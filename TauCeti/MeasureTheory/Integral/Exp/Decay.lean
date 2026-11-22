@@ -43,6 +43,11 @@ inclusion.
   `a < 0`.
 * `TauCeti.integrableOn_exp_mul_Iic_iff`: `exp (a * ·)` is integrable on `(-∞, c]` exactly when
   `0 < a`.
+* `TauCeti.not_integrableOn_rpow_mul_exp_mul_Ioi`,
+  `TauCeti.integrableOn_rpow_mul_exp_mul_Ioi_iff`,
+  `TauCeti.integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos`: `x ↦ x ^ s * exp (a * x)` is not
+  integrable on `(c, ∞)` for any `c : ℝ` when `0 < a`, and for `0 < c` is integrable on `(c, ∞)`
+  precisely when `a < 0`, or `a = 0` and `s < -1`.
 * `TauCeti.integrable_exp_neg_mul_abs`: `exp (-(a * |·|))` is integrable when `0 < a`.
 * `TauCeti.memLp_exp_neg_mul_abs`: it lies in every `Lᵖ`.
 * `TauCeti.integral_exp_neg_mul_abs`: its integral is `2 / a`.
@@ -64,6 +69,12 @@ inclusion.
   `TauCeti.exists_integral_mul_le_mul_exp_neg_mul_norm_of_forall_lt` restates the bound for
   nonnegative functions decaying at every rate below a threshold. The pointwise overlap bounds
   are in `TauCeti.Analysis.SpecialFunctions.Exp.Overlap`.
+* `TauCeti.integral_mul_le_mul_exp_of_forall_le_norm_sub`: the same for functions decaying in the
+  distance to two finite multisets of centres at distance at least `δ` from each other: their
+  overlap integral is `O(exp (-(c δ)))`, with a constant depending only on the decay constants and
+  the number of centres. It integrates the radial exponentials about finitely many centres,
+  `TauCeti.integrable_sum_map_exp_neg_mul_norm_sub` and
+  `TauCeti.integral_sum_map_exp_neg_mul_norm_sub`.
 * `TauCeti.integrable_norm_mul_norm_comp_add`, `TauCeti.integrable_mul_comp_add`: the overlap of
   an exponentially decaying function with a translate of a bounded one is integrable, and
   `TauCeti.integrable_mul_comp_add_of_forall_lt` restates this for nonnegative functions decaying
@@ -337,6 +348,62 @@ theorem integrable_mul_comp_add_of_forall_lt {f g : E → ℝ} {r : ℝ}
     (fun z ↦ (Real.norm_of_nonneg (hf₀ z)).trans_le (hKf z))
     (fun z ↦ (Real.norm_of_nonneg (hg₀ z)).trans_le (by simpa using hKg z)) a
 
+/-- **Radial exponentials about finitely many centres are integrable.** For `0 < a` and a finite
+multiset `S` of centres, `z ↦ ∑_{x ∈ S} exp (-(a ‖z - x‖))` is integrable on a finite-dimensional
+space for every additive Haar measure. -/
+theorem integrable_sum_map_exp_neg_mul_norm_sub {a : ℝ} (ha : 0 < a) (S : Multiset E) :
+    Integrable (fun z ↦ (S.map fun x ↦ Real.exp (-(a * ‖z - x‖))).sum) μ := by
+  induction S using Multiset.induction_on with
+  | empty => simp
+  | cons x S ih =>
+    simp only [Multiset.map_cons, Multiset.sum_cons]
+    exact ((integrable_exp_neg_mul_norm μ ha).comp_sub_right x).add ih
+
+/-- **The integral of radial exponentials about finitely many centres.** For `0 < a` and a finite
+multiset `S` of centres, `∫ ∑_{x ∈ S} exp (-(a ‖z - x‖)) = card S ∫ exp (-(a ‖z‖))` on a
+finite-dimensional space, for every additive Haar measure. -/
+theorem integral_sum_map_exp_neg_mul_norm_sub {a : ℝ} (ha : 0 < a) (S : Multiset E) :
+    ∫ z, (S.map fun x ↦ Real.exp (-(a * ‖z - x‖))).sum ∂μ =
+      Multiset.card S * ∫ z, Real.exp (-(a * ‖z‖)) ∂μ := by
+  induction S using Multiset.induction_on with
+  | empty => simp
+  | cons x S ih =>
+    simp only [Multiset.map_cons, Multiset.sum_cons, Multiset.card_cons]
+    rw [integral_add ((integrable_exp_neg_mul_norm μ ha).comp_sub_right x)
+      (integrable_sum_map_exp_neg_mul_norm_sub μ ha S), ih,
+      integral_sub_right_eq_self (fun z ↦ Real.exp (-(a * ‖z‖)))]
+    push_cast
+    ring
+
+/-- **Overlap of functions decaying away from separated finite sets of centres, integrated.**
+Let `0 ≤ c < b`. Suppose that `0 ≤ f z ≤ K exp (-(b ρ))` whenever every point of the multiset
+`S` is at distance at least `ρ` from `z`, that `0 ≤ g z ≤ L exp (-(b ρ))` whenever every point of
+`T` is, and that every point of `S` is at distance at least `δ` from every point of `T`. Then on a
+finite-dimensional space, for every additive Haar measure,
+
+`∫ f z g z ≤ K L (card S ∫ exp (-((b - c) ‖z‖))) exp (-(c δ))`.
+
+The constant depends on `f`, `g`, `S` and `T` only through `K`, `L` and the number of points
+of `S`. -/
+theorem integral_mul_le_mul_exp_of_forall_le_norm_sub {f g : E → ℝ} {S T : Multiset E}
+    {b δ : ℝ} (hc : 0 ≤ c) (hcb : c < b) (hf₀ : ∀ z, 0 ≤ f z) (hg₀ : ∀ z, 0 ≤ g z)
+    (hf : ∀ z ρ, (∀ a ∈ S, ρ ≤ ‖z - a‖) → f z ≤ K * Real.exp (-(b * ρ)))
+    (hg : ∀ z ρ, (∀ a ∈ T, ρ ≤ ‖z - a‖) → g z ≤ L * Real.exp (-(b * ρ)))
+    (hST : ∀ a ∈ S, ∀ a' ∈ T, δ ≤ ‖a - a'‖) :
+    ∫ z, f z * g z ∂μ ≤
+      K * L * (Multiset.card S * ∫ z, Real.exp (-((b - c) * ‖z‖)) ∂μ) *
+        Real.exp (-(c * δ)) := by
+  have hint := integrable_sum_map_exp_neg_mul_norm_sub μ (sub_pos.2 hcb) S
+  calc ∫ z, f z * g z ∂μ
+      ≤ ∫ z, K * L * Real.exp (-(c * δ)) *
+          (S.map fun a ↦ Real.exp (-((b - c) * ‖z - a‖))).sum ∂μ :=
+        integral_mono_of_nonneg (.of_forall fun z ↦ mul_nonneg (hf₀ z) (hg₀ z))
+          (hint.const_mul _)
+          (.of_forall (mul_le_mul_exp_mul_sum_exp_of_forall_le_norm_sub hc hcb hf₀ hg₀ hf hg hST))
+    _ = _ := by
+      rw [integral_const_mul, integral_sum_map_exp_neg_mul_norm_sub μ (sub_pos.2 hcb)]
+      ring
+
 end Overlap
 
 /-- The two-sided exponential is integrable on the line. -/
@@ -484,5 +551,64 @@ theorem locallyIntegrableOn_of_integrableOn_exp_neg_mul_smul {E : Type*} [Normed
       |>.continuousOn_smul isClosed_Ici.isLocallyClosed
       (by fun_prop : ContinuousOn (fun t : ℝ ↦ Real.exp (p * t)) (Ici a))).congr
     (ae_of_all _ fun t ↦ by simp [smul_smul, ← Real.exp_add])
+
+/-- At a positive rate `0 < a`, `exp (a * x)` dominates `x ^ (-s)` for large `x`, so
+`x ↦ x ^ s * exp (a * x)` is not integrable on `(c, ∞)` for any `c : ℝ`. -/
+theorem not_integrableOn_rpow_mul_exp_mul_Ioi {a s c : ℝ} (ha : 0 < a) :
+    ¬ IntegrableOn (fun x : ℝ => x ^ s * Real.exp (a * x)) (Set.Ioi c) := by
+  refine MeasureTheory.not_integrableOn_Ioi_of_eventually_le_norm one_pos c ?_
+  filter_upwards [Filter.eventually_gt_atTop (0 : ℝ),
+    (tendsto_exp_mul_div_rpow_atTop (-s) a ha).eventually_ge_atTop 1] with x hx hge
+  rw [Real.rpow_neg hx.le, div_inv_eq_mul, mul_comm] at hge
+  exact hge.trans ((le_abs_self _).trans_eq (Real.norm_eq_abs _).symm)
+
+/-- On a right half-line `(c, ∞)` bounded away from zero (`0 < c`), a real power times an
+exponential `x ↦ x ^ s * exp (a * x)` is integrable precisely when either `a < 0`, or `a = 0` and
+`s < -1`. -/
+@[simp]
+theorem integrableOn_rpow_mul_exp_mul_Ioi_iff {a s c : ℝ} (hc : 0 < c) :
+    IntegrableOn (fun x : ℝ => x ^ s * Real.exp (a * x)) (Set.Ioi c) ↔
+      a < 0 ∨ (a = 0 ∧ s < -1) := by
+  refine ⟨fun hint => ?_, fun h => ?_⟩
+  · rcases lt_trichotomy a 0 with ha | rfl | ha
+    · exact Or.inl ha
+    · refine Or.inr ⟨rfl, (integrableOn_Ioi_rpow_iff hc).mp ?_⟩
+      simpa using hint
+    · exact absurd hint (not_integrableOn_rpow_mul_exp_mul_Ioi ha)
+  · -- For `a < 0`, dominate `(x / c) ^ s ≤ (x / c) ^ max s 0` across `c < x`.
+    rcases h with ha | ⟨rfl, hs⟩
+    · set s' := max s 0
+      have hs' : -1 < s' := lt_of_lt_of_le (by norm_num) (le_max_right s 0)
+      have hbase : IntegrableOn (fun x : ℝ => x ^ s' * Real.exp (a * x)) (Set.Ioi c) := by
+        refine ((integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) hs' one_pos
+          (neg_pos.mpr ha)).mono_set (Set.Ioi_subset_Ioi hc.le)).congr_fun (fun x _ => ?_)
+          measurableSet_Ioi
+        simp
+      refine Integrable.mono' (hbase.const_mul (c ^ s * (c ^ s')⁻¹))
+        (Measurable.aestronglyMeasurable (by fun_prop)) ?_
+      filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx
+      have hx0 : 0 < x := hc.trans hx
+      have hdiv : (x / c) ^ s ≤ (x / c) ^ s' :=
+        Real.rpow_le_rpow_of_exponent_le ((one_le_div hc).mpr hx.le) (le_max_left s 0)
+      rw [Real.div_rpow hx0.le hc.le, Real.div_rpow hx0.le hc.le,
+        div_le_iff₀ (Real.rpow_pos_of_pos hc s), div_eq_mul_inv] at hdiv
+      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+      calc x ^ s * Real.exp (a * x)
+          ≤ (x ^ s' * (c ^ s')⁻¹ * c ^ s) * Real.exp (a * x) :=
+            mul_le_mul_of_nonneg_right hdiv (Real.exp_nonneg _)
+        _ = c ^ s * (c ^ s')⁻¹ * (x ^ s' * Real.exp (a * x)) := by ring
+    · simpa using integrableOn_Ioi_rpow_of_lt hs hc
+
+/-- Sufficient condition for integrability of `x ↦ x ^ s * exp (-a * x)` on `(c, ∞)` (`0 < c`):
+either positive decay rate `0 < a`, or nonnegative rate `0 ≤ a` with integrable power `s < -1`. -/
+theorem integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos {a s c : ℝ} (hc : 0 < c)
+    (h : 0 < a ∨ (0 ≤ a ∧ s < -1)) :
+    IntegrableOn (fun x : ℝ => x ^ s * Real.exp (-a * x)) (Set.Ioi c) := by
+  rw [integrableOn_rpow_mul_exp_mul_Ioi_iff hc]
+  rcases h with ha | ⟨ha, hs⟩
+  · exact Or.inl (neg_lt_zero.mpr ha)
+  · rcases ha.eq_or_lt with rfl | ha'
+    · exact Or.inr ⟨neg_zero, hs⟩
+    · exact Or.inl (neg_lt_zero.mpr ha')
 
 end TauCeti

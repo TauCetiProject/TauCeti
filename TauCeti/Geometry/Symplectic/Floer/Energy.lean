@@ -17,6 +17,7 @@ import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Curvature of Hamiltonian perturbations and the Floer energy identity
@@ -102,9 +103,9 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
   `SymplecticForm.floerEnergyDensity_comp_add_right`,
-  `SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`); hence translations preserve the
-  energy
-  (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
+  `SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`), so that data and maps invariant
+  under a translation have invariant energy density
+  (`SymplecticForm.periodic_floerEnergyDensity`).
 * `SymplecticForm.tendsto_floerEnergyDensity`,
   `SymplecticForm.setLIntegral_floerEnergyDensity_le_liminf`: the energy density depends
   continuously on the value and the derivative of the map, so the energy is lower semicontinuous
@@ -448,6 +449,16 @@ theorem floerEnergyDensity_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ �
       ω.floerEnergyDensity Ks Kt u (z + v) := by
   rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedFDeriv_comp_add_right]
 
+/-- If the perturbation and the map are invariant under the translation of the domain by `v`, then
+so is the Floer energy density. -/
+theorem periodic_floerEnergyDensity (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {v : ℝ × ℝ} (hKs : Function.Periodic Ks v) (hKt : Function.Periodic Kt v)
+    (hu : Function.Periodic u v) : Function.Periodic (ω.floerEnergyDensity Ks Kt u) v := fun z ↦ by
+  have hKs' : (fun w ↦ Ks (w + v)) = Ks := funext hKs
+  have hKt' : (fun w ↦ Kt (w + v)) = Kt := funext hKt
+  have hu' : (fun w ↦ u (w + v)) = u := funext hu
+  rw [← ω.floerEnergyDensity_comp_add_right, hKs', hKt', hu']
+
 /-- For the cylindrical perturbation `K = H_t dt`, the energy density of the translate
 `(s, t) ↦ u(s + c, t)` at `z` is the energy density of `u` at `z + (c, 0)`. -/
 theorem floerEnergyDensity_cylindrical_comp_add_right (ω : SymplecticForm V) (H : ℝ → V → ℝ)
@@ -706,20 +717,6 @@ end TargetIndependent
 
 section Integral
 
-/-- **Translations preserve the energy.** Translating the map and the perturbation data by `v`
-preserves the energy: the energy of the translate over `(· + v) ⁻¹' S` is the energy of the
-original over `S`. -/
-theorem lintegral_floerEnergyDensity_comp_add_right (ω : SymplecticForm V)
-    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (v : ℝ × ℝ) (S : Set (ℝ × ℝ)) :
-    ∫⁻ z in (· + v) ⁻¹' S, ENNReal.ofReal
-        (ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z) =
-      ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) := by
-  have hv : MeasurePreserving (· + v) volume volume :=
-    (measurePreserving_add_right volume v.1).prod (measurePreserving_add_right volume v.2)
-  simp only [floerEnergyDensity_comp_add_right]
-  exact hv.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight v)
-    (fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)) S
-
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
 /-- For a map and perturbation data that are `C¹` over an open set `U` of the domain, the Floer
@@ -811,11 +808,8 @@ theorem integrableOn_floerEnergyDensity_and_setIntegral_le_of_tendsto (ω : Symp
   have hmeas : AEStronglyMeasurable (ω.floerEnergyDensity Ks Kt v) (volume.restrict S) :=
     aestronglyMeasurable_of_tendsto_ae atTop (fun n ↦ (hint n).aestronglyMeasurable)
       (ae_restrict_of_forall_mem hS hlim)
-  refine ⟨⟨hmeas, ?_⟩, ?_⟩
-  · rw [hasFiniteIntegral_iff_ofReal hnnv]
-    exact hlint.trans_lt ENNReal.ofReal_lt_top
-  · rw [integral_eq_lintegral_of_nonneg_ae hnnv hmeas]
-    exact ENNReal.toReal_le_of_le_ofReal ((setIntegral_nonneg hS (hnn 0)).trans (hE 0)) hlint
+  exact integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le hmeas hnnv subset_rfl
+    ((setIntegral_nonneg hS (hnn 0)).trans (hE 0)) hlint
 
 /-- For perturbation data that is `C¹` over an open set `U` of the domain, the curvature evaluated
 along a map continuous on `U` is continuous on `U`. -/

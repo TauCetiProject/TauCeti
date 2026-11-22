@@ -5,20 +5,20 @@ Authors: Jon Crall, Claude Opus 5
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.InfiniteSum
-import Mathlib.Tactic.GCongr
-import Mathlib.Tactic.Push
+public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
 # Reassembling lower bounds from norm-splitting blocks
 
-Suppose maps from one seminormed additive commutative group to another split the
-squared extended norms of vectors. A common lower bound for the images of
-each pair of vectors then gives the same bound for the original pair.
+Suppose maps from one type with an extended norm to another split the `p`-th powers of the
+extended norms of vectors, for some real `p > 0`; the case `p = 2` covers splittings of
+squared norms such as orthogonal decompositions. A common lower bound for the images of each
+pair of vectors then gives the same bound for the original pair.
 
-The maps need not be linear, continuous, or endomorphisms. Neither space
-needs a definite norm or an inner product. The use of extended nonnegative
-norms also avoids any summability or finiteness assumption on the index type.
+The maps need not be linear, continuous, or endomorphisms, and the two types need carry no
+structure beyond an extended norm `‖·‖ₑ`: no group structure, definite norm or inner product.
+The use of extended nonnegative norms also avoids any summability or finiteness assumption on
+the index type.
 
 Adapted from the Kitware DKPS formalization,
 `ForTauCeti/Analysis/InnerProductSpace/BlockLowerBound.lean`.
@@ -30,29 +30,25 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {H K : Type*} [SeminormedAddCommGroup H] [SeminormedAddCommGroup K]
+variable {E F : Type*} [ENorm E] [ENorm F]
 
-/-- Reassemble a lower bound from a family of arbitrary maps that splits the
-squared extended norms of the source space. The maps may take values in a
-different seminormed additive commutative group. -/
-theorem enorm_ge_of_blocks {c : ℝ≥0∞} {ι : Type*}
-    (blocks : ι → H → K)
-    (hsplit : ∀ f : H, ∑' i, ‖blocks i f‖ₑ ^ 2 = ‖f‖ₑ ^ 2)
-    {x y : H} (hblock : ∀ i, c * ‖blocks i x‖ₑ ≤ ‖blocks i y‖ₑ) :
+/-- Reassemble a lower bound from a family of arbitrary maps that splits the `p`-th powers
+(`0 < p`) of the extended norms of the source. The maps may take values in a different type
+with an extended norm. -/
+theorem enorm_ge_of_blocks {ι : Type*} {p : ℝ} {c : ℝ≥0∞} (hp : 0 < p)
+    (blocks : ι → E → F)
+    (hsplit : ∀ f : E, ∑' i, ‖blocks i f‖ₑ ^ p = ‖f‖ₑ ^ p)
+    {x y : E} (hblock : ∀ i, c * ‖blocks i x‖ₑ ≤ ‖blocks i y‖ₑ) :
     c * ‖x‖ₑ ≤ ‖y‖ₑ := by
-  have hsq : (c * ‖x‖ₑ) ^ 2 ≤ ‖y‖ₑ ^ 2 := by
-    calc
-      (c * ‖x‖ₑ) ^ 2 = c ^ 2 * ∑' i, ‖blocks i x‖ₑ ^ 2 := by
-        rw [mul_pow, hsplit]
-      _ = ∑' i, (c * ‖blocks i x‖ₑ) ^ 2 := by
-        simp_rw [mul_pow]
-        exact (ENNReal.tsum_mul_left).symm
-      _ ≤ ∑' i, ‖blocks i y‖ₑ ^ 2 :=
-        tsum_le_tsum fun i => by gcongr; exact hblock i
-      _ = ‖y‖ₑ ^ 2 := hsplit _
-  by_contra hcon
-  push Not at hcon
-  exact absurd ((ENNReal.pow_lt_pow_left_iff (n := 2) two_ne_zero).mpr hcon)
-    (not_lt.mpr hsq)
+  refine (ENNReal.rpow_le_rpow_iff hp).1 ?_
+  calc
+    (c * ‖x‖ₑ) ^ p = c ^ p * ∑' i, ‖blocks i x‖ₑ ^ p := by
+      rw [ENNReal.mul_rpow_of_nonneg _ _ hp.le, hsplit]
+    _ = ∑' i, (c * ‖blocks i x‖ₑ) ^ p := by
+      simp_rw [ENNReal.mul_rpow_of_nonneg _ _ hp.le]
+      exact ENNReal.tsum_mul_left.symm
+    _ ≤ ∑' i, ‖blocks i y‖ₑ ^ p :=
+      tsum_le_tsum fun i => ENNReal.rpow_le_rpow (hblock i) hp.le
+    _ = ‖y‖ₑ ^ p := hsplit y
 
 end TauCeti

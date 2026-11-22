@@ -39,16 +39,19 @@ such actions.
   point of an edge fixes the edge because there are no inversions. By `GTree.dominates_iff`,
   `T` dominates `T'` exactly when every vertex stabilizer of `T` is elliptic in `T'`. Two
   `G`-trees lie in the same deformation space when each dominates the other.
+* A `G`-tree `T` is *elliptic with respect to* `T'` when every dart stabilizer of `T` is elliptic
+  in `T'`. This holds when `T` dominates `T'`, and then also with respect to every tree that `T'`
+  dominates.
 
-A `G`-tree has at most one vertex exactly when it has no darts. Such a tree is minimal and
-relative to all families of subgroups, every subgroup is elliptic in it, and it is dominated by
-every `G`-tree; it dominates exactly the `G`-trees in which `G` fixes a vertex. The one-vertex
-`G`-tree is such a tree. In a `G`-tree with trivial vertex stabilizers only the trivial subgroup
-is elliptic, so such a tree is relative to every family containing the trivial subgroup and every
-family of trivial subgroups. The line, a `G`-tree for the infinite cyclic group, is in
-`TauCeti.GroupTheory.GTree.Line`, and the axis of a hyperbolic element is in
-`TauCeti.GroupTheory.GTree.Axis`. The automorphism of the segment exchanging its vertices inverts
-its edge (`TauCeti.SerreGraph.segmentSwap_smul`); more generally, no element of a `G`-tree
+A `G`-tree has at most one vertex exactly when it has no darts. Such a tree is minimal and relative
+to all families of subgroups, every subgroup is elliptic in it, and it is dominated by every
+`G`-tree; it dominates exactly the `G`-trees in which `G` fixes a vertex, and it is elliptic with
+respect to every `G`-tree. The one-vertex `G`-tree is such a tree. In a `G`-tree with trivial vertex
+stabilizers only the trivial subgroup is elliptic, so such a tree is relative to every family
+containing the trivial subgroup and every family of trivial subgroups. The line, a `G`-tree for the
+infinite cyclic group, is in `TauCeti.GroupTheory.GTree.Line`, and the axis of a hyperbolic element
+is in `TauCeti.GroupTheory.GTree.Axis`. The automorphism of the segment exchanging its vertices
+inverts its edge (`TauCeti.SerreGraph.segmentSwap_smul`); more generally, no element of a `G`-tree
 exchanges the endpoints of a dart.
 
 ## Main declarations
@@ -64,6 +67,7 @@ exchanges the endpoints of a dart.
   intersections of its stabilizer with the conjugates of the members of a family `ℋ`.
 * `TauCeti.GTree.Dominates`, `TauCeti.GTree.SameDeformationSpace`: domination and deformation
   spaces, with `TauCeti.GTree.dominates_iff`.
+* `TauCeti.GTree.IsEllipticWith`: ellipticity of one tree with respect to another.
 * `TauCeti.GTree.point`: the one-vertex tree.
 
 ## References
@@ -527,6 +531,13 @@ variable {T}
     T.IsConvex (g • S) ↔ T.IsConvex S := by
   rw [smul_set_vertex_def, Aut.isConvex_smul_set_iff]
 
+/-- An element that maps a set of vertices into itself maps the darts induced by the set to darts
+induced by the set. -/
+theorem smul_mem_inducedDarts {g : G} {C : Set T.V} (hinv : ∀ v ∈ C, g • v ∈ C) {e : T.E}
+    (he : e ∈ T.inducedDarts C) : g • e ∈ T.inducedDarts C := by
+  simp only [mem_inducedDarts_iff, src_smul, tgt_smul] at he ⊢
+  exact ⟨hinv _ he.1, hinv _ he.2⟩
+
 end Pointwise
 
 /-! ### Fixed vertices -/
@@ -840,6 +851,36 @@ theorem dominates_of_subsingleton [Subsingleton T'.V] : T.Dominates T' :=
   dominates_iff.mpr fun _ => T'.isEllipticSubgroup_of_subsingleton _
 
 end Dominates
+
+section IsEllipticWith
+
+variable (T : GTree.{u, v} G) (T' : GTree.{u', v'} G)
+
+/-- A `G`-tree `T` is *elliptic with respect to* a `G`-tree `T'` when the stabilizer of every dart
+of `T` fixes a vertex of `T'`. -/
+def IsEllipticWith : Prop :=
+  ∀ e : T.E, T'.IsEllipticSubgroup (stabilizer G e)
+
+/-- A `G`-tree with at most one vertex is elliptic with respect to every `G`-tree. -/
+theorem isEllipticWith_of_subsingleton [Subsingleton T.V] : T.IsEllipticWith T' :=
+  fun e => (T.isEmpty_dart_of_subsingleton.false e).elim
+
+variable {T T'} {T'' : GTree.{u'', v''} G}
+
+theorem isEllipticWith_iff :
+    T.IsEllipticWith T' ↔ ∀ e : T.E, T'.IsEllipticSubgroup (stabilizer G e) := Iff.rfl
+
+/-- If `T` is elliptic with respect to `T'`, it is elliptic with respect to every tree which `T'`
+dominates. -/
+theorem IsEllipticWith.trans_dominates (h : T.IsEllipticWith T') (h' : T'.Dominates T'') :
+    T.IsEllipticWith T'' :=
+  fun e => h'.isEllipticSubgroup (h e)
+
+/-- A `G`-tree is elliptic with respect to every `G`-tree it dominates. -/
+theorem Dominates.isEllipticWith (h : T.Dominates T') : T.IsEllipticWith T' :=
+  fun e => h.isEllipticSubgroup (T.isEllipticSubgroup_stabilizer_dart e)
+
+end IsEllipticWith
 
 section SameDeformationSpace
 

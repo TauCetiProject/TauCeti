@@ -40,7 +40,9 @@ and resolvent methods:
   the row and column removed from `Hₙ₊₁` (`indepFun_wignerMatrix_column`); the same holds for
   the actual principal submatrix of `Hₙ₊₁` (`indepFun_submatrix_castSucc_wignerMatrix`),
   independence restricts to the `< n` corner (`iIndepFun_sumElim_ofReal_subtype_lt`), and the law
-  of `Hₙ` depends only on the laws of the entries (`identDistrib_wignerMatrix`);
+  of `Hₙ` depends only on the laws of the entries (`identDistrib_wignerMatrix`). For zero
+  diagonal, deleting any index gives a minor independent of the removed off-diagonal column
+  (`indepFun_submatrix_wignerMatrix_zero_column`);
 * entries at distinct off-diagonal unordered positions, and their squared absolute values, are
   independent whenever the corner upper entries are (`iIndepFun_wignerMatrix_apply_of_ne`,
   `iIndepFun_norm_wignerMatrix_apply_sq_of_ne`);
@@ -95,6 +97,12 @@ abbrev StrictUpperFin (n : ℕ) := {ij : Fin n × Fin n // ij.1.val < ij.2.val}
 /-- Convert a finite upper-triangular position to the index type used by `wignerMatrix`. -/
 def wignerUpperIndex {n : ℕ} (u : StrictUpperFin n) : StrictUpper :=
   ⟨(u.val.1.val, u.val.2.val), by exact_mod_cast u.property⟩
+
+/-- Reading the row and column labels of a finite upper coordinate in the infinite array. -/
+@[simp]
+theorem wignerUpperIndex_val {n : ℕ} (u : StrictUpperFin n) :
+    (wignerUpperIndex u).val = (u.val.1.val, u.val.2.val) :=
+  (rfl)
 
 /-- Coordinate labels for a finite Wigner matrix: upper-triangular entries and its diagonal. -/
 abbrev WignerCoordinateIndex (n : ℕ) := StrictUpperFin n ⊕ Fin n
@@ -485,6 +493,60 @@ theorem indepFun_submatrix_castSucc_wignerMatrix (hξ : ∀ ij, AEMeasurable (ξ
     simpa only [hcast, Function.comp_apply, Nat.cast_add, Nat.cast_one, Nat.cast_succ] using
       (submatrix_castLE_wignerMatrix (ξ := ξ) (η := η) ω (Nat.le_succ n))
   · rfl
+
+/-- For a zero-diagonal Wigner matrix with independent upper entries, every principal
+minor obtained by deleting an index is independent of the removed off-diagonal column. -/
+theorem indepFun_submatrix_wignerMatrix_zero_column (hind : iIndepFun ξ P)
+    (hm : ∀ ij, AEMeasurable (ξ ij) P) {n : ℕ} (i : Fin n) :
+    IndepFun (fun ω ↦ ((wignerMatrix ξ (fun _ _ ↦ 0) n ω).submatrix (↑) (↑) :
+      Matrix {j // j ≠ i} {j // j ≠ i} ℂ))
+      (fun ω (j : {j // j ≠ i}) ↦ wignerMatrix ξ (fun _ _ ↦ 0) n ω j i) P := by
+  classical
+  let S := (Finset.univ : Finset (StrictUpperFin n)).image wignerUpperIndex
+  let T := S.filter (fun ij ↦ ij.val.1 = i.val ∨ ij.val.2 = i.val)
+  let U := S \ T
+  let extend (V : Finset StrictUpper) (x : V → ℂ) :=
+    Function.extend (Subtype.val : V → StrictUpper) x (fun _ ↦ (0 : ℂ))
+  let W (V : Finset StrictUpper) :=
+    wignerMatrix (fun ij x ↦ extend V x ij) (fun _ _ ↦ 0) n
+  have hW (V : Finset StrictUpper) : Measurable (W V) :=
+    measurable_wignerMatrix (ξ := fun ij x ↦ extend V x ij) (η := fun _ _ ↦ 0)
+      (fun ij _ ↦ (measurable_pi_apply ij).comp (MeasureTheory.measurable_extend
+        (Subtype.val : V → StrictUpper) (fun _ ↦ (0 : ℂ))))
+      (fun _ _ ↦ measurable_const)
+  have hu : Disjoint U T := Finset.sdiff_disjoint
+  have h := (hind.indepFun_finset₀ U T hu hm).comp
+    (φ := fun x ↦ ((W U x).submatrix (↑) (↑) : Matrix {j // j ≠ i} {j // j ≠ i} ℂ))
+    (ψ := fun x (j : {j // j ≠ i}) ↦ W T x j i)
+    (.of_eval_matrix _ fun _ _ ↦ (hW U).eval_matrix)
+    (measurable_pi_iff.mpr fun _ ↦ (hW T).eval_matrix)
+  have hs {j k : Fin n} (hjk : j.val < k.val) :
+      (⟨(j.val, k.val), hjk⟩ : StrictUpper) ∈ S :=
+    Finset.mem_image.mpr ⟨⟨(j, k), hjk⟩, Finset.mem_univ _, Subtype.ext (wignerUpperIndex_val _)⟩
+  refine h.congr (.of_forall fun ω ↦ ?_) (.of_forall fun ω ↦ ?_)
+  · apply Matrix.ext
+    intro j k
+    simp only [Function.comp_apply, Matrix.submatrix_apply, W, extend]
+    have hj := Fin.val_ne_of_ne j.property
+    have hk := Fin.val_ne_of_ne k.property
+    rcases lt_trichotomy j.val.val k.val.val with hlt | heq | hgt
+    · have hmem : (⟨(j.val.val, k.val.val), hlt⟩ : StrictUpper) ∈ U :=
+        Finset.mem_sdiff.mpr ⟨hs hlt, by simp [T, hj, hk]⟩
+      simp only [wignerMatrix_apply_of_lt _ _ _ hlt, Function.extend_val_apply hmem]
+    · obtain rfl : j = k := Subtype.ext (Fin.ext heq)
+      simp
+    · have hmem : (⟨(k.val.val, j.val.val), hgt⟩ : StrictUpper) ∈ U :=
+        Finset.mem_sdiff.mpr ⟨hs hgt, by simp [T, hj, hk]⟩
+      simp only [wignerMatrix_apply_of_gt _ _ _ hgt, Function.extend_val_apply hmem]
+  · funext j
+    simp only [Function.comp_apply, W, extend]
+    rcases lt_or_gt_of_ne (Fin.val_ne_of_ne j.property) with hlt | hgt
+    · have hmem : (⟨(j.val.val, i.val), hlt⟩ : StrictUpper) ∈ T :=
+        Finset.mem_filter.mpr ⟨hs hlt, Or.inr rfl⟩
+      simp only [wignerMatrix_apply_of_lt _ _ _ hlt, Function.extend_val_apply hmem]
+    · have hmem : (⟨(i.val, j.val.val), hgt⟩ : StrictUpper) ∈ T :=
+        Finset.mem_filter.mpr ⟨hs hgt, Or.inl rfl⟩
+      simp only [wignerMatrix_apply_of_gt _ _ _ hgt, Function.extend_val_apply hmem]
 
 /-- The law of a Wigner matrix with independent entries depends only on the laws of the
 entries: two arrays of independent entries with identically distributed coordinates give

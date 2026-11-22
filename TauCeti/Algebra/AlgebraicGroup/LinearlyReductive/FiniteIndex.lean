@@ -146,7 +146,7 @@ theorem Coalgebra.IsLinearlyReductive.of_bialgHom_finiteIndex
   refine Coalgebra.IsLinearlyReductive.of_forall_isCompletelyReducible k fun M _ _ _ _ ↦ ?_
   refine Comodule.isCompletelyReducible_of_corestrict_finiteIndex f hindex ?_
   let _ : Comodule k H₂ M := Comodule.Corestrict f.toCoalgHom
-  exact hH₂.isCompletelyReducible_sameUniverse k M
+  exact hH₂.isCompletelyReducible_same_universe k M
 
 end Unbundled
 

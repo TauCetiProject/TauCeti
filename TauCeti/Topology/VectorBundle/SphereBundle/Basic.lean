@@ -31,7 +31,16 @@ on the negative normal bundle. Dividing a fibre gauge by a continuous positive r
 disc and sphere bundles are `{v | ρ v ≤ r v.proj}` and `{v | ρ v = r v.proj}`
 (`TauCeti.gaugeDiscBundle_div`, `TauCeti.gaugeSphereBundle_div`). Each point of `S(E)` gives a
 unit vector in its fibre (`TauCeti.unitSphereOfSphereBundle`), and the unit sphere bundle projects
-continuously onto the base (`TauCeti.sphereBundleProj`).
+continuously onto the base (`TauCeti.sphereBundleProj`). The disc bundle of a fibre gauge contains
+the zero section (`TauCeti.IsFiberGauge.zeroSection_mem_gaugeDiscBundle`). The pair `(D(E), S(E))`
+(`TauCeti.discSpherePair`) is the gauge disc-sphere pair of the fibre norm
+(`TauCeti.discSpherePair_eq_gaugeDiscSpherePair`). In rank zero every vector is zero, so the unit
+sphere bundle is empty and the unit disc bundle is the whole total space
+(`TauCeti.isEmpty_sphereBundle_of_subsingleton`, `TauCeti.discBundle_eq_univ_of_subsingleton`).
+The disc bundle of a fibre gauge contains the zero section
+(`TauCeti.IsFiberGauge.zeroSection_mem_gaugeDiscBundle`), so it projects onto the base, and the
+base is compact when the disc bundle is
+(`TauCeti.IsFiberGauge.compactSpace_of_compactSpace_gaugeDiscBundle`).
 
 The unit disc and sphere bundles are closed in the total space (`TauCeti.isClosed_discBundle`,
 `TauCeti.isClosed_sphereBundle`). For a finite-rank bundle whose fibres carry inner products, the
@@ -47,7 +56,11 @@ where `E₀` is the complement of the zero section:
 * the inclusion `D_ρ(E) → E` is a homotopy equivalence, with homotopy inverse the radial
   retraction `v ↦ v / max 1 (ρ v)` (`TauCeti.gaugeDiscBundleHomotopyEquiv`);
 * the inclusion `S_ρ(E) → E₀` is a homotopy equivalence, with homotopy inverse the normalization
-  `v ↦ v / ρ v` (`TauCeti.gaugeSphereBundleHomotopyEquiv`).
+  `v ↦ v / ρ v` (`TauCeti.gaugeSphereBundleHomotopyEquiv`). For the unit sphere bundle the
+  inclusion `S(E) → E₀` (`TauCeti.sphereBundleInclusion`) is a morphism of topological spaces.
+  When the fibres are normed and the fibre norm is continuous on the total space, so is the
+  normalization `v ↦ v / ‖v‖` (`TauCeti.sphereBundleNormalization`), and the inclusion induces
+  isomorphisms on cohomology (`TauCeti.isIso_singularCohomologyMap_sphereBundleInclusion`).
 
 In both cases the homotopy is the straight line from the identity to the retraction, which only
 rescales each vector by a positive factor. In general they do not combine into a homotopy
@@ -60,13 +73,25 @@ every degree (`TauCeti.isIso_singularHomologyMap_gaugeDiscSpherePairMap` and
 
 So Thom classes may be read on any gauge disc-sphere pair, and the cohomology of the deleted total
 space `E₀` in the long exact sequence of the Thom pair is that of the sphere bundle, as in the
-Gysin sequence. No orientation, finite-dimensionality, norm on the fibres or condition on the base
-is needed. The rank zero case is included: there `S_ρ(E)` (and in particular `S(E)`, via
-`TauCeti.isEmpty_sphereBundle_of_subsingleton`) and `E₀` are empty and `D_ρ(E) = E`.
+Gysin sequence. For these fibre-gauge comparisons no orientation, finite-dimensionality, norm on
+the fibres or condition on the base is needed. The rank zero case is included: there `S_ρ(E)` (and
+in particular `S(E)`, via `TauCeti.isEmpty_sphereBundle_of_subsingleton`) and `E₀` are empty and
+`D_ρ(E) = E`.
 
 The disc bundle of a fibre gauge also contracts radially onto the zero section, so its projection
 to the base is a homotopy equivalence with homotopy inverse the zero section
 (`TauCeti.gaugeDiscBundleProjHomotopyEquiv`).
+
+For the unit sphere bundle of a bundle with normed fibres whose fibre norm is continuous on the
+total space, with the connecting morphism `Hˡ(S(E)) ⟶ Hˡ⁺¹(E, E₀)` (`TauCeti.sphereBundleδ`), the
+sequence
+
+`⋯ ⟶ Hᵐ(E, E₀) ⟶ Hᵐ(B) ⟶ Hᵐ(S(E)) ⟶ Hᵐ⁺¹(E, E₀) ⟶ Hᵐ⁺¹(B) ⟶ ⋯`
+
+of the Euler class maps, the pullback along `S(E) → B` and `TauCeti.sphereBundleδ` is exact
+(`TauCeti.exact_eulerClass_singularCohomologyMap_sphereBundleProj`,
+`TauCeti.exact_singularCohomologyMap_sphereBundleProj_sphereBundleδ`,
+`TauCeti.exact_sphereBundleδ_eulerClass`).
 
 ## References
 
@@ -173,6 +198,10 @@ variable {F E} in
 theorem mem_sphereBundle {v : TotalSpace F E} : v ∈ sphereBundle F E ↔ ‖v.snd‖ = 1 :=
   Iff.rfl
 
+/-- The unit sphere bundle lies in the unit disc bundle. -/
+theorem sphereBundle_subset_discBundle : sphereBundle F E ⊆ discBundle F E :=
+  gaugeSphereBundle_subset_gaugeDiscBundle _
+
 variable {F E} in
 /-- The vectors of norm less than one miss the sphere bundle. -/
 theorem disjoint_norm_lt_one_sphereBundle :
@@ -189,6 +218,30 @@ variable {F E} [TopologicalSpace (TotalSpace F E)]
 /-- The disc-sphere pair `(D_ρ(E), S_ρ(E))` of a function `ρ` on the total space of a bundle. -/
 abbrev gaugeDiscSpherePair (ρ : TotalSpace F E → ℝ) : TopPair.{w} :=
   TopPair.ofInclusion (X := TopCat.of (TotalSpace F E)) (gaugeSphereBundle_subset_gaugeDiscBundle ρ)
+
+variable (F E) in
+/-- The inclusion `S(E) → E₀` of the unit sphere bundle into the complement of the zero section. -/
+def sphereBundleInclusion : TopCat.of (sphereBundle F E) ⟶ (thomPair F E).snd :=
+  TopCat.ofHom (ContinuousMap.inclusion fun _ hv ↦
+    mem_zeroSectionCompl.2 (norm_ne_zero_iff.1 ((mem_sphereBundle.1 hv).symm ▸ one_ne_zero)))
+
+variable (F E) in
+@[simp]
+theorem coe_sphereBundleInclusion_apply (v : sphereBundle F E) :
+    @Subtype.val _ (· ∈ zeroSectionCompl F E) (sphereBundleInclusion F E v) = v :=
+  (rfl)
+
+variable (F E) in
+/-- The pair `(D(E), S(E))` of the unit disc bundle and the unit sphere bundle of a bundle with
+normed fibres. -/
+abbrev discSpherePair : TopPair.{w} :=
+  TopPair.ofInclusion (X := TopCat.of (TotalSpace F E)) (sphereBundle_subset_discBundle F E)
+
+variable (F E) in
+/-- The pair `(D(E), S(E))` is the disc-sphere pair of the fibre norm, as a fibre gauge. -/
+theorem discSpherePair_eq_gaugeDiscSpherePair :
+    discSpherePair F E = gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.snd‖ :=
+  TopPair.ofInclusion_congr _ _ sphereBundle_def discBundle_def
 
 end Sets
 
@@ -228,6 +281,10 @@ theorem nonneg (v : TotalSpace F E) : 0 ≤ ρ v := by
 /-- A fibre gauge vanishes exactly on the zero section. -/
 theorem eq_zero_iff {v : TotalSpace F E} : ρ v = 0 ↔ v.snd = 0 :=
   ⟨fun h ↦ by_contra fun hv ↦ (hρ.pos hv).ne' h, hρ.eq_zero_of_snd_eq_zero⟩
+
+/-- The zero section lies in the disc bundle of a fibre gauge. -/
+theorem zeroSection_mem_gaugeDiscBundle (b : B) : zeroSection F E b ∈ gaugeDiscBundle ρ :=
+  mem_gaugeDiscBundle.2 ((hρ.eq_zero_of_snd_eq_zero (zeroSection_snd F E b)).trans_le zero_le_one)
 
 /-- Dividing a fibre gauge `ρ` by a continuous positive function `r` on the base yields a fibre
 gauge whose disc and sphere bundles are `{v | ρ v ≤ r v.proj}` and `{v | ρ v = r v.proj}`
@@ -314,6 +371,15 @@ instance isEmpty_sphereBundle_of_subsingleton : IsEmpty (sphereBundle F E) := by
   rw [sphereBundle_eq_empty_of_subsingleton]
   infer_instance
 
+/-- When the model fibre is a subsingleton, every vector is zero, so the unit disc bundle is the
+whole total space. -/
+theorem discBundle_eq_univ_of_subsingleton : discBundle F E = univ :=
+  eq_univ_of_forall fun v ↦ by
+    have : Subsingleton (E v.proj) :=
+      (FiberBundle.homeomorphAt F E v.proj).toEquiv.subsingleton
+    rw [mem_discBundle, Subsingleton.elim v.snd 0, norm_zero]
+    exact zero_le_one
+
 end Subsingleton
 
 section Proj
@@ -330,6 +396,13 @@ def sphereBundleProj : C(sphereBundle F E, B) :=
 theorem sphereBundleProj_apply (v : sphereBundle F E) :
     sphereBundleProj F E v = (v : TotalSpace F E).proj :=
   (rfl)
+
+/-- The inclusion `S(E) → E₀` followed by the projection `π₀ : E₀ → B` is the projection of the
+sphere bundle. -/
+@[reassoc (attr := simp)]
+theorem sphereBundleInclusion_comp_zeroSectionComplProjHom :
+    sphereBundleInclusion F E ≫ zeroSectionComplProjHom F E = TopCat.ofHom (sphereBundleProj F E) :=
+  TopCat.ext fun v ↦ (zeroSectionComplProjHom_apply F E _).trans (sphereBundleProj_apply F E v).symm
 
 /-- The inclusion `S(E_b) → S(E)` of the unit sphere of the fibre over `b` into the unit sphere
 bundle. -/
@@ -439,6 +512,22 @@ theorem isCompact_discBundle_inter_proj_preimage_singleton (b : B) :
   exact ⟨fun ⟨hv, hvb⟩ ↦ ⟨hv, hvb⟩, fun ⟨hv, hvb⟩ ↦ ⟨hv, hvb⟩⟩
 
 end Proper
+
+section Compact
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E : B → Type w}
+  [∀ b, AddCommGroup (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
+
+/-- The base of a bundle is compact when the disc bundle of a fibre gauge is: the projection maps
+the disc bundle onto the base, since the disc bundle contains the zero section. -/
+theorem IsFiberGauge.compactSpace_of_compactSpace_gaugeDiscBundle {ρ : TotalSpace F E → ℝ}
+    (hρ : IsFiberGauge ρ) [CompactSpace (gaugeDiscBundle ρ)] : CompactSpace B :=
+  Function.Surjective.compactSpace (f := fun v : gaugeDiscBundle ρ ↦ v.val.proj)
+    ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal)
+    fun b ↦ ⟨⟨zeroSection F E b, hρ.zeroSection_mem_gaugeDiscBundle b⟩, rfl⟩
+
+end Compact
 
 section GaugePair
 
@@ -577,7 +666,7 @@ theorem isIso_singularHomologyMap_gaugeDiscSpherePairMap
 
 /-- The zero section, as a map into the disc bundle of a fibre gauge. -/
 private def zeroSectionGaugeDisc : C(B, gaugeDiscBundle ρ) :=
-  ⟨fun b ↦ ⟨zeroSection F E b, (hρ.eq_zero_of_snd_eq_zero rfl).trans_le zero_le_one⟩,
+  ⟨fun b ↦ ⟨zeroSection F E b, hρ.zeroSection_mem_gaugeDiscBundle b⟩,
     (Trivialization.continuous_zeroSection ℝ).subtype_mk _⟩
 
 /-- The projection of the disc bundle of a fibre gauge. -/
@@ -643,5 +732,179 @@ theorem gaugeDiscSpherePair_map_comp_gaugeDiscBundleProjHomotopyEquiv_norm {B : 
   ext v
   exact (gaugeDiscBundleProjHomotopyEquiv_apply (isFiberGauge_norm hnorm) _).trans
     (sphereBundleProj_apply F E v).symm
+
+section Norm
+
+variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
+  (E : B → Type w) [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
+  (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖)
+
+/-- The normalization `v ↦ v / ‖v‖` of `E₀` onto the unit sphere bundle, the homotopy inverse of
+the inclusion `S(E) → E₀` (`TauCeti.gaugeSphereBundleHomotopyEquiv` for the fibre norm). -/
+def sphereBundleNormalization : (thomPair F E).snd ⟶ TopCat.of (sphereBundle F E) :=
+  TopCat.ofHom (gaugeSphereBundleHomotopyEquiv (isFiberGauge_norm hnorm)).invFun
+
+@[simp]
+theorem coe_sphereBundleNormalization_apply (v : zeroSectionCompl F E) :
+    (sphereBundleNormalization F E hnorm v : TotalSpace F E) =
+      TotalSpace.mk' F v.val.proj (‖v.val.snd‖⁻¹ • v.val.snd) :=
+  coe_gaugeSphereBundleHomotopyEquiv_symm_apply (isFiberGauge_norm hnorm) v
+
+/-- The forward map of the homotopy equivalence `S(E) ≃ₕ E₀` is the inclusion `S(E) → E₀`. -/
+private theorem ofHom_gaugeSphereBundleHomotopyEquiv_norm :
+    TopCat.ofHom (gaugeSphereBundleHomotopyEquiv (isFiberGauge_norm hnorm)).toFun =
+      sphereBundleInclusion F E :=
+  TopCat.ext fun v ↦ Subtype.ext (coe_gaugeSphereBundleHomotopyEquiv (isFiberGauge_norm hnorm) v)
+
+include hnorm in
+/-- **The inclusion `S(E) → E₀` induces isomorphisms on cohomology** with arbitrary coefficients,
+in every degree: it is a homotopy equivalence (`TauCeti.gaugeSphereBundleHomotopyEquiv` for the
+fibre norm). -/
+theorem isIso_singularCohomologyMap_sphereBundleInclusion
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (k : Type*) [Ring k]
+    [Linear k C] (M : C) (n : ℕ) :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
+      (sphereBundleInclusion F E) n) := by
+  rw [← ofHom_gaugeSphereBundleHomotopyEquiv_norm F E hnorm]
+  exact (gaugeSphereBundleHomotopyEquiv (isFiberGauge_norm hnorm)).isIso_singularCohomologyMap
+    R k M n
+
+section Cohomology
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C} {k : Type*}
+  [Ring k] [Linear k C] {M : C}
+
+/-- Restricting a class of `E₀` to `S(E)` and pulling it back along the normalization
+`E₀ → S(E)` gives the class back. -/
+@[simp]
+theorem singularCohomologyMap_sphereBundleInclusion_normalization_apply {n : ℕ}
+    (y : (thomPair F E).snd.singularCohomology R k M n) :
+    TopCat.singularCohomologyMap (sphereBundleNormalization F E hnorm) n
+      (TopCat.singularCohomologyMap (sphereBundleInclusion F E) n y) = y := by
+  have h := ((gaugeSphereBundleHomotopyEquiv (isFiberGauge_norm hnorm)).singularCohomologyIso R k M
+    n).hom_inv_id_apply y
+  rw [ContinuousMap.HomotopyEquiv.singularCohomologyIso_hom,
+    ContinuousMap.HomotopyEquiv.singularCohomologyIso_inv,
+    ofHom_gaugeSphereBundleHomotopyEquiv_norm F E hnorm] at h
+  exact h
+
+/-- Pulling a class of `S(E)` back along the normalization `E₀ → S(E)` and restricting it to `S(E)`
+gives the class back. -/
+@[simp]
+theorem singularCohomologyMap_sphereBundleNormalization_inclusion_apply {n : ℕ}
+    (y : (TopCat.of (sphereBundle F E)).singularCohomology R k M n) :
+    TopCat.singularCohomologyMap (sphereBundleInclusion F E) n
+      (TopCat.singularCohomologyMap (sphereBundleNormalization F E hnorm) n y) = y := by
+  have h := ((gaugeSphereBundleHomotopyEquiv (isFiberGauge_norm hnorm)).singularCohomologyIso R k M
+    n).inv_hom_id_apply y
+  rw [ContinuousMap.HomotopyEquiv.singularCohomologyIso_hom,
+    ContinuousMap.HomotopyEquiv.singularCohomologyIso_inv,
+    ofHom_gaugeSphereBundleHomotopyEquiv_norm F E hnorm] at h
+  exact h
+
+variable (R k M)
+
+/-- The connecting morphism `Hˡ(S(E)) ⟶ Hᵐ(E, E₀)` of the sphere bundle, `l + 1 = m`: the pullback
+along the normalization `E₀ → S(E)`, which inverts the restriction `Hˡ(E₀) ≅ Hˡ(S(E))`, followed
+by the connecting morphism of the Thom pair `(E, E₀)`. It is characterized by
+`TauCeti.sphereBundleδ_singularCohomologyMap_sphereBundleInclusion`. -/
+def sphereBundleδ (l m : ℕ) (hl : l + 1 = m) :
+    (TopCat.of (sphereBundle F E)).singularCohomology R k M l ⟶
+      (thomPair F E).singularCohomology R k M m :=
+  TopCat.singularCohomologyMap (sphereBundleNormalization F E hnorm) l ≫
+    (thomPair F E).singularCohomologyδ R k M l m hl
+
+theorem sphereBundleδ_def (l m : ℕ) (hl : l + 1 = m) :
+    sphereBundleδ F E hnorm R k M l m hl =
+      TopCat.singularCohomologyMap (sphereBundleNormalization F E hnorm) l ≫
+        (thomPair F E).singularCohomologyδ R k M l m hl :=
+  (rfl)
+
+variable {R k M} in
+/-- The connecting morphism of the sphere bundle on the restriction of a class of `E₀` is the
+connecting morphism of the Thom pair `(E, E₀)`. -/
+@[simp]
+theorem sphereBundleδ_singularCohomologyMap_sphereBundleInclusion {l m : ℕ} (hl : l + 1 = m)
+    (y : (thomPair F E).snd.singularCohomology R k M l) :
+    sphereBundleδ F E hnorm R k M l m hl
+        (TopCat.singularCohomologyMap (sphereBundleInclusion F E) l y) =
+      (thomPair F E).singularCohomologyδ R k M l m hl y := by
+  rw [sphereBundleδ_def, ConcreteCategory.comp_apply,
+    singularCohomologyMap_sphereBundleInclusion_normalization_apply]
+
+include hnorm in
+/-- **Exactness at the cohomology of the base, read on the sphere bundle**:
+`Hᵐ(E, E₀) ⟶ Hᵐ(B) ⟶ Hᵐ(S(E))`, the Euler class map followed by the pullback along `S(E) → B`, is
+exact. -/
+theorem exact_eulerClass_singularCohomologyMap_sphereBundleProj (m : ℕ) :
+    Function.Exact (eulerClass R k M F E m)
+      (TopCat.singularCohomologyMap (TopCat.ofHom (sphereBundleProj F E)) m) := by
+  intro y
+  rw [← exact_eulerClass_singularCohomologyMap_zeroSectionComplProjHom R k M F E m y,
+    ← sphereBundleInclusion_comp_zeroSectionComplProjHom, TopCat.singularCohomologyMap_comp,
+    ConcreteCategory.comp_apply]
+  -- The restriction `Hᵐ(E₀) ⟶ Hᵐ(S(E))` is injective.
+  refine ⟨fun hy ↦ ?_, fun hy ↦ by rw [hy, map_zero]⟩
+  rw [← singularCohomologyMap_sphereBundleInclusion_normalization_apply F E hnorm
+    (TopCat.singularCohomologyMap (zeroSectionComplProjHom F E) m y), hy, map_zero]
+
+/-- **Exactness at the cohomology of the sphere bundle**: `Hˡ(B) ⟶ Hˡ(S(E)) ⟶ Hᵐ(E, E₀)`, the
+pullback along `S(E) → B` followed by the connecting morphism of the sphere bundle, is exact, for
+`l + 1 = m`. -/
+theorem exact_singularCohomologyMap_sphereBundleProj_sphereBundleδ (l m : ℕ) (hl : l + 1 = m) :
+    Function.Exact (TopCat.singularCohomologyMap (TopCat.ofHom (sphereBundleProj F E)) l)
+      (sphereBundleδ F E hnorm R k M l m hl) := by
+  intro y
+  rw [sphereBundleδ_def, ConcreteCategory.comp_apply,
+    exact_singularCohomologyMap_zeroSectionComplProjHom_singularCohomologyδ R k M F E l m hl,
+    ← sphereBundleInclusion_comp_zeroSectionComplProjHom]
+  -- Transport exactness at `Hˡ(E₀)` along the isomorphism `Hˡ(E₀) ≅ Hˡ(S(E))`.
+  refine ⟨fun ⟨x, hx⟩ ↦ ⟨x, ?_⟩, fun ⟨x, hx⟩ ↦ ⟨x, ?_⟩⟩
+  · rw [TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply, hx,
+      singularCohomologyMap_sphereBundleNormalization_inclusion_apply]
+  · rw [← hx, TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply,
+      singularCohomologyMap_sphereBundleInclusion_normalization_apply]
+
+/-- **Exactness at relative cohomology, read on the sphere bundle**:
+`Hˡ(S(E)) ⟶ Hᵐ(E, E₀) ⟶ Hᵐ(B)`, the connecting morphism of the sphere bundle followed by the Euler
+class map, is exact, for `l + 1 = m`. -/
+theorem exact_sphereBundleδ_eulerClass (l m : ℕ) (hl : l + 1 = m) :
+    Function.Exact (sphereBundleδ F E hnorm R k M l m hl) (eulerClass R k M F E m) := by
+  intro y
+  rw [exact_singularCohomologyδ_eulerClass R k M F E l m hl]
+  -- Transport exactness at `Hᵐ(E, E₀)` along the isomorphism `Hˡ(E₀) ≅ Hˡ(S(E))`.
+  refine ⟨fun ⟨x, hx⟩ ↦ ⟨TopCat.singularCohomologyMap (sphereBundleInclusion F E) l x, ?_⟩,
+    fun ⟨x, hx⟩ ↦ ⟨TopCat.singularCohomologyMap (sphereBundleNormalization F E hnorm) l x, hx⟩⟩
+  rwa [sphereBundleδ_singularCohomologyMap_sphereBundleInclusion]
+
+/-- The Euler class map followed by the pullback along `S(E) → B` is zero. -/
+@[reassoc (attr := simp)]
+theorem eulerClass_comp_singularCohomologyMap_sphereBundleProj (m : ℕ) :
+    eulerClass R k M F E m ≫ TopCat.singularCohomologyMap (TopCat.ofHom (sphereBundleProj F E)) m =
+      0 := by
+  rw [← sphereBundleInclusion_comp_zeroSectionComplProjHom, TopCat.singularCohomologyMap_comp,
+    eulerClass_comp_singularCohomologyMap_zeroSectionComplProjHom_assoc, zero_comp]
+
+/-- The pullback along `S(E) → B` followed by the connecting morphism of the sphere bundle is
+zero. -/
+@[reassoc (attr := simp)]
+theorem singularCohomologyMap_sphereBundleProj_comp_sphereBundleδ (l m : ℕ) (hl : l + 1 = m) :
+    TopCat.singularCohomologyMap (TopCat.ofHom (sphereBundleProj F E)) l ≫
+      sphereBundleδ F E hnorm R k M l m hl = 0 := by
+  ext y
+  exact (exact_singularCohomologyMap_sphereBundleProj_sphereBundleδ F E hnorm R k M l m
+    hl).apply_apply_eq_zero y
+
+/-- The connecting morphism of the sphere bundle followed by the Euler class map is zero. -/
+@[reassoc (attr := simp)]
+theorem sphereBundleδ_comp_eulerClass (l m : ℕ) (hl : l + 1 = m) :
+    sphereBundleδ F E hnorm R k M l m hl ≫ eulerClass R k M F E m = 0 := by
+  ext y
+  exact (exact_sphereBundleδ_eulerClass F E hnorm R k M l m hl).apply_apply_eq_zero y
+
+end Cohomology
+
+end Norm
 
 end TauCeti
