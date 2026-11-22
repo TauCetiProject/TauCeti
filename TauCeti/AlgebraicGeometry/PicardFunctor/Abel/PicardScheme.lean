@@ -85,16 +85,30 @@ def abelMapToPicFppf : yoneda.obj (Over.mk f) ⋙ uliftFunctor.{u + 1} ⟶
   Functor.whiskerRight (graphDivisor f) uliftFunctor.{u + 1} ≫ abelMap f ≫
     relativePicardToFppfSheafOfMul f
 
+/-- The Abel map on points is the graph divisor, followed by the Abel map `D ↦ 𝒪(D)` and the
+canonical map to the relative Picard fppf sheaf. -/
+theorem abelMapToPicFppf_eq :
+    abelMapToPicFppf f = Functor.whiskerRight (graphDivisor f) uliftFunctor.{u + 1} ≫
+      abelMap f ≫ relativePicardToFppfSheafOfMul f :=
+  (rfl)
+
+variable {f} in
+/-- The Abel map on points sends a `T`-point `x` to the image in the relative Picard fppf sheaf
+of the Abel map at the graph divisor of `x`. -/
+theorem abelMapToPicFppf_app_eq_relativePicardToFppfSheafOfMul {T : Over S}
+    (x : T ⟶ Over.mk f) :
+    (abelMapToPicFppf f).app (op T) (ULift.up x) =
+      (relativePicardToFppfSheafOfMul f).app (op T)
+        ((abelMap f).app (op T) (ULift.up ((graphDivisor f).app (op T) x))) :=
+  (rfl)
+
 variable {f} in
 private lemma abelMapToPicFppf_app_graphClass {T : Over S} (x : T ⟶ Over.mk f) :
     (abelMapToPicFppf f).app (op T) (ULift.up x) =
       (relativePicardToFppfSheaf f).app (op T)
         (relativePicardAddPresheafMk f (op T) (graphClass x)) := by
-  rw [abelMapToPicFppf, NatTrans.comp_app, NatTrans.comp_app]
-  -- Expose the value of the composite at `x`, hidden by the forgetful-functor composites.
-  change (relativePicardToFppfSheafOfMul f).app (op T)
-    ((abelMap f).app (op T) (ULift.up ((graphDivisor f).app (op T) x))) = _
-  rw [abelMap_app_graphDivisor, relativePicardToFppfSheafOfMul_app_mk]
+  rw [abelMapToPicFppf_app_eq_relativePicardToFppfSheafOfMul, abelMap_app_graphDivisor,
+    relativePicardToFppfSheafOfMul_app_mk]
 
 -- The source and target of `(abelMapToPicFppf f).app (op T)` are spelled out in their
 -- simp-normal form, so that the left-hand side passes the `simpNF` linter.
@@ -157,12 +171,10 @@ theorem picardSchemeRepresentableBy_homEquiv_comp_abelMorphism_div {x₀ : S ⟶
       (relativePicardToFppfSheafOfMul f).app (op T) ((abelJacobiMap f hx₀).app (op T) ⟨x⟩) := by
   rw [picardSchemeRepresentableBy_homEquiv_div,
     picardSchemeRepresentableBy_homEquiv_comp_abelMorphism,
-    picardSchemeRepresentableBy_homEquiv_comp_abelMorphism, abelMapToPicFppf_app_graphClass,
-    abelMapToPicFppf_app_graphClass, abelJacobiMap_app_apply, abelMap_app_graphDivisor,
-    abelMap_app_graphDivisor, ← map_sub, ← relativePicardAddPresheafMk_div,
-    ← relativePicardToFppfSheafOfMul_app_mk]
-  exact congrArg _ (QuotientGroup.mk_div (LineBundleClass.pullbackHom (pullback.fst T.hom f)).range
-    (graphClass x) (graphClass (basePoint hx₀ T)))
+    picardSchemeRepresentableBy_homEquiv_comp_abelMorphism,
+    abelMapToPicFppf_app_eq_relativePicardToFppfSheafOfMul,
+    abelMapToPicFppf_app_eq_relativePicardToFppfSheafOfMul, abelJacobiMap_app_apply,
+    relativePicardToFppfSheafOfMul_app_div]
 
 end
 

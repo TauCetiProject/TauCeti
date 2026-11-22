@@ -258,6 +258,21 @@ lemma relativePicardToFppfSheafOfMul_app_mk {T : (Over S)ᵒᵖ}
       (relativePicardToFppfSheaf f).app T (relativePicardAddPresheafMk f T a) :=
   relativePicardToFppfSheafOfMulApp_mk f T a
 
+/-- The canonical map from the multiplicative relative Picard presheaf turns quotients into
+differences. -/
+@[simp]
+lemma relativePicardToFppfSheafOfMul_app_div {T : (Over S)ᵒᵖ}
+    (c d : (relativePicardPresheaf f).obj T) :
+    ConcreteCategory.hom (C := Type (u + 1)) (X := ToType ((relativePicardPresheaf f).obj T))
+        (Y := ToType ((relativePicardFppfSheaf f).obj.obj T))
+        ((relativePicardToFppfSheafOfMul f).app T) (c / d) =
+      (relativePicardToFppfSheafOfMul f).app T c - (relativePicardToFppfSheafOfMul f).app T d := by
+  obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective c
+  obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective d
+  rw [relativePicardToFppfSheafOfMul_app_mk, relativePicardToFppfSheafOfMul_app_mk, ← map_sub,
+    ← relativePicardAddPresheafMk_div, ← relativePicardToFppfSheafOfMul_app_mk]
+  exact congrArg _ (QuotientGroup.mk_div _ a b)
+
 /-- Two sections of `T ↦ Pic(X_T) / Pic(T)` with the same image in the relative Picard fppf sheaf
 agree fppf-locally. -/
 instance isLocallyInjective_relativePicardToFppfSheaf :
