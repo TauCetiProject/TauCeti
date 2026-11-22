@@ -68,17 +68,18 @@ theorem Valued.integer.natCast_eq_zero_of_norm_apply_sub_pow_lt_one [Infinite �
     (q : 𝓀[K]) = 0 := by
   have hadd (ξ : 𝓀[K]) : (ξ + 1) ^ q = ξ ^ q + 1 := by
     obtain ⟨a, rfl⟩ := residue_surjective ξ
-    rw [← map_one (residue 𝒪[K]), ← map_add, ← map_pow, ← map_pow, ← map_add,
-      residue_eq_residue_iff_norm_sub_lt_one]
     have h₁ := hσq (a + 1) (mem_iff.1 (a + 1).property)
     have h₂ := hσq a (mem_iff.1 a.property)
-    push_cast at h₁ ⊢
     have : ((a : K) + 1) ^ q - ((a : K) ^ q + 1) =
         (σ a - (a : K) ^ q) + -(σ ((a : K) + 1) - ((a : K) + 1) ^ q) := by
       rw [map_add, map_one]
       ring
-    rw [this]
-    exact (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt h₂ (by rwa [norm_neg]))
+    have hlt : ‖((a : K) + 1) ^ q - ((a : K) ^ q + 1)‖ < 1 := by
+      rw [this]
+      exact (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt h₂ (by rwa [norm_neg]))
+    have := (residue_eq_residue_iff_norm_sub_lt_one (x := (a + 1) ^ q) (y := a ^ q + 1)).2
+      (by push_cast; exact hlt)
+    simpa only [map_pow, map_add, map_one] using this
   have hP : ((X + 1) ^ q - X ^ q - 1 : 𝓀[K][X]) = 0 :=
     zero_of_eval_zero _ fun ξ ↦ by simp [hadd]
   have hcoeff := congrArg (fun P : 𝓀[K][X] ↦ P.coeff (q - 1)) hP
@@ -143,8 +144,9 @@ private theorem exists_norm_eq_one_and_norm_apply_sub_mul_lt_one (hq : 1 < q) {u
   obtain ⟨z, rfl⟩ := residue_surjective ξ
   refine ⟨z, le_antisymm (Valued.integer.mem_iff.1 z.property) (not_lt.1 fun h ↦
     hξ₀ (Valued.integer.residue_eq_zero_iff_norm_lt_one.2 h)), ?_⟩
-  simpa using norm_apply_sub_mul_add_lt_one σ hσq (b := 0) (by
-    rw [map_zero, add_zero, ← hξu, ← pow_succ, Nat.sub_add_cancel hq.le, sub_self])
+  have hpow : residue 𝒪[K] z ^ q = residue 𝒪[K] z ^ (q - 1) * residue 𝒪[K] z := by
+    rw [← pow_succ, Nat.sub_add_cancel hq.le]
+  simpa using norm_apply_sub_mul_add_lt_one σ hσq (b := 0) (by simp [hpow, hξu])
 
 variable [IsDiscreteValuationRing 𝒪[K]] (hσ : ∀ a, ‖σ a‖ = ‖a‖)
 include hσ
