@@ -134,8 +134,9 @@ lemma isSeparatedFor_presheafHom_of_hom_ext {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ 
   have hr' : ((Sieve.overEquiv Y).symm R).arrows (Over.homMk r rfl : Over.mk (r ≫ Y.hom) ⟶ Y) :=
     (Sieve.overEquiv_symm_iff R _).2 hr
   have h' : pullHom φ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl =
-      pullHom ψ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl :=
-    (hφ _ hr').trans (hψ _ hr').symm
+      pullHom ψ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl := by
+    simpa only [presheafHom_map, TypeCat.ofHom_apply, Quiver.Hom.unop_op, Over.homMk_left,
+      Over.mk_hom] using (hφ _ hr').trans (hψ _ hr').symm
   rw [map_eq_pullHom φ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl,
     map_eq_pullHom ψ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl, h']
 
@@ -328,9 +329,11 @@ lemma IsPrestackFor.existsUnique_map_eq {W : C} {M₁ M₂ : F.obj (.mk (op W))}
   have hx : x.Compatible := by
     rw [Presieve.compatible_iff_sieveCompatible]
     intro Z Z' g f hg
+    rw [presheafHom_map]
+    dsimp only [TypeCat.ofHom_apply, Quiver.Hom.unop_op, x]
     have haux : ∀ {w : Z'.left ⟶ W} (hw : f.left ≫ Z.hom = w),
         m w (by rw [← hw]; exact R.downward_closed (mem_hom hg) f.left) =
-          pullHom (m Z.hom (mem_hom hg)) f.left w w (by simp [hw]) (by simp [hw]) := by
+          pullHom (m Z.hom (mem_hom hg)) f.left w w hw hw := by
       rintro w rfl
       exact hm f.left Z.hom (mem_hom hg)
     exact haux (Over.w f)
@@ -344,7 +347,7 @@ lemma IsPrestackFor.existsUnique_map_eq {W : C} {M₁ M₂ : F.obj (.mk (op W))}
     have h1 := hy g hmem
     rw [← Equiv.apply_symm_apply F.presheafHomObjHomEquiv y,
       presheafHom_map_presheafHomObjHomEquiv] at h1
-    exact h1
+    simpa only [x, Over.mk_hom] using h1
   exact ⟨φ, hφ, fun ψ hψ ↦ hR.hom_ext fun Z r hr ↦ (hψ r hr).trans (hφ r hr).symm⟩
 
 namespace IsPrestack

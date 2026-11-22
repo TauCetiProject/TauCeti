@@ -16,10 +16,11 @@ morphisms `D.hom q f₁ f₂ hf₁ hf₂` carry the common composite `q : Y ⟶ 
 `f₂ ≫ f i₂` as an argument. This file records that they do not depend on `q`
 (`DescentData.hom_congr`), states the cocycle condition `DescentData.hom_comp` for two morphisms
 whose common composites are only propositionally equal (`DescentData.hom_comp_hom`), extracts
-component isomorphisms from an isomorphism of descent data (`DescentData.isoApp`), and expresses
-transition maps and compatibility squares of `toDescentData` and `pullFunctor` in terms of
-`Pseudofunctor.compIso` and flexible factorizations (`DescentData.toDescentData_obj_hom`,
-`DescentData.hom_toDescentData_obj_iff`, `DescentData.pullFunctor_obj_hom_eq`).
+component isomorphisms from an isomorphism of descent data (`DescentData.isoApp`,
+`DescentData.isoApp_isoMk`), and expresses transition maps and compatibility squares of
+`toDescentData` and `pullFunctor` in terms of `Pseudofunctor.compIso` and flexible factorizations
+(`DescentData.toDescentData_obj_hom`, `DescentData.hom_toDescentData_obj_iff`,
+`DescentData.pullFunctor_obj_hom_eq`).
 -/
 
 public section
@@ -37,8 +38,12 @@ def isoApp {D₁ D₂ : F.DescentData f} (e : D₁ ≅ D₂) (i : ι) :
     D₁.obj i ≅ D₂.obj i where
   hom := e.hom.hom i
   inv := e.inv.hom i
-  hom_inv_id := congrArg (fun φ : D₁ ⟶ D₁ ↦ φ.hom i) e.hom_inv_id
-  inv_hom_id := congrArg (fun φ : D₂ ⟶ D₂ ↦ φ.hom i) e.inv_hom_id
+  hom_inv_id := by
+    simpa only [DescentData.comp_hom, DescentData.id_hom] using
+      congrArg (fun φ : D₁ ⟶ D₁ ↦ φ.hom i) e.hom_inv_id
+  inv_hom_id := by
+    simpa only [DescentData.comp_hom, DescentData.id_hom] using
+      congrArg (fun φ : D₂ ⟶ D₂ ↦ φ.hom i) e.inv_hom_id
 
 /-- The forward morphism of `DescentData.isoApp e i` is the `i`-th component of `e.hom`. -/
 @[simp]
@@ -51,6 +56,16 @@ lemma isoApp_hom {D₁ D₂ : F.DescentData f} (e : D₁ ≅ D₂) (i : ι) :
 lemma isoApp_inv {D₁ D₂ : F.DescentData f} (e : D₁ ≅ D₂) (i : ι) :
     (isoApp e i).inv = e.inv.hom i :=
   (rfl)
+
+/-- Extracting the `i`-th component isomorphism from `DescentData.isoMk e comm` recovers `e i`. -/
+@[simp]
+lemma isoApp_isoMk {D₁ D₂ : F.DescentData f} (e : ∀ i, D₁.obj i ≅ D₂.obj i)
+    (comm : ∀ ⦃Y : C⦄ (q : Y ⟶ S) ⦃i₁ i₂ : ι⦄ (f₁ : Y ⟶ X i₁) (f₂ : Y ⟶ X i₂)
+      (hf₁ : f₁ ≫ f i₁ = q) (hf₂ : f₂ ≫ f i₂ = q),
+      (F.map f₁.op.toLoc).toFunctor.map (e i₁).hom ≫ D₂.hom q f₁ f₂ =
+        D₁.hom q f₁ f₂ ≫ (F.map f₂.op.toLoc).toFunctor.map (e i₂).hom) (i : ι) :
+    isoApp (DescentData.isoMk e comm) i = e i :=
+  Iso.ext (by simp only [isoApp_hom, isoMk_hom_hom])
 
 /-- The morphisms `D.hom q f₁ f₂` do not depend on the common composite `q`, which is determined
 by `f₁`. -/

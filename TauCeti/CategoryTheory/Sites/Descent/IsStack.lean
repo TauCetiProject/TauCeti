@@ -542,12 +542,29 @@ private lemma descendIso_comm (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j
       (F.compIso (u jk₂.1 jk₂.2 ≫ p jk₂.1).op f₂.op q.op
           (by rw [← op_comp, hf₂]) N).hom ≫
         (F.map f₂.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk₂).hom := by
-    rw [descendIso_component_eq_assoc hu D M α N β q jk₁ f₁ hf₁,
-      descendIso_component_eq hu D M α N β q jk₂ f₂ hf₂,
-      ← localTrans_comp_αIso D M α ha₁ ha₂ f₁ f₂ rfl rfl,
-      ← Category.assoc _ (localTrans D M α ha₁ ha₂ f₁ f₂ rfl rfl),
-      ← Category.assoc _ (_ ≫ localTrans D M α ha₁ ha₂ f₁ f₂ rfl rfl), hβ]
-    simp only [Category.assoc]
+    calc
+      (F.compIso (u jk₁.1 jk₁.2 ≫ p jk₁.1).op f₁.op q.op (by rw [← op_comp, hf₁]) N).hom ≫
+          (F.map f₁.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk₁).hom ≫
+          D.hom q (i₁ := jk₁) (i₂ := jk₂) f₁ f₂ hf₁ hf₂
+        = (F.compIso (p jk₁.1).op (f₁ ≫ u jk₁.1 jk₁.2).op q.op
+              (by rw [← op_comp, ha₁]) N).hom ≫
+            (F.map (f₁ ≫ u jk₁.1 jk₁.2).op.toLoc).toFunctor.map (βIso hu D M α N β jk₁.1).hom ≫
+            localTrans D M α ha₁ ha₂ f₁ f₂ rfl rfl ≫
+            (F.compIso (u jk₂.1 jk₂.2).op f₂.op (f₂ ≫ u jk₂.1 jk₂.2).op
+              op_comp.symm (M jk₂.1)).hom ≫
+            (F.map f₂.op.toLoc).toFunctor.map (αIso D M α jk₂.1 jk₂.2).hom := by
+          rw [descendIso_component_eq_assoc hu D M α N β q jk₁ f₁ hf₁,
+            ← localTrans_comp_αIso D M α ha₁ ha₂ f₁ f₂ rfl rfl]
+      _ = (F.compIso (p jk₂.1).op (f₂ ≫ u jk₂.1 jk₂.2).op q.op
+              (by rw [← op_comp, ha₂]) N).hom ≫
+            (F.map (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc).toFunctor.map (βIso hu D M α N β jk₂.1).hom ≫
+            (F.compIso (u jk₂.1 jk₂.2).op f₂.op (f₂ ≫ u jk₂.1 jk₂.2).op
+              op_comp.symm (M jk₂.1)).hom ≫
+            (F.map f₂.op.toLoc).toFunctor.map (αIso D M α jk₂.1 jk₂.2).hom := by
+          rw [reassoc_of% hβ]
+      _ = (F.compIso (u jk₂.1 jk₂.2 ≫ p jk₂.1).op f₂.op q.op (by rw [← op_comp, hf₂]) N).hom ≫
+            (F.map f₂.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk₂).hom := by
+          rw [descendIso_component_eq hu D M α N β q jk₂ f₂ hf₂]
   exact (DescentData.hom_toDescentData_obj_iff (F := F)
     (f := fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1) q f₁ f₂ hf₁ hf₂ _ _ _).2 hgoal
 
