@@ -489,8 +489,10 @@ theorem TopRegularOverMostPolyads.of_polyadEnergy_sub_le_div_sq [Fintype κ] {δ
         ((em (Nat.card κ = 0)).imp Nat.cast_eq_zero.2 Nat.one_le_cast_iff_ne_zero.2))
       hγ.le
   have hqγ : q * γ ≤ topRegularFineProportion δ ε := by
-    rw [mul_div_assoc', div_le_iff₀ (by positivity)]
-    nlinarith [topRegularFineProportion_pos hδ hε]
+    dsimp only [γ]
+    rw [mul_div_left_comm]
+    exact mul_le_of_le_one_right (topRegularFineProportion_pos hδ hε).le
+      ((div_le_one₀ (by positivity)).2 (le_add_of_nonneg_right zero_le_one))
   rw [topRegularFineProportion_def, topRegularFineTolerance_def] at hqγ ⊢
   linarith
 
