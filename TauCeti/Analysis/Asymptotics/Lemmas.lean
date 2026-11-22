@@ -27,9 +27,10 @@ If `(σ - a) • f(σ)` has a limit along a filter on a normed division ring tha
 `σ → 1⁺`, this is the growth bound near `s = 1` of a Dedekind zeta function or an `L`-series with
 a simple pole there, read off from the limit of `(s - 1) L(s)` along the real axis.
 
-A map `u` whose differences satisfy `u y - u y' = O(y - y')` near `(x, x)`, the difference
-estimate of a strictly differentiable map, is continuous at `x`. Only this Lipschitz-type
-estimate is used, not differentiability.
+A map `u` between pseudometric spaces whose distances satisfy
+`dist (u y) (u y') = O(dist y y')` near `(x, x)`, the difference estimate of a strictly
+differentiable map, is continuous at `x`. Only this Lipschitz-type estimate is used, not
+differentiability or any additive structure.
 
 In a seminormed group the norm is at most one on a neighbourhood of the origin, so there a higher
 power of the norm is dominated by any lower one. This is the comparison that lets a Taylor
@@ -86,17 +87,18 @@ evaluations of elliptic integrals.
 * `Asymptotics.isBigO_smul_const_self`: `u • c = O(u)` for a scalar function `u` and a constant
   vector `c`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
-  when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below there.
-* `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when `f` and `g`
-  are continuous on `[a, ∞)` and `g` does not vanish there.
+  when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below on `[a, ∞)` by a positive
+  constant.
+* `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when closed
+  intervals are compact, `f` and `g` are continuous on `[a, ∞)` and `g` does not vanish there.
 * `Asymptotics.IsBigO.exists_norm_le_div_log`: `f = O((log x)⁻¹)` at `atTop` gives a uniform bound
   `‖f x‖ ≤ C / log x` on `[a, ∞)` (`a > 1`) when `f` is bounded on each `[a, b]`.
 * `TauCeti.tendsto_add_pow_mul_pow_of_abs_lt_one`: `(n + m) ^ k * ρ ^ n` tends to zero when
   `|ρ| < 1`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
   are bounded by `A * (|c| / q)ⁿ` at the radius `c`.
-* `TauCeti.continuousAt_of_isBigO_sub`: `u y - u y' = O(y - y')` near `(x, x)` implies continuity
-  of `u` at `x`.
+* `TauCeti.continuousAt_of_isBigO_dist`: `dist (u y) (u y') = O(dist y y')` near `(x, x)` implies
+  continuity of `u` at `x`.
 * `TauCeti.tendsto_add_div_add_atTop`: `(t + x) / (t + y) → 1` as `t → ∞`.
 
 ## Related results
@@ -210,10 +212,11 @@ theorem IsBigO.isBigO_principal_Ici {ι E F : Type*} [LinearOrder ι] [Norm E] [
         exact mul_le_mul_of_nonneg_left hgx (le_max_right _ _)
       _ ≤ max c₀ (max B 0 / c) * ‖g x‖ := mul_le_mul_of_nonneg_right (le_max_right _ _) hg0
 
-/-- **An eventual big-O bound holds on a whole half-line, continuous version.** If `f = O(g)` at
-`atTop`, both functions are continuous on `[a, ∞)` and `g` does not vanish there, then
-`f = O(g)` uniformly on `[a, ∞)`. Unlike `IsBigO.isBigO_principal_Ici`, `‖g‖` may tend to zero,
-as for an exponentially decaying majorant. -/
+/-- **An eventual big-O bound holds on a whole half-line, continuous version.** In a linear
+order whose closed intervals are compact, if `f = O(g)` at `atTop`, both functions are continuous
+on `[a, ∞)` and `g` does not vanish there, then `f = O(g)` uniformly on `[a, ∞)`. Unlike
+`IsBigO.isBigO_principal_Ici`, `‖g‖` may tend to zero, as for an exponentially decaying
+majorant. -/
 theorem IsBigO.isBigO_principal_Ici_of_continuousOn {ι E F : Type*} [LinearOrder ι]
     [TopologicalSpace ι] [CompactIccSpace ι] [SeminormedAddGroup E] [NormedAddGroup F]
     {f : ι → E} {g : ι → F} {a : ι} (h : f =O[atTop] g) (hf : ContinuousOn f (Set.Ici a))
@@ -311,18 +314,17 @@ theorem mul_abs_pow_le_of_forall_mul_pow_le {a : ℕ → ℝ} {q A c : ℝ} (hq 
         rw [div_pow]; field_simp
     _ ≤ A * (|c| / q) ^ n := by gcongr; exact hA n
 
-/-- A map satisfying the difference estimate of a strictly differentiable map near `x` is
-continuous at `x`. -/
-theorem continuousAt_of_isBigO_sub {E G : Type*} [SeminormedAddCommGroup E]
-    [SeminormedAddCommGroup G] {u : E → G} {x : E}
-    (hu : (fun p : E × E ↦ u p.1 - u p.2) =O[𝓝 (x, x)] fun p ↦ p.1 - p.2) :
+/-- A map between pseudometric spaces satisfying the difference estimate of a strictly
+differentiable map near `x`, `dist (u y) (u y') = O(dist y y')` near `(x, x)`, is continuous at
+`x`. -/
+theorem continuousAt_of_isBigO_dist {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y]
+    {u : X → Y} {x : X}
+    (hu : (fun p : X × X ↦ dist (u p.1) (u p.2)) =O[𝓝 (x, x)] fun p ↦ dist p.1 p.2) :
     ContinuousAt u x := by
-  have hpair : Tendsto (fun y : E ↦ (y, x)) (𝓝 x) (𝓝 (x, x)) :=
+  have hpair : Tendsto (fun y : X ↦ (y, x)) (𝓝 x) (𝓝 (x, x)) :=
     tendsto_id.prodMk_nhds tendsto_const_nhds
-  have hsub : Tendsto (fun y : E ↦ y - x) (𝓝 x) (𝓝 0) := by
-    simpa using (tendsto_id (x := 𝓝 x)).sub_const x
-  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
-  exact (hu.comp_tendsto hpair).norm_norm.trans_tendsto (by simpa using hsub.norm)
+  rw [ContinuousAt, tendsto_iff_dist_tendsto_zero]
+  exact (hu.comp_tendsto hpair).trans_tendsto (tendsto_iff_dist_tendsto_zero.mp tendsto_id)
 
 /-- In an ordered field, the ratio `(t + x) / (t + y)` of two translates of `t` tends to `1` as
 `t → ∞`. -/
