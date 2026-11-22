@@ -110,20 +110,6 @@ theorem hasLaw_add_hypoexponentialMeasure {ι κ Ω : Type*} [Fintype ι] [Finty
     (hXY : IndepFun X Y P) (hX : HasLaw X (hypoexponentialMeasure r) P)
     (hY : HasLaw Y (hypoexponentialMeasure s) P) :
     HasLaw (X + Y) (hypoexponentialMeasure (Sum.elim r s)) P := by
-  have hr : IsFiniteMeasure (hypoexponentialMeasure r) := by
-    by_cases h : ∀ i, 0 < r i
-    · let _ := isProbabilityMeasure_hypoexponentialMeasure h
-      infer_instance
-    · rw [hypoexponentialMeasure_eq_zero_of_invalid h]
-      infer_instance
-  have hs : IsFiniteMeasure (hypoexponentialMeasure s) := by
-    by_cases h : ∀ i, 0 < s i
-    · let _ := isProbabilityMeasure_hypoexponentialMeasure h
-      infer_instance
-    · rw [hypoexponentialMeasure_eq_zero_of_invalid h]
-      infer_instance
-  let _ := hr
-  let _ := hs
   rw [← hypoexponentialMeasure_conv_hypoexponentialMeasure]
   exact hXY.hasLaw_add hX hY
 
