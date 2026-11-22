@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.TrajectoryOperator.Gluing
 public import TauCeti.Analysis.Sobolev.Cylinder.Parametrix
+public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Normed.Operator.Surjective
-import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Function.Lp.Multiplication
 
 /-!
@@ -36,9 +35,12 @@ Written in a trivialization along a broken Floer trajectory, the linearized Floe
 nondegenerate orbit, are operators of this form. When they are onto, as for regular trajectories,
 the theorem gives uniformly bounded right inverses for the operators of the glued coefficient field.
 The linearization along the pre-glued cylinder differs from these by an error that is small in
-`L^∞` for long necks; absorbing it (for instance with
-`ContinuousLinearMap.surjective_of_norm_sub_lt_inv_rightInverse`) gives the uniformly bounded right
-inverses that are the linear input of the Newton iteration gluing broken Floer trajectories.
+`L^∞` for long necks. Absorbing it gives the uniformly bounded right inverses that are the linear
+input of the Newton iteration gluing broken Floer trajectories: if `S` is that linearization and
+`Q` the right inverse given here for the glued operator `T`, then
+`‖S Q - id‖ = ‖(S - T) Q‖ ≤ ‖S - T‖ ‖Q‖ ≤ 1 / 2` once the error is small, and
+`ContinuousLinearMap.exists_rightInverse_of_norm_comp_sub_id_le_half` turns `Q` into a right
+inverse of `S` of norm at most `2 ‖Q‖`.
 
 * **Translation.** Translation in `s` commutes with first-order operators, the coefficient field
   being translated too (`TauCeti.CylinderSobolev.translateLp_jetOperator`), so a right inverse of

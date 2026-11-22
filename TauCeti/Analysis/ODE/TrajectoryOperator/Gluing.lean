@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 public import TauCeti.Analysis.Sobolev.GraphStep.Multiplication
 public import TauCeti.Analysis.Sobolev.GraphStep.Translation
+public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Normed.Operator.Surjective
-import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Function.Lp.Multiplication
 
 /-!
@@ -50,7 +50,6 @@ operator is the linear input of the Newton iteration that glues broken trajector
 
 ## Main declarations
 
-* `TauCeti.gluedCoeff`: the coefficient of two operators glued along a neck of length `2 R`.
 * `TauCeti.WeakDerivStep.exists_forall_ge_exists_rightInverse_trajectoryOperator_gluedCoeff`: the
   glued operator has right inverses bounded uniformly in the neck length.
 
@@ -70,20 +69,6 @@ open Filter MeasureTheory Set TopologicalSpace Topology
 open scoped ENNReal ContDiff
 
 namespace TauCeti
-
-/-- **The glued coefficient.** The coefficient obtained by gluing the positive end of `A₁` to the
-negative end of `A₂` along a neck of length `2 R`: it is `A₁` translated by `-R` on `(-∞, 0)` and
-`A₂` translated by `R` on `[0, ∞)`. -/
-def gluedCoeff {X : Type*} (A₁ A₂ : ℝ → X) (R s : ℝ) : X :=
-  if s < 0 then A₁ (s + R) else A₂ (s - R)
-
-theorem gluedCoeff_of_neg {X : Type*} (A₁ A₂ : ℝ → X) (R : ℝ) {s : ℝ} (hs : s < 0) :
-    gluedCoeff A₁ A₂ R s = A₁ (s + R) := by
-  simp [gluedCoeff, hs]
-
-theorem gluedCoeff_of_nonneg {X : Type*} (A₁ A₂ : ℝ → X) (R : ℝ) {s : ℝ} (hs : 0 ≤ s) :
-    gluedCoeff A₁ A₂ R s = A₂ (s - R) := by
-  simp [gluedCoeff, not_lt.2 hs]
 
 namespace WeakDerivStep
 

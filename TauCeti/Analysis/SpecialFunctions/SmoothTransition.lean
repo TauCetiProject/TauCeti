@@ -108,6 +108,9 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
 * `TauCeti.neckCutoff`: the cutoff `s ↦ ψ (1 + a s)`, equal to `1` where `0 ≤ a s` and to `0` where
   `1 + a s ≤ 0`, with derivative at most `|a|` times a bound for `ψ'`. These cutoffs splice
   right inverses along a neck of length `2 R`, with slope `O(1 / R)`.
+* `TauCeti.gluedCoeff`: the coefficient of two operators glued along a neck of length `2 R`, equal
+  to `A₁ (s + R)` for `s < 0` and to `A₂ (s - R)` for `s ≥ 0`; the neck cutoffs splice right
+  inverses of operators with this coefficient.
 * `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
   `(-∞, a]` down to `0` on `[b, ∞)`, positive on `(-∞, b)` when `v > 0`.
 * `TauCeti.exists_contDiff_plateau`: a smooth function with values in `[0, 1]`, vanishing outside
@@ -740,6 +743,22 @@ theorem neckCutoff_eq_one {a s : ℝ} (h : 0 ≤ a * s) : neckCutoff a s = 1 :=
 /-- The neck cutoff is `0` where `1 + a s ≤ 0`. -/
 theorem neckCutoff_eq_zero {a s : ℝ} (h : 1 + a * s ≤ 0) : neckCutoff a s = 0 :=
   Real.smoothTransition.zero_of_nonpos h
+
+/-- **The glued coefficient.** The coefficient obtained by gluing the positive end of `A₁` to the
+negative end of `A₂` along a neck of length `2 R`: it is `A₁` translated by `-R` on `(-∞, 0)` and
+`A₂` translated by `R` on `[0, ∞)`. -/
+def gluedCoeff {X : Type*} (A₁ A₂ : ℝ → X) (R s : ℝ) : X :=
+  if s < 0 then A₁ (s + R) else A₂ (s - R)
+
+/-- The glued coefficient is `A₁` translated by `-R` on `(-∞, 0)`. -/
+theorem gluedCoeff_of_neg {X : Type*} (A₁ A₂ : ℝ → X) (R : ℝ) {s : ℝ} (hs : s < 0) :
+    gluedCoeff A₁ A₂ R s = A₁ (s + R) := by
+  simp [gluedCoeff, hs]
+
+/-- The glued coefficient is `A₂` translated by `R` on `[0, ∞)`. -/
+theorem gluedCoeff_of_nonneg {X : Type*} (A₁ A₂ : ℝ → X) (R : ℝ) {s : ℝ} (hs : 0 ≤ s) :
+    gluedCoeff A₁ A₂ R s = A₂ (s - R) := by
+  simp [gluedCoeff, not_lt.2 hs]
 
 /-- A smooth nonincreasing step down from a value `v ≥ 0` to `0`: for `a < b` there is a smooth
 antitone function `μ ≥ 0` equal to `v` on `(-∞, a]` and to `0` on `[b, ∞)`. When `v > 0` it is
