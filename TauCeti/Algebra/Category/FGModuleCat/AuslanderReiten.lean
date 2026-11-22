@@ -29,7 +29,7 @@ sequence ending at `M` starts at `τ M = ModuleCat.arTranslate R E M`, and the s
 The sequence ending at `M` is the almost-split sequence of all `A`-modules of
 `ModuleCat.exists_isAlmostSplit_arTranslate`, whose terms are finitely generated.
 The inclusion of `mod A` into all modules is fully faithful and exact, so it reflects almost-split
-sequences (`CategoryTheory.ShortComplex.isAlmostSplit_of_map`). The sequence starting at `N` is the
+sequences (`CategoryTheory.Functor.isAlmostSplit_of_map`). The sequence starting at `N` is the
 one ending at `τ⁻ N`, using `τ τ⁻ N ≅ N`
 (`ModuleCat.nonempty_iso_arTranslate_arInverseTranslate`). Projectivity and injectivity in
 `mod A` agree with those in all modules (`FGModuleCat.projective_obj_iff`,
@@ -88,7 +88,7 @@ theorem exists_isAlmostSplit_arTranslate (M : FGModuleCat.{max u v w} A)
   let S : ShortComplex (FGModuleCat.{max u v w} A) :=
     ShortComplex.mk (X₁ := T) (X₂ := Y') (X₃ := M) (ObjectProperty.homMk i)
       (ObjectProperty.homMk p) ((ObjectProperty.ι _).map_injective h)
-  exact ⟨S, ShortComplex.isAlmostSplit_of_map (ObjectProperty.ι _) hS, ⟨Iso.refl _⟩,
+  exact ⟨S, (ObjectProperty.ι _).isAlmostSplit_of_map hS, ⟨Iso.refl _⟩,
     ⟨Iso.refl _⟩⟩
 
 /-- **The Auslander–Reiten theorem in `FGModuleCat`, existence on the left.** Over an Artin

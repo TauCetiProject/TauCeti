@@ -43,7 +43,9 @@ and `T` not injective, and the relevant `Ext¹` of finite length, an almost-spli
 * Conversely, if one pairing is perfect, the dual of the top of the local ring `End(A)`, resp.
   `End(T)`, gives a nonzero class `δ` killed by base change along every morphism into `A` that is
   not a split epimorphism, resp. by cobase change along every morphism out of `T` that is not a
-  split monomorphism. Such a class is almost split by the extension-class criterion.
+  split monomorphism. Its deflation is then right almost split, resp. its inflation left almost
+  split, which uses only the locality of `End(A)`, resp. `End(T)`. With both endomorphism rings
+  local, such a class is almost split by the extension-class criterion.
 
 No enough projectives or injectives are assumed, and `R` need not be Artinian.
 
@@ -65,6 +67,9 @@ No enough projectives or injectives are assumed, and `R` need not be Artinian.
 * `TauCeti.ExactStructure.bijective_stablePairing_of_isAlmostSplit` and
   `TauCeti.ExactStructure.bijective_costablePairing_of_isAlmostSplit`: an almost-split conflation
   gives the dualities `(E/𝒫)(A, B) ≅ D Ext¹_E(B, T)` and `Ext¹_E(A, X) ≅ D ((E/ℐ)(X, T))`.
+* `TauCeti.ExactStructure.exists_isRightAlmostSplit_of_bijective_stablePairing` and
+  `TauCeti.ExactStructure.exists_isLeftAlmostSplit_of_bijective_costablePairing`: the one-sided
+  converses, a right, resp. left, almost-split map from a perfect pairing.
 * `TauCeti.ExactStructure.exists_isAlmostSplit_of_bijective_stablePairing` and
   `TauCeti.ExactStructure.exists_isAlmostSplit_of_bijective_costablePairing`: the converses.
 * `TauCeti.ExactStructure.tfae_exists_isAlmostSplit`: **the local theorem**.
@@ -422,13 +427,14 @@ theorem bijective_costablePairing_of_isAlmostSplit (e : E.Extension A T)
     exact hφ (by
       rw [← ha, ← costablePairing_map, ← LinearMap.flip_apply, hξ, LinearMap.zero_apply])
 
-/-- **The converse from the stable pairing.** Let `A` and `T` have local endomorphism rings, with
-`A` not projective and `Ext¹_E(A, T)` of finite length. If `stablePairing φ B` is bijective for
-every `B`, there is an almost-split conflation `T ⟶ Y ⟶ A`. -/
-theorem exists_isAlmostSplit_of_bijective_stablePairing [IsLocalRing (End A)]
-    [IsLocalRing (End T)] (hA : ¬ E.isProjective A) (hAT : IsFiniteLength R (E.Ext1 A T))
+/-- **One-sided converse from the stable pairing.** Let `A` have local endomorphism ring, with `A`
+not projective and `Ext¹_E(A, T)` of finite length. If `stablePairing φ B` is bijective for every
+`B`, there is a conflation `T ⟶ Y ⟶ A` whose deflation is right almost split. No assumption is
+made on `T`. -/
+theorem exists_isRightAlmostSplit_of_bijective_stablePairing [IsLocalRing (End A)]
+    (hA : ¬ E.isProjective A) (hAT : IsFiniteLength R (E.Ext1 A T))
     {φ : E.Ext1 A T →ₗ[R] Q} (hφ : ∀ B, Function.Bijective (stablePairing φ B)) :
-    ∃ e : E.Extension A T, e.shortComplex.IsAlmostSplit := by
+    ∃ e : E.Extension A T, IsRightAlmostSplit e.g := by
   have hflip : ∀ B, Function.Injective (stablePairing φ B).flip := fun B ↦
     injective_flip_of_surjective (nontrivial_linearMap_of_isMaximal hQ) (hφ B).2
   -- The class `δ` dual to a linear form on the top of `(E/𝒫)(A, A)`.
@@ -440,7 +446,7 @@ theorem exists_isAlmostSplit_of_bijective_stablePairing [IsLocalRing (End A)]
       φ (δ.pullback c) = ψ (E.projectivelyTrivialIdeal.quotientFunctor.map c) := fun c ↦ by
     rw [← hδ, LinearMap.flip_apply, stablePairing_map]
   obtain ⟨e, rfl⟩ := Ext1.mk_surjective δ
-  refine ⟨e, (e.isAlmostSplit_iff_ext1_pullback).mpr ⟨fun h0 ↦ hψ1 ?_, fun W u hu ↦ hflip W ?_⟩⟩
+  refine ⟨e, e.isRightAlmostSplit_g_iff_ext1.mpr ⟨fun h0 ↦ hψ1 ?_, fun W u hu ↦ hflip W ?_⟩⟩
   · rw [← hδc, h0, Ext1.zero_pullback, map_zero]
   · -- `u^* δ` pairs to zero with every `c : A ⟶ W`, since `c ≫ u` is not invertible.
     refine LinearMap.ext fun x ↦ ?_
@@ -450,14 +456,14 @@ theorem exists_isAlmostSplit_of_bijective_stablePairing [IsLocalRing (End A)]
     exact hψ _ fun _ ↦ hu (IsSplitEpi.mk' ⟨inv (c ≫ u) ≫ c,
       by rw [Category.assoc, IsIso.inv_hom_id]⟩)
 
-/-- **The converse from the costable pairing.** Let `A` and `T` have local endomorphism rings,
-with `T` not injective and `Ext¹_E(A, T)` of finite length. If `costablePairing φ X` is bijective
-for every `X`, that is, if `T` represents `D Ext¹_E(A, -)` on `E/ℐ` with universal element `φ`,
-there is an almost-split conflation `T ⟶ Y ⟶ A`. -/
-theorem exists_isAlmostSplit_of_bijective_costablePairing [IsLocalRing (End A)]
-    [IsLocalRing (End T)] (hT : ¬ E.isInjective T) (hAT : IsFiniteLength R (E.Ext1 A T))
+/-- **One-sided converse from the costable pairing.** Let `T` have local endomorphism ring, with
+`T` not injective and `Ext¹_E(A, T)` of finite length. If `costablePairing φ X` is bijective for
+every `X`, that is, if `T` represents `D Ext¹_E(A, -)` on `E/ℐ` with universal element `φ`, there
+is a conflation `T ⟶ Y ⟶ A` whose inflation is left almost split. No assumption is made on `A`. -/
+theorem exists_isLeftAlmostSplit_of_bijective_costablePairing [IsLocalRing (End T)]
+    (hT : ¬ E.isInjective T) (hAT : IsFiniteLength R (E.Ext1 A T))
     {φ : E.Ext1 A T →ₗ[R] Q} (hφ : ∀ X, Function.Bijective (costablePairing φ X)) :
-    ∃ e : E.Extension A T, e.shortComplex.IsAlmostSplit := by
+    ∃ e : E.Extension A T, IsLeftAlmostSplit e.f := by
   have hflip : ∀ X, Function.Injective (costablePairing φ X).flip := fun X ↦
     injective_flip_of_surjective (nontrivial_linearMap_of_isMaximal hQ) (hφ X).2
   -- The class `δ` dual to a linear form on the top of `(E/ℐ)(T, T)`.
@@ -469,7 +475,7 @@ theorem exists_isAlmostSplit_of_bijective_costablePairing [IsLocalRing (End A)]
       φ (δ.pushout a) = ψ (E.injectivelyTrivialIdeal.quotientFunctor.map a) := fun a ↦ by
     rw [← hδ, LinearMap.flip_apply, costablePairing_map]
   obtain ⟨e, rfl⟩ := Ext1.mk_surjective δ
-  refine ⟨e, (e.isAlmostSplit_iff_ext1_pushout).mpr ⟨fun h0 ↦ hψ1 ?_, fun W v hv ↦ hflip W ?_⟩⟩
+  refine ⟨e, e.isLeftAlmostSplit_f_iff_ext1.mpr ⟨fun h0 ↦ hψ1 ?_, fun W v hv ↦ hflip W ?_⟩⟩
   · rw [← hδa, h0, Ext1.zero_pushout, map_zero]
   · -- `v_* δ` pairs to zero with every `a : W ⟶ T`, since `v ≫ a` is not invertible.
     refine LinearMap.ext fun x ↦ ?_
@@ -478,6 +484,27 @@ theorem exists_isAlmostSplit_of_bijective_costablePairing [IsLocalRing (End A)]
       Ext1.pushout_pushout, hδa]
     exact hψ _ fun _ ↦ hv (IsSplitMono.mk' ⟨a ≫ inv (v ≫ a),
       by rw [← Category.assoc, IsIso.hom_inv_id]⟩)
+
+/-- **The converse from the stable pairing.** Let `A` and `T` have local endomorphism rings, with
+`A` not projective and `Ext¹_E(A, T)` of finite length. If `stablePairing φ B` is bijective for
+every `B`, there is an almost-split conflation `T ⟶ Y ⟶ A`. -/
+theorem exists_isAlmostSplit_of_bijective_stablePairing [IsLocalRing (End A)]
+    [IsLocalRing (End T)] (hA : ¬ E.isProjective A) (hAT : IsFiniteLength R (E.Ext1 A T))
+    {φ : E.Ext1 A T →ₗ[R] Q} (hφ : ∀ B, Function.Bijective (stablePairing φ B)) :
+    ∃ e : E.Extension A T, e.shortComplex.IsAlmostSplit :=
+  have ⟨e, he⟩ := exists_isRightAlmostSplit_of_bijective_stablePairing hQ hA hAT hφ
+  ⟨e, e.isAlmostSplit_iff_isRightAlmostSplit_g.mpr he⟩
+
+/-- **The converse from the costable pairing.** Let `A` and `T` have local endomorphism rings,
+with `T` not injective and `Ext¹_E(A, T)` of finite length. If `costablePairing φ X` is bijective
+for every `X`, that is, if `T` represents `D Ext¹_E(A, -)` on `E/ℐ` with universal element `φ`,
+there is an almost-split conflation `T ⟶ Y ⟶ A`. -/
+theorem exists_isAlmostSplit_of_bijective_costablePairing [IsLocalRing (End A)]
+    [IsLocalRing (End T)] (hT : ¬ E.isInjective T) (hAT : IsFiniteLength R (E.Ext1 A T))
+    {φ : E.Ext1 A T →ₗ[R] Q} (hφ : ∀ X, Function.Bijective (costablePairing φ X)) :
+    ∃ e : E.Extension A T, e.shortComplex.IsAlmostSplit :=
+  have ⟨e, he⟩ := exists_isLeftAlmostSplit_of_bijective_costablePairing hQ hT hAT hφ
+  ⟨e, e.isAlmostSplit_iff_isLeftAlmostSplit_f.mpr he⟩
 
 variable (R Q) in
 /-- **The local theorem.** Let `A` and `T` be objects with local endomorphism rings, `A` not

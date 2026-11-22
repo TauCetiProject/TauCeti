@@ -10,7 +10,8 @@ public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Translate
 public import TauCeti.CategoryTheory.AlmostSplit.Sequence
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.ModuleCat.Algebra
-import TauCeti.Algebra.Category.ModuleCat.Injective.FiniteDimensional
+import TauCeti.Algebra.Category.ModuleCat.Ext.FiniteLength
+import TauCeti.CategoryTheory.AlmostSplit.Minimal
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.RingTheory.Artinian.FiniteLength
 import TauCeti.RingTheory.MatlisDuality.Semilocal
@@ -46,17 +47,20 @@ endomorphism ring, for instance a finitely generated one.
 The sequence comes from the Auslander–Reiten formula. For a finite minimal projective presentation
 `P` of `M`, the translate `τ M = D Tr M` represents `D Ext¹(M, -)` on the injectively stable
 category, with universal element the Auslander–Reiten form
-(`ModuleCat.bijective_costablePairing_auslanderReitenForm`). Since `M` and `τ M` have local
-endomorphism rings and `τ M` is not injective, the local duality theorem
-(`TauCeti.ExactStructure.exists_isAlmostSplit_of_bijective_costablePairing`) turns this
-representation into an almost-split conflation `τ M ⟶ Y ⟶ M`. Its finiteness hypothesis is that
+(`ModuleCat.bijective_costablePairing_auslanderReitenForm`); this needs no indecomposability of
+`M`. When `τ M` has a local endomorphism ring and is not injective, the one-sided local duality
+theorem (`TauCeti.ExactStructure.exists_isLeftAlmostSplit_of_bijective_costablePairing`) turns this
+representation into a conflation `τ M ⟶ Y ⟶ M` whose inflation is left almost split
+(`ModuleCat.exists_isLeftAlmostSplit_arTranslate`). Its finiteness hypothesis is that
 `Ext¹(M, τ M)` has finite length over `R`, which holds for all finitely generated modules
-(`ModuleCat.isFiniteLength_ext1`).
+(`ModuleCat.isFiniteLength_ext1`). If moreover `M` is indecomposable, both ends have local
+endomorphism rings and the sequence is almost split.
 
 ## Main results
 
-* `ModuleCat.isFiniteLength_ext1`: `Ext¹` between finitely generated modules over an Artin
-  algebra has finite length over the base ring.
+* `ModuleCat.exists_isLeftAlmostSplit_arTranslate`: a short exact sequence starting at `τ M` with
+  left almost-split first map, for `M` finitely generated with `τ M` non-injective with local
+  endomorphism ring.
 * `ModuleCat.exists_isAlmostSplit_arTranslate`: the existence of almost-split sequences ending at
   finitely generated indecomposable non-projective modules.
 * `ModuleCat.exists_isAlmostSplit_of_not_injective`: the existence of almost-split sequences
@@ -87,7 +91,7 @@ public section
 
 namespace ModuleCat
 
-open CategoryTheory CategoryTheory.Limits TauCeti TauCeti.ExactStructure
+open CategoryTheory TauCeti TauCeti.ExactStructure
 open scoped ModuleCat.Algebra
 
 universe u v w
@@ -97,42 +101,28 @@ section Artin
 variable (R : Type u) {A : Type v} [CommRing R] [IsArtinianRing R] [Ring A] [Algebra R A]
   [Module.Finite R A]
 
-/-- **`Ext¹` between finitely generated modules over an Artin algebra has finite length** over the
-base ring. Embedding `N` into a finitely generated injective module `I` presents `Ext¹(M, N)` as a
-quotient of `Hom(M, I ⧸ N)`, a finitely generated module over the Artinian base ring. -/
-theorem isFiniteLength_ext1 [Small.{w} A] (M N : ModuleCat.{w} A) [Module.Finite A M]
-    [Module.Finite A N] :
-    IsFiniteLength R ((ExactStructure.abelian (ModuleCat.{w} A)).Ext1 M N) := by
-  obtain ⟨I, _⟩ := exists_injectivePresentation_finite_of_isArtinianRing R N
-  let K : ModuleCat.{w} A := cokernel I.f
-  let e : (ExactStructure.abelian _).Extension K N :=
-    ⟨I.J, I.f, cokernel.π I.f, cokernel.condition _, abelian_conflation_of_mono _⟩
-  have : Module.Finite A K := Module.Finite.of_surjective (cokernel.π I.f).hom
-    ((ModuleCat.epi_iff_surjective _).mp inferInstance)
-  have := Module.Finite.equiv
-    (e.homQuotientEquivExt1 ((abelian_isInjective_iff _).mpr I.injective) R M)
-  exact isFiniteLength_of_finite R _
-
 section Translate
 
 variable (E : Type u) [AddCommGroup E] [Module R E] [Module.Injective R E]
   (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
+include hE
 
-include hE in
-/-- **The Auslander–Reiten theorem, existence.** Over an Artin algebra, a finitely generated
-indecomposable non-projective module `M` ends an almost-split sequence `0 → τ M → Y → M → 0` of
-`A`-modules whose left-hand end is the translate `τ M` and whose middle term is finitely
-generated. -/
-theorem exists_isAlmostSplit_arTranslate (M : ModuleCat.{max u v w} A) [Module.Finite A M]
-    (hiM : Indecomposable M) (hpM : ¬ Projective M) :
+/-- The coefficient module is finitely generated: it has finite length, by `hE`. -/
+private theorem finite_of_forall_isMaximal : Module.Finite R E :=
+  have := (isFiniteLength_iff_isNoetherian_isArtinian.mp (isFiniteLength_of_forall_isMaximal hE)).1
+  inferInstance
+
+/-- **Left almost-split maps out of the translate.** Over an Artin algebra, let `M` be a finitely
+generated module whose translate `τ M` has a local endomorphism ring and is not injective. Then
+there is a short exact sequence `0 → τ M → Y → M → 0` of `A`-modules with `Y` finitely generated
+whose first map is left almost split. The module `M` need not be indecomposable. -/
+theorem exists_isLeftAlmostSplit_arTranslate (M : ModuleCat.{max u v w} A) [Module.Finite A M]
+    [IsLocalRing (End (arTranslate R E M))] (hT : ¬ Injective (arTranslate R E M)) :
     ∃ (Y : ModuleCat.{max u v w} A) (i : arTranslate R E M ⟶ Y) (p : Y ⟶ M) (h : i ≫ p = 0),
-      Module.Finite A Y ∧ (ShortComplex.mk i p h).IsAlmostSplit := by
+      Module.Finite A Y ∧ (ShortComplex.mk i p h).ShortExact ∧ IsLeftAlmostSplit i := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
   have : Module.FinitePresentation A M := Module.finitePresentation_of_finite A M
-  have : Module.Finite R E := by
-    have := (isFiniteLength_iff_isNoetherian_isArtinian.mp
-      (isFiniteLength_of_forall_isMaximal hE)).1
-    infer_instance
+  have := finite_of_forall_isMaximal R E hE
   -- The Auslander–Reiten formula is applied to the lift `E'` of `E` to the module universe.
   let E' := ULift.{w} E
   have : Module.Injective R E' := Module.ulift_injective_of_injective R inferInstance
@@ -143,22 +133,38 @@ theorem exists_isAlmostSplit_arTranslate (M : ModuleCat.{max u v w} A) [Module.F
   let T := matlisDualTranspose R E' P
   let e : arTranslate R E M ≅ T := e ≪≫ (MatlisDual.congrCoeffOp ULift.moduleEquiv.symm).toModuleIso
   have : Module.Finite A T := Module.Finite.equiv e.toLinearEquiv
-  have : IsLocalRing (End M) :=
-    (indecomposable_iff_isLocalRing_end M (isFiniteLength_of_finite A M)).mp hiM
   have : IsLocalRing (End T) := (indecomposable_iff_isLocalRing_end T
-    (isFiniteLength_of_finite A T)).mp
-      (((indecomposable_arTranslate_iff hE M hiM).mpr hpM).of_iso e)
-  have hT : ¬ (ExactStructure.abelian _).isInjective T := fun h ↦ hpM
-    ((injective_arTranslate_iff hE M).mp (Injective.of_iso e.symm
-      ((abelian_isInjective_iff T).mp h)))
-  obtain ⟨x, hx⟩ := exists_isAlmostSplit_of_bijective_costablePairing hE' hT
+    (isFiniteLength_of_finite A T)).mp (((indecomposable_iff_isLocalRing_end _
+      (isFiniteLength_of_finite A _)).mpr ‹_›).of_iso e)
+  have hT' : ¬ (ExactStructure.abelian _).isInjective T := fun h ↦
+    hT (Injective.of_iso e.symm ((abelian_isInjective_iff T).mp h))
+  obtain ⟨x, hx⟩ := exists_isLeftAlmostSplit_of_bijective_costablePairing hE' hT'
     (isFiniteLength_ext1 R M T) (bijective_costablePairing_auslanderReitenForm R E' P)
-  have hS := hx.shortExact
+  have hS := x.shortExact
   have : Module.Finite A x.obj := Module.Finite.of_exact
     ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp hS.exact)
     hS.moduleCat_surjective_g
-  exact ⟨x.obj, e.hom ≫ x.f, x.g, by simp, this, ShortComplex.isAlmostSplit_of_iso
-    (S₁ := x.shortComplex) (ShortComplex.isoMk e.symm (Iso.refl _) (Iso.refl _)) hx⟩
+  exact ⟨x.obj, e.hom ≫ x.f, x.g, by simp, this, ShortComplex.shortExact_of_iso
+    (S₁ := x.shortComplex) (ShortComplex.isoMk e.symm (Iso.refl _) (Iso.refl _)) hS,
+    hx.iso_comp e.hom⟩
+
+/-- **The Auslander–Reiten theorem, existence.** Over an Artin algebra, a finitely generated
+indecomposable non-projective module `M` ends an almost-split sequence `0 → τ M → Y → M → 0` of
+`A`-modules whose left-hand end is the translate `τ M` and whose middle term is finitely
+generated. -/
+theorem exists_isAlmostSplit_arTranslate (M : ModuleCat.{max u v w} A) [Module.Finite A M]
+    (hiM : Indecomposable M) (hpM : ¬ Projective M) :
+    ∃ (Y : ModuleCat.{max u v w} A) (i : arTranslate R E M ⟶ Y) (p : Y ⟶ M) (h : i ≫ p = 0),
+      Module.Finite A Y ∧ (ShortComplex.mk i p h).IsAlmostSplit := by
+  have : IsArtinianRing A := IsArtinianRing.of_finite R A
+  have := finite_of_forall_isMaximal R E hE
+  have : IsLocalRing (End M) :=
+    (indecomposable_iff_isLocalRing_end M (isFiniteLength_of_finite A M)).mp hiM
+  have : IsLocalRing (End (arTranslate R E M)) := (indecomposable_iff_isLocalRing_end _
+    (isFiniteLength_of_finite A _)).mp ((indecomposable_arTranslate_iff hE M hiM).mpr hpM)
+  obtain ⟨Y, i, p, h, hY, hS, hi⟩ := exists_isLeftAlmostSplit_arTranslate R E hE M
+    fun h ↦ hpM ((injective_arTranslate_iff hE M).mp h)
+  exact ⟨Y, i, p, h, hY, hS.isAlmostSplit_iff_isLeftAlmostSplit.mpr hi⟩
 
 end Translate
 
