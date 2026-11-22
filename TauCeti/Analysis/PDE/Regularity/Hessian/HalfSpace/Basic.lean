@@ -293,21 +293,14 @@ private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
         ((normalHalfSpace (E := E) (a / c) : Opens (WithLp 2 (ℝ × E))) :
           Set (WithLp 2 (ℝ × E))) =
           e ⁻¹' (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
-  -- the symmetric part of `A` has the same quadratic form
+  -- the symmetric part of `A` is symmetric with the same quadratic form
   have hS : (((2⁻¹ : ℝ) • (A + A.adjoint) : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
-      WithLp 2 (ℝ × E) →ₗ[ℝ] WithLp 2 (ℝ × E)).IsSymmetric := fun x y => by
-    simp [inner_add_left, inner_add_right, inner_smul_left, inner_smul_right,
-      ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.adjoint_inner_right]
-    ring
-  have hSA (ξ : WithLp 2 (ℝ × E)) :
-      ⟪((2⁻¹ : ℝ) • (A + A.adjoint)) ξ, ξ⟫_ℝ = ⟪A ξ, ξ⟫_ℝ := by
-    simp [inner_add_left, inner_smul_left, ContinuousLinearMap.adjoint_inner_left,
-      real_inner_comm (A ξ) ξ]
-    ring
+      WithLp 2 (ℝ × E) →ₗ[ℝ] WithLp 2 (ℝ × E)).IsSymmetric :=
+    A.inner_symmPart_apply_left
   set ν : WithLp 2 (ℝ × E) := WithLp.toLp 2 (1, 0)
   obtain ⟨e, hee, ⟨c, hc, hcν⟩, he⟩ :=
     ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric _ hS hlam
-      (fun ξ => by rw [RCLike.re_to_real, hSA]; exact hA ξ)
+      (fun ξ => by rw [RCLike.re_to_real, A.inner_symmPart_apply_self]; exact hA ξ)
   -- over `ℝ` the scalar `(c : ℝ)` produced by the `RCLike` statement is `c` itself
   rw [RCLike.ofReal_real_eq_id, id_eq] at hcν
   have hinner (x : WithLp 2 (ℝ × E)) : ⟪x, ν⟫_ℝ = (WithLp.ofLp x).1 := by

@@ -46,10 +46,9 @@ a priori estimates of the Dirichlet problem `L u = f` in `Ω`, `u ∈ W^{2,p}(Ω
 ## The arguments
 
 For uniqueness, `u ∈ W^{2,p}(Ω) ⊆ W^{2,n}(Ω)` has a representative `ū` continuous on `closure Ω`,
-by Morrey's embedding on Lipschitz domains
-(`TauCeti.Wkp.exists_holderEmbeddingL_of_isLipschitzDomainWith`), which vanishes on `frontier Ω`
-since `u ∈ W^{1,p}_0(Ω)` (`TauCeti.W1p.mem_w1p0Submodule_iff_eqOn_frontier`). The weak maximum
-principle for strong subsolutions
+by Morrey's embedding on Lipschitz domains, which vanishes on `frontier Ω` since
+`u ∈ W^{1,p}_0(Ω)` (`TauCeti.Wkp.exists_continuousOn_closure_ae_eq_and_eqOn_frontier`). The weak
+maximum principle for strong subsolutions
 (`TauCeti.PDE.le_of_nonneg_traceCLM_comp_iteratedGradient_add_mul_le_frontier`), applied to `u`
 and `-u`, gives `ū = 0`.
 
@@ -57,10 +56,7 @@ For Lemma 9.17, `u ↦ L u` is a bounded operator `W^{2,p}(Ω) → Lᵖ(Ω)`: `A
 continuity on the compact set `closure Ω`. On the closed subspace of `u` with zero boundary values,
 Theorem 9.14 is an estimate `‖u‖ ≤ C ‖L u‖ + ‖K u‖` with `K` a multiple of the compact inclusion
 `W^{2,p}(Ω) → Lᵖ(Ω)` (Rellich–Kondrachov), and `L` is injective there by uniqueness, so `L` is
-bounded below there (`ContinuousLinearMap.exists_pos_mul_norm_le_of_compact_estimate`).
-
-What remains of Gilbarg–Trudinger, Theorem 9.15, is the existence of solutions, and uniqueness for
-`1 < p < n`, which needs the regularity of solutions of Gilbarg–Trudinger, Lemma 9.16.
+bounded below there (`TauCeti.Wkp.exists_pos_mul_norm_le_of_mem_w1p0Submodule`).
 
 ## References
 
@@ -161,47 +157,6 @@ theorem exists_norm_le_of_continuousWithinAt_of_contDiff_graph (hp : 1 < p) (hp_
   linarith [hE u, mul_nonneg (mul_nonneg hC hC₁) (norm_nonneg f),
     mul_nonneg hC (norm_nonneg (value 2 u)), mul_nonneg hC₁ (norm_nonneg f)]
 
-/-- On a bounded Lipschitz domain of dimension `n`, every `u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` with
-`n ≤ p < ∞` has a representative continuous on `closure Ω` that vanishes on `frontier Ω`. -/
-private theorem exists_continuousOn_closure_ae_eq_and_eqOn_frontier (hp_top : p ≠ ⊤)
-    (hpn : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞) ≤ p) {Omega : Opens (WithLp 2 (ℝ × E))}
-    {L : ℝ≥0} (hΩ : (Omega : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
-    (hb : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
-    {u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2}
-    (hu0 : firstOrder 1 u ∈ w1p0Submodule volume Omega p) :
-    ∃ ū : WithLp 2 (ℝ × E) → ℝ, ContinuousOn ū (closure (Omega : Set (WithLp 2 (ℝ × E)))) ∧
-      value 2 u =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] ū ∧
-      EqOn ū 0 (frontier (Omega : Set (WithLp 2 (ℝ × E)))) := by
-  set N := finrank ℝ (WithLp 2 (ℝ × E))
-  have hN : (1 : ℝ≥0) ≤ N := by
-    have : 0 < N := Module.finrank_pos
-    exact_mod_cast this
-  have : Fact (1 ≤ ((N : ℝ≥0) : ℝ≥0∞)) := ⟨by exact_mod_cast hN⟩
-  have : IsFiniteMeasure (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) :=
-    isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
-  have hpn' : ((N : ℝ≥0) : ℝ≥0∞) ≤ p := by simpa using hpn
-  -- Lower the exponent to `n` and apply Morrey's embedding, `n < 2 n`.
-  obtain ⟨T, hT⟩ := Wkp.exists_holderEmbeddingL_of_isLipschitzDomainWith (k := 2)
-    (by push_cast; exact lt_mul_left (zero_lt_one.trans_le hN) one_lt_two :
-      (N : ℝ≥0) < (2 : ℕ) * (N : ℝ≥0)) hΩ hb
-  classical
-  set ū : WithLp 2 (ℝ × E) → ℝ := fun x =>
-    if h : x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))) then T (ofExponentLEL hpn' 2 u) ⟨x, h⟩
-    else 0
-  have hcont : ContinuousOn ū (closure (Omega : Set (WithLp 2 (ℝ × E)))) := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    convert (T (ofExponentLEL hpn' 2 u)).continuous using 1
-    funext x
-    simp [ū, x.property]
-  have huū : value 2 u =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] ū := by
-    filter_upwards [ae_restrict_of_ae (hT (ofExponentLEL hpn' 2 u)),
-      ae_restrict_mem Omega.isOpen.measurableSet, value_ofExponentLEL_ae hpn' 2 u]
-      with x hx hxΩ hv
-    rw [← hv, ← hx hxΩ]
-    simp [ū, subset_closure hxΩ]
-  exact ⟨ū, hcont, huū, (W1p.mem_w1p0Submodule_iff_eqOn_frontier hp_top hΩ hb hcont
-    (by rw [value_firstOrder]; exact huū)).1 hu0⟩
-
 /-- **Uniqueness for the Dirichlet problem with strong solutions.** Let `Ω ⊆ ℝ × E` be a bounded
 Lipschitz domain of dimension `n` and let `n ≤ p < ∞`. Let `A(x)` be positive definite,
 `⟪A(x) ξ, ξ⟫ > 0` for `ξ ≠ 0`, and let `c(x) ≤ 0`, for almost every `x ∈ Ω`. If
@@ -241,8 +196,7 @@ theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero (hp_top : p �
       hcont.neg ((value_neg_ae 2 v).trans hvū.neg) hA hc
       (by
         filter_upwards [heq, hD, value_ofExponentLEL_ae hpn 2 u, value_neg_ae 2 v,
-          (Lp.coeFn_neg (iteratedGradient 1 v))] with y hy hDy hvy hnv hnD
-        rw [← iteratedGradientL_apply, map_neg, iteratedGradientL_apply] at *
+          iteratedGradient_neg_ae 1 v] with y hy hDy hvy hnv hnD
         rw [hnD, hnv, Pi.neg_apply, Pi.neg_apply, hDy, hvy, ContinuousLinearMap.comp_neg,
           map_neg, mul_neg, ← neg_add, hy, neg_zero])
       le_rfl (fun z hz => by simp [hfr hz]) hx
@@ -280,50 +234,6 @@ private theorem exists_continuousLinearMap_traceCLM_comp_add_mul
     ContinuousLinearMap.holderL_apply_apply] at h1 ⊢
   rw [h1, Pi.add_apply, h2, h3, h4, ContinuousLinearMap.mul_apply', iteratedGradientL_apply,
     valueL_apply]
-
-/-- **Peetre's argument on `W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)`.** On a bounded Lipschitz domain, an operator
-`T : W^{2,p}(Ω) → Lᵖ(Ω)` with `‖u‖ ≤ D (‖T u‖ + ‖u‖_{Lᵖ})` that is injective on functions with zero
-boundary values is bounded below there. -/
-private theorem exists_pos_mul_norm_le_of_mem_w1p0Submodule {Omega : Opens (WithLp 2 (ℝ × E))}
-    {L : ℝ≥0} (hΩ : (Omega : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
-    (hb : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
-    (T : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2 →L[ℝ]
-      Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega)) {D : ℝ}
-    (hest : ∀ u, firstOrder 1 u ∈ w1p0Submodule volume Omega p → ‖u‖ ≤ D * (‖T u‖ + ‖value 2 u‖))
-    (hinj : ∀ u, firstOrder 1 u ∈ w1p0Submodule volume Omega p → T u = 0 → u = 0) :
-    ∃ κ : ℝ, 0 < κ ∧ ∀ u, firstOrder 1 u ∈ w1p0Submodule volume Omega p → κ * ‖u‖ ≤ ‖T u‖ := by
-  -- The closed subspace `M` of zero boundary values, a Banach space.
-  let M : Submodule ℝ (Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2) :=
-    (w1p0Submodule volume Omega p).toSubmodule.comap (firstOrderL 1).toLinearMap
-  have hmemM : ∀ u, u ∈ M ↔ firstOrder 1 u ∈ w1p0Submodule volume Omega p := fun u => by
-    rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, firstOrderL_apply,
-      ClosedSubmodule.mem_toSubmodule_iff]
-  have : CompleteSpace M :=
-    ((w1p0Submodule volume Omega p).isClosed.preimage (firstOrderL 1).continuous).completeSpace_coe
-  -- On `M`, `‖u‖ ≤ D' ‖T u‖ + ‖K u‖` with `K = D' • valueL 2` compact, `D' = max D 0`.
-  have hK : IsCompactOperator ((max D 0 • valueL 2).comp M.subtypeL) :=
-    ((isCompactOperator_valueL_of_isCompactOperator_lowerOrderL
-      (isCompactOperator_lowerOrderL_of_isLipschitzDomainWith hΩ hb 1)).smul (max D 0)).comp_clm _
-  have hbound : ∀ w : M,
-      ‖w‖ ≤ max D 0 * ‖T.comp M.subtypeL w‖ + ‖(max D 0 • valueL 2).comp M.subtypeL w‖ :=
-    fun w => by
-      have hn := mul_le_mul_of_nonneg_right (le_max_left D 0) (add_nonneg (norm_nonneg (T w))
-        (norm_nonneg (value 2 (w : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2))))
-      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
-        smul_apply, valueL_apply, norm_smul, Real.norm_of_nonneg (le_max_right D 0),
-        ← Submodule.norm_coe]
-      linarith [hest w ((hmemM _).1 w.property)]
-  have hker : Disjoint (T.comp M.subtypeL).ker ⊤ := by
-    rw [disjoint_top, LinearMap.ker_eq_bot']
-    intro w hw
-    rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
-      Submodule.subtypeL_apply] at hw
-    exact Subtype.ext (hinj w ((hmemM _).1 w.property) hw)
-  obtain ⟨κ, hκ, hκb⟩ := (T.comp M.subtypeL).exists_pos_mul_norm_le_of_compact_estimate hK hbound
-    isClosed_univ hker
-  refine ⟨κ, hκ, fun u hu0 => ?_⟩
-  simpa only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, ← Submodule.norm_coe]
-    using hκb ⟨u, (hmemM u).2 hu0⟩ trivial
 
 /-- **The a priori estimate for the Dirichlet problem** (Gilbarg–Trudinger, Lemma 9.17). Let
 `Ω ⊆ ℝ × E` be a bounded open set of dimension `n` with `C²` boundary, and let `n ≤ p < ∞`,

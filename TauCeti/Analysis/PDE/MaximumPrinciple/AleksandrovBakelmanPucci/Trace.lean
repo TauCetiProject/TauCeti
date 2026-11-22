@@ -67,69 +67,6 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDim
   [MeasurableSpace F] [BorelSpace F] {Ω : Opens F} {p : ℝ≥0∞} [Fact (1 ≤ p)]
   {ū : F → ℝ} {A : F → F →L[ℝ] F} {m : ℝ}
 
-omit [MeasurableSpace F] [BorelSpace F] in
-/-- The symmetric part `(A + A†) / 2` of an endomorphism is self-adjoint. -/
-private theorem inner_symmPart_apply_left (A : F →L[ℝ] F) (x y : F) :
-    ⟪((2⁻¹ : ℝ) • (A + A.adjoint)) x, y⟫ = ⟪x, ((2⁻¹ : ℝ) • (A + A.adjoint)) y⟫ := by
-  simp only [smul_apply, add_apply, inner_smul_left, inner_smul_right, inner_add_left,
-    inner_add_right, ContinuousLinearMap.adjoint_inner_left,
-    ContinuousLinearMap.adjoint_inner_right, RCLike.conj_to_real]
-  ring
-
-omit [MeasurableSpace F] [BorelSpace F] in
-/-- In an orthonormal basis `(bᵢ)`, the entries `⟪bᵢ, S bⱼ⟫` of the symmetric part
-`S = (A + A†) / 2` of `A`, paired with those of a self-adjoint `H`, sum to `tr (A ∘ H)`. -/
-private theorem sum_toMatrix_symmPart_mul_repr {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b : OrthonormalBasis ι ℝ F) (A H : F →L[ℝ] F) (hH : H.adjoint = H) :
-    ∑ i, ∑ j, LinearMap.toMatrix b.toBasis b.toBasis
-        (((2⁻¹ : ℝ) • (A + A.adjoint) : F →L[ℝ] F) : F →ₗ[ℝ] F) i j * b.repr (H (b j)) i =
-      traceCLM ℝ F (A ∘L H) := by
-  set S : F →L[ℝ] F := (2⁻¹ : ℝ) • (A + A.adjoint)
-  have hS : ∀ x y, ⟪S x, y⟫ = ⟪x, S y⟫ := inner_symmPart_apply_left A
-  rw [← ContinuousLinearMap.traceCLM_symmPart_comp A H hH, traceCLM_apply,
-    LinearMap.trace_eq_sum_inner _ b, Finset.sum_comm]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  simp only [LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply,
-    OrthonormalBasis.coe_toBasis, OrthonormalBasis.repr_apply_apply, ContinuousLinearMap.coe_coe,
-    ContinuousLinearMap.coe_comp, Function.comp_apply]
-  rw [← hS]
-  simpa only [real_inner_comm (b _) (S (b j))] using b.sum_inner_mul_inner (S (b j)) (H (b j))
-
-omit [MeasurableSpace F] [BorelSpace F] in
-/-- The matrix of the symmetric part of a positive definite endomorphism in an orthonormal basis is
-positive definite. -/
-private theorem posDef_toMatrix_symmPart {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b : OrthonormalBasis ι ℝ F) {A : F →L[ℝ] F} (hA : ∀ ξ, ξ ≠ 0 → 0 < ⟪A ξ, ξ⟫) :
-    (LinearMap.toMatrix b.toBasis b.toBasis
-      (((2⁻¹ : ℝ) • (A + A.adjoint) : F →L[ℝ] F) : F →ₗ[ℝ] F)).PosDef := by
-  set S : F →L[ℝ] F := (2⁻¹ : ℝ) • (A + A.adjoint)
-  have hS : ∀ x y, ⟪S x, y⟫ = ⟪x, S y⟫ := inner_symmPart_apply_left A
-  have hSA : ∀ ξ, ⟪S ξ, ξ⟫ = ⟪A ξ, ξ⟫ := fun ξ => by
-    simp only [S, smul_apply, add_apply, inner_smul_left, inner_add_left,
-      ContinuousLinearMap.adjoint_inner_left, RCLike.conj_to_real, real_inner_comm ξ (A ξ)]
-    ring
-  have hM : ∀ i j, LinearMap.toMatrix b.toBasis b.toBasis (S : F →ₗ[ℝ] F) i j = ⟪S (b i), b j⟫ :=
-    fun i j => by
-      rw [LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply,
-        OrthonormalBasis.coe_toBasis, OrthonormalBasis.repr_apply_apply,
-        ContinuousLinearMap.coe_coe, hS, real_inner_comm]
-  refine Matrix.posDef_iff_dotProduct_mulVec.2 ⟨Matrix.IsHermitian.ext fun i j => ?_,
-    fun x hx => ?_⟩
-  · -- the matrix of the self-adjoint `S` is symmetric
-    simp only [star_trivial, hM]
-    rw [hS, real_inner_comm]
-  set v : F := b.repr.symm (WithLp.toLp 2 x)
-  have hxv : ∀ i, x i = ⟪b i, v⟫ := fun i => by
-    rw [← b.repr_apply_apply, LinearIsometryEquiv.apply_symm_apply]
-  have hv : v ≠ 0 := fun h => hx (funext fun i => by rw [hxv i, h, inner_zero_right]; rfl)
-  calc 0 < ⟪A v, v⟫ := hA v hv
-    _ = ⟪S v, v⟫ := (hSA v).symm
-    _ = ∑ i, ⟪v, b i⟫ * ∑ j, ⟪S (b i), b j⟫ * ⟪b j, v⟫ := by
-        simp only [b.sum_inner_mul_inner]
-        simp only [hS, b.sum_inner_mul_inner]
-    _ = star x ⬝ᵥ (LinearMap.toMatrix b.toBasis b.toBasis (S : F →ₗ[ℝ] F) *ᵥ x) := by
-        simp only [dotProduct, Matrix.mulVec, star_trivial, hM, hxv, real_inner_comm v]
-
 /-- **The weak maximum principle for strong subsolutions** (Gilbarg–Trudinger, Theorem 9.1 with
 `b = 0`, `c = 0` and `f = 0`). Let `Ω` be a bounded open subset of a real inner product space of
 dimension `n`, let `u ∈ W^{2,n}(Ω)` have a representative `ū` continuous on `closure Ω`, and let
@@ -168,7 +105,7 @@ theorem le_of_nonneg_traceCLM_comp_iteratedGradient_le_frontier
     (by simpa using hp) u'
     (by rw [hclosure]; exact hcont.comp e.symm.continuous.continuousOn fun y hy => hy)
     ((Wkp.value_compLinearIsometryEquiv_ae he hUW 2 u).trans (he'.ae_eq_comp hū))
-    (hsub (he'.ae (hA.mono fun y hy => posDef_toMatrix_symmPart b hy)))
+    (hsub (he'.ae (hA.mono fun y hy => ContinuousLinearMap.posDef_toMatrix_symmPart hy b)))
     (hsub ?_) (by simp) (fun z hz => hm _ (by rwa [hfrontier] at hz))
     (by
       rw [← SetLike.mem_coe, hUW, mem_preimage, LinearIsometryEquiv.symm_apply_apply]
@@ -178,7 +115,8 @@ theorem le_of_nonneg_traceCLM_comp_iteratedGradient_le_frontier
   filter_upwards [he'.ae hL, he'.ae (Wkp.adjoint_iteratedGradient_one_ae_eq u),
     Wkp.iteratedGradient_compLinearIsometryEquiv_ae he hUW 1 u] with y hy hsym hD
   rw [Pi.zero_apply, hD]
-  refine hy.trans_eq ((sum_toMatrix_symmPart_mul_repr b _ _ hsym).symm.trans ?_)
+  refine hy.trans_eq
+    ((ContinuousLinearMap.sum_toMatrix_symmPart_mul_repr _ _ hsym b).symm.trans ?_)
   -- In coordinates the weak Hessian of `u'` is `e ∘ D²u ∘ e⁻¹`, with columns `e (D²u bⱼ)`.
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [LinearIsometryEquiv.iteratedGradientCongr_symm_succ_apply e.symm 0]

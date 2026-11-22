@@ -322,6 +322,12 @@ theorem value_neg_ae (k : ℕ) (u : Wkp mu Omega p k) :
     ⇑(value k (-u)) =ᵐ[mu.restrict Omega] -⇑(value k u) := by
   simpa only [value_neg] using Lp.coeFn_neg (value k u)
 
+/-- The highest weak derivative of the negation of a Sobolev function is almost everywhere the
+negation of its highest weak derivative. -/
+theorem iteratedGradient_neg_ae (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
+    ⇑(iteratedGradient k (-u)) =ᵐ[mu.restrict Omega] -⇑(iteratedGradient k u) := by
+  simpa only [← iteratedGradientL_apply, map_neg] using Lp.coeFn_neg (iteratedGradient k u)
+
 /-- The value of a sum of two Sobolev functions is almost everywhere the sum of their values. -/
 theorem value_add_ae (k : ℕ) (u v : Wkp mu Omega p k) :
     ⇑(value k (u + v)) =ᵐ[mu.restrict Omega] ⇑(value k u) + ⇑(value k v) := by
