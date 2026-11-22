@@ -82,6 +82,9 @@ microlocally there.
   symbols.** For a smooth function `ψ` of the position, `q(x, ξ) = ψ(x) b(x, ξ)` with `b` a left
   parametrix symbol of `a`, and a symbol `p` with compact spatial support which agrees with `a`
   near the support of `ψ`, the composition symbol `q # p` is `ψ(x)` up to a smoothing symbol.
+  `TauCeti.Symbol.isSmoothing_sharp_sub_of_isAsymptoticSum` is the same for a symbol `b` whose
+  formal composition with `a` is a symbol `c` of order `0`: then `q # p` is `ψ(x) c(x, ξ)` up to a
+  smoothing symbol.
 * `TauCeti.Symbol.IsEllipticOn.exists_isAsymptoticSum_sharpTerm_left`,
   `TauCeti.Symbol.IsEllipticOn.exists_isAsymptoticSum_sharpTerm_right`: **microlocal left and
   right parametrix symbols** of a symbol elliptic on a set `S`, for a target symbol of order `0`
@@ -542,6 +545,38 @@ section Parametrix
 
 variable [CompleteSpace V] [CompleteSpace W]
 
+/-- **The local parametrix modulo smoothing symbols, for a target symbol.** Let `b` be a symbol of
+order `-m` whose formal composition with the symbol `a` of order `m` is a symbol `c` of order `0`,
+`c ∼ ∑ₖ sharpTerm b a k`. Let `ψ` be a smooth function of the position, `q(x, ξ) = ψ(x) b(x, ξ)`,
+`e(x, ξ) = ψ(x) c(x, ξ)`, and `p` a symbol with compact spatial support which agrees with `a` at
+all positions near the support of `ψ`. Then the composition symbol `q # p` is `e` up to a
+smoothing symbol. -/
+theorem isSmoothing_sharp_sub_of_isAsymptoticSum {a : Symbol n V W m} {b : Symbol n W V (-m)}
+    {c : Symbol n V V 0}
+    (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) c) (b.sharpTerm a))
+    {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ) {q : Symbol n W V (-m)}
+    (hq : ∀ x ξ, q.coefficient (x, ξ) = ψ x • b.coefficient (x, ξ)) {p : Symbol n V W m}
+    (hp : p.HasCompactSpatialSupport)
+    (hpa : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, p.coefficient (x, ξ) = a.coefficient (x, ξ))
+    {e : Symbol n V V 0} (he : ∀ x ξ, e.coefficient (x, ξ) = ψ x • c.coefficient (x, ξ)) :
+    (q.sharp p hp - inclusion (neg_add_cancel m).ge e).IsSmoothing := by
+  refine isSmoothing_iff.2 fun μ ↦ ?_
+  obtain ⟨N, hN⟩ := exists_nat_ge (-μ)
+  obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hab N
+  -- `q # p - e = (q # p - ∑_{k < N} sharpTerm q p k) - ψ (c - ∑_{k < N} sharpTerm b a k)`.
+  refine ⟨inclusion (m := -m + m - N) (by linarith) (q.sharpRemainder p hp N) -
+    inclusion (m := 0 + (-m + m - N)) (by linarith)
+      ((ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) (hψ.smul contDiff_const)).comp r),
+    ?_⟩
+  funext ⟨x, ξ⟩
+  have hr' := congrFun hr (x, ξ)
+  simp only [Pi.sub_apply, Finset.sum_apply, coefficient_inclusion] at hr'
+  simp only [coefficient_sub, coefficient_inclusion, coefficient_sharpRemainder, coefficient_comp,
+    coefficient_ofSpatial, Pi.sub_apply, Finset.sum_apply, he,
+    coefficient_sharpTerm_of_eq_smul_of_eventuallyEq hq hpa, ← hr',
+    ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp, smul_sub, Finset.smul_sum]
+  abel
+
 /-- **The local parametrix modulo smoothing symbols.** Let `b` be a left parametrix symbol of the
 symbol `a` of order `m`, `1 ∼ ∑ₖ sharpTerm b a k`. Let `ψ` be a smooth function of the position,
 `q(x, ξ) = ψ(x) b(x, ξ)`, and `p` a symbol with compact spatial support which agrees with `a` at
@@ -556,23 +591,8 @@ theorem isSmoothing_sharp_sub_ofSpatial {a : Symbol n V W m} {b : Symbol n W V (
     (hpa : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, p.coefficient (x, ξ) = a.coefficient (x, ξ)) :
     (q.sharp p hp - inclusion (neg_add_cancel m).ge
       (ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V)
-        (hψ.smul contDiff_const))).IsSmoothing := by
-  refine isSmoothing_iff.2 fun μ ↦ ?_
-  obtain ⟨N, hN⟩ := exists_nat_ge (-μ)
-  obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hab N
-  -- `q # p - ψ = (q # p - ∑_{k < N} sharpTerm q p k) - ψ (1 - ∑_{k < N} sharpTerm b a k)`.
-  refine ⟨inclusion (m := -m + m - N) (by linarith) (q.sharpRemainder p hp N) -
-    inclusion (m := 0 + (-m + m - N)) (by linarith)
-      ((ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) (hψ.smul contDiff_const)).comp r),
-    ?_⟩
-  funext ⟨x, ξ⟩
-  have hr' := congrFun hr (x, ξ)
-  simp only [Pi.sub_apply, Finset.sum_apply, coefficient_inclusion, coefficient_const] at hr'
-  simp only [coefficient_sub, coefficient_inclusion, coefficient_sharpRemainder, coefficient_comp,
-    coefficient_ofSpatial, Pi.sub_apply, Finset.sum_apply,
-    coefficient_sharpTerm_of_eq_smul_of_eventuallyEq hq hpa, ← hr',
-    ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp, smul_sub, Finset.smul_sum]
-  abel
+        (hψ.smul contDiff_const))).IsSmoothing :=
+  isSmoothing_sharp_sub_of_isAsymptoticSum hab hψ hq hp hpa fun x ξ ↦ by simp
 
 end Parametrix
 
