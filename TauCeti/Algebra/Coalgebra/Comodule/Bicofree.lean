@@ -79,10 +79,9 @@ theorem leftCoactRTensor_comp_bicofreeLift
 /-- Applying both counits to a bicofree lift recovers its prescribed map to the cogenerators. -/
 @[simp]
 theorem counit_comp_bicofreeLift (F : (C ⊗[R] M) ⊗[R] D →ₗ[R] N) :
-    leftCofreeCounit R C N ∘ₗ (TensorProduct.rid R (C ⊗[R] N)).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := D)).lTensor (C ⊗[R] N) ∘ₗ
+    leftCofreeCounit R C N ∘ₗ cofreeCounit R D (C ⊗[R] N) ∘ₗ
         (bicofreeLift F).toLinearMap = F := by
-  have h := Hom.rid_comp_lTensor_counit_comp_cofreeLift
+  have h := Hom.cofreeCounit_comp_cofreeLift
     (C := D) (F.lTensor C ∘ₗ leftCoactRTensor D (leftCofreeCoact R C M))
   rw [bicofreeLift, h]
   rw [← LinearMap.comp_assoc, LinearMap.lTensor_def,
@@ -96,23 +95,21 @@ theorem bicofreeLift_counit_comp
     (hf : leftCoactRTensor D (leftCofreeCoact R C N) ∘ₗ f.toLinearMap =
       f.toLinearMap.lTensor C ∘ₗ leftCoactRTensor D (leftCofreeCoact R C M)) :
     bicofreeLift (leftCofreeCounit R C N ∘ₗ
-      (TensorProduct.rid R (C ⊗[R] N)).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := D)).lTensor (C ⊗[R] N) ∘ₗ f.toLinearMap) = f := by
-  let π := (TensorProduct.rid R (C ⊗[R] N)).toLinearMap ∘ₗ
-    (Coalgebra.counit (R := R) (A := D)).lTensor (C ⊗[R] N)
+      cofreeCounit R D (C ⊗[R] N) ∘ₗ f.toLinearMap) = f := by
+  let π := cofreeCounit R D (C ⊗[R] N)
   have hπ : leftCofreeCoact R C N ∘ₗ (π ∘ₗ f.toLinearMap) =
       (π ∘ₗ f.toLinearMap).lTensor C ∘ₗ
         leftCoactRTensor D (leftCofreeCoact R C M) := by
     have hp := comp_rid_comp_lTensor_eq_lTensor_comp_leftCoactRTensor
       (leftCofreeCoact R C N) (Coalgebra.counit (R := R) (A := D))
     have hp' := congrArg (fun k ↦ k ∘ₗ f.toLinearMap) hp
-    simpa only [π, LinearMap.comp_assoc, hf, LinearMap.lTensor_comp] using hp'
+    simpa only [π, cofreeCounit_def, LinearMap.comp_assoc, hf, LinearMap.lTensor_comp] using hp'
   have h := eq_add_of_leftCofreeCoact_comp_eq
     (leftCoactRTensor D (leftCofreeCoact R C M)) LinearMap.id
     (K := 0) (by simpa only [zero_add, LinearMap.lTensor_def] using hπ)
   simp only [LinearMap.comp_zero, zero_add, ← LinearMap.lTensor_def] at h
   have h' := congrArg (Hom.cofreeLift (C := D)) h.symm
-  exact h'.trans (Hom.cofreeLift_rid_comp_lTensor_counit_comp f)
+  exact h'.trans (Hom.cofreeLift_cofreeCounit_comp f)
 
 /-- Two bicomodule maps into a cofree bicomodule agree if their two-counit components agree. -/
 theorem bicofree_ext
@@ -121,10 +118,8 @@ theorem bicofree_ext
       f.toLinearMap.lTensor C ∘ₗ leftCoactRTensor D (leftCofreeCoact R C M))
     (hg : leftCoactRTensor D (leftCofreeCoact R C N) ∘ₗ g.toLinearMap =
       g.toLinearMap.lTensor C ∘ₗ leftCoactRTensor D (leftCofreeCoact R C M))
-    (h : leftCofreeCounit R C N ∘ₗ (TensorProduct.rid R (C ⊗[R] N)).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := D)).lTensor (C ⊗[R] N) ∘ₗ f.toLinearMap =
-      leftCofreeCounit R C N ∘ₗ (TensorProduct.rid R (C ⊗[R] N)).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := D)).lTensor (C ⊗[R] N) ∘ₗ g.toLinearMap) : f = g := by
+    (h : leftCofreeCounit R C N ∘ₗ cofreeCounit R D (C ⊗[R] N) ∘ₗ f.toLinearMap =
+      leftCofreeCounit R C N ∘ₗ cofreeCounit R D (C ⊗[R] N) ∘ₗ g.toLinearMap) : f = g := by
   rw [← bicofreeLift_counit_comp f hf, h, bicofreeLift_counit_comp g hg]
 
 /-- A right-comodule map with a twisted left coaction is recovered from its two-counit
@@ -134,11 +129,9 @@ theorem Hom.eq_cofreeLift_of_leftCoact
     (hf : leftCoactRTensor D (leftCofreeCoact R C N) ∘ₗ f.toLinearMap =
       TensorProduct.map τ f.toLinearMap ∘ₗ leftCoactRTensor D (leftCofreeCoact R C M)) :
     f = Hom.cofreeLift (TensorProduct.map τ
-      (leftCofreeCounit R C N ∘ₗ (TensorProduct.rid R (C ⊗[R] N)).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := D)).lTensor (C ⊗[R] N) ∘ₗ f.toLinearMap) ∘ₗ
+      (leftCofreeCounit R C N ∘ₗ cofreeCounit R D (C ⊗[R] N) ∘ₗ f.toLinearMap) ∘ₗ
           leftCoactRTensor D (leftCofreeCoact R C M)) := by
-  let π := (TensorProduct.rid R (C ⊗[R] N)).toLinearMap ∘ₗ
-    (Coalgebra.counit (R := R) (A := D)).lTensor (C ⊗[R] N)
+  let π := cofreeCounit R D (C ⊗[R] N)
   have hπ : leftCofreeCoact R C N ∘ₗ (π ∘ₗ f.toLinearMap) =
       TensorProduct.map τ (π ∘ₗ f.toLinearMap) ∘ₗ
         leftCoactRTensor D (leftCofreeCoact R C M) := by
@@ -148,12 +141,12 @@ theorem Hom.eq_cofreeLift_of_leftCoact
     simp only [LinearMap.comp_assoc] at hp'
     rw [hf] at hp'
     simp only [← LinearMap.comp_assoc, LinearMap.lTensor_comp_map] at hp'
-    simpa only [π, LinearMap.comp_assoc] using hp'
+    simpa only [π, cofreeCounit_def, LinearMap.comp_assoc] using hp'
   have hz := eq_add_of_leftCofreeCoact_comp_eq
     (leftCoactRTensor D (leftCofreeCoact R C M)) τ (K := 0) (by simpa using hπ)
   have he := congrArg (Hom.cofreeLift (C := D)) hz
-  simpa only [LinearMap.comp_zero, zero_add, π, LinearMap.comp_assoc,
-    Hom.cofreeLift_rid_comp_lTensor_counit_comp] using he
+  have hl := Hom.cofreeLift_cofreeCounit_comp (C := D) f
+  simpa only [LinearMap.comp_zero, zero_add, π, LinearMap.comp_assoc, hl] using he
 
 /-- A right-comodule map with a possibly twisted left coaction vanishes if its two-counit
 component vanishes. This also detects commutators of differentials and bicomodule maps. -/
@@ -161,8 +154,7 @@ theorem Hom.eq_zero_of_bicofree_counit_eq_zero
     (f : Hom R D ((C ⊗[R] M) ⊗[R] D) ((C ⊗[R] N) ⊗[R] D)) (τ : C →ₗ[R] C)
     (hf : leftCoactRTensor D (leftCofreeCoact R C N) ∘ₗ f.toLinearMap =
       TensorProduct.map τ f.toLinearMap ∘ₗ leftCoactRTensor D (leftCofreeCoact R C M))
-    (h : leftCofreeCounit R C N ∘ₗ (TensorProduct.rid R (C ⊗[R] N)).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := D)).lTensor (C ⊗[R] N) ∘ₗ f.toLinearMap = 0) : f = 0 := by
+    (h : leftCofreeCounit R C N ∘ₗ cofreeCounit R D (C ⊗[R] N) ∘ₗ f.toLinearMap = 0) : f = 0 := by
   rw [f.eq_cofreeLift_of_leftCoact τ hf, h, TensorProduct.map_zero_right,
     LinearMap.zero_comp]
   apply Hom.toLinearMap_injective

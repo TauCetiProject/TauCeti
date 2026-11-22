@@ -31,6 +31,8 @@ of `g` and `h` on these degree bounds, in the explicit form consumed by Hensel's
 ## Main results
 
 * `Polynomial.mem_degreeLT_natDegree_iff`: membership in `R[X]_(g.natDegree)` is `degree < degree`.
+* `Polynomial.mem_degreeLT_succ_iff_natDegree_le`: membership in `R[X]_(n + 1)` is
+  `natDegree ≤ n`.
 * `Polynomial.modByMonic_mem_degreeLT`, `Polynomial.divByMonic_mem_degreeLT`: where `%ₘ` and `/ₘ`
   land.
 * `Polynomial.Monic.modByMonic_mul_add`, `Polynomial.Monic.divByMonic_mul_add`: division with
@@ -43,9 +45,9 @@ of `g` and `h` on these degree bounds, in the explicit form consumed by Hensel's
   existence and uniqueness of degree-bounded solutions of `g * b + h * a = c`.
 
 Stated over an arbitrary commutative ring, with the trivial ring dispatched by `nontriviality`
-rather than excluded by hypothesis; `mem_degreeLT_natDegree_iff` needs only a semiring,
-`finrank_degreeLT` a semiring with the strong rank condition, and `Monic.sub_mem_degreeLT` and
-`divByMonic_mem_degreeLT` only a ring.
+rather than excluded by hypothesis; `mem_degreeLT_natDegree_iff` and
+`mem_degreeLT_succ_iff_natDegree_le` need only a semiring, `finrank_degreeLT` a semiring with the
+strong rank condition, and `Monic.sub_mem_degreeLT` and `divByMonic_mem_degreeLT` only a ring.
 
 ## Provenance
 
@@ -70,6 +72,11 @@ variable {R : Type*} [Semiring R] {g q : R[X]}
 theorem mem_degreeLT_natDegree_iff (hg : g ≠ 0) :
     q ∈ degreeLT R g.natDegree ↔ q.degree < g.degree := by
   rw [mem_degreeLT, degree_eq_natDegree hg]
+
+/-- Membership in `R[X]_(n + 1)` is the bound `natDegree ≤ n`. -/
+theorem mem_degreeLT_succ_iff_natDegree_le {n : ℕ} {p : R[X]} :
+    p ∈ degreeLT R (n + 1) ↔ p.natDegree ≤ n := by
+  rw [degreeLT_succ_eq_degreeLE, mem_degreeLE, natDegree_le_iff_degree_le]
 
 /-- A change of coefficients preserves the degree bound. -/
 theorem map_mem_degreeLT {S : Type*} [Semiring S] (φ : R →+* S) {n : ℕ} {f : R[X]}

@@ -121,7 +121,7 @@ theorem measure_exists_le_card_filter_lt_norm_wignerMatrix_zero_apply_le_ofReal_
       simp only [mem_ofPred_eq] at hω ⊢
       exact hω.le
     refine (measure_mono hsub).trans ?_
-    exact meas_ge_le_integral_norm_pow_div_pow 4 (hX.integrable_norm_pow (by decide))
+    exact meas_ge_le_integral_pow_div_pow 4 (hX.integrable_norm_pow (by decide))
       (.of_forall fun _ ↦ pow_nonneg (norm_nonneg _) _) hr
   have hpow : N ^ (q + 1) * (C / (N ^ a) ^ 4) ^ q =
       C ^ q * N ^ ((q : ℝ) + 1 - a * (4 * q)) := by
