@@ -123,7 +123,8 @@ private theorem energyFormH1_eq_setIntegral_inner_smul_single
       (W1p.value (D j)) (EuclideanSpace.basisFun (Fin (n + 1)) ℝ j) := by
     simpa only [EuclideanSpace.basisFun_apply] using hD
   -- Move `∂ₖ` from `∂ₖu` onto the test function; the coefficients are constant.
-  rw [energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn hA (hD k) φ,
+  rw [energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn
+      (fun i j => (hA i j).of_le (by simp)) (hD k) φ,
     energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn hA hD']
   simp only [fderiv_fun_const, Pi.zero_apply, zero_apply, zero_mul, zero_add,
     EuclideanSpace.basisFun_apply]
