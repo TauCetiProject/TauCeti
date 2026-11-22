@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Classification
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Smooth
 public import TauCeti.AlgebraicGeometry.GroupAction.Stabilizer
@@ -14,8 +13,9 @@ public import TauCeti.AlgebraicGeometry.GroupAction.Stabilizer
 # Stabilizer Hopf ideals of affine group actions
 
 Let `G = Spec H` be an affine group scheme over a commutative ring `R` acting on a scheme `X` over
-`Spec R`, and let `x : Spec R ⟶ X` be a section that is a closed immersion (for example, any
-rational point when `R` is a field).
+`Spec R`, and let `x : Spec R ⟶ X` be a section whose scheme-theoretic stabilizer inclusion
+`stabilizer G x ⟶ G` is a closed immersion (for example, any closed section `x`, or any rational
+point when `R` is a field).
 
 The scheme-theoretic stabilizer `stabilizer G x` is a closed subgroup scheme of `Spec H`, hence is
 cut out by a unique Hopf ideal `stabilizerHopfIdeal H x` of `H`. Over every commutative
@@ -77,11 +77,13 @@ theorem stabilizerInclGrpHom_hom_hom :
       stabilizer.incl ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) x :=
   (rfl)
 
-variable [IsClosedImmersion x.left]
+variable [hclosed : IsClosedImmersion
+  (stabilizer.incl ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) x).left]
 
-instance : IsClosedImmersion (stabilizerInclGrpHom H x).hom.hom.left :=
-  isClosedImmersion_orbitFiber_incl
-    ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) x x
+include hclosed in
+instance : IsClosedImmersion (stabilizerInclGrpHom H x).hom.hom.left := by
+  rw [stabilizerInclGrpHom_hom_hom]
+  exact hclosed
 
 /-- The scheme-theoretic stabilizer of `x` as a `ClosedSubgroupScheme` of `Spec H`. -/
 def stabilizerClosedSubgroup :
@@ -132,6 +134,22 @@ theorem quotientSpecStabilizerHopfIdealIso_inv_comp :
       stabilizerInclGrpHom H x := by
   rw [← quotientSpecStabilizerHopfIdealIso_hom_comp H x, Iso.inv_hom_id_assoc]
 
+private def quotientSpecStabilizerHopfIdealOverIso :
+    ((Spec (CommRingCat.of (H.quotient (stabilizerHopfIdeal H x)))).asOver
+        (Spec (CommRingCat.of R))) ≅
+      stabilizer ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) x :=
+  (Grp.forget (Over (Spec (CommRingCat.of R)))).mapIso (quotientSpecStabilizerHopfIdealIso H x)
+
+@[reassoc (attr := simp)]
+private theorem quotientSpecStabilizerHopfIdealOverIso_hom_incl :
+    (quotientSpecStabilizerHopfIdealOverIso H x).hom ≫
+        stabilizer.incl ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) x =
+      (TauCeti.CommHopfAlgCat.quotientSpecι H (stabilizerHopfIdeal H x)).hom.hom := by
+  have h := congrArg (fun f ↦ (Grp.forget (Over (Spec (CommRingCat.of R)))).map f)
+    (quotientSpecStabilizerHopfIdealIso_hom_comp H x)
+  rw [Functor.map_comp, Grp.forget_map, Grp.forget_map, stabilizerInclGrpHom_hom_hom] at h
+  exact h
+
 /-- **Points of the stabilizer Hopf ideal.** Over every commutative `R`-algebra `A`, an `A`-point
 of `Spec H` lies in the subgroup cut out by `stabilizerHopfIdeal H x` if and only if it stabilizes
 `x`. -/
@@ -142,62 +160,24 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff
         stabilizerPoints ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) x
           ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R))) := by
   set I := stabilizerHopfIdeal H x
-  let e := quotientSpecStabilizerHopfIdealIso H x
-  let eHom : (Spec (CommRingCat.of (_root_.CommHopfAlgCat.quotient H I))).asOver
-        (Spec (CommRingCat.of R)) ⟶
-      stabilizer ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) x :=
-    e.hom.hom.hom
-  let eInv : stabilizer ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) x ⟶
-      (Spec (CommRingCat.of (_root_.CommHopfAlgCat.quotient H I))).asOver
-        (Spec (CommRingCat.of R)) :=
-    e.inv.hom.hom
-  have heHom : eHom ≫
-      stabilizer.incl ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) x =
-      ((TauCeti.CommHopfAlgCat.quotientSpecι H I).hom.hom :
-        (Spec (CommRingCat.of (_root_.CommHopfAlgCat.quotient H I))).asOver
-          (Spec (CommRingCat.of R)) ⟶
-          (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) :=
-    Over.OverMorphism.ext <| congrArg (fun f ↦ f.hom.hom.left)
-      (quotientSpecStabilizerHopfIdealIso_hom_comp H x)
-  have heInv : eInv ≫
-      ((TauCeti.CommHopfAlgCat.quotientSpecι H I).hom.hom :
-        (Spec (CommRingCat.of (_root_.CommHopfAlgCat.quotient H I))).asOver
-          (Spec (CommRingCat.of R)) ⟶
-          (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) =
-      stabilizer.incl ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) x :=
-    Over.OverMorphism.ext <| congrArg (fun f ↦ f.hom.hom.left)
-      (quotientSpecStabilizerHopfIdealIso_inv_comp H x)
-  have hqMap (q : HopfAlgebra.points (R := R) (H := _root_.CommHopfAlgCat.quotient H I) A) :
-      Spec.mapMulEquiv (quotientPointsHom H I A q) =
-        Spec.mapMulEquiv q ≫ ((TauCeti.CommHopfAlgCat.quotientSpecι H I).hom.hom :
-          (Spec (CommRingCat.of (_root_.CommHopfAlgCat.quotient H I))).asOver
-            (Spec (CommRingCat.of R)) ⟶
-            (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) :=
-    mapMulEquiv_quotientPointsHom H I A q
+  let e := quotientSpecStabilizerHopfIdealOverIso H x
   rw [← stabilizer.exists_lift_iff, TauCeti.CommHopfAlgCat.quotientPointsSubgroup,
     MonoidHom.mem_range]
   constructor
-  · rintro ⟨q, rfl⟩
-    refine ⟨Spec.mapMulEquiv q ≫ eHom, ?_⟩
-    rw [Category.assoc]
-    exact (congrArg (Spec.mapMulEquiv q ≫ ·) heHom).trans (hqMap q).symm
+  · rintro ⟨q, hq⟩
+    refine ⟨Spec.mapMulEquiv q ≫ e.hom, ?_⟩
+    have hq' : TauCeti.CommHopfAlgCat.quotientPointsHom H I A q = g := hq
+    rw [← hq', Category.assoc, quotientSpecStabilizerHopfIdealOverIso_hom_incl]
+    exact (mapMulEquiv_quotientPointsHom H I A q).symm
   · rintro ⟨s, hs⟩
-    let q : HopfAlgebra.points (R := R) (H := _root_.CommHopfAlgCat.quotient H I) A :=
-      Spec.mapMulEquiv.symm (s ≫ eInv)
-    refine ⟨q, Spec.mapMulEquiv.injective ?_⟩
-    refine (hqMap q).trans ?_
-    have h1 : Spec.mapMulEquiv q ≫
-        ((TauCeti.CommHopfAlgCat.quotientSpecι H I).hom.hom :
-          (Spec (CommRingCat.of (_root_.CommHopfAlgCat.quotient H I))).asOver
-            (Spec (CommRingCat.of R)) ⟶
-            (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) =
-        (s ≫ eInv) ≫
-          ((TauCeti.CommHopfAlgCat.quotientSpecι H I).hom.hom :
-            (Spec (CommRingCat.of (_root_.CommHopfAlgCat.quotient H I))).asOver
-              (Spec (CommRingCat.of R)) ⟶
-              (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) :=
-      congrArg (· ≫ _) (MulEquiv.apply_symm_apply Spec.mapMulEquiv (s ≫ eInv))
-    exact h1.trans ((Category.assoc _ _ _).trans ((congrArg (s ≫ ·) heInv).trans hs))
+    refine ⟨Spec.mapMulEquiv.symm (s ≫ e.inv), Spec.mapMulEquiv.injective ?_⟩
+    rw [mapMulEquiv_quotientPointsHom, MulEquiv.apply_symm_apply]
+    have h1 : e.inv ≫ (quotientSpecι H I).hom.hom =
+        stabilizer.incl ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) x :=
+      (congrArg (e.inv ≫ ·) (quotientSpecStabilizerHopfIdealOverIso_hom_incl H x).symm).trans
+        (Iso.inv_hom_id_assoc e _)
+    exact (Category.assoc s e.inv (quotientSpecι H I).hom.hom).trans <|
+      (congrArg (s ≫ ·) h1).trans hs
 
 /-- Over every commutative `R`-algebra `A`, two `A`-points of `Spec H` lie in the same left coset
 of `stabilizerHopfIdeal H x` if and only if they have the same image under the orbit morphism. -/

@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Line
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Scheme
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Flat
-import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
 import TauCeti.Algebra.Category.CommAlgCat.PointsSheaf
 
 /-!
@@ -95,32 +94,19 @@ theorem SpecMap_toProjectiveOrbit_projectiveOrbitToSpec (m : M)
   ext x
   exact g.commutes x
 
-/-- Changing the value algebra of a group point along `χ` precomposes its orbit point with
-`Spec χ`. -/
-private theorem SpecMap_toProjectiveOrbit_naturality (m : M) (hm : Module.IsUnimodular k m)
-    {A B : Type u} [CommRing A] [CommRing B] [Algebra k A] [Algebra k B] (χ : A →ₐ[k] B)
-    (g : H →ₐ[k] A) :
-    Spec.map (CommRingCat.ofHom (χ.comp g).toRingHom) ≫ toProjectiveOrbit (H := H) m hm =
-      Spec.map (CommRingCat.ofHom χ.toRingHom) ≫
-        Spec.map (CommRingCat.ofHom g.toRingHom) ≫ toProjectiveOrbit (H := H) m hm := by
-  rw [← Category.assoc, ← Spec.map_comp]
-  rfl
+private noncomputable abbrev toProjectiveOrbitOver (m : M) (hm : Module.IsUnimodular k m) :
+    (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k)) ⟶
+      Over.mk (projectiveOrbitToSpec (H := H) m hm) :=
+  Over.homMk (toProjectiveOrbit (H := H) m hm)
+    (toProjectiveOrbit_projectiveOrbitToSpec m hm)
 
 /-- The orbit map on points: an `A`-valued group point `g` is sent to the point
 `Spec A ⟶ Spec H ⟶ X` of the projective orbit scheme. -/
 noncomputable def toProjectiveOrbitPoints (m : M) (hm : Module.IsUnimodular k m) :
     HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
-      (projectiveOrbitPointsSheaf (H := H) m hm).obj where
-  app A := ↾fun g ↦ ULift.up <| Over.homMk
-    (Spec.map (CommRingCat.ofHom g.down.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm)
-    (SpecMap_toProjectiveOrbit_projectiveOrbitToSpec m hm g.down.ofConv)
-  naturality A B χ := by
-    ext ⟨g⟩
-    have h := SpecMap_toProjectiveOrbit_naturality m hm χ.unop.unop.hom g.ofConv
-    rw [← WithConv.ofConv_toConv (χ.unop.unop.hom.comp g.ofConv),
-      ← HopfAlgebra.mapPoints_apply (H := H) χ.unop.unop g] at h
-    -- Both sides are `Spec` of the composite value-algebra map followed by the orbit map.
-    exact congrArg ULift.up (Over.OverMorphism.ext h)
+      (projectiveOrbitPointsSheaf (H := H) m hm).obj :=
+  CommHopfAlgCat.specPointsHomEquiv H (Over.mk (projectiveOrbitToSpec (H := H) m hm))
+    (toProjectiveOrbitOver (H := H) m hm)
 
 /-- The orbit point of `g` is `Spec g` followed by the orbit map. -/
 @[simp]
@@ -130,7 +116,9 @@ theorem toProjectiveOrbitPoints_app_apply (m : M) (hm : Module.IsUnimodular k m)
       ULift.up (Over.homMk
         (Spec.map (CommRingCat.ofHom g.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm)
         (SpecMap_toProjectiveOrbit_projectiveOrbitToSpec m hm g.ofConv)) :=
-  (rfl)
+  (CommHopfAlgCat.specPointsHomEquiv_apply_app_apply H _ A g).trans <|
+    congrArg ULift.up <| Over.OverMorphism.ext <|
+      congrArg (· ≫ toProjectiveOrbit (H := H) m hm) (TauCeti.CommHopfAlgCat.mapMulEquiv_left g)
 
 /-- Two algebra-valued group points have the same orbit point exactly when their matrix
 coefficients at `m` differ by one unit of the value algebra. -/
@@ -152,19 +140,8 @@ theorem toProjectiveOrbitPoints_app_eq_iff (m : M) (hm : Module.IsUnimodular k m
     CommHopfAlgCat.specPointsHomEquiv H (Over.mk (projectiveOrbitToSpec (H := H) m hm))
         (Over.homMk (toProjectiveOrbit (H := H) m hm)
           (toProjectiveOrbit_projectiveOrbitToSpec m hm)) =
-      toProjectiveOrbitPoints (H := H) m hm := by
-  ext A ⟨g⟩
-  exact (CommHopfAlgCat.specPointsHomEquiv_apply_app_apply H _ A g).trans <|
-    (congrArg ULift.up <| Over.OverMorphism.ext <|
-      congrArg (· ≫ toProjectiveOrbit (H := H) m hm)
-        (TauCeti.CommHopfAlgCat.mapMulEquiv_left g)).trans
-      (toProjectiveOrbitPoints_app_apply m hm A g).symm
-
-private noncomputable abbrev toProjectiveOrbitOver (m : M) (hm : Module.IsUnimodular k m) :
-    (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k)) ⟶
-      Over.mk (projectiveOrbitToSpec (H := H) m hm) :=
-  Over.homMk (toProjectiveOrbit (H := H) m hm)
-    (toProjectiveOrbit_projectiveOrbitToSpec m hm)
+      toProjectiveOrbitPoints (H := H) m hm :=
+  (rfl)
 
 private instance isLocallySurjective_pointsSheafFunctor_map_toProjectiveOrbit
     [_root_.IsReduced H] (m : M) (hm : Module.IsUnimodular k m) :
@@ -200,17 +177,18 @@ private theorem mapMulEquiv_comp_toProjectiveOrbit_eq_iff (m : M) (hm : Module.I
       ∃ c : Aˣ, ∀ φ : Module.Dual k M,
         h.ofConv (matrixCoefficient (C := H) φ m) =
           c * g.ofConv (matrixCoefficient (C := H) φ m) := by
-  have heq :
-      (Spec.mapMulEquiv g ≫ toProjectiveOrbitOver (H := H) m hm =
-        Spec.mapMulEquiv h ≫ toProjectiveOrbitOver (H := H) m hm) ↔
-      (Spec.map (CommRingCat.ofHom g.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm =
-        Spec.map (CommRingCat.ofHom h.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm) :=
-    Over.OverMorphism.ext_iff.trans <| by
-      simp only [Over.mk_left, Over.comp_left, TauCeti.CommHopfAlgCat.mapMulEquiv_left]
-      exact Iff.rfl
-  rw [heq, ← cancel_mono (projectiveOrbitι (H := H) m hm), Category.assoc, Category.assoc,
-    toProjectiveOrbit_projectiveOrbitι,
-    projectiveOrbitMap_SpecMap_eq_iff_exists_units_matrixCoefficient]
+  have hg : (toProjectiveOrbitPoints (H := H) m hm).app (op (op A)) (ULift.up g) =
+      ULift.up (Spec.mapMulEquiv g ≫ toProjectiveOrbitOver (H := H) m hm) :=
+    CommHopfAlgCat.specPointsHomEquiv_apply_app_apply H (toProjectiveOrbitOver (H := H) m hm)
+      (op (op A)) g
+  have hh : (toProjectiveOrbitPoints (H := H) m hm).app (op (op A)) (ULift.up h) =
+      ULift.up (Spec.mapMulEquiv h ≫ toProjectiveOrbitOver (H := H) m hm) :=
+    CommHopfAlgCat.specPointsHomEquiv_apply_app_apply H (toProjectiveOrbitOver (H := H) m hm)
+      (op (op A)) h
+  refine (ULift.up_inj (x := Spec.mapMulEquiv g ≫ toProjectiveOrbitOver (H := H) m hm)
+    (y := Spec.mapMulEquiv h ≫ toProjectiveOrbitOver (H := H) m hm)).symm.trans ?_
+  rw [← hg, ← hh]
+  exact toProjectiveOrbitPoints_app_eq_iff (H := H) m hm (op (op A)) g h
 
 variable (I : HopfIdeal k H) (m : M) (hm : Module.IsUnimodular k m)
   (hcoset : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),

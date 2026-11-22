@@ -88,8 +88,7 @@ theorem exists_projectiveOrbit_iso_of_orbit_eq_univ [_root_.IsReduced H] [IsRedu
       (e : Over.mk (Comodule.projectiveOrbitToSpec (H := H) m hm) ≅ X),
       Comodule.toProjectiveOrbit (H := H) m hm ≫ e.hom.left =
         (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left := by
-  have : CompactSpace X.left := Function.Surjective.compactSpace (orbitMap _ x).left.continuous
-    ((surjective_iff _).mp ((surjective_orbitMap_iff_orbit_eq_univ _ x).mpr h))
+  have : CompactSpace X.left := compactSpace_of_orbit_eq_univ _ x h
   obtain ⟨M, _, _, _, _, m, hm, e, he⟩ := exists_projectiveOrbit_iso_orbitOver H x
   refine ⟨M, inferInstance, inferInstance, inferInstance, inferInstance, m, hm,
     e ≪≫ orbitInclusionIso _ x h, ?_⟩

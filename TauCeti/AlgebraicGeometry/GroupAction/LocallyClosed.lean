@@ -205,11 +205,11 @@ private theorem isLocallyClosed_orbit_of_isAlgClosed [GrpObj G] [ModObj G X]
 nonclosed points) if and only if every rational point of `X` is a translate of `x` by a rational
 point of `G`. -/
 theorem orbit_eq_univ_iff_forall_exists_smul [MonObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
-    [CompactSpace G.left] [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
+    [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+    [QuasiCompact (orbitMap G x).left] :
     orbit G x = Set.univ ↔
       ∀ y : 𝟙_ (Over (Spec (.of k))) ⟶ X,
         ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, g • x = y := by
-  have : IsNoetherian G.left := { __ := LocallyOfFiniteType.isLocallyNoetherian G.hom }
   have : LocallyOfFiniteType ((orbitMap G x).left ≫ X.hom) := by
     rw [Over.w]; infer_instance
   rw [← surjective_orbitMap_iff_orbit_eq_univ, surjective_iff,
@@ -220,20 +220,16 @@ theorem orbit_eq_univ_iff_forall_exists_smul [MonObj G] [ModObj G X] [LocallyOfF
       rw [← Over.w (orbitMap G x), ← Category.assoc, hq]
       exact Over.w y)
     refine ⟨g, Over.OverMorphism.ext ?_⟩
-    have hcomp : g.left ≫ (orbitMap G x).left = (g • x).left :=
-      congrArg Over.Hom.left (comp_orbitMap G g x)
-    exact hcomp.symm.trans hq
+    exact (left_comp_orbitMap_left G x g).symm.trans hq
   · obtain ⟨g, hg⟩ := h (Over.homMk (U := 𝟙_ _) p hp)
     refine ⟨g.left, ?_⟩
-    have hcomp : g.left ≫ (orbitMap G x).left = (g • x).left :=
-      congrArg Over.Hom.left (comp_orbitMap G g x)
-    exact hcomp.trans (congrArg Over.Hom.left hg)
+    exact (left_comp_orbitMap_left G x g).trans (congrArg Over.Hom.left hg)
 
 /-- Over an algebraically closed field, the orbit morphism is surjective on all scheme points if
 and only if every rational point of `X` is a translate of `x` by a rational point of `G`. -/
 theorem surjective_orbitMap_iff_forall_exists_smul [MonObj G] [ModObj G X]
-    [LocallyOfFiniteType G.hom] [CompactSpace G.left] [LocallyOfFiniteType X.hom]
-    (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
+    [LocallyOfFiniteType G.hom] [LocallyOfFiniteType X.hom]
+    (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) [QuasiCompact (orbitMap G x).left] :
     Surjective (orbitMap G x).left ↔
       ∀ y : 𝟙_ (Over (Spec (.of k))) ⟶ X,
         ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, g • x = y :=
@@ -247,13 +243,12 @@ section Field
 if and only if it contains every closed point of `X`. -/
 theorem orbit_eq_univ_iff_closedPoints_subset {k : Type u} [Field k] (G : Over (Spec (.of k)))
     {X : Over (Spec (.of k))} [MonObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
-    [CompactSpace G.left] [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
+    [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+    [QuasiCompact (orbitMap G x).left] :
     orbit G x = Set.univ ↔ closedPoints X.left ⊆ orbit G x := by
   refine ⟨fun h ↦ h ▸ Set.subset_univ _, fun h ↦ Set.eq_univ_iff_forall.mpr fun p ↦ ?_⟩
-  by_contra hp
   have : IsLocallyNoetherian X.left := LocallyOfFiniteType.isLocallyNoetherian X.hom
   have : JacobsonSpace X.left := LocallyOfFiniteType.jacobsonSpace X.hom
-  have : IsNoetherian G.left := { __ := LocallyOfFiniteType.isLocallyNoetherian G.hom }
   have : LocallyOfFinitePresentation (orbitMap G x).left :=
     locallyOfFinitePresentation_orbitMap G x
   have hloc : IsLocallyConstructible (orbit G x) := by
@@ -261,11 +256,9 @@ theorem orbit_eq_univ_iff_closedPoints_subset {k : Type u} [Field k] (G : Over (
       IsLocallyConstructible.univ
   obtain ⟨V, hV, hpV, -⟩ :=
     exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top p)
-  have hdiff : IsConstructible ((V : Set X.left) \ (orbit G x ∩ V)) :=
-    (hV.isCompact.isConstructible V.isOpen).sdiff
-      (hloc.inter_of_isOpen_isCompact V.isOpen hV.isCompact)
-  obtain ⟨q, ⟨hqV, hqO⟩, hqc⟩ := hdiff.nonempty_inter_closedPoints ⟨p, hpV, fun hmem ↦ hp hmem.1⟩
-  exact hqO ⟨h hqc, hqV⟩
+  exact ((hV.isCompact.isConstructible V.isOpen).subset_iff_inter_closedPoints_subset
+    (hloc.inter_of_isOpen_isCompact V.isOpen hV.isCompact)).mpr
+      (fun q ⟨hqV, hqc⟩ ↦ ⟨⟨h hqc, hqV⟩, hqc⟩) hpV |>.1
 
 variable {k : Type u} [Field k] (G : Over (Spec (.of k))) {X : Over (Spec (.of k))}
   [GrpObj G] [ModObj G X] [LocallyOfFiniteType G.hom] [CompactSpace G.left]

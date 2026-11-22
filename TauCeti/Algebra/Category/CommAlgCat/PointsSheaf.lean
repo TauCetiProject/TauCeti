@@ -27,8 +27,7 @@ Specifically:
   sheaves (`TauCeti.CommAlgCat.isLocallySurjective_pointsSheafFunctor_map`).
 * Morphisms inducing fppf-locally surjective maps on affine points sheaves stay epimorphic after
   whiskering on the left (`TauCeti.CommAlgCat.epi_whiskerLeft_of_isLocallySurjective`).
-* Equivariance under an internal monoid-scheme action is detected on affine-valued points
-  (`TauCeti.CommAlgCat.isModHom_iff_pointsSheaf`) and descends along equivariant fppf-locally
+* Equivariance under an internal monoid-scheme action descends along equivariant fppf-locally
   surjective morphisms (`TauCeti.CommAlgCat.isModHom_of_isLocallySurjective_comp`,
   `TauCeti.CommAlgCat.isModHom_of_isLocallySurjective_mul_comp`).
 -/
@@ -100,21 +99,6 @@ theorem epi_whiskerLeft_of_isLocallySurjective (W : Over (Spec (CommRingCat.of R
     rfl
   have : Epi ((pointsSheafFunctor R).map (W ◁ p)) := by rw [heq]; infer_instance
   exact (pointsSheafFunctor R).epi_of_epi_map this
-
-/-- Equivariance of a scheme morphism over `Spec R` is detected on all affine-valued points. -/
-theorem isModHom_iff_pointsSheaf {G X Y : Over (Spec (CommRingCat.of R))}
-    [MonObj G] [ModObj G X] [ModObj G Y] (f : X ⟶ Y) :
-    IsModHom G f ↔
-      ∀ (A : CommAlgCat.{u} R) (g : (algSpec (CommRingCat.of R)).obj (op A) ⟶ G)
-        (x : (algSpec (CommRingCat.of R)).obj (op A) ⟶ X),
-        (g • x) ≫ f = g • (x ≫ f) := by
-  refine ⟨fun _ A g x ↦ IsModHom.map_smul f g x, fun h ↦ ⟨?_⟩⟩
-  apply hom_ext_pointsSheaf
-  intro A p
-  have hp : p = lift (p ≫ fst G X) (p ≫ snd G X) := by
-    apply CartesianMonoidalCategory.hom_ext <;> simp
-  rw [hp, ← Category.assoc, ← Hom.smul_def, h, Hom.smul_def, ← lift_whiskerLeft_assoc]
-  rfl
 
 /-- Equivariance descends along an equivariant morphism whose map on affine points sheaves is
 fppf locally surjective. -/

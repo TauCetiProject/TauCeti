@@ -14,8 +14,9 @@ public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Homogeneous
 # Orbit-map comparison for fppf homogeneous quotients
 
 Let `G = Spec H` be an affine algebraic group scheme over a commutative ring `R` acting on a
-scheme `X` over `Spec R`, and let `x : Spec R ⟶ X` be a section that is a closed immersion (for
-instance, any rational point when `R` is a field).
+scheme `X` over `Spec R`, and let `x : Spec R ⟶ X` be a section whose scheme-theoretic
+stabilizer inclusion `stabilizer G x ⟶ G` is a closed immersion (for example, any closed section,
+or any rational point when `R` is a field).
 
 The scheme-theoretic stabilizer `stabilizer G x` is cut out by `stabilizerHopfIdeal H x`, and the
 orbit morphism `orbitMap G x` descends to a morphism of fppf sheaves
@@ -74,7 +75,8 @@ variable {R : Type u} [CommRing R] (H : _root_.CommHopfAlgCat.{u} R)
   {X : Over (Spec (CommRingCat.of R))}
   [ModObj ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) X]
   (x : 𝟙_ (Over (Spec (CommRingCat.of R))) ⟶ X)
-  [IsClosedImmersion x.left]
+  [IsClosedImmersion
+    (stabilizer.incl ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) x).left]
 
 private theorem orbitMap_mul_invariant :
     ∀ (A : CommAlgCat.{u} R) (g : HopfAlgebra.points (R := R) (H := H) A)
@@ -270,8 +272,7 @@ theorem isIso_fppfHomogeneousQuotientToPointsSheaf
     [IsReduced X.left]
     (h : orbit ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x = Set.univ) :
     IsIso (fppfHomogeneousQuotientToPointsSheaf H x) := by
-  have : CompactSpace X.left := Function.Surjective.compactSpace (orbitMap _ x).left.continuous
-    ((surjective_iff _).mp ((surjective_orbitMap_iff_orbit_eq_univ _ x).mpr h))
+  have : CompactSpace X.left := compactSpace_of_orbit_eq_univ _ x h
   have hid : fppfHomogeneousQuotientToPointsSheaf H x =
       (fppfHomogeneousQuotientIsoOrbitPoints H x).hom ≫
         (TauCeti.CommAlgCat.pointsSheafFunctor k).map (orbitInclusionIso _ x h).hom := by
@@ -290,8 +291,11 @@ theorem isIso_fppfHomogeneousQuotientToPointsSheaf_of_forall_exists_smul
       ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶
           ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))),
         g • x = y) :
-    IsIso (fppfHomogeneousQuotientToPointsSheaf H x) :=
-  isIso_fppfHomogeneousQuotientToPointsSheaf H x
+    IsIso (fppfHomogeneousQuotientToPointsSheaf H x) := by
+  have : IsNoetherian ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).left :=
+    { __ := LocallyOfFiniteType.isLocallyNoetherian
+        ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom }
+  exact isIso_fppfHomogeneousQuotientToPointsSheaf H x
     ((orbit_eq_univ_iff_forall_exists_smul _ x).mpr htrans)
 
 /-- **Homogeneous orbit comparison for smooth targets.** When `X` is smooth over `Spec k` and

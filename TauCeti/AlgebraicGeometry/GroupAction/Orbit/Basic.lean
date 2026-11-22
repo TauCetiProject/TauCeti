@@ -140,6 +140,13 @@ theorem surjective_orbitMap_iff_orbit_eq_univ (x : 𝟙_ (Over S) ⟶ X) :
   ⟨fun ⟨h⟩ ↦ orbit_def G x ▸ Set.range_eq_univ.mpr h,
     fun h ↦ ⟨Set.range_eq_univ.mp (orbit_def G x ▸ h)⟩⟩
 
+/-- When a single orbit of a quasi-compact acting monoid scheme covers `X`, `X` is
+quasi-compact. -/
+theorem compactSpace_of_orbit_eq_univ [CompactSpace G.left] (x : 𝟙_ (Over S) ⟶ X)
+    (h : orbit G x = Set.univ) : CompactSpace X.left :=
+  Function.Surjective.compactSpace (orbitMap G x).left.continuous
+    ((surjective_iff _).mp ((surjective_orbitMap_iff_orbit_eq_univ G x).mpr h))
+
 /-- The orbit morphism is locally of finite type when `G` is locally of finite type over the
 base. -/
 theorem locallyOfFiniteType_orbitMap [LocallyOfFiniteType G.hom] (x : 𝟙_ (Over S) ⟶ X) :

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Basic
+import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
 import TauCeti.CategoryTheory.Comma.Over
 
 /-!
@@ -25,7 +26,6 @@ the same universe, which is reflected in the declaration in this file.
 
 ## Main declarations
 
-* `TauCeti.CommHopfAlgCat.hopfSpec_map_left`: the underlying scheme morphism of `hopfSpec.map f.op`.
 * `TauCeti.CommHopfAlgCat.isClosedImmersion_hopfSpec_map_iff`: the coordinate criterion for a
   morphism of Hopf spectra to be a closed immersion.
 * `TauCeti.CommHopfAlgCat.isClosedImmersion_hopfSpec_map_comp_eqToHom_iff`: the same criterion
@@ -47,14 +47,6 @@ universe u
 namespace CommHopfAlgCat
 
 open AlgebraicGeometry
-
-/-- The scheme morphism underlying the contravariant `hopfSpec` image of `f` is `Spec.map` of its
-underlying ring homomorphism. -/
-lemma hopfSpec_map_left {S : CommRingCat.{u}}
-    {A B : _root_.CommHopfAlgCat.{u} S} (f : A ⟶ B) :
-    ((AlgebraicGeometry.hopfSpec S).map f.op).hom.hom.left =
-      Spec.map (CommRingCat.ofHom f.hom.toAlgHom.toRingHom) :=
-  rfl
 
 /-- The scheme morphism underlying the contravariant `hopfSpec` image of `f` is a closed
 immersion if and only if the coordinate Hopf-algebra morphism `f` is surjective. -/

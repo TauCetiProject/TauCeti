@@ -190,8 +190,9 @@ private lemma kernelSpecι_underlying (f : H ⟶ K) :
         ((Grp.forget (Over (Spec (CommRingCat.of R)))).map (kernelSpecι f)) =
       Spec.map (CommRingCat.ofHom
         (mkQuotient K (kernelHopfIdeal f)).hom.toAlgHom.toRingHom) := by
-  rw [kernelSpecι_def, quotientSpecι_def]
-  exact hopfSpec_map_left _
+  rw [kernelSpecι_def, quotientSpecι_def,
+    ← hopfSpec_map_left (S := CommRingCat.of R) (mkQuotient K (kernelHopfIdeal f))]
+  rfl
 
 private lemma kernelSpec_to_trivial_underlying (f : H ⟶ K) :
     (Over.forget (Spec (CommRingCat.of R))).map
@@ -206,8 +207,8 @@ private lemma hopfSpec_map_underlying (f : H ⟶ K) :
         ((Grp.forget (Over (Spec (CommRingCat.of R)))).map
           ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map f.op)) =
       Spec.map (CommRingCat.ofHom f.hom.toAlgHom.toRingHom) := by
-  change ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map f.op).hom.hom.left = _
-  exact hopfSpec_map_left (S := CommRingCat.of R) f
+  rw [← hopfSpec_map_left (S := CommRingCat.of R) f]
+  rfl
 
 private lemma trivial_to_hopfSpec_underlying (H : _root_.CommHopfAlgCat.{u} R) :
     (Over.forget (Spec (CommRingCat.of R))).map

@@ -43,10 +43,9 @@ points is fppf locally surjective is surjective, because fppf covers are jointly
 * `TauCeti.CommAlgCat.fppfSheafEquiv`: equivalence between `A`-valued affine fppf sheaves and
   `A`-valued fppf sheaves on schemes over `Spec R`.
 * `TauCeti.CommAlgCat.pointsSheaf`: the fppf sheaf of points of a scheme over `Spec R`.
-* `TauCeti.CommAlgCat.pointsSheafFunctor`, `TauCeti.CommAlgCat.fullyFaithfulPointsSheafFunctor`,
-  and `TauCeti.CommAlgCat.hom_ext_pointsSheaf`: the functor of points to affine fppf sheaves is
-  fully faithful, so morphisms between schemes over `Spec R` are morphisms of sheaves of points
-  and are detected on all affine-valued points.
+* `TauCeti.CommAlgCat.pointsSheafFunctor` and `TauCeti.CommAlgCat.fullyFaithfulPointsSheafFunctor`:
+  the functor of points to affine fppf sheaves is fully faithful, so morphisms between schemes
+  over `Spec R` are morphisms of sheaves of points.
 * `TauCeti.CommAlgCat.surjective_of_isLocallySurjective_pointsSheafFunctor_map`: a morphism
   inducing a locally surjective map of fppf sheaves of points is surjective.
 * `TauCeti.CommAlgCat.generate_singleton_op_mem_fppfTopology`: a faithfully flat, finitely
@@ -368,17 +367,6 @@ noncomputable def fullyFaithfulPointsSheafFunctor : (pointsSheafFunctor R).Fully
 instance : (pointsSheafFunctor R).Full := (fullyFaithfulPointsSheafFunctor R).full
 
 instance : (pointsSheafFunctor R).Faithful := (fullyFaithfulPointsSheafFunctor R).faithful
-
-variable {R} in
-/-- Two morphisms of schemes over `Spec R` are equal if they induce the same map on all
-affine-valued points. -/
-theorem hom_ext_pointsSheaf {X Y : Over (Spec (CommRingCat.of R))} {f g : X ⟶ Y}
-    (h : ∀ (A : CommAlgCat.{u} R) (p : (algSpec (CommRingCat.of R)).obj (op A) ⟶ X),
-      p ≫ f = p ≫ g) :
-    f = g := by
-  apply (pointsSheafFunctor R).map_injective
-  ext A ⟨p⟩
-  exact congrArg ULift.up (h A.unop.unop p)
 
 variable {R} in
 /-- **Locally surjective maps of points come from surjective morphisms.** If a morphism of
