@@ -20,14 +20,16 @@ import TauCeti.MeasureTheory.Integral.Exp.Decay
 /-!
 # Separating-contour Mellin–Barnes functional and abscissa-independence
 
-Following DLMF §15.6(ii) (15.6.6), we define `Complex.mellinBarnesSeparatingIntegral` at `σ < 0`
-as the separating-contour Mellin–Barnes functional representing `Γ(a) Γ(b) 𝐅(a, b; c; z)` (and
-hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)`): the vertical-line integral
+Following DLMF §15.6(ii) (15.6.6), we define `Complex.mellinBarnesSeparatingIntegral` at `σ : ℝ`
+as the totalized separating-contour Mellin–Barnes functional: the vertical-line integral
 `(2πi)⁻¹ ∫_{Re t = σ} ... dt = (2π)⁻¹ ∫_{-∞}^∞ ... (σ + i y) dy` plus the residue sum over the
-finite pole set `Complex.mellinBarnesLeftPoles a b σ` of left-family poles `-a - k`, `-b - k` that
-have crossed to the right of `Re t = σ`. Using the uniform vertical-strip Stirling bound for `Γ`
-and `1 / Γ`, we prove exponential vertical decay on `-z ∈ Complex.slitPlane`, vertical
-integrability, and independence of the choice of pole-avoiding abscissa `σ < 0` via the rectangle
+finite pole set `Complex.mellinBarnesLeftPoles a b σ` of candidate left-family poles `-a - k`,
+`-b - k` that have crossed to the right of `Re t = σ`. Under the admissibility conditions `σ < 0`,
+`-z ∈ Complex.slitPlane`, `a, b ∉ -ℕ`, and `∀ k : ℕ, a.re + σ ≠ -k ∧ b.re + σ ≠ -k` (a vertical
+line passing through a pole is not a valid contour), it represents `Γ(a) Γ(b) 𝐅(a, b; c; z)` (and
+hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)`). Using the uniform vertical-strip Stirling bound for
+`Γ` and `1 / Γ`, we prove exponential vertical decay on `-z ∈ Complex.slitPlane`, vertical
+integrability, and independence of the choice of admissible abscissa `σ < 0` via the rectangle
 residue theorem.
 
 ## Main definitions and results
@@ -35,7 +37,8 @@ residue theorem.
 * `Complex.mellinBarnesIntegrand`, `Complex.mellinBarnesLeftPoles`,
   `Complex.mellinBarnesSeparatingIntegral`.
 * `Complex.residue_mellinBarnesIntegrand_neg_sub_natCast_left`,
-  `Complex.residue_mellinBarnesIntegrand_neg_sub_natCast_right`: closed-form simple-pole residues.
+  `Complex.residue_mellinBarnesIntegrand_neg_sub_natCast_right`: closed-form candidate-pole
+  residues (which vanish when `(Γ(c - a - k))⁻¹ = 0` or `(Γ(c - b - k))⁻¹ = 0` cancels the pole).
 * `Complex.exists_norm_mellinBarnesIntegrand_vertical_le`,
   `Complex.verticalIntegrable_mellinBarnesIntegrand`: vertical decay and integrability.
 * `Complex.mellinBarnesSeparatingIntegral_eq_of_lt_zero`: `σ`-independence for admissible
@@ -139,10 +142,13 @@ theorem abs_im_le_of_mem_mellinBarnesLeftPoles {a b : ℂ} {σ : ℝ} {s : ℂ}
     (hs : s ∈ mellinBarnesLeftPoles a b σ) : |s.im| ≤ max |a.im| |b.im| := by
   rcases (mem_mellinBarnesLeftPoles.1 hs).2 with ⟨k, rfl⟩ | ⟨k, rfl⟩ <;> simp
 
-/-- The separating-contour Mellin–Barnes functional at abscissa `σ`, representing
-`Γ(a) Γ(b) 𝐅(a, b; c; z)` (hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)`): the vertical-line
-integral `(2πi)⁻¹ ∫_{Re t = σ} ... dt = (2π)⁻¹ ∫_{-∞}^∞ ... (σ + i y) dy` plus the sum of
-residues at the left-family poles strictly to the right of `Re t = σ`. -/
+/-- The separating-contour Mellin–Barnes functional at abscissa `σ`: the vertical-line integral
+`(2πi)⁻¹ ∫_{Re t = σ} ... dt = (2π)⁻¹ ∫_{-∞}^∞ ... (σ + i y) dy` plus the sum of residues at the
+candidate left-family poles strictly to the right of `Re t = σ`. This definition is totalized
+across all `(a, b, c, z : ℂ)` and `σ : ℝ`; it represents `Γ(a) Γ(b) 𝐅(a, b; c; z)` (hence
+`(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)`) under the admissibility conditions `σ < 0`,
+`-z ∈ Complex.slitPlane`, `a, b ∉ -ℕ`, and `∀ k : ℕ, a.re + σ ≠ -k ∧ b.re + σ ≠ -k` (a vertical
+line passing through a pole is not a valid contour). -/
 def mellinBarnesSeparatingIntegral (a b c z : ℂ) (σ : ℝ) : ℂ :=
   (2 * π : ℂ)⁻¹ * (∫ y : ℝ, mellinBarnesIntegrand a b c z (σ + y * I)) +
     ∑ s ∈ mellinBarnesLeftPoles a b σ, TauCeti.Contour.residue (mellinBarnesIntegrand a b c z) s
@@ -161,8 +167,11 @@ theorem mellinBarnesSeparatingIntegral_symm (a b c z : ℂ) (σ : ℝ) :
     mellinBarnesLeftPoles_symm a b σ]
   simp_rw [funext (mellinBarnesIntegrand_symm a b c z)]
 
-/-- When `-Re a ≤ σ` and `-Re b ≤ σ`, the separating-contour functional reduces to the straight
-vertical-line integral along `Re t = σ`. -/
+/-- Algebraic reduction of `mellinBarnesSeparatingIntegral` when `-Re a ≤ σ` and `-Re b ≤ σ`:
+no left-family pole lies strictly to the right of `Re t = σ`, so the finite residue sum vanishes
+and the functional reduces to the vertical-line integral expression. This is an algebraic identity
+of totalized expressions and does not assert vertical integrability or convergence (in particular,
+equality at the boundary `-Re a = σ` or `-Re b = σ` holds only in the Bochner-junk sense). -/
 theorem mellinBarnesSeparatingIntegral_of_neg_re_le {a b : ℂ} (c z : ℂ) {σ : ℝ}
     (ha : -a.re ≤ σ) (hb : -b.re ≤ σ) :
     mellinBarnesSeparatingIntegral a b c z σ =
@@ -170,12 +179,13 @@ theorem mellinBarnesSeparatingIntegral_of_neg_re_le {a b : ℂ} (c z : ℂ) {σ 
   rw [mellinBarnesSeparatingIntegral_def, mellinBarnesLeftPoles_eq_empty_iff.2 ⟨ha, hb⟩,
     Finset.sum_empty, add_zero]
 
-/-! ### Section 2: Meromorphy, regular points, and simple-pole residues -/
+/-! ### Section 2: Meromorphy, regular points, and candidate-pole residues -/
 
 /-- The Barnes integrand `t ↦ mellinBarnesIntegrand a b c z t` is meromorphic at every point of
 the complex plane, for all parameters `a, b, c, z : ℂ`. -/
 theorem meromorphicAt_mellinBarnesIntegrand (a b c z t : ℂ) :
     MeromorphicAt (mellinBarnesIntegrand a b c z) t := by
+  rw [funext (mellinBarnesIntegrand_def a b c z)]
   refine (((((Meromorphic.Gamma (a + t)).comp_analyticAt
     (analyticAt_const.add analyticAt_id)).mul
     ((Meromorphic.Gamma (b + t)).comp_analyticAt (analyticAt_const.add analyticAt_id))).mul
@@ -188,6 +198,7 @@ theorem meromorphicAt_mellinBarnesIntegrand (a b c z t : ℂ) :
 theorem analyticAt_mellinBarnesIntegrand (a b c z : ℂ) {t : ℂ}
     (ha : ∀ k : ℕ, t ≠ -a - k) (hb : ∀ k : ℕ, t ≠ -b - k) (ht : ∀ m : ℕ, t ≠ m) :
     AnalyticAt ℂ (mellinBarnesIntegrand a b c z) t := by
+  rw [funext (mellinBarnesIntegrand_def a b c z)]
   refine (((((analyticAt_Gamma fun k h => ha k (by dsimp at h; linear_combination h)).comp
     (analyticAt_const.add analyticAt_id)).mul
     ((analyticAt_Gamma fun k h => hb k (by dsimp at h; linear_combination h)).comp
@@ -236,8 +247,10 @@ theorem analyticAt_mellinBarnesIntegrand_uncurry_vertical {p : ℂ × ℂ × ℂ
     (fun k h => hb k (by have hre := congrArg re h; simp at hre; linarith))
     (fun m h => hσ m (by have hre := congrArg re h; simp at hre; linarith)) hz
 
-/-- Simple-pole residue of `mellinBarnesIntegrand a b c z` at `t = -a - k` when `-a - k` avoids
-both `-b - ℕ` and `ℕ`. -/
+/-- Residue evaluation of `mellinBarnesIntegrand a b c z` at the candidate left-family pole
+`t = -a - k` when `-a - k` avoids both `-b - ℕ` and `ℕ`. Note that the reciprocal Gamma factor
+`(Γ(c - a - k))⁻¹` vanishes when `c - a - k ∈ -ℕ`, which cancels the pole of `Γ(a + t)` and makes
+the singularity removable (with residue `0`). -/
 theorem residue_mellinBarnesIntegrand_neg_sub_natCast_left (a b c z : ℂ) (k : ℕ)
     (hb : ∀ m : ℕ, b - a - k ≠ -m) (ha : ∀ m : ℕ, a + k ≠ -m) :
     TauCeti.Contour.residue (mellinBarnesIntegrand a b c z) (-a - k) =
@@ -279,8 +292,10 @@ theorem residue_mellinBarnesIntegrand_neg_sub_natCast_left (a b c z : ℂ) (k : 
   refine hmul.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with t _; simp only [mellinBarnesIntegrand_def]; ring
 
-/-- Simple-pole residue of `mellinBarnesIntegrand a b c z` at `t = -b - k` when `-b - k` avoids
-both `-a - ℕ` and `ℕ`. -/
+/-- Residue evaluation of `mellinBarnesIntegrand a b c z` at the candidate left-family pole
+`t = -b - k` when `-b - k` avoids both `-a - ℕ` and `ℕ`. Note that the reciprocal Gamma factor
+`(Γ(c - b - k))⁻¹` vanishes when `c - b - k ∈ -ℕ`, which cancels the pole of `Γ(b + t)` and makes
+the singularity removable (with residue `0`). -/
 theorem residue_mellinBarnesIntegrand_neg_sub_natCast_right (a b c z : ℂ) (k : ℕ)
     (ha : ∀ m : ℕ, a - b - k ≠ -m) (hb : ∀ m : ℕ, b + k ≠ -m) :
     TauCeti.Contour.residue (mellinBarnesIntegrand a b c z) (-b - k) =

@@ -208,19 +208,23 @@ private theorem tendstoUniformlyOn_truncated_vertical_mellinBarnes {p₀ : ℂ �
     aecover_Ioc (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
       tendsto_natCast_atTop_atTop
   -- Dominate the truncation tail `(-n, n)ᶜ` uniformly across the product box.
-  rw [Metric.tendstoUniformlyOn_iff]
-  intro ε hε
-  filter_upwards [(hcov.tendsto_setIntegral_compl_zero hdom).eventually (gt_mem_nhds hε),
-    eventually_ge_atTop (⌈Y₀⌉₊ + 1)] with n hn_ε hn_Y p hp
-  rw [dist_eq_norm]
-  have hint_p : Integrable
-      (fun y : ℝ => mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)) :=
-    verticalIntegrable_mellinBarnesIntegrand p.2.2.1 (hav₀ p.1 hp.1) (hav₁ p.2.1 hp.2.1)
-      hσ (hz_sub p.2.2.2 hp.2.2.2).1
-  rw [intervalIntegral.integral_of_le (by linarith [n.cast_nonneg (α := ℝ)]),
-    ← integral_add_compl (s := Ioc (-(n : ℝ)) n) measurableSet_Ioc hint_p, add_sub_cancel_left]
-  refine (norm_integral_le_integral_norm _).trans_lt ((integral_mono_ae
-    hint_p.norm.integrableOn hdom.integrableOn ?_).trans_lt hn_ε)
+  have heq :
+      (fun (n : ℕ) (p : ℂ × ℂ × ℂ × ℂ) =>
+        ∫ y : ℝ in (-(n : ℝ))..(n : ℝ),
+          mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)) =
+      fun (n : ℕ) (p : ℂ × ℂ × ℂ × ℂ) =>
+        ∫ y in Ioc (-(n : ℝ)) n,
+          mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I) := by
+    ext n p
+    exact intervalIntegral.integral_of_le (by linarith [n.cast_nonneg (α := ℝ)])
+  rw [heq]
+  refine hcov.tendstoUniformlyOn_setIntegral
+    (fun p hp => by
+      simpa only [VerticalIntegrable] using
+        verticalIntegrable_mellinBarnesIntegrand p.2.2.1 (hav₀ p.1 hp.1) (hav₁ p.2.1 hp.2.1)
+          hσ (hz_sub p.2.2.2 hp.2.2.2).1)
+    hdom ?_
+  filter_upwards [eventually_ge_atTop (⌈Y₀⌉₊ + 1)] with n hn_Y p hp
   filter_upwards [ae_restrict_mem measurableSet_Ioc.compl] with y hy
   have hyY : Y₀ ≤ |y| := by
     have hYN : Y₀ ≤ n := (Nat.le_ceil Y₀).trans
@@ -291,8 +295,8 @@ theorem analyticOnNhd_integral_mellinBarnesIntegrand {σ : ℝ} (hσ : ∀ m : �
 private theorem exists_isolating_radius_mellinBarnesLeftPoles {a₀ b₀ : ℂ} (σ : ℝ)
     (ha₀ : ∀ k : ℕ, a₀ ≠ -k) (hb₀ : ∀ k : ℕ, b₀ ≠ -k) :
     ∃ r : ℝ, 0 < r ∧
-      (∀ s ∈ mellinBarnesLeftPoles a₀ b₀ σ, σ + r < s.re) ∧
-      (∀ s ∈ mellinBarnesLeftPoles a₀ b₀ σ, ∀ m : ℕ, r < ‖s - m‖) ∧
+      (∀ s ∈ mellinBarnesLeftPoles a₀ b₀ σ,
+        closedBall s r ⊆ {t : ℂ | σ < t.re} \ range ((↑) : ℕ → ℂ)) ∧
       (∀ s₁ ∈ mellinBarnesLeftPoles a₀ b₀ σ, ∀ s₂ ∈ mellinBarnesLeftPoles a₀ b₀ σ,
         s₁ ≠ s₂ → 2 * r < dist s₁ s₂) := by
   set P₀ : Finset ℂ := mellinBarnesLeftPoles a₀ b₀ σ
@@ -304,16 +308,7 @@ private theorem exists_isolating_radius_mellinBarnesLeftPoles {a₀ b₀ : ℂ} 
     rcases (mem_mellinBarnesLeftPoles.1 hs).2 with ⟨k, rfl⟩ | ⟨k, rfl⟩
     · exact ha₀ (k + m) (by push_cast; linear_combination hm)
     · exact hb₀ (k + m) (by push_cast; linear_combination hm)
-  obtain ⟨r, hr, hsub, hsep⟩ := TauCeti.exists_pos_closedBall_subset_and_lt_dist (T := P₀) hU_mem
-  refine ⟨r, hr, fun s hs => ?_, fun s hs m => ?_, hsep⟩
-  · have hmem : s - (r : ℂ) ∈ U := hsub s hs (by simp [mem_closedBall, abs_of_pos hr])
-    have hre : σ < (s - (r : ℂ)).re := hmem.1
-    simp only [sub_re, ofReal_re] at hre
-    linarith
-  · by_contra! hle
-    have hmem : (m : ℂ) ∈ U :=
-      hsub s hs (by simpa [mem_closedBall, dist_eq_norm, norm_sub_rev] using hle)
-    exact hmem.2 ⟨m, rfl⟩
+  exact TauCeti.exists_pos_closedBall_subset_and_lt_dist (T := P₀) hU_mem
 
 private theorem mellinBarnesLeftPoles_cover {a₀ b₀ a b : ℂ} {σ r : ℝ}
     (ha₀_σ : ∀ k : ℕ, a₀.re + σ ≠ -k) (hb₀_σ : ∀ k : ℕ, b₀.re + σ ≠ -k)
@@ -336,8 +331,8 @@ private theorem mellinBarnesLeftPoles_cover {a₀ b₀ a b : ℂ} {σ r : ℝ}
 
 private theorem residueSum_eq_sum_circleIntegral_mellinBarnes {a₀ b₀ a b : ℂ} (c z : ℂ) {σ r : ℝ}
     (hr : 0 < r)
-    (hre : ∀ s ∈ mellinBarnesLeftPoles a₀ b₀ σ, σ + r < s.re)
-    (hnat : ∀ s ∈ mellinBarnesLeftPoles a₀ b₀ σ, ∀ m : ℕ, r < ‖s - m‖)
+    (hsub : ∀ s ∈ mellinBarnesLeftPoles a₀ b₀ σ,
+      closedBall s r ⊆ {t : ℂ | σ < t.re} \ range ((↑) : ℕ → ℂ))
     (hsep : ∀ s₁ ∈ mellinBarnesLeftPoles a₀ b₀ σ, ∀ s₂ ∈ mellinBarnesLeftPoles a₀ b₀ σ,
       s₁ ≠ s₂ → 2 * r < dist s₁ s₂)
     (ha₀_σ : ∀ k : ℕ, a₀.re + σ ≠ -k) (hb₀_σ : ∀ k : ℕ, b₀.re + σ ≠ -k)
@@ -368,18 +363,12 @@ private theorem residueSum_eq_sum_circleIntegral_mellinBarnes {a₀ b₀ a b : �
   -- applies.
   have hsupp : ∀ w ∈ closedBall s r,
       meromorphicOrderAt (mellinBarnesIntegrand a b c z) w < 0 → w ∈ F s := fun w hw hord => by
+    have hw_mem := hsub s hs hw
     have hpole : (∃ k : ℕ, w = -a - k) ∨ (∃ k : ℕ, w = -b - k) := by
       by_contra hno; push Not at hno
-      refine hord.not_ge (analyticAt_mellinBarnesIntegrand a b c z hno.1 hno.2
-        fun m hm => ?_).meromorphicOrderAt_nonneg
-      have h1 : ‖s - m‖ ≤ r := by
-        rw [← dist_eq_norm, dist_comm, ← hm]
-        exact mem_closedBall.1 hw
-      linarith [hnat s hs m]
-    have hw_re : σ < w.re := by
-      have h1 : |w.re - s.re| ≤ r := (abs_re_le_norm (w - s)).trans (mem_closedBall_iff_norm.1 hw)
-      linarith [(abs_le.1 h1).1, hre s hs]
-    have hwP : w ∈ P := mem_mellinBarnesLeftPoles.2 ⟨hw_re, hpole⟩
+      exact hord.not_ge (analyticAt_mellinBarnesIntegrand a b c z hno.1 hno.2
+        fun m hm => hw_mem.2 ⟨m, hm.symm⟩).meromorphicOrderAt_nonneg
+    have hwP : w ∈ P := mem_mellinBarnesLeftPoles.2 ⟨hw_mem.1, hpole⟩
     obtain ⟨s', hs', hws'⟩ := hcover w hwP
     have hs_eq : s' = s := by
       by_contra hne
@@ -393,8 +382,8 @@ private theorem residueSum_eq_sum_circleIntegral_mellinBarnes {a₀ b₀ a b : �
 
 private theorem analyticAt_circleIntegral_mellinBarnes_term {p₀ : ℂ × ℂ × ℂ × ℂ} {σ r : ℝ}
     (hr : 0 < r)
-    (hre : ∀ s ∈ mellinBarnesLeftPoles p₀.1 p₀.2.1 σ, σ + r < s.re)
-    (hnat : ∀ s ∈ mellinBarnesLeftPoles p₀.1 p₀.2.1 σ, ∀ m : ℕ, r < ‖s - m‖)
+    (hsub : ∀ s ∈ mellinBarnesLeftPoles p₀.1 p₀.2.1 σ,
+      closedBall s r ⊆ {t : ℂ | σ < t.re} \ range ((↑) : ℕ → ℂ))
     (hsep : ∀ s₁ ∈ mellinBarnesLeftPoles p₀.1 p₀.2.1 σ,
       ∀ s₂ ∈ mellinBarnesLeftPoles p₀.1 p₀.2.1 σ, s₁ ≠ s₂ → 2 * r < dist s₁ s₂)
     (hz₀ : -p₀.2.2.2 ∈ slitPlane)
@@ -407,23 +396,17 @@ private theorem analyticAt_circleIntegral_mellinBarnes_term {p₀ : ℂ × ℂ �
       mellinBarnesIntegrand q.1.1 q.1.2.1 q.1.2.2.1 q.1.2.2.2 q.2)
     fun ζ hζ => ?_)
   rw [abs_of_pos hr] at hζ
-  have hζ_re : σ < ζ.re := by
-    have h1 : |ζ.re - s.re| ≤ r := (abs_re_le_norm (ζ - s)).trans (mem_sphere_iff_norm.1 hζ).le
-    linarith [(abs_le.1 h1).1, hre s hs]
+  have hζ_mem := hsub s hs (sphere_subset_closedBall hζ)
   have hnot_P₀ : ζ ∉ mellinBarnesLeftPoles p₀.1 p₀.2.1 σ := fun hζP => by
     by_cases heq : ζ = s
     · subst heq; simp at hζ; linarith
     · linarith [mem_sphere.1 hζ, hsep ζ hζP s hs heq]
   exact analyticAt_mellinBarnesIntegrand_uncurry
     (fun k hk => hnot_P₀ (mem_mellinBarnesLeftPoles.2
-      ⟨hζ_re, Or.inl ⟨k, by linear_combination hk⟩⟩))
+      ⟨hζ_mem.1, Or.inl ⟨k, by linear_combination hk⟩⟩))
     (fun k hk => hnot_P₀ (mem_mellinBarnesLeftPoles.2
-      ⟨hζ_re, Or.inr ⟨k, by linear_combination hk⟩⟩))
-    (fun m hm => by
-      have h1 : ‖s - m‖ = r := by
-        rw [← dist_eq_norm, dist_comm, ← (by linear_combination -hm : ζ = m)]
-        exact mem_sphere.1 hζ
-      linarith [hnat s hs m]) hz₀
+      ⟨hζ_mem.1, Or.inr ⟨k, by linear_combination hk⟩⟩))
+    (fun m hm => hζ_mem.2 ⟨m, neg_inj.1 hm.symm⟩) hz₀
 
 private theorem analyticAt_residueSum_mellinBarnes {p₀ : ℂ × ℂ × ℂ × ℂ} {σ : ℝ}
     (ha₀ : ∀ k : ℕ, p₀.1 ≠ -k) (hb₀ : ∀ k : ℕ, p₀.2.1 ≠ -k)
@@ -432,7 +415,7 @@ private theorem analyticAt_residueSum_mellinBarnes {p₀ : ℂ × ℂ × ℂ × 
     AnalyticAt ℂ (fun p : ℂ × ℂ × ℂ × ℂ =>
       ∑ w ∈ mellinBarnesLeftPoles p.1 p.2.1 σ,
         TauCeti.Contour.residue (mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2) w) p₀ := by
-  obtain ⟨r, hr, hre, hnat, hsep⟩ := exists_isolating_radius_mellinBarnesLeftPoles σ ha₀ hb₀
+  obtain ⟨r, hr, hsub, hsep⟩ := exists_isolating_radius_mellinBarnesLeftPoles σ ha₀ hb₀
   obtain ⟨δ₀, hδ₀, hav₀⟩ := p₀.1.exists_ball_re_add_ne_neg_natCast_and_lt_iff ha₀_σ
   obtain ⟨δ₁, hδ₁, hav₁⟩ := p₀.2.1.exists_ball_re_add_ne_neg_natCast_and_lt_iff hb₀_σ
   let δ_ab : ℝ := min (r / 2) (min δ₀ δ₁)
@@ -441,9 +424,9 @@ private theorem analyticAt_residueSum_mellinBarnes {p₀ : ℂ × ℂ × ℂ × 
     (isOpen_ball.prod (isOpen_ball.prod isOpen_univ)).mem_nhds
       ⟨mem_ball_self hδ_ab, mem_ball_self hδ_ab, mem_univ _⟩
   refine (Finset.analyticAt_fun_sum (mellinBarnesLeftPoles p₀.1 p₀.2.1 σ) fun _ hs =>
-    analyticAt_circleIntegral_mellinBarnes_term hr hre hnat hsep hz₀ hs).congr ?_
+    analyticAt_circleIntegral_mellinBarnes_term hr hsub hsep hz₀ hs).congr ?_
   filter_upwards [hU_nhds] with p hp
-  exact (residueSum_eq_sum_circleIntegral_mellinBarnes p.2.2.1 p.2.2.2 hr hre hnat hsep ha₀_σ hb₀_σ
+  exact (residueSum_eq_sum_circleIntegral_mellinBarnes p.2.2.1 p.2.2.2 hr hsub hsep ha₀_σ hb₀_σ
     ((mem_ball_iff_norm.1 hp.1).trans_le (min_le_left _ _))
     ((mem_ball_iff_norm.1 hp.2.1).trans_le (min_le_left _ _))
     (fun k =>

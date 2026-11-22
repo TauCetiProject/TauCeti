@@ -51,6 +51,8 @@ not belong to any particular application.
   by the integral of a function dominating `‖f‖` almost everywhere on `(a, b)`.
 * `MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub`: for `f` integrable on `(a, b)`, the
   integral over a subinterval `(s, t)` is a difference of primitives based at any `c ∈ [a, b]`.
+* `MeasureTheory.setIntegral_Ioo_eq_intervalIntegral`: for `a ≤ b` and a null-singleton measure,
+  `∫ t in Ioo a b, f t ∂μ = ∫ t in a..b, f t ∂μ`.
 * `MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm`: an interval integral of an
   integrable function is bounded in norm by the integral of its norm over the whole space.
 * `MeasureTheory.setIntegral_Ioc_comp_add_left`: translating a set integral over `(a, b]` to one
@@ -433,6 +435,14 @@ theorem MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub {E : Type*} [NormedAdd
       (hf.intervalIntegrable_of_mem_Icc hc ⟨has.trans hst, htb⟩)
       (hf.intervalIntegrable_of_mem_Icc hc ⟨has, hst.trans htb⟩),
     intervalIntegral.integral_of_le hst, integral_Ioc_eq_integral_Ioo]
+
+/-- For ordered endpoints `a ≤ b` and a measure without mass at points, the set integral over
+`(a, b)` equals the interval integral `∫ t in a..b, f t ∂μ`. -/
+theorem MeasureTheory.setIntegral_Ioo_eq_intervalIntegral {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} [NullSingletonClass μ] {f : ℝ → E} {a b : ℝ}
+    (hab : a ≤ b) :
+    ∫ t in Ioo a b, f t ∂μ = ∫ t in a..b, f t ∂μ := by
+  rw [← integral_Ioc_eq_integral_Ioo, intervalIntegral.integral_of_le hab]
 
 /-- The norm of an interval integral of an integrable function is at most the integral of its
 norm over the whole space. -/

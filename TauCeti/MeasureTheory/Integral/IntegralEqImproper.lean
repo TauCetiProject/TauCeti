@@ -42,7 +42,9 @@ If nonnegative functions `f` and `g` satisfy `∫_{φ i} f ≤ ∫_{φ i} g + e 
 with errors `e i → 0`, and `g` is integrable, then `f` is integrable with `∫ f ≤ ∫ g`
 (`MeasureTheory.AECover.integrable_and_integral_le_of_setIntegral_le_add`). Along any countably
 generated exhaustion, the integral of a Bochner-integrable function over the complements `(φ i)ᶜ`
-tends to `0` (`MeasureTheory.AECover.tendsto_setIntegral_compl_zero`). For the truncations
+tends to `0` (`MeasureTheory.AECover.tendsto_setIntegral_compl_zero`), and a family of integrable
+functions uniformly dominated on `(φ i)ᶜ` by a common integrable function converges uniformly on
+`φ i` (`MeasureTheory.AECover.tendstoUniformlyOn_setIntegral`). For the truncations
 `[-n, n] × T` of a strip `ℝ × T` this is
 `TauCeti.integrableOn_univ_prod_and_setIntegral_le_of_setIntegral_Icc_prod_le_add`.
 
@@ -250,6 +252,23 @@ theorem tendsto_setIntegral_compl_zero {E : Type*} [NormedAddCommGroup E] [Norme
     rw [eq_sub_iff_add_eq', integral_add_compl (hφ.measurableSet i) hf]
   rw [hsub, ← sub_self (∫ x, f x ∂μ)]
   exact tendsto_const_nhds.sub (hφ.integral_tendsto_of_countably_generated hf)
+
+/-- Along a countably generated exhaustion `φ`, if `F p` is integrable for each `p ∈ s` and
+eventually along `l` all `F p` (`p ∈ s`) are dominated on `(φ i)ᶜ` by a common integrable
+function `dom`, then `p ↦ ∫ x in φ i, F p x ∂μ` converges uniformly on `s` to
+`p ↦ ∫ x, F p x ∂μ`. -/
+theorem tendstoUniformlyOn_setIntegral {β E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (hφ : AECover μ l φ) {F : β → α → E} {s : Set β} {dom : α → ℝ}
+    (hF : ∀ p ∈ s, Integrable (F p) μ) (hdom : Integrable dom μ)
+    (hle : ∀ᶠ i in l, ∀ p ∈ s, ∀ᵐ x ∂μ.restrict (φ i)ᶜ, ‖F p x‖ ≤ dom x) :
+    TendstoUniformlyOn (fun i p => ∫ x in φ i, F p x ∂μ) (fun p => ∫ x, F p x ∂μ) l s := by
+  rw [Metric.tendstoUniformlyOn_iff]
+  intro ε hε
+  filter_upwards [(hφ.tendsto_setIntegral_compl_zero hdom).eventually (gt_mem_nhds hε), hle]
+    with i hi_eps hi_le p hp
+  rw [dist_eq_norm, ← integral_add_compl (hφ.measurableSet i) (hF p hp), add_sub_cancel_left]
+  exact (norm_integral_le_integral_norm _).trans_lt
+    ((integral_mono_ae (hF p hp).norm.integrableOn hdom.integrableOn (hi_le p hp)).trans_lt hi_eps)
 
 end MeasureTheory.AECover
 
