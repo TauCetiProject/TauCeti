@@ -47,6 +47,8 @@ annuli, removable-singularity characterization, and term-by-term differentiation
 * `HasFPowerSeriesOnBall.hasLaurentSeriesOnAnnulus`: views a formal power series on
   `Metric.eball c R` as a Laurent series on `Metric.eball c R \ {c}` with vanishing negative
   coefficients.
+* `TauCeti.HasLaurentSeriesOnAnnulus.comp_mul`: pullback of a Laurent series centered at `0` by a
+  nonzero dilation `w ↦ q * w`.
 * `TauCeti.HasLaurentSeriesOnAnnulus.summable_norm_mul_zpow` and
   `TauCeti.HasLaurentSeriesOnAnnulus.tendstoUniformlyOn_closedAnnulus`: automatic absolute
   summability on interior circles and uniform convergence on closed concentric subannuli.
@@ -277,6 +279,37 @@ theorem const_smul {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r : ℝ} {R : ℝ�
   r_lt := hf.r_lt
   hasSum hw := by
     simpa only [smul_comm _ b] using (hf.hasSum hw).const_smul b
+
+/-- Pulling back a Laurent series centered at `0` by a nonzero dilation `w ↦ q * w` scales the
+inner and outer radii by `‖q‖⁻¹` and multiplies the `n`-th coefficient by `q ^ n`. -/
+theorem comp_mul {f : ℂ → E} {a : ℤ → E} {r : ℝ} {R : ℝ≥0∞}
+    (hf : HasLaurentSeriesOnAnnulus f a 0 r R) {q : ℂ} (hq : q ≠ 0) :
+    HasLaurentSeriesOnAnnulus (fun w => f (q * w)) (fun n => q ^ n • a n) 0
+      (r / ‖q‖) (R / ‖q‖₊) where
+  r_nonneg := div_nonneg hf.r_nonneg (norm_nonneg q)
+  r_lt := by
+    have hq_pos : (0 : ℝ≥0∞) < ‖q‖₊ := by simpa using nnNorm_pos.mpr hq
+    rw [ENNReal.ofReal_div_of_pos (norm_pos_iff.mpr hq), ← coe_nnNorm, ENNReal.ofReal_coe_nnreal]
+    exact ENNReal.div_lt_div_right hq_pos.ne' ENNReal.coe_ne_top hf.r_lt
+  hasSum {w} hw := by
+    have hq_pos : 0 < ‖q‖ := norm_pos_iff.mpr hq
+    have hqw : q * w ∈ eball 0 R \ closedBall 0 r := by
+      refine ⟨?_, ?_⟩
+      · have hw_lt : (‖w‖₊ : ℝ≥0∞) < R / ‖q‖₊ := by
+          simpa [mem_eball, edist_zero_right, eNorm_eq_nnNorm] using hw.1
+        have hmul : (‖w‖₊ : ℝ≥0∞) * ‖q‖₊ < R :=
+          (ENNReal.lt_div_iff_mul_lt (Or.inl (ENNReal.coe_ne_zero.mpr (nnNorm_ne_zero_iff.mpr hq)))
+            (Or.inl ENNReal.coe_ne_top)).mp hw_lt
+        rw [mul_comm] at hmul
+        simpa [mem_eball, edist_zero_right, eNorm_eq_nnNorm, nnNorm_mul] using hmul
+      · intro hmem
+        apply hw.2
+        have hle : ‖q‖ * ‖w‖ ≤ r := by
+          simpa [mem_closedBall, dist_zero_right, norm_mul] using hmem
+        simpa [mem_closedBall, dist_zero_right] using (le_div_iff₀' hq_pos).mpr hle
+    refine (hf.hasSum hqw).congr_fun fun n => ?_
+    simp only [sub_zero, smul_smul, mul_zpow]
+    rw [mul_comm (w ^ n)]
 
 /-- A Laurent monomial `(w - c) ^ m • v` has the single-term Laurent expansion supported at `m`. -/
 theorem sub_zpow_smul (v : E) (c : ℂ) (m : ℤ) {r : ℝ} {R : ℝ≥0∞}

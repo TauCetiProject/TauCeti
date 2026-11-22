@@ -18,7 +18,6 @@ import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import TauCeti.Analysis.Complex.Laurent.Expansion
 import TauCeti.Analysis.Complex.Periodic
-import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 
 /-!
@@ -156,32 +155,23 @@ private lemma differentiableOn_twistedCusp {α : ℝ} {s : ℂ → ℂ}
   exact (Function.Periodic.differentiableAt_cuspFunction one_ne_zero
     (periodic_twistedPeriodic h1) (hdiff _)).differentiableWithinAt
 
-private lemma thetaFourierCoeff_eq_circleLaurentCoeff {α : ℝ} {s : ℂ → ℂ}
-    (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) (m : ℤ) :
-    thetaFourierCoeff α s m = circleLaurentCoeff (twistedCusp α s) 0 1 m := by
-  rw [circleLaurentCoeff_def, circleIntegral_sub_zpow_sub_one_smul _ 0 one_ne_zero (-m),
-    smul_smul, smul_eq_mul]
-  have hcoef : (2 * π * I : ℂ)⁻¹ * I = ((2 * π)⁻¹ : ℝ) := by
-    have h2pi : (2 * π : ℂ) ≠ 0 := by exact_mod_cast Real.two_pi_pos.ne'
-    push_cast
-    field_simp [h2pi, I_ne_zero]
-  rw [hcoef, ← Complex.real_smul]
-  have hsub := intervalIntegral.integral_comp_mul_left
-    (fun θ : ℝ => circleMap 0 1 θ ^ (-m) • twistedCusp α s (circleMap 0 1 θ))
-    (a := (0 : ℝ)) (b := 1) Real.two_pi_pos.ne'
-  simp only [mul_zero, mul_one, smul_eq_mul] at hsub ⊢
-  rw [← hsub, thetaFourierCoeff_def]
+private lemma fourierCoeffOn_twistedPeriodic_eq_thetaFourierCoeff (α : ℝ) (s : ℂ → ℂ) (m : ℤ) :
+    fourierCoeffOn zero_lt_one (fun t : ℝ => cexp (-2 * π * I * α * t) * s t) m =
+      thetaFourierCoeff α s m := by
+  rw [fourierCoeffOn_eq_integral, thetaFourierCoeff_def]
+  simp only [sub_zero, div_one, one_smul]
   refine intervalIntegral.integral_congr fun t _ => ?_
-  have hcmap : circleMap 0 1 (2 * π * t) = Function.Periodic.qParam 1 (t : ℂ) := by
-    rw [circleMap, Periodic.qParam_one]
-    simp
-    congr 1
-    ring
-  rw [hcmap, twistedCusp_qParam h1, twistedPeriodic, Periodic.qParam_one_zpow, ← mul_assoc,
-    ← Complex.exp_add]
+  simp only [smul_eq_mul, fourier_coe_apply, ← mul_assoc, ← Complex.exp_add]
   congr 2
   push_cast
   ring
+
+private lemma thetaFourierCoeff_eq_circleLaurentCoeff {α : ℝ} {s : ℂ → ℂ}
+    (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) (m : ℤ) :
+    thetaFourierCoeff α s m = circleLaurentCoeff (twistedCusp α s) 0 1 m := by
+  rw [← fourierCoeffOn_twistedPeriodic_eq_thetaFourierCoeff α s m]
+  exact (circleLaurentCoeff_cuspFunction_eq_fourierCoeffOn zero_lt_one
+    (periodic_twistedPeriodic h1) m).symm
 
 private lemma hasLaurentSeriesOnAnnulus_twistedCusp {α : ℝ} {s : ℂ → ℂ}
     (hs : Differentiable ℂ s) (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) :
@@ -260,17 +250,6 @@ theorem tendsto_thetaFourierCoeff_zero (α : ℝ) (s : ℂ → ℂ) :
     ring
   · simp [Set.indicator_of_notMem ht]
 
-private lemma fourierCoeffOn_twistedPeriodic_eq_thetaFourierCoeff (α : ℝ) (s : ℂ → ℂ) (m : ℤ) :
-    fourierCoeffOn zero_lt_one (fun t : ℝ => cexp (-2 * π * I * α * t) * s t) m =
-      thetaFourierCoeff α s m := by
-  rw [fourierCoeffOn_eq_integral, thetaFourierCoeff_def]
-  simp only [sub_zero, div_one, one_smul]
-  refine intervalIntegral.integral_congr fun t _ => ?_
-  simp only [smul_eq_mul, fourier_coe_apply, ← mul_assoc, ← Complex.exp_add]
-  congr 2
-  push_cast
-  ring
-
 /-- An entire function whose twisted Fourier coefficients all vanish is identically zero. -/
 theorem eq_zero_of_thetaFourierCoeff_eq_zero {α : ℝ} {s : ℂ → ℂ} (hs : Differentiable ℂ s)
     (h0 : ∀ m : ℤ, thetaFourierCoeff α s m = 0) : s = 0 := by
@@ -333,13 +312,8 @@ private lemma thetaFourierCoeff_add_of_add_tau {k : ℤ} {τ : ℂ} {α β : ℝ
   have hL₁ : HasLaurentSeriesOnAnnulus
       (fun w => twistedCusp α s (Function.Periodic.qParam 1 τ * w))
       (fun n : ℤ => Function.Periodic.qParam 1 τ ^ n * thetaFourierCoeff α s n) 0 0 ⊤ := by
-    refine ⟨le_rfl, ENNReal.ofReal_lt_top, fun {w} hw => ?_⟩
-    have hw0 : w ≠ 0 := fun h => hw.2 (by simp [h])
-    have hqw : Function.Periodic.qParam 1 τ * w ∈ eball 0 ⊤ \ closedBall 0 0 :=
-      ⟨by simp, fun h => mul_ne_zero (Function.Periodic.qParam_ne_zero τ) hw0 (by simpa using h)⟩
-    refine (hL.hasSum hqw).congr_fun fun n => ?_
-    simp only [sub_zero, smul_eq_mul, mul_zpow]
-    ring
+    simpa [ENNReal.top_div_of_ne_top ENNReal.coe_ne_top] using
+      hL.comp_mul (Function.Periodic.qParam_ne_zero τ)
   have hm : Function.Periodic.qParam 1 τ ^ m * thetaFourierCoeff α s m =
       cexp (-2 * π * I * α * τ + 2 * π * I * β - π * I * k * τ) *
         thetaFourierCoeff α s (m + k) := by
@@ -515,6 +489,18 @@ theorem characteristicTheta_undef {k : ℕ} {τ : ℂ} (h : k = 0 ∨ τ.im ≤ 
     · simp
     · exact mul_nonpos_of_nonneg_of_nonpos (Nat.cast_nonneg k) hτ
   simp [characteristicTheta_def, jacobiTheta₂_undef _ him]
+
+/-- At level `k = 0`, `characteristicTheta` vanishes identically. -/
+@[simp]
+theorem characteristicTheta_zero (τ : ℂ) (α β : ℝ) (r : ℤ) (z : ℂ) :
+    characteristicTheta 0 τ α β r z = 0 :=
+  characteristicTheta_undef (Or.inl rfl) α β r z
+
+/-- When `τ.im ≤ 0`, `characteristicTheta` vanishes identically. -/
+@[simp]
+theorem characteristicTheta_of_im_nonpos (k : ℕ) {τ : ℂ} (hτ : τ.im ≤ 0) (α β : ℝ) (r : ℤ)
+    (z : ℂ) : characteristicTheta k τ α β r z = 0 :=
+  characteristicTheta_undef (Or.inr hτ) α β r z
 
 /-- First generator automorphy law for `characteristicTheta`. -/
 theorem characteristicTheta_add_one (k : ℕ) (τ : ℂ) (α β : ℝ) (r : ℤ) (z : ℂ) :

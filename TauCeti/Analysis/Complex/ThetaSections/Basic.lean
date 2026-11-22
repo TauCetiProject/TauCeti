@@ -49,9 +49,11 @@ yield `∂̄∂ log h = -πk / im τ`, the `d(conj z) ∧ dz` coefficient of the
   `TauCeti.conjWirtingerDeriv_wirtingerDeriv_log_thetaMetric`: descent of the Hermitian metric
   and its constant Chern curvature.
 * `TauCeti.add_int_add_int_mul_tau_eq_thetaFactor_mul`,
-  `TauCeti.add_int_add_int_mul_tau_of_mem_thetaSections`, `TauCeti.thetaSections_add_int`, and
-  `TauCeti.mul_mem_thetaSections`: full lattice automorphy, integer characteristic invariance,
-  and level-additive multiplication of theta sections.
+  `TauCeti.add_int_add_int_mul_tau_of_mem_thetaSections`,
+  `TauCeti.mem_thetaSections_iff_forall_add_int_add_int_mul_tau`,
+  `TauCeti.thetaSections_add_int`, and `TauCeti.mul_mem_thetaSections`: full lattice automorphy,
+  lattice-law membership equivalence, integer characteristic invariance, and level-additive
+  multiplication of theta sections.
 
 ## References
 
@@ -199,6 +201,17 @@ theorem thetaMetric_def (k : ℝ) (τ z : ℂ) :
 /-- The Hermitian metric weight `thetaMetric` is strictly positive everywhere. -/
 theorem thetaMetric_pos (k : ℝ) (τ z : ℂ) : 0 < thetaMetric k τ z :=
   Real.exp_pos _
+
+/-- At level zero, the Gaussian Hermitian metric weight `thetaMetric` reduces to `1`. -/
+@[simp]
+theorem thetaMetric_zero (τ z : ℂ) : thetaMetric 0 τ z = 1 := by
+  simp [thetaMetric_def]
+
+/-- Under `τ.im = 0`, the Gaussian Hermitian metric weight `thetaMetric` reduces to `1`. -/
+@[simp]
+theorem thetaMetric_of_im_eq_zero (k : ℝ) {τ : ℂ} (hτ : τ.im = 0) (z : ℂ) :
+    thetaMetric k τ z = 1 := by
+  simp [thetaMetric_def, hτ]
 
 /-- The Hermitian metric weight is invariant under real integer translations `z ↦ z + 1`. -/
 @[simp]
@@ -388,6 +401,18 @@ theorem add_int_add_int_mul_tau_of_mem_thetaSections {k : ℕ} {τ : ℂ} {α β
     s (z + m + n * τ) = thetaFactor k τ α β m n z * s z := by
   simpa using add_int_add_int_mul_tau_eq_thetaFactor_mul (k := (k : ℤ)) hs.2.1
     (by simpa using hs.2.2) m n z
+
+/-- Membership in `thetaSections` is equivalent to being entire and satisfying the full
+`ℤ²`-automorphy law with factor `thetaFactor`. -/
+theorem mem_thetaSections_iff_forall_add_int_add_int_mul_tau {k : ℕ} {τ : ℂ} {α β : ℝ}
+    {s : ℂ → ℂ} :
+    s ∈ thetaSections k τ α β ↔
+      Differentiable ℂ s ∧
+        ∀ m n : ℤ, ∀ z : ℂ, s (z + m + n * τ) = thetaFactor k τ α β m n z * s z := by
+  refine ⟨fun hs => ⟨hs.1, add_int_add_int_mul_tau_of_mem_thetaSections hs⟩, fun ⟨hs, h⟩ => ?_⟩
+  refine mem_thetaSections_iff.mpr ⟨hs, fun z => ?_, fun z => ?_⟩
+  · simpa [thetaFactor_one_zero] using h 1 0 z
+  · simpa [thetaFactor_zero_one] using h 0 1 z
 
 /-- Shifting the characteristics `(α, β)` by integers does not change the space of theta
 sections. -/
