@@ -20,11 +20,11 @@ structural subtleties:
 1. Adjoining a nonzero subduction remainder `r` of an element `aeval b P` normalizes `r` to
    `m.monicNormalize r = C (m.leadingCoeff r)⁻¹ * r` and records the scalar `m.leadingCoeff r`
    (and its inverse) in the presentation maps relating the old and enlarged generator families.
-2. Submonoids of `σ →₀ ℕ` do not satisfy the ascending chain condition, so strictly enlarging the
-   leading-term algebra at each step does not by itself force termination—even when the full
-   initial algebra is finitely generated, an unfair selection of relations could neglect a needed
-   generator forever, and without finite generation of the initial algebra completion may run
-   forever even on a finitely generated subalgebra.
+2. Submonoids of `σ →₀ ℕ` need not satisfy the ascending chain condition (it can fail even for
+   two variables), so strictly enlarging the leading-term algebra at each step does not by itself
+   force termination—even when the full initial algebra is finitely generated, an unfair selection
+   of relations could neglect a needed generator forever, and without finite generation of the
+   initial algebra completion may run forever even on a finitely generated subalgebra.
 
 This file develops the presentation maps of subduction-remainder adjunction, defines fair SAGBI
 completion sequences (`MonomialOrder.IsFairSAGBISequence`), proves that every fair completion
@@ -47,7 +47,8 @@ leading-exponent monoid.
   kernels across normalized remainder adjunction.
 * `MonomialOrder.IsFairSAGBISequence`: a monotone sequence of monic families generating the same
   subalgebra in which every stage's toric ideal has a binomial generating set whose members are
-  eventually subducted with nonzero normalized remainders adjoined.
+  all subducted at some stage `N ≥ n`, with only nonzero remainders required to appear (as
+  `m.monicNormalize r`) at or after that processing stage (`M ≥ N`).
 * `MonomialOrder.IsFairSAGBISequence.iSup_closure_degree_eq_leadingExponents` and
   `MonomialOrder.IsFairSAGBISequence.iSup_adjoin_leadingTerm_eq_initialAlgebra`: any fair
   completion sequence exhausts the leading exponents and initial algebra.
@@ -95,9 +96,11 @@ noncomputable def subductionRetract (P Q : κ → MvPolynomial ι k) (r : κ →
     MvPolynomial (ι ⊕ κ) k →ₐ[k] MvPolynomial ι k :=
   aeval (Sum.elim X fun l ↦ C (m.leadingCoeff (r l))⁻¹ * (P l - Q l))
 
-/-- The expression `rename Sum.inl (Q l) + C (m.leadingCoeff (r l)) * X (.inr l)` for
-`aeval b (P l)` in the enlarged family `Sum.elim b (m.monicNormalize ∘ r)`, retaining the leading
-coefficient of `r l` before normalization. -/
+/-- The expression `rename Sum.inl (Q l) + C (m.leadingCoeff (r l)) * X (.inr l)` in the enlarged
+family `Sum.elim b (m.monicNormalize ∘ r)`, retaining the leading coefficient of `r l` before
+normalization. When `(Q l, r l)` is a certified subduction pair for `aeval b (P l)`
+(`MonomialOrder.IsSubduction b (aeval b (P l)) (Q l) (r l)`), it evaluates back to `aeval b (P l)`
+(`MonomialOrder.aeval_sumElim_subductionLiftExpr`). -/
 noncomputable def subductionLiftExpr (Q : κ → MvPolynomial ι k) (r : κ → MvPolynomial σ k)
     (l : κ) : MvPolynomial (ι ⊕ κ) k :=
   rename Sum.inl (Q l) + C (m.leadingCoeff (r l)) * X (Sum.inr l)
@@ -159,17 +162,22 @@ theorem aeval_comp_subductionRetract
       Function.comp_apply]
     exact ((hs l).monicNormalize_eq_aeval rfl).symm
 
+private theorem adjoin_range_eq_of_aeval_comp_eq {R A B C : Type*} [CommSemiring R]
+    [CommSemiring C] [Algebra R C] {b : A → C} {c : B → C}
+    {φ : MvPolynomial B R →ₐ[R] MvPolynomial A R}
+    (hcomp : (aeval b).comp φ = aeval c) (hφ : Function.Surjective φ) :
+    Algebra.adjoin R (Set.range c) = Algebra.adjoin R (Set.range b) := by
+  rw [Algebra.adjoin_range_eq_range_aeval, Algebra.adjoin_range_eq_range_aeval, ← hcomp,
+    AlgHom.range_comp, (AlgHom.range_eq_top φ).2 hφ, Algebra.map_top]
+
 /-- Adjoining a family of normalized subduction remainders of elements of `k[b]` leaves the
 generated subalgebra unchanged. -/
 theorem adjoin_range_sumElim_monicNormalize
     (hs : ∀ l, m.IsSubduction b (aeval b (P l)) (Q l) (r l)) :
     Algebra.adjoin k (Set.range (Sum.elim b (m.monicNormalize ∘ r))) =
-      Algebra.adjoin k (Set.range b) := by
-  rw [Algebra.adjoin_range_eq_range_aeval, Algebra.adjoin_range_eq_range_aeval,
-    ← m.aeval_comp_subductionRetract hs]
-  exact SetLike.coe_injective (by
-    simp only [AlgHom.coe_range, AlgHom.coe_comp]
-    exact m.subductionRetract_surjective.range_comp _)
+      Algebra.adjoin k (Set.range b) :=
+  adjoin_range_eq_of_aeval_comp_eq (m.aeval_comp_subductionRetract hs)
+    m.subductionRetract_surjective
 
 /-- In the enlarged family `Sum.elim b (m.monicNormalize ∘ r)`, the scalar-retaining expression
 `m.subductionLiftExpr Q r l` evaluates back to `aeval b (P l)`. -/
@@ -179,6 +187,14 @@ theorem aeval_sumElim_subductionLiftExpr
   rw [subductionLiftExpr_def, map_add, map_mul, aeval_rename, Sum.elim_comp_inl, aeval_C,
     algebraMap_eq, aeval_X, Sum.elim_inr, Function.comp_apply, C_leadingCoeff_mul_monicNormalize,
     ← (hs l).eq_aeval_add]
+
+private theorem linearCombination_rename_eq_of_comp {α β R M : Type*}
+    [CommSemiring R] [AddCommMonoid M]
+    {τ : α → β} {a : α → M} {b : β → M} (hcomp : b ∘ τ = a)
+    {P : MvPolynomial α R} {w : β →₀ ℕ} (hw : w ∈ (rename τ P).support) :
+    ∃ u ∈ P.support, Finsupp.linearCombination ℕ b w = Finsupp.linearCombination ℕ a u := by
+  obtain ⟨u, rfl, hu⟩ := coeff_rename_ne_zero _ _ _ (mem_support_iff.1 hw)
+  exact ⟨u, mem_support_iff.2 hu, by rw [Finsupp.linearCombination_mapDomain, hcomp]⟩
 
 /-- Every exponent in the support of `m.subductionLiftExpr Q r l` has weight at most
 `m.degree (aeval b (P l))` with respect to `Sum.elim b (m.monicNormalize ∘ r)`. -/
@@ -190,9 +206,10 @@ theorem linearCombination_subductionLiftExpr_le
   classical
   rw [subductionLiftExpr_def] at hw
   rcases Finset.mem_union.1 (support_add hw) with hw | hw
-  · obtain ⟨u, rfl, hu0⟩ := coeff_rename_ne_zero _ _ _ (mem_support_iff.1 hw)
-    rw [Finsupp.linearCombination_mapDomain, Function.comp_assoc, Sum.elim_comp_inl]
-    exact (hs l).support_le u (mem_support_iff.2 hu0)
+  · obtain ⟨u, hu, heq⟩ := linearCombination_rename_eq_of_comp
+      (show (m.degree ∘ Sum.elim b (m.monicNormalize ∘ r)) ∘ Sum.inl = m.degree ∘ b from rfl) hw
+    rw [heq]
+    exact (hs l).support_le u hu
   · rw [X, C_mul_monomial, mul_one] at hw
     have hw' : w = Finsupp.single (Sum.inr l) 1 :=
       Finset.mem_singleton.1 (support_monomial_subset hw)
@@ -219,18 +236,11 @@ theorem ker_subductionRetract_eq_span_of_ne_zero (P Q : κ → MvPolynomial ι k
     rw [subductionLiftExpr_def, map_mul, rename_C, map_sub, neg_mul, mul_sub, ← mul_assoc, hinv,
       one_mul]
     ring
-  refine le_antisymm (Ideal.span_le.2 ?_) (Ideal.span_le.2 ?_)
-  · rintro _ ⟨l, rfl⟩
-    have hc : m.leadingCoeff (r l) ≠ 0 := m.leadingCoeff_ne_zero_iff.2 (hr l)
-    have hmem : rename Sum.inl (P l) - m.subductionLiftExpr Q r l ∈
-        Ideal.span (Set.range fun l ↦ rename Sum.inl (P l) - m.subductionLiftExpr Q r l) :=
-      Ideal.subset_span ⟨l, rfl⟩
-    have hmul := Ideal.mul_mem_left _ (-C (m.leadingCoeff (r l))⁻¹) hmem
-    rwa [hrel l, ← mul_assoc, neg_mul_neg, ← C_mul, inv_mul_cancel₀ hc, C_1, one_mul] at hmul
-  · rintro _ ⟨l, rfl⟩
-    dsimp only
-    rw [hrel l]
-    exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨l, rfl⟩)
+  rw [Ideal.span_range_eq_iSup, Ideal.span_range_eq_iSup]
+  refine iSup_congr fun l ↦ ?_
+  have hunit : IsUnit (-C (m.leadingCoeff (r l)) : MvPolynomial (ι ⊕ κ) k) :=
+    ((m.leadingCoeff_ne_zero_iff.2 (hr l)).isUnit.map C).neg
+  rw [hrel l, Ideal.span_singleton_mul_left_unit hunit]
 
 /-- The presentation kernel of the enlarged family `Sum.elim b (m.monicNormalize ∘ r)` is the sum
 of the renamed presentation kernel of `b` and the kernel of `m.subductionRetract P Q r`. -/
@@ -267,8 +277,9 @@ structure IsFairSAGBISequence (m : MonomialOrder σ)
   range_subset : ∀ n, Set.range (c n) ⊆ Set.range (c (n + 1))
   /-- Generators of stage `n + 1` belong to the subalgebra generated at stage `n`. -/
   subset_adjoin : ∀ n, Set.range (c (n + 1)) ⊆ Algebra.adjoin k (Set.range (c n))
-  /-- Every stage's toric ideal admits a binomial generating set whose members are all eventually
-  subducted, with any nonzero normalized remainders adjoined at a subsequent stage. -/
+  /-- Every stage's toric ideal admits a binomial generating set whose members are all subducted
+  at some stage `N ≥ n`, with only nonzero remainders required to appear (as `m.monicNormalize r`)
+  at or after that processing stage (`M ≥ N`). -/
   fair : ∀ n, ∃ S : Set ((ι n →₀ ℕ) × (ι n →₀ ℕ)),
     TauCeti.toricIdeal k (fun i ↦ m.degree (c n i)) =
       Ideal.span ((fun p : (ι n →₀ ℕ) × (ι n →₀ ℕ) ↦
@@ -322,17 +333,17 @@ private theorem exists_aeval_eq_support_lt_of_isSubduction (h : m.IsFairSAGBISeq
   rcases eq_or_ne r 0 with rfl | hr0
   · refine ⟨rename τ Q, ?_, fun w hw ↦ ?_⟩
     · rw [aeval_rename, ← hτ, hs.eq_aeval_add, add_zero]
-    · obtain ⟨u₀, rfl, hu₀⟩ := coeff_rename_ne_zero _ _ _ (mem_support_iff.1 hw)
-      rw [Finsupp.linearCombination_mapDomain, hdegτ]
-      exact (hs.support_le u₀ (mem_support_iff.2 hu₀)).trans_lt hflt
+    · obtain ⟨u₀, hu₀, heq⟩ := linearCombination_rename_eq_of_comp hdegτ hw
+      rw [heq]
+      exact (hs.support_le u₀ hu₀).trans_lt hflt
   · obtain ⟨i_r, hir⟩ := hr hr0
     refine ⟨rename τ Q + C (m.leadingCoeff r) * X i_r, ?_, fun w hw ↦ ?_⟩
     · rw [map_add, map_mul, aeval_rename, ← hτ, aeval_C, algebraMap_eq, aeval_X, hir,
         C_leadingCoeff_mul_monicNormalize, ← hs.eq_aeval_add]
     · rcases Finset.mem_union.1 (support_add hw) with hw | hw
-      · obtain ⟨u₀, rfl, hu₀⟩ := coeff_rename_ne_zero _ _ _ (mem_support_iff.1 hw)
-        rw [Finsupp.linearCombination_mapDomain, hdegτ]
-        exact (hs.support_le u₀ (mem_support_iff.2 hu₀)).trans_lt hflt
+      · obtain ⟨u₀, hu₀, heq⟩ := linearCombination_rename_eq_of_comp hdegτ hw
+        rw [heq]
+        exact (hs.support_le u₀ hu₀).trans_lt hflt
       · rw [X, C_mul_monomial, mul_one] at hw
         rw [Finset.mem_singleton.1 (support_monomial_subset hw), Finsupp.linearCombination_single,
           one_smul, hir, degree_monicNormalize]
@@ -378,9 +389,6 @@ private theorem exists_stage_aeval_eq_support_lt (h : m.IsFairSAGBISequence c)
   let aM := fun i ↦ m.degree (c M i)
   let g' := g.mapRange (rename τ₀) (map_zero _)
   have hcomp : aM ∘ τ₀ = a := funext fun i ↦ congrArg m.degree (congrFun hτ₀.symm i)
-  have hdegτ₀ (u : ι n →₀ ℕ) :
-      Finsupp.linearCombination ℕ aM (u.mapDomain τ₀) = Finsupp.linearCombination ℕ a u := by
-    rw [Finsupp.linearCombination_mapDomain, hcomp]
   refine ⟨M, hnM, rename τ₀ (P - weightedHomogeneousComponent a δ P) +
       g.sum (fun p q ↦ rename τ₀ q * Q'M p), ?_, fun w hw ↦ ?_⟩
   · have hsum : (aeval (c M)) (g.sum fun p q ↦ rename τ₀ q * Q'M p) =
@@ -401,23 +409,23 @@ private theorem exists_stage_aeval_eq_support_lt (h : m.IsFairSAGBISequence c)
     rw [hsub_eq, hsum_eq] at hw
     refine linearCombination_sub_weightedHomogeneousComponent_add_sum_lt aM
       (fun p ↦ Finsupp.linearCombination ℕ a p.val.1) ?_ ?_ ?_ hw
-    · intro w hwP
-      obtain ⟨u, rfl, hu⟩ := coeff_rename_ne_zero _ _ _ (mem_support_iff.1 hwP)
-      rw [hdegτ₀]
-      exact hPδ u (mem_support_iff.2 hu)
+    · intro _ hwP
+      obtain ⟨u, hu, heq⟩ := linearCombination_rename_eq_of_comp hcomp hwP
+      rw [heq]
+      exact hPδ u hu
     · intro p _ x hx
       rw [Finsupp.mapRange_apply] at hx
-      obtain ⟨u, rfl, hu⟩ := coeff_rename_ne_zero _ _ _ (mem_support_iff.1 hx)
-      rw [hdegτ₀]
-      exact hgA p u (mem_support_iff.2 hu)
+      obtain ⟨u, hu, heq⟩ := linearCombination_rename_eq_of_comp hcomp hx
+      rw [heq]
+      exact hgA p u hu
     · intro p hp y hy
       have hp' := Finsupp.support_mapRange hp
       simp only [Q'M, hp', ↓reduceDIte] at hy
-      obtain ⟨y₀, rfl, hy₀⟩ := coeff_rename_ne_zero _ _ _ (mem_support_iff.1 hy)
       have hcomp_p : aM ∘ Classical.choose (hτp p hp') = fun i ↦ m.degree (c (Mfn p) i) :=
         funext fun i ↦ congrArg m.degree (congrFun (Classical.choose_spec (hτp p hp')).symm i)
-      rw [Finsupp.linearCombination_mapDomain, hcomp_p]
-      exact hQfnlt p y₀ (mem_support_iff.2 hy₀)
+      obtain ⟨y₀, hy₀, heq⟩ := linearCombination_rename_eq_of_comp hcomp_p hy
+      rw [heq]
+      exact hQfnlt p y₀ hy₀
 
 /-- **Exhaustion of leading exponents.** In any fair SAGBI completion sequence, the leading
 exponent of every nonzero element of the generated subalgebra eventually lies in the additive
@@ -623,8 +631,11 @@ private noncomputable def batchStageSeq (m : MonomialOrder σ) (c₀ : ι₀ →
 /-- The finite index type of stage `n` of batch SAGBI completion starting from `c₀`: stage `0` is
 `ι₀`, and stage `n + 1` extends stage `n` by a sum with the subtype of elements in a chosen finite
 binomial generating set of `TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)` whose
-chosen subduction remainder with respect to stage `n` is nonzero. Intended for a monic family
-`c₀`. -/
+chosen remainder with respect to stage `n` is nonzero. If stage `n` contains a zero polynomial, the
+underlying choice falls back silently to `(0, 0)` and no new indices are adjoined; nonzero
+generators suffice for certified `MonomialOrder.IsSubduction` pairs
+(`MonomialOrder.exists_sagbiCompletion_succ`), whereas monicity of `c₀` is needed for fairness
+(`MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily`). -/
 noncomputable def sagbiCompletionIndex (m : MonomialOrder σ) (c₀ : ι₀ → MvPolynomial σ k)
     (n : ℕ) : Type u :=
   (m.batchStageSeq c₀ n).Idx
@@ -635,11 +646,14 @@ instance instFiniteSagbiCompletionIndex (m : MonomialOrder σ) (c₀ : ι₀ →
   (m.batchStageSeq c₀ n).instFinite
 
 /-- The generator family at stage `n` of batch SAGBI completion starting from `c₀`. Stage `0` is
-`c₀`; at stage `n + 1`, each binomial in a chosen finite binomial generating set of
-`TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)` is subducted with respect to
-stage `n`, and `m.monicNormalize` of every nonzero remainder is adjoined. Intended for a monic
-initial family `c₀` so that unscaled toric binomials cancel leading terms and yield a fair
-completion sequence (`MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily`). -/
+`c₀`; at stage `n + 1`, when all stage-`n` generators are nonzero, each binomial in a chosen finite
+binomial generating set of `TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)` is
+subducted with respect to stage `n` (`MonomialOrder.IsSubduction`) and `m.monicNormalize` of every
+nonzero remainder is adjoined. If stage `n` contains a zero generator, the internal choice falls
+back silently to `(0, 0)` and leaves the family unchanged. Nonzero generators suffice for certified
+subductions (`MonomialOrder.exists_sagbiCompletion_succ`), whereas monicity of `c₀` is required so
+that unscaled toric binomials cancel leading terms and yield a fair completion sequence
+(`MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily`). -/
 noncomputable def sagbiCompletionFamily (m : MonomialOrder σ) (c₀ : ι₀ → MvPolynomial σ k)
     (n : ℕ) : m.sagbiCompletionIndex c₀ n → MvPolynomial σ k :=
   (m.batchStageSeq c₀ n).family
@@ -647,9 +661,11 @@ noncomputable def sagbiCompletionFamily (m : MonomialOrder σ) (c₀ : ι₀ →
 /-- The surjective presentation retraction from stage `n` of batch SAGBI completion back to the
 initial polynomial ring `MvPolynomial ι₀ k`. Starting from `AlgHom.id` at stage `0`, each step
 composes with `MonomialOrder.subductionRetract` for the chosen finite binomial generating set of
-`TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)` and the nonzero subduction
-remainders adjoined at that step. Intended for a monic initial family `c₀`, for which
-`(aeval c₀).comp (m.sagbiCompletionRetract c₀ n) = aeval (m.sagbiCompletionFamily c₀ n)`
+`TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)` and the chosen subduction pairs
+for nonzero remainders (silently falling back to `(0, 0)` with no new variables if stage `n`
+contains a zero generator). Nonzero generators ensure certified `MonomialOrder.IsSubduction` pairs
+(`MonomialOrder.exists_sagbiCompletion_succ`), whereas monicity of `c₀` is required for fairness
+and for `(aeval c₀).comp (m.sagbiCompletionRetract c₀ n) = aeval (m.sagbiCompletionFamily c₀ n)`
 (`MonomialOrder.aeval_comp_sagbiCompletionRetract`). -/
 noncomputable def sagbiCompletionRetract (m : MonomialOrder σ) (c₀ : ι₀ → MvPolynomial σ k)
     (n : ℕ) : MvPolynomial (m.sagbiCompletionIndex c₀ n) k →ₐ[k] MvPolynomial ι₀ k :=
@@ -816,14 +832,10 @@ theorem isFairSAGBISequence_sagbiCompletionFamily (hc₀ : ∀ i, m.Monic (c₀ 
   range_subset n := fun _ ⟨i, hi⟩ ↦
     ⟨m.sagbiCompletionIndexInclusion c₀ n i, (m.sagbiCompletionFamily_succ_inclusion n i).trans hi⟩
   subset_adjoin n := by
-    obtain ⟨B, Q, r, e, -, hsub, -, hfam, -⟩ := m.exists_sagbiCompletion_succ c₀ n
-    have hs := fun l : {p : B // r p ≠ 0} ↦
-      hsub (fun i ↦ (m.monic_sagbiCompletionFamily hc₀ n i).ne_zero) l.val
-    have hadj : Algebra.adjoin k (Set.range (m.sagbiCompletionFamily c₀ (n + 1))) =
-        Algebra.adjoin k (Set.range (m.sagbiCompletionFamily c₀ n)) := by
-      rw [← e.surjective.range_comp, hfam]
-      exact m.adjoin_range_sumElim_monicNormalize hs
-    rw [← hadj]
+    rw [adjoin_range_eq_of_aeval_comp_eq (m.aeval_comp_sagbiCompletionRetract hc₀ n)
+        (m.sagbiCompletionRetract_surjective c₀ n),
+      ← adjoin_range_eq_of_aeval_comp_eq (m.aeval_comp_sagbiCompletionRetract hc₀ (n + 1))
+        (m.sagbiCompletionRetract_surjective c₀ (n + 1))]
     exact Algebra.subset_adjoin
   fair n := by
     obtain ⟨B, Q, r, e, hB, hsub, -, hfam, -⟩ := m.exists_sagbiCompletion_succ c₀ n

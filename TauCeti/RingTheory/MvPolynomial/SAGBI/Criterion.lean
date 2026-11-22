@@ -37,8 +37,10 @@ flat degeneration of `k[c]` to the semigroup algebra of its initial algebra.
 * `MonomialOrder.IsSAGBIBasis.exists_aeval_eq_aeval_sub`: if `c` is a SAGBI basis of `k[c]`, then
   every binomial `Y^u - Y^v` with `A u = A v` has a bounded zero subduction.
 * `MonomialOrder.linearCombination_sub_weightedHomogeneousComponent_add_sum_lt`: subtracting
-  the weight-`δ` component of `P` and adding combinations `g j * Q j` of weights `A x + e j = δ`
-  with `A y ≺ e j` strictly lowers the weight bound below `δ`.
+  the weight-`δ` component of `P` and adding combinations `∑ j, g j * Q j`, where every exponent
+  `x` in the support of `g j` satisfies `A x + e j = δ` and every exponent `y` in the support of
+  `Q j` satisfies `A y ≺ e j`, ensures that each product exponent has weight `A x + A y ≺ δ` and
+  strictly lowers the weight bound below `δ`.
 * `MonomialOrder.exists_finsupp_sum_mul_toricIdeal_eq_weightedHomogeneousComponent`: if all
   exponents `w` of `P` have `A w ≼ δ` and the coefficient of `X^δ` in `φ P` vanishes, then the
   weight-`δ` component of `P` is a combination `∑ j, g j * (Y^(u j) - Y^(v j))` with every
@@ -124,17 +126,20 @@ theorem linearCombination_sub_weightedHomogeneousComponent_add_sum_lt
     (hw : w ∈ (P - weightedHomogeneousComponent a δ P + g.sum fun j q ↦ q * Q j).support) :
     Finsupp.linearCombination ℕ a w ≺[m] δ := by
   classical
-  rcases Finset.mem_union.1 (support_add hw) with hw | hw
-  · rw [mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, coeff_weightedHomogeneousComponent,
-      Finsupp.weight_apply, ← Finsupp.linearCombination_apply] at hw
-    have hwδ : Finsupp.linearCombination ℕ a w ≠ δ := fun h ↦ hw (by simp [h])
-    have hwP : w ∈ P.support := mem_support_iff.2 fun h ↦ hw (by simp [h])
-    exact lt_of_le_of_ne (hPδ w hwP) fun h ↦ hwδ (m.toSyn.injective h)
-  · -- An exponent of `g j * Q j` is a sum `x + y` with `A x + e j = δ` and `A y ≺ e j`.
-    obtain ⟨j, hj, hwg⟩ := Finset.mem_biUnion.1 (support_sum hw)
-    obtain ⟨x, hx, y, hy, rfl⟩ := Finset.mem_add.1 (support_mul _ _ hwg)
-    rw [map_add, ← hg j hj x hx, map_add, map_add]
-    exact add_lt_add_right (hQ j hj y hy) _
+  have hsyn (u : ι →₀ ℕ) :
+      Finsupp.weight (m.toSyn ∘ a) u = m.toSyn (Finsupp.linearCombination ℕ a u) := by
+    simp [Finsupp.weight_apply, Finsupp.linearCombination_apply, map_finsuppSum]
+  have hwhc : weightedHomogeneousComponent a δ P =
+      weightedHomogeneousComponent (m.toSyn ∘ a) (m.toSyn δ) P := by
+    ext u
+    simp only [coeff_weightedHomogeneousComponent, hsyn, Finsupp.weight_apply,
+      Finsupp.linearCombination_apply, m.toSyn.injective.eq_iff]
+    congr 1
+  rw [hwhc] at hw
+  simpa [hsyn] using weight_sub_weightedHomogeneousComponent_add_sum_lt
+    (m.toSyn ∘ a) (m.toSyn ∘ e) (fun u hu ↦ by simpa [hsyn] using hPδ u hu)
+    (fun j hj x hx ↦ by simpa [hsyn, ← map_add] using congrArg m.toSyn (hg j hj x hx))
+    (fun j hj y hy ↦ by simpa [hsyn] using hQ j hj y hy) hw
 
 end Ring
 
