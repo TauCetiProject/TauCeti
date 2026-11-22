@@ -75,12 +75,12 @@ theorem hexGraph_adj_white (v : ℤ × ℤ) (g : TriFace) :
   · rintro ⟨⟨⟨a, b⟩, k⟩, h⟩
     obtain ⟨c, d⟩ := v
     obtain ⟨⟨x, y⟩, _ | _⟩ := g <;> fin_cases k <;>
-      simp [TriEdge.whiteFace, TriEdge.blackFace, TriFace.ext_iff, Prod.ext_iff] at h ⊢ <;>
+      simp [TriFace.ext_iff, Prod.ext_iff] at h ⊢ <;>
       omega
   · rintro (rfl | rfl | rfl)
-    · exact ⟨⟨v, 2⟩, Or.inl ⟨by simp [TriEdge.whiteFace], by simp [TriEdge.blackFace]⟩⟩
-    · exact ⟨⟨v, 0⟩, Or.inl ⟨by simp [TriEdge.whiteFace], by simp [TriEdge.blackFace]⟩⟩
-    · exact ⟨⟨v + (1, 0), 1⟩, Or.inl ⟨by simp [TriEdge.whiteFace], by simp [TriEdge.blackFace]⟩⟩
+    · exact ⟨⟨v, 2⟩, Or.inl ⟨by simp [TriFace.ext_iff], by simp [TriFace.ext_iff]⟩⟩
+    · exact ⟨⟨v, 0⟩, Or.inl ⟨by simp [TriFace.ext_iff], by simp [TriFace.ext_iff]⟩⟩
+    · exact ⟨⟨v + (1, 0), 1⟩, Or.inl ⟨by simp [TriFace.ext_iff], by simp [TriFace.ext_iff]⟩⟩
 
 /-- `B(v)` is adjacent exactly to `W(v)`, `W(v - e₁)` and `W(v + e₂)`, across the edges `(v, 3)`,
 `(v, 2)` and `(v + e₂, 1)`. -/
@@ -92,12 +92,12 @@ theorem hexGraph_adj_black (v : ℤ × ℤ) (g : TriFace) :
   · rintro ⟨⟨⟨a, b⟩, k⟩, h⟩
     obtain ⟨c, d⟩ := v
     obtain ⟨⟨x, y⟩, _ | _⟩ := g <;> fin_cases k <;>
-      simp [TriEdge.whiteFace, TriEdge.blackFace, TriFace.ext_iff, Prod.ext_iff] at h ⊢ <;>
+      simp [TriFace.ext_iff, Prod.ext_iff] at h ⊢ <;>
       omega
   · rintro (rfl | rfl | rfl)
-    · exact ⟨⟨v, 2⟩, Or.inr ⟨by simp [TriEdge.blackFace], by simp [TriEdge.whiteFace]⟩⟩
-    · exact ⟨⟨v, 1⟩, Or.inr ⟨by simp [TriEdge.blackFace], by simp [TriEdge.whiteFace]⟩⟩
-    · exact ⟨⟨v + (0, 1), 0⟩, Or.inr ⟨by simp [TriEdge.blackFace], by simp [TriEdge.whiteFace]⟩⟩
+    · exact ⟨⟨v, 2⟩, Or.inr ⟨by simp [TriFace.ext_iff], by simp [TriFace.ext_iff]⟩⟩
+    · exact ⟨⟨v, 1⟩, Or.inr ⟨by simp [TriFace.ext_iff], by simp [TriFace.ext_iff]⟩⟩
+    · exact ⟨⟨v + (0, 1), 0⟩, Or.inr ⟨by simp [TriFace.ext_iff], by simp [TriFace.ext_iff]⟩⟩
 
 /-- The three neighbours of a face in `hexGraph`. -/
 def TriFace.neighbors (f : TriFace) : Finset TriFace :=
@@ -183,17 +183,24 @@ def hexGraphTranslate (w : ℤ × ℤ) : hexGraph ≃g hexGraph where
     hexGraphTranslate w f = w +ᵥ f := (rfl)
 
 /-- The rotation `ρ` of order three, as a permutation of the faces. -/
-@[expose] def TriFace.rotateEquiv : TriFace ≃ TriFace where
+def TriFace.rotateEquiv : TriFace ≃ TriFace where
   toFun := rotate
   invFun f := f.rotate.rotate
   left_inv := rotate_rotate_rotate
   right_inv := rotate_rotate_rotate
 
+/-- The permutation `TriFace.rotateEquiv` is the rotation of faces. -/
+@[simp] theorem TriFace.rotateEquiv_apply (f : TriFace) : rotateEquiv f = f.rotate := (rfl)
+
+/-- The inverse of `TriFace.rotateEquiv` is the rotation applied twice. -/
+@[simp] theorem TriFace.rotateEquiv_symm_apply (f : TriFace) :
+    rotateEquiv.symm f = f.rotate.rotate := (rfl)
+
 /-- The rotation `ρ` is an automorphism of `hexGraph`. -/
 def hexGraphRotate : hexGraph ≃g hexGraph where
   toEquiv := TriFace.rotateEquiv
   map_rel_iff' {f g} := by
-    simp only [TriFace.rotateEquiv, Equiv.coe_fn_mk, hexGraph_adj, ne_eq,
+    simp only [TriFace.rotateEquiv_apply, hexGraph_adj, ne_eq,
       TriFace.rotate_injective.eq_iff]
     refine and_congr_right fun _ => ⟨fun ⟨e, h₁, h₂⟩ => ⟨e.rotate.rotate, ?_, ?_⟩,
       fun ⟨e, h₁, h₂⟩ => ⟨e.rotate, (TriFace.rotate_mem_edges_rotate e f).2 h₁,
@@ -206,7 +213,7 @@ def hexGraphRotate : hexGraph ≃g hexGraph where
 
 /-- The closed walk `W(u) – B(u) – W(u - e₁) – B(u - e₃) – W(u - e₃) – B(u - e₂) – W(u)` through
 the six faces at the vertex `u`, across the six edges at `u`. -/
-@[expose] def hexCycleAt (u : ℤ × ℤ) : hexGraph.Walk ⟨u, true⟩ ⟨u, true⟩ :=
+def hexCycleAt (u : ℤ × ℤ) : hexGraph.Walk ⟨u, true⟩ ⟨u, true⟩ :=
   have h₁ : hexGraph.Adj ⟨u, true⟩ ⟨u, false⟩ := (hexGraph_adj_white u _).2 (Or.inl rfl)
   have h₂ : hexGraph.Adj ⟨u, false⟩ ⟨u - (1, 0), true⟩ :=
     (hexGraph_adj_black u _).2 (Or.inr (Or.inl rfl))
@@ -226,7 +233,13 @@ theorem isCycle_hexCycleAt (u : ℤ × ℤ) : (hexCycleAt u).IsCycle := by
   simp [hexCycleAt, Walk.cons_isCycle_iff, Walk.isPath_def, TriFace.ext_iff, Prod.ext_iff,
     eq_sub_iff_add_eq]
 
+/-- The cycle at the vertex `u` passes through the six faces containing `u`. -/
+theorem support_hexCycleAt (u : ℤ × ℤ) :
+    (hexCycleAt u).support = [⟨u, true⟩, ⟨u, false⟩, ⟨u - (1, 0), true⟩, ⟨u - (1, 1), false⟩,
+      ⟨u - (1, 1), true⟩, ⟨u - (0, 1), false⟩, ⟨u, true⟩] :=
+  (rfl)
+
 /-- The cycle of faces at a vertex has length `6`. -/
-theorem length_hexCycleAt (u : ℤ × ℤ) : (hexCycleAt u).length = 6 := rfl
+theorem length_hexCycleAt (u : ℤ × ℤ) : (hexCycleAt u).length = 6 := (rfl)
 
 end TauCeti

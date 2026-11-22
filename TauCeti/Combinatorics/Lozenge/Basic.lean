@@ -133,11 +133,15 @@ instance instIsCancelVAddTriEdge : IsCancelVAdd (ℤ × ℤ) TriEdge where
 
 /-- The rotation `ρ` on edges: the image of the segment from `v` to `v + e_k` is the segment
 between `ρ v` and `ρ (v + e_k)`, which has direction `k + 1`. -/
-@[expose] def rotate (e : TriEdge) : TriEdge :=
+def rotate (e : TriEdge) : TriEdge :=
   ⟨latticeRotation e.v - ![0, (1, 1), (1, 0)] e.k, e.k + 1⟩
 
+/-- The initial vertex of the rotation of an edge. -/
+@[simp] theorem rotate_v (e : TriEdge) :
+    e.rotate.v = latticeRotation e.v - ![0, (1, 1), (1, 0)] e.k := (rfl)
+
 /-- `ρ` sends direction `k` to direction `k + 1`. -/
-@[simp] theorem rotate_k (e : TriEdge) : e.rotate.k = e.k + 1 := rfl
+@[simp] theorem rotate_k (e : TriEdge) : e.rotate.k = e.k + 1 := (rfl)
 
 /-- The rotation of an edge joins the rotations of its endpoints. -/
 theorem rotate_endpoints (e : TriEdge) :
@@ -211,11 +215,15 @@ instance instIsCancelVAddTriFace : IsCancelVAdd (ℤ × ℤ) TriFace where
   right_cancel' w w' f h := by simpa using congrArg TriFace.v h
 
 /-- The rotation `ρ` on faces: `W(v) ↦ W(ρ v - e₁)` and `B(v) ↦ B(ρ v - e₃)`. -/
-@[expose] def rotate (f : TriFace) : TriFace :=
+def rotate (f : TriFace) : TriFace :=
   ⟨latticeRotation f.v - if f.isWhite then (1, 0) else (1, 1), f.isWhite⟩
 
+/-- The base vertex of the rotation of a face. -/
+@[simp] theorem rotate_v (f : TriFace) :
+    f.rotate.v = latticeRotation f.v - if f.isWhite then (1, 0) else (1, 1) := (rfl)
+
 /-- The rotation preserves colours. -/
-@[simp] theorem rotate_isWhite (f : TriFace) : f.rotate.isWhite = f.isWhite := rfl
+@[simp] theorem rotate_isWhite (f : TriFace) : f.rotate.isWhite = f.isWhite := (rfl)
 
 /-- The rotation has order three on faces. -/
 @[simp] theorem rotate_rotate_rotate (f : TriFace) : f.rotate.rotate.rotate = f := by
@@ -254,17 +262,23 @@ namespace TriEdge
 
 /-- The white face containing an edge: `W(v)` for `(v, 1)`, `W(v - e₁)` for `(v, 2)` and `W(v)`
 for `(v, 3)`. -/
-@[expose] def whiteFace (e : TriEdge) : TriFace := ⟨e.v - ![0, (1, 0), 0] e.k, true⟩
+def whiteFace (e : TriEdge) : TriFace := ⟨e.v - ![0, (1, 0), 0] e.k, true⟩
 
 /-- The black face containing an edge: `B(v - e₂)` for `(v, 1)`, `B(v)` for `(v, 2)` and `B(v)`
 for `(v, 3)`. -/
-@[expose] def blackFace (e : TriEdge) : TriFace := ⟨e.v - ![(0, 1), 0, 0] e.k, false⟩
+def blackFace (e : TriEdge) : TriFace := ⟨e.v - ![(0, 1), 0, 0] e.k, false⟩
+
+/-- The base vertex of the white face of an edge. -/
+@[simp] theorem whiteFace_v (e : TriEdge) : e.whiteFace.v = e.v - ![0, (1, 0), 0] e.k := (rfl)
+
+/-- The base vertex of the black face of an edge. -/
+@[simp] theorem blackFace_v (e : TriEdge) : e.blackFace.v = e.v - ![(0, 1), 0, 0] e.k := (rfl)
 
 /-- The white face of an edge is white. -/
-@[simp] theorem whiteFace_isWhite (e : TriEdge) : e.whiteFace.isWhite = true := rfl
+@[simp] theorem whiteFace_isWhite (e : TriEdge) : e.whiteFace.isWhite = true := (rfl)
 
 /-- The black face of an edge is black. -/
-@[simp] theorem blackFace_isWhite (e : TriEdge) : e.blackFace.isWhite = false := rfl
+@[simp] theorem blackFace_isWhite (e : TriEdge) : e.blackFace.isWhite = false := (rfl)
 
 /-- The two faces containing an edge are distinct. -/
 theorem whiteFace_ne_blackFace (e : TriEdge) : e.whiteFace ≠ e.blackFace :=
@@ -329,11 +343,15 @@ theorem card_edges (f : TriFace) : f.edges.card = 3 := by
   obtain ⟨⟨a, b⟩, _ | _⟩ := f <;> simp [edges, TriEdge.ext_iff]
 
 /-- The edge of direction `k` of a face. -/
-@[expose] def edge (f : TriFace) (k : Fin 3) : TriEdge :=
+def edge (f : TriFace) (k : Fin 3) : TriEdge :=
   ⟨f.v + (if f.isWhite then ![0, (1, 0), 0] else ![(0, 1), 0, 0]) k, k⟩
 
+/-- The initial vertex of the edge of direction `k` of a face. -/
+@[simp] theorem edge_v (f : TriFace) (k : Fin 3) :
+    (f.edge k).v = f.v + (if f.isWhite then ![0, (1, 0), 0] else ![(0, 1), 0, 0]) k := (rfl)
+
 /-- The edge of direction `k` of a face has direction `k`. -/
-@[simp] theorem edge_k (f : TriFace) (k : Fin 3) : (f.edge k).k = k := rfl
+@[simp] theorem edge_k (f : TriFace) (k : Fin 3) : (f.edge k).k = k := (rfl)
 
 /-- The edges of a face are its edges of the three directions. -/
 theorem mem_edges_iff_eq_edge (f : TriFace) (e : TriEdge) : e ∈ f.edges ↔ e = f.edge e.k := by
