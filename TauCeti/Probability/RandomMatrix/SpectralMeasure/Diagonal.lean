@@ -9,12 +9,14 @@ public import TauCeti.Analysis.Matrix.SpectralMeasure.Diagonal
 public import TauCeti.Probability.StrongLaw
 
 /-!
-# Weak spectral limits under a random diagonal perturbation
+# Removing the diagonal of a random matrix
 
 Adding a real i.i.d. diagonal divided by a normalization tending to infinity preserves almost
 sure weak spectral limits of Hermitian matrix families. Pairwise independence of the diagonal
 coordinates suffices. No diagonal moment, centering, or independence from the matrix family is
 required. The full-measure event works for every limiting probability measure at once.
+The result concerns global spectral limits; individual extreme eigenvalues need not be stable
+under these perturbations.
 
 ## References
 
@@ -24,7 +26,7 @@ required. The full-measure event works for every limiting probability measure at
 
 public section
 
-open Filter MeasureTheory ProbabilityTheory Matrix
+open Filter MeasureTheory ProbabilityTheory Matrix Finset
 open scoped Topology
 
 namespace TauCeti.Probability

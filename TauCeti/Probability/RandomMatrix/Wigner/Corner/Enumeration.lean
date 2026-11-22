@@ -86,7 +86,7 @@ theorem strictUpperEquivNat_symm_apply_val_snd_lt_iff (k n : ℕ) :
 
 /-- The column-order enumeration restricted to strictly upper entries of a finite corner. -/
 def finStrictUpperEquiv (n : ℕ) : FinStrictUpper n ≃ Fin (n.choose 2) :=
-  ((finStrictUpperEquivSubtype n).trans (strictUpperEquivNat.subtypeEquiv fun ij ↦
+  ((wignerCornerUpperEquiv n).trans (strictUpperEquivNat.subtypeEquiv fun ij ↦
     (strictUpperEquivNat_lt_choose_iff ij n).symm)).trans Fin.equivSubtype.symm
 
 /-- The finite enumeration gives the same index as the infinite column enumeration. -/
@@ -94,7 +94,7 @@ def finStrictUpperEquiv (n : ℕ) : FinStrictUpper n ≃ Fin (n.choose 2) :=
 theorem finStrictUpperEquiv_apply_val (n : ℕ) (ij : FinStrictUpper n) :
     (finStrictUpperEquiv n ij).val = strictUpperEquivNat (wignerUpperIndex ij) := by
   simp only [finStrictUpperEquiv, Equiv.trans_apply, Fin.equivSubtype_symm_apply,
-    Equiv.subtypeEquiv_apply, finStrictUpperEquivSubtype_apply_val]
+    Equiv.subtypeEquiv_apply, coe_wignerCornerUpperEquiv_apply]
 
 /-- An index of the finite enumeration corresponds to the same strictly upper entry as in the
 infinite column enumeration. -/

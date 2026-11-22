@@ -92,8 +92,8 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
   have happrox : ∀ᵐ ω ∂P, Tendsto (fun n ↦ ‖Z n ω - B n ω‖) atTop (𝓝 0) := by
     simpa only [B, Z] using
       ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_centeredTruncation
-        (η := fun _ _ ↦ 0) (fun _ ↦
-          (hind.precomp Subtype.val_injective).wignerMatrix_row_apply_of_ne)
+        (η := fun _ _ ↦ 0)
+        (fun _ i ↦ iIndepFun_wignerMatrix_offDiag_row i (hind.precomp Subtype.val_injective))
         hid hξ hmean ha
   have hweak := ae_tendsto_spectralMeasure_wignerMatrix_zero_of_memLp hind
     (fun ij ↦ (hid ij).trans (hid e₀).symm)

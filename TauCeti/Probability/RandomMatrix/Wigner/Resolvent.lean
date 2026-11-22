@@ -7,10 +7,8 @@ module
 
 public import TauCeti.Probability.RandomMatrix.Wigner.Basic
 public import TauCeti.Probability.RandomMatrix.QuadraticForm
-public import TauCeti.Analysis.Matrix.Resolvent.SelfConsistency
-public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
+public import TauCeti.Analysis.Matrix.Resolvent.Semicircle
 import TauCeti.MeasureTheory.Measure.ResolventTransform.WeakConvergence
-import TauCeti.Analysis.Matrix.MeasurableSpace
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
@@ -32,7 +30,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Matrix Filter
-open scoped Topology NNReal ENNReal Matrix.Norms.L2Operator
+open scoped BigOperators Topology NNReal ENNReal Matrix.Norms.L2Operator
 
 namespace TauCeti.Probability
 
@@ -68,45 +66,30 @@ private theorem hasSubgaussianMGF_wignerMatrix_apply_of_ne {n : ℕ} {i j : Fin 
     simpa only [wignerMatrix_apply_of_gt _ _ _ h, ← Complex.ofReal_inv, mul_left_comm,
       Complex.re_ofReal_mul, hre, nnNorm_star] using hf.mono (hproxy (star u)).le
 
-private def wignerMinorResolvent {n : ℕ} (i : Fin (n + 1)) (z : ℂ) (ω : Ω) :
-    Matrix {j // j ≠ i} {j // j ≠ i} ℂ :=
-  ((wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).submatrix (↑) (↑) - z • 1)⁻¹
-
-private def wignerQuadraticError {n : ℕ} (i : Fin (n + 1)) (z : ℂ) (v : ℝ≥0) (ω : Ω) : ℂ :=
-  let a : {j // j ≠ i} → ℂ := fun j ↦ wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω j i
-  star a ⬝ᵥ wignerMinorResolvent (ξ := ξ) i z ω *ᵥ a -
-    ((v : ℂ) / ((n + 1 : ℕ) : ℂ)) * (wignerMinorResolvent (ξ := ξ) i z ω).trace
-
 include hξ in
 private theorem wignerQuadraticError_tail (hind : iIndepFun ξ P)
     (hv : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = v) {n : ℕ} (i : Fin (n + 1))
     {z : ℂ} (hz : 0 < z.im) (t : ℝ) :
-    P.real {ω | t < ‖wignerQuadraticError (ξ := ξ) i z v ω‖} ≤
+    P.real {ω | t < ‖(wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).minorQuadraticError i z v‖} ≤
       2 * Real.exp (-(1 / 150528) *
         min (t ^ 2 * z.im ^ 2 / (K : ℝ) ^ 2) (t * z.im / (K : ℝ)) * (n + 1)) := by
-  let a (j : {j // j ≠ i}) (ω : Ω) := wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω j i
-  let A (ω : Ω) : Matrix {j // j ≠ i} {j // j ≠ i} ℂ :=
-    (wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).submatrix (↑) (↑)
   have hm (ij : StrictUpper) := (integrable_of_hasSubgaussianMGF_re_star_mul (hξ ij)).aemeasurable
-  have hW := aemeasurable_wignerMatrix (n := n + 1) (η := fun _ _ ↦ 0) (fun ij _ ↦ hm ij)
-    (fun _ _ ↦ aemeasurable_const)
-  have hA : AEMeasurable A P := .of_eval fun j ↦ .of_eval fun k ↦
-    (Matrix.measurable_apply (i := j.val) (j := k.val)).comp_aemeasurable hW
-  have hi : IndepFun A (fun ω j ↦ a j ω) P :=
-    indepFun_submatrix_wignerMatrix_zero_column hind hm i
-  have hia : iIndepFun a P := iIndepFun_wignerMatrix_apply_of_ne Subtype.val (fun _ ↦ i)
-    Subtype.property (fun j k h ↦ Subtype.ext (((Sym2.eq_iff.mp h).resolve_right
-      fun he ↦ j.property he.1).1)) (hind.precomp Subtype.val_injective)
-  have ha (j : {j // j ≠ i}) : ∫ ω, ‖a j ω‖ ^ 2 ∂P = (v : ℝ) / (n + 1) := by
-    simp only [a, norm_wignerMatrix_apply_sq_of_ne _ _ _ j.property, integral_const_mul,
-      hv, Nat.cast_add, Nat.cast_one]
-    ring
+  have hind' : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n + 1} ↦ ξ ij.val) P :=
+    hind.precomp Subtype.val_injective
+  have hA : AEMeasurable (fun ω ↦ ((wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).submatrix (↑) (↑) :
+      Matrix {j // j ≠ i} {j // j ≠ i} ℂ)) P :=
+    (continuous_id.matrix_submatrix _ _).measurable.comp_aemeasurable
+      (aemeasurable_wignerMatrix (fun ij _ ↦ hm ij) (fun _ _ ↦ aemeasurable_const))
+  have hi := indepFun_submatrix_wignerMatrix_zero_column hind' (fun ij _ ↦ hm ij) i
+  have hia := iIndepFun_wignerMatrix_offDiag_column (η := fun _ _ ↦ 0) i hind'
+  have ha (j : {j // j ≠ i}) := integral_norm_wignerMatrix_apply_sq_of_ne
+    (η := fun _ _ ↦ 0) (fun ij _ ↦ hv ij) j.property
   have hcard : (Fintype.card {j // j ≠ i} : ℝ) ≤ n + 1 := by
-    have hc := Fintype.card_le_of_injective (Subtype.val : {j // j ≠ i} → Fin (n + 1))
-      Subtype.val_injective
-    exact_mod_cast hc.trans_eq (Fintype.card_fin (n + 1))
+    exact_mod_cast (Fintype.card_subtype_le (fun j : Fin (n + 1) ↦ j ≠ i)).trans_eq
+      (Fintype.card_fin (n + 1))
   have htail := hia.measureReal_norm_star_dotProduct_inv_sub_smul_one_mulVec_sub_smul_trace_gt_le
-    (fun j ↦ hasSubgaussianMGF_wignerMatrix_apply_of_ne hξ j.property) ha hA
+    (fun j ↦ hasSubgaussianMGF_wignerMatrix_apply_of_ne hξ j.property)
+    (fun j ↦ by simpa only [Nat.cast_succ, div_eq_inv_mul] using ha j) hA
     (.of_forall fun ω ↦ (wignerMatrix_isHermitian ξ _ ω _).submatrix _) hi z 1 hcard (t := t)
   simp only [Complex.ofReal_one, one_mul, one_pow, abs_one, abs_of_pos hz] at htail
   have hd : 0 < (n + 1 : ℝ) := by positivity
@@ -123,61 +106,28 @@ private theorem wignerQuadraticError_tail (hind : iIndepFun ξ P)
   simp only [NNReal.coe_div, NNReal.coe_add, NNReal.coe_natCast, NNReal.coe_one,
     ← mul_assoc] at htail
   rw [hr₁, hr₂, ← min_mul_of_nonneg _ _ hd.le, ← mul_assoc] at htail
-  simpa only [wignerQuadraticError, a, A, wignerMinorResolvent, Complex.ofReal_div,
-    Complex.ofReal_add, Complex.ofReal_natCast, Complex.ofReal_one, Nat.cast_add, Nat.cast_one]
+  simpa only [Matrix.minorQuadraticError_def, Matrix.minorResolvent_def, Fintype.card_fin,
+    Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_add, Complex.ofReal_one,
+    Complex.ofReal_natCast, Nat.cast_succ, div_eq_inv_mul]
     using htail
 
 omit [MeasurableSpace Ω] in
 private theorem norm_wignerTransform_sub_le {n : ℕ} {z : ℂ} (hz : 0 < z.im)
     (ω : Ω) (v : ℝ≥0) (t : ℝ)
-    (ht : ∀ i : Fin (n + 1), ‖wignerQuadraticError (ξ := ξ) i z v ω‖ ≤ t) :
+    (ht : ∀ i : Fin (n + 1),
+      ‖(wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).minorQuadraticError i z v‖ ≤ t) :
     let A := wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω
     let hA := wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1)
     ‖resolventTransform (A.spectralMeasure hA : Measure ℝ) z -
       resolventTransform (semicircleReal 0 v) z‖ ≤
       (t + 3 * (v : ℝ) / ((n + 1) * z.im)) / z.im ^ 2 := by
   intro A hA
-  let m := resolventTransform (A.spectralMeasure hA : Measure ℝ) z
-  let R := (A - z • 1)⁻¹
-  have hm : m = (((n + 1 : ℕ) : ℂ))⁻¹ * R.trace := by
-    simpa only [Fintype.card_fin] using
-      resolventTransform_spectralMeasure A hA (hA.notMem_spectrum_of_im_ne_zero hz.ne')
-  have hbound (i : Fin (n + 1)) :
-      ‖(v : ℂ) / ((n + 1 : ℕ) : ℂ) * (wignerMinorResolvent (ξ := ξ) i z ω).trace -
-        (v : ℂ) * m‖ ≤ 3 * (v : ℝ) / ((n + 1) * z.im) := by
-    rw [hm, div_eq_mul_inv, ← mul_assoc, ← mul_sub, norm_mul, norm_mul, norm_inv,
-      Complex.norm_natCast]
-    have h := hA.norm_trace_inv_sub_smul_one_sub_trace_submatrix_le i hz.ne'
-    rw [abs_of_pos hz, ← norm_sub_rev] at h
-    simp only [R, A, wignerMinorResolvent, Complex.norm_real, Real.norm_eq_abs,
-      abs_of_nonneg v.coe_nonneg, Nat.cast_add, Nat.cast_one]
-    calc
-      _ ≤ ((v : ℝ) * (n + 1 : ℝ)⁻¹) * (3 / z.im) := mul_le_mul_of_nonneg_left h (by positivity)
-      _ = _ := by simp only [div_eq_mul_inv, _root_.mul_inv_rev]; ring
-  have hentry (i : Fin (n + 1)) :
-      ‖(v : ℂ) * m - star (fun j : {j // j ≠ i} ↦ A j i) ⬝ᵥ
-        (wignerMinorResolvent (ξ := ξ) i z ω *ᵥ fun j : {j // j ≠ i} ↦ A j i)‖ ≤
-        t + 3 * (v : ℝ) / ((n + 1) * z.im) := by
-    rw [norm_sub_rev]
-    exact (norm_sub_le_norm_sub_add_norm_sub _ _ _).trans (add_le_add (ht i) (hbound i))
-  have hres := hA.norm_resolventTransform_spectralMeasure_quadratic_le hz (v : ℂ)
-  dsimp only at hres
-  have hs := norm_sub_resolventTransform_semicircleReal_le (a := 0) (v := v) hz
-    (w := m) (im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) hz).le
-  rw [Complex.ofReal_zero, sub_zero] at hs
-  have hquad : ‖(v : ℂ) * (m * m) + z * m + 1‖ ≤
-      (t + 3 * (v : ℝ) / ((n + 1) * z.im)) / z.im := hres.trans (by
-    simp only [Fintype.card_fin, Nat.cast_add, Nat.cast_one]
-    calc
-      _ ≤ (z.im * (n + 1))⁻¹ * ∑ _ : Fin (n + 1), (t + 3 * (v : ℝ) / ((n + 1) * z.im)) := by
-        gcongr with i _
-        simpa only [A, wignerMatrix_apply_self, Complex.ofReal_zero, mul_zero, zero_add,
-          wignerMinorResolvent] using hentry i
-      _ = (t + 3 * (v : ℝ) / ((n + 1) * z.im)) / z.im := by
-        simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
-          Nat.cast_add, Nat.cast_one, _root_.mul_inv_rev, div_eq_mul_inv]
-        field_simp)
-  exact hs.trans ((div_le_div_of_nonneg_right hquad hz.le).trans_eq (by rw [div_div, sq]))
+  have h := hA.norm_resolventTransform_spectralMeasure_sub_semicircleReal_le_of_diag_eq_zero
+    (diag_wignerMatrix_zero ξ ω) hz v
+  have hmean : (𝔼 i, ‖A.minorQuadraticError i z v‖) ≤ t :=
+    Finset.expect_le Finset.univ_nonempty (fun i _ ↦ ht i)
+  have h' := h.trans (mul_le_mul_of_nonneg_left (add_le_add hmean le_rfl) (sq_nonneg _))
+  simpa only [Fintype.card_fin, Nat.cast_succ, inv_pow, div_eq_inv_mul] using h'
 
 include hξ in
 /-- At a fixed upper-half-plane parameter, the Wigner transform deviates from the
@@ -193,11 +143,13 @@ theorem measureReal_norm_resolventTransform_wignerMatrix_zero_sub_semicircleReal
       2 * (n + 1) * Real.exp (-(1 / 150528) *
         min (t ^ 2 * z.im ^ 2 / (K : ℝ) ^ 2) (t * z.im / (K : ℝ)) * (n + 1)) := by
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
-  let E (i : Fin (n + 1)) := {ω | t < ‖wignerQuadraticError (ξ := ξ) i z v ω‖}
+  let E (i : Fin (n + 1)) :=
+    {ω | t < ‖(wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).minorQuadraticError i z v‖}
   refine (measureReal_mono (s₂ := ⋃ i, E i) ?_).trans ((measureReal_iUnion_fintype_le E).trans ?_)
   · intro ω hω
     by_contra hnone
-    have hi (i : Fin (n + 1)) : ‖wignerQuadraticError (ξ := ξ) i z v ω‖ ≤ t :=
+    have hi (i : Fin (n + 1)) :
+        ‖(wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).minorQuadraticError i z v‖ ≤ t :=
       le_of_not_gt fun hi ↦ hnone (Set.mem_iUnion.2 ⟨i, hi⟩)
     exact (not_lt_of_ge (norm_wignerTransform_sub_le hz ω v t hi)) hω
   · refine (Finset.sum_le_sum fun i _ ↦ wignerQuadraticError_tail hξ hind hv i hz t).trans_eq ?_
