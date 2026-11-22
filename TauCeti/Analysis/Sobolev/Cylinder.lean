@@ -32,8 +32,8 @@ setting of the linearized operators of Floer theory along Floer cylinders.
 * The strip measure is the product of Lebesgue measure and Lebesgue measure on `[0, 1]`
   (`TauCeti.CylinderSobolev.stripMeasure_eq_prod`). A section that is bounded on a box
   `[-R, R] × [0, 1]` and vanishes outside it lies in every `Lᵖ` of the strip
-  (`TauCeti.CylinderSobolev.memLp_stripMeasure_of_bound_of_eq_zero`), in particular a continuous
-  section vanishing for `|s|` large (`TauCeti.CylinderSobolev.memLp_stripMeasure_of_continuous`)
+  (`TauCeti.StripSobolev.memLp_stripMeasure_of_bound_of_eq_zero`), in particular a continuous
+  section vanishing for `|s|` large (`TauCeti.StripSobolev.memLp_stripMeasure_of_continuous`)
   and a product section `φ(s) ψ(t)` with `φ` compactly supported
   (`TauCeti.CylinderSobolev.memLp_smul_of_hasCompactSupport`).
 * **Test sections** (`TauCeti.CylinderSobolev.testSection`) are the `C²` maps of period one in
@@ -113,35 +113,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 theorem stripMeasure_eq_prod :
     stripMeasure = (volume : Measure ℝ).prod (volume.restrict (Icc (0 : ℝ) 1)) := by
   rw [stripMeasure, Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
-
-omit [NormedSpace ℝ V] in
-/-- A section bounded on `[-R, R] × [0, 1]` and vanishing for `|s| > R` lies in every `Lᵖ` of the
-strip. -/
-theorem memLp_stripMeasure_of_bound_of_eq_zero {u : ℝ × ℝ → V}
-    (hu : AEStronglyMeasurable u stripMeasure) {C R : ℝ}
-    (hC : ∀ z ∈ Icc (-R) R ×ˢ Icc 0 1, ‖u z‖ ≤ C) (hR : ∀ z : ℝ × ℝ, R < |z.1| → u z = 0)
-    (p : ℝ≥0∞) : MemLp u p stripMeasure := by
-  set K : Set (ℝ × ℝ) := Icc (-R) R ×ˢ Icc 0 1
-  have hK : MeasurableSet K := measurableSet_Icc.prod measurableSet_Icc
-  have hae : u =ᵐ[stripMeasure] K.indicator u := by
-    refine ae_restrict_of_forall_mem (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ ?_
-    by_cases hzR : |z.1| ≤ R
-    · rw [indicator_of_mem (show z ∈ K from ⟨abs_le.1 hzR, hz.2⟩)]
-    · rw [hR z (not_le.1 hzR), indicator_apply_eq_zero.2 fun _ ↦ hR z (not_le.1 hzR)]
-  refine (memLp_congr_ae hae).2 ((memLp_indicator_iff_restrict hK.nullMeasurableSet).2 ?_)
-  have : IsFiniteMeasure (stripMeasure.restrict K) := ⟨by
-    rw [Measure.restrict_apply_univ, stripMeasure, Measure.restrict_apply hK]
-    exact (measure_mono inter_subset_left).trans_lt
-      ((isCompact_Icc.prod isCompact_Icc).measure_lt_top)⟩
-  exact MemLp.of_bound hu.restrict C ((ae_restrict_mem hK).mono hC)
-
-omit [NormedSpace ℝ V] in
-/-- A continuous section vanishing for `|s| > R` lies in every `Lᵖ` of the strip. -/
-theorem memLp_stripMeasure_of_continuous {u : ℝ × ℝ → V} (hu : Continuous u) {R : ℝ}
-    (hR : ∀ z : ℝ × ℝ, R < |z.1| → u z = 0) (p : ℝ≥0∞) : MemLp u p stripMeasure := by
-  obtain ⟨C, hC⟩ := (isCompact_Icc.prod isCompact_Icc).exists_bound_of_continuousOn
-    (s := Icc (-R) R ×ˢ Icc (0 : ℝ) 1) hu.continuousOn
-  exact memLp_stripMeasure_of_bound_of_eq_zero hu.aestronglyMeasurable hC hR p
 
 /-- A product section `φ(s) ψ(t)`, with `φ` continuous of compact support and `ψ` continuous,
 lies in every `Lᵖ` of the strip. -/
