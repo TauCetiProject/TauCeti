@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.Convolution
-public import Mathlib.RingTheory.Ideal.Operations
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
@@ -17,22 +16,26 @@ product of linear maps `C →ₗ[R] C ⊗[R] C`, comultiplication is the convolu
 canonical inclusions `c ↦ c ⊗ₜ 1` and `c ↦ 1 ⊗ₜ c` of `C` into its tensor square.
 
 For the convolution dual `Module.Dual R C` of a module carrying comultiplication and counit
-data, the unit is the counit and multiplication is successive contraction of comultiplication.
+data, the element `1` is the counit and multiplication is successive contraction of
+comultiplication. Only when the counit laws hold (for a `Coalgebra`) is this `1` a
+multiplicative identity.
 
 The file also provides the exterior convolution product `WithConv.mulTensor`: linear maps
 out of modules `M` and `N`, valued in a (not necessarily unital or associative) algebra,
 applied legwise on `M ⊗[R] N` and multiplied in the codomain. Its normalization rules (zero,
 addition, scalars) and its multiplicativity for the convolution product make it the engine for
-composition-level convolution calculations: convolution products interleave legwise, and
-composing with a multiplication lands in the image of `mulTensor` for maps with a suitable
-multiplicativity law. This file proves that for an **algebra map**
-(`AlgHom.toConv_toLinearMap_comp_mul'`); the Leibniz-rule counterpart for counit-valued
-derivations is in `TauCeti/Algebra/AlgebraicGroup/Tangent/Basic.lean`.
+composition-level convolution calculations: when the coefficient multiplication is commutative
+and associative, convolution products interleave legwise. Composing a multiplicative map with a
+multiplication gives its exterior square (`NonUnitalAlgHom.toConv_coe_comp_mul'`, with the
+algebra-map form `AlgHom.toConv_toLinearMap_comp_mul'`). The Leibniz-rule counterpart, that a
+counit-valued derivation composed with multiplication is the sum of its two exterior products
+with the counit, is in `TauCeti/Algebra/AlgebraicGroup/Tangent/Basic.lean`.
 
 The file also records how convolution algebras change with their coefficients. An algebra
 map `g : B →ₐ[R] B'` induces Mathlib's `AlgHom.convPostcomp` on convolution algebras, and when
-`B'` is a `B`-algebra with a basis over `B`, taking coordinates identifies the convolution
-algebra with coefficients in `B'` with a free module over the one with coefficients in `B`.
+`B'` is a `B`-algebra with a finite basis over `B`, taking coordinates identifies the
+convolution algebra with coefficients in `B'` with a free module over the one with coefficients
+in `B`.
 
 Finally, convolution products respect submodule-valued maps: the convolution product of maps with
 values in `R`-submodules `M` and `N` of the algebra has values in `M * N`, so the `n`-th
@@ -42,25 +45,26 @@ this controls the binomial expansion of the powers of `x`.
 
 ## Main declarations
 
-* `LinearMap.ofConv_one_eq_counit`: the convolution-dual unit is the counit.
+* `LinearMap.ofConv_one_eq_counit`: the convolution dual's `1` is the counit.
 * `LinearMap.convMul_eq_comp_tensorComponent`: convolution-dual multiplication as contraction.
 * `LinearMap.tensorComponent_lTensor_comul`: successive contractions on the right tensor factor.
 * `TauCeti.Coalgebra.comul_eq_convMul_includeLeft_includeRight`: comultiplication as the
   convolution product of the two tensor inclusions.
 * `TauCeti.Bialgebra.comulPoint_eq_include_mul`: the corresponding identity for the
   algebra-hom points of a commutative bialgebra.
-* `TauCeti.Bialgebra.toConv_comp_comulAlgHom`: the functorial form of the previous identity,
-  after post-composing with an arbitrary algebra map out of the tensor square.
+* `AlgHom.toConv_comp_comulAlgHom`: the functorial form of the previous identity, after
+  post-composing with an arbitrary algebra map out of the tensor square.
 * `TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom`: the identity base-valued point is the counit.
-* `TauCeti.Bialgebra.map_comp_comulAlgHom_of_mul`: an algebra map into a commutative bialgebra
-  respects the comultiplications when pre-composition with it is multiplicative on points.
+* `AlgHom.map_comp_comulAlgHom_of_mul`: an algebra map into a commutative bialgebra respects
+  the comultiplications when pre-composition with it is multiplicative on points.
 * `WithConv.mulTensor`: the exterior convolution product, with its
   normalization rules and `WithConv.mulTensor_convMul`.
-* `AlgHom.toConv_toLinearMap_comp_mul'`: an algebra map composed with
-  multiplication is its own exterior square.
-* `Module.Basis.convCoordEquiv`: the coordinates of a convolution-algebra element in a basis of
-  the coefficients, with `Module.Basis.convCoordEquiv_convPostcomp_mul` recording that they are
-  linear over the convolution algebra of the smaller coefficient ring.
+* `NonUnitalAlgHom.toConv_coe_comp_mul'`: a non-unital algebra map composed with
+  multiplication is its own exterior square, with the algebra-map form
+  `AlgHom.toConv_toLinearMap_comp_mul'`.
+* `Module.Basis.convCoordEquiv`: the coordinates of a convolution-algebra element in a finite
+  basis of the coefficients, with `Module.Basis.convCoordEquiv_convPostcomp_mul` recording that
+  they are linear over the convolution algebra of the smaller coefficient ring.
 * `LinearMap.convMul_apply_mem_mul` and `LinearMap.convPow_apply_mem_pow`: convolution products
   and powers of submodule-valued maps.
 -/
@@ -74,7 +78,8 @@ namespace LinearMap
 variable {R C : Type*} [CommSemiring R]
   [AddCommMonoid C] [Module R C] [CoalgebraStruct R C]
 
-/-- The unit of the convolution dual is the coalgebra counit. -/
+/-- The element `1` of the convolution dual is the counit. It is a multiplicative identity only
+when the counit laws hold, as for a `Coalgebra`. -/
 @[simp]
 theorem ofConv_one_eq_counit :
     (1 : WithConv (Module.Dual R C)).ofConv = Coalgebra.counit := by
@@ -152,7 +157,7 @@ The convolution monoid here is the one on points of `H` with values in the *comm
 source of `φ`, never as a convolution target. That is why this is proved from the linear-map
 identity `TauCeti.Coalgebra.comul_eq_convMul_includeLeft_includeRight` rather than from
 `TauCeti.Bialgebra.comulPoint_eq_include_mul`, which needs `H ⊗[R] H` to be commutative. -/
-theorem toConv_comp_comulAlgHom {A : Type*} [CommSemiring A] [Algebra R A]
+theorem _root_.AlgHom.toConv_comp_comulAlgHom {A : Type*} [CommSemiring A] [Algebra R A]
     (phi : H ⊗[R] H →ₐ[R] A) :
     toConv (phi.comp (Bialgebra.comulAlgHom R H)) =
       toConv (phi.comp (Algebra.TensorProduct.includeLeft
@@ -187,7 +192,7 @@ theorem comulPoint_eq_include_mul :
       toConv (Algebra.TensorProduct.includeRight
         (R := R) (A := H) (B := H)) := by
   simpa only [AlgHom.id_comp] using
-    toConv_comp_comulAlgHom (phi := AlgHom.id R (H ⊗[R] H))
+    (AlgHom.id R (H ⊗[R] H)).toConv_comp_comulAlgHom
 
 /-- **A criterion for respecting comultiplication.** An `R`-algebra map `φ : A →ₐ[R] B` of
 bialgebras, with `B` commutative, respects the comultiplications as soon as pre-composition with
@@ -195,14 +200,14 @@ bialgebras, with `B` commutative, respects the comultiplications as soon as pre-
 the comultiplication of `B` is the product of the two tensor inclusions
 (`TauCeti.Bialgebra.comulPoint_eq_include_mul`). In particular it suffices that pre-composition
 with `φ` is multiplicative on points with values in every commutative `R`-algebra. -/
-theorem map_comp_comulAlgHom_of_mul {A B : Type*} [Semiring A] [CommSemiring B]
+theorem _root_.AlgHom.map_comp_comulAlgHom_of_mul {A B : Type*} [Semiring A] [CommSemiring B]
     [_root_.Bialgebra R A] [_root_.Bialgebra R B] (φ : A →ₐ[R] B)
     (hmul : ∀ f g : WithConv (B →ₐ[R] B ⊗[R] B),
       toConv ((f * g).ofConv.comp φ) = toConv (f.ofConv.comp φ) * toConv (g.ofConv.comp φ)) :
     (Algebra.TensorProduct.map φ φ).comp (Bialgebra.comulAlgHom R A) =
       (Bialgebra.comulAlgHom R B).comp φ := by
   refine WithConv.toConv_injective ?_
-  rw [toConv_comp_comulAlgHom, Algebra.TensorProduct.map_comp_includeLeft,
+  rw [AlgHom.toConv_comp_comulAlgHom, Algebra.TensorProduct.map_comp_includeLeft,
     Algebra.TensorProduct.map_comp_includeRight, ← hmul, ← comulPoint_eq_include_mul,
     ofConv_toConv]
 
@@ -222,8 +227,9 @@ namespace WithConv
 
 /-- The exterior convolution product on `M ⊗[R] N`: apply one factor on each tensor
 leg and multiply the results in the coefficients. It underlies the Leibniz-rule
-manipulations for counit-valued derivations: composing with the multiplication of the
-bialgebra lands in this product's image (there at `N = M`). -/
+manipulations for counit-valued derivations (there at `N = M`): a derivation `d` composed with
+the multiplication of the bialgebra is the sum `mulTensor 1 d + mulTensor d 1` of its two
+exterior products with the counit. -/
 def mulTensor (s : WithConv (M →ₗ[R] S)) (t : WithConv (N →ₗ[R] S)) :
     WithConv (M ⊗[R] N →ₗ[R] S) :=
   toConv (LinearMap.mul' R S ∘ₗ map s.ofConv t.ofConv)
@@ -284,19 +290,38 @@ end ExteriorProduct
 
 section ExteriorProductAlgHom
 
+variable {R A S : Type*} [CommSemiring R]
+
+namespace NonUnitalAlgHom
+
+variable [NonUnitalNonAssocSemiring A] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+  [NonUnitalNonAssocSemiring S] [Module R S] [SMulCommClass R S S] [IsScalarTower R S S]
+
+/-- A multiplicative linear map composed with multiplication is its own exterior square:
+the multiplicativity of the map, in convolution form. Neither algebra need be unital or
+associative. -/
+@[simp]
+lemma toConv_coe_comp_mul' (g : A →ₙₐ[R] S) :
+    toConv ((g : A →ₗ[R] S) ∘ₗ LinearMap.mul' R A) =
+      mulTensor (toConv (g : A →ₗ[R] S)) (toConv (g : A →ₗ[R] S)) := by
+  -- Not a re-derivation: this is Mathlib's `NonUnitalAlgHom.comp_mul'` transported into the
+  -- file's own `mulTensor` vocabulary, which is what consumers rewrite with.
+  exact congrArg toConv (NonUnitalAlgHom.comp_mul' g)
+
+end NonUnitalAlgHom
+
 namespace AlgHom
 
-variable {R A S : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Semiring S] [Algebra R S]
+variable [Semiring A] [Algebra R A] [Semiring S] [Algebra R S]
 
-/-- An algebra-map point composed with multiplication is its own exterior square:
-the multiplicativity of the point, in convolution form. -/
+/-- An algebra-map point composed with multiplication is its own exterior square. This is
+`NonUnitalAlgHom.toConv_coe_comp_mul'` in the `AlgHom.toLinearMap` form that algebra-map points
+are written in. -/
 @[simp]
 lemma toConv_toLinearMap_comp_mul' (g : A →ₐ[R] S) :
     toConv (g.toLinearMap ∘ₗ LinearMap.mul' R A) =
-      mulTensor (toConv g.toLinearMap) (toConv g.toLinearMap) := by
-  -- Not a re-derivation: this is Mathlib's `AlgHom.comp_mul'` transported into the file's
-  -- own `mulTensor` vocabulary, which is what consumers rewrite with.
-  exact congrArg toConv (AlgHom.comp_mul' g)
+      mulTensor (toConv g.toLinearMap) (toConv g.toLinearMap) :=
+  (g : A →ₙₐ[R] S).toConv_coe_comp_mul'
 
 end AlgHom
 
@@ -340,7 +365,7 @@ section CoefficientChange
 
 open WithConv
 
-/-- A basis of `B'` over `B` identifies linear maps `C → B'` with families of linear maps
+/-- A finite basis of `B'` over `B` identifies linear maps `C → B'` with families of linear maps
 `C → B`, by taking coordinates. -/
 noncomputable def _root_.Module.Basis.convCoordEquiv {ι B B' : Type*} [Finite ι]
     [Semiring B] [AddCommMonoid B'] [Module B B'] (b : Module.Basis ι B B') (R : Type*)
@@ -389,8 +414,8 @@ end Module
 variable [CommSemiring B] [Semiring B'] [Algebra B B'] [Algebra R B] [Algebra R B']
   [IsScalarTower R B B']
 
-/-- Taking coordinates in a basis of `B'` over `B` is linear over the convolution algebra with
-coefficients in `B`, which acts on maps into `B'` through post-composition with
+/-- Taking coordinates in a finite basis of `B'` over `B` is linear over the convolution algebra
+with coefficients in `B`, which acts on maps into `B'` through post-composition with
 `algebraMap B B'`. -/
 theorem _root_.Module.Basis.convCoordEquiv_convPostcomp_mul [_root_.Coalgebra R C]
     (b : Module.Basis ι B B') (f : WithConv (C →ₗ[R] B)) (φ : WithConv (C →ₗ[R] B')) (i : ι) :
@@ -421,10 +446,8 @@ a submodule `N` has values in `M * N`. -/
 theorem convMul_apply_mem_mul [CoalgebraStruct R C] {M N : Submodule R A}
     {f g : WithConv (C →ₗ[R] A)} (hf : ∀ c, f c ∈ M) (hg : ∀ c, g c ∈ N) (c : C) :
     (f * g) c ∈ M * N := by
-  rw [convMul_apply]
-  induction (CoalgebraStruct.comul c : C ⊗[R] C) with
-  | tmul x y => simpa using Submodule.mul_mem_mul (hf x) (hg y)
-  | add x y hx hy => simpa [map_add] using add_mem hx hy
+  rw [(Coalgebra.Repr.arbitrary R c).convMul_apply]
+  exact (M * N).sum_mem fun i _ => Submodule.mul_mem_mul (hf _) (hg _)
 
 /-- The `n`-th convolution power of a linear map with values in a submodule `M` has values in
 `M ^ n`. -/
