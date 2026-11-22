@@ -193,9 +193,9 @@ omit [FiniteDimensional 𝕜 V] in
 theorem _root_.ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply [CompleteSpace V]
     (A : V →L[𝕜] V) (ξ : V) :
     re ⟪((2⁻¹ : 𝕜) • (A + A.adjoint)) ξ, ξ⟫_𝕜 = re ⟪A ξ, ξ⟫_𝕜 := by
-  rw [smul_apply, add_apply, inner_smul_left, inner_add_left,
-    ContinuousLinearMap.adjoint_inner_left, ← inner_conj_symm ξ (A ξ), map_inv₀, map_ofNat,
-    add_conj, inv_mul_cancel_left₀ two_ne_zero, ofReal_re]
+  simp [inner_add_left, inner_smul_left, ContinuousLinearMap.adjoint_inner_left,
+    inner_re_symm ξ (A ξ), normSq_apply]
+  ring
 
 /-- **Factoring the symmetric part of a coercive operator through a prescribed direction.** Let
 `A` be an operator on a finite-dimensional inner product space, not necessarily symmetric, with
