@@ -1,0 +1,379 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.FormalScheme.Basic
+public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk
+public import Mathlib.AlgebraicGeometry.Noetherian
+import TauCeti.RingTheory.AdicCompletion.Noetherian
+
+/-!
+# Locally noetherian formal schemes
+
+A formal scheme `X` is *locally noetherian* if every point has an open neighbourhood isomorphic to
+the formal spectrum `Spf A` of a noetherian adic ring `A`, and *noetherian* if moreover its
+underlying space is quasi-compact (EGA I, Ch. I, 10.4.2). This file shows that the condition does
+not depend on the chosen charts: on a locally noetherian formal scheme, the ring of sections of
+every affine formal open is noetherian. In particular `Spf A` is (locally) noetherian exactly when
+`A` is a noetherian ring (EGA I, Ch. I, 10.6.5). For ordinary schemes the notion agrees with
+Mathlib's `AlgebraicGeometry.IsLocallyNoetherian`.
+
+## Implementation notes
+
+The key step is affine. Let `Spf B` be an affine formal open of `X`. Every point of `Spf B` lies in
+a basic open set `D(b)` that is also a basic open set of a noetherian chart `Spf A` of `X`. Indeed,
+the basic open set `D(a)` of `Spf A` is the locus where the global section `a` is invertible, and
+being invertible is preserved by the stalk maps of an open immersion, which are isomorphisms. So
+the completed localisation `B_{b} ≅ A_{a}` is noetherian. Reducing modulo an ideal of definition
+`J` of `B`, the localisations of `B ⧸ J` at the images of the elements `b` are the quotients
+`B_{b} ⧸ J B_{b}`, hence noetherian; as these elements generate the unit ideal of `B ⧸ J`, the ring
+`B ⧸ J` is noetherian. Since `B` is `J`-adically complete and `J` is finitely generated, `B` is
+noetherian (EGA I, Ch. 0, 7.2.6).
+
+## Main definitions
+
+* `TauCeti.FormalScheme.IsLocallyNoetherian`: every point lies in an open formal spectrum of a
+  noetherian adic ring.
+* `TauCeti.FormalScheme.IsNoetherian`: locally noetherian with quasi-compact underlying space.
+
+## Main results
+
+* `TauCeti.FormalScheme.isNoetherianRing_of_isOpenImmersion`: an open formal spectrum `Spf B` of a
+  locally noetherian formal scheme has `B` noetherian.
+* `TauCeti.FormalScheme.isLocallyNoetherian_iff_forall_isAffineOpen`: a formal scheme is locally
+  noetherian if and only if the ring of sections of every affine formal open is noetherian.
+* `TauCeti.FormalScheme.isLocallyNoetherian_ofSpf_iff`,
+  `TauCeti.FormalScheme.isNoetherian_ofSpf_iff`: `Spf A` is (locally) noetherian if and only if
+  `A` is noetherian.
+* `TauCeti.FormalScheme.IsLocallyNoetherian.of_isOpenImmersion`: the source of an open immersion
+  into a locally noetherian formal scheme is locally noetherian; in particular so are open formal
+  subschemes, which are noetherian when quasi-compact (`isNoetherian_restrict`).
+* `TauCeti.FormalScheme.isNoetherianRing_stalk`: the stalks of a locally noetherian formal scheme
+  are noetherian local rings.
+* `TauCeti.FormalScheme.isLocallyNoetherian_toFormalScheme_iff`,
+  `TauCeti.FormalScheme.isNoetherian_toFormalScheme_iff`: an ordinary scheme is a (locally)
+  noetherian formal scheme if and only if it is a (locally) noetherian scheme.
+
+## References
+
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, 7.2.6, and
+  Ch. I, 10.1.4, 10.4.2 and 10.6.5.
+-/
+
+public section
+
+open CategoryTheory TopologicalSpace AlgebraicGeometry Opposite
+
+universe u
+
+namespace TauCeti.FormalScheme
+
+namespace Spf
+
+variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
+
+/-- The identification `Γ(Spf A, ⊤) ≅ A` of the global sections of the formal spectrum, for the
+chosen ideal of definition. -/
+private noncomputable abbrev topSectionsIso (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] : (Spf A).presheaf.obj (op ⊤) ≅ CommRingCat.of A :=
+  have := (IsAdicRing.ideal_spec A).2.2
+  globalSectionsIso (IsAdicRing.ideal_spec A).2.1
+
+/-- A global section of `Spf A` is invertible at an open prime `p` exactly when the corresponding
+element of `A` does not lie in `p`. -/
+private theorem isUnit_Γgerm_iff (s : (Spf A).presheaf.obj (op ⊤)) (p : carrier A) :
+    IsUnit ((Spf A).presheaf.Γgerm p s) ↔
+      (topSectionsIso A).hom s ∉ (p : PrimeSpectrum A).asIdeal := by
+  have := (IsAdicRing.ideal_spec A).2.2
+  have hp : (1 : A) ∉ (p : PrimeSpectrum A).asIdeal := (p : PrimeSpectrum A).isPrime.one_notMem
+  -- restricted to `D(1)`, the section `s` is the image of `a` in `A_{1}`, where `s ↔ a`
+  have hres : (Spf A).presheaf.map (homOfLE (le_top : basicOpen (1 : A) ≤ ⊤)).op s =
+      (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 1).inv
+        (algebraMap A (AdicRing.CompletedAway A 1) ((topSectionsIso A).hom s)) := by
+    have h := ConcreteCategory.congr_hom (globalSectionsIso_inv_comp_basicOpenSectionsIso_hom
+      (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 1) ((topSectionsIso A).hom s)
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h
+    have hs := congrArg (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1
+      (IsAdicRing.ideal_spec A).1 1).inv h
+    rw [Iso.hom_inv_id_apply] at hs
+    exact (congrArg _ (Iso.hom_inv_id_apply (topSectionsIso A) s).symm).trans hs
+  -- so the germ of `s` at `p` is the germ of the image of `a` in `A_{1}`
+  have hgerm := ((Spf A).presheaf.Γgerm_res_apply (i := homOfLE le_top) p
+    (mem_basicOpen.mpr hp) s).symm.trans (congrArg _ hres)
+  have key := stalkResidueFieldEquiv_residue_germ (p := p) ⟨1, hp⟩ ((topSectionsIso A).hom s)
+  refine (iff_of_eq (congrArg IsUnit hgerm)).trans ?_
+  calc _ ↔ IsLocalRing.residue _ _ ≠ 0 := (IsLocalRing.residue_ne_zero_iff_isUnit _).symm
+    _ ↔ stalkResidueFieldEquiv p ((Spf A).residue p _) ≠ 0 :=
+      (map_ne_zero_iff _ (stalkResidueFieldEquiv p).injective).symm
+    _ ↔ algebraMap _ (FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal))
+        (Ideal.Quotient.mk _ ((topSectionsIso A).hom s)) ≠ 0 := iff_of_eq (congrArg (· ≠ 0) key)
+    _ ↔ _ := by rw [ne_eq, IsFractionRing.to_map_eq_zero_iff, Ideal.Quotient.eq_zero_iff_mem]
+
+/-- The locus where a global section of `Spf A` is invertible is the basic open set of the
+corresponding element of `A`. -/
+private theorem basicOpen_eq (s : (Spf A).presheaf.obj (op ⊤)) :
+    (Spf A).toRingedSpace.basicOpen s = basicOpen ((topSectionsIso A).hom s) := by
+  ext p
+  exact ((Spf A).toRingedSpace.mem_top_basicOpen s p).trans
+    ((isUnit_Γgerm_iff s p).trans mem_basicOpen.symm)
+
+variable {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B]
+
+/-- Isomorphic formal spectra have isomorphic rings of global sections, so one ring is noetherian
+if the other is. -/
+private theorem isNoetherianRing_of_iso [IsNoetherianRing A] (e : Spf A ≅ Spf B) :
+    IsNoetherianRing B :=
+  isNoetherianRing_of_ringEquiv A ((topSectionsIso A).symm ≪≫
+    LocallyRingedSpace.Γ.mapIso e.symm.op ≪≫ topSectionsIso B).commRingCatIsoToRingEquiv
+
+/-- If an open immersion from the formal spectrum of a noetherian adic ring hits the open prime `y`
+of `B`, then `y` lies in a basic open set `D(b)` whose completed localisation `B_{b}` is
+noetherian. -/
+private theorem exists_mem_basicOpen_isNoetherianRing [IsNoetherianRing A] (χ : Spf A ⟶ Spf B)
+    [hχ : LocallyRingedSpace.IsOpenImmersion χ] {y : carrier B} (hy : y ∈ Set.range χ.base) :
+    ∃ b : B, y ∈ basicOpen b ∧ IsNoetherianRing (AdicRing.CompletedAway B b) := by
+  obtain ⟨_, ⟨b, rfl⟩, hyb, hbχ⟩ := (Opens.isBasis_iff_nbhd.mp isBasis_basicOpen)
+    (show y ∈ (⟨_, hχ.base_open.isOpen_range⟩ : Opens (carrier B)) from hy)
+  refine ⟨b, hyb, ?_⟩
+  -- the preimage of `D(b)` is the basic open set of the pulled-back global section
+  set a := (topSectionsIso A).hom (χ.c.app (op ⊤) ((topSectionsIso B).inv b))
+  have hpre : (Opens.map χ.base).obj (basicOpen b) = basicOpen a := by
+    have h := basicOpen_eq ((topSectionsIso B).inv b)
+    rw [Iso.inv_hom_id_apply] at h
+    exact (congrArg (Opens.map χ.base).obj h.symm).trans
+      ((LocallyRingedSpace.preimage_basicOpen χ _).trans (basicOpen_eq _))
+  -- `χ` identifies `D(a) ≅ Spf A_{a}` with `D(b) ≅ Spf B_{b}`
+  let f₁ := (Spf A).ofRestrict (basicOpen a).isOpenEmbedding ≫ χ
+  let f₂ := (Spf B).ofRestrict (basicOpen b).isOpenEmbedding
+  have hD : Set.range ((Spf A).ofRestrict (basicOpen a).isOpenEmbedding).base =
+      χ.base ⁻¹' (basicOpen b : Set (carrier B)) :=
+    Subtype.range_coe.trans (congrArg SetLike.coe hpre).symm
+  have hrange : Set.range f₁.base = Set.range f₂.base := by
+    simp only [f₁, f₂, LocallyRingedSpace.comp_base, TopCat.coe_comp, Set.range_comp]
+    exact (congrArg _ hD).trans ((Set.image_preimage_eq_of_subset hbχ).trans
+      Subtype.range_coe.symm)
+  let e : (Spf A).restrict (basicOpen a).isOpenEmbedding ≅
+      (Spf B).restrict (basicOpen b).isOpenEmbedding :=
+    LocallyRingedSpace.isoOfSheafedSpaceIso <| SheafedSpace.isoMk <|
+      PresheafedSpace.IsOpenImmersion.isoOfRangeEq f₁.toHom f₂.toHom hrange
+  exact isNoetherianRing_of_iso ((restrictBasicOpenIso a).symm ≪≫ e ≪≫ restrictBasicOpenIso b)
+
+/-- If every open prime of `B` lies in a basic open set `D(b)` whose completed localisation `B_{b}`
+is noetherian, then `B` is noetherian. -/
+private theorem isNoetherianRing_of_forall_exists
+    (h : ∀ y : carrier B, ∃ b : B, y ∈ basicOpen b ∧
+      IsNoetherianRing (AdicRing.CompletedAway B b)) :
+    IsNoetherianRing B := by
+  obtain ⟨hJfg, hJ, hJc⟩ := IsAdicRing.ideal_spec B
+  set J := IsAdicRing.ideal B
+  choose b hb hN using h
+  -- the images of the elements `b y` generate the unit ideal of `B ⧸ J`
+  have hspan : Ideal.span (Set.range fun y ↦ Ideal.Quotient.mk (J ^ 1) (b y)) = ⊤ := by
+    by_contra hne
+    obtain ⟨M, hM, hle⟩ := Ideal.exists_le_maximal _ hne
+    let P : PrimeSpectrum B := ⟨M.comap (Ideal.Quotient.mk _), Ideal.comap_isPrime _ _⟩
+    have hP : P ∈ carrier B := (mem_carrier_iff_le hJ).mpr fun x hx ↦ Ideal.mem_comap.mpr <| by
+      rw [Ideal.Quotient.eq_zero_iff_mem.mpr (by rwa [pow_one])]
+      exact M.zero_mem
+    exact mem_basicOpen.mp (hb ⟨P, hP⟩) (hle (Ideal.subset_span ⟨⟨P, hP⟩, rfl⟩))
+  obtain ⟨S, hSsub, hS⟩ := (Ideal.span_eq_top_iff_finite _).mp hspan
+  -- each localisation of `B ⧸ J` is a quotient of a noetherian completed localisation
+  have : IsNoetherianRing (B ⧸ J ^ 1) := isNoetherianRing_of_away S hS fun ⟨s, hs⟩ ↦ by
+    obtain ⟨y, rfl⟩ := hSsub hs
+    exact isNoetherianRing_of_ringEquiv _
+      (AdicRing.CompletedAway.quotientPowEquiv B (b y) 1).toRingEquiv
+  have : IsNoetherianRing (B ⧸ J) :=
+    isNoetherianRing_of_ringEquiv _ (Ideal.quotEquivOfEq (pow_one J))
+  exact Ideal.isNoetherianRing_of_isAdicComplete J hJfg
+
+end Spf
+
+/-- A formal scheme is **locally noetherian** if every point lies in an open formal spectrum
+`Spf A` of a noetherian adic ring `A` (EGA I, Ch. I, 10.4.2). By
+`isLocallyNoetherian_iff_forall_isAffineOpen`, the ring of sections of every affine formal open is
+then noetherian. -/
+class IsLocallyNoetherian (X : FormalScheme.{u}) : Prop where
+  /-- Every point lies in the image of an open immersion from the formal spectrum of a noetherian
+  adic ring. -/
+  exists_isNoetherianRing (x : X) :
+    ∃ (A : Type u) (_ : CommRing A) (_ : TopologicalSpace A) (_ : IsTopologicalRing A)
+      (_ : IsAdicRing A) (_ : IsNoetherianRing A) (f : Spf A ⟶ X.toLocallyRingedSpace),
+      LocallyRingedSpace.IsOpenImmersion f ∧ x ∈ Set.range f.base
+
+/-- A formal scheme is **noetherian** if it is locally noetherian and its underlying space is
+quasi-compact (EGA I, Ch. I, 10.4.2). -/
+class IsNoetherian (X : FormalScheme.{u}) : Prop extends IsLocallyNoetherian X, CompactSpace X
+
+variable {X : FormalScheme.{u}}
+
+/-- On a locally noetherian formal scheme, every point of the source of an open immersion into it
+lies in an open formal spectrum of a noetherian adic ring. -/
+private theorem exists_isNoetherianRing_of_isOpenImmersion [X.IsLocallyNoetherian]
+    {Y : LocallyRingedSpace.{u}} (g : Y ⟶ X.toLocallyRingedSpace)
+    [hg : LocallyRingedSpace.IsOpenImmersion g] (y : Y) :
+    ∃ (A : Type u) (_ : CommRing A) (_ : TopologicalSpace A) (_ : IsTopologicalRing A)
+      (_ : IsAdicRing A) (_ : IsNoetherianRing A) (f : Spf A ⟶ Y),
+      LocallyRingedSpace.IsOpenImmersion f ∧ y ∈ Set.range f.base := by
+  obtain ⟨A, _, _, _, _, _, φ, hφ, hx⟩ := IsLocallyNoetherian.exists_isNoetherianRing (g.base y)
+  obtain ⟨a, hxa, haW⟩ := exists_basicOpenι_comp_mem_range_and_range_subset φ
+    ⟨_, hg.base_open.isOpen_range⟩ (Set.mem_range_self y) hx
+  -- the open set in `haW` is the range of `g`, as `lift` expects
+  replace haW : Set.range (Spf.basicOpenι a ≫ φ).base ⊆ Set.range g.base := haW
+  refine ⟨AdicRing.CompletedAway A a, inferInstance, inferInstance, inferInstance, inferInstance,
+    inferInstance, LocallyRingedSpace.IsOpenImmersion.lift g _ haW,
+    LocallyRingedSpace.IsOpenImmersion.isOpenImmersion_lift g _ haW, ?_⟩
+  rw [LocallyRingedSpace.IsOpenImmersion.lift_range]
+  exact hxa
+
+/-- **An open formal spectrum of a locally noetherian formal scheme is noetherian**: if
+`Spf B → X` is an open immersion and `X` is locally noetherian, then `B` is noetherian
+(EGA I, Ch. I, 10.6.5). -/
+theorem isNoetherianRing_of_isOpenImmersion [X.IsLocallyNoetherian] {B : Type u} [CommRing B]
+    [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B] (f : Spf B ⟶ X.toLocallyRingedSpace)
+    [hf : LocallyRingedSpace.IsOpenImmersion f] : IsNoetherianRing B :=
+  Spf.isNoetherianRing_of_forall_exists fun y ↦ by
+    obtain ⟨A, _, _, _, _, _, χ, hχ, hy⟩ := exists_isNoetherianRing_of_isOpenImmersion f y
+    exact Spf.exists_mem_basicOpen_isNoetherianRing χ hy
+
+/-- The sections of `X` over the image `U` of an open immersion `Spf B → X` are `B`. -/
+private noncomputable def sectionsIso {B : Type u} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] [IsAdicRing B] (f : Spf B ⟶ X.toLocallyRingedSpace)
+    [LocallyRingedSpace.IsOpenImmersion f] {U : Opens X} (hU : Set.range f.base = (U : Set X)) :
+    X.presheaf.obj (op U) ≅ CommRingCat.of B :=
+  X.presheaf.mapIso (eqToIso (congrArg op (Opens.ext (by
+    rw [IsOpenMap.coe_functor_obj, Opens.coe_top, Set.image_univ, hU])))) ≪≫
+    (asIso (PresheafedSpace.IsOpenImmersion.invApp f.toHom ⊤)).symm ≪≫ Spf.topSectionsIso B
+
+/-- A formal scheme is locally noetherian if and only if the ring of sections of every affine
+formal open is noetherian (EGA I, Ch. I, 10.4.2 and 10.6.5). -/
+theorem isLocallyNoetherian_iff_forall_isAffineOpen :
+    X.IsLocallyNoetherian ↔
+      ∀ U : Opens X, X.IsAffineOpen U → IsNoetherianRing (X.presheaf.obj (op U)) := by
+  refine ⟨fun _ U hU ↦ ?_, fun h ↦ ⟨fun x ↦ ?_⟩⟩
+  · obtain ⟨B, _, _, _, _, f, hf, hU⟩ := (isAffineOpen_def X U).mp hU
+    have := isNoetherianRing_of_isOpenImmersion f
+    exact isNoetherianRing_of_ringEquiv B (sectionsIso f hU).symm.commRingCatIsoToRingEquiv
+  · obtain ⟨B, _, _, _, _, f, hf, hx⟩ := X.local_spf x
+    have := h ⟨_, hf.base_open.isOpen_range⟩ ((isAffineOpen_def X _).mpr ⟨B, inferInstance,
+      inferInstance, inferInstance, inferInstance, f, hf, rfl⟩)
+    exact ⟨B, inferInstance, inferInstance, inferInstance, inferInstance,
+      isNoetherianRing_of_ringEquiv _
+        (sectionsIso f (U := ⟨_, hf.base_open.isOpen_range⟩) rfl).commRingCatIsoToRingEquiv,
+      f, hf, hx⟩
+
+/-- The ring of sections of an affine formal open of a locally noetherian formal scheme is
+noetherian. -/
+theorem IsAffineOpen.isNoetherianRing [X.IsLocallyNoetherian] {U : Opens X}
+    (hU : X.IsAffineOpen U) : IsNoetherianRing (X.presheaf.obj (op U)) :=
+  isLocallyNoetherian_iff_forall_isAffineOpen.mp ‹_› U hU
+
+/-- The source of an open immersion into a locally noetherian formal scheme is locally
+noetherian. -/
+theorem IsLocallyNoetherian.of_isOpenImmersion {Y : FormalScheme.{u}} [X.IsLocallyNoetherian]
+    (f : Y ⟶ X) [LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map f)] :
+    Y.IsLocallyNoetherian :=
+  ⟨exists_isNoetherianRing_of_isOpenImmersion (hg := ‹_›) (forgetToLocallyRingedSpace.map f)⟩
+
+/-- Open formal subschemes of a locally noetherian formal scheme are locally noetherian. -/
+instance [X.IsLocallyNoetherian] (U : Opens X) : (X.restrict U).IsLocallyNoetherian :=
+  IsLocallyNoetherian.of_isOpenImmersion (X := X) (X.ofRestrict U)
+
+/-- A quasi-compact open formal subscheme of a locally noetherian formal scheme is noetherian. -/
+theorem isNoetherian_restrict [X.IsLocallyNoetherian] {U : Opens X}
+    (hU : IsCompact (U : Set X)) : (X.restrict U).IsNoetherian where
+  toCompactSpace := isCompact_iff_compactSpace.mp hU
+
+/-- The stalks of a locally noetherian formal scheme are noetherian local rings
+(EGA I, Ch. I, 10.1.6). -/
+instance isNoetherianRing_stalk [X.IsLocallyNoetherian] (x : X) :
+    IsNoetherianRing (X.presheaf.stalk x) := by
+  obtain ⟨A, _, _, _, _, _, f, hf, z, rfl⟩ := IsLocallyNoetherian.exists_isNoetherianRing x
+  have := Spf.isNoetherianRing_stalk (A := A) z
+  exact isNoetherianRing_of_ringEquiv _ (asIso (f.stalkMap z)).commRingCatIsoToRingEquiv.symm
+
+section Spf
+
+variable (A : Type u) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
+
+/-- The formal spectrum of a noetherian adic ring is a noetherian formal scheme. -/
+instance [IsNoetherianRing A] : (ofSpf A).IsNoetherian where
+  exists_isNoetherianRing x := ⟨A, inferInstance, inferInstance, inferInstance, inferInstance,
+    inferInstance, 𝟙 _, inferInstanceAs (LocallyRingedSpace.IsOpenImmersion (𝟙 (Spf A))), x, rfl⟩
+  toCompactSpace := Spf.compactSpace_carrier (IsAdicRing.ideal_spec A).2.1
+
+/-- `Spf A` is locally noetherian if and only if `A` is noetherian (EGA I, Ch. I, 10.6.5). -/
+theorem isLocallyNoetherian_ofSpf_iff : (ofSpf A).IsLocallyNoetherian ↔ IsNoetherianRing A :=
+  ⟨fun _ ↦ isNoetherianRing_of_isOpenImmersion (X := ofSpf A) (𝟙 (Spf A))
+    (hf := inferInstanceAs (LocallyRingedSpace.IsOpenImmersion (𝟙 (Spf A)))), fun _ ↦ inferInstance⟩
+
+/-- `Spf A` is a noetherian formal scheme if and only if `A` is noetherian
+(EGA I, Ch. I, 10.6.5). -/
+theorem isNoetherian_ofSpf_iff : (ofSpf A).IsNoetherian ↔ IsNoetherianRing A :=
+  ⟨fun _ ↦ (isLocallyNoetherian_ofSpf_iff A).mp inferInstance, fun _ ↦ inferInstance⟩
+
+end Spf
+
+section Scheme
+
+/-- An affine open `U` of a scheme `X` is an open formal spectrum of the discrete ring `Γ(X, U)`
+in `X` regarded as a formal scheme. -/
+private theorem exists_isOpenImmersion_spf (X : Scheme.{u}) {U : X.Opens}
+    (hU : AlgebraicGeometry.IsAffineOpen U) :
+    ∃ (_ : TopologicalSpace Γ(X, U)) (_ : IsTopologicalRing Γ(X, U)) (_ : IsAdicRing Γ(X, U))
+      (f : Spf Γ(X, U) ⟶ X.toLocallyRingedSpace),
+      LocallyRingedSpace.IsOpenImmersion f ∧ Set.range f.base = U := by
+  let : TopologicalSpace Γ(X, U) := ⊥
+  have : DiscreteTopology Γ(X, U) := ⟨rfl⟩
+  let e := (Spf.discreteIsoSpec Γ(X, U)).symm
+  refine ⟨inferInstance, inferInstance, inferInstance, e.inv ≫ hU.fromSpec.toLRSHom,
+    @LocallyRingedSpace.IsOpenImmersion.comp _ _ _ e.inv inferInstance hU.fromSpec.toLRSHom
+      hU.isOpenImmersion_fromSpec, ?_⟩
+  exact (LocallyRingedSpace.range_iso_inv_comp e _).trans hU.range_fromSpec
+
+/-- An affine open of a scheme is an affine formal open of the scheme regarded as a formal
+scheme. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.isAffineOpen_toFormalScheme {X : Scheme.{u}}
+    {U : X.Opens} (hU : AlgebraicGeometry.IsAffineOpen U) : X.toFormalScheme.IsAffineOpen U := by
+  obtain ⟨_, _, _, f, hf, hrange⟩ := exists_isOpenImmersion_spf X hU
+  exact (isAffineOpen_def X.toFormalScheme U).mpr
+    ⟨Γ(X, U), inferInstance, inferInstance, inferInstance, inferInstance, f, hf, hrange⟩
+
+/-- An ordinary scheme is a locally noetherian formal scheme if and only if it is a locally
+noetherian scheme (EGA I, Ch. I, 10.4.2). -/
+theorem isLocallyNoetherian_toFormalScheme_iff (X : Scheme.{u}) :
+    X.toFormalScheme.IsLocallyNoetherian ↔ AlgebraicGeometry.IsLocallyNoetherian X := by
+  refine ⟨fun _ ↦ ⟨fun U ↦ U.property.isAffineOpen_toFormalScheme.isNoetherianRing⟩,
+    fun _ ↦ ⟨fun x ↦ ?_⟩⟩
+  obtain ⟨U, hU, hxU, -⟩ := exists_isAffineOpen_mem_and_subset
+    (show x ∈ (⊤ : X.Opens) from trivial)
+  obtain ⟨_, _, _, f, hf, hrange⟩ := exists_isOpenImmersion_spf X hU
+  exact ⟨Γ(X, U), inferInstance, inferInstance, inferInstance, inferInstance,
+    IsLocallyNoetherian.component_noetherian ⟨U, hU⟩, f, hf, hrange ▸ hxU⟩
+
+/-- A locally noetherian scheme is a locally noetherian formal scheme. -/
+instance (X : Scheme.{u}) [AlgebraicGeometry.IsLocallyNoetherian X] :
+    X.toFormalScheme.IsLocallyNoetherian :=
+  (isLocallyNoetherian_toFormalScheme_iff X).mpr ‹_›
+
+/-- An ordinary scheme is a noetherian formal scheme if and only if it is a noetherian scheme. -/
+theorem isNoetherian_toFormalScheme_iff (X : Scheme.{u}) :
+    X.toFormalScheme.IsNoetherian ↔ AlgebraicGeometry.IsNoetherian X :=
+  ⟨fun h ↦
+    { toIsLocallyNoetherian :=
+        (isLocallyNoetherian_toFormalScheme_iff X).mp h.toIsLocallyNoetherian
+      toCompactSpace := h.toCompactSpace },
+   fun h ↦
+    { toIsLocallyNoetherian :=
+        (isLocallyNoetherian_toFormalScheme_iff X).mpr h.toIsLocallyNoetherian
+      toCompactSpace := h.toCompactSpace }⟩
+
+/-- A noetherian scheme is a noetherian formal scheme. -/
+instance (X : Scheme.{u}) [AlgebraicGeometry.IsNoetherian X] : X.toFormalScheme.IsNoetherian :=
+  (isNoetherian_toFormalScheme_iff X).mpr ‹_›
+
+end Scheme
+
+end TauCeti.FormalScheme
