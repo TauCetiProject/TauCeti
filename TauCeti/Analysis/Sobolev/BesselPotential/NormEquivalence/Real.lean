@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence
+public import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Real
 
 /-!
