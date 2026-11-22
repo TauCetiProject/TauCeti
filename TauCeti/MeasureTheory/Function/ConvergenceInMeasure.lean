@@ -22,10 +22,11 @@ No measurability is required of the exceptional sets, since the squeeze only
 uses monotonicity of the (outer) measure; the index runs along an arbitrary
 filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 
-Convergence in mean square also implies convergence in measure, with integrability of the
-squared deviations required only eventually along the filter. In the other direction,
-Chebyshev-type bounds with an auxiliary truncation level give measures tending to zero, and real
-functions tending to zero in measure have upper tails of measure tending to zero.
+Convergence in mean absolute norm implies vanishing tail measures even when the measure spaces
+vary with the index. Convergence in mean square implies convergence in measure, with
+integrability of the squared deviations required only eventually along the filter. Chebyshev-type
+bounds with an auxiliary truncation level give measures tending to zero. Real functions tending to
+zero in measure have upper tails of measure tending to zero.
 
 This file also develops continuous and algebraic stability of `MeasureTheory.TendstoInMeasure`:
 * Pairing (`TendstoInMeasure.prodMk`), uniformly continuous unary and binary maps
@@ -306,6 +307,26 @@ theorem tendstoInMeasure_prod_of_ae_tendstoInMeasure
     (fun _ ↦ ν Set.univ) (hs.mono fun _ hi ↦ measurable_measure_prodMk_left hi)
     (Eventually.of_forall fun _ ↦ ae_of_all _ fun _ ↦ measure_mono (Set.subset_univ _))
     (by rw [lintegral_const]; finiteness) hlim
+
+/-- If the mean norms tend to zero, every positive norm tail has vanishing measure, even
+on varying measure spaces. Integrability of the norms is only needed eventually. -/
+theorem tendsto_measure_norm_ge_of_tendsto_integral_norm {ι E : Type*}
+    [SeminormedAddCommGroup E]
+    {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)] {μ : ∀ i, Measure (Ω i)}
+    {l : Filter ι} {f : ∀ i, Ω i → E}
+    (hint : ∀ᶠ i in l, Integrable (fun ω ↦ ‖f i ω‖) (μ i))
+    (hlim : Tendsto (fun i ↦ ∫ ω, ‖f i ω‖ ∂μ i) l (𝓝 0)) {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun i ↦ μ i {ω | ε ≤ ‖f i ω‖}) l (𝓝 0) := by
+  have hupper := ENNReal.tendsto_ofReal (hlim.div_const ε)
+  simp only [zero_div, ENNReal.ofReal_zero] at hupper
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
+    (.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hint] with i hi
+  have hMarkov := meas_ge_le_lintegral_div hi.aemeasurable.ennreal_ofReal
+    (ENNReal.ofReal_pos.mpr hε).ne' ENNReal.ofReal_ne_top
+  rw [← ofReal_integral_eq_lintegral_ofReal hi (.of_forall fun ω ↦ norm_nonneg (f i ω)),
+    ← ENNReal.ofReal_div_of_pos hε] at hMarkov
+  simpa only [ENNReal.ofReal_le_ofReal_iff (norm_nonneg _)] using hMarkov
 
 /-- Convergence in mean square implies convergence in measure, for any measure and filter.
 Integrability of the squared deviations is needed only eventually. -/

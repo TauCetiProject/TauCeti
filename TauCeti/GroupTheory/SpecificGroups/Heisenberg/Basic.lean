@@ -9,7 +9,7 @@ public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.GroupTheory.PLowerCentralSeries
-public import TauCeti.GroupTheory.ProperPower
+public import TauCeti.Algebra.Group.ProperPower
 public import Mathlib.LinearAlgebra.Matrix.Notation
 -- Private: `fin_cases` is used only inside proofs.
 import Mathlib.Tactic.FinCases
@@ -371,9 +371,9 @@ theorem isPGroup_zmod (p : ℕ) : IsPGroup p (HeisenbergGroup (ZMod p)) :=
 /-- The central element with third coordinate one in the integer Heisenberg group is not a
 proper power. -/
 theorem not_isProperPower_mk_zero_zero_one :
-    ¬ Group.IsProperPower (⟨0, 0, 1⟩ : HeisenbergGroup ℤ) := by
+    ¬ IsProperPower (⟨0, 0, 1⟩ : HeisenbergGroup ℤ) := by
   intro h
-  obtain ⟨y, n, hn, heq⟩ := Group.isProperPower_iff.mp h
+  obtain ⟨y, n, hn, heq⟩ := isProperPower_iff.mp h
   have hx := congrArg HeisenbergGroup.x heq
   have hy := congrArg HeisenbergGroup.y heq
   simp only [pow_eq, Int.nsmul_eq_mul, zero_eq_mul, Int.natCast_eq_zero] at hx hy
