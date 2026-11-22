@@ -9,7 +9,6 @@ public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Order
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
-import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Conjugation
 import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Exponential
 import TauCeti.MeasureTheory.Function.BoundedBorel.Exponential
 
@@ -42,17 +41,17 @@ norm-path-connected in arbitrary Hilbert dimension (Putnam–Wintner, 1952).
 * `Unitary.norm_borelArg_le_pi`, `Unitary.neg_pi_smul_one_le_borelArg`,
   `Unitary.borelArg_le_pi_smul_one`: operator-norm and Loewner order bounds on `borelArg u`.
 * `Unitary.exp_I_smul_borelArg`, `Unitary.expUnitary_borelArg`: Putnam–Wintner theorem
-  `exp (I • borelArg u) = u`, hence `selfAdjoint.surjective_expUnitary`.
+  `exp (I • borelArg u) = u`, hence `selfAdjoint.expUnitary_surjective`.
 * `Unitary.norm_borelArg`: unconditional formula
   `‖borelArg u‖ = Real.arccos (1 - ‖(u - 1 : H →L[ℂ] H)‖ ^ 2 / 2)`.
 * `Unitary.borelArg_eq_argSelfAdjoint_of_continuousOn`, `Unitary.borelArg_eq_argSelfAdjoint`,
   `Unitary.borelArg_expUnitary`: agreement with `Unitary.argSelfAdjoint` whenever `Complex.arg` is
   continuous on `spectrum ℂ u` (in particular on `Metric.ball 1 2`) and left-inverse identity on
   `Metric.ball 0 π`.
-* `Unitary.borelArg_one`, `Unitary.borelArg_neg_one`, `Unitary.borelArg_conj`: values at `1` and
-  `-1`, and equivariance under Hilbert-space linear isometric equivalences.
-* `Unitary.borelPathToOne`, `Unitary.instPathConnectedSpace`, `Unitary.isPathConnected`: explicit
-  norm-continuous path from `1` to `u` and norm-path-connectedness of `unitary (H →L[ℂ] H)`.
+* `Unitary.borelArg_one`, `Unitary.borelArg_neg_one`: values at `1` and `-1`.
+* `Unitary.borelPathToOne`, `Unitary.instPathConnectedSpaceContinuousLinearMap`,
+  `Unitary.isPathConnected_continuousLinearMap`: explicit norm-continuous path from `1` to `u` and
+  norm-path-connectedness of `unitary (H →L[ℂ] H)`.
 
 ## References
 
@@ -226,32 +225,8 @@ theorem borelArg_neg_one :
     rw [hspec, Set.mem_singleton_iff] at hz
     subst hz
     simp
-  rw [borelArg_coe, hsym, AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one, Complex.coe_smul]
-  rfl
-
-section UnitaryConj
-
-variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [CompleteSpace H']
-
-/-- Conjugating a unitary operator by a Hilbert-space linear isometric equivalence `U : H ≃ₗᵢ[ℂ] H'`
-conjugates its Borel argument. -/
-theorem borelArg_conj (u : unitary (H →L[ℂ] H)) (U : H ≃ₗᵢ[ℂ] H') :
-    (borelArg ⟨U.conjStarAlgEquiv (u : H →L[ℂ] H),
-        Unitary.map_mem U.conjStarAlgEquiv u.property⟩ :
-        H' →L[ℂ] H') =
-      U.conjStarAlgEquiv (borelArg u : H →L[ℂ] H) := by
-  let u' : unitary (H' →L[ℂ] H') :=
-    ⟨U.conjStarAlgEquiv (u : H →L[ℂ] H), Unitary.map_mem U.conjStarAlgEquiv u.property⟩
-  rw [borelArg_coe u', borelArg_coe u]
-  have hconj := (u : H →L[ℂ] H).borelCalculus_conj U (borelArgSymbol u')
-  refine Eq.trans ?_ (hconj.trans (congrArg U.conjStarAlgEquiv
-    (congrArg (u : H →L[ℂ] H).borelCalculus ?_)))
-  · congr!
-  · ext z
-    simp only [BoundedBorelFunction.compStarAlgHom'_apply, borelArgSymbol_apply]
-    exact borelArgSymbol_apply u' _
-
-end UnitaryConj
+  rw [borelArg_coe, hsym, AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one, Complex.coe_smul,
+    selfAdjoint.val_smul, selfAdjoint.val_one]
 
 /-- The canonical norm-continuous path `t ↦ expUnitary (t • borelArg u)` from `1` to `u` in
 `unitary (H →L[ℂ] H)`. -/
@@ -282,18 +257,12 @@ theorem norm_borelPathToOne_sub_one_le (u : unitary (H →L[ℂ] H)) (t : I) :
 
 /-- **Putnam–Wintner theorem.** The unitary group `unitary (H →L[ℂ] H)` of any complex Hilbert
 space `H` is norm-path-connected. -/
-instance instPathConnectedSpace : PathConnectedSpace (unitary (H →L[ℂ] H)) where
+instance instPathConnectedSpaceContinuousLinearMap : PathConnectedSpace (unitary (H →L[ℂ] H)) where
   nonempty := ⟨1⟩
   joined u v := ⟨(borelPathToOne u).symm.trans (borelPathToOne v)⟩
 
-/-- The path component of `1` in `unitary (H →L[ℂ] H)` is the entire unitary group. -/
-@[simp]
-theorem pathComponent_one_eq_univ :
-    pathComponent (1 : unitary (H →L[ℂ] H)) = Set.univ :=
-  Set.eq_univ_of_forall (PathConnectedSpace.joined 1)
-
 /-- The set of unitary operators in `H →L[ℂ] H` is path-connected in the operator norm topology. -/
-theorem isPathConnected :
+theorem isPathConnected_continuousLinearMap :
     IsPathConnected (unitary (H →L[ℂ] H) : Set (H →L[ℂ] H)) := by
   rw [← Subtype.range_val (s := (unitary (H →L[ℂ] H) : Set (H →L[ℂ] H)))]
   exact isPathConnected_range (X := unitary (H →L[ℂ] H)) continuous_subtypeVal
@@ -302,7 +271,7 @@ end Unitary
 
 /-- The exponential map `selfAdjoint.expUnitary : selfAdjoint (H →L[ℂ] H) → unitary (H →L[ℂ] H)`
 is surjective on any complex Hilbert space `H`. -/
-theorem selfAdjoint.surjective_expUnitary :
+theorem selfAdjoint.expUnitary_surjective :
     Function.Surjective (selfAdjoint.expUnitary : selfAdjoint (H →L[ℂ] H) → unitary (H →L[ℂ] H)) :=
   fun u ↦ ⟨Unitary.borelArg u, Unitary.expUnitary_borelArg u⟩
 

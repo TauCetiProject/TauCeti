@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Polar.Bounded
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Norm-controlled polar deformation

@@ -132,7 +132,10 @@ theorem ContinuousLinearMap.IsFredholm.exists_path_of_index_eq {T₀ T₁ : E �
   let γ₁ : Path (T₁.comp C) T₁ :=
     (γC.map (f := fun A ↦ T₁.comp A)
       (continuous_const.clm_comp continuous_id)).cast rfl T₁.comp_id.symm
-  have hγ₁ : ∀ t, (γ₁ t).IsFredholm := fun t ↦ hT₁.comp (hγC t).isFredholm
+  have hγ₁ : ∀ t, (γ₁ t).IsFredholm := by
+    intro t
+    simpa only [γ₁, Path.cast_coe, Path.map_coe, Function.comp_apply] using
+      hT₁.comp (hγC t).isFredholm
   exact hpath₀.trans ⟨γ₁, hγ₁⟩
 
 /-- Two elements of the Fredholm locus are connected by a norm-continuous path precisely

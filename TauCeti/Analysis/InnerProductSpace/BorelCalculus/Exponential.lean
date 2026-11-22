@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Basic
+public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Exponential
 
 /-!
 # Exponentials in the Borel functional calculus
 
-For a normal bounded operator `a` on a complex Hilbert space `H`, the Borel functional calculus
-`a.borelCalculus` is continuous (`ContinuousLinearMap.continuous_borelCalculus`), so by
-`NormedSpace.map_exp` it commutes with the Banach-algebra exponential `NormedSpace.exp`:
-`(exp f)(a) = exp (f(a))`.
+For a normal bounded operator `a` on a complex Hilbert space `H`, specializing
+`TauCeti.ProjValMeasure.integral_exp` to `a.spectralPVM` shows that `a.borelCalculus` commutes
+with the Banach-algebra exponential `NormedSpace.exp`: `(exp f)(a) = exp (f(a))`.
 
 ## Main declarations
 
@@ -42,8 +41,7 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 `f` on the spectrum of a normal operator `a`, `(exp f)(a) = exp (f(a))`. -/
 theorem borelCalculus_exp (f : BoundedBorelFunction (spectrum ℂ a)) :
     a.borelCalculus (NormedSpace.exp f) = NormedSpace.exp (a.borelCalculus f) := by
-  let +nondep : NormedAlgebra ℚ (BoundedBorelFunction (spectrum ℂ a)) := .restrictScalars ℚ ℂ _
-  let +nondep : NormedAlgebra ℚ (H →L[ℂ] H) := .restrictScalars ℚ ℂ _
-  exact NormedSpace.map_exp a.borelCalculus a.continuous_borelCalculus f
+  rw [← a.integral_spectralPVM]
+  exact a.spectralPVM.integral_exp f
 
 end ContinuousLinearMap

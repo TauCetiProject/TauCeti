@@ -17,7 +17,7 @@ import TauCeti.Topology.Algebra.IsOpenUnits
 
 In an algebra `A` with a real continuous functional calculus and compatible star order, the set
 `{p : A | IsStrictlyPositive p}` of strictly positive elements is convex
-(`IsStrictlyPositive.convex_setOf`) and contains `1`: for any strictly positive `p` and
+(`TauCeti.convex_setOf_isStrictlyPositive`) and contains `1`: for any strictly positive `p` and
 `t ∈ [0, 1]`, the affine interpolation `(1 - t) • 1 + t • p` remains strictly positive
 (`IsStrictlyPositive.one_sub_smul_add_smul`).
 
@@ -40,7 +40,8 @@ so `Aˣ` is path-connected if and only if `unitary A` is (`Units.pathConnectedSp
 
 ## Main declarations
 
-* `IsStrictlyPositive.isPathConnected_setOf`: `{p : A | IsStrictlyPositive p}` is path-connected.
+* `TauCeti.isPathConnected_setOf_isStrictlyPositive`: `{p : A | IsStrictlyPositive p}` is
+  path-connected.
 * `IsStrictlyPositive.linePathToOne`: the straight-line path `t ↦ (1 - t) • 1 + t • p` from `1` to
   `hp.isUnit.unit` in `Aˣ`.
 * `Units.polarPathToOne`: the polar-linear path from `1` to `a : Aˣ` induced by a path from `1` to
@@ -72,9 +73,9 @@ variable {A : Type*} [Ring A] [PartialOrder A] [StarRing A] [StarOrderedRing A]
   [NonnegSpectrumClass ℝ A] [IsSemitopologicalRing A] [T2Space A]
 
 /-- The set of strictly positive elements in `A` is path-connected. -/
-theorem IsStrictlyPositive.isPathConnected_setOf [ContinuousSMul ℝ A] :
+theorem TauCeti.isPathConnected_setOf_isStrictlyPositive [ContinuousSMul ℝ A] :
     IsPathConnected {p : A | IsStrictlyPositive p} :=
-  IsStrictlyPositive.convex_setOf.isPathConnected ⟨1, isStrictlyPositive_one⟩
+  TauCeti.convex_setOf_isStrictlyPositive.isPathConnected ⟨1, isStrictlyPositive_one⟩
 
 end Convex
 

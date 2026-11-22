@@ -26,9 +26,8 @@ finite-dimensionality assumptions.
   `t ↦ exp(i t borelArg g.polarUnitary) ∘L ((1 - t) • 1 + t • |g|)` from `1` to `g` in
   `(H →L[ℂ] H)ˣ`.
 * `Units.instPathConnectedSpaceContinuousLinearMap`,
-  `ContinuousLinearMap.isPathConnected_isUnit`,
-  `ContinuousLinearMap.isPathConnected_isInvertible_endo`: norm-path-connectedness of
-  `(H →L[ℂ] H)ˣ` and `{T : H →L[ℂ] H | T.IsInvertible}` in arbitrary Hilbert dimension.
+  `ContinuousLinearMap.isPathConnected_isUnit`: norm-path-connectedness of `(H →L[ℂ] H)ˣ` and
+  `{T : H →L[ℂ] H | IsUnit T}` in arbitrary Hilbert dimension.
 * `ContinuousLinearMap.IsInvertible.borelPolarPath`,
   `ContinuousLinearMap.IsInvertible.joinedIn`,
   `ContinuousLinearMap.isPreconnected_isInvertible`,
@@ -80,12 +79,6 @@ separability or finite-dimensionality assumption), the group of invertible bound
 instance instPathConnectedSpaceContinuousLinearMap : PathConnectedSpace (H →L[ℂ] H)ˣ :=
   pathConnectedSpace_of_unitary
 
-/-- The path component of `1` in `(H →L[ℂ] H)ˣ` is the entire general linear group. -/
-@[simp]
-theorem pathComponent_one_continuousLinearMap_eq_univ :
-    pathComponent (1 : (H →L[ℂ] H)ˣ) = Set.univ :=
-  Set.eq_univ_of_forall (PathConnectedSpace.joined 1)
-
 end Units
 
 namespace ContinuousLinearMap
@@ -94,13 +87,6 @@ namespace ContinuousLinearMap
 space `H` is path-connected in the operator norm topology. -/
 theorem isPathConnected_isUnit : IsPathConnected {T : H →L[ℂ] H | IsUnit T} :=
   Units.isPathConnected_isUnit_of_unitary
-
-/-- The set `{T : H →L[ℂ] H | T.IsInvertible}` of invertible bounded endomorphisms on a complex
-Hilbert space `H` is path-connected in the operator norm topology. -/
-theorem isPathConnected_isInvertible_endo : IsPathConnected {T : H →L[ℂ] H | T.IsInvertible} := by
-  convert isPathConnected_isUnit (H := H) using 1
-  ext T
-  exact isInvertible_iff_isUnit
 
 end ContinuousLinearMap
 

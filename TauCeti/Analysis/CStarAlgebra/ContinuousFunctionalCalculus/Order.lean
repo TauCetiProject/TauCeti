@@ -14,10 +14,9 @@ import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 
 In a star-ordered algebra `A` carrying a continuous functional calculus over a star-ordered
 scalar semiring `R`, any unital `⋆`-homomorphism `C(spectrum R 0, R) →⋆ₐ[R] A` forces
-`star (algebraMap R A r) = algebraMap R A (star r)`, hence `StarModule R A`. Consequently `A` is
-an ordered `R`-module (`TauCeti.isOrderedModule_of_cfc`), and nonnegative scalar multiplication
-preserves nonnegativity (`TauCeti.smul_nonneg_of_cfc`) without needing a separate `StarModule R A`
-assumption.
+`star (algebraMap R A r) = algebraMap R A (star r)`, hence `StarModule R A`
+(`TauCeti.starModule_of_cfc`). Consequently `A` is an ordered `R`-module
+(`TauCeti.isOrderedModule_of_cfc`) without needing a separate `StarModule R A` assumption.
 
 Over `ℝ`, the square-root congruence argument also generalizes Mathlib's C⋆-algebra theorems
 `IsStrictlyPositive.add_nonneg` and `IsStrictlyPositive.nonneg_add` to arbitrary star-ordered
@@ -25,18 +24,18 @@ algebras with a real continuous functional calculus (`IsStrictlyPositive.add_non
 `IsStrictlyPositive.nonneg_add_of_cfc`): if `a` is strictly positive and `0 ≤ b`, then
 `a + b = √a (1 + √a⁻¹ b √a⁻¹) √a` is strictly positive. Consequently the cone
 `{p : A | IsStrictlyPositive p}` of strictly positive elements is convex over `ℝ`
-(`IsStrictlyPositive.convex_setOf`).
+(`TauCeti.convex_setOf_isStrictlyPositive`).
 
 ## Main declarations
 
+* `TauCeti.starModule_of_cfc`: a star-ordered algebra with a continuous functional calculus over a
+  star-ordered scalar semiring `R` is a `StarModule R A`.
 * `TauCeti.isOrderedModule_of_cfc`: a star-ordered algebra with a continuous functional calculus
   over a star-ordered scalar semiring `R` is an ordered `R`-module.
-* `TauCeti.smul_nonneg_of_cfc`: `0 ≤ c` and `0 ≤ a` imply `0 ≤ c • a` in a star-ordered algebra
-  with a continuous functional calculus.
 * `IsStrictlyPositive.add_nonneg_of_cfc`, `IsStrictlyPositive.nonneg_add_of_cfc`: adding a
   nonnegative element to a strictly positive element (on either side) yields a strictly positive
   element in any real-CFC star-ordered algebra.
-* `IsStrictlyPositive.convex_setOf`: `{p : A | IsStrictlyPositive p}` is convex over `ℝ`.
+* `TauCeti.convex_setOf_isStrictlyPositive`: `{p : A | IsStrictlyPositive p}` is convex over `ℝ`.
 * `IsStrictlyPositive.one_sub_smul_add_smul`: `(1 - t) • 1 + t • p` is strictly positive for
   `t ∈ [0, 1]`.
 -/
@@ -44,6 +43,30 @@ algebras with a real continuous functional calculus (`IsStrictlyPositive.add_non
 public section
 
 namespace TauCeti
+
+section StarModule
+
+variable {R A : Type*} [CommSemiring R] [StarRing R]
+  [MetricSpace R] [IsTopologicalSemiring R] [ContinuousStar R]
+  [Ring A] [StarRing A] [TopologicalSpace A] [Algebra R A]
+
+/-- In an algebra carrying a continuous functional calculus over a scalar semiring `R`, the scalar
+action satisfies `StarModule R A`. -/
+theorem starModule_of_cfc {p : A → Prop} [ContinuousFunctionalCalculus R A p] :
+    StarModule R A := by
+  obtain ⟨φ, -⟩ :=
+    ContinuousFunctionalCalculus.exists_cfc_of_predicate (R := R) (0 : A) (cfc_predicate_zero R)
+  have hstar (r : R) : star (algebraMap R A r) = algebraMap R A (star r) := by
+    have h := map_star φ (algebraMap R C(spectrum R (0 : A), R) r)
+    have hc : star (algebraMap R C(spectrum R (0 : A), R) r) =
+        algebraMap R C(spectrum R (0 : A), R) (star r) := by
+      ext x
+      rfl
+    simpa only [AlgHomClass.commutes, hc] using h.symm
+  exact ⟨fun r a ↦ by
+    rw [Algebra.smul_def, star_mul, hstar, ← Algebra.commutes, ← Algebra.smul_def]⟩
+
+end StarModule
 
 section OrderedModule
 
@@ -56,27 +79,9 @@ variable {R A : Type*} [CommSemiring R] [PartialOrder R] [StarRing R] [StarOrder
 scalar semiring `R`, the scalar action makes `A` an ordered `R`-module without requiring an
 explicit `StarModule R A` instance. -/
 theorem isOrderedModule_of_cfc {p : A → Prop} [ContinuousFunctionalCalculus R A p] :
-    IsOrderedModule R A := by
-  obtain ⟨φ, -⟩ :=
-    ContinuousFunctionalCalculus.exists_cfc_of_predicate (R := R) (0 : A) (cfc_predicate_zero R)
-  have hstar (r : R) : star (algebraMap R A r) = algebraMap R A (star r) := by
-    have h := map_star φ (algebraMap R C(spectrum R (0 : A), R) r)
-    have hc : star (algebraMap R C(spectrum R (0 : A), R) r) =
-        algebraMap R C(spectrum R (0 : A), R) (star r) := by
-      ext x
-      rfl
-    simpa only [AlgHomClass.commutes, hc] using h.symm
-  have : StarModule R A := ⟨fun r a ↦ by
-    rw [Algebra.smul_def, star_mul, hstar, ← Algebra.commutes, ← Algebra.smul_def]⟩
-  infer_instance
-
-/-- In a star-ordered algebra carrying a continuous functional calculus over a star-ordered
-scalar semiring `R`, scaling a nonnegative element by a nonnegative scalar preserves
-nonnegativity. -/
-theorem smul_nonneg_of_cfc {p : A → Prop} [ContinuousFunctionalCalculus R A p]
-    {c : R} (hc : 0 ≤ c) {a : A} (ha : 0 ≤ a) : 0 ≤ c • a :=
-  have : IsOrderedModule R A := isOrderedModule_of_cfc (R := R) (A := A) (p := p)
-  smul_nonneg hc ha
+    IsOrderedModule R A :=
+  have : StarModule R A := starModule_of_cfc (p := p)
+  inferInstance
 
 end OrderedModule
 
@@ -96,11 +101,8 @@ theorem IsStrictlyPositive.add_nonneg_of_cfc {a b : A} (ha : IsStrictlyPositive 
   have hs : IsStrictlyPositive (CFC.sqrt a) := ha.sqrt
   let u : Aˣ := hs.isUnit.unit
   have hu_sa : IsSelfAdjoint (u : A) := hs.isSelfAdjoint
-  have hinv_sa : IsSelfAdjoint (↑u⁻¹ : A) := by
-    rw [IsSelfAdjoint, ← Units.coe_star]
-    refine congrArg Units.val (inv_eq_of_mul_eq_one_right (G := Aˣ) (Units.ext ?_)).symm
-    rw [Units.val_mul, Units.coe_star, ← hu_sa.star_eq, ← star_mul, u.inv_mul, star_one,
-      Units.val_one]
+  have hu' : IsSelfAdjoint u := Units.ext hu_sa.star_eq
+  have hinv_sa : IsSelfAdjoint (↑u⁻¹ : A) := congrArg Units.val hu'.inv.star_eq
   let q : A := (↑u⁻¹ : A) * b * star (↑u⁻¹ : A)
   have hq0 : 0 ≤ q := star_right_conjugate_nonneg hb (↑u⁻¹ : A)
   have h1q : IsStrictlyPositive (1 + q) := by
@@ -128,7 +130,7 @@ theorem IsStrictlyPositive.nonneg_add_of_cfc {a b : A} (ha : 0 ≤ a) (hb : IsSt
   add_comm b a ▸ hb.add_nonneg_of_cfc ha
 
 /-- The cone `{p : A | IsStrictlyPositive p}` of strictly positive elements is convex over `ℝ`. -/
-theorem IsStrictlyPositive.convex_setOf : Convex ℝ {p : A | IsStrictlyPositive p} := by
+theorem TauCeti.convex_setOf_isStrictlyPositive : Convex ℝ {p : A | IsStrictlyPositive p} := by
   have : IsOrderedModule ℝ A := TauCeti.isOrderedModule_of_cfc
   rw [convex_iff_forall_pos]
   intro p hp q hq u v hu hv _
@@ -139,7 +141,7 @@ remains strictly positive for every `t ∈ [0, 1]`. -/
 theorem IsStrictlyPositive.one_sub_smul_add_smul {p : A} (hp : IsStrictlyPositive p) {t : ℝ}
     (ht : t ∈ Set.Icc (0 : ℝ) 1) :
     IsStrictlyPositive ((1 - t) • (1 : A) + t • p) :=
-  IsStrictlyPositive.convex_setOf isStrictlyPositive_one hp (sub_nonneg.2 ht.2) ht.1
+  TauCeti.convex_setOf_isStrictlyPositive isStrictlyPositive_one hp (sub_nonneg.2 ht.2) ht.1
     (sub_add_cancel 1 t)
 
 end StrictPositivity
