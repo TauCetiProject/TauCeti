@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.CentralTwist.Convolution
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
+public import TauCeti.Analysis.Normed.Operator.Completion
 public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
+import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 
 /-!
 # The cocycle-twisted convolution ⋆-algebra and its L¹ norm
@@ -18,8 +20,10 @@ normalized continuous central multiplier cocycle `ω : CentralCocycle α`, and a
 and the Bochner `L¹` seminorm `∫ s, ‖f s‖ ∂μ`. When `G` is locally compact and Borel and `μ` is
 left-invariant, `TwistedConvolutionAlgebra ω μ` is a complex `StarRing` and `NormedStarGroup`
 whose uniform completion `UniformSpace.Completion (TwistedConvolutionAlgebra ω μ)` is the
-cocycle-twisted `L¹` Banach ⋆-algebra `L¹(G, A, α, ω)`. At `ω = 1`, `untwistStarAlgEquiv`
-identifies it isometrically with `ConvolutionAlgebra α μ`.
+cocycle-twisted `L¹` Banach ⋆-algebra `L¹(G, A, α, ω)`. When `G` is weakly locally compact and `μ`
+is inner regular on finite-measure sets, `TwistedConvolutionAlgebra.completionEquivL1` identifies
+this completion isometrically with Bochner `Lp A 1 μ`. At `ω = 1`, `untwistStarAlgEquiv` identifies
+it isometrically with `ConvolutionAlgebra α μ`.
 
 ## Main definitions
 
@@ -27,6 +31,9 @@ identifies it isometrically with `ConvolutionAlgebra α μ`.
   `C_c(G, A)` with its `L¹` topology.
 * `TauCeti.CStarAction.TwistedConvolutionAlgebra.toL1`, `toL1LI`: linear and linear-isometric
   realizations in Bochner `Lp A 1 μ`.
+* `TauCeti.CStarAction.TwistedConvolutionAlgebra.completionEquivL1`: identification of the
+  twisted `L¹` completion `UniformSpace.Completion (TwistedConvolutionAlgebra ω μ)` with Bochner
+  `Lp A 1 μ`.
 * `TauCeti.CStarAction.TwistedConvolutionAlgebra.untwistStarAlgEquiv`: isometric ⋆-algebra
   equivalence
   `TwistedConvolutionAlgebra (1 : CentralCocycle α) μ ≃⋆ₐ[ℂ] ConvolutionAlgebra α μ`.
@@ -42,7 +49,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory
+open MeasureTheory UniformSpace
 open scoped CompactlySupported
 
 namespace TauCeti.CStarAction
@@ -291,6 +298,54 @@ theorem norm_star (f : TwistedConvolutionAlgebra ω μ) : ‖star f‖ = ‖f‖
 instance : NormedStarGroup (TwistedConvolutionAlgebra ω μ) := ⟨fun f => (norm_star f).le⟩
 
 end NormedStar
+
+section CompletionEquiv
+
+/-- `TwistedConvolutionAlgebra.toL1` realizes a compactly supported coefficient via
+`CompactlySupportedContinuousMap.toLp`. -/
+theorem toL1_eq_toLp [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
+    (f : TwistedConvolutionAlgebra ω μ) :
+    toL1 f = CompactlySupportedContinuousMap.toLp 1 μ ℂ f.ofConv :=
+  Lp.ext ((coeFn_toL1 f).trans (CompactlySupportedContinuousMap.coeFn_toLp ℂ f.ofConv).symm)
+
+variable [R1Space G] [WeaklyLocallyCompactSpace G] [BorelSpace G]
+  [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop]
+
+/-- The compact-support twisted convolution algebra has dense image in `Lp A 1 μ` for any
+measure finite on compact sets and inner regular on sets of finite measure. -/
+theorem denseRange_toL1 : DenseRange (toL1 (ω := ω) (μ := μ)) := by
+  refine (CompactlySupportedContinuousMap.denseRange_toLp ENNReal.one_ne_top μ ℂ).mono ?_
+  rintro _ ⟨f, rfl⟩
+  exact ⟨toConv f, toL1_eq_toLp (toConv f)⟩
+
+/-- `toL1LI` has dense range in `Lp A 1 μ`. -/
+theorem denseRange_toL1LI : DenseRange (toL1LI ω μ) :=
+  (funext toL1LI_apply : ⇑(toL1LI ω μ) = ⇑(toL1 (ω := ω) (μ := μ))) ▸ denseRange_toL1
+
+variable (ω μ) in
+/-- **Identification of the cocycle-twisted `L¹` completion with Bochner `L¹`**: the canonical
+inclusion `toL1` extends to a complex linear isometric equivalence between
+`UniformSpace.Completion (TwistedConvolutionAlgebra ω μ)` and `Lp A 1 μ`. -/
+def completionEquivL1 : Completion (TwistedConvolutionAlgebra ω μ) ≃ₗᵢ[ℂ] Lp A 1 μ :=
+  (toL1LI ω μ).fromCompletionEquivOfDenseRange denseRange_toL1LI
+
+@[simp] theorem completionEquivL1_coe (f : TwistedConvolutionAlgebra ω μ) :
+    completionEquivL1 ω μ f = toL1 f := by
+  rw [completionEquivL1,
+    (toL1LI ω μ).fromCompletionEquivOfDenseRange_coe denseRange_toL1LI f, toL1LI_apply]
+
+@[simp] theorem completionEquivL1_symm_toL1 (f : TwistedConvolutionAlgebra ω μ) :
+    (completionEquivL1 ω μ).symm (toL1 f) = f := by
+  rw [completionEquivL1, ← toL1LI_apply (ω := ω) (μ := μ),
+    (toL1LI ω μ).fromCompletionEquivOfDenseRange_symm_apply denseRange_toL1LI f]
+
+@[simp] theorem completionEquivL1_symm_toLp (f : C_c(G, A)) :
+    (completionEquivL1 ω μ).symm (CompactlySupportedContinuousMap.toLp 1 μ ℂ f) =
+      ((toConv f : TwistedConvolutionAlgebra ω μ) :
+        Completion (TwistedConvolutionAlgebra ω μ)) := by
+  rw [← toL1_eq_toLp, completionEquivL1_symm_toL1]
+
+end CompletionEquiv
 
 /-! ### Comparison with the untwisted convolution algebra at `ω = 1` -/
 

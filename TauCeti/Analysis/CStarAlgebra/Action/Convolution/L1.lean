@@ -268,20 +268,19 @@ variable (α μ) in
 `toL1` extends to a complex linear isometric equivalence between
 `UniformSpace.Completion (ConvolutionAlgebra α μ)` and `Lp A 1 μ`. -/
 def completionEquivL1 : Completion (ConvolutionAlgebra α μ) ≃ₗᵢ[ℂ] Lp A 1 μ :=
-  (LinearEquiv.refl ℂ (ConvolutionAlgebra α μ)).extendOfIsometry
-    Completion.toComplₗᵢ.toLinearMap (toL1 (α := α) (μ := μ))
-    Completion.denseRange_coe denseRange_toL1 fun f => by
-      simp [← toL1LI_apply]
+  (toL1LI α μ).fromCompletionEquivOfDenseRange denseRange_toL1LI
 
 @[simp]
 theorem completionEquivL1_coe (f : ConvolutionAlgebra α μ) :
-    completionEquivL1 α μ f = toL1 f :=
-  LinearEquiv.extendOfIsometry_eq _ _ _ _ _ _ f
+    completionEquivL1 α μ f = toL1 f := by
+  rw [completionEquivL1,
+    (toL1LI α μ).fromCompletionEquivOfDenseRange_coe denseRange_toL1LI f, toL1LI_apply]
 
 @[simp]
 theorem completionEquivL1_symm_toL1 (f : ConvolutionAlgebra α μ) :
-    (completionEquivL1 α μ).symm (toL1 f) = f :=
-  LinearEquiv.extendOfIsometry_symm_eq _ _ _ _ _ _ f
+    (completionEquivL1 α μ).symm (toL1 f) = f := by
+  rw [completionEquivL1, ← toL1LI_apply (α := α) (μ := μ),
+    (toL1LI α μ).fromCompletionEquivOfDenseRange_symm_apply denseRange_toL1LI f]
 
 @[simp]
 theorem completionEquivL1_symm_toLp (f : C_c(G, A)) :

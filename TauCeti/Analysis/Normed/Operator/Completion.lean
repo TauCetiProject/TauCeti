@@ -85,6 +85,8 @@ space `V` and `c < s`, then `ContinuousLinearMap.denseRange_comp` and rescaling 
   `c`-coercive can be pulled back to `E` with norm at most `‖A'‖` and `T` still `c`-coercive.
 * `LinearIsometry.fromCompletion_surjective_of_denseRange`: extending a linear isometry with dense
   range from a completion is surjective.
+* `LinearIsometry.fromCompletionEquivOfDenseRange`: a linear isometry with dense range into a
+  complete normed module extends to a linear isometric equivalence from the completion.
 * `LinearIsometryEquiv.completion`: the extension of a linear isometric equivalence to the
   completions.
 * `LinearIsometryEquiv.toLinearIsometry_completion`: as a linear isometry, it is
@@ -342,6 +344,51 @@ theorem fromCompletion_surjective_of_denseRange {R R₂ E F : Type*}
   rw [← Set.range_eq_univ, ← Set.univ_subset_iff, ← hf.closure_eq]
   exact closure_minimal (by rintro _ ⟨x, rfl⟩; exact ⟨x, f.fromCompletion_apply_coe x⟩)
     f.fromCompletion.isometry.isUniformInducing.isComplete_range.isClosed
+
+/-- A semilinear isometry `f : E →ₛₗᵢ[σ₁₂] F` with dense range into a complete normed module
+extends to a semilinear isometric equivalence `Completion E ≃ₛₗᵢ[σ₁₂] F`. -/
+noncomputable def fromCompletionEquivOfDenseRange {R R₂ E F : Type*}
+    [Semiring R] [Semiring R₂] [SeminormedAddCommGroup E] [Module R E]
+    [UniformContinuousConstSMul R E] [NormedAddCommGroup F] [Module R₂ F]
+    [PseudoMetricSpace R₂] [CompleteSpace F] [IsBoundedSMul R₂ F]
+    {σ₁₂ : R →+* R₂} {σ₂₁ : R₂ →+* R} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
+    (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) : Completion E ≃ₛₗᵢ[σ₁₂] F :=
+  LinearIsometryEquiv.ofSurjective f.fromCompletion (f.fromCompletion_surjective_of_denseRange hf)
+
+/-- On `E`, the extension of a linear isometry with dense range into a complete space is the
+isometry itself. -/
+@[simp]
+theorem fromCompletionEquivOfDenseRange_coe {R R₂ E F : Type*}
+    [Semiring R] [Semiring R₂] [SeminormedAddCommGroup E] [Module R E]
+    [UniformContinuousConstSMul R E] [NormedAddCommGroup F] [Module R₂ F]
+    [PseudoMetricSpace R₂] [CompleteSpace F] [IsBoundedSMul R₂ F]
+    {σ₁₂ : R →+* R₂} {σ₂₁ : R₂ →+* R} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
+    (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) (x : E) :
+    f.fromCompletionEquivOfDenseRange hf x = f x :=
+  f.fromCompletion_apply_coe x
+
+/-- On the image of `f`, the inverse of `fromCompletionEquivOfDenseRange` recovers the canonical
+inclusion into the completion. -/
+@[simp]
+theorem fromCompletionEquivOfDenseRange_symm_apply {R R₂ E F : Type*}
+    [Semiring R] [Semiring R₂] [SeminormedAddCommGroup E] [Module R E]
+    [UniformContinuousConstSMul R E] [NormedAddCommGroup F] [Module R₂ F]
+    [PseudoMetricSpace R₂] [CompleteSpace F] [IsBoundedSMul R₂ F]
+    {σ₁₂ : R →+* R₂} {σ₂₁ : R₂ →+* R} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
+    (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) (x : E) :
+    (f.fromCompletionEquivOfDenseRange hf).symm (f x) = x := by
+  rw [← fromCompletionEquivOfDenseRange_coe f hf x, LinearIsometryEquiv.symm_apply_apply]
+
+/-- As a linear isometry, `fromCompletionEquivOfDenseRange` is `LinearIsometry.fromCompletion`. -/
+@[simp]
+theorem toLinearIsometry_fromCompletionEquivOfDenseRange {R R₂ E F : Type*}
+    [Semiring R] [Semiring R₂] [SeminormedAddCommGroup E] [Module R E]
+    [UniformContinuousConstSMul R E] [NormedAddCommGroup F] [Module R₂ F]
+    [PseudoMetricSpace R₂] [CompleteSpace F] [IsBoundedSMul R₂ F]
+    {σ₁₂ : R →+* R₂} {σ₂₁ : R₂ →+* R} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
+    (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) :
+    (f.fromCompletionEquivOfDenseRange hf).toLinearIsometry = f.fromCompletion :=
+  (rfl)
 
 end LinearIsometry
 

@@ -93,12 +93,8 @@ theorem continuous_integratedNonUnitalAlgHom : Continuous (P.integratedNonUnital
 /-- The integrated form on the twisted L¹ algebra: the extension by continuity of
 `integratedNonUnitalAlgHom` to the completion of the convolution algebra in its L¹ seminorm. -/
 def integratedOperatorL1 :
-    Completion (ConvolutionAlgebra α μ) →ₙₐ[ℂ] (H →L[ℂ] H) where
-  toFun := (P.integratedOperatorCLM μ).fromCompletion
-  map_smul' := map_smul _
-  map_zero' := map_zero _
-  map_add' := map_add _
-  map_mul' := (P.integratedOperatorCLM μ).fromCompletion_mul fun f g => by simp
+    Completion (ConvolutionAlgebra α μ) →ₙₐ[ℂ] (H →L[ℂ] H) :=
+  (P.integratedNonUnitalAlgHom μ).fromCompletion (P.continuous_integratedNonUnitalAlgHom μ)
 
 /-- On compactly supported coefficients the L¹ integrated form is the integrated form. -/
 @[simp]
@@ -109,12 +105,14 @@ theorem integratedOperatorL1_coe (f : ConvolutionAlgebra α μ) :
 /-- The L¹ integrated form is continuous. -/
 @[fun_prop]
 theorem continuous_integratedOperatorL1 : Continuous (P.integratedOperatorL1 μ) :=
-  (P.integratedOperatorCLM μ).fromCompletion.continuous
+  (P.integratedNonUnitalAlgHom μ).continuous_fromCompletion _
 
 /-- The L¹ integrated form is a contraction: `‖(π ⋊ U)(x)‖ ≤ ‖x‖₁` on the twisted L¹ algebra. -/
 theorem norm_integratedOperatorL1_le (x : Completion (ConvolutionAlgebra α μ)) :
-    ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ :=
-  ((P.integratedOperatorCLM μ).fromCompletion.le_of_opNorm_le
+    ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ := by
+  rw [integratedOperatorL1,
+    NonUnitalAlgHom.fromCompletion_eq_clm _ _ (P.integratedOperatorCLM μ) (fun f => by simp) x]
+  exact ((P.integratedOperatorCLM μ).fromCompletion.le_of_opNorm_le
     ((ContinuousLinearMap.norm_fromCompletion _).trans_le (P.norm_integratedOperatorCLM_le μ))
     x).trans_eq (one_mul _)
 

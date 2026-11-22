@@ -277,13 +277,13 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)} {U : G → H →L[ℂ] H}
 
 /-- On a locally compact topological group with a left-invariant Borel measure finite on compacts,
-if `f g : C_c(G, A)` satisfy the pointwise modular-weighted adjoint identity
-`π (g s) * U s = c(s) • (π (f s⁻¹) * U s⁻¹)*`, then `π.integratedOperator U hU hbdd μ g` is the
-adjoint of `π.integratedOperator U hU hbdd μ f`. -/
+if `f g : C_c(G, A)` satisfy the almost-everywhere modular-weighted adjoint identity
+`∀ᵐ s ∂μ, π (g s) * U s = c(s) • (π (f s⁻¹) * U s⁻¹)*`, then
+`π.integratedOperator U hU hbdd μ g` is the adjoint of `π.integratedOperator U hU hbdd μ f`. -/
 theorem integratedOperator_eq_star (hU : ∀ v : H, Continuous fun g => U g v)
     (hbdd : ∃ C, ∀ g, ‖U g‖ ≤ C) (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
     [μ.IsMulLeftInvariant] {f g : C_c(G, A)}
-    (hstar : ∀ s, π (g s) * U s =
+    (hstar : ∀ᵐ s ∂μ, π (g s) * U s =
       ((Measure.modularCharacter s : ℝ) : ℂ) • star (π (f s⁻¹) * U s⁻¹)) :
     π.integratedOperator U hU hbdd μ g = star (π.integratedOperator U hU hbdd μ f) := by
   rw [ContinuousLinearMap.star_eq_adjoint]
@@ -293,8 +293,9 @@ theorem integratedOperator_eq_star (hU : ∀ v : H, Continuous fun g => U g v)
   calc
     (∫ s, starRingEnd ℂ ⟪w, π (g s) (U s v)⟫_ℂ ∂μ) =
         ∫ s, (Measure.modularCharacter s : ℝ) • ⟪v, π (f s⁻¹) (U s⁻¹ w)⟫_ℂ ∂μ := by
-      congr 1 with s
-      rw [inner_conj_symm, ← mul_apply_eq_comp, hstar s, smul_apply,
+      refine integral_congr_ae ?_
+      filter_upwards [hstar] with s hs
+      rw [inner_conj_symm, ← mul_apply_eq_comp, hs, smul_apply,
         inner_smul_left, Complex.conj_ofReal, ← Complex.real_smul,
         ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left,
         mul_apply_eq_comp]

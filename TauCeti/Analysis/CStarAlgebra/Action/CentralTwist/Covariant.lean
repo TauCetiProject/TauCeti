@@ -409,7 +409,7 @@ theorem integratedOperator_involution [MeasurableSpace G] [BorelSpace G] (μ : M
     [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant] (f : C_c(G, A)) :
     P.integratedOperator μ (ω.involution f) = star (P.integratedOperator μ f) :=
   P.pi.integratedOperator_eq_star P.strong_continuous P.exists_norm_unitaryMap_le μ
-    (P.pi_involution_mul_unitaryMap f)
+    (.of_forall (P.pi_involution_mul_unitaryMap f))
 
 end Involution
 
