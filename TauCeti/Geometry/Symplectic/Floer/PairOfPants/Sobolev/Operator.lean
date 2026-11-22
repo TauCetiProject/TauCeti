@@ -187,9 +187,7 @@ theorem norm_floerConformalJetCoeff_positiveEndChart_le (ω : SymplecticForm V)
   -- The zeroth-order part `C(w)` is at most `(1 + B) B / (2π d)` with `d = |w - c_q|`, and the
   -- weight is at least `d⁻²`.
   have hcmp := ω.mul_norm_floerLinearizationCoeff_positiveEndChart_le hH hHs hζ hu hfl
-  have hne : Complex.equivRealProdCLM.symm (positiveEndChart q ζ) ≠ q.endCenter := by
-    rw [positiveEndChart_apply]
-    exact equivRealProdCLM_symm_endChart_ne_endCenter q _
+  have hne := equivRealProdCLM_symm_positiveEndChart_ne_endCenter q ζ
   have hρd := inv_sqrt_cylindricalWeight_le_norm_sub_endCenter q hne
   generalize ‖Complex.equivRealProdCLM.symm (positiveEndChart q ζ) - q.endCenter‖ = d
     at hcmp hρd

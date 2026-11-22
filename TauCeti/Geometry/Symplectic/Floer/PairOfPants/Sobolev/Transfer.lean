@@ -104,11 +104,8 @@ theorem setLIntegral_thricePuncturedSphereReal_eq_lintegral_positiveEndChart (q 
     ∫⁻ z in thricePuncturedSphereReal, G z =
       ∫⁻ ζ, ENNReal.ofReal (positiveEndChartScale q ζ ^ 2) * G (positiveEndChart q ζ)
         ∂StripSobolev.stripMeasure := by
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
   rw [volume_restrict_thricePuncturedSphereReal_eq q, ← image_positiveEndChart_band,
-    lintegral_image_eq_lintegral_abs_det_fderiv_mul volume (MeasurableSet.univ.prod
-      measurableSet_Ico) (fun ζ _ ↦ ((contDiff_positiveEndChart q 1).differentiable one_ne_zero
-      ζ).hasFDerivAt.hasFDerivWithinAt) (injOn_positiveEndChart q 0 |>.mono (by simp)),
+    lintegral_image_positiveEndChart q MeasurableSet.univ,
     StripSobolev.stripMeasure_eq_restrict_band]
   refine lintegral_congr fun ζ ↦ ?_
   rw [sq_positiveEndChartScale, abs_of_pos (det_fderiv_positiveEndChart_pos q ζ)]
