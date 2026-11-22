@@ -86,8 +86,8 @@ differentiable at `x`. -/
 private theorem mdifferentiableAt_hessianForm_apply_of_contMDiff (hf : ContMDiff I 𝓘(ℝ) ∞ f)
     {x : M} {σ τ : Π y : M, TangentSpace I y} (hσ : MDiffAt (T% σ) x)
     (hτ : MDiffAt (T% τ) x) : MDiffAt (fun y ↦ I.hessianForm f y (σ y) (τ y)) x :=
-  mdifferentiableAt_hessianForm_apply (m := ∞) (k := ∞) (by simp) (by simp) isOpen_univ
-    (hf.of_le (by simp)).contMDiffOn (Set.mem_univ x) hσ hτ
+  mdifferentiableAt_hessianForm_apply_of_contMDiffOn (m := ∞) (k := ∞) (by simp) (by simp)
+    isOpen_univ (hf.of_le (by simp)).contMDiffOn (Set.mem_univ x) hσ hτ
 
 /-- Pairing the second covariant derivative of `grad f` with a vector is the covariant derivative
 of the Hessian: `⟪∇²(grad f)(u, v), w⟫ = (∇_u Hess f)(v, w)`. -/

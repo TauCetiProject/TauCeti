@@ -53,8 +53,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.mdifferentiableAt_mgradient` and
   `TauCeti.Manifold.mdifferentiable_mgradient`: a `C²` germ or function has a differentiable
   Riemannian gradient section.
-* `TauCeti.Manifold.mgradient_add_eventuallyEq`: the gradient is additive near a point where
-  both functions are `C¹`.
+* `TauCeti.Manifold.mgradient_add_eventuallyEq`: the gradient is additive near a point near which
+  both functions are differentiable.
 * `TauCeti.Manifold.contMDiff_neg_mgradient`: so is the negative gradient, and
   `TauCeti.Manifold.contMDiff_neg_mgradient_one` states its `C¹` case for a `C²` function.
 * `TauCeti.Manifold.eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient`: for a
@@ -158,17 +158,16 @@ theorem mgradient_add {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
   funext x
   simp [mgradient, mvfderiv_add (hf x) (hg x)]
 
-/-- The gradient is additive near a point where both functions are `C¹`. -/
+/-- The gradient is additive near a point where both functions are differentiable nearby. -/
 theorem mgradient_add_eventuallyEq {g : M → ℝ}
-    (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) (hg : ContMDiffAt I 𝓘(ℝ) 1 g x) :
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in 𝓝 x, MDifferentiableAt I 𝓘(ℝ) g y) :
     ∀ᶠ y in 𝓝 x, mgradient I (f + g) y = (mgradient I f + mgradient I g) y := by
-  filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf,
-    (contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hg] with y hfy hgy
+  filter_upwards [hf, hg] with y hfy hgy
   apply ext_inner_right ℝ
   intro v
   rw [Pi.add_apply, inner_add_left, inner_mgradient, inner_mgradient, inner_mgradient,
-    mvfderiv_add (hfy.mdifferentiableAt (by simp)) (hgy.mdifferentiableAt (by simp)),
-    add_apply]
+    mvfderiv_add hfy hgy, add_apply]
 
 /-- The gradient satisfies the scalar product rule for differentiable functions. -/
 theorem mgradient_mul {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)

@@ -196,11 +196,6 @@ private def slice12 (r : FourTensor V) (x y : V) : V →ₗ[ℝ] V →ₗ[ℝ] �
     (fun _ _ _ ↦ apply_add_first ..) (fun _ _ _ ↦ apply_smul_first ..)
     (fun _ _ _ ↦ apply_add_second ..) (fun _ _ _ ↦ apply_smul_second ..)
 
-private def slice13 (r : FourTensor V) (x y : V) : V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
-  LinearMap.mk₂ ℝ (fun u z ↦ r ![u, x, z, y])
-    (fun _ _ _ ↦ apply_add_first ..) (fun _ _ _ ↦ apply_smul_first ..)
-    (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
-
 private def tensorBilin (A B : V →ₗ[ℝ] V →ₗ[ℝ] ℝ) :
     V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
   A.compr₂ ((LinearMap.lsmul ℝ (V →ₗ[ℝ] V →ₗ[ℝ] ℝ)).flip B)
@@ -212,10 +207,10 @@ private def reactionBilinearContraction {ι : Type*} [Fintype ι] (b : Orthonorm
   (∑ p, ∑ q, ofLinearMap₄ (tensorBilin (slice12 r (b p) (b q)) (slice12 s (b p) (b q)))) +
   (2 : ℝ) • (∑ p, ∑ q, ofLinearMap₄
     ((LinearMap.lflip (R₀ := ℝ)).toLinearMap.comp
-      (tensorBilin (slice13 r (b p) (b q)) (slice13 s (b p) (b q))))) -
+      (tensorBilin (ricciSlice r (b p) (b q)) (ricciSlice s (b p) (b q))))) -
   (2 : ℝ) • (∑ p, ∑ q, ofLinearMap₄
     (((LinearMap.lflip (R₀ := ℝ)).toLinearMap.comp
-      (tensorBilin (slice13 r (b p) (b q)) (slice13 s (b p) (b q)))).compr₂
+      (tensorBilin (ricciSlice r (b p) (b q)) (ricciSlice s (b p) (b q)))).compr₂
       (LinearMap.lflip (R₀ := ℝ)).toLinearMap))
 
 private theorem reactionBilinearContraction_apply {ι : Type*} [Fintype ι]
@@ -224,7 +219,7 @@ private theorem reactionBilinearContraction_apply {ι : Type*} [Fintype ι]
       (∑ p, ∑ q, r ![u, v, b p, b q] * s ![z, w, b p, b q]) +
       2 * (∑ p, ∑ q, r ![u, b p, z, b q] * s ![v, b p, w, b q]) -
       2 * (∑ p, ∑ q, r ![u, b p, w, b q] * s ![v, b p, z, b q]) := by
-  simp [reactionBilinearContraction, tensorBilin, slice12, slice13]
+  simp [reactionBilinearContraction, tensorBilin, slice12, ricciSlice_apply]
 
 private theorem reactionTensor_eq_contraction (r : FourTensor V) :
     reactionTensor r = reactionBilinearContraction (stdOrthonormalBasis ℝ V) r r := by

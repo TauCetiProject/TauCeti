@@ -17,8 +17,11 @@ Riemannian Hessian of `f` with two `C^n` tangent fields along a `C^n` base map g
 scalar function. The parameter manifold needs no dimension or regularity assumption beyond its
 charts.
 
-Likewise, the Hessian form of a `C³` function pairs two tangent fields differentiable at a point
-to a function differentiable there, on a `C³` manifold with a `C²` metric.
+Likewise, the Hessian form pairs two tangent fields differentiable at a point to a function
+differentiable there whenever `∇ grad f` is differentiable at that point
+(`TauCeti.Manifold.mdifferentiableAt_hessianForm_apply`); this holds for a function that is `C³`
+near the point, on a `C³` manifold with a `C²` metric
+(`TauCeti.Manifold.mdifferentiableAt_hessianForm_apply_of_contMDiffOn`).
 -/
 
 public noncomputable section
@@ -77,19 +80,32 @@ theorem contMDiffAt_hessian_pair (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) {f : M �
   exact ContMDiffAt.inner_bundle (IB := I) (F := E)
     (E := fun y : M ↦ TangentSpace I y) (b := γ) hAP hQ
 
+/-- The Hessian form pairs two tangent fields differentiable at `x` to a function differentiable at
+`x`, provided the Levi–Civita covariant derivative `∇ grad f` of the gradient is differentiable at
+`x` as a section of the endomorphism bundle. -/
+theorem mdifferentiableAt_hessianForm_apply {f : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I (I.prod 𝓘(ℝ, E →L[ℝ] E))
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun y : M ↦ (TangentSpace I y →L[ℝ] TangentSpace I y)) y
+          (leviCivitaConnection I M (mgradient I f) y)) x)
+    {σ τ : Π y : M, TangentSpace I y} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
+    MDiffAt (fun y ↦ I.hessianForm f y (σ y) (τ y)) x := by
+  have hGσ : MDiffAt (T% (fun y ↦ leviCivitaConnection I M (mgradient I f) y (σ y))) x :=
+    hf.clm_bundle_apply hσ
+  simp only [ModelWithCorners.hessianForm_apply, hessian_def]
+  exact mdifferentiableAt_inner hGσ hτ
+
 /-- The Hessian form of a function that is `C³` on an open neighbourhood of `x` pairs two tangent
 fields differentiable at `x` to a function differentiable at `x`, on a `C³` manifold with a `C²`
 metric. -/
-theorem mdifferentiableAt_hessianForm_apply (hm : 3 ≤ m) (hk : 2 ≤ k) {f : M → ℝ} {U : Set M}
-    (hU : IsOpen U) (hf : ContMDiffOn I 𝓘(ℝ) 3 f U) {x : M} (hx : x ∈ U)
+theorem mdifferentiableAt_hessianForm_apply_of_contMDiffOn (hm : 3 ≤ m) (hk : 2 ≤ k) {f : M → ℝ}
+    {U : Set M} (hU : IsOpen U) (hf : ContMDiffOn I 𝓘(ℝ) 3 f U) {x : M} (hx : x ∈ U)
     {σ τ : Π y : M, TangentSpace I y} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
     MDiffAt (fun y ↦ I.hessianForm f y (σ y) (τ y)) x := by
   have h3 : (1 : ℕ∞ω) + 2 = 3 := by norm_num
   have hA := contMDiffOn_leviCivitaConnection_mgradient (n := 1) (m := m) (k := k) (h3 ▸ hm)
     (by rwa [one_add_one_eq_two]) hU (h3 ▸ hf)
-  have hGσ : MDiffAt (T% (fun y ↦ leviCivitaConnection I M (mgradient I f) y (σ y))) x :=
-    ((hA.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt one_ne_zero).clm_bundle_apply hσ
-  simp only [ModelWithCorners.hessianForm_apply, hessian_def]
-  exact mdifferentiableAt_inner hGσ hτ
+  exact mdifferentiableAt_hessianForm_apply
+    ((hA.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt one_ne_zero) hσ hτ
 
 end TauCeti.Manifold

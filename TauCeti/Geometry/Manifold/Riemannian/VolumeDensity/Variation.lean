@@ -113,7 +113,7 @@ theorem hasDerivWithinAt_chartVolumeDensity (α : M) (hx : x ∈ (chartAt H α).
       Matrix.trace_mul_comm]
     simp only [Matrix.trace, Matrix.diag, Matrix.mul_apply, G', Matrix.of_apply, smul_eq_mul]
     refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [show (G t)⁻¹ j i = (G t)⁻¹ i j by simpa using hsymm.apply i j]
+    rw [hsymm.isSymm.apply i j]
     ring
   convert hsqrt using 1
   · exact funext hρ

@@ -57,7 +57,8 @@ theorem _root_.ContinuousLinearMap.traceCLM_inverse_comp_self_eq_sum_sq
       ∑ i, ∑ j, B (b i) (b j) ^ 2 := by
   -- The raised map `A` is symmetric, so `A ∘ A = A† ∘ A` and its trace is the Frobenius sum.
   let A : F →ₗ[ℝ] F := bilinFormToEnd B.toBilinForm
-  have hA : A.IsSymmetric := isSymmetric_bilinFormToEnd_iff.mpr ⟨fun v w ↦ hB v w⟩
+  have hA : A.IsSymmetric := isSymmetric_bilinFormToEnd_iff.mpr
+    ⟨fun v w ↦ by simpa only [ContinuousLinearMap.toBilinForm_apply] using hB v w⟩
   have hsq : A ∘ₗ A = A.adjoint ∘ₗ A := by rw [hA.adjoint_eq]
   rw [traceCLM_apply, ContinuousLinearMap.toLinearMap_comp,
     g.toLinearMap_inverse_comp_eq_bilinFormToEnd hg B, hsq,

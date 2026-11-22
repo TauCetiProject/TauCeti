@@ -18,6 +18,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.InnerProductSpace.BilinearForm.End
+import TauCeti.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Analysis.Calculus.Gradient
@@ -28,6 +29,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -557,11 +559,7 @@ theorem _root_.ModelWithCorners.hessianForm_add_of_mdifferentiableAt_mgradient {
     (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
     (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x) :
     I.hessianForm (f + g) x = I.hessianForm f x + I.hessianForm g x := by
-  have hev : ∀ᶠ y in nhds x, mgradient I (f + g) y = (mgradient I f + mgradient I g) y := by
-    filter_upwards [hf, hg] with y hfy hgy
-    refine ext_inner_right ℝ fun v ↦ ?_
-    rw [Pi.add_apply, inner_add_left, inner_mgradient, inner_mgradient, inner_mgradient,
-      mvfderiv_add hfy hgy, add_apply]
+  have hev := mgradient_add_eventuallyEq hf hg
   have hsum := mdifferentiableAt_add_section hf' hg'
   have hcov := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv
   rw [I.hessianForm_def, I.hessianForm_def, I.hessianForm_def,
@@ -728,7 +726,12 @@ theorem laplaceBeltrami_add_of_contMDiffAt {f g : M → ℝ} {x : M}
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   have hgradf := mdifferentiableAt_mgradient hf
   have hgradg := mdifferentiableAt_mgradient hg
-  have hev := mgradient_add_eventuallyEq (hf.of_le (by norm_num)) (hg.of_le (by norm_num))
+  -- Both functions are `C¹`, hence differentiable, near `x`.
+  have hdiff {h : M → ℝ} (hh : ContMDiffAt I 𝓘(ℝ) 2 h x) :
+      ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) h y :=
+    ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hh).mono fun _ hy ↦
+      hy.mdifferentiableAt (by norm_num)
+  have hev := mgradient_add_eventuallyEq (hdiff hf) (hdiff hg)
   have hcov := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv
   rw [laplaceBeltrami_def, divergence_def,
     hcov.congr_of_eventuallyEq (mdifferentiableAt_mgradient (hf.add hg))
@@ -914,14 +917,9 @@ theorem _root_.ModelWithCorners.laplaceBeltrami_eq_metricTrace_hessianForm
     laplaceBeltrami I f x =
       LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (I.hessianForm f x)) := by
   -- The Hessian form is the metric lowering of the covariant derivative of the gradient.
-  have h : ContinuousLinearMap.toLinearMap₁₂ (I.hessianForm f x) =
-      (innerₗ (TangentSpace I x)).comp
-        (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x).toLinearMap :=
-    LinearMap.ext₂ fun v w ↦ by
-      rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, I.hessianForm_apply, hessian_def,
-        LinearMap.comp_apply, innerₗ_apply_apply, ContinuousLinearMap.coe_coe]
-  rw [laplaceBeltrami_def, divergence_def, h, ← LinearMap.BilinForm.trace_bilinFormToEnd,
-    LinearMap.bilinFormToEnd_innerₗ_comp]
+  rw [laplaceBeltrami_def, divergence_def, I.hessianForm_def,
+    ContinuousLinearMap.toLinearMap₁₂_comp, toLinearMap₁₂_innerSL,
+    ← LinearMap.BilinForm.trace_bilinFormToEnd, LinearMap.bilinFormToEnd_innerₗ_comp]
 
 /-- The Laplace–Beltrami operator is the trace of the scalar Hessian in every orthonormal basis. -/
 theorem laplaceBeltrami_eq_sum_hessian (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]

@@ -231,7 +231,9 @@ private theorem traceCLM_inverse_deriv_ricciTensor_eq_laplaceBeltrami
     _ = LinearMap.BilinMap.metricTrace Kx.toBilinForm :=
       ContinuousLinearMap.traceCLM_inverse_comp_eq_metricTrace (g.metric t x)
         (fun u v ↦ by simpa only [metric_apply] using hg x u v) Kx
-    _ = ∑ j, Kx (e j) (e j) := LinearMap.BilinMap.metricTrace_eq_sum _ e
+    _ = ∑ j, Kx (e j) (e j) := by
+      simpa only [ContinuousLinearMap.toBilinForm_apply] using
+        LinearMap.BilinMap.metricTrace_eq_sum Kx.toBilinForm e
     _ = ∑ j, ∑ i, inner ℝ (e i)
         ((cov t).hom ((cov t).hom (cov t)) C x (e i) (e j) (e j) -
           (cov t).hom ((cov t).hom (cov t)) C x (e j) (e j) (e i)) := by

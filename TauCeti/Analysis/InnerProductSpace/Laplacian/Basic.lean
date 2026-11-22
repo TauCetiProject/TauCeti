@@ -17,7 +17,9 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
 # Calculus and geometric invariance of the Laplacian
@@ -177,33 +179,25 @@ theorem _root_.ContinuousLinearMap.norm_traceL_apply_le (H : E →L[ℝ] E →L[
 
 /-- Transposing the arguments of a bilinear map preserves its trace. -/
 @[simp] theorem traceL_flip (B : E →L[ℝ] E →L[ℝ] F) : traceL B.flip = traceL B := by
-  have h : ContinuousLinearMap.toLinearMap₁₂ B.flip = (ContinuousLinearMap.toLinearMap₁₂ B).flip :=
-    LinearMap.ext₂ fun _ _ ↦ by simp
-  rw [B.flip.traceL_apply_eq_metricTrace, B.traceL_apply_eq_metricTrace, h,
-    LinearMap.BilinMap.metricTrace_flip]
+  rw [B.flip.traceL_apply_eq_metricTrace, B.traceL_apply_eq_metricTrace,
+    ContinuousLinearMap.toLinearMap₁₂_flip, LinearMap.BilinMap.metricTrace_flip]
 
 /-- The trace of the real inner product is the dimension of the space. -/
 @[simp] theorem traceL_innerSL :
     traceL (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = (Module.finrank ℝ E : ℝ) := by
-  have h : ContinuousLinearMap.toLinearMap₁₂ (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = innerₗ E :=
-    LinearMap.ext₂ fun v w ↦ by
-      rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, innerSL_apply_apply,
-        innerₗ_apply_apply]
-  rw [ContinuousLinearMap.traceL_apply_eq_metricTrace, h, LinearMap.BilinMap.metricTrace_inner]
+  rw [ContinuousLinearMap.traceL_apply_eq_metricTrace, toLinearMap₁₂_innerSL,
+    LinearMap.BilinMap.metricTrace_inner]
 
 /-- The trace of the rank-one bilinear map `(v, w) ↦ f v • A w` is `A` evaluated at the Riesz
 representative of `f`. -/
 @[simp] theorem _root_.ContinuousLinearMap.traceL_smulRight (f : E →L[ℝ] ℝ) (A : E →L[ℝ] F) :
     traceL (f.smulRight A) = A ((InnerProductSpace.toDual ℝ E).symm f) := by
-  have h : ContinuousLinearMap.toLinearMap₁₂ (f.smulRight A) =
-      (innerₗ E ((InnerProductSpace.toDual ℝ E).symm f)).smulRight (A : E →ₗ[ℝ] F) :=
-    LinearMap.ext₂ fun v w ↦ by
-      rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, LinearMap.smulRight_apply,
-        innerₗ_apply_apply, InnerProductSpace.toDual_symm_apply,
-        ContinuousLinearMap.smulRight_apply, LinearMap.smul_apply, smul_apply,
-        ContinuousLinearMap.coe_coe]
-  rw [ContinuousLinearMap.traceL_apply_eq_metricTrace, h,
-    LinearMap.BilinMap.metricTrace_innerₗ_smulRight, ContinuousLinearMap.coe_coe]
+  -- The functional `f` is the inner product with its Riesz representative.
+  have hf : innerₗ E ((InnerProductSpace.toDual ℝ E).symm f) = (f : E →ₗ[ℝ] ℝ) :=
+    LinearMap.ext fun v ↦ by
+      rw [innerₗ_apply_apply, InnerProductSpace.toDual_symm_apply, ContinuousLinearMap.coe_coe]
+  rw [ContinuousLinearMap.traceL_apply_eq_metricTrace, ContinuousLinearMap.toLinearMap₁₂_smulRight,
+    ← hf, LinearMap.BilinMap.metricTrace_innerₗ_smulRight, ContinuousLinearMap.coe_coe]
 
 end traceL
 
@@ -213,7 +207,8 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 continuous linear functional `traceL` of `fderiv ℝ (fderiv ℝ f) x`. -/
 theorem laplacian_eq_traceL (f : E → F) (x : E) :
     Δ f x = traceL (fderiv ℝ (fderiv ℝ f) x) := by
-  simp [traceL_apply, laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, iteratedFDeriv_two_apply]
+  rw [ContinuousLinearMap.traceL_apply_eq_metricTrace, LinearMap.BilinMap.metricTrace_apply]
+  simp only [laplacian, tensorIteratedFDerivTwo, bilinearIteratedFDerivTwo]
 
 /-- The Laplacian of a function is the trace of its second iterated Fréchet derivative, expressed
 as a continuous linear functional of `iteratedFDeriv ℝ 2 f x` in the standard orthonormal basis. -/

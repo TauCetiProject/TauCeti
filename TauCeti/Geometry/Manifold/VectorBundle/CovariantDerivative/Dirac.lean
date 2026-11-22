@@ -57,7 +57,8 @@ equations. None of these hypotheses is used by the first-order calculus of this 
   (`diracOperator_linearMap_apply_eq_neg`); for a parallel grading `γ` anticommuting with `c`,
   such as the chirality of an even-dimensional Clifford module, this gives `D γ = -γ D`.
 * **Change of connection.** Adding to `∇` a one-form `A` with values in the endomorphisms of `V`
-  adds the term of order zero `∑ᵢ c(eᵢ) A(eᵢ)` to `D` (`diracOperator_addOneForm`). When
+  adds the term of order zero `∑ᵢ c(eᵢ) A(eᵢ)`, the metric trace of `(u, w) ↦ c(u) A(w)`, to `D`
+  (`diracOperator_addOneForm`). When
   `A(w) = θ(w) L` for a real one-form `θ` and an endomorphism `L`, this term is `c(θ♯) L`
   (`diracOperator_addOneForm_of_forall_apply_eq`). For the spin connection of `A + a`, with `a`
   an imaginary one-form on the determinant line, `∇_{A + a} = ∇_A + a / 2`, so this is the law
@@ -245,15 +246,19 @@ end Leibniz
 /-! ### Change of connection -/
 
 /-- **Change of connection.** Adding to `∇` a one-form `A` with values in the endomorphisms of
-`V` adds `∑ᵢ c(eᵢ) A(eᵢ) σ` to the Dirac operator, for every orthonormal basis `eᵢ` of the
-tangent space at `x`. -/
+`V` adds to the Dirac operator the metric trace of the pairing `(u, w) ↦ c(u) (A(w) σ)`, that is
+`∑ᵢ c(eᵢ) A(eᵢ) σ` in any orthonormal basis `eᵢ` of the tangent space at `x`
+(`LinearMap.BilinMap.metricTrace_eq_sum`). -/
 theorem diracOperator_addOneForm (A : Π y : M, V y →L[ℝ] TangentSpace I y →L[ℝ] V y)
-    (σ : Π y : M, V y) (x : M) {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
+    (σ : Π y : M, V y) (x : M) :
     (cov.addOneForm A).diracOperator c σ x =
-      cov.diracOperator c σ x + ∑ i, c x (b i) (A x (σ x) (b i)) := by
-  rw [diracOperator_eq_sum _ c σ x b, diracOperator_eq_sum cov c σ x b, addOneForm_apply]
-  simp only [add_apply, map_add, Finset.sum_add_distrib]
+      cov.diracOperator c σ x + LinearMap.BilinMap.metricTrace
+        ((ContinuousLinearMap.toLinearMap₁₂ (c x)).compl₂ (A x (σ x)).toLinearMap) := by
+  rw [diracOperator_def, diracOperator_def, addOneForm_apply, ← map_add]
+  congr 1
+  ext u w
+  simp only [LinearMap.compl₂_apply, ContinuousLinearMap.toLinearMap_add, LinearMap.add_apply,
+    map_add]
 
 /-- **Change of connection by a scalar one-form.** If the endomorphism-valued one-form `A` is
 `A(w) = θ(w) L` at `x`, for a real covector `θ` and an endomorphism `L` of the fibre, then adding
@@ -267,8 +272,11 @@ theorem diracOperator_addOneForm_of_forall_apply_eq [IsManifold I 1 M]
     (cov.addOneForm A).diracOperator c σ x =
       cov.diracOperator c σ x + c x (Riemannian.Tensor.rieszDual x θ) (L (σ x)) := by
   set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [cov.diracOperator_addOneForm c A σ x b, Riemannian.Tensor.rieszDual_eq_sum θ b]
-  simp only [hA, map_smul, map_sum, FunLike.coe_sum, Finset.sum_apply, smul_apply]
+  rw [cov.diracOperator_addOneForm c A σ x, LinearMap.BilinMap.metricTrace_eq_sum _ b,
+    Riemannian.Tensor.rieszDual_eq_sum θ b]
+  simp only [LinearMap.compl₂_apply, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
+    ContinuousLinearMap.coe_coe, hA, map_smul, map_sum, FunLike.coe_sum, Finset.sum_apply,
+    smul_apply]
 
 /-- **Change of connection by an inner-product one-form.** If the one-form `A` acts on `σ` at `x`
 by `A_x(σ_x)(w) = ⟪u, w⟫ v`, then adding it to `∇` adds `c(u) v` to the Dirac operator at `x`.
@@ -280,11 +288,12 @@ theorem diracOperator_addOneForm_of_apply_eq_inner_smul
     {v : V x} (hA : ∀ w, A x (σ x) w = ⟪u, w⟫ • v) :
     (cov.addOneForm A).diracOperator c σ x = cov.diracOperator c σ x + c x u v := by
   set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [cov.diracOperator_addOneForm c A σ x b]
+  rw [cov.diracOperator_addOneForm c A σ x, LinearMap.BilinMap.metricTrace_eq_sum _ b]
   congr 1
   conv_rhs => rw [← b.sum_repr' u]
-  simp only [hA, map_smul, map_sum, FunLike.coe_sum, Finset.sum_apply, smul_apply,
-    real_inner_comm u]
+  simp only [LinearMap.compl₂_apply, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
+    ContinuousLinearMap.coe_coe, hA, map_smul, map_sum, FunLike.coe_sum, Finset.sum_apply,
+    smul_apply, real_inner_comm u]
 
 /-! ### Gradings -/
 
