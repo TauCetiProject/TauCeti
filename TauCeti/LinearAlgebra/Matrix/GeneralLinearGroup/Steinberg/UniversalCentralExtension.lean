@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupExtension.UniversalCentralExtension
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.K2
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.Centrality
 import TauCeti.GroupTheory.Commutator
 
 /-!
@@ -14,9 +14,9 @@ import TauCeti.GroupTheory.Commutator
 
 For an associative unital ring `R`, the canonical homomorphism
 `TauCeti.SteinbergGroup.toStableGL : St(R) →* GL_∞(R)` has image the stable elementary subgroup
-`E_∞(R)`, and `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.K2` proves that its
-kernel `K₂(R)` is central in `St(R)`. This file proves the **universal central extension** half of
-the Kervaire–Steinberg theorem:
+`E_∞(R)`, and `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.Centrality` proves that
+its kernel `ker (toStableGL R)` is central in `St(R)`. This file proves the **universal central
+extension** half of the Kervaire–Steinberg theorem:
 
 Given an index type `ι` in which any four indices admit a fifth distinct index (in particular
 `|ι| ≥ 5` or `Infinite ι`), a homomorphism `φ : St_ι(R) →* G`, and a homomorphism `q : E →* G`
