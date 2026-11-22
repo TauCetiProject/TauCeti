@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Boundary.GlobalHolder
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.MeasureDensity
 import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
+import TauCeti.Analysis.PDE.Regularity.Boundary.DirichletHolder
 import TauCeti.Analysis.PDE.Regularity.Boundary.Divergence
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
 import TauCeti.MeasureTheory.Function.L2Space
@@ -35,6 +36,12 @@ exponent `α ∈ (0, 1]` and a constant depending only on `λ`, `Λ`, `θ`, `q`,
 normalization of the Haar measure. No regularity of the coefficients beyond measurability is
 used. Every bounded Lipschitz domain has such an exterior density.
 
+On a bounded Lipschitz domain the file also adds a scalar datum `f ∈ Lʳ(Ω)` with `r > 1` and
+`r > n/2`: a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, `u = G` on `∂Ω`, agrees almost
+everywhere with a function that is Hölder on `Ω` with constant
+`C ((‖f‖_{Lʳ(Ω)} + ‖F‖_{L^q(Ω)}) / λ + K₀ + K₁)`, where `K₀` bounds `G` and `K₁` is its Lipschitz
+constant.
+
 * `exists_holderWith_preciseRepresentative_indicator_of_measureReal_ball_diff_divergence`:
   for zero boundary values, the precise representative of the extension of `u` by zero is
   `α`-Hölder on all of `ℝⁿ` with constant `C R^(-α) (|Ω|^(1/n - 1/q) + R^(1 - n/q)) ‖F‖_{L^q} / λ`.
@@ -49,9 +56,16 @@ used. Every bounded Lipschitz domain has such an exterior density.
 * `Set.IsLipschitzDomain.exists_ae_eq_and_holderOnWith_divergence`: on a bounded Lipschitz domain
   the constant becomes `C (‖F‖_{L^q} / λ + K₀ + K₁)`, with `α` and `C` depending on `Ω`, `λ`, `Λ`
   and `q`.
+* `Set.IsLipschitzDomain.exists_ae_eq_and_holderOnWith_add_divergence`: on a bounded Lipschitz
+  domain, for the equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ` with a scalar datum `f ∈ Lʳ(Ω)`, `r > 1`,
+  `r > n/2`, as well, the constant is `C ((‖f‖_{Lʳ} + ‖F‖_{L^q}) / λ + K₀ + K₁)`.
 
-This is the case of a right-hand side in divergence form and Lipschitz boundary values of the
-global Hölder estimate of Gilbarg–Trudinger, Theorem 8.29.
+The last statement is the global Hölder estimate of Gilbarg–Trudinger, Theorem 8.29, with
+Lipschitz boundary values. The Hölder estimates
+`exists_holderWith_preciseRepresentative_indicator_of_measureReal_ball_diff_divergence`,
+`exists_ae_eq_and_holderOnWith_of_measureReal_ball_diff_divergence` and
+`exists_ae_eq_and_holderOnWith_divergence` are its cases of a right-hand side in divergence form,
+and the remaining entries are the reduction steps.
 
 ## The argument
 
@@ -71,6 +85,13 @@ Lipschitz function `G` is its derivative, bounded by `K₁`, so `|a ∇g| ≤ Λ
 lies in `L^q(Ω)` with norm at most `‖F‖_{L^q} + Λ K₁ |Ω|^(1/q)`. The precise representative of
 the extension of `w` by zero is Hölder on `ℝⁿ`, and `G` is Hölder on `Ω` with constant
 `R^(-α) (R K₁ + 2 K₀)`, using its Lipschitz bound at distances below `R` and its bound above.
+
+A scalar datum is split off by linearity
+(`TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_and_sub_eq_neg_setIntegral_inner`). The
+weak solution `w ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = f` is Hölder on the whole space by the estimate for
+zero boundary values (`Set.IsLipschitzDomain.exists_holderWith_preciseRepresentative_indicator`),
+and `u - w` has the divergence datum alone and the boundary values `G`. On the bounded set `Ω` both
+Hölder bounds hold with the smaller exponent, at the cost of a power of the diameter.
 
 ## References
 
@@ -461,5 +482,93 @@ theorem exists_ae_eq_and_holderOnWith_divergence [Nonempty ι]
         exact mul_add_mul_add_add_le (by positivity) hB (by positivity) K₀.coe_nonneg
           K₁.coe_nonneg
     _ = _ := by ring
+
+/-- **The global Hölder estimate for the Dirichlet problem on a bounded Lipschitz domain**
+(Gilbarg–Trudinger, Theorem 8.29). Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be a bounded Lipschitz domain, let
+`r > 1` with `r > n/2`, and let `q > 2` with `q > n`. There are `α ∈ (0, 1]` and `C > 0`,
+depending only on `Ω`, `λ`, `Λ`, `r`, `q` and the normalization of the additive Haar measure `mu`,
+such that the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants
+`λ, Λ`, let `f ∈ Lʳ(Ω)` and `F ∈ L^q(Ω; ℝⁿ)`, and let `G` be bounded by `K₀` and `K₁`-Lipschitz
+on `Ω`. Let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ` with boundary values
+`G`: `a(u, v) = ∫_Ω f v - ∫_Ω F · ∇v` for every `v ∈ H¹₀(Ω)`, and `u - g ∈ H¹₀(Ω)` for some
+`g ∈ H¹(Ω)` whose value is `G` almost everywhere on `Ω`. Then `u` agrees almost everywhere on `Ω`
+with a function that is `α`-Hölder on `Ω` with constant
+
+`C ((‖f‖_{Lʳ(Ω)} + ‖F‖_{L^q(Ω)}) / λ + K₀ + K₁)`.
+
+No regularity of the coefficients beyond measurability is assumed, and `f` need not be square
+integrable. -/
+theorem exists_ae_eq_and_holderOnWith_add_divergence [Nonempty ι]
+    {Omega : Opens (EuclideanSpace ℝ ι)}
+    (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLipschitzDomain E)
+    (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι))) {lam Lam : ℝ} {r q : ℝ≥0}
+    (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r) (hq : 2 < (q : ℝ))
+    (hqn : (Fintype.card ι : ℝ) < q) :
+    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ (α : ℝ) ≤ 1 ∧ 0 < C ∧ ∀ {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+      {f : EuclideanSpace ℝ ι → ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+      {u g : W1p mu Omega 2} {G : EuclideanSpace ℝ ι → ℝ} {K₀ K₁ : ℝ≥0},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      MemLp f r (mu.restrict Omega) →
+      MemLp F q (mu.restrict Omega) →
+      u - g ∈ w1p0Submodule mu Omega 2 →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+          ∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu) →
+      W1p.value g =ᵐ[mu.restrict Omega] G →
+      LipschitzOnWith K₁ G (Omega : Set (EuclideanSpace ℝ ι)) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), |G x| ≤ K₀) →
+      ∃ v : EuclideanSpace ℝ ι → ℝ, W1p.value u =ᵐ[mu.restrict Omega] v ∧
+        HolderOnWith (C * (((eLpNorm f r (mu.restrict Omega)).toReal +
+            (eLpNorm F q (mu.restrict Omega)).toReal) / lam + K₀ + K₁)).toNNReal
+          α v Omega := by
+  obtain ⟨α₁, C₁, hα₁, hC₁, hscalar⟩ :=
+    hΩ.exists_holderWith_preciseRepresentative_indicator (mu := mu) hb (lam := lam) (Lam := Lam)
+      hr hrn
+  obtain ⟨α₂, C₂, hα₂, hα₂1, hC₂, hdiv⟩ :=
+    hΩ.exists_ae_eq_and_holderOnWith_divergence (mu := mu) hb (lam := lam) (Lam := Lam) hq hqn
+  -- The distances in `Ω` are at most `D`, so both bounds hold with the exponent `min α₁ α₂`.
+  set D : ℝ≥0 := (diam (Omega : Set (EuclideanSpace ℝ ι))).toNNReal
+  have hD : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ∀ y ∈ (Omega : Set (EuclideanSpace ℝ ι)),
+      edist x y ≤ D := fun x hx y hy =>
+    (Metric.edist_le_ediam_of_mem hx hy).trans_eq (ENNReal.ofReal_toReal hb.ediam_ne_top).symm
+  set α := min α₁ α₂
+  set P₁ : ℝ := (D : ℝ) ^ ((α₁ : ℝ) - α)
+  set P₂ : ℝ := (D : ℝ) ^ ((α₂ : ℝ) - α)
+  refine ⟨α, C₁ * P₁ + C₂ * P₂ + 1, lt_min hα₁ hα₂, (min_le_right _ _).trans hα₂1,
+    by positivity, ?_⟩
+  intro a f F u g G K₀ K₁ h ha hf hF hug hu hgG hG hG0
+  have hlam := h.pos
+  -- The weak solution `w ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = f`, and `u - w`, which has the divergence
+  -- datum alone and the boundary values `G`.
+  obtain ⟨w, hw, hu'⟩ := exists_forall_energyFormH1_eq_setIntegral_and_sub_eq_neg_setIntegral_inner
+    h ha hb.measure_lt_top.ne hr
+    (mul_two_sub_lt_two_mul_of_lt_two_mul (Nat.cast_nonneg _) (by exact_mod_cast hr) hrn) hf hu
+  obtain ⟨v₂, hv₂, hv₂H⟩ := hdiv h ha hF (by
+    rw [sub_right_comm]; exact (w1p0Submodule mu Omega 2).toSubmodule.sub_mem hug w.property)
+    hu' hgG hG hG0
+  refine ⟨_, by simpa only [sub_sub_cancel] using
+    value_ae_eq_preciseRepresentative_indicator_sub_add u (u - (w : W1p mu Omega 2)) hv₂,
+    HolderOnWith.of_dist_le fun x hx y hy =>
+      ((((hscalar h ha hf w.property hw).holderOnWith _).of_le hD (min_le_left _ _)).add
+        (hv₂H.of_le hD (min_le_right _ _)) |>.dist_le hx hy).trans
+      (mul_le_mul_of_nonneg_right ?_ (Real.rpow_nonneg dist_nonneg _))⟩
+  -- The constants: `C₁ ‖f‖ / λ · D^(α₁ - α) + C₂ (‖F‖ / λ + K₀ + K₁) D^(α₂ - α)`.
+  set X := (eLpNorm f r (mu.restrict Omega)).toReal / lam
+  set Y := (eLpNorm F q (mu.restrict Omega)).toReal / lam + K₀ + K₁
+  have hX : 0 ≤ X := by positivity
+  have hY : 0 ≤ Y := by positivity
+  have hsum : ((eLpNorm f r (mu.restrict Omega)).toReal +
+      (eLpNorm F q (mu.restrict Omega)).toReal) / lam + K₀ + K₁ = X + Y := by simp only [X, Y]; ring
+  have hP₁ : 0 ≤ P₁ := Real.rpow_nonneg D.coe_nonneg _
+  have hP₂ : 0 ≤ P₂ := Real.rpow_nonneg D.coe_nonneg _
+  have hfX : C₁ * (eLpNorm f r (mu.restrict Omega)).toReal / lam = C₁ * X := by
+    simp only [X]; ring
+  have hC : 0 ≤ (C₁ * P₁ + C₂ * P₂ + 1) * (X + Y) :=
+    mul_nonneg (by linarith [mul_nonneg hC₁.le hP₁, mul_nonneg hC₂.le hP₂]) (add_nonneg hX hY)
+  simp only [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_rpow]
+  rw [hfX, hsum, Real.coe_toNNReal _ (mul_nonneg hC₁.le hX),
+    Real.coe_toNNReal _ (mul_nonneg hC₂.le hY), Real.coe_toNNReal _ hC]
+  nlinarith [mul_nonneg (mul_nonneg hC₁.le hP₁) hY, mul_nonneg (mul_nonneg hC₂.le hP₂) hX]
 
 end Set.IsLipschitzDomain
