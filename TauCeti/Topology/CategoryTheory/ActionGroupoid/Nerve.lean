@@ -177,7 +177,7 @@ any point of the string. -/
 theorem coarseMap_ι (m : SemiSimplexCategory)
     (F : ComposableArrows (ActionCategory G X) (SemiSimplexCategory.toSimplexCategory.obj m).len)
     (t : SemiSimplexCategory.toTop.obj m) (i : Fin (_ + 1)) :
-    coarseMap G X (functorTensor.ι SemiSimplexCategory.toTop _ m (F, t)) = ⟦(F.obj i).back⟧ :=
+    coarseMap G X (functorTensor.ι SemiSimplexCategory.toTop.{u} _ m (F, t)) = ⟦(F.obj i).back⟧ :=
   (functorTensor.augment_ι SemiSimplexCategory.toTop (coarseAugmentation G X) m F t).trans
     (F.quotient_mk_back_obj i).symm
 
@@ -187,7 +187,7 @@ theorem orbitQuotientEquivIsomorphismClasses_coarseMap
     (p : fatClassifyingSpace (ActionCategory G X)) :
     orbitQuotientEquivIsomorphismClasses G X (coarseMap G X p) =
       fatClassifyingSpace.coarseMap (continuous_source G X) p := by
-  obtain ⟨m, F, t, rfl⟩ := functorTensor.ι_jointly_surjective SemiSimplexCategory.toTop _ p
+  obtain ⟨m, F, t, rfl⟩ := functorTensor.ι_jointly_surjective SemiSimplexCategory.toTop.{u} _ p
   have hgeneral := fatClassifyingSpace.coarseMap_ι (continuous_source G X) m F t
   rw [coarseMap_ι m F t 0, hgeneral, orbitQuotientEquivIsomorphismClasses_mk]
   exact congrArg (Quotient.mk _) ((objEquiv G X).apply_symm_apply (F.obj 0))
@@ -198,7 +198,7 @@ theorem coarseMap_surjective : Function.Surjective (coarseMap G X) := by
   -- The topological simplex of `⦋0⦌ₛ` is that of `⦋0⦌`, which is nonempty.
   obtain ⟨t⟩ : Nonempty (SimplexCategory.toTop.{u}.obj
     (SemiSimplexCategory.toSimplexCategory.obj (SemiSimplexCategory.mk 0))) := inferInstance
-  exact ⟨functorTensor.ι SemiSimplexCategory.toTop _ (SemiSimplexCategory.mk 0)
+  exact ⟨functorTensor.ι SemiSimplexCategory.toTop.{u} _ (SemiSimplexCategory.mk 0)
     (ComposableArrows.mk₀ (x : ActionCategory G X), t), coarseMap_ι _ _ _ 0⟩
 
 end Group

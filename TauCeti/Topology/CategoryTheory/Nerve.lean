@@ -290,8 +290,8 @@ theorem fatClassifyingSpace.hom_ext {Z : TopCat.{max u v}} {g h : fatClassifying
     (H : ∀ (n : SemiSimplexCategory)
       (F : ComposableArrows C (SemiSimplexCategory.toSimplexCategory.obj n).len)
       (t : SemiSimplexCategory.toTop.obj n),
-        g (functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) =
-          h (functorTensor.ι SemiSimplexCategory.toTop _ n (F, t))) : g = h :=
+        g (functorTensor.ι SemiSimplexCategory.toTop.{max u v} _ n (F, t)) =
+          h (functorTensor.ι SemiSimplexCategory.toTop.{max u v} _ n (F, t))) : g = h :=
   functorTensor.hom_ext H
 
 variable {D : Type u} [Category.{v} D] [TopologicalSpace (Quiver.Total D)]
@@ -355,8 +355,9 @@ theorem fatClassifyingSpaceMap_ι (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunct
     (n : SemiSimplexCategory)
     (F : ComposableArrows C (SemiSimplexCategory.toSimplexCategory.obj n).len)
     (t : SemiSimplexCategory.toTop.obj n) :
-    fatClassifyingSpaceMap Φ hΦ (functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) =
-      functorTensor.ι SemiSimplexCategory.toTop _ n ((Φ.mapComposableArrows _).obj F, t) :=
+    fatClassifyingSpaceMap Φ hΦ (functorTensor.ι SemiSimplexCategory.toTop.{max u v} _ n (F, t)) =
+      functorTensor.ι SemiSimplexCategory.toTop.{max u v} _ n
+        ((Φ.mapComposableArrows _).obj F, t) :=
   functorTensor.map_ι SemiSimplexCategory.toTop
     (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Φ hΦ)) n F t
 
@@ -367,15 +368,15 @@ theorem fatClassifyingSpaceMap_eq_of_mapComposableArrows_obj {Φ Ψ : C ⥤ D}
     (h : ∀ n F, (Φ.mapComposableArrows n).obj F = (Ψ.mapComposableArrows n).obj F) :
     fatClassifyingSpaceMap Φ hΦ = fatClassifyingSpaceMap Ψ hΨ :=
   fatClassifyingSpace.hom_ext fun n F t ↦ (fatClassifyingSpaceMap_ι Φ hΦ n F t).trans <|
-    (congrArg (fun F ↦ functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) (h _ F)).trans
-      (fatClassifyingSpaceMap_ι Ψ hΨ n F t).symm
+    (congrArg (fun F ↦ functorTensor.ι SemiSimplexCategory.toTop.{max u v} _ n (F, t))
+      (h _ F)).trans (fatClassifyingSpaceMap_ι Ψ hΨ n F t).symm
 
 variable (C) in
 @[simp]
 theorem fatClassifyingSpaceMap_id :
     fatClassifyingSpaceMap (𝟭 C) (Prefunctor.mapTotal_id (Q := C) ▸ continuous_id) =
       𝟙 (fatClassifyingSpace C) :=
-  functorTensor.map_id SemiSimplexCategory.toTop _
+  functorTensor.map_id SemiSimplexCategory.toTop.{max u v} _
 
 theorem fatClassifyingSpaceMap_comp {E : Type u} [Category.{v} E]
     [TopologicalSpace (Quiver.Total E)] (Φ : C ⥤ D) (Ψ : D ⥤ E)
@@ -405,8 +406,8 @@ theorem fatClassifyingSpaceHomotopy_apply_ι (Φ : unitInterval → C ⥤ D)
     (F : ComposableArrows C (SemiSimplexCategory.toSimplexCategory.obj n).len)
     (t : SemiSimplexCategory.toTop.obj n) :
     fatClassifyingSpaceHomotopy Φ hΦ
-        (s, functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) =
-      functorTensor.ι SemiSimplexCategory.toTop _ n
+        (s, functorTensor.ι SemiSimplexCategory.toTop.{max u v} _ n (F, t)) =
+      functorTensor.ι SemiSimplexCategory.toTop.{max u v} _ n
         (((Φ s).mapComposableArrows _).obj F, t) :=
   functorTensor.homotopy_apply_ι SemiSimplexCategory.toTop
     (fun s ↦ Functor.whiskerLeft toSimplexCategory.op

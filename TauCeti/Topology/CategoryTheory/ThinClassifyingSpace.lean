@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialObject.GeometricRealization.Skeleton
-public import TauCeti.Topology.CategoryTheory.CoarseSpace.Restrict
+public import TauCeti.Topology.CategoryTheory.FullSubcategory
+public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
 public import TauCeti.Topology.CategoryTheory.Latching
 import Mathlib.Topology.GDelta.MetrizableSpace
 import Mathlib.Topology.Metrizable.Urysohn
+import TauCeti.Topology.CategoryTheory.Nerve.FullSubcategory
 
 /-!
 # Thin classifying spaces of topological categories and groupoids
@@ -21,18 +23,14 @@ its genuine colimit topology in `TopCat` (with no compactly-generated replacemen
 
 Forgetting degeneracies gives the quotient map `TauCeti.fatToThinClassifyingSpace C`
 (`TauCeti.isQuotientMap_fatToThinClassifyingSpace`). Adapting the fat-realization APIs of
-`TauCeti.Topology.CategoryTheory.Nerve`, `TauCeti.Topology.CategoryTheory.CoarseSpace`, and
-`TauCeti.Topology.CategoryTheory.CoarseSpace.Restrict`, continuous functors and `[0, 1]`-families
-induce `TauCeti.thinClassifyingSpaceMap` and `TauCeti.thinClassifyingSpaceHomotopy`; when the
-source map `Quiver.Total.left : Quiver.Total C → C` is continuous, closed full subcategories induce
-closed embeddings (`CategoryTheory.ObjectProperty.isClosedEmbedding_thinClassifyingSpaceMap_ι`) and
-saturated open full subgroupoids induce open embeddings
-(`CategoryTheory.ObjectProperty.isOpenEmbedding_thinClassifyingSpaceMap_ι`); and for groupoids with
-continuous source, `TauCeti.thinClassifyingSpace.coarseMap` factors
-`TauCeti.fatClassifyingSpace.coarseMap` and identifies coarse preimages of saturated open or closed
-sets (`CategoryTheory.ObjectProperty.thinClassifyingSpaceRestrictionHomeomorphOfIsEmbedding`,
-`CategoryTheory.ObjectProperty.thinClassifyingSpaceRestrictionHomeomorph`,
-`CategoryTheory.ObjectProperty.thinClassifyingSpaceClosedRestrictionHomeomorph`).
+`TauCeti.Topology.CategoryTheory.Nerve`, continuous functors and `[0, 1]`-families induce
+`TauCeti.thinClassifyingSpaceMap` and `TauCeti.thinClassifyingSpaceHomotopy`; full subcategories
+induce injections (`CategoryTheory.ObjectProperty.thinClassifyingSpaceMap_ι_injective`), and when
+the source map `Quiver.Total.left : Quiver.Total C → C` is continuous, closed full subcategories
+induce closed embeddings
+(`CategoryTheory.ObjectProperty.isClosedEmbedding_thinClassifyingSpaceMap_ι`).
+The coarse projection `TauCeti.thinClassifyingSpace.coarseMap` and saturated restriction
+homeomorphisms are in `TauCeti.Topology.CategoryTheory.CoarseSpace.Thin`.
 
 Specializing the skeletal pushout and sequential-colimit theorems of
 `TauCeti.AlgebraicTopology.SimplicialObject.GeometricRealization.Skeleton` proves that
@@ -114,7 +112,8 @@ variable {C}
 @[simp↓] theorem fatToThinClassifyingSpace_ι (m : SemiSimplexCategory)
     (F : ComposableArrows C (toSimplexCategory.obj m).len)
     (t : SemiSimplexCategory.toTop.{max u v}.obj m) :
-    fatToThinClassifyingSpace C (functorTensor.ι SemiSimplexCategory.toTop _ m (F, t)) =
+    fatToThinClassifyingSpace C
+        (functorTensor.ι SemiSimplexCategory.toTop.{max u v} _ m (F, t)) =
       geometricRealization.ι (topologicalNerve C) (toSimplexCategory.obj m).len (F, t) :=
   fatToGeometricRealization_ι (topologicalNerve C) m F t
 
@@ -191,45 +190,6 @@ def thinClassifyingSpaceHomotopy (Φ : unitInterval → C ⥤ D)
 end Functoriality
 
 namespace thinClassifyingSpace
-
-section CoarseSpace
-
-variable {C : Type u} [Category.{u} C] [IsGroupoid C] [TopologicalSpace C]
-  [TopologicalSpace (Quiver.Total C)] (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
-
-/-- The coarse projection from `thinClassifyingSpace C` to `Quotient (isIsomorphicSetoid C)`. -/
-def coarseMap : thinClassifyingSpace C ⟶ TopCat.of (Quotient (isIsomorphicSetoid C)) :=
-  geometricRealization.augment (topologicalNerve.coarseAugmentation hs)
-
-theorem coarseMap_eq_augment :
-    coarseMap hs = geometricRealization.augment (topologicalNerve.coarseAugmentation hs) := (rfl)
-
-@[simp↓] theorem coarseMap_ι (n : ℕ) (F : ComposableArrows C n) (t : toTop.{u}.obj ⦋n⦌) :
-    coarseMap hs (geometricRealization.ι (topologicalNerve C) n (F, t)) =
-      Quotient.mk (isIsomorphicSetoid C) (F.obj 0) :=
-  (geometricRealization.augment_ι (topologicalNerve.coarseAugmentation hs) n F t).trans
-    (topologicalNerve.coarseAugmentation_app_apply hs (op ⦋n⦌) F)
-
-/-- The coarse projection of `fatClassifyingSpace C` descends along `fatToThinClassifyingSpace`. -/
-@[reassoc (attr := simp)] theorem fatToThinClassifyingSpace_comp_coarseMap :
-    fatToThinClassifyingSpace C ≫ coarseMap hs = fatClassifyingSpace.coarseMap hs := by
-  rw [fatToThinClassifyingSpace_eq, coarseMap_eq_augment, fatClassifyingSpace.coarseMap_eq_augment]
-  exact geometricRealization.fatToGeometricRealization_comp_augment _
-
-/-- The coarse projection from `thinClassifyingSpace C` is surjective. -/
-theorem coarseMap_surjective : Function.Surjective (coarseMap hs) :=
-  .of_comp (g := fatToThinClassifyingSpace C) <| by
-    rw [← TopCat.coe_comp, fatToThinClassifyingSpace_comp_coarseMap]
-    exact fatClassifyingSpace.coarseMap_surjective hs
-
-/-- With continuous units, `coarseMap` on `thinClassifyingSpace C` is a topological quotient map. -/
-theorem isQuotientMap_coarseMap (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C)) :
-    IsQuotientMap (coarseMap hs) :=
-  IsQuotientMap.of_comp (fatToThinClassifyingSpace C).hom.continuous (coarseMap hs).hom.continuous
-    (by rw [← TopCat.coe_comp, fatToThinClassifyingSpace_comp_coarseMap]
-        exact fatClassifyingSpace.isQuotientMap_coarseMap hs hu)
-
-end CoarseSpace
 
 section PointSetTopology
 
@@ -462,115 +422,6 @@ theorem isClosedEmbedding_thinClassifyingSpaceMap_ι [TopologicalSpace C]
   geometricRealization.isClosedEmbedding_map fun n ↦ by
     rw [coe_topologicalNerveMap_app]; exact P.isClosedEmbedding_mapComposableArrows_ι hs hP n
 
-/-- For a groupoid with continuous source `Quiver.Total.left : Quiver.Total C → C`, the inclusion
-of a saturated open full subgroupoid induces an open embedding on thin classifying spaces. -/
-theorem isOpenEmbedding_thinClassifyingSpaceMap_ι [IsGroupoid C] [TopologicalSpace C]
-    [P.IsClosedUnderIsomorphisms]
-    (hs : Continuous (Quiver.Total.left : Quiver.Total C → C)) (hP : IsOpen {x | P x}) :
-    IsOpenEmbedding (thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) :=
-  geometricRealization.isOpenEmbedding_map
-    (fun n ↦ by
-      rw [coe_topologicalNerveMap_app]; exact P.isOpenEmbedding_mapComposableArrows_ι hs hP n)
-    fun m n f (F : ComposableArrows C n) hF ↦ by
-      rw [topologicalNerve_map_apply, coe_topologicalNerveMap_app] at hF
-      have h0 : P (F.obj (f.toOrderHom 0)) := by
-        rw [← nerve.map_obj f F 0]
-        exact (P.range_mapComposableArrows_ι_of_isClosedUnderIsomorphisms m).subset hF
-      rw [coe_topologicalNerveMap_app]
-      exact (P.range_mapComposableArrows_ι_of_isClosedUnderIsomorphisms n).superset
-        (P.prop_of_iso (asIso (F.map (homOfLE (Fin.zero_le _)))).symm h0)
-
 end GeneralCategory
-
-section SaturatedGroupoid
-
-variable {C : Type u} [Category.{u} C] [IsGroupoid C] [TopologicalSpace C]
-  [TopologicalSpace (Quiver.Total C)] (P : ObjectProperty C) [P.IsClosedUnderIsomorphisms]
-  (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
-
-/-- The preimage of a saturated coarse subset in `thinClassifyingSpace C` is the image of the thin
-classifying space of the corresponding full restriction. -/
-theorem preimage_coarseMap_eq_range_thinClassifyingSpaceMap_ι :
-    thinClassifyingSpace.coarseMap hs ⁻¹' (_root_.Quotient.mk (isIsomorphicSetoid C) '' {x | P x}) =
-      range (thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) :=
-  geometricRealization.preimage_augment_eq_range_map (ε := topologicalNerve.coarseAugmentation hs)
-    (fun n ↦ P.range_topologicalNerveMap_ι hs (op ⦋n⦌))
-
-/-- Whenever the inclusion of a saturated full subgroupoid induces a topological embedding on thin
-classifying spaces (for instance via `isOpenEmbedding_thinClassifyingSpaceMap_ι` or
-`isClosedEmbedding_thinClassifyingSpaceMap_ι`), its thin classifying space is homeomorphic to the
-corresponding coarse-map preimage with its subspace topology. -/
-def thinClassifyingSpaceRestrictionHomeomorphOfIsEmbedding
-    (h : IsEmbedding (thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι)) :
-    thinClassifyingSpace P.FullSubcategory ≃ₜ
-      (thinClassifyingSpace.coarseMap hs ⁻¹'
-        (_root_.Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :=
-  h.toHomeomorph.trans
-    (Homeomorph.setCongr (P.preimage_coarseMap_eq_range_thinClassifyingSpaceMap_ι hs).symm)
-
-@[simp↓] theorem thinClassifyingSpaceRestrictionHomeomorphOfIsEmbedding_apply_val
-    (h : IsEmbedding (thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι))
-    (z : thinClassifyingSpace P.FullSubcategory) :
-    (P.thinClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs h z).val =
-      thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι z := (rfl)
-
-@[simp↓]
-theorem thinClassifyingSpaceMap_ι_thinClassifyingSpaceRestrictionHomeomorphOfIsEmbedding_symm_apply
-    (h : IsEmbedding (thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι))
-    (z : thinClassifyingSpace.coarseMap hs ⁻¹'
-      (_root_.Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :
-    thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι
-      ((P.thinClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs h).symm z) = z.val :=
-  congrArg Subtype.val
-    ((P.thinClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs h).apply_symm_apply z)
-
-/-- The thin classifying space of a saturated open full subgroupoid is homeomorphic to the
-corresponding coarse-map preimage in `thinClassifyingSpace C`. -/
-def thinClassifyingSpaceRestrictionHomeomorph (hP : IsOpen {x | P x}) :
-    thinClassifyingSpace P.FullSubcategory ≃ₜ
-      (thinClassifyingSpace.coarseMap hs ⁻¹'
-        (_root_.Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :=
-  P.thinClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs
-    (P.isOpenEmbedding_thinClassifyingSpaceMap_ι hs hP).isEmbedding
-
-@[simp↓] theorem thinClassifyingSpaceRestrictionHomeomorph_apply_val (hP : IsOpen {x | P x})
-    (z : thinClassifyingSpace P.FullSubcategory) :
-    (P.thinClassifyingSpaceRestrictionHomeomorph hs hP z).val =
-      thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι z := (rfl)
-
-@[simp↓] theorem thinClassifyingSpaceMap_ι_thinClassifyingSpaceRestrictionHomeomorph_symm_apply
-    (hP : IsOpen {x | P x})
-    (z : thinClassifyingSpace.coarseMap hs ⁻¹'
-      (_root_.Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :
-    thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι
-      ((P.thinClassifyingSpaceRestrictionHomeomorph hs hP).symm z) = z.val :=
-  P.thinClassifyingSpaceMap_ι_thinClassifyingSpaceRestrictionHomeomorphOfIsEmbedding_symm_apply
-    hs (P.isOpenEmbedding_thinClassifyingSpaceMap_ι hs hP).isEmbedding z
-
-/-- The thin classifying space of a saturated closed full subgroupoid is homeomorphic to the
-corresponding coarse-map preimage in `thinClassifyingSpace C`. -/
-def thinClassifyingSpaceClosedRestrictionHomeomorph (hP : IsClosed {x | P x}) :
-    thinClassifyingSpace P.FullSubcategory ≃ₜ
-      (thinClassifyingSpace.coarseMap hs ⁻¹'
-        (_root_.Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :=
-  P.thinClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs
-    (P.isClosedEmbedding_thinClassifyingSpaceMap_ι hs hP).isEmbedding
-
-@[simp↓] theorem thinClassifyingSpaceClosedRestrictionHomeomorph_apply_val (hP : IsClosed {x | P x})
-    (z : thinClassifyingSpace P.FullSubcategory) :
-    (P.thinClassifyingSpaceClosedRestrictionHomeomorph hs hP z).val =
-      thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι z := (rfl)
-
-@[simp↓]
-theorem thinClassifyingSpaceMap_ι_thinClassifyingSpaceClosedRestrictionHomeomorph_symm_apply
-    (hP : IsClosed {x | P x})
-    (z : thinClassifyingSpace.coarseMap hs ⁻¹'
-      (_root_.Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :
-    thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι
-      ((P.thinClassifyingSpaceClosedRestrictionHomeomorph hs hP).symm z) = z.val :=
-  P.thinClassifyingSpaceMap_ι_thinClassifyingSpaceRestrictionHomeomorphOfIsEmbedding_symm_apply
-    hs (P.isClosedEmbedding_thinClassifyingSpaceMap_ι hs hP).isEmbedding z
-
-end SaturatedGroupoid
 
 end CategoryTheory.ObjectProperty

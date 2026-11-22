@@ -22,9 +22,9 @@ reindexing quotient comparison map `X.fatToGeometricRealization` from the fat re
 
 This file specializes `TauCeti.functorTensor` to `SimplexCategory.toTop` with `ℕ`-indexed
 characteristic maps (`geometricRealization.ι`), universal property (`geometricRealization.desc`),
-functoriality (`geometricRealizationFunctor`), augmentations (`geometricRealization.augment`),
-`[0, 1]`-homotopies (`geometricRealization.homotopy`), Lindelöf and compactly-generated instances,
-and open restriction (`geometricRealization.isOpenEmbedding_map`,
+functoriality (`TauCeti.functorTensorFunctor SimplexCategory.toTop`), augmentations
+(`geometricRealization.augment`), `[0, 1]`-homotopies (`geometricRealization.homotopy`), Lindelöf
+and compactly-generated instances, and open restriction (`geometricRealization.isOpenEmbedding_map`,
 `geometricRealization.isOpenEmbedding_map_of_range_eq_preimage`). Unconditional injectivity and
 closed embeddings are proved via normal forms in
 `TauCeti.AlgebraicTopology.SimplicialObject.GeometricRealization.Skeleton`.
@@ -91,13 +91,26 @@ theorem continuous_iff {Z : Type*} [TopologicalSpace Z] {g : X.geometricRealizat
     Continuous g ↔ ∀ n, Continuous (g ∘ ι X n) :=
   TauCeti.functorTensor.continuous_iff.trans ⟨fun h n ↦ h ⦋n⦌, fun h ⟨n⟩ ↦ h n⟩
 
-@[ext] theorem hom_ext {Z : TopCat} {g h : X.geometricRealization ⟶ Z}
+/-- Two functions out of `|X|` agree once they agree on every degree. -/
+theorem fun_ext {Z : Sort*} {g h : X.geometricRealization → Z}
     (H : ∀ n x t, g (ι X n (x, t)) = h (ι X n (x, t))) : g = h :=
-  TauCeti.functorTensor.hom_ext fun ⟨n⟩ x t ↦ H n x t
+  TauCeti.functorTensor.fun_ext fun ⟨n⟩ x t ↦ H n x t
+
+/-- Two continuous maps out of `|X|` agree once they agree on every degree. -/
+@[ext] theorem continuousMap_ext {Z : Type*} [TopologicalSpace Z]
+    {g h : C(X.geometricRealization, Z)}
+    (H : ∀ n x t, g (ι X n (x, t)) = h (ι X n (x, t))) : g = h :=
+  ContinuousMap.coe_injective (fun_ext X H)
+
+/-- Two morphisms out of `|X|` agree once they agree on every degree. -/
+@[ext] theorem hom_ext {Z : TopCat.{u}} {g h : X.geometricRealization ⟶ Z}
+    (H : ∀ n x t, g (ι X n (x, t)) = h (ι X n (x, t))) : g = h :=
+  TopCat.hom_ext (continuousMap_ext X H)
 
 instance [h : ∀ n : ℕ, LindelofSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)] :
     LindelofSpace X.geometricRealization :=
-  @TauCeti.functorTensor.instLindelofSpace _ _ toTop X _ fun ⟨n⟩ ↦ h n
+  have : ∀ d : SimplexCategory, LindelofSpace (X.obj (op d) × toTop.{u}.obj d) := fun ⟨n⟩ ↦ h n
+  TauCeti.functorTensor.instLindelofSpace toTop X
 
 /-- If every level `X _⦋n⦌` is Lindelöf, then `X.geometricRealization` is Lindelöf. -/
 instance (priority := 90) instLindelofSpace_of_levels [hX : ∀ n : ℕ, LindelofSpace (X _⦋n⦌)] :
@@ -109,7 +122,9 @@ instance (priority := 90) instLindelofSpace_of_levels [hX : ∀ n : ℕ, Lindelo
 
 instance [h : ∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)] :
     UCompactlyGeneratedSpace.{v} X.geometricRealization :=
-  @TauCeti.functorTensor.instUCompactlyGeneratedSpace _ _ toTop X fun ⟨n⟩ ↦ h n
+  have : ∀ d : SimplexCategory, UCompactlyGeneratedSpace.{v} (X.obj (op d) × toTop.{u}.obj d) :=
+    fun ⟨n⟩ ↦ h n
+  TauCeti.functorTensor.instUCompactlyGeneratedSpace toTop X
 
 section Desc
 
@@ -117,7 +132,7 @@ variable {X}
 
 section DescFun
 
-variable {Z : Type*} (g : ∀ n : ℕ, X _⦋n⦌ × toTop.{u}.obj ⦋n⦌ → Z)
+variable {Z : Sort*} (g : ∀ n : ℕ, X _⦋n⦌ × toTop.{u}.obj ⦋n⦌ → Z)
   (hg : ∀ ⦃m n : ℕ⦄ (f : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋m⦌),
     g m (X.map f.op x, t) = g n (x, toTop.map f t))
 
@@ -169,11 +184,6 @@ end Map
 
 end geometricRealization
 
-/-- Geometric realization as a functor from simplicial spaces to topological spaces. -/
-@[expose, simps] def geometricRealizationFunctor : SimplicialObject TopCat.{u} ⥤ TopCat.{u} where
-  obj := geometricRealization
-  map := geometricRealization.map
-
 open SemiSimplexCategory (toSimplexCategory)
 
 /-- The canonical quotient comparison map `‖X‖ ⟶ |X|` from the fat realization of the underlying
@@ -184,7 +194,8 @@ def fatToGeometricRealization :
 
 @[simp↓] theorem fatToGeometricRealization_ι (m : SemiSimplexCategory)
     (x : (toSimplexCategory.op ⋙ X).obj (op m)) (t : SemiSimplexCategory.toTop.{u}.obj m) :
-    X.fatToGeometricRealization (TauCeti.functorTensor.ι SemiSimplexCategory.toTop _ m (x, t)) =
+    X.fatToGeometricRealization
+        (TauCeti.functorTensor.ι SemiSimplexCategory.toTop (toSimplexCategory.op ⋙ X) m (x, t)) =
       geometricRealization.ι X (toSimplexCategory.obj m).len (x, t) :=
   TauCeti.functorTensor.reindex_ι toSimplexCategory toTop X m x t
 
@@ -270,7 +281,7 @@ theorem isOpenEmbedding_map (hφ : ∀ n : ℕ, IsOpenEmbedding (φ.app (op ⦋n
     (hsat : ∀ ⦃m n : ℕ⦄ (f : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌),
       X.map f.op x ∈ range (φ.app (op ⦋m⦌)) → x ∈ range (φ.app (op ⦋n⦌))) :
     IsOpenEmbedding (map φ) :=
-  TauCeti.functorTensor.isOpenEmbedding_map (fun ⟨⟨n⟩⟩ ↦ hφ n) fun _ _ f x hx ↦
+  TauCeti.functorTensor.isOpenEmbedding_map (φ := φ) (fun ⟨⟨n⟩⟩ ↦ hφ n) fun _ _ f x hx ↦
     hsat f.unop x hx
 
 variable {Z : TopCat.{u}} {ε : X ⟶ (Functor.const _).obj Z} {V : Set Z}

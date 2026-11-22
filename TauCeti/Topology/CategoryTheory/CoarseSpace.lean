@@ -87,7 +87,7 @@ theorem coarseMap_eq_augment :
 theorem coarseMap_ι (m : SemiSimplexCategory)
     (F : ComposableArrows C (SemiSimplexCategory.toSimplexCategory.obj m).len)
     (t : SemiSimplexCategory.toTop.obj m) :
-    coarseMap hs (functorTensor.ι SemiSimplexCategory.toTop _ m (F, t)) =
+    coarseMap hs (functorTensor.ι SemiSimplexCategory.toTop.{u} _ m (F, t)) =
       Quotient.mk (isIsomorphicSetoid C) (F.obj 0) :=
   (functorTensor.augment_ι SemiSimplexCategory.toTop
     (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
@@ -99,7 +99,7 @@ theorem coarseMap_surjective : Function.Surjective (coarseMap hs) := by
   refine Quotient.ind fun x ↦ ?_
   obtain ⟨t⟩ : Nonempty (SimplexCategory.toTop.{u}.obj
     (SemiSimplexCategory.toSimplexCategory.obj (SemiSimplexCategory.mk 0))) := inferInstance
-  exact ⟨functorTensor.ι SemiSimplexCategory.toTop _ (SemiSimplexCategory.mk 0)
+  exact ⟨functorTensor.ι SemiSimplexCategory.toTop.{u} _ (SemiSimplexCategory.mk 0)
       (ComposableArrows.mk₀ x, t),
     coarseMap_ι hs _ _ _⟩
 

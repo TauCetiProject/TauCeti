@@ -103,7 +103,7 @@ theorem iUnion_skeleton : ⋃ n, skeleton X n = univ :=
 /-- The number of nonzero barycentric coordinates of a point of the fat realization, that is, the
 number of vertices of the face of a simplex carrying it. -/
 private def card : fatRealization X → ℕ :=
-  functorTensor.lift (fun _ p ↦ #(toTopWeights p.2).support) fun _ _ f _ t ↦
+  functorTensor.lift (X := X) (fun _ p ↦ #(toTopWeights p.2).support) fun _ _ f _ t ↦
     (card_support_toTopWeights_toTop_map f t).symm
 
 /-- A point `[x, t]` lies in the `n`-skeleton exactly when at most `n + 1` barycentric coordinates

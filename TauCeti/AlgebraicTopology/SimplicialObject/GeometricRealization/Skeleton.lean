@@ -245,8 +245,7 @@ def skeleton : ℕ ⥤ TopCat.{u} where
     TauCeti.functorTensor.reindex (SimplexCategory.Truncated.incl m n (leOfHom f))
       (SimplexCategory.Truncated.inclusion n ⋙ toTop)
       ((SimplexCategory.Truncated.inclusion n).op ⋙ X)
-  map_id _ := TauCeti.functorTensor.hom_ext fun ⟨⟨_⟩, _⟩ _ _ ↦
-    (TauCeti.functorTensor.reindex_ι _ _ _ _ _ _).trans (CategoryTheory.id_apply _).symm
+  map_id _ := TauCeti.functorTensor.reindex_id _ _
   map_comp {m k l} f g := TauCeti.functorTensor.reindex_comp
     (SimplexCategory.Truncated.incl k l (leOfHom g))
     (SimplexCategory.Truncated.inclusion l ⋙ toTop)
@@ -303,10 +302,24 @@ theorem skeleton.continuous_iff {n : ℕ} {Z : Type*} [TopologicalSpace Z]
     Continuous g ↔ ∀ (k : ℕ) (hk : k ≤ n), Continuous (g ∘ skeleton.ι X n hk) :=
   TauCeti.functorTensor.continuous_iff.trans ⟨fun h k hk ↦ h ⟨⦋k⦌, hk⟩, fun h ⟨⟨k⟩, hk⟩ ↦ h k hk⟩
 
+/-- Two functions out of `skₙ |X|` agree once they agree on every characteristic map. -/
+theorem skeleton.fun_ext {n : ℕ} {Z : Sort*} {g h : (skeleton X).obj n → Z}
+    (H : ∀ (k : ℕ) (hk : k ≤ n) (x : X _⦋k⦌) (t : toTop.{u}.obj ⦋k⦌),
+      g (skeleton.ι X n hk (x, t)) = h (skeleton.ι X n hk (x, t))) : g = h :=
+  TauCeti.functorTensor.fun_ext fun ⟨⟨k⟩, hk⟩ x t ↦ H k hk x t
+
+/-- Two continuous maps out of `skₙ |X|` agree once they agree on every characteristic map. -/
+@[ext] theorem skeleton.continuousMap_ext {n : ℕ} {Z : Type*} [TopologicalSpace Z]
+    {g h : C((skeleton X).obj n, Z)}
+    (H : ∀ (k : ℕ) (hk : k ≤ n) (x : X _⦋k⦌) (t : toTop.{u}.obj ⦋k⦌),
+      g (skeleton.ι X n hk (x, t)) = h (skeleton.ι X n hk (x, t))) : g = h :=
+  ContinuousMap.coe_injective (skeleton.fun_ext X H)
+
+/-- Two morphisms out of `skₙ |X|` agree once they agree on every characteristic map. -/
 @[ext] theorem skeleton.hom_ext {n : ℕ} {Z : TopCat.{u}} {g h : (skeleton X).obj n ⟶ Z}
     (H : ∀ (k : ℕ) (hk : k ≤ n) (x : X _⦋k⦌) (t : toTop.{u}.obj ⦋k⦌),
       g (skeleton.ι X n hk (x, t)) = h (skeleton.ι X n hk (x, t))) : g = h :=
-  TauCeti.functorTensor.hom_ext fun ⟨⟨k⟩, hk⟩ x t ↦ H k hk x t
+  TopCat.hom_ext (skeleton.continuousMap_ext X H)
 
 section Desc
 
@@ -318,7 +331,9 @@ variable (n : ℕ) {Z : Type*} [TopologicalSpace Z]
 /-- Universal property of the `n`-skeleton: continuous maps `X _⦋k⦌ × Δᵏ → Z` (`k ≤ n`) compatible
 with all simplicial operators in degrees at most `n` descend to a continuous map `skₙ |X| → Z`. -/
 def skeleton.desc : C((skeleton X).obj n, Z) :=
-  TauCeti.functorTensor.desc (fun k ↦ g k.obj.len k.property) fun _ _ f x t ↦ hg _ _ f.hom x t
+  TauCeti.functorTensor.desc (K := SimplexCategory.Truncated.inclusion n ⋙ toTop.{u})
+    (X := (SimplexCategory.Truncated.inclusion n).op ⋙ X)
+    (fun k ↦ g k.obj.len k.property) fun _ _ f x t ↦ hg _ _ f.hom x t
 
 @[simp] theorem skeleton.desc_ι {k : ℕ} (hk : k ≤ n) (p : X _⦋k⦌ × toTop.{u}.obj ⦋k⦌) :
     skeleton.desc X n g hg (skeleton.ι X n hk p) = g k hk p :=
@@ -360,8 +375,12 @@ def skeleton.toRealization (n : ℕ) : (skeleton X).obj n ⟶ X.geometricRealiza
 
 instance (n : ℕ) [h : ∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌)] :
     LindelofSpace ((skeleton X).obj n) :=
-  @TauCeti.functorTensor.instLindelofSpace _ _ (SimplexCategory.Truncated.inclusion n ⋙ toTop)
-    ((SimplexCategory.Truncated.inclusion n).op ⋙ X) _ fun k ↦ h ⟨k.obj.len, k.property⟩
+  have : ∀ k : SimplexCategory.Truncated n,
+      LindelofSpace (((SimplexCategory.Truncated.inclusion n).op ⋙ X).obj (op k) ×
+        (SimplexCategory.Truncated.inclusion n ⋙ toTop.{u}).obj k) :=
+    fun k ↦ h ⟨k.obj.len, k.property⟩
+  TauCeti.functorTensor.instLindelofSpace (SimplexCategory.Truncated.inclusion n ⋙ toTop.{u})
+    ((SimplexCategory.Truncated.inclusion n).op ⋙ X)
 
 /-- The canonical cocone exhibiting `X.geometricRealization` above `skeleton X`. -/
 @[expose, simps] def skeletonCocone : Cocone (skeleton X) where
