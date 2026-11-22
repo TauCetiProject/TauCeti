@@ -197,12 +197,8 @@ theorem fourier_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ] E) (T : �
     𝓕 (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv T) =
       compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (𝓕 T) := by
   ext f
-  simp only [fourier_apply, compCLMOfContinuousLinearEquiv_linearIsometryEquiv_apply_apply]
-  congr 1
-  ext ξ
-  rw [SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_apply,
-    SchwartzMap.compCLMOfContinuousLinearEquiv_apply, Function.comp_apply,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+  simp only [fourier_apply, compCLMOfContinuousLinearEquiv_linearIsometryEquiv_apply_apply,
+    SchwartzMap.fourier_compCLMOfContinuousLinearEquiv]
 
 /-- The inverse Fourier transform commutes with the pullback along a linear isometry:
 `𝓕⁻ (A^* T) = A^* (𝓕⁻ T)`. -/
@@ -210,14 +206,8 @@ theorem fourierInv_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ] E) (T : 
     𝓕⁻ (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv T) =
       compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (𝓕⁻ T) := by
   ext f
-  simp only [fourierInv_apply, compCLMOfContinuousLinearEquiv_linearIsometryEquiv_apply_apply]
-  congr 1
-  ext ξ
-  rw [SchwartzMap.fourierInv_apply_eq_fourier_neg,
-    SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_apply,
-    SchwartzMap.compCLMOfContinuousLinearEquiv_apply, Function.comp_apply,
-    SchwartzMap.fourierInv_apply_eq_fourier_neg]
-  simp
+  simp only [fourierInv_apply, compCLMOfContinuousLinearEquiv_linearIsometryEquiv_apply_apply,
+    SchwartzMap.fourierInv_compCLMOfContinuousLinearEquiv]
 
 end TVS
 
@@ -256,14 +246,8 @@ theorem compCLMOfContinuousLinearEquiv_toTemperedDistribution_eq_compMeasurePres
     {p : ℝ≥0∞} [Fact (1 ≤ p)] (A : E ≃ₗᵢ[ℝ] E) (u : Lp F p (volume : Measure E)) :
     compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (u : 𝓢'(E, F)) =
       (Lp.compMeasurePreserving A A.measurePreserving u : 𝓢'(E, F)) := by
-  ext f
-  rw [compCLMOfContinuousLinearEquiv, compCLM_apply_apply, Lp.toTemperedDistribution_apply,
-    Lp.toTemperedDistribution_apply, SchwartzMap.integral_pushforwardCLM_smul]
-  refine integral_congr_ae ((Lp.coeFn_compMeasurePreserving u A.measurePreserving).mono
-    fun x hx ↦ ?_)
-  dsimp only
-  rw [hx, Function.comp_apply, ContinuousLinearEquiv.coe_toEquiv,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+  rw [compCLMOfContinuousLinearEquiv]
+  exact compCLM_toTemperedDistribution_eq_compMeasurePreserving volume _ _ A.measurePreserving u
 
 /-- The pullback along a linear isometry preserves the Bessel-potential space `H^{s,p}`. -/
 theorem MemSobolev.compCLMOfContinuousLinearEquiv {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
