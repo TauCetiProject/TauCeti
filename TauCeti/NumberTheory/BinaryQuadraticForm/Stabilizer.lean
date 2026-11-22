@@ -96,7 +96,7 @@ private theorem generatorMatrix_eq (hfD : f.discrim = D) :
 
 private theorem det_generatorMatrix (hfD : f.discrim = D) :
     (generatorMatrix f hfD).det = -((D - D ^ 2) / 4) :=
-  ((ofMatrixEquiv _ _).symm _).2.2
+  ((ofMatrixEquiv _ _).symm _).property.2
 
 /-! ### The regular representation over a coefficient ring -/
 
@@ -191,7 +191,7 @@ private def unitaryToStabilizer (hfD : f.discrim = D) :
       rw [det_regularRep, norm_eq_one_iff_mem_unitary]
       exact z.prop⟩, mem_stabilizer_iff.mpr <| regularRep_smul_eq f hfD (z := z) rfl⟩
   map_one' := Subtype.ext <| Subtype.ext <| map_one (regularRep R f hfD)
-  map_mul' z w := Subtype.ext <| Subtype.ext <| map_mul (regularRep R f hfD) z.1 w.1
+  map_mul' z w := Subtype.ext <| Subtype.ext <| map_mul (regularRep R f hfD) z.val w.val
 
 private theorem coe_unitaryToStabilizer (hfD : f.discrim = D)
     (z : unitary (QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D)) :
@@ -344,7 +344,7 @@ theorem map_stabilizerEquivUnitary_symm_apply {S : Type*} [CommRing S] (φ : R �
           simpa [Ideal.map_span, Ideal.map_top, Set.image_insert_eq] using
             congrArg (Ideal.map φ) hf) hfD hS).symm w : SL(2, S)) := by
   ext i j
-  rw [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+  rw [SpecialLinearGroup.map_apply_coe,
     coe_stabilizerEquivUnitary_symm_apply, coe_stabilizerEquivUnitary_symm_apply]
   fin_cases i <;> fin_cases j <;> simp [hre, him]
 
@@ -393,9 +393,9 @@ theorem map_stabilizerEquivNormOneUnits_symm_apply (hf : f.IsPrimitive) (hfD : f
   rw [hsymm, coe_stabilizerEquivUnitary_symm_apply, hu, QuadraticOrder.lift_apply]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
-  · linear_combination (z.1.im : ℚ) / 2 * he
+  · linear_combination (z.val.im : ℚ) / 2 * he
   · ring
   · ring
-  · linear_combination (z.1.im : ℚ) / 2 * he'
+  · linear_combination (z.val.im : ℚ) / 2 * he'
 
 end TauCeti.BinaryQuadraticForm

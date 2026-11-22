@@ -57,7 +57,7 @@ noncomputable instance instModuleDGClosedHom
 @[simp]
 theorem dgClosedHomAddEquiv_apply_coe
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
-    (dgClosedHomAddEquiv R X Y f).1 = dgClosedHom R f := by
+    (dgClosedHomAddEquiv R X Y f).val = dgClosedHom R f := by
   simp only [dgClosedHomAddEquiv, Equiv.addEquiv_apply, dgClosedHomEquiv_apply_coe]
 
 /-- Taking the closed component preserves zero. -/

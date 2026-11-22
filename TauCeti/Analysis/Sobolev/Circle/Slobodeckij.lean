@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Circle.Precomp
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Measure.AddCircle
 
 /-!
@@ -410,10 +411,8 @@ theorem enorm_rotate_sub_sq {a : CircleSobolev 0 ℂ} {g : AddCircle T → ℂ}
       hg] with x h₁ h₂ h₃ h₄
     simp only [Function.comp_apply] at h₂ h₃
     rw [h₁, Pi.sub_apply, h₂, h₃, h₄]
-  have h2 := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero
-    ((Lp.aestronglyMeasurable _).congr hae)
-  simp only [NNReal.coe_ofNat, ENNReal.coe_ofNat, ENNReal.rpow_two] at h2
-  rw [← (toLpₗᵢ T).eNorm_map, Lp.eNorm_def, eLpNorm_congr_ae hae, h2]
+  rw [← (toLpₗᵢ T).eNorm_map, Lp.eNorm_def, eLpNorm_congr_ae hae,
+    eLpNorm_two_sq_eq_lintegral ((Lp.aestronglyMeasurable _).congr hae)]
 
 /-- The energy of order `s` of `a ∈ H⁰` is the double integral
 `∫∫ ‖g y - g x‖² / ‖y - x‖ ^ (1 + 2 s) dy dx`, for any measurable representative `g` of the `L²`

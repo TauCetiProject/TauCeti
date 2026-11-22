@@ -117,9 +117,7 @@ theorem exists_contDiffOn_ae_eq (hk : finrank ℝ E < 2 * k) :
       exact ⟨gi, hgi, (hd.congr_ae hug).congr_ae_deriv hdgi⟩
     choose G hG hdG using hd
     -- They assemble into a `Cʲ` weak derivative of `g`.
-    obtain ⟨hD, hgD⟩ := contDiffOn_sum_innerSL_and_hasWeakFDerivOn hG
-      (hg.locallyIntegrableOn Omega.isOpen.measurableSet) hdG
-    exact ⟨g, by exact_mod_cast hgD.contDiffOn_succ hg hD, hug⟩
+    exact ⟨g, by exact_mod_cast contDiffOn_succ_of_forall_hasWeakLineDerivOn hg hG hdG, hug⟩
 
 end Wkp
 

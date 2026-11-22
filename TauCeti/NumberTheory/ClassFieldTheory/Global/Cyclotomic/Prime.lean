@@ -66,6 +66,18 @@ theorem galEquivZMod_globalArtinMap_prime (ι : E →ₐ[ℚ] SeparableClosure �
   exact (TauCeti.NumberField.isArithFrobAt_iff_galEquivZMod_eq_absNorm v hm Q σ).1
     (globalArtinMap_isArithFrobAt E ι v Q hσ)
 
+omit [IsGalois ℚ E] in
+/-- In a rational cyclotomic field, the coordinate under `Rat.galEquivZMod` of the finite Artin
+symbol `ideleClassArtinMap ℚ E (primeIdeleClass ℚ v)` at a prime not dividing the level is the
+absolute norm of that prime modulo the level. The instance `IsAbelianGalois ℚ E` is supplied by
+`IsCyclotomicExtension.isAbelianGalois`. -/
+theorem galEquivZMod_ideleClassArtinMap_prime [IsAbelianGalois ℚ E]
+    (v : HeightOneSpectrum (𝓞 ℚ)) (hm : (m : 𝓞 ℚ) ∉ v.asIdeal) :
+    (Rat.galEquivZMod m E (ideleClassArtinMap ℚ E (primeIdeleClass ℚ v)) : ZMod m) =
+      Ideal.absNorm v.asIdeal :=
+  galEquivZMod_globalArtinMap_prime (IsSepClosed.lift : E →ₐ[ℚ] SeparableClosure ℚ) v hm
+    (globalArtinMap_eq_ofMul_ideleClassArtinMap ℚ E _ _)
+
 /-- In the fifth cyclotomic field, the global Artin symbol at `2` sends a primitive fifth
 root to its square and has order four: its square is nontrivial and its fourth power is one. -/
 theorem globalArtinMap_zeta5_two (E : Type) [Field E] [NumberField E]

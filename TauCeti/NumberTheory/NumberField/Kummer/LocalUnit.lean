@@ -38,7 +38,7 @@ theorem exists_integral_pow_eq_of_valuation_eq_one
       algebraMap (𝓞 K) K c = algebraMap (𝓞 K) K d ^ n * a ∧
       (β : M) = algebraMap (𝓞 K) M d * α ∧ β ^ n = algebraMap (𝓞 K) (𝓞 M) c := by
   obtain ⟨b, d, hbd⟩ := v.exists_primeCompl_mul_eq_of_integer (K := K) a ha.le
-  have hd : (d : 𝓞 K) ∉ v.asIdeal := d.2
+  have hd : (d : 𝓞 K) ∉ v.asIdeal := d.property
   let c : 𝓞 K := (d : 𝓞 K) ^ (n - 1) * b
   have hc : algebraMap (𝓞 K) K c = algebraMap (𝓞 K) K d ^ n * a := by
     rw [map_mul, map_pow, ← hbd, ← pow_sub_one_mul hn]

@@ -300,7 +300,7 @@ theorem contDiff_rotate (h : s + 1 ≤ t) :
   have df₂ (φ : ℝ) (b : CircleSobolev t E) : HasFDerivAt (f φ ·) (f₂ φ b) b :=
     (f₂ φ b).hasFDerivAt
   have cf₁ : Continuous ↿f₁ :=
-    (ContinuousLinearMap.smulRightL ℝ ℝ (CircleSobolev s E) 1).continuous.comp <|
+    (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℝ (CircleSobolev s E) 1).continuous.comp <|
       continuous_rotate.comp <| (continuous_quotient_mk'.comp continuous_fst).prodMk
         ((derivative T h).continuous.comp continuous_snd)
   -- The partial derivative in `a` is Lipschitz in `θ` for the operator norm, by the Lipschitz

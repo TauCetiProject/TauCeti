@@ -237,9 +237,9 @@ its row of values on the class sums, and a row extends linearly along the class-
 noncomputable def algHomEquivEigenrow : (Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k) ≃
       {v : ConjClasses G → k // v (ConjClasses.mk (1 : G)) = 1 ∧ IsClassEigenrow v} where
   toFun φ := ⟨classSumRow φ, classSumRow_mk_one φ, isClassEigenrow_classSumRow φ⟩
-  invFun v := eigenrowAlgHom v.2.1 v.2.2
+  invFun v := eigenrowAlgHom v.property.1 v.property.2
   left_inv _ := classSumRow_injective (classSumRow_eigenrowAlgHom _ _)
-  right_inv v := Subtype.ext (classSumRow_eigenrowAlgHom v.2.1 v.2.2)
+  right_inv v := Subtype.ext (classSumRow_eigenrowAlgHom v.property.1 v.property.2)
 
 @[simp]
 theorem algHomEquivEigenrow_apply_coe (φ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k) :
@@ -251,7 +251,7 @@ theorem algHomEquivEigenrow_symm_apply_classSumCenter
     (v : {v : ConjClasses G → k // v (ConjClasses.mk (1 : G)) = 1 ∧ IsClassEigenrow v})
     (C : ConjClasses G) :
     algHomEquivEigenrow.symm v (classSumCenter C) = (v : ConjClasses G → k) C :=
-  eigenrowAlgHom_classSumCenter v.2.1 v.2.2 C
+  eigenrowAlgHom_classSumCenter v.property.1 v.property.2 C
 
 section Split
 

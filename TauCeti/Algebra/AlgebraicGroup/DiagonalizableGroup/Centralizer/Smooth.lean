@@ -53,7 +53,7 @@ to the centralizer of the kernel of a root, and recovers smoothness of the dynam
 
 public section
 
-open CategoryTheory TensorProduct WithConv
+open TensorProduct WithConv
 
 namespace BialgHom
 
