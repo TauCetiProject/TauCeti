@@ -39,8 +39,9 @@ normal bundle, multiplied by `t` to the power of its index.
 So the pieces are pairwise disjoint and cover the critical set
 (`TauCeti.IsMorseBottFamily.pairwise_disjoint_range`, `TauCeti.IsMorseBottFamily.iUnion_range`),
 each critical point lies on exactly one of them
-(`TauCeti.IsMorseBottFamily.existsUnique_mem_range`), only finitely many of them meet a compact set
-(by `LocallyFinite.finite_nonempty_inter_compact`), so only finitely many lie in it
+(`TauCeti.IsMorseBottFamily.existsUnique_mem_range`), so pieces through a common point have the
+same index (`TauCeti.IsMorseBottFamily.eq_of_apply_eq`), only finitely many of them meet a compact
+set (by `LocallyFinite.finite_nonempty_inter_compact`), so only finitely many lie in it
 (`TauCeti.IsMorseBottFamily.finite_setOf_range_subset`), and on a compact manifold there are
 finitely many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
 (`TauCeti.IsMorseBottFamily.isClosed_range`) and preconnected
@@ -178,6 +179,11 @@ theorem existsUnique_mem_range (hx : x ∈ criticalPoints I f) : ∃! a, x ∈ r
   refine ⟨a, ha, fun b hb ↦ ?_⟩
   by_contra hba
   exact disjoint_left.1 (h.pairwise_disjoint_range hba) hb ha
+
+/-- Two pieces passing through the same point have the same index. -/
+theorem eq_of_apply_eq {a b : ι} {s : S a} {s' : S b} (hss' : i a s = i b s') : a = b := by
+  by_contra hab
+  exact disjoint_left.1 (h.pairwise_disjoint_range hab) (mem_range_self s) ⟨s', hss'.symm⟩
 
 /-- On a compact manifold a Morse–Bott family has finitely many pieces. -/
 theorem finite [CompactSpace M] : Finite ι :=

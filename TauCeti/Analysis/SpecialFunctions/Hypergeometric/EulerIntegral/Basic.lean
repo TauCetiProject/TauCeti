@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 public import TauCeti.Analysis.Complex.SlitPlane
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Analytic.Binomial
+import TauCeti.Analysis.SpecialFunctions.Integrability.Cpow
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
@@ -100,6 +101,21 @@ theorem intervalIntegrable_eulerIntegrand (a : ℂ) {b c z : ℂ}
       volume 0 1 := by
   exact (betaIntegral_convergent hb (by simpa using sub_pos.mpr hcb)).mul_continuousOn
     (by simpa only [uIcc_of_le zero_le_one] using continuousOn_eulerKernel a hz)
+
+/-- On the cut plane, restricting the Euler integrand to `[ρ, 1]` with `ρ > 0` removes the
+condition `0 < b.re`; only `b.re < c.re` is needed for the endpoint at one. -/
+theorem intervalIntegrable_eulerIntegrand_right (a : ℂ) {b c z : ℂ} (hbc : b.re < c.re)
+    (hz : 1 - z ∈ slitPlane) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ ≤ 1) :
+    IntervalIntegrable (fun t : ℝ =>
+      (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * t) ^ (-a))
+      volume ρ 1 := by
+  have hsub : uIcc ρ 1 ⊆ Icc 0 1 := by
+    rw [uIcc_of_le hρ1]
+    exact Icc_subset_Icc_left hρ.le
+  apply TauCeti.intervalIntegrable_ofReal_cpow_mul_one_sub_cpow_mul hρ
+  · simp only [sub_re, one_re]
+    linarith
+  · exact (continuousOn_eulerKernel a hz).mono hsub
 
 /-- For fixed `b` and `c` in the convergence region, the unnormalized Euler integral is
 jointly holomorphic in its first parameter and its argument, away from the cut `[1, ∞)`. -/

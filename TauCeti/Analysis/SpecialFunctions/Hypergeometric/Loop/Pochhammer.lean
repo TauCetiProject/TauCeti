@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
-import Mathlib.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
--- Reuse the private `(0+)` keyhole contour helpers from `LoopIntegral.lean`.
-import all TauCeti.Analysis.SpecialFunctions.Hypergeometric.LoopIntegral
+-- Reuse the private `(0+)` keyhole contour helpers from `Loop/Integral.lean`.
+import all TauCeti.Analysis.SpecialFunctions.Hypergeometric.Loop.Integral
 
 /-!
 # Pochhammer's double-loop contour integral for the Gauss hypergeometric function
@@ -32,7 +31,7 @@ crosses no branch cut.
 
 Splitting the radial segments at `A` expresses `Complex.hypergeometricPochhammerLoop` as a linear
 combination of the two `(0+)` keyhole pieces from
-`TauCeti.Analysis.SpecialFunctions.Hypergeometric.LoopIntegral`. Consequently:
+`TauCeti.Analysis.SpecialFunctions.Hypergeometric.Loop.Integral`. Consequently:
 
 * `Complex.hypergeometricPochhammerLoop_eq`: for all complex parameters `(a, b, c)`, the integral is
   independent of admissible `(A, ρ₀, ρ₁)` satisfying `0 < ρ₀ < A`, `0 < ρ₁ < 1 - A`,
@@ -311,11 +310,9 @@ private theorem pochhammer_change_radii (a b c z : ℂ) {A ρ₀ ρ₀' ρ₁ ρ
         ⟨hr.le.trans hu.1, hu.2.trans hA1.le⟩).intervalIntegrable_of_Icc hrA.le
   have hint₁ (r : ℝ) (hr : 0 < r) (hrA : r < 1 - A) :
       IntervalIntegrable (affineSegIntegrand a (c - b) b (1 - z) (-z)) volume r (1 - A) :=
-    (continuousOn_affineSegIntegrand_Icc a (c - b) b (1 - z) (-z) hr h1A1 fun u hu => by
-      rw [show (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) by push_cast; ring]
-      exact one_sub_mul_ofReal_mem_slitPlane hz
-        ⟨sub_nonneg.mpr (hu.2.trans h1A1.le),
-          sub_le_self _ (hr.le.trans hu.1)⟩).intervalIntegrable_of_Icc hrA.le
+    (continuousOn_affineSegIntegrand_Icc a (c - b) b (1 - z) (-z) hr h1A1 fun u hu =>
+      one_sub_sub_neg_mul_ofReal_mem_slitPlane hz
+        ⟨hr.le.trans hu.1, hu.2.trans h1A1.le⟩).intervalIntegrable_of_Icc hrA.le
   rw [hypergeometricPochhammerLoop_eq_affineLoopZero a b c z hρ₀ hρ₀A hρ₁ hρ₁A hz,
     hypergeometricPochhammerLoop_eq_affineLoopZero a b c z hρ₀' hρ₀'A hρ₁' hρ₁'A hz,
     affineLoopZero_eq_of_radius a b (c - b) 1 z hρ₀ (hρ₀A.trans hA1) hρ₀' (hρ₀'A.trans hA1)
@@ -337,10 +334,8 @@ private theorem pochhammer_change_basepoint (a b c z : ℂ) (hz : 1 - z ∈ slit
   have hcont₀ := continuousOn_affineSegIntegrand_Icc a b (c - b) 1 z hr₀ hAA' fun u hu =>
     one_sub_mul_ofReal_mem_slitPlane hz ⟨hr₀.le.trans hu.1, hu.2.trans hAA'.le⟩
   have hcont₁ := continuousOn_affineSegIntegrand_Icc a (c - b) b (1 - z) (-z) hr₁ h1AA'
-    fun u hu => by
-      rw [show (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) by push_cast; ring]
-      exact one_sub_mul_ofReal_mem_slitPlane hz
-        ⟨sub_nonneg.mpr (hu.2.trans h1AA'.le), sub_le_self _ (hr₁.le.trans hu.1)⟩
+    fun u hu =>
+      one_sub_sub_neg_mul_ofReal_mem_slitPlane hz ⟨hr₁.le.trans hu.1, hu.2.trans h1AA'.le⟩
   have hsplit₀ : (∫ u : ℝ in r₀..A', affineSegIntegrand a b (c - b) 1 z u) =
       (∫ u : ℝ in r₀..A, affineSegIntegrand a b (c - b) 1 z u) +
         ∫ u : ℝ in A..A', affineSegIntegrand a b (c - b) 1 z u :=
@@ -432,11 +427,8 @@ theorem analyticOnNhd_hypergeometricPochhammerLoop {A ρ₀ ρ₁ : ℝ}
   have hslit₀ : ∀ u ∈ Icc ρ₀ A, (1 : ℂ) - p.2.2.2 * (u : ℂ) ∈ slitPlane := fun u hu =>
     one_sub_mul_ofReal_mem_slitPlane hz ⟨hρ₀.le.trans hu.1, hu.2.trans hA1.le⟩
   have hslit₁ : ∀ u ∈ Icc ρ₁ (1 - A), (1 - p.2.2.2) - (-p.2.2.2) * (u : ℂ) ∈ slitPlane :=
-    fun u hu => by
-      rw [show (1 - p.2.2.2) - (-p.2.2.2) * (u : ℂ) = 1 - p.2.2.2 * ((1 - u : ℝ) : ℂ) by
-        push_cast; ring]
-      exact one_sub_mul_ofReal_mem_slitPlane hz
-        ⟨sub_nonneg.mpr (hu.2.trans h1A1.le), sub_le_self _ (hρ₁.le.trans hu.1)⟩
+    fun u hu =>
+      one_sub_sub_neg_mul_ofReal_mem_slitPlane hz ⟨hρ₁.le.trans hu.1, hu.2.trans h1A1.le⟩
   have haff₀ : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ × ℂ =>
       affineLoopZero q.1 q.2.1 (q.2.2.1 - q.2.1) 1 q.2.2.2 A ρ₀) p :=
     ((by fun_prop : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ × ℂ =>
@@ -495,9 +487,8 @@ theorem hypergeometricPochhammerLoop_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0
       exact Icc_subset_Icc_right (by linarith))
     rw [uIcc_of_le zero_le_one]
     exact continuousOn_of_forall_continuousAt fun u hu =>
-      ContinuousAt.cpow (by fun_prop) continuousAt_const (by
-        rw [show (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) by push_cast; ring]
-        exact one_sub_mul_ofReal_mem_slitPlane hz ⟨sub_nonneg.mpr hu.2, sub_le_self _ hu.1⟩)
+      ContinuousAt.cpow (by fun_prop) continuousAt_const
+        (one_sub_sub_neg_mul_ofReal_mem_slitPlane hz hu)
   rw [hypergeometricPochhammerLoop_eq_affineLoopZero a b c z hρ₀ hρ₀A hρ₁ hρ₁A hz,
     affineLoopZero_eq_integral a b (c - b) 1 z hb hρ₀ (hρ₀A.trans hA1) hρ₀A.le
       (closedBall_one_subset_slitPlane_iff.mpr hz₀) hint₀,
