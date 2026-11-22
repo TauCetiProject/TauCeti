@@ -162,4 +162,15 @@ theorem abs_apply_le_sqrt_trace_mul_transpose (L : Matrix m n ℝ) (i : m) (j : 
   rw [frobenius_norm_def, ← Real.sqrt_eq_rpow]
   simp [trace, Matrix.mul_apply, sq]
 
+/-- The trace `tr (X * Y)` of the product of two skew-Hermitian matrices `X` and `Y` is real
+(`RCLike.im (X * Y).trace = 0`). -/
+theorem im_trace_mul_eq_zero_of_conjTranspose_eq_neg {ι : Type*} [Fintype ι]
+    {X Y : Matrix ι ι 𝕜} (hX : Xᴴ = -X) (hY : Yᴴ = -Y) :
+    RCLike.im (X * Y).trace = 0 := by
+  have hconj : star (X * Y).trace = (X * Y).trace := by
+    rw [← trace_conjTranspose, conjTranspose_mul, hX, hY, neg_mul_neg, trace_mul_comm]
+  have him := congrArg RCLike.im hconj
+  simp only [RCLike.star_def, RCLike.conj_im] at him
+  exact self_eq_neg.mp him.symm
+
 end Matrix

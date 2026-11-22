@@ -200,6 +200,7 @@ theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_one
     have hlie := leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap d.subtypeVal D
     dsimp only at hlie
     refine h1.trans ?_
+    -- Unfold `mvfderiv` on `d.subtypeVal` to `mfderiv` so `hlie` applies.
     change mfderiv 𝓘(ℝ, E') 𝓘(ℝ, R) (⇑d.subtypeVal) (1 : K) (eK D) = _
     rw [← hlie]
     simp only [unitsLieAlgebraLieEquiv_apply, unitsLieAlgebraEquiv_apply,
@@ -285,7 +286,7 @@ theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_eq_mulRight
       (unitsLieSubalgebra K).toSubmodule.map (LinearMap.mulRight ℝ ((g : Rˣ) : R)) := by
   dsimp only
   rw [d.range_mvfderiv_unitsVal_subtypeVal g]
-  exact map_mulLeft_unitsLieSubalgebra_eq_map_mulRight (Subgroup.le_normalizer g.2)
+  exact map_mulLeft_unitsLieSubalgebra_eq_map_mulRight (Subgroup.le_normalizer g.property)
 
 end EmbeddedTangent
 

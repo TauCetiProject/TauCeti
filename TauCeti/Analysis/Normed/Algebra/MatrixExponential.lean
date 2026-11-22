@@ -152,6 +152,17 @@ theorem IsUpperTriangular.exp_submatrix_castSucc {n : ℕ}
     exact Set.ordConnected_Iio (a := Fin.last n)
   simpa only [Fin.coe_castSuccEmb] using hX.exp_submatrix Fin.castSuccEmb he
 
+/-- Matrix exponentiation commutes with simultaneous row and column reindexing. -/
+theorem exp_reindex {p q : Type*} [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q]
+    (e : p ≃ q) (M : Matrix p p R) :
+    exp (M.reindex e e) = (exp M).reindex e e := by
+  ext i j
+  rw [reindex_apply (M := exp M), submatrix_apply]
+  refine exp_apply_eq_of_forall_pow_apply_eq (M.reindex e e) M i j (e.symm i) (e.symm j)
+    fun k ↦ ?_
+  have hpow := map_pow (Matrix.reindexRingEquiv R e) M k
+  exact congrFun (congrFun hpow.symm i) j
+
 end EntrySeries
 
 section PositiveDiagonal
@@ -214,6 +225,12 @@ section EntryDerivative
 
 variable {m 𝕜 : Type*} [Fintype m] [DecidableEq m] [RCLike 𝕜]
 
+/-- The exponential line `t ↦ exp (t • X)` of a matrix is continuous on `ℝ`. -/
+theorem continuous_exp_smul (X : Matrix m m 𝕜) :
+    Continuous (fun t : ℝ ↦ exp (t • X)) := by
+  let _ : NormedAlgebra ℚ (Matrix m m 𝕜) := TauCeti.normedAlgebraRatOfReal
+  exact exp_continuous.comp (continuous_id.smul continuous_const)
+
 /-- An entry of `X` is the derivative at `0` of that entry of the exponential line
 `t ↦ exp (t • X)`. -/
 theorem hasDerivAt_exp_smul_apply (X : Matrix m m 𝕜) (i j : m) :
@@ -233,6 +250,32 @@ theorem apply_eq_zero_of_forall_exp_smul_apply_eq_zero {X : Matrix m m 𝕜} {i 
   have hX := hasDerivAt_exp_smul_apply X i j
   simp only [h] at hX
   exact hX.unique (hasDerivAt_const 0 0)
+
+/-- A matrix `X` is zero if `exp (t • X) = 1` for every real `t`. -/
+theorem eq_zero_of_forall_exp_smul_eq_one {X : Matrix m m 𝕜}
+    (h : ∀ t : ℝ, exp (t • X) = 1) : X = 0 := by
+  ext i j
+  have hX := hasDerivAt_exp_smul_apply X i j
+  have hconst : (fun t : ℝ ↦ exp (t • X) i j) = fun _ ↦ (1 : Matrix m m 𝕜) i j :=
+    funext fun t ↦ congrFun (congrFun (h t) i) j
+  rw [hconst] at hX
+  exact hX.unique (hasDerivAt_const 0 _)
+
+/-- If the exponential line `t ↦ exp (t • X)` stays inside the union of two closed sets `U` and
+`V` whose preimages are disjoint, and `1 ∈ U`, then `exp (t • X) ∈ U` for every `t : ℝ`. -/
+theorem forall_exp_smul_mem_of_isClosed_union (X : Matrix m m 𝕜) {U V : Set (Matrix m m 𝕜)}
+    (hU : IsClosed U) (hV : IsClosed V) (hcov : ∀ t : ℝ, exp (t • X) ∈ U ∪ V)
+    (hdisj : ∀ t : ℝ, ¬(exp (t • X) ∈ U ∧ exp (t • X) ∈ V)) (h1 : (1 : Matrix m m 𝕜) ∈ U) :
+    ∀ t : ℝ, exp (t • X) ∈ U := by
+  let f : ℝ → Matrix m m 𝕜 := fun t ↦ exp (t • X)
+  have hf : Continuous f := continuous_exp_smul X
+  have hsub := (isPreconnected_iff_subset_of_fully_disjoint_closed isClosed_univ).1
+    isPreconnected_univ (f ⁻¹' U) (f ⁻¹' V) (hU.preimage hf) (hV.preimage hf)
+    (fun t _ ↦ hcov t) (Set.disjoint_left.2 fun t htU htV ↦ hdisj t ⟨htU, htV⟩)
+  have h0 : (0 : ℝ) ∈ f ⁻¹' U := by simpa [f] using h1
+  rcases hsub with hU' | hV'
+  · exact fun t ↦ hU' (Set.mem_univ t)
+  · exact False.elim (hdisj 0 ⟨h0, hV' (Set.mem_univ 0)⟩)
 
 end EntryDerivative
 

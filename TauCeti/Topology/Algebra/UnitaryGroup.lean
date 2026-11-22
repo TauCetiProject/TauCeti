@@ -192,6 +192,14 @@ theorem continuous_toSpecialUnitaryAt [IsTopologicalRing 𝕜] [ContinuousStar �
   exact continuous_subtypeVal.matrix_mul (Continuous.matrix_diagonal
     (continuous_const.update j (continuous_subtypeVal.matrix_det.star)))
 
+/-- Reindexing unitary matrices along a bijection `e : n ≃ m` is continuous. -/
+theorem continuous_reindexEquiv {n m : Type*} [Fintype n] [DecidableEq n]
+    [Fintype m] [DecidableEq m] (e : n ≃ m) :
+    Continuous (reindexEquiv (R := 𝕜) e) := by
+  refine continuous_induced_rng.2 ?_
+  simp only [Function.comp_def, coe_reindexEquiv]
+  exact continuous_subtypeVal.matrix_reindex e e
+
 end Matrix.UnitaryGroup
 
 namespace Matrix.specialUnitaryGroup
@@ -210,7 +218,84 @@ end Matrix.specialUnitaryGroup
 
 namespace ClosedSubgroup
 
+section Unitary
+
+variable (n 𝕜 : Type*) [Fintype n] [DecidableEq n] [CommRing 𝕜] [StarRing 𝕜]
+  [TopologicalSpace 𝕜]
+
+/-- The full unitary group `U(n)` as a closed subgroup of `Matrix.unitaryGroup n 𝕜`. -/
+def unitary : ClosedSubgroup (Matrix.unitaryGroup n 𝕜) where
+  toSubgroup := ⊤
+  isClosed' := isClosed_univ
+
+/-- Every unitary matrix belongs to `ClosedSubgroup.unitary n 𝕜`. -/
+@[simp]
+theorem mem_unitary (U : Matrix.unitaryGroup n 𝕜) : U ∈ unitary n 𝕜 :=
+  trivial
+
+end Unitary
+
+section SpecialUnitary
+
+variable (n 𝕜 : Type*) [Fintype n] [DecidableEq n] [CommRing 𝕜] [StarRing 𝕜]
+  [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜] [T1Space 𝕜]
+
+/-- The special unitary group `SU(n)` as a closed subgroup of `Matrix.unitaryGroup n 𝕜`. -/
+def specialUnitary : ClosedSubgroup (Matrix.unitaryGroup n 𝕜) where
+  toSubgroup := Matrix.UnitaryGroup.specialUnitarySubgroup n 𝕜
+  isClosed' := by
+    -- Identify the `ClosedSubgroup` carrier with the underlying `Subgroup` carrier set.
+    change IsClosed ((Matrix.UnitaryGroup.specialUnitarySubgroup n 𝕜 :
+      Subgroup (Matrix.unitaryGroup n 𝕜)) : Set (Matrix.unitaryGroup n 𝕜))
+    have hset : ((Matrix.UnitaryGroup.specialUnitarySubgroup n 𝕜 :
+        Subgroup (Matrix.unitaryGroup n 𝕜)) : Set (Matrix.unitaryGroup n 𝕜)) =
+        (fun U : Matrix.unitaryGroup n 𝕜 ↦ (U : Matrix n n 𝕜).det) ⁻¹' {1} := by
+      ext U
+      simp [Matrix.UnitaryGroup.mem_specialUnitarySubgroup_iff]
+    rw [hset]
+    exact isClosed_singleton.preimage continuous_subtypeVal.matrix_det
+
+/-- Membership in `ClosedSubgroup.specialUnitary n 𝕜` is having determinant `1`. -/
+@[simp]
+theorem mem_specialUnitary_iff {U : Matrix.unitaryGroup n 𝕜} :
+    U ∈ specialUnitary n 𝕜 ↔ (U : Matrix n n 𝕜).det = 1 :=
+  Matrix.UnitaryGroup.mem_specialUnitarySubgroup_iff
+
+end SpecialUnitary
+
 variable {n m 𝕜 : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m] [RCLike 𝕜]
+
+/-- Reindex a closed subgroup `G ≤ U(n)` along a bijection `e : n ≃ m` to obtain a closed
+subgroup of `U(m)`. -/
+def reindex (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (e : n ≃ m) :
+    ClosedSubgroup (Matrix.unitaryGroup m 𝕜) where
+  toSubgroup := (G : Subgroup _).map (Matrix.UnitaryGroup.reindexEquiv e).toMonoidHom
+  isClosed' := by
+    convert (G.isClosed'.isCompact.image
+      (Matrix.UnitaryGroup.continuous_reindexEquiv e)).isClosed using 1
+    ext g
+    simp only [Subgroup.mem_carrier, Subgroup.mem_map, MulEquiv.coe_toMonoidHom, Set.mem_image]
+
+/-- Membership in `G.reindex e` reduces to membership of the inverse reindexing in `G`. -/
+@[simp]
+theorem mem_reindex_iff {G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)} (e : n ≃ m)
+    {V : Matrix.unitaryGroup m 𝕜} :
+    V ∈ G.reindex e ↔ (Matrix.UnitaryGroup.reindexEquiv e).symm V ∈ G := by
+  -- The underlying subgroup of `reindex` is, by definition, the image of `G` under `reindexEquiv`.
+  change V ∈ (G : Subgroup _).map (Matrix.UnitaryGroup.reindexEquiv e).toMonoidHom ↔ _
+  simp only [Subgroup.mem_map, MulEquiv.coe_toMonoidHom]
+  constructor
+  · rintro ⟨U, hU, rfl⟩
+    simp only [MulEquiv.symm_apply_apply]
+    exact hU
+  · intro hV
+    exact ⟨(Matrix.UnitaryGroup.reindexEquiv e).symm V, hV, by simp⟩
+
+/-- Reindexing an element of `G` along `e` lands in `G.reindex e`. -/
+theorem reindexEquiv_mem_reindex {G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)} (e : n ≃ m)
+    {U : Matrix.unitaryGroup n 𝕜} (hU : U ∈ G) :
+    Matrix.UnitaryGroup.reindexEquiv e U ∈ G.reindex e := by
+  simpa using hU
 
 /-- The block-diagonal product `G₁ × G₂ ≤ U(n ⊕ m)` of closed subgroups `G₁ ≤ U(n)` and
 `G₂ ≤ U(m)`: the matrices `diag(g₁, g₂)` with `g₁ ∈ G₁` and `g₂ ∈ G₂`. It is closed, being the

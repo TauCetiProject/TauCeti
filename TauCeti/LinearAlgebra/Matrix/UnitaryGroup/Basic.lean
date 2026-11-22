@@ -112,7 +112,61 @@ theorem toSpecialUnitaryAt_of_det_eq_one (j : n) {A : unitaryGroup n R}
     (hA : (A : Matrix n n R).det = 1) : (toSpecialUnitaryAt j A : Matrix n n R) = A := by
   simp [coe_toSpecialUnitaryAt, hA]
 
+/-- Reindexing unitary matrices along a bijection `e : n ≃ m`, as a group isomorphism
+`Matrix.unitaryGroup n R ≃* Matrix.unitaryGroup m R`. -/
+def reindexEquiv {m : Type*} [Fintype m] [DecidableEq m] (e : n ≃ m) :
+    unitaryGroup n R ≃* unitaryGroup m R where
+  toFun U := ⟨reindex e e (U : Matrix n n R), submatrix_equiv_mem_unitary.2 U.property⟩
+  invFun V := ⟨reindex e.symm e.symm (V : Matrix m m R),
+    submatrix_equiv_mem_unitary.2 V.property⟩
+  left_inv U := Subtype.ext (by simp [reindex_apply])
+  right_inv V := Subtype.ext (by simp [reindex_apply])
+  map_mul' U V := Subtype.ext (by
+    simp only [Submonoid.coe_mul, reindex_apply, submatrix_mul_equiv])
+
+/-- The matrix underlying `reindexEquiv e U` is `Matrix.reindex e e U`. -/
+@[simp]
+theorem coe_reindexEquiv {m : Type*} [Fintype m] [DecidableEq m] (e : n ≃ m)
+    (U : unitaryGroup n R) :
+    (reindexEquiv e U : Matrix m m R) = reindex e e (U : Matrix n n R) :=
+  (rfl)
+
+/-- The matrix underlying `(reindexEquiv e).symm V` is `Matrix.reindex e.symm e.symm V`. -/
+@[simp]
+theorem coe_reindexEquiv_symm {m : Type*} [Fintype m] [DecidableEq m] (e : n ≃ m)
+    (V : unitaryGroup m R) :
+    ((reindexEquiv e).symm V : Matrix n n R) = reindex e.symm e.symm (V : Matrix m m R) :=
+  (rfl)
+
 end UnitaryGroup
+
+section SpecialUnitary
+
+variable (n : Type*) (R : Type*) [Fintype n] [DecidableEq n] [CommRing R] [StarRing R]
+
+/-- The special unitary group `SU(n)` as a subgroup of `Matrix.unitaryGroup n R`. -/
+def UnitaryGroup.specialUnitarySubgroup : Subgroup (unitaryGroup n R) where
+  carrier := {U | (U : Matrix n n R).det = 1}
+  mul_mem' {A B} hA hB := by
+    change ((A : Matrix n n R) * (B : Matrix n n R)).det = 1
+    rw [det_mul, hA, hB, mul_one]
+  one_mem' := det_one
+  inv_mem' {A} hA := by
+    have hmul : (A : Matrix n n R) * ((A⁻¹ : unitaryGroup n R) : Matrix n n R) = 1 := by
+      simpa only [Submonoid.coe_mul, OneMemClass.coe_one] using
+        congrArg Subtype.val (mul_inv_cancel A)
+    have hdet := congrArg Matrix.det hmul
+    rw [det_mul, hA, one_mul, det_one] at hdet
+    exact hdet
+
+/-- A unitary matrix lies in `specialUnitarySubgroup` iff its determinant is `1`. -/
+@[simp]
+theorem UnitaryGroup.mem_specialUnitarySubgroup_iff {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [StarRing R] {U : unitaryGroup n R} :
+    U ∈ UnitaryGroup.specialUnitarySubgroup n R ↔ (U : Matrix n n R).det = 1 :=
+  Iff.rfl
+
+end SpecialUnitary
 
 variable {R : Type u} [Semiring R] [StarRing R]
 variable {n : Type v} [Fintype n] [DecidableEq n]
