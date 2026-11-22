@@ -30,7 +30,7 @@ The first two statements are local on `X`. On an affine chart `Spec A ⟶ X` thr
 finitely generated `k`-algebra and `x` corresponding to a prime `p`, they are the affine statements
 `dim (A ⧸ p) = trdeg_k κ(p)` (`Ideal.ringKrullDim_quotient_eq_toNat_trdeg_residueField`) and
 `dim_p Spec A = ht p + dim (A ⧸ p)`
-(`TauCeti.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient`). The chart is an open
+(`PrimeSpectrum.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient`). The chart is an open
 embedding, so it preserves local dimension; it identifies the stalk `O_{X,x}` with `A_p`, whose
 dimension is `ht p`; and it identifies `κ(x)` with `κ(p)` as `k`-algebras. The closure of `x`
 meets the chart in a nonempty open part of an irreducible closed set, which has the dimension of
@@ -58,7 +58,7 @@ All in the namespace `TauCeti.AlgebraicGeometry`:
 * `height_eq_toNat_trdeg_residueField`: the height of `x` is `trdeg_k κ(x)`.
 * `height_apply_eq_height_of_residueDegree_ne_zero`: a morphism over `k` preserves the height of
   a point with finite residue field extension.
-* `height_apply_of_isOpenImmersion`: an open immersion over `k` preserves the height of points.
+* `height_apply_of_isOpenImmersion`: an open immersion into `X` preserves the height of points.
 
 ## References
 
@@ -125,7 +125,7 @@ theorem topologicalKrullDimAt_eq_ringKrullDim_stalk_add_toNat_trdeg_residueField
     coheight_eq_of_isOpenImmersion, ← idealHeight_eq_coheight,
     (g.residueFieldAlgEquivOfIsOpenImmersion φ hφ y).trdeg_eq]
   rw [← Ideal.ringKrullDim_quotient_eq_toNat_trdeg_residueField k]
-  exact topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient k y
+  exact y.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient k
 
 include k in
 /-- **Local dimension via the stalk and the point closure.** On a scheme `X` locally of finite
@@ -165,11 +165,11 @@ theorem topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents 
       rfl⟩) ?_)
     rw [← Ideal.topologicalKrullDim_zeroLocus]
     exact ((g.isOpenEmbedding.isEmbedding.comp IsEmbedding.subtypeVal).codRestrict Z
-      fun v ↦ hVZ ⟨v.1, v.2, rfl⟩).isInducing.topologicalKrullDim_le
+      fun v ↦ hVZ ⟨v.val, v.property, rfl⟩).isInducing.topologicalKrullDim_le
   · -- A component `Z` through `x` meets every open neighbourhood `U` of `x` in a nonempty open
     -- part of `Z`, which has the dimension of `Z`.
     rw [← topologicalKrullDim_inter_eq_of_locallyOfFiniteType (X ↘ Spec (.of k)) hZ.1
-      (isClosed_of_mem_irreducibleComponents Z hZ) U.2.1 ⟨x, hxZ, U.2.2⟩]
+      (isClosed_of_mem_irreducibleComponents Z hZ) U.property.1 ⟨x, hxZ, U.property.2⟩]
     exact (IsEmbedding.inclusion Set.inter_subset_right).isInducing.topologicalKrullDim_le
 
 include k in
@@ -246,12 +246,17 @@ theorem topologicalKrullDimAt_eq_of_isPureDimensional {d : ℕ} (h : IsPureDimen
     (le_iSup_of_le mem_irreducibleComponent (isPureDimensional_iff.mp h _
       (irreducibleComponent_mem_irreducibleComponents x)).ge)
 
+include k in
 /-- Over a field, an open immersion preserves the dimension of points: its residue degrees are
-one, so a point and its image have residue fields of the same transcendence degree over `k`. -/
-theorem height_apply_of_isOpenImmersion {U : Scheme.{u}} [U.Over (Spec (.of k))]
-    [LocallyOfFiniteType (U ↘ Spec (.of k))] (j : U ⟶ X) [IsOpenImmersion j]
-    [j.IsOver (Spec (.of k))] (u : U) : Order.height (j u) = Order.height u :=
-  height_apply_eq_height_of_residueDegree_ne_zero k j
+one, so a point and its image have residue fields of the same transcendence degree over `k`. No
+structure over `k` is needed on the source, which is given the one induced from the target. -/
+theorem height_apply_of_isOpenImmersion {U : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
+    (u : U) : Order.height (j u) = Order.height u := by
+  let : U.Over (Spec (.of k)) := ⟨j ≫ X ↘ Spec (.of k)⟩
+  have : LocallyOfFiniteType (U ↘ Spec (.of k)) :=
+    inferInstanceAs (LocallyOfFiniteType (j ≫ X ↘ Spec (.of k)))
+  have : j.IsOver (Spec (.of k)) := ⟨rfl⟩
+  exact height_apply_eq_height_of_residueDegree_ne_zero k j
     (by rw [Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks]; exact one_ne_zero)
 
 end AlgebraicGeometry

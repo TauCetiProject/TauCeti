@@ -17,8 +17,10 @@ slots. Publisher and sandbox must use distinct fresh runners.
 
 Ordinary non-staging picker jobs and the CI label dispatcher (`full-lint-label.yml`)
 run on the Fleet PR pool when `FLEET_CI_ENABLED` is `true` so GitHub-hosted backlogs
-cannot starve runner selection. Setting `PICKER_GITHUB_FALLBACK` to `true` returns
-both to GitHub-hosted `ubuntu-24.04` without a source PR. Neither job receives
+cannot starve runner selection. The API docs build (`api-docs.yml`) uses the same pool, so
+its hours-long re-analysis after a pin bump does not hold a GitHub-hosted runner. Setting
+`PICKER_GITHUB_FALLBACK` to `true` returns all three to GitHub-hosted `ubuntu-24.04`
+without a source PR. None of them receives
 `APP_PRIVATE_KEY`.
 
 Native Actions concurrency groups cap GitHub-hosted bulk builds across workflows at

@@ -122,6 +122,26 @@ abbrev homSnd (φ : T ⟶ T') : T.snd ⟶ T'.snd := φ.hom.app 1
 /-- The map between the smallest spaces induced by a morphism of triples. -/
 abbrev homThd (φ : T ⟶ T') : T.thd ⟶ T'.thd := φ.hom.app 0
 
+/-- Construct a morphism of triples from its maps on the smallest, middle and ambient spaces and
+the two commuting squares, the analogue of `TopPair.ofHom`. -/
+abbrev homMk (f₀ : T.thd ⟶ T'.thd) (f₁ : T.snd ⟶ T'.snd) (f₂ : T.fst ⟶ T'.fst)
+    (w₀ : T.innerMap ≫ f₁ = f₀ ≫ T'.innerMap := by cat_disch)
+    (w₁ : T.outerMap ≫ f₂ = f₁ ≫ T'.outerMap := by cat_disch) : T ⟶ T' :=
+  ObjectProperty.homMk (ComposableArrows.homMk₂ f₀ f₁ f₂ w₀ w₁)
+
+section
+
+variable (f₀ : T.thd ⟶ T'.thd) (f₁ : T.snd ⟶ T'.snd) (f₂ : T.fst ⟶ T'.fst)
+    (w₀ : T.innerMap ≫ f₁ = f₀ ≫ T'.innerMap) (w₁ : T.outerMap ≫ f₂ = f₁ ≫ T'.outerMap)
+
+@[simp] lemma homThd_homMk : homThd (homMk f₀ f₁ f₂ w₀ w₁) = f₀ := rfl
+
+@[simp] lemma homSnd_homMk : homSnd (homMk f₀ f₁ f₂ w₀ w₁) = f₁ := rfl
+
+@[simp] lemma homFst_homMk : homFst (homMk f₀ f₁ f₂ w₀ w₁) = f₂ := rfl
+
+end
+
 @[reassoc]
 lemma homThd_comp_innerMap (φ : T ⟶ T') :
     homThd φ ≫ T'.innerMap = T.innerMap ≫ homSnd φ :=
@@ -163,11 +183,11 @@ abbrev outerPair : TopTriple.{u} ⥤ TopPair.{u} where
   obj T := { left := T.snd, right := T.fst, hom := T.outerMap, prop := T.property.2 }
   map φ := TopPair.ofHom (homFst φ) (homSnd φ) (homSnd_comp_outerMap φ)
 
-@[simp] lemma innerPair_obj_map : (innerPair.obj T).map = T.innerMap := rfl
+lemma innerPair_obj_map : (innerPair.obj T).map = T.innerMap := rfl
 
-@[simp] lemma totalPair_obj_map : (totalPair.obj T).map = T.totalMap := rfl
+lemma totalPair_obj_map : (totalPair.obj T).map = T.totalMap := rfl
 
-@[simp] lemma outerPair_obj_map : (outerPair.obj T).map = T.outerMap := rfl
+lemma outerPair_obj_map : (outerPair.obj T).map = T.outerMap := rfl
 
 section
 
@@ -184,22 +204,22 @@ variable {X : TopCat.{u}} {s t w : Set X} (hst : s ⊆ t) (htw : t ⊆ w)
 
 end
 
-@[simp] lemma innerPair_map_fst (φ : T ⟶ T') :
+lemma innerPair_map_fst (φ : T ⟶ T') :
     TopPair.Hom.fst (innerPair.map φ) = homSnd φ := rfl
 
-@[simp] lemma innerPair_map_snd (φ : T ⟶ T') :
+lemma innerPair_map_snd (φ : T ⟶ T') :
     TopPair.Hom.snd (innerPair.map φ) = homThd φ := rfl
 
-@[simp] lemma totalPair_map_fst (φ : T ⟶ T') :
+lemma totalPair_map_fst (φ : T ⟶ T') :
     TopPair.Hom.fst (totalPair.map φ) = homFst φ := rfl
 
-@[simp] lemma totalPair_map_snd (φ : T ⟶ T') :
+lemma totalPair_map_snd (φ : T ⟶ T') :
     TopPair.Hom.snd (totalPair.map φ) = homThd φ := rfl
 
-@[simp] lemma outerPair_map_fst (φ : T ⟶ T') :
+lemma outerPair_map_fst (φ : T ⟶ T') :
     TopPair.Hom.fst (outerPair.map φ) = homFst φ := rfl
 
-@[simp] lemma outerPair_map_snd (φ : T ⟶ T') :
+lemma outerPair_map_snd (φ : T ⟶ T') :
     TopPair.Hom.snd (outerPair.map φ) = homSnd φ := rfl
 
 -- Expose the pair maps so dependent coefficient pullback types can compute their components.

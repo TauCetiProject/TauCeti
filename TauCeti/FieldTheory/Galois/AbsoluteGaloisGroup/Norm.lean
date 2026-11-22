@@ -159,7 +159,7 @@ theorem coe_norm_eq_prod_quotient_out (hW : fixedField W.toSubgroup = E)
       IntermediateField.mem_fixingSubgroup_iff, IntermediateField.mem_fixingSubgroup_iff]
     refine ⟨fun h ↦ ?_, fun h y hy ↦ h y ⟨⟨y, hy⟩, rfl⟩⟩
     rintro _ ⟨y, rfl⟩
-    exact h _ y.2
+    exact h _ y.property
   -- The cosets of `W'` in `W` are the `E`-embeddings of `E'` in `Kˢ`, and those in an algebraic
   -- closure of `Kˢ`.
   let f : W.toSubgroup ⧸ W'.toSubgroup.subgroupOf W.toSubgroup ≃

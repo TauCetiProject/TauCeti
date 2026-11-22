@@ -176,7 +176,7 @@ private noncomputable def uniqueBasicOpenCoordIdem (n : ℕ) :
   apply PrimeSpectrum.ext
   have hmax : (RingHom.ker (Pi.evalRingHom (fun _ : ℕ ↦ k) n)).IsMaximal :=
     RingHom.ker_isMaximal_of_surjective _ (Pi.evalRingHom (fun _ : ℕ ↦ k) n).surjective
-  refine (hmax.eq_of_le q.1.1.isPrime.ne_top fun x hx ↦ ?_).symm
+  refine (hmax.eq_of_le q.val.val.isPrime.ne_top fun x hx ↦ ?_).symm
   have hx0 : x * coordIdem k n = 0 := by
     ext j
     rw [Pi.mul_apply, Pi.zero_apply, coordIdem]
@@ -185,8 +185,8 @@ private noncomputable def uniqueBasicOpenCoordIdem (n : ℕ) :
       have hxn : x j = 0 := by simpa only [RingHom.mem_ker, Pi.evalRingHom_apply] using hx
       simp [hxn]
     · rw [Pi.single_eq_of_ne hj, mul_zero]
-  have hmem : x * coordIdem k n ∈ q.1.1.asIdeal := hx0 ▸ q.1.1.asIdeal.zero_mem
-  exact (q.1.1.isPrime.mem_or_mem hmem).resolve_right (mem_basicOpen.mp q.2)
+  have hmem : x * coordIdem k n ∈ q.val.val.asIdeal := hx0 ▸ q.val.val.asIdeal.zero_mem
+  exact (q.val.val.isPrime.mem_or_mem hmem).resolve_right (mem_basicOpen.mp q.property)
 
 /-- The union `U = ⋃ n : ℕ, D(eₙ)` in `Spf (ℕ → k)` is not quasi-compact. -/
 private theorem not_isCompact_iSup_basicOpen_coordIdem :

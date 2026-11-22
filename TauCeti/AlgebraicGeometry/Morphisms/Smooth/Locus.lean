@@ -95,16 +95,17 @@ theorem smooth_of_transitive_on_closedPoints {k : Type u} [Field k] [PerfectFiel
 of any affine source neighbourhood, with scalars restricted along `R ≅ Γ(Spec R, ⊤)`. -/
 theorem mem_smoothLocus_iff_isSmoothAt {R : Type u} [CommRing R] {X : Scheme.{u}}
     (f : X ⟶ Spec (.of R)) [LocallyOfFinitePresentation f]
-    {U : X.affineOpens} {x : X} (hx : x ∈ U.1) :
-    letI := ((Scheme.ΓSpecIso (.of R)).inv ≫ f.appLE ⊤ U.1 le_top).hom.toAlgebra
-    x ∈ f.smoothLocus ↔ Algebra.IsSmoothAt R (U.2.primeIdealOf ⟨x, hx⟩).asIdeal := by
-  let φ := f.appLE ⊤ U.1 le_top
+    {U : X.affineOpens} {x : X} (hx : x ∈ U.val) :
+    letI := ((Scheme.ΓSpecIso (.of R)).inv ≫ f.appLE ⊤ U.val le_top).hom.toAlgebra
+    x ∈ f.smoothLocus ↔ Algebra.IsSmoothAt R (U.property.primeIdealOf ⟨x, hx⟩).asIdeal := by
+  let φ := f.appLE ⊤ U.val le_top
   let ψ := (Scheme.ΓSpecIso (.of R)).inv ≫ φ
   let := φ.hom.toAlgebra
   let := ψ.hom.toAlgebra
-  let q := (U.2.primeIdealOf ⟨x, hx⟩).asIdeal
+  let q := (U.property.primeIdealOf ⟨x, hx⟩).asIdeal
   let A := Localization.AtPrime q
-  rw [mem_smoothLocus, formallySmooth_stalkMap_iff ⊤ (isAffineOpen_top _) U.1 U.2 le_top hx]
+  rw [mem_smoothLocus, formallySmooth_stalkMap_iff ⊤ (isAffineOpen_top _) U.val U.property le_top
+      hx]
   have h := RingHom.FormallySmooth.respectsIso.cancel_left_isIso
     (Scheme.ΓSpecIso (.of R)).inv (φ ≫ CommRingCat.ofHom (algebraMap Γ(X, U) A))
   simp only [Algebra.smoothLocus, Set.mem_ofPred_eq, Algebra.IsSmoothAt]

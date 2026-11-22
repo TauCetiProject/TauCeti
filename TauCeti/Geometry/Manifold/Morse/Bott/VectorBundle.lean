@@ -444,7 +444,7 @@ theorem exists_parametric_morse_partialDiffeomorph (hW : IsOpen W)
     exact (Function.LeftInverse.isEmbedding (f := TotalSpace.proj) (zeroSection_proj F E)
       (FiberBundle.continuous_proj F E) (Trivialization.continuous_zeroSection ℝ)).isInducing
   have hOloc : IsLocalDiffeomorphOn (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F)) n Φ₀ O :=
-    fun p ↦ p.2.1.1
+    fun p ↦ p.property.1.1
   obtain ⟨Φ, hzΦ, hΦO, -, hΦ⟩ := hOloc.exists_partialDiffeomorph_near_section hO hzO
     (Trivialization.continuous_zeroSection ℝ) TotalSpace.proj (FiberBundle.continuous_proj F E)
     (zeroSection_proj F E) hind

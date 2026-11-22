@@ -40,7 +40,7 @@ namespace Derivation
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
 
 private def dualNumberEnd (d : Derivation R A A) : A[ε] →ₐ[R] A[ε] :=
-  DualNumber.lift ⟨((TauCeti.derivationToTrivSqZeroExtEquivLift R A A d).1, ε),
+  DualNumber.lift ⟨((TauCeti.derivationToTrivSqZeroExtEquivLift R A A d).val, ε),
     eps_mul_eps, fun _ ↦ Commute.all _ _⟩
 
 private theorem dualNumberEnd_fst (d : Derivation R A A) (z : A[ε]) :

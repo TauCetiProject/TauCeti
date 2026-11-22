@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.LocallyFree
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
+public import TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 public import Mathlib.RingTheory.Smooth.StandardSmoothCotangent
 
@@ -28,11 +29,13 @@ When `X` is smooth of relative dimension one over `Spec R`, as a smooth curve ov
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply`: the
   finite locally free sheaf `FiniteLocallyFreeSheaf.relativeDifferentials R X` has rank `n`
   everywhere when `X` is smooth of relative dimension `n`;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials`: the same
+  sheaf as a finite locally free sheaf of constant rank `n`;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rank_relativeDifferentials_of_isOpenImmersion`:
   the rank is unchanged by restriction along an open immersion over `Spec R`;
 * `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_of_forall_rank_relativeDifferentials_eq`:
-  conversely, a smooth scheme over `Spec R` on which `Ω_{X/R}` has constant rank `d` is smooth of
-  relative dimension `d`;
+  conversely to the first item, a smooth scheme over `Spec R` on which `Ω_{X/R}` has constant
+  rank `d` is smooth of relative dimension `d`;
 * `TauCeti.AlgebraicGeometry.isInvertible_relativeDifferentials` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.relativeDifferentials`: in relative dimension one
   it is an invertible sheaf.
@@ -83,9 +86,9 @@ theorem FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply (n : ℕ)
     (FiniteLocallyFreeSheaf.relativeDifferentials R X).rank x = n := by
   have := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
   obtain ⟨W, hxW, hW⟩ := exists_isStandardSmoothOfRelativeDimension R n x
-  let : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W.1)).hom.toAlgebra
+  let : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W.val)).hom.toAlgebra
   have : Algebra.IsStandardSmoothOfRelativeDimension n R Γ(X, W) := hW.toAlgebra
-  have : Nonempty W.1 := ⟨⟨x, hxW⟩⟩
+  have : Nonempty W.val := ⟨⟨x, hxW⟩⟩
   have : W.property.fromSpec.IsOver (Spec (.of R)) := isOver_fromSpec R X W
   have : IsOpenImmersion W.property.fromSpec := IsAffineOpen.isOpenImmersion_fromSpec W.property
   obtain ⟨ι, _, hι, ⟨e⟩⟩ := exists_relativeDifferentialsSpecIsoFree R n Γ(X, W)
@@ -172,6 +175,25 @@ lemma InvertibleSheaf.relativeDifferentials_obj
     [SmoothOfRelativeDimension 1 (X ↘ Spec (.of R))] :
     (InvertibleSheaf.relativeDifferentials R X).obj = X.relativeDifferentials R :=
   (rfl)
+
+variable (n : ℕ) [SmoothOfRelativeDimension n (X ↘ Spec (.of R))]
+
+/-- The sheaf of relative differentials `Ω_{X/R}` of a scheme smooth of relative dimension `n`
+over `Spec R`, as a finite locally free sheaf of constant rank `n`. -/
+def FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials : FiniteLocallyFreeSheaf.FixedRank X n :=
+  haveI := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
+  ⟨FiniteLocallyFreeSheaf.relativeDifferentials R X,
+    (FiniteLocallyFreeSheaf.isConstantRank_iff _ n).mpr
+      (FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply R n)⟩
+
+/-- The underlying sheaf of `FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials R X n` is
+`Ω_{X/R}`. -/
+@[simp]
+lemma FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials_obj_obj :
+    (FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials R X n).obj.obj =
+      X.relativeDifferentials R :=
+  haveI := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
+  FiniteLocallyFreeSheaf.relativeDifferentials_obj R X
 
 end
 

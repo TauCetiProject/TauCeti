@@ -142,7 +142,7 @@ theorem sum_smul_generator [DecidableEq X] (hι : ∀ s, IsIdempotentElem (ι s)
   simp only [Submodule.coe_sum, Submodule.coe_smul, coe_generator, Finset.sum_apply,
     Pi.smul_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_zero, Finset.sum_ite_eq,
     Finset.mem_univ, ite_true]
-  exact φ.2 y
+  exact φ.property y
 
 /-- An `A`-linear map out of the induced module is determined by its values on the
 generators. -/
@@ -168,7 +168,7 @@ variable (N N') in
 noncomputable def inducedHom : morphisms N N' →ₗ[R] N.inducedModule →ₗ[A] N'.inducedModule where
   toFun F :=
     { toFun φ := ⟨continuationMap R A (F : Matrix X X' A) φ, mem_inducedModule_iff_mem_boxTensor.mpr
-        (continuationMap_mem_boxTensor (M := A) F.2 φ)⟩
+        (continuationMap_mem_boxTensor (M := A) F.property φ)⟩
       map_add' φ ψ := Subtype.ext (map_add _ _ _)
       map_smul' b φ := by
         ext z
@@ -194,11 +194,12 @@ theorem coe_inducedHom_generator [DecidableEq X] (hι : ∀ s, IsIdempotentElem 
   ext y
   rw [coe_inducedHom_apply, coe_generator,
     continuationMap_single_apply (R := R) (M := A) (F : Matrix X X' A), op_smul_eq_mul,
-    (mem_morphisms_iff.mp F.2 x y).1]
+    (mem_morphisms_iff.mp F.property x y).1]
 
 /-- **Composition**: the matrix product of morphisms induces the composite of the maps. -/
 theorem inducedHom_mul (F : morphisms N N') (G : morphisms N' N'') :
-    inducedHom N N'' ⟨(F : Matrix X X' A) * (G : Matrix X' X'' A), mul_mem_morphisms F.2 G.2⟩ =
+    inducedHom N N'' ⟨(F : Matrix X X' A) * (G : Matrix X' X'' A),
+        mul_mem_morphisms F.property G.property⟩ =
       (inducedHom N' N'' G).comp (inducedHom N N' F) := by
   ext φ : 2
   simp only [coe_inducedHom_apply, LinearMap.comp_apply, continuationMap_matMul]
@@ -208,7 +209,7 @@ theorem inducedHom_mul (F : morphisms N N') (G : morphisms N' N'') :
 theorem inducedHom_idMorphism [DecidableEq X] (hι : ∀ s, IsIdempotentElem (ι s)) :
     inducedHom N N ⟨N.idMorphism, N.idMorphism_mem_morphisms hι⟩ = LinearMap.id := by
   ext φ : 2
-  exact continuationMap_idMorphism (mem_inducedModule_iff_mem_boxTensor.mp φ.2)
+  exact continuationMap_idMorphism (mem_inducedModule_iff_mem_boxTensor.mp φ.property)
 
 variable (N N') in
 /-- **Morphisms of type `D` structures are the `A`-linear maps of the induced modules**: when
@@ -218,7 +219,7 @@ noncomputable def inducedHomEquiv [DecidableEq X] (hι : ∀ s, IsIdempotentElem
     morphisms N N' ≃ₗ[R] N.inducedModule →ₗ[A] N'.inducedModule where
   __ := inducedHom N N'
   invFun T := ⟨fun x y => (T (N.generator hι x) : X' → A) y, mem_morphisms_iff.mpr fun x y => by
-    refine ⟨?_, (T (N.generator hι x)).2 y⟩
+    refine ⟨?_, (T (N.generator hι x)).property y⟩
     have h := congrArg (fun φ : N'.inducedModule => (φ : X' → A) y)
       (congrArg T (idem_smul_generator hι x))
     simpa only [map_smul, Submodule.coe_smul, Pi.smul_apply, smul_eq_mul] using h⟩
@@ -256,7 +257,7 @@ noncomputable def inducedDifferential (hd : IsUngradedDGAlgebra d) (hι : ∀ s,
     N.inducedModule →ₗ[R] N.inducedModule where
   toFun φ := ⟨N.boxDifferential d φ, mem_inducedModule_iff_mem_boxTensor.mpr
     (N.boxDifferential_mem_boxTensor hι hd.isUngradedDGRightModule
-      (mem_inducedModule_iff_mem_boxTensor.mp φ.2))⟩
+      (mem_inducedModule_iff_mem_boxTensor.mp φ.property))⟩
   map_add' _ _ := Subtype.ext (map_add _ _ _)
   map_smul' r φ := Subtype.ext (map_smul (N.boxDifferential d) r (φ : X → A))
 
@@ -334,7 +335,8 @@ theorem inducedHomDifferential_eq_zero_iff [CharP R 2] (hd : IsUngradedDGAlgebra
 `∂F = d F + F * δ' + δ * F` is `∂' ∘ T_F + T_F ∘ ∂`. -/
 theorem inducedHom_morphismDifferential [CharP R 2] (hd : IsUngradedDGAlgebra d)
     (hι : ∀ s, d (ι s) = 0) (F : morphisms N N') :
-    inducedHom N N' ⟨morphismDifferential N N' F, morphismDifferential_mem_morphisms hd hι F.2⟩ =
+    inducedHom N N' ⟨morphismDifferential N N' F, morphismDifferential_mem_morphisms hd hι
+        F.property⟩ =
       inducedHomDifferential N N' hd hι (inducedHom N N' F) := by
   ext φ : 2
   exact (boxDifferential_continuationMap hd.isUngradedDGRightModule (F : Matrix X X' A)
