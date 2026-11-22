@@ -31,7 +31,16 @@ on the negative normal bundle. Dividing a fibre gauge by a continuous positive r
 disc and sphere bundles are `{v | ρ v ≤ r v.proj}` and `{v | ρ v = r v.proj}`
 (`TauCeti.gaugeDiscBundle_div`, `TauCeti.gaugeSphereBundle_div`). Each point of `S(E)` gives a
 unit vector in its fibre (`TauCeti.unitSphereOfSphereBundle`), and the unit sphere bundle projects
-continuously onto the base (`TauCeti.sphereBundleProj`).
+continuously onto the base (`TauCeti.sphereBundleProj`). The disc bundle of a fibre gauge contains
+the zero section (`TauCeti.IsFiberGauge.zeroSection_mem_gaugeDiscBundle`). The pair `(D(E), S(E))`
+(`TauCeti.discSpherePair`) is the gauge disc-sphere pair of the fibre norm
+(`TauCeti.discSpherePair_eq_gaugeDiscSpherePair`). In rank zero every vector is zero, so the unit
+sphere bundle is empty and the unit disc bundle is the whole total space
+(`TauCeti.isEmpty_sphereBundle_of_subsingleton`, `TauCeti.discBundle_eq_univ_of_subsingleton`).
+The disc bundle of a fibre gauge contains the zero section
+(`TauCeti.IsFiberGauge.zeroSection_mem_gaugeDiscBundle`), so it projects onto the base, and the
+base is compact when the disc bundle is
+(`TauCeti.IsFiberGauge.compactSpace_of_compactSpace_gaugeDiscBundle`).
 
 The unit disc and sphere bundles are closed in the total space (`TauCeti.isClosed_discBundle`,
 `TauCeti.isClosed_sphereBundle`). For a finite-rank bundle whose fibres carry inner products, the
@@ -189,6 +198,10 @@ variable {F E} in
 theorem mem_sphereBundle {v : TotalSpace F E} : v ∈ sphereBundle F E ↔ ‖v.snd‖ = 1 :=
   Iff.rfl
 
+/-- The unit sphere bundle lies in the unit disc bundle. -/
+theorem sphereBundle_subset_discBundle : sphereBundle F E ⊆ discBundle F E :=
+  gaugeSphereBundle_subset_gaugeDiscBundle _
+
 variable {F E} in
 /-- The vectors of norm less than one miss the sphere bundle. -/
 theorem disjoint_norm_lt_one_sphereBundle :
@@ -217,6 +230,18 @@ variable (F E) in
 theorem coe_sphereBundleInclusion_apply (v : sphereBundle F E) :
     @Subtype.val _ (· ∈ zeroSectionCompl F E) (sphereBundleInclusion F E v) = v :=
   (rfl)
+
+variable (F E) in
+/-- The pair `(D(E), S(E))` of the unit disc bundle and the unit sphere bundle of a bundle with
+normed fibres. -/
+abbrev discSpherePair : TopPair.{w} :=
+  TopPair.ofInclusion (X := TopCat.of (TotalSpace F E)) (sphereBundle_subset_discBundle F E)
+
+variable (F E) in
+/-- The pair `(D(E), S(E))` is the disc-sphere pair of the fibre norm, as a fibre gauge. -/
+theorem discSpherePair_eq_gaugeDiscSpherePair :
+    discSpherePair F E = gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.snd‖ :=
+  TopPair.ofInclusion_congr _ _ sphereBundle_def discBundle_def
 
 end Sets
 
@@ -256,6 +281,10 @@ theorem nonneg (v : TotalSpace F E) : 0 ≤ ρ v := by
 /-- A fibre gauge vanishes exactly on the zero section. -/
 theorem eq_zero_iff {v : TotalSpace F E} : ρ v = 0 ↔ v.snd = 0 :=
   ⟨fun h ↦ by_contra fun hv ↦ (hρ.pos hv).ne' h, hρ.eq_zero_of_snd_eq_zero⟩
+
+/-- The zero section lies in the disc bundle of a fibre gauge. -/
+theorem zeroSection_mem_gaugeDiscBundle (b : B) : zeroSection F E b ∈ gaugeDiscBundle ρ :=
+  mem_gaugeDiscBundle.2 ((hρ.eq_zero_of_snd_eq_zero (zeroSection_snd F E b)).trans_le zero_le_one)
 
 /-- Dividing a fibre gauge `ρ` by a continuous positive function `r` on the base yields a fibre
 gauge whose disc and sphere bundles are `{v | ρ v ≤ r v.proj}` and `{v | ρ v = r v.proj}`
@@ -341,6 +370,15 @@ theorem sphereBundle_eq_empty_of_subsingleton : sphereBundle F E = ∅ :=
 instance isEmpty_sphereBundle_of_subsingleton : IsEmpty (sphereBundle F E) := by
   rw [sphereBundle_eq_empty_of_subsingleton]
   infer_instance
+
+/-- When the model fibre is a subsingleton, every vector is zero, so the unit disc bundle is the
+whole total space. -/
+theorem discBundle_eq_univ_of_subsingleton : discBundle F E = univ :=
+  eq_univ_of_forall fun v ↦ by
+    have : Subsingleton (E v.proj) :=
+      (FiberBundle.homeomorphAt F E v.proj).toEquiv.subsingleton
+    rw [mem_discBundle, Subsingleton.elim v.snd 0, norm_zero]
+    exact zero_le_one
 
 end Subsingleton
 
@@ -474,6 +512,22 @@ theorem isCompact_discBundle_inter_proj_preimage_singleton (b : B) :
   exact ⟨fun ⟨hv, hvb⟩ ↦ ⟨hv, hvb⟩, fun ⟨hv, hvb⟩ ↦ ⟨hv, hvb⟩⟩
 
 end Proper
+
+section Compact
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E : B → Type w}
+  [∀ b, AddCommGroup (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
+
+/-- The base of a bundle is compact when the disc bundle of a fibre gauge is: the projection maps
+the disc bundle onto the base, since the disc bundle contains the zero section. -/
+theorem IsFiberGauge.compactSpace_of_compactSpace_gaugeDiscBundle {ρ : TotalSpace F E → ℝ}
+    (hρ : IsFiberGauge ρ) [CompactSpace (gaugeDiscBundle ρ)] : CompactSpace B :=
+  Function.Surjective.compactSpace (f := fun v : gaugeDiscBundle ρ ↦ v.val.proj)
+    ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal)
+    fun b ↦ ⟨⟨zeroSection F E b, hρ.zeroSection_mem_gaugeDiscBundle b⟩, rfl⟩
+
+end Compact
 
 section GaugePair
 
@@ -612,7 +666,7 @@ theorem isIso_singularHomologyMap_gaugeDiscSpherePairMap
 
 /-- The zero section, as a map into the disc bundle of a fibre gauge. -/
 private def zeroSectionGaugeDisc : C(B, gaugeDiscBundle ρ) :=
-  ⟨fun b ↦ ⟨zeroSection F E b, (hρ.eq_zero_of_snd_eq_zero rfl).trans_le zero_le_one⟩,
+  ⟨fun b ↦ ⟨zeroSection F E b, hρ.zeroSection_mem_gaugeDiscBundle b⟩,
     (Trivialization.continuous_zeroSection ℝ).subtype_mk _⟩
 
 /-- The projection of the disc bundle of a fibre gauge. -/

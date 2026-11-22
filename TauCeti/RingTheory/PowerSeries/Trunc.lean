@@ -45,6 +45,8 @@ This file collects facts used to compare power series to a finite order `m`:
   a ring homomorphism to power series.
 * `PowerSeries.coeff_coe_mul_eq_sum`: `coeff n (p * g) = ∑_{i < N} pᵢ coeff n (Xⁱ g)` for a
   polynomial `p` of degree less than `N`.
+* `PowerSeries.eval_trunc`: the value of the truncation below `n` at `x` is the partial sum
+  `∑_{i < n} cᵢ xⁱ`.
 * `Polynomial.exists_natDegree_le_forall_coeff_eq`: every polynomial agrees up to index `m` with
   one of degree at most `m`.
 * `PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero`: at an element with a vanishing `n`th power,
@@ -146,6 +148,11 @@ theorem coeff_coe_mul_eq_sum (p : Polynomial R) (g : R⟦X⟧) {N : ℕ} (hN : p
   rw [← Polynomial.eval₂_C_X_eq_coe, Polynomial.eval₂_eq_sum_range' _ hN, Finset.sum_mul,
     map_sum]
   simp [mul_assoc, coeff_C_mul]
+
+/-- The value at `x` of the truncation below degree `n` is the partial sum of the series. -/
+theorem eval_trunc (n : ℕ) (f : R⟦X⟧) (x : R) :
+    (trunc n f).eval x = ∑ i ∈ Finset.range n, coeff i f * x ^ i := by
+  simp only [Polynomial.eval, eval₂_trunc_eq_sum_range, RingHom.id_apply]
 
 end Semiring
 

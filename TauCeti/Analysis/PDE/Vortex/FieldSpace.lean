@@ -20,6 +20,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 
 /-!
 # The affine Sobolev space of framed plane vortex fields
@@ -42,7 +43,9 @@ represent `a = i (b₁ ds + b₂ dt)` and `α = 2 (p + i q)`.
   (`TemperedDistribution.realSobolevFunctions`). This is the componentwise complexification on
   which the tempered vacuum operator `TauCeti.Vortex.temperedVacuumOperator` acts. For `s ≥ 0` a
   field lies in it exactly when its coordinates are almost everywhere the `L²` functions of
-  elements of `H^s(ℂ)` (`mem_sobolevFields_iff_exists_inclusionLp_ae_eq`).
+  elements of `H^s(ℂ)` (`mem_sobolevFields_iff_exists_inclusionLp_ae_eq`), and its `L²` norm is
+  then at most `4` times the norm of these coordinates
+  (`eLpNorm_le_of_forall_inclusionLp_ae_eq`).
 * `framedFieldSpace f m s` is `A_m^s`, the affine subspace through `referenceField f m` with
   direction `sobolevFields s`.
 
@@ -352,6 +355,37 @@ theorem memLp_of_mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fi
     (hy : y ∈ sobolevFields s) : MemLp y 2 volume :=
   memLp_piLp_iff.2 fun i ↦ memLp_of_mem_realSobolevFunctions (mem_sobolevFields.1 hy i)
 
+open BesselPotentialSpace in
+/-- A real field whose four coordinates are represented by `v : Fin 4 → H^s(ℂ)`, `s ≥ 0`, has
+`L²` norm at most `4 ‖v‖`. -/
+theorem eLpNorm_le_of_forall_inclusionLp_ae_eq {s : ℝ} (hs : 0 ≤ s)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} {v : Fin 4 → H^{s}(ℂ)}
+    (hv : ∀ a, ⇑(inclusionLp hs (v a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) :
+    eLpNorm y 2 volume ≤ ENNReal.ofReal (4 * ‖v‖) := by
+  have hy : MemLp y 2 volume := memLp_of_mem_sobolevFields
+    ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq hs).2 ⟨v, hv⟩)
+  let b := (EuclideanSpace.basisFun (Fin 4) ℝ).toBasis
+  calc eLpNorm y 2 volume
+      ≤ ∑ a, ‖b a‖ₑ * eLpNorm (fun z ↦ b.coord a (y z)) 2 volume :=
+        b.eLpNorm_le_sum_enorm_mul_eLpNorm_coord hy.aestronglyMeasurable
+    _ ≤ ∑ _a : Fin 4, ENNReal.ofReal ‖v‖ := by
+        refine Finset.sum_le_sum fun a _ ↦ ?_
+        have hn : eLpNorm (fun z ↦ b.coord a (y z)) 2 volume =
+            eLpNorm (inclusionLp hs (v a)) 2 volume :=
+          eLpNorm_congr_norm_ae
+            ((b.coord a).continuous_of_finiteDimensional.comp_aestronglyMeasurable
+              hy.aestronglyMeasurable) (Lp.aestronglyMeasurable _)
+            ((hv a).mono fun z hz ↦ by simp [b, hz])
+        have hb : ‖b a‖ = 1 := by simp [b]
+        rw [← ofReal_norm, hb, ENNReal.ofReal_one, one_mul, hn,
+          ← ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top _), ← Lp.norm_def]
+        exact ENNReal.ofReal_le_ofReal
+          ((norm_inclusionLp_apply_le hs _).trans (norm_le_pi_norm v a))
+    _ = ENNReal.ofReal (4 * ‖v‖) := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+          ENNReal.ofReal_mul (by norm_num)]
+        norm_num
+
 /-- A field lies in `sobolevFields 0` exactly when it is square integrable. -/
 @[simp]
 theorem mem_sobolevFields_zero_iff {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
@@ -586,6 +620,14 @@ theorem contDiff_of_forall_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m 
     contDiff_infty.2 fun n ↦ contDiff_euclidean.2 fun i ↦
       (contDiff_and_bounded_sub_referenceField_apply hx (hmem (n + 2)) i).1
   simpa using hd.add (contDiff_referenceField f m)
+
+/-- A continuous field lying in `A_m^k` for every `k` has `|α|² = 4 (p² + q²) → 1` at infinity
+(`tendsto_normSq_of_mem_framedFieldSpace` in `A_m^2`). -/
+theorem tendsto_normSq_of_forall_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x)
+    (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) :
+    Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) :=
+  tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx
 
 /-- **Fields in `A_m^(n+2)` have bounded derivatives of order `n`.** The `n`-th iterated
 derivative of every coordinate of a continuous field lying in `A_m^(n+2)` is bounded on the whole

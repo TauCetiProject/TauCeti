@@ -20,6 +20,7 @@ public import Mathlib.Analysis.RCLike.Basic
   jointly continuous `K`-scalar multiplication.
 * `RCLike.re_mem_Ioo_of_mem_ball`: for `z ∈ Metric.ball z₀ δ`,
   `re z ∈ Set.Ioo (re z₀ - δ) (re z₀ + δ)`.
+* `RCLike.norm_I_le_one`: `‖I‖ ≤ 1`, uniformly over `ℝ` (where `I = 0`) and `ℂ` (where `‖I‖ = 1`).
 -/
 
 public section
@@ -35,6 +36,12 @@ theorem norm_le_abs_re_add_abs_im (z : K) : ‖z‖ ≤ |re z| + |im z| := by
   rw [norm_sq_eq_def]
   nlinarith [abs_mul_abs_self (re z), abs_mul_abs_self (im z), abs_nonneg (re z),
     abs_nonneg (im z)]
+
+/-- The imaginary unit has norm at most `1`: it is either `0` (as over `ℝ`) or of norm `1` (as over
+`ℂ`). -/
+theorem norm_I_le_one : ‖(I : K)‖ ≤ 1 := by
+  rw [norm_I]
+  split_ifs <;> norm_num
 
 /-- A scalar with zero imaginary part is the image of its real part. -/
 theorem re_eq_self_of_im_eq_zero {z : K} (h : im z = 0) : (re z : K) = z :=
