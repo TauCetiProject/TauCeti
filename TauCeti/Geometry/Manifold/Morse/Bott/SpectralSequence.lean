@@ -497,7 +497,7 @@ end ThomPair
 
 section TwistedHomology
 
-open LocalCoefficientSystem Module VectorBundleOrientationCover
+open LocalCoefficientSystem _root_.Module VectorBundleOrientationCover
 
 variable {E M : Type} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
