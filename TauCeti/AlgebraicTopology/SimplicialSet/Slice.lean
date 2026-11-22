@@ -42,6 +42,7 @@ to standard simplices.
 * `SSet.slice.comp_π`: under the universal property, the projection to `C` is the restriction to
   `X`.
 * `SSet.slice.isIso_π`: the slice over the empty diagram is the whole simplicial set.
+* `SSet.slice.isTerminal`: the slice of a terminal simplicial set is terminal.
 * `SSet.slice.isPullback_map`: slices preserve pullback squares.
 * `SSet.slice.isPullback_restrictionMap`, `SSet.slice.restrictionMap_comp` and
   `SSet.slice.isPullback_restrictionMapComp`: the behaviour of restriction maps under base change
@@ -368,6 +369,13 @@ lemma isIso_π (hK : ¬ K.Nonempty) : IsIso (π p) := by
     refine ⟨homEquiv.symm ⟨inv (join.inl X K) ≫ g, (isInitialOfNotNonempty hK).hom_ext _ _⟩, ?_⟩
     simp
 
+variable (p) in
+/-- The slice of a terminal simplicial set is terminal: over the point there is exactly one cone
+on every diagram. -/
+noncomputable def isTerminal (hC : Limits.IsTerminal C) : Limits.IsTerminal (slice p) :=
+  Limits.IsTerminal.ofUniqueHom (fun _ ↦ homEquiv.symm ⟨hC.from _, hC.hom_ext _ _⟩)
+    fun _ _ ↦ hom_ext (hC.hom_ext _ _)
+
 section map
 
 variable {L D : SSet.{u}} {q : L ⟶ D}
@@ -430,10 +438,11 @@ lemma map_comp {L' D' : SSet.{u}} {q' : L' ⟶ D'} (i : L ⟶ K) (g : C ⟶ D) (
     ← Category.id_comp (map (i' ≫ i) _ _), homEquiv_comp_map_coe, homEquiv_comp_map_coe]
   simp only [Category.assoc, ← join.map_comp_assoc, Category.id_comp]
 
-/-- Pushing cones forward along an isomorphism is an isomorphism of slices. -/
-instance isIso_map (g : C ⟶ D) [IsIso g] {r : K ⟶ D} (h : 𝟙 K ≫ p ≫ g = r) :
-    IsIso (map (𝟙 K) g h) :=
-  ⟨map (𝟙 K) (inv g) (by simp [← h]), hom_ext (by simp), hom_ext (by simp)⟩
+/-- Restricting cones along an isomorphism and pushing them forward along an isomorphism is an
+isomorphism of slices. -/
+instance isIso_map (i : L ⟶ K) [IsIso i] (g : C ⟶ D) [IsIso g] (h : i ≫ p ≫ g = q) :
+    IsIso (map i g h) :=
+  ⟨map (inv i) (inv g) (by simp [← h]), hom_ext (by simp), hom_ext (by simp)⟩
 
 /-- Slices preserve pullbacks: for a pullback square of simplicial sets with top-left corner `C'`,
 the slices over a diagram `p' : K ⟶ C'` and over its images in the other corners form a pullback
