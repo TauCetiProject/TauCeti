@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.Nakayama
@@ -23,8 +24,9 @@ idempotent: every element of the maximal ideal is the square of an element of th
 ideal. A nonzero such maximal ideal is therefore not finitely generated.
 
 All results are stated for a nontrivial commutative ring whose elements are totally ordered by
-divisibility (a `PreValuationRing`); valuation domains are the main example, and no domain
-assumption is needed.
+divisibility (a `PreValuationRing`); valuation domains are the main example. The first two
+results need no domain assumption, so they also cover such rings with zero divisors. The third
+requires an algebraically closed fraction field, which forces the ring to be a domain.
 
 ## References
 
@@ -49,10 +51,9 @@ theorem isIdempotentElem_maximalIdeal_of_not_fg (hfg : ¬ (maximalIdeal V).FG) :
   -- Some `y ∈ m` is not a multiple of `x`, since otherwise `m = (x)` would be finitely generated.
   obtain ⟨y, hy, hxy⟩ : ∃ y ∈ maximalIdeal V, ¬ x ∣ y := by
     by_contra! h
-    refine hfg ⟨{x}, ?_⟩
-    rw [Finset.coe_singleton]
-    exact le_antisymm ((Ideal.span_singleton_le_iff_mem _).mpr hx)
-      fun y hy ↦ Ideal.mem_span_singleton.mpr (h y hy)
+    have heq : Ideal.span {x} = maximalIdeal V := le_antisymm
+      ((Ideal.span_singleton_le_iff_mem _).mpr hx) fun y hy ↦ Ideal.mem_span_singleton.mpr (h y hy)
+    exact hfg (heq ▸ Submodule.fg_span_singleton x)
   obtain ⟨z, rfl⟩ := (_root_.ValuationRing.dvd_total x y).resolve_left hxy
   -- The cofactor `z` is not a unit, since otherwise `x = y * z` would divide `y`.
   have hz : z ∈ maximalIdeal V := by
@@ -75,25 +76,19 @@ idempotent, including when the valuation ring is the field itself. -/
 theorem isIdempotentElem_maximalIdeal_of_isAlgClosed (K : Type*) [Field K] [Algebra V K]
     [IsFractionRing V K] [IsAlgClosed K] :
     IsIdempotentElem (maximalIdeal V) := by
+  -- `V` is a valuation domain, hence integrally closed.
+  have : IsDomain V := (IsFractionRing.injective V K).isDomain _
+  have : _root_.ValuationRing V := {}
   apply le_antisymm Ideal.mul_le_left
   intro x hx
-  -- Write a square root of `x` in `K` as a quotient `a / b` of elements of `V`.
+  -- A square root of `x` in `K` is integral over `V`, so it is the image of some `c ∈ V`.
   obtain ⟨y, hy⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap V K x) two_pos
-  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective V y
-  have hb0 : algebraMap V K b ≠ 0 := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hb
-  obtain ⟨c, rfl⟩ | ⟨c, rfl⟩ := _root_.ValuationRing.dvd_total b a
-  · -- If `b ∣ a`, then the square root `a / b = c` lies in `V`, and in `m` since `x` does.
-    have hc : c ^ 2 = x := IsFractionRing.injective V K <| by
-      rw [map_pow, ← hy, map_mul, mul_div_cancel_left₀ _ hb0]
-    have hcm : c ∈ maximalIdeal V :=
-      (maximalIdeal.isMaximal V).isPrime.mem_of_pow_mem 2 (hc ▸ hx)
-    rw [← hc, pow_two]
-    exact Ideal.mul_mem_mul hcm hcm
-  · -- If `a ∣ b`, then `x * c ^ 2 = 1`, contradicting `x ∈ m`.
-    rw [map_mul] at hb0 hy
-    have hxc : x * c ^ 2 = 1 := IsFractionRing.injective V K <| by
-      rw [map_mul, map_pow, map_one, ← hy]
-      field_simp [left_ne_zero_of_mul hb0, right_ne_zero_of_mul hb0]
-    exact (notMem_maximalIdeal.mpr (IsUnit.of_mul_eq_one _ hxc) hx).elim
+  obtain ⟨c, rfl⟩ := IsIntegrallyClosed.exists_algebraMap_eq_of_isIntegral_pow (R := V) two_pos
+    (hy ▸ isIntegral_algebraMap)
+  have hc : c ^ 2 = x := IsFractionRing.injective V K (by simpa using hy)
+  -- `c ∈ m` since `c ^ 2 = x ∈ m` and `m` is prime.
+  have hcm : c ∈ maximalIdeal V := (maximalIdeal.isMaximal V).isPrime.mem_of_pow_mem 2 (hc ▸ hx)
+  rw [← hc, pow_two]
+  exact Ideal.mul_mem_mul hcm hcm
 
 end TauCeti.ValuationRing
