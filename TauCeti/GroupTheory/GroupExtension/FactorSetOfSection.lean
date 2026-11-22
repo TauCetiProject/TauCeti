@@ -27,8 +27,9 @@ the copy of `M`, and because `M` is abelian this conjugation is trivial on the c
 (`TauCeti.GroupExtension.conjAct_inl`), hence depends only on the image in `G`
 (`TauCeti.GroupExtension.conjAct_eq_of_rightHom_eq`); packaged as a homomorphism it is
 `TauCeti.GroupExtension.conjActOfSection`, independent of the section used to write it down.
-`TauCeti.GroupExtension.InducesAction S` says that this conjugation is the ambient
-`MulDistribMulAction` of `G` on `M`, equivalently that `conjActOfSection` *is* that action
+`TauCeti.GroupExtension.InducesAction S` (from `TauCeti.GroupTheory.GroupExtension.Basic`) says
+that this conjugation is the ambient `MulDistribMulAction` of `G` on `M`; here it is shown
+equivalent to `conjActOfSection` *being* that action
 (`TauCeti.GroupExtension.inducesAction_iff_conjActOfSection_eq`). For a central extension the
 conjugation is trivial (`TauCeti.GroupExtension.conjAct_eq_one_of_le_center`), so there
 `InducesAction` holds exactly for the trivial action
@@ -48,16 +49,13 @@ bookkeeping (`TauCeti.GroupExtension.factorSetFun`, `TauCeti.GroupExtension.norm
 ## Main definitions
 
 * `TauCeti.GroupExtension.conjActOfSection`: the action of `G` on an abelian kernel by conjugation.
-* `TauCeti.GroupExtension.InducesAction`: the extension conjugates the kernel by the given action.
 * `TauCeti.GroupExtension.factorSet`: the factor set of a normalized section.
 * `TauCeti.GroupExtension.normalizeSection`: any section, corrected to send `1` to `1`.
 
 ## Main results
 
-* `TauCeti.GroupExtension.inducesAction_iff_conjActOfSection_eq` and
-  `TauCeti.GroupExtension.inducesAction_iff_smul_eq_self`: `InducesAction` holds exactly when the
-  descended conjugation action is the ambient one, and, for a central extension, exactly when the
-  ambient action is trivial.
+* `TauCeti.GroupExtension.inducesAction_iff_conjActOfSection_eq`: `InducesAction` holds exactly
+  when the descended conjugation action is the ambient one.
 * `TauCeti.GroupExtension.factorSet_monoidHomComp`: the factor set of a section transported along a
   homomorphism of extensions over `G` restricting to `f` on the kernels is the pushforward along
   `f` of the factor set of the section.
@@ -86,77 +84,6 @@ open groupCohomology
 universe u v w
 
 variable {G : Type u} {M : Type v} {E : Type w} [Group G] [Group E]
-
-section Conj
-
-variable [Group M] {S : GroupExtension M E G}
-
-/-- **A central extension acts trivially on its kernel.** -/
-theorem conjAct_eq_one_of_le_center (h : S.inl.range ≤ Subgroup.center E) (e : E) :
-    S.conjAct e = 1 := by
-  ext m
-  refine S.inl_injective ?_
-  rw [GroupExtension.inl_conjAct_comm, Subgroup.mem_center_iff.1 (h ⟨m, rfl⟩) e,
-    mul_inv_cancel_right]
-  simp
-
-variable (S) in
-/-- The extension `S` conjugates its kernel by the ambient action of `G` on `M`. This is the
-compatibility that makes `TauCeti.GroupExtension.factorSet` a `TauCeti.FactorSet` for that action;
-for a central extension it says the ambient action is trivial. -/
-def InducesAction [MulDistribMulAction G M] : Prop :=
-  ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m
-
-/-- The pointwise characterization of the action induced by an extension. -/
-@[simp]
-theorem inducesAction_iff [MulDistribMulAction G M] :
-    InducesAction S ↔ ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m :=
-  Iff.rfl
-
-/-- Relabelling the quotient transports the induced action on the kernel along the same
-equivalence. -/
-theorem InducesAction.relabelQuotient [MulDistribMulAction G M]
-    (hact : InducesAction S) {H : Type*} [Group H] [MulDistribMulAction H M]
-    (e : G ≃* H) (hsmul : ∀ (g : G) (m : M), e g • m = g • m) :
-    InducesAction (S.relabelQuotient e) := by
-  intro x m
-  simpa only [relabelQuotient_conjAct, GroupExtension.relabelQuotient_rightHom,
-    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hsmul] using hact x m
-
-/-- Relabelling both the kernel and the quotient transports the induced action along the two
-equivalences, provided they identify the ambient actions. -/
-theorem InducesAction.relabel [MulDistribMulAction G M] (hact : InducesAction S)
-    {M' G' : Type*} [Group M'] [Group G'] [MulDistribMulAction G' M'] (eM : M' ≃* M)
-    (eG : G ≃* G') (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
-    InducesAction (S.relabel eM eG) := by
-  intro x m
-  apply (S.relabel eM eG).inl_injective
-  rw [GroupExtension.inl_conjAct_comm]
-  simp only [GroupExtension.relabel_inl, GroupExtension.relabel_rightHom, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, hsmul]
-  rw [← hact x (eM m), GroupExtension.inl_conjAct_comm]
-
-/-- **A central extension induces exactly the trivial action.** This is the constructor for
-`TauCeti.GroupExtension.InducesAction` in the central case: the hypothesis holds if and only if the
-ambient action of `G` on `M` is trivial. -/
-theorem inducesAction_iff_smul_eq_self [MulDistribMulAction G M]
-    (h : S.inl.range ≤ Subgroup.center E) :
-    InducesAction S ↔ ∀ (g : G) (m : M), g • m = m := by
-  constructor
-  · intro hact g m
-    obtain ⟨e, rfl⟩ := S.rightHom_surjective g
-    rw [← hact e, conjAct_eq_one_of_le_center h e, MulAut.one_apply]
-  · intro htriv e m
-    rw [conjAct_eq_one_of_le_center h e, MulAut.one_apply, htriv]
-
-/-- The image of the kernel is conjugated by a section according to the ambient action. -/
-theorem inl_smul [MulDistribMulAction G M] (σ : S.Section) (hact : InducesAction S) (g : G)
-    (m : M) : S.inl (g • m) = σ g * S.inl m * (σ g)⁻¹ := by
-  have h := hact (σ g) m
-  rw [GroupExtension.Section.rightHom_section] at h
-  rw [← h, GroupExtension.inl_conjAct_comm]
-
-end Conj
 
 section ConjAct
 
@@ -204,14 +131,15 @@ theorem InducesAction.conjActOfSection_eq_toMulAut [MulDistribMulAction G M]
     (hact : InducesAction S) (σ : S.Section) :
     conjActOfSection σ = MulDistribMulAction.toMulAut G M := by
   ext g m
-  simpa using hact (σ g) m
+  simpa using inducesAction_iff.1 hact (σ g) m
 
 /-- **`InducesAction` says exactly that the descended conjugation action is the ambient one.** The
 reverse implication is the constructor: it suffices to check the two actions agree after presenting
 conjugation through a single section. -/
 theorem inducesAction_iff_conjActOfSection_eq [MulDistribMulAction G M] (σ : S.Section) :
     InducesAction S ↔ conjActOfSection σ = MulDistribMulAction.toMulAut G M := by
-  refine ⟨fun hact => hact.conjActOfSection_eq_toMulAut σ, fun h e m => ?_⟩
+  refine ⟨fun hact => hact.conjActOfSection_eq_toMulAut σ,
+    fun h => inducesAction_iff.2 fun e m => ?_⟩
   rw [conjAct_eq_of_rightHom_eq (S := S) (e' := σ (S.rightHom e)) (by simp)]
   simpa using DFunLike.congr_fun (DFunLike.congr_fun h (S.rightHom e)) m
 
@@ -276,8 +204,8 @@ variable [CommGroup M] {S : GroupExtension M E G} [MulDistribMulAction G M]
 theorem isMulCocycle₂_factorSetFun (σ : S.Section) (hact : InducesAction S) :
     IsMulCocycle₂ (factorSetFun σ) := by
   intro g₁ g₂ g₃
-  rw [mul_comm (factorSetFun σ (g₁ * g₂, g₃)), GroupExtension.Section.factorSetFun_mul, hact,
-    GroupExtension.Section.rightHom_section]
+  rw [mul_comm (factorSetFun σ (g₁ * g₂, g₃)), GroupExtension.Section.factorSetFun_mul,
+    inducesAction_iff.1 hact, GroupExtension.Section.rightHom_section]
 
 /-- **The factor set of a normalized section** of an extension whose conjugation action on its
 abelian kernel is the ambient one. -/
@@ -395,15 +323,6 @@ end Exists
 section RoundTrip
 
 variable [CommGroup M] [MulDistribMulAction G M] (α : FactorSet G M)
-
-/-- The twisted product built from a factor set conjugates its kernel by the given action of `G`. -/
-theorem inducesAction_groupExtension : InducesAction α.groupExtension := by
-  intro x a
-  refine α.groupExtension.inl_injective ?_
-  rw [GroupExtension.inl_conjAct_comm]
-  simp only [FactorSet.groupExtension_inl, FactorSet.groupExtension_rightHom,
-    FactorSet.rightHom_apply]
-  rw [FactorSet.mul_inl, mul_inv_cancel_right]
 
 /-- **Reading the factor set back off the extension it builds returns it unchanged**, when the
 factor set is read off the canonical section. -/

@@ -25,6 +25,11 @@ This file provides operations on an existing group extension.
   over the identity of the quotient group.
 * `GroupExtension.surjective_of_comp_inl_eq`: a homomorphism of extensions over the identity of
   the quotient group is surjective as soon as it is surjective on the kernel terms.
+* `TauCeti.GroupExtension.InducesAction`: the extension conjugates its kernel by a given action
+  of the quotient group.
+* `TauCeti.GroupExtension.inducesAction_iff_smul_eq_self`: a central extension induces exactly the
+  trivial action, and `TauCeti.GroupExtension.InducesAction.range_inl_le_center_iff`: an extension
+  inducing an action is central exactly when that action is trivial.
 
 The relabelling and homomorphism constructions are mirrored for additive groups by `to_additive`.
 Central extensions also admit character twists, preserved by equivalences of extensions. When the
@@ -340,6 +345,93 @@ theorem mulAutCongr_characterTwist (F : S.Equiv S') (hcentral : S.inl.range ≤ 
 end Equiv
 
 end GroupExtension
+
+namespace TauCeti.GroupExtension
+
+variable {G : Type u} {M : Type v} {E : Type w} [Group G] [Group E]
+
+section Conj
+
+variable [Group M] {S : GroupExtension M E G}
+
+/-- **A central extension acts trivially on its kernel.** -/
+theorem conjAct_eq_one_of_le_center (h : S.inl.range ≤ Subgroup.center E) (e : E) :
+    S.conjAct e = 1 := by
+  ext m
+  refine S.inl_injective ?_
+  rw [GroupExtension.inl_conjAct_comm, Subgroup.mem_center_iff.1 (h ⟨m, rfl⟩) e,
+    mul_inv_cancel_right]
+  simp
+
+variable (S) in
+/-- The extension `S` conjugates its kernel by the ambient action of `G` on `M`. This is the
+compatibility that makes `TauCeti.GroupExtension.factorSet` a `TauCeti.FactorSet` for that action;
+for a central extension it says the ambient action is trivial. -/
+def InducesAction [MulDistribMulAction G M] : Prop :=
+  ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m
+
+/-- The pointwise characterization of the action induced by an extension. -/
+@[simp]
+theorem inducesAction_iff [MulDistribMulAction G M] :
+    InducesAction S ↔ ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m :=
+  Iff.rfl
+
+/-- Relabelling the quotient transports the induced action on the kernel along the same
+equivalence. -/
+theorem InducesAction.relabelQuotient [MulDistribMulAction G M]
+    (hact : InducesAction S) {H : Type*} [Group H] [MulDistribMulAction H M]
+    (e : G ≃* H) (hsmul : ∀ (g : G) (m : M), e g • m = g • m) :
+    InducesAction (S.relabelQuotient e) := by
+  intro x m
+  simpa only [relabelQuotient_conjAct, GroupExtension.relabelQuotient_rightHom,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hsmul] using hact x m
+
+/-- Relabelling both the kernel and the quotient transports the induced action along the two
+equivalences, provided they identify the ambient actions. -/
+theorem InducesAction.relabel [MulDistribMulAction G M] (hact : InducesAction S)
+    {M' G' : Type*} [Group M'] [Group G'] [MulDistribMulAction G' M'] (eM : M' ≃* M)
+    (eG : G ≃* G') (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
+    InducesAction (S.relabel eM eG) := by
+  intro x m
+  apply (S.relabel eM eG).inl_injective
+  rw [GroupExtension.inl_conjAct_comm]
+  simp only [GroupExtension.relabel_inl, GroupExtension.relabel_rightHom, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, hsmul]
+  rw [← hact x (eM m), GroupExtension.inl_conjAct_comm]
+
+/-- **A central extension induces exactly the trivial action.** This is the constructor for
+`TauCeti.GroupExtension.InducesAction` in the central case: the hypothesis holds if and only if the
+ambient action of `G` on `M` is trivial. -/
+theorem inducesAction_iff_smul_eq_self [MulDistribMulAction G M]
+    (h : S.inl.range ≤ Subgroup.center E) :
+    InducesAction S ↔ ∀ (g : G) (m : M), g • m = m := by
+  constructor
+  · intro hact g m
+    obtain ⟨e, rfl⟩ := S.rightHom_surjective g
+    rw [← hact e, conjAct_eq_one_of_le_center h e, MulAut.one_apply]
+  · intro htriv e m
+    rw [conjAct_eq_one_of_le_center h e, MulAut.one_apply, htriv]
+
+/-- **An extension inducing the ambient action is central exactly when that action is trivial.**
+The forward implication is `TauCeti.GroupExtension.inducesAction_iff_smul_eq_self`; conversely,
+conjugation by any element of `E` moves the kernel by the trivial action, so it fixes the kernel. -/
+theorem InducesAction.range_inl_le_center_iff [MulDistribMulAction G M] (hact : InducesAction S) :
+    S.inl.range ≤ Subgroup.center E ↔ ∀ (g : G) (m : M), g • m = m := by
+  refine ⟨fun h => (inducesAction_iff_smul_eq_self h).1 hact, fun h => ?_⟩
+  rintro _ ⟨m, rfl⟩
+  refine Subgroup.mem_center_iff.2 fun e => ?_
+  rw [← mul_inv_eq_iff_eq_mul, ← GroupExtension.inl_conjAct_comm, hact e m, h]
+
+/-- The image of the kernel is conjugated by a section according to the ambient action. -/
+theorem inl_smul [MulDistribMulAction G M] (σ : S.Section) (hact : InducesAction S) (g : G)
+    (m : M) : S.inl (g • m) = σ g * S.inl m * (σ g)⁻¹ := by
+  have h := hact (σ g) m
+  rw [GroupExtension.Section.rightHom_section] at h
+  rw [← h, GroupExtension.inl_conjAct_comm]
+
+end Conj
+
+end TauCeti.GroupExtension
 
 namespace SemidirectProduct
 
