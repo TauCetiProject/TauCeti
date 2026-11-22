@@ -208,8 +208,8 @@ private theorem d_leibniz_elementary {m n : ℕ} (c c' : B) (u : Fin m → B) (v
   have hanti : ExteriorAlgebra.ι B (D A B c') * ExteriorAlgebra.ιMulti B m (D A B ∘ u) =
       (-1 : ℤ) ^ m •
         (ExteriorAlgebra.ιMulti B m (D A B ∘ u) * ExteriorAlgebra.ι B (D A B c')) := by
-    rw [ExteriorAlgebra.ι_mul_ιMulti_anticomm, Units.smul_def, Units.val_pow_eq_pow_val,
-      Units.val_neg, Units.val_one]
+    simpa [Units.smul_def] using
+      ExteriorAlgebra.ι_mul_ιMulti_anticomm (R := B) (D A B c') (D A B ∘ u)
   rw [wedge_elementary, coe_d_elementary_mul, happend]
   simp only [coe_d_elementary, coe_elementary, mul_smul_comm, smul_mul_assoc]
   rw [add_comm]

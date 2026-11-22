@@ -100,7 +100,7 @@ def pullback (f : B →ₐ[A] C) (n : ℕ) : Forms A B n →ₛₗ[f.toRingHom] 
   { toFun := φ
     map_add' := map_add φ
     map_smul' := fun b ω => by
-      rw [LinearMap.map_smul]
+      rw [LinearMap.map_smul, ← RingHom.algebraMap_toAlgebra f.toRingHom]
       exact (IsScalarTower.algebraMap_smul C b (φ ω)).symm }
 
 private theorem pullback_apply (f : B →ₐ[A] C) (n : ℕ) (ω : Forms A B n) :
@@ -209,30 +209,27 @@ theorem pullback_wedge (f : B →ₐ[A] C) {m n : ℕ} (α : Forms A B m) (β : 
       rw [wedge_elementary, pullback_elementary, pullback_elementary, pullback_elementary,
         wedge_elementary, map_mul, Fin.comp_append]
 
-/-- Pullback along the identity `A`-algebra homomorphism is the identity on `Forms A B n`. -/
-theorem pullback_id (n : ℕ) :
-    (pullback (AlgHom.id A B) n : Forms A B n →ₗ[B] Forms A B n) = LinearMap.id :=
-  (pullback_unique (AlgHom.id A B) n (φ := LinearMap.id) fun c v => by
-    refine (LinearMap.id_apply (elementary A c v)).trans ?_
-    refine congrArg₂ (elementary A) ?_ (funext fun i => ?_)
-    · rw [AlgHom.id_apply]
-    · rw [Function.comp_apply, AlgHom.id_apply]).symm
-
 /-- Pullback along the identity fixes every differential `n`-form. -/
 @[simp]
 theorem pullback_id_apply (n : ℕ) (ω : Forms A B n) :
-    pullback (AlgHom.id A B) n ω = ω :=
-  DFunLike.congr_fun (pullback_id (A := A) (B := B) n) ω
+    pullback (AlgHom.id A B) n ω = ω := by
+  induction ω using induction_elementary with
+  | zero => simp only [map_zero]
+  | add ω₁ ω₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+  | elem c v => simp only [pullback_elementary, AlgHom.id_apply, Function.comp_def]
+
+/-- Pullback along the identity `A`-algebra homomorphism is the identity on `Forms A B n`. -/
+theorem pullback_id (n : ℕ) :
+    (pullback (AlgHom.id A B) n : Forms A B n →ₗ[B] Forms A B n) = LinearMap.id :=
+  -- `(AlgHom.id A B).toRingHom` is definitionally `RingHom.id B`.
+  LinearMap.ext (pullback_id_apply n)
 
 /-- Pullback is functorial with respect to composition of `A`-algebra homomorphisms. -/
 theorem pullback_comp (g : C →ₐ[A] E) (f : B →ₐ[A] C) (n : ℕ) :
-    pullback (g.comp f) n = (pullback g n).comp (pullback f n) := by
-  symm
-  refine pullback_unique (g.comp f) n fun c v => ?_
-  rw [LinearMap.comp_apply, pullback_elementary, pullback_elementary]
-  refine congrArg₂ (elementary A) ?_ (funext fun i => ?_)
-  · rw [AlgHom.comp_apply]
-  · rw [Function.comp_apply, Function.comp_apply, Function.comp_apply, AlgHom.comp_apply]
+    pullback (g.comp f) n = (pullback g n).comp (pullback f n) :=
+  (pullback_unique (g.comp f) n fun c v => by
+    simp only [LinearMap.comp_apply, pullback_elementary, AlgHom.comp_apply,
+      Function.comp_def]).symm
 
 /-- Pullback along `g.comp f` applies `pullback f` followed by `pullback g`. -/
 @[simp]
