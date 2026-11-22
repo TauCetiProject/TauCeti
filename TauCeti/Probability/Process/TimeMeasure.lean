@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
@@ -16,7 +17,9 @@ public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 time, obtained by pulling back real Lebesgue measure along the coercion to `ℝ`.
 The origin has zero mass. Interval masses, monotonicity in the horizon and restriction to
 shorter horizons are recorded explicitly for time-product measures used in stochastic
-integration.
+integration. Integrals for time measure are interval integrals over `(0,T]`
+(`TauCeti.Probability.integral_timeMeasure`), and continuous functions lie in every `Lᵖ` space
+of a finite horizon (`Continuous.memLp_timeMeasure`).
 The isometry `timeMeasureExtendLp` extends finite-horizon `Lᵖ` functions by zero to
 longer horizons. Initial-interval indicator classes depend only on their endpoint
 clipped to the horizon; the extension lemmas describe their images.
@@ -65,6 +68,26 @@ theorem timeMeasure_univ (T : ℝ≥0) : timeMeasure T univ = T := by
       rw [timeMeasure_def, Measure.restrict_apply_univ, Measure.restrict_apply_self]
     _ = T := by simp
 
+/-- Integration against time measure is the interval integral over `(0,T]` of the function
+extended to real time by truncation at zero. -/
+theorem integral_timeMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (T : ℝ≥0)
+    (g : ℝ≥0 → E) : ∫ s, g s ∂timeMeasure T = ∫ r in (0 : ℝ)..T, g r.toNNReal := by
+  have he : MeasurableEmbedding ((↑) : ℝ≥0 → ℝ) :=
+    NNReal.isClosedEmbedding_coe.measurableEmbedding
+  have hmap : (timeMeasure T).map ((↑) : ℝ≥0 → ℝ) = volume.restrict (Ioc (0 : ℝ) T) := by
+    ext s hs
+    rw [he.map_apply, timeMeasure_apply T (he.measurable hs), Measure.restrict_apply hs]
+    congr 1
+    ext x
+    simp only [mem_image, mem_inter_iff, mem_preimage, mem_Ioc]
+    refine ⟨?_, fun hx ↦ ⟨x.toNNReal, ?_, Real.coe_toNNReal x hx.2.1.le⟩⟩
+    · rintro ⟨y, ⟨hy, hy0, hyT⟩, rfl⟩
+      exact ⟨hy, NNReal.coe_pos.2 hy0, NNReal.coe_le_coe.2 hyT⟩
+    · rw [Real.coe_toNNReal x hx.2.1.le]
+      exact ⟨hx.1, Real.toNNReal_pos.2 hx.2.1, Real.toNNReal_le_iff_le_coe.2 hx.2.2⟩
+  rw [intervalIntegral.integral_of_le T.coe_nonneg, ← hmap, he.integral_map]
+  simp
+
 /-- Finite time horizons have finite time mass. -/
 instance (T : ℝ≥0) : IsFiniteMeasure (timeMeasure T) :=
   ⟨by simp⟩
@@ -73,6 +96,14 @@ instance (T : ℝ≥0) : IsFiniteMeasure (timeMeasure T) :=
 theorem ae_mem_Ioc_timeMeasure (T : ℝ≥0) : ∀ᵐ t ∂timeMeasure T, t ∈ Ioc 0 T := by
   rw [timeMeasure_def]
   exact ae_restrict_mem measurableSet_Ioc
+
+/-- A continuous function on time lies in every `Lᵖ` space of a finite horizon. -/
+theorem _root_.Continuous.memLp_timeMeasure {E : Type*} [NormedAddCommGroup E] {f : ℝ≥0 → E}
+    (hf : Continuous f) (p : ℝ≥0∞) (T : ℝ≥0) : MemLp f p (timeMeasure T) := by
+  obtain ⟨C, hC⟩ := (isCompact_Icc (a := (0 : ℝ≥0)) (b := T)).exists_bound_of_continuousOn
+    hf.continuousOn
+  refine MemLp.of_bound hf.aestronglyMeasurable C ?_
+  filter_upwards [ae_mem_Ioc_timeMeasure T] with s hs using hC s ⟨bot_le, hs.2⟩
 
 /-- The horizon of length zero carries the zero measure. -/
 @[simp]

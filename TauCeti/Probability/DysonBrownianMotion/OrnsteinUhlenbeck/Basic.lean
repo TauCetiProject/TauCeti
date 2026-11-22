@@ -34,8 +34,11 @@ integration-by-parts forms of `w 0 + ∫ e^{-u/2} dw(e^u - 1)` and
 Ornstein–Uhlenbeck system is solved pathwise exactly by time-changed Dyson trajectories
 (`isDysonOUPath_iff_isDysonPath_ouTimeChangeInv`, `isDysonPath_iff_isDysonOUPath_ouTimeChange`).
 Existence and noncollision for the system driven by `w` therefore reduce pathwise to those of the
-Dyson system driven by `ouTimeChangeInvForcing w`; identifying that transformed forcing as a
-Brownian motion when `w` is one is not done here. Uniqueness follows outright.
+Dyson system driven by `ouTimeChangeInvForcing w`; each coordinate of that transformed forcing
+of a Brownian motion is again a Brownian motion
+(`TauCeti.Probability.isBrownianReal_ouTimeChangeInvForcing`, in
+`TauCeti.Probability.DysonBrownianMotion.OrnsteinUhlenbeck.Forcing`). Uniqueness follows
+outright.
 
 Pathwise `ℓ²` contraction of the Dyson system becomes exponential contraction at rate `e^{-(t - s)}`
 (`IsDysonOUPath.sum_sub_sq_le_of_le`), which gives pathwise and almost-sure uniqueness.
@@ -397,6 +400,18 @@ theorem ouTimeChange_apply (X : ℝ≥0 → Fin n → ℝ) (t : ℝ≥0) (i : Fi
 /-- Coordinate evaluation of `ouTimeChangeInv`. -/
 theorem ouTimeChangeInv_apply (Y : ℝ≥0 → Fin n → ℝ) (s : ℝ≥0) (i : Fin n) :
     ouTimeChangeInv Y s i = √(1 + s) * Y (Real.log (1 + s)).toNNReal i :=
+  (rfl)
+
+/-- Coordinate evaluation of `ouTimeChangeForcing`. -/
+theorem ouTimeChangeForcing_apply (w : ℝ≥0 → Fin n → ℝ) (t : ℝ≥0) (i : Fin n) :
+    ouTimeChangeForcing w t i = Real.exp (-((t : ℝ) / 2)) * w (Real.exp t - 1).toNNReal i +
+      ∫ u in (0 : ℝ)..t, Real.exp (-(u / 2)) * w (Real.exp u - 1).toNNReal i / 2 :=
+  (rfl)
+
+/-- Coordinate evaluation of `ouTimeChangeInvForcing`. -/
+theorem ouTimeChangeInvForcing_apply (w : ℝ≥0 → Fin n → ℝ) (s : ℝ≥0) (i : Fin n) :
+    ouTimeChangeInvForcing w s i = √(1 + s) * w (Real.log (1 + s)).toNNReal i -
+      ∫ r in (0 : ℝ)..s, w (Real.log (1 + r)).toNNReal i / (2 * √(1 + r)) :=
   (rfl)
 
 private theorem coe_toNNReal_exp_sub_one {u : ℝ} (hu : 0 ≤ u) :
