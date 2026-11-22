@@ -59,7 +59,8 @@ the other hand every class pulled back from the base is relatively numerically t
   `j : Z ⟶ X` is a closed immersion then `j^* a ≡_{j ≫ f} 0`;
 * `LineBundleClass.relNumericallyTrivial_iff_numericallyTrivial`: relative to a structure
   morphism `x : X ⟶ Spec k`, relative numerical triviality is numerical triviality over `k`,
-  through the identification of `X` with its fibre over the point of `Spec k`.
+  through the identification of `X` with its fibre over the point of `Spec k`; for proper `x` the
+  two subgroups agree (`LineBundleClass.relNumericallyTrivialClasses_eq_numericallyTrivialClasses`).
 
 ## References
 
@@ -342,6 +343,13 @@ theorem relNumericallyTrivial_iff_numericallyTrivial {k : Type u} [Field k]
       numericallyTrivial_pullback_iff_of_isIso]
   obtain ⟨s⟩ : Nonempty (Spec (.of k)) := inferInstanceAs (Nonempty (PrimeSpectrum k))
   exact ⟨fun h ↦ (key s).mp (h s), fun h t ↦ (key t).mpr h⟩
+
+/-- Relative to a proper structure morphism `x : X ⟶ Spec k`, the subgroup `Pic^τ(X/Spec k)` is
+the subgroup `Pic^τ(X/k)` of classes numerically trivial over `k`. -/
+theorem relNumericallyTrivialClasses_eq_numericallyTrivialClasses {k : Type u} [Field k]
+    (x : X ⟶ Spec (.of k)) [IsProper x] :
+    relNumericallyTrivialClasses x = numericallyTrivialClasses k x :=
+  Subgroup.ext fun a ↦ relNumericallyTrivial_iff_numericallyTrivial x a
 
 end Relative
 
