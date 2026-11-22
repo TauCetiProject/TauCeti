@@ -84,7 +84,7 @@ theorem IsGeodesicCurveOn.comp_affine (h : IsGeodesicCurveOn I γ s) (a b : ℝ)
       ((hasDerivAt_const_mul a).add_const b).hasDerivWithinAt
     have hderiv : EqOn (derivWithin φ u) (fun _ ↦ a) u := fun r hr ↦ (hφ r).derivWithin (hu r hr)
     have hsection : DifferentiableWithinAt ℝ
-        (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ (φ t))) s (φ t) :=
+        (sectionCoord ℝ (F := E) γ (curveVelocityWithin I γ s) (γ (φ t))) s (φ t) :=
       differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn h.contMDiffOn
         (hmaps ht) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ (φ t)))
     -- By the chain rule for the acceleration, the reparametrized acceleration is `a²` times the

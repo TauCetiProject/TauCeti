@@ -66,7 +66,7 @@ theorem exists_supp_eq_comap_eq (φ : A →+* B) (v : Spv A) (q : Ideal B) [q.Is
     have : IsLocalHom (algebraMap O O') := hloc
     obtain ⟨y, hy⟩ := ValuationRing.isInteger_of_isInteger_algebraMap (R := O) (S := O')
       Subtype.val_injective (RingHom.ext fun _ ↦ rfl) (x := x) ⟨⟨ψ x, hx⟩, rfl⟩
-    exact hy ▸ y.2
+    exact hy ▸ y.property
   refine ⟨ofValuation (O'.valuation.comap (algebraMap B q.ResidueField)), ?_, ?_⟩
   · ext b
     simp [supp_ofValuation, Valuation.mem_supp_iff, Ideal.algebraMap_residueField_eq_zero]

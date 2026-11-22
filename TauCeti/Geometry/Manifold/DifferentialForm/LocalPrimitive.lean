@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 public import TauCeti.Geometry.Manifold.DifferentialForm.Poincare
 public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
@@ -91,7 +92,6 @@ theorem IsPrimitiveOn.add_const (hg : IsPrimitiveOn φ g U) (c : F) :
     IsPrimitiveOn φ (fun y ↦ g y + c) U := by
   refine ⟨hg.isOpen, hg.mdifferentiableOn.add mdifferentiableOn_const, fun y hy ↦ ?_⟩
   rw [mextDeriv_ofFunction_eq_of_eventuallyEq_add_const
-    ((hg.mdifferentiableOn y hy).mdifferentiableAt (hg.isOpen.mem_nhds hy))
     (Eventually.of_forall fun _ ↦ rfl)]
   exact hg.mextDeriv_eq y hy
 
@@ -115,6 +115,20 @@ theorem IsPrimitiveOn.const_smul (hg : IsPrimitiveOn φ g U) (c : ℝ) :
     IsPrimitiveOn (c • φ) (c • g) U := by
   refine ⟨hg.isOpen, hg.mdifferentiableOn.const_smul c, fun y hy ↦ ?_⟩
   rw [RoughForm.ofFunction_smul, mextDeriv_smul, Pi.smul_apply, Pi.smul_apply, hg.mextDeriv_eq y hy]
+
+/-- A primitive of `φ` followed by a continuous linear map `L` is a primitive of the form
+`L ∘ φ`. -/
+theorem IsPrimitiveOn.mapCoeff {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (hg : IsPrimitiveOn φ g U) (L : F →L[ℝ] G) :
+    IsPrimitiveOn (RoughForm.mapCoeff L φ) (L ∘ g) U := by
+  refine ⟨hg.isOpen, L.mdifferentiable.comp_mdifferentiableOn hg.mdifferentiableOn,
+    fun y hy ↦ ?_⟩
+  have hgy := (hg.mdifferentiableOn y hy).mdifferentiableAt (hg.isOpen.mem_nhds hy)
+  ext v
+  rw [RoughForm.mapCoeff_apply, ← hg.mextDeriv_eq y hy]
+  simp only [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_apply_eq_mfderiv_apply, mfderiv_comp y L.mdifferentiableAt hgy, L.mfderiv_eq]
+  exact L.comp_apply _ _
 
 section Chart
 

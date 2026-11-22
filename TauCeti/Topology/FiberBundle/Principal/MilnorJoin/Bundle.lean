@@ -190,17 +190,17 @@ private theorem continuous_maxBaseWeightFun (G : Type u) [Group G] [TopologicalS
   let I := (finite_support_baseWeight b₀).toFinset
   obtain ⟨i₀, hi₀⟩ := exists_mem_baseCoordSet b₀
   have hm₀ : 0 < maxBaseWeightFun G b₀ := hi₀.trans_le (le_maxBaseWeightFun i₀ b₀)
-  have hcont_sup : Continuous fun x : MilnorClassifyingSpace G ↦ ⨆ i : I, baseWeight G i.1 x :=
-    TauCeti.continuous_ciSup_of_finite fun i : I ↦ (baseWeight G i.1).continuous
+  have hcont_sup : Continuous fun x : MilnorClassifyingSpace G ↦ ⨆ i : I, baseWeight G i.val x :=
+    TauCeti.continuous_ciSup_of_finite fun i : I ↦ (baseWeight G i.val).continuous
   have hcont_sum : Continuous fun x : MilnorClassifyingSpace G ↦ ∑ i ∈ I, baseWeight G i x := by
     fun_prop
-  have hsup₀ : maxBaseWeightFun G b₀ = ⨆ i : I, baseWeight G i.1 b₀ :=
+  have hsup₀ : maxBaseWeightFun G b₀ = ⨆ i : I, baseWeight G i.val b₀ :=
     TauCeti.ciSup_eq_ciSup_of_notMem_le
       ⟨1, forall_mem_range.2 fun j ↦ baseWeight_le_one j b₀⟩ (fun i ↦ baseWeight_nonneg i b₀)
       fun _ hj ↦ (baseWeight_eq_zero_of_notMem hj).symm ▸
-        Real.iSup_nonneg fun i ↦ baseWeight_nonneg i.1 b₀
+        Real.iSup_nonneg fun i ↦ baseWeight_nonneg i.val b₀
   have hW : ({x | 1 - maxBaseWeightFun G b₀ / 3 < ∑ i ∈ I, baseWeight G i x} ∩
-      {x | maxBaseWeightFun G b₀ / 2 < ⨆ i : I, baseWeight G i.1 x}) ∈ 𝓝 b₀ :=
+      {x | maxBaseWeightFun G b₀ / 2 < ⨆ i : I, baseWeight G i.val x}) ∈ 𝓝 b₀ :=
     ((isOpen_lt continuous_const hcont_sum).inter (isOpen_lt continuous_const hcont_sup)).mem_nhds
       ⟨by have := sum_toFinset_support_baseWeight b₀; dsimp; linarith,
        by dsimp; rw [← hsup₀]; linarith⟩
@@ -348,15 +348,15 @@ def localSection (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup
     continuousOn_iff_continuous_domRestrict.mp (continuousOn_localSectionAux G i)⟩
 
 @[simp] theorem mk'_localSection [IsTopologicalGroup G] (i : ℕ) (b : baseCoordSet G i) :
-    (Quotient.mk'' (localSection G i b) : MilnorClassifyingSpace G) = b.1 :=
-  mk'_localSectionAux b.2
+    (Quotient.mk'' (localSection G i b) : MilnorClassifyingSpace G) = b.val :=
+  mk'_localSectionAux b.property
 theorem localSection_mem_coordSet [IsTopologicalGroup G] (i : ℕ) (b : baseCoordSet G i) :
-    localSection G i b ∈ MilnorTotalSpace.coordSet G i := localSectionAux_mem_coordSet b.2
+    localSection G i b ∈ MilnorTotalSpace.coordSet G i := localSectionAux_mem_coordSet b.property
 @[simp] theorem weight_localSection [IsTopologicalGroup G] (j i : ℕ) (b : baseCoordSet G i) :
-    MilnorTotalSpace.weight j (localSection G i b) = baseWeight G j b.1 :=
-  weight_localSectionAux j b.2
+    MilnorTotalSpace.weight j (localSection G i b) = baseWeight G j b.val :=
+  weight_localSectionAux j b.property
 @[simp] theorem label_localSection [IsTopologicalGroup G] (i : ℕ) (b : baseCoordSet G i) :
-    MilnorTotalSpace.label i (localSection G i b) = 1 := label_localSectionAux b.2
+    MilnorTotalSpace.label i (localSection G i b) = 1 := label_localSectionAux b.property
 @[simp] theorem localSection_mk' [IsTopologicalGroup G] {i : ℕ} {p : MilnorTotalSpace G}
     (hp : p ∈ MilnorTotalSpace.coordSet G i) :
     localSection G i ⟨Quotient.mk'' p, mk'_mem_baseCoordSet_iff.mpr hp⟩ =
@@ -442,22 +442,22 @@ instance instNonempty (b : MilnorClassifyingSpace G) : Nonempty (MilnorBundleFib
 `MilnorTotalSpace G`. -/
 @[expose] def totalSpaceEquiv (G : Type u) [Group G] :
     TotalSpace G (MilnorBundleFiber G) ≃ MilnorTotalSpace G :=
-  (⟨fun x ↦ ⟨x.1, x.2⟩, fun x ↦ ⟨x.1, x.2⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩ :
+  (⟨fun x ↦ ⟨x.proj, x.snd⟩, fun x ↦ ⟨x.1, x.2⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩ :
       TotalSpace G (MilnorBundleFiber G) ≃
         Σ ω : MulAction.orbitRel.Quotient Gᵐᵒᵖ (MilnorTotalSpace G), ω.orbit).trans
     (MulAction.selfEquivSigmaOrbits' Gᵐᵒᵖ (MilnorTotalSpace G)).symm
 
 @[simp] theorem totalSpaceEquiv_apply (x : TotalSpace G (MilnorBundleFiber G)) :
-    totalSpaceEquiv G x = x.2.val := (rfl)
+    totalSpaceEquiv G x = x.snd.val := (rfl)
 @[simp] theorem totalSpaceEquiv_symm_apply (p : MilnorTotalSpace G) :
     (totalSpaceEquiv G).symm p =
       ⟨Quotient.mk'' p, ⟨p, MulAction.orbitRel.Quotient.mem_orbit.mpr rfl⟩⟩ :=
   (rfl)
 @[simp] theorem snd_val_totalSpaceEquiv_symm (p : MilnorTotalSpace G) :
-    ((totalSpaceEquiv G).symm p).2.val = p := (rfl)
+    ((totalSpaceEquiv G).symm p).snd.val = p := (rfl)
 theorem mk'_comp_totalSpaceEquiv (x : TotalSpace G (MilnorBundleFiber G)) :
     (Quotient.mk'' (totalSpaceEquiv G x) : MilnorClassifyingSpace G) = x.proj :=
-  MulAction.orbitRel.Quotient.mem_orbit.mp x.2.2
+  MulAction.orbitRel.Quotient.mem_orbit.mp x.snd.property
 
 end Group
 
@@ -494,7 +494,7 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 /-- Principal `G`-bundle trivialization of `MilnorBundleFiber G` over `baseCoordSet G i`, sending
 `p` to `(p.proj, label i p.2.val)` with inverse `(b, g) ↦ s_i(b) · g`. -/
 def milnorTrivialization (i : ℕ) : Trivialization G (π G (MilnorBundleFiber G)) where
-  toFun p := (p.proj, MilnorTotalSpace.label i p.2.val)
+  toFun p := (p.proj, MilnorTotalSpace.label i p.snd.val)
   invFun x := (MilnorBundleFiber.totalSpaceEquiv G).symm
     (op x.2 • MilnorClassifyingSpace.localSectionAux G i x.1)
   source := π G (MilnorBundleFiber G) ⁻¹' MilnorClassifyingSpace.baseCoordSet G i
@@ -509,14 +509,14 @@ def milnorTrivialization (i : ℕ) : Trivialization G (π G (MilnorBundleFiber G
         (MilnorClassifyingSpace.mk'_localSectionAux hx.1)
     simpa only [mem_preimage, MilnorBundleFiber.totalSpaceEquiv_symm_apply, hproj] using hx.1
   left_inv' := fun p hp ↦ (MilnorBundleFiber.totalSpaceEquiv G).injective <| by
-    have hp_proj : (Quotient.mk'' p.2.val : MilnorClassifyingSpace G) = p.proj :=
-      MulAction.orbitRel.Quotient.mem_orbit.mp p.2.2
-    have hq : p.2.val ∈ MilnorTotalSpace.coordSet G i :=
+    have hp_proj : (Quotient.mk'' p.snd.val : MilnorClassifyingSpace G) = p.proj :=
+      MulAction.orbitRel.Quotient.mem_orbit.mp p.snd.property
+    have hq : p.snd.val ∈ MilnorTotalSpace.coordSet G i :=
       MilnorClassifyingSpace.mk'_mem_baseCoordSet_iff.mp (hp_proj.symm ▸ hp)
     have hsec : MilnorClassifyingSpace.localSectionAux G i p.proj =
-        MilnorClassifyingSpace.normalize G i p.2.val :=
+        MilnorClassifyingSpace.normalize G i p.snd.val :=
       (congrArg (MilnorClassifyingSpace.localSectionAux G i) hp_proj).symm.trans
-        (MilnorClassifyingSpace.localSectionAux_mk' i p.2.val)
+        (MilnorClassifyingSpace.localSectionAux_mk' i p.snd.val)
     dsimp only
     rw [Equiv.apply_symm_apply, hsec, MilnorClassifyingSpace.smul_normalize hq,
       MilnorBundleFiber.totalSpaceEquiv_apply]
@@ -538,8 +538,8 @@ def milnorTrivialization (i : ℕ) : Trivialization G (π G (MilnorBundleFiber G
       (MilnorTotalSpace.continuousOn_label i).comp
         (MilnorBundleFiber.totalSpaceHomeomorph G).continuous.continuousOn fun p hp ↦
           MilnorClassifyingSpace.mk'_mem_baseCoordSet_iff.mp <| by
-            have hp_proj : (Quotient.mk'' p.2.val : MilnorClassifyingSpace G) = p.proj :=
-              MulAction.orbitRel.Quotient.mem_orbit.mp p.2.2
+            have hp_proj : (Quotient.mk'' p.snd.val : MilnorClassifyingSpace G) = p.proj :=
+              MulAction.orbitRel.Quotient.mem_orbit.mp p.snd.property
             rwa [hp_proj]
   continuousOn_invFun :=
     (MilnorBundleFiber.totalSpaceHomeomorph G).symm.continuous.comp_continuousOn <|
@@ -555,7 +555,7 @@ def milnorTrivialization (i : ℕ) : Trivialization G (π G (MilnorBundleFiber G
 @[simp] theorem baseSet_milnorTrivialization (i : ℕ) :
     (milnorTrivialization G i).baseSet = MilnorClassifyingSpace.baseCoordSet G i := (rfl)
 @[simp] theorem milnorTrivialization_apply (i : ℕ) (p : TotalSpace G (MilnorBundleFiber G)) :
-    milnorTrivialization G i p = (p.proj, MilnorTotalSpace.label i p.2.val) := (rfl)
+    milnorTrivialization G i p = (p.proj, MilnorTotalSpace.label i p.snd.val) := (rfl)
 
 variable {G} in
 @[simp] theorem milnorTrivialization_symm_apply {i : ℕ} {b : MilnorClassifyingSpace G}
@@ -568,8 +568,8 @@ instance isEquivariant_milnorTrivialization (i : ℕ) :
     (milnorTrivialization G i).IsEquivariant where
   snd_apply_smul _ hb p g := MilnorTotalSpace.label_op_smul g
     (MilnorClassifyingSpace.mk'_mem_baseCoordSet_iff.mp <| by
-      have hp : (Quotient.mk'' p.1 : MilnorClassifyingSpace G) = _ :=
-        MulAction.orbitRel.Quotient.mem_orbit.mp p.2
+      have hp : (Quotient.mk'' p.val : MilnorClassifyingSpace G) = _ :=
+        MulAction.orbitRel.Quotient.mem_orbit.mp p.property
       rwa [hp])
 
 /-- **Noncommutative transition cocycle of Milnor's principal bundle charts.** -/

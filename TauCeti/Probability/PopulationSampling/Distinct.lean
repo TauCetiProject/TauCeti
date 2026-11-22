@@ -26,7 +26,9 @@ The value space is arbitrary; the all-distinct event is explicitly assumed measu
 * `sampleWithoutReplacement_dirac_injective_apply_eq_one`: the all-distinct event has mass one.
 * `sampleWithReplacement_dirac_injective_apply_eq`: its mass is the exact injective-selection ratio.
 * `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq`: the exact excess.
-* `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq`: twice that excess.
+* `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq`,
+  `tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq`: twice that excess in `ℝ≥0∞`
+  and in `ℝ`.
 
 ## References
 
@@ -118,5 +120,19 @@ theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq {x : κ 
   let := isProbabilityMeasure_sampleWithReplacement (ι := ι) (Measure.dirac x)
   rw [etvDist_eq_two_mul_iSup_sub (by rw [measure_univ, measure_univ]),
     iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq hx e hI]
+
+/-- Real total-variation (`tvDist`) form of
+`etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq`. -/
+theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq {x : κ → α}
+    (hx : Function.Injective x) (e : ι ↪ κ)
+    (hI : MeasurableSet {f : ι → α | Function.Injective f}) :
+    tvDist (sampleWithoutReplacement (ι := ι) (Measure.dirac x))
+      (sampleWithReplacement (ι := ι) (Measure.dirac x)) =
+      2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ) ^ Fintype.card ι) := by
+  let : Nonempty (ι → κ) := ⟨e⟩
+  rw [tvDist, etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq hx e hI,
+    ENNReal.toReal_mul, ENNReal.toReal_ofNat, ← uniformOn_not_injective_apply_eq,
+    ← measureReal_def, uniformOn_real_not_injective_apply_eq]
 
 end TauCeti.Probability

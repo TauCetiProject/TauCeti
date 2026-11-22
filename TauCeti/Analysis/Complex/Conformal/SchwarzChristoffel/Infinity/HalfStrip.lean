@@ -121,7 +121,7 @@ private theorem exists_mem_image_in_strip_of_sum_eq_neg_one
       (Real.pi / 2)
     apply h.congr'
     filter_upwards [eventually_gt_atTop (0 : ℝ)] with y hy
-    simp [F, arg_real_mul I hy, arg_I, log_im]
+    simp [F, arg_ofReal_mul hy I, arg_I, log_im]
   have hre := (tendsto_re_schwarzChristoffelPrimitive_atTop_of_sum_eq_neg_one
     a e z₀ hsum).comp hpath
   have hstrip := him.eventually (Ioo_mem_nhds

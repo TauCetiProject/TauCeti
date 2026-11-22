@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.PicardFunctor.Fppf
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Relative
+public import Mathlib.CategoryTheory.Sites.CoverLifting
+public import Mathlib.CategoryTheory.Sites.Over
 public import TauCeti.CategoryTheory.Adjunction.Representable
 
 /-!
-# Base change of the relative Picard presheaf
+# Base change of the relative Picard presheaf and fppf sheaf
 
 Let `f : X ⟶ S` be a morphism of schemes and `g : S' ⟶ S` a morphism of bases, with base change
 `f' : X' = S' ×_S X ⟶ S'` (`pullback.fst g f`). A scheme `T` over `S'` is a scheme over `S`
@@ -18,7 +21,9 @@ through `g` (`Over.map g`), and the two base changes of `X` agree:
 the projections to `T`. Pullback along this isomorphism identifies `Pic(T ×_{S'} X') / Pic(T)`
 with `Pic(T ×_S X) / Pic(T)`, naturally in `T`. So the relative Picard presheaf of `f'` is the
 restriction of the relative Picard presheaf of `f` to schemes over `S'`
-(`relativePicardPresheafBaseChangeIso`).
+(`relativePicardPresheafBaseChangeIso`). Since restriction along `Over.map g` commutes with fppf
+sheafification, the same holds for the relative Picard fppf sheaves
+(`relativePicardFppfSheafBaseChangeIso`).
 
 When `f` has a section `x₀`, its base change `x₀' : S' ⟶ X'` is a section of `f'`, and the
 same holds for the rigidified Picard functors (`rigidifiedPicardFunctorBaseChangeIso`). The
@@ -33,6 +38,8 @@ pointed scheme over a field `k` and a field extension `K` of `k`, the base chang
 * `TauCeti.AlgebraicGeometry.relativePicardPresheafBaseChangeIso`: the relative Picard presheaf
   of `S' ×_S X ⟶ S'` is the relative Picard presheaf of `X ⟶ S` restricted along
   `Over.map g`;
+* `TauCeti.AlgebraicGeometry.relativePicardFppfSheafBaseChangeIso`: the same for the relative
+  Picard fppf sheaves;
 * `TauCeti.AlgebraicGeometry.rigidifiedPicardFunctorBaseChangeIso`: the same for the rigidified
   Picard functors, with the base-changed section; it is pullback of rigidified classes
   (`rigidifiedPicardFunctorBaseChangeIso_hom_app_apply`);
@@ -136,6 +143,30 @@ lemma relativePicardPresheafBaseChangeIso_hom_app_mk (T : (Over S')ᵒᵖ)
   -- As in `relativePicardPresheafBaseChangeIso`, the component is
   -- `relativePicardBaseChangeMulEquiv` only after unfolding at default transparency.
   relativePicardBaseChangeMulEquiv_mk f g T.unop a
+
+/-- **Base change of the relative Picard fppf sheaf.** For `f : X ⟶ S` and `g : S' ⟶ S`, the
+relative Picard fppf sheaf of the base change `S' ×_S X ⟶ S'` is the relative Picard fppf sheaf
+of `f` restricted to schemes over `S'` along `Over.map g`. It is the base change comparison of
+the relative Picard presheaves (`relativePicardPresheafBaseChangeIso`) after sheafification, as
+restriction along `Over.map g` commutes with fppf sheafification. -/
+def relativePicardFppfSheafBaseChangeIso :
+    relativePicardFppfSheaf (pullback.fst g f) ≅
+      (Over.map g).sheafPushforwardContinuous AddCommGrpCat.{u + 1}
+        (Scheme.fppfTopology.over S') (Scheme.fppfTopology.over S) |>.obj
+          (relativePicardFppfSheaf f) :=
+  eqToIso (relativePicardFppfSheaf_eq _) ≪≫
+    (presheafToSheaf _ _).mapIso
+      (eqToIso (relativePicardAddPresheaf_eq _) ≪≫
+        Functor.isoWhiskerRight (relativePicardPresheafBaseChangeIso f g)
+          CommGrpCat.toAddCommGrp ≪≫
+        Functor.associator _ _ _ ≪≫
+        Functor.isoWhiskerLeft (Over.map g).op (eqToIso (relativePicardAddPresheaf_eq f).symm)) ≪≫
+    ((Over.map g).pushforwardContinuousSheafificationCompatibility AddCommGrpCat.{u + 1}
+      (Scheme.fppfTopology.over S') (Scheme.fppfTopology.over S)).app
+        (relativePicardAddPresheaf f) ≪≫
+    ((Over.map g).sheafPushforwardContinuous AddCommGrpCat.{u + 1}
+      (Scheme.fppfTopology.over S') (Scheme.fppfTopology.over S)).mapIso
+        (eqToIso (relativePicardFppfSheaf_eq f).symm)
 
 variable (x₀ : S ⟶ X) (hx₀ : x₀ ≫ f = 𝟙 S)
 

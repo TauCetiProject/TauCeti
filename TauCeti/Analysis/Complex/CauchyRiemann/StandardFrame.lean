@@ -45,12 +45,17 @@ for a variable `J` reduce to the case `J = i`.
 * `TauCeti.comp_standardFrame`: `J(z) Φ(z) = Φ(z) i`.
 * `TauCeti.exists_ball_isUnit_standardFrame`, `TauCeti.memWkpLoc_standardFrame`,
   `TauCeti.memWkpLoc_ring_inverse_standardFrame`: invertibility near `z₀` and Sobolev regularity
-  of the frame and its inverse.
+  of the frame and its inverse; `TauCeti.contDiffOn_standardFrame`: the frame is `Cⁿ` with `J`.
 * `TauCeti.frameCoeff`: the coefficient `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`, with
   `TauCeti.frameCoeff_apply`.
 * `TauCeti.isWeakLinearCauchyRiemannOn_iff_frame`: the reduction for any frame, and
   `TauCeti.isWeakLinearCauchyRiemannOn_iff_standardFrame` for the standard frame.
-* `TauCeti.memLpLoc_frameCoeff_iff`: `C'` is locally `Lᵖ` exactly when `C` is.
+* `TauCeti.fderiv_add_apply_fderiv_add_apply_eq_apply_frameCoeff`: the same identity
+  `∂ₛξ + J ∂ₜξ + C ξ = Φ(∂ₛη + i ∂ₜη + C' η)` pointwise, for classical derivatives.
+* `TauCeti.memLpLoc_frameCoeff_iff`: `C'` is locally `Lᵖ` exactly when `C` is;
+  `TauCeti.aestronglyMeasurable_frameCoeff` and `TauCeti.exists_eventually_norm_frameCoeff_le`:
+  for a continuous frame with continuous inverse and derivative, `C'` is measurable and locally
+  bounded when `C` is.
 * `TauCeti.commute_symm_comp_standardFrame_transportedComplexStructure`: for `J = Ψ i Ψ⁻¹`, the
   standard frame is `Ψ` composed with a real-linear map commuting with `i`.
 
@@ -62,7 +67,7 @@ for a variable `J` reduce to the case `J = i`.
 
 public noncomputable section
 
-open Complex ContinuousLinearMap MeasureTheory Metric Set Filter TopologicalSpace
+open Complex ContinuousLinearMap MeasureTheory Metric Set Filter TopologicalSpace Topology
 open scoped NNReal ENNReal
 
 namespace TauCeti
@@ -123,6 +128,13 @@ theorem continuousOn_standardFrame {U : Set ℂ} (hJ : ContinuousOn J U) :
     ContinuousOn (standardFrame J z₀ Φ₁) U :=
   ((continuousOn_const.sub (hJ.clm_comp continuousOn_const)).const_smul ((2 : ℝ)⁻¹)).clm_comp
     (continuousOn_const (c := (Φ₁ : V →L[ℝ] V)))
+
+omit [CompleteSpace V] in
+/-- The standard frame is `Cⁿ` where `J` is, being an affine function of `J`. -/
+theorem contDiffOn_standardFrame {n : WithTop ℕ∞} {U : Set ℂ} (hJ : ContDiffOn ℝ n J U) :
+    ContDiffOn ℝ n (standardFrame J z₀ Φ₁) U :=
+  ((contDiffOn_const.sub (hJ.clm_comp contDiffOn_const)).const_smul ((2 : ℝ)⁻¹)).clm_comp
+    contDiffOn_const
 
 /-- **Invertibility near the base point.** For `J` continuous on an open set `Ω ∋ z₀` with
 `J(z₀)² = -1`, the standard frame is invertible on a disc about `z₀` inside `Ω`. -/
@@ -188,6 +200,69 @@ private theorem add_frame_eq (hu : IsUnit (Φ z))
     simpa using congr($(Ring.mul_inverse_cancel _ hu) v)
   simp only [frameCoeff_apply, map_add, hinv, hJ']
   abel
+
+omit [CompleteSpace V] in
+/-- **The reduction for classical solutions.** If `ξ = Φ η` near `z`, with `Φ` and `η`
+differentiable at `z`, `Φ(z)` invertible and `J(z) Φ(z) = Φ(z) i`, then at `z`
+`∂ₛξ + J ∂ₜξ + C ξ = Φ(∂ₛη + i ∂ₜη + C' η)` with `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`. -/
+theorem fderiv_add_apply_fderiv_add_apply_eq_apply_frameCoeff {η : ℂ → V}
+    (hξη : ξ =ᶠ[𝓝 z] fun w ↦ Φ w (η w)) (hΦ : DifferentiableAt ℝ Φ z)
+    (hη : DifferentiableAt ℝ η z) (hu : IsUnit (Φ z))
+    (hJ : J z ∘L Φ z = Φ z ∘L (I • ContinuousLinearMap.id ℝ V)) :
+    fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + C z (ξ z) =
+      Φ z (fderiv ℝ η z 1 + I • fderiv ℝ η z I + frameCoeff J C Φ (fderiv ℝ Φ) z (η z)) := by
+  rw [hξη.fderiv_eq, fderiv_clm_apply hΦ hη, hξη.eq_of_nhds, ← add_frame_eq hu hJ]
+  simp only [_root_.add_apply, comp_apply, flip_apply, map_add]
+  abel
+
+omit [CompleteSpace V] in
+/-- The derivative part `∂ₛΦ + J ∂ₜΦ` of the coefficient `C'` is continuous where `J` and `DΦ`
+are. -/
+private theorem continuousWithinAt_frameCoeffAux {s : Set ℂ} (hJ : ContinuousWithinAt J s z)
+    (hDΦ : ContinuousWithinAt DΦ s z) :
+    ContinuousWithinAt (fun z ↦ DΦ z 1 + J z ∘L DΦ z I) s z :=
+  (hDΦ.clm_apply continuousWithinAt_const).add
+    (hJ.clm_comp (hDΦ.clm_apply continuousWithinAt_const))
+
+omit [CompleteSpace V] in
+/-- **Measurability of the coefficient.** On a measurable set where `J`, `Φ`, its pointwise
+inverse and `DΦ` are continuous and `C` is measurable, `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)` is
+measurable. -/
+theorem aestronglyMeasurable_frameCoeff {U : Set ℂ} (hU : MeasurableSet U)
+    (hJ : ContinuousOn J U) (hΦ : ContinuousOn Φ U)
+    (hΨ : ContinuousOn (fun z ↦ Ring.inverse (Φ z)) U) (hDΦ : ContinuousOn DΦ U)
+    (hC : AEStronglyMeasurable C (volume.restrict U)) :
+    AEStronglyMeasurable (frameCoeff J C Φ DΦ) (volume.restrict U) := by
+  have hA : ContinuousOn (fun z ↦ DΦ z 1 + J z ∘L DΦ z I) U := fun z hz ↦
+    continuousWithinAt_frameCoeffAux (hJ z hz) (hDΦ z hz)
+  have hC' : frameCoeff J C Φ DΦ = fun z ↦ compL ℝ V V V (Ring.inverse (Φ z))
+      ((DΦ z 1 + J z ∘L DΦ z I) + compL ℝ V V V (C z) (Φ z)) := by
+    ext1 z
+    rw [frameCoeff_def, compL_apply, compL_apply]
+  rw [hC']
+  exact (compL ℝ V V V).aestronglyMeasurable_comp₂ (hΨ.aestronglyMeasurable hU)
+    ((hA.aestronglyMeasurable hU).add
+      ((compL ℝ V V V).aestronglyMeasurable_comp₂ hC (hΦ.aestronglyMeasurable hU)))
+
+omit [CompleteSpace V] in
+/-- **Local boundedness of the coefficient.** Near a point `z` where `J`, `Φ`, its pointwise
+inverse and `DΦ` are continuous, `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)` is bounded if `C` is. -/
+theorem exists_eventually_norm_frameCoeff_le (hJ : ContinuousAt J z) (hΦ : ContinuousAt Φ z)
+    (hΨ : ContinuousAt (fun z ↦ Ring.inverse (Φ z)) z) (hDΦ : ContinuousAt DΦ z)
+    (hC : ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M) : ∃ M, ∀ᶠ w in 𝓝 z, ‖frameCoeff J C Φ DΦ w‖ ≤ M := by
+  have hA : ContinuousAt (fun z ↦ DΦ z 1 + J z ∘L DΦ z I) z := (continuousWithinAt_univ _ _).1 <|
+    continuousWithinAt_frameCoeffAux hJ.continuousWithinAt hDΦ.continuousWithinAt
+  -- A family continuous at `z` is eventually bounded by its norm at `z` plus one.
+  have hle {f : ℂ → V →L[ℝ] V} (hf : ContinuousAt f z) : ∀ᶠ w in 𝓝 z, ‖f w‖ ≤ ‖f z‖ + 1 :=
+    (hf.norm.eventually (gt_mem_nhds (lt_add_one _))).mono fun _ h ↦ h.le
+  obtain ⟨M, hM⟩ := hC
+  refine ⟨(‖Ring.inverse (Φ z)‖ + 1) * ((‖DΦ z 1 + J z ∘L DΦ z I‖ + 1) + M * (‖Φ z‖ + 1)), ?_⟩
+  filter_upwards [hle hΨ, hle hA, hle hΦ, hM] with w hΨw hAw hΦw hCw
+  rw [frameCoeff_def]
+  refine (opNorm_comp_le _ _).trans ?_
+  gcongr
+  exact (norm_add_le _ _).trans (add_le_add hAw ((opNorm_comp_le _ _).trans
+    (mul_le_mul hCw hΦw (norm_nonneg _) ((norm_nonneg _).trans hCw))))
 
 /-- **Reduction to the standard structure.** Let `V` be finite-dimensional, as the weak Leibniz
 rule requires, let `p > 2` and let `Φ` be a continuous family of real-linear automorphisms on an

@@ -196,7 +196,8 @@ private def tailDenom (N : ℕ) (f : C(X, MilnorTotalSpace G)) (z : I × X) : �
 private theorem tailDenom_pos {N : ℕ} {f : C(X, MilnorTotalSpace G)}
     (hf : ∀ x, 0 < partialWeightSum G N (f x)) (z : I × X) : 0 < tailDenom N f z :=
   add_pos_of_pos_of_nonneg (hf z.2)
-    (mul_nonneg (sub_nonneg.mpr z.1.2.2) (sub_nonneg.mpr (partialWeightSum_le_one N (f z.2))))
+    (mul_nonneg (sub_nonneg.mpr z.1.property.2)
+      (sub_nonneg.mpr (partialWeightSum_le_one N (f z.2))))
 
 private def tailWeight (N : ℕ) (f : C(X, MilnorTotalSpace G)) (z : I × X) (i : ℕ) : ℝ :=
   (if i < N then weight i (f z.2) else (1 - (z.1 : ℝ)) * weight i (f z.2)) / tailDenom N f z
@@ -205,7 +206,8 @@ private theorem tailWeight_nonneg {N : ℕ} {f : C(X, MilnorTotalSpace G)}
     (hf : ∀ x, 0 < partialWeightSum G N (f x)) (z : I × X) (i : ℕ) :
     0 ≤ tailWeight N f z i := by
   refine div_nonneg ?_ (tailDenom_pos hf z).le; split_ifs
-  exacts [weight_nonneg i (f z.2), mul_nonneg (sub_nonneg.mpr z.1.2.2) (weight_nonneg i (f z.2))]
+  exacts [weight_nonneg i (f z.2),
+    mul_nonneg (sub_nonneg.mpr z.1.property.2) (weight_nonneg i (f z.2))]
 
 private theorem weight_pos_of_tailWeight_pos {N : ℕ} {f : C(X, MilnorTotalSpace G)}
     {z : I × X} {i : ℕ} (hz : 0 < tailWeight N f z i) : 0 < weight i (f z.2) := by
@@ -263,7 +265,7 @@ private def tailTruncationHomotopyFun (N : ℕ) (f : C(X, MilnorTotalSpace G))
       by_cases hi : i < N <;> simp only [hi, ↓reduceIte]
       · exact ((continuous_weight i).comp (f.continuous.comp continuous_snd)).div
           hden fun z ↦ (tailDenom_pos hf z).ne'
-      · exact (((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).mul
+      · exact (((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).mul
           ((continuous_weight i).comp (f.continuous.comp continuous_snd)))).div
           hden fun z ↦ (tailDenom_pos hf z).ne'
     · simp_rw [weight_tailTruncationPt]
@@ -329,7 +331,7 @@ private def conePt (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
   ofFinsetCoord (insert N S) (coneWeight N g z) (fun i ↦ if i = N then a else label i (g z.2))
     (fun i _ ↦ by
       unfold coneWeight; split_ifs
-      exacts [z.1.2.1, mul_nonneg (sub_nonneg.mpr z.1.2.2) (weight_nonneg i (g z.2))])
+      exacts [z.1.property.1, mul_nonneg (sub_nonneg.mpr z.1.property.2) (weight_nonneg i (g z.2))])
     (by
       unfold coneWeight
       rw [Finset.sum_insert hN, ite_eq_left rfl,
@@ -371,7 +373,7 @@ def coneAtFreshIndexHomotopy (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
   continuous_toFun := continuous_iff.mpr ⟨fun i ↦ by
       simp_rw [weight_conePt]; unfold coneWeight
       by_cases hiN : i = N <;> simp only [hiN, ↓reduceIte]
-      exacts [continuous_subtype_val.comp continuous_fst, by fun_prop], fun i ↦ by
+      exacts [continuous_subtypeVal.comp continuous_fst, by fun_prop], fun i ↦ by
       simp_rw [weight_conePt]
       by_cases hiN : i = N
       · subst hiN; exact (continuousOn_const (c := a)).congr fun _ hz ↦
@@ -486,7 +488,9 @@ instance subsingleton_milnorTotalSpace
         induction a using Quotient.inductionOn with | h p =>
         obtain ⟨g, hg⟩ := one_mem_orbit_of_forall_mem_of_nullhomotopic
           (ContinuousMap.nullhomotopic_to_milnorTotalSpace_of_isCompact_range
-            (by rw [ContinuousMap.coe_mk, Subtype.range_coe]; exact isCompact_range p.1.continuous))
+            (by
+              rw [ContinuousMap.coe_mk, Subtype.range_coe]
+              exact isCompact_range p.val.continuous))
           p Set.mem_range_self
         exact (fundamentalGroup_smul_eq_self g _).symm.trans hg
       exact ⟨fun a b ↦ (h_one a).trans (h_one b).symm⟩
@@ -506,7 +510,7 @@ variable {E : Type v} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpac
 theorem exists_extension_closedBall_milnorTotalSpace [Nonempty G]
     (g : C(sphere (0 : E) 1, MilnorTotalSpace G)) :
     ∃ G' : C(closedBall (0 : E) 1, MilnorTotalSpace G),
-      ∀ y : sphere (0 : E) 1, G' ⟨y, sphere_subset_closedBall y.2⟩ = g y :=
+      ∀ y : sphere (0 : E) 1, G' ⟨y, sphere_subset_closedBall y.property⟩ = g y :=
   g.nullhomotopic_iff_exists_extension_closedBall.mp g.nullhomotopic_to_milnorTotalSpace
 
 /-- Every continuous map `g` from the unit sphere of a proper real seminormed space `E` into

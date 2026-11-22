@@ -57,9 +57,9 @@ namespace TauCeti
 theorem ciSup_eq_ciSup_of_notMem_le {ι : Type*} {f : ι → ℝ} (hbdd : BddAbove (range f))
     (hnn : ∀ i, 0 ≤ f i) {I : Finset ι} (hI : ∀ j ∉ I, f j ≤ ⨆ i : I, f i) :
     ⨆ i, f i = ⨆ i : I, f i := by
-  have hnonneg : 0 ≤ ⨆ i : I, f i := Real.iSup_nonneg fun i ↦ hnn i.1
+  have hnonneg : 0 ≤ ⨆ i : I, f i := Real.iSup_nonneg fun i ↦ hnn i.val
   refine le_antisymm (Real.iSup_le (fun j ↦ ?_) hnonneg)
-    (Real.iSup_le (fun i : I ↦ le_ciSup hbdd i.1) (Real.iSup_nonneg hnn))
+    (Real.iSup_le (fun i : I ↦ le_ciSup hbdd i.val) (Real.iSup_nonneg hnn))
   by_cases hj : j ∈ I
   · exact le_ciSup (finite_range (fun i : I ↦ f i)).bddAbove ⟨j, hj⟩
   · exact hI j hj
@@ -74,7 +74,7 @@ theorem continuous_ciSup_of_eventually_le {ι X : Type*} [TopologicalSpace X] {f
     Continuous fun x ↦ ⨆ i, f i x := by
   refine continuous_iff_continuousAt.mpr fun x₀ ↦ ?_
   obtain ⟨I, hI⟩ := hevent x₀
-  exact (TauCeti.continuous_ciSup_of_finite fun i : I ↦ hf i.1).continuousAt.congr
+  exact (TauCeti.continuous_ciSup_of_finite fun i : I ↦ hf i.val).continuousAt.congr
     (hI.mono fun x hx ↦ (ciSup_eq_ciSup_of_notMem_le (hbdd x) (fun i ↦ hnn i x) hx).symm)
 
 end TauCeti
@@ -261,7 +261,7 @@ private theorem continuous_maxWeight (ρ : PartitionOfUnity ι X) :
   obtain ⟨I, hI⟩ := ρ.locallyFinite.exists_finset_support x₀
   exact ⟨I, hI.mono fun x hx j hj ↦
     (by_contra fun hne ↦ hj (hx hne) : ρ j x = 0).le.trans
-      (Real.iSup_nonneg fun i ↦ ρ.nonneg i.1 x)⟩
+      (Real.iSup_nonneg fun i ↦ ρ.nonneg i.val x)⟩
 
 private noncomputable def maxWeightCont (ρ : PartitionOfUnity ι X) : C(X, ℝ) :=
   ⟨maxWeight ρ, continuous_maxWeight ρ⟩

@@ -69,9 +69,9 @@ def equivRealization (G : Type u) : MilnorTotalSpace G ≃ universalGSpace G :=
     (equivRealization G).symm x = ofRealization x := (rfl)
 
 /-- Underlying finitely supported barycentric coordinate vector on `Σ _ : ℕ, G`. -/
-def val (p : MilnorTotalSpace G) : (Σ _ : ℕ, G) →₀ ℝ := p.toRealization.1
+def val (p : MilnorTotalSpace G) : (Σ _ : ℕ, G) →₀ ℝ := p.toRealization.val
 
-@[simp] theorem val_ofRealization (x : universalGSpace G) : (ofRealization x).val = x.1 := (rfl)
+@[simp] theorem val_ofRealization (x : universalGSpace G) : (ofRealization x).val = x.val := (rfl)
 
 theorem ext_val {p q : MilnorTotalSpace G} (h : p.val = q.val) : p = q :=
   MilnorTotalSpace.ext (Subtype.ext h)
@@ -301,7 +301,7 @@ theorem continuous_iff {Z : Type*} [TopologicalSpace Z] {f : Z → MilnorTotalSp
     refine ⟨fun i ↦ continuous_def.mpr fun W hW ↦ hf _ (Or.inl ⟨i, W, hW, rfl⟩), fun i ↦ ?_⟩
     rw [continuousOn_iff_continuous_domRestrict, continuous_def]; intro V hV
     convert (hf _ (Or.inr ⟨i, V, hV, rfl⟩)).preimage
-      (continuous_subtype_val (p := fun z ↦ 0 < weight i (f z))) using 1
+      (continuous_subtypeVal (p := fun z ↦ 0 < weight i (f z))) using 1
     ext ⟨z, hz⟩; exact ⟨fun h ↦ ⟨hz, h⟩, fun h ↦ h.2⟩
   · rintro ⟨hw, hl⟩ s (⟨i, W, hW, rfl⟩ | ⟨i, V, hV, rfl⟩)
     · exact hW.preimage (hw i)
@@ -357,35 +357,35 @@ to `MilnorTotalSpace G` (strong coordinate topology) is continuous. -/
 theorem continuous_ofRealization :
     Continuous (ofRealization : universalGSpace G → MilnorTotalSpace G) := by
   rw [continuous_iff_faceInclusion]; intro σ; rw [continuous_iff]
-  let F : StandardSimplex σ.1 → MilnorTotalSpace G :=
+  let F : StandardSimplex σ.val → MilnorTotalSpace G :=
     ofRealization ∘ (indexedJoin fun _ : ℕ ↦ G).faceInclusion σ
-  have hval (x : StandardSimplex σ.1) : (F x).val = x.1 := faceInclusion_val _ σ x
-  have hmem {i : ℕ} {b : G} {x : StandardSimplex σ.1} (hb : x.1 ⟨i, b⟩ ≠ 0) :
-      (⟨i, b⟩ : Σ _ : ℕ, G) ∈ σ.1 :=
+  have hval (x : StandardSimplex σ.val) : (F x).val = x.val := faceInclusion_val _ σ x
+  have hmem {i : ℕ} {b : G} {x : StandardSimplex σ.val} (hb : x.val ⟨i, b⟩ ≠ 0) :
+      (⟨i, b⟩ : Σ _ : ℕ, G) ∈ σ.val :=
     StandardSimplex.support_subset x (Finsupp.mem_support_iff.mpr hb)
   refine ⟨fun i ↦ ?_, fun i ↦ ?_⟩
-  · by_cases hex : ∃ a : G, (⟨i, a⟩ : Σ _ : ℕ, G) ∈ σ.1
+  · by_cases hex : ∃ a : G, (⟨i, a⟩ : Σ _ : ℕ, G) ∈ σ.val
     · obtain ⟨a, ha⟩ := hex
-      suffices (fun x ↦ weight i (F x)) = fun x ↦ x.1 ⟨i, a⟩ from
+      suffices (fun x ↦ weight i (F x)) = fun x ↦ x.val ⟨i, a⟩ from
         this ▸ (continuous_apply (⟨i, a⟩ : Σ _ : ℕ, G)).comp continuous_induced_dom
       ext x
-      by_cases hx0 : x.1 ⟨i, a⟩ = 0
+      by_cases hx0 : x.val ⟨i, a⟩ = 0
       · rw [hx0]; refine not_not.mp fun hne ↦ ?_
         obtain ⟨b, hb⟩ := weight_ne_zero_iff.mp hne; rw [hval x] at hb
-        exact hb (by simpa [eq_of_mem_indexedJoin σ.2 (hmem hb) ha rfl] using hx0)
+        exact hb (by simpa [eq_of_mem_indexedJoin σ.property (hmem hb) ha rfl] using hx0)
       · exact (weight_eq_val_of_ne_zero (by rwa [hval x])).trans (by rw [hval x])
     · push Not at hex
       suffices (fun x ↦ weight i (F x)) = 0 from this ▸ continuous_const
       ext x; refine not_not.mp fun hne ↦ ?_
       obtain ⟨a, ha⟩ := weight_ne_zero_iff.mp hne
       exact hex a (hmem (by rwa [hval x] at ha))
-  · by_cases hex : ∃ a : G, (⟨i, a⟩ : Σ _ : ℕ, G) ∈ σ.1
+  · by_cases hex : ∃ a : G, (⟨i, a⟩ : Σ _ : ℕ, G) ∈ σ.val
     · obtain ⟨a, ha⟩ := hex
       refine (continuousOn_const (c := a)).congr fun x hx ↦ ?_
       obtain ⟨b, hb⟩ := weight_pos_iff.mp hx
-      have hb' : x.1 ⟨i, b⟩ ≠ 0 := by rw [← hval x]; exact hb.ne'
+      have hb' : x.val ⟨i, b⟩ ≠ 0 := by rw [← hval x]; exact hb.ne'
       exact (eq_label_of_val_pos hb).symm.trans
-        (congrArg Sigma.snd (eq_of_mem_indexedJoin σ.2 (hmem hb') ha rfl))
+        (congrArg Sigma.snd (eq_of_mem_indexedJoin σ.property (hmem hb') ha rfl))
     · push Not at hex
       refine (continuousOn_empty _).mono fun x hx ↦ ?_
       obtain ⟨a, ha⟩ := weight_pos_iff.mp hx
@@ -508,7 +508,7 @@ def invEquiv (G : Type u) [Group G] : universalGSpace G ≃ MilnorTotalSpace G w
 
 theorem val_invEquiv (x : universalGSpace G) :
     (invEquiv G x).val =
-      Finsupp.mapDomain (fun v : Σ _ : ℕ, G ↦ (⟨v.1, v.2⁻¹⟩ : Σ _ : ℕ, G)) x.1 :=
+      Finsupp.mapDomain (fun v : Σ _ : ℕ, G ↦ (⟨v.1, v.2⁻¹⟩ : Σ _ : ℕ, G)) x.val :=
   val_relabel Inv.inv (ofRealization x)
 
 @[simp] theorem invEquiv_basepoint : invEquiv G (universalGSpaceBasepoint G) = basepoint G :=

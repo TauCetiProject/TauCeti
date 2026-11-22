@@ -53,7 +53,7 @@ theorem sum_card_support_sdiff_ofSubcells_le (A : Finset (Polyad3 S)) (B : Finse
   rw [← card_biUnion hdisj]
   calc
     #(A.biUnion lost) ≤
-        #{x : {x : Fin 3 → V // Function.Injective x} | ∃ i, x.1 i ∈ B} := by
+        #{x : {x : Fin 3 → V // Function.Injective x} | ∃ i, x.val i ∈ B} := by
       apply card_le_card
       intro x hx
       obtain ⟨P, _, hx⟩ := mem_biUnion.1 hx
