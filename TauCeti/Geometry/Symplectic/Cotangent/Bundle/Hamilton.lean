@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Hyperregular
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Legendre.Velocity
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ModelSpace
 public import TauCeti.Geometry.Symplectic.Cotangent.SignConvention
-import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
 # Hamilton's equations on the cotangent bundle of a normed space
@@ -39,9 +37,10 @@ The second half works out a particle of mass `m` in a potential `V` on the line.
 of the Legendre map is `(δq, δv) ↦ (δq, m δv)`
 (`TauCeti.mfderiv_lineDiffeomorph_comp_legendreMap_mul_sq_sub`), so at `p = m v` it sends the
 vector `(v, -V'(q) / m)` to the Hamiltonian vector field `(v, -V'(q))` of `H`
-(`TauCeti.IsHyperregularLagrangian.mfderiv_legendreMap_mul_sq_sub`). This is the coordinate
-form, for this Lagrangian, of the conjugation `dFL(X_E) = X_H` of the Lagrangian and Hamiltonian
-vector fields (`TauCeti.IsHyperregularLagrangian.mfderiv_legendreMap_hamiltonianVectorField`).
+(`TauCeti.IsHyperregularLagrangian.mfderiv_legendreMap_mul_sq_sub_eq_hamiltonianVectorField`).
+This is the coordinate form, for this Lagrangian, of the conjugation `dFL(X_E) = X_H` of the
+Lagrangian and Hamiltonian vector fields
+(`TauCeti.IsHyperregularLagrangian.mfderiv_legendreMap_hamiltonianVectorField`).
 
 ## Main results
 
@@ -60,8 +59,9 @@ In the namespace `TauCeti`:
 
 * `IsHyperregularLagrangian.hamiltonian_mul_sq_sub`: the Hamiltonian of `(m / 2) v² - V(q)` is
   `p² / (2 m) + V(q)`.
-* `IsHyperregularLagrangian.mfderiv_legendreMap_mul_sq_sub`: the differential of its Legendre map
-  sends `(v, -V'(q) / m)` to the Hamiltonian vector field `(v, -V'(q))`.
+* `IsHyperregularLagrangian.mfderiv_legendreMap_mul_sq_sub_eq_hamiltonianVectorField`: the
+  differential of its Legendre map sends `(v, -V'(q) / m)` to the Hamiltonian vector field
+  `(v, -V'(q))`.
 
 ## References
 
@@ -155,13 +155,14 @@ theorem mfderiv_lineDiffeomorph_symplecticForm_hamiltonianVectorField_comp_lineD
   -- In the coordinates `(q, p)` of `T*ℝ ≃ ℝ × ℝ'`, the Hamiltonian is `h(q, p 1)`.
   set P : ℝ × StrongDual ℝ ℝ →L[ℝ] ℝ × ℝ := (ContinuousLinearMap.fst ℝ ℝ (StrongDual ℝ ℝ)).prod
     ((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).comp (ContinuousLinearMap.snd ℝ ℝ (StrongDual ℝ ℝ)))
+  have hPapply (q : ℝ) (p : StrongDual ℝ ℝ) : P (q, p) = (q, p 1) := by simp [P]
   have hP : h ∘ lineDiffeomorph ℝ = (h ∘ P) ∘ modelSpaceDiffeomorph ℝ :=
     funext fun w ↦ by
       simp only [Function.comp_apply, lineDiffeomorph_apply, modelSpaceDiffeomorph_apply]
-      rfl
+      exact congrArg h (hPapply w.proj w.snd).symm
   have hz : P (modelSpaceDiffeomorph ℝ z) = lineDiffeomorph ℝ z := by
     rw [modelSpaceDiffeomorph_apply, lineDiffeomorph_apply]
-    rfl
+    exact hPapply z.proj z.snd
   rw [← hz] at hh
   have hd : HasFDerivAt (h ∘ P) ((a • ContinuousLinearMap.id ℝ ℝ).comp
       (ContinuousLinearMap.fst ℝ ℝ (StrongDual ℝ ℝ)) + (ContinuousLinearMap.apply ℝ ℝ b).comp
@@ -221,13 +222,31 @@ section Particle
 
 variable {m : ℝ} {V : ℝ → ℝ}
 
-/-- The derivative of the kinetic energy `(m / 2) w²` is multiplication by `m w`. -/
-private theorem fderiv_mul_sq (m w : ℝ) :
-    fderiv ℝ (fun w : ℝ ↦ m / 2 * w ^ 2) w = (m * w) • ContinuousLinearMap.id ℝ ℝ := by
-  refine ((((hasDerivAt_pow 2 w).const_mul (m / 2)).hasFDerivAt).fderiv).trans ?_
-  ext
-  simp
-  ring
+/-- The particle Lagrangian `(m / 2) v² - V(q)` is the mechanical Lagrangian with kinetic form
+`g(v, w) = m v w`. -/
+private theorem mul_sq_sub_eq_mechanicalLagrangian :
+    (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ m / 2 * @HPow.hPow ℝ ℕ ℝ _ v.snd 2 - V v.proj) =
+      mechanicalLagrangian (fun _ ↦ m • ContinuousLinearMap.mul ℝ ℝ) V := by
+  -- State the identity for a real velocity, which `v.snd` then instantiates.
+  have key (w c : ℝ) : m / 2 * w ^ 2 - c = 2⁻¹ * (m • ContinuousLinearMap.mul ℝ ℝ) w w - c := by
+    simp only [smul_apply, ContinuousLinearMap.mul_apply', smul_eq_mul]
+    ring
+  exact funext fun v ↦ (key v.snd (V v.proj)).trans
+    (mechanicalLagrangian_apply (fun _ ↦ m • ContinuousLinearMap.mul ℝ ℝ) V v).symm
+
+/-- The kinetic form `g(v, w) = m v w` of the particle is symmetric. -/
+private theorem smul_mul_symm (_ : ℝ) (v w : ℝ) :
+    (m • ContinuousLinearMap.mul ℝ ℝ) v w = (m • ContinuousLinearMap.mul ℝ ℝ) w v := by
+  simp only [smul_apply, ContinuousLinearMap.mul_apply', mul_comm v w]
+
+/-- The kinetic form `g(v, w) = m v w` is invertible onto the dual exactly when `m ≠ 0`. -/
+private theorem isInvertible_smul_mul_iff :
+    (m • ContinuousLinearMap.mul ℝ ℝ).IsInvertible ↔ m ≠ 0 := by
+  refine ⟨fun h hm ↦ ?_, fun hm ↦
+    .of_inverse (g := m⁻¹ • ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)) ?_ ?_⟩
+  · exact one_ne_zero (h.injective (a₁ := 1) (a₂ := 0) (by simp [hm]))
+  · ext; simp [hm]
+  · ext; simp [hm]
 
 /-- **The particle Lagrangian is hyperregular exactly for nonzero mass.** The Lagrangian
 `(m / 2) v² - V(q)` on the line is hyperregular exactly when `m ≠ 0`, for every potential `V`. -/
@@ -235,15 +254,9 @@ theorem isHyperregularLagrangian_mul_sq_sub_iff :
     IsHyperregularLagrangian
         (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ m / 2 * @HPow.hPow ℝ ℕ ℝ _ v.snd 2 - V v.proj) ↔
       m ≠ 0 := by
-  have h2 : ∀ w : ℝ, iteratedDeriv 2 (fun w : ℝ ↦ m / 2 * w ^ 2) w = m := fun w ↦ by simp
-  rw [isHyperregularLagrangian_sub_comp_proj_iff]
-  refine (isHyperregularLagrangian_comp_snd_iff (fun w : ℝ ↦ m / 2 * w ^ 2)).trans ?_
-  simp only [isInvertible_fderiv_fderiv_iff_iteratedDeriv_two_ne_zero, h2]
-  simp only [funext (fderiv_mul_sq m)]
-  refine ⟨fun h ↦ h.1 0, fun hm ↦ ⟨fun _ ↦ hm, fun w w' hww' ↦ ?_, fun p ↦ ⟨p 1 / m, ?_⟩⟩⟩
-  · simpa [hm] using DFunLike.congr_fun hww' 1
-  · refine ContinuousLinearMap.ext_ring ?_
-    simp [mul_div_cancel₀ _ hm]
+  rw [mul_sq_sub_eq_mechanicalLagrangian, isHyperregularLagrangian_mechanicalLagrangian_iff
+    smul_mul_symm]
+  exact ⟨fun h ↦ isInvertible_smul_mul_iff.1 (h 0), fun hm _ ↦ isInvertible_smul_mul_iff.2 hm⟩
 
 /-- **The Legendre map of the particle Lagrangian** `(m / 2) v² - V(q)` is `(q, v) ↦ (q, m v)` in
 the coordinates `(q, p 1)` of `T*ℝ`. -/
@@ -251,11 +264,10 @@ theorem lineDiffeomorph_legendreMap_mul_sq_sub (v : TangentBundle 𝓘(ℝ, ℝ)
     lineDiffeomorph ℝ (legendreMap
         (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ m / 2 * @HPow.hPow ℝ ℕ ℝ _ v.snd 2 - V v.proj) v) =
       (v.proj, @HMul.hMul ℝ ℝ ℝ _ m v.snd) := by
-  rw [legendreMap_sub_comp_proj (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦
-      m / 2 * @HPow.hPow ℝ ℕ ℝ _ v.snd 2),
-    legendreMap_comp_snd (fun w : ℝ ↦ m / 2 * w ^ 2), lineDiffeomorph_apply]
-  -- State the momentum for a real variable, which `v.snd` then instantiates.
-  have key (w : ℝ) : fderiv ℝ (fun w : ℝ ↦ m / 2 * w ^ 2) w 1 = m * w := by simp [fderiv_mul_sq]
+  rw [mul_sq_sub_eq_mechanicalLagrangian, legendreMap_mechanicalLagrangian smul_mul_symm,
+    lineDiffeomorph_apply]
+  -- State the momentum for a real velocity, which `v.snd` then instantiates.
+  have key (w : ℝ) : (m • ContinuousLinearMap.mul ℝ ℝ) w 1 = m * w := by simp
   exact Prod.ext rfl (key v.snd)
 
 /-- **The Hamiltonian of the particle Lagrangian.** The Hamiltonian `E_L ∘ FL⁻¹` of the
@@ -267,19 +279,19 @@ theorem IsHyperregularLagrangian.hamiltonian_mul_sq_sub
     (z : CotangentBundle 𝓘(ℝ, ℝ) ℝ) :
     h.hamiltonian z = z.snd (1 : ℝ) ^ 2 / (2 * m) + V z.proj := by
   have hm := isHyperregularLagrangian_mul_sq_sub_iff.1 h
-  refine (congrFun ((h.eq_hamiltonian_iff
-    (K := fun z ↦ z.snd (1 : ℝ) ^ 2 / (2 * m) + V z.proj)).2 (funext fun v ↦ ?_)) z).symm
-  have hFL := lineDiffeomorph_legendreMap_mul_sq_sub (m := m) (V := V) v
-  rw [lineDiffeomorph_apply, Prod.mk.injEq] at hFL
-  simp only [Function.comp_apply, hFL.1, hFL.2, lagrangianEnergy_sub_comp_proj,
-    lagrangianEnergy_comp_snd (fun w : ℝ ↦ m / 2 * w ^ 2)]
-  -- State the energy identity for a real variable, which `v.snd` then instantiates.
-  have key (w : ℝ) : (m * w) ^ 2 / (2 * m) + V v.proj =
-      fderiv ℝ (fun w : ℝ ↦ m / 2 * w ^ 2) w w - m / 2 * w ^ 2 + V v.proj := by
-    simp only [fderiv_mul_sq, smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
-    field_simp [hm]
-    ring
-  exact key v.snd
+  revert h
+  rw [mul_sq_sub_eq_mechanicalLagrangian]
+  intro h
+  rw [h.hamiltonian_mechanicalLagrangian smul_mul_symm]
+  -- State the energy identity for a real covector, which `z.snd` then instantiates: the
+  -- covector `p` is `g(u, ·)` for the velocity `u = p 1 / m`.
+  have key (p : ℝ →L[ℝ] ℝ) (c : ℝ) :
+      2⁻¹ * p ((m • ContinuousLinearMap.mul ℝ ℝ).inverse p) + c = p 1 ^ 2 / (2 * m) + c := by
+    obtain ⟨u, rfl⟩ := (isInvertible_smul_mul_iff.2 hm).surjective p
+    rw [(isInvertible_smul_mul_iff.2 hm).inverse_apply_self]
+    simp only [smul_apply, ContinuousLinearMap.mul_apply', smul_eq_mul]
+    field_simp
+  exact key z.snd (V z.proj)
 
 /-- **Hamilton's equations of the particle Lagrangian.** The Hamiltonian vector field of the
 Hamiltonian of `(m / 2) v² - V(q)` is `(p / m, -V'(q))` in the coordinates `(q, p 1)` of `T*ℝ`,
@@ -303,12 +315,17 @@ private theorem lineDiffeomorph_comp_legendreMap_mul_sq_sub (v₀ : TangentBundl
         extChartAt 𝓘(ℝ, ℝ).tangent v₀ := by
   funext v
   have hv : extChartAt 𝓘(ℝ, ℝ).tangent v₀ v = (v.proj, v.snd) := by
-    simp [extChartAt]
-    -- The chart is `TotalSpace.toProd`, which sends `v` to `(v.proj, v.snd)`.
-    rfl
+    rw [extChartAt_coe, Function.comp_apply, tangentBundle_model_space_coe_chartAt,
+      ModelWithCorners.tangent, modelWithCorners_prod_coe]
+    simp only [TotalSpace.toProd, Equiv.coe_fn_mk, modelWithCornersSelf_coe, Prod.map_apply, id_eq]
+    -- Both pairs are `(v.proj, v.snd)`; they differ only in the type of the second entry, the
+    -- tangent space `TangentSpace 𝓘(ℝ, ℝ) v.proj`, which is `ℝ` by definition.
+    exact rfl
+  -- State the linear map for real coordinates, which `(v.proj, v.snd)` then instantiates.
+  have key (q w : ℝ) : (q, m * w) =
+      (ContinuousLinearMap.fst ℝ ℝ ℝ).prod (m • ContinuousLinearMap.snd ℝ ℝ ℝ) (q, w) := by simp
   rw [Function.comp_apply, lineDiffeomorph_legendreMap_mul_sq_sub, Function.comp_apply, hv]
-  -- `m • v.snd` is `m * v.snd` in the tangent space `TangentSpace 𝓘(ℝ, ℝ) v.proj`, which is `ℝ`.
-  rfl
+  exact key v.proj v.snd
 
 /-- **The differential of the Legendre map of the particle Lagrangian.** In the coordinates
 `(q, v)` of `Tℝ` and `(q, p 1)` of `T*ℝ`, the differential of the Legendre map of
@@ -319,18 +336,21 @@ theorem mfderiv_lineDiffeomorph_comp_legendreMap_mul_sq_sub (v : TangentBundle �
         (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ m / 2 * @HPow.hPow ℝ ℕ ℝ _ v.snd 2 - V v.proj)) v w =
       (w.1, m * w.2) := by
   set A := (ContinuousLinearMap.fst ℝ ℝ ℝ).prod (m • ContinuousLinearMap.snd ℝ ℝ ℝ)
+  -- State the linear map for real coordinates, which `w` then instantiates.
+  have key (u : ℝ × ℝ) : A u = (u.1, m * u.2) := by simp [A]
   rw [lineDiffeomorph_comp_legendreMap_mul_sq_sub v, mfderiv_comp_apply v
     A.differentiableAt.mdifferentiableAt (mdifferentiableAt_extChartAt (mem_chart_source _ v)),
     mfderiv_extChartAt_self, mfderiv_eq_fderiv, ContinuousLinearMap.fderiv]
-  -- The tangent spaces of `ℝ × ℝ` are `ℝ × ℝ`, and the chart has the identity as differential.
-  rfl
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_symm_apply]
+  exact key w
 
 /-- **The Legendre map carries the motion of the particle to Hamilton's equations.** For the
 hyperregular Lagrangian `(m / 2) v² - V(q)` and a velocity `v` over a point `q` where `V` is
 differentiable, the differential of the Legendre map sends `(v, -V'(q) / m)` to the Hamiltonian
 vector field of the Hamiltonian `p² / (2 m) + V(q)` at the momentum `p = m v`, whose coordinates
 are `(v, -V'(q))`. -/
-theorem IsHyperregularLagrangian.mfderiv_legendreMap_mul_sq_sub
+theorem IsHyperregularLagrangian.mfderiv_legendreMap_mul_sq_sub_eq_hamiltonianVectorField
     (h : IsHyperregularLagrangian
       fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ m / 2 * @HPow.hPow ℝ ℕ ℝ _ v.snd 2 - V v.proj)
     {v : TangentBundle 𝓘(ℝ, ℝ) ℝ} (hV : DifferentiableAt ℝ V v.proj) :
@@ -341,38 +361,44 @@ theorem IsHyperregularLagrangian.mfderiv_legendreMap_mul_sq_sub
       (symplecticForm 𝓘(ℝ, ℝ) ℝ).hamiltonianVectorField h.hamiltonian (legendreMap
         (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ m / 2 * @HPow.hPow ℝ ℕ ℝ _ v.snd 2 - V v.proj) v) := by
   have hm := isHyperregularLagrangian_mul_sq_sub_iff.1 h
+  have hz := lineDiffeomorph_legendreMap_mul_sq_sub (m := m) (V := V) v
+  rw [lineDiffeomorph_apply, Prod.mk.injEq] at hz
+  set L := fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ m / 2 * @HPow.hPow ℝ ℕ ℝ _ v.snd 2 - V v.proj
   -- Compare both sides in the coordinates `(q, p 1)` of `T*ℝ`, which are injective on tangent
   -- vectors since a covector `p` of the line is determined by `p 1`.
   have hinj : Function.Injective (mfderiv (𝓘(ℝ).prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) 𝓘(ℝ, ℝ × ℝ)
-      (lineDiffeomorph ℝ) (legendreMap
-        (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ m / 2 * @HPow.hPow ℝ ℕ ℝ _ v.snd 2 - V v.proj) v)) :=
+      (lineDiffeomorph ℝ) (legendreMap L v)) :=
     fun x y hxy ↦ by
       have hxy' := (mfderiv_lineDiffeomorph_apply ℝ _ x).symm.trans
         (hxy.trans (mfderiv_lineDiffeomorph_apply ℝ _ y))
       obtain ⟨h1, h2⟩ := Prod.mk.inj hxy'
       exact Prod.ext h1 (ContinuousLinearMap.ext_ring h2)
-  have hℓFL : MDifferentiableAt 𝓘(ℝ, ℝ).tangent 𝓘(ℝ, ℝ × ℝ) (lineDiffeomorph ℝ ∘ legendreMap
-      (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ m / 2 * @HPow.hPow ℝ ℕ ℝ _ v.snd 2 - V v.proj)) v := by
+  have hℓFL : MDifferentiableAt 𝓘(ℝ, ℝ).tangent 𝓘(ℝ, ℝ × ℝ)
+      (lineDiffeomorph ℝ ∘ legendreMap L) v := by
     rw [lineDiffeomorph_comp_legendreMap_mul_sq_sub v]
     exact ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod
       (m • ContinuousLinearMap.snd ℝ ℝ ℝ)).differentiableAt.mdifferentiableAt.comp v
         (mdifferentiableAt_extChartAt (mem_chart_source _ v))
-  have hFL : MDifferentiableAt 𝓘(ℝ, ℝ).tangent (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) (legendreMap
-      (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ m / 2 * @HPow.hPow ℝ ℕ ℝ _ v.snd 2 - V v.proj)) v :=
+  have hFL : MDifferentiableAt 𝓘(ℝ, ℝ).tangent (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ →L[ℝ] ℝ))
+      (legendreMap L) v :=
     (((lineDiffeomorph ℝ).symm.mdifferentiable (by simp) _).comp v hℓFL).congr_of_eventuallyEq
       (Filter.Eventually.of_forall fun u ↦ ((lineDiffeomorph ℝ).symm_apply_apply _).symm)
-  have hz := lineDiffeomorph_legendreMap_mul_sq_sub (m := m) (V := V) v
-  rw [lineDiffeomorph_apply, Prod.mk.injEq] at hz
-  -- State the coordinate identity for real variables, which `v.snd` then instantiates.
-  have key (w p : ℝ) (hp : p = m * w) :
-      ((w, m * (-deriv V v.proj / m)) : ℝ × ℝ) = (p / m, -deriv V v.proj) := by
-    rw [hp]
-    field_simp [hm]
-  -- In coordinates: `d(ℓ ∘ FL)(v, -V'/m) = (v, -V') = (p / m, -V')`, which is `dℓ(X_H)`.
-  refine hinj (((mfderiv_comp_apply v ((lineDiffeomorph ℝ).mdifferentiable (by simp) _) hFL
-    _).symm.trans (mfderiv_lineDiffeomorph_comp_legendreMap_mul_sq_sub v _)).trans
-    (((key v.snd _ hz.2).trans (congrArg (fun q ↦ ((_ : ℝ), -deriv V q)) hz.1.symm)).trans
-      (h.mfderiv_lineDiffeomorph_hamiltonianVectorField_mul_sq_sub (hz.1 ▸ hV)).symm))
+  -- Left side in coordinates: `d(ℓ ∘ FL)(v, -V'/m) = (v, m (-V'/m)) = (v, -V')`.
+  have hlhs : mfderiv (𝓘(ℝ).prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) 𝓘(ℝ, ℝ × ℝ) (lineDiffeomorph ℝ)
+      (legendreMap L v) (mfderiv 𝓘(ℝ, ℝ).tangent (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) (legendreMap L) v
+        ((v.snd, -deriv V v.proj / m) : ℝ × ℝ)) = ((v.snd, -deriv V v.proj) : ℝ × ℝ) := by
+    have hcomp := mfderiv_comp_apply v ((lineDiffeomorph ℝ).mdifferentiable (by simp) _) hFL
+      ((v.snd, -deriv V v.proj / m) : ℝ × ℝ)
+    exact hcomp.symm.trans ((mfderiv_lineDiffeomorph_comp_legendreMap_mul_sq_sub v _).trans
+      (Prod.ext rfl (mul_div_cancel₀ _ hm)))
+  -- Right side in coordinates: `dℓ(X_H) = (p / m, -V'(q))`, which is `(v, -V')` at `p = m v`.
+  have hrhs : mfderiv (𝓘(ℝ).prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) 𝓘(ℝ, ℝ × ℝ) (lineDiffeomorph ℝ)
+      (legendreMap L v) ((symplecticForm 𝓘(ℝ, ℝ) ℝ).hamiltonianVectorField h.hamiltonian
+        (legendreMap L v)) = ((v.snd, -deriv V v.proj) : ℝ × ℝ) := by
+    rw [h.mfderiv_lineDiffeomorph_hamiltonianVectorField_mul_sq_sub (hz.1 ▸ hV)]
+    exact Prod.ext ((congrArg (· / m) hz.2).trans (mul_div_cancel_left₀ _ hm))
+      (congrArg (fun q ↦ -deriv V q) hz.1)
+  exact hinj (hlhs.trans hrhs.symm)
 
 end Particle
 
