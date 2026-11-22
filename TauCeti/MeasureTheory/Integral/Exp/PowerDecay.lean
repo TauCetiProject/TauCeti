@@ -42,7 +42,7 @@ functions, which is `π^{-3/2}` times the integral with `b = 1/12` and `q = -1/2
 * `TauCeti.integral_cpow_mul_cexp_neg_mul_rpow`: the Gamma value of the integral at `z = 0`.
 
 The norm, integrability and differentiation arguments are extracted and generalized from the
-proofs for the integral of `Ai² + Bi²` in `TauCeti.Analysis.SpecialFunctions.Airy.ProductIntegral`
+proofs for the integral of `Ai² + Bi²` in `TauCeti.Analysis.SpecialFunctions.Airy.Product.Integral`
 (formerly its own dominated-differentiation proof of
 `TauCeti.hasDerivAt_integral_pow_mul_cexp_sub_cube_div_twelve_mul_cpow`). The derivative is
 Mathlib's `ProbabilityTheory.hasDerivAt_integral_pow_mul_exp` for the measure with density
@@ -127,15 +127,20 @@ theorem tendsto_cpow_mul_cexp_mul_sub_mul_rpow_atTop {p q b : ℝ} (hp : 1 < p) 
     Tendsto (fun t : ℝ => (t : ℂ) ^ (q : ℂ) * cexp (z * t - ((b * t ^ p : ℝ) : ℂ))) atTop
       (𝓝 0) := by
   rw [tendsto_zero_iff_norm_tendsto_zero]
-  -- The exponent `(Re z + 1) t - b t ^ p = t (Re z + 1 - b t ^ (p - 1))` tends to `-∞`.
+  -- The exponent `(Re z + 1) t - b t ^ p` tends to `-∞`: with `d = max 1 (Re z + 1)`, it is at
+  -- most `d t - b t ^ p = -d ((b / d) t ^ p - t)`, and `exp (-(b / d) t ^ p) = o(exp (-t))`.
   have hpoly : Tendsto (fun t : ℝ => (z.re + 1) * t - b * t ^ p) atTop atBot := by
-    have hlin : Tendsto (fun t : ℝ => z.re + 1 - b * t ^ (p - 1)) atTop atBot :=
-      tendsto_atBot_add_const_left _ _ (tendsto_neg_atTop_atBot.comp
-        ((tendsto_rpow_atTop (sub_pos.mpr hp)).const_mul_atTop hb))
-    refine (tendsto_id.atTop_mul_atBot₀ hlin).congr' ?_
-    filter_upwards [eventually_gt_atTop 0] with t ht
-    rw [id, Real.rpow_sub_one ht.ne']
-    field_simp
+    set d := max 1 (z.re + 1)
+    have hd : 0 < d := lt_max_of_lt_left one_pos
+    have h := (Real.isLittleO_exp_comp_exp_comp.1
+      (exp_neg_mul_rpow_isLittleO_exp_neg (div_pos hb hd) hp)).const_mul_atTop hd
+    refine tendsto_atBot_mono' _ ?_ (tendsto_neg_atTop_atBot.comp h)
+    filter_upwards [eventually_ge_atTop 0] with t ht
+    have hdt : -(d * (-t - -(b / d) * t ^ p)) = d * t - b * t ^ p := by
+      field_simp
+      ring
+    rw [Function.comp_apply, hdt]
+    nlinarith [mul_le_mul_of_nonneg_right (le_max_right 1 (z.re + 1)) ht]
   have hlim := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero q 1 one_pos).mul
     (Real.tendsto_exp_atBot.comp hpoly)
   rw [zero_mul] at hlim

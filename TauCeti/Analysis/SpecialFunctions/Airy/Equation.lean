@@ -251,7 +251,6 @@ theorem hasDerivAt_deriv_div_of_airy_ode {w : ℂ → ℂ} (hw : Differentiable 
     HasDerivAt (fun u => deriv w u / w u) (z - (deriv w z / w z) ^ 2) z :=
   hasDerivAt_deriv_div_of_airy_ode_at (hw z) (hw.deriv z) (hode z) hz
 
-
 /-- **Rotation symmetry** of the inhomogeneous Airy equation: if `f'' = z f + c` and `ν³ = 1`,
 then the rotated function `z ↦ ν f(ν z)` satisfies the same equation. No differentiability of `f`
 is needed. With `c = 0`, `z ↦ ν w(ν z)` solves Airy's equation whenever `w` does. -/

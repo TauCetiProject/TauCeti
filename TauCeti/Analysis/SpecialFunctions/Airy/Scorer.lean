@@ -49,11 +49,11 @@ cube root of unity `ν`, the rotation `f ↦ (z ↦ ν f(ν z))` preserves every
 
 The norm, integrability and differentiation lemmas for the moment integrals, the decay of the
 kernel at infinity and the Gamma values at the origin are shared with the integral of `Ai² + Bi²`
-in `TauCeti.Analysis.SpecialFunctions.Airy.ProductIntegral` through
+in `TauCeti.Analysis.SpecialFunctions.Airy.Product.Integral` through
 `TauCeti.MeasureTheory.Integral.Exp.PowerDecay`, whose proofs were extracted from that file. The
 argument for the equation `Hi'' = z Hi + 1/π` is proved here; it is adapted from the proof of the
 product differential equation `TauCeti.airyAi_sq_add_airyBi_sq_differential_equation` in
-`TauCeti.Analysis.SpecialFunctions.Airy.ProductIntegral`. The rotation argument is adapted from
+`TauCeti.Analysis.SpecialFunctions.Airy.Product.Integral`. The rotation argument is adapted from
 the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/Airy/Scorer/Representations.lean`, whose `Hi` is defined by its Maclaurin series rather
 than by the integral used here.
