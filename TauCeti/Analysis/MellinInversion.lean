@@ -6,10 +6,12 @@ Authors: Claude
 module
 
 public import Mathlib.Analysis.MellinInversion
+public import Mathlib.Analysis.Asymptotics.Theta
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+import Mathlib.Analysis.Polynomial.Basic
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Analysis.Contour.Residue.Rectangle
 import TauCeti.Analysis.Complex.NormSq
@@ -45,6 +47,11 @@ The vertical-line bound generalizes the first-order estimates
 `Perron.vertIntBound` and `Perron.vertIntBoundLeft` in the same PNT+ development. Its two endpoint
 margins preserve unequal coefficients and give Cauchy-integral control of outward real lines.
 
+The all-order height profile generalizes the first-order uniform estimates in the same PNT+
+file, which credits Lawrence Wu for its uniform little-o arguments. Here the denominator uses
+Mathlib's Pochhammer polynomial and its leading-monomial asymptotics. The profile supplies the
+horizontal-tail estimates for Landau's iterated Perron formula.
+
 ## Main results
 
 * `Complex.VerticalIntegrable.integrable_cpow_smul`: the integrand of `mellinInv σ f y` is
@@ -64,9 +71,10 @@ margins preserve unequal coefficients and give Cauchy-integral control of outwar
   `x → +∞`, both from `TauCeti.mellinInv_isLittleO_of_tendsto_log`. Mathlib writes
   `mellinInv σ G x` as `x^{-σ}` times a Fourier transform of `G` on the line `Re z = σ`,
   evaluated at `log x`, and the Riemann–Lebesgue lemma applies to it.
-
 * `TauCeti.integrable_and_integral_norm_cpow_div_ascPochhammer_le`: absolute convergence and a
   full-line L¹ bound for all-order Perron kernels, with separate first/last-factor margins.
+* `TauCeti.isTheta_cpow_div_ascPochhammer`: the all-order Perron kernel decays as
+  `|t|⁻(j+1)` uniformly on every bounded set of real parts.
 
 ## References
 
@@ -80,7 +88,7 @@ The Riemann–Lebesgue estimates follow the lean-DLMF project
 
 public section
 
-open Real Set MeasureTheory Filter
+open Real Set MeasureTheory Filter Asymptotics
 open scoped Interval Topology
 open Complex hiding exp continuous_exp
 
@@ -309,9 +317,52 @@ theorem integral_cpow_div_mul_add_one {c x : ℝ} (hc : 0 < c) (hx : 0 < x) :
   apply (inv_mul_eq_iff_eq_mul₀ hπ).mp
   simpa only [Complex.real_smul, one_div, Complex.ofReal_inv] using h
 
+/-- The order-`j` Perron kernel has size `|t|⁻ᵈ`, where `d = j + 1`, uniformly when its real
+part ranges over a bounded set. The Pochhammer denominator is `s(s + 1)⋯(s + j)`.
+
+Empty and nonclosed sets of real parts are allowed, including real parts through the poles.
+The estimate holds in both height directions. At `j = 0` it gives decay of order `|t|⁻¹`,
+which does not imply absolute convergence of the vertical integral. -/
+theorem isTheta_cpow_div_ascPochhammer (j : ℕ) {x : ℝ} (hx : 0 < x)
+    {K : Set ℝ} (hK : Bornology.IsBounded K) :
+    (fun q : ℝ × ℝ ↦ (x : ℂ) ^ ((q.1 : ℂ) + q.2 * I) /
+      (ascPochhammer ℂ (j + 1)).eval ((q.1 : ℂ) + q.2 * I))
+      =Θ[𝓟 K ×ˢ (atBot ⊔ atTop)] ((fun t : ℝ ↦ 1 / t ^ (j + 1)) ∘ Prod.snd) := by
+  set l : Filter (ℝ × ℝ) := 𝓟 (closure K) ×ˢ (atBot ⊔ atTop) with hl
+  have hc : ∀ c : ℂ, (fun _ : ℝ × ℝ ↦ c) =o[l] Prod.snd := by
+    intro c
+    rw [hl, Filter.prod_sup, isLittleO_sup]
+    exact ⟨(isLittleO_const_id_atBot c).comp_tendsto tendsto_snd,
+      (isLittleO_const_id_atTop c).comp_tendsto tendsto_snd⟩
+  have hs : (fun q : ℝ × ℝ ↦ (q.1 : ℂ) + q.2 * I) =Θ[l] Prod.snd := by
+    refine IsLittleO.add_isTheta ?_ (IsTheta.of_norm_eventuallyEq_norm (by simp))
+    exact ((continuous_ofReal.continuousOn.isBigO_principal hK.isCompact_closure
+      (by norm_num : ‖(1 : ℂ)‖ ≠ 0)).comp_tendsto tendsto_fst).trans_isLittleO (hc 1)
+  have hesc : Tendsto (fun q : ℝ × ℝ ↦ (q.1 : ℂ) + q.2 * I) l
+      (Bornology.cobounded ℂ) := by
+    rw [← tendsto_norm_atTop_iff_cobounded]
+    apply hs.tendsto_norm_atTop_iff.mpr
+    rw [hl, Filter.prod_sup, tendsto_sup]
+    exact ⟨tendsto_abs_atBot_atTop.comp tendsto_snd,
+      tendsto_abs_atTop_atTop.comp tendsto_snd⟩
+  have hp := ((ascPochhammer ℂ (j + 1)).isEquivalent_cobounded_leading_monomial
+    |>.comp_tendsto hesc).isTheta
+  simp only [(monic_ascPochhammer ℂ (j + 1)).leadingCoeff, ascPochhammer_natDegree,
+    one_mul, Function.comp_def] at hp
+  have hn : (fun q : ℝ × ℝ ↦ (x : ℂ) ^ ((q.1 : ℂ) + q.2 * I)) =Θ[l]
+      (fun _ ↦ (1 : ℝ)) := by
+    apply isTheta_norm_left.mp
+    have hcont : ContinuousOn (fun σ : ℝ ↦ |x| ^ σ) (closure K) :=
+      continuousOn_const.rpow continuousOn_id fun _ _ ↦ Or.inl (ne_of_gt (abs_pos.mpr hx.ne'))
+    simpa [norm_cpow_of_ne_zero (ofReal_ne_zero.mpr hx.ne'), arg_ofReal_of_nonneg hx.le] using!
+      (hcont.isTheta_principal hK.isCompact_closure (by norm_num : ‖(1 : ℝ)‖ ≠ 0)
+        (fun _ _ ↦ ne_of_gt (rpow_pos_of_pos (abs_pos.mpr hx.ne') _))).comp_tendsto
+          tendsto_fst
+  exact (hn.div (hp.trans (hs.pow (j + 1)))).mono
+    (Filter.prod_mono (Filter.principal_mono.mpr subset_closure) le_rfl)
+
 section RiemannLebesgue
 
-open Asymptotics
 open scoped FourierTransform
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]

@@ -71,8 +71,13 @@ parabolically `α`-Hölder field on `E × [a, b]`.
 * `TauCeti.HolderSpace.compSlabSpaceL`: a Hölder field on space as a time-independent parabolic
   Hölder field on a slab, with `TauCeti.HolderSpace.norm_compSlabSpaceL_apply_le`: this does not
   increase the norm.
+<<<<<<< HEAD
 * `TauCeti.HolderSpace.compSlabTimeL`: a temporal `(α / 2)`-Hölder field on `[a, b]` viewed as a
   space-independent parabolic `α`-Hölder field on a slab, of operator norm at most `1`.
+=======
+* `TauCeti.HolderSpace.holderWith_slabMk`: the time slices of a parabolic Hölder field on a slab
+  are Hölder in space, with its norm as constant.
+>>>>>>> origin/main
 
 ## References
 
@@ -309,6 +314,19 @@ theorem eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm (α : ℝ≥0)
         rw [add_mul]
         gcongr
 
+/-- A function on a slab that is `α`-Hölder in space with constant `C₁` on every time slice and
+`α / 2`-Hölder in time with constant `C₂` at every position is parabolically `α`-Hölder with
+constant `C₁ + C₂`. -/
+theorem holderWith_of_holderWith_slices {α C₁ C₂ : ℝ≥0} {v : slab (E := E) a b → F}
+    (hspace : ∀ t : Icc a b, HolderWith C₁ α fun x ↦ v (slabMk x t))
+    (htime : ∀ x : E, HolderWith C₂ (α / 2) fun t : Icc a b ↦ v (slabMk x t)) :
+    HolderWith (C₁ + C₂) α v := by
+  have h := (eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α v).trans
+    (add_le_add (spaceEHolderNorm_le_iff.2 fun t x y ↦ hspace t x y)
+      (timeEHolderNorm_le_iff.2 fun x t s ↦ htime x t s))
+  intro p q
+  simpa only [ENNReal.coe_add] using eHolderNorm_le_iff.1 h p q
+
 /-- A function on a slab is parabolically `α`-Hölder exactly when it is `α`-Hölder in space and
 `α / 2`-Hölder in time, uniformly in the other variable. -/
 theorem memHolder_slab_iff {α : ℝ≥0} {v : slab (E := E) a b → F} :
@@ -408,12 +426,20 @@ end TauCeti.ParabolicSpaceTime
 
 namespace TauCeti.HolderSpace
 
-/-! ### Time-independent and space-independent Hölder fields on a slab -/
-
 variable {α : ℝ≥0} {E Y : Type*} [MetricSpace E] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
   {a b : ℝ}
 
 open ParabolicSpaceTime
+
+/-! ### Time slices of Hölder fields on a slab -/
+
+/-- The time slices of a parabolic Hölder field on a slab are Hölder in space, with its norm as
+constant. -/
+theorem holderWith_slabMk (F : HolderSpace α (slab (E := E) a b) Y) (t : Icc a b) :
+    HolderWith ‖F‖₊ α fun x ↦ F (slabMk x t) := fun x y ↦ by
+  simpa [edist_slabMk] using F.holderWith_nnnorm (slabMk x t) (slabMk y t)
+
+/-! ### Time-independent Hölder fields on a slab -/
 
 /-- A bounded `α`-Hölder field on space, viewed as a time-independent bounded parabolically
 `α`-Hölder field on the slab `E × [a, b]`: precomposition with the spatial position, which is
@@ -437,6 +463,8 @@ space. -/
 theorem norm_compSlabSpaceL_apply_le (f : HolderSpace α E Y) :
     ‖(compSlabSpaceL f : HolderSpace α (slab (E := E) a b) Y)‖ ≤ ‖f‖ :=
   (compSlabSpaceL.le_of_opNorm_le norm_compSlabSpaceL_le_one f).trans_eq (one_mul _)
+
+/-! ### Space-independent Hölder fields on a slab -/
 
 private theorem holderWith_slabTime :
     HolderWith 1 2 (slabTime : slab (E := E) a b → Icc a b) := by
