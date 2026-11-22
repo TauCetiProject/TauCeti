@@ -61,7 +61,8 @@ Admissibility is invariant under every permutation of the list, in particular un
 ## References
 
 * [W. Duke, Ö. Imamoglu and Á. Tóth, *Geometric invariants for real quadratic fields*,
-  Ann. of Math. 184 (2016), 949–990][DIT16], §3, (3.1)–(3.2) and the paragraph after (3.2).
+  Ann. of Math. 184 (2016), 949–990](https://doi.org/10.4007/annals.2016.184.3.8), §3,
+  (3.1)–(3.2) and the paragraph after (3.2).
 -/
 
 public section
