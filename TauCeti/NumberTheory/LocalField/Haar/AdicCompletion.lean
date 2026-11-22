@@ -35,7 +35,7 @@ hypotheses:
 
 * `IsDedekindDomain.HeightOneSpectrum.localAddHaar_adicCompletionIntegers`: the normalized additive
   Haar measure gives `v.adicCompletionIntegers K` mass one.
-* `IsDedekindDomain.HeightOneSpectrum.distribHaarChar_adicCompletion`: identification of
+* `IsDedekindDomain.HeightOneSpectrum.distribHaarChar_adicCompletion_eq_nnnorm`: identification of
   `distribHaarChar (v.adicCompletion K) a` with `‖a‖₊`.
 * `IsDedekindDomain.HeightOneSpectrum.distribHaarChar_adicCompletion_of_isUniformizer`: a
   uniformizer of `v.adicCompletion K` has character `(Ideal.absNorm v.asIdeal)⁻¹`.
@@ -70,11 +70,11 @@ theorem localAddHaar_adicCompletionIntegers [Finite (R ⧸ v.asIdeal)]
 /-- **Adic completion Haar character equals pinned `nnnorm`.** When `R` has finite quotients, the
 distributive Haar character of `a ∈ (v.adicCompletion K)ˣ` coincides with `‖a‖₊` for the pinned
 norm using `Ideal.absNorm v.asIdeal`. -/
-@[simp, grind =]
-theorem distribHaarChar_adicCompletion [Ring.HasFiniteQuotients R]
+@[grind =]
+theorem distribHaarChar_adicCompletion_eq_nnnorm [Ring.HasFiniteQuotients R]
     (a : (v.adicCompletion K)ˣ) :
     distribHaarChar (v.adicCompletion K) a = ‖(a : v.adicCompletion K)‖₊ := by
-  rw [a.distribHaarChar_eq_normalizedAbsoluteValue,
+  rw [distribHaarChar_eq_normalizedAbsoluteValue a,
     v.normalizedAbsoluteValue_adicCompletion_eq_nnnorm]
 
 /-- Any uniformizer `ϖ` of `v.adicCompletion K` has distributive Haar character

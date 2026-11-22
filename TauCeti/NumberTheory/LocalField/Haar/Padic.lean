@@ -57,9 +57,9 @@ theorem localAddHaar_range_padicIntCoe (p : ℕ) [Fact p.Prime] [MeasurableSpace
 
 /-- On `ℚ_[p]`, the distributive Haar character of a unit `a ∈ ℚ_[p]ˣ` coincides with its `p`-adic
 norm `‖a‖₊`. -/
-@[simp, grind =]
+@[grind =]
 theorem distribHaarChar_eq_nnnorm {p : ℕ} [Fact p.Prime] (a : ℚ_[p]ˣ) :
     distribHaarChar ℚ_[p] a = ‖(a : ℚ_[p])‖₊ := by
-  rw [a.distribHaarChar_eq_normalizedAbsoluteValue, normalizedAbsoluteValue_eq_nnnorm]
+  rw [distribHaarChar_eq_normalizedAbsoluteValue a, normalizedAbsoluteValue_eq_nnnorm]
 
 end Padic

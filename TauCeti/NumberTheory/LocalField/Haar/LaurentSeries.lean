@@ -48,7 +48,7 @@ theorem localAddHaar_range_ofPowerSeries [MeasurableSpace F⸨X⸩] [BorelSpace 
 /-- **Equal-characteristic uniformizer character.** Over a finite field `F` (covering the
 positive-characteristic case of nonarchimedean local fields), the uniformizer `X` of `F⸨X⸩` has
 distributive Haar character `(Nat.card F)⁻¹`. -/
-@[simp, grind =]
+@[grind =]
 theorem distribHaarChar_XUnit :
     distribHaarChar F⸨X⸩ (XUnit F) = (Nat.card F : ℝ≥0)⁻¹ := by
   rw [distribHaarChar_of_isUniformizer (isUniformizer_XUnit F), natCard_residueField]

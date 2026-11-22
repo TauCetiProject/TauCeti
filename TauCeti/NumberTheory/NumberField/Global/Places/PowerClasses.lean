@@ -42,6 +42,8 @@ is compared with the index `n ^ (#S + r₁ + r₂)` of the `n`-th powers in the 
 
 ## Main results
 
+* `IsDedekindDomain.HeightOneSpectrum.coe_normalizedAbsoluteValue_adicCompletion`: the norm of
+  `K_v` is its normalized absolute value as a nonarchimedean local field.
 * `IsDedekindDomain.HeightOneSpectrum.card_powerClasses_adicCompletion_mul_normalizedAbsValue`
   and `NumberField.InfinitePlace.card_powerClasses_completion_mul_normalizedAbsValue`: the local
   count `#(K_vˣ ⧸ (K_vˣ)ⁿ) · ‖n‖_v = n · #μ_n(K_v)` at a finite and at an infinite place.
@@ -62,6 +64,14 @@ namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-- The norm of the completion `K_v` of a number field is its normalized absolute value as a
+nonarchimedean local field: both send a nonzero `x` to `(N v) ^ (-v(x))`, the residue field of
+`K_v` having `N v` elements. -/
+theorem coe_normalizedAbsoluteValue_adicCompletion (v : HeightOneSpectrum (𝓞 K))
+    (x : v.adicCompletion K) :
+    (TauCeti.normalizedAbsoluteValue (v.adicCompletion K) x : ℝ) = ‖x‖ :=
+  congrArg ((↑) : NNReal → ℝ) (v.normalizedAbsoluteValue_adicCompletion_eq_nnnorm x)
+
 open TauCeti TauCeti.GlobalNumberFields in
 /-- **The power classes at a finite place.** For `n ≠ 0` and a finite place `v` of a number field
 `K`, `#(K_vˣ ⧸ (K_vˣ)ⁿ) · ‖n‖_v = n · #μ_n(K_v)`. -/
@@ -74,13 +84,9 @@ theorem card_powerClasses_adicCompletion_mul_normalizedAbsValue (v : HeightOneSp
   have h := congrArg ((↑) : ℚ≥0 → ℝ) (card_powerClasses_eq_mul_inv_normalizedAbsoluteValue hn')
   have h0 : (normalizedAbsoluteValue (v.adicCompletion K) (n : v.adicCompletion K) : ℝ) ≠ 0 := by
     simpa using hn'
-  have hnorm : (normalizedAbsoluteValue (v.adicCompletion K) (n : v.adicCompletion K) : ℝ) =
-      ‖(n : v.adicCompletion K)‖ :=
-    congrArg ((↑) : NNReal → ℝ)
-      (v.normalizedAbsoluteValue_adicCompletion_eq_nnnorm (n : v.adicCompletion K))
   push_cast at h
-  rw [normalizedAbsValue_inl, ← FinitePlace.norm_embedding, map_natCast, ← hnorm, h, mul_assoc,
-    inv_mul_cancel₀ h0, mul_one]
+  rw [normalizedAbsValue_inl, ← FinitePlace.norm_embedding, map_natCast,
+    ← v.coe_normalizedAbsoluteValue_adicCompletion, h, mul_assoc, inv_mul_cancel₀ h0, mul_one]
 
 end IsDedekindDomain.HeightOneSpectrum
 
