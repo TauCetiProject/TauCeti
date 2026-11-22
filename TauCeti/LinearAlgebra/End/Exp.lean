@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Algebra.Module.BigOperators
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Algebra.Ring.Commutator
 import TauCeti.Data.Nat.Choose.Cast
 import TauCeti.RingTheory.Nilpotent.Exp.Basic
 
@@ -238,30 +239,6 @@ theorem locallyNilpotentExp_eq_exp (hnil : IsNilpotent f) :
 
 /-! ### Pushing an endomorphism past a locally nilpotent exponential -/
 
-omit [Module ℚ M] in
-private theorem pow_apply_apply_eq_sum_antidiagonal (f g : Module.End R M) (x : M) (n : ℕ) :
-    (f ^ n) (g x) =
-      ∑ ij ∈ antidiagonal n, n.choose ij.fst • ((fun h ↦ ⁅f, h⁆)^[ij.fst] g) ((f ^ ij.snd) x) := by
-  let : LieRing (Module.End R M) := LieRing.ofAssociativeRing
-  let : LieAlgebra ℤ (Module.End R M) := LieAlgebra.ofAssociativeAlgebra
-  let : LieRingModule (Module.End R M) M := LieRingModule.ofAssociativeModule
-  let : LieModule ℤ (Module.End R M) M := LieModule.ofAssociativeModule
-  have had (j : ℕ) : (LieAlgebra.ad ℤ (Module.End R M) f ^ j) g = (fun h ↦ ⁅f, h⁆)^[j] g := by
-    induction j with
-    | zero => simp
-    | succ j ih =>
-      rw [pow_succ', _root_.mul_apply_eq_comp, LieAlgebra.ad_apply, ih,
-        Function.iterate_succ_apply']
-  have htoEnd (j : ℕ) (z : M) :
-      (LieModule.toEnd ℤ (Module.End R M) M f ^ j) z = (f ^ j) z := by
-    induction j with
-    | zero => simp
-    | succ j ih =>
-      rw [pow_succ', _root_.mul_apply_eq_comp, ih, pow_succ', _root_.mul_apply_eq_comp,
-        LieModule.toEnd_apply_apply, lie_eq_smul, Module.End.smul_def]
-  have h := LieModule.toEnd_pow_lie ℤ (L := Module.End R M) (M := M) f g x n
-  simpa only [htoEnd, lie_eq_smul, Module.End.smul_def, had] using h
-
 /-- **Pushing an endomorphism past a locally nilpotent exponential.** If the `m`-fold iterated
 commutator `(fun h ↦ ⁅f, h⁆)^[m] g` vanishes in `Module.End R M`, then
 `exp f (g x) = (∑ j ∈ range m, (j ! : ℚ)⁻¹ • (fun h ↦ ⁅f, h⁆)^[j] g) (exp f x)`. -/
@@ -274,25 +251,26 @@ theorem locallyNilpotentExp_apply_eq_sum_of_iterate_lie_eq_zero {g : Module.End 
   let d : ℕ → Module.End R M := fun j ↦ (fun h ↦ ⁅f, h⁆)^[j] g
   have hd_zero (j : ℕ) (hj : m ≤ j) : d j = 0 := by
     obtain ⟨t, rfl⟩ := Nat.exists_eq_add_of_le hj
-    clear hj
-    induction t with
-    | zero => exact hfg
-    | succ t ih =>
-      simpa [d, ← add_assoc, Function.iterate_succ_apply', Ring.lie_def] using
-        congrArg (fun h ↦ ⁅f, h⁆) ih
+    dsimp only [d]
+    rw [add_comm m t, Function.iterate_add_apply, hfg]
+    exact Function.iterate_fixed (lie_zero f) t
+  have hpow (n : ℕ) : (f ^ n) (g x) =
+      ∑ ij ∈ antidiagonal n, n.choose ij.fst • ((fun h ↦ ⁅f, h⁆)^[ij.fst] g) ((f ^ ij.snd) x) := by
+    simpa only [_root_.mul_apply_eq_comp, LinearMap.sum_apply, LinearMap.smul_apply] using
+      LinearMap.congr_fun (TauCeti.Associative.pow_mul_eq_sum_antidiagonal f g n) x
   obtain ⟨k, hk⟩ := hf x
   have hterm_zero (i j : ℕ) (hij : m ≤ i ∨ k ≤ j) : d i ((f ^ j) x) = 0 := by
     rcases hij with hi | hj
     · rw [hd_zero _ hi, LinearMap.zero_apply]
     · rw [pow_map_zero_of_le hj hk, map_zero]
   have hgx : (f ^ (m + k)) (g x) = 0 := by
-    rw [pow_apply_apply_eq_sum_antidiagonal]
+    rw [hpow]
     refine sum_eq_zero fun ij hij ↦ ?_
     have hsum := mem_antidiagonal.mp hij
     rw [hterm_zero ij.fst ij.snd (by omega), smul_zero]
   rw [locallyNilpotentExp_apply_eq_sum f hf hgx,
     locallyNilpotentExp_apply_eq_sum f hf hk, LinearMap.sum_apply]
-  simp_rw [pow_apply_apply_eq_sum_antidiagonal, smul_sum, LinearMap.smul_apply, map_sum,
+  simp_rw [hpow, smul_sum, LinearMap.smul_apply, map_sum,
     smul_sum, map_rat_smul, smul_smul]
   have hterm (n : ℕ) :
       ∑ ij ∈ antidiagonal n,

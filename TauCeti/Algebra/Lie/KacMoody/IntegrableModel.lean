@@ -291,6 +291,9 @@ private theorem sl2CartanHom_coroot (hA : A default default = 2) :
     LinearMap.smul_apply, hrc, smul_eq_mul]
   rw [mul_assoc (n : K) 2⁻¹ 2, inv_mul_cancel₀ two_ne_zero, mul_one, one_smul]
 
+private theorem half_mul_two (a : K) : (2⁻¹ * a) * 2 = a := by
+  rw [mul_assoc, mul_comm a 2, ← mul_assoc, inv_mul_cancel₀ two_ne_zero, one_mul]
+
 private noncomputable def sl2Rep (hA : A default default = 2) (hlam : lam (R.coroot default) = n) :
     Enveloping R →ₐ[K] Module.End K (Sl2Std K n) :=
   _root_.UniversalEnvelopingAlgebra.lift K <| KacMoody.lift <|
@@ -305,16 +308,14 @@ private noncomputable def sl2Rep (hA : A default default = 2) (hlam : lam (R.cor
           LinearMap.smul_apply, smul_eq_mul]
         have h1 : ⁅(1 : Module.End K (Sl2Std K n)), Sl2Std.raise K n⁆ = 0 := by
           simp [Ring.lie_def]
-        rw [h1, Sl2Std.lie_diag_raise, smul_zero, zero_add, smul_smul, mul_assoc,
-          mul_comm (R.root default x) 2, ← mul_assoc, inv_mul_cancel₀ two_ne_zero, one_mul]
+        rw [h1, Sl2Std.lie_diag_raise, smul_zero, zero_add, smul_smul, half_mul_two]
       lie_cartan_negative := fun x j ↦ by
         rw [Unique.eq_default j]
         simp only [sl2CartanHom, LinearMap.add_apply, LinearMap.smulRight_apply, add_lie, smul_lie,
           LinearMap.smul_apply, smul_eq_mul]
         have h1 : ⁅(1 : Module.End K (Sl2Std K n)), Sl2Std.lower K n⁆ = 0 := by
           simp [Ring.lie_def]
-        rw [h1, Sl2Std.lie_diag_lower, smul_zero, zero_add, smul_neg, smul_smul, mul_assoc,
-          mul_comm (R.root default x) 2, ← mul_assoc, inv_mul_cancel₀ two_ne_zero, one_mul]
+        rw [h1, Sl2Std.lie_diag_lower, smul_zero, zero_add, smul_neg, smul_smul, half_mul_two]
       lie_positive_negative_self := fun i ↦ by
         rw [Unique.eq_default i, Sl2Std.lie_raise_lower, sl2CartanHom_coroot R lam n hA, hlam,
           sub_self, zero_smul, zero_add]
@@ -345,6 +346,8 @@ instance : IsScalarTower K (Enveloping R) (RankOneModule R hA lam n hlam) where
   smul_assoc c u v := by
     rw [smul_def, smul_def, AlgHom.map_smul_of_tower, LinearMap.smul_apply]
 
+/-- Under `equiv`, the Chevalley generator `eᵢ` acts on `RankOneModule R hA lam n hlam` as
+`Sl2Std.raise K n`. -/
 theorem positiveAction_eq (i : I) :
     positiveAction R (RankOneModule R hA lam n hlam) i =
       (equiv R hA lam n hlam).symm.conjAlgEquiv K (Sl2Std.raise K n) := by
@@ -352,6 +355,8 @@ theorem positiveAction_eq (i : I) :
   rw [positiveAction_apply, smul_def]
   simp [rep, sl2Rep]
 
+/-- Under `equiv`, the Chevalley generator `fᵢ` acts on `RankOneModule R hA lam n hlam` as
+`Sl2Std.lower K n`. -/
 theorem negativeAction_eq (i : I) :
     negativeAction R (RankOneModule R hA lam n hlam) i =
       (equiv R hA lam n hlam).symm.conjAlgEquiv K (Sl2Std.lower K n) := by
@@ -369,25 +374,32 @@ theorem isNilpotent_negativeAction (i : I) :
     IsNilpotent (negativeAction R (RankOneModule R hA lam n hlam) i) :=
   ⟨n + 1, by rw [negativeAction_eq, ← map_pow, Sl2Std.lower_pow_eq_zero, map_zero]⟩
 
+private theorem cartanAction_eq_sl2CartanHom (x : H) :
+    cartanAction R (RankOneModule R hA lam n hlam) x =
+      (equiv R hA lam n hlam).symm.conjAlgEquiv K (sl2CartanHom R lam n x) := by
+  ext v
+  rw [cartanAction_apply, smul_def]
+  simp [rep, sl2Rep]
+
 /-- The Cartan action of an arbitrary `x : H` on `RankOneModule R hA lam n hlam`. -/
 theorem cartanAction_eq (x : H) :
     cartanAction R (RankOneModule R hA lam n hlam) x =
       (equiv R hA lam n hlam).symm.conjAlgEquiv K
         ((lam x - (n : K) * 2⁻¹ * R.root default x) • (1 : Module.End K (Sl2Std K n)) +
           (2⁻¹ * R.root default x) • Sl2Std.diag K n) := by
-  ext v
-  rw [cartanAction_apply, smul_def]
-  simp [rep, sl2Rep, sl2CartanHom]
+  rw [cartanAction_eq_sl2CartanHom]
+  simp [sl2CartanHom]
 
+/-- Under `equiv`, the simple coroot `R.coroot i` acts on `RankOneModule R hA lam n hlam` as
+`Sl2Std.diag K n`. -/
 theorem cartanAction_coroot (i : I) :
     cartanAction R (RankOneModule R hA lam n hlam) (R.coroot i) =
       (equiv R hA lam n hlam).symm.conjAlgEquiv K (Sl2Std.diag K n) := by
-  rw [Unique.eq_default i, cartanAction_eq]
-  congr 1
-  have hrc := R.root_coroot_eq_two hA
-  rw [hrc, hlam, mul_assoc (n : K) 2⁻¹ 2, inv_mul_cancel₀ two_ne_zero, mul_one, sub_self,
-    zero_smul, zero_add, one_smul]
+  rw [Unique.eq_default i, cartanAction_eq_sl2CartanHom, sl2CartanHom_coroot R lam n hA,
+    hlam, sub_self, zero_smul, zero_add]
 
+/-- Transporting `positiveAction` on `RankOneModule R hA lam n hlam` across `equiv` yields
+`Sl2Std.raise K n`. -/
 @[simp]
 theorem equiv_positiveAction_apply (i : I) (v : RankOneModule R hA lam n hlam) :
     equiv R hA lam n hlam (positiveAction R (RankOneModule R hA lam n hlam) i v) =
@@ -395,6 +407,8 @@ theorem equiv_positiveAction_apply (i : I) (v : RankOneModule R hA lam n hlam) :
   rw [positiveAction_eq]
   simp [LinearEquiv.conjAlgEquiv_apply]
 
+/-- Transporting `negativeAction` on `RankOneModule R hA lam n hlam` across `equiv` yields
+`Sl2Std.lower K n`. -/
 @[simp]
 theorem equiv_negativeAction_apply (i : I) (v : RankOneModule R hA lam n hlam) :
     equiv R hA lam n hlam (negativeAction R (RankOneModule R hA lam n hlam) i v) =
@@ -410,6 +424,8 @@ theorem equiv_cartanAction_apply (x : H) (v : RankOneModule R hA lam n hlam) :
   rw [cartanAction_eq]
   simp [LinearEquiv.conjAlgEquiv_apply]
 
+/-- Transporting the Cartan action of the simple coroot `R.coroot i` on
+`RankOneModule R hA lam n hlam` across `equiv` yields `Sl2Std.diag K n`. -/
 @[simp]
 theorem equiv_cartanAction_coroot_apply (i : I) (v : RankOneModule R hA lam n hlam) :
     equiv R hA lam n hlam (cartanAction R (RankOneModule R hA lam n hlam) (R.coroot i) v) =
@@ -526,6 +542,7 @@ theorem equiv_simpleWeylIntertwiner_apply {i : I}
     (v : RankOneModule R hA lam n hlam) :
     equiv R hA lam n hlam (simpleWeylIntertwiner he hf v) =
       (Sl2Std.weylUnit K n : Module.End K (Sl2Std K n)) (equiv R hA lam n hlam v) := by
+  let : Module ℚ (RankOneModule R hA lam n hlam) := Module.compHom _ (algebraMap ℚ K)
   let φ := (equiv R hA lam n hlam).symm.conjAlgEquiv K
   have hep : (Module.End.locallyNilpotentExp
       (positiveAction R (RankOneModule R hA lam n hlam) i) he).toLinearMap =

@@ -46,6 +46,8 @@ Lie bracket `⁅A, B⁆ = A * B - B * A` of the ring.
 * `TauCeti.Associative.pow_mul_eq_mul_pow_add_nsmul_of_commutator_eq`: the mirrored orientation,
   moving an element across a power standing to its left.
 * `TauCeti.Associative.pow_mul_eq_add_nsmul_mul_pow`: the mirrored shifted-factor form.
+* `TauCeti.Associative.pow_mul_eq_sum_antidiagonal`: the general binomial expansion of
+  `x ^ n * y` in iterated commutators `(fun z ↦ ⁅x, z⁆)^[i] y` and powers `x ^ j`.
 * `TauCeti.Associative.isNilpotent_of_commutator_eq`: a commutator commuting with both of its
   arguments is nilpotent as soon as one of them is.
 * `TauCeti.Associative.isNilpotent_of_commutator_eq_nsmul`: the same conclusion when the
@@ -208,6 +210,35 @@ theorem mul_pow_eq_pow_mul_add_zsmul (hxy : x * y - y * x = c • y) (n : ℕ) :
     Int.cast_natCast, (Nat.cast_commute n (c : A)).eq]
 
 end IntegerShift
+
+section IteratedCommutator
+
+variable {A : Type*} [Ring A]
+
+/-- **Power–commutator expansion in an associative ring.** Moving `x ^ n` past `y` expands as a
+binomial sum over `i + j = n` of `n.choose i • ((fun z ↦ ⁅x, z⁆)^[i] y * x ^ j)`. -/
+theorem pow_mul_eq_sum_antidiagonal (x y : A) (n : ℕ) :
+    x ^ n * y =
+      ∑ ij ∈ Finset.antidiagonal n,
+        n.choose ij.fst • ((fun z ↦ ⁅x, z⁆)^[ij.fst] y * x ^ ij.snd) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Finset.sum_antidiagonal_choose_succ_nsmul
+      (fun i j ↦ (fun z ↦ ⁅x, z⁆)^[i] y * x ^ j) n]
+    have hstep (i j : ℕ) :
+        x * ((fun z ↦ ⁅x, z⁆)^[i] y * x ^ j) =
+          (fun z ↦ ⁅x, z⁆)^[i + 1] y * x ^ j + (fun z ↦ ⁅x, z⁆)^[i] y * (x * x ^ j) := by
+      rw [Function.iterate_succ_apply', Ring.lie_def]
+      noncomm_ring
+    rw [pow_succ', mul_assoc, ih, Finset.mul_sum]
+    simp only [mul_smul_comm, hstep, nsmul_add, Finset.sum_add_distrib, pow_succ']
+    rw [add_comm, add_left_cancel_iff, Finset.sum_congr rfl]
+    rintro ⟨i, j⟩ hij
+    rw [Finset.mem_antidiagonal] at hij
+    rw [Nat.choose_symm_of_eq_add hij.symm]
+
+end IteratedCommutator
 
 section CentralCommutator
 

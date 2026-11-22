@@ -53,7 +53,8 @@ finiteness hypothesis on the index set `I`.
   the presented algebra and its Cartan, raising, and lowering generators on an
   `Enveloping R`-module.
 * `TauCeti.KacMoody.weightSpace`: the joint eigenspace of `cartanAction R M` for a linear form `μ`,
-  with `TauCeti.KacMoody.weightSpaceDirectSumEquiv` identifying weight spaces of a direct sum.
+  with `TauCeti.KacMoody.weightSpaceMap` for the induced map on weight spaces and
+  `TauCeti.KacMoody.weightSpaceDirectSumEquiv` identifying weight spaces of a direct sum.
 * `TauCeti.KacMoody.IsWeightModule`: predicate that the weight spaces span `M`.
 * `TauCeti.KacMoody.IsCategoryO`: Kac's category `O` predicate (weight module with
   finite-dimensional weight spaces and weights bounded above by finitely many cones `λ - Q₊`).
@@ -409,6 +410,31 @@ theorem map_weightSpace_le (f : M →ₗ[Enveloping R] N) (μ : Dual K H) :
   rw [LinearMap.coe_restrictScalars, ← map_cartanAction, cartanAction_apply_of_mem_weightSpace hm,
     ← LinearMap.coe_restrictScalars (R := K), map_smul]
 
+/-- The `K`-linear map between weight spaces induced by an `Enveloping R`-linear map
+`f : M →ₗ[Enveloping R] N`. -/
+noncomputable def weightSpaceMap (f : M →ₗ[Enveloping R] N) (μ : Dual K H) :
+    weightSpace R M μ →ₗ[K] weightSpace R N μ :=
+  (f.restrictScalars K).restrict fun _ hm ↦ map_weightSpace_le f μ ⟨_, hm, rfl⟩
+
+/-- Coercing `weightSpaceMap f μ v` to `N` agrees with applying `f`. -/
+@[simp]
+theorem coe_weightSpaceMap_apply (f : M →ₗ[Enveloping R] N) (μ : Dual K H)
+    (v : weightSpace R M μ) :
+    (weightSpaceMap f μ v : N) = f v := (rfl)
+
+/-- The kernel of `weightSpaceMap f μ` is the pullback of `(LinearMap.ker f).restrictScalars K`
+to `weightSpace R M μ`. -/
+theorem ker_weightSpaceMap (f : M →ₗ[Enveloping R] N) (μ : Dual K H) :
+    LinearMap.ker (weightSpaceMap f μ) =
+      ((LinearMap.ker f).restrictScalars K).comap (weightSpace R M μ).subtype := by
+  rw [weightSpaceMap, LinearMap.ker_restrict, LinearMap.ker_restrictScalars]
+
+/-- An injective `Enveloping R`-linear map induces an injective map on every weight space. -/
+theorem weightSpaceMap_injective {f : M →ₗ[Enveloping R] N} (hf : Function.Injective f)
+    (μ : Dual K H) :
+    Function.Injective (weightSpaceMap f μ) :=
+  fun _ _ h ↦ Subtype.ext (hf (by simpa using congrArg Subtype.val h))
+
 theorem apply_mem_weightSpace_iff_of_injective {f : M →ₗ[Enveloping R] N}
     (hf : Function.Injective f) {μ : Dual K H} {m : M} :
     f m ∈ weightSpace R N μ ↔ m ∈ weightSpace R M μ := by
@@ -435,6 +461,8 @@ section DirectSum
 variable {κ : Type*} {P : κ → Type*} [∀ j, AddCommGroup (P j)] [∀ j, Module K (P j)]
   [∀ j, Module (Enveloping R) (P j)] [∀ j, IsScalarTower K (Enveloping R) (P j)]
 
+/-- A vector of `⨁ j, P j` lies in the `μ`-weight space iff every component lies in the
+`μ`-weight space of `P j`. -/
 @[simp]
 theorem mem_weightSpace_directSum_iff {μ : Dual K H} {v : ⨁ j, P j} :
     v ∈ weightSpace R (⨁ j, P j) μ ↔ ∀ j, v j ∈ weightSpace R (P j) μ := by
@@ -500,6 +528,8 @@ theorem weightSpaceDirectSumEquiv_lof [DecidableEq κ] (μ : Dual K H) (j : κ)
   apply Subtype.ext
   exact (coe_weightSpaceDirectSumEquiv_symm_lof (R := R) (P := P) μ j v).symm
 
+/-- A weight `μ` has a nonzero weight space in `⨁ j, P j` iff it has a nonzero weight space in
+at least one summand `P j`. -/
 theorem weightSpace_directSum_ne_bot_iff {μ : Dual K H} :
     weightSpace R (⨁ j, P j) μ ≠ ⊥ ↔ ∃ j, weightSpace R (P j) μ ≠ ⊥ := by
   classical
@@ -613,26 +643,43 @@ theorem IsWeightModule.submodule (hM : IsWeightModule R M) (P : Submodule (Envel
     IsWeightModule R P :=
   hM.of_injective P.injective_subtype
 
+private theorem map_iSup_weightSpace_le (f : M →ₗ[Enveloping R] N) :
+    (⨆ μ : Dual K H, weightSpace R M μ).map (f.restrictScalars K) ≤
+      ⨆ μ : Dual K H, weightSpace R N μ := by
+  rw [Submodule.map_iSup]
+  exact iSup_le fun μ ↦ (map_weightSpace_le f μ).trans (le_iSup (weightSpace R N) μ)
+
+private theorem IsWeightModule.iSup_map_weightSpace_eq_top (hM : IsWeightModule R M)
+    {f : M →ₗ[Enveloping R] N} (hf : Function.Surjective f) :
+    (⨆ ν : Dual K H, (weightSpace R M ν).map (f.restrictScalars K)) = ⊤ := by
+  rw [← Submodule.map_iSup, hM.iSup_weightSpace_eq_top, Submodule.map_top,
+    LinearMap.range_eq_top]
+  exact hf
+
 /-- Surjective `Enveloping R`-linear maps from a weight module map each weight space onto the
 corresponding weight space of the target. -/
 theorem IsWeightModule.map_weightSpace_of_surjective (hM : IsWeightModule R M)
     {f : M →ₗ[Enveloping R] N} (hf : Function.Surjective f) (μ : Dual K H) :
-    (weightSpace R M μ).map (f.restrictScalars K) = weightSpace R N μ := by
-  have htop : (⨆ ν : Dual K H, (weightSpace R M ν).map (f.restrictScalars K)) = ⊤ := by
-    rw [← Submodule.map_iSup, hM.iSup_weightSpace_eq_top, Submodule.map_top,
-      LinearMap.range_eq_top]
-    exact hf
-  exact (weightSpace_eq_of_iSup_eq_top R N (fun ν ↦ map_weightSpace_le f ν) htop
-    Function.injective_id μ).symm
+    (weightSpace R M μ).map (f.restrictScalars K) = weightSpace R N μ :=
+  (weightSpace_eq_of_iSup_eq_top R N (fun ν ↦ map_weightSpace_le f ν)
+    (hM.iSup_map_weightSpace_eq_top hf) Function.injective_id μ).symm
+
+/-- A surjective `Enveloping R`-linear map from a weight module induces a surjective map on every
+weight space. -/
+theorem IsWeightModule.weightSpaceMap_surjective (hM : IsWeightModule R M)
+    {f : M →ₗ[Enveloping R] N} (hf : Function.Surjective f) (μ : Dual K H) :
+    Function.Surjective (weightSpaceMap f μ) := by
+  rintro ⟨y, hy⟩
+  rw [← hM.map_weightSpace_of_surjective hf μ, Submodule.mem_map] at hy
+  obtain ⟨x, hx, rfl⟩ := hy
+  exact ⟨⟨x, hx⟩, Subtype.ext rfl⟩
 
 /-- Surjective `Enveloping R`-linear images of weight modules are weight modules. -/
 theorem IsWeightModule.of_surjective (hM : IsWeightModule R M) {f : M →ₗ[Enveloping R] N}
     (hf : Function.Surjective f) : IsWeightModule R N := by
   rw [isWeightModule_iff]
   simp_rw [← hM.map_weightSpace_of_surjective hf]
-  rw [← Submodule.map_iSup, hM.iSup_weightSpace_eq_top, Submodule.map_top,
-    LinearMap.range_eq_top]
-  exact hf
+  exact hM.iSup_map_weightSpace_eq_top hf
 
 /-- Quotients of weight modules are weight modules. -/
 theorem IsWeightModule.quotient (hM : IsWeightModule R M) (P : Submodule (Enveloping R) M) :
@@ -644,18 +691,12 @@ theorem IsWeightModule.prod (hM : IsWeightModule R M) (hN : IsWeightModule R N) 
     IsWeightModule R (M × N) := by
   rw [isWeightModule_iff, eq_top_iff]
   rintro ⟨m, n⟩ _
-  have hm : (m, (0 : N)) ∈ ⨆ μ : Dual K H, weightSpace R (M × N) μ := by
-    have : m ∈ ⨆ μ : Dual K H, weightSpace R M μ := hM.symm ▸ Submodule.mem_top
-    refine Submodule.iSup_induction (weightSpace R M) (motive := fun x ↦ (x, (0 : N)) ∈ _) this
-      (fun μ x hx ↦ le_iSup (weightSpace R (M × N)) μ ?_) (zero_mem _) fun x y hx hy ↦ ?_
-    · rw [weightSpace_prod]; exact ⟨hx, zero_mem _⟩
-    · simpa [Prod.mk_add_mk] using add_mem hx hy
-  have hn : ((0 : M), n) ∈ ⨆ μ : Dual K H, weightSpace R (M × N) μ := by
-    have : n ∈ ⨆ μ : Dual K H, weightSpace R N μ := hN.symm ▸ Submodule.mem_top
-    refine Submodule.iSup_induction (weightSpace R N) (motive := fun y ↦ ((0 : M), y) ∈ _) this
-      (fun μ y hy ↦ le_iSup (weightSpace R (M × N)) μ ?_) (zero_mem _) fun x y hx hy ↦ ?_
-    · rw [weightSpace_prod]; exact ⟨zero_mem _, hy⟩
-    · simpa [Prod.mk_add_mk] using add_mem hx hy
+  have hm : (m, (0 : N)) ∈ ⨆ μ : Dual K H, weightSpace R (M × N) μ :=
+    map_iSup_weightSpace_le (LinearMap.inl (Enveloping R) M N)
+      ⟨m, hM.symm ▸ Submodule.mem_top, rfl⟩
+  have hn : ((0 : M), n) ∈ ⨆ μ : Dual K H, weightSpace R (M × N) μ :=
+    map_iSup_weightSpace_le (LinearMap.inr (Enveloping R) M N)
+      ⟨n, hN.symm ▸ Submodule.mem_top, rfl⟩
   simpa using add_mem hm hn
 
 /-- Direct sums of weight modules are weight modules. -/
@@ -667,13 +708,9 @@ theorem IsWeightModule.directSum {κ : Type*} {P : κ → Type*} [∀ j, AddComm
   rw [isWeightModule_iff, eq_top_iff]
   intro v _
   refine DirectSum.induction_on v (zero_mem _) (fun j m ↦ ?_) fun x y hx hy ↦ add_mem hx hy
-  have hm : m ∈ ⨆ μ : Dual K H, weightSpace R (P j) μ := (hP j).symm ▸ Submodule.mem_top
   rw [← DirectSum.lof_eq_of (Enveloping R)]
-  refine Submodule.iSup_induction (weightSpace R (P j))
-    (motive := fun x ↦ DirectSum.lof (Enveloping R) κ P j x ∈ _) hm
-    (fun μ x hx ↦ le_iSup (weightSpace R (⨁ j, P j)) μ
-      (map_weightSpace_le (DirectSum.lof (Enveloping R) κ P j) μ ⟨x, hx, rfl⟩))
-    (by rw [map_zero]; exact zero_mem _) fun x y hx hy ↦ by rw [map_add]; exact add_mem hx hy
+  exact map_iSup_weightSpace_le (DirectSum.lof (Enveloping R) κ P j)
+    ⟨m, (hP j).symm ▸ Submodule.mem_top, rfl⟩
 
 end Closure
 
@@ -709,12 +746,7 @@ theorem IsCategoryO.of_injective (hN : IsCategoryO R N) {f : M →ₗ[Enveloping
   isWeightModule := hN.isWeightModule.of_injective hf
   finiteDimensional_weightSpace μ := by
     have := hN.finiteDimensional_weightSpace μ
-    let g : weightSpace R M μ →ₗ[K] weightSpace R N μ :=
-      { toFun := fun x ↦ ⟨f x.val, map_weightSpace_le f μ ⟨x.val, x.property, rfl⟩⟩
-        map_add' := fun x y ↦ Subtype.ext (map_add f x.val y.val)
-        map_smul' := fun c x ↦ Subtype.ext ((f.restrictScalars K).map_smul c x.val) }
-    exact FiniteDimensional.of_injective g fun x y hxy ↦
-      Subtype.ext (hf (congrArg Subtype.val hxy))
+    exact FiniteDimensional.of_injective (weightSpaceMap f μ) (weightSpaceMap_injective hf μ)
   exists_finset_rootLE := by
     obtain ⟨S, hS⟩ := hN.exists_finset_rootLE
     refine ⟨S, fun μ hμ ↦ hS μ ?_⟩

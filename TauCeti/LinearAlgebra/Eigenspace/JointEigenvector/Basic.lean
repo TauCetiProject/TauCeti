@@ -22,10 +22,12 @@ For an algebra representation it is moreover additive and `R`-linear, assembling
 `AlgHom.eigenvalueHomOfJointEigenvector : A →ₐ[R] K`. This much
 needs no division — a nonzero vector cancels over a commutative ring without zero divisors
 acting torsion-freely, and on a group multiplicativity exhibits the inverse of `χ g` as
-`χ g⁻¹`. This yields the simultaneous-diagonalization toolkit for a commuting family of
-semisimple endomorphisms: the joint eigenspaces are supremum-independent, they span (over an
-algebraically closed field, in finite dimension), and every invariant submodule is the
-supremum of its intersections with them.
+`χ g⁻¹`. Over a commutative domain acting torsion-freely, the joint eigenspaces of any family of
+endomorphisms are supremum-independent; over any field, every invariant submodule contained in the
+sum of the joint eigenspaces decomposes as the supremum of its intersections with them. Over an
+algebraically closed field, a pairwise-commuting family of semisimple endomorphisms spans a
+finite-dimensional space, and any finite-dimensional invariant submodule on which the restricted
+operators pairwise commute and are semisimple decomposes likewise.
 
 When `G` is a *finite commutative group* there is a second, unconditional route to the same
 spanning statements. Averaging against the characters of `G` produces Fourier projectors onto
@@ -48,17 +50,24 @@ components of `M_k(Γ₁(N))`.
   eigenvector of an algebra representation, as an algebra homomorphism `A →ₐ[R] K`.
 * `LinearMap.dualOfJointEigenvector`: the eigenvalue function of a nonzero joint eigenvector of a
   linear family of endomorphisms `H →ₗ[K] Module.End K V`, as a linear form `Module.Dual K H`.
-* `iSupIndep_iInf_eigenspace`,
-  `iSup_iInf_eigenspace_eq_top_of_isSemisimple`,
-  `iSup_inf_iInf_eigenspace_of_invariant`: joint eigenspaces of a commuting family are
-  independent (with no further hypotheses), exhaust the space when semisimple, and
-  decompose every invariant submodule — with the character-indexed forms (`…_unitHom…`)
-  for group representations.
-* `Submodule.inf_iSup_iInf_eigenspace_eq_of_forall_mapsTo`,
-  `Submodule.iSup_inf_iInf_eigenspace_eq_of_le`: over any field, the intersection of an invariant
-  submodule with the sum of the joint eigenspaces of any family of endomorphisms is the supremum
-  of its intersections with them, with no commutation, semisimplicity, finite-dimensionality or
+* `iSupIndep_iInf_eigenspace` (and `iSupIndep_iInf_eigenspace_unitHom`): over a commutative domain
+  acting torsion-freely, the joint eigenspaces of any family of endomorphisms are
+  supremum-independent, with no commutation, semisimplicity, finite-dimensionality, or
   algebraic-closedness hypothesis.
+* `iSup_iInf_eigenspace_eq_top_of_isSemisimple` (and `iSup_iInf_eigenspace_unitHom_eq_top`): over
+  an algebraically closed field and in finite dimension, the joint eigenspaces of a
+  pairwise-commuting family of semisimple endomorphisms span the whole space.
+* `iSup_inf_iInf_eigenspace_of_invariant` (and `iSup_inf_iInf_eigenspace_unitHom_of_invariant`):
+  over an algebraically closed field, a finite-dimensional invariant submodule on which the
+  restricted endomorphisms pairwise commute and are semisimple is the supremum of its
+  intersections with the joint eigenspaces.
+* `Submodule.inf_iSup_iInf_eigenspace_eq_of_forall_mapsTo`: over any field (with no commutation,
+  semisimplicity, finite-dimensionality, or algebraic-closedness hypothesis), the intersection of
+  an invariant submodule with the sum of the joint eigenspaces of any family of endomorphisms is
+  the supremum of its intersections with them.
+* `Submodule.iSup_inf_iInf_eigenspace_eq_of_le`: over any field, an invariant submodule contained
+  in the sum of the joint eigenspaces of any family of endomorphisms is the supremum of its
+  intersections with them.
 * `iInf_eigenspace_eq_of_iSup_eq_top`, `iInf_eigenspace_eq_bot_of_iSup_eq_top`: if spanning
   summands carry pairwise distinct joint scalars of any family of endomorphisms, every summand is
   a joint eigenspace, and every other joint eigenspace is zero.
