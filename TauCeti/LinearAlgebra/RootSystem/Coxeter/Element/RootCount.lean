@@ -71,14 +71,14 @@ private lemma image_comp_symm_range_rootCoefficients {b : P.Base} {t : DynkinTyp
       t.cartanMatrix_apply_same e.symm
       (fun i j ↦ by simp [he (e.symm i) (e.symm j)]) hk
     have hs : (Pi.single k 1 : b.support → ℤ) ∘ e.symm = Pi.single (e k) 1 := by
-      ext i; simp [Pi.single_apply, Equiv.symm_apply_eq]
+      rw [Pi.single_comp_equiv, Equiv.symm_symm]
     rwa [hs] at horb
   · rintro ⟨i, hi⟩
     refine ⟨d ∘ e, ⟨e.symm i, ?_⟩, by ext j; simp⟩
     have horb := Matrix.comp_equiv_mem_orbit t.cartanMatrix t.cartanMatrix_apply_same
       b.cartanMatrix_apply_same e he hi
-    have hs : (Pi.single i 1 : Fin t.rank → ℤ) ∘ e = Pi.single (e.symm i) 1 := by
-      ext k; simp [Pi.single_apply, Equiv.eq_symm_apply]
+    have hs : (Pi.single i 1 : Fin t.rank → ℤ) ∘ e = Pi.single (e.symm i) 1 :=
+      Pi.single_comp_equiv e i 1
     rwa [hs] at horb
 
 /-- **A finite reduced crystallographic root pairing carrying a base of valid Cartan type `t` has

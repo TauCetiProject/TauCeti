@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.CoxeterNumber
 import Mathlib.Data.Nat.Prime.Basic
-import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
 # Exponents and fundamental degrees of Dynkin types
@@ -57,6 +56,18 @@ def exponents : DynkinType → List ℕ
 @[simp] lemma exponents_F4 : F4.exponents = [1, 5, 7, 11] := (rfl)
 @[simp] lemma exponents_G2 : G2.exponents = [1, 5] := (rfl)
 
+/-- The exponents of `E₈` are the residues modulo `30` coprime to `30`. -/
+theorem exponents_E8_eq_filter : E8.exponents = (List.range 30).filter (Nat.Coprime · 30) := by
+  decide
+
+/-- The exponents of `F₄` are the residues modulo `12` coprime to `12`. -/
+theorem exponents_F4_eq_filter : F4.exponents = (List.range 12).filter (Nat.Coprime · 12) := by
+  decide
+
+/-- The exponents of `G₂` are the residues modulo `6` coprime to `6`. -/
+theorem exponents_G2_eq_filter : G2.exponents = (List.range 6).filter (Nat.Coprime · 6) := by
+  decide
+
 /-- The **fundamental invariant degrees** `dᵢ = mᵢ + 1` of a Dynkin type. -/
 def degrees (t : DynkinType) : List ℕ :=
   t.exponents.map (· + 1)
@@ -84,6 +95,9 @@ lemma degrees_def (t : DynkinType) : t.degrees = t.exponents.map (· + 1) := (rf
 /-- **Twice the sum of the exponents of any Dynkin type equals its number of roots**:
 `2 ∑ mᵢ = |Φ|`. -/
 theorem two_mul_sum_exponents (t : DynkinType) : 2 * t.exponents.sum = t.numRoots := by
+  have hsum : ∀ (m : ℕ) (f : ℕ → ℕ),
+      ((List.range m).map f).sum = ∑ k ∈ Finset.range m, f k := fun m f => by
+    simpa only [List.toFinset_range] using (List.sum_toFinset f List.nodup_range).symm
   have hodd : ∀ m : ℕ, ∑ k ∈ Finset.range m, (2 * k + 1) = m ^ 2 := fun m => by
     have h2 := Finset.sum_range_id_mul_two m
     rw [Finset.sum_add_distrib, ← Finset.mul_sum, Finset.sum_const, Finset.card_range,
@@ -96,7 +110,7 @@ theorem two_mul_sum_exponents (t : DynkinType) : 2 * t.exponents.sum = t.numRoot
   cases t with
   | A n =>
     have h2 := Finset.sum_range_id_mul_two n
-    rw [exponents_A, List.sum_map_range, Finset.sum_add_distrib, Finset.sum_const,
+    rw [exponents_A, hsum, Finset.sum_add_distrib, Finset.sum_const,
       Finset.card_range, smul_eq_mul, mul_one, numRoots_A]
     rcases eq_or_ne n 0 with rfl | hn
     · simp
@@ -104,11 +118,11 @@ theorem two_mul_sum_exponents (t : DynkinType) : 2 * t.exponents.sum = t.numRoot
       simp only [Nat.add_sub_cancel] at h2
       nlinarith
   | B n | C n =>
-    simp only [exponents_B, exponents_C, List.sum_map_range, hodd, numRoots_B, numRoots_C]
+    simp only [exponents_B, exponents_C, hsum, hodd, numRoots_B, numRoots_C]
   | D n =>
     rcases eq_or_ne n 0 with rfl | hn
     · simp
-    · simp only [exponents_D_of_ne_zero hn, List.sum_append, List.sum_map_range, hodd,
+    · simp only [exponents_D_of_ne_zero hn, List.sum_append, hsum, hodd,
         List.sum_singleton, numRoots_D]
       obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
       simp only [Nat.add_sub_cancel]

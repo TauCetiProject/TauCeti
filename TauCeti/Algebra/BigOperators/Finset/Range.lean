@@ -80,8 +80,6 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   with common difference `2` is `J (D + J)`.
 * `Finset.sum_range_min_add_one_sub_two_mul`: the Clebsch–Gordan dimension count
   `∑_{k ≤ min m n} (m + n - 2k + 1) = (m + 1)(n + 1)`.
-* `List.prod_map_range`, `List.sum_map_range`: a product or sum of `f` mapped along `List.range n`
-  equals the product or sum over `Finset.range n`.
 -/
 
 public section
@@ -679,16 +677,3 @@ theorem sum_range_sum_range_tsub_eq_sum_ite {M : Type*} [AddCommMonoid M] (F : �
   rw [ite_eq_left (by omega), Nat.add_sub_cancel' (by omega)]
 
 end Finset
-
-namespace List
-
-/-- The product of `f` mapped along `List.range n` equals the product over `Finset.range n`. -/
-@[to_additive /-- The sum of `f` mapped along `List.range n` equals the sum over
-`Finset.range n`. -/]
-theorem prod_map_range {M : Type*} [CommMonoid M] (n : ℕ) (f : ℕ → M) :
-    ((List.range n).map f).prod = ∏ k ∈ Finset.range n, f k := by
-  rw [← Multiset.prod_coe, ← Multiset.map_coe, Multiset.coe_range, Finset.prod_eq_multiset_prod,
-    Finset.range_val]
-
-end List
-

@@ -13,6 +13,8 @@ import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.LinearAlgebra.Matrix.Permutation
+import TauCeti.Data.Fin.Basic
+import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclic
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclotomic
 import TauCeti.LinearAlgebra.Matrix.FiniteOrder
@@ -137,9 +139,8 @@ private lemma mul_reflMatrix_apply {κ : Type*} {n : ℕ}
 private lemma permMatrixHom_mulVec_single {κ : Type*} [Fintype κ] [DecidableEq κ]
     (σ : Equiv.Perm κ) (j : κ) :
     (permMatrixHom σ : Matrix κ κ ℤ) *ᵥ Pi.single j 1 = Pi.single (σ j) 1 := by
-  rw [permMatrixHom_apply, permMatrix_mulVec]
-  ext r
-  simp [Pi.single_apply, Equiv.symm_apply_eq]
+  rw [permMatrixHom_apply, permMatrix_mulVec, Equiv.Perm.inv_def,
+    Pi.single_comp_equiv σ.symm j 1, Equiv.symm_symm]
 
 private lemma permMatrixHom_mul_apply {κ₁ κ₂ : Type*} [Fintype κ₁] [DecidableEq κ₁]
     (σ : Equiv.Perm κ₁) (M : Matrix κ₁ κ₂ ℤ) (r : κ₁) (j : κ₂) :
@@ -239,10 +240,6 @@ private lemma leftInvPA_mul_matPA (n : ℕ) : leftInvPA n * matPA n = 1 := by
     hsum ⟨j.val, by omega⟩, hsum ⟨j.val + 1, by omega⟩, Matrix.one_apply, Fin.ext_iff]
   split_ifs <;> omega
 
-private lemma matPA_left_injective {n : ℕ} {κ : Type*} {X Y : Matrix (Fin n) κ ℤ}
-    (h : matPA n * X = matPA n * Y) : X = Y := by
-  simpa [← Matrix.mul_assoc, leftInvPA_mul_matPA] using congrArg (leftInvPA n * ·) h
-
 /-- Coordinate simple reflections of type `Aₙ` on `Fin (n + 1)`. -/
 private def reflCoordA (n : ℕ) (i : Fin (n + 1)) : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
   if hi : i.val + 1 < n + 1 then permMatrixHom (Equiv.swap ⟨i.val, i.isLt⟩ ⟨i.val + 1, hi⟩)
@@ -267,44 +264,36 @@ private lemma matPA_mul_coxA (n : ℕ) :
   exact prod_take_adjSwap (N := n + 1) (reflCoordA n) n (Nat.lt_succ_self n) fun i => by
     simp [reflCoordA, Nat.add_lt_add_right i.isLt 1]
 
-private lemma finRotate_pow_apply (n m : ℕ) (j : Fin (n + 1)) :
-    (finRotate (n + 1) ^ m) j = ⟨(j.val + m) % (n + 1), Nat.mod_lt _ (Nat.succ_pos n)⟩ := by
-  induction m generalizing j with
-  | zero => exact Fin.ext (by simp [Nat.mod_eq_of_lt j.isLt])
-  | succ m ih =>
-    rw [pow_succ', Equiv.Perm.mul_apply, ih, finRotate_apply]
-    exact Fin.ext (by simp [Fin.val_add, Nat.add_assoc])
-
-private lemma permMatrixHom_finRotate_pow_self (n : ℕ) :
-    (permMatrixHom (finRotate (n + 1)) : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ) ^ (n + 1) = 1 := by
-  rw [← map_pow]
-  convert map_one (permMatrixHom (n := Fin (n + 1)) (R := ℤ))
-  ext j
-  simp [finRotate_pow_apply, Nat.mod_eq_of_lt j.isLt]
-
 private lemma coxA_pow_mulVec_single_zero {n : ℕ} (hn : 0 < n) (m : ℕ) (hm : m < n) :
     coxA n ^ m *ᵥ Pi.single ⟨0, hn⟩ 1 = Pi.single ⟨m, hm⟩ 1 := by
   have hcol : (matPA n * coxA n ^ m) *ᵥ Pi.single ⟨0, hn⟩ 1 =
       matPA n *ᵥ Pi.single ⟨m, hm⟩ 1 := by
     rw [(pow_mul_eq_mul_pow (matPA_mul_coxA n).symm m).symm, ← Matrix.mulVec_mulVec,
       matPA_mulVec_single, matPA_mulVec_single, Matrix.mulVec_sub, ← map_pow,
-      permMatrixHom_mulVec_single, permMatrixHom_mulVec_single, finRotate_pow_apply,
-      finRotate_pow_apply]
+      permMatrixHom_mulVec_single, permMatrixHom_mulVec_single]
     congr 1
-    · congr 1; ext; simp [Nat.mod_eq_of_lt (by omega : m < n + 1)]
-    · congr 1; ext; simp [Nat.add_comm 1 m, Nat.mod_eq_of_lt (by omega : m + 1 < n + 1)]
+    · congr 1; exact Fin.ext (by
+        simp [Fin.coe_finRotate_pow, Nat.mod_eq_of_lt (by omega : m < n + 1)])
+    · congr 1; exact Fin.ext (by simp [Fin.coe_finRotate_pow, Nat.add_comm 1 m,
+        Nat.mod_eq_of_lt (by omega : m + 1 < n + 1)])
   have h1 := congrArg (leftInvPA n *ᵥ ·) hcol
   rwa [Matrix.mulVec_mulVec, ← Matrix.mul_assoc, leftInvPA_mul_matPA, Matrix.one_mul,
     Matrix.mulVec_mulVec, leftInvPA_mul_matPA, Matrix.one_mulVec] at h1
 
 private lemma sum_coxA_pow_eq_zero (n : ℕ) :
     (∑ m ∈ Finset.range (n + 1), coxA n ^ m) = 0 := by
-  apply matPA_left_injective
+  apply Matrix.mul_right_injective_of_inv _ _ (leftInvPA_mul_matPA n)
+  dsimp only
   rw [Matrix.mul_zero, Matrix.mul_sum]
   simp_rw [← (pow_mul_eq_mul_pow (matPA_mul_coxA n).symm _), ← Matrix.sum_mul]
   set C : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ := permMatrixHom (finRotate (n + 1))
+  have hpow : C ^ (n + 1) = 1 := by
+    dsimp [C]
+    rw [← map_pow, show finRotate (n + 1) ^ (n + 1) = 1 by
+      simpa [TauCeti.orderOf_finRotate (by omega : n + 1 ≠ 0)] using
+        pow_orderOf_eq_one (finRotate (n + 1)), map_one]
   have hgeom : (∑ m ∈ Finset.range (n + 1), C ^ m) * (1 - C) = 0 := by
-    rw [geom_sum_mul_neg, permMatrixHom_finRotate_pow_self, sub_self]
+    rw [geom_sum_mul_neg, hpow, sub_self]
   ext r j
   have hcol : matPA n *ᵥ Pi.single j 1 = (1 - C) *ᵥ Pi.single ⟨j.val, by omega⟩ 1 := by
     rw [matPA_mulVec_single, Matrix.sub_mulVec, Matrix.one_mulVec, permMatrixHom_mulVec_single]

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.RingTheory.RootsOfUnity.Complex
-import TauCeti.Data.Multiset.Nodup
+import Mathlib.Data.Multiset.MapFold
 
 /-!
 # Roots of geometric sums and `X ^ m + 1` at roots of unity
@@ -109,8 +109,10 @@ theorem multiset_eq_map_exp_of_mem_iff_of_nodup {s : Multiset ℂ} {es : List �
   have hζ : IsPrimitiveRoot ζ h := Complex.isPrimitiveRoot_exp h hh.ne'
   have hpow : ∀ e : ℕ, Complex.exp (2 * Real.pi * Complex.I * (e / (h : ℕ))) = ζ ^ e := fun e ↦ by
     dsimp [ζ]; rw [← Complex.exp_nat_mul]; congr 1; ring
-  refine Multiset.eq_map_of_mem_iff_of_nodup hs_nd hes_nd (fun x hx y hy hxy ↦ ?_) hmem
-  rw [hpow, hpow] at hxy
-  exact hζ.pow_inj (hes_lt x hx) (hes_lt y hy) hxy
+  refine (Multiset.Nodup.ext hs_nd (Multiset.Nodup.map_on (fun x hx y hy hxy ↦ ?_)
+    (Multiset.coe_nodup.mpr hes_nd))).mpr fun z ↦ ?_
+  · rw [hpow, hpow] at hxy
+    exact hζ.pow_inj (hes_lt x hx) (hes_lt y hy) hxy
+  · simp [hmem]
 
 end TauCeti

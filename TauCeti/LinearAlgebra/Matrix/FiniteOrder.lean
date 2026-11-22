@@ -62,21 +62,19 @@ theorem orderOf_eq_of_mul_eq_mul {n R : Type*} [Fintype n] [DecidableEq n]
   have hm := pow_mul_eq_mul_pow h m
   constructor
   · intro hA
-    have hsmul : P.det • B ^ m = P.det • (1 : Matrix n n R) := by
-      calc P.det • B ^ m = (P.det • (1 : Matrix n n R)) * B ^ m := by simp
-        _ = (P.adjugate * P) * B ^ m := by rw [adjugate_mul]
-        _ = P.adjugate * (A ^ m * P) := by rw [Matrix.mul_assoc, hm]
-        _ = P.adjugate * P := by rw [hA, Matrix.one_mul]
-        _ = P.det • (1 : Matrix n n R) := adjugate_mul P
-    exact ext fun i j ↦ mul_left_cancel₀ hP (by simpa using congrFun₂ hsmul i j)
+    ext i j
+    have hcol := Matrix.mulVec_injective_of_det_ne_zero hP <| by
+      simpa only [Matrix.col_mul_eq_mulVec_col] using
+        congrArg (·.col j) (by rw [← hm, hA, Matrix.one_mul, Matrix.mul_one] : P * B ^ m = P * 1)
+    exact congrFun hcol i
   · intro hB
-    have hsmul : P.det • A ^ m = P.det • (1 : Matrix n n R) := by
-      calc P.det • A ^ m = A ^ m * (P.det • (1 : Matrix n n R)) := by simp
-        _ = A ^ m * (P * P.adjugate) := by rw [mul_adjugate]
-        _ = (P * B ^ m) * P.adjugate := by rw [← Matrix.mul_assoc, hm]
-        _ = P * P.adjugate := by rw [hB, Matrix.mul_one]
-        _ = P.det • (1 : Matrix n n R) := mul_adjugate P
-    exact ext fun i j ↦ mul_left_cancel₀ hP (by simpa using congrFun₂ hsmul i j)
+    have hmT : Pᵀ * (A ^ m)ᵀ = Pᵀ * (1 : Matrix n n R)ᵀ := by
+      rw [← Matrix.transpose_mul, hm, hB, Matrix.mul_one, Matrix.transpose_one, Matrix.mul_one]
+    have hPT : (Pᵀ).det ≠ 0 := by rwa [Matrix.det_transpose]
+    ext i j
+    have hcol := Matrix.mulVec_injective_of_det_ne_zero hPT <| by
+      simpa only [Matrix.col_mul_eq_mulVec_col] using congrArg (·.col i) hmT
+    simpa only [Matrix.col_apply, Matrix.transpose_apply] using congrFun hcol j
 
 variable {A R n : Type*} [CommRing A] [CommRing R] [Algebra A R] [Fintype n] [DecidableEq n]
 
