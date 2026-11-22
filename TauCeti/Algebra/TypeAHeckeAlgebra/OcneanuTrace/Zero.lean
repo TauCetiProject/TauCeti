@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Star.Basic
-public import TauCeti.Algebra.TypeAHeckeAlgebra.CanonicalTrace
 public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Regular.Form
 public import TauCeti.RingTheory.TraceFunctional.Radical
@@ -31,24 +30,6 @@ namespace TauCeti
 namespace TypeAHeckeAlgebra
 
 variable {R : Type*} [CommRing R] {q : Rˣ}
-
-/-- Evaluating the `A_∞` regular representation at `(Finsupp.single 1 1) 1` recovers
-`canonicalTrace`. -/
-theorem canonicalTrace_eq_regularRep_toInfinite {n : ℕ} {W W' : Type*} [Group W] [Group W']
-    (cs : CoxeterSystem (CoxeterMatrix.A (n - 1)) W)
-    (cs' : CoxeterSystem coxeterMatrixAInfty W') (x : TypeAHeckeAlgebra R q n) :
-    canonicalTrace cs x =
-      InfiniteTypeAHeckeAlgebra.regularRep q cs' (toInfinite R q n x) (Finsupp.single 1 1) 1 := by
-  classical
-  refine LinearMap.congr_fun ((basisTw q cs).ext (f₁ := canonicalTrace (R := R) (q := q) cs)
-    (f₂ := (Finsupp.lapply (1 : W')).comp ((LinearMap.applyₗ (Finsupp.single (1 : W') (1 : R))).comp
-      ((InfiniteTypeAHeckeAlgebra.regularRep q cs').toLinearMap.comp
-        (toInfinite R q n).toLinearMap))) fun w ↦ ?_) x
-  simp only [LinearMap.coe_comp, Function.comp_apply, AlgHom.toLinearMap_apply,
-    LinearMap.applyₗ_apply_apply, Finsupp.lapply_apply, coe_basisTw, canonicalTrace_Tw,
-    regularRep_toInfinite_Tw_apply_single_one, Finsupp.single_apply]
-  rw [eq_comm, map_eq_one_iff _
-    (cs.parabolicHom_injective (cs' := cs') coxeterMatrixA_eq_coxeterMatrixAInfty)]
 
 /-- **The canonical trace is the `z = 0` Ocneanu trace** along `toInfinite`. -/
 theorem canonicalTrace_eq_ocneanuTrace_zero {n : ℕ} {W : Type*} [Group W]

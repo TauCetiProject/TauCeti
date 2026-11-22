@@ -808,18 +808,19 @@ open TypeAHeckeAlgebra
 variable {R : Type*} [CommRing R] {q : Rˣ} {z : R} {τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
 
 /-- **First-site Markov towers are restrictions of a Markov trace.** A family of tracial,
-block-multiplicative functionals on the finite Hecke algebras, normalized on at most one strand and
+block-multiplicative functionals on the finite Hecke algebras, normalized on one strand and
 satisfying the first-site Markov rule `φ (n + 2) (T 0 * tailIncl x) = z * φ (n + 1) x`, agrees with
 any Markov trace `τ` of parameter `z` restricted along `toInfinite`. -/
 theorem eq_toInfinite_of_T_zero_mul_tailIncl (hτ : IsMarkovTrace z τ)
     (φ : ∀ n, TypeAHeckeAlgebra R q n →ₗ[R] R)
-    (h_zero : φ 0 1 = 1) (h_one : φ 1 1 = 1)
+    (h_one : φ 1 1 = 1)
     (h_comm : ∀ n x y, φ n (x * y) = φ n (y * x))
     (h_block : ∀ a b x y, φ (a + b) (castAdd R q a b x * natAdd R q a b y) = φ a x * φ b y)
     (h_left : ∀ n x,
       φ (n + 2) (TypeAHeckeAlgebra.T q (0 : Fin (n + 1)) * tailIncl q (n + 1) x) = z * φ (n + 1) x)
     (n : ℕ) (x : TypeAHeckeAlgebra R q n) :
     φ n x = τ (toInfinite R q n x) := by
+  have h_zero : φ 0 1 = 1 := by simpa [h_one] using (h_block 0 1 1 1).symm
   let ψ : ∀ m, TypeAHeckeAlgebra R q m →ₗ[R] R := fun m ↦
     τ.comp (toInfinite R q m).toLinearMap
   have hψm (a b : ℕ) (u : TypeAHeckeAlgebra R q a) (v : TypeAHeckeAlgebra R q b) :

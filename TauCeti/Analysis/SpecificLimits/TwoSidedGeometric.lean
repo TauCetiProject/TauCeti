@@ -52,25 +52,32 @@ theorem twoSidedGeom_nonneg {a₁ a₂ r : ℝ} (h₁ : 0 ≤ a₁) (h₂ : 0 �
     (a : ℕ ⊕ₗ ℕᵒᵈ) : 0 ≤ twoSidedGeom a₁ a₂ r a := by
   cases ha : ofLex a <;> simp only [twoSidedGeom, ha] <;> positivity
 
+private def sumEquiv : (ℕ ⊕ ℕ) ≃ (ℕ ⊕ₗ ℕᵒᵈ) :=
+  (Equiv.sumCongr (Equiv.refl ℕ) toDual).trans toLex
+
+@[simp]
+private theorem sumEquiv_inl (k : ℕ) : sumEquiv (Sum.inl k) = Sum.inlₗ k := (rfl)
+
+@[simp]
+private theorem sumEquiv_inr (k : ℕ) : sumEquiv (Sum.inr k) = Sum.inrₗ (toDual k) := (rfl)
+
 /-- Absolute summability of `twoSidedGeom a₁ a₂ r` for `0 ≤ r < 1`. -/
 theorem summable_norm_twoSidedGeom (a₁ a₂ : ℝ) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
     Summable fun a ↦ ‖twoSidedGeom a₁ a₂ r a‖ := by
   have hgeom := summable_geometric_of_lt_one hr0 hr1
-  refine ((Equiv.sumCongr (Equiv.refl ℕ) toDual).trans toLex).summable_iff.mp <|
-    Summable.sum _
-      ((hgeom.mul_left ‖a₁‖).congr fun k ↦ by simp [abs_of_nonneg hr0])
-      ((hgeom.mul_left ‖a₂‖).congr fun k ↦ by simp [abs_of_nonneg hr0])
+  refine sumEquiv.summable_iff.mp <| Summable.sum _
+    ((hgeom.mul_left ‖a₁‖).congr fun k ↦ by simp [abs_of_nonneg hr0])
+    ((hgeom.mul_left ‖a₂‖).congr fun k ↦ by simp [abs_of_nonneg hr0])
 
 /-- Total sum `(a₁ + a₂) / (1 - r)` of `twoSidedGeom a₁ a₂ r` for `0 ≤ r < 1`. -/
 theorem tsum_twoSidedGeom (a₁ a₂ : ℝ) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
     (∑' a, twoSidedGeom a₁ a₂ r a) = (a₁ + a₂) / (1 - r) := by
   have hgeom := summable_geometric_of_lt_one hr0 hr1
-  let e : (ℕ ⊕ ℕ) ≃ (ℕ ⊕ₗ ℕᵒᵈ) := (Equiv.sumCongr (Equiv.refl ℕ) toDual).trans toLex
-  rw [(e.tsum_eq _).symm.trans (Summable.tsum_sum (f := twoSidedGeom a₁ a₂ r ∘ e)
-    (hgeom.mul_left a₁) (hgeom.mul_left a₂))]
-  simp only [e, comp_def, Equiv.trans_apply, Equiv.sumCongr_apply, Equiv.refl_apply, Sum.map_inl,
-    Sum.map_inr, twoSidedGeom, ofLex_toLex, ofDual_toDual, hgeom.tsum_mul_left,
-    tsum_geometric_of_lt_one hr0 hr1]
+  rw [(sumEquiv.tsum_eq _).symm.trans (Summable.tsum_sum (f := twoSidedGeom a₁ a₂ r ∘ sumEquiv)
+    (by simpa [comp_def] using hgeom.mul_left a₁)
+    (by simpa [comp_def] using hgeom.mul_left a₂))]
+  simp only [comp_def, sumEquiv_inl, sumEquiv_inr, twoSidedGeom_inl, twoSidedGeom_inr,
+    ofDual_toDual, hgeom.tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1]
   ring
 
 /-- Initial-segment sum of `twoSidedGeom a₁ a₂ r` strictly below `Sum.inlₗ m`. -/
@@ -81,13 +88,11 @@ theorem mul_tsum_lt_twoSidedGeom_inl (a₁ a₂ r : ℝ) (m : ℕ) :
       (∑ k ∈ Finset.range m, a₁ * r ^ k) := by
     convert hasSum_subtype_iff_indicator.mp ((Finset.range m).hasSum fun k ↦ a₁ * r ^ k) using 1
     ext k; simp [Set.indicator_apply]
-  let e : (ℕ ⊕ ℕ) ≃ (ℕ ⊕ₗ ℕᵒᵈ) := (Equiv.sumCongr (Equiv.refl ℕ) toDual).trans toLex
-  rw [(e.tsum_eq _).symm.trans (Summable.tsum_sum
-    (f := (fun a : ℕ ⊕ₗ ℕᵒᵈ ↦ if a < Sum.inlₗ m then twoSidedGeom a₁ a₂ r a else 0) ∘ e)
-    (by simpa [e, comp_def] using hpref.summable) (by simp [e, comp_def]))]
-  simp only [e, comp_def, Equiv.trans_apply, Equiv.sumCongr_apply, Equiv.refl_apply, Sum.map_inl,
-    Sum.map_inr, twoSidedGeom, ofLex_toLex, Sum.Lex.inl_lt_inl_iff, Sum.Lex.not_inr_lt_inl,
-    ↓reduceIte, tsum_zero, add_zero, hpref.tsum_eq, ← Finset.mul_sum]
+  rw [(sumEquiv.tsum_eq _).symm.trans (Summable.tsum_sum
+    (f := (fun a : ℕ ⊕ₗ ℕᵒᵈ ↦ if a < Sum.inlₗ m then twoSidedGeom a₁ a₂ r a else 0) ∘ sumEquiv)
+    (by simpa [comp_def] using hpref.summable) (by simp [comp_def]))]
+  simp only [comp_def, sumEquiv_inl, sumEquiv_inr, twoSidedGeom_inl, Sum.Lex.inl_lt_inl_iff,
+    Sum.Lex.not_inr_lt_inl, ↓reduceIte, tsum_zero, add_zero, hpref.tsum_eq, ← Finset.mul_sum]
   rw [mul_left_comm, mul_neg_geom_sum]
 
 /-- Initial-segment sum of `twoSidedGeom a₁ a₂ r` strictly below `Sum.inrₗ (toDual m)`. -/
@@ -108,15 +113,14 @@ theorem mul_tsum_lt_twoSidedGeom_inr (a₁ a₂ : ℝ) {r : ℝ} (hr0 : 0 ≤ r)
       tsum_congr (g := fun k ↦ if m < k then a₂ * r ^ k else 0) fun k ↦ by
         simp [Set.indicator_apply]] at hsplit
     linarith
-  let e : (ℕ ⊕ ℕ) ≃ (ℕ ⊕ₗ ℕᵒᵈ) := (Equiv.sumCongr (Equiv.refl ℕ) toDual).trans toLex
-  rw [(e.tsum_eq _).symm.trans (Summable.tsum_sum
-    (f := (fun a : ℕ ⊕ₗ ℕᵒᵈ ↦ if a < Sum.inrₗ (toDual m) then twoSidedGeom a₁ a₂ r a else 0) ∘ e)
-    (by simpa [e, comp_def] using hgeom.mul_left a₁)
-    (by simpa [e, comp_def] using htail_sum))]
-  simp only [e, comp_def, Equiv.trans_apply, Equiv.sumCongr_apply, Equiv.refl_apply, Sum.map_inl,
-    Sum.map_inr, twoSidedGeom, ofLex_toLex, ofDual_toDual, Sum.Lex.inl_lt_inr,
-    Sum.Lex.inr_lt_inr_iff, toDual_lt_toDual, ↓reduceIte, htail, hgeom.tsum_mul_left,
-    tsum_geometric_of_lt_one hr0 hr1, ← Finset.mul_sum]
+  rw [(sumEquiv.tsum_eq _).symm.trans (Summable.tsum_sum
+    (f := (fun a : ℕ ⊕ₗ ℕᵒᵈ ↦ if a < Sum.inrₗ (toDual m) then twoSidedGeom a₁ a₂ r a else 0) ∘
+      sumEquiv)
+    (by simpa [comp_def] using hgeom.mul_left a₁)
+    (by simpa [comp_def] using htail_sum))]
+  simp only [comp_def, sumEquiv_inl, sumEquiv_inr, twoSidedGeom_inl, twoSidedGeom_inr,
+    ofDual_toDual, Sum.Lex.inl_lt_inr, Sum.Lex.inr_lt_inr_iff, toDual_lt_toDual, ↓reduceIte,
+    htail, hgeom.tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, ← Finset.mul_sum]
   rw [mul_add, mul_sub, mul_left_comm (1 - r) a₂ (∑ _ ∈ _, _), mul_neg_geom_sum]
   have h1r : 1 - r ≠ 0 := sub_ne_zero.mpr hr1.ne'
   field_simp; ring

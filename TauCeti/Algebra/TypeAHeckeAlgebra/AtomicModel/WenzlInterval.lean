@@ -11,6 +11,7 @@ import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic
 import TauCeti.Analysis.SpecificLimits.TwoSidedGeometric
 
 /-!
@@ -50,12 +51,7 @@ section CountableGeometricModels
 
 private theorem mul_markovParam_proj_eq {q : ℂˣ} {Q : ℝ} (hqQ : (q : ℂ) ^ 2 = Q) (η : ℝ) :
     (q : ℂ) * ((q : ℂ) * η - (↑q⁻¹ : ℂ) * (1 - η)) = (((1 + Q) * η - 1 : ℝ) : ℂ) := by
-  have _ := q.ne_zero
-  rw [Units.val_inv_eq_inv_val]
-  push_cast
-  rw [← hqQ]
-  field_simp
-  ring
+  simpa [← hqQ] using mul_sub_val_inv_mul_one_sub q (η : ℂ)
 
 private theorem countableAtomicTrace_ofReal_eq_ocneanuTrace_of_leftSlice {ι : Type*}
     [LinearOrder ι] (pos : ι → Prop) [DecidablePred pos] {q : ℂˣ} {Q : ℝ}

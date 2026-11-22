@@ -27,6 +27,7 @@ its own inverse in the form `u - u⁻¹ ≠ 0`, as used for quantum integers at 
 * `TauCeti.isUnit_one_add_mul_comm`: `IsUnit (1 + a * b) ↔ IsUnit (1 + b * a)`.
 * `Units.val_sub_val_inv_ne_zero`: in a ring without zero divisors, a unit `u ≠ ±1` satisfies
   `u - u⁻¹ ≠ 0`.
+* `Units.one_add_sq_eq_mul_add_inv`: for a unit `q`, `1 + q ^ 2 = q * (q + q⁻¹)`.
 -/
 
 public section
@@ -50,10 +51,15 @@ end TauCeti
 
 namespace Units
 
-variable {R : Type*} [Ring R] [NoZeroDivisors R]
+variable {R : Type*} [Ring R]
+
+/-- For a unit `q` in a ring, `1 + q ^ 2 = q * (q + q⁻¹)`. -/
+theorem one_add_sq_eq_mul_add_inv (q : Rˣ) :
+    1 + (q : R) ^ 2 = q * ((q : R) + ↑q⁻¹) := by
+  rw [mul_add, ← sq, Units.mul_inv, add_comm]
 
 /-- In a ring without zero divisors, a unit `u ≠ ±1` satisfies `u - u⁻¹ ≠ 0`. -/
-theorem val_sub_val_inv_ne_zero {u : Rˣ} (hu₁ : u ≠ 1) (hu₂ : u ≠ -1) :
+theorem val_sub_val_inv_ne_zero [NoZeroDivisors R] {u : Rˣ} (hu₁ : u ≠ 1) (hu₂ : u ≠ -1) :
     (u : R) - ↑u⁻¹ ≠ 0 := fun h ↦
   ((inv_eq_self_iff u).1 (Units.ext (sub_eq_zero.1 h).symm)).elim hu₁ hu₂
 

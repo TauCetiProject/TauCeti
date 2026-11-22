@@ -74,10 +74,10 @@ coefficient rings here may have nilpotents.
   bounded by `C` gives an evaluation bound by `C`, even without norm-one identity in the target;
   `PowerSeries.norm_evalAt_le_gaussNorm_of_norm_algebraMap_le` is the contractive case.
 * `PowerSeries.norm_evalAt_le_mul_gaussNorm`: a Gauss-norm bound in any normed algebra.
-* `PowerSeries.evalAt_add_of_summable_norm`, `PowerSeries.evalAt_sum_of_summable_norm` and
-  `PowerSeries.evalAt_mul_of_summable_norm`: in a complete normed algebra, evaluation preserves
-  addition, finite sums and multiplication on series whose terms at the point are absolutely
-  summable.
+* `PowerSeries.evalAt_add_of_summable_norm`, `PowerSeries.evalAt_sum_of_summable_norm`,
+  `PowerSeries.evalAt_mul_of_summable_norm` and `PowerSeries.evalAt_mul_coe_of_summable_norm`:
+  in a complete normed algebra, evaluation preserves addition, finite sums, multiplication and
+  polynomial multiplication on series whose terms at the point are absolutely summable.
 * `PowerSeries.IsRestricted.summable_smul_pow`, `PowerSeries.IsRestricted.hasSum_evalAt`,
   `PowerSeries.IsRestricted.evalAt_add` and `PowerSeries.IsRestricted.evalAt_mul`: a series
   restricted at `c` converges at every `b` with `‖b‖ ≤ c` in a complete ultrametric algebra,
@@ -473,6 +473,14 @@ theorem hasSum_evalAt_of_summable_norm {R A : Type*} [CommSemiring R] [Seminorme
   rw [evalAt_def]
   exact hf.of_norm.hasSum
 
+/-- The terms `(coeff n (p : R⟦X⟧)) • b ^ n` of a polynomial coerced to a power series are
+absolutely summable at any point `b`. -/
+theorem summable_norm_coeff_coe_smul_pow {R A : Type*} [CommSemiring R] [SeminormedRing A]
+    [Algebra R A] (p : Polynomial R) (b : A) :
+    Summable fun n ↦ ‖coeff n (p : R⟦X⟧) • b ^ n‖ :=
+  summable_of_ne_finset_zero (s := Finset.range (p.natDegree + 1)) fun k hk ↦ by
+    simp [p.coeff_eq_zero_of_natDegree_lt (by simpa using hk)]
+
 variable {R A : Type*} [CommSemiring R] [NormedRing A] [Algebra R A] [CompleteSpace A]
   {f g : R⟦X⟧} {b : A}
 
@@ -502,6 +510,13 @@ theorem evalAt_mul_of_summable_norm (hf : Summable fun n ↦ ‖coeff n f • b 
   rw [coeff_mul, Finset.sum_smul]
   refine Finset.sum_congr rfl fun p hp ↦ ?_
   rw [← Finset.mem_antidiagonal.mp hp, pow_add, smul_mul_smul_comm]
+
+/-- Multiplying an absolutely convergent series at `b` by a polynomial multiplies its value at `b`
+by the polynomial evaluated at `b`. -/
+theorem evalAt_mul_coe_of_summable_norm (p : Polynomial R)
+    (hf : Summable fun n ↦ ‖coeff n f • b ^ n‖) :
+    (f * (p : R⟦X⟧)).evalAt b = f.evalAt b * Polynomial.aeval b p := by
+  rw [evalAt_mul_of_summable_norm hf (summable_norm_coeff_coe_smul_pow p b), evalAt_coe]
 
 end Summable
 

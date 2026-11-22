@@ -165,7 +165,7 @@ theorem atomicTrace_eq_ocneanuTrace_of_leftSlice [Fintype ι] (p : ι → R) {z 
     atomicTrace pos q p n x =
       InfiniteTypeAHeckeAlgebra.ocneanuTrace R q z (toInfinite R q n x) :=
   (InfiniteTypeAHeckeAlgebra.isMarkovTrace_ocneanuTrace z).eq_toInfinite_of_T_zero_mul_tailIncl
-    (atomicTrace pos q p) (by simp) (by simp [hp]) (fun _ ↦ atomicTrace_mul_comm pos q p)
+    (atomicTrace pos q p) (by simp [hp]) (fun _ ↦ atomicTrace_mul_comm pos q p)
     (fun _ _ ↦ atomicTrace_castAdd_mul_natAdd pos q p)
     (fun _ ↦ atomicTrace_T_zero_mul_tailIncl pos q p hz) n x
 

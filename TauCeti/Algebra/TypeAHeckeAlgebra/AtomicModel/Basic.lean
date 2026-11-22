@@ -68,6 +68,9 @@ Positivity is not considered: everything here is algebraic, over any commutative
   and `TauCeti.TypeAHeckeAlgebra.atomicTrace_strandIncl`: the atomic trace is tracial, its value
   at `1`, and its behaviour under adding a strand.
 * `TauCeti.TypeAHeckeAlgebra.atomicTrace_strandIncl_mul_T_last`: the Markov rule.
+* `TauCeti.TypeAHeckeAlgebra.atomicTrace_subtype_eq_of_eq_zero` and
+  `TauCeti.TypeAHeckeAlgebra.atomicTrace_subtype_ne_zero`: invariance under dropping
+  zero-weight letters.
 * `TauCeti.TypeAHeckeAlgebra.atomicTrace_eq_ocneanuTrace`: **the atomic trace is the Ocneanu
   trace.**
 
@@ -354,6 +357,38 @@ theorem atomicTrace_eq_ocneanuTrace {z : R} (hp : ∑ a, p a = 1)
   eq_ocneanuTrace_toInfinite (atomicTrace pos q p) (by simp)
     (fun _ _ ↦ by rw [atomicTrace_strandIncl, hp, mul_one]) (fun _ ↦ atomicTrace_mul_comm pos q p)
     (fun _ ↦ atomicTrace_strandIncl_mul_T_last pos q p hz) n x
+
+omit [Fintype ι] in
+/-- Restricting the alphabet of a finite atomic model to a predicate outside which all weights
+vanish does not change `atomicTrace`. -/
+theorem atomicTrace_subtype_eq_of_eq_zero [Finite ι] (P : ι → Prop)
+    (hp : ∀ a, ¬ P a → p a = 0) (x : TypeAHeckeAlgebra R q n) :
+    atomicTrace (fun a : {a : ι // P a} ↦ pos a) q (fun a ↦ p a) n x =
+      atomicTrace pos q p n x := by
+  classical
+  cases nonempty_fintype ι
+  rw [atomicTrace_eq_sum, atomicTrace_eq_sum]
+  have hsub :
+      (∑ w ∈ Finset.univ.image (fun (w : Fin n → {a : ι // P a}) ↦ Subtype.val ∘ w),
+        signedChecked pos q x (single w 1) w * ∏ i, p (w i)) =
+      ∑ w : Fin n → ι, signedChecked pos q x (single w 1) w * ∏ i, p (w i) := by
+    refine Finset.sum_subset (Finset.subset_univ _) fun w _ hw ↦ ?_
+    have hnot : ¬ ∀ i, P (w i) := fun hP ↦
+      hw (Finset.mem_image.mpr ⟨fun i ↦ ⟨w i, hP i⟩, Finset.mem_univ _, rfl⟩)
+    obtain ⟨i, hi⟩ := not_forall.mp hnot
+    rw [Finset.prod_eq_zero (Finset.mem_univ i) (hp (w i) hi), mul_zero]
+  rw [← hsub, Finset.sum_image (Subtype.val_injective.comp_left.injOn)]
+  refine Finset.sum_congr rfl fun w _ ↦ ?_
+  rw [signedChecked_strictMono_single_apply pos q (fun a : {a : ι // P a} ↦ pos a)
+    (Subtype.strictMono_coe P) (fun _ ↦ Iff.rfl)]
+  rfl
+
+omit [Fintype ι] in
+/-- Dropping zero-weight letters from a finite alphabet does not change `atomicTrace`. -/
+theorem atomicTrace_subtype_ne_zero [Finite ι] (x : TypeAHeckeAlgebra R q n) :
+    atomicTrace (fun a : {a : ι // p a ≠ 0} ↦ pos a) q (fun a ↦ p a) n x =
+      atomicTrace pos q p n x :=
+  atomicTrace_subtype_eq_of_eq_zero pos q p (fun a ↦ p a ≠ 0) (fun _ h ↦ not_not.mp h) x
 
 end Trace
 

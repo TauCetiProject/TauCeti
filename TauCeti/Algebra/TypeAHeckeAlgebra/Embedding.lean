@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Basis
+public import TauCeti.Algebra.TypeAHeckeAlgebra.CanonicalTrace
 public import TauCeti.GroupTheory.Coxeter.Restriction
 public import TauCeti.GroupTheory.Perm.Coxeter
 
@@ -41,6 +42,8 @@ injective.
 
 * `TauCeti.TypeAHeckeAlgebra.regularRep_toInfinite_Tw_apply_single_one`: the image of `T_w` in the
   infinite algebra takes the basis vector of `1` to that of the image of `w`.
+* `TauCeti.TypeAHeckeAlgebra.canonicalTrace_eq_regularRep_toInfinite`: evaluating the `A_∞`
+  regular representation at `(Finsupp.single 1 1) 1` recovers `canonicalTrace`.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.T_ne_algebraMap` and
   `TauCeti.TypeAHeckeAlgebra.T_ne_algebraMap`: over a nontrivial ring a generator is never a
   scalar, whatever the unit `q`.
@@ -160,6 +163,17 @@ private theorem regularRep_toInfinite_apply_single_one (x : TypeAHeckeAlgebra R 
       rw [coe_basisTw] at hw
       simp [hw]
   exact LinearMap.congr_fun h x
+
+/-- Evaluating the `A_∞` regular representation at `(Finsupp.single 1 1) 1` recovers
+`canonicalTrace`. -/
+theorem canonicalTrace_eq_regularRep_toInfinite (x : TypeAHeckeAlgebra R q n) :
+    canonicalTrace cs x =
+      InfiniteTypeAHeckeAlgebra.regularRep q cs' (toInfinite R q n x) (single 1 1) 1 := by
+  rw [regularRep_toInfinite_apply_single_one cs cs',
+    ← map_one (cs.parabolicHom cs' coxeterMatrixA_eq_coxeterMatrixAInfty),
+    mapDomain_apply_of_injective
+      (cs.parabolicHom_injective (cs' := cs') coxeterMatrixA_eq_coxeterMatrixAInfty),
+    canonicalTrace_apply]
 
 variable (R q n) in
 /-- **The Hecke algebra on `n` strands embeds in the infinite type-A Hecke algebra**, over every

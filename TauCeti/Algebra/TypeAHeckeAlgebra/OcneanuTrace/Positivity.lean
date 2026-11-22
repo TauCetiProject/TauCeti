@@ -11,7 +11,6 @@ public import TauCeti.Analysis.StarAlgebra.GNS.Basic
 import Mathlib.Analysis.Complex.Order
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.LeftSlice
 import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.WenzlInterval
 import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Zero
 
@@ -76,7 +75,7 @@ private theorem ocneanuTrace_wenzlParam_nonneg {q : ℂˣ} [Fact (IsSelfAdjoint 
     have hcQ : 0 ≤ c * Q ^ (a : ℕ) := by positivity
     simpa [hQ] using Complex.zero_le_real.mpr hcQ
   have hmap (d : ℤ) : ((wenzlParam d Q : ℝ) : ℂ) = wenzlParam d ((q : ℂ) ^ 2) := by
-    simpa [hQ] using map_wenzlParam Complex.ofRealHom d Q
+    rw [← hQ]; exact map_wenzlParam Complex.ofRealHom d Q
   cases b
   · simp only [Bool.false_eq_true, ↓reduceIte, hmap, mul_wenzlParam_neg_natCast_sub h1Q hcZ,
       ← TypeAHeckeAlgebra.atomicTrace_negGeometric_eq q hcZ (star y * y)]

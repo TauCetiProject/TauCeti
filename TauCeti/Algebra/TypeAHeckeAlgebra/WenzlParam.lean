@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import TauCeti.Algebra.Ring.Units
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Field.GeomSum
@@ -117,6 +118,7 @@ theorem wenzlParam_neg_natCast (r : ℕ) (Q : K) :
   · rw [Nat.cast_succ, ← Int.negSucc_eq, wenzlParam, Nat.add_sub_cancel]
 
 /-- `wenzlParam` commutes with ring homomorphisms between fields. -/
+@[simp]
 theorem map_wenzlParam {L : Type*} [Field L] (f : K →+* L) (d : ℤ) (Q : K) :
     f (wenzlParam d Q) = wenzlParam d (f Q) := by
   obtain ⟨r, rfl | rfl⟩ := Int.eq_nat_or_neg d <;>
@@ -404,6 +406,7 @@ theorem mem_wenzlPositiveSet_of_mem_Icc_of_le_one {Q : ℝ} (hQ0 : 0 ≤ Q) (hQ1
   exact Or.inl ⟨(min_eq_right hle).symm ▸ hη.1, (max_eq_left hle).symm ▸ hη.2⟩
 
 /-- Inversion symmetry `wenzlPositiveSet Q⁻¹ = wenzlPositiveSet Q` for `0 < Q`. -/
+@[simp]
 theorem wenzlPositiveSet_inv {Q : ℝ} (hQ : 0 < Q) : wenzlPositiveSet Q⁻¹ = wenzlPositiveSet Q := by
   have h1 : 1 / (1 + Q⁻¹) = Q / (1 + Q) := by field_simp; ring
   have h2 : Q⁻¹ / (1 + Q⁻¹) = 1 / (1 + Q) := by field_simp; ring
@@ -412,6 +415,7 @@ theorem wenzlPositiveSet_inv {Q : ℝ} (hQ : 0 < Q) : wenzlPositiveSet Q⁻¹ = 
     min_comm (Q / (1 + Q)), max_comm (Q / (1 + Q)), wenzlParam_inv]
 
 /-- Complement symmetry `1 - η ∈ wenzlPositiveSet Q ↔ η ∈ wenzlPositiveSet Q` for `0 < Q`. -/
+@[simp]
 theorem one_sub_mem_wenzlPositiveSet_iff {Q : ℝ} (hQ : 0 < Q) {η : ℝ} :
     1 - η ∈ wenzlPositiveSet Q ↔ η ∈ wenzlPositiveSet Q := by
   suffices h : ∀ x, x ∈ wenzlPositiveSet Q → 1 - x ∈ wenzlPositiveSet Q from
@@ -462,16 +466,6 @@ theorem mul_wenzlParam_neg_natCast_sub {q : Kˣ} (hQ : 1 + (q : K) ^ 2 ≠ 0) {r
   field_simp
   linear_combination -((1 + (q : K) ^ 2) * hg) + (1 + (q : K) ^ 2) * hc
 
-private theorem one_add_sq_ne_zero_of_eq_add_inv {q s : Kˣ} (hs : (s : K) = q + ↑q⁻¹) :
-    1 + (q : K) ^ 2 ≠ 0 := by
-  have hq : (q : K) ≠ 0 := q.ne_zero
-  have hqs : 1 + (q : K) ^ 2 = q * s := by
-    rw [hs, Units.val_inv_eq_inv_val]
-    field_simp
-    ring
-  rw [hqs]
-  exact mul_ne_zero hq s.ne_zero
-
 namespace InfiniteTypeAHeckeAlgebra
 
 variable {q : Kˣ}
@@ -490,7 +484,9 @@ theorem ocneanuTrace_mul_eigenprojection_geometric (s : Kˣ) (hs : (s : K) = q +
       wenzlParam ((r + 1 : ℕ) : ℤ) ((q : K) ^ 2) *
         ocneanuTrace K q (c * (q : K) ^ (2 * r + 1)) x :=
   (isMarkovTrace_ocneanuTrace _).map_mul_eigenprojection s hs
-    (mul_wenzlParam_natCast_sub (one_add_sq_ne_zero_of_eq_add_inv hs) hc).symm hx
+    (mul_wenzlParam_natCast_sub
+      (by rw [Units.one_add_sq_eq_mul_add_inv, ← hs]; exact mul_ne_zero q.ne_zero s.ne_zero)
+      hc).symm hx
 
 /-- **The projection parameter of a negative geometric atomic model** is `wenzlParam (-(r + 1)) Q`
 (`Q = q ^ 2`, `c * [r + 1]_Q = 1`). -/
@@ -502,7 +498,9 @@ theorem ocneanuTrace_mul_eigenprojection_negGeometric (s : Kˣ) (hs : (s : K) = 
       wenzlParam (-((r + 1 : ℕ) : ℤ)) ((q : K) ^ 2) *
         ocneanuTrace K q (-(c * ↑q⁻¹)) x :=
   (isMarkovTrace_ocneanuTrace _).map_mul_eigenprojection s hs
-    (mul_wenzlParam_neg_natCast_sub (one_add_sq_ne_zero_of_eq_add_inv hs) hc).symm hx
+    (mul_wenzlParam_neg_natCast_sub
+      (by rw [Units.one_add_sq_eq_mul_add_inv, ← hs]; exact mul_ne_zero q.ne_zero s.ne_zero)
+      hc).symm hx
 
 end InfiniteTypeAHeckeAlgebra
 
