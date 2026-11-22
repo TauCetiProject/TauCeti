@@ -12,7 +12,8 @@ public import Mathlib.Analysis.Normed.Affine.Isometry
 /-!
 # Inner-product half-spaces
 
-A translation orthogonal to the normal vector preserves a strict half-space. The ball of radius
+Open and closed half-spaces are convex. A translation orthogonal to the normal vector preserves a
+strict half-space. The ball of radius
 `r` about a unit vector `x` lies in the half-space `{z | 1 - r ≤ ⟪x, z⟫}`, and more generally a
 closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever `⟪w, ν⟫ + r * ‖ν‖ < c`
 (`TauCeti.closedBall_subset_setOf_inner_lt`) and in `{y | c < ⟪y, ν⟫}` whenever
@@ -48,6 +49,14 @@ theorem convex_of_halfSpace {E : Type*} [SeminormedAddCommGroup E] [InnerProduct
   have h : s = {x | c < innerSL ℝ ν x} := Set.ext fun x => by simp [hΩ x, real_inner_comm]
   rw [h]
   exact convex_halfSpace_gt (innerSL ℝ ν).toLinearMap.isLinear c
+
+/-- The closed half-space `{x | c ≤ ⟪x, ν⟫}` is convex. -/
+theorem convex_setOf_le_inner {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
+    (ν : E) (c : ℝ) : Convex ℝ {x : E | c ≤ ⟪x, ν⟫_ℝ} := by
+  have h : {x : E | c ≤ ⟪x, ν⟫_ℝ} = {x | c ≤ innerSL ℝ ν x} :=
+    Set.ext fun x => by simp [real_inner_comm]
+  rw [h]
+  exact convex_halfSpace_ge (innerSL ℝ ν).toLinearMap.isLinear c
 
 /-- The inner product of a unit vector `x` with `z` is at least `1 - ‖z - x‖`. -/
 theorem one_sub_norm_sub_le_inner {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]

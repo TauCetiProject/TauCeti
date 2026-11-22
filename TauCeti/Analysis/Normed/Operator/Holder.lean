@@ -21,8 +21,9 @@ compact set the uniform bounds are automatic for a positive exponent
 
 If one argument vanishes off a set `s`, the other need only be Hölder and bounded on `s`
 (`ContinuousLinearMap.holderWith_comp₂_of_eq_zero`, and `HolderWith.smul_of_eq_zero` for scalar
-multiplication): this is how a cutoff extends a function given on `s` to the whole space, and how
-freezing a coefficient on the support of a localized function is estimated.
+multiplication, with its relative form `HolderOnWith.smul_of_eq_zero` on a set `t`): this is how a
+cutoff extends a function given on `s` to the whole space, and how freezing a coefficient on the
+support of a localized function is estimated.
 
 A continuous linear map applied after a Hölder function is Hölder, the constant multiplied by
 the operator norm (`ContinuousLinearMap.holderWith_comp`).
@@ -168,6 +169,34 @@ theorem smul_of_eq_zero {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G
   refine h.mono ?_
   rw [ContinuousLinearMap.opNNNorm_flip, add_comm]
   exact mul_le_of_le_one_left zero_le ContinuousLinearMap.opNNNorm_lsmul_le
+
+end HolderWith
+
+namespace HolderOnWith
+
+variable {𝕜 X G : Type*} [NontriviallyNormedField 𝕜] [PseudoEMetricSpace X]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- The relative form of `HolderWith.smul_of_eq_zero`: a scalar factor that is Hölder and bounded
+on a set `t` and vanishes at the points of `t` off a set `s` turns a function that is Hölder and
+bounded only on `s ∩ t` into a function that is Hölder on `t`. This is how a cutoff `c` extends a
+function given on `s ∩ t` to all of `t`, for instance from a half-ball to a closed half-space. -/
+theorem smul_of_eq_zero {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G} {s t : Set X}
+    (hc : HolderOnWith Kc α c t) (hf : HolderOnWith Kf α f (s ∩ t))
+    (hcnorm : ∀ x ∈ t, ‖c x‖ ≤ Mc) (hfnorm : ∀ x ∈ s ∩ t, ‖f x‖ ≤ Mf)
+    (hc0 : ∀ x ∈ t, x ∉ s → c x = 0) :
+    HolderOnWith (Mc * Kf + Mf * Kc) α (fun x ↦ c x • f x) t :=
+  HolderWith.restrict_iff.1 <| HolderWith.smul_of_eq_zero (s := {x : t | (x : X) ∈ s})
+    hc.holderWith (fun x hx y hy ↦ hf.edist_le ⟨hx, x.property⟩ ⟨hy, y.property⟩)
+    (fun x ↦ hcnorm x x.property) (fun x hx ↦ hfnorm x ⟨hx, x.property⟩)
+    fun x hx ↦ hc0 x x.property hx
+
+end HolderOnWith
+
+namespace HolderWith
+
+variable {𝕜 X G : Type*} [NontriviallyNormedField 𝕜] [PseudoEMetricSpace X]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
 
 /-- For a scalar-valued continuous multilinear map `L` and an `α`-Hölder function `g` with
 constant `H`, `‖L.smulRight (g x - g y)‖ ≤ H (‖L‖ dist(x, y)^α)`. -/

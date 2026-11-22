@@ -66,6 +66,8 @@ constant never matters for cutting off, where one is free to shrink the radius i
   is at most `|min (dist x x₀) r|`, with equality unless `dist x x₀ = 0` and `r < 0`.
 * `TauCeti.lipschitzWith_centeredRadialRetraction`: for `0 ≤ r`, the centred retraction is
   `2`-Lipschitz.
+* `Convex.centeredRadialRetraction_mem`: for `0 ≤ r`, the centred retraction maps a convex set
+  containing the centre into itself.
 * `LipschitzOnWith.comp_centeredRadialRetraction`: precomposing with the centred retraction makes a
   map that is Lipschitz on the closed ball globally Lipschitz, with twice the constant.
 * `LipschitzOnWith.comp_radialRetraction`: precomposing with it makes a map that is Lipschitz on
@@ -348,6 +350,14 @@ theorem mapsTo_radialRetraction (hr : 0 ≤ r) :
 theorem mapsTo_centeredRadialRetraction {x₀ : E} (hr : 0 ≤ r) :
     MapsTo (centeredRadialRetraction x₀ r) univ (closedBall x₀ r) :=
   fun x _ ↦ centeredRadialRetraction_mem_closedBall hr x
+
+/-- The centred radial retraction maps a convex set containing the centre into itself: it moves
+each point along the segment towards the centre. -/
+theorem _root_.Convex.centeredRadialRetraction_mem {s : Set E} (hs : Convex ℝ s) {x₀ : E}
+    (hx₀ : x₀ ∈ s) (hx : x ∈ s) (hr : 0 ≤ r) : centeredRadialRetraction x₀ r x ∈ s := by
+  rw [centeredRadialRetraction_def, radialRetraction_def]
+  exact hs.add_smul_sub_mem hx₀ hx
+    ⟨le_min zero_le_one (div_nonneg hr (norm_nonneg _)), min_le_left _ _⟩
 
 /-- For nonnegative radius `r`, the radial retraction as a map into the closed ball of radius
 `r`. -/
