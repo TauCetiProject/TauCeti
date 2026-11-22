@@ -49,8 +49,6 @@ two- or three-variable object can rewrite rather than unfold them.
   `TauCeti.finRotate_finSumFinInterleaveEquiv_inl` and
   `TauCeti.finRotate_finSumFinInterleaveEquiv_inr`: one step of `finRotate (2 * k)` moves from
   `2 * t` to `2 * t + 1`, and from `2 * t + 1` to the even position of `finRotate k t`.
-  Its inverse `TauCeti.finSumFinInterleaveEquiv_symm_apply` reads the parity of a position and
-  halves it.
 
 ## Implementation notes
 
@@ -59,9 +57,6 @@ The constructions are implementation details: `Mathlib.Data.Fintype.BigOperators
 than re-exported, as is `TauCeti.Data.Fin.Basic`, which supplies the value formula for
 `finRotate`. Only the finite sum, finiteness, equivalence, rotation and embedding interfaces needed
 by the declaration types are public.
-
-The two rotation formulas are simp lemmas of high priority, so that they fire before Mathlib's
-`finRotate_apply` turns the rotation into an addition in `Fin (2 * k)`.
 -/
 
 public section
@@ -181,15 +176,7 @@ theorem val_finSumFinInterleaveEquiv_inr {k : ℕ} (t : Fin k) :
     (finSumFinInterleaveEquiv k (.inr t) : ℕ) = 2 * t + 1 :=
   (rfl)
 
-/-- The inverse interleaving reads an even position on the left and an odd position on the right,
-at half the position. -/
-theorem finSumFinInterleaveEquiv_symm_apply {k : ℕ} (s : Fin (2 * k)) :
-    (finSumFinInterleaveEquiv k).symm s =
-      if (s : ℕ) % 2 = 0 then .inl ⟨s / 2, by omega⟩ else .inr ⟨s / 2, by omega⟩ :=
-  (rfl)
-
 /-- The step after the even position `2 * t` is the odd position `2 * t + 1`. -/
-@[simp high]
 theorem finRotate_finSumFinInterleaveEquiv_inl {k : ℕ} (t : Fin k) :
     finRotate (2 * k) (finSumFinInterleaveEquiv k (.inl t)) =
       finSumFinInterleaveEquiv k (.inr t) := by
@@ -199,7 +186,6 @@ theorem finRotate_finSumFinInterleaveEquiv_inl {k : ℕ} (t : Fin k) :
 
 /-- The step after the odd position `2 * t + 1` is the even position of the cyclically next index
 `t + 1`. -/
-@[simp high]
 theorem finRotate_finSumFinInterleaveEquiv_inr {k : ℕ} (t : Fin k) :
     finRotate (2 * k) (finSumFinInterleaveEquiv k (.inr t)) =
       finSumFinInterleaveEquiv k (.inl (finRotate k t)) := by

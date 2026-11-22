@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Analysis.Normed.Module.Normalize
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+public import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
@@ -145,7 +146,8 @@ allowing the entire path or loop to be read in one stereographic chart.
 * `TauCeti.contMDiff_coe_sphere_compl_zero`, `TauCeti.contMDiff_normalize_sphere`: the inclusion
   of the unit sphere into the punctured space `E \ {0}` and the radial projection
   `x ↦ x / ‖x‖` back onto the sphere are smooth; `TauCeti.contMDiff_normalize_compl_zero` is the
-  radial projection read in `E`.
+  radial projection read in `E`, and `TauCeti.contDiffAt_sphereExtend` pulls back `C^m` regularity
+  along the radial projection to the `0`-homogeneous radial extension.
 * `TauCeti.conjSphere`, `TauCeti.contMDiff_conjSphere`: complex conjugation on the unit circle
   of `ℂ`, a smooth involution.
 * `TauCeti.contMDiff_zpow_sphere`, `TauCeti.mvfderiv_coe_zpow_sphere_apply`: the power maps
@@ -1020,6 +1022,19 @@ theorem contMDiff_normalize_sphere :
       (⟨NormedSpace.normalize (x : E), mem_sphere_zero_iff_norm.2
         (NormedSpace.norm_normalize_eq_one_iff.2 x.property)⟩ : sphere (0 : E) 1)) :=
   contMDiff_normalize_compl_zero.codRestrict_sphere _
+
+/-- Away from the origin, `sphereExtend f` inherits `C^m` regularity from `f` at `x / ‖x‖`. -/
+theorem contDiffAt_sphereExtend {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : sphere (0 : E) 1 → G} {x : E} (hx : x ≠ 0)
+    (hf : ContMDiffAt (𝓡 n) 𝓘(ℝ, G) m f
+      ⟨NormedSpace.normalize x, mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩) :
+    ContDiffAt ℝ m (sphereExtend f) x := by
+  let U : TopologicalSpace.Opens E := ⟨{0}ᶜ, isOpen_compl_singleton⟩
+  let xU : U := ⟨x, hx⟩
+  have hcomp : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, G) m (sphereExtend f ∘ (Subtype.val : U → E)) xU := by
+    refine (hf.comp xU (contMDiff_normalize_sphere xU)).congr_of_eventuallyEq ?_
+    exact .of_forall fun y ↦ sphereExtend_of_ne_zero f y.property
+  exact contMDiffAt_iff_contDiffAt.1 (contMDiffAt_subtype_iff.1 hcomp)
 
 end Punctured
 

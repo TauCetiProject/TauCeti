@@ -9,7 +9,6 @@ public import TauCeti.Combinatorics.TreeWalk.Basic
 public import TauCeti.Combinatorics.TreeWalk.Canonical
 public import TauCeti.Combinatorics.TreeWalk.Relabeling
 public import TauCeti.Combinatorics.TraceWord.Counting
-import TauCeti.Data.Fin.Rotate
 
 /-!
 # Leading trace words as canonical tree walks
@@ -74,7 +73,8 @@ theorem cyclicPath_apply {k : ℕ} [NeZero k] (w : Fin k → α) (i : Fin (k + 1
 
 @[simp] theorem cyclicPath_succ {k : ℕ} [NeZero k] (w : Fin k → α) (i : Fin k) :
     cyclicPath w i.succ = w (finRotate k i) := by
-  rw [cyclicPath_apply, Fin.val_succ, ← Fin.finRotate_ofNat, Fin.ofNat_val_eq_self]
+  apply congrArg w
+  simp [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
 
 @[simp] theorem cyclicPath_zero {k : ℕ} [NeZero k] (w : Fin k → α) :
     cyclicPath w 0 = w 0 := by

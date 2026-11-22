@@ -232,6 +232,9 @@ theorem norm_integral_prod_wignerMatrix_apply_mul_integral_prod_le [IsProbabilit
       refine integral_congr_ae (.of_forall fun z ↦ ?_)
       simp [F, Fintype.prod_sum_type]
     have hcard : Fintype.card (ι₁ ⊕ ι₂) = K := Fintype.card_sum
+    have hK_ne : (K : ℝ) ≠ 0 := by
+      rw [← hcard]
+      exact Nat.cast_ne_zero.mpr Fintype.card_ne_zero
     have hint (x : ι₁ ⊕ ι₂) : Integrable (fun z ↦ ‖F x z‖ ^ K) (P.prod P) := by
       have hK0 : K ≠ 0 := by rw [← hcard]; exact Fintype.card_ne_zero
       cases x with
@@ -252,9 +255,15 @@ theorem norm_integral_prod_wignerMatrix_apply_mul_integral_prod_le [IsProbabilit
           integral_norm_wignerMatrix_apply_pow_le (fun ij _ ↦ hξ ij) (fun i _ ↦ hη i)
             (u₂ t) (v₂ t)
     rw [hprod]
-    exact norm_integral_prod_le_of_integral_norm_pow_le F univ_nonempty
-      (fun x _ ↦ by simpa only [card_univ, hcard] using hint x)
-      (fun x _ ↦ by simpa only [card_univ, hcard] using hmom x)
+    calc
+      ‖∫ z, ∏ x, F x z ∂P.prod P‖ ≤
+          (K : ℝ)⁻¹ * ∑ x, ∫ z, ‖F x z‖ ^ K ∂P.prod P := by
+        simpa [hcard] using norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow F univ_nonempty
+          (fun x _ ↦ by simpa [hcard] using hint x)
+      _ ≤ (K : ℝ)⁻¹ * ∑ _x : ι₁ ⊕ ι₂, (Real.sqrt n)⁻¹ ^ K * B := by
+        gcongr with x
+        exact hmom x
+      _ = (Real.sqrt n)⁻¹ ^ K * B := by simp [hcard, hK_ne]
 
 private theorem norm_integral_prod_mul_prod_sub_wignerMatrix_le [IsProbabilityMeasure P]
     {k₁ k₂ n : ℕ} {B : ℝ}
