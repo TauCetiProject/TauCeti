@@ -45,6 +45,8 @@ is their coproduct. This is the indexed analogue of `Algebra.TensorProduct.produ
 * `PiTensorProduct.productMap_comp_singleAlgHom'`, `PiTensorProduct.comp_productMap`: an algebra
   map into a commutative algebra is the product map of its restrictions to the factors, and
   postcomposition acts factorwise.
+* `PiTensorProduct.productMap_comp_mapAlgHom`: precomposition with `PiTensorProduct.mapAlgHom`
+  acts factorwise.
 * `PiTensorProduct.productMap_reindex`: invariance of `PiTensorProduct.productMap` under
   reindexing.
 -/
@@ -148,9 +150,8 @@ pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the factor inc
 @[simp↓]
 theorem productMap_singleAlgHom [DecidableEq τ] (f : ∀ j, A j →ₐ[R] S) (j : τ) (a : A j) :
     productMap f (singleAlgHom j a) = f j a := by
-  rw [singleAlgHom_apply, productMap_tprod, Finset.prod_eq_single j (fun k _ hk ↦ ?_) (by simp),
-    MonoidHom.mulSingle_apply, Pi.mulSingle_eq_same]
-  rw [MonoidHom.mulSingle_apply, Pi.mulSingle_eq_of_ne hk, map_one]
+  simp only [singleAlgHom_apply, productMap_tprod, MonoidHom.mulSingle_apply,
+    Pi.apply_mulSingle (fun k ↦ ⇑(f k)) (fun k ↦ map_one (f k)), Fintype.prod_pi_mulSingle']
 
 /-- `PiTensorProduct.productMap f` restricts to `f j` along the factor inclusion at `j`. -/
 @[simp]
@@ -174,14 +175,26 @@ theorem comp_productMap {T : Type*} [CommSemiring T] [Algebra R T] (h : S →ₐ
   exact algHom_ext fun j ↦ by
     rw [AlgHom.comp_assoc, productMap_comp_singleAlgHom, productMap_comp_singleAlgHom]
 
+/-- Precomposing `PiTensorProduct.productMap g` with the factorwise map
+`PiTensorProduct.mapAlgHom f` precomposes each factor map. -/
+@[simp]
+theorem productMap_comp_mapAlgHom {B : τ → Type*} [∀ j, Semiring (B j)] [∀ j, Algebra R (B j)]
+    (g : ∀ j, B j →ₐ[R] S) (f : ∀ j, A j →ₐ[R] B j) :
+    (productMap g).comp (mapAlgHom f) = productMap fun j ↦ (g j).comp (f j) := by
+  classical
+  exact algHom_ext fun j ↦ AlgHom.ext fun a ↦ by
+    simp only [AlgHom.comp_apply, mapAlgHom_singleAlgHom, productMap_singleAlgHom]
+
 /-- `PiTensorProduct.productMap` is invariant under reindexing the factors along a bijection. -/
 @[simp]
 theorem productMap_reindex {τ' : Type*} [Fintype τ'] (e : τ ≃ τ') (f : ∀ j, A j →ₐ[R] S)
     (x : ⨂[R] j, A j) :
     productMap (fun k ↦ f (e.symm k)) (reindex R A e x) = productMap f x := by
-  induction x using PiTensorProduct.induction_on with
-  | smul_tprod r a => simp [reindex_tprod, e.symm.prod_comp fun j ↦ f j (a j)]
-  | add x y hx hy => simp only [map_add, hx, hy]
+  refine (liftAlgHom_apply _ _ _ _).trans <| (lift_reindex e _ x).trans <|
+    .trans ?_ (liftAlgHom_apply _ _ _ _).symm
+  congr 1
+  ext a
+  simp [e.symm.prod_comp fun j ↦ f j (a j)]
 
 end ProductMap
 

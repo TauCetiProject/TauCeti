@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Invariant.Free
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 import TauCeti.LinearAlgebra.PiTensorProduct.Option
+import TauCeti.RingTheory.PiTensorProduct.Map
 
 /-!
 # The iterated Galois map of a group action
@@ -59,14 +60,11 @@ variable (R A G : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A] [Monoid
 /-- The iterated Galois map `A^{⊗(k+1)} → (G^k → A)`, sending `a₀ ⊗ a₁ ⊗ ⋯ ⊗ aₖ` to
 `(gᵢ)ᵢ ↦ a₀ * ∏ i, gᵢ • aᵢ₊₁`. The `j`-th tensor factor is moved by the `j`-th vertex
 `Fin.cons 1 g j`, so every group coordinate is measured from the zeroth factor. For `k = 1` its
-value `a₀ * g • a₁` on `a₀ ⊗ a₁` at `g` is that of `tensorToPi R A G`. -/
+value `a₀ * g • a₁` on `a₀ ⊗ a₁` at `g` is that of `tensorToPi R A G`. Each coordinate is the
+product map `PiTensorProduct.productMap` of the actions of the vertices. -/
 noncomputable def iterTensorToPi (k : ℕ) : (⨂[R] _ : Fin (k + 1), A) →ₐ[R] ((Fin k → G) → A) :=
-  liftAlgHom
-    (MultilinearMap.pi fun g : Fin k → G ↦
-      (MultilinearMap.mkPiAlgebra R (Fin (k + 1)) A).compLinearMap fun j ↦
-        (MulSemiringAction.toAlgHom R A (Fin.cons (α := fun _ ↦ G) 1 g j)).toLinearMap)
-    (by ext; simp)
-    (fun _ _ ↦ by ext; simp [Finset.prod_mul_distrib])
+  AlgHom.pi fun g : Fin k → G ↦
+    productMap fun j ↦ MulSemiringAction.toAlgHom R A (Fin.cons (α := fun _ ↦ G) 1 g j)
 
 variable {R A G}
 

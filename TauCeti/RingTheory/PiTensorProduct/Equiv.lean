@@ -13,7 +13,6 @@ public import TauCeti.LinearAlgebra.PiTensorProduct.Assoc
 public import TauCeti.LinearAlgebra.PiTensorProduct.Option
 public import TauCeti.LinearAlgebra.PiTensorProduct.Sigma
 public import TauCeti.RingTheory.PiTensorProduct.FiberwiseMul
-public import TauCeti.RingTheory.PiTensorProduct.Map
 import Mathlib.LinearAlgebra.PiTensorProduct.Finsupp
 
 /-!
@@ -32,9 +31,9 @@ permutations gives the action of `Equiv.Perm ι` on a tensor power by algebra au
 Applying algebra equivalences factorwise gives `PiTensorProduct.congrAlgEquiv`, the algebra
 version of Mathlib's `PiTensorProduct.congr`, compatible with `PiTensorProduct.mapAlgHom` and
 `PiTensorProduct.reindexAlgEquiv`; `PiTensorProduct.productMap` and `PiTensorProduct.mulAlgHom` are
-likewise invariant under `PiTensorProduct.reindexAlgEquiv` and `PiTensorProduct.permAlgEquiv`, and
-`PiTensorProduct.fiberwiseMul` commutes with reindexing along a commuting square of index maps
-(`PiTensorProduct.reindex_fiberwiseMul`).
+likewise invariant under `PiTensorProduct.reindexAlgEquiv` and `PiTensorProduct.permAlgEquiv`. On
+tensor powers of a single commutative algebra, `PiTensorProduct.fiberwiseMul` commutes with
+reindexing along a commuting square of index maps (`PiTensorProduct.reindex_fiberwiseMul`).
 
 For finite index types, the tensor product of the split algebras `κ i → R` is the split algebra
 of functions on `Π i, κ i` (`PiTensorProduct.piScalarAlgEquiv`), built from Mathlib's
@@ -285,9 +284,9 @@ section FiberwiseMul
 variable {σ τ σ' τ' : Type*} [Fintype σ] [DecidableEq τ] [Fintype σ'] [DecidableEq τ']
   {B : Type*} [CommSemiring B] [Algebra R B]
 
-/-- `PiTensorProduct.fiberwiseMul` is natural in the index map: reindexing along bijections of the
-source and target carries multiplication along `f` to multiplication along `f'` when the square
-`eτ ∘ f = f' ∘ eσ` commutes. -/
+/-- For tensor powers of a commutative `R`-algebra `B`, `PiTensorProduct.fiberwiseMul` is natural
+in the index map: reindexing along bijections of the source and target carries multiplication
+along `f` to multiplication along `f'` when the square `eτ ∘ f = f' ∘ eσ` commutes. -/
 theorem reindex_fiberwiseMul (eσ : σ ≃ σ') (eτ : τ ≃ τ') {f : σ → τ} {f' : σ' → τ'}
     (h : eτ ∘ f = f' ∘ eσ) (x : ⨂[R] _ : σ, B) :
     reindex R (fun _ ↦ B) eτ (fiberwiseMul (R := R) (A := fun _ ↦ B) f x) =
@@ -535,11 +534,9 @@ factor inclusion first. -/
 theorem piScalarAlgEquiv_singleAlgHom [DecidableEq ι] (i : ι) (f : κ i → R) :
     piScalarAlgEquiv R κ (singleAlgHom i f) = fun p ↦ f (p i) := by
   ext p
-  rw [singleAlgHom_apply, piScalarAlgEquiv_tprod]
-  dsimp only
-  rw [Finset.prod_eq_single i (fun j _ hj ↦ ?_) (by simp), MonoidHom.mulSingle_apply,
-    Pi.mulSingle_eq_same]
-  rw [MonoidHom.mulSingle_apply, Pi.mulSingle_eq_of_ne hj, Pi.one_apply]
+  simp only [singleAlgHom_apply, piScalarAlgEquiv_tprod, MonoidHom.mulSingle_apply,
+    Pi.apply_mulSingle (fun j (g : κ j → R) ↦ g (p j)) (fun _ ↦ rfl),
+    Fintype.prod_pi_mulSingle']
 
 /-- Permuting the tensor factors of a tensor power of a function algebra by `σ` becomes
 precomposition with `σ` on functions on `ι → κ`. -/
