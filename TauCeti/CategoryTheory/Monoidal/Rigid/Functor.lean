@@ -307,9 +307,8 @@ evaluation of `(ᘁY, Y)`. This characterizes `F.mapLeftDualIso Y`, by
 theorem whiskerLeft_mapLeftDualIso_hom_evaluation (Y : C) [HasLeftDual Y]
     [_hFY : HasLeftDual (F.obj Y)] :
     F.obj Y ◁ (F.mapLeftDualIso Y).hom ≫ ε_ (ᘁ(F.obj Y)) (F.obj Y) =
-      μ F Y (ᘁY) ≫ F.map (ε_ (ᘁY) Y) ≫ η F := by
-  rw [mapLeftDualIso, ExactPairing.leftDualIso_hom, ExactPairing.leftMate_comp_evaluation,
-    id_whiskerRight, Category.id_comp, mapExactPairing_evaluation]
+      μ F Y (ᘁY) ≫ F.map (ε_ (ᘁY) Y) ≫ η F :=
+  ExactPairing.leftDualIso_hom_whiskerLeft_evaluation _ _
 
 /-- Through the inverse of `F.mapLeftDualIso Y`, the coevaluation of `(ᘁ(F.obj Y), F.obj Y)` is
 the image of the coevaluation of `(ᘁY, Y)`. -/
@@ -542,8 +541,9 @@ theorem NatTrans.rightAdjointMate_comp_mapRightDualIso_inv_comp_app (τ : F ⟶ 
   rw [Functor.coevaluation_whiskerLeft_mapRightDualIso_inv]
   simp only [whiskerLeft_comp]
   rw [coevaluation_comp_rightAdjointMate_assoc, ← whisker_exchange_assoc,
-    Functor.coevaluation_whiskerLeft_mapRightDualIso_inv_assoc, ← tensorHom_def,
-    NatTrans.IsMonoidal.δ_comp_tensor, τ.naturality_assoc, IsMonoidal.unit_assoc]
+    Functor.coevaluation_whiskerLeft_mapRightDualIso_inv_assoc, ← tensorHom_def]
+  simpa only [Functor.mapExactPairing_coevaluation, Category.assoc] using
+    NatTrans.mapExactPairing_coevaluation_comp_tensorHom_app τ X Xᘁ
 
 /-- A monoidal natural isomorphism `α : F ≅ G` intertwines the comparisons between images of
 duals and duals of images: `α_{Xᘁ} ≫ δ^G_X = δ^F_X ≫ (α_X⁻¹)ᘁ`. -/

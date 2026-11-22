@@ -74,60 +74,66 @@ def Hom.subst (σ : Substitution S T) : ∀ {X Y}, Hom X Y →
   | _, _, .ρ_hom X => .ρ_hom (projectObj σ.obj X).as
   | _, _, .ρ_inv X => .ρ_inv (projectObj σ.obj X).as
   | _, _, .coupon g => σ.coupon g
-  | _, _, .comp f g => (f.subst σ).comp (g.subst σ)
-  | _, _, .whiskerLeft X f => (f.subst σ).whiskerLeft (projectObj σ.obj X).as
-  | _, _, .whiskerRight f X => (f.subst σ).whiskerRight (projectObj σ.obj X).as
-  | _, _, .tensor f g => (f.subst σ).tensor (g.subst σ)
+  | _, _, .comp f g => (Hom.subst σ f).comp (Hom.subst σ g)
+  | _, _, .whiskerLeft X f => (Hom.subst σ f).whiskerLeft (projectObj σ.obj X).as
+  | _, _, .whiskerRight f X => (Hom.subst σ f).whiskerRight (projectObj σ.obj X).as
+  | _, _, .tensor f g => (Hom.subst σ f).tensor (Hom.subst σ g)
 
 @[simp]
 theorem Hom.subst_id (σ : Substitution S T) (X) :
-    (Hom.id X).subst σ = .id (projectObj σ.obj X).as := by rfl
+    Hom.subst σ (MonoidalCore.Hom.id X) = MonoidalCore.Hom.id (projectObj σ.obj X).as := by rfl
 
 @[simp]
 theorem Hom.subst_coupon (σ : Substitution S T) (g : S.Coupon) :
-    (Hom.coupon g).subst σ = σ.coupon g := by rfl
+    Hom.subst σ (Hom.coupon g) = σ.coupon g := by rfl
 
 @[simp]
 theorem Hom.subst_comp (σ : Substitution S T) {X Y Z} (f : Hom X Y) (g : Hom Y Z) :
-    (f.comp g).subst σ = (f.subst σ).comp (g.subst σ) := by rfl
+    Hom.subst σ (f.comp g) = (Hom.subst σ f).comp (Hom.subst σ g) := by rfl
 
 @[simp]
 theorem Hom.subst_tensor (σ : Substitution S T) {W X Y Z} (f : Hom W X) (g : Hom Y Z) :
-    (f.tensor g).subst σ = (f.subst σ).tensor (g.subst σ) := by rfl
+    Hom.subst σ (f.tensor g) = (Hom.subst σ f).tensor (Hom.subst σ g) := by rfl
 
 @[simp]
 theorem Hom.subst_whiskerLeft (σ : Substitution S T) (X) {Y Z} (f : Hom Y Z) :
-    (f.whiskerLeft X).subst σ = (f.subst σ).whiskerLeft (projectObj σ.obj X).as := by rfl
+    Hom.subst σ (f.whiskerLeft X) = (Hom.subst σ f).whiskerLeft (projectObj σ.obj X).as := by rfl
 
 @[simp]
 theorem Hom.subst_whiskerRight (σ : Substitution S T) {Y Z} (f : Hom Y Z) (X) :
-    (f.whiskerRight X).subst σ = (f.subst σ).whiskerRight (projectObj σ.obj X).as := by rfl
+    Hom.subst σ (f.whiskerRight X) = (Hom.subst σ f).whiskerRight (projectObj σ.obj X).as := by rfl
 
 @[simp]
 theorem Hom.subst_α_hom (σ : Substitution S T) (X Y Z) :
-    (Hom.α_hom X Y Z).subst σ =
-      .α_hom (projectObj σ.obj X).as (projectObj σ.obj Y).as (projectObj σ.obj Z).as := by rfl
+    Hom.subst σ (MonoidalCore.Hom.α_hom X Y Z) =
+      MonoidalCore.Hom.α_hom (projectObj σ.obj X).as (projectObj σ.obj Y).as
+        (projectObj σ.obj Z).as := by rfl
 
 @[simp]
 theorem Hom.subst_α_inv (σ : Substitution S T) (X Y Z) :
-    (Hom.α_inv X Y Z).subst σ =
-      .α_inv (projectObj σ.obj X).as (projectObj σ.obj Y).as (projectObj σ.obj Z).as := by rfl
+    Hom.subst σ (MonoidalCore.Hom.α_inv X Y Z) =
+      MonoidalCore.Hom.α_inv (projectObj σ.obj X).as (projectObj σ.obj Y).as
+        (projectObj σ.obj Z).as := by rfl
 
 @[simp]
 theorem Hom.subst_l_hom (σ : Substitution S T) (X) :
-    (Hom.l_hom X).subst σ = .l_hom (projectObj σ.obj X).as := by rfl
+    Hom.subst σ (MonoidalCore.Hom.l_hom X) =
+      MonoidalCore.Hom.l_hom (projectObj σ.obj X).as := by rfl
 
 @[simp]
 theorem Hom.subst_l_inv (σ : Substitution S T) (X) :
-    (Hom.l_inv X).subst σ = .l_inv (projectObj σ.obj X).as := by rfl
+    Hom.subst σ (MonoidalCore.Hom.l_inv X) =
+      MonoidalCore.Hom.l_inv (projectObj σ.obj X).as := by rfl
 
 @[simp]
 theorem Hom.subst_ρ_hom (σ : Substitution S T) (X) :
-    (Hom.ρ_hom X).subst σ = .ρ_hom (projectObj σ.obj X).as := by rfl
+    Hom.subst σ (MonoidalCore.Hom.ρ_hom X) =
+      MonoidalCore.Hom.ρ_hom (projectObj σ.obj X).as := by rfl
 
 @[simp]
 theorem Hom.subst_ρ_inv (σ : Substitution S T) (X) :
-    (Hom.ρ_inv X).subst σ = .ρ_inv (projectObj σ.obj X).as := by rfl
+    Hom.subst σ (MonoidalCore.Hom.ρ_inv X) =
+      MonoidalCore.Hom.ρ_inv (projectObj σ.obj X).as := by rfl
 
 end FreeMonoidal
 
@@ -179,21 +185,21 @@ substitution. This is also the representative computation rule for the descended
 @[simp]
 theorem toFunctor_map_homMk {X Y : FreeMonoidalCategory S.Obj} (f : FreeMonoidal.Hom X Y) :
     σ.toFunctor.map (FreeMonoidal.homMk (X := ⟨X⟩) (Y := ⟨Y⟩) f) =
-      FreeMonoidal.homMk (f.subst σ) := by
+      FreeMonoidal.homMk (Hom.subst σ f) := by
   -- The lift's interpreter is opaque in this module, so use its computation lemmas.
   -- The `homMk` structural generators and the wrapped interpreted endpoints are
   -- definitionally the corresponding native categorical objects and morphisms.
   induction f with
-  | id X => exact liftMap_id _ _ ⟨X⟩
+  | id X => exact (lift σ.obj _).map_id ⟨X⟩
   | α_hom X Y Z => exact lift_map_associator_hom _ _ ⟨X⟩ ⟨Y⟩ ⟨Z⟩
   | α_inv X Y Z => exact lift_map_associator_inv _ _ ⟨X⟩ ⟨Y⟩ ⟨Z⟩
   | l_hom X => exact lift_map_leftUnitor_hom _ _ ⟨X⟩
   | l_inv X => exact lift_map_leftUnitor_inv _ _ ⟨X⟩
   | ρ_hom X => exact lift_map_rightUnitor_hom _ _ ⟨X⟩
   | ρ_inv X => exact lift_map_rightUnitor_inv _ _ ⟨X⟩
-  | coupon g => exact lift_map_coupon _ _ g
+  | gen g => cases g with | coupon g => exact lift_map_coupon _ _ g
   | comp f g hf hg =>
-    exact (liftMap_comp _ _ (homMk f) (homMk g)).trans (congrArg₂ (· ≫ ·) hf hg)
+    exact ((lift σ.obj _).map_comp (homMk f) (homMk g)).trans (congrArg₂ (· ≫ ·) hf hg)
   | whiskerLeft X f hf =>
     exact (lift_map_whiskerLeft _ _ ⟨X⟩ (homMk f)).trans
       (congrArg (projectObj σ.obj X ◁ ·) hf)
@@ -210,7 +216,7 @@ namespace FreeMonoidal
 /-- Substitution preserves the relation generated by the monoidal-category axioms.
 No equation between the replacing coupons is required. -/
 theorem HomEquiv.subst (σ : Substitution S T) {X Y} {f g : Hom X Y} (h : HomEquiv f g) :
-    HomEquiv (f.subst σ) (g.subst σ) := by
+    HomEquiv (Hom.subst σ f) (Hom.subst σ g) := by
   apply Quotient.exact (s := setoidHom _ _)
   exact (σ.toFunctor_map_homMk f).symm.trans
     ((congrArg (σ.toFunctor.map (X := ⟨X⟩) (Y := ⟨Y⟩)) (Quotient.sound h)).trans
@@ -260,7 +266,7 @@ def comp (σ : Substitution S T) (τ : Substitution T U) : Substitution S U wher
   obj a := projectObj τ.obj (σ.obj a).as
   coupon g :=
     cast (by rw [FreeMonoidal.projectObj_projectObj, FreeMonoidal.projectObj_projectObj])
-      ((σ.coupon g).subst τ)
+      (Hom.subst τ (σ.coupon g))
 
 @[simp]
 theorem comp_obj (σ : Substitution S T) (τ : Substitution T U) (a : S.Obj) :
@@ -270,7 +276,7 @@ theorem comp_obj (σ : Substitution S T) (τ : Substitution T U) (a : S.Obj) :
 /-- The composite substitution replaces a coupon by the substitution of `τ` into its replacement
 under `σ`, up to the identification of the boundary words given by `projectObj_projectObj`. -/
 theorem comp_coupon_heq (σ : Substitution S T) (τ : Substitution T U) (g : S.Coupon) :
-    (σ.comp τ).coupon g ≍ (σ.coupon g).subst τ :=
+    (σ.comp τ).coupon g ≍ Hom.subst τ (σ.coupon g) :=
   cast_heq _ _
 
 end Substitution
@@ -281,19 +287,23 @@ namespace FreeMonoidal
 results. -/
 theorem Hom.subst_congr_heq (σ : Substitution S T) {X X' Y Y' : FreeMonoidalCategory S.Obj}
     {f : Hom X Y} {f' : Hom X' Y'} (hX : X = X') (hY : Y = Y') (h : f ≍ f') :
-    f.subst σ ≍ f'.subst σ := by
+    Hom.subst σ f ≍ Hom.subst σ f' := by
   subst hX hY
   rw [eq_of_heq h]
 
 /-! The constructors of raw expressions respect heterogeneous equality, given equal words. -/
 
 private theorem α_hom_heq {X X' Y Y' Z Z' : FreeMonoidalCategory S.Obj} (hX : X = X')
-    (hY : Y = Y') (hZ : Z = Z') : Hom.α_hom X Y Z ≍ Hom.α_hom X' Y' Z' := by
+    (hY : Y = Y') (hZ : Z = Z') :
+    (MonoidalCore.Hom.α_hom X Y Z : Hom (S := S) _ _) ≍
+      (MonoidalCore.Hom.α_hom X' Y' Z' : Hom (S := S) _ _) := by
   subst hX hY hZ
   rfl
 
 private theorem α_inv_heq {X X' Y Y' Z Z' : FreeMonoidalCategory S.Obj} (hX : X = X')
-    (hY : Y = Y') (hZ : Z = Z') : Hom.α_inv X Y Z ≍ Hom.α_inv X' Y' Z' := by
+    (hY : Y = Y') (hZ : Z = Z') :
+    (MonoidalCore.Hom.α_inv X Y Z : Hom (S := S) _ _) ≍
+      (MonoidalCore.Hom.α_inv X' Y' Z' : Hom (S := S) _ _) := by
   subst hX hY hZ
   rfl
 
@@ -330,18 +340,18 @@ private theorem homMk_heq {X X' Y Y' : FreeMonoidalCategory S.Obj} {f : Hom X Y}
 /-- Substituting the identity substitution into a raw expression gives the expression itself, up
 to the identification of each word with its interpretation by its own generating objects. -/
 theorem Hom.subst_substitutionId_heq {X Y : FreeMonoidalCategory S.Obj} (f : Hom X Y) :
-    f.subst (Substitution.id S) ≍ f := by
+    Hom.subst (Substitution.id S) f ≍ f := by
   have h (X : FreeMonoidalCategory S.Obj) : (projectObj (Substitution.id S).obj X).as = X :=
     congrArg FreeMonoidal.as (projectObj_of X)
   induction f with
-  | id X => exact congr_arg_heq Hom.id (h X)
+  | id X => exact congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.id Z : Hom (S := S) _ _)) (h X)
   | α_hom X Y Z => exact α_hom_heq (h X) (h Y) (h Z)
   | α_inv X Y Z => exact α_inv_heq (h X) (h Y) (h Z)
-  | l_hom X => exact congr_arg_heq Hom.l_hom (h X)
-  | l_inv X => exact congr_arg_heq Hom.l_inv (h X)
-  | ρ_hom X => exact congr_arg_heq Hom.ρ_hom (h X)
-  | ρ_inv X => exact congr_arg_heq Hom.ρ_inv (h X)
-  | coupon g => exact Substitution.id_coupon_heq g
+  | l_hom X => exact congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.l_hom Z : Hom (S := S) _ _)) (h X)
+  | l_inv X => exact congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.l_inv Z : Hom (S := S) _ _)) (h X)
+  | ρ_hom X => exact congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.ρ_hom Z : Hom (S := S) _ _)) (h X)
+  | ρ_inv X => exact congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.ρ_inv Z : Hom (S := S) _ _)) (h X)
+  | gen g => cases g with | coupon g => exact Substitution.id_coupon_heq g
   | comp f g hf hg => exact comp_heq (h _) (h _) (h _) hf hg
   | whiskerLeft X f hf => exact whiskerLeft_heq (h X) (h _) (h _) hf
   | whiskerRight f X hf => exact whiskerRight_heq (h _) (h _) (h X) hf
@@ -353,19 +363,19 @@ variable {U : TensorSignature.{u'', v''}}
 the identification of the boundary words given by `projectObj_projectObj`. -/
 theorem Hom.subst_subst_heq (σ : Substitution S T) (τ : Substitution T U)
     {X Y : FreeMonoidalCategory S.Obj} (f : Hom X Y) :
-    (f.subst σ).subst τ ≍ f.subst (σ.comp τ) := by
+    Hom.subst τ (Hom.subst σ f) ≍ Hom.subst (σ.comp τ) f := by
   have h (X : FreeMonoidalCategory S.Obj) :
       (projectObj τ.obj (projectObj σ.obj X).as).as = (projectObj (σ.comp τ).obj X).as :=
     congrArg FreeMonoidal.as (projectObj_projectObj τ.obj σ.obj X)
   induction f with
-  | id X => exact congr_arg_heq Hom.id (h X)
+  | id X => exact congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.id Z : Hom (S := U) _ _)) (h X)
   | α_hom X Y Z => exact α_hom_heq (h X) (h Y) (h Z)
   | α_inv X Y Z => exact α_inv_heq (h X) (h Y) (h Z)
-  | l_hom X => exact congr_arg_heq Hom.l_hom (h X)
-  | l_inv X => exact congr_arg_heq Hom.l_inv (h X)
-  | ρ_hom X => exact congr_arg_heq Hom.ρ_hom (h X)
-  | ρ_inv X => exact congr_arg_heq Hom.ρ_inv (h X)
-  | coupon g => exact (Substitution.comp_coupon_heq σ τ g).symm
+  | l_hom X => exact congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.l_hom Z : Hom (S := U) _ _)) (h X)
+  | l_inv X => exact congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.l_inv Z : Hom (S := U) _ _)) (h X)
+  | ρ_hom X => exact congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.ρ_hom Z : Hom (S := U) _ _)) (h X)
+  | ρ_inv X => exact congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.ρ_inv Z : Hom (S := U) _ _)) (h X)
+  | gen g => cases g with | coupon g => exact (Substitution.comp_coupon_heq σ τ g).symm
   | comp f g hf hg => exact comp_heq (h _) (h _) (h _) hf hg
   | whiskerLeft X f hf => exact whiskerLeft_heq (h X) (h _) (h _) hf
   | whiskerRight f X hf => exact whiskerRight_heq (h _) (h _) (h X) hf

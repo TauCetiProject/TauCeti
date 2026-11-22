@@ -79,95 +79,106 @@ Endpoints are interpreted by `FreeMonoidalCategory.projectObj`. -/
 def Hom.subst (σ : BraidedSubstitution S T) :
     ∀ {X Y : FreeMonoidalCategory S.Obj},
       Hom X Y → Hom (projectObj σ.obj X).as (projectObj σ.obj Y).as
-  | _, _, .id X => .id (projectObj σ.obj X).as
+  | _, _, .id X => MonoidalCore.Hom.id (projectObj σ.obj X).as
   | _, _, .α_hom X Y Z =>
-    .α_hom (projectObj σ.obj X).as (projectObj σ.obj Y).as (projectObj σ.obj Z).as
+    MonoidalCore.Hom.α_hom (projectObj σ.obj X).as (projectObj σ.obj Y).as (projectObj σ.obj Z).as
   | _, _, .α_inv X Y Z =>
-    .α_inv (projectObj σ.obj X).as (projectObj σ.obj Y).as (projectObj σ.obj Z).as
-  | _, _, .l_hom X => .l_hom (projectObj σ.obj X).as
-  | _, _, .l_inv X => .l_inv (projectObj σ.obj X).as
-  | _, _, .ρ_hom X => .ρ_hom (projectObj σ.obj X).as
-  | _, _, .ρ_inv X => .ρ_inv (projectObj σ.obj X).as
-  | _, _, .β_hom X Y => .β_hom (projectObj σ.obj X).as (projectObj σ.obj Y).as
-  | _, _, .β_inv X Y => .β_inv (projectObj σ.obj X).as (projectObj σ.obj Y).as
-  | _, _, .coupon g => σ.coupon g
-  | _, _, .comp f g => (f.subst σ).comp (g.subst σ)
-  | _, _, .whiskerLeft X f => (f.subst σ).whiskerLeft (projectObj σ.obj X).as
-  | _, _, .whiskerRight f X => (f.subst σ).whiskerRight (projectObj σ.obj X).as
-  | _, _, .tensor f g => (f.subst σ).tensor (g.subst σ)
+    MonoidalCore.Hom.α_inv (projectObj σ.obj X).as (projectObj σ.obj Y).as (projectObj σ.obj Z).as
+  | _, _, .l_hom X => MonoidalCore.Hom.l_hom (projectObj σ.obj X).as
+  | _, _, .l_inv X => MonoidalCore.Hom.l_inv (projectObj σ.obj X).as
+  | _, _, .ρ_hom X => MonoidalCore.Hom.ρ_hom (projectObj σ.obj X).as
+  | _, _, .ρ_inv X => MonoidalCore.Hom.ρ_inv (projectObj σ.obj X).as
+  | _, _, .gen g =>
+    match g with
+    | .β_hom X Y => .βHom (projectObj σ.obj X).as (projectObj σ.obj Y).as
+    | .β_inv X Y => .βInv (projectObj σ.obj X).as (projectObj σ.obj Y).as
+    | .coupon g => σ.coupon g
+  | _, _, .comp f g => (Hom.subst σ f).comp (Hom.subst σ g)
+  | _, _, .whiskerLeft X f => (Hom.subst σ f).whiskerLeft (projectObj σ.obj X).as
+  | _, _, .whiskerRight f X => (Hom.subst σ f).whiskerRight (projectObj σ.obj X).as
+  | _, _, .tensor f g => (Hom.subst σ f).tensor (Hom.subst σ g)
 
 /-- Raw braided substitution sends a formal identity to the formal identity at the substituted
 word. -/
 @[simp]
 theorem Hom.subst_id (σ : BraidedSubstitution S T) (X) :
-    (Hom.id X).subst σ = .id (projectObj σ.obj X).as := (rfl)
+    Hom.subst σ (MonoidalCore.Hom.id X) =
+      (MonoidalCore.Hom.id (projectObj σ.obj X).as : Hom (S := T) _ _) := (rfl)
 
 /-- Raw braided substitution replaces a coupon `g` by `σ.coupon g`. -/
 @[simp]
 theorem Hom.subst_coupon (σ : BraidedSubstitution S T) (g : S.Coupon) :
-    (Hom.coupon g).subst σ = σ.coupon g := (rfl)
+    Hom.subst σ (Hom.coupon g) = σ.coupon g := (rfl)
 
 /-- Raw braided substitution commutes with formal composition. -/
 @[simp]
 theorem Hom.subst_comp (σ : BraidedSubstitution S T) {X Y Z} (f : Hom X Y) (g : Hom Y Z) :
-    (f.comp g).subst σ = (f.subst σ).comp (g.subst σ) := (rfl)
+    Hom.subst σ (f.comp g) = (Hom.subst σ f).comp (Hom.subst σ g) := (rfl)
 
 /-- Raw braided substitution commutes with formal tensor product of morphisms. -/
 @[simp]
 theorem Hom.subst_tensor (σ : BraidedSubstitution S T) {W X Y Z} (f : Hom W X) (g : Hom Y Z) :
-    (f.tensor g).subst σ = (f.subst σ).tensor (g.subst σ) := (rfl)
+    Hom.subst σ (f.tensor g) = (Hom.subst σ f).tensor (Hom.subst σ g) := (rfl)
 
 /-- Raw braided substitution commutes with formal left whiskering. -/
 @[simp]
 theorem Hom.subst_whiskerLeft (σ : BraidedSubstitution S T) (X) {Y Z} (f : Hom Y Z) :
-    (f.whiskerLeft X).subst σ = (f.subst σ).whiskerLeft (projectObj σ.obj X).as := (rfl)
+    Hom.subst σ (f.whiskerLeft X) =
+      (Hom.subst σ f).whiskerLeft (projectObj σ.obj X).as := (rfl)
 
 /-- Raw braided substitution commutes with formal right whiskering. -/
 @[simp]
 theorem Hom.subst_whiskerRight (σ : BraidedSubstitution S T) {Y Z} (f : Hom Y Z) (X) :
-    (f.whiskerRight X).subst σ = (f.subst σ).whiskerRight (projectObj σ.obj X).as := (rfl)
+    Hom.subst σ (f.whiskerRight X) =
+      (Hom.subst σ f).whiskerRight (projectObj σ.obj X).as := (rfl)
 
 /-- Raw braided substitution sends `Hom.α_hom` to `Hom.α_hom` at the substituted words. -/
 @[simp]
 theorem Hom.subst_α_hom (σ : BraidedSubstitution S T) (X Y Z) :
-    (Hom.α_hom X Y Z).subst σ =
-      .α_hom (projectObj σ.obj X).as (projectObj σ.obj Y).as (projectObj σ.obj Z).as := (rfl)
+    Hom.subst σ (MonoidalCore.Hom.α_hom X Y Z) =
+      (MonoidalCore.Hom.α_hom (projectObj σ.obj X).as (projectObj σ.obj Y).as
+        (projectObj σ.obj Z).as : Hom (S := T) _ _) := (rfl)
 
 /-- Raw braided substitution sends `Hom.α_inv` to `Hom.α_inv` at the substituted words. -/
 @[simp]
 theorem Hom.subst_α_inv (σ : BraidedSubstitution S T) (X Y Z) :
-    (Hom.α_inv X Y Z).subst σ =
-      .α_inv (projectObj σ.obj X).as (projectObj σ.obj Y).as (projectObj σ.obj Z).as := (rfl)
+    Hom.subst σ (MonoidalCore.Hom.α_inv X Y Z) =
+      (MonoidalCore.Hom.α_inv (projectObj σ.obj X).as (projectObj σ.obj Y).as
+        (projectObj σ.obj Z).as : Hom (S := T) _ _) := (rfl)
 
 /-- Raw braided substitution sends `Hom.l_hom` to `Hom.l_hom` at the substituted word. -/
 @[simp]
 theorem Hom.subst_l_hom (σ : BraidedSubstitution S T) (X) :
-    (Hom.l_hom X).subst σ = .l_hom (projectObj σ.obj X).as := (rfl)
+    Hom.subst σ (MonoidalCore.Hom.l_hom X) =
+      (MonoidalCore.Hom.l_hom (projectObj σ.obj X).as : Hom (S := T) _ _) := (rfl)
 
 /-- Raw braided substitution sends `Hom.l_inv` to `Hom.l_inv` at the substituted word. -/
 @[simp]
 theorem Hom.subst_l_inv (σ : BraidedSubstitution S T) (X) :
-    (Hom.l_inv X).subst σ = .l_inv (projectObj σ.obj X).as := (rfl)
+    Hom.subst σ (MonoidalCore.Hom.l_inv X) =
+      (MonoidalCore.Hom.l_inv (projectObj σ.obj X).as : Hom (S := T) _ _) := (rfl)
 
 /-- Raw braided substitution sends `Hom.ρ_hom` to `Hom.ρ_hom` at the substituted word. -/
 @[simp]
 theorem Hom.subst_ρ_hom (σ : BraidedSubstitution S T) (X) :
-    (Hom.ρ_hom X).subst σ = .ρ_hom (projectObj σ.obj X).as := (rfl)
+    Hom.subst σ (MonoidalCore.Hom.ρ_hom X) =
+      (MonoidalCore.Hom.ρ_hom (projectObj σ.obj X).as : Hom (S := T) _ _) := (rfl)
 
 /-- Raw braided substitution sends `Hom.ρ_inv` to `Hom.ρ_inv` at the substituted word. -/
 @[simp]
 theorem Hom.subst_ρ_inv (σ : BraidedSubstitution S T) (X) :
-    (Hom.ρ_inv X).subst σ = .ρ_inv (projectObj σ.obj X).as := (rfl)
+    Hom.subst σ (MonoidalCore.Hom.ρ_inv X) =
+      (MonoidalCore.Hom.ρ_inv (projectObj σ.obj X).as : Hom (S := T) _ _) := (rfl)
 
-/-- Raw braided substitution sends `Hom.β_hom` to `Hom.β_hom` at the substituted words. -/
+/-- Raw braided substitution sends `Hom.βHom` to `Hom.βHom` at the substituted words. -/
 @[simp]
 theorem Hom.subst_β_hom (σ : BraidedSubstitution S T) (X Y) :
-    (Hom.β_hom X Y).subst σ = .β_hom (projectObj σ.obj X).as (projectObj σ.obj Y).as := (rfl)
+    Hom.subst σ (Hom.βHom X Y) = .βHom (projectObj σ.obj X).as (projectObj σ.obj Y).as := (rfl)
 
-/-- Raw braided substitution sends `Hom.β_inv` to `Hom.β_inv` at the substituted words. -/
+/-- Raw braided substitution sends `Hom.βInv` to `Hom.βInv` at the substituted words. -/
 @[simp]
 theorem Hom.subst_β_inv (σ : BraidedSubstitution S T) (X Y) :
-    (Hom.β_inv X Y).subst σ = .β_inv (projectObj σ.obj X).as (projectObj σ.obj Y).as := (rfl)
+    Hom.subst σ (Hom.βInv X Y) = .βInv (projectObj σ.obj X).as (projectObj σ.obj Y).as := (rfl)
 
 /-- Raw braided substitution respects heterogeneous equality of raw morphisms with equal
 endpoints. -/
@@ -175,7 +186,7 @@ theorem Hom.subst_congr_heq (σ : BraidedSubstitution S T)
     {X₁ X₂ Y₁ Y₂ : FreeMonoidalCategory S.Obj}
     (hX : X₁ = X₂) (hY : Y₁ = Y₂)
     {f₁ : Hom X₁ Y₁} {f₂ : Hom X₂ Y₂} (hf : HEq f₁ f₂) :
-    HEq (f₁.subst σ) (f₂.subst σ) := by
+    HEq (Hom.subst σ f₁) (Hom.subst σ f₂) := by
   subst hX; subst hY
   cases eq_of_heq hf
   rfl
@@ -318,28 +329,31 @@ equivalence class of its raw substitution `f.subst σ`. -/
 @[simp]
 theorem toFunctor_map_homMk {X Y : FreeMonoidalCategory S.Obj} (f : FreeBraided.Hom X Y) :
     σ.toFunctor.map (FreeBraided.homMk (X := ⟨X⟩) (Y := ⟨Y⟩) f) =
-      FreeBraided.homMk (f.subst σ) := by
+      FreeBraided.homMk (Hom.subst σ f) := by
   induction f with
-  | id X => exact liftMap_id σ.obj _ ⟨X⟩
-  | α_hom X Y Z => exact lift_map_associator_hom σ.obj _ ⟨X⟩ ⟨Y⟩ ⟨Z⟩
-  | α_inv X Y Z => exact lift_map_associator_inv σ.obj _ ⟨X⟩ ⟨Y⟩ ⟨Z⟩
-  | l_hom X => exact lift_map_leftUnitor_hom σ.obj _ ⟨X⟩
-  | l_inv X => exact lift_map_leftUnitor_inv σ.obj _ ⟨X⟩
-  | ρ_hom X => exact lift_map_rightUnitor_hom σ.obj _ ⟨X⟩
-  | ρ_inv X => exact lift_map_rightUnitor_inv σ.obj _ ⟨X⟩
-  | β_hom X Y => exact lift_map_braiding_hom σ.obj _ ⟨X⟩ ⟨Y⟩
-  | β_inv X Y => exact lift_map_braiding_inv σ.obj _ ⟨X⟩ ⟨Y⟩
-  | coupon g => exact (congrArg σ.toFunctor.map (homMk_coupon g)).trans (lift_map_coupon σ.obj _ g)
+  | id X => exact (lift σ.obj _).map_id ⟨X⟩
+  | α_hom X Y Z => exact lift_map_associator_hom _ _ ⟨X⟩ ⟨Y⟩ ⟨Z⟩
+  | α_inv X Y Z => exact lift_map_associator_inv _ _ ⟨X⟩ ⟨Y⟩ ⟨Z⟩
+  | l_hom X => exact lift_map_leftUnitor_hom _ _ ⟨X⟩
+  | l_inv X => exact lift_map_leftUnitor_inv _ _ ⟨X⟩
+  | ρ_hom X => exact lift_map_rightUnitor_hom _ _ ⟨X⟩
+  | ρ_inv X => exact lift_map_rightUnitor_inv _ _ ⟨X⟩
+  | gen g =>
+    cases g with
+    | β_hom X Y => exact lift_map_braiding_hom _ _ ⟨X⟩ ⟨Y⟩
+    | β_inv X Y => exact lift_map_braiding_inv _ _ ⟨X⟩ ⟨Y⟩
+    | coupon g =>
+      exact (congrArg σ.toFunctor.map (homMk_coupon g)).trans (lift_map_coupon σ.obj _ g)
   | comp f g hf hg =>
-    exact (liftMap_comp σ.obj _ (homMk f) (homMk g)).trans (congrArg₂ (· ≫ ·) hf hg)
+    exact ((lift σ.obj _).map_comp (homMk f) (homMk g)).trans (congrArg₂ (· ≫ ·) hf hg)
   | whiskerLeft X f hf =>
-    exact (lift_map_whiskerLeft σ.obj _ ⟨X⟩ (homMk f)).trans
+    exact (lift_map_whiskerLeft _ _ ⟨X⟩ (homMk f)).trans
       (congrArg (projectObj σ.obj X ◁ ·) hf)
   | whiskerRight f X hf =>
-    exact (lift_map_whiskerRight σ.obj _ (homMk f) ⟨X⟩).trans
+    exact (lift_map_whiskerRight _ _ (homMk f) ⟨X⟩).trans
       (congrArg (· ▷ projectObj σ.obj X) hf)
   | tensor f g hf hg =>
-    exact (lift_map_tensorHom σ.obj _ (homMk f) (homMk g)).trans (congrArg₂ (· ⊗ₘ ·) hf hg)
+    exact (lift_map_tensorHom _ _ (homMk f) (homMk g)).trans (congrArg₂ (· ⊗ₘ ·) hf hg)
 
 end BraidedSubstitution
 
@@ -348,7 +362,7 @@ namespace FreeBraided
 /-- Raw braided substitution preserves the congruence generated by the braided monoidal axioms,
 without requiring any equation among the replacing coupons. -/
 theorem HomEquiv.subst (σ : BraidedSubstitution S T) {X Y} {f g : Hom X Y} (h : HomEquiv f g) :
-    HomEquiv (f.subst σ) (g.subst σ) := by
+    HomEquiv (Hom.subst σ f) (Hom.subst σ g) := by
   apply Quotient.exact (s := setoidHom _ _)
   exact (σ.toFunctor_map_homMk f).symm.trans
     ((congrArg (σ.toFunctor.map (X := ⟨X⟩) (Y := ⟨Y⟩)) (Quotient.sound h)).trans
@@ -410,7 +424,7 @@ def comp (σ : BraidedSubstitution S T) (τ : BraidedSubstitution T U) :
     cast (congrArg₂ FreeBraided.Hom
       (congrArg FreeBraided.as (projectObj_comp σ.obj τ.obj (S.src g))).symm
       (congrArg FreeBraided.as (projectObj_comp σ.obj τ.obj (S.tgt g))).symm)
-      ((σ.coupon g).subst τ)
+      (Hom.subst τ (σ.coupon g))
 
 /-- On generating objects, `σ.comp τ` applies `τ.toFunctor` to the object word `σ.obj a`. -/
 @[simp]
@@ -421,7 +435,7 @@ theorem comp_obj (σ : BraidedSubstitution S T) (τ : BraidedSubstitution T U) (
 across iterated `projectObj`. -/
 theorem comp_coupon_heq (σ : BraidedSubstitution S T) (τ : BraidedSubstitution T U)
     (g : S.Coupon) :
-    HEq ((σ.comp τ).coupon g) ((σ.coupon g).subst τ) :=
+    HEq ((σ.comp τ).coupon g) (Hom.subst τ (σ.coupon g)) :=
   cast_heq _ _
 
 private theorem hom_comp_heq {X₁ X₂ Y₁ Y₂ Z₁ Z₂ : FreeMonoidalCategory S.Obj}
@@ -476,17 +490,24 @@ private theorem subst_heq_of {σ : BraidedSubstitution S U}
     (F : ∀ {X Y}, FreeBraided.Hom X Y → FreeBraided.Hom (φ X) (φ Y))
     (h_coupon : ∀ g, HEq (σ.coupon g) (F (.coupon g)))
     {X Y : FreeMonoidalCategory S.Obj} (f : FreeBraided.Hom X Y)
-    (h_id : ∀ X, HEq (FreeBraided.Hom.id (φ X)) (F (.id X)) := by intros; rfl)
+    (h_id : ∀ X, HEq (MonoidalCore.Hom.id (φ X) : FreeBraided.Hom (S := U) _ _)
+      (F (.id X)) := by intros; rfl)
     (h_α_hom : ∀ X Y Z,
-      HEq (FreeBraided.Hom.α_hom (φ X) (φ Y) (φ Z)) (F (.α_hom X Y Z)) := by intros; rfl)
+      HEq (MonoidalCore.Hom.α_hom (φ X) (φ Y) (φ Z) : FreeBraided.Hom (S := U) _ _)
+        (F (.α_hom X Y Z)) := by intros; rfl)
     (h_α_inv : ∀ X Y Z,
-      HEq (FreeBraided.Hom.α_inv (φ X) (φ Y) (φ Z)) (F (.α_inv X Y Z)) := by intros; rfl)
-    (h_l_hom : ∀ X, HEq (FreeBraided.Hom.l_hom (φ X)) (F (.l_hom X)) := by intros; rfl)
-    (h_l_inv : ∀ X, HEq (FreeBraided.Hom.l_inv (φ X)) (F (.l_inv X)) := by intros; rfl)
-    (h_ρ_hom : ∀ X, HEq (FreeBraided.Hom.ρ_hom (φ X)) (F (.ρ_hom X)) := by intros; rfl)
-    (h_ρ_inv : ∀ X, HEq (FreeBraided.Hom.ρ_inv (φ X)) (F (.ρ_inv X)) := by intros; rfl)
-    (h_β_hom : ∀ X Y, HEq (FreeBraided.Hom.β_hom (φ X) (φ Y)) (F (.β_hom X Y)) := by intros; rfl)
-    (h_β_inv : ∀ X Y, HEq (FreeBraided.Hom.β_inv (φ X) (φ Y)) (F (.β_inv X Y)) := by intros; rfl)
+      HEq (MonoidalCore.Hom.α_inv (φ X) (φ Y) (φ Z) : FreeBraided.Hom (S := U) _ _)
+        (F (.α_inv X Y Z)) := by intros; rfl)
+    (h_l_hom : ∀ X, HEq (MonoidalCore.Hom.l_hom (φ X) : FreeBraided.Hom (S := U) _ _)
+      (F (.l_hom X)) := by intros; rfl)
+    (h_l_inv : ∀ X, HEq (MonoidalCore.Hom.l_inv (φ X) : FreeBraided.Hom (S := U) _ _)
+      (F (.l_inv X)) := by intros; rfl)
+    (h_ρ_hom : ∀ X, HEq (MonoidalCore.Hom.ρ_hom (φ X) : FreeBraided.Hom (S := U) _ _)
+      (F (.ρ_hom X)) := by intros; rfl)
+    (h_ρ_inv : ∀ X, HEq (MonoidalCore.Hom.ρ_inv (φ X) : FreeBraided.Hom (S := U) _ _)
+      (F (.ρ_inv X)) := by intros; rfl)
+    (h_β_hom : ∀ X Y, HEq (FreeBraided.Hom.βHom (φ X) (φ Y)) (F (.βHom X Y)) := by intros; rfl)
+    (h_β_inv : ∀ X Y, HEq (FreeBraided.Hom.βInv (φ X) (φ Y)) (F (.βInv X Y)) := by intros; rfl)
     (h_comp : ∀ {X Y Z} (f : FreeBraided.Hom X Y) (g : FreeBraided.Hom Y Z),
       HEq ((F f).comp (F g)) (F (f.comp g)) := by intros; rfl)
     (h_whiskerLeft : ∀ X {Y Z} (f : FreeBraided.Hom Y Z),
@@ -495,42 +516,53 @@ private theorem subst_heq_of {σ : BraidedSubstitution S U}
       HEq ((F f).whiskerRight (φ Z)) (F (f.whiskerRight Z)) := by intros; rfl)
     (h_tensor : ∀ {W X Y Z} (f : FreeBraided.Hom W Y) (g : FreeBraided.Hom X Z),
       HEq ((F f).tensor (F g)) (F (f.tensor g)) := by intros; rfl) :
-    HEq (f.subst σ) (F f) := by
+    HEq (Hom.subst σ f) (F f) := by
   induction f with
   | id X =>
     rw [Hom.subst_id]
-    exact (congr_arg_heq FreeBraided.Hom.id (has X)).trans (h_id X)
+    exact (congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.id Z : FreeBraided.Hom (S := U) _ _))
+      (has X)).trans (h_id X)
   | α_hom X Y Z =>
     rw [Hom.subst_α_hom]
-    exact (congr_arg_heq (fun p : _ × _ × _ ↦ FreeBraided.Hom.α_hom p.1 p.2.1 p.2.2)
+    exact (congr_arg_heq
+      (fun p : _ × _ × _ ↦ (MonoidalCore.Hom.α_hom p.1 p.2.1 p.2.2 :
+        FreeBraided.Hom (S := U) _ _))
       (congrArg₂ Prod.mk (has X) (congrArg₂ Prod.mk (has Y) (has Z)))).trans (h_α_hom X Y Z)
   | α_inv X Y Z =>
     rw [Hom.subst_α_inv]
-    exact (congr_arg_heq (fun p : _ × _ × _ ↦ FreeBraided.Hom.α_inv p.1 p.2.1 p.2.2)
+    exact (congr_arg_heq
+      (fun p : _ × _ × _ ↦ (MonoidalCore.Hom.α_inv p.1 p.2.1 p.2.2 :
+        FreeBraided.Hom (S := U) _ _))
       (congrArg₂ Prod.mk (has X) (congrArg₂ Prod.mk (has Y) (has Z)))).trans (h_α_inv X Y Z)
   | l_hom X =>
     rw [Hom.subst_l_hom]
-    exact (congr_arg_heq FreeBraided.Hom.l_hom (has X)).trans (h_l_hom X)
+    exact (congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.l_hom Z : FreeBraided.Hom (S := U) _ _))
+      (has X)).trans (h_l_hom X)
   | l_inv X =>
     rw [Hom.subst_l_inv]
-    exact (congr_arg_heq FreeBraided.Hom.l_inv (has X)).trans (h_l_inv X)
+    exact (congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.l_inv Z : FreeBraided.Hom (S := U) _ _))
+      (has X)).trans (h_l_inv X)
   | ρ_hom X =>
     rw [Hom.subst_ρ_hom]
-    exact (congr_arg_heq FreeBraided.Hom.ρ_hom (has X)).trans (h_ρ_hom X)
+    exact (congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.ρ_hom Z : FreeBraided.Hom (S := U) _ _))
+      (has X)).trans (h_ρ_hom X)
   | ρ_inv X =>
     rw [Hom.subst_ρ_inv]
-    exact (congr_arg_heq FreeBraided.Hom.ρ_inv (has X)).trans (h_ρ_inv X)
-  | β_hom X Y =>
-    rw [Hom.subst_β_hom]
-    exact (congr_arg_heq (fun p : _ × _ ↦ FreeBraided.Hom.β_hom p.1 p.2)
-      (congrArg₂ Prod.mk (has X) (has Y))).trans (h_β_hom X Y)
-  | β_inv X Y =>
-    rw [Hom.subst_β_inv]
-    exact (congr_arg_heq (fun p : _ × _ ↦ FreeBraided.Hom.β_inv p.1 p.2)
-      (congrArg₂ Prod.mk (has X) (has Y))).trans (h_β_inv X Y)
-  | coupon g =>
-    rw [Hom.subst_coupon]
-    exact h_coupon g
+    exact (congr_arg_heq (fun Z ↦ (MonoidalCore.Hom.ρ_inv Z : FreeBraided.Hom (S := U) _ _))
+      (has X)).trans (h_ρ_inv X)
+  | gen g =>
+    cases g with
+    | β_hom X Y =>
+      rw [Hom.subst_β_hom]
+      exact (congr_arg_heq (fun p : _ × _ ↦ FreeBraided.Hom.βHom p.1 p.2)
+        (congrArg₂ Prod.mk (has X) (has Y))).trans (h_β_hom X Y)
+    | β_inv X Y =>
+      rw [Hom.subst_β_inv]
+      exact (congr_arg_heq (fun p : _ × _ ↦ FreeBraided.Hom.βInv p.1 p.2)
+        (congrArg₂ Prod.mk (has X) (has Y))).trans (h_β_inv X Y)
+    | coupon g =>
+      rw [Hom.subst_coupon]
+      exact h_coupon g
   | comp f g hf hg =>
     rw [Hom.subst_comp]
     exact (hom_comp_heq (has _) (has _) (has _) hf hg).trans (h_comp f g)
@@ -547,7 +579,7 @@ private theorem subst_heq_of {σ : BraidedSubstitution S U}
 /-- Substituting along the identity braided substitution leaves every raw braided expression
 heterogeneously unchanged. -/
 theorem id_subst_heq {X Y : FreeMonoidalCategory S.Obj} (f : FreeBraided.Hom X Y) :
-    HEq (f.subst (id S)) f :=
+    HEq (Hom.subst (id S) f) f :=
   subst_heq_of _root_.id
     (fun Z ↦ congrArg FreeBraided.as (projectObj_of Z))
     (fun {_ _} f ↦ f) id_coupon_heq f
@@ -556,13 +588,13 @@ theorem id_subst_heq {X Y : FreeMonoidalCategory S.Obj} (f : FreeBraided.Hom X Y
 substituting along `σ` followed by `τ`. -/
 theorem comp_subst_heq (σ : BraidedSubstitution S T) (τ : BraidedSubstitution T U)
     {X Y : FreeMonoidalCategory S.Obj} (f : FreeBraided.Hom X Y) :
-    HEq (f.subst (σ.comp τ)) ((f.subst σ).subst τ) :=
+    HEq (Hom.subst (σ.comp τ) f) (Hom.subst τ (Hom.subst σ f)) :=
   subst_heq_of (fun Z ↦ (projectObj τ.obj (projectObj σ.obj Z).as).as)
     (fun Z ↦ by
       rw [show (σ.comp τ).obj = fun a ↦ projectObj τ.obj (σ.obj a).as from
         funext fun a ↦ (comp_obj σ τ a).trans (τ.toFunctor_obj (σ.obj a))]
       exact congrArg FreeBraided.as (projectObj_comp σ.obj τ.obj Z))
-    (fun {_ _} f ↦ (f.subst σ).subst τ) (comp_coupon_heq σ τ) f
+    (fun {_ _} f ↦ Hom.subst τ (Hom.subst σ f)) (comp_coupon_heq σ τ) f
 
 /-- The strong braided functor induced by the identity braided substitution is the identity functor
 on `S.FreeBraided`. -/
@@ -584,7 +616,7 @@ theorem comp_toFunctor (σ : BraidedSubstitution S T) (τ : BraidedSubstitution 
   refine (heq_of_eq ((σ.comp τ).toFunctor_map_homMk f)).trans ?_
   refine (homMk_heq_of_heq (projectObj_comp σ.obj τ.obj X.as)
     (projectObj_comp σ.obj τ.obj Y.as) (comp_subst_heq σ τ f)).trans ?_
-  exact heq_of_eq ((τ.toFunctor_map_homMk (f.subst σ)).symm.trans
+  exact heq_of_eq ((τ.toFunctor_map_homMk (Hom.subst σ f)).symm.trans
     (congrArg τ.toFunctor.map (σ.toFunctor_map_homMk f).symm))
 
 /-- Precomposing with the identity braided substitution leaves a substitution unchanged. -/

@@ -81,7 +81,7 @@ morphism.
 * `TauCeti.leftAdjointMate_eq_leftMate`, `CategoryTheory.ExactPairing.leftDualIso_hom` and
   `CategoryTheory.ExactPairing.leftDualIso_inv`: Mathlib's `leftAdjointMate` and `leftDualIso`
   as left mates, with `leftDualIso_hom_whiskerLeft_evaluation`,
-  `leftDualIso_congrRight_tensorHom_evaluation`, and
+  `leftDualIso_inv_whiskerLeft_evaluation`, `leftDualIso_congrRight_tensorHom_evaluation`, and
   `coevaluation_comp_leftDualIso_congrRight_tensorHom`;
 * `CategoryTheory.ExactPairing.leftMate_rightDualIso_hom` and
   `CategoryTheory.ExactPairing.rightMate_leftDualIso_hom`: the opposite-handed mate of the
@@ -501,6 +501,13 @@ evaluation of `p₁`. -/
 theorem leftDualIso_hom_whiskerLeft_evaluation {X₁ X₂ Y : C} (p₁ : ExactPairing X₁ Y)
     (p₂ : ExactPairing X₂ Y) : Y ◁ (leftDualIso p₁ p₂).hom ≫ ε_ X₂ Y = ε_ X₁ Y := by
   rw [leftDualIso_hom, leftMate_comp_evaluation, id_whiskerRight, Category.id_comp]
+
+/-- Through the inverse comparison `(leftDualIso p₁ p₂).inv : X₂ ⟶ X₁`, the evaluation of `p₁`
+is the evaluation of `p₂`. -/
+@[reassoc]
+theorem leftDualIso_inv_whiskerLeft_evaluation {X₁ X₂ Y : C} (p₁ : ExactPairing X₁ Y)
+    (p₂ : ExactPairing X₂ Y) : Y ◁ (leftDualIso p₁ p₂).inv ≫ ε_ X₁ Y = ε_ X₂ Y := by
+  rw [leftDualIso_inv, ← leftDualIso_hom, leftDualIso_hom_whiskerLeft_evaluation]
 
 /-- Transporting an exact pairing `p₂ : ExactPairing X₂ Y₂` along `j : Y₁ ≅ Y₂` and comparing
 its left dual with `p₁ : ExactPairing X₁ Y₁` intertwines the evaluations. -/
