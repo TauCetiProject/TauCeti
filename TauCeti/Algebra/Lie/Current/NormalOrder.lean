@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Current.Completion
+public import TauCeti.Algebra.Lie.Current.CompletedCoordinateAction
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Summation
 
 import TauCeti.Algebra.BigOperators.Intervals
+import Mathlib.Topology.Algebra.InfiniteSum.Module
 
 /-!
 # Normally ordered modes in the completed enveloping algebra
@@ -29,8 +30,9 @@ converge in `Û`: modulo `I_N`, every summand with `m ≥ N` lies in `I_N` becau
 `y_{n-m}` does. So the coordinate of `:x y:_n` in `U / I_N` is the class of the finite sum over
 `min (n + 1 - N) 0 ≤ m < N` (`TauCeti.CurrentAlgebra.limπ_normalOrderedMode`), and on a vector of a
 smooth module killed by `I_N` the mode `:x y:_n` acts by this finite sum
-(`TauCeti.CurrentAlgebra.limSmul_normalOrderedMode`). No finiteness of `L` and no condition on `Φ`
-or on `a` is needed; in particular this includes the critical level.
+(`TauCeti.CurrentAlgebra.limSmul_normalOrderedMode`). No finiteness of `L` and no further condition
+on the invariant symmetric form `Φ` or on `a` is needed; in particular this includes the critical
+level.
 
 The same argument applies when the summands are ordered at any other cut `p`, putting `xₘ` on the
 left exactly for `m < p` (`TauCeti.CurrentAlgebra.normalOrderedSummand`). Moving the cut from `0`
@@ -55,6 +57,11 @@ The modes `:x y:_n` are bilinear in `x` and `y`, and the completed level compari
 the modes of `Û(ĝ_Ψ)` at central value `1` to those of `Û(ĝ_Φ)` at central value `k` when
 `Ψ = k • Φ` (`TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_normalOrderedMode`).
 
+Over a field, the coordinate homothety `t ↦ u t` for a unit `u` scales every summand of total
+mode `n` by `u ^ n`, independently of the ordering cut. Continuity passes the same law to the
+convergent sum at every cut and hence to `:x y:_n`. These laws apply to any Lie algebra over the
+field and at every central value.
+
 ## Main definitions
 
 * `TauCeti.CurrentAlgebra.normalOrderedSummand`: the summands `xₘ y_{n-m}` or `y_{n-m} xₘ`,
@@ -72,6 +79,12 @@ the modes of `Û(ĝ_Ψ)` at central value `1` to those of `Û(ĝ_Φ)` at central
 * `TauCeti.CurrentAlgebra.limSmul_normalOrderedMode`: its action on a smooth vector is a finite
   sum.
 * `TauCeti.CurrentAlgebra.tsum_normalOrderedSummand`: moving the cut of the normal ordering.
+* `TauCeti.CurrentAlgebra.coordinateEnvelopingAut_homothety_normalOrderedSummand`: homothety
+  scaling of each normally ordered summand at any cut.
+* `TauCeti.CurrentAlgebra.coordinateCompletedEnvelopingAut_homothety_tsum_normalOrderedSummand`:
+  homothety scaling of the convergent normally ordered sum at any cut.
+* `TauCeti.CurrentAlgebra.coordinateCompletedEnvelopingAut_homothety_normalOrderedMode`:
+  homothety scaling of the normally ordered mode.
 * `TauCeti.CurrentAlgebra.toCompletedEnveloping_mul_normalOrderedMode_sub_mul`: the commutator of
   a current with a normally ordered mode.
 
@@ -272,6 +285,61 @@ theorem tsum_normalOrderedSummand (p n : ℤ) (x y : L) :
   exact ((hasSum_normalOrderedMode n x y).add (hs _ _)).sub (hs _ _)
 
 end NormalOrder
+
+/-! ### Homothety scaling -/
+
+section Homothety
+
+variable {K : Type*} [Field K] [LieAlgebra K L]
+variable (Φ : LinearMap.BilinForm K L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : K)
+
+/-- Every summand of a normally ordered mode scales with its total mode, at any cut. -/
+@[simp]
+theorem coordinateEnvelopingAut_homothety_normalOrderedSummand
+    (u : Kˣ) (p n m : ℤ) (x y : L) :
+    coordinateEnvelopingAut Φ hΦ hΦs a (FormalCoordinate.homothety u).substAlgEquiv
+        (normalOrderedSummand Φ hΦ hΦs a p n m x y) =
+      (u : K) ^ n • normalOrderedSummand Φ hΦ hΦs a p n m x y := by
+  have hu : (u : K) ^ m * (u : K) ^ (n - m) = (u : K) ^ n := by
+    rw [← zpow_add₀ u.ne_zero, add_sub_cancel]
+  have hu' : (u : K) ^ (n - m) * (u : K) ^ m = (u : K) ^ n := by
+    rw [mul_comm, hu]
+  simp only [normalOrderedSummand_apply]
+  split_ifs <;>
+    simp only [map_mul, coordinateEnvelopingAut_homothety_envelopingι,
+      smul_mul_smul, hu, hu']
+
+/-- A formal homothety scales the convergent normally ordered sum at any cut by its total mode.
+This applies to any Lie algebra over the field and at every central value. -/
+theorem coordinateCompletedEnvelopingAut_homothety_tsum_normalOrderedSummand
+    (u : Kˣ) (p n : ℤ) (x y : L) :
+    coordinateCompletedEnvelopingAut Φ hΦ hΦs a (FormalCoordinate.homothety u).substAlgEquiv
+        (∑' m, toCompletedEnveloping Φ hΦ hΦs a
+          (normalOrderedSummand Φ hΦ hΦs a p n m x y)) =
+      (u : K) ^ n • ∑' m, toCompletedEnveloping Φ hΦ hΦs a
+        (normalOrderedSummand Φ hΦ hΦs a p n m x y) := by
+  refine ((summable_normalOrderedSummand Φ hΦ hΦs a p n x y).hasSum.map
+    (coordinateCompletedEnvelopingAut Φ hΦ hΦs a (FormalCoordinate.homothety u).substAlgEquiv)
+    (continuous_coordinateCompletedEnvelopingAut _)).unique ?_
+  convert (summable_normalOrderedSummand Φ hΦ hΦs a p n x y).hasSum.const_smul
+    ((u : K) ^ n) using 1
+  ext m
+  dsimp only [Function.comp_def]
+  rw [coe_toCompletedEnveloping, coordinateCompletedEnvelopingAut_toLimQuotients,
+    ← coe_toCompletedEnveloping, coordinateEnvelopingAut_homothety_normalOrderedSummand,
+    map_smul]
+
+/-- A formal homothety scales the convergent normally ordered mode of degree `n` by `u ^ n`. -/
+@[simp]
+theorem coordinateCompletedEnvelopingAut_homothety_normalOrderedMode
+    (u : Kˣ) (n : ℤ) (x y : L) :
+    coordinateCompletedEnvelopingAut Φ hΦ hΦs a (FormalCoordinate.homothety u).substAlgEquiv
+        (normalOrderedMode Φ hΦ hΦs a n x y) =
+      (u : K) ^ n • normalOrderedMode Φ hΦ hΦs a n x y := by
+  simp only [normalOrderedMode_apply]
+  exact coordinateCompletedEnvelopingAut_homothety_tsum_normalOrderedSummand Φ hΦ hΦs a u 0 n x y
+
+end Homothety
 
 /-! ### Commutators with currents -/
 

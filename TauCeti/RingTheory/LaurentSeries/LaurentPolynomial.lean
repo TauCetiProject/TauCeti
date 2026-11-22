@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Algebra
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Derivative
 public import TauCeti.RingTheory.LaurentSeries.Convergence
+import TauCeti.RingTheory.HahnSeries.Addition
 
 /-!
 # Laurent polynomials as Laurent series
@@ -342,10 +343,7 @@ theorem continuousLinearMap_ext_single {K M : Type*} [Field K] [AddCommMonoid M]
   | add p q hp hq => simp only [Function.comp_apply, map_add] at *; rw [hp, hq]
   | C_mul_T n r =>
     have hs : (single n r : K⸨X⸩) = r • single n 1 := by
-      -- The linear-map apply lemma retains the additive-hom wrapper; unfold just that wrapper
-      -- to express its scalar-linearity law in terms of single.
-      simpa [HahnSeries.single.addMonoidHom] using
-        map_smul (HahnSeries.single.linearMap n) r (1 : K)
+      simpa only [smul_eq_mul, mul_one] using HahnSeries.single_smul n r (1 : K)
     simp only [Function.comp_apply, ← LaurentPolynomial.single_eq_C_mul_T,
       LaurentPolynomial.toLaurentSeries_single, hs, map_smul, h]
 

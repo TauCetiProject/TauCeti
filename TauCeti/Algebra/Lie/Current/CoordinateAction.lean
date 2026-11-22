@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Current.LeftIdeal
 public import TauCeti.Algebra.Lie.Current.Substitution
 public import TauCeti.Algebra.Lie.Extension.Basic
+import TauCeti.RingTheory.HahnSeries.Addition
 
 /-!
 # Coordinate changes on residue central extensions and their enveloping algebras
@@ -208,8 +209,7 @@ theorem coordinateEnvelopingAut_homothety_envelopingι (u : Kˣ) (m : ℤ) (c : 
       (u : K) ^ m • envelopingι cΦ a (HahnSeries.single m c ⊗ₜ[K] x) := by
   have hs : HahnSeries.single m ((u : K) ^ m * c) =
       (u : K) ^ m • HahnSeries.single m c := by
-    simpa [HahnSeries.single.addMonoidHom, smul_eq_mul] using
-      map_smul (HahnSeries.single.linearMap m) ((u : K) ^ m) c
+    simpa only [smul_eq_mul] using HahnSeries.single_smul m ((u : K) ^ m) c
   simp only [coordinateEnvelopingAut_envelopingι, FormalCoordinate.ofAlgEquiv_substAlgEquiv,
     substLieEquiv_tmul, LaurentSeries.substAlgEquiv_homothety, LaurentSeries.rescale_single,
     Units.val_zpow_eq_zpow_val, hs,
