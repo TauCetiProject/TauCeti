@@ -128,19 +128,8 @@ theorem isFredholm : ContinuousLinearMap.IsFredholm (blockToeplitz 2 symbol) := 
 
 /-- The opposite-shift block Toeplitz operator has Fredholm index zero. -/
 theorem index_eq_zero : ContinuousLinearMap.index (blockToeplitz 2 symbol) = 0 := by
-  have hS := isFredholm_toeplitz_fourierLp 1
-  have hT := isFredholm_toeplitz_fourierLp (-1)
-  let := hS.finite_ker
-  let := hS.finite_coker
-  let := hT.finite_ker
-  let := hT.finite_coker
-  let := Module.Free.of_divisionRing ℂ (toeplitz (fourierLp (T := 1) ∞ 1)).ker
-  let := Module.Free.of_divisionRing ℂ (toeplitz (fourierLp (T := 1) ∞ (-1))).ker
-  let := Module.Free.of_divisionRing ℂ
-    (HardySpace ⧸ (toeplitz (fourierLp (T := 1) ∞ 1)).range)
-  let := Module.Free.of_divisionRing ℂ
-    (HardySpace ⧸ (toeplitz (fourierLp (T := 1) ∞ (-1))).range)
-  rw [conjugate, ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+  rw [conjugate, (isFredholm_toeplitz_fourierLp 1).index_conj_prodMap
+    (isFredholm_toeplitz_fourierLp (-1))]
   norm_num [index_toeplitz_fourierLp]
 
 /-- The operator annihilates the constant mode in its second component. -/

@@ -34,11 +34,9 @@ namespace TauCeti
 /-- Include the first `n + 1` block Hardy positions. -/
 def blockFiniteInclusion (r n : ℕ) :
     EuclideanSpace ℂ (Fin (n + 1) × Fin r) →ₗᵢ[ℂ] BlockHardySpace r :=
-  ((blockHardyBasis r).orthonormal.comp (fun i : Fin (n + 1) × Fin r => (i.1.val, i.2))
-    (by
-      intro i j h
-      exact Prod.ext (Fin.ext (congrArg (fun p : ℕ × Fin r => p.1) h))
-        (congrArg (fun p : ℕ × Fin r => p.2) h))).synthesisMapIsometry
+  ((blockHardyBasis r).orthonormal.comp
+    (Prod.map (Fin.val : Fin (n + 1) → ℕ) id)
+    (Fin.val_injective.prodMap Function.injective_id)).synthesisMapIsometry
 
 /-- The inclusion is the finite expansion in the selected block basis vectors. -/
 theorem blockFiniteInclusion_apply (r n : ℕ)
@@ -50,19 +48,13 @@ theorem blockFiniteInclusion_apply (r n : ℕ)
 @[simp] theorem blockFiniteInclusion_single (r n : ℕ) (i : Fin (n + 1) × Fin r) :
     blockFiniteInclusion r n (EuclideanSpace.single i 1) =
       blockHardyBasis r (i.1, i.2) := by
-  have h := Orthonormal.synthesisMapIsometry_single
-    ((blockHardyBasis r).orthonormal.comp
-      (fun j : Fin (n + 1) × Fin r => (j.1.val, j.2))
-      (by
-        intro a b hab
-        exact Prod.ext (Fin.ext (congrArg (fun p : ℕ × Fin r => p.1) hab))
-          (congrArg (fun p : ℕ × Fin r => p.2) hab))) i (1 : ℂ)
-  simp only [one_smul, Function.comp_apply] at h
-  refine Eq.trans ?_ h
-  -- The native lemma chooses classical equality; reconcile its coordinate unit with Fin equality.
-  congr 1
-  ext j
-  by_cases hji : j = i <;> simp [EuclideanSpace.single, hji]
+  rw [blockFiniteInclusion_apply]
+  rw [Finset.sum_eq_single i]
+  · simp [EuclideanSpace.single]
+  · intro j _ hji
+    rw [EuclideanSpace.single, PiLp.single_eq_of_ne 2 hji]
+    exact zero_smul ℂ (blockHardyBasis r (j.1, j.2))
+  · simp
 
 /-- The adjoint inclusion reads the selected block Hardy coefficients. -/
 @[simp] theorem adjoint_blockFiniteInclusion_apply (r n : ℕ) (f : BlockHardySpace r)

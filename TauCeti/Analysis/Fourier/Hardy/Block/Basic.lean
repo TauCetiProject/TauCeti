@@ -342,8 +342,9 @@ def blockHardyBasisNat (r : ℕ) [NeZero r] : HilbertBasis ℕ ℂ (BlockHardySp
 theorem blockHardyBasisNat_apply_div_mod (r : ℕ) [NeZero r] (m : ℕ) :
     blockHardyBasisNat r m =
       blockHardyBasis r (m / r, ⟨m % r, Nat.mod_lt m (NeZero.pos r)⟩) := by
-  rw [blockHardyBasisNat, HilbertBasis.reindex_apply]
-  rfl
+  rw [blockHardyBasisNat, HilbertBasis.reindex_apply, Equiv.symm_symm]
+  apply congrArg (blockHardyBasis r)
+  exact (Nat.divModEquiv_apply r m).trans (Prod.ext rfl (Fin.ext (by simp)))
 
 /-- Coordinate representation in `blockHardyBasis r` evaluates coordinatewise via `hardyBasis`. -/
 @[simp] theorem blockHardyBasis_repr {r : ℕ} (f : BlockHardySpace r) (p : ℕ × Fin r) :
