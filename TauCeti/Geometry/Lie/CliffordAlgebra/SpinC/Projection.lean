@@ -128,7 +128,7 @@ def realToSpecialOrthogonalRange : G →ₜ* SpecialOrthogonalUnitsRange where
       (toSpecialOrthogonal (realCliffordForm n 0) hQ)
   continuous_toFun :=
     (realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange n).continuous.comp
-      (continuous_toSpecialOrthogonal (realCliffordForm n 0) hQ)
+      (continuous_toSpecialOrthogonal_pi (realCliffordForm n 0) hQ)
 
 /-- `realToSpecialOrthogonalRange` transports `toSpecialOrthogonal` into the matrix-units range. -/
 theorem realToSpecialOrthogonalRange_apply (g : G) :
@@ -278,18 +278,17 @@ theorem realSpecialOrthogonalProdDetLinearEquiv_apply (p : 𝔬 × ℝ) :
 /-- Projecting `realSpecialOrthogonalProdDetLinearEquiv (W, a)` to `Lie(SO(n))` recovers `W`. -/
 @[simp]
 theorem lieMap_realToSpecialOrthogonalRange_realSpecialOrthogonalProdDetLinearEquiv (p : 𝔬 × ℝ) :
-    πO (realSpecialOrthogonalProdDetLinearEquiv n hQ p) = p.1 :=
-  (lieMap_realToSpecialOrthogonalRange_realSpinProdDetLinearEquiv n hQ
-    ((realSpinToSpecialOrthogonalLieEquiv n).symm p.1, p.2)).trans
-      ((realSpinToSpecialOrthogonalLieEquiv n).apply_symm_apply p.1)
+    πO (realSpecialOrthogonalProdDetLinearEquiv n hQ p) = p.1 := by
+  rw [realSpecialOrthogonalProdDetLinearEquiv_apply,
+    lieMap_realToSpecialOrthogonalRange_realSpinProdDetLinearEquiv, LieEquiv.apply_symm_apply]
 
 /-- Evaluating the determinant weight on `realSpecialOrthogonalProdDetLinearEquiv (W, a)` recovers
 `a`. -/
 @[simp]
 theorem lieWeight_detContinuousMonoidHom_realSpecialOrthogonalProdDetLinearEquiv (p : 𝔬 × ℝ) :
-    d (realSpecialOrthogonalProdDetLinearEquiv n hQ p) = p.2 :=
-  lieWeight_detContinuousMonoidHom_realSpinProdDetLinearEquiv n hQ
-    ((realSpinToSpecialOrthogonalLieEquiv n).symm p.1, p.2)
+    d (realSpecialOrthogonalProdDetLinearEquiv n hQ p) = p.2 := by
+  rw [realSpecialOrthogonalProdDetLinearEquiv_apply,
+    lieWeight_detContinuousMonoidHom_realSpinProdDetLinearEquiv]
 
 /-- **Canonical coordinates on `Lie(Spinᶜ(n))`**: the inverse of
 `realSpecialOrthogonalProdDetLinearEquiv` sends every `Y ∈ Lie(Spinᶜ(n))` to its rotation
@@ -311,8 +310,11 @@ the central determinant parameter. -/
 theorem lie_realSpecialOrthogonalProdDetLinearEquiv (p q : 𝔬 × ℝ) :
     ⁅realSpecialOrthogonalProdDetLinearEquiv n hQ p,
         realSpecialOrthogonalProdDetLinearEquiv n hQ q⁆ =
-      realSpecialOrthogonalProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) :=
-  lie_realSpinProdDetLinearEquiv_comp_lieEquiv n hQ
+      realSpecialOrthogonalProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) := by
+  rw [realSpecialOrthogonalProdDetLinearEquiv_apply,
+    realSpecialOrthogonalProdDetLinearEquiv_apply,
+    realSpecialOrthogonalProdDetLinearEquiv_apply]
+  exact lie_realSpinProdDetLinearEquiv_comp_lieEquiv n hQ
     (realSpinToSpecialOrthogonalLieEquiv n).symm p q
 
 /-- **Full `Spinᶜ(n)` adjoint equivariance of the `Lie(SO(n)) × ℝ` lift**: any `g ∈ Spinᶜ(n)` acts
@@ -350,19 +352,18 @@ theorem realSoProdDetLinearEquiv_apply (p : LieAlgebra.Orthogonal.so (Fin n) ℝ
 @[simp]
 theorem realCliffordSpecialOrthogonalLieEquivSo_lieMap_realSoProdDetLinearEquiv
     (p : LieAlgebra.Orthogonal.so (Fin n) ℝ × ℝ) :
-    realCliffordSpecialOrthogonalLieEquivSo n (πO (realSoProdDetLinearEquiv n hQ p)) = p.1 :=
-  (congrArg (realCliffordSpecialOrthogonalLieEquivSo n)
-    (lieMap_realToSpecialOrthogonalRange_realSpecialOrthogonalProdDetLinearEquiv n hQ
-      ((realCliffordSpecialOrthogonalLieEquivSo n).symm p.1, p.2))).trans
-    ((realCliffordSpecialOrthogonalLieEquivSo n).apply_symm_apply p.1)
+    realCliffordSpecialOrthogonalLieEquivSo n (πO (realSoProdDetLinearEquiv n hQ p)) = p.1 := by
+  rw [realSoProdDetLinearEquiv_apply,
+    lieMap_realToSpecialOrthogonalRange_realSpecialOrthogonalProdDetLinearEquiv,
+    LieEquiv.apply_symm_apply]
 
 /-- Evaluating the determinant weight on `realSoProdDetLinearEquiv (A, a)` recovers `a`. -/
 @[simp]
 theorem lieWeight_detContinuousMonoidHom_realSoProdDetLinearEquiv
     (p : LieAlgebra.Orthogonal.so (Fin n) ℝ × ℝ) :
-    d (realSoProdDetLinearEquiv n hQ p) = p.2 :=
-  lieWeight_detContinuousMonoidHom_realSpecialOrthogonalProdDetLinearEquiv n hQ
-    ((realCliffordSpecialOrthogonalLieEquivSo n).symm p.1, p.2)
+    d (realSoProdDetLinearEquiv n hQ p) = p.2 := by
+  rw [realSoProdDetLinearEquiv_apply,
+    lieWeight_detContinuousMonoidHom_realSpecialOrthogonalProdDetLinearEquiv]
 
 /-- Inverse of `realSoProdDetLinearEquiv`: it returns the skew-symmetric matrix coordinate of the
 rotation differential together with the normalized determinant weight. -/
@@ -381,10 +382,10 @@ annihilate the central determinant parameter. -/
 @[simp]
 theorem lie_realSoProdDetLinearEquiv (p q : LieAlgebra.Orthogonal.so (Fin n) ℝ × ℝ) :
     ⁅realSoProdDetLinearEquiv n hQ p, realSoProdDetLinearEquiv n hQ q⁆ =
-      realSoProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) :=
-  lie_realSpinProdDetLinearEquiv_comp_lieEquiv n hQ
-    ((realCliffordSpecialOrthogonalLieEquivSo n).symm.trans
-      (realSpinToSpecialOrthogonalLieEquiv n).symm) p q
+      realSoProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) := by
+  rw [realSoProdDetLinearEquiv_apply, realSoProdDetLinearEquiv_apply,
+    realSoProdDetLinearEquiv_apply, lie_realSpecialOrthogonalProdDetLinearEquiv,
+    LieEquiv.map_lie]
 
 /-- Compatibility of the two routes from native Spin to skew matrices: taking quadratic Clifford
 coordinates then applying `realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv` agrees with
@@ -456,9 +457,18 @@ def realToSpecialOrthogonalProdDetLieEquiv :
 theorem realToSpecialOrthogonalProdDetLieEquiv_apply (Y : 𝔤) :
     realToSpecialOrthogonalProdDetLieEquiv n hQ Y =
       (πO Y, ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1) (detContinuousMonoidHom _ hQ) Y) := by
-  unfold realToSpecialOrthogonalProdDetLieEquiv realToSpecialOrthogonalProdDetRange
-  exact TauCeti.Lie.prodLieEquiv_continuousMonoidHom_lieMap_prod
-    (realToSpecialOrthogonalRange n hQ) (detContinuousMonoidHom _ hQ) Y
+  rw [realToSpecialOrthogonalProdDetLieEquiv, LieEquiv.trans_apply]
+  have hof :
+      (LieEquiv.ofBijective
+        (ContinuousMonoidHom.lieMap (I := IC) (I' := ISP)
+          (realToSpecialOrthogonalProdDetRange n hQ))
+        (lieMap_realToSpecialOrthogonalProdDetRange_bijective n hQ)) Y =
+      ContinuousMonoidHom.lieMap (I := IC) (I' := ISP)
+        (realToSpecialOrthogonalProdDetRange n hQ) Y := by
+    rw [← LieEquiv.coe_toLinearEquiv, LieEquiv.toLinearEquiv_ofBijective,
+      LinearEquiv.ofBijective_apply, LieHom.coe_toLinearMap]
+  rw [hof, realToSpecialOrthogonalProdDetRange,
+    TauCeti.Lie.prodLieEquiv_continuousMonoidHom_lieMap_prod]
 
 /-- The paired rotation-and-determinant homomorphism is a smooth local diffeomorphism. -/
 theorem isLocalDiffeomorph_realToSpecialOrthogonalProdDetRange :

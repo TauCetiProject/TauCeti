@@ -102,11 +102,10 @@ theorem realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv_symm_eq_bivector (
   let Q := QuadraticMap.weightedSumSquares ℝ (1 : Fin n → ℝ)
   let _ := bivectorLieRing Q
   let _ := bivectorLieAlgebra Q
-  let z := (bivectorEquivSo n ℝ).symm A
   apply EquivLike.injective (realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv n)
-  exact ((realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv n).apply_symm_apply A).trans
-    ((realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_bivectorEquivSo n z).trans
-      ((bivectorEquivSo n ℝ).apply_symm_apply A)).symm
+  rw [LieEquiv.apply_symm_apply, realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv_apply,
+    realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_bivectorEquivSo,
+    (bivectorEquivSo n ℝ).apply_symm_apply]
 
 /-- The differential of the smooth Spin projection on the native units-range carriers is
 bijective. -/

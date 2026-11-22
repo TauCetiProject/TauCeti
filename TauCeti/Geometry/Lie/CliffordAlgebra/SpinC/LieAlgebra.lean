@@ -118,13 +118,10 @@ def realSpinProdCircleLieEquiv : (𝔰 × LeftInvariantDerivation (𝓡 1) Circl
 images in `Lie(Spinᶜ(n))`. -/
 @[simp]
 theorem realSpinProdCircleLieEquiv_apply (p : 𝔰 × LeftInvariantDerivation (𝓡 1) Circle) :
-    realSpinProdCircleLieEquiv n hQ p = ιS p.1 + ιC p.2 :=
-  (TauCeti.Lie.lieMap_prodLieEquiv_symm (mkContinuousMonoidHom _ hQ) p).trans <|
-    congrArg₂ (· + ·)
-      (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f p.1)
-        (mkContinuousMonoidHom_comp_inl _ hQ))
-      (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC) f p.2)
-        (mkContinuousMonoidHom_comp_inr _ hQ))
+    realSpinProdCircleLieEquiv n hQ p = ιS p.1 + ιC p.2 := by
+  rw [realSpinProdCircleLieEquiv, LieEquiv.trans_apply, realMkLieEquiv_apply,
+    TauCeti.Lie.lieMap_prodLieEquiv_symm, mkContinuousMonoidHom_comp_inl,
+    mkContinuousMonoidHom_comp_inr]
 
 /-- The Lie differential of the Spin inclusion `Spin(n) → Spinᶜ(n)` is injective. -/
 theorem lieMap_ofSpinContinuousMonoidHom_injective : Function.Injective ιS := by
@@ -344,7 +341,9 @@ bracket and annihilate the determinant component. -/
 theorem lie_realQuadraticProdDetLinearEquiv
     (p q : quadraticLieSubalgebra (realCliffordForm n 0) × ℝ) :
     ⁅realQuadraticProdDetLinearEquiv n hQ p, realQuadraticProdDetLinearEquiv n hQ q⁆ =
-      realQuadraticProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) :=
-  lie_realSpinProdDetLinearEquiv_comp_lieEquiv n hQ (realSpinLieEquivQuadratic n).symm p q
+      realQuadraticProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) := by
+  rw [realQuadraticProdDetLinearEquiv_apply, realQuadraticProdDetLinearEquiv_apply,
+    realQuadraticProdDetLinearEquiv_apply]
+  exact lie_realSpinProdDetLinearEquiv_comp_lieEquiv n hQ (realSpinLieEquivQuadratic n).symm p q
 
 end CliffordAlgebra.spinCGroup
