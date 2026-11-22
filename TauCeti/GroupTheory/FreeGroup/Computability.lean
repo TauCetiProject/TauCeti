@@ -115,22 +115,15 @@ theorem primrec_toWord_inv_mk [DecidableEq α] :
 primitive-recursive predicate on natural numbers. Invalid codes are rejected. -/
 theorem primrecPred_exists_encode_toWord [DecidableEq α] :
     PrimrecPred fun n : ℕ => ∃ x : FreeGroup α, Encodable.encode x.toWord = n := by
-  classical
-  have test : Primrec fun n : ℕ =>
-      ((Encodable.decode₂ (List (α × Bool)) n).map
-        (fun w => decide (IsReduced w))).getD false :=
-    Primrec.option_getD.comp
-      (Primrec.option_map Primrec.decode₂
-        (primrecPred_isReduced.decide.comp Primrec.snd).to₂) (Primrec.const false)
-  refine (Primrec.eq.comp test (Primrec.const true)).of_eq fun n => ?_
+  refine ((primrecPred_isReduced (α := α)).exists_mem_list.comp
+    (Primrec.optionToList.comp Primrec.decode₂)).of_eq fun n => ?_
   -- The valid codes are those decoding to a reduced word.
   have codes : (∃ x : FreeGroup α, Encodable.encode x.toWord = n) ↔
       ∃ w ∈ Encodable.decode₂ (List (α × Bool)) n, IsReduced w := by
     simp_rw [Encodable.mem_decode₂]
     exact ⟨fun ⟨x, hx⟩ => ⟨_, hx, isReduced_toWord⟩,
       fun ⟨w, hw, hr⟩ => ⟨mk w, by rw [toWord_mk, hr.reduce_eq, hw]⟩⟩
-  rw [codes]
-  cases Encodable.decode₂ (List (α × Bool)) n <;> simp
+  simpa only [Option.mem_toList, Option.mem_def] using codes.symm
 
 variable {P G : Type*} [Primcodable P] [Primcodable G] [Group G]
 
