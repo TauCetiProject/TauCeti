@@ -11,6 +11,7 @@ import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import TauCeti.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Distribution.BumpComp
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Normed.Operator.Surjective
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Dynamics.Flow.Variational
@@ -131,8 +132,7 @@ private theorem span_insert_gradient_range_contribution_eq_top {r : ℕ∞} (hr 
       (Submodule.subset_span (mem_insert_of_mem _ (mem_range_self g))) hyV
   -- The covectors `⟪y, N σ ·⟫`, as vectors.
   set m : ℝ → E := fun σ ↦ ContinuousLinearMap.adjoint (N σ) y
-  have hm : Continuous m :=
-    ((ContinuousLinearMap.adjoint (𝕜 := ℝ)).continuous.comp hN).clm_apply continuous_const
+  have hm : Continuous m := hN.clm_adjoint.clm_apply continuous_const
   -- They annihilate the flow direction.
   have hmgrad : ∀ σ, fderiv ℝ f (φ σ x) (m σ) = 0 := fun σ ↦ by
     have hNg : N σ (∇ f (φ σ x)) = ∇ f x := by

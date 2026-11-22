@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Indicator
+public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.Algebra.Ring.Periodic
 
 /-!
 # Periodicity under integer combinations of two periods, in a product coordinate, under reflection,
-and of single-index families
+of single-index families and of subgroup indicators
 
 A function periodic under `c₁` and `c₂` is periodic under every integer combination
 `m c₁ + n c₂` (`Function.Periodic.int_mul_add_int_mul`). For the periods `1` and `i` of a
@@ -25,6 +27,10 @@ A function with period `c` composed with the reflection `x ↦ -x` still has per
 
 The family which is a `c`-periodic function `g` at one index and zero at the others is
 `c`-periodic at every index (`Function.Periodic.piSingle_apply`).
+
+Restricting a `u`-periodic function to an additive subgroup containing `u` keeps the period `u`
+(`Function.Periodic.indicator_addSubgroup`); for instance the indicator of a lattice is periodic
+along the lattice.
 -/
 
 public section
@@ -64,5 +70,15 @@ theorem Periodic.piSingle_apply {ι γ δ : Type*} [DecidableEq ι] [Add γ] [Ze
 theorem Periodic.lift_comp_coe {γ : Type*} [AddGroup γ] {f : γ → β} {c : γ} (h : Periodic f c) :
     h.lift ∘ ((↑) : γ → γ ⧸ AddSubgroup.zmultiples c) = f :=
   funext h.lift_coe
+
+/-- Restricting a `u`-periodic function to an additive subgroup `U` containing `u` keeps the
+period `u`: the indicator of `U` with values `f` is `u`-periodic. -/
+theorem Periodic.indicator_addSubgroup {γ : Type*} [AddGroup γ] [Zero β] {f : γ → β} {u : γ}
+    (hf : Periodic f u) {U : AddSubgroup γ} (hu : u ∈ U) :
+    Periodic ((U : Set γ).indicator f) u := fun v ↦ by
+  by_cases hv : v ∈ U
+  · rw [Set.indicator_of_mem (U.add_mem hv hu), Set.indicator_of_mem hv, hf v]
+  · rw [Set.indicator_of_notMem ((U.add_mem_cancel_right hu).not.mpr hv),
+      Set.indicator_of_notMem hv]
 
 end Function
