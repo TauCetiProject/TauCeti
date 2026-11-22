@@ -10,6 +10,7 @@ public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Topology.FilledIn
 import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
+import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Topology.ConnectedComponents
@@ -56,6 +57,8 @@ real seminormed spaces.
   `TauCeti.iUnion_filledExhaustion`, `IsOpen.iUnion_filledExhaustion`,
   `IsOpen.exists_subset_interior_filledExhaustion`, and `IsOpen.exists_subset_filledExhaustion`:
   monotonicity, interior nesting, union, and compact cofinality.
+* `TauCeti.summable_of_forall_norm_le_filledExhaustion`: pointwise convergence of a series whose
+  `k`-th term is bounded on the `k`-th stage by a summable sequence.
 * `TauCeti.isCompact_filledExhaustion`: compactness of each stage in a proper space.
 * `IsOpen.isFilledIn_closedBall_sdiff_thickening` and `IsOpen.isFilledIn_filledExhaustion`:
   filledness of `closedBall a r \ thickening δ Ωᶜ` and of each exhaustion stage in an open `Ω`.
@@ -244,6 +247,17 @@ theorem _root_.IsOpen.exists_subset_filledExhaustion {Ω K : Set E}
     (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     ∃ n, K ⊆ filledExhaustion Ω n :=
   (hΩ.exists_subset_interior_filledExhaustion hK hKΩ).imp fun _ h ↦ h.trans interior_subset
+
+/-- A series whose `k`-th term is bounded by `u k` on the stage `filledExhaustion Ω k`, for a
+summable `u`, converges at every point of `interior Ω`: such a point lies in every stage from some
+index on. -/
+theorem summable_of_forall_norm_le_filledExhaustion {F : Type*} [NormedAddCommGroup F]
+    [CompleteSpace F] {Ω : Set E} {t : ℕ → E → F} {u : ℕ → ℝ} (hu : Summable u)
+    (hb : ∀ k, ∀ x ∈ filledExhaustion Ω k, ‖t k x‖ ≤ u k) {x : E} (hx : x ∈ interior Ω) :
+    Summable fun k ↦ t k x := by
+  obtain ⟨j, hj⟩ := mem_iUnion.1 ((iUnion_filledExhaustion Ω).symm ▸ hx)
+  exact .of_norm_bounded_eventually_nat hu <|
+    Filter.eventually_atTop.2 ⟨j, fun k hk ↦ hb k x (filledExhaustion_mono hk hj)⟩
 
 end Stages
 

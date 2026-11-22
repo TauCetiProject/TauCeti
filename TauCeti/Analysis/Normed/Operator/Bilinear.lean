@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pairing
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
@@ -48,6 +49,12 @@ invertible map and `X` tends to the identity. On Banach spaces the comparison op
 
 Evaluating a `𝕜`-linear operator `f : E →L[𝕜] G` at `v : E` is also continuous and `𝕜'`-linear
 in `f` whenever `𝕜` and `𝕜'` commute on `G` (`ContinuousLinearMap.applyMixed`).
+
+On normable spaces over nontrivially normed fields, with isometric scalar homomorphisms `σ₁₃`,
+`σ₂₃` and `σ₂₃` surjective, the flip of a continuous pairing `μ : E →SL[σ₁₃] F →SL[σ₂₃] H` is
+Mathlib's flip: `μ.toLinearMap.pairingFlip hμ = μ.flip`, where `hμ` is a proof of joint continuity
+of `μ`, that is, continuity of `Function.uncurry fun x y ↦ μ x y`, which callers supply
+explicitly (`ContinuousLinearMap.pairingFlip_eq_flip`).
 -/
 
 public section
@@ -274,6 +281,36 @@ theorem applyMixed_apply {𝕜 𝕜' E G : Type*} [NontriviallyNormedField 𝕜]
   (rfl)
 
 end MixedScalar
+
+section PairingFlip
+
+variable {𝕜₂ 𝕜₃ E F H : Type*} [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]
+  {σ₁₃ : 𝕜 →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₁₃] [RingHomIsometric σ₂₃]
+  [RingHomSurjective σ₂₃]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsNormableSpace 𝕜 E]
+  [AddCommGroup F] [Module 𝕜₂ F] [TopologicalSpace F] [IsNormableSpace 𝕜₂ F]
+  [AddCommGroup H] [Module 𝕜₃ H] [TopologicalSpace H] [IsNormableSpace 𝕜₃ H]
+
+/-- On normable spaces, when both scalar homomorphisms are isometric and the second is
+surjective, the flip of a continuous pairing `μ` is Mathlib's flip:
+`μ.toLinearMap.pairingFlip hμ = μ.flip`, where the caller supplies `hμ`, a proof of joint
+continuity of `μ` (continuity of the uncurried pairing `Function.uncurry fun x y ↦ μ x y`). The
+topological additive group structures of `F` and `H` used by `LinearMap.pairingFlip`, by
+Mathlib's flip and by the topology of `F →SL[σ₂₃] H` come from their normability
+(`PolynormableSpace.isTopologicalAddGroup`). -/
+@[simp]
+theorem pairingFlip_eq_flip
+    (μ : haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H; E →SL[σ₁₃] F →SL[σ₂₃] H)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) :
+    haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₂ F
+    haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H
+    μ.toLinearMap.pairingFlip hμ = μ.flip := by
+  have := PolynormableSpace.isTopologicalAddGroup 𝕜₂ F
+  have := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H
+  ext
+  rw [LinearMap.pairingFlip_apply, coe_coe, flip_apply]
+
+end PairingFlip
 
 end ContinuousLinearMap
 
