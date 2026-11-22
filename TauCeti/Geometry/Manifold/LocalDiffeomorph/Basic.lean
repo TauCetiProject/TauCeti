@@ -85,6 +85,8 @@ diffeomorphism of the model space read through it has explicit source and forwar
   is a maximal-atlas chart.
 * `PartialDiffeomorph.trans_mem_maximalAtlas`: a partial diffeomorphism followed by a
   maximal-atlas chart is a maximal-atlas chart.
+* `PartialDiffeomorph.contDiffOn_comp_symm_of_contMDiffOn`: a `C^n` map `K : P × M → W` into a
+  normed space, read through the inverse of a partial diffeomorphism `φ : M → V`, is `C^n`.
 * `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq`: a maximal-atlas chart pulls back
   along a local diffeomorphism to a maximal-atlas chart.
 * `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq`: the pulled back chart can
@@ -682,6 +684,35 @@ theorem isLocalDiffeomorphAt_of_writtenInExtChartAt [IsManifold I n M] [IsManifo
     ((ModelWithCorners.isInteriorPoint_iff (I := J)).mp hJfx)) hf
 
 end EqOn
+
+section CompSymm
+
+variable {I : ModelWithCorners 𝕂 E H} {P V W : Type*} [NormedAddCommGroup P] [NormedSpace 𝕂 P]
+  [NormedAddCommGroup V] [NormedSpace 𝕂 V] [NormedAddCommGroup W] [NormedSpace 𝕂 W]
+
+/-- **A map read through a partial diffeomorphism is smooth.** Let `φ` be a `C^m` partial
+diffeomorphism from `M` to a normed space `V`, with `n ≤ m`, and let `K : P × M → W` be `C^n` on
+`U × φ.source` for an open subset `U` of a normed space `P`. Then `(p, y) ↦ K(p, φ⁻¹ y)`, the map
+`K` read in the chart `φ`, is `C^n` on `U × φ.target`. -/
+theorem _root_.PartialDiffeomorph.contDiffOn_comp_symm_of_contMDiffOn {m : WithTop ℕ∞}
+    (φ : PartialDiffeomorph I 𝓘(𝕂, V) M V m) {K : P → M → W} {U : Set P} {n : ℕ∞}
+    (hU : IsOpen U) (hK : ContMDiffOn (𝓘(𝕂, P).prod I) 𝓘(𝕂, W) n (Function.uncurry K)
+      (U ×ˢ φ.source))
+    (hnm : (n : WithTop ℕ∞) ≤ m) :
+    ContDiffOn 𝕂 n (fun q : P × V ↦ K q.1 (φ.symm q.2)) (U ×ˢ φ.target) := by
+  rintro ⟨z, y⟩ ⟨hz, hy⟩
+  refine ContDiffAt.contDiffWithinAt ?_
+  -- The point `z` and the chart inverse `φ⁻¹` are `C^n` into `P × M`.
+  have hsymm : ContMDiffAt 𝓘(𝕂, V) I n φ.symm y :=
+    (φ.symm.contMDiffOn.of_le hnm).contMDiffAt (φ.open_target.mem_nhds hy)
+  have hpair : ContMDiffAt 𝓘(𝕂, P × V) (𝓘(𝕂, P).prod I) n
+      (fun q : P × V ↦ (q.1, φ.symm q.2)) (z, y) :=
+    (contDiff_fst.contMDiff.contMDiffAt).prodMk
+      (hsymm.comp (z, y) contDiff_snd.contMDiff.contMDiffAt)
+  have hK' := hK.contMDiffAt ((hU.prod φ.open_source).mem_nhds (mk_mem_prod hz (φ.map_target hy)))
+  exact contMDiffAt_iff_contDiffAt.1 (hK'.comp (z, y) hpair)
+
+end CompSymm
 
 end General
 

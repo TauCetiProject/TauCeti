@@ -741,8 +741,7 @@ theorem finrank_eigenspace_smul_tetrahedronSpringMatrix {κ m ω : ℝ} (hκm : 
   have hev {μ s : ℝ} (hs : 0 ≤ s) (h : s ^ 2 = -(κ / (2 * m) * μ)) :
       -(ω ^ 2) / (κ / (2 * m)) = μ ↔ ω = s := by
     rw [← sq_eq_sq₀ hω hs, h, div_eq_iff hc, mul_comm μ, neg_eq_iff_eq_neg]
-  rw [map_smul, ← mul_div_cancel₀ (-(ω ^ 2)) hc, Module.End.eigenspace_smul _ hc,
-    finrank_eigenspace_tetrahedronSpringMatrix]
+  rw [map_smul, Module.End.eigenspace_smul_eq_div _ hc, finrank_eigenspace_tetrahedronSpringMatrix]
   simp only [hev (μ := 0) le_rfl (by simp), hev (Real.sqrt_nonneg _) h₂,
     hev (Real.sqrt_nonneg _) h₄, hev (by positivity) h₈]
 
