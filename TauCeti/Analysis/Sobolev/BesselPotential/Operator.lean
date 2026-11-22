@@ -217,18 +217,7 @@ end Gradient
 section ContDiff
 
 variable [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] {s : ℝ}
-  {ι : Type*} {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] {n : WithTop ℕ∞}
-
-/-- The tempered distribution of a finite sum is the sum of the tempered distributions. -/
-@[simp]
-theorem toDistr_sum {p : ℝ≥0∞} [Fact (1 ≤ p)] (t : Finset ι) (u : ι → H^{s, p}(E, F)) :
-    (∑ i ∈ t, u i).toDistr = ∑ i ∈ t, (u i).toDistr := by
-  classical
-  induction t using Finset.induction_on with
-  | empty => simp [toDistr_zero]
-  | insert a t ha ih => rw [Finset.sum_insert ha, Finset.sum_insert ha, toDistr_add, ih]
-
-variable [Fintype ι]
+  {ι : Type*} [Fintype ι] {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] {n : WithTop ℕ∞}
 
 /-- **Smooth families in `H^{s+1}` from their first derivatives.** Let `b` be an orthonormal basis
 of `E`, and let `w` be a `C^n` map into `H^s(E, F)` whose distributional derivatives `∂_{b i} w`
@@ -255,8 +244,7 @@ theorem exists_contDiff_inclusion_eq_of_lineDerivOp_eq (b : OrthonormalBasis ι 
   simp only [toDistr_inclusion, toDistr_sub, toDistr_sum, R₀, R, toDistr_mapCLM,
     ContinuousLinearMap.comp_apply, LineDeriv.lineDerivOpCLM_apply, ← hd, ← map_sum, ← map_sub,
     ← laplacian_eq_sum b]
-  rw [show (w x).toDistr - Δ (w x).toDistr = -Δ (w x).toDistr + (1 : ℝ) • (w x).toDistr by
-    rw [one_smul]; abel, laplacianResolvent_neg_laplacian_add_smul one_pos]
+  exact laplacianResolvent_one_sub_laplacian _
 
 end ContDiff
 

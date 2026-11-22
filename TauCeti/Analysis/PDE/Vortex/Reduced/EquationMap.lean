@@ -131,7 +131,7 @@ and `c ↦ φ_c, k_c` are smooth into `L²` (`TauCeti.Vortex.contDiff_background
   `TauCeti.Vortex.exists_reducedEquationMap_eq_zero`: solutions of the reduced equation are zeros
   of `N`.
 * `TauCeti.Vortex.exists_contDiffAt_backgroundDefect_monicOfCoeff_eq_mul`: near `c₀`,
-  `φ_c = φ_{c₀} ψ_c` with `ψ_c` bounded continuous and smooth in `c`.
+  `φ_c = φ_{c₀} ψ_c` for a family `ψ` of bounded continuous functions that is smooth at `c₀`.
 * `TauCeti.Vortex.contDiff_reducedEquationMapOfCoeff`: `Φ` is smooth on `ℂ^m × H²(ℂ)`.
 * `TauCeti.Vortex.hasFDerivAt_reducedEquationMapOfCoeff`,
   `TauCeti.Vortex.coeFn_reducedLinearizationOfCoeff`: its partial derivative in `u` is
@@ -636,9 +636,9 @@ private theorem exists_local_repr (c₀ : Fin m → ℂ) :
     hinv, hdef, fun c z ↦ ?_⟩
   exact normSqWeight_apply P₀ hP₀ hn (natDegree_derivative_monicOfCoeff_lt c) z
 
-/-- **The defect near `c₀` is a smooth bounded multiple of the defect at `c₀`.** Near every `c₀`,
-`φ_c = φ_{c₀} ψ_c` for bounded continuous functions `ψ_c = (1 + ‖P_{c₀}‖²) / (1 + ‖P_c‖²)`
-depending smoothly on `c`. -/
+/-- **The defect near `c₀` is a bounded multiple of the defect at `c₀`.** For every `c₀` there is a
+family `ψ` of bounded continuous functions, smooth at `c₀`, with `φ_c = φ_{c₀} ψ_c` for all `c`
+near `c₀`. -/
 theorem exists_contDiffAt_backgroundDefect_monicOfCoeff_eq_mul (c₀ : Fin m → ℂ) :
     ∃ ψ : (Fin m → ℂ) → ℂ →ᵇ ℂ, ContDiffAt ℝ ∞ ψ c₀ ∧
       ∀ᶠ c in 𝓝 c₀, backgroundDefect (monicOfCoeff c) =
