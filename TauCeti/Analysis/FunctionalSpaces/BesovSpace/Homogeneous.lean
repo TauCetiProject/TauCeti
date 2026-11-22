@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import TauCeti.Analysis.Distribution.TemperedDistribution.HomogeneousLittlewoodPaley
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Reindex
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Homogeneous Besov spaces
@@ -150,9 +151,8 @@ theorem memHomogeneousBesov_iff_memℓp {u : 𝓢'(E, F)} {f : ℤ → Lp F p (v
   refine ⟨fun hu ↦ ?_, fun h ↦ memHomogeneousBesov_iff.2 ⟨f, hf, h⟩⟩
   obtain ⟨g, hg, hmem⟩ := memHomogeneousBesov_iff.1 hu
   -- An `Lᵖ` function is determined by its tempered distribution, so `g = f`.
-  have hgf : g = f := funext fun j ↦
-    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, ← hg, hf]
+  have hgf : g = f := funext fun j ↦ Lp.toTemperedDistribution_injective <| by
+    simp only [← hg, hf]
   rwa [hgf] at hmem
 
 theorem MemHomogeneousBesov.zero : (0 : 𝓢'(E, F)).MemHomogeneousBesov φ s p q :=
@@ -221,9 +221,7 @@ theorem MemHomogeneousBesov.mono_exponent {u : 𝓢'(E, F)} {r : ℝ≥0∞} [Fa
   calc (2 : ℝ) ^ ((s - a) * j) * ‖g j‖
       ≤ 2 ^ ((s - a) * j) * (C * 2 ^ (a * j) * ‖f j‖) := by gcongr; exact hgf j
     _ = C * (2 ^ (s * j) * ‖f j‖) := by
-        have h2 : (2 : ℝ) ^ ((s - a) * j) * 2 ^ (a * j) = 2 ^ (s * j) := by
-          rw [← Real.rpow_add two_pos, sub_mul, sub_add_cancel]
-        rw [← h2]
+        rw [← Real.rpow_sub_mul_mul_rpow_mul two_pos s a j]
         ring
 
 /-- **The blocks of another bump function.** If the homogeneous blocks `Pₖ u` built from `φ` are
@@ -293,35 +291,6 @@ theorem MemHomogeneousBesov.of_bump {u : 𝓢'(E, F)} (hu : u.MemHomogeneousBeso
   rw [Real.norm_of_nonneg (by positivity)]
   exact hle j
 
-/-- **Summability of the low frequencies below the critical regularity.** Let `bⱼ ≥ 0`, `j ∈ ℤ`, be
-an `ℓ^q` sequence. If `s < e`, or `s = e` and `q ≤ 1`, then `2^{(e - s) j} bⱼ` is summable over
-the nonpositive indices `j = -k`. -/
-private theorem summable_two_rpow_mul_neg {b : ℤ → ℝ} (hb0 : ∀ j, 0 ≤ b j) (hb : Memℓp b q)
-    {e : ℝ} (hs : s < e ∨ (s = e ∧ q ≤ 1)) :
-    Summable fun k : ℕ ↦ (2 : ℝ) ^ ((e - s) * ((-k : ℤ) : ℝ)) * b (-k) := by
-  rcases hs with hs | ⟨rfl, hq⟩
-  · -- The weights decay geometrically and the sequence is bounded.
-    obtain ⟨M, hM⟩ := memℓp_infty_iff.1 (hb.of_exponent_ge le_top)
-    have hr : (2 : ℝ) ^ (-(e - s)) < 1 :=
-      Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
-    refine Summable.of_nonneg_of_le (fun k ↦ mul_nonneg (by positivity) (hb0 _)) (fun k ↦ ?_)
-      ((summable_geometric_of_lt_one (by positivity) hr).mul_left M)
-    have hbM : b (-k) ≤ M := (Real.le_norm_self _).trans (hM ⟨-k, rfl⟩)
-    have hw : (2 : ℝ) ^ ((e - s) * ((-k : ℤ) : ℝ)) = (2 ^ (-(e - s))) ^ k := by
-      rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two]
-      push_cast
-      ring_nf
-    rw [hw, mul_comm]
-    exact mul_le_mul_of_nonneg_right hbM (by positivity)
-  · -- At the critical regularity the sequence itself is summable.
-    have h1 := (memℓp_gen_iff (by simp : (0 : ℝ) < (1 : ℝ≥0∞).toReal)).1
-      (hb.of_exponent_ge hq)
-    simp only [ENNReal.toReal_one, Real.rpow_one] at h1
-    have hinj : Function.Injective fun k : ℕ ↦ -(k : ℤ) :=
-      neg_injective.comp Nat.cast_injective
-    refine ((h1.comp_injective hinj).of_norm).congr fun k ↦ ?_
-    simp
-
 /-- **Reconstruction modulo spectrum at the origin, below the critical regularity.** Let
 `u ∈ \dot B^s_{p,q}` with `s < n / p`, or `s = n / p` and `q ≤ 1`, where `n` is the dimension of `E`
 and `1/∞ = 0`. Then the two-sided partial sums `∑_{a < j ≤ b} Pⱼ u` of the homogeneous blocks
@@ -345,11 +314,8 @@ theorem MemHomogeneousBesov.exists_tendsto_sum_homogeneousLittlewoodPaleyBlock {
   -- The bounded blocks of nonpositive index are summable in `L^∞`.
   refine exists_tendsto_sum_homogeneousLittlewoodPaleyBlock_of_summable φ (fun k ↦ hg (-k)) ?_
   refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun k ↦ (hgf _).trans_eq ?_)
-    ((summable_two_rpow_mul_neg (fun j ↦ by positivity) hmem hs).mul_left C)
-  have h2 : (2 : ℝ) ^ ((e - s) * ((-k : ℤ) : ℝ)) * 2 ^ (s * ((-k : ℤ) : ℝ)) =
-      2 ^ (e * ((-k : ℤ) : ℝ)) := by
-    rw [← Real.rpow_add two_pos, ← add_mul, sub_add_cancel]
-  rw [← h2]
+    ((hmem.summable_two_rpow_mul_neg (fun j ↦ by positivity) hs).mul_left C)
+  rw [← Real.rpow_sub_mul_mul_rpow_mul two_pos e s ((-k : ℤ) : ℝ)]
   ring
 
 end MemHomogeneousBesov
@@ -394,9 +360,8 @@ theorem ext {u v : HomogeneousBesovSpace F φ s p q} (h : u.toDistr = v.toDistr)
   obtain ⟨u, a, ha⟩ := u
   obtain ⟨v, b, hb⟩ := v
   obtain rfl : u = v := h
-  obtain rfl : a = b := lp.ext <| funext fun j ↦
-    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, ha, hb]
+  obtain rfl : a = b := lp.ext <| funext fun j ↦ Lp.toTemperedDistribution_injective <| by
+    simp only [ha, hb]
   rfl
 
 instance : Zero (HomogeneousBesovSpace F φ s p q) where
@@ -563,10 +528,8 @@ theorem weightedBlocks_eq_zero_iff (u : HomogeneousBesovSpace F φ s p q) :
         tendsto_const_nhds)
     rwa [sub_zero] at hlim
   · intro h
-    refine lp.ext <| funext fun j ↦
-      LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot ?_
-    simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
-      coe_weightedBlocks_apply,
+    refine lp.ext <| funext fun j ↦ Lp.toTemperedDistribution_injective ?_
+    simp only [coe_weightedBlocks_apply,
       homogeneousLittlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_zero φ h, smul_zero,
       lp.coeFn_zero, Pi.zero_apply, Lp.toTemperedDistribution_zero]
 
