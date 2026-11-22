@@ -39,7 +39,10 @@ continuous linear maps out of L². On a compact space with a finite measure, the
 L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
 More generally, the L² pairing of an L² function with the class of any square-integrable
-function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
+function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`), also
+in the other order for an L² function given by an almost-everywhere representative
+(`MeasureTheory.L2.toLp_inner_of_ae_eq`). The zero class pairs to zero with every function
+(`MeasureTheory.Lp.integral_inner_coeFn_zero_left`).
 An L² function orthogonal to every L² function vanishing outside a measurable set vanishes
 almost everywhere on that set (`MeasureTheory.L2.ae_restrict_eq_zero_of_forall_inner_eq_zero`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
@@ -47,7 +50,8 @@ product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
 `TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`.
 The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
-`integral_inner` with the integrand in the left slot, and the integral of the Hilbert space
+`integral_inner` with the integrand in the left slot, the pairing `∫ ⟪f, g⟫` is conjugate
+symmetric (`integral_inner_conj_symm`), and the integral of the Hilbert space
 adjoints `(f x)†` of an operator-valued function is `(∫ f)†`
 (`ContinuousLinearMap.integral_adjoint`).
 Indicators of any countably spanning generating π-system of finite-measure sets have
@@ -282,6 +286,21 @@ theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
   filter_upwards [hg.coeFn_toLp] with x hx
   rw [hx]
 
+/-- The L² inner product of the class of a square-integrable function `g` with an L² function `f`
+that is almost everywhere equal to `w` is the integral of `⟪g x, w x⟫`. -/
+theorem L2.toLp_inner_of_ae_eq {g : α → E} (hg : MemLp g 2 μ) {f : Lp E 2 μ} {w : α → E}
+    (hfw : f =ᵐ[μ] w) : ⟪hg.toLp g, f⟫_𝕜 = ∫ x, ⟪g x, w x⟫_𝕜 ∂μ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hg.coeFn_toLp, hfw] with x hx hx'
+  rw [hx, hx']
+
+/-- The pointwise inner product of the zero class of `Lᵖ` with any function integrates to zero. -/
+theorem Lp.integral_inner_coeFn_zero_left {p : ℝ≥0∞} (g : α → E) :
+    ∫ x, ⟪(0 : Lp E p μ) x, g x⟫_𝕜 ∂μ = 0 := by
+  rw [integral_congr_ae ((Lp.coeFn_zero E p μ).mono fun x hx ↦ by
+    rw [hx, Pi.zero_apply, inner_zero_left]), integral_zero]
+
 /-- An L² function orthogonal to every L² function vanishing outside a measurable set `A`
 vanishes almost everywhere on `A`: it is orthogonal to its own restriction to `A`. -/
 theorem L2.ae_restrict_eq_zero_of_forall_inner_eq_zero {A : Set α} (hA : MeasurableSet A)
@@ -390,6 +409,14 @@ theorem integral_inner_left {f : α → E} (hf : Integrable f μ) (c : E) :
     ∫ x, ⟪f x, c⟫_𝕜 ∂μ = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
   simpa only [innerSLFlip_apply_apply] using
     (innerSLFlip 𝕜 c).integral_comp_commSL RCLike.conj_smul hf
+
+omit [CompleteSpace E] [NormedSpace ℝ E] in
+/-- Conjugate symmetry of the pairing `∫ ⟪f, g⟫` of two functions:
+`conj (∫ ⟪g, f⟫) = ∫ ⟪f, g⟫`. No integrability is needed, since conjugation commutes with the
+integral (`integral_conj`). -/
+theorem integral_inner_conj_symm (f g : α → E) :
+    conj (∫ x, ⟪g x, f x⟫_𝕜 ∂μ) = ∫ x, ⟪f x, g x⟫_𝕜 ∂μ := by
+  simp_rw [← integral_conj, inner_conj_symm]
 
 /-- The Hilbert space adjoint commutes with the integral of an operator-valued function:
 `∫ (f x)† = (∫ f)†`, the counterpart of Mathlib's `integral_conj`. No integrability is needed,

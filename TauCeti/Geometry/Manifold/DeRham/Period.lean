@@ -54,6 +54,8 @@ is the subgroup of loops lifting to loops, so this decides which covers make a c
   manifold is exact exactly when its periods vanish.
 * `TauCeti.deRhamCohomology.period`: the periods of de Rham classes in degree one, an injective
   linear map on a connected manifold.
+* `TauCeti.pathClassIntegral_mapCoeff`: integration commutes with continuous linear maps of the
+  coefficients.
 * `TauCeti.pathClassIntegral_mpullback`, `TauCeti.periodHom_mpullback`,
   `TauCeti.deRhamCohomology.period_map`: naturality of integrals and periods under pullback.
 * `TauCeti.mpullback_mem_exactForms_one_iff_periodHom_map_eq_zero`: the pullback of a closed form
@@ -264,7 +266,7 @@ theorem continuousPathIntegral_eq_pathClassIntegral (hφ : IsSmoothForm I 1 φ)
   have hloc : ∀ p : M, ∃ (g : M → F) (U : Set M), p ∈ U ∧ IsPrimitiveOn φ g U := fun p ↦ by
     obtain ⟨g, -, U, hpU, hgU⟩ := exists_contMDiff_isPrimitiveOn le_rfl hφ hclosed p
     exact ⟨g, U, hpU, hgU⟩
-  have hp := PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hloc
+  have hp := PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hloc
   obtain ⟨Γ, hΓγ, -⟩ := hp.exists_path_lifts γ.toContinuousMap
     (PrimitiveSpace.graph φ 0 x) (by simp)
   rw [continuousPathIntegral_eq_sub_of_lift hloc Γ.continuous (fun t ↦ congrFun hΓγ t),

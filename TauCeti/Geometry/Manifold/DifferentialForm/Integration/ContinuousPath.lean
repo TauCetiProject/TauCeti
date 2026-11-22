@@ -17,8 +17,9 @@ import TauCeti.Algebra.BigOperators.Fin
 
 A `1`-form `φ` with local primitives on a `C¹` manifold `M` over any real model with corners
 induces a covering map `TauCeti.PrimitiveSpace.proj φ` from its space of local primitives to `M`
-(`TauCeti.PrimitiveSpace.isCoveringMap_proj_of_localPrimitives`). Consequently, `φ` can be
-integrated along every continuous path `γ : Path x y` in `M` by lifting `γ` to `PrimitiveSpace φ`
+(`TauCeti.PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn`). Consequently, `φ`
+can be integrated along every continuous path `γ : Path x y` in `M` by lifting `γ` to
+`PrimitiveSpace φ`
 and taking the change of its value (`TauCeti.continuousPathIntegral`). No regularity of `φ`,
 completeness of the coefficient space `F`, finite dimensionality, or Hausdorff property is needed
 for the definition or its topological properties.
@@ -104,7 +105,7 @@ starting at `x` with value `0`. It is `0` by convention when `φ` does not have 
 def continuousPathIntegral (φ : RoughForm I M F 1) (γ : Path x y) : F :=
   if hφ : ∀ p : M, ∃ (g : M → F) (U : Set M), p ∈ U ∧ IsPrimitiveOn φ g U then
     PrimitiveSpace.value φ
-      ((PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hφ).liftPath
+      ((PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hφ).liftPath
         γ.toContinuousMap (PrimitiveSpace.graph φ 0 x)
         (by rw [Path.coe_toContinuousMap, γ.source, PrimitiveSpace.proj_graph]) 1)
   else 0
@@ -122,7 +123,7 @@ theorem continuousPathIntegral_eq_sub_of_lift
     {γ : Path x y} {Γ : unitInterval → PrimitiveSpace φ} (hΓ : Continuous Γ)
     (hΓγ : ∀ t, PrimitiveSpace.proj φ (Γ t) = γ t) :
     continuousPathIntegral φ γ = PrimitiveSpace.value φ (Γ 1) - PrimitiveSpace.value φ (Γ 0) := by
-  have hp := PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hφ
+  have hp := PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hφ
   let Γ' : unitInterval → PrimitiveSpace φ :=
     fun t ↦ PrimitiveSpace.translate φ (-PrimitiveSpace.value φ (Γ 0)) (Γ t)
   have hΓ'_eq : Γ' = hp.liftPath γ.toContinuousMap (PrimitiveSpace.graph φ 0 x)
@@ -139,10 +140,10 @@ theorem PrimitiveSpace.value_liftPath_of_localPrimitives
     (hφ : ∀ p : M, ∃ (g : M → F) (U : Set M), p ∈ U ∧ IsPrimitiveOn φ g U)
     (γ : Path x y) (e : PrimitiveSpace φ) (he : γ.toContinuousMap 0 = PrimitiveSpace.proj φ e) :
     PrimitiveSpace.value φ
-        ((PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hφ).liftPath
+        ((PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hφ).liftPath
           γ.toContinuousMap e he 1) =
       PrimitiveSpace.value φ e + continuousPathIntegral φ γ := by
-  have hp := PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hφ
+  have hp := PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hφ
   rw [continuousPathIntegral_eq_sub_of_lift hφ (hp.liftPath γ.toContinuousMap e he).continuous
     (fun t ↦ congrFun (hp.liftPath_lifts γ.toContinuousMap e he) t), hp.liftPath_zero]
   abel
@@ -186,7 +187,7 @@ theorem PrimitiveSpace.value_sub_eq_of_isPrimitiveOn
     {g : M → F} {U : Set M} (hgU : IsPrimitiveOn φ g U) {a b : unitInterval}
     (hγU : ∀ s ∈ uIcc a b, γ s ∈ U) :
     PrimitiveSpace.value φ (Γ b) - PrimitiveSpace.value φ (Γ a) = g (γ b) - g (γ a) := by
-  have hp := PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hφ
+  have hp := PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hφ
   let S : Set unitInterval := uIcc a b
   have hpre : IsPreconnected S := by
     have himg : (Subtype.val : unitInterval → ℝ) '' S = uIcc (a : ℝ) (b : ℝ) := by
@@ -226,7 +227,7 @@ theorem continuousPathIntegral_eq_sum_sub_of_subdivision
     (hγ : ∀ i, ∀ s ∈ uIcc (t i.castSucc) (t i.succ), γ s ∈ U i) :
     continuousPathIntegral φ γ =
       ∑ i : Fin n, (g i (γ (t i.succ)) - g i (γ (t i.castSucc))) := by
-  have hp := PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hφ
+  have hp := PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hφ
   let Γ := hp.liftPath γ.toContinuousMap (PrimitiveSpace.graph φ 0 x)
     (by rw [Path.coe_toContinuousMap, γ.source, PrimitiveSpace.proj_graph])
   have hΓγ (s : unitInterval) : PrimitiveSpace.proj φ (Γ s) = γ s :=
@@ -271,7 +272,7 @@ theorem continuousPathIntegral_eq_of_homotopic {γ₁ γ₂ : Path x y} (h : γ�
   by_cases hφ : ∀ p : M, ∃ (g : M → F) (U : Set M), p ∈ U ∧ IsPrimitiveOn φ g U
   · rw [continuousPathIntegral, dite_eq_left hφ, continuousPathIntegral, dite_eq_left hφ]
     congr 1
-    have hp := PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hφ
+    have hp := PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hφ
     exact hp.liftPath_apply_one_eq_of_homotopicRel h (PrimitiveSpace.graph φ 0 x)
       (by rw [Path.coe_toContinuousMap, γ₁.source, PrimitiveSpace.proj_graph])
       (by rw [Path.coe_toContinuousMap, γ₂.source, PrimitiveSpace.proj_graph])
@@ -284,7 +285,7 @@ theorem continuousPathIntegral_trans (γ : Path x y) (γ' : Path y z) :
     continuousPathIntegral φ (γ.trans γ') =
       continuousPathIntegral φ γ + continuousPathIntegral φ γ' := by
   by_cases hφ : ∀ p : M, ∃ (g : M → F) (U : Set M), p ∈ U ∧ IsPrimitiveOn φ g U
-  · have hp := PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hφ
+  · have hp := PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hφ
     have h0 : γ.toContinuousMap 0 = PrimitiveSpace.proj φ (PrimitiveSpace.graph φ 0 x) := by
       rw [Path.coe_toContinuousMap, γ.source, PrimitiveSpace.proj_graph]
     let Γ₁ : Path (PrimitiveSpace.graph φ 0 x) (hp.liftPath γ.toContinuousMap _ h0 1) :=
@@ -335,7 +336,7 @@ theorem continuousPathIntegral_mpullback {θ : RoughForm I' M' F 1}
       IsPrimitiveOn (mpullback I I' f θ) g U := fun p ↦
     let ⟨g, U, hpU, hgU⟩ := hθ (f p)
     ⟨g ∘ f, f ⁻¹' U, hpU, hgU.mpullback hf⟩
-  have hp := PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hθ
+  have hp := PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hθ
   let Γ := hp.liftPath (γ.map hf.continuous).toContinuousMap (PrimitiveSpace.graph θ 0 (f x))
     (by simp)
   have hΓγ (t : unitInterval) : PrimitiveSpace.proj θ (Γ t) = f (γ t) :=
@@ -370,7 +371,7 @@ theorem continuousPathIntegral_mapCoeff {G : Type*} [NormedAddCommGroup G] [Norm
       IsPrimitiveOn (RoughForm.mapCoeff L φ) g U := fun p ↦
     let ⟨g, U, hpU, hgU⟩ := hφ p
     ⟨L ∘ g, U, hpU, hgU.mapCoeff L⟩
-  have hp := PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hφ
+  have hp := PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hφ
   let Γ := hp.liftPath γ.toContinuousMap (PrimitiveSpace.graph φ 0 x)
     (by rw [Path.coe_toContinuousMap, γ.source, PrimitiveSpace.proj_graph])
   have hΓγ (t : unitInterval) : PrimitiveSpace.proj φ (Γ t) = γ t :=
@@ -410,8 +411,8 @@ theorem continuousPathIntegral_add
     let ⟨g, U, hpU, hgU⟩ := hφ p
     let ⟨h, V, hpV, hhV⟩ := hψ p
     ⟨g + h, U ∩ V, ⟨hpU, hpV⟩, hgU.add hhV⟩
-  have hpφ := PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hφ
-  have hpψ := PrimitiveSpace.isCoveringMap_proj_of_localPrimitives hψ
+  have hpφ := PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hφ
+  have hpψ := PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hψ
   let Γ := hpφ.liftPath γ.toContinuousMap (PrimitiveSpace.graph φ 0 x)
     (by rw [Path.coe_toContinuousMap, γ.source, PrimitiveSpace.proj_graph])
   let Δ := hpψ.liftPath γ.toContinuousMap (PrimitiveSpace.graph ψ 0 x)

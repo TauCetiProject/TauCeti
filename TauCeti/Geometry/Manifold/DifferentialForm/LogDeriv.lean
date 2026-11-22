@@ -66,6 +66,11 @@ in `TauCeti.Geometry.Manifold.DeRham.LogDeriv`.
   smooth circle-valued map is a smooth closed form.
 * `ContMDiffMap.mlogDeriv_coe_mul`, `TauCeti.mlogDeriv_coe_eq_zero_iff`: `dlog` on smooth
   circle-valued maps turns products into sums, and its kernel is the constants.
+* `ContMDiffMap.circleLogDeriv u`: the real logarithmic derivative `-i dlog u` of a smooth
+  circle-valued map, a closed real `1`-form (`ContMDiffMap.mextDeriv_circleLogDeriv`) with
+  `dlog u = i circleLogDeriv u`; it turns products into sums, its kernel on a connected manifold is
+  the constants, and `circleLogDeriv (exp (i f)) = df` for the map `ContMDiffMap.circleExp f`
+  (`ContMDiffMap.circleLogDeriv_circleExp`).
 
 ## References
 
@@ -398,6 +403,119 @@ theorem mlogDeriv_coe_eq_zero_iff [IsManifold I 1 M] [PreconnectedSpace M]
   rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
   · exact ⟨1, isEmptyElim⟩
   · exact ⟨u x₀, fun x ↦ Circle.ext ((hc x).trans (hc x₀).symm)⟩
+
+/-- The smooth circle-valued map `x ↦ exp (i f x)` of a smooth real function `f`. -/
+def _root_.ContMDiffMap.circleExp (f : C^∞⟮I, M; ℝ⟯) : C^∞⟮I, M; 𝓡 1, Circle⟯ :=
+  ⟨fun x ↦ Circle.exp (f x), contMDiff_circleExp.comp f.contMDiff⟩
+
+@[simp]
+theorem _root_.ContMDiffMap.circleExp_apply (f : C^∞⟮I, M; ℝ⟯) (x : M) :
+    f.circleExp x = Circle.exp (f x) :=
+  (rfl)
+
+@[simp]
+theorem _root_.ContMDiffMap.circleExp_add (f g : C^∞⟮I, M; ℝ⟯) :
+    (f + g).circleExp = f.circleExp * g.circleExp := by
+  ext x
+  simp [Circle.exp_add]
+
+@[simp]
+theorem _root_.ContMDiffMap.circleExp_zero :
+    (0 : C^∞⟮I, M; ℝ⟯).circleExp = 1 := by
+  ext x
+  simp
+
+variable [IsManifold I 2 M]
+
+/-- The **real logarithmic derivative** `-i dlog u = -i u⁻¹ du` of a smooth circle-valued map `u`,
+a smooth real `1`-form: the imaginary part of the imaginary form `dlog u`, so that
+`dlog u = i circleLogDeriv u` (`ContMDiffMap.mlogDeriv_coe_apply_eq_circleLogDeriv_mul_I`). For
+`u = exp (i f)` it is `df` (`ContMDiffMap.circleLogDeriv_circleExp`). -/
+def _root_.ContMDiffMap.circleLogDeriv (u : C^∞⟮I, M; 𝓡 1, Circle⟯) : SmoothForm I M ℝ 1 :=
+  SmoothForm.mapCoeff Complex.imCLM
+    ⟨mlogDeriv I fun x ↦ (u x : ℂ), u.isSmoothForm_mlogDeriv_coe.mem_smoothBundleForms⟩
+
+theorem _root_.ContMDiffMap.coe_circleLogDeriv (u : C^∞⟮I, M; 𝓡 1, Circle⟯) :
+    (u.circleLogDeriv : RoughForm I M ℝ 1) =
+      RoughForm.mapCoeff Complex.imCLM (mlogDeriv I fun x ↦ (u x : ℂ)) :=
+  SmoothForm.coe_mapCoeff _ _
+
+theorem _root_.ContMDiffMap.circleLogDeriv_apply (u : C^∞⟮I, M; 𝓡 1, Circle⟯) (x : M)
+    (v : Fin 1 → TangentSpace I x) :
+    u.circleLogDeriv.val x v = (mlogDeriv I (fun y ↦ (u y : ℂ)) x v).im := by
+  rw [u.coe_circleLogDeriv, RoughForm.mapCoeff_apply, Complex.imCLM_apply]
+
+/-- `dlog u` is `i` times the real logarithmic derivative of the circle-valued map `u`. -/
+theorem _root_.ContMDiffMap.mlogDeriv_coe_apply_eq_circleLogDeriv_mul_I
+    (u : C^∞⟮I, M; 𝓡 1, Circle⟯) (x : M) (v : Fin 1 → TangentSpace I x) :
+    mlogDeriv I (fun y ↦ (u y : ℂ)) x v = u.circleLogDeriv.val x v * Complex.I := by
+  have hre := re_mlogDeriv_apply_eq_zero ((u.contMDiff_coe_circle x).mdifferentiableAt (by simp))
+    (Eventually.of_forall fun y ↦ Circle.norm_coe (u y)) v
+  conv_lhs => rw [← Complex.re_add_im (mlogDeriv I (fun y ↦ (u y : ℂ)) x v)]
+  rw [hre, Complex.ofReal_zero, zero_add, u.circleLogDeriv_apply]
+
+/-- The real logarithmic derivative turns products of circle-valued maps into sums. -/
+@[simp]
+theorem _root_.ContMDiffMap.circleLogDeriv_mul (u v : C^∞⟮I, M; 𝓡 1, Circle⟯) :
+    (u * v).circleLogDeriv = u.circleLogDeriv + v.circleLogDeriv := by
+  apply Subtype.ext
+  ext x w
+  simp only [Submodule.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
+    ContMDiffMap.circleLogDeriv_apply, u.mlogDeriv_coe_mul v, Complex.add_im]
+
+@[simp]
+theorem _root_.ContMDiffMap.circleLogDeriv_one :
+    (1 : C^∞⟮I, M; 𝓡 1, Circle⟯).circleLogDeriv = 0 := by
+  apply Subtype.ext
+  ext x w
+  simp [ContMDiffMap.circleLogDeriv_apply]
+
+@[simp]
+theorem _root_.ContMDiffMap.circleLogDeriv_inv (u : C^∞⟮I, M; 𝓡 1, Circle⟯) :
+    u⁻¹.circleLogDeriv = -u.circleLogDeriv := by
+  rw [eq_neg_iff_add_eq_zero, ← ContMDiffMap.circleLogDeriv_mul, inv_mul_cancel,
+    ContMDiffMap.circleLogDeriv_one]
+
+/-- The real logarithmic derivative of a smooth circle-valued map is closed. -/
+theorem _root_.ContMDiffMap.mextDeriv_circleLogDeriv (u : C^∞⟮I, M; 𝓡 1, Circle⟯) :
+    mextDeriv u.circleLogDeriv.val = 0 := by
+  rw [← mextDerivₗ_apply, ContMDiffMap.circleLogDeriv, SmoothForm.mextDerivₗ_mapCoeff,
+    SmoothForm.coe_mapCoeff, mextDerivₗ_apply, u.mextDeriv_mlogDeriv_coe, RoughForm.mapCoeff_zero]
+
+/-- **The kernel of the real logarithmic derivative is the constants.** On a preconnected manifold
+a smooth circle-valued map has vanishing real logarithmic derivative exactly when it is
+constant. -/
+theorem _root_.ContMDiffMap.circleLogDeriv_eq_zero_iff [PreconnectedSpace M]
+    {u : C^∞⟮I, M; 𝓡 1, Circle⟯} :
+    u.circleLogDeriv = 0 ↔ ∃ z : Circle, ∀ x, u x = z := by
+  rw [← mlogDeriv_coe_eq_zero_iff]
+  refine ⟨fun h ↦ funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_,
+    fun h ↦ Subtype.ext <| funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_⟩
+  · rw [u.mlogDeriv_coe_apply_eq_circleLogDeriv_mul_I, h]
+    simp only [ZeroMemClass.coe_zero, Pi.zero_apply, ContinuousAlternatingMap.coe_zero,
+      Complex.ofReal_zero, zero_mul]
+  · rw [u.circleLogDeriv_apply, h]
+    simp only [ZeroMemClass.coe_zero, Pi.zero_apply, ContinuousAlternatingMap.coe_zero,
+      Complex.zero_im]
+
+/-- **The real logarithmic derivative of `exp (i f)` is `df`.** -/
+@[simp]
+theorem _root_.ContMDiffMap.circleLogDeriv_circleExp (f : C^∞⟮I, M; ℝ⟯) :
+    f.circleExp.circleLogDeriv = mextDerivₗ I 0 (SmoothForm.ofFunction f) := by
+  apply Subtype.ext
+  ext x v
+  -- `exp (i f) = exp g` with `g = L ∘ f` for the real-linear map `L t = i t`.
+  let L : ℝ →L[ℝ] ℂ := Complex.I • Complex.ofRealCLM
+  have hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f x := f.contMDiff.mdifferentiableAt (by simp)
+  have hg : MDifferentiableAt I 𝓘(ℝ, ℂ) (L ∘ f) x := L.mdifferentiableAt.comp x hf
+  have hexp : (fun y ↦ ((f.circleExp y : Circle) : ℂ)) = fun y ↦ Complex.exp ((L ∘ f) y) := by
+    funext y
+    simp [L, Circle.coe_exp, mul_comm]
+  have hL (t : ℝ) : (L t).im = t := by simp [L]
+  rw [ContMDiffMap.circleLogDeriv_apply, hexp, mlogDeriv_exp hg, mextDeriv_ofFunction,
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply, L.mvfderiv_comp_apply hf, hL]
+  simp only [mextDerivₗ_apply, SmoothForm.coe_ofFunction, mextDeriv_ofFunction,
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply]
 
 end Circle
 
