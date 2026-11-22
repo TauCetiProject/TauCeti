@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
-public import Mathlib.CategoryTheory.MorphismProperty.Comma
 
 /-!
 # The category of finite-type schemes over a base
