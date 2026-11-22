@@ -34,6 +34,11 @@ test densities `TestFunction.pushforwardCLM` of a change of variables. In genera
 submanifolds, and the absence of critical points is what makes `f_♯ φ` smooth: at a critical value
 the image measure of `φ μ` need not have a smooth density.
 
+Since the defining identity determines `f_♯ φ`, fibre integration only depends on `f` on `Ω`
+(`TestFunction.fiberIntegralCLM_congr`), it is compatible with shrinking `Ω`
+(`TestFunction.fiberIntegralCLM_monoCLM`), and it is functorial: `(g ∘ f)_♯ = g_♯ ∘ f_♯`
+(`TestFunction.fiberIntegralCLM_comp`).
+
 ## Construction
 
 For a surjective linear map `A`, choose a linear equivalence `L : E ≃ E' × ker A` whose first
@@ -368,6 +373,46 @@ theorem fiberIntegralCLM_eq_pushforwardCLM {e : OpenPartialHomeomorph E E}
   ext φ : 1
   refine ((eq_fiberIntegralCLM_iff μ μ _ _ _).2 fun g _ _ _ ↦ ?_).symm
   exact integral_pushforwardCLM_smul μ φ g
+
+/-- Fibre integration only depends on the values of the submersion on `Ω`. -/
+theorem fiberIntegralCLM_congr {f₂ : E → E'} (h : EqOn f f₂ Ω)
+    {hf₂ : ContDiffOn ℝ ∞ f₂ Ω} {hf₂Ω : MapsTo f₂ Ω Ω'}
+    {hsurj₂ : ∀ x ∈ Ω, Function.Surjective (fderiv ℝ f₂ x)} :
+    fiberIntegralCLM μ ν f₂ hf₂ hf₂Ω hsurj₂ = fiberIntegralCLM μ ν f hf hfΩ hsurj := by
+  ext φ : 1
+  refine (eq_fiberIntegralCLM_iff μ ν _ _ _).2 fun g hg _ _ ↦ ?_
+  rw [integral_fiberIntegralCLM_smul μ ν hf₂ hf₂Ω hsurj₂ φ hg.continuous.continuousOn]
+  refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
+  by_cases hx : x ∈ Ω
+  · simp only [h hx]
+  · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hx (φ.tsupport_subset h)]
+
+/-- **Restriction of fibre integration**: on tests supported in an open set `U ≤ Ω`, fibre
+integration along `f` on `U` is fibre integration along `f` on `Ω`. -/
+@[simp]
+theorem fiberIntegralCLM_monoCLM {U : Opens E} (hU : U ≤ Ω) (φ : 𝓓(U, ℝ)) :
+    fiberIntegralCLM μ ν f hf hfΩ hsurj (monoCLM ℝ φ) =
+      fiberIntegralCLM μ ν f (hf.mono hU) (hfΩ.mono_left hU) (fun x hx ↦ hsurj x (hU hx)) φ := by
+  refine ((eq_fiberIntegralCLM_iff μ ν _ _ _).2 fun g hg _ _ ↦ ?_).symm
+  rw [integral_fiberIntegralCLM_smul μ ν _ _ _ φ hg.continuous.continuousOn]
+  simp [monoCLM_apply, hU]
+
+/-- **Fibre integration is functorial**: integrating over the fibres of `f` and then over those of
+`g` is integrating over the fibres of `g ∘ f`. -/
+theorem fiberIntegralCLM_comp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    [FiniteDimensional ℝ E''] [MeasurableSpace E''] [BorelSpace E''] (ρ : Measure E'')
+    [ρ.IsAddHaarMeasure] {Ω'' : Opens E''} {g : E' → E''} (hg : ContDiffOn ℝ ∞ g Ω')
+    (hgΩ : MapsTo g Ω' Ω'') (hgsurj : ∀ y ∈ Ω', Function.Surjective (fderiv ℝ g y))
+    {hgf : ContDiffOn ℝ ∞ (g ∘ f) Ω} {hgfΩ : MapsTo (g ∘ f) Ω Ω''}
+    {hgfsurj : ∀ x ∈ Ω, Function.Surjective (fderiv ℝ (g ∘ f) x)} :
+    fiberIntegralCLM μ ρ (g ∘ f) hgf hgfΩ hgfsurj =
+      (fiberIntegralCLM ν ρ g hg hgΩ hgsurj).comp (fiberIntegralCLM μ ν f hf hfΩ hsurj) := by
+  ext φ : 1
+  refine ((eq_fiberIntegralCLM_iff μ ρ _ _ _).2 fun u hu _ _ ↦ ?_).symm
+  rw [ContinuousLinearMap.comp_apply,
+    integral_fiberIntegralCLM_smul ν ρ hg hgΩ hgsurj _ hu.continuous.continuousOn]
+  exact integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj φ
+    (hu.continuous.comp_continuousOn hg.continuousOn)
 
 end Submersion
 
