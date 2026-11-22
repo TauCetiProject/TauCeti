@@ -305,11 +305,13 @@ variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] (G : Type*) [Mon
 
 variable [Algebra.Etale R S] [Module.Finite R S] [Monoid.FG G]
 
-/-- The invariants are the equalizer of the diagonal map `S → (Fin n → S)` and the action of
-finitely many generators of `G`, so they are finite étale. -/
+/-- The invariants of a finite étale algebra under a finitely generated monoid of algebra
+endomorphisms form a finite étale algebra. -/
 private theorem etale_and_finite_subalgebra :
     Algebra.Etale R (FixedPoints.subalgebra R S G) ∧
       Module.Finite R (FixedPoints.subalgebra R S G) := by
+  -- The invariants are the equalizer of the diagonal map `S → (Fin n → S)` and the action of
+  -- finitely many generators of `G`, which is finite étale.
   obtain ⟨s, hs⟩ := Monoid.exists_of_isMulFG (M := G)
   -- Index the generators by `Fin n`, so that `Fin n → S` stays in the universe of `R`.
   rw [subalgebra_eq_equalizer G (σ := Subtype.val ∘ s.equivFin.symm) (by simpa [Set.range_comp])]
