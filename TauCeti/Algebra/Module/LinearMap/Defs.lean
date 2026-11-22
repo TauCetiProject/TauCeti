@@ -16,6 +16,9 @@ injective or surjective (`LinearMap.injective_comp`, `LinearMap.surjective_comp`
 `Function.Injective.comp` and `Function.Surjective.comp` for the coercion of `g.comp f`, so that
 they can be passed where a proof about exactly this coercion is expected. Pasting a commutative
 square onto a factorization gives a factorization (`LinearMap.comp_comp_eq_comp_comp_of_comp_eq`).
+A homotopy between maps of modules with square-zero differentials transfers the property of
+commuting with the differentials from one map to the other
+(`LinearMap.comp_eq_comp_of_comp_add_comp_eq_add`).
 It also provides the identity and composition laws for integer linearization of additive
 homomorphisms (`AddMonoidHom.toIntLinearMap_id` and `AddMonoidHom.toIntLinearMap_comp`).
 -/
@@ -60,6 +63,23 @@ theorem comp_comp_eq_comp_comp_of_comp_eq {ψ : V →ₗ[R] W} {ψ' : V' →ₗ[
   rw [← comp_assoc, ← h, comp_assoc, hy, comp_assoc]
 
 end Paste
+
+section Homotopy
+
+variable {R V W : Type*} [Semiring R] [AddCommGroup V] [AddCommGroup W] [Module R V] [Module R W]
+
+/-- **A homotopy transfers the chain-map property.** Let `d₀` and `d₁` be differentials,
+`d₀ ∘ d₀ = 0` and `d₁ ∘ d₁ = 0`, and let `F` commute with them. If
+`d₁ ∘ K + K ∘ d₀ = F + G` for some `K`, then `G` commutes with them as well. -/
+theorem comp_eq_comp_of_comp_add_comp_eq_add {d₀ : V →ₗ[R] V} {d₁ : W →ₗ[R] W}
+    (h₀ : d₀ ∘ₗ d₀ = 0) (h₁ : d₁ ∘ₗ d₁ = 0) {K F G : V →ₗ[R] W} (hF : d₁ ∘ₗ F = F ∘ₗ d₀)
+    (hK : d₁ ∘ₗ K + K ∘ₗ d₀ = F + G) : d₁ ∘ₗ G = G ∘ₗ d₀ := by
+  -- Solve the homotopy identity for `G` and use `d ∘ d = 0` on both sides.
+  obtain rfl : G = d₁ ∘ₗ K + K ∘ₗ d₀ - F := by rw [hK, add_sub_cancel_left]
+  rw [comp_sub, sub_comp, comp_add, add_comp, ← comp_assoc K d₁ d₁, h₁, zero_comp,
+    comp_assoc d₀ d₀ K, h₀, comp_zero, zero_add, add_zero, hF, comp_assoc]
+
+end Homotopy
 
 end LinearMap
 
