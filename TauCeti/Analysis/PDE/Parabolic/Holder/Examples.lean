@@ -72,7 +72,6 @@ the slab `E × [0, T]`. -/
 theorem exists_holderSpace_eq_sqrt_time {α : ℝ≥0} (hα : α ≤ 1) (T : ℝ) :
     ∃ f : HolderSpace α (slab (E := E) 0 T) ℝ,
       ∀ p, f p = √(p : ParabolicSpaceTime E).time := by
-  have hα' : (α : ℝ) ≤ 1 := hα
   -- The increments are at most `√T`, and at most `√|t - s| ≤ d`.
   have hbound : ∀ p q : slab (E := E) 0 T,
       dist (√(p : ParabolicSpaceTime E).time) (√(q : ParabolicSpaceTime E).time) ≤ √T := by
@@ -83,37 +82,26 @@ theorem exists_holderSpace_eq_sqrt_time {α : ℝ≥0} (hα : α ≤ 1) (T : ℝ
     constructor <;> linarith [Real.sqrt_le_sqrt hp.2, Real.sqrt_le_sqrt hq.2,
       Real.sqrt_nonneg (p : ParabolicSpaceTime E).time,
       Real.sqrt_nonneg (q : ParabolicSpaceTime E).time]
-  have hinc : ∀ p q : slab (E := E) 0 T,
+  have h₁ : ∀ p q : slab (E := E) 0 T,
       dist (√(p : ParabolicSpaceTime E).time) (√(q : ParabolicSpaceTime E).time) ≤
-        max 1 √T * dist p q ^ (α : ℝ) := by
+        dist p q := by
     intro p q
     have hp := mem_slab.1 p.property
     have hq := mem_slab.1 q.property
-    have h₁ : dist (√(p : ParabolicSpaceTime E).time) (√(q : ParabolicSpaceTime E).time) ≤
-        dist p q := by
-      rw [Real.dist_eq, Subtype.dist_eq]
-      refine le_trans ?_ (sqrt_abs_time_sub_le_dist _ _)
-      have h := Real.abs_rpow_sub_rpow_le hp.1 hq.1 (by norm_num : (0 : ℝ) ≤ 1 / 2)
-        (by norm_num)
-      simpa only [← Real.sqrt_eq_rpow] using h
-    rcases le_total (dist p q) 1 with hd | hd
-    · calc _ ≤ dist p q := h₁
-        _ ≤ dist p q ^ (α : ℝ) := Real.self_le_rpow_of_le_one dist_nonneg hd hα'
-        _ ≤ max 1 √T * dist p q ^ (α : ℝ) :=
-          le_mul_of_one_le_left (by positivity) (le_max_left _ _)
-    · calc _ ≤ √T := hbound p q
-        _ ≤ max 1 √T * 1 := by rw [mul_one]; exact le_max_right _ _
-        _ ≤ max 1 √T * dist p q ^ (α : ℝ) := by
-          gcongr
-          exact Real.one_le_rpow hd α.coe_nonneg
+    rw [Real.dist_eq, Subtype.dist_eq]
+    refine le_trans ?_ (sqrt_abs_time_sub_le_dist _ _)
+    have h := Real.abs_rpow_sub_rpow_le hp.1 hq.1 (by norm_num : (0 : ℝ) ≤ 1 / 2)
+      (by norm_num)
+    simpa only [← Real.sqrt_eq_rpow] using h
   let g : slab (E := E) 0 T →ᵇ ℝ :=
     BoundedContinuousFunction.mkOfBound
       ⟨fun p ↦ √(p : ParabolicSpaceTime E).time,
         Real.continuous_sqrt.comp (continuous_time.comp continuous_subtypeVal)⟩ √T
       hbound
   have hg : MemHolder α (g : slab (E := E) 0 T → ℝ) :=
-    ⟨⟨max 1 √T, by positivity⟩,
-      holderOnWith_univ.1 (HolderOnWith.of_dist_le fun p _ q _ ↦ hinc p q)⟩
+    ⟨_, holderOnWith_univ.1 (HolderOnWith.of_le_of_dist_le (K := 1) (β := 1) (δ := 1)
+      (D := ⟨√T, Real.sqrt_nonneg T⟩) (fun p _ q _ _ ↦ by simpa [g] using h₁ p q)
+      (fun p _ q _ ↦ hbound p q) hα one_pos)⟩
   exact ⟨HolderSpace.ofBoundedContinuousFunction g hg,
     fun p ↦ HolderSpace.ofBoundedContinuousFunction_apply g hg p⟩
 
