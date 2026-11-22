@@ -43,6 +43,8 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
   value, so only finitely many occur for each `n` (Popa–Zagier, Lemma 4(a)).
 * `TauCeti.PopaZagier.finite_support_weight_traceDetFiber`: in particular only finitely many
   matrices of a given trace and determinant have nonzero weight.
+* `TauCeti.PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_det_nonpos`: the weights of the
+  matrices of a given trace and nonpositive determinant sum to zero.
 * `TauCeti.PopaZagier.abs_le_of_weightᵢ_ne_zero`: the same bound for a matrix of nonzero weight
   in any one of the four sums `T₁`, ..., `T₄`.
 * `TauCeti.PopaZagier.weight_neg_eq_zero`: with Popa–Zagier's representatives, `c > 0` or
@@ -339,6 +341,16 @@ theorem finite_support_weight_traceDetFiber (t n : ℤ) :
     fun M _ N _ h ↦ Subtype.ext (by simpa using congrArg Subtype.val h)).subset fun M hM i j ↦ ?_
   have := abs_le_of_weight_ne_zero hM i j
   rwa [(mem_traceDetFiber.mp M.property).2] at this
+
+/-- The weights of the matrices of trace `t` and determinant `n ≤ 0` sum to zero: every matrix of
+nonzero weight has positive determinant (`det_pos_of_weight_ne_zero`). -/
+theorem finsum_weight_traceDetFiber_eq_zero_of_det_nonpos {t n : ℤ} (hn : n ≤ 0) :
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 :=
+  finsum_eq_zero_of_forall_eq_zero fun M ↦ by
+    by_contra h
+    have := det_pos_of_weight_ne_zero h
+    rw [(mem_traceDetFiber.mp M.property).2] at this
+    omega
 
 /-- Every matrix `M = (a b; c d)` of nonzero weight has `c > 0`, or `c = 0 < a`. -/
 theorem pos_or_eq_zero_and_pos_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) :

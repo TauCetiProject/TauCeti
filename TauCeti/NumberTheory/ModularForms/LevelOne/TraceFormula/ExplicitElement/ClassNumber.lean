@@ -34,6 +34,8 @@ class-number terms `P_{w+2}(t, n) H(4 n - t²)` of the Eichler–Selberg trace f
 * `TauCeti.PopaZagier.finsum_weight_traceDetFiber_add_two`: for `n > 0`, the weights of the
   matrices of trace `t + 2` and determinant `n + t + 1` have the same sum as those of trace `t`
   and determinant `n`.
+* `TauCeti.PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_trace_nonpos`: the weights of the
+  matrices of trace `t ≤ 0` and determinant `n` sum to zero when `t² - 4 n ≥ 0`.
 * `TauCeti.PopaZagier.finsum_weight_traceDetFiber_eq_neg_twelve_mul_hurwitzClassNumber`: the
   weights of the matrices of trace `t` and determinant `n` sum to `-12 H(D)` when
   `t² - 4 n = -D < 0`.
@@ -49,6 +51,9 @@ at the matrices with `a = c`, `b = d`, `d = 0` or `a = 0`. For `n > 0` these are
 factorisations `n = u v` into positive integers, and their changes cancel under `(u, v) ↦ (v, u)`.
 This gives the first result; the sum over the matrices of trace `t` and determinant `n` therefore
 depends only on `D = 4 n - t²`.
+
+If `t ≤ 0` and `t² - 4 n ≥ 0`, translating upwards decreases `n` until `n ≤ 0`, where every weight
+vanishes because every matrix of nonzero weight has positive determinant.
 
 For `t ≤ -D` only the sums `T₃` and `T₄` contribute, with all their second-line inequalities
 automatic. Through `M ↦ Q_M` their matrices are the forms `⟨a', b', c'⟩` of discriminant `-D` with
@@ -347,6 +352,19 @@ theorem finsum_weight_traceDetFiber_add_two (hn : 0 < n) :
   refine (Finset.sum_congr rfl fun p _ ↦ ?_).trans (sum_pairTerm n t)
   unfold pairTerm
   ring_nf
+
+/-- **Nonpositive trace.** If `t ≤ 0` and `t² - 4 n ≥ 0`, then the weights of the matrices of
+trace `t` and determinant `n` sum to zero. -/
+theorem finsum_weight_traceDetFiber_eq_zero_of_trace_nonpos (ht : t ≤ 0) (hD : 4 * n ≤ t ^ 2) :
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 := by
+  induction hk : n.toNat using Nat.strong_induction_on generalizing t n with
+  | _ k ih =>
+  rcases le_or_gt n 0 with hn | hn
+  · exact finsum_weight_traceDetFiber_eq_zero_of_det_nonpos hn
+  -- translate upwards to the fibre `(t + 2, n + t + 1)`, of smaller determinant
+  rw [← finsum_weight_traceDetFiber_add_two hn]
+  have ht₂ : t ≤ -2 := by nlinarith
+  exact ih _ (by omega) (by omega) (by nlinarith) rfl
 
 /-! ### Very negative trace -/
 

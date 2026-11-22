@@ -73,15 +73,6 @@ private theorem finsum_weight_trace_two_det_one :
     exact hM (Subtype.ext (eq_one_of_det_one_trace_sq_four_weight_ne_zero M.val hd
       (by rw [ht]; norm_num) hw))
 
-private theorem finsum_weight_trace_neg_two_det_one :
-    ∑ᶠ M : traceDetFiber (Fin 2) (-2) 1, weight M.val = 0 := by
-  refine finsum_eq_zero_of_forall_eq_zero fun M ↦ ?_
-  by_contra hw
-  obtain ⟨ht, hd⟩ := mem_traceDetFiber.mp M.property
-  have hM := eq_one_of_det_one_trace_sq_four_weight_ne_zero M.val hd
-    (by rw [ht]; norm_num) hw
-  simp [hM] at ht
-
 private theorem finsum_weight_traceDetFiber_two_mul_sq_step {a : ℤ} (ha : a ≠ 0) :
     ∑ᶠ M : traceDetFiber (Fin 2) (2 * (a + 1)) ((a + 1) ^ 2), weight M.val =
       ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.val := by
@@ -101,38 +92,19 @@ private theorem finsum_weight_traceDetFiber_two_mul_sq_of_pos {a : ℤ} (ha : 0 
   | succ a ha ih =>
     exact (finsum_weight_traceDetFiber_two_mul_sq_step (by omega)).trans ih
 
-/-- The discriminant-zero fibre with negative trace has total integer weight zero. -/
-private theorem finsum_weight_traceDetFiber_two_mul_sq_of_neg {a : ℤ} (ha : a < 0) :
-    ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.val = 0 := by
-  have ha' : a ≤ -1 := by omega
-  clear ha
-  induction a, ha' using Int.leInductionDown with
-  | base => simpa using finsum_weight_trace_neg_two_det_one
-  | pred a ha ih =>
-    have h := finsum_weight_traceDetFiber_two_mul_sq_step (a := a - 1) (by omega)
-    rw [sub_add_cancel] at h
-    exact h.symm.trans ih
-
-/-- **The repeated-root trace fibres of Popa–Zagier's element.** At positive determinant and
-zero discriminant, the total integer weight is `2` for positive trace and zero for negative
-trace. The sum includes scalar and nonscalar matrices, not just conjugacy representatives. -/
-theorem finsum_weight_traceDetFiber_of_discrim_eq_zero {t n : ℤ} (hn : 0 < n)
-    (hdisc : t ^ 2 - 4 * n = 0) :
+/-- **The repeated-root trace fibres of Popa–Zagier's element.** At zero discriminant, the total
+integer weight is `2` for positive trace and zero for nonpositive trace. The sum includes scalar
+and nonscalar matrices, not just conjugacy representatives. -/
+theorem finsum_weight_traceDetFiber_of_discrim_eq_zero {t n : ℤ} (hdisc : t ^ 2 - 4 * n = 0) :
     ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = if 0 < t then 2 else 0 := by
+  rcases le_or_gt t 0 with ht | ht
+  · rw [ite_eq_right (by omega)]
+    exact finsum_weight_traceDetFiber_eq_zero_of_trace_nonpos ht (by linarith)
+  rw [ite_eq_left ht]
   have he : Even (t ^ 2) := ⟨2 * n, by linarith⟩
   obtain ⟨a, ha⟩ := (Int.even_pow.mp he).1
-  have ht : t = 2 * a := by omega
-  clear ha
-  subst t
-  have hn' : n = a ^ 2 := by nlinarith
-  subst n
-  by_cases ha' : 0 < a
-  · rw [ite_eq_left (by omega)]
-    exact finsum_weight_traceDetFiber_two_mul_sq_of_pos ha'
-  · have hneg : a < 0 := by
-      have : a ≠ 0 := by rintro rfl; simp at hn
-      omega
-    rw [ite_eq_right (by omega)]
-    exact finsum_weight_traceDetFiber_two_mul_sq_of_neg hneg
+  obtain rfl : t = 2 * a := by omega
+  obtain rfl : n = a ^ 2 := by nlinarith
+  exact finsum_weight_traceDetFiber_two_mul_sq_of_pos (by omega)
 
 end TauCeti.PopaZagier

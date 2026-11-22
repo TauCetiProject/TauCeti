@@ -38,11 +38,11 @@ nothing.
 
 Translation `M ↦ M + 1` preserves the sum over a fibre of positive determinant
 (`TauCeti.PopaZagier.finsum_weight_traceDetFiber_add_two`) and shifts both eigenvalues by `1`.
-If `t < 0`, translating upwards reaches a fibre of nonpositive determinant, where every weight
-vanishes. If `t > 0`, translating downwards reaches a fibre with `n + 1 ≤ t`, that is, with an
-eigenvalue in `(0, 1]`. There only the sum `T₁` contributes, and only through the matrices
-`(1 b; 0 n)` with `0 ≤ b < n`, which occur exactly when `t = n + 1`, that is when the
-eigenvalues are `1` and `n`.
+If `t < 0`, the fibre sum vanishes
+(`TauCeti.PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_trace_nonpos`). If `t > 0`,
+translating downwards reaches a fibre with `n + 1 ≤ t`, that is, with an eigenvalue in `(0, 1]`.
+There only the sum `T₁` contributes, and only through the matrices `(1 b; 0 n)` with `0 ≤ b < n`,
+which occur exactly when `t = n + 1`, that is when the eigenvalues are `1` and `n`.
 
 ## References
 
@@ -57,35 +57,6 @@ open Matrix
 namespace TauCeti.PopaZagier
 
 variable {t n : ℤ}
-
-/-! ### Fibres of nonpositive determinant and of negative trace -/
-
-/-- Every weight vanishes on a fibre of nonpositive determinant. -/
-private theorem finsum_weight_traceDetFiber_of_nonpos (hn : n ≤ 0) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 :=
-  finsum_eq_zero_of_forall_eq_zero fun M ↦ by
-    by_contra hw
-    have := det_pos_of_weight_ne_zero hw
-    rw [(mem_traceDetFiber.mp M.property).2] at this
-    omega
-
-/-- At positive discriminant, the weights of a fibre of negative trace sum to zero. -/
-private theorem finsum_weight_traceDetFiber_of_neg (ht : t < 0) (hD : 0 < t ^ 2 - 4 * n) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 := by
-  -- translate upwards until the determinant is nonpositive
-  induction hk : (-t).toNat using Nat.strong_induction_on generalizing t n with
-  | _ k ih =>
-    rcases le_or_gt n 0 with hn | hn
-    · exact finsum_weight_traceDetFiber_of_nonpos hn
-    rw [← finsum_weight_traceDetFiber_add_two hn]
-    rcases le_or_gt (n + t + 1) 0 with hn' | hn'
-    · exact finsum_weight_traceDetFiber_of_nonpos hn'
-    -- both eigenvalues stay negative: a positive determinant forbids a trace `0` or `1`
-    have ht' : t + 2 < 0 := by
-      by_contra! h
-      have : t + 2 = 0 ∨ t + 2 = 1 := by omega
-      rcases this with h | _ <;> nlinarith
-    exact ih _ (by omega) ht' (by linear_combination hD) rfl
 
 /-! ### Fibres with an eigenvalue in `(0, 1]` -/
 
@@ -255,10 +226,9 @@ theorem finsum_weight_traceDetFiber_of_discrim_eq_sq {u : ℤ} (hn : 0 < n) (hu 
     (h : t ^ 2 - 4 * n = u ^ 2) :
     ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = if 0 < t then 12 * u else 0 := by
   have hD : 0 < t ^ 2 - 4 * n := h ▸ pow_pos hu 2
-  rcases lt_trichotomy t 0 with ht | rfl | ht
+  rcases le_or_gt t 0 with ht | ht
   · rw [ite_eq_right (by omega)]
-    exact finsum_weight_traceDetFiber_of_neg ht hD
-  · nlinarith
+    exact finsum_weight_traceDetFiber_eq_zero_of_trace_nonpos ht (by linarith)
   rw [ite_eq_left ht]
   obtain ⟨t', n', hD', hn', h', e⟩ := exists_finsum_weight_traceDetFiber_eq ht hn hD
   rw [e, finsum_weight_traceDetFiber_of_le hn' h' (hD' ▸ hD)]
@@ -284,10 +254,9 @@ theorem finsum_weight_traceDetFiber_of_not_isSquare (hD : 0 < t ^ 2 - 4 * n)
     (h : ¬IsSquare (t ^ 2 - 4 * n)) :
     ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 := by
   rcases le_or_gt n 0 with hn | hn
-  · exact finsum_weight_traceDetFiber_of_nonpos hn
-  rcases lt_trichotomy t 0 with ht | rfl | ht
-  · exact finsum_weight_traceDetFiber_of_neg ht hD
-  · nlinarith
+  · exact finsum_weight_traceDetFiber_eq_zero_of_det_nonpos hn
+  rcases le_or_gt t 0 with ht | ht
+  · exact finsum_weight_traceDetFiber_eq_zero_of_trace_nonpos ht (by linarith)
   obtain ⟨t', n', hD', hn', h', e⟩ := exists_finsum_weight_traceDetFiber_eq ht hn hD
   rw [e, finsum_weight_traceDetFiber_of_le hn' h' (hD' ▸ hD)]
   split_ifs with ht'

@@ -17,7 +17,8 @@ Popa and Zagier's explicit Hecke element, their eq. (15). The elliptic trace fib
 `t² - 4 n < 0`, are evaluated in `ExplicitElement/ClassNumber.lean`. This file evaluates the
 remaining fibres, those with `t² - 4 n ≥ 0`: for `n > 0` the weights of the integral matrices of
 trace `t` and determinant `n` sum to
-* `0` if `t < 0`;
+* `0` if `t < 0` (`TauCeti.PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_trace_nonpos`, in
+  `ExplicitElement/ClassNumber.lean`);
 * `0` if `t² - 4 n` is not a square;
 * `12 |d - a|` if `t = a + d` and `n = a d` with `a ≠ d` positive (the split hyperbolic fibres);
 * `2` if `t = 2 a` and `n = a²` with `a` positive (the parabolic fibres, which contain the scalar
@@ -32,8 +33,6 @@ the split fibres give the divisor-sum terms and the parabolic fibres the terms w
 
 ## Main results
 
-* `TauCeti.PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_neg`: the fibre sum vanishes when
-  `t < 0` and `t² - 4 n ≥ 0`.
 * `TauCeti.PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_not_isSquare`: the fibre sum vanishes
   when `t² - 4 n ≥ 0` is not a square.
 * `TauCeti.PopaZagier.finsum_weight_traceDetFiber_add_mul_eq_twelve_mul_abs_sub`: the fibre of
@@ -46,9 +45,6 @@ the split fibres give the divisor-sum terms and the parabolic fibres the terms w
 The translation `M ↦ M + 1` preserves the fibre sums
 (`TauCeti.PopaZagier.finsum_weight_traceDetFiber_add_two`) and changes `(t, n)` to
 `(t + 2, n + t + 1)`, keeping `t² - 4 n`.
-
-For negative trace, translating upwards decreases `n`, and ends at a fibre with `n ≤ 0`, where
-every weight vanishes because every matrix of nonzero weight has positive determinant.
 
 For positive trace, translating downwards decreases `n` and ends at a fibre with `0 < n < t`. There
 the sums `T₂`, `T₃` and `T₄` of eq. (15) contribute nothing and the only matrices occurring in
@@ -74,31 +70,6 @@ namespace TauCeti
 namespace PopaZagier
 
 variable {t n : ℤ}
-
-/-- A fibre of nonpositive determinant has weight sum zero: every matrix of nonzero weight has
-positive determinant. -/
-private theorem finsum_weight_traceDetFiber_of_nonpos (hn : n ≤ 0) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 :=
-  finsum_eq_zero_of_forall_eq_zero fun M ↦ by
-    by_contra h
-    have := det_pos_of_weight_ne_zero h
-    rw [(mem_traceDetFiber.mp M.property).2] at this
-    omega
-
-/-- **Negative trace.** If `t < 0` and `t² - 4 n ≥ 0`, then the weights of the integral matrices
-of trace `t` and determinant `n` sum to zero. -/
-theorem finsum_weight_traceDetFiber_eq_zero_of_neg (ht : t < 0) (hD : 4 * n ≤ t ^ 2) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 := by
-  induction hk : n.toNat using Nat.strong_induction_on generalizing t n with
-  | _ k ih =>
-  rcases le_or_gt n 0 with hn | hn
-  · exact finsum_weight_traceDetFiber_of_nonpos hn
-  -- translate upwards to the fibre `(t + 2, n + t + 1)`, of smaller determinant
-  rw [← finsum_weight_traceDetFiber_add_two hn]
-  have ht₂ : t ≤ -2 := by nlinarith
-  rcases (show t + 2 < 0 ∨ t + 2 = 0 by omega) with ht' | ht'
-  · exact ih _ (by omega) ht' (by nlinarith) rfl
-  · exact finsum_weight_traceDetFiber_of_nonpos (by nlinarith)
 
 /-! ### Fibres with `0 < n < t` -/
 
@@ -302,9 +273,9 @@ theorem finsum_weight_traceDetFiber_eq_zero_of_not_isSquare (hD : 4 * n ≤ t ^ 
   induction hk : n.toNat using Nat.strong_induction_on generalizing t n with
   | _ k ih =>
   rcases le_or_gt n 0 with hn | hn
-  · exact finsum_weight_traceDetFiber_of_nonpos hn
+  · exact finsum_weight_traceDetFiber_eq_zero_of_det_nonpos hn
   rcases lt_or_gt_of_ne (show t ≠ 0 by rintro rfl; omega) with ht | ht
-  · exact finsum_weight_traceDetFiber_eq_zero_of_neg ht hD
+  · exact finsum_weight_traceDetFiber_eq_zero_of_trace_nonpos ht.le hD
   rcases lt_or_ge n t with hnt | hnt
   · -- the fibre `(n + 1, n)` has the square discriminant `(n - 1)²`
     rw [finsum_weight_traceDetFiber_of_lt hn hnt, ite_eq_right]
