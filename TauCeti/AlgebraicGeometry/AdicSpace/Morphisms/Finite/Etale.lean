@@ -121,41 +121,13 @@ theorem isFiniteEtale_iff (f : X ⟶ Y) : IsFiniteEtale f ↔
     targetLocally (@fun A _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ φ ↦ IsTateRing A ∧ φ.IsFiniteEtale) f :=
   Iff.rfl
 
-/-! ### Finite étale morphisms are finite, with finite fibres -/
+/-! ### Finite étale morphisms are finite -/
 
 /-- **Finite étale morphisms are finite**: over a complete Hausdorff Tate ring, a finite étale
 morphism of Huber pairs is finite (`TauCeti.Huber.Pair.Hom.IsFiniteEtale.isFinite`). -/
 theorem IsFiniteEtale.isFinite {f : X ⟶ Y} (hf : IsFiniteEtale f) : IsFinite f :=
   (isFinite_iff f).mpr <|
     targetLocally_mono (fun _ ⟨_, hφ⟩ ↦ hφ.isFinite) ((isFiniteEtale_iff f).mp hf)
-
-/-- **The fibres of a finite étale morphism are finite.** Over a neighbourhood `V` supplied by the
-definition, the morphism is, up to homeomorphisms, the map `Spa(B, B⁺) → Spa(A, A⁺)` induced by a
-finite étale morphism of Huber pairs, whose fibres are finite
-(`TauCeti.Huber.Pair.Hom.IsFiniteEtale.finite_fibre`). -/
-theorem IsFiniteEtale.finite_preimage_singleton {f : X ⟶ Y} (hf : IsFiniteEtale f) (y : Y.obj) :
-    (f.hom.base ⁻¹' {y}).Finite := by
-  obtain ⟨V, hy, A, _, _, _, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, ⟨_, hφ⟩,
-    hsheaf, eV, eU, hfac⟩ := (targetLocally_iff f).mp ((isFiniteEtale_iff f).mp hf) y
-  let g := presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom φ.map_mem_plus
-    S.isRingOfIntegralElements.isPowerBounded_of_mem
-    T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf
-  let eU' := TopCat.homeoOfIso (forgetToTop.mapIso eU)
-  let eV' := TopCat.homeoOfIso (forgetToTop.mapIso eV)
-  -- on points, `Spa(φ)` is `φ.spaComap`, whose fibres are finite
-  have hg : ⇑(ConcreteCategory.hom g.base) = φ.spaComap := funext fun w ↦ Subtype.ext <|
-    (presentationLimitPreAdicSpaceComap_base_val _ _ _ _ _ _ _ _ w).trans (φ.spaComap_val w).symm
-  have hfin : (⇑(ConcreteCategory.hom g.base) ⁻¹' {eV' ⟨y, hy⟩}).Finite :=
-    hg ▸ (hφ.finite_fibre _).1
-  -- the defining square, on points
-  have hfac' := congrArg (fun h ↦ ConcreteCategory.hom (forgetToTop.map h)) hfac
-  simp only [Functor.map_comp, TopCat.hom_comp] at hfac'
-  -- the fibre of `f` over `y` is the image of the fibre of `Spa(φ)` over the point of `y`
-  refine (hfin.image fun w ↦ (eU'.symm w).val).subset fun x hx ↦ ?_
-  have hxV : f.hom.base x ∈ V := (Set.mem_singleton_iff.mp hx).symm ▸ hy
-  have h := congrArg (fun h ↦ h ⟨x, hxV⟩) hfac'
-  exact ⟨eU' ⟨x, hxV⟩, eV'.symm_apply_eq.mp (Subtype.ext (h.symm.trans hx)),
-    congrArg Subtype.val (eU'.symm_apply_apply _)⟩
 
 /-! ### Finite étale morphisms have analytic source and target -/
 
@@ -365,6 +337,35 @@ theorem IsFiniteEtale.exists_ofPair_chart {f : X ⟶ Y} (hf : IsFiniteEtale f) (
   rw [hfac, Iso.trans_hom, Iso.symm_hom, Iso.trans_inv, Iso.symm_inv]
   simp only [Category.assoc, ← reassoc_of% hcomp_pre]
 
+private noncomputable def IsFiniteEtale.OfPairChart.sourceHomeomorph
+    {f : X ⟶ Y} {y : Y.obj} (c : IsFiniteEtale.OfPairChart f y) :
+    ↥((Opens.map f.hom.base).obj c.V) ≃ₜ spa c.sourcePair.plus :=
+  (TopCat.homeoOfIso (forgetToTop.mapIso c.sourceIso)).trans
+    (ofPairHomeomorph c.sourcePair c.isSheafySource)
+
+private noncomputable def IsFiniteEtale.OfPairChart.targetHomeomorph
+    {f : X ⟶ Y} {y : Y.obj} (c : IsFiniteEtale.OfPairChart f y) :
+    ↥c.V ≃ₜ spa c.targetPair.plus :=
+  (TopCat.homeoOfIso (forgetToTop.mapIso c.targetIso)).trans
+    (ofPairHomeomorph c.targetPair c.isSheafyTarget)
+
+private theorem IsFiniteEtale.OfPairChart.targetHomeomorph_restrictPreimage
+    {f : X ⟶ Y} {y : Y.obj} (c : IsFiniteEtale.OfPairChart f y)
+    (x : (Opens.map f.hom.base).obj c.V) :
+    c.targetHomeomorph ((c.V : Set Y.obj).restrictPreimage f.hom.base x) =
+      c.pairHom.spaComap (c.sourceHomeomorph x) := by
+  have hfac := congrArg (fun k ↦ ConcreteCategory.hom (forgetToTop.map k)) c.fac
+  simp only [Functor.map_comp, TopCat.hom_comp] at hfac
+  have hres : (c.V : Set Y.obj).restrictPreimage f.hom.base x =
+      (TopCat.homeoOfIso (forgetToTop.mapIso c.targetIso)).symm
+        ((comapOfPair c.isSheafyTarget c.isSheafySource c.pairHom).hom.base
+          (TopCat.homeoOfIso (forgetToTop.mapIso c.sourceIso) x)) :=
+    Subtype.ext (congrArg (fun k ↦ k x) hfac)
+  have h1 := (congrArg (TopCat.homeoOfIso (forgetToTop.mapIso c.targetIso)) hres).trans
+    ((TopCat.homeoOfIso (forgetToTop.mapIso c.targetIso)).apply_symm_apply _)
+  exact (congrArg (ofPairHomeomorph c.targetPair c.isSheafyTarget) h1).trans
+    (ofPairHomeomorph_comapOfPair_apply _ _ _ _)
+
 /-- **`Spa(φ)` is finite étale for a finite étale morphism of sheafy Huber pairs** over a complete
 Hausdorff Tate ring (`AdicSpace.comapOfPair`). -/
 theorem IsFiniteEtale.comapOfPair {A : Type u} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
@@ -393,7 +394,23 @@ theorem IsFiniteEtale.comapOfPair {A : Type u} [CommRing A] [UniformSpace A] [Is
   exact MorphismProperty.RespectsIso.precomp @IsFiniteEtale.{u} _ _
     (MorphismProperty.RespectsIso.postcomp @IsFiniteEtale.{u} _ _ hbase)
 
-/-! ### Empty sources, locally noetherian ascent, and clopen image -/
+/-! ### Finite fibres, empty sources, locally noetherian ascent, and clopen image -/
+
+/-- **The fibres of a finite étale morphism are finite.** Over a chart neighbourhood supplied by
+`IsFiniteEtale.exists_ofPair_chart`, the restricted map agrees under chart homeomorphisms with
+`Pair.Hom.spaComap`, whose fibres are finite
+(`TauCeti.Huber.Pair.Hom.IsFiniteEtale.finite_fibre`). -/
+theorem IsFiniteEtale.finite_preimage_singleton {f : X ⟶ Y} (hf : IsFiniteEtale f) (y : Y.obj) :
+    (f.hom.base ⁻¹' {y}).Finite := by
+  obtain ⟨c⟩ := hf.exists_ofPair_chart y
+  have hfin : (c.pairHom.spaComap ⁻¹' {c.targetHomeomorph ⟨y, c.mem⟩}).Finite :=
+    (c.isFiniteEtale.finite_fibre _).1
+  refine (hfin.image fun w ↦ (c.sourceHomeomorph.symm w).val).subset fun x hx ↦ ?_
+  have hxV : f.hom.base x ∈ c.V := (Set.mem_singleton_iff.mp hx).symm ▸ c.mem
+  refine ⟨c.sourceHomeomorph ⟨x, hxV⟩, ?_,
+    congrArg Subtype.val (c.sourceHomeomorph.symm_apply_apply _)⟩
+  exact (c.targetHomeomorph_restrictPreimage ⟨x, hxV⟩).symm.trans
+    (congrArg c.targetHomeomorph (Subtype.ext hx))
 
 /-- **Every morphism from an empty adic space into an analytic adic space is finite étale.** -/
 theorem IsFiniteEtale.of_isEmpty (f : X ⟶ Y) [IsEmpty X.obj] (hY : Y.IsAnalytic) :
@@ -451,29 +468,17 @@ theorem IsFiniteEtale.isClopen_range {f : X ⟶ Y} (hf : IsFiniteEtale f) :
     IsClopen (Set.range f.hom.base) := by
   have hlocal (y : Y.obj) : ∃ V : Opens Y.obj,
       y ∈ V ∧ IsClopen (Set.range ((V : Set Y.obj).restrictPreimage f.hom.base)) := by
-    obtain ⟨V, hy, A, _, _, _, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ,
-      ⟨_, hφ⟩, hsheaf, eV, eU, hfac⟩ :=
-      (targetLocally_iff f).mp ((isFiniteEtale_iff f).mp hf) y
-    let hU := TopCat.homeoOfIso (forgetToTop.mapIso eU)
-    let hV := TopCat.homeoOfIso (forgetToTop.mapIso eV)
-    let g := presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom φ.map_mem_plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem
-      T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf
-    have hfac' := congrArg (fun k ↦ ConcreteCategory.hom (forgetToTop.map k)) hfac
-    simp only [Functor.map_comp, TopCat.hom_comp] at hfac'
-    have hres (x : (Opens.map f.hom.base).obj V) :
-        (V : Set Y.obj).restrictPreimage f.hom.base x = hV.symm (g.base (hU x)) :=
-      Subtype.ext (congrArg (fun k ↦ k x) hfac')
-    have hg_pt (w) : g.base w = φ.spaComap w := Subtype.ext
-      ((presentationLimitPreAdicSpaceComap_base_val _ _ _ _ _ _ _ _ w).trans
-        (φ.spaComap_val w).symm)
-    have hr : Set.range ((V : Set Y.obj).restrictPreimage f.hom.base) =
-        hV ⁻¹' Set.range φ.spaComap := by
+    obtain ⟨c⟩ := hf.exists_ofPair_chart y
+    have hr : Set.range ((c.V : Set Y.obj).restrictPreimage f.hom.base) =
+        c.targetHomeomorph ⁻¹' Set.range c.pairHom.spaComap := by
       refine Set.ext fun z ↦ ⟨fun ⟨x, hx⟩ ↦ ?_, fun ⟨w, hw⟩ ↦ ?_⟩
-      · exact ⟨hU x, (hg_pt (hU x)).symm.trans (hV.symm_apply_eq.mp ((hres x).symm.trans hx))⟩
-      · exact ⟨hU.symm w, (hres _).trans (hV.symm_apply_eq.mpr
-          ((hg_pt _).trans ((congrArg φ.spaComap (hU.apply_symm_apply w)).trans hw)))⟩
-    exact ⟨V, hy, hr ▸ hφ.isClopen_range_spaComap.preimage hV.continuous⟩
+      · exact ⟨c.sourceHomeomorph x,
+          (c.targetHomeomorph_restrictPreimage x).symm.trans (congrArg c.targetHomeomorph hx)⟩
+      · exact ⟨c.sourceHomeomorph.symm w, c.targetHomeomorph.injective
+          ((c.targetHomeomorph_restrictPreimage _).trans
+            ((congrArg c.pairHom.spaComap (c.sourceHomeomorph.apply_symm_apply w)).trans hw))⟩
+    exact ⟨c.V, c.mem, hr ▸ c.isFiniteEtale.isClopen_range_spaComap.preimage
+      c.targetHomeomorph.continuous⟩
   choose V hV hcl using hlocal
   have hcov : IsOpenCover V := eq_top_iff.mpr fun y _ ↦ Opens.mem_iSup.mpr ⟨y, hV y⟩
   simp_rw [Set.range_restrictPreimage] at hcl

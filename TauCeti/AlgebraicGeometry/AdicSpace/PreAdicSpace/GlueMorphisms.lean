@@ -120,7 +120,8 @@ theorem hom_ext_of_jointly_surjective {ι' : Type*} {V : ι' → PreAdicSpace.{u
   refine hom_ext_of_ofRestrict hX O
     (eq_top_iff.mpr fun x _ ↦ let ⟨i, y, hy⟩ := hw x; Opens.mem_iSup.mpr ⟨i, y, hy⟩) fun i ↦ ?_
   rw [← IsOpenImmersion.isoOfRangeEq_inv_comp (w i) (X.ofRestrict (O i).isOpenEmbedding)
-      (Opens.set_range_inclusion' (O i)).symm, Category.assoc, Category.assoc, h i]
+      (Opens.set_range_inclusion' (O i)).symm]
+  simp only [Category.assoc, h i]
 
 include hX in
 /-- Two morphisms out of a sheafy pre-adic space that agree on an open immersion around every point

@@ -534,9 +534,10 @@ private theorem comm_restrictPreimage_of_square {W W₀ Z Z₀ : AdicSpace.{u}}
     {uO : W₀.obj ⟶ Z₀.obj.restrict ((Opens.map ι.hom.base).obj O).isOpenEmbedding}
     (huO : uO ≫ Z₀.obj.ofRestrict ((Opens.map ι.hom.base).obj O).isOpenEmbedding = u.hom) :
     k.hom ≫ vO = uO ≫ ι.hom.restrictPreimage O := by
-  rw [← cancel_mono (Z.obj.ofRestrict O.isOpenEmbedding), Category.assoc, hvO,
-    ← ObjectProperty.FullSubcategory.comp_hom, hsq, ObjectProperty.FullSubcategory.comp_hom,
-    Category.assoc, Hom.restrictPreimage_ofRestrict, reassoc_of% huO]
+  refine (cancel_mono (Z.obj.ofRestrict O.isOpenEmbedding)).mp ?_
+  simpa only [ObjectProperty.FullSubcategory.comp_hom, Category.assoc, hvO,
+    Hom.restrictPreimage_ofRestrict, reassoc_of% huO] using
+    congrArg InducedCategory.Hom.hom hsq
 
 section SquareComparison
 
