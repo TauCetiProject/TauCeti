@@ -664,7 +664,7 @@ private theorem exists_energyFormH1_restrictL_sub_nonpos_and_ae_abs_le [Nonempty
   set n : ℝ := (Fintype.card ι : ℝ)
   have hn : (0 : ℝ) < n := Nat.cast_pos.2 Fintype.card_pos
   have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-  have hrn' : n * (2 - r) < 2 * r := by nlinarith [mul_pos hn (sub_pos.2 hr1)]
+  have hrn' : n * (2 - r) < 2 * r := mul_two_sub_lt_two_mul_of_lt_two_mul hn.le hr1 hrn
   obtain ⟨K, hK, hsolve⟩ := exists_forall_energyFormH1_eq_setIntegral_ae_abs_le (mu := mu) hr hrn
   refine ⟨K * 2 ^ (2 - n / r), by positivity, ?_⟩
   intro U a' g ub x₀ R hUdef hR h' ha' hsubsol hg

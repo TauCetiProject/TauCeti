@@ -108,6 +108,8 @@ one and so does not apply to an ungraded differential algebra.
 * `TauCeti.TypeDStructure.boxDifferential_continuationMap`: morphisms act on box tensor products
   compatibly with the differentials.
 * `TauCeti.TypeDStructure.lift_iteratedCoeff_succ`: the recursion `δᵏ⁺¹ = (1 ⊗ δᵏ) ∘ δ¹`.
+* `TauCeti.TypeDStructure.add_le_of_iteratedCoeff_ne_zero`: a nonzero iterate `δᵏ` raises a
+  height function increased by the coefficients by at least `k`.
 * `TauCeti.TypeDStructure.iteratedCoeff_eq_zero_of_lt` and
   `TauCeti.TypeDStructure.isBounded_of_lt`: a type `D` structure whose coefficients increase a
   height function is bounded.
@@ -697,17 +699,27 @@ theorem lift_iteratedCoeff_succ {P : Type*} [AddCommGroup P] [Module R P] (k : �
     refine Fin.cases ?_ (fun t => ?_) t <;> simp
   · rfl
 
+/-- If the coefficients of a type `D` structure strictly increase a height function `h`, then
+along a nonzero iterate `δᵏ` from `x` to `z` the height rises by at least `k`:
+`h x + k ≤ h z`. -/
+theorem add_le_of_iteratedCoeff_ne_zero (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y)
+    {k : ℕ} {x z : X} (hxz : N.iteratedCoeff k x z ≠ 0) : h x + k ≤ h z := by
+  obtain ⟨r, hr, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hxz
+  rw [Finset.mem_filter] at hr
+  have hnz (t : Fin k) : N.coeff (r t.castSucc) (r t.succ) ≠ 0 := fun h0 =>
+    hne (MultilinearMap.map_coord_zero _ t h0)
+  -- Along a path of nonzero coefficients the height rises at each of its `k` steps.
+  have hr' : StrictMono (h ∘ r) := Fin.strictMono_iff_lt_succ.mpr fun t => hh _ _ (hnz t)
+  simpa [hr.2.1, hr.2.2] using hr'.add_sub_le_nat (Fin.zero_le (Fin.last k))
+
 /-- A type `D` structure whose coefficients strictly increase a height function `h` is bounded:
 `δᵏ = 0` as soon as `k` exceeds every height. -/
 theorem iteratedCoeff_eq_zero_of_lt (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y)
     {k : ℕ} (hk : Finset.univ.sup h < k) (x z : X) : N.iteratedCoeff k x z = 0 := by
-  refine Finset.sum_eq_zero fun r _ => ?_
   by_contra hne
-  have hnz (t : Fin k) : N.coeff (r t.castSucc) (r t.succ) ≠ 0 := fun h0 =>
-    hne (MultilinearMap.map_coord_zero _ t h0)
-  -- Along a path of nonzero coefficients the height rises `k` times, beyond every height.
-  have hr : StrictMono (h ∘ r) := Fin.strictMono_iff_lt_succ.mpr fun t => hh _ _ (hnz t)
-  exact hk.not_ge hr.le_univ_sup_nat
+  have := N.add_le_of_iteratedCoeff_ne_zero h hh hne
+  have := Finset.le_sup (f := h) (Finset.mem_univ z)
+  omega
 
 /-- A type `D` structure is **bounded** when its iterates `δᵏ` vanish for all large `k`. -/
 def IsBounded : Prop :=

@@ -86,11 +86,20 @@ for a Floer trajectory these are
 need only be continuous, and their nondegeneracy as Hamiltonian orbits is replaced by that of the
 shifted fields.
 
+The Fredholm property and the index of `D_u` depend only on the asymptotic orbits, and in a unitary
+trivialization, for the `s`-independent Floer data `(i, 0, H_t)` of a Hamiltonian `H` with a
+nondegenerate one-periodic orbit `x`, `D_u` is Fredholm of index zero along maps `u` from `x` to
+itself; both are proved by deformation in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm`
+(`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical`,
+`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt`,
+`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt`).
+
 The semi-Fredholm estimate for the formal adjoint `D_u^*` on `C²` covector fields is
 `TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_add`
 along a Floer trajectory, with a version for data cylindrical near the ends (suffix
-`_of_cylindrical`). The finiteness of the cokernel, hence the Fredholm property and the index,
-still needs the Sobolev realization of `D_u^*` and the regularity of weak `L²` cokernel elements.
+`_of_cylindrical`). For distinct ends `x₋ ≠ x₊`, the finiteness of the cokernel, hence the Fredholm
+property and the index, still needs the Sobolev realization of `D_u^*` and the regularity of weak
+`L²` cokernel elements.
 
 ## References
 
@@ -245,11 +254,9 @@ theorem exists_forall_norm_floerJetCoeff_le (ω : SymplecticForm V) {H : ℝ →
   -- The data as continuous functions of `(t, y)`, bounded on the compact set `K`.
   have hdJ : Continuous fun p : ℝ × V ↦
       fderiv ℝ (fun y ↦ (J p.1 y).toLinearMap.toContinuousLinearMap) p.2 :=
-    (ContDiff.fderiv (f := fun (p : ℝ × V) y ↦ (J p.1 y).toLinearMap.toContinuousLinearMap)
-      (hJ.comp (contDiff_fst.fst.prodMk contDiff_snd)) (contDiff_snd (n := 0)) (by simp)).continuous
+    continuous_fderiv_slice_right (f := fun t y ↦ (J t y).toLinearMap.toContinuousLinearMap) hJ
   have hdX : Continuous fun p : ℝ × V ↦ fderiv ℝ (ω.hamiltonianVectorField (H p.1)) p.2 :=
-    (ContDiff.fderiv (f := fun (p : ℝ × V) y ↦ ω.hamiltonianVectorField (H p.1) y)
-      (hX.comp (contDiff_fst.fst.prodMk contDiff_snd)) (contDiff_snd (n := 0)) (by simp)).continuous
+    continuous_fderiv_slice_right (f := fun t ↦ ω.hamiltonianVectorField (H t)) hX
   set K : Set (ℝ × V) := Icc 0 1 ×ˢ Metric.closedBall 0 Cu
   have hK : IsCompact K := isCompact_Icc.prod (isCompact_closedBall 0 Cu)
   obtain ⟨BJ, hBJ⟩ := hK.exists_bound_of_continuousOn hJ.continuous.continuousOn
