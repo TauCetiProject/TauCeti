@@ -57,11 +57,11 @@ normed spaces:
 * `LinearMap.norm_apply_le_card_mul_norm_mul`: for a semilinear map `L : (ι → R) →ₛₗ[σ] F` on a
   finite product over a seminormed ring, into a seminormed group with a bounded scalar action of
   `S`, a bound `M` on the values at the coordinate vectors bounds every value:
-  `‖L v‖ ≤ #ι * ‖v‖ * M` for the sup norm, provided `‖σ (v j)‖ ≤ ‖v‖` for every coordinate.
-* `LinearMap.norm_inv_smul_sub_le`: for a semilinear map `L : E →ₛₗ[σ] F` from a seminormed group
-  with any action of a normed ring into one with a bounded scalar action of a normed division ring,
-  an estimate `‖w - L (t • v)‖ ≤ c (‖t‖ ‖v‖)` with `t ≠ 0` and `‖t‖ ≤ ‖σ t‖` rescales to
-  `‖(σ t)⁻¹ • w - L v‖ ≤ c ‖v‖`. When `‖t • v‖ = ‖t‖ ‖v‖`, the hypothesis is the estimate
+  `‖L v‖ ≤ #ι * ‖v‖ * M` for the sup norm, provided `∑ j, ‖σ (v j)‖ ≤ #ι * ‖v‖`.
+* `LinearMap.norm_inv_smul_sub_le`: for a semilinear map `L : E →ₛₗ[σ] F` from a module over a
+  semiring carrying any norm into a seminormed group with a bounded scalar action of a normed
+  division ring, an estimate `‖w - L (t • v)‖ ≤ c (‖σ t‖ ‖v‖)` with `σ t ≠ 0` rescales to
+  `‖(σ t)⁻¹ • w - L v‖ ≤ c ‖v‖`. When `‖t • v‖ = ‖σ t‖ ‖v‖`, the hypothesis is the estimate
   `‖w - L (t • v)‖ ≤ c ‖t • v‖`. No continuity of `L` is needed.
 
 The coordinate bound is adapted from [KLS](https://github.com/human-ai-mathematics/kls-lean),
@@ -263,12 +263,12 @@ namespace LinearMap
 
 /-- A bound `M` on the values of a semilinear map `L : (ι → R) →ₛₗ[σ] F` at the coordinate vectors
 of a finite product bounds its value at every vector `v` by `#ι * ‖v‖ * M`, for the sup norm,
-when `S` acts on `F` with bounded scalar action and `σ` maps each coordinate of `v` to a scalar
-of norm at most `‖v‖`. -/
+when `S` acts on `F` with bounded scalar action and the norms of the images under `σ` of the
+coordinates of `v` sum to at most `#ι * ‖v‖`. -/
 theorem norm_apply_le_card_mul_norm_mul {ι R S F : Type*} [Fintype ι] [DecidableEq ι]
     [SeminormedRing R] [SeminormedRing S] [SeminormedAddCommGroup F] [Module S F]
     [IsBoundedSMul S F] {σ : R →+* S} (L : (ι → R) →ₛₗ[σ] F) (v : ι → R)
-    (hσ : ∀ j, ‖σ (v j)‖ ≤ ‖v‖) {M : ℝ} (h : ∀ j, ‖L (Pi.single j 1)‖ ≤ M) :
+    (hσ : ∑ j, ‖σ (v j)‖ ≤ Fintype.card ι * ‖v‖) {M : ℝ} (h : ∀ j, ‖L (Pi.single j 1)‖ ≤ M) :
     ‖L v‖ ≤ Fintype.card ι * ‖v‖ * M := by
   rcases isEmpty_or_nonempty ι with hι | ⟨⟨j₀⟩⟩
   · simp [Subsingleton.elim v 0]
@@ -277,36 +277,28 @@ theorem norm_apply_le_card_mul_norm_mul {ι R S F : Type*} [Fintype ι] [Decidab
     conv_lhs => rw [← Finset.univ_sum_single v]
     simp only [map_sum, ← map_smulₛₗ, ← Pi.single_smul', smul_eq_mul, mul_one]
   calc ‖L v‖ ≤ (∑ j, ‖σ (v j)‖) * M := hv ▸ TauCeti.norm_sum_smul_le_sum_norm_mul fun j _ ↦ h j
-    _ ≤ Fintype.card ι * ‖v‖ * M := by
-        gcongr
-        · exact (norm_nonneg _).trans (h j₀)
-        · simpa using Finset.sum_le_card_nsmul Finset.univ _ _ fun j _ ↦ hσ j
+    _ ≤ Fintype.card ι * ‖v‖ * M := mul_le_mul_of_nonneg_right hσ ((norm_nonneg _).trans (h j₀))
 
 section Rescale
 
-variable {𝕜 𝕜₂ E F : Type*} [NormedRing 𝕜] [NormedDivisionRing 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
-  [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [Module 𝕜 E] [Module 𝕜₂ F]
+variable {𝕜 𝕜₂ E F : Type*} [Semiring 𝕜] [NormedDivisionRing 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
+  [AddCommMonoid E] [Norm E] [Module 𝕜 E] [SeminormedAddCommGroup F] [Module 𝕜₂ F]
   [IsBoundedSMul 𝕜₂ F]
 
-/-- A first-order estimate at `t • v` rescales to one at `v`: if `w` is within `c (‖t‖ ‖v‖)` of
-`L (t • v)` for a semilinear map `L`, with `t ≠ 0` and `‖t‖ ≤ ‖σ t‖`, then `(σ t)⁻¹ • w` is
-within `c ‖v‖` of `L v`. When `‖t • v‖ = ‖t‖ ‖v‖` (for instance under `NormSMulClass 𝕜 E`), the
-hypothesis is the estimate `‖w - L (t • v)‖ ≤ c ‖t • v‖`. -/
-theorem norm_inv_smul_sub_le (L : E →ₛₗ[σ] F) {t : 𝕜} (ht : t ≠ 0) (hσt : ‖t‖ ≤ ‖σ t‖) {w : F}
-    {v : E} {c : ℝ} (h : ‖w - L (t • v)‖ ≤ c * (‖t‖ * ‖v‖)) :
+/-- A first-order estimate at `t • v` rescales to one at `v`: if `w` is within `c (‖σ t‖ ‖v‖)`
+of `L (t • v)` for a semilinear map `L`, with `σ t ≠ 0`, then `(σ t)⁻¹ • w` is within `c ‖v‖` of
+`L v`. When `‖t • v‖ = ‖σ t‖ ‖v‖` (for instance for a linear map over a normed division ring acting
+with `NormSMulClass`), the hypothesis is the estimate `‖w - L (t • v)‖ ≤ c ‖t • v‖`. -/
+theorem norm_inv_smul_sub_le (L : E →ₛₗ[σ] F) {t : 𝕜} (ht : σ t ≠ 0) {w : F} {v : E} {c : ℝ}
+    (h : ‖w - L (t • v)‖ ≤ c * (‖σ t‖ * ‖v‖)) :
     ‖(σ t)⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
-  have hσ : σ t ≠ 0 := norm_pos_iff.1 <| (norm_pos_iff.2 ht).trans_le hσt
   have : (σ t)⁻¹ • w - L v = (σ t)⁻¹ • (w - L (t • v)) := by
-    simp [smul_sub, hσ]
+    simp [smul_sub, ht]
   rw [this]
-  have hcv : 0 ≤ c * ‖v‖ := (mul_nonneg_iff_of_pos_left (norm_pos_iff.2 ht)).1 <| by
-    linarith [norm_nonneg (w - L (t • v))]
   calc ‖(σ t)⁻¹ • (w - L (t • v))‖ ≤ ‖σ t‖⁻¹ * ‖w - L (t • v)‖ := by
         simpa only [norm_inv] using norm_smul_le (σ t)⁻¹ (w - L (t • v))
-    _ ≤ ‖σ t‖⁻¹ * (c * (‖t‖ * ‖v‖)) := by gcongr
-    _ = ‖t‖ / ‖σ t‖ * (c * ‖v‖) := by ring
-    _ ≤ 1 * (c * ‖v‖) := by gcongr; exact div_le_one_of_le₀ hσt (norm_nonneg _)
-    _ = c * ‖v‖ := one_mul _
+    _ ≤ ‖σ t‖⁻¹ * (c * (‖σ t‖ * ‖v‖)) := by gcongr
+    _ = c * ‖v‖ := by field_simp [norm_ne_zero_iff.2 ht]
 
 end Rescale
 
