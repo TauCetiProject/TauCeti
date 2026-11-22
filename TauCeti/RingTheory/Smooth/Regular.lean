@@ -8,9 +8,11 @@ module
 public import Mathlib.RingTheory.Localization.LocalizationLocalization
 public import Mathlib.RingTheory.RegularLocalRing.Polynomial
 public import Mathlib.RingTheory.Smooth.Flat
+public import Mathlib.RingTheory.Smooth.Locus
 public import Mathlib.RingTheory.Smooth.StandardSmoothOfFree
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 public import TauCeti.RingTheory.RegularLocalRing.Flat
+public import TauCeti.RingTheory.RegularLocalRing.Locus
 import TauCeti.RingTheory.EssentialFiniteness
 
 /-!
@@ -35,6 +37,10 @@ regularity ascends by `TauCeti.IsRegularLocalRing.of_flat_of_formallyUnramified`
 * `TauCeti.IsRegularRing.of_smooth`: a smooth algebra over a regular ring is a regular ring.
 * `TauCeti.IsRegularLocalRing.of_formallySmooth`: a local algebra, essentially of finite type and
   formally smooth over a regular ring, is a regular local ring.
+* `TauCeti.Excellence.mem_regularLocus_of_mem_smoothLocus`: a prime of an algebra essentially of
+  finite type, at which the algebra is smooth and whose contraction lies in the regular locus of
+  the base, lies in the regular locus; hence `TauCeti.Excellence.smoothLocus_subset_regularLocus`
+  over a regular base.
 
 ## References
 
@@ -116,5 +122,31 @@ theorem IsRegularLocalRing.of_formallySmooth [IsRegularRing R] [IsLocalRing S]
   have : Algebra.IsSmoothAt R q := Algebra.FormallySmooth.of_equiv (e.restrictScalars R).symm
   have := isRegularLocalRing_localization_of_isSmoothAt (R := R) q
   exact .of_ringEquiv e.toRingEquiv
+
+namespace Excellence
+
+/-- Let `B` be an `R`-algebra essentially of finite type and `q` a prime of `B` whose contraction
+`p` to `R` lies in the regular locus. If `B` is smooth over `R` at `q`, then `q` lies in the
+regular locus of `B`: the local ring `B_q` is essentially of finite type and formally smooth over
+the regular local ring `R_p`, so it is regular by `TauCeti.IsRegularLocalRing.of_formallySmooth`. -/
+theorem mem_regularLocus_of_mem_smoothLocus [Algebra.EssFiniteType R S] {q : PrimeSpectrum S}
+    [IsRegularLocalRing (Localization.AtPrime (q.asIdeal.under R))]
+    (hq : q ∈ Algebra.smoothLocus R S) : q ∈ regularLocus S := by
+  rw [Algebra.smoothLocus, Set.mem_ofPred_eq] at hq
+  let p := q.asIdeal.under R
+  let := Localization.AtPrime.algebraOfLiesOver p q.asIdeal
+  have : Algebra.FormallySmooth (Localization.AtPrime p) (Localization.AtPrime q.asIdeal) :=
+    .of_restrictScalars R _ _
+  have : Algebra.EssFiniteType (Localization.AtPrime p) (Localization.AtPrime q.asIdeal) :=
+    .of_comp R _ _
+  exact mem_regularLocus.mpr (IsRegularLocalRing.of_formallySmooth (R := Localization.AtPrime p))
+
+/-- Over a regular ring `R`, the smooth locus of an `R`-algebra essentially of finite type lies in
+its regular locus. -/
+theorem smoothLocus_subset_regularLocus [IsRegularRing R] [Algebra.EssFiniteType R S] :
+    Algebra.smoothLocus R S ⊆ regularLocus S :=
+  fun _ ↦ mem_regularLocus_of_mem_smoothLocus
+
+end Excellence
 
 end TauCeti

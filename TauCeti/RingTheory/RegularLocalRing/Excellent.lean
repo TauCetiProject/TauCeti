@@ -26,11 +26,13 @@ regular, hence universally catenary.
 
 ## Main definitions and results
 
-* `TauCeti.Excellence.IsQuasiExcellentRing R`: `R` is a G-ring and J-2.
-* `TauCeti.Excellence.IsExcellentRing R`: `R` is quasi-excellent and universally catenary.
-* `TauCeti.Excellence.IsQuasiExcellentRing.of_isLocalization`,
-  `TauCeti.Excellence.IsExcellentRing.of_isLocalization`: localizations of quasi-excellent,
-  respectively excellent, rings are quasi-excellent, respectively excellent.
+* `TauCeti.Excellence.IsQuasiExcellentRing R`: `R` is a G-ring and J-2
+  (`TauCeti.Excellence.isQuasiExcellentRing_iff`).
+* `TauCeti.Excellence.IsExcellentRing R`: `R` is quasi-excellent and universally catenary
+  (`TauCeti.Excellence.isExcellentRing_iff`).
+* `Submonoid.isQuasiExcellentRing_of_isLocalization`, `Submonoid.isExcellentRing_of_isLocalization`:
+  localizations of quasi-excellent, respectively excellent, rings are quasi-excellent, respectively
+  excellent.
 * `TauCeti.Excellence.IsExcellentRing.of_perfectField`: a perfect field is excellent.
 
 ## References
@@ -54,53 +56,75 @@ Stacks, Definition 15.53.1 (2). -/
 class IsExcellentRing (R : Type u) [CommRing R] : Prop extends IsQuasiExcellentRing R,
     IsUniversallyCatenary R
 
+/-- A ring is quasi-excellent if and only if it is a G-ring and J-2. -/
+theorem isQuasiExcellentRing_iff {R : Type u} [CommRing R] :
+    IsQuasiExcellentRing R ↔ IsGRing R ∧ IsJ2 R :=
+  ⟨fun _ ↦ ⟨inferInstance, inferInstance⟩, fun ⟨h₁, h₂⟩ ↦ { __ := h₁, __ := h₂ }⟩
+
+/-- A ring is excellent if and only if it is quasi-excellent and universally catenary. -/
+theorem isExcellentRing_iff {R : Type u} [CommRing R] :
+    IsExcellentRing R ↔ IsQuasiExcellentRing R ∧ IsUniversallyCatenary R :=
+  ⟨fun _ ↦ ⟨inferInstance, inferInstance⟩, fun ⟨h₁, h₂⟩ ↦ { __ := h₁, __ := h₂ }⟩
+
+/-- A perfect field is excellent: it is Artinian, hence a G-ring; it is J-2; and it is regular,
+hence universally catenary. -/
+instance IsExcellentRing.of_perfectField (k : Type u) [Field k] [PerfectField k] :
+    IsExcellentRing k where
+  __ : IsGRing k := inferInstance
+  __ : IsJ2 k := inferInstance
+  __ : IsUniversallyCatenary k := inferInstance
+
+end TauCeti.Excellence
+
+open TauCeti.Excellence
+
+namespace RingEquiv
+
 variable {R : Type u} {S : Type v} [CommRing R] [CommRing S]
 
-namespace IsQuasiExcellentRing
-
 /-- Being quasi-excellent is invariant under ring isomorphisms. -/
-theorem of_ringEquiv [IsQuasiExcellentRing R] (e : R ≃+* S) : IsQuasiExcellentRing S where
+theorem isQuasiExcellentRing [IsQuasiExcellentRing R] (e : R ≃+* S) : IsQuasiExcellentRing S where
   __ := IsGRing.of_ringEquiv e
   __ := e.isJ2
 
+/-- Being excellent is invariant under ring isomorphisms. -/
+theorem isExcellentRing [IsExcellentRing R] (e : R ≃+* S) : IsExcellentRing S where
+  __ := e.isQuasiExcellentRing
+  __ := e.isUniversallyCatenary
+
+end RingEquiv
+
+namespace Submonoid
+
+variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [Algebra R S]
+
 /-- A localization of a quasi-excellent ring is quasi-excellent. -/
-theorem of_isLocalization [Algebra R S] [IsQuasiExcellentRing R] (M : Submonoid R)
+theorem isQuasiExcellentRing_of_isLocalization [IsQuasiExcellentRing R] (M : Submonoid R)
     [IsLocalization M S] : IsQuasiExcellentRing S where
   __ := IsGRing.of_isLocalization (S := S) M
   __ := M.isJ2_of_isLocalization (S := S)
 
 /-- The localization `Localization M` of a quasi-excellent ring is quasi-excellent. -/
-instance localization [IsQuasiExcellentRing R] (M : Submonoid R) :
+instance isQuasiExcellentRing_localization [IsQuasiExcellentRing R] (M : Submonoid R) :
     IsQuasiExcellentRing (Localization M) :=
-  of_isLocalization M
-
-end IsQuasiExcellentRing
-
-namespace IsExcellentRing
-
-/-- Being excellent is invariant under ring isomorphisms. -/
-theorem of_ringEquiv [IsExcellentRing R] (e : R ≃+* S) : IsExcellentRing S where
-  __ := IsQuasiExcellentRing.of_ringEquiv e
-  __ := e.isUniversallyCatenary
+  M.isQuasiExcellentRing_of_isLocalization
 
 /-- A localization of an excellent ring is excellent. -/
-theorem of_isLocalization [Algebra R S] [IsExcellentRing R] (M : Submonoid R)
+theorem isExcellentRing_of_isLocalization [IsExcellentRing R] (M : Submonoid R)
     [IsLocalization M S] : IsExcellentRing S where
-  __ := IsQuasiExcellentRing.of_isLocalization (S := S) M
+  __ := M.isQuasiExcellentRing_of_isLocalization (S := S)
   __ := M.isUniversallyCatenary_of_isLocalization (S := S)
 
 /-- The localization `Localization M` of an excellent ring is excellent. -/
-instance localization [IsExcellentRing R] (M : Submonoid R) : IsExcellentRing (Localization M) :=
-  of_isLocalization M
+instance isExcellentRing_localization [IsExcellentRing R] (M : Submonoid R) :
+    IsExcellentRing (Localization M) :=
+  M.isExcellentRing_of_isLocalization
 
-/-- A perfect field is excellent: it is Artinian, hence a G-ring; it is J-2; and it is regular,
-hence universally catenary. -/
-instance of_perfectField (k : Type u) [Field k] [PerfectField k] : IsExcellentRing k where
-  __ : IsGRing k := inferInstance
-  __ : IsJ2 k := inferInstance
-  __ : IsUniversallyCatenary k := inferInstance
+end Submonoid
 
-end IsExcellentRing
+namespace TauCeti.Excellence
+
+variable {R : Type u} [CommRing R]
 
 /-! ### Checks -/
 

@@ -7,12 +7,9 @@ module
 
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.EssentialFiniteness
-public import Mathlib.RingTheory.Smooth.Locus
+public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.RingTheory.RegularLocalRing.Locus
 import TauCeti.RingTheory.RegularLocalRing.Smooth
-import TauCeti.RingTheory.Smooth.Field
-import TauCeti.RingTheory.Smooth.Regular
-import Mathlib.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # J-2 rings
@@ -32,15 +29,25 @@ for instance `ℚ[x, y] ⧸ (y ^ 2 - x ^ 3)`, has open regular locus.
 ## Main definitions and results
 
 * `TauCeti.Excellence.IsJ2 R`: `R` is Noetherian and every finite type `R`-algebra has open regular
-  locus.
+  locus; `TauCeti.Excellence.isJ2_iff` unfolds it.
 * `TauCeti.Excellence.IsJ2.isOpen_regularLocus_of_essFiniteType`: an algebra essentially of finite
   type over a J-2 ring, in any universe, has open regular locus.
 * `TauCeti.Excellence.IsJ2.of_essFiniteType`: an algebra essentially of finite type over a J-2
-  ring is J-2. Quotients, localizations and polynomial rings over J-2 rings are J-2.
-* `TauCeti.Excellence.smoothLocus_subset_regularLocus`: over a regular ring, the smooth locus of an
-  algebra essentially of finite type lies in its regular locus.
-* `TauCeti.Excellence.regularLocus_eq_smoothLocus`: over a perfect field the two loci agree.
+  ring is J-2. Quotients, localizations and polynomial rings in finitely many variables over J-2
+  rings are J-2.
 * `TauCeti.Excellence.IsJ2.of_perfectField`: a perfect field is J-2.
+
+## Implementation notes
+
+The definition and its transfer API follow `TauCeti.RingTheory.UniversallyCatenary`: the
+same-universe quantifier of `TauCeti.Excellence.IsUniversallyCatenary`, its extension to algebras
+of finite type and essentially of finite type in any universe, and the surjection, ring
+isomorphism, quotient, localization and polynomial ring results.
+
+That a perfect field is J-2 rests on `TauCeti.Excellence.regularLocus_eq_smoothLocus`, whose two
+inclusions come from `TauCeti.formallySmooth_of_isRegularLocalRing` and
+`TauCeti.IsRegularLocalRing.of_formallySmooth`, and on Mathlib's `Algebra.isOpen_smoothLocus` for
+the openness of the smooth locus of a finitely presented algebra.
 
 ## References
 
@@ -67,6 +74,13 @@ class IsJ2 (R : Type u) [CommRing R] : Prop where
 
 attribute [instance] IsJ2.isNoetherianRing
 
+/-- A ring is J-2 if and only if it is Noetherian and every finite type algebra over it, in its
+universe, has open regular locus. -/
+theorem isJ2_iff {R : Type u} [CommRing R] :
+    IsJ2 R ↔ IsNoetherianRing R ∧ ∀ (B : Type u) [CommRing B] [Algebra R B],
+      Algebra.FiniteType R B → IsOpen (regularLocus B) :=
+  ⟨fun h ↦ ⟨h.isNoetherianRing, h.forall_isOpen_regularLocus⟩, fun ⟨h₁, h₂⟩ ↦ ⟨h₁, h₂⟩⟩
+
 namespace IsJ2
 
 variable {R : Type u} {B : Type v} [CommRing R] [CommRing B] [Algebra R B]
@@ -88,7 +102,7 @@ algebra of finite type. -/
 theorem isOpen_regularLocus_of_essFiniteType [IsJ2 R] [Algebra.EssFiniteType R B] :
     IsOpen (regularLocus B) := by
   have := isOpen_regularLocus_of_finiteType (R := R) (B := Algebra.EssFiniteType.subalgebra R B)
-  rw [← regularLocus_comap_of_isLocalization (Algebra.EssFiniteType.submonoid R B)]
+  rw [← (Algebra.EssFiniteType.submonoid R B).preimage_comap_regularLocus]
   exact this.preimage (PrimeSpectrum.continuous_comap _)
 
 /-- An algebra essentially of finite type over a J-2 ring is J-2: it is Noetherian, and an algebra
@@ -159,64 +173,26 @@ instance isJ2_localization [IsJ2 R] (M : Submonoid R) : IsJ2 (Localization M) :=
 
 end Submonoid
 
-namespace MvPolynomial
+namespace TauCeti.Excellence
 
 /-- A polynomial ring in finitely many variables over a J-2 ring is J-2. -/
-instance isJ2 {σ : Type v} {R : Type u} [Finite σ] [CommRing R] [IsJ2 R] :
+instance IsJ2.mvPolynomial {σ : Type v} {R : Type u} [Finite σ] [CommRing R] [IsJ2 R] :
     IsJ2 (MvPolynomial σ R) :=
   IsJ2.of_essFiniteType (R := R)
 
-end MvPolynomial
-
-namespace Polynomial
-
 /-- A polynomial ring in one variable over a J-2 ring is J-2. -/
-instance isJ2 {R : Type u} [CommRing R] [IsJ2 R] : IsJ2 R[X] :=
+instance IsJ2.polynomial {R : Type u} [CommRing R] [IsJ2 R] : IsJ2 (Polynomial R) :=
   IsJ2.of_essFiniteType (R := R)
 
-end Polynomial
-
-namespace TauCeti.Excellence
-
-/-! ### The regular locus and the smooth locus -/
-
-section SmoothLocus
-
-variable {R : Type u} {B : Type v} [CommRing R] [CommRing B] [Algebra R B]
-
-/-- Over a regular ring `R`, the smooth locus of an `R`-algebra essentially of finite type lies in
-its regular locus: a local ring essentially of finite type and formally smooth over a regular ring
-is regular. -/
-theorem smoothLocus_subset_regularLocus [IsRegularRing R] [Algebra.EssFiniteType R B] :
-    Algebra.smoothLocus R B ⊆ regularLocus B := fun p hp ↦ by
-  have : Algebra.FormallySmooth R (Localization.AtPrime p.asIdeal) := hp
-  have : Algebra.EssFiniteType B (Localization.AtPrime p.asIdeal) :=
-    .of_isLocalization _ p.asIdeal.primeCompl
-  have : Algebra.EssFiniteType R (Localization.AtPrime p.asIdeal) := .comp R B _
-  exact mem_regularLocus.mpr (IsRegularLocalRing.of_formallySmooth (R := R))
-
-/-- **Over a perfect field the regular locus is the smooth locus.** For an algebra `B` essentially
-of finite type over a perfect field `k`, a prime of `B` lies in the regular locus exactly when `B`
-is smooth over `k` there. Over an imperfect field the regular locus can be strictly larger. -/
-theorem regularLocus_eq_smoothLocus (k : Type w) [Field k] [PerfectField k] [Algebra k B]
-    [Algebra.EssFiniteType k B] : regularLocus B = Algebra.smoothLocus k B := by
-  refine subset_antisymm (fun p hp ↦ ?_) smoothLocus_subset_regularLocus
-  have := mem_regularLocus.mp hp
-  have : Algebra.EssFiniteType B (Localization.AtPrime p.asIdeal) :=
-    .of_isLocalization _ p.asIdeal.primeCompl
-  have : Algebra.EssFiniteType k (Localization.AtPrime p.asIdeal) := .comp k B _
-  exact formallySmooth_of_isRegularLocalRing
-
 /-- **A perfect field is J-2**: the regular locus of an algebra of finite type over it is its smooth
-locus, which is open since the algebra is finitely presented. -/
+locus (`TauCeti.Excellence.regularLocus_eq_smoothLocus`), which is open since the algebra is
+finitely presented (`Algebra.isOpen_smoothLocus`). -/
 instance IsJ2.of_perfectField (k : Type u) [Field k] [PerfectField k] : IsJ2 k where
   isNoetherianRing := inferInstance
   forall_isOpen_regularLocus B _ _ hB := by
     have : Algebra.FinitePresentation k B := Algebra.FinitePresentation.of_finiteType.mp hB
     rw [regularLocus_eq_smoothLocus k]
     exact Algebra.isOpen_smoothLocus
-
-end SmoothLocus
 
 /-! ### Checks -/
 
