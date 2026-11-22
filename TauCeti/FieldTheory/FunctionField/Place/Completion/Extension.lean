@@ -153,6 +153,7 @@ theorem algebraMap_completionExtensionAlgebra :
 
 /-- Completion preserves the ramification index, with no finiteness assumption on the residue
 extension. -/
+@[simp]
 theorem ramificationIdx_completionPlace :
     letI := P.completionExtensionAlgebra P' hP
     ramificationIdx P.Completion P'.completionPlace = ramificationIdx F P' := by
@@ -302,32 +303,39 @@ section IntegralClosure
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
-/-- The canonical ring homomorphism from the local integral closure `𝒪'_P` to the completed
-valuation ring `𝒪̂_{P'}` at a place `P'` lying over `P`. -/
+/-- The canonical `𝒪_P`-algebra homomorphism from the local integral closure `𝒪'_P` to the
+completed valuation ring `𝒪̂_{P'}` at a place `P'` lying over `P`. -/
 noncomputable def completionIntegersIntegralClosureHom :
-    integralClosure P.integers F' →+* P'.completionPlace.integers :=
-  P'.completionIntegersEmbedding.toRingHom.comp
-    ((algebraMap (integralClosure P.integers F') F').codRestrict P'.integers fun b ↦ by
-      subst hP
-      exact algebraMap_mem_integers_of_mem_integralClosure k F P' b)
+    letI : Algebra P.integers P'.completionPlace.integers :=
+      ((P.completionIntegersExtension P' hP).comp P.completionIntegersEmbedding.toRingHom).toAlgebra
+    integralClosure P.integers F' →ₐ[P.integers] P'.completionPlace.integers :=
+  letI : Algebra P.integers P'.completionPlace.integers :=
+    ((P.completionIntegersExtension P' hP).comp P.completionIntegersEmbedding.toRingHom).toAlgebra
+  ⟨P'.completionIntegersEmbedding.toRingHom.comp
+      ((algebraMap (integralClosure P.integers F') F').codRestrict P'.integers fun b ↦ by
+        subst hP
+        exact algebraMap_mem_integers_of_mem_integralClosure k F P' b),
+    fun r ↦ Subtype.ext <| by
+      simp [RingHom.algebraMap_toAlgebra, IsScalarTower.algebraMap_apply P.integers F F']⟩
 
 /-- Coercing `completionIntegersIntegralClosureHom` to `F̂_{P'}` is `P'.completionEmbedding`. -/
 @[simp]
 theorem coe_completionIntegersIntegralClosureHom (b : integralClosure P.integers F') :
     (P.completionIntegersIntegralClosureHom P' hP b : P'.Completion) =
       P'.completionEmbedding (b : F') := by
-  simp [completionIntegersIntegralClosureHom]
+  dsimp [completionIntegersIntegralClosureHom]
+  exact P'.completionIntegersEmbedding_apply _
 
 /-- On `𝒪_P`, `completionIntegersIntegralClosureHom` agrees with `completionIntegersExtension`. -/
-@[simp]
 theorem completionIntegersIntegralClosureHom_algebraMap (r : P.integers) :
     P.completionIntegersIntegralClosureHom P' hP
         (algebraMap P.integers (integralClosure P.integers F') r) =
       P.completionIntegersExtension P' hP (P.completionIntegersEmbedding r) := by
   apply Subtype.ext
-  simp [coe_completionIntegersIntegralClosureHom, IsScalarTower.algebraMap_apply P.integers F F']
+  rw [coe_completionIntegersIntegralClosureHom]
+  simp [IsScalarTower.algebraMap_apply P.integers F F']
 
-/-- The canonical homomorphism `𝒪'_P →+* 𝒪̂_{P'}` is injective. -/
+/-- The canonical homomorphism `𝒪'_P →ₐ[𝒪_P] 𝒪̂_{P'}` is injective. -/
 theorem completionIntegersIntegralClosureHom_injective :
     Function.Injective (P.completionIntegersIntegralClosureHom P' hP) := fun _ _ h ↦
   Subtype.ext <| P'.completionEmbedding.toRingHom.injective <| by
@@ -414,12 +422,6 @@ theorem completionPlace_restrictConstants (P' : Place k' F') :
       @Place.restrictConstants k' P'.Completion _ _ P'.instAlgebraCompletion
         k _ _ (P'.restrictConstants k).instAlgebraCompletion this P'.completionPlace := by
   ext x
-  simp
-
-/-- Restricting the constant field of `P'` does not change the completed valuation ring
-`𝒪̂_{P'}`. -/
-theorem integers_completionPlace_restrictConstants (P' : Place k' F') :
-    (P'.restrictConstants k).completionPlace.integers = P'.completionPlace.integers := by
   simp
 
 variable [Algebra.IsIntegral F F']

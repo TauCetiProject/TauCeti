@@ -7,7 +7,6 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Extension
-public import TauCeti.FieldTheory.FunctionField.Place.Adic
 public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 
@@ -346,26 +345,35 @@ variable (k F : Type*) {k' F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 /-- **The centre of `P'` on `𝒪'_P` generates the completed maximal ideal `𝔪̂_{P'}`.** -/
+@[simp]
 theorem map_centerIntegralClosure_completionIntegers
     [FiniteDimensional F F'] [Algebra.IsSeparable F F'] (P' : Place k' F') :
+    letI : Algebra (P'.restrict k F).integers P'.completionPlace.integers :=
+      (((P'.restrict k F).completionIntegersExtension P' rfl).comp
+        (P'.restrict k F).completionIntegersEmbedding.toRingHom).toAlgebra
     (centerIntegralClosure k F P').asIdeal.map
-        ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl) =
+        (((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl :
+          integralClosure (P'.restrict k F).integers F' →+* P'.completionPlace.integers)) =
       IsLocalRing.maximalIdeal P'.completionPlace.integers := by
+  let _ : Algebra (P'.restrict k F).integers P'.completionPlace.integers :=
+    (((P'.restrict k F).completionIntegersExtension P' rfl).comp
+      (P'.restrict k F).completionIntegersEmbedding.toRingHom).toAlgebra
   let w := centerIntegralClosure k F P'
-  have hw : P'.valuation = w.valuation F' :=
-    (P'.valuation_center _).symm.trans
-      (congrArg (IsDedekindDomain.HeightOneSpectrum.valuation F')
-        (centerIntegralClosure_def k F P').symm)
+  have hw : P'.valuation = w.valuation F' := (valuation_centerIntegralClosure k F P').symm
   let eB := completionIntegersRingEquivAdicCompletionIntegersOfValuationEq k' F' w P' hw
-  have hcomp : eB.toRingHom.comp ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl) =
+  have hcomp : eB.toRingHom.comp
+        ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl :
+          integralClosure (P'.restrict k F).integers F' →+* P'.completionPlace.integers) =
       algebraMap (integralClosure (P'.restrict k F).integers F') (w.adicCompletionIntegers F') := by
     ext b
-    rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+    rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, RingHom.coe_coe,
       completionIntegersRingEquivAdicCompletionIntegersOfValuationEq_apply,
       coe_completionIntegersIntegralClosureHom,
       completionEquivAdicCompletionOfValuationEq_completionEmbedding]
     rfl
-  have hmap : ((w.asIdeal.map ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl)).map
+  have hmap : ((w.asIdeal.map
+      ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl :
+        integralClosure (P'.restrict k F).integers F' →+* P'.completionPlace.integers)).map
       eB.toRingHom) =
       (IsLocalRing.maximalIdeal P'.completionPlace.integers).map eB.toRingHom := by
     rw [Ideal.map_map, hcomp, w.map_asIdeal_adicCompletionIntegers (K := F'),

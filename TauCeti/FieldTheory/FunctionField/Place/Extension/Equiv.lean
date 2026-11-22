@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Equiv
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # Ramification under field isomorphisms
@@ -91,17 +92,12 @@ theorem relativeDegree_equivOfRingEquiv_of_comm [Algebra k K] [Algebra k' K']
     (integersEquivOfRingEquiv σ σK hσK (Q.restrict k K)).trans
       (RingEquiv.subringCongr (congrArg (fun P ↦ P.integers.toSubring) hr.symm))
   rw [relativeDegree_def, relativeDegree_def]
-  refine (Algebra.finrank_eq_of_equiv_equiv (IsLocalRing.ResidueField.mapEquiv i)
-    (IsLocalRing.ResidueField.mapEquiv (integersEquivOfRingEquiv σ τ h Q))
-    (RingHom.ext fun x ↦ ?_)).symm
-  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
+  refine (finrank_residueField_eq_of_equiv_equiv i (integersEquivOfRingEquiv σ τ h Q)
+    (RingHom.ext fun x ↦ Subtype.ext ?_)).symm
   simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-    IsLocalRing.ResidueField.mapEquiv_apply, IsLocalRing.ResidueField.map_residue,
-    IsLocalRing.ResidueField.algebraMap_residue]
-  congr 1
-  ext
-  refine (congrArg (algebraMap K' L') (coe_integersEquivOfRingEquiv σ σK hσK _ x)).trans ?_
-  simpa using (hK x).symm
+    coe_algebraMap_integers, coe_integersEquivOfRingEquiv, i, RingEquiv.trans_apply]
+  exact (congrArg (algebraMap K' L') (coe_integersEquivOfRingEquiv σ σK hσK _ x)).trans
+    (hK x).symm
 
 end Semilinear
 

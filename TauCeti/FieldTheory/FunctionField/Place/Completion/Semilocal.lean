@@ -534,21 +534,16 @@ def integralCompletionSemilocalHom :
       ∀ Q : {P' : Place k' F' // P'.restrict k F = P}, Q.val.completionPlace.integers :=
   letI (Q : {P' : Place k' F' // P'.restrict k F = P}) :
       Algebra P.integers Q.val.completionPlace.integers :=
-    ((algebraMap P.completionPlace.integers Q.val.completionPlace.integers).comp
-      (algebraMap P.integers P.completionPlace.integers)).toAlgebra
+    ((P.completionIntegersExtension Q.val Q.property).comp
+      P.completionIntegersEmbedding.toRingHom).toAlgebra
   letI (Q : {P' : Place k' F' // P'.restrict k F = P}) :
       IsScalarTower P.integers P.completionPlace.integers Q.val.completionPlace.integers :=
-    .of_algebraMap_eq fun _ ↦ by rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply]
+    .of_algebraMap_eq fun r ↦ by
+      rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
+        algebraMap_completionIntegersAlgebra, algebraMap_completionIntegersFibreAlgebra]
+      rfl
   Algebra.TensorProduct.lift (Algebra.ofId _ _)
-    (AlgHom.pi fun Q ↦
-      { P.completionIntegersIntegralClosureHom Q.val Q.property with
-        commutes' := fun r ↦ by
-          rw [RingHom.toFun_eq_coe,
-            IsScalarTower.algebraMap_apply P.integers P.completionPlace.integers
-              Q.val.completionPlace.integers,
-            completionIntegersIntegralClosureHom_algebraMap,
-            algebraMap_completionIntegersAlgebra,
-            algebraMap_completionIntegersFibreAlgebra] })
+    (AlgHom.pi fun Q ↦ P.completionIntegersIntegralClosureHom Q.val Q.property)
     fun _ _ ↦ .all _ _
 
 /-- The field semilocal algebra map `F̂_P ⊗[F] F' →ₐ[F̂_P] ∏_{Q ∣ P} F̂_Q` sending `a ⊗ x` to

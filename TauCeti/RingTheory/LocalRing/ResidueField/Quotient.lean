@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 
 /-!
@@ -22,6 +23,8 @@ is the residue field `κ`. Likewise, any surjective `R₀`-algebra map `ψ : R �
   sending the class of `r` to `residue R r`.
 * `TauCeti.residueFieldAlgEquivOfSurjective`: `ResidueField R ≃ₐ[R₀] L` induced by a surjective
   `R₀`-algebra map `ψ : R →ₐ[R₀] L` onto a field `L`.
+* `TauCeti.finrank_residueField_eq_of_equiv_equiv`: a commuting square of ring equivalences
+  between local ring extensions induces an equality of residue-field degrees.
 -/
 
 public section
@@ -81,5 +84,34 @@ theorem residueFieldAlgEquivOfSurjective_symm_apply {R₀ L : Type*} [CommRing R
     (residueFieldAlgEquivOfSurjective hψ).symm (ψ r) = residue R r :=
   (residueFieldAlgEquivOfSurjective hψ).symm_apply_eq.mpr
     (residueFieldAlgEquivOfSurjective_residue hψ r).symm
+
+/-- A commuting square of ring equivalences between local ring extensions induces an equality
+of residue-field degrees. -/
+theorem finrank_residueField_eq_of_equiv_equiv
+    {R₀ S₀ R₁ S₁ : Type*} [CommRing R₀] [CommRing S₀] [CommRing R₁] [CommRing S₁]
+    [IsLocalRing R₀] [IsLocalRing S₀] [IsLocalRing R₁] [IsLocalRing S₁]
+    [Algebra R₀ S₀] [Algebra R₁ S₁]
+    [IsLocalHom (algebraMap R₀ S₀)] [IsLocalHom (algebraMap R₁ S₁)]
+    (i : R₀ ≃+* R₁) (j : S₀ ≃+* S₁)
+    (hc : (algebraMap R₁ S₁).comp i.toRingHom = j.toRingHom.comp (algebraMap R₀ S₀)) :
+    Module.finrank (ResidueField R₀) (ResidueField S₀) =
+      Module.finrank (ResidueField R₁) (ResidueField S₁) := by
+  refine Algebra.finrank_eq_of_equiv_equiv (ResidueField.mapEquiv i) (ResidueField.mapEquiv j) ?_
+  have h₁ : algebraMap (ResidueField R₁) (ResidueField S₁) =
+      ResidueField.map (algebraMap R₁ S₁) :=
+    Ideal.Quotient.ringHom_ext <| RingHom.ext fun _ ↦ rfl
+  have h₀ : algebraMap (ResidueField R₀) (ResidueField S₀) =
+      ResidueField.map (algebraMap R₀ S₀) :=
+    Ideal.Quotient.ringHom_ext <| RingHom.ext fun _ ↦ rfl
+  have : IsLocalHom i.toRingHom := ⟨fun _ h ↦ by simpa using i.symm.toRingHom.isUnit_map h⟩
+  have : IsLocalHom j.toRingHom := ⟨fun _ h ↦ by simpa using j.symm.toRingHom.isUnit_map h⟩
+  rw [h₁, h₀]
+  change (ResidueField.map (algebraMap R₁ S₁)).comp (ResidueField.map i.toRingHom) =
+    (ResidueField.map j.toRingHom).comp (ResidueField.map (algebraMap R₀ S₀))
+  rw [← ResidueField.map_comp, ← ResidueField.map_comp]
+  exact Ideal.Quotient.ringHom_ext <| RingHom.ext fun x ↦ by
+    change ResidueField.map ((algebraMap R₁ S₁).comp i.toRingHom) (residue R₀ x) =
+      ResidueField.map (j.toRingHom.comp (algebraMap R₀ S₀)) (residue R₀ x)
+    simp only [ResidueField.map_residue, RingHom.comp_apply, RingHom.congr_fun hc x]
 
 end TauCeti

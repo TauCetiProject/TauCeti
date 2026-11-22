@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.LocalDegree
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # Residue extensions under completion
@@ -137,15 +138,10 @@ theorem relativeDegree_completionPlace :
     congrArg (fun R : Place k P.Completion ↦ R.integers.toSubring)
       (restrict_completionPlace P P' rfl)
   rw [relativeDegree_def, ← P'.finrank_residueField_completion (k := k) (F := F)]
-  refine Algebra.finrank_eq_of_equiv_equiv (ResidueField.mapEquiv (RingEquiv.subringCongr hsub))
-    (.refl _) ?_
-  ext x
-  obtain ⟨a, rfl⟩ := residue_surjective x
-  simp only [RingHom.coe_comp, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, Function.comp_apply,
-    RingEquiv.refl_apply, ResidueField.mapEquiv_apply, ResidueField.map_residue,
-    ResidueField.algebraMap_residue]
-  congr 1
-  apply Subtype.ext
+  refine finrank_residueField_eq_of_equiv_equiv (RingEquiv.subringCongr hsub) (.refl _)
+    (RingHom.ext fun x ↦ Subtype.ext ?_)
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    RingEquiv.refl_apply]
   rw [coe_algebraMap_integers, coe_algebraMap_completionIntegersExtensionAlgebra,
     algebraMap_completionExtensionAlgebra, RingEquiv.coe_subringCongr_apply]
 
