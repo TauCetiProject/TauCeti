@@ -47,6 +47,7 @@ computable one-one reductions, so validity is neither Σ⁰₂, computably enume
   on `Fin k → ℕ`, together with `isSigma_iff_exists_normalFormCode`,
   `isPi_iff_exists_normalFormCode`, and `isClass_iff_exists_normalFormCode_unary`.
 * `TauCeti.ArithmeticalHierarchy.isPi_two_isValid`,
+  `TauCeti.ArithmeticalHierarchy.exists_primrec_totality_iff_isValid`,
   `TauCeti.ArithmeticalHierarchy.oneOneReducible_totality_isValid`,
   `TauCeti.ArithmeticalHierarchy.not_isSigma_two_isValid`,
   `TauCeti.ArithmeticalHierarchy.not_computablePred_isValid`: exact Π⁰₂-completeness and
@@ -518,25 +519,27 @@ theorem isPi_two_isValid {Z : Set ℕ} : IsPi Z 2 (NormalFormCode.IsValid Z) := 
       exact (hne hl).elim
     · exact hb
 
-/-- Relative totality reduces one-one to normal-form validity by a primitive recursive map,
+/-- There is an injective primitive recursive map sending each single-oracle program index `e` to a
+normal-form code that is valid relative to `Z` if and only if `e` is total relative to `Z`,
 uniformly for every oracle `Z`. -/
-theorem oneOneReducible_totality_isValid {Z : Set ℕ} :
-    OneOneReducible (· ∈ totality Z) (NormalFormCode.IsValid Z) := by
+theorem exists_primrec_totality_iff_isValid :
+    ∃ f : ℕ → NormalFormCode, Primrec f ∧ Function.Injective f ∧
+      ∀ (Z : Set ℕ) (e : ℕ), e ∈ totality Z ↔ (f e).IsValid Z := by
   obtain ⟨headCode, hhead⟩ := Code.exists_listHeadCode
-  let f : ℕ → NormalFormCode := fun e =>
-    ⟨.zero, 1, Code.comp Code.zero (Code.comp (ofNat Code e) headCode)⟩
-  have hf : Primrec f :=
-    NormalFormCode.primrec_mk.comp
+  refine ⟨fun e => ⟨.zero, 1, Code.comp Code.zero (Code.comp (ofNat Code e) headCode)⟩,
+    ?_, ?_, ?_⟩
+  · exact NormalFormCode.primrec_mk.comp
       ((Primrec.const .zero).pair ((Primrec.const 1).pair
         (Code.primrec₂_comp.comp (Primrec.const Code.zero)
           (Code.primrec₂_comp.comp (Primrec.ofNat Code) (Primrec.const headCode)))))
-  refine ⟨f, hf.to_comp, fun e₁ e₂ h => ?_, fun e => ?_⟩
-  · have hmat : Code.comp Code.zero (Code.comp (ofNat Code e₁) headCode) =
+  · intro e₁ e₂ h
+    have hmat : Code.comp Code.zero (Code.comp (ofNat Code e₁) headCode) =
         Code.comp Code.zero (Code.comp (ofNat Code e₂) headCode) :=
       congrArg NormalFormCode.matrix h
     simp only [Code.comp.injEq] at hmat
     rw [← @encode_ofNat Code _ e₁, ← @encode_ofNat Code _ e₂, hmat.2.1]
-  · simp only [mem_totality, NormalFormCode.IsValid, f, QuantifierPrefix.depth_zero, Nat.zero_add]
+  · intro Z e
+    simp only [mem_totality, NormalFormCode.IsValid, QuantifierPrefix.depth_zero, Nat.zero_add]
     have hmem : ∀ (x z : ℕ),
         z ∈ Code.eval Z.oracle (Code.comp Code.zero (Code.comp (ofNat Code e) headCode))
           (encode [x]) ↔ (Code.eval Z.oracle (ofNat Code e) x).Dom ∧ z = 0 := fun x z => by
@@ -550,6 +553,13 @@ theorem oneOneReducible_totality_isValid {Z : Set ℕ} :
     · intro h x
       obtain ⟨b, hb⟩ := h [x] rfl
       exact ((hmem x (encode b)).1 hb).1
+
+/-- Relative totality reduces one-one to normal-form validity, uniformly for every oracle `Z`
+via `exists_primrec_totality_iff_isValid`. -/
+theorem oneOneReducible_totality_isValid {Z : Set ℕ} :
+    OneOneReducible (· ∈ totality Z) (NormalFormCode.IsValid Z) := by
+  obtain ⟨f, hf, hinj, hiff⟩ := exists_primrec_totality_iff_isValid
+  exact ⟨f, hf.to_comp, hinj, hiff Z⟩
 
 /-- Every Π⁰₂ predicate relative to `Z` one-one reduces to `NormalFormCode.IsValid Z` by an
 ordinary computable function. -/

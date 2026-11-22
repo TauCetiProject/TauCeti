@@ -616,6 +616,7 @@ theorem not_eval_iff (p : QuantifierPrefix) (R : List ℕ → Prop) (xs : List �
 
 /-- A proposition independent of the bound variables pulls out of any quantifier prefix under
 conjunction, since `ℕ` is nonempty. -/
+@[simp]
 theorem eval_and_const_iff (p : QuantifierPrefix) (P : Prop) (R : List ℕ → Prop) (xs : List ℕ) :
     p.Eval (fun l => P ∧ R l) xs ↔ P ∧ p.Eval R xs := by
   induction p using eval_induction generalizing xs with
@@ -632,6 +633,7 @@ theorem eval_and_const_iff (p : QuantifierPrefix) (P : Prop) (R : List ℕ → P
 
 /-- A proposition independent of the bound variables pulls out of any quantifier prefix under
 disjunction. -/
+@[simp]
 theorem eval_or_const_iff (p : QuantifierPrefix) (P : Prop) (R : List ℕ → Prop) (xs : List ℕ) :
     p.Eval (fun l => P ∨ R l) xs ↔ P ∨ p.Eval R xs := by
   classical
@@ -656,13 +658,15 @@ theorem eval_or_const_iff (p : QuantifierPrefix) (P : Prop) (R : List ℕ → Pr
 
 /-- A premise independent of the bound variables pulls out of any quantifier prefix under
 implication. -/
+@[simp]
 theorem eval_imp_const_iff (p : QuantifierPrefix) (P : Prop) (R : List ℕ → Prop) (xs : List ℕ) :
     p.Eval (fun l => P → R l) xs ↔ (P → p.Eval R xs) := by
   classical
-  simpa [imp_iff_not_or] using eval_or_const_iff p (¬P) R xs
+  simp [imp_iff_not_or]
 
 /-- Evaluating a prefix on a matrix that drops all `p.depth` bound variables reduces to the
 underlying predicate on `xs`. -/
+@[simp]
 theorem eval_drop_iff (p : QuantifierPrefix) (R : List ℕ → Prop) (xs : List ℕ) :
     p.Eval (fun l => R (l.drop p.depth)) xs ↔ R xs :=
   (eval_congr_append fun bs hbs => by simp [hbs]).trans (eval_const_iff p (R xs) xs)
