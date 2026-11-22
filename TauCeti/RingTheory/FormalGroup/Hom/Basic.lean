@@ -809,6 +809,23 @@ theorem toAddEquiv_trans (f : FormalGroupIso F G) (g : FormalGroupIso G H) (σ :
 theorem toAddEquiv_symm (f : FormalGroupIso F G) (σ : Type*) :
     f.symm.toAddEquiv σ = (f.toAddEquiv σ).symm := (rfl)
 
+/-- A formal group law isomorphic to a commutative one is commutative. -/
+theorem isComm (f : FormalGroupIso F G) [F.IsComm] : G.IsComm where
+  comm := by
+    let x : G.Point (Fin 2) := ⟨X 0, PowerSeries.HasSubst.X 0⟩
+    let y : G.Point (Fin 2) := ⟨X 1, PowerSeries.HasSubst.X 1⟩
+    -- addition on the points of `G` is transported from the commutative addition of `F`
+    have hxy : x + y = y + x :=
+      (f.symm.toAddEquiv (Fin 2)).injective (by rw [map_add, map_add, add_comm])
+    have h := congrArg Subtype.val hxy
+    rw [G.add_apply, G.add_apply] at h
+    rw [← h]
+    trans subst X G.toPowerSeries
+    · rw [subst_self, id]
+    · congr 1
+      funext i
+      fin_cases i <;> rfl
+
 end FormalGroupIso
 
 namespace FormalGroupHom
