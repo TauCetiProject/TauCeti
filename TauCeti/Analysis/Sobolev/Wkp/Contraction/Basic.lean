@@ -37,9 +37,10 @@ No boundedness or boundary regularity of `Ω` is assumed.
   directional derivatives along a tuple `Fin j → E`.
 * `TauCeti.Wkp.iteratedLineDerivL_comp_perm`: permutation invariance of iterated directional
   derivatives.
-* `TauCeti.Wkp.iteratedLineDerivZeroL_succ_apply` and
-  `TauCeti.Wkp.value_iteratedLineDerivL_eq_evalL_compLp`: identification of iterated directional
-  derivatives with multilinear evaluations of `Wkp.iteratedGradient`.
+* `TauCeti.Wkp.iteratedLineDerivZeroL_succ_apply`,
+  `TauCeti.Wkp.value_iteratedLineDerivL_eq_evalL_compLp`, and
+  `TauCeti.Wkp.value_iteratedLineDerivL_const`: identification of iterated directional
+  derivatives with multilinear evaluations and full contractions of `Wkp.iteratedGradient`.
 * `TauCeti.Wkp.iteratedGradient_iteratedLineDerivL_const`: repeated-direction differentiation
   contracts the outer slots of `Wkp.iteratedGradient`.
 * `TauCeti.Wkp.domDomCongr_toContinuousMultilinearMapₗᵢ_iteratedGradient_ae`: almost-everywhere
@@ -96,6 +97,7 @@ theorem iteratedLineDerivL_one (k : ℕ) (m : Fin 1 → E) :
 
 /-- Updating slot `i` of the direction tuple with `v₁ + v₂` splits `iteratedLineDerivL` as a
 sum. -/
+@[simp]
 theorem iteratedLineDerivL_update_add (k : ℕ) :
     ∀ (j : ℕ) (m : Fin j → E) (i : Fin j) (v₁ v₂ : E),
       iteratedLineDerivL (mu := mu) (Omega := Omega) (p := p) k j
@@ -106,19 +108,15 @@ theorem iteratedLineDerivL_update_add (k : ℕ) :
   | j + 1, m, i, v₁, v₂ => by
       cases i using Fin.cases with
       | zero =>
-          have htail (v : E) : Fin.tail (Function.update m 0 v) = Fin.tail m :=
-            funext fun r => Function.update_of_ne (Fin.succ_ne_zero r) v m
-          simp only [iteratedLineDerivL_succ, Function.update_self, htail, lineDerivL_add_left,
-            ContinuousLinearMap.comp_add]
+          simp only [iteratedLineDerivL_succ, Function.update_self, Fin.tail_update_zero,
+            lineDerivL_add_left, ContinuousLinearMap.comp_add]
       | succ i =>
-          have htail (v : E) :
-              Fin.tail (Function.update m i.succ v) = Function.update (Fin.tail m) i v :=
-            funext fun r => by simp [Fin.tail, Function.update_apply]
           simp only [iteratedLineDerivL_succ, Function.update_of_ne (Fin.succ_ne_zero i).symm,
-            htail, iteratedLineDerivL_update_add k j (Fin.tail m) i v₁ v₂,
+            Fin.tail_update_succ, iteratedLineDerivL_update_add k j (Fin.tail m) i v₁ v₂,
             ContinuousLinearMap.add_comp]
 
 /-- Updating slot `i` of the direction tuple with `c • v` scales `iteratedLineDerivL` by `c`. -/
+@[simp]
 theorem iteratedLineDerivL_update_smul (k : ℕ) :
     ∀ (j : ℕ) (m : Fin j → E) (i : Fin j) (c : ℝ) (v : E),
       iteratedLineDerivL (mu := mu) (Omega := Omega) (p := p) k j
@@ -128,16 +126,11 @@ theorem iteratedLineDerivL_update_smul (k : ℕ) :
   | j + 1, m, i, c, v => by
       cases i using Fin.cases with
       | zero =>
-          have htail (w : E) : Fin.tail (Function.update m 0 w) = Fin.tail m :=
-            funext fun r => Function.update_of_ne (Fin.succ_ne_zero r) w m
-          simp only [iteratedLineDerivL_succ, Function.update_self, htail, lineDerivL_smul_left,
-            ContinuousLinearMap.comp_smul]
+          simp only [iteratedLineDerivL_succ, Function.update_self, Fin.tail_update_zero,
+            lineDerivL_smul_left, ContinuousLinearMap.comp_smul]
       | succ i =>
-          have htail (w : E) :
-              Fin.tail (Function.update m i.succ w) = Function.update (Fin.tail m) i w :=
-            funext fun r => by simp [Fin.tail, Function.update_apply]
           simp only [iteratedLineDerivL_succ, Function.update_of_ne (Fin.succ_ne_zero i).symm,
-            htail, iteratedLineDerivL_update_smul k j (Fin.tail m) i c v,
+            Fin.tail_update_succ, iteratedLineDerivL_update_smul k j (Fin.tail m) i c v,
             ContinuousLinearMap.smul_comp]
 
 /-- The `Lᵖ` value of `iteratedLineDerivL` depends only on the `Lᵖ` value of the input,
@@ -185,6 +178,7 @@ theorem iteratedLineDerivZeroL_one (m : Fin 1 → E) :
 
 /-- Updating slot `i` of the direction tuple with `v₁ + v₂` splits `iteratedLineDerivZeroL` as
 a sum. -/
+@[simp]
 theorem iteratedLineDerivZeroL_update_add (j : ℕ) (m : Fin j → E) (i : Fin j) (v₁ v₂ : E) :
     iteratedLineDerivZeroL (mu := mu) (Omega := Omega) (p := p) j
         (Function.update m i (v₁ + v₂)) =
@@ -194,6 +188,7 @@ theorem iteratedLineDerivZeroL_update_add (j : ℕ) (m : Fin j → E) (i : Fin j
 
 /-- Updating slot `i` of the direction tuple with `c • v` scales `iteratedLineDerivZeroL` by
 `c`. -/
+@[simp]
 theorem iteratedLineDerivZeroL_update_smul (j : ℕ) (m : Fin j → E) (i : Fin j) (c : ℝ) (v : E) :
     iteratedLineDerivZeroL (mu := mu) (Omega := Omega) (p := p) j
         (Function.update m i (c • v)) =
@@ -269,6 +264,14 @@ theorem value_iteratedLineDerivL_eq_evalL_compLp (k j : ℕ) (m : Fin (j + 1) �
       (IteratedGradient.evalL j m).compLp
         (iteratedGradient j (toOrderL (Nat.le_add_left (j + 1) k) u)) := by
   rw [value_iteratedLineDerivL_eq_iteratedLineDerivZeroL, iteratedLineDerivZeroL_succ_apply]
+
+/-- Specializing `TauCeti.Wkp.value_iteratedLineDerivL_eq_evalL_compLp` to a constant direction
+tuple gives the scalar full contraction `TauCeti.IteratedGradient.fullContractL`. -/
+theorem value_iteratedLineDerivL_const (k j : ℕ) (h : E) (u : Wkp mu Omega p (k + (j + 1))) :
+    value k (iteratedLineDerivL k (j + 1) (fun _ => h) u) =
+      (IteratedGradient.fullContractL j h).compLp
+        (iteratedGradient j (toOrderL (Nat.le_add_left (j + 1) k) u)) := by
+  rw [value_iteratedLineDerivL_eq_evalL_compLp, IteratedGradient.evalL_const]
 
 /-! ### Repeated-direction contractions -/
 

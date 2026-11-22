@@ -36,9 +36,10 @@ entries are comparable with explicit constants (`1` and `(card ι) ^ (j + 1)`).
   `IteratedGradient E j ≃ₗᵢ[ℝ] (E [×(j + 1)]→L[ℝ] ℝ)` when `E` is complete.
 * `TauCeti.IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain`: under this
   equivalence, `iteratedGradientChain f j x` corresponds to `iteratedFDeriv ℝ (j + 1) f x`.
-* `TauCeti.IteratedGradient.norm_le_sum_norm_evalL_orthonormalBasis` and
-  `TauCeti.IteratedGradient.sum_norm_evalL_orthonormalBasis_le`: equivalence between the operator
-  norm of an iterated gradient and the `ℓ¹` sum of its entries along a finite orthonormal basis.
+* `TauCeti.IteratedGradient.norm_le_sum_norm_evalL_apply_orthonormalBasis` and
+  `TauCeti.IteratedGradient.sum_norm_evalL_apply_orthonormalBasis_le`: equivalence between the
+  operator norm of an iterated gradient and the `ℓ¹` sum of its entries along a finite orthonormal
+  basis.
 -/
 
 public section
@@ -55,22 +56,22 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- Any entry of an iterated gradient along vectors of an orthonormal basis has norm at most the
 operator norm of the field. -/
-theorem norm_evalL_orthonormalBasis_le {ι : Type*} [Fintype ι] (j : ℕ) (G : IteratedGradient E j)
-    (b : OrthonormalBasis ι ℝ E) (r : Fin (j + 1) → ι) :
+theorem norm_evalL_apply_orthonormalBasis_le {ι : Type*} [Fintype ι] (j : ℕ)
+    (G : IteratedGradient E j) (b : OrthonormalBasis ι ℝ E) (r : Fin (j + 1) → ι) :
     ‖evalL j (fun k => b (r k)) G‖ ≤ ‖G‖ := by
   refine (norm_evalL_apply_le j (fun k => b (r k)) G).trans_eq ?_
   rw [Finset.prod_eq_one fun k _ => b.orthonormal.1 (r k), mul_one]
 
 /-- The sum of the norms of all entries of `G : IteratedGradient E j` along an orthonormal basis
 `b` is at most `(card ι) ^ (j + 1) * ‖G‖`. -/
-theorem sum_norm_evalL_orthonormalBasis_le {ι : Type*} [Fintype ι] (j : ℕ)
+theorem sum_norm_evalL_apply_orthonormalBasis_le {ι : Type*} [Fintype ι] (j : ℕ)
     (G : IteratedGradient E j) (b : OrthonormalBasis ι ℝ E) :
     ∑ r : Fin (j + 1) → ι, ‖evalL j (fun k => b (r k)) G‖ ≤
       (Fintype.card ι : ℝ) ^ (j + 1) * ‖G‖ := by
   calc
     ∑ r : Fin (j + 1) → ι, ‖evalL j (fun k => b (r k)) G‖
       ≤ ∑ _r : Fin (j + 1) → ι, ‖G‖ :=
-        Finset.sum_le_sum fun r _ => norm_evalL_orthonormalBasis_le j G b r
+        Finset.sum_le_sum fun r _ => norm_evalL_apply_orthonormalBasis_le j G b r
     _ = (Fintype.card ι : ℝ) ^ (j + 1) * ‖G‖ := by
         rw [Finset.sum_const, Finset.card_univ, Fintype.card_fun, Fintype.card_fin,
           nsmul_eq_mul, Nat.cast_pow]
@@ -174,7 +175,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- The operator norm of an iterated gradient is bounded by the sum of the norms of its entries
 along a finite orthonormal basis `b`. Completeness of `E` is derived from the finite basis rather
 than assumed. -/
-theorem norm_le_sum_norm_evalL_orthonormalBasis {ι : Type*} [Fintype ι] (j : ℕ)
+theorem norm_le_sum_norm_evalL_apply_orthonormalBasis {ι : Type*} [Fintype ι] (j : ℕ)
     (G : IteratedGradient E j) (b : OrthonormalBasis ι ℝ E) :
     ‖G‖ ≤ ∑ r : Fin (j + 1) → ι, ‖evalL j (fun k => b (r k)) G‖ := by
   have : FiniteDimensional ℝ E := b.toBasis.finiteDimensional_of_finite

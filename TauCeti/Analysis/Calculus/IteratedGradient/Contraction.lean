@@ -160,6 +160,7 @@ theorem ext {j : ℕ} {G₁ G₂ : IteratedGradient E j}
 
 /-- Evaluating `evalL` at a tuple updated in slot `i` with `v₁ + v₂` is the sum of the
 evaluations at `v₁` and `v₂`. -/
+@[simp]
 theorem evalL_update_add (j : ℕ) (m : Fin (j + 1) → E) (i : Fin (j + 1)) (v₁ v₂ : E) :
     evalL j (Function.update m i (v₁ + v₂)) =
       evalL j (Function.update m i v₁) + evalL j (Function.update m i v₂) := by
@@ -173,24 +174,20 @@ theorem evalL_update_add (j : ℕ) (m : Fin (j + 1) → E) (i : Fin (j + 1)) (v�
       cases i using Fin.cases with
       | zero =>
           refine ContinuousLinearMap.ext fun G => ?_
-          have htail (v : E) : Fin.tail (Function.update m 0 v) = Fin.tail m :=
-            funext fun r => Function.update_of_ne (Fin.succ_ne_zero r) v m
           rw [add_apply, evalL_succ_apply, evalL_succ_apply, evalL_succ_apply,
             Function.update_self, Function.update_self, Function.update_self,
-            htail, htail, htail, map_add, map_add]
+            Fin.tail_update_zero, Fin.tail_update_zero, Fin.tail_update_zero, map_add, map_add]
       | succ i =>
           refine ContinuousLinearMap.ext fun G => ?_
-          have htail (v : E) :
-              Fin.tail (Function.update m i.succ v) = Function.update (Fin.tail m) i v :=
-            funext fun r => by simp [Fin.tail, Function.update_apply]
           rw [add_apply, evalL_succ_apply, evalL_succ_apply, evalL_succ_apply,
             Function.update_of_ne (Fin.succ_ne_zero i).symm,
             Function.update_of_ne (Fin.succ_ne_zero i).symm,
             Function.update_of_ne (Fin.succ_ne_zero i).symm,
-            htail, htail, htail, ih, add_apply]
+            Fin.tail_update_succ, Fin.tail_update_succ, Fin.tail_update_succ, ih, add_apply]
 
 /-- Evaluating `evalL` at a tuple updated in slot `i` with `c • v` scales the evaluation by
 `c`. -/
+@[simp]
 theorem evalL_update_smul (j : ℕ) (m : Fin (j + 1) → E) (i : Fin (j + 1)) (c : ℝ) (v : E) :
     evalL j (Function.update m i (c • v)) = c • evalL j (Function.update m i v) := by
   induction j with
@@ -203,19 +200,15 @@ theorem evalL_update_smul (j : ℕ) (m : Fin (j + 1) → E) (i : Fin (j + 1)) (c
       cases i using Fin.cases with
       | zero =>
           refine ContinuousLinearMap.ext fun G => ?_
-          have htail (w : E) : Fin.tail (Function.update m 0 w) = Fin.tail m :=
-            funext fun r => Function.update_of_ne (Fin.succ_ne_zero r) w m
           rw [smul_apply, evalL_succ_apply, evalL_succ_apply,
-            Function.update_self, Function.update_self, htail, htail, map_smul, map_smul]
+            Function.update_self, Function.update_self,
+            Fin.tail_update_zero, Fin.tail_update_zero, map_smul, map_smul]
       | succ i =>
           refine ContinuousLinearMap.ext fun G => ?_
-          have htail (w : E) :
-              Fin.tail (Function.update m i.succ w) = Function.update (Fin.tail m) i w :=
-            funext fun r => by simp [Fin.tail, Function.update_apply]
           rw [smul_apply, evalL_succ_apply, evalL_succ_apply,
             Function.update_of_ne (Fin.succ_ne_zero i).symm,
             Function.update_of_ne (Fin.succ_ne_zero i).symm,
-            htail, htail, ih, smul_apply]
+            Fin.tail_update_succ, Fin.tail_update_succ, ih, smul_apply]
 
 /-- Pointwise operator-norm bound for multilinear evaluation of an iterated gradient. -/
 theorem norm_evalL_apply_le (j : ℕ) (m : Fin (j + 1) → E) (G : IteratedGradient E j) :

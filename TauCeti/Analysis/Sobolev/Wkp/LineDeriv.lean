@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.Seminorm
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.Calculus.IteratedGradient.Contraction
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormalTangential
@@ -67,15 +69,21 @@ No boundedness or boundary regularity of `Ω` is assumed.
   orthogonal to `ν` and the purely normal one `∂_ν ∂_ν ∂_ν u` do.
 * `TauCeti.Wkp.hasWeakLineDerivOn_iteratedGradient`: weak directional differentiation commutes
   with `Wkp.iteratedGradient`.
+* `TauCeti.Wkp.toOrderL_lineDerivL` and `TauCeti.Wkp.iteratedGradient_toOrderL_lineDerivL`:
+  commutation of `lineDerivL` with order truncation `Wkp.toOrderL` and contraction of arbitrary
+  lower-order components.
 * `TauCeti.Wkp.iteratedGradient_lineDerivL` and `TauCeti.Wkp.iteratedGradient_lineDerivL_ae`:
   the top weak derivative of `Wkp.lineDerivL v (j + 1) u` evaluates the outermost slot of
   `Wkp.iteratedGradient (j + 1) u` at `v`.
 * `TauCeti.Wkp.iteratedGradient_lineDerivL_eq_zero_of_eq_zero`: vanishing of the top weak
   derivative is inherited by every directional derivative `Wkp.lineDerivL v (j + 1) u`.
+* `TauCeti.Wkp.value_lineDerivL_ae_eq_of_contDiffOn`: single-direction `ContDiffOn`
+  identification for `lineDerivL`.
 * `TauCeti.Wkp.norm_lineDerivL_zero_apply_le`, `TauCeti.Wkp.norm_iteratedGradient_lineDerivL_le`,
-  `TauCeti.Wkp.norm_lineDerivL_le_of_exponent_two`, `TauCeti.Wkp.norm_lineDerivL_le`, and
-  `TauCeti.Wkp.norm_lineDerivBilinL_le`: sharp componentwise (`1`) and Sobolev graph-norm (`1` at
-  `k = 0` or `p = 2`, `√2` in general) bounds for `lineDerivL` and `lineDerivBilinL`.
+  `TauCeti.Wkp.seminorm_lineDerivL_le`, `TauCeti.Wkp.norm_lineDerivL_le_of_exponent_two`,
+  `TauCeti.Wkp.norm_lineDerivL_le`, and `TauCeti.Wkp.norm_lineDerivBilinL_le`: sharp componentwise
+  (`1`) and Sobolev graph-norm (`1` at `k = 0` or `p = 2`, `√2` in general) bounds for
+  `lineDerivL` and `lineDerivBilinL`.
 
 ## References
 
@@ -349,14 +357,10 @@ def Wkp.lineDerivBilinL (k : ℕ) :
       map_smul' := fun c v => Wkp.lineDerivL_smul_left c v k }
 
 -- Not `@[simp]`: unfolding `Wkp mu Omega p (k + 1)` in `DiscrTree.mkPath` introduces
--- `sobolevStage.match_1` (`Key.other`) inside `DFunLike.coe`, so `simpNF` rejects both
--- `lineDerivBilinL_apply` and `lineDerivBilinL_apply_apply` (neither simplifies its own LHS).
+-- `sobolevStage.match_1` (`Key.other`) inside `DFunLike.coe`, so `simpNF` rejects
+-- `lineDerivBilinL_apply` (it does not simplify its own LHS).
 theorem Wkp.lineDerivBilinL_apply (k : ℕ) (v : E) :
     Wkp.lineDerivBilinL (mu := mu) (Omega := Omega) (p := p) k v = Wkp.lineDerivL v k :=
-  (rfl)
-
-theorem Wkp.lineDerivBilinL_apply_apply (k : ℕ) (v : E) (w : Wkp mu Omega p (k + 1)) :
-    Wkp.lineDerivBilinL k v w = Wkp.lineDerivL v k w :=
   (rfl)
 
 /-- At order zero, `TauCeti.Wkp.lineDerivL` pairs the weak gradient with the direction `v` in
@@ -389,6 +393,19 @@ theorem Wkp.lowerOrderL_comp_lineDerivL (v : E) (k : ℕ) :
   ContinuousLinearMap.ext fun w => by
     rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, Wkp.lowerOrderL_apply,
       Wkp.lowerOrderL_apply, Wkp.lowerOrder_lineDerivL]
+
+/-- Order truncation commutes with `TauCeti.Wkp.lineDerivL`. -/
+theorem Wkp.toOrderL_lineDerivL (v : E) {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p (k + 1)) :
+    Wkp.toOrderL h (Wkp.lineDerivL v k u) =
+      Wkp.lineDerivL v j (Wkp.toOrderL (Nat.succ_le_succ h) u) :=
+  Wkp.ext j ((Wkp.value_toOrderL h _).trans
+    (Wkp.value_lineDerivL_eq_of_value_eq (Wkp.value_toOrderL (Nat.succ_le_succ h) u).symm v))
+
+/-- Operator form of `TauCeti.Wkp.toOrderL_lineDerivL`. -/
+theorem Wkp.toOrderL_comp_lineDerivL (v : E) {j k : ℕ} (h : j ≤ k) :
+    (Wkp.toOrderL (mu := mu) (Omega := Omega) (p := p) h).comp (Wkp.lineDerivL v k) =
+      (Wkp.lineDerivL v j).comp (Wkp.toOrderL (Nat.succ_le_succ h)) :=
+  ContinuousLinearMap.ext fun u => Wkp.toOrderL_lineDerivL v h u
 
 /-- At every positive order, the `Lᵖ` value of `TauCeti.Wkp.lineDerivL v k w` is the `v`-component
 of the weak gradient of the first-order part of `w`. -/
@@ -772,6 +789,38 @@ theorem Wkp.iteratedGradient_lineDerivL_ae (v : E) (j : ℕ) (u : Wkp mu Omega p
     (Wkp.iteratedGradient (j + 1) u)] with x hx
   rw [hx, ContinuousLinearMap.apply_apply]
 
+/-- Weak derivative of order `j + 1` of `Wkp.lineDerivL v k u` for `j + 1 ≤ k`, obtained by
+evaluating the outermost slot of the order-`(j + 2)` weak derivative of `u` at `v`. -/
+theorem Wkp.iteratedGradient_toOrderL_lineDerivL (v : E) {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega p (k + 1)) :
+    Wkp.iteratedGradient j (Wkp.toOrderL h (Wkp.lineDerivL v k u)) =
+      (ContinuousLinearMap.apply ℝ (IteratedGradient E j) v).compLp
+        (Wkp.iteratedGradient (j + 1) (Wkp.toOrderL (Nat.succ_le_succ h) u)) := by
+  rw [Wkp.toOrderL_lineDerivL, Wkp.iteratedGradient_lineDerivL]
+
+/-! ### Classical comparison -/
+
+/-- If `u ∈ W^{k+1,p}(Ω)` is represented on `Ω` by a `C¹` function `f`, then the value of
+`lineDerivL v k u` agrees almost everywhere on `Ω` with the classical directional derivative
+`x ↦ fderiv ℝ f x v`. Only `C¹` regularity of `f` is needed, regardless of `k`. -/
+theorem Wkp.value_lineDerivL_ae_eq_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p (k + 1)) (v : E)
+    {f : E → ℝ} (hf : ContDiffOn ℝ 1 f Omega)
+    (hu : (Wkp.value (k + 1) u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
+    (Wkp.value k (Wkp.lineDerivL v k u) : E → ℝ) =ᵐ[mu.restrict Omega] fun x => fderiv ℝ f x v := by
+  have hfd : (fun x => innerSL ℝ (W1p.gradient (Wkp.firstOrder k u) x)) =ᵐ[mu.restrict Omega]
+      fderiv ℝ f :=
+    ((W1p.hasWeakFDerivOn (Wkp.firstOrder k u)).congr_ae
+      ((Wkp.value_firstOrder k u).symm ▸ hu)).ae_eq_fderiv
+      ((hf.continuousOn_fderiv_of_isOpen Omega.isOpen (by simp)).locallyIntegrableOn
+        Omega.isOpen.measurableSet)
+      (fun x hx => (hf.contDiffAt (Omega.isOpen.mem_nhds hx)).differentiableAt (by simp))
+  rw [Wkp.value_lineDerivL]
+  filter_upwards [(innerSL ℝ v).coeFn_compLp (W1p.gradient (Wkp.firstOrder k u)), hfd] with
+    x hx hfx
+  have hfxv := congrArg (fun l : E →L[ℝ] ℝ => l v) hfx
+  rw [hx, innerSL_apply_apply, real_inner_comm]
+  simpa only [innerSL_apply_apply] using hfxv
+
 /-! ### Componentwise and graph-norm bounds -/
 
 /-- Componentwise `Lᵖ` bound at order zero: `‖∂_v u‖_{Lᵖ} ≤ ‖v‖ ‖∇u‖_{Lᵖ}`. -/
@@ -803,11 +852,34 @@ theorem Wkp.norm_iteratedGradient_lineDerivL_le (v : E) (j : ℕ) (u : Wkp mu Om
     ‖Wkp.iteratedGradient j (Wkp.lineDerivL v (j + 1) u)‖ ≤
       ‖v‖ * ‖Wkp.iteratedGradient (j + 1) u‖ := by
   rw [Wkp.iteratedGradient_lineDerivL]
-  have hv : ‖ContinuousLinearMap.apply ℝ (IteratedGradient E j) v‖ ≤ ‖v‖ :=
-    ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v) fun G =>
-      (G.le_opNorm v).trans_eq (mul_comm _ _)
+  have hv : ‖ContinuousLinearMap.apply ℝ (IteratedGradient E j) v‖ ≤ ‖v‖ := by
+    simpa only [IteratedGradient.contractL_one, pow_one] using
+      (IteratedGradient.norm_contractL_le j 1 v)
   exact ((ContinuousLinearMap.apply ℝ (IteratedGradient E j) v).norm_compLp_le _).trans
     (mul_le_mul_of_nonneg_right hv (norm_nonneg _))
+
+/-- Componentwise `Lᵖ` bound on an arbitrary lower-order weak derivative of `lineDerivL v k u`. -/
+theorem Wkp.norm_iteratedGradient_toOrderL_lineDerivL_le (v : E) {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega p (k + 1)) :
+    ‖Wkp.iteratedGradient j (Wkp.toOrderL h (Wkp.lineDerivL v k u))‖ ≤
+      ‖v‖ * ‖Wkp.iteratedGradient (j + 1) (Wkp.toOrderL (Nat.succ_le_succ h) u)‖ := by
+  rw [Wkp.toOrderL_lineDerivL]
+  exact Wkp.norm_iteratedGradient_lineDerivL_le v j _
+
+/-- Componentwise Sobolev seminorm bound for `lineDerivL`: for every `j ≤ k`,
+`|∂ᵥ u|_{j,p} ≤ ‖v‖ * |u|_{j+1,p}`. -/
+theorem Wkp.seminorm_lineDerivL_le (v : E) {j k : ℕ} (h : j ≤ k)
+    (u : Wkp mu Omega p (k + 1)) :
+    Wkp.seminorm k j h (Wkp.lineDerivL v k u) ≤
+      ‖v‖ * Wkp.seminorm (k + 1) (j + 1) (Nat.succ_le_succ h) u := by
+  cases j with
+  | zero =>
+      rw [Wkp.seminorm_zero_apply, Wkp.seminorm_succ_apply, ← Wkp.value_toOrderL h,
+        Wkp.toOrderL_lineDerivL, Wkp.value_zero]
+      exact Wkp.norm_lineDerivL_zero_apply_le v _
+  | succ j =>
+      rw [Wkp.seminorm_succ_apply, Wkp.seminorm_succ_apply]
+      exact Wkp.norm_iteratedGradient_toOrderL_lineDerivL_le v h u
 
 /-- Euclidean-stage induction step for `lineDerivL` graph-norm bounds. -/
 private theorem Wkp.norm_lineDerivL_succ_apply_le_of_norm_sq {C : ℝ} (hC : 1 ≤ C) (v : E) (k : ℕ)

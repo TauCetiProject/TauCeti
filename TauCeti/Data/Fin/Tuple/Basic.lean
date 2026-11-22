@@ -35,6 +35,8 @@ once.
   away from the first (last) one commutes with dropping the first (last) entry.
 * `Fin.snoc_comp_swap_castSucc`: exchanging two entries other than the last one commutes with
   appending.
+* `Fin.cons_comp_swap_succ`: exchanging two entries other than the first one commutes with
+  prepending.
 * `Fin.tail_tail_comp_swap_zero_one`: exchanging the first two entries leaves
   `Fin.tail (Fin.tail a)` unchanged.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
@@ -138,6 +140,16 @@ theorem snoc_comp_swap_castSucc {n : ℕ} (c : Fin n → α) (z : α) (j k : Fin
   refine lastCases ?_ (fun i ↦ ?_) i
   · simp [Equiv.swap_apply_of_ne_of_ne, (castSucc_lt_last j).ne.symm, (castSucc_lt_last k).ne.symm]
   · rw [Function.comp_apply, ← (castSucc_injective n).map_swap j k i]
+    simp
+
+/-- Exchanging the entries `j.succ` and `k.succ` of `Fin.cons z c` is prepending `z` to `c` with
+the entries `j` and `k` exchanged. -/
+theorem cons_comp_swap_succ {n : ℕ} (z : α) (c : Fin n → α) (j k : Fin n) :
+    cons z c ∘ Equiv.swap j.succ k.succ = cons z (c ∘ Equiv.swap j k) := by
+  funext i
+  refine cases ?_ (fun i ↦ ?_) i
+  · simp [Equiv.swap_apply_of_ne_of_ne, (succ_ne_zero j).symm, (succ_ne_zero k).symm]
+  · rw [Function.comp_apply, ← (succ_injective n).map_swap j k i]
     simp
 
 /-- Swapping the first two entries of a tuple of length at least two leaves `Fin.tail (Fin.tail a)`

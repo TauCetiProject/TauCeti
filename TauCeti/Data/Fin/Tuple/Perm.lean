@@ -43,16 +43,7 @@ theorem comp_perm_eq_of_cons_of_swap {α : Sort*} {β : ℕ → Sort*}
           intro i a
           refine cases ?_ (fun q => ?_) i
           · simpa using hswap n a
-          · have hswap' :
-                (cons (a 0) (tail a) : Fin (n + 2) → α) ∘ Equiv.swap q.castSucc.succ q.succ.succ =
-                  cons (a 0) (tail a ∘ Equiv.swap q.castSucc q.succ) := by
-              funext k
-              refine cases ?_ (fun k => ?_) k
-              · simp [Equiv.swap_apply_of_ne_of_ne, (succ_ne_zero _).symm]
-              · rw [Function.comp_apply,
-                  ← (succ_injective (n + 1)).map_swap q.castSucc q.succ k]
-                simp
-            conv_lhs => rw [← cons_self_tail a, ← succ_castSucc, hswap']
+          · conv_lhs => rw [← cons_self_tail a, ← succ_castSucc, cons_comp_swap_succ]
             exact (hcons (n + 1) (a 0) _ _ (ih q (tail a))).trans
               (congrArg (F (n + 2)) (cons_self_tail a))
       revert m
