@@ -141,6 +141,8 @@ theorem height_eq_height_add_of_isFiberGenericPoint (f : X ⟶ Y) [f.IsOver (Spe
   have : (f.fiberι y).IsOver (Spec (.of k)) := ⟨rfl⟩
   have : g.IsOver (Spec (.of k)) := ⟨rfl⟩
   have : (F ↘ Spec (.of K)).IsOver (Spec (.of k)) := ⟨by
+    -- The structure morphisms chosen above are `p`, `g ≫ Y ↘ Spec k` and `fiberι y ≫ X ↘ Spec k`;
+    -- `change` unfolds `↘` and `IsOver` to these composites.
     change p ≫ g ≫ Y ↘ Spec (.of k) = f.fiberι y ≫ X ↘ Spec (.of k)
     rw [← comp_over f (Spec (.of k)), ← Category.assoc, ← Category.assoc]
     exact congrArg (· ≫ Y ↘ Spec (.of k)) (f.fiber_fac y).symm⟩
