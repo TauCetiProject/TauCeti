@@ -25,11 +25,12 @@ that is far from integrality — but the denominator of a point is *powerful*
 `f.leadingCoeff` twice. If that leading coefficient is squarefree, no prime can divide the
 denominator at all, so `den x` is a unit and `x` is integral.
 
-The second is a consequence of the curve equation alone: once `x` comes from `R`, `y` is a root of
-the monic quadratic `Y² + (a₁x + a₃)Y − (x³ + a₂x² + a₄x + a₆)` over `R`, so `y` is integral over
-`R`. That step needs no domain, fraction-field or factorisation hypothesis, so it is stated over an
-arbitrary commutative `R`-algebra, with the `IsLocalization.IsInteger` form as a corollary over any
-commutative `R`-algebra in which `R` is integrally closed.
+The second is a consequence of the curve equation alone: once `x` is integral over `R`, `y` is a
+root of the monic quadratic `Y² + (a₁x + a₃)Y − (x³ + a₂x² + a₄x + a₆)`, whose coefficients lie in
+the ambient `R`-algebra and are integral over `R`, so `y` is integral over `R`. That step needs no
+domain, fraction-field or factorisation hypothesis, so it is stated over an arbitrary commutative
+`R`-algebra, with the `IsLocalization.IsInteger` form as a corollary over any commutative
+`R`-algebra in which `R` is integrally closed.
 
 The third is the scaling that replaces integrality in the **order-two case**, the one case of
 Nagell–Lutz where the conclusion is weaker. Where the `Y`-derivative of the Weierstrass polynomial

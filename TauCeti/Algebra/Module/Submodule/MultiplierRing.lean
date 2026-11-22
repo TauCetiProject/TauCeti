@@ -90,20 +90,17 @@ is a finitely generated `R`-submodule of an `R`-algebra `B` with `1 ∈ M`, ever
 theorem isIntegral_of_mem_multiplierRing {M : Submodule R B} (hM : M.FG) (h1 : (1 : B) ∈ M)
     {b : B} (hb : b ∈ M.toAddSubgroup.multiplierRing) : IsIntegral R b := by
   have : Module.Finite R M := Module.Finite.iff_fg.mpr hM
-  have hbM (m : B) (hm : m ∈ M) : LinearMap.mulLeft R b m ∈ M := by
-    rw [LinearMap.mulLeft_apply, ← M.mem_toAddSubgroup]
+  have hbM (m : B) (hm : m ∈ M) : Algebra.lmul R B b m ∈ M := by
+    rw [Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', ← M.mem_toAddSubgroup]
     exact AddSubgroup.mem_multiplierRing.mp hb m (M.mem_toAddSubgroup.mpr hm)
   -- By Cayley–Hamilton, left multiplication by `b` on `M` satisfies a monic polynomial `p`.
-  let f : Module.End R M := (LinearMap.mulLeft R b).restrict hbM
+  let f : Module.End R M := (Algebra.lmul R B b).restrict hbM
   obtain ⟨p, hp, hpf⟩ := LinearMap.exists_monic_and_aeval_eq_zero R f
   refine ⟨p, hp, ?_⟩
   -- The inclusion `M → B` intertwines `f` with left multiplication by `b`, so evaluating `p`
   -- at `f` and applying it to `1 ∈ M` is evaluating `p` at `b`.
   have hcomp : (Algebra.lmul R B b).comp M.subtype = M.subtype.comp f :=
-    LinearMap.ext fun m ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.subtype_apply,
-        Submodule.subtype_apply, LinearMap.coe_restrict_apply, Algebra.coe_lmul_eq_mul,
-        LinearMap.mul_apply', LinearMap.mulLeft_apply]
+    (LinearMap.subtype_comp_restrict hbM).symm
   have hb1 : Polynomial.aeval b p = 0 := by
     have := LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hcomp p) ⟨1, h1⟩
     rw [Polynomial.aeval_algHom_apply] at this
@@ -121,13 +118,10 @@ theorem isIntegral_of_forall_mul_mem {M : Submodule R B} (hM : M.FG) (h1 : (1 : 
   let N : Submodule R Bᵐᵒᵖ := M.map (MulOpposite.opLinearEquiv R).toLinearMap
   have hN : MulOpposite.op b ∈ N.toAddSubgroup.multiplierRing := by
     refine AddSubgroup.mem_multiplierRing.mpr fun z hz ↦ ?_
-    rw [Submodule.mem_toAddSubgroup, Submodule.mem_map_equiv,
-      MulOpposite.coe_opLinearEquiv_symm] at hz ⊢
-    rw [MulOpposite.unop_mul, MulOpposite.unop_op]
+    simp only [N, Submodule.mem_toAddSubgroup, Submodule.mem_map_equiv,
+      MulOpposite.coe_opLinearEquiv_symm, MulOpposite.unop_mul, MulOpposite.unop_op] at hz ⊢
     exact hb _ hz
-  have h1N : (1 : Bᵐᵒᵖ) ∈ N := by
-    rw [Submodule.mem_map_equiv, MulOpposite.coe_opLinearEquiv_symm, MulOpposite.unop_one]
-    exact h1
+  have h1N : (1 : Bᵐᵒᵖ) ∈ N := by simpa [N] using h1
   obtain ⟨p, hp, hpb⟩ := isIntegral_of_mem_multiplierRing (hM.map _) h1N hN
   rw [← Polynomial.aeval_def, Polynomial.aeval_op_apply, MulOpposite.op_eq_zero_iff] at hpb
   exact ⟨p, hp, by rwa [← Polynomial.aeval_def]⟩

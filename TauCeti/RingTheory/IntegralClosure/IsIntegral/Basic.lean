@@ -75,8 +75,9 @@ generated `R`-module (`fg_adjoin_of_finite_of_pairwise_commute`, which applies M
 For a Weierstrass equation over `R`, read in a commutative `R`-algebra, the equation is monic
 quadratic in `y`. When `x` is integral over `R`, its remaining coefficients are integral as well,
 so this criterion proves integrality of `y`. It also applies to the quadratic relations for `s` and
-`t` in a change of variables between integral Weierstrass models. The commutative case was first
-proved inside `WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x` in
+`t` in a change of variables between integral Weierstrass models. Tau Ceti's original commutative
+version of this lemma was extracted from the proof of
+`WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x` in
 `TauCeti/AlgebraicGeometry/EllipticCurve/Integrality.lean`.
 -/
 
