@@ -17,8 +17,7 @@ Weyl group. It forces `w₀` to be an involution of maximal length with every si
 left and right descent, and it determines `w₀`. Conversely, an element of maximal length is a
 longest element (`CoxeterSystem.isLongest_iff_forall_length_le`). The same holds inside a standard
 parabolic subgroup `W_J`: lengths complement in an element `w₀J` of maximal length of `W_J`
-(`CoxeterSystem.length_mul_add_length_of_forall_length_le`). The proof is by induction on length,
-through the strong exchange condition: a reflection of `W_J` cannot lengthen `w₀J`.
+(`CoxeterSystem.length_mul_add_length_of_forall_length_le`).
 
 The main point is that multiplication by `w₀` **reverses the Bruhat order**: an edge `u → t * u` of
 the Bruhat graph becomes the edge `t * u * w₀ → u * w₀`, since lengths are complemented in `ℓ w₀`.
@@ -41,11 +40,11 @@ reverses a path and sends paths of shape `λ` to paths of shape `-w₀ λ`.
 
 Left multiplication by `w₀` also acts on `W / W_J`, now with no condition on `J`. If `w₀J` has
 maximal length in `W_J`, the minimal coset representative of `w₀ u W_J` is `w₀ * u * w₀J`, of length
-`ℓ w₀ - ℓ u - ℓ w₀J` (`CoxeterSystem.IsLongest.minimalCosetRep_mul`). Read on the left cosets
-`W_J \ W` by inversion, this is the **Kostant involution** `w ↦ w₀J * w * w₀` of the minimal
-representatives of the left cosets (`CoxeterSystem.IsLongest.kostantInvolution`). For the Weyl group
-`W` of a split reductive group `G` and the Weyl group `W_J` of the Levi subgroup of a standard
-parabolic subgroup `P`, these minimal representatives are Kostant's representatives, and
+`ℓ w₀ - ℓ u - ℓ w₀J` (`CoxeterSystem.IsLongest.minimalCosetRep_mul`). Read on the right cosets
+`W_J w` by inversion, this is the **Kostant involution** `w ↦ w₀J * w * w₀` of the minimal
+representatives of the cosets in `W_J \ W` (`CoxeterSystem.IsLongest.kostantInvolution`). For the
+Weyl group `W` of a split reductive group `G` and the Weyl group `W_J` of the Levi subgroup of a
+standard parabolic subgroup `P`, these minimal representatives are Kostant's representatives, and
 `ℓ w₀ - ℓ w₀J` is the number of positive roots outside the Levi subgroup, the dimension of `G / P`.
 
 ## Main definitions
@@ -54,7 +53,7 @@ parabolic subgroup `P`, these minimal representatives are Kostant's representati
 * `CoxeterSystem.MinimalCosetRepChain.reverseMul`: the reversal of a saturated chain of `W / W_J`
   by right multiplication with a longest element, a saturated chain of `W / W_K`.
 * `CoxeterSystem.IsLongest.kostantInvolution`: the involution `w ↦ w₀J * w * w₀` of the minimal
-  representatives of the left cosets `W_J \ W`.
+  representatives of the right cosets `W_J w`.
 
 ## Main results
 
@@ -323,7 +322,8 @@ private theorem isLeftDescent_inv_mul_of_forall_length_le (hw₀ : w₀ ∈ cs.p
     omega
 
 /-- Every element of `cs.parabolic J` is a prefix of an element `w₀` of maximal length in
-`cs.parabolic J`. -/
+`cs.parabolic J`. The proof is by induction on length, through the strong exchange condition: a
+reflection of `W_J` cannot lengthen `w₀`. -/
 private theorem length_inv_mul_add_length_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
     (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) (n : ℕ) :
     ∀ u ∈ cs.parabolic J, ℓ u = n → ℓ (u⁻¹ * w₀) + ℓ u = ℓ w₀ := by
@@ -362,13 +362,22 @@ theorem mul_self_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
     have := cs.length_mul_add_length_of_forall_length_le hw₀ h hw₀
     omega
 
+/-- An element of maximal length of a standard parabolic subgroup is its own inverse. -/
+theorem inv_eq_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
+    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) : w₀⁻¹ = w₀ :=
+  (eq_inv_of_mul_eq_one_left (cs.mul_self_of_forall_length_le hw₀ h)).symm
+
+theorem mul_mul_cancel_left_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
+    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) (u : W) : w₀ * (w₀ * u) = u := by
+  rw [← mul_assoc, cs.mul_self_of_forall_length_le hw₀ h, one_mul]
+
 /-- **Lengths complement in an element of maximal length of a standard parabolic subgroup**, for
 multiplication on the left: `ℓ (w₀ * u) + ℓ u = ℓ w₀` for every `u` in `cs.parabolic J`. -/
 theorem length_mul_left_add_length_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
     (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) (hu : u ∈ cs.parabolic J) :
     ℓ (w₀ * u) + ℓ u = ℓ w₀ := by
-  have hinv : w₀⁻¹ = w₀ := (eq_inv_of_mul_eq_one_left (cs.mul_self_of_forall_length_le hw₀ h)).symm
-  rw [← cs.length_inv (w₀ * u), mul_inv_rev, hinv, ← cs.length_inv u]
+  rw [← cs.length_inv (w₀ * u), mul_inv_rev, cs.inv_eq_of_forall_length_le hw₀ h,
+    ← cs.length_inv u]
   exact cs.length_mul_add_length_of_forall_length_le hw₀ h (inv_mem hu)
 
 /-- **An element of maximal length is a longest element**: if no element of `W` is longer than
@@ -405,13 +414,11 @@ theorem isMinimalCosetRep_mul_mul (h : cs.IsLongest w₀) (hJ : w₀J ∈ cs.par
   refine cs.isMinimalCosetRep_iff.mpr fun i hi ↦ cs.not_isRightDescent_iff.mpr ?_
   -- Both lengths are complements in `ℓ w₀`, and `ℓ (w₀J * s i) + 1 = ℓ w₀J`.
   have hv := cs.simple_mem_parabolic hi
-  have h₁ := h.length_mul_left_add_length (u * w₀J)
-  have h₂ := h.length_mul_left_add_length (u * (w₀J * s i))
-  have h₃ := cs.length_mul_of_isMinimalCosetRep hu hJ
-  have h₄ := cs.length_mul_of_isMinimalCosetRep hu (mul_mem hJ hv)
+  have h₁ := h.length_mul_mul_add_length_add_length hJ hu
+  have h₂ := h.length_mul_mul_add_length_add_length (mul_mem hJ hv) hu
   have h₅ := cs.length_mul_left_add_length_of_forall_length_le hJ h₀J hv
   rw [cs.length_simple] at h₅
-  simp only [mul_assoc] at h₁ h₂ ⊢
+  rw [← mul_assoc] at h₂
   omega
 
 /-- **Left multiplication by the longest element on `W / W_J`.** Let `w₀` be the longest element
@@ -424,28 +431,27 @@ theorem minimalCosetRep_mul (h : cs.IsLongest w₀) (hJ : w₀J ∈ cs.parabolic
   refine ((cs.eq_minimalCosetRep_iff).mpr ⟨h.isMinimalCosetRep_mul_mul hJ h₀J hu, ?_⟩).symm
   rwa [inv_mul_cancel_left]
 
-/-- `w₀J * w * w₀` is a minimal representative of a left coset `W_J \ W` whenever `w` is. Minimal
-representatives `w` of left cosets are spelled `cs.IsMinimalCosetRep J w⁻¹`. -/
+/-- `w₀J * w * w₀` is a minimal representative of a right coset `W_J w` whenever `w` is. Minimal
+representatives `w` of right cosets are spelled `cs.IsMinimalCosetRep J w⁻¹`. -/
 theorem isMinimalCosetRep_inv_mul_mul (h : cs.IsLongest w₀) (hJ : w₀J ∈ cs.parabolic J)
     (h₀J : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀J) {w : W} (hw : cs.IsMinimalCosetRep J w⁻¹) :
     cs.IsMinimalCosetRep J (w₀J * w * w₀)⁻¹ := by
-  have hinv : w₀J⁻¹ = w₀J :=
-    (eq_inv_of_mul_eq_one_left (cs.mul_self_of_forall_length_le hJ h₀J)).symm
-  rw [mul_inv_rev, mul_inv_rev, h.inv_eq, hinv, ← mul_assoc]
+  rw [mul_inv_rev, mul_inv_rev, h.inv_eq, cs.inv_eq_of_forall_length_le hJ h₀J, ← mul_assoc]
   exact h.isMinimalCosetRep_mul_mul hJ h₀J hw
 
-/-- Let `w₀` be the longest element. For a minimal representative `w` of a left coset `W_J \ W`
+/-- Let `w₀` be the longest element. For a minimal representative `w` of a right coset `W_J w`
 and any `x ∈ cs.parabolic J`, the length of `x * w * w₀` is the complement `ℓ w₀ - ℓ w - ℓ x`. -/
 theorem length_mul_mul_add_length_add_length_of_isMinimalCosetRep_inv (h : cs.IsLongest w₀)
     {x : W} (hx : x ∈ cs.parabolic J) {w : W} (hw : cs.IsMinimalCosetRep J w⁻¹) :
     ℓ (x * w * w₀) + ℓ w + ℓ x = ℓ w₀ := by
-  have := h.length_mul_mul_add_length_add_length (inv_mem hx) hw
-  rwa [← cs.length_inv (w₀ * w⁻¹ * x⁻¹), cs.length_inv w, cs.length_inv x, mul_inv_rev,
-    mul_inv_rev, inv_inv, inv_inv, h.inv_eq, ← mul_assoc] at this
+  have hinv : (x * w * w₀)⁻¹ = w₀ * w⁻¹ * x⁻¹ := by
+    rw [mul_inv_rev, mul_inv_rev, h.inv_eq, mul_assoc]
+  rw [← cs.length_inv (x * w * w₀), hinv, ← cs.length_inv w, ← cs.length_inv x]
+  exact h.length_mul_mul_add_length_add_length (inv_mem hx) hw
 
-/-- The **Kostant involution** `w ↦ w₀J * w * w₀` of the minimal representatives of the left cosets
-`W_J \ W`, for the longest element `w₀` and an element `w₀J` of maximal length of the standard
-parabolic subgroup `cs.parabolic J`. Minimal representatives `w` of left cosets are spelled
+/-- The **Kostant involution** `w ↦ w₀J * w * w₀` of the minimal representatives of the right
+cosets `W_J w`, for the longest element `w₀` and an element `w₀J` of maximal length of the standard
+parabolic subgroup `cs.parabolic J`. Minimal representatives `w` of right cosets are spelled
 `cs.IsMinimalCosetRep J w⁻¹`. It sends `ℓ w` to `ℓ w₀ - ℓ w₀J - ℓ w`
 (`CoxeterSystem.IsLongest.length_kostantInvolution`). When `W` is the Weyl group of a split
 reductive group `G` and `W_J` that of the Levi subgroup of a standard parabolic subgroup `P`,
@@ -458,7 +464,7 @@ def kostantInvolution (h : cs.IsLongest w₀) (hJ : w₀J ∈ cs.parabolic J)
     (fun w ↦ ⟨w₀J * w.val * w₀, h.isMinimalCosetRep_inv_mul_mul hJ h₀J w.property⟩)
     fun w ↦ Subtype.ext <| by
       dsimp only
-      rw [← mul_assoc w₀J, ← mul_assoc w₀J w₀J, cs.mul_self_of_forall_length_le hJ h₀J, one_mul,
+      rw [mul_assoc w₀J w.val, cs.mul_mul_cancel_left_of_forall_length_le hJ h₀J,
         h.mul_mul_cancel_right]
 
 variable (h : cs.IsLongest w₀) (hJ : w₀J ∈ cs.parabolic J)
