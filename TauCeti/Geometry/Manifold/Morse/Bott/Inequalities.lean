@@ -182,14 +182,9 @@ theorem finrank_singularHomology_negativeDiscSpherePair_of_isThomClass
         hdim hV hε u hu (p := k - r) (m := k) (by omega)
     rw [bettiNumber_def]
     exact e.toLinearEquiv.finrank_eq
-  · -- Below the rank, the Thom pair of `ν⁻`, hence `(D_ε, S_ε)`, has no homology.
-    have hz := isZero_singularHomology_thomPair (F := Fin r → ℝ)
-      (E := fun s ↦ h.negativeNormalSpace hn g s) (ModuleCat.of K K) (n := k)
-      (by rw [Module.finrank_fin_fun]; omega)
-    have := ModuleCat.isZero_iff_subsingleton.1 (hz.of_iso (@asIso _ _ _ _ _
-      (h.isIso_singularHomologyMap_negativeDiscThomPairMap hn g r hdim hV hε
-        (ModuleCat.of K K) k)))
-    exact Module.finrank_zero_of_subsingleton
+  · exact ModuleCat.finrank_eq_zero_of_isZero
+      (h.isZero_singularHomology_negativeDiscSpherePair_of_lt hn g hdim hV hε (ModuleCat.of K K)
+        (not_le.1 hrk))
 
 end SmoothEmbedding.IsCriticalSubmanifold
 
@@ -415,23 +410,11 @@ theorem exists_cut_sum_finrank_sublevelPair_eq_sum (d : ι → ℕ → ℕ)
         ∑ p with r p ≤ n, d p (n - r p) := by
   classical
   have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
-  obtain ⟨a, ha, ⟨q₀, hq₀⟩, ⟨q₁, hq₁⟩⟩ := exists_isCriticalBandCut_of_finite_image_criticalPoints
-    h.contMDiff.continuous (h.finite_image_criticalPoints hn)
-  -- Reindex the cut by `ℕ`, starting at `q₀`.
-  let s (j : ℕ) : ℝ := a (q₀ + j)
-  have hs : Monotone s := fun j k hjk ↦ ha.monotone (by simpa using hjk)
-  have hcut (j : ℕ) : ∃ c ∈ Ioo (s j) (s (j + 1)),
-      ∀ x ∈ criticalPoints I f, f x ∈ Icc (s j) (s (j + 1)) → f x = c := by
-    simpa [s, ← add_assoc] using (ha.isCriticalBand (q₀ + j)).exists_mem_Ioo_forall_eq
-  choose c hc hcrit using hcut
-  set N := (max q₁ (q₀ + 1) - q₀ - 1).toNat
-  have hs₀ (x : M) : s 0 < f x := by simpa [s] using hq₀ x
-  have hsN (x : M) : f x ≤ s (N + 1) := (hq₁ x).trans (ha.monotone (by simp only [N]; omega))
-  refine ⟨s, hs, N, hs₀, hsN, fun j _ ↦ ?_, fun n ↦ ?_⟩
-  · -- A cut value is not a critical value, since the critical value of its band is inside it.
-    refine isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, hx, hxs⟩ ↦ ?_
-    have := hcrit j x hx ⟨hxs ▸ hs j.le_succ, hxs.le⟩
-    linarith [(hc j).2]
+  obtain ⟨s, N, hs, hs₀, hsN, hcut, hreg⟩ :=
+    exists_monotone_isCriticalBand_of_finite_image_criticalPoints h.contMDiff.continuous
+      (h.finite_image_criticalPoints hn)
+  choose c hc hcrit using fun j ↦ (hcut j).exists_mem_Ioo_forall_eq
+  refine ⟨s, hs, N, hs₀, hsN, fun j _ ↦ hreg (j + 1), fun n ↦ ?_⟩
   rw [Finset.sum_congr rfl fun j _ ↦ hband (hc j).1 (hc j).2 (hcrit j) n]
   simp_rw [Finset.sum_filter]
   rw [Finset.sum_comm]
