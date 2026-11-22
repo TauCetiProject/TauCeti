@@ -177,13 +177,9 @@ theorem ofDual_smul' (r : R) (φ : Module.Dual R M) :
     ofDual (σ := σ) (r • φ) = σ.symm r • ofDual φ := by
   rw [← ofDual_smul, σ.apply_symm_apply]
 
-instance : Module S (ContragredientDual σ M) where
-  one_smul φ := toDual_injective <| by simp
-  mul_smul s t φ := toDual_injective <| by simp [mul_smul]
-  smul_zero s := toDual_injective <| by simp
-  smul_add s φ ψ := toDual_injective <| by simp
-  add_smul s t φ := toDual_injective <| by simp [add_smul]
-  zero_smul φ := toDual_injective <| by simp
+instance : Module S (ContragredientDual σ M) :=
+  letI : Module S (Module.Dual R M) := Module.compHom (Module.Dual R M) (σ : S →+* R)
+  toDual_injective.module S ⟨⟨toDual, toDual_zero⟩, toDual_add⟩ fun _ _ ↦ rfl
 
 /-- **The contragredient scalar action**: `(s • φ) x = φ (σ s • x)`. -/
 @[simp]

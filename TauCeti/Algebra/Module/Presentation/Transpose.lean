@@ -14,6 +14,7 @@ import Mathlib.RingTheory.LocalProperties.Basic
 import Mathlib.RingTheory.LocalRing.Module
 import TauCeti.Algebra.Module.AuslanderReiten.BaseChange
 import TauCeti.Algebra.Module.AuslanderReiten.FinitePresentation
+import TauCeti.LinearAlgebra.Matrix.ToLin
 import TauCeti.RingTheory.FittingIdeal.BaseChange
 import TauCeti.RingTheory.FittingIdeal.Matrix
 import TauCeti.RingTheory.FittingIdeal.Semilinear
@@ -126,21 +127,9 @@ def toARTranspose {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀} :
   with_unfolding_all
     exact AddEquiv.refl (AuslanderReitenTranspose f)
 
-instance (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) : SMul S (PresentationTranspose σ f) where
-  smul s x := toARTranspose.symm (σ s • toARTranspose x)
-
-private theorem smul_def {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀} (s : S) (x : PresentationTranspose σ f) :
-    s • x = toARTranspose.symm (σ s • toARTranspose x) :=
-  (rfl)
-
-instance (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) : Module S (PresentationTranspose σ f) where
-  one_smul x := by rw [smul_def, map_one, one_smul, AddEquiv.symm_apply_apply]
-  mul_smul s t x := by
-    rw [smul_def, smul_def, smul_def, map_mul, mul_smul, AddEquiv.apply_symm_apply]
-  smul_zero s := by rw [smul_def, map_zero, smul_zero, map_zero]
-  smul_add s x y := by rw [smul_def, smul_def, smul_def, map_add, smul_add, map_add]
-  add_smul s t x := by rw [smul_def, smul_def, smul_def, map_add, add_smul, map_add]
-  zero_smul x := by rw [smul_def, map_zero, zero_smul, map_zero]
+instance (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) : Module S (PresentationTranspose σ f) :=
+  letI := Module.compHom (AuslanderReitenTranspose f) (σ : S →+* R)
+  inferInstanceAs (Module S (AuslanderReitenTranspose f))
 
 /-- `toARTranspose` intertwines the `S`-action on `PresentationTranspose σ f` with the `R`-action
 on `AuslanderReitenTranspose f` along `σ`. -/
@@ -148,7 +137,8 @@ on `AuslanderReitenTranspose f` along `σ`. -/
 theorem toARTranspose_smul {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀}
     (s : S) (x : PresentationTranspose σ f) :
     toARTranspose (s • x) = σ s • toARTranspose x := by
-  rw [smul_def, AddEquiv.apply_symm_apply]
+  with_unfolding_all
+    rfl
 
 @[simp]
 theorem toARTranspose_symm_smul {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀}
@@ -190,8 +180,8 @@ def mk (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) :
   map_smul' s φ := by
     apply toARTranspose.injective
     rw [toARTranspose_smul, AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply,
-      ContragredientDual.toDual_smul, ← AuslanderReitenTranspose.mkLinear_apply, map_smul,
-      AuslanderReitenTranspose.mkLinear_apply, RingHom.id_apply]
+      ContragredientDual.toDual_smul, RingHom.id_apply]
+    exact ((AuslanderReitenTranspose.mk f).restrictScalars R).map_smul (σ s) φ.toDual
 
 @[simp]
 theorem toARTranspose_mk {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀} (φ : ContragredientDual σ P₁) :
@@ -258,18 +248,17 @@ variable {N : Type*} [AddCommGroup N] [Module S N]
 def lift (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) (g : ContragredientDual σ P₁ →ₗ[S] N)
     (hg : ∀ ψ : ContragredientDual σ P₀, g (ContragredientDual.map σ f ψ) = 0) :
     PresentationTranspose σ f →ₗ[S] N :=
-  ((LinearMap.ker (mk σ f)).liftQ g <| by
-      rw [ker_mk]
-      rintro _ ⟨ψ, rfl⟩
-      exact hg ψ).comp
-    ((mk σ f).quotKerEquivOfSurjective (mk_surjective σ f)).symm.toLinearMap
+  (mk σ f).liftOfSurjective (mk_surjective σ f) ⟨g, by
+    rw [ker_mk]
+    rintro _ ⟨ψ, rfl⟩
+    exact hg ψ⟩
 
 @[simp]
 theorem lift_mk (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) (g : ContragredientDual σ P₁ →ₗ[S] N)
     (hg : ∀ ψ : ContragredientDual σ P₀, g (ContragredientDual.map σ f ψ) = 0)
     (φ : ContragredientDual σ P₁) :
-    lift σ f g hg (mk σ f φ) = g φ := by
-  simp [lift, LinearMap.quotKerEquivOfSurjective_symm_apply]
+    lift σ f g hg (mk σ f φ) = g φ :=
+  LinearMap.equivOfSurjective_apply (mk_surjective σ f) _
 
 @[simp]
 theorem lift_comp_mk (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) (g : ContragredientDual σ P₁ →ₗ[S] N)
@@ -294,16 +283,11 @@ def congr (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] Q₀}
     (e₁ : P₁ ≃ₗ[R] Q₁) (e₀ : P₀ ≃ₗ[R] Q₀)
     (hfg : e₀.toLinearMap ∘ₗ f = g ∘ₗ e₁.toLinearMap) :
     PresentationTranspose σ f ≃ₗ[S] PresentationTranspose σ g :=
-  let e := AuslanderReitenTranspose.linearEquiv e₀ e₁ hfg
-  { toFun x := toARTranspose.symm (e (toARTranspose x))
-    invFun y := toARTranspose.symm (e.symm (toARTranspose y))
-    left_inv x := by simp
-    right_inv y := by simp
-    map_add' x y := by simp
-    map_smul' s x := by
-      rw [toARTranspose_smul, ← AuslanderReitenTranspose.op_smul_eq_smul f (σ s), map_smul,
-        AuslanderReitenTranspose.op_smul_eq_smul g (σ s), toARTranspose_symm_smul,
-        σ.symm_apply_apply, RingHom.id_apply] }
+  haveI := RingHomInvPair.of_ringEquiv σ
+  haveI := RingHomInvPair.of_ringEquiv_symm σ
+  ((toARTransposeLinearEquiv σ f).trans
+    ((AuslanderReitenTranspose.linearEquiv e₀ e₁ hfg).restrictScalars R)).trans
+    (toARTransposeLinearEquiv σ g).symm
 
 @[simp]
 theorem congr_mk (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] Q₀}
@@ -311,7 +295,8 @@ theorem congr_mk (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] 
     (hfg : e₀.toLinearMap ∘ₗ f = g ∘ₗ e₁.toLinearMap) (φ : ContragredientDual σ P₁) :
     congr σ e₁ e₀ hfg (mk σ f φ) = mk σ g (ContragredientDual.congr σ e₁.symm φ) := by
   apply toARTranspose.injective
-  simp only [congr, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk, toARTranspose_mk,
+  simp only [congr, LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply,
+    toARTransposeLinearEquiv_apply, toARTransposeLinearEquiv_symm_apply, toARTranspose_mk,
     AddEquiv.apply_symm_apply, AuslanderReitenTranspose.linearEquiv_mk]
   congr 1
   ext x
@@ -356,17 +341,8 @@ def fstEquiv (σ : S ≃+* R) : PresentationTranspose σ (LinearMap.fst R R R) �
     uniqueOfSubsingleton 0
   haveI := RingHomInvPair.of_ringEquiv σ
   haveI := RingHomInvPair.of_ringEquiv_symm σ
-  let eComp : AuslanderReitenTranspose (LinearMap.fst R R R) ≃ₗ[R]
-      AuslanderReitenTranspose (LinearMap.id : R →ₗ[R] R) × Module.Dual R R :=
-    let e := AuslanderReitenTranspose.compFstEquiv (LinearMap.id : R →ₗ[R] R) R
-    { toAddEquiv := e.toAddEquiv
-      map_smul' r x := by
-        rw [← AuslanderReitenTranspose.op_smul_eq_smul _ r x]
-        change e (MulOpposite.op r • x) = r • e x
-        rw [e.map_smul]
-        refine Prod.ext (AuslanderReitenTranspose.op_smul_eq_smul _ r _) (LinearMap.ext fun y ↦ ?_)
-        simp }
-  ((toARTransposeLinearEquiv σ (LinearMap.fst R R R)).trans eComp).trans
+  ((toARTransposeLinearEquiv σ (LinearMap.fst R R R)).trans
+    ((AuslanderReitenTranspose.compFstEquiv (LinearMap.id : R →ₗ[R] R) R).restrictScalars R)).trans
     (LinearEquiv.uniqueProd.trans
       ((LinearMap.ringLmapEquivSelf R R R).trans σ.toSemilinearEquiv.symm))
 
@@ -381,9 +357,10 @@ theorem fstEquiv_mk (σ : S ≃+* R) (φ : ContragredientDual σ (R × R)) :
   have hmk : AuslanderReitenTranspose.mk (LinearMap.fst R R R) φ.toDual =
       AuslanderReitenTranspose.mk ((LinearMap.id : R →ₗ[R] R) ∘ₗ LinearMap.fst R R R)
         φ.toDual := rfl
-  change σ.symm ((AuslanderReitenTranspose.compFstEquiv (LinearMap.id : R →ₗ[R] R) R
-    (AuslanderReitenTranspose.mk (LinearMap.fst R R R) φ.toDual)).2 1) = _
-  rw [hmk, AuslanderReitenTranspose.compFstEquiv_mk]
+  simp only [fstEquiv, LinearEquiv.trans_apply, toARTransposeLinearEquiv_apply,
+    toARTranspose_mk, LinearEquiv.restrictScalars_apply, hmk, LinearEquiv.uniqueProd_apply,
+    LinearMap.ringLmapEquivSelf_apply]
+  rw [AuslanderReitenTranspose.compFstEquiv_mk]
   rfl
 
 /-- The inverse of `fstEquiv` sends `s : S` to `s • [snd]`. -/
@@ -553,9 +530,11 @@ theorem fittingIdeal_toLin'_eq_minorsIdeal (σ : S ≃+* R) {m t : ℕ} (A : Mat
   have hrel : Matrix.toLin' (Aᵀ.map σ.symm) =
       d₁.equivFun.toLinearMap ∘ₗ ContragredientDual.map σ (Matrix.toLin' A) ∘ₗ
         d₀.equivFun.symm.toLinearMap := by
-    rw [← ContragredientDual.toMatrix_map_toLin' σ A, LinearMap.toMatrix, LinearEquiv.trans_apply,
-      Matrix.toLin'_toMatrix']
-    rfl
+    have hcomm := LinearMap.toLin'_toMatrix_comp_equivFun d₀ d₁
+      (ContragredientDual.map σ (Matrix.toLin' A))
+    rw [ContragredientDual.toMatrix_map_toLin'] at hcomm
+    simpa only [LinearMap.comp_assoc, LinearEquiv.comp_symm, LinearMap.comp_id] using
+      congrArg (· ∘ₗ d₀.equivFun.symm.toLinearMap) hcomm
   have hker : LinearMap.ker q = LinearMap.range (Aᵀ.map σ.symm).mulVecLin := by
     rw [← Matrix.toLin'_apply', hrel, LinearMap.range_comp,
       LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _),
@@ -612,14 +591,12 @@ theorem fittingIdeal_eq_of_free (σ : S ≃+* R) {t s : ℕ}
   let b₁ : Module.Basis (Fin t) R P₁ := Module.finBasisOfFinrankEq R P₁ h₁
   let b₀ : Module.Basis (Fin (t + s)) R P₀ := Module.finBasisOfFinrankEq R P₀ h₀
   let A : Matrix (Fin (t + s)) (Fin t) R := LinearMap.toMatrix b₁ b₀ f
+  have hcomm : b₀.equivFun.toLinearMap ∘ₗ f = Matrix.toLin' A ∘ₗ b₁.equivFun.toLinearMap :=
+    (LinearMap.toLin'_toMatrix_comp_equivFun b₁ b₀ f).symm
   have hrel : Matrix.toLin' A =
       b₀.equivFun.toLinearMap ∘ₗ f ∘ₗ b₁.equivFun.symm.toLinearMap := by
-    rw [show A = LinearMap.toMatrix b₁ b₀ f from rfl, LinearMap.toMatrix,
-      LinearEquiv.trans_apply, Matrix.toLin'_toMatrix']
-    rfl
-  have hcomm : b₀.equivFun.toLinearMap ∘ₗ f = Matrix.toLin' A ∘ₗ b₁.equivFun.toLinearMap := by
-    rw [hrel, LinearMap.comp_assoc, LinearMap.comp_assoc, LinearEquiv.symm_comp,
-      LinearMap.comp_id]
+    simpa only [LinearMap.comp_assoc, LinearEquiv.comp_symm, LinearMap.comp_id] using
+      congrArg (· ∘ₗ b₁.equivFun.symm.toLinearMap) hcomm.symm
   let π' : (Fin (t + s) → R) →ₗ[R] M := π ∘ₗ b₀.equivFun.symm.toLinearMap
   have hπ' : Function.Surjective π' := hπ.comp b₀.equivFun.symm.surjective
   have hker : LinearMap.ker π' = LinearMap.range A.mulVecLin := by
@@ -643,11 +620,9 @@ theorem fittingIdeal_eq_excess (σ : S ≃+* R) {t s : ℕ}
     [Module.Finite R M] :
     TauCeti.fittingIdeal S (PresentationTranspose σ f) 0 =
       Ideal.map σ.symm (TauCeti.fittingIdeal R M s) := by
-  have hsurjTr : Function.Surjective (AuslanderReitenTranspose.mkLinear f) := by
-    simpa only [Function.Surjective, AuslanderReitenTranspose.mkLinear_apply] using
-      AuslanderReitenTranspose.mk_surjective f
   have : Module.Finite R (AuslanderReitenTranspose f) :=
-    Module.Finite.of_surjective (AuslanderReitenTranspose.mkLinear f) hsurjTr
+    Module.Finite.of_surjective ((AuslanderReitenTranspose.mk f).restrictScalars R)
+      (AuslanderReitenTranspose.mk_surjective f)
   have := RingHomInvPair.of_ringEquiv σ
   have := RingHomInvPair.of_ringEquiv_symm σ
   rw [TauCeti.fittingIdeal_eq_map_of_semilinearEquiv (toARTransposeLinearEquiv σ f).symm 0]

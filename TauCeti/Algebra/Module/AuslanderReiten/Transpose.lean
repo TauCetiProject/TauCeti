@@ -48,8 +48,6 @@ is supplied here alongside the opposite-ring module structure.
 
 * `AuslanderReitenTranspose`: the cokernel of the dual of the first map in a projective
   presentation.
-* `AuslanderReitenTranspose.mkLinear`: the quotient map `Module.Dual R Q₁ →ₗ[R]
-  AuslanderReitenTranspose p` over a commutative ring `R`.
 * `AuslanderReitenTranspose.lift`: the universal property of that cokernel, descending an
   opposite-linear map that kills the functionals factoring through `p₁`.
 * `AuslanderReitenTranspose.linearEquiv`: the equivalence induced by an isomorphism of presentation
@@ -208,23 +206,6 @@ variable {R Q₀ Q₁ : Type*} [CommRing R] [AddCommMonoid Q₀] [Module R Q₀]
 theorem op_smul_eq_smul (p : Q₁ →ₗ[R] Q₀) (r : R) (y : AuslanderReitenTranspose p) :
     MulOpposite.op r • y = r • y := by
   simpa only [Algebra.algebraMap_self_apply] using op_algebraMap_smul (k := R) p r y
-
-/-- Over a commutative ring `R`, the quotient map from `Module.Dual R Q₁` onto
-`AuslanderReitenTranspose p` is `R`-linear. -/
-def mkLinear (p : Q₁ →ₗ[R] Q₀) : Module.Dual R Q₁ →ₗ[R] AuslanderReitenTranspose p where
-  toFun := mk p
-  map_add' := map_add (mk p)
-  map_smul' r φ := by
-    have hsmul : r • φ = MulOpposite.op r • φ := by
-      ext x
-      exact mul_comm r (φ x)
-    rw [hsmul, map_smul, op_smul_eq_smul, RingHom.id_apply]
-
-/-- `mkLinear p` agrees with the quotient map `mk p` on functionals. -/
-@[simp]
-theorem mkLinear_apply (p : Q₁ →ₗ[R] Q₀) (φ : Module.Dual R Q₁) :
-    mkLinear p φ = mk p φ :=
-  (rfl)
 
 end CommRing
 
