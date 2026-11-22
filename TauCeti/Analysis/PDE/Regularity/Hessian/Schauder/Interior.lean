@@ -9,8 +9,10 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CompactSupport
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
+import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Cutoff
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # The interior Schauder estimate on small balls
@@ -107,26 +109,16 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
           (((n : ℝ) + 1) ^ 2 * (4 * Z)) * N := by
   subst hB₂ hδ
   have hsR : ball x₀ R ⊆ closedBall x₀ R := ball_subset_closedBall
-  obtain ⟨hHu, hHdu⟩ := holderOnWith_and_holderOnWith_fderiv_apply_of_norm_le
-    (D := (2 * R).toNNReal) hα1 (convex_ball x₀ R) (fun x hx y hy => by
-      rw [edist_dist]
-      refine ENNReal.ofReal_le_ofReal ?_
-      linarith [dist_triangle_right x y x₀, mem_ball.1 hx, mem_ball.1 hy])
+  obtain ⟨hHu, hHdu⟩ := (convex_ball x₀ R).holderOnWith_and_holderOnWith_fderiv_apply_of_norm_le
+    (D := (2 * R).toNNReal) hα1 (fun _ hx _ hy => edist_le_two_mul_of_mem_ball hx hy)
     isOpen_ball subset_rfl hu hN1 hN2
-  have hdu (i : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ univ) :
-      |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N := by
-    simpa using ((fderiv ℝ u x).unit_le_opNorm (EuclideanSpace.single i 1) (by simp)).trans
-      (hN1 x hx.1)
-  have hd2u (i j : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ univ) :
-      |fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ N := by
-    simpa [iteratedFDeriv_two_apply] using
-      ((iteratedFDeriv ℝ 2 u x).norm_apply_orthonormalBasis_le
-        (EuclideanSpace.basisFun _ ℝ) i j).trans (hN2 x hx.1)
+  obtain ⟨hdu, hd2u⟩ := abs_fderiv_apply_single_le_and_abs_fderiv_fderiv_apply_single_single_le
+    (S := ball x₀ R ∩ univ) (fun x hx => hN1 x hx.1) fun x hx => hN2 x hx.1
   have hw : ContDiff ℝ 2 (ζ * u) := hu.contDiff_smul_of_tsupport_subset isOpen_ball hζ2 hζs
   have htU : univ ∩ tsupport ζ ⊆ ball x₀ R := fun x hx => hζs hx.2
   have hWH := holderOnWith_fderiv_fderiv_cutoff_mul isOpen_ball hζ2 hζs htU hZ0 hZ1 hZ2 hu
     (fun x hx => hN0 x hx.1) hdu hd2u (hHu.mono inter_subset_left)
-    (fun i => (hHdu i).mono inter_subset_left) fun i j => by
+    (fun i => (hHdu _ (by simp)).mono inter_subset_left) fun i j => by
       simpa [iteratedFDeriv_two_apply] using
         (hV.apply_orthonormalBasis (EuclideanSpace.basisFun _ ℝ) i j).mono
           (inter_subset_left (t := univ))
@@ -136,7 +128,7 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
     fun i j => by simpa [iteratedFDeriv_two_apply] using (hWH i j).1)).memHolder,
     holderOnWith_univ.1 ((holderOnWith_sum_smul_fderiv_fderiv_cutoff_mul isOpen_ball hζ2 hζs htU
       hZ0 hZ1 hZ2 hu (fun x hx => hN0 x hx.1) hdu hd2u (hHu.mono inter_subset_left)
-      (fun i => (hHdu i).mono inter_subset_left)
+      (fun i => (hHdu _ (by simp)).mono inter_subset_left)
       (fun i j => (hL i j).mono (inter_subset_left.trans hsR))
       (fun x hx => hM x (hsR hx.1)) (hK.mono inter_subset_left)).mono_const (le_of_eq (by ring))),
     hsupp, ?_⟩

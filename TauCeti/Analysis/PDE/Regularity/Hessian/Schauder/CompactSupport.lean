@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.VariableCoefficient
-
-import TauCeti.Analysis.Normed.Module.Ball.Retraction
 
 /-!
 # Schauder estimates with compactly supported Hessian
@@ -22,8 +21,11 @@ cutoff. It removes the global small-oscillation hypothesis from the perturbative
 it by the natural requirement that the support ball and the interpolation scale are small compared
 with the Hölder modulus of the coefficients.
 
-## Main declaration
+## Main declarations
 
+* `TauCeti.PDE.sum_smul_fderiv_fderiv_comp_centeredRadialRetraction_eq`: precomposing the
+  coefficients with the radial retraction onto a ball does not change the operator at points
+  off the ball where the Hessian vanishes, nor at points of the ball.
 * `TauCeti.PDE.exists_holderWith_iteratedFDeriv_two_of_support_subset_closedBall`: the global
   Hölder estimate for the Hessian of a function whose Hessian is supported in a ball.
 
@@ -45,6 +47,27 @@ namespace TauCeti.PDE
 variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
+
+/-- Precomposing the coefficients with the radial retraction onto `closedBall x₀ R` does not change
+the operator `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu` at a point `x` which lies in the ball if the Hessian of `u` is nonzero
+there: on the ball the retraction is the identity, and where the Hessian vanishes both sums
+vanish. -/
+theorem sum_smul_fderiv_fderiv_comp_centeredRadialRetraction_eq
+    (a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) {u : E → ℝ} {x₀ x : E} {R : ℝ}
+    (hx : x ∈ Function.support (iteratedFDeriv ℝ 2 u) → x ∈ closedBall x₀ R) :
+    ∑ i, ∑ j, a (TauCeti.centeredRadialRetraction x₀ R x) i j •
+        fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
+      ∑ i, ∑ j, a x i j •
+        fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+  by_cases hx' : x ∈ Function.support (iteratedFDeriv ℝ 2 u)
+  · rw [TauCeti.centeredRadialRetraction_of_mem_closedBall (hx hx')]
+  · have hzero : iteratedFDeriv ℝ 2 u x = 0 := by simpa [Function.mem_support] using hx'
+    have hentry (i j : Fin (n + 1)) : fderiv ℝ (fderiv ℝ u) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = 0 := by
+      simpa only [iteratedFDeriv_two_apply, zero_apply, Matrix.cons_val_zero,
+        Matrix.cons_val_one] using congrArg (fun H : E [×2]→L[ℝ] ℝ =>
+          H ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) hzero
+    simp [hentry]
 
 /-- **Schauder estimate for a Hessian supported in a ball.** Let `0 < α < 1`. There is
 `C > 0`, depending only on dimension and `α`, with the following property. Let `a` be
@@ -93,8 +116,6 @@ theorem exists_holderWith_iteratedFDeriv_two_of_support_subset_closedBall
     {u} hu hH hsupp hf => ?_⟩
   let q : E → E := TauCeti.centeredRadialRetraction x₀ R
   let a' : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ := fun x => a (q x)
-  have hq_eq {x : E} (hx : x ∈ closedBall x₀ R) : q x = x :=
-    TauCeti.centeredRadialRetraction_of_mem_closedBall hx
   have ha'_holder (i j : Fin (n + 1)) :
       HolderWith (L * 2 ^ (α : ℝ)) α (fun x => a' x i j) := by
     simpa only [a', q, Function.comp_def] using (hL i j).comp_centeredRadialRetraction hR
@@ -110,16 +131,7 @@ theorem exists_holderWith_iteratedFDeriv_two_of_support_subset_closedBall
         (EuclideanSpace.single j 1)) := by
     convert hf using 1
     funext x
-    by_cases hx : x ∈ Function.support (iteratedFDeriv ℝ 2 u)
-    · simp only [a', hq_eq (hsupp hx)]
-    · have hzero : iteratedFDeriv ℝ 2 u x = 0 := by simpa [Function.mem_support] using hx
-      have hentry (i j : Fin (n + 1)) : fderiv ℝ (fderiv ℝ u) x
-          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = 0 := by
-        have hzero' := congrArg (fun H : E [×2]→L[ℝ] ℝ =>
-          H ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) hzero
-        simpa only [iteratedFDeriv_two_apply, zero_apply, Matrix.cons_val_zero,
-          Matrix.cons_val_one] using hzero'
-      simp [hentry]
+    exact sum_smul_fderiv_fderiv_comp_centeredRadialRetraction_eq a fun h => hsupp h
   have hH2 : MemLp (iteratedFDeriv ℝ 2 u) 2 volume :=
     (hu.continuous_iteratedFDeriv (by norm_num)).memLp_of_hasCompactSupport
       (HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall x₀ R) hsupp)

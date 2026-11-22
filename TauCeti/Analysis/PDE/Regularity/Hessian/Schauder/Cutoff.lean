@@ -12,7 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.Defs
 public import Mathlib.Topology.MetricSpace.Holder
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.Holder.MeanValue
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -29,16 +29,16 @@ product rule,
 so `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼw = ζ ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + ∑ᵢⱼ aᵢⱼ Tᵢⱼ`. Every term is a product of a factor built from
 `ζ`, which vanishes off a set `s`, with a factor that is bounded and Hölder on `s`; such products
 are Hölder (`HolderOnWith.smul_of_eq_zero`). This file proves these bounds on an arbitrary set `t`:
-the data need only be given on `s ∩ t`. The interior estimate takes `t` to be the whole space, the
-boundary estimate the closed half-space.
+the data need only be given on `s ∩ t`. The interior estimate takes `t` to be the whole space. The
+boundary estimate takes `t` to be the closed half-space for the Hessian entries of `w`, and the open
+half-space for the operator applied to `w`.
 
 ## Main declarations
 
 * `TauCeti.PDE.exists_forall_exists_cutoff`: smooth cutoffs about every centre, with one constant
   bounding them, their first and second coordinate derivatives and the Hölder constants of these.
-* `TauCeti.PDE.holderOnWith_and_holderOnWith_fderiv_apply_of_norm_le`: bounds on the first and
-  second derivatives of a `C²` function on a convex set make it and its partial derivatives Hölder
-  there.
+* `TauCeti.PDE.abs_fderiv_apply_single_le_and_abs_fderiv_fderiv_apply_single_single_le`: norm
+  bounds on the first and second derivatives bound the coordinate partial derivatives.
 * `TauCeti.PDE.holderOnWith_fderiv_fderiv_cutoff_mul`: the Hessian entries of a cutoff product are
   Hölder and bounded on `t`.
 * `TauCeti.PDE.holderOnWith_sum_smul_fderiv_fderiv_cutoff_mul`: the operator `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼ`
@@ -159,30 +159,21 @@ theorem exists_forall_exists_cutoff {α : ℝ≥0} (hα : α ≤ 1) {ρ R : ℝ}
   · simpa [dist_eq_norm] using hζ₀s (tsupport_comp_subset_preimage ζ₀
       (continuous_id.sub continuous_const) hx)
 
-/-- On a convex set `S` whose points are at distance at most `D` from each other, a function `C²`
-on an open set containing `S`, with `‖Du‖ ≤ N` and `‖D²u‖ ≤ N` on `S`, and each of its partial
-derivatives, are `α`-Hölder on `S` with constant `N D^(1 - α)`, for every `α ≤ 1`. -/
-theorem holderOnWith_and_holderOnWith_fderiv_apply_of_norm_le {u : E → ℝ} {S U : Set E}
-    {N D α : ℝ≥0} (hα : α ≤ 1) (hS : Convex ℝ S) (hD : ∀ x ∈ S, ∀ y ∈ S, edist x y ≤ D)
-    (hU : IsOpen U) (hSU : S ⊆ U) (hu : ContDiffOn ℝ 2 u U)
-    (hN1 : ∀ x ∈ S, ‖fderiv ℝ u x‖ ≤ N) (hN2 : ∀ x ∈ S, ‖iteratedFDeriv ℝ 2 u x‖ ≤ N) :
-    HolderOnWith (N * D ^ ((1 : ℝ) - α)) α u S ∧
-      ∀ i, HolderOnWith (N * D ^ ((1 : ℝ) - α)) α
-        (fun x => fderiv ℝ u x (EuclideanSpace.single i 1)) S := by
-  have hDu : HolderOnWith (N * D ^ ((1 : ℝ) - α)) α (fderiv ℝ u) S :=
-    hS.holderOnWith_of_norm_fderiv_le hα hD (fun x hx =>
-      ((hu.fderiv_of_isOpen hU (m := 1) le_rfl).differentiableOn one_ne_zero).differentiableAt
-        (hU.mem_nhds (hSU hx)))
-      fun x hx => by rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]; exact hN2 x hx
-  refine ⟨hS.holderOnWith_of_norm_fderiv_le hα hD (fun x hx =>
-    (hu.contDiffAt (hU.mem_nhds (hSU hx))).differentiableAt two_ne_zero) hN1, fun i => ?_⟩
-  have hev : LipschitzWith 1 fun L : E →L[ℝ] ℝ => L (EuclideanSpace.single i 1) :=
-    LipschitzWith.of_dist_le_mul fun L L' => by
-      rw [dist_eq_norm, dist_eq_norm, ← sub_apply, NNReal.coe_one, one_mul]
-      exact (L - L').unit_le_opNorm _ (by simp)
-  have h := (holderWith_one.2 hev).comp_holderOnWith hDu
-  simp only [NNReal.coe_one, NNReal.rpow_one, one_mul] at h
-  exact h
+/-- Bounds `‖Du‖ ≤ N` and `‖D²u‖ ≤ N` on a set `S` bound the first and second partial derivatives
+of `u` along the coordinate directions by `N` on `S`. -/
+theorem abs_fderiv_apply_single_le_and_abs_fderiv_fderiv_apply_single_single_le {u : E → ℝ}
+    {S : Set E} {N : ℝ} (hN1 : ∀ x ∈ S, ‖fderiv ℝ u x‖ ≤ N)
+    (hN2 : ∀ x ∈ S, ‖iteratedFDeriv ℝ 2 u x‖ ≤ N) :
+    (∀ i, ∀ x ∈ S, |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N) ∧
+      ∀ i j, ∀ x ∈ S,
+        |fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ N :=
+  ⟨fun i x hx => by
+    simpa using ((fderiv ℝ u x).unit_le_opNorm (EuclideanSpace.single i 1) (by simp)).trans
+      (hN1 x hx),
+  fun i j x hx => by
+    simpa [iteratedFDeriv_two_apply] using
+      ((iteratedFDeriv ℝ 2 u x).norm_apply_orthonormalBasis_le
+        (EuclideanSpace.basisFun _ ℝ) i j).trans (hN2 x hx)⟩
 
 /-- The product of a factor `c` which is Hölder and bounded on `t` and vanishes at the points of `t`
 off `s` with a factor `g` which is Hölder and bounded on `s ∩ t` is Hölder on `t`, and bounded there
@@ -251,22 +242,6 @@ private theorem holderOnWith_cutoff_remainder {s t : Set E} {ζ u : E → ℝ} {
     ring
   · simp only [hζ''0 x hx, hζ'0 i x hx, hζ'0 j x hx, zero_mul, add_zero]
 
-/-- The second-order product rule for a cutoff product `ζ u` at the points of a set `t` whose
-intersection with the support of `ζ` lies in an open set `U` on which `ζ` and `u` are `C²`. -/
-private theorem fderiv_fderiv_cutoff_mul_apply {t U : Set E} (hU : IsOpen U) {ζ u : E → ℝ}
-    (hζ : ContDiffOn ℝ 2 ζ U) (hu : ContDiffOn ℝ 2 u U) (htU : t ∩ tsupport ζ ⊆ U) {x : E}
-    (hx : x ∈ t) (v w : E) :
-    fderiv ℝ (fderiv ℝ (ζ * u)) x v w =
-      ζ x * fderiv ℝ (fderiv ℝ u) x v w + u x * fderiv ℝ (fderiv ℝ ζ) x v w +
-        fderiv ℝ ζ x v * fderiv ℝ u x w + fderiv ℝ u x v * fderiv ℝ ζ x w := by
-  by_cases hxs : x ∈ tsupport ζ
-  · have hxU := hU.mem_nhds (htU ⟨hx, hxs⟩)
-    exact fderiv_fderiv_mul_apply (hζ.contDiffAt hxU) (hu.contDiffAt hxU) v w
-  · -- Off the support of `ζ`, both sides vanish.
-    have hxs' : x ∉ tsupport (ζ * u) := fun h => hxs (tsupport_mul_subset_left h)
-    simp [image_eq_zero_of_notMem_tsupport hxs, fderiv_of_notMem_tsupport ℝ hxs,
-      fderiv_fderiv_of_notMem_tsupport hxs, fderiv_fderiv_of_notMem_tsupport hxs']
-
 /-- **The Hessian of a cutoff product.** The Hessian entries `∂ᵢ∂ⱼ(ζ u) = ζ ∂ᵢ∂ⱼu + Tᵢⱼ` of a
 cutoff product are Hölder and bounded on a set `t`, when `ζ` is supported in `s` and `ζ` and its
 first and second derivatives are globally Hölder and bounded with constant `Z`, while `ζ` and `u`
@@ -303,7 +278,7 @@ theorem holderOnWith_fderiv_fderiv_cutoff_mul {s t U : Set E} (hU : IsOpen U) {�
         (fderiv ℝ (fderiv ℝ ζ) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) * u x +
           fderiv ℝ ζ x (EuclideanSpace.single i 1) * fderiv ℝ u x (EuclideanSpace.single j 1) +
           fderiv ℝ ζ x (EuclideanSpace.single j 1) * fderiv ℝ u x (EuclideanSpace.single i 1)) := by
-    rw [fderiv_fderiv_cutoff_mul_apply hU hζ hu htU hx]
+    rw [fderiv_fderiv_mul_apply_of_tsupport_subset hU hζ htU hu hx]
     ring
   refine ⟨(h1.add hT).congr fun x hx => (hW x hx).symm, fun x hx => ?_⟩
   rw [hW x hx]
@@ -358,8 +333,8 @@ theorem holderOnWith_sum_smul_fderiv_fderiv_cutoff_mul {s t U : Set E} (hU : IsO
         a x i j) (fun x => ∑ i, ∑ j, a x i j •
       fderiv ℝ (fderiv ℝ (ζ * u)) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) t := by
     intro x hx
-    simp only [fderiv_fderiv_cutoff_mul_apply hU hζ hu htU hx, smul_eq_mul, f, Finset.mul_sum,
-      ← Finset.sum_add_distrib]
+    simp only [fderiv_fderiv_mul_apply_of_tsupport_subset hU hζ htU hu hx, smul_eq_mul, f,
+      Finset.mul_sum, ← Finset.sum_add_distrib]
     exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
   obtain ⟨h1, -⟩ := holderOnWith_mul_and_abs_le (hZ0.1.holderOnWith t) (fun x _ => hZ0.2 x)
     (fun x _ hx => image_eq_zero_of_notMem_tsupport fun h => hx (hζs h)) hK hfM
@@ -381,7 +356,7 @@ theorem holderOnWith_sum_smul_fderiv_fderiv_cutoff_mul {s t U : Set E} (hU : IsO
   ring
 
 /-- The comparison of constants closing the localized Schauder estimates: with
-`κ = C₀ (Λ / λ)^e` and `0 < λ ≤ Λ`, if `X ≤ A N` then
+`κ = C₀ (Λ / λ)^e`, `0 ≤ C₀`, `0 < λ ≤ Λ`, `0 ≤ Q` and `0 ≤ A`, if `X ≤ A N` then
 `2 κ ((Z K + N B) / λ + Q X) ≤ max (2 κ (Z / λ + B / λ + Q A)) 0 * (K + N)`. -/
 theorem two_mul_mul_add_div_add_mul_le {C₀ lam Lam e Q A X : ℝ} {Z B K N : ℝ≥0} (hC₀ : 0 ≤ C₀)
     (hlam : 0 < lam) (hlamLam : lam ≤ Lam) (hQ : 0 ≤ Q) (hA : 0 ≤ A) (hX : X ≤ A * N) :
