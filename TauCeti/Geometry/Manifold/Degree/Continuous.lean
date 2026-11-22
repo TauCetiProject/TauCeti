@@ -8,10 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Geometry.Manifold.Degree.Basic
--- Private: global degree invariance, Whitney smooth approximation, `[0, 1]` manifold charts,
--- and homotopy/path-connectedness bridges are used only inside definitions and proofs.
+-- Private: global degree invariance, Whitney smooth approximation and
+-- homotopy/path-connectedness bridges are used only inside definitions and proofs.
 import TauCeti.Geometry.Manifold.Degree.Global
-import TauCeti.Geometry.Manifold.Instances.Icc
 import TauCeti.Geometry.Manifold.SmoothApprox
 import TauCeti.Topology.Homotopy.Homotopic.With
 import TauCeti.Topology.Homotopy.HomotopyEquiv
