@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import TauCeti.Algebra.Category.ModuleCat.HomCocycle
 public import Mathlib.RingTheory.Artinian.Ring
 public import Mathlib.RingTheory.FiniteLength
 public import TauCeti.CategoryTheory.Exact.Abelian
@@ -29,6 +30,9 @@ finite length over `R` as soon as `P₁` is finitely generated over `R` and `N` 
 over `R` (`LinearMap.isFiniteLength_ext1_cokernel`). Neither `f` nor `P₁` need be injective or
 projective, and neither `A` nor `P₀ ⧸ range f` need be finitely generated over `R`. For a field
 `R` this is the finite-dimensionality of `Ext¹` from finite-dimensional relations and coefficients.
+
+The same holds for Mathlib's derived `Ext¹`, through the description of `Ext¹(P₀ ⧸ range f, N)` by
+Hom cocycles (`LinearMap.isFiniteLength_ext_cokernel`).
 
 Over an Artin algebra, every finitely generated module has such a presentation, so `Ext¹` between
 finitely generated modules has finite length over the base ring (`ModuleCat.isFiniteLength_ext1`).
@@ -97,6 +101,26 @@ theorem isFiniteLength_ext1_cokernel (f : P₁ →ₗ[A] P₀) {N : ModuleCat.{t
   have hι : Function.Injective ι := fun a b h ↦ ModuleCat.hom_ext
     ((cancel_right f.surjective_rangeRestrict).mp (restrictScalars_injective R h))
   exact ((isFiniteLength_linearMap P₁ N hN).of_injective hι).of_surjective hc
+
+end LinearMap
+
+namespace LinearMap
+
+variable {P₀ P₁ : Type max u v w} [AddCommGroup P₀] [Module A P₀] [Module.Projective A P₀]
+  [AddCommGroup P₁] [Module A P₁] [Module R P₁] [IsScalarTower R A P₁] [Module.Finite R P₁]
+
+/-- **Derived `Ext¹` of a cokernel has finite length**, the counterpart for Mathlib's derived `Ext`
+of `LinearMap.isFiniteLength_ext1_cokernel`. For `f : P₁ → P₀` with `P₀` projective, the Hom
+cocycles `Hom_A(P₁, N) ⊆ Hom_R(P₁, N)` modulo coboundaries compute `Ext¹(P₀ ⧸ range f, N)`
+(`LinearMap.homCocycleQuotientEquivExt`). -/
+theorem isFiniteLength_ext_cokernel (f : P₁ →ₗ[A] P₀) {N : ModuleCat.{max u v w} A}
+    (hN : IsFiniteLength R N) :
+    IsFiniteLength R (Abelian.Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1) := by
+  have hP : IsFiniteLength R (P₁ →ₗ[A] N) := (isFiniteLength_linearMap P₁ N hN).of_injective
+    (f := restrictScalarsₗ R A P₁ N R) (restrictScalars_injective R)
+  have : IsFiniteLength R (HomCocycleQuotient (k := R) f N) :=
+    (hP.of_injective (Submodule.injective_subtype _)).of_surjective (Submodule.mkQ_surjective _)
+  exact (homCocycleQuotientEquivExt (k := R) f N).isFiniteLength this
 
 end LinearMap
 
