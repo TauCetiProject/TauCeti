@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.Algebra.Category.ModuleCat.Products
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.Condensed.Solid
 public import TauCeti.Condensed.Discrete.Colimit
 public import TauCeti.Condensed.Discrete.LocallyConstant
@@ -14,35 +15,38 @@ public import TauCeti.Condensed.Discrete.Module
 public import TauCeti.Topology.LocallyConstant.FinsuppDual
 
 /-!
-# Free solid modules on profinite sets as duals of locally constant functions
+# `R[S]^solid` on profinite sets as the dual of locally constant functions
 
 For a profinite set `S` and a commutative ring `R`, Mathlib defines the condensed `R`-module
 `R[S]^solid` (`Condensed.profiniteSolid R`) as the right Kan extension of the free condensed
 modules `R[T]` on finite sets `T` along `FintypeCat.toProfinite`, so that informally
 `R[S]^solid = lim R[S_i]` over the finite quotients `S_i` of `S`. This file identifies it,
-naturally in `S` (`Condensed.profiniteSolidIsoLocallyConstantDual`), with the condensed
-`R`-module `Condensed.locallyConstantDual R S` whose sections over a compact Hausdorff space `X`
+naturally in `S` (`TauCeti.profiniteSolidIsoLocallyConstantDual`), with the condensed
+`R`-module `TauCeti.locallyConstantDual R S` whose sections over a compact Hausdorff space `X`
 are the `R`-linear maps `LocallyConstant S R → LocallyConstant X R`
-(`Condensed.locallyConstantDualSectionsEquiv`), with restriction by composition.
+(`TauCeti.locallyConstantDualSectionsEquiv`), with restriction by composition.
 
 The proof shows that `locallyConstantDual R` is a right Kan extension of `finFree R` along
 `FintypeCat.toProfinite`:
 * on a finite set `T`, the free condensed module `R[T]` is the discrete condensed module on
-  the free module `T →₀ R` (`Condensed.freeCompLocallyConstantIso`, by uniqueness of left
+  the free module `T →₀ R` (`TauCeti.locallyConstantCompFreeIso`, by uniqueness of left
   adjoints), whose sections are identified with the dual of `LocallyConstant T R` by
   `TauCeti.locallyConstantFinsuppLinearEquiv`;
 * the dual sends a presentation of `S` as a cofiltered limit of finite sets, such as the limit of
-  its finite quotients, to a limit (`Condensed.isLimitLocallyConstantDual`), because
+  its finite quotients, to a limit (`TauCeti.isLimitLocallyConstantDual`), because
   `LocallyConstant S R` is the corresponding colimit of the `LocallyConstant S_i R`
-  (`Condensed.isColimitLocallyConstantModulePresheaf`).
+  (`TauCeti.isColimitLocallyConstantModulePresheaf`).
 
 A basis of `LocallyConstant S R` exhibits the dual, hence `R[S]^solid`, as a product of copies of
-the discrete condensed module `R` (`Condensed.profiniteSolidObjIsoPi`). This file proves only this
+the discrete condensed module `R` (`TauCeti.profiniteSolidObjIsoPi`). This file proves only this
 basis-dependent decomposition. Over the integers, Nöbeling's theorem
 (`LocallyConstant.freeOfProfinite`) says that `LocallyConstant S ℤ` is free, so that `ℤ[S]^solid`
-is a product of copies of `ℤ`; applying `Condensed.profiniteSolidObjIsoPi` to this requires
+is a product of copies of `ℤ`; applying `TauCeti.profiniteSolidObjIsoPi` to this requires
 transporting a basis to the universe-lifted coefficient ring `ULift ℤ`, since the coefficient
 ring of condensed modules lives in `Type (u + 1)`.
+
+This file computes `Condensed.profiniteSolid R`; it does not prove that `R[S]^solid` is solid
+(`CondensedMod.IsSolid`), nor that it is free among solid modules.
 
 ## References
 
@@ -58,18 +62,20 @@ open CategoryTheory Limits Opposite MonoidalCategory Functor
 
 noncomputable section
 
-namespace Condensed
+namespace TauCeti
+
+open Condensed
 
 variable (R : Type (u + 1)) [CommRing R]
 
 /-- The functor sending a profinite set `S` to the condensed `R`-module whose sections over a
 compact Hausdorff space `X` are the `R`-linear maps `LocallyConstant S R → LocallyConstant X R`
-(`Condensed.locallyConstantDualSectionsEquiv`), with restriction along `X` given by
+(`TauCeti.locallyConstantDualSectionsEquiv`), with restriction along `X` given by
 postcomposition with the pullback of locally constant functions. It is built sectionwise from the
 internal hom of `R`-modules. One may interpret it as the internal hom, in condensed `R`-modules,
 from the discrete module `LocallyConstant S R` to the discrete module `R`, but this file does not
 prove that identification; it proves that the functor is isomorphic to `Condensed.profiniteSolid R`
-(`Condensed.profiniteSolidIsoLocallyConstantDual`). -/
+(`TauCeti.profiniteSolidIsoLocallyConstantDual`). -/
 def locallyConstantDual : Profinite.{u} ⥤ CondensedMod.{u} R :=
   ObjectProperty.lift _
     (((CompHausLike.LocallyConstantModule.functorToPresheaves.{u + 1, u} R).obj
@@ -104,6 +110,33 @@ lemma locallyConstantDual_obj_obj_map_apply {S : Profinite.{u}} {X Y : CompHaus.
       LocallyConstant.comapₗ R g.unop.hom.hom ∘ₗ locallyConstantDualSectionsEquiv R S X L :=
   (rfl)
 
+/-- A cone of condensed `R`-modules is a limit cone if its cone of sections over every compact
+Hausdorff space `X` is: limits of sheaves, and of presheaves, are detected sectionwise. -/
+private def isLimitOfIsLimitSections {J : Type*} [Category* J] {K : J ⥤ CondensedMod.{u} R}
+    (c : Cone K)
+    (h : ∀ X : CompHaus.{u}ᵒᵖ, IsLimit
+      ((sheafToPresheaf (coherentTopology CompHaus.{u}) (ModuleCat.{u + 1} R) ⋙
+        (evaluation _ _).obj X).mapCone c)) :
+    IsLimit c :=
+  have : ReflectsLimit K (sheafToPresheaf (coherentTopology CompHaus.{u}) (ModuleCat.{u + 1} R)) :=
+    (fullyFaithful_reflectsLimits _).reflectsLimitsOfShape.reflectsLimit
+  isLimitOfReflects _ <| evaluationJointlyReflectsLimits _ fun X ↦
+    (h X).ofIsoLimit (Functor.mapConeMapCone _).symm
+
+/-- On sections over `X`, `locallyConstantDual R` is the internal hom from the module of locally
+constant functions on `S` into `N = LocallyConstant X R`: on both sides, `f : S ⟶ S'` acts by
+precomposition with the pullback along `f` (`locallyConstantDual_map_hom_app_apply`). -/
+private def locallyConstantDualSectionsIso (X : CompHaus.{u}ᵒᵖ) :
+    locallyConstantDual R ⋙ sheafToPresheaf (coherentTopology CompHaus.{u}) (ModuleCat.{u + 1} R) ⋙
+        (evaluation _ _).obj X ≅
+      ((CompHausLike.LocallyConstantModule.functorToPresheaves.{u + 1, u} R).obj
+        (ModuleCat.of R R)).rightOp ⋙ MonoidalClosed.internalHom.flip.obj
+          (((CondensedMod.LocallyConstant.functor R).obj (ModuleCat.of R R)).obj.obj X) :=
+  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦ by
+    refine ModuleCat.hom_ext (LinearMap.ext fun L ↦ ?_)
+    exact (locallyConstantDualSectionsEquiv R _ X).injective
+      (locallyConstantDual_map_hom_app_apply R f X L)
+
 section Limit
 
 variable {I : Type u} [Category.{u} I] [IsCofiltered I] {F : I ⥤ FintypeCat.{u}}
@@ -114,21 +147,17 @@ such as the presentation of a profinite set as the limit of its finite quotients
 since `LocallyConstant c.pt R` is the colimit of the locally constant functions on the finite
 sets. -/
 def isLimitLocallyConstantDual (hc : IsLimit c) [∀ i, Epi (c.π.app i)] :
-    IsLimit ((locallyConstantDual R).mapCone c) := by
-  -- Limits of sheaves, and of presheaves, are detected sectionwise.
-  refine @isLimitOfReflects _ _ _ _ _ _ _
-    (sheafToPresheaf (coherentTopology CompHaus.{u}) (ModuleCat.{u + 1} R)) _ ?_
-    ((fullyFaithful_reflectsLimits.{u, u} _).reflectsLimitsOfShape.reflectsLimit)
-  apply evaluationJointlyReflectsLimits
-  intro X
-  refine @isLimitOfReflects _ _ _ _ _ _ _ (CategoryTheory.forget (ModuleCat.{u + 1} R)) _ ?_
-    (reflectsLimit_of_reflectsIsomorphisms _ _)
-  -- On sections over `X` this is `Hom(colim LocallyConstant c_i R, -) = lim Hom(-, -)`: the
-  -- cone of sections has the same point, the linear maps `LocallyConstant c.pt R → _`, and the
-  -- same legs, precomposition with the pullbacks along the projections of `c`.
-  exact ((isLimitOfPreserves (yoneda.obj _)
-    (isColimitLocallyConstantModulePresheaf c (ModuleCat.of R R) hc).op).whiskerEquivalence
-      (opOpEquivalence _).symm).ofIsoLimit (Cone.ext (Iso.refl _))
+    IsLimit ((locallyConstantDual R).mapCone c) :=
+  isLimitOfIsLimitSections R _ fun X ↦
+    -- On sections over `X` this is `Hom(colim LocallyConstant c_i R, N) = lim Hom(-, N)` for the
+    -- internal hom into `N = LocallyConstant X R`, which turns colimits into limits.
+    -- The cone `coneRightOpOfCocone` built from the image of `c.op` is the image of `c`.
+    have h : IsLimit (((CompHausLike.LocallyConstantModule.functorToPresheaves.{u + 1, u} R).obj
+        (ModuleCat.of R R)).rightOp.mapCone c) :=
+      isLimitConeRightOpOfCocone _ (isColimitLocallyConstantModulePresheaf c (ModuleCat.of R R) hc)
+    IsLimit.mapConeEquiv (locallyConstantDualSectionsIso R X).symm <|
+      (isLimitOfPreserves (MonoidalClosed.internalHom.flip.obj _) h).ofIsoLimit
+        (Functor.mapConeMapCone _)
 
 end Limit
 
@@ -178,7 +207,7 @@ finite set `T`, the free condensed module `R[T]` is the dual of `LocallyConstant
 def toProfiniteCompLocallyConstantDualIso :
     FintypeCat.toProfinite ⋙ locallyConstantDual R ≅ finFree R :=
   (locallyConstantFreeIso R).symm ≪≫
-    isoWhiskerLeft (FintypeCat.incl ⋙ uliftFunctor.{u + 1}) (freeCompLocallyConstantIso R).symm ≪≫
+    isoWhiskerLeft (FintypeCat.incl ⋙ uliftFunctor.{u + 1}) (locallyConstantCompFreeIso R).symm ≪≫
     isoWhiskerRight toProfiniteCompProfiniteToCondensedIso.symm (free R)
 
 /-- `locallyConstantDual R` is the right Kan extension of the free condensed modules on finite
@@ -192,8 +221,8 @@ instance : (locallyConstantDual R).IsRightKanExtension
         (Profinite.Extend.isLimitCone S.asLimitCone (locallyConstantDual R) S.asLimit
           (isLimitLocallyConstantDual R S.asLimitCone S.asLimit))
 
-/-- The free solid `R`-module `R[S]^solid` on a profinite set `S` is the condensed dual of
-`LocallyConstant S R`: its sections over `X` are the `R`-linear maps
+/-- The condensed `R`-module `R[S]^solid = (Condensed.profiniteSolid R).obj S` on a profinite set
+`S` is the condensed dual of `LocallyConstant S R`: its sections over `X` are the `R`-linear maps
 `LocallyConstant S R → LocallyConstant X R`. The isomorphism is natural in `S`. -/
 def profiniteSolidIsoLocallyConstantDual : profiniteSolid R ≅ locallyConstantDual R :=
   Functor.rightKanExtensionUnique _ (profiniteSolidCounit R) _
@@ -228,20 +257,17 @@ lemma locallyConstantDualEval_hom_app_apply {S : Profinite.{u}} (f : LocallyCons
 `(locallyConstantDual R).obj S` as a product of copies of the discrete condensed module `R`. -/
 def isLimitLocallyConstantDualFan {I : Type (u + 1)} {S : Profinite.{u}}
     (b : Module.Basis I R (LocallyConstant S R)) :
-    IsLimit (Fan.mk ((locallyConstantDual R).obj S) fun i ↦ locallyConstantDualEval R (b i)) := by
-  -- Limits of sheaves, and of presheaves, are detected sectionwise.
-  refine @isLimitOfReflects _ _ _ _ _ _ _
-    (sheafToPresheaf (coherentTopology CompHaus.{u}) (ModuleCat.{u + 1} R)) _ ?_
-    ((fullyFaithful_reflectsLimits.{u + 1, u + 1} _).reflectsLimitsOfShape.reflectsLimit)
-  apply evaluationJointlyReflectsLimits
-  intro X
-  -- On sections, a linear map out of `LocallyConstant S R` is determined freely by its values
-  -- on the basis (`Module.Basis.constr`), so the cone of sections is the concrete product cone:
-  -- its `i`-th leg evaluates `b.constr R L` at `b i`, which is `L i`.
-  exact (ModuleCat.productConeIsLimit.{u + 1, u + 1, u + 1}
-    fun _ : I ↦ ModuleCat.of R (LocallyConstant X.unop R)).ofIsoLimit
-    (Cone.ext ((locallyConstantDualSectionsEquiv R S X ≪≫ₗ (b.constr R).symm).toModuleIso.symm)
-      fun ⟨i⟩ ↦ by ext L; exact (b.constr_basis R L i).symm)
+    IsLimit (Fan.mk ((locallyConstantDual R).obj S) fun i ↦ locallyConstantDualEval R (b i)) :=
+  isLimitOfIsLimitSections R _ fun X ↦
+    -- Rewrite the evaluated diagram as the discrete diagram on the evaluated factors.
+    IsLimit.postcomposeHomEquiv (Discrete.compNatIsoDiscrete _ _) _ <|
+    -- On sections, a linear map out of `LocallyConstant S R` is determined freely by its values
+    -- on the basis (`Module.Basis.constr`), so the cone of sections is the concrete product cone:
+    -- its `i`-th leg evaluates `b.constr R L` at `b i`, which is `L i`.
+    (ModuleCat.productConeIsLimit.{u + 1, u + 1, u + 1}
+      fun _ : I ↦ ModuleCat.of R (LocallyConstant X.unop R)).ofIsoLimit
+      (Cone.ext ((locallyConstantDualSectionsEquiv R S X ≪≫ₗ (b.constr R).symm).toModuleIso.symm)
+        fun ⟨i⟩ ↦ by ext L; exact (b.constr_basis R L i).symm)
 
 /-- If `b` is a basis of `LocallyConstant S R` indexed by `I`, then `R[S]^solid` is the product of
 `I` copies of the discrete condensed module `R`. -/
@@ -261,4 +287,4 @@ lemma profiniteSolidObjIsoPi_hom_π {I : Type (u + 1)} {S : Profinite.{u}}
       (profiniteSolidIsoLocallyConstantDual R).hom.app S ≫ locallyConstantDualEval R (b i) := by
   simp [profiniteSolidObjIsoPi]
 
-end Condensed
+end TauCeti

@@ -7,12 +7,13 @@ module
 
 public import Mathlib.Condensed.Discrete.LocallyConstant
 public import Mathlib.Condensed.Functors
+public import TauCeti.Topology.Category.Profinite.Basic
 
 /-!
 # Finite sets as discrete condensed sets
 
 For a finite set `T`, the condensed set represented by the finite profinite set `T` is the
-discrete condensed set on `T` (`Condensed.toProfiniteCompProfiniteToCondensedIso`, natural in `T`):
+discrete condensed set on `T` (`TauCeti.toProfiniteCompProfiniteToCondensedIso`, natural in `T`):
 on sections over a compact Hausdorff space `X`, a continuous map `X → T` is the same as a locally
 constant one, since `T` is discrete.
 -/
@@ -25,12 +26,9 @@ open CategoryTheory Functor
 
 noncomputable section
 
-/-- A finite set, regarded as a compact Hausdorff space, is discrete. -/
-instance FintypeCat.discreteTopology_profiniteToCompHaus_obj (T : FintypeCat.{u}) :
-    DiscreteTopology (profiniteToCompHaus.obj (FintypeCat.toProfinite.obj T)) :=
-  inferInstanceAs (DiscreteTopology (FintypeCat.toProfinite.obj T))
+namespace TauCeti
 
-namespace Condensed
+open Condensed
 
 /-- For a finite set `T`, the condensed set represented by the finite profinite set `T` is the
 discrete condensed set on `T`: a continuous map from a compact Hausdorff space to the finite
@@ -68,4 +66,4 @@ lemma toProfiniteCompProfiniteToCondensedIso_inv_hom_app_apply (T : FintypeCat.{
       (f x).down :=
   (rfl)
 
-end Condensed
+end TauCeti

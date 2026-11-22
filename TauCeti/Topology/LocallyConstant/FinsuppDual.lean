@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
-public import Mathlib.Topology.LocallyConstant.Algebra
+public import TauCeti.Topology.LocallyConstant.Algebra
 
 /-!
 # Locally constant families of finitely supported functions as linear maps
@@ -24,20 +23,10 @@ The equivalence is natural in `X` (`TauCeti.locallyConstantFinsuppLinearEquiv_co
 When `X` is compact Hausdorff and `T` is a finite set, the left-hand side is the module of
 sections over `X` of the discrete condensed module `R[T]`. The equivalence thus identifies `R[T]`
 with the dual of the locally constant functions on `T`, which is the finite case of the
-description of free solid modules on profinite sets.
+description of `Condensed.profiniteSolid R` (informally `R[S]^solid`) on profinite sets `S`.
 -/
 
 public section
-
-namespace LocallyConstant
-
-/-- Zero and addition of locally constant functions are pointwise, so that the generic `FunLike`
-lemmas such as `sum_apply` apply to `LocallyConstant X M`. -/
-instance {X M : Type*} [TopologicalSpace X] [Zero M] : IsZeroApply (LocallyConstant X M) where
-
-instance {X M : Type*} [TopologicalSpace X] [Add M] : IsAddApply (LocallyConstant X M) where
-
-end LocallyConstant
 
 namespace TauCeti
 
@@ -62,17 +51,13 @@ noncomputable def locallyConstantFinsuppLinearEquiv :
         simp [Finsupp.linearCombination_apply, Finsupp.mul_sum, mul_left_comm] }
   map_add' φ ψ := by ext f x; simp
   map_smul' r φ := by ext f x; simp
-  invFun L :=
-    letI := Fintype.ofFinite κ
-    ∑ k, (L (charFn R (isClopen_discrete {e k}))).map (Finsupp.single k)
+  invFun L := (unflip fun k ↦ L (charFn R (isClopen_discrete {e k}))).map
+    (Finsupp.linearEquivFunOnFinite R R κ).symm
   left_inv φ := by
     classical
     let := Fintype.ofFinite κ
     ext x k
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, _root_.sum_apply, map_apply,
-      Function.comp_apply]
-    rw [Finset.sum_apply']
-    simp [Finsupp.single_apply, Finsupp.linearCombination_apply, Finsupp.sum_fintype, coe_charFn,
+    simp [unflip, Finsupp.linearCombination_apply, Finsupp.sum_fintype, coe_charFn,
       Pi.single_apply]
   right_inv L := by
     classical
@@ -84,7 +69,7 @@ noncomputable def locallyConstantFinsuppLinearEquiv :
       obtain ⟨j, rfl⟩ := e.surjective i
       simp [coe_charFn, Pi.single_apply]
     conv_rhs => rw [hf]
-    simp [Finsupp.linearCombination_apply, Finsupp.sum_fintype, Finsupp.single_apply, mul_comm]
+    simp [unflip, Finsupp.linearCombination_apply, Finsupp.sum_fintype, mul_comm]
 
 @[simp]
 lemma locallyConstantFinsuppLinearEquiv_apply_apply (φ : LocallyConstant X (κ →₀ R))
@@ -98,9 +83,8 @@ lemma locallyConstantFinsuppLinearEquiv_apply_apply (φ : LocallyConstant X (κ 
 lemma locallyConstantFinsuppLinearEquiv_symm_apply_apply_apply
     (L : LocallyConstant ι R →ₗ[R] LocallyConstant X R) (x : X) (k : κ) :
     (locallyConstantFinsuppLinearEquiv R X e).symm L x k =
-      L (charFn R (isClopen_discrete {e k})) x := by
-  classical
-  simp [locallyConstantFinsuppLinearEquiv, Finset.sum_apply', Finsupp.single_apply]
+      L (charFn R (isClopen_discrete {e k})) x :=
+  (rfl)
 
 /-- `locallyConstantFinsuppLinearEquiv` is natural in `X`: pulling a family back along
 `g : X → Y` postcomposes the corresponding linear map with the pullback along `g`. -/
