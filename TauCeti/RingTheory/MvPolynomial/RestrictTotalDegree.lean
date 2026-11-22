@@ -54,8 +54,10 @@ the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members 
   finite coefficient coordinates by zero.
 * `MvPolynomial.boundedCoefficientEquiv_inclusion_comp_homogeneous`: including homogeneous
   polynomials in a bounded-degree space extends their coordinates by zero.
-* `MvPolynomial.aeval_mem_restrictTotalDegree`: substituting linear forms for the variables does
-  not raise the total degree.
+* `MvPolynomial.aeval_mem_restrictTotalDegree`: substituting polynomials of total degree at most
+  one, such as affine linear forms, for the variables occurring in a polynomial of total degree at
+  most `m` gives a polynomial of total degree at most `m`, also when the substituted polynomials
+  have coefficients in an `R`-algebra.
 * `MvPolynomial.span_prod_aeval_X_le`: products of a triangular family of one-variable polynomials
   in the separate variables lie in the span of the products of the original family.
 * `Polynomial.Sequence.span_prod_aeval_X_eq_restrictTotalDegree`: the products `∏ᵢ Sₖᵢ(Xᵢ)` of
