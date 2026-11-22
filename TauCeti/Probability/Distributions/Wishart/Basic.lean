@@ -293,7 +293,7 @@ theorem ae_posSemidef_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) 
   refine (ae_iff_prob_eq_one ?_).2 (wishartGramMeasure_setOf_posSemidef ν S)
   apply measurableSet_setOfPred.mp
   exact (_root_.isClosed_setOfPred_posSemidef (n := Fin p) (R := ℝ)).measurableSet.preimage
-    continuous_subtype_val.measurable
+    continuous_subtypeVal.measurable
 
 /-- Every value of the congruated Gram sum has rank at most `min ν S.rank`: the Gram sum of `ν`
 vectors caps the rank at `ν`, and congruating by the square root of `S` caps it at `S.rank`. -/

@@ -15,12 +15,15 @@ public import TauCeti.Geometry.Symplectic.StandardCompatible
 
 A smooth real two-form `ω` on a manifold is **Kähler** for a smooth almost complex structure `J`
 when `ω` is closed, `ω` is compatible with `J` (invariant under `J` and positive on complex lines,
-`TauCeti.SmoothTwoForm.Compatible`), and the Nijenhuis tensor of `J` vanishes. By the
-Newlander–Nirenberg theorem the last condition says that `J` comes from a complex atlas; the
-first two say that the Hermitian metric `g(u, v) = ω(u, J v)` of that complex structure has a
-closed fundamental form `ω`. The predicate is stated on the real carrier `SmoothTwoForm I M` with
-`TauCeti.SmoothForm.IsClosed`, `TauCeti.SmoothTwoForm.Compatible` and
-`TauCeti.SmoothAlmostComplexStructure.nijenhuis`.
+`TauCeti.SmoothTwoForm.Compatible`), and the Nijenhuis tensor of `J` vanishes. On a manifold
+without boundary (`BoundarylessManifold I M`), the Newlander–Nirenberg theorem says that the last
+condition makes `J` come from a complex atlas; the first two then say that the Hermitian metric
+`g(u, v) = ω(u, J v)` of that complex structure has a closed fundamental form `ω`. The predicate
+itself does not assume boundarylessness, and without it there need be no complex atlas: the
+closed half-plane with its standard form and complex structure satisfies all three conditions,
+but a boundary point has no neighbourhood homeomorphic to an open subset of `ℂ`. The predicate
+is stated on the real carrier `SmoothTwoForm I M` with `TauCeti.SmoothForm.IsClosed`,
+`TauCeti.SmoothTwoForm.Compatible` and `TauCeti.SmoothAlmostComplexStructure.nijenhuis`.
 
 ## Main declarations
 
@@ -60,14 +63,17 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 /-- The **Kähler condition** on the real carrier: a closed real two-form compatible with a smooth
 almost complex structure (invariant and positive on complex lines) whose Nijenhuis tensor
-vanishes. Through the Newlander–Nirenberg theorem it is a Kähler metric `g(u, v) = ω(u, J v)` on
-the induced complex manifold. -/
+vanishes. When `M` has no boundary (`BoundarylessManifold I M`), the Newlander–Nirenberg theorem
+makes `J` the almost complex structure of a complex manifold, on which the condition says that
+`g(u, v) = ω(u, J v)` is a Kähler metric. Boundarylessness is not part of the predicate: on the
+closed half-plane the standard form and complex structure satisfy all three conditions, but a
+boundary point has no neighbourhood homeomorphic to an open subset of `ℂ`. -/
 structure IsKahler (form : SmoothTwoForm I M) (J : SmoothAlmostComplexStructure I M) : Prop where
   /-- A Kähler form is closed. -/
   isClosed : form.IsClosed
   /-- A Kähler form is compatible with the almost complex structure. -/
   compatible : form.Compatible J
-  /-- The almost complex structure of a Kähler pair is integrable. -/
+  /-- The almost complex structure of a Kähler pair is integrable: its Nijenhuis tensor vanishes. -/
   nijenhuis_eq_zero : J.nijenhuis = 0
 
 /-- The Kähler condition is the conjunction of closedness, compatibility, and vanishing of the

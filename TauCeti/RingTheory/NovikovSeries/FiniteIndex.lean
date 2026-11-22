@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.FreeModule.Basic
+public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.RingTheory.Trace.Defs
 public import TauCeti.RingTheory.NovikovSeries.Functoriality
 
@@ -51,6 +52,8 @@ basis is the restriction of `a` to `K`, so the trace of `a` is `[H : K]` times t
   infinite index, by the convention for `Module.finrank` of an infinite-rank module).
 * `TauCeti.NovikovSeries.trace_eq_index_smul_comap`: the trace of `a` is `[H : K]` times the
   restriction of `a` to `K`.
+* `TauCeti.NovikovSeries.norm_mapRingHom` and `TauCeti.NovikovSeries.trace_mapRingHom`: the norm
+  and trace over `Nov(R, K, N|K)` commute with changing coefficients along a ring homomorphism.
 
 ## References
 
@@ -82,7 +85,7 @@ private theorem comap_subtype_single_mul_algebraMap_of_notMem {g : H} (hg : g �
     comap K.subtype hφ hker (single g r * algebraMap _ (NovikovSeries R H N) b) = 0 := by
   ext k
   rw [coeff_comap, coeff_single_mul, coeff_algebraMap_addSubgroup_of_notMem, mul_zero, coeff_zero]
-  exact fun hk => hg (by simpa using K.sub_mem k.2 hk)
+  exact fun hk => hg (by simpa using K.sub_mem k.property hk)
 
 /-- Restricting to `K` the translate `e^(-g) a` reads off the coefficients of `a` on `g + K`. -/
 private theorem coeff_comap_subtype_single_neg_mul (g : H) (a : NovikovSeries R H N) (k : K) :
@@ -274,6 +277,60 @@ theorem trace_eq_index_smul_comap
   simp [Algebra.leftMulMatrix_eq_repr_mul, b, coeff_mul_single]
 
 end Ring
+
+section CoefficientChange
+
+variable {S : Type*}
+
+/-- Changing coefficients commutes with taking coordinates in the coset basis. -/
+theorem cosetBasis_repr_mapRingHom [CommSemiring R] [CommSemiring S] (ρ : R →+* S)
+    [K.FiniteIndex] (s : H ⧸ K → H) (hs : ∀ q, (s q : H ⧸ K) = q)
+    (a : NovikovSeries R H N) (q : H ⧸ K) :
+    (cosetBasis K s hs).repr (mapRingHom ρ (AddMonoidHom.id H) exists_period_rescale_id a) q =
+      mapRingHom ρ (AddMonoidHom.id K) exists_period_rescale_id ((cosetBasis K s hs).repr a q) := by
+  ext k
+  simp
+
+variable [CommRing R] [CommRing S] (ρ : R →+* S) [K.FiniteIndex]
+
+/-- Changing coefficients commutes with taking the matrix of multiplication in the coset
+basis. -/
+theorem leftMulMatrix_cosetBasis_mapRingHom (s : H ⧸ K → H) (hs : ∀ q, (s q : H ⧸ K) = q)
+    [Fintype (H ⧸ K)] [DecidableEq (H ⧸ K)] (a : NovikovSeries R H N) :
+    Algebra.leftMulMatrix (cosetBasis K s hs)
+        (mapRingHom ρ (AddMonoidHom.id H) exists_period_rescale_id a) =
+      (mapRingHom ρ (AddMonoidHom.id K) exists_period_rescale_id).mapMatrix
+        (Algebra.leftMulMatrix (cosetBasis K s hs) a) := by
+  ext i j k
+  simp
+
+/-- The norm of a Novikov series over the Novikov series on a finite-index subgroup commutes with
+changing coefficients. -/
+theorem norm_mapRingHom (a : NovikovSeries R H N) :
+    Algebra.norm (NovikovSeries S K (N.comp K.subtype))
+        (mapRingHom ρ (AddMonoidHom.id H) exists_period_rescale_id a) =
+      mapRingHom ρ (AddMonoidHom.id K) exists_period_rescale_id
+        (Algebra.norm (NovikovSeries R K (N.comp K.subtype)) a) := by
+  classical
+  have := Fintype.ofFinite (H ⧸ K)
+  rw [Algebra.norm_eq_matrix_det (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
+    Algebra.norm_eq_matrix_det (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
+    leftMulMatrix_cosetBasis_mapRingHom, RingHom.map_det]
+
+/-- The trace of a Novikov series over the Novikov series on a finite-index subgroup commutes with
+changing coefficients. -/
+theorem trace_mapRingHom (a : NovikovSeries R H N) :
+    Algebra.trace (NovikovSeries S K (N.comp K.subtype)) (NovikovSeries S H N)
+        (mapRingHom ρ (AddMonoidHom.id H) exists_period_rescale_id a) =
+      mapRingHom ρ (AddMonoidHom.id K) exists_period_rescale_id
+        (Algebra.trace (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) a) := by
+  classical
+  have := Fintype.ofFinite (H ⧸ K)
+  rw [Algebra.trace_eq_matrix_trace (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
+    Algebra.trace_eq_matrix_trace (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
+    leftMulMatrix_cosetBasis_mapRingHom, RingHom.mapMatrix_apply, AddMonoidHom.map_trace]
+
+end CoefficientChange
 
 end NovikovSeries
 

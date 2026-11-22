@@ -113,9 +113,9 @@ variable (K L) in
 determined by, and determines, the image of `X`. -/
 noncomputable def algEquivEquivGenerator : (RatFunc K ≃ₐ[K] L) ≃ {f : L // K⟮f⟯ = ⊤} where
   toFun σ := ⟨σ X, adjoin_apply_X_eq_top σ⟩
-  invFun f := algEquivOfAdjoinEqTop f.2
+  invFun f := algEquivOfAdjoinEqTop f.property
   left_inv σ := algEquiv_ext (by simp)
-  right_inv f := Subtype.ext (algEquivOfAdjoinEqTop_X f.2)
+  right_inv f := Subtype.ext (algEquivOfAdjoinEqTop_X f.property)
 
 @[simp]
 theorem algEquivEquivGenerator_apply (σ : RatFunc K ≃ₐ[K] L) :
@@ -124,7 +124,7 @@ theorem algEquivEquivGenerator_apply (σ : RatFunc K ≃ₐ[K] L) :
 
 @[simp]
 theorem algEquivEquivGenerator_symm_apply (f : {f : L // K⟮f⟯ = ⊤}) :
-    (algEquivEquivGenerator K L).symm f = algEquivOfAdjoinEqTop f.2 :=
+    (algEquivEquivGenerator K L).symm f = algEquivOfAdjoinEqTop f.property :=
   (rfl)
 
 end RatFunc

@@ -148,20 +148,20 @@ theorem sum_mul_wassersteinEDist_rpow_map_le (hd : Measurable fun z : X × X ↦
 
 end General
 
-section NormedSpace
-
-variable {ι E : Type*} [Fintype ι] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] {w : ι → ℝ≥0}
-
-omit [BorelSpace E] [SecondCountableTopology E] in
 /-- For weights summing to `1`, the weighted mean of a multi-coupling of probability laws is a
 probability law. -/
-private theorem isProbabilityMeasure_map_sum_smul (hw : ∑ i, w i = 1) {μ : ι → Measure E}
+private theorem isProbabilityMeasure_map_sum_smul {ι E : Type*} [Fintype ι] [AddCommMonoid E]
+    [SMul ℝ E] [MeasurableSpace E] {w : ι → ℝ≥0} (hw : ∑ i, w i = 1) {μ : ι → Measure E}
     [∀ i, IsProbabilityMeasure (μ i)] {γ : Measure (ι → E)} (hγ : Measure.IsMultiCoupling γ μ) :
     IsProbabilityMeasure (γ.map fun x ↦ ∑ j, (w j : ℝ) • x j) := by
   obtain ⟨i, -, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hw.trans_ne one_ne_zero)
   have := hγ.isProbabilityMeasure i
   infer_instance
+
+section NormedSpace
+
+variable {ι E : Type*} [Fintype ι] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] {w : ι → ℝ≥0}
 
 /-- **The weighted mean of a multi-coupling is a competitor for the barycenter.** For every
 multi-marginal coupling `γ` of the laws `μ i`, the weighted quadratic Wasserstein cost of the law
@@ -178,18 +178,13 @@ theorem sum_mul_wassersteinEDist_sq_map_le {μ : ι → Measure E} {γ : Measure
 
 end NormedSpace
 
-section Polish
-
-variable {J X : Type*} [Fintype J] [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
-  [SecondCountableTopology X] [CompleteSpace X] {w : J → ℝ≥0} {p : ℝ≥0∞}
-
-omit [Fintype J] in
 /-- Gluing optimal plans from `ν` to each `μ j` along their common first marginal `ν` gives a
 joint law `Γ` of a point and a multi-coupling of the laws `μ j` whose `j`th pair has cost
 `W_p(ν, μ j) ^ p`. -/
-private theorem exists_glue_wassersteinEDist_rpow_eq [Finite J] (hp0 : p ≠ 0) (hp : p ≠ ∞)
-    (μ : J → Measure X) [∀ j, IsProbabilityMeasure (μ j)] (ν : Measure X)
-    [IsProbabilityMeasure ν] :
+private theorem exists_glue_wassersteinEDist_rpow_eq {J X : Type*} [Finite J]
+    [PseudoEMetricSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X] {p : ℝ≥0∞}
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ : J → Measure X) [∀ j, IsProbabilityMeasure (μ j)]
+    (ν : Measure X) [IsProbabilityMeasure ν] :
     ∃ Γ : Measure (X × (J → X)), Γ.fst = ν ∧ Measure.IsMultiCoupling Γ.snd μ ∧
       ∀ j, wassersteinEDist p ν (μ j) ^ p.toReal = ∫⁻ q, edist q.1 (q.2 j) ^ p.toReal ∂Γ := by
   choose π hπ hπW using fun j ↦ exists_isCoupling_eLpNorm_eq_wassersteinEDist hp0 hp ν (μ j)
@@ -206,7 +201,7 @@ private theorem exists_glue_wassersteinEDist_rpow_eq [Finite J] (hp0 : p ≠ 0) 
     lintegral_map (measurable_edist.pow_const _) (he j)]
   rfl
 
-end Polish
+section InnerProductSpace
 
 variable {ι E : Type*} [Fintype ι] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] {w : ι → ℝ≥0}
@@ -364,6 +359,8 @@ theorem isFrechetBarycenter_two_iff_exists_isMinOn_lintegral_map_eq (hw : ∑ i,
     rw [hγν] at hmin'
     exact isMinOn_iff.1 hmin' ((z : ProbabilityMeasure E) : Measure E)
       (inferInstance : IsProbabilityMeasure ((z : ProbabilityMeasure E) : Measure E))
+
+end InnerProductSpace
 
 /-! ### Barycenters in proper metric spaces
 
