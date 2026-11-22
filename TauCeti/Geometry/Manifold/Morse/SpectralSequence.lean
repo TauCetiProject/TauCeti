@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 import TauCeti.Geometry.Manifold.Morse.Generic.Inequalities
