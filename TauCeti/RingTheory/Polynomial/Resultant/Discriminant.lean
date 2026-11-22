@@ -791,7 +791,7 @@ theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsDomain D]
   have : CharZero (FractionRing D) := charZero_of_injective_algebraMap hinj
   apply (map_ne_zero_iff (algebraMap D (FractionRing D)) hinj).mp
   apply (p.separable_map_iff_map_discr_ne_zero _ ?_).mp
-  · exact PerfectField.separable_iff_squarefree.mpr hp.map_fraction_map
+  · exact PerfectField.separable_iff_squarefree.mpr (hp.map_localization_map (nonZeroDivisors D))
   · exact (map_ne_zero_iff _ hinj).mpr (leadingCoeff_ne_zero.mpr hp.ne_zero)
 
 /-- An integral polynomial whose leading coefficient is not divisible by a prime `p` has separable

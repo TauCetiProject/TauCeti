@@ -204,7 +204,7 @@ theorem squarefree_prod (hB : F.IsSquarefreeBasis B) : Squarefree (∏ b ∈ B, 
 theorem squarefree_prod_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
     (hB : F.IsSquarefreeBasis B) : Squarefree (∏ b ∈ B, b.map (algebraMap D K)) := by
   rw [← Polynomial.map_prod]
-  exact hB.squarefree_prod.map_fraction_map
+  exact hB.squarefree_prod.map_localization_map (nonZeroDivisors D)
 
 /-- In characteristic zero, the product of any subfamily of a squarefree basis has
 nonzero discriminant. This includes the empty subfamily, whose product is `1`. -/
@@ -224,7 +224,7 @@ theorem discr_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) :
 theorem isCoprime_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
     (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B) (hne : b ≠ b') :
     IsCoprime (b.map (algebraMap D K)) (b'.map (algebraMap D K)) :=
-  (hB.isRelPrime b hb b' hb' hne).map_fraction_map.isCoprime
+  ((hB.isRelPrime b hb b' hb' hne).map_localization_map (nonZeroDivisors D)).isCoprime
 
 /-- The resultant of two distinct members of a squarefree basis is nonzero. -/
 theorem resultant_ne_zero [IsDomain D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B)

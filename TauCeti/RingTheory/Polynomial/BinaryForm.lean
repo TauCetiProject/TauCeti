@@ -72,7 +72,8 @@ theorem separable_map_radical {R : Type*} (K L : Type*) [CommRing R] [IsDomain R
     [IsScalarTower R K L] (f : R[X]) :
     ((radical f).map (algebraMap R L)).Separable := by
   have hK : ((radical f).map (algebraMap R K)).Separable :=
-    PerfectField.separable_iff_squarefree.2 squarefree_radical.map_fraction_map
+    PerfectField.separable_iff_squarefree.2 <|
+      squarefree_radical.map_localization_map (nonZeroDivisors R)
   have h := hK.map (f := algebraMap K L)
   rwa [Polynomial.map_map, ← IsScalarTower.algebraMap_eq] at h
 
