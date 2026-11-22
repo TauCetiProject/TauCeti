@@ -9,6 +9,8 @@ public import Mathlib.Algebra.MvPolynomial.Eval
 public import TauCeti.LowDimTopology.Heegaard.AlexanderGrading
 public import TauCeti.LowDimTopology.Heegaard.MinusDifferential
 
+import TauCeti.Algebra.MvPolynomial.AevalConstX
+
 /-!
 # The knot Floer differential of a doubly pointed Heegaard diagram
 
@@ -258,14 +260,6 @@ theorem aeval_knotCoefficient_X_X :
   rw [Int.toNat_add (basepoint_nonneg_of_mem_minusDomains hD w)
     (basepoint_nonneg_of_mem_minusDomains hD z), pow_add]
 
-/-- Evaluating `U = 0` and `V = 1` is evaluating `U = X` and `V = 1`, and then `X = 0`. -/
-private theorem aeval_zero_one_eq_coeff_zero_aeval_X_one (p : MvPolynomial (Fin 2) (ZMod 2)) :
-    aeval ![(0 : ZMod 2), 1] p = (aeval ![(Polynomial.X : Polynomial (ZMod 2)), 1] p).coeff 0 := by
-  rw [Polynomial.coeff_zero_eq_aeval_zero, ← AlgHom.comp_apply, comp_aeval]
-  congr 2
-  ext i
-  fin_cases i <;> simp
-
 /-- **Setting `U = 0` and `V = 1` gives the hat coefficient of the ambient manifold.** When
 finitely many domains are counted, evaluating `U = 0` and `V = 1` keeps the counted domains
 avoiding `w`, with any multiplicity at `z`: this is the hat coefficient of the diagram pointed at
@@ -273,19 +267,11 @@ avoiding `w`, with any multiplicity at `z`: this is the hat coefficient of the d
 theorem aeval_knotCoefficient_zero_one (hfin : (H.minusDomains χ x y).Finite) :
     aeval ![(0 : ZMod 2), 1] (H.knotCoefficient χ w z x y) =
       (H.withBasepoints fun _ : Unit => H.basepoint w).hatCoefficient χ x y := by
-  rw [aeval_zero_one_eq_coeff_zero_aeval_X_one, aeval_knotCoefficient_X_one,
-    coeff_zero_minusCoefficient (by rwa [minusDomains_withBasepoints])]
-
-/-- Evaluating `U = V = 0` is evaluating `U = V = X`, and then `X = 0`. -/
-private theorem constantCoeff_eq_coeff_zero_aeval_X_X (p : MvPolynomial (Fin 2) (ZMod 2)) :
-    constantCoeff p =
-      (aeval ![(Polynomial.X : Polynomial (ZMod 2)), Polynomial.X] p).coeff 0 := by
-  have h0 : (fun i => Polynomial.aeval (0 : ZMod 2)
-      (![(Polynomial.X : Polynomial (ZMod 2)), Polynomial.X] i)) = 0 := by
-    ext i
-    fin_cases i <;> simp
-  rw [Polynomial.coeff_zero_eq_aeval_zero, ← AlgHom.comp_apply, comp_aeval, h0, aeval_zero,
-    Algebra.algebraMap_self, RingHom.id_apply]
+  rw [← coeff_zero_minusCoefficient (by rwa [minusDomains_withBasepoints]),
+    ← aeval_knotCoefficient_X_one, coeff_zero_aeval, aeval_eq_eval]
+  congr
+  ext i
+  fin_cases i <;> simp
 
 /-- **Setting `U = V = 0` gives the hat knot Floer coefficient.** When finitely many domains are
 counted, the constant coefficient of the knot coefficient is the hat coefficient of the diagram
@@ -294,8 +280,9 @@ its hat differential. -/
 theorem constantCoeff_knotCoefficient (hfin : (H.minusDomains χ x y).Finite) :
     constantCoeff (H.knotCoefficient χ w z x y) =
       (H.withBasepoints ![H.basepoint w, H.basepoint z]).hatCoefficient χ x y := by
-  rw [constantCoeff_eq_coeff_zero_aeval_X_X, aeval_knotCoefficient_X_X,
-    coeff_zero_minusCoefficient (by rwa [minusDomains_withBasepoints])]
+  rw [← coeff_zero_minusCoefficient (by rwa [minusDomains_withBasepoints]),
+    ← aeval_knotCoefficient_X_X, Matrix.vec_single_eq_const (Polynomial.X : Polynomial (ZMod 2)),
+    Matrix.vecCons_const, coeff_zero_aeval_const_X]
 
 end Specialization
 
@@ -441,7 +428,9 @@ theorem mapRange_constantCoeff_knotDifferential (hfin : ∀ x y, (H.minusDomains
             (map_zero _) c) := by
     ext x
     rw [Finsupp.mapRange_apply, Finsupp.mapRange_apply, Finsupp.mapRange_apply,
-      Polynomial.constantCoeff_apply, constantCoeff_eq_coeff_zero_aeval_X_X]
+      Polynomial.constantCoeff_apply,
+      Matrix.vec_single_eq_const (Polynomial.X : Polynomial (ZMod 2)), Matrix.vecCons_const,
+      coeff_zero_aeval_const_X]
   rw [h, h, mapRange_aeval_X_X_knotDifferential,
     mapRange_constantCoeff_minusDifferential fun x y => by
       rw [minusDomains_withBasepoints]
@@ -463,7 +452,10 @@ theorem mapRange_aeval_zero_one_knotDifferential (hfin : ∀ x y, (H.minusDomain
           (Finsupp.mapRange (aeval ![(Polynomial.X : Polynomial (ZMod 2)), 1]) (map_zero _) c) := by
     ext x
     rw [Finsupp.mapRange_apply, Finsupp.mapRange_apply, Finsupp.mapRange_apply,
-      Polynomial.constantCoeff_apply, aeval_zero_one_eq_coeff_zero_aeval_X_one]
+      Polynomial.constantCoeff_apply, coeff_zero_aeval, aeval_eq_eval]
+    congr
+    ext i
+    fin_cases i <;> simp
   rw [h, h, mapRange_aeval_X_one_knotDifferential,
     mapRange_constantCoeff_minusDifferential fun x y => by
       rw [minusDomains_withBasepoints]
