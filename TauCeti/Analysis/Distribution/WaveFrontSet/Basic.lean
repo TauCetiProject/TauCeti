@@ -215,6 +215,18 @@ theorem localFourier_smulLeftCLM (T : 𝓓'(Ω, ℂ)) {g : E → ℝ} (hg : Cont
   ext x
   simp [bilinLeftCLM_apply, mul_assoc]
 
+/-- Modulating the cutoff by the Fourier atom `e_ζ` shifts the localized Fourier transform by `ζ`:
+`T ((φ e_ζ) e_η) = T (φ e_(ζ + η))`. -/
+@[simp]
+theorem localFourier_bilinLeftCLM_fourierAtom (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (ζ η : E) :
+    T.localFourier (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom ζ)
+      φ) η = T.localFourier φ (ζ + η) := by
+  rw [localFourier_def, localFourier_def]
+  congr 1
+  ext x
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', TauCeti.fourierAtom_add_left]
+  ring
+
 /-- The localized Fourier transform of a restriction `T|_{Ω'}` with cutoff `φ` is that of `T`
 with cutoff `φ` extended by zero. -/
 @[simp]
@@ -435,6 +447,11 @@ theorem isMicrolocallySmoothAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (
     (fun N => ⟨0, fun η => ?_⟩) ξ
   simp [localFourier_eq_zero_of_disjoint_dsupport
     (disjoint_left.2 fun _ hy => (hφ hy).1 : Disjoint (tsupport φ) (dsupport T)) η]
+
+/-- The zero distribution is microlocally smooth in every direction at every point of `Ω`. -/
+theorem isMicrolocallySmoothAt_zero {x : E} (hx : x ∈ Ω) (ξ : E) :
+    (0 : 𝓓'(Ω, ℂ)).IsMicrolocallySmoothAt x ξ :=
+  isMicrolocallySmoothAt_of_notMem_dsupport hx (by simp) ξ
 
 /-- The wave front set lies over the support of the distribution. -/
 theorem waveFrontSet_subset_dsupport (T : 𝓓'(Ω, ℂ)) :
