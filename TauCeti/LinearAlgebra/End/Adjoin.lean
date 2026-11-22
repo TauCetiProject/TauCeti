@@ -47,7 +47,7 @@ theorem mem_invtSubmodule_of_mem_adjoin {R K M : Type*} [CommSemiring R] [Semiri
   simp only [Module.End.mem_invtSubmodule_iff_forall_mem_of_mem] at hp ⊢
   intro x hx
   simpa only [Submodule.restrictScalars_mem, Module.End.smul_def] using
-    Algebra.smul_mem_of_mem_adjoin (P := p.restrictScalars R)
+    (p.restrictScalars R).smul_mem_of_mem_adjoin
       (by simpa only [Submodule.restrictScalars_mem, Module.End.smul_def] using hp) hg
       ((Submodule.restrictScalars_mem R p x).mpr hx)
 

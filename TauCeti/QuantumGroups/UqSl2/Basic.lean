@@ -422,7 +422,7 @@ theorem _root_.Submodule.smul_mem_of_uqSl2_generators {V : Type*} [AddCommMonoid
     [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V] (W : Submodule ℂ V)
     (he : ∀ x ∈ W, e q • x ∈ W) (hf : ∀ x ∈ W, f q • x ∈ W) (hk : ∀ x ∈ W, k q • x ∈ W)
     (hkInv : ∀ x ∈ W, kInv q • x ∈ W) (a : UqSl2 q) {x : V} (hx : x ∈ W) : a • x ∈ W := by
-  refine Algebra.smul_mem_of_mem_adjoin (s := Set.range (generator q)) ?_
+  refine W.smul_mem_of_mem_adjoin (s := Set.range (generator q)) ?_
     (adjoin_range_generator (q := q) ▸ Algebra.mem_top) hx
   rintro _ ⟨g, rfl⟩
   cases g
