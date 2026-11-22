@@ -139,12 +139,8 @@ theorem squareDeriv_apply (a v : ι → 𝕜) (i : ι) : squareDeriv a v i = 2 *
 theorem hasFDerivAt_coordwise_sq [Finite ι] (a : ι → 𝕜) :
     HasFDerivAt (fun z : ι → 𝕜 ↦ fun i ↦ z i ^ 2) (squareDeriv a) a := by
   have := Fintype.ofFinite ι
-  refine hasFDerivAt_pi'.2 fun i ↦ ?_
-  have hL : (proj i).comp (squareDeriv a) = (2 * a i) • proj i := by
-    ext v
-    simp
-  rw [hL]
-  simpa using (hasFDerivAt_apply (𝕜 := 𝕜) i a).pow 2
+  unfold squareDeriv
+  exact hasFDerivAt_pi.2 fun i ↦ by simpa using (hasFDerivAt_apply (𝕜 := 𝕜) i a).pow 2
 
 end CoordwiseSq
 

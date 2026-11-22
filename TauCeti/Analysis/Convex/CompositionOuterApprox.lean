@@ -74,7 +74,9 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
 * `TauCeti.CompositionLift.fst_image_sharedOuterApprox_subset_directOuterApprox_of_monotone`:
   the same comparison when `h` is monotone on the whole height space.
 * `TauCeti.CompositionLift.sharedOuterApprox_empty_heights`,
-  `TauCeti.CompositionLift.directOuterApprox_of_isEmpty` and
+  `TauCeti.CompositionLift.sharedOuterApproxOn_empty_heights`,
+  `TauCeti.CompositionLift.directOuterApprox_of_isEmpty`,
+  `TauCeti.CompositionLift.sharedOuterApproxOn_of_isEmpty` and
   `TauCeti.CompositionLift.fst_image_sharedOuterApprox_of_isEmpty`: the degenerate cases of no
   admissible heights and no anchors.
 
@@ -109,11 +111,20 @@ def outerRow (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dh : (ι
 theorem outerRow_def : outerRow g h a Dh y = h (g a) + Dh (y - g a) :=
   (rfl)
 
+/-- A continuous linear outer function is its own outer row at any anchor. -/
+@[simp]
+theorem outerRow_continuousLinearMap (L : (ι → ℝ) →L[ℝ] ℝ) : outerRow g L a L y = L y := by
+  simp [outerRow_def]
+
 /-- For the outer sum, the outer row at any anchor is the sum of the heights. -/
 @[simp]
 theorem outerRow_sum_coord [Fintype ι] :
     outerRow g (fun y ↦ ∑ j, y j) a (∑ j, ContinuousLinearMap.proj j) y = ∑ j, y j := by
-  simp [outerRow_def, Finset.sum_sub_distrib]
+  convert outerRow_continuousLinearMap (g := g) (a := a) (y := y)
+    (∑ j, ContinuousLinearMap.proj (R := ℝ) j) using 2
+  · ext
+    simp
+  · simp
 
 @[simp]
 theorem outerRow_self : outerRow g h a Dh (g a) = h (g a) := by
@@ -155,11 +166,16 @@ def directRow (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dg : X 
 theorem componentRow_def : componentRow g a Dg x = g a + Dg (x - a) :=
   (rfl)
 
+/-- A continuous linear inner map is its own component row at any anchor. -/
+@[simp]
+theorem componentRow_continuousLinearMap (L : X →L[ℝ] ι → ℝ) : componentRow L a L x = L x := by
+  simp [componentRow_def]
+
 /-- The component row of the identity inner map is the identity at every anchor. -/
 @[simp]
 theorem componentRow_id [Fintype ι] (a x : ι → ℝ) :
     componentRow id a (ContinuousLinearMap.id ℝ _) x = x := by
-  simp [componentRow_def]
+  simpa using componentRow_continuousLinearMap (a := a) (x := x) (ContinuousLinearMap.id ℝ _)
 
 theorem directRow_def : directRow g h a Dg Dh x = h (g a) + Dh (Dg (x - a)) :=
   (rfl)
@@ -309,6 +325,12 @@ budget. -/
 theorem sharedOuterApprox_empty_heights : sharedOuterApprox D ∅ g h a Dg Dh b = ∅ :=
   subset_empty_iff.1 <| sharedOuterApprox_subset_prod.trans (prod_empty (s := D)).subset
 
+/-- With no admissible heights the shared approximation with exact rows on `J` is empty, whatever
+the anchors, rows and budget. -/
+@[simp]
+theorem sharedOuterApproxOn_empty_heights : sharedOuterApproxOn J D ∅ g h a Dg Dh b = ∅ :=
+  subset_empty_iff.1 <| sharedOuterApproxOn_subset.trans sharedOuterApprox_empty_heights.subset
+
 /-- Without anchors the direct approximation is the domain. -/
 @[simp]
 theorem directOuterApprox_of_isEmpty [IsEmpty κ] : directOuterApprox D g h a Dg Dh b = D := by
@@ -319,6 +341,14 @@ theorem directOuterApprox_of_isEmpty [IsEmpty κ] : directOuterApprox D g h a Dg
 @[simp]
 theorem sharedOuterApprox_of_isEmpty [IsEmpty κ] :
     sharedOuterApprox D E g h a Dg Dh b = D ×ˢ E := by
+  ext z
+  simp
+
+/-- Without anchors the shared approximation with exact rows on `J` is the product of the domain
+and the heights. -/
+@[simp]
+theorem sharedOuterApproxOn_of_isEmpty [IsEmpty κ] :
+    sharedOuterApproxOn J D E g h a Dg Dh b = D ×ˢ E := by
   ext z
   simp
 

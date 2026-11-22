@@ -23,8 +23,9 @@ Small real examples for the rows `TauCeti.CompositionLift.componentRow`,
 `TauCeti.CompositionLift.outerRow` and `TauCeti.CompositionLift.directRow` and the outer
 approximations `TauCeti.CompositionLift.directOuterApprox`,
 `TauCeti.CompositionLift.sharedOuterApprox` and `TauCeti.CompositionLift.sharedOuterApproxOn`.
-All derivatives are the actual Fréchet derivatives of the inner and outer functions at the
-anchors.
+In the explicitly computed rows, all derivatives are the actual Fréchet derivatives of the inner
+and outer functions at the anchors; the empty-height result holds for arbitrary continuous linear
+row maps.
 
 * Squared coordinates `g x = (x_j ^ 2)_j` with outer sum `h y = ∑ j, y j`. At the anchor `(1, 1)`
   the rows are `G x = (2 x₀ - 1, 2 x₁ - 1)`, `H y = y₀ + y₁` and `C x = 2 x₀ + 2 x₁ - 2`, with
@@ -36,10 +37,10 @@ anchors.
   admissible heights the shared approximation is empty, whatever the anchors, while the direct set
   of the box with budget one and copies of the anchor `(1, 1)` contains `0`: the height domain
   cannot be discarded.
-* The two anchors `(1, 1)` and `(-1, -1)` with budget `1/2` give the direct set
-  `|x₀ + x₁| ≤ 5/4` and the projected shared set `|x₀| + |x₁| ≤ 5/4`. The objective `-x₀ + x₁`
-  attains `-2`, `-5/4` and `-1` on the direct, shared and original sets, and the exact lift of
-  `TauCeti.CompositionLift.liftedSet` retains `-1`.
+* On the box `[-1, 1]²`, the two anchors `(1, 1)` and `(-1, -1)` with budget `1/2` give the
+  direct set `|x₀ + x₁| ≤ 5/4` and the projected shared set `|x₀| + |x₁| ≤ 5/4`. The objective
+  `-x₀ + x₁` attains `-2`, `-5/4` and `-1` on the direct, shared and original sets, and the exact
+  lift of `TauCeti.CompositionLift.liftedSet` retains `-1`.
 * For `g x = x ^ 2` and `h = id` with budget `1/4`, the shared heights at the anchor `0` project
   onto the whole line, while the direct row at the anchor `1` is `x ≤ 5/8`: with different anchors
   the shared projection need not lie in the direct set.
@@ -384,8 +385,12 @@ theorem hasFDerivAt_line_id (a : ℝ) :
 @[simp]
 theorem componentRow_line_id (a x : ℝ) :
     componentRow (fun x : ℝ ↦ fun _ : Fin 1 ↦ x) a (toSpanSingleton ℝ 1) x = fun _ ↦ x := by
+  have hL : (fun x : ℝ ↦ fun _ : Fin 1 ↦ x) = toSpanSingleton ℝ 1 := by
+    ext
+    simp
+  rw [hL, componentRow_continuousLinearMap]
   ext
-  simp [componentRow_def]
+  simp
 
 /-! #### Rows at different anchors -/
 
@@ -394,12 +399,9 @@ theorem originalSet_sq_line_quarter :
     originalSet univ (fun x : ℝ ↦ fun _ : Fin 1 ↦ x ^ 2) (fun y ↦ y 0) (1 / 4) =
       Icc (-1 / 2) (1 / 2) := by
   ext x
-  simp only [mem_originalSet, mem_univ, true_and, mem_Icc]
-  constructor
-  · intro hx
-    constructor <;> nlinarith
-  · rintro ⟨h1, h2⟩
-    nlinarith
+  have hq : (1 / 4 : ℝ) = (1 / 2) ^ 2 := by norm_num
+  simp only [mem_originalSet, mem_univ, true_and, mem_Icc, hq, sq_le_sq,
+    abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2), abs_le, neg_div]
 
 /-- For `x ^ 2 ≤ 1/4` on the line, the shared heights at the anchor `0` project onto the whole line:
 the height `0` dominates the component row `0` and satisfies the outer row. -/
