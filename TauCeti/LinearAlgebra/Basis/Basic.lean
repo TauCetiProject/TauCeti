@@ -87,6 +87,7 @@ theorem eq_smul_of_repr_support_subset_singleton (b : Module.Basis ι K V) {w : 
 
 /-- The supremum of the submodules spanned by the individual vectors of a basis is the whole
 module. -/
+@[simp]
 theorem iSup_span_singleton_eq_top (b : Module.Basis ι K V) :
     (⨆ i : ι, Submodule.span K {b i}) = ⊤ := by
   rw [← Submodule.span_iUnion, Set.iUnion_singleton_eq_range, b.span_eq]

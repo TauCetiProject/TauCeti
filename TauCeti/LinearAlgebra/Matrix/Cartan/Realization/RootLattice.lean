@@ -35,7 +35,7 @@ integral coroot coordinates are nonnegative, so dominance is decidable on the we
 * `TauCeti.CartanRealization.posRootCone`: the positive root cone `Q₊`.
 * `TauCeti.CartanRealization.height`: the height on `Q₊`.
 * `TauCeti.CartanRealization.RootLE`: the order `μ ≤ λ` given by `λ - μ ∈ Q₊`, with height
-  difference `TauCeti.CartanRealization.RootLE.height`.
+  difference `TauCeti.CartanRealization.RootLE.height` over a field of characteristic zero.
 * `TauCeti.CartanRealization.IsDominant`: the dominance predicate `λ(hᵢ) ≥ 0` for all `i`.
 * `TauCeti.CartanRealization.restrictRootLatticeEquiv`: the canonical isomorphism
   `R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice` induced by restriction of functionals.
@@ -49,10 +49,12 @@ integral coroot coordinates are nonnegative, so dominance is decidable on the we
 * `TauCeti.CartanRealization.RootLE.antisymm`: the order on weights is antisymmetric.
 * `TauCeti.CartanRealization.finite_setOf_rootLE_height_le`: **finite-height intervals**, the set
   of `μ ≤ λ` with `ht(λ - μ) ≤ n` is finite.
-* `TauCeti.CartanRealization.exists_maximal_of_rootLE_finset`: any nonempty predicate on weights
-  bounded above by finitely many cones `λ - Q₊` has a `RootLE`-maximal element above any witness.
-* `TauCeti.CartanRealization.isDominant_of_forall_exists_nat_apply_coroot`: a weight taking natural
-  values on all simple coroots is dominant.
+* `TauCeti.CartanRealization.exists_maximal_of_rootLE_finset`: over a field of characteristic zero,
+  any nonempty predicate on weights bounded above by finitely many cones `λ - Q₊` has a
+  `RootLE`-maximal element above any witness.
+* `TauCeti.CartanRealization.isDominant_of_forall_exists_nat_apply_coroot`: over a field with a
+  compatible partial order (`[PartialOrder K] [IsOrderedRing K]`), a weight taking natural values
+  on all simple coroots is dominant.
 * `TauCeti.CartanRealization.CoweightLattice.rootLattice_le_weightLattice`: `Q ⊆ P`.
 * `TauCeti.CartanRealization.CoweightLattice.isDominant_coe_iff`: dominance of an integral weight
   is nonnegativity of its coroot coordinates.

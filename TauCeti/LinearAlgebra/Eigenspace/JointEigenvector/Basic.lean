@@ -27,9 +27,11 @@ acting torsion-freely, and on a group multiplicativity exhibits the inverse of `
 endomorphisms are supremum-independent; over any field, every invariant submodule contained in the
 sum of the joint eigenspaces decomposes as the supremum of its intersections with them. This
 yields the simultaneous-diagonalization toolkit for a commuting family: the joint eigenspaces span
-in finite dimension when every member is diagonalizable (as a semisimple endomorphism is over an
-algebraically closed field), and any finite-dimensional invariant submodule on which the restricted
-operators pairwise commute and are semisimple decomposes likewise.
+in finite dimension when every member is diagonalizable over any field (and hence when every member
+is semisimple over an algebraically closed field), and over an algebraically closed field any
+finite-dimensional invariant submodule on which the restricted operators pairwise commute and are
+semisimple decomposes likewise (whereas over an arbitrary field, decomposition holds for any
+invariant submodule contained in the sum of the joint eigenspaces).
 
 When `G` is a *finite commutative group* there is a second, unconditional route to the same
 spanning statements. Averaging against the characters of `G` produces Fourier projectors onto
@@ -60,9 +62,10 @@ components of `M_k(Γ₁(N))`.
   `iSup_iInf_eigenspace_eq_top_of_isSemisimple`,
   `iSup_inf_iInf_eigenspace_of_invariant`: in finite dimension, the joint eigenspaces of a
   pairwise-commuting family exhaust the space when each member is diagonalizable (over any field)
-  or semisimple (over an algebraically closed field), and a finite-dimensional invariant submodule
-  on which the restricted endomorphisms pairwise commute and are semisimple decomposes likewise —
-  with the character-indexed forms (`…_unitHom…`) for group representations.
+  or semisimple (over an algebraically closed field), and over an algebraically closed field a
+  finite-dimensional invariant submodule on which the restricted endomorphisms pairwise commute and
+  are semisimple decomposes likewise — with the character-indexed forms (`…_unitHom…`) for group
+  representations.
 * `Submodule.inf_iSup_iInf_eigenspace_eq_of_forall_mapsTo`,
   `Submodule.iSup_inf_iInf_eigenspace_eq_of_le`: over any field (with no commutation,
   semisimplicity, finite-dimensionality, or algebraic-closedness hypothesis), the intersection of

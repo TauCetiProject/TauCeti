@@ -33,8 +33,9 @@ The defining relations move weight vectors along simple roots: `positiveAction R
 A module `M` is a *weight module* (`IsWeightModule R M`) when its weight spaces span `M`. Because
 joint eigenspaces of any linear family are independent (`iSupIndep_weightSpace`) and non-linear
 eigenvalue functions have trivial joint eigenspaces (`TauCeti.iSup_dual_eq_iSup`), every
-`cartanAction`-invariant `K`-subspace — in particular every `Enveloping R`-submodule — decomposes as
-the direct sum of its intersections with the weight spaces, over an arbitrary base field.
+`cartanAction`-invariant `K`-subspace of a weight module — in particular every
+`Enveloping R`-submodule of a weight module — decomposes as the direct sum of its intersections
+with the weight spaces, over an arbitrary base field.
 
 Category `O` (`IsCategoryO R M`) refines `IsWeightModule R M` by requiring finite-dimensional weight
 spaces and a finite set `S` of weights whose downward cones `λ - Q₊` cover all weights of `M`. Both
@@ -174,6 +175,14 @@ theorem commute_cartanAction (x y : H) :
   rw [commute_iff_eq, ← sub_eq_zero, ← Ring.lie_def]
   exact lie_cartanAction_cartanAction R M x y
 
+private theorem end_apply_comp_of_lie {K' M' : Type*} [Ring K'] [AddCommGroup M'] [Module K' M']
+    {u v w : Module.End K' M'} (h : ⁅u, v⁆ = w) (m : M') :
+    u (v m) = v (u m) + w m := by
+  have h' := LinearMap.congr_fun h m
+  rw [Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp, _root_.mul_apply_eq_comp,
+    sub_eq_iff_eq_add, add_comm] at h'
+  exact h'
+
 @[simp]
 theorem lie_cartanAction_positiveAction (x : H) (j : I) :
     ⁅cartanAction R M x, positiveAction R M j⁆ = R.root j x • positiveAction R M j :=
@@ -182,11 +191,7 @@ theorem lie_cartanAction_positiveAction (x : H) (j : I) :
 theorem cartanAction_positiveAction_apply (x : H) (j : I) (m : M) :
     cartanAction R M x (positiveAction R M j m) =
       positiveAction R M j (cartanAction R M x m) + R.root j x • positiveAction R M j m := by
-  have h := LinearMap.congr_fun (lie_cartanAction_positiveAction R M x j) m
-  rw [Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp, _root_.mul_apply_eq_comp,
-    LinearMap.smul_apply, sub_eq_iff_eq_add] at h
-  rw [add_comm]
-  exact h
+  rw [end_apply_comp_of_lie (lie_cartanAction_positiveAction R M x j) m, LinearMap.smul_apply]
 
 @[simp]
 theorem lie_cartanAction_negativeAction (x : H) (j : I) :
@@ -196,10 +201,8 @@ theorem lie_cartanAction_negativeAction (x : H) (j : I) :
 theorem cartanAction_negativeAction_apply (x : H) (j : I) (m : M) :
     cartanAction R M x (negativeAction R M j m) =
       negativeAction R M j (cartanAction R M x m) - R.root j x • negativeAction R M j m := by
-  have h := LinearMap.congr_fun (lie_cartanAction_negativeAction R M x j) m
-  rw [Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp, _root_.mul_apply_eq_comp,
-    LinearMap.neg_apply, LinearMap.smul_apply, sub_eq_iff_eq_add] at h
-  rw [h, sub_eq_add_neg, add_comm]
+  rw [end_apply_comp_of_lie (lie_cartanAction_negativeAction R M x j) m, LinearMap.neg_apply,
+    LinearMap.smul_apply, sub_eq_add_neg]
 
 @[simp]
 theorem lie_positiveAction_negativeAction_self (i : I) :
@@ -208,12 +211,8 @@ theorem lie_positiveAction_negativeAction_self (i : I) :
 
 theorem positiveAction_negativeAction_self_apply (i : I) (m : M) :
     positiveAction R M i (negativeAction R M i m) =
-      negativeAction R M i (positiveAction R M i m) + cartanAction R M (R.coroot i) m := by
-  have h := LinearMap.congr_fun (lie_positiveAction_negativeAction_self R M i) m
-  rw [Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp, _root_.mul_apply_eq_comp,
-    sub_eq_iff_eq_add] at h
-  rw [add_comm]
-  exact h
+      negativeAction R M i (positiveAction R M i m) + cartanAction R M (R.coroot i) m :=
+  end_apply_comp_of_lie (lie_positiveAction_negativeAction_self R M i) m
 
 @[simp]
 theorem lie_positiveAction_negativeAction_of_ne {i j : I} (hij : i ≠ j) :
@@ -313,15 +312,20 @@ theorem weightSpace_def (μ : Dual K H) :
 
 variable {R M}
 
+/-- **Simultaneous eigenvector criterion for weight spaces.** A vector `m` lies in
+`weightSpace R M μ` if and only if every Cartan element `x : H` acts on `m` by the scalar
+`μ x`. -/
 theorem mem_weightSpace_iff {μ : Dual K H} {m : M} :
     m ∈ weightSpace R M μ ↔ ∀ x : H, cartanAction R M x m = μ x • m := by
   simp [weightSpace_def, Submodule.mem_iInf]
 
+/-- Every Cartan element `x : H` acts on a vector in `weightSpace R M μ` by the scalar `μ x`. -/
 theorem cartanAction_apply_of_mem_weightSpace {μ : Dual K H} {m : M}
     (hm : m ∈ weightSpace R M μ) (x : H) :
     cartanAction R M x m = μ x • m :=
   mem_weightSpace_iff.mp hm x
 
+/-- The Cartan action stabilizes each weight space. -/
 theorem cartanAction_mem_weightSpace {μ : Dual K H} {m : M} (hm : m ∈ weightSpace R M μ) (x : H) :
     cartanAction R M x m ∈ weightSpace R M μ := by
   rw [cartanAction_apply_of_mem_weightSpace hm]
@@ -422,6 +426,22 @@ theorem coe_weightSpaceMap_apply (f : M →ₗ[Enveloping R] N) (μ : Dual K H)
     (v : weightSpace R M μ) :
     (weightSpaceMap f μ v : N) = f v := (rfl)
 
+/-- The identity `Enveloping R`-linear map induces the identity on each weight space. -/
+@[simp]
+theorem weightSpaceMap_id (μ : Dual K H) :
+    weightSpaceMap (LinearMap.id : M →ₗ[Enveloping R] M) μ = LinearMap.id := by
+  ext v
+  simp [coe_weightSpaceMap_apply]
+
+/-- `weightSpaceMap` preserves composition of `Enveloping R`-linear maps. -/
+@[simp]
+theorem weightSpaceMap_comp {P : Type*} [AddCommGroup P] [Module K P] [Module (Enveloping R) P]
+    [IsScalarTower K (Enveloping R) P] (g : N →ₗ[Enveloping R] P) (f : M →ₗ[Enveloping R] N)
+    (μ : Dual K H) :
+    weightSpaceMap (g.comp f) μ = (weightSpaceMap g μ).comp (weightSpaceMap f μ) := by
+  ext v
+  simp [coe_weightSpaceMap_apply]
+
 /-- The kernel of `weightSpaceMap f μ` is the pullback of `(LinearMap.ker f).restrictScalars K`
 to `weightSpace R M μ`. -/
 theorem ker_weightSpaceMap (f : M →ₗ[Enveloping R] N) (μ : Dual K H) :
@@ -429,12 +449,24 @@ theorem ker_weightSpaceMap (f : M →ₗ[Enveloping R] N) (μ : Dual K H) :
       ((LinearMap.ker f).restrictScalars K).comap (weightSpace R M μ).subtype := by
   rw [weightSpaceMap, LinearMap.ker_restrict, LinearMap.ker_restrictScalars]
 
+/-- The range of `weightSpaceMap f μ` is the pullback of
+`(weightSpace R M μ).map (f.restrictScalars K)` to `weightSpace R N μ`. -/
+theorem range_weightSpaceMap (f : M →ₗ[Enveloping R] N) (μ : Dual K H) :
+    LinearMap.range (weightSpaceMap f μ) =
+      ((weightSpace R M μ).map (f.restrictScalars K)).comap (weightSpace R N μ).subtype := by
+  rw [weightSpaceMap, LinearMap.range_restrict]
+
 /-- An injective `Enveloping R`-linear map induces an injective map on every weight space. -/
 theorem weightSpaceMap_injective {f : M →ₗ[Enveloping R] N} (hf : Function.Injective f)
     (μ : Dual K H) :
-    Function.Injective (weightSpaceMap f μ) :=
-  fun _ _ h ↦ Subtype.ext (hf (by simpa using congrArg Subtype.val h))
+    Function.Injective (weightSpaceMap f μ) := by
+  intro v w h
+  apply Subtype.ext
+  apply hf
+  simpa only [coe_weightSpaceMap_apply] using congrArg Subtype.val h
 
+/-- An injective `Enveloping R`-linear map reflects weight-space membership: `f m` lies in
+`weightSpace R N μ` if and only if `m` lies in `weightSpace R M μ`. -/
 theorem apply_mem_weightSpace_iff_of_injective {f : M →ₗ[Enveloping R] N}
     (hf : Function.Injective f) {μ : Dual K H} {m : M} :
     f m ∈ weightSpace R N μ ↔ m ∈ weightSpace R M μ := by
@@ -442,6 +474,8 @@ theorem apply_mem_weightSpace_iff_of_injective {f : M →ₗ[Enveloping R] N}
   rw [map_cartanAction, cartanAction_apply_of_mem_weightSpace h,
     ← LinearMap.coe_restrictScalars (R := K) f, map_smul, LinearMap.coe_restrictScalars]
 
+/-- Along an injective `Enveloping R`-linear map, each source weight space equals the `comap` of
+the corresponding target weight space. -/
 theorem weightSpace_eq_comap_of_injective {f : M →ₗ[Enveloping R] N} (hf : Function.Injective f)
     (μ : Dual K H) :
     weightSpace R M μ = (weightSpace R N μ).comap (f.restrictScalars K) := by
@@ -671,8 +705,9 @@ theorem IsWeightModule.weightSpaceMap_surjective (hM : IsWeightModule R M)
     Function.Surjective (weightSpaceMap f μ) := by
   rintro ⟨y, hy⟩
   rw [← hM.map_weightSpace_of_surjective hf μ, Submodule.mem_map] at hy
-  obtain ⟨x, hx, rfl⟩ := hy
-  exact ⟨⟨x, hx⟩, Subtype.ext rfl⟩
+  obtain ⟨x, hx, hxy⟩ := hy
+  refine ⟨⟨x, hx⟩, Subtype.ext ?_⟩
+  rw [coe_weightSpaceMap_apply, ← LinearMap.restrictScalars_apply K f x, hxy]
 
 /-- Surjective `Enveloping R`-linear images of weight modules are weight modules. -/
 theorem IsWeightModule.of_surjective (hM : IsWeightModule R M) {f : M →ₗ[Enveloping R] N}

@@ -294,28 +294,23 @@ private theorem sl2CartanHom_coroot (hA : A default default = 2) :
 private theorem half_mul_two (a : K) : (2⁻¹ * a) * 2 = a := by
   rw [mul_assoc, mul_comm a 2, ← mul_assoc, inv_mul_cancel₀ two_ne_zero, one_mul]
 
+omit [CharZero K] in
+private theorem lie_sl2CartanHom (x : H) (u : Module.End K (Sl2Std K n)) :
+    ⁅sl2CartanHom R lam n x, u⁆ = (2⁻¹ * R.root default x) • ⁅Sl2Std.diag K n, u⁆ := by
+  have h1 : ⁅(1 : Module.End K (Sl2Std K n)), u⁆ = 0 := by simp [Ring.lie_def]
+  simp [sl2CartanHom, add_lie, smul_lie, h1]
+
 private noncomputable def sl2Rep (hA : A default default = 2) (hlam : lam (R.coroot default) = n) :
     Enveloping R →ₐ[K] Module.End K (Sl2Std K n) :=
   _root_.UniversalEnvelopingAlgebra.lift K <| KacMoody.lift <|
     { lie_cartan_cartan := fun x y ↦ by
-        simp only [sl2CartanHom, LinearMap.add_apply, LinearMap.smulRight_apply, lie_add, add_lie,
-          lie_smul, smul_lie, Ring.lie_def (1 : Module.End K (Sl2Std K n)),
-          Ring.lie_def _ (1 : Module.End K (Sl2Std K n)), mul_one, one_mul, sub_self, lie_self,
-          smul_zero, add_zero]
+        rw [lie_sl2CartanHom, ← lie_skew, lie_sl2CartanHom, lie_self, smul_zero, neg_zero,
+          smul_zero]
       lie_cartan_positive := fun x j ↦ by
-        rw [Unique.eq_default j]
-        simp only [sl2CartanHom, LinearMap.add_apply, LinearMap.smulRight_apply, add_lie, smul_lie,
-          LinearMap.smul_apply, smul_eq_mul]
-        have h1 : ⁅(1 : Module.End K (Sl2Std K n)), Sl2Std.raise K n⁆ = 0 := by
-          simp [Ring.lie_def]
-        rw [h1, Sl2Std.lie_diag_raise, smul_zero, zero_add, smul_smul, half_mul_two]
+        rw [Unique.eq_default j, lie_sl2CartanHom, Sl2Std.lie_diag_raise, smul_smul, half_mul_two]
       lie_cartan_negative := fun x j ↦ by
-        rw [Unique.eq_default j]
-        simp only [sl2CartanHom, LinearMap.add_apply, LinearMap.smulRight_apply, add_lie, smul_lie,
-          LinearMap.smul_apply, smul_eq_mul]
-        have h1 : ⁅(1 : Module.End K (Sl2Std K n)), Sl2Std.lower K n⁆ = 0 := by
-          simp [Ring.lie_def]
-        rw [h1, Sl2Std.lie_diag_lower, smul_zero, zero_add, smul_neg, smul_smul, half_mul_two]
+        rw [Unique.eq_default j, lie_sl2CartanHom, Sl2Std.lie_diag_lower, smul_neg, smul_smul,
+          half_mul_two]
       lie_positive_negative_self := fun i ↦ by
         rw [Unique.eq_default i, Sl2Std.lie_raise_lower, sl2CartanHom_coroot R lam n hA, hlam,
           sub_self, zero_smul, zero_add]
