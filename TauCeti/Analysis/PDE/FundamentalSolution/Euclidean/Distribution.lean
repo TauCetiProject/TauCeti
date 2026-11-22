@@ -102,15 +102,7 @@ theorem locallyIntegrable_newtonianKernel (n : ℕ) :
         intro x
         dsimp [C]
         exact newtonianKernel_norm_le_rpow n hn x
-      · rw [show newtonianKernel n = (fun x : EuclideanSpace ℝ (Fin n) ↦
-            ((n : ℝ) * ((n : ℝ) - 2) *
-              volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-              ‖x‖ ^ (2 - (n : ℝ))) by
-          -- Lift the pointwise defining equation so that measurability can see the radial formula.
-          funext x
-          exact newtonianKernel_def n x]
-        apply AEMeasurable.aestronglyMeasurable
-        measurability
+      · exact (measurable_newtonianKernel n).aestronglyMeasurable
 
 /-- The Fréchet derivative of the Newtonian kernel is locally integrable in dimensions zero
 and two, where the kernel is identically zero. -/

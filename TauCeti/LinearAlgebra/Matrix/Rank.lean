@@ -56,6 +56,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 * `Matrix.rank_mul_eq_right_of_rank_eq_card`: left multiplication by a full-column-rank matrix
   preserves rank.
 * `LinearMap.rank_toMatrix`: the rank of the matrix of a linear map is the dimension of its range.
+* `LinearMap.finrank_range_eq_of_toMatrix_eq_transpose`: over a field, maps with transposed
+  matrices have ranges of the same dimension.
 * `Matrix.natCard_range_mulVec_eq_pow_rank`: the column space of a matrix over a field `K` has
   `|K| ^ rank` elements.
 * `Matrix.rank_conjAct_smul` and `Matrix.rank_neg`: conjugation by an invertible matrix and
@@ -80,6 +82,36 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 public section
 
 namespace Matrix
+
+/-- The difference of matrices that agree outside one column has rank at most one. -/
+theorem rank_sub_le_one_of_col_eq {R m n : Type*} [CommRing R] [StrongRankCondition R]
+    [Finite n] (A B : Matrix m n R) (j : n)
+    (h : ∀ k ≠ j, A.col k = B.col k) : (A - B).rank ≤ 1 := by
+  classical
+  have hsub : A - B = vecMulVec (fun i ↦ A i j - B i j) (fun k ↦ if k = j then 1 else 0) := by
+    ext i k
+    by_cases hk : k = j
+    · subst k
+      simp [vecMulVec_apply]
+    · have heq : A i k = B i k := congrFun (h k hk) i
+      simp [vecMulVec_apply, hk, heq]
+  rw [hsub]
+  exact rank_vecMulVec_le _ _
+
+/-- The difference of matrices that agree outside one row has rank at most one. -/
+theorem rank_sub_le_one_of_row_eq {R m n : Type*} [CommRing R] [StrongRankCondition R]
+    [Finite n] (A B : Matrix m n R) (i : m)
+    (h : ∀ k ≠ i, A.row k = B.row k) : (A - B).rank ≤ 1 := by
+  classical
+  have hsub : A - B = vecMulVec (fun k ↦ if k = i then 1 else 0) (fun j ↦ A i j - B i j) := by
+    ext k j
+    by_cases hk : k = i
+    · subst k
+      simp [vecMulVec_apply]
+    · have heq : A k j = B k j := congrFun (h k hk) j
+      simp [vecMulVec_apply, hk, heq]
+  rw [hsub]
+  exact rank_vecMulVec_le _ _
 
 section LinearIndependent
 
@@ -314,6 +346,17 @@ theorem _root_.LinearMap.rank_toMatrix {R M₁ M₂ : Type*} [CommSemiring R] [A
     [Finite n] (f : M₁ →ₗ[R] M₂) (v₁ : Module.Basis m R M₁) (v₂ : Module.Basis n R M₂) :
     (LinearMap.toMatrix v₁ v₂ f).rank = Module.finrank R (LinearMap.range f) := by
   rw [rank_eq_finrank_range_toLin _ v₂ v₁, toLin_toMatrix]
+
+/-- If the matrix of `g` in bases `e'`, `e` is the transpose of the matrix of `f` in bases `c`,
+`c'`, then the ranges of `f` and `g` have the same dimension. -/
+theorem _root_.LinearMap.finrank_range_eq_of_toMatrix_eq_transpose {K V V' W W' : Type*}
+    [Field K] [AddCommMonoid V] [Module K V] [AddCommMonoid V'] [Module K V'] [AddCommMonoid W]
+    [Module K W] [AddCommMonoid W'] [Module K W'] {ι ι' : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype ι'] [DecidableEq ι'] {c : Module.Basis ι K V} {c' : Module.Basis ι' K V'}
+    {e : Module.Basis ι K W} {e' : Module.Basis ι' K W'} {f : V →ₗ[K] V'} {g : W' →ₗ[K] W}
+    (h : LinearMap.toMatrix e' e g = (LinearMap.toMatrix c c' f)ᵀ) :
+    Module.finrank K (LinearMap.range g) = Module.finrank K (LinearMap.range f) := by
+  rw [← g.rank_toMatrix e' e, h, rank_transpose, f.rank_toMatrix]
 
 end ToMatrix
 
