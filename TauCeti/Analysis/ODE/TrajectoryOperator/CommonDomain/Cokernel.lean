@@ -161,7 +161,7 @@ theorem map_ker_le_orthogonal_range_familyDomainTrajectoryOperator
   rintro _ ⟨z, hz, rfl⟩
   rw [Submodule.mem_orthogonal]
   rintro _ ⟨u, rfl⟩
-  have hz' : familyDomainTrajectoryOperator ι (-AL) z = 0 := hz
+  have hz' : familyDomainTrajectoryOperator ι (-AL) z = 0 := LinearMap.mem_ker.1 hz
   simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply, prevL_apply]
   rw [inner_familyDomainTrajectoryOperator_compLpL_prev hSymm, hz', inner_zero_right, neg_zero]
 
@@ -297,7 +297,7 @@ private theorem injective_compLpL_prev_comp_subtype_ker {B : D →L[ℝ] H}
       (familyDomainTrajectoryOperator (p := 2) ι (-AL)).ker.subtype) := by
   refine (injective_iff_map_eq_zero _).2 fun ⟨z, hz⟩ hιz ↦ ?_
   have hιz' : ι.compLpL 2 μ₀ (prev (ι.compLpL 2 μ₀) z) = 0 := by simpa [prevL_apply] using hιz
-  have hz' : familyDomainTrajectoryOperator ι (-AL) z = 0 := hz
+  have hz' : familyDomainTrajectoryOperator ι (-AL) z = 0 := LinearMap.mem_ker.1 hz
   rw [familyDomainTrajectoryOperator_eq_iff_hasWeakLineDerivOn, hιz'] at hz'
   -- The weak derivative of `ι ∘ z = 0` vanishes, so `A z = 0`.
   have hAz := hz'.ae_eq (hasWeakLineDerivOn_zero.congr_ae (Lp.coeFn_zero H 2 μ₀).symm)
@@ -386,6 +386,23 @@ private theorem orthogonal_range_familyDomainTrajectoryOperator_eq_map_ker_of_te
     (ae_of_ae_eq hAL (P := fun T ↦ ∀ x y, ⟪T x, ι y⟫_ℝ = ⟪ι x, T y⟫_ℝ) hSymm)
     (ae_of_ae_eq hAL (P := fun T ↦ ∀ x, ‖(T - Btop) x‖ ≤ c * ‖ι x‖) hc)
 
+/-- Under the hypotheses of `isFredholm_familyDomainTrajectoryOperator`, the cokernel of `D_A` is
+linearly equivalent, through the orthogonal complement of the range, to the image of the kernel
+of `D_{-A}` under `z ↦ ι ∘ z`. -/
+private noncomputable def quotientRangeEquivMapKer (hι : IsCompactOperator ι)
+    (hSymm : ∀ᵐ s ∂volume, ∀ x y : D, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ)
+    (hBbot : Bbot.IsInvertible) (hBtop : Btop.IsInvertible) (hAL : AL =ᵐ[μ₀] A)
+    (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop)) {c : ℝ}
+    (hc : ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
+    (Lp H 2 μ₀ ⧸ (familyDomainTrajectoryOperator (p := 2) ι AL).range) ≃ₗ[ℝ]
+      (familyDomainTrajectoryOperator (p := 2) ι (-AL)).ker.map
+        ((ι.compLpL 2 μ₀).comp (prevL (ι.compLpL 2 μ₀)) : _ →ₗ[ℝ] Lp H 2 μ₀) :=
+  haveI := (isClosed_range_familyDomainTrajectoryOperator_of_ae hι hSymm hBbot hBtop hAL hbot htop
+    hc).completeSpace_coe
+  (familyDomainTrajectoryOperator (p := 2) ι AL).range.quotientEquivOrthogonal.toLinearEquiv.trans
+    (LinearEquiv.ofEq _ _ (orthogonal_range_familyDomainTrajectoryOperator_eq_map_ker_of_tendsto
+      hSymm (inner_apply_eq_inner_of_tendsto_atBot_atTop hSymm hbot htop).2 hBtop hAL hc))
+
 /-- **The trajectory operator over a compactly embedded domain is Fredholm.** Let `ι : D →L[ℝ] H`
 be a compact operator, and let `A : ℝ → (D →L[ℝ] H)` be a family of operators, `ι`-symmetric for
 almost every `s`, with an `L∞` class `AL`, converging to invertible operators `B₋` and `B₊`
@@ -400,8 +417,6 @@ theorem isFredholm_familyDomainTrajectoryOperator (hι : IsCompactOperator ι)
     (familyDomainTrajectoryOperator (p := 2) ι AL).IsFredholm := by
   obtain ⟨c, hc⟩ := hc
   obtain ⟨hSymmbot, hSymmtop⟩ := inner_apply_eq_inner_of_tendsto_atBot_atTop hSymm hbot htop
-  have := (isClosed_range_familyDomainTrajectoryOperator_of_ae hι hSymm hBbot hBtop hAL hbot htop
-    hc).completeSpace_coe
   have := finiteDimensional_ker_familyDomainTrajectoryOperator_neg hι hSymmbot hBbot hSymmtop hBtop
     hAL hbot htop hc
   refine ContinuousLinearMap.IsFredholm.of_finite_ker_coker _
@@ -409,10 +424,7 @@ theorem isFredholm_familyDomainTrajectoryOperator (hι : IsCompactOperator ι)
       htop fun _ ↦ ⟨c, hc.mono fun _ hs _ ↦ hs⟩) ?_
   -- The cokernel is the orthogonal complement of the range, the image of a finite-dimensional
   -- kernel.
-  exact ((familyDomainTrajectoryOperator (p := 2) ι AL).range.quotientEquivOrthogonal
-    |>.toLinearEquiv.trans (LinearEquiv.ofEq _ _
-      (orthogonal_range_familyDomainTrajectoryOperator_eq_map_ker_of_tendsto hSymm hSymmtop hBtop
-        hAL hc))).symm.finiteDimensional
+  exact (quotientRangeEquivMapKer hι hSymm hBbot hBtop hAL hbot htop hc).symm.finiteDimensional
 
 /-- **The index of the trajectory operator over a compactly embedded domain.** Under the
 hypotheses of `isFredholm_familyDomainTrajectoryOperator`, the index of `D_A u = (ι ∘ u)' + A u` is
@@ -427,19 +439,14 @@ theorem index_familyDomainTrajectoryOperator (hι : IsCompactOperator ι)
       (Module.finrank ℝ (familyDomainTrajectoryOperator (p := 2) ι AL).ker : ℤ) -
         Module.finrank ℝ (familyDomainTrajectoryOperator (p := 2) ι (-AL)).ker := by
   obtain ⟨c, hc⟩ := hc
-  have := (isClosed_range_familyDomainTrajectoryOperator_of_ae hι hSymm hBbot hBtop hAL hbot htop
-    hc).completeSpace_coe
-  have horth := orthogonal_range_familyDomainTrajectoryOperator_eq_map_ker_of_tendsto hSymm
-    (inner_apply_eq_inner_of_tendsto_atBot_atTop hSymm hbot htop).2 hBtop hAL hc
   -- On the kernel of `D_{-A}`, the path `ι ∘ z` determines `z`.
-  obtain ⟨e, rfl⟩ := hBtop
+  obtain ⟨e, rfl⟩ := id hBtop
   have hJ := injective_compLpL_prev_comp_subtype_ker e.injective
     (ae_of_ae_eq hAL (P := fun T ↦ ∀ x, ‖(T - e) x‖ ≤ c * ‖ι x‖) hc)
   have hcoker :
       Module.finrank ℝ (Lp H 2 μ₀ ⧸ (familyDomainTrajectoryOperator (p := 2) ι AL).range) =
       Module.finrank ℝ (familyDomainTrajectoryOperator (p := 2) ι (-AL)).ker :=
-    (((familyDomainTrajectoryOperator (p := 2) ι AL).range.quotientEquivOrthogonal
-      |>.toLinearEquiv.trans (LinearEquiv.ofEq _ _ horth)).trans
+    ((quotientRangeEquivMapKer hι hSymm hBbot hBtop hAL hbot htop hc).trans
       ((LinearEquiv.ofEq _ _ (by rw [LinearMap.range_comp, Submodule.range_subtype])).trans
         (LinearEquiv.ofInjective _ hJ).symm)).finrank_eq
   rw [ContinuousLinearMap.index_eq_finrank_sub, hcoker]
