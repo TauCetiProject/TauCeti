@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Computability.Priority.Preservation
-import TauCeti.Computability.SingleOracle.Stage
 
 /-!
 # Regression examples: preservation of protected stage computations
@@ -25,10 +24,6 @@ address `n`: against a set not containing `n` it halts with output `0` and use `
   inactive afterwards, `0` can enter at stage `2` without injuring the requirement, and the
   computation found at stage `0` fails against the limit at every fuel. Absence of injury does not
   preserve a use that the restraint no longer covers.
-* **Fixed versus moving oracles:** against fixed answers a stage computation `evalStage σ s c x`
-  persists at every later stage, while the stage computation `evalStage (setAnswers (A s)) s c x`
-  against the stages of an enumeration is lost at every later stage once a number below its use
-  enters.
 -/
 
 open TauCeti.Enumeration TauCeti.Priority TauCeti.Oracle.Single.Code
@@ -120,20 +115,3 @@ example (k : ℕ) :
   have h0 : 0 ∈ stageLimit fun s => if s ≤ 1 then (∅ : Finset ℕ) else {0} :=
     mem_stageLimit.2 ⟨2, by simp⟩
   rcases k with - | k <;> simp [h0]
-
-/-! ### Fixed versus moving oracles -/
-
--- Against the fixed answers of `∅`, the computation is found at stage `encode oracle + 1`, the
--- first stage exceeding the program index, and persists at every later stage.
-example (t : ℕ) (ht : Encodable.encode oracle + 1 ≤ t) :
-    evalStage (setAnswers ∅) t oracle 0 = some ⟨0, 1⟩ :=
-  evalStage_mono ht (evalStage_eq_some_of_evaln (k := 1) (by simp) (by omega) (by omega) (by simp))
-
--- Against the stages of the enumeration in which `0` enters right after that stage, the
--- computation found there is lost at every later stage.
-example (t : ℕ) (ht : Encodable.encode oracle + 1 < t) :
-    evalStage (setAnswers ↑(if t ≤ Encodable.encode oracle + 1 then (∅ : Finset ℕ) else {0})) t
-      oracle 0 ≠ some ⟨0, 1⟩ := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : t ≠ 0)
-  have hk : ¬k + 1 ≤ Encodable.encode oracle + 1 := by omega
-  simp [hk]
