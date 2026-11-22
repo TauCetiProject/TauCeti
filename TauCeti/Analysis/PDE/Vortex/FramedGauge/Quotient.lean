@@ -127,7 +127,9 @@ instance : IsCancelSMul (SobolevTopologicalGaugeGroup hs) (SobolevFieldSpace f m
 
 /-! ### The coordinates of the transformed field -/
 
-private theorem finrank_lt : (finrank ℝ ℂ : ℝ) < 2 * (k : ℝ) :=
+/-- The Sobolev threshold `dim_ℝ ℂ < 2k` for the field exponent `k > 1`, needed for the
+multiplication `H^k(ℂ) × H^k(ℂ) → H^k(ℂ)`. -/
+theorem finrank_lt : (finrank ℝ ℂ : ℝ) < 2 * (k : ℝ) :=
   finrank_real_complex_lt_two_mul (by exact_mod_cast (Fact.out : 1 < k))
 
 variable (f m) in

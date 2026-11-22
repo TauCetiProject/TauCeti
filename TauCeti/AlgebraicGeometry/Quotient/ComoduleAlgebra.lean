@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Limits
-public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import Mathlib.AlgebraicGeometry.Morphisms.Finite
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Integral
 
 /-!
 # The affine quotient `X // G` of an affine scheme by an affine group action
@@ -45,6 +44,11 @@ a ring by a monoid action, `TauCeti.AffineInvariantQuotient` in
   target.
 * `TauCeti.ComoduleAlgebra.AffineQuotient.existsUnique_desc`: the affine-target universal
   property.
+
+For a finite locally free group scheme, the projection is integral and surjective
+(`isIntegralHom_projection`, `surjective_projection`), including for non-free actions.
+It is finite when `A` is of finite type over the coinvariants (`isFinite_projection`), in
+particular when `A` is of finite type over `R` (`isFinite_projection_of_finiteType`).
 
 ## References
 
@@ -167,5 +171,42 @@ recovers that morphism. -/
 theorem desc_projection {Y : Scheme.{u}} [IsAffine Y] (f : quotient R H A ⟶ Y) :
     desc (projection R H A ≫ f) (by rw [act_projection_assoc]) = f :=
   hom_ext (projection_desc _ _)
+
+end TauCeti.ComoduleAlgebra.AffineQuotient
+
+namespace TauCeti.ComoduleAlgebra.AffineQuotient
+
+variable (R : Type*) (H A : Type u) [CommRing R] [CommRing H] [HopfAlgebra R H]
+  [CommRing A] [Algebra R A] [ComoduleAlgebra R H A]
+  [Module.Finite R H] [Module.Projective R H]
+
+/-- The affine quotient projection for a finite locally free group scheme is integral,
+without a freeness hypothesis. -/
+instance isIntegralHom_projection : IsIntegralHom (projection R H A) := by
+  rw [projection_def]
+  exact IsIntegralHom.SpecMap_iff.mpr
+    (algebraMap_isIntegral_iff.mpr isIntegral_coinvariants)
+
+/-- Every point of the affine quotient by a finite locally free group scheme lifts to the
+original scheme. -/
+instance surjective_projection : Surjective (projection R H A) := by
+  rw [projection_def]
+  let := isIntegral_coinvariants (R := R) (H := H) (A := A)
+  exact ⟨Algebra.IsIntegral.comap_surjective _ _⟩
+
+/-- For a finite locally free group scheme, the projection to the affine quotient is finite
+when `A` is of finite type over the coinvariants. -/
+theorem isFinite_projection [Algebra.FiniteType (coinvariants R H A) A] :
+    IsFinite (projection R H A) := by
+  let := isIntegral_coinvariants (R := R) (H := H) (A := A)
+  rw [projection_def]
+  exact (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr Algebra.IsIntegral.finite)
+
+/-- For a finite locally free group scheme acting on a finite-type affine scheme, the
+projection to the affine quotient is finite. -/
+theorem isFinite_projection_of_finiteType [Algebra.FiniteType R A] :
+    IsFinite (projection R H A) :=
+  have : Algebra.FiniteType (coinvariants R H A) A := .of_restrictScalars_finiteType R _ _
+  isFinite_projection R H A
 
 end TauCeti.ComoduleAlgebra.AffineQuotient

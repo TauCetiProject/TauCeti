@@ -297,13 +297,14 @@ theorem rowFiniteTwistedDifferential_mem_indexFiltration {p : ℤ} {f : P →₀
     (hf : f ∈ rowFiniteIndexFiltration (R := R) ind p) :
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f ∈
       rowFiniteIndexFiltration (R := R) ind p := by
-  have hcoeff : Finsupp.mapRange.linearMap d f ∈ rowFiniteIndexFiltration (R := R) ind p := by
-    rw [Finsupp.mapRange.linearMap_apply]
-    exact (Finsupp.mem_supported R _).2
-      ((Finset.coe_subset.mpr Finsupp.support_mapRange).trans ((Finsupp.mem_supported R _).1 hf))
-  have h := rowFiniteIndexFiltration_mono (R := R) (A := A) ind (by omega : p - 1 ≤ p)
-    (rowFiniteTwistedDifferential_sub_mem_indexFiltration (𝒜 := 𝒜) (d := d) m hm hf)
-  simpa only [sub_add_cancel] using (rowFiniteIndexFiltration (R := R) ind p).add_mem h hcoeff
+  -- The stage is `Finsupp.supported A R s`, with the carrier of `Finsupp.supported A A s`, and
+  -- the row of a generator of index at most `p` only involves generators of smaller index.
+  have hrow : ∀ x ∈ {x | ind x ≤ p}, m x ∈ Finsupp.supported A A {x | ind x ≤ p} :=
+    fun x hx ↦ (Finsupp.mem_supported' A _).2 fun y hy ↦
+      hm x y (by simp only [Set.mem_ofPred_eq, not_le] at hx hy; omega)
+  exact (Finsupp.mem_supported R _).2 ((Finsupp.mem_supported A _).1
+    (rowFiniteTwistedDifferential_mem_supported hrow ((Finsupp.mem_supported A f).2
+      ((Finsupp.mem_supported R f).1 hf))))
 
 /-- On the new generators the induced differential is exactly the coefficient differential. -/
 theorem rowFiniteIndexProjection_differential (p : ℤ)
