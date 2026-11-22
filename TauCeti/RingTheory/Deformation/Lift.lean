@@ -36,6 +36,8 @@ exactly when `ρbar` is continuous for the discrete topology on `k`.
 
 * `TauCeti.Deformation.ArtinLocalAlg.strictKernel n A`: the kernel `Γ̂ₙ(A)` of the reduction
   `GL n A →* GL n k`.
+* `TauCeti.Deformation.ArtinLocalAlg.strictKernelMap n f`: the homomorphism of strict kernels
+  induced by a morphism `f` of `C_Λ`.
 * `TauCeti.Deformation.Lift ρbar A`: the lifts of `ρbar` to `A`.
 * `TauCeti.Deformation.Lift.map f`: the pushforward of lifts along a morphism `f` of `C_Λ`.
 * `TauCeti.Deformation.liftFunctor Λ ρbar`: the framed lifting functor `C_Λ ⥤ Type`.
@@ -109,6 +111,40 @@ theorem map_mem_strictKernel {A B : ArtinLocalAlg Λ k} (f : A ⟶ B) {a : GL n 
     GeneralLinearGroup.map (f.hom.left.hom : A.obj.left →+* B.obj.left) a ∈ B.strictKernel n := by
   rw [mem_strictKernel_iff, map_augmentation_map, ← mem_strictKernel_iff]
   exact ha
+
+variable (n) in
+/-- The homomorphism `Γ̂ₙ(A) →* Γ̂ₙ(B)` of strict kernels induced by a morphism `f : A ⟶ B` of
+`C_Λ`, applying `f` to the matrix entries. -/
+def strictKernelMap {A B : ArtinLocalAlg Λ k} (f : A ⟶ B) : A.strictKernel n →* B.strictKernel n :=
+  ((GeneralLinearGroup.map (f.hom.left.hom : A.obj.left →+* B.obj.left)).comp
+    (A.strictKernel n).subtype).codRestrict _ fun a ↦ map_mem_strictKernel f a.property
+
+@[simp]
+theorem coe_strictKernelMap_apply {A B : ArtinLocalAlg Λ k} (f : A ⟶ B) (a : A.strictKernel n) :
+    (strictKernelMap n f a : GL n B.obj.left) =
+      GeneralLinearGroup.map (f.hom.left.hom : A.obj.left →+* B.obj.left) a :=
+  (rfl)
+
+@[simp]
+theorem strictKernelMap_id {A : ArtinLocalAlg Λ k} (a : A.strictKernel n) :
+    strictKernelMap n (𝟙 A) a = a :=
+  Subtype.ext <| GeneralLinearGroup.ext fun i j ↦ by simp
+
+theorem strictKernelMap_comp {A B C : ArtinLocalAlg Λ k} (f : A ⟶ B) (g : B ⟶ C)
+    (a : A.strictKernel n) :
+    strictKernelMap n (f ≫ g) a = strictKernelMap n g (strictKernelMap n f a) :=
+  Subtype.ext <| GeneralLinearGroup.ext fun i j ↦ by simp
+
+/-- Over the residue field the strict kernel is trivial: reduction to `k` is the identity. -/
+@[simp]
+theorem strictKernel_residue : (residue Λ k).strictKernel n = ⊥ :=
+  eq_bot_iff.mpr fun a ha ↦ by
+    rw [Subgroup.mem_bot, ← map_augmentation_residue a]
+    exact mem_strictKernel_iff.mp ha
+
+instance : Subsingleton ((residue Λ k).strictKernel n) := by
+  rw [strictKernel_residue]
+  infer_instance
 
 end ArtinLocalAlg
 
