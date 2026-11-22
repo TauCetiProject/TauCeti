@@ -94,6 +94,11 @@ and moving the remaining factors by vectors of that subspace does not change the
 * `TauCeti.exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero`: over a field, a vector lies in
   the span of a linearly independent family exactly when its product with the exterior product of
   the family vanishes.
+* `exteriorPower.ι_mul_ιMulti_eq_zero_of_mem_span`: any vector in the span of a family annihilates
+  its exterior product by left exterior multiplication over any commutative ring.
+* `exteriorPower.span_range_eq_of_ιMulti_eq_smul`: over a field, if one exterior product is a
+  nonzero multiple of that of a linearly independent family, both families are linearly independent
+  and span the same subspace.
 
 ## References
 
@@ -663,6 +668,47 @@ theorem mem_span_range_iff_ι_mul_ιMulti_eq_zero {n : ℕ} {v : Fin n → V}
     _root_.exteriorPower.ιMulti_apply_coe, _root_.ExteriorAlgebra.ιMulti_succ_apply,
     _root_.exteriorPower.ιMulti_apply_coe]
   simp [Matrix.vecTail, Function.comp_def]
+
+/-- Any vector in the span of `v : Fin n → M` annihilates `ιMulti R n v` by left exterior
+multiplication. -/
+theorem _root_.exteriorPower.ι_mul_ιMulti_eq_zero_of_mem_span {R M : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] {n : ℕ} {v : Fin n → M} {y : M}
+    (hy : y ∈ Submodule.span R (Set.range v)) :
+    _root_.ExteriorAlgebra.ι R y * (_root_.exteriorPower.ιMulti R n v : ExteriorAlgebra R M) =
+      0 := by
+  induction hy using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨j, rfl⟩ := hx
+    have h := (_root_.ExteriorAlgebra.ιMulti R (n + 1)).map_eq_zero_of_eq (Fin.cons (v j) v)
+      (i := 0) (j := j.succ) (by simp) (Fin.succ_ne_zero j).symm
+    rw [_root_.ExteriorAlgebra.ιMulti_succ_apply] at h
+    simpa [_root_.exteriorPower.ιMulti_apply_coe, Matrix.vecTail] using h
+  | zero => simp
+  | add x y _ _ hx hy => rw [map_add, add_mul, hx, hy, add_zero]
+  | smul r x _ hx => rw [map_smul, smul_mul_assoc, hx, smul_zero]
+
+/-- If the exterior product of `u` is a nonzero scalar multiple of that of a linearly independent
+family `v`, then `u` is linearly independent and spans the same subspace as `v`. -/
+theorem _root_.exteriorPower.span_range_eq_of_ιMulti_eq_smul {n : ℕ} {u v : Fin n → V} {c : K}
+    (hv : LinearIndependent K v) (hc : c ≠ 0)
+    (h : _root_.exteriorPower.ιMulti K n u = c • _root_.exteriorPower.ιMulti K n v) :
+    LinearIndependent K u ∧ Submodule.span K (Set.range u) = Submodule.span K (Set.range v) := by
+  have hle : ∀ {u' v' : Fin n → V} {c' : K}, LinearIndependent K v' → c' ≠ 0 →
+      _root_.exteriorPower.ιMulti K n u' = c' • _root_.exteriorPower.ιMulti K n v' →
+        Submodule.span K (Set.range u') ≤ Submodule.span K (Set.range v') := by
+    intro u' v' c' hv' hc' h'
+    rw [Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    have h0 : _root_.ExteriorAlgebra.ι K (u' i) *
+        (_root_.exteriorPower.ιMulti K n u' : ExteriorAlgebra K V) = 0 :=
+      _root_.exteriorPower.ι_mul_ιMulti_eq_zero_of_mem_span (Submodule.subset_span ⟨i, rfl⟩)
+    rw [h', Submodule.coe_smul, mul_smul_comm, smul_eq_zero] at h0
+    exact (mem_span_range_iff_ι_mul_ιMulti_eq_zero hv' (u' i)).mpr (h0.resolve_left hc')
+  have hu : LinearIndependent K u := by
+    rw [← _root_.exteriorPower.ιMulti_ne_zero_iff u, h]
+    exact smul_ne_zero hc ((_root_.exteriorPower.ιMulti_ne_zero_iff v).mpr hv)
+  exact ⟨hu, le_antisymm (hle hv hc h)
+    (hle hu (inv_ne_zero hc) (by rw [h, inv_smul_smul₀ hc]))⟩
 
 end exteriorPower
 

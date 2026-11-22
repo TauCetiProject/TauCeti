@@ -30,6 +30,8 @@ the point factors uniquely through the quotient algebra.
 * `CommHopfAlgCat.mem_range_quotientPointsHom_iff`: quotient points are exactly ambient
   points killing `I`.
 * `CommHopfAlgCat.quotientPointsSubgroup`: the subgroup of ambient points cut out by `I`.
+* `CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker`: ideal-inclusion form of
+  quotient-subgroup membership.
 * `CommHopfAlgCat.eq_one_of_mem_quotientPointsSubgroup_augmentation`: the subgroup cut out by
   the augmentation ideal consists only of the identity point.
 * `CommHopfAlgCat.instIsMulCommutativeQuotientPointsSubgroup`: when the quotient Hopf algebra is
@@ -217,6 +219,15 @@ lemma mem_quotientPointsSubgroup_iff (H : _root_.CommHopfAlgCat.{v} R)
     (g : HopfAlgebra.points (R := R) (H := H) A) :
     g ∈ quotientPointsSubgroup H I A ↔ ∀ h : H, h ∈ I → g.ofConv h = 0 :=
   mem_range_quotientPointsHom_iff H I A g
+
+/-- Membership in the subgroup of points cut out by a Hopf ideal `I` is containment of `I.toIdeal`
+in the kernel of the underlying algebra homomorphism. -/
+lemma mem_quotientPointsSubgroup_iff_toIdeal_le_ker (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
+    (g : HopfAlgebra.points (R := R) (H := H) A) :
+    g ∈ quotientPointsSubgroup H I A ↔ I.toIdeal ≤ RingHom.ker g.ofConv :=
+  (mem_quotientPointsSubgroup_iff H I A g).trans
+    ⟨fun h _ hx ↦ h _ hx, fun h _ hx ↦ h hx⟩
 
 /-- A point killing the augmentation ideal is the identity point: the trivial subgroup has only
 the identity over every value algebra. -/

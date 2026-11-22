@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Orbit
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Regular
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.ClosureOrder
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedOrbit
+import TauCeti.RingTheory.KrullDimension.FiniteType
 
 /-!
 # Centralizers along the boundary of an adjoint orbit
@@ -96,8 +97,9 @@ theorem ringKrullDim_centralizer_lt_of_mem_adjointOrbit_boundary [IsReduced H]
     (Module.isUnimodular_mk_one x) (Module.isUnimodular_mk_one y) hy
   have hx := topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_centralizerHopfIdeal x
   have hy := topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_centralizerHopfIdeal y
+  have := Bialgebra.nontrivial (A := H ⧸ (centralizerHopfIdeal H y).toIdeal) k
   exact lt_of_not_ge fun h ↦
-    horbit.not_ge (Comodule.le_of_add_ringKrullDim_quotient_eq_of_le hx hy h)
+    horbit.not_ge (TauCeti.le_of_add_ringKrullDim_quotient_eq_of_le k hx hy h)
 
 /-- A minimal-centralizer regular element in the closure of an adjoint orbit already belongs
 to that orbit. In particular no adjoint orbit has a regular element in its boundary. -/

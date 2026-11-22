@@ -343,10 +343,7 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (W : Submodule k M)
     simp only [e, LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.lid_symm_apply]
     rw [Comodule.endOfPoint_tmul, one_smul,
       Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
-  have hker : (∀ h ∈ W.stabilizerHopfIdeal H, g.ofConv h = 0) ↔
-      (W.stabilizerHopfIdeal H).toIdeal ≤ RingHom.ker g.ofConv :=
-    ⟨fun h _ hx ↦ h _ hx, fun h _ hx ↦ h hx⟩
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hker,
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker,
     W.stabilizerHopfIdeal_le_ker_iff g, hbc, ← map_comp, hcomp, map_comp]
   exact (map_injective_of_injective (TensorProduct.lid k M).symm.injective).eq_iff
 
@@ -383,10 +380,10 @@ theorem stabilizerHopfIdeal_eq_of_forall_mem_quotientPointsSubgroup_iff
     (H := _root_.CommHopfAlgCat.of k H) fun A ↦ ?_
   ext g
   have hA := h A g
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at hA
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hA, ← W.stabilizerHopfIdeal_le_ker_iff g]
-  exact ⟨fun hg _ hx ↦ hg _ hx, fun hg _ hx ↦ hg hx⟩
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker] at hA
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker,
+    CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker, hA,
+    ← W.stabilizerHopfIdeal_le_ker_iff g]
 
 end Hopf
 
@@ -407,9 +404,8 @@ theorem stabilizerHopfIdeal_eq_of_forall_map_endOfPoint_eq_iff
     W₁.stabilizerHopfIdeal H = W₂.stabilizerHopfIdeal H :=
   stabilizerHopfIdeal_eq_of_forall_mem_quotientPointsSubgroup_iff W₁ (W₂.stabilizerHopfIdeal H)
     fun A _ _ g ↦ by
-      rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, h A g,
+      rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker, h A g,
         ← W₂.stabilizerHopfIdeal_le_ker_iff g]
-      exact ⟨fun hg _ hx ↦ hg _ hx, fun hg _ hx ↦ hg hx⟩
 
 /-- Transporting a comodule along a linear equivalence preserves subspace stabilizer Hopf ideals. -/
 theorem stabilizerHopfIdeal_map_transport

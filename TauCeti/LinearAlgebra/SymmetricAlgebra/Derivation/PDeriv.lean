@@ -104,8 +104,7 @@ theorem lift_pderiv_comp_of_map_eq_self (p : SymmetricAlgebra R M)
     (hx : x ∘ₗ g = c • x) (φ : Module.Dual R M) :
     lift x (pderiv φ p) = c ^ (d - 1) * lift x (pderiv (φ ∘ₗ g) p) := by
   have heval : (lift x).comp (map R g) = lift (c • x) := by
-    ext m
-    simpa using DFunLike.congr_fun hx m
+    rw [lift_comp_map, hx]
   calc
     lift x (pderiv φ p) = lift x (map R g (pderiv (φ ∘ₗ g) p)) := by
       rw [← pderiv_map, hg]

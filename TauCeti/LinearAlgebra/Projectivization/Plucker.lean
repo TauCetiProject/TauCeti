@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.ExteriorPower.Plucker
 
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
-import TauCeti.LinearAlgebra.ExteriorPower.Decomposable
 
 /-!
 # The Plücker point of a subspace

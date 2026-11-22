@@ -96,6 +96,8 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
 * `PrimeSpectrum.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient`,
   `PrimeSpectrum.topologicalKrullDimAt_eq_ringKrullDim_localization_add_toNat_trdeg_residueField`:
   the local Krull dimension of `Spec A` at `p` is `ht p + dim (A ⧸ p) = dim A_p + trdeg_k κ(p)`.
+* `TauCeti.le_of_add_ringKrullDim_quotient_eq_of_le`: comparison of codimensions from
+  complementary quotient Krull dimensions.
 
 ## References
 
@@ -493,6 +495,26 @@ theorem _root_.PrimeSpectrum.topologicalKrullDimAt_eq_height_add_ringKrullDim_qu
     calc _ = topologicalKrullDim ↥((Subtype.val : U.val → _) ⁻¹' zeroLocus (q : Set A)) := by
           rw [IsEmbedding.subtypeVal.topologicalKrullDim_preimage, Subtype.range_coe]
       _ ≤ _ := topologicalKrullDim_subspace_le _ _
+
+/-- If `o₁ + dim (A ⧸ J) = dim A`, `o₂ + dim (A ⧸ I) = dim A`, and
+`dim (A ⧸ I) ≤ dim (A ⧸ J)`, with `A ⧸ I` nontrivial and finite-type over a field `k`,
+then `o₁ ≤ o₂`. -/
+theorem le_of_add_ringKrullDim_quotient_eq_of_le
+    (k : Type*) {A : Type*} [Field k] [CommRing A] [Algebra k A]
+    {o₁ o₂ : WithBot ℕ∞} {I J : Ideal A}
+    [Nontrivial (A ⧸ I)] [Algebra.FiniteType k (A ⧸ I)]
+    (ho₁ : o₁ + ringKrullDim (A ⧸ J) = ringKrullDim A)
+    (ho₂ : o₂ + ringKrullDim (A ⧸ I) = ringKrullDim A)
+    (hIJ : ringKrullDim (A ⧸ I) ≤ ringKrullDim (A ⧸ J)) :
+    o₁ ≤ o₂ := by
+  have := finiteRingKrullDim_of_finiteType k (A ⧸ I)
+  have htop := ringKrullDim_ne_top (R := A ⧸ I)
+  lift ringKrullDim (A ⧸ I) to ℕ∞ using ringKrullDim_ne_bot with d
+  lift d to ℕ using by simpa using htop
+  simp only [ENat.WithBot.coe_eq_natCast] at ho₂ hIJ
+  refine (ENat.WithBot.add_le_add_natCast_right_iff (c := d)).mp ?_
+  rw [ho₂, ← ho₁]
+  exact add_le_add le_rfl hIJ
 
 end TauCeti
 

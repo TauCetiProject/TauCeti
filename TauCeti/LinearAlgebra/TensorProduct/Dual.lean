@@ -21,6 +21,10 @@ by `α⁻¹` and `β⁻¹` is pairing after `(α ⊗ β)⁻¹`
 For finite projective modules `L` and `M`, swapping the factors and identifying `L` with its
 double dual gives the canonical isomorphism `L ⊗ M^* ≃ (M ⊗ L^*)^*`
 (`TensorProduct.dualFlipEquiv`), which pairs `l ⊗ μ` with `m ⊗ θ` to `μ m * θ l`.
+Over any commutative semiring, `TensorProduct.dualDistrib (φ ⊗ₜ ψ)` agrees with partial
+contraction followed by evaluation (`TensorProduct.comp_rid_lTensor_eq_dualDistrib`,
+`TensorProduct.comp_lid_rTensor_eq_dualDistrib`) and with multiplication of the two maps
+(`TensorProduct.lid_comp_map_eq_dualDistrib`).
 -/
 
 public section
@@ -46,6 +50,34 @@ end LinearMap
 namespace TensorProduct
 
 open Module
+
+section Semiring
+
+variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N]
+
+/-- Partially contracting a tensor on the right with `ψ` and evaluating the remaining factor at
+`φ` agrees with evaluating `dualDistrib R M N (φ ⊗ₜ ψ)`. -/
+theorem comp_rid_lTensor_eq_dualDistrib (φ : Dual R M) (ψ : Dual R N) :
+    φ ∘ₗ (TensorProduct.rid R M).toLinearMap ∘ₗ LinearMap.lTensor M ψ =
+      dualDistrib R M N (φ ⊗ₜ ψ) :=
+  ext' fun _ _ ↦ by simp [mul_comm]
+
+/-- Partially contracting a tensor on the left with `φ` and evaluating the remaining factor at
+`ψ` agrees with evaluating `dualDistrib R M N (φ ⊗ₜ ψ)`. -/
+theorem comp_lid_rTensor_eq_dualDistrib (φ : Dual R M) (ψ : Dual R N) :
+    ψ ∘ₗ (TensorProduct.lid R N).toLinearMap ∘ₗ LinearMap.rTensor N φ =
+      dualDistrib R M N (φ ⊗ₜ ψ) :=
+  ext' fun _ _ ↦ by simp
+
+/-- Multiplying two linear forms through `TensorProduct.map` and `TensorProduct.lid` agrees with
+`dualDistrib R M N (φ ⊗ₜ ψ)`. -/
+theorem lid_comp_map_eq_dualDistrib (φ : Dual R M) (ψ : Dual R N) :
+    (TensorProduct.lid R R).toLinearMap ∘ₗ map φ ψ =
+      dualDistrib R M N (φ ⊗ₜ ψ) :=
+  ext' fun _ _ ↦ by simp
+
+end Semiring
 
 section Naturality
 

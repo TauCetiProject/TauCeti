@@ -8,143 +8,46 @@ module
 public import Mathlib.GroupTheory.Solvable
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
-public import TauCeti.Algebra.Coalgebra.Comodule.ExteriorAlgebra.Power
-public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
-public import TauCeti.Algebra.Coalgebra.Comodule.Transport
-public import TauCeti.LinearAlgebra.ExteriorPower.FlagCone
+public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Exterior
+public import TauCeti.LinearAlgebra.ExteriorPower.Flag.Basic
 import Mathlib.RingTheory.HopfAlgebra.Quotient
 import TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Basic
-import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.ExteriorPower
-import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Transport
 import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct
 import TauCeti.Algebra.Coalgebra.Comodule.Flag.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Solvable
 
 /-!
-# Flag comodules and scheme-theoretic stabilizers of exterior flag lines
+# Scheme-theoretic stabilizers of exterior flag lines
 
-For a comodule `M` over a commutative bialgebra `H`, each exterior power `⋀ᵈ M` is an `H`-comodule
-(`TauCeti.Comodule.exteriorPower`), and transporting tensor products along `flagSpaceZeroEquiv` and
-`flagSpaceSuccEquiv` equips `exteriorPower.FlagSpace R M d` with an `H`-comodule structure
-(`TauCeti.Comodule.exteriorFlag`) whose rational point action is `exteriorFlagMap d`.
-
-Over a field `k` and a commutative Hopf algebra `H`:
-* the line stabilizer of `exteriorFlagVector k d b` for a basis `b : Module.Basis (Fin d) k M` is
-  `Finset.univ.sup fun r ↦ (b.flag r).stabilizerHopfIdeal H`, and lies below `J : HopfIdeal k H`
-  precisely when the corestricted coefficient matrix of `b` over `H ⧸ J` is upper triangular;
-* if `M` contains any subspace `W₀` whose stabilizer `J` has solvable `k`-points, then for *every*
-  basis `b` of `M`, the `k`-points of the quotient by
-  `(k ∙ exteriorFlagVector k d b).stabilizerHopfIdeal H` form a solvable group
-  (`isSolvable_points_quotient_stabilizerHopfIdeal_exteriorFlagVector`), since acting on `M` maps
-  it into `upperTriangularGroup (Fin d) k` with kernel fixing `W₀`.
-
-## Main definitions
-
-* `TauCeti.Comodule.exteriorFlag`: the `H`-comodule structure on `exteriorPower.FlagSpace R M d`.
+Over a field `k` and a commutative Hopf algebra `H`, the line stabilizer of
+`exteriorFlagVector k d b` in `exteriorFlag k H M d` is the supremum of the stabilizers of the
+prefix spans `b.flag r`, lying below `J` iff `coefficientMatrix (C := H ⧸ J.toIdeal) b` is upper
+triangular. Whenever `M` contains a subspace whose stabilizer has solvable `k`-points, every basis
+flag line stabilizer also has solvable `k`-points.
 
 ## Main results
 
-* `TauCeti.Comodule.exteriorFlag_zero` and `TauCeti.Comodule.exteriorFlag_succ`: recursive
-  unfolding equations for `TauCeti.Comodule.exteriorFlag`.
-* `TauCeti.Comodule.basePointsRepresentation_exteriorFlag`: base-valued points act on `FlagSpace`
-  by `exteriorPower.exteriorFlagMap`.
-* `TauCeti.Comodule.stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent`: the line
-  stabilizer of `exteriorFlagVector k d v` for a linearly independent tuple `v` is the supremum of
-  the stabilizers of its prefix spans.
-* `TauCeti.Comodule.stabilizerHopfIdeal_span_exteriorFlagVector`: the line stabilizer of
-  `exteriorFlagVector k d b` is `Finset.univ.sup fun r ↦ (b.flag r).stabilizerHopfIdeal H`.
-* `TauCeti.Comodule.stabilizerHopfIdeal_span_exteriorFlagVector_le_iff`: the line stabilizer lies
-  below `J` iff `coefficientMatrix (C := H ⧸ J.toIdeal) b` is upper triangular.
-* `TauCeti.Comodule.stabilizerHopfIdeal_span_exteriorFlagVector_eq`: when `b` is upper triangular
-  over `H ⧸ J.toIdeal` and `(k ∙ b 0).stabilizerHopfIdeal H = J`, the flag line stabilizer equals
-  `J`.
+* `TauCeti.Comodule.stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent`: stabilizer
+  of `exteriorFlagVector k d v` for a linearly independent tuple `v`.
+* `TauCeti.Comodule.stabilizerHopfIdeal_span_exteriorFlagVector`: stabilizer of
+  `exteriorFlagVector k d b` for a basis `b`.
+* `TauCeti.Comodule.stabilizerHopfIdeal_span_exteriorFlagVector_le_iff`: characterization via
+  upper triangularity of `coefficientMatrix (C := H ⧸ J.toIdeal) b`.
+* `TauCeti.Comodule.stabilizerHopfIdeal_span_exteriorFlagVector_eq`: equality with `J` when `b`
+  is upper triangular over `H ⧸ J.toIdeal` and `(k ∙ b 0).stabilizerHopfIdeal H = J`.
 * `TauCeti.Comodule.isSolvable_points_quotient_stabilizerHopfIdeal_exteriorFlagVector`: solvability
-  of `k`-points for the stabilizer of any basis flag vector in `M`.
+  of `k`-points for any basis flag line stabilizer.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups*, Cambridge University Press (2017), Theorem 17.9(a), p. 354.
-* J. E. Humphreys, *Linear Algebraic Groups*, GTM 21, Springer (1975), §21.3.
+* J. S. Milne, *Algebraic Groups* (2017), Theorem 17.9(a), p. 354.
+* J. E. Humphreys, *Linear Algebraic Groups*, §21.3.
 -/
 
 public section
 
 open scoped TensorProduct
 open WithConv
-
-namespace TauCeti.Comodule
-
-section Bialgebra
-
-variable (R H M : Type*) [CommRing R] [CommSemiring H] [Bialgebra R H]
-  [AddCommGroup M] [Module R M] [Comodule R H M]
-
-/-- The right `H`-comodule structure on `exteriorPower.FlagSpace R M d`, built recursively from
-`Comodule.exteriorPower` and `Comodule.tensor` via `Comodule.Transport`. Select it explicitly as a
-local instance. -/
-@[implicit_reducible]
-noncomputable def exteriorFlag : (d : ℕ) → Comodule R H (exteriorPower.FlagSpace R M d)
-  | 0 =>
-      let _ : Comodule R H (⋀[R]^0 M) := exteriorPower R H M 0
-      Transport (exteriorPower.flagSpaceZeroEquiv R M).symm
-  | r + 1 =>
-      let _ : Comodule R H (exteriorPower.FlagSpace R M r) := exteriorFlag r
-      let _ : Comodule R H (⋀[R]^(r + 1) M) := exteriorPower R H M (r + 1)
-      let _ : Comodule R H (exteriorPower.FlagSpace R M r ⊗[R] ⋀[R]^(r + 1) M) :=
-        tensor R H (exteriorPower.FlagSpace R M r) (⋀[R]^(r + 1) M)
-      Transport (exteriorPower.flagSpaceSuccEquiv R M r).symm
-
-/-- Base-case unfolding of `exteriorFlag` in degree `0`. -/
-theorem exteriorFlag_zero :
-    exteriorFlag R H M 0 =
-      (letI : Comodule R H (⋀[R]^0 M) := exteriorPower R H M 0
-       Transport (exteriorPower.flagSpaceZeroEquiv R M).symm) :=
-  (rfl)
-
-/-- Recursive unfolding of `exteriorFlag` in degree `r + 1`. -/
-theorem exteriorFlag_succ (r : ℕ) :
-    exteriorFlag R H M (r + 1) =
-      (letI : Comodule R H (exteriorPower.FlagSpace R M r) := exteriorFlag R H M r
-       letI : Comodule R H (⋀[R]^(r + 1) M) := exteriorPower R H M (r + 1)
-       letI : Comodule R H (exteriorPower.FlagSpace R M r ⊗[R] ⋀[R]^(r + 1) M) :=
-         tensor R H (exteriorPower.FlagSpace R M r) (⋀[R]^(r + 1) M)
-       Transport (exteriorPower.flagSpaceSuccEquiv R M r).symm) :=
-  (rfl)
-
-end Bialgebra
-
-section Points
-
-variable {R H M : Type*} [CommRing R] [CommSemiring H] [HopfAlgebra R H]
-  [AddCommGroup M] [Module R M] [Comodule R H M]
-
-/-- Base-valued points act on `exteriorPower.FlagSpace R M d` by
-`exteriorPower.exteriorFlagMap d`. -/
-theorem basePointsRepresentation_exteriorFlag (d : ℕ) (g : WithConv (H →ₐ[R] R)) :
-    (letI : Comodule R H (exteriorPower.FlagSpace R M d) := exteriorFlag R H M d
-     basePointsRepresentation (R := R) (H := H) (exteriorPower.FlagSpace R M d) g) =
-      exteriorPower.exteriorFlagMap d (basePointsRepresentation (R := R) (H := H) M g) := by
-  induction d with
-  | zero =>
-    let _ : Comodule R H (⋀[R]^0 M) := exteriorPower R H M 0
-    rw [exteriorFlag_zero, basePointsRepresentation_transport,
-      basePointsRepresentation_exteriorPower, exteriorPower.exteriorFlagMap_zero,
-      LinearEquiv.symm_symm]
-  | succ r ih =>
-    let _ : Comodule R H (exteriorPower.FlagSpace R M r) := exteriorFlag R H M r
-    let _ : Comodule R H (⋀[R]^(r + 1) M) := exteriorPower R H M (r + 1)
-    let _ : Comodule R H (exteriorPower.FlagSpace R M r ⊗[R] ⋀[R]^(r + 1) M) :=
-      tensor R H (exteriorPower.FlagSpace R M r) (⋀[R]^(r + 1) M)
-    rw [exteriorFlag_succ, basePointsRepresentation_transport, exteriorPower.exteriorFlagMap_succ,
-      LinearEquiv.symm_symm]
-    congr 2
-    exact TensorProduct.ext' fun x y ↦ by
-      rw [basePointsRepresentation_tensor_tmul, ih, basePointsRepresentation_exteriorPower,
-        TensorProduct.map_tmul]
-
-end Points
-
-end TauCeti.Comodule
 
 namespace TauCeti.Comodule
 
@@ -159,7 +62,8 @@ variable {k : Type u} {H : Type v} {M : Type w}
 stabilizer of `exteriorFlagVector k d v` is the supremum of the stabilizers of its prefix spans. -/
 theorem stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent [Module.Finite k M]
     {d : ℕ} {v : Fin d → M} (hv : LinearIndependent k v) :
-    (letI : Comodule k H (exteriorPower.FlagSpace k M d) := exteriorFlag k H M d
+    (letI : AddCommGroup (exteriorPower.FlagSpace k M d) := Module.addCommMonoidToAddCommGroup k
+     letI : Comodule k H (exteriorPower.FlagSpace k M d) := exteriorFlag k H M d
      (k ∙ exteriorPower.exteriorFlagVector k d v).stabilizerHopfIdeal H) =
       Finset.univ.sup fun r : Fin (d + 1) ↦
         (Submodule.span k
@@ -177,6 +81,7 @@ theorem stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent [Module
       Submodule.stabilizerHopfIdeal_span_ιMulti hv]
     simp [Set.range_eq_empty]
   | succ r ih =>
+    let _ : AddCommGroup (exteriorPower.FlagSpace k M r) := Module.addCommMonoidToAddCommGroup k
     let _ : Comodule k H (exteriorPower.FlagSpace k M r) := exteriorFlag k H M r
     let _ : Comodule k H (⋀[k]^(r + 1) M) := exteriorPower k H M (r + 1)
     let _ : Comodule k H (exteriorPower.FlagSpace k M r ⊗[k] ⋀[k]^(r + 1) M) :=
@@ -203,7 +108,8 @@ theorem stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent [Module
 /-- For a basis `b : Module.Basis (Fin d) k M`, the line stabilizer of `exteriorFlagVector k d b` is
 the supremum of the stabilizers of all steps `b.flag r` of the basis flag. -/
 theorem stabilizerHopfIdeal_span_exteriorFlagVector {d : ℕ} (b : Module.Basis (Fin d) k M) :
-    (letI : Comodule k H (exteriorPower.FlagSpace k M d) := exteriorFlag k H M d
+    (letI : AddCommGroup (exteriorPower.FlagSpace k M d) := Module.addCommMonoidToAddCommGroup k
+     letI : Comodule k H (exteriorPower.FlagSpace k M d) := exteriorFlag k H M d
      (k ∙ exteriorPower.exteriorFlagVector k d b).stabilizerHopfIdeal H) =
       Finset.univ.sup fun r : Fin (d + 1) ↦ (b.flag r).stabilizerHopfIdeal H := by
   have : Module.Finite k M := Module.Finite.of_basis b
@@ -216,7 +122,8 @@ theorem stabilizerHopfIdeal_span_exteriorFlagVector {d : ℕ} (b : Module.Basis 
 coefficient matrix of `b` over `H ⧸ J.toIdeal` is upper triangular. -/
 theorem stabilizerHopfIdeal_span_exteriorFlagVector_le_iff {d : ℕ} (b : Module.Basis (Fin d) k M)
     (J : HopfIdeal k H) :
-    (letI : Comodule k H (exteriorPower.FlagSpace k M d) := exteriorFlag k H M d
+    (letI : AddCommGroup (exteriorPower.FlagSpace k M d) := Module.addCommMonoidToAddCommGroup k
+     letI : Comodule k H (exteriorPower.FlagSpace k M d) := exteriorFlag k H M d
      (k ∙ exteriorPower.exteriorFlagVector k d b).stabilizerHopfIdeal H) ≤ J ↔
       (letI : Comodule k (H ⧸ J.toIdeal) M :=
         Corestrict (CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of k H) J).hom.toCoalgHom
@@ -239,7 +146,9 @@ theorem stabilizerHopfIdeal_span_exteriorFlagVector_eq {n : ℕ}
     (htri : letI : Comodule k (H ⧸ J.toIdeal) M :=
         Corestrict (CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of k H) J).hom.toCoalgHom
       (coefficientMatrix (C := H ⧸ J.toIdeal) b).IsUpperTriangular) :
-    (letI : Comodule k H (exteriorPower.FlagSpace k M (1 + n)) := exteriorFlag k H M (1 + n)
+    (letI : AddCommGroup (exteriorPower.FlagSpace k M (1 + n)) :=
+       Module.addCommMonoidToAddCommGroup k
+     letI : Comodule k H (exteriorPower.FlagSpace k M (1 + n)) := exteriorFlag k H M (1 + n)
      (k ∙ exteriorPower.exteriorFlagVector k (1 + n) b).stabilizerHopfIdeal H) = J := by
   refine le_antisymm ((stabilizerHopfIdeal_span_exteriorFlagVector_le_iff b J).mpr htri) ?_
   rw [stabilizerHopfIdeal_span_exteriorFlagVector, ← h0]
@@ -256,9 +165,11 @@ theorem isSolvable_points_quotient_stabilizerHopfIdeal_exteriorFlagVector
     {d : ℕ} (b : Module.Basis (Fin d) k M) {W₀ : Submodule k M} {J : HopfIdeal k H}
     (hW₀ : W₀.stabilizerHopfIdeal H = J)
     [Group.IsSolvable (WithConv ((H ⧸ J.toIdeal) →ₐ[k] k))] :
+    letI : AddCommGroup (exteriorPower.FlagSpace k M d) := Module.addCommMonoidToAddCommGroup k
     letI : Comodule k H (exteriorPower.FlagSpace k M d) := exteriorFlag k H M d
     let D := (k ∙ exteriorPower.exteriorFlagVector k d b).stabilizerHopfIdeal H
     Group.IsSolvable (WithConv ((H ⧸ D.toIdeal) →ₐ[k] k)) := by
+  let _ : AddCommGroup (exteriorPower.FlagSpace k M d) := Module.addCommMonoidToAddCommGroup k
   let _ : Comodule k H (exteriorPower.FlagSpace k M d) := exteriorFlag k H M d
   set D := (k ∙ exteriorPower.exteriorFlagVector k d b).stabilizerHopfIdeal H
   let Hcat := _root_.CommHopfAlgCat.of k H

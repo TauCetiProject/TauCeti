@@ -280,9 +280,8 @@ theorem coset_stabilizerHopfIdeal_eq_iff_exists_units_matrixCoefficient (v : M)
           c * g.ofConv (matrixCoefficient (C := H) φ ((v, 1) : M × k)) := by
   refine HopfIdeal.coset_eq_iff_exists_units_matrixCoefficient _ _
     (Module.isUnimodular_mk_one v) A (fun a ↦ ?_) g h
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, stabilizerHopfIdeal_def,
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker, stabilizerHopfIdeal_def,
     ← Submodule.stabilizerHopfIdeal_le_ker_iff]
-  exact ⟨fun ha x hx ↦ ha x hx, fun ha x hx ↦ ha hx⟩
 
 end Coset
 

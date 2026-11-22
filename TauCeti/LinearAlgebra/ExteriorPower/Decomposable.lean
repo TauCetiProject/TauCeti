@@ -54,11 +54,6 @@ element is a multiple of the empty product. When `r + 1 > dim V` the exterior po
 
 ## Main results
 
-* `exteriorPower.ι_mul_ιMulti_eq_zero_of_mem_span`: any vector in the span of `v₀, …, vₙ₋₁`
-  annihilates `v₀ ∧ ⋯ ∧ vₙ₋₁` by left exterior multiplication over any commutative ring.
-* `exteriorPower.span_range_eq_of_ιMulti_eq_smul`: over a field, if `u₀ ∧ ⋯ ∧ uₙ₋₁` is a nonzero
-  multiple of a linearly independent `v₀ ∧ ⋯ ∧ vₙ₋₁`, then `u` is linearly independent with the
-  same span as `v`.
 * `exteriorPower.mem_range_ιMulti_iff_forall_ι_contract_mul_eq_zero`: **the decomposability
   criterion** `θ ∈ range ιMulti ↔ ∀ η, (ι_η θ) ∧ θ = 0`.
 * `exteriorPower.range_contract_flip_ιMulti`: for linearly independent `v`, the contractions of
@@ -79,28 +74,6 @@ public section
 open Module Submodule
 
 namespace exteriorPower
-
-section Span
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {n : ℕ}
-
-/-- Any vector in the span of `v : Fin n → M` annihilates `ιMulti R n v` by left exterior
-multiplication. -/
-theorem ι_mul_ιMulti_eq_zero_of_mem_span {v : Fin n → M} {y : M}
-    (hy : y ∈ span R (Set.range v)) :
-    ExteriorAlgebra.ι R y * (ιMulti R n v : ExteriorAlgebra R M) = 0 := by
-  induction hy using span_induction with
-  | mem x hx =>
-    obtain ⟨j, rfl⟩ := hx
-    have h := (ExteriorAlgebra.ιMulti R (n + 1)).map_eq_zero_of_eq (Fin.cons (v j) v)
-      (i := 0) (j := j.succ) (by simp) (Fin.succ_ne_zero j).symm
-    rw [ExteriorAlgebra.ιMulti_succ_apply] at h
-    simpa [ιMulti_apply_coe, Matrix.vecTail] using h
-  | zero => simp
-  | add x y _ _ hx hy => rw [map_add, add_mul, hx, hy, add_zero]
-  | smul r x _ hx => rw [map_smul, smul_mul_assoc, hx, smul_zero]
-
-end Span
 
 section Contract
 
@@ -346,33 +319,5 @@ theorem mem_range_ιMulti_iff_forall_ι_contract_mul_eq_zero (θ : ⋀[K]^(r + 1
   exact Subtype.ext (Finset.ext fun x ↦ (key t ht x).trans (key t' ht' x).symm)
 
 end Field
-
-section FieldSpan
-
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
-
-/-- If the exterior product of `u` is a nonzero scalar multiple of that of a linearly independent
-family `v`, then `u` is linearly independent and spans the same subspace as `v`. -/
-theorem span_range_eq_of_ιMulti_eq_smul {n : ℕ} {u v : Fin n → V} {c : K}
-    (hv : LinearIndependent K v) (hc : c ≠ 0)
-    (h : ιMulti K n u = c • ιMulti K n v) :
-    LinearIndependent K u ∧ span K (Set.range u) = span K (Set.range v) := by
-  have hle : ∀ {u' v' : Fin n → V} {c' : K}, LinearIndependent K v' → c' ≠ 0 →
-      ιMulti K n u' = c' • ιMulti K n v' → span K (Set.range u') ≤ span K (Set.range v') := by
-    intro u' v' c' hv' hc' h'
-    rw [span_le]
-    rintro _ ⟨i, rfl⟩
-    have h0 : ExteriorAlgebra.ι K (u' i) * (ιMulti K n u' : ExteriorAlgebra K V) = 0 :=
-      ι_mul_ιMulti_eq_zero_of_mem_span (subset_span ⟨i, rfl⟩)
-    rw [h', Submodule.coe_smul, mul_smul_comm, smul_eq_zero] at h0
-    exact (TauCeti.exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero hv' (u' i)).mpr
-      (h0.resolve_left hc')
-  have hu : LinearIndependent K u := by
-    rw [← ιMulti_ne_zero_iff u, h]
-    exact smul_ne_zero hc ((ιMulti_ne_zero_iff v).mpr hv)
-  exact ⟨hu, le_antisymm (hle hv hc h)
-    (hle hu (inv_ne_zero hc) (by rw [h, inv_smul_smul₀ hc]))⟩
-
-end FieldSpan
 
 end exteriorPower

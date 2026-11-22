@@ -114,4 +114,19 @@ theorem exists_finite_subcomodule_exteriorPower_line_stabilizer (I : HopfIdeal k
   · exact fun A g ↦
       I.mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq V hgen A g
 
+/-- Every closed subgroup with finitely generated defining ideal is the stabilizer Hopf ideal of a
+one-dimensional subspace of a finite-dimensional comodule. -/
+theorem exists_line_stabilizerHopfIdeal_eq (I : HopfIdeal k H) (hI : I.toIdeal.FG) :
+    ∃ (M : Type (max u v)) (_ : AddCommGroup M) (_ : Module k M) (_ : Comodule k H M)
+      (_ : Module.Finite k M) (L : Submodule k M),
+      Module.finrank k L = 1 ∧ L.stabilizerHopfIdeal H = I := by
+  obtain ⟨V, r, hV, L, hL, -, hstabL⟩ :=
+    I.exists_finite_subcomodule_exteriorPower_line_stabilizer.{u, v, v} hI
+  let _ : Module.Finite k V := hV
+  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
+  let instComodM : Comodule k H (⋀[k]^r V) := Comodule.exteriorPower k H V r
+  exact ⟨⋀[k]^r V, inferInstance, inferInstance, instComodM, inferInstance, L, hL,
+    L.stabilizerHopfIdeal_eq_of_forall_mem_quotientPointsSubgroup_iff I fun A _ _ g ↦
+      hstabL (CommAlgCat.of k A) g⟩
+
 end TauCeti.HopfIdeal

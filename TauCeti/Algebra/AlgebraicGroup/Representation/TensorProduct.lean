@@ -12,7 +12,6 @@ public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct.Contraction
-import TauCeti.LinearAlgebra.TensorProduct.Segre
 import TauCeti.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.LinearAlgebra.Unimodular
 
@@ -134,12 +133,9 @@ theorem stabilizerHopfIdeal_span_singleton_tmul {m : M} (hm : m ≠ 0) {n : N} (
     (k ∙ (m ⊗ₜ[k] n)) ((k ∙ m).stabilizerHopfIdeal H ⊔ (k ∙ n).stabilizerHopfIdeal H)
     fun A _ _ g ↦ ?_
   rw [TauCeti.CommHopfAlgCat.quotientPointsSubgroup_sup, Subgroup.mem_inf,
-    TauCeti.CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
-    TauCeti.CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  have hker (I : TauCeti.HopfIdeal k H) :
-      (∀ x ∈ I, g.ofConv x = 0) ↔ I.toIdeal ≤ RingHom.ker g.ofConv :=
-    ⟨fun hg _ hx ↦ hg _ hx, fun hg _ hx ↦ hg hx⟩
-  rw [hker, hker, stabilizerHopfIdeal_le_ker_iff, stabilizerHopfIdeal_le_ker_iff]
+    TauCeti.CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker,
+    TauCeti.CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker,
+    stabilizerHopfIdeal_le_ker_iff, stabilizerHopfIdeal_le_ker_iff]
   have hmu : Module.IsUnimodular A ((1 : A) ⊗ₜ[k] m) := hmU.one_tmul
   have hnu : Module.IsUnimodular A ((1 : A) ⊗ₜ[k] n) := hnU.one_tmul
   simp only [Submodule.baseChange_span, Set.image_singleton, TensorProduct.mk_apply,
