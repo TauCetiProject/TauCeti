@@ -30,8 +30,9 @@ homogeneous linear system, with no multiplicative identity needed. An eigenvecto
 eigenvector of each of its powers, with the eigenvalue in any monoid of scalars whose action
 commutes with multiplication of the entries.
 
-The `σ`-sesquilinear form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` of a matrix `Q` scales by `σ c * c` along a
-line, for any multiplicative map `σ`.
+For a matrix `Q` and a multiplicative map `σ`, the pairing `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by
+`σ c * c` along a line. When `σ` is also additive, such as a ring endomorphism, this pairing is
+the `σ`-sesquilinear form of `Q`.
 
 A matrix invariant under row and column reindexing sends vectors invariant under the column
 permutation to vectors invariant under the row map.
@@ -119,13 +120,16 @@ theorem pow_mulVec_eq_pow_smul [DecidableEq n] {R S : Type*} [Semiring R] [Monoi
   | zero => simp
   | succ k ih => rw [pow_succ, ← mulVec_mulVec, h, mulVec_smul, ih, smul_smul, ← pow_succ']
 
-/-- Along a line the `σ`-sesquilinear form `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by `σ c * c`:
-`h(c v, c v) = σ c * c * h(v, v)`, for any multiplicative map `σ`, such as a ring endomorphism. -/
-theorem comp_smul_dotProduct_mulVec_smul {R F : Type*} [CommSemiring R] [FunLike F R R]
+/-- For a multiplicative map `σ`, the pairing `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by `σ c * c`
+along a line: `h(c v, c v) = σ c * c * h(v, v)`. When `σ` is also additive, such as a ring
+endomorphism, `h` is the `σ`-sesquilinear form of `Q`. -/
+theorem comp_smul_dotProduct_mulVec_smul {R F : Type*} [NonUnitalCommSemiring R] [FunLike F R R]
     [MulHomClass F R R] (Q : Matrix n n R) (σ : F) (c : R) (v : n → R) :
     (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
-  rw [TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_smul,
-    smul_eq_mul]
+  -- Mathlib derives `SMulCommClass R R R` only from a `CommMonoid`; commutativity suffices.
+  have : SMulCommClass R R R := ⟨mul_left_comm⟩
+  rw [TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
+    smul_eq_mul, mul_assoc]
 
 section OrderedSemiring
 
