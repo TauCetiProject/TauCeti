@@ -410,18 +410,32 @@ theorem equation_smul_eq_zero_iff (hk : 3 ≤ k) (u : SobolevTopologicalGaugeGro
 
 variable (f m hs) in
 /-- **The Sobolev moduli space of framed vortices** in the orbit space `A_m^k / G_(k+1)`: the
-orbits of the continuous fields of `A_m^k` solving the vortex equations. For `k ≥ 3` an orbit
-lies in it exactly when each of its fields is a vortex (`mk_mem_vortexModuli_iff`). -/
+orbits of the continuous fields of `A_m^k` solving the vortex equations (`mem_vortexModuli_iff`).
+For `k ≥ 3` an orbit lies in it exactly when each of its fields is a vortex
+(`mk_mem_vortexModuli_iff`). -/
 def vortexModuli :
     Set (MulAction.orbitRel.Quotient (SobolevTopologicalGaugeGroup hs) (SobolevFieldSpace f m k)) :=
   Quotient.mk _ '' {x | ∀ z, equation x z = 0}
+
+/-- An orbit lies in the vortex moduli space exactly when it is the orbit of a continuous field of
+`A_m^k` solving the vortex equations. -/
+theorem mem_vortexModuli_iff
+    {q : MulAction.orbitRel.Quotient (SobolevTopologicalGaugeGroup hs) (SobolevFieldSpace f m k)} :
+    q ∈ vortexModuli f m hs ↔ ∃ x : SobolevFieldSpace f m k, (∀ z, equation x z = 0) ∧
+      Quotient.mk _ x = q :=
+  Iff.rfl
+
+/-- The orbit of a continuous vortex of `A_m^k` lies in the vortex moduli space. -/
+theorem mk_mem_vortexModuli {x : SobolevFieldSpace f m k} (h : ∀ z, equation x z = 0) :
+    Quotient.mk _ x ∈ vortexModuli f m hs :=
+  mem_vortexModuli_iff.2 ⟨x, h, rfl⟩
 
 /-- For `k ≥ 3`, the orbit of a continuous field of `A_m^k` lies in the vortex moduli space exactly
 when the field solves the vortex equations. -/
 @[simp]
 theorem mk_mem_vortexModuli_iff (hk : 3 ≤ k) {x : SobolevFieldSpace f m k} :
     Quotient.mk _ x ∈ vortexModuli f m hs ↔ ∀ z, equation x z = 0 := by
-  refine ⟨?_, fun h ↦ ⟨x, h, rfl⟩⟩
+  refine ⟨?_, mk_mem_vortexModuli⟩
   rintro ⟨y, hy, hyx⟩
   obtain ⟨u, rfl⟩ :=
     MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 (Quotient.exact hyx.symm))
