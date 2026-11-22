@@ -9,7 +9,9 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Convolution.ConeDecay
 import TauCeti.Analysis.Normed.Module.Cone
+import TauCeti.Analysis.Normed.Module.OppositeCones
 
 /-!
 # Products of distributions under the wave front condition
@@ -49,6 +51,31 @@ cut-off distributions, `∫ 𝓕⁻ f η T (φ e_η) dη = T (φ f)`
 its point in every positive dimension (`Distribution.not_noOppositeCovectorsOn_delta_delta`), so
 `δ₀ · δ₀` is not covered.
 
+The wave front set of the product lies in the sums of the frequencies of the factors. Writing
+`Σ_K(S)` for the frequencies of `WF(S)` over `K`, pooled over all points of `K`,
+
+`WF(φ² S T) ⊆ supp φ × ((Σ_K(S) ∪ {0}) + (Σ_K(T) ∪ {0}))`, with `K = supp φ`
+
+(`Distribution.waveFrontSet_cutoffProduct_subset`). This is a cut-off analogue of Hörmander I,
+Theorem 8.2.10, and its proof follows Hörmander's; it is not pointwise, since the frequencies of
+`WF(S)` and `WF(T)` added here may come from different points of `supp φ`. The global pointwise
+bound, where both come from the same point, is not proved here.
+
+The proof starts from the convolution formula
+`(χ φ² S T)^(ζ) = ∫ S (φ e_η) T (χ φ e_(ζ - η)) dη` (`Distribution.localFourier_cutoffProduct`).
+Thicken `Σ_K(S)` and `Σ_K(T)` to open cones `U₁` and `U₂`, off which the two factors decay
+rapidly (`TauCeti.exists_cones_of_notMem_add`). If `ζ` lies in a small cone around a frequency
+outside the sum, then for each `η` at most one of `η ∈ U₁` and `ζ - η ∈ U₂` holds, and the
+decaying factor is evaluated at a frequency comparable to `ζ`, so the convolution decays
+(`TauCeti.exists_one_add_norm_pow_mul_norm_integral_mul_le`). This rests on the fact that
+`Σ_K(S)` and `Σ_K(T)`, together with `0`, are closed
+(`Distribution.isClosed_insert_zero_image_snd_waveFrontSet_inter`) cones without opposite
+directions, so that their sum is closed (`TauCeti.isClosed_add_of_forall_neg_mem_imp_eq_zero`).
+The same bound holds with any such closed cones in place of `Σ_K(S)` and `Σ_K(T)`
+(`Distribution.waveFrontSet_cutoffProduct_subset_of_cones`). This is a cut-off analogue, with one
+pair of cones over all of `supp φ`, of Brouder, Dang and Hélein, Theorem 6.1, whose cones are
+taken at each point.
+
 ## Main declarations
 
 * `Distribution.NoOppositeCovectorsOn S T K`: no opposite covectors of `WF(S)` and `WF(T)` over `K`,
@@ -65,13 +92,19 @@ its point in every positive dimension (`Distribution.not_noOppositeCovectorsOn_d
 * `Distribution.cutoffProduct_apply_of_apply_eq_integral_right`,
   `Distribution.cutoffProduct_apply_of_apply_eq_integral_left`: agreement with multiplication by
   a smooth function.
+* `Distribution.complexPairing_cutoffProduct`, `Distribution.localFourier_cutoffProduct`: the
+  product on complex test functions, and its localized Fourier transforms as convolutions.
+* `Distribution.waveFrontSet_cutoffProduct_subset_of_cones`,
+  `Distribution.waveFrontSet_cutoffProduct_subset`: the wave front set of the product.
 
 ## References
 
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, second edition,
-  Springer, 1990, Theorem 8.2.10 and its proof (the product of distributions).
+  Springer, 1990, Theorem 8.2.10 and its proof (the product of distributions); the bounds here are
+  cut-off, non-pointwise analogues.
 * C. Brouder, N. V. Dang, F. Hélein, *Continuity of the fundamental operations on distributions
-  having a specified wave front set*, Studia Math. 232 (2016), arXiv:1409.7662v2, Theorem 6.1.
+  having a specified wave front set*, Studia Math. 232 (2016), arXiv:1409.7662v2, Theorem 6.1,
+  whose cone form is followed here with one pair of cones over the support of the cutoff.
 -/
 
 public section
@@ -80,6 +113,7 @@ noncomputable section
 
 open Complex Filter Function Metric Set TopologicalSpace TestFunction MeasureTheory Module
 open scoped Distributions Topology FourierTransform ContDiff SchwartzMap Pointwise NNReal
+open scoped RealInnerProductSpace
 
 namespace Distribution
 
@@ -547,5 +581,153 @@ theorem cutoffProduct_apply_of_apply_eq_integral_left {U : Set E} (hU : IsOpen U
     rw [hχ, hf]
     simp only [TestFunction.smulLeftCLM_apply, Complex.real_smul]
     ring
+
+/-! ### The localized Fourier transform of the product -/
+
+/-- The product `φ² S T` paired with a complex test function `f`:
+`∫ S (φ e_η) T (f φ e_(-η)) dη`. -/
+theorem complexPairing_cutoffProduct {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ))
+    (f : 𝓓(Ω, ℂ)) :
+    (S.cutoffProduct T φ h).complexPairing f = ∫ η, S.localFourier φ η *
+      T.localFourier (bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) φ.contDiff f) (-η) := by
+  set f₁ := postcompCLM (𝕜 := ℝ) reCLM f
+  set f₂ := postcompCLM (𝕜 := ℝ) imCLM f
+  rw [complexPairing_apply, cutoffProduct_apply, cutoffProduct_apply, ← integral_const_mul,
+    ← integral_add (h.integrable_localFourier_mul_localFourier
+      (tsupport_smulLeftCLM_subset_right f₁.contDiff φ))
+      ((h.integrable_localFourier_mul_localFourier
+      (tsupport_smulLeftCLM_subset_right f₂.contDiff φ)).const_mul I)]
+  congr 1
+  ext η
+  rw [mul_left_comm I, ← mul_add, ← localFourier_smul_cutoff, ← localFourier_add_cutoff]
+  congr 2
+  ext x
+  simp only [_root_.add_apply, _root_.smul_apply, TestFunction.smulLeftCLM_apply,
+    bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', f₁, f₂, postcompCLM_apply,
+    Function.comp_apply, reCLM_apply, imCLM_apply, Complex.real_smul, smul_eq_mul]
+  conv_rhs => rw [← re_add_im (f x)]
+  ring
+
+/-- **The localized Fourier transform of the product is a convolution.** For a cutoff `χ`, the
+Fourier transform of `χ φ² S T` is the convolution of the Fourier transforms of `φ S` and `χ φ T`:
+
+`(χ φ² S T)^(ζ) = ∫ S (φ e_η) T (χ φ e_(ζ - η)) dη`. -/
+theorem localFourier_cutoffProduct {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ))
+    (χ : 𝓓(Ω, ℂ)) (ζ : E) :
+    (S.cutoffProduct T φ h).localFourier χ ζ = ∫ η, S.localFourier φ η *
+      T.localFourier (bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) φ.contDiff χ) (ζ - η) := by
+  rw [localFourier_def, complexPairing_cutoffProduct]
+  congr 1
+  ext η
+  congr 1
+  rw [localFourier_def]
+  refine (localFourier_eq T _ fun x ↦ ?_).symm
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
+    TauCeti.fourierAtom_eq_fourierChar]
+  rw [show -⟪x, ζ - η⟫ = -⟪x, ζ⟫ + -⟪x, -η⟫ by rw [inner_sub_right, inner_neg_right]; ring,
+    AddChar.map_add_eq_mul, Circle.coe_mul]
+  ring
+
+/-! ### The wave front set of the product -/
+
+/-- The product `φ² S T` is microlocally smooth at `(x, ζ)` whenever `ζ ∉ Γ₁ + Γ₂`, for closed cones
+`Γ₁ ∋ 0` and `Γ₂ ∋ 0` without opposite nonzero vectors containing the frequencies of the wave front
+sets of `S` and `T` over the support of `φ`. -/
+private theorem isMicrolocallySmoothAt_cutoffProduct_of_notMem_add {φ : 𝓓(Ω, ℂ)}
+    (h : NoOppositeCovectorsOn S T (tsupport φ)) {Γ₁ Γ₂ : Set E} (h₁ : IsClosed Γ₁)
+    (h₂ : IsClosed Γ₂) (h0₁ : (0 : E) ∈ Γ₁) (h0₂ : (0 : E) ∈ Γ₂)
+    (hc₁ : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ₁, t • ξ ∈ Γ₁) (hc₂ : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ₂, t • ξ ∈ Γ₂)
+    (hopp : ∀ ξ ∈ Γ₁, -ξ ∈ Γ₂ → ξ = 0)
+    (hS : ∀ x ∈ tsupport φ, ∀ ξ, (x, ξ) ∈ S.waveFrontSet → ξ ∈ Γ₁)
+    (hT : ∀ x ∈ tsupport φ, ∀ ξ, (x, ξ) ∈ T.waveFrontSet → ξ ∈ Γ₂) {x ζ : E} (hx : x ∈ Ω)
+    (hζ : ζ ∉ Γ₁ + Γ₂) : (S.cutoffProduct T φ h).IsMicrolocallySmoothAt x ζ := by
+  obtain ⟨U₁, U₂, hU₁, hU₂, hsub₁, hsub₂, hcU₁, hcU₂, Γ, hΓ, hζΓ, hΓc, c, hc, hgeom⟩ :=
+    TauCeti.exists_cones_of_notMem_add h₁ h₂ h0₁ h0₂ hc₁ hc₂ hopp hζ
+  -- A cutoff at `x`, and the localized Fourier transforms of `φ S` and of `χ φ T`.
+  obtain ⟨χ, -, hχx⟩ := exists_tsupport_subset_apply_eq (n := ⊤) (Ω.isOpen.mem_nhds hx)
+    subset_rfl (1 : ℂ)
+  set ψ := bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) φ.contDiff χ
+  have hψ : tsupport ψ ⊆ tsupport φ := by
+    simp only [ψ, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
+    exact tsupport_mul_subset_right
+  obtain ⟨A, kS, hA⟩ := exists_norm_localFourier_le S φ
+  obtain ⟨B, kT, hB⟩ := exists_norm_localFourier_le T ψ
+  have hA0 : 0 ≤ A := by simpa using (norm_nonneg _).trans (hA 0)
+  have hB0 : 0 ≤ B := by simpa using (norm_nonneg _).trans (hB 0)
+  have hpow {k k' : ℕ} (hk : k ≤ k') (η : E) : (1 + ‖η‖) ^ k ≤ (1 + ‖η‖) ^ k' :=
+    pow_le_pow_right₀ (le_add_of_nonneg_right (norm_nonneg η)) hk
+  -- They decay off `U₁` and `U₂`, where there is no wave front set.
+  have hdS : Disjoint (tsupport φ ×ˢ U₁ᶜ) S.waveFrontSet := disjoint_left.2 fun p hp hwf ↦
+    hp.2 (hsub₁ ⟨hS p.1 hp.1 p.2 hwf, (mem_waveFrontSet_iff.1 hwf).2.1⟩)
+  have hdT : Disjoint (tsupport ψ ×ˢ U₂ᶜ) T.waveFrontSet := disjoint_left.2 fun p hp hwf ↦
+    hp.2 (hsub₂ ⟨hT p.1 (hψ hp.1) p.2 hwf, (mem_waveFrontSet_iff.1 hwf).2.1⟩)
+  refine isMicrolocallySmoothAt_iff.2 ⟨χ, by simp [hχx], Γ, hΓ, hζΓ, hΓc, fun M ↦ ?_⟩
+  simp_rw [localFourier_cutoffProduct]
+  exact TauCeti.exists_one_add_norm_pow_mul_norm_integral_mul_le (k := max kS kT) hA0 hB0
+    (fun η ↦ (hA η).trans (mul_le_mul_of_nonneg_left (hpow (le_max_left _ _) η) hA0))
+    (fun θ ↦ (hB θ).trans (mul_le_mul_of_nonneg_left (hpow (le_max_right _ _) θ) hB0))
+    (fun N ↦ exists_forall_one_add_norm_pow_mul_norm_localFourier_le_of_disjoint
+      hU₁.isClosed_compl hcU₁ hdS N)
+    (fun N ↦ exists_forall_one_add_norm_pow_mul_norm_localFourier_le_of_disjoint
+      hU₂.isClosed_compl hcU₂ hdT N) hc hgeom M
+
+/-- **The wave front set of a cut-off product, for closed cones.** Let `Γ₁` and `Γ₂` be closed
+sets of frequencies, closed under multiplication by positive reals and without opposite nonzero
+vectors, containing the frequencies of the wave front sets of `S` and of `T` at all points of the
+support of `φ`. Then the frequencies of the wave front set of `φ² S T` lie in
+`(Γ₁ ∪ {0}) + (Γ₂ ∪ {0})`, that is, in `Γ₁`, in `Γ₂` or in `Γ₁ + Γ₂`. This is a cut-off analogue,
+with one pair of cones over the whole support of `φ`, of the pointwise cone form in Brouder, Dang
+and Hélein, Theorem 6.1; the proof follows that of Hörmander I, Theorem 8.2.10. -/
+theorem waveFrontSet_cutoffProduct_subset_of_cones {φ : 𝓓(Ω, ℂ)}
+    (h : NoOppositeCovectorsOn S T (tsupport φ)) {Γ₁ Γ₂ : Set E} (h₁ : IsClosed Γ₁)
+    (h₂ : IsClosed Γ₂) (hc₁ : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ₁, t • ξ ∈ Γ₁)
+    (hc₂ : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ₂, t • ξ ∈ Γ₂) (hopp : ∀ ξ ∈ Γ₁, -ξ ∈ Γ₂ → ξ = 0)
+    (hS : ∀ x ∈ tsupport φ, ∀ ξ, (x, ξ) ∈ S.waveFrontSet → ξ ∈ Γ₁)
+    (hT : ∀ x ∈ tsupport φ, ∀ ξ, (x, ξ) ∈ T.waveFrontSet → ξ ∈ Γ₂) :
+    (S.cutoffProduct T φ h).waveFrontSet ⊆ tsupport φ ×ˢ (insert 0 Γ₁ + insert 0 Γ₂) := by
+  rintro ⟨x, ζ⟩ hp
+  obtain ⟨hx, -, hns⟩ := mem_waveFrontSet_iff.1 hp
+  refine ⟨(dsupport_cutoffProduct_subset h (waveFrontSet_subset_dsupport _ hp).1).1,
+    by_contra fun hζ ↦ hns ?_⟩
+  -- Adjoin `0` to both cones.
+  exact isMicrolocallySmoothAt_cutoffProduct_of_notMem_add h
+    (insert_eq (0 : E) Γ₁ ▸ isClosed_singleton.union h₁)
+    (insert_eq (0 : E) Γ₂ ▸ isClosed_singleton.union h₂) (mem_insert _ _) (mem_insert _ _)
+    (TauCeti.forall_smul_mem_insert_zero hc₁) (TauCeti.forall_smul_mem_insert_zero hc₂)
+    (TauCeti.forall_neg_mem_insert_zero_imp_eq_zero hopp)
+    (fun x hx ξ hwf ↦ mem_insert_of_mem _ (hS x hx ξ hwf))
+    (fun x hx ξ hwf ↦ mem_insert_of_mem _ (hT x hx ξ hwf)) hx hζ
+
+/-- **The wave front set of a cut-off product.** If `S` and `T` have no opposite covectors over
+the support of `φ`, the wave front set of `φ² S T` lies over the support of `φ`, with frequencies
+`ξ + η` where `ξ` is `0` or a frequency of `WF(S)` over the support of `φ`, and `η` is `0` or a
+frequency of `WF(T)` over the support of `φ`. The frequencies `ξ` and `η` are pooled over the
+support of `φ` and may come from different points, so this is a cut-off, non-pointwise analogue of
+Hörmander I, Theorem 8.2.10, proved along the lines of Hörmander's proof. -/
+theorem waveFrontSet_cutoffProduct_subset {φ : 𝓓(Ω, ℂ)}
+    (h : NoOppositeCovectorsOn S T (tsupport φ)) :
+    (S.cutoffProduct T φ h).waveFrontSet ⊆ tsupport φ ×ˢ
+      (insert 0 (Prod.snd '' (S.waveFrontSet ∩ tsupport φ ×ˢ univ)) +
+        insert 0 (Prod.snd '' (T.waveFrontSet ∩ tsupport φ ×ˢ univ))) := by
+  have hK : IsCompact (tsupport φ) := φ.hasCompactSupport.isCompact
+  -- The frequencies of `WF(R)` over the support of `φ` form a cone, and those of `S` and `T` have
+  -- no opposite nonzero vectors.
+  have hcone (R : 𝓓'(Ω, ℂ)) : ∀ t : ℝ, 0 < t →
+      ∀ ξ ∈ Prod.snd '' (R.waveFrontSet ∩ tsupport φ ×ˢ univ),
+        t • ξ ∈ Prod.snd '' (R.waveFrontSet ∩ tsupport φ ×ˢ univ) := by
+    rintro t ht _ ⟨⟨x, ξ⟩, ⟨hwf, hx, -⟩, rfl⟩
+    exact ⟨(x, t • ξ), ⟨(smul_mem_waveFrontSet_iff ht).2 hwf, hx, mem_univ _⟩, rfl⟩
+  have hopp : ∀ ξ ∈ Prod.snd '' (S.waveFrontSet ∩ tsupport φ ×ˢ univ),
+      -ξ ∈ Prod.snd '' (T.waveFrontSet ∩ tsupport φ ×ˢ univ) → ξ = 0 := by
+    rintro _ ⟨⟨x, ξ⟩, ⟨hwf, hx, -⟩, rfl⟩ ⟨⟨y, ξ'⟩, ⟨hwf', hy, -⟩, hξ'eq⟩
+    exact (noOppositeCovectorsOn_iff.1 h x hx y hy ξ hwf (by simpa [← hξ'eq] using hwf')).elim
+  have hsub := waveFrontSet_cutoffProduct_subset_of_cones h
+    (isClosed_insert_zero_image_snd_waveFrontSet_inter hK φ.tsupport_subset S)
+    (isClosed_insert_zero_image_snd_waveFrontSet_inter hK φ.tsupport_subset T)
+    (TauCeti.forall_smul_mem_insert_zero (hcone S)) (TauCeti.forall_smul_mem_insert_zero (hcone T))
+    (TauCeti.forall_neg_mem_insert_zero_imp_eq_zero hopp)
+    (fun x hx ξ hwf ↦ mem_insert_of_mem _ ⟨(x, ξ), ⟨hwf, hx, mem_univ _⟩, rfl⟩)
+    (fun x hx ξ hwf ↦ mem_insert_of_mem _ ⟨(x, ξ), ⟨hwf, hx, mem_univ _⟩, rfl⟩)
+  simpa only [insert_idem] using hsub
 
 end Distribution

@@ -137,29 +137,24 @@ may live in any universe. -/
 theorem _root_.FGModuleCat.additiveClosure_of_isCoseparator_of_injective {M : FGModuleCat.{v} R}
     (hM : IsCoseparator M) (I : FGModuleCat.{v} R) [Injective I] [IsArtinian R I.obj] :
     additiveClosure M I := by
-  classical
-  -- The kernels of the morphisms `I ⟶ M` meet in zero, as `M` is a coseparator: test on the
+  -- The linear maps `I → M` separate the points of `I`, as `M` is a coseparator: test on the
   -- inclusion of the cyclic submodule `R ∙ x`.
-  have hker (x : I.obj) (hx : ∀ g : I ⟶ M, g.hom.hom x = 0) : x = 0 := by
+  have hsep (x : I.obj) (hx0 : x ≠ 0) : ∃ f : I.obj →ₗ[R] M.obj, f x ≠ 0 := by
+    by_contra! hx
     let i : FGModuleCat.of R (R ∙ x) ⟶ I := ObjectProperty.homMk (ModuleCat.ofHom (R ∙ x).subtype)
     have hi : i = 0 := (Preadditive.isCoseparator_iff M).1 hM i fun g ↦ by
       ext ⟨y, hy⟩
       obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hy
       simp [i, hx]
-    simpa [i] using congr(($hi).hom.hom ⟨x, Submodule.mem_span_singleton_self x⟩)
-  -- As `I` is Artinian, the kernels of finitely many of them already meet in zero.
-  obtain ⟨F, hF⟩ := IsArtinian.exists_finset_iInf_eq fun g : I ⟶ M ↦ LinearMap.ker g.hom.hom
-  have hF' (x : I.obj) (hx : ∀ g ∈ F, g.hom.hom x = 0) : x = 0 := hker x fun g ↦ by
-    have hx' : x ∈ ⨅ g ∈ F, LinearMap.ker g.hom.hom := by simpa [Submodule.mem_iInf] using hx
-    rw [hF] at hx'
-    exact (Submodule.mem_iInf _).1 hx' g
-  -- So `I` embeds into a finite sum of copies of `M`, and the embedding splits.
-  let ι : I ⟶ ⨁ fun _ : Fin F.card ↦ M := biproduct.lift fun j ↦ F.equivFin.symm j
+    exact hx0 (by simpa [i] using congr(($hi).hom.hom ⟨x, Submodule.mem_span_singleton_self x⟩))
+  -- As `I` is Artinian, it embeds into a finite power `Mⁿ`, and the embedding splits.
+  obtain ⟨n, g, hg⟩ := IsArtinian.exists_injective_linearMap_pi hsep
+  let ι : I ⟶ ⨁ fun _ : Fin n ↦ M :=
+    biproduct.lift fun j ↦ ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.proj j ∘ₗ g))
   have : Mono ι := Preadditive.mono_of_cancel_zero ι fun {Z} h hh ↦ by
-    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun z ↦ ?_))
-    have hz := hF' (h.hom.hom z) fun g hg ↦ by
-      simpa [ι] using congr(($hh ≫ biproduct.π _ (F.equivFin ⟨g, hg⟩)).hom.hom z)
-    simpa using hz
+    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun z ↦ hg ?_))
+    ext j
+    simpa [ι] using congr(($hh ≫ biproduct.π _ j).hom.hom z)
   exact (additiveClosure M).prop_of_retract ⟨ι, Injective.factorThru (𝟙 I) ι, by simp⟩
     ((additiveClosure M).prop_of_isLimit (biproduct.isLimit _) fun _ ↦ additiveClosure_self M)
 
