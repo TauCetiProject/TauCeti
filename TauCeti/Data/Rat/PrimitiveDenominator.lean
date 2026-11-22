@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Rat.Defs
 public import Mathlib.RingTheory.Coprime.Lemmas
 
 import Mathlib.Tactic.LinearCombination
@@ -21,8 +20,7 @@ quadratic `t² = x t + y`, it rescales the relation to a primitive integral one
 theory of lattices in quadratic fields (D. A. Cox, *Primes of the Form x² + ny²*, §7).
 
 The integer `a` is `x.den` times the denominator of `x.den * y`, that is, the least common
-multiple of the two denominators; primitivity comes from the coprimality of numerator and
-denominator of `x` and of `x.den * y`. Dually, any two rationals satisfy a primitive integral linear
+multiple of the two denominators. Dually, any two rationals satisfy a primitive integral linear
 relation `u x + v y = 0` with `u, v` coprime.
 -/
 
