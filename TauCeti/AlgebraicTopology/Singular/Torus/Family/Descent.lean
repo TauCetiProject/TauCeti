@@ -105,8 +105,8 @@ private theorem torusFamilyMarking_loopClass_of_homotopy_of_mk_eq {g : Γ} {y₀
       letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
       ∀ t, Quotient.mk (MulAction.orbitRel Γ _) (H' (t, 1)) =
         Quotient.mk _ (γ₁ t : AddAction.orbitRel.Quotient Λ (Y × E))) :
-    torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology _ (loopClass γ₁)) =
-      ρ g⁻¹ (torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology _ (loopClass γ₀))) := by
+    torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₁)) =
+      ρ g⁻¹ (torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₀))) := by
   let _ := periodAddAction P
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
   have covX := (isQuotientCoveringMap_quotientMk_torusFamilyAffineMulAction P hcont hinj R hone
@@ -181,10 +181,10 @@ theorem torusFamilyMarking_loopClass_of_orbitRelQuotient_homotopy {y₀ : Y}
       letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
       ∀ s, δ s = MulActionHom.orbitRelQuotientMap
       (torusFamilyAffineProjectionHom R hone hmul P ρ hP b hb hbmul) (H (0, s))) :
-    torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology _ (loopClass γ₁)) =
+    torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₁)) =
       ρ ((isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := Γ) (E := Y)
           |>.fundamentalGroupToMulOpposite ⟨y₀, rfl⟩ (.of (.mk δ))).unop⁻¹)
-        (torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology _ (loopClass γ₀))) := by
+        (torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₀))) := by
   let _ := periodAddAction P
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
   have hqY := isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := Γ) (E := Y)
@@ -246,10 +246,10 @@ theorem torusFamilyMarking_loopClass_of_orbitRelQuotient_homotopy_symm {y₀ : Y
       letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
       ∀ s, δ.symm s = MulActionHom.orbitRelQuotientMap
       (torusFamilyAffineProjectionHom R hone hmul P ρ hP b hb hbmul) (H (0, s))) :
-    torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology _ (loopClass γ₁)) =
+    torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₁)) =
       ρ (isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := Γ) (E := Y)
           |>.fundamentalGroupToMulOpposite ⟨y₀, rfl⟩ (.of (.mk δ))).unop
-        (torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology _ (loopClass γ₀))) := by
+        (torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₀))) := by
   have hqY := isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := Γ) (E := Y)
   -- The class of `δ⁻¹` is the inverse of the class of `δ` in the fundamental group.
   have hinv : (hqY.fundamentalGroupToMulOpposite ⟨y₀, rfl⟩ (.of (.mk δ.symm))).unop⁻¹ =
