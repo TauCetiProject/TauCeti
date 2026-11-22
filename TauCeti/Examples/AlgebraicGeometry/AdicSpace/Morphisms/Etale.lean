@@ -70,7 +70,8 @@ example :
     let X₁ := AdicSpace.ofPair (discPair p) (isSheafy_discPair p)
     IsFiniteEtale (𝟙 X₀) ∧ IsEtaleLocalDescription (𝟙 X₀) ∧
       IsFiniteEtale (𝟙 X₁) ∧ IsEtaleLocalDescription (𝟙 X₁) :=
-  ⟨.id (.ofPair _ _), .id (.ofPair _ _), .id (.ofPair _ _), .id (.ofPair _ _)⟩
+  ⟨isFiniteEtale_id (.ofPair _ _), .id (.ofPair _ _), isFiniteEtale_id (.ofPair _ _),
+    .id (.ofPair _ _)⟩
 
 /-- Conditional on sheafiness of its structure presheaf (`hs`), `Spa(ℤ_[p], ℤ_[p])` is not analytic,
 so its identity is neither finite étale nor étale. -/
@@ -124,13 +125,15 @@ example :
       (Pair.polydisc.closedPolydiscHomeomorph 1)
     let U : Opens D.obj := ⟨e ⁻¹' closedSubdisc 0 (p : ℚ_[p]),
       (isOpen_closedSubdisc 0 (p : ℚ_[p])).preimage e.continuous⟩
-    let j : (⟨D.obj.restrict U.isOpenEmbedding, isAdic_restrict _ D.property⟩ :
-        AdicSpace.{0}) ⟶ D := ObjectProperty.homMk (D.obj.ofRestrict U.isOpenEmbedding)
+    let j := D.ofRestrict U
     IsEtaleLocalDescription j ∧ ¬ IsFiniteEtale j := by
   intro D e U j
   refine ⟨.of_isOpenImmersion j (.ofPair _ _), fun hj ↦ ?_⟩
   have hcl : IsClosed (U : Set D.obj) := by
-    convert hj.isClopen_range.isClosed; exact (Opens.set_range_inclusion' U).symm
+    have hr : Set.range j.hom.base = (U : Set D.obj) := by
+      rw [AdicSpace.ofRestrict_hom]
+      exact Opens.set_range_inclusion' U
+    exact hr ▸ hj.isClopen_range.isClosed
   have hp_pos : 0 < ‖(p : ℚ_[p])‖ := norm_pos_iff.mpr (mod_cast (Fact.out : p.Prime).ne_zero)
   have hp_lt : ‖(p : ℚ_[p])‖ < 1 := _root_.Padic.norm_p_lt_one
   have hcl_sub : IsClosed (closedSubdisc 0 (p : ℚ_[p])) := by

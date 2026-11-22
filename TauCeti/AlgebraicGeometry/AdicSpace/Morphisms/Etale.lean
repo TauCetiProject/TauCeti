@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FiniteEtale
+public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.Finite.Etale
 
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.GlueMorphisms
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyOfFiniteType.Local
@@ -105,7 +105,7 @@ theorem IsEtaleLocalDescription.of_isFiniteEtale {f : Y ⟶ X} (hf : IsFiniteEta
 theorem IsEtaleLocalDescription.of_isOpenImmersion (f : Y ⟶ X)
     [PreAdicSpace.IsOpenImmersion f.hom] (hX : X.IsAnalytic) : IsEtaleLocalDescription f :=
   ⟨hX, hX.of_isOpenImmersion f, fun y ↦ ⟨Y, X, X, 𝟙 Y, 𝟙 X, f, 𝟙 X, inferInstance, ⟨y, rfl⟩,
-    inferInstance, inferInstance, .id hX, by simp⟩⟩
+    inferInstance, inferInstance, isFiniteEtale_id hX, by simp⟩⟩
 
 /-- **An open immersion in `AdicSpace` is étale if and only if its target is analytic.** -/
 theorem isEtaleLocalDescription_iff_of_isOpenImmersion (f : Y ⟶ X)
@@ -114,7 +114,7 @@ theorem isEtaleLocalDescription_iff_of_isOpenImmersion (f : Y ⟶ X)
 
 /-- **The identity of an analytic adic space is étale.** -/
 theorem IsEtaleLocalDescription.id {X : AdicSpace.{u}} (hX : X.IsAnalytic) :
-    IsEtaleLocalDescription (𝟙 X) := .of_isFiniteEtale (IsFiniteEtale.id hX)
+    IsEtaleLocalDescription (𝟙 X) := .of_isFiniteEtale (isFiniteEtale_id hX)
 
 /-- **The identity of an adic space `X` is étale if and only if `X` is analytic.** -/
 @[simp] theorem isEtaleLocalDescription_id_iff {X : AdicSpace.{u}} :
@@ -123,7 +123,7 @@ theorem IsEtaleLocalDescription.id {X : AdicSpace.{u}} (hX : X.IsAnalytic) :
 
 /-- **An isomorphism onto an analytic adic space is étale.** -/
 theorem IsEtaleLocalDescription.of_isIso (f : Y ⟶ X) [IsIso f] (hX : X.IsAnalytic) :
-    IsEtaleLocalDescription f := .of_isFiniteEtale (IsFiniteEtale.of_isIso f hX)
+    IsEtaleLocalDescription f := .of_isFiniteEtale (isFiniteEtale_of_isIso f hX)
 
 /-- **An isomorphism in `AdicSpace` is étale if and only if its target is analytic.** -/
 theorem isEtaleLocalDescription_iff_of_isIso (f : Y ⟶ X) [IsIso f] :
@@ -365,7 +365,7 @@ theorem IsEtaleLocalDescription.locallyOfFiniteType {f : Y ⟶ X} (hf : IsEtaleL
       simpa only [ObjectProperty.FullSubcategory.comp_hom, Category.assoc] using
         congrArg InducedCategory.Hom.hom (hfac y)
     rw [hfac']
-    exact ((hg y).locallyOfFiniteType.comp_of_isOpenImmersion _).isOpenImmersion_comp _
+    exact ((hg y).isFinite.locallyOfFiniteType.comp_of_isOpenImmersion _).isOpenImmersion_comp _
   rw [← IsOpenImmersion.isoOfRangeEq_inv_comp (u y).hom (Y.obj.ofRestrict (O y).isOpenEmbedding)
       (Opens.set_range_inclusion' (O y)).symm, Category.assoc,
     MorphismProperty.cancel_left_of_respectsIso @PreAdicSpace.LocallyOfFiniteType.{u}]
@@ -538,6 +538,94 @@ private theorem comm_restrictPreimage_of_square {W W₀ Z Z₀ : AdicSpace.{u}}
     ← ObjectProperty.FullSubcategory.comp_hom, hsq, ObjectProperty.FullSubcategory.comp_hom,
     Category.assoc, Hom.restrictPreimage_ofRestrict, reassoc_of% huO]
 
+section SquareComparison
+
+variable {R hR I hRI} {W : Opens (ofPair R hR).obj} {z : (ofPair R hR).obj}
+  (sq : OfPairQuotientRationalSquare R hR I hRI W z)
+
+private noncomputable def sqTargetIso :
+    (ofPair sq.pair sq.isSheafy).obj ≅ (ofPair R hR).obj.restrict sq.openSet.isOpenEmbedding :=
+  IsOpenImmersion.isoOfRangeEq sq.targetMap.hom
+    ((ofPair R hR).obj.ofRestrict sq.openSet.isOpenEmbedding)
+    (sq.range_targetMap.trans (Opens.set_range_inclusion' sq.openSet).symm)
+
+private theorem sqTargetIso_hom_ofRestrict :
+    (sqTargetIso sq).hom ≫ (ofPair R hR).obj.ofRestrict sq.openSet.isOpenEmbedding =
+      sq.targetMap.hom :=
+  IsOpenImmersion.isoOfRangeEq_hom_comp _ _ _
+
+private theorem sqTargetIso_inv_targetMap :
+    (sqTargetIso sq).inv ≫ sq.targetMap.hom =
+      (ofPair R hR).obj.ofRestrict sq.openSet.isOpenEmbedding :=
+  IsOpenImmersion.isoOfRangeEq_inv_comp _ _ _
+
+private noncomputable def sqQuotientIso :
+    (ofPair (sq.pair.quotient sq.ideal) sq.isSheafyQuotient).obj ≅
+      (ofPair (R.quotient I) hRI).obj.restrict
+        ((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj sq.openSet).isOpenEmbedding :=
+  IsOpenImmersion.isoOfRangeEq sq.quotientMap.hom
+    ((ofPair (R.quotient I) hRI).obj.ofRestrict
+      ((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj sq.openSet).isOpenEmbedding)
+    (sq.range_quotientMap.trans
+      (Opens.set_range_inclusion'
+        ((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj sq.openSet)).symm)
+
+private theorem sqQuotientIso_hom_ofRestrict :
+    (sqQuotientIso sq).hom ≫
+      (ofPair (R.quotient I) hRI).obj.ofRestrict
+        ((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj sq.openSet).isOpenEmbedding =
+      sq.quotientMap.hom :=
+  IsOpenImmersion.isoOfRangeEq_hom_comp _ _ _
+
+private theorem sqQuotientIso_inv_quotientMap :
+    (sqQuotientIso sq).inv ≫ sq.quotientMap.hom =
+      (ofPair (R.quotient I) hRI).obj.ofRestrict
+        ((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj sq.openSet).isOpenEmbedding :=
+  IsOpenImmersion.isoOfRangeEq_inv_comp _ _ _
+
+private theorem sqRestrictPreimage :
+    (sqZeroQuotHom R hR I hRI).hom.restrictPreimage sq.openSet =
+      (sqQuotientIso sq).inv ≫
+        (comapOfPair sq.isSheafy sq.isSheafyQuotient (Pair.quotientHom sq.pair sq.ideal)).hom ≫
+        (sqTargetIso sq).hom :=
+  (Iso.eq_inv_comp (sqQuotientIso sq)).mpr
+    (comm_restrictPreimage_of_square sq.comm sq.openSet (sqTargetIso_hom_ofRestrict sq)
+      (sqQuotientIso_hom_ofRestrict sq)).symm
+
+private noncomputable def sqTargetIncl {O : Opens (ofPair R hR).obj} (hO : sq.openSet ≤ O) :
+    (ofPair sq.pair sq.isSheafy).obj ⟶ (ofPair R hR).obj.restrict O.isOpenEmbedding :=
+  (sqTargetIso sq).hom ≫ Hom.liftRestrict (𝟙 (ofPair R hR).obj) (by simpa using hO)
+
+private theorem sqTargetIncl_ofRestrict {O : Opens (ofPair R hR).obj} (hO : sq.openSet ≤ O) :
+    sqTargetIncl sq hO ≫ (ofPair R hR).obj.ofRestrict O.isOpenEmbedding = sq.targetMap.hom := by
+  rw [sqTargetIncl, Category.assoc, Hom.liftRestrict_ofRestrict, Category.comp_id,
+    sqTargetIso_hom_ofRestrict]
+
+private noncomputable def sqQuotientIncl {O : Opens (ofPair R hR).obj} (hO : sq.openSet ≤ O) :
+    (ofPair (sq.pair.quotient sq.ideal) sq.isSheafyQuotient).obj ⟶
+      (ofPair (R.quotient I) hRI).obj.restrict
+        ((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj O).isOpenEmbedding :=
+  (sqQuotientIso sq).hom ≫
+    Hom.liftRestrict (𝟙 (ofPair (R.quotient I) hRI).obj)
+      (by simpa using ((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).map (homOfLE hO)).le)
+
+private theorem sqQuotientIncl_ofRestrict {O : Opens (ofPair R hR).obj} (hO : sq.openSet ≤ O) :
+    sqQuotientIncl sq hO ≫
+      (ofPair (R.quotient I) hRI).obj.ofRestrict
+        ((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj O).isOpenEmbedding =
+      sq.quotientMap.hom := by
+  rw [sqQuotientIncl, Category.assoc, Hom.liftRestrict_ofRestrict, Category.comp_id,
+    sqQuotientIso_hom_ofRestrict]
+
+private theorem sqIncl_restrictPreimage {O : Opens (ofPair R hR).obj} (hO : sq.openSet ≤ O) :
+    (comapOfPair sq.isSheafy sq.isSheafyQuotient (Pair.quotientHom sq.pair sq.ideal)).hom ≫
+        sqTargetIncl sq hO =
+      sqQuotientIncl sq hO ≫ (sqZeroQuotHom R hR I hRI).hom.restrictPreimage O :=
+  comm_restrictPreimage_of_square sq.comm O (sqTargetIncl_ofRestrict sq hO)
+    (sqQuotientIncl_ofRestrict sq hO)
+
+end SquareComparison
+
 private theorem exists_local_lift_of_sqZero_quotient (hf : IsEtaleLocalDescription f)
     (hI : I ^ 2 = ⊥) (hsq : g₀ ≫ f = sqZeroQuotHom R hR I hRI ≫ h) (z : (ofPair R hR).obj) :
     ∃ (O : Opens (ofPair R hR).obj), z ∈ O ∧
@@ -546,7 +634,7 @@ private theorem exists_local_lift_of_sqZero_quotient (hf : IsEtaleLocalDescripti
         (sqZeroQuotHom R hR I hRI).hom.restrictPreimage O ≫ gO =
           (ofPair (R.quotient I) hRI).obj.ofRestrict
             ((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj O).isOpenEmbedding ≫ g₀.hom := by
-  let Z := ofPair R hR; let Z₀ := ofPair (R.quotient I) hRI; let ι := sqZeroQuotHom R hR I hRI
+  let Z := ofPair R hR; let ι := sqZeroQuotHom R hR I hRI
   have hι := isHomeomorph_comapOfPair_quotientHom_base_of_isNilpotent R hR I hRI ⟨2, hI⟩
   obtain ⟨z₀, hz₀⟩ := hι.surjective z
   -- Refine around `z` to a rational open `sq.openSet` where `g₀` lands in an affinoid chart
@@ -564,44 +652,20 @@ private theorem exists_local_lift_of_sqZero_quotient (hf : IsEtaleLocalDescripti
       sq.isSheafyQuotient fac.isFiniteEtale fac.fac sq.completeSpaceQuotient (sq.pow_eq_bot hI)
       (sq.quotientMap ≫ g₀) (sq.targetMap ≫ h)
       (by simp only [Category.assoc, hsq, ← reassoc_of% sq.comm]) hr₀
-  have hrv : Set.range sq.targetMap.hom.base =
-      Set.range (Z.obj.ofRestrict sq.openSet.isOpenEmbedding).base :=
-    sq.range_targetMap.trans (Opens.set_range_inclusion' sq.openSet).symm
-  have hru' : Set.range sq.quotientMap.hom.base =
-      Set.range (Z₀.obj.ofRestrict ((Opens.map ι.hom.base).obj sq.openSet).isOpenEmbedding).base :=
-    sq.range_quotientMap.trans
-      (Opens.set_range_inclusion' ((Opens.map ι.hom.base).obj sq.openSet)).symm
-  let ev := IsOpenImmersion.isoOfRangeEq sq.targetMap.hom
-    (Z.obj.ofRestrict sq.openSet.isOpenEmbedding) hrv
-  let eu' := IsOpenImmersion.isoOfRangeEq sq.quotientMap.hom (Z₀.obj.ofRestrict _) hru'
-  have hres_ι : ι.hom.restrictPreimage sq.openSet =
-      eu'.inv ≫ (comapOfPair sq.isSheafy sq.isSheafyQuotient
-        (Pair.quotientHom sq.pair sq.ideal)).hom ≫ ev.hom :=
-    (Iso.eq_inv_comp eu').mpr (comm_restrictPreimage_of_square sq.comm sq.openSet
-      (IsOpenImmersion.isoOfRangeEq_hom_comp _ _ hrv)
-      (IsOpenImmersion.isoOfRangeEq_hom_comp _ _ hru')).symm
-  refine ⟨sq.openSet, sq.mem, ev.inv ≫ gloc.hom, ?_, ?_⟩
-  · calc (ev.inv ≫ gloc.hom) ≫ f.hom
-        = ev.inv ≫ (gloc ≫ f).hom := by
-          simp only [Category.assoc, ObjectProperty.FullSubcategory.comp_hom]
-      _ = ev.inv ≫ (sq.targetMap ≫ h).hom := by rw [hgloc_f]
-      _ = (ev.inv ≫ sq.targetMap.hom) ≫ h.hom := by
-          simp only [ObjectProperty.FullSubcategory.comp_hom, Category.assoc]
-      _ = Z.obj.ofRestrict sq.openSet.isOpenEmbedding ≫ h.hom := by
-          rw [IsOpenImmersion.isoOfRangeEq_inv_comp]
-  · calc ι.hom.restrictPreimage sq.openSet ≫ ev.inv ≫ gloc.hom
-        = (eu'.inv ≫ (comapOfPair sq.isSheafy sq.isSheafyQuotient
-            (Pair.quotientHom sq.pair sq.ideal)).hom ≫ ev.hom) ≫ ev.inv ≫ gloc.hom := by
-          rw [hres_ι]
-      _ = eu'.inv ≫ ((comapOfPair sq.isSheafy sq.isSheafyQuotient
-            (Pair.quotientHom sq.pair sq.ideal)).hom ≫ gloc.hom) := by
-          simp only [Category.assoc, Iso.hom_inv_id_assoc]
-      _ = eu'.inv ≫ (sq.quotientMap ≫ g₀).hom := by
-          rw [← ObjectProperty.FullSubcategory.comp_hom, hgloc_K]
-      _ = (eu'.inv ≫ sq.quotientMap.hom) ≫ g₀.hom := by
-          simp only [ObjectProperty.FullSubcategory.comp_hom, Category.assoc]
-      _ = Z₀.obj.ofRestrict ((Opens.map ι.hom.base).obj sq.openSet).isOpenEmbedding ≫ g₀.hom := by
-          rw [IsOpenImmersion.isoOfRangeEq_inv_comp]
+  have hgloc_f_hom : gloc.hom ≫ f.hom = sq.targetMap.hom ≫ h.hom := by
+    simpa only [ObjectProperty.FullSubcategory.comp_hom] using
+      congrArg InducedCategory.Hom.hom hgloc_f
+  have hgloc_K_hom :
+      (comapOfPair sq.isSheafy sq.isSheafyQuotient (Pair.quotientHom sq.pair sq.ideal)).hom ≫
+          gloc.hom =
+        sq.quotientMap.hom ≫ g₀.hom := by
+    simpa only [ObjectProperty.FullSubcategory.comp_hom] using
+      congrArg InducedCategory.Hom.hom hgloc_K
+  refine ⟨sq.openSet, sq.mem, (sqTargetIso sq).inv ≫ gloc.hom, ?_, ?_⟩
+  · simp only [Category.assoc, hgloc_f_hom, reassoc_of% (sqTargetIso_inv_targetMap sq)]
+  · rw [sqRestrictPreimage]
+    simp only [Category.assoc, Iso.hom_inv_id_assoc, hgloc_K_hom,
+      reassoc_of% (sqQuotientIso_inv_quotientMap sq)]
 
 private theorem pullback_fst_comp_eq_of_sqZero_quotient (hf : IsEtaleLocalDescription f)
     (hI : I ^ 2 = ⊥) {O₁ O₂ : Opens (ofPair R hR).obj}
@@ -639,38 +703,33 @@ private theorem pullback_fst_comp_eq_of_sqZero_quotient (hf : IsEtaleLocalDescri
       ((congrArg (fun m ↦ m.base q) (IsOpenImmersion.lift_fac pZ sq.targetMap.hom hvP_sub)).trans
         hq)⟩
   let πK := comapOfPair sq.isSheafy sq.isSheafyQuotient (Pair.quotientHom sq.pair sq.ideal)
-  have hπK_lift {O : Opens Z.obj} (hWO : O₁ ⊓ O₂ ≤ O)
-      {vO : (ofPair sq.pair sq.isSheafy).obj ⟶ Z.obj.restrict O.isOpenEmbedding}
-      (hvO : vO ≫ Z.obj.ofRestrict O.isOpenEmbedding = sq.targetMap.hom)
+  have hπK_lift {O : Opens Z.obj} (hWO : sq.openSet ≤ O)
       {gO : Z.obj.restrict O.isOpenEmbedding ⟶ Y.obj}
       (hgO_ι : ι.hom.restrictPreimage O ≫ gO =
         Z₀.obj.ofRestrict ((Opens.map ι.hom.base).obj O).isOpenEmbedding ≫ g₀.hom) :
-      πK.hom ≫ vO ≫ gO = sq.quotientMap.hom ≫ g₀.hom := by
-    let u'O := IsOpenImmersion.lift
-      (Z₀.obj.ofRestrict ((Opens.map ι.hom.base).obj O).isOpenEmbedding) sq.quotientMap.hom
-      (Set.range_subset_iff.mpr fun r ↦ Set.mem_range.mpr
-        ⟨⟨sq.quotientMap.hom.base r, hWO (sq.le (Set.mem_preimage.mp
-          (by rw [← sq.range_quotientMap]; exact ⟨r, rfl⟩)))⟩, rfl⟩)
-    have hcomm : πK.hom ≫ vO = u'O ≫ ι.hom.restrictPreimage O :=
-      comm_restrictPreimage_of_square sq.comm O hvO (IsOpenImmersion.lift_fac _ _ _)
-    rw [reassoc_of% hcomm, hgO_ι, IsOpenImmersion.lift_fac_assoc]
-  have hv₁ : (vP ≫ pullback.fst _ _) ≫ Z.obj.ofRestrict O₁.isOpenEmbedding = sq.targetMap.hom := by
-    rw [Category.assoc]; exact IsOpenImmersion.lift_fac pZ sq.targetMap.hom hvP_sub
-  have hv₂ : (vP ≫ pullback.snd _ _) ≫ Z.obj.ofRestrict O₂.isOpenEmbedding = sq.targetMap.hom := by
-    rw [Category.assoc, ← pullback.condition]
-    exact IsOpenImmersion.lift_fac pZ sq.targetMap.hom hvP_sub
-  have hm_eq : (ObjectProperty.homMk ((vP ≫ pullback.fst _ _) ≫ g₁) :
+      πK.hom ≫ sqTargetIncl sq hWO ≫ gO = sq.quotientMap.hom ≫ g₀.hom := by
+    rw [reassoc_of% (sqIncl_restrictPreimage sq hWO), hgO_ι,
+      reassoc_of% (sqQuotientIncl_ofRestrict sq hWO)]
+  have hv₁ : vP ≫ pullback.fst _ _ = sqTargetIncl sq (sq.le.trans inf_le_left) :=
+    (cancel_mono (Z.obj.ofRestrict O₁.isOpenEmbedding)).mp
+      (by rw [Category.assoc, IsOpenImmersion.lift_fac pZ _ hvP_sub, sqTargetIncl_ofRestrict])
+  have hv₂ : vP ≫ pullback.snd _ _ = sqTargetIncl sq (sq.le.trans inf_le_right) :=
+    (cancel_mono (Z.obj.ofRestrict O₂.isOpenEmbedding)).mp
+      (by rw [Category.assoc, ← pullback.condition, IsOpenImmersion.lift_fac pZ _ hvP_sub,
+        sqTargetIncl_ofRestrict])
+  have hm_eq : (ObjectProperty.homMk (sqTargetIncl sq (sq.le.trans inf_le_left) ≫ g₁) :
         ofPair sq.pair sq.isSheafy ⟶ Y) =
-      ObjectProperty.homMk ((vP ≫ pullback.snd _ _) ≫ g₂) :=
+      ObjectProperty.homMk (sqTargetIncl sq (sq.le.trans inf_le_right) ≫ g₂) :=
     hf.eq_of_sqZero_quotient sq.pair sq.isSheafy sq.ideal (sq.pow_eq_bot hI) sq.isSheafyQuotient
       (InducedCategory.Hom.ext (by
         simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
-          Category.assoc, hg₁_f, hg₂_f, Z, reassoc_of% hv₁, reassoc_of% hv₂]))
+          Category.assoc, hg₁_f, hg₂_f, Z, reassoc_of% (sqTargetIncl_ofRestrict sq _)]))
       (InducedCategory.Hom.ext (by
         simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom]
-        exact (hπK_lift inf_le_left hv₁ hg₁_ι).trans (hπK_lift inf_le_right hv₂ hg₂_ι).symm))
+        exact (hπK_lift _ hg₁_ι).trans (hπK_lift _ hg₂_ι).symm))
   refine ⟨(ofPair sq.pair sq.isSheafy).obj, vP, inferInstance, hp_mem, ?_⟩
-  simpa only [ObjectProperty.homMk_hom, Category.assoc] using congrArg InducedCategory.Hom.hom hm_eq
+  rw [reassoc_of% hv₁, reassoc_of% hv₂]
+  simpa only [ObjectProperty.homMk_hom] using congrArg InducedCategory.Hom.hom hm_eq
 
 end SqZeroLift
 

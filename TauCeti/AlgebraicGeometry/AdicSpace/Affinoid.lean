@@ -752,12 +752,18 @@ theorem exists_ofPair_quotient_rational_square (S : Pair A)
   have hψπ : hq.quotientKerInverse.comp π = Pair.quotientHom S₁ K := by
     rw [← Pair.Hom.quotientLift_comp_quotientHom K π le_rfl, ← Pair.Hom.comp_assoc,
       hq.quotientKerInverse_comp_quotientLift, Pair.Hom.id_comp]
+  have hpair_sq : (Pair.quotientHom S₁ K).comp (P.toCompletionLocHom S hP F s L hden) =
+      (hq.quotientKerInverse.comp
+        ((P.quotient J).toCompletionLocHom (S.quotient J) hPq F' _ L' hden')).comp
+          (Pair.quotientHom S J) := by
+    rw [← hψπ, Pair.Hom.comp_assoc,
+      P.completionLocQuotientPairHom_comp_toCompletionLocHom J F s L hF' L' S hP hden,
+      ← Pair.Hom.comp_assoc]
   have hsq : comapOfPair hS₁ hSK (Pair.quotientHom S₁ K) ≫
       comapOfPair hS hS₁ (P.toCompletionLocHom S hP F s L hden) =
       (eSK.hom ≫ u₀) ≫ comapOfPair hS hSJ (Pair.quotientHom S J) := by
-    rw [← hψπ, comapOfPair_comp hS₁ hS₂ hSK, heSK, Category.assoc, Category.assoc]; congr 1
-    rw [← comapOfPair_comp, ← comapOfPair_comp,
-      P.completionLocQuotientPairHom_comp_toCompletionLocHom J F s L hF' L' S hP hden]
+    simpa only [comapOfPair_comp hS hS₁ hSK, comapOfPair_comp hS hSJ hSK,
+      comapOfPair_comp hSJ hS₂ hSK, ← heSK] using congrArg (comapOfPair hS hSK) hpair_sq
   exact ⟨{
     openSet := O
     mem := hzR₀
