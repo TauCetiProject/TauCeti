@@ -14,9 +14,10 @@ public import Mathlib.Topology.Separation.Regular
 # Operations on compact exhaustions and compact exhaustions of open sets
 
 Supplements `Mathlib.Topology.Compactness.SigmaCompact` with `CompactExhaustion.sigmaCompactSpace`,
-`weaklyLocallyCompactSpace`, `instMax` (`⊔`), `supImage`, `supPreimage`,
-`CompactExhaustion.complOfCofinalNhds` (via `TauCeti.cofinalNhdsIndex`),
-`CompactExhaustion.subtype`, and `TauCeti.isOpen_of_subset_interior_succ`.
+`weaklyLocallyCompactSpace`, `instPartialOrder`, `instSemilatticeSup` (`⊔`), `supImage`,
+`supPreimage`, `CompactExhaustion.complOfCofinalNhdsSet` (via `TauCeti.shrinkingNhdsSetIndex` and
+`TauCeti.normal_exists_closure_subset_of_cofinal`), `CompactExhaustion.subtype`, and
+`TauCeti.isOpen_of_subset_interior_succ`.
 -/
 
 public section
@@ -53,7 +54,10 @@ theorem sigmaCompactSpace (K : CompactExhaustion X) : SigmaCompactSpace X :=
 theorem weaklyLocallyCompactSpace (K : CompactExhaustion X) : WeaklyLocallyCompactSpace X where
   exists_compact_mem_nhds x := let ⟨n, hn⟩ := K.exists_mem_nhds x; ⟨K n, K.isCompact n, hn⟩
 
-private def supSeq (K : CompactExhaustion X) (S : ℕ → Set X) (hK : ∀ n, IsCompact (S n))
+/-- Pointwise union of a compact exhaustion `K` with a sequence `S` of compact sets satisfying
+`S n ⊆ interior (S (n + 1))`. -/
+@[expose]
+def supSeq (K : CompactExhaustion X) (S : ℕ → Set X) (hK : ∀ n, IsCompact (S n))
     (hS : ∀ n, S n ⊆ interior (S (n + 1))) : CompactExhaustion X where
   toFun n := K n ∪ S n
   isCompact' n := (K.isCompact n).union (hK n)
@@ -62,15 +66,19 @@ private def supSeq (K : CompactExhaustion X) (S : ℕ → Set X) (hK : ∀ n, Is
     ((hS n).trans (interior_mono subset_union_right))
   iUnion_eq' := eq_univ_of_subset (iUnion_mono fun _ ↦ subset_union_left) K.iUnion_eq
 
-/-- Pointwise union of two compact exhaustions of the same space. -/
-instance instMax : Max (CompactExhaustion X) where
-  max K₁ K₂ :=
-    { toFun n := K₁ n ∪ K₂ n
-      isCompact' n := (K₁.isCompact n).union (K₂.isCompact n)
-      subset_interior_succ' n := union_subset
-        ((K₁.subset_interior_succ n).trans (interior_mono subset_union_left))
-        ((K₂.subset_interior_succ n).trans (interior_mono subset_union_right))
-      iUnion_eq' := eq_univ_of_subset (iUnion_mono fun _ ↦ subset_union_left) K₁.iUnion_eq }
+/-- Pointwise inclusion order on compact exhaustions of the same space. -/
+instance instPartialOrder : PartialOrder (CompactExhaustion X) :=
+  PartialOrder.lift (fun K : CompactExhaustion X ↦ (K : ℕ → Set X)) DFunLike.coe_injective
+
+theorem le_def {K₁ K₂ : CompactExhaustion X} : K₁ ≤ K₂ ↔ ∀ n, K₁ n ⊆ K₂ n := Iff.rfl
+
+/-- Pointwise union of two compact exhaustions of the same space, as a join-semilattice. -/
+instance instSemilatticeSup : SemilatticeSup (CompactExhaustion X) where
+  sup K₁ K₂ := supSeq K₁ K₂ K₂.isCompact K₂.subset_interior_succ
+  le_sup_left _ _ _ := subset_union_left
+  le_sup_right _ _ _ := subset_union_right
+  sup_le _ _ _ h₁ h₂ n := union_subset (h₁ n) (h₂ n)
+
 @[simp] lemma sup_apply (K₁ K₂ : CompactExhaustion X) (n : ℕ) : (K₁ ⊔ K₂) n = K₁ n ∪ K₂ n := (rfl)
 lemma subset_sup_left (K₁ K₂ : CompactExhaustion X) (n : ℕ) : K₁ n ⊆ (K₁ ⊔ K₂) n :=
   subset_union_left
@@ -83,11 +91,19 @@ variable (K_X : CompactExhaustion X) {f : Y → X} (hfc : Continuous f) (hfo : I
 /-- Enlarge `K_X` by the images of `K_Y` along a continuous open map `f : Y → X`. -/
 def supImage : CompactExhaustion X :=
   supSeq K_X (fun n ↦ f '' K_Y n) (fun n ↦ (K_Y.isCompact n).image hfc) fun n ↦
-    (image_mono (K_Y.subset_interior_succ n)).trans <|
-      (hfo _ isOpen_interior).subset_interior_iff.2 (image_mono interior_subset)
+    (image_mono (K_Y.subset_interior_succ n)).trans (hfo.image_interior_subset _)
 @[simp] lemma supImage_apply (n : ℕ) : K_X.supImage hfc hfo K_Y n = K_X n ∪ f '' K_Y n := (rfl)
 lemma subset_supImage_left (n : ℕ) : K_X n ⊆ K_X.supImage hfc hfo K_Y n := subset_union_left
 lemma image_subset_supImage (n : ℕ) : f '' K_Y n ⊆ K_X.supImage hfc hfo K_Y n := subset_union_right
+lemma le_supImage_left : K_X ≤ K_X.supImage hfc hfo K_Y := fun _ ↦ subset_union_left
+lemma supImage_le_iff {K' : CompactExhaustion X} :
+    K_X.supImage hfc hfo K_Y ≤ K' ↔ K_X ≤ K' ∧ ∀ n, f '' K_Y n ⊆ K' n :=
+  ⟨fun h ↦ ⟨(K_X.le_supImage_left hfc hfo K_Y).trans h,
+    fun n ↦ (K_X.image_subset_supImage hfc hfo K_Y n).trans (h n)⟩,
+    fun ⟨h₁, h₂⟩ n ↦ union_subset (h₁ n) (h₂ n)⟩
+lemma supImage_le {K' : CompactExhaustion X} (h₁ : K_X ≤ K') (h₂ : ∀ n, f '' K_Y n ⊆ K' n) :
+    K_X.supImage hfc hfo K_Y ≤ K' :=
+  (K_X.supImage_le_iff hfc hfo K_Y).2 ⟨h₁, h₂⟩
 end SupImage
 
 section SupPreimage
@@ -95,12 +111,21 @@ variable (K_X : CompactExhaustion X) {f : X → Y} (hf : IsProperMap f) (K_Y : C
 /-- Enlarge `K_X` by the preimages of `K_Y` along a proper map `f : X → Y`. -/
 def supPreimage : CompactExhaustion X :=
   supSeq K_X (fun n ↦ f ⁻¹' K_Y n) (fun n ↦ hf.isCompact_preimage (K_Y.isCompact n)) fun n ↦
-    (preimage_mono (K_Y.subset_interior_succ n)).trans <|
-      (isOpen_interior.preimage hf.continuous).subset_interior_iff.2 (preimage_mono interior_subset)
+    (preimage_mono (K_Y.subset_interior_succ n)).trans
+      (preimage_interior_subset_interior_preimage hf.continuous)
 @[simp] lemma supPreimage_apply (n : ℕ) : K_X.supPreimage hf K_Y n = K_X n ∪ f ⁻¹' K_Y n := (rfl)
 lemma subset_supPreimage_left (n : ℕ) : K_X n ⊆ K_X.supPreimage hf K_Y n := subset_union_left
 lemma preimage_subset_supPreimage (n : ℕ) : f ⁻¹' K_Y n ⊆ K_X.supPreimage hf K_Y n :=
   subset_union_right
+lemma le_supPreimage_left : K_X ≤ K_X.supPreimage hf K_Y := fun _ ↦ subset_union_left
+lemma supPreimage_le_iff {K' : CompactExhaustion X} :
+    K_X.supPreimage hf K_Y ≤ K' ↔ K_X ≤ K' ∧ ∀ n, f ⁻¹' K_Y n ⊆ K' n :=
+  ⟨fun h ↦ ⟨(K_X.le_supPreimage_left hf K_Y).trans h,
+    fun n ↦ (K_X.preimage_subset_supPreimage hf K_Y n).trans (h n)⟩,
+    fun ⟨h₁, h₂⟩ n ↦ union_subset (h₁ n) (h₂ n)⟩
+lemma supPreimage_le {K' : CompactExhaustion X} (h₁ : K_X ≤ K') (h₂ : ∀ n, f ⁻¹' K_Y n ⊆ K' n) :
+    K_X.supPreimage hf K_Y ≤ K' :=
+  (K_X.supPreimage_le_iff hf K_Y).2 ⟨h₁, h₂⟩
 end SupPreimage
 
 end CompactExhaustion
@@ -116,6 +141,15 @@ theorem isOpen_of_subset_interior_succ {X : Type*} [TopologicalSpace X] {U : Set
   obtain ⟨n, hn⟩ := mem_iUnion.1 (hcover hx)
   exact Filter.mem_of_superset (mem_interior_iff_mem_nhds.1 (hsub n hn)) (hKU (n + 1))
 
+/-- In a normal space, any cofinal family of neighborhoods of a closed set `A` contains a member
+whose closure lies inside a given open neighborhood `V` of `A`. -/
+theorem normal_exists_closure_subset_of_cofinal {X : Type*} {ι : Sort*} [TopologicalSpace X]
+    [NormalSpace X] {A V : Set X} (hA : IsClosed A) (hV : IsOpen V) (hAV : A ⊆ V)
+    {U : ι → Set X} (hU_cofinal : ∀ {W : Set X}, IsOpen W → A ⊆ W → ∃ i, U i ⊆ W) :
+    ∃ i, closure (U i) ⊆ V := by
+  obtain ⟨W, hW_open, hAW, hW_cl⟩ := normal_exists_closure_subset hA hV hAV
+  exact let ⟨i, hi⟩ := hU_cofinal hW_open hAW; ⟨i, (closure_mono hi).trans hW_cl⟩
+
 section CofinalNeighborhoods
 
 variable {X : Type*} [TopologicalSpace X] [hNorm : NormalSpace X] {A : Set X} (hA : IsClosed A)
@@ -123,25 +157,25 @@ variable {X : Type*} [TopologicalSpace X] [hNorm : NormalSpace X] {A : Set X} (h
   (hU_cofinal : ∀ {W : Set X}, IsOpen W → A ⊆ W → ∃ n, U n ⊆ W)
 include hNorm hA hU_open hAU hU_cofinal
 
-private lemma exists_closure_subset_inter (k m : ℕ) : ∃ j, closure (U j) ⊆ U k ∩ U m := by
-  obtain ⟨W, hW_open, hAW, hW_cl⟩ := normal_exists_closure_subset hA
-    ((hU_open k).inter (hU_open m)) (subset_inter (hAU k) (hAU m))
-  exact let ⟨j, hj⟩ := hU_cofinal hW_open hAW; ⟨j, (closure_mono hj).trans hW_cl⟩
-
 /-- Shrinking index sequence extracted from a countable cofinal open neighbourhood family of `A`. -/
-noncomputable def cofinalNhdsIndex : ℕ → ℕ
+noncomputable def shrinkingNhdsSetIndex : ℕ → ℕ
   | 0 => 0
-  | n + 1 => (exists_closure_subset_inter hA hU_open hAU hU_cofinal
-      (cofinalNhdsIndex n) (n + 1)).choose
-@[simp] lemma cofinalNhdsIndex_zero : cofinalNhdsIndex hA hU_open hAU hU_cofinal 0 = 0 := (rfl)
-lemma closure_apply_cofinalNhdsIndex_succ_subset_inter (n : ℕ) :
-    closure (U (cofinalNhdsIndex hA hU_open hAU hU_cofinal (n + 1))) ⊆
-      U (cofinalNhdsIndex hA hU_open hAU hU_cofinal n) ∩ U (n + 1) :=
-  (exists_closure_subset_inter hA hU_open hAU hU_cofinal _ (n + 1)).choose_spec
-lemma apply_cofinalNhdsIndex_subset : ∀ n, U (cofinalNhdsIndex hA hU_open hAU hU_cofinal n) ⊆ U n
+  | n + 1 => (normal_exists_closure_subset_of_cofinal hA
+      ((hU_open (shrinkingNhdsSetIndex n)).inter (hU_open (n + 1)))
+      (subset_inter (hAU _) (hAU (n + 1))) hU_cofinal).choose
+@[simp] lemma shrinkingNhdsSetIndex_zero :
+    shrinkingNhdsSetIndex hA hU_open hAU hU_cofinal 0 = 0 := (rfl)
+lemma closure_apply_shrinkingNhdsSetIndex_succ_subset_inter (n : ℕ) :
+    closure (U (shrinkingNhdsSetIndex hA hU_open hAU hU_cofinal (n + 1))) ⊆
+      U (shrinkingNhdsSetIndex hA hU_open hAU hU_cofinal n) ∩ U (n + 1) :=
+  (normal_exists_closure_subset_of_cofinal hA
+    ((hU_open (shrinkingNhdsSetIndex hA hU_open hAU hU_cofinal n)).inter (hU_open (n + 1)))
+    (subset_inter (hAU _) (hAU (n + 1))) hU_cofinal).choose_spec
+lemma apply_shrinkingNhdsSetIndex_subset :
+    ∀ n, U (shrinkingNhdsSetIndex hA hU_open hAU hU_cofinal n) ⊆ U n
   | 0 => Subset.rfl
   | n + 1 => subset_closure.trans <|
-      (closure_apply_cofinalNhdsIndex_succ_subset_inter hA hU_open hAU hU_cofinal n).trans
+      (closure_apply_shrinkingNhdsSetIndex_succ_subset_inter hA hU_open hAU hU_cofinal n).trans
         inter_subset_right
 
 end CofinalNeighborhoods
@@ -163,32 +197,34 @@ include hComp hT2 hA hU_open hAU hU_cofinal
 
 /-- Compact exhaustion of `X \ A` from a countable cofinal open neighbourhood family of closed `A`
 in a compact Hausdorff space `X`. -/
-noncomputable def complOfCofinalNhds : CompactExhaustion (Aᶜ : Set X) where
-  toFun n := Subtype.val ⁻¹' (U (TauCeti.cofinalNhdsIndex hA hU_open hAU hU_cofinal n))ᶜ
+noncomputable def complOfCofinalNhdsSet : CompactExhaustion (Aᶜ : Set X) where
+  toFun n := Subtype.val ⁻¹' (U (TauCeti.shrinkingNhdsSetIndex hA hU_open hAU hU_cofinal n))ᶜ
   isCompact' n := by
     rw [Topology.IsEmbedding.subtypeVal.isCompact_iff, image_subtypeVal_preimage_compl (hAU _)]
     exact (hU_open _).isClosed_compl.isCompact
-  subset_interior_succ' n :=
-    (preimage_mono (compl_subset_compl.2 <|
-      (TauCeti.closure_apply_cofinalNhdsIndex_succ_subset_inter hA hU_open hAU hU_cofinal n).trans
-        inter_subset_left)).trans <|
-      (isClosed_closure.isOpen_compl.preimage continuous_subtypeVal).subset_interior_iff.2
-        (preimage_mono (compl_subset_compl.2 subset_closure))
+  subset_interior_succ' n := by
+    refine (preimage_mono ?_).trans
+      (preimage_interior_subset_interior_preimage continuous_subtypeVal)
+    rw [interior_compl]
+    exact compl_subset_compl.2 <|
+      (TauCeti.closure_apply_shrinkingNhdsSetIndex_succ_subset_inter
+        hA hU_open hAU hU_cofinal n).trans inter_subset_left
   iUnion_eq' := eq_univ_iff_forall.2 fun y ↦ mem_iUnion.2 <|
     let ⟨n, hn⟩ := hU_cofinal isClosed_singleton.isOpen_compl
       fun _ ha (hy : _ = y.val) ↦ y.property (hy ▸ ha)
-    ⟨n, fun hyU ↦ hn (TauCeti.apply_cofinalNhdsIndex_subset hA hU_open hAU hU_cofinal n hyU) rfl⟩
-@[simp] lemma complOfCofinalNhds_apply (n : ℕ) :
-    complOfCofinalNhds hA hU_open hAU hU_cofinal n =
-      Subtype.val ⁻¹' (U (TauCeti.cofinalNhdsIndex hA hU_open hAU hU_cofinal n))ᶜ := (rfl)
-lemma image_subtypeVal_complOfCofinalNhds (n : ℕ) :
-    (Subtype.val : (Aᶜ : Set X) → X) '' complOfCofinalNhds hA hU_open hAU hU_cofinal n =
-      (U (TauCeti.cofinalNhdsIndex hA hU_open hAU hU_cofinal n))ᶜ :=
+    ⟨n, fun hyU ↦ hn
+      (TauCeti.apply_shrinkingNhdsSetIndex_subset hA hU_open hAU hU_cofinal n hyU) rfl⟩
+@[simp] lemma complOfCofinalNhdsSet_apply (n : ℕ) :
+    complOfCofinalNhdsSet hA hU_open hAU hU_cofinal n =
+      Subtype.val ⁻¹' (U (TauCeti.shrinkingNhdsSetIndex hA hU_open hAU hU_cofinal n))ᶜ := (rfl)
+lemma image_subtypeVal_complOfCofinalNhdsSet (n : ℕ) :
+    (Subtype.val : (Aᶜ : Set X) → X) '' complOfCofinalNhdsSet hA hU_open hAU hU_cofinal n =
+      (U (TauCeti.shrinkingNhdsSetIndex hA hU_open hAU hU_cofinal n))ᶜ :=
   image_subtypeVal_preimage_compl (hAU _)
-lemma compl_image_subtypeVal_complOfCofinalNhds (n : ℕ) :
-    ((Subtype.val : (Aᶜ : Set X) → X) '' complOfCofinalNhds hA hU_open hAU hU_cofinal n)ᶜ =
-      U (TauCeti.cofinalNhdsIndex hA hU_open hAU hU_cofinal n) := by
-  rw [image_subtypeVal_complOfCofinalNhds, compl_compl]
+lemma compl_image_subtypeVal_complOfCofinalNhdsSet (n : ℕ) :
+    ((Subtype.val : (Aᶜ : Set X) → X) '' complOfCofinalNhdsSet hA hU_open hAU hU_cofinal n)ᶜ =
+      U (TauCeti.shrinkingNhdsSetIndex hA hU_open hAU hU_cofinal n) := by
+  rw [image_subtypeVal_complOfCofinalNhdsSet, compl_compl]
 
 end CofinalNeighborhoods
 

@@ -86,24 +86,6 @@ theorem isZero_twistedHomology_of_isEmpty {R : Type u} [Ring R] {X : TopCat.{v}}
   exact ((twistedChainComplex L).sc k).isZero_homology_of_isZero_X₂
     (ModuleCat.isZero_of_subsingleton ((twistedChainComplex L).X k))
 
-/-- A coefficient morphism acts on a simplex coefficient through its initial-vertex component. -/
-@[reassoc (attr := simp)]
-lemma twistedChainComplexCoefficientMap_f_comp_twistedChainComplexCoeff {R : Type u} [Ring R]
-    {X : TopCat.{v}} {L K : LocalCoefficientSystem.{u, v, max v w} R X} (η : L ⟶ K) {k : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋k⦌) : (twistedChainComplexCoefficientMap η).f k ≫
-      twistedChainComplexCoeff K σ = twistedChainComplexCoeff L σ ≫ η.app (initialVertex σ) :=
-  twistedChainComplex_hom_ext L fun τ ↦ by rcases eq_or_ne τ σ with rfl | h <;> simp [*]
-
-/-- A coefficient morphism acts on a simplex coefficient of a twisted chain at `σ` through its
-component at the initial vertex of `σ`. -/
-@[simp]
-lemma twistedChainComplexCoeff_twistedChainComplexCoefficientMap_f_apply {R : Type u} [Ring R]
-    {X : TopCat.{v}} {L K : LocalCoefficientSystem.{u, v, max v w} R X} (η : L ⟶ K) {k : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋k⦌) (a : (twistedChainComplex L).X k) :
-    (twistedChainComplexCoeff K σ).hom (((twistedChainComplexCoefficientMap η).f k).hom a) =
-      (η.app (initialVertex σ)).hom ((twistedChainComplexCoeff L σ).hom a) :=
-  congrArg (·.hom a) (twistedChainComplexCoefficientMap_f_comp_twistedChainComplexCoeff η σ)
-
 end TauCeti.LocalCoefficientSystem
 
 namespace TopPair

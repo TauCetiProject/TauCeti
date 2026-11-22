@@ -303,10 +303,16 @@ variable (L : LocalCoefficientSystem.{u, v, max v w} R X) (C : ℕ → Set X)
   (hC : ∀ n, C n ⊆ C (n + 1))
 
 /-- The tower `C(X, X \ Cₙ; L)` of a monotone sequence `C : ℕ → Set X`. -/
+-- The body is exposed so that the terms of the tower are the relative chain complexes, which the
+-- statements identifying the cone legs and the Milnor maps below need in order to typecheck.
 @[expose] def complChainComplexTower : ComplexTower.{max v w} R (ComplexShape.down ℕ) :=
   Functor.ofOpSequence (X := fun n ↦ (TopPair.ofSubset (C n)ᶜ).twistedChainComplex L)
     fun n ↦ TopTriple.twistedChainComplexTotalToOuter
       (TopTriple.ofSubset (Set.compl_subset_compl.2 (hC n))) L
+/-- The terms of `complChainComplexTower` are the relative twisted chain complexes. -/
+lemma complChainComplexTower_obj (n : ℕ) :
+    (complChainComplexTower L C hC).obj (op n) = (TopPair.ofSubset (C n)ᶜ).twistedChainComplex L :=
+  (rfl)
 @[simp] lemma complChainComplexTower_map_succ (n : ℕ) :
     (complChainComplexTower L C hC).map (homOfLE (Nat.le_succ n)).op =
       TopTriple.twistedChainComplexTotalToOuter
@@ -347,6 +353,26 @@ lemma complChainComplexTower_shift_surjective (i : ℕ) :
       erw [Category.id_comp, complChainComplexTower_map_succ,
         TopTriple.locallyFiniteChainComplexToRelative_comp_twistedChainComplexTotalToOuter
           (hA := (hK n).compl_range_ofSubset_compl_map)]; rfl
+/-- The cone point of `locallyFiniteChainComplexComplCone` is `locallyFiniteChainComplex L`. -/
+@[simp] lemma locallyFiniteChainComplexComplCone_pt (hK : ∀ n, IsCompact (C n)) :
+    (locallyFiniteChainComplexComplCone L C hC hK).pt = locallyFiniteChainComplex L :=
+  (rfl)
+/-- The legs of `locallyFiniteChainComplexComplCone` take relative classes of locally finite
+chains. -/
+@[simp] lemma locallyFiniteChainComplexComplCone_π_app (hK : ∀ n, IsCompact (C n)) (n : ℕ) :
+    (locallyFiniteChainComplexComplCone L C hC hK).π.app (op n) =
+      (TopPair.ofSubset (C n)ᶜ).locallyFiniteChainComplexToRelative L
+        (hK n).compl_range_ofSubset_compl_map :=
+  (rfl)
+/-- The relative classes of a locally finite chain are compatible with the maps of
+`complChainComplexTower`. -/
+@[reassoc, simp] lemma locallyFiniteChainComplexToRelative_comp_complChainComplexTower_map
+    (hK : ∀ n, IsCompact (C n)) {m n : ℕ} (f : op m ⟶ op n) :
+    (TopPair.ofSubset (C m)ᶜ).locallyFiniteChainComplexToRelative L
+        (hK m).compl_range_ofSubset_compl_map ≫ (complChainComplexTower L C hC).map f =
+      (TopPair.ofSubset (C n)ᶜ).locallyFiniteChainComplexToRelative L
+        (hK n).compl_range_ofSubset_compl_map :=
+  (locallyFiniteChainComplexComplCone L C hC hK).w f
 /-- Canonical map from locally finite chains to `(complChainComplexTower L C hC).limComplex`. -/
 def locallyFiniteChainComplexToComplLim (hK : ∀ n, IsCompact (C n)) :
     locallyFiniteChainComplex L ⟶ (complChainComplexTower L C hC).limComplex :=
@@ -358,7 +384,8 @@ def locallyFiniteChainComplexToComplLim (hK : ∀ n, IsCompact (C n)) :
         (complChainComplexTower L C hC).limComplexπ n =
       (TopPair.ofSubset (C n)ᶜ).locallyFiniteChainComplexToRelative L
         (hK n).compl_range_ofSubset_compl_map :=
-  (complChainComplexTower L C hC).isLimitLimComplexCone.fac _ (op n)
+  ((complChainComplexTower L C hC).isLimitLimComplexCone.fac _ (op n)).trans
+    (locallyFiniteChainComplexComplCone_π_app L C hC hK n)
 end Basic
 
 section Helpers
@@ -376,7 +403,9 @@ private def mkComplTowerHom (app : ∀ n, (TopPair.ofSubset (C₁ n)ᶜ).twisted
   naturality {m n} f := (TopPair.ofSubset (C₁ m.unop)ᶜ).twistedChainComplex_hom_ext L₁ <| by
     erw [twistedChainComplexπ_comp_complChainComplexTower_map_assoc, h, ← Category.assoc, h,
       Category.assoc, twistedChainComplexπ_comp_complChainComplexTower_map]; rfl
-private lemma complTower_hom_ext
+/-- Two morphisms out of `complChainComplexTower` agree if they agree after precomposing with the
+quotient projections from ambient twisted chains at every stage. -/
+lemma complTower_hom_ext
     {α β : complChainComplexTower L₁ C₁ hC₁ ⟶ complChainComplexTower L₂ C₂ hC₂}
     (h : ∀ n, (TopPair.ofSubset (C₁ n)ᶜ).twistedChainComplexπ L₁ ≫ α.app (op n) =
       (TopPair.ofSubset (C₁ n)ᶜ).twistedChainComplexπ L₁ ≫ β.app (op n)) : α = β :=
@@ -454,7 +483,7 @@ end TowerMap
 
 section CoeffMap
 variable (C : ℕ → Set X) (hC : ∀ n, C n ⊆ C (n + 1))
-  {L₁ L₂ : LocalCoefficientSystem.{u, v, max v w} R X} (η : L₁ ⟶ L₂)
+  {L₁ L₂ L₃ : LocalCoefficientSystem.{u, v, max v w} R X} (η : L₁ ⟶ L₂)
 
 /-- A morphism of local coefficient systems induces a morphism of complement relative towers. -/
 def complChainComplexTowerCoefficientMap :
@@ -465,6 +494,27 @@ def complChainComplexTowerCoefficientMap :
 @[simp] lemma complChainComplexTowerCoefficientMap_app (n : ℕ) :
     (complChainComplexTowerCoefficientMap C hC η).app (op n) =
       (TopPair.ofSubset (C n)ᶜ).twistedChainComplexCoefficientMap η := (rfl)
+/-- Identity law for `complChainComplexTowerCoefficientMap`. -/
+@[simp] lemma complChainComplexTowerCoefficientMap_id
+    (L : LocalCoefficientSystem.{u, v, max v w} R X) :
+    complChainComplexTowerCoefficientMap C hC (𝟙 L) = 𝟙 _ :=
+  complTower_hom_ext fun n ↦ by
+    erw [complChainComplexTowerCoefficientMap_app,
+      (TopPair.ofSubset (C n)ᶜ).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap,
+      twistedChainComplexCoefficientMap_id, Category.id_comp]
+/-- Composition law for `complChainComplexTowerCoefficientMap`. -/
+@[simp, reassoc] lemma complChainComplexTowerCoefficientMap_comp
+    (η : L₁ ⟶ L₂) (θ : L₂ ⟶ L₃) :
+    complChainComplexTowerCoefficientMap C hC (η ≫ θ) =
+      complChainComplexTowerCoefficientMap C hC η ≫
+        complChainComplexTowerCoefficientMap C hC θ :=
+  complTower_hom_ext fun n ↦ by
+    erw [complChainComplexTowerCoefficientMap_app, NatTrans.comp_app,
+      complChainComplexTowerCoefficientMap_app, complChainComplexTowerCoefficientMap_app,
+      (TopPair.ofSubset (C n)ᶜ).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap,
+      (TopPair.ofSubset (C n)ᶜ).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
+      (TopPair.ofSubset (C n)ᶜ).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap,
+      twistedChainComplexCoefficientMap_comp, Category.assoc]
 @[reassoc] lemma locallyFiniteChainComplexCoefficientMap_comp_toComplLim
     (hK : ∀ n, IsCompact (C n)) :
     locallyFiniteChainComplexCoefficientMap η ≫ locallyFiniteChainComplexToComplLim L₂ C hC hK =
@@ -505,6 +555,16 @@ def complChainComplexTowerPairMap :
       twistedChainComplexMap f L ≫ (TopPair.ofSubset (C_Y n)ᶜ).twistedChainComplexπ L :=
   π_comp_eqToHom_pairMap _ (TopPair.ofSubsetMap_fst f (hf n))
 end Fixed
+/-- Identity law for `complChainComplexTowerPairMap`. -/
+@[simp] lemma complChainComplexTowerPairMap_id
+    (L : LocalCoefficientSystem.{u, v, max v w} R X) {C : ℕ → Set X}
+    (hC : ∀ n, C n ⊆ C (n + 1)) (hf : ∀ n, Set.MapsTo (𝟙 X) (C n)ᶜ (C n)ᶜ := fun _ _ hx ↦ hx) :
+    complChainComplexTowerPairMap (𝟙 X) L hC hC hf =
+      complChainComplexTowerCoefficientMap C hC ((pullbackIdIso X).hom.app L) :=
+  complTower_hom_ext fun n ↦ by
+    erw [twistedChainComplexπ_comp_complChainComplexTowerPairMap_app, twistedChainComplexMap_id,
+      complChainComplexTowerCoefficientMap_app,
+      (TopPair.ofSubset (C n)ᶜ).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap]; rfl
 /-- Enlarging both monotone sequences commutes with `complChainComplexTowerPairMap`. -/
 @[reassoc] lemma complChainComplexTowerMap_comp_complChainComplexTowerPairMap
     (L : LocalCoefficientSystem.{u, v, max v w} R Y) {C_X C_X' : ℕ → Set X}
@@ -624,62 +684,23 @@ typings cannot be rewritten, so the limit argument goes through the coefficients
 variable {X : TopCat.{v}} (L : LocalCoefficientSystem.{u, v, max v w} R X) (K : CompactExhaustion X)
   {k : ℕ}
 
-/-- The tower of relative twisted chain complexes `C(X, X \ Kₙ; L)` of a compact exhaustion `K` of
-`X`, whose transitions are the quotient maps `C(X, X \ Kₙ₊₁; L) ⟶ C(X, X \ Kₙ; L)`. -/
--- The body is exposed so that the terms of the tower are the relative chain complexes, which the
--- statements identifying the cone legs and the Milnor maps below need in order to typecheck.
-@[expose]
-def relativeChainComplexTower : ComplexTower.{max v w} R (ComplexShape.down ℕ) :=
-  complChainComplexTower L K K.subset_succ
-
-/-- The terms of the tower of a compact exhaustion are the relative twisted chain complexes. -/
-lemma relativeChainComplexTower_obj (n : ℕ) :
-    (relativeChainComplexTower L K).obj (op n) =
-      (TopPair.ofSubset (K n)ᶜ).twistedChainComplex L :=
-  (rfl)
-
-/-- The transitions of the tower of a compact exhaustion are the quotient maps. -/
-@[simp]
-lemma relativeChainComplexTower_map_succ (n : ℕ) :
-    (relativeChainComplexTower L K).map (homOfLE (Nat.le_succ n)).op =
-      TopTriple.twistedChainComplexTotalToOuter
-        (TopTriple.ofSubset (Set.compl_subset_compl.2 (K.subset_succ n))) L :=
-  complChainComplexTower_map_succ L K K.subset_succ n
-
-/-- Every map of the tower of a compact exhaustion is induced by the identity of the ambient
-twisted chains. -/
-@[reassoc, simp]
-lemma twistedChainComplexπ_comp_relativeChainComplexTower_map {m n : ℕ} (f : op m ⟶ op n) :
-    (TopPair.ofSubset (K m)ᶜ).twistedChainComplexπ L ≫ (relativeChainComplexTower L K).map f =
-      (TopPair.ofSubset (K n)ᶜ).twistedChainComplexπ L :=
-  twistedChainComplexπ_comp_complChainComplexTower_map L K K.subset_succ f
-
-/-- The transitions of the tower of a compact exhaustion are surjective in every degree. -/
-lemma relativeChainComplexTower_transition_surjective (i n : ℕ) :
-    Function.Surjective (((relativeChainComplexTower L K).term i).transition n) :=
-  complChainComplexTower_transition_surjective L K K.subset_succ i n
-
-/-- The tower of a compact exhaustion has surjective shift maps in every degree, so its `lim¹`
-vanishes and the Milnor sequence applies to it. -/
-lemma relativeChainComplexTower_shift_surjective (i : ℕ) :
-    Function.Surjective ((relativeChainComplexTower L K).term i).shift :=
-  complChainComplexTower_shift_surjective L K K.subset_succ i
-
 /-- The coefficient on a simplex meeting `Kₙ` of a chain in the `n`-th term of the tower. -/
 private def towerCoeff (n : ℕ) (σ : (TopCat.toSSet.obj X) _⦋k⦌)
     (hσ : (Set.range (TopCat.simplexMap σ) ∩ K n).Nonempty) :
-    ((relativeChainComplexTower L K).obj (op n)).X k ⟶ L.obj (initialVertex σ) :=
+    ((complChainComplexTower L K K.subset_succ).obj (op n)).X k ⟶ L.obj (initialVertex σ) :=
   (TopPair.ofSubset (K n)ᶜ).twistedChainComplexCoeff L σ
     (TopPair.not_range_simplexMap_subset_range_ofSubset_compl_map_iff.2 hσ)
 
 /-- A chain in a term of the tower is determined by its coefficients. -/
-private lemma towerCoeff_ext {n : ℕ} {y y' : ((relativeChainComplexTower L K).obj (op n)).X k}
+private lemma towerCoeff_ext {n : ℕ}
+    {y y' : ((complChainComplexTower L K K.subset_succ).obj (op n)).X k}
     (h : ∀ σ hσ, (towerCoeff L K n σ hσ).hom y = (towerCoeff L K n σ hσ).hom y') : y = y' :=
   (TopPair.ofSubset (K n)ᶜ).twistedChainComplex_ext_coeff L fun σ hσ ↦
     h σ (TopPair.not_range_simplexMap_subset_range_ofSubset_compl_map_iff.1 hσ)
 
 /-- The coefficients of a chain in a term of the tower are those of an ambient twisted chain. -/
-private lemma exists_towerCoeff_eq {n : ℕ} (y : ((relativeChainComplexTower L K).obj (op n)).X k) :
+private lemma exists_towerCoeff_eq {n : ℕ}
+    (y : ((complChainComplexTower L K K.subset_succ).obj (op n)).X k) :
     ∃ a : L.twistedChainComplex.X k,
       ∀ σ hσ, (towerCoeff L K n σ hσ).hom y = (twistedChainComplexCoeff L σ).hom a := by
   obtain ⟨a, rfl⟩ := (TopPair.ofSubset (K n)ᶜ).twistedChainComplexπ_f_surjective L y
@@ -691,19 +712,20 @@ set. -/
 private lemma towerCoeff_map {m n : ℕ} (f : op m ⟶ op n) (σ : (TopCat.toSSet.obj X) _⦋k⦌)
     (hn : (Set.range (TopCat.simplexMap σ) ∩ K n).Nonempty)
     (hm : (Set.range (TopCat.simplexMap σ) ∩ K m).Nonempty)
-    (y : ((relativeChainComplexTower L K).obj (op m)).X k) :
-    (towerCoeff L K n σ hn).hom ((((relativeChainComplexTower L K).map f).f k).hom y) =
+    (y : ((complChainComplexTower L K K.subset_succ).obj (op m)).X k) :
+    (towerCoeff L K n σ hn).hom
+        ((((complChainComplexTower L K K.subset_succ).map f).f k).hom y) =
       (towerCoeff L K m σ hm).hom y := by
   obtain ⟨a, rfl⟩ := (TopPair.ofSubset (K m)ᶜ).twistedChainComplexπ_f_surjective L y
   exact (congrArg _ (congrArg (fun g ↦ (g.f k).hom a)
-    (twistedChainComplexπ_comp_relativeChainComplexTower_map L K f))).trans
+    (twistedChainComplexπ_comp_complChainComplexTower_map L K K.subset_succ f))).trans
     (((TopPair.ofSubset (K n)ᶜ).twistedChainComplexCoeff_twistedChainComplexπ_f_apply L σ _
       a).trans ((TopPair.ofSubset (K m)ᶜ).twistedChainComplexCoeff_twistedChainComplexπ_f_apply L
         σ _ a).symm)
 
 /-- The relative class of a locally finite chain in the `n`-th term of the tower. -/
 private abbrev toTower (n : ℕ) :
-    locallyFiniteChainComplex L ⟶ (relativeChainComplexTower L K).obj (op n) :=
+    locallyFiniteChainComplex L ⟶ (complChainComplexTower L K K.subset_succ).obj (op n) :=
   (TopPair.ofSubset (K n)ᶜ).locallyFiniteChainComplexToRelative L
     (K.isCompact n).compl_range_ofSubset_compl_map
 
@@ -716,72 +738,41 @@ private lemma towerCoeff_toTower (n : ℕ) (c : locallyFiniteChains L k)
     (K.isCompact n).compl_range_ofSubset_compl_map c σ
     (TopPair.not_range_simplexMap_subset_range_ofSubset_compl_map_iff.2 hσ)
 
-/-- The locally finite chain complex, with the chain maps to the relative twisted chains of the
-pairs `(X, X \ Kₙ)`, as a cone over the tower of a compact exhaustion. -/
--- The body is exposed so that the point and legs of the cone are visible to its consumers.
-@[expose]
-def locallyFiniteChainComplexCone : Cone (relativeChainComplexTower L K) :=
-  locallyFiniteChainComplexComplCone L K K.subset_succ K.isCompact
-
-/-- The point of the cone of a compact exhaustion is the locally finite chain complex. -/
-@[simp]
-lemma locallyFiniteChainComplexCone_pt :
-    (locallyFiniteChainComplexCone L K).pt = locallyFiniteChainComplex L :=
-  (rfl)
-
-/-- The legs of the cone of a compact exhaustion take relative classes. -/
-@[simp]
-lemma locallyFiniteChainComplexCone_π_app (n : ℕ) :
-    (locallyFiniteChainComplexCone L K).π.app (op n) =
-      (TopPair.ofSubset (K n)ᶜ).locallyFiniteChainComplexToRelative L
-        (K.isCompact n).compl_range_ofSubset_compl_map :=
-  (rfl)
-
-/-- The relative classes of a locally finite chain for the sets of a compact exhaustion are
-compatible with the maps of the tower. -/
-@[reassoc, simp]
-lemma locallyFiniteChainComplexToRelative_comp_relativeChainComplexTower_map {m n : ℕ}
-    (f : op m ⟶ op n) :
-    (TopPair.ofSubset (K m)ᶜ).locallyFiniteChainComplexToRelative L
-        (K.isCompact m).compl_range_ofSubset_compl_map ≫ (relativeChainComplexTower L K).map f =
-      (TopPair.ofSubset (K n)ᶜ).locallyFiniteChainComplexToRelative L
-        (K.isCompact n).compl_range_ofSubset_compl_map :=
-  (locallyFiniteChainComplexCone L K).w f
-
 /-- The degree-`k` component of the map from locally finite chains to the limit of the tower,
 precomposed with the identification of its source with the module of locally finite chains. -/
 private abbrev toLim (k : ℕ) : ModuleCat.of R (locallyFiniteChains L k) ⟶
-    (relativeChainComplexTower L K).limComplex.X k :=
+    (complChainComplexTower L K K.subset_succ).limComplex.X k :=
   eqToHom (locallyFiniteChainComplex_X L k).symm ≫
-    ((relativeChainComplexTower L K).isLimitLimComplexCone.lift
-      (locallyFiniteChainComplexCone L K)).f k
+    ((complChainComplexTower L K K.subset_succ).isLimitLimComplexCone.lift
+      (locallyFiniteChainComplexComplCone L K K.subset_succ K.isCompact)).f k
 
 private lemma limπ_toLim_apply (n : ℕ) (c : locallyFiniteChains L k) :
-    ((relativeChainComplexTower L K).term k).limπ n ((toLim L K k).hom c) =
+    ((complChainComplexTower L K K.subset_succ).term k).limπ n ((toLim L K k).hom c) =
       ((toTower L K n).f k).hom ((eqToHom (locallyFiniteChainComplex_X L k).symm).hom c) := by
   have h := congrArg (fun φ : locallyFiniteChainComplex L ⟶
-      (relativeChainComplexTower L K).obj (op n) ↦
+      (complChainComplexTower L K K.subset_succ).obj (op n) ↦
         (φ.f k).hom ((eqToHom (locallyFiniteChainComplex_X L k).symm).hom c))
-    ((relativeChainComplexTower L K).isLimitLimComplexCone.fac
-      (locallyFiniteChainComplexCone L K) (op n))
+    ((complChainComplexTower L K K.subset_succ).isLimitLimComplexCone.fac
+      (locallyFiniteChainComplexComplCone L K K.subset_succ K.isCompact) (op n))
   rw [← ComplexTower.limComplexπ_f_hom]
   -- `h` is the goal up to definitional unfolding: the leg of `limComplexCone` at `n` is
   -- `limComplexπ n` (`ComplexTower.limComplexCone_π_app`), the leg of
-  -- `locallyFiniteChainComplexCone` at `n` is `toTower n`, and the component of a composite of
-  -- chain maps applied to an element is the composite application.
+  -- `locallyFiniteChainComplexComplCone` at `n` is `toTower n`, and the component of a composite
+  -- of chain maps applied to an element is the composite application.
   exact h
 
 /-- A point of the limit of the tower has the same coefficient on a simplex `σ` in every term
 with `σ` meeting the corresponding compact set. -/
-private lemma towerCoeff_limπ_eq_of_le (x : ((relativeChainComplexTower L K).term k).lim)
+private lemma towerCoeff_limπ_eq_of_le (x : ((complChainComplexTower L K K.subset_succ).term k).lim)
     (σ : (TopCat.toSSet.obj X) _⦋k⦌) {m n : ℕ} (hnm : n ≤ m)
     (hn : (Set.range (TopCat.simplexMap σ) ∩ K n).Nonempty)
     (hm : (Set.range (TopCat.simplexMap σ) ∩ K m).Nonempty) :
-    (towerCoeff L K n σ hn).hom (((relativeChainComplexTower L K).term k).limπ n x) =
-      (towerCoeff L K m σ hm).hom (((relativeChainComplexTower L K).term k).limπ m x) := by
-  have hx : ((relativeChainComplexTower L K).term k).limπ n x =
-      (((relativeChainComplexTower L K).map (homOfLE hnm).op).f k).hom
-        (((relativeChainComplexTower L K).term k).limπ m x) := by
+    (towerCoeff L K n σ hn).hom (((complChainComplexTower L K K.subset_succ).term k).limπ n x) =
+      (towerCoeff L K m σ hm).hom
+        (((complChainComplexTower L K K.subset_succ).term k).limπ m x) := by
+  have hx : ((complChainComplexTower L K K.subset_succ).term k).limπ n x =
+      (((complChainComplexTower L K K.subset_succ).map (homOfLE hnm).op).f k).hom
+        (((complChainComplexTower L K K.subset_succ).term k).limπ m x) := by
     rw [ModuleTower.limπ_apply, ModuleTower.limπ_apply,
       ← ModuleTower.transitionOfLE_coe_lim _ x hnm, ModuleTower.transitionOfLE_def,
       Functor.comp_map, HomologicalComplex.eval_map]
@@ -795,26 +786,29 @@ private lemma bijective_toLim : Function.Bijective (toLim L K k).hom := by
     ⟨_, ⟨_, rfl⟩, K.mem_find _⟩
   -- The coefficient on `σ` of a point of the limit, read off in any term with `σ` meeting the
   -- corresponding compact set.
-  have hc (x : ((relativeChainComplexTower L K).term k).lim) (n : ℕ) (σ)
+  have hc (x : ((complChainComplexTower L K K.subset_succ).term k).lim) (n : ℕ) (σ)
       (hσ : (Set.range (TopCat.simplexMap σ) ∩ K n).Nonempty) :
-      (towerCoeff L K n σ hσ).hom (((relativeChainComplexTower L K).term k).limπ n x) =
+      (towerCoeff L K n σ hσ).hom
+          (((complChainComplexTower L K K.subset_succ).term k).limπ n x) =
         (towerCoeff L K (N σ) σ (hN σ)).hom
-          (((relativeChainComplexTower L K).term k).limπ (N σ) x) :=
+          (((complChainComplexTower L K K.subset_succ).term k).limπ (N σ) x) :=
     (towerCoeff_limπ_eq_of_le L K x σ (le_max_left n (N σ)) hσ
       (hσ.mono (Set.inter_subset_inter_right _ (K.subset (le_max_left _ _))))).trans
     (towerCoeff_limπ_eq_of_le L K x σ (le_max_right n (N σ)) (hN σ) _).symm
   refine ⟨fun c c' h ↦ Subtype.ext <| funext fun σ ↦ ?_, fun x ↦ ?_⟩
   · have h' := congrArg (fun y ↦ (towerCoeff L K (N σ) σ (hN σ)).hom
-      (((relativeChainComplexTower L K).term k).limπ (N σ) y)) h
+      (((complChainComplexTower L K K.subset_succ).term k).limπ (N σ) y)) h
     dsimp only at h'
     rwa [limπ_toLim_apply, limπ_toLim_apply, towerCoeff_toTower, towerCoeff_toTower] at h'
   let c (σ : (TopCat.toSSet.obj X) _⦋k⦌) : L.obj (initialVertex σ) :=
-    (towerCoeff L K (N σ) σ (hN σ)).hom (((relativeChainComplexTower L K).term k).limπ (N σ) x)
+    (towerCoeff L K (N σ) σ (hN σ)).hom
+      (((complChainComplexTower L K K.subset_succ).term k).limπ (N σ) x)
   -- Near a point, the coefficients are those of a single finite ambient chain.
   have hlf : c ∈ locallyFiniteChains L k := by
     refine mem_locallyFiniteChains.2 <| isLocallyFiniteChain_iff.2 fun p ↦ ?_
     obtain ⟨n, hn⟩ := K.exists_mem_nhds p
-    obtain ⟨a, ha⟩ := exists_towerCoeff_eq L K (((relativeChainComplexTower L K).term k).limπ n x)
+    obtain ⟨a, ha⟩ :=
+      exists_towerCoeff_eq L K (((complChainComplexTower L K K.subset_succ).term k).limπ n x)
     refine ⟨K n, hn, (finite_support_twistedChainComplexCoeff L a).subset ?_⟩
     rintro σ ⟨hσ, hσK⟩
     rw [Set.mem_ofPred_eq, ← ha σ hσK, hc x n σ hσK]
@@ -826,11 +820,11 @@ private lemma bijective_toLim : Function.Bijective (toLim L K k).hom := by
 
 /-- The map from locally finite chains to the limit complex of the tower of a compact exhaustion is
 an isomorphism. -/
-instance isIso_isLimitLimComplexCone_lift_locallyFiniteChainComplexCone :
-    IsIso ((relativeChainComplexTower L K).isLimitLimComplexCone.lift
-      (locallyFiniteChainComplexCone L K)) := by
-  have (k : ℕ) : IsIso (((relativeChainComplexTower L K).isLimitLimComplexCone.lift
-      (locallyFiniteChainComplexCone L K)).f k) :=
+instance isIso_isLimitLimComplexCone_lift_locallyFiniteChainComplexComplCone :
+    IsIso ((complChainComplexTower L K K.subset_succ).isLimitLimComplexCone.lift
+      (locallyFiniteChainComplexComplCone L K K.subset_succ K.isCompact)) := by
+  have (k : ℕ) : IsIso (((complChainComplexTower L K K.subset_succ).isLimitLimComplexCone.lift
+      (locallyFiniteChainComplexComplCone L K K.subset_succ K.isCompact)).f k) :=
     (ConcreteCategory.isIso_iff_bijective _).2 <| (Function.Bijective.of_comp_iff _
       (ConcreteCategory.bijective_of_isIso
         (eqToHom (locallyFiniteChainComplex_X L k).symm))).1 (bijective_toLim L K)
@@ -840,8 +834,9 @@ instance isIso_isLimitLimComplexCone_lift_locallyFiniteChainComplexCone :
 `K` of `X`, the locally finite chain complex, with the maps sending a locally finite chain to the
 class of its part on the simplices meeting `Kₙ`, is the limit of the tower of relative twisted
 chain complexes `C(X, X \ Kₙ; L)`. -/
-def isLimitLocallyFiniteChainComplexCone : IsLimit (locallyFiniteChainComplexCone L K) :=
-  IsLimit.ofPointIso (relativeChainComplexTower L K).isLimitLimComplexCone
+def isLimitLocallyFiniteChainComplexCone :
+    IsLimit (locallyFiniteChainComplexComplCone L K K.subset_succ K.isCompact) :=
+  IsLimit.ofPointIso (complChainComplexTower L K K.subset_succ).isLimitLimComplexCone
 
 end Tower
 
@@ -853,23 +848,24 @@ variable {X : TopCat.{v}} (L : LocalCoefficientSystem.{u, v, max v w} R X) (K : 
 compact exhaustion, whose components are the relative classes of locally finite chains
 (`TauCeti.LocalCoefficientSystem.locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexπ`). -/
 def locallyFiniteChainComplexIsoLimComplex :
-    locallyFiniteChainComplex L ≅ (relativeChainComplexTower L K).limComplex :=
+    locallyFiniteChainComplex L ≅ (complChainComplexTower L K K.subset_succ).limComplex :=
   (isLimitLocallyFiniteChainComplexCone L K).conePointUniqueUpToIso
-    (relativeChainComplexTower L K).isLimitLimComplexCone
+    (complChainComplexTower L K K.subset_succ).isLimitLimComplexCone
 
 /-- The components of the isomorphism to the limit complex are the relative classes. -/
 @[reassoc (attr := simp)]
 lemma locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexπ (n : ℕ) :
     (locallyFiniteChainComplexIsoLimComplex L K).hom ≫
-        (relativeChainComplexTower L K).limComplexπ n =
+        (complChainComplexTower L K K.subset_succ).limComplexπ n =
       (TopPair.ofSubset (K n)ᶜ).locallyFiniteChainComplexToRelative L
         (K.isCompact n).compl_range_ofSubset_compl_map :=
-  IsLimit.conePointUniqueUpToIso_hom_comp _ _ (op n)
+  (IsLimit.conePointUniqueUpToIso_hom_comp _ _ (op n)).trans
+    (locallyFiniteChainComplexComplCone_π_app L K K.subset_succ K.isCompact n)
 
 lemma locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim :
     (locallyFiniteChainComplexIsoLimComplex L K).hom =
       locallyFiniteChainComplexToComplLim L K K.subset_succ K.isCompact :=
-  (relativeChainComplexTower L K).limComplex_hom_ext fun n ↦
+  (complChainComplexTower L K K.subset_succ).limComplex_hom_ext fun n ↦
     (locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexπ L K n).trans
       (locallyFiniteChainComplexToComplLim_comp_π L K K.subset_succ K.isCompact n).symm
 @[reassoc (attr := simp)] lemma locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexMap_compl
@@ -891,17 +887,13 @@ lemma locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim :
           (complChainComplexTowerPairMap f L K_X.subset_succ K_Y.subset_succ hf) := by
   simp only [locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim]
   exact locallyFiniteChainComplexMap_comp_toComplLim f hf_proper L _ _ _ _ hf
-/-- Morphism of relative chain towers induced by a morphism of local coefficient systems. -/
-abbrev relativeChainComplexTowerCoefficientMap
-    {L₁ L₂ : LocalCoefficientSystem.{u, v, max v w} R X} (η : L₁ ⟶ L₂) :
-    relativeChainComplexTower L₁ K ⟶ relativeChainComplexTower L₂ K :=
-  complChainComplexTowerCoefficientMap K K.subset_succ η
 /-- `locallyFiniteChainComplexIsoLimComplex` is natural in the local coefficient system. -/
 @[reassoc] theorem locallyFiniteChainComplexCoefficientMap_comp_isoLimComplex_hom
     {L₁ L₂ : LocalCoefficientSystem.{u, v, max v w} R X} (η : L₁ ⟶ L₂) :
     locallyFiniteChainComplexCoefficientMap η ≫ (locallyFiniteChainComplexIsoLimComplex L₂ K).hom =
       (locallyFiniteChainComplexIsoLimComplex L₁ K).hom ≫
-        ComplexTower.limComplexMap (relativeChainComplexTowerCoefficientMap K η) := by
+        ComplexTower.limComplexMap
+          (complChainComplexTowerCoefficientMap K K.subset_succ η) := by
   simp only [locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim]
   exact locallyFiniteChainComplexCoefficientMap_comp_toComplLim K K.subset_succ η K.isCompact
 
@@ -909,48 +901,55 @@ abbrev relativeChainComplexTowerCoefficientMap
 `H_j(X, X \ Kₙ; L)` of a compact exhaustion, whose components are induced by the relative classes
 of locally finite chains (`TauCeti.LocalCoefficientSystem.limπ_borelMooreHomologyToLim`). -/
 def borelMooreHomologyToLim (j : ℕ) :
-    borelMooreHomology L j →ₗ[R] ((relativeChainComplexTower L K).homology j).lim :=
-  (relativeChainComplexTower L K).homologyToLim j ∘ₗ
+    borelMooreHomology L j →ₗ[R]
+      ((complChainComplexTower L K K.subset_succ).homology j).lim :=
+  (complChainComplexTower L K K.subset_succ).homologyToLim j ∘ₗ
     (HomologicalComplex.homologyMap (locallyFiniteChainComplexIsoLimComplex L K).hom j).hom
 
 /-- The map from Borel–Moore homology to the limit of relative homology is the map of the tower
 of complexes to the limit of its homology, after identifying locally finite chains with the limit
 complex. -/
 lemma borelMooreHomologyToLim_def (j : ℕ) :
-    borelMooreHomologyToLim L K j = (relativeChainComplexTower L K).homologyToLim j ∘ₗ
-      (HomologicalComplex.homologyMap (locallyFiniteChainComplexIsoLimComplex L K).hom j).hom :=
+    borelMooreHomologyToLim L K j =
+      (complChainComplexTower L K K.subset_succ).homologyToLim j ∘ₗ
+        (HomologicalComplex.homologyMap (locallyFiniteChainComplexIsoLimComplex L K).hom j).hom :=
   (rfl)
 
 /-- The components of the map from Borel–Moore homology to the limit of relative homology are the
 maps induced by the relative classes of locally finite chains. -/
 lemma limπ_borelMooreHomologyToLim (j n : ℕ) (x : borelMooreHomology L j) :
-    ((relativeChainComplexTower L K).homology j).limπ n (borelMooreHomologyToLim L K j x) =
+    ((complChainComplexTower L K K.subset_succ).homology j).limπ n
+        (borelMooreHomologyToLim L K j x) =
       (HomologicalComplex.homologyMap ((TopPair.ofSubset (K n)ᶜ).locallyFiniteChainComplexToRelative
         L (K.isCompact n).compl_range_ofSubset_compl_map) j).hom x :=
   (ModuleTower.limπ_apply _ n _).trans <| (ComplexTower.coe_homologyToLim_apply _ j _ n).trans <|
     (congrArg (fun g : (locallyFiniteChainComplex L).homology j ⟶
-        ((relativeChainComplexTower L K).obj (op n)).homology j ↦ g.hom x)
+        ((complChainComplexTower L K K.subset_succ).obj (op n)).homology j ↦ g.hom x)
       (HomologicalComplex.homologyMap_comp _ _ j).symm).trans
-      (congrArg (fun φ : locallyFiniteChainComplex L ⟶ (relativeChainComplexTower L K).obj (op n) ↦
-        (HomologicalComplex.homologyMap φ j).hom x)
+      (congrArg (fun φ : locallyFiniteChainComplex L ⟶
+          (complChainComplexTower L K K.subset_succ).obj (op n) ↦
+          (HomologicalComplex.homologyMap φ j).hom x)
         (locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexπ L K n))
 
 /-- The map from `lim¹` of the relative twisted homology modules `H_{j+1}(X, X \ Kₙ; L)` of a
 compact exhaustion to Borel–Moore homology in degree `j`: the connecting map of the Milnor
 sequence. -/
 def limOneToBorelMooreHomology (j : ℕ) :
-    ((relativeChainComplexTower L K).homology (j + 1)).limOne →ₗ[R] borelMooreHomology L j :=
+    ((complChainComplexTower L K K.subset_succ).homology (j + 1)).limOne →ₗ[R]
+      borelMooreHomology L j :=
   (HomologicalComplex.homologyMap (locallyFiniteChainComplexIsoLimComplex L K).inv j).hom ∘ₗ
-    (relativeChainComplexTower L K).limOneToHomology
-      (relativeChainComplexTower_shift_surjective L K) (ComplexShape.down_mk (j + 1) j rfl)
+    (complChainComplexTower L K K.subset_succ).limOneToHomology
+      (complChainComplexTower_shift_surjective L K K.subset_succ)
+      (ComplexShape.down_mk (j + 1) j rfl)
 
 /-- The connecting map of the Milnor sequence of Borel–Moore homology is the connecting map of the
 tower of complexes, after identifying the limit complex with locally finite chains. -/
 lemma limOneToBorelMooreHomology_def (j : ℕ) :
     limOneToBorelMooreHomology L K j =
       (HomologicalComplex.homologyMap (locallyFiniteChainComplexIsoLimComplex L K).inv j).hom ∘ₗ
-        (relativeChainComplexTower L K).limOneToHomology
-          (relativeChainComplexTower_shift_surjective L K) (ComplexShape.down_mk (j + 1) j rfl) :=
+        (complChainComplexTower L K K.subset_succ).limOneToHomology
+          (complChainComplexTower_shift_surjective L K K.subset_succ)
+          (ComplexShape.down_mk (j + 1) j rfl) :=
   (rfl)
 
 /-- The connecting map of the Milnor sequence of Borel–Moore homology is injective. -/
@@ -968,14 +967,16 @@ theorem exact_limOneToBorelMooreHomology_borelMooreHomologyToLim (j : ℕ) :
   let e := (HomologicalComplex.homologyMapIso
     (locallyFiniteChainComplexIsoLimComplex L K) j).toLinearEquiv
   have hexact := ComplexTower.exact_limOneToHomology_homologyToLim
-    (relativeChainComplexTower_shift_surjective L K) (ComplexShape.down_mk (j + 1) j rfl)
+    (complChainComplexTower_shift_surjective L K K.subset_succ)
+    (ComplexShape.down_mk (j + 1) j rfl)
   refine Function.Exact.of_ladder_linearEquiv_of_exact (e₁ := LinearEquiv.refl R _)
     (e₂ := e.symm) (e₃ := LinearEquiv.refl R _) ?_ ?_ hexact
   · rw [limOneToBorelMooreHomology_def]
     rfl
   · rw [borelMooreHomologyToLim_def]
     exact LinearMap.ext fun x ↦
-      congrArg ((relativeChainComplexTower L K).homologyToLim j) (e.apply_symm_apply x)
+      congrArg ((complChainComplexTower L K K.subset_succ).homologyToLim j)
+        (e.apply_symm_apply x)
 
 /-- The map from Borel–Moore homology to the limit of the relative twisted homology modules of a
 compact exhaustion is surjective. -/
@@ -984,19 +985,20 @@ theorem borelMooreHomologyToLim_surjective (j : ℕ) :
   let e := (HomologicalComplex.homologyMapIso
     (locallyFiniteChainComplexIsoLimComplex L K) j).toLinearEquiv
   rw [borelMooreHomologyToLim_def, LinearMap.coe_comp]
-  exact (ComplexTower.homologyToLim_surjective (relativeChainComplexTower_shift_surjective L K)
-    j).comp e.surjective
+  exact (ComplexTower.homologyToLim_surjective
+    (complChainComplexTower_shift_surjective L K K.subset_succ) j).comp e.surjective
 
 /-- The map from Borel–Moore homology to the limit of the relative twisted homology modules of a
 compact exhaustion is bijective when `lim¹` of the relative homology modules in degree `j + 1`
 vanishes. -/
 theorem borelMooreHomologyToLim_bijective (j : ℕ)
-    [Subsingleton ((relativeChainComplexTower L K).homology (j + 1)).limOne] :
+    [Subsingleton ((complChainComplexTower L K K.subset_succ).homology (j + 1)).limOne] :
     Function.Bijective (borelMooreHomologyToLim L K j) := by
   let e := (HomologicalComplex.homologyMapIso
     (locallyFiniteChainComplexIsoLimComplex L K) j).toLinearEquiv
   rw [borelMooreHomologyToLim_def, LinearMap.coe_comp]
-  exact (ComplexTower.homologyToLim_bijective (relativeChainComplexTower_shift_surjective L K)
+  exact (ComplexTower.homologyToLim_bijective
+    (complChainComplexTower_shift_surjective L K K.subset_succ)
     (ComplexShape.down_mk (j + 1) j rfl)).comp e.bijective
 
 end Milnor

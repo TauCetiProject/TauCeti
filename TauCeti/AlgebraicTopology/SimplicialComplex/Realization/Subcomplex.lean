@@ -128,6 +128,21 @@ theorem isClosed_setOf_support_mem {P : PreAbstractSimplicialComplex ι}
     exact iff_true_intro (support_faceInclusion_mem hP hσ x)
   exact heq.symm ▸ isClosed_univ
 
+/-- Whenever the weak realization of `L` is weakly locally compact, the complement of any
+precomplex polyhedron `{x : Realization L | x.val.support ∈ P}` is locally compact. -/
+instance instLocallyCompactSpaceComplSetOfSupportMem
+    (L : AbstractSimplicialComplex ι) [WeaklyLocallyCompactSpace (Realization L)]
+    (P : PreAbstractSimplicialComplex ι) :
+    LocallyCompactSpace ({x : Realization L | x.val.support ∈ P}ᶜ : Set (Realization L)) := by
+  have hcl : IsClosed {x : Realization L | x.val.support ∈ P} := by
+    have heq : {x : Realization L | x.val.support ∈ P} =
+        {x : Realization L | x.val.support ∈ P ⊓ L.toPreAbstractSimplicialComplex} := by
+      ext x
+      simp [PreAbstractSimplicialComplex.mem_inf, support_mem L x]
+    rw [heq]
+    exact isClosed_setOf_support_mem inf_le_right
+  exact hcl.isOpen_compl.locallyCompactSpace
+
 /-- A map defined on a precomplex polyhedron is continuous exactly when its composition
 with each canonical face map into that polyhedron is continuous. The domain carries the
 subspace topology of the ambient weak realization, without any finiteness assumption. -/

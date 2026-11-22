@@ -70,6 +70,14 @@ theorem compactSpace_realization_of_finite_faces (hfin : K.faces.Finite) :
   rw [heq] at hc
   exact ⟨hc⟩
 
+/-- For a complex with finitely many faces, the complement `|K| \ |P|` of any precomplex
+polyhedron is locally compact. -/
+theorem locallyCompactSpace_compl_setOf_support_mem
+    (P : PreAbstractSimplicialComplex ι) (hfin : K.faces.Finite) :
+    LocallyCompactSpace ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)) :=
+  have := K.compactSpace_realization_of_finite_faces hfin
+  inferInstance
+
 /-- The weak realization of a complex on a finite vertex type is compact. -/
 instance instCompactSpaceRealization [Finite ι] (K : AbstractSimplicialComplex ι) :
     CompactSpace (Realization K) := by
