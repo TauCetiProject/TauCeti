@@ -80,8 +80,6 @@ the finite-rank groups `Stₙ(R)` along the index inclusions `Fin m ↪ Fin n`.
   `Stₙ(R)` over `n : ℕ`.
 * `TauCeti.SteinbergGroup.range_toStableGL`: the image of `toStableGL R` in `GL_∞(R)` is
   `TauCeti.StableGeneralLinearGroup.elementarySubgroup R`.
-* `TauCeti.SteinbergGroup.range_toStableGL_eq_ker_abelianizationOf`: the image of
-  `St(R) →* GL_∞(R)` equals the kernel of `GL_∞(R) →* K₁(R)`.
 
 ## References
 
@@ -959,14 +957,6 @@ theorem range_toStableGL :
     rw [← IndexedSteinbergGroup.range_toGL] at hu
     obtain ⟨z, rfl⟩ := hu
     exact ⟨ofFin R n z, toStableGL_ofFin n z⟩
-
-variable (R) in
-/-- The image of `St(R) →* GL_∞(R)` equals the kernel of the abelianization projection
-`GL_∞(R) →* K₁(R)`. -/
-theorem range_toStableGL_eq_ker_abelianizationOf :
-    (toStableGL R).range =
-      (Group.Abelianization.of : StableGeneralLinearGroup R →* AlgebraicK1 R).ker :=
-  range_toStableGL.trans AlgebraicK1.ker_of.symm
 
 /-- The projection `St(R) →* GL_∞(R)` intertwines `IndexedSteinbergGroup.map` with
 `StableGeneralLinearGroup.map`. -/

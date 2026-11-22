@@ -47,9 +47,6 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
   `GL n A`, for a set `T` of indices.
 * `Matrix.upperBlockGL`, `Matrix.lowerBlockGL`: the block unipotent matrices
   `fromBlocks 1 X 0 1` and `fromBlocks 1 0 Y 1`.
-* `Matrix.upperBlockGLHom`, `Matrix.lowerBlockGLHom`: the injective block unipotent
-  homomorphisms `Multiplicative (Matrix m k A) →* GL (m ⊕ k) A` and
-  `Multiplicative (Matrix k m A) →* GL (m ⊕ k) A`.
 * `Matrix.GeneralLinearGroup.toBlocks₁₁GL`: the invertible upper-left block of a block matrix in
   `GL (m ⊕ k) A` whose lower-left block is `0` and lower-right block is `1`.
 
@@ -66,10 +63,6 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
   relabelling the indices preserves the elementary subgroup.
 * `Equiv.reindexGL_sumAssoc_fromBlocksGL`, `Equiv.reindexGL_sumCongr_fromBlocksGL`: reindexing
   block diagonal matrices along `Equiv.sumAssoc` and `Equiv.sumCongr`.
-* `Matrix.upperBlockGL_single`, `Matrix.lowerBlockGL_single`: single-entry block unipotent
-  matrices are elementary transvections.
-* `Matrix.upperBlockGLHom_injective`, `Matrix.lowerBlockGLHom_injective`: injectivity of the
-  block unipotent homomorphisms.
 * `Matrix.upperBlockGL_mem_elementarySubgroup`, `Matrix.lowerBlockGL_mem_elementarySubgroup`:
   block unipotent matrices are elementary.
 * `Matrix.GeneralLinearGroup.eq_fromBlocksGL_mul_upperBlockGL`: block upper-triangular
@@ -208,14 +201,9 @@ theorem centralizer_elementarySubgroup [Nontrivial n] :
   rw [mem_centralizer_elementarySubgroup_iff, ← center_eq_scalar_image] at hg
   exact Units.ext (Semigroup.mem_center_iff.1 hg (h : Matrix n n A))
 
-end TauCeti
-
-namespace TauCeti
-
 /-! ## Block matrices -/
 
-variable {n m k : Type*} [DecidableEq n] [Fintype n] [DecidableEq m] [Fintype m]
-  [DecidableEq k] [Fintype k] {A : Type*} [Semiring A]
+variable {m k : Type*} [DecidableEq m] [Fintype m] [DecidableEq k] [Fintype k]
 
 /-- The **block diagonal homomorphism** `(u, v) ↦ u ⊕ v` from `GL m A × GL k A` to
 `GL (m ⊕ k) A`. -/
@@ -377,78 +365,6 @@ theorem upperBlockGL_inv (X : Matrix m k A) : (upperBlockGL X)⁻¹ = upperBlock
 theorem lowerBlockGL_inv (Y : Matrix k m A) : (lowerBlockGL Y)⁻¹ = lowerBlockGL (-Y) :=
   Units.ext (rfl)
 
-/-- Distinct upper blocks give distinct upper block unipotent matrices. -/
-theorem upperBlockGL_injective :
-    Function.Injective (upperBlockGL : Matrix m k A → GL (m ⊕ k) A) := by
-  intro X Y hXY
-  ext i j
-  simpa [coe_upperBlockGL] using
-    congrArg (fun u : GL (m ⊕ k) A ↦ (u : Matrix (m ⊕ k) (m ⊕ k) A) (Sum.inl i) (Sum.inr j)) hXY
-
-/-- Distinct lower blocks give distinct lower block unipotent matrices. -/
-theorem lowerBlockGL_injective :
-    Function.Injective (lowerBlockGL : Matrix k m A → GL (m ⊕ k) A) := by
-  intro X Y hXY
-  ext j i
-  simpa [coe_lowerBlockGL] using
-    congrArg (fun u : GL (m ⊕ k) A ↦ (u : Matrix (m ⊕ k) (m ⊕ k) A) (Sum.inr j) (Sum.inl i)) hXY
-
-/-- The injective homomorphism `Multiplicative (Matrix m k A) →* GL (m ⊕ k) A` sending `X` to the
-upper block unipotent matrix `fromBlocks 1 X 0 1`. -/
-def upperBlockGLHom : Multiplicative (Matrix m k A) →* GL (m ⊕ k) A where
-  toFun X := upperBlockGL X.toAdd
-  map_one' := upperBlockGL_zero
-  map_mul' X Y := by simp [toAdd_mul]
-
-/-- The upper block unipotent homomorphism evaluates to `Matrix.upperBlockGL`. -/
-@[simp]
-theorem upperBlockGLHom_apply (X : Multiplicative (Matrix m k A)) :
-    upperBlockGLHom X = upperBlockGL X.toAdd :=
-  (rfl)
-
-/-- The upper block unipotent homomorphism is injective. -/
-theorem upperBlockGLHom_injective :
-    Function.Injective (upperBlockGLHom (A := A) (m := m) (k := k)) :=
-  upperBlockGL_injective.comp Multiplicative.toAdd.injective
-
-/-- The injective homomorphism `Multiplicative (Matrix k m A) →* GL (m ⊕ k) A` sending `Y` to the
-lower block unipotent matrix `fromBlocks 1 0 Y 1`. -/
-def lowerBlockGLHom : Multiplicative (Matrix k m A) →* GL (m ⊕ k) A where
-  toFun Y := lowerBlockGL Y.toAdd
-  map_one' := lowerBlockGL_zero
-  map_mul' X Y := by simp [toAdd_mul]
-
-/-- The lower block unipotent homomorphism evaluates to `Matrix.lowerBlockGL`. -/
-@[simp]
-theorem lowerBlockGLHom_apply (Y : Multiplicative (Matrix k m A)) :
-    lowerBlockGLHom Y = lowerBlockGL Y.toAdd :=
-  (rfl)
-
-/-- The lower block unipotent homomorphism is injective. -/
-theorem lowerBlockGLHom_injective :
-    Function.Injective (lowerBlockGLHom (A := A) (m := m) (k := k)) :=
-  lowerBlockGL_injective.comp Multiplicative.toAdd.injective
-
-/-- An upper block unipotent matrix with a single nonzero entry `a` at `(i, j)` is the
-transvection `1 + a E_(inl i, inr j)`. -/
-@[simp]
-theorem upperBlockGL_single (i : m) (j : k) (a : A) :
-    upperBlockGL (Matrix.single i j a) =
-      transvectionUnit (Sum.inl_ne_inr (a := i) (b := j)) a := by
-  apply Units.ext
-  ext (p | p) (q | q) <;>
-    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
-
-/-- A lower block unipotent matrix with a single nonzero entry `a` at `(j, i)` is the
-transvection `1 + a E_(inr j, inl i)`. -/
-@[simp]
-theorem lowerBlockGL_single (j : k) (i : m) (a : A) :
-    lowerBlockGL (Matrix.single j i a) =
-      transvectionUnit (Sum.inr_ne_inl (a := i) (b := j)) a := by
-  apply Units.ext
-  ext (p | p) (q | q) <;>
-    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
-
 /-- Upper block unipotent matrices are elementary: they are products of the commuting elementary
 matrices `1 + X a b E_(inl a, inr b)`. -/
 theorem upperBlockGL_mem_elementarySubgroup (X : Matrix m k A) :
@@ -457,8 +373,9 @@ theorem upperBlockGL_mem_elementarySubgroup (X : Matrix m k A) :
   | h_zero => simp
   | h_add X Y hX hY => simpa only [upperBlockGL_add] using mul_mem hX hY
   | h_std_basis a b c =>
-    rw [upperBlockGL_single]
-    exact transvectionUnit_mem_elementarySubgroup _ _
+    convert transvectionUnit_mem_elementarySubgroup (Sum.inl_ne_inr (a := a) (b := b)) c
+    ext (p | p) (q | q) <;>
+      simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
 
 /-- Lower block unipotent matrices are elementary: they are products of the commuting elementary
 matrices `1 + Y b a E_(inr b, inl a)`. -/
@@ -468,8 +385,9 @@ theorem lowerBlockGL_mem_elementarySubgroup (Y : Matrix k m A) :
   | h_zero => simp
   | h_add X Y hX hY => simpa only [lowerBlockGL_add] using mul_mem hX hY
   | h_std_basis b a c =>
-    rw [lowerBlockGL_single]
-    exact transvectionUnit_mem_elementarySubgroup _ _
+    convert transvectionUnit_mem_elementarySubgroup (Sum.inr_ne_inl (a := a) (b := b)) c
+    ext (p | p) (q | q) <;>
+      simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
 
 end Matrix
 
@@ -691,8 +609,8 @@ theorem reindexGL_mem_elementarySubgroup_iff (e : n ≃ m) {u : GL n A} :
 
 /-- Reindexing a nested block diagonal matrix along `Equiv.sumAssoc` reassociates the blocks. -/
 @[simp]
-theorem reindexGL_sumAssoc_fromBlocksGL {A : Type*} [Semiring A] {n₁ n₂ n₃ : Type*}
-    [DecidableEq n₁] [Fintype n₁] [DecidableEq n₂] [Fintype n₂] [DecidableEq n₃] [Fintype n₃]
+theorem reindexGL_sumAssoc_fromBlocksGL {n₁ n₂ n₃ : Type*} [DecidableEq n₁] [Fintype n₁]
+    [DecidableEq n₂] [Fintype n₂] [DecidableEq n₃] [Fintype n₃]
     (u₁ : GL n₁ A) (u₂ : GL n₂ A) (u₃ : GL n₃ A) :
     (Equiv.sumAssoc n₁ n₂ n₃).reindexGL A (fromBlocksGL (fromBlocksGL (u₁, u₂), u₃)) =
       fromBlocksGL (u₁, fromBlocksGL (u₂, u₃)) := by
@@ -702,9 +620,8 @@ theorem reindexGL_sumAssoc_fromBlocksGL {A : Type*} [Semiring A] {n₁ n₂ n₃
 /-- Reindexing a block diagonal matrix along `Equiv.sumCongr` reindexes each diagonal block
 independently. -/
 @[simp]
-theorem reindexGL_sumCongr_fromBlocksGL {A : Type*} [Semiring A] {m₁ m₂ k₁ k₂ : Type*}
-    [DecidableEq m₁] [Fintype m₁] [DecidableEq m₂] [Fintype m₂]
-    [DecidableEq k₁] [Fintype k₁] [DecidableEq k₂] [Fintype k₂]
+theorem reindexGL_sumCongr_fromBlocksGL {m₁ m₂ k₁ k₂ : Type*} [DecidableEq m₁] [Fintype m₁]
+    [DecidableEq m₂] [Fintype m₂] [DecidableEq k₁] [Fintype k₁] [DecidableEq k₂] [Fintype k₂]
     (e₁ : m₁ ≃ m₂) (e₂ : k₁ ≃ k₂) (u : GL m₁ A) (v : GL k₁ A) :
     (Equiv.sumCongr e₁ e₂).reindexGL A (fromBlocksGL (u, v)) =
       fromBlocksGL (e₁.reindexGL A u, e₂.reindexGL A v) := by
@@ -759,19 +676,12 @@ def elementarySubgroupMap (f : A →+* B) :
     (elementarySubgroup n A).subtype).codRestrict (elementarySubgroup n B)
       (fun u ↦ f.map_elementarySubgroup_le ⟨u, u.property, rfl⟩)
 
-/-- The elementary subgroup inclusion intertwines `elementarySubgroupMap` with entrywise scalar
-change on `GL`. -/
-theorem subtype_comp_elementarySubgroupMap (f : A →+* B) :
-    (elementarySubgroup n B).subtype.comp f.elementarySubgroupMap =
-      (Units.map (f.mapMatrix (m := n)).toMonoidHom).comp (elementarySubgroup n A).subtype :=
-  (rfl)
-
 /-- The induced map on elementary subgroups is entrywise scalar change. -/
 @[simp]
 theorem coe_elementarySubgroupMap (f : A →+* B) (u : elementarySubgroup n A) :
     (f.elementarySubgroupMap u : GL n B) =
       Units.map (f.mapMatrix (m := n)).toMonoidHom (u : GL n A) :=
-  DFunLike.congr_fun (f.subtype_comp_elementarySubgroupMap) u
+  (rfl)
 
 /-- Extension along the identity ring map is the identity on the elementary subgroup. -/
 @[simp]
