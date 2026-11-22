@@ -160,6 +160,15 @@ theorem forall_dvd_iff_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid 
   subst B
   simp only [LinearMap.smul_apply, smul_eq_mul, mul_comm r a, ha.dvd_cancel_left]
 
+/-- Divisibility of self-pairings on a submodule `P` by `r * a` is equivalent to divisibility by
+`r` for any `a`-rescaling `C` of `B.restrict P` when `a` is left-regular. -/
+theorem forall_dvd_restrict_iff_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {B : LinearMap.BilinForm R M} {P : Submodule R M} {C : LinearMap.BilinForm R P}
+    {a : R} (ha : IsLeftRegular a) (hC : a • C = B.restrict P) (r : R) :
+    (∀ x : P, r ∣ C x x) ↔ ∀ v ∈ P, r * a ∣ B v v := by
+  rw [forall_dvd_iff_of_smul_eq ha hC r, Subtype.forall]
+  simp [restrict_apply]
+
 /-- Rescaling by a scalar `a` that acts injectively on `R`, such as a regular element of `R`,
 neither creates nor destroys symmetry of a bilinear form. -/
 @[simp]

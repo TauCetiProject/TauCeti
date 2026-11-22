@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
+import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
@@ -17,6 +18,7 @@ import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.Padics.DyadicUnits
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.NumberTheory.Padics.SerreSigns
 import TauCeti.RingTheory.Valuation.ValuationRing
 
 /-!
@@ -36,9 +38,9 @@ with respect to `2`, each constituent `N i` has a unique unimodular rescaling `C
 ## Main definitions and results
 
 * `LinearMap.BilinForm.IsJordanSplitting.constituentForm`, `two_pow_smul_constituentForm`,
-  `isPerfPair_constituentForm`, `isSymm_constituentForm`, `constituentCharVec`,
-  `isCharacteristic_constituentCharVec`: canonical unimodular rescaling and characteristic vector
-  for each Jordan constituent.
+  `eq_constituentForm_iff`, `isPerfPair_constituentForm`, `isSymm_constituentForm`,
+  `constituentCharVec`, `isCharacteristic_constituentCharVec`: canonical unimodular rescaling and
+  characteristic vector for each Jordan constituent.
 * `LinearMap.BilinForm.IsJordanSplitting.constituentSign`, `constituentOddity`,
   `constituentSign_eq`, `constituentOddity_eq`: definition and independence of choices.
 * `LinearMap.BilinForm.IsJordanSplitting.constituentSign_eq_one_or_neg_one`,
@@ -47,7 +49,9 @@ with respect to `2`, each constituent `N i` has a unique unimodular rescaling `C
   `constituentSign_of_eq_bot`, `constituentOddity_of_eq_bot`, `constituentOddity_of_even`:
   agreement on equal constituents, zero constituents, and type-II constituents.
 * `LinearMap.BilinForm.IsJordanSplitting.constituentSign_eq_mul_of_isSquare_det`,
-  `constituentOddity_eq_add_of_eight_dvd`: transformation under elementary Jordan-splitting moves.
+  `constituentOddity_eq_add_of_eight_dvd`, `constituentSign_eq_neg_of_isSquare_five`,
+  `constituentSign_eq_neg_and_oddity_eq_add_four_of_isSquare_five`: transformation under elementary
+  Jordan-splitting moves.
 
 ## References
 
@@ -74,6 +78,15 @@ noncomputable def IsJordanSplitting.constituentForm (h : B.IsJordanSplitting 2 N
 theorem IsJordanSplitting.two_pow_smul_constituentForm (h : B.IsJordanSplitting 2 N) (i : ℕ) :
     (2 : ℤ_[2]) ^ i • h.constituentForm i = B.restrict (N i) :=
   (isModular_def.mp (h.isModular i)).choose_spec.1
+
+/-- Characterization of the canonical constituent form: `C` equals `h.constituentForm i` iff
+`2 ^ i • C = B.restrict (N i)`. -/
+theorem IsJordanSplitting.eq_constituentForm_iff (h : B.IsJordanSplitting 2 N) {i : ℕ}
+    {C : BilinForm ℤ_[2] (N i)} :
+    (2 : ℤ_[2]) ^ i • C = B.restrict (N i) ↔ C = h.constituentForm i :=
+  ⟨fun hC ↦ eq_of_smul_eq (PadicInt.isLeftRegular_p_pow i) hC
+      (h.two_pow_smul_constituentForm i),
+    fun hC ↦ hC ▸ h.two_pow_smul_constituentForm i⟩
 
 /-- The canonical constituent form of a dyadic Jordan splitting is a perfect pairing. -/
 theorem IsJordanSplitting.isPerfPair_constituentForm (h : B.IsJordanSplitting 2 N) (i : ℕ) :
@@ -140,10 +153,7 @@ theorem IsJordanSplitting.constituentSign_eq (h : B.IsJordanSplitting 2 N) {i : 
     {ι : Type*} [Fintype ι] [DecidableEq ι] (d : Basis ι ℤ_[2] (N i)) :
     h.constituentSign i = χ₈ (PadicInt.toZModPow 3 (C.toMatrix d).det) := by
   have := h.free i; have := h.finite i
-  have hreg : IsLeftRegular ((2 : ℤ_[2]) ^ i) :=
-    (isRegular_iff_mem_nonZeroDivisors.mpr
-      (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i two_ne_zero))).left
-  rw [eq_of_smul_eq hreg hC (h.two_pow_smul_constituentForm i)]
+  rw [h.eq_constituentForm_iff.mp hC]
   unfold IsJordanSplitting.constituentSign; dsimp only
   let d' := d.reindex (Fintype.equivFinOfCardEq (finrank_eq_card_basis d).symm)
   rw [← det_toMatrix_reindex d (Fintype.equivFinOfCardEq (finrank_eq_card_basis d).symm),
@@ -190,10 +200,7 @@ theorem IsJordanSplitting.prod_constituentSign_eq_ite
       if (∑ i ∈ u, if h.constituentSign i = -1 then (4 : ZMod (2 ^ 3)) else 0) = 4
       then -1 else 1 := by
   rw [h.sum_if_constituentSign_eq_neg_one]
-  have hpm : (∏ i ∈ u, h.constituentSign i) = 1 ∨ (∏ i ∈ u, h.constituentSign i) = -1 :=
-    Finset.prod_induction _ (fun x ↦ x = 1 ∨ x = -1)
-      (fun _ _ ha hb ↦ by rcases ha with rfl | rfl <;> rcases hb with rfl | rfl <;> norm_num)
-      (Or.inl rfl) fun i _ ↦ h.constituentSign_eq_one_or_neg_one i
+  have hpm := Finset.prod_eq_one_or_neg_one u fun i _ ↦ h.constituentSign_eq_one_or_neg_one i
   have h04 : (0 : ZMod (2 ^ 3)) ≠ 4 := by decide
   rcases hpm with hp | hp <;> simp [hp, h04]
 
@@ -204,10 +211,7 @@ theorem IsJordanSplitting.constituentOddity_eq (h : B.IsJordanSplitting 2 N) (hB
     {w : N i} (hw : C.IsCharacteristic w) :
     h.constituentOddity hB i = PadicInt.toZModPow 3 (C w w) := by
   have := h.free i
-  have hreg : IsLeftRegular ((2 : ℤ_[2]) ^ i) :=
-    (isRegular_iff_mem_nonZeroDivisors.mpr
-      (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i two_ne_zero))).left
-  rw [eq_of_smul_eq hreg hC (h.two_pow_smul_constituentForm i)] at hw ⊢
+  rw [h.eq_constituentForm_iff.mp hC] at hw ⊢
   have := h.isPerfPair_constituentForm i
   exact (PadicInt.eight_dvd_sub_iff_toZModPow_three_eq.mp
     (hw.eight_dvd_apply_self_sub_apply_self (h.isSymm_constituentForm hB i)
@@ -253,12 +257,10 @@ theorem IsJordanSplitting.constituentSign_of_eq_bot (h : B.IsJordanSplitting 2 N
 /-- A type-II constituent has oddity `0`. -/
 theorem IsJordanSplitting.constituentOddity_of_even (h : B.IsJordanSplitting 2 N) (hB : B.IsSymm)
     {i : ℕ} (heven : ∀ v ∈ N i, 2 * 2 ^ i ∣ B v v) : h.constituentOddity hB i = 0 := by
-  have hreg : IsLeftRegular ((2 : ℤ_[2]) ^ i) :=
-    (isRegular_iff_mem_nonZeroDivisors.mpr
-      (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i (two_ne_zero (α := ℤ_[2]))))).left
   have hw : (h.constituentForm i).IsCharacteristic 0 :=
     isCharacteristic_zero_iff.mpr
-      ((forall_dvd_restrict_iff_of_smul_eq hreg (h.two_pow_smul_constituentForm i) 2).mpr heven)
+      ((forall_dvd_restrict_iff_of_smul_eq (PadicInt.isLeftRegular_p_pow i)
+        (h.two_pow_smul_constituentForm i) 2).mpr heven)
   simp [h.constituentOddity_eq hB (h.two_pow_smul_constituentForm i) hw]
 
 /-- A zero constituent has oddity `0`. -/
@@ -317,6 +319,34 @@ theorem IsJordanSplitting.constituentOddity_eq_add_of_eight_dvd {N' : ℕ → Su
       (h'.isCharacteristic_constituentCharVec hB k),
     ← map_add]
   exact (PadicInt.eight_dvd_sub_iff_toZModPow_three_eq.mp (by convert h8 using 1; ring)).symm
+
+/-- Multiplying the Gram determinant of a constituent by `5` (up to squares) negates its
+constituent sign. -/
+theorem IsJordanSplitting.constituentSign_eq_neg_of_isSquare_five
+    {N' : ℕ → Submodule ℤ_[2] M} (h : B.IsJordanSplitting 2 N) (h' : B.IsJordanSplitting 2 N')
+    {k : ℕ}
+    (hdk : ∀ (n : ℕ) (d : Basis (Fin n) ℤ_[2] (N k)) (d' : Basis (Fin n) ℤ_[2] (N' k)),
+      IsSquare (5 * ((B.restrict (N k)).toMatrix d).det * ((B.restrict (N' k)).toMatrix d').det)) :
+    h'.constituentSign k = -h.constituentSign k := by
+  have hsk := h.constituentSign_eq_mul_of_isSquare_det h' TauCeti.isUnit_five_padicInt hdk
+  have hχ5 : χ₈ (PadicInt.toZModPow 3 (5 : ℤ_[2])) = -1 := by rw [map_ofNat]; decide
+  rwa [hχ5, neg_one_mul] at hsk
+
+/-- Updating both `constituentSign` (negated) and `constituentOddity` (shifted by `4` modulo `8`)
+under a `5`-twist Jordan-splitting move. -/
+theorem IsJordanSplitting.constituentSign_eq_neg_and_oddity_eq_add_four_of_isSquare_five
+    {N' : ℕ → Submodule ℤ_[2] M} (h : B.IsJordanSplitting 2 N) (h' : B.IsJordanSplitting 2 N')
+    (hB : B.IsSymm) {k : ℕ}
+    (hdk : ∀ (n : ℕ) (d : Basis (Fin n) ℤ_[2] (N k)) (d' : Basis (Fin n) ℤ_[2] (N' k)),
+      IsSquare (5 * ((B.restrict (N k)).toMatrix d).det * ((B.restrict (N' k)).toMatrix d').det))
+    (hok : ∀ (C : BilinForm ℤ_[2] (N k)) (C' : BilinForm ℤ_[2] (N' k)) (w : N k) (w' : N' k),
+      (2 : ℤ_[2]) ^ k • C = B.restrict (N k) →
+      (2 : ℤ_[2]) ^ k • C' = B.restrict (N' k) →
+      C.IsCharacteristic w → C'.IsCharacteristic w' → (8 : ℤ_[2]) ∣ C' w' w' - C w w - 4) :
+    h'.constituentSign k = -h.constituentSign k ∧
+      h'.constituentOddity hB k = h.constituentOddity hB k + 4 :=
+  ⟨h.constituentSign_eq_neg_of_isSquare_five h' hdk,
+    by simpa [map_ofNat] using h.constituentOddity_eq_add_of_eight_dvd h' hB (δ := 4) hok⟩
 
 end FreeFinite
 

@@ -70,8 +70,9 @@ unchanged.
   isometry invariant.
 * `LinearMap.BilinForm.IsJordanSplitting.partialOddity`, `partialOddity_eq`,
   `stdAddChar_partialOddity`, `partialOddity_eq_of_equivalent`,
-  `partialOddity_eq_of_isJordanSplitting`: the algebraic partial residue modulo `8`, its evaluation
-  and additive-character dictionary, and its invariance.
+  `partialOddity_eq_of_isJordanSplitting`, `partialOddity_succ_sub_partialOddity_of_eq_bot`: the
+  algebraic partial residue modulo `8`, its evaluation and additive-character dictionary, its
+  invariance, and its step across a zero constituent.
 
 ## References
 
@@ -352,6 +353,33 @@ theorem IsJordanSplitting.partialOddity_eq_of_isJordanSplitting
     (hB : B.IsSymm) {j : ℕ} (hnext : ∀ v ∈ N (j + 1), 2 * 2 ^ (j + 1) ∣ B v v) :
     h.partialOddity hB j = h'.partialOddity hB j :=
   h.partialOddity_eq_of_equivalent h' hB hB (.refl B) hnext
+
+/-- Crossing a zero constituent `N (j + 1) = ⊥` shifts `partialOddity` by `4` for each prior
+constituent of sign `-1`. -/
+theorem IsJordanSplitting.partialOddity_succ_sub_partialOddity_of_eq_bot
+    (h : B.IsJordanSplitting 2 N) (hB : B.IsSymm) {j : ℕ} (hbot : N (j + 1) = ⊥) :
+    h.partialOddity hB (j + 1) - h.partialOddity hB j =
+      ∑ i ∈ Finset.Iic j, if h.constituentSign i = -1 then (4 : ZMod (2 ^ 3)) else 0 := by
+  rw [h.partialOddity_def, h.partialOddity_def]
+  have hIic : Finset.Iic (j + 1) = insert (j + 1) (Finset.Iic j) := by
+    rw [Finset.Iic_eq_Icc, Finset.Iic_eq_Icc, ← Order.succ_eq_add_one,
+      Finset.insert_Icc_right_eq_Icc_succ bot_le]
+  have hnotMem : j + 1 ∉ Finset.Iic j := by simp [Finset.mem_Iic]
+  have h1m1 : (1 : ℤ) ≠ -1 := by decide
+  have hm4 : -(4 : ZMod (2 ^ 3)) = 4 := by decide
+  rw [hIic, Finset.sum_insert hnotMem, h.constituentSign_of_eq_bot hbot,
+    h.constituentOddity_of_eq_bot hB hbot]
+  simp only [h1m1, and_false, ↓reduceIte, add_zero, zero_add, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have hij : i ≤ j := Finset.mem_Iic.mp hi
+  have hsub : j + 1 + 1 - i = (j + 1 - i) + 1 := by omega
+  have hpar : Odd (j + 1 + 1 - i) ↔ ¬Odd (j + 1 - i) := by rw [hsub, Nat.odd_add_one]
+  by_cases hsi : h.constituentSign i = -1
+  · by_cases ho : Odd (j + 1 - i)
+    · simp only [hsi, ho, hpar.not.mpr (not_not.mpr ho), and_true, ↓reduceIte, add_zero,
+        sub_add_eq_sub_sub, sub_self, zero_sub, hm4]
+    · simp only [hsi, ho, hpar.mpr ho, and_true, ↓reduceIte, add_zero, add_sub_cancel_left]
+  · simp [hsi]
 
 end PartialOddity
 

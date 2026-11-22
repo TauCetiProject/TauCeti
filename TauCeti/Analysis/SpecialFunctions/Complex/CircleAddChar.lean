@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.Harmonic.Defs
 
 import Mathlib.Algebra.Field.GeomSum
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.Algebra.Group.AddChar.Basic
 import TauCeti.Data.ZMod.Count
 
@@ -69,17 +70,12 @@ theorem prod_pow_mul_stdAddChar_eq_stdAddChar_add_ite {ι : Type*} {n : ℕ} [Ne
     (x : ZMod (2 * n)) (e : ι → ℕ) :
     (∏ i ∈ u, (s i : ℂ) ^ e i) * stdAddChar x =
       stdAddChar (x + if ∏ i ∈ u, s i ^ e i = -1 then (n : ZMod (2 * n)) else 0) := by
-  have hprod : (∏ i ∈ u, s i ^ e i) = 1 ∨ (∏ i ∈ u, s i ^ e i) = -1 := by
-    refine Finset.prod_induction _ (fun y ↦ y = 1 ∨ y = -1)
-      (fun _ _ ha hb ↦ by rcases ha with rfl | rfl <;> rcases hb with rfl | rfl <;> norm_num)
-      (Or.inl rfl) fun i hi ↦ ?_
-    rcases hs i hi with h | h
-    · exact Or.inl (by rw [h, one_pow])
-    · rw [h]
-      rcases Nat.even_or_odd (e i) with he | he <;> simp [he.neg_one_pow]
+  have hprod : (∏ i ∈ u, s i ^ e i) = 1 ∨ (∏ i ∈ u, s i ^ e i) = -1 :=
+    Finset.prod_eq_one_or_neg_one u fun i hi ↦
+      (hs i hi).elim (fun h ↦ .inl (by rw [h, one_pow]))
+        (fun h ↦ by rw [h]; exact neg_one_pow_eq_or ℤ (e i))
   have hcast : (∏ i ∈ u, (s i : ℂ) ^ e i) = ((∏ i ∈ u, s i ^ e i : ℤ) : ℂ) := by
-    push_cast
-    rfl
+    simp only [Int.cast_prod, Int.cast_pow]
   rw [hcast]
   rcases hprod with h | h <;> simp [h, AddChar.map_add_eq_mul, stdAddChar_natCast_self]
 

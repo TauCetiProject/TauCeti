@@ -109,6 +109,11 @@ theorem isSMulRegular_natCast_p {M : Type*} [AddCommMonoid M] [Module ℤ_[p] M]
     [Module.IsTorsionFree ℤ_[p] M] : IsSMulRegular M (p : ℤ_[p]) :=
   .of_ne_zero (NeZero.ne _)
 
+/-- Any power of `(p : ℤ_[p])` is left-regular in `ℤ_[p]`. -/
+theorem isLeftRegular_p_pow (i : ℕ) : IsLeftRegular ((p : ℤ_[p]) ^ i) :=
+  (isRegular_iff_mem_nonZeroDivisors.mpr
+    (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i (NeZero.ne _)))).left
+
 /-- Every series `∑ₙ pⁿ aₙ` of `p`-adic integers converges in `ℤ_p`. -/
 theorem summable_pow_mul (a : ℕ → ℤ_[p]) : Summable fun n ↦ (p : ℤ_[p]) ^ n * a n :=
   .of_norm_bounded (summable_geometric_of_lt_one (norm_nonneg _) norm_p_lt_one) fun n ↦ by

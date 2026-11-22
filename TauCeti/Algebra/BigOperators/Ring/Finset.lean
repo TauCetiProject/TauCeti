@@ -34,6 +34,11 @@ over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one
 
 `Finset.sum_filter_mem_mul_eq`: when the weight `w` vanishes outside a set `U`, the weighted sum
 `∑ s ∈ S, w s * r s` only sees the points of `S` lying in `U`.
+
+## Products of `±1`
+
+`Finset.prod_eq_one_or_neg_one`: a finite product of elements each equal to `1` or `-1` is
+`1` or `-1`.
 -/
 
 public section
@@ -106,5 +111,13 @@ theorem sq_dvd_prod_sub_one_sub_sum_add_card {R ι : Type*} [CommRing R] (s : Fi
     push_cast
     refine ⟨f + c * (r * f + e), ?_⟩
     linear_combination (∏ i ∈ s, u i - 1) * hc + (1 + r * c) * hf + r * c * he
+
+/-- A finite product of elements each equal to `1` or `-1` is equal to `1` or `-1`. -/
+theorem prod_eq_one_or_neg_one {ι M : Type*} [CommMonoid M] [HasDistribNeg M]
+    (s : Finset ι) {f : ι → M} (hf : ∀ i ∈ s, f i = 1 ∨ f i = -1) :
+    ∏ i ∈ s, f i = 1 ∨ ∏ i ∈ s, f i = -1 :=
+  prod_induction f (fun x ↦ x = 1 ∨ x = -1)
+    (fun _ _ ha hb ↦ by rcases ha with rfl | rfl <;> rcases hb with rfl | rfl <;> simp)
+    (Or.inl rfl) hf
 
 end Finset
