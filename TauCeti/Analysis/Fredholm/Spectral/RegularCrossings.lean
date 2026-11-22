@@ -98,23 +98,24 @@ theorem finite_setOf_ker_ne_bot (hA : ContinuousOn A (Icc a b))
     (hreg : ∀ t ∈ Ioo a b, (A t).ker ≠ ⊥ →
       (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t))).Nondegenerate) :
     {t ∈ Icc a b | (A t).ker ≠ ⊥}.Finite := by
-  by_contra hinf
-  obtain ⟨z, hz, hacc⟩ := Set.Infinite.exists_accPt_of_subset_isCompact hinf isCompact_Icc
-    (sep_subset _ _)
-  refine (accPt_iff_frequently_nhdsNE.1 hacc) ?_
+  rw [← inter_ofPred_eq_sep, ← compl_ofPred, ← sdiff_eq]
+  -- The injective times are codiscrete in the compact interval `[a, b]`.
+  refine isCompact_Icc.finite_sdiff_of_mem_codiscreteWithin <|
+    mem_codiscreteWithin_iff_forall_mem_nhdsNE.2 fun z hz ↦ ?_
+  suffices h : ∀ᶠ t in 𝓝[≠] z, t ∈ Icc a b → (A t).ker = ⊥ from
+    mem_of_superset h fun t ht ↦ (em (t ∈ Icc a b)).imp ht id
   by_cases hnz : (A z).ker = ⊥
   · -- `A z` is invertible, and so is `A t` for every `t ∈ [a, b]` near `z`.
     have hunit : IsUnit (A z) :=
       (hF z hz).isUnit_of_injective_of_isSelfAdjoint (hsa z hz) (LinearMap.ker_eq_bot.1 hnz)
     have hopen := eventually_nhdsWithin_iff.1 <| (hA z hz).eventually (Units.isOpen.mem_nhds hunit)
-    filter_upwards [nhdsWithin_le_nhds hopen] with t ht htD
-    exact htD.2 (LinearMap.ker_eq_bot.2 (isInvertible_iff_isUnit.2 (ht htD.1)).injective)
+    filter_upwards [nhdsWithin_le_nhds hopen] with t ht htI
+    exact LinearMap.ker_eq_bot.2 (isInvertible_iff_isUnit.2 (ht htI)).injective
   · -- A crossing lies in `(a, b)`, and regular crossings are isolated.
     have hz' : z ∈ Ioo a b := mem_Ioo_of_ker_ne_bot ha hb hz hnz
     obtain ⟨hcont, hsa'⟩ := eventually_continuousAt_and_isSelfAdjoint hA hsa hz'
     filter_upwards [eventually_ker_eq_bot_of_crossingForm_nondegenerate hcont hsa' (hF z hz)
-      (hderiv z hz' hnz) (hreg z hz' hnz)] with t ht htD
-    exact htD.2 ht
+      (hderiv z hz' hnz) (hreg z hz' hnz)] with t ht _ using ht
 
 /-- The regular-crossing formula for a finite set `S` of regular crossings in `(a, b)` outside which
 the path is injective, by induction on `S` from its largest element. -/

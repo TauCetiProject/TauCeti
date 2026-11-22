@@ -91,11 +91,7 @@ theorem cfc_indicator_smul_of_smul_eq_algebraMap_smul [ContinuousInv₀ R] {M : 
   have hg : (fun x ↦ (s.indicator (1 : R → R) x - s.indicator 1 μ) / (x - μ)) =
       sᶜ.indicator fun x ↦ -(x - μ)⁻¹ := by
     funext x
-    by_cases hx : x ∈ s
-    · rw [Set.indicator_of_mem hx, Set.indicator_of_mem hμ, Pi.one_apply, Pi.one_apply, sub_self,
-        zero_div, Set.indicator_of_notMem (Set.notMem_compl_iff.2 hx)]
-    · rw [Set.indicator_of_notMem hx, Set.indicator_of_mem hμ, Set.indicator_of_mem hx,
-        Pi.one_apply, zero_sub, neg_div, one_div]
+    by_cases hx : x ∈ s <;> simp [hx, hμ, neg_div]
   have hcont : ContinuousOn (fun x ↦ (s.indicator (1 : R → R) x - s.indicator 1 μ) / (x - μ))
       (spectrum R a) := by
     rw [hg]

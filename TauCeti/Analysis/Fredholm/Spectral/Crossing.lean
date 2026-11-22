@@ -310,11 +310,13 @@ private theorem ker_eq_bot_of_nondegenerate_compressedForm {t : ℝ} (hst : IsSe
     cfc_indicator_smul_of_smul_eq_algebraMap_smul
       (by rw [map_zero, zero_smul, ContinuousLinearMap.smul_def, hx]) ⟨by linarith, hc⟩
       (disjoint_frontier_Icc h₁ h₂) hst
-  obtain ⟨v, hv⟩ : x ∈ ((P ∘L ι : E →L[ℝ] H) : E →ₗ[ℝ] H).range := hrange ▸ ⟨x, hPx⟩
-  have hv0 : v = 0 := hnd.1 v fun w ↦ by
-    have hv' : P (ι v) = x := hv
-    simp [compressedForm, ← hP, hv', hx]
-  rw [← hv, hv0, map_zero]
+  have hxP : x ∈ ((P ∘L ι : E →L[ℝ] H) : E →ₗ[ℝ] H).range := by
+    rw [hrange, LinearMap.mem_range]
+    exact ⟨x, by simpa using hPx⟩
+  obtain ⟨v, hv⟩ := LinearMap.mem_range.1 hxP
+  rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply] at hv
+  have hv0 : v = 0 := hnd.1 v fun w ↦ by simp [compressedForm, ← hP, hv, hx]
+  rw [← hv, hv0, map_zero, map_zero]
 
 /-! ### The spectral flow across a regular crossing -/
 
