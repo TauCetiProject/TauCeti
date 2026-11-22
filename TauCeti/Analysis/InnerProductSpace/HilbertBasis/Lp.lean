@@ -55,17 +55,14 @@ private theorem orthogonal_span_range_single_hilbertBasis [DecidableEq ι]
     (b : ∀ i, HilbertBasis (κ i) 𝕜 (E i)) :
     (Submodule.span 𝕜 (Set.range fun p : Σ i, κ i =>
       lp.single (E := E) 2 p.1 (b p.1 p.2)))ᗮ = ⊥ := by
+  have : ∀ i, CompleteSpace (E i) := fun i => (b i).completeSpace
   rw [Submodule.eq_bot_iff]
   intro x hx
+  rw [lp.mem_orthogonal_span_range_single_iff (fun i => ⇑(b i))] at hx
   ext i
-  refine (b i).repr.injective ?_
-  ext k
-  have hmem : lp.single (E := E) 2 i (b i k) ∈
-      Submodule.span 𝕜 (Set.range fun p : Σ i, κ i => lp.single (E := E) 2 p.1 (b p.1 p.2)) :=
-    Submodule.subset_span ⟨⟨i, k⟩, rfl⟩
-  have h0 := (Submodule.mem_orthogonal _ _).1 hx _ hmem
-  simpa only [lp.inner_single_left, HilbertBasis.repr_apply_apply, map_zero, lp.coeFn_zero,
-    Pi.zero_apply] using h0
+  have hmem := hx i
+  rw [Submodule.topologicalClosure_eq_top_iff.1 (b i).dense_span, Submodule.mem_bot] at hmem
+  exact hmem
 
 /-- The Hilbert basis of the Hilbert direct sum `lp E 2` assembled from a Hilbert basis `b i` of
 each summand `E i`. -/

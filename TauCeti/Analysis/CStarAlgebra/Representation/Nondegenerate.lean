@@ -244,11 +244,13 @@ theorem isNondegenerate_iff_dense_span_comp {ι : Type*} {g : ι → A} (hg : De
     topologicalClosure_span_range_comp_eq hg]
 
 /-- Every representation on a zero Hilbert space is nondegenerate. -/
+@[simp]
 theorem isNondegenerate_of_subsingleton_space [Subsingleton H] (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
     π.IsNondegenerate :=
   isNondegenerate_iff_forall_apply_eq_zero.2 fun ξ _ => Subsingleton.elim ξ 0
 
 /-- No representation of a zero C⋆-algebra on a nontrivial Hilbert space is nondegenerate. -/
+@[simp]
 theorem not_isNondegenerate_of_subsingleton_domain [Subsingleton A] [Nontrivial H]
     (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) : ¬ π.IsNondegenerate := by
   intro hπ

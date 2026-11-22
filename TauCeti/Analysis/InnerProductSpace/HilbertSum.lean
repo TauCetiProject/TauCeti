@@ -29,6 +29,8 @@ every summand is. For the ampliation `lp.ampliation ι 2 T` of a single operator
 
 * `lp.orthonormal_single`: coordinate embeddings of orthonormal families form an orthonormal
   family in `lp E 2`.
+* `lp.mem_orthogonal_span_range_single_iff`: orthogonality to the span of embedded families
+  reduces coordinatewise.
 * `lp.adjoint_mapCLM`: `(⊕ T i)† = ⊕ (T i)†`.
 * `lp.star_mapCLM`: the same identity for families of endomorphisms, stated with `star`.
 * `lp.isSelfAdjoint_mapCLM_iff`: `⊕ T i` is self-adjoint iff every `T i` is.
@@ -64,6 +66,34 @@ theorem orthonormal_single {ι 𝕜 : Type*} {E : ι → Type*} {κ : ι → Typ
   · subst hij
     simpa [Sigma.mk.inj_iff] using (orthonormal_iff_ite.1 (hv i) k l)
   · simp [hij]
+
+/-- A vector in `lp E 2` is orthogonal to the span of the embedded families
+`lp.single 2 i (v i k)` if and only if each coordinate `x i` is orthogonal to the span of
+`v i`. -/
+theorem mem_orthogonal_span_range_single_iff {ι 𝕜 : Type*} {E : ι → Type*} {κ : ι → Type*}
+    [RCLike 𝕜] [DecidableEq ι] [∀ i, NormedAddCommGroup (E i)] [∀ i, InnerProductSpace 𝕜 (E i)]
+    (v : ∀ i, κ i → E i) (x : lp E 2) :
+    x ∈ (Submodule.span 𝕜 (Set.range fun p : Σ i, κ i =>
+      lp.single (E := E) 2 p.1 (v p.1 p.2)))ᗮ ↔
+      ∀ i, x i ∈ (Submodule.span 𝕜 (Set.range (v i)))ᗮ := by
+  have h1 : x ∈ (Submodule.span 𝕜 (Set.range fun p : Σ i, κ i =>
+      lp.single (E := E) 2 p.1 (v p.1 p.2)))ᗮ ↔
+      ∀ i k, ⟪x, lp.single (E := E) 2 i (v i k)⟫_𝕜 = 0 := by
+    rw [Submodule.mem_orthogonal']
+    refine ⟨fun h i k => h _ (Submodule.subset_span ⟨⟨i, k⟩, rfl⟩), fun h u hu => ?_⟩
+    exact LinearMap.mem_ker.1
+      (Submodule.span_le (p := LinearMap.ker (innerSL 𝕜 x : lp E 2 →ₗ[𝕜] 𝕜)) |>.2
+        (Set.range_subset_iff.2 fun ⟨i, k⟩ => h i k) hu)
+  have h2 : (∀ i, x i ∈ (Submodule.span 𝕜 (Set.range (v i)))ᗮ) ↔
+      ∀ i k, ⟪x i, v i k⟫_𝕜 = 0 := by
+    refine forall_congr' fun i => ?_
+    rw [Submodule.mem_orthogonal']
+    refine ⟨fun h k => h _ (Submodule.subset_span ⟨k, rfl⟩), fun h u hu => ?_⟩
+    exact LinearMap.mem_ker.1
+      (Submodule.span_le (p := LinearMap.ker (innerSL 𝕜 (x i) : E i →ₗ[𝕜] 𝕜)) |>.2
+        (Set.range_subset_iff.2 h) hu)
+  rw [h1, h2]
+  simp only [lp.inner_single_right]
 
 variable {ι 𝕜 : Type*} [RCLike 𝕜] {E F : ι → Type*}
   [∀ i, NormedAddCommGroup (E i)] [∀ i, InnerProductSpace 𝕜 (E i)] [∀ i, CompleteSpace (E i)]

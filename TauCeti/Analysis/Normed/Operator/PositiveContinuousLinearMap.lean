@@ -23,7 +23,7 @@ When the series converges in operator norm, it evaluates pointwise
 dominates every summand on nonnegative elements (`PositiveContinuousLinearMap.le_tsum_apply`), and
 vanishes at a nonnegative element if and only if every summand vanishes there
 (`PositiveContinuousLinearMap.tsum_apply_eq_zero_iff`). The bundled sum satisfies `tsum_zero`,
-`tsum_const_zero`, `tsum_eq_zero_of_not_summable`, and `tsum_add`.
+`tsum_const_zero`, `tsum_eq_zero_of_not_summable`, `tsum_eq_sum`, and `tsum_add`.
 
 ## Main declarations
 
@@ -32,7 +32,9 @@ vanishes at a nonnegative element if and only if every summand vanishes there
 * `PositiveContinuousLinearMap.toContinuousLinearMap_tsum`: coercion to `E₁ →L[𝕜] E₂`.
 * `PositiveContinuousLinearMap.tsum_zero`, `PositiveContinuousLinearMap.tsum_const_zero`,
   `PositiveContinuousLinearMap.tsum_eq_zero_of_not_summable`,
-  `PositiveContinuousLinearMap.tsum_add`: algebraic and nonsummable simplification laws.
+  `PositiveContinuousLinearMap.tsum_eq_sum`,
+  `PositiveContinuousLinearMap.tsum_add`: algebraic, finite-support, and nonsummable
+  simplification laws.
 * `PositiveContinuousLinearMap.hasSum_tsum_apply`, `PositiveContinuousLinearMap.tsum_apply`:
   pointwise evaluation of a summable positive series.
 * `PositiveContinuousLinearMap.le_tsum_apply`,
@@ -89,6 +91,15 @@ theorem tsum_eq_zero_of_not_summable {f : ι → E₁ →P[𝕜] E₂}
     (hf : ¬ Summable fun i => (f i : E₁ →L[𝕜] E₂)) : tsum f = 0 :=
   toContinuousLinearMap_injective <| by
     simpa [toContinuousLinearMap_tsum] using _root_.tsum_eq_zero_of_not_summable hf
+
+/-- The `tsum` of a family vanishing outside a `Finset` equals the finite sum over that
+`Finset`. -/
+theorem tsum_eq_sum {f : ι → E₁ →P[𝕜] E₂} {s : Finset ι} (hf : ∀ i ∉ s, f i = 0) :
+    tsum f = ∑ i ∈ s, f i := by
+  refine toContinuousLinearMap_injective ?_
+  rw [toContinuousLinearMap_tsum, _root_.tsum_eq_sum fun i hi => by simp [hf i hi]]
+  exact (map_sum (AddMonoidHom.mk' (fun g : E₁ →P[𝕜] E₂ => (g : E₁ →L[𝕜] E₂))
+    PositiveContinuousLinearMap.toContinuousLinearMap_add) f s).symm
 
 /-- The `tsum` of the sum of two summable families is the sum of their `tsum`s. -/
 theorem tsum_add {f g : ι → E₁ →P[𝕜] E₂}
