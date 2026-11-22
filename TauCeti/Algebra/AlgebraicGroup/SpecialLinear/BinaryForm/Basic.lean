@@ -300,8 +300,9 @@ theorem exists_lTensor_coact_eq_tmul_iff_mem_span [IsDomain R] {d : ℕ} {f : Mv
   let _ := polynomialComodule R 2
   refine ⟨fun ⟨h, hfh⟩ ↦ ?_, fun hmem ↦ ?_⟩
   · -- The universal upper unitriangular point over `R[t]`, as a point of the Borel subgroup.
+    -- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
     let u : Matrix.SpecialLinearGroup (Fin 2) R[X] :=
-      ⟨!![1, X; 0, 1], by simp [Matrix.det_fin_two]⟩
+      .mk !![1, X; 0, 1] (by simp [Matrix.det_fin_two])
     have hu : u ∈ (upperTriangularGroup (Fin 2) R[X]).comap Matrix.SpecialLinearGroup.toGL := by
       rw [UpperTriangularGroup.mem_comap_toGL_iff]
       intro i j hij

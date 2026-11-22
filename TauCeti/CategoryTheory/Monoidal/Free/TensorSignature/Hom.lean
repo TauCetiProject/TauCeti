@@ -57,8 +57,8 @@ namespace Hom
 def id (S : TensorSignature.{u, v}) : Hom S S where
   obj := _root_.id
   coupon := _root_.id
-  src_coupon g := (projectObj_of_self (S.src g)).symm
-  tgt_coupon g := (projectObj_of_self (S.tgt g)).symm
+  src_coupon g := (projectObj_of (S.src g)).symm
+  tgt_coupon g := (projectObj_of (S.tgt g)).symm
 
 @[simp] theorem id_obj (S : TensorSignature.{u, v}) (a : S.Obj) : (id S).obj a = a := (rfl)
 @[simp] theorem id_coupon (S : TensorSignature.{u, v}) (g : S.Coupon) : (id S).coupon g = g := (rfl)
@@ -113,7 +113,7 @@ def invOfEquiv {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v�
   src_coupon h := by
     have hφ : φ.coupon (ec.symm h) = h := (hc (ec.symm h)).symm.trans (ec.apply_symm_apply h)
     calc S.src (ec.symm h)
-        = projectObj FreeMonoidalCategory.of (S.src (ec.symm h)) := (projectObj_of_self _).symm
+        = projectObj FreeMonoidalCategory.of (S.src (ec.symm h)) := (projectObj_of _).symm
       _ = projectObj ((.of ∘ eo.symm) ∘ φ.obj) (S.src (ec.symm h)) :=
           projectObj_congr (fun a ↦ congrArg FreeMonoidalCategory.of
             ((eo.symm_apply_apply a).symm.trans (congrArg eo.symm (ho a)))) _
@@ -123,7 +123,7 @@ def invOfEquiv {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v�
   tgt_coupon h := by
     have hφ : φ.coupon (ec.symm h) = h := (hc (ec.symm h)).symm.trans (ec.apply_symm_apply h)
     calc S.tgt (ec.symm h)
-        = projectObj FreeMonoidalCategory.of (S.tgt (ec.symm h)) := (projectObj_of_self _).symm
+        = projectObj FreeMonoidalCategory.of (S.tgt (ec.symm h)) := (projectObj_of _).symm
       _ = projectObj ((.of ∘ eo.symm) ∘ φ.obj) (S.tgt (ec.symm h)) :=
           projectObj_congr (fun a ↦ congrArg FreeMonoidalCategory.of
             ((eo.symm_apply_apply a).symm.trans (congrArg eo.symm (ho a)))) _

@@ -32,6 +32,9 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   linear.
 * `MDifferentiableAt.mvfderiv_prod_eq_add_apply`: the vector-valued derivative on a product
   is the sum of its partial derivatives.
+* `MDifferentiableAt.mvfderiv_prod_eq_apply_of_snd_eq_zero`,
+  `MDifferentiableAt.mvfderiv_prod_eq_apply_of_fst_eq_zero`: along a tangent vector of one factor,
+  the derivative on a product is the derivative of the slice through the point.
 * `MDifferentiableAt.mfderiv_prodMk_id_apply`: the derivative of the graph map `y ↦ (y, u y)`
   sends a tangent vector `v` to `(v, d u v)`.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
@@ -54,6 +57,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   differentiability hypothesis.
 * `TauCeti.mvfderiv_smul_algebra`: the Leibniz rule for multiplication by a function with values in
   a normed algebra acting on the target.
+* `TauCeti.mvfderiv_smul_left`: for a group acting on a normed space by continuous linear maps,
+  the derivative of `k • ·` is `k • ·`.
 * `TauCeti.mvfderiv_add_const`: adding a constant does not change `mvfderiv`, without a
   differentiability hypothesis.
 * `TauCeti.mvfderiv_fun_sum`: `mvfderiv` of a finite sum of differentiable functions is the sum of
@@ -207,6 +212,28 @@ theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_add_apply
   simpa only [mvfderiv, ContinuousLinearMap.coe_comp, Function.comp_def,
     ContinuousLinearEquiv.coe_coe, map_add] using h
 
+/-- Along a tangent vector of the first factor, the vector-valued derivative of a function on a
+product is the derivative of its slice through the point. -/
+theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_apply_of_snd_eq_zero
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {f : M × M' → F'} {p : M × M'}
+    (hf : MDifferentiableAt (I.prod I') 𝓘(𝕜, F') f p)
+    {v : TangentSpace (I.prod I') p} (hv : v.2 = (0 : TangentSpace I' p.2)) :
+    mvfderiv (I.prod I') f p v = mvfderiv I (fun y ↦ f (y, p.2)) p.1 v.1 := by
+  rw [hf.mvfderiv_prod_eq_add_apply, hv, map_zero, add_zero]
+
+/-- Along a tangent vector of the second factor, the vector-valued derivative of a function on a
+product is the derivative of its slice through the point. -/
+theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_apply_of_fst_eq_zero
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {f : M × M' → F'} {p : M × M'}
+    (hf : MDifferentiableAt (I.prod I') 𝓘(𝕜, F') f p)
+    {v : TangentSpace (I.prod I') p} (hv : v.1 = (0 : TangentSpace I p.1)) :
+    mvfderiv (I.prod I') f p v = mvfderiv I' (fun y ↦ f (p.1, y)) p.2 v.2 := by
+  rw [hf.mvfderiv_prod_eq_add_apply, hv, map_zero, zero_add]
+
 /-- The derivative of a graph map, evaluated in the product tangent space. -/
 theorem _root_.MDifferentiableAt.mfderiv_prodMk_id_apply {u : F → M} {x : F}
     (hu : MDifferentiableAt 𝓘(𝕜, F) I u x) (v : TangentSpace 𝓘(𝕜, F) x) :
@@ -326,6 +353,16 @@ theorem mvfderiv_smul_algebra {𝕜' : Type*} [NormedRing 𝕜'] [NormedAlgebra 
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp] at h ⊢
   rwa [Function.comp_apply, Function.comp_apply, extChartAt_to_inv] at h
+
+/-- For a group acting on a normed space by continuous linear maps, the derivative of `k • ·`, read
+in the space, is `k • ·` at every point. -/
+theorem mvfderiv_smul_left {K : Type*} [Group K] [DistribMulAction K F] [SMulCommClass K 𝕜 F]
+    [ContinuousConstSMul K F] (k : K) (p : F) (v : TangentSpace 𝓘(𝕜, F) p) :
+    mvfderiv 𝓘(𝕜, F) (fun x ↦ k • x) p v = k • NormedSpace.fromTangentSpace p v := by
+  have h : HasFDerivAt (fun x : F ↦ k • x)
+      (ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (M₁ := F) k : F →L[𝕜] F) p :=
+    (ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (M₁ := F) k).hasFDerivAt
+  simp [mvfderiv_eq_fderiv, h.fderiv]
 
 /-- Adding a constant does not change the derivative of a vector-valued function, read in the
 target space. No differentiability is needed: `g` and `g + c` are differentiable at the same
