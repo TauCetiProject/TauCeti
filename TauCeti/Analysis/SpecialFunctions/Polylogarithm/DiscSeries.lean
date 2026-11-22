@@ -7,10 +7,8 @@ module
 
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Topology.Algebra.InfiniteSum.UniformOn
-public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import Mathlib.Analysis.Calculus.SmoothSeries
-import Mathlib.Analysis.Normed.Group.FunctionSeries
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log

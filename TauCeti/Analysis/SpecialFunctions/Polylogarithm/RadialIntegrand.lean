@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Analysis.SpecialFunctions.Integrability.Log
@@ -41,7 +40,7 @@ gives the uniform majorant of the integrand, and the same lower bound controls i
 * `TauCeti.Polylog.intervalIntegrable_neg_log_pow_div_one_sub_mul`: interval integrability of the
   differentiated kernel `(-log t) ^ k / (1 - t z)` on `[0, 1]` for `z` in the principal domain.
 * `TauCeti.Polylog.hasDerivAt_integral_radialIntegrand`: parametric complex derivative of the
-  weight-`(k + 2)` radial integral on the principal domain.
+  weight-`(k + 2)` radial integral (omitting the factor `(k!)⁻¹`) on the principal domain.
 
 ## References
 
@@ -201,9 +200,9 @@ private lemma hasDerivAt_radialIntegrand (k : ℕ) {t : ℝ} (ht : t ≠ 0) {w :
   field_simp [ht0, htw0]
   ring
 
-/-- Parametric differentiation of the raw weight-`(k + 2)` radial integral on the principal domain,
-yielding both interval integrability of the differentiated kernel and `HasDerivAt` of the
-integral. -/
+/-- Parametric differentiation of the weight-`(k + 2)` radial integral (omitting the factor
+`(k!)⁻¹`) on the principal domain, yielding both interval integrability of the differentiated kernel
+and `HasDerivAt` of the integral. -/
 private lemma intervalIntegrable_and_hasDerivAt_radialIntegrand (k : ℕ) {z : ℂ}
     (hz : 1 - z ∈ Complex.slitPlane) :
     IntervalIntegrable
@@ -251,8 +250,9 @@ theorem intervalIntegrable_neg_log_pow_div_one_sub_mul (k : ℕ) {z : ℂ}
       (fun t : ℝ ↦ ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) volume 0 1 :=
   (intervalIntegrable_and_hasDerivAt_radialIntegrand k hz).1
 
-/-- On the principal domain `{z | 1 - z ∈ Complex.slitPlane}`, the raw weight-`(k + 2)` radial
-integral has complex derivative `∫ t in 0..1, (-Real.log t) ^ k / (1 - t * z)`. -/
+/-- On the principal domain `{z | 1 - z ∈ Complex.slitPlane}`, the weight-`(k + 2)` radial
+integral (omitting the factor `(k!)⁻¹`) has complex derivative
+`∫ t in 0..1, (-Real.log t) ^ k / (1 - t * z)`. -/
 theorem hasDerivAt_integral_radialIntegrand (k : ℕ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
     HasDerivAt
       (fun w : ℂ ↦ ∫ t : ℝ in 0..1,
