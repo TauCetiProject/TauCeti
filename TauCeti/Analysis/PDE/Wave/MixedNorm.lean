@@ -75,6 +75,10 @@ All in the `ContDiffBump` namespace, with `φ` the bump function defining the cu
 * `exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le`: the retarded
   estimate for the Duhamel integral.
 
+The file also proves `TauCeti.eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le`, which
+combines mixed-norm bounds for `cos(tD) f` and `D⁻¹ sin(tD) g` into one for the free solution
+`cos(tD) f + D⁻¹ sin(tD) g`.
+
 ## References
 
 * T. Tao, *Nonlinear Dispersive Equations: Local and Global Analysis*, CBMS Regional Conference
@@ -309,15 +313,6 @@ private theorem aemeasurable_enorm_inner_halfWavePropagator {τ : ℝ × ℝ →
   ((aestronglyMeasurable_phasePropagator_apply sqrtNegLaplacianSymbol hτ.aestronglyMeasurable
     (T.continuous.comp_aestronglyMeasurable hY.comp_snd)).inner hG.comp_fst).eNorm
 
-/-- Reflecting time, `t ↦ -t`, preserves mixed norms. -/
-private theorem eLpNorm_eLpNorm_comp_neg {H : ℝ → Lp ℂ 2 (volume : Measure E)}
-    (hH : AEStronglyMeasurable H) {q r : ℝ≥0∞} :
-    eLpNorm (fun t ↦ eLpNorm (H (-t)) r volume) q volume =
-      eLpNorm (fun t ↦ eLpNorm (H t) r volume) q volume :=
-  eLpNorm_comp_measurePreserving (g := fun t ↦ eLpNorm (H t) r volume)
-    (hH.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
-    (Measure.measurePreserving_neg (volume : Measure ℝ))
-
 /-- The mixed norm of a family vanishing at every time is zero. -/
 private theorem eLpNorm_eLpNorm_eq_zero {H : ℝ → Lp ℂ 2 (volume : Measure E)}
     (hH : ∀ t, H t = 0) {q r : ℝ≥0∞} :
@@ -346,7 +341,7 @@ private theorem eLpNorm_eLpNorm_le_mul_two_mul {w u : ℝ → Lp ℂ 2 (volume :
         gcongr
         exact eLpNorm_add_le hq
     _ = _ := by
-        rw [eLpNorm_eLpNorm_comp_neg hu]
+        rw [hu.eLpNorm_eLpNorm_comp_neg]
         ring
 
 /-- Reflecting time turns a bilinear bound for the pairings `⟪W₊(t - s) T F(s), G(t)⟫` into the
@@ -371,7 +366,7 @@ private theorem lintegral_lintegral_enorm_inner_halfWavePropagator_neg_sub_le
     _ = ∫⁻ t, ∫⁻ s, ‖⟪halfWavePropagator ℂ (t - s) (T (F (-s))), G (-t)⟫_ℂ‖ₑ := by
         simp only [neg_sub_neg, neg_sub]
     _ ≤ _ := h _ _ (hF.comp_measurePreserving hneg) (hG.comp_measurePreserving hneg)
-    _ = _ := by rw [eLpNorm_eLpNorm_comp_neg hF, eLpNorm_eLpNorm_comp_neg hG]
+    _ = _ := by rw [hF.eLpNorm_eLpNorm_comp_neg, hG.eLpNorm_eLpNorm_comp_neg]
 
 /-- If the pairings `⟪W₊(t - s) T F(s), G(t)⟫` satisfy a bilinear bound with constant `X`, then
 those of `c (W₊(t - s) - W₊(-(t - s))) T F(s)` satisfy it with constant `2 ‖c‖ X`. -/
@@ -712,3 +707,37 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
 end Admissible
 
 end ContDiffBump
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [Nontrivial E]
+  {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+  {q : ℝ≥0} {r : ℝ≥0∞}
+
+/-- Let `(q, r)` be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 < q`. If
+`‖cos(tD) f‖_{L^q_t L^r_x} ≤ C₁ A` and `‖D⁻¹ sin(tD) g‖_{L^q_t L^r_x} ≤ C₂ B`, then the free
+solution satisfies `‖cos(tD) f + D⁻¹ sin(tD) g‖_{L^q_t L^r_x} ≤ (C₁ + C₂) (A + B)`. At `r = 0`
+every mixed norm vanishes; otherwise wave-admissibility gives `2 ≤ r`, and Minkowski's inequality
+`MeasureTheory.eLpNorm_eLpNorm_add_le` applies. -/
+theorem eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le (hq : 2 < q)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    {f g : Lp F 2 (volume : Measure E)} {C₁ C₂ : ℝ≥0} {A B : ℝ≥0∞}
+    (hf : eLpNorm (fun t ↦ eLpNorm (waveCosPropagator F t f) r volume) q volume ≤ C₁ * A)
+    (hg : eLpNorm (fun t ↦ eLpNorm (waveSinPropagator F t g) r volume) q volume ≤ C₂ * B) :
+    eLpNorm (fun t ↦ eLpNorm (waveCosPropagator F t f + waveSinPropagator F t g) r volume) q
+      volume ≤ ((C₁ + C₂ : ℝ≥0) : ℝ≥0∞) * (A + B) := by
+  rcases eq_or_ne r 0 with rfl | hr0
+  · simp_rw [eLpNorm_exponent_zero (Lp.aestronglyMeasurable _)]
+    simp
+  obtain ⟨-, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq hr0 hqr Module.finrank_pos
+  grw [eLpNorm_eLpNorm_add_le (continuous_waveCosPropagator_apply f).aestronglyMeasurable
+    (continuous_waveSinPropagator_apply g).aestronglyMeasurable
+    (by exact_mod_cast one_le_two.trans hq.le) (one_le_two.trans hr2), hf, hg, ENNReal.coe_add,
+    add_mul, mul_add, mul_add]
+  gcongr
+  · exact le_self_add
+  · exact le_add_self
+
+end TauCeti

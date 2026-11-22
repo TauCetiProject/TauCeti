@@ -286,14 +286,8 @@ theorem enorm_integral_phasePropagator_neg_le (G : ℝ → Lp F 2 (volume : Meas
 /-- `exp(itω(D))` commutes with every `L²` Fourier multiplier. -/
 theorem phasePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :
     phasePropagator F ω t ∘L Lp.fourierMultiplierCLM F m =
-      Lp.fourierMultiplierCLM F m ∘L phasePropagator F ω t := by
-  rw [phasePropagator_def, Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM,
-    Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM]
-  congr 1
-  apply Lp.ext
-  filter_upwards [Lp.coeFn_lpSMul (r := ∞) ((memLp_phaseSymbol ω t).toLp _) m,
-    Lp.coeFn_lpSMul (r := ∞) m ((memLp_phaseSymbol ω t).toLp _)] with ξ h₁ h₂
-  rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', smul_eq_mul, smul_eq_mul, mul_comm]
+      Lp.fourierMultiplierCLM F m ∘L phasePropagator F ω t :=
+  ContinuousLinearMap.ext fun _ ↦ Lp.fourierMultiplierCLM_fourierMultiplierCLM_comm _ _ _
 
 /-- `exp(itω(D)) T_m` is the multiplier with any symbol `σ` equal almost everywhere to
 `exp(i t ω(ξ)) m(ξ)`. -/
