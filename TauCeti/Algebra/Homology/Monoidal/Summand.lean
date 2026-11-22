@@ -55,9 +55,10 @@ The curried tensor bifunctor on cochain complexes is also identified with `tenso
   `MonoidalCategory.curriedTensor (CochainComplex C ℤ)` and
   `(MonoidalCategory.curriedTensor C).map₂CochainComplex`.
 
-The analogous formula for the differential of a tensor product is
-`HomologicalComplex.ιTensorObj_tensor_d`, in
-`TauCeti/Algebra/Homology/Monoidal/Tensor/Differential.lean`.
+The analogous formulas for the differential of a tensor product are in
+`TauCeti/Algebra/Homology/Monoidal/Tensor/Differential.lean`:
+`HomologicalComplex.ιTensorObj_d_of_rel` for complexes of any shape with tensor signs, and
+`HomologicalComplex.ιTensorObj_tensor_d`, the rule for `X ⊗ Y` of cochain complexes indexed by `ℤ`.
 -/
 
 public section

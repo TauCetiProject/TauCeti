@@ -95,12 +95,7 @@ private lemma tensorTruncLE'ToRestrictionX_comm (j : ℕ) :
   rw [ι_tensorTruncLE'ToRestrictionX_assoc, restriction_d_eq _ embeddingDownNat
     (embeddingDownNat_f (j + 1)) (embeddingDownNat_f j)]
   simp only [Iso.inv_hom_id_assoc]
-  -- The differential of a tensor product of chain complexes is the sum of its two parts.
-  have hd : (K.truncLE' embeddingDownNat ⊗ L.truncLE' embeddingDownNat).d (j + 1) j =
-      mapBifunctor.D₁ _ _ (curriedTensor (ModuleCat.{v} R)) (down ℕ) (j + 1) j +
-        mapBifunctor.D₂ _ _ (curriedTensor (ModuleCat.{v} R)) (down ℕ) (j + 1) j :=
-    mapBifunctor.d_eq _ _ _ _ _ _
-  rw [hd, Preadditive.add_comp, Preadditive.comp_add]
+  rw [tensor_d (K.truncLE' embeddingDownNat) (L.truncLE' embeddingDownNat)]
   -- Expand both differentials on the summand; the bidegree `(0, 0)` does not occur.
   obtain _ | r := p <;> obtain _ | s := q
   · omega
@@ -109,25 +104,29 @@ private lemma tensorTruncLE'ToRestrictionX_comm (j : ℕ) :
     rw [ιTensorObj_tensor_d'_assoc K L (p := -((0 : ℕ) : ℤ)) (q := -((s + 1 : ℕ) : ℤ))
       (j := -((s + 1 : ℕ) : ℤ)) (p' := -((0 : ℕ) : ℤ) + 1) (q' := -(s : ℤ)) (j' := -(s : ℤ))
       (by omega) rfl (by omega) (by omega),
-      ChainComplex.ιTensorObj_D₁_zero_assoc, ChainComplex.ιTensorObj_D₂_succ_assoc]
+      ιTensorObj_d_of_not_rel_left_assoc _ _ (p := 0) (q := s + 1) (q' := s) (j' := s) _
+        (by simp) (by simp) (by omega)]
   on_goal 2 =>
     obtain rfl : r = j := by omega
     rw [ιTensorObj_tensor_d'_assoc K L (p := -((r + 1 : ℕ) : ℤ)) (q := -((0 : ℕ) : ℤ))
       (j := -((r + 1 : ℕ) : ℤ)) (p' := -(r : ℤ)) (q' := -((0 : ℕ) : ℤ) + 1) (j' := -(r : ℤ))
       (by omega) (by omega) rfl (by omega),
-      ChainComplex.ιTensorObj_D₁_succ_assoc, ChainComplex.ιTensorObj_D₂_zero_assoc]
+      ιTensorObj_d_of_not_rel_right_assoc _ _ (p := r + 1) (q := 0) (p' := r) (j' := r) _
+        (by simp) (by simp) (by omega)]
   on_goal 3 =>
     rw [ιTensorObj_tensor_d'_assoc K L (p := -((r + 1 : ℕ) : ℤ)) (q := -((s + 1 : ℕ) : ℤ))
       (j := -((j + 1 : ℕ) : ℤ)) (p' := -(r : ℤ)) (q' := -(s : ℤ)) (j' := -(j : ℤ)) (by omega)
       (by omega) (by omega) (by omega),
-      ChainComplex.ιTensorObj_D₁_succ_assoc, ChainComplex.ιTensorObj_D₂_succ_assoc]
+      ιTensorObj_d_of_rel_assoc _ _ (p := r + 1) (q := s + 1) (p' := r) (q' := s) (j' := j) _
+        (by simp) (by simp) (by omega) (by omega)]
   -- Match the parts of the two differentials, using that degree `0` of `τ_{≥ 0}` is cycles.
   all_goals
     simp only [Preadditive.comp_add, Preadditive.add_comp, Category.assoc, Linear.smul_comp,
       Linear.comp_smul, ι_tensorTruncLE'ToRestrictionX, tensorHom_comp_whiskerRight_assoc,
       tensorHom_comp_whiskerLeft_assoc, whiskerRight_comp_tensorHom_assoc,
       whiskerLeft_comp_tensorHom_assoc, truncLE'ToX_d_succ, truncLE'ToX_zero_d,
-      Int.negOnePow_neg, Units.smul_def, Int.coe_negOnePow_natCast,
+      Int.negOnePow_neg, Units.smul_def, Int.coe_negOnePow_natCast, ε_down_ℕ,
+      Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, pow_zero, one_smul,
       MonoidalPreadditive.zero_tensor, MonoidalPreadditive.tensor_zero, zero_comp, smul_zero,
       zero_add, add_zero]
 
