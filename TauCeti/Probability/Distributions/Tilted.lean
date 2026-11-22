@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Measure.Tilted
 import TauCeti.MeasureTheory.Measure.Tilted
 import TauCeti.Probability.Distributions.Binomial.Basic
 import TauCeti.Probability.Distributions.Gamma.Basic
+import TauCeti.Probability.Distributions.Gaussian.Transforms
 import TauCeti.Probability.Distributions.Poisson.Basic
 
 /-!
@@ -77,11 +78,9 @@ theorem gaussianReal_tilted_mul (m : ℝ) (v : ℝ≥0) (t : ℝ) :
     (gaussianReal m v).tilted (t * ·) = gaussianReal (m + v * t) v := by
   rcases eq_or_ne v 0 with rfl | hv
   · simp
-  have hZ : ∫ x, exp (t * x) ∂gaussianReal m v = exp (m * t + v * t ^ 2 / 2) := by
-    simpa [mgf] using congrFun (mgf_id_gaussianReal (μ := m) (v := v)) t
   rw [gaussianReal_of_var_ne_zero _ hv, gaussianReal_of_var_ne_zero _ hv,
     tilted_withDensity (measurable_gaussianPDF _ _).aemeasurable (by fun_prop),
-    ← gaussianReal_of_var_ne_zero _ hv, hZ]
+    ← gaussianReal_of_var_ne_zero _ hv, integral_exp_mul_gaussianReal]
   congr with x
   rw [gaussianPDF, gaussianPDF, ← ENNReal.ofReal_mul (gaussianPDFReal_nonneg _ _ _),
     gaussianPDFReal_mul_exp_div_mgf]
@@ -92,10 +91,8 @@ moment-generating function `exp (m t + v t² / 2)` times the mass of `s` under t
 theorem setIntegral_exp_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (t : ℝ) (s : Set ℝ) :
     ∫ x in s, exp (t * x) ∂gaussianReal m v =
       exp (m * t + v * t ^ 2 / 2) * (gaussianReal (m + v * t) v).real s := by
-  have hZ : ∫ x, exp (t * x) ∂gaussianReal m v = exp (m * t + v * t ^ 2 / 2) := by
-    simpa [mgf] using congrFun (mgf_id_gaussianReal (μ := m) (v := v)) t
   have h := setIntegral_tilted (μ := gaussianReal m v) (t * ·) (fun _ => (1 : ℝ)) s
-  rw [gaussianReal_tilted_mul, hZ, setIntegral_const] at h
+  rw [gaussianReal_tilted_mul, integral_exp_mul_gaussianReal, setIntegral_const] at h
   simp only [smul_eq_mul, mul_one, integral_div] at h
   rw [h]
   field_simp

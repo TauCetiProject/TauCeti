@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.SkewNormal.Construction
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.Probability.Distributions.Chi.Gaussian
 import TauCeti.Probability.Distributions.Gaussian.Moments
+import TauCeti.Probability.Distributions.Gaussian.Transforms
 
 /-!
 # Moments and transforms of the skew-normal distribution
@@ -89,14 +90,13 @@ theorem mgf_id_skewNormalMeasure (hs : 0 < s) (m α t : ℝ) :
         cdf (gaussianReal 0 1) (α / √(1 + α ^ 2) * s * t) := by
   have hδ := sq_div_sqrt_one_add_sq_add_sq_sqrt_one_sub_sq α
   set δ := α / √(1 + α ^ 2)
-  have hgauss (u : ℝ) : ∫ x, exp (u * x) ∂gaussianReal 0 1 = exp (u ^ 2 / 2) := by
-    simpa [mgf] using congrFun (mgf_id_gaussianReal (μ := 0) (v := 1)) u
   rw [mgf, ← map_prod_gaussianReal_eq_skewNormalMeasure hs m α,
     integral_map (by fun_prop) (by fun_prop)]
   simp only [id, exp_mul_skewNormal_construction]
   rw [integral_prod_mul (fun x => exp (t * m) * exp (t * s * δ * |x|))
     (fun y => exp (t * s * √(1 - δ ^ 2) * y)), integral_const_mul,
-    integral_exp_mul_abs_gaussianReal, hgauss]
+    integral_exp_mul_abs_gaussianReal, integral_exp_mul_gaussianReal, zero_mul, zero_add,
+    NNReal.coe_one, one_mul]
   rw [show δ * s * t = t * s * δ by ring]
   have hexp : t * m + (t * s * δ) ^ 2 / 2 + (t * s * √(1 - δ ^ 2)) ^ 2 / 2 =
       m * t + s ^ 2 * t ^ 2 / 2 := by
