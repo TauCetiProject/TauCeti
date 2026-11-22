@@ -17,7 +17,8 @@ A nonnegative finite sequence in which every term is at most half of the previou
 most twice its first term. In Roth's lemma this bounds the sum of the weights `rᵢ` by `2 r₀`.
 
 The partial products of a sequence of terms at least `1`, and the partial sums of a nonnegative
-sequence, are monotone.
+sequence, are monotone. The partial products of a sequence bounded by `c` are bounded by powers of
+`c`, and its partial sums by multiples of `c`.
 
 A nonnegative monotone sequence of length `D * k` bounds the `D`-th power of the product of `k`
 of its terms, the `j`-th of which is taken no later than position `D * j`. This converts bounds
@@ -32,6 +33,8 @@ of the whole sequence.
   `∑ᵢ rᵢ ≤ 2 r₀`.
 * `Fin.monotone_partialProd`, `Fin.monotone_partialSum`: the partial products of entries at least
   `1` (the partial sums of nonnegative entries) are monotone.
+* `Fin.partialProd_le_pow`, `Fin.partialSum_le_nsmul`: if `fᵢ ≤ c`, the partial product up to `i`
+  is at most `c ^ i` (the partial sum is at most `i • c`).
 * `Fin.prod_pow_le_prod_of_monotone`: if `c` is nonnegative and monotone on `Fin (D * k)` and
   `s j ≤ D * j`, then `(∏ⱼ c (s j)) ^ D ≤ ∏ᵢ cᵢ`.
 * `Fin.pow_sub_le_prod_of_monotone`: if `c : Fin n → R` is monotone with `1 ≤ cⱼ`, then
@@ -92,6 +95,19 @@ theorem monotone_partialProd {M : Type*} [Monoid M] [Preorder M] [MulLeftMono M]
   monotone_iff_le_succ.2 fun i ↦ by
     rw [partialProd_succ]
     exact le_mul_of_one_le_right' (hf i)
+
+/-- If every factor of a tuple is at most `c`, its partial product up to `i` is at most
+`c ^ i`. -/
+@[to_additive /-- If every term of a tuple is at most `c`, its partial sum up to `i` is at most
+`i • c`. -/]
+theorem partialProd_le_pow {M : Type*} [Monoid M] [Preorder M] [MulLeftMono M] [MulRightMono M]
+    {n : ℕ} {f : Fin n → M} {c : M} (h : ∀ i, f i ≤ c) (i : Fin (n + 1)) :
+    partialProd f i ≤ c ^ (i : ℕ) := by
+  induction i using Fin.induction with
+  | zero => simp
+  | succ i ih =>
+    rw [partialProd_succ, val_succ, pow_succ]
+    exact mul_le_mul' (by simpa using ih) (h i)
 
 /-- In a monotone sequence `c : Fin n → R` of terms at least `1`, the `i`-th term raised to the
 power `n - i` is at most the product of the whole sequence: the `n - i` terms from position `i`

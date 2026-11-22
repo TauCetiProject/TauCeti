@@ -45,9 +45,7 @@ the paths of length `i + j` (`Fin.sum_sum_ite_apply_last_eq_apply_zero`). A sum 
 Deleting the entry at position `p` of a tuple leaves its partial products up to `p` unchanged
 (`Fin.partialProd_removeNth_of_le`); in a group, the later partial products of the shortened tuple
 are those of the original one with the factor at `p` cancelled
-(`Fin.partialProd_removeNth_of_ge`). In a canonically ordered monoid the partial products increase
-(`Fin.monotone_partialProd`), and they are bounded by powers of a common bound of the factors
-(`Fin.partialProd_le_pow`).
+(`Fin.partialProd_removeNth_of_ge`).
 
 A strictly increasing list `a` on `Fin (n + 1)` in an additive group with a preorder (no
 compatibility between the two is needed) telescopes (`StrictMono.eq_add_sum_ite_sub`): `a k` is
@@ -255,28 +253,6 @@ theorem partialProd_removeNth_of_ge {G : Type*} [Group G] {n : ℕ} (f : Fin (n 
       rw [partialProd_succ, ih hpl, removeNth_apply, succAbove_of_le_castSucc _ _ hpl,
         mul_assoc _ (partialProd f l.castSucc.succ), succ_castSucc, ← partialProd_succ]
     · rw [partialProd_removeNth_of_le f le_rfl, inv_mul_cancel_right]
-
-/-- In a canonically ordered monoid the partial products of a tuple increase. -/
-@[to_additive /-- In a canonically ordered additive monoid the partial sums of a tuple
-increase. -/]
-theorem monotone_partialProd {M : Type*} [Monoid M] [Preorder M] [CanonicallyOrderedMul M]
-    {n : ℕ} (f : Fin n → M) : Monotone (partialProd f) :=
-  monotone_iff_le_succ.mpr fun i => by
-    rw [partialProd_succ]
-    exact le_self_mul
-
-/-- If every factor of a tuple is at most `c`, its partial product up to `i` is at most
-`c ^ i`. -/
-@[to_additive /-- If every term of a tuple is at most `c`, its partial sum up to `i` is at most
-`i • c`. -/]
-theorem partialProd_le_pow {M : Type*} [Monoid M] [Preorder M] [MulLeftMono M] [MulRightMono M]
-    {n : ℕ} {f : Fin n → M} {c : M} (h : ∀ i, f i ≤ c) (i : Fin (n + 1)) :
-    partialProd f i ≤ c ^ (i : ℕ) := by
-  induction i using Fin.induction with
-  | zero => simp
-  | succ i ih =>
-    rw [partialProd_succ, val_succ, pow_succ]
-    exact mul_le_mul' (by simpa using ih) (h i)
 
 end Fin
 

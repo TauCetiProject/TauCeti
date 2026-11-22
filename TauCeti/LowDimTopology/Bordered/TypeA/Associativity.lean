@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LowDimTopology.Bordered.TypeA.BoxTypeDA
 import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.Algebra.Order.BigOperators.Fin
 
 /-!
 # Associativity of the box tensor product with a type `DA` bimodule
@@ -77,28 +78,7 @@ variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R
 private theorem partialSum_castSucc_add_le {k : ℕ} (j : Fin k → ℕ) (t : Fin k) :
     Fin.partialSum j t.castSucc + j t ≤ Fin.partialSum j (Fin.last k) := by
   rw [← Fin.partialSum_succ]
-  exact Fin.monotone_partialSum j (Fin.le_last _)
-
-/-- Up to position `L`, the path `u ++ r` is the path `u` followed by the start of `r`. -/
-private theorem append_apply_of_le {L a : ℕ} (u : Fin L → X) (r : Fin (a + 1) → X) {i : ℕ}
-    (hi : i ≤ L) :
-    Fin.append u r (⟨i, by omega⟩ : Fin (L + (a + 1))) =
-      Fin.snoc (α := fun _ => X) u (r 0) ⟨i, by omega⟩ := by
-  rcases hi.lt_or_eq with hi | rfl
-  · have h1 : (⟨i, by omega⟩ : Fin (L + (a + 1))) = Fin.castAdd (a + 1) ⟨i, hi⟩ := rfl
-    have h2 : (⟨i, by omega⟩ : Fin (L + 1)) = Fin.castSucc ⟨i, hi⟩ := rfl
-    rw [h1, h2, Fin.append_left, Fin.snoc_castSucc]
-  · have h1 : (⟨i, by omega⟩ : Fin (i + (a + 1))) = Fin.natAdd i 0 := rfl
-    have h2 : (⟨i, by omega⟩ : Fin (i + 1)) = Fin.last i := rfl
-    rw [h1, h2, Fin.append_right, Fin.snoc_last]
-
-/-- From position `L` on, the path `u ++ r` follows `r`. -/
-private theorem append_apply_add {L a : ℕ} (u : Fin L → X) (r : Fin (a + 1) → X) {i l : ℕ}
-    (hl : l < a + 1) (hi : i = L + l) :
-    Fin.append u r (⟨i, by omega⟩ : Fin (L + (a + 1))) = r ⟨l, hl⟩ := by
-  subst hi
-  have h1 : (⟨L + l, by omega⟩ : Fin (L + (a + 1))) = Fin.natAdd L ⟨l, hl⟩ := rfl
-  rw [h1, Fin.append_right]
+  exact Fin.monotone_partialSum (fun _ => Nat.zero_le _) (Fin.le_last _)
 
 variable [Fintype X] (N : TypeDStructure dA ιA X)
 
@@ -117,27 +97,6 @@ private theorem pathBlock_congr {n n' : ℕ} {x : Fin (n + 1) → X} {x' : Fin (
   funext l
   simp only [pathBlock]
   rw [hx _ (by have := l.isLt; omega), hx _ (by have := l.isLt; omega)]
-
-/-- The last block of a glued path. -/
-private theorem pathBlock_append {L a : ℕ} (u : Fin L → X) (r : Fin (a + 1) → X) {s : ℕ}
-    (hs : s = L)
-    (h : s + a ≤ L + a) :
-    pathBlock (n := L + a) N (Fin.append (m := L) (n := a + 1) u r) s a h =
-      fun l => N.coeff (r l.castSucc) (r l.succ) := by
-  subst hs
-  funext l
-  simp only [pathBlock]
-  rw [append_apply_add u r (l := l) (by omega) rfl,
-    append_apply_add u r (l := l + 1) (by omega) (by omega)]
-  rfl
-
-/-- The blocks of a glued path inside its first part. -/
-private theorem pathBlock_append_of_le {L a : ℕ} (u : Fin L → X) (r : Fin (a + 1) → X)
-    {s s' len : ℕ}
-    (hs : s = s') (h : s + len ≤ L + a) (h' : s' + len ≤ L) :
-    pathBlock (n := L + a) N (Fin.append (m := L) (n := a + 1) u r) s len h =
-      pathBlock N (Fin.snoc (α := fun _ => X) u (r 0)) s' len h' :=
-  pathBlock_congr N hs h h' fun i hi => append_apply_of_le u r (by omega)
 
 /-- The entry of the block matrix of the coefficients along a path between two cut points is the
 coefficient matrix of `P` on the block of the path between them. -/
@@ -177,36 +136,22 @@ private theorem sum_pathBlock_snoc_left {W : Type*} [AddCommGroup W] [Module R W
             (Fin.partialSum (Fin.init j) t.castSucc) (Fin.init j t)
             (partialSum_castSucc_add_le (Fin.init j) t)))
             (P.coeff (j (Fin.last k)) fun l => N.coeff (r l.castSucc) (r l.succ))) else 0 := by
-  set L := Fin.partialSum (Fin.init j) (Fin.last k)
-  rw [← (Fin.appendEquiv L (j (Fin.last k) + 1)).sum_comp, Fintype.sum_prod_type]
-  conv_rhs => rw [← (Fin.snocEquiv fun _ => X).sum_comp, Fintype.sum_prod_type, Finset.sum_comm]
-  refine Finset.sum_congr rfl fun u _ => ?_
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun r _ => ?_
-  rw [Fintype.sum_eq_single (r 0) fun b hb => ?_]
-  · have h0 : Fin.append u r (0 : Fin (L + (j (Fin.last k) + 1))) =
-        Fin.snoc (α := fun _ => X) u (r 0) 0 :=
-      append_apply_of_le u r (Nat.zero_le _)
-    have hlast : Fin.append u r (Fin.last (L + j (Fin.last k))) = r (Fin.last _) :=
-      append_apply_add u r (l := j (Fin.last k)) (by omega) rfl
-    have hG : (fun t => P.coeff (j t) (pathBlock (n := L + j (Fin.last k)) N
-        (Fin.append (m := L) (n := j (Fin.last k) + 1) u r) (Fin.partialSum j t.castSucc) (j t)
-        (hn ▸ partialSum_castSucc_add_le j t))) =
-        Fin.snoc (fun t => P.coeff (Fin.init j t) (pathBlock N (Fin.snoc (α := fun _ => X) u (r 0))
-          (Fin.partialSum (Fin.init j) t.castSucc) (Fin.init j t)
-          (partialSum_castSucc_add_le (Fin.init j) t)))
-          (P.coeff (j (Fin.last k)) fun l => N.coeff (r l.castSucc) (r l.succ)) := by
-      funext t
-      refine Fin.lastCases ?_ (fun t => ?_) t
-      · rw [Fin.snoc_last]
-        exact congrArg _ (pathBlock_append N u r (Fin.partialSum_init (Fin.last k)).symm _)
-      · rw [Fin.snoc_castSucc]
-        exact congrArg _ (pathBlock_append_of_le N u r (Fin.partialSum_init t.castSucc).symm _ _)
-    simp only [Fin.snocEquiv_apply, Fin.snoc_last, true_and, Fin.appendEquiv_apply]
-    rw [h0, hlast]
-    exact if_congr Iff.rfl (congrArg f hG) rfl
-  · simp only [Fin.snocEquiv_apply, Fin.snoc_last]
-    rw [ite_eq_right fun h => hb h.2.1]
+  have hL : Fin.partialSum j (Fin.last k).castSucc = Fin.partialSum (Fin.init j) (Fin.last k) :=
+    (Fin.partialSum_init (Fin.last k)).symm
+  have key (p q s : Prop) [Decidable p] [Decidable q] [Decidable s] (v : W) :
+      (if p ∧ q ∧ s then v else 0) = if q then (if p ∧ s then v else 0) else 0 := by
+    split_ifs <;> tauto
+  simp only [key]
+  rw [Fin.sum_sum_ite_apply_last_eq_apply_zero rfl]
+  refine Finset.sum_congr rfl fun w _ => ?_
+  refine if_congr Iff.rfl (congrArg f (funext fun t => ?_)) rfl
+  refine Fin.lastCases ?_ (fun t => ?_) t
+  · rw [Fin.snoc_last]
+    refine congrArg _ (funext fun l => ?_)
+    exact congrArg₂ N.coeff (congrArg w (Fin.ext (by simp [hL])))
+      (congrArg w (Fin.ext (by simp [hL, add_assoc])))
+  · rw [Fin.snoc_castSucc]
+    exact congrArg _ (pathBlock_congr N (Fin.partialSum_init t.castSucc).symm _ _ fun i hi => rfl)
 
 /-- Splitting a path of the generators of `N` at its last step, the evaluations of `f` on the
 matrices `iterMatrix` along it become evaluations of `f` with its last input fixed. -/
@@ -323,7 +268,8 @@ variable [DecidableEq Y] {M : Type*} [AddCommGroup M] [Module R M]
 /-- A cut point sequence from partial sums. -/
 private def cutOfPartialSum {k n : ℕ} (j : Fin k → ℕ) (hn : Fin.partialSum j (Fin.last k) = n)
     (t : Fin (k + 1)) : Fin (n + 1) :=
-  ⟨Fin.partialSum j t, Nat.lt_succ_of_le (hn ▸ Fin.monotone_partialSum j (Fin.le_last t))⟩
+  ⟨Fin.partialSum j t,
+    Nat.lt_succ_of_le (hn ▸ Fin.monotone_partialSum (fun _ => Nat.zero_le _) (Fin.le_last t))⟩
 
 /-- The summand `T` of the operations of `M ⊠ P` along the coefficients of paths, at a cut. -/
 private noncomputable def cutTerm {k n : ℕ} (φ : X → Y → M) (z : X) (y' : Y)
