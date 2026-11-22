@@ -505,14 +505,14 @@ morphism of complexes for the dual differential `d f = (-1)^(|f| + 1) f ∘ d`. 
 noncomputable def linearHomComplexDualDistrib (A B : CochainComplex (ModuleCat.{v} R) ℤ) :
     linearHomComplex R B (𝟙_ _) ⊗ linearHomComplex R A (𝟙_ _) ⟶
       linearHomComplex R (A ⊗ B) (𝟙_ _) :=
-  koszulBraidingHom (ModuleCat.{v} R) _ _ ≫ linearHomComplexTensor R A (𝟙_ _) B (𝟙_ _) ≫
+  (HomologicalComplex.tensorBraiding _ _).hom ≫ linearHomComplexTensor R A (𝟙_ _) B (𝟙_ _) ≫
     linearHomComplexPostcomp R (A ⊗ B) (λ_ (𝟙_ _)).hom
 
 /-- `TauCeti.linearHomComplexDualDistrib` is the Koszul braiding followed by
 `TauCeti.linearHomComplexTensor` and postcomposition with the unitor `R[0] ⊗ R[0] ≅ R[0]`. -/
 lemma linearHomComplexDualDistrib_def (A B : CochainComplex (ModuleCat.{v} R) ℤ) :
     linearHomComplexDualDistrib R A B =
-      koszulBraidingHom (ModuleCat.{v} R) _ _ ≫ linearHomComplexTensor R A (𝟙_ _) B (𝟙_ _) ≫
+      (HomologicalComplex.tensorBraiding _ _).hom ≫ linearHomComplexTensor R A (𝟙_ _) B (𝟙_ _) ≫
         linearHomComplexPostcomp R (A ⊗ B) (λ_ (𝟙_ _)).hom :=
   (rfl)
 
@@ -527,7 +527,8 @@ lemma ι_linearHomComplexDualDistrib_tmul (A B : CochainComplex (ModuleCat.{v} R
           i j n h ≫ (linearHomComplexDualDistrib R A B).f n) (g ⊗ₜ f)) =
       (g.dualDistrib f n h : ModuleCat.of R (Cochain (A ⊗ B) (𝟙_ _) n)) := by
   rw [linearHomComplexDualDistrib_def, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    ι_koszulBraidingHom_assoc, koszulBraidingSummand_def, Linear.units_smul_comp, Category.assoc,
+    HomologicalComplex.ιTensorObj_tensorBraiding_hom_f_assoc, ComplexShape.σ_up_ℤ,
+    Linear.units_smul_comp, Category.assoc,
     Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply]
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply]
   rw [ModuleCat.MonoidalCategory.braiding_hom_apply, ι_linearHomComplexTensor_tmul,

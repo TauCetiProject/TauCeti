@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Immersion.SecondFundamentalForm
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.LinearAlgebra.Eigenspace.Smul
 import TauCeti.LinearAlgebra.Eigenspace.Transport
 
 /-!
@@ -483,7 +484,7 @@ theorem ker_criticalHessian_norm_sq_sub_add_smul_comp (hi : ContMDiffAt I 𝓘(�
           TangentSpace I x →ₗ[ℝ] TangentSpace I x →L[ℝ] ℝ) =
       eigenspace (manifoldShapeOperator I i x ν) t⁻¹ := by
   rw [ker_criticalHessian_norm_sq_sub_comp hi h (by simpa using Submodule.smul_mem _ (-t) hν),
-    add_sub_cancel_left, manifoldShapeOperator_smul, eigenspace, genEigenspace_smul _ ht, mul_one]
+    add_sub_cancel_left, manifoldShapeOperator_smul, eigenspace_smul_eq_div _ ht, one_div]
 
 /-- The base point `i x` is not a focal point: squared distance from `i x` has trivial critical
 Hessian kernel at `x` along a `C²` immersion. -/
@@ -529,7 +530,7 @@ theorem isManifoldNondegenerateCriticalPoint_norm_sq_sub_add_smul_comp_iff
   have hmem : i x - (i x + t • ν) ∈ normalSubspace I i x := by
     simpa using Submodule.smul_mem _ (-t) hν
   simp only [hmem, true_and, add_sub_cancel_left, manifoldShapeOperator_smul,
-    Module.End.hasEigenvalue_iff, eigenspace, genEigenspace_smul _ ht, mul_one]
+    Module.End.hasEigenvalue_smul_iff_div _ ht, one_div]
 
 /-- Squared distance from `i x` has a nondegenerate critical point at `x` along any `C²`
 immersion. -/

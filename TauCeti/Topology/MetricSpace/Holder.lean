@@ -39,12 +39,12 @@ be continuous.
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
 
-Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants;
-a scalar multiple `a • f` is Hölder with the constant multiplied by `‖a‖₊`; the reciprocal of a
-Hölder function bounded away from zero is Hölder; the second differences
-`f (x + h) + f (x - h) - 2 f x` of a Hölder function on a normed group are bounded by twice its
-constant times `‖h‖ ^ r`; and a pointwise limit of Hölder functions with a common constant is
-Hölder with that constant.
+Sums, differences and finite sums of Hölder functions, also with natural multiplicities, are
+Hölder, with the sum of the constants; a scalar multiple `a • f` is Hölder with the constant
+multiplied by `‖a‖₊`; the reciprocal of a Hölder function bounded away from zero is Hölder; the
+second differences `f (x + h) + f (x - h) - 2 f x` of a Hölder function on a normed group are
+bounded by twice its constant times `‖h‖ ^ r`; and a pointwise limit of Hölder functions with a
+common constant is Hölder with that constant.
 For `0 < α < 1`, a series of pieces bounded by `a 2^{-jα}` and Lipschitz with constants
 `b 2^{j(1-α)}` is `α`-Hölder; this is the dyadic summation behind the Hölder regularity of
 Littlewood–Paley series.
@@ -57,7 +57,10 @@ is attained, so the seminorm is the best constant in the Hölder inequality. Equ
 supremum of the difference quotients `edist (f x) (f y) / edist x y ^ r` over pairs of distinct
 points, the form in which Hölder seminorms are written in analysis texts.
 Its truncation `nnHolderNorm r f` is homogeneous in scalar multiples of `f`, whether or not `f` is
-Hölder.
+Hölder. For `r = 1` it is the Lipschitz seminorm, the least Lipschitz constant. The seminorm is
+lower semicontinuous for pointwise convergence, unchanged by postcomposition with an isometry (in
+particular by an isometric star), and satisfies the Leibniz estimate
+`[f g]_r ≤ ‖f‖_∞ [g]_r + ‖g‖_∞ [f]_r` for products of bounded maps into a seminormed ring.
 
 By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
 `α ≤ 1`.
@@ -104,6 +107,7 @@ positive exponent, is equicontinuous on that set
   constant and exponent.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.congr`: Hölder continuity on a set transfers to a function agreeing there.
+* `HolderOnWith.prodMk`: a pair of Hölder functions with a common exponent is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
 * `HolderOnWith.smul`: scalar multiples of Hölder functions on a set.
 * `HolderWith.norm_add_add_sub_two_nsmul_le`: the second differences of an `r`-Hölder function
@@ -132,6 +136,13 @@ positive exponent, is equicontinuous on that set
   difference quotients.
 * `nnHolderNorm_smul`: scalar homogeneity of Mathlib's `nnHolderNorm`, without assuming that the
   map is Hölder.
+* `TauCeti.eHolderNorm_one_le_coe_iff`: `eHolderNorm 1 f ≤ K` if and only if `f` is
+  `K`-Lipschitz.
+* `TauCeti.lowerSemicontinuous_eHolderNorm`: the Hölder seminorm is lower semicontinuous for
+  pointwise convergence.
+* `Isometry.eHolderNorm_comp`, `TauCeti.eHolderNorm_star`: postcomposition with an isometry, such
+  as an isometric star, does not change the Hölder seminorm.
+* `TauCeti.eHolderNorm_mul_le`: the Leibniz estimate for the Hölder seminorm of a product.
 * `TauCeti.holderWith_norm_rpow`: the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
   `α ≤ 1`.
 -/
@@ -412,6 +423,27 @@ theorem HolderWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddComm
     exact (hf a (Finset.mem_insert_self a s)).add
       (ih fun i hi => hf i (Finset.mem_insert_of_mem hi)) (g := fun x => ∑ i ∈ s, f i x)
 
+/-- A natural multiple `n • f` of an `r`-Hölder map `f` with constant `C` is `r`-Hölder with
+constant `n C`. Compare Mathlib's `HolderWith.smul`, which needs a normed scalar group. -/
+theorem HolderWith.nsmul {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {C r : ℝ≥0} {f : X → Y} (n : ℕ) (hf : HolderWith C r f) :
+    HolderWith (n * C) r (n • f) := by
+  induction n with
+  | zero =>
+    simp only [Nat.cast_zero, zero_mul, zero_smul]
+    exact HolderWith.const
+  | succ n ih =>
+    simp only [succ_nsmul, Nat.cast_succ, add_mul, one_mul]
+    exact ih.add hf
+
+/-- A sum of `cᵢ` copies of maps `fᵢ` which are `r`-Hölder with constants `Cᵢ` is `r`-Hölder
+with constant `∑ cᵢ Cᵢ`. -/
+theorem HolderWith.sum_nsmul {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {C : ι → ℝ≥0} {r : ℝ≥0} (s : Finset ι) (c : ι → ℕ) {f : ι → X → Y}
+    (hf : ∀ i ∈ s, HolderWith (C i) r (f i)) :
+    HolderWith (∑ i ∈ s, c i * C i) r fun x ↦ ∑ i ∈ s, c i • f i x :=
+  HolderWith.sum fun i hi ↦ (hf i hi).nsmul (c i)
+
 /-- A function that agrees on `s` with a function Hölder on `s` is Hölder on `s`, with the same
 constant and exponent. -/
 theorem HolderOnWith.congr {X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
@@ -419,6 +451,17 @@ theorem HolderOnWith.congr {X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSp
     HolderOnWith C r g s := fun x hx y hy => by
   rw [← h hx, ← h hy]
   exact hf x hx y hy
+
+/-- Two functions that are Hölder on `s` with a common exponent give a pair that is Hölder on `s`
+with that exponent, with the larger of the two constants: the extended distance on a product is
+the maximum of the distances of the components. -/
+theorem HolderOnWith.prodMk {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [PseudoEMetricSpace Z] {C D r : ℝ≥0} {f : X → Y} {g : X → Z} {s : Set X}
+    (hf : HolderOnWith C r f s) (hg : HolderOnWith D r g s) :
+    HolderOnWith (max C D) r (fun x => (f x, g x)) s := fun x hx y hy => by
+  rw [Prod.edist_eq]
+  exact max_le ((hf x hx y hy).trans (by gcongr; exact le_max_left C D))
+    ((hg x hx y hy).trans (by gcongr; exact le_max_right C D))
 
 /-- The sum of two functions that are Hölder on `s` with a common exponent is Hölder on `s`, with
 the sum of the constants. Compare Mathlib's `HolderWith.add`. -/
@@ -710,6 +753,64 @@ theorem nnHolderNorm_smul {X Y 𝕜 : Type*} [MetricSpace X] [NormedAddCommGroup
     nnHolderNorm r (c • f) = ‖c‖₊ * nnHolderNorm r f := by
   -- `nnHolderNorm` is the truncation of `eHolderNorm`, which is unconditionally homogeneous.
   rw [nnHolderNorm, nnHolderNorm, eHolderNorm_smul, ENNReal.toNNReal_mul, ENNReal.toNNReal_coe]
+
+/-- Postcomposition with an isometry does not change the Hölder seminorm. -/
+theorem Isometry.eHolderNorm_comp {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) (r : ℝ≥0) (f : X → Y) :
+    eHolderNorm r (g ∘ f) = eHolderNorm r f := by
+  simp only [eHolderNorm, hg.holderWith_comp_iff]
+
+namespace TauCeti
+
+/-- On a metric space, `eHolderNorm 1 f` is the Lipschitz seminorm: it is at most `K` exactly
+when `f` is `K`-Lipschitz, so it is the least Lipschitz constant of `f`. -/
+theorem eHolderNorm_one_le_coe_iff {X Y : Type*} [MetricSpace X] [PseudoEMetricSpace Y]
+    {f : X → Y} {K : ℝ≥0} : eHolderNorm 1 f ≤ K ↔ LipschitzWith K f := by
+  simp [eHolderNorm_le_iff, LipschitzWith]
+
+/-- The Hölder seminorm is lower semicontinuous for the topology of pointwise convergence: its
+sublevel sets are closed. Composing with the continuous coercion, it is also lower semicontinuous
+on spaces of continuous or bounded continuous maps. -/
+theorem lowerSemicontinuous_eHolderNorm {X Y : Type*} [MetricSpace X] [PseudoEMetricSpace Y]
+    (r : ℝ≥0) : LowerSemicontinuous (eHolderNorm r : (X → Y) → ℝ≥0∞) := by
+  refine lowerSemicontinuous_iff_isClosed_preimage.2 fun C ↦ ?_
+  simp only [preimage, mem_Iic, eHolderNorm_le_iff, ofPred_forall]
+  exact isClosed_iInter fun x ↦ isClosed_iInter fun y ↦
+    isClosed_le ((continuous_apply x).edist (continuous_apply y)) continuous_const
+
+/-- The Hölder seminorm is invariant under an isometric star operation, such as complex
+conjugation of scalar functions. -/
+@[simp]
+theorem eHolderNorm_star {X E : Type*} [PseudoEMetricSpace X] [SeminormedAddCommGroup E]
+    [StarAddMonoid E] [NormedStarGroup E] (r : ℝ≥0) (f : X → E) :
+    eHolderNorm r (star f) = eHolderNorm r f := by
+  simpa only [Function.comp_def, Pi.star_def] using star_isometry.eHolderNorm_comp r f
+
+/-- **The Leibniz estimate.** For maps `f` and `g` into a seminormed ring with `‖f‖ ≤ A` and
+`‖g‖ ≤ B` pointwise, the Hölder seminorm of the product satisfies
+`eHolderNorm r (f * g) ≤ A * eHolderNorm r g + B * eHolderNorm r f`. -/
+theorem eHolderNorm_mul_le {X R : Type*} [MetricSpace X] [NonUnitalSeminormedRing R]
+    {r A B : ℝ≥0} {f g : X → R} (hf : ∀ x, ‖f x‖₊ ≤ A) (hg : ∀ x, ‖g x‖₊ ≤ B) :
+    eHolderNorm r (f * g) ≤ A * eHolderNorm r g + B * eHolderNorm r f := by
+  refine eHolderNorm_le_iff.2 fun x y ↦ ?_
+  calc edist ((f * g) x) ((f * g) y) ≤ A * edist (g x) (g y) + B * edist (f x) (f y) := by
+        simp only [Pi.mul_apply, edist_nndist, nnDist_eq_nnNorm]
+        norm_cast
+        calc ‖f x * g x - f y * g y‖₊ = ‖f x * (g x - g y) + (f x - f y) * g y‖₊ := by
+              congr 1
+              noncomm_ring
+          _ ≤ ‖f x‖₊ * ‖g x - g y‖₊ + ‖f x - f y‖₊ * ‖g y‖₊ :=
+              (nnNorm_add_le _ _).trans (add_le_add (nnNorm_mul_le _ _) (nnNorm_mul_le _ _))
+          _ ≤ A * ‖g x - g y‖₊ + B * ‖f x - f y‖₊ := by
+              rw [mul_comm _ ‖g y‖₊]
+              gcongr
+              exacts [hf x, hg y]
+    _ ≤ A * (eHolderNorm r g * edist x y ^ (r : ℝ)) +
+          B * (eHolderNorm r f * edist x y ^ (r : ℝ)) := by
+        gcongr <;> exact edist_le_eHolderNorm_mul r _ x y
+    _ = (A * eHolderNorm r g + B * eHolderNorm r f) * edist x y ^ (r : ℝ) := by ring
+
+end TauCeti
 
 /-- A curve on a set `S` of times with `d(u s, u t)² ≤ c |s - t|` is `1/2`-Hölder continuous on `S`
 with constant `c ^ (1 / 2)`. -/
