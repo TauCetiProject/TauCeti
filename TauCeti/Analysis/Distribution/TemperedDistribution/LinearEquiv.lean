@@ -11,7 +11,6 @@ import Mathlib.Analysis.InnerProductSpace.NormDet
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
-import TauCeti.Analysis.Distribution.SchwartzSpace.LinearIsometry
 import TauCeti.Topology.Algebra.Module.Equiv.Basic
 
 /-!
@@ -45,7 +44,8 @@ space side.
   `compCLMOfContinuousLinearEquiv_toTemperedDistributionCLM`, and functoriality
   `compCLMOfContinuousLinearEquiv_trans`, `compCLMOfContinuousLinearEquiv_refl` and
   `compCLMOfContinuousLinearEquiv_symm_apply_apply`,
-  `compCLMOfContinuousLinearEquiv_apply_symm_apply`.
+  `compCLMOfContinuousLinearEquiv_apply_symm_apply`, and its interaction
+  `compCLMOfContinuousLinearEquiv_smulLeftCLM` with multiplication by a function.
 * `TemperedDistribution.compCLMOfContinuousLinearEquiv_linearIsometryEquiv_apply_apply`: for a
   linear isometry, `(A^* T) f = T (f ∘ A⁻¹)`.
 * `TemperedDistribution.fourier_compCLMOfContinuousLinearEquiv` and
@@ -148,6 +148,13 @@ theorem compCLMOfContinuousLinearEquiv_apply_symm_apply (e : E ≃L[ℝ] E) (T :
     LinearEquiv.toEquiv_symm]
   exact compCLM_compCLM_symm _ _ _ T
 
+/-- The pullback of `g T` along `e` is `(g ∘ e) e^* T`. -/
+theorem compCLMOfContinuousLinearEquiv_smulLeftCLM (e : E ≃L[ℝ] E) {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (T : 𝓢'(E, F)) :
+    compCLMOfContinuousLinearEquiv F e (smulLeftCLM F g T) =
+      smulLeftCLM F (g ∘ e) (compCLMOfContinuousLinearEquiv F e T) := by
+  rw [compCLMOfContinuousLinearEquiv, compCLM_smulLeftCLM _ _ hg, ContinuousLinearEquiv.coe_toEquiv]
+
 end Pullback
 
 section Embedding
@@ -235,12 +242,9 @@ theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ
     fourierMultiplierCLM F (g ∘ A) (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv T) =
       compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (fourierMultiplierCLM F g T) := by
   by_cases hg : g.HasTemperateGrowth
-  · have hcomp : g ∘ A.toContinuousLinearEquiv.toEquiv = g ∘ A := by
-      rw [ContinuousLinearEquiv.coe_toEquiv, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-    rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply,
-      fourier_compCLMOfContinuousLinearEquiv, compCLMOfContinuousLinearEquiv,
-      ← hcomp, ← compCLM_smulLeftCLM _ _ hg, ← compCLMOfContinuousLinearEquiv,
-      fourierInv_compCLMOfContinuousLinearEquiv]
+  · rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply,
+      fourier_compCLMOfContinuousLinearEquiv, ← LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+      ← compCLMOfContinuousLinearEquiv_smulLeftCLM _ hg, fourierInv_compCLMOfContinuousLinearEquiv]
   · have hgA : ¬(g ∘ A).HasTemperateGrowth :=
       A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.not.mpr hg
     ext u

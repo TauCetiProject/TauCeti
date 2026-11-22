@@ -43,6 +43,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℂ 𝕜 F]
 
 namespace SchwartzMap
 
@@ -51,7 +52,7 @@ the symbol `g` to `g ∘ A`: `T_{g ∘ A} (f ∘ A) = (T_g f) ∘ A`. In particu
 whose symbol is invariant under a linear isometry of `E` commutes with composition with it. -/
 theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv_linearIsometryEquiv {D : Type*}
     [NormedAddCommGroup D] [InnerProductSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace D]
-    [BorelSpace D] (A : D ≃ₗᵢ[ℝ] E) (g : E → ℂ) (f : 𝓢(E, F)) :
+    [BorelSpace D] (A : D ≃ₗᵢ[ℝ] E) (g : E → 𝕜) (f : 𝓢(E, F)) :
     fourierMultiplierCLM F (g ∘ A) (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv f) =
       compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv (fourierMultiplierCLM F g f) := by
   by_cases hg : g.HasTemperateGrowth
