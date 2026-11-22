@@ -363,6 +363,18 @@ theorem absolutelyContinuous_withDensity_ofReal {α : Type*} [MeasurableSpace α
     μ ≪ μ.withDensity fun x => ENNReal.ofReal (w x) :=
   withDensity_absolutelyContinuous' hwm.ennreal_ofReal (by simpa using hwpos)
 
+private theorem ae_of_ae_restrict_withDensity_ne_top {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {w : α → ℝ≥0∞} [SigmaFinite (μ.withDensity w)] {p : α → Prop}
+    (hp : ∀ s : Set α, MeasurableSet s → ∫⁻ x, w x ∂μ.restrict s ≠ ∞ → ∀ᵐ x ∂μ.restrict s, p x) :
+    ∀ᵐ x ∂μ, p x := by
+  have hae_n : ∀ n, ∀ᵐ x ∂μ.restrict (spanningSets (μ.withDensity w) n), p x := fun n ↦ by
+    have hs := measurableSet_spanningSets (μ.withDensity w) n
+    refine hp _ hs ?_
+    rw [← withDensity_apply w hs]
+    exact (measure_spanningSets_lt_top (μ.withDensity w) n).ne
+  rw [← Measure.restrict_univ (μ := μ), ← iUnion_spanningSets (μ.withDensity w)]
+  exact (ae_restrict_iUnion_iff _ _).2 hae_n
+
 /-- Two a.e. measurable `ℝ≥0∞`-valued densities define the same σ-finite weighted measure if and
 only if they agree almost everywhere with respect to the reference measure `μ`.
 
@@ -373,20 +385,12 @@ theorem withDensity_eq_iff_of_sigmaFinite_withDensity {α : Type*} [MeasurableSp
     {μ : Measure α} {f g : α → ℝ≥0∞} [SigmaFinite (μ.withDensity f)]
     (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) :
     μ.withDensity f = μ.withDensity g ↔ f =ᵐ[μ] g := by
-  refine ⟨fun hfg ↦ ?_, withDensity_congr_ae⟩
-  have hae_n : ∀ n, f =ᵐ[μ.restrict (spanningSets (μ.withDensity f) n)] g := fun n ↦ by
-    have hs : MeasurableSet (spanningSets (μ.withDensity f) n) :=
-      measurableSet_spanningSets (μ.withDensity f) n
-    have heq : (μ.restrict (spanningSets (μ.withDensity f) n)).withDensity f =
-        (μ.restrict (spanningSets (μ.withDensity f) n)).withDensity g := by
-      rw [← restrict_withDensity hs, ← restrict_withDensity hs]
-      exact congrArg (·.restrict (spanningSets (μ.withDensity f) n)) hfg
-    have hfin : ∫⁻ x, f x ∂μ.restrict (spanningSets (μ.withDensity f) n) ≠ ∞ := by
-      rw [← withDensity_apply f hs]
-      exact (measure_spanningSets_lt_top (μ.withDensity f) n).ne
-    exact (withDensity_eq_iff hf.restrict hg.restrict hfin).mp heq
-  rw [← Measure.restrict_univ (μ := μ), ← iUnion_spanningSets (μ.withDensity f)]
-  exact (ae_restrict_iUnion_iff _ _).2 hae_n
+  refine ⟨fun hfg ↦ ae_of_ae_restrict_withDensity_ne_top (w := f) fun s hs hfin ↦ ?_,
+    withDensity_congr_ae⟩
+  have heq : (μ.restrict s).withDensity f = (μ.restrict s).withDensity g := by
+    rw [← restrict_withDensity hs, ← restrict_withDensity hs]
+    exact congrArg (·.restrict s) hfg
+  exact (withDensity_eq_iff hf.restrict hg.restrict hfin).mp heq
 
 /-- Continuous nonnegative real densities that present the same measure are equal pointwise, with
 respect to a σ-finite reference measure that is positive on nonempty open sets. -/
@@ -417,7 +421,6 @@ theorem isFiniteMeasure_withDensity_ofReal_exp {α : Type*} [MeasurableSpace α]
   rw [lintegral_const]
   exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (measure_lt_top _ _)
 
-<<<<<<< HEAD
 /-- If `P ≪ L` where `L` is σ-finite, and `P`, `L` have `ℝ≥0∞`-valued densities `g * h` and
 `G * h` with respect to `μ`, then `P` has `L`-density `g / G`. -/
 theorem eq_withDensity_div_of_eq_withDensity_mul {α : Type*} [MeasurableSpace α]
@@ -429,13 +432,10 @@ theorem eq_withDensity_div_of_eq_withDensity_mul {α : Type*} [MeasurableSpace �
   have hLm : AEMeasurable (fun x ↦ G x * h x) μ := hG.mul hh
   have hPm : AEMeasurable (fun x ↦ g x * h x) μ := hg.mul hh
   -- σ-finiteness of `L` ensures `G x * h x < ∞` `μ`-almost everywhere.
-  have hLlt : ∀ᵐ x ∂μ, G x * h x < ∞ := by
-    have hae_n : ∀ n, ∀ᵐ x ∂μ.restrict (spanningSets L n), G x * h x < ∞ := fun n ↦ by
-      refine ae_lt_top' hLm.restrict ?_
-      rw [← withDensity_apply _ (measurableSet_spanningSets L n), ← hL]
-      exact (measure_spanningSets_lt_top L n).ne
-    rw [← Measure.restrict_univ (μ := μ), ← iUnion_spanningSets L]
-    exact (ae_restrict_iUnion_iff _ _).2 hae_n
+  have : SigmaFinite (μ.withDensity fun x ↦ G x * h x) := hL ▸ inferInstance
+  have hLlt : ∀ᵐ x ∂μ, G x * h x < ∞ :=
+    ae_of_ae_restrict_withDensity_ne_top (w := fun x ↦ G x * h x) fun _ _ hfin ↦
+      ae_lt_top' hLm.restrict hfin
   -- `G` is nonzero `L`-a.e., hence `P`-a.e., so `G x = 0` forces `g x * h x = 0` `μ`-a.e.
   have hZ : ∀ᵐ x ∂μ, G x = 0 → g x * h x = 0 := by
     have hLG : ∀ᵐ x ∂L, G x ≠ 0 := by

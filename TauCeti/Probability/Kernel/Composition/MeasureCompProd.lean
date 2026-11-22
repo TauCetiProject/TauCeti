@@ -145,12 +145,7 @@ theorem const_compProd_prodMkLeft_apply (γ : Type*) [MeasurableSpace γ] (μ : 
     · ext s hs
       simp [Kernel.compProd_apply hs, Measure.compProd_apply hs]
     · have hκ' : ¬ IsSFiniteKernel (Kernel.prodMkLeft γ κ) := by
-        intro h
-        have : κ = (Kernel.prodMkLeft γ κ).comap (fun w ↦ (a, w))
-            (measurable_const.prodMk measurable_id) := by
-          ext x s _
-          simp [Kernel.comap_apply, Kernel.prodMkLeft_apply]
-        exact hκ (this ▸ inferInstance)
+        rwa [Kernel.isSFiniteKernel_prodMkLeft_iff]
       rw [Kernel.compProd_of_not_isSFiniteKernel_right _ _ hκ',
         Measure.compProd_of_not_isSFiniteKernel _ _ hκ, zero_apply]
   · have hμ' : ¬ IsSFiniteKernel (Kernel.const γ μ) := by

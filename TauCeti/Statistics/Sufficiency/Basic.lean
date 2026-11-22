@@ -159,6 +159,14 @@ theorem IsSufficientStatistic.comp_measurableEquiv {P : Θ → Measure X} [∀ �
     _ = (P θ).map (e ∘ T) ⊗ₘ K.comap e.symm e.symm.measurable := by
         rw [Measure.map_map e.measurable hT]
 
+/-- Composing a statistic with a measurable equivalence preserves sufficiency. -/
+@[simp]
+theorem isSufficientStatistic_comp_measurableEquiv_iff {P : Θ → Measure X} [∀ θ, SFinite (P θ)]
+    {T : X → S} (e : S ≃ᵐ S') :
+    IsSufficientStatistic P (e ∘ T) ↔ IsSufficientStatistic P T :=
+  ⟨fun h ↦ by simpa [Function.comp_def] using h.comp_measurableEquiv e.symm,
+    fun h ↦ h.comp_measurableEquiv e⟩
+
 /-- A measurable statistic agreeing almost everywhere under every `P θ` with a sufficient statistic
 is itself sufficient. -/
 theorem IsSufficientStatistic.of_ae_eq {P : Θ → Measure X} {T₁ T₂ : X → S}
@@ -233,6 +241,17 @@ theorem IsMinimalSufficientStatistic.comp_measurableEquiv.{u, v, w, w', r} {Θ :
   refine ⟨h.isSufficientStatistic.comp_measurableEquiv e, fun U_ty _ U hU ↦ ?_⟩
   obtain ⟨φ, hφ, hfac⟩ := h.exists_ae_eq_comp hU
   exact ⟨e ∘ φ, e.measurable.comp hφ, fun θ ↦ (hfac θ).fun_comp e⟩
+
+/-- Composing a statistic with a measurable equivalence preserves minimal sufficiency. -/
+@[simp]
+theorem isMinimalSufficientStatistic_comp_measurableEquiv_iff.{u, v, w, w', r} {Θ : Type u}
+    {X : Type v} {S : Type w} {S' : Type w'} [MeasurableSpace X] [MeasurableSpace S]
+    [MeasurableSpace S'] {P : Θ → Measure X} [∀ θ, SFinite (P θ)] {T : X → S}
+    (e : S ≃ᵐ S') :
+    IsMinimalSufficientStatistic.{u, v, w', r} P (e ∘ T) ↔
+      IsMinimalSufficientStatistic.{u, v, w, r} P T :=
+  ⟨fun h ↦ by simpa [Function.comp_def] using h.comp_measurableEquiv e.symm,
+    fun h ↦ h.comp_measurableEquiv e⟩
 
 /-- A measurable statistic agreeing almost everywhere under every `P θ` with a minimal sufficient
 statistic is itself minimal sufficient. -/

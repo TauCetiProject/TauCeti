@@ -254,7 +254,8 @@ theorem eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd {P L : Measure X} [
       _ = (L.map T ⊗ₘ K).withDensity (fun p ↦ q p.1) := Measure.withDensity_compProd hq
       _ = (L.map (fun x ↦ (T x, x))).withDensity (fun p ↦ q p.1) := by rw [hL]
       _ = (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x)) :=
-          (Measure.map_withDensity_comp hpair (hq.comp measurable_fst)).symm
+          (Measure.map_withDensity_comp hpair.aemeasurable
+            (hq.comp measurable_fst).aemeasurable).symm
   have hsnd := congrArg Measure.snd hjoint
   rwa [Measure.snd_map_prodMk hT measurable_id', Measure.snd_map_prodMk hT measurable_id',
     Measure.map_id', Measure.map_id'] at hsnd
@@ -268,9 +269,10 @@ theorem map_prodMk_withDensity_comp_eq_compProd {L : Measure X} [SFinite L] {T :
   have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
   calc (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x))
     _ = (L.map (fun x ↦ (T x, x))).withDensity (fun p ↦ q p.1) :=
-        Measure.map_withDensity_comp hpair (hq.comp measurable_fst)
+        Measure.map_withDensity_comp hpair.aemeasurable (hq.comp measurable_fst).aemeasurable
     _ = (L.map T ⊗ₘ K).withDensity (fun p ↦ q p.1) := by rw [hL]
     _ = (L.map T).withDensity q ⊗ₘ K := (Measure.withDensity_compProd hq).symm
-    _ = (L.withDensity (q ∘ T)).map T ⊗ₘ K := by rw [← Measure.map_withDensity_comp hT hq]
+    _ = (L.withDensity (q ∘ T)).map T ⊗ₘ K := by
+        rw [← Measure.map_withDensity_comp hT.aemeasurable hq.aemeasurable]
 
 end ProbabilityTheory

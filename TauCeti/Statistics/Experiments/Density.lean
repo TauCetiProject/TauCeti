@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.MeasureTheory.Measure.WithDensity
+import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
@@ -30,11 +31,12 @@ density `k` of `P.map φ` with respect to `μ.map φ`.
 
 ## Main results
 
-* `TauCeti.hasDensity_def`, `TauCeti.hasDensity_of_measure_apply`: unfolding and set-evaluation
-  introduction for `HasDensity`.
+* `TauCeti.hasDensity_def`, `TauCeti.hasDensity_of_measure_apply`,
+  `TauCeti.hasDensity_toReal_rnDeriv`: unfolding and introduction lemmas for `HasDensity`.
 * `TauCeti.HasDensity.congr_ae`, `TauCeti.HasDensity.ae_eq`,
-  `TauCeti.HasDensity.ae_eq_of_sigmaFinite`: a density may be changed on a `μ`-null set, and for
-  σ-finite `μ` or σ-finite `P` it is unique up to such a change.
+  `TauCeti.HasDensity.ae_eq_of_sigmaFinite`, `TauCeti.HasDensity.ae_eq_toReal_rnDeriv`: a
+  density may be changed on a `μ`-null set, is unique up to a `μ`-null set for σ-finite `μ` or
+  σ-finite `P`, and agrees `μ`-a.e. with `(P.rnDeriv μ ·).toReal`.
 * `TauCeti.HasDensity.ae_pos`: a density is positive almost everywhere for the measure it
   defines.
 * `TauCeti.HasDensity.integral_eq`: `∫ g dP = ∫ f • g dμ`, for every `g`.
@@ -94,6 +96,19 @@ theorem hasDensity_withDensity_ofReal (hf : Measurable f) (hf₀ : 0 ≤ᵐ[μ] 
     HasDensity (μ.withDensity fun x ↦ ENNReal.ofReal (f x)) μ f :=
   ⟨hf, hf₀, rfl⟩
 
+/-- The real-valued Radon–Nikodym derivative `(P.rnDeriv μ ·).toReal` is a real density of a
+σ-finite measure `P` with respect to `μ`, provided `P ≪ μ` and `P` has a Lebesgue decomposition
+with respect to `μ`. -/
+theorem hasDensity_toReal_rnDeriv [SigmaFinite P] [P.HaveLebesgueDecomposition μ]
+    (hPμ : P ≪ μ) :
+    HasDensity P μ fun x ↦ (P.rnDeriv μ x).toReal := by
+  refine ⟨(Measure.measurable_rnDeriv P μ).ennreal_toReal,
+    ae_of_all _ fun _ ↦ ENNReal.toReal_nonneg, ?_⟩
+  calc P = μ.withDensity (P.rnDeriv μ) := (Measure.withDensity_rnDeriv_eq P μ hPμ).symm
+    _ = μ.withDensity fun x ↦ ENNReal.ofReal (P.rnDeriv μ x).toReal :=
+        withDensity_congr_ae ((Measure.rnDeriv_lt_top P μ).mono fun _ hx ↦
+          (ENNReal.ofReal_toReal hx.ne).symm)
+
 namespace HasDensity
 
 /-- A measure with a density is absolutely continuous with respect to the reference measure. -/
@@ -130,6 +145,13 @@ theorem ae_eq_of_sigmaFinite [SigmaFinite P] (hf : HasDensity P μ f) {g : X →
     hg.measurable.ennreal_ofReal.aemeasurable).mp (hf.eq_withDensity.symm.trans hg.eq_withDensity)
   filter_upwards [h, hf.ae_nonneg, hg.ae_nonneg] with x hx hfx hgx
   exact (ENNReal.ofReal_eq_ofReal_iff hfx hgx).mp hx
+
+/-- Any real density of a σ-finite measure `P` with respect to `μ` (when `P` has a Lebesgue
+decomposition with respect to `μ`) agrees `μ`-almost everywhere with the real-valued
+Radon–Nikodym derivative `(P.rnDeriv μ ·).toReal`. -/
+theorem ae_eq_toReal_rnDeriv [SigmaFinite P] [P.HaveLebesgueDecomposition μ]
+    (hf : HasDensity P μ f) : f =ᵐ[μ] fun x ↦ (P.rnDeriv μ x).toReal :=
+  hf.ae_eq_of_sigmaFinite (hasDensity_toReal_rnDeriv hf.absolutelyContinuous)
 
 /-- A density is positive almost everywhere with respect to the measure it defines. -/
 theorem ae_pos (h : HasDensity P μ f) : ∀ᵐ x ∂P, 0 < f x := by
