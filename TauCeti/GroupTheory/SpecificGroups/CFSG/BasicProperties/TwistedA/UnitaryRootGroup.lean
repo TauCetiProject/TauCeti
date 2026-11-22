@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Unitary
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Unitary.Commutator
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.BasicProperties.TwistedA.Basic
 
 /-!
@@ -17,6 +17,7 @@ We embed the corresponding unitary subgroup of the Heisenberg group into the fin
 special unitary model and then into the actual Steinberg fixed points of `²A₂(q)`.
 The embedding is injective and retains the matrix coordinates under finite-field descent.
 The inherited multiplication and central commutator formulas describe this root subgroup.
+Its derived subgroup is exactly its centre, also on its image in the Steinberg fixed points.
 
 ## References
 
@@ -96,6 +97,22 @@ theorem mem_range_rankTwoUpperUnitaryRootHom_iff
         (hga.symm ▸ g.property)
     exact ⟨⟨a, ha'⟩, Subtype.ext hga⟩
 
+/-- The upper root subgroup of the finite special unitary model has derived subgroup equal
+to its centre, including over the field of order four. -/
+theorem commutator_range_rankTwoUpperUnitaryRootHom_eq_center :
+    commutator d.rankTwoUpperUnitaryRootHom.range =
+      Subgroup.center d.rankTwoUpperUnitaryRootHom.range := by
+  let e := MonoidHom.ofInjective d.rankTwoUpperUnitaryRootHom_injective
+  have h := HeisenbergGroup.unitarySubgroup.commutator_eq_center_iterateFrobenius
+    (K := GaloisField d.characteristic (d.fieldExponent * 2))
+    (p := d.characteristic) (n := d.fieldExponent)
+    (by
+      simpa [pow_mul] using GaloisField.card d.characteristic (d.fieldExponent * 2)
+        (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero))
+  have hm := congrArg (Subgroup.map e.toMonoidHom) h
+  exact (map_commutator_of_surjective e.surjective).symm.trans
+    (hm.trans (Subgroup.map_center_eq e))
+
 end TauCeti.ValidLieTypeIndex
 
 namespace TauCeti.TypeALieIndex
@@ -104,31 +121,31 @@ namespace TauCeti.TypeALieIndex
 `²A₂(q)`, via finite-field descent. -/
 def rankTwoUpperUnitaryRootHom (q : PrimePower) (hv : (LieTypeIndex.twistedA 2 q).Valid) :
     HeisenbergGroup.unitarySubgroup
-        (iterateFrobenius (GaloisField (ofTwistedA 2 q hv).1.characteristic
-          ((ofTwistedA 2 q hv).1.fieldExponent * 2)) (ofTwistedA 2 q hv).1.characteristic
-          (ofTwistedA 2 q hv).1.fieldExponent) →*
+        (iterateFrobenius (GaloisField (ofTwistedA 2 q hv).val.characteristic
+          ((ofTwistedA 2 q hv).val.fieldExponent * 2)) (ofTwistedA 2 q hv).val.characteristic
+          (ofTwistedA 2 q hv).val.fieldExponent) →*
       (ofTwistedA 2 q hv).FixedPoints :=
   -- The abbreviation ofTwistedA makes its rank definitionally 2, so the descent domain
   -- indexed by Fin (rank + 1) agrees with the root homomorphism's Fin 3 matrix carrier.
   (specialUnitaryEquivFixedPoints 2 q hv).toMonoidHom.comp
-    (ofTwistedA 2 q hv).1.rankTwoUpperUnitaryRootHom
+    (ofTwistedA 2 q hv).val.rankTwoUpperUnitaryRootHom
 
 /-- The rank-two upper root embedding is the composition with finite-field descent. -/
 theorem rankTwoUpperUnitaryRootHom_def (q : PrimePower)
     (hv : (LieTypeIndex.twistedA 2 q).Valid) :
     rankTwoUpperUnitaryRootHom q hv =
       (specialUnitaryEquivFixedPoints 2 q hv).toMonoidHom.comp
-        (ofTwistedA 2 q hv).1.rankTwoUpperUnitaryRootHom := (rfl)
+        (ofTwistedA 2 q hv).val.rankTwoUpperUnitaryRootHom := (rfl)
 
 /-- The root embedding is finite-field descent applied to the finite unitary root matrix. -/
 theorem rankTwoUpperUnitaryRootHom_apply (q : PrimePower) (hv : (LieTypeIndex.twistedA 2 q).Valid)
     (a : HeisenbergGroup.unitarySubgroup
-      (iterateFrobenius (GaloisField (ofTwistedA 2 q hv).1.characteristic
-        ((ofTwistedA 2 q hv).1.fieldExponent * 2)) (ofTwistedA 2 q hv).1.characteristic
-        (ofTwistedA 2 q hv).1.fieldExponent)) :
+      (iterateFrobenius (GaloisField (ofTwistedA 2 q hv).val.characteristic
+        ((ofTwistedA 2 q hv).val.fieldExponent * 2)) (ofTwistedA 2 q hv).val.characteristic
+        (ofTwistedA 2 q hv).val.fieldExponent)) :
     rankTwoUpperUnitaryRootHom q hv a =
       specialUnitaryEquivFixedPoints 2 q hv
-        ((ofTwistedA 2 q hv).1.rankTwoUpperUnitaryRootHom a) := (rfl)
+        ((ofTwistedA 2 q hv).val.rankTwoUpperUnitaryRootHom a) := (rfl)
 
 /-- In the standard matrix carrier over the closure, the root embedding is coefficient extension
 of its upper unitriangular Heisenberg matrix. -/
@@ -136,20 +153,20 @@ of its upper unitriangular Heisenberg matrix. -/
 theorem carrierEquivSpecialLinear_rankTwoUpperUnitaryRootHom (q : PrimePower)
     (hv : (LieTypeIndex.twistedA 2 q).Valid)
     (a : HeisenbergGroup.unitarySubgroup
-      (iterateFrobenius (GaloisField (ofTwistedA 2 q hv).1.characteristic
-        ((ofTwistedA 2 q hv).1.fieldExponent * 2)) (ofTwistedA 2 q hv).1.characteristic
-        (ofTwistedA 2 q hv).1.fieldExponent)) :
+      (iterateFrobenius (GaloisField (ofTwistedA 2 q hv).val.characteristic
+        ((ofTwistedA 2 q hv).val.fieldExponent * 2)) (ofTwistedA 2 q hv).val.characteristic
+        (ofTwistedA 2 q hv).val.fieldExponent)) :
     (ofTwistedA 2 q hv).carrierEquivSpecialLinear
         (rankTwoUpperUnitaryRootHom q hv a : (ofTwistedA 2 q hv).AmbientGroup) =
       HeisenbergGroup.toSpecialLinear (HeisenbergGroup.map
-        ((ofTwistedA 2 q hv).1.extensionGaloisFieldEmbedding 2 two_ne_zero) a) := by
+        ((ofTwistedA 2 q hv).val.extensionGaloisFieldEmbedding 2 two_ne_zero) a) := by
   rw [← HeisenbergGroup.map_toSpecialLinear, rankTwoUpperUnitaryRootHom_apply]
   apply Subtype.ext
   have h := coe_specialUnitaryEquivFixedPoints 2 q hv
-    ((ofTwistedA 2 q hv).1.rankTwoUpperUnitaryRootHom a)
+    ((ofTwistedA 2 q hv).val.rankTwoUpperUnitaryRootHom a)
   simp only [ValidLieTypeIndex.coe_rankTwoUpperUnitaryRootHom,
     HeisenbergGroup.coe_toSpecialLinear] at h
-  simp only [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+  simp only [SpecialLinearGroup.map_apply_coe,
     HeisenbergGroup.coe_toSpecialLinear]
   -- Normalize the numeric rank in the dependent matrix indices of finite-field descent.
   convert! h using 1
@@ -159,7 +176,24 @@ theorem rankTwoUpperUnitaryRootHom_injective (q : PrimePower)
     (hv : (LieTypeIndex.twistedA 2 q).Valid) :
     Function.Injective (rankTwoUpperUnitaryRootHom q hv) :=
   (specialUnitaryEquivFixedPoints 2 q hv).injective.comp
-    (ofTwistedA 2 q hv).1.rankTwoUpperUnitaryRootHom_injective
+    (ofTwistedA 2 q hv).val.rankTwoUpperUnitaryRootHom_injective
+
+/-- The upper root subgroup of the actual Steinberg fixed points of `²A₂(q)` has derived
+subgroup equal to its centre, including in characteristic two. -/
+theorem commutator_range_rankTwoUpperUnitaryRootHom_eq_center (q : PrimePower)
+    (hv : (LieTypeIndex.twistedA 2 q).Valid) :
+    commutator (rankTwoUpperUnitaryRootHom q hv).range =
+      Subgroup.center (rankTwoUpperUnitaryRootHom q hv).range := by
+  rw [rankTwoUpperUnitaryRootHom_def]
+  -- The descent carrier uses Fin (rank + 1), definitionally Fin 3 at this index.
+  erw [MonoidHom.range_comp]
+  let d := (ofTwistedA 2 q hv).val
+  let e : d.rankTwoUpperUnitaryRootHom.range ≃* _ :=
+    (specialUnitaryEquivFixedPoints 2 q hv).subgroupMap d.rankTwoUpperUnitaryRootHom.range
+  have h := d.commutator_range_rankTwoUpperUnitaryRootHom_eq_center
+  have hm := congrArg (Subgroup.map e.toMonoidHom) h
+  exact (map_commutator_of_surjective e.surjective).symm.trans
+    (hm.trans (Subgroup.map_center_eq e))
 
 end TauCeti.TypeALieIndex
 
