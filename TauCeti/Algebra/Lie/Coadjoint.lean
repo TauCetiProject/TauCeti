@@ -73,9 +73,9 @@ Finally, the positive Lie–Poisson tensor of `L*` at `ν`, `{ℓ_α, ℓ_β}(ν
 form on covectors `α, β ∈ L`, with sharp map `β(π♯α) = π(α, β)`. Its sharp image
 `π♯α = -⁅α, ν⁆` is the orbit derivative of `[-α]`, and the KKS form evaluated on the preimages
 of `π♯α` and `π♯β` is `π_ν(α, β)`. This fixes the signs relating the KKS form to the Lie–Poisson
-structure. The sharp map and the orbit derivative have the same image `L · ν`. For a
-finite-dimensional Lie algebra over a field this image is the annihilator of the stabilizer `L_ν`,
-the kernel of the alternating form `ν.kirillovForm`, and its dimension is that of `L ⧸ L_ν`.
+structure. The sharp map and the orbit derivative have the same image `L · ν`, whose rank is that
+of `L ⧸ L_ν`. For a finite-dimensional Lie algebra over a field this image is the annihilator of
+the stabilizer `L_ν`, the kernel of the alternating form `ν.kirillovForm`.
 
 ## Main definitions
 
@@ -455,6 +455,14 @@ theorem range_coadjointTangentMap :
   induction x using Submodule.Quotient.induction_on with
   | H ξ => exact ⟨-ξ, by rw [kirillovForm_eq_coadjointTangentMap_mk_neg, neg_neg]⟩
 
+/-- **The rank of the Lie–Poisson tensor at `ν` is the dimension of the algebraic tangent model**
+`L ⧸ L_ν` of the coadjoint orbit through `ν`, since the injective orbit derivative has the same
+image as the sharp map. -/
+theorem finrank_range_kirillovForm :
+    finrank R (LinearMap.range ν.kirillovForm) =
+      finrank R (L ⧸ (lieAnnihilator R L ν).toSubmodule) := by
+  rw [← range_coadjointTangentMap, LinearMap.finrank_range_of_inj ν.coadjointTangentMap_injective]
+
 end Module.Dual
 
 namespace Module.Dual
@@ -471,14 +479,6 @@ theorem range_kirillovForm [FiniteDimensional K L] :
     ext ξ η
     exact (ν.isAlt_kirillovForm.neg_eq ξ η).symm
   rw [← ker_kirillovForm, LinearMap.dualAnnihilator_ker_eq_range_flip, h, LinearMap.range_neg]
-
-/-- **The rank of the Lie–Poisson tensor at `ν` is the dimension of the algebraic tangent model**
-`L ⧸ L_ν` of the coadjoint orbit through `ν`, since the injective orbit derivative has the same
-image as the sharp map. -/
-theorem finrank_range_kirillovForm :
-    finrank K (LinearMap.range ν.kirillovForm) =
-      finrank K (L ⧸ (lieAnnihilator K L ν).toSubmodule) := by
-  rw [← range_coadjointTangentMap, LinearMap.finrank_range_of_inj ν.coadjointTangentMap_injective]
 
 end Module.Dual
 

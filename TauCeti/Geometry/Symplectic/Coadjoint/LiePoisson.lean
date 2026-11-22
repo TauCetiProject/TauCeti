@@ -165,8 +165,8 @@ theorem finrank_range_kirillovForm_orbitMap_coadjointRepresentation
     finrank ℝ (LinearMap.range ((coadjointRepresentation ℝ I G).orbitMap ν x).kirillovForm) =
       finrank ℝ (Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν)) := by
   rw [← range_differential_orbitMap_coadjointRepresentation,
-    LinearMap.finrank_range_of_inj (ν.injective_differential_orbitMap_coadjointRepresentation x)]
-  rfl
+    LinearMap.finrank_range_of_inj (ν.injective_differential_orbitMap_coadjointRepresentation x),
+    TauCeti.finrank_tangentSpace]
 
 /-! ### The KKS form inverts the sharp map -/
 
