@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.E2
 
 /-!
-# The entries of the classical complex on the cohomology of a DG module
+# The classical complex on the cohomology of a DG module
 
 The second page of the index spectral sequence of a twisted complex is the homology of the
 classical complex `TauCeti.TwistingCocycle.indexClassicalComplex`, whose terms are products of the
@@ -62,7 +62,7 @@ the fundamental group, acting on the local system `H^k(𝓕)`; see
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, Definition 3.38.
+  Applications to cotangent bundles*, arXiv:2404.07953, Definition 3.38 and Theorem 3.39.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Morse homology with differential graded
   coefficients*, Progress in Mathematics 360, Birkhäuser, 2025, Chapter 3 and Section 4.2.
 -/

@@ -25,9 +25,22 @@ The finite-place pairings vanish at all but finitely many places, so the finite 
 finite places is an honest sum rather than the junk value of `finsum` on an infinitely supported
 function. The archimedean terms vanish at complex places but need not vanish at real places.
 
+The same holds for an isogeny `φ : E₁ → E₂` over `K` of degree `n` and its dual `φ̂`: for
+`a ∈ H¹(K, E₁[φ])` and `b ∈ H¹(K, E₂[φ̂])`, the local Tate pairings
+`H¹(K_v, E₁[φ]) × H¹(K_v, E₂[φ̂]) → ℤ/n` of their restrictions at all places, embedded in `ℚ/ℤ`
+by `k ↦ k/n`, sum to zero (in the namespace `TauCeti.Isogeny`,
+`finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`).
+Here `b` is restricted into the kernel of the dual of the base change of `φ`
+(`TauCeti.Isogeny.dualKerRes`), on which the local pairings of the base change are defined. The
+degree of the base change of `φ` to `K_v` equals `n` only propositionally, so the all-places
+reciprocity is stated in `ℚ/ℤ`; when `a` and `b` satisfy their local Selmer conditions outside a
+finite set `S` of finite places and at all real infinite places, the resulting finite sum over `S`
+also vanishes in `ℤ/(deg φ)ℤ`
+(`TauCeti.Isogeny.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero`).
+
 This is the reciprocity input for comparing global Selmer conditions with their orthogonals, in
-particular in Cassels' comparison of `Sel_φ(E₁/K)` and `Sel_φ̂(E₂/K)`. It follows by localizing
-the Brauer class of the global Weil cup product and applying the Brauer sum formula.
+particular in Cassels' comparison of `Sel_φ(E₁/K)` and `Sel_φ̂(E₂/K)`. Both forms follow by
+localizing the Brauer class of the global cup product and applying the Brauer sum formula.
 
 ## Main results
 
@@ -38,9 +51,11 @@ the Brauer class of the global Weil cup product and applying the Brauer sum form
   and `WeierstrassCurve.finsum_localTateWeilPairing_add_sum_infiniteTateWeilPairing_eq_zero`:
   global reciprocity for `[m]`-torsion.
 * `TauCeti.Isogeny.finiteInvAt_kerWeilBrauerPairing`,
+  `TauCeti.Isogeny.infiniteInvAt_kerWeilBrauerPairing`,
+  `TauCeti.Isogeny.hasFiniteSupport_localTateKerWeilPairing_kerRes`,
   `TauCeti.Isogeny.finite_setOf_localTateKerWeilPairing_kerRes_ne_zero`,
-  `TauCeti.Isogeny.hasFiniteSupport_toRatAddCircle_localTateKerWeilPairing_kerRes`,
-  `TauCeti.Isogeny.finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteInvMap_eq_zero`,
+  `finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero` (in
+  `TauCeti.Isogeny`),
   `TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`, and
   `TauCeti.Isogeny.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero`:
   global reciprocity for the isogeny Weil cup product on `H¹(K, E₁[φ]) × H¹(K, E₂[φ̂])`.
@@ -163,11 +178,10 @@ end WeierstrassCurve
 
 namespace TauCeti.Isogeny
 
-open WeierstrassCurve TauCeti TauCeti.ContCohomology TauCeti.ClassFieldTheory
-open Hom (ofIsogeny kerH1Congr)
+open WeierstrassCurve TauCeti TauCeti.ContCohomology TauCeti.ClassFieldTheory Hom
+open IsDedekindDomain _root_.NumberField
 
-variable {K : Type} [Field K] [NumberField K]
-  {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
+variable {K : Type} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
 
 section
@@ -176,37 +190,50 @@ variable
   (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
   (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff)
 
+/-- At an infinite place, the local invariant of the global isogeny Weil cup product is the
+archimedean local Tate pairing of the restrictions, embedded in `ℚ/ℤ` by `k ↦ k/n`,
+`n = deg φ`. The second class is restricted into the kernel of the dual of the base change of
+`φ` (`TauCeti.Isogeny.dualKerRes`). -/
+theorem infiniteInvAt_kerWeilBrauerPairing (hn : IsUnit (φ.degree : K)) (w : InfinitePlace K)
+    (τ' : SeparableClosure K →ₐ[K] SeparableClosure w.Completion) :
+    infiniteInvAt K w (φ.kerWeilBrauerPairing hn a b) =
+      ZMod.toRatAddCircle (φ.baseChange w.Completion).degree
+        ((φ.baseChange w.Completion).infiniteTateKerWeilPairing (φ.kerRes τ' a)
+          (φ.dualKerRes τ' b)) := by
+  have hnw : IsUnit ((φ.baseChange w.Completion).degree : w.Completion) :=
+    isUnit_natCast_of_ne_zero (φ.baseChange w.Completion).degree_ne_zero
+  rw [infiniteInvAt_apply, φ.brBaseChange_kerWeilBrauerPairing τ' hn hnw]
+  exact ((φ.baseChange w.Completion).toRatAddCircle_infiniteTateKerWeilPairing hnw _ _).symm
+
+variable [NumberField K]
+
 /-- At a finite place, the local invariant of the global isogeny Weil cup product is the local
-Tate pairing of the restricted kernel classes, embedded in `ℚ/ℤ` by `k ↦ k/deg φ`. No
-prime-to-residue-characteristic hypothesis is required. -/
-theorem finiteInvAt_kerWeilBrauerPairing
-    (v : HeightOneSpectrum (𝓞 K))
+Tate pairing of the restrictions, embedded in `ℚ/ℤ` by `k ↦ k/n`, `n = deg φ`. The second class
+is restricted into the kernel of the dual of the base change of `φ`
+(`TauCeti.Isogeny.dualKerRes`). No prime-to-residue-characteristic hypothesis is required. -/
+theorem finiteInvAt_kerWeilBrauerPairing (v : HeightOneSpectrum (𝓞 K))
     (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K)) :
-    finiteInvAt K v (φ.kerWeilBrauerPairing φ.isUnit_degree a b) =
+    finiteInvAt K v (φ.kerWeilBrauerPairing (isUnit_natCast_of_ne_zero φ.degree_ne_zero) a b) =
       ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-          (φ.isUnit_degree_baseChange (v.adicCompletion K))
-          (φ.kerRes τ a)
-          (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-            (φ.dual.kerRes τ b))) :=
-  (finiteInvAt_apply K v _).trans <|
-    (congrArg (invMap (v.adicCompletion K))
-      (φ.brBaseChange_kerWeilBrauerPairing φ.isUnit_degree τ a b)).trans <|
-    ((φ.baseChange (v.adicCompletion K)).toRatAddCircle_localTateKerWeilPairing _ _ _).symm
+          (isUnit_natCast_of_ne_zero (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
+          (φ.kerRes τ a) (φ.dualKerRes τ b)) := by
+  rw [finiteInvAt_apply, φ.brBaseChange_kerWeilBrauerPairing τ _
+    (isUnit_natCast_of_ne_zero (φ.baseChange (v.adicCompletion K)).degree_ne_zero)]
+  exact ((φ.baseChange (v.adicCompletion K)).toRatAddCircle_localTateKerWeilPairing _ _ _).symm
 
-/-- The `ℚ/ℤ`-valued local Tate pairings of the restrictions of two global kernel-cohomology
-classes have finite support over the finite places of `K`. -/
-theorem hasFiniteSupport_toRatAddCircle_localTateKerWeilPairing_kerRes
+/-- The local Tate pairings of the restrictions of two global classes, for an isogeny and its
+dual, vanish at all but finitely many finite places. -/
+theorem hasFiniteSupport_localTateKerWeilPairing_kerRes
     (τ : ∀ v : HeightOneSpectrum (𝓞 K),
       SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K)) :
-    (fun v : HeightOneSpectrum (𝓞 K) ↦
-      ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
-        ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-          (φ.isUnit_degree_baseChange (v.adicCompletion K))
-          (φ.kerRes (τ v) a)
-          (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-            (φ.dual.kerRes (τ v) b)))).HasFiniteSupport := by
-  refine (hasFiniteSupport_finiteInvAt K (φ.kerWeilBrauerPairing φ.isUnit_degree a b)).subset ?_
+    (fun v : HeightOneSpectrum (𝓞 K) ↦ ZMod.toRatAddCircle
+      (φ.baseChange (v.adicCompletion K)).degree
+      ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
+        (isUnit_natCast_of_ne_zero (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
+        (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b))).HasFiniteSupport := by
+  refine (hasFiniteSupport_finiteInvAt K
+    (φ.kerWeilBrauerPairing (isUnit_natCast_of_ne_zero φ.degree_ne_zero) a b)).subset ?_
   intro v hv
   rwa [Function.mem_support, φ.finiteInvAt_kerWeilBrauerPairing a b v (τ v)]
 
@@ -218,62 +245,44 @@ theorem finite_setOf_localTateKerWeilPairing_kerRes_ne_zero
     {v : HeightOneSpectrum (𝓞 K) |
       (φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
         (φ.isUnit_degree_baseChange (v.adicCompletion K))
-        (φ.kerRes (τ v) a)
-        (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-          (φ.dual.kerRes (τ v) b)) ≠ 0}.Finite := by
-  refine (φ.hasFiniteSupport_toRatAddCircle_localTateKerWeilPairing_kerRes a b τ).subset ?_
+        (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b) ≠ 0}.Finite := by
+  refine (φ.hasFiniteSupport_localTateKerWeilPairing_kerRes a b τ).subset ?_
   intro v hv
   rw [Function.mem_support, ne_eq, ZMod.toRatAddCircle_eq_zero]
   exact hv
 
-/-- **Global reciprocity for the isogeny Weil cup product.** For an isogeny `φ : E₁ → E₂` over a
-number field `K`, the finite-place local Tate pairings of `a ∈ H¹(K, E₁[φ])` and
-`b ∈ H¹(K, E₂[φ̂])`, embedded in `ℚ/ℤ` by `k ↦ k/deg φ`, together with the archimedean Brauer
-invariants of their isogeny Weil cup product, sum to zero. The finite-place sum has finite
-support by `hasFiniteSupport_toRatAddCircle_localTateKerWeilPairing_kerRes`. All choices of
-embeddings of separable closures are allowed, independently at each place. -/
-theorem finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteInvMap_eq_zero
+/-- **Global reciprocity for the isogeny Weil cup product.** Let `φ : E₁ → E₂` be an isogeny of
+elliptic curves over a number field `K`, of degree `n`, and let `a ∈ H¹(K, E₁[φ])` and
+`b ∈ H¹(K, E₂[φ̂])`. The local Tate pairings of their restrictions at the finite places and the
+archimedean local Tate pairings at the infinite places, each embedded in `ℚ/ℤ` by `k ↦ k/n`, sum
+to zero. The finite-place sum has finite support by
+`TauCeti.Isogeny.hasFiniteSupport_localTateKerWeilPairing_kerRes`. All choices of embeddings of
+separable closures are allowed, independently at each place. -/
+theorem finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero
     (τ : ∀ v : HeightOneSpectrum (𝓞 K),
       SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
     (τ' : ∀ w : InfinitePlace K, SeparableClosure K →ₐ[K] SeparableClosure w.Completion) :
-    (∑ᶠ v : HeightOneSpectrum (𝓞 K),
-      ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
-        ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-          (φ.isUnit_degree_baseChange (v.adicCompletion K))
-          (φ.kerRes (τ v) a)
-          (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-            (φ.dual.kerRes (τ v) b)))) +
-      ∑ w : InfinitePlace K, infiniteInvMap w
-        ((φ.baseChange w.Completion).kerWeilBrauerPairing
-          (φ.isUnit_degree_baseChange w.Completion)
-          (φ.kerRes (τ' w) a)
-          (kerH1Congr (φ.ofIsogeny_dual_baseChange w.Completion)
-            (φ.dual.kerRes (τ' w) b))) = 0 := by
-  let x := φ.kerWeilBrauerPairing φ.isUnit_degree a b
-  have hfin : (∑ᶠ v : HeightOneSpectrum (𝓞 K),
-      ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
-        ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-          (φ.isUnit_degree_baseChange (v.adicCompletion K))
-          (φ.kerRes (τ v) a)
-          (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-            (φ.dual.kerRes (τ v) b)))) =
-      ∑ᶠ v : HeightOneSpectrum (𝓞 K), finiteInvAt K v x :=
-    finsum_congr fun v ↦ (φ.finiteInvAt_kerWeilBrauerPairing a b v (τ v)).symm
-  have hinf : (∑ w : InfinitePlace K, infiniteInvMap w
-      ((φ.baseChange w.Completion).kerWeilBrauerPairing
-        (φ.isUnit_degree_baseChange w.Completion)
-        (φ.kerRes (τ' w) a)
-        (kerH1Congr (φ.ofIsogeny_dual_baseChange w.Completion)
-          (φ.dual.kerRes (τ' w) b)))) =
-      ∑ w : InfinitePlace K, infiniteInvAt K w x :=
-    Finset.sum_congr rfl fun w _ ↦
-      ((infiniteInvAt_apply K w x).trans
-        (congrArg (infiniteInvMap w)
-          (φ.brBaseChange_kerWeilBrauerPairing φ.isUnit_degree (τ' w) a b))).symm
-  exact (congrArg₂ (· + ·) hfin hinf).trans
-    (finsum_finiteInvAt_add_sum_infiniteInvAt_eq_zero K x)
+    (∑ᶠ v : HeightOneSpectrum (𝓞 K), ZMod.toRatAddCircle
+      (φ.baseChange (v.adicCompletion K)).degree
+      ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
+        (isUnit_natCast_of_ne_zero (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
+        (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b))) +
+      ∑ w : InfinitePlace K, ZMod.toRatAddCircle (φ.baseChange w.Completion).degree
+        ((φ.baseChange w.Completion).infiniteTateKerWeilPairing (φ.kerRes (τ' w) a)
+          (φ.dualKerRes (τ' w) b)) = 0 := by
+  classical
+  let x := φ.kerWeilBrauerPairing (isUnit_natCast_of_ne_zero φ.degree_ne_zero) a b
+  have hsum := sumLocalInv_brLocalization_eq_zero K x
+  rw [sumLocalInv_brLocalization K x (S := brauerSupport K x) (fun _ hv ↦ hv)] at hsum
+  simp only [← φ.finiteInvAt_kerWeilBrauerPairing a b _ (τ _),
+    ← φ.infiniteInvAt_kerWeilBrauerPairing a b (isUnit_natCast_of_ne_zero φ.degree_ne_zero) _
+      (τ' _)]
+  rwa [finsum_eq_sum_of_support_subset _ (s := brauerSupport K x)
+    (fun v hv ↦ (mem_brauerSupport K).2 hv)]
 
 end
+
+variable [NumberField K]
 
 /-- **Finite-`S` global reciprocity in `ℚ/ℤ`.** Let `S` be a finite set of finite places of `K`.
 If `a ∈ H¹(K, E₁[φ])` and `b ∈ H¹(K, E₂[φ̂])` satisfy their respective local Selmer conditions at
@@ -304,50 +313,45 @@ theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
       ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
           (φ.isUnit_degree_baseChange (v.adicCompletion K))
-          (φ.kerRes (τ v) a)
-          (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-            (φ.dual.kerRes (τ v) b))) = 0 := by
-  have hrec := φ.finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteInvMap_eq_zero
-    a b τ τ'
-  have harch : ∑ w : InfinitePlace K, infiniteInvMap w
-      ((φ.baseChange w.Completion).kerWeilBrauerPairing
-        (φ.isUnit_degree_baseChange w.Completion)
-        (φ.kerRes (τ' w) a)
-        (kerH1Congr (φ.ofIsogeny_dual_baseChange w.Completion)
-          (φ.dual.kerRes (τ' w) b))) = 0 := by
+          (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b)) = 0 := by
+  have hrec :=
+    φ.finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero
+      a b τ τ'
+  have harch : ∑ w : InfinitePlace K, ZMod.toRatAddCircle (φ.baseChange w.Completion).degree
+      ((φ.baseChange w.Completion).infiniteTateKerWeilPairing (φ.kerRes (τ' w) a)
+        (φ.dualKerRes (τ' w) b)) = 0 := by
     apply Finset.sum_eq_zero
     intro w _
-    exact w.isReal_or_isComplex.elim
-      (fun hw ↦ (φ.baseChange w.Completion).infiniteInvMap_kerWeilBrauerPairing_eq_zero_of_mem_ker
-        w _ (hinf w hw).1
-        ((Hom.mem_ker_explicitCoeff1_kerCoeffIncl_kerH1Congr_iff _).mpr (hinf w hw).2))
-      (fun hw ↦ infiniteInvMap_eq_zero_of_isComplex w hw _)
-  have hsupp : (∑ᶠ v : HeightOneSpectrum (𝓞 K),
-      ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
+    rcases w.isReal_or_isComplex with hw | hw
+    · have hb : φ.dualKerRes (τ' w) b ∈
+          (explicitCoeff1 _ _ (ofIsogeny (φ.baseChange w.Completion).dual).kerCoeffIncl
+            continuous_of_discreteTopology).ker := by
+        rw [AddMonoidHom.mem_ker, φ.explicitCoeff1_kerCoeffIncl_dualKerRes]
+        exact (hinf w hw).2
+      rw [(φ.baseChange w.Completion).infiniteTateKerWeilPairing_eq_zero_of_mem_ker
+        (hinf w hw).1 hb, map_zero]
+    · rw [(φ.baseChange w.Completion).infiniteTateKerWeilPairing_of_isComplex hw,
+        AddMonoidHom.zero_apply, AddMonoidHom.zero_apply, map_zero]
+  have hsupp : (∑ᶠ v : HeightOneSpectrum (𝓞 K), ZMod.toRatAddCircle
+      (φ.baseChange (v.adicCompletion K)).degree
+      ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
+        (isUnit_natCast_of_ne_zero (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
+        (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b))) =
+      ∑ v ∈ S, ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
           (φ.isUnit_degree_baseChange (v.adicCompletion K))
-          (φ.kerRes (τ v) a)
-          (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-            (φ.dual.kerRes (τ v) b)))) =
-      ∑ v ∈ S,
-        ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
-          ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-            (φ.isUnit_degree_baseChange (v.adicCompletion K))
-            (φ.kerRes (τ v) a)
-            (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-              (φ.dual.kerRes (τ v) b))) := by
+          (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b)) := by
     refine finsum_eq_sum_of_support_subset _ fun v hv ↦ ?_
     by_contra hvS
     apply hv
-    have hv₀ : ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-        (φ.isUnit_degree_baseChange (v.adicCompletion K))
-        (φ.kerRes (τ v) a)
-        (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-          (φ.dual.kerRes (τ v) b))) = 0 :=
-      (φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing_eq_zero_of_mem_ker _
-        (hfin v hvS).1
-        ((Hom.mem_ker_explicitCoeff1_kerCoeffIncl_kerH1Congr_iff _).mpr (hfin v hvS).2)
-    exact (congrArg (ZMod.toRatAddCircle _) hv₀).trans (map_zero _)
+    have hb : φ.dualKerRes (τ v) b ∈
+        (explicitCoeff1 _ _ (ofIsogeny (φ.baseChange (v.adicCompletion K)).dual).kerCoeffIncl
+          continuous_of_discreteTopology).ker := by
+      rw [AddMonoidHom.mem_ker, φ.explicitCoeff1_kerCoeffIncl_dualKerRes]
+      exact (hfin v hvS).2
+    dsimp only
+    rw [(φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing_eq_zero_of_mem_ker _
+      (hfin v hvS).1 hb, map_zero]
   exact ((add_zero _).symm.trans ((congrArg₂ (· + ·) hsupp.symm harch.symm).trans hrec))
 
 /-- **Finite-`S` global reciprocity in `ℤ/(deg φ)ℤ`.** Under the same local hypotheses outside `S`
@@ -379,14 +383,10 @@ theorem sum_ringEquivCongr_localTateKerWeilPairing_eq_zero
       ZMod.ringEquivCongr (φ.degree_baseChange (v.adicCompletion K))
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
           (φ.isUnit_degree_baseChange (v.adicCompletion K))
-          (φ.kerRes (τ v) a)
-          (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-            (φ.dual.kerRes (τ v) b))) = 0 := by
+          (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b)) = 0 := by
   apply ZMod.toRatAddCircle_injective φ.degree
   rw [map_zero, map_sum]
   simp_rw [ZMod.toRatAddCircle_ringEquivCongr]
   exact φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero τ τ' S hfin hinf
 
 end TauCeti.Isogeny
-
-end

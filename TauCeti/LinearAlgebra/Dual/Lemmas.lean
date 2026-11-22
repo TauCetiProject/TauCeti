@@ -15,21 +15,28 @@ import TauCeti.LinearAlgebra.LinearIndependent.Extend
 # Linear functionals and hyperplanes
 
 A functional `f` with `f x = 1` splits a module into the line through `x` and the kernel of `f`.
-This file records the projection `id - f(·) • x` that this splitting defines, and the dimension
-count for the trace of `ker f` on a subspace on which `f` does not vanish. A basis `X` with
-`f (X j) ≠ 0` yields a basis of `ker f` by moving each other `X i` into `ker f` along `X j`.
+This file records the projection `id - f(·) • x` that this splitting defines, the factorization
+of `r • id` through `f` when `r` annihilates `ker f`, and the dimension count for the trace of
+`ker f` on a subspace on which `f` does not vanish. A basis `X` with `f (X j) ≠ 0` yields a basis
+of `ker f` by moving each other `X i` into `ker f` along `X j`.
 A codimension-one subspace, even in an infinite-dimensional ambient space, is the kernel
 of a nonzero functional. Since functionals separate points, a vector space whose endomorphism
 algebra is finite-dimensional is itself finite-dimensional.
 Over a field, a linearly independent family of vectors has a biorthogonal family of functionals,
 and on a finite-dimensional space a linearly independent family of functionals has a biorthogonal
 family of vectors. Linearly independent functionals, as many as the dimension, span the dual space
-and so separate points.
+and so separate points. Conversely, a separating family of functionals on a finite-dimensional
+space contains such a family, which gives coordinates on the space.
 
 ## Main results
 
 * `Module.Dual.ker_id_sub_smulRight`: if `f x = 1`, the kernel of `id - f(·) • x` is the line
   through `x`.
+* `Module.Dual.smulRight_smul_eq_smul_id`: if `f x = 1` and `r` annihilates `ker f`, then
+  `r • id` factors through `f` as `y ↦ (r • f) y • x`.
+* `Module.Dual.linearIndependent_iff_apply_basis`: a family of forms is linearly independent
+  exactly when the family of its coefficient vectors with respect to a basis is.
+* `Module.Dual.eval_eq_applyₗ`: evaluation into the double dual is `LinearMap.applyₗ`.
 * `Module.Dual.linearIndependent_proj` and `Module.Dual.span_range_proj_eq_top`: the coordinate
   projections on `ι → R` are linearly independent in the dual space, and span it when `ι` is
   finite.
@@ -71,6 +78,8 @@ and so separate points.
 * `Module.Dual.span_range_proj` and `LinearIndependent.exists_linearIndependent_sumElim_proj`: the
   coordinate forms span the dual of `Rⁱ`, so over a field a linearly independent family of forms
   extends by coordinate forms to a basis of the dual.
+* `Module.Dual.exists_bijective_pi_of_iInf_ker_eq_bot`: on a finite-dimensional space, a family
+  of functionals with no common zero but `0` contains `finrank K V` members that form coordinates.
 * `Matrix.of_apply_eq_mul_transpose_toMatrix'_pi` and `Matrix.det_of_apply_eq_det_mul_det_pi`:
   evaluating linear forms `l` on `ι → R` against vectors `x` multiplies `Matrix.of x` on the right
   by `(LinearMap.toMatrix' (LinearMap.pi l))ᵀ`, so for `#ι` forms and `#ι` vectors its determinant
@@ -98,9 +107,49 @@ theorem ker_id_sub_smulRight (f : Dual K V) {x : V} (hfx : f x = 1) :
 
 end Semiring
 
+section CommRing
+
+variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+
+/-- If `f x = 1` and `r` annihilates the kernel of `f`, then multiplication by `r` factors through
+`f`: `r • y = (r • f) y • x`, since `y - f y • x` lies in the kernel of `f`. -/
+theorem smulRight_smul_eq_smul_id (f : Dual R V) {x : V} (hfx : f x = 1) {r : R}
+    (hr : ∀ y ∈ LinearMap.ker f, r • y = 0) :
+    LinearMap.smulRight (r • f) x = r • LinearMap.id := by
+  ext y
+  have h := hr (y - f y • x) (by simp [hfx])
+  rw [smul_sub, sub_eq_zero] at h
+  simp [h, smul_smul]
+
+end CommRing
+
 section CommSemiring
 
+section Basis
+
+variable {R M ι κ : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- A family of forms is linearly independent exactly when the family of their coefficient
+vectors, the values on a basis, is. -/
+theorem linearIndependent_iff_apply_basis (b : Basis ι R M) {L : κ → Dual R M} :
+    LinearIndependent R L ↔ LinearIndependent R (fun i j ↦ L i (b j)) := by
+  let e : Dual R M ≃ₗ[R] (ι → R) := (b.constr R).symm
+  have he : (fun i j ↦ L i (b j)) = e ∘ L := by
+    ext
+    simp [e]
+  rw [he]
+  exact (e.toLinearMap.linearIndependent_iff_of_injOn e.injective.injOn).symm
+
+end Basis
+
+section Proj
+
 variable (R ι : Type*) [CommSemiring R]
+
+/-- Evaluation into the double dual is evaluation into the double `R`-valued `Hom`. -/
+theorem eval_eq_applyₗ (M : Type*) [AddCommMonoid M] [Module R M] :
+    Dual.eval R M = LinearMap.applyₗ :=
+  LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
 
 /-- The coordinate projections on `ι → R` are linearly independent in the dual space. -/
 theorem linearIndependent_proj :
@@ -117,6 +166,8 @@ theorem span_range_proj_eq_top [Finite ι] :
     ext i x
     simp
   exact h ▸ (Pi.basisFun R ι).dualBasis.span_eq
+
+end Proj
 
 end CommSemiring
 
@@ -457,6 +508,30 @@ theorem det_pi_ne_zero {K ι : Type*} [Field K] [Finite ι]
     (Module.End.isUnit_iff (LinearMap.pi l) |>.mpr hl.pi_bijective)).ne_zero
 
 end LinearIndependent
+
+namespace Module.Dual
+
+variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- **Coordinates from separating functionals.** On a finite-dimensional space, a family of
+functionals with no common zero but `0` contains `finrank K V` members that assemble into a
+linear isomorphism `V ≃ K^(finrank K V)`. -/
+theorem exists_bijective_pi_of_iInf_ker_eq_bot [FiniteDimensional K V] (L : ι → Dual K V)
+    (h : ⨅ i, LinearMap.ker (L i) = ⊥) :
+    ∃ c : Fin (finrank K V) → ι, Function.Bijective (LinearMap.pi (L ∘ c)) := by
+  have hspan : Submodule.span K (Set.range L) = ⊤ := Submodule.eq_top_iff'.mpr fun f ↦
+    FiniteDimensional.mem_span_of_iInf_ker_le_ker (by simp [h])
+  obtain ⟨κ, a, -, hspan', hli⟩ := exists_linearIndependent' K L
+  rw [hspan] at hspan'
+  let e : κ ≃ Fin (finrank K V) := (Basis.mk hli hspan'.ge).indexEquiv (finBasis K V).dualBasis
+  refine ⟨a ∘ e.symm, ?_⟩
+  have hinj : Function.Injective (LinearMap.pi (L ∘ a ∘ e.symm)) :=
+    (injective_iff_map_eq_zero _).mpr fun x hx ↦
+      (hli.comp _ e.symm.injective).eq_zero_of_forall_apply_eq_zero (by simp) fun i ↦
+        congrFun hx i
+  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by simp)).mp hinj⟩
+
+end Module.Dual
 
 namespace Matrix
 

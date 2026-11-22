@@ -42,6 +42,10 @@ near the diagonal of properly supported operators.
   diagonal, a symbol of order `m`, with the Leibniz rules `TauCeti.Amplitude.spatialDeriv_diagonal`
   and `TauCeti.Amplitude.frequencyDeriv_diagonal`.
 * `TauCeti.Amplitude.ofRight`: the amplitude `b(y, ξ)` of the right quantization of a symbol `b`.
+* `TauCeti.Amplitude.ofBoundedFrequencySupport`: a smooth coefficient vanishing at all large
+  frequencies, an amplitude of every order; so a smooth coefficient agreeing with an amplitude at
+  all large frequencies is an amplitude of the same order
+  (`TauCeti.Amplitude.exists_coefficient_eq_of_forall_le_norm`).
 * `TauCeti.Amplitude.smulPositions`: the product `φ(x, y) a(x, y, ξ)` with a smooth function of the
   positions, an amplitude of the same order; cutoffs `φ(x, y) = χ(x - y)` localize the kernel near
   the diagonal.
@@ -89,6 +93,24 @@ theorem amplitudeDirections_def (α γ β : List (Fin n)) :
       γ.map (fun j ↦ (0, EuclideanSpace.single j 1, 0)) ++
         β.map (fun j ↦ (0, 0, EuclideanSpace.single j 1)) := by
   simp [amplitudeDirections, mixedDirections_def, Function.comp_def, List.append_assoc]
+
+/-- Appending an output-position direction, when there are no other directions. -/
+theorem amplitudeDirections_append_singleton_left (α : List (Fin n)) (j : Fin n) :
+    amplitudeDirections (α ++ [j]) [] [] =
+      amplitudeDirections α [] [] ++ [(EuclideanSpace.single j 1, 0, 0)] := by
+  simp [amplitudeDirections_def, Prod.mk_zero_zero]
+
+/-- Appending an input-position direction, when there are no frequency directions. -/
+theorem amplitudeDirections_append_singleton_mid (α γ : List (Fin n)) (j : Fin n) :
+    amplitudeDirections α (γ ++ [j]) [] =
+      amplitudeDirections α γ [] ++ [(0, EuclideanSpace.single j 1, 0)] := by
+  simp [amplitudeDirections_def]
+
+/-- Appending a frequency direction. -/
+theorem amplitudeDirections_append_singleton_right (α γ β : List (Fin n)) (j : Fin n) :
+    amplitudeDirections α γ (β ++ [j]) =
+      amplitudeDirections α γ β ++ [(0, 0, EuclideanSpace.single j 1)] := by
+  simp [amplitudeDirections_def]
 
 @[simp]
 theorem length_amplitudeDirections (α γ β : List (Fin n)) :
@@ -361,6 +383,86 @@ theorem iteratedFDerivAlong_amplitudeDirections_nil_ofRight (b : Symbol n V W m)
     iteratedFDerivAlong_comp_of_hasFDerivAt (fun _ ↦ hasFDerivAt_snd) b.contDiff_coefficient _
       (by simp), map_snd_amplitudeDirections_nil,
     ← mixedDeriv_eq_iteratedFDerivAlong _ _ (b.contDiff_coefficient.of_le (by simp))]
+
+/-! ### Coefficients with bounded frequency support -/
+
+section BoundedFrequencySupport
+
+/-- A smooth coefficient vanishing at every frequency of norm at least `R` satisfies the
+amplitude estimates of every order. -/
+private theorem exists_bound_of_forall_le_norm_eq_zero
+    {f : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
+    (hf : ContDiff ℝ ∞ f) (R : ℝ) (hR : ∀ x y ξ, R ≤ ‖ξ‖ → f (x, y, ξ) = 0) (s : ℝ)
+    {K : Set (CoordinateSpace n × CoordinateSpace n)} (hK : IsCompact K)
+    (ds : List (CoordinateSpace n × CoordinateSpace n × CoordinateSpace n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x y, (x, y) ∈ K → ∀ ξ,
+      ‖iteratedFDerivAlong ℝ ds f (x, y, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
+  -- On `K × closedBall 0 R` the continuous quotient of the derivative by the weight is bounded;
+  -- beyond the radius `R` the coefficient vanishes on a neighbourhood, and so do its derivatives.
+  have hw : Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
+      (1 + ‖q.2‖ ^ 2) ^ (s / 2) :=
+    (continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun q ↦
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖q.2‖ ^ 2).ne'
+  have hD : Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
+      ‖iteratedFDerivAlong ℝ ds f (q.1.1, q.1.2, q.2)‖ :=
+    ((hf.iteratedFDerivAlong (m := 0) ds (by simp)).continuous.comp (by fun_prop)).norm
+  obtain ⟨M, hM⟩ := (hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R))
+    |>.exists_bound_of_continuousOn (hD.div hw fun q ↦ (rpow_weight_pos q.2 _).ne').continuousOn
+  refine ⟨max M 0, le_max_right _ _, fun x y hxy ξ ↦ ?_⟩
+  rcases le_or_gt ‖ξ‖ R with hξ | hξ
+  · have h := hM ((x, y), ξ) ⟨hxy, mem_closedBall_zero_iff.2 hξ⟩
+    rw [Real.norm_eq_abs] at h
+    rw [← div_le_iff₀ (rpow_weight_pos ξ _)]
+    exact (le_abs_self _).trans (h.trans (le_max_left M 0))
+  · have hzero : f =ᶠ[𝓝 (x, y, ξ)] 0 := by
+      filter_upwards [(isOpen_lt continuous_const
+        (continuous_norm.comp (continuous_snd.comp continuous_snd))).mem_nhds hξ] with q hq
+      exact hR q.1 q.2.1 q.2.2 hq.le
+    rw [iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero hzero, norm_zero]
+    exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
+
+/-- A smooth coefficient vanishing at every frequency of norm at least `R`, such as the difference
+of a coefficient and an amplitude agreeing at large frequencies, is an amplitude of every order
+`m`. -/
+def ofBoundedFrequencySupport
+    (f : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ContDiff ℝ ∞ f) (R : ℝ) (hR : ∀ x y ξ, R ≤ ‖ξ‖ → f (x, y, ξ) = 0) :
+    Amplitude n V W m where
+  coefficient := f
+  contDiff_coefficient := hf
+  exists_bound _ hK α γ β :=
+    exists_bound_of_forall_le_norm_eq_zero hf R hR _ hK (amplitudeDirections α γ β)
+
+@[simp]
+theorem coefficient_ofBoundedFrequencySupport
+    (f : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ContDiff ℝ ∞ f) (R : ℝ) (hR : ∀ x y ξ, R ≤ ‖ξ‖ → f (x, y, ξ) = 0) :
+    (ofBoundedFrequencySupport f hf R hR : Amplitude n V W m).coefficient = f :=
+  (rfl)
+
+/-- A smooth coefficient that agrees with an amplitude `b` of order `m' ≤ m` at all frequencies of
+norm at least `R` is an amplitude of order `m`: the difference vanishes at large frequencies. -/
+theorem exists_coefficient_eq_of_forall_le_norm
+    {f : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
+    (hf : ContDiff ℝ ∞ f) {m' : ℝ} (b : Amplitude n V W m') (hm : m' ≤ m) (R : ℝ)
+    (h : ∀ x y ξ, R ≤ ‖ξ‖ → f (x, y, ξ) = b.coefficient (x, y, ξ)) :
+    ∃ c : Amplitude n V W m, c.coefficient = f := by
+  -- `f` is `b` plus the difference `f - b`, an amplitude of every order.
+  have hg : ContDiff ℝ ∞ (f - b.coefficient) := hf.sub b.contDiff_coefficient
+  let d : Amplitude n V W m := ofBoundedFrequencySupport (f - b.coefficient) hg R
+    fun x y ξ hξ ↦ sub_eq_zero.2 (h x y ξ hξ)
+  refine ⟨⟨f, hf, fun K hK α γ β ↦ ?_⟩, rfl⟩
+  obtain ⟨C, hC0, hC⟩ := b.exists_bound K hK α γ β
+  obtain ⟨D, hD0, hD⟩ := d.exists_bound K hK α γ β
+  refine ⟨C + D, add_nonneg hC0 hD0, fun x y hxy ξ ↦ ?_⟩
+  have e : f = b.coefficient + d.coefficient := by simp [d]
+  rw [e, iteratedFDerivAlong_add b.contDiff_coefficient d.contDiff_coefficient _ (by simp),
+    Pi.add_apply, add_mul]
+  exact (norm_add_le _ _).trans (add_le_add ((hC x y hxy ξ).trans
+    (mul_le_mul_of_nonneg_left (rpow_weight_le_rpow_weight ξ (by linarith)) hC0))
+    (hD x y hxy ξ))
+
+end BoundedFrequencySupport
 
 /-! ### Multiplication by functions of the positions -/
 
@@ -699,6 +801,23 @@ theorem HasProperInputSupport.exists_bound {a : Amplitude n V W m}
 
 /-! ### The Fourier transform in the input position -/
 
+/-- The derivatives of the input-position slices of an amplitude with proper input support grow
+at most like `⟨ξ⟩ ^ m`, uniformly for output positions in a compact set and all input positions. -/
+theorem HasProperInputSupport.exists_norm_iteratedFDeriv_slice_le {a : Amplitude n V W m}
+    (ha : a.HasProperInputSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (k : ℕ) :
+    ∃ D, 0 ≤ D ∧ ∀ x ∈ K, ∀ y ξ,
+      ‖iteratedFDeriv ℝ k (fun y ↦ a.coefficient (x, y, ξ)) y‖ ≤
+        D * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  choose C hC0 hC using fun r : Fin k → Fin n ↦ ha.exists_bound hK [] (List.ofFn r) []
+  refine ⟨∑ r, C r, Finset.sum_nonneg fun r _ ↦ hC0 r, fun x hx y ξ ↦ ?_⟩
+  have hsmooth : ContDiff ℝ ∞ fun y ↦ a.coefficient (x, y, ξ) :=
+    a.contDiff_coefficient.comp (by fun_prop)
+  rw [Finset.sum_mul]
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (hsmooth.of_le (by simp)) y).trans
+    (Finset.sum_le_sum fun r _ ↦ ?_)
+  rw [coordinateDeriv_slice_snd]
+  simpa using hC r x hx y ξ
+
 /-- The `L¹` norms of the derivatives of the input-position slices of an amplitude with proper
 input support grow at most like `⟨ξ⟩ ^ m`, uniformly for output positions in a compact set. -/
 private theorem HasProperInputSupport.exists_integral_norm_iteratedFDeriv_slice_le
@@ -708,22 +827,15 @@ private theorem HasProperInputSupport.exists_integral_norm_iteratedFDeriv_slice_
       ∫ y, ‖iteratedFDeriv ℝ k (fun y ↦ a.coefficient (x, y, ξ)) y‖ ≤
         B * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
   obtain ⟨L, hL, hLa⟩ := ha K hK
-  choose C hC0 hC using fun r : Fin k → Fin n ↦ ha.exists_bound hK [] (List.ofFn r) []
-  set D := ∑ r, C r
-  have hD : 0 ≤ D := Finset.sum_nonneg fun r _ ↦ hC0 r
+  obtain ⟨D, hD, hDb⟩ := ha.exists_norm_iteratedFDeriv_slice_le hK k
   refine ⟨D * (volume L).toReal, mul_nonneg hD ENNReal.toReal_nonneg, fun x hx ξ ↦ ?_⟩
-  have hsmooth : ContDiff ℝ ∞ fun y ↦ a.coefficient (x, y, ξ) :=
-    a.contDiff_coefficient.comp (by fun_prop)
   -- The `k`-th derivative is bounded by `D ⟨ξ⟩ ^ m` and vanishes outside `L`.
   have hpt : ∀ y, ‖iteratedFDeriv ℝ k (fun y ↦ a.coefficient (x, y, ξ)) y‖ ≤
       L.indicator (fun _ ↦ D * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) y := by
     intro y
     by_cases hy : y ∈ L
-    · rw [Set.indicator_of_mem hy, Finset.sum_mul]
-      refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (hsmooth.of_le (by simp)) y).trans
-        (Finset.sum_le_sum fun r _ ↦ ?_)
-      rw [coordinateDeriv_slice_snd]
-      simpa using hC r x hx y ξ
+    · rw [Set.indicator_of_mem hy]
+      exact hDb x hx y ξ
     · rw [Set.indicator_of_notMem hy, norm_le_zero_iff]
       exact image_eq_zero_of_notMem_tsupport fun hmem ↦ hy <|
         (closure_minimal (s := Function.support fun y ↦ a.coefficient (x, y, ξ))

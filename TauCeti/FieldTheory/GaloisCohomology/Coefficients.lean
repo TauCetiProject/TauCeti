@@ -144,6 +144,15 @@ instance : TopologicalSpace (KummerCoeff K n) := ⊥
 
 instance : DiscreteTopology (KummerCoeff K n) := ⟨rfl⟩
 
+variable {K n} in
+/-- Two Kummer coefficients are equal as soon as their underlying elements of the separable
+closure are. -/
+@[ext]
+theorem KummerCoeff.ext {x y : KummerCoeff K n}
+    (h : ((x.toMul : (SeparableClosure K)ˣ) : SeparableClosure K) =
+      ((y.toMul : (SeparableClosure K)ˣ) : SeparableClosure K)) : x = y :=
+  Additive.toMul.injective <| rootsOfUnity.coe_injective h
+
 /-- **`μₙ` is a discrete `G_K`-module**: the stabilizer of a root of unity is the stabilizer of
 the underlying unit of `Kˢ`, which is open. -/
 instance kummerCoeff_continuousSMul :
@@ -167,7 +176,7 @@ theorem smul_kummerCoeff_eq_self [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n
   have hx : (((x.toMul : rootsOfUnity n (SeparableClosure K)) : (SeparableClosure K)ˣ) :
       SeparableClosure K) = algebraMap K _ ζ ^ i := by
     rw [← hi, Units.val_pow_eq_pow_val, IsUnit.unit_spec]
-  refine Additive.toMul.injective (Subtype.ext (Units.ext ?_))
+  refine KummerCoeff.ext ?_
   simp only [Additive.toMul_smul, rootsOfUnity.coe_smul, AlgEquiv.smul_units_def, Units.coe_map,
     MonoidHom.coe_ofClass]
   rw [hx, map_pow, AlgEquiv.commutes]

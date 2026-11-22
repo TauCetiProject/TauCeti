@@ -55,7 +55,7 @@ open IsDedekindDomain NumberField
 namespace TauCeti.Isogeny
 
 open WeierstrassCurve TauCeti TauCeti.ContCohomology TauCeti.ClassFieldTheory
-open Hom (ofIsogeny kerH1Congr)
+open Hom (ofIsogeny)
 
 /-! ### Global orthogonality of relaxed `φ`- and `φ̂`-Selmer groups -/
 
@@ -101,9 +101,7 @@ theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_re
       ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
           (φ.isUnit_degree_baseChange (v.adicCompletion K))
-          (φ.kerRes (τ (.inl v)) a)
-          (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-            (φ.dual.kerRes (τ (.inl v)) b))) = 0 :=
+          (φ.kerRes (τ (.inl v)) a) (φ.dualKerRes (τ (.inl v)) b)) = 0 :=
   have ha' := φ.kerRes_mem_ker_of_mem_selmerGroup_relax τ S ha
   have hb' := φ.dual.kerRes_mem_ker_of_mem_selmerGroup_relax τ S hb
   φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
@@ -126,9 +124,7 @@ theorem sum_ringEquivCongr_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_re
       ZMod.ringEquivCongr (φ.degree_baseChange (v.adicCompletion K))
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
           (φ.isUnit_degree_baseChange (v.adicCompletion K))
-          (φ.kerRes (τ (.inl v)) a)
-          (kerH1Congr (φ.ofIsogeny_dual_baseChange (v.adicCompletion K))
-            (φ.dual.kerRes (τ (.inl v)) b))) = 0 :=
+          (φ.kerRes (τ (.inl v)) a) (φ.dualKerRes (τ (.inl v)) b)) = 0 :=
   have ha' := φ.kerRes_mem_ker_of_mem_selmerGroup_relax τ S ha
   have hb' := φ.dual.kerRes_mem_ker_of_mem_selmerGroup_relax τ S hb
   φ.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero
@@ -147,9 +143,7 @@ theorem localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax_singleton
     (hb : b ∈ ((φ.dual.selmerStructure τ).relax {Sum.inl v₀}).selmerGroup) :
     (φ.baseChange (v₀.adicCompletion K)).localTateKerWeilPairing
       (φ.isUnit_degree_baseChange (v₀.adicCompletion K))
-      (φ.kerRes (τ (.inl v₀)) a)
-      (kerH1Congr (φ.ofIsogeny_dual_baseChange (v₀.adicCompletion K))
-        (φ.dual.kerRes (τ (.inl v₀)) b)) = 0 := by
+      (φ.kerRes (τ (.inl v₀)) a) (φ.dualKerRes (τ (.inl v₀)) b) = 0 := by
   have ha' : a ∈ ((φ.selmerStructure τ).relax
       (Sum.inl '' (({v₀} : Finset (HeightOneSpectrum (𝓞 K))) :
         Set (HeightOneSpectrum (𝓞 K))))).selmerGroup := by

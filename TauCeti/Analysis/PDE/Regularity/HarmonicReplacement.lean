@@ -9,6 +9,8 @@ public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 public import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.PDE.WeakLaplacian
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # Harmonic replacement
@@ -44,6 +46,9 @@ bounded domain are the Dirichlet problem with boundary values in `H¹(Ω)`,
 * `TauCeti.PDE.UniformlyEllipticOn.mul_norm_gradient_sub_le_add`: the energy estimate
   `λ ‖∇(u - w)‖ ≤ ‖G‖ + L` when `a(u, v) = ⟪G, ∇v⟫ + ℓ v` with `|ℓ v| ≤ L ‖∇v‖`, as for an
   equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` with a scalar datum `f`.
+* `UniformlyEllipticOn.lintegral_enorm_gradient_sq_le_of_forall_energyFormH1_eq_divergence`:
+  the energy estimate `∫_Ω ‖∇u‖² ≤ ∫_Ω (‖F‖/λ)²` for the `H¹₀(Ω)` solution of
+  `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ`.
 * `TauCeti.PDE.exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero`: a function of `H¹(Ω)`
   that solves `Δw = 0` weakly agrees almost everywhere with a harmonic function.
 * `TauCeti.PDE.W1p.exists_harmonicOnNhd_ae_eq_gradient`: so does its weak gradient, since the
@@ -137,6 +142,42 @@ theorem UniformlyEllipticOn.mul_norm_gradient_sub_le [DecidableEq ι]
     lam * ‖W1p.gradient (u - w)‖ ≤ ‖G‖ := by
   simpa using h.mul_norm_gradient_sub_le_add ha huw hw le_rfl (ℓ := 0)
     (fun _ => by simp) fun v => by simpa using hG v
+
+/-- **The energy estimate for a divergence datum.** Let `a` be measurable and uniformly elliptic on
+`Ω` with constants `0 < λ ≤ Λ`, let `F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹₀(Ω)` be a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ`, that is `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`. Then
+`∫_Ω ‖∇u‖² ≤ ∫_Ω (‖F‖/λ)²`. This is the case `w = 0`, `G = -F` of
+`TauCeti.PDE.UniformlyEllipticOn.mul_norm_gradient_sub_le`, written with lower integrals. -/
+theorem UniformlyEllipticOn.lintegral_enorm_gradient_sq_le_of_forall_energyFormH1_eq_divergence
+    [DecidableEq ι] {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hF : MemLp F 2 (mu.restrict Omega)) {u : W1p0 mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+      -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) :
+    ∫⁻ x in Omega, ‖W1p.gradient (u : W1p mu Omega 2) x‖ₑ ^ (2 : ℝ) ∂mu ≤
+      ∫⁻ x in Omega, (‖F x‖ₑ / ENNReal.ofReal lam) ^ (2 : ℝ) ∂mu := by
+  set g := W1p.gradient (u : W1p mu Omega 2)
+  have hlam := h.pos
+  have hle : lam * ‖g‖ ≤ ‖hF.toLp F‖ := by
+    simpa [g] using h.mul_norm_gradient_sub_le ha (w := 0) (by simp)
+      (fun v => energyFormH1_zero_left _ _ _ _) (G := -hF.toLp F) fun v => by
+        rw [hu v, inner_neg_left, L2.inner_def]
+        exact congrArg Neg.neg
+          (integral_congr_ae (hF.coeFn_toLp.mono fun x hx => by simp only [hx]))
+  have hsq : ∀ {f : EuclideanSpace ℝ ι → ENNReal}, AEMeasurable f (mu.restrict Omega) →
+      ∫⁻ x in Omega, f x ^ (2 : ℝ) ∂mu = eLpNorm f 2 (mu.restrict Omega) ^ (2 : ℝ) := fun hf => by
+    simpa using (eLpNorm_rpow_eq_lintegral two_ne_zero ENNReal.ofNat_ne_top hf).symm
+  rw [hsq (Lp.aestronglyMeasurable g).eNorm, hsq (hF.aestronglyMeasurable.eNorm.div_const _)]
+  gcongr
+  -- Both `L²` norms are those of `g` and of `F / λ`.
+  rw [eLpNorm_eNorm _ (Lp.aestronglyMeasurable g), ← ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top g),
+    ← Lp.norm_def]
+  calc ENNReal.ofReal ‖g‖ ≤ ENNReal.ofReal (‖hF.toLp F‖ / lam) :=
+        ENNReal.ofReal_le_ofReal ((le_div_iff₀ hlam).2 (by linarith))
+    _ = eLpNorm (fun x => ‖F x‖ₑ / ENNReal.ofReal lam) 2 (mu.restrict Omega) := by
+        rw [ENNReal.ofReal_div_of_pos hlam, Lp.norm_toLp, ENNReal.ofReal_toReal hF.eLpNorm_ne_top,
+          eLpNorm_enorm_div_const two_ne_zero hF.aestronglyMeasurable]
 
 /-- **Weakly harmonic Sobolev functions are harmonic.** If `w ∈ H¹(Ω)` solves `Δw = 0` weakly,
 in the sense that `∫_Ω ⟨∇w, ∇φ⟩ = 0` for every test function `φ` on `Ω`, then `w` agrees almost
