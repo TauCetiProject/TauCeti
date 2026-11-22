@@ -11,7 +11,6 @@ import TauCeti.Geometry.Diffeomorphism.Congr
 import TauCeti.Geometry.Diffeomorphism.Diffeotopy.AddCircle
 import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Path
 import TauCeti.Geometry.Manifold.Instances.AddCircle.Circle
-import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 
 /-!
 # The path components of the diffeomorphism group of the circle
@@ -54,18 +53,6 @@ namespace TauCeti
 
 variable {m : ℕ∞ω}
 
-/-- The parametrization `AddCircle.diffeomorphSphere` of `S¹` carries the reflection `θ ↦ -θ` of
-`ℝ / ℤ` to the reflection `(x, y) ↦ (x, -y)`. -/
-private lemma diffeomorphSphere_neg (θ : AddCircle (1 : ℝ)) :
-    AddCircle.diffeomorphSphere 1 m (-θ) =
-      orthogonalToDiffSphere 1 m (orthogonalDiagonalReflection ℝ 1)
-        (AddCircle.diffeomorphSphere 1 m θ) := by
-  ext i : 2
-  simp only [orthogonalToDiffSphere_apply, LinearIsometryEquiv.unitSphereDiffHom_apply,
-    LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply, AddCircle.coe_diffeomorphSphere_apply,
-    AddCircle.toCircle_neg]
-  fin_cases i <;> simp [Complex.orthonormalBasisOneI_repr_apply, Matrix.mulVec_diagonal]
-
 /-- **Diffeomorphisms of the circle are isotopic to orthogonal ones.** Every `C^m` diffeomorphism
 of the circle `S¹ ⊆ ℝ²`, `m ≠ 0`, is joined in the weak Whitney topology to the restriction of an
 orthogonal transformation of `ℝ²`. -/
@@ -94,7 +81,7 @@ theorem exists_joined_orthogonalToDiffSphere_circle (hm : m ≠ 0)
     have hfρ : Diffeomorph.diffCongr ψ Ψ.final = f * ρ := by
       refine Diffeomorph.ext fun x ↦ ?_
       rw [Diffeomorph.diffCongr_apply_apply, hΨ, Function.comp_apply,
-        Diffeomorph.diffCongr_apply_apply, hψ, diffeomorphSphere_neg,
+        Diffeomorph.diffCongr_apply_apply, hψ, AddCircle.diffeomorphSphere_neg,
         Diffeomorph.apply_symm_apply, Diffeomorph.apply_symm_apply, Diffeomorph.mul_apply]
     refine ⟨(orthogonalDiagonalReflection ℝ 1)⁻¹, ?_⟩
     rw [hfρ] at hJ

@@ -9,7 +9,8 @@ public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.Geometry.Sphere.Circle
-import TauCeti.Geometry.Diffeomorphism.Sphere
+public import TauCeti.Geometry.Diffeomorphism.Sphere
+public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
@@ -44,6 +45,8 @@ circle be compared, which is done in `TauCeti.Geometry.Manifold.DeRham.Circle`.
   `AddCircle p ≃ₘ^n⟮𝓘(ℝ), 𝓡 1⟯ Circle`.
 * `AddCircle.diffeomorphSphere p n`: the `C^n` diffeomorphism from `AddCircle p` to the unit circle
   of `ℝ²` sending the class of `t` to `(cos (2π t / p), sin (2π t / p))`.
+* `AddCircle.diffeomorphSphere_neg`: `diffeomorphSphere p n` carries `θ ↦ -θ` to the reflection
+  `(x, y) ↦ (x, -y)`.
 
 ## References
 
@@ -189,6 +192,18 @@ theorem coe_diffeomorphSphere_mk (n : ℕ∞ω) (t : ℝ) :
   · simpa only [Complex.orthonormalBasisOneI_repr_apply, Fin.mk_one, Matrix.cons_val_one,
       Matrix.cons_val_fin_one]
       using Complex.exp_ofReal_mul_I_im _
+
+/-- The diffeomorphism `diffeomorphSphere p n` carries the reflection `θ ↦ -θ` of `AddCircle p`
+to the reflection `(x, y) ↦ (x, -y)` of the unit circle of `ℝ²`, the restriction of the diagonal
+reflection `TauCeti.orthogonalDiagonalReflection ℝ 1`. -/
+theorem diffeomorphSphere_neg (n : ℕ∞ω) (θ : AddCircle p) :
+    diffeomorphSphere p n (-θ) =
+      orthogonalToDiffSphere 1 n (orthogonalDiagonalReflection ℝ 1) (diffeomorphSphere p n θ) := by
+  ext i : 2
+  simp only [orthogonalToDiffSphere_apply, LinearIsometryEquiv.unitSphereDiffHom_apply,
+    LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply, coe_diffeomorphSphere_apply,
+    toCircle_neg]
+  fin_cases i <;> simp [Complex.orthonormalBasisOneI_repr_apply, Matrix.mulVec_diagonal]
 
 /-- The underlying homeomorphism of `diffeomorphSphere p n` is `AddCircle.homeomorphCircle`
 followed by the inverse of the identification `TauCeti.EuclideanSpace.sphereHomeomorphCircle` of
