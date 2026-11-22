@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Chebyshev.Growth
 
+import Mathlib.LinearAlgebra.Reflection
+
 /-!
 # Rank-two tropical denominator recurrence
 
@@ -18,8 +20,8 @@ polynomials. Under these same nonnegative-exponent and product hypotheses, all e
 are pairwise distinct, giving the infinite-denominator step in the rank-two finite-type
 obstruction. No Laurent-numerator or cluster-variable realization is asserted here.
 
-The closed form uses Mathlib's `Polynomial.Chebyshev.S` and `S_add_one`. Positivity and
-growth use `one_le_S_eval` and `nonneg_S_eval_sub_one` for the coordinate signs, and
+The closed form uses Mathlib's Chebyshev formulas for products of two linear reflections.
+Positivity and growth use `one_le_S_eval` and `nonneg_S_eval_sub_one` for the coordinate signs, and
 `S_eval_add_S_sub_one_eval_strictMono` for growth of the even first coordinates.
 
 ## Reference
@@ -37,6 +39,10 @@ open Polynomial.Chebyshev
 /-- One vector update in the rank-two denominator recurrence. -/
 def rankTwoDenominatorUpdate (k : ℤ) (u v : ℤ × ℤ) : ℤ × ℤ :=
   k • v⁺ - u
+
+/-- The vector formula uses the positive part of the current denominator vector. -/
+theorem rankTwoDenominatorUpdate_def (k : ℤ) (u v : ℤ × ℤ) :
+    rankTwoDenominatorUpdate k u v = k • v⁺ - u := by rfl
 
 /-- The coordinate formula for one denominator-vector update. -/
 @[simp] theorem rankTwoDenominatorUpdate_eq (k : ℤ) (u v : ℤ × ℤ) :
@@ -96,31 +102,94 @@ theorem rankTwoDenominatorUpdate_of_nonneg (k : ℤ) (u v : ℤ × ℤ) (hv : 0 
     rankTwoDenominatorUpdate k u v = k • v - u := by
   simp [rankTwoDenominatorUpdate, posPart_def, sup_eq_left.mpr hv]
 
-private theorem rankTwo_pair_step {b c s p q : ℤ} (hb : 0 ≤ b) (hc : 0 ≤ c)
-    (hs : 0 ≤ s) (hp : 0 ≤ p) (hq : 0 ≤ q) (h : q = (b * c - 2) * s - p)
-    (n : ℕ)
-    (hn : rankTwoDenominatorPair b c n = ((s + p, c * p), (b * s, s + p))) :
-    rankTwoDenominatorPair b c (n + 1) = ((q + s, c * s), (b * q, q + s)) := by
-  let v := rankTwoDenominatorUpdate c (s + p, c * p) (b * s, s + p)
-  have hv : v = (q + s, c * s) := by
-    dsimp only [v]
-    rw [rankTwoDenominatorUpdate_of_nonneg _ _ _
-      ⟨mul_nonneg hb hs, add_nonneg hs hp⟩]
-    apply Prod.ext <;> simp
-    · linear_combination -h
-    · ring
-  calc
+private def firstReflection (b : ℤ) : (ℤ × ℤ) ≃ₗ[ℤ] (ℤ × ℤ) :=
+  Module.reflection (x := (1, 0))
+    (f := 2 • LinearMap.fst ℤ ℤ ℤ - b • LinearMap.snd ℤ ℤ ℤ) (by simp)
+
+private def secondReflection (c : ℤ) : (ℤ × ℤ) ≃ₗ[ℤ] (ℤ × ℤ) :=
+  Module.reflection (x := (0, 1))
+    (f := 2 • LinearMap.snd ℤ ℤ ℤ - c • LinearMap.fst ℤ ℤ ℤ) (by simp)
+
+private theorem firstReflection_apply (b : ℤ) (z : ℤ × ℤ) :
+    firstReflection b z = (b * z.2 - z.1, z.2) := by
+  rw [firstReflection, Module.reflection_apply]
+  ext
+  · simp
+    ring
+  · simp
+
+private theorem secondReflection_apply (c : ℤ) (z : ℤ × ℤ) :
+    secondReflection c z = (z.1, c * z.1 - z.2) := by
+  rw [secondReflection, Module.reflection_apply]
+  ext
+  · simp
+  · simp
+    ring
+
+private theorem firstReflection_power_apply (b c : ℤ) (n : ℕ) :
+    ((firstReflection b * secondReflection c) ^ n) (1, 0) =
+      let t := b * c - 2
+      let s := (S ℤ (n : ℤ)).eval t
+      let p := (S ℤ ((n : ℤ) - 1)).eval t
+      (s + p, c * p) := by
+  unfold firstReflection secondReflection
+  rw [Module.reflection_mul_reflection_pow_apply_self _ _ n (b * c - 2) (by simp)]
+  ext <;> simp [mul_comm]
+
+private theorem secondReflection_power_apply (b c : ℤ) (n : ℕ) :
+    (((firstReflection b * secondReflection c) ^ n) * firstReflection b) (0, 1) =
+      let t := b * c - 2
+      let s := (S ℤ (n : ℤ)).eval t
+      let p := (S ℤ ((n : ℤ) - 1)).eval t
+      (b * s, s + p) := by
+  rw [mul_pow_mul]
+  unfold firstReflection secondReflection
+  rw [Module.reflection_mul_reflection_mul_reflection_pow_apply_self _ _ n
+    (b * c - 2) (by simp; ring)]
+  ext <;> simp [mul_comm]
+
+private theorem rankTwoDenominatorPair_reflection_power {b c : ℤ}
+    (hb : 0 ≤ b) (hbc : 4 ≤ b * c) (n : ℕ) :
     rankTwoDenominatorPair b c (n + 1) =
-        (v, rankTwoDenominatorUpdate b (b * s, s + p) v) := by
-      rw [rankTwoDenominatorPair_succ, hn, rankTwoDenominatorStep_eq]
-    _ = ((q + s, c * s), (b * q, q + s)) := by
-      rw [hv]
-      congr 1
-      rw [rankTwoDenominatorUpdate_of_nonneg _ _ _
-        ⟨add_nonneg hq hs, mul_nonneg hc hs⟩]
-      apply Prod.ext <;> simp
-      · ring
-      · linear_combination -h
+      (((firstReflection b * secondReflection c) ^ n) (1, 0),
+        (((firstReflection b * secondReflection c) ^ n) * firstReflection b) (0, 1)) := by
+  have hc : 0 ≤ c := (pos_of_mul_pos_right (by omega : 0 < b * c) hb).le
+  have ht : 2 ≤ b * c - 2 := by omega
+  let T := firstReflection b * secondReflection c
+  let e : ℤ × ℤ := (1, 0)
+  let o : ℤ × ℤ := firstReflection b (0, 1)
+  change rankTwoDenominatorPair b c (n + 1) = ((T ^ n) e, ((T ^ n) * firstReflection b) (0, 1))
+  simp only [mul_apply_eq_comp]
+  change rankTwoDenominatorPair b c (n + 1) = ((T ^ n) e, (T ^ n) o)
+  have he : c • o - e = T e := by
+    simp only [T, e, o, mul_apply_eq_comp, firstReflection_apply, secondReflection_apply]
+    ext <;> simp [mul_comm]
+  have ho : b • T e - o = T o := by
+    simp only [T, e, o, mul_apply_eq_comp, firstReflection_apply, secondReflection_apply]
+    ext <;> simp <;> ring_nf
+    simp
+  have he_pos (j : ℕ) : 0 ≤ (T ^ j) e := by
+    change 0 ≤ ((firstReflection b * secondReflection c) ^ j) (1, 0)
+    rw [firstReflection_power_apply]
+    exact ⟨add_nonneg (le_trans zero_le_one (one_le_S_eval ht j)) (nonneg_S_eval_sub_one ht j),
+      mul_nonneg hc (nonneg_S_eval_sub_one ht j)⟩
+  have ho_pos (j : ℕ) : 0 ≤ (T ^ j) o := by
+    change 0 ≤ (T ^ j) (firstReflection b (0, 1))
+    rw [← mul_apply_eq_comp, secondReflection_power_apply]
+    exact ⟨mul_nonneg hb (le_trans zero_le_one (one_le_S_eval ht j)),
+      add_nonneg (le_trans zero_le_one (one_le_S_eval ht j)) (nonneg_S_eval_sub_one ht j)⟩
+  induction n with
+  | zero => simp [e, o, firstReflection_apply]
+  | succ n ih =>
+    have he_step : rankTwoDenominatorUpdate c ((T ^ n) e) ((T ^ n) o) =
+        (T ^ (n + 1)) e := by
+      rw [rankTwoDenominatorUpdate_of_nonneg _ _ _ (ho_pos n), pow_succ,
+        mul_apply_eq_comp, ← he, map_sub, map_smul]
+    rw [rankTwoDenominatorPair_succ, ih, rankTwoDenominatorStep_eq, he_step]
+    congr 1
+    rw [rankTwoDenominatorUpdate_of_nonneg _ _ _ (he_pos (n + 1)), pow_succ,
+      mul_apply_eq_comp, ← map_smul, ← map_sub, ho,
+      ← mul_apply_eq_comp, ← pow_succ]
 
 /-- For `0 ≤ b` and `4 ≤ b * c`, the forward even and odd denominator vectors have the
 following Chebyshev closed form. -/
@@ -129,23 +198,8 @@ theorem rankTwoDenominatorPair_succ_eq_chebyshev {b c : ℤ} (hb : 0 ≤ b) (hbc
     let s := (S ℤ (n : ℤ)).eval t
     let p := (S ℤ ((n : ℤ) - 1)).eval t
     rankTwoDenominatorPair b c (n + 1) = ((s + p, c * p), (b * s, s + p)) := by
-  have hprod : 0 < b * c := lt_of_lt_of_le (by norm_num) hbc
-  have hc : 0 ≤ c := (pos_of_mul_pos_right hprod hb).le
-  dsimp only
-  let t := b * c - 2
-  have ht : 2 ≤ t := by dsimp [t]; omega
-  induction n with
-  | zero => simp [S_zero, S_neg_one]
-  | succ n ih =>
-    rw [Nat.cast_succ, add_sub_cancel_right]
-    have hs := natCast_add_one_le_S_eval (R := ℤ) ht n
-    have hq := natCast_add_one_le_S_eval (R := ℤ) ht (n + 1)
-    rw [Nat.cast_succ] at hq
-    have hstep : (S ℤ ((n : ℤ) + 1)).eval t =
-        t * (S ℤ (n : ℤ)).eval t - (S ℤ ((n : ℤ) - 1)).eval t := by
-      simpa using congrArg (fun p : Polynomial ℤ ↦ p.eval t) (S_add_one ℤ (n : ℤ))
-    exact rankTwo_pair_step hb hc (by omega) (nonneg_S_eval_sub_one ht n) (by omega)
-      hstep (n + 1) ih
+  rw [rankTwoDenominatorPair_reflection_power hb hbc, firstReflection_power_apply,
+    secondReflection_power_apply]
 
 private theorem rankTwo_forward_signs {b c : ℤ}
     (hb : 0 ≤ b) (hbc : 4 ≤ b * c) (n : ℕ) :
