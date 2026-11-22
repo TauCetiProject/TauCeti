@@ -25,7 +25,7 @@ Neither completeness nor the analytic C⋆-algebra axioms are needed for these a
 Over a (possibly nonunital) C⋆-algebra `A`, combining the algebraic laws with the norm bound
 `CStarModule.norm_smul_le` packages scalar multiplication by `a : A` as a bounded `ℂ`-linear
 operator `CStarModule.smulCLM` of operator norm at most `‖a‖` (`CStarModule.norm_smulCLM_le`),
-giving continuity of the coefficient action (`CStarModule.continuous_const_smul_coeff`).
+giving continuity of the coefficient action (`CStarModule.continuousConstSMul`).
 
 ## References
 
@@ -156,9 +156,10 @@ theorem smulCLM_apply (a : A) (x : E) : smulCLM a x = a • x :=
 theorem norm_smulCLM_le (a : A) : ‖smulCLM (E := E) a‖ ≤ ‖a‖ :=
   LinearMap.mkContinuous_norm_le _ (norm_nonneg a) _
 
-@[fun_prop]
-theorem continuous_const_smul_coeff (a : A) : Continuous fun x : E => a • x :=
-  (smulCLM (E := E) a).continuous
+variable (A E) in
+/-- Coefficient multiplication on a Hilbert `A`-module is continuous in the module variable. -/
+theorem continuousConstSMul : ContinuousConstSMul A E where
+  continuous_const_smul a := (smulCLM (E := E) a).continuous
 
 end SmulCLM
 

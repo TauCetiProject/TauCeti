@@ -240,7 +240,7 @@ end Quotient
 theorem comap_map_mk (I J : TwoSidedIdeal A) :
     TwoSidedIdeal.comap (Quotient.mk J) (TwoSidedIdeal.map (Quotient.mk J) I) = I ⊔ J := by
   ext a
-  rw [TwoSidedIdeal.mem_comap, mem_map_of_surjective (Quotient.mk_surjective J),
+  rw [TwoSidedIdeal.mem_comap, mem_map_iff_of_surjective (Quotient.mk_surjective J),
     TwoSidedIdeal.mem_sup]
   constructor
   · rintro ⟨x, hx, hxa⟩

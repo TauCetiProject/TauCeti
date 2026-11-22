@@ -17,7 +17,7 @@ This file supplements `Mathlib.RingTheory.TwoSidedIdeal.Operations` with basic l
 
 * `TwoSidedIdeal.map_le_iff_le_comap`: Galois connection between `TwoSidedIdeal.map` and
   `TwoSidedIdeal.comap`.
-* `TwoSidedIdeal.coe_map_of_surjective` and `TwoSidedIdeal.mem_map_of_surjective`: under a
+* `TwoSidedIdeal.coe_map_of_surjective` and `TwoSidedIdeal.mem_map_iff_of_surjective`: under a
   surjective nonunital ring homomorphism `f`, the pushforward ideal `TwoSidedIdeal.map f I` has
   underlying set `f '' I`.
 -/
@@ -57,7 +57,7 @@ theorem coe_map_of_surjective {f : F} (hf : Function.Surjective f) (I : TwoSided
   exact fun b hb => (TwoSidedIdeal.mem_mk' _ _ _ _ _ _ b).mp (hle hb)
 
 /-- Membership in `TwoSidedIdeal.map f I` for a surjective nonunital ring homomorphism `f`. -/
-theorem mem_map_of_surjective {f : F} (hf : Function.Surjective f) {I : TwoSidedIdeal A}
+theorem mem_map_iff_of_surjective {f : F} (hf : Function.Surjective f) {I : TwoSidedIdeal A}
     {b : B} : b ∈ TwoSidedIdeal.map f I ↔ ∃ a ∈ I, f a = b := by
   rw [← SetLike.mem_coe, coe_map_of_surjective hf, Set.mem_image]
   simp

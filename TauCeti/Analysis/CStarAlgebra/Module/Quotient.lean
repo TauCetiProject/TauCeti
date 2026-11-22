@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.Module.Action
 public import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+import TauCeti.Analysis.Normed.Module.Quotient
 
 /-!
 # Quotient Hilbert C⋆-modules by closed two-sided ideals
@@ -706,45 +707,31 @@ variable {E F : Type*}
   [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E]
   [SeminormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F]
 
-theorem norm_quotientMapCLM_apply_le (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
-    (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (v : E ⧸ idealSubmodule J E) :
-    ‖quotientMapCLM J T hT v‖ ≤ ‖T‖ * ‖v‖ := by
-  refine le_of_forall_pos_le_add fun ε hε => ?_
-  by_cases hT0 : ‖T‖ = 0
-  · obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ v
-    have hle : ‖quotientMapCLM J T hT (Submodule.Quotient.mk x)‖ ≤ 0 := by
-      simpa [hT0] using
-        (Submodule.Quotient.norm_mk_le (idealSubmodule J F) (T x)).trans (T.le_opNorm x)
-    simpa [hT0] using hle.trans hε.le
-  · have hTpos : 0 < ‖T‖ := lt_of_le_of_ne (norm_nonneg T) (Ne.symm hT0)
-    obtain ⟨x, rfl, hx⟩ := Submodule.Quotient.norm_mk_lt v (div_pos hε hTpos)
-    calc
-      ‖quotientMapCLM J T hT (Submodule.Quotient.mk x)‖
-          ≤ ‖T x‖ := Submodule.Quotient.norm_mk_le _ _
-      _ ≤ ‖T‖ * ‖x‖ := T.le_opNorm x
-      _ ≤ ‖T‖ * (‖(Submodule.Quotient.mk x : E ⧸ idealSubmodule J E)‖ + ε / ‖T‖) :=
-        mul_le_mul_of_nonneg_left hx.le hTpos.le
-      _ = ‖T‖ * ‖(Submodule.Quotient.mk x : E ⧸ idealSubmodule J E)‖ + ε := by
-        rw [mul_add, mul_div_cancel₀ _ hT0]
-
 /-- Passing to the quotient modulo `E J` does not increase operator norm:
 `‖quotientMapCLM J T hT‖ ≤ ‖T‖`. -/
 theorem norm_quotientMapCLM_le (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
     (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) :
     ‖quotientMapCLM J T hT‖ ≤ ‖T‖ :=
-  (quotientMapCLM J T hT).opNorm_le_bound (norm_nonneg T) (norm_quotientMapCLM_apply_le J T hT)
+  ((idealSubmodule J E).norm_liftQL_le ((idealSubmodule J F).mkQL.comp T) _).trans
+    ((idealSubmodule J F).norm_mkQL_comp_le T)
 
-theorem norm_quotientFactorCLM_apply_le {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂)
-    (u : E ⧸ idealSubmodule J₁ E) :
-    ‖quotientFactorCLM h u‖ ≤ ‖u‖ := by
-  refine le_of_forall_pos_le_add fun ε hε => ?_
-  obtain ⟨x, rfl, hx⟩ := Submodule.Quotient.norm_mk_lt u hε
-  exact (Submodule.Quotient.norm_mk_le (idealSubmodule J₂ E) x).trans hx.le
+theorem norm_quotientMapCLM_apply_le (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (v : E ⧸ idealSubmodule J E) :
+    ‖quotientMapCLM J T hT v‖ ≤ ‖T‖ * ‖v‖ :=
+  ((quotientMapCLM J T hT).le_opNorm v).trans
+    (mul_le_mul_of_nonneg_right (norm_quotientMapCLM_le J T hT) (norm_nonneg v))
 
 theorem norm_quotientFactorCLM_le {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) :
     ‖quotientFactorCLM (E := E) h‖ ≤ 1 :=
-  (quotientFactorCLM (E := E) h).opNorm_le_bound zero_le_one fun u => by
-    simpa only [one_mul] using norm_quotientFactorCLM_apply_le h u
+  ((idealSubmodule J₁ E).norm_liftQL_le (idealSubmodule J₂ E).mkQL _).trans
+    (idealSubmodule J₂ E).norm_mkQL_le
+
+theorem norm_quotientFactorCLM_apply_le {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂)
+    (u : E ⧸ idealSubmodule J₁ E) :
+    ‖quotientFactorCLM h u‖ ≤ ‖u‖ :=
+  ((quotientFactorCLM h).le_opNorm u).trans <| by
+    simpa only [one_mul] using
+      mul_le_mul_of_nonneg_right (norm_quotientFactorCLM_le h) (norm_nonneg u)
 
 end Seminormed
 
