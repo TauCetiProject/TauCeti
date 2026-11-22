@@ -14,7 +14,8 @@ Over a seminormed commutative ring `R`, which need not be a field, an `R`-biline
 `‖β x y‖ ≤ C * ‖x‖ * ‖y‖` is jointly continuous (`LinearMap.continuous₂_of_bound`), and so is a
 scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuousSMul_of_norm_smul_le`). For an
 `R`-algebra `S`, such a bound on the action makes the structure map bounded
-(`TauCeti.exists_norm_algebraMap_le_of_norm_smul_le`).
+(`TauCeti.exists_norm_algebraMap_le_of_norm_smul_le`, and
+`TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul` when `[IsBoundedSMul R S]`).
 
 A fibrewise linear change of coordinates `(x, v) ↦ (x, e x v)`, with `e` continuous at `a`, tends
 to `(a, 0)` at `(a, 0)` (`ContinuousAt.tendsto_prodMk_clm_apply`).
@@ -57,6 +58,15 @@ theorem TauCeti.exists_norm_algebraMap_le_of_norm_smul_le {S : Type*} [Seminorme
     ∃ C : ℝ≥0, ∀ r : R, ‖algebraMap R S r‖ ≤ C * ‖r‖ :=
   h.elim fun C hC ↦ ⟨C * ‖(1 : S)‖₊, fun r ↦ by
     simpa [Algebra.algebraMap_eq_smul_one, mul_right_comm] using hC r 1⟩
+
+/-- If `R` acts on an `R`-algebra `S` with `[IsBoundedSMul R S]`, then the structure map is
+bounded: `‖algebraMap R S r‖ ≤ C * ‖r‖` for some `C : ℝ`. -/
+theorem TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul {S : Type*} [SeminormedRing S]
+    [Algebra R S] [IsBoundedSMul R S] :
+    ∃ C : ℝ, ∀ r : R, ‖algebraMap R S r‖ ≤ C * ‖r‖ :=
+  let ⟨C, hC⟩ := TauCeti.exists_norm_algebraMap_le_of_norm_smul_le (R := R) (S := S)
+    ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩
+  ⟨C, hC⟩
 
 /-- A fibrewise linear change of coordinates `(x, v) ↦ (x, e x v)`, with `e` continuous at `a`,
 tends to `(a, 0)` at `(a, 0)`. -/

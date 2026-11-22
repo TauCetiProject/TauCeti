@@ -585,21 +585,6 @@ theorem unitsToZModPow_zero_apply (u : ℤ_[p]ˣ) : unitsToZModPow 0 u = 1 := by
   have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
   exact Subsingleton.elim _ _
 
-/-- Every ring endomorphism of `ℤ_[p]` is the identity: any ring homomorphism preserves natural
-numbers and divisibility by `p ^ n`, so it preserves truncations in `ZMod (p ^ n)` for all `n`. -/
-theorem ringHom_eq_id (φ : ℤ_[p] →+* ℤ_[p]) : φ = RingHom.id ℤ_[p] := by
-  refine toZModPow_eq_iff_ext.mp fun n ↦ ?_
-  ext x
-  simp only [RingHom.comp_apply, RingHom.id_apply, toZModPow_eq_iff_dvd_sub]
-  have h1 : (p : ℤ_[p]) ^ n ∣ x - x.appr n := dvd_sub_appr x n
-  have h2 : (p : ℤ_[p]) ^ n ∣ φ x - x.appr n := by simpa using map_dvd φ h1
-  simpa using dvd_sub h1 h2
-
-/-- The identity is the unique ring endomorphism of `ℤ_[p]`. -/
-noncomputable instance RingHom.unique : Unique (ℤ_[p] →+* ℤ_[p]) where
-  default := RingHom.id ℤ_[p]
-  uniq := ringHom_eq_id
-
 /-- Every `p`-adically separated commutative ring admits at most one ring homomorphism from `ℤ_[p]`:
 any two ring homomorphisms agree modulo `p ^ n` because every `c : ℤ_[p]` is congruent modulo
 `p ^ n` to a natural number `c.appr n`. -/
@@ -615,6 +600,19 @@ theorem ringHom_eq_of_isHausdorff {S : Type*} [CommRing S] [IsHausdorff (Ideal.s
   conv_lhs => rw [hc]
   simp only [map_add, map_natCast, map_mul, map_pow]
   ring
+
+/-- Every ring endomorphism of `ℤ_[p]` is the identity, as a specialization of
+`PadicInt.ringHom_eq_of_isHausdorff`. -/
+theorem ringHom_eq_id (φ : ℤ_[p] →+* ℤ_[p]) : φ = RingHom.id ℤ_[p] := by
+  have : IsHausdorff (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
+    rw [← maximalIdeal_eq_span_p]
+    infer_instance
+  exact ringHom_eq_of_isHausdorff φ (RingHom.id ℤ_[p])
+
+/-- The identity is the unique ring endomorphism of `ℤ_[p]`. -/
+noncomputable instance RingHom.unique : Unique (ℤ_[p] →+* ℤ_[p]) where
+  default := RingHom.id ℤ_[p]
+  uniq := ringHom_eq_id
 
 /-- Every continuous ring homomorphism `ℤ_[p] →+* K` into a Hausdorff topological semiring takes
 values in the center of `K`, because `ℕ` is dense in `ℤ_[p]` and central in `K`. -/

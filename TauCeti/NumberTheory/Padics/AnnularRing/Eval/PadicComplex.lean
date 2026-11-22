@@ -47,35 +47,35 @@ is uniformly bounded by `(p ^ (-1/4)) ^ |m|`. -/
 private theorem norm_coeff_mul_rpow_le_of_mem_Icc (x : AnnularRing p) {q : ℚ}
     (hq₁ : (1 / 4 : ℚ) ≤ q) (hq₂ : q ≤ 3 / 4) (m : ℤ) :
     ‖x.coeff m‖ * ((p : ℝ) ^ (-(q : ℝ))) ^ m ≤ ((p : ℝ) ^ (-(1 / 4 : ℝ))) ^ m.natAbs := by
-  have hp0 : (0 : ℝ) ≤ p := (p_pos (p := p)).le
+  have hp : (0 : ℝ) < p := p_pos (p := p)
+  have h1p : (1 : ℝ) ≤ p := (one_lt_p (p := p)).le
   have hq₁' : (1 / 4 : ℝ) ≤ (q : ℝ) := by simpa using (Rat.cast_le (K := ℝ)).mpr hq₁
   have hq₂' : (q : ℝ) ≤ 3 / 4 := by simpa using (Rat.cast_le (K := ℝ)).mpr hq₂
-  rw [← Real.rpow_intCast, ← Real.rpow_mul hp0, ← Real.rpow_natCast, ← Real.rpow_mul hp0]
-  rcases le_or_gt 0 m with hm | hm
-  · have habs : (m.natAbs : ℝ) = (m : ℝ) := by
-      rw [← Int.cast_natCast, Int.natAbs_of_nonneg hm]
-    have _ : (0 : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm
-    calc ‖x.coeff m‖ * (p : ℝ) ^ (-(q : ℝ) * (m : ℝ))
-        ≤ 1 * (p : ℝ) ^ (-(q : ℝ) * (m : ℝ)) :=
-          mul_le_mul_of_nonneg_right (PadicInt.norm_le_one _) (Real.rpow_nonneg hp0 _)
-      _ = (p : ℝ) ^ (-(q : ℝ) * (m : ℝ)) := one_mul _
-      _ ≤ (p : ℝ) ^ (-(1 / 4 : ℝ) * (m.natAbs : ℝ)) := by
-          rw [habs]
-          exact Real.rpow_le_rpow_of_exponent_le (one_lt_p (p := p)).le (by nlinarith)
-  · have habs : (m : ℝ) = -(m.natAbs : ℝ) := by
-      have : m = -(m.natAbs : ℤ) := by omega
-      exact_mod_cast this
-    have hcoeff : ‖x.coeff m‖ ≤ (p : ℝ) ^ (m : ℝ) := by
-      have := x.norm_coeff_le m
-      rwa [min_eq_right hm.le, ← Real.rpow_intCast] at this
-    calc ‖x.coeff m‖ * (p : ℝ) ^ (-(q : ℝ) * (m : ℝ))
-        ≤ (p : ℝ) ^ (m : ℝ) * (p : ℝ) ^ (-(q : ℝ) * (m : ℝ)) :=
-          mul_le_mul_of_nonneg_right hcoeff (Real.rpow_nonneg hp0 _)
-      _ = (p : ℝ) ^ ((m : ℝ) + -(q : ℝ) * (m : ℝ)) := (Real.rpow_add (p_pos (p := p)) _ _).symm
-      _ ≤ (p : ℝ) ^ (-(1 / 4 : ℝ) * (m.natAbs : ℝ)) := by
-          refine Real.rpow_le_rpow_of_exponent_le (one_lt_p (p := p)).le ?_
-          rw [habs]
-          nlinarith
+  set r₀ : ℝ := (p : ℝ) ^ (-(q : ℝ))
+  set r₁ : ℝ := (p : ℝ) ^ (q : ℝ)
+  have hpow : r₀ ^ m = (if 0 ≤ m then r₀ else r₁) ^ m.natAbs := by
+    rcases le_or_gt 0 m with hm | hm
+    · rw [ite_eq_left hm]
+      have hm_eq : m = (m.natAbs : ℤ) := by omega
+      conv_lhs => rw [hm_eq]
+      rw [zpow_natCast]
+    · rw [ite_eq_right hm.not_ge]
+      have hm_eq : m = -(m.natAbs : ℤ) := by omega
+      conv_lhs => rw [hm_eq]
+      rw [zpow_neg, zpow_natCast, ← inv_pow]
+      congr 1
+      dsimp only [r₀, r₁]
+      rw [← Real.rpow_neg hp.le, neg_neg]
+  have hmax : max r₀ (r₁ / p) ≤ (p : ℝ) ^ (-(1 / 4 : ℝ)) := by
+    refine max_le (Real.rpow_le_rpow_of_exponent_le h1p (by linarith)) ?_
+    have hr₁ : r₁ / p = (p : ℝ) ^ ((q : ℝ) - 1) := by
+      dsimp only [r₁]
+      rw [Real.rpow_sub_one hp.ne', div_eq_mul_inv]
+    rw [hr₁]
+    exact Real.rpow_le_rpow_of_exponent_le h1p (by linarith)
+  rw [hpow]
+  refine (norm_coeff_mul_le x (Real.rpow_nonneg hp.le _) (Real.rpow_nonneg hp.le _) m).trans ?_
+  exact pow_le_pow_left₀ (le_trans (Real.rpow_nonneg hp.le _) (le_max_left _ _)) hmax _
 
 /-- Uniform positive lower bound on `‖x.coeff m₀‖ * (p ^ (-q)) ^ m₀` over `q ∈ [1/4, 3/4]`. -/
 private theorem min_rpow_le_rpow_zpow {q : ℚ} (hq₁ : (1 / 4 : ℚ) ≤ q) (hq₂ : q ≤ 3 / 4) (m : ℤ) :
@@ -145,12 +145,15 @@ private theorem exists_rat_Icc_distinct_term_norms (x : AnnularRing p) (S : Fins
   exact Set.mem_iUnion₂.mpr ⟨(m, n),
     Finset.mem_filter.mpr ⟨Finset.mem_product.mpr ⟨hm, hn⟩, hmn⟩, hxm, heq⟩
 
-/-- **Joint injectivity on `H`**: an element of `AnnularRing p` that vanishes at every point
-`t ∈ ℂ_[p]` of the open annulus `p⁻¹ < ‖t‖ < 1` is zero. -/
-theorem eq_zero_of_forall_evalAt_padicComplex_eq_zero {x : AnnularRing p}
-    (hx : ∀ (t : ℂ_[p]) (ht₀ : (p : ℝ)⁻¹ < ‖t‖) (ht₁ : ‖t‖ < 1), evalAt t ht₀ ht₁ x = 0) :
-    x = 0 := by
-  by_contra hne
+/-- Any nonzero element `x : AnnularRing p` admits a rational subannulus radius `q ∈ [1/4, 3/4]`
+at which the term norms `‖x.coeff m‖ * (p ^ (-q)) ^ m` attain a unique positive strict maximum at
+some degree `m₁ : ℤ`. -/
+private theorem exists_rat_Icc_unique_max_term_norm {x : AnnularRing p} (hne : x ≠ 0) :
+    ∃ (q : ℚ) (m₁ : ℤ), (1 / 4 : ℚ) ≤ q ∧ q ≤ 3 / 4 ∧
+      0 < ‖x.coeff m₁‖ * ((p : ℝ) ^ (-(q : ℝ))) ^ m₁ ∧
+      ∀ m : ℤ, m ≠ m₁ →
+        ‖x.coeff m‖ * ((p : ℝ) ^ (-(q : ℝ))) ^ m <
+          ‖x.coeff m₁‖ * ((p : ℝ) ^ (-(q : ℝ))) ^ m₁ := by
   obtain ⟨m₀, hm₀⟩ : ∃ m : ℤ, x.coeff m ≠ 0 := by
     by_contra h
     push Not at h
@@ -168,6 +171,33 @@ theorem eq_zero_of_forall_evalAt_padicComplex_eq_zero {x : AnnularRing p}
   set S : Finset ℤ := Finset.Icc (-(M : ℤ)) M
   have hm₀S : m₀ ∈ S := Finset.mem_Icc.mpr ⟨by omega, by omega⟩
   obtain ⟨q, hq₁, hq₂, hq_dist⟩ := exists_rat_Icc_distinct_term_norms x S
+  let termNorm (m : ℤ) : ℝ := ‖x.coeff m‖ * ((p : ℝ) ^ (-(q : ℝ))) ^ m
+  obtain ⟨m₁, hm₁S, hm₁max⟩ := S.exists_max_image termNorm ⟨m₀, hm₀S⟩
+  have hδ_le_m₁ : δ ≤ termNorm m₁ :=
+    (mul_le_mul_of_nonneg_left (min_rpow_le_rpow_zpow hq₁ hq₂ m₀) (norm_nonneg _)).trans
+      (hm₁max m₀ hm₀S)
+  have hm₁_pos : 0 < termNorm m₁ := hδ.trans_le hδ_le_m₁
+  have hm₁_ne : x.coeff m₁ ≠ 0 := by
+    intro h0
+    simp [termNorm, h0] at hm₁_pos
+  refine ⟨q, m₁, hq₁, hq₂, hm₁_pos, fun m hm ↦ ?_⟩
+  by_cases hmS : m ∈ S
+  · exact lt_of_le_of_ne (hm₁max m hmS) fun heq ↦ hq_dist m₁ hm₁S m hmS hm.symm hm₁_ne heq.symm
+  · have hMlt : M₀ ≤ m.natAbs := by
+      simp only [S, Finset.mem_Icc, not_and_or, not_le] at hmS
+      omega
+    calc termNorm m ≤ ρ ^ m.natAbs := norm_coeff_mul_rpow_le_of_mem_Icc x hq₁ hq₂ m
+      _ ≤ ρ ^ M₀ := pow_le_pow_of_le_one hρ0.le hρ1.le hMlt
+      _ < δ := hM₀
+      _ ≤ termNorm m₁ := hδ_le_m₁
+
+/-- **Joint injectivity on `H`**: an element of `AnnularRing p` that vanishes at every point
+`t ∈ ℂ_[p]` of the open annulus `p⁻¹ < ‖t‖ < 1` is zero. -/
+theorem eq_zero_of_forall_evalAt_padicComplex_eq_zero {x : AnnularRing p}
+    (hx : ∀ (t : ℂ_[p]) (ht₀ : (p : ℝ)⁻¹ < ‖t‖) (ht₁ : ‖t‖ < 1), evalAt t ht₀ ht₁ x = 0) :
+    x = 0 := by
+  by_contra hne
+  obtain ⟨q, m₁, hq₁, hq₂, hm₁_pos, hdom⟩ := exists_rat_Icc_unique_max_term_norm hne
   obtain ⟨t, htnorm⟩ := PadicComplex.exists_norm_eq_rpow (p := p) (-q)
   rw [Rat.cast_neg] at htnorm
   have h1p : (1 : ℝ) < p := one_lt_p (p := p)
@@ -179,31 +209,16 @@ theorem eq_zero_of_forall_evalAt_padicComplex_eq_zero {x : AnnularRing p}
   have ht₁ : ‖t‖ < 1 := by
     rw [htnorm]
     exact Real.rpow_lt_one_of_one_lt_of_neg h1p (by linarith)
-  let term (m : ℤ) : ℂ_[p] := padicIntAlgebraMap p ℂ_[p] (x.coeff m) * t ^ m
-  have hterm_norm (m : ℤ) : ‖term m‖ = ‖x.coeff m‖ * ((p : ℝ) ^ (-(q : ℝ))) ^ m := by
-    simp [term, htnorm]
-  obtain ⟨m₁, hm₁S, hm₁max⟩ := S.exists_max_image (fun m ↦ ‖term m‖) ⟨m₀, hm₀S⟩
-  have hδ_le_m₁ : δ ≤ ‖term m₁‖ :=
-    (mul_le_mul_of_nonneg_left (min_rpow_le_rpow_zpow hq₁ hq₂ m₀) (norm_nonneg _)).trans
-      ((hterm_norm m₀).symm.le.trans (hm₁max m₀ hm₀S))
-  have hm₁_ne : x.coeff m₁ ≠ 0 := fun h0 ↦ by
-    have : ‖term m₁‖ = 0 := by simp [term, h0]
-    linarith
-  have hdom : ∀ m : ℤ, m ≠ m₁ → ‖term m‖ < ‖term m₁‖ := fun m hm ↦ by
-    by_cases hmS : m ∈ S
-    · refine lt_of_le_of_ne (hm₁max m hmS) fun heq ↦
-        hq_dist m₁ hm₁S m hmS hm.symm hm₁_ne ?_
-      simpa only [hterm_norm] using heq.symm
-    · have hMlt : M₀ ≤ m.natAbs := by
-        simp only [S, Finset.mem_Icc, not_and_or, not_le] at hmS
-        omega
-      calc ‖term m‖ = ‖x.coeff m‖ * ((p : ℝ) ^ (-(q : ℝ))) ^ m := hterm_norm m
-        _ ≤ ρ ^ m.natAbs := norm_coeff_mul_rpow_le_of_mem_Icc x hq₁ hq₂ m
-        _ ≤ ρ ^ M₀ := pow_le_pow_of_le_one hρ0.le hρ1.le hMlt
-        _ < δ := hM₀
-        _ ≤ ‖term m₁‖ := hδ_le_m₁
-  have heval_norm := (hasSum_evalAt t ht₀ ht₁ x).norm_eq_of_forall_norm_lt m₁ hdom
-  rw [hx t ht₀ ht₁, norm_zero] at heval_norm
+  have hterm_norm (m : ℤ) :
+      ‖padicIntAlgebraMap p ℂ_[p] (x.coeff m) * t ^ m‖ =
+        ‖x.coeff m‖ * ((p : ℝ) ^ (-(q : ℝ))) ^ m := by
+    simp [htnorm]
+  have hdom' : ∀ m : ℤ, m ≠ m₁ →
+      ‖padicIntAlgebraMap p ℂ_[p] (x.coeff m) * t ^ m‖ <
+        ‖padicIntAlgebraMap p ℂ_[p] (x.coeff m₁) * t ^ m₁‖ := fun m hm ↦ by
+    simpa only [hterm_norm] using hdom m hm
+  have heval_norm := (hasSum_evalAt t ht₀ ht₁ x).norm_eq_of_forall_norm_lt m₁ hdom'
+  rw [hx t ht₀ ht₁, norm_zero, hterm_norm] at heval_norm
   linarith
 
 /-- Two elements of `AnnularRing p` that agree at every point `t ∈ ℂ_[p]` of the open annulus

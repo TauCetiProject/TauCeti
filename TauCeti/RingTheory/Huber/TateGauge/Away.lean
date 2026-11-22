@@ -29,12 +29,15 @@ of norm `α`. None of these structures are registered as global instances.
   `π`, and `α ∈ (0, 1)` for any topology with basis `πⁿ A₀`.
 * `TauCeti.Huber.awayNormedCommRing`: the ultrametric `NormedCommRing A` induced by the
   `π`-adic Tate gauge of radius `α ∈ (0, 1)`.
+* `TauCeti.Huber.awayNormedPseudoUniformizer`: `π` as a multiplicative pseudo-uniformiser for
+  `awayNormedCommRing`.
 
 ## Main results
 
 * `TauCeti.Huber.completeSpace_awayNormedCommRing`,
   `TauCeti.Huber.isUltrametricDist_awayNormedCommRing`,
   `TauCeti.Huber.normOneClass_awayNormedCommRing`,
+  `TauCeti.Huber.awayNormedPseudoUniformizer_unit`,
   `TauCeti.Huber.isTate_awayNormedCommRing`: Banach–Tate properties of `awayNormedCommRing`.
 * `TauCeti.Huber.norm_le_one_iff_awayNormedCommRing`: the closed unit ball is the image of `A₀`.
 * `TauCeti.Huber.norm_pseudoUniformizer_zpow_mul_awayNormedCommRing`,
@@ -175,13 +178,33 @@ theorem normOneClass_awayNormedCommRing [Nontrivial A] :
   exact normOneClass_tateNormedCommRing
     (awayTateNormDatum (hasBasis_nhds_zero_awayNormedCommRing π A hπ hα₀ hα₁) hα₀ hα₁)
 
+/-- The chosen pseudo-uniformiser `π` as a multiplicative pseudo-uniformiser for the `π`-adic
+Tate gauge on `A₀[1/π]`. -/
+noncomputable def awayNormedPseudoUniformizer [Nontrivial A] :
+    letI := awayNormedCommRing π A hπ hα₀ hα₁
+    NormedRing.PseudoUniformizer A := by
+  let := awayNormedCommRing π A hπ hα₀ hα₁
+  exact tateNormedPseudoUniformizer
+    (awayTateNormDatum (hasBasis_nhds_zero_awayNormedCommRing π A hπ hα₀ hα₁) hα₀ hα₁)
+
+/-- The multiplicative pseudo-uniformiser `awayNormedPseudoUniformizer` has underlying unit
+given by the image of `π`. -/
+@[simp]
+theorem awayNormedPseudoUniformizer_unit [Nontrivial A] :
+    letI := awayNormedCommRing π A hπ hα₀ hα₁
+    (awayNormedPseudoUniformizer π A hπ hα₀ hα₁).unit =
+      (IsLocalization.Away.algebraMap_isUnit π).unit := by
+  let := awayNormedCommRing π A hπ hα₀ hα₁
+  rw [awayNormedPseudoUniformizer, tateNormedPseudoUniformizer_unit]
+  exact awayTateNormDatum_pseudoUniformizer
+    (hasBasis_nhds_zero_awayNormedCommRing π A hπ hα₀ hα₁) hα₀ hα₁
+
 /-- A nontrivial localisation `A₀[1/π]` with the `π`-adic Tate gauge is a normed Tate ring. -/
 theorem isTate_awayNormedCommRing [Nontrivial A] :
     letI := awayNormedCommRing π A hπ hα₀ hα₁
     NormedRing.IsTate A := by
   let := awayNormedCommRing π A hπ hα₀ hα₁
-  exact isTate_tateNormedCommRing
-    (awayTateNormDatum (hasBasis_nhds_zero_awayNormedCommRing π A hπ hα₀ hα₁) hα₀ hα₁)
+  exact ⟨⟨awayNormedPseudoUniformizer π A hπ hα₀ hα₁⟩⟩
 
 theorem norm_le_one_iff_awayNormedCommRing {x : A} :
     letI := awayNormedCommRing π A hπ hα₀ hα₁

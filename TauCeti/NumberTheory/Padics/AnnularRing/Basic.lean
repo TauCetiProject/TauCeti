@@ -58,6 +58,8 @@ is larger than the `p`-adic completion of `ℤ_p⟦T⟧[p/T]`, in which they ten
   `(p, T) = (T)`.
 * `TauCeti.AnnularRing.coeff_T_pow`, `TauCeti.AnnularRing.coeff_U_pow`: the normal forms of
   `T ^ n` and `U ^ n = p ^ n T ^ (-n)`.
+* `TauCeti.AnnularRing.T_pow_dvd_iff`, `TauCeti.AnnularRing.T_not_dvd_U_pow`: divisibility by
+  `T ^ n` in `H` via coefficients, and non-divisibility of `U ^ j` by `T`.
 * `TauCeti.AnnularRing.coeff_normalForm_natCast`, `TauCeti.AnnularRing.coeff_normalForm_neg_succ`:
   the coefficients of `f(T) + U g(U)`, which determine it.
 * `TauCeti.AnnularRing.one_sub_U_mul_ofPowerSeriesU_mk_one`: `(1 - U) ∑_{j ≥ 0} U ^ j = 1`.
@@ -394,6 +396,41 @@ theorem coeff_U_pow (n : ℕ) (m : ℤ) :
     by_cases hm : m = -(n + 1 : ℕ)
     · simp [hm, pow_succ']
     · rw [ite_eq_right (show ¬m + 1 = -(n : ℤ) by omega), ite_eq_right hm, mul_zero]
+
+/-- Multiplication by `T ^ n` shifts the normal form up by `n` degrees. -/
+@[simp] theorem coeff_T_pow_mul (n : ℕ) (x : AnnularRing p) (m : ℤ) :
+    (T ^ n * x).coeff m = x.coeff (m - n) := by
+  rw [coeff_mul_of_coeff_eq_zero (k := (n : ℤ)) fun i hi ↦ by simp [coeff_T_pow, hi]]
+  simp [coeff_T_pow]
+
+/-- An element of `AnnularRing p` is divisible by `T ^ n` exactly when its coefficients satisfy
+`‖x.coeff m‖ ≤ p ^ min 0 (m - n)` for every `m ∈ ℤ`. -/
+theorem T_pow_dvd_iff {n : ℕ} {x : AnnularRing p} :
+    (T : AnnularRing p) ^ n ∣ x ↔ ∀ m : ℤ, ‖x.coeff m‖ ≤ (p : ℝ) ^ min 0 (m - n) := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨y, rfl⟩ m
+    rw [coeff_T_pow_mul]
+    exact y.norm_coeff_le (m - n)
+  · refine ⟨⟨fun m ↦ x.coeff (m + n), fun m ↦ ?_⟩, ?_⟩
+    · simpa [add_sub_cancel_right] using h (m + n)
+    · ext m : 2
+      simp [coeff_T_pow_mul]
+
+/-- An element of `AnnularRing p` is divisible by `T` exactly when its coefficients satisfy
+`‖x.coeff m‖ ≤ p ^ min 0 (m - 1)` for every `m ∈ ℤ`. -/
+theorem T_dvd_iff {x : AnnularRing p} :
+    (T : AnnularRing p) ∣ x ↔ ∀ m : ℤ, ‖x.coeff m‖ ≤ (p : ℝ) ^ min 0 (m - 1) := by
+  simpa using T_pow_dvd_iff (p := p) (n := 1) (x := x)
+
+/-- No power `U ^ j` is divisible by `T` in `AnnularRing p`: its degree `-j` coefficient is `p ^ j`,
+which has norm `p ^ (-j) > p ^ (-j - 1)`. -/
+theorem T_not_dvd_U_pow (j : ℕ) : ¬(T : AnnularRing p) ∣ U ^ j := by
+  intro h
+  have hle := T_dvd_iff.mp h (-(j : ℤ))
+  rw [coeff_U_pow, ite_eq_left rfl, PadicInt.norm_p_pow, min_eq_right (by omega)] at hle
+  have hlt : (p : ℝ) ^ (-(j : ℤ) - 1) < (p : ℝ) ^ (-(j : ℤ)) :=
+    (zpow_lt_zpow_iff_right₀ (one_lt_p (p := p))).2 (by omega)
+  exact hlt.not_ge hle
 
 /-- The defining relation `T U = p` of the annular coefficient ring. -/
 @[simp] theorem T_mul_U : (T : AnnularRing p) * U = (p : AnnularRing p) := by

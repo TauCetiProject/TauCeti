@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.Basic
 public import TauCeti.NumberTheory.Padics.AnnularRing.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Away
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
@@ -38,8 +37,6 @@ series, and the `T`-adic filtration `T ^ n H` is characterized by
 
 ## Main results
 
-* `TauCeti.AnnularRing.T_pow_dvd_iff`: `T ^ n ∣ x ↔ ∀ m, ‖x.coeff m‖ ≤ p ^ min 0 (m - n)`.
-* `TauCeti.AnnularRing.T_not_dvd_U_pow`: no power `U ^ j` is divisible by `T` in `H`.
 * `TauCeti.AnnularRing.instIsAdicCompleteSpanT`, `TauCeti.AnnularRing.isAdicComplete_span_p_T`:
   `H` is `(T)`-adically and `(p, T)`-adically complete.
 * `TauCeti.AnnularRing.localizedCoeff_injective`, `TauCeti.AnnularRing.localizedCoeff_ext`,
@@ -69,42 +66,7 @@ variable {p : ℕ} [Fact p.Prime]
 
 private theorem one_lt_p : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
 
-/-! ### Divisibility by powers of `T` and `T`-adic completeness of `H` -/
-
-/-- Multiplication by `T ^ n` shifts the normal form up by `n` degrees. -/
-@[simp] theorem coeff_T_pow_mul (n : ℕ) (x : AnnularRing p) (m : ℤ) :
-    (T ^ n * x).coeff m = x.coeff (m - n) := by
-  rw [coeff_mul_of_coeff_eq_zero (k := (n : ℤ)) fun i hi ↦ by simp [coeff_T_pow, hi]]
-  simp [coeff_T_pow]
-
-/-- An element of `AnnularRing p` is divisible by `T ^ n` exactly when its coefficients satisfy
-`‖x.coeff m‖ ≤ p ^ min 0 (m - n)` for every `m ∈ ℤ`. -/
-theorem T_pow_dvd_iff {n : ℕ} {x : AnnularRing p} :
-    (T : AnnularRing p) ^ n ∣ x ↔ ∀ m : ℤ, ‖x.coeff m‖ ≤ (p : ℝ) ^ min 0 (m - n) := by
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨y, rfl⟩ m
-    rw [coeff_T_pow_mul]
-    exact y.norm_coeff_le (m - n)
-  · refine ⟨⟨fun m ↦ x.coeff (m + n), fun m ↦ ?_⟩, ?_⟩
-    · simpa [add_sub_cancel_right] using h (m + n)
-    · ext m : 2
-      simp [coeff_T_pow_mul]
-
-/-- An element of `AnnularRing p` is divisible by `T` exactly when its coefficients satisfy
-`‖x.coeff m‖ ≤ p ^ min 0 (m - 1)` for every `m ∈ ℤ`. -/
-theorem T_dvd_iff {x : AnnularRing p} :
-    (T : AnnularRing p) ∣ x ↔ ∀ m : ℤ, ‖x.coeff m‖ ≤ (p : ℝ) ^ min 0 (m - 1) := by
-  simpa using T_pow_dvd_iff (p := p) (n := 1) (x := x)
-
-/-- No power `U ^ j` is divisible by `T` in `AnnularRing p`: its degree `-j` coefficient is `p ^ j`,
-which has norm `p ^ (-j) > p ^ (-j - 1)`. -/
-theorem T_not_dvd_U_pow (j : ℕ) : ¬(T : AnnularRing p) ∣ U ^ j := by
-  intro h
-  have hle := T_dvd_iff.mp h (-(j : ℤ))
-  rw [coeff_U_pow, ite_eq_left rfl, PadicInt.norm_p_pow, min_eq_right (by omega)] at hle
-  have hlt : (p : ℝ) ^ (-(j : ℤ) - 1) < (p : ℝ) ^ (-(j : ℤ)) :=
-    (zpow_lt_zpow_iff_right₀ (one_lt_p (p := p))).2 (by omega)
-  exact hlt.not_ge hle
+/-! ### `T`-adic completeness of `H` -/
 
 /-- Congruence modulo `(T) ^ n` in `AnnularRing p` is equivalent to the shifted coefficient bound
 on the difference. -/
@@ -348,22 +310,35 @@ by `p`. -/
   congr 2
   omega
 
+/-- Cancellation for coerced integer powers of the unit `T` in `H[1/T]`:
+`T ^ (-n) * x = y ↔ x = T ^ n * y`. -/
+theorem T_zpow_neg_mul_eq_iff (n : ℤ) (x y : A) :
+    (((IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit ^ (-n) : Aˣ) : A) * x =
+        y ↔
+      x = (((IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit ^ n : Aˣ) : A) *
+        y := by
+  rw [zpow_neg, Units.inv_mul_eq_iff_eq_mul]
+
 /-- Multiplication by an integer power `T ^ k` in `H[1/T]` shifts the coefficients by `k`
 degrees. -/
 @[simp] theorem localizedCoeff_T_zpow_mul (k : ℤ) (x : A) (m : ℤ) :
     localizedCoeff p (((IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit ^ k : Aˣ) *
       x) m = localizedCoeff p x (m - k) := by
   set u : Aˣ := (IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit
-  have hu : (u : A) = algebraMap (AnnularRing p) A T := rfl
+  have hu : (u : A) = algebraMap (AnnularRing p) A T :=
+    (IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit_spec
   cases k with
   | ofNat n =>
     simp [hu]
   | negSucc n =>
-    have hinv : (u ^ Int.negSucc n : Aˣ) = (u ^ (n + 1))⁻¹ := by rw [zpow_negSucc]
-    have hmul : algebraMap (AnnularRing p) A T ^ (n + 1) * (((u ^ (Int.negSucc n) : Aˣ) : A) * x) =
+    have hinv : (((u ^ ((n + 1 : ℕ) : ℤ) : Aˣ) : A) *
+        (((u ^ Int.negSucc n : Aˣ) : A) * x)) = x := by
+      rw [Int.negSucc_eq, ← Nat.cast_add_one]
+      exact ((T_zpow_neg_mul_eq_iff (p := p) ((n + 1 : ℕ) : ℤ) x _).mp rfl).symm
+    have hmul : algebraMap (AnnularRing p) A T ^ (n + 1) * (((u ^ Int.negSucc n : Aˣ) : A) * x) =
         x := by
-      rw [hinv, ← hu, ← Units.val_pow_eq_pow_val, Units.mul_inv_cancel_left]
-    have := localizedCoeff_T_pow_mul (p := p) (n + 1) (((u ^ (Int.negSucc n) : Aˣ) : A) * x)
+      simpa only [zpow_natCast, Units.val_pow_eq_pow_val, hu] using hinv
+    have := localizedCoeff_T_pow_mul (p := p) (n + 1) (((u ^ Int.negSucc n : Aˣ) : A) * x)
       (m + ((n + 1 : ℕ) : ℤ))
     rw [hmul, add_sub_cancel_right] at this
     exact this.symm.trans (congr_arg _ (by omega))
@@ -457,16 +432,12 @@ theorem mem_awayNhd_iff_norm_localizedCoeff_le {n : ℕ} {x : A} :
     x ∈ Huber.awayNhd (T : AnnularRing p) A n ↔
       ∀ m : ℤ, ‖localizedCoeff p x m‖ ≤ (p : ℝ) ^ min 0 (m - n) := by
   rw [← T_zpow_neg_mul_mem_range_iff (p := p), Huber.mem_awayNhd, RingHom.mem_range]
-  set u : Aˣ := (IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit
-  have hinv : (u ^ (-(n : ℤ)) : Aˣ) = (u ^ n)⁻¹ := by rw [zpow_neg, zpow_natCast]
-  have hu : ((u ^ n : Aˣ) : A) = algebraMap (AnnularRing p) A (T ^ n) := by simp [u]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨a, rfl⟩
-    exact ⟨a, by rw [map_mul, ← hu, hinv, Units.inv_mul_cancel_left]⟩
-  · rintro ⟨a, ha⟩
-    refine ⟨a, ?_⟩
-    rw [map_mul, ← hu]
-    exact ((Units.inv_mul_eq_iff_eq_mul (u ^ n)).mp (hinv ▸ ha.symm)).symm
+  have hu : (((IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit ^ (n : ℤ) : Aˣ) :
+      A) = algebraMap (AnnularRing p) A (T ^ n) := by
+    rw [zpow_natCast, Units.val_pow_eq_pow_val,
+      (IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit_spec, map_pow]
+  exact exists_congr fun a ↦ by
+    rw [map_mul, ← hu, eq_comm (b := x), ← T_zpow_neg_mul_eq_iff (p := p), eq_comm]
 
 section Divergence
 
