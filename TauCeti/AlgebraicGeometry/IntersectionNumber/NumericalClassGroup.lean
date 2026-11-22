@@ -24,12 +24,10 @@ This file develops the basic structure of these quotients.
   same image in `Num(X/k)` exactly when they have the same degree on every integral closed curve.
 * Restriction to the scheme-theoretic fibre `X_s` over a point `s` of `S` induces a homomorphism
   `Num(X/S) ⟶ Num(X_s/κ(s))`, and these restrictions jointly separate the points of `Num(X/S)`.
-  Through them the degree pairing of `Num(X/S)` with the integral curves in the fibres of `f`
-  is the one of the fibres. Two classes have the same image in `Num(X/S)` exactly when they
-  have the same degree, over `κ(s)`, on every integral curve in every fibre `X_s`.
+  Two classes have the same image in `Num(X/S)` exactly when they have the same degree, over
+  `κ(s)`, on every integral curve in every fibre `X_s`.
 * Both groups are torsion-free: if `aⁿ` is numerically trivial for some `n ≠ 0`, then so is `a`,
-  since the integer `n · (a · C)` vanishes only when `(a · C)` does. Hence `Num(X/k)` and
-  `Num(X/S)` embed into their rational and real scalar extensions.
+  since the integer `n · (a · C)` vanishes only when `(a · C)` does.
 * On the projective line every numerically trivial class is trivial, so `Num(ℙ¹_k/k) ≅ ℤ`
   through the degree; for the identity of `S` every class is relatively numerically trivial, so
   `Num(S/S)` is trivial whatever `Pic S` is.
@@ -38,6 +36,9 @@ This file develops the basic structure of these quotients.
 
 * `LineBundleClass.numericalIntersectionNumber`: the intersection number `(α · C)` of a numerical
   class `α ∈ Num(X/k)` with an integral closed curve `C ⊆ X`;
+* `LineBundleClass.mk_eq_mk_iff_numericallyTrivial` and
+  `LineBundleClass.mk_eq_mk_iff_relNumericallyTrivial`: `[a] = [b]` in `Num(X/k)`, respectively
+  `Num(X/S)`, iff `a⁻¹ * b` is numerically trivial, respectively `a⁻¹ * b ≡_f 0`;
 * `LineBundleClass.mk_eq_mk_iff_forall_intersectionNumber_eq`: two classes have the same image in
   `Num(X/k)` iff they have the same degree on every integral closed curve, and
   `LineBundleClass.eq_of_forall_numericalIntersectionNumber_eq` the corresponding statement on
@@ -91,6 +92,13 @@ theorem mk_eq_mk_iff_forall_intersectionNumber_eq (a b : LineBundleClass X) :
     forall_congr' fun _ ↦ forall_congr' fun hi ↦ forall_congr' fun hC ↦ ?_
   rw [intersectionNumber_mul_of_isClosedImmersion k i hi hC,
     intersectionNumber_inv_of_isClosedImmersion k i hi hC, neg_add_eq_zero]
+
+/-- Two classes on a proper `k`-scheme have the same image in `Num(X/k)` exactly when
+`a⁻¹ * b` is numerically trivial. -/
+theorem mk_eq_mk_iff_numericallyTrivial (a b : LineBundleClass X) :
+    (a : LineBundleClass X ⧸ numericallyTrivialClasses k x) = b ↔
+      NumericallyTrivial k x (a⁻¹ * b) := by
+  rw [QuotientGroup.eq, mem_numericallyTrivialClasses]
 
 /-- A class on a proper `k`-scheme is numerically trivial exactly when its image in `Num(X/k)`
 is trivial. -/
@@ -199,6 +207,13 @@ section Relative
 
 variable {X S : Scheme.{u}} (f : X ⟶ S) [IsProper f]
 
+/-- Two classes have the same image in `Num(X/S)` exactly when `a⁻¹ * b` is relatively
+numerically trivial, `a⁻¹ * b ≡_f 0`. -/
+theorem mk_eq_mk_iff_relNumericallyTrivial (a b : LineBundleClass X) :
+    (a : LineBundleClass X ⧸ relNumericallyTrivialClasses f) = b ↔
+      RelNumericallyTrivial f (a⁻¹ * b) := by
+  rw [QuotientGroup.eq, mem_relNumericallyTrivialClasses]
+
 /-- A class is relatively numerically trivial exactly when its image in `Num(X/S)` is trivial. -/
 theorem mk_eq_one_iff_relNumericallyTrivial (a : LineBundleClass X) :
     (a : LineBundleClass X ⧸ relNumericallyTrivialClasses f) = 1 ↔ RelNumericallyTrivial f a := by
@@ -275,13 +290,6 @@ end LineBundleClass
 namespace projectiveLine
 
 variable (k : Type u) [Field k]
-
-/-- On `ℙ¹_k` the subgroup `Pic^τ(ℙ¹_k/k)` of numerically trivial classes is trivial. -/
-@[simp]
-theorem numericallyTrivialClasses_eq_bot :
-    LineBundleClass.numericallyTrivialClasses k (projectiveLine k ↘ Spec (.of k)) = ⊥ :=
-  eq_bot_iff.mpr fun a ha ↦
-    (numericallyTrivial_iff_eq_one k a).mp (LineBundleClass.mem_numericallyTrivialClasses.mp ha)
 
 /-- **The numerical group of the projective line.** The degree identifies `Num(ℙ¹_k/k)` with
 `ℤ`. -/
