@@ -49,6 +49,8 @@ almost everywhere equalities in place of pointwise ones.
 
 * `MeasureTheory.Lp.smul_eq_mul`: the product is the Hölder product at exponents `∞, ∞, ∞`.
 * `MeasureTheory.Lp.coeFn_mul`: the product is pointwise almost everywhere.
+* `MeasureTheory.Lp.sum_mul_eq_of_ae_eq`: an almost everywhere identity `∑ₖ aₖ aⱼ = aⱼ` of
+  representatives gives the same identity in `Lp R ∞ μ`.
 * `MeasureTheory.Lp.coeFn_algebraMap`: scalars act as almost everywhere constant classes.
 * `MeasureTheory.Lp.exists_eq_algebraMap_dirac`: over a Dirac measure, every element of `L∞` is
   a scalar in the image of `algebraMap`.
@@ -137,6 +139,20 @@ instance inftyNontrivial [Nontrivial R] [NeZero μ] : Nontrivial (Lp R ∞ μ) :
     have h₁ := norm_one_of_ne_zero (E := R) (NeZero.ne μ)
     rw [h, norm_zero, eq_comm, norm_eq_zero] at h₁
     exact one_ne_zero h₁
+
+/-- If the classes `mₖ ∈ L^∞` are almost everywhere the functions `aₖ`, and
+`∑_{k ∈ s} aₖ aⱼ = aⱼ` almost everywhere, then `∑_{k ∈ s} mₖ mⱼ = mⱼ` in `L^∞`. -/
+theorem sum_mul_eq_of_ae_eq {ι : Type*} {m : ι → Lp R ∞ μ} {a : ι → α → R}
+    (hm : ∀ k, m k =ᵐ[μ] a k) {s : Finset ι} {j : ι}
+    (h : ∀ᵐ x ∂μ, ∑ k ∈ s, a k x * a j x = a j x) :
+    ∑ k ∈ s, m k * m j = m j := by
+  apply Lp.ext
+  filter_upwards [coeFn_fun_finsetSum s fun k ↦ m k * m j,
+    (Filter.eventually_all_finset s).2 fun k _ ↦ coeFn_mul (m k) (m j),
+    (Filter.eventually_all_finset s).2 fun k _ ↦ hm k, hm j, h] with x h₁ h₂ h₃ hj h₄
+  rw [h₁, hj, ← h₄]
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  rw [h₂ k hk, Pi.mul_apply, h₃ k hk, hj]
 
 end NormedRing
 

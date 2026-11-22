@@ -43,6 +43,8 @@ supporting sets.
 * `TauCeti.indicatorConstLp_smul`: the indicator class of `a • c` is `a` times that of `c`.
 * `TauCeti.indicatorConstLpₗ`: the indicator class `indicatorConstLp p hs hμs c` as a linear map
   in `c`.
+* `TauCeti.indicatorConstLpL`: the same map `c ↦ indicatorConstLp p hs hμs c` as a continuous
+  linear map.
 * `TauCeti.norm_sum_indicatorConstLp_one`: the `L¹` norm of a sum of indicator classes of pairwise
   disjoint sets.
 * `TauCeti.eq_sum_indicatorConstLp_fiber`: an `Lᵖ` class represented by `φ ∘ G`, for a simple
@@ -112,6 +114,33 @@ noncomputable def indicatorConstLpₗ (hs : MeasurableSet s) (hμs : μ s ≠ �
   toFun := indicatorConstLp p hs hμs
   map_add' _ _ := indicatorConstLp_add.symm
   map_smul' := indicatorConstLp_smul hs hμs
+
+variable (𝕜 p) in
+/-- `TauCeti.indicatorConstLpₗ` as a continuous linear map from the constants to `Lᵖ`. Its norm
+is at most `μ(s) ^ (1 / p)`, by `MeasureTheory.norm_indicatorConstLp_le`. -/
+noncomputable def indicatorConstLpL [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs : μ s ≠ ∞) :
+    E →L[𝕜] Lp E p μ :=
+  (indicatorConstLpₗ 𝕜 p hs hμs).mkContinuous (μ.real s ^ (1 / p.toReal)) fun c ↦
+    (norm_indicatorConstLp_le (hs := hs) (hμs := hμs) (c := c)).trans_eq (mul_comm _ _)
+
+/-- `TauCeti.indicatorConstLpL` sends a constant to its indicator class. -/
+@[simp]
+theorem indicatorConstLpL_apply [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (c : E) :
+    indicatorConstLpL 𝕜 p hs hμs c = indicatorConstLp p hs hμs c := by
+  simp [indicatorConstLpL]
+
+section NormedField
+
+variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} {p : ℝ≥0∞} [NormedAddCommGroup E]
+  [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] {s : Set α}
+
+variable (𝕜 E) in
+/-- The operator norm of `TauCeti.indicatorConstLpL` is at most `μ(s) ^ (1 / p)`. -/
+theorem norm_indicatorConstLpL_le [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs : μ s ≠ ∞) :
+    ‖(indicatorConstLpL 𝕜 p hs hμs : E →L[𝕜] Lp E p μ)‖ ≤ μ.real s ^ (1 / p.toReal) :=
+  LinearMap.mkContinuous_norm_le _ (Real.rpow_nonneg measureReal_nonneg _) _
+
+end NormedField
 
 section Disjoint
 

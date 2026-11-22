@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Lift.Basic
+import TauCeti.GroupTheory.FreeGroup.Commuting
 import TauCeti.GroupTheory.FreeGroup.Vaught
 import TauCeti.GroupTheory.GroupAlgGeom.Irreducible.FreeGroup
 import TauCeti.GroupTheory.GroupAlgGeom.SingleEquation

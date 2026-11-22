@@ -7,8 +7,11 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
+public import TauCeti.MeasureTheory.Function.Lp.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.Multiplier
 
 /-!
@@ -26,6 +29,11 @@ operator norm on `Lp E p μ` equals the `L∞` norm `‖a‖` (`norm_multiplicat
 `Lp E 2 μ` for a complete inner-product space `E` over `𝕜` (`[RCLike 𝕜]`), the Hilbert adjoint of
 multiplication by `a` is multiplication by `star a` (`adjoint_multiplicationOperator`), and over
 `ℂ` this gives a unital ⋆-algebra homomorphism `MeasureTheory.Lp.multiplicationStarAlgHom`.
+
+For a measurable set `s`, multiplication by the class `TauCeti.linftyIndicator μ ℝ s hs` of its
+indicator cuts an `Lᵖ` class off to `s` (`multiplicationOperator_linftyIndicator_ae`). It does not
+increase the norm (`norm_multiplicationOperator_linftyIndicator_apply_le`), and the cut-offs to `s`
+and to its complement add up to the class (`multiplicationOperator_linftyIndicator_add_compl`).
 
 ## References
 
@@ -207,6 +215,41 @@ theorem multiplicationOperator_linftyIndicator_indicatorConstLp_self {s : Set α
   multiplicationOperator_linftyIndicator_indicatorConstLp_of_subset hs hs hμs Set.Subset.rfl v
 
 end NormedSpace
+
+section Indicator
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+  {s : Set α}
+
+/-- Multiplication by the `L∞` class `TauCeti.linftyIndicator μ ℝ s hs` cuts an `Lᵖ` class off to
+`s`. -/
+theorem multiplicationOperator_linftyIndicator_ae (hs : MeasurableSet s) (f : Lp E p μ) :
+    multiplicationOperator (TauCeti.linftyIndicator μ ℝ s hs) f =ᵐ[μ] s.indicator f := by
+  filter_upwards [multiplicationOperator_ae (TauCeti.linftyIndicator μ ℝ s hs) f,
+    TauCeti.coeFn_linftyIndicator (μ := μ) (R := ℝ) hs] with x hx h₁
+  rw [hx, h₁]
+  by_cases hxs : x ∈ s <;> simp [hxs]
+
+/-- Cutting an `Lᵖ` class off to a measurable set does not increase its norm. -/
+theorem norm_multiplicationOperator_linftyIndicator_apply_le (hs : MeasurableSet s)
+    (f : Lp E p μ) : ‖multiplicationOperator (TauCeti.linftyIndicator μ ℝ s hs) f‖ ≤ ‖f‖ := by
+  refine Lp.norm_le_norm_of_ae_le ?_
+  filter_upwards [multiplicationOperator_linftyIndicator_ae hs f] with x hx
+  rw [hx]
+  exact norm_indicator_le_norm_self f x
+
+/-- The cut-offs of an `Lᵖ` class to a measurable set and to its complement add up to the class. -/
+theorem multiplicationOperator_linftyIndicator_add_compl (hs : MeasurableSet s) (f : Lp E p μ) :
+    multiplicationOperator (TauCeti.linftyIndicator μ ℝ s hs) f +
+      multiplicationOperator (TauCeti.linftyIndicator μ ℝ sᶜ hs.compl) f = f := by
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_add (multiplicationOperator (TauCeti.linftyIndicator μ ℝ s hs) f)
+      (multiplicationOperator (TauCeti.linftyIndicator μ ℝ sᶜ hs.compl) f),
+    multiplicationOperator_linftyIndicator_ae hs f,
+    multiplicationOperator_linftyIndicator_ae hs.compl f] with x hx h₁ h₂
+  rw [hx, Pi.add_apply, h₁, h₂, Set.indicator_self_add_compl_apply]
+
+end Indicator
 
 section InnerProductSpace
 
