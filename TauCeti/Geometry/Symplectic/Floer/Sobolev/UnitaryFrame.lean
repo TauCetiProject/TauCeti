@@ -283,8 +283,10 @@ theorem isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_frame
     (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).IsInvertible :=
   ⟨.ofBijective _ (ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt ω hX
-      (hH.of_le (by norm_num)) hx hJ (fun t ↦ ω.compatible_of_isInvertible_of_forall_eq_im_inner
-        (hΦi t) (hΦω t) (hΦJ t)) hnd)
+      (hH.of_le (by norm_num)) hx
+      (hJ.continuous.comp (continuous_id.prodMk (continuous_iff_continuousAt.2 fun t ↦
+        (hx t).continuousAt)))
+      (fun t ↦ ω.compatible_of_isInvertible_of_forall_eq_im_inner (hΦi t) (hΦω t) (hΦJ t)) hnd)
     (range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame ω hX hH hHp hx hxp hJ hΦ
       hΦp hΦi hΦω hΦJ hnd),
     ContinuousLinearEquiv.coe_ofBijective ..⟩
