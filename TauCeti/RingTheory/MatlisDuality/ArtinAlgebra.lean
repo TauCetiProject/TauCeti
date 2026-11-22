@@ -154,23 +154,17 @@ theorem IsInjectiveEnvelope.exists_injective_linearMap_pi_matlisDual [Module A N
   let g : N →ₗ[A] (Fin n → MatlisDual R E A) :=
     LinearMap.pi fun i ↦ equivLinearMapDualRegular (b i)
   refine ⟨n, g, (injective_iff_map_eq_zero g).mpr fun x hx => ?_⟩
-  -- Every functional on `N` is a combination of the `b i`, each of which vanishes on `A • x`.
-  have key (φ : MatlisDual R E N) (hφ : φ ∈ Submodule.span Aᵐᵒᵖ (Set.range b)) (a : A) :
-      equivLinearMap R E N φ (a • x) = 0 := by
-    induction hφ using Submodule.span_induction generalizing a with
-    | mem _ h =>
-      obtain ⟨i, rfl⟩ := h
+  -- Dualizing `a ↦ a • x` kills each `b i`, hence every functional on `N`.
+  have key : map (LinearMap.toSpanSingleton A N x) = (0 : MatlisDual R E N →ₗ[Aᵐᵒᵖ] _) :=
+    LinearMap.ext_on_range hb fun i ↦ MatlisDual.ext fun a ↦ by
       have h := congr(equivLinearMap R E A ($hx i) a)
       simpa only [g, LinearMap.pi_apply, equivLinearMapDualRegular_apply_apply, Pi.zero_apply,
-        map_zero, LinearMap.zero_apply] using h
-    | zero => simp
-    | add _ _ _ _ h₁ h₂ => simp [h₁, h₂]
-    | smul c _ _ h => simpa [mul_smul] using h (c.unop * a)
+        map_zero, LinearMap.zero_apply, map_apply, LinearMap.toSpanSingleton_apply] using h
   refine (injective_iff_map_eq_zero _).mp
     (MatlisDual.bijective_evalₗ hf.length_quotient_linearMap_eq_one
       (isFiniteLength_of_finite_trans R A N)).1 x
     (MatlisDual.ext fun φ => ?_)
-  simpa using key φ (hb ▸ Submodule.mem_top) 1
+  simpa using congr(equivLinearMap R E A ($key φ) 1)
 
 variable [Small.{w} A]
 
@@ -214,10 +208,9 @@ right module, for an injective `E` such that each `Hom_R(R ⧸ 𝔪, E)` has len
 theorem moduleProjective_op_matlisDual_iff_injective [Module.Injective R E]
     (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1) [Module A N]
     [IsScalarTower R A N] [Module.Finite A N] :
-    Module.Projective Aᵐᵒᵖ (MatlisDual R E N) ↔ Module.Injective A N := by
-  refine ⟨fun _ => ?_, fun _ => moduleProjective_op_matlisDual_of_injective hE⟩
-  have : Small.{max w v} A := small_lift A
-  exact moduleInjective_of_projective_op_matlisDual hE (isFiniteLength_of_finite_trans R A N)
+    Module.Projective Aᵐᵒᵖ (MatlisDual R E N) ↔ Module.Injective A N :=
+  ⟨fun _ => moduleInjective_of_projective_op_matlisDual hE (isFiniteLength_of_finite_trans R A N),
+    fun _ => moduleProjective_op_matlisDual_of_injective hE⟩
 
 /-- A finitely generated left `A`-module is injective exactly when its Matlis dual is a projective
 right module. -/

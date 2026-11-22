@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.Category.FGModuleCat.Generator.Cogenerator
 public import TauCeti.RingTheory.DominantDimension
 
-import TauCeti.RingTheory.Artinian.Subalgebra
-
 /-!
 # The endomorphism ring of a generator-cogenerator has dominant dimension at least two
 
@@ -23,7 +21,8 @@ The proof follows Müller. As a generator, `M` is a finitely generated projectiv
 cogenerator, `M` is an injective `Γ`-module (`FGModuleCat.injective_end_of_isCoseparator`). A
 presentation `Aᵐ → Aⁿ → M → 0` and the left exact functor `Hom_A(-, M)` then give an exact sequence
 `0 → Γ → Mⁿ → Mᵐ` of `Γ`-modules whose last two terms are finitely generated, projective and
-injective. This last step holds for a finitely presented generator over any ring
+injective. This last step holds over any ring, for a finitely presented generator that is
+injective over its endomorphism ring
 (`TauCeti.two_le_dominantDimension_end_of_isGenerator`).
 
 ## Main results

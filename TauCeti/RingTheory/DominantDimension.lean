@@ -115,7 +115,8 @@ theorem two_le_dominantDimension_end_of_isGenerator {A : Type u} [Ring A] (M : T
   let g := (e m).toLinearMap ∘ₗ LinearMap.lcomp (Module.End A M) M r ∘ₗ (e n).symm.toLinearMap
   have hfg : Function.Exact f g :=
     (hqr.lcomp_of_surjective (T := Module.End A M) M hq).of_ladder_linearEquiv_of_exact
-      (e₁ := LinearEquiv.refl _ _) (e₂ := e n) (e₃ := e m) (LinearMap.ext fun _ ↦ rfl)
+      (e₁ := LinearEquiv.refl _ _) (e₂ := e n) (e₃ := e m)
+      (by simp only [f, LinearEquiv.refl_toLinearMap, LinearMap.comp_id])
       (LinearMap.ext fun _ ↦ by simp [g])
   -- Each `Mᵏ` is finitely generated, projective and injective over `Γ`, as `M` is.
   have hM (k : ℕ) : Module.Finite (Module.End A M) (ModuleCat.of (Module.End A M) (Fin k → M)) ∧

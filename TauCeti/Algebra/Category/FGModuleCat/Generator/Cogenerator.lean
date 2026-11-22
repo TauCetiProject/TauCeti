@@ -15,7 +15,6 @@ public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.AdditiveClosure
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Category.FGModuleCat.End
 import TauCeti.Algebra.Category.FGModuleCat.Injective
-import TauCeti.Algebra.Module.Injective.Envelope.Existence
 import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.CategoryTheory.Preadditive.Projectivization
 import TauCeti.RingTheory.Artinian.Subalgebra
@@ -46,9 +45,11 @@ coseparator exactly when `D A ∈ add M`
 argument. The descriptions through indecomposable objects then follow from the
 Krull-Schmidt property of `mod A`, with `FGModuleCat.indecomposable_obj_iff` and
 `FGModuleCat.additiveClosure_of_isGenerator_of_projective`: a projective object lies in `add M` for
-every separator `M`, and dually an injective object lies in `add M` for every coseparator `M`.
+every separator `M`, and dually an injective object lies in `add M` for every coseparator `M`
+(`FGModuleCat.additiveClosure_of_isCoseparator_of_injective`).
 
-A coseparator `M` is injective over its endomorphism ring `Γ`
+Over an Artin algebra, with `A` small in the module universe, a coseparator `M` is injective over
+its endomorphism ring `Γ`
 (`FGModuleCat.injective_end_of_isCoseparator`), dually to a generator being projective over it
 (`TauCeti.Module.IsGenerator.projective_end`). The dual `D A` lies in `add M`, so by
 projectivization (`TauCeti.finiteProjectiveModules_preadditiveCoyonedaObj_obj`) `Hom_A(M, D A)` is a
@@ -83,6 +84,8 @@ generator-cogenerator. (This last part is a remark and is not formalized here.)
   exactly when `D A ∈ add M`.
 * `TauCeti.IsInjectiveEnvelope.isGeneratorCogenerator_iff_additiveClosure`: `M` is a
   generator-cogenerator exactly when `A ∈ add M` and `D A ∈ add M`.
+* `FGModuleCat.additiveClosure_of_isCoseparator_of_injective`: over an Artin algebra, an injective
+  object of `mod A` lies in `add M` for every coseparator `M`.
 * `FGModuleCat.isCoseparator_iff_forall_indecomposable`: `M` is a coseparator exactly when every
   indecomposable injective is a direct summand of `M`.
 * `TauCeti.isGeneratorCogenerator_iff_forall_indecomposable`: `M` is a generator-cogenerator exactly
@@ -182,6 +185,32 @@ theorem IsInjectiveEnvelope.isGeneratorCogenerator_regular_biprod_fgModuleCatMat
 
 end Artin
 
+/-- **Finitely generated injective modules are summands of finite sums of a coseparator**: over an
+Artin algebra, if `M` is a coseparator of `mod A`, then an injective object of `mod A` lies in
+`add M`. This is dual to `FGModuleCat.additiveClosure_of_isGenerator_of_projective`. The modules
+may live in any universe in which `A` is small. -/
+theorem _root_.FGModuleCat.additiveClosure_of_isCoseparator_of_injective (R : Type u) [CommRing R]
+    [IsArtinianRing R] {A : Type v} [Ring A] [Algebra R A] [Module.Finite R A] [Small.{w} A]
+    {M : FGModuleCat.{w} A} (hM : IsCoseparator M) (I : FGModuleCat.{w} A) [Injective I] :
+    additiveClosure M I := by
+  -- Replace `R` by the centre `C` of `A`, which is small in the universe `w`, and take an injective
+  -- hull `E` of `C ⧸ J(C)` there.
+  let C := Subalgebra.center R A
+  have : Module.Finite C A := Subalgebra.finite_centerAlgebra_of_finite
+  have : Small.{w} C := inferInstanceAs (Small.{w} {a : A // a ∈ C})
+  have : Small.{w} (C ⧸ Ring.jacobson C) := small_of_surjective Ideal.Quotient.mk_surjective
+  let e := Shrink.linearEquiv.{w} C (C ⧸ Ring.jacobson C)
+  obtain ⟨E, _, _, i, hi⟩ := exists_isInjectiveEnvelope C (Shrink.{w} (C ⧸ Ring.jacobson C))
+  have hf := hi.comp e.symm.injective (by rw [LinearEquiv.range]; exact isEssential_top)
+  -- The Matlis duality turns the coseparator `M` and the injective `I` into a separator and a
+  -- projective of `mod Aᵐᵒᵖ`.
+  let Φ := hf.fgModuleCatMatlisDuality (A := A)
+  have : Small.{w} Aᵐᵒᵖ := small_of_injective MulOpposite.unop_injective
+  have := FGModuleCat.isGenerator_of_isSeparator (((isSeparator_op_iff M).2 hM).of_equivalence Φ)
+  have : Projective (Φ.functor.obj (op I)) := (Φ.map_projective_iff _).2 inferInstance
+  exact Φ.additiveClosure_functor_obj_op_iff.1
+    (FGModuleCat.additiveClosure_of_isGenerator_of_projective _ _)
+
 /-- **The coseparators of `mod A` through indecomposables**: over an Artin algebra, `M` is a
 coseparator of `mod A` exactly when every indecomposable injective object is a direct summand of
 `M`. The modules may live in any universe in which `A` is small. -/
@@ -211,10 +240,8 @@ theorem _root_.FGModuleCat.isCoseparator_iff_forall_indecomposable (R : Type u) 
   have : Projective G := FGModuleCat.projective_of_free _ _
   refine ⟨fun hM I hI hIi ↦ ?_, fun h ↦ ?_⟩
   · have := FGModuleCat.isLocalRing_end_of_indecomposable hIi
-    have := FGModuleCat.isGenerator_of_isSeparator (((isSeparator_op_iff M).2 hM).of_equivalence Φ)
-    have : Projective (Φ.functor.obj (op I)) := (Φ.map_projective_iff _).2 inferInstance
-    exact additiveClosure_iff_nonempty_retract.1 (Φ.additiveClosure_functor_obj_op_iff.1
-      (FGModuleCat.additiveClosure_of_isGenerator_of_projective _ _))
+    exact additiveClosure_iff_nonempty_retract.1
+      (FGModuleCat.additiveClosure_of_isCoseparator_of_injective R hM I)
   · -- The dual `D` of `G` is an injective coseparator of `mod A`, and lies in `add M`.
     have : Projective (Φ.inverse.obj G) := (Φ.symm.map_projective_iff _).2 inferInstance
     have : Injective (Φ.inverse.obj G).unop := inferInstanceAs (Injective (unop _))
@@ -308,10 +335,8 @@ theorem _root_.FGModuleCat.injective_end_of_isCoseparator (R : Type u) [CommRing
   let X := FGModuleCat.of A (Shrink.{w} (MatlisDual C E A))
   have : Injective X := FGModuleCat.injective_of_moduleInjective X
   -- As an injective object, `X` lies in `add M`; so `D_C M` is projective over `End M`.
-  have hX : additiveClosure M X := additiveClosure_iff_forall_indecomposable.2 fun Y hY ⟨r⟩ ↦
-    (FGModuleCat.isCoseparator_iff_forall_indecomposable R M).1 hM Y r.injective
-      ((FGModuleCat.indecomposable_obj_iff Y).2 hY)
-  have := projective_end_op_matlisDual_of_additiveClosure (R := C) hX e
+  have := projective_end_op_matlisDual_of_additiveClosure (R := C)
+    (FGModuleCat.additiveClosure_of_isCoseparator_of_injective R hM X) e
   exact moduleInjective_of_projective_op_matlisDual hf.length_quotient_linearMap_eq_one
     (isFiniteLength_of_finite_trans C A M.obj)
 
