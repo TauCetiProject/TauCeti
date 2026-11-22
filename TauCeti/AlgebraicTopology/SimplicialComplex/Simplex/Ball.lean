@@ -459,7 +459,7 @@ def standardCellBallToOrderedSimplex (n : ℕ) :
 lemma weights_standardCellBallToOrderedSimplex (n : ℕ) (z : closedBall (0 : Fin n → ℝ) 1)
     (i : Fin (n + 1)) :
     (standardCellBallToOrderedSimplex n z).weights i =
-      ((realizationTopHomeomorphPiClosedBall n).symm z).1 i := by
+      ((realizationTopHomeomorphPiClosedBall n).symm z).val i := by
   rw [standardCellBallToOrderedSimplex, Homeomorph.trans_apply,
     realizationTopHomeomorphStdSimplex_apply]
 
@@ -476,9 +476,9 @@ lemma standardCellBallToOrderedSimplex_symm_apply (n : ℕ)
 `standardCellBallToOrderedSimplex n` has a vanishing barycentric weight. -/
 lemma exists_weights_standardCellBallToOrderedSimplex_eq_zero_iff (n : ℕ)
     (z : closedBall (0 : Fin n → ℝ) 1) :
-    (∃ i : Fin (n + 1), (standardCellBallToOrderedSimplex n z).weights i = 0) ↔ ‖z.1‖ = 1 := by
-  have hnorm : ‖z.1‖ = 1 ↔
-      ((realizationTopHomeomorphPiClosedBall n).symm z).1.support ≠ Finset.univ := by
+    (∃ i : Fin (n + 1), (standardCellBallToOrderedSimplex n z).weights i = 0) ↔ ‖z.val‖ = 1 := by
+  have hnorm : ‖z.val‖ = 1 ↔
+      ((realizationTopHomeomorphPiClosedBall n).symm z).val.support ≠ Finset.univ := by
     rw [← realizationTopHomeomorphPiClosedBall_norm_eq_one_iff, Homeomorph.apply_symm_apply]
   rw [hnorm, ne_eq, Finset.eq_univ_iff_forall, not_forall]
   simp only [weights_standardCellBallToOrderedSimplex, Finsupp.mem_support_iff, ne_eq, not_not]
@@ -487,7 +487,8 @@ lemma exists_weights_standardCellBallToOrderedSimplex_eq_zero_iff (n : ℕ)
 `(standardCellBallToOrderedSimplex n).symm` exactly when it has a vanishing barycentric weight. -/
 lemma norm_standardCellBallToOrderedSimplex_symm_eq_one_iff (n : ℕ)
     (w : Convexity.StdSimplex ℝ (Fin (n + 1))) :
-    ‖((standardCellBallToOrderedSimplex n).symm w).1‖ = 1 ↔ ∃ i : Fin (n + 1), w.weights i = 0 := by
+    ‖((standardCellBallToOrderedSimplex n).symm w).val‖ = 1 ↔
+      ∃ i : Fin (n + 1), w.weights i = 0 := by
   rw [← exists_weights_standardCellBallToOrderedSimplex_eq_zero_iff, Homeomorph.apply_symm_apply]
 
 end TauCeti

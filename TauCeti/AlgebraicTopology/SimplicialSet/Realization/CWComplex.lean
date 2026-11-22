@@ -176,14 +176,14 @@ def simplicialRealizationCWCellEquiv (X : SSet.{u}) (n : ℕ) :
   ((SSet.toTopCWComplex X).toCWComplexCellEquiv n).trans <|
     (SSet.toTopCWComplexCellEquiv X n).trans
       { toFun c := ⟨c.simplex, c.nonDegenerate⟩
-        invFun σ := { simplex := σ.1, nonDegenerate := σ.2, notMem := by simp }
+        invFun σ := { simplex := σ.val, nonDegenerate := σ.property, notMem := by simp }
         left_inv _ := rfl
         right_inv _ := rfl }
 
 /-- The nondegenerate simplex corresponding to a cell `i` of `simplicialRealizationCW X`. -/
 private lemma simplicialRealizationCWCellEquiv_coe (X : SSet.{u}) (n : ℕ)
     (i : (simplicialRealizationCW X).cell n) :
-    (simplicialRealizationCWCellEquiv X n i).1 =
+    (simplicialRealizationCWCellEquiv X n i).val =
       (toTopCWComplexCellEquiv X n ((toTopCWComplex X).toCWComplexCellEquiv n i)).simplex :=
   rfl
 
@@ -194,7 +194,7 @@ lemma simplicialRealizationCW_map_apply (X : SSet.{u}) (n : ℕ)
     (i : (simplicialRealizationCW X).cell n) (x : closedBall (0 : Fin n → ℝ) 1) :
     letI := simplicialRealizationCW X
     RelCWComplex.map (C := (Set.univ : Set |X|)) n i x =
-      SSet.toTopObjMk (simplicialRealizationCWCellEquiv X n i).1
+      SSet.toTopObjMk (simplicialRealizationCWCellEquiv X n i).val
         (standardCellBallToOrderedSimplex n x) := by
   let _ := simplicialRealizationCW X
   rw [(toTopCWComplex X).toCWComplex_map_apply n i x, toTopCWComplex_cells_ι,
@@ -207,7 +207,7 @@ lemma simplicialRealizationCW_map_cellEquiv_symm_apply (X : SSet.{u}) (n : ℕ)
     letI := simplicialRealizationCW X
     RelCWComplex.map (C := (Set.univ : Set |X|)) n
         ((simplicialRealizationCWCellEquiv X n).symm σ) x =
-      SSet.toTopObjMk σ.1 (standardCellBallToOrderedSimplex n x) :=
+      SSet.toTopObjMk σ.val (standardCellBallToOrderedSimplex n x) :=
   (simplicialRealizationCW_map_apply X n _ x).trans (by simp)
 
 end TauCeti
@@ -293,7 +293,7 @@ theorem isCellular_toTop_map {X Y : SSet.{u}} (f : X ⟶ Y) :
     letI := simplicialRealizationCW X
     letI := simplicialRealizationCW Y
     IsCellular (Set.univ : Set |X|) (Set.univ : Set |Y|)
-      (TopCat.ofHom ⟨fun x ↦ ⟨toTop.map f x.1, trivial⟩, by fun_prop⟩) :=
+      (TopCat.ofHom ⟨fun x ↦ ⟨toTop.map f x.val, trivial⟩, by fun_prop⟩) :=
   fun n _ hx ↦ mapsTo_toTop_map_skeletonLT f n hx
 
 namespace Subcomplex
@@ -307,28 +307,29 @@ def toTopCWSubcomplex {X : SSet.{u}} (A : X.Subcomplex) :
   letI := simplicialRealizationCW X
   have hclosed : ∀ (n : ℕ)
       (i : Set.ofPred fun i : (simplicialRealizationCW X).cell n ↦
-        (simplicialRealizationCWCellEquiv X n i).1 ∈ A.obj (op ⦋n⦌)),
-      RelCWComplex.closedCell (C := (Set.univ : Set |X|)) n i.1 ⊆ Set.range (toTop.map A.ι) := by
+        (simplicialRealizationCWCellEquiv X n i).val ∈ A.obj (op ⦋n⦌)),
+      RelCWComplex.closedCell (C := (Set.univ : Set |X|)) n i.val ⊆ Set.range (toTop.map A.ι) := by
     rintro n ⟨i, hi⟩ _ ⟨x, hx, rfl⟩
     rw [simplicialRealizationCW_map_apply X n i ⟨x, hx⟩]
-    refine ⟨toTopObjMk (⟨(simplicialRealizationCWCellEquiv X n i).1, hi⟩ : (A : SSet.{u}) _⦋n⦌)
+    refine ⟨toTopObjMk
+        (⟨(simplicialRealizationCWCellEquiv X n i).val, hi⟩ : (A : SSet.{u}) _⦋n⦌)
         (standardCellBallToOrderedSimplex n ⟨x, hx⟩), ?_⟩
     rw [toTop_map_toTopObjMk]
     rfl
   CWComplex.Subcomplex.mk' (Set.univ : Set |X|) (Set.range (toTop.map A.ι))
-    (fun n ↦ Set.ofPred fun i ↦ (simplicialRealizationCWCellEquiv X n i).1 ∈ A.obj (op ⦋n⦌))
+    (fun n ↦ Set.ofPred fun i ↦ (simplicialRealizationCWCellEquiv X n i).val ∈ A.obj (op ⦋n⦌))
     hclosed
     (by
       apply Set.Subset.antisymm
       · exact Set.iUnion₂_subset fun n i ↦
-          (RelCWComplex.openCell_subset_closedCell n i.1).trans (hclosed n i)
+          (RelCWComplex.openCell_subset_closedCell n i.val).trans (hclosed n i)
       · rintro _ ⟨z, rfl⟩
         have hz : z ∈ (Set.univ : Set |A|) := trivial
         rw [← (simplicialRealizationCW A).iUnion_openCell_eq_complex] at hz
         obtain ⟨n, i, x, hx, rfl⟩ := by simpa only [Set.mem_iUnion, Set.mem_image] using hz
         let σA := simplicialRealizationCWCellEquiv A n i
-        have hnd : σA.1.1 ∈ X.nonDegenerate n := (A.mem_nonDegenerate_iff σA.1).1 σA.2
-        let j := (simplicialRealizationCWCellEquiv X n).symm ⟨σA.1.1, hnd⟩
+        have hnd : σA.val.val ∈ X.nonDegenerate n := (A.mem_nonDegenerate_iff σA.val).1 σA.property
+        let j := (simplicialRealizationCWCellEquiv X n).symm ⟨σA.val.val, hnd⟩
         refine Set.mem_iUnion₂.2 ⟨n, ⟨j, by simp [j]⟩, ⟨x, hx, ?_⟩⟩
         rw [simplicialRealizationCW_map_apply X n j ⟨x, ball_subset_closedBall hx⟩,
           simplicialRealizationCW_map_apply A n i ⟨x, ball_subset_closedBall hx⟩,
@@ -349,7 +350,7 @@ lemma mem_toTopCWSubcomplex_I_iff {X : SSet.{u}} (A : X.Subcomplex) (n : ℕ)
     (i : (simplicialRealizationCW X).cell n) :
     letI := simplicialRealizationCW X
     i ∈ A.toTopCWSubcomplex.I n ↔
-      (simplicialRealizationCWCellEquiv X n i).1 ∈ A.obj (op ⦋n⦌) :=
+      (simplicialRealizationCWCellEquiv X n i).val ∈ A.obj (op ⦋n⦌) :=
   Iff.rfl
 
 end Subcomplex
@@ -373,10 +374,10 @@ theorem exists_finite_subcomplex_of_isCompact {X : SSet.{u}} {K : Set |X|} (hK :
   let _ := simplicialRealizationCW X
   have hSfin := finite_setOf_nonempty_inter_openCell_of_isCompact (C := (Set.univ : Set |X|)) hK
   set S := Set.ofPred fun a : Σ n, RelCWComplex.cell (Set.univ : Set |X|) n ↦
-    (K ∩ RelCWComplex.openCell (C := (Set.univ : Set |X|)) a.1 a.2).Nonempty
+    (K ∩ RelCWComplex.openCell (C := (Set.univ : Set |X|)) a.fst a.snd).Nonempty
   have : _root_.Finite S := hSfin.to_subtype
   let A : X.Subcomplex :=
-    ⨆ a : S, Subcomplex.ofSimplex (simplicialRealizationCWCellEquiv X a.1.1 a.1.2).1
+    ⨆ a : S, Subcomplex.ofSimplex (simplicialRealizationCWCellEquiv X a.val.fst a.val.snd).val
   refine ⟨A, (finite_iSup_iff _).2 fun _ ↦ inferInstance, fun y hy ↦ ?_⟩
   have hyU : y ∈ (Set.univ : Set |X|) := trivial
   rw [← (simplicialRealizationCW X).iUnion_openCell_eq_complex] at hyU
@@ -385,7 +386,7 @@ theorem exists_finite_subcomplex_of_isCompact {X : SSet.{u}} {K : Set |X|} (hK :
   have hiA : i ∈ A.toTopCWSubcomplex.I n := by
     rw [Subcomplex.mem_toTopCWSubcomplex_I_iff]
     exact le_iSup (fun a : S ↦
-      Subcomplex.ofSimplex (simplicialRealizationCWCellEquiv X a.1.1 a.1.2).1)
+      Subcomplex.ofSimplex (simplicialRealizationCWCellEquiv X a.val.fst a.val.snd).val)
       ⟨⟨n, i⟩, ha⟩ _ (Subcomplex.mem_ofSimplex_obj _)
   rw [← Subcomplex.coe_toTopCWSubcomplex, ← A.toTopCWSubcomplex.union, Set.empty_union]
   exact Set.mem_iUnion₂.2 ⟨n, ⟨i, hiA⟩, hyi⟩
@@ -426,8 +427,8 @@ lemma natCard_simplicialRealizationCW_stdSimplex_cell (n k : ℕ) :
   rw [Nat.card_congr e]
   let e' : (Set.ofPred fun S : Finset (Fin (n + 1)) ↦ S.card = k + 1) ≃
       (Finset.univ : Finset (Fin (n + 1))).powersetCard (k + 1) :=
-    { toFun S := ⟨S.1, Finset.mem_powersetCard.2 ⟨Finset.subset_univ _, S.2⟩⟩
-      invFun S := ⟨S.1, (Finset.mem_powersetCard.1 S.2).2⟩
+    { toFun S := ⟨S.val, Finset.mem_powersetCard.2 ⟨Finset.subset_univ _, S.property⟩⟩
+      invFun S := ⟨S.val, (Finset.mem_powersetCard.1 S.property).2⟩
       left_inv _ := rfl
       right_inv _ := rfl }
   rw [Nat.card_congr e', Nat.card_eq_fintype_card, Fintype.card_coe, Finset.card_powersetCard,

@@ -27,10 +27,10 @@ codomain. -/
 lemma skeleton_le_preimage_skeleton {X Y : SSet.{u}} (f : X ⟶ Y) (n : ℕ) :
     X.skeleton n ≤ (Y.skeleton n).preimage f := by
   -- Expose the defining supremum of `X.skeleton n` without unfolding the `OrderHom` structure.
-  change (⨆ (i : Fin n) (x : X.nonDegenerate i), Subcomplex.ofSimplex x.1) ≤ _
+  change (⨆ (i : Fin n) (x : X.nonDegenerate i), Subcomplex.ofSimplex x.val) ≤ _
   simp only [iSup_le_iff]
   intro k x
   rw [Subcomplex.ofSimplex_le_iff, Subcomplex.preimage_obj, Set.mem_preimage]
-  exact Y.mem_skeleton (f.app _ x.1) k.isLt
+  exact Y.mem_skeleton (f.app _ x.val) k.isLt
 
 end SSet

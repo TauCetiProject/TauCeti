@@ -80,7 +80,7 @@ lemma exists_toTop_map_boundary_ι {n : ℕ} (x : |(∂Δ[n + 1] : SSet.{u})|) :
   | left a =>
     have hw := ((toTop ⋙ forget TopCat).mapCocone c).w (WalkingMultispan.Hom.fst a)
     have hval := congrArg (fun g ↦ g y) hw
-    exact hright a.1.1 _ (hval.trans hy)
+    exact hright a.val.1 _ (hval.trans hy)
 
 /-- The geometric realization of `∂Δ[n]` is compact. -/
 instance compactSpace_toTop_boundary (n : ℕ) : CompactSpace |(∂Δ[n] : SSet.{u})| := by
