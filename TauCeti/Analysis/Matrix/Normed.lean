@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Topology.Instances.Matrix
 import Mathlib.Topology.UniformSpace.Matrix
+import TauCeti.Topology.Instances.Matrix
 
 /-!
-# Topologies from matrix norms
+# Topologies from matrix norms, and limits of products
 
 This file exposes the topology underlying Mathlib's `L∞` operator norm on finite matrices. Since
 matrix norms are scoped, consumers can select this topology locally without reconstructing the
@@ -26,6 +27,10 @@ complete. Its completeness instance is activated by `Matrix.Norms.Operator`, alo
 Similarly, the entrywise sup norm makes finite matrices over a proper space a proper space; this
 instance is activated by `Matrix.Norms.Elementwise`, alongside the norm.
 
+Over a seminormed ring, a family of matrices whose entries are bounded along a filter, multiplied
+on either side by a family tending to `0`, tends to `0`. This is entrywise the corresponding
+fact for the ring of entries, so it needs no matrix norm.
+
 ## Main declarations
 
 * `Matrix.linftyOpTopologicalSpace`: the topology induced by the `L∞` operator norm.
@@ -35,6 +40,8 @@ instance is activated by `Matrix.Norms.Elementwise`, alongside the norm.
 * `Matrix.ofContinuousLinearEquiv`: `Matrix.of` as a continuous linear equivalence from entry
   functions to matrices with the topology of the `L∞` operator norm.
 * `Matrix.properSpace`: properness for the entrywise sup norm, scoped with the norm.
+* `Matrix.isBoundedUnder_le_mul_tendsto_zero`, `Matrix.tendsto_zero_mul_isBoundedUnder_le`: an
+  entrywise bounded family times a family tending to `0`, in either order, tends to `0`.
 -/
 
 public section
@@ -118,6 +125,34 @@ theorem coe_ofContinuousLinearEquiv :
 theorem coe_ofContinuousLinearEquiv_symm :
     ⇑(ofContinuousLinearEquiv R : (m → n → α) ≃L[R] Matrix m n α).symm = of.symm :=
   (rfl)
+
+end
+
+section
+
+open Filter Topology
+
+variable {ι l m n R : Type*} [Fintype m] [NonUnitalSeminormedRing R] {f : Filter ι}
+
+/-- A family of matrices with entries bounded along `f`, times a family tending to `0`, tends
+to `0`. -/
+theorem isBoundedUnder_le_mul_tendsto_zero {F : ι → Matrix l m R} {H : ι → Matrix m n R}
+    (hF : ∀ i k, IsBoundedUnder (· ≤ ·) f fun x ↦ ‖F x i k‖) (hH : Tendsto H f (𝓝 0)) :
+    Tendsto (fun x ↦ F x * H x) f (𝓝 0) := by
+  rw [tendsto_iff_tendsto_apply] at hH ⊢
+  intro i j
+  simpa only [Matrix.mul_apply, Matrix.zero_apply, Finset.sum_const_zero] using
+    tendsto_finsetSum _ fun k _ ↦ Filter.isBoundedUnder_le_mul_tendsto_zero (hF i k) (hH k j)
+
+/-- A family of matrices tending to `0`, times a family with entries bounded along `f`, tends
+to `0`. -/
+theorem tendsto_zero_mul_isBoundedUnder_le {H : ι → Matrix l m R} {F : ι → Matrix m n R}
+    (hH : Tendsto H f (𝓝 0)) (hF : ∀ k j, IsBoundedUnder (· ≤ ·) f fun x ↦ ‖F x k j‖) :
+    Tendsto (fun x ↦ H x * F x) f (𝓝 0) := by
+  rw [tendsto_iff_tendsto_apply] at hH ⊢
+  intro i j
+  simpa only [Matrix.mul_apply, Matrix.zero_apply, Finset.sum_const_zero] using
+    tendsto_finsetSum _ fun k _ ↦ (hH i k).zero_mul_isBoundedUnder_le (hF k j)
 
 end
 

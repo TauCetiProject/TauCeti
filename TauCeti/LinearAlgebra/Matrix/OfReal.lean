@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.DetDescent
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
 /-!
 # Real matrices as complex matrices
@@ -29,6 +30,8 @@ form `Im ⟪·, ·⟫` on the columns, transforms by the same congruence.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
 * `Matrix.map_ofReal_mul`, `Matrix.map_ofReal_one`, `Matrix.trace_map_ofReal`: the entrywise
   coercion is multiplicative, preserves the identity and commutes with the trace.
+* `Matrix.isUnit_map_ofReal_iff`: a real matrix is invertible exactly when it is invertible as a
+  complex matrix.
 * `Matrix.det_map_ofReal`: the determinant of a real matrix is unchanged as a complex matrix.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
   matrix `N` is `Nᵀ Re (Mᴴ M) N`.
@@ -84,6 +87,13 @@ theorem map_ofReal_one [DecidableEq n] : (1 : Matrix n n ℝ).map ((↑) : ℝ �
 theorem trace_map_ofReal [Fintype n] (X : Matrix n n ℝ) :
     trace (X.map ((↑) : ℝ → ℂ)) = ((trace X : ℝ) : ℂ) :=
   (AddMonoidHom.map_trace Complex.ofRealHom X).symm
+
+/-- A real square matrix is invertible exactly when it is invertible as a complex matrix: the
+case `ℝ → ℂ` of `Matrix.isUnit_map_iff`. -/
+@[simp]
+theorem isUnit_map_ofReal_iff [Fintype n] [DecidableEq n] {M : Matrix n n ℝ} :
+    IsUnit (M.map ((↑) : ℝ → ℂ)) ↔ IsUnit M :=
+  isUnit_map_iff Complex.ofRealHom M
 
 /-- The determinant of the complex image of a real matrix is the image of its determinant. -/
 @[simp]

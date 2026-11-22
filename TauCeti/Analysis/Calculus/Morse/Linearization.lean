@@ -20,6 +20,7 @@ import Mathlib.Analysis.Matrix.Hermitian
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Linearization of the negative-gradient field at a Morse critical point
@@ -420,20 +421,11 @@ theorem IsNondegenerateCriticalPoint.gradient_eq_zero
   apply (InnerProductSpace.toDual ℝ E).injective
   simp [h.fderiv_eq_zero]
 
-/-- Negating a Hessian operator preserves and reflects invertibility. -/
-theorem isInvertible_neg_hessianOperator_iff :
-    (-hessianOperator f x).IsInvertible ↔ (hessianOperator f x).IsInvertible := by
-  have hneg : -hessianOperator f x =
-      (ContinuousLinearEquiv.neg ℝ : E ≃L[ℝ] E) ∘L hessianOperator f x := by
-    ext v
-    simp
-  rw [hneg, ContinuousLinearMap.isInvertible_equiv_comp]
-
 /-- The derivative of the negative-gradient field at a nondegenerate critical point is
 invertible. -/
 theorem IsNondegenerateCriticalPoint.isInvertible_neg_hessianOperator
     (h : IsNondegenerateCriticalPoint f x) : (-hessianOperator f x).IsInvertible :=
-  isInvertible_neg_hessianOperator_iff.2 h.isInvertible_hessianOperator
+  ContinuousLinearMap.isInvertible_neg_iff.2 h.isInvertible_hessianOperator
 
 /-- The nonlinear-remainder estimate at a nondegenerate critical point. -/
 theorem IsNondegenerateCriticalPoint.neg_gradient_sub_linearization_isLittleO
@@ -488,7 +480,7 @@ theorem isNondegenerateCriticalPoint_iff_neg_gradient_linearization :
     exact h.isInvertible_neg_hessianOperator
   · rintro ⟨hf, hzero, hinv⟩
     rw [fderiv_neg, fderiv_gradient,
-      isInvertible_neg_hessianOperator_iff] at hinv
+      ContinuousLinearMap.isInvertible_neg_iff] at hinv
     rw [isNondegenerateCriticalPoint_iff_gradient]
     refine ⟨hf, ?_, hinv⟩
     simpa only [Pi.neg_apply, neg_eq_zero] using hzero

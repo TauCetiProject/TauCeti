@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
 public import TauCeti.Analysis.Pseudodifferential.Composition.Sobolev
+public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
+import TauCeti.Analysis.Pseudodifferential.Smoothing
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 
@@ -26,10 +28,13 @@ parametrix identity `(φ b) # a = φ + r` with `r` smoothing
 the Bessel-potential spaces `H^s = H^{s,2}(ℝⁿ; V)`. This file proves this operator identity and
 the regularity of solutions of elliptic equations:
 
+* `TauCeti.Symbol.IsEllipticAbove.exists_isSmoothing_sharp_sub_ofSpatial` is the symbol identity:
+  a symbol `q` of order `-m` with compact spatial support, vanishing at positions outside
+  `tsupport φ`, such that `q # a - φ` is smoothing, again with compact spatial support.
 * `TauCeti.Symbol.IsEllipticAbove.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_smulLeftCLM_add`
-  is the operator identity: for an elliptic `p`, there are a symbol `q` of order `-m` and a
-  smoothing symbol `r`, both with compact spatial support, with `Op(q) Op(a) u = φ u + Op(r) u`
-  for every `u ∈ H^s` and every real `s`.
+  is the operator identity: for an elliptic `p`, there are a symbol `q` of order `-m`, vanishing
+  at positions outside `tsupport φ`, and a smoothing symbol `r`, both with compact spatial
+  support, with `Op(q) Op(a) u = φ u + Op(r) u` for every `u ∈ H^s` and every real `s`.
 * `TauCeti.Symbol.memSobolev_smulLeftCLM_of_eventually_comp_eq_id`: **interior elliptic
   regularity** for symbols `a` that are only elliptic near `tsupport φ`, in the sense that a symbol
   `e` of order `-m` is a left inverse of `a(x, ξ)` at all large frequencies and all positions near
@@ -46,6 +51,18 @@ the regularity of solutions of elliptic equations:
   (`TemperedDistribution.exists_contDiff_eq_integral_of_forall_memSobolev`), this follows from
   regularity at every order `s`. Since `t` may be negative, this applies to distributions that are
   not functions.
+
+The same holds for scalar symbols acting on arbitrary tempered distributions, with no a priori
+Sobolev regularity, since the smoothing remainder `Op(r)` maps every tempered distribution into
+every `H^s` (`TauCeti.Symbol.IsSmoothing.memSobolev_quantizeTempered`):
+
+* `TauCeti.Symbol.IsEllipticAbove.exists_isSmoothing_and_quantizeTempered_eq_smulLeftCLM_add`:
+  the operator identity `Op(q) Op(a) T = φ T + Op(r) T` for every tempered distribution `T`.
+* `TauCeti.Symbol.IsEllipticAbove.memSobolev_smulLeftCLM_of_memSobolev_quantizeTempered`: if `T`
+  is a tempered distribution with `Op(a) T ∈ H^{s - m}`, then `φ T ∈ H^s`.
+* `TauCeti.Symbol.IsEllipticAbove.exists_contDiff_smulLeftCLM_eq_integral_of_forall_memSobolev`:
+  **hypoellipticity**. If `Op(a) T` lies in every `H^s`, for instance `Op(a) T = 0`, then `φ T`
+  is a smooth function.
 
 The corresponding interior estimate
 `‖φ u‖_{H^s} ≤ C (‖Op(a) u‖_{H^{s - m}} + ‖u‖_{H^r})` is
@@ -96,32 +113,50 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {m R : ℝ}
   {p a : Symbol n V W m}
 
+/-- **The local parametrix symbol of an elliptic symbol.** Let `p` be elliptic of order `m`, let
+`φ` be a compactly supported Schwartz function, and let `a` be a symbol with compact spatial support
+that agrees with `p` on a neighbourhood of `tsupport φ`. There is a symbol `q` of order `-m` with
+compact spatial support, vanishing at positions outside `tsupport φ`, such that `q # a - φ` is
+smoothing and has compact spatial support. -/
+theorem IsEllipticAbove.exists_isSmoothing_sharp_sub_ofSpatial (hp : p.IsEllipticAbove R)
+    (ha : a.HasCompactSpatialSupport) {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ)
+    (hap : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, a.coefficient (x, ξ) = p.coefficient (x, ξ)) :
+    ∃ q : Symbol n W V (-m), q.HasCompactSpatialSupport ∧
+      (∀ x ∉ tsupport φ, ∀ ξ, q.coefficient (x, ξ) = 0) ∧
+      let r := q.sharp a ha - inclusion (neg_add_cancel m).ge
+        (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const))
+      r.HasCompactSpatialSupport ∧ r.IsSmoothing := by
+  obtain ⟨b, hL, -⟩ := hp.exists_isAsymptoticSum_sharpTerm
+  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hφ
+  set F := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const)
+  set q := smulLeft (φ.smooth ⊤) b
+  have hqb : ∀ x ξ, q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ) := fun x ξ ↦
+    coefficient_smulLeft _ b (x, ξ)
+  have hq : q.HasCompactSpatialSupport := hasCompactSpatialSupport_smulLeft (φ.smooth ⊤) hφ b
+  exact ⟨q, hq, fun x hx ξ ↦ by rw [hqb, image_eq_zero_of_notMem_tsupport hx, zero_smul],
+    (hq.sharp ha).sub (hF.inclusion _), isSmoothing_sharp_sub_ofSpatial hL (φ.smooth ⊤) hqb ha hap⟩
+
 /-- **The local parametrix of an elliptic operator.** Let `p` be elliptic of order `m`, let `φ`
 be a compactly supported Schwartz function, and let `a` be a symbol with compact spatial support
-that agrees with `p` on a neighbourhood of `tsupport φ`. There are a symbol `q` of order `-m` and
-a smoothing symbol `r`, both with compact spatial support, such that
-`Op(q) Op(a) u = φ u + Op(r) u` for every `u ∈ H^s` and every real `s`. -/
+that agrees with `p` on a neighbourhood of `tsupport φ`. There are a symbol `q` of order `-m`,
+vanishing at positions outside `tsupport φ`, and a smoothing symbol `r`, both with compact spatial
+support, such that `Op(q) Op(a) u = φ u + Op(r) u` for every `u ∈ H^s` and every real `s`. -/
 theorem IsEllipticAbove.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_smulLeftCLM_add
     (hp : p.IsEllipticAbove R) (ha : a.HasCompactSpatialSupport) {φ : 𝓢(CoordinateSpace n, ℂ)}
     (hφ : HasCompactSupport φ)
     (hap : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, a.coefficient (x, ξ) = p.coefficient (x, ξ)) :
-    ∃ (q : Symbol n W V (-m)) (hq : q.HasCompactSpatialSupport) (r : Symbol n V V (-m + m))
-      (hr : r.HasCompactSpatialSupport), r.IsSmoothing ∧
+    ∃ (q : Symbol n W V (-m)) (hq : q.HasCompactSpatialSupport),
+      (∀ x ∉ tsupport φ, ∀ ξ, q.coefficient (x, ξ) = 0) ∧
+      ∃ (r : Symbol n V V (-m + m)) (hr : r.HasCompactSpatialSupport), r.IsSmoothing ∧
         ∀ (s : ℝ) (u : H^{s}(CoordinateSpace n, V)),
           (q.quantizeSobolev hq (s - m) (a.quantizeSobolev ha s u)).toDistr =
             (BesselPotentialSpace.smulLeftCLM s φ u).toDistr +
               (r.quantizeSobolev hr s u).toDistr := by
-  obtain ⟨b, hL, -⟩ := hp.exists_isAsymptoticSum_sharpTerm
+  obtain ⟨q, hq, hqφ, hr, hrS⟩ := hp.exists_isSmoothing_sharp_sub_ofSpatial ha hφ hap
   have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hφ
   set F := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const)
-  set q := inclusion (zero_add (-m)).le (F.comp b)
-  have hq : q.HasCompactSpatialSupport := (hF.comp_right b).inclusion _
-  have hqb : ∀ x ξ, q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ) := fun x ξ ↦ by
-    simp [q, F]
   have hF' := hF.inclusion (neg_add_cancel m).ge
-  have hr := (hq.sharp ha).sub hF'
-  refine ⟨q, hq, _, hr, isSmoothing_sharp_sub_ofSpatial hL (φ.smooth ⊤) hqb ha hap,
-    fun s u ↦ ?_⟩
+  refine ⟨q, hq, hqφ, _, hr, hrS, fun s u ↦ ?_⟩
   rw [← toDistr_quantizeSobolev_sharp hq ha,
     toDistr_quantizeSobolev_congr
       (b := inclusion (neg_add_cancel m).ge F + (q.sharp a ha - inclusion (neg_add_cancel m).ge F))
@@ -281,6 +316,78 @@ theorem IsEllipticAbove.exists_contDiff_smulLeftCLM (hp : p.IsEllipticAbove R)
       (BesselPotentialSpace.smulLeftCLM t φ u).toDistr ψ = ∫ x, ψ x • g x :=
   TemperedDistribution.exists_contDiff_eq_integral_of_forall_memSobolev fun s ↦
     hp.memSobolev_smulLeftCLM ha hap hχ hχφ (hu (s - m))
+
+/-! ### Tempered distributions -/
+
+section Tempered
+
+variable {p a : Symbol n ℂ ℂ m}
+
+/-- **The local parametrix on tempered distributions.** Let `p` be a scalar symbol elliptic of
+order `m`, let `φ` be a compactly supported Schwartz function, and let `a` be a symbol with compact
+spatial support that agrees with `p` on a neighbourhood of `tsupport φ`. There are a symbol `q` of
+order `-m` and a smoothing symbol `r`, both with compact spatial support, such that
+`Op(q) Op(a) T = φ T + Op(r) T` for every tempered distribution `T`. -/
+theorem IsEllipticAbove.exists_isSmoothing_and_quantizeTempered_eq_smulLeftCLM_add
+    (F : Type*) [AddCommGroup F] [Module ℂ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+    [ContinuousConstSMul ℂ F] (hp : p.IsEllipticAbove R) (ha : a.HasCompactSpatialSupport)
+    {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ)
+    (hap : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, a.coefficient (x, ξ) = p.coefficient (x, ξ)) :
+    ∃ (q : Symbol n ℂ ℂ (-m)) (hq : q.HasCompactSpatialSupport) (r : Symbol n ℂ ℂ (-m + m))
+      (hr : r.HasCompactSpatialSupport), r.IsSmoothing ∧
+        ∀ T : 𝓢'(CoordinateSpace n, F),
+          quantizeTempered F q hq.isUniform (quantizeTempered F a ha.isUniform T) =
+            TemperedDistribution.smulLeftCLM F φ T + quantizeTempered F r hr.isUniform T := by
+  obtain ⟨q, hq, -, hr, hrS⟩ := hp.exists_isSmoothing_sharp_sub_ofSpatial ha hφ hap
+  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := ℂ) hφ
+  set M := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ ℂ) ((φ.smooth ⊤).smul contDiff_const)
+  have hF' := hF.inclusion (neg_add_cancel m).ge
+  refine ⟨q, hq, _, hr, hrS, fun T ↦ ?_⟩
+  rw [← ContinuousLinearMap.comp_apply, ← quantizeTempered_sharp hq.isUniform ha,
+    quantizeTempered_congr (hq.sharp ha).isUniform (hF'.add hr).isUniform
+      (b := inclusion (neg_add_cancel m).ge M + (q.sharp a ha - inclusion (neg_add_cancel m).ge M))
+      (by simp),
+    quantizeTempered_add hF'.isUniform hr.isUniform, add_apply,
+    quantizeTempered_inclusion hF.isUniform, quantizeTempered_ofSpatial_smul_id]
+
+/-- **Interior elliptic regularity for tempered distributions.** Let `p` be a scalar symbol
+elliptic of order `m`, let `φ` be a compactly supported Schwartz function, and let `a` be a symbol
+with compact spatial support that agrees with `p` on a neighbourhood of `tsupport φ`. If
+`Op(a) T ∈ H^{s - m}` for a tempered distribution `T`, then `φ T ∈ H^s`. Unlike
+`TauCeti.Symbol.IsEllipticAbove.memSobolev_smulLeftCLM`, `T` is not assumed to lie in any
+Bessel-potential space: the smoothing remainder of the local parametrix maps every tempered
+distribution into every `H^s` (`TauCeti.Symbol.IsSmoothing.memSobolev_quantizeTempered`). -/
+theorem IsEllipticAbove.memSobolev_smulLeftCLM_of_memSobolev_quantizeTempered
+    (hp : p.IsEllipticAbove R) (ha : a.HasCompactSpatialSupport) {φ : 𝓢(CoordinateSpace n, ℂ)}
+    (hφ : HasCompactSupport φ)
+    (hap : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, a.coefficient (x, ξ) = p.coefficient (x, ξ))
+    {s : ℝ} {T : 𝓢'(CoordinateSpace n, ℂ)}
+    (hT : (quantizeTempered ℂ a ha.isUniform T).MemSobolev (s - m) 2) :
+    (TemperedDistribution.smulLeftCLM ℂ φ T).MemSobolev s 2 := by
+  obtain ⟨q, hq, r, hr, hrS, h⟩ :=
+    hp.exists_isSmoothing_and_quantizeTempered_eq_smulLeftCLM_add ℂ ha hφ hap
+  have h₁ := memSobolev_quantizeTempered hq hT
+  rw [h, sub_neg_eq_add, sub_add_cancel] at h₁
+  convert h₁.sub (hrS.memSobolev_quantizeTempered hr T s) using 1
+  exact (add_sub_cancel_right _ _).symm
+
+/-- **Hypoellipticity on tempered distributions.** Let `p` be a scalar symbol elliptic of order
+`m`, let `φ` be a compactly supported Schwartz function, and let `a` be a symbol with compact
+spatial support that agrees with `p` on a neighbourhood of `tsupport φ`. If `Op(a) T` lies in
+every `H^s` for a tempered distribution `T`, for instance if `Op(a) T = 0`, then `φ T` is a smooth
+function `g`: it pairs with every Schwartz function `ψ` as `∫ ψ • g`. -/
+theorem IsEllipticAbove.exists_contDiff_smulLeftCLM_eq_integral_of_forall_memSobolev
+    (hp : p.IsEllipticAbove R) (ha : a.HasCompactSpatialSupport) {φ : 𝓢(CoordinateSpace n, ℂ)}
+    (hφ : HasCompactSupport φ)
+    (hap : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, a.coefficient (x, ξ) = p.coefficient (x, ξ))
+    {T : 𝓢'(CoordinateSpace n, ℂ)}
+    (hT : ∀ s, (quantizeTempered ℂ a ha.isUniform T).MemSobolev s 2) :
+    ∃ g : CoordinateSpace n → ℂ, ContDiff ℝ ∞ g ∧
+      ∀ ψ : 𝓢(CoordinateSpace n, ℂ), TemperedDistribution.smulLeftCLM ℂ φ T ψ = ∫ x, ψ x • g x :=
+  TemperedDistribution.exists_contDiff_eq_integral_of_forall_memSobolev fun s ↦
+    hp.memSobolev_smulLeftCLM_of_memSobolev_quantizeTempered ha hφ hap (hT (s - m))
+
+end Tempered
 
 end Symbol
 

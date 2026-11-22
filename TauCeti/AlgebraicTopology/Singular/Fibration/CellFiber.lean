@@ -121,6 +121,15 @@ abbrev cellDiskPullbackPair (n : ℕ) (j : cell C n) : TopPair.{u} :=
   TopPair.ofSubset (_root_.TopCat.pullbackFst (cellULiftMap C n j) p ⁻¹'
     {x | (x : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1})
 
+/-- A point of the pullback `Pⱼ` along an `n`-cell `j` lies in the part `∂Pⱼ` over the
+boundary exactly when its point of the ball lies in the unit sphere. -/
+lemma mem_cellDiskPullbackPair_snd_iff (n : ℕ) (j : cell C n)
+    (y : {x : closedBall (0 : ULift.{u} (Fin n → ℝ)) 1 × E // cellULiftMap C n j x.1 = p x.2}) :
+    y ∈ _root_.TopCat.pullbackFst (cellULiftMap C n j) p ⁻¹'
+        {x | (x : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1} ↔
+      (y.val.1 : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1 := by
+  rw [mem_preimage, mem_ofPred_eq, _root_.TopCat.pullbackFst_apply]
+
 variable (p C) in
 /-- The inclusion `Pⱼ ⟶ P` of the pullback of `p` along the characteristic map of `j` into the
 pullback of `p` to the disks of all `n`-cells. -/
@@ -146,7 +155,7 @@ def cellDiskPullbackPairι (n : ℕ) (j : cell C n) :
     cellDiskPullbackPair p C n j ⟶ cellPullbackPair p C n :=
   TopPair.ofSubsetMap (cellDiskPullbackι p C n j) fun x hx ↦ by
     rw [mem_ofPred_eq, coe_cellDiskPullbackι_apply, coe_uliftClosedBall_apply, ULift.norm_down]
-    exact mem_sphere_zero_iff_norm.1 hx
+    exact mem_sphere_zero_iff_norm.1 ((mem_cellDiskPullbackPair_snd_iff n j x).1 hx)
 
 private lemma cellDiskPullbackPairι_fst_apply (n : ℕ) (j : cell C n)
     (x : (cellDiskPullbackPair p C n j).fst) :
@@ -232,26 +241,16 @@ single cells.** The inclusions `(Pⱼ, ∂Pⱼ) ⟶ (P, ∂P)` exhibit `(P, ∂P
 pairs `(Pⱼ, ∂Pⱼ)` in `TopPair`. -/
 def isColimitCofanCellDiskPullbackPairι (n : ℕ) :
     IsColimit (Cofan.mk (cellPullbackPair p C n) (cellDiskPullbackPairι p C n)) :=
-  let hσ := TopPair.sigmaCofanIsColimit (cellDiskPullbackPair p C n)
-  let σ := hσ.desc (Cofan.mk (cellPullbackPair p C n) (cellDiskPullbackPairι p C n))
-  -- On the summand of `j`, `σ` is the inclusion of `Pⱼ`.
-  have hσ_fst (x : Σ j : cell C n, (cellDiskPullbackPair p C n j).fst) :
-      TopPair.Hom.fst σ x = cellDiskPullbackι p C n x.1 x.2 :=
-    (ConcreteCategory.congr_hom (congrArg TopPair.Hom.fst (hσ.fac _ ⟨x.1⟩)) x.2).trans
-      (cellDiskPullbackPairι_fst_apply n x.1 x.2)
-  have : IsIso (TopPair.Hom.fst σ) := by
-    rw [_root_.TopCat.isIso_iff_isHomeomorph, (funext hσ_fst : ⇑(TopPair.Hom.fst σ) = _)]
-    exact isHomeomorph_sigmaCellDiskPullbackι n
-  have : IsIso σ := TopPair.isIso_of_isIso_fst_of_surjective_snd σ fun y ↦ by
+  TopPair.isColimitCofanOfIsHomeomorph _ (by
+    simp only [cellDiskPullbackPairι_fst_apply]
+    exact isHomeomorph_sigmaCellDiskPullbackι n) fun y ↦ by
     -- A point over a boundary sphere comes from the pullback to its cell, over the sphere.
     obtain ⟨x, hx⟩ := (isHomeomorph_sigmaCellDiskPullbackι (p := p) n).bijective.2 y.val
     have hy : ‖(y.val.val.1.2 : Fin n → ℝ)‖ = 1 := y.property
     rw [← hx, coe_cellDiskPullbackι_apply, coe_uliftClosedBall_apply] at hy
     -- Membership in `∂Pⱼ` is membership of the point of the disk in the sphere.
-    refine ⟨⟨x.1, x.2, (by simpa using hy : (x.2.val.1 : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1)⟩,
-      Subtype.ext ?_⟩
-    exact (TopPair.Hom.w_apply σ _).trans ((hσ_fst _).trans hx)
-  IsColimit.ofIsoColimit hσ (Cofan.ext (asIso σ) fun j ↦ hσ.fac _ ⟨j⟩)
+    exact ⟨x.1, ⟨x.2, (by simpa using hy : (x.2.val.1 : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1)⟩,
+      (cellDiskPullbackPairι_fst_apply n x.1 x.2).trans hx⟩
 
 variable (p C) in
 /-- The fibre of `Pⱼ ⟶ Dⁿ` over the centre of the disk is the fibre of `p` over the centre
