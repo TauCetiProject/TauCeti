@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 import Mathlib.Analysis.Calculus.FDeriv.Norm
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 
@@ -23,9 +25,11 @@ operator norm at points of equal norm (`TauCeti.norm_fderiv_eq_of_norm_eq`). Mor
 unit ray a radial function's one-dimensional derivative is bounded in norm by the operator norm of
 its Fréchet derivative (`TauCeti.norm_deriv_comp_smul_le`, `TauCeti.deriv_radial_sq_le`), and two
 points on a radially nonincreasing function's noncritical level set have equal norm
-(`TauCeti.norm_eq_of_notMem_image_fderiv_eq_zero`). The norm itself, being `1`-Lipschitz, has
-derivative of norm at most `1` everywhere (`TauCeti.norm_fderiv_norm_le`). In any real normed space,
-a curve whose derivative is a multiple `c • f a` of its value has norm with derivative
+(`TauCeti.norm_eq_of_notMem_image_fderiv_eq_zero`). Likewise, the `0`-homogeneous radial extension
+`TauCeti.sphereExtend f` has vanishing radial derivative everywhere
+(`TauCeti.fderiv_sphereExtend_self`). The norm itself, being `1`-Lipschitz, has derivative of norm
+at most `1` everywhere (`TauCeti.norm_fderiv_norm_le`). In any real normed space, a curve whose
+derivative is a multiple `c • f a` of its value has norm with derivative
 `c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
@@ -207,5 +211,18 @@ theorem sqrt_one_sub_norm_sq_pos {G : Type*} [SeminormedAddCommGroup G] {x : G} 
 theorem hasFDerivAt_norm_sq_sub (x₀ x : F) :
     HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
   simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
+
+/-- The radial directional derivative of `sphereExtend f` at `x` along `x` vanishes unconditionally,
+as `sphereExtend f` is constant on positive rays. -/
+@[simp]
+theorem fderiv_sphereExtend_self {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (f : Metric.sphere (0 : E) 1 → G) (x : E) :
+    fderiv ℝ (sphereExtend f) x x = 0 := by
+  by_cases hd : DifferentiableAt ℝ (sphereExtend f) x
+  · simpa using hd.hasFDerivAt.apply_self_eq_smul_of_eventuallyEq
+      (w := fun _ ↦ (1 : ℝ)) (hasDerivAt_const (1 : ℝ) (1 : ℝ))
+      (Filter.eventually_of_mem (Ioi_mem_nhds zero_lt_one) fun t ht ↦ by
+        simp [sphereExtend_smul_of_pos f ht])
+  · rw [fderiv_zero_of_not_differentiableAt hd, zero_apply]
 
 end TauCeti
