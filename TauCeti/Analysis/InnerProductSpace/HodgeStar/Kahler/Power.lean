@@ -9,7 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Mass
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Wedge
 import TauCeti.Geometry.Symplectic.CompatibleMetric
-import TauCeti.Geometry.Symplectic.ExistsCompatible
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
@@ -211,17 +210,6 @@ theorem norm_kahlerPowerForm_le (r : ℕ) : ‖J.kahlerPowerForm r‖ ≤ 1 := b
         gcongr
         exact norm_alternatingFormEquiv_kahlerForm_le hJ
     _ = r.factorial := by simp
-
-/-- Up to half the dimension, there are families of `r` vectors that are orthonormal for the
-Hermitian metric of `J`. -/
-theorem exists_orthonormal_forall_inner_apply_eq_zero {r : ℕ} (hr : 2 * r ≤ finrank ℝ V) :
-    ∃ u : Fin r → V, Orthonormal ℝ u ∧ ∀ i j, ⟪J (u i), u j⟫ = 0 := by
-  obtain ⟨n, hn⟩ := (J.symplecticForm hJ).even_finrank
-  obtain ⟨b, hb⟩ := exists_adapted_orthonormalBasis J (norm_apply hJ) n (by omega)
-  refine ⟨fun i ↦ b ⟨2 * i, by omega⟩, ?_, fun i j ↦ ?_⟩
-  · exact b.orthonormal.comp _ fun i j h ↦ Fin.ext (by simpa using congrArg Fin.val h)
-  · rw [← hb ⟨i, by omega⟩]
-    exact b.orthonormal.2 (by simp [Fin.ext_iff]; omega)
 
 /-- `ω ^ r / r!` has comass exactly one when `2r` is at most the dimension. -/
 theorem norm_kahlerPowerForm {r : ℕ} (hr : 2 * r ≤ finrank ℝ V) : ‖J.kahlerPowerForm r‖ = 1 := by
