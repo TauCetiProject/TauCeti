@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Leibniz
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.Sobolev.Wkp.Extension
 import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
