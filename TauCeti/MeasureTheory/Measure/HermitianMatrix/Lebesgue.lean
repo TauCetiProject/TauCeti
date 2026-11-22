@@ -8,8 +8,6 @@ module
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 public import TauCeti.MeasureTheory.Measure.HermitianMatrix.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Normalize
-import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Lebesgue measure on the complex Hermitian subspace
@@ -101,43 +99,50 @@ theorem inner_hermitianBasis (p : ℕ)
     simp only [h.ne', ↓reduceIte, smul_eq_mul, Complex.sub_re, Complex.mul_re, Complex.I_re,
       Complex.I_im, Complex.conj_im]; ring
 
-/-- The coordinate basis vectors of `TauCeti.hermitianBasis` are pairwise orthogonal in the
-real Frobenius inner product. -/
-theorem pairwise_inner_hermitianBasis (p : ℕ) :
-    Pairwise fun ij kl ↦ ⟪hermitianBasis p ij, hermitianBasis p kl⟫ = 0 := by
-  intro ij kl hne
-  rw [inner_hermitianBasis, hermitianBasis_apply, ContinuousLinearEquiv.apply_symm_apply,
-    Pi.single_apply, ite_eq_right hne.symm, mul_zero]
+private def hermScale (p : ℕ) (ij : Fin p × Fin p) : ℝˣ :=
+  if ij.1 = ij.2 then 1 else Units.mk0 (Real.sqrt 2)⁻¹ (by positivity)
 
-/-- Each vector of `TauCeti.hermitianBasis` has Frobenius norm `1` on the diagonal and `√2` off
-it. -/
-theorem norm_hermitianBasis (p : ℕ) (ij : Fin p × Fin p) :
-    ‖hermitianBasis p ij‖ = if ij.1 = ij.2 then 1 else Real.sqrt 2 := by
-  rw [← Real.sqrt_sq (norm_nonneg _), ← real_inner_self_eq_norm_sq, inner_hermitianBasis,
-    hermitianBasis_apply, ContinuousLinearEquiv.apply_symm_apply, Pi.single_eq_same, mul_one]
-  split_ifs <;> simp
+private theorem hermScale_coe (p : ℕ) (ij : Fin p × Fin p) :
+    ((hermScale p ij : ℝˣ) : ℝ) = if ij.1 = ij.2 then 1 else (Real.sqrt 2)⁻¹ := by
+  rw [hermScale]; split <;> simp
+
+private theorem orthonormal_hermScaled (p : ℕ) :
+    Orthonormal ℝ ⇑((hermitianBasis p).unitsSMul (hermScale p)) := by
+  refine orthonormal_iff_ite.2 fun ij kl ↦ ?_
+  rw [Basis.unitsSMul_apply, Basis.unitsSMul_apply, Units.smul_def, Units.smul_def,
+    real_inner_smul_left, real_inner_smul_right, inner_hermitianBasis, hermitianBasis_apply,
+    ContinuousLinearEquiv.apply_symm_apply, Pi.single_apply]
+  rcases eq_or_ne ij kl with rfl | h
+  · by_cases hd : ij.1 = ij.2
+    · simp [hermScale_coe, hd]
+    · simp only [hermScale_coe, hd, ↓reduceIte, mul_one, ← mul_assoc, ← mul_inv]
+      rw [Real.mul_self_sqrt (by norm_num), inv_mul_cancel₀ two_ne_zero]
+  · simp [h, Ne.symm h]
 
 /-- The orthonormal basis of the complex Hermitian subspace obtained by rescaling the off-diagonal
 vectors of `TauCeti.hermitianBasis` by `(√2)⁻¹`. -/
 def hermitianOrthonormalBasis (p : ℕ) :
     OrthonormalBasis (Fin p × Fin p) ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :=
-  (hermitianBasis p).toOrthonormalBasisOfOrthogonal (pairwise_inner_hermitianBasis p)
+  ((hermitianBasis p).unitsSMul (hermScale p)).toOrthonormalBasis (orthonormal_hermScaled p)
 
 /-- Each vector of `TauCeti.hermitianOrthonormalBasis` rescales `TauCeti.hermitianBasis` by `1` on
 the diagonal and `(√2)⁻¹` off the diagonal. -/
 theorem hermitianOrthonormalBasis_apply (p : ℕ) (ij : Fin p × Fin p) :
     hermitianOrthonormalBasis p ij =
       (if ij.1 = ij.2 then (1 : ℝ) else (Real.sqrt 2)⁻¹) • hermitianBasis p ij := by
-  rw [hermitianOrthonormalBasis, Basis.toOrthonormalBasisOfOrthogonal_apply, norm_hermitianBasis]
-  split_ifs <;> simp
+  rw [hermitianOrthonormalBasis, Basis.coe_toOrthonormalBasis, Basis.unitsSMul_apply,
+    Units.smul_def, hermScale_coe]
 
 /-- Coordinates in `TauCeti.hermitianOrthonormalBasis` rescale off-diagonal coordinates by `√2`. -/
 @[simp] theorem hermitianOrthonormalBasis_repr (p : ℕ)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) (ij : Fin p × Fin p) :
     (hermitianOrthonormalBasis p).repr A ij =
       (if ij.1 = ij.2 then 1 else Real.sqrt 2) * hermitianCoordinates p A ij := by
-  rw [hermitianOrthonormalBasis, Basis.toOrthonormalBasisOfOrthogonal_repr_apply,
-    norm_hermitianBasis, hermitianBasis_repr, RCLike.ofReal_real_eq_id, id_eq]
+  have h2 : (Real.sqrt 2)⁻¹ * 2 = Real.sqrt 2 :=
+    (inv_mul_eq_iff_eq_mul₀ (by positivity)).2 (Real.mul_self_sqrt (by norm_num)).symm
+  rw [(hermitianOrthonormalBasis p).repr_apply_apply, hermitianOrthonormalBasis_apply,
+    real_inner_smul_left, real_inner_comm, inner_hermitianBasis, ← mul_assoc]
+  by_cases hd : ij.1 = ij.2 <;> simp [hd, h2]
 
 private theorem card_hermOffDiag (p : ℕ) :
     ((Finset.univ.filter fun ij : Fin p × Fin p ↦ ij.1 ≠ ij.2).card : ℝ) =
@@ -155,14 +160,19 @@ end comparison
 theorem volume_hermitianMatrix_eq_smul_hermitianLebesgue (p : ℕ) :
     (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ))) =
       ENNReal.ofReal ((2 : ℝ) ^ (((p : ℝ) * ((p : ℝ) - 1)) / 2)) • hermitianLebesgue p := by
-  rw [hermitianLebesgue_eq_addHaar,
-    (hermitianBasis p).volume_eq_smul_addHaar_of_pairwise_inner_eq_zero
-      (pairwise_inner_hermitianBasis p)]
-  congr 2
-  simp_rw [norm_hermitianBasis]
-  rw [Finset.prod_ite, Finset.prod_const_one, one_mul, Finset.prod_const, Real.sqrt_eq_rpow,
-    ← Real.rpow_natCast, ← Real.rpow_mul (by norm_num), card_hermOffDiag]
-  exact congrArg _ (by ring)
+  have hhaar : ((hermitianBasis p).unitsSMul (hermScale p)).addHaar =
+      (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ))) := by
+    rw [← Basis.toBasis_toOrthonormalBasis _ (orthonormal_hermScaled p),
+      OrthonormalBasis.addHaar_eq_volume]
+  set N : ℕ := (Finset.univ.filter fun ij : Fin p × Fin p ↦ ij.1 ≠ ij.2).card with hN
+  have hprod : (∏ ij, (hermScale p ij : ℝ))⁻¹ = (2 : ℝ) ^ (((p : ℝ) * ((p : ℝ) - 1)) / 2) := by
+    simp only [hermScale_coe, Finset.prod_ite, Finset.prod_const_one, one_mul, Finset.prod_const]
+    rw [inv_pow, inv_inv, Real.sqrt_eq_rpow, ← Real.rpow_natCast ((2 : ℝ) ^ (1 / 2 : ℝ)) N,
+      ← Real.rpow_mul (by norm_num), hN, card_hermOffDiag]
+    exact congrArg _ (by ring)
+  rw [← hhaar, hermitianLebesgue_eq_addHaar,
+    Module.Basis.addHaar_eq_smul_of_basis (hermitianBasis p), Basis.det_unitsSMul_self, hprod,
+    abs_of_nonneg (Real.rpow_nonneg (by norm_num) _)]
 
 /-- Conversely, `hermitianLebesgue p` is `2 ^ (-(p * (p - 1) / 2))` times `volume`. -/
 theorem hermitianLebesgue_eq_smul_volume (p : ℕ) :

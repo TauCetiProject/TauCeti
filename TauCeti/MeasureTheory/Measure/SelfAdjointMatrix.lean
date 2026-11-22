@@ -16,7 +16,6 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.UniformSpace.Matrix
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Frobenius geometry and unitary conjugation on self-adjoint matrix subspaces
@@ -25,16 +24,14 @@ For `[RCLike 𝕜]`, `selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)` i
 subspace at `𝕜 = ℝ` and the complex Hermitian subspace at `𝕜 = ℂ`. This file equips it uniformly
 over `𝕜` with the ambient Frobenius norm and real inner product `⟪A, B⟫ = RCLike.re tr(B * A)` on
 the subtype uniformity, and builds `Matrix.UnitaryGroup.selfAdjointConj` as a real linear isometry
-equivalence preserving every additive Haar measure and traces of powers.
+equivalence preserving `volume`.
 
 ## Main declarations
 
 * `TauCeti.selfAdjointMatrixNormedAddCommGroup`, `TauCeti.selfAdjointMatrixInnerProductSpace`.
 * `selfAdjoint.coe_inner`, `selfAdjoint.isHermitian_coe`, `selfAdjoint.conjTranspose_coe`,
   `selfAdjoint.inner_eq_rclike_re_trace_mul`, `selfAdjoint.norm_sq_eq_rclike_re_trace_sq`.
-* `Matrix.UnitaryGroup.selfAdjointConj`, `coe_selfAdjointConj_pow`, `trace_selfAdjointConj_pow`,
-  `trace_selfAdjointConj`, `measurePreserving_selfAdjointConj`,
-  `measurePreserving_selfAdjointConj_volume`.
+* `Matrix.UnitaryGroup.selfAdjointConj`, `measurePreserving_selfAdjointConj_volume`.
 -/
 
 public section
@@ -216,42 +213,7 @@ theorem selfAdjointConj_mul (U V : Matrix.unitaryGroup (Fin p) 𝕜) :
     rw [coe_selfAdjointConj_apply, coe_selfAdjointConj_symm_apply, ← Unitary.star_eq_inv,
       Unitary.coe_star, star_eq_conjTranspose, Matrix.conjTranspose_conjTranspose]
 
-/-- Powers commute with unitary conjugation: `(U * A * Uᴴ) ^ k = U * A ^ k * Uᴴ`. -/
-theorem coe_selfAdjointConj_pow (U : Matrix.unitaryGroup (Fin p) 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) (k : ℕ) :
-    (selfAdjointConj U A : Matrix (Fin p) (Fin p) 𝕜) ^ k =
-      (U : Matrix (Fin p) (Fin p) 𝕜) * (A : Matrix (Fin p) (Fin p) 𝕜) ^ k *
-        (U : Matrix (Fin p) (Fin p) 𝕜)ᴴ := by
-  rw [coe_selfAdjointConj_apply]
-  simpa [Matrix.star_eq_conjTranspose] using
-    (Unitary.toUnits U).conj_pow (A : Matrix (Fin p) (Fin p) 𝕜) k
-
-/-- Unitary conjugation preserves the trace of every power of a self-adjoint matrix. -/
-theorem trace_selfAdjointConj_pow (U : Matrix.unitaryGroup (Fin p) 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) (k : ℕ) :
-    ((selfAdjointConj U A : Matrix (Fin p) (Fin p) 𝕜) ^ k).trace =
-      ((A : Matrix (Fin p) (Fin p) 𝕜) ^ k).trace := by
-  have hU : (U : Matrix (Fin p) (Fin p) 𝕜)ᴴ * (U : Matrix (Fin p) (Fin p) 𝕜) = 1 :=
-    Matrix.mem_unitaryGroup_iff'.1 U.property
-  rw [coe_selfAdjointConj_pow, Matrix.trace_mul_cycle, hU, one_mul]
-
-/-- Unitary conjugation preserves the trace of a self-adjoint matrix. -/
-theorem trace_selfAdjointConj (U : Matrix.unitaryGroup (Fin p) 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
-    (selfAdjointConj U A : Matrix (Fin p) (Fin p) 𝕜).trace =
-      (A : Matrix (Fin p) (Fin p) 𝕜).trace := by
-  simpa only [pow_one] using trace_selfAdjointConj_pow U A 1
-
 end Algebra
-
-/-- Unitary conjugation preserves every additive Haar measure on the real self-adjoint matrix
-subspace (in particular Frobenius `volume`, `TauCeti.symmetricLebesgue`, and
-`TauCeti.hermitianLebesgue`). -/
-theorem measurePreserving_selfAdjointConj {𝕜 : Type*} [RCLike 𝕜] [MeasurableSpace 𝕜]
-    [BorelSpace 𝕜] {p : ℕ} (U : Matrix.unitaryGroup (Fin p) 𝕜)
-    (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜))) [μ.IsAddHaarMeasure] :
-    MeasurePreserving (selfAdjointConj U) μ μ :=
-  (selfAdjointConj U).measurePreserving_addHaar μ
 
 /-- Unitary conjugation preserves Frobenius `volume` on the self-adjoint matrix subspace. -/
 theorem measurePreserving_selfAdjointConj_volume {𝕜 : Type*} [RCLike 𝕜] [MeasurableSpace 𝕜]

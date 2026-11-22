@@ -34,8 +34,6 @@ basis that consumes them.
   vanishes, so
   `volume^ι`-null sets are exactly `γ^ι`-null sets in the direction one needs to move an
   almost-everywhere statement from `γ^ι` to `volume^ι`.
-* `TauCeti.Probability.pi_gaussianReal_eq_map_sqrt_smul`: the product of centered Gaussians of
-  variance `v` on `ℝ^ι` is the pushforward of `γ^ι` by scalar multiplication with `√v`.
 * `ProbabilityTheory.isGaussian_pi`: a finite product of Gaussian measures is Gaussian. In
   particular `γ^ι` is Gaussian, so the Gaussian moment and integrability API applies to it.
 -/
@@ -44,7 +42,7 @@ public section
 
 open MeasureTheory ProbabilityTheory Real
 
-open scoped ENNReal NNReal
+open scoped ENNReal
 
 namespace ProbabilityTheory
 
@@ -136,18 +134,5 @@ theorem pi_volume_absolutelyContinuous_pi_gaussianReal :
   rw [pi_gaussianReal_eq_withDensity]
   exact absolutelyContinuous_withDensity_ofReal (measurable_prod_gaussianPDFReal ι).aemeasurable
     (.of_forall (prod_gaussianPDFReal_pos ι))
-
-/-- The product of centered real Gaussians with variance `v` on `ι → ℝ` is the pushforward of the
-standard product Gaussian `Measure.pi (fun _ : ι => gaussianReal 0 1)` by scalar multiplication
-with `√v`. -/
-theorem pi_gaussianReal_eq_map_sqrt_smul (v : ℝ≥0) :
-    (Measure.pi fun _ : ι => (gaussianReal 0 v : Measure ℝ)) =
-      (Measure.pi fun _ : ι => (gaussianReal 0 1 : Measure ℝ)).map (Real.sqrt v • ·) := by
-  have hv : gaussianReal 0 v = (gaussianReal 0 1).map (Real.sqrt v * ·) := by
-    rw [gaussianReal_map_const_mul, mul_zero, mul_one]
-    congr
-    exact NNReal.eq (Real.sq_sqrt v.property).symm
-  rw [hv, ← Measure.pi_map_pi fun _ => by fun_prop]
-  rfl
 
 end TauCeti.Probability

@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Analysis.Complex.NormSq
+import TauCeti.Probability.Distributions.Gaussian.Affine
 
 /-!
 # Gaussian orthogonal and unitary ensembles
@@ -224,17 +225,8 @@ theorem hasLaw_gaussianEnsemble {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Mea
     HasLaw (fun ω ↦ gaussianEnsemble β n (fun ij ↦ g ij ω))
       ((Measure.pi fun _ : Fin n × Fin n ↦ gaussianReal 0 1).map
         fun x ↦ Real.sqrt v • gaussianEnsemble β n x) P := by
-  have hv : gaussianReal 0 v = (gaussianReal 0 1).map (Real.sqrt v * ·) := by
-    rw [gaussianReal_map_const_mul, mul_zero, mul_one]
-    congr
-    exact NNReal.eq (Real.sq_sqrt v.property).symm
-  have hpi : Measure.pi (fun _ : Fin n × Fin n ↦ gaussianReal 0 v) =
-      (Measure.pi fun _ : Fin n × Fin n ↦ gaussianReal 0 1).map (Real.sqrt v • ·) := by
-    rw [hv, ← Measure.pi_map_pi fun _ ↦ by fun_prop]
-    -- scalar multiplication on arrays is coordinatewise multiplication
-    rfl
   have hlaw := (⟨by fun_prop, rfl⟩ : HasLaw (gaussianEnsemble β n) _ _).comp (hindep.hasLaw_pi hg)
-  rw [hpi, Measure.map_map (by fun_prop) (by fun_prop)] at hlaw
+  rw [pi_gaussianReal_zero_eq_map_smul, Measure.map_map (by fun_prop) (by fun_prop)] at hlaw
   simpa [Function.comp_def, gaussianEnsemble_smul] using hlaw
 
 /-- A sampled Gaussian ensemble is the corresponding Wigner matrix with its entry functions. -/

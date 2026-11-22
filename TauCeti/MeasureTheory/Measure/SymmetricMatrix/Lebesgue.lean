@@ -8,8 +8,6 @@ module
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Normalize
-import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Lebesgue measure on the symmetric subspace
@@ -118,35 +116,44 @@ theorem inner_symmetricBasis (p : ℕ)
     rw [ite_eq_right h]
     ring
 
-/-- The coordinate basis vectors of `TauCeti.symmetricBasis` are pairwise orthogonal in the
-Frobenius inner product. -/
-theorem pairwise_inner_symmetricBasis (p : ℕ) :
-    Pairwise fun ij kl ↦ ⟪symmetricBasis p ij, symmetricBasis p kl⟫ = 0 := by
-  intro ij ⟨⟨k, l⟩, hkl⟩ hne
-  rw [inner_symmetricBasis, coe_symmetricBasis_apply_of_le p ij hkl, ite_eq_right hne, mul_zero]
+/-- The rescaling that turns the coordinate basis into an orthonormal one. -/
+private def symScale (p : ℕ) (ij : upperTriangle p) : ℝˣ :=
+  if ij.val.1 = ij.val.2 then 1 else Units.mk0 (Real.sqrt 2)⁻¹ (by positivity)
 
-/-- Each vector of `TauCeti.symmetricBasis` has Frobenius norm `1` on the diagonal and `√2` off
-it. -/
-theorem norm_symmetricBasis (p : ℕ) (ij : upperTriangle p) :
-    ‖symmetricBasis p ij‖ = if ij.val.1 = ij.val.2 then 1 else Real.sqrt 2 := by
-  obtain ⟨⟨k, l⟩, hkl⟩ := ij
-  rw [← Real.sqrt_sq (norm_nonneg _), ← real_inner_self_eq_norm_sq, inner_symmetricBasis,
-    coe_symmetricBasis_apply_of_le p _ hkl, ite_eq_left rfl, mul_one]
-  split_ifs <;> simp
+private theorem symScale_coe (p : ℕ) (ij : upperTriangle p) :
+    ((symScale p ij : ℝˣ) : ℝ) = if ij.val.1 = ij.val.2 then 1 else (Real.sqrt 2)⁻¹ := by
+  rw [symScale]
+  split <;> simp
+
+private theorem orthonormal_symScaled (p : ℕ) :
+    Orthonormal ℝ ⇑((symmetricBasis p).unitsSMul (symScale p)) := by
+  rw [orthonormal_iff_ite]
+  intro ij kl
+  obtain ⟨⟨k, l⟩, hkl⟩ := kl
+  rw [Basis.unitsSMul_apply, Basis.unitsSMul_apply, Units.smul_def, Units.smul_def,
+    real_inner_smul_left, real_inner_smul_right, inner_symmetricBasis,
+    coe_symmetricBasis_apply_of_le p ij hkl]
+  by_cases h : ij = ⟨(k, l), hkl⟩
+  · subst h
+    by_cases hd : k = l
+    · simp [symScale_coe, hd]
+    · simp only [symScale_coe, hd, ite_false, ite_true, mul_one]
+      rw [← mul_assoc, ← mul_inv, Real.mul_self_sqrt (by norm_num), inv_mul_cancel₀ two_ne_zero]
+  · simp [h]
 
 /-- The orthonormal basis of the symmetric subspace obtained by rescaling the off-diagonal vectors
 of `TauCeti.symmetricBasis` by `(√2)⁻¹`: `Eᵢᵢ` on the diagonal and `(Eᵢⱼ + Eⱼᵢ) / √2` above it. -/
 def symmetricOrthonormalBasis (p : ℕ) :
     OrthonormalBasis (upperTriangle p) ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-  (symmetricBasis p).toOrthonormalBasisOfOrthogonal (pairwise_inner_symmetricBasis p)
+  ((symmetricBasis p).unitsSMul (symScale p)).toOrthonormalBasis (orthonormal_symScaled p)
 
 /-- Each vector of `TauCeti.symmetricOrthonormalBasis` is the coordinate basis vector
 `TauCeti.symmetricBasis` scaled by `1` on the diagonal and `(√2)⁻¹` above it. -/
 theorem symmetricOrthonormalBasis_apply (p : ℕ) (ij : upperTriangle p) :
     symmetricOrthonormalBasis p ij =
       (if ij.val.1 = ij.val.2 then (1 : ℝ) else (Real.sqrt 2)⁻¹) • symmetricBasis p ij := by
-  rw [symmetricOrthonormalBasis, Basis.toOrthonormalBasisOfOrthogonal_apply, norm_symmetricBasis]
-  split_ifs <;> simp
+  rw [symmetricOrthonormalBasis, Basis.coe_toOrthonormalBasis, Basis.unitsSMul_apply,
+    Units.smul_def, symScale_coe]
 
 /-- Coordinates in `TauCeti.symmetricOrthonormalBasis` rescale off-diagonal entries by `√2`. -/
 @[simp] theorem symmetricOrthonormalBasis_repr (p : ℕ)
@@ -154,8 +161,17 @@ theorem symmetricOrthonormalBasis_apply (p : ℕ) (ij : upperTriangle p) :
     (symmetricOrthonormalBasis p).repr A ij =
       (if ij.val.1 = ij.val.2 then 1 else Real.sqrt 2) *
         (A : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2 := by
-  rw [symmetricOrthonormalBasis, Basis.toOrthonormalBasisOfOrthogonal_repr_apply,
-    norm_symmetricBasis, symmetricBasis_repr, RCLike.ofReal_real_eq_id, id_eq]
+  have h2 : (Real.sqrt 2)⁻¹ * 2 = Real.sqrt 2 :=
+    (inv_mul_eq_iff_eq_mul₀ (by positivity)).2 (Real.mul_self_sqrt (by norm_num)).symm
+  rw [(symmetricOrthonormalBasis p).repr_apply_apply, symmetricOrthonormalBasis_apply,
+    real_inner_smul_left, real_inner_comm, inner_symmetricBasis, ← mul_assoc]
+  by_cases hd : ij.val.1 = ij.val.2 <;> simp [hd, h2]
+
+private theorem addHaar_symScaled (p : ℕ) :
+    ((symmetricBasis p).unitsSMul (symScale p)).addHaar =
+      (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) := by
+  rw [← Basis.toBasis_toOrthonormalBasis _ (orthonormal_symScaled p),
+    OrthonormalBasis.addHaar_eq_volume]
 
 /-- There are `∑ i < p, i = p * (p - 1) / 2` upper-triangular positions off the diagonal. -/
 private theorem card_offDiag (p : ℕ) :
@@ -179,6 +195,31 @@ private theorem two_mul_card_offDiag (p : ℕ) :
     push_cast at hcast ⊢
     linarith
 
+private theorem prod_symScale_inv (p : ℕ) :
+    (((∏ ij, symScale p ij)⁻¹ : ℝˣ) : ℝ) =
+      (2 : ℝ) ^ (((p : ℝ) * ((p : ℝ) - 1)) / 4) := by
+  set N : ℕ := ∑ i ∈ Finset.range p, i with hN
+  have hprod : ((∏ ij, symScale p ij : ℝˣ) : ℝ) = (Real.sqrt 2)⁻¹ ^ N := by
+    rw [← Units.coeHom_apply, map_prod]
+    simp only [Units.coeHom_apply, symScale_coe]
+    rw [Finset.prod_ite, Finset.prod_const_one, one_mul, Finset.prod_const, card_offDiag]
+  rw [Units.val_inv_eq_inv_val, hprod, inv_pow, inv_inv, Real.sqrt_eq_rpow,
+    ← Real.rpow_natCast ((2 : ℝ) ^ (1 / 2 : ℝ)) N, ← Real.rpow_mul (by norm_num)]
+  congr 1
+  have := two_mul_card_offDiag p
+  rw [← hN] at this
+  linarith
+
+private theorem volume_parallelepiped_symmetricBasis (p : ℕ) :
+    (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)))
+        (symmetricBasis p).parallelepiped =
+      ENNReal.ofReal ((2 : ℝ) ^ (((p : ℝ) * ((p : ℝ) - 1)) / 4)) := by
+  rw [Basis.coe_parallelepiped, ← addHaar_symScaled p, Measure.addHaar_parallelepiped,
+    Basis.det_unitsSMul]
+  simp only [_root_.smul_apply, Basis.det_self, smul_eq_mul, mul_one]
+  rw [prod_symScale_inv]
+  exact congrArg ENNReal.ofReal (abs_of_nonneg (Real.rpow_nonneg (by norm_num) _))
+
 end comparison
 
 /-- The Frobenius volume of the symmetric subspace is `2 ^ (p * (p - 1) / 4)` times
@@ -187,15 +228,8 @@ coordinate directions `Eᵢⱼ + Eⱼᵢ` has Frobenius norm `√2`. -/
 theorem volume_symmetricMatrix_eq_smul_symmetricLebesgue (p : ℕ) :
     (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) =
       ENNReal.ofReal ((2 : ℝ) ^ (((p : ℝ) * ((p : ℝ) - 1)) / 4)) • symmetricLebesgue p := by
-  rw [symmetricLebesgue_eq_addHaar,
-    (symmetricBasis p).volume_eq_smul_addHaar_of_pairwise_inner_eq_zero
-      (pairwise_inner_symmetricBasis p)]
-  congr 2
-  simp_rw [norm_symmetricBasis]
-  rw [Finset.prod_ite, Finset.prod_const_one, one_mul, Finset.prod_const, card_offDiag,
-    Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (by norm_num)]
-  congr 1
-  linarith [two_mul_card_offDiag p]
+  rw [symmetricLebesgue_eq_addHaar, Basis.addHaar_def, ← volume_parallelepiped_symmetricBasis]
+  exact Measure.addHaarMeasure_unique _ _
 
 /-- Conversely, `symmetricLebesgue p` is `2 ^ (-(p * (p - 1) / 4))` times the Frobenius `volume`. -/
 theorem symmetricLebesgue_eq_smul_volume (p : ℕ) :
