@@ -18,32 +18,32 @@ import TauCeti.LinearAlgebra.HermiteInterpolation
 /-!
 # Analytic Hermite interpolation quotients
 
-Given a function `f : 𝕜 → 𝕜` analytic on an open set `U` containing `K` and a finite set `S` of
-interpolation nodes with multiplicities `m : 𝕜 → ℕ`, this file constructs an interpolating
-polynomial `P` matching the jets `iteratedDeriv k f a` for `a ∈ S`, `k < m a`, together with an
-analytic quotient `q` on an open neighbourhood `U' ⊇ K` (specifically `U \ (S \ K)`) such that
-`f z - P.eval z = (∏ a ∈ S, (z - a) ^ m a) * q z` on `K`.
+Given a function `f : 𝕜 → 𝕜` analytic at each point of `K` and a finite set `S` of interpolation
+nodes with multiplicities `m : 𝕜 → ℕ`, this file constructs an interpolating polynomial `P` matching
+the jets `iteratedDeriv k f a` for `a ∈ S`, `k < m a`, together with an analytic quotient `q` on
+an open neighbourhood `U' ⊇ K` (obtained from `{z | AnalyticAt 𝕜 f z} \ (S \ K)`) such that
+`f z - P.eval z = (∏ a ∈ S, (z - a) ^ m a) * q z` for all `z ∈ U'`.
 
 ## Main results
 
 * `AnalyticOnNhd.exists_hermite_quotient`: existence of the interpolating polynomial `P` and
-  analytic quotient `q` on an open neighbourhood of `K`.
+  analytic quotient `q` on an open neighbourhood `U'` of `K`.
 -/
 
 public section
 
 open Polynomial Set
 
-/-- **Analytic Hermite interpolation quotient.** Let `f : 𝕜 → 𝕜` be analytic on an open set
-`U ⊇ K`, and let `S : Finset 𝕜` be a finite set of nodes with multiplicities `m : 𝕜 → ℕ`. Then
+/-- **Analytic Hermite interpolation quotient.** Let `f : 𝕜 → 𝕜` be analytic at every point of
+`K : Set 𝕜`, and let `S : Finset 𝕜` be a finite set of nodes with multiplicities `m : 𝕜 → ℕ`. Then
 there exist a polynomial `P : 𝕜[X]`, an open neighbourhood `U'` of `K`, and a function `q` analytic
 on `U'` such that `P.eval` matches the jets `iteratedDeriv k f a` for `a ∈ S` and `k < m a`, and
-`f z - P.eval z = (∏ a ∈ S, (z - a) ^ m a) * q z` for all `z ∈ K`. -/
+`f z - P.eval z = (∏ a ∈ S, (z - a) ^ m a) * q z` for all `z ∈ U'`. -/
 theorem AnalyticOnNhd.exists_hermite_quotient {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    [CharZero 𝕜] [CompleteSpace 𝕜] {K U : Set 𝕜} (hU : IsOpen U) (hKU : K ⊆ U) {f : 𝕜 → 𝕜}
-    (hf : AnalyticOnNhd 𝕜 f U) (S : Finset 𝕜) (m : 𝕜 → ℕ) :
+    [CharZero 𝕜] [CompleteSpace 𝕜] {K : Set 𝕜} {f : 𝕜 → 𝕜}
+    (hf : AnalyticOnNhd 𝕜 f K) (S : Finset 𝕜) (m : 𝕜 → ℕ) :
     ∃ (P : 𝕜[X]) (U' : Set 𝕜) (q : 𝕜 → 𝕜), IsOpen U' ∧ K ⊆ U' ∧ AnalyticOnNhd 𝕜 q U' ∧
-      (∀ z ∈ K, f z - P.eval z = (∏ a ∈ S, (z - a) ^ m a) * q z) ∧
+      (∀ z ∈ U', f z - P.eval z = (∏ a ∈ S, (z - a) ^ m a) * q z) ∧
       (∀ a ∈ S, ∀ k < m a, iteratedDeriv k (fun z ↦ P.eval z) a = iteratedDeriv k f a) := by
   classical
   have hbij := (Polynomial.ordinaryHermiteJet_bijective_iff_of_charZero
@@ -56,6 +56,10 @@ theorem AnalyticOnNhd.exists_hermite_quotient {𝕜 : Type*} [NontriviallyNormed
     rw [Polynomial.iteratedDeriv]
     have h := congrFun (congrFun hP_eq ⟨a, ha⟩) ⟨k, hk⟩
     rwa [Polynomial.ordinaryHermiteJet_apply] at h
+  set U : Set 𝕜 := {z : 𝕜 | AnalyticAt 𝕜 f z}
+  have hU : IsOpen U := isOpen_iff_mem_nhds.mpr fun _ hz ↦ hz.eventually_analyticAt
+  have hKU : K ⊆ U := hf
+  have hfU : AnalyticOnNhd 𝕜 f U := fun _ hz ↦ hz
   set Sin := S.filter (· ∈ K)
   set Sout := S.filter (· ∉ K)
   set U' := U \ (Sout : Set 𝕜)
@@ -63,11 +67,11 @@ theorem AnalyticOnNhd.exists_hermite_quotient {𝕜 : Type*} [NontriviallyNormed
   have hKU' : K ⊆ U' := fun z hz ↦ ⟨hKU hz, fun hz' ↦ (Finset.mem_filter.mp hz').2 hz⟩
   have hP_an : AnalyticOnNhd 𝕜 (fun z ↦ P.eval z) univ := AnalyticOnNhd.eval_polynomial P
   have hfP_an : AnalyticOnNhd 𝕜 (fun z ↦ f z - P.eval z) U' :=
-    (hf.mono sdiff_subset).sub (hP_an.mono (subset_univ U'))
+    (hfU.mono sdiff_subset).sub (hP_an.mono (subset_univ U'))
   have hord_in : ∀ a ∈ Sin, (m a : ℕ∞) ≤ analyticOrderAt (fun z ↦ f z - P.eval z) a := by
     intro a ha
     obtain ⟨haS, haK⟩ := Finset.mem_filter.mp ha
-    have hfa := hf a (hKU haK)
+    have hfa := hfU a (hKU haK)
     have hPa := hP_an a (mem_univ a)
     have hfPa : AnalyticAt 𝕜 (fun z ↦ f z - P.eval z) a := hfa.sub hPa
     rw [natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hfPa]
@@ -76,7 +80,7 @@ theorem AnalyticOnNhd.exists_hermite_quotient {𝕜 : Type*} [NontriviallyNormed
   obtain ⟨q₁, hq₁_an, hq₁_eq⟩ := hfP_an.exists_eq_prod_pow_smul Sin m hord_in
   set Qout : 𝕜 → 𝕜 := fun z ↦ ∏ b ∈ Sout, (z - b) ^ m b
   have hQout_an : AnalyticOnNhd 𝕜 Qout U' := fun z _ ↦ by
-    change AnalyticAt 𝕜 (fun w ↦ ∏ b ∈ Sout, (w - b) ^ m b) z
+    dsimp only [Qout]
     fun_prop
   have hQout_ne : ∀ z ∈ U', Qout z ≠ 0 := fun z hz ↦
     Finset.prod_ne_zero_iff.mpr fun b hb ↦ pow_ne_zero _ (sub_ne_zero.mpr fun hzb ↦ hz.2 (hzb ▸ hb))
@@ -86,4 +90,4 @@ theorem AnalyticOnNhd.exists_hermite_quotient {𝕜 : Type*} [NontriviallyNormed
     (Finset.prod_filter_mul_prod_filter_not S (· ∈ K) fun a ↦ (z - a) ^ m a).symm
   have h1 := hq₁_eq z
   simp only [smul_eq_mul] at h1
-  rw [h1, hsplit, mul_assoc, mul_div_cancel₀ _ (hQout_ne z (hKU' hz))]
+  rw [h1, hsplit, mul_assoc, mul_div_cancel₀ _ (hQout_ne z hz)]

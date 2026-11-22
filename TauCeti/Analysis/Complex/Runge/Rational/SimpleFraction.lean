@@ -98,9 +98,14 @@ theorem _root_.IsCompact.exists_rational_norm_inv_sub_lt {K A : Set ℂ} (hK : I
   let S := R.topologicalClosure
   let : IsClosed (S : Set C(K, ℂ)) := R.isClosed_topologicalClosure
   let evalAt (z : K) : S →ₐ[ℂ] ℂ := (ContinuousMap.evalAlgHom ℂ ℂ z).comp S.val
+  have hevalAt (z : K) (u : S) : evalAt z u = (u : C(K, ℂ)) z := by
+    simp only [evalAt, AlgHom.comp_apply, Subalgebra.val_apply, ContinuousMap.evalAlgHom_apply]
   let x : S := ⟨⟨Subtype.val, continuous_subtypeVal⟩,
     R.le_topologicalClosure (mem_rationalSubalgebra_coord K A)⟩
-  have hxval (z : K) : evalAt z x = z := rfl
+  have hxval (z : K) : evalAt z x = z := by
+    rw [hevalAt]
+    dsimp only [x]
+    rw [ContinuousMap.coe_mk]
   have hx : spectrum ℂ (x : C(K, ℂ)) = K := by
     rw [ContinuousMap.spectrum_eq_range]
     exact Subtype.range_coe
@@ -110,11 +115,12 @@ theorem _root_.IsCompact.exists_rational_norm_inv_sub_lt {K A : Set ℂ} (hK : I
     refine ⟨⟨y, R.le_topologicalClosure hyR⟩, Subtype.ext <| ContinuousMap.ext fun z ↦ ?_⟩
     have hz : evalAt z ((algebraMap ℂ S b - x) * ⟨y, R.le_topologicalClosure hyR⟩) =
         evalAt z 1 := by
-      simp only [map_mul, map_sub, map_one, AlgHom.commutes, Algebra.algebraMap_self,
-        RingHom.id_apply, hxval,
-        show evalAt z ⟨y, R.le_topologicalClosure hyR⟩ = y z from rfl, hyval z]
+      rw [map_mul, map_sub, map_one, AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply,
+        hxval, hevalAt]
+      dsimp only
+      rw [hyval z]
       exact mul_inv_cancel₀ (sub_ne_zero.mpr fun h : b = (z : ℂ) ↦ hb.2 (h ▸ z.property))
-    simpa [evalAt] using hz
+    simpa only [hevalAt, OneMemClass.coe_one, ContinuousMap.one_apply] using hz
   have hspec : a ∉ spectrum ℂ x := by
     intro haspec
     have hbd := Subalgebra.isBounded_connectedComponentIn_spectrum_compl S x haspec
@@ -131,7 +137,7 @@ theorem _root_.IsCompact.exists_rational_norm_inv_sub_lt {K A : Set ℂ} (hK : I
     have h := congrArg (evalAt z) hu.unit.inv_mul
     simp only [map_mul, map_sub, map_one, AlgHom.commutes, Algebra.algebraMap_self,
       RingHom.id_apply, IsUnit.unit_spec, hxval] at h
-    exact h
+    rwa [hevalAt] at h
   obtain ⟨g, ⟨p, q, hq, hqA, hgval⟩, hdist⟩ := Metric.mem_closure_iff.mp v.property ε hε
   refine ⟨p, q, hq, hqA, fun z hz ↦ ?_⟩
   rw [← hgval ⟨z, hz⟩, ← hv ⟨z, hz⟩]

@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Exp
-public import TauCeti.Analysis.Complex.Runge.Operator
+public import TauCeti.Analysis.Complex.Runge.CompactPair
 public import TauCeti.Topology.FilledHull
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Complex.LogLinearFactor

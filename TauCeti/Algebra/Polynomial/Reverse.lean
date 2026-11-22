@@ -465,13 +465,12 @@ theorem natDegree_reflect_comp_X_sub_C_le [Ring R] (a₀ : R) {d : ℕ} {P : R[X
 `Q.natDegree ≤ d`. -/
 theorem coeff_reflect_comp_X_sub_C [CommRing R] (a₀ : R) {d : ℕ} {Q : R[X]}
     (hQ : Q.natDegree ≤ d) : ((Q.reflect d).comp (X - C a₀)).coeff d = Q.eval 0 := by
-  have hq : (Q.reflect d).natDegree ≤ d := natDegree_reflect_le_of_natDegree_le hQ
-  rw [sub_eq_add_neg, ← C_neg, ← taylor_apply, coeff_taylor_eq_sum (Nat.lt_succ_of_le hq)]
-  rw [Finset.sum_eq_single 0]
-  · simp [coeff_zero_eq_eval_zero]
-  · intro k _ hk0
-    have hgt : (Q.reflect d).natDegree < k + d := lt_of_le_of_lt hq (by omega)
-    simp [coeff_eq_zero_of_natDegree_lt hgt]
-  · simp
+  rw [sub_eq_add_neg, ← C_neg, ← taylor_apply, ← coeff_zero_eq_eval_zero, ← coeff_reflect_self Q d]
+  set q := Q.reflect d
+  have hq : q.natDegree ≤ d := natDegree_reflect_le_of_natDegree_le hQ
+  rcases hq.eq_or_lt with hdeg | hlt
+  · rw [← hdeg, coeff_taylor_natDegree, coeff_natDegree]
+  · rw [coeff_eq_zero_of_natDegree_lt ((natDegree_taylor _ _).trans_lt hlt),
+      coeff_eq_zero_of_natDegree_lt hlt]
 
 end Polynomial

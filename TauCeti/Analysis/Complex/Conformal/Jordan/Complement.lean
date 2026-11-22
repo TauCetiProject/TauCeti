@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.Jordan.Domain
 import TauCeti.Analysis.Complex.Conformal.Jordan.Approach
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.Complex.Conformal.BoundaryCorrespondence
-import TauCeti.Analysis.Complex.Inversion
+import TauCeti.Analysis.Complex.Inversion.Basic
 import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Logic.Equiv.Set

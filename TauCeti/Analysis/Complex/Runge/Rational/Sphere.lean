@@ -13,8 +13,9 @@ import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Algebra.Polynomial.Reverse
-import TauCeti.Analysis.Complex.Inversion
-import TauCeti.Analysis.Complex.Runge.Rational
+import TauCeti.Analysis.Complex.Inversion.Basic
+import TauCeti.Analysis.Complex.Inversion.FilledHull
+import TauCeti.Analysis.Complex.Runge.Rational.Basic
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.LinearAlgebra.Complex.Finrank
 
@@ -23,11 +24,12 @@ import TauCeti.LinearAlgebra.Complex.Finrank
 
 Let `K ⊆ ℂ` be a compact set and `A ⊆ ℂ` a prescribed set of poles meeting every connected
 component of `Kᶜ`, including the unbounded component. Choosing `a₀ ∈ A \ filledHull K`, the
-Möbius inversion `z ↦ (z - a₀)⁻¹` sends `a₀` to `∞` and `∞` to `0`, keeping `0` outside the filled
-hull of the inverted compact set (`IsClosed.notMem_filledHull_inv_sub_image`). Applying finite-pole
-rational Runge approximation (`IsCompact.exists_rational_norm_sub_lt`) on the inverted domain and
-homogenizing the resulting rational function in `(z - a₀)` yields a uniform rational approximant
-`p / q` with `p.natDegree ≤ q.natDegree` and all finite poles in `A \ K`.
+Möbius inversion `z ↦ (z - a₀)⁻¹` sends `a₀` to `∞` and `∞` to `0`, sending `A \ {a₀}` to a set
+meeting every bounded complementary component of the inverted compact set
+(`IsClosed.image_inv_sub_inter_connectedComponentIn_nonempty`). Applying finite-pole rational Runge
+approximation (`IsCompact.exists_rational_norm_sub_lt`) on the inverted domain and homogenizing the
+resulting rational function in `(z - a₀)` yields a uniform rational approximant `p / q` with
+`p.natDegree ≤ q.natDegree` and all finite poles in `A \ K`.
 
 ## Main results
 
@@ -46,65 +48,6 @@ open Bornology Polynomial Set
 
 namespace TauCeti
 
-/-- If `A` meets every connected component of `Kᶜ` and `a₀ ∈ A \ filledHull K`, then under
-`z ↦ (z - a₀)⁻¹` the set `(fun z ↦ (z - a₀)⁻¹) '' (A \ {a₀})` meets every bounded component of
-`((fun z ↦ (z - a₀)⁻¹) '' K)ᶜ`. -/
-private theorem inv_sub_image_meets_bounded_components {K A : Set ℂ} {a₀ : ℂ} (hK : IsCompact K)
-    (ha₀ : a₀ ∉ filledHull K) (hA : ∀ x ∈ Kᶜ, (A ∩ connectedComponentIn Kᶜ x).Nonempty) :
-    ∀ w ∈ filledHull ((fun z ↦ (z - a₀)⁻¹) '' K) \ ((fun z ↦ (z - a₀)⁻¹) '' K),
-      ((fun z ↦ (z - a₀)⁻¹) '' (A \ {a₀}) ∩
-        connectedComponentIn ((fun z ↦ (z - a₀)⁻¹) '' K)ᶜ w).Nonempty := by
-  let φ : ℂ → ℂ := fun z ↦ (z - a₀)⁻¹
-  have hφ_inj : Function.Injective φ := inv_injective.comp (sub_left_injective (b := a₀))
-  have hφ_cont : ContinuousOn φ {a₀}ᶜ :=
-    (continuousOn_id.sub continuousOn_const).inv₀ fun z hz h ↦ hz (sub_eq_zero.mp h)
-  obtain ⟨h0_not, hD_sub⟩ := hK.isClosed.notMem_filledHull_inv_sub_image ha₀
-  rintro w ⟨hwH, hwK'⟩
-  have hw0 : w ≠ 0 := fun h ↦ h0_not (h ▸ hwH)
-  set x : ℂ := a₀ + w⁻¹
-  have hxa₀ : x ≠ a₀ := fun h ↦ inv_ne_zero hw0 (by simpa [x] using h)
-  have hφx : φ x = w := by simp [φ, x]
-  have hxK : x ∈ Kᶜ := fun hxK ↦ hwK' ⟨x, hxK, hφx⟩
-  have ha₀_not_comp : a₀ ∉ connectedComponentIn Kᶜ x := by
-    intro hmem
-    have hxD : x ∈ connectedComponentIn Kᶜ a₀ :=
-      (connectedComponentIn_eq hmem).symm ▸ mem_connectedComponentIn hxK
-    have hw0c : w ∈ connectedComponentIn (φ '' K)ᶜ 0 := hD_sub ⟨x, ⟨hxD, hxa₀⟩, hφx⟩
-    exact h0_not (mem_filledHull_iff.mpr <|
-      (connectedComponentIn_eq hw0c).symm ▸ mem_filledHull_iff.mp hwH)
-  obtain ⟨b, hbA, hbc⟩ := hA x hxK
-  have hba₀ : b ≠ a₀ := fun h ↦ ha₀_not_comp (h ▸ hbc)
-  have himg_sub : φ '' connectedComponentIn Kᶜ x ⊆ (φ '' K)ᶜ :=
-    Set.subset_compl_iff_disjoint_right.mpr <| (Set.disjoint_image_iff hφ_inj).mpr <|
-      Set.subset_compl_iff_disjoint_right.mp (connectedComponentIn_subset Kᶜ x)
-  have hcomp_sub : φ '' connectedComponentIn Kᶜ x ⊆ connectedComponentIn (φ '' K)ᶜ w :=
-    (isPreconnected_connectedComponentIn.image φ
-      (hφ_cont.mono fun _ hz hza ↦ ha₀_not_comp (hza ▸ hz))).subset_connectedComponentIn
-      ⟨x, mem_connectedComponentIn hxK, hφx⟩ himg_sub
-  exact ⟨φ b, ⟨b, ⟨hbA, hba₀⟩, rfl⟩, hcomp_sub ⟨b, hbc, rfl⟩⟩
-
-/-- Pulling back a holomorphic function `f` on `U ⊇ K` along the Möbius inversion
-`w ↦ a₀ + w⁻¹` yields a holomorphic function on the open neighbourhood
-`{0}ᶜ ∩ (fun w ↦ a₀ + w⁻¹) ⁻¹' U` of the compact set `(fun z ↦ (z - a₀)⁻¹) '' K`. -/
-private theorem inv_sub_pullback_data {K U : Set ℂ} {a₀ : ℂ} (hK : IsCompact K) (hU : IsOpen U)
-    (hKU : K ⊆ U) (ha₀K : a₀ ∉ K) {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f U) :
-    IsCompact ((fun z ↦ (z - a₀)⁻¹) '' K) ∧
-      IsOpen (({0}ᶜ : Set ℂ) ∩ (fun w ↦ a₀ + w⁻¹) ⁻¹' U) ∧
-      (fun z ↦ (z - a₀)⁻¹) '' K ⊆ ({0}ᶜ : Set ℂ) ∩ (fun w ↦ a₀ + w⁻¹) ⁻¹' U ∧
-      DifferentiableOn ℂ (fun w ↦ f (a₀ + w⁻¹)) (({0}ᶜ : Set ℂ) ∩ (fun w ↦ a₀ + w⁻¹) ⁻¹' U) := by
-  have hφ_cont : ContinuousOn (fun z ↦ (z - a₀)⁻¹) K :=
-    (continuousOn_id.sub continuousOn_const).inv₀ fun z hz h ↦ by
-      have hza : z = a₀ := sub_eq_zero.mp h
-      exact ha₀K (hza ▸ hz)
-  have hψ_diff : DifferentiableOn ℂ (fun w ↦ a₀ + w⁻¹) {0}ᶜ :=
-    DifferentiableOn.add (differentiableOn_const a₀)
-      (DifferentiableOn.inv differentiableOn_id fun _ hw ↦ hw)
-  refine ⟨hK.image_of_continuousOn hφ_cont,
-    hψ_diff.continuousOn.isOpen_inter_preimage isOpen_compl_singleton hU, ?_,
-    DifferentiableOn.comp hf (hψ_diff.mono inter_subset_left) inter_subset_right⟩
-  rintro _ ⟨z, hzK, rfl⟩
-  exact ⟨inv_ne_zero (sub_ne_zero.mpr fun h ↦ ha₀K (h ▸ hzK)), by simpa using hKU hzK⟩
-
 /-- **Riemann-sphere rational Runge approximation.** Let `K ⊆ ℂ` be compact and `A ⊆ ℂ` meet every
 connected component of `Kᶜ`, including the unbounded component. Then every function holomorphic on
 an open neighbourhood `U` of `K` can be uniformly approximated on `K` by rational functions `p / q`
@@ -121,9 +64,11 @@ theorem _root_.IsCompact.exists_rational_natDegree_le_norm_sub_lt {K U A : Set �
       compl_filledHull_eq_connectedComponentIn Complex.one_lt_rank_real hK.isBounded hx₀]
   have ha₀K : a₀ ∉ K := fun h ↦ ha₀ (subset_filledHull h)
   set φ : ℂ → ℂ := fun z ↦ (z - a₀)⁻¹
-  obtain ⟨hK', hU', hK'U', hf'⟩ := inv_sub_pullback_data hK hU hKU ha₀K hf
-  obtain ⟨P, Q, -, hQA', happrox⟩ := hK'.exists_rational_norm_sub_lt hU' hK'U'
-    (inv_sub_image_meets_bounded_components hK ha₀ hA) hf' hε
+  obtain ⟨P, Q, -, hQA', happrox⟩ := (hK.image_inv_sub ha₀K).exists_rational_norm_sub_lt
+    (hU.compl_singleton_inter_preimage_add_inv a₀)
+    (image_inv_sub_subset_compl_singleton_inter_preimage_add_inv hKU ha₀K)
+    (hK.isClosed.image_inv_sub_inter_connectedComponentIn_nonempty ha₀ hA)
+    (hf.comp_add_inv a₀) hε
   have hQ0 : Q.eval 0 ≠ 0 := by
     intro h0
     obtain ⟨b, ⟨-, hba⟩, hb0⟩ := (hQA' 0 h0).1

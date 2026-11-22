@@ -25,7 +25,7 @@ import TauCeti.Topology.MetricSpace.HausdorffDistance
 
 In complex analysis on an arbitrary open set `Ω ⊆ ℂ`, a compact subset `K ⊆ Ω` forms a *Runge
 compact pair* `(Ω, K)` (`TauCeti.IsRungeCompactPair Ω K`, in
-`TauCeti.Analysis.Complex.Runge.Operator`) when `K` is filled in `Ω`, i.e. no connected component
+`TauCeti.Analysis.Complex.Runge.CompactPair`) when `K` is filled in `Ω`, i.e. no connected component
 of `Ω \ K` is relatively compact in `Ω`. These are precisely the compact subsets on which every
 function holomorphic in a neighbourhood of `K` can be uniformly approximated by functions
 holomorphic on all of `Ω` (Runge's approximation theorem, in

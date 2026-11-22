@@ -199,11 +199,11 @@ theorem exists_eval_div_eq_sum_mul_div {ι K : Type*} [Field K] (s : Finset ι)
   · simpa only [eval_prod, Finset.prod_eq_zero_iff] using hz
   · rw [eval_finsetSum, div_eq_mul_inv, Finset.sum_mul]
     refine Finset.sum_congr rfl fun i hi ↦ ?_
-    have herase : (∏ j ∈ s.erase i, q j).eval z ≠ 0 := by
-      rw [eval_prod]
-      exact Finset.prod_ne_zero_iff.mpr fun j hj ↦ hz j (Finset.mem_of_mem_erase hj)
-    rw [← Finset.mul_prod_erase s q hi, eval_mul, eval_mul, eval_mul, eval_C, eval_prod,
-      ← div_eq_mul_inv, mul_div_mul_right _ _ (by simpa only [eval_prod] using herase)]
+    have herase : ∏ j ∈ s.erase i, (q j).eval z ≠ 0 :=
+      Finset.prod_ne_zero_iff.mpr fun j hj ↦ hz j (Finset.mem_of_mem_erase hj)
+    rw [← Finset.mul_prod_erase s q hi]
+    simp only [eval_mul, eval_C, eval_prod]
+    rw [← div_eq_mul_inv, mul_div_mul_right _ _ herase]
     ring
 
 end Polynomial
