@@ -12,17 +12,20 @@ public import Mathlib.Probability.Moments.Covariance
 public import Mathlib.Probability.Moments.Variance
 
 /-!
-# Means and covariances of probability mixtures
+# Means and covariances of mixtures
 
 A mixture's expectation is the expectation of its component means. Its covariance is the
 expected component covariance plus the covariance of the component means; taking the same
 observable twice gives the law of total variance.
 
-The mixing measure is a probability measure. The component family need only be almost everywhere
-measurable, and the components need be probability measures only almost everywhere. Finite
-second moments of the mixture imply the required integrability of component means and
-covariances. The covariance formula applies to any pair of real observables, including
-coordinates of a vector-valued law.
+Throughout, the component family need only be almost everywhere measurable, and the components
+need be probability measures only almost everywhere. Finite second moments of the mixture imply
+the required integrability of component means and covariances, with no assumption on the mixing
+measure. The laws of total covariance and variance need the mixing measure to be finite, but not
+of mass one: Mathlib's `covariance` and `variance` are defined for every measure, and the
+identities hold for every finite mixing measure. They fail for some infinite mixing measures. The
+covariance formula applies to any pair of real observables, including coordinates of a
+vector-valued law.
 
 The integration steps use Mathlib's kernel-composition theory through
 `TauCeti.MeasureTheory.Integral.Bind`.
@@ -45,18 +48,7 @@ mixing law, even when the components are probability measures only almost everyw
 theorem memLp_integral_bind (hK : AEMeasurable K μ)
     (hprob : ∀ᵐ a ∂μ, IsProbabilityMeasure (K a)) (hX : MemLp X 2 (μ.bind K)) :
     MemLp (fun a ↦ ∫ x, X x ∂K a) 2 μ := by
-  -- Replace `K` by a measurable modification, which is a kernel.
-  let κ : Kernel α β := ⟨hK.mk K, hK.measurable_mk⟩
-  have hKκ : K =ᵐ[μ] κ := hK.ae_eq_mk
-  -- The mixture is the composition of `κ` with the constant kernel at `μ`.
-  have hXκ := hX.aestronglyMeasurable
-  rw [Measure.bind_congr_right hKκ, Measure.comp_eq_comp_const_apply] at hXκ
-  have hmean : AEStronglyMeasurable (fun a ↦ ∫ x, X x ∂K a) μ := by
-    have hmeanκ := hXκ.integral_kernel_comp
-    rw [Kernel.const_apply] at hmeanκ
-    refine hmeanκ.congr ?_
-    filter_upwards [hKκ] with a ha
-    rw [ha]
+  have hmean := Measure.aestronglyMeasurable_integral_bind hK hX.aestronglyMeasurable
   apply (memLp_two_iff_integrable_sq hmean).mpr
   obtain ⟨hae, hsecond⟩ := (Measure.memLp_two_bind_iff hK hX.aestronglyMeasurable).mp hX
   simp only [Real.norm_eq_abs, sq_abs] at hsecond
@@ -65,6 +57,18 @@ theorem memLp_integral_bind (hK : AEMeasurable K μ)
   have hvar := variance_nonneg X (K a)
   rw [variance_eq_sub hXa] at hvar
   simpa only [Real.norm_of_nonneg (sq_nonneg _), Pi.pow_apply] using sub_nonneg.mp hvar
+
+/-- Almost every component covariance is the component mean of the product minus the product of
+the component means. -/
+private theorem covariance_ae_eq_bind (hK : AEMeasurable K μ)
+    (hprob : ∀ᵐ a ∂μ, IsProbabilityMeasure (K a))
+    (hX : MemLp X 2 (μ.bind K)) (hY : MemLp Y 2 (μ.bind K)) :
+    (fun a ↦ covariance X Y (K a)) =ᵐ[μ]
+      fun a ↦ (∫ x, X x * Y x ∂K a) - (∫ x, X x ∂K a) * ∫ x, Y x ∂K a := by
+  obtain ⟨hXae, _⟩ := (Measure.memLp_two_bind_iff hK hX.aestronglyMeasurable).mp hX
+  obtain ⟨hYae, _⟩ := (Measure.memLp_two_bind_iff hK hY.aestronglyMeasurable).mp hY
+  filter_upwards [hprob, hXae, hYae] with a hpa hXa hYa
+  exact covariance_eq_sub hXa hYa
 
 /-- The component covariances of two square-integrable observables are integrable under the
 mixing law. -/
@@ -76,36 +80,52 @@ theorem integrable_covariance_bind (hK : AEMeasurable K μ)
   have hmeans := (memLp_integral_bind hK hprob hX).integrable_mul
     (memLp_integral_bind hK hprob hY)
   simp only [Pi.mul_apply] at hprod hmeans
-  refine (hprod.sub hmeans).congr ?_
-  obtain ⟨hXae, _⟩ := (Measure.memLp_two_bind_iff hK hX.aestronglyMeasurable).mp hX
-  obtain ⟨hYae, _⟩ := (Measure.memLp_two_bind_iff hK hY.aestronglyMeasurable).mp hY
-  filter_upwards [hprob, hXae, hYae] with a hpa hXa hYa
-  exact (covariance_eq_sub hXa hYa).symm
+  exact (hprod.sub hmeans).congr (covariance_ae_eq_bind hK hprob hX hY).symm
 
-variable [IsProbabilityMeasure μ]
+/-- Mathlib's covariance under a finite measure, expanded in terms of its total mass. For a
+probability measure this is `covariance_eq_sub`. -/
+private theorem covariance_eq_integral_mul_add {Ω : Type*} [MeasurableSpace Ω] {ν : Measure Ω}
+    [IsFiniteMeasure ν] {X Y : Ω → ℝ} (hX : MemLp X 2 ν) (hY : MemLp Y 2 ν) :
+    covariance X Y ν = ν[X * Y] + (ν.real Set.univ - 2) * (ν[X] * ν[Y]) := by
+  simp_rw [covariance, sub_mul, mul_sub]
+  repeat rw [integral_sub]
+  · simp_rw [integral_mul_const, integral_const_mul, integral_const, smul_eq_mul]
+    simp only [Pi.mul_apply]
+    ring
+  · exact hY.const_mul _ |>.integrable (by simp)
+  · exact integrable_const _
+  · exact hX.integrable_mul hY
+  · exact hX.mul_const _ |>.integrable (by simp)
+  · exact (hX.integrable_mul hY).sub (hX.mul_const _ |>.integrable (by simp))
+  · exact (hY.const_mul _ |>.integrable (by simp)).sub (integrable_const _)
 
-/-- **Law of total covariance**: a probability mixture's covariance is the sum of the expected
-component covariance and the covariance of component means. -/
+variable [IsFiniteMeasure μ]
+
+/-- **Law of total covariance**: the covariance of a mixture over a finite mixing measure is the
+sum of the expected component covariance and the covariance of component means. -/
 theorem covariance_bind (hK : AEMeasurable K μ)
     (hprob : ∀ᵐ a ∂μ, IsProbabilityMeasure (K a))
     (hX : MemLp X 2 (μ.bind K)) (hY : MemLp Y 2 (μ.bind K)) :
     covariance X Y (μ.bind K) =
       (∫ a, covariance X Y (K a) ∂μ) +
         covariance (fun a ↦ ∫ x, X x ∂K a) (fun a ↦ ∫ x, Y x ∂K a) μ := by
-  have : IsProbabilityMeasure (μ.bind K) := isProbabilityMeasure_bind hK hprob
+  -- The mixture has the same total mass as the mixing measure.
+  have hmass : ∀ᵐ a ∂μ, K a Set.univ = 1 := hprob.mono fun a ha ↦ measure_univ
+  have : IsFiniteMeasure (μ.bind K) := ⟨by
+    rw [Measure.bind_apply MeasurableSet.univ hK, lintegral_congr_ae hmass, lintegral_one]
+    exact measure_lt_top μ _⟩
+  have hreal : (μ.bind K).real Set.univ = μ.real Set.univ := by
+    rw [Measure.bind_apply_real hK MeasurableSet.univ (hmass.mono fun a ha ↦ by simp [ha]),
+      integral_congr_ae (g := fun _ ↦ 1)
+        (hmass.mono fun a ha ↦ by simp [measureReal_def, ha]), integral_const,
+      smul_eq_mul, mul_one]
   have hmX := memLp_integral_bind hK hprob hX
   have hmY := memLp_integral_bind hK hprob hY
   have hprod := Measure.integrable_integral_bind hK (hX.integrable_mul hY)
   have hmeans : Integrable (fun a ↦ (∫ x, X x ∂K a) * ∫ x, Y x ∂K a) μ :=
     hmX.integrable_mul hmY
-  have hcov : (fun a ↦ covariance X Y (K a)) =ᵐ[μ]
-      (fun a ↦ (∫ x, X x * Y x ∂K a) - (∫ x, X x ∂K a) * ∫ x, Y x ∂K a) := by
-    obtain ⟨hXae, _⟩ := (Measure.memLp_two_bind_iff hK hX.aestronglyMeasurable).mp hX
-    obtain ⟨hYae, _⟩ := (Measure.memLp_two_bind_iff hK hY.aestronglyMeasurable).mp hY
-    filter_upwards [hprob, hXae, hYae] with a hpa hXa hYa
-    exact covariance_eq_sub hXa hYa
-  rw [covariance_eq_sub hX hY, covariance_eq_sub hmX hmY,
-    integral_congr_ae hcov]
+  rw [covariance_eq_integral_mul_add hX hY, covariance_eq_integral_mul_add hmX hmY, hreal,
+    integral_congr_ae (covariance_ae_eq_bind hK hprob hX hY)]
   simp only [Pi.mul_apply] at hprod hmeans ⊢
   have hXY : (∫ x, X x * Y x ∂μ.bind K) = ∫ a, ∫ x, X x * Y x ∂K a ∂μ :=
     Measure.integral_bind hK (hX.integrable_mul hY)
@@ -114,8 +134,8 @@ theorem covariance_bind (hK : AEMeasurable K μ)
     Measure.integral_bind hK (hY.integrable one_le_two)]
   ring
 
-/-- **Law of total variance**: a probability mixture's variance is its expected component
-variance plus the variance of the component means. -/
+/-- **Law of total variance**: the variance of a mixture over a finite mixing measure is its
+expected component variance plus the variance of the component means. -/
 theorem variance_bind (hK : AEMeasurable K μ)
     (hprob : ∀ᵐ a ∂μ, IsProbabilityMeasure (K a)) (hX : MemLp X 2 (μ.bind K)) :
     variance X (μ.bind K) = (∫ a, variance X (K a) ∂μ) +
@@ -129,9 +149,9 @@ theorem variance_bind (hK : AEMeasurable K μ)
 
 variable {π : Measure β} [IsProbabilityMeasure π] {F : α × β → ℝ}
 
-/-- The law of total variance on a product of probability spaces: the variance of a square
-integrable `F` splits into the average of the variances in the second coordinate and the variance
-of the average over the second coordinate. -/
+/-- The law of total variance on the product of a finite measure and a probability measure: the
+variance of a square integrable `F` splits into the average of the variances in the second
+coordinate and the variance of the average over the second coordinate. -/
 theorem evariance_prod_eq (hL : MemLp F 2 (μ.prod π)) :
     evariance F (μ.prod π) = ∫⁻ a, evariance (fun w => F (a, w)) π ∂μ +
       evariance (fun a => ∫ w, F (a, w) ∂π) μ := by
@@ -174,10 +194,9 @@ end TauCeti.Probability
 namespace ProbabilityTheory.Kernel
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-  {μ : Measure α} [IsProbabilityMeasure μ] {X Y : β → ℝ}
+  {μ : Measure α} [IsFiniteMeasure μ] {X Y : β → ℝ}
 
-/-- The law of total covariance for the composition of a probability measure and a Markov
-kernel. -/
+/-- The law of total covariance for the composition of a finite measure and a Markov kernel. -/
 theorem covariance_comp (κ : Kernel α β) [IsMarkovKernel κ]
     (hX : MemLp X 2 (κ ∘ₘ μ)) (hY : MemLp Y 2 (κ ∘ₘ μ)) :
     covariance X Y (κ ∘ₘ μ) = (∫ a, covariance X Y (κ a) ∂μ) +
@@ -185,8 +204,7 @@ theorem covariance_comp (κ : Kernel α β) [IsMarkovKernel κ]
   exact TauCeti.Probability.covariance_bind κ.aemeasurable
     (Filter.Eventually.of_forall fun _ ↦ inferInstance) hX hY
 
-/-- The law of total variance for the composition of a probability measure and a Markov
-kernel. -/
+/-- The law of total variance for the composition of a finite measure and a Markov kernel. -/
 theorem variance_comp (κ : Kernel α β) [IsMarkovKernel κ]
     (hX : MemLp X 2 (κ ∘ₘ μ)) :
     variance X (κ ∘ₘ μ) = (∫ a, variance X (κ a) ∂μ) +

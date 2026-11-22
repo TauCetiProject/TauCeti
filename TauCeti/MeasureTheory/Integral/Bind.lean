@@ -75,20 +75,30 @@ theorem bind_apply_real (hK : AEMeasurable K μ) {s : Set β} (hs : MeasurableSe
   exact (integral_toReal ((Measure.measurable_coe hs).comp_aemeasurable hK)
     (hKs.mono fun _ h ↦ lt_top_iff_ne_top.mpr h)).symm
 
-/-- Component expectations of an integrable observable are integrable under the mixing law. -/
-theorem integrable_integral_bind [NormedSpace ℝ E] (hK : AEMeasurable K μ)
-    (hf : Integrable f (μ.bind K)) :
-    Integrable (fun a ↦ ∫ x, f x ∂K a) μ := by
+/-- Component expectations of an almost everywhere strongly measurable observable are almost
+everywhere strongly measurable under the mixing law. -/
+theorem aestronglyMeasurable_integral_bind [NormedSpace ℝ E] (hK : AEMeasurable K μ)
+    (hf : AEStronglyMeasurable f (μ.bind K)) :
+    AEStronglyMeasurable (fun a ↦ ∫ x, f x ∂K a) μ := by
   -- Replace `K` by a measurable modification, which is a kernel.
   let κ : Kernel α β := ⟨hK.mk K, hK.measurable_mk⟩
   have hKκ : K =ᵐ[μ] κ := hK.ae_eq_mk
-  -- The mixture is the composition of `κ` with the constant kernel at `μ`.
+  -- The mixture is the composition of `κ` with the constant kernel at `μ`, so Mathlib's
+  -- `AEStronglyMeasurable.integral_kernel_comp` applies.
   rw [bind_congr_right hKκ, Measure.comp_eq_comp_const_apply] at hf
-  have hκ := hf.integral_comp
+  have hκ := hf.integral_kernel_comp
   rw [Kernel.const_apply] at hκ
   refine hκ.congr ?_
   filter_upwards [hKκ] with a ha
-  rw [ha]
+  simp only [κ, Kernel.coe_mk, ha]
+
+/-- Component expectations of an integrable observable are integrable under the mixing law. -/
+theorem integrable_integral_bind [NormedSpace ℝ E] (hK : AEMeasurable K μ)
+    (hf : Integrable f (μ.bind K)) :
+    Integrable (fun a ↦ ∫ x, f x ∂K a) μ :=
+  ((integrable_bind_iff hK hf.aestronglyMeasurable).mp hf).2.mono'
+    (aestronglyMeasurable_integral_bind hK hf.aestronglyMeasurable)
+    (.of_forall fun _ ↦ norm_integral_le_integral_norm _)
 
 /-- A mixture has a finite second moment exactly when its components do almost everywhere
 and their second moments are integrable under the mixing law. -/
