@@ -126,7 +126,6 @@ private lemma exists_separating_perturbation [IsReduced B] [Finite (minimalPrime
     have : Algebra.FormallyUnramified B (F i) :=
       Algebra.FormallyUnramified.of_isLocalization i.val.primeCompl
     exact Algebra.FormallyUnramified.comp A B (F i)
-  have : FaithfulSMul R K := TauCeti.IsFractionRing.faithfulSMul R K
   obtain ⟨b, hb⟩ := exists_forall_transcendental_and_isSeparable_adjoin_add_smul F
     (fun i ↦ hΩ i.val i.property) a hπ0
   refine ⟨b, ?_⟩
@@ -226,10 +225,12 @@ theorem finite_integralClosure_of_isReduced_of_isFunctionField [IsReduced B]
   let f' : A' →ₐ[R] B := Ideal.Quotient.liftₐ I (IsScalarTower.toAlgHom R A B) fun _ h ↦ h
   have hf'_inj : Function.Injective f' := RingHom.kerLift_injective (algebraMap A B)
   let : Algebra A' B := f'.toRingHom.toAlgebra
-  have : IsScalarTower A A' B := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower A A' B := .of_algebraMap_eq fun a ↦ by
+    have ha := AlgHom.congr_fun
+      (Ideal.Quotient.liftₐ_comp I (IsScalarTower.toAlgHom R A B) fun _ h ↦ h) a
+    simpa [A', f', RingHom.algebraMap_toAlgebra, Ideal.Quotient.algebraMap_eq] using ha.symm
   have : IsScalarTower R A' B := .of_algebraMap_eq fun r ↦ by
     simp [RingHom.algebraMap_toAlgebra]
-  have : FaithfulSMul R K := TauCeti.IsFractionRing.faithfulSMul R K
   have : Module.IsTorsionFree R B := Module.IsTorsionFree.trans K
   have : Module.IsTorsionFree R A' := hf'_inj.moduleIsTorsionFree f' (map_smul f')
   have : Algebra.FiniteType R A' :=

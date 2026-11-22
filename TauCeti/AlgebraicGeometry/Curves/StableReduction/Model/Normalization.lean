@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import TauCeti.AlgebraicGeometry.Normalization.Basic
-public import TauCeti.AlgebraicGeometry.Normalization.Finite
 public import TauCeti.AlgebraicGeometry.Normalization.IsIso
 public import TauCeti.AlgebraicGeometry.Normalization.Normal
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
@@ -15,9 +14,9 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
 
 import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+import TauCeti.AlgebraicGeometry.Normalization.DiscreteValuationRing
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 import TauCeti.RingTheory.Localization.Integral
-import TauCeti.RingTheory.SerreCondition.Normal
 
 /-!
 # Normalizing a model in its generic fibre
@@ -142,13 +141,8 @@ instance isIso_fromNormalization_of_isNormalScheme [AlgebraicGeometry.IsNormalSc
   rw [Scheme.Hom.isIso_fromNormalization_iff]
   refine fun U hU ↦ ⟨M.genericι.app_injective U, fun s hs ↦ ?_⟩
   have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
-  have : IsNoetherianRing Γ(M.total, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
-  have hnorm := (AlgebraicGeometry.isNormalScheme_Spec_iff_forall_localization Γ(M.total, U)).mp
-    (AlgebraicGeometry.isNormalScheme_iff_forall_affineOpens.mp ‹_› ⟨U, hU⟩)
-  obtain ⟨hR, hS⟩ :=
-    forall_isDomain_and_isIntegrallyClosed_iff_satisfiesSerreR_one_and_satisfiesSerreS_two.mp hnorm
   have : IsIntegrallyClosed Γ(M.total, U) :=
-    isIntegrallyClosed_of_satisfiesSerreR_one_of_satisfiesSerreS_two hR hS
+    AlgebraicGeometry.IsNormalScheme.isIntegrallyClosed_of_isLocallyNoetherian_of_isAffineOpen hU
   let : M.total.Over (Spec (.of R)) := ⟨M.toBase⟩
   let : C.Over (Spec (.of K)) := ⟨toK⟩
   refine Scheme.with_algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen

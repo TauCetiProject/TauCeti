@@ -8,8 +8,6 @@ module
 public import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 
-import Mathlib.RingTheory.PrincipalIdealDomain
-
 /-!
 # Multivariate polynomials over discrete valuation rings
 
@@ -52,19 +50,14 @@ theorem exists_C_pow_mul_and_not_dvd_coeff {R ι : Type*} [CommRing R] [IsDomain
       exact mod_cast hmin m hm
     · rw [notMem_support_iff.mp hm]
       exact dvd_zero _
-  choose c hc using hdvd
-  let g : MvPolynomial ι R := ∑ m ∈ f.support, monomial m (c m)
-  have hg {m : ι →₀ ℕ} (hm : m ∈ f.support) : g.coeff m = c m := by
-    simp [g, coeff_monomial, hm]
-  refine ⟨n, g, m₀, ext _ _ fun m ↦ ?_, fun ⟨d, hd⟩ ↦ ?_⟩
-  · rw [coeff_C_mul]
-    by_cases hm : m ∈ f.support
-    · rw [hg hm, ← hc]
-    · simp [g, coeff_monomial, hm, notMem_support_iff.mp hm]
-  · have hle : ((n + 1 : ℕ) : ℕ∞) ≤ IsDiscreteValuationRing.addVal R (f.coeff m₀) := by
-      rw [← hπ.addVal_pow, IsDiscreteValuationRing.addVal_le_iff_dvd]
-      exact ⟨d, by rw [hc m₀, ← hg hm₀, hd, pow_succ, mul_assoc]⟩
-    rw [hval_m₀] at hle
-    exact Nat.not_succ_le_self n (ENat.natCast_le_natCast.mp hle)
+  obtain ⟨g, hfg⟩ := (MvPolynomial.C_dvd_iff_dvd_coeff (π ^ n) f).mpr hdvd
+  refine ⟨n, g, m₀, hfg, fun ⟨d, hd⟩ ↦ ?_⟩
+  have hle : ((n + 1 : ℕ) : ℕ∞) ≤ IsDiscreteValuationRing.addVal R (f.coeff m₀) := by
+    rw [← hπ.addVal_pow, IsDiscreteValuationRing.addVal_le_iff_dvd]
+    have hcoeff : f.coeff m₀ = π ^ n * g.coeff m₀ :=
+      (congrArg (fun p ↦ p.coeff m₀) hfg).trans (coeff_C_mul _ _ _)
+    exact ⟨d, by rw [hcoeff, hd, pow_succ, mul_assoc]⟩
+  rw [hval_m₀] at hle
+  exact Nat.not_succ_le_self n (ENat.natCast_le_natCast.mp hle)
 
 end MvPolynomial

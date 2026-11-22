@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.RingTheory.QuasiFinite.Quotient
 public import TauCeti.RingTheory.KrullDimension.Parameter
 
-import Mathlib.RingTheory.FiniteStability
 import TauCeti.RingTheory.KrullDimension.FiniteType
 
 /-!

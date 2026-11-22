@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
-public import Mathlib.RingTheory.Localization.Ideal
 public import TauCeti.RingTheory.Localization.Ideal
 import Mathlib.Tactic.LinearCombination
 

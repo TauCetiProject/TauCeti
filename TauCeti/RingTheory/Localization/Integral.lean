@@ -367,14 +367,10 @@ theorem IsLocalization.isIntegrallyClosedIn_of_isIntegrallyClosed {A B : Type*} 
     _root_.IsLocalization.localizationAlgebraOfSubmonoidLe B (FractionRing A) M A⁰ hM
   have : IsScalarTower A B (FractionRing A) :=
     _root_.IsLocalization.localization_isScalarTower_of_submonoid_le B (FractionRing A) M A⁰ hM
-  have hinj : Function.Injective (algebraMap B (FractionRing A)) := by
-    rw [_root_.IsLocalization.injective_iff_map_algebraMap_eq M]
-    intro a b
-    rw [← IsScalarTower.algebraMap_apply A B (FractionRing A),
-      ← IsScalarTower.algebraMap_apply A B (FractionRing A),
-      (IsFractionRing.injective A (FractionRing A)).eq_iff,
-      (_root_.IsLocalization.injective B hM).eq_iff]
-  exact AlgHom.isIntegrallyClosedIn (IsScalarTower.toAlgHom A B (FractionRing A)) hinj inferInstance
+  have : _root_.IsFractionRing B (FractionRing A) :=
+    _root_.IsFractionRing.isFractionRing_of_isLocalization M B (FractionRing A) hM
+  exact AlgHom.isIntegrallyClosedIn (IsScalarTower.toAlgHom A B (FractionRing A))
+    (_root_.IsFractionRing.injective B (FractionRing A)) inferInstance
 
 end LocalizedModule
 

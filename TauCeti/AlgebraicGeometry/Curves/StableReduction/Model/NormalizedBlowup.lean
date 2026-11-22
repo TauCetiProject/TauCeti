@@ -32,8 +32,11 @@ This file establishes the basic properties of a single normalized-blowup step:
 * as an abbreviation for `(M.blowup I hC).normalization`, the normalized blowup preserves
   properness via `TauCeti.Model.isProper_normalization` and has normal total space when `C` is
   smooth over `K` via `TauCeti.Model.isNormalScheme_normalization_of_smooth`;
+* `M.normalizedBlowupHom I hC` factors as `(M.blowup I hC).normalizationHom ≫ M.blowupHom I hC`
+  (`TauCeti.Model.normalizedBlowupHom_def`);
 * any morphism from a normal model along which `I` pulls back to an effective Cartier divisor
   factors uniquely through `M.normalizedBlowup I hC` (`TauCeti.Model.normalizedBlowupLift`,
+  `TauCeti.Model.normalizedBlowupLift_normalizationHom`,
   `TauCeti.Model.normalizedBlowupLift_normalizedBlowupHom`, and
   `TauCeti.Model.eq_normalizedBlowupLift`);
 * when `M.total` is already normal, `M.normalizedBlowupHom I hC` is an isomorphism if and only if
@@ -74,6 +77,12 @@ abbrev normalizedBlowup : Model R K C toK :=
 /-- **The normalized-blowup morphism of models** `M.normalizedBlowup I hC ⟶ M`. -/
 def normalizedBlowupHom : M.normalizedBlowup I hC ⟶ M :=
   (M.blowup I hC).normalizationHom ≫ M.blowupHom I hC
+
+/-- The normalized-blowup morphism factors as the normalization morphism followed by the blowup
+morphism. -/
+lemma normalizedBlowupHom_def :
+    M.normalizedBlowupHom I hC = (M.blowup I hC).normalizationHom ≫ M.blowupHom I hC :=
+  (rfl)
 
 /-- The normalized-blowup morphism of models has the composite of the normalization and blowup
 morphisms as its underlying scheme morphism. -/
@@ -123,6 +132,16 @@ def normalizedBlowupLift [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
     (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
     N ⟶ M.normalizedBlowup I hC :=
   liftToNormalization (blowupLift (hC := hC) f hf)
+
+/-- Composing the lift to the normalized blowup with the normalization morphism recovers the lift to
+the blowup. -/
+@[reassoc (attr := simp)]
+lemma normalizedBlowupLift_normalizationHom
+    [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
+    (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
+    normalizedBlowupLift (hC := hC) f hf ≫ (M.blowup I hC).normalizationHom =
+      blowupLift (hC := hC) f hf :=
+  liftToNormalization_normalizationHom _
 
 /-- The lift to the normalized blowup commutes with `M.normalizedBlowupHom I hC`. -/
 @[reassoc (attr := simp)]

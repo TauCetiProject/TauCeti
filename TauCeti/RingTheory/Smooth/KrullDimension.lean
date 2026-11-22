@@ -12,7 +12,6 @@ public import TauCeti.RingTheory.Jacobson.FiniteType
 public import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 public import TauCeti.RingTheory.Smooth.Regular
-import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Localization.FractionRing
 
 /-!
@@ -32,9 +31,9 @@ and every maximal ideal of `P` has height `n` (`MvPolynomial.height_eq_natCard_o
 Moreover `Spec S` is pure-dimensional of dimension `n`: for every minimal prime `P` of `S`, the
 quotient `S ⧸ P` has dimension `n`. Choose a maximal ideal `m ⊇ P`. The local ring `S_m` is
 regular, hence a domain, so every prime contained in `m` contains `P`; thus a chain of primes
-below `m` realizing its height `n` is a chain in `V(P)`. When a reduced algebra `B` has a
-localization `S = M⁻¹ B` standard smooth of relative dimension `n` at a minimal prime `P`, this
-determines the transcendence degree of `P.ResidueField`.
+below `m` realizing its height `n` is a chain in `V(P)`. When an algebra `B` has a localization
+`S = M⁻¹ B` standard smooth of relative dimension `n` at a minimal prime `P`, this determines the
+transcendence degree of `P.ResidueField`.
 
 ## Main declarations
 
@@ -46,7 +45,7 @@ determines the transcendence degree of `P.ResidueField`.
   `TauCeti.isPureDimensional_primeSpectrum_of_isStandardSmoothOfRelativeDimension`: every
   irreducible component of its spectrum has dimension `n`;
 * `TauCeti.trdeg_residueField_of_isStandardSmoothOfRelativeDimension`: at a minimal prime `P` of a
-  reduced `k`-algebra `B` admitting a standard-smooth localization of relative dimension `n`,
+  `k`-algebra `B` admitting a standard-smooth localization of relative dimension `n`,
   `Algebra.trdeg k P.ResidueField = n`.
 
 ## References
@@ -58,30 +57,6 @@ determines the transcendence degree of `P.ResidueField`.
 public section
 
 namespace TauCeti
-
-private theorem with_quotient_map_isFractionRing {k B S : Type*} [Field k] [CommRing B]
-    [Algebra k B] {P : Ideal B} [P.IsPrime] (M : Submonoid B) (hdisj : Disjoint (M : Set B) P)
-    [CommRing S] [Algebra k S] [Algebra B S] [IsLocalization M S]
-    [Algebra S P.ResidueField] [IsScalarTower B S P.ResidueField]
-    [IsScalarTower k S P.ResidueField]
-    {C : Prop}
-    (h : [Algebra (S ⧸ P.map (algebraMap B S)) P.ResidueField] →
-      [IsScalarTower S (S ⧸ P.map (algebraMap B S)) P.ResidueField] →
-      [IsScalarTower k (S ⧸ P.map (algebraMap B S)) P.ResidueField] →
-      [IsFractionRing (S ⧸ P.map (algebraMap B S)) P.ResidueField] → C) : C := by
-  let g : (S ⧸ P.map (algebraMap B S)) →ₐ[k] P.ResidueField :=
-    Ideal.Quotient.liftₐ (P.map (algebraMap B S)) (IsScalarTower.toAlgHom k S P.ResidueField)
-      Ideal.map_le_ker_of_isScalarTower_quotient
-  let : Algebra (S ⧸ P.map (algebraMap B S)) P.ResidueField := g.toRingHom.toAlgebra
-  have : IsScalarTower S (S ⧸ P.map (algebraMap B S)) P.ResidueField :=
-    .of_algebraMap_eq fun s ↦ by
-      simp [g, RingHom.algebraMap_toAlgebra, Ideal.Quotient.algebraMap_eq]
-      rfl
-  have : IsScalarTower k (S ⧸ P.map (algebraMap B S)) P.ResidueField :=
-    .of_algebraMap_eq fun c ↦ by simp [g, RingHom.algebraMap_toAlgebra]
-  have : IsFractionRing (S ⧸ P.map (algebraMap B S)) P.ResidueField :=
-    IsFractionRing.quotient_map_of_isLocalization M hdisj
-  exact h
 
 section
 
@@ -154,18 +129,28 @@ theorem isPureDimensional_primeSpectrum_of_isStandardSmoothOfRelativeDimension :
   isPureDimensional_primeSpectrum_iff.mpr fun _ hP ↦
     ringKrullDim_quotient_of_isStandardSmoothOfRelativeDimension k n hP
 
-/-- If a localization `S` of a reduced `k`-algebra `B` at a submonoid `M ≤ P.primeCompl` is
+/-- If a localization `S` of a `k`-algebra `B` at a submonoid `M ≤ P.primeCompl` is
 standard smooth of relative dimension `n` over a field `k` at a minimal prime `P` of `B`, then the
 residue field `P.ResidueField` has transcendence degree `n` over `k`. -/
 theorem trdeg_residueField_of_isStandardSmoothOfRelativeDimension {B : Type*} [CommRing B]
-    [Algebra k B] [IsReduced B] {P : Ideal B} [P.IsPrime] (hP : P ∈ minimalPrimes B)
+    [Algebra k B] {P : Ideal B} [P.IsPrime] (hP : P ∈ minimalPrimes B)
     (M : Submonoid B) (hM : M ≤ P.primeCompl) [Algebra B S] [IsScalarTower k B S]
     [IsLocalization M S] :
     Algebra.trdeg k P.ResidueField = n := by
-  refine with_residueField_isLocalization_of_mem_minimalPrimes (R := k) (S := S) hP M hM
-    fun {_ _ _ _ _} ↦ ?_
-  have hdisj : Disjoint (M : Set B) P :=
-    Set.disjoint_left.mpr fun _ hm ↦ hM hm
+  have hdisj : Disjoint (M : Set B) P := Set.disjoint_left.mpr fun _ hm ↦ hM hm
+  have hunit : ∀ m : M, IsUnit (IsScalarTower.toAlgHom k B P.ResidueField m) := fun m ↦
+    IsUnit.mk0 _ <| by
+      change algebraMap B P.ResidueField m.val ≠ 0
+      rw [IsScalarTower.algebraMap_apply B (B ⧸ P) P.ResidueField, Ideal.Quotient.algebraMap_eq,
+        ne_eq, FaithfulSMul.algebraMap_eq_zero_iff, Ideal.Quotient.eq_zero_iff_mem]
+      exact hM m.property
+  let φ : S →ₐ[k] P.ResidueField :=
+    IsLocalization.liftAlgHom (M := M) (f := IsScalarTower.toAlgHom k B P.ResidueField) hunit
+  let : Algebra S P.ResidueField := φ.toRingHom.toAlgebra
+  have : IsScalarTower B S P.ResidueField := .of_algebraMap_eq fun b ↦ by
+    simp [φ, RingHom.algebraMap_toAlgebra]
+  have : IsScalarTower k S P.ResidueField := .of_algebraMap_eq fun c ↦ by
+    simp [φ, RingHom.algebraMap_toAlgebra]
   have hPS_min : P.map (algebraMap B S) ∈ minimalPrimes S := by
     have hmem : P.map (algebraMap B S) ∈ ((⊥ : Ideal B).map (algebraMap B S)).minimalPrimes := by
       rw [IsLocalization.minimalPrimes_map M S ⊥, Set.mem_preimage]
@@ -175,8 +160,10 @@ theorem trdeg_residueField_of_isStandardSmoothOfRelativeDimension {B : Type*} [C
     ringKrullDim_quotient_of_isStandardSmoothOfRelativeDimension k n hPS_min
   have : Algebra.IsStandardSmooth k S :=
     Algebra.IsStandardSmoothOfRelativeDimension.isStandardSmooth n
-  exact with_quotient_map_isFractionRing (k := k) (S := S) (P := P) M hdisj fun {_ _ _ _} ↦
-    trdeg_eq_of_ringKrullDim_eq_of_isFractionRing k (D := S ⧸ P.map (algebraMap B S)) hdimS
+  exact IsFractionRing.with_quotient_map_isFractionRing (R := k) (S := S) (P := P)
+    (F := P.ResidueField) M fun {_ _ _ _} ↦
+      trdeg_eq_of_ringKrullDim_eq_of_isFractionRing k
+        (D := S ⧸ P.map (algebraMap B S)) (F := P.ResidueField) hdimS
 
 end
 

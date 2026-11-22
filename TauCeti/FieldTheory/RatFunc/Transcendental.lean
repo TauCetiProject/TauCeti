@@ -11,7 +11,6 @@ public import Mathlib.FieldTheory.Separable
 public import TauCeti.RingTheory.Algebraic.Basic
 import Mathlib.RingTheory.Localization.Algebra
 import Mathlib.RingTheory.Localization.LocalizationLocalization
-import Mathlib.RingTheory.Polynomial.Tower
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.RatFunc.Automorphism

@@ -10,8 +10,8 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
 
-import TauCeti.RingTheory.MvPolynomial.Basic
 import TauCeti.RingTheory.MvPolynomial.DiscreteValuationRing
+import TauCeti.RingTheory.MvPolynomial.Localization
 
 /-!
 # Lifting algebraic independence from the residue fibre of a discrete valuation ring
@@ -65,8 +65,7 @@ theorem of_quotient_residueField {R K D E ι : Type*}
     exact IsScalarTower.algebraMap_apply R (IsLocalRing.ResidueField R) (D ⧸ q) r
   have hres : MvPolynomial.aeval (R := IsLocalRing.ResidueField R) (fun i ↦ φ (y i))
       (MvPolynomial.map (IsLocalRing.residue R) g) = 0 := by
-    rw [MvPolynomial.aeval_def, MvPolynomial.eval₂_map, ← hcomm, ← MvPolynomial.hom_eval₂,
-      ← MvPolynomial.aeval_def, hg0, map_zero]
+    rw [← MvPolynomial.map_aeval_eq_aeval_map (IsLocalRing.residue R) φ hcomm.symm, hg0, map_zero]
   have hg_map : MvPolynomial.map (IsLocalRing.residue R) g = 0 :=
     hy (hres.trans (map_zero _).symm)
   have hm₀_zero : IsLocalRing.residue R (g.coeff m₀) = 0 := by

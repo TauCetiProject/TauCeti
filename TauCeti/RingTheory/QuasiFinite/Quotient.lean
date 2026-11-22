@@ -73,9 +73,8 @@ theorem of_quasiFiniteAt_quotient {J : Ideal S} {q : Ideal S} [q.IsPrime]
       (RingHom.surjectiveOnStalks_of_surjective (Ideal.Quotient.factor_surjective hJ)) _ ?_
     apply Ideal.comap_injective_of_surjective _ Ideal.Quotient.mk_surjective
     have hfac : (Ideal.Quotient.factorₐ R hJ).toRingHom.comp (Ideal.Quotient.mk J) =
-        Ideal.Quotient.mk ((q.under R).map (algebraMap R S)) := by
-      ext x
-      exact Ideal.Quotient.factorₐ_apply_mk R hJ x
+        Ideal.Quotient.mk ((q.under R).map (algebraMap R S)) :=
+      Ideal.Quotient.factor_comp_mk hJ
     rw [hp, Ideal.comap_comap, hfac, Ideal.comap_map_mk Ideal.map_comap_le]
   exact .of_weaklyQuasiFiniteAt q
 

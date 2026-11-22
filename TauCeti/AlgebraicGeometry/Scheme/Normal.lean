@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 public import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
 import Mathlib.RingTheory.Polynomial.RationalRoot
+import TauCeti.RingTheory.SerreCondition.Normal
 
 /-!
 # Normal schemes
@@ -47,6 +48,8 @@ use `IsNormalScheme (Spec R)` for it.
   `R` is integrally closed.
 * `TauCeti.AlgebraicGeometry.IsNormalScheme.isIntegrallyClosed_of_isAffineOpen`: on a normal
   scheme, a domain of sections over an affine open is integrally closed.
+* `IsNormalScheme.isIntegrallyClosed_of_isLocallyNoetherian_of_isAffineOpen`: on a locally
+  Noetherian normal scheme, sections over an affine open are integrally closed.
 * `TauCeti.AlgebraicGeometry.IsNormalScheme.isDiscreteValuationRing_stalk`: on a locally
   Noetherian normal scheme, the local ring at a point of coheight one is a discrete valuation
   ring, by the ring-level `IsDiscreteValuationRing.of_ringKrullDim_eq_one`.
@@ -202,6 +205,18 @@ theorem IsNormalScheme.isIntegrallyClosed_of_isAffineOpen [IsNormalScheme X]
     {U : X.Opens} [IsDomain Γ(X, U)] (hU : IsAffineOpen U) :
     IsIntegrallyClosed Γ(X, U) :=
   hU.isIntegrallyClosed_iff_forall_stalk.mpr fun _ _ ↦ inferInstance
+
+/-- On a locally Noetherian normal scheme, the ring of sections over an affine open is integrally
+closed (without assuming it is a domain). -/
+theorem IsNormalScheme.isIntegrallyClosed_of_isLocallyNoetherian_of_isAffineOpen
+    [IsLocallyNoetherian X] [IsNormalScheme X] {U : X.Opens} (hU : IsAffineOpen U) :
+    IsIntegrallyClosed Γ(X, U) := by
+  have : IsNoetherianRing Γ(X, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
+  have hB := (isNormalScheme_Spec_iff_forall_localization Γ(X, U)).mp
+    (isNormalScheme_iff_forall_affineOpens.mp ‹IsNormalScheme X› ⟨U, hU⟩)
+  obtain ⟨hR, hS⟩ :=
+    forall_isDomain_and_isIntegrallyClosed_iff_satisfiesSerreR_one_and_satisfiesSerreS_two.mp hB
+  exact isIntegrallyClosed_of_satisfiesSerreR_one_of_satisfiesSerreS_two hR hS
 
 /-- On a locally Noetherian normal scheme the local ring at a point of coheight one is a
 discrete valuation ring. Stacks, Lemma 10.119.7 (00PD). -/

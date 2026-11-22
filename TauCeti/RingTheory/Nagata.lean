@@ -125,7 +125,6 @@ private theorem finite_integralClosure_fractionRing_quotient [IsNagata R] (S : T
       ← IsScalarTower.algebraMap_apply R (S ⧸ q) L]
   have : FaithfulSMul R' (S ⧸ q) :=
     (faithfulSMul_iff_algebraMap_injective _ _).mpr Ideal.algebraMap_quotient_injective
-  have : FaithfulSMul (S ⧸ q) L := TauCeti.IsFractionRing.faithfulSMul (S ⧸ q) L
   have : FaithfulSMul R' L := .trans R' (S ⧸ q) L
   let : Algebra (FractionRing R') L := FractionRing.liftAlgebra R' L
   have : Algebra.EssFiniteType R' (S ⧸ q) := .of_comp R R' (S ⧸ q)

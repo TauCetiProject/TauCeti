@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicGeometry.Normalization
 public import TauCeti.AlgebraicGeometry.Scheme.Normal
 import TauCeti.RingTheory.IntegralClosure.ReducedArtinian
 import TauCeti.RingTheory.Localization.Reduced
-import TauCeti.RingTheory.SerreCondition.Normal
 
 /-!
 # Normality of relative normalization in a normal scheme
@@ -53,14 +52,9 @@ instance isNormalScheme_normalization {X Y : Scheme.{u}} (f : X ⟶ Y) [IsAffine
   refine ⟨⟨_, hU.preimage f.fromNormalization⟩, hxU, ?_⟩
   let := (f.app U).hom.toAlgebra
   let B := Γ(X, f ⁻¹ᵁ U)
-  have : IsNoetherianRing B := IsLocallyNoetherian.component_noetherian
-    ⟨_, hU.preimage f⟩
-  have hB := (isNormalScheme_Spec_iff_forall_localization B).mp
-    (isNormalScheme_iff_forall_affineOpens.mp ‹IsNormalScheme X› ⟨_, hU.preimage f⟩)
-  obtain ⟨hR, hS⟩ :=
-    forall_isDomain_and_isIntegrallyClosed_iff_satisfiesSerreR_one_and_satisfiesSerreS_two.mp hB
+  have : IsNoetherianRing B := IsLocallyNoetherian.component_noetherian ⟨_, hU.preimage f⟩
   have : IsIntegrallyClosed B :=
-    isIntegrallyClosed_of_satisfiesSerreR_one_of_satisfiesSerreS_two hR hS
+    IsNormalScheme.isIntegrallyClosed_of_isLocallyNoetherian_of_isAffineOpen (hU.preimage f)
   let E := FractionRing B
   let A := Γ(Y, U)
   let C := integralClosure A B
