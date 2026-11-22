@@ -24,9 +24,9 @@ other than `2`, this file proves the Thom isomorphism with orientation-twisted c
 
 (`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEquivTwistedHomology`), with no
 orientation of `E` and over any base. For a non-orientable bundle the twist cannot be dropped: for
-the Möbius line over the circle, `H₁(E, E₀; ℚ) = 0` while `H₀(S¹; ℚ) = ℚ`. Over `ZMod 2` the twist
-disappears and the untwisted mod `2` Thom isomorphism holds instead
-(`TauCeti.existsUnique_isThomClass_of_subsingleton_units` with `TauCeti.homologyThomIso`).
+the Möbius line over the circle, `H₁(E, E₀; ℚ) = 0` while `H₀(S¹; ℚ) = ℚ`. In characteristic
+two, for instance over `ZMod 2`, the twist disappears and the untwisted Thom isomorphism holds
+instead (`TauCeti.exists_isThomClass_of_two_eq_zero` with `TauCeti.homologyThomIso`).
 
 The proof passes through the orientation double cover `B'` of `E`, with its deck involution `σ`
 reversing orientations, and the pull-back `E'` of `E` to `B'`, oriented by the tautological

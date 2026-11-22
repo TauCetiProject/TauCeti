@@ -37,9 +37,8 @@ of a critical submanifold of index `r`: the cohomology of the base, shifted up b
   isomorphism `a ↦ π^*a ⌣ u` (`TauCeti.thomMap`) then gives
   `Hᵖ⁺ʳ(M_{c+ε}, M_{c-ε}; N) ≅ Hᵖ(B; N)` in every degree `p`
   (`TauCeti.nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass`).
-* Such a Thom class exists with no orientation when `1` is the only unit of `K`, as for
-  `K = ZMod 2`
-  (`TauCeti.nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_subsingleton_units`),
+* Such a Thom class exists with no orientation when `2 = 0` in `K`, as for `K = ZMod 2`
+  (`TauCeti.nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_eq_zero`),
   and for every commutative ring `K`, in particular for `ℤ`, when `V` is oriented
   (`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_vectorBundleOrientation`).
 
@@ -189,14 +188,14 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isTho
 
 variable [FiniteDimensional ℝ F]
 
-/-- **Across a Morse–Bott level the relative cohomology mod `2` is the shifted cohomology of the
-critical submanifold, with no orientation.** Under the hypotheses of
+/-- **Across a Morse–Bott level the relative cohomology in characteristic two is the shifted
+cohomology of the critical submanifold, with no orientation.** Under the hypotheses of
 `TauCeti.exists_isIso_singularCohomologyMap_sublevelPair_of_negativeDiscBundle`, where the
 negative disc bundle of the quadratic normal form `f = c - s + t` is parametrized by the disc
-bundle of a real vector bundle `V → B` of rank `r`, let `K` be a commutative ring whose only
-unit is `1`, such as `ZMod 2`. Then `Hᵖ⁺ʳ({f ≤ c + ε}, {f ≤ c - ε}; N) ≅ Hᵖ(B; N)` for every
+bundle of a real vector bundle `V → B` of rank `r`, let `K` be a commutative ring in which
+`2 = 0`, such as `ZMod 2`. Then `Hᵖ⁺ʳ({f ≤ c + ε}, {f ≤ c - ε}; N) ≅ Hᵖ(B; N)` for every
 `K`-module `N` and every degree `p`. -/
-theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_subsingleton_units
+theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_eq_zero
     (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hW : IsOpen W) (hs : ContMDiffOn I 𝓘(ℝ) ∞ s W)
     (ht : ContMDiffOn I 𝓘(ℝ) ∞ t W) (hs₀ : ∀ x ∈ W, 0 ≤ s x) (ht₀ : ∀ x ∈ W, 0 ≤ t x)
     (hf : ∀ x ∈ W, f x = c - s x + t x)
@@ -212,12 +211,12 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_subsi
     (hg : IsClosedEmbedding ((gaugeDiscBundle ρ).domRestrict g))
     (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε})
     (hgS : g '' gaugeSphereBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x = ε})
-    (K : Type u) [CommRing K] [Subsingleton Kˣ] (N : ModuleCat.{u} K)
+    (K : Type u) [CommRing K] (h2 : (2 : K) = 0) (N : ModuleCat.{u} K)
     (p : ℕ) :
     Nonempty ((sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularCohomology
         (ModuleCat.of K K) K N (p + finrank ℝ F) ≅
       (TopCat.of B).singularCohomology (ModuleCat.of K K) K N p) :=
-  let ⟨_, hu, _⟩ := existsUnique_isThomClass_of_subsingleton_units (F := F) (E := V) K
+  let ⟨_, hu⟩ := exists_isThomClass_of_two_eq_zero (F := F) (E := V) K h2
   nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass hfs hW hs ht hs₀
     ht₀ hf hdir φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS hu N p
 
