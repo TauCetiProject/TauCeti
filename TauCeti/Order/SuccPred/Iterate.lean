@@ -85,4 +85,15 @@ theorem succ_mem_range_succ_iterate_iff {α : Type*} [PartialOrder α] [SuccOrde
   ⟨mem_range_succ_iterate_of_le_of_mem hab (le_succ b),
     fun ⟨n, hn⟩ => ⟨n + 1, hn ▸ Function.iterate_succ_apply' _ _ _⟩⟩
 
+/-- If no iterate `succ^[n] a` is maximal, then the iterated successor range of `a` has no
+greatest element. -/
+theorem not_exists_isGreatest_range_succ_iterate {α : Type*} [Preorder α] [SuccOrder α] {a : α}
+    (h : ∀ n : ℕ, ¬ IsMax (succ^[n] a)) :
+    ¬ ∃ b, IsGreatest (Set.range (fun n : ℕ => succ^[n] a)) b := by
+  rintro ⟨b, ⟨n, rfl⟩, hmax⟩
+  have hlt : succ^[n] a < succ^[n + 1] a := by
+    rw [Function.iterate_succ_apply']
+    exact lt_succ_of_not_isMax (h n)
+  exact hlt.not_ge (hmax ⟨n + 1, rfl⟩)
+
 end TauCeti.Order

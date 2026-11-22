@@ -162,11 +162,7 @@ theorem inv_ofFun_const_mul_nonArchimedeanWord_eq_none {t : Λ}
   rw [mul_eq_none_iff, ← not_exists,
     exists_isMul_inv_left_iff (isReduced_ofFun_const t x) (isReduced_nonArchimedeanWord t x y),
     common_prefix_lengths_nonArchimedeanWord_eq_range ht' hxy]
-  rintro ⟨δ, ⟨n, rfl⟩, hmax⟩
-  have hlt : (Order.succ^[n]) (0 : Λ) < (Order.succ^[n + 1]) (0 : Λ) := by
-    rw [Function.iterate_succ_apply']
-    exact Order.lt_succ_self_of_lt (ht' n)
-  exact hlt.not_ge (hmax ⟨n + 1, rfl⟩)
+  exact TauCeti.Order.not_exists_isGreatest_range_succ_iterate fun n => not_isMax_of_lt (ht' n)
 
 /-- When `t` exceeds every finite multiple `n • Order.succ 0` and `x ≠ y`, the concatenation
 `nonArchimedeanWord t x y ++ (x^t)⁻¹` is reduced. -/
@@ -202,22 +198,26 @@ theorem nonArchimedeanWord_append_inv_notMem_CDR {t : Λ}
   exact mul_eq_none_iff.1 (inv_ofFun_const_mul_nonArchimedeanWord_eq_none ht hxy) w₂⁻¹
     (by simpa using hw₂.inv)
 
-/-- Whenever `Λ` has an element exceeding all finite multiples of `Order.succ 0` and `X` has
-at least one letter, `CDR(Λ, X)` is a strict subset of the reduced `Λ`-words. -/
-theorem exists_isReduced_notMem_CDR {t : Λ} (ht : ∀ n : ℕ, n • Order.succ (0 : Λ) < t)
-    (a : X) : ∃ w : InfWord Λ X, w.IsReduced ∧ w ∉ CDR Λ X :=
-  ⟨_, isReduced_nonArchimedeanWord_append_inv ht (x := (a, true)) (y := (a, false)) (by simp),
+/-- Whenever `Λ` is non-Archimedean and `X` is nonempty, `CDR(Λ, X)` is a strict subset of the
+reduced `Λ`-words. -/
+theorem exists_isReduced_notMem_CDR [Nonempty X] (hΛ : ¬ Archimedean Λ) :
+    ∃ w : InfWord Λ X, w.IsReduced ∧ w ∉ CDR Λ X := by
+  obtain ⟨t, ht⟩ := TauCeti.Order.not_archimedean_iff_exists_forall_nsmul_succ_zero_lt.1 hΛ
+  obtain ⟨a⟩ := ‹Nonempty X›
+  exact ⟨_, isReduced_nonArchimedeanWord_append_inv ht (x := (a, true)) (y := (a, false)) (by simp),
     nonArchimedeanWord_append_inv_notMem_CDR ht (x := (a, true)) (y := (a, false)) (by simp)⟩
 
 /-- Stallings' fifth pregroup axiom (P5) fails on the set of all reduced `Λ`-words whenever `Λ` is
 non-Archimedean and `X` is nonempty: there exist reduced words `u, v, w, z` such that `u ∗ v`,
 `v ∗ w`, and `w ∗ z` are all defined, while neither `(u ∗ v) ∗ w` nor `v ∗ (w ∗ z)` is defined. -/
-theorem exists_pregroup_P5_counterexample {t : Λ} (ht : ∀ n : ℕ, n • Order.succ 0 < t) (a : X) :
+theorem exists_pregroup_P5_counterexample [Nonempty X] (hΛ : ¬ Archimedean Λ) :
     ∃ u v w z : InfWord Λ X,
       u.IsReduced ∧ v.IsReduced ∧ w.IsReduced ∧ z.IsReduced ∧
       (u.mul v).Dom ∧ (v.mul w).Dom ∧ (w.mul z).Dom ∧
       ¬((u.mul v).bind (·.mul w)).Dom ∧ ¬((w.mul z).bind (v.mul ·)).Dom := by
   classical
+  obtain ⟨t, ht⟩ := TauCeti.Order.not_archimedean_iff_exists_forall_nsmul_succ_zero_lt.1 hΛ
+  obtain ⟨a⟩ := ‹Nonempty X›
   have ht0 : 0 < t := by simpa using ht 0
   set p : InfWord Λ X := ofFun t fun _ => (a, true)
   set q : InfWord Λ X := nonArchimedeanWord t (a, true) (a, false)
@@ -281,7 +281,8 @@ example :
       (u.mul v).Dom ∧ (v.mul w).Dom ∧ (w.mul z).Dom ∧
       ¬((u.mul v).bind (·.mul w)).Dom ∧ ¬((w.mul z).bind (v.mul ·)).Dom :=
   exists_pregroup_P5_counterexample
-    (TauCeti.Order.nsmul_succ_zero_lt_toLex_of_pos zero_lt_one 0) (0 : Fin 2)
+    (TauCeti.Order.not_archimedean_iff_exists_forall_nsmul_succ_zero_lt.2
+      ⟨_, TauCeti.Order.nsmul_succ_zero_lt_toLex_of_pos zero_lt_one 0⟩)
 
 end InfWord
 

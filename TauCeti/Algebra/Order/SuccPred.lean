@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Archimedean.Defs
 public import Mathlib.Algebra.Order.Group.OrderIso
 public import Mathlib.Order.SuccPred.Basic
 import Mathlib.Algebra.Order.Monoid.Unbundled.Pow
+import TauCeti.Order.SuccPred.Basic
 
 /-!
 # Successors in ordered additive groups
@@ -70,8 +71,7 @@ theorem not_archimedean_iff_exists_forall_nsmul_succ_zero_lt
     refine h ⟨fun x y hy => ?_⟩
     obtain ⟨n, hn⟩ := hle x
     exact ⟨n, hn.trans (nsmul_le_nsmul_right (succ_le_of_lt hy) n)⟩
-  · have h01 : (0 : α) < succ 0 :=
-      lt_succ_of_not_isMax (not_isMax_of_lt (by simpa using ht 0))
+  · have h01 : (0 : α) < succ 0 := lt_succ_self_of_lt (by simpa using ht 0)
     obtain ⟨n, hn⟩ := h.arch t h01
     exact (ht n).not_ge hn
 
