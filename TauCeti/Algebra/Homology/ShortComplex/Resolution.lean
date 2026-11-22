@@ -12,8 +12,8 @@ public import Mathlib.Algebra.Homology.Double
 
 A short complex `S : S.X₁ ⟶ S.X₂ ⟶ S.X₃` determines the chain complex
 `⋯ ⟶ 0 ⟶ S.X₁ ⟶ S.X₂`, augmented to `S.X₃`. This file constructs the complex, its augmentation,
-and the chain maps induced by morphisms of short complexes in any category with zero morphisms
-and a zero object.
+a constructor for chain maps out of the complex, and the chain maps induced by morphisms of short
+complexes in any category with zero morphisms and a zero object.
 
 For a short exact presentation by projective objects in an abelian category, this is the complex
 of the projective resolution used to compute left derived functors in
@@ -96,6 +96,39 @@ lemma from_resolutionComplex_hom_ext {K : ChainComplex C ℕ} {f g : S.resolutio
   · exact h₁
   · exact (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _
 
+section mkHomFromResolutionComplex
+
+variable (S) {K : ChainComplex C ℕ} (φ₀ : S.X₂ ⟶ K.X 0) (φ₁ : S.X₁ ⟶ K.X 1)
+  (comm : φ₁ ≫ K.d 1 0 = S.f ≫ φ₀)
+
+/-- The chain map out of `S.resolutionComplex` with components `φ₀` in degree `0` and `φ₁` in
+degree `1`, given their compatibility `comm` with `S.f` and the differential of `K`. This is the
+analogue for this model of Mathlib's `HomologicalComplex.mkHomFromDouble`. -/
+def mkHomFromResolutionComplex : S.resolutionComplex ⟶ K :=
+  ChainComplex.ofHom (fun n => match n with | 0 => φ₀ | 1 => φ₁ | _ + 2 => 0) fun
+    | 0 => comm
+    | j + 1 => (S.isZero_resolutionComplex_X_add_two j).eq_of_src _ _
+
+/-- In degree `0`, `S.mkHomFromResolutionComplex φ₀ φ₁ comm` is `φ₀`. -/
+@[simp]
+lemma mkHomFromResolutionComplex_f_zero :
+    (S.mkHomFromResolutionComplex φ₀ φ₁ comm).f 0 = φ₀ :=
+  (rfl)
+
+/-- In degree `1`, `S.mkHomFromResolutionComplex φ₀ φ₁ comm` is `φ₁`. -/
+@[simp]
+lemma mkHomFromResolutionComplex_f_one :
+    (S.mkHomFromResolutionComplex φ₀ φ₁ comm).f 1 = φ₁ :=
+  (rfl)
+
+/-- In degrees at least `2`, `S.mkHomFromResolutionComplex φ₀ φ₁ comm` vanishes. -/
+@[simp]
+lemma mkHomFromResolutionComplex_f_add_two (n : ℕ) :
+    (S.mkHomFromResolutionComplex φ₀ φ₁ comm).f (n + 2) = 0 :=
+  (rfl)
+
+end mkHomFromResolutionComplex
+
 /-- The normalized presentation complex is Mathlib's two-term complex on `S.f`. -/
 def resolutionComplexIsoDouble (S : ShortComplex C) :
     S.resolutionComplex ≅ HomologicalComplex.double S.f (c := ComplexShape.down ℕ)
@@ -166,9 +199,7 @@ lemma resolutionπ_f_succ (S : ShortComplex C) (n : ℕ) : S.resolutionπ.f (n +
 /-- A morphism of short complexes induces the chain map of the associated complexes given by its
 first two components. -/
 def resolutionComplexMap (φ : S ⟶ S') : S.resolutionComplex ⟶ S'.resolutionComplex :=
-  ChainComplex.ofHom (fun n => match n with | 0 => φ.τ₂ | 1 => φ.τ₁ | _ + 2 => 0) fun
-    | 0 => φ.comm₁₂
-    | j + 1 => (S.isZero_resolutionComplex_X_add_two j).eq_of_src _ _
+  S.mkHomFromResolutionComplex φ.τ₂ φ.τ₁ φ.comm₁₂
 
 /-- In degree `0`, the chain map induced by `φ` is `φ.τ₂`. -/
 @[simp]
