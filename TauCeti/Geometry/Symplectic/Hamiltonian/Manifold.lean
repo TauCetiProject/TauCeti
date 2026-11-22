@@ -319,8 +319,8 @@ and the zeros of that field are located by the differential alone. -/
 at most one Hamiltonian vector field. No finite-dimensionality is needed. -/
 theorem unique (hσ : σ.IsNondegenerate) (hX : σ.IsHamiltonianVectorField f X)
     (hY : σ.IsHamiltonianVectorField f Y) : X = Y :=
-  funext fun x ↦ sub_eq_zero.1 <| isNondegenerate_iff_separatingLeft.1 hσ x _ fun w ↦ by
-    rw [SmoothBundleForm.eval₂_sub_left, hX, hY, sub_self]
+  hσ.interior_injective <| (isHamiltonianVectorField_iff_interior_eq.1 hX).trans
+    (isHamiltonianVectorField_iff_interior_eq.1 hY).symm
 
 /-- **The zeros of a Hamiltonian vector field are the critical points of the Hamiltonian.** For a
 fiberwise nondegenerate form, a Hamiltonian vector field `X` of `f` vanishes at `x` exactly when
