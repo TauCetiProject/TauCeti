@@ -33,6 +33,8 @@ is `O` of a slower one, so a decay estimate at one rate gives one at every slowe
   decay estimate at a rate `c'` gives one at every slower rate `c`.
 * `TauCeti.exists_forall_le_mul_exp_of_eventually_le`: an exponential bound outside a compact set
   extends to the whole space for a continuous function, with a larger constant.
+* `TauCeti.exists_forall_norm_le_mul_exp_of_isBigO`: a map with continuous norm that is
+  `O(exp (-c ‖x‖))` outside a compact set satisfies a global bound `‖f x‖ ≤ K exp (-c ‖x‖)`.
 * `TauCeti.abs_exp_mul_sub_le_exp`: a bound `|f x| ≤ M` bounds `|exp (t * (f x - I))|` by
   `exp (|t| * (M + |I|))`.
 * `ContinuousOn.exists_forall_le_mul_exp_Ici_of_eventually_le`: an eventual exponential bound
@@ -94,6 +96,18 @@ theorem exists_forall_le_mul_exp_of_eventually_le {E : Type*} [NormedAddCommGrou
       _ ≤ max K M * Real.exp (-(c * ‖x‖)) :=
           mul_le_mul_of_nonneg_right (((le_abs_self _).trans hb).trans (le_max_right _ _)) he.le
   · exact (hR hx).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) he.le)
+
+open Asymptotics Filter in
+/-- A map whose norm is continuous and which is `O(exp (-c ‖x‖))` outside a compact set satisfies
+a global bound `‖f x‖ ≤ K exp (-c ‖x‖)`. -/
+theorem exists_forall_norm_le_mul_exp_of_isBigO {E F : Type*} [NormedAddCommGroup E] [Norm F]
+    {f : E → F} (hf : Continuous fun x ↦ ‖f x‖) {c : ℝ}
+    (h : f =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖))) :
+    ∃ K, ∀ x, ‖f x‖ ≤ K * Real.exp (-(c * ‖x‖)) := by
+  obtain ⟨K, hK⟩ := h.bound
+  refine exists_forall_le_mul_exp_of_eventually_le hf (K := K) ?_
+  filter_upwards [hK] with x hx
+  simpa [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] using hx
 
 /-- A bound on `f` bounds the shifted exponential `exp (t * (f x - I))` for any shift `I`. -/
 theorem abs_exp_mul_sub_le_exp {α : Type*} {f : α → ℝ} {M : ℝ} (hMf : ∀ x, |f x| ≤ M)

@@ -206,14 +206,11 @@ theorem exists_norm_iteratedFDeriv_sub_referenceField_le_mul_exp (f : ContDiffBu
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
     {c : ℝ} (hc : c < 1 / 2) :
-    ∃ K, ∀ z, ‖iteratedFDeriv ℝ n (x - referenceField f m) z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K, hK⟩ := (isBigO_iteratedFDeriv_sub_referenceField f hp hq hsol hlim hphase hc n).bound
-  have hcont : Continuous fun z ↦ ‖iteratedFDeriv ℝ n (x - referenceField f m) z‖ :=
+    ∃ K, ∀ z, ‖iteratedFDeriv ℝ n (x - referenceField f m) z‖ ≤ K * Real.exp (-(c * ‖z‖)) :=
+  exists_forall_norm_le_mul_exp_of_isBigO
     ((hx.sub ((contDiff_referenceField f m).of_le (by simp))).continuous_iteratedFDeriv
       le_rfl).norm
-  refine exists_forall_le_mul_exp_of_eventually_le hcont (K := K) ?_
-  filter_upwards [hK] with z hz
-  simpa [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] using hz
+    (isBigO_iteratedFDeriv_sub_referenceField f hp hq hsol hlim hphase hc n)
 
 /-- **Sobolev membership of a smooth end-normalized vortex.** A smooth plane vortex with `|α| → 1`
 at infinity whose section equals `|α|` times `windingPhase m` outside a compact set lies in the
@@ -254,7 +251,8 @@ theorem gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq
   have hdec := fun c (hc : c < 1 / 2) n ↦
     isBigO_iteratedFDeriv_sub_referenceField f ((contDiff_euclidean.1 hy 2).of_le (by simp))
       ((contDiff_euclidean.1 hy 3).of_le (by simp)) hsol' hlim hphase hc n
-  exact ⟨mem_framedFieldSpace_of_sectionValue_eq_mul_windingPhase hy hsol' hlim hphase f, hdec⟩
+  exact ⟨mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField hy (c := 1 / 4)
+    (by norm_num) (hdec _ (by norm_num)), hdec⟩
 
 /-- **Smooth framed gauge representative in `A_m^s` with all-order exponential decay.** Every
 smooth plane vortex with the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1` has a smooth framed
@@ -275,12 +273,10 @@ theorem exists_framedGaugeGroup_smul_mem_framedFieldSpace
   have hm (f : ContDiffBump (0 : ℝ)) :=
     gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq f u.property hx hsol hframe hu
   refine ⟨u, hu, fun f ↦ (hm f).1, fun f c hc n ↦ ?_⟩
-  obtain ⟨K, hK⟩ := ((hm f).2 c hc n).bound
-  have hcont : Continuous fun z ↦ ‖iteratedFDeriv ℝ n (u • x - referenceField f m) z‖ :=
+  exact exists_forall_norm_le_mul_exp_of_isBigO
     (((contDiff_framedGaugeGroup_smul u hx).sub
       (contDiff_referenceField f m)).continuous_iteratedFDeriv (by simp)).norm
-  exact exists_forall_le_mul_exp_of_eventually_le hcont (K := K) <| hK.mono fun z hz ↦ by
-    simpa [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] using hz
+    ((hm f).2 c hc n)
 
 /-- **Existence of smooth Sobolev framed vortices with prescribed zeros.** Every effective divisor
 `D ∈ Sym ℂ m` is the zero divisor of a smooth plane vortex `x` whose section equals `|α|` times
@@ -357,15 +353,6 @@ theorem sobolevVortexModuliEquiv_apply {hs : 1 < (k : ℝ) + 1} (hk : 3 < k)
     sobolevVortexModuliEquiv hk q = sobolevVortexModuliDivisor hk q :=
   (rfl)
 
-/-- The inverse Sobolev moduli equivalence sends the divisor of a `C²` vortex of `A_m^k` back to
-its `G_(k+1)`-orbit. -/
-@[simp]
-theorem sobolevVortexModuliEquiv_symm_sobolevVortexDivisor {hs : 1 < (k : ℝ) + 1} (hk : 3 < k)
-    (x : sobolevVortices f m k) :
-    (sobolevVortexModuliEquiv (f := f) (m := m) (hs := hs) hk).symm (sobolevVortexDivisor x) =
-      Quotient.mk'' ⟨x.val, mem_sobolevVortexSubMulAction.2 x.property⟩ := by
-  rw [Equiv.symm_apply_eq, sobolevVortexModuliEquiv_apply, sobolevVortexModuliDivisor_mk]
-
 /-- **Equivalence between the Sobolev and smooth framed vortex moduli spaces.** For `k ≥ 4`, the
 orbit space of `G_(k+1)` on the `C²` vortices of `A_m^k` is canonically equivalent to the orbit
 space of `framedGaugeGroup` on the smooth framed degree-`m` vortices, identifying orbits with the
@@ -389,19 +376,6 @@ theorem sobolevVortexModuliEquivFramedVortexModuli_mk_eq_mk_iff {hs : 1 < (k : �
   rw [← (framedVortexModuliEquiv one_pos m).apply_eq_iff_eq]
   simp [sobolevVortexModuliEquivFramedVortexModuli]
 
-/-- Symmetrically, the inverse equivalence sends the orbit of a smooth framed vortex `x'` to the
-orbit of a `C²` Sobolev vortex `x` if and only if their zero divisors agree. -/
-@[simp]
-theorem sobolevVortexModuliEquivFramedVortexModuli_symm_mk_eq_mk_iff {hs : 1 < (k : ℝ) + 1}
-    {hk : 3 < k} (x' : framedVortexSubMulAction 1 m)
-    (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :
-    (sobolevVortexModuliEquivFramedVortexModuli (f := f) (hs := hs) hk).symm (Quotient.mk'' x') =
-        Quotient.mk'' x ↔
-      framedVortexDivisor x' =
-        sobolevVortexDivisor ⟨x.val, mem_sobolevVortexSubMulAction.1 x.property⟩ := by
-  rw [(sobolevVortexModuliEquivFramedVortexModuli hk).symm_apply_eq, eq_comm,
-    sobolevVortexModuliEquivFramedVortexModuli_mk_eq_mk_iff, eq_comm]
-
 /-- On the `G_(k+1)`-orbit of any smooth vortex in `A_m^k`,
 `sobolevVortexModuliEquivFramedVortexModuli` agrees with taking its `framedGaugeGroup`-orbit. -/
 theorem sobolevVortexModuliEquivFramedVortexModuli_mk_of_eq {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
@@ -411,16 +385,5 @@ theorem sobolevVortexModuliEquivFramedVortexModuli_mk_of_eq {hs : 1 < (k : ℝ) 
   (sobolevVortexModuliEquivFramedVortexModuli_mk_eq_mk_iff x x').2
     (sobolevVortexDivisor_eq_framedVortexDivisor
       ⟨x.val, mem_sobolevVortexSubMulAction.1 x.property⟩ x' hx)
-
-/-- On the `framedGaugeGroup`-orbit of any smooth vortex lying in `A_m^k`, the inverse of
-`sobolevVortexModuliEquivFramedVortexModuli` agrees with taking its `G_(k+1)`-orbit. -/
-theorem sobolevVortexModuliEquivFramedVortexModuli_symm_mk_of_eq {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
-    (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk)
-    (x' : framedVortexSubMulAction 1 m) (hx : (x : ℂ → EuclideanSpace ℝ (Fin 4)) = x') :
-    (sobolevVortexModuliEquivFramedVortexModuli (f := f) (hs := hs) hk).symm (Quotient.mk'' x') =
-      Quotient.mk'' x :=
-  (sobolevVortexModuliEquivFramedVortexModuli_symm_mk_eq_mk_iff x' x).2
-    (sobolevVortexDivisor_eq_framedVortexDivisor
-      ⟨x.val, mem_sobolevVortexSubMulAction.1 x.property⟩ x' hx).symm
 
 end TauCeti.Vortex

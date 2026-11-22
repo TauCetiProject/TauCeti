@@ -67,10 +67,6 @@ def ofNormIteratedFDerivLeMulExp {f : E → F} (hf : ContDiff ℝ ∞ f) {c : �
           rw [Real.rpow_natCast]; ring
       _ ≤ max K 0 * M := mul_le_mul_of_nonneg_left (hM ‖x‖ (norm_nonneg x)) (le_max_right K 0)
 
-theorem ofNormIteratedFDerivLeMulExp_apply {f : E → F} (hf : ContDiff ℝ ∞ f) {c : ℝ} (hc : 0 < c)
-    (hbound : ∀ n : ℕ, ∃ K, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ K * Real.exp (-(c * ‖x‖))) (x : E) :
-    ofNormIteratedFDerivLeMulExp hf hc hbound x = f x := (rfl)
-
 @[simp]
 theorem coe_ofNormIteratedFDerivLeMulExp {f : E → F} (hf : ContDiff ℝ ∞ f) {c : ℝ} (hc : 0 < c)
     (hbound : ∀ n : ℕ, ∃ K, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ K * Real.exp (-(c * ‖x‖))) :
@@ -83,17 +79,9 @@ def ofIsBigOIteratedFDerivExp {f : E → F} (hf : ContDiff ℝ ∞ f) {c : ℝ} 
     (hdecay : ∀ n : ℕ,
       iteratedFDeriv ℝ n f =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖))) :
     𝓢(E, F) :=
-  ofNormIteratedFDerivLeMulExp hf hc fun n ↦ by
-    obtain ⟨K, hK⟩ := (hdecay n).bound
-    refine TauCeti.exists_forall_le_mul_exp_of_eventually_le
-      ((hf.continuous_iteratedFDeriv (mod_cast le_top)).norm) (K := K) ?_
-    filter_upwards [hK] with x hx
-    simpa [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] using hx
-
-theorem ofIsBigOIteratedFDerivExp_apply {f : E → F} (hf : ContDiff ℝ ∞ f) {c : ℝ} (hc : 0 < c)
-    (hdecay : ∀ n : ℕ,
-      iteratedFDeriv ℝ n f =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖))) (x : E) :
-    ofIsBigOIteratedFDerivExp hf hc hdecay x = f x := (rfl)
+  ofNormIteratedFDerivLeMulExp hf hc fun n ↦
+    TauCeti.exists_forall_norm_le_mul_exp_of_isBigO
+      ((hf.continuous_iteratedFDeriv (mod_cast le_top)).norm) (hdecay n)
 
 @[simp]
 theorem coe_ofIsBigOIteratedFDerivExp {f : E → F} (hf : ContDiff ℝ ∞ f) {c : ℝ} (hc : 0 < c)

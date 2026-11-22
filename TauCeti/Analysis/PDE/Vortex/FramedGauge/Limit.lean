@@ -346,20 +346,16 @@ theorem exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniform
   have hd : x - y ∈ sobolevFields k := by
     simpa only [sub_sub_sub_cancel_right] using
       sub_mem (mem_framedFieldSpace.1 hxA) (mem_framedFieldSpace.1 hyA)
-  have hC1 (i : Fin 4) : ContDiff ℝ 1 (fun z ↦ x z i - y z i) := by
-    have hdi := mem_sobolevFields.1 hd i
-    simp only [Pi.sub_apply, PiLp.sub_apply] at hdi
-    refine TemperedDistribution.contDiff_of_mem_realSobolevFunctions ?_ hdi ?_
-    · rw [Complex.finrank_real_complex]
-      push_cast
-      linarith
-    · exact ((EuclideanSpace.proj i).continuous.comp hxc).sub
-        ((EuclideanSpace.proj i).continuous.comp hyc)
+  have hdC1 : ContDiff ℝ 1 (x - y) :=
+    contDiff_of_mem_sobolevFields (by push_cast; linarith) hd (hxc.sub hyc)
   have hω : ContDiff ℝ (1 : ℕ) (gaugeForm v) := by
-    have heq : gaugeForm v = fun z ↦ (x z 0 - y z 0) • reCLM + (x z 1 - y z 1) • imCLM :=
-      funext fun z ↦ (gaugeTransform_eq_iff.1 hv z).1
+    have heq : gaugeForm v = fun z ↦ connectionDifferenceCLM ((x - y) z, 0) := by
+      ext z : 1
+      rw [gaugeForm_eq_connectionDifferenceCLM hv z, connectionDifferenceCLM_apply,
+        connectionDifferenceCLM_apply]
+      simp
     rw [heq]
-    exact ((hC1 0).smul contDiff_const).add ((hC1 1).smul contDiff_const)
+    exact connectionDifferenceCLM.contDiff.comp (hdC1.prodMk contDiff_const)
   have hv2 : ContDiff ℝ 2 (fun z ↦ (v z : ℂ)) := by
     exact_mod_cast contDiff_coe_of_contDiff_gaugeForm hvd hω
   exact mem_sobolevGaugeGroup_of_mem_framedFieldSpace (by omega) hxA hv2 (hv ▸ hyA)
