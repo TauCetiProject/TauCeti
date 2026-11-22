@@ -79,6 +79,9 @@ finite union of trivializing open sets
 * `TauCeti.thomPairTwistedHomologyFinrankIso`: `Hᵣ(E, E₀; π^*o(E)) ≅ H₀(B; R)` over a compact base.
 * `TauCeti.thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass`: it sends the fibre class
   over `b` to the class of `b`.
+* `TauCeti.thomPairTwistedHomology_hom_ext`: over a compact base, morphisms out of
+  `Hᵣ(E, E₀; π^*o(E))` are determined by their values on the fibre classes.
+* `TauCeti.thomPairSignFiberClass_neg`: reversing `ω` negates the fibre classes.
 
 ## References
 
@@ -123,6 +126,13 @@ theorem thomPairSignLocalSystem_def :
       (LocalCoefficientSystem.pullback (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of B)
         ⟨π F E, FiberBundle.continuous_proj F E⟩).obj (signLocalSystem F E R hι) :=
   (rfl)
+
+/-- The fibres of the orientation system pulled back to the total space are projective, as those of
+the orientation system are (`TauCeti.VectorBundleOrientationCover.projective_signLocalSystem_obj`).
+Stated over the total space of the Thom pair, where twisted cohomology of the pair looks for it. -/
+instance projective_thomPairSignLocalSystem_obj (x : FundamentalGroupoid (thomPair F E).fst) :
+    CategoryTheory.Projective ((thomPairSignLocalSystem F E R hι).obj x) :=
+  inferInstanceAs (CategoryTheory.Projective ((signLocalSystem F E R hι).obj _))
 
 variable (F E R) in
 /-- The pulled-back orientation system `π^*o(E)` restricted to the part `E|_W` of the total space
@@ -820,6 +830,39 @@ theorem thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass [CompactSpa
     singularHomology₀Section_naturality]
   simp only [TopCat.isoOfHomeo_hom, TopCat.hom_ofHom, ContinuousMap.coe_ofClass,
     Homeomorph.Set.univ_apply]
+
+/-- Reversing the orientation `ω` of the model fibre negates the fibre classes. -/
+@[simp]
+theorem thomPairSignFiberClass_neg (b : B) :
+    thomPairSignFiberClass F E R hι (-ω) b = -thomPairSignFiberClass F E R hι ω b := by
+  have h : ((trivializationAt F E b).mapOrientation ι
+      (FiberBundle.mem_baseSet_trivializationAt' b)).symm (-ω) =
+      -((trivializationAt F E b).mapOrientation ι
+        (FiberBundle.mem_baseSet_trivializationAt' b)).symm ω := by
+    rw [Equiv.symm_apply_eq, Trivialization.mapOrientation_neg, Equiv.apply_symm_apply]
+  rw [thomPairSignFiberClass, thomPairSignFiberClass, fiberClass, fiberClass, fiberClassAux,
+    fiberClassAux, h, fiberSignIso_neg_inv, TopPair.twistedHomologyCoefficientMap_neg]
+  simp only [ModuleCat.hom_neg, LinearMap.neg_apply, map_neg]
+
+/-- **Morphisms out of `Hᵣ(E, E₀; π^*o(E))` are determined by the fibre classes.** Over a compact
+base, two morphisms to a module `M` that agree on the fibre class over every point are equal. -/
+theorem thomPairTwistedHomology_hom_ext [CompactSpace B] {M : ModuleCat.{w} R}
+    {f g : (thomPair F E).twistedHomology (thomPairSignLocalSystem F E R hι) (finrank ℝ F) ⟶ M}
+    (h : ∀ b, f.hom (thomPairSignFiberClass F E R hι ω b) =
+      g.hom (thomPairSignFiberClass F E R hι ω b)) :
+    f = g := by
+  rw [← Iso.hom_inv_id_assoc (thomPairTwistedHomologyFinrankIso F E R hι ω) f,
+    ← Iso.hom_inv_id_assoc (thomPairTwistedHomologyFinrankIso F E R hι ω) g]
+  congr 1
+  refine singularHomology₀_hom_ext _ fun b ↦ ?_
+  -- The class of `b` is the image of the fibre class over `b`.
+  have hb : singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of B) b =
+      ModuleCat.ofHom (LinearMap.toSpanSingleton R _ ((thomPairTwistedHomologyFinrankIso F E R hι
+        ω).hom (thomPairSignFiberClass F E R hι ω b))) := by
+    rw [thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass]
+    exact ModuleCat.hom_ext (LinearMap.ext_ring (by simp))
+  rw [hb, ModuleCat.ofHom_toSpanSingleton_comp, ModuleCat.ofHom_toSpanSingleton_comp,
+    ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, Iso.hom_inv_id_apply, h b]
 
 end FiberClass
 
