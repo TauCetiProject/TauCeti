@@ -37,8 +37,9 @@ In chart `i` a section `s` is read as the `F`-valued function `A.coord i s` on t
 `A.image i = chart i '' dom i` of the model space. On the overlap `A.overlap i i'` of two charts,
 read in chart `i'`, the coordinates in chart `i'` are the coordinate change of the bundle applied
 to the coordinates in chart `i` composed with the chart transition `A.transition i i'`
-(`TauCeti.FiniteBundleAtlas.coord_eq_coordChange`). For a `C¹` manifold without boundary modelled
-on a real normed space, chart transitions are differentiable on the overlaps
+(`TauCeti.FiniteBundleAtlas.coord_eq_coordChange`). For a `Cⁿ` manifold without boundary modelled
+on a real normed space, chart transitions are `Cⁿ` on the overlaps
+(`TauCeti.FiniteBundleAtlas.contDiffOn_transition`); for a `C¹` manifold they are differentiable
 (`TauCeti.FiniteBundleAtlas.differentiableOn_transition`). Charts of manifolds modelled on the
 closed upper half-plane are read in `ℂ` in
 `TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.HalfPlane`.
@@ -64,12 +65,16 @@ closed upper half-plane are read in `ℂ` in
 * `TauCeti.FiniteBundleAtlas.compactSpace`: a manifold with a finite bundle atlas is compact.
 * `TauCeti.FiniteBundleAtlas.exists_isOpen_closure_subset_dom`: the chart domains of a finite
   bundle atlas of a Hausdorff manifold have a shrinking.
+* `TauCeti.FiniteBundleAtlas.eq_of_forall_eqOn_coord`: a section is determined by its chart
+  expressions on the chart images.
 * `TauCeti.FiniteBundleAtlas.coord_eq_coordChange`: coordinates in two charts differ by the
   coordinate change of the bundle; `TauCeti.FiniteBundleAtlas.coord_eq_coordChangeL_coord` is the
   same for charts of two different atlases.
 * `TauCeti.FiniteBundleAtlas.exists_continuous_coord_eqOn`: functions continuous on the chart
   images and related by these coordinate changes are the chart expressions of a continuous section.
-* `TauCeti.FiniteBundleAtlas.differentiableOn_transition`: chart transitions are differentiable.
+* `TauCeti.FiniteBundleAtlas.contDiffOn_transition`: chart transitions of a `Cⁿ` manifold are `Cⁿ`.
+* `TauCeti.FiniteBundleAtlas.differentiableOn_transition`: chart transitions are differentiable
+  for a `C¹` manifold.
 * `TauCeti.FiniteBundleAtlas.contMDiff_smul_chartSection`: a `Cⁿ` cutoff supported in a chart
   domain times a section that is `Cⁿ` in that chart is a `Cⁿ` section.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coord`: the chart coordinates of a `Cᵏ` section of a `Cᵏ`
@@ -279,6 +284,14 @@ theorem eq_of_coord_chart_eq {i : Fin A.n} {s t : ∀ x, V x} {x : M} (hx : x �
   exact TotalSpace.mk_inj.1 ((A.triv i).injOn ((A.triv i).mem_source.2 hb)
     ((A.triv i).mem_source.2 hb) himage)
 
+/-- **Sections are determined by their chart expressions.** Two sections whose chart expressions
+agree on the image of every chart are equal. -/
+theorem eq_of_forall_eqOn_coord {s t : ∀ x, V x}
+    (h : ∀ i, EqOn (A.coord i s) (A.coord i t) (A.image i)) : s = t :=
+  funext fun x ↦ by
+    obtain ⟨i, hx⟩ := A.exists_mem_dom x
+    exact A.eq_of_coord_chart_eq hx (h i (A.mem_image.2 ⟨x, hx, rfl⟩))
+
 theorem symm_mem_dom {i : Fin A.n} {y : E} (hy : y ∈ A.image i) : (A.chart i).symm y ∈ A.dom i := by
   obtain ⟨x, hx, rfl⟩ := hy
   rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)]
@@ -413,11 +426,11 @@ namespace FiniteBundleAtlas
 
 variable (A : FiniteBundleAtlas E M F V)
 
-/-- Chart transitions are differentiable on the overlap of the chart domains. -/
-theorem differentiableOn_transition [IsManifold 𝓘(ℝ, E) 1 M] (i i' : Fin A.n) :
-    DifferentiableOn ℝ (A.transition i i') (A.overlap i i') := by
-  refine ((contDiffOn_ext_coord_change (I := 𝓘(ℝ, E)) (A.center i) (A.center i')).differentiableOn
-    one_ne_zero).congr_mono (fun y _ ↦ by simp [transition]) ?_
+/-- Chart transitions of a `Cⁿ` manifold are `Cⁿ` on the overlap of the chart domains. -/
+theorem contDiffOn_transition {n : WithTop ℕ∞} [IsManifold 𝓘(ℝ, E) n M] (i i' : Fin A.n) :
+    ContDiffOn ℝ n (A.transition i i') (A.overlap i i') := by
+  refine (contDiffOn_ext_coord_change (I := 𝓘(ℝ, E)) (n := n) (A.center i)
+    (A.center i')).congr_mono (fun y _ ↦ by simp [transition]) ?_
   rintro _ ⟨x, hx, rfl⟩
   have hx' : x ∈ (A.chart i').source := A.dom_subset_chart_source i' hx.2
   simp only [PartialEquiv.trans_source, PartialEquiv.symm_source, mem_inter_iff, mem_preimage,
@@ -426,6 +439,11 @@ theorem differentiableOn_transition [IsManifold 𝓘(ℝ, E) 1 M] (i i' : Fin A.
     preimage_id_eq]
   exact ⟨(A.chart i').map_source hx', by
     rw [(A.chart i').left_inv hx']; exact A.dom_subset_chart_source i hx.1⟩
+
+/-- Chart transitions are differentiable on the overlap of the chart domains. -/
+theorem differentiableOn_transition [IsManifold 𝓘(ℝ, E) 1 M] (i i' : Fin A.n) :
+    DifferentiableOn ℝ (A.transition i i') (A.overlap i i') :=
+  (A.contDiffOn_transition (n := 1) i i').differentiableOn one_ne_zero
 
 /-- A `Cⁿ` function on `M`, read in chart `i`, is `Cⁿ` on the chart target. -/
 theorem contDiffOn_comp_chart_symm {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]

@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 
 /-!
 # Lowering the exponent of `Lᵖ` functions on a finite measure space
@@ -29,6 +30,8 @@ continuous linear map, which does not change the underlying almost everywhere eq
 * `MeasureTheory.Lp.ofExponentLEL_injective`: the inclusion is injective.
 * `MeasureTheory.Lp.opNorm_ofExponentLEL_le`, `MeasureTheory.Lp.norm_ofExponentLEL_apply_le`: the
   bound `ν(univ) ^ (1/p - 1/q)` on the operator norm.
+* `MeasureTheory.Lp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow`: the norms of the inclusions
+  are logarithmically convex in `1 / p`.
 * `MeasureTheory.Lp.ofExponentLEL_self`, `MeasureTheory.Lp.ofExponentLEL_ofExponentLEL`: the
   identity at `p = q` and transitivity.
 * `ContinuousLinearMap.compLpL_ofExponentLEL`: the inclusion commutes with postcomposition by a
@@ -103,6 +106,16 @@ theorem ofExponentLEL_injective (hpq : p ≤ q) :
 theorem norm_ofExponentLEL_apply_le (hpq : p ≤ q) (f : Lp F q ν) :
     ‖ofExponentLEL 𝕜 F hpq f‖ ≤ (ν Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toReal * ‖f‖ :=
   norm_mk_le hpq f
+
+/-- **Logarithmic convexity of the `Lᵖ` norms under lowering the exponent.** If `p, q ≤ r` and
+`1 / q = (1 - θ) / p + θ / r` with `0 ≤ θ ≤ 1`, then
+`‖f‖_q ≤ ‖f‖_p ^ (1 - θ) ‖f‖_r ^ θ` for every `f ∈ L^r(ν)`. -/
+theorem norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow (hpr : p ≤ r) (hqr : q ≤ r) {θ : ℝ}
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * p⁻¹ + ENNReal.ofReal θ * r⁻¹) (f : Lp F r ν) :
+    ‖ofExponentLEL 𝕜 F hqr f‖ ≤ ‖ofExponentLEL 𝕜 F hpr f‖ ^ (1 - θ) * ‖f‖ ^ θ :=
+  Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_eq hθ hq
+    (.of_eq (by rw [coeFn_ofExponentLEL, coeFn_ofExponentLEL])) (.of_eq (coeFn_ofExponentLEL _ _))
 
 /-- Lowering the exponent from `p` to itself is the identity. -/
 @[simp]
