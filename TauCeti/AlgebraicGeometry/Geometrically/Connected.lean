@@ -113,7 +113,7 @@ private theorem connectedSpace_pullback_of_isIntegralHom (hs : s ≫ f = 𝟙 _)
       ((p.isOpenMap.enatCard_connectedComponents_le_encard_preimage_singleton p.isClosedMap
         (s default)).trans (Set.encard_le_one_iff_subsingleton.mpr hfib))
   have : PreconnectedSpace (pullback f g : Scheme.{u}) :=
-    preconnectedSpace_of_subsingleton_connectedComponents
+    preconnectedSpace_iff_subsingleton_connectedComponents.mpr this
   exact ⟨inferInstance⟩
 
 /-- **A connected scheme with a rational point is geometrically connected.** If `X` is a

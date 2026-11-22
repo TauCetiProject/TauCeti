@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -52,8 +53,12 @@ curvature.
   `c < 1 / 2`.
 * `TauCeti.Vortex.exists_abs_curvature_le_mul_exp`: the same bound for the curvature coefficient
   `∂₁ b₂ - ∂₂ b₁`.
-* `TauCeti.Vortex.integrable_one_sub_normSq`, `TauCeti.Vortex.integrable_curvature`: the modulus
-  defect and the curvature are integrable.
+* `TauCeti.Vortex.isBigO_norm_pow_mul_one_sub_normSq`: the modulus defect beats every polynomial
+  weight.
+* `TauCeti.Vortex.integrable_one_sub_normSq_smul_of_isBigO`,
+  `TauCeti.Vortex.integrable_one_sub_normSq`, `TauCeti.Vortex.integrable_curvature`: the modulus
+  defect against a polynomially bounded continuous weight, the modulus defect itself and the
+  curvature are integrable.
 * `TauCeti.Vortex.neg_log_normSq_le_mul_exp_of_forall_le_normSq`,
   `TauCeti.Vortex.one_sub_normSq_le_mul_exp_of_forall_le_normSq`,
   `TauCeti.Vortex.abs_curvature_le_mul_exp_of_forall_le_normSq`: where `|α|² ≥ 4 c²` on a disc of
@@ -75,7 +80,7 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex Filter Metric MeasureTheory Topology InnerProductSpace Laplacian
+open Asymptotics Complex Filter Metric MeasureTheory Topology InnerProductSpace Laplacian
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
@@ -275,7 +280,45 @@ theorem abs_curvature_le_mul_exp_of_forall_le_normSq
   rw [curvature_eq_of_equation_eq_zero (hsol z), abs_neg, abs_of_nonneg (by linarith)]
   linarith [one_sub_normSq_le_mul_exp_of_forall_le_normSq hp hq hsol hlim hk hkc hR hball]
 
+/-- The modulus defect `1 - |α|²` of a vortex beats every polynomial weight: `‖z‖ʲ (1 - |α|²)` is
+`O(exp (-‖z‖ / 8))` at infinity. -/
+theorem isBigO_norm_pow_mul_one_sub_normSq
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (j : ℕ) :
+    (fun z ↦ ‖z‖ ^ j * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2))) =O[cocompact ℂ]
+      fun z ↦ Real.exp (-(1 / 8 * ‖z‖)) := by
+  obtain ⟨K₀, hK₀⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim
+    (by norm_num : (1 / 4 : ℝ) < 1 / 2)
+  have hdef : (fun z ↦ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) =O[cocompact ℂ]
+      fun z ↦ Real.exp (-(1 / 4 * ‖z‖)) := by
+    refine .of_bound K₀ (.of_forall fun z ↦ ?_)
+    rw [Real.norm_of_nonneg (sub_nonneg.2 (normSq_le_one_of_tendsto hp hq hsol hlim z)),
+      Real.norm_of_nonneg (Real.exp_pos _).le]
+    exact hK₀ z
+  rw [← cobounded_eq_cocompact] at hdef ⊢
+  simpa only [smul_eq_mul] using
+    isBigO_norm_pow_smul_of_isBigO_exp_neg_mul_norm j (by norm_num : (1 / 8 : ℝ) < 1 / 4) hdef
+
 variable (μ : Measure ℂ) [μ.IsAddHaarMeasure]
+
+/-- **Integrability of polynomial moments of the modulus defect.** For a `C²` vortex on the whole
+plane whose section satisfies `|α| → 1` at infinity, the modulus defect `1 - |α|²` against a
+continuous weight `g` with `g = O(‖z‖ᵏ)` at infinity is integrable. -/
+theorem integrable_one_sub_normSq_smul_of_isBigO {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {g : ℂ → E}
+    (hg : Continuous g) {k : ℕ} (hgk : g =O[cocompact ℂ] fun z ↦ ‖z‖ ^ k) :
+    Integrable (fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • g z) μ := by
+  have hdec : (fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • g z) =O[cocompact ℂ]
+      fun z ↦ Real.exp (-(1 / 8 * ‖z‖)) := by
+    refine ((isBigO_refl (fun z ↦ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) _).smul hgk).trans ?_
+    simpa only [smul_eq_mul, mul_comm] using
+      isBigO_norm_pow_mul_one_sub_normSq hp hq hsol hlim k
+  have hc : Continuous fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • g z :=
+    (continuous_const.sub (contDiff_normSq hp hq).continuous).smul hg
+  exact memLp_one_iff_integrable.1 (hc.memLp_of_isBigO_exp_neg_mul_norm (by norm_num) hdec 1)
 
 /-- The modulus defect `1 - |α|²` of a vortex on the whole plane with `|α| → 1` at infinity is
 integrable. -/
@@ -284,16 +327,8 @@ theorem integrable_one_sub_normSq
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     Integrable (fun z ↦ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) μ := by
-  obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim
-    (by norm_num : (1 / 4 : ℝ) < 1 / 2)
-  have hint : Integrable (fun z : ℂ ↦ K * Real.exp (-(1 / 4 * ‖z‖))) μ :=
-    (integrable_exp_neg_mul_norm μ (by norm_num : (0 : ℝ) < 1 / 4)).const_mul K
-  have hcont : Continuous fun z ↦ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
-    continuous_const.sub (continuous_const.mul ((hp.continuous.pow 2).add (hq.continuous.pow 2)))
-  refine hint.mono' hcont.aestronglyMeasurable (.of_forall fun z ↦ ?_)
-  have h₁ := normSq_le_one_of_tendsto hp hq hsol hlim z
-  rw [Real.norm_eq_abs, abs_of_nonneg (by linarith)]
-  exact hK z
+  simpa using integrable_one_sub_normSq_smul_of_isBigO μ hp hq hsol hlim continuous_const
+    ((isBigO_refl (fun _ : ℂ ↦ (1 : ℝ)) _).congr_right fun z ↦ (pow_zero ‖z‖).symm)
 
 /-- **Integrability of the curvature of a plane vortex.** A vortex on the whole plane whose
 section satisfies `|α| → 1` at infinity has integrable curvature coefficient `∂₁ b₂ - ∂₂ b₁`. -/

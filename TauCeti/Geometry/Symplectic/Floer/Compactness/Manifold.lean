@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Limit
 public import TauCeti.Geometry.Symplectic.Floer.Chart
-import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
@@ -87,14 +86,20 @@ in a compact subset `C` of the source of a symplectic chart, in the namespace
 The data are read in the chart: the Hamiltonians are `K'(z, y) = K(z, φ⁻¹ y)`, and the almost
 complex structures are any family `J'(z, y)` on `V` with `dφ_x ∘ J(z, x) = J'(z, φ x) ∘ dφ_x`.
 The regularity hypotheses, `C³` for `K'` and `C²` for `J'`, are those of the vector-space theorem
-for this coordinate data. By `TauCeti.Geometry.Symplectic.Floer.Chart`, the coordinate maps
-`φ ∘ u` solve the Floer equation of `(V, ω₀)` for `K'` and `J'`, with the same energy density, and
-`J'` is tamed by `ω₀` where `J` is tamed by `ω`. So a sequence of such solutions on an open subset
+for this coordinate data. If `K` is `C³` on `Ω' × M` for an open set `Ω'` of the domain, then `K'`
+is `C³` on `Ω' × φ.target`
+(`PartialDiffeomorph.contDiffOn_comp_symm_of_contMDiffOn`). By
+`TauCeti.Geometry.Symplectic.Floer.Chart`, the coordinate maps `φ ∘ u` solve the Floer equation
+of `(V, ω₀)` for `K'` and `J'`, with the same energy density, and `J'` is tamed by `ω₀` where `J`
+is tamed by `ω`. So a sequence of such solutions on an open subset
 `Ω` of a compact window `D` of the domain, with Floer energy at most `A`, has a subsequence which
 converges off a finite set `Z` of bubbling points: the coordinate maps converge locally uniformly
 on `Ω \ Z` with locally bounded derivatives, the maps themselves converge pointwise in `M` to a
 continuous limit with values in `C`, `#Z δ ≤ A` for a threshold `δ > 0` depending only on the
 data, and at least the energy `δ` concentrates at every point of `Z`.
+The theorems take the energy bound as an integrable density with bounded integral over `Ω`;
+`TauCeti.SmoothTwoForm.integrableOn_and_setIntegral_floerEnergyDensity_le` derives it from a bound
+on the energy over a larger open domain.
 
 The same holds over a compact window `C` of parameters `p` in a real inner product space, for
 perturbations `K_p` and structures `J_p` whose chart readings `K_p(z, φ⁻¹ y)` and `J'_p(z, y)` are
@@ -119,7 +124,8 @@ derivatives of the coordinate maps converge locally uniformly on `Ω \ Z` as wel
 Here the image of the solutions is assumed to stay in a single chart. The mean-value inequality for
 solutions in a chart is in `TauCeti.Geometry.Symplectic.Floer.Compactness.MeanValue`. Gromov–Floer
 compactness on a closed manifold also needs the images of small discs of small energy to be
-localized into charts; that step is not treated here.
+localized into charts; that step, and the compactness theorem without the single-chart assumption,
+are in `TauCeti.Geometry.Symplectic.Floer.Compactness.Bubbling`.
 
 ## References
 
@@ -157,27 +163,9 @@ theorem inChartAt_apply_almostComplexInChartAt (ω : SmoothTwoForm I M) {y : E}
       SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
         ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)
         (J z ((extChartAt I α).symm y)
-          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)) := by
-  set e := extChartAt I α with he
-  set T := trivializationAt E (TangentSpace I) α with hT
-  have hbase : e.symm y ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
-      e.map_target hy
-  -- The coordinate expression of `ω` feeds it the vectors with the given tangent coordinates.
-  have hS := TangentBundle.symmL_trivializationAt (I := I) (𝕜 := ℝ) (x₀ := α)
-    (by simpa only [he, extChartAt_source] using e.map_target hy)
-  rw [(extChartAt I α).right_inv hy] at hS
-  rw [RoughForm.inChartAt_apply, SmoothBundleForm.eval₂_apply, ← hS]
-  congr 1
-  funext i
-  fin_cases i
-  · simp only [Fin.zero_eta, Matrix.cons_val_zero]
-    rw [he, extChartAt_coe_symm, Function.comp_apply]
-    -- `T` abbreviates `trivializationAt E (TangentSpace I) α`, which an instance argument of
-    -- `symmL` also mentions, so it cannot be rewritten; `rfl` unfolds the local definition.
-    rfl
-  · exact (congrArg (T.symmL ℝ (e.symm y)) (Floer.almostComplexInChartAt_apply z y a)).trans
-      (Trivialization.symmL_continuousLinearMapAt _ hbase _)
+          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)) :=
+  (ω.associatedBilinFormInChartAt_apply_eq_inChartAt J (z, y) a a).symm.trans
+    (ω.associatedBilinFormInChartAt_apply J z hy a a)
 
 /-- **The Floer energy density in a chart.** Let `u` be differentiable at `z`, with `u z` in the
 source of the chart at `α`, and solve the Floer equation for `J(z, u z)` at `z`. Then its energy
@@ -194,9 +182,9 @@ theorem floerEnergyDensity_eq_inChartAt (ω : SmoothTwoForm I M)
           Floer.almostComplexInChartAt I α J (z, extChartAt I α (u z))
             (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
               ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z)))] := by
-  set T := trivializationAt E (TangentSpace I) α with hT
-  have hub : u z ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using hus
+  set T := trivializationAt E (TangentSpace I) α
+  have hub : u z ∈ T.baseSet :=
+    TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source hus
   -- The chart coordinate of `∂ₛu - X_{K_s}`.
   have hPs : T.symmL ℝ (u z) (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
       ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z))) =
@@ -277,31 +265,17 @@ theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq
             ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)) ≤
           C * ‖ξ‖ ^ 2 := by
   set e := extChartAt I α
-  set T := trivializationAt E (TangentSpace I) α with hT
-  set Jc := Floer.almostComplexInChartAt I α J
+  set T := trivializationAt E (TangentSpace I) α
   have hDK : IsCompact (D ×ˢ K) := hD.prod hK
-  have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
-      e.map_target hy
+  have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet :=
+    TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
   -- In the chart, `ω(·, J ·)` is the bilinear form `b`, continuous and positive on `D × K`.
-  set b : (ℝ × ℝ) × E → E →L[ℝ] E →L[ℝ] ℝ := fun p ↦
-    ((compL ℝ E E ℝ).flip (Jc p)).comp
-      (ContinuousAlternatingMap.flatL ℝ E ℝ (RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α p.2))
-    with hb_def
-  have hb_apply (p : (ℝ × ℝ) × E) (a : E) : b p a a = RoughForm.inChartAt (ω : RoughForm I M ℝ 2)
-      α p.2 ![a, Jc p a] := by
-    simp only [hb_def, comp_apply, flip_apply, compL_apply,
-      ContinuousAlternatingMap.flatL_apply_apply]
+  set b := ω.associatedBilinFormInChartAt α J
   have hb : ∀ p ∈ D ×ˢ K, ∀ a, b p a a = SmoothBundleForm.eval₂ ω (e.symm p.2)
-      (T.symmL ℝ (e.symm p.2) a) (J p.1 (e.symm p.2) (T.symmL ℝ (e.symm p.2) a)) := by
-    rintro ⟨z, y⟩ hp a
-    rw [hb_apply]
-    exact ω.inChartAt_apply_almostComplexInChartAt (hKα hp.2) z a
+      (T.symmL ℝ (e.symm p.2) a) (J p.1 (e.symm p.2) (T.symmL ℝ (e.symm p.2) a)) :=
+    fun p hp a ↦ ω.associatedBilinFormInChartAt_apply J p.1 (hKα hp.2) a a
   have hbc : ContinuousOn b (D ×ˢ K) :=
-    ((compL ℝ E E ℝ).flip.continuous.comp_continuousOn hJ).clm_comp
-      ((ContinuousAlternatingMap.flatL ℝ E ℝ).continuous.comp_continuousOn
-        ((ω.isSmoothForm.continuousOn_inChartAt α).comp continuousOn_snd
-          fun p hp ↦ hKα hp.2))
+    continuousOn_associatedBilinFormInChartAt (fun p hp ↦ hKα hp.2) hJ
   obtain ⟨c, hc, hcb⟩ := hDK.exists_pos_forall_mul_norm_sq_le hbc fun p hp a ha ↦ by
     rw [hb p hp]
     have hy : p.2 ∈ e.target := hKα hp.2
@@ -480,6 +454,33 @@ theorem IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_extChartAt_s
   refine h.congr fun n ↦ ?_
   simp only [Function.comp_apply]
   exact e.left_inv (hus (φ n) hz.1)
+
+omit [FiniteDimensional ℝ E] in
+/-- **The Floer energy over a subdomain as a Bochner integral, for a manifold target.** Let `u` be
+`C¹` on an open set `S ⊆ ℝ × ℝ`, let the Hamiltonian vector fields of `K = K_s ds + K_t dt` be
+continuous on `S × M` as maps into the tangent bundle, and let `Ω ⊆ S` be measurable with Floer
+energy density nonnegative on `Ω`. If the energy of `u` over `S` is at most `E ≥ 0`, then the
+density is integrable on `Ω` and its integral over `Ω` is at most `E`. The vector-space case is
+`TauCeti.SymplecticForm.integrableOn_and_setIntegral_floerEnergyDensity_le`. -/
+theorem integrableOn_and_setIntegral_floerEnergyDensity_le (ω : SmoothTwoForm I M)
+    {S Ω : Set (ℝ × ℝ)} (hS : IsOpen S) (hΩ : MeasurableSet Ω) (hΩS : Ω ⊆ S)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u S)
+    (hXs : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Ks p.1) p.2⟩ : TangentBundle I M)) (S ×ˢ univ))
+    (hXt : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (S ×ˢ univ))
+    (hf0 : ∀ z ∈ Ω, 0 ≤ ω.floerEnergyDensity Ks Kt u z) {E : ℝ} (hE0 : 0 ≤ E)
+    (hE : ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≤ ENNReal.ofReal E) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω ∧
+      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E := by
+  have hf0' := ae_restrict_of_forall_mem (μ := volume) hΩ hf0
+  have hlin := (lintegral_mono_set hΩS).trans hE
+  have hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω :=
+    ⟨((ω.continuousOn_floerEnergyDensity hS hu hXs hXt).mono hΩS).aestronglyMeasurable hΩ,
+      (hasFiniteIntegral_iff_ofReal hf0').2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
+  refine ⟨hint, ?_⟩
+  rw [integral_eq_lintegral_of_nonneg_ae hf0' hint.aestronglyMeasurable]
+  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
 
 end SmoothTwoForm
 

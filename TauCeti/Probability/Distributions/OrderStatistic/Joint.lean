@@ -9,6 +9,7 @@ public import TauCeti.Data.Fin.Tuple.OrderStatistic
 public import TauCeti.MeasureTheory.MeasurableSpace.StrictMono
 public import TauCeti.Probability.Distributions.Uniform.Basic
 import TauCeti.Probability.Independence.InfinitePi
+import TauCeti.Data.Fin.Tuple.Sort
 
 /-!
 # Joint laws of order statistics
@@ -21,7 +22,7 @@ retains the dependence needed to compute the law of the spacings.
 
 The chamber decomposition uses Mathlib's `Tuple.sort` and measure-preserving
 coordinate permutations. Ties form a null set by
-`TauCeti.Probability.ae_eval_ne_eval_infinitePi`.
+`TauCeti.Probability.ae_injective_infinitePi`.
 
 ## References
 
@@ -35,11 +36,33 @@ open scoped ENNReal
 
 namespace TauCeti.Probability
 
+variable {α : Type*} [LinearOrder α] [TopologicalSpace α] [OrderClosedTopology α]
+  [SecondCountableTopology α] [MeasurableSpace α]
+  {n : ℕ} {μ : Measure α}
+
+/-- On one strictly increasing chamber of a product measure, sorting transports the restricted
+measure to the restriction to the increasing tuples in their original coordinate order. -/
+theorem map_orderStatistics_pi_restrict_strictMono_comp [OpensMeasurableSpace α] [SigmaFinite μ]
+    (σ : Equiv.Perm (Fin n)) :
+    ((Measure.pi fun _ : Fin n ↦ μ).restrict {x | StrictMono (x ∘ σ)}).map
+        (fun x i ↦ orderStatistic i x) =
+      (Measure.pi fun _ : Fin n ↦ μ).restrict {x | StrictMono x} := by
+  have hperm : MeasurePreserving (fun x : Fin n → α ↦ x ∘ σ)
+      (Measure.pi fun _ : Fin n ↦ μ) (Measure.pi fun _ : Fin n ↦ μ) := by
+    convert measurePreserving_piCongrLeft (fun _ : Fin n ↦ μ) σ.symm using 1
+    funext x i
+    simp [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply]
+  have hmono : MeasurableSet {x : Fin n → α | StrictMono x} := measurableSet_setOf_strictMono
+  conv_rhs => rw [← hperm.map_eq, Measure.restrict_map hperm.measurable hmono]
+  apply Measure.map_congr
+  filter_upwards [ae_restrict_mem (hmono.preimage hperm.measurable)] with x hx
+  funext i
+  rw [orderStatistic_def]
+  exact congrFun (Tuple.unique_monotone (Tuple.monotone_sort x) hx.monotone) i
+
 section Atomless
 
-variable {α : Type*} [LinearOrder α] [TopologicalSpace α] [OrderClosedTopology α]
-  [SecondCountableTopology α] [MeasurableSpace α] [BorelSpace α]
-  {n : ℕ} {μ : Measure α} [IsProbabilityMeasure μ] [NullSingletonClass μ]
+variable [BorelSpace α] [IsProbabilityMeasure μ] [NullSingletonClass μ]
 
 /-- Sorting an atomless iid sample multiplies the product law restricted to the strictly
 increasing chamber by `n!`. This includes the empty sample. -/
@@ -50,7 +73,7 @@ theorem map_orderStatistics_pi :
   let ρ := Measure.pi fun _ : Fin n => μ
   let S : (Fin n → α) → (Fin n → α) := fun x i => orderStatistic i x
   let C : Equiv.Perm (Fin n) → Set (Fin n → α) := fun σ => {x | StrictMono (x ∘ σ)}
-  have hS : Measurable S := by fun_prop
+  have hS : Measurable S := Measurable.of_eval measurable_orderStatistic
   have hmono : MeasurableSet {x : Fin n → α | StrictMono x} := measurableSet_setOf_strictMono
   have hC (σ) : MeasurableSet (C σ) :=
     hmono.preimage (Measurable.of_eval fun i => measurable_pi_apply (σ i))
@@ -58,40 +81,23 @@ theorem map_orderStatistics_pi :
   have hdis : Pairwise (Disjoint on C) := by
     intro σ τ hστ
     refine disjoint_left.mpr fun x hxσ hxτ => hστ ?_
-    have heq := Tuple.unique_monotone hxσ.monotone hxτ.monotone
     have hinj : Injective x := hxσ.injective.of_comp_right σ.surjective
-    exact DFunLike.ext _ _ fun i => hinj (congrFun heq i)
+    exact ((Tuple.strictMono_comp_perm_iff_sort_eq hinj σ).1 hxσ).symm.trans
+      ((Tuple.strictMono_comp_perm_iff_sort_eq hinj τ).1 hxτ)
   have hcover : ∀ᵐ x ∂ρ, x ∈ ⋃ σ, C σ := by
-    have hne : ∀ᵐ x ∂ρ, ∀ i j : Fin n, i ≠ j → x i ≠ x j := by
-      refine ae_all_iff.mpr fun i => ae_all_iff.mpr fun j => ?_
-      by_cases hij : i = j
-      · exact Filter.Eventually.of_forall fun _ h => (h hij).elim
-      · simpa only [Measure.infinitePi_eq_pi] using
-          (ae_eval_ne_eval_infinitePi (fun _ : Fin n => μ) hij).mono fun _ hx _ => hx
-    filter_upwards [hne] with x hx
-    refine mem_iUnion.mpr ⟨Tuple.sort x, ?_⟩
-    exact (Tuple.monotone_sort x).strictMono_of_injective
-      ((injective_iff_pairwise_ne.mpr hx).comp (Tuple.sort x).injective)
+    have hinj : ∀ᵐ x ∂ρ, Injective x := by
+      simpa only [Measure.infinitePi_eq_pi] using
+        (ae_injective_infinitePi (fun _ : Fin n ↦ μ))
+    filter_upwards [hinj] with x hx
+    exact mem_iUnion.mpr ⟨Tuple.sort x, Tuple.strictMono_comp_sort hx⟩
   have hpart : ρ = Measure.sum fun σ => ρ.restrict (C σ) := by
     rw [← Measure.restrict_iUnion hdis hC, Measure.restrict_eq_self_of_ae_mem hcover]
-  have hmap (σ : Equiv.Perm (Fin n)) :
-      (ρ.restrict (C σ)).map S = ρ.restrict {x | StrictMono x} := by
-    have hperm : MeasurePreserving (fun x : Fin n → α => x ∘ σ) ρ ρ := by
-      convert measurePreserving_piCongrLeft (fun _ : Fin n => μ) σ.symm using 1
-      funext x i
-      simp [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply]
-    conv_rhs => rw [← hperm.map_eq, Measure.restrict_map hperm.measurable hmono]
-    apply Measure.map_congr
-    filter_upwards [ae_restrict_mem (hC σ)] with x hx
-    funext i
-    simp only [S, orderStatistic_def]
-    exact congrFun (Tuple.unique_monotone (Tuple.monotone_sort x) hx.monotone) i
   -- Every chamber has the same sorted image, so summing contributes the factorial.
   calc
     ρ.map S = (Measure.sum fun σ => ρ.restrict (C σ)).map S := congrArg (Measure.map S) hpart
     _ = Measure.sum fun _ : Equiv.Perm (Fin n) => ρ.restrict {x | StrictMono x} := by
       rw [Measure.map_sum hS.aemeasurable]
-      simp_rw [hmap]
+      simp_rw [ρ, C, S, map_orderStatistics_pi_restrict_strictMono_comp]
     _ = n.factorial • ρ.restrict {x | StrictMono x} := by
       rw [Measure.sum_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_perm,
         Fintype.card_fin]
@@ -120,7 +126,8 @@ theorem map_orderStatistics_pi_uniformMeasure (n : ℕ) :
     simp_rw [hunit]
     exact (Measure.restrict_pi_pi _ _).symm
   rw [map_orderStatistics_pi, hprod,
-    withDensity_indicator (measurableSet_strictMono_mem_Ioo n 0 1), withDensity_const]
+    withDensity_indicator (measurableSet_setOf_strictMono_and_forall_mem measurableSet_Ioo),
+    withDensity_const]
   have hsets : {y : Fin n → ℝ | StrictMono y} ∩
       (univ.pi fun _ : Fin n => Ioo (0 : ℝ) 1) =
         {y | StrictMono y ∧ ∀ i, y i ∈ Ioo (0 : ℝ) 1} := by
