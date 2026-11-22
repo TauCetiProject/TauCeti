@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.NumberTheory.LSeries.Basic
+import Mathlib.Order.Cofinal
 import TauCeti.Analysis.Complex.PowerSeries.Fejer
-import TauCeti.Analysis.SpecificLimits.CesaroTauberian
+import TauCeti.Analysis.SpecificLimits.Cesaro.Basic
 import TauCeti.NumberTheory.LSeries.BoundaryConvergence.BlockCoefficients
 import TauCeti.NumberTheory.LSeries.BoundaryConvergence.Endpoint
-import TauCeti.Topology.Order.OrderClosed
 
 /-!
 # Continuous boundary values do not force Dirichlet convergence at `s = 1`
@@ -101,7 +101,9 @@ theorem exists_bounded_continuousOn_LSeries_not_tendsto_sum_Icc_div :
     have hre : Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.Icc 1 N, a n / (n : ℝ)) atTop (𝓝 L.re) :=
       ((Complex.continuous_re.tendsto L).comp hL).congr fun N ↦ by
         simp only [Function.comp_apply, Complex.re_sum, Complex.div_natCast_re, Complex.ofReal_re]
-    exact TauCeti.not_tendsto_nhds_of_forall_exists_le hunb L.re hre
+    have hc : IsCofinal (Set.range fun N : ℕ ↦ ∑ n ∈ Finset.Icc 1 N, a n / (n : ℝ)) := fun B ↦
+      let ⟨N, hN⟩ := hunb B; ⟨_, ⟨N, rfl⟩, hN⟩
+    exact hc.not_bddAbove hre.bddAbove_range
   refine ⟨a, F, ha0, ha_bound, ha_zero, hmean, hF_cont, hF_diff, hF_series, hunb, hnot,
     fun Ω F' hΩ hsub heq hF' ↦ ?_⟩
   exact hnot (F' 1) (boundedDirichlet_tendsto_ordered_at_one

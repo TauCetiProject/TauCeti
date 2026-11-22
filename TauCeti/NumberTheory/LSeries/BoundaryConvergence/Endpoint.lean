@@ -13,7 +13,6 @@ import TauCeti.Analysis.Complex.ClosedHalfPlane
 import TauCeti.Analysis.LaplaceTransform.ExponentialStep
 import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
 import TauCeti.NumberTheory.LSeries.BoundaryConvergence.LaplaceBridge
-import TauCeti.NumberTheory.LSeries.Term
 
 /-!
 # Ordered boundary convergence of bounded Dirichlet series at `s = 1`
@@ -97,10 +96,7 @@ theorem boundedDirichlet_tendsto_ordered_at_one (hbound : ∀ n, 1 ≤ n → ‖
   have h := (hnewman.comp (Real.tendsto_log_natCast_add_atTop 1)).sub hcorr
   simp only [zero_add, add_sub_cancel_right] at h
   refine h.congr fun N ↦ ?_
-  have hN := intervalIntegral_floor_exp_mul_cexp_neg_mul_log_succ a N 0
-  simp only [neg_zero, zero_mul, Complex.exp_zero, mul_one, zero_add] at hN
-  simp only [Function.comp_apply, hN, Finset.sum_add_distrib, add_sub_cancel_right]
-  exact sum_range_add_one_LSeries_term_one a N
+  simp only [Function.comp_apply, intervalIntegral_floor_exp_log_succ, add_sub_cancel_right]
 
 /-- **Bounded Dirichlet series converge in order at `s = 1`, with a pointwise continuation
 hypothesis.** Let `a : ℕ → ℂ` be bounded from `n = 1` on, and let `F` satisfy

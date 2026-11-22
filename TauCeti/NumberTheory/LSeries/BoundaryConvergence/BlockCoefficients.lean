@@ -7,18 +7,17 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.StepCorrection
-import TauCeti.Analysis.LaplaceTransform.ExponentialStep
 import TauCeti.Analysis.LaplaceTransform.UniformStep
+import TauCeti.Analysis.SpecialFunctions.Log.Base
 import TauCeti.NumberTheory.LSeries.BoundaryConvergence.LaplaceBridge
-import TauCeti.NumberTheory.LSeries.Term
 
 /-!
 # Block-constant Dirichlet series and uniform step transforms
 
 For an integer base `b > 1` and a sequence `c : ℕ → ℂ`, the `b`-adic block-constant sequence
 `a n = c (Nat.log b n)` (`n ≥ 1`, `a 0 = 0`) satisfies `Nat.log b ⌊exp t⌋₊ = ⌊t / log b⌋₊`
-for `0 ≤ t` (`Real.natFloor_logb_eq_natLog_natFloor`). Combining this with the integral identity
-`TauCeti.integral_floor_exp_natLog_mul_cexp_neg_mul`:
+(`Real.natLog_natFloor_exp`), so on `0 ≤ t` the exponential step function `t ↦ a ⌊exp t⌋₊`
+agrees with the uniform step function `t ↦ c ⌊t / log b⌋₊`:
 
 * when `c` is bounded and `0 < re z`, `LSeries a (z + 1) + stepCorrection a z` equals
   `(∫ u in 0..log b, exp (-z * u)) * ∑' k, c k * exp (-log b * z) ^ k`
@@ -50,13 +49,20 @@ private theorem norm_ite_natLog_le (b : ℕ) {c : ℕ → ℂ} {M : ℝ} (hbound
     ∀ n, 1 ≤ n → ‖if n = 0 then (0 : ℂ) else c (Nat.log b n)‖ ≤ M := fun n hn ↦ by
   simpa [Nat.one_le_iff_ne_zero.mp hn] using hbound (Nat.log b n)
 
+private theorem ite_floor_exp_natLog_eq {α : Type*} [Zero α] (b : ℕ) (c : ℕ → α) {t : ℝ}
+    (ht : 0 ≤ t) :
+    (if ⌊Real.exp t⌋₊ = 0 then (0 : α) else c (Nat.log b ⌊Real.exp t⌋₊)) =
+      c ⌊t / Real.log b⌋₊ := by
+  rw [ite_eq_right (Nat.floor_pos.mpr (Real.one_le_exp ht)).ne', Real.natLog_natFloor_exp]
+
 private theorem LSeries_natLog_add_stepCorrection_eq_integral (b : ℕ) {c : ℕ → ℂ} {M : ℝ}
     (hbound : ∀ n, ‖c n‖ ≤ M) {z : ℂ} (hz : 0 < z.re) :
     LSeries (fun n ↦ if n = 0 then 0 else c (Nat.log b n)) (z + 1) +
         stepCorrection (fun n ↦ if n = 0 then 0 else c (Nat.log b n)) z =
       ∫ t in Ici (0 : ℝ), c ⌊t / Real.log b⌋₊ * cexp (-z * t) := by
-  rw [← integral_floor_exp_mul_cexp_neg_mul (norm_ite_natLog_le b hbound) hz,
-    integral_floor_exp_natLog_mul_cexp_neg_mul b c z]
+  rw [← integral_floor_exp_mul_cexp_neg_mul (norm_ite_natLog_le b hbound) hz]
+  refine setIntegral_congr_fun measurableSet_Ici fun t ht ↦ ?_
+  rw [ite_floor_exp_natLog_eq b c ht]
 
 /-- **Laplace–Dirichlet bridge for `b`-adic block coefficients.** For an integer base `b > 1`,
 a bounded sequence `c : ℕ → ℂ`, and `0 < re z`, the shifted Dirichlet series of
@@ -89,21 +95,19 @@ theorem sum_Icc_natLog_div_add_stepCorrectionTerm {b : ℕ} (hb : 1 < b) (c : �
       exact_mod_cast Nat.sub_add_cancel hpow_pos
     rw [hcast, Real.log_pow]
   -- Evaluate the integral of `t ↦ a ⌊exp t⌋₊` over `[0, K * log b]` in two ways.
-  have hL := intervalIntegral_floor_exp_mul_cexp_neg_mul_log_succ a (b ^ K - 1) 0
-  simp only [neg_zero, zero_mul, Complex.exp_zero, mul_one, zero_add] at hL
-  rw [hlog_eq, Nat.sub_add_cancel hpow_pos, Finset.sum_add_distrib] at hL
+  have hL := intervalIntegral_floor_exp_log_succ a (b ^ K - 1)
+  rw [hlog_eq, Nat.sub_add_cancel hpow_pos] at hL
   have hR := intervalIntegral_floor_div c hlogb K
   have hint_eq : ∫ t in (0 : ℝ)..((K : ℝ) * Real.log b), a ⌊Real.exp t⌋₊ =
       ∫ t in (0 : ℝ)..((K : ℝ) * Real.log b), c ⌊t / Real.log b⌋₊ := by
     refine intervalIntegral.integral_congr fun t ht ↦ ?_
     rw [uIcc_of_le (by positivity)] at ht
     exact ite_floor_exp_natLog_eq b c ht.1
-  have hterm : ∑ n ∈ Finset.range (b ^ K), LSeries.term a 1 n =
+  have hsum_eq : ∑ n ∈ Finset.Icc 1 (b ^ K - 1), a n / (n : ℂ) =
       ∑ n ∈ Finset.Icc 1 (b ^ K - 1), c (Nat.log b n) / (n : ℂ) := by
-    rw [← Nat.sub_add_cancel hpow_pos, sum_range_add_one_LSeries_term_one]
     refine Finset.sum_congr rfl fun n hn ↦ ?_
     simp [a, Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hn).1]
-  rw [← hterm, ← hL, hint_eq, hR]
+  rw [← hsum_eq, ← hL, hint_eq, hR]
 
 /-- **Transfer of a disc-algebra power series to a `b`-adic block Dirichlet series.** Given an
 integer base `b > 1` and a bounded sequence `c : ℕ → ℂ` whose power series `∑' n, c n * w ^ n`

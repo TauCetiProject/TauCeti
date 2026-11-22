@@ -29,6 +29,7 @@ convergence estimates.
 * `Real.lt_pow_natFloor_logb_add_one`: `x < b ^ (⌊logb b x⌋₊ + 1)` for `1 < b` and `0 < x`.
 * `Real.natFloor_logb_eq_natLog_natFloor`: `⌊logb b x⌋₊ = Nat.log b ⌊x⌋₊` for `b : ℕ` and
   `0 ≤ x`.
+* `Real.natLog_natFloor_exp`: `Nat.log b ⌊exp t⌋₊ = ⌊t / log b⌋₊` for `b : ℕ` and `t : ℝ`.
 -/
 
 public section
@@ -86,5 +87,9 @@ theorem natFloor_logb_eq_natLog_natFloor (b : ℕ) {x : ℝ} (hx : 0 ≤ x) :
   · rw [Int.log_of_one_le_right b hx1, Int.toNat_natCast]
   · rw [Int.log_of_right_le_one b hx1.le, Int.toNat_of_nonpos (by simp),
       Nat.floor_eq_zero.mpr hx1, Nat.log_zero_right]
+
+/-- For a natural base `b` and any real `t`, `Nat.log b ⌊exp t⌋₊ = ⌊t / log b⌋₊`. -/
+theorem natLog_natFloor_exp (b : ℕ) (t : ℝ) : Nat.log b ⌊exp t⌋₊ = ⌊t / log b⌋₊ := by
+  rw [← natFloor_logb_eq_natLog_natFloor b (exp_nonneg t), logb, log_exp]
 
 end Real

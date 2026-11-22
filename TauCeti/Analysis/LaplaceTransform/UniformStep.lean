@@ -38,6 +38,46 @@ private theorem norm_cexp_neg_mul_lt_one {h : ℝ} (hh : 0 < h) {z : ℂ} (hz : 
   rw [neg_mul, mul_comm (h : ℂ) z, Complex.norm_exp_neg_mul_ofReal]
   exact Real.exp_lt_one_iff.mpr (by nlinarith)
 
+private theorem floor_div_eq_of_mem_Ioo {h : ℝ} (hh : 0 < h) {n : ℕ} {t : ℝ}
+    (ht : t ∈ Ioo ((n : ℝ) * h) (((n + 1 : ℕ) : ℝ) * h)) : ⌊t / h⌋₊ = n := by
+  have h1 : (n : ℝ) < t / h := (lt_div_iff₀ hh).mpr ht.1
+  have h2 : t / h < (n : ℝ) + 1 :=
+    (div_lt_iff₀ hh).mpr (by simpa only [Nat.cast_add, Nat.cast_one] using ht.2)
+  exact (Nat.floor_eq_iff ((Nat.cast_nonneg n).trans h1.le)).mpr ⟨h1.le, h2⟩
+
+private theorem intervalIntegrable_floor_div_mul_cexp_neg_mul_step (c : ℕ → ℂ) {h : ℝ}
+    (hh : 0 < h) (n : ℕ) (z : ℂ) :
+    IntervalIntegrable (fun t : ℝ ↦ c ⌊t / h⌋₊ * cexp (-z * t)) volume
+      ((n : ℝ) * h) (((n + 1 : ℕ) : ℝ) * h) := by
+  have hle : (n : ℝ) * h ≤ ((n + 1 : ℕ) : ℝ) * h := by gcongr; exact_mod_cast Nat.le_succ n
+  refine ((by fun_prop : Continuous fun t : ℝ ↦ c n * cexp (-z * t)).intervalIntegrable
+    _ _).congr_uIoo fun t ht ↦ ?_
+  rw [uIoo_of_le hle] at ht
+  simp only [floor_div_eq_of_mem_Ioo hh ht]
+
+private theorem intervalIntegral_floor_div_mul_cexp_neg_mul_step (c : ℕ → ℂ) {h : ℝ} (hh : 0 < h)
+    (n : ℕ) (z : ℂ) :
+    ∫ t in ((n : ℝ) * h)..(((n + 1 : ℕ) : ℝ) * h), c ⌊t / h⌋₊ * cexp (-z * t) =
+      (∫ u in (0 : ℝ)..h, cexp (-z * u)) * (c n * cexp (-(h : ℂ) * z) ^ n) := by
+  have hle : (n : ℝ) * h ≤ ((n + 1 : ℕ) : ℝ) * h := by gcongr; exact_mod_cast Nat.le_succ n
+  have hcongr : ∫ t in ((n : ℝ) * h)..(((n + 1 : ℕ) : ℝ) * h), c ⌊t / h⌋₊ * cexp (-z * t) =
+      ∫ t in ((n : ℝ) * h)..(((n + 1 : ℕ) : ℝ) * h), c n * cexp (-z * t) :=
+    intervalIntegral.integral_congr_Ioo_of_le hle fun t ht ↦ by
+      rw [floor_div_eq_of_mem_Ioo hh ht]
+  have hshift := intervalIntegral.integral_comp_add_left (f := fun t : ℝ ↦ cexp (-z * t))
+    ((n : ℝ) * h) (a := (0 : ℝ)) (b := h)
+  have hhi : (n : ℝ) * h + h = ((n + 1 : ℕ) : ℝ) * h := by push_cast; ring
+  rw [add_zero, hhi] at hshift
+  have hexp (u : ℝ) : cexp (-z * ((n : ℝ) * h + u : ℝ)) =
+      cexp (-(h : ℂ) * z) ^ n * cexp (-z * u) := by
+    rw [← Complex.exp_natCast_mul, ← Complex.exp_add]
+    congr 1
+    push_cast
+    ring
+  rw [hcongr, intervalIntegral.integral_const_mul, ← hshift]
+  simp_rw [hexp, intervalIntegral.integral_const_mul]
+  ring
+
 /-- **Truncated Laplace transform of a uniform step function.** For `h > 0`, `c : ℕ → ℂ`,
 `N : ℕ`, and `z : ℂ`, the Laplace integral of `t ↦ c ⌊t / h⌋₊` over `[0, N * h]` factors as the
 single-step integral `∫ u in 0..h, exp (-z * u)` times the `N`-th partial sum of the power series
@@ -46,44 +86,13 @@ theorem intervalIntegral_floor_div_mul_cexp_neg_mul (c : ℕ → ℂ) {h : ℝ} 
     (N : ℕ) (z : ℂ) :
     ∫ t in (0 : ℝ)..((N : ℝ) * h), c ⌊t / h⌋₊ * cexp (-z * t) =
       (∫ u in (0 : ℝ)..h, cexp (-z * u)) * ∑ n ∈ Finset.range N, c n * cexp (-(h : ℂ) * z) ^ n := by
-  have hfloor {n : ℕ} {t : ℝ} (ht : t ∈ Ioo ((n : ℝ) * h) (((n + 1 : ℕ) : ℝ) * h)) :
-      ⌊t / h⌋₊ = n := by
-    have h1 : (n : ℝ) < t / h := (lt_div_iff₀ hh).mpr ht.1
-    have h2 : t / h < (n : ℝ) + 1 :=
-      (div_lt_iff₀ hh).mpr (by simpa only [Nat.cast_add, Nat.cast_one] using ht.2)
-    exact (Nat.floor_eq_iff ((Nat.cast_nonneg n).trans h1.le)).mpr ⟨h1.le, h2⟩
-  have hle (n : ℕ) : (n : ℝ) * h ≤ ((n + 1 : ℕ) : ℝ) * h := by
-    gcongr
-    exact_mod_cast Nat.le_succ n
-  have hint (n : ℕ) : IntervalIntegrable (fun t : ℝ ↦ c ⌊t / h⌋₊ * cexp (-z * t)) volume
-      ((n : ℝ) * h) (((n + 1 : ℕ) : ℝ) * h) := by
-    refine ((by fun_prop : Continuous fun t : ℝ ↦ c n * cexp (-z * t)).intervalIntegrable
-      _ _).congr_uIoo fun t ht ↦ ?_
-    rw [uIoo_of_le (hle n)] at ht
-    simp only [hfloor ht]
   have hsum := intervalIntegral.sum_integral_adjacent_intervals
     (f := fun t : ℝ ↦ c ⌊t / h⌋₊ * cexp (-z * t)) (μ := volume)
-    (a := fun k : ℕ ↦ (k : ℝ) * h) (n := N) fun k _ ↦ hint k
+    (a := fun k : ℕ ↦ (k : ℝ) * h) (n := N)
+    fun k _ ↦ intervalIntegrable_floor_div_mul_cexp_neg_mul_step c hh k z
   simp only [Nat.cast_zero, zero_mul] at hsum
   rw [← hsum, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun n _ ↦ ?_
-  have hcongr : ∫ t in ((n : ℝ) * h)..(((n + 1 : ℕ) : ℝ) * h), c ⌊t / h⌋₊ * cexp (-z * t) =
-      ∫ t in ((n : ℝ) * h)..(((n + 1 : ℕ) : ℝ) * h), c n * cexp (-z * t) :=
-    intervalIntegral.integral_congr_Ioo_of_le (hle n) fun t ht ↦ by rw [hfloor ht]
-  rw [hcongr, intervalIntegral.integral_const_mul]
-  have hshift := intervalIntegral.integral_comp_add_left (f := fun t : ℝ ↦ cexp (-z * t))
-    ((n : ℝ) * h) (a := (0 : ℝ)) (b := h)
-  have hhi : (n : ℝ) * h + h = ((n + 1 : ℕ) : ℝ) * h := by push_cast; ring
-  rw [add_zero, hhi] at hshift
-  rw [← hshift]
-  have hexp (u : ℝ) : cexp (-z * ((n : ℝ) * h + u : ℝ)) =
-      cexp (-(h : ℂ) * z) ^ n * cexp (-z * u) := by
-    rw [← Complex.exp_natCast_mul, ← Complex.exp_add]
-    congr 1
-    push_cast
-    ring
-  simp_rw [hexp, intervalIntegral.integral_const_mul]
-  ring
+  exact Finset.sum_congr rfl fun n _ ↦ intervalIntegral_floor_div_mul_cexp_neg_mul_step c hh n z
 
 /-- **Unweighted truncated integral of a uniform step function.** Specializing
 `intervalIntegral_floor_div_mul_cexp_neg_mul` to `z = 0` yields

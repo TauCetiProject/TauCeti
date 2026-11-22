@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Function.Floor
+import Mathlib.Order.Cofinal
 import TauCeti.Analysis.Complex.PowerSeries.Fejer
 import TauCeti.Analysis.LaplaceTransform.UniformStep
 import TauCeti.NumberTheory.LSeries.Newman.Tauberian
-import TauCeti.Topology.Order.OrderClosed
 
 /-!
 # Continuous boundary values do not force Laplace convergence
@@ -80,7 +80,9 @@ theorem exists_bounded_continuousOn_laplace_not_tendsto_intervalIntegral :
     have hre : Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.range N, c n) atTop (𝓝 L.re) :=
       ((Complex.continuous_re.tendsto L).comp (hL.comp tendsto_natCast_atTop_atTop)).congr
         fun N ↦ by simp [intervalIntegral.integral_ofReal, hint_nat]
-    exact TauCeti.not_tendsto_nhds_of_forall_exists_le hc_unb L.re hre
+    have hc : IsCofinal (Set.range fun N : ℕ ↦ ∑ n ∈ Finset.range N, c n) := fun B ↦
+      let ⟨N, hN⟩ := hc_unb B; ⟨_, ⟨N, rfl⟩, hN⟩
+    exact hc.not_bddAbove hre.bddAbove_range
   refine ⟨f, G, hmeas, hf_bound, hc_zero.comp tendsto_nat_floor_atTop, hG_cont, hG_diff,
     hG_laplace, fun B ↦ ?_, hnot, fun Ω G' hΩ hsub heq hG' ↦ ?_⟩
   · obtain ⟨N, hN⟩ := hc_unb B
