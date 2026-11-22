@@ -136,18 +136,21 @@ private theorem sum_update_evalSection_wedge {k l : ℕ} (a : Cₛ^∞⟮I; F, V
           φ.evalSection (fun i ↦ s (σ (Fin.castAdd l i))) *
           ψ.evalSection (Function.update (fun j' ↦ s (σ (Fin.natAdd k j'))) j
             (A.bracket a (s (σ (Fin.natAdd k j)))))) := by
+  have hdisj (i : Fin k) (j : Fin l) : Fin.castAdd l i ≠ Fin.natAdd k j :=
+    Fin.ext_iff.ne.2 <| Nat.ne_of_lt <| by
+      rw [Fin.val_castAdd, Fin.val_natAdd]; exact lt_of_lt_of_le i.isLt (Nat.le_add_right k j)
   rw [← Equiv.sum_comp σ, Fin.sum_univ_add]
   congr 1
-  · refine Finset.sum_congr rfl fun i _ ↦
-      congrArg₂ (· * ·) (congrArg φ.evalSection ?_) (congrArg ψ.evalSection ?_)
-    · funext i'; simp [Function.update_apply, σ.injective.eq_iff, Fin.ext_iff]
-    · funext j
-      exact Function.update_of_ne (σ.injective.ne fun h ↦ by simp [Fin.ext_iff] at h; omega) _ _
-  · refine Finset.sum_congr rfl fun j _ ↦
-      congrArg₂ (· * ·) (congrArg φ.evalSection ?_) (congrArg ψ.evalSection ?_)
-    · funext i
-      exact Function.update_of_ne (σ.injective.ne fun h ↦ by simp [Fin.ext_iff] at h; omega) _ _
-    · funext j'; simp [Function.update_apply, σ.injective.eq_iff, Fin.ext_iff]
+  · refine Finset.sum_congr rfl fun i _ ↦ congrArg₂ (· * ·) ?_ ?_
+    · exact congrArg φ.evalSection <|
+        Function.update_comp_eq_of_injective s (σ.injective.comp (Fin.castAdd_injective _ l)) i _
+    · exact congrArg ψ.evalSection <|
+        Function.update_comp_eq_of_forall_ne s _ fun j ↦ σ.injective.ne (hdisj i j).symm
+  · refine Finset.sum_congr rfl fun j _ ↦ congrArg₂ (· * ·) ?_ ?_
+    · exact congrArg φ.evalSection <|
+        Function.update_comp_eq_of_forall_ne s _ fun i ↦ σ.injective.ne (hdisj i j)
+    · exact congrArg ψ.evalSection <|
+        Function.update_comp_eq_of_injective s (σ.injective.comp (Fin.natAdd_injective _ k)) j _
 
 section Complex
 
@@ -202,8 +205,10 @@ def lieDeriv {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) : A.Cochain k →ₗ[ℝ] A.C
 
 @[simp] theorem cochainSectionsEquiv_lieDeriv {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain k) :
     A.cochainSectionsEquiv k (A.lieDeriv a φ) = LieRinehartAlgebra.lieDeriv ℝ C^∞⟮I, M; ℝ⟯
-      A.Sections (A.sectionsEquiv.symm a) (A.cochainSectionsEquiv k φ) :=
-  (A.cochainSectionsEquiv k).apply_symm_apply _
+      A.Sections (A.sectionsEquiv.symm a) (A.cochainSectionsEquiv k φ) := by
+  rw [lieDeriv, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.coe_coe, LinearEquiv.restrictScalars_symm_apply,
+    LinearEquiv.restrictScalars_apply, LinearEquiv.apply_symm_apply]
 
 /-- The Chevalley–Eilenberg differential `d_A : A.Cochain k →ₗ[ℝ] A.Cochain (k + 1)` of a Lie
 algebroid `A`, transported from `TauCeti.LieRinehartAlgebra.extDeriv` across
@@ -215,8 +220,10 @@ def extDeriv (k : ℕ) : A.Cochain k →ₗ[ℝ] A.Cochain (k + 1) :=
 
 @[simp] theorem cochainSectionsEquiv_extDeriv (k : ℕ) (φ : A.Cochain k) :
     A.cochainSectionsEquiv (k + 1) (A.extDeriv k φ) =
-      LieRinehartAlgebra.extDeriv ℝ C^∞⟮I, M; ℝ⟯ A.Sections k (A.cochainSectionsEquiv k φ) :=
-  (A.cochainSectionsEquiv (k + 1)).apply_symm_apply _
+      LieRinehartAlgebra.extDeriv ℝ C^∞⟮I, M; ℝ⟯ A.Sections k (A.cochainSectionsEquiv k φ) := by
+  rw [extDeriv, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.coe_coe, LinearEquiv.restrictScalars_symm_apply,
+    LinearEquiv.restrictScalars_apply, LinearEquiv.apply_symm_apply]
 
 /-! ### Explicit evaluation formulas on smooth sections -/
 
@@ -231,11 +238,8 @@ theorem evalSection_lieDeriv {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cocha
     ← A.evalSection_eq_cochainSectionsEquiv]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [A.evalSection_eq_cochainSectionsEquiv]
-  exact congrArg (A.cochainSectionsEquiv k φ) (funext fun j ↦ by
-    by_cases hj : j = i
-    · subst hj; simp
-    · simp [hj])
+  rw [A.evalSection_eq_cochainSectionsEquiv, Function.comp_update, Function.comp_apply,
+    sectionsEquiv_symm_bracket]
 
 /-- In degree zero, `(d_A φ)(s₀) = ρ(s₀)(φ)`. -/
 @[simp] theorem evalSection_extDeriv_zero (φ : A.Cochain 0) (s : Fin 1 → Cₛ^∞⟮I; F, V⟯) :
@@ -623,17 +627,15 @@ private theorem tangent_extDeriv_succ_evalSection_apply (m : ℕ)
         ∑ i : Fin (m + 1), ∑ j ≥ i, (-1 : ℤ) ^ (i + j : ℕ) •
           φ x (Matrix.vecCons (mlieBracket I (s i.castSucc) (s j.succ) x)
             (j.removeNth (i.castSucc.removeNth (s · x)))) := by
-  rw [(tangent I M).evalSection_extDeriv_succ, ContMDiffMap.coe_add, Pi.add_apply, sub_eq_add_neg]
+  rw [(tangent I M).evalSection_extDeriv_succ, ← ContMDiffMap.evalAlgHom_apply ℝ x,
+    map_add, sub_eq_add_neg]
   congr 1
-  · rw [← ContMDiffMap.coeFnLinearMap_apply (𝕜 := ℝ), map_sum]
-    simp_rw [map_zsmul]
-    simp only [Finset.sum_apply, Pi.smul_apply, ContMDiffMap.coeFnLinearMap_apply,
-      anchorDeriv_apply, tangent_anchor_apply]
+  · rw [map_sum]
+    simp_rw [map_zsmul, ContMDiffMap.evalAlgHom_apply]
     refine Finset.sum_congr rfl fun i _ ↦ congrArg ((-1 : ℤ) ^ i.val • ·) ?_
-    rw [evalSection_removeNth_coeFn]
-  · rw [← ContMDiffMap.coeFnLinearMap_apply (𝕜 := ℝ), map_sum, ← Finset.sum_neg_distrib]
-    simp_rw [map_sum, map_zsmul, ← Finset.sum_neg_distrib]
-    simp only [Finset.sum_apply, Pi.smul_apply, ContMDiffMap.coeFnLinearMap_apply,
+    rw [anchorDeriv_apply, tangent_anchor_apply, evalSection_removeNth_coeFn]
+  · rw [map_sum, ← Finset.sum_neg_distrib]
+    simp_rw [map_sum, map_zsmul, ← Finset.sum_neg_distrib, ContMDiffMap.evalAlgHom_apply,
       ContMDiffSection.evalSection_apply]
     refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
     rw [pow_succ, mul_neg, mul_one, neg_zsmul]
@@ -645,10 +647,8 @@ agrees pointwise with the manifold exterior derivative `mextDeriv`. -/
 theorem tangent_extDeriv_apply (k : ℕ) (φ : (tangent I M).Cochain k) (x : M) :
     (tangent I M).extDeriv k φ x = mextDeriv (fun y ↦ φ y) x := by
   ext w
-  choose s hs using fun i ↦ ContMDiffSection.evalLinearMap_surjective (I := I) (F := E)
-    (V := (TangentSpace I : M → Type _)) ∞ x (w i)
-  have hw : (s · x) = w := funext fun i ↦ by
-    simpa only [ContMDiffSection.evalLinearMap_apply] using hs i
+  obtain ⟨s, hw⟩ := ContMDiffSection.exists_fun_apply_eq (I := I) (F := E)
+    (V := (TangentSpace I : M → Type _)) ∞ x w
   have hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ))
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] ℝ) y (φ y)) x :=
     (φ.contMDiff x).mdifferentiableAt (by simp)

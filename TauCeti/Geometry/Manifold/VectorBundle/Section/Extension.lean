@@ -76,6 +76,15 @@ theorem evalLinearMap_surjective (n : ℕ∞ω) [ENat.LEInfty n] [ContMDiffVecto
   obtain ⟨s, hs, hsx⟩ := FiberBundle.exists_contMDiff_section_eq I F n v
   exact ⟨⟨s, hs⟩, by simpa using hsx⟩
 
+/-- In a `C^n` vector bundle with `n ≤ ∞`, every indexed family of fibre vectors over `x` is
+realized by evaluating a family of global `C^n` sections at `x`. -/
+theorem exists_fun_apply_eq (n : ℕ∞ω) [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
+    {ι : Type*} (x : M) (v : ι → V x) :
+    ∃ s : ι → Cₛ^n⟮I; F, V⟯, (s · x) = v := by
+  obtain ⟨s, hs⟩ :=
+    (evalLinearMap_surjective (I := I) (F := F) (V := V) n x).comp_left (α := ι) v
+  exact ⟨s, funext fun i ↦ (evalLinearMap_apply x (s i)).symm.trans (congrFun hs i)⟩
+
 end Surjective
 
 section CompactSupport

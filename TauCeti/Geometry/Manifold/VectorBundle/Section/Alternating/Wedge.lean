@@ -123,10 +123,8 @@ theorem evalSection_wedge (s : Fin (k + l) → Cₛ^n⟮I; F, V⟯) :
           ψ.evalSection (fun j ↦ s (σ (Fin.natAdd k j)))) := by
   ext x
   rw [evalSection_apply, wedge_apply_apply,
-    ← ContMDiffMap.coeFnLinearMap_apply (𝕜 := ℝ), map_smul, map_sum]
-  simp_rw [Units.smul_def, map_zsmul]
-  simp only [Pi.smul_apply, Finset.sum_apply, ContMDiffMap.coeFnLinearMap_apply,
-    ContMDiffMap.coe_mul, Pi.mul_apply, evalSection_apply]
+    ← ContMDiffMap.evalAlgHom_apply ℝ x, map_smul, map_sum]
+  simp_rw [Units.smul_def, map_zsmul, map_mul, ContMDiffMap.evalAlgHom_apply, evalSection_apply]
 
 @[simp] theorem wedge_zero_left :
     (0 : Cₛ^n⟮I; F [⋀^Fin k]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin k]→L[ℝ] ℝ⟯).wedge ψ = 0 := by ext x v; simp

@@ -524,9 +524,8 @@ def alternatingEquiv :
   invFun := ofSectionAlternatingMap
   left_inv φ := by
     ext x v
-    choose s hs using fun i ↦ evalLinearMap_surjective (I := I) (F := F) (V := V) ∞ x (v i)
-    have hv : (s · x) = v := funext fun i ↦ by simpa only [evalLinearMap_apply] using hs i
-    rw [← hv, ofSectionAlternatingMap_eval, evalAlternatingLinearMap_apply,
+    obtain ⟨s, hs⟩ := exists_fun_apply_eq (I := I) (F := F) (V := V) ∞ x v
+    rw [← hs, ofSectionAlternatingMap_eval, evalAlternatingLinearMap_apply,
       evalAlternatingMap_apply_apply]
   right_inv Φ := by
     ext s x
