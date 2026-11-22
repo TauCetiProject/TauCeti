@@ -385,6 +385,25 @@ lemma twistedHomologyMap_comp (k : ℕ) :
       (twistedChainComplexMap_comp f g K)).trans
     (by rw [HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp])
 
+/-- Three composable maps of pairs induce on relative twisted homology the map induced by any map
+equal to their composite, after the canonical identifications of the pulled-back coefficient
+systems. -/
+lemma twistedHomologyMap_comp_comp {T : TopPair.{v}} (h : S ⟶ T) {φ : P ⟶ T}
+    (hφ : f ≫ g ≫ h = φ) (M : LocalCoefficientSystem.{u, v, max v w} R T.fst) (k : ℕ) :
+    twistedHomologyMap f ((LocalCoefficientSystem.pullback (Hom.fst g).hom).obj
+        ((LocalCoefficientSystem.pullback (Hom.fst h).hom).obj M)) k ≫
+      twistedHomologyMap g ((LocalCoefficientSystem.pullback (Hom.fst h).hom).obj M) k ≫
+      twistedHomologyMap h M k =
+    P.twistedHomologyCoefficientMap
+        ((LocalCoefficientSystem.pullback (Hom.fst f).hom).map (fstPullbackCompIso g h M).inv ≫
+          (fstPullbackCompIso f (g ≫ h) M).inv ≫ eqToHom (by rw [hφ])) k ≫
+      twistedHomologyMap φ M k := by
+  subst hφ
+  simp only [twistedHomologyMap_comp, twistedHomologyMap_naturality_assoc,
+    ← twistedHomologyCoefficientMap_comp_assoc, eqToHom_refl, Category.comp_id,
+    Category.assoc, Iso.inv_hom_id_assoc, ← CategoryTheory.Functor.map_comp, Iso.inv_hom_id,
+    CategoryTheory.Functor.map_id, Category.id_comp, twistedHomologyCoefficientMap_id]
+
 /-- The homology map induced by the map on subspace chains is the coefficient comparison followed
 by the map induced by the subspace component. -/
 lemma homologyMap_twistedSubspaceChainComplexMap (k : ℕ) :
