@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Primitive
 import TauCeti.Algebra.Group.Hom.Rational
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OrderedProduct
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Conjugate
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
@@ -101,7 +102,12 @@ theorem list_prod_map_rootSubgroupPoints_inj (A : Type v) [CommRing A]
 nonreduced rings and rings of small characteristic. -/
 theorem rootSubgroupPoints_injective (γ : Fin t.numRoots) (A : Type v) [CommRing A] :
     Function.Injective (D.rootSubgroupPoints γ A) := by
-  refine D.rootSubgroupPoints_injective_of_simple A (fun i u v huv => ?_) γ
+  -- Every root subgroup is conjugate to a positive simple-root subgroup by a word in the simple
+  -- Weyl elements, with a sign in its parameter, so no generation theorem is needed.
+  refine (D.rootSubgroupPoints_injective_iff γ A).2 <|
+    chevalleyRootSubgroup_injective_of_simple D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator (CommAlgCat.of ℤ A)
+      (fun i => (D.rootSubgroupPoints_injective_iff _ A).1 fun u v huv => ?_) γ
   have h := (D.list_prod_map_rootSubgroupPoints_inj A (List.nodup_singleton (t.simpleIndex ht i))
     (fun _ hγ => List.mem_singleton.mp hγ ▸ simpleIndex_mem_posRoots i)
     (u := Function.const _ u.toAdd) (v := Function.const _ v.toAdd)).mp

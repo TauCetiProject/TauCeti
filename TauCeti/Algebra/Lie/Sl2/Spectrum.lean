@@ -71,11 +71,11 @@ itself need not generate the ambient `L`.
   `TauCeti.isInternal_eigenspace_toEnd_intCast`: the two halves combined — such a module is the
   internal direct sum of the eigenspaces at the *integers*.
 * `IsSl2Triple.exists_pos_weight_of_span_eq_top`: if a module over a characteristic-zero domain is
-  spanned by `h`-eigenvectors whose integral weights are bounded below and `h` acts nontrivially,
-  then some nonzero generator has strictly positive weight.
-* `IsSl2Triple.exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top`: if those integral
-  weights are also bounded above, then a maximal-weight nonzero generator has strictly positive
-  weight and is primitive for the triple.
+  spanned by `h`-eigenvectors whose nonzero vectors have integral weights bounded below and `h`
+  acts nontrivially, then some nonzero generator has strictly positive weight.
+* `IsSl2Triple.exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top`: if the integral
+  weights of those nonzero generators are also bounded above, then a maximal-weight nonzero
+  generator has strictly positive weight and is primitive for the triple.
 
 ## References
 
@@ -443,12 +443,13 @@ variable {K L M : Type*} [CommRing K] [IsDomain K] [CharZero K]
   [Module.IsTorsionFree K M] {h e f : L}
 
 /-- If a spanning family `v : η → M` of `h`-eigenvectors with integral weights `wt` has weights
-bounded below and `h` acts nontrivially on `M`, then some nonzero generator has strictly positive
-weight. No finiteness on `η` or field hypothesis on `K` is required. -/
+on its nonzero vectors bounded below and `h` acts nontrivially on `M`, then some nonzero
+generator has strictly positive weight. No finiteness on `η` or field hypothesis on `K` is
+required. -/
 theorem exists_pos_weight_of_span_eq_top (t : IsSl2Triple h e f) {η : Type*} {v : η → M}
     (hspan : Submodule.span K (Set.range v) = ⊤) (hh : toEnd K L M h ≠ 0)
     {wt : η → ℤ} (hwt : ∀ r, ⁅h, v r⁆ = (wt r : K) • v r)
-    (hbdd : BddBelow (Set.range wt)) :
+    (hbdd : BddBelow (Set.range fun r : {r // v r ≠ 0} ↦ wt r)) :
     ∃ r : η, 0 < wt r ∧ v r ≠ 0 := by
   have hspanS : Submodule.span K (Set.range fun r : {r : η // v r ≠ 0} ↦ v r) = ⊤ := by
     refine eq_top_iff.mpr (hspan ▸ Submodule.span_le.mpr ?_)
@@ -467,7 +468,7 @@ theorem exists_pos_weight_of_span_eq_top (t : IsSl2Triple h e f) {η : Type*} {v
   obtain ⟨b, hb⟩ := hbdd
   obtain ⟨_, ⟨j₀, hj₀ne, rfl⟩, hj₀min⟩ := Int.exists_least_of_bdd
     (P := fun z ↦ ∃ r : η, v r ≠ 0 ∧ wt r = z)
-    ⟨b, by rintro z ⟨r, -, rfl⟩; exact hb ⟨r, rfl⟩⟩ ⟨wt r₀, r₀, hr₀ne, rfl⟩
+    ⟨b, by rintro z ⟨r, hr, rfl⟩; exact hb ⟨⟨r, hr⟩, rfl⟩⟩ ⟨wt r₀, r₀, hr₀ne, rfl⟩
   have hj₀neg : wt j₀ < 0 := lt_of_le_of_lt (hj₀min _ ⟨r₀, hr₀ne, rfl⟩)
     (lt_of_le_of_ne (hle0 r₀ hr₀ne) hr₀wt)
   have hfj₀ : ⁅f, v j₀⁆ = 0 := by
@@ -495,13 +496,14 @@ theorem exists_pos_weight_of_span_eq_top (t : IsSl2Triple h e f) {η : Type*} {v
   exact_mod_cast (by omega : wt r.val ≠ (n : ℤ))
 
 /-- If a spanning family `v : η → M` of `h`-eigenvectors with integral weights `wt` has weights
-bounded both below and above and `h` acts nontrivially on `M`, then a maximal-weight nonzero
-generator has strictly positive weight and is primitive for the triple `t` (in particular, it is
-nonzero and killed by the raising operator `e`). -/
+on its nonzero vectors bounded both below and above and `h` acts nontrivially on `M`, then a
+maximal-weight nonzero generator has strictly positive weight and is primitive for the triple `t`
+(in particular, it is nonzero and killed by the raising operator `e`). -/
 theorem exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top (t : IsSl2Triple h e f)
     {η : Type*} {v : η → M} (hspan : Submodule.span K (Set.range v) = ⊤)
     (hh : toEnd K L M h ≠ 0) {wt : η → ℤ} (hwt : ∀ r, ⁅h, v r⁆ = (wt r : K) • v r)
-    (hbdd_below : BddBelow (Set.range wt)) (hbdd_above : BddAbove (Set.range wt)) :
+    (hbdd_below : BddBelow (Set.range fun r : {r // v r ≠ 0} ↦ wt r))
+    (hbdd_above : BddAbove (Set.range fun r : {r // v r ≠ 0} ↦ wt r)) :
     ∃ j : η, 0 < wt j ∧ t.HasPrimitiveVectorWith (v j) (wt j : K) := by
   have hspanS : Submodule.span K (Set.range fun r : {r : η // v r ≠ 0} ↦ v r) = ⊤ := by
     refine eq_top_iff.mpr (hspan ▸ Submodule.span_le.mpr ?_)
@@ -513,7 +515,7 @@ theorem exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top (t : IsSl2Tr
   obtain ⟨b, hb⟩ := hbdd_above
   obtain ⟨_, ⟨j, hjne, rfl⟩, hjmax⟩ := Int.exists_greatest_of_bdd
     (P := fun z ↦ ∃ r : η, v r ≠ 0 ∧ wt r = z)
-    ⟨b, by rintro z ⟨r, -, rfl⟩; exact hb ⟨r, rfl⟩⟩ ⟨wt r₁, r₁, hr₁ne, rfl⟩
+    ⟨b, by rintro z ⟨r, hr, rfl⟩; exact hb ⟨⟨r, hr⟩, rfl⟩⟩ ⟨wt r₁, r₁, hr₁ne, rfl⟩
   refine ⟨j, lt_of_lt_of_le hr₁pos (hjmax (wt r₁) ⟨r₁, hr₁ne, rfl⟩),
     { ne_zero := hjne
       lie_h := hwt j

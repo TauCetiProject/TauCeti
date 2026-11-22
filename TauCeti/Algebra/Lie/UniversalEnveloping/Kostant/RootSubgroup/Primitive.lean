@@ -148,7 +148,8 @@ private theorem exists_pow_kostantRootOperator_eq_factorial_smul
   obtain ⟨j, hjpos, hP⟩ :=
     hsl2W.exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top hspanW
       (fun h0 => hsl2W.h_ne_zero (LinearMap.ext fun x => congrArg (· x) h0))
-      hwtW hbdd_below hbdd_above
+      hwtW (hbdd_below.mono (Set.range_comp_subset_range Subtype.val wt))
+      (hbdd_above.mono (Set.range_comp_subset_range Subtype.val wt))
   have hEj : E (b j : V) = 0 := congrArg Subtype.val hP.lie_e
   let N : ℕ := (wt j).toNat
   have hN_eq : (N : ℤ) = wt j := Int.toNat_of_nonneg hjpos.le
