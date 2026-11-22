@@ -5,38 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.PGroup
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import Mathlib.GroupTheory.Torsion
 import Mathlib.Data.Nat.Factorization.Basic
-import TauCeti.Algebra.Group.Primary.Basic
+import TauCeti.GroupTheory.Torsion
 
 /-!
 # Primary components of finite bilinear and quadratic modules
 
 The primary components of a finite abelian group are already defined by Mathlib as
-`AddCommGroup.primaryComponent`. This file bundles the restricted forms as
-`TauCeti.FiniteBilinearModule.primaryComponent` and
-`TauCeti.FiniteQuadraticModule.primaryComponent`, proves their compatibility with isometries and
-orthogonal products, and establishes the form-theoretic fact needed to decompose finite bilinear and
-quadratic modules: components belonging to distinct primes are orthogonal.
+`AddCommGroup.primaryComponent`. This file proves the form-theoretic fact needed to decompose
+finite bilinear and quadratic modules: components belonging to distinct primes are orthogonal.
 
 For a bilinear module, orthogonality follows because the value of the pairing on a `p`-primary and
-a `q`-primary element is annihilated by powers of both `p` and `q`. Those powers are coprime when
-the primes are distinct. The quadratic statements then follow from the polar identity. Finite-sum
+a `q`-primary element is annihilated by powers of both `p` and `q`.  Those powers are coprime when
+the primes are distinct.  The quadratic statements then follow from the polar identity.  Finite-sum
 versions record that both raw forms split as sums of their restrictions whenever the summands lie
-in pairwise distinct primary components.
+in pairwise distinct primary components. Primary components are also functorial: an isometry
+restricts to them, and the `p`-primary component of an orthogonal product is the orthogonal product
+of the `p`-primary components.
 
-## Main definitions and results
+## Main results
 
-* `TauCeti.FiniteBilinearModule.primaryComponent`,
-  `TauCeti.FiniteQuadraticModule.primaryComponent`: the restricted bilinear and quadratic modules on
-  `AddCommGroup.primaryComponent A p`.
-* `TauCeti.FiniteBilinearModule.Isometry.primaryComponent`,
-  `TauCeti.FiniteQuadraticModule.Isometry.primaryComponent`,
-  `TauCeti.FiniteBilinearModule.primaryComponentProdIsometry`,
-  `TauCeti.FiniteQuadraticModule.primaryComponentProdIsometry`: functoriality under isometries and
-  orthogonal direct sums.
 * `TauCeti.FiniteBilinearModule.pairing_eq_zero_of_mem_primaryComponent`: distinct primary
   components are orthogonal elementwise.
 * `TauCeti.FiniteBilinearModule.primaryComponent_le_orthogonalComplement_primaryComponent`: the
@@ -47,6 +37,10 @@ in pairwise distinct primary components.
   pairing of primary decompositions is the sum of the component pairings.
 * `TauCeti.FiniteQuadraticModule.quadratic_sum_of_mem_primaryComponent`: a quadratic value on a
   sum of primary components is the sum of the component values.
+* `TauCeti.FiniteQuadraticModule.Isometry.restrictPrimaryComponent`: an isometry restricts to an
+  isometry of `p`-primary components.
+* `TauCeti.FiniteQuadraticModule.restrictPrimaryComponentProdIsometry`: the `p`-primary component
+  of an orthogonal product is the orthogonal product of the `p`-primary components.
 
 ## References
 
@@ -58,7 +52,7 @@ public section
 
 namespace TauCeti
 
-universe u v
+universe u
 
 private theorem eq_zero_of_coprime_nsmul_eq_zero {M : Type*} [AddMonoid M] {m n : ℕ} {x : M}
     (hmn : m.Coprime n) (hm : m • x = 0) (hn : n • x = 0) : x = 0 := by
@@ -170,280 +164,11 @@ theorem pairing_sum_eq_sum_pairing_of_mem_primaryComponent {ι : Type*}
       (hdistinct i hi j hj hji.symm) (hx i hi) (hy j hj)
   rw [Finset.sum_eq_single i hoff (fun hnot ↦ (hnot hi).elim), A.toBilin_apply]
 
-/-! ## Bundled primary components -/
-
-/-- The `p`-primary component of a finite bilinear module: the restriction of the pairing to
-`AddCommGroup.primaryComponent A p`. -/
-abbrev primaryComponent (A : FiniteBilinearModule.{u}) (p : ℕ) : FiniteBilinearModule.{u} :=
-  A.restrict (AddCommGroup.primaryComponent A p)
-
-/-- The `n`-primary component of a finite bilinear module is an additive `n`-group. -/
-theorem isAddPGroup_primaryComponent (A : FiniteBilinearModule.{u}) (n : ℕ) :
-    IsAddPGroup n (A.primaryComponent n) :=
-  AddCommGroup.primaryComponent.isAddPGroup A n
-
-/-- An isometry of finite bilinear modules restricts to an isometry between their `n`-primary
-components. -/
-def Isometry.primaryComponent {A : FiniteBilinearModule.{u}} {B : FiniteBilinearModule.{v}}
-    (f : A.Isometry B) (n : ℕ) : (A.primaryComponent n).Isometry (B.primaryComponent n) where
-  toAddEquiv := f.toAddEquiv.primaryComponent n
-  map_pairing' x y := by
-    rw [restrict_pairing, restrict_pairing]
-    simp [f.map_pairing]
-
-/-- Applying `FiniteBilinearModule.Isometry.primaryComponent f n` agrees with `f` on underlying
-elements. -/
-@[simp]
-theorem Isometry.coe_primaryComponent_apply {A : FiniteBilinearModule.{u}}
-    {B : FiniteBilinearModule.{v}} (f : A.Isometry B) (n : ℕ) (x : A.primaryComponent n) :
-    (f.primaryComponent n x : B) = f x.val := by
-  rw [← Isometry.coe_toAddEquiv]
-  simp [Isometry.primaryComponent]
-
-/-- Applying `(FiniteBilinearModule.Isometry.primaryComponent f n).symm` agrees with `f.symm` on
-underlying elements. -/
-@[simp]
-theorem Isometry.coe_primaryComponent_symm_apply {A : FiniteBilinearModule.{u}}
-    {B : FiniteBilinearModule.{v}} (f : A.Isometry B) (n : ℕ) (y : B.primaryComponent n) :
-    ((f.primaryComponent n).symm y : A) = f.symm y.val := by
-  rw [← coe_toAddEquiv, symm_toAddEquiv]
-  simp [Isometry.primaryComponent, ← Isometry.symm_toAddEquiv]
-
-/-- The `n`-primary component of an orthogonal direct sum of finite bilinear modules splits as the
-orthogonal direct sum of their `n`-primary components. -/
-def primaryComponentProdIsometry (A : FiniteBilinearModule.{u}) (B : FiniteBilinearModule.{v})
-    (n : ℕ) :
-    ((A.prod B).primaryComponent n).Isometry
-      ((A.primaryComponent n).prod (B.primaryComponent n)) where
-  toAddEquiv := AddCommGroup.primaryComponentProdAddEquiv A B n
-  map_pairing' x y := by
-    rw [prod_pairing, restrict_pairing, restrict_pairing, restrict_pairing, prod_pairing]
-    simp
-
-/-- The first component of `FiniteBilinearModule.primaryComponentProdIsometry` preserves the
-underlying first coordinate. -/
-@[simp]
-theorem coe_primaryComponentProdIsometry_apply_fst (A : FiniteBilinearModule.{u})
-    (B : FiniteBilinearModule.{v}) (n : ℕ) (x : (A.prod B).primaryComponent n) :
-    ((primaryComponentProdIsometry A B n x).1 : A) = x.val.1 :=
-  AddCommGroup.coe_primaryComponentProdAddEquiv_apply_fst A.carrier B.carrier n x
-
-/-- The second component of `FiniteBilinearModule.primaryComponentProdIsometry` preserves the
-underlying second coordinate. -/
-@[simp]
-theorem coe_primaryComponentProdIsometry_apply_snd (A : FiniteBilinearModule.{u})
-    (B : FiniteBilinearModule.{v}) (n : ℕ) (x : (A.prod B).primaryComponent n) :
-    ((primaryComponentProdIsometry A B n x).2 : B) = x.val.2 :=
-  AddCommGroup.coe_primaryComponentProdAddEquiv_apply_snd A.carrier B.carrier n x
-
-/-- The inverse of `FiniteBilinearModule.primaryComponentProdIsometry` preserves underlying
-coordinates. -/
-@[simp]
-theorem coe_primaryComponentProdIsometry_symm_apply (A : FiniteBilinearModule.{u})
-    (B : FiniteBilinearModule.{v}) (n : ℕ) (x : A.primaryComponent n) (y : B.primaryComponent n) :
-    ((primaryComponentProdIsometry A B n).symm (x, y) : A.carrier × B.carrier) =
-      (x.val, y.val) := by
-  rw [← Isometry.coe_toAddEquiv, Isometry.symm_toAddEquiv]
-  exact AddCommGroup.coe_primaryComponentProdAddEquiv_symm_apply A B n x y
-
-/-- If the underlying group of `A` is already `n`-primary torsion, its `n`-primary component is
-canonically isometric to `A`. -/
-def primaryComponentIsometrySelfOfIsAddPGroup {A : FiniteBilinearModule.{u}} {n : ℕ}
-    (hA : IsAddPGroup n A) : (A.primaryComponent n).Isometry A where
-  toAddEquiv := hA.primaryComponentEquiv
-  map_pairing' x y := by
-    rw [restrict_pairing]
-    simp
-
-/-- `FiniteBilinearModule.primaryComponentIsometrySelfOfIsAddPGroup` acts as the subtype
-coercion. -/
-@[simp]
-theorem primaryComponentIsometrySelfOfIsAddPGroup_apply {A : FiniteBilinearModule.{u}} {n : ℕ}
-    (hA : IsAddPGroup n A) (x : A.primaryComponent n) :
-    primaryComponentIsometrySelfOfIsAddPGroup hA x = x.val :=
-  hA.primaryComponentEquiv_apply x
-
-/-- The inverse of `FiniteBilinearModule.primaryComponentIsometrySelfOfIsAddPGroup` preserves
-underlying elements. -/
-@[simp]
-theorem coe_primaryComponentIsometrySelfOfIsAddPGroup_symm_apply {A : FiniteBilinearModule.{u}}
-    {n : ℕ} (hA : IsAddPGroup n A) (x : A) :
-    ((primaryComponentIsometrySelfOfIsAddPGroup hA).symm x : A) = x := by
-  rw [← Isometry.coe_toAddEquiv, Isometry.symm_toAddEquiv]
-  exact hA.coe_primaryComponentEquiv_symm_apply x
-
-/-- For coprime `p` and `q`, the `p`-primary component of a `q`-primary finite bilinear module
-is trivial. -/
-theorem subsingleton_primaryComponent_of_isAddPGroup_of_coprime {A : FiniteBilinearModule.{u}}
-    {p q : ℕ} (hpq : p.Coprime q) (hA : IsAddPGroup q A) :
-    Subsingleton (A.primaryComponent p) :=
-  AddCommGroup.primaryComponent.subsingleton_of_isAddPGroup_of_coprime hA hpq
-
 end FiniteBilinearModule
 
 namespace FiniteQuadraticModule
 
 variable (A : FiniteQuadraticModule)
-
-/-- The `p`-primary component of a finite quadratic module: the restriction of the quadratic map
-and polar pairing to `AddCommGroup.primaryComponent A p`. -/
-abbrev primaryComponent (A : FiniteQuadraticModule.{u}) (p : ℕ) : FiniteQuadraticModule.{u} :=
-  A.restrict (AddCommGroup.primaryComponent A p)
-
-/-- The `n`-primary component of a finite quadratic module is an additive `n`-group. -/
-theorem isAddPGroup_primaryComponent (A : FiniteQuadraticModule.{u}) (n : ℕ) :
-    IsAddPGroup n (A.primaryComponent n) :=
-  AddCommGroup.primaryComponent.isAddPGroup A n
-
-/-- An isometry of finite quadratic modules restricts to an isometry between their `n`-primary
-components. -/
-def Isometry.primaryComponent {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
-    (f : A.Isometry B) (n : ℕ) : (A.primaryComponent n).Isometry (B.primaryComponent n) where
-  toLinearEquiv := (f.toAddEquiv.primaryComponent n).toIntLinearEquiv
-  map_app' x :=
-    -- `FiniteQuadraticModule.restrict` is semireducible with carrier definitionally equal to the
-    -- subgroup, so `restrict_quadratic` is applied directly in a `calc` chain.
-    calc (B.primaryComponent n).quadratic ((f.toAddEquiv.primaryComponent n).toIntLinearEquiv x)
-        = (B.primaryComponent n).quadratic (f.toAddEquiv.primaryComponent n x) :=
-            congrArg _ (congrFun (AddEquiv.coe_toIntLinearEquiv _) x)
-      _ = B.quadratic (f.toAddEquiv.primaryComponent n x).val :=
-            restrict_quadratic B _ _
-      _ = B.quadratic (f x.val) :=
-            congrArg B.quadratic (f.toAddEquiv.coe_primaryComponent_apply n x)
-      _ = A.quadratic x.val :=
-            f.map_app x.val
-      _ = (A.primaryComponent n).quadratic x :=
-            (restrict_quadratic A _ x).symm
-
-/-- Applying `FiniteQuadraticModule.Isometry.primaryComponent f n` agrees with `f` on underlying
-elements. -/
-@[simp]
-theorem Isometry.coe_primaryComponent_apply {A : FiniteQuadraticModule.{u}}
-    {B : FiniteQuadraticModule.{v}} (f : A.Isometry B) (n : ℕ) (x : A.primaryComponent n) :
-    (f.primaryComponent n x).val = f x.val := by
-  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
-  exact (congrArg Subtype.val (congrFun (AddEquiv.coe_toIntLinearEquiv _) x)).trans
-    (f.toAddEquiv.coe_primaryComponent_apply n x)
-
-/-- Applying `(FiniteQuadraticModule.Isometry.primaryComponent f n).symm` agrees with `f.symm` on
-underlying elements. -/
-@[simp]
-theorem Isometry.coe_primaryComponent_symm_apply {A : FiniteQuadraticModule.{u}}
-    {B : FiniteQuadraticModule.{v}} (f : A.Isometry B) (n : ℕ) (y : B.primaryComponent n) :
-    ((f.primaryComponent n).symm y).val = f.symm y.val := by
-  apply EquivLike.injective f
-  exact (Isometry.coe_primaryComponent_apply f n ((f.primaryComponent n).symm y)).symm.trans <|
-    (congrArg Subtype.val ((f.primaryComponent n).apply_symm_apply y)).trans
-      (f.apply_symm_apply y.val).symm
-
-/-- The `n`-primary component of an orthogonal direct sum of finite quadratic modules splits as the
-orthogonal direct sum of their `n`-primary components. -/
-def primaryComponentProdIsometry (A : FiniteQuadraticModule.{u}) (B : FiniteQuadraticModule.{v})
-    (n : ℕ) :
-    ((A.prod B).primaryComponent n).Isometry
-      ((A.primaryComponent n).prod (B.primaryComponent n)) where
-  toLinearEquiv := (AddCommGroup.primaryComponentProdAddEquiv A B n).toIntLinearEquiv
-  map_app' x :=
-    -- `FiniteQuadraticModule.restrict` is semireducible with carrier definitionally equal to the
-    -- subgroup, so `restrict_quadratic` is applied directly in a `calc` chain.
-    calc ((A.primaryComponent n).prod (B.primaryComponent n)).quadratic
-          ((AddCommGroup.primaryComponentProdAddEquiv A B n).toIntLinearEquiv x)
-        = ((A.primaryComponent n).prod (B.primaryComponent n)).quadratic
-          (AddCommGroup.primaryComponentProdAddEquiv A B n x) :=
-            congrArg _ (congrFun (AddEquiv.coe_toIntLinearEquiv _) x)
-      _ = (A.primaryComponent n).quadratic (AddCommGroup.primaryComponentProdAddEquiv A B n x).1 +
-          (B.primaryComponent n).quadratic (AddCommGroup.primaryComponentProdAddEquiv A B n x).2 :=
-            QuadraticMap.prod_apply _ _ _
-      _ = A.quadratic (AddCommGroup.primaryComponentProdAddEquiv A B n x).1.val +
-          B.quadratic (AddCommGroup.primaryComponentProdAddEquiv A B n x).2.val :=
-            congrArg₂ (· + ·) (restrict_quadratic A _ _) (restrict_quadratic B _ _)
-      _ = A.quadratic x.val.1 + B.quadratic x.val.2 :=
-            congrArg₂ (· + ·)
-              (congrArg A.quadratic
-                (AddCommGroup.coe_primaryComponentProdAddEquiv_apply_fst A B n x))
-              (congrArg B.quadratic
-                (AddCommGroup.coe_primaryComponentProdAddEquiv_apply_snd A B n x))
-      _ = (A.prod B).quadratic x.val := by
-            rw [prod_quadratic]
-      _ = ((A.prod B).primaryComponent n).quadratic x :=
-            (restrict_quadratic (A.prod B) _ x).symm
-
-/-- The first component of `FiniteQuadraticModule.primaryComponentProdIsometry` preserves the
-underlying first coordinate. -/
-@[simp]
-theorem coe_primaryComponentProdIsometry_apply_fst (A : FiniteQuadraticModule.{u})
-    (B : FiniteQuadraticModule.{v}) (n : ℕ) (x : (A.prod B).primaryComponent n) :
-    ((primaryComponentProdIsometry A B n x).1).val = x.val.1 := by
-  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
-  exact (congrArg
-      (fun p : AddCommGroup.primaryComponent A n × AddCommGroup.primaryComponent B n ↦ p.1.val)
-      (congrFun (AddEquiv.coe_toIntLinearEquiv _) x)).trans
-    (AddCommGroup.coe_primaryComponentProdAddEquiv_apply_fst A.carrier B.carrier n x)
-
-/-- The second component of `FiniteQuadraticModule.primaryComponentProdIsometry` preserves the
-underlying second coordinate. -/
-@[simp]
-theorem coe_primaryComponentProdIsometry_apply_snd (A : FiniteQuadraticModule.{u})
-    (B : FiniteQuadraticModule.{v}) (n : ℕ) (x : (A.prod B).primaryComponent n) :
-    ((primaryComponentProdIsometry A B n x).2).val = x.val.2 := by
-  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
-  exact (congrArg
-      (fun p : AddCommGroup.primaryComponent A n × AddCommGroup.primaryComponent B n ↦ p.2.val)
-      (congrFun (AddEquiv.coe_toIntLinearEquiv _) x)).trans
-    (AddCommGroup.coe_primaryComponentProdAddEquiv_apply_snd A.carrier B.carrier n x)
-
-/-- The inverse of `FiniteQuadraticModule.primaryComponentProdIsometry` preserves underlying
-coordinates. -/
-@[simp]
-theorem coe_primaryComponentProdIsometry_symm_apply (A : FiniteQuadraticModule.{u})
-    (B : FiniteQuadraticModule.{v}) (n : ℕ) (x : A.primaryComponent n) (y : B.primaryComponent n) :
-    ((primaryComponentProdIsometry A B n).symm (x, y)).val = (x.val, y.val) := by
-  refine Prod.ext ?_ ?_
-  · rw [← coe_primaryComponentProdIsometry_apply_fst A B n,
-      QuadraticMap.IsometryEquiv.apply_symm_apply]
-  · rw [← coe_primaryComponentProdIsometry_apply_snd A B n,
-      QuadraticMap.IsometryEquiv.apply_symm_apply]
-
-/-- If the underlying group of `A` is already `n`-primary torsion, its `n`-primary component is
-canonically isometric to `A`. -/
-def primaryComponentIsometrySelfOfIsAddPGroup {A : FiniteQuadraticModule.{u}} {n : ℕ}
-    (hA : IsAddPGroup n A) : (A.primaryComponent n).Isometry A where
-  toLinearEquiv := hA.primaryComponentEquiv.toIntLinearEquiv
-  map_app' x :=
-    -- `FiniteQuadraticModule.restrict` is semireducible with carrier definitionally equal to the
-    -- subgroup, so `restrict_quadratic` is applied directly in a `calc` chain.
-    calc A.quadratic (hA.primaryComponentEquiv.toIntLinearEquiv x)
-        = A.quadratic (hA.primaryComponentEquiv x) :=
-            congrArg A.quadratic (congrFun (AddEquiv.coe_toIntLinearEquiv _) x)
-      _ = A.quadratic x.val :=
-            congrArg A.quadratic (hA.primaryComponentEquiv_apply x)
-      _ = (A.primaryComponent n).quadratic x :=
-            (restrict_quadratic A _ x).symm
-
-/-- `FiniteQuadraticModule.primaryComponentIsometrySelfOfIsAddPGroup` acts as the subtype
-coercion. -/
-@[simp]
-theorem primaryComponentIsometrySelfOfIsAddPGroup_apply {A : FiniteQuadraticModule.{u}} {n : ℕ}
-    (hA : IsAddPGroup n A) (x : A.primaryComponent n) :
-    primaryComponentIsometrySelfOfIsAddPGroup hA x = x.val := by
-  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
-  exact (congrFun (AddEquiv.coe_toIntLinearEquiv _) x).trans (hA.primaryComponentEquiv_apply x)
-
-/-- The inverse of `FiniteQuadraticModule.primaryComponentIsometrySelfOfIsAddPGroup` preserves
-underlying elements. -/
-@[simp]
-theorem coe_primaryComponentIsometrySelfOfIsAddPGroup_symm_apply {A : FiniteQuadraticModule.{u}}
-    {n : ℕ} (hA : IsAddPGroup n A) (x : A) :
-    ((primaryComponentIsometrySelfOfIsAddPGroup hA).symm x).val = x := by
-  rw [← primaryComponentIsometrySelfOfIsAddPGroup_apply hA,
-    QuadraticMap.IsometryEquiv.apply_symm_apply]
-
-/-- For coprime `p` and `q`, the `p`-primary component of a `q`-primary finite quadratic module
-is trivial. -/
-theorem subsingleton_primaryComponent_of_isAddPGroup_of_coprime {A : FiniteQuadraticModule.{u}}
-    {p q : ℕ} (hpq : p.Coprime q) (hA : IsAddPGroup q A) :
-    Subsingleton (A.primaryComponent p) :=
-  A.toFiniteBilinearModule.subsingleton_primaryComponent_of_isAddPGroup_of_coprime hpq hA
 
 /-- The polar pairing of a nondegenerate finite quadratic module restricts nondegenerately to each
 prime-primary component. -/
@@ -492,6 +217,52 @@ theorem quadratic_sum_of_mem_primaryComponent {ι : Type*}
         (fun j hj k hk hjk ↦ hdistinct j (Finset.mem_insert_of_mem hj) k
           (Finset.mem_insert_of_mem hk) hjk)
         (fun j hj ↦ hx j (Finset.mem_insert_of_mem hj))
+
+/-! ## Primary components under isometries and orthogonal products -/
+
+variable {A} in
+/-- An isometry carries `p`-primary components onto `p`-primary components, so it restricts to an
+isometry between them. -/
+def Isometry.restrictPrimaryComponent {B : FiniteQuadraticModule} (f : Isometry A B) (p : ℕ) :
+    Isometry (A.restrict (AddCommGroup.primaryComponent A p))
+      (B.restrict (AddCommGroup.primaryComponent B p)) :=
+  f.restrict fun x ↦ by
+    simp only [AddCommGroup.mem_primaryComponent, ← map_nsmul, EmbeddingLike.map_eq_zero_iff]
+
+variable {A} in
+/-- The restriction of an isometry to primary components acts as the isometry. -/
+@[simp]
+theorem Isometry.restrictHom_restrictPrimaryComponent_apply {B : FiniteQuadraticModule}
+    (f : Isometry A B) (p : ℕ) (x : A.restrict (AddCommGroup.primaryComponent A p)) :
+    B.restrictHom _ (f.restrictPrimaryComponent p x) = f (A.restrictHom _ x) :=
+  f.restrictHom_restrict_apply _ x
+
+/-- **The `p`-primary component of an orthogonal product** is the orthogonal product of the
+`p`-primary components (`AddCommGroup.primaryComponent_prod`). -/
+def restrictPrimaryComponentProdIsometry (B : FiniteQuadraticModule) (p : ℕ) :
+    Isometry ((A.prod B).restrict (AddCommGroup.primaryComponent (A.prod B) p))
+      ((A.restrict (AddCommGroup.primaryComponent A p)).prod
+        (B.restrict (AddCommGroup.primaryComponent B p))) :=
+  ((A.prod B).restrictCongr (AddCommGroup.primaryComponent_prod A B p)).trans
+    (A.restrictProdIsometry _ _)
+
+/-- The first component of `restrictPrimaryComponentProdIsometry` is the first coordinate. -/
+@[simp]
+theorem restrictHom_restrictPrimaryComponentProdIsometry_apply_fst (B : FiniteQuadraticModule)
+    (p : ℕ) (x : (A.prod B).restrict (AddCommGroup.primaryComponent (A.prod B) p)) :
+    A.restrictHom _ (A.restrictPrimaryComponentProdIsometry B p x).1 =
+      ((A.prod B).restrictHom _ x).1 := by
+  rw [restrictPrimaryComponentProdIsometry, Isometry.trans_apply,
+    restrictHom_restrictProdIsometry_apply_fst, restrictHom_restrictCongr_apply]
+
+/-- The second component of `restrictPrimaryComponentProdIsometry` is the second coordinate. -/
+@[simp]
+theorem restrictHom_restrictPrimaryComponentProdIsometry_apply_snd (B : FiniteQuadraticModule)
+    (p : ℕ) (x : (A.prod B).restrict (AddCommGroup.primaryComponent (A.prod B) p)) :
+    B.restrictHom _ (A.restrictPrimaryComponentProdIsometry B p x).2 =
+      ((A.prod B).restrictHom _ x).2 := by
+  rw [restrictPrimaryComponentProdIsometry, Isometry.trans_apply,
+    restrictHom_restrictProdIsometry_apply_snd, restrictHom_restrictCongr_apply]
 
 end FiniteQuadraticModule
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.PGroup
 public import Mathlib.GroupTheory.Torsion
+public import TauCeti.GroupTheory.Torsion
 import TauCeti.GroupTheory.PGroup
 
 /-!
@@ -114,8 +115,7 @@ namespace CommGroup
 
 /-- The `n`-primary component of a binary product of commutative groups is the product of their
 `n`-primary components. -/
-@[to_additive /-- The `n`-primary component of a binary product of additive commutative groups
-is the product of their `n`-primary components. -/]
+@[to_additive existing primaryComponent_prod]
 theorem primaryComponent_prod (G H : Type*) [CommGroup G] [CommGroup H] (n : ℕ) :
     CommGroup.primaryComponent (G × H) n =
       (CommGroup.primaryComponent G n).prod (CommGroup.primaryComponent H n) := by

@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Nat.Factorial.BigOperators
 public import Mathlib.Data.Pi.Interval
+public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Order.SuccPred.Int
@@ -127,6 +128,10 @@ groups, is divisible by `2!/2 · 4!/2 ⋯ (2n - 2)!/2`, with the monic even poly
 * `TauCeti.exists_lt_card_sum_mul_pow_ne_zero`: **nonvanishing power sums.** For pairwise
   distinct nodes `θᵢ` and weights `wᵢ`, not all zero, in a domain, one of the power sums
   `∑ᵢ wᵢ θᵢ ^ k` with `k` less than the number of nodes is nonzero.
+* `TauCeti.mul_pow_eq_sum_inv_vandermonde_mul_sum_mul_pow_add`: **moment recovery.** For
+  pairwise distinct nodes `βᵢ` of a field and arbitrary weights `cᵢ`, each weighted power
+  `c_k β_k ^ n` is a fixed linear combination, with coefficients the column `k` of the inverse
+  Vandermonde matrix, of the `d` consecutive moments `∑ᵢ cᵢ βᵢ ^ (n + j)`, `j < d`.
 -/
 
 public section
@@ -494,5 +499,22 @@ theorem exists_lt_card_sum_mul_pow_ne_zero {ι R : Type*} [CommRing R] [IsDomain
       rw [← h k k.isLt, ← s.sum_coe_sort]
       exact e.symm.sum_comp fun i : s ↦ w i * θ i ^ (k : ℕ)
   exact hw₀ (by simpa using congrFun hv (e ⟨i₀, hi₀⟩))
+
+/-! ### Moment recovery -/
+
+/-- **Recovering a weighted power from a window of moments.** Let `β` be pairwise distinct nodes
+of a field and `c` arbitrary weights. The `d` consecutive moments `∑ i, c i * β i ^ (n + j)`,
+`j < d`, form the row vector `(c i * β i ^ n)ᵢ` multiplied by the Vandermonde matrix of `β`, so
+pairing them with the column `k` of its inverse gives back the weighted power `c k * β k ^ n`.
+Zero nodes are allowed, and `n = 0` recovers the weight `c k` from the moments of order `< d`. -/
+theorem mul_pow_eq_sum_inv_vandermonde_mul_sum_mul_pow_add {K : Type*} [Field K] {d : ℕ}
+    {β : Fin d → K} (hβ : Function.Injective β) (c : Fin d → K) (n : ℕ) (k : Fin d) :
+    c k * β k ^ n = ∑ j, (vandermonde β)⁻¹ j k * ∑ i, c i * β i ^ (n + j) := by
+  have hdet : IsUnit (vandermonde β).det := (det_vandermonde_ne_zero_iff.2 hβ).isUnit
+  have h := congrFun (vecMul_vecMul (fun i ↦ c i * β i ^ n) (vandermonde β) (vandermonde β)⁻¹) k
+  rw [mul_nonsing_inv _ hdet, vecMul_one] at h
+  rw [← h]
+  simp only [vecMul, dotProduct, vandermonde_apply, pow_add, Finset.sum_mul, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ by ring
 
 end TauCeti

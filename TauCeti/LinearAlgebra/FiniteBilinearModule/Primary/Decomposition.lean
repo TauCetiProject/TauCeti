@@ -42,6 +42,8 @@ orthogonality and finite-sum identities proved in
 
 public section
 
+open AddCommGroup
+
 namespace TauCeti
 
 namespace FiniteBilinearModule
@@ -124,11 +126,9 @@ assemble to an additive equivalence of the products of their primary components:
 `primeFactorsEquiv`, then apply the given equivalence componentwise. -/
 private noncomputable def primaryComponentsAddEquiv {A B : FiniteBilinearModule}
     (hcard : Nat.card A = Nat.card B)
-    (f : ∀ p : ℕ, p.Prime → AddCommGroup.primaryComponent A p ≃+
-      AddCommGroup.primaryComponent B p) :
+    (f : ∀ p : ℕ, p.Prime → primaryComponent A p ≃+ primaryComponent B p) :
     A.primaryComponents ≃+ B.primaryComponents :=
-  (LinearEquiv.piCongrLeft' ℤ
-    (fun p : (Nat.card A).primeFactors ↦ AddCommGroup.primaryComponent A p.val)
+  (LinearEquiv.piCongrLeft' ℤ (fun p : (Nat.card A).primeFactors ↦ primaryComponent A p.val)
     (primeFactorsEquiv hcard)).toAddEquiv.trans
     (AddEquiv.piCongrRight fun q ↦ f q.val (Nat.prime_of_mem_primeFactors q.property))
 
@@ -137,8 +137,7 @@ private noncomputable def primaryComponentsAddEquiv {A B : FiniteBilinearModule}
 carrier `primaryComponents` so that it rewrites in the isometry proofs below. -/
 private theorem primaryComponentsAddEquiv_apply {A B : FiniteBilinearModule}
     (hcard : Nat.card A = Nat.card B)
-    (f : ∀ p : ℕ, p.Prime → AddCommGroup.primaryComponent A p ≃+
-      AddCommGroup.primaryComponent B p)
+    (f : ∀ p : ℕ, p.Prime → primaryComponent A p ≃+ primaryComponent B p)
     (x : A.primaryComponents) (q : (Nat.card B).primeFactors) :
     primaryComponentsAddEquiv hcard f x q =
       f q.val (Nat.prime_of_mem_primeFactors q.property) (x ((primeFactorsEquiv hcard).symm q)) :=
@@ -148,7 +147,7 @@ private theorem primaryComponentsAddEquiv_apply {A B : FiniteBilinearModule}
 at every prime `p`, their `p`-primary components are isometric. -/
 theorem nonempty_isometry_of_forall_primaryComponent {A B : FiniteBilinearModule}
     (h : ∀ p : ℕ, p.Prime →
-      Nonempty (Isometry (A.primaryComponent p) (B.primaryComponent p))) :
+      Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
     Nonempty (Isometry A B) := by
   have hcard : Nat.card A = Nat.card B :=
     AddCommGroup.natCard_eq_of_natCard_primaryComponent_eq fun p hp ↦
@@ -227,7 +226,7 @@ theorem isNondegenerate_primaryComponents :
 at every prime `p`, their `p`-primary components are isometric. -/
 theorem nonempty_isometry_of_forall_primaryComponent {A B : FiniteQuadraticModule}
     (h : ∀ p : ℕ, p.Prime →
-      Nonempty (Isometry (A.primaryComponent p) (B.primaryComponent p))) :
+      Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
     Nonempty (Isometry A B) := by
   have hcard : Nat.card A = Nat.card B :=
     AddCommGroup.natCard_eq_of_natCard_primaryComponent_eq fun p hp ↦
@@ -240,7 +239,7 @@ theorem nonempty_isometry_of_forall_primaryComponent {A B : FiniteQuadraticModul
   rw [primaryComponents_quadratic, primaryComponents_quadratic]
   -- The coercion of `g.toIntLinearEquiv` is `g` (`AddEquiv.coe_toIntLinearEquiv` is `rfl`).
   exact Fintype.sum_equiv (FiniteBilinearModule.primeFactorsEquiv hcard).symm _ _ fun q ↦
-    (congrArg (fun y : AddCommGroup.primaryComponent B.carrier q.val ↦ B.quadratic y)
+    (congrArg (fun y : primaryComponent B.carrier q.val ↦ B.quadratic y)
       (FiniteBilinearModule.primaryComponentsAddEquiv_apply hcard _ x q)).trans
       ((f q.val (Nat.prime_of_mem_primeFactors q.property)).map_app _)
 
