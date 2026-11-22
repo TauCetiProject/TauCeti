@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 public import Mathlib.LinearAlgebra.Eigenspace.Zero
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Generalized eigenspaces under a pairing with a multiplier
@@ -24,23 +25,26 @@ the dimensions below are algebraic, not geometric, multiplicities, and no splitt
 characteristic polynomials is assumed either.
 
 * The maximal generalized eigenspaces `M_α` of `F` and `M'_β` of `F'` are orthogonal unless
-  `α * β = c` (`LinearMap.apply_eq_zero_of_mem_maxGenEigenspace`). This needs no finiteness, and
-  holds over a domain for pairings with values in a torsion-free module.
+  `α * β = c` (`LinearMap.apply_eq_zero_of_mem_maxGenEigenspace_of_compl₁₂_eq_smul`). This needs
+  no finiteness, and holds over a domain for pairings with values in a torsion-free module.
 * If `α * β = c` with `α` a unit, `B` is left-separating and `M'` is Artinian, then a vector of
-  `M_α` orthogonal to `M'_β` is zero (`LinearMap.eq_zero_of_mem_maxGenEigenspace`). The proof moves
-  `F - α` across the pairing, `B (F a) ((F' - β) b) = -β • B ((F - α) a) b`, and uses the
-  kernel-range (Fitting) decomposition of a high power of `F' - β`.
+  `M_α` orthogonal to `M'_β` is zero
+  (`LinearMap.eq_zero_of_mem_maxGenEigenspace_of_compl₁₂_eq_smul`). The proof moves `F - α` across
+  the pairing, `B (F a) ((F' - β) b) = -β • B ((F - α) a) b`, and uses the kernel-range
+  (Fitting) decomposition of a high power of `F' - β`.
 * Over a field, if `B` is perfect and `c ≠ 0`, then `B` restricts to a perfect pairing of `M_α`
-  with `M'_β` whenever `α * β = c` (`LinearMap.isPerfPair_domRestrict₁₂_maxGenEigenspace`), so these
-  spaces have the same dimension (`LinearMap.finrank_maxGenEigenspace_eq_of_compl₁₂_eq_smul`).
+  with `M'_β` whenever `α * β = c`
+  (`LinearMap.isPerfPair_domRestrict₁₂_maxGenEigenspace_of_compl₁₂_eq_smul`), so these spaces
+  have the same dimension (`LinearMap.finrank_maxGenEigenspace_eq_of_compl₁₂_eq_smul`).
   Consequently the eigenvalues of `F'` with algebraic multiplicity are the `c / α` for the
   eigenvalues `α` of `F` (`LinearMap.roots_charpoly_eq_map_div_of_compl₁₂_eq_smul`); over an
   algebraically closed field these are all the eigenvalues. For `M = M'` and `F = F'`, the
   eigenvalue multiset of `F` is stable under `α ↦ c / α`. A pairing of `F` with a different map
   does not give this: `F = 2` and `F' = 3` on `ℚ`, paired by multiplication, have `c = 6`, and the
   spectrum `{2}` of `F` is not stable under `α ↦ 6 / α`.
-* If `B` identifies `M'` with the dual of a finite free module `M`, then
-  `det F * det F' = c ^ finrank M` (`LinearMap.det_mul_det_eq_of_compl₁₂_eq_smul`).
+* The eigenvalue `0` is ruled out by the two-space determinant identity
+  `det F * det F' = c ^ finrank M` (`LinearMap.det_mul_det_eq_of_compl₁₂_eq_smul`, in
+  `TauCeti.LinearAlgebra.Determinant.Basic`).
 
 The analogous statements for an adjoint pair, `B (f x) y = B x (g y)`, where the eigenvalues of `f`
 and `g` match additively rather than multiplicatively, are in
@@ -93,30 +97,13 @@ private theorem apply_eq_zero_of_pow_sub_smul_apply_eq_zero [IsCancelMulZero R]
 /-- **Generalized eigenspaces are orthogonal unless their eigenvalues multiply to the
 multiplier.** If `B (F x) (F' y) = c • B x y`, then the maximal generalized eigenspace of `F` at
 `α` is orthogonal under `B` to that of `F'` at `β` unless `α * β = c`. -/
-theorem apply_eq_zero_of_mem_maxGenEigenspace [IsCancelMulZero R] [Module.IsTorsionFree R N]
-    (B : M →ₗ[R] M' →ₗ[R] N) {F : End R M} {F' : End R M'} {c α β : R}
+theorem apply_eq_zero_of_mem_maxGenEigenspace_of_compl₁₂_eq_smul [IsCancelMulZero R]
+    [Module.IsTorsionFree R N] (B : M →ₗ[R] M' →ₗ[R] N) {F : End R M} {F' : End R M'} {c α β : R}
     (h : B.compl₁₂ F F' = c • B) (hαβ : α * β ≠ c) {x : M} {y : M'}
     (hx : x ∈ F.maxGenEigenspace α) (hy : y ∈ F'.maxGenEigenspace β) : B x y = 0 := by
   obtain ⟨m, hm⟩ := (mem_maxGenEigenspace F α x).1 hx
   obtain ⟨n, hn⟩ := (mem_maxGenEigenspace F' β y).1 hy
   exact B.apply_eq_zero_of_pow_sub_smul_apply_eq_zero h hαβ m n hm hn
-
-/-- **The two-space determinant identity.** If `B` identifies `M'` with the dual of the finite
-free module `M` and `B (F x) (F' y) = c • B x y`, then `det F * det F' = c ^ finrank M`: under the
-identification, `F'` is `c` times the inverse of the transpose of `F`. -/
-theorem det_mul_det_eq_of_compl₁₂_eq_smul [Module.Free R M] [Module.Finite R M]
-    (B : M →ₗ[R] M' →ₗ[R] R) (hB : Function.Bijective B.flip) {F : End R M} {F' : End R M'}
-    {c : R} (h : B.compl₁₂ F F' = c • B) :
-    LinearMap.det F * LinearMap.det F' = c ^ finrank R M := by
-  let e : M' ≃ₗ[R] Dual R M := LinearEquiv.ofBijective B.flip hB
-  have key : F.dualMap ∘ₗ ((e : M' →ₗ[R] Dual R M) ∘ₗ F' ∘ₗ (e.symm : Dual R M →ₗ[R] M')) =
-      c • LinearMap.id := by
-    ext φ x
-    obtain ⟨y, rfl⟩ := e.surjective φ
-    simpa [e] using congr($h x y)
-  have hdet := congr(LinearMap.det $key)
-  rw [det_comp, det_dualMap, det_conj, det_smul, det_id, mul_one] at hdet
-  rw [hdet, (Free.chooseBasis R M).toDualEquiv.finrank_eq]
 
 /-- Moving `F - α` across the pairing: if `α * β = c`, then
 `B (F a) ((F' - β) b) = -β • B ((F - α) a) b`. -/
@@ -139,9 +126,25 @@ private theorem apply_pow_apply_pow_sub_smul (B : M →ₗ[R] M' →ₗ[R] N) {F
   | succ k ih =>
     have hcomm : (F - α • 1) * F ^ k = F ^ k * (F - α • 1) :=
       ((Commute.sub_left (Commute.refl F) (Commute.smul_left (Commute.one_left F) α))).pow_right k
-    rw [pow_succ' F, pow_succ' (F' - β • 1), mul_apply_eq_comp, mul_apply_eq_comp,
-      B.apply_apply_sub_smul h hαβ, ← mul_apply_eq_comp, hcomm, mul_apply_eq_comp, ih, smul_smul,
-      ← pow_succ', ← mul_apply_eq_comp, ← pow_succ]
+    have hcomm' (v : M) : (F - α • 1) ((F ^ k) v) = (F ^ k) ((F - α • 1) v) := by
+      simpa [mul_apply_eq_comp] using LinearMap.congr_fun hcomm v
+    simp only [pow_succ' F, pow_succ' (F' - β • 1), pow_succ (F - α • 1), pow_succ' (-β),
+      mul_apply_eq_comp, B.apply_apply_sub_smul h hαβ, hcomm', ih, smul_smul]
+
+/-- For a unit `α`, each power of `F` maps the kernel of `(F - α) ^ n` onto itself: since
+`(X - α) ^ n` and `X ^ k` are coprime, a vector `x` with `(F - α) ^ n x = 0` is `F ^ k u` for some
+`u` with `(F - α) ^ n u = 0`. -/
+private theorem exists_pow_apply_eq_of_pow_sub_smul_apply_eq_zero {F : End R M} {α : R}
+    (hα : IsUnit α) {n : ℕ} {x : M} (hx : ((F - α • 1) ^ n) x = 0) (k : ℕ) :
+    ∃ u, ((F - α • 1) ^ n) u = 0 ∧ (F ^ k) u = x := by
+  obtain ⟨a, b, hab⟩ : IsCoprime ((X - C α) ^ n) (X ^ k) := by
+    simpa using (isCoprime_X_sub_C_of_isUnit_sub (a := α) (b := (0 : R)) (by simpa using hα)).pow
+  have hP : aeval F ((X - C α) ^ n) = (F - α • 1) ^ n := by
+    simp [Algebra.algebraMap_eq_smul_one]
+  refine ⟨aeval F b x, ?_, ?_⟩
+  · have hc := LinearMap.congr_fun ((Commute.all ((X - C α) ^ n) b).map (aeval F)).eq x
+    simpa only [map_mul, mul_apply_eq_comp, hP, hx, map_zero] using hc
+  · simpa [mul_comm b, mul_apply_eq_comp, hP, hx] using congr(aeval F $hab x)
 
 section Artinian
 
@@ -152,37 +155,20 @@ vanishes.** Let `B` be left-separating with `B (F x) (F' y) = c • B x y`, let 
 let `α * β = c` with `α` a unit. A vector of the maximal generalized eigenspace of `F` at `α` which
 `B` pairs to zero with the maximal generalized eigenspace of `F'` at `β` is zero. No splitting of
 the characteristic polynomials is needed. -/
-theorem eq_zero_of_mem_maxGenEigenspace (B : M →ₗ[R] M' →ₗ[R] N) (hB : B.SeparatingLeft)
-    {F : End R M} {F' : End R M'} {c α β : R} (h : B.compl₁₂ F F' = c • B) (hα : IsUnit α)
-    (hαβ : α * β = c) {x : M} (hx : x ∈ F.maxGenEigenspace α)
-    (hxy : ∀ y ∈ F'.maxGenEigenspace β, B x y = 0) : x = 0 := by
-  -- The Artinian half of the Fitting decomposition: `ker (F' - β) ^ k + range (F' - β) ^ k = M'`.
-  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1
-    (eventually_codisjoint_ker_pow_range_pow (F' - β • 1))
+theorem eq_zero_of_mem_maxGenEigenspace_of_compl₁₂_eq_smul (B : M →ₗ[R] M' →ₗ[R] N)
+    (hB : B.SeparatingLeft) {F : End R M} {F' : End R M'} {c α β : R}
+    (h : B.compl₁₂ F F' = c • B) (hα : IsUnit α) (hαβ : α * β = c) {x : M}
+    (hx : x ∈ F.maxGenEigenspace α) (hxy : ∀ y ∈ F'.maxGenEigenspace β, B x y = 0) : x = 0 := by
   obtain ⟨n, hn⟩ := (mem_maxGenEigenspace F α x).1 hx
-  -- Since `(X - α) ^ n` and `X ^ (N + n)` are coprime, `x = F ^ (N + n) u` with
-  -- `(F - α) ^ n u = 0`.
-  obtain ⟨a, b, hab⟩ : IsCoprime ((X - C α) ^ n) (X ^ (N + n)) := by
-    simpa using (isCoprime_X_sub_C_of_isUnit_sub (a := α) (b := (0 : R)) (by simpa using hα)).pow
-  have hP : aeval F ((X - C α) ^ n) = (F - α • 1) ^ n := by
-    simp [Algebra.algebraMap_eq_smul_one]
-  have hu : ((F - α • 1) ^ n) (aeval F b x) = 0 := by
-    rw [← hP, ← mul_apply_eq_comp, ← map_mul, mul_comm, map_mul, mul_apply_eq_comp, hP, hn,
-      map_zero]
-  have hxu : x = (F ^ (N + n)) (aeval F b x) := by
-    rw [mul_comm b] at hab
-    have := congr(aeval F $hab x)
-    rw [map_add, map_mul, map_mul, map_one, LinearMap.add_apply, mul_apply_eq_comp, hP, hn,
-      map_zero, zero_add, mul_apply_eq_comp, map_pow, aeval_X, one_apply_eq_self] at this
-    exact this.symm
-  refine hB x fun w ↦ ?_
-  have hw : w ∈ ker ((F' - β • 1) ^ (N + n)) ⊔ range ((F' - β • 1) ^ (N + n)) := by
-    rw [codisjoint_iff.1 (hN (N + n) (Nat.le_add_right N n))]
-    exact Submodule.mem_top
-  obtain ⟨y, hy, _, ⟨z, rfl⟩, rfl⟩ := Submodule.mem_sup.1 hw
-  rw [map_add, hxy y ((mem_maxGenEigenspace F' β y).2 ⟨N + n, hy⟩), zero_add, hxu,
-    B.apply_pow_apply_pow_sub_smul h hαβ, pow_add (F - α • 1) N n, mul_apply_eq_comp, hu, map_zero,
-    map_zero, LinearMap.zero_apply, smul_zero]
+  -- The Artinian half of the Fitting decomposition: `ker (F' - β) ^ k + range (F' - β) ^ k = M'`
+  -- for all large `k`; take such a `k ≥ n` and write `x = F ^ k u` with `(F - α) ^ k u = 0`.
+  obtain ⟨k, hk, hnk⟩ := ((eventually_codisjoint_ker_pow_range_pow (F' - β • 1)).and
+    (Filter.eventually_ge_atTop n)).exists
+  obtain ⟨u, hu, rfl⟩ := exists_pow_apply_eq_of_pow_sub_smul_apply_eq_zero hα hn k
+  refine hB _ fun w ↦ ?_
+  obtain ⟨y, _, hy, ⟨z, rfl⟩, rfl⟩ := Submodule.codisjoint_iff_exists_add_eq.1 hk w
+  simp [hxy y ((mem_maxGenEigenspace F' β y).2 ⟨k, hy⟩), B.apply_pow_apply_pow_sub_smul h hαβ,
+    pow_map_zero_of_le hnk hu]
 
 end Artinian
 
@@ -197,8 +183,8 @@ variable {K V V' : Type*} [Field K] [AddCommGroup V] [Module K V] [AddCommGroup 
 eigenspaces.** If `B` is perfect and `B (F x) (F' y) = c • B x y` with `c ≠ 0`, then for
 `α * β = c` the pairing `B` restricts to a perfect pairing of the maximal generalized eigenspace of
 `F` at `α` with that of `F'` at `β`. No splitting of the characteristic polynomials is needed. -/
-theorem isPerfPair_domRestrict₁₂_maxGenEigenspace (h : B.compl₁₂ F F' = c • B) (hc : c ≠ 0)
-    (hαβ : α * β = c) :
+theorem isPerfPair_domRestrict₁₂_maxGenEigenspace_of_compl₁₂_eq_smul (h : B.compl₁₂ F F' = c • B)
+    (hc : c ≠ 0) (hαβ : α * β = c) :
     (B.domRestrict₁₂ (F.maxGenEigenspace α) (F'.maxGenEigenspace β)).IsPerfPair := by
   have : IsReflexive K V := .of_isPerfPair B
   have : IsReflexive K V' := .of_isPerfPair B.flip
@@ -208,11 +194,12 @@ theorem isPerfPair_domRestrict₁₂_maxGenEigenspace (h : B.compl₁₂ F F' = 
     simpa using congr($h x y)
   refine .of_injective ((injective_iff_map_eq_zero _).2 fun x hx ↦ ?_)
     ((injective_iff_map_eq_zero _).2 fun y hy ↦ ?_)
-  · exact Subtype.ext <| B.eq_zero_of_mem_maxGenEigenspace hB.separatingLeft h
-      (left_ne_zero_of_mul (hαβ ▸ hc)).isUnit hαβ x.property
+  · exact Subtype.ext <| B.eq_zero_of_mem_maxGenEigenspace_of_compl₁₂_eq_smul hB.separatingLeft
+      h (left_ne_zero_of_mul (hαβ ▸ hc)).isUnit hαβ x.property
       fun y hy ↦ by simpa [domRestrict₁₂_apply] using congr($hx ⟨y, hy⟩)
-  · exact Subtype.ext <| B.flip.eq_zero_of_mem_maxGenEigenspace hB.separatingRight hflip
-      (right_ne_zero_of_mul (hαβ ▸ hc)).isUnit ((mul_comm β α).trans hαβ) y.property
+  · exact Subtype.ext <| B.flip.eq_zero_of_mem_maxGenEigenspace_of_compl₁₂_eq_smul
+      hB.separatingRight hflip (right_ne_zero_of_mul (hαβ ▸ hc)).isUnit
+      ((mul_comm β α).trans hαβ) y.property
       fun x hx ↦ by simpa [domRestrict₁₂_apply] using congr($hy ⟨x, hx⟩)
 
 /-- **Paired generalized eigenspaces have the same dimension.** If `B` is perfect and
@@ -222,7 +209,7 @@ theorem finrank_maxGenEigenspace_eq_of_compl₁₂_eq_smul (h : B.compl₁₂ F 
     (hc : c ≠ 0) (hαβ : α * β = c) :
     finrank K (F'.maxGenEigenspace β) = finrank K (F.maxGenEigenspace α) := by
   have : IsReflexive K V := .of_isPerfPair B
-  have := B.isPerfPair_domRestrict₁₂_maxGenEigenspace h hc hαβ
+  have := B.isPerfPair_domRestrict₁₂_maxGenEigenspace_of_compl₁₂_eq_smul h hc hαβ
   exact (finrank_of_isPerfPair
     (B.domRestrict₁₂ (F.maxGenEigenspace α) (F'.maxGenEigenspace β))).symm
 

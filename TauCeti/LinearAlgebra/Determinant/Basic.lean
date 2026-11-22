@@ -58,6 +58,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   same two statements for an alternating bilinear form on a module of rank two.
 * `LinearMap.det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft`: the recovery statement over any
   commutative ring, for a left-separating form.
+* `LinearMap.det_mul_det_eq_of_compl₁₂_eq_smul`: if a pairing `B` identifies `M'` with the dual of
+  a finite free module `M` and `B (F x) (F' y) = c • B x y`, then `det F * det F' = c ^ finrank M`.
 * `Matrix.detRowAlternating_mulVec`: multiplication by a square matrix scales the
   standard-basis determinant form by the matrix determinant.
 * `Matrix.detRowAlternating_pi_apply`: evaluating the row determinant form on a family of
@@ -298,6 +300,25 @@ theorem det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft (b : Basis (Fin 2) 
   refine sub_eq_zero.1 <| halt.eq_zero_of_smul_apply_basis_eq_zero b hω ?_
   rw [sub_smul, sub_eq_zero]
   simpa using congr($hd (b 0) (b 1))
+
+/-- **The two-space determinant identity.** If `B` identifies `M'` with the dual of the finite
+free module `M` and `B (F x) (F' y) = c • B x y`, then `det F * det F' = c ^ finrank M`: under the
+identification, the transpose of `F` composed with `F'` is `c • id`, so `F'` is `c` times the
+inverse of the transpose of `F` when `c` is a unit. -/
+theorem det_mul_det_eq_of_compl₁₂_eq_smul {M' : Type*} [AddCommGroup M'] [Module R M']
+    [Module.Free R M] [Module.Finite R M] (B : M →ₗ[R] M' →ₗ[R] R)
+    (hB : Function.Bijective B.flip) {F : End R M} {F' : End R M'} {c : R}
+    (h : B.compl₁₂ F F' = c • B) :
+    LinearMap.det F * LinearMap.det F' = c ^ finrank R M := by
+  let e : M' ≃ₗ[R] Dual R M := LinearEquiv.ofBijective B.flip hB
+  have key : F.dualMap ∘ₗ ((e : M' →ₗ[R] Dual R M) ∘ₗ F' ∘ₗ (e.symm : Dual R M →ₗ[R] M')) =
+      c • LinearMap.id := by
+    ext φ x
+    obtain ⟨y, rfl⟩ := e.surjective φ
+    simpa [e] using congr($h x y)
+  have hdet := congr(LinearMap.det $key)
+  rw [det_comp, det_dualMap, det_conj, det_smul, det_id, mul_one] at hdet
+  rw [hdet, (Free.chooseBasis R M).toDualEquiv.finrank_eq]
 
 /-- The **Weinstein–Aronszajn identity** for linear maps: for linear maps `X : F' →ₗ[R] F` and
 `Y : F →ₗ[R] F'` between free modules of finite rank, `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)`. This
