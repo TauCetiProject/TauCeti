@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
+public import Mathlib.RingTheory.Binomial
 public import Mathlib.Topology.Order.ProjIcc
 public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 public import TauCeti.Analysis.Complex.SlitPlane
@@ -30,7 +31,8 @@ this cut plane, by the compact-parameter theorem `TauCeti.analyticAt_integral_sm
 
 On the open unit disk `‖z‖ < 1`, expanding `(1 - z t) ^ (-a)` in its binomial series and
 integrating term by term against the Beta weight identifies `Complex.regularizedGaussHGFun a b c z`
-with `Complex.eulerIntegral a b c z` throughout `0 < b.re < c.re`. When `(a + b).re < c.re` as
+with `Complex.eulerIntegral a b c z` throughout `0 < b.re < c.re`; for `a = -n` both sides are
+polynomials in `z`, so the identity holds at every `z`. When `(a + b).re < c.re` as
 well, dominated convergence extends `eulerIntegral a b c` continuously to the closed unit disk and
 evaluates it at `z = 1` via Euler's Beta integral; contiguous parameter shifts then remove
 `0 < b.re < c.re`, yielding Gauss's summation theorem (DLMF 15.4.20) as a boundary limit along
@@ -45,8 +47,12 @@ value can vanish when a Gamma factor has a pole.
 * `Complex.eulerIntegral` — Euler's normalized integral representation.
 * `Complex.analyticOnNhd_eulerIntegral` — joint holomorphy in `(a, z)` on
   `{p | 1 - p.2 ∈ slitPlane}` when `0 < b.re < c.re`.
+* `Complex.hasSum_integral_mul_multichoose_mul_pow` — termwise integration over `[0, 1]` of the
+  binomial series of `(1 - v t) ^ (-a)` against an integrable weight, when `‖v t‖ ≤ q < 1`.
 * `Complex.regularizedGaussHGFun_eq_eulerIntegral` — `𝐅(a, b; c; z) = eulerIntegral a b c z` on
   `‖z‖ < 1` when `0 < b.re < c.re` (DLMF 15.6.1).
+* `Complex.regularizedGaussHGFun_neg_natCast_eq_eulerIntegral` — the same for the terminating
+  `𝐅(-n, b; c; z)` at every `z`, both sides being polynomials in `z`.
 * `Complex.eulerIntegral_one` — `eulerIntegral a b c 1 = Γ(c - a - b) / (Γ(c - a) Γ(c - b))` when
   `0 < b.re` and `(a + b).re < c.re`.
 * `Complex.continuousOn_eulerIntegral_closedBall` — continuity of `eulerIntegral a b c` on
@@ -210,52 +216,86 @@ private theorem inv_Gamma_mul_integral_multichoose_mul_pow (a : ℂ) {b c : ℂ}
     coeff_regularizedGaussHGFunSeries, ← hpoch]
   field_simp [Gamma_ne_zero_of_re_pos hb, Gamma_ne_zero_of_re_pos hcb]
 
+/-- Termwise integration of the binomial series `(1 - v)^{-a} = ∑ₙ (a)ₙ / n! vⁿ` against a weight
+`w` integrable on `[0, 1]`, when `v` is continuous on `[0, 1]` and bounded there by `q < 1`. -/
+theorem hasSum_integral_mul_multichoose_mul_pow (a : ℂ) {w v : ℝ → ℂ}
+    (hw : IntervalIntegrable w volume 0 1) (hv : ContinuousOn v (Icc 0 1)) {q : ℝ} (hq : q < 1)
+    (hvq : ∀ t ∈ Ioc (0 : ℝ) 1, ‖v t‖ ≤ q) :
+    HasSum (fun n : ℕ => ∫ t : ℝ in 0..1, w t * (Ring.multichoose a n * v t ^ n))
+      (∫ t : ℝ in 0..1, w t * (1 - v t) ^ (-a)) := by
+  have hq0 : 0 ≤ q := (norm_nonneg _).trans (hvq 1 ⟨one_pos, le_rfl⟩)
+  have hsum : Summable fun n : ℕ => ‖Ring.multichoose a n‖ * q ^ n :=
+    (TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a) (z := (q : ℂ))
+      (by rwa [Complex.norm_of_nonneg hq0])).summable.norm.congr fun n => by
+        rw [norm_mul, norm_pow, Complex.norm_of_nonneg hq0]
+  refine intervalIntegral.hasSum_integral_of_dominated_convergence
+    (fun n t => ‖w t‖ * (‖Ring.multichoose a n‖ * q ^ n)) (fun n => ?_)
+    (fun n => ae_of_all _ fun t ht => ?_) (ae_of_all _ fun t _ => hsum.mul_left ‖w t‖) ?_
+    (ae_of_all _ fun t ht => ?_)
+  · rw [uIoc_of_le zero_le_one]
+    exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
+      (hw.mul_continuousOn (by rw [uIcc_of_le zero_le_one]; fun_prop))).aestronglyMeasurable
+  · rw [uIoc_of_le zero_le_one] at ht
+    rw [norm_mul (w t), norm_mul (Ring.multichoose a n), norm_pow]
+    gcongr
+    exact hvq t ht
+  · simp_rw [tsum_mul_left]
+    exact hw.norm.mul_const _
+  · rw [uIoc_of_le zero_le_one] at ht
+    have h := TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a)
+      ((hvq t ht).trans_lt hq)
+    rw [one_div, ← cpow_neg] at h
+    exact h.mul_left (w t)
+
 /-- **Euler's integral representation** (DLMF 15.6.1) on the open unit disk: when
 `0 < b.re < c.re` and `‖z‖ < 1`, `regularizedGaussHGFun a b c z` equals `eulerIntegral a b c z`. -/
 theorem regularizedGaussHGFun_eq_eulerIntegral (a : ℂ) {b c z : ℂ}
     (hb : 0 < b.re) (hbc : b.re < c.re) (hz : ‖z‖ < 1) :
     regularizedGaussHGFun a b c z = eulerIntegral a b c z := by
-  have hcb : 0 < (c - b).re := by simpa using sub_pos.mpr hbc
-  let w : ℝ → ℂ := fun t => (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)
-  have hw_int : IntervalIntegrable w volume 0 1 := betaIntegral_convergent hb hcb
-  have hsum : Summable fun n : ℕ => ‖Ring.multichoose a n‖ * ‖z‖ ^ n :=
-    (TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a) hz).summable.norm
-      |>.congr fun n => by rw [norm_mul, norm_pow]
-  have hpoly_cont (n : ℕ) : Continuous fun t : ℝ => Ring.multichoose a n * (z * (t : ℂ)) ^ n := by
-    fun_prop
-  -- Expand `(1 - z t) ^ (-a)` in powers of `z t` and swap sum and integral by dominated
-  -- convergence against the integrable Beta weight `‖w t‖`.
-  have hdct := intervalIntegral.hasSum_integral_of_dominated_convergence
-    (F := fun n t => w t * (Ring.multichoose a n * (z * (t : ℂ)) ^ n))
-    (f := fun t => w t * (1 - z * (t : ℂ)) ^ (-a))
-    (μ := volume) (a := 0) (b := 1)
-    (fun n t => ‖w t‖ * (‖Ring.multichoose a n‖ * ‖z‖ ^ n))
-    (fun n => by
-      rw [uIoc_of_le zero_le_one]
-      exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
-        (hw_int.mul_continuousOn (hpoly_cont n).continuousOn)).aestronglyMeasurable)
-    (fun n => ae_of_all _ fun t ht => by
-      rw [uIoc_of_le zero_le_one] at ht
-      have hzt : ‖z * (t : ℂ)‖ ≤ ‖z‖ := by
-        rw [norm_mul, Complex.norm_of_nonneg ht.1.le]
-        exact mul_le_of_le_one_right (norm_nonneg z) ht.2
-      rw [norm_mul (w t), norm_mul (Ring.multichoose a n), norm_pow]
-      gcongr)
-    (ae_of_all _ fun t _ => hsum.mul_left ‖w t‖)
-    (by
-      simp_rw [tsum_mul_left]
-      exact hw_int.norm.mul_const _)
-    (ae_of_all _ fun t ht => by
-      rw [uIoc_of_le zero_le_one] at ht
-      have hzt : ‖z * (t : ℂ)‖ < 1 := by
-        rw [norm_mul, Complex.norm_of_nonneg ht.1.le]
-        exact (mul_le_of_le_one_right (norm_nonneg z) ht.2).trans_lt hz
-      have h := TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a) hzt
-      rw [one_div, ← cpow_neg] at h
-      exact h.mul_left (w t))
+  -- Expand `(1 - z t) ^ (-a)` in powers of `z t` and integrate term by term.
+  have hdct := hasSum_integral_mul_multichoose_mul_pow a (betaIntegral_convergent (v := c - b) hb
+    (by simpa using sub_pos.mpr hbc)) (v := fun t : ℝ => z * t) (by fun_prop) hz fun t ht => by
+      rw [norm_mul, Complex.norm_of_nonneg ht.1.le]
+      exact mul_le_of_le_one_right (norm_nonneg z) ht.2
   have heuler := (hdct.mul_left (Gamma b * Gamma (c - b))⁻¹).congr_fun fun n =>
     (inv_Gamma_mul_integral_multichoose_mul_pow a hb hbc z n).symm
   exact (regularizedGaussHGFun_eq_tsum_coeff_mul_pow a b c z).trans heuler.tsum_eq
+
+/-- **Euler's integral representation** (DLMF 15.6.1) of the terminating Gauss function: when
+`0 < b.re < c.re`, the polynomial `regularizedGaussHGFun (-n) b c z` equals
+`eulerIntegral (-n) b c z` for every `z`, including `z` on the cut `[1, ∞)`. -/
+theorem regularizedGaussHGFun_neg_natCast_eq_eulerIntegral (n : ℕ) {b c : ℂ} (hb : 0 < b.re)
+    (hbc : b.re < c.re) (z : ℂ) :
+    regularizedGaussHGFun (-n) b c z = eulerIntegral (-n) b c z := by
+  have hcb : 0 < (c - b).re := by simpa using sub_pos.mpr hbc
+  let w : ℝ → ℂ := fun t => (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)
+  have hw_int : IntervalIntegrable w volume 0 1 := betaIntegral_convergent hb hcb
+  -- With first parameter `-n` the Euler kernel is the polynomial `(1 - z t) ^ n`, so the
+  -- integral is a polynomial in `z`.
+  have hpoly : eulerIntegral (-n) b c = fun z => (Gamma b * Gamma (c - b))⁻¹ *
+      ∑ k ∈ Finset.range (n + 1),
+        (∫ t : ℝ in 0..1, w t * ((-(t : ℂ)) ^ k * n.choose k)) * z ^ k := by
+    ext z
+    simp_rw [eulerIntegral_def, ← intervalIntegral.integral_mul_const]
+    rw [← intervalIntegral.integral_finsetSum fun k _ =>
+      (hw_int.mul_continuousOn (by fun_prop)).mul_const _]
+    congr 1
+    refine intervalIntegral.integral_congr fun t _ => ?_
+    rw [neg_neg, cpow_natCast, show (1 : ℂ) - z * t = -(t : ℂ) * z + 1 by ring, add_pow,
+      Finset.mul_sum]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    simp only [w]
+    ring
+  have hf : AnalyticOnNhd ℂ (eulerIntegral (-n) b c) univ := by
+    rw [hpoly]
+    exact fun z _ => Differentiable.analyticAt (by fun_prop) z
+  have hg : AnalyticOnNhd ℂ (regularizedGaussHGFun (-n) b c) univ := by
+    have h := (regularizedGaussHGFunSeries (-n) b c).hasFPowerSeriesOnBall (by simp)
+    rw [radius_regularizedGaussHGFunSeries_eq_top_of_left] at h
+    exact fun z _ => h.analyticAt_of_mem (by simp)
+  refine congrFun (hg.eq_of_eventuallyEq hf (z₀ := 0) ?_) z
+  filter_upwards [Metric.ball_mem_nhds (0 : ℂ) one_pos] with z hz
+  exact regularizedGaussHGFun_eq_eulerIntegral _ hb hbc (by simpa using hz)
 
 /-- At `z = 1`, Euler's normalized integral reduces to Euler's Beta integral when `0 < b.re` and
 `(a + b).re < c.re`. -/
