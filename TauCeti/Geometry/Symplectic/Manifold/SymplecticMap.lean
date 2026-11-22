@@ -22,6 +22,9 @@ the equation `φ^* σ' = σ` of the pullback of forms
 symplectic map from the pullback form, such as the inclusion of an open submanifold with the
 restricted form (`TauCeti.SmoothTwoForm.isSymplecticMap_mpullback`).
 
+The condition can also be imposed only at the points of a set `s`
+(`TauCeti.SmoothTwoForm.IsSymplecticMapOn`); on an open set it depends only on the map there.
+
 The identity is a symplectic map, composites of differentiable symplectic maps are symplectic
 maps, and out of a nondegenerate form the differential of a symplectic map is injective at every
 point, since a vector in its kernel pairs to zero with every vector.
@@ -45,6 +48,10 @@ dynamics are transported, and the maps whose fixed points fixed-point Floer theo
   out of a nondegenerate form is injective.
 * `TauCeti.SmoothTwoForm.IsSymplecticMap.flat_apply`: the flat map of `σ` is that of `σ'` read
   through the differential.
+* `TauCeti.SmoothTwoForm.IsSymplecticMapOn`: maps whose differential preserves the forms at the
+  points of a set, such as partial diffeomorphisms pulling one form back to the other on their
+  sources, with `TauCeti.SmoothTwoForm.IsSymplecticMapOn.comp` and
+  `TauCeti.SmoothTwoForm.IsSymplecticMapOn.congr`.
 * `TauCeti.SmoothTwoForm.IsSymplectomorphism`: diffeomorphisms that are symplectic maps, with
   `TauCeti.SmoothTwoForm.IsSymplectomorphism.symm` and
   `TauCeti.SmoothTwoForm.IsSymplectomorphism.trans`.
@@ -146,6 +153,64 @@ theorem IsSymplecticMap.mfderiv_injective (h : σ.IsSymplecticMap σ' φ) (hσ :
   refine (injective_iff_map_eq_zero _).2 fun v hv ↦
     (isNondegenerate_iff_separatingLeft.1 hσ) x v fun w ↦ ?_
   rw [← h x v w, hv, SmoothBundleForm.eval₂_zero_left]
+
+/-! ### Symplectic maps on a set -/
+
+/-- A map `φ : M → M'` is a **symplectic map on `s`** from `σ` to `σ'` when its differential
+preserves the forms at every point of `s`: `σ'_{φ x}(dφ v, dφ w) = σ_x(v, w)` for `x ∈ s` and
+tangent vectors `v`, `w` at `x`. For a partial diffeomorphism on its source, this says that it
+pulls `σ'` back to `σ` there. -/
+def IsSymplecticMapOn (σ : SmoothTwoForm I M) (σ' : SmoothTwoForm I' M') (φ : M → M')
+    (s : Set M) : Prop :=
+  ∀ x ∈ s, ∀ v w : TangentSpace I x,
+    σ'.eval₂ (φ x) (mfderiv I I' φ x v) (mfderiv I I' φ x w) = σ.eval₂ x v w
+
+/-- A map is symplectic on `s` exactly when its differential preserves the forms at every point
+of `s`. -/
+theorem isSymplecticMapOn_iff {s : Set M} :
+    σ.IsSymplecticMapOn σ' φ s ↔
+      ∀ x ∈ s, ∀ v w : TangentSpace I x,
+        σ'.eval₂ (φ x) (mfderiv I I' φ x v) (mfderiv I I' φ x w) = σ.eval₂ x v w :=
+  Iff.rfl
+
+/-- Apply a symplectic-map-on-a-set hypothesis at a point of the set and two tangent vectors. -/
+theorem IsSymplecticMapOn.apply {s : Set M} (h : σ.IsSymplecticMapOn σ' φ s) {x : M} (hx : x ∈ s)
+    (v w : TangentSpace I x) :
+    σ'.eval₂ (φ x) (mfderiv I I' φ x v) (mfderiv I I' φ x w) = σ.eval₂ x v w :=
+  h x hx v w
+
+/-- A map is a symplectic map on the whole space exactly when it is a symplectic map. -/
+@[simp]
+theorem isSymplecticMapOn_univ : σ.IsSymplecticMapOn σ' φ Set.univ ↔ σ.IsSymplecticMap σ' φ :=
+  ⟨fun h x ↦ h x (Set.mem_univ x), fun h x _ ↦ h x⟩
+
+/-- A symplectic map is a symplectic map on every set. -/
+theorem IsSymplecticMap.isSymplecticMapOn (h : σ.IsSymplecticMap σ' φ) (s : Set M) :
+    σ.IsSymplecticMapOn σ' φ s :=
+  fun x _ ↦ h x
+
+/-- A symplectic map on `s` is a symplectic map on every subset of `s`. -/
+theorem IsSymplecticMapOn.mono {s t : Set M} (h : σ.IsSymplecticMapOn σ' φ s) (hts : t ⊆ s) :
+    σ.IsSymplecticMapOn σ' φ t :=
+  fun x hx ↦ h x (hts hx)
+
+/-- **Composites of symplectic maps on sets.** If `φ` is a symplectic map on `s`, differentiable
+there, mapping `s` into `t`, and `ψ` is a symplectic map on `t`, differentiable at the images of
+the points of `s`, then `ψ ∘ φ` is a symplectic map on `s`. -/
+theorem IsSymplecticMapOn.comp {s : Set M} {t : Set M'} (hψ : σ'.IsSymplecticMapOn σ'' ψ t)
+    (hφ : σ.IsSymplecticMapOn σ' φ s) (hst : Set.MapsTo φ s t)
+    (hψd : ∀ x ∈ s, MDifferentiableAt I' I'' ψ (φ x)) (hφd : ∀ x ∈ s, MDifferentiableAt I I' φ x) :
+    σ.IsSymplecticMapOn σ'' (ψ ∘ φ) s := fun x hx v w ↦ by
+  rw [mfderiv_comp x (hψd x hx) (hφd x hx)]
+  exact (hψ (φ x) (hst hx) _ _).trans (hφ x hx v w)
+
+/-- **Symplectic maps on open sets depend only on the map there.** If `φ` is a symplectic map on
+an open set `s` and `φ'` agrees with `φ` on `s`, then `φ'` is a symplectic map on `s`. -/
+theorem IsSymplecticMapOn.congr {s : Set M} {φ' : M → M'} (h : σ.IsSymplecticMapOn σ' φ s)
+    (hs : IsOpen s) (hφ : Set.EqOn φ φ' s) : σ.IsSymplecticMapOn σ' φ' s := fun x hx v w ↦ by
+  have hφx : φ' =ᶠ[nhds x] φ := (hφ.symm.eventuallyEq_of_mem (hs.mem_nhds hx))
+  rw [hφx.mfderiv_eq, ← hφ hx]
+  exact h x hx v w
 
 /-! ### Symplectomorphisms -/
 
