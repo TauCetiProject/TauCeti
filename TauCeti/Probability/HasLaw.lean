@@ -9,16 +9,17 @@ public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.ConditionalProbability
 public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
+public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.MeasureTheory.Measure.Atom
 public import TauCeti.MeasureTheory.Measure.Dirac
-public import TauCeti.MeasureTheory.Measure.Prod
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
 import Mathlib.Probability.Process.FiniteDimensionalLaws
 
 import TauCeti.MeasureTheory.Measure.AEMeasurable
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Conditioning laws, source atoms, connected sources and almost-sure limits
