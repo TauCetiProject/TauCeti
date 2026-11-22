@@ -12,9 +12,10 @@ import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 /-!
 # Integral Gram matrices and weighted Euclidean realizations
 
-An integer-valued family `x : α → ℤ` with nonnegative weights `w : α → ℝ` embeds `ℤ`-linearly
+An integer-valued family `x : α → ℤ` with nonnegative weights `w : α → ℝ` maps `ℤ`-linearly
 into `EuclideanSpace ℝ α` via `TauCeti.weightedToLp w x`, multiplying coordinate `a` by
-`Real.sqrt (w a)` so that the Euclidean inner product equals `∑ a, w a * x a * y a`.
+`Real.sqrt (w a)` so that the Euclidean inner product equals `∑ a, w a * x a * y a`. When every
+weight is strictly positive, this map is injective (`TauCeti.weightedToLp_injective`).
 
 More generally, whenever an integer matrix `G : Matrix ι ι ℤ` agrees after coercion to `ℝ` with
 the Gram matrix `Matrix.gram ℝ v` of a finite family `v` in a real inner product space,
@@ -25,6 +26,7 @@ and Hadamard's logarithmic bound `Real.log (G.det : ℝ) ≤ ∑ i, 2 * Real.log
 
 * `TauCeti.weightedToLp`: bundled `ℤ`-linear weighted Euclidean realization
   `(α → ℤ) →ₗ[ℤ] EuclideanSpace ℝ α`.
+* `TauCeti.weightedToLp_injective`: injectivity when every weight is strictly positive.
 * `TauCeti.inner_weightedToLp`, `TauCeti.norm_sq_weightedToLp`: inner product and squared norm of
   `TauCeti.weightedToLp`.
 * `Matrix.intCast_det_eq_det_gram`: determinant agreement between an integer matrix `G` and the
@@ -56,6 +58,17 @@ noncomputable def weightedToLp {α : Type*} (w : α → ℝ) : (α → ℤ) →�
 theorem weightedToLp_ofLp {α : Type*} (w : α → ℝ) (x : α → ℤ) (a : α) :
     (weightedToLp w x).ofLp a = Real.sqrt (w a) * (x a : ℝ) := by
   rfl
+
+/-- `TauCeti.weightedToLp w` is injective when every weight `w a` is strictly positive. -/
+theorem weightedToLp_injective {α : Type*} {w : α → ℝ} (hw : ∀ a, 0 < w a) :
+    Function.Injective (weightedToLp w) := by
+  rw [injective_iff_map_eq_zero]
+  intro x hx
+  ext a
+  have ha := congrArg (fun v : EuclideanSpace ℝ α ↦ v.ofLp a) hx
+  simp only [weightedToLp_ofLp, WithLp.ofLp_zero, Pi.zero_apply, mul_eq_zero,
+    Real.sqrt_eq_zero (hw a).le, (hw a).ne', false_or, Int.cast_eq_zero] at ha
+  exact ha
 
 /-- Inner product of two weighted Euclidean realizations when the weights `w` are nonnegative. -/
 theorem inner_weightedToLp {α : Type*} [Fintype α] {w : α → ℝ} (hw : ∀ a, 0 ≤ w a)

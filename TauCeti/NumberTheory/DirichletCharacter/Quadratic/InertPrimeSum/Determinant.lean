@@ -28,8 +28,9 @@ import TauCeti.RingTheory.Polynomial.Resultant.Multiplicity
 For a squarefree integer `d ≠ 1` and parameters `N, R, S : ℕ` satisfying the planar-grid degree
 condition `N * ((R - 1) + (S - 1)) + 2 * (R - 1) * (S - 1) < N ^ 3`, consider the `R * S` basis
 polynomials `z ^ r * z' ^ s ∈ (ℤ√d)[z', z]` (`r < R`, `s < S`) together with their jet evaluations
-`∂_z ^ j P(x + y√d, x - y√d)` on the grid `{0, …, N - 1}³`. Embedding `ℤ√d` into `ℝ²` via the
-trace pairing `2 * (a₁ a₂ + |d| b₁ b₂)` gives an `(R * S) × (R * S)` integer Gram matrix `G`:
+`∂_z ^ j P(x + y√d, x - y√d)` on the grid `{0, …, N - 1}³`. Mapping `ℤ√d` into `ℝ²` via the
+weighted Euclidean pairing `2 * (a₁ a₂ + |d| b₁ b₂)` gives an `(R * S) × (R * S)` integer Gram
+matrix `G`:
 
 1. **Positivity (`1 ≤ G.det`).** Any real linear relation among the jet vectors gives a complex
    bivariate polynomial of bidegree `< (R, S)` vanishing to order `N` in `z` at `(x + y√d, x - y√d)`
@@ -292,39 +293,33 @@ private theorem norm_emb_baseFam_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
       ‖Zsqrtd.embNeg d (baseFam d N R S i k)‖ ≤
         (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val) := by
   have h2Nd_ge : (1 : ℝ) ≤ 2 * N * Real.sqrt d.natAbs := one_le_two_mul_mul_sqrt_natAbs hd0 hN
-  have hpt (sgn : ℤ) (hsgn : |sgn| ≤ 1) (ε : ℂ) (hε : ‖ε‖ = ‖Complex.sqrt (d : ℂ)‖) :
-      ‖((k.1.val : ℂ) + ((sgn * (k.2.1.val : ℤ) : ℤ) : ℂ) * ε)‖ ≤
-        2 * N * Real.sqrt d.natAbs := by
-    have hx : (k.1.val : ℝ) ≤ N := by exact_mod_cast k.1.isLt.le
-    have hy : ‖((sgn * (k.2.1.val : ℤ) : ℤ) : ℂ)‖ ≤ N := by
-      rw [Complex.norm_intCast, ← Int.cast_abs, abs_mul, Int.abs_natCast]
-      have : |sgn| * (k.2.1.val : ℤ) ≤ N := by
-        simpa using mul_le_mul hsgn (by exact_mod_cast k.2.1.isLt.le) (by positivity) (by omega)
-      exact_mod_cast this
-    calc ‖(k.1.val : ℂ) + ((sgn * (k.2.1.val : ℤ) : ℤ) : ℂ) * ε‖
-        ≤ ‖(k.1.val : ℂ)‖ + ‖((sgn * (k.2.1.val : ℤ) : ℤ) : ℂ)‖ * ‖ε‖ :=
-          (norm_add_le _ _).trans (by rw [norm_mul])
-      _ ≤ N + N * Real.sqrt d.natAbs := by
-          rw [Complex.norm_natCast, hε, Complex.norm_sqrt_intCast]
-          exact add_le_add hx (mul_le_mul_of_nonneg_right hy (Real.sqrt_nonneg _))
-      _ ≤ 2 * N * Real.sqrt d.natAbs := by
-          have hsq1 : (1 : ℝ) ≤ Real.sqrt d.natAbs := by
-            rw [← Real.sqrt_one]
-            exact Real.sqrt_le_sqrt (by exact_mod_cast Int.natAbs_pos.mpr hd0)
-          nlinarith
+  have hsq1 : (1 : ℝ) ≤ Real.sqrt d.natAbs := by
+    rw [← Real.sqrt_one]
+    exact Real.sqrt_le_sqrt (by exact_mod_cast Int.natAbs_pos.mpr hd0)
+  have hpt (a b : ℤ) (ha : |a| ≤ N) (hb : |b| ≤ N) :
+      |(a : ℝ)| + |(b : ℝ)| * Real.sqrt d.natAbs ≤ 2 * N * Real.sqrt d.natAbs := by
+    have haR : |(a : ℝ)| ≤ N := by exact_mod_cast ha
+    have hbR : |(b : ℝ)| ≤ N := by exact_mod_cast hb
+    nlinarith
+  have hk1 : |(k.1.val : ℤ)| ≤ N := by
+    rw [abs_of_nonneg (Int.natCast_nonneg _)]
+    exact_mod_cast k.1.isLt.le
+  have hk2 : |(k.2.1.val : ℤ)| ≤ N := by
+    rw [abs_of_nonneg (Int.natCast_nonneg _)]
+    exact_mod_cast k.2.1.isLt.le
   have hdesc : (i.1.val.descFactorial k.2.2.val : ℝ) ≤ (R : ℝ) ^ N := by
     exact_mod_cast (Nat.descFactorial_le_pow _ _).trans
       ((Nat.pow_le_pow_left i.1.isLt.le _).trans (Nat.pow_le_pow_right hR k.2.2.isLt.le))
-  have hbound (φ : ℤ√d →+* ℂ) (ε : ℂ) (hε : ‖ε‖ = ‖Complex.sqrt (d : ℂ)‖)
-      (hφ : ∀ a b : ℤ, φ ⟨a, b⟩ = (a : ℂ) + (b : ℂ) * ε) :
+  have hbound (φ : ℤ√d →+* ℂ)
+      (hnorm : ∀ u : ℤ√d, ‖φ u‖ ≤ |(u.re : ℝ)| + |(u.im : ℝ)| * Real.sqrt d.natAbs) :
       ‖φ (baseFam d N R S i k)‖ ≤
         (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val) := by
     rw [jetEval_basePoly_eq, map_mul, map_mul, map_pow, map_pow, map_natCast, norm_mul, norm_mul,
       norm_pow, norm_pow, Complex.norm_natCast]
-    have hp1 : ‖φ ⟨k.1.val, -(k.2.1.val : ℤ)⟩‖ ≤ 2 * N * Real.sqrt d.natAbs := by
-      simpa [hφ] using hpt (-1) (by norm_num) ε hε
-    have hp2 : ‖φ ⟨k.1.val, (k.2.1.val : ℤ)⟩‖ ≤ 2 * N * Real.sqrt d.natAbs := by
-      simpa [hφ] using hpt 1 (by norm_num) ε hε
+    have hp1 : ‖φ ⟨k.1.val, -(k.2.1.val : ℤ)⟩‖ ≤ 2 * N * Real.sqrt d.natAbs :=
+      (hnorm _).trans (hpt _ _ hk1 (by rw [abs_neg]; exact hk2))
+    have hp2 : ‖φ ⟨k.1.val, (k.2.1.val : ℤ)⟩‖ ≤ 2 * N * Real.sqrt d.natAbs :=
+      (hnorm _).trans (hpt _ _ hk1 hk2)
     calc ‖φ ⟨k.1.val, -k.2.1.val⟩‖ ^ i.2.val * i.1.val.descFactorial k.2.2.val *
             ‖φ ⟨k.1.val, k.2.1.val⟩‖ ^ (i.1.val - k.2.2.val)
         ≤ (2 * N * Real.sqrt d.natAbs) ^ i.2.val * (R : ℝ) ^ N *
@@ -334,8 +329,8 @@ private theorem norm_emb_baseFam_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
           rw [pow_add]; ring
       _ ≤ (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val) :=
           mul_le_mul_of_nonneg_left (pow_le_pow_right₀ h2Nd_ge (by omega)) (by positivity)
-  exact ⟨hbound (Zsqrtd.embPos d) (Complex.sqrt d) rfl (fun _ _ ↦ Zsqrtd.embPos_apply d _),
-    hbound (Zsqrtd.embNeg d) (-Complex.sqrt d) (norm_neg _) (fun _ _ ↦ Zsqrtd.embNeg_apply d _)⟩
+  exact ⟨hbound (Zsqrtd.embPos d) (Zsqrtd.norm_embPos_le d),
+    hbound (Zsqrtd.embNeg d) (Zsqrtd.norm_embNeg_le d)⟩
 
 private theorem two_mul_log_norm_baseVec_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
     (hN : 0 < N) (hR : 0 < R) {i : Fin R × Fin S} (hi : baseVec d N R S i ≠ 0) :
@@ -415,40 +410,14 @@ private theorem log_det_intGram_le {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1)
 
 /-! ### `p`-adic divisibility of `G.det` at inert primes -/
 
-/-- Frobenius at an odd prime `p` with `jacobiSym d p = -1` sends `x + y√d` to `x - y√d` mod `p`. -/
-private theorem inert_frobenius_sub_conj {d : ℤ} {p : ℕ} (hp : p.Prime) (hodd : Odd p)
+/-- Frobenius at a prime `p` with `jacobiSym d p = -1` sends `x + y√d` to `x - y√d` mod `p`. -/
+private theorem inert_frobenius_sub_conj {d : ℤ} {p : ℕ} (hp : p.Prime)
     (hjac : jacobiSym d p = -1) (x y : ℤ) :
     (p : ℤ√d) ∣ (⟨x, y⟩ : ℤ√d) ^ p - ⟨x, -y⟩ := by
   have : Fact p.Prime := ⟨hp⟩
-  have hdec : (⟨x, y⟩ : ℤ√d) = (x : ℤ√d) + (y : ℤ√d) * Zsqrtd.sqrtd := by ext <;> simp
-  obtain ⟨r, hr⟩ := exists_add_pow_prime_eq hp (x : ℤ√d) ((y : ℤ√d) * Zsqrtd.sqrtd)
-  have hmid : (p : ℤ√d) ∣ (p : ℤ√d) * (x : ℤ√d) * ((y : ℤ√d) * Zsqrtd.sqrtd) * r :=
-    ⟨(x : ℤ√d) * ((y : ℤ√d) * Zsqrtd.sqrtd) * r, by ring⟩
-  have hsqrtd_pow : (Zsqrtd.sqrtd : ℤ√d) ^ p = ((d ^ (p / 2) : ℤ) : ℤ√d) * Zsqrtd.sqrtd := by
-    obtain ⟨k, hk⟩ := hodd
-    have hdiv : p / 2 = k := by omega
-    rw [hdiv, hk, pow_add, pow_one, pow_mul, sq, Zsqrtd.dmuld, ← Int.cast_pow]
-  have hx_dvd : (p : ℤ) ∣ x ^ p - x := by
-    rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]; simp [ZMod.pow_card]
-  have hy_dvd : (p : ℤ) ∣ y ^ p * d ^ (p / 2) + y := by
-    rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
-    push_cast
-    rw [ZMod.pow_card, ← legendreSym.eq_pow, jacobiSym.legendreSym.to_jacobiSym, hjac]
-    ring
-  have hrem : (p : ℤ√d) ∣ (x : ℤ√d) ^ p + ((y : ℤ√d) * Zsqrtd.sqrtd) ^ p - ⟨x, -y⟩ := by
-    have hrem_eq : (x : ℤ√d) ^ p + ((y : ℤ√d) * Zsqrtd.sqrtd) ^ p - ⟨x, -y⟩ =
-        ⟨x ^ p - x, y ^ p * d ^ (p / 2) + y⟩ := by
-      rw [mul_pow, hsqrtd_pow, ← mul_assoc, ← Int.cast_pow, ← Int.cast_pow, ← Int.cast_mul]
-      ext <;> simp [-Int.cast_pow, -Int.cast_mul]
-    rw [hrem_eq, ← Int.cast_natCast, Zsqrtd.intCast_dvd]
-    exact ⟨hx_dvd, hy_dvd⟩
-  have hsplit : (⟨x, y⟩ : ℤ√d) ^ p - ⟨x, -y⟩ =
-      ((p : ℤ√d) * (x : ℤ√d) * ((y : ℤ√d) * Zsqrtd.sqrtd) * r) +
-        ((x : ℤ√d) ^ p + ((y : ℤ√d) * Zsqrtd.sqrtd) ^ p - ⟨x, -y⟩) := by
-    rw [hdec, hr]
-    ring
-  rw [hsplit]
-  exact dvd_add hmid hrem
+  have hns : ¬ IsSquare (d : ZMod p) := by
+    rw [← legendreSym.eq_neg_one_iff p, jacobiSym.legendreSym.to_jacobiSym, hjac]
+  simpa [Zsqrtd.star_mk] using Zsqrtd.natCast_dvd_pow_sub_star hp hns ⟨x, y⟩
 
 /-- Exponent `h = min (r / p) (S - 1 - s)` and the modified polynomial
 `z ^ (r - p * h) * (z ^ p - z') ^ h * z' ^ s`. -/
@@ -540,6 +509,30 @@ private theorem shiftPoly_eq_sum_basePoly (d : ℤ) {p R S : ℕ} (hp : 0 < p) (
   rw [Finset.sum_comm]
   simp only [Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
 
+private theorem det_shiftMatrix_eq_one {p R S : ℕ} (hp : 0 < p) :
+    (shiftMatrix (R := R) (S := S) hp).det = 1 := by
+  have hno_match {i j : Fin R × Fin S} (hij : i.1.val ≤ j.1.val) (m : Fin (shiftExp p S i)) :
+      j ≠ shiftIdx hp i m :=
+    fun h ↦ absurd (h ▸ shiftIdx_fst_lt hp i m) (Nat.not_lt.mpr hij)
+  let rank : Fin R × Fin S → OrderDual (Fin R ×ₗ Fin S) := OrderDual.toDual ∘ toLex
+  have htri : (shiftMatrix (R := R) (S := S) hp).BlockTriangular rank := by
+    intro i j hij
+    dsimp only [rank, Function.comp_apply] at hij
+    rw [OrderDual.toDual_lt_toDual] at hij
+    have hij_ne : i ≠ j := fun h ↦ lt_irrefl _ (h ▸ hij)
+    have hi_le_j : i.1.val ≤ j.1.val := by
+      rcases Prod.Lex.lt_iff.mp hij with h1 | ⟨h1, _⟩
+      · exact Nat.le_of_lt h1
+      · exact le_of_eq (congrArg Fin.val h1)
+    simp only [shiftMatrix, Matrix.of_apply, hij_ne, ↓reduceIte, zero_add]
+    exact Finset.sum_eq_zero fun m _ ↦ ite_eq_right_iff.mpr fun h ↦ absurd h (hno_match hi_le_j m)
+  have hdiag (i : Fin R × Fin S) : shiftMatrix (R := R) (S := S) hp i i = 1 := by
+    simp only [shiftMatrix, Matrix.of_apply, ↓reduceIte]
+    rw [Finset.sum_eq_zero fun m _ ↦ ite_eq_right_iff.mpr fun h ↦ absurd h (hno_match le_rfl m),
+      add_zero]
+  rw [htri.det_eq_prod_diag (OrderDual.toDual.injective.comp toLex.injective)]
+  exact Finset.prod_eq_one fun i _ ↦ hdiag i
+
 /-- Unitriangularity of the change of basis `basePoly ↦ shiftPoly` in reverse lexicographic
 order preserves the integer Gram determinant. -/
 private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
@@ -554,37 +547,27 @@ private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
         Finset.sum_apply, Pi.smul_apply]
     rw [hfam, Zsqrtd.famToLp_sum_zsmul]
     rfl
-  have hno_match {i j : Fin R × Fin S} (hij : i.1.val ≤ j.1.val) (m : Fin (shiftExp p S i)) :
-      j ≠ shiftIdx hp i m :=
-    fun h ↦ absurd (h ▸ shiftIdx_fst_lt hp i m) (Nat.not_lt.mpr hij)
-  let rank : Fin R × Fin S → OrderDual (Fin R ×ₗ Fin S) := OrderDual.toDual ∘ toLex
-  have htri : (U.map (Int.castRingHom ℝ)).BlockTriangular rank := by
-    intro i j hij
-    dsimp only [rank, Function.comp_apply] at hij
-    rw [OrderDual.toDual_lt_toDual] at hij
-    have hij_ne : i ≠ j := fun h ↦ lt_irrefl _ (h ▸ hij)
-    have hi_le_j : i.1.val ≤ j.1.val := by
-      rcases Prod.Lex.lt_iff.mp hij with h1 | ⟨h1, _⟩
-      · exact Nat.le_of_lt h1
-      · exact le_of_eq (congrArg Fin.val h1)
-    simp only [Matrix.map_apply, U, shiftMatrix, Matrix.of_apply, hij_ne, ↓reduceIte, zero_add]
-    rw [Finset.sum_eq_zero fun m _ ↦ ite_eq_right_iff.mpr fun h ↦ absurd h (hno_match hi_le_j m),
-      map_zero]
-  have hdiag (i : Fin R × Fin S) : (U.map (Int.castRingHom ℝ)) i i = 1 := by
-    simp only [Matrix.map_apply, U, shiftMatrix, Matrix.of_apply, ↓reduceIte]
-    rw [Finset.sum_eq_zero fun m _ ↦ ite_eq_right_iff.mpr fun h ↦ absurd h (hno_match le_rfl m),
-      add_zero, map_one]
   have hdetU : (U.map (Int.castRingHom ℝ)).det = 1 := by
-    rw [htri.det_eq_prod_diag (OrderDual.toDual.injective.comp toLex.injective)]
-    exact Finset.prod_eq_one fun i _ ↦ hdiag i
+    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, det_shiftMatrix_eq_one hp, map_one]
   have hR_eq : ((Zsqrtd.intGram d (shiftFam d p N R S)).det : ℝ) =
       ((Zsqrtd.intGram d (baseFam d N R S)).det : ℝ) := by
     rw [Zsqrtd.intCast_det_intGram, Zsqrtd.intCast_det_intGram, funext hvec]
     exact Matrix.det_gram_sum_smul_of_det_eq_one hdetU (baseVec d N R S)
   exact_mod_cast hR_eq
 
-/-- Every jet evaluation of `shiftPoly d p i` at an inert odd prime `p` is divisible by `p ^ h`. -/
-private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime) (hodd : Odd p)
+private theorem pow_dvd_factorial_mul_coeff_mul_X_pow {R : Type*} [CommRing R]
+    {p : ℕ} (hp : 0 < p) (m j : ℕ) (B : R[X]) :
+    (p : R) ^ m ∣ (j.factorial : R) * (B * X ^ (p * m)).coeff j := by
+  rcases lt_or_ge j (p * m) with hlt | hge
+  · simp only [coeff_mul_X_pow', not_le.mpr hlt, ↓reduceIte, mul_zero, dvd_zero]
+  · obtain ⟨q_fac, hq_fac⟩ := Nat.pow_dvd_factorial_of_mul_le hp hge
+    have hcast : (j.factorial : R) = (p : R) ^ m * (q_fac : R) := by
+      rw [hq_fac, Nat.cast_mul, Nat.cast_pow]
+    rw [hcast, mul_assoc]
+    exact dvd_mul_right _ _
+
+/-- Every jet evaluation of `shiftPoly d p i` at an inert prime `p` is divisible by `p ^ h`. -/
+private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime)
     (hjac : jacobiSym d p = -1) (N R S : ℕ) (i : Fin R × Fin S)
     (k : Fin N × Fin N × Fin N) :
     (p : ℤ√d) ^ shiftExp p S i ∣ shiftFam d p N R S i k := by
@@ -598,35 +581,27 @@ private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime) (hodd : Odd 
   have hf : f = C (α_bar ^ i.2.val) * X ^ (i.1.val - p * h) * (X ^ p - C α_bar) ^ h := by
     simp [f, shiftPoly, h, mul_assoc]
   obtain ⟨A, hA⟩ := exists_taylor_X_pow_sub_C_eq_C_mul_add_X_pow hp
-    (inert_frobenius_sub_conj hp hodd hjac k.1.val k.2.1.val)
+    (inert_frobenius_sub_conj hp hjac k.1.val k.2.1.val)
   have htf : taylor α f =
       C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h) * (X ^ p + C (p : ℤ√d) * A) ^ h := by
-    simp only [hf, taylor_apply, mul_comp, pow_comp, X_comp, C_comp]
-    rw [← taylor_apply α (X ^ p - C α_bar), hA, add_comm (C (p : ℤ√d) * A) (X ^ p)]
+    rw [hf, taylor_mul, taylor_mul, taylor_C, taylor_X_pow, taylor_pow, hA,
+      add_comm (C (p : ℤ√d) * A) (X ^ p)]
   rw [htf, (Commute.all (X ^ p : (ℤ√d)[X]) (C (p : ℤ√d) * A)).add_pow h, Finset.mul_sum,
     finsetSum_coeff, Finset.mul_sum]
   refine Finset.dvd_sum fun m hm ↦ ?_
   have hm_le : m ≤ h := Nat.lt_succ_iff.mp (Finset.mem_range.mp hm)
-  have hterm : C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h) *
-        ((X ^ p) ^ m * (C (p : ℤ√d) * A) ^ (h - m) * (h.choose m : (ℤ√d)[X])) =
-      C ((p : ℤ√d) ^ (h - m)) *
-        (C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h) * A ^ (h - m) *
-          (h.choose m : (ℤ√d)[X])) * X ^ (p * m) := by
-    rw [mul_pow, ← C_pow, ← pow_mul]; ring
-  rw [hterm, mul_assoc, coeff_C_mul]
   set B := C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h) * A ^ (h - m) *
     (h.choose m : (ℤ√d)[X])
-  rcases lt_or_ge j (p * m) with hlt | hge
-  · simp only [coeff_mul_X_pow', not_le.mpr hlt, ↓reduceIte, mul_zero, dvd_zero]
-  · obtain ⟨q_fac, hq_fac⟩ := Nat.pow_dvd_factorial_of_mul_le hp.pos hge
-    have hcast : (j.factorial : ℤ√d) = (p : ℤ√d) ^ m * (q_fac : ℤ√d) := by exact_mod_cast hq_fac
-    refine ⟨(q_fac : ℤ√d) * (B * X ^ (p * m)).coeff j, ?_⟩
-    rw [hcast]
-    conv_rhs => rw [← Nat.add_sub_of_le hm_le, pow_add]
-    ring
+  have hterm : C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h) *
+        ((X ^ p) ^ m * (C (p : ℤ√d) * A) ^ (h - m) * (h.choose m : (ℤ√d)[X])) =
+      C ((p : ℤ√d) ^ (h - m)) * (B * X ^ (p * m)) := by
+    rw [mul_pow, ← C_pow, ← pow_mul]; dsimp only [B]; ring
+  rw [hterm, coeff_C_mul, mul_left_comm]
+  conv_lhs => rw [← Nat.sub_add_cancel hm_le, pow_add]
+  exact mul_dvd_mul_left _ (pow_dvd_factorial_mul_coeff_mul_X_pow hp.pos m j B)
 
-/-- **Fact 3: `p`-adic divisibility of `G.det`** at odd inert primes. -/
-private theorem pow_dvd_det_intGram {d : ℤ} {p : ℕ} (hp : p.Prime) (hodd : Odd p)
+/-- **Fact 3: `p`-adic divisibility of `G.det`** at inert primes. -/
+private theorem pow_dvd_det_intGram {d : ℤ} {p : ℕ} (hp : p.Prime)
     (hjac : jacobiSym d p = -1) (N R S : ℕ) :
     ((p : ℤ) ^ (2 * ∑ i : Fin R × Fin S, shiftExp p S i)) ∣
       (Zsqrtd.intGram d (baseFam d N R S)).det := by
@@ -636,9 +611,9 @@ private theorem pow_dvd_det_intGram {d : ℤ} {p : ℕ} (hp : p.Prime) (hodd : O
     rw [Zsqrtd.intGram_apply]
     refine Finset.dvd_sum fun k _ ↦ dvd_mul_of_dvd_right ?_ 2
     obtain ⟨⟨a₁, ha₁⟩, ⟨b₁, hb₁⟩⟩ := (Zsqrtd.intCast_dvd ((p : ℤ) ^ shiftExp p S i) _).mp
-      (by simpa using pow_dvd_shiftFam hp hodd hjac N R S i k)
+      (by simpa using pow_dvd_shiftFam hp hjac N R S i k)
     obtain ⟨⟨a₂, ha₂⟩, ⟨b₂, hb₂⟩⟩ := (Zsqrtd.intCast_dvd ((p : ℤ) ^ shiftExp p S j) _).mp
-      (by simpa using pow_dvd_shiftFam hp hodd hjac N R S j k)
+      (by simpa using pow_dvd_shiftFam hp hjac N R S j k)
     refine ⟨a₁ * a₂ + (d.natAbs : ℤ) * b₁ * b₂, ?_⟩
     rw [ha₁, hb₁, ha₂, hb₂]
     ring
@@ -686,12 +661,12 @@ theorem exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one {d : ℤ} (hd 
   set D := (Zsqrtd.intGram d (baseFam d N R S)).det.toNat
   have hD_cast : (D : ℤ) = (Zsqrtd.intGram d (baseFam d N R S)).det :=
     Int.toNat_of_nonneg (by omega)
-  refine ⟨D, by omega, ?_, fun p hp hodd hjac ↦ ?_⟩
+  refine ⟨D, by omega, ?_, fun p hp _hodd hjac ↦ ?_⟩
   · have hD_real : (D : ℝ) = ((Zsqrtd.intGram d (baseFam d N R S)).det : ℝ) := by
       exact_mod_cast hD_cast
     rw [hD_real]
     exact log_det_intGram_le hd hd1 hN hR hdeg
   · rw [← Int.ofNat_dvd, Nat.cast_pow, hD_cast]
-    exact pow_dvd_det_intGram hp hodd hjac N R S
+    exact pow_dvd_det_intGram hp hjac N R S
 
 end TauCeti

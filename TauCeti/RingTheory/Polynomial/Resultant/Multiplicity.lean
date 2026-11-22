@@ -14,6 +14,7 @@ import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import TauCeti.Algebra.Polynomial.Bivariate
 import TauCeti.Algebra.Polynomial.Bivariate.SchwartzZippel
 import TauCeti.Algebra.Polynomial.Roots
+import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
@@ -115,20 +116,6 @@ end DegreeBounds
 
 section ResultantMultiplicity
 
-private theorem dvd_sylvester_of_dvd_coeff {A : Type*} [CommRing A] {f g : A[X]} {a : A}
-    {m n k : ℕ} (hf : ∀ r < k, a ∣ f.coeff r) (hg : ∀ r < k, a ∣ g.coeff r)
-    {i j : Fin (m + n)} (hi : (i : ℕ) < k) :
-    a ∣ sylvester f g m n i j := by
-  by_cases hj : (j : ℕ) < m
-  · rw [sylvester_apply_of_lt _ _ _ j hj]
-    split_ifs
-    · exact hg _ (by omega)
-    · exact dvd_zero _
-  · rw [sylvester_apply_of_le _ _ _ j (Nat.le_of_not_lt hj)]
-    split_ifs
-    · exact hf _ (by omega)
-    · exact dvd_zero _
-
 /-- **Resultant bound on fiber root multiplicities.** Over an integral domain `R`, if `Q : R[X][X]`
 has nonzero formal derivative resultant `Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)`,
 then the multiplicity of `α` as a root of the specialized polynomial `Q.map (evalRingHom β)` is at
@@ -153,10 +140,9 @@ theorem rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero {R : Type*} [Co
     exact hm_deg.trans natDegree_map_le
   -- Shift the outer variable by `C α` so the multiple root moves to `0`.
   set P : R[X][X] := taylor (C α) Q
-  have hPmap : P.map φ = (Q.map φ).comp (X + C α) := by
-    simp [P, taylor_apply, map_comp, φ]
   have htrail : (P.map φ).natTrailingDegree = m := by
-    rw [hPmap, ← rootMultiplicity_eq_natTrailingDegree]
+    simp only [P, map_taylor, φ, coe_evalRingHom, eval_C]
+    exact natTrailingDegree_taylor (Q.map (evalRingHom β)) α
   have hdvd_P {k : ℕ} (hk : k < m) : X - C β ∣ P.coeff k := by
     rw [dvd_iff_isRoot, IsRoot.def]
     have hk0 := coeff_eq_zero_of_lt_natTrailingDegree (htrail.symm ▸ hk)
@@ -174,7 +160,8 @@ theorem rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero {R : Type*} [Co
     rw [← resultant_taylor_deriv Q (C α), resultant, ← hs_card]
     have hprod : (X - C β) ^ s.card =
         ∏ i : Fin (d + (d - 1)), if i ∈ s then X - C β else 1 := by
-      rw [Finset.prod_ite_mem, Finset.univ_inter, Finset.prod_const]
+      rw [Fintype.prod_ite_mem]
+      simp
     rw [hprod]
     refine Matrix.prod_dvd_det_of_dvd_row _ _ fun i j ↦ ?_
     split_ifs with hi
@@ -211,33 +198,21 @@ end ResultantMultiplicity
 
 section BivariateMultiplicityBound
 
-/-- The fiber root multiplicity of `P : K[X][X]` at `(α, β)`, capped at `N` (equal to `N` when the
+/-- The fiber root multiplicity of `P : R[X][X]` at `(α, β)`, capped at `N` (equal to `N` when the
 fiber polynomial `P.map (evalRingHom β)` vanishes identically). -/
-private noncomputable def cappedFiberMult {K : Type*} [Field K] (α β : K) (N : ℕ)
-    (P : K[X][X]) : ℕ :=
-  letI := Classical.propDecidable
-  if P.map (evalRingHom β) = 0 then N else min N ((P.map (evalRingHom β)).rootMultiplicity α)
+private noncomputable def cappedFiberMult {R : Type*} [CommRing R] (α β : R)
+    (N : ℕ) (P : R[X][X]) : ℕ :=
+  (P.map (evalRingHom β)).cappedRootMultiplicity α N
 
-private theorem cappedFiberMult_of_isUnit {K : Type*} [Field K] (α β : K) (N : ℕ)
-    {u : K[X][X]} (hu : IsUnit u) : cappedFiberMult α β N u = 0 := by
-  obtain ⟨p, hp, rfl⟩ := Polynomial.isUnit_iff.mp hu
-  obtain ⟨c, hc, rfl⟩ := Polynomial.isUnit_iff.mp hp
-  have hmap : (C (C c) : K[X][X]).map (evalRingHom β) = C c := by simp
-  have hc0 : (C c : K[X]) ≠ 0 := C_ne_zero.mpr hc.ne_zero
-  simp [cappedFiberMult, hmap, hc0, rootMultiplicity_C]
+private theorem cappedFiberMult_of_isUnit {R : Type*} [CommRing R] [IsDomain R] (α β : R)
+    (N : ℕ) {u : R[X][X]} (hu : IsUnit u) : cappedFiberMult α β N u = 0 :=
+  cappedRootMultiplicity_of_isUnit (hu.map (mapRingHom (evalRingHom β))) α N
 
-private theorem cappedFiberMult_mul_le {K : Type*} [Field K] (α β : K) (N : ℕ)
-    (A B : K[X][X]) :
+private theorem cappedFiberMult_mul_le {R : Type*} [CommRing R] [IsDomain R] (α β : R) (N : ℕ)
+    (A B : R[X][X]) :
     cappedFiberMult α β N (A * B) ≤ cappedFiberMult α β N A + cappedFiberMult α β N B := by
-  dsimp [cappedFiberMult]
-  rw [Polynomial.map_mul]
-  by_cases hA : A.map (evalRingHom β) = 0
-  · simp [hA]
-  by_cases hB : B.map (evalRingHom β) = 0
-  · simp [hB]
-  have hAB : A.map (evalRingHom β) * B.map (evalRingHom β) ≠ 0 := mul_ne_zero hA hB
-  simp only [hA, hB, hAB, ↓reduceIte, rootMultiplicity_mul hAB]
-  omega
+  rw [cappedFiberMult, Polynomial.map_mul]
+  exact cappedRootMultiplicity_mul_le _ _ α N
 
 /-- The bivariate multiplicity bound on a single irreducible factor `Q : K[X][X]`. -/
 private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [CharZero K]
@@ -257,25 +232,32 @@ private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [
       rw [Bivariate.swap_C, natDegree_map_eq_of_injective C_injective]
     let Z := Finset.univ.filter fun i : ι ↦ q.eval (β i) = 0
     have hterm (i : ι) : cappedFiberMult (α i) (β i) N (C q) = if i ∈ Z then N else 0 := by
-      by_cases h0 : q.eval (β i) = 0 <;> simp [cappedFiberMult, Z, h0, rootMultiplicity_C]
+      by_cases h0 : q.eval (β i) = 0
+      · simp [cappedFiberMult, Z, h0]
+      · simp [cappedFiberMult, Z, h0, cappedRootMultiplicity_C]
     have hZ : Z.card ≤ q.natDegree := by
       calc Z.card = ∑ i ∈ Z, 1 := by simp
         _ ≤ ∑ i ∈ Z, q.rootMultiplicity (β i) := Finset.sum_le_sum fun i hi ↦
             Nat.succ_le_of_lt ((rootMultiplicity_pos hq0).mpr (Finset.mem_filter.mp hi).2)
         _ ≤ q.natDegree := q.sum_rootMultiplicity_comp_le_natDegree Z hβ.injOn
-    simp_rw [hterm]
-    rw [Finset.sum_ite_mem, Finset.univ_inter, Finset.sum_const, smul_eq_mul, natDegree_C, hswap,
-      zero_add, mul_zero, zero_mul, add_zero, mul_comm]
-    exact Nat.mul_le_mul_left N hZ
+    calc ∑ i : ι, cappedFiberMult (α i) (β i) N (C q)
+        = ∑ i : ι, if i ∈ Z then N else 0 := Finset.sum_congr rfl fun i _ ↦ hterm i
+      _ = N * Z.card := by rw [Fintype.sum_ite_mem]; simp [mul_comm]
+      _ ≤ N * q.natDegree := Nat.mul_le_mul_left N hZ
+      _ = N * ((C q : K[X][X]).natDegree + (Bivariate.swap (C q : K[X][X])).natDegree) +
+            2 * (C q : K[X][X]).natDegree * (Bivariate.swap (C q : K[X][X])).natDegree := by
+          rw [natDegree_C, hswap]
+          ring
   · let Z := Finset.univ.filter fun i : ι ↦ (Q.map (evalRingHom (β i))).eval (α i) = 0
     have hne (i : ι) : Q.map (evalRingHom (β i)) ≠ 0 := hQ.map_evalRingHom_ne_zero hdeg _
     have hout (i : ι) (hi : i ∉ Z) : cappedFiberMult (α i) (β i) N Q = 0 := by
       have hnroot : ¬ (Q.map (evalRingHom (β i))).IsRoot (α i) := by
         simpa [Z, IsRoot.def] using hi
-      simp [cappedFiberMult, hne i, rootMultiplicity_eq_zero hnroot]
+      simp [cappedFiberMult, cappedRootMultiplicity_of_ne_zero (hne i),
+        rootMultiplicity_eq_zero hnroot]
     have hin (i : ι) : cappedFiberMult (α i) (β i) N Q ≤
         1 + (Q.resultant Q.derivative).rootMultiplicity (β i) := by
-      simp only [cappedFiberMult, hne i, ↓reduceIte]
+      rw [cappedFiberMult, cappedRootMultiplicity_of_ne_zero (hne i)]
       exact (min_le_right _ _).trans (hQ.rootMultiplicity_map_evalRingHom_le (α i) (β i))
     calc ∑ i : ι, cappedFiberMult (α i) (β i) N Q
         = ∑ i ∈ Z, cappedFiberMult (α i) (β i) N Q :=
@@ -310,11 +292,8 @@ theorem card_mul_le_of_pow_dvd_map_evalRingHom {K ι : Type*} [Field K] [CharZer
       N * (F.natDegree + (Bivariate.swap F).natDegree) +
         2 * F.natDegree * (Bivariate.swap F).natDegree := by
   have hsum_F : Fintype.card ι * N = ∑ i : ι, cappedFiberMult (α i) (β i) N F := by
-    have hpt (i : ι) : cappedFiberMult (α i) (β i) N F = N := by
-      dsimp [cappedFiberMult]
-      split_ifs with h0
-      · rfl
-      · exact min_eq_left ((le_rootMultiplicity_iff h0).mpr (hmult i))
+    have hpt (i : ι) : cappedFiberMult (α i) (β i) N F = N :=
+      cappedRootMultiplicity_eq_self_iff.mpr (hmult i)
     simp [hpt]
   rw [hsum_F]
   suffices hgen : ∀ P : K[X][X], P ≠ 0 →

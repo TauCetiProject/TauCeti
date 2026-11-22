@@ -14,19 +14,22 @@ public import TauCeti.NumberTheory.Zsqrtd.ComplexEmbedding
 /-!
 # Euclidean realizations and integer Gram matrices for `ℤ√d`-families
 
-A tuple `v : κ → ℤ√d` embeds `ℤ`-linearly into `EuclideanSpace ℝ (κ × Fin 2)` via
+A tuple `v : κ → ℤ√d` maps `ℤ`-linearly into `EuclideanSpace ℝ (κ × Fin 2)` via
 `Zsqrtd.famToLp d κ`, defined as the composition of integer coordinate extraction
 `Zsqrtd.famCoords d κ` with `TauCeti.weightedToLp (Zsqrtd.famWeight d κ)` (scaling the real part
-by `√2` and the imaginary part by `√(2 * |d|)`). Its real inner product recovers the trace-type
-integer Gram pairing
+by `√2` and the imaginary part by `√(2 * |d|)`). This map is injective whenever `d ≠ 0`
+(`Zsqrtd.famToLp_injective`). Its real inner product recovers the weighted Euclidean integer Gram
+pairing
 `Zsqrtd.intGram d v i j = ∑ k, 2 * ((v i k).re * (v j k).re + |d| * (v i k).im * (v j k).im)`,
 and its squared Euclidean norm equals `∑ k, (‖embPos d (v k)‖ ^ 2 + ‖embNeg d (v k)‖ ^ 2)`.
 
 ## Main results
 
 * `Zsqrtd.famCoords`, `Zsqrtd.famWeight`: integer coordinate extraction and real weights.
+* `Zsqrtd.famWeight_pos`: positivity of `Zsqrtd.famWeight` when `d ≠ 0`.
 * `Zsqrtd.famToLp`: bundled `ℤ`-linear Euclidean realization
   `(κ → ℤ√d) →ₗ[ℤ] EuclideanSpace ℝ (κ × Fin 2)`.
+* `Zsqrtd.famToLp_injective`: injectivity of `Zsqrtd.famToLp` when `d ≠ 0`.
 * `Zsqrtd.famToLp_eq_weightedToLp`, `Zsqrtd.famToLp_apply`: explicit factorization through
   `TauCeti.weightedToLp`.
 * `Zsqrtd.famToLp_ofLp_zero`, `Zsqrtd.famToLp_ofLp_one`: coordinate evaluations.
@@ -75,6 +78,15 @@ theorem famWeight_nonneg (d : ℤ) (κ : Type*) (p : κ × Fin 2) : 0 ≤ famWei
   dsimp [famWeight]
   split_ifs <;> positivity
 
+/-- Positivity of `Zsqrtd.famWeight` whenever `d ≠ 0`. -/
+theorem famWeight_pos {d : ℤ} (hd : d ≠ 0) (κ : Type*) (p : κ × Fin 2) :
+    0 < famWeight d κ p := by
+  dsimp [famWeight]
+  split_ifs
+  · positivity
+  · have : (0 : ℝ) < d.natAbs := Nat.cast_pos.mpr (Int.natAbs_pos.mpr hd)
+    positivity
+
 /-- Weight `2` on real-part coordinates `(k, 0)` in `Zsqrtd.famWeight`. -/
 @[simp]
 theorem famWeight_zero (d : ℤ) {κ : Type*} (k : κ) : famWeight d κ (k, 0) = 2 := by
@@ -87,7 +99,7 @@ theorem famWeight_one (d : ℤ) {κ : Type*} (k : κ) :
   simp [famWeight]
 
 /-- Bundled `ℤ`-linear Euclidean realization of a tuple in `(ℤ√d) ^ κ` whose real inner product
-recovers the trace pairing `∑ k, 2 * (re₁ * re₂ + |d| * im₁ * im₂)`. -/
+recovers the weighted Euclidean pairing `∑ k, 2 * (re₁ * re₂ + |d| * im₁ * im₂)`. -/
 noncomputable def famToLp (d : ℤ) (κ : Type*) :
     (κ → ℤ√d) →ₗ[ℤ] EuclideanSpace ℝ (κ × Fin 2) :=
   (TauCeti.weightedToLp (famWeight d κ)).comp (famCoords d κ)
@@ -101,6 +113,14 @@ theorem famToLp_eq_weightedToLp (d : ℤ) (κ : Type*) :
 theorem famToLp_apply (d : ℤ) {κ : Type*} (v : κ → ℤ√d) :
     famToLp d κ v = TauCeti.weightedToLp (famWeight d κ) (famCoords d κ v) := by
   rfl
+
+/-- `Zsqrtd.famToLp d κ` is injective whenever `d ≠ 0`. -/
+theorem famToLp_injective {d : ℤ} (hd : d ≠ 0) (κ : Type*) :
+    Function.Injective (famToLp d κ) :=
+  (TauCeti.weightedToLp_injective (famWeight_pos hd κ)).comp fun v w h ↦ by
+    ext k
+    · exact congrArg (fun f ↦ f (k, 0)) h
+    · exact congrArg (fun f ↦ f (k, 1)) h
 
 /-- Real-part coordinate evaluation of `Zsqrtd.famToLp`. -/
 @[simp]
@@ -143,8 +163,8 @@ theorem norm_sq_famToLp (d : ℤ) {κ : Type*} [Fintype κ] (v : κ → ℤ√d)
   rw [Nat.cast_natAbs, Int.cast_abs] at h
   linear_combination h
 
-/-- Integer Gram matrix of a finite family of tuples in `(ℤ√d) ^ κ` with respect to the trace
-pairing `∑ k, 2 * (re₁ * re₂ + |d| * im₁ * im₂)`. -/
+/-- Integer Gram matrix of a finite family of tuples in `(ℤ√d) ^ κ` with respect to the weighted
+Euclidean pairing `∑ k, 2 * (re₁ * re₂ + |d| * im₁ * im₂)`. -/
 def intGram (d : ℤ) {κ ι : Type*} [Fintype κ] (v : ι → κ → ℤ√d) : Matrix ι ι ℤ :=
   Matrix.of fun i j ↦
     ∑ k : κ, 2 * ((v i k).re * (v j k).re + (d.natAbs : ℤ) * (v i k).im * (v j k).im)

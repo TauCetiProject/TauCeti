@@ -179,7 +179,7 @@ theorem exists_taylor_X_pow_sub_C_eq_C_mul_add_X_pow {p : ℕ} (hp : p.Prime) {a
   refine ⟨X * C a * r + C γ, ?_⟩
   have hcb : C (a ^ p) - C b = C (p : R) * C γ := by
     rw [← C_sub, hγ, C_mul, C_eq_natCast]
-  rw [taylor_apply, sub_comp, pow_comp, X_comp, C_comp, hr, ← C_pow]
+  rw [map_sub, taylor_X_pow, taylor_C, hr, ← C_pow]
   calc X ^ p + C (a ^ p) + (p : R[X]) * X * C a * r - C b
       = X ^ p + (p : R[X]) * X * C a * r + (C (a ^ p) - C b) := by ring
     _ = C (p : R) * (X * C a * r + C γ) + X ^ p := by rw [hcb, C_eq_natCast]; ring

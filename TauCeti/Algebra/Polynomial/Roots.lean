@@ -29,7 +29,9 @@ roots counted with multiplicity
 (`Polynomial.mul_card_le_natDegree_of_le_rootMultiplicity`).
 
 Finally, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a`
-occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`).
+occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`), and
+`Polynomial.cappedRootMultiplicity` caps the root multiplicity at `N` (taking value `N` on `0`),
+so `k ≤ p.cappedRootMultiplicity a N ↔ (X - C a) ^ k ∣ p` for all `k ≤ N`.
 -/
 
 public section
@@ -59,6 +61,8 @@ theorem eventually_rootMultiplicity_eq_of_roots_eq_map
 end TauCeti
 
 namespace Polynomial
+
+section
 
 variable {R : Type*} [CommRing R] [IsDomain R]
 
@@ -132,5 +136,91 @@ theorem X_sub_C_pow_dvd_smul_multiset_prod_iff [DecidableEq R] {E : Multiset R} 
     (X - C a) ^ k ∣ c • (E.map fun b ↦ X - C b).prod ↔ k ≤ E.count a := by
   rw [← le_rootMultiplicity_iff (smul_ne_zero hc (monic_multisetProd_X_sub_C E).ne_zero),
     ← count_roots, roots_smul_of_ne_zero _ hc, roots_multiset_prod_X_sub_C]
+
+end
+
+section
+
+variable {R : Type*} [Ring R]
+
+/-- The root multiplicity of `p` at `a`, capped at `N` (equal to `N` when `p = 0`).
+This satisfies `k ≤ p.cappedRootMultiplicity a N ↔ (X - C a) ^ k ∣ p` for all `k ≤ N`,
+including `p = 0`, and is subadditive under multiplication. -/
+noncomputable def cappedRootMultiplicity (p : R[X]) (a : R) (N : ℕ) : ℕ :=
+  letI := Classical.propDecidable
+  if p = 0 then N else min N (p.rootMultiplicity a)
+
+/-- `p.cappedRootMultiplicity a N` never exceeds the cap `N`. -/
+theorem cappedRootMultiplicity_le (p : R[X]) (a : R) (N : ℕ) :
+    p.cappedRootMultiplicity a N ≤ N := by
+  dsimp [cappedRootMultiplicity]
+  split_ifs
+  · exact le_rfl
+  · exact min_le_left _ _
+
+/-- The capped root multiplicity of `0` is the cap `N`. -/
+@[simp]
+theorem cappedRootMultiplicity_zero (a : R) (N : ℕ) :
+    (0 : R[X]).cappedRootMultiplicity a N = N := by
+  simp [cappedRootMultiplicity]
+
+/-- For nonzero `p`, `p.cappedRootMultiplicity a N = min N (p.rootMultiplicity a)`. -/
+theorem cappedRootMultiplicity_of_ne_zero {p : R[X]} (hp : p ≠ 0) (a : R) (N : ℕ) :
+    p.cappedRootMultiplicity a N = min N (p.rootMultiplicity a) := by
+  simp [cappedRootMultiplicity, hp]
+
+/-- The capped root multiplicity of a nonzero constant polynomial is `0`. -/
+theorem cappedRootMultiplicity_C {c : R} (hc : c ≠ 0) (a : R) (N : ℕ) :
+    (C c).cappedRootMultiplicity a N = 0 := by
+  simp [cappedRootMultiplicity_of_ne_zero (C_ne_zero.mpr hc), rootMultiplicity_C]
+
+end
+
+section
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- Every unit polynomial has capped root multiplicity `0` at every point. -/
+theorem cappedRootMultiplicity_of_isUnit {u : R[X]} (hu : IsUnit u) (a : R) (N : ℕ) :
+    u.cappedRootMultiplicity a N = 0 := by
+  obtain ⟨c, hc, rfl⟩ := Polynomial.isUnit_iff.mp hu
+  exact cappedRootMultiplicity_C hc.ne_zero a N
+
+/-- `cappedRootMultiplicity` is subadditive under polynomial multiplication. -/
+theorem cappedRootMultiplicity_mul_le (p q : R[X]) (a : R) (N : ℕ) :
+    (p * q).cappedRootMultiplicity a N ≤
+      p.cappedRootMultiplicity a N + q.cappedRootMultiplicity a N := by
+  by_cases hp : p = 0
+  · simp [hp]
+  by_cases hq : q = 0
+  · simp [hq]
+  have hpq : p * q ≠ 0 := mul_ne_zero hp hq
+  rw [cappedRootMultiplicity_of_ne_zero hpq, cappedRootMultiplicity_of_ne_zero hp,
+    cappedRootMultiplicity_of_ne_zero hq, rootMultiplicity_mul hpq]
+  omega
+
+end
+
+section
+
+variable {R : Type*} [CommRing R]
+
+/-- For `k ≤ N`, `k ≤ p.cappedRootMultiplicity a N` if and only if `(X - C a) ^ k ∣ p`
+(including when `p = 0`). -/
+theorem le_cappedRootMultiplicity_iff {p : R[X]} {a : R} {N k : ℕ} (hk : k ≤ N) :
+    k ≤ p.cappedRootMultiplicity a N ↔ (X - C a) ^ k ∣ p := by
+  by_cases hp : p = 0
+  · simp [hp, hk]
+  · rw [cappedRootMultiplicity_of_ne_zero hp, le_min_iff, iff_true_intro hk, true_and,
+      le_rootMultiplicity_iff hp]
+
+/-- `p.cappedRootMultiplicity a N = N` if and only if `(X - C a) ^ N ∣ p`
+(including when `p = 0`). -/
+theorem cappedRootMultiplicity_eq_self_iff {p : R[X]} {a : R} {N : ℕ} :
+    p.cappedRootMultiplicity a N = N ↔ (X - C a) ^ N ∣ p := by
+  rw [← le_cappedRootMultiplicity_iff le_rfl, le_antisymm_iff,
+    iff_true_intro (p.cappedRootMultiplicity_le a N), true_and]
+
+end
 
 end Polynomial

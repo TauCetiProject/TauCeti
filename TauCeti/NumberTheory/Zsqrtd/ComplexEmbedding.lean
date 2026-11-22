@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.RCLike.Sqrt
 public import Mathlib.NumberTheory.Zsqrtd.Basic
+public import TauCeti.NumberTheory.NumberField.Quadratic.EmbeddingBound
+public import TauCeti.NumberTheory.Zsqrtd.QuadraticAlgebra
 import Mathlib.Analysis.InnerProductSpace.Basic
 import TauCeti.Analysis.Complex.Sqrt
 
@@ -21,8 +23,13 @@ For any integer `d : ℤ`, the quadratic order `ℤ√d` admits two ring homomor
 every `d`. (By contrast, complex conjugation on the target `ℂ` exchanges them when `d < 0`, while
 fixing both real images when `d ≥ 0`.) When `¬ IsSquare d`, both embeddings are injective.
 
+Along the canonical equivalence `Zsqrtd.equivQuadraticAlgebra d : ℤ√d ≃+* QuadraticAlgebra ℤ d 0`
+and scalar extension to `ℚ`, these maps agree with `QuadraticAlgebra.sqrtEmbedding (d : ℚ)` and
+`QuadraticAlgebra.negSqrtEmbedding (d : ℚ)`, transporting the coordinate bound
+`‖embPos d u‖, ‖embNeg d u‖ ≤ |u.re| + |u.im| * √|d|`.
+
 The parallelogram law on `ℂ` relates the squared complex norms of the two embeddings to the
-trace-type quadratic form `2 * (re ^ 2 + |d| * im ^ 2)` uniformly in the sign of `d`.
+weighted Euclidean quadratic form `2 * (re ^ 2 + |d| * im ^ 2)` uniformly in the sign of `d`.
 
 ## Main results
 
@@ -30,6 +37,10 @@ trace-type quadratic form `2 * (re ^ 2 + |d| * im ^ 2)` uniformly in the sign of
 * `Zsqrtd.embPos_star`, `Zsqrtd.embNeg_star`: source conjugation `star` on `ℤ√d` exchanges
   `embPos d` and `embNeg d`.
 * `Zsqrtd.embPos_injective`, `Zsqrtd.embNeg_injective`: injectivity whenever `¬ IsSquare d`.
+* `Zsqrtd.embPos_eq_sqrtEmbedding`, `Zsqrtd.embNeg_eq_negSqrtEmbedding`: agreement with
+  `QuadraticAlgebra.sqrtEmbedding` and `QuadraticAlgebra.negSqrtEmbedding`.
+* `Zsqrtd.norm_embPos_le`, `Zsqrtd.norm_embNeg_le`: coordinate norm bounds transported from
+  `QuadraticAlgebra.norm_embedding_algebraMap_le`.
 * `Zsqrtd.two_mul_re_sq_add_im_sq_eq`: parallelogram identity
   `2 * (u.re ^ 2 + |d| * u.im ^ 2) = ‖embPos d u‖ ^ 2 + ‖embNeg d u‖ ^ 2`.
 -/
@@ -76,6 +87,65 @@ theorem embPos_injective {d : ℤ} (hd : ¬ IsSquare d) : Function.Injective (em
 /-- `Zsqrtd.embNeg d` is injective whenever `d` is not a square in `ℤ`. -/
 theorem embNeg_injective {d : ℤ} (hd : ¬ IsSquare d) : Function.Injective (embNeg d) :=
   Zsqrtd.lift_injective _ fun n hn ↦ hd ⟨n, hn⟩
+
+private theorem sqrt_intCast_eq_sqrtRadicand (d : ℤ) :
+    Complex.sqrt (d : ℂ) = QuadraticAlgebra.sqrtRadicand (d : ℚ) := by
+  open scoped ComplexOrder in
+  rcases le_total 0 d with hd | hd
+  · have hq : (0 : ℚ) ≤ d := by exact_mod_cast hd
+    have hc : (0 : ℂ) ≤ (d : ℂ) := by
+      rw [show (d : ℂ) = ((d : ℝ) : ℂ) by norm_cast]
+      exact Complex.zero_le_real.mpr (by exact_mod_cast hd)
+    rw [Complex.sqrt_of_nonneg hc, QuadraticAlgebra.sqrtRadicand_of_nonneg hq]
+    simp
+  · have hq : (d : ℚ) ≤ 0 := by exact_mod_cast hd
+    have hc : (0 : ℂ) ≤ -(d : ℂ) := by
+      rw [show -(d : ℂ) = (((-d : ℤ) : ℝ) : ℂ) by push_cast; ring]
+      exact Complex.zero_le_real.mpr (by exact_mod_cast neg_nonneg.mpr hd)
+    have hneg : -(-(d : ℂ)) = (d : ℂ) := neg_neg _
+    rw [← hneg, Complex.sqrt_neg_of_nonneg hc, Complex.sqrt_of_nonneg hc,
+      QuadraticAlgebra.sqrtRadicand_of_nonpos hq]
+    simp [mul_comm]
+
+/-- `Zsqrtd.embPos d` agrees with `QuadraticAlgebra.sqrtEmbedding (d : ℚ)` via
+`Zsqrtd.equivQuadraticAlgebra d` and scalar extension to `ℚ`. -/
+theorem embPos_eq_sqrtEmbedding (d : ℤ) (u : ℤ√d) :
+    embPos d u =
+      QuadraticAlgebra.sqrtEmbedding (d : ℚ)
+        (algebraMap (QuadraticAlgebra ℤ d 0) (QuadraticAlgebra ℚ d ((0 : ℤ) : ℚ))
+          (equivQuadraticAlgebra d u)) := by
+  rw [embPos_apply, QuadraticAlgebra.sqrtEmbedding_apply]
+  erw [QuadraticAlgebra.Int.re_algebraMap, QuadraticAlgebra.Int.im_algebraMap]
+  simp [sqrt_intCast_eq_sqrtRadicand]
+
+/-- `Zsqrtd.embNeg d` agrees with `QuadraticAlgebra.negSqrtEmbedding (d : ℚ)` via
+`Zsqrtd.equivQuadraticAlgebra d` and scalar extension to `ℚ`. -/
+theorem embNeg_eq_negSqrtEmbedding (d : ℤ) (u : ℤ√d) :
+    embNeg d u =
+      QuadraticAlgebra.negSqrtEmbedding (d : ℚ)
+        (algebraMap (QuadraticAlgebra ℤ d 0) (QuadraticAlgebra ℚ d ((0 : ℤ) : ℚ))
+          (equivQuadraticAlgebra d u)) := by
+  rw [embNeg_apply, QuadraticAlgebra.negSqrtEmbedding_apply]
+  erw [QuadraticAlgebra.Int.re_algebraMap, QuadraticAlgebra.Int.im_algebraMap]
+  simp [sqrt_intCast_eq_sqrtRadicand, sub_eq_add_neg]
+
+/-- Coordinate norm bound for `Zsqrtd.embPos`, transported from
+`QuadraticAlgebra.norm_embedding_algebraMap_le`. -/
+theorem norm_embPos_le (d : ℤ) (u : ℤ√d) :
+    ‖embPos d u‖ ≤ |(u.re : ℝ)| + |(u.im : ℝ)| * Real.sqrt d.natAbs := by
+  rw [embPos_eq_sqrtEmbedding]
+  simpa [Nat.cast_natAbs, Int.cast_abs] using
+    QuadraticAlgebra.norm_embedding_algebraMap_le
+      (QuadraticAlgebra.sqrtEmbedding (d : ℚ)) (equivQuadraticAlgebra d u)
+
+/-- Coordinate norm bound for `Zsqrtd.embNeg`, transported from
+`QuadraticAlgebra.norm_embedding_algebraMap_le`. -/
+theorem norm_embNeg_le (d : ℤ) (u : ℤ√d) :
+    ‖embNeg d u‖ ≤ |(u.re : ℝ)| + |(u.im : ℝ)| * Real.sqrt d.natAbs := by
+  rw [embNeg_eq_negSqrtEmbedding]
+  simpa [Nat.cast_natAbs, Int.cast_abs] using
+    QuadraticAlgebra.norm_embedding_algebraMap_le
+      (QuadraticAlgebra.negSqrtEmbedding (d : ℚ)) (equivQuadraticAlgebra d u)
 
 /-- Parallelogram identity relating the weighted coordinate norm on `ℤ√d` to the two complex
 embeddings, uniformly in the sign of `d`. -/

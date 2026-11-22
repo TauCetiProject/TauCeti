@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Chebyshev
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.FundamentalDiscriminant
 import TauCeti.Algebra.Order.BigOperators.Sum.Min
 import TauCeti.Analysis.SpecialFunctions.Log.ProdPowDvd
+import TauCeti.NumberTheory.Chebyshev.Basic
 import TauCeti.NumberTheory.Chebyshev.PrimeTail
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic.InertPrimeSum.Determinant
 
@@ -204,24 +205,6 @@ private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq
         have h1C_nn : 0 ≤ 1 + 1 / (C : ℝ) := by positivity
         nlinarith
 
-private theorem sum_log_le_of_subset_primesLE {P : Finset ℕ} {B : ℕ}
-    (hP : P ⊆ Nat.primesLE B) :
-    ∑ p ∈ P, Real.log p ≤ Real.log 4 * B :=
-  calc ∑ p ∈ P, Real.log p
-      ≤ ∑ p ∈ Nat.primesLE B, Real.log p :=
-        Finset.sum_le_sum_of_subset_of_nonneg hP fun p hp _ ↦
-          Real.log_nonneg (by exact_mod_cast (Nat.mem_primesLE.mp hp).2.one_le)
-    _ = Chebyshev.theta B := (Chebyshev.theta_eq_sum_primesLE_log B).symm
-    _ ≤ Real.log 4 * B := Chebyshev.theta_le_log4_mul_x (by positivity)
-
-private theorem sum_log_div_le_of_subset_primesLE {P : Finset ℕ} {B : ℕ}
-    (hP : P ⊆ Nat.primesLE B) :
-    ∑ p ∈ P, Real.log p / p ≤ Real.log 4 * B := by
-  refine le_trans (Finset.sum_le_sum fun p hp ↦ ?_) (sum_log_le_of_subset_primesLE hP)
-  have hp_pr := (Nat.mem_primesLE.mp (hP hp)).2
-  exact div_le_self (Real.log_nonneg (by exact_mod_cast hp_pr.one_le))
-    (by exact_mod_cast hp_pr.one_le)
-
 private theorem prime_error_sums_le {P : Finset ℕ} {X S C : ℕ}
     (hP : ∀ p ∈ P, p ∈ Nat.primesLE X ∧ 2 * C < p) (hS_pos : 0 < S) (hC_pos : 0 < C)
     (hS_eq : S = X / C) :
@@ -230,9 +213,10 @@ private theorem prime_error_sums_le {P : Finset ℕ} {X S C : ℕ}
         (X : ℝ) ^ 3 * (∑ p ∈ P, Real.log p / (p : ℝ) ^ 2) ≤
       (X : ℝ) ^ 2 * S * (4 * (C : ℝ) * Real.log 4 + 4 * Real.log 4) := by
   have hsub : P ⊆ Nat.primesLE X := fun p hp ↦ (hP p hp).1
-  have htheta_P : ∑ p ∈ P, Real.log p ≤ Real.log 4 * X := sum_log_le_of_subset_primesLE hsub
+  have htheta_P : ∑ p ∈ P, Real.log p ≤ Real.log 4 * X :=
+    Chebyshev.sum_log_le_of_subset_primesLE hsub
   have hsum_p_le : ∑ p ∈ P, Real.log p / p ≤ Real.log 4 * X :=
-    sum_log_div_le_of_subset_primesLE hsub
+    Chebyshev.sum_log_div_le_of_subset_primesLE hsub
   have htail_sq : ∑ p ∈ P, Real.log p / (p : ℝ) ^ 2 ≤ Real.log 4 / C := by
     calc ∑ p ∈ P, Real.log p / (p : ℝ) ^ 2
         ≤ 2 * Real.log 4 / (2 * (C : ℝ)) :=
@@ -390,7 +374,7 @@ theorem DirichletCharacter.IsPrimitive.sum_primesLE_filter_eq_neg_one_le {R : Ty
       intro p hp
       obtain ⟨hpS, hp2C⟩ := Finset.mem_filter.mp hp
       exact Nat.mem_primesLE.mpr ⟨hp2C, (Nat.mem_primesLE.mp (Finset.mem_filter.mp hpS).1).2⟩
-    exact (TauCeti.InertPrimeSum.sum_log_div_le_of_subset_primesLE hsub).trans_eq
+    exact (Chebyshev.sum_log_div_le_of_subset_primesLE hsub).trans_eq
       (by push_cast; ring)
   have hlarge_sub : S_all.filter (¬ · ≤ 2 * C) ⊆
       (Nat.primesLE (q ^ C)).filter (fun p : ℕ ↦ 2 * C < p ∧ jacobiSym d p = -1) := by
