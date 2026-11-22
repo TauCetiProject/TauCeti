@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Analysis.Matrix.Hermitian
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 import TauCeti.Analysis.InnerProductSpace.Reflection
 import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
@@ -47,8 +48,6 @@ half-space.
   factorization for the symmetric part `(A + A†) / 2` of a coercive operator `A` that need not be
   symmetric (`ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint`), which has the same real
   quadratic form as `A` (`ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply`).
-* `LinearMap.toMatrix_orthonormalBasis_apply`: the entries of the matrix of a linear map in
-  orthonormal bases `(bⱼ)` and `(cᵢ)` are `⟪cᵢ, T bⱼ⟫`.
 * `ContinuousLinearMap.posDef_toMatrix_symmPart`: over the reals, the matrix of the symmetric part
   of a positive-definite operator in an orthonormal basis is positive definite.
 * `TauCeti.exists_linearEquiv_inner_eq_of_posDef`: a symmetric positive-definite bilinear form on a
@@ -243,19 +242,6 @@ theorem exists_linearEquiv_inner_eq_of_posDef {W E : Type*} [AddCommGroup W] [Mo
   exact φ.inner_map_map x y
 
 end TauCeti
-
-namespace LinearMap
-
-/-- The `(i, j)` entry of the matrix of `T : V → W` with respect to orthonormal bases `(bⱼ)` of
-`V` and `(cᵢ)` of `W` is `⟪cᵢ, T bⱼ⟫`. -/
-theorem toMatrix_orthonormalBasis_apply {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
-    [InnerProductSpace 𝕜 V] [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] {ι κ : Type*}
-    [Fintype ι] [DecidableEq ι] [Fintype κ] (b : OrthonormalBasis ι 𝕜 V)
-    (c : OrthonormalBasis κ 𝕜 W) (T : V →ₗ[𝕜] W) (i : κ) (j : ι) :
-    toMatrix b.toBasis c.toBasis T i j = ⟪c i, T (b j)⟫_𝕜 := by
-  simp [toMatrix_apply, OrthonormalBasis.repr_apply_apply]
-
-end LinearMap
 
 namespace ContinuousLinearMap
 
