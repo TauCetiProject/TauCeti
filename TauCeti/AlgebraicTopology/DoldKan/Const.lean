@@ -107,14 +107,6 @@ lemma N.constIso_inv_app_f_zero (X : C) :
 `(ChainComplex.single₀ C).obj X` correspond naturally to constant simplicial objects
 `(SimplicialObject.const C).obj X`. -/
 def Γ.single₀Iso : ChainComplex.single₀ C ⋙ Γ ≅ SimplicialObject.const C :=
-  NatIso.ofComponents
-    (fun X ↦ Γ.mapIso (N.constIso.symm.app X) ≪≫
-      (ε (C := C)).symm.app ((SimplicialObject.const C).obj X))
-    (fun {X Y} f ↦ by
-      dsimp
-      rw [← Category.assoc, ← Γ.map_comp, N.constIso.inv.naturality f, Γ.map_comp, Category.assoc]
-      simpa [Category.assoc] using
-        whisker_eq (Γ.map (N.constIso.inv.app X))
-          ((ε (C := C)).inv.naturality ((SimplicialObject.const C).map f)))
+  N.constIso.symm.compInverseIso (H := equivalence)
 
 end CategoryTheory.Idempotents.DoldKan
