@@ -24,9 +24,10 @@ the ideal is two-sided, of `x * a`.
 
 Finally, the irrelevant ideal `A₊` is two-sided, and in a connected graded algebra, whose
 degree-zero part consists of the scalars, every element is its constant term plus an element of
-`A₊`. So the scalars map onto `A ⧸ A₊`, and over a field `A₊` is maximal. These results need
-neither commutativity of `A` nor grading by `ℕ`: any canonically ordered grading monoid, the
-setting of Mathlib's `HomogeneousIdeal.irrelevant`, will do.
+`A₊`. So the scalars map onto `A ⧸ A₊`, and for a nontrivial algebra over a field `A₊` is
+maximal. These results need neither commutativity of `A` nor grading by `ℕ`: any canonically
+ordered additive commutative grading monoid, the setting of Mathlib's
+`HomogeneousIdeal.irrelevant`, will do.
 
 ## Main results
 
@@ -36,8 +37,8 @@ setting of Mathlib's `HomogeneousIdeal.irrelevant`, will do.
   asks the ideal to be two-sided, through `Ideal.IsTwoSided`.
 * `CompleteOrthogonalIdempotents.mem_zero_of_isHomogeneous_span`: a complete family of orthogonal
   idempotents with homogeneous left ideals consists of degree-zero elements.
-* `HomogeneousIdeal.isTwoSided_toIdeal_irrelevant`: the irrelevant ideal is two-sided, so the
-  quotient `A ⧸ A₊` is a ring.
+* `HomogeneousIdeal.isTwoSided_toIdeal_irrelevant`: the irrelevant ideal is two-sided, so when
+  `A` is a ring the quotient `A ⧸ A₊` carries its quotient ring structure.
 * `TauCeti.GradedAlgebra.exists_sub_algebraMap_mem_irrelevant`: in a connected graded algebra
   every element is a scalar plus an element of the irrelevant ideal.
 * `TauCeti.GradedAlgebra.surjective_algebraMap_quotient_irrelevant`: in a connected graded algebra
@@ -192,14 +193,10 @@ theorem isMaximal_toIdeal_irrelevant {k : Type*} [Field k] [Ring A] [Nontrivial 
     [SetLike σ A] [AddSubmonoidClass σ A] (𝒜 : ι → σ) [GradedRing 𝒜]
     (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra k A)) :
     (irrelevant 𝒜).toIdeal.IsMaximal := by
-  -- `1` has degree-zero component `1 ≠ 0`, so `A₊ ≠ ⊤` and `A ⧸ A₊` is nontrivial.
-  have : Nontrivial (A ⧸ (irrelevant 𝒜).toIdeal) := Ideal.Quotient.nontrivial_iff.2 fun h ↦ by
-    have h1 : (1 : A) ∈ irrelevant 𝒜 := by
-      rw [← HomogeneousIdeal.mem_iff, h]
-      exact Submodule.mem_top
-    rw [mem_irrelevant_iff, GradedRing.proj_apply,
-      decompose_of_mem_same 𝒜 SetLike.GradedOne.one_mem] at h1
-    exact one_ne_zero h1
+  -- `A₊` is the kernel of a ring map to the nontrivial ring `A`, so `A ⧸ A₊` is nontrivial.
+  have : Nontrivial (A ⧸ (irrelevant 𝒜).toIdeal) := Ideal.Quotient.nontrivial_iff.2 <| by
+    rw [toIdeal_irrelevant]
+    exact RingHom.ker_ne_top (GradedRing.projZeroRingHom 𝒜)
   -- `k ≃ A ⧸ A₊`, and `⊥` is maximal in the field `k`.
   exact (Ideal.bot_quotient_isMaximal_iff _).1 <| (Ideal.isMaximal_iff_of_bijective
     (algebraMap k (A ⧸ (irrelevant 𝒜).toIdeal)) ⟨(algebraMap k _).injective,
