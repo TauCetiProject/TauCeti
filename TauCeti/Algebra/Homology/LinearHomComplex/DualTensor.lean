@@ -9,7 +9,10 @@ public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplexSingle
 public import Mathlib.Data.Int.Interval
 public import Mathlib.LinearAlgebra.Contraction
+public import TauCeti.Algebra.Homology.LinearHomComplex.Bidual
 public import TauCeti.Algebra.Homology.LinearHomComplex.Composition
+public import TauCeti.Algebra.Homology.LinearHomComplex.Curry
+public import TauCeti.Algebra.Homology.LinearHomComplex.Tensor
 
 /-!
 # The dual-tensor comparison of cochain complexes of modules
@@ -24,10 +27,21 @@ complex. Its term of degree `q` consists of the linear forms on `A^(-q)`, and it
 
 which sends `b ⊗ φ`, for `b ∈ Bᵖ` and `φ ∈ (A∨)^q`, to the cochain `a ↦ φ(a) • b` of degree
 `p + q`. No sign enters: in the Koszul convention, `φ` already stands next to its argument. It is
-the complex-level form of Mathlib's contraction `dualTensorHom`. Reading a functional on an
-external kernel `A ⊗ B∨` as an operator from `A` to `B` ends with this map; it must first be
-preceded by the identification of `(A ⊗ B∨)∨` with `B∨∨ ⊗ A∨` and the inverse of the bidual map
-on `B`, neither of which is in this file.
+the complex-level form of Mathlib's contraction `dualTensorHom`.
+
+The comparison also computes the dual of a tensor product. The pairing
+`B∨ ⊗ A∨ ⟶ (A ⊗ B)∨`, `(g ⊗ f)(a ⊗ b) = f(a) g(b)` (`TauCeti.linearHomComplexDualDistrib`), is the
+dual-tensor comparison `B∨ ⊗ A∨ ⟶ Hom(A, B∨)` followed by uncurrying
+`Hom(A, Hom(B, R[0])) ≅ Hom(A ⊗ B, R[0])`, with no sign
+(`TauCeti.linearHomComplexDualTensor_comp_linearHomComplexCurryIso_inv`). So when `A` is a finite
+complex of finitely generated projective modules, the dual of `A ⊗ B` is `B∨ ⊗ A∨`, for every `B`.
+
+This is how a functional on an external kernel `A ⊗ B∨` is read as an operator from `A` to `B`, as
+counts of moduli spaces are in Floer theory: uncurrying gives an operator from `A` to `B∨∨`, and the
+inverse of the chain-compatible bidual map `j : B ⟶ B∨∨` (`CochainComplex.bidualHom`) brings it
+back to `B` (`TauCeti.linearHomComplexTensorDualIso`). Through `B∨∨ ⊗ A∨ ⟶ (A ⊗ B∨)∨`, this
+reading is `j⁻¹` on the first factor followed by the dual-tensor comparison `B ⊗ A∨ ⟶ Hom(A, B)`
+(`TauCeti.linearHomComplexDualDistrib_comp_linearHomComplexTensorDualIso_hom`).
 
 The comparison is built from structure that already exists rather than by hand:
 
@@ -59,6 +73,16 @@ The comparison is built from structure that already exists rather than by hand:
   `TauCeti.isIso_linearHomComplexDualTensor_of_isStrictlyGE_of_isStrictlyLE` states this for
   bounded complexes. Without finiteness the comparison need not be surjective: the Hom complex is
   a product over `i`, while the tensor product is a direct sum.
+* `TauCeti.linearHomComplexDualTensor_comp_linearHomComplexCurryIso_inv`: the pairing
+  `B∨ ⊗ A∨ ⟶ (A ⊗ B)∨` is the dual-tensor comparison followed by uncurrying.
+* `TauCeti.isIso_linearHomComplexDualDistrib` and
+  `TauCeti.isIso_linearHomComplexDualDistrib_of_isStrictlyGE_of_isStrictlyLE`: the pairing
+  `B∨ ⊗ A∨ ⟶ (A ⊗ B)∨` is an isomorphism when `A` is a finite complex of finitely generated
+  projective modules, with no hypothesis on `B`.
+* `TauCeti.linearHomComplexTensorDualIso`: the identification `(A ⊗ B∨)∨ ≅ Hom(A, B)` for `B`
+  with reflexive terms, and
+  `TauCeti.linearHomComplexDualDistrib_comp_linearHomComplexTensorDualIso_hom`, its reading
+  through `B∨∨ ⊗ A∨`.
 
 ## References
 
@@ -477,5 +501,156 @@ theorem isIso_linearHomComplexDualTensor_of_isStrictlyGE_of_isStrictlyLE
     rw [Finset.mem_Icc, not_and_or, not_le, not_le] at hi
     exact hi.elim (fun h => CochainComplex.isZero_of_isStrictlyGE A a i h)
       (fun h => CochainComplex.isZero_of_isStrictlyLE A b i h)
+
+/-! ### The dual of a tensor product -/
+
+/-- Uncurrying the cochain `a ↦ f(a) • g` from `A` to `B∨`, for `g` of degree `i` in `B∨` and `f`
+of degree `j` in `A∨`, gives the pairing `a ⊗ b ↦ f(a) g(b)` of `g` and `f` on `A ⊗ B`. -/
+theorem _root_.CochainComplex.HomComplex.Cochain.uncurry_comp_cochainFromTensorUnitLinearEquiv_symm
+    {A B : CochainComplex (ModuleCat.{v} R) ℤ} {i j n : ℤ} (h : i + j = n)
+    (g : Cochain B (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) i)
+    (f : Cochain A (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) j) :
+    (f.comp ((cochainFromTensorUnitLinearEquiv R (linearHomComplex R B (𝟙_ _)) i).symm g)
+      (by omega : j + i = n)).uncurry = g.dualDistrib f n h := by
+  obtain ⟨φ, rfl⟩ := Cochain.toSingleMk_surjective f (-j) (by omega)
+  obtain ⟨ψ, rfl⟩ := Cochain.toSingleMk_surjective g (-i) (by omega)
+  refine Cochain.ext_tensorObj fun a b k l hab hkl => ModuleCat.MonoidalCategory.tensor_ext
+    fun x y => ?_
+  rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply]
+  -- Both sides vanish unless `x` and `y` lie in the degrees `-j` and `-i` on which `f` and `g`
+  -- are supported.
+  by_cases ha : a = -j
+  swap
+  · rw [Cochain.uncurry_v_hom_ιTensorObj_apply _ hkl hab x y rfl,
+      Cochain.comp_v _ _ _ a (a + j) (a + n) rfl (by omega),
+      Cochain.toSingleMk_v_eq_zero _ _ _ _ _ ha, ← LinearMap.comp_apply, ← ModuleCat.hom_comp,
+      Cochain.ιTensorObj_dualDistrib_v _ _ h a b k l (a + j) (b + i) hab hkl rfl rfl,
+      Cochain.toSingleMk_v_eq_zero _ _ _ _ _ ha]
+    simp
+  subst ha
+  -- The tensor unit `𝟙_ (ModuleCat R)` of the target of `φ` and the module `ModuleCat.of R R`
+  -- through which `cochainFromTensorUnitLinearEquiv` reads elements are the same module.
+  have hs (r : R) : (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (ModuleCat.of R R)).hom.hom
+      ((HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv.hom r) = r :=
+    congrArg (fun u => u.hom r)
+      (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv_hom_id
+  rw [Cochain.uncurry_v_hom_ιTensorObj_apply _ hkl hab x y (show -j + n = i by omega),
+    Cochain.comp_v _ _ _ (-j) 0 i (by omega) (by omega), Cochain.toSingleMk_v,
+    cochainFromTensorUnitLinearEquiv_symm_apply, Cochain.fromSingleMk_v]
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom,
+    LinearMap.toSpanSingleton_apply, hs]
+  rw [Cochain.smul_v, ModuleCat.hom_smul, LinearMap.smul_apply, ← LinearMap.comp_apply,
+    ← ModuleCat.hom_comp]
+  by_cases hb : b = -i
+  swap
+  · rw [Cochain.ιTensorObj_dualDistrib_v _ _ h (-j) b k l 0 (b + i) hab hkl (by omega) rfl,
+      Cochain.toSingleMk_v_eq_zero _ _ _ _ _ hb, Cochain.toSingleMk_v_eq_zero _ _ _ _ _ hb]
+    simp
+  subst hb
+  obtain rfl : l = 0 := by omega
+  rw [Cochain.ιTensorObj_dualDistrib_v _ _ h (-j) (-i) k 0 0 0 hab hkl (by omega) (by omega),
+    Cochain.toSingleMk_v, Cochain.toSingleMk_v]
+  have hunit := congrArg (fun u => u.hom
+      ((HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv.hom (φ.hom x) ⊗ₜ
+        (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv.hom (ψ.hom y)))
+    (HomologicalComplex.ι_leftUnitor_hom_f (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) 0)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.MonoidalCategory.tensorHom_tmul,
+    ModuleCat.MonoidalCategory.whiskerRight_apply,
+    ModuleCat.MonoidalCategory.leftUnitor_hom_apply] at hunit ⊢
+  refine Eq.trans ?_ hunit.symm
+  rw [Iso.inv_hom_id_apply]
+
+/-- **The dual of a tensor product through currying.** The comparison `B∨ ⊗ A∨ ⟶ (A ⊗ B)∨` is the
+dual-tensor comparison `B∨ ⊗ A∨ ⟶ Hom(A, B∨)`, which sends `g ⊗ f` to `a ↦ f(a) • g`, followed by
+uncurrying `Hom(A, Hom(B, R[0])) ≅ Hom(A ⊗ B, R[0])`. -/
+@[reassoc]
+theorem linearHomComplexDualTensor_comp_linearHomComplexCurryIso_inv
+    (A B : CochainComplex (ModuleCat.{v} R) ℤ) :
+    linearHomComplexDualTensor R A (linearHomComplex R B (𝟙_ _)) ≫
+        (linearHomComplexCurryIso A B (𝟙_ _)).inv =
+      linearHomComplexDualDistrib R A B := by
+  ext n : 1
+  refine HomologicalComplex.mapBifunctor.hom_ext fun i j h =>
+    ModuleCat.MonoidalCategory.tensor_ext fun g f => ?_
+  rw [ι_linearHomComplexDualDistrib_tmul, HomologicalComplex.comp_f]
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
+  refine (congrArg (fun z => ((linearHomComplexCurryIso A B _).inv.f n).hom z)
+    (linearHomComplexDualTensor_ιTensorObj_tmul A _ i j n h g f)).trans ?_
+  rw [linearHomComplexCurryIso_inv_f_apply]
+  exact Cochain.uncurry_comp_cochainFromTensorUnitLinearEquiv_symm h g f
+
+/-- **The dual of a tensor product is the tensor product of the duals.** If every term of `A` is a
+finitely generated projective module and only finitely many terms are nonzero, the comparison
+`B∨ ⊗ A∨ ⟶ (A ⊗ B)∨` is an isomorphism of complexes, for every complex `B`. -/
+theorem isIso_linearHomComplexDualDistrib (A B : CochainComplex (ModuleCat.{v} R) ℤ)
+    [∀ i, Module.Finite R (A.X i)] [∀ i, Module.Projective R (A.X i)] (S : Finset ℤ)
+    (hS : ∀ i ∉ S, IsZero (A.X i)) : IsIso (linearHomComplexDualDistrib R A B) := by
+  have := isIso_linearHomComplexDualTensor A (linearHomComplex R B (𝟙_ _)) S hS
+  rw [← linearHomComplexDualTensor_comp_linearHomComplexCurryIso_inv]
+  infer_instance
+
+/-- The comparison `B∨ ⊗ A∨ ⟶ (A ⊗ B)∨` is an isomorphism when `A` is a bounded complex of finitely
+generated projective modules. -/
+theorem isIso_linearHomComplexDualDistrib_of_isStrictlyGE_of_isStrictlyLE
+    (A B : CochainComplex (ModuleCat.{v} R) ℤ) [∀ i, Module.Finite R (A.X i)]
+    [∀ i, Module.Projective R (A.X i)] (a b : ℤ) [CochainComplex.IsStrictlyGE A a]
+    [CochainComplex.IsStrictlyLE A b] :
+    IsIso (linearHomComplexDualDistrib R A B) := by
+  have := isIso_linearHomComplexDualTensor_of_isStrictlyGE_of_isStrictlyLE A
+    (linearHomComplex R B (𝟙_ _)) a b
+  rw [← linearHomComplexDualTensor_comp_linearHomComplexCurryIso_inv]
+  infer_instance
+
+/-! ### Functionals on `A ⊗ B∨` as operators from `A` to `B` -/
+
+/-- **Functionals on `A ⊗ B∨` are operators from `A` to `B`.** Uncurrying identifies the dual
+`(A ⊗ B∨)∨` with `Hom(A, B∨∨)`, and the inverse of the chain-compatible bidual map
+`j : B ⟶ B∨∨` (`CochainComplex.bidualHom`, `j(b) = (-1)^|b| (φ ↦ φ(b))`) identifies this with
+`Hom(A, B)` when every term of `B` is reflexive. Through the comparison `B∨∨ ⊗ A∨ ⟶ (A ⊗ B∨)∨` it
+is `j⁻¹` followed by the dual-tensor comparison `B ⊗ A∨ ⟶ Hom(A, B)`
+(`TauCeti.linearHomComplexDualDistrib_comp_linearHomComplexTensorDualIso_hom`). -/
+noncomputable def linearHomComplexTensorDualIso (A B : CochainComplex (ModuleCat.{v} R) ℤ)
+    [∀ p, Module.IsReflexive R (B.X p)] :
+    linearHomComplex R (A ⊗ linearHomComplex R B (𝟙_ _)) (𝟙_ _) ≅ linearHomComplex R A B :=
+  linearHomComplexCurryIso A (linearHomComplex R B (𝟙_ _)) (𝟙_ _) ≪≫
+    { hom := linearHomComplexPostcomp R A (inv (CochainComplex.bidualHom B))
+      inv := linearHomComplexPostcomp R A (CochainComplex.bidualHom B)
+      hom_inv_id := by
+        rw [← linearHomComplexPostcomp_comp, IsIso.inv_hom_id, linearHomComplexPostcomp_id]
+      inv_hom_id := by
+        rw [← linearHomComplexPostcomp_comp, IsIso.hom_inv_id, linearHomComplexPostcomp_id] }
+
+variable (A B : CochainComplex (ModuleCat.{v} R) ℤ) [∀ p, Module.IsReflexive R (B.X p)]
+
+/-- The operator read off a functional on `A ⊗ B∨` is its curried form followed by the inverse of
+the bidual map of `B`. -/
+theorem linearHomComplexTensorDualIso_hom :
+    (linearHomComplexTensorDualIso A B).hom =
+      (linearHomComplexCurryIso A (linearHomComplex R B (𝟙_ _)) (𝟙_ _)).hom ≫
+        linearHomComplexPostcomp R A (inv (CochainComplex.bidualHom B)) :=
+  (rfl)
+
+/-- The functional on `A ⊗ B∨` of an operator `T` from `A` to `B` is `a ⊗ φ ↦ j(T a)(φ)`: the
+bidual map of `B` followed by uncurrying. -/
+theorem linearHomComplexTensorDualIso_inv :
+    (linearHomComplexTensorDualIso A B).inv =
+      linearHomComplexPostcomp R A (CochainComplex.bidualHom B) ≫
+        (linearHomComplexCurryIso A (linearHomComplex R B (𝟙_ _)) (𝟙_ _)).inv :=
+  (rfl)
+
+/-- **Reading a functional as an operator through `B∨∨ ⊗ A∨`.** On the image of
+`B∨∨ ⊗ A∨ ⟶ (A ⊗ B∨)∨`, the identification `(A ⊗ B∨)∨ ≅ Hom(A, B)` is the inverse of the bidual
+map `j : B ⟶ B∨∨` followed by the dual-tensor comparison `B ⊗ A∨ ⟶ Hom(A, B)`. -/
+@[reassoc]
+theorem linearHomComplexDualDistrib_comp_linearHomComplexTensorDualIso_hom :
+    linearHomComplexDualDistrib R A (linearHomComplex R B (𝟙_ _)) ≫
+        (linearHomComplexTensorDualIso A B).hom =
+      inv (CochainComplex.bidualHom B) ▷ _ ≫ linearHomComplexDualTensor R A B := by
+  rw [← linearHomComplexDualTensor_comp_linearHomComplexCurryIso_inv,
+    linearHomComplexTensorDualIso_hom, Category.assoc, Iso.inv_hom_id_assoc,
+    linearHomComplexDualTensor_naturality_target]
+  -- The double dual `CochainComplex.linearDual` is taken into the single complex on
+  -- `ModuleCat.of R R`, which is the tensor unit `𝟙_` of cochain complexes of modules.
+  rfl
 
 end TauCeti
