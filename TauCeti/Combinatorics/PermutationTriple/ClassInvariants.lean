@@ -18,13 +18,6 @@ characteristic, combinatorial genus, automorphism-group order, and regularity of
 triple. This file descends each invariant to `TauCeti.PermutationTriple.IsoClass` and restricts
 them along `TauCeti.ConnectedIsoClass.forget` to `TauCeti.ConnectedIsoClass`, where `χ ≤ 2`,
 `2 - 2 g = χ`, `|Aut| ∣ n`, and regularity is equivalent to `|Aut| = n`.
-
-## Main definitions and results
-
-* `TauCeti.PermutationTriple.IsoClass.cycleData`, `unorderedCycleData`, `cycleCounts`, `eulerChar`,
-  `genus`, `natCardAutomorphismGroup`, `IsRegular` and their restrictions to `ConnectedIsoClass`.
-* `TauCeti.ConnectedIsoClass.eulerChar_le_two`, `natCast_genus`, `two_sub_two_mul_genus`,
-  `natCardAutomorphismGroup_dvd`, `isRegular_iff_natCardAutomorphismGroup`.
 -/
 
 open Equiv
@@ -214,9 +207,8 @@ theorem two_sub_two_mul_genus : 2 - 2 * (c.genus : ℤ) = c.eulerChar := by
 noncomputable def natCardAutomorphismGroup : ℕ := c.forget.natCardAutomorphismGroup
 
 /-- Evaluating `natCardAutomorphismGroup` on `mk t` gives `Nat.card t.val.automorphismGroup`. -/
-@[simp] theorem natCardAutomorphismGroup_mk :
-    (mk t).natCardAutomorphismGroup = Nat.card t.val.automorphismGroup := by
-  simp [natCardAutomorphismGroup]
+@[simp] theorem natCardAutomorphismGroup_mk : (mk t).natCardAutomorphismGroup =
+    Nat.card t.val.automorphismGroup := by simp [natCardAutomorphismGroup]
 
 /-- Forgetting connectedness preserves `natCardAutomorphismGroup`. -/
 @[simp] theorem natCardAutomorphismGroup_forget :

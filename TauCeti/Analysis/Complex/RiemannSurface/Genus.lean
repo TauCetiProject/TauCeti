@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
 public import TauCeti.Analysis.Complex.RiemannSurface.Branch.EulerCharacteristic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch
 public import TauCeti.Geometry.Manifold.Complex.FiniteCWType
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.RiemannSurface.Branch.Sphere
 
 /-!
@@ -181,11 +180,6 @@ theorem genus_eq_genus_iff (hX : eulerChar X = 2 - 2 * genus X)
 end FiniteCWType
 
 end FiniteHolomorphicMap
-
-/-- **The Riemann sphere has genus `0`**: its Euler characteristic is `2`. -/
-@[simp]
-theorem genus_onePoint_complex : genus (OnePoint ℂ) = 0 :=
-  genus_eq_of_eulerChar_eq (by rw [eulerChar_onePoint, Complex.finrank_real_complex]; norm_num)
 
 section AnalyticGenus
 

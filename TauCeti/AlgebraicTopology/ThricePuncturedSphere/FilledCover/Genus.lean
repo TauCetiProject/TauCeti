@@ -64,20 +64,6 @@ theorem two_mul_genus_X_sub_two_eq_degree_mul_genus_onePoint :
 
 end TypeZero
 
-/-- The equivalence `isoClassEquivConnectedIsoClass` preserves the Euler characteristic. -/
-@[simp] theorem eulerChar_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
-    (isoClassEquivConnectedIsoClass n P).eulerChar = isoClassEulerChar n P :=
-  Quotient.inductionOn P fun P ↦ (P.val.nonempty_restrict_preimage_singleton_equiv basePt).elim
-    fun ν ↦ by simp [isoClassEquivConnectedIsoClass_mk P (ν.trans (finCongr P.property)),
-      P.val.eulerChar_X_eq_eulerChar_monodromyTriple (ν.trans (finCongr P.property))]
-
-/-- The equivalence `isoClassEquivConnectedIsoClass` preserves the genus. -/
-@[simp] theorem genus_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
-    (isoClassEquivConnectedIsoClass n P).genus = isoClassGenus n P :=
-  Quotient.inductionOn P fun P ↦ (P.val.nonempty_restrict_preimage_singleton_equiv basePt).elim
-    fun ν ↦ by simp [isoClassEquivConnectedIsoClass_mk P (ν.trans (finCongr P.property)),
-      P.val.genus_X_eq_genus_monodromyTriple (ν.trans (finCongr P.property))]
-
 end AnalyticBelyiPair
 
 /-! ### Reconciliation on filled covers and topological branched covers -/
@@ -91,10 +77,10 @@ theorem eulerChar_toAnalyticBelyiPair (ν : ⇑C.cover.proj ⁻¹' {basePt} ≃ 
     eulerChar C.toAnalyticBelyiPair.X =
       (C.cover.isCoveringMap_proj.monodromyTriple ν).eulerChar := by
   obtain ⟨ν'⟩ := C.toAnalyticBelyiPair.nonempty_restrict_preimage_singleton_equiv basePt
-  let ν'' := ν'.trans (finCongr C.degree_toAnalyticBelyiPair)
-  exact (C.toAnalyticBelyiPair.eulerChar_X_eq_eulerChar_monodromyTriple ν'').trans
-    (PermutationTriple.eulerChar_eq_of_equivalent (PermutationTriple.IsoClass.mk_eq_mk_iff.1
-      (C.isoClass_monodromyTriple_toAnalyticBelyiPair ν'' ν)))
+  have h := C.isoClass_monodromyTriple_toAnalyticBelyiPair
+    (ν'.trans (finCongr C.degree_toAnalyticBelyiPair)) ν
+  rw [C.toAnalyticBelyiPair.eulerChar_X_eq_eulerChar_monodromyTriple _]
+  exact PermutationTriple.eulerChar_eq_of_equivalent (PermutationTriple.IsoClass.mk_eq_mk_iff.1 h)
 
 /-- The topological genus of `C.toAnalyticBelyiPair.X` equals that of the monodromy triple. -/
 theorem genus_toAnalyticBelyiPair (ν : ⇑C.cover.proj ⁻¹' {basePt} ≃ Fin n) :
@@ -128,24 +114,6 @@ theorem Iso.eulerChar_eq {n : ℕ} {X Y : TopBranchedCover.{u} n} [FiniteCWType 
 theorem Iso.genus_eq {n : ℕ} {X Y : TopBranchedCover.{u} n} [FiniteCWType X.Z] [FiniteCWType Y.Z]
     (ι : X.Iso Y) : genus X.Z = genus Y.Z := ι.toHomeomorph.toHomotopyEquiv.genus_eq
 
-end TopBranchedCover
-
-namespace AnalyticBelyiPair
-
-/-- Forgetting the complex structure preserves the Euler characteristic. -/
-@[simp] theorem eulerChar_toTopBranchedCover (P : AnalyticBelyiPair.{0}) {n : ℕ}
-    (h : degree P.β = n) : eulerChar (P.toTopBranchedCover h).Z = eulerChar P.X :=
-  (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X).eulerChar_eq
-
-/-- Forgetting the complex structure preserves the topological genus. -/
-@[simp] theorem genus_toTopBranchedCover (P : AnalyticBelyiPair.{0}) {n : ℕ}
-    (h : degree P.β = n) : genus (P.toTopBranchedCover h).Z = genus P.X :=
-  (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X).toHomotopyEquiv.genus_eq
-
-end AnalyticBelyiPair
-
-namespace TopBranchedCover
-
 /-- **The Euler characteristic of a topological branched cover is that of its monodromy triple.** -/
 theorem eulerChar_Z_eq_eulerChar_monodromyTriple {n : ℕ} (X : TopBranchedCover.{0} n)
     (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
@@ -153,7 +121,8 @@ theorem eulerChar_Z_eq_eulerChar_monodromyTriple {n : ℕ} (X : TopBranchedCover
   obtain ⟨P, h, ⟨ι⟩⟩ := X.exists_iso_toTopBranchedCover
   obtain ⟨νP⟩ := P.nonempty_restrict_preimage_singleton_equiv basePt
   obtain ⟨νT⟩ := (P.toTopBranchedCover h).nonempty_restrict_preimage_singleton_equiv basePt
-  rw [ι.eulerChar_eq, P.eulerChar_toTopBranchedCover h,
+  rw [(ι.toHomeomorph.trans
+      (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X)).eulerChar_eq,
     P.eulerChar_X_eq_eulerChar_monodromyTriple (νP.trans (finCongr h))]
   exact PermutationTriple.eulerChar_eq_of_equivalent <| PermutationTriple.IsoClass.mk_eq_mk_iff.1 <|
     (P.isoClass_monodromyTriple_toTopBranchedCover h _ νT).symm.trans <|
@@ -192,20 +161,30 @@ def IsoClass.genus {n : ℕ} : IsoClass.{0} n → ℕ :=
 /-- `IsoClass.equivConnectedIsoClass` preserves the Euler characteristic. -/
 @[simp] theorem IsoClass.eulerChar_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :
     (equivConnectedIsoClass n c).eulerChar = c.eulerChar := by
-  obtain ⟨X, rfl⟩ := mk_surjective c
-  obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
-  simp [equivConnectedIsoClass_mk X ν, X.eulerChar_Z_eq_eulerChar_monodromyTriple ν]
+  obtain ⟨X, rfl⟩ := IsoClass.mk_surjective c
+  exact (X.nonempty_restrict_preimage_singleton_equiv basePt).elim fun ν ↦ by
+    simp [equivConnectedIsoClass_mk X ν, X.eulerChar_Z_eq_eulerChar_monodromyTriple ν]
 
 /-- `IsoClass.equivConnectedIsoClass` preserves the genus. -/
 @[simp] theorem IsoClass.genus_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :
     (equivConnectedIsoClass n c).genus = c.genus := by
-  obtain ⟨X, rfl⟩ := mk_surjective c
-  obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
-  simp [equivConnectedIsoClass_mk X ν, X.genus_Z_eq_genus_monodromyTriple ν]
+  obtain ⟨X, rfl⟩ := IsoClass.mk_surjective c
+  exact (X.nonempty_restrict_preimage_singleton_equiv basePt).elim fun ν ↦ by
+    simp [equivConnectedIsoClass_mk X ν, X.genus_Z_eq_genus_monodromyTriple ν]
 
 end TopBranchedCover
 
 namespace AnalyticBelyiPair
+
+/-- Forgetting the complex structure preserves the Euler characteristic. -/
+@[simp] theorem eulerChar_toTopBranchedCover (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (h : degree P.β = n) : eulerChar (P.toTopBranchedCover h).Z = eulerChar P.X :=
+  (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X).eulerChar_eq
+
+/-- Forgetting the complex structure preserves the topological genus. -/
+@[simp] theorem genus_toTopBranchedCover (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (h : degree P.β = n) : genus (P.toTopBranchedCover h).Z = genus P.X :=
+  (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X).toHomotopyEquiv.genus_eq
 
 /-- Passing to the underlying topological branched cover preserves the Euler characteristic. -/
 @[simp] theorem eulerChar_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
@@ -216,6 +195,16 @@ namespace AnalyticBelyiPair
 @[simp] theorem genus_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
     (toTopBranchedCoverIsoClass n P).genus = isoClassGenus n P :=
   Quotient.inductionOn P fun _ ↦ by simp
+
+/-- The equivalence `isoClassEquivConnectedIsoClass` preserves the Euler characteristic. -/
+@[simp] theorem eulerChar_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
+    (isoClassEquivConnectedIsoClass n P).eulerChar = isoClassEulerChar n P := by
+  simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
+
+/-- The equivalence `isoClassEquivConnectedIsoClass` preserves the genus. -/
+@[simp] theorem genus_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
+    (isoClassEquivConnectedIsoClass n P).genus = isoClassGenus n P := by
+  simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
 
 end AnalyticBelyiPair
 

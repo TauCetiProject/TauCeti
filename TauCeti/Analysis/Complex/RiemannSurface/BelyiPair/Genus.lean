@@ -5,24 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
 public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair
-public import TauCeti.Analysis.Complex.RiemannSurface.Genus
 public import TauCeti.Geometry.Manifold.Complex.FiniteCWType
 
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 
 /-!
 # Euler characteristic and genus of analytic Belyi pairs
 
-Every compact Riemann surface has finite CW type (`TauCeti.ComplexManifold.instFiniteCWType`).
-This file records isomorphism invariance of `eulerChar P.X` and `genus P.X`, evaluates them on
-degree-one pairs and the sphere examples `pow` and `chebyshev`, and descends them to `isoSetoid`.
+Records isomorphism invariance and degree-one/sphere evaluations of `eulerChar P.X` and `genus P.X`,
+and descends both invariants to `isoSetoid`.
 -/
 
 public noncomputable section
 
-open Metric Module
 open scoped OnePoint
 
 namespace TauCeti.AnalyticBelyiPair
@@ -45,9 +42,9 @@ theorem eulerChar_X_eq_two_of_degree_eq_one {P : AnalyticBelyiPair.{u}} (hP : de
   have h : Fintype.card (ULift.{u} (Fin 3)) = 2 + 1 := by simp
   let _ := sphereCWComplex h; have := finite_sphereCWComplex h
   rw [eulerChar_eq_cwEulerChar ((biholomorphOfDegreeEqOne P.β hP).toHomeomorph.trans
-      (onePointEquivSphereOfFinrankEq (ι := ULift.{u} (Fin 3))
-        (by simp [Complex.finrank_real_complex]))).toHomotopyEquiv,
-    cwEulerChar_sphereCWComplex h]; norm_num
+    (onePointEquivSphereOfFinrankEq (ι := ULift.{u} (Fin 3))
+      (by simp [Complex.finrank_real_complex]))).toHomotopyEquiv, cwEulerChar_sphereCWComplex h]
+  norm_num
 
 /-- **An analytic Belyi pair of degree one has genus `0`.** -/
 theorem genus_X_eq_zero_of_degree_eq_one {P : AnalyticBelyiPair.{u}} (hP : degree P.β = 1) :

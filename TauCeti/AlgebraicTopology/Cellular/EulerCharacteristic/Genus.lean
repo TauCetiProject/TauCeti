@@ -58,10 +58,9 @@ is not asserted here.
   `TauCeti.RiemannSurface.eulerChar_realProjectiveSpace_two_ne_two_sub_two_mul_genus`: the real
   projective plane has `χ = 1` and genus `0`, and `χ = 2 - 2 · genus` fails, since `χ(RP²) = 1` is
   odd.
+* `TauCeti.RiemannSurface.genus_onePoint_complex`: the Riemann sphere has genus `0`.
 
-The Riemann sphere and the level-one modular curve have genus `0`: see
-`TauCeti.RiemannSurface.genus_onePoint_complex` and
-`TauCeti.ModularGroup.genus_compactifiedQuotient`.
+The level-one modular curve has genus `0`: see `TauCeti.ModularGroup.genus_compactifiedQuotient`.
 
 ## References
 
@@ -154,6 +153,11 @@ theorem eulerChar_realProjectiveSpace_two_ne_two_sub_two_mul_genus :
     eulerChar (RealProjectiveSpace 2) ≠ 2 - 2 * genus (RealProjectiveSpace 2) := by
   rw [eulerChar_realProjectiveSpace, genus_realProjectiveSpace_two]
   decide
+
+/-- **The Riemann sphere has genus `0`**: its Euler characteristic is `2`. -/
+@[simp]
+theorem genus_onePoint_complex : genus (OnePoint ℂ) = 0 :=
+  genus_eq_of_eulerChar_eq (by rw [eulerChar_onePoint, Complex.finrank_real_complex]; norm_num)
 
 end Checks
 

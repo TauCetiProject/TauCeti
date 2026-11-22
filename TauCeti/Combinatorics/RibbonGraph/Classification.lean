@@ -265,25 +265,14 @@ theorem _root_.TauCeti.PermutationTriple.coe_automorphismGroupMulEquivRibbonGrap
 
 /-! ### Regularity -/
 
-/-- A ribbon graph is *regular* when it is connected and `Γ.Aut` acts transitively on `Γ.E`. -/
-def IsRegular : Prop := Γ.IsConnected ∧ MulAction.IsPretransitive Γ.Aut Γ.E
-
-/-- Unfold `BipartiteRibbonGraph.IsRegular` into connectedness and edge-transitivity. -/
-theorem isRegular_iff {Γ : BipartiteRibbonGraph.{u}} :
-    Γ.IsRegular ↔ Γ.IsConnected ∧ MulAction.IsPretransitive Γ.Aut Γ.E := Iff.rfl
-
-/-- Every regular bipartite ribbon graph is connected. -/
-theorem IsRegular.isConnected {Γ : BipartiteRibbonGraph.{u}} (hΓ : Γ.IsRegular) :
-    Γ.IsConnected := hΓ.1
-
 /-- Numbering the edges of a bipartite ribbon graph preserves regularity. -/
 @[simp] theorem isRegular_toPermutationTriple (ν : Γ.E ≃ Fin n) :
     (Γ.toPermutationTriple ν).IsRegular ↔ Γ.IsRegular := by
   let φ : Γ.E →ₑ[Γ.autEquivAutomorphismGroup ν] Fin n :=
     ⟨ν, fun f e ↦ by simp [Aut.smul_def, Subgroup.smul_def, Perm.smul_def]⟩
-  exact PermutationTriple.isRegular_iff.trans <| and_congr (Γ.isConnected_toPermutationTriple ν)
+  exact (PermutationTriple.isRegular_iff.trans <| and_congr (Γ.isConnected_toPermutationTriple ν)
     (MulAction.isPretransitive_congr (f := φ) (Γ.autEquivAutomorphismGroup ν).surjective
-      ν.bijective).symm
+      ν.bijective).symm).trans isRegular_iff.symm
 
 /-- Passing from a permutation triple to its ribbon graph preserves regularity. -/
 @[simp] theorem _root_.TauCeti.PermutationTriple.isRegular_ribbonGraph (t : PermutationTriple n) :
@@ -297,12 +286,6 @@ theorem isRegular_iff_natCard_aut :
   let ν := Fintype.equivFin Γ.E
   rw [← Γ.isRegular_toPermutationTriple ν, PermutationTriple.isRegular_iff_card_automorphismGroup,
     Γ.isConnected_toPermutationTriple ν, Γ.natCard_automorphismGroup_toPermutationTriple ν]
-
-/-- Regularity of bipartite ribbon graphs is invariant under isomorphism. -/
-theorem Iso.isRegular_iff {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}}
-    (φ : Γ.Iso Δ) : Γ.IsRegular ↔ Δ.IsRegular := by
-  rw [isRegular_iff_natCard_aut, isRegular_iff_natCard_aut, φ.isConnected_iff, φ.natCard_aut_eq,
-    Fintype.card_congr φ.edge]
 
 end BipartiteRibbonGraph
 

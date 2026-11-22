@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.MonodromyTriple
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.Deck
 public import TauCeti.Analysis.Complex.RiemannSurface.ChebyshevMap
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
 public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
-public import TauCeti.Combinatorics.PermutationTriple.IsoClass
-public import TauCeti.Combinatorics.PermutationTriple.Regular
 
 import TauCeti.AlgebraicTopology.ThricePuncturedSphere.RestrictOver
 import TauCeti.Analysis.Complex.RiemannSurface.Branch.FiberCount
@@ -1165,8 +1162,8 @@ def isoClassRamificationPartitions (n : ℕ) :
 /-- Forgetting the complex structure preserves the ramification partitions over `0`, `1` and `∞`. -/
 @[simp] theorem ramificationPartitions_toTopBranchedCoverIsoClass {n : ℕ}
     (P : Quotient (isoSetoid.{u} n)) :
-    (toTopBranchedCoverIsoClass n P).ramificationPartitions =
-      isoClassRamificationPartitions n P := Quotient.inductionOn P fun _ ↦ by simp
+    (toTopBranchedCoverIsoClass n P).ramificationPartitions = isoClassRamificationPartitions n P :=
+  Quotient.inductionOn P fun _ ↦ by simp
 
 /-- The order of the automorphism group of an isomorphism class of analytic Belyi pairs. -/
 def isoClassNatCardAut (n : ℕ) : Quotient (isoSetoid.{u} n) → ℕ :=

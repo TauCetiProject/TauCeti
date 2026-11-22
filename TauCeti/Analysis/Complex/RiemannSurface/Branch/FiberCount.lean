@@ -103,8 +103,7 @@ theorem sum_localMultiplicity_sub_one_fiber_eq (f : FiniteHolomorphicMap X Y) {�
     ∑ x ∈ (f.finite_fiber y).toFinset, (localMultiplicity f x - 1) =
       Fintype.card α - orbitCount σ := by
   have hdeg : degree f = Fintype.card α := by
-    simpa [← degree_eq_fiber_sum f y, Finset.sum_eq_multiset_sum,
-      Equiv.Perm.sum_fullCycleType] using congrArg Multiset.sum h
+    simpa [← degree_eq_fiber_sum f y, Finset.sum_eq_multiset_sum] using congrArg Multiset.sum h
   have hcard := card_fiber_add_sum_localMultiplicity_sub_one f y
   rw [f.card_finite_fiber_eq_orbitCount h, hdeg] at hcard; omega
 

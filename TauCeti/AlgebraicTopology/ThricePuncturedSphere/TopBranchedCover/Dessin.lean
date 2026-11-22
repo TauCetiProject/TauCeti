@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.Deck
-public import TauCeti.Combinatorics.RibbonGraph.ConnectedClassification
+public import TauCeti.Combinatorics.RibbonGraph.Classification
 
 /-!
 # Deck groups of topological branched covers as ribbon-graph automorphisms

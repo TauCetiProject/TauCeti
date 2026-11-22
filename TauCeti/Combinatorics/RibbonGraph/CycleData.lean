@@ -17,14 +17,6 @@ this file packages the black-vertex, white-vertex, and face degree multisets int
 `facePerm`, so edge numberings identify `Γ.cycleData` with `(Γ.toPermutationTriple ν).cycleData`
 and graph isomorphisms preserve it.
 
-## Main definitions and results
-
-* `TauCeti.BipartiteRibbonGraph.cycleData`: the triple of black-vertex, white-vertex, and face
-  degree partitions.
-* `TauCeti.BipartiteRibbonGraph.fullCycleType_rotB`, `fullCycleType_rotW`, `fullCycleType_facePerm`.
-* `TauCeti.BipartiteRibbonGraph.cycleData_toPermutationTriple`,
-  `PermutationTriple.cycleData_ribbonGraph`, `BipartiteRibbonGraph.Iso.cycleData_eq`.
-
 ## References
 
 * S. K. Lando, A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, Encyclopaedia of
@@ -73,10 +65,9 @@ def cycleData : Multiset ℕ × Multiset ℕ × Multiset ℕ :=
     (Finset.univ : Finset Γ.Face).val.map Γ.faceDegree)
 
 /-- The defining formula for the cycle data of a bipartite ribbon graph. -/
-theorem cycleData_def :
-    Γ.cycleData = ((Finset.univ : Finset Γ.B).val.map Γ.blackDegree,
-      (Finset.univ : Finset Γ.W).val.map Γ.whiteDegree,
-      (Finset.univ : Finset Γ.Face).val.map Γ.faceDegree) := (rfl)
+theorem cycleData_def : Γ.cycleData = ((Finset.univ : Finset Γ.B).val.map Γ.blackDegree,
+    (Finset.univ : Finset Γ.W).val.map Γ.whiteDegree,
+    (Finset.univ : Finset Γ.Face).val.map Γ.faceDegree) := (rfl)
 
 /-- The degree partitions of `Γ` are the full cycle types of `rotB`, `rotW`, and `facePerm`. -/
 theorem cycleData_eq_fullCycleType :
@@ -84,15 +75,13 @@ theorem cycleData_eq_fullCycleType :
   rw [cycleData_def, fullCycleType_rotB, fullCycleType_rotW, fullCycleType_facePerm]
 
 /-- Each of the three degree partitions of `Γ` sums to the number of edges. -/
-theorem sum_cycleData :
-    (Γ.cycleData.1.sum, Γ.cycleData.2.1.sum, Γ.cycleData.2.2.sum) =
-      (Fintype.card Γ.E, Fintype.card Γ.E, Fintype.card Γ.E) := by
+theorem sum_cycleData : (Γ.cycleData.1.sum, Γ.cycleData.2.1.sum, Γ.cycleData.2.2.sum) =
+    (Fintype.card Γ.E, Fintype.card Γ.E, Fintype.card Γ.E) := by
   simp [cycleData_def, Γ.sum_blackDegree, Γ.sum_whiteDegree, Γ.sum_faceDegree]
 
 /-- The numbers of parts of the three degree partitions are `|B|`, `|W|`, and `faceCount`. -/
-theorem card_cycleData :
-    (Γ.cycleData.1.card, Γ.cycleData.2.1.card, Γ.cycleData.2.2.card) =
-      (Fintype.card Γ.B, Fintype.card Γ.W, Γ.faceCount) := by simp [cycleData_def, faceCount_def]
+theorem card_cycleData : (Γ.cycleData.1.card, Γ.cycleData.2.1.card, Γ.cycleData.2.2.card) =
+    (Fintype.card Γ.B, Fintype.card Γ.W, Γ.faceCount) := by simp [cycleData_def, faceCount_def]
 
 /-- Numbering the edges of `Γ` gives a permutation triple with cycle data `Γ.cycleData`. -/
 @[simp] theorem cycleData_toPermutationTriple {n : ℕ} (ν : Γ.E ≃ Fin n) :

@@ -350,10 +350,10 @@ theorem equivConnectedIsoClass_mk {n : ℕ} (X : TopBranchedCover.{0} n)
   obtain ⟨ν'⟩ := X.connectedCover.nonempty_equiv_fin
   rw [equivConnectedIsoClass, Equiv.trans_apply, equivConnectedCoverClass_apply, restrict_mk,
     ConnectedCoverClass.isoClassEquiv_apply, ConnectedCoverClass.isoClass_mk _ ν']
-  refine ConnectedIsoClass.forget_injective ?_
-  simpa using (X.connectedCover.cover.isCoveringMap_proj.isoClass_monodromyTriple_eq_of_homeomorph
-    ν' X.isCoveringMap_restrict ν X.connectedCoverHomeomorph
-    (funext X.restrict_connectedCoverHomeomorph)).symm
+  exact ConnectedIsoClass.forget_injective <| by simpa using
+    (X.connectedCover.cover.isCoveringMap_proj.isoClass_monodromyTriple_eq_of_homeomorph
+      ν' X.isCoveringMap_restrict ν X.connectedCoverHomeomorph
+      (funext X.restrict_connectedCoverHomeomorph)).symm
 
 /-- Up to isomorphism there is a unique topological branched cover of degree one. -/
 instance : Unique (IsoClass.{0} 1) := (equivConnectedIsoClass 1).unique
@@ -470,25 +470,25 @@ theorem ramificationPartitions_eq_cycleData_monodromyTriple {n : ℕ} (X : TopBr
 /-- `IsoClass.equivConnectedIsoClass` matches `ramificationPartitions` with `cycleData`. -/
 @[simp] theorem IsoClass.cycleData_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :
     (equivConnectedIsoClass n c).cycleData = c.ramificationPartitions := by
-  obtain ⟨X, rfl⟩ := mk_surjective c
-  obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
-  simp [equivConnectedIsoClass_mk X ν, X.ramificationPartitions_eq_cycleData_monodromyTriple ν]
+  obtain ⟨X, rfl⟩ := IsoClass.mk_surjective c
+  exact (X.nonempty_restrict_preimage_singleton_equiv basePt).elim fun ν ↦ by
+    simp [equivConnectedIsoClass_mk X ν, X.ramificationPartitions_eq_cycleData_monodromyTriple ν]
 
 /-- `IsoClass.equivConnectedIsoClass` preserves the order of the deck/automorphism group. -/
 @[simp] theorem IsoClass.natCardAutomorphismGroup_equivConnectedIsoClass {n : ℕ}
     (c : IsoClass.{0} n) :
     (equivConnectedIsoClass n c).natCardAutomorphismGroup = c.natCardDeck := by
-  obtain ⟨X, rfl⟩ := mk_surjective c
-  obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
-  simpa [equivConnectedIsoClass_mk X ν] using
-    (Nat.card_congr (X.deckMulEquivAutomorphismGroup ν).toEquiv).symm
+  obtain ⟨X, rfl⟩ := IsoClass.mk_surjective c
+  exact (X.nonempty_restrict_preimage_singleton_equiv basePt).elim fun ν ↦ by
+    simpa [equivConnectedIsoClass_mk X ν] using
+      (Nat.card_congr (X.deckMulEquivAutomorphismGroup ν).toEquiv).symm
 
 /-- `IsoClass.equivConnectedIsoClass` preserves regularity. -/
 @[simp] theorem IsoClass.isRegular_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :
     (equivConnectedIsoClass n c).IsRegular ↔ c.IsRegular := by
-  obtain ⟨X, rfl⟩ := mk_surjective c
-  obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
-  rw [equivConnectedIsoClass_mk X ν]; simp [X.isRegular_iff_monodromyTriple ν]
+  obtain ⟨X, rfl⟩ := IsoClass.mk_surjective c
+  exact (X.nonempty_restrict_preimage_singleton_equiv basePt).elim fun ν ↦ by
+    rw [equivConnectedIsoClass_mk X ν]; simp [X.isRegular_iff_monodromyTriple ν]
 
 end TopBranchedCover
 

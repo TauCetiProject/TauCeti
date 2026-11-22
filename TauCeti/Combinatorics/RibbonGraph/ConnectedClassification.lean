@@ -143,8 +143,7 @@ def connectedCycleData (n : ℕ) :
   Quotient.lift (fun Γ => Γ.val.val.cycleData) fun _ _ h => (isoSetoid_r.1 h).elim Iso.cycleData_eq
 
 /-- Evaluating `connectedCycleData` on the class of `Γ` gives `Γ.val.val.cycleData`. -/
-@[simp] theorem connectedCycleData_mk :
-    connectedCycleData n (Quotient.mk (connectedIsoSetoid n) Γ) = Γ.val.val.cycleData := (rfl)
+@[simp] theorem connectedCycleData_mk : connectedCycleData n ⟦Γ⟧ = Γ.val.val.cycleData := (rfl)
 
 /-- `connectedIsoClassEquiv` matches `connectedCycleData` with `ConnectedIsoClass.cycleData`. -/
 @[simp] theorem cycleData_connectedIsoClassEquiv :
@@ -156,8 +155,7 @@ def connectedEulerChar (n : ℕ) : Quotient (connectedIsoSetoid.{u} n) → ℤ :
   Quotient.lift (fun Γ => Γ.val.val.eulerChar) fun _ _ h => (isoSetoid_r.1 h).elim Iso.eulerChar_eq
 
 /-- Evaluating `connectedEulerChar` on the class of `Γ` gives `Γ.val.val.eulerChar`. -/
-@[simp] theorem connectedEulerChar_mk :
-    connectedEulerChar n (Quotient.mk (connectedIsoSetoid n) Γ) = Γ.val.val.eulerChar := (rfl)
+@[simp] theorem connectedEulerChar_mk : connectedEulerChar n ⟦Γ⟧ = Γ.val.val.eulerChar := (rfl)
 
 /-- The classification `connectedIsoClassEquiv` preserves the Euler characteristic. -/
 @[simp] theorem eulerChar_connectedIsoClassEquiv :
@@ -169,8 +167,7 @@ def connectedGenus (n : ℕ) : Quotient (connectedIsoSetoid.{u} n) → ℕ :=
   Quotient.lift (fun Γ => Γ.val.val.genus) fun _ _ h => (isoSetoid_r.1 h).elim fun φ => φ.genus_eq
 
 /-- Evaluating `connectedGenus` on the class of `Γ` gives `Γ.val.val.genus`. -/
-@[simp] theorem connectedGenus_mk :
-    connectedGenus n (Quotient.mk (connectedIsoSetoid n) Γ) = Γ.val.val.genus := (rfl)
+@[simp] theorem connectedGenus_mk : connectedGenus n ⟦Γ⟧ = Γ.val.val.genus := (rfl)
 
 /-- The classification `connectedIsoClassEquiv` preserves the combinatorial genus. -/
 @[simp] theorem genus_connectedIsoClassEquiv :
@@ -183,8 +180,7 @@ noncomputable def connectedNatCardAut (n : ℕ) : Quotient (connectedIsoSetoid.{
     (isoSetoid_r.1 h).elim Iso.natCard_aut_eq
 
 /-- Evaluating `connectedNatCardAut` on the class of `Γ` gives `Nat.card Γ.val.val.Aut`. -/
-@[simp] theorem connectedNatCardAut_mk :
-    connectedNatCardAut n (Quotient.mk (connectedIsoSetoid n) Γ) = Nat.card Γ.val.val.Aut := (rfl)
+@[simp] theorem connectedNatCardAut_mk : connectedNatCardAut n ⟦Γ⟧ = Nat.card Γ.val.val.Aut := (rfl)
 
 /-- The classification `connectedIsoClassEquiv` preserves the automorphism-group order. -/
 @[simp] theorem natCardAutomorphismGroup_connectedIsoClassEquiv :
@@ -197,8 +193,7 @@ def ConnectedIsRegular (n : ℕ) : Quotient (connectedIsoSetoid.{u} n) → Prop 
     (isoSetoid_r.1 h).elim fun φ => propext φ.isRegular_iff
 
 /-- Evaluating `ConnectedIsRegular` on the class of `Γ` recovers `Γ.val.val.IsRegular`. -/
-@[simp] theorem connectedIsRegular_mk :
-    ConnectedIsRegular n (Quotient.mk (connectedIsoSetoid n) Γ) ↔ Γ.val.val.IsRegular := Iff.rfl
+@[simp] theorem connectedIsRegular_mk : ConnectedIsRegular n ⟦Γ⟧ ↔ Γ.val.val.IsRegular := Iff.rfl
 
 /-- The classification `connectedIsoClassEquiv` preserves regularity. -/
 @[simp] theorem isRegular_connectedIsoClassEquiv :

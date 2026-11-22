@@ -743,6 +743,24 @@ instance : MulAction Γ.Aut Γ.E where
   one_smul _ := by rw [Aut.smul_def, Aut.one_edge]; rfl
   mul_smul _ _ _ := by rw [Aut.smul_def, Aut.smul_def, Aut.smul_def, Aut.mul_edge]; rfl
 
+/-- A ribbon graph is *regular* when it is connected and `Γ.Aut` acts transitively on `Γ.E`. -/
+def IsRegular : Prop := Γ.IsConnected ∧ MulAction.IsPretransitive Γ.Aut Γ.E
+
+/-- Unfold `BipartiteRibbonGraph.IsRegular` into connectedness and edge-transitivity. -/
+theorem isRegular_iff {Γ : BipartiteRibbonGraph.{u}} :
+    Γ.IsRegular ↔ Γ.IsConnected ∧ MulAction.IsPretransitive Γ.Aut Γ.E := Iff.rfl
+
+/-- Every regular bipartite ribbon graph is connected. -/
+theorem IsRegular.isConnected {Γ : BipartiteRibbonGraph.{u}} (hΓ : Γ.IsRegular) :
+    Γ.IsConnected := hΓ.1
+
+/-- Regularity of bipartite ribbon graphs is invariant under isomorphism. -/
+theorem Iso.isRegular_iff {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}}
+    (φ : Γ.Iso Δ) : Γ.IsRegular ↔ Δ.IsRegular :=
+  let ψ : Γ.E →ₑ[φ.autMulEquiv] Δ.E := ⟨φ.edge, fun f e ↦ by simp⟩
+  and_congr φ.isConnected_iff
+    (MulAction.isPretransitive_congr (f := ψ) φ.autMulEquiv.surjective φ.edge.bijective)
+
 /-! ### Universe lifting -/
 
 /-- The copy of a ribbon graph in a higher universe, with edges and vertices of both colours

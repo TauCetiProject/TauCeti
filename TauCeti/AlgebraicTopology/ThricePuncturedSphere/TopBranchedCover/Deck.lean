@@ -81,15 +81,13 @@ def Iso.deckMulEquiv {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y) : deck X.π �
 
 /-- `ι.deckMulEquiv` acts by conjugating the underlying homeomorphism by `ι.toHomeomorph`. -/
 @[simp] theorem Iso.coe_deckMulEquiv_apply {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y)
-    (φ : deck X.π) (y : Y.Z) :
-    (ι.deckMulEquiv φ : Y.Z ≃ₜ Y.Z) y =
+    (φ : deck X.π) (y : Y.Z) : (ι.deckMulEquiv φ : Y.Z ≃ₜ Y.Z) y =
       ι.toHomeomorph ((φ : X.Z ≃ₜ X.Z) (ι.toHomeomorph.symm y)) :=
   Deck.conjMulEquiv_apply_coe _ _ φ y
 
 /-- The inverse of `Iso.deckMulEquiv` conjugates by `ι.toHomeomorph.symm`. -/
 @[simp] theorem Iso.coe_deckMulEquiv_symm_apply {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y)
-    (ψ : deck Y.π) (x : X.Z) :
-    (ι.deckMulEquiv.symm ψ : X.Z ≃ₜ X.Z) x =
+    (ψ : deck Y.π) (x : X.Z) : (ι.deckMulEquiv.symm ψ : X.Z ≃ₜ X.Z) x =
       ι.toHomeomorph.symm ((ψ : Y.Z ≃ₜ Y.Z) (ι.toHomeomorph x)) :=
   Deck.conjMulEquiv_symm_apply_coe _ _ ψ x
 
@@ -137,9 +135,7 @@ def deckMulEquivAutomorphismGroup :
 over `1/2`. -/
 @[simp] theorem coe_deckMulEquivAutomorphismGroup_apply (φ : deck X.π) (i : Fin n) :
     (X.deckMulEquivAutomorphismGroup ν φ : Perm (Fin n)) i = ν (φ • ν.symm i) := by
-  refine (IsCoveringMap.coe_deckMulEquivAutomorphismGroup_apply _ ν
-    (X.deckMulEquivDeckRestrict φ) i).trans (congrArg ν (Subtype.ext (Subtype.ext ?_)))
-  simp [deck.fiber_smul_coe]
+  simp [deckMulEquivAutomorphismGroup]; rfl
 
 /-- The deck transformation attached to `τ` sends the sheet labelled `i` to that labelled `τ i`. -/
 @[simp] theorem deckMulEquivAutomorphismGroup_symm_smul

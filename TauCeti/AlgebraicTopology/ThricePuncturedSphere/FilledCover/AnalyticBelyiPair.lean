@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Classification
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBranchedCover
 public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair
 
@@ -284,18 +283,6 @@ theorem toTopBranchedCoverIsoClass_bijective (n : ℕ) :
     Bijective (toTopBranchedCoverIsoClass.{0} n) :=
   ⟨toTopBranchedCoverIsoClass_injective n, toTopBranchedCoverIsoClass_surjective n⟩
 
-end AnalyticBelyiPair
-
-/-- **Every topological branched cover is isomorphic to `P.toTopBranchedCover h` for some `P`.** -/
-theorem TopBranchedCover.exists_iso_toTopBranchedCover {n : ℕ} (X : TopBranchedCover.{0} n) :
-    ∃ (P : AnalyticBelyiPair.{0}) (h : RiemannSurface.degree P.β = n),
-      Nonempty (X.Iso (P.toTopBranchedCover h)) := by
-  obtain ⟨q, hq⟩ := AnalyticBelyiPair.toTopBranchedCoverIsoClass_surjective n (.mk X)
-  obtain ⟨⟨P, h⟩, rfl⟩ := Quotient.exists_rep q
-  exact ⟨P, h, (IsoClass.mk_eq_mk_iff.1 (by simpa using hq)).map Iso.symm⟩
-
-namespace AnalyticBelyiPair
-
 /-- **Analytic Belyi pairs are classified by finite covers of the thrice-punctured sphere.**
 Restricting the Belyi map over `ℂ ∖ {0, 1}` and filling the punctures are inverse bijections between
 isomorphism classes of analytic Belyi pairs of degree `n` and isomorphism classes of connected
@@ -506,12 +493,10 @@ theorem map_localMultiplicity_fiber_inf (P : AnalyticBelyiPair.{0}) {n : ℕ}
 theorem ramificationPartitions_eq_cycleData_monodromyTriple (P : AnalyticBelyiPair.{0}) {n : ℕ}
     (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
     P.ramificationPartitions = (P.isCoveringMap_restrict.monodromyTriple ν).cycleData := by
-  let h := P.degree_β_eq_of_restrict_preimage_singleton_equiv ν
-  obtain ⟨νT⟩ := (P.toTopBranchedCover h).nonempty_restrict_preimage_singleton_equiv basePt
-  rw [← P.ramificationPartitions_toTopBranchedCover h,
-    (P.toTopBranchedCover h).ramificationPartitions_eq_cycleData_monodromyTriple νT]
-  exact PermutationTriple.cycleData_eq_of_equivalent (PermutationTriple.IsoClass.mk_eq_mk_iff.1
-    (P.isoClass_monodromyTriple_toTopBranchedCover h ν νT))
+  simp only [ramificationPartitions_def, P.map_localMultiplicity_fiber_zero ν,
+    P.map_localMultiplicity_fiber_one ν, P.map_localMultiplicity_fiber_inf ν, fullCycleType_def]
+  exact Prod.ext (PermutationTriple.cycleData_σ0 _).symm
+    (Prod.ext (PermutationTriple.cycleData_σ1 _).symm (PermutationTriple.cycleData_σinf _).symm)
 
 /-- **A Belyi map is unramified over `0` exactly when `σ0` is the identity**, in the monodromy
 triple of the pair for any numbering of its fibre over `1/2`. -/
@@ -607,14 +592,22 @@ theorem sum_localMultiplicity_sub_one_fiber_inf :
 theorem natCast_ramificationDegree_β_eq_two_mul_degree_sub_eulerChar :
     (ramificationDegree P.β : ℤ) =
       2 * (degree P.β : ℤ) - (P.isCoveringMap_restrict.monodromyTriple ν).eulerChar := by
-  have h := P.ncard_preimage_marked_add_ramificationDegree_β
-  rw [P.ncard_preimage_marked_eq_orbitCount ν, P.degree_β_eq_of_restrict_preimage_singleton_equiv ν]
-    at h
-  rw [P.degree_β_eq_of_restrict_preimage_singleton_equiv ν, PermutationTriple.eulerChar_def]; omega
+  have := P.ncard_preimage_marked_add_ramificationDegree_β
+  have := P.ncard_preimage_marked_eq_orbitCount ν
+  have := P.degree_β_eq_of_restrict_preimage_singleton_equiv ν
+  rw [PermutationTriple.eulerChar_def]; omega
 
 end MarkedFibers
 
 end AnalyticBelyiPair
+
+/-- **Every topological branched cover is isomorphic to `P.toTopBranchedCover h` for some `P`.** -/
+theorem TopBranchedCover.exists_iso_toTopBranchedCover {n : ℕ} (X : TopBranchedCover.{0} n) :
+    ∃ (P : AnalyticBelyiPair.{0}) (h : RiemannSurface.degree P.β = n),
+      Nonempty (X.Iso (P.toTopBranchedCover h)) := by
+  obtain ⟨q, hq⟩ := AnalyticBelyiPair.toTopBranchedCoverIsoClass_surjective n (.mk X)
+  obtain ⟨⟨P, h⟩, rfl⟩ := Quotient.exists_rep q
+  exact ⟨P, h, (IsoClass.mk_eq_mk_iff.1 (by simpa using hq)).map Iso.symm⟩
 
 /-! ### The filled pair of a cover -/
 
