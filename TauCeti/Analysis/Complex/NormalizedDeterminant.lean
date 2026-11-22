@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.Analysis.Normed.Module.TensorProduct.FiniteDimension
+public import TauCeti.LinearAlgebra.Determinant.Semilinear
 public import TauCeti.LinearAlgebra.Determinant.TensorProduct
 
 /-!
@@ -26,8 +27,12 @@ loop of determinants.
 * `ContinuousLinearEquiv.det_eq_norm_mul_normalizedDet`: `det A = ‖det A‖ * normalizedDet A`.
 * `ContinuousLinearEquiv.normalizedDet_trans`, `ContinuousLinearEquiv.normalizedDet_refl`,
   `ContinuousLinearEquiv.normalizedDet_symm`: the normalized determinant is multiplicative.
+* `ContinuousLinearEquiv.normalizedDet_trans_symm_mul_trans`: the cocycle law for the transitions
+  between isomorphisms `E ≃ G`.
 * `ContinuousLinearEquiv.normalizedDet_trans_trans_symm`: it is invariant under conjugation by an
   isomorphism `E' ≃ E`.
+* `ContinuousLinearEquiv.normalizedDet_conjₛₗ`: conjugating by a conjugate-linear isomorphism
+  inverts the normalized determinant.
 * `ContinuousLinearEquiv.normalizedDet_prodCongr`: the normalized determinant of `A × B` is the
   product of those of `A` and `B`.
 * `ContinuousLinearEquiv.normalizedDet_eq_pow_mul_pow_of_apply_tmul`: the normalized determinant
@@ -90,6 +95,14 @@ theorem normalizedDet_refl : (ContinuousLinearEquiv.refl ℂ E).normalizedDet = 
 theorem normalizedDet_symm (A : E ≃L[ℂ] E) : A.symm.normalizedDet = A.normalizedDet⁻¹ :=
   eq_inv_of_mul_eq_one_right (by rw [← normalizedDet_trans, self_trans_symm, normalizedDet_refl])
 
+/-- **Cocycle law.** For isomorphisms `a b : E ≃ G` and `L : G ≃ E`, the normalized determinant
+of `L ∘ a` factors through `b`: it is that of the transition `b⁻¹ ∘ a` times that of `L ∘ b`. -/
+theorem normalizedDet_trans_symm_mul_trans {G : Type*} [AddCommGroup G] [Module ℂ G]
+    [TopologicalSpace G] (a b : E ≃L[ℂ] G) (L : G ≃L[ℂ] E) :
+    (a.trans b.symm).normalizedDet * (b.trans L).normalizedDet = (a.trans L).normalizedDet := by
+  rw [← normalizedDet_trans]
+  exact congrArg _ (ext <| funext fun v ↦ by simp)
+
 /-- The normalized determinant is invariant under conjugation: transporting an automorphism `A` of
 `E` along an isomorphism `L : E' ≃ E` does not change it. -/
 @[simp]
@@ -101,6 +114,20 @@ theorem normalizedDet_trans_trans_symm {E' : Type*} [NormedAddCommGroup E'] [Nor
     LinearMap.det_conj (A.toLinearEquiv : E →ₗ[ℂ] E) L.symm.toLinearEquiv
   ext1
   simp only [coe_normalizedDet, hdet]
+
+/-- **Conjugation by a conjugate-linear isomorphism.** Transporting `A` along a conjugate-linear
+isomorphism `K : E ≃ E'` conjugates its determinant, so it inverts its normalized determinant. -/
+@[simp]
+theorem normalizedDet_conjₛₗ {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+    (A : E ≃L[ℂ] E) (K : E ≃L⋆[ℂ] E') :
+    ((K.symm.trans A).trans K : E' ≃L[ℂ] E').normalizedDet = A.normalizedDet⁻¹ := by
+  have h : (((K.symm.trans A).trans K : E' ≃L[ℂ] E').toLinearEquiv : E' →ₗ[ℂ] E') =
+      (K.toLinearEquiv : E →ₗ⋆[ℂ] E') ∘ₛₗ (A.toLinearEquiv : E →ₗ[ℂ] E) ∘ₛₗ
+        (K.toLinearEquiv.symm : E' →ₗ⋆[ℂ] E) :=
+    LinearMap.ext fun _ ↦ rfl
+  ext1
+  rw [coe_normalizedDet, h, LinearMap.det_conjₛₗ, Circle.coe_inv_eq_conj]
+  simp [coe_normalizedDet, map_div₀]
 
 /-- The normalized determinant of a product of automorphisms is the product of their normalized
 determinants. -/

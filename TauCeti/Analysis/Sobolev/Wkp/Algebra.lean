@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
-public import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence
+public import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.MeasureTheory.Measure.Restrict

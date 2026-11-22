@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType
+public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian
 public import TauCeti.Geometry.Manifold.VectorField.Derivation
 import TauCeti.Geometry.Manifold.MFDeriv.Localized

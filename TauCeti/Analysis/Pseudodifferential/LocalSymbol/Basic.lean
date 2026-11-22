@@ -48,6 +48,10 @@ global one. It does extend after multiplication by a cutoff:
   (`TauCeti.LocalSymbol.restrict_extend_of_eqOn_one`).
 
 The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction and extension.
+The smoothing symbols on `U` (`TauCeti.LocalSymbol.IsSmoothing`), of every real order on `U`, are
+preserved by restriction and by the cut-off extension, and the restriction of a smoothing symbol
+on `ℝⁿ` is smoothing on `U`. Over `U = ℝⁿ` they are the smoothing symbols on `ℝⁿ`
+(`TauCeti.Symbol.isSmoothing_restrictTopEquiv_iff`).
 
 Conversely, `TauCeti.LocalSymbol.ofEventuallyEq` builds a local symbol from a function that agrees,
 near every position in `U`, with a symbol on `ℝⁿ`: the estimates of a local symbol only involve
@@ -113,7 +117,7 @@ private theorem exists_contDiff_eventually_eq_coefficient (a : LocalSymbol U V W
     {x : CoordinateSpace n} (hx : x ∈ U) :
     ∃ g : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W, ContDiff ℝ ∞ g ∧
       ∀ᶠ y in 𝓝 x, ∀ η, g (y, η) = a.coefficient (y, η) :=
-  let ⟨g, hg, hga⟩ := a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ
+  let ⟨g, hg, hga, _⟩ := a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ
     isCompact_singleton U.isOpen (singleton_subset_iff.2 hx)
   ⟨g, hg, hga x rfl⟩
 
@@ -469,7 +473,7 @@ private theorem exists_bound_extend (a : LocalSymbol U V W m) (hψ : ContDiff �
   set L := K ∩ tsupport ψ
   have hL : IsCompact L := hK.inter_right (isClosed_tsupport ψ)
   have hLU : L ⊆ U := inter_subset_right.trans hψU
-  obtain ⟨b, hb, hab⟩ :=
+  obtain ⟨b, hb, hab, -⟩ :=
     a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ hL U.isOpen hLU
   -- Bounds for the derivatives of `ψ` and the mixed derivatives of `a` on `L`.
   choose B hB using fun i : ℕ => hL.exists_bound_of_continuousOn
@@ -572,6 +576,96 @@ theorem extend_restrict (h : U' ≤ U) (hψU' : tsupport ψ ⊆ U') (a : LocalSy
 
 end Extend
 
+section Smoothing
+
+/-- A symbol on `U` is *smoothing*, or of order `-∞`, if its coefficient is a symbol on `U` of
+every real order: the smoothing symbols on `U` are the intersection of all the classes
+`S^m_{1,0}(U × ℝⁿ)`. -/
+def IsSmoothing (a : LocalSymbol U V W m) : Prop :=
+  ∀ m' : ℝ, ∃ b : LocalSymbol U V W m', b.coefficient = a.coefficient
+
+theorem isSmoothing_iff {a : LocalSymbol U V W m} :
+    a.IsSmoothing ↔ ∀ m' : ℝ, ∃ b : LocalSymbol U V W m', b.coefficient = a.coefficient :=
+  Iff.rfl
+
+/-- A symbol on `U` is smoothing iff for every `N` its coefficient is that of a symbol of order
+`m - N` on `U`. -/
+theorem isSmoothing_iff_forall_nat {a : LocalSymbol U V W m} :
+    a.IsSmoothing ↔ ∀ N : ℕ, ∃ b : LocalSymbol U V W (m - N), b.coefficient = a.coefficient := by
+  refine ⟨fun h N => h _, fun h m' => (h ⌈m - m'⌉₊).elim fun b hb => ?_⟩
+  exact ⟨inclusion (by linarith [Nat.le_ceil (m - m')]) b, by rw [coefficient_inclusion, hb]⟩
+
+@[simp]
+theorem isSmoothing_zero : (0 : LocalSymbol U V W m).IsSmoothing := fun _ => ⟨0, rfl⟩
+
+theorem IsSmoothing.add {a b : LocalSymbol U V W m} (ha : a.IsSmoothing) (hb : b.IsSmoothing) :
+    (a + b).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha m'
+  obtain ⟨b', hb'⟩ := hb m'
+  exact ⟨a' + b', by simp [ha', hb']⟩
+
+theorem IsSmoothing.smul {a : LocalSymbol U V W m} (ha : a.IsSmoothing) (c : ℂ) :
+    (c • a).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha m'
+  exact ⟨c • a', by simp [ha']⟩
+
+theorem IsSmoothing.neg {a : LocalSymbol U V W m} (ha : a.IsSmoothing) : (-a).IsSmoothing :=
+  fun m' => by
+    obtain ⟨a', ha'⟩ := ha m'
+    exact ⟨-a', by simp [ha']⟩
+
+theorem IsSmoothing.sub {a b : LocalSymbol U V W m} (ha : a.IsSmoothing) (hb : b.IsSmoothing) :
+    (a - b).IsSmoothing := by
+  simpa only [sub_eq_add_neg] using ha.add hb.neg
+
+/-- A symbol on `U` is smoothing exactly when its negative is. -/
+@[simp]
+theorem isSmoothing_neg_iff {a : LocalSymbol U V W m} : (-a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha => neg_neg a ▸ ha.neg, IsSmoothing.neg⟩
+
+/-- Including a symbol on `U` into a higher order does not change whether it is smoothing. -/
+@[simp]
+theorem isSmoothing_inclusion_iff {a : LocalSymbol U V W m} {h : m ≤ m'} :
+    (inclusion h a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion],
+    fun ha m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion]⟩
+
+/-- The restriction of a smoothing symbol on `U` to a smaller open set is smoothing. -/
+theorem IsSmoothing.restrict {a : LocalSymbol U V W m} (ha : a.IsSmoothing) (h : U' ≤ U) :
+    (LocalSymbol.restrict h a).IsSmoothing := fun m' => by
+  obtain ⟨b, hb⟩ := ha m'
+  exact ⟨LocalSymbol.restrict h b, by rw [coefficient_restrict, coefficient_restrict, hb]⟩
+
+/-- The cut-off extension of a smoothing symbol on `U` is a smoothing symbol on `ℝⁿ`. -/
+theorem IsSmoothing.extend {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψU : tsupport ψ ⊆ U) {a : LocalSymbol U V W m} (ha : a.IsSmoothing) :
+    (LocalSymbol.extend ψ hψ hψU a).IsSmoothing := Symbol.isSmoothing_iff.2 fun m' => by
+  obtain ⟨b, hb⟩ := ha m'
+  exact ⟨LocalSymbol.extend ψ hψ hψU b, funext fun p => by
+    rw [coefficient_extend, coefficient_extend, hb]⟩
+
+end Smoothing
+
 end LocalSymbol
+
+/-- Over `U = ℝⁿ`, smoothing symbols on an open set are smoothing symbols on `ℝⁿ`. -/
+@[simp]
+theorem Symbol.isSmoothing_restrictTopEquiv_iff {V W : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ} {a : Symbol n V W m} :
+    (Symbol.restrictTopEquiv a).IsSmoothing ↔ a.IsSmoothing := by
+  rw [LocalSymbol.isSmoothing_iff, Symbol.isSmoothing_iff]
+  refine forall_congr' fun m' => ⟨fun ⟨b, hb⟩ => ⟨Symbol.restrictTopEquiv.symm b, ?_⟩,
+    fun ⟨b, hb⟩ => ⟨Symbol.restrictTopEquiv b, ?_⟩⟩
+  · rw [Symbol.coefficient_restrictTopEquiv_symm_apply, hb,
+      Symbol.coefficient_restrictTopEquiv_apply]
+  · rw [Symbol.coefficient_restrictTopEquiv_apply, Symbol.coefficient_restrictTopEquiv_apply, hb]
+
+/-- The restriction of a smoothing symbol on `ℝⁿ` to an open set `U` of positions is a smoothing
+symbol on `U`. -/
+theorem Symbol.IsSmoothing.restrict {U : TopologicalSpace.Opens (CoordinateSpace n)} {V W : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
+    {a : Symbol n V W m} (ha : a.IsSmoothing) : (a.restrict U).IsSmoothing := by
+  simpa only [Symbol.restrict_restrictTopEquiv] using
+    (Symbol.isSmoothing_restrictTopEquiv_iff.2 ha).restrict (le_top : U ≤ ⊤)
 
 end TauCeti

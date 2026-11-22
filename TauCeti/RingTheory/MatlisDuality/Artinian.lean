@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MatlisDuality.FiniteLength
+public import TauCeti.RingTheory.MatlisDuality.Endomorphism
 public import TauCeti.Algebra.Module.Torsion.ResidueField
-public import TauCeti.RingTheory.AdicCompletion.Torsion
 public import TauCeti.RingTheory.AdicCompletion.Noetherian
+public import TauCeti.RingTheory.Artinian.Module
 
 /-!
-# Artinian modules detected by their Matlis duals
+# Artinian modules and their Matlis duals
 
 Let `E` be an injective module containing the residue field of a commutative local ring `R`.
 The annihilator of a submodule `N ≤ M` in `Hom_R(M, E)` is the kernel of restriction to `N`.
@@ -24,6 +24,22 @@ local ring, use its canonical action by the completion. A Matlis dual finite ove
 therefore detects Artinianness of the original module. The module need not be assumed to be
 maximal-ideal-power torsion; the criterion implies Artinianness even without that assumption.
 No completeness of `R` or finiteness of its residue field is required.
+
+Conversely, an Artinian module embeds into a finite power of `E`
+(`IsArtinian.exists_injective_linearMap_pi`), so its dual is a quotient of a finite power of
+`End_R(E)`. Hence the dual is finite over every semiring of scalars over which `End_R(E)` is
+finite; for the injective hull this is the completion, which acts on `End_R(E)` as a cyclic
+module. So a module over a Noetherian local ring is Artinian exactly when its Matlis dual is
+finite over the completion.
+
+## Main results
+
+* `TauCeti.isArtinian_of_isNoetherian_linearMap`: a module with Noetherian dual is Artinian.
+* `TauCeti.finite_linearMap_of_isArtinian`: the dual of an Artinian module is finite over any
+  scalars over which `End_R(E)` is finite.
+* `TauCeti.IsInjectiveEnvelope.isArtinian_iff_finite_adicCompletion_linearMap`: for the injective
+  hull of the residue field of a Noetherian local ring, a module is Artinian exactly when its dual
+  is finite over the completion.
 
 ## References
 
@@ -92,6 +108,21 @@ theorem isArtinian_of_isNoetherian_linearMap [Module.Injective R E]
     (hι : Function.Injective ι) [IsNoetherian S (M →ₗ[R] E)] : IsArtinian R M :=
   (matlisAnnihilatorOrderEmbedding (M := M) S hι).wellFoundedLT
 
+/-- **The Matlis dual of an Artinian module is finite.** Let `E` be an injective module containing
+the residue field and `S` a semiring acting on `E`, commuting with `R`, over which the
+endomorphisms of `E` form a finite module. Then the dual of every Artinian module is finite over
+`S`. -/
+theorem finite_linearMap_of_isArtinian [Module.Injective R E] (hι : Function.Injective ι)
+    [IsArtinian R M] [Module.Finite S (Module.End R E)] : Module.Finite S (M →ₗ[R] E) := by
+  -- `E` separates the points of `M`, so `M` embeds into some `Eⁿ`.
+  obtain ⟨n, g, hg⟩ := IsArtinian.exists_injective_linearMap_pi (R := R) (M := M) (E := E)
+    fun _ hm ↦ exists_apply_ne_zero_of_injective hι hm
+  -- Restriction along `g` maps `Hom_R(Eⁿ, E) ≅ End_R(E)ⁿ` onto the dual, by injectivity of `E`.
+  refine Module.Finite.of_surjective
+    (g.lcomp S E ∘ₗ (LinearMap.lsum R (fun _ : Fin n ↦ E) S).toLinearMap) fun f ↦ ?_
+  obtain ⟨h, rfl⟩ := Module.Injective.extension_property R E M (Fin n → E) g hg f
+  exact ⟨(LinearMap.lsum R (fun _ : Fin n ↦ E) S).symm h, by simp [lcomp_apply']⟩
+
 variable [IsNoetherianRing R]
 
 /-- A module whose Matlis dual is finite over the completion of a Noetherian local ring is
@@ -111,5 +142,28 @@ theorem IsInjectiveEnvelope.isArtinian_of_finite_adicCompletion_linearMap
   have := hι.moduleInjective
   exact isArtinian_of_isNoetherian_linearMap
     (_root_.AdicCompletion (maximalIdeal R) R) hι.injective
+
+/-- **The Matlis dual of an Artinian module is finite over the completion.** For an injective hull
+`E` of the residue field of a Noetherian local ring, the dual of every Artinian module is finite
+over the completion, which acts on `E` through its canonical torsion-module action. The ring need
+not be complete. -/
+theorem IsInjectiveEnvelope.finite_adicCompletion_linearMap_of_isArtinian
+    (hι : IsInjectiveEnvelope ι) [IsArtinian R M] :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) (M →ₗ[R] E) := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  have := hι.finite_adicCompletion_end
+  have := hι.moduleInjective
+  exact finite_linearMap_of_isArtinian _ hι.injective
+
+/-- **Artinian modules are those with Matlis dual finite over the completion.** For an injective
+hull `E` of the residue field of a Noetherian local ring, a module is Artinian exactly when its
+dual is finite over the completion. -/
+theorem IsInjectiveEnvelope.isArtinian_iff_finite_adicCompletion_linearMap
+    (hι : IsInjectiveEnvelope ι) :
+    IsArtinian R M ↔ letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+      Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) (M →ₗ[R] E) :=
+  ⟨fun _ ↦ hι.finite_adicCompletion_linearMap_of_isArtinian,
+    hι.isArtinian_of_finite_adicCompletion_linearMap⟩
 
 end TauCeti
