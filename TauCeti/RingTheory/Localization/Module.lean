@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.FinitePresentation
+public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.RingTheory.QuotSMulTop
@@ -26,6 +28,8 @@ submonoid `S`:
   after localizing at `S`.
 * `LocalizedModule.bijective_map_single`: the inclusion of a factor of a finite product becomes
   bijective after localizing at `S` if every other factor vanishes there.
+* `LocalizedModule.map_injective_of_ker_le_torsion`: a linear map with torsion kernel stays
+  injective after localizing, when the localized source is torsion-free.
 * `LocalizedModule.equivLocalization`: the localization of `R` itself as a module is
   `Localization S`, sending `mk r s` to `Localization.mk r s`.
 * `LinearMap.exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id`: if `M` is finitely
@@ -139,6 +143,38 @@ theorem equivLocalization_mk (r : R) (s : S) :
 theorem equivLocalization_symm_mk (r : R) (s : S) :
     (equivLocalization S).symm (Localization.mk r s) = mk r s :=
   (equivLocalization S).symm_apply_eq.mpr (equivLocalization_mk S r s).symm
+
+end LocalizedModule
+
+namespace LocalizedModule
+
+/-- A linear map whose kernel consists of torsion elements stays injective after localizing at
+`S`, when the localization of its source is torsion-free over `Localization S`. -/
+theorem map_injective_of_ker_le_torsion {R M N : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (S : Submonoid R) (q : M →ₗ[R] N)
+    (htors : LinearMap.ker q ≤ Submodule.torsion R M)
+    [Module.IsTorsionFree (Localization S) (LocalizedModule S M)] :
+    Function.Injective (map S q) := by
+  rw [← LinearMap.ker_eq_bot, eq_bot_iff]
+  intro y hy
+  induction y using induction_on with
+  | h x s =>
+    simp only [LinearMap.mem_ker, map_mk] at hy
+    rw [← zero_mk (1 : S), mk_eq] at hy
+    obtain ⟨u, hu⟩ := hy
+    simp only [one_smul, smul_zero, Submonoid.smul_def] at hu
+    have hux : (u : R) • x ∈ LinearMap.ker q := by
+      rw [LinearMap.mem_ker, map_smul]
+      exact hu
+    obtain ⟨b, hbx⟩ := (Submodule.mem_torsion_iff _).mp (htors hux)
+    -- The image of `b * u` in `Localization S` is regular, so it acts injectively.
+    have hreg : IsRegular (algebraMap R (Localization S) ((b : R) * u)) := by
+      rw [isRegular_iff_mem_nonZeroDivisors, map_mul]
+      exact mul_mem (IsLocalization.nonZeroDivisors_le_comap S _ b.property)
+        (IsLocalization.map_units _ u).mem_nonZeroDivisors
+    have h0 : algebraMap R (Localization S) ((b : R) * u) • mk x s = 0 := by
+      rw [algebraMap_smul, smul'_mk, mul_smul, ← Submonoid.smul_def, hbx, zero_mk]
+    exact hreg.isSMulRegular (h0.trans (smul_zero _).symm)
 
 end LocalizedModule
 
