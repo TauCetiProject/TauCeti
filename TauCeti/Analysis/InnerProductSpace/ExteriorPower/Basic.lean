@@ -62,6 +62,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `⋀ⁿ E` is skew-adjoint, `⟪D_A x, y⟫ = -⟪x, D_A y⟫`.
 * `OrthonormalBasis.sum_norm_sq_ιMulti_two`: contraction of squared wedge norms in a basis.
 * `OrthonormalBasis.inner_toBasis_exteriorPower`: the induced basis of `⋀ⁿ E` is orthonormal.
+* `OrthonormalBasis.orthonormal_ιMulti_two_add_one_add_two`: for an orthonormal basis `b` of a
+  three-dimensional space, the wedges `b 1 ∧ b 2`, `b 2 ∧ b 0`, `b 0 ∧ b 1` are orthonormal.
 * `OrthonormalBasis.ιMulti_two_eq_sum`, `OrthonormalBasis.inner_ιMulti_two_eq_sum`,
   `OrthonormalBasis.eq_sum_inner_smul_ιMulti_two`,
   `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
@@ -376,6 +378,16 @@ theorem inner_toBasis_exteriorPower [LinearOrder ι] (b : OrthonormalBasis ι �
     ⟪b.toBasis.exteriorPower n u, b.toBasis.exteriorPower n v⟫ = if u = v then 1 else 0 := by
   rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
     OrthonormalBasis.inner_eq_ite]
+
+/-- For an orthonormal basis `b` indexed by `Fin 3`, the wedges `b (k + 1) ∧ b (k + 2)` of
+cyclically consecutive basis vectors, namely `b 1 ∧ b 2`, `b 2 ∧ b 0` and `b 0 ∧ b 1`, are
+orthonormal. -/
+theorem orthonormal_ιMulti_two_add_one_add_two (b : OrthonormalBasis (Fin 3) ℝ E) :
+    Orthonormal ℝ fun k : Fin 3 ↦ exteriorPower.ιMulti ℝ 2 ![b (k + 1), b (k + 2)] := by
+  rw [orthonormal_iff_ite]
+  intro i j
+  rw [exteriorPower.inner_ιMulti_two]
+  fin_cases i <;> fin_cases j <;> simp [b.inner_eq_ite]
 
 /-! ### Two-vectors in an orthonormal frame of a four-dimensional space -/
 
