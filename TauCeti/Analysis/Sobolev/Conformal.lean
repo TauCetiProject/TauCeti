@@ -465,10 +465,11 @@ theorem norm_restrictWeightedValue_sq (hρ : IsWeight U ρ) {K : Set (ℝ × ℝ
     _ = ∫ z in K, ρ z * ‖ξ z‖ ^ 2 := by rw [Measure.restrict_restrict hK, inter_eq_left.2 hKU]
 
 /-- On a compact set `K ⊆ U`, where the weight is bounded below, the `L²` norm over `K` of a
-continuous section `ξ` is controlled by the restricted weighted value of the class of its jet. -/
+section `ξ` continuous on `K` is controlled by the restricted weighted value of the class of its
+jet. -/
 theorem exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq (hρ : IsWeight U ρ)
     {K : Set (ℝ × ℝ)} (hK : IsCompact K) (hKU : K ⊆ U) :
-    ∃ B, ∀ ⦃ξ : ℝ × ℝ → V⦄, Continuous ξ → ∀ ⦃f : Lp (V × V × V) 2 (volume.restrict U)⦄,
+    ∃ B, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContinuousOn ξ K → ∀ ⦃f : Lp (V × V × V) 2 (volume.restrict U)⦄,
       f =ᵐ[volume.restrict U] jet ρ ξ →
       ∫ z in K, ‖ξ z‖ ^ 2 ≤ B * ‖restrictWeightedValue V U K f‖ ^ 2 := by
   -- The inverse of the weight is bounded on `K`.
@@ -476,10 +477,10 @@ theorem exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq (hρ : I
     ((hρ.continuousOn.mono hKU).inv₀ fun z hz ↦ (hρ.pos z (hKU hz)).ne')
   refine ⟨|B|, fun ξ hξ f hf ↦ ?_⟩
   rw [norm_restrictWeightedValue_sq hρ hK.measurableSet hKU hf, ← integral_const_mul]
-  have hcξ : Continuous fun z ↦ ‖ξ z‖ ^ 2 := by fun_prop
-  refine setIntegral_mono_on (hcξ.continuousOn.integrableOn_compact hK)
-    ((continuousOn_const.mul ((hρ.continuousOn.mono hKU).mul hcξ.continuousOn)).integrableOn_compact
-      hK) hK.measurableSet fun z hz ↦ ?_
+  have hcξ : ContinuousOn (fun z ↦ ‖ξ z‖ ^ 2) K := hξ.norm.pow 2
+  refine setIntegral_mono_on (hcξ.integrableOn_compact hK)
+    ((continuousOn_const.mul ((hρ.continuousOn.mono hKU).mul hcξ)).integrableOn_compact hK)
+    hK.measurableSet fun z hz ↦ ?_
   have hρz := hρ.pos z (hKU hz)
   have hBz : (ρ z)⁻¹ ≤ |B| := by
     have h := hB z hz

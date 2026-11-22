@@ -237,7 +237,7 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_esti
   set D := ω.floerConformalSobolevOperator S cylindricalWeight J Ks Kt u
   set R := restrictWeightedValue V S K
   have hY : ∫ z in K, ‖ξ z‖ ^ 2 ≤ |B| * ‖R x‖ ^ 2 :=
-    (hB hξ2.continuous hxξ).trans (by gcongr; exact le_abs_self B)
+    (hB hξ2.continuous.continuousOn hxξ).trans (by gcongr; exact le_abs_self B)
   -- Assemble: `‖x‖² ≤ k (‖D x‖ + ‖R x‖)²`.
   have hx2 : ‖x‖ ^ 2 ≤ k * (‖D x‖ + ‖R x‖) ^ 2 := by
     have h₁ := (sq_norm_le_integral hρ hξ hxξ).trans (hW (hξ2.of_le one_le_two) hξc hξS)
@@ -267,13 +267,13 @@ jets of `W^{1,2}`.** Under the hypotheses of the semi-Fredholm estimate
 `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add` on the ends
 (jointly `C²` period-one Hamiltonians `H_q`, almost complex structures equal far out on each end to
 `C¹` families `J_q(t)`, and a `C¹` Floer pair of pants `u` whose loops in each positive end chart
-converge uniformly to continuous loops `x_q` while the slice defects tend uniformly to zero), the
-coefficient field of the linearized Floer operator on the conformal jets of the cylindrical weight
-is essentially bounded on `S`. -/
+converge uniformly on `[0, 1]` to loops `x_q` continuous on `[0, 1]` while the slice defects tend
+uniformly to zero), the coefficient field of the linearized Floer operator on the conformal jets
+of the cylindrical weight is essentially bounded on `S`. -/
 theorem memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn (ω : SymplecticForm V)
     {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) {x : Puncture → ℝ → V}
-    (hx : ∀ q, Continuous (x q)) {J : ℝ × ℝ → V → AlmostComplexStructure V}
+    (hx : ∀ q, ContinuousOn (x q) (Icc 0 1)) {J : ℝ × ℝ → V → AlmostComplexStructure V}
     {Je : Puncture → ℝ → V → AlmostComplexStructure V} {R₁ : ℝ}
     (hJe : ∀ q, ContDiff ℝ 1 fun p : ℝ × V ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2)
@@ -302,7 +302,7 @@ theorem memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn (ω : Sym
     (Metric.tendstoUniformlyOn_iff.1 (hux q) 1 one_pos).and
       (Metric.tendstoUniformlyOn_iff.1 (hδ q) 1 one_pos))
   choose Mx hMx using fun q ↦
-    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn (hx q).continuousOn
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn (hx q)
   have hT₁ : R₁ ≤ max 2 (max R₁ S₀) := le_max_of_le_right (le_max_left _ _)
   have hT₀ : S₀ ≤ max 2 (max R₁ S₀) := le_max_of_le_right (le_max_right _ _)
   refine ω.memLp_floerConformalJetCoeff_pairOfPants hH hHs hJ
@@ -327,9 +327,9 @@ theorem memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn (ω : Sym
 /-- **Peetre's estimate along a Floer pair of pants.** Under the hypotheses of the semi-Fredholm
 estimate `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add`
 (a Floer pair of pants `u` whose ends converge to nondegenerate one-periodic orbits of the end
-Hamiltonians, with almost complex structures cylindrical far out on the ends), there are a compact
-set `K ⊆ S` and `C` such that the jet `x ∈ W^{1,2}_0(S, V)` of every test section `ξ` satisfies
-`‖x‖ ≤ C (‖D_u x‖ + ‖√ρ ξ‖_{L²(K)})` for the realization
+Hamiltonians, with almost complex structures cylindrical far out on the ends), there are a height
+`T` and `C` such that the jet `x ∈ W^{1,2}_0(S, V)` of every test section `ξ` satisfies
+`‖x‖ ≤ C (‖D_u x‖ + ‖√ρ ξ‖_{L²(S_T)})` on the compact truncation `S_T` of `S`, for the realization
 `D_u = TauCeti.SymplecticForm.floerConformalSobolevOperator` of the linearized Floer operator. -/
 theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add (ω : SymplecticForm V)
     {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
@@ -361,7 +361,7 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add (ω : S
     (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
       (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
         (s, t)) 0 atTop (Icc 0 1)) :
-    ∃ K, IsCompact K ∧ K ⊆ thricePuncturedSphereReal ∧ ∃ C,
+    ∃ T C,
       ∀ y : H1 V thricePuncturedSphereReal cylindricalWeight,
         (y : Lp (V × V × V) 2 (volume.restrict thricePuncturedSphereReal)) ∈
           jetSubmodule V thricePuncturedSphereReal cylindricalWeight →
@@ -370,16 +370,17 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add (ω : S
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
             u y‖ +
-          ‖restrictWeightedValue V thricePuncturedSphereReal K y‖) := by
+          ‖restrictWeightedValue V thricePuncturedSphereReal
+            (Complex.equivRealProdCLM.symm ⁻¹' truncation T) y‖) := by
   obtain ⟨C, -, T, hT, hest⟩ :=
     ω.exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add hH hHs
       hX hx hnd hJe hJex hJeq hJ hu hc hF hux hδ
   have hM := ω.memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn hH hHs
-    (fun q ↦ continuous_iff_continuousAt.2 fun t ↦ (hx q t).continuousAt) hJe hJeq hJ hu hF hux hδ
+    (fun q ↦ (continuous_iff_continuousAt.2 fun t ↦ (hx q t).continuousAt).continuousOn) hJe hJeq
+    hJ hu hF hux hδ
   obtain ⟨C', hC'⟩ :=
     ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_estimate hM hT hest
-  exact ⟨_, isCompact_preimage_truncation _, preimage_truncation_subset_thricePuncturedSphereReal _,
-    C', hC'⟩
+  exact ⟨T + 1, C', hC'⟩
 
 /-- **The linearized operator of a Floer pair of pants has finite-dimensional kernel on
 `W^{1,2}`.** Under the hypotheses of the semi-Fredholm estimate
@@ -423,10 +424,12 @@ theorem finiteDimensional_ker_floerConformalSobolevOperator_pairOfPants (ω : Sy
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       u).ker := by
-  obtain ⟨K, hK, hKS, C, hest⟩ :=
+  obtain ⟨T, C, hest⟩ :=
     ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add hH hHs hX hx hnd hJe hJex
       hJeq hJ hu hc hF hux hδ
-  exact finiteDimensional_ker_of_estimate isWeight_cylindricalWeight hK hKS _ hest
+  exact finiteDimensional_ker_of_estimate isWeight_cylindricalWeight
+    (isCompact_preimage_truncation T) (preimage_truncation_subset_thricePuncturedSphereReal T) _
+    hest
 
 /-- **The linearized operator of a Floer pair of pants has closed range on `W^{1,2}`.** Under the
 hypotheses of `finiteDimensional_ker_floerConformalSobolevOperator_pairOfPants`, the realization
@@ -467,10 +470,11 @@ theorem isClosed_range_floerConformalSobolevOperator_pairOfPants (ω : Symplecti
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u).range :
         Set (Lp V 2 (volume.restrict thricePuncturedSphereReal))) := by
-  obtain ⟨K, hK, hKS, C, hest⟩ :=
+  obtain ⟨T, C, hest⟩ :=
     ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add hH hHs hX hx hnd hJe hJex
       hJeq hJ hu hc hF hux hδ
-  exact isClosed_range_of_estimate isWeight_cylindricalWeight hK hKS _ hest
+  exact isClosed_range_of_estimate isWeight_cylindricalWeight (isCompact_preimage_truncation T)
+    (preimage_truncation_subset_thricePuncturedSphereReal T) _ hest
 
 end SymplecticForm
 
