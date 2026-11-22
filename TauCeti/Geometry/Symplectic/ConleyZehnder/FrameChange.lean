@@ -161,15 +161,6 @@ theorem frameChange_apply {A B C : V →L[ℝ] V} (g' : Path A A) (Ψ : Path B C
     (t : I) : frameChange g' Ψ P t = g' t ∘L Ψ t ∘L P :=
   (rfl)
 
-/-- A left inverse `f'` of a linear map `f` preserving `ω` preserves `ω`, since in finite
-dimension it is also a right inverse. -/
-theorem apply_apply_of_leftInverse {f f' : V →L[ℝ] V} (hf : ∀ u v, ω (f u) (f v) = ω u v)
-    (hf' : ∀ u, f' (f u) = u) (u v : V) : ω (f' u) (f' v) = ω u v := by
-  have h : (f' : V →ₗ[ℝ] V) ∘ₗ (f : V →ₗ[ℝ] V) = LinearMap.id := LinearMap.ext hf'
-  have hff' (w : V) : f (f' w) = w := by
-    simpa using LinearMap.congr_fun ((LinearMap.comp_eq_id_comm ℝ V).1 h) w
-  rw [← hf, hff', hff']
-
 /-- If `g` is a loop of linear symplectic maps with pointwise inverses `g'`, and `Ψ` is a path of
 linear symplectic maps, the frame-changed path `t ↦ g'(t) ∘ Ψ(t) ∘ g(0)` runs through linear
 symplectic maps. -/
@@ -178,9 +169,10 @@ theorem apply_frameChange_apply {A A' B C : V →L[ℝ] V} {g : Path A A} {g' : 
     (hΨ : ∀ t u v, ω (Ψ t u) (Ψ t v) = ω u v) (t : I) (u v : V) :
     ω (frameChange g' Ψ A t u) (frameChange g' Ψ A t v) = ω u v := by
   have hA (u v : V) : ω (A u) (A v) = ω u v := by simpa using hg 0 u v
+  have hgt : ∀ u v, ω (g' t u) (g' t v) = ω u v :=
+    ω.apply_apply_of_leftInverse (f := g t) (f' := g' t) (hg t) (hg' t)
   rw [frameChange_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    ω.apply_apply_of_leftInverse (hg t) (hg' t), hΨ, hA]
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, hgt, hΨ, hA]
 
 /-- **Change of frame for the Conley–Zehnder index of linear symplectic maps.** Let `g` be a loop
 of linear maps preserving `ω`, with pointwise inverses `g'`, and `Ψ` a path of linear maps
@@ -196,17 +188,13 @@ theorem conleyZehnderIndex_frameChange {A A' B C : V →L[ℝ] V} (g : Path A A)
     ← GLSymplectic.conleyZehnderIndex_frameChange]
   refine GLSymplectic.conleyZehnderIndex_congr _ _ fun t ↦ ?_
   have hA (u v : V) : ω (A u) (A v) = ω u v := by simpa using hg 0 u v
-  have hgt := ω.apply_apply_of_leftInverse (hg t) (hg' t)
-  -- The matrix of `g'(t)` is the inverse of the matrix of `g(t)`.
-  have hinv : ω.toGLSymplectic hb (g' t) hgt = (ω.toGLSymplectic hb (g t) (hg t))⁻¹ := by
-    refine eq_inv_of_mul_eq_one_left ?_
-    rw [← ω.toGLSymplectic_comp hb hgt (hg t) fun u v ↦ by simp [hg' t],
-      ω.toGLSymplectic_congr hb (A' := LinearMap.id) (LinearMap.ext (hg' t)) _ fun _ _ ↦ rfl,
-      toGLSymplectic_id]
+  have hgt : ∀ u v, ω (g' t u) (g' t v) = ω u v :=
+    ω.apply_apply_of_leftInverse (f := g t) (f' := g' t) (hg t) (hg' t)
   -- The matrix of `g'(t) ∘ Ψ(t) ∘ g(0)` is the product of the three matrices.
   rw [matrixPath_apply, GLSymplectic.frameChange_apply, matrixPath_apply, matrixPath_apply,
-    ← hinv, mul_assoc, ← ω.toGLSymplectic_comp hb (hΨ t) hA fun u v ↦ by simp [hΨ t, hA],
+    ← ω.toGLSymplectic_of_leftInverse hb (hg t) hgt (hg' t), mul_assoc,
+    ← ω.toGLSymplectic_comp hb (hΨ t) hA fun u v ↦ by simp [hΨ t, hA],
     ← ω.toGLSymplectic_comp hb hgt _ fun u v ↦ by simp [hΨ t, hA, hgt]]
-  rfl
+  exact ω.toGLSymplectic_congr hb (by simp [frameChange_apply]) _ _
 
 end TauCeti.SymplecticForm

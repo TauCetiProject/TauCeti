@@ -31,8 +31,9 @@ of a linear map preserving `ω` is symplectic (`TauCeti.SymplecticForm.toMatrix_
 `TauCeti.SymplecticForm.toGLSymplectic`), and a path `Ψ` of linear maps preserving `ω` becomes a
 path of symplectic matrices (`TauCeti.SymplecticForm.matrixPath`), continuous by
 `TauCeti.SymplecticForm.continuous_toGLSymplectic`. Taking matrices is multiplicative: it sends the
-identity to `1`, compositions to products and inverses to inverses
+identity to `1`, compositions to products and inverses, or left inverses, to inverses
 (`TauCeti.SymplecticForm.toGLSymplectic_id`, `TauCeti.SymplecticForm.toGLSymplectic_comp`,
+`TauCeti.SymplecticForm.toGLSymplectic_of_leftInverse`,
 `TauCeti.SymplecticForm.toGLSymplectic_symm`).
 
 * **Independence of the basis.** Two symplectic bases `b` and `b'` indexed by the same type differ
@@ -141,16 +142,25 @@ theorem toGLSymplectic_comp {b : Basis (ι ⊕ ι) ℝ V}
     ω.toGLSymplectic hb (A ∘ₗ B) h = ω.toGLSymplectic hb A hA * ω.toGLSymplectic hb B hB :=
   Subtype.ext (Units.ext (by simp [LinearMap.toMatrix_comp b b b]))
 
+/-- The symplectic matrix of a left inverse `f'` of a linear map `f` preserving `ω` is the inverse
+of the symplectic matrix of `f`. -/
+theorem toGLSymplectic_of_leftInverse {b : Basis (ι ⊕ ι) ℝ V}
+    (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ) {f f' : V →ₗ[ℝ] V}
+    (hf : ∀ u v, ω (f u) (f v) = ω u v) (hf' : ∀ u v, ω (f' u) (f' v) = ω u v)
+    (h : ∀ u, f' (f u) = u) :
+    ω.toGLSymplectic hb f' hf' = (ω.toGLSymplectic hb f hf)⁻¹ := by
+  refine eq_inv_of_mul_eq_one_left ?_
+  rw [← ω.toGLSymplectic_comp hb hf' hf fun u v ↦ by simp [h],
+    ω.toGLSymplectic_congr hb (A' := LinearMap.id) (LinearMap.ext h) _ fun _ _ ↦ rfl,
+    toGLSymplectic_id]
+
 /-- The symplectic matrix of the inverse of a linear equivalence preserving `ω` is the inverse of
 its symplectic matrix. -/
 theorem toGLSymplectic_symm {b : Basis (ι ⊕ ι) ℝ V}
     (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ) (e : V ≃ₗ[ℝ] V)
     (he : ∀ u v, ω (e u) (e v) = ω u v) (h : ∀ u v, ω (e.symm u) (e.symm v) = ω u v) :
-    ω.toGLSymplectic hb e.symm h = (ω.toGLSymplectic hb e he)⁻¹ := by
-  refine (inv_eq_of_mul_eq_one_right ?_).symm
-  rw [← ω.toGLSymplectic_comp hb he h fun u v ↦ by simp,
-    ω.toGLSymplectic_congr hb (A' := LinearMap.id) (by ext; simp) _ fun u v ↦ rfl,
-    toGLSymplectic_id]
+    ω.toGLSymplectic hb e.symm h = (ω.toGLSymplectic hb e he)⁻¹ :=
+  ω.toGLSymplectic_of_leftInverse hb he h e.symm_apply_apply
 
 /-- The change of basis matrix `b'.toMatrix b` between two symplectic bases of `(V, ω)` indexed by
 the same type, as a symplectic matrix. It conjugates the matrices of linear symplectic maps in `b`
@@ -161,6 +171,25 @@ def basisChange {b b' : Basis (ι ⊕ ι) ℝ V}
   GLSymplectic.symplecticGroupContinuousMulEquiv ι ℝ
     ⟨_, LinearMap.BilinForm.basis_toMatrix_mem_symplecticGroup_of_toMatrix_eq_J hb' hb⟩
 
+/-- The underlying matrix of `TauCeti.SymplecticForm.basisChange` is the change of basis matrix
+`b'.toMatrix b`. -/
+@[simp]
+theorem coe_basisChange {b b' : Basis (ι ⊕ ι) ℝ V}
+    (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ)
+    (hb' : LinearMap.BilinForm.toMatrix b' ω.toBilinForm = J ι ℝ) :
+    ((ω.basisChange hb hb' : GL (ι ⊕ ι) ℝ) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) = b'.toMatrix b := by
+  simp [basisChange, GLSymplectic.coe_ofSymplecticGroup]
+
+/-- The underlying matrix of the inverse of `TauCeti.SymplecticForm.basisChange` is the reverse
+change of basis matrix `b.toMatrix b'`. -/
+theorem coe_basisChange_inv {b b' : Basis (ι ⊕ ι) ℝ V}
+    (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ)
+    (hb' : LinearMap.BilinForm.toMatrix b' ω.toBilinForm = J ι ℝ) :
+    ((((ω.basisChange hb hb')⁻¹ : GLSymplectic ι ℝ) : GL (ι ⊕ ι) ℝ) :
+      Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) = b.toMatrix b' := by
+  rw [Subgroup.coe_inv, Matrix.coe_units_inv, coe_basisChange]
+  exact Matrix.inv_eq_right_inv (Basis.toMatrix_mul_toMatrix_flip b' b)
+
 /-- **Change of symplectic basis.** The matrix of a linear symplectic map in a symplectic basis `b'`
 is the conjugate `P M P⁻¹` of its matrix `M` in another symplectic basis `b`, by the change of
 basis matrix `P = b'.toMatrix b`. -/
@@ -170,15 +199,9 @@ theorem toGLSymplectic_eq_basisChange_mul {b b' : Basis (ι ⊕ ι) ℝ V}
     (hA : ∀ u v, ω (A u) (A v) = ω u v) :
     ω.toGLSymplectic hb' A hA =
       ω.basisChange hb hb' * ω.toGLSymplectic hb A hA * (ω.basisChange hb hb')⁻¹ := by
-  have hP : ((ω.basisChange hb hb' : GL (ι ⊕ ι) ℝ) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) =
-      b'.toMatrix b := by
-    simp [basisChange, GLSymplectic.coe_ofSymplecticGroup]
-  have hP_inv : (((ω.basisChange hb hb')⁻¹ : GLSymplectic ι ℝ) : GL (ι ⊕ ι) ℝ) =
-      (b.toMatrix b' : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) := by
-    rw [Subgroup.coe_inv, Matrix.coe_units_inv, hP]
-    exact Matrix.inv_eq_right_inv (Basis.toMatrix_mul_toMatrix_flip b' b)
   refine Subtype.ext (Units.ext ?_)
-  simp only [Subgroup.coe_mul, Units.val_mul, hP, hP_inv, coe_toGLSymplectic]
+  simp only [Subgroup.coe_mul, Units.val_mul, coe_basisChange, coe_basisChange_inv,
+    coe_toGLSymplectic]
   exact (basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix b' b b' b _).symm
 
 end Matrix
