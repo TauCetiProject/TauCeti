@@ -47,7 +47,8 @@ is `∞`, and every cusp of `Γ₁(2)` is `∞` or `0`. Every cusp of `Γ₁(4)`
 * `TauCeti.card_cuspOrbit_Gamma1_of_prime`: `Γ₁(p)` has `p - 1` cusps for an odd prime `p`.
 * `TauCeti.cuspOrbitOfSL2Z_Gamma1_one`, `TauCeti.cuspOrbitOfSL2Z_Gamma1_two`,
   `TauCeti.cuspOrbitOfSL2Z_Gamma1_four`: cusp representatives at the levels `1`, `2` and `4`.
-* `TauCeti.exists_cuspOrbitOfSL2Z_Gamma1_four_eq`: the cusps of `Γ₁(4)` are `∞`, `0` and `1/2`.
+* `TauCeti.exists_cuspOrbitOfSL2Z_Gamma1_four_eq`: every cusp of `Γ₁(4)` is represented by `∞`, `0`
+  or `1/2`.
 * `TauCeti.cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two`,
   `TauCeti.mul_neg_T_mul_inv_mem_Gamma1_four`: the cusps of `Γ₁(4)` with `c ≡ 2` modulo `4` form
   one irregular cusp.
