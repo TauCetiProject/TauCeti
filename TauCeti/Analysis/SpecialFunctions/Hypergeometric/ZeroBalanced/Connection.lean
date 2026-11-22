@@ -13,7 +13,7 @@ import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
-import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.Limits
 import TauCeti.RingTheory.Binomial
 
