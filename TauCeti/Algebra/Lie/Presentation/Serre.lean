@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Lie.SerreConstruction
 public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Presentation.Basic
-import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Quotient
 
 /-!
@@ -124,8 +123,7 @@ theorem serreMk_surjective : Function.Surjective (serreMk R CM) :=
 /-- A relator of Serre's presentation becomes zero in the presented algebra. -/
 theorem serreMk_eq_zero_of_mem_toSet {x : FreeLieAlgebra R (Generators B)}
     (hx : x ∈ Relations.toSet R CM) : serreMk R CM x = 0 :=
-  (LieIdeal.mkQ_apply _ x).trans
-    (LieSubmodule.Quotient.mk_eq_zero'.mpr (LieSubmodule.subset_lieSpan hx))
+  (Relations.toIdeal R CM).mkQ_eq_zero.mpr (LieSubmodule.subset_lieSpan hx)
 
 /-- The generator `Hᵢ` of `Matrix.ToLieAlgebra R CM`, the image of the free generator `Hᵢ`. -/
 noncomputable def serreH (i : B) : Matrix.ToLieAlgebra R CM :=
@@ -258,9 +256,9 @@ structure IsSerreSystem (H E F : B → L) : Prop where
   lie_E_F_self : ∀ i, ⁅E i, F i⁆ = H i
   /-- `Eᵢ` and `Fⱼ` commute for `i ≠ j`. -/
   lie_E_F_of_ne : ∀ i j, i ≠ j → ⁅E i, F j⁆ = 0
-  /-- `Eⱼ` is an eigenvector of `ad Hᵢ` of eigenvalue `CMᵢⱼ`. -/
+  /-- `ad Hᵢ` multiplies `Eⱼ` by `CMᵢⱼ`. -/
   lie_H_E : ∀ i j, ⁅H i, E j⁆ = CM i j • E j
-  /-- `Fⱼ` is an eigenvector of `ad Hᵢ` of eigenvalue `-CMᵢⱼ`. -/
+  /-- `ad Hᵢ` multiplies `Fⱼ` by `-CMᵢⱼ`. -/
   lie_H_F : ∀ i j, ⁅H i, F j⁆ = -(CM i j • F j)
   /-- The higher Serre relation on the `E`'s. -/
   ad_pow_lie_E_E : ∀ i j, (ad R L (E i) ^ (-CM i j).toNat) ⁅E i, E j⁆ = 0
@@ -324,6 +322,24 @@ theorem IsSerreSystem.F_eq_zero_of_H_eq_zero [IsAddTorsionFree L]
   apply (IsAddTorsionFree.zsmul_eq_zero_iff_right hij).mp
   simpa [hH] using (hs.lie_H_F i j).symm
 
+omit [DecidableEq B] in
+/-- In a torsion-free Serre system, a zero Cartan generator forces every Cartan generator with
+a nonzero Cartan entry in its row to vanish. -/
+theorem IsSerreSystem.H_eq_zero_of_H_eq_zero [IsAddTorsionFree L]
+    (hs : IsSerreSystem R CM H E F) {i j : B} (hH : H i = 0) (hij : CM i j ≠ 0) :
+    H j = 0 := by
+  rw [← hs.lie_E_F_self j, hs.E_eq_zero_of_H_eq_zero hH hij, zero_lie]
+
+omit [DecidableEq B] in
+/-- In a torsion-free Serre system, at a bond whose two Cartan entries are nonzero, a zero Cartan
+generator at the node `j` forces the raising and lowering generators at both nodes to vanish. -/
+theorem IsSerreSystem.eq_zero_of_H_eq_zero_of_cartan_ne_zero [IsAddTorsionFree L]
+    (hs : IsSerreSystem R CM H E F) {i j : B} (hij : CM i j ≠ 0) (hji : CM j i ≠ 0)
+    (hj : H j = 0) : E i = 0 ∧ F i = 0 ∧ E j = 0 ∧ F j = 0 := by
+  have hi0 : H i = 0 := hs.H_eq_zero_of_H_eq_zero hj hji
+  exact ⟨hs.E_eq_zero_of_H_eq_zero hj hji, hs.F_eq_zero_of_H_eq_zero hj hji,
+    hs.E_eq_zero_of_H_eq_zero hi0 hij, hs.F_eq_zero_of_H_eq_zero hi0 hij⟩
+
 end CartanWeights
 
 /-! ### Orthogonal generators commute
@@ -368,7 +384,9 @@ end Orthogonal
 Serre's relations are stable under reindexing the three families along an injective map of index
 sets, provided the matrix is reindexed the same way, and under the signed exchange of the raising
 and lowering families. Both are statements about an arbitrary Serre system in an arbitrary Lie
-algebra; applied to the generators of the presented algebra they give its automorphisms, in
+algebra. Applied to the generators of the presented algebra, reindexing along an arbitrary
+injective map gives homomorphisms between different presentations, while only the
+matrix-preserving permutations and the signed exchange give automorphisms, in
 `TauCeti/Algebra/Lie/Presentation/Serre/Automorphism.lean`. -/
 
 section Stability
@@ -677,8 +695,8 @@ theorem eq_serreLift {h : IsSerreSystem R CM H E F} {g : Matrix.ToLieAlgebra R C
     g = serreLift h :=
   serre_hom_ext (fun i => by rw [hE, serreLift_serreE]) fun i => by rw [hF, serreLift_serreF]
 
-/-- A Serre system whose raising and lowering families generate the ambient Lie algebra presents
-it: the homomorphism it determines is surjective. -/
+/-- A Serre system whose raising and lowering families generate the ambient Lie algebra induces a
+surjective homomorphism from `Matrix.ToLieAlgebra R CM` onto it. -/
 theorem serreLift_surjective (h : IsSerreSystem R CM H E F)
     (hspan : LieSubalgebra.lieSpan R L (Set.range E ∪ Set.range F) = ⊤) :
     Function.Surjective (serreLift h) := by

@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Defs
 public import Mathlib.RingTheory.Valuation.ValuationRing
+import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
+import TauCeti.RingTheory.Subsemiring.SpanSingleton
 
 /-!
 # Valuation rings: squares `1 + 4c`, integrality under domination, and divisibility
@@ -25,6 +28,10 @@ containing `S`, an element of `K` whose image lies in `S` already lies in `R`. O
 valuation ring this is what lets an integrality statement proved after a ramified extension of
 the base descend to the base itself.
 
+In a valuation ring an irreducible element `ϖ` generates the maximal ideal, with no discreteness
+hypothesis; so for a valuation subring `s` of a commutative ring the powers of the maximal ideal
+are, inside that ring, the scaled copies `ϖ ^ k • s`.
+
 Finally, on a monoid with total divisibility, a multiplicative map preserving zero and one is
 determined by divisibility when it is at most `1` everywhere, below `1` on the nonunits and zero
 only at `0`: then `v x ≤ v y` exactly when `y ∣ x`. This describes the `𝔪`-adic valuation of a
@@ -36,6 +43,10 @@ discrete valuation ring on its own elements, and the points with zero support of
   `c = t ^ 2 + t` for some `t`.
 * `TauCeti.ValuationRing.isInteger_of_isInteger_algebraMap`: an element of `K` whose image in `L`
   lies in a ring `S` dominating `R` already lies in `R`.
+* `Irreducible.maximalIdeal_eq_of_preValuationRing`: an irreducible element
+  of a valuation ring generates its maximal ideal.
+* `Irreducible.image_maximalIdeal_pow_eq_smul`: for an irreducible `ϖ` of a valuation subring `s`
+  of a commutative ring, the image of the `k`-th power of the maximal ideal is `ϖ ^ k • s`.
 * `MonoidWithZeroHom.le_iff_dvd`: a multiplicative map at most `1`, below `1` on the nonunits
   and zero only at `0` compares elements by divisibility.
 
@@ -64,16 +75,14 @@ theorem isSquare_one_add_four_mul_iff (h2 : IsRegular (2 : R)) {c : R} :
     · exact h
     -- Otherwise `2 = z * w`, and cancelling `z ^ 2` from `z ^ 2 * (1 + w) = z ^ 2 * w ^ 2 * c`
     -- shows that `w` is a unit.
-    have hz : IsRegular ((y - 1) * w) := hw ▸ h2
-    have hz := hz.of_mul_left
+    have hz : IsRegular (y - 1) := (hw ▸ h2 : IsRegular ((y - 1) * w)).of_mul_left
     have hw' : 1 + w = w * w * c := (hz.mul hz).left <| by
       linear_combination -hy - (y - 1 - ((y - 1) * w + 2) * c) * hw
     have hu : IsUnit w := IsUnit.of_mul_eq_one (w * c - 1) (by linear_combination -hw')
-    exact ⟨↑hu.unit⁻¹, by rw [hw, mul_assoc, IsUnit.mul_val_inv, mul_one]⟩
-  refine ⟨t, (h2.mul h2).left ?_⟩
-  rw [sub_eq_iff_eq_add] at ht
-  rw [ht] at hy
-  linear_combination -hy
+    rw [hw]
+    exact hu.mul_right_dvd.mpr dvd_rfl
+  -- With `y = 1 + 2 * t`, the equation `y * y = 1 + 4 * c` is `4 * (t ^ 2 + t) = 4 * c`.
+  exact ⟨t, (h2.mul h2).left <| by linear_combination -hy - (y + 1 + 2 * t) * ht⟩
 
 section Domination
 
@@ -109,6 +118,29 @@ theorem isInteger_of_isInteger_algebraMap (hS : Function.Injective (algebraMap S
 
 end Domination
 
+/-- In a valuation ring, an irreducible element generates the maximal ideal. No discrete valuation
+ring hypothesis is needed (compare `Irreducible.maximalIdeal_eq`). -/
+theorem _root_.Irreducible.maximalIdeal_eq_of_preValuationRing {R : Type*} [CommRing R]
+    [Nontrivial R] [PreValuationRing R] {ϖ : R} (hϖ : Irreducible ϖ) :
+    IsLocalRing.maximalIdeal R = Ideal.span {ϖ} := by
+  ext y
+  rw [Ideal.mem_span_singleton, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
+  refine ⟨fun hy ↦ ?_, fun h hu ↦ hϖ.not_isUnit (isUnit_of_dvd_unit h hu)⟩
+  rcases _root_.ValuationRing.dvd_total y ϖ with h | h
+  · exact ((hϖ.dvd_iff.mp h).resolve_left hy).dvd
+  · exact h
+
+open Pointwise in
+/-- For an irreducible element `ϖ` of a subring `s` of a commutative ring `A` that is a valuation
+ring, the image in `A` of the power `𝓂 ^ k` of the maximal ideal of `s` is the scaled copy
+`ϖ ^ k • s`. For instance `s` can be the ring of integers of a valuation on a field. -/
+theorem _root_.Irreducible.image_maximalIdeal_pow_eq_smul {A S : Type*} [CommRing A] [SetLike S A]
+    [SubringClass S A] {s : S} [Nontrivial s] [PreValuationRing s] {ϖ : s} (hϖ : Irreducible ϖ)
+    (k : ℕ) :
+    ((↑) : s → A) '' ↑(IsLocalRing.maximalIdeal s ^ k) = (ϖ : A) ^ k • (s : Set A) := by
+  rw [hϖ.maximalIdeal_eq_of_preValuationRing]
+  exact SubsemiringClass.image_coe_span_singleton_pow s ϖ.property k
+
 end ValuationRing
 
 end TauCeti
@@ -127,12 +159,11 @@ theorem le_iff_dvd (v : R →*₀ Γ₀) (hle : ∀ x, v x ≤ 1) (hlt : ∀ x, 
     · exact hyx
     -- `y = x * z`: either `z` is a unit, or `v y = v x * v z < v x` unless `x = 0`.
     by_cases hz : IsUnit z
-    · exact ⟨↑hz.unit⁻¹, by simp [mul_assoc]⟩
+    · exact hz.mul_right_dvd.mpr dvd_rfl
     rcases eq_or_ne (v x) 0 with hx | hx
     · simp [hsupp x hx]
-    rw [map_mul] at h
-    exact absurd h (mul_lt_of_lt_one_right (zero_lt_iff.mpr hx) (hlt z hz)).not_ge
-  · rw [hz, map_mul]
-    exact mul_le_of_le_one_right' (hle z)
+    exact absurd h ((map_mul v x z).trans_lt
+      (mul_lt_of_lt_one_right (pos_iff_ne_zero.mpr hx) (hlt z hz))).not_ge
+  · exact hz ▸ (map_mul v y z).trans_le (mul_le_of_le_one_right' (hle z))
 
 end MonoidWithZeroHom

@@ -95,11 +95,11 @@ private theorem toLevel_injective : Function.Injective (toLevel (N := N) (k := k
   intro a b h
   have hg : a.t * a.u = b.t * b.u := congrArg (fun x ↦ (x.1 : ℕ)) h
   have hpsi : a.psi.changeLevel a.u_dvd = b.psi.changeLevel b.u_dvd :=
-    congrArg (fun x ↦ x.2.1.1) h
+    congrArg (fun x ↦ x.2.val.1) h
   have hu := u_eq_of_changeLevel_eq hpsi
   have hu₀ : 0 < b.u := Nat.pos_of_dvd_of_pos b.u_dvd (NeZero.pos N)
   exact eq_of_changeLevel_eq (Nat.eq_of_mul_eq_mul_right hu₀ (hu ▸ hg)) hpsi
-    (congrArg (fun x ↦ x.2.1.2) h)
+    (congrArg (fun x ↦ x.2.val.2) h)
 
 private theorem toLevel_surjective : Function.Surjective (toLevel (N := N) (k := k)) := by
   rintro ⟨⟨g, hg⟩, ⟨⟨χ₁, χ₂⟩, h₁, h₂, hpar⟩⟩
@@ -149,7 +149,7 @@ private theorem card_eq_sum_of_neZero :
         q.1 (-1) * q.2 (-1) = (-1) ^ (k : ℤ)} := by
   rw [Nat.card_eq_of_bijective _ ⟨toLevel_injective, toLevel_surjective⟩, Nat.card_sigma,
     ← Finset.sum_coe_sort N.divisors]
-  exact Finset.sum_congr rfl fun g _ ↦ card_factorsThrough (Nat.dvd_of_mem_divisors g.2)
+  exact Finset.sum_congr rfl fun g _ ↦ card_factorsThrough (Nat.dvd_of_mem_divisors g.property)
 
 end NeZero
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Weight
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Weight.Basic
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Backward
 import TauCeti.Probability.Finance.LogSpot
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeLine
@@ -77,8 +77,13 @@ variable {α : ℝ≥0} {t₀ t₁ : ℝ} {ht : t₀ < t₁}
 -- These shortcuts keep instance search shallow for the nested coefficient spaces.
 private local instance : NormedAddCommGroup (ℝ →L[ℝ] ℝ) := inferInstance
 private local instance : NormedSpace ℝ (ℝ →L[ℝ] ℝ) := inferInstance
-private local instance : NormedAddCommGroup (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
-private local instance : NormedSpace ℝ (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
+/-- A local shortcut for the norm on Hessians on the line. Without it, instance search for the
+operator norm on `(ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ`, the coefficient space of the second-order term,
+fails, for the reason explained in `TauCeti.Analysis.PDE.Parabolic.Holder.Operator`. It is not
+private, so that public statements may mention that coefficient space. -/
+local instance : NormedAddCommGroup (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
+/-- A local shortcut for scalar operations on Hessians on the line, needed for the same reason. -/
+local instance : NormedSpace ℝ (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
 private local instance : NormedAddCommGroup ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
 private local instance : NormedSpace ℝ ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
 private local instance : NormedAddCommGroup ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
@@ -128,6 +133,15 @@ def weightedLogSpotPricingOperatorL :
     ((lsmul ℝ ℝ).compHolder₂ a (HolderSpace.const ((apply ℝ ℝ 1).comp (apply ℝ _ 1))))
     (weightedLogSpotFirstOrderCoeff hα a r) (weightedLogSpotZerothOrderCoeff hα r)
 
+/-- The weighted operator is the backward operator with the second-order coefficient `a`
+and the weighted first- and zeroth-order coefficients. -/
+theorem weightedLogSpotPricingOperatorL_def :
+    weightedLogSpotPricingOperatorL (ht := ht) hα a r =
+      backwardParabolicOperatorL (F := ℝ) hα
+        ((lsmul ℝ ℝ).compHolder₂ a (HolderSpace.const ((apply ℝ ℝ 1).comp (apply ℝ _ 1))))
+        (weightedLogSpotFirstOrderCoeff hα a r) (weightedLogSpotZerothOrderCoeff hα r) :=
+  (rfl)
+
 /-- Evaluation of the bounded operator in terms of its derivative fields. -/
 @[simp]
 theorem weightedLogSpotPricingOperatorL_apply (v : ParabolicC2HolderSpace α ℝ ℝ ht)
@@ -167,7 +181,7 @@ theorem one_add_exp_mul_weightedLogSpotPricingOperatorL
   have hw := weightedLogSpotPricingOperatorL_apply hα a r v (slabMk x t)
   simp only [space_slabMk] at hw
   have hd := ((v.hasTimeDerivWithinAt x t).const_mul (1 + exp x)).derivWithin
-    (uniqueDiffOn_Icc ht t t.2)
+    (uniqueDiffOn_Icc ht t t.property)
   simp [parabolicOperatorL_apply, weightFirstOrderCoeff_apply,
     weightZerothOrderCoeff_apply, space_slabMk] at h
   rw [hw]
@@ -199,7 +213,7 @@ theorem weightedLogSpotPricingOperatorL_eq_spot
         rw [timeExtension_of_mem ht.le v x ⟨s, hs⟩]
         exact (hC x ⟨s, hs⟩).symm)
       (by rw [timeExtension_of_mem ht.le v x t]; exact (hC x t).symm)]
-    exact hCt.derivWithin (uniqueDiffOn_Icc ht t t.2)
+    exact hCt.derivWithin (uniqueDiffOn_Icc ht t t.property)
   have hsecond : fderiv ℝ (fderiv ℝ fun y ↦ C (exp y) t) x 1 1 =
       deriv (deriv fun y ↦ C (exp y) t) x := by
     simpa [_root_.iteratedFDeriv_two_apply, iteratedDeriv_succ, iteratedDeriv_one] using
@@ -323,7 +337,7 @@ theorem le_exp_mul_mul_add_mul_of_le_weightedLogSpotPricingOperatorL (ha : ∀ p
       simpa only [sub_zero, projIcc_right, mul_zero, Real.exp_zero, zero_mul, add_zero,
         one_mul] using hterm y)
   have hp : t₁ - slabTime p ∈ Icc 0 (t₁ - t₀) :=
-    ⟨by linarith [(slabTime p).2.2], by linarith [(slabTime p).2.1]⟩
+    ⟨by linarith [(slabTime p).property.2], by linarith [(slabTime p).property.1]⟩
   have hτ : projIcc t₀ t₁ ht.le (t₁ - (t₁ - slabTime p)) = slabTime p := by
     rw [sub_sub_cancel, projIcc_val]
   simpa only [hτ, slabMk_space_slabTime] using key hp (p : ParabolicSpaceTime ℝ).space

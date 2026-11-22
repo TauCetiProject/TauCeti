@@ -16,12 +16,16 @@ The underlying ring automorphism of an algebra automorphism turns the identity a
 (`AlgEquiv.toRingEquiv_one`, `AlgEquiv.toRingEquiv_mul`). For inverses, Mathlib's
 `AlgEquiv.aut_inv` and `AlgEquiv.symm_toRingEquiv` already apply. An algebra with no nontrivial
 automorphisms admits at most one isomorphism from any algebra
-(`AlgEquiv.subsingleton_of_subsingleton_aut`).
+(`AlgEquiv.subsingleton_of_subsingleton_aut`). A group homomorphism into the algebra
+endomorphisms, lifted to the automorphisms through `AlgEquiv.algHomUnitsEquiv`, still acts by the
+same endomorphisms (`AlgEquiv.algHomUnitsEquiv_comp_toHomUnits_apply`).
 
 The remaining lemmas relate the action of an algebra automorphism on one factor to its action
 on a product or quotient with a fixed cancellable factor. An automorphism negating a nonzero
 element is nontrivial when multiplication by `2` is injective. An automorphism multiplying an
-element by a fixed factor `c` multiplies it by `cᵏ` under its `k`-th power.
+element by a fixed factor `c` multiplies it by `cᵏ` under its `k`-th power. Finally, compatible
+ring equivalences `e : K ≃+* K'` and `eL : L ≃+* L'` induce a group isomorphism
+`RingEquiv.algAutCongr : (L ≃ₐ[K] L) ≃* (L' ≃ₐ[K'] L')` by conjugation.
 -/
 
 public section
@@ -66,6 +70,16 @@ theorem pow_apply_eq_mul_pow (σ : A ≃ₐ[R] A) {u c : A} (hc : σ c = c) (h :
   | zero => simp
   | succ k ih => simp only [pow_succ', mul_apply, ih, map_mul, map_pow, h, hc, mul_assoc]
 
+/-- A group homomorphism `f` into the algebra endomorphisms, lifted to the units and then to the
+algebra automorphisms through `AlgEquiv.algHomUnitsEquiv`, still acts by `f`: the automorphism
+attached to `g` applies `f g`. -/
+theorem algHomUnitsEquiv_comp_toHomUnits_apply {G : Type*} [Group G] (f : G →* (A →ₐ[R] A))
+    (g : G) (x : A) : (algHomUnitsEquiv R A).toMonoidHom.comp f.toHomUnits g x = f g x := by
+  rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, algHomUnitsEquiv_apply_apply,
+    MonoidHom.coe_toHomUnits]
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe, AlgHom.toRingHom_toMonoidHom,
+    OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe, MonoidHom.coe_ofClass]
+
 end Semiring
 
 /-- An automorphism that negates a nonzero element is not the identity when multiplication by
@@ -81,3 +95,82 @@ theorem apply_div_eq_neg_iff [DivisionRing A] [Algebra R A] (σ : A ≃ₐ[R] A)
   rw [map_div₀, hσe, ← neg_div, div_left_inj₀ he]
 
 end AlgEquiv
+
+namespace RingEquiv
+
+variable {K K' L L' : Type*} [CommSemiring K] [CommSemiring K'] [Semiring L] [Semiring L']
+  [Algebra K L] [Algebra K' L']
+
+/-- **Conjugation of algebra automorphisms along compatible ring equivalences.** Given ring
+equivalences `e : K ≃+* K'` and `eL : L ≃+* L'` commuting with `algebraMap`, conjugation
+`σ ↦ eL ∘ σ ∘ eL⁻¹` is a group isomorphism `(L ≃ₐ[K] L) ≃* (L' ≃ₐ[K'] L')`. -/
+def algAutCongr (e : K ≃+* K') (eL : L ≃+* L')
+    (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c)) :
+    (L ≃ₐ[K] L) ≃* (L' ≃ₐ[K'] L') where
+  toFun σ := AlgEquiv.ofRingEquiv (f := eL.symm.trans (σ.toRingEquiv.trans eL)) fun c' ↦ by
+    have hc : eL.symm (algebraMap K' L' c') = algebraMap K L (e.symm c') :=
+      eL.symm_apply_eq.2 (by rw [heL, e.apply_symm_apply])
+    rw [RingEquiv.trans_apply, RingEquiv.trans_apply, hc, AlgEquiv.coe_toRingEquiv,
+      AlgEquiv.commutes, heL, e.apply_symm_apply]
+  invFun σ' := AlgEquiv.ofRingEquiv (f := eL.trans (σ'.toRingEquiv.trans eL.symm)) fun c ↦ by
+    rw [RingEquiv.trans_apply, RingEquiv.trans_apply, heL, AlgEquiv.coe_toRingEquiv,
+      AlgEquiv.commutes]
+    exact eL.symm_apply_eq.2 (heL c).symm
+  left_inv σ := AlgEquiv.ext fun x ↦ by simp
+  right_inv σ' := AlgEquiv.ext fun x' ↦ by simp
+  map_mul' σ τ := AlgEquiv.ext fun x' ↦ by simp
+
+/-- Conjugation along `(e, eL)` evaluates on `x'` as `eL (σ (eL.symm x'))`. -/
+@[simp]
+theorem algAutCongr_apply (e : K ≃+* K') (eL : L ≃+* L')
+    (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c))
+    (σ : L ≃ₐ[K] L) (x' : L') :
+    algAutCongr e eL heL σ x' = eL (σ (eL.symm x')) :=
+  (rfl)
+
+/-- The underlying ring equivalence of `algAutCongr e eL heL σ` is `eL.symm.trans (σ.trans eL)`. -/
+@[simp]
+theorem toRingEquiv_algAutCongr (e : K ≃+* K') (eL : L ≃+* L')
+    (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c))
+    (σ : L ≃ₐ[K] L) :
+    ((algAutCongr e eL heL σ : L' ≃ₐ[K'] L') : L' ≃+* L') =
+      eL.symm.trans ((σ : L ≃+* L).trans eL) :=
+  (rfl)
+
+/-- Conjugation along identity ring equivalences is the identity automorphism of `L ≃ₐ[K] L`. -/
+@[simp]
+theorem algAutCongr_refl
+    (h : ∀ c : K, RingEquiv.refl L (algebraMap K L c) = algebraMap K L (RingEquiv.refl K c)) :
+    algAutCongr (RingEquiv.refl K) (RingEquiv.refl L) h = MulEquiv.refl (L ≃ₐ[K] L) := by
+  ext; rfl
+
+/-- The inverse of `algAutCongr e eL heL` is `algAutCongr e.symm eL.symm _`. -/
+@[simp]
+theorem algAutCongr_symm (e : K ≃+* K') (eL : L ≃+* L')
+    (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c)) :
+    (algAutCongr e eL heL).symm = algAutCongr e.symm eL.symm
+      (fun c' ↦ eL.symm_apply_eq.2 (by rw [heL, e.apply_symm_apply])) :=
+  (rfl)
+
+/-- Conjugating along `(e, eL)` and then `(e', eL')` is conjugating along
+`(e.trans e', eL.trans eL')`. -/
+@[simp]
+theorem algAutCongr_trans {K'' L'' : Type*} [CommSemiring K''] [Semiring L''] [Algebra K'' L'']
+    (e : K ≃+* K') (eL : L ≃+* L')
+    (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c))
+    (e' : K' ≃+* K'') (eL' : L' ≃+* L'')
+    (heL' : ∀ c' : K', eL' (algebraMap K' L' c') = algebraMap K'' L'' (e' c')) :
+    (algAutCongr e eL heL).trans (algAutCongr e' eL' heL') =
+      algAutCongr (e.trans e') (eL.trans eL') (fun c ↦ by simp [heL, heL']) := by
+  ext; simp
+
+omit [CommSemiring K'] [Algebra K' L'] in
+/-- Over a fixed base ring `K`, conjugating along `(RingEquiv.refl K, φ)` for an algebra
+equivalence `φ : L ≃ₐ[K] L'` recovers `AlgEquiv.autCongr φ`. -/
+@[simp]
+theorem algAutCongr_refl_toRingEquiv [Algebra K L'] (φ : L ≃ₐ[K] L')
+    (h : ∀ c : K, (φ : L ≃+* L') (algebraMap K L c) = algebraMap K L' (RingEquiv.refl K c)) :
+    algAutCongr (RingEquiv.refl K) (φ : L ≃+* L') h = AlgEquiv.autCongr φ := by
+  ext; rfl
+
+end RingEquiv
