@@ -90,7 +90,7 @@ private theorem counit_aux_of_ne_zero {n : ℕ} (hn : n ≠ 0) (f : stableSymmet
   refine C_injective (Fin 0) R ?_
   rw [C_counit_aux, specialization_of, C_0,
     eq_C_of_isEmpty (p := (stableSymmetricProj R n 0 f : MvPolynomial (Fin 0) R)),
-    (mem_symmetricHomogeneousSubmodule.mp (stableSymmetricProj R n 0 f).2).2.coeff_eq_zero
+    (mem_symmetricHomogeneousSubmodule.mp (stableSymmetricProj R n 0 f).property).2.coeff_eq_zero
       (by simpa using hn.symm), C_0]
 
 private theorem counit_aux_of_stableEsymm (n : ℕ) :

@@ -53,7 +53,7 @@ theorem mem_range_gaussFamilyMap_iff (φ : E →ₗ[R] F) {C L : ℝ}
   · intro hb
     choose a ha hn using fun t ↦ hlift (b t) (hb t)
     refine ⟨ofAddSubgroup ⟨a, mem_addSubgroup.mpr
-      ((mem_addSubgroup.mp b.toAddSubgroup.2).of_norm_le hn)⟩, ?_⟩
+      ((mem_addSubgroup.mp b.toAddSubgroup.property).of_norm_le hn)⟩, ?_⟩
     ext t
     simpa using ha t
 

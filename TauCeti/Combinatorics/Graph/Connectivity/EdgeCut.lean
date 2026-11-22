@@ -77,14 +77,14 @@ theorem IsLoopAt.notMem_edgeCut (h : G.IsLoopAt e x) : e ∉ G.edgeCut S := by
 corresponding cut of actual vertices. -/
 theorem edgeEnds_crosses_iff_mem_edgeCut (G : Graph α β) (e : G.edgeSet)
     (S : Set G.vertexSet) :
-    (G.edgeEnds e).Crosses S ↔ e.1 ∈ G.edgeCut (Subtype.val '' S) := by
+    (G.edgeEnds e).Crosses S ↔ e.val ∈ G.edgeCut (Subtype.val '' S) := by
   classical
   obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
   let x' : G.vertexSet := ⟨x, hxy.left_mem⟩
   let y' : G.vertexSet := ⟨y, hxy.right_mem⟩
   have hend : G.edgeEnds e = s(x', y') := (G.edgeEnds_eq_iff_isLink e x' y').2 hxy
-  have hx' : x'.1 = x := rfl
-  have hy' : y'.1 = y := rfl
+  have hx' : x'.val = x := rfl
+  have hy' : y'.val = y := rfl
   rw [hend, Sym2.crosses_mk_iff, hxy.mem_edgeCut_iff, ← hx', ← hy',
     Subtype.val_injective.mem_set_image, Subtype.val_injective.mem_set_image]
 

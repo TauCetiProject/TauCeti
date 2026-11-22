@@ -34,11 +34,10 @@ For a subgroup `Δ ≤ Γ` of finite index, `Δ` is again cocompact
 in the index. The area formula therefore makes the orbifold Euler characteristic
 `χ(X(Γ)) - ∑ₑ (1 - 1 / mₑ)` multiplicative in the index. Combined with the expression of the
 ramification degree of `X(Δ) → X(Γ)` through elliptic orders
-(`TauCeti.Fuchsian.ramificationDegree_eq_index_mul_cusps_add_elliptic_sub`), this gives the
-Riemann–Hurwitz formula `χ(X(Δ)) = [Γ : Δ] · χ(X(Γ)) - R` for cocompact groups without any
-finite-CW-type hypothesis; the general form
-`TauCeti.Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree` also asks
-for finite CW type of the free-locus quotient.
+(`TauCeti.Fuchsian.ramificationDegree_eq_index_mul_cusps_add_elliptic_sub`), this gives a
+hyperbolic-area proof of the Riemann--Hurwitz formula `χ(X(Δ)) = [Γ : Δ] · χ(X(Γ)) - R` for
+cocompact groups, independent of the branched-cover Morse proof in
+`TauCeti.Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree`.
 
 ## Main results
 
@@ -166,13 +165,12 @@ namespace TauCeti.Fuchsian
 
 variable {Δ Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ] [CompactSpace (orbitRel.Quotient Γ ℍ)]
 
-/-- **The Riemann–Hurwitz formula for cocompact Fuchsian groups.** Let `Δ ≤ Γ` be discrete
+/-- **The Riemann--Hurwitz formula for cocompact Fuchsian groups.** Let `Δ ≤ Γ` be discrete
 subgroups of `PSL(2, ℝ)` of finite index, with `Γ \ ℍ` compact. Then
 `χ(X(Δ)) = [Γ : Δ] · χ(X(Γ)) - R`, where `R` is the ramification degree of `X(Δ) → X(Γ)`. Unlike
-`TauCeti.Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree`, this carries
-no finite-CW-type hypotheses: both compactified quotients have finite CW type, and the formula
-follows from multiplicativity of the orbifold Euler characteristic together with the expression
-of `R` through elliptic orders. -/
+`TauCeti.Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree`, which uses
+the branched-cover topology on `X(Δ) → X(Γ)`, this deduces the formula from multiplicativity of
+hyperbolic covolume together with the expression of `R` through elliptic orders. -/
 theorem eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree_of_compactSpace
     (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ] :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h

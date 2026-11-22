@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Action.Sigma
 public import Mathlib.Algebra.Group.Action.Sum
+public import Mathlib.Algebra.Group.Action.TypeTags
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.GroupTheory.GroupAction.Transitive
@@ -26,6 +27,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.transversalEquivOrbitRelQuotient`: a set meeting every orbit, such that a
   group element carrying one of its points into it fixes that point, is a set of orbit
   representatives.
+* `TauCeti.MulAction.mk_eq_iff_mem_orbit_out`: a point lies in an orbit exactly when it lies in
+  the orbit of the chosen representative `Quotient.out`.
 * `TauCeti.MulAction.exists_smul_out_eq`: every point of an orbit is a translate of the chosen
   representative `Quotient.out` of that orbit.
 * `TauCeti.MulAction.injOn_quotientMk_slice`: if the slice map `(g, s) ↦ g • σ s` is injective
@@ -58,8 +61,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   transitive.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff`: if the normalizer
   of `H` acts freely, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
-* `TauCeti.MulAction.orbitRelQuotientCongr`: an equivalence carrying one action to another along
-  a group isomorphism induces an equivalence of orbit spaces.
+* `TauCeti.MulAction.orbitRelQuotientCongr` and `TauCeti.AddAction.orbitRelQuotientCongr`: an
+  equivalence carrying one action to another along a group isomorphism induces an equivalence of
+  orbit spaces.
 * `TauCeti.MulAction.orbitRelQuotientLift`: a `G`-invariant map descends to the orbit space,
   uniquely (`TauCeti.MulAction.eq_orbitRelQuotientLift_iff`). A surjection invariant under a
   generating set bounds the number of orbits from below on a finite type
@@ -68,10 +72,10 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   `V` over the orbit space descends to a section of `V`, uniquely
   (`TauCeti.MulAction.eq_orbitRelQuotientRec_iff`), and every section of `V` is the descent of its
   pullback (`TauCeti.MulAction.orbitRelQuotientRec_apply_mk`).
-* `MulActionHom.orbitRelQuotientMap`: an equivariant map induces a map of orbit spaces,
-  functorially. An injection induces an injection when the acting-group map is surjective;
-  its image consists of the orbits meeting the image upstairs. Descent is natural along it
-  (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`).
+* `MulActionHom.orbitRelQuotientMap` and `AddActionHom.orbitRelQuotientMap`: an equivariant map
+  induces a map of orbit spaces, functorially. An injection induces an injection when the
+  acting-group map is surjective; its image consists of the orbits meeting the image upstairs.
+  Descent is natural along it (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`).
 * `SubMulAction.orbitRelQuotientMap`: for an `H`-invariant subset `S` of `X`, the map
   `S / H → X / G` sending an `H`-orbit to its `G`-orbit; it is injective when `S` is a slice for
   `H`, that is when every element of `G` carrying a point of `S` into `S` lies in `H`
@@ -79,6 +83,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   exactly when they lie in the same `G`-orbit (`SubMulAction.orbitRel_iff`). If the stabilizer in
   `G` of a point of `S` lies in `H`, its stabilizer in `H` is trivial exactly when its stabilizer in
   `G` is (`SubMulAction.stabilizer_eq_bot_iff`).
+* `TauCeti.MulAction.stabilizer_smul_le_iff_of_normal`: whether a point stabilizer lies in a
+  normal subgroup depends only on the orbit of the point.
 * `TauCeti.MulAction.stabilizer_sigma_mk`: the stabilizer of a sigma point is its fibre
   stabilizer.
 * `TauCeti.MulAction.orbitRelQuotientSigmaEquiv`: the orbit space of a componentwise sigma
@@ -91,6 +97,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `MulAction.orbitRel.Quotient.instMulActionQuotientGroup`: for a normal subgroup `H`, the
   quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives
   (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version.
+* `TauCeti.AddAction.orbitRelQuotientEquivMultiplicative` and
+  `TauCeti.MulAction.orbitRelQuotientEquivAdditive`: the canonical equivalences of orbit spaces
+  identifying an action of `G` with the corresponding action of `Multiplicative G` or `Additive G`.
 -/
 
 public section
@@ -99,29 +108,17 @@ namespace TauCeti
 
 variable {G X : Type*} [Group G] [MulAction G X]
 
-private lemma eq_of_bot_orbitRel {x y : X}
-    (h : MulAction.orbitRel (⊥ : Subgroup G) X x y) : x = y := by
-  rw [MulAction.orbitRel_apply] at h
-  rcases h with ⟨g, hg⟩
-  have hg_one : (g : G) = 1 := Subgroup.mem_bot.mp g.2
-  have hsmul : (g : G) • y = x := by
-    simpa [Subgroup.smul_def] using hg
-  rw [hg_one, one_smul] at hsmul
-  exact hsmul.symm
+/-- The orbit relation of a trivial group is equality. -/
+@[simp]
+theorem MulAction.orbitRel_of_subsingleton [Subsingleton G] : MulAction.orbitRel G X = ⊥ := by
+  ext x y
+  simp [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, Subsingleton.elim _ (1 : G), eq_comm]
 
 /-- Quotienting a group action by the trivial subgroup gives back the original space. -/
 def MulAction.orbitRelQuotientBotEquiv :
     MulAction.orbitRel.Quotient (⊥ : Subgroup G) X ≃ X :=
-  { toFun := Quotient.lift (fun x : X => x) fun _ _ h => eq_of_bot_orbitRel h
-    invFun := Quotient.mk''
-    left_inv := by
-      intro x
-      refine Quotient.inductionOn' x ?_
-      intro x
-      rfl
-    right_inv := by
-      intro x
-      rfl }
+  (Quotient.congrRight fun _ _ ↦ by rw [MulAction.orbitRel_of_subsingleton]).trans
+    Setoid.quotientBotEquiv
 
 /-- The bottom-subgroup quotient equivalence sends a class to its representative. -/
 @[simp]
@@ -145,9 +142,9 @@ bijection onto the orbit space. -/
 noncomputable def MulAction.transversalEquivOrbitRelQuotient {s : Set X}
     (hex : ∀ x : X, ∃ g : G, g • x ∈ s)
     (hfix : ∀ x ∈ s, ∀ g : G, g • x ∈ s → g • x = x) : s ≃ MulAction.orbitRel.Quotient G X :=
-  Equiv.ofBijective (fun x ↦ Quotient.mk'' x.1)
+  Equiv.ofBijective (fun x ↦ Quotient.mk'' x.val)
     ⟨fun x y h ↦ (Quotient.exact h).elim fun g (hg : g • (y : X) = x) ↦
-      Subtype.ext <| hg.symm.trans <| hfix _ y.2 g <| hg ▸ x.2,
+      Subtype.ext <| hg.symm.trans <| hfix _ y.property g <| hg ▸ x.property,
     Quotient.ind' fun x ↦ (hex x).elim fun g hg ↦
       ⟨⟨g • x, hg⟩, MulAction.orbitRel.Quotient.quotient_smul_eq⟩⟩
 
@@ -189,7 +186,7 @@ lemma MulAction.orbitRel_le_of_subgroup_le {H K : Subgroup G} (hHK : H ≤ K) :
   intro x y h
   rw [MulAction.orbitRel_apply] at h ⊢
   rcases h with ⟨g, hg⟩
-  exact ⟨⟨g.1, hHK g.2⟩, hg⟩
+  exact ⟨⟨g.val, hHK g.property⟩, hg⟩
 
 /-- Translating by elements of `G` that agree modulo the normal subgroup `H` sends points in the
 same `H`-orbit to points in the same `H`-orbit. -/
@@ -207,12 +204,24 @@ theorem _root_.Subgroup.orbitRel_smul_smul_of_inv_mul_mem (H : Subgroup G) [H.No
     simpa [mul_assoc] using hk
   · simp [MulAction.subgroup_smul_def, smul_smul, mul_assoc]
 
+/-- **A point lies in an orbit exactly when it lies in the orbit of the chosen representative.**
+This combines Mathlib's `MulAction.orbitRel.Quotient.mem_orbit` and
+`MulAction.orbitRel.Quotient.orbit_eq_orbit_out`. -/
+@[to_additive AddAction.mk_eq_iff_mem_orbit_out
+  /-- **A point lies in an orbit exactly when it lies in the orbit of the chosen representative.**
+This combines Mathlib's `AddAction.orbitRel.Quotient.mem_orbit` and
+`AddAction.orbitRel.Quotient.orbit_eq_orbit_out`. -/]
+theorem MulAction.mk_eq_iff_mem_orbit_out {y : X} {ω : MulAction.orbitRel.Quotient G X} :
+    (Quotient.mk'' y : MulAction.orbitRel.Quotient G X) = ω ↔
+      y ∈ _root_.MulAction.orbit G ω.out := by
+  rw [← MulAction.orbitRel.Quotient.mem_orbit,
+    MulAction.orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq']
+
 /-- **Every point of an orbit is a translate of its chosen representative.** This is Mathlib's
 `MulAction.orbitRel.Quotient.orbit_eq_orbit_out` in existential form. -/
 lemma MulAction.exists_smul_out_eq {y : X} {ω : MulAction.orbitRel.Quotient G X}
     (h : (Quotient.mk'' y : MulAction.orbitRel.Quotient G X) = ω) : ∃ g : G, g • ω.out = y :=
-  MulAction.mem_orbit_iff.1 <| MulAction.orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq' ▸
-    MulAction.orbitRel.Quotient.mem_orbit.2 h
+  MulAction.mem_orbit_iff.1 <| MulAction.mk_eq_iff_mem_orbit_out.1 h
 
 /-- **Slices meet each orbit at most once.** If the slice map `(g, s) ↦ g • σ s` is injective on
 `G × U`, then distinct points of `U` lie in distinct orbits. -/
@@ -324,7 +333,7 @@ lemma MulAction.orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq
       Subgroup.normalizerQuotientMk H g⁻¹ = Subgroup.normalizerQuotientMk H k⁻¹ := by
   rw [MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem_of_mem_normalizer,
     Subgroup.normalizerQuotientMk_eq_iff_div_mem]
-  have h := (Subgroup.mem_normalizer_iff.mp g⁻¹.2) ((k : G) * (g : G)⁻¹)
+  have h := (Subgroup.mem_normalizer_iff.mp g⁻¹.property) ((k : G) * (g : G)⁻¹)
   simp only [div_eq_mul_inv, Subgroup.coe_inv, inv_inv, mul_assoc] at h ⊢
   rw [← inv_mem_iff, mul_inv_rev, inv_inv]
   simpa [mul_assoc] using h
@@ -374,7 +383,7 @@ private lemma normalizer_smul_mem_orbit (H : Subgroup G)
     (g : G) • x ∈ MulAction.orbit H ((g : G) • y) := by
   rcases hxy with ⟨h, hh⟩
   refine ⟨⟨(g : G) * h * (g : G)⁻¹, ?_⟩, ?_⟩
-  · exact ((Subgroup.mem_normalizer_iff.mp g.2) (h : G)).1 h.2
+  · exact ((Subgroup.mem_normalizer_iff.mp g.property) (h : G)).1 h.property
   · rw [← hh]
     simp [Subgroup.smul_def, mul_smul]
 
@@ -397,7 +406,7 @@ lemma MulAction.normalizerOrbitRelQuotientMap_apply (H : Subgroup G)
 /-- The normalizer representative `1` acts trivially on the orbit quotient. -/
 @[simp]
 lemma MulAction.normalizerOrbitRelQuotientMap_one (H : Subgroup G) :
-    MulAction.normalizerOrbitRelQuotientMap (X := X) H ⟨1, by simp⟩ = id := by
+    MulAction.normalizerOrbitRelQuotientMap (X := X) H 1 = id := by
   ext x
   refine Quotient.inductionOn' x ?_
   intro x
@@ -501,10 +510,11 @@ def MulAction.normalizerQuotientOrbitRelQuotientPermHom (H : Subgroup G) :
 
 /-- The descended normalizer-quotient action sends a normalizer representative to the
 corresponding translate on orbit classes. -/
+@[simp]
 lemma MulAction.normalizerQuotientOrbitRelQuotientPermHom_mk_apply (H : Subgroup G)
     (g : Subgroup.normalizer (H : Set G)) (x : X) :
     MulAction.normalizerQuotientOrbitRelQuotientPermHom (X := X) H
-        (Subgroup.normalizerQuotientMk H g)
+        (g : Subgroup.normalizerQuotient H)
         (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) =
       Quotient.mk'' ((g : G) • x) :=
   by simp [MulAction.normalizerQuotientOrbitRelQuotientPermHom]
@@ -518,10 +528,11 @@ def MulAction.normalizerQuotientOrbitRelQuotientMulAction (H : Subgroup G) :
 
 /-- A normalizer-quotient representative acts on the orbit quotient by translating
 representatives. -/
+@[simp]
 lemma MulAction.normalizerQuotientOrbitRelQuotient_smul_mk (H : Subgroup G)
     (g : Subgroup.normalizer (H : Set G)) (x : X) :
     letI := MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := X) H
-    Subgroup.normalizerQuotientMk H g •
+    (g : Subgroup.normalizerQuotient H) •
         (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) =
       Quotient.mk'' ((g : G) • x) :=
   by
@@ -581,10 +592,9 @@ lemma MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_apply_smul
     [MulAction.IsPretransitive G X] [IsCancelSMul G X] (H : Subgroup G) [H.Normal] (x : X) (g : G) :
     MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal H x
         (Quotient.mk'' (g • x) : MulAction.orbitRel.Quotient H X) =
-      Subgroup.normalizerQuotientMk H
-        ⟨g⁻¹, by simp [H.normalizer_eq_top]⟩ := by
+      ((⟨g⁻¹, by simp [H.normalizer_eq_top]⟩ : Subgroup.normalizer (H : Set G)) :
+        Subgroup.normalizerQuotient H) := by
   rw [← (MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal H x).eq_symm_apply]
-  rw [Subgroup.normalizerQuotientMk_apply]
   rw [MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_symm_mk]
   simp
 
@@ -598,7 +608,7 @@ lemma MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_
     MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal H x₀ (a • x) =
       MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal H x₀ x * a⁻¹ := by
   let := MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := X) H
-  obtain ⟨g, rfl⟩ := Subgroup.normalizerQuotientMk_surjective H a
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective a
   refine Quotient.inductionOn' x ?_
   intro x
   obtain ⟨k, hk⟩ := MulAction.exists_smul_eq G x₀ x
@@ -666,13 +676,14 @@ lemma MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff
   let := MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := X) H
   constructor
   · intro h
-    obtain ⟨g, rfl⟩ := Subgroup.normalizerQuotientMk_surjective H a
-    obtain ⟨k, rfl⟩ := Subgroup.normalizerQuotientMk_surjective H c
+    obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective a
+    obtain ⟨k, rfl⟩ := QuotientGroup.mk_surjective c
     refine Quotient.inductionOn' x ?_ h
     intro x h
     rw [MulAction.normalizerQuotientOrbitRelQuotient_smul_mk,
       MulAction.normalizerQuotientOrbitRelQuotient_smul_mk] at h
-    rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem]
+    rw [← H.normalizerQuotientMk_apply, ← H.normalizerQuotientMk_apply,
+      Subgroup.normalizerQuotientMk_eq_iff_div_mem]
     simpa [div_eq_mul_inv] using
       (MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem_of_mem_normalizer H x g k).mp h
   · intro h
@@ -682,7 +693,7 @@ lemma MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff
 quotient of `X` by `H`-orbits is free. This packages
 `normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff` as the cancellativity of the descended
 action. -/
-theorem MulAction.normalizerQuotientOrbitRelQuotientIsCancelSMul
+theorem _root_.Subgroup.isCancelSMul_normalizerQuotient_orbitRelQuotient
     (H : Subgroup G) [IsCancelSMul (Subgroup.normalizer (H : Set G)) X] :
     letI := MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := X) H
     IsCancelSMul (Subgroup.normalizerQuotient H) (MulAction.orbitRel.Quotient H X) :=
@@ -697,6 +708,10 @@ variable {H Y : Type*} [Group H] [MulAction H Y]
 /-- **An equivariant equivalence induces an equivalence of orbit spaces**: if `e : X ≃ Y` carries
 the `G`-action to the `H`-action along a group isomorphism `φ : G ≃* H`, it maps the `G`-orbits
 onto the `H`-orbits. -/
+@[to_additive AddAction.orbitRelQuotientCongr
+  /-- **An equivariant equivalence induces an equivalence of additive orbit spaces**: if `e : X ≃ Y`
+carries the additive `G`-action to the `H`-action along an additive group isomorphism `φ : G ≃+ H`,
+it maps the `G`-orbits onto the `H`-orbits. -/]
 def MulAction.orbitRelQuotientCongr (φ : G ≃* H) (e : X ≃ Y)
     (he : ∀ (g : G) (x : X), e (g • x) = φ g • e x) :
     MulAction.orbitRel.Quotient G X ≃ MulAction.orbitRel.Quotient H Y :=
@@ -704,7 +719,8 @@ def MulAction.orbitRelQuotientCongr (φ : G ≃* H) (e : X ≃ Y)
   Quotient.congr e fun _ _ ↦ φ.toEquiv.exists_congr fun _ ↦ by simp [← he]
 
 /-- `orbitRelQuotientCongr φ e he` sends the orbit of `x` to the orbit of `e x`. -/
-@[simp]
+@[to_additive (attr := simp) AddAction.orbitRelQuotientCongr_mk
+  /-- `AddAction.orbitRelQuotientCongr φ e he` sends the orbit of `x` to the orbit of `e x`. -/]
 theorem MulAction.orbitRelQuotientCongr_mk (φ : G ≃* H) (e : X ≃ Y)
     (he : ∀ (g : G) (x : X), e (g • x) = φ g • e x) (x : X) :
     MulAction.orbitRelQuotientCongr φ e he (Quotient.mk'' x) = Quotient.mk'' (e x) :=
@@ -712,7 +728,9 @@ theorem MulAction.orbitRelQuotientCongr_mk (φ : G ≃* H) (e : X ≃ Y)
 
 /-- The inverse of `orbitRelQuotientCongr φ e he` sends the orbit of `y` to the orbit of
 `e.symm y`. -/
-@[simp]
+@[to_additive (attr := simp) AddAction.orbitRelQuotientCongr_symm_mk
+  /-- The inverse of `AddAction.orbitRelQuotientCongr φ e he` sends the orbit of `y` to the orbit of
+`e.symm y`. -/]
 theorem MulAction.orbitRelQuotientCongr_symm_mk (φ : G ≃* H) (e : X ≃ Y)
     (he : ∀ (g : G) (x : X), e (g • x) = φ g • e x) (y : Y) :
     (MulAction.orbitRelQuotientCongr φ e he).symm (Quotient.mk'' y) = Quotient.mk'' (e.symm y) :=
@@ -720,13 +738,17 @@ theorem MulAction.orbitRelQuotientCongr_symm_mk (φ : G ≃* H) (e : X ≃ Y)
 
 end Congr
 
-/-- An equivariant injection preserves point stabilizers. -/
-theorem MulAction.stabilizer_eq_of_injective {Y : Type*} [MulAction G Y]
-    (f : X → Y) (hf : Function.Injective f)
-    (he : ∀ (g : G) (x : X), f (g • x) = g • f x) (x : X) :
-    _root_.MulAction.stabilizer G (f x) = _root_.MulAction.stabilizer G x := by
-  ext g
-  simp only [_root_.MulAction.mem_stabilizer_iff, ← he, hf.eq_iff]
+/-- **Containment of stabilizers in a normal subgroup is an orbit property.** The stabilizers
+along an orbit are conjugate, so one of them lies in a normal subgroup `N` exactly when the other
+does. -/
+@[to_additive /-- **Containment of stabilizers in a normal subgroup is an orbit property.** The
+stabilizers along an orbit are conjugate, so one of them lies in a normal subgroup `N` exactly when
+the other does. -/]
+theorem MulAction.stabilizer_smul_le_iff_of_normal {N : Subgroup G} [N.Normal] {g : G} {x : X} :
+    _root_.MulAction.stabilizer G (g • x) ≤ N ↔ _root_.MulAction.stabilizer G x ≤ N := by
+  conv_lhs => rw [_root_.MulAction.stabilizer_smul_eq_stabilizer_map_conj,
+    ← Subgroup.Normal.map_conj_eq N g]
+  exact Subgroup.map_le_map_iff_of_injective (MulAut.conj g).injective
 
 section Sum
 
@@ -890,7 +912,7 @@ theorem MulAction.card_le_card_orbitRelQuotient_closure_of_surjective {S : Set G
     | mul g g' _ _ ih ih' => intro x; rw [mul_smul, ih, ih']
     | inv g _ ih => intro x; rw [← ih (g⁻¹ • x), smul_inv_smul]
   refine Nat.card_le_card_of_surjective
-    (MulAction.orbitRelQuotientLift f fun g x ↦ hG g g.2 x) fun y ↦ ?_
+    (MulAction.orbitRelQuotientLift f fun g x ↦ hG g g.property x) fun y ↦ ?_
   obtain ⟨x, rfl⟩ := hsurj y
   exact ⟨Quotient.mk _ x, MulAction.orbitRelQuotientLift_mk x⟩
 
@@ -1121,7 +1143,7 @@ theorem orbitRelQuotientMap_injective
     Function.Injective S.orbitRelQuotientMap := by
   rintro ⟨s⟩ ⟨t⟩ h
   obtain ⟨g, hg⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact h))
-  have hgS : g ∈ H := hS g t t.2 (hg ▸ s.2)
+  have hgS : g ∈ H := hS g t t.property (hg ▸ s.property)
   exact Quotient.sound (orbitRel_apply.mpr
     (mem_orbit_subMul_iff.mpr ⟨⟨g, hgS⟩, hg⟩))
 
@@ -1146,3 +1168,57 @@ theorem stabilizer_eq_bot_iff {s : S} (hle : stabilizer G (s : X) ≤ H) :
   rw [stabilizer_eq_subgroupOf, Subgroup.subgroupOf_eq_bot, disjoint_iff, inf_eq_left.2 hle]
 
 end SubMulAction
+
+namespace TauCeti
+
+/-! ### Orbit spaces of `Multiplicative` and `Additive` actions -/
+
+/-- Canonical equivalence identifying the orbit space of an additive action of `G` on `X` with the
+orbit space of the corresponding multiplicative action of `Multiplicative G` on `X`. -/
+def AddAction.orbitRelQuotientEquivMultiplicative {G X : Type*} [AddGroup G] [AddAction G X] :
+    _root_.AddAction.orbitRel.Quotient G X ≃ MulAction.orbitRel.Quotient (Multiplicative G) X :=
+  Quotient.congrRight fun _ _ ↦ by simp [_root_.AddAction.orbitRel_apply, MulAction.orbitRel_apply]
+
+/-- `AddAction.orbitRelQuotientEquivMultiplicative` preserves orbit representatives. -/
+@[simp]
+theorem AddAction.orbitRelQuotientEquivMultiplicative_mk {G X : Type*} [AddGroup G]
+    [AddAction G X] (x : X) :
+    AddAction.orbitRelQuotientEquivMultiplicative
+      (Quotient.mk (_root_.AddAction.orbitRel G X) x) =
+      Quotient.mk (MulAction.orbitRel (Multiplicative G) X) x :=
+  (rfl)
+
+/-- The inverse of `AddAction.orbitRelQuotientEquivMultiplicative` preserves orbit
+representatives. -/
+@[simp]
+theorem AddAction.orbitRelQuotientEquivMultiplicative_symm_mk {G X : Type*} [AddGroup G]
+    [AddAction G X] (x : X) :
+    (AddAction.orbitRelQuotientEquivMultiplicative (G := G) (X := X)).symm
+      (Quotient.mk (MulAction.orbitRel (Multiplicative G) X) x) =
+      Quotient.mk (_root_.AddAction.orbitRel G X) x :=
+  (rfl)
+
+/-- Canonical equivalence identifying the orbit space of a multiplicative action of `G` on `X` with
+the orbit space of the corresponding additive action of `Additive G` on `X`. -/
+def MulAction.orbitRelQuotientEquivAdditive {G X : Type*} [Group G] [MulAction G X] :
+    MulAction.orbitRel.Quotient G X ≃ _root_.AddAction.orbitRel.Quotient (Additive G) X :=
+  Quotient.congrRight fun _ _ ↦ by simp [MulAction.orbitRel_apply, _root_.AddAction.orbitRel_apply]
+
+/-- `MulAction.orbitRelQuotientEquivAdditive` preserves orbit representatives. -/
+@[simp]
+theorem MulAction.orbitRelQuotientEquivAdditive_mk {G X : Type*} [Group G] [MulAction G X]
+    (x : X) :
+    MulAction.orbitRelQuotientEquivAdditive (Quotient.mk (MulAction.orbitRel G X) x) =
+      Quotient.mk (_root_.AddAction.orbitRel (Additive G) X) x :=
+  (rfl)
+
+/-- The inverse of `MulAction.orbitRelQuotientEquivAdditive` preserves orbit representatives. -/
+@[simp]
+theorem MulAction.orbitRelQuotientEquivAdditive_symm_mk {G X : Type*} [Group G] [MulAction G X]
+    (x : X) :
+    (MulAction.orbitRelQuotientEquivAdditive (G := G) (X := X)).symm
+      (Quotient.mk (_root_.AddAction.orbitRel (Additive G) X) x) =
+      Quotient.mk (MulAction.orbitRel G X) x :=
+  (rfl)
+
+end TauCeti

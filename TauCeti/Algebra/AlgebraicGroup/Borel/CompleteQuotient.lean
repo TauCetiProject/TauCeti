@@ -91,7 +91,7 @@ private theorem isClosed_exteriorFlagZeroLocus (d : ℕ) :
   let 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule k
     (Module.Dual k (exteriorPower.FlagSpace k M d))
   have hZ : exteriorFlagZeroLocus k M d =
-      ⋂ s ∈ exteriorPower.exteriorFlagForms k M d, ((Proj.basicOpen 𝒜 s).1)ᶜ :=
+      ⋂ s ∈ exteriorPower.exteriorFlagForms k M d, ((Proj.basicOpen 𝒜 s).carrier)ᶜ :=
     Set.ext fun x ↦ by simp [exteriorFlagZeroLocus, 𝒜, Proj.mem_basicOpen]
   exact hZ ▸ isClosed_biInter fun s _ ↦ (Proj.basicOpen 𝒜 s).isOpen.isClosed_compl
 

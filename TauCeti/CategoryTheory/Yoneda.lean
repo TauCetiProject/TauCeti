@@ -51,7 +51,7 @@ theorem isIso_iff_existsUnique_of_homEquiv {A' A : D} (f : A' ⟶ A) {X X' : D �
   constructor
   · intro _ F s hs
     let g' := (e' F).symm ⟨s, hs⟩
-    refine ⟨e F (inv f ≫ g'), ⟨(e F _).2, ?_⟩, ?_⟩
+    refine ⟨e F (inv f ≫ g'), ⟨(e F _).property, ?_⟩, ?_⟩
     · simpa [g'] using (key F (inv f ≫ g') g').1 (IsIso.hom_inv_id_assoc f g')
     · rintro t ⟨ht, hts⟩
       have h : f ≫ (e F).symm ⟨t, ht⟩ = g' := (key F _ g').2 (by simpa [g'] using hts)
@@ -60,9 +60,9 @@ theorem isIso_iff_existsUnique_of_homEquiv {A' A : D} (f : A' ⟶ A) {X X' : D �
     refine isIso_of_coyoneda_map_bijective f fun F ↦ ⟨fun g₁ g₂ hg ↦ ?_, fun g' ↦ ?_⟩
     · set s := e' F (f ≫ g₂)
       apply (e F).injective
-      exact Subtype.ext <| (h F s s.2).unique ⟨(e F g₁).2, (key F g₁ _).1 hg⟩
-        ⟨(e F g₂).2, (key F g₂ _).1 rfl⟩
-    · obtain ⟨t, ⟨ht, hts⟩, -⟩ := h F _ (e' F g').2
+      exact Subtype.ext <| (h F s s.property).unique ⟨(e F g₁).property, (key F g₁ _).1 hg⟩
+        ⟨(e F g₂).property, (key F g₂ _).1 rfl⟩
+    · obtain ⟨t, ⟨ht, hts⟩, -⟩ := h F _ (e' F g').property
       refine ⟨(e F).symm ⟨t, ht⟩, (key F _ g').2 ?_⟩
       rw [Equiv.apply_symm_apply]
       exact hts

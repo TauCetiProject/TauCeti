@@ -305,10 +305,10 @@ private noncomputable def homPos : ∀ k : ℕ,
       r.ι ((k : ℤ) + 1) ≫ (φ.f ((k : ℤ) + 1) - h ≫ r'.d k) = 0 }
   | 0 =>
       let H := homUp φ (Int.negSucc 0) c (ι_comp_sub_d_eq_zero φ hφ c hc)
-      ⟨H.1, H.2.2⟩
+      ⟨H.val, H.property.2⟩
   | k + 1 =>
-      let H := homUp φ k (homPos k).1 (homPos k).2
-      ⟨H.1, H.2.2⟩
+      let H := homUp φ k (homPos k).val (homPos k).property
+      ⟨H.val, H.property.2⟩
 
 /-- The components `Xⁿ⁺¹ ⟶ X'ⁿ` of the null-homotopy in degrees `n = Int.negSucc (k + 1)`, by
 downward steps from the correction `φ⁻¹ - d ≫ c` in degree `-1`. -/
@@ -318,59 +318,59 @@ private noncomputable def homNeg : ∀ k : ℕ,
         r'.π (Int.negSucc (k + 1)) = 0 }
   | 0 =>
       let H := homDown φ (Int.negSucc 1) c (sub_comp_π_eq_zero φ hφ c hc)
-      ⟨H.1, H.2.2⟩
+      ⟨H.val, H.property.2⟩
   | k + 1 =>
-      let H := homDown φ (Int.negSucc (k + 2)) (homNeg k).1 (homNeg k).2
-      ⟨H.1, H.2.2⟩
+      let H := homDown φ (Int.negSucc (k + 2)) (homNeg k).val (homNeg k).property
+      ⟨H.val, H.property.2⟩
 
 /-- The components `Xⁿ⁺¹ ⟶ X'ⁿ` of the null-homotopy. -/
 private noncomputable def homotopyHom : ∀ n : ℤ, r.X (n + 1) ⟶ r'.X n
-  | Int.ofNat k => (homPos φ hφ c hc k).1
+  | Int.ofNat k => (homPos φ hφ c hc k).val
   | Int.negSucc 0 => c
-  | Int.negSucc (k + 1) => (homNeg φ hφ c hc k).1
+  | Int.negSucc (k + 1) => (homNeg φ hφ c hc k).val
 
 /-! The equations of these recursions at the constructors of `ℤ` and at their successors, by
 `rfl`, as for the lift. -/
 
 private theorem homPos_zero :
-    (homPos φ hφ c hc 0).1 =
-      (homUp φ (Int.negSucc 0) c (ι_comp_sub_d_eq_zero φ hφ c hc)).1 :=
+    (homPos φ hφ c hc 0).val =
+      (homUp φ (Int.negSucc 0) c (ι_comp_sub_d_eq_zero φ hφ c hc)).val :=
   rfl
 
 private theorem homPos_succ (k : ℕ) :
-    (homPos φ hφ c hc (k + 1)).1 =
-      (homUp φ k (homPos φ hφ c hc k).1 (homPos φ hφ c hc k).2).1 :=
+    (homPos φ hφ c hc (k + 1)).val =
+      (homUp φ k (homPos φ hφ c hc k).val (homPos φ hφ c hc k).property).val :=
   rfl
 
 private theorem homNeg_zero :
-    (homNeg φ hφ c hc 0).1 =
-      (homDown φ (Int.negSucc 1) c (sub_comp_π_eq_zero φ hφ c hc)).1 :=
+    (homNeg φ hφ c hc 0).val =
+      (homDown φ (Int.negSucc 1) c (sub_comp_π_eq_zero φ hφ c hc)).val :=
   rfl
 
 private theorem homNeg_succ (k : ℕ) :
-    (homNeg φ hφ c hc (k + 1)).1 = (homDown φ (Int.negSucc (k + 2)) (homNeg φ hφ c hc k).1
-      (homNeg φ hφ c hc k).2).1 :=
+    (homNeg φ hφ c hc (k + 1)).val = (homDown φ (Int.negSucc (k + 2)) (homNeg φ hφ c hc k).val
+      (homNeg φ hφ c hc k).property).val :=
   rfl
 
 private theorem homotopyHom_ofNat (k : ℕ) :
-    homotopyHom φ hφ c hc (Int.ofNat k) = (homPos φ hφ c hc k).1 := rfl
+    homotopyHom φ hφ c hc (Int.ofNat k) = (homPos φ hφ c hc k).val := rfl
 
 private theorem homotopyHom_ofNat_add_one (k : ℕ) :
-    homotopyHom φ hφ c hc (Int.ofNat k + 1) = (homPos φ hφ c hc (k + 1)).1 := rfl
+    homotopyHom φ hφ c hc (Int.ofNat k + 1) = (homPos φ hφ c hc (k + 1)).val := rfl
 
 private theorem homotopyHom_negSucc_zero : homotopyHom φ hφ c hc (Int.negSucc 0) = c := rfl
 
 private theorem homotopyHom_negSucc_zero_add_one :
-    homotopyHom φ hφ c hc (Int.negSucc 0 + 1) = (homPos φ hφ c hc 0).1 := rfl
+    homotopyHom φ hφ c hc (Int.negSucc 0 + 1) = (homPos φ hφ c hc 0).val := rfl
 
 private theorem homotopyHom_negSucc_succ (k : ℕ) :
-    homotopyHom φ hφ c hc (Int.negSucc (k + 1)) = (homNeg φ hφ c hc k).1 := rfl
+    homotopyHom φ hφ c hc (Int.negSucc (k + 1)) = (homNeg φ hφ c hc k).val := rfl
 
 private theorem homotopyHom_negSucc_one_add_one :
     homotopyHom φ hφ c hc (Int.negSucc 1 + 1) = c := rfl
 
 private theorem homotopyHom_negSucc_add_two_add_one (k : ℕ) :
-    homotopyHom φ hφ c hc (Int.negSucc (k + 2) + 1) = (homNeg φ hφ c hc k).1 := rfl
+    homotopyHom φ hφ c hc (Int.negSucc (k + 2) + 1) = (homNeg φ hφ c hc k).val := rfl
 
 /-! The homotopy identities, one for each kind of degree: each is the equation `d ≫ h' = χ` or
 `h' ≫ d = ω` returned by the step that produced the component. After the equations above, the
@@ -381,21 +381,21 @@ private theorem comm_ofNat (k : ℕ) :
     φ.f (Int.ofNat k + 1) = r.d (Int.ofNat k + 1) ≫ homotopyHom φ hφ c hc (Int.ofNat k + 1) +
       homotopyHom φ hφ c hc (Int.ofNat k) ≫ r'.d (Int.ofNat k) := by
   rw [← sub_eq_iff_eq_add, homotopyHom_ofNat_add_one, homotopyHom_ofNat, homPos_succ]
-  exact (homUp φ k (homPos φ hφ c hc k).1 (homPos φ hφ c hc k).2).2.1.symm
+  exact (homUp φ k (homPos φ hφ c hc k).val (homPos φ hφ c hc k).property).property.1.symm
 
 private theorem comm_negSucc_zero :
     φ.f (Int.negSucc 0 + 1) =
       r.d (Int.negSucc 0 + 1) ≫ homotopyHom φ hφ c hc (Int.negSucc 0 + 1) +
         homotopyHom φ hφ c hc (Int.negSucc 0) ≫ r'.d (Int.negSucc 0) := by
   rw [← sub_eq_iff_eq_add, homotopyHom_negSucc_zero_add_one, homotopyHom_negSucc_zero, homPos_zero]
-  exact (homUp φ (Int.negSucc 0) c (ι_comp_sub_d_eq_zero φ hφ c hc)).2.1.symm
+  exact (homUp φ (Int.negSucc 0) c (ι_comp_sub_d_eq_zero φ hφ c hc)).property.1.symm
 
 private theorem comm_negSucc_one :
     φ.f (Int.negSucc 1 + 1) =
       r.d (Int.negSucc 1 + 1) ≫ homotopyHom φ hφ c hc (Int.negSucc 1 + 1) +
         homotopyHom φ hφ c hc (Int.negSucc 1) ≫ r'.d (Int.negSucc 1) := by
   rw [← sub_eq_iff_eq_add', homotopyHom_negSucc_one_add_one, homotopyHom_negSucc_succ, homNeg_zero]
-  exact (homDown φ (Int.negSucc 1) c (sub_comp_π_eq_zero φ hφ c hc)).2.1.symm
+  exact (homDown φ (Int.negSucc 1) c (sub_comp_π_eq_zero φ hφ c hc)).property.1.symm
 
 private theorem comm_negSucc_add_two (k : ℕ) :
     φ.f (Int.negSucc (k + 2) + 1) =
@@ -403,8 +403,8 @@ private theorem comm_negSucc_add_two (k : ℕ) :
         homotopyHom φ hφ c hc (Int.negSucc (k + 2)) ≫ r'.d (Int.negSucc (k + 2)) := by
   rw [← sub_eq_iff_eq_add', homotopyHom_negSucc_add_two_add_one, homotopyHom_negSucc_succ,
     homNeg_succ]
-  exact (homDown φ (Int.negSucc (k + 2)) (homNeg φ hφ c hc k).1
-    (homNeg φ hφ c hc k).2).2.1.symm
+  exact (homDown φ (Int.negSucc (k + 2)) (homNeg φ hφ c hc k).val
+    (homNeg φ hφ c hc k).property).property.1.symm
 
 /-- The null-homotopy of a map of complexes lifting `f = ι₀ ≫ c ≫ π₋₁`. -/
 private noncomputable def homotopyZeroOfEq : Homotopy φ 0 :=

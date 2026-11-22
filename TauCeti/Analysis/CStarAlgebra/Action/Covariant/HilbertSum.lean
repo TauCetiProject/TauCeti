@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
-public import TauCeti.Analysis.InnerProductSpace.HilbertSum
+public import TauCeti.Analysis.CStarAlgebra.Representation.HilbertSum
 public import TauCeti.Analysis.Normed.Lp.Basic
 public import TauCeti.Analysis.Normed.Lp.Map
 public import TauCeti.RepresentationTheory.Continuous.Unitary.HilbertSum
@@ -15,9 +15,10 @@ public import TauCeti.RepresentationTheory.Continuous.Unitary.HilbertSum
 # Hilbert direct sums of covariant representations
 
 Covariant representations of a fixed C⋆-action can be summed over an arbitrary index type.
-The Hilbert space is `lp H 2`, and both representations act coordinatewise. The coefficient
-operators are uniformly bounded by the coefficient norm, and the group representation is the
-Hilbert direct sum `ContRepresentation.hilbertSum` of the unitary group representations.
+The Hilbert space is `lp H 2`, and both representations act coordinatewise: the coefficient
+representation is the direct sum `NonUnitalStarAlgHom.hilbertSum` of the coefficient
+representations, and the group representation is the Hilbert direct sum
+`ContRepresentation.hilbertSum` of the unitary group representations.
 Strong continuity follows from uniform approximation by finite coordinate sums.
 
 The vector-integrated form acts coordinatewise as well: evaluation in a summand commutes
@@ -46,18 +47,7 @@ variable {G A ι : Type*} {H : ι → Type*} [Group G] [TopologicalSpace G]
 /-- The Hilbert direct sum of a family of covariant representations. The coefficient and group
 representations act coordinatewise on `lp H 2`. -/
 def hilbertSum : CovariantRepresentation α (lp H 2) where
-  coefficient :=
-    { toFun a := lp.mapCLM 2 (fun i => (P i).coefficient a) (norm_nonneg a)
-        (fun i => NonUnitalStarAlgHom.norm_apply_le _ a)
-      map_zero' := by ext x i; simp
-      map_add' a b := by ext x i; simp
-      map_smul' c a := by ext x i; simp
-      map_mul' a b := by ext x i; simp [mul_apply_eq_comp]
-      map_star' a := by
-        rw [ContinuousLinearMap.star_eq_adjoint, lp.adjoint_mapCLM _ _ _ (norm_nonneg a)
-          (fun i => by simpa using NonUnitalStarAlgHom.norm_apply_le (P i).coefficient a)]
-        ext x i
-        simp [← ContinuousLinearMap.star_eq_adjoint, map_star] }
+  coefficient := NonUnitalStarAlgHom.hilbertSum fun i => (P i).coefficient
   group := .hilbertSum (fun i => (P i).group) fun i => (P i).isUnitary
   isUnitary := ContRepresentation.isUnitary_hilbertSum _ _
   continuous_orbit x := (lp.continuous_mapCLM_apply (p := 2) (by simp)
@@ -72,7 +62,7 @@ def hilbertSum : CovariantRepresentation α (lp H 2) where
 @[simp]
 theorem hilbertSum_coefficient_apply (a : A) (x : lp H 2) (i : ι) :
     (hilbertSum P).coefficient a x i = (P i).coefficient a (x i) :=
-  (rfl)
+  NonUnitalStarAlgHom.hilbertSum_apply_apply _ a x i
 
 /-- Group operators in the Hilbert direct sum act coordinatewise. -/
 @[simp]

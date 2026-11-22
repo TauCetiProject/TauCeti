@@ -55,21 +55,21 @@ variable {K L M : Type*} [Field K] [Field L] [Field M] [Algebra K L] [Algebra L 
 intermediate field. -/
 def liesOverTowerEquiv (v : InfinitePlace K) :
     (Σ w : {w : InfinitePlace L // w.LiesOver v},
-      {u : InfinitePlace M // u.LiesOver w.1}) ≃
+      {u : InfinitePlace M // u.LiesOver w.val}) ≃
       {u : InfinitePlace M // u.LiesOver v} where
   toFun p := by
-    let _ : p.2.1.LiesOver p.1.1 := p.2.2
-    let _ : p.1.1.LiesOver v := p.1.2
-    exact ⟨p.2.1, LiesOver.trans p.2.1 p.1.1 v⟩
+    let _ : p.2.val.LiesOver p.1.val := p.2.property
+    let _ : p.1.val.LiesOver v := p.1.property
+    exact ⟨p.2.val, AbsoluteValue.LiesOver.trans v.val p.1.val.val p.2.val.val⟩
   invFun u := by
-    let _ : u.1.LiesOver v := u.2
-    let w := u.1.comap (algebraMap L M)
+    let _ : u.val.LiesOver v := u.property
+    let w := u.val.comap (algebraMap L M)
     have hw : w.LiesOver v := by
       have h : w.comap (algebraMap K L) = v := by
         rw [← comap_comp, ← IsScalarTower.algebraMap_eq K L M,
-          LiesOver.comap_eq u.1 v]
+          LiesOver.comap_eq u.val v]
       exact ⟨congrArg Subtype.val h⟩
-    exact ⟨⟨w, hw⟩, ⟨u.1, InfinitePlace.liesOver_comap u.1⟩⟩
+    exact ⟨⟨w, hw⟩, ⟨u.val, InfinitePlace.liesOver_comap u.val⟩⟩
   left_inv p := by
     rcases p with ⟨⟨w, hw⟩, ⟨u, hu⟩⟩
     let _ : u.LiesOver w := hu
@@ -81,22 +81,22 @@ def liesOverTowerEquiv (v : InfinitePlace K) :
 @[simp]
 theorem liesOverTowerEquiv_apply (v : InfinitePlace K)
     (p : Σ w : {w : InfinitePlace L // w.LiesOver v},
-      {u : InfinitePlace M // u.LiesOver w.1}) :
-    (liesOverTowerEquiv (L := L) (M := M) v p).1 = p.2.1 :=
+      {u : InfinitePlace M // u.LiesOver w.val}) :
+    (liesOverTowerEquiv (L := L) (M := M) v p).val = p.2.val :=
   by simp [liesOverTowerEquiv]
 
 /-- The inverse of `liesOverTowerEquiv` passes through the place `u` induces on `L`. -/
 @[simp]
 theorem liesOverTowerEquiv_symm_apply_fst (v : InfinitePlace K)
     (u : {u : InfinitePlace M // u.LiesOver v}) :
-    ((liesOverTowerEquiv (L := L) v).symm u).1.1 = u.1.comap (algebraMap L M) :=
+    ((liesOverTowerEquiv (L := L) v).symm u).1.val = u.val.comap (algebraMap L M) :=
   by simp [liesOverTowerEquiv]
 
 /-- The inverse of `liesOverTowerEquiv` keeps `u` as the top place. -/
 @[simp]
 theorem liesOverTowerEquiv_symm_apply_snd (v : InfinitePlace K)
     (u : {u : InfinitePlace M // u.LiesOver v}) :
-    ((liesOverTowerEquiv (L := L) v).symm u).2.1 = u.1 :=
+    ((liesOverTowerEquiv (L := L) v).symm u).2.val = u.val :=
   by simp [liesOverTowerEquiv]
 
 end NumberField.InfinitePlace

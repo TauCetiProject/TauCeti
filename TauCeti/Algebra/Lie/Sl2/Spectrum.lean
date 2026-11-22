@@ -283,7 +283,7 @@ private theorem iSup_eigenspace_toEnd_eq_top_of_isAlgClosed (t : IsSl2Triple h e
       simpa only [LieSubmodule.coe_bracket, LieSubalgebra.coe_bracket_of_module,
         LieSubmodule.coe_smul] using congrArg (fun w : ↥N ↦ (w : M)) hv'
     have hmem : (v : M) ∈ eigenspaceSup t ⊓ N :=
-      ⟨mem_eigenspaceSup_of_lie_h_eq_smul t hvM, v.2⟩
+      ⟨mem_eigenspaceSup_of_lie_h_eq_smul t hvM, v.property⟩
     rw [hN.inf_eq_bot] at hmem
     exact hv0 (Subtype.ext (by simpa using (LieSubmodule.mem_bot _).1 hmem))
   have hsup : eigenspaceSup (K := K) (M := M) t = ⊤ := by
