@@ -77,6 +77,8 @@ allowing the entire path or loop to be read in one stereographic chart.
 * `LinearIndependent.finCons_mvfderiv_coe_sphere`: a point `u` of the sphere followed by the image
   in the ambient space of a linearly independent family of tangent vectors at `u` is linearly
   independent.
+* `TauCeti.exists_mvfderiv_coe_sphere_eq`: a vector orthogonal to a point of the sphere is the
+  image in the ambient space of a tangent vector at that point.
 * `TauCeti.chartAt_sphere`: the preferred chart at `v` is `stereographic' n (-v)`.
 * `TauCeti.extChartAt_sphere_apply_self`: the preferred extended chart at `v` sends `v` to `0`.
 * `TauCeti.isSmoothEmbedding_stereographic'_symm`: the inverse of a stereographic chart is a
@@ -232,6 +234,14 @@ theorem _root_.LinearIndependent.finCons_mvfderiv_coe_sphere (u : sphere (0 : E)
   LinearIndependent.finCons_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere u)
     (hv.map' _ (LinearMap.ker_eq_bot_of_injective (injective_mvfderiv_subtypeVal_sphere u)))
     fun _ ↦ range_mvfderiv_subtypeVal (n := n) u ▸ LinearMap.mem_range_self _ _
+
+/-- A vector orthogonal to a point `x` of the unit sphere is the image in `E` of a tangent vector
+at `x`. -/
+theorem exists_mvfderiv_coe_sphere_eq (x : sphere (0 : E) 1) {u : E} (hu : ⟪(x : E), u⟫_ℝ = 0) :
+    ∃ v : TangentSpace (𝓡 n) x, mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v = u := by
+  have h : u ∈ (ℝ ∙ (x : E))ᗮ := Submodule.mem_orthogonal_singleton_iff_inner_right.2 hu
+  rw [← range_mvfderiv_subtypeVal (n := n) x] at h
+  exact LinearMap.mem_range.1 h
 
 /-- The preferred chart of the sphere at `v` is the stereographic projection from `-v`. -/
 theorem chartAt_sphere (v : sphere (0 : E) 1) :

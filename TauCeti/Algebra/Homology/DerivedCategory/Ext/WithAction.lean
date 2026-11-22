@@ -7,6 +7,7 @@ module
 
 import Mathlib.Algebra.FiveLemma
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.ExactSequences
+public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.RingTheory.Flat.Basic
 
@@ -64,38 +65,10 @@ namespace ExtWithAction
 noncomputable instance (P : C) (n : ℕ) : AddCommGroup (ExtWithAction ρ P n) :=
   inferInstanceAs (AddCommGroup (Ext P F n))
 
-/-- The action of `A` on `Ext P F n` induced by `ρ`, as a ring homomorphism to the additive
-endomorphisms. -/
-noncomputable def smulEnd (P : C) (n : ℕ) : A →+* AddMonoid.End (Ext P F n) where
-  toFun a := (mk₀ (ρ a).asHom).postcomp P (add_zero n)
-  map_one' := by
-    ext x
-    -- AddMonoid.End.one evaluates to the identity, and postcomp evaluates to Ext.comp.
-    change x.comp (mk₀ (ρ 1).asHom) (add_zero n) = x
-    rw [map_one, End.one_asHom]
-    exact comp_mk₀_id x
-  map_mul' a b := by
-    ext x
-    -- Endomorphism multiplication is composition; postcomp exposes its two Ext factors.
-    change x.comp (mk₀ (ρ (a * b)).asHom) (add_zero n) =
-      (x.comp (mk₀ (ρ b).asHom) (add_zero n)).comp (mk₀ (ρ a).asHom) (add_zero n)
-    rw [map_mul, End.mul_asHom, comp_assoc_of_third_deg_zero, mk₀_comp_mk₀]
-  map_zero' := by
-    ext x
-    -- The zero endomorphism evaluates to zero, while postcomp evaluates to Ext.comp.
-    change x.comp (mk₀ (ρ 0).asHom) (add_zero n) = 0
-    rw [map_zero, End.zero_asHom, mk₀_zero]
-    exact comp_zero _ _ _ _ _
-  map_add' a b := by
-    ext x
-    -- Addition of endomorphisms is pointwise, and each postcomp evaluates to Ext.comp.
-    change x.comp (mk₀ (ρ (a + b)).asHom) (add_zero n) =
-      x.comp (mk₀ (ρ a).asHom) (add_zero n) + x.comp (mk₀ (ρ b).asHom) (add_zero n)
-    rw [map_add, End.add_asHom, mk₀_add]
-    exact comp_add _ _ _ _
-
+/-- The action of `A` on `Ext P F n` pulled back along `ρ` from Mathlib's action
+`CategoryTheory.Abelian.Ext.moduleEndRight` of `End F` by postcomposition. -/
 noncomputable instance (P : C) (n : ℕ) : Module A (ExtWithAction ρ P n) :=
-  Module.compHom (Ext P F n) (smulEnd ρ P n)
+  Module.compHom (Ext P F n) ρ
 
 /-- The identification of `ExtWithAction ρ P n` with `Ext P F n`. -/
 noncomputable def toExt {P : C} {n : ℕ} : ExtWithAction ρ P n ≃+ Ext P F n := AddEquiv.refl _
@@ -103,14 +76,14 @@ noncomputable def toExt {P : C} {n : ℕ} : ExtWithAction ρ P n ≃+ Ext P F n 
 @[simp]
 lemma toExt_smul {P : C} {n : ℕ} (a : A) (x : ExtWithAction ρ P n) :
     toExt ρ (a • x) = (toExt ρ x).comp (mk₀ (ρ a).asHom) (add_zero n) :=
-  (rfl)
+  smul_end_def (ρ a) (toExt ρ x)
 
 /-- Precomposition with `α : Ext P P' m` is `A`-linear. -/
 noncomputable def precompLinearMap {P P' : C} {m : ℕ} (α : Ext P P' m) {n n' : ℕ} (h : m + n = n') :
     ExtWithAction ρ P' n →ₗ[A] ExtWithAction ρ P n' where
   toFun x := (toExt ρ).symm (α.comp (toExt ρ x) h)
   map_add' x y := comp_add α (toExt ρ x) (toExt ρ y) h
-  map_smul' a x := (comp_assoc_of_third_deg_zero α (toExt ρ x) (mk₀ (ρ a).asHom) h).symm
+  map_smul' a x := comp_end_smul α (toExt ρ x) h (ρ a)
 
 @[simp]
 lemma toExt_precompLinearMap {P P' : C} {m : ℕ} (α : Ext P P' m) {n n' : ℕ} (h : m + n = n')

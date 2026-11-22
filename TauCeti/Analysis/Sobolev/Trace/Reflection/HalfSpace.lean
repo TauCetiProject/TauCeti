@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.TangentCone.Prod
 public import Mathlib.Analysis.Calculus.TangentCone.Real
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
+public import Mathlib.Analysis.Normed.Operator.Prod
 public import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 public import TauCeti.Analysis.Sobolev.Trace.Reflection.Higher
 
@@ -51,6 +52,14 @@ def timeScale (a : ℝ) : (ℝ × E) →L[ℝ] ℝ × E :=
 /-- Time dilation multiplies only the time coordinate. -/
 @[simp] theorem timeScale_apply (a : ℝ) (x : ℝ × E) :
     timeScale a x = (a * x.1, x.2) := (rfl)
+
+/-- A time dilation by `a` has operator norm at most `max |a| 1`. -/
+theorem norm_timeScale_le (a : ℝ) : ‖(timeScale a : (ℝ × E) →L[ℝ] ℝ × E)‖ ≤ max |a| 1 := by
+  rw [timeScale, ContinuousLinearMap.opNorm_prod, Prod.norm_mk]
+  refine max_le_max ((ContinuousLinearMap.opNorm_smul_le _ _).trans ?_)
+    (ContinuousLinearMap.norm_snd_le ℝ ℝ E)
+  rw [Real.norm_eq_abs]
+  exact mul_le_of_le_one_right (abs_nonneg a) (ContinuousLinearMap.norm_fst_le ℝ ℝ E)
 
 /-- Expand a time-dilated multilinear term by its subset of time-direction slots. -/
 theorem map_timeScale_eq_sum_pow_card_smul {m : ℕ}
@@ -139,6 +148,20 @@ theorem isClosed_lowerHalfSpace : IsClosed (lowerHalfSpace E) :=
   isClosed_Iic.prod isClosed_univ
 
 end HalfSpaceClosed
+
+section HalfSpaceConvex
+
+variable {E : Type*} [AddCommMonoid E] [Module ℝ E]
+
+/-- The upper half-space is convex. -/
+theorem convex_upperHalfSpace : Convex ℝ (upperHalfSpace E) :=
+  (convex_Ici 0).prod convex_univ
+
+/-- The lower half-space is convex. -/
+theorem convex_lowerHalfSpace : Convex ℝ (lowerHalfSpace E) :=
+  (convex_Iic 0).prod convex_univ
+
+end HalfSpaceConvex
 
 section HalfSpaceUniqueDiff
 

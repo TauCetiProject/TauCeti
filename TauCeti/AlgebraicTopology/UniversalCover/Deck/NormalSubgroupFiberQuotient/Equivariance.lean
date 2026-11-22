@@ -88,6 +88,7 @@ private lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_eq
     subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul,
     subgroupFiberOrbitClass_eq_mk,
     TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_apply_smul]
+  simp only [Subgroup.normalizerQuotientMk_apply]
 
 /-- Under the normal-subgroup fibre quotient equivalence, the descended normalizer-quotient
 action is right multiplication by the inverse. This is the representative-free form of the

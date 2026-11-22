@@ -70,14 +70,16 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
   `a`-torsion if and only if `P` is `a`-saturated in `M`.
 * `Submodule.exists_smul_mem_of_forall_exists_smul_mem`: finitely many elements with nonzero
   multiples in `N` have a common nonzero multiplier into `N`.
-* `Module.isTorsion'_iff`, `Module.not_isTorsion'_iff`: elementwise characterizations of
-  `S`-torsion and its negation.
-* `Module.isTorsion'_of_zero_mem`: every module is `S`-torsion when `0 ∈ S`.
-* `Submodule.isTorsion'_quotient_iff`: elementwise characterization of `S`-torsion quotients.
+* `Submodule.subsingleton_torsionBy_iff_smul_right_injective`: the `a`-torsion submodule is zero
+  exactly when multiplication by `a` is injective.
 * `Ideal.isTorsion_quotient_of_mem`: the quotient of a commutative ring by an ideal
   containing a nonzerodivisor is a torsion module.
 * `Ideal.torsionOf_eq_span_pow_of_prime`: over a principal ideal domain, if `p ^ m` kills `t` but
   `p ^ (m - 1)` does not, for a prime `p`, the annihilator of `t` is `(p ^ m)`.
+* `Module.isTorsion'_iff`, `Module.not_isTorsion'_iff`: elementwise characterizations of
+  `S`-torsion and its negation.
+* `Module.isTorsion'_of_zero_mem`: every module is `S`-torsion when `0 ∈ S`.
+* `Submodule.isTorsion'_quotient_iff`: elementwise characterization of `S`-torsion quotients.
 -/
 
 public section
@@ -401,6 +403,14 @@ theorem exists_smul_mem_of_forall_exists_smul_mem (N : Submodule R M) {ι : Type
   exact N.smul_mem _ (hr i hi)
 
 end
+
+/-- The `a`-torsion submodule is zero exactly when multiplication by `a` is injective. -/
+theorem subsingleton_torsionBy_iff_smul_right_injective {R M : Type*} [CommSemiring R]
+    [AddCommGroup M] [Module R M] {a : R} :
+    Subsingleton (torsionBy R M a) ↔ Function.Injective (a • · : M → M) := by
+  -- `torsionBy R M a` is defined as the kernel of `DistribSMul.toLinearMap R M a`, i.e. of `a • ·`.
+  rw [subsingleton_iff_eq_bot, torsionBy, LinearMap.ker_eq_bot']
+  exact (injective_iff_map_eq_zero (DistribSMul.toLinearMap R M a)).symm
 
 end Submodule
 

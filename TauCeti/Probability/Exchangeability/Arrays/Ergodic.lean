@@ -9,7 +9,7 @@ public import TauCeti.Probability.Exchangeability.Arrays.ZeroOne
 public import TauCeti.MeasureTheory.Group.CountableAction
 public import TauCeti.Probability.Process.Array.FinitaryAction
 -- Non-public: cylinder approximation and its real-valued measure estimates are proof tools.
-import TauCeti.MeasureTheory.Constructions.CylinderApproximation
+import TauCeti.MeasureTheory.Constructions.Cylinder.Approximation
 import TauCeti.MeasureTheory.Measure.ZeroOne
 import Mathlib.Probability.Process.FiniteDimensionalLaws
 
