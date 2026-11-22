@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
+public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 public import Mathlib.RingTheory.KrullDimension.Basic
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
@@ -23,7 +24,7 @@ it is `R × M`.
 This file records the standard finiteness and dimension invariants: over a local ring `R` the
 extension is local and the inclusion of `R` is a local homomorphism; it is finite, respectively
 Noetherian, when `M` is finite (and `R` is Noetherian); and, being integral over `R`, it has the
-Krull dimension of `R`.
+Krull dimension of `R`. Over a free module of finite rank `n` it is free of rank `n + 1`.
 
 Taking for `M` the residue field of a local ring `A` gives `A[z] ⧸ (z², 𝔪z)`, a finite local
 `A`-algebra with the dimension of `A` and of depth zero, which is not flat over `A` unless `A` is
@@ -35,6 +36,7 @@ a field (`TrivSqZeroExt.depth_eq_zero`, `TrivSqZeroExt.not_flat`).
 * `TrivSqZeroExt.mem_maximalIdeal_iff`: its maximal ideal consists of the elements whose first
   component lies in the maximal ideal of `R`.
 * `TrivSqZeroExt.ringKrullDim_eq`: `TrivSqZeroExt R M` has the Krull dimension of `R`.
+* `TrivSqZeroExt.finrank_eq_finrank_add_one`: `TrivSqZeroExt R M` has rank `finrank R M + 1`.
 -/
 public section
 
@@ -70,6 +72,19 @@ end LocalRing
 /-- The trivial square-zero extension by a finite module is a finite algebra. -/
 instance [Module.Finite R M] : Module.Finite R (TrivSqZeroExt R M) :=
   inferInstanceAs (Module.Finite R (R × M))
+
+omit [Module Rᵐᵒᵖ M] [IsCentralScalar R M] in
+/-- The trivial square-zero extension by a free module is a free module. -/
+instance [Module.Free R M] : Module.Free R (TrivSqZeroExt R M) :=
+  inferInstanceAs (Module.Free R (R × M))
+
+omit [Module Rᵐᵒᵖ M] [IsCentralScalar R M] in
+/-- The trivial square-zero extension by a free module of finite rank `n` has rank `n + 1`. -/
+theorem finrank_eq_finrank_add_one [StrongRankCondition R] [Module.Free R M] [Module.Finite R M] :
+    Module.finrank R (TrivSqZeroExt R M) = Module.finrank R M + 1 := by
+  -- As a module, `TrivSqZeroExt R M` is the product `R × M`.
+  rw [show Module.finrank R (TrivSqZeroExt R M) = Module.finrank R (R × M) from rfl,
+    Module.finrank_prod, Module.finrank_self, add_comm]
 
 /-- The trivial square-zero extension of a Noetherian ring by a finite module is Noetherian. -/
 instance [IsNoetherianRing R] [Module.Finite R M] : IsNoetherianRing (TrivSqZeroExt R M) :=

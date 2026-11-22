@@ -93,6 +93,8 @@ open scoped Distributions
 
 namespace TauCeti.SeibergWitten
 
+section Wedge
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   {A B : Type*} [NormedAddCommGroup A] [NormedAddCommGroup B] {k n : ℕ}
 
@@ -173,6 +175,8 @@ theorem _root_.Module.Basis.exists_mass_integral_wedge_le_of_le_mul_max_one_sub
   rw [one_mul] at h
   rw [Real.eNorm_eq_ofReal_abs]
   exact ENNReal.ofReal_le_ofReal h
+
+end Wedge
 
 /-! ### Solutions of the large-parameter equations in a unitary frame -/
 
@@ -376,6 +380,8 @@ theorem norm_le_mul_max_one_sub_add_of_inner_ιMulti_eq {Θ F η : ⋀[ℝ]^2 V}
   have hNrw : 0 ≤ N * (r * w) := mul_nonneg hN hrw
   nlinarith
 
+section
+
 variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
 
 /-- **The cutoff current has `r`-independent `L¹` norm.** On a finite measure space `X`,
@@ -425,6 +431,8 @@ theorem integral_norm_le_of_inner_ιMulti_eq [IsFiniteMeasure μ] {F η Θ : X �
       hφβx hβKx hDαx
     exact norm_le_mul_max_one_sub_add_of_inner_ιMulti_eq h₀ h₂₃ hQ hkl he hρ h₂ hr hC hχ hχ'
       hφx hβx hFx hηx hFmx hΘx hφβx hβKx hDαx
+
+end
 
 /-- **The cutoff current of large-parameter solutions has `r`-independent mass.** Work on an
 open set `Ω` of finite volume in an oriented four-dimensional inner product space with a constant

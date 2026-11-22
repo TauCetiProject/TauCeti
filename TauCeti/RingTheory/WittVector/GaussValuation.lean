@@ -95,9 +95,9 @@ theorem mem_span_teichmuller_pow_iff (hv : v.Integers R) {c : R} {x : 𝕎 R} {n
       i hi, teichmullerCoeff_teichmuller_mul, map_mul, map_mul]
     exact mul_le_of_le_one_right' (hv.map_le_one _)
   · choose u hu using fun i : Finset.Iic n ↦
-      hv.dvd_of_le (hx i (Finset.mem_Iic.mp i.2))
+      hv.dvd_of_le (hx i (Finset.mem_Iic.mp i.property))
     obtain ⟨d, hd⟩ := pow_dvd_sub_sum_teichmullerCoeff x n
-    refine Ideal.mem_span_pair.mpr ⟨∑ i : Finset.Iic n, teichmuller p (u i) * (p : 𝕎 R) ^ i.1,
+    refine Ideal.mem_span_pair.mpr ⟨∑ i : Finset.Iic n, teichmuller p (u i) * (p : 𝕎 R) ^ i.val,
       d, ?_⟩
     rw [sub_eq_iff_eq_add] at hd
     rw [hd, ← Finset.sum_coe_sort (Finset.Iic n), Finset.sum_mul, add_comm]

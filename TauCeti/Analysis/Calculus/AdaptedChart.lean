@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Operator.Banach
-public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
-public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-public import TauCeti.Analysis.Calculus.NormalExtension
+public import TauCeti.Analysis.Calculus.NormalExtension.Chart
 public import TauCeti.LinearAlgebra.TotallyReal.Frame
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
@@ -42,16 +40,18 @@ consumer may shrink the chart freely, and over an arbitrary nontrivially normed 
   `C^(ℓ+1)` parametrization it is `C^(ℓ-1)`. It equals the standard structure on the zero
   section.
 
+The inverse function step and the inversion of the parametrization are the cases for the adapted
+extension of the general normal-extension chart results in
+`TauCeti.Analysis.Calculus.NormalExtension.Chart`.
+
 ## Main declarations
 
 * `TauCeti.isInvertible_fderiv_adaptedNormalExtension_zero_iff`: the derivative of the adapted
   extension on the zero section is invertible exactly for maximal totally real tangent spaces.
 * `TauCeti.exists_adaptedChart`: the inverse function theorem for the adapted extension, with a
-  `C^ℓ` inverse on the whole target.
+  `C^ℓ` inverse on the whole target; a case of `TauCeti.exists_normalExtensionChart`.
 * `TauCeti.exists_adaptedChart_of_isInducing`: for an embedded submanifold, an adapted chart
   that flattens all of `γ (U)` inside its target.
-* `TauCeti.exists_openPartialHomeomorph_normalExtension`: the inverse function theorem for an
-  arbitrary normal extension, shared with the charts adapted to pseudoholomorphic discs.
 * `OpenPartialHomeomorph.isImage_of_coe_eq_normalExtension`,
   `OpenPartialHomeomorph.isImage_image_of_coe_eq_normalExtension`: flattening, for any chart
   whose underlying map is a normal extension.
@@ -105,39 +105,6 @@ theorem isInvertible_fderiv_adaptedNormalExtension_zero_iff [CompleteSpace V] [C
 
 end Invertible
 
-section NormalChart
-
-variable {𝕜 V E W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup W] [NormedSpace 𝕜 W]
-  {γ : V → W} {A : V → E →L[𝕜] W}
-
-/-- **Charts from a normal extension.** Let the normal extension `Φ (x, y) = γ x + A x y` be
-`C^ℓ` on `U × E` for an open `U`, with `1 ≤ ℓ`, and let its derivative at `(x₀, 0)` be a
-continuous linear equivalence, where `x₀ ∈ U` and `γ x₀` lies in an open `Ω`. Then `Φ`
-restricts to a partial homeomorphism around `(x₀, 0)` with source in `U × E`, target in `Ω`,
-and which is `C^ℓ` with `C^ℓ` inverse. -/
-theorem exists_openPartialHomeomorph_normalExtension [CompleteSpace V] [CompleteSpace E]
-    {U : Set V} {Ω : Set W} {x₀ : V} {ℓ : ℕ∞ω} (hU : IsOpen U) (hΩ : IsOpen Ω) (hx₀ : x₀ ∈ U)
-    (hγx₀ : γ x₀ ∈ Ω) (hℓ : 1 ≤ ℓ) (hΦ : ContDiffOn 𝕜 ℓ (normalExtension γ A) (U ×ˢ univ))
-    {L : (V × E) ≃L[𝕜] W}
-    (hL : (L : (V × E) →L[𝕜] W) = fderiv 𝕜 (normalExtension γ A) (x₀, 0)) :
-    ∃ e : OpenPartialHomeomorph (V × E) W, ⇑e = normalExtension γ A ∧
-      (x₀, 0) ∈ e.source ∧ e.source ⊆ U ×ˢ univ ∧ e.target ⊆ Ω ∧
-      ContDiffOn 𝕜 ℓ e e.source ∧ ContDiffOn 𝕜 ℓ e.symm e.target := by
-  have hs : IsOpen ((U ×ˢ univ) ∩ normalExtension γ A ⁻¹' Ω) :=
-    hΦ.continuousOn.isOpen_inter_preimage (hU.prod isOpen_univ) hΩ
-  have hmem : (x₀, (0 : E)) ∈ (U ×ˢ univ) ∩ normalExtension γ A ⁻¹' Ω :=
-    ⟨⟨hx₀, mem_univ _⟩, by rwa [mem_preimage, normalExtension_zero]⟩
-  obtain ⟨e, he, hx, hsub, hsymm⟩ :=
-    TauCeti.ContDiffOn.exists_openPartialHomeomorph (hΦ.mono inter_subset_left) hs hmem hℓ hL
-  refine ⟨e, he, hx, fun p hp ↦ (hsub hp).1, fun y hy ↦ ?_, ?_, hsymm⟩
-  · rw [← e.right_inv hy, he]
-    exact (hsub (e.map_target hy)).2
-  · rw [he]
-    exact hΦ.mono fun p hp ↦ (hsub hp).1
-
-end NormalChart
-
 section Chart
 
 variable {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
@@ -156,13 +123,14 @@ theorem exists_adaptedChart [CompleteSpace V] [CompleteSpace W] {U : Set V} {Ω 
     ∃ e : OpenPartialHomeomorph (V × V) W, ⇑e = adaptedNormalExtension γ J ∧
       (x₀, 0) ∈ e.source ∧ e.source ⊆ U ×ˢ univ ∧ e.target ⊆ Ω ∧
       ContDiffOn 𝕜 ℓ e e.source ∧ ContDiffOn 𝕜 ℓ e.symm e.target := by
-  have hΦ := contDiffOn_adaptedNormalExtension hU hγ hJ hγΩ
-  have hγ₁ : ContDiffAt 𝕜 1 γ x₀ :=
-    (hγ.contDiffAt (hU.mem_nhds hx₀)).of_le (hℓ.trans le_self_add)
+  have hγℓ : ContDiffOn 𝕜 ℓ γ U := hγ.of_le le_self_add
+  have hγ₁ : ContDiffAt 𝕜 1 γ x₀ := (hγℓ.contDiffAt (hU.mem_nhds hx₀)).of_le hℓ
   have hJc : ContinuousAt J (γ x₀) := hJ.continuousOn.continuousAt (hΩ.mem_nhds (hγΩ hx₀))
-  obtain ⟨E, hE⟩ := (isInvertible_fderiv_adaptedNormalExtension_zero_iff hγ₁ hJc hsq hinj).2 htr
-  rw [adaptedNormalExtension_eq_normalExtension] at hΦ hE ⊢
-  exact exists_openPartialHomeomorph_normalExtension hU hΩ hx₀ (hγΩ hx₀) hℓ hΦ hE
+  have hframe := (isInvertible_fderiv_adaptedNormalExtension_zero_iff hγ₁ hJc hsq hinj).2 htr
+  rw [fderiv_adaptedNormalExtension_zero hγ₁ hJc] at hframe
+  rw [adaptedNormalExtension_eq_normalExtension]
+  exact exists_normalExtensionChart hU hΩ hx₀ hℓ hγℓ
+    ((hJ.comp hγℓ hγΩ).clm_comp (hγ.fderiv_of_isOpen hU le_rfl)) hγΩ hframe
 
 end Chart
 
@@ -176,11 +144,6 @@ variable {𝕜 V E W : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup W] [NormedSpace 𝕜 W]
   {γ : V → W} {A : V → E →L[𝕜] W} {e : OpenPartialHomeomorph (V × E) W}
 
-/-- A chart given by a normal extension inverts the parametrization on the zero section of its
-source. -/
-theorem symm_apply_of_coe_eq_normalExtension (he : ⇑e = TauCeti.normalExtension γ A)
-    {x : V} (hx : (x, 0) ∈ e.source) : e.symm (γ x) = (x, 0) := by
-  rw [← TauCeti.normalExtension_zero γ A x, ← he, e.left_inv hx]
 
 /-- A chart given by a normal extension sends the zero section of its source into its target
 along `γ`. -/

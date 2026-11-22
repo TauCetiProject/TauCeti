@@ -19,6 +19,7 @@ by the identity of `M`, viewed as an `f`-semilinear map. It is an isomorphism wh
 bijective, although this need not hold for a general ring map. This
 supplies the sectionwise maps for symmetric powers of pushforwards of module presheaves, in the
 same way as `TauCeti.ModuleCat.restrictScalarsExteriorPowerComparison` does for exterior powers.
+In degree zero it is `f` itself, read through the identifications `Sym⁰ ≅` the coefficient ring.
 -/
 
 public section
@@ -44,7 +45,7 @@ private def restrictScalarsSymmetricPowerApp (n : ℕ) (M : ModuleCat.{max u v w
 private lemma coe_restrictScalarsSymmetricPowerApp_apply (n : ℕ) (M : ModuleCat.{max u v w} R)
     (x : ((ModuleCat.restrictScalars f).obj M).symmetricPower n) :
     Subtype.val (restrictScalarsSymmetricPowerApp f n M x) =
-      SymmetricAlgebra.mapₛₗ ((ModuleCat.semilinearMapAddEquiv f _ M).symm (𝟙 _)) x.1 :=
+      SymmetricAlgebra.mapₛₗ ((ModuleCat.semilinearMapAddEquiv f _ M).symm (𝟙 _)) x.val :=
   TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n x
 
 /-- Restriction of scalars carries the natural symmetric-power comparison, changing the
@@ -71,7 +72,7 @@ def restrictScalarsSymmetricPowerComparison (n : ℕ) :
     apply Subtype.ext
     exact (coe_restrictScalarsSymmetricPowerApp_apply f n N _).trans
       ((congrArg _ (ModuleCat.symmetricPower.coe_map_apply _ n x)).trans
-        ((RingHom.congr_fun key x.1).trans
+        ((RingHom.congr_fun key x.val).trans
           ((congrArg (SymmetricAlgebra.map R φ.hom)
             (coe_restrictScalarsSymmetricPowerApp_apply f n M x).symm).trans
               (ModuleCat.symmetricPower.coe_map_apply φ n _).symm)))
@@ -87,7 +88,7 @@ theorem coe_restrictScalarsSymmetricPowerComparison_app_apply (n : ℕ)
       (X := ((ModuleCat.restrictScalars f).obj M).symmetricPower n)
       (Y := (ModuleCat.restrictScalars f).obj (M.symmetricPower n))
       ((restrictScalarsSymmetricPowerComparison f n).app M) x) =
-      SymmetricAlgebra.mapₛₗ ((ModuleCat.semilinearMapAddEquiv f _ M).symm (𝟙 _)) x.1 :=
+      SymmetricAlgebra.mapₛₗ ((ModuleCat.semilinearMapAddEquiv f _ M).symm (𝟙 _)) x.val :=
   coe_restrictScalarsSymmetricPowerApp_apply f n M x
 
 /-- Restriction along an isomorphism of coefficient rings preserves symmetric powers. -/
@@ -113,8 +114,8 @@ theorem isIso_restrictScalarsSymmetricPowerComparison_app_of_bijective
     have eq := SymmetricAlgebra.mapₛₗ_comp_mapₛₗ
       ((_root_.ModuleCat.semilinearMapAddEquiv f _ M).symm (𝟙 _)) g
       (LinearMap.id : N →ₗ[S] N) (fun r ↦ e.symm_apply_apply r) (fun _ ↦ rfl)
-    exact (RingHom.congr_fun eq x.1).trans
-      (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl) (fun _ ↦ rfl)) x.1)
+    exact (RingHom.congr_fun eq x.val).trans
+      (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl) (fun _ ↦ rfl)) x.val)
   have hright (x : M.symmetricPower n) :
       ((restrictScalarsSymmetricPowerComparison f n).app M) (h x) = x := by
     apply Subtype.ext
@@ -124,11 +125,31 @@ theorem isIso_restrictScalarsSymmetricPowerComparison_app_of_bijective
     have eq := SymmetricAlgebra.mapₛₗ_comp_mapₛₗ g
       ((_root_.ModuleCat.semilinearMapAddEquiv f _ M).symm (𝟙 _))
       (LinearMap.id : M →ₗ[R] M) (fun r ↦ e.apply_symm_apply r) (fun _ ↦ rfl)
-    exact (RingHom.congr_fun eq x.1).trans
-      (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl) (fun _ ↦ rfl)) x.1)
+    exact (RingHom.congr_fun eq x.val).trans
+      (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl) (fun _ ↦ rfl)) x.val)
   exact (ConcreteCategory.isIso_iff_bijective _).mpr
     ⟨Function.LeftInverse.injective hleft, Function.RightInverse.surjective hright⟩
 
 end
+
+section DegreeZero
+
+variable {S R : Type u} [CommRing S] [CommRing R] (f : S →+* R)
+
+/-- In degree zero the restriction-of-scalars comparison is the ring map `f`, read through the
+identifications `Sym⁰ ≅ S` and `Sym⁰ ≅ R` of `ModuleCat.symmetricPower.iso₀`. -/
+theorem iso₀_hom_restrictScalarsSymmetricPowerComparison_app_apply (M : ModuleCat.{u} R)
+    (x : ((ModuleCat.restrictScalars f).obj M).symmetricPower 0) :
+    (ModuleCat.symmetricPower.iso₀ M).hom
+        ((restrictScalarsSymmetricPowerComparison.{u, u, u} f 0).app M x) =
+      f ((ModuleCat.symmetricPower.iso₀ ((ModuleCat.restrictScalars f).obj M)).hom x) := by
+  -- Degree-zero elements are scalars in the symmetric algebra, where the comparison is `f`.
+  apply (SymmetricAlgebra.algebraMap_leftInverse (R := R) M).injective
+  exact (ModuleCat.symmetricPower.algebraMap_iso₀_hom_apply M _).trans
+    ((coe_restrictScalarsSymmetricPowerComparison_app_apply f 0 M x).trans
+      ((congrArg _ (ModuleCat.symmetricPower.algebraMap_iso₀_hom_apply _ x).symm).trans
+        (SymmetricAlgebra.mapₛₗ_algebraMap _ _)))
+
+end DegreeZero
 
 end TauCeti.ModuleCat

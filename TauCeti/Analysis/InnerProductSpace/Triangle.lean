@@ -28,7 +28,7 @@ open scoped RealInnerProductSpace
 
 namespace TauCeti
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+variable {F : Type*} [SeminormedAddCommGroup F] [InnerProductSpace ℝ F]
 
 /-- The sum of the squared sides of the triangle with vertices `a, b, c` is
 `3 (‖a‖ ^ 2 + ‖b‖ ^ 2 + ‖c‖ ^ 2) - ‖a + b + c‖ ^ 2`. -/

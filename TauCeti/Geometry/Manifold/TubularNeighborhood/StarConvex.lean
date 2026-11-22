@@ -53,7 +53,7 @@ theorem isTubularNeighborhood_radialCore {f : B → N} {U : Set (TotalSpace F E)
   zero_mem := fun x => (VectorBundle.zeroSection_mem_radialCore x).mpr (hzero x)
   fiberwise_starConvex := VectorBundle.starConvex_radialCore U
   isOpenEmbedding := hφ.comp (.inclusion (VectorBundle.radialCore_subset U)
-    ((VectorBundle.isOpen_radialCore hU).preimage continuous_subtype_val))
+    ((VectorBundle.isOpen_radialCore hU).preimage continuous_subtypeVal))
   isEmbedding_f := by
     have hleft : Function.LeftInverse (π F E) (zeroSection F E) := fun _ => rfl
     have hz : IsEmbedding (zeroSection F E) :=
@@ -63,7 +63,7 @@ theorem isTubularNeighborhood_radialCore {f : B → N} {U : Set (TotalSpace F E)
       hφ.isEmbedding.comp (hz.codRestrict U hzero)
   map_zeroSection := fun x => hφzero x
   continuous_radial :=
-    (continuous_subtype_val.comp continuous_fst).smul_totalSpace
-      (continuous_subtype_val.comp continuous_snd)
+    (continuous_subtypeVal.comp continuous_fst).smul_totalSpace
+      (continuous_subtypeVal.comp continuous_snd)
 
 end TauCeti
