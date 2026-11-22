@@ -171,8 +171,8 @@ private theorem _root_.IsCompactOperator.exists_eq_succ_of_chain (hK : IsCompact
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
   -- Riesz's lemma gives a bounded sequence whose images under `K` stay `1` apart.
   choose f hfmem hfnorm hfsep using fun n =>
-    riesz_lemma_of_norm_lt_of_lt hc (lt_add_one ‖c‖) (hclosed (n + 1))
-      ((hmono n).lt_of_ne (hcon n))
+    riesz_lemma_of_norm_lt_of_lt hc (lt_add_one ‖c‖)
+      ((hclosed (n + 1)).preimage continuous_subtypeVal) ((hmono n).lt_of_ne (hcon n))
   have key : ∀ m n : ℕ, m < n → 1 ≤ ‖K (f m) - K (f n)‖ := by
     intro m n hmn
     have hy : (f m - K (f m)) + f n - (f n - K (f n)) ∈ V (m + 1) :=

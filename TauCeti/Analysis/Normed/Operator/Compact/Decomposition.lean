@@ -54,8 +54,8 @@ theorem exists_ker_pow_succ_eq_one_sub (hK : IsCompactOperator K) :
   by_contra! hcon
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
   choose f hfmem hfnorm hfsep using fun n ↦
-    TauCeti.riesz_lemma_of_norm_lt_of_lt hc (lt_add_one ‖c‖) (hclosed n)
-      ((hmono (Nat.le_succ n)).lt_of_ne (hcon n).symm)
+    TauCeti.riesz_lemma_of_norm_lt_of_lt hc (lt_add_one ‖c‖)
+      ((hclosed n).preimage continuous_subtypeVal) ((hmono (Nat.le_succ n)).lt_of_ne (hcon n).symm)
   have hsep (m n : ℕ) (hmn : m < n) : 1 ≤ ‖K (f n) - K (f m)‖ := by
     have hy : A (f n) + f m - A (f m) ∈ V n :=
       (V n).sub_mem ((V n).add_mem (hstep n _ (hfmem n))

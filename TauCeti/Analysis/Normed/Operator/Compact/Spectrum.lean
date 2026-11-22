@@ -81,7 +81,8 @@ private theorem not_injective_eigenvalues_of_norm_ge (hK : IsCompactOperator K)
   obtain ⟨V, hmono, hclosed, hstrict, hstep⟩ := exists_eigenvector_span_chain μ hinj v hv
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
   choose f hfmem hfnorm hfsep using fun n ↦
-    TauCeti.riesz_lemma_of_norm_lt_of_lt hc (lt_add_one ‖c‖) (hclosed n) (hstrict n)
+    TauCeti.riesz_lemma_of_norm_lt_of_lt hc (lt_add_one ‖c‖)
+      ((hclosed n).preimage continuous_subtypeVal) (hstrict n)
   have hsep (m n : ℕ) (hmn : m < n) : ε ≤ ‖K (f n) - K (f m)‖ := by
     have hne : μ n ≠ 0 := norm_pos_iff.mp (hε.trans_le (hnorm n))
     let y := (μ n)⁻¹ • (K (f m) - (K (f n) - μ n • f n))

@@ -12,38 +12,39 @@ public import Mathlib.Analysis.Normed.Module.RieszLemma
 
 Mathlib's `riesz_lemma_of_norm_lt` finds, outside a proper closed subspace `F` of a normed space,
 a vector of controlled norm at distance at least `1` from `F`. This file records the relative
-form: when `F` is a proper closed subspace of a subspace `G`, the vector can be chosen in `G`.
-This is the form used to build separated sequences along strictly decreasing chains of closed
-subspaces, as in the Riesz theory of compact operators.
+form: when `F` is a proper subspace of a subspace `G` and is closed in `G`, the vector can be
+chosen in `G`. This is the form used to build separated sequences along strictly decreasing chains
+of closed subspaces, as in the Riesz theory of compact operators.
 
-It also records the translated form `TauCeti.riesz_lemma_translate`: a prescribed vector `x` can be
-moved by an element of a closed subspace `F` to a vector `x - y` with `r * ‖x - y‖ ≤ ‖x - y - z‖`
-for every `z ∈ F`. Unlike `riesz_lemma`, this keeps track of the coset `x + F`, which is what an
-approximate Gram–Schmidt process needs.
+It also records the translated form `TauCeti.riesz_lemma_translate`: in a seminormed group, a
+prescribed vector `x` can be moved by an element of a closed submodule `F` to a vector `x - y` with
+`r * ‖x - y‖ ≤ ‖x - y - z‖` for every `z ∈ F`. Unlike `riesz_lemma`, this keeps track of the coset
+`x + F`, which is what an approximate Gram–Schmidt process needs.
 -/
 
 public section
 
 namespace TauCeti
 
-variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-
-/-- **Riesz's lemma** relative to a larger subspace: if `F` is a closed subspace properly contained
-in a subspace `G`, then `G` contains a vector of norm at most `R` at distance at least `1`
-from `F`. -/
-theorem riesz_lemma_of_norm_lt_of_lt {c : 𝕜} (hc : 1 < ‖c‖) {R : ℝ} (hR : ‖c‖ < R)
-    {F G : Submodule 𝕜 E} (hFc : IsClosed (F : Set E)) (hFG : F < G) :
+/-- **Riesz's lemma** relative to a larger subspace: if a subspace `F` is properly contained in a
+subspace `G` and is closed in `G`, then `G` contains a vector of norm at most `R` at distance at
+least `1` from `F`. If `hF : IsClosed (F : Set E)`, then `hF.preimage continuous_subtypeVal`
+supplies `hFc`. -/
+theorem riesz_lemma_of_norm_lt_of_lt {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {c : 𝕜} (hc : 1 < ‖c‖) {R : ℝ} (hR : ‖c‖ < R) {F G : Submodule 𝕜 E}
+    (hFc : IsClosed (((↑) : G → E) ⁻¹' F)) (hFG : F < G) :
     ∃ x₀ ∈ G, ‖x₀‖ ≤ R ∧ ∀ y ∈ F, 1 ≤ ‖x₀ - y‖ := by
   obtain ⟨x, hxG, hxF⟩ := IsConcreteLE.exists_of_lt hFG
-  obtain ⟨x₀, hx₀R, hx₀⟩ := riesz_lemma_of_norm_lt hc hR (F := F.comap G.subtype)
-    (hFc.preimage continuous_subtypeVal) ⟨⟨x, hxG⟩, hxF⟩
+  -- `F.comap G.subtype` is `F` seen inside `G`; its carrier is by definition the preimage in `hFc`.
+  obtain ⟨x₀, hx₀R, hx₀⟩ :=
+    riesz_lemma_of_norm_lt hc hR (F := F.comap G.subtype) hFc ⟨⟨x, hxG⟩, hxF⟩
   exact ⟨x₀, x₀.property, hx₀R, fun y hy => hx₀ ⟨y, hFG.le hy⟩ hy⟩
 
-/-- **Riesz's lemma**, translated form: for a closed submodule `F`, a vector `x` and `r < 1`, some
-`y ∈ F` satisfies `r * ‖x - y‖ ≤ ‖x - y - z‖` for every `z ∈ F`, so `x - y` is almost as far from
-`F` as its norm. For `x ∈ F` one may take `y = x`. -/
-theorem riesz_lemma_translate {R : Type*} [Semiring R] [Module R E] {F : Submodule R E}
-    (hFc : IsClosed (F : Set E)) (x : E) {r : ℝ} (hr : r < 1) :
+/-- **Riesz's lemma**, translated form: for a closed submodule `F` of a seminormed group, a vector
+`x` and `r < 1`, some `y ∈ F` satisfies `r * ‖x - y‖ ≤ ‖x - y - z‖` for every `z ∈ F`, so `x - y`
+is almost as far from `F` as its norm. For `x ∈ F` one may take `y = x`. -/
+theorem riesz_lemma_translate {R E : Type*} [Semiring R] [SeminormedAddCommGroup E] [Module R E]
+    {F : Submodule R E} (hFc : IsClosed (F : Set E)) (x : E) {r : ℝ} (hr : r < 1) :
     ∃ y ∈ F, ∀ z ∈ F, r * ‖x - y‖ ≤ ‖x - y - z‖ := by
   by_cases hx : x ∈ F
   · exact ⟨x, hx, fun z _ ↦ by simp⟩
