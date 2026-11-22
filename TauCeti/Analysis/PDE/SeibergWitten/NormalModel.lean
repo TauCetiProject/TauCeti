@@ -736,35 +736,41 @@ theorem pairedBaseCoupling_zero : pairedBaseCoupling 0 = 0 := by
   fin_cases i <;> simp
 
 /-- The base coupling of the normal rows is additive in the base derivative. -/
+@[simp]
 theorem normalBaseCoupling_add (D D' : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
     normalBaseCoupling (D + D') = normalBaseCoupling D + normalBaseCoupling D' := by
   ext i
   fin_cases i <;> simp <;> ring
 
 /-- The base coupling of the paired rows is additive in the base derivative. -/
+@[simp]
 theorem pairedBaseCoupling_add (D D' : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
     pairedBaseCoupling (D + D') = pairedBaseCoupling D + pairedBaseCoupling D' := by
   ext i
   fin_cases i <;> simp <;> ring
 
 /-- The base coupling of the normal rows is homogeneous in the base derivative. -/
+@[simp]
 theorem normalBaseCoupling_smul (c : ℝ) (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
     normalBaseCoupling (c • D) = c • normalBaseCoupling D := by
   ext i
   fin_cases i <;> simp <;> ring
 
 /-- The base coupling of the paired rows is homogeneous in the base derivative. -/
+@[simp]
 theorem pairedBaseCoupling_smul (c : ℝ) (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
     pairedBaseCoupling (c • D) = c • pairedBaseCoupling D := by
   ext i
   fin_cases i <;> simp <;> ring
 
 /-- The base coupling of the normal rows commutes with negating the base derivative. -/
+@[simp]
 theorem normalBaseCoupling_neg (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
     normalBaseCoupling (-D) = -normalBaseCoupling D := by
   rw [← neg_one_smul ℝ D, normalBaseCoupling_smul, neg_one_smul]
 
 /-- The base coupling of the paired rows commutes with negating the base derivative. -/
+@[simp]
 theorem pairedBaseCoupling_neg (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
     pairedBaseCoupling (-D) = -pairedBaseCoupling D := by
   rw [← neg_one_smul ℝ D, pairedBaseCoupling_smul, neg_one_smul]
