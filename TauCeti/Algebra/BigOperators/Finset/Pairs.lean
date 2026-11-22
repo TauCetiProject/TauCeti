@@ -474,7 +474,7 @@ theorem FinStrictUpper.toStrictUpper_injective {n : ℕ} :
 `n.choose 2` exactly when its column `j` is below `n`. This is the simp normal form of corner
 membership for the enumeration `strictUpperEquivNat`, after `strictUpperEquivNat_apply`. -/
 @[simp]
-theorem strictUpperIndex_lt_choose_iff (ij : StrictUpper) (n : ℕ) :
+theorem choose_two_add_lt_choose_two_iff (ij : StrictUpper) (n : ℕ) :
     ij.val.2.choose 2 + ij.val.1 < n.choose 2 ↔ ij.val.2 < n := by
   constructor
   · contrapose!
@@ -492,10 +492,10 @@ noncomputable def strictUpperEquivNat : StrictUpper ≃ ℕ := by
   refine Equiv.ofBijective (fun ij ↦ ij.val.2.choose 2 + ij.val.1) ⟨?_, ?_⟩
   · intro x y h
     dsimp only at h
-    have hx := (strictUpperIndex_lt_choose_iff x (y.val.2 + 1)).mp (h.symm ▸
-      (strictUpperIndex_lt_choose_iff y (y.val.2 + 1)).mpr (Nat.lt_succ_self _))
-    have hy := (strictUpperIndex_lt_choose_iff y (x.val.2 + 1)).mp (h ▸
-      (strictUpperIndex_lt_choose_iff x (x.val.2 + 1)).mpr (Nat.lt_succ_self _))
+    have hx := (choose_two_add_lt_choose_two_iff x (y.val.2 + 1)).mp (h.symm ▸
+      (choose_two_add_lt_choose_two_iff y (y.val.2 + 1)).mpr (Nat.lt_succ_self _))
+    have hy := (choose_two_add_lt_choose_two_iff y (x.val.2 + 1)).mp (h ▸
+      (choose_two_add_lt_choose_two_iff x (x.val.2 + 1)).mpr (Nat.lt_succ_self _))
     have hs : x.val.2 = y.val.2 := by omega
     exact Subtype.ext (Prod.ext (by rw [hs, Nat.add_right_inj] at h; exact h) hs)
   · intro k
@@ -525,12 +525,12 @@ below `n.choose 2`. -/
 @[simp]
 theorem strictUpperEquivNat_symm_apply_val_snd_lt_iff (k n : ℕ) :
     (strictUpperEquivNat.symm k).val.2 < n ↔ k < n.choose 2 := by
-  rw [← strictUpperIndex_lt_choose_iff, ← strictUpperEquivNat_apply, Equiv.apply_symm_apply]
+  rw [← choose_two_add_lt_choose_two_iff, ← strictUpperEquivNat_apply, Equiv.apply_symm_apply]
 
 /-- The column-order enumeration restricted to the strictly upper positions of `Fin n`. -/
 noncomputable def finStrictUpperEquiv (n : ℕ) : FinStrictUpper n ≃ Fin (n.choose 2) :=
   ((finStrictUpperEquivSubtype n).trans (strictUpperEquivNat.subtypeEquiv fun ij ↦ by
-    simp only [strictUpperEquivNat_apply, strictUpperIndex_lt_choose_iff])).trans
+    simp only [strictUpperEquivNat_apply, choose_two_add_lt_choose_two_iff])).trans
       Fin.equivSubtype.symm
 
 /-- The finite enumeration gives the same index as the infinite column enumeration. -/

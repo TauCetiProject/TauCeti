@@ -48,7 +48,7 @@ theorem ae_eventually_norm_wignerMatrix_zero_apply_le
   have hscale (ij : StrictUpper) (hij : ij.val.2 < n + 1) :
       (Real.sqrt (n + 1 : ℕ))⁻¹ * ‖ξ ij ω‖ ≤ ε := by
     have h := hn (strictUpperEquivNat ij) (by
-      simpa only [strictUpperEquivNat_apply, strictUpperIndex_lt_choose_iff] using hij)
+      simpa only [strictUpperEquivNat_apply, choose_two_add_lt_choose_two_iff] using hij)
     rw [Equiv.symm_apply_apply] at h
     rw [inv_mul_eq_div, div_le_iff₀ (Real.sqrt_pos.2 (by positivity)), mul_comm]
     simpa only [mul_comm ε] using h
