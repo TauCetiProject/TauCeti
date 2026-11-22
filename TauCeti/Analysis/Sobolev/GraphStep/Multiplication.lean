@@ -161,6 +161,16 @@ theorem prev_smulLeftCLM_ae (hψ : ContDiffOn ℝ ∞ ψ Omega) (h₀ : ∃ C, �
   exact Lp.multiplicationOperator_linftyOfContinuousOn_ae hψ.continuousOn
     Omega.isOpen.measurableSet h₀ (prev _ u)
 
+/-- If `ψ` vanishes on a set `Z`, then so does the field of `ψ u`, almost everywhere. -/
+theorem ae_prev_smulLeftCLM_eq_zero (hψ : ContDiffOn ℝ ∞ ψ Omega)
+    (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C)
+    (hT : ∀ (a : Lp ℝ ∞ (mu.restrict Omega)) g,
+      T (Lp.multiplicationOperator a g) = Lp.multiplicationOperator a (T g))
+    {Z : Set E} (hZ : ∀ x ∈ Z, ψ x = 0) (u : WeakDerivStep mu Omega p T) :
+    ∀ᵐ x ∂mu.restrict Omega, x ∈ Z → prev _ (smulLeftCLM ψ hψ h₀ h₁ hT u) x = 0 := by
+  filter_upwards [prev_smulLeftCLM_ae hψ h₀ h₁ hT u] with x hx hxZ
+  rw [hx, hZ x hxZ, zero_smul]
+
 /-- **The Leibniz rule.** The weak derivative of `T (ψ u)` is represented almost everywhere by
 `x ↦ ψ x • Du x + Dψ x ⊗ T u x`. -/
 theorem weakFDeriv_smulLeftCLM_ae (hψ : ContDiffOn ℝ ∞ ψ Omega)

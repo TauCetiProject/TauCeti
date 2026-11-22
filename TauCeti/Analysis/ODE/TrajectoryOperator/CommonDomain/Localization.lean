@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Sobolev.GraphStep.Multiplication
 import TauCeti.Analysis.Calculus.BumpFunction.LinePartition
 import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.SemiFredholm
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
-import TauCeti.Analysis.Sobolev.GraphStep.AubinLions
 
 /-!
 # The semi-Fredholm estimate for continuous families over a common domain, by localization
@@ -101,86 +100,6 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [CompleteSpace
   [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H] {ι : D →L[ℝ] H}
 
 omit [CompleteSpace D] in
-/-- If `|φ| ≤ c` and `φ` vanishes off `(-T, T)`, then the path `φ (ι ∘ u)` on `ℝ` has `L²` norm at
-most `c` times that of `ι ∘ u` on `(-T, T)`. -/
-private theorem norm_le_mul_norm_restrictBaseL {T c : ℝ} {φ : ℝ → ℝ} (hφ : ∀ s, |φ s| ≤ c)
-    (hφT : ∀ s ∉ Ioo (-T) T, φ s = 0) (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀))
-    {g : Lp H 2 μ₀} (hg : g =ᵐ[μ₀] fun s ↦ φ s • ι (prev _ u s)) :
-    ‖g‖ ≤ c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-T) T, isOpen_Ioo⟩) le_top u‖ := by
-  set f := ι.compLpL 2 μ₀ (prev _ u)
-  have hc : 0 ≤ c := (abs_nonneg _).trans (hφ 0)
-  have hgf : g =ᵐ[μ₀] fun s ↦ φ s • f s := by
-    filter_upwards [hg, ι.coeFn_compLpL (prev _ u)] with s h₁ h₂
-    rw [h₁, h₂]
-  have hmeas : AEStronglyMeasurable (fun s ↦ φ s • f s) volume := by
-    simpa using (Lp.aestronglyMeasurable g).congr hgf
-  have hsupp : Function.support (fun s ↦ φ s • f s) ⊆ Ioo (-T) T := fun s hs ↦ by
-    by_contra hns
-    exact hs (by simp [hφT s hns])
-  rw [Lp.norm_def, Lp.norm_def, ← ENNReal.toReal_ofReal hc, ← ENNReal.toReal_mul]
-  refine ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (Lp.eLpNorm_ne_top _)) ?_
-  have hg' : eLpNorm g 2 μ₀ = eLpNorm (fun s ↦ φ s • f s) 2 (volume.restrict (Ioo (-T) T)) := by
-    rw [eLpNorm_congr_ae hgf, eLpNorm_restrict_eq_of_support_subset hmeas hsupp]
-    simp
-  rw [hg']
-  refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul hmeas.restrict ?_ 2
-  filter_upwards [restrictBaseL_apply_ae (ι.compLpL 2 μ₀) (V := ⟨Ioo (-T) T, isOpen_Ioo⟩) le_top u]
-    with s hs
-  rw [hs, norm_smul, Real.norm_eq_abs]
-  exact mul_le_mul_of_nonneg_right (hφ s) (norm_nonneg _)
-
-omit [CompleteSpace D] in
-/-- The commutator estimate: if `|ψ|` and `|ψ'|` are at most `c` and `ψ'` vanishes off `(-T, T)`,
-then `‖(ι ∘ (ψ u))' + A (ψ u)‖ ≤ c ‖(ι ∘ u)' + A u‖ + c ‖ι ∘ u‖_{L²((-T, T), H)}`. -/
-private theorem norm_familyDomainTrajectoryOperator_smulLeftCLM_le_add
-    (AL : Lp (D →L[ℝ] H) ∞ μ₀) {ψ : ℝ → ℝ} (hψ : ContDiff ℝ ∞ ψ)
-    (h₀ : ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖fderiv ℝ ψ x‖ ≤ C)
-    {c₀ c₁ T : ℝ} (hc₀ : ∀ s, |ψ s| ≤ c₀) (hc₁ : ∀ s, |deriv ψ s| ≤ c₁)
-    (hT : ∀ s ∉ Ioo (-T) T, deriv ψ s = 0) (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
-    ‖familyDomainTrajectoryOperator ι AL
-        (smulLeftCLM ψ hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator u)‖ ≤
-      c₀ * ‖familyDomainTrajectoryOperator ι AL u‖ +
-        c₁ * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-T) T, isOpen_Ioo⟩) le_top u‖ := by
-  set f := ι.compLpL 2 μ₀ (prev _ u)
-  have hf := ι.coeFn_compLpL (μ := μ₀) (p := 2) (prev _ u)
-  -- The commutator term `ψ' (ι ∘ u)` as an element of `L²`.
-  have hmem : MemLp (fun s ↦ deriv ψ s • f s) 2 μ₀ :=
-    (Lp.memLp f).of_le_mul (c := c₁)
-      ((hψ.continuous_deriv (by simp)).aestronglyMeasurable.smul (Lp.aestronglyMeasurable f))
-      (.of_forall fun s ↦ by rw [norm_smul, Real.norm_eq_abs]; gcongr; exact hc₁ s)
-  set g₂ := hmem.toLp _
-  set g₁ := familyDomainTrajectoryOperator ι AL
-    (smulLeftCLM ψ hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator u) - g₂
-  have hg₁ : ‖g₁‖ ≤ c₀ * ‖familyDomainTrajectoryOperator ι AL u‖ := by
-    refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-    filter_upwards [Lp.coeFn_sub (familyDomainTrajectoryOperator ι AL
-        (smulLeftCLM ψ hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator u)) g₂, hmem.coeFn_toLp,
-      familyDomainTrajectoryOperator_smulLeftCLM_ae ι AL hψ.contDiffOn h₀ h₁ u, hf]
-      with s hs hs₂ hs₁ hsf
-    rw [hs, Pi.sub_apply, hs₂, hs₁, hsf, add_sub_cancel_right, norm_smul, Real.norm_eq_abs]
-    exact mul_le_mul_of_nonneg_right (hc₀ s) (norm_nonneg _)
-  have hg₂ :
-      ‖g₂‖ ≤ c₁ * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-T) T, isOpen_Ioo⟩) le_top u‖ :=
-    norm_le_mul_norm_restrictBaseL hc₁ hT u (by
-      filter_upwards [hmem.coeFn_toLp, hf] with s hs hsf
-      rw [hs, hsf])
-  calc _ = ‖g₁ + g₂‖ := by rw [sub_add_cancel]
-    _ ≤ _ := (norm_add_le _ _).trans (add_le_add hg₁ hg₂)
-
-omit [CompleteSpace D] in
-/-- If `ψ` vanishes on a set `Z`, so does the path `ψ u`, almost everywhere. -/
-private theorem ae_prev_smulLeftCLM_eq_zero {ψ : ℝ → ℝ} (hψ : ContDiff ℝ ∞ ψ)
-    (h₀ : ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖fderiv ℝ ψ x‖ ≤ C)
-    {Z : Set ℝ} (hZ : ∀ s ∈ Z, ψ s = 0) (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
-    ∀ᵐ s ∂volume, s ∈ Z →
-      prev _ (smulLeftCLM ψ hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator u) s = 0 := by
-  have hae : ae volume = ae μ₀ := by simp
-  filter_upwards [(prev_smulLeftCLM_ae hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator
-    u).filter_mono hae.le]
-    with s hs hsZ
-  rw [hs, hZ s hsZ, zero_smul]
-
-omit [CompleteSpace D] in
 /-- If `|ψ| ≤ c` and `ψ` vanishes off `(-T, T)`, then `‖ι ∘ (ψ u)‖ ≤ c ‖ι ∘ u‖_{L²((-T, T), H)}`. -/
 private theorem norm_compLpL_prev_smulLeftCLM_le {ψ : ℝ → ℝ} (hψ : ContDiff ℝ ∞ ψ)
     (h₀ : ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖fderiv ℝ ψ x‖ ≤ C)
@@ -188,12 +107,23 @@ private theorem norm_compLpL_prev_smulLeftCLM_le {ψ : ℝ → ℝ} (hψ : ContD
     (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
     ‖ι.compLpL 2 μ₀
       (prev _ (smulLeftCLM ψ hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator u))‖ ≤
-      c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-T) T, isOpen_Ioo⟩) le_top u‖ :=
-  norm_le_mul_norm_restrictBaseL hc hT u (by
-    filter_upwards [ι.coeFn_compLpL
-        (prev _ (smulLeftCLM ψ hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator u)),
-      prev_smulLeftCLM_ae hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator u] with s hs hψs
-    rw [hs, hψs, map_smul])
+      c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-T) T, isOpen_Ioo⟩) le_top u‖ := by
+  have hae : ae volume = ae μ₀ := by simp
+  have hf : ∀ᵐ s ∂volume, ι.compLpL 2 μ₀
+      (prev _ (smulLeftCLM ψ hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator u)) s =
+        ψ s • ι (prev _ u s) := by
+    filter_upwards [(ι.coeFn_compLpL
+        (prev _ (smulLeftCLM ψ hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator u))).filter_mono
+          hae.le,
+      (prev_smulLeftCLM_ae hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator u).filter_mono
+        hae.le] with s hs hψs
+    rw [hs, hψs, map_smul]
+  refine norm_le_mul_norm_restrictBaseL ((abs_nonneg _).trans (hc 0)) u ?_ ?_
+  · filter_upwards [hf] with s hs
+    rw [hs, norm_smul, Real.norm_eq_abs]
+    exact mul_le_mul_of_nonneg_right (hc s) (norm_nonneg _)
+  · filter_upwards [hf] with s hs hsT
+    rw [hs, hT s hsT, zero_smul]
 
 omit [CompleteSpace D] in
 /-- **Splicing local estimates.** Let `∑ᵢ ψᵢ = 1` be a finite smooth partition of unity on `ℝ` by
@@ -225,8 +155,8 @@ private theorem exists_forall_norm_le_of_sum_eq_one (AL : Lp (D →L[ℝ] H) ∞
   have hpiece : ∀ i ∈ t,
       ‖smulLeftCLM (ψ i) (hψ i).contDiffOn (h₀ i) (h₁ i) ι.compLpL_multiplicationOperator u‖ ≤
       |C i| * (|(h₀ i).choose| + |(h₁ i).choose| + 1) * (Du + Ku) := fun i hi ↦ by
-    have hD := norm_familyDomainTrajectoryOperator_smulLeftCLM_le_add AL (hψ i) (h₀ i) (h₁ i)
-      (hc₀' i) (hc₁' i) (hT i hi) u
+    have hD := norm_familyDomainTrajectoryOperator_smulLeftCLM_le (hψ i).contDiffOn (h₀ i) (h₁ i)
+      (hc₀' i) (hc₁' i) (hT i hi) AL u
     refine (hC i hi u).trans ((mul_le_mul_of_nonneg_right (le_abs_self _)
       (by positivity)).trans ?_)
     rw [mul_assoc]
@@ -265,7 +195,10 @@ private theorem exists_forall_norm_smulLeftCLM_le (AL : Lp (D →L[ℝ] H) ∞ �
   set K := restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-T) T, isOpen_Ioo⟩) le_top u
   have hK : e * ‖ι.compLpL 2 μ₀ (prev _ w)‖ ≤ e * (|c| * ‖K‖) :=
     mul_le_mul_of_nonneg_left (norm_compLpL_prev_smulLeftCLM_le hψ h₀ h₁ hc' hT u) he
-  refine (hest w (ae_prev_smulLeftCLM_eq_zero hψ h₀ h₁ (Z := Sᶜ) hS u)).trans ?_
+  have hw : ∀ᵐ s ∂volume, s ∉ S → prev _ w s = 0 := by
+    simpa using ae_prev_smulLeftCLM_eq_zero hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator
+      (Z := Sᶜ) hS u
+  refine (hest w hw).trans ?_
   refine (mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity)).trans ?_
   rw [mul_assoc]
   refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg C)
@@ -322,33 +255,16 @@ theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_o
   obtain ⟨C, hC⟩ := exists_forall_norm_le_of_sum_eq_one AL t ψ hψ h₀ h₁ hsum (fun i _ ↦ hT i) <| by
     rintro ((_ | _) | i) -
     · refine ⟨|Cb|, fun u ↦ hend (norm_nonneg _) (hCb _ ?_)⟩
-      exact ae_prev_smulLeftCLM_eq_zero (hψ (.inl false)) (h₀ _) (h₁ _) (Z := Ioi Tb)
+      simpa using ae_prev_smulLeftCLM_eq_zero (hψ (.inl false)).contDiffOn (h₀ _) (h₁ _)
+        ι.compLpL_multiplicationOperator (Z := Ioi Tb)
         (fun s hs ↦ hψb s (by linarith [neg_abs_le Tb, le_max_right |Tt| |Tb|, mem_Ioi.1 hs])) u
     · refine ⟨|Ct|, fun u ↦ hend (norm_nonneg _) (hCt _ ?_)⟩
-      exact ae_prev_smulLeftCLM_eq_zero (hψ (.inl true)) (h₀ _) (h₁ _) (Z := Iio Tt)
+      simpa using ae_prev_smulLeftCLM_eq_zero (hψ (.inl true)).contDiffOn (h₀ _) (h₁ _)
+        ι.compLpL_multiplicationOperator (Z := Iio Tt)
         (fun s hs ↦ hψt s (by linarith [le_abs_self Tt, le_max_left |Tt| |Tb|, mem_Iio.1 hs])) u
     · exact exists_forall_norm_smulLeftCLM_le AL (hψ (.inr i)) (h₀ _) (h₁ _) (hel i)
         (fun s hs ↦ hψS i s fun h ↦ hs h.1) (fun s hs ↦ hψS i s fun h ↦ hs h.2) (hCl i)
   exact ⟨C, T₀ + 1, hC⟩
-
-/-- Under the hypotheses of the semi-Fredholm estimate, with `ι` compact, the operator satisfies an
-estimate `‖u‖ ≤ C ‖(ι ∘ u)' + A u‖ + ‖K u‖` with `K` compact. -/
-private theorem exists_isCompactOperator_and_norm_le (hι : IsCompactOperator ι)
-    (hAL : AL =ᵐ[μ₀] A) (hA : Continuous A) (hSymm : ∀ s x y, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ)
-    (hres : ∀ s, ∃ c : ℝ, (A s - c • ι).IsInvertible) (hAbot : Tendsto A atBot (𝓝 Abot))
-    (hAtop : Tendsto A atTop (𝓝 Atop)) (hAbot' : Abot.IsInvertible) (hAtop' : Atop.IsInvertible) :
-    ∃ (C T : ℝ) (K : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ]
-      Lp H 2 (volume.restrict (Ioo (-T) T))), IsCompactOperator K ∧
-        ∀ u, ‖u‖ ≤ C * ‖familyDomainTrajectoryOperator ι AL u‖ + ‖K u‖ := by
-  obtain ⟨C, T, hC⟩ :=
-    exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_of_continuous hAL hA
-      hSymm hres hAbot hAtop hAbot' hAtop'
-  refine ⟨|C|, T, |C| • restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-T) T, isOpen_Ioo⟩) le_top,
-    ?_, fun u ↦ ?_⟩
-  · simpa using (isCompactOperator_restrictBaseL_compLpL (p := 2) hι
-      (le_top : (⟨Ioo (-T) T, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤)).smul |C|
-  rw [smul_apply, norm_smul, Real.norm_eq_abs, abs_abs, ← mul_add]
-  exact (hC u).trans (mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity))
 
 /-- **Finite-dimensional kernel.** For a compact embedding `ι : D → H` and a continuous family `A`
 of `ι`-symmetric operators, each invertible after subtracting a multiple of `ι`, with invertible
@@ -360,8 +276,10 @@ theorem finiteDimensional_ker_familyDomainTrajectoryOperator_of_continuous
     (hres : ∀ s, ∃ c : ℝ, (A s - c • ι).IsInvertible) (hAbot : Tendsto A atBot (𝓝 Abot))
     (hAtop : Tendsto A atTop (𝓝 Atop)) (hAbot' : Abot.IsInvertible) (hAtop' : Atop.IsInvertible) :
     FiniteDimensional ℝ (familyDomainTrajectoryOperator (p := 2) ι AL).ker := by
-  obtain ⟨C, T, K, hK, hb⟩ := exists_isCompactOperator_and_norm_le hι hAL hA hSymm hres hAbot hAtop
-    hAbot' hAtop'
+  obtain ⟨C, T, hC⟩ :=
+    exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_of_continuous hAL hA
+      hSymm hres hAbot hAtop hAbot' hAtop'
+  obtain ⟨K, hK, hb⟩ := exists_isCompactOperator_and_norm_le_of_forall_norm_le hι hC
   exact ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate _ hK hb
 
 /-- **Closed range.** For a compact embedding `ι : D → H` and a continuous family `A` of
@@ -374,8 +292,10 @@ theorem isClosed_range_familyDomainTrajectoryOperator_of_continuous
     (hres : ∀ s, ∃ c : ℝ, (A s - c • ι).IsInvertible) (hAbot : Tendsto A atBot (𝓝 Abot))
     (hAtop : Tendsto A atTop (𝓝 Atop)) (hAbot' : Abot.IsInvertible) (hAtop' : Atop.IsInvertible) :
     IsClosed ((familyDomainTrajectoryOperator (p := 2) ι AL).range : Set (Lp H 2 μ₀)) := by
-  obtain ⟨C, T, K, hK, hb⟩ := exists_isCompactOperator_and_norm_le hι hAL hA hSymm hres hAbot hAtop
-    hAbot' hAtop'
+  obtain ⟨C, T, hC⟩ :=
+    exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_of_continuous hAL hA
+      hSymm hres hAbot hAtop hAbot' hAtop'
+  obtain ⟨K, hK, hb⟩ := exists_isCompactOperator_and_norm_le_of_forall_norm_le hι hC
   exact ContinuousLinearMap.isClosed_range_of_compact_estimate _ hK hb
 
 end Line
