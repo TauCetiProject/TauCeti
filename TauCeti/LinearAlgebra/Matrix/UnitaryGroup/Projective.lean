@@ -36,7 +36,7 @@ block-diagonal matrix `diag(c, c • 1)` is the unit scalar `c • 1`
 class of `diag(1, star c • B)` (`TauCeti.ProjectiveUnitaryGroup.mk_prodBlockSucc`).
 
 Every `1 × 1` unitary matrix is a unit scalar
-(`TauCeti.ProjectiveUnitaryGroup.range_scalarHom_fin_one`), so `PU(1)` is trivial
+(`Matrix.UnitaryGroup.range_scalarHom_fin_one`), so `PU(1)` is trivial
 (`TauCeti.ProjectiveUnitaryGroup.instSubsingletonFinOne`).
 
 ## References
@@ -53,14 +53,10 @@ namespace Matrix.UnitaryGroup
 variable (n : Type*) [Fintype n] [DecidableEq n] (R : Type*) [CommRing R] [StarRing R]
 
 /-- The **unit scalars** `c • 1`, for `c ∈ unitary R`, as a group morphism
-`unitary R →* Matrix.unitaryGroup n R`. -/
-def scalarHom : unitary R →* unitaryGroup n R where
-  toFun c := ⟨scalar n (c : R), by
-    rw [mem_unitaryGroup_iff', star_eq_conjTranspose, scalar_apply, diagonal_conjTranspose,
-      diagonal_mul_diagonal]
-    simp⟩
-  map_one' := Subtype.ext (map_one (scalar n))
-  map_mul' c d := Subtype.ext (map_mul (scalar n) (c : R) d)
+`unitary R →* Matrix.unitaryGroup n R`: the map of unitary elements induced by the algebra map
+`R →⋆ₐ[R] Matrix n n R`. -/
+def scalarHom : unitary R →* unitaryGroup n R :=
+  (Unitary.map (StarMonoidHom.ofClass (StarAlgHom.ofId R (Matrix n n R)))).toMonoidHom
 
 variable {n R}
 
@@ -71,8 +67,25 @@ theorem coe_scalarHom (c : unitary R) :
   (rfl)
 
 /-- On a nonempty index type, distinct unitary scalars give distinct scalar matrices. -/
-theorem scalarHom_injective [Nonempty n] : Function.Injective (scalarHom n R) := fun c d h ↦
-  Subtype.ext <| (scalar_inj (n := n)).1 (by simpa using congrArg Subtype.val h)
+theorem scalarHom_injective [Nonempty n] : Function.Injective (scalarHom n R) :=
+  Unitary.map_injective fun _ _ h ↦ (scalar_inj (n := n)).1 h
+
+/-- On a nonempty index type, the scalar matrix `a • 1` is unitary exactly when `a` is. -/
+theorem scalar_mem_unitaryGroup_iff [Nonempty n] {a : R} :
+    scalar n a ∈ unitaryGroup n R ↔ a ∈ unitary R := by
+  simp [mem_unitaryGroup_iff', Unitary.mem_iff_star_mul_self, star_eq_conjTranspose, scalar_apply,
+    ← scalar_inj (n := n)]
+
+variable (R) in
+/-- Every `1 × 1` unitary matrix is a unit scalar. -/
+theorem range_scalarHom_fin_one : (scalarHom (Fin 1) R).range = ⊤ := by
+  refine eq_top_iff.2 fun A _ ↦ ?_
+  have hA : (A : Matrix (Fin 1) (Fin 1) R) =
+      scalar (Fin 1) ((A : Matrix (Fin 1) (Fin 1) R) 0 0) := by
+    ext i j
+    fin_cases i; fin_cases j
+    simp [scalar_apply]
+  exact ⟨⟨_, scalar_mem_unitaryGroup_iff.1 (hA ▸ A.property)⟩, Subtype.ext hA.symm⟩
 
 /-- Unit scalars commute with every unitary matrix. -/
 theorem commute_scalarHom (c : unitary R) (A : unitaryGroup n R) :
@@ -103,10 +116,7 @@ def starSMulHom : unitary R × unitaryGroup n R →* unitaryGroup n R where
   toFun cB := scalarHom n R (star cB.1) * cB.2
   map_one' := by simp
   map_mul' cB cB' := by
-    simp only [Prod.fst_mul, Prod.snd_mul, star_mul, map_mul, mul_assoc]
-    rw [← mul_assoc (cB.2 : unitaryGroup n R), ← (commute_scalarHom (star cB'.1) cB.2).eq]
-    simp only [← mul_assoc]
-    rw [(commute_scalarHom (star cB'.1) (scalarHom n R (star cB.1))).eq]
+    simpa [mul_comm] using (commute_scalarHom (star cB'.1) cB.2).mul_mul_mul_comm _ _
 
 /-- The morphism `U(1) × U(n) →* U(n)` sends `(c, B)` to `star c • B`. -/
 @[simp]
@@ -185,24 +195,12 @@ theorem mk_prodBlockSucc {m : ℕ} (cB : unitary R × unitaryGroup (Fin m) R) :
   rw [h, QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).2 (MonoidHom.mem_range.2 ⟨_, rfl⟩),
     one_mul]
 
-variable (R) in
-/-- Every `1 × 1` unitary matrix is a unit scalar. -/
-theorem range_scalarHom_fin_one : (UnitaryGroup.scalarHom (Fin 1) R).range = ⊤ := by
-  refine eq_top_iff.2 fun A _ ↦ ⟨⟨(A : Matrix (Fin 1) (Fin 1) R) 0 0, ?_⟩,
-    UnitaryGroup.ext _ _ fun i j ↦ ?_⟩
-  · have h := congrFun (congrFun (mem_unitaryGroup_iff'.1 A.property) 0) 0
-    rw [star_eq_conjTranspose, Matrix.mul_apply, Fin.sum_univ_one, conjTranspose_apply,
-      one_apply_eq] at h
-    exact Unitary.mem_iff_star_mul_self.2 h
-  · fin_cases i; fin_cases j
-    simp [scalar_apply]
-
 /-- The projective unitary group `PU(1)` is trivial. -/
 instance instSubsingletonFinOne : Subsingleton (ProjectiveUnitaryGroup (Fin 1) R) where
   allEq g h := by
     induction g using QuotientGroup.induction_on with | H A =>
     induction h using QuotientGroup.induction_on with | H B =>
-    exact QuotientGroup.eq.2 (range_scalarHom_fin_one R ▸ Subgroup.mem_top _)
+    exact QuotientGroup.eq.2 (UnitaryGroup.range_scalarHom_fin_one R ▸ Subgroup.mem_top _)
 
 end ProjectiveUnitaryGroup
 

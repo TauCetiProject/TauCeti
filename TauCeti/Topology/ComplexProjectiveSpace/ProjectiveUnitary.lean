@@ -23,9 +23,13 @@ action descends to a faithful, transitive action of the projective unitary group
 
 `PU(n + 1) = U(n + 1) ⧸ {c • 1 : |c| = 1}`
 
-(`TauCeti.ProjectiveUnitaryGroup (Fin (n + 1)) ℂ`) on `CPⁿ`. This is the symmetry group of the
-Fubini–Study metric, which unitary matrices preserve
-(`LinearIsometry.fubiniStudyHermitian_map_map_map`) and on which `PU(n + 1)` acts without kernel.
+(`TauCeti.ProjectiveUnitaryGroup (Fin (n + 1)) ℂ`) on `CPⁿ`. So `PU(n + 1)` acts by symmetries of
+the Fubini–Study Hermitian form, which unitary matrices preserve
+(`LinearIsometry.fubiniStudyHermitian_map_map_map`).
+
+The kernel computation and the descent to a faithful action follow Mathlib's treatment of the
+action of `Matrix.ProjectiveSpecialLinearGroup` on projective space
+(`Projectivization.SL_mulAction_ker` in `Mathlib/LinearAlgebra/Projectivization/Action.lean`).
 
 In `U(n + 1)` the stabilizer of the base point `[e₀]` is the block-diagonal subgroup
 `U(1) × U(n)` of the matrices `diag(c, B)`
@@ -121,10 +125,7 @@ theorem forall_smul_eq_iff_mem_range_scalarHom {A : unitaryGroup (Fin (n + 1)) �
       UnitaryGroup.toLinearIsometryEquiv_single] at h
     simpa [scalar_apply, diagonal_apply, Pi.single_apply, eq_comm] using h
   -- The scalar `a` is unitary because `A` is.
-  have hau : a ∈ unitary ℂ := by
-    have h := congrFun (congrFun (mem_unitaryGroup_iff'.1 A.property) 0) 0
-    rw [hAa] at h
-    simpa [scalar_apply, star_eq_conjTranspose, Unitary.mem_iff_star_mul_self] using h
+  have hau : a ∈ unitary ℂ := UnitaryGroup.scalar_mem_unitaryGroup_iff.1 (hAa ▸ A.property)
   exact ⟨⟨a, hau⟩, Subtype.ext (by rw [UnitaryGroup.coe_scalarHom]; exact hAa.symm)⟩
 
 /-- The kernel of the action of `U(n + 1)` on `CPⁿ` is the subgroup of unit scalars. -/
