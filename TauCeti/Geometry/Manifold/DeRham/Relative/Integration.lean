@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Relative.Basic
 public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham
+import TauCeti.Algebra.Homology.Embedding.Extend
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 
 /-!
@@ -94,6 +95,26 @@ def smoothCochainRestriction :
   extendMap (SSet.cochainComplexMap
     (smoothSingularSubcomplexMap (Subtype.val : W → M) contMDiff_subtypeVal)) _
 
+omit [IsManifold I 2 M] in
+/-- The restriction of smooth cochains is the extension to `ℤ` of precomposition with the chain map
+induced by the inclusion of `W`. -/
+theorem smoothCochainRestriction_def :
+    smoothCochainRestriction I W = extendMap (SSet.cochainComplexMap
+      (smoothSingularSubcomplexMap (Subtype.val : W → M) contMDiff_subtypeVal)) _ :=
+  (rfl)
+
+omit [IsManifold I 2 M] in
+/-- In degree `k`, read on the unextended cochain complexes, the restriction of smooth cochains is
+precomposition with the chain map induced by the inclusion of `W`. -/
+@[reassoc, elementwise]
+theorem smoothCochainRestriction_f_comp_extendXIso_hom {k : ℕ} {p : ℤ}
+    (h : ComplexShape.embeddingUpNat.f k = p) :
+    (smoothCochainRestriction I W).f p ≫ (extendXIso 𝒞[W] ComplexShape.embeddingUpNat h).hom =
+      (extendXIso 𝒞[M] ComplexShape.embeddingUpNat h).hom ≫
+        (SSet.cochainComplexMap
+          (smoothSingularSubcomplexMap (Subtype.val : W → M) contMDiff_subtypeVal)).f k :=
+  extendMap_f_comp_extendXIso_hom _ _ h
+
 /-- The relative smooth singular cochain complex of the open pair `(M, W)`, with real
 coefficients: the mapping cocone of the restriction of smooth cochains from `M` to `W`. -/
 abbrev relativeSmoothCochainComplex : CochainComplex (ModuleCat ℝ) ℤ :=
@@ -105,7 +126,7 @@ theorem deRhamRestriction_comp_extendMap_deRhamIntegration :
     deRhamRestriction I W ≫ extendMap (deRhamIntegration I W) ComplexShape.embeddingUpNat =
       extendMap (deRhamIntegration I M) ComplexShape.embeddingUpNat ≫
         smoothCochainRestriction I W := by
-  rw [deRhamRestriction_def, smoothCochainRestriction, ← extendMap_comp, ← extendMap_comp,
+  rw [deRhamRestriction_def, smoothCochainRestriction_def, ← extendMap_comp, ← extendMap_comp,
     deRhamIntegration_naturality]
 
 /-- **Relative integration.** The cochain map from the relative de Rham complex of `(M, W)` to the
@@ -162,6 +183,10 @@ theorem eval_apply (k : ℕ)
           (relativeCoordinates (smoothCochainRestriction I W) (k + 1 : ℕ) k (by push_cast; lia)
             x).2).hom c' := by
   simp only [eval, LinearMap.sub_apply, LinearMap.comp_apply]
+  -- The remaining composites pass from a cochain module `𝒞[X].X n` to the hom type
+  -- `𝒮[X].X n ⟶ ℝ` it is built from (`ModuleCat.homLinearEquiv`). These agree only after
+  -- unfolding `ChainComplex.linearYonedaObj`, so `LinearMap.comp_apply` does not split them; the
+  -- goal closes by unfolding `ModuleCat.homLinearEquiv`, `LinearMap.fst` and `LinearMap.snd`.
   rfl
 
 omit [IsManifold I 2 M] in
@@ -182,7 +207,7 @@ private theorem d_eq_zero_of_d_eq (j : ℕ)
     (Subtype.val : W → M) contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).comm (j + 1) j) c'
   simp only [ModuleCat.comp_apply] at h
   rw [map_zero, ← h, ← hc, ← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]
-  rfl
+  simp
 
 omit [IsManifold I 2 M] in
 /-- On the `W`-part `c'` of a relative smooth cycle, the coboundary `db` of a cochain of `W` of
@@ -204,26 +229,17 @@ private theorem hom_extendXIso_hom_extend_d_apply_eq_zero (k : ℕ) {c : 𝒮[M]
         simp only [ComplexShape.embeddingUpNat_f] at hn
         lia
     rw [Subsingleton.elim b 0, map_zero, map_zero]
-    rfl
+    -- The zero of the cochain module `Hom(𝒮[W]₀, ℝ)` is the zero morphism, whose underlying linear
+    -- map is zero.
+    exact LinearMap.zero_apply c'
   | succ j =>
-    have hmor : (𝒞[W].extend ComplexShape.embeddingUpNat).d
-        (((j + 1 : ℕ) : ℤ) + -1) (j + 1 : ℕ) ≫
-          (extendXIso 𝒞[W] ComplexShape.embeddingUpNat rfl).hom =
-        (extendXIso 𝒞[W] ComplexShape.embeddingUpNat (i := j)
-          (by simp only [ComplexShape.embeddingUpNat_f]; lia)).hom ≫
-          𝒞[W].d j (j + 1) := by
-      rw [extend_d_eq _ ComplexShape.embeddingUpNat (i' := ((j + 1 : ℕ) : ℤ) + -1)
+    rw [extend_d_comp_extendXIso_hom_apply _ _ (i' := ((j + 1 : ℕ) : ℤ) + -1)
         (j' := ((j + 1 : ℕ) : ℤ)) (i := j) (j := j + 1)
-        (by simp only [ComplexShape.embeddingUpNat_f]; lia) rfl]
-      simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-    have h := ConcreteCategory.congr_hom hmor b
-    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h
-    rw [h]
-    have h0 : (𝒮[W].d (j + 1) j).hom c' = 0 := d_eq_zero_of_d_eq I W j hc
-    -- `(d g)(c') = g(∂c')` holds by definition, as in `hA`.
-    exact (congrArg (ModuleCat.Hom.hom ((extendXIso 𝒞[W] ComplexShape.embeddingUpNat
-      (i := j) (by simp only [ComplexShape.embeddingUpNat_f]; lia)).hom b)) h0).trans
-        (map_zero _)
+        (by simp only [ComplexShape.embeddingUpNat_f]; lia) rfl,
+      ChainComplex.linearYonedaObj_d_apply]
+    -- The cochain `∂ ≫ g` of `W` evaluates at `c'` to `g (∂c')`, and `∂c' = 0`.
+    refine (ModuleCat.comp_apply _ _ c').trans ?_
+    rw [d_eq_zero_of_d_eq I W j hc, map_zero]
 
 omit [IsManifold I 2 M] in
 /-- **Relative cycles annihilate coboundaries.** If `∂c = c'` in `M`, the pairing with `(c, c')`
@@ -243,40 +259,23 @@ theorem eval_d (k : ℕ)
     relativeCoordinates_d _ k (k + -1) rfl y
   set a := (relativeCoordinates (smoothCochainRestriction I W) k (k + -1) rfl y).1
   set b := (relativeCoordinates (smoothCochainRestriction I W) k (k + -1) rfl y).2
-  -- The three terms of `eval` on `d (a, b) = (da, a|_W - db)`, read in the unextended complexes.
-  -- In each, the cochain `d g` (resp. `g|_W`) is by definition `g ∘ ∂` (resp. `g ∘ ι`), and
-  -- evaluating a composite is applying its factors, so the last step of each is `rfl`.
+  -- The two terms of `eval` on `d (a, b) = (da, a|_W - db)` involving `a`, read in the unextended
+  -- complexes, where the cochain `d g` is `g ∘ ∂` and the cochain `g|_W` is `g ∘ ι`.
   have hA : ((extendXIso 𝒞[M] ComplexShape.embeddingUpNat (i := k + 1) (by simp)).hom
       ((𝒞[M].extend ComplexShape.embeddingUpNat).d k ((k : ℤ) + 1) a)).hom c =
         ((extendXIso 𝒞[M] ComplexShape.embeddingUpNat rfl).hom a).hom
           ((𝒮[M].d (k + 1) k).hom c) := by
-    have hmor : (𝒞[M].extend ComplexShape.embeddingUpNat).d k
-        ((k : ℤ) + 1) ≫ (extendXIso 𝒞[M] ComplexShape.embeddingUpNat (i := k + 1) (by simp)).hom =
-          (extendXIso 𝒞[M] ComplexShape.embeddingUpNat rfl).hom ≫ 𝒞[M].d k (k + 1) := by
-      rw [extend_d_eq _ ComplexShape.embeddingUpNat (i' := (k : ℤ)) (j' := (k : ℤ) + 1) (i := k)
-        (j := k + 1) rfl (by simp)]
-      simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-    have h := ConcreteCategory.congr_hom hmor a
-    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h
-    rw [h]
-    rfl
+    rw [extend_d_comp_extendXIso_hom_apply _ _ (i' := (k : ℤ)) (j' := (k : ℤ) + 1) (i := k)
+        (j := k + 1) rfl (by simp),
+      ChainComplex.linearYonedaObj_d_apply]
+    exact ModuleCat.comp_apply _ _ c
   have hB : ((extendXIso 𝒞[W] ComplexShape.embeddingUpNat rfl).hom
       ((smoothCochainRestriction I W).f k a)).hom c' =
         ((extendXIso 𝒞[M] ComplexShape.embeddingUpNat rfl).hom a).hom
           (((SSet.chainComplexMap (smoothSingularSubcomplexMap (Subtype.val : W → M)
             contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).f k).hom c') := by
-    have hmor : (smoothCochainRestriction I W).f k ≫
-        (extendXIso 𝒞[W] ComplexShape.embeddingUpNat rfl).hom =
-          (extendXIso 𝒞[M] ComplexShape.embeddingUpNat rfl).hom ≫
-            (SSet.cochainComplexMap (smoothSingularSubcomplexMap (Subtype.val : W → M)
-              contMDiff_subtypeVal)).f k := by
-      rw [smoothCochainRestriction,
-        extendMap_f _ ComplexShape.embeddingUpNat (i' := (k : ℤ)) (i := k) rfl]
-      simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-    have h := ConcreteCategory.congr_hom hmor a
-    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h
-    rw [h]
-    rfl
+    rw [smoothCochainRestriction_f_comp_extendXIso_hom_apply I W (k := k) (p := k) rfl]
+    exact ModuleCat.comp_apply _ _ c'
   -- `hc` is stated with the coercion of morphisms to functions, which for `ModuleCat` is
   -- definitionally `ModuleCat.Hom.hom`.
   have hc' : (𝒮[M].d (k + 1) k).hom c = ((SSet.chainComplexMap (smoothSingularSubcomplexMap
@@ -296,28 +295,15 @@ theorem eval_relativeDeRhamIntegration_f_coord_symm (k : ℕ)
         ((relativeDeRhamComplex.coord I W k).symm (α, β))) =
       (integrationCochain α.val).hom c - (integrationCochain β.val).hom c' := by
   -- Relative integration acts on the extended complexes; read it back on the unextended ones.
-  have hαmor :
-      (extendXIso (deRhamComplex I M) ComplexShape.embeddingUpNat rfl).inv ≫
-        (extendMap (deRhamIntegration I M) ComplexShape.embeddingUpNat).f (k + 1 : ℕ) ≫
-          (extendXIso 𝒞[M] ComplexShape.embeddingUpNat rfl).hom =
-            (deRhamIntegration I M).f (k + 1) := by
-    rw [extendMap_f _ ComplexShape.embeddingUpNat (i' := ((k + 1 : ℕ) : ℤ)) (i := k + 1) rfl]
-    simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Iso.inv_hom_id_assoc]
-  have hα := ConcreteCategory.congr_hom hαmor ((deRhamComplexXIso I (k + 1)).inv α)
-  have hβmor :
-      (extendXIso (deRhamComplex I W) ComplexShape.embeddingUpNat rfl).inv ≫
-        (extendMap (deRhamIntegration I W) ComplexShape.embeddingUpNat).f (k : ℤ) ≫
-          (extendXIso 𝒞[W] ComplexShape.embeddingUpNat rfl).hom = (deRhamIntegration I W).f k := by
-    rw [extendMap_f _ ComplexShape.embeddingUpNat (i' := (k : ℤ)) (i := k) rfl]
-    simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Iso.inv_hom_id_assoc]
-  have hβ := ConcreteCategory.congr_hom hβmor ((deRhamComplexXIso I k).inv β)
-  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, deRhamIntegration_f_inv_apply]
-    at hα hβ
   rw [eval_apply, relativeCoordinates_relativeDeRhamIntegration_f,
     relativeDeRhamComplex.coord_symm_apply, map_add, relativeDeRhamComplex.relativeCoordinates_inl,
     relativeDeRhamComplex.relativeCoordinates_inr, Prod.mk_add_mk, add_zero, zero_add]
   dsimp only
-  rw [deRhamComplexExtendXEquiv_symm_apply, deRhamComplexExtendXEquiv_symm_apply, hα, hβ]
+  rw [deRhamComplexExtendXEquiv_symm_apply, deRhamComplexExtendXEquiv_symm_apply,
+    extendMap_f_comp_extendXIso_hom_apply _ _ (i' := ((k + 1 : ℕ) : ℤ)) (i := k + 1) rfl,
+    extendMap_f_comp_extendXIso_hom_apply _ _ (i' := (k : ℤ)) (i := k) rfl,
+    Iso.inv_hom_id_apply, Iso.inv_hom_id_apply, deRhamIntegration_f_inv_apply,
+    deRhamIntegration_f_inv_apply]
 
 end relativeSmoothCochainComplex
 
@@ -325,40 +311,27 @@ namespace relativeDeRhamCohomology
 
 open relativeDeRhamComplex
 
-/-- The integral over `(c, c')` of a relative de Rham cocycle of degree `k + 1`, through relative
+/-- The integral over `(c, c')` of a relative cocycle `(α, β)` of degree `k + 1`, through relative
 integration. -/
-private def cycleIntegral (k : ℕ) (c : 𝒮[M].X (k + 1)) (c' : 𝒮[W].X k) :
-    (relativeDeRhamComplex I W).cycles (k + 1 : ℕ) →ₗ[ℝ] ℝ :=
+private def cocycleIntegral (k : ℕ) (c : 𝒮[M].X (k + 1)) (c' : 𝒮[W].X k) :
+    cocycles I W k →ₗ[ℝ] ℝ :=
   relativeSmoothCochainComplex.eval I W k c c' ∘ₗ
     ((relativeDeRhamIntegration I W).f (k + 1 : ℕ)).hom ∘ₗ
-      ((relativeDeRhamComplex I W).iCycles (k + 1 : ℕ)).hom
+      (coord I W k).symm.toLinearMap ∘ₗ (cocycles I W k).subtype
 
-/-- `cycleIntegral` only depends on the class of a relative cocycle, because relative integration
+/-- `cocycleIntegral` vanishes on relative cocycles with zero class, because relative integration
 is a cochain map and relative cycles annihilate coboundaries. -/
-private theorem cycleIntegral_eq_of_homologyπ_eq (k : ℕ) {c : 𝒮[M].X (k + 1)} {c' : 𝒮[W].X k}
+private theorem ker_mk_le_ker_cocycleIntegral (k : ℕ) {c : 𝒮[M].X (k + 1)} {c' : 𝒮[W].X k}
     (hc : 𝒮[M].d (k + 1) k c =
       (SSet.chainComplexMap (smoothSingularSubcomplexMap (Subtype.val : W → M)
-        contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).f k c')
-    {z w : (relativeDeRhamComplex I W).cycles (k + 1 : ℕ)}
-    (h : (relativeDeRhamComplex I W).homologyπ (k + 1 : ℕ) z =
-      (relativeDeRhamComplex I W).homologyπ (k + 1 : ℕ) w) :
-    cycleIntegral I W k c c' z = cycleIntegral I W k c c' w := by
-  obtain ⟨y, hy⟩ := ((relativeDeRhamComplex I W).moduleCat_homologyπ_eq_iff
-    (m := (k : ℤ)) (by simp) z w).mp h
+        contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).f k c') :
+    LinearMap.ker (mk I W k) ≤ LinearMap.ker (cocycleIntegral I W k c c') := fun z hz ↦ by
+  obtain ⟨y, hy⟩ := (mk_eq_zero_iff I W k z).mp (LinearMap.mem_ker.mp hz)
   have h' := ConcreteCategory.congr_hom ((relativeDeRhamIntegration I W).comm k (k + 1 : ℕ)) y
-  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hy, map_sub] at h'
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hy] at h'
   have h0 := relativeSmoothCochainComplex.eval_d I W k hc ((relativeDeRhamIntegration I W).f k y)
-  rw [h', map_sub, sub_eq_zero] at h0
-  exact h0
-
-/-- A relative cocycle representing a relative de Rham class of degree `k + 1`. -/
-private def classRep (k : ℕ) (x : relativeDeRhamCohomology I W (k + 1 : ℕ)) :
-    (relativeDeRhamComplex I W).cycles (k + 1 : ℕ) :=
-  ((relativeDeRhamComplex I W).moduleCat_homologyπ_surjective _ x).choose
-
-private theorem homologyπ_classRep (k : ℕ) (x : relativeDeRhamCohomology I W (k + 1 : ℕ)) :
-    (relativeDeRhamComplex I W).homologyπ (k + 1 : ℕ) (classRep I W k x) = x :=
-  ((relativeDeRhamComplex I W).moduleCat_homologyπ_surjective _ x).choose_spec
+  rw [h'] at h0
+  exact LinearMap.mem_ker.mpr h0
 
 /-- **The integral of relative de Rham classes over a relative smooth cycle.** For a smooth
 `(k + 1)`-chain `c` of `M` whose boundary is a smooth `k`-chain `c'` of `W`, the linear map on
@@ -368,16 +341,11 @@ def integral (k : ℕ) {c : 𝒮[M].X (k + 1)} {c' : 𝒮[W].X k}
     (hc : 𝒮[M].d (k + 1) k c =
       (SSet.chainComplexMap (smoothSingularSubcomplexMap (Subtype.val : W → M)
         contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).f k c') :
-    relativeDeRhamCohomology I W (k + 1 : ℕ) →ₗ[ℝ] ℝ where
-  toFun x := cycleIntegral I W k c c' (classRep I W k x)
-  map_add' x y := by
-    rw [← map_add]
-    exact cycleIntegral_eq_of_homologyπ_eq I W k hc (by
-      rw [map_add, homologyπ_classRep, homologyπ_classRep, homologyπ_classRep])
-  map_smul' r x := by
-    rw [RingHom.id_apply, ← map_smul]
-    exact cycleIntegral_eq_of_homologyπ_eq I W k hc (by
-      rw [map_smul, homologyπ_classRep, homologyπ_classRep])
+    relativeDeRhamCohomology I W (k + 1 : ℕ) →ₗ[ℝ] ℝ :=
+  LinearMap.liftOfSurjective (R := ℝ) (M := cocycles I W k)
+    (M₂ := relativeDeRhamCohomology I W (k + 1 : ℕ)) (M₃ := ℝ)
+    (f := relativeDeRhamCohomology.mk I W k) (mk_surjective I W k)
+    ⟨cocycleIntegral I W k c c', ker_mk_le_ker_cocycleIntegral I W k hc⟩
 
 /-- The integral of the class of a relative cocycle `(α, β)` over `(c, c')` is
 `∫_c α - ∫_{c'} β`. -/
@@ -389,13 +357,8 @@ theorem integral_mk (k : ℕ) {c : 𝒮[M].X (k + 1)} {c' : 𝒮[W].X k}
     integral I W k hc (mk I W k z) =
       (integrationCochain z.val.1.val).hom c - (integrationCochain z.val.2.val).hom c' := by
   obtain ⟨⟨α, β⟩, hz⟩ := z
-  rw [integral, LinearMap.coe_mk, AddHom.coe_mk,
-    cycleIntegral_eq_of_homologyπ_eq I W k hc
-      ((homologyπ_classRep I W k _).trans (mk_apply I W k _)),
-    cycleIntegral, LinearMap.comp_apply, LinearMap.comp_apply]
-  rw [show ∀ x m hm hx, ((relativeDeRhamComplex I W).iCycles (k + 1 : ℕ)).hom
-      ((relativeDeRhamComplex I W).moduleCatCyclesMk x m hm hx) = x from
-    fun x m hm hx ↦ iCycles_moduleCatCyclesMk (x := x) (m := m) (hm := hm) (hx := hx)]
+  rw [integral, LinearMap.equivOfSurjective_apply, cocycleIntegral, LinearMap.comp_apply,
+    LinearMap.comp_apply, LinearMap.comp_apply, Submodule.subtype_apply, LinearEquiv.coe_coe]
   exact relativeSmoothCochainComplex.eval_relativeDeRhamIntegration_f_coord_symm I W k c c' α β
 
 end relativeDeRhamCohomology
