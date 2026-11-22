@@ -23,10 +23,10 @@ A conjugation identifies `E` with its complex conjugate bundle, whose first Cher
 point, read in a trivialization `e`, the transition `e ∘ ψ y` is the conjugate `κ ∘ (e ∘ φ y) ∘ κ`
 of the transition of `φ`, followed by the fixed automorphism `κ ∘ e⁻¹ ∘ c ∘ e`. Conjugating an
 automorphism by `κ` conjugates its determinant, and complex conjugation inverts points of the
-circle (`Module.Basis.normalizedDet_conjTrans_trans_coordConjL`). So on the boundary of the square
-the clutching function of `ψ` is the inverse of that of `φ`, up to a constant factor, and its degree
-is the negative of that of `φ`. Both degrees are the clutching number of `p`, which is therefore
-`0`.
+circle (`Module.Basis.normalizedDet_coordConjL_trans_trans_coordConjL`). So on the boundary of the
+square the clutching function of `ψ` is the inverse of that of `φ`, up to a constant factor, and its
+degree is the negative of that of `φ`. Both degrees are the clutching number of `p`, which is
+therefore `0`.
 
 The motivating instance is a real vector bundle `V` with a continuous complex structure `J` and a
 continuous automorphism `c` anticommuting with `J`, `c ∘ J = -J ∘ c`: then `c` is a conjugation of
@@ -40,14 +40,12 @@ tangent bundle of the base.
 
 ## Main definitions
 
-* `ContinuousLinearEquiv.conjTrans`: the composite of two conjugate-linear isomorphisms, a
-  complex-linear isomorphism.
 * `Module.Basis.coordConjL`: the conjugation of the coordinates in a basis.
 
 ## Main results
 
-* `Module.Basis.normalizedDet_conjTrans_trans_coordConjL`: conjugating an automorphism by the
-  conjugation of the coordinates inverts its normalized determinant.
+* `Module.Basis.normalizedDet_coordConjL_trans_trans_coordConjL`: conjugating an automorphism by
+  the conjugation of the coordinates inverts its normalized determinant.
 * `TauCeti.clutchingNumber_eq_zero_of_conjugateLinear`,
   `TauCeti.clutchingNumberHom_eq_zero_of_conjugateLinear`: a complex vector bundle with a
   conjugation has vanishing clutching numbers.
@@ -71,32 +69,6 @@ noncomputable section
 
 open Bundle Set Module
 open scoped unitInterval Topology.Homotopy ComplexConjugate
-
-/-! ### Composites of conjugate-linear maps -/
-
-namespace ContinuousLinearEquiv
-
-variable {M N P : Type*} [AddCommGroup M] [Module ℂ M] [TopologicalSpace M]
-  [AddCommGroup N] [Module ℂ N] [TopologicalSpace N]
-  [AddCommGroup P] [Module ℂ P] [TopologicalSpace P]
-
-/-- The composite of two conjugate-linear isomorphisms, a complex-linear isomorphism. -/
-def conjTrans (a : M ≃SL[starRingEnd ℂ] N) (b : N ≃SL[starRingEnd ℂ] P) : M ≃L[ℂ] P where
-  toFun v := b (a v)
-  invFun w := a.symm (b.symm w)
-  map_add' v w := by rw [map_add, map_add]
-  map_smul' z v := by rw [map_smulₛₗ, map_smulₛₗ, RingHom.id_apply, Complex.conj_conj]
-  left_inv v := by simp
-  right_inv w := by simp
-  continuous_toFun := b.continuous.comp a.continuous
-  continuous_invFun := a.symm.continuous.comp b.symm.continuous
-
-@[simp]
-theorem conjTrans_apply (a : M ≃SL[starRingEnd ℂ] N) (b : N ≃SL[starRingEnd ℂ] P) (v : M) :
-    a.conjTrans b v = b (a v) :=
-  (rfl)
-
-end ContinuousLinearEquiv
 
 /-! ### The conjugation of a space in a basis -/
 
@@ -135,13 +107,13 @@ theorem coordConjL_coordConjL (v : F) : b.coordConjL (b.coordConjL v) = v :=
 /-- **Conjugating an automorphism by the conjugation of the coordinates conjugates its
 determinant**: the matrix of `κ ∘ A ∘ κ` in the basis is the complex conjugate of the matrix of
 `A`. -/
-theorem det_conjTrans_trans_coordConjL (A : F ≃L[ℂ] F) :
-    LinearMap.det ((b.coordConjL.conjTrans (A.trans b.coordConjL)).toLinearEquiv :
+theorem det_coordConjL_trans_trans_coordConjL (A : F ≃L[ℂ] F) :
+    LinearMap.det ((b.coordConjL.trans (A.trans b.coordConjL) : F ≃L[ℂ] F).toLinearEquiv :
         F →ₗ[ℂ] F) =
       conj (LinearMap.det (A.toLinearEquiv : F →ₗ[ℂ] F)) := by
   classical
   have hM : LinearMap.toMatrix b b
-      ((b.coordConjL.conjTrans (A.trans b.coordConjL)).toLinearEquiv : F →ₗ[ℂ] F) =
+      ((b.coordConjL.trans (A.trans b.coordConjL) : F ≃L[ℂ] F).toLinearEquiv : F →ₗ[ℂ] F) =
         (starRingEnd ℂ).mapMatrix (LinearMap.toMatrix b b (A.toLinearEquiv : F →ₗ[ℂ] F)) := by
     ext i j
     simp [LinearMap.toMatrix_apply]
@@ -149,12 +121,13 @@ theorem det_conjTrans_trans_coordConjL (A : F ≃L[ℂ] F) :
 
 /-- **Conjugating an automorphism by the conjugation of the coordinates inverts its normalized
 determinant**, since complex conjugation inverts points of the circle. -/
-theorem normalizedDet_conjTrans_trans_coordConjL (A : F ≃L[ℂ] F) :
-    (b.coordConjL.conjTrans (A.trans b.coordConjL)).normalizedDet = A.normalizedDet⁻¹ := by
+theorem normalizedDet_coordConjL_trans_trans_coordConjL (A : F ≃L[ℂ] F) :
+    (b.coordConjL.trans (A.trans b.coordConjL) : F ≃L[ℂ] F).normalizedDet =
+      A.normalizedDet⁻¹ := by
   ext1
   rw [Circle.coe_inv_eq_conj, ContinuousLinearEquiv.coe_normalizedDet,
-    ContinuousLinearEquiv.coe_normalizedDet, det_conjTrans_trans_coordConjL, Complex.norm_conj,
-    map_div₀, Complex.conj_ofReal]
+    ContinuousLinearEquiv.coe_normalizedDet, det_coordConjL_trans_trans_coordConjL,
+    Complex.norm_conj, map_div₀, Complex.conj_ofReal]
 
 end Module.Basis
 
@@ -179,7 +152,7 @@ private def conjCoordinate (c : ∀ x, E x ≃SL[starRingEnd ℂ] E x) (κ : F �
     (e : Trivialization F (π F E)) [e.IsLinear ℂ] (b : X) : F ≃L[ℂ] F :=
   open Classical in
   if hb : b ∈ e.baseSet then
-    κ.conjTrans ((e.continuousLinearEquivAt ℂ b hb).symm.trans
+    κ.trans ((e.continuousLinearEquivAt ℂ b hb).symm.trans
       ((c b).trans (e.continuousLinearEquivAt ℂ b hb)))
   else ContinuousLinearEquiv.refl ℂ F
 
@@ -192,7 +165,7 @@ theorem clutchingNumber_eq_zero_of_conjugateLinear (c : ∀ x, E x ≃SL[starRin
   obtain ⟨φ, hφ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)
   let κ := (Module.finBasis ℂ F).coordConjL
   -- The conjugate frame `ψ y = c ∘ φ y ∘ κ`, again complex-linear and continuous.
-  let ψ : ∀ y, F ≃L[ℂ] E (p y) := fun y ↦ κ.conjTrans ((φ y).trans (c (p y)))
+  let ψ : ∀ y, F ≃L[ℂ] E (p y) := fun y ↦ κ.trans ((φ y).trans (c (p y)))
   have hψ : Continuous fun q : (Fin 2 → I) × F ↦ TotalSpace.mk' F (p q.1) (ψ q.1 q.2) :=
     hc.comp (hφ.comp (continuous_fst.prodMk (κ.continuous.comp continuous_snd)))
   set e := trivializationAt F E x
@@ -206,12 +179,12 @@ theorem clutchingNumber_eq_zero_of_conjugateLinear (c : ∀ x, E x ≃SL[starRin
     intro y hy
     have hy' : p y ∈ e.baseSet := mem_of_eq_of_mem (GenLoop.boundary p y hy) hx
     have hsplit : (ψ y).trans (e.continuousLinearEquivAt ℂ (p y) hy') =
-        (κ.conjTrans (((φ y).trans (e.continuousLinearEquivAt ℂ (p y) hy')).trans κ)).trans
-          (conjCoordinate c κ e (p y)) := by
+        (κ.trans (((φ y).trans (e.continuousLinearEquivAt ℂ (p y) hy')).trans κ) :
+          F ≃L[ℂ] F).trans (conjCoordinate c κ e (p y)) := by
       ext v
       simp [ψ, conjCoordinate, hy', κ]
     rw [clutchingFunction_of_mem hy', hsplit, ContinuousLinearEquiv.normalizedDet_trans,
-      Module.Basis.normalizedDet_conjTrans_trans_coordConjL, Pi.mul_apply, Pi.inv_apply,
+      Module.Basis.normalizedDet_coordConjL_trans_trans_coordConjL, Pi.mul_apply, Pi.inv_apply,
       clutchingFunction_of_mem hy',
       show conjCoordinate c κ e (p y) = conjCoordinate c κ e x by rw [GenLoop.boundary p y hy],
       mul_inv, inv_inv]
