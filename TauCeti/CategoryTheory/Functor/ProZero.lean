@@ -42,10 +42,13 @@ the error terms that derived limits of towers cannot see.
   is the case of a cofinal monotone reindexing of inverse systems.
 * `CategoryTheory.Functor.IsProTorsionBy`: in an `R`-linear category, the diagrams that `r : R`
   kills as pro-objects, with the same reindexing lemmas, closure of the killing scalars under
-  addition and multiplication (`CategoryTheory.Functor.IsProTorsionBy.add`,
-  `CategoryTheory.Functor.IsProTorsionBy.mul_left`), the case `r = 1`
-  (`CategoryTheory.Functor.isProTorsionBy_one_iff`) and closure under subobjects, quotients and
-  extensions (`CategoryTheory.Functor.IsProTorsionBy.of_shortExact`).
+  addition and multiplication on either side (`CategoryTheory.Functor.IsProTorsionBy.add`,
+  `CategoryTheory.Functor.IsProTorsionBy.mul_left`,
+  `CategoryTheory.Functor.IsProTorsionBy.mul_right`), the case `r = 1`
+  (`CategoryTheory.Functor.isProTorsionBy_one_iff`), closure under componentwise subobjects and
+  quotients (`CategoryTheory.Functor.IsProTorsionBy.of_mono`,
+  `CategoryTheory.Functor.IsProTorsionBy.of_epi`) and, in an abelian category, under extensions
+  (`CategoryTheory.Functor.IsProTorsionBy.of_shortExact`).
 * `CategoryTheory.Functor.isSerreClass_isProZero`: in an abelian category, pro-zero diagrams form a
   Serre class.
 * `CategoryTheory.Functor.proIsomorphisms`: the pro-isomorphisms of diagrams.
@@ -207,6 +210,16 @@ lemma IsProTorsionBy.mul_left {F : J ⥤ C} {r : R} (s : R) (h : F.IsProTorsionB
   have ⟨i, f, hf⟩ := h j
   ⟨i, f, by rw [mul_smul, hf, smul_zero]⟩
 
+/-- If `r` kills a diagram as a pro-object, then so does every right multiple `r * s`. The scalars
+need not commute: `r • s • g = (r • g) ≫ (s • 𝟙 _)` in an `R`-linear category. -/
+lemma IsProTorsionBy.mul_right {F : J ⥤ C} {r : R} (s : R) (h : F.IsProTorsionBy r) :
+    F.IsProTorsionBy (r * s) := fun j ↦
+  have ⟨i, f, hf⟩ := h j
+  ⟨i, f, calc
+    (r * s) • F.map f = (r • F.map f) ≫ (s • 𝟙 (F.obj j)) := by
+      rw [Linear.smul_comp, Linear.comp_smul, Category.comp_id, mul_smul]
+    _ = 0 := by rw [hf, zero_comp]⟩
+
 /-- A diagram indexed by the opposite of a preorder is pro-`r`-torsion exactly when `r` kills, for
 every `i`, the transition into `F i` from some later term. -/
 lemma isProTorsionBy_iff_forall_exists_le {ι : Type u₃} [Preorder ι] (F : ιᵒᵖ ⥤ C) (r : R) :
@@ -245,11 +258,25 @@ theorem isProTorsionBy_monotone_comp_iff {ι : Type u₃} {κ : Type u₄} [Preo
   have := (hφ.final_functor_iff).2 hcof
   isProTorsionBy_comp_iff _ F r
 
-/-- Over a commutative ring of scalars, if `r` kills a diagram as a pro-object, then so does every
-multiple `r * s`. -/
-lemma IsProTorsionBy.mul_right {R : Type w} [CommSemiring R] [Linear R C] {F : J ⥤ C} {r : R}
-    (s : R) (h : F.IsProTorsionBy r) : F.IsProTorsionBy (r * s) :=
-  mul_comm s r ▸ h.mul_left s
+/-- A subdiagram of a pro-`r`-torsion diagram is pro-`r`-torsion. It suffices that `f` is a
+monomorphism in each component, which holds for every monomorphism of diagrams when `C` has
+pullbacks, e.g. when `C` is abelian. -/
+lemma IsProTorsionBy.of_mono {r : R} {X Y : J ⥤ C} (f : X ⟶ Y) [∀ j, Mono (f.app j)]
+    (hY : Y.IsProTorsionBy r) : X.IsProTorsionBy r := fun j ↦ by
+  obtain ⟨i, g, hg⟩ := hY j
+  refine ⟨i, g, (cancel_mono (f.app j)).1 ?_⟩
+  rw [Linear.smul_comp, f.naturality, ← Linear.comp_smul, hg]
+  simp
+
+/-- A quotient of a pro-`r`-torsion diagram is pro-`r`-torsion. It suffices that `f` is an
+epimorphism in each component, which holds for every epimorphism of diagrams when `C` has
+pushouts, e.g. when `C` is abelian. -/
+lemma IsProTorsionBy.of_epi {r : R} {X Y : J ⥤ C} (f : X ⟶ Y) [∀ j, Epi (f.app j)]
+    (hX : X.IsProTorsionBy r) : Y.IsProTorsionBy r := fun j ↦ by
+  obtain ⟨i, g, hg⟩ := hX j
+  refine ⟨i, g, (cancel_epi (f.app i)).1 ?_⟩
+  rw [Linear.comp_smul, ← f.naturality, ← Linear.smul_comp, hg]
+  simp
 
 end Linear
 
@@ -259,23 +286,7 @@ variable [Abelian C]
 
 section Linear
 
-variable {R : Type w} [Semiring R] [Linear R C] {r : R}
-
-/-- A subdiagram of a pro-`r`-torsion diagram is pro-`r`-torsion. -/
-lemma IsProTorsionBy.of_mono {X Y : J ⥤ C} (f : X ⟶ Y) [Mono f] (hY : Y.IsProTorsionBy r) :
-    X.IsProTorsionBy r := fun j ↦ by
-  obtain ⟨i, g, hg⟩ := hY j
-  refine ⟨i, g, (cancel_mono (f.app j)).1 ?_⟩
-  rw [Linear.smul_comp, f.naturality, ← Linear.comp_smul, hg]
-  simp
-
-/-- A quotient of a pro-`r`-torsion diagram is pro-`r`-torsion. -/
-lemma IsProTorsionBy.of_epi {X Y : J ⥤ C} (f : X ⟶ Y) [Epi f] (hX : X.IsProTorsionBy r) :
-    Y.IsProTorsionBy r := fun j ↦ by
-  obtain ⟨i, g, hg⟩ := hX j
-  refine ⟨i, g, (cancel_epi (f.app i)).1 ?_⟩
-  rw [Linear.comp_smul, ← f.naturality, ← Linear.smul_comp, hg]
-  simp
+variable {R : Type w} [Semiring R] [Linear R C]
 
 /-- In a short exact sequence of diagrams, if `b` kills the subdiagram and `a` kills the quotient
 as pro-objects, then `a * b` kills the middle term as a pro-object. -/
@@ -345,11 +356,15 @@ theorem proIsomorphisms_kernel_ι_smul_id_iff (r : R) (F : J ⥤ C) :
   set g := r • 𝟙 F
   have key : ∀ {i j : J} (f : i ⟶ j),
       (Abelian.coimage g).map f = 0 ↔ r • F.map f = 0 := fun {i j} f ↦ by
-    rw [← cancel_epi ((Abelian.coimage.π g).app i), ← cancel_mono
-      ((Abelian.factorThruCoimage g).app j), comp_zero, zero_comp, Category.assoc,
-      ← NatTrans.naturality_assoc,
-      ← NatTrans.comp_app, Abelian.coimage.fac]
-    simp [g]
+    -- Flanked by `coimage.π` and `factorThruCoimage`, the transition of the coimage becomes
+    -- `g.app i ≫ F.map f = r • F.map f`, by naturality and `coimage.π g ≫ factorThruCoimage g = g`.
+    have h : (Abelian.coimage.π g).app i ≫ (Abelian.coimage g).map f ≫
+        (Abelian.factorThruCoimage g).app j = r • F.map f := by
+      rw [← NatTrans.naturality_assoc, ← NatTrans.comp_app, Abelian.coimage.fac]
+      simp [g]
+    rw [← cancel_epi ((Abelian.coimage.π g).app i),
+      ← cancel_mono ((Abelian.factorThruCoimage g).app j)]
+    simp only [Category.assoc, h, comp_zero, zero_comp]
   refine (ObjectProperty.isoModSerre_iff_of_mono (P := IsProZero) (kernel.ι g)).trans ?_
   exact forall_congr' fun j ↦ exists_congr fun i ↦ exists_congr fun f ↦ key f
 
