@@ -84,17 +84,17 @@ theorem exists_measurable_rightInverse_eqOn [MeasurableSpace E] [MeasurableMul E
   · simp [hx, patch, surjInv_eq hp, hpσ _ ((hmem _ _).1 (Nat.find_spec (htV x)))]
 
 /-- **Borel sections from a local continuous section.** Let `p : E →* G` be a surjective
-homomorphism onto a Lindelöf group with continuous translations, for instance a second-countable
-topological group, and let `σ : G → E` be a section of `p` on an open neighbourhood `V` of `1`
-that is continuous on `V`. Then `p` has a Borel section that agrees with `σ` on `V`, so it is
-continuous on `V`. -/
+homomorphism onto a Lindelöf group with continuous left translations, for instance a
+second-countable topological group, and let `σ : G → E` be a section of `p` on an open
+neighbourhood `V` of `1` that is continuous on `V`. Then `p` has a Borel section that agrees with
+`σ` on `V`, so it is continuous on `V`. -/
 @[to_additive /-- **Borel sections from a local continuous section.** Let `p : E →+ G` be a
-surjective homomorphism onto a Lindelöf additive group with continuous translations, for instance
-a second-countable topological additive group, and let `σ : G → E` be a section of `p` on an open
-neighbourhood `V` of `0` that is continuous on `V`. Then `p` has a Borel section that agrees with
-`σ` on `V`, so it is continuous on `V`. -/]
+surjective homomorphism onto a Lindelöf additive group with continuous left translations, for
+instance a second-countable topological additive group, and let `σ : G → E` be a section of `p`
+on an open neighbourhood `V` of `0` that is continuous on `V`. Then `p` has a Borel section that
+agrees with `σ` on `V`, so it is continuous on `V`. -/]
 theorem exists_measurable_rightInverse_eqOn_of_continuousOn [TopologicalSpace E]
-    [MeasurableSpace E] [BorelSpace E] [MeasurableMul E] [SeparatelyContinuousMul G]
+    [MeasurableSpace E] [BorelSpace E] [MeasurableMul E] [ContinuousConstSMul G G]
     [LindelofSpace G] [MeasurableSpace G] [BorelSpace G] (p : E →* G) (hp : Surjective p)
     {V : Set G} (hVo : IsOpen V) (h1 : 1 ∈ V) {σ : G → E} (hσ : ContinuousOn σ V)
     (hpσ : ∀ g ∈ V, p (σ g) = g) :
