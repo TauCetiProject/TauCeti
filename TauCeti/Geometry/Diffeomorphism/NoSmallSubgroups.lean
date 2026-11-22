@@ -19,6 +19,14 @@ sufficiently small identity neighbourhood contains no nontrivial subgroup. Only 
 are used: in coordinates the displacement of a nearby diffeomorphism is `1/2`-Lipschitz, so
 squaring increases a nonzero displacement by a factor of at least `3/2`. All the powers cannot
 continue to lie in the neighbourhood, since their displacements there are bounded.
+
+This is a variant of the Bochner–Montgomery argument for groups of differentiable
+transformations. Instead of averaging over a subgroup, it compares a power to its square.
+
+## References
+
+* S. Bochner and D. Montgomery, *Groups of differentiable and real or complex analytic
+  transformations*, Ann. of Math. (2) 46 (1945), 685–694.
 -/
 
 public section
@@ -78,9 +86,13 @@ private theorem norm_chartDisplacement_sub_le (f : M ≃ₘ^n⟮I, I⟯ M) (hn :
       (extChartAt I c (f ((extChartAt I c).symm u)) - u)‖ ≤ (1 / 2 : ℝ) * ‖v - u‖ := by
   let e := extChartAt I c
   let g : E → E := e ∘ f ∘ e.symm
-  refine (convex_closedBall _ _).norm_image_sub_le_of_norm_hasFDerivWithin_le
-    (f := fun w ↦ g w - w) (f' := fun w ↦ fderivWithin ℝ g e.target w - ContinuousLinearMap.id ℝ E)
-    ?_ ?_ hu hv
+  have hsub : (extChartAt I c (f ((extChartAt I c).symm v)) - v) -
+      (extChartAt I c (f ((extChartAt I c).symm u)) - u) = g v - g u - (v - u) := by
+    dsimp [g, e]
+    abel
+  rw [hsub]
+  refine (convex_closedBall _ _).norm_image_sub_le_of_norm_hasFDerivWithin_le'
+    (f' := fun w ↦ fderivWithin ℝ g e.target w) (φ := ContinuousLinearMap.id ℝ E) ?_ ?_ hu hv
   · intro w hw
     have hwT := hB hw
     have he : ContMDiffAt 𝓘(ℝ, E) I n e.symm w :=
@@ -90,7 +102,7 @@ private theorem norm_chartDisplacement_sub_le (f : M ≃ₘ^n⟮I, I⟯ M) (hn :
     have hg : DifferentiableWithinAt ℝ g e.target w :=
       ((hed.comp w (f.contMDiff.contMDiffAt.comp w he)).contDiffAt.differentiableAt
         (ENat.one_le_iff_ne_zero_withTop.mp hn)).differentiableWithinAt
-    exact (hg.hasFDerivWithinAt.sub (hasFDerivAt_id w).hasFDerivWithinAt).mono hB
+    exact hg.hasFDerivWithinAt.mono hB
   · intro w hw
     have hwT := hB hw
     have hdiff := uniqueDiffOn_extChartAt_target c w hwT
@@ -98,6 +110,23 @@ private theorem norm_chartDisplacement_sub_le (f : M ≃ₘ^n⟮I, I⟯ M) (hn :
       fderivWithin_id hdiff] using (hf ⟨w, hwT⟩ hw).2
 
 variable [CompactSpace M]
+
+omit [I.Boundaryless] in
+/-- A compact chart test holds near the identity when its open set of jets contains the
+corresponding jets of the coordinate identity. -/
+private theorem preimage_chartJetSet_mem_nhds_one (c : M) (m : ℕ) (hm : m ≤ n)
+    {K : Set (extChartAt I c).target} (hK : IsCompact K)
+    {V : Set (E [×m]→L[ℝ] E)} (hV : IsOpen V)
+    (hId : ∀ w ∈ K, iteratedFDerivWithin ℝ m id (extChartAt I c).target w ∈ V) :
+    toContMDiffMap ⁻¹' ContMDiffMap.chartJetSet c c m K V ∈ 𝓝 (1 : M ≃ₘ^n⟮I, I⟯ M) := by
+  let e := extChartAt I c
+  have he : EqOn (e ∘ (1 : M ≃ₘ^n⟮I, I⟯ M).toContMDiffMap ∘ e.symm) id e.target :=
+    fun z hz ↦ by simpa only [comp_apply, coe_coe, one_apply, id_eq] using e.right_inv hz
+  refine ((ContMDiffMap.isOpen_chartJetSet c c m hm hK hV).preimage
+    continuous_toContMDiffMap).mem_nhds (ContMDiffMap.mem_chartJetSet.2 fun w hw ↦ ⟨?_, ?_⟩)
+  · simpa only [coe_coe, one_apply] using e.map_target w.property
+  · rw [iteratedFDerivWithin_congr he w.property]
+    exact hId w hw
 
 /-- First-order Whitney control of displacement on a compact coordinate set. -/
 private theorem eventually_chart_derivative_close (hn : 1 ≤ n) (c : M)
@@ -113,15 +142,9 @@ private theorem eventually_chart_derivative_close (hn : 1 ≤ n) (c : M)
     rw [iteratedFDerivWithin_of_isOpen 1 (isOpen_extChartAt_target c) hw]
     ext m
     simp only [D, iteratedFDeriv_one_apply, fderiv_id]
-  have hId : EqOn (e ∘ (1 : M ≃ₘ^n⟮I, I⟯ M).toContMDiffMap ∘ e.symm) id e.target :=
-    fun z hz ↦ by simpa only [comp_apply, coe_coe, one_apply, id_eq] using e.right_inv hz
-  have hU : {f : M ≃ₘ^n⟮I, I⟯ M | f.toContMDiffMap ∈
-      ContMDiffMap.chartJetSet c c 1 K (ball D (1 / 2))} ∈ 𝓝 1 := by
-    refine ((ContMDiffMap.isOpen_chartJetSet c c 1 (by simpa using hn) hK
-      isOpen_ball).preimage continuous_toContMDiffMap).mem_nhds ?_
-    refine ContMDiffMap.mem_chartJetSet.2 fun w _ ↦
-      ⟨by simpa only [coe_coe, one_apply] using e.map_target w.property, ?_⟩
-    rw [iteratedFDerivWithin_congr hId w.property, hD _ w.property]
+  have hU := preimage_chartJetSet_mem_nhds_one (n := n) c 1 (by simpa using hn) hK
+    (V := ball D (1 / 2)) isOpen_ball fun w _ ↦ by
+    rw [hD _ w.property]
     exact mem_ball_self (by norm_num)
   filter_upwards [hU] with f hf u hu
   obtain ⟨hsrc, hb⟩ := ContMDiffMap.mem_chartJetSet.1 hf u hu
@@ -147,12 +170,9 @@ private theorem exists_nhds_forall_pow_apply_eq (hn : 1 ≤ n) (c : M) :
   let U₀ : Set (M ≃ₘ^n⟮I, I⟯ M) :=
     toContMDiffMap ⁻¹' ContMDiffMap.chartJetSet c c 0 (K (r / 2)) V₀
   have hU₀ : U₀ ∈ 𝓝 (1 : M ≃ₘ^n⟮I, I⟯ M) := by
-    refine ((ContMDiffMap.isOpen_chartJetSet c c 0 (by simp) (hK _ (by linarith))
-      (isOpen_ball.preimage (by fun_prop))).preimage continuous_toContMDiffMap).mem_nhds ?_
-    refine ContMDiffMap.mem_chartJetSet.2 fun w hw ↦
-      ⟨by simpa only [coe_coe, one_apply] using e.map_target w.property, ?_⟩
-    simpa only [e, mem_preimage, iteratedFDerivWithin_zero_apply, comp_apply, coe_coe, one_apply,
-      (extChartAt I c).right_inv w.property] using
+    refine preimage_chartJetSet_mem_nhds_one c 0 (by simp) (hK _ (by linarith))
+      (isOpen_ball.preimage (by fun_prop)) fun w hw ↦ ?_
+    simpa only [V₀, mem_preimage, iteratedFDerivWithin_zero_apply, id_eq] using
       (closedBall_subset_ball (by linarith : r / 2 < r) hw)
   have hU₁ := eventually_chart_derivative_close hn c (hK r le_rfl)
   refine ⟨e.source ∩ e ⁻¹' ball (e c) (r / 2), U₀ ∩ _,

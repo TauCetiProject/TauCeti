@@ -43,7 +43,8 @@ used (`TauCeti.HasWeakLineDerivOn.contDiffOn_smul`), since `ψ φ` only sees `ψ
 coefficient field of an elliptic operator, smooth in the domain but not beyond it, is a factor of
 this kind. For an additive Haar measure, a factor that is only `C¹` on `Ω` also suffices
 (`TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`), as a consequence of the Lipschitz rule
-below.
+below. Expanding in a basis gives the rule `D(T u) = T Du + (DT) u` for a `C¹` field `T` of linear
+maps between finite-dimensional spaces (`TauCeti.HasWeakFDerivOn.contDiffOn_clm_apply_of_ne_zero`).
 
 ## Lipschitz factors
 
@@ -84,9 +85,15 @@ explicit, non-asymptotic formula is the point.
 * `TauCeti.HasWeakLineDerivOn.lipschitzWith_smul` and
   `TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul`: the rule in a direction `v` for a Lipschitz
   factor, with its almost-everywhere directional derivative.
+* `TauCeti.HasWeakLineDerivOn.locallyLipschitzOn_smul`: the same for a factor that is only
+  locally Lipschitz on `Ω`, such as the continuous representative of a `W^{1,∞}` function.
 * `TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`,
   `TauCeti.HasWeakFDerivOn.contDiffOn_smul_of_ne_zero`: the rule in both forms for a factor that
   is `C^n` on `Ω` with `n ≠ 0` (at least `C¹`), for an additive Haar measure.
+* `TauCeti.HasWeakLineDerivOn.contDiffOn_clm_apply_of_ne_zero`,
+  `TauCeti.HasWeakFDerivOn.contDiffOn_clm_apply_of_ne_zero`: the same rule in both forms for a
+  `C¹` factor with values in linear maps between finite-dimensional spaces,
+  `∂_v (Φ u) = Φ ∂_v u + (∂_v Φ) u`.
 * `TauCeti.HasWeakLineDerivOn.exists_norm_le_lipschitzOnWith_smul`: a bounded Lipschitz factor
   keeps an `Lᵖ` weak derivative in `Lᵖ`, with an explicit bound.
 * `TauCeti.eLpNorm_smul_add_fderiv_smulRight_le`: for `1 ≤ p`, the `Lᵖ` bound
@@ -360,6 +367,20 @@ theorem HasWeakLineDerivOn.lipschitzOnWith_smul (h : HasWeakLineDerivOn μ Ω u 
   · exact (ae_restrict_mem Ω.isOpen.measurableSet).mono fun x hx => by
       simp only [← hgψ hx, (hnear x hx).lineDeriv_eq]
 
+/-- **The Leibniz rule for weak directional derivatives with a locally Lipschitz factor.** If `u'`
+is a weak derivative of `u` in the direction `v` on `Ω` and `ψ` is locally Lipschitz on `Ω`, then
+`ψ u` is weakly differentiable in the direction `v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`.
+Neither `ψ` nor its directional derivative need be bounded on `Ω`. -/
+theorem HasWeakLineDerivOn.locallyLipschitzOn_smul (h : HasWeakLineDerivOn μ Ω u u' v)
+    (hψ : LocallyLipschitzOn (Ω : Set E) ψ) :
+    HasWeakLineDerivOn μ Ω (fun x => ψ x • u x)
+      (fun x => ψ x • u' x + lineDeriv ℝ ψ x v • u x) v := by
+  -- On each relatively compact open `V` with closure in `Ω` the factor is Lipschitz, so the
+  -- Lipschitz rule applies there.
+  refine hasWeakLineDerivOn_iff_forall_isCompact_closure.2 fun V hVc hVΩ => ?_
+  obtain ⟨K, hK⟩ := (hψ.mono hVΩ).exists_lipschitzOnWith_of_compact hVc
+  exact (h.mono (subset_closure.trans hVΩ)).lipschitzOnWith_smul (hK.mono subset_closure)
+
 /-- **The Leibniz rule for weak directional derivatives with a `C¹` factor.** If `u'` is a weak
 derivative of `u` in the direction `v` on `Ω` and `ψ` is `C^n` on `Ω` for some `n ≠ 0`, then `ψ u`
 is weakly differentiable in the direction `v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`.
@@ -370,20 +391,14 @@ theorem HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero {n : WithTop ℕ∞}
     (h : HasWeakLineDerivOn μ Ω u u' v) (hψ : ContDiffOn ℝ n ψ Ω) (hn : n ≠ 0) :
     HasWeakLineDerivOn μ Ω (fun x => ψ x • u x)
       (fun x => ψ x • u' x + fderiv ℝ ψ x v • u x) v := by
-  -- On each relatively compact open `V` with closure in `Ω`, the factor is Lipschitz, so the
-  -- Lipschitz rule applies there, and its almost-everywhere directional derivative is the
-  -- classical one.
+  -- The factor is locally Lipschitz on `Ω`, and its directional derivative is the classical one.
   have hψ1 : ContDiffOn ℝ 1 ψ Ω := hψ.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)
   have hll : LocallyLipschitzOn (Ω : Set E) ψ := fun x hx => by
     obtain ⟨K, t, ht, hK⟩ :=
       ((hψ1 x hx).contDiffAt (Ω.isOpen.mem_nhds hx)).exists_lipschitzOnWith
     exact ⟨K, t, nhdsWithin_le_nhds ht, hK⟩
-  refine hasWeakLineDerivOn_iff_forall_isCompact_closure.2 fun V hVc hVΩ => ?_
-  obtain ⟨K, hK⟩ := (hll.mono hVΩ).exists_lipschitzOnWith_of_compact hVc
-  refine ((h.mono (subset_closure.trans hVΩ)).lipschitzOnWith_smul
-    (hK.mono subset_closure)).congr_ae_deriv ?_
-  filter_upwards [ae_restrict_mem V.isOpen.measurableSet] with x hx
-  have hxΩ : x ∈ (Ω : Set E) := hVΩ (subset_closure hx)
+  refine (h.locallyLipschitzOn_smul hll).congr_ae_deriv ?_
+  filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with x hxΩ
   rw [((hψ1.differentiableOn one_ne_zero x hxΩ).differentiableAt
     (Ω.isOpen.mem_nhds hxΩ)).lineDeriv_eq_fderiv]
 
@@ -396,6 +411,50 @@ theorem HasWeakFDerivOn.contDiffOn_smul_of_ne_zero {n : WithTop ℕ∞} {U : E �
   rw [hasWeakFDerivOn_iff]
   intro v
   have hv := (h.hasWeakLineDerivOn v).contDiffOn_smul_of_ne_zero hψ hn
+  convert hv using 2 with x
+  simp
+
+/-- **The Leibniz rule with a `C¹` operator-valued factor.** If `u'` is a weak derivative of `u`
+in the direction `v` on `Ω` and `Φ : E → (F →L[ℝ] G)` is `C^n` on `Ω` for some `n ≠ 0`, between
+finite-dimensional spaces, then `x ↦ Φ x (u x)` is weakly differentiable in the direction `v` on
+`Ω`, with derivative `Φ u' + (∂_v Φ) u`, for an additive Haar measure. -/
+theorem HasWeakLineDerivOn.contDiffOn_clm_apply_of_ne_zero [FiniteDimensional ℝ F]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+    {n : WithTop ℕ∞} {Φ : E → F →L[ℝ] G} (h : HasWeakLineDerivOn μ Ω u u' v)
+    (hΦ : ContDiffOn ℝ n Φ Ω) (hn : n ≠ 0) :
+    HasWeakLineDerivOn μ Ω (fun x => Φ x (u x)) (fun x => Φ x (u' x) + fderiv ℝ Φ x v (u x))
+      v := by
+  -- Expand `Φ x = ∑ₘ cₘ (Φ x) • bₘ` in a basis `(bₘ)` of `F →L[ℝ] G`; the scalar `C¹` Leibniz
+  -- rule applies to each `cₘ (Φ x) • bₘ (u x)`.
+  set b := Module.finBasis ℝ (F →L[ℝ] G)
+  let c : Fin (Module.finrank ℝ (F →L[ℝ] G)) → (F →L[ℝ] G) →L[ℝ] ℝ := fun m =>
+    LinearMap.toContinuousLinearMap (b.coord m)
+  have hexp (T : F →L[ℝ] G) (y : F) : ∑ m, c m T • b m y = T y := by
+    calc ∑ m, c m T • b m y = (∑ m, b.repr T m • b m) y := by
+          simp [-Module.Basis.sum_repr, c]
+      _ = T y := by rw [b.sum_repr]
+  have hsum := HasWeakLineDerivOn.sum (F := G) Finset.univ fun m _ =>
+    (h.clm_comp (b m)).contDiffOn_smul_of_ne_zero ((c m).contDiff.comp_contDiffOn hΦ) hn
+  refine (hsum.congr_ae (Filter.Eventually.of_forall fun x => hexp (Φ x) (u x))).congr_ae_deriv ?_
+  filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with x hx
+  have hd : DifferentiableAt ℝ Φ x :=
+    ((hΦ.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)).differentiableOn one_ne_zero x
+      hx).differentiableAt (Ω.isOpen.mem_nhds hx)
+  simp only [Finset.sum_add_distrib, fderiv_comp x (c _).differentiableAt hd,
+    ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply, Function.comp_apply, hexp]
+
+/-- **The Leibniz rule for weak Fréchet derivatives with a `C¹` operator-valued factor**:
+`D(Φ u) = Φ Du + (DΦ) u` on `Ω` for `Φ : E → (F →L[ℝ] G)` that is `C^n` on `Ω` with `n ≠ 0`,
+between finite-dimensional spaces, for an additive Haar measure. -/
+theorem HasWeakFDerivOn.contDiffOn_clm_apply_of_ne_zero [FiniteDimensional ℝ F]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+    {n : WithTop ℕ∞} {Φ : E → F →L[ℝ] G} {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
+    (hΦ : ContDiffOn ℝ n Φ Ω) (hn : n ≠ 0) :
+    HasWeakFDerivOn μ Ω (fun x => Φ x (u x))
+      (fun x => (Φ x).comp (U x) + (fderiv ℝ Φ x).flip (u x)) := by
+  rw [hasWeakFDerivOn_iff]
+  intro v
+  have hv := (h.hasWeakLineDerivOn v).contDiffOn_clm_apply_of_ne_zero hΦ hn
   convert hv using 2 with x
   simp
 

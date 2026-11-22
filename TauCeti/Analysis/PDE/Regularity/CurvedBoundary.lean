@@ -7,11 +7,15 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.FlatBoundary
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
+import Mathlib.Analysis.Normed.Operator.Banach
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
-import TauCeti.Analysis.PDE.Regularity.Interior
+import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Flattening
 import TauCeti.Analysis.Sobolev.Wkp.Gluing
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # `H²` regularity up to a `C²` boundary
@@ -27,8 +31,10 @@ hence that the weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem on a bo
 boundary lies in `H²(Ω)` (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_contDiff_graph`).
 A `C²` boundary is described as in Evans, Appendix C.1: near each boundary point, in rigid
 coordinates `e : ℝⁿ ≃ ℝ × E` centred there, `Ω` is the region above the graph of a `C²` function
-`γ : E → ℝ` with `γ 0 = 0`, inside a normal cylinder. Only the qualitative statement is proved:
-no estimate of the `H²` norm is given.
+`γ : E → ℝ` with `γ 0 = 0`, inside a normal cylinder. The regularity comes with the global
+estimate `‖u‖_{H²(Ω)} ≤ C (‖u‖_{L²(Ω)} + ‖f‖_{L²(Ω)})`
+(`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_norm_value_of_contDiff_graph`),
+with `C` depending only on `Ω` and the coefficients.
 
 ## The argument
 
@@ -41,7 +47,7 @@ The classical proof (Evans, §6.3.2, Theorem 4) flattens the boundary.
 * **The transformed equation.** The function `u ∘ Φ` is a weak solution of an equation of the same
   form on the flat side (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`), whose principal
   coefficient is again uniformly elliptic (`TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`) and
-  Lipschitz (`TauCeti.PDE.exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal`), since `DΦ`
+  Lipschitz (`TauCeti.PDE.exists_holderOnWith_matrixBilinearForm_pullbackPrincipal`), since `DΦ`
   is `C¹` and so Lipschitz on compact convex sets, and whose lower-order terms and right-hand side
   stay bounded and square integrable. Zero boundary values are carried along by cutting off
   near the image of the support and pulling back.
@@ -53,6 +59,16 @@ The classical proof (Evans, §6.3.2, Theorem 4) flattens the boundary.
   `Ω` where interior regularity applies
   (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn`), cover
   the compact closure, and the local second derivatives glue (`TauCeti.Wkp.exists_glue`).
+* **The estimate.** The pairs `(u, f)` of a weak solution `u ∈ H¹₀(Ω)` of `L u = f` and its
+  datum `f ∈ L²(Ω)` form a closed subspace of `H¹(Ω) × L²(Ω)` (`TauCeti.PDE.dirichletGraph`,
+  `TauCeti.PDE.isClosed_dirichletGraph`), and so do the pairs `(w, f)` with
+  `w ∈ W^{2,2}(Ω)` whose first-order part solves `L u = f`. Forgetting the second derivatives maps
+  the second space continuously onto the first, by the regularity theorem, so the open mapping
+  theorem (`ContinuousLinearMap.exists_preimage_norm_le`) bounds `‖w‖_{W^{2,2}}` by
+  `C (‖u‖_{H¹} + ‖f‖_{L²})`. Gårding's inequality applied to the equation tested against `u`
+  bounds `‖u‖_{H¹}` by `‖u‖_{L²}` and `‖f‖_{L²}`
+  (`TauCeti.PDE.UniformlyEllipticOn.norm_le_of_isWeakSolutionDirichlet_of_norm_le`). The
+  constant is not explicit; as in Evans's theorem, it depends only on `Ω` and the coefficients.
 
 ## Main declarations
 
@@ -60,6 +76,10 @@ The classical proof (Evans, §6.3.2, Theorem 4) flattens the boundary.
   regularity near a `C²` boundary portion on which the solution vanishes.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_contDiff_graph`: `H²` regularity of
   the Dirichlet problem on a bounded open set with `C²` boundary.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph`: the
+  global `H²` estimate in terms of `‖u‖_{H¹}` and `‖f‖_{L²}`.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_norm_value_of_contDiff_graph`:
+  the global `H²` estimate in terms of `‖u‖_{L²}` and `‖f‖_{L²}` (Evans, §6.3.2, Theorem 4).
 
 ## References
 
@@ -310,6 +330,156 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_contDiff_graph
   exact ⟨v, W1p.ext_value (Lp.ext (by rw [Wkp.value_lowerOrder_one]; exact hv))⟩
 
 end Local
+
+/-! ### The global `H²` estimate -/
+
+section Estimate
+
+variable {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+  {lam Lam : ℝ} {K : ℝ≥0} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+  {c : EuclideanSpace ℝ ι → ℝ} {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- Shortcut normed group instance on `W^{1,2}(Ω)`. Without it, the normed structure of a subspace
+of `W^{1,2}(Ω) × L²(Ω)` and its module structure are found along paths that do not unify. -/
+private noncomputable local instance instNormedAddCommGroupW1pTwo :
+    NormedAddCommGroup (W1p mu Omega 2) := inferInstance
+
+/-- Shortcut normed space instance on `W^{1,2}(Ω)`, for the same reason. -/
+private noncomputable local instance instNormedSpaceW1pTwo :
+    NormedSpace ℝ (W1p mu Omega 2) := inferInstance
+
+variable [DecidableEq ι]
+
+/-- **The global `H²` estimate up to a `C²` boundary, in terms of the `H¹` norm.** Under the
+hypotheses of `UniformlyEllipticOn.exists_lowerOrder_eq_of_contDiff_graph`, there is a constant
+`C` such that every weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem for `L u = f` with
+`f ∈ L²(Ω)` is the first-order part of some `w ∈ W^{2,2}(Ω)` with
+
+`‖w‖_{W^{2,2}(Ω)} ≤ C (‖u‖_{H¹(Ω)} + ‖f‖_{L²(Ω)})`.
+
+The element `w` is unique (`TauCeti.Wkp.ext_lowerOrder`). The constant depends on `Ω` and on the
+coefficients, but not on `u` or `f`. -/
+theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph
+    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
+    (hbdry : ∀ x ∈ frontier (Omega : Set (EuclideanSpace ℝ ι)),
+      ∃ (e : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ),
+        e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 2 γ ∧
+          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ γ z.snd < z.fst))
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega)) :
+    ∃ C : ℝ, ∀ {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2},
+      u ∈ w1p0Submodule mu Omega 2 →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
+      ∃ w : Wkp mu Omega 2 2, Wkp.lowerOrder 1 w = u ∧ ‖w‖ ≤ C * (‖u‖ + ‖f‖) := by
+  -- The coefficients are essentially bounded, so the energy form is a continuous bilinear form.
+  have hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) :=
+    memLp_energyIntegrand_of_memLp_top ha.upper_nonneg
+      ((continuousOn_of_continuousOn_matrixBilinearForm hK.continuousOn).aestronglyMeasurable
+        Omega.isOpen.measurableSet) (fun _ hx => ha.upper_bound hx) hb hc
+  -- The map `(w, f) ↦ (w', f)`, where `w'` is the first-order part of `w`, from the closed
+  -- subspace of solutions in `W^{2,2}(Ω) × L²(Ω)` onto the graph of the Dirichlet problem.
+  let X := dirichletGraph hcoeff
+  let P : Wkp mu Omega 2 2 × Lp ℝ 2 (mu.restrict Omega) →L[ℝ]
+      W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega) :=
+    (Wkp.lowerOrderL 1).prodMap (ContinuousLinearMap.id ℝ _)
+  have hP : ∀ q, P q = (Wkp.lowerOrder 1 q.1, q.2) := fun q =>
+    Prod.ext (Wkp.lowerOrderL_apply 1 q.1) rfl
+  let S := X.comap P.toLinearMap
+  have hX : IsClosed (X : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) :=
+    isClosed_dirichletGraph hcoeff
+  have : CompleteSpace X := hX.completeSpace_coe
+  have : CompleteSpace S := (hX.preimage P.continuous).completeSpace_coe
+  let π : S →L[ℝ] X := (P.comp S.subtypeL).codRestrict X fun q => q.property
+  -- `π` has the values of `P` (`ContinuousLinearMap.coe_codRestrict_apply`).
+  have hπ : ∀ q : S, (π q : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)) = P q := fun _ => rfl
+  -- By the qualitative regularity theorem it is surjective, so the open mapping theorem bounds
+  -- a preimage.
+  have hsurj : Function.Surjective π := by
+    rintro ⟨⟨u, f⟩, hX⟩
+    have hu0 := ((mem_dirichletGraph_iff hcoeff).1 hX).1
+    obtain ⟨w, hw⟩ := ha.exists_lowerOrder_eq_of_contDiff_graph hΩ hbdry hK hb hc hu0
+      ((isWeakSolutionDirichlet_iff f ⟨u, hu0⟩).1 ((mk_mem_dirichletGraph_iff hcoeff _ f).1 hX))
+    have hPwf : P (w, f) = (u, f) := (hP (w, f)).trans (Prod.ext hw rfl)
+    have hmem : P (w, f) ∈ X := hPwf ▸ hX
+    exact ⟨⟨(w, f), Submodule.mem_comap.2 hmem⟩, Subtype.ext ((hπ _).trans hPwf)⟩
+  obtain ⟨C, hC, hpre⟩ := π.exists_preimage_norm_le hsurj
+  refine ⟨C, fun {f u} hu0 hu => ?_⟩
+  obtain ⟨⟨⟨w, g⟩, hq⟩, hwg, hnorm⟩ :=
+    hpre ⟨(u, f), (mk_mem_dirichletGraph_iff hcoeff ⟨u, hu0⟩ f).2
+      ((isWeakSolutionDirichlet_iff f _).2 hu)⟩
+  have hw : P (w, g) = (u, f) := (hπ _).symm.trans (congrArg Subtype.val hwg)
+  rw [hP] at hw
+  refine ⟨w, (Prod.ext_iff.1 hw).1, ?_⟩
+  calc ‖w‖ ≤ ‖((w, g) : Wkp mu Omega 2 2 × Lp ℝ 2 (mu.restrict Omega))‖ :=
+        norm_fst_le ((w, g) : Wkp mu Omega 2 2 × Lp ℝ 2 (mu.restrict Omega))
+    _ ≤ C * max ‖u‖ ‖f‖ := hnorm
+    _ ≤ C * (‖u‖ + ‖f‖) := by
+      gcongr
+      exact max_le_add_of_nonneg (norm_nonneg _) (norm_nonneg _)
+
+/-- **The global `H²` estimate up to a `C²` boundary** (Evans, §6.3.2, Theorem 4). Let `Ω` be a
+bounded open set with `C²` boundary, described as in
+`UniformlyEllipticOn.exists_lowerOrder_eq_of_contDiff_graph`, let `a` be uniformly elliptic and
+Lipschitz on `Ω`, and let `b, c` be essentially bounded on `Ω`. There is a
+constant `C` such that every weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem
+
+`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω`, `u = 0` on `∂Ω`, with `f ∈ L²(Ω)`,
+
+is the first-order part of some `w ∈ W^{2,2}(Ω)` with
+
+`‖w‖_{W^{2,2}(Ω)} ≤ C (‖u‖_{L²(Ω)} + ‖f‖_{L²(Ω)})`.
+
+The constant depends on `Ω` and on the coefficients, but not on `u` or `f`. No sign condition on
+`c` and no smallness of `b` is assumed, so `u` need not be unique, and the `L²` norm of `u` cannot
+be dropped from the right-hand side. -/
+theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_norm_value_of_contDiff_graph
+    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
+    (hbdry : ∀ x ∈ frontier (Omega : Set (EuclideanSpace ℝ ι)),
+      ∃ (e : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ),
+        e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 2 γ ∧
+          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ γ z.snd < z.fst))
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega)) :
+    ∃ C : ℝ, ∀ {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2},
+      u ∈ w1p0Submodule mu Omega 2 →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
+      ∃ w : Wkp mu Omega 2 2, Wkp.lowerOrder 1 w = u ∧
+        ‖w‖ ≤ C * (‖W1p.value u‖ + ‖f‖) := by
+  obtain ⟨C, hC⟩ := ha.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph hΩ hbdry hK hb hc
+  -- The `L^∞` norms of `b` and `c` bound them almost everywhere on `Ω`.
+  set beta := lpNorm b ⊤ (mu.restrict Omega)
+  set gamma := lpNorm c ⊤ (mu.restrict Omega)
+  have hlam : 0 < lam := ha.pos
+  set κ := lam / 2 + |gamma| + beta ^ 2 / (2 * lam)
+  refine ⟨max C 0 * (1 + 2 / lam + 2 * κ / lam), fun {f u} hu0 hu => ?_⟩
+  obtain ⟨w, hw, hwle⟩ := hC hu0 hu
+  refine ⟨w, hw, ?_⟩
+  -- Gårding's inequality and the equation tested against `u` itself bound `‖u‖_{H¹}`.
+  have hu_le : ‖u‖ ≤ 2 / lam * (‖f‖ + κ * ‖W1p.value u‖) :=
+    ha.norm_le_of_isWeakSolutionDirichlet_of_norm_le (u := ⟨u, hu0⟩)
+      ((continuousOn_of_continuousOn_matrixBilinearForm hK.continuousOn).aestronglyMeasurable
+        Omega.isOpen.measurableSet) hb.aestronglyMeasurable hc.aestronglyMeasurable
+      (ae_le_lpNorm_exponent_top hb) (ae_le_lpNorm_exponent_top hc)
+      ((isWeakSolutionDirichlet_iff f _).2 hu)
+  calc ‖w‖ ≤ C * (‖u‖ + ‖f‖) := hwle
+    _ ≤ max C 0 * (‖u‖ + ‖f‖) := by gcongr; exact le_max_left _ _
+    _ ≤ max C 0 * (2 / lam * (‖f‖ + κ * ‖W1p.value u‖) + ‖f‖) := by gcongr
+    _ ≤ max C 0 * (1 + 2 / lam + 2 * κ / lam) * (‖W1p.value u‖ + ‖f‖) := by
+      rw [mul_assoc]
+      gcongr
+      have h1 : 0 ≤ (1 + 2 / lam) * ‖W1p.value u‖ := by positivity
+      have h2 : 0 ≤ 2 * κ / lam * ‖f‖ := by positivity
+      have hexp : (1 + 2 / lam + 2 * κ / lam) * (‖W1p.value u‖ + ‖f‖) =
+          2 / lam * (‖f‖ + κ * ‖W1p.value u‖) + ‖f‖ +
+            ((1 + 2 / lam) * ‖W1p.value u‖ + 2 * κ / lam * ‖f‖) := by
+        ring
+      linarith
+
+end Estimate
 
 end PDE
 

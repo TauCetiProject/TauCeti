@@ -35,6 +35,7 @@ rapid decay of every order.
 ## Main results
 
 * `Distribution.localFourier_lineDerivOp`: the localized Fourier transform of a derivative.
+* `Distribution.one_add_norm_pow_mul_norm_localFourier_lineDerivOp_le`: its decay estimate.
 * `Distribution.IsMicrolocallySmoothAt.lineDerivOp`,
   `Distribution.IsMicrolocallySmoothAt.iteratedLineDerivOp`,
   `Distribution.waveFrontSet_lineDerivOp_subset`,
@@ -74,6 +75,42 @@ theorem localFourier_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (φ : 𝓓(Ω, ℂ
     lineDerivOp_bilinLeftCLM_fourierAtom, map_sub, map_smul, smul_eq_mul]
   ring
 
+/-- The factor `2πi ⟪v, η⟫` of the localized Fourier transform of a derivative `∂_v T`
+(`Distribution.localFourier_lineDerivOp`) is bounded by `2π ‖v‖ (1 + ‖η‖)`, so it costs one order
+of decay. -/
+theorem _root_.TauCeti.norm_two_pi_I_mul_inner_le (v η : E) :
+    ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ ≤ 2 * π * ‖v‖ * (1 + ‖η‖) := by
+  calc ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ = 2 * π * |⟪v, η⟫| := by
+        simp [abs_of_pos Real.pi_pos]
+    _ ≤ 2 * π * (‖v‖ * (1 + ‖η‖)) := by
+        gcongr
+        exact (abs_real_inner_le_norm v η).trans
+          (mul_le_mul_of_nonneg_left (le_add_of_nonneg_left zero_le_one) (norm_nonneg v))
+    _ = 2 * π * ‖v‖ * (1 + ‖η‖) := by ring
+
+/-- **The decay estimate for the localized Fourier transform of a derivative.** By
+`Distribution.localFourier_lineDerivOp`, the factor `2πi ⟪v, η⟫` costs one order of decay:
+
+`(1 + ‖η‖)^N ‖(∂_v T) (φ e_η)‖ ≤
+  2π ‖v‖ (1 + ‖η‖)^(N+1) ‖T (φ e_η)‖ + (1 + ‖η‖)^N ‖T ((∂_v φ) e_η)‖`. -/
+theorem one_add_norm_pow_mul_norm_localFourier_lineDerivOp_le (T : 𝓓'(Ω, ℂ)) (v : E)
+    (φ : 𝓓(Ω, ℂ)) (N : ℕ) (η : E) :
+    (1 + ‖η‖) ^ N * ‖(∂_{v} T).localFourier φ η‖ ≤
+      2 * π * ‖v‖ * ((1 + ‖η‖) ^ (N + 1) * ‖T.localFourier φ η‖) +
+        (1 + ‖η‖) ^ N * ‖T.localFourier (∂_{v} φ) η‖ := by
+  rw [localFourier_lineDerivOp]
+  calc (1 + ‖η‖) ^ N *
+        ‖2 * π * I * ⟪v, η⟫ * T.localFourier φ η - T.localFourier (∂_{v} φ) η‖
+      ≤ (1 + ‖η‖) ^ N * (2 * π * ‖v‖ * (1 + ‖η‖) * ‖T.localFourier φ η‖) +
+          (1 + ‖η‖) ^ N * ‖T.localFourier (∂_{v} φ) η‖ := by
+        rw [← mul_add]
+        refine mul_le_mul_of_nonneg_left ((norm_sub_le _ _).trans ?_) (by positivity)
+        rw [norm_mul]
+        gcongr
+        exact TauCeti.norm_two_pi_I_mul_inner_le v η
+    _ = 2 * π * ‖v‖ * ((1 + ‖η‖) ^ (N + 1) * ‖T.localFourier φ η‖) +
+          (1 + ‖η‖) ^ N * ‖T.localFourier (∂_{v} φ) η‖ := by ring
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E] {T : 𝓓'(Ω, ℂ)} {x ξ : E}
@@ -95,31 +132,10 @@ theorem IsMicrolocallySmoothAt.lineDerivOp (hT : T.IsMicrolocallySmoothAt x ξ) 
   -- Both terms of `localFourier_lineDerivOp` decay; the factor `⟪v, η⟫` costs one order.
   obtain ⟨C₁, hC₁⟩ := hdecay φ hφU' (N + 1)
   obtain ⟨C₂, hC₂⟩ := hdecay (∂_{v} φ) ((tsupport_fderiv_apply_subset ℝ v).trans hφU') N
-  refine ⟨2 * π * ‖v‖ * C₁ + C₂, fun η hη ↦ ?_⟩
-  have hinner : ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ ≤ 2 * π * ‖v‖ * (1 + ‖η‖) := by
-    calc ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ = 2 * π * ‖⟪v, η⟫‖ := by
-          rw [norm_mul, norm_mul, norm_mul, norm_I, Complex.norm_real, Complex.norm_real,
-            Complex.norm_two, Real.norm_of_nonneg Real.pi_pos.le, mul_one]
-      _ ≤ 2 * π * (‖v‖ * (1 + ‖η‖)) := by
-          gcongr
-          exact (norm_inner_le_norm (𝕜 := ℝ) v η).trans
-            (mul_le_mul_of_nonneg_left (le_add_of_nonneg_left zero_le_one) (norm_nonneg v))
-      _ = 2 * π * ‖v‖ * (1 + ‖η‖) := by ring
-  have h1 : 0 ≤ (1 + ‖η‖) ^ N := by positivity
-  rw [localFourier_lineDerivOp]
-  calc (1 + ‖η‖) ^ N *
-        ‖2 * π * I * ⟪v, η⟫ * T.localFourier φ η - T.localFourier (∂_{v} φ) η‖
-      ≤ (1 + ‖η‖) ^ N * (2 * π * ‖v‖ * (1 + ‖η‖) * ‖T.localFourier φ η‖) +
-          (1 + ‖η‖) ^ N * ‖T.localFourier (∂_{v} φ) η‖ := by
-        rw [← mul_add]
-        refine mul_le_mul_of_nonneg_left ((norm_sub_le _ _).trans ?_) h1
-        rw [norm_mul]
-        gcongr
-    _ = 2 * π * ‖v‖ * ((1 + ‖η‖) ^ (N + 1) * ‖T.localFourier φ η‖) +
-          (1 + ‖η‖) ^ N * ‖T.localFourier (∂_{v} φ) η‖ := by ring
-    _ ≤ 2 * π * ‖v‖ * C₁ + C₂ := by
-        gcongr
-        exacts [hC₁ η hη, hC₂ η hη]
+  refine ⟨2 * π * ‖v‖ * C₁ + C₂, fun η hη ↦
+    (one_add_norm_pow_mul_norm_localFourier_lineDerivOp_le T v φ N η).trans ?_⟩
+  gcongr
+  exacts [hC₁ η hη, hC₂ η hη]
 
 /-- An iterated derivative `∂^{m} T` of a distribution microlocally smooth at `(x, ξ)` is
 microlocally smooth there. -/
