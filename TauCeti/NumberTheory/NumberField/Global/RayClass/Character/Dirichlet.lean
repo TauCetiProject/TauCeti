@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Rat
 
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 
 /-!
 # Ray class characters of `ℚ` and Dirichlet characters

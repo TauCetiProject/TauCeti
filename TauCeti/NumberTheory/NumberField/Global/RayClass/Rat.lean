@@ -15,7 +15,7 @@ import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 
 /-!
 # The ray class group of `ℚ` modulo `(n)·∞`

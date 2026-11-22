@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
-import Mathlib.Algebra.QuadraticAlgebra.Discriminant
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 import TauCeti.NumberTheory.QuadraticOrder.Reduction
 

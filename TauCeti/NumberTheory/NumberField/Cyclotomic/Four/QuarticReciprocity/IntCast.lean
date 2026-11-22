@@ -10,7 +10,7 @@ import TauCeti.NumberTheory.GaussSum.Basic
 import TauCeti.NumberTheory.LegendreSymbol.Complex
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.SupplementaryLaws
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.IntegralClosure.Map
 

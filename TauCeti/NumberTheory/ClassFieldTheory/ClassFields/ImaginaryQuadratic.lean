@@ -21,7 +21,8 @@ Let `K` be an imaginary quadratic field (`[IsTotallyComplex K]`, `finrank ℚ K 
 `TauCeti.NumberTheory.NumberField.Global.RayClass.ImaginaryQuadratic`, and the residue-unit
 counts of `TauCeti.NumberTheory.NumberField.Quadratic.ResidueUnits` yields the closed ray class
 field degree dictionary over `hilbertClassField K` (for the multiplication-matrix Galois actions,
-see `TauCeti.NumberTheory.ClassFieldTheory.ClassFields.MatrixReciprocity`):
+see `TauCeti.NumberTheory.ClassFieldTheory.ClassFields.MatrixReciprocity.Basic`, `LevelTwo`, and
+`LevelThree`):
 
 * `[K_(N) : H_K] * #(𝓞 K)ˣ = #(𝓞 K ⧸ (N))ˣ` for every `3 ≤ N`
   (`finrank_hilbertClassField_rayClassField_spanNat_mul_card_units`).
@@ -29,9 +30,7 @@ see `TauCeti.NumberTheory.ClassFieldTheory.ClassFields.MatrixReciprocity`):
   fields — including `D = -4` and `D = -3`, where `[K_(2) : H_K] = 1` despite
   `#(𝓞 K ⧸ (2))ˣ > 1`.
 * Unconditional relative tower degrees `[K_(6) : K_(2)] = (3 - χ_D(3)).toNat` and
-  `[K_(8) : K_(2)] = 8`, valid uniformly for every imaginary quadratic discriminant `D`, together
-  with the mod-`24` criterion `fundamentalDiscriminantChar_two_eq_neg_one_and_three_eq_zero_iff`
-  characterizing the inert-two, ramified-three branch `D ≡ 21 (mod 24)`.
+  `[K_(8) : K_(2)] = 8`, valid uniformly for every imaginary quadratic discriminant `D`.
 
 ## References
 
@@ -48,26 +47,6 @@ open TauCeti.Multiquadratic (fundamentalDiscriminantChar isFundamentalDiscr_disc
   fundamentalDiscriminantChar_le_one fundamentalDiscriminantChar_neg_four_two
   fundamentalDiscriminantChar_neg_four_three fundamentalDiscriminantChar_neg_three_two
   fundamentalDiscriminantChar_neg_three_three)
-
-namespace TauCeti.Multiquadratic
-
-/-- The fundamental-discriminant character satisfies `χ_D(2) = -1` and `χ_D(3) = 0` iff
-`D ≡ 21 (mod 24)` (the inert-two, ramified-three CM branch). -/
-theorem fundamentalDiscriminantChar_two_eq_neg_one_and_three_eq_zero_iff {D : ℤ}
-    (hD : Int.IsFundamentalDiscr D) :
-    fundamentalDiscriminantChar D hD 2 = -1 ∧ fundamentalDiscriminantChar D hD 3 = 0 ↔
-      D % 24 = 21 := by
-  have h2 := fundamentalDiscriminantChar_two_eq_neg_one_iff hD
-  have h3 : fundamentalDiscriminantChar D hD 3 = 0 ↔ D % 3 = 0 := by
-    have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
-    have h := fundamentalDiscriminantChar_natCast_eq_legendreSym hD (q := 3) (by decide)
-    rw [show ((3 : ℕ) : ℤ) = 3 by rfl, Int.cast_ofNat] at h
-    rw [h, legendreSym.eq_zero_iff, ZMod.intCast_zmod_eq_zero_iff_dvd, Int.dvd_iff_emod_eq_zero]
-    norm_cast
-  rw [h2, h3]
-  omega
-
-end TauCeti.Multiquadratic
 
 namespace TauCeti.ClassFieldTheory
 

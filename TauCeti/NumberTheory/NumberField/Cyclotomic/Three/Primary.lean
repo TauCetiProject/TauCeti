@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Quadratic
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Three.Basic
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 
 /-!
 # Primary elements of the Eisenstein integers

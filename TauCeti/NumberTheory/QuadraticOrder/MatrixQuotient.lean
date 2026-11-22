@@ -29,12 +29,9 @@ When `discr a b < -4`, the only integral units of `ℤ[ω]` are `±1`
 (`units_eq_one_or_neg_one_of_discr_lt_neg_four`), so `unitPeriodMatrixSubgroup a b N` collapses to
 the scalar sign subgroup `Subgroup.zpowers (-1)` (`unitPeriodMatrixSubgroup_eq_zpowers_neg_one`).
 For the level-`2` specializations (including the Gaussian and Eisenstein exceptions), see
-`TauCeti.NumberTheory.QuadraticOrder.LevelTwoMatrix`.
-
-Finally, over `(a, b) = (0, 0)` in `ZMod 3` — the ramified reduction occurring when `3` divides
-both `a` and `b` — the three lower-triangular unipotent matrices `!![1, 0; s, 1]` (`s : ZMod 3`)
-form a subgroup isomorphic to `Multiplicative (ZMod 3)` that projects bijectively onto the cosets
-modulo `{±I}` (`unipotentPeriodMatrixQuotientEquivZModThree`).
+`TauCeti.NumberTheory.QuadraticOrder.LevelTwoMatrix`; for the level-`3` unipotent coset
+representatives over `(a, b) = (0, 0)` in `ZMod 3`, see
+`TauCeti.NumberTheory.QuadraticOrder.LevelThreeMatrix`.
 
 ## References
 
@@ -215,78 +212,5 @@ theorem periodMatrixQuotientEquivZpowersNegOne_mk {a b : ℤ} {N : ℕ} {a' b' :
     periodMatrixQuotientEquivZpowersNegOne hd ha hb M =
       (⟨(M : GL (Fin 2) (ZMod N)), by rw [ha, hb]; exact M.property⟩ :
         periodMatrixGroup (a : ZMod N) (b : ZMod N)) := (rfl)
-
-/-! ### Unipotent coset representatives over `(0, 0)` at level `3` -/
-
-/-- Injectivity of the composite `Multiplicative (ZMod 3) →* periodMatrixGroup 0 0 ⧸ {±I}`. -/
-private theorem unipotentPeriodMatrixHom_mk_injective :
-    Function.Injective
-      ((QuotientGroup.mk'
-          (Subgroup.zpowers (-1 : periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3)))).comp
-        (unipotentPeriodMatrixHom (ZMod 3))) := by
-  rw [← MonoidHom.ker_eq_bot_iff, Subgroup.eq_bot_iff_forall]
-  intro s hs
-  simp only [MonoidHom.mem_ker, MonoidHom.comp_apply, QuotientGroup.mk'_apply,
-    QuotientGroup.eq_one_iff, Subgroup.mem_zpowers_iff] at hs
-  obtain ⟨k, hk⟩ := hs
-  rw [show (-1 : periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3)) = periodUnitMatrixEquiv (-1) by simp,
-    ← map_zpow] at hk
-  have him := congrArg (fun M : periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3) ↦
-      ((M : GL (Fin 2) (ZMod 3)) : Matrix (Fin 2) (Fin 2) (ZMod 3)) 1 0) hk
-  have hneg : ((((-1 : (QuadraticAlgebra (ZMod 3) 0 0)ˣ) ^ k :
-      (QuadraticAlgebra (ZMod 3) 0 0)ˣ) : QuadraticAlgebra (ZMod 3) 0 0)).im = 0 := by
-    rcases Int.even_or_odd k with ⟨n, rfl⟩ | ⟨n, rfl⟩
-    · simp [← two_mul, zpow_mul]
-    · simp [zpow_add, zpow_mul]
-  simp only [coe_periodUnitMatrixEquiv, coe_periodUnitMatrix, periodMulMatrix_eq,
-    coe_unipotentPeriodMatrixHom, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_one,
-    Matrix.cons_val_zero, hneg] at him
-  exact Multiplicative.toAdd.injective him.symm
-
-/-- Surjectivity of the composite `Multiplicative (ZMod 3) →* periodMatrixGroup 0 0 ⧸ {±I}`. -/
-private theorem unipotentPeriodMatrixHom_mk_surjective :
-    Function.Surjective
-      ((QuotientGroup.mk'
-          (Subgroup.zpowers (-1 : periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3)))).comp
-        (unipotentPeriodMatrixHom (ZMod 3))) := by
-  intro x
-  obtain ⟨M, rfl⟩ := QuotientGroup.mk_surjective x
-  obtain ⟨u, rfl⟩ := periodUnitMatrixEquiv.surjective M
-  have hu : IsUnit u.val.re := by simpa [norm_def, sq] using isUnit_iff_norm_isUnit.mp u.isUnit
-  rcases (show ∀ t : ZMod 3, IsUnit t → t = 1 ∨ t = -1 by decide) u.val.re hu with h1 | h1
-  · refine ⟨Multiplicative.ofAdd u.val.im, ?_⟩
-    simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply]
-    congr 1; apply periodUnitMatrixEquiv.symm.injective; apply Units.ext
-    rw [val_periodUnitMatrixEquiv_symm_unipotentPeriodMatrixHom, MulEquiv.symm_apply_apply]
-    ext <;> simp [h1]
-  · refine ⟨Multiplicative.ofAdd (-u.val.im), ?_⟩
-    have hneg : unipotentPeriodMatrixHom (ZMod 3) (Multiplicative.ofAdd (-u.val.im)) =
-        -periodUnitMatrixEquiv u := by
-      apply periodUnitMatrixEquiv.symm.injective; apply Units.ext
-      rw [val_periodUnitMatrixEquiv_symm_unipotentPeriodMatrixHom, ← periodUnitMatrixEquiv_neg,
-        MulEquiv.symm_apply_apply]
-      ext <;> simp [h1]
-    simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply, hneg, QuotientGroup.eq,
-      Subgroup.mem_zpowers_iff]
-    exact ⟨1, by rw [zpow_one, eq_inv_mul_iff_mul_eq]; simp⟩
-
-/-- Over `ZMod 3` with `(a, b) = (0, 0)`, the three lower-triangular unipotent matrices
-`!![1, 0; s, 1]` (`s : ZMod 3`) form a complete, irredundant set of coset representatives for
-`periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3) ⧸ Subgroup.zpowers (-1)`. -/
-def unipotentPeriodMatrixQuotientEquivZModThree :
-    Multiplicative (ZMod 3) ≃*
-      periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3) ⧸
-        Subgroup.zpowers (-1 : periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3)) :=
-  MulEquiv.ofBijective ((QuotientGroup.mk' _).comp (unipotentPeriodMatrixHom (ZMod 3)))
-    ⟨unipotentPeriodMatrixHom_mk_injective, unipotentPeriodMatrixHom_mk_surjective⟩
-
-/-- `unipotentPeriodMatrixQuotientEquivZModThree` sends `Multiplicative.ofAdd s` to the coset of
-`unipotentPeriodMatrixHom (ZMod 3) (Multiplicative.ofAdd s)`. -/
-@[simp]
-theorem unipotentPeriodMatrixQuotientEquivZModThree_ofAdd (s : ZMod 3) :
-    unipotentPeriodMatrixQuotientEquivZModThree (Multiplicative.ofAdd s) =
-      (unipotentPeriodMatrixHom (ZMod 3) (Multiplicative.ofAdd s) :
-        periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3) ⧸ Subgroup.zpowers (-1)) := by
-  rfl
 
 end QuadraticAlgebra

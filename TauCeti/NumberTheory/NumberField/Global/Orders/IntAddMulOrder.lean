@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Discriminant
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Maximal
 public import Mathlib.Data.ZMod.QuotientRing
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 
 /-!
 # The order `ℤ + f 𝓞 K`

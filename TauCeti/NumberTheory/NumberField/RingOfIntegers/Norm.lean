@@ -9,7 +9,6 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.NumberTheory.NumberField.Norm
 public import TauCeti.Analysis.SpecialFunctions.Log.ProdPowDvd
-public import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.Norm.Divisibility
 
