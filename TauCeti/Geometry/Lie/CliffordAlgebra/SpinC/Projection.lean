@@ -124,19 +124,18 @@ theorem realSpinToSpecialOrthogonalLieEquiv_apply (X : 𝔰) :
 carrier. -/
 def realToSpecialOrthogonalRange : G →ₜ* SpecialOrthogonalUnitsRange where
   toMonoidHom :=
-    (realCliffordSpecialOrthogonalContinuousMulEquivRange n).toMonoidHom.comp
+    (realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange n).toMonoidHom.comp
       (toSpecialOrthogonal (realCliffordForm n 0) hQ)
   continuous_toFun :=
-    (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm ▸
-      ((realCliffordSpecialOrthogonalContinuousMulEquivRange n).continuous.comp
-        (continuous_toSpecialOrthogonal (realCliffordForm n 0) hQ))
+    (realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange n).continuous.comp
+      (continuous_toSpecialOrthogonal (realCliffordForm n 0) hQ)
 
 /-- `realToSpecialOrthogonalRange` transports `toSpecialOrthogonal` into the matrix-units range. -/
 theorem realToSpecialOrthogonalRange_apply (g : G) :
     realToSpecialOrthogonalRange n hQ g =
       realCliffordSpecialOrthogonalContinuousMulEquivRange n
         (toSpecialOrthogonal (realCliffordForm n 0) hQ g) :=
-  (rfl)
+  realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange_apply n _
 
 /-- The smooth rotation homomorphism on compact `Spinᶜ(n)`. -/
 def realToSpecialOrthogonalSmoothRange :
@@ -207,16 +206,15 @@ theorem lieMap_realToSpecialOrthogonalRange_realDetLieLift (a : ℝ) :
 theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpin (X : 𝔰) :
     πO (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
       (ofSpinContinuousMonoidHom _ hQ) X) = realSpinToSpecialOrthogonalLieEquiv n X := by
-  have hlieHom := congrArg (ContinuousMonoidHom.lieMap (I := IS) (I' := ISO))
-    (realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom n hQ)
-  rw [ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IC) (I'' := ISO),
-    ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IS) (I'' := ISO)] at hlieHom
-  have hlie := LieHom.congr_fun hlieHom X
-  rw [LieHom.comp_apply, LieHom.comp_apply, ← realSpinLieEquivUnitsRange_apply n X,
-    ← realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap n,
-    ← realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply n,
-    ← realSpinToSpecialOrthogonalLieEquiv_apply n X] at hlie
-  exact hlie
+  have hlie := LieHom.congr_fun
+    (congrArg (ContinuousMonoidHom.lieMap (I := IS) (I' := ISO))
+      (realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom n hQ)) X
+  simpa only [ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IC) (I'' := ISO),
+    ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IS) (I'' := ISO),
+    LieHom.comp_apply, realSpinToSpecialOrthogonalLieEquiv_apply,
+    realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply,
+    realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap,
+    realSpinLieEquivUnitsRange_apply] using hlie
 
 /-- Evaluating the rotation differential on `realSpinProdDetLinearEquiv (X, a)` projects onto the
 Spin factor via `realSpinToSpecialOrthogonalLieEquiv`. -/
@@ -496,6 +494,7 @@ theorem realToSpecialOrthogonalProdDetRange_surjective :
     ((realCliffordSpecialOrthogonalContinuousMulEquivRange n).symm y, z)
   refine ⟨g, (realToSpecialOrthogonalProdDetRange_apply n hQ g).trans
     (Prod.ext ?_ (Prod.mk.inj hg).2)⟩
+  rw [realToSpecialOrthogonalRange_apply]
   exact (congrArg (realCliffordSpecialOrthogonalContinuousMulEquivRange n) (Prod.mk.inj hg).1).trans
     ((realCliffordSpecialOrthogonalContinuousMulEquivRange n).apply_symm_apply y)
 
@@ -506,13 +505,7 @@ theorem isCoveringMap_realToSpecialOrthogonalProdDetRange :
   let e : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) × Circle ≃ₜ
       SpecialOrthogonalUnitsRange × Circle :=
     Homeomorph.prodCongr
-      { toEquiv := (realCliffordSpecialOrthogonalContinuousMulEquivRange n).toEquiv
-        continuous_toFun :=
-          (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm ▸
-            (realCliffordSpecialOrthogonalContinuousMulEquivRange n).continuous
-        continuous_invFun :=
-          (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm ▸
-            (realCliffordSpecialOrthogonalContinuousMulEquivRange n).symm.continuous }
+      (realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange n).toHomeomorph
       (Homeomorph.refl Circle)
   have hfun : ⇑(realToSpecialOrthogonalProdDetRange n hQ) =
       e ∘ ((toSpecialOrthogonal (realCliffordForm n 0) hQ).prod

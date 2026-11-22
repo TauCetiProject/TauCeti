@@ -34,6 +34,9 @@ Lie homomorphism from quadratic Clifford elements to skew-symmetric matrices.
   with the quadratic Lie subalgebra.
 * `TauCeti.CliffordAlgebra.realCliffordSpecialOrthogonalLieEquivSo` identifies the target Lie
   algebra with real skew-symmetric matrices.
+* `TauCeti.CliffordAlgebra.realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange`
+  transports the topological group equivalence between `SO(n)` and its matrix-units range to the
+  operator-norm matrix topology.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalCarrierRange` and
   `realCliffordSpinToSpecialOrthogonalSmoothRange` are the continuous and smooth carrier
   projections under the operator-norm matrix topology, and
@@ -245,14 +248,48 @@ theorem
           LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) :=
   (coe_realCliffordSpecialOrthogonalLieEquivSo_apply n X).symm
 
+/-- The topological group isomorphism between `SO(n)` and its closed matrix-units carrier,
+explicitly typed with the operator-norm matrix topology on the target. -/
+noncomputable def realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange (n : ℕ) :
+    QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ*
+      SpecialOrthogonalUnitsRange(n) where
+  toMulEquiv := (realCliffordSpecialOrthogonalContinuousMulEquivRange n).toMulEquiv
+  continuous_toFun :=
+    (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm ▸
+      (realCliffordSpecialOrthogonalContinuousMulEquivRange n).continuous
+  continuous_invFun :=
+    (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm ▸
+      (realCliffordSpecialOrthogonalContinuousMulEquivRange n).symm.continuous
+
+/-- Pointwise, `realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange` agrees with
+`realCliffordSpecialOrthogonalContinuousMulEquivRange`. -/
+@[simp]
+theorem realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange_apply (n : ℕ)
+    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
+    realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange n g =
+      realCliffordSpecialOrthogonalContinuousMulEquivRange n g :=
+  (rfl)
+
+/-- Pointwise, the inverse of `realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange` agrees
+with `(realCliffordSpecialOrthogonalContinuousMulEquivRange n).symm`. -/
+@[simp]
+theorem realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange_symm_apply (n : ℕ)
+    (u : SpecialOrthogonalUnitsRange(n)) :
+    (realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange n).symm u =
+      (realCliffordSpecialOrthogonalContinuousMulEquivRange n).symm u :=
+  (rfl)
+
 /-- The continuous projection between the closed real Spin and special-orthogonal carriers,
 explicitly typed with the operator-norm matrix topology on the target. -/
 noncomputable def realCliffordSpinToSpecialOrthogonalCarrierRange (n : ℕ) :
     SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) where
   toMonoidHom := (realCliffordSpinToSpecialOrthogonalRange n).toMonoidHom
   continuous_toFun :=
-    (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm ▸
-      (realCliffordSpinToSpecialOrthogonalRange n).continuous
+    ((realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange n).continuous.comp
+      ((realCliffordSpecialOrthogonalContinuousMulEquivRange n).symm.continuous.comp
+        (realCliffordSpinToSpecialOrthogonalRange n).continuous)).congr fun x ↦
+      (realCliffordSpecialOrthogonalContinuousMulEquivRange n).apply_symm_apply
+        (realCliffordSpinToSpecialOrthogonalRange n x)
 
 /-- Pointwise, the Lie-group carrier projection agrees with the topological projection
 `realCliffordSpinToSpecialOrthogonalRange`. -/

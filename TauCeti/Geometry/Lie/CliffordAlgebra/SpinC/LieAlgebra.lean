@@ -128,21 +128,15 @@ theorem realSpinProdCircleLieEquiv_apply (p : 𝔰 × LeftInvariantDerivation (�
 
 /-- The Lie differential of the Spin inclusion `Spin(n) → Spinᶜ(n)` is injective. -/
 theorem lieMap_ofSpinContinuousMonoidHom_injective : Function.Injective ιS := by
-  intro X Y hXY
-  apply TauCeti.Lie.lieMap_comp_inl_injective
+  rw [← mkContinuousMonoidHom_comp_inl (realCliffordForm n 0) hQ]
+  exact TauCeti.Lie.lieMap_comp_inl_injective
     (lieMap_mkContinuousMonoidHom_bijective n hQ).injective
-  have h := mkContinuousMonoidHom_comp_inl (realCliffordForm n 0) hQ
-  exact (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f X) h).trans <|
-    hXY.trans (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f Y) h).symm
 
 /-- The Lie differential of the central circle inclusion `U(1) → Spinᶜ(n)` is injective. -/
 theorem lieMap_ofCircleContinuousMonoidHom_injective : Function.Injective ιC := by
-  intro Z W hZW
-  apply TauCeti.Lie.lieMap_comp_inr_injective
+  rw [← mkContinuousMonoidHom_comp_inr (realCliffordForm n 0) hQ]
+  exact TauCeti.Lie.lieMap_comp_inr_injective
     (lieMap_mkContinuousMonoidHom_bijective n hQ).injective
-  have h := mkContinuousMonoidHom_comp_inr (realCliffordForm n 0) hQ
-  exact (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC) f Z) h).trans <|
-    hZW.trans (congrArg (fun f ↦ ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC) f W) h).symm
 
 /-- The determinant differential vanishes on the image of the Spin Lie algebra. -/
 @[simp]
