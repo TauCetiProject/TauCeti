@@ -246,12 +246,11 @@ theorem boxTensorMorphism_mul_boxTensorMorphism (hP : P.IsRightIdemCompatible ι
     (hF : F ∈ TypeDStructure.morphisms N N') (G : Matrix X' X'' A) :
     P.boxTensorMorphism idemA N N' F * P.boxTensorMorphism idemA N' N'' G =
       (P.boxMorphism N N' F * P.boxMorphism N' N'' G).submatrix Subtype.val Subtype.val :=
-  (Matrix.submatrix_mul_of_injective (P.boxMorphism N N' F) (P.boxMorphism N' N'' G)
-    (Subtype.val : {p : Y × X // idemA p.1 = N.idem p.2} → Y × X)
-    (Subtype.val : {q : Y × X' // idemA q.1 = N'.idem q.2} → Y × X')
-    (Subtype.val : {q : Y × X'' // idemA q.1 = N''.idem q.2} → Y × X'') Subtype.val_injective
-    fun p q hpq => ⟨⟨q, by_contra fun hq =>
-      hpq (boxMorphism_eq_zero_of_isRightIdemCompatible hP hιA N hF p hq)⟩, rfl⟩).symm
+  (Matrix.submatrix_val_mul_of_forall (r := fun p : Y × X => idemA p.1 = N.idem p.2)
+    (s := fun q : Y × X' => idemA q.1 = N'.idem q.2) (P.boxMorphism N N' F)
+    (P.boxMorphism N' N'' G)
+    (Subtype.val : {q : Y × X'' // idemA q.1 = N''.idem q.2} → Y × X'')
+    fun p _ _ hq => boxMorphism_eq_zero_of_isRightIdemCompatible hP hιA N hF p hq).symm
 
 variable [CharP R 2]
 

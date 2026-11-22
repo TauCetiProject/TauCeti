@@ -462,12 +462,10 @@ theorem morphismDifferential_submatrix {p' : X' → Prop} [DecidablePred p']
   have hcoeff' : (N'.restrict p' hp').coeff = N'.coeff.submatrix Subtype.val Subtype.val :=
     Matrix.ext (restrict_coeff N')
   -- The products only pass through generators satisfying `p'`, respectively `p`.
-  have hmul' := Matrix.submatrix_mul_of_injective F N'.coeff (Subtype.val : {x // p x} → X)
-    (Subtype.val : {x' // p' x'} → X') (Subtype.val : {x' // p' x'} → X') Subtype.val_injective
-    fun x x' hx => ⟨⟨x', by_contra fun hx' => hx (hF x x' x.property hx')⟩, rfl⟩
-  have hmul := Matrix.submatrix_mul_of_injective N.coeff F (Subtype.val : {x // p x} → X)
-    (Subtype.val : {x // p x} → X) (Subtype.val : {x' // p' x'} → X') Subtype.val_injective
-    fun x y hxy => ⟨⟨y, by_contra fun hy => hxy (hp x y x.property hy)⟩, rfl⟩
+  have hmul' := Matrix.submatrix_val_mul_of_forall F N'.coeff
+    (Subtype.val : {x' // p' x'} → X') hF
+  have hmul := Matrix.submatrix_val_mul_of_forall N.coeff F
+    (Subtype.val : {x' // p' x'} → X') hp
   rw [morphismDifferential_apply, morphismDifferential_apply, hcoeff, hcoeff', ← hmul', ← hmul,
     ← Matrix.submatrix_map]
   simp only [Matrix.submatrix_add, Pi.add_apply]
