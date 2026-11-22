@@ -27,11 +27,8 @@ boundaryless manifold, and let `g` be a fibre metric on its normal bundle. For `
   `Hₖ({f ≤ b}, {f ≤ a}) ≅ Hₖ(D_ε, S_ε)`, with coefficients in any abelian category with
   coproducts (`nonempty_singularHomology_sublevelPair_iso_negativeDiscSpherePair`, in the namespace
   `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`).
-* If instead the critical points of the band lie on an empty submanifold, then the band has no
-  critical points and `Hₖ({f ≤ b}, {f ≤ a})` vanishes
-  (`TauCeti.SmoothEmbedding.isZero_singularHomology_sublevelPair_of_isEmpty`).
 
-The first two come from the attachment theorem for the negative disc bundle
+Both come from the attachment theorem for the negative disc bundle
 (`IsCriticalSubmanifold.isIso_singularHomologyMap_of_attach_negativeDiscBundle` in
 `TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair`) and, for the second, the attachment of `D_ε`
 across the level through a Morse–Bott normal form
@@ -182,32 +179,5 @@ theorem nonempty_singularHomology_sublevelPair_iso_negativeDiscSpherePair
 end IsNondegenerateCriticalSubmanifold
 
 end Attachment
-
-/-! ### Bands around an empty critical submanifold -/
-
-section Empty
-
-variable {E H E' H' S : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] [NormedAddCommGroup E']
-  [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S]
-  [ChartedSpace H' S] {f : M → ℝ}
-
-/-- **A band whose critical points lie on an empty submanifold carries no relative homology.** If
-`a ≤ b`, the band `f⁻¹[a, b]` of a smooth function `f` is compact and all its critical points
-lie on the image of an embedding of an empty manifold `S`, then the band has no critical points, so
-`Hₖ({f ≤ b}, {f ≤ a})` vanishes in every degree, with coefficients in any preadditive category
-with homology and coproducts. -/
-theorem isZero_singularHomology_sublevelPair_of_isEmpty [IsEmpty S] {i : SmoothEmbedding J I ∞ S M}
-    (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b : ℝ} (hab : a ≤ b)
-    (hcompact : IsCompact (f ⁻¹' Icc a b)) (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
-    {C : Type v} [Category.{w} C] [Preadditive C] [CategoryWithHomology C] [HasCoproducts.{u} C]
-    (R : C) (k : ℕ) :
-    IsZero ((sublevelPair f hab).singularHomology R k) :=
-  isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hfs hab hcompact
-    (fun _ hax hxb hx ↦ isEmptyElim (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx,
-      hax, hxb⟩).choose) R k
-
-end Empty
 
 end TauCeti.SmoothEmbedding

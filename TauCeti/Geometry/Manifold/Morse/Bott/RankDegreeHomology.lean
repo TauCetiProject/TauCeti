@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
 public import TauCeti.Topology.VectorBundle.Orientation.RankDegreeHomology
 public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology.Basic
-import TauCeti.Geometry.Manifold.Morse.Bott.Thom.DiscSpherePair
 import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
