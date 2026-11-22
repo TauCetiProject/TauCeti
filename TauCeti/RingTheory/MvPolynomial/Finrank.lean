@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.InvariantBasisNumber
 public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
-import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.Data.Finsupp.Weight
 
@@ -156,8 +155,7 @@ theorem finrank_restrictTotalDegree (σ R : Type*) [Fintype σ] [CommSemiring R]
     Module.finrank R (restrictTotalDegree σ R m) =
       (m + Fintype.card σ).choose (Fintype.card σ) := by
   rw [restrictTotalDegree, Module.finrank_eq_nat_card_basis (basisRestrictSupport R _)]
-  -- The basis is indexed by the exponents `s` with `(s.sum fun _ e ↦ e) ≤ m`, and this sum is
-  -- `s.degree` by definition.
+  simp only [Finsupp.sum, ← Finsupp.degree_apply, Set.coe_ofPred]
   exact Finsupp.card_degree_le_eq_choose σ m
 
 /-- The degree-`w` homogeneous polynomials in two variables have dimension `w + 1`. -/
