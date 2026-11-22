@@ -28,8 +28,8 @@ every signed trajectory count vanish. Each saddle receives two trajectories, bot
 `(v, w)`, and emits two, both to the minimum `(-v, -w)`, so every coefficient is even
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_eq_zero_of_finrank_eq_two`).
 Over `ℤ` the two trajectories into each saddle carry opposite signs `+1` and `-1` because `S¹ × S¹`
-is orientable, and the two trajectories out of each saddle carry opposite signs `+1` and `-1` because
-the minimum is unique
+is orientable, and the two trajectories out of each saddle carry opposite signs `+1` and `-1`
+because the minimum is unique
 (`IsMorseSmale.exists_trajectorySign_eq_one_and_eq_neg_one_of_finrank_eq_two`,
 `IsMorseSmale.signedTrajectoryCount_eq_zero_of_finrank_eq_two`,
 `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundary_eq_zero_of_finrank_eq_two`),
