@@ -97,7 +97,7 @@ theorem taylorPolynomial_zero (u : E → F) (y x : E) :
     taylorPolynomial 𝕜 0 u y x = u y := by
   simp [taylorPolynomial_apply]
 
-/-- Recurrence separating the top-degree homogeneous term of the Taylor polynomial. -/
+/-- Recurrence separating the term homogeneous of order `m + 1` in the displacement `x - y`. -/
 theorem taylorPolynomial_succ (m : ℕ) (u : E → F) (y x : E) :
     taylorPolynomial 𝕜 (m + 1) u y x =
       taylorPolynomial 𝕜 m u y x +

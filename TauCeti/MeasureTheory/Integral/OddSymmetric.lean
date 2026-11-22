@@ -129,18 +129,16 @@ theorem setIntegral_setOf_nonneg_of_even {G F : Type*} [MeasurableSpace G] [AddG
     (hzero : μ {y | g y = 0} = 0) :
     ∫ y in {y | 0 ≤ g y}, φ y ∂μ = (2 : ℝ)⁻¹ • ∫ y, φ y ∂μ := by
   let N : Set G := {y | g y < 0}
-  let Ppos : Set G := {y | 0 < g y}
   have hNm : MeasurableSet N := measurableSet_lt hg measurable_const
-  have hPpos_m : MeasurableSet Ppos := measurableSet_lt measurable_const hg
   have hNc : Nᶜ = {y | 0 ≤ g y} := by ext y; simp [N]
-  have hP_union : {y | 0 ≤ g y} = Ppos ∪ {y | g y = 0} := by
-    ext y; simp [Ppos, le_iff_lt_or_eq, eq_comm]
-  have hind : (fun y ↦ Ppos.indicator φ (-y)) = N.indicator φ := by
-    ext y; by_cases hy : g y < 0 <;> simp [Ppos, N, hodd y, heven y, hy]
+  have hP_union : {y | 0 ≤ g y} = {y | 0 < g y} ∪ {y | g y = 0} := by
+    ext y; simp [le_iff_lt_or_eq, eq_comm]
   have heq_PN : ∫ y in Nᶜ, φ y ∂μ = ∫ y in N, φ y ∂μ := by
     rw [hNc, setIntegral_congr_set
       (hP_union ▸ union_ae_eq_left_of_ae_eq_empty (ae_eq_empty.mpr hzero)),
-      ← integral_indicator hPpos_m, ← integral_indicator hNm, ← integral_neg_eq_self, hind]
+      ← (Measure.measurePreserving_neg μ).setIntegral_preimage_emb
+        (MeasurableEquiv.neg G).measurableEmbedding φ {y | 0 < g y}]
+    simp [N, hodd _, heven _]
   have hsum := integral_add_compl hNm hφ
   rw [← heq_PN, ← two_smul ℝ] at hsum
   rw [← hNc, ← hsum, inv_smul_smul₀ two_ne_zero]

@@ -66,13 +66,11 @@ theorem iteratedFDerivAlong_mem_polynomialsDegLE {m : ℕ} {q : EuclideanSpace �
 theorem iteratedFDerivAlong_eq_zero_of_mem_polynomialsDegLE {m : ℕ} {q : EuclideanSpace ℝ ι → ℝ}
     (hq : q ∈ polynomialsDegLE ι m) {vs : List (EuclideanSpace ℝ ι)} (hvs : m < vs.length) :
     iteratedFDerivAlong ℝ vs q = 0 := by
-  cases vs with
-  | nil => simp at hvs
-  | cons v ws =>
-    have hmw : m - ws.length = 0 := Nat.sub_eq_zero_of_le (Nat.lt_succ_iff.mp hvs)
-    obtain ⟨c, hc⟩ := (mem_polynomialsDegLE_zero_iff ι).1
-      (hmw ▸ iteratedFDerivAlong_mem_polynomialsDegLE hq ws)
-    rw [iteratedFDerivAlong_cons, hc]; ext; simp
+  ext x
+  rw [← List.ofFn_get vs,
+    iteratedFDerivAlong_ofFn_eq_iteratedFDeriv (contDiff_of_mem_polynomialsDegLE hq) vs.get x,
+    iteratedFDeriv_eq_zero_of_mem_polynomialsDegLE hvs hq]
+  simp
 
 /-- For any map `u : EuclideanSpace ℝ ι → ℝ` (with no regularity assumptions) and any expansion
 point `y`, the `m`-th Taylor polynomial `taylorPolynomial ℝ m u y` belongs to
@@ -85,7 +83,7 @@ theorem taylorPolynomial_mem_polynomialsDegLE (m : ℕ) (u : EuclideanSpace ℝ 
     ext x
     rw [taylorPolynomial_eq_finiteJetPolynomial, finiteJetPolynomial_apply,
       FormalMultilinearSeries.partialSum, ← Fin.sum_univ_eq_sum_range]
-    simp only [finiteJetSeries_apply, smul_apply]
+    simp
   rw [h]
   simpa using comp_sub_mem_polynomialsDegLE y
     ((finiteJetSeries m (fun i ↦ iteratedFDeriv ℝ i.val u y)).partialSum_mem_polynomialsDegLE
