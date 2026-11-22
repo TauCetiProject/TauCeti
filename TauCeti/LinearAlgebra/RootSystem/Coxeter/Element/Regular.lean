@@ -198,7 +198,7 @@ theorem bipartiteCoxeterElement_smul_colorPart_false
 
 /-- For a root `μ` of `X ^ 2 + (2 - λ ^ 2) X + 1`, the vector `(1 + μ) u₀ + λ u₁` of the Coxeter
 plane is an eigenvector of the bipartite Coxeter element for `μ`. -/
-theorem bipartiteCoxeterElement_smul_eigen
+theorem bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) {μ : K}
     (hμ : μ ^ 2 + (2 - algebraMap ℝ K (2 - κ) ^ 2) * μ + 1 = 0) :
     (weylCoxeterSystem P b).bipartiteCoxeterElement c •
@@ -299,9 +299,11 @@ private theorem pow_eq_one_of_pow_eq_one
     field_simp
     linear_combination hμ
   have h1 : g ^ l • ((1 + μ) • u₀ + L • u₁) = (1 + μ) • u₀ + L • u₁ := by
-    rw [pow_smul_eq_of_smul_eq (bipartiteCoxeterElement_smul_eigen hy hμ), hl, one_smul]
+    rw [pow_smul_eq_of_smul_eq
+      (bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul hy hμ), hl, one_smul]
   have h2 : g ^ l • ((1 + μ⁻¹) • u₀ + L • u₁) = (1 + μ⁻¹) • u₀ + L • u₁ := by
-    rw [pow_smul_eq_of_smul_eq (bipartiteCoxeterElement_smul_eigen hy hμ'), inv_pow, hl,
+    rw [pow_smul_eq_of_smul_eq
+      (bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul hy hμ'), inv_pow, hl,
       inv_one, one_smul]
   -- The difference of the two eigenvectors is a nonzero multiple of `u₀`.
   have hg₀ : g ^ l • u₀ = u₀ := by
@@ -381,7 +383,7 @@ theorem exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveR
     simpa [Matrix.vecMul, dotProduct, Base.cartanMatrixIn_def] using congrFun hyC j
   obtain ⟨μ, hμ⟩ := exists_quadratic_root (algebraMap ℝ K (2 - κ))
   have hreg := isRegularWeight_one_add_smul_colorPart_add_smul (c := c) hy hy0 hκ hκ2 hμ
-  have hgv := bipartiteCoxeterElement_smul_eigen (c := c) hy hμ
+  have hgv := bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul (c := c) hy hμ
   set v := (1 + μ) • colorPart P b c y true + algebraMap ℝ K (2 - κ) • colorPart P b c y false
   exact ⟨v, μ, hreg, hgv, isPrimitiveRoot_orderOf_of_smul_eq hreg.ne_zero hgv fun l hl ↦
     pow_eq_one_of_pow_eq_one hy hy0 hκ hκ2 hμ hl⟩

@@ -31,43 +31,6 @@ open Finset Function Module Representation SymmetricAlgebra TauCeti TauCeti.Symm
 
 namespace RootPairing
 
-private theorem finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_of_equiv
-    {K G₁ G₂ V₁ V₂ : Type*} [Field K] [Group G₁] [Group G₂]
-    [AddCommGroup V₁] [Module K V₁] [AddCommGroup V₂] [Module K V₂]
-    {ρ₁ : Representation K G₁ V₁} {ρ₂ : Representation K G₂ V₂}
-    (eG : G₁ ≃* G₂) (eV : V₁ ≃ₗ[K] V₂)
-    (he : ∀ g x, ρ₂ (eG g) (eV x) = eV (ρ₁ g x)) (n : ℕ) :
-    Module.finrank K
-        ↥(Subalgebra.toSubmodule ρ₁.symmetricAlgebraInvariants ⊓
-          homogeneousSubmodule K V₁ n) =
-      Module.finrank K
-        ↥(Subalgebra.toSubmodule ρ₂.symmetricAlgebraInvariants ⊓
-          homogeneousSubmodule K V₂ n) := by
-  let ρ₂' : Representation K G₁ V₂ := ρ₂.comp eG.toMonoidHom
-  have hinv_eq : ρ₂'.symmetricAlgebraInvariants = ρ₂.symmetricAlgebraInvariants :=
-    ρ₂.symmetricAlgebraInvariants_comp_of_surjective eG.toMonoidHom eG.surjective
-  have hf : IsIntertwiningMap ρ₁ ρ₂' eV.toLinearMap := ⟨fun g x ↦ (he g x).symm⟩
-  have hs : IsIntertwiningMap ρ₂' ρ₁ eV.symm.toLinearMap := ⟨fun g y ↦ eV.injective (by
-    simpa [ρ₂', LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using he g (eV.symm y))⟩
-  let φ : SymmetricAlgebra K V₁ ≃ₗ[K] SymmetricAlgebra K V₂ :=
-    (SymmetricAlgebra.mapEquiv K eV).toLinearEquiv
-  have hmap : (Subalgebra.toSubmodule ρ₁.symmetricAlgebraInvariants ⊓
-        homogeneousSubmodule K V₁ n).map φ.toLinearMap =
-      Subalgebra.toSubmodule ρ₂.symmetricAlgebraInvariants ⊓
-        homogeneousSubmodule K V₂ n := by
-    rw [← hinv_eq]; ext q
-    simp only [Submodule.mem_map, Submodule.mem_inf, Subalgebra.mem_toSubmodule]
-    refine ⟨?_, fun ⟨hq1, hq2⟩ ↦ ⟨φ.symm q, ⟨?_, ?_⟩, φ.apply_symm_apply q⟩⟩
-    · rintro ⟨p, ⟨hp1, hp2⟩, rfl⟩
-      exact ⟨by simpa [φ, SymmetricAlgebra.mapEquiv_apply] using
-          map_mem_symmetricAlgebraInvariants hf hp1,
-        by simpa [φ, SymmetricAlgebra.mapEquiv_apply] using map_mem_homogeneousSubmodule _ hp2⟩
-    · simpa [φ, SymmetricAlgebra.mapEquiv_symm, SymmetricAlgebra.mapEquiv_apply] using
-        map_mem_symmetricAlgebraInvariants hs hq1
-    · simpa [φ, SymmetricAlgebra.mapEquiv_symm, SymmetricAlgebra.mapEquiv_apply] using
-        map_mem_homogeneousSubmodule _ hq2
-  exact (φ.submoduleMap _).trans (LinearEquiv.ofEq _ _ hmap) |>.finrank_eq
-
 private theorem finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_rootPairingBaseChange
     {ι σ S : Type*} [Finite ι] [Fintype σ] [Field S] [CharZero S]
     (Q : RootPairing ι ℚ (σ → ℚ) (σ → ℚ))
@@ -95,8 +58,9 @@ private theorem finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_rootPai
     induction z with
     | add x y hx hy => simp [smul_add, map_add, hx, hy]
     | tmul s x =>
-      simp only [hePi_tmul, smul_comm, Representation.baseChange_apply, LinearMap.baseChange_tmul]
-      change s • (eG w • Pi.algebraMap σ ℚ S x) = s • Pi.algebraMap σ ℚ S (w • x)
+      simp only [hePi_tmul, smul_comm, Representation.baseChange_apply, LinearMap.baseChange_tmul,
+        weylGroupRootRep_apply]
+      dsimp only [eG]
       rw [weylGroupBaseChangeEquiv_smul]
   have heDual (w : Q.weylGroup) (ψ : S ⊗[ℚ] Module.Dual ℚ (σ → ℚ)) :
       (rootPairingBaseChange S Q hQ).weylGroupRootRep.dual (eG w) (eDual ψ) =
@@ -112,24 +76,24 @@ private theorem finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_rootPai
         have hinv := hePi w⁻¹ (t ⊗ₜ[ℚ] x)
         simp only [Representation.baseChange_apply, LinearMap.baseChange_tmul] at hinv
         simp only [eDual, LinearEquiv.trans_apply, LinearEquiv.dualMap_apply,
-          TauCeti.Module.Dual.baseChangeEvaluationEquiv_apply, Representation.dual_apply,
+          Representation.dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
           Representation.baseChange_apply, LinearMap.baseChange_tmul, ← map_inv eG]
-        change (TauCeti.Module.Dual.baseChangeEvaluation (R := ℚ) (A := S) (s ⊗ₜ[ℚ] φ))
-            (ePi.symm (eG w⁻¹ • ePi (t ⊗ₜ[ℚ] x))) =
-          (TauCeti.Module.Dual.baseChangeEvaluation (R := ℚ) (A := S)
-            (s ⊗ₜ[ℚ] (Q.weylGroupRootRep.dual w φ))) (ePi.symm (ePi (t ⊗ₜ[ℚ] x)))
-        rw [hinv, ePi.symm_apply_apply, ePi.symm_apply_apply,
+        rw [weylGroupRootRep_apply, hinv, ePi.symm_apply_apply, ePi.symm_apply_apply,
+          TauCeti.Module.Dual.baseChangeEvaluationEquiv_apply,
+          TauCeti.Module.Dual.baseChangeEvaluationEquiv_apply,
           TauCeti.Module.Dual.baseChangeEvaluation_tmul,
           TauCeti.Module.Dual.baseChangeEvaluation_tmul]; rfl
   rw [← finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_of_equiv eG eDual heDual n]
   exact finrank_symmetricAlgebraInvariants_baseChange_inf_homogeneousSubmodule
     Q.weylGroupRootRep.dual (L := S) n
 
+namespace Base
+
 /-- **Base-change invariance of basic invariant degrees.** For any finite crystallographic root
 system `P` over a characteristic-zero field `K` with base `b`, and any other characteristic-zero
 field `L`, the basic invariant degrees of `P.weylGroupRootRep.dual` agree (as multisets) with those
 of the base change of `b.rationalModel` to `L`. -/
-theorem Base.map_univ_eq_of_bijective_aeval_weylGroupRootRep_dual
+theorem map_univ_eq_of_bijective_aeval_weylGroupRootRep_dual_rootPairingBaseChange_rationalModel
     {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
     [AddCommGroup N] [Module K N] {P : RootPairing ι K M N}
     [Finite ι] [P.IsCrystallographic] [P.IsRootSystem] (b : P.Base)
@@ -163,11 +127,9 @@ theorem Base.map_univ_eq_of_bijective_aeval_weylGroupRootRep_dual
         (eqv.weightEquiv.dualMap φ) = eqv.weightEquiv.dualMap ((rootPairingBaseChange K
           b.rationalModel b.rationalModel_toLinearMap).weylGroupRootRep.dual w φ) := by
       intro w φ; obtain ⟨u, rfl⟩ := eqv.weylGroupEquiv.surjective w; ext x
-      simp only [MulEquiv.symm_apply_apply, Representation.dual_apply,
-        LinearEquiv.dualMap_apply]
-      change φ (eqv.weightEquiv (u⁻¹ • x)) =
-        φ ((eqv.weylGroupEquiv u)⁻¹ • eqv.weightEquiv x)
-      rw [← map_inv, eqv.weylGroupEquiv_smul]
+      simp only [MulEquiv.symm_apply_apply, Representation.dual_apply, Module.Dual.transpose_apply,
+        LinearMap.comp_apply, LinearEquiv.dualMap_apply, weylGroupRootRep_apply, ← map_inv,
+        eqv.weylGroupEquiv_smul]
     rw [← finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_of_equiv
       eqv.weylGroupEquiv.symm eqv.weightEquiv.dualMap heDual n,
       finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_rootPairingBaseChange _ _ n,
@@ -181,5 +143,7 @@ theorem Base.map_univ_eq_of_bijective_aeval_weylGroupRootRep_dual
     (by simpa using he) ?_
   simpa [Multiset.map_map, Function.comp_def] using
     left_inv_eq_right_inv ((mul_comm _ _).trans hH1) hH2
+
+end Base
 
 end RootPairing

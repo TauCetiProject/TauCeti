@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
+import Mathlib.LinearAlgebra.Charpoly.ToMatrix
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 
 /-!
 # From Weyl-group elements to integer matrices on the simple roots
@@ -18,13 +21,16 @@ For a base `b` of a root pairing `P`, an element `w` of the Weyl group *acts by*
 Acting-by is multiplicative, and the simple reflection `sᵢ` acts by `reflMatrix b.cartanMatrix i`.
 The action is faithful for a finite anisotropic root pairing over a domain, in particular for a
 crystallographic one in characteristic zero (`RootPairing.weylGroup.eq_one_of_forall_smul_root_eq`;
-the roots need not span), so the order of `w` is the order of `W`.
+the roots need not span), so the order of `w` is the order of `W`, and on a root system the
+characteristic polynomial of `P.weylGroupRootRep w` is the scalar extension of `W.charpoly`.
 
 ## Main results
 
 * `RootPairing.Base.actsBy_wordProd`: a word in the simple reflections acts by the product of the
   corresponding reflection matrices.
 * `RootPairing.Base.ActsBy.orderOf_eq`: if `w` acts by `W`, then `orderOf w = orderOf W`.
+* `RootPairing.Base.ActsBy.map_charpoly_eq_charpoly_weylGroupRootRep`: on a root system, if `w`
+  acts by `W`, then `(P.weylGroupRootRep w).charpoly` is the scalar extension of `W.charpoly`.
 * `RootPairing.Base.orderOf_wordProd_of_cartanMatrix_eq`: for a base whose Cartan matrix is `A` up
   to a relabelling `e`, the Coxeter element spelled in the order `e` has the order of
   `coxeterElement A`.
@@ -75,6 +81,28 @@ theorem ActsBy.pow {b : P.Base} {w : P.weylGroup} {W : Matrix b.support b.suppor
   induction k with
   | zero => simpa using actsBy_one b
   | succ k ih => rw [pow_succ, pow_succ]; exact ih.mul h
+
+/-- If a Weyl-group element `w` acts on the simple roots of `b` by an integer matrix `W`, then the
+characteristic polynomial of `P.weylGroupRootRep w` is the scalar extension of `W.charpoly`. -/
+theorem ActsBy.map_charpoly_eq_charpoly_weylGroupRootRep [P.IsRootSystem]
+    {b : P.Base} {w : P.weylGroup} {W : Matrix b.support b.support ℤ} (hW : b.ActsBy w W) :
+    letI := Module.Free.of_basis b.toWeightBasis
+    letI := Module.Finite.of_basis b.toWeightBasis
+    W.charpoly.map (algebraMap ℤ R) = (P.weylGroupRootRep w).charpoly := by
+  classical
+  let := Module.Free.of_basis b.toWeightBasis
+  let := Module.Finite.of_basis b.toWeightBasis
+  have hmat : LinearMap.toMatrix b.toWeightBasis b.toWeightBasis (P.weylGroupRootRep w) =
+      W.map (algebraMap ℤ R) := by
+    ext i j
+    have hw : P.weylGroupRootRep w (b.toWeightBasis j) =
+        ∑ k : b.support, (algebraMap ℤ R (W k j)) • b.toWeightBasis k := by
+      rw [weylGroupRootRep_apply, Base.toWeightBasis_apply, Base.actsBy_iff.1 hW j]
+      refine Finset.sum_congr rfl fun k _ ↦ ?_
+      rw [Base.toWeightBasis_apply, eq_intCast, Int.cast_smul_eq_zsmul]
+    rw [LinearMap.toMatrix_apply, ← Module.Basis.equivFun_apply, hw, map_sum, Finset.sum_apply]
+    simp [Finsupp.single_apply]
+  rw [← (P.weylGroupRootRep w).charpoly_toMatrix b.toWeightBasis, hmat, Matrix.charpoly_map]
 
 /-- The simple reflection `sᵢ` acts by `reflMatrix b.cartanMatrix i`. -/
 theorem actsBy_ofIdx [P.IsCrystallographic] (b : P.Base) (i : b.support) :

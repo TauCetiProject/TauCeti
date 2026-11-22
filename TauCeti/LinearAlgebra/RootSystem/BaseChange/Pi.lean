@@ -46,6 +46,7 @@ proved over the new base ring rather than transported.
 
 * `TauCeti.isCrystallographic_rootPairingBaseChange`: base change preserves being crystallographic.
 * `TauCeti.isReduced_rootPairingBaseChange`: base change preserves being reduced.
+* `TauCeti.isRootSystem_rootPairingBaseChange`: base change preserves being a root system.
 * `TauCeti.span_range_root_rootPairingBaseChange_eq_top` and
   `TauCeti.span_range_coroot_rootPairingBaseChange_eq_top`: a spanning family of roots or coroots
   stays spanning.
@@ -207,7 +208,7 @@ ring of characteristic zero. Hence so is the Cartan matrix of any base. -/
   simp [algebraMap_int_eq]
 
 /-- Base change along an injective map into a domain preserves being reduced. -/
-theorem isReduced_rootPairingBaseChange [IsDomain S] [P.IsReduced] :
+instance isReduced_rootPairingBaseChange [IsDomain S] [P.IsReduced] :
     (rootPairingBaseChange S P hP).IsReduced where
   eq_or_eq_neg i j h := by
     rw [linearIndependent_pair_root_rootPairingBaseChange_iff] at h
@@ -222,6 +223,15 @@ theorem span_range_root_rootPairingBaseChange_eq_top (h : span R (range P.root) 
 theorem span_range_coroot_rootPairingBaseChange_eq_top (h : span R (range P.coroot) = ⊤) :
     span S (range (rootPairingBaseChange S P hP).coroot) = ⊤ :=
   span_range_piAlgebraMap_eq_top S h
+
+/-- Base change along an injective map preserves being a root system. -/
+instance isRootSystem_rootPairingBaseChange [P.IsRootSystem] :
+    (rootPairingBaseChange S P hP).IsRootSystem where
+  span_root_eq_top :=
+    span_range_root_rootPairingBaseChange_eq_top S P hP RootPairing.IsRootSystem.span_root_eq_top
+  span_coroot_eq_top :=
+    span_range_coroot_rootPairingBaseChange_eq_top S P hP
+      RootPairing.IsRootSystem.span_coroot_eq_top
 
 end Transport
 

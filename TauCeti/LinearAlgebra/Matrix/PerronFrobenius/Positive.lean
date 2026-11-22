@@ -378,6 +378,79 @@ theorem spectralRadius_eq_of_mulVec_eq_smul [Nonempty n] (hA : ∀ i j, 0 ≤ A 
     (fun h => (hv i₀).ne' (by simpa using congrFun h i₀)) hAv
     fun μ z hz hAz => norm_le_of_mulVec_le_smul hA hv hAv.le hz hAz
 
+/-- **Spectral bound for a bipartite dihedral product.** Let `A` be a nonnegative real matrix
+vanishing within the parts of a `Bool`-colouring `col`, with a positive eigenvector `a` for `r`.
+If complex matrices `M₁, M₂` act on the two parts as `col`-reflections coupled through `A` with
+`M₁ * M₁ = 1`, then any nonzero eigenvalue `ω` of `M₁ * M₂` satisfies `‖(1 + ω) ^ 2 / ω‖ ≤ r ^ 2`.
+-/
+theorem norm_one_add_sq_div_le_sq_of_mulVec_eq_smul [DecidableEq n]
+    {A : Matrix n n ℝ} {M₁ M₂ : Matrix n n ℂ} {col : n → Bool} {a : n → ℝ} {r : ℝ}
+    (hA_nonneg : ∀ i j, 0 ≤ A i j) (hA_same : ∀ i j, col i = col j → A i j = 0)
+    (ha_pos : ∀ i, 0 < a i) (ha_eig : A *ᵥ a = r • a) (hM₁_sq : M₁ * M₁ = 1)
+    (hM₁_mul : ∀ (z : n → ℂ) (i : n), (M₁ *ᵥ z) i = if col i = true then
+        -z i + ∑ j : n, (if col j = false then (A i j : ℂ) * z j else 0) else z i)
+    (hM₂_mul : ∀ (z : n → ℂ) (i : n), (M₂ *ᵥ z) i = if col i = false then
+        -z i + ∑ j : n, (if col j = true then (A i j : ℂ) * z j else 0) else z i)
+    {ω : ℂ} {z : n → ℂ} (hω : ω ≠ 0) (hz : z ≠ 0) (heig : (M₁ * M₂) *ᵥ z = ω • z) :
+    ‖(1 + ω) ^ 2 / ω‖ ≤ r ^ 2 := by
+  set AC : Matrix n n ℂ := A.map Complex.ofReal
+  have hM₂_eq : M₂ *ᵥ z = ω • (M₁ *ᵥ z) := by
+    have h1 := congrArg (M₁ *ᵥ ·) heig
+    rwa [mulVec_mulVec, ← Matrix.mul_assoc, hM₁_sq, Matrix.one_mul, mulVec_smul] at h1
+  set z₁ : n → ℂ := fun i ↦ if col i = true then z i else 0
+  set z₂ : n → ℂ := fun i ↦ if col i = false then z i else 0
+  have hz_split : z = z₁ + z₂ := by
+    ext i
+    simp only [z₁, z₂, Pi.add_apply]
+    cases col i <;> simp
+  have hAz_color (b0 : Bool) (i : n) :
+      (AC *ᵥ fun j ↦ if col j = b0 then z j else 0) i = if col i = !b0 then
+        ∑ j : n, (if col j = b0 then (A i j : ℂ) * z j else 0) else 0 := by
+    simp only [mulVec, dotProduct, AC, Matrix.map_apply]
+    split_ifs with hci
+    · exact Finset.sum_congr rfl fun j _ ↦ by split_ifs <;> simp
+    · have hsame : col i = b0 := by cases h1 : col i <;> cases b0 <;> simp_all
+      exact Finset.sum_eq_zero fun j _ ↦ by
+        split_ifs with hcj
+        · simp [hA_same i j (hsame.trans hcj.symm)]
+        · simp
+  have heq₁ : (1 + ω) • z₁ = ω • (AC *ᵥ z₂) := by
+    ext i
+    have hi := congrFun hM₂_eq i
+    have hAz := hAz_color false i
+    simp only [Bool.not_false, z₁, z₂, Pi.smul_apply, smul_eq_mul, hM₂_mul, hM₁_mul] at hi hAz ⊢
+    rw [hAz]
+    cases hci : col i <;> simp [hci] at hi ⊢
+    linear_combination hi
+  have heq₂ : AC *ᵥ z₁ = (1 + ω) • z₂ := by
+    ext i
+    have hi := congrFun hM₂_eq i
+    have hAz := hAz_color true i
+    simp only [Bool.not_true, z₁, z₂, Pi.smul_apply, smul_eq_mul, hM₂_mul, hM₁_mul] at hi hAz ⊢
+    rw [hAz]
+    cases hci : col i <;> simp [hci] at hi ⊢
+    linear_combination hi
+  have hA2_eig : (A ^ 2).map Complex.ofReal *ᵥ z = ((1 + ω) ^ 2 / ω) • z := by
+    have h1 : ω • (AC *ᵥ (AC *ᵥ z₁)) = (1 + ω) ^ 2 • z₁ := by
+      rw [heq₂, mulVec_smul, smul_comm, ← heq₁, smul_smul, sq]
+    have h2 : ω • (AC *ᵥ (AC *ᵥ z₂)) = (1 + ω) ^ 2 • z₂ := by
+      have := congrArg (AC *ᵥ ·) heq₁
+      rw [mulVec_smul, mulVec_smul, heq₂, smul_smul, ← sq] at this
+      exact this.symm
+    have hsum : ω • ((AC * AC) *ᵥ z) = (1 + ω) ^ 2 • z := by
+      rw [hz_split, mulVec_add, ← mulVec_mulVec, ← mulVec_mulVec, smul_add, h1, h2, ← smul_add]
+    rw [show (A ^ 2).map Complex.ofReal = AC * AC by ext i j; simp [AC, sq, Matrix.mul_apply]]
+    ext i
+    have hi := congrFun hsum i
+    simp only [Pi.smul_apply, smul_eq_mul] at hi ⊢
+    exact mul_left_cancel₀ hω (by rw [hi]; field_simp [hω])
+  have hA2_nonneg : ∀ i j, 0 ≤ (A ^ 2) i j := fun i j ↦ by
+    rw [sq, Matrix.mul_apply]
+    exact Finset.sum_nonneg fun k _ ↦ mul_nonneg (hA_nonneg i k) (hA_nonneg k j)
+  exact norm_le_of_mulVec_le_smul hA2_nonneg ha_pos
+    (le_of_eq (by rw [sq, ← mulVec_mulVec, ha_eig, mulVec_smul, ha_eig, smul_smul, sq]))
+    hz hA2_eig
+
 end Real
 
 end Matrix

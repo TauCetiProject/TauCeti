@@ -39,6 +39,8 @@ group, where a Coxeter element has finite order `h` and so its eigenvalues have 
   every coroot vanishes on `x`, that is, exactly when the whole Weyl group fixes `x`.
 * `TauCeti.wordProd_smul_eq_self_iff_eq_zero` and `TauCeti.not_hasEigenvalue_one_wordProd`: for a
   root system, a Coxeter element fixes no nonzero vector, so `1` is not one of its eigenvalues.
+* `RootPairing.two_le_orderOf_wordProd`: every Coxeter element of a nontrivial finite root system
+  has order at least `2`.
 
 ## References
 
@@ -116,5 +118,18 @@ theorem not_hasEigenvalue_one_wordProd [P.IsRootSystem] {l : List b.support} (hl
   rw [Module.End.mem_eigenspace_iff, one_smul, weylGroupRootRep,
     Representation.ofDistribMulAction_apply_apply, wordProd_smul_eq_self_iff_eq_zero b hl hl'] at hy
   exact (mem_bot R).mpr hy
+
+/-- Every Coxeter element of a nontrivial finite root system has order at least `2`. -/
+theorem _root_.RootPairing.two_le_orderOf_wordProd (P : RootPairing ι R M N) [Finite ι]
+    [P.IsRootSystem] [Nontrivial M] (b : P.Base) {l : List b.support} (hl : l.Nodup)
+    (hall : ∀ i, i ∈ l) :
+    2 ≤ orderOf (wordProd P b l) := by
+  have : Finite P.weylGroup := P.finite_weylGroup
+  have hpos : 0 < orderOf (wordProd P b l) := orderOf_pos_iff.2 (isOfFinOrder_of_finite _)
+  have hne : orderOf (wordProd P b l) ≠ 1 := fun h1 ↦ by
+    obtain ⟨x, hx⟩ := exists_ne (0 : M)
+    exact hx ((wordProd_smul_eq_self_iff_eq_zero b hl hall).1
+      (by rw [orderOf_eq_one_iff.1 h1, one_smul]))
+  omega
 
 end TauCeti
