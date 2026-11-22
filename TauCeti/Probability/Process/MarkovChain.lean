@@ -213,37 +213,11 @@ theorem _root_.ProbabilityTheory.Kernel.measurable_markovChainLaw_dirac :
   rw [h]
   exact κ.markovChainKernel.measurable
 
-/-- The trajectory of the chain restricted to time `0` is the initial law, transported along the
-canonical identification of `(_ : ↥(Iic 0)) → α` with `α`. -/
-private theorem markovChainLaw_map_frestrictLe_zero :
-    (markovChainLaw ν κ).map (frestrictLe 0) =
-      ν.map (MeasurableEquiv.piUnique fun _ : ↥(Iic (0 : ℕ)) => α).symm := by
-  rw [markovChainLaw, Kernel.trajMeasure,
-    Measure.map_comp _ _ (measurable_frestrictLe _), Kernel.traj_map_frestrictLe,
-    Kernel.partialTraj_self, Measure.id_comp]
-
 /-- **The chain starts from its initial law.** -/
 @[simp]
 theorem markovChainLaw_map_eval_zero :
-    (markovChainLaw ν κ).map (fun x => x 0) = ν := by
-  have hcomp : (fun x : ℕ → α => x 0)
-      = (fun u : ((_ : ↥(Iic (0 : ℕ))) → α) => u ⟨0, mem_Iic.2 le_rfl⟩) ∘ frestrictLe 0 := rfl
-  have hid : (fun u : ((_ : ↥(Iic (0 : ℕ))) → α) => u ⟨0, mem_Iic.2 le_rfl⟩) ∘
-      (MeasurableEquiv.piUnique fun _ : ↥(Iic (0 : ℕ)) => α).symm = id := by
-    funext a
-    simp [MeasurableEquiv.piUnique, Equiv.piUnique, uniqueElim_const]
-  calc (markovChainLaw ν κ).map (fun x => x 0)
-      = ((markovChainLaw ν κ).map (frestrictLe 0)).map
-          (fun u : ((_ : ↥(Iic (0 : ℕ))) → α) => u ⟨0, mem_Iic.2 le_rfl⟩) := by
-        rw [Measure.map_map (μ := markovChainLaw ν κ) (f := frestrictLe 0)
-          (g := fun u : ((_ : ↥(Iic (0 : ℕ))) → α) => u ⟨0, mem_Iic.2 le_rfl⟩)
-          (by fun_prop) (measurable_frestrictLe 0), hcomp]
-    _ = ν := by
-        rw [markovChainLaw_map_frestrictLe_zero,
-          Measure.map_map (μ := ν)
-            (f := ⇑(MeasurableEquiv.piUnique fun _ : ↥(Iic (0 : ℕ)) => α).symm)
-            (g := fun u : ((_ : ↥(Iic (0 : ℕ))) → α) => u ⟨0, mem_Iic.2 le_rfl⟩)
-            (by fun_prop) (MeasurableEquiv.measurable _), hid, Measure.map_id]
+    (markovChainLaw ν κ).map (fun x => x 0) = ν :=
+  Kernel.map_eval_zero_trajMeasure
 
 /-- **A chain started at `a₀` starts at `a₀`.** -/
 theorem markovChainLaw_dirac_ae_apply_zero [MeasurableSingletonClass α] (a₀ : α) :

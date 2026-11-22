@@ -89,21 +89,8 @@ matching-marginal assumption. -/
 @[simp]
 theorem map_eval_zero_chainMeasure
     (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)] :
-    (chainMeasure pi).map (fun x ↦ x 0) = (pi 0).fst := by
-  let e : ((i : Iic 0) → X i) ≃ᵐ X 0 := MeasurableEquiv.piUnique _
-  have heval : (fun x : (n : ℕ) → X n ↦ x 0) = e ∘ frestrictLe 0 := by
-    funext x
-    rfl
-  have hprefix : (chainMeasure pi).map (frestrictLe 0) = (pi 0).fst.map e.symm := by
-    simp [chainMeasure, Kernel.trajMeasure, e,
-      MeasureTheory.Measure.map_comp _ _ (measurable_frestrictLe 0),
-      Kernel.traj_map_frestrictLe, Kernel.partialTraj_self, MeasureTheory.Measure.id_comp]
-  calc
-    (chainMeasure pi).map (fun x ↦ x 0)
-        = ((chainMeasure pi).map (frestrictLe 0)).map e := by
-            rw [heval]
-            exact (MeasureTheory.Measure.map_map e.measurable (measurable_frestrictLe 0)).symm
-    _ = (pi 0).fst := by simp [hprefix]
+    (chainMeasure pi).map (fun x ↦ x 0) = (pi 0).fst :=
+  Kernel.map_eval_zero_trajMeasure
 
 /-- The path law has the total mass of the initial plan, even if later marginals do not match. -/
 @[simp]
@@ -319,27 +306,13 @@ instance starMeasure.instIsProbabilityMeasure (μ₀ : Measure X₀) [IsProbabil
   rw [starMeasure]
   exact (Measure.isProbabilityMeasure_map_iff measurable_toStar.aemeasurable).2 inferInstance
 
-private theorem map_eval_zero_trajMeasure_starKernel (μ₀ : Measure X₀)
-    (pi : ∀ n, Measure (X₀ × Y n)) [∀ n, IsFiniteMeasure (pi n)] :
-    (Kernel.trajMeasure (X := starCarrier X₀ Y) μ₀ (starKernel pi)).map (fun x ↦ x 0) = μ₀ := by
-  let e : ((i : Iic 0) → starCarrier X₀ Y i) ≃ᵐ X₀ :=
-    MeasurableEquiv.piUnique (fun i : Iic 0 ↦ starCarrier X₀ Y i)
-  have heval : (fun x : (k : ℕ) → starCarrier X₀ Y k ↦ x 0) = e ∘ frestrictLe 0 := rfl
-  have hprefix :
-      (Kernel.trajMeasure (X := starCarrier X₀ Y) μ₀ (starKernel pi)).map (frestrictLe 0) =
-        μ₀.map e.symm := by
-    simp [Kernel.trajMeasure, e, MeasureTheory.Measure.map_comp _ _ (measurable_frestrictLe 0),
-      Kernel.traj_map_frestrictLe, Kernel.partialTraj_self, MeasureTheory.Measure.id_comp]
-  rw [heval, ← MeasureTheory.Measure.map_map e.measurable (measurable_frestrictLe 0), hprefix]
-  simp
-
 /-- The first marginal of `starMeasure μ₀ pi` is `μ₀`, with no compatibility assumption on `pi`. -/
 @[simp]
 theorem fst_starMeasure (μ₀ : Measure X₀) (pi : ∀ n, Measure (X₀ × Y n))
     [∀ n, IsFiniteMeasure (pi n)] :
     (starMeasure μ₀ pi).fst = μ₀ := by
   rw [starMeasure, Measure.fst, MeasureTheory.Measure.map_map measurable_fst measurable_toStar]
-  exact map_eval_zero_trajMeasure_starKernel μ₀ pi
+  exact Kernel.map_eval_zero_trajMeasure
 
 /-- The first projection from `starMeasure μ₀ pi` to `μ₀` is measure-preserving. -/
 theorem measurePreserving_fst_starMeasure (μ₀ : Measure X₀) (pi : ∀ n, Measure (X₀ × Y n))
@@ -368,7 +341,7 @@ theorem map_prodMk_starMeasure (μ₀ : Measure X₀)
       (μ₀ := μ₀) (κ := starKernel pi) n).symm
   have hmarginal : (Q.map (frestrictLe n)).map first = (pi n).fst := by
     rw [MeasureTheory.Measure.map_map hfirst (measurable_frestrictLe n)]
-    exact (map_eval_zero_trajMeasure_starKernel μ₀ pi).trans hn.symm
+    exact (Kernel.map_eval_zero_trajMeasure).trans hn.symm
   calc
     (starMeasure μ₀ pi).map (fun w ↦ (w.1, w.2 n))
         = Q.map (fun x ↦ (x 0, x (n + 1))) := by

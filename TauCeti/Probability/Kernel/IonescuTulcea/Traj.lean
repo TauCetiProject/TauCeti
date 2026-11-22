@@ -17,6 +17,8 @@ next transition kernel. This identity lets finite transport plans be glued witho
 This generalizes Mathlib's
 `ProbabilityTheory.Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure`, which assumes
 a probability initial law.
+
+The coordinate at time `0` of the trajectory measure has the initial law.
 -/
 
 public section
@@ -68,5 +70,18 @@ theorem map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure_of_sFinite [SFin
   simp [trajMeasure, Measure.compProd_eq_comp_prod, Measure.map_comp _ _ hproj,
     Measure.map_comp _ _ (measurable_frestrictLe n), traj_map_frestrictLe, Measure.comp_assoc,
     hstep]
+
+/-- The coordinate at time `0` of the trajectory measure has the initial law `μ₀`. -/
+@[simp]
+theorem map_eval_zero_trajMeasure : (trajMeasure μ₀ κ).map (fun x ↦ x 0) = μ₀ := by
+  let e : ((i : Iic 0) → X i) ≃ᵐ X 0 := MeasurableEquiv.piUnique _
+  -- `e` evaluates at the unique element `default` of `Iic 0`, which is `⟨0, _⟩` by definition;
+  -- `simp` cannot rewrite `↑default` to `0` under the dependent type `X`, so we use `rfl`.
+  have heval : (fun x : (n : ℕ) → X n ↦ x 0) = e ∘ frestrictLe 0 := rfl
+  have hprefix : (trajMeasure μ₀ κ).map (frestrictLe 0) = μ₀.map e.symm := by
+    simp [trajMeasure, e, Measure.map_comp _ _ (measurable_frestrictLe 0), traj_map_frestrictLe,
+      partialTraj_self, Measure.id_comp]
+  rw [heval, ← Measure.map_map e.measurable (measurable_frestrictLe 0), hprefix]
+  simp
 
 end ProbabilityTheory.Kernel
