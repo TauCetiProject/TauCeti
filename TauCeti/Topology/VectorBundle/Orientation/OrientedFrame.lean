@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.SpecialOrthogonal
 public import TauCeti.Topology.VectorBundle.Orientation.OrthonormalFrame
-import Mathlib.Topology.Algebra.Indicator
+import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction
 
 /-!
 # The oriented orthonormal frame bundle
@@ -40,9 +40,10 @@ orthogonal group, by trivializations equivariant for the action
 equivariant trivialization of the orthonormal frame bundle, its local frame `σ` is positively
 oriented on a clopen subset of the base set; on the complement, composing `σ` with an orthogonal
 transformation `r` of determinant `-1` makes it positively oriented. Dividing by the corrected
-frame trivializes the positively oriented frames. This is the reduction of the structure group of
-the orthonormal frame bundle from the orthogonal group to the special orthogonal group given by
-the orientation.
+frame trivializes the positively oriented frames, by the construction shared by all such
+reductions (`TauCeti.OrthonormalFrameBundle.exists_trivialization_of_continuousOn_smul_mem`). This
+is the reduction of the structure group of the orthonormal frame bundle from the orthogonal group
+to the special orthogonal group given by the orientation.
 
 ## Main definitions
 
@@ -237,74 +238,6 @@ end Oriented
 
 /-! ### Local triviality -/
 
-section ToSpecialOrthogonal
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
-
-open scoped Classical in
-/-- An orthogonal transformation, as an element of the special orthogonal group when it is one,
-and `1` otherwise. -/
-private def toSpecialOrthogonal (g : unitary (V →L[ℝ] V)) : specialOrthogonalGroup V :=
-  if h : g ∈ specialOrthogonalGroup V then ⟨g, h⟩ else 1
-
-private theorem coe_toSpecialOrthogonal {g : unitary (V →L[ℝ] V)}
-    (hg : g ∈ specialOrthogonalGroup V) : (toSpecialOrthogonal g : unitary (V →L[ℝ] V)) = g := by
-  simp [toSpecialOrthogonal, hg]
-
-/-- The map `toSpecialOrthogonal` is continuous, since `specialOrthogonalGroup V` is clopen in
-`unitary (V →L[ℝ] V)`. -/
-private theorem continuous_toSpecialOrthogonal :
-    Continuous (toSpecialOrthogonal : unitary (V →L[ℝ] V) → specialOrthogonalGroup V) := by
-  refine Topology.IsInducing.subtypeVal.continuous_iff.2 <|
-    (isClopen_specialOrthogonalGroup.continuous_mulIndicator continuous_id).congr fun g ↦ ?_
-  by_cases hg : g ∈ specialOrthogonalGroup V <;> simp [toSpecialOrthogonal, hg]
-
-end ToSpecialOrthogonal
-
-section FrameTrivialization
-
-variable {B : Type*} [TopologicalSpace B] {F : Type*}
-  {E : B → Type*} [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)]
-  [TopologicalSpace (TotalSpace F E)]
-  {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
-  (T : Trivialization (unitary (V →L[ℝ] V)) (proj : OrthonormalFrameBundle ℝ F E V → B))
-
-/-- The local frame of the trivialization `T` at `y`: the frame with fibre coordinate `1`. -/
-private abbrev localFrame (y : B) : OrthonormalFrameBundle ℝ F E V :=
-  T.toOpenPartialHomeomorph.symm (y, 1)
-
-/-- The trivialization `T` of the orthonormal frame bundle is equivariant: it turns the right action
-of the orthogonal group into right multiplication on the fibre coordinate, as for the
-trivializations of `TauCeti.OrthonormalFrameBundle.exists_trivialization`. -/
-private abbrev IsEquivariant : Prop :=
-  ∀ (g : unitary (V →L[ℝ] V)) (p : OrthonormalFrameBundle ℝ F E V),
-    T (op g • p) = ((T p).1, (T p).2 * g)
-
-variable {T}
-
-/-- Over the base set of an equivariant trivialization, every frame is the local frame acted on
-by its fibre coordinate. -/
-private theorem eq_smul_localFrame
-    (hT : IsEquivariant T)
-    {p : OrthonormalFrameBundle ℝ F E V} (hp : p.proj ∈ T.baseSet) :
-    p = op (T p).2 • localFrame T p.proj := by
-  refine T.injOn (T.mem_source.2 hp)
-    (T.mem_source.2 (by rwa [proj_smul, T.proj_symm_apply' hp])) ?_
-  rw [T.coe_coe, hT, T.apply_symm_apply' hp, one_mul]
-  exact Prod.ext (T.coe_fst' hp) rfl
-
-/-- The inverse of an equivariant trivialization at `(y, g)` is the local frame at `y` acted on
-by `g`. -/
-private theorem symm_apply_eq_smul
-    (hT : IsEquivariant T)
-    {y : B} (hy : y ∈ T.baseSet) (g : unitary (V →L[ℝ] V)) :
-    T.toOpenPartialHomeomorph.symm (y, g) = op g • localFrame T y := by
-  have hproj : (T.toOpenPartialHomeomorph.symm (y, g)).proj = y := T.proj_symm_apply' hy
-  have hy' : (T.toOpenPartialHomeomorph.symm (y, g)).proj ∈ T.baseSet := by rwa [hproj]
-  exact (eq_smul_localFrame hT hy').trans (by rw [hproj, T.apply_symm_apply' hy])
-
-end FrameTrivialization
-
 section OrientedTrivialization
 
 variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -319,6 +252,10 @@ section Trivialization
 variable
   (T : Trivialization (unitary (V →L[ℝ] V)) (proj : OrthonormalFrameBundle ℝ F E V → B))
   (r : unitary (V →L[ℝ] V))
+
+/-- The local frame of the trivialization `T` at `y`: the frame with fibre coordinate `1`. -/
+private abbrev localFrame (y : B) : OrthonormalFrameBundle ℝ F E V :=
+  T.toOpenPartialHomeomorph.symm (y, 1)
 
 open scoped Classical in
 /-- The correction of the local frame of `T` at `y`: `1` where it is positively oriented, and
@@ -338,26 +275,6 @@ private theorem smul_localFrame_mem (hr : r ∉ specialOrthogonalGroup V) (y : B
     by_contra hn
     exact (smul_mem_orientedFrames_iff Fact.out ((notMem_orientedFrames_iff Fact.out).1 h)).not.2 hr
       ((notMem_orientedFrames_iff Fact.out).1 hn)
-
-/-- Over `T.baseSet`, the fibre coordinate of a positively oriented frame multiplied by the
-correction is special orthogonal. -/
-private theorem correction_mul_mem_of_mem (hT : IsEquivariant T)
-    (hr : r ∉ specialOrthogonalGroup V) {p : OrthonormalFrameBundle ℝ F E V}
-    (hp : p.proj ∈ T.baseSet) (h : p ∈ orientedFrames s o) :
-    correction s o T r p.proj * (T p).2 ∈ specialOrthogonalGroup V := by
-  rw [← smul_mem_orientedFrames_iff (Fact.out (p := Fintype.card ι = finrank ℝ V))
-      (smul_localFrame_mem (s := s) (o := o) hr p.proj),
-    smul_smul, ← op_mul, inv_mul_cancel_left, ← eq_smul_localFrame hT hp]
-  exact h
-
-/-- Acting on the local frame at `y` by a special orthogonal transformation pre-multiplied by the
-inverse correction yields a positively oriented frame. -/
-private theorem inv_correction_mul_smul_localFrame_mem
-    (hr : r ∉ specialOrthogonalGroup V) (y : B)
-    {g : unitary (V →L[ℝ] V)} (hg : g ∈ specialOrthogonalGroup V) :
-    op ((correction s o T r y)⁻¹ * g) • localFrame T y ∈ orientedFrames s o := by
-  rw [op_mul, mul_smul]
-  exact (smul_mem_orientedFrames_iff Fact.out (smul_localFrame_mem hr y)).2 hg
 
 /-- The correction is locally constant over the base set of `T`. -/
 private theorem eventually_correction_eq {y : B} (hy : y ∈ T.baseSet) :
@@ -380,113 +297,6 @@ private theorem continuousAt_correction {X : Type*} [TopologicalSpace X]
   continuousAt_const.congr
     ((eventually_correction_eq (s := s) (o := o) (r := r) hy).mono fun _ hz ↦ congrArg f hz.symm)
 
-open scoped Classical in
-variable (s o T r) in
-/-- The inverse map of `orientedTrivialization`: it sends `(y, g)` to the local frame at `y`
-corrected by `(correction s o T r y)⁻¹ * g` when positively oriented, and to `p₀` otherwise. -/
-private def orientedTrivializationInv (p₀ : orientedFrames s o)
-    (q : B × specialOrthogonalGroup V) : orientedFrames s o :=
-  if h : T.toOpenPartialHomeomorph.symm (q.1, (correction s o T r q.1)⁻¹ * q.2) ∈
-      orientedFrames s o then ⟨_, h⟩ else p₀
-
-/-- Over `T.baseSet`, `orientedTrivializationInv` agrees with the inverse of `T` at the corrected
-special orthogonal fibre coordinate. -/
-private theorem coe_orientedTrivializationInv (hT : IsEquivariant T)
-    (hr : r ∉ specialOrthogonalGroup V) (p₀ : orientedFrames s o)
-    {q : B × specialOrthogonalGroup V} (hq : q.1 ∈ T.baseSet) :
-    (orientedTrivializationInv s o T r p₀ q : OrthonormalFrameBundle ℝ F E V) =
-      T.toOpenPartialHomeomorph.symm (q.1, (correction s o T r q.1)⁻¹ * q.2) := by
-  have hmem : T.toOpenPartialHomeomorph.symm (q.1, (correction s o T r q.1)⁻¹ * q.2) ∈
-      orientedFrames s o := by
-    rw [symm_apply_eq_smul hT hq]
-    exact inv_correction_mul_smul_localFrame_mem hr q.1 q.2.property
-  rw [orientedTrivializationInv, dite_eq_left hmem]
-
-variable (s o r) in
-/-- The trivialization of the positively oriented frames over the base set of an equivariant
-trivialization `T` of the orthonormal frame bundle, with fibre the special orthogonal group: a
-frame `p` over `y` goes to `(y, c y * (T p).2)`, where `c` is the correction making the local frame
-of `T` positively oriented. The positively oriented frame `p₀` is a junk value of the inverse off
-its target. -/
-private def orientedTrivialization
-    (hT : IsEquivariant T)
-    (hr : r ∉ specialOrthogonalGroup V) (p₀ : orientedFrames s o) :
-    Trivialization (specialOrthogonalGroup V)
-      (fun p : orientedFrames s o ↦ (p : OrthonormalFrameBundle ℝ F E V).proj) where
-  toFun p := (p.val.proj, toSpecialOrthogonal (correction s o T r p.val.proj * (T p.val).2))
-  invFun := orientedTrivializationInv s o T r p₀
-  source := {p | p.val.proj ∈ T.baseSet}
-  target := T.baseSet ×ˢ univ
-  map_source' _ hp := ⟨hp, mem_univ _⟩
-  map_target' q hq := by
-    rw [mem_ofPred_eq, coe_orientedTrivializationInv hT hr p₀ hq.1, T.proj_symm_apply' hq.1]
-    exact hq.1
-  left_inv' p hp := by
-    have hm := correction_mul_mem_of_mem hT hr hp p.property
-    apply Subtype.ext
-    rw [coe_orientedTrivializationInv (q := (p.val.proj, _)) hT hr p₀ hp,
-      coe_toSpecialOrthogonal hm, inv_mul_cancel_left]
-    exact T.symm_apply_mk_proj (T.mem_source.2 hp)
-  right_inv' := by
-    rintro ⟨y, g⟩ hq
-    rw [Prod.mk.injEq, coe_orientedTrivializationInv hT hr p₀ hq.1,
-      T.proj_symm_apply' hq.1, T.apply_symm_apply' hq.1, mul_inv_cancel_left]
-    exact ⟨rfl, Subtype.ext (coe_toSpecialOrthogonal g.property)⟩
-  open_source := T.open_baseSet.preimage (continuous_proj.comp continuous_subtypeVal)
-  open_target := T.open_baseSet.prod isOpen_univ
-  continuousOn_toFun :=
-    (continuous_proj.comp continuous_subtypeVal).continuousOn.prodMk <|
-      continuous_toSpecialOrthogonal.comp_continuousOn <|
-        ContinuousOn.mul
-          (fun _ hp ↦ ((continuousAt_correction id hp).comp
-            (f := fun p : orientedFrames s o ↦ p.val.proj)
-            (continuous_proj.comp continuous_subtypeVal).continuousAt).continuousWithinAt)
-          (continuous_snd.comp_continuousOn (T.continuousOn_toFun.comp
-            continuous_subtypeVal.continuousOn fun _ hp ↦ T.mem_source.2 hp))
-  continuousOn_invFun := by
-    refine Topology.IsInducing.subtypeVal.continuousOn_iff.2 (ContinuousOn.congr
-      (f := fun q : B × specialOrthogonalGroup V ↦
-        T.toOpenPartialHomeomorph.symm (q.1, (correction s o T r q.1)⁻¹ * q.2)) ?_
-      fun q hq ↦ coe_orientedTrivializationInv hT hr p₀ hq.1)
-    refine T.toOpenPartialHomeomorph.continuousOn_symm.comp (continuousOn_fst.prodMk ?_)
-      fun _ hq ↦ T.mem_target.2 hq.1
-    exact ContinuousOn.mul
-      (fun _ hq ↦ ((continuousAt_correction (·⁻¹) hq.1).comp
-        continuous_fst.continuousAt).continuousWithinAt)
-      (continuous_subtypeVal.comp continuous_snd).continuousOn
-  baseSet := T.baseSet
-  open_baseSet := T.open_baseSet
-  source_eq := rfl
-  target_eq := rfl
-  proj_toFun _ _ := rfl
-
-private theorem orientedTrivialization_apply
-    (hT : IsEquivariant T)
-    (hr : r ∉ specialOrthogonalGroup V) (p₀ : orientedFrames s o) (p : orientedFrames s o) :
-    orientedTrivialization s o r hT hr p₀ p =
-      (p.val.proj, toSpecialOrthogonal (correction s o T r p.val.proj * (T p.val).2)) :=
-  rfl
-
-/-- The trivialization `orientedTrivialization` is equivariant over its base set. -/
-private theorem orientedTrivialization_smul
-    (hT : IsEquivariant T)
-    (hr : r ∉ specialOrthogonalGroup V) (p₀ : orientedFrames s o) (g : specialOrthogonalGroup V)
-    {p : orientedFrames s o} (hp : (p : OrthonormalFrameBundle ℝ F E V).proj ∈ T.baseSet) :
-    orientedTrivialization s o r hT hr p₀ (op g • p) =
-      ((orientedTrivialization s o r hT hr p₀ p).1,
-        (orientedTrivialization s o r hT hr p₀ p).2 * g) := by
-  have hgp : ((op g • p : orientedFrames s o) : OrthonormalFrameBundle ℝ F E V).proj ∈
-      T.baseSet := by
-    rwa [coe_orientedFrames_smul, proj_smul]
-  have h₁ := correction_mul_mem_of_mem hT hr hp p.property
-  have h₂ := correction_mul_mem_of_mem hT hr hgp (op g • p).property
-  rw [coe_orientedFrames_smul, unop_op] at h₂
-  simp only [orientedTrivialization_apply, coe_orientedFrames_smul, unop_op, proj_smul]
-  refine Prod.ext rfl (Subtype.ext ?_)
-  rw [Subgroup.coe_mul, coe_toSpecialOrthogonal h₁]
-  rw [proj_smul] at h₂
-  rw [coe_toSpecialOrthogonal h₂, hT, mul_assoc]
-
 end Trivialization
 
 /-- In positive rank the positively oriented frames are locally trivial with fibre the special
@@ -506,9 +316,13 @@ theorem exists_trivialization_orientedFrames [ContinuousFiberNorm F E] [Nonempty
   obtain ⟨r, hr⟩ := Unitary.exists_det_eq_neg_one (V := V) (hι ▸ Fintype.card_pos)
   have hr' : r ∉ specialOrthogonalGroup V :=
     notMem_specialOrthogonalGroup_iff_det_neg.2 (by rw [hr]; norm_num)
-  obtain ⟨p₀, hp₀, -⟩ := exists_mem_orientedFrames (s := s) (o := o) hι hF x
-  exact ⟨orientedTrivialization s o r hT hr' ⟨p₀, hp₀⟩, hx,
-    fun g p hp ↦ orientedTrivialization_smul hT hr' _ g hp⟩
+  -- The local frame of `T`, corrected by `correction`, is positively oriented over `T.baseSet`.
+  obtain ⟨t, ht, hteq⟩ := exists_trivialization_of_continuousOn_smul_mem hT
+    (fun _ hp _ ↦ smul_mem_orientedFrames_iff hι hp) subset_rfl
+    (fun y _ ↦ smul_localFrame_mem (s := s) (o := o) hr' y) T.open_baseSet
+    (fun _ hy ↦ (continuousAt_correction (s := s) (o := o) (r := r) (·⁻¹) hy).continuousWithinAt)
+    hx
+  exact ⟨t, ht ▸ hx, fun g p hp ↦ hteq g p (ht ▸ hp)⟩
 
 end OrientedTrivialization
 
