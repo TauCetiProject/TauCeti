@@ -289,11 +289,11 @@ private abbrev fMap {a b : ℤ} (h : (a : EInt) ≤ b) :=
   (CochainComplex.filtrationFunctor _
     (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hX)).map (homOfLE h)
 
-/-- The sequence `F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q` of graded pieces: the last row of
-`kernelCokernelCompSequence.snakeInput` for the transition maps `F_{q-1} ⟶ F_q ⟶ F_{q+1}`. -/
+/-- The sequence `F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q` of graded pieces: the sequence
+`TauCeti.cokernelCompSequence` of the transition maps `F_{q-1} ⟶ F_q ⟶ F_{q+1}`. -/
 private abbrev gradedShortComplex : ShortComplex (CochainComplex A ℤ) :=
-  (kernelCokernelCompSequence.snakeInput (fMap R hX (by simp : ((q - 1 : ℤ) : EInt) ≤ q))
-    (fMap R hX (by simp : (q : EInt) ≤ ((q + 1 : ℤ) : EInt)))).L₃
+  cokernelCompSequence (fMap R hX (by simp : ((q - 1 : ℤ) : EInt) ≤ q))
+    (fMap R hX (by simp : (q : EInt) ≤ ((q + 1 : ℤ) : EInt)))
 
 /-- The reindexed relative singular chain sequence of the triple `(X (q + 1), X q, X (q - 1))`,
 written with the pairs of the filtration. -/
@@ -349,7 +349,7 @@ private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortCom
     cokernelFiltrationFunctorMapIso R hX _).hom
   τ₃ := (cokernelFiltrationFunctorMapIso R hX _).hom
   comm₁₂ := by
-    unfold gradedShortComplex kernelCokernelCompSequence.snakeInput
+    unfold gradedShortComplex
     refine (cancel_epi (cokernel.π _)).1 ?_
     simp only [homOfLE_leOfHom, TopTriple.innerPair_obj_ofInclusions,
       TopTriple.totalPair_obj_ofInclusions, π_cokernelFiltrationFunctorMapIso_hom_assoc,
@@ -371,7 +371,7 @@ private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortCom
     exact congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans <|
       (congrArg (_ ≫ ·) (extendMap_π_comp_innerToTotal R hX q)).trans (Category.assoc _ _ _).symm)
   comm₂₃ := by
-    unfold gradedShortComplex kernelCokernelCompSequence.snakeInput
+    unfold gradedShortComplex
     refine (cancel_epi (cokernel.π _)).1 ?_
     simp only [homOfLE_leOfHom, homOfLE_comp, Iso.trans_hom,
       TopTriple.totalPair_obj_ofInclusions, TopTriple.outerPair_obj_ofInclusions, Category.assoc,
@@ -386,7 +386,7 @@ private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortCom
 singular chains. -/
 private lemma δ_comp_extendHomologyIso_hom (n : ℕ) (m₀ m₁ : ℤ) (h₀ : m₀ = -(n + 1 : ℕ))
     (h₁ : m₁ = -n) (h : (ComplexShape.up ℤ).Rel m₀ m₁) :
-    (kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _).δ m₀ m₁ h ≫
+    (cokernelCompSequence_shortExact _ _).δ m₀ m₁ h ≫
         HomologicalComplex.homologyMap (gradedShortComplexHom R hX q).τ₁ m₁ ≫
           (extendHomologyIso _ ComplexShape.embeddingDownNat h₁.symm).hom =
       HomologicalComplex.homologyMap (gradedShortComplexHom R hX q).τ₃ m₀ ≫
