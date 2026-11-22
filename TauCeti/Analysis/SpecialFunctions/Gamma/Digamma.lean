@@ -6,20 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
+public import Mathlib.Analysis.Analytic.Basic
 import TauCeti.Analysis.Complex.Conformal.Reflection.LogDeriv
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 
 /-!
-# The complex digamma function: conjugation and continuity
+# The complex digamma function: conjugation and analyticity
 
 Two general facts about Mathlib's complex digamma function `ψ = Complex.digamma`, the logarithmic
 derivative of `Γ`. Since `Γ(conj s) = conj Γ(s)` on the whole plane, `ψ` commutes with complex
-conjugation. On the right half-plane `Γ` is holomorphic and nonzero, so `ψ = Γ′/Γ` is continuous
-there.
+conjugation. Away from the nonpositive integers `Γ` is analytic and nonzero, so `ψ = Γ′/Γ` is
+analytic there, in particular on the right half-plane.
 
 ## Main results
 
 * `Complex.digamma_conj`: complex digamma commutes with conjugation, `ψ(conj s) = conj ψ(s)`.
-* `Complex.continuousOn_digamma_re_pos`: complex digamma is continuous on the right half-plane.
+* `Complex.analyticAt_digamma`: complex digamma is analytic away from the nonpositive integers.
+* `Complex.analyticOnNhd_digamma_re_pos`: complex digamma is analytic on the right half-plane.
 -/
 
 public section
@@ -35,13 +39,13 @@ theorem digamma_conj (s : ℂ) : digamma (conj s) = conj (digamma s) := by
     (F := Gamma) (Ω := Set.univ) (u := 1) one_ne_zero isOpen_univ
     (fun z _ => by rw [Gamma_conj, one_mul]) (Set.mem_univ s)
 
-/-- The digamma function is continuous on the right half-plane `0 < Re s`. -/
-theorem continuousOn_digamma_re_pos : ContinuousOn digamma {s : ℂ | 0 < s.re} := by
-  have hU : IsOpen {s : ℂ | 0 < s.re} := isOpen_lt continuous_const continuous_re
-  have hG : DifferentiableOn ℂ Gamma {s : ℂ | 0 < s.re} := fun s hs =>
-    (hasDerivAt_Gamma_of_re_pos hs).differentiableAt.differentiableWithinAt
-  have hψ : ContinuousOn (fun s => deriv Gamma s / Gamma s) {s : ℂ | 0 < s.re} :=
-    (hG.deriv hU).continuousOn.div hG.continuousOn fun s hs => Gamma_ne_zero_of_re_pos hs
-  exact hψ.congr fun s _ => by rw [digamma_def, logDeriv_apply]
+/-- The digamma function is analytic at every `s` that is not a nonpositive integer. -/
+theorem analyticAt_digamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ digamma s := by
+  have h := (analyticAt_Gamma hs).deriv.div (analyticAt_Gamma hs) (Gamma_ne_zero hs)
+  simpa only [digamma_def, logDeriv, Pi.div_def] using h
+
+/-- The digamma function is analytic on the right half-plane `0 < Re s`. -/
+theorem analyticOnNhd_digamma_re_pos : AnalyticOnNhd ℂ digamma {s : ℂ | 0 < s.re} :=
+  fun _ hs => analyticAt_digamma (ne_neg_natCast_of_re_pos hs)
 
 end Complex

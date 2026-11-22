@@ -63,7 +63,7 @@ private theorem one_half_add_mul_I_mem_slitPlane (a : ℝ) : (1 / 2 + a * I : �
 /-- `ψ` is continuous on the line `Re s = ½`. -/
 private theorem continuous_digamma_one_half_add_mul_I :
     Continuous fun t : ℝ => Complex.digamma (1 / 2 + t * I) :=
-  continuousOn_digamma_re_pos.comp_continuous (by fun_prop) fun t => by simp
+  analyticOnNhd_digamma_re_pos.continuousOn.comp_continuous (by fun_prop) fun t => by simp
 
 /-- The continuous phase `φ₂(a) = ph Γ(½ + ia)` with `φ₂(0) = 0` (DLMF 12.14.7),
 `φ₂(a) = ∫₀ᵃ Re ψ(½ + it) dt`. -/
