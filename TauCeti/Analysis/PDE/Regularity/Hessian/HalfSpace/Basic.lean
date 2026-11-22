@@ -296,7 +296,7 @@ private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
   -- the symmetric part of `A` is symmetric with the same quadratic form
   have hS : (((2⁻¹ : ℝ) • (A + A.adjoint) : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
       WithLp 2 (ℝ × E) →ₗ[ℝ] WithLp 2 (ℝ × E)).IsSymmetric :=
-    A.inner_symmPart_apply_left
+    A.isSymmetric_symmPart
   set ν : WithLp 2 (ℝ × E) := WithLp.toLp 2 (1, 0)
   obtain ⟨e, hee, ⟨c, hc, hcν⟩, he⟩ :=
     ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric _ hS hlam

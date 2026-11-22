@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.LinearAlgebra.Trace.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
+import Mathlib.Analysis.Matrix.Hermitian
 
 /-!
 # Trace-free self-adjoint endomorphisms
@@ -46,8 +47,9 @@ pairing `tr (T* U) = tr (T U)` is real.
   endomorphism, and the trace pairing `tr (T U)` of two of them, are real.
 * `ContinuousLinearMap.traceCLM_symmPart_comp`: over `ℝ`, only the symmetric part of `A` enters
   the trace pairing `tr (A M)` with a self-adjoint `M`.
-* `ContinuousLinearMap.inner_symmPart_apply_left`, `ContinuousLinearMap.inner_symmPart_apply_self`:
-  the symmetric part `(A + A†) / 2` is self-adjoint and has the same quadratic form as `A`.
+* `ContinuousLinearMap.isSymmetric_symmPart`, `ContinuousLinearMap.inner_symmPart_apply_left`,
+  `ContinuousLinearMap.inner_symmPart_apply_self`: the symmetric part `(A + A†) / 2` is
+  self-adjoint and has the same quadratic form as `A`.
 * `ContinuousLinearMap.sum_toMatrix_symmPart_mul_repr`,
   `ContinuousLinearMap.posDef_toMatrix_symmPart`: in an orthonormal basis, the matrix of the
   symmetric part computes the trace pairing with a self-adjoint endomorphism, and it is positive
@@ -137,6 +139,14 @@ theorem traceCLM_symmPart_comp {V : Type*} [NormedAddCommGroup V] [InnerProductS
   rw [smul_comp, add_comp, map_smul, map_add, h, smul_eq_mul]
   ring
 
+/-- The symmetric part `(A + A†) / 2` of an endomorphism of a real inner product space is a
+symmetric linear map. -/
+theorem isSymmetric_symmPart {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [CompleteSpace V] (A : V →L[ℝ] V) :
+    (((2⁻¹ : ℝ) • (A + A.adjoint) : V →L[ℝ] V) : V →ₗ[ℝ] V).IsSymmetric := by
+  rw [← star_eq_adjoint]
+  exact ((IsSelfAdjoint.all (2⁻¹ : ℝ)).smul (IsSelfAdjoint.add_star_self A)).isSymmetric
+
 /-- The symmetric part `(A + A†) / 2` of an endomorphism of a real inner product space is
 self-adjoint. -/
 theorem inner_symmPart_apply_left {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
@@ -188,11 +198,8 @@ theorem posDef_toMatrix_symmPart {V : Type*} [NormedAddCommGroup V] [InnerProduc
       rw [LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply,
         OrthonormalBasis.coe_toBasis, OrthonormalBasis.repr_apply_apply, coe_coe, hS,
         real_inner_comm]
-  refine Matrix.posDef_iff_dotProduct_mulVec.2 ⟨Matrix.IsHermitian.ext fun i j => ?_,
-    fun x hx => ?_⟩
-  · -- the matrix of the self-adjoint `S` is symmetric
-    simp only [star_trivial, hM]
-    rw [hS, real_inner_comm]
+  refine Matrix.posDef_iff_dotProduct_mulVec.2
+    ⟨(LinearMap.isHermitian_toMatrix_iff b).2 (isSymmetric_symmPart A), fun x hx => ?_⟩
   set v : V := b.repr.symm (WithLp.toLp 2 x)
   have hxv : ∀ i, x i = ⟪b i, v⟫_ℝ := fun i => by
     rw [← b.repr_apply_apply, LinearIsometryEquiv.apply_symm_apply]

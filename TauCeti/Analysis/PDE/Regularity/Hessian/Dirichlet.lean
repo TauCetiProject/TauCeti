@@ -8,12 +8,10 @@ module
 public import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Trace
 public import TauCeti.Analysis.PDE.Regularity.Hessian.CurvedBoundary
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.ContDiff
-public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Morrey
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.RellichKondrachov
 public import TauCeti.Analysis.Sobolev.Wkp.Compactness
 public import TauCeti.Analysis.Sobolev.Wkp.Exponent
-import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.MeasureTheory.Function.Lp.Trace
 
 /-!
@@ -52,7 +50,8 @@ maximum principle for strong subsolutions
 (`TauCeti.PDE.le_of_nonneg_traceCLM_comp_iteratedGradient_add_mul_le_frontier`), applied to `u`
 and `-u`, gives `ū = 0`.
 
-For Lemma 9.17, `u ↦ L u` is a bounded operator `W^{2,p}(Ω) → Lᵖ(Ω)`: `A` is bounded on `Ω` by its
+For Lemma 9.17, `u ↦ L u` is a bounded operator `W^{2,p}(Ω) → Lᵖ(Ω)`
+(`TauCeti.exists_continuousLinearMap_traceCLM_comp_add_inner_add_mul`): `A` is bounded on `Ω` by its
 continuity on the compact set `closure Ω`. On the closed subspace of `u` with zero boundary values,
 Theorem 9.14 is an estimate `‖u‖ ≤ C ‖L u‖ + ‖K u‖` with `K` a multiple of the compact inclusion
 `W^{2,p}(Ω) → Lᵖ(Ω)` (Rellich–Kondrachov), and `L` is injective there by uniqueness, so `L` is
@@ -206,35 +205,6 @@ theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero (hp_top : p �
   filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
   exact le_antisymm (hle x hx) (neg_nonpos.1 (hge x hx))
 
-/-- For bounded measurable coefficients `A` and `c`, `u ↦ tr (A ∘ D²u) + c u` is a bounded
-operator `W^{2,p}(Ω) → Lᵖ(Ω)`. -/
-private theorem exists_continuousLinearMap_traceCLM_comp_add_mul
-    {Omega : Opens (WithLp 2 (ℝ × E))}
-    {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)} {c : WithLp 2 (ℝ × E) → ℝ}
-    {Λ γ : ℝ} (hA : AEStronglyMeasurable A (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
-    (hAΛ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), ‖A x‖ ≤ Λ)
-    (hc : AEStronglyMeasurable c (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
-    (hcγ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), |c x| ≤ γ) :
-    ∃ T : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2 →L[ℝ]
-        Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega),
-      ∀ u, ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
-        T u x = traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) +
-          c x * value 2 u x := by
-  obtain ⟨T₁, hT₁⟩ := exists_continuousLinearMap_traceCLM_comp (p := p) hA hAΛ
-  -- The zeroth-order term is pointwise multiplication by the `L^∞` class of `c`.
-  have hc' := memLp_top_of_bound hc γ (hcγ.mono fun x hx => by rwa [Real.norm_eq_abs])
-  refine ⟨T₁.comp (iteratedGradientL 1) +
-    ((ContinuousLinearMap.mul ℝ ℝ).holderL _ ∞ p p (hc'.toLp c)).comp (valueL 2), fun u => ?_⟩
-  filter_upwards [Lp.coeFn_add (T₁ (iteratedGradientL 1 u))
-      (((ContinuousLinearMap.mul ℝ ℝ).holderL _ ∞ p p (hc'.toLp c)) (valueL 2 u)),
-    hT₁ (iteratedGradientL 1 u),
-    (ContinuousLinearMap.mul ℝ ℝ).coeFn_holder (r := p) (hc'.toLp c) (valueL 2 u),
-    hc'.coeFn_toLp] with x h1 h2 h3 h4
-  simp only [add_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.holderL_apply_apply] at h1 ⊢
-  rw [h1, Pi.add_apply, h2, h3, h4, ContinuousLinearMap.mul_apply', iteratedGradientL_apply,
-    valueL_apply]
-
 /-- **The a priori estimate for the Dirichlet problem** (Gilbarg–Trudinger, Lemma 9.17). Let
 `Ω ⊆ ℝ × E` be a bounded open set of dimension `n` with `C²` boundary, and let `n ≤ p < ∞`,
 `1 < p`. Let `A` be measurable on `Ω`, continuous within `Ω` and elliptic at every point of
@@ -274,12 +244,13 @@ theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq (hp : 1 < p)
   have hAΛ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), ‖A x‖ ≤ Λ := by
     filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
     exact hΛ _ ⟨x, ⟨hKU (subset_closure hx), hx⟩, rfl⟩
-  obtain ⟨T, hTae⟩ := exists_continuousLinearMap_traceCLM_comp_add_mul (p := p) hA hAΛ hc hcγ
+  obtain ⟨T, hTae⟩ := exists_continuousLinearMap_traceCLM_comp_add_inner_add_mul (p := p) hA hAΛ
+    (b := 0) (β := 0) aestronglyMeasurable_const (ae_of_all _ fun _ => by simp) hc hcγ
   have hT : ∀ u f, (∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
       traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) + c x * value 2 u x =
         f x) → T u = f := fun u f heq => Lp.ext <| by
     filter_upwards [hTae u, heq] with x h1 h2
-    rw [h1, h2]
+    rw [h1, Pi.zero_apply, inner_zero_left, add_zero, h2]
   -- Theorem 9.14 with `b = 0`, with a nonnegative constant `D`.
   obtain ⟨D₀, hD₀⟩ := exists_norm_le_of_continuousWithinAt_of_contDiff_graph hp hp_top hΩ hbdry
     hA hcont hell (b := 0) (β := 0) aestronglyMeasurable_const (ae_of_all _ fun _ => by simp) hc
@@ -293,13 +264,13 @@ theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq (hp : 1 < p)
   obtain ⟨κ, hκ, hκb⟩ := exists_pos_mul_norm_le_of_mem_w1p0Submodule hL hΩ T
     (fun u hu0 => hD₀ u (T u) hu0 (by
       filter_upwards [hTae u] with x hx
-      rw [Pi.zero_apply, inner_zero_left, add_zero]
       exact hx.symm))
     (fun u hu0 hTu => eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero hp_top hpn hL hΩ
       hpos hc0 hu0 (by
         filter_upwards [hTae u, Lp.coeFn_zero ℝ p
           ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega)] with x h1 h2
-        rw [← h1, hTu]
+        rw [Pi.zero_apply, inner_zero_left, add_zero, hTu] at h1
+        rw [← h1]
         exact h2))
   refine ⟨κ⁻¹, fun u f hu0 heq => ?_⟩
   have h := hκb u hu0

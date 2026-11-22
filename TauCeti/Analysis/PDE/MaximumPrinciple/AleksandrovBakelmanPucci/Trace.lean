@@ -166,8 +166,7 @@ theorem le_of_nonneg_traceCLM_comp_iteratedGradient_add_mul_le_frontier
       z ∈ (∅ : Set F))
     by_cases hzΩ : z ∈ Ω
     · exact not_lt.1 fun h => hzV ⟨hzΩ, h⟩
-    · exact hm z ⟨closure_mono hVΩ (frontier_subset_closure hz), by
-        rwa [Ω.isOpen.interior_eq]⟩
+    · exact hm z (Ω.isOpen.frontier_eq ▸ ⟨closure_mono hVΩ (frontier_subset_closure hz), hzΩ⟩)
 
 end PDE
 

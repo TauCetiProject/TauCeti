@@ -25,7 +25,8 @@ neither boundedness of the domain nor compactness of its boundary is needed for 
 When the frontier is compact, `C¹` graphs at every frontier point, with no bound on their
 derivatives, already give a Lipschitz domain with some uniform constant
 (`TauCeti.exists_isLipschitzDomainWith_of_contDiffAt`), since finitely many charts cover the
-frontier; this applies to every bounded open set with `C¹` boundary.
+frontier; this applies to every bounded open set with `C¹` boundary when `E` is
+finite-dimensional.
 
 The analytic inputs are Mathlib's
 `ContDiffAt.exists_lipschitzOnWith_of_nnNorm_lt` and `LipschitzOnWith.extend_real`.
