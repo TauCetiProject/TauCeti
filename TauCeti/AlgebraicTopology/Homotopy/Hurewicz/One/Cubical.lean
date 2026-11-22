@@ -138,8 +138,8 @@ theorem hurewiczCubicalHomologyAddEquiv_apply [PathConnectedSpace X] {x : X}
     (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
     hurewiczCubicalHomologyAddEquiv x a =
       (singularCubicalHomologyIso ℤ X 1).hom (hurewiczHomologyAddEquiv x a) := by
-  rw [hurewiczCubicalHomologyAddEquiv, AddEquiv.trans_apply]
-  rfl
+  rw [hurewiczCubicalHomologyAddEquiv, AddEquiv.trans_apply, LinearEquiv.coe_toAddEquiv,
+    LinearEquiv.coe_addEquiv_apply, Iso.toLinearEquiv_apply]
 
 /-- **The cubical Hurewicz isomorphism on a loop**: the class of a loop `γ` goes to minus the
 cubical class of `γ` read as a `1`-cube. The sign comes from the two boundary conventions: the
