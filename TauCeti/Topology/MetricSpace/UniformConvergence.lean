@@ -44,7 +44,7 @@ theorem tendsto_of_mem_closure_of_lipschitzWith {l : Filter ι} {F : ι → X �
     (hx : x ∈ closure s) : Tendsto (F · x) l (𝓝 z) := by
   let S : Set ι := {i | LipschitzWith K (F i)}
   have hmap : (l.comap ((↑) : S → ι)).map ((↑) : S → ι) = l :=
-    map_comap_of_mem (hF.mono fun i hi => ⟨⟨i, hi⟩, rfl⟩)
+    map_comap_of_mem (by rwa [Subtype.range_coe])
   have heq : EquicontinuousAt (fun j : S => F j.val) x :=
     (LipschitzWith.uniformEquicontinuous (fun j : S => F j.val) K
       fun j => j.property).equicontinuous x
@@ -60,7 +60,7 @@ theorem tendstoUniformlyOn_of_lipschitzOnWith {l : Filter ι} {F : ι → X → 
     (hpt : ∀ x ∈ s, Tendsto (F · x) l (𝓝 (f x))) : TendstoUniformlyOn F f l s := by
   let S : Set ι := {i | LipschitzOnWith K (F i) s}
   have hmap : (l.comap ((↑) : S → ι)).map ((↑) : S → ι) = l :=
-    map_comap_of_mem (hF.mono fun i hi => ⟨⟨i, hi⟩, rfl⟩)
+    map_comap_of_mem (by rwa [Subtype.range_coe])
   have heq : EquicontinuousOn (fun j : S => F j.val) s :=
     (LipschitzOnWith.uniformEquicontinuousOn (fun j : S => F j.val) K
       fun j => j.property).equicontinuousOn
