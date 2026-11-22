@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.LinearAlgebra.Determinant
 
 /-!
 # Skew-symmetric maps and orthogonal hyperplane frames on real inner product spaces
@@ -15,7 +16,9 @@ vector `x` into its orthogonal complement `(ℝ ∙ x)ᗮ`. When `f` also satisf
 preserves inner products and norms, and any two anticommuting skew-symmetric maps take orthogonal
 values at every vector `x`. Evaluating a family of `card ι` pairwise anticommuting skew-symmetric
 maps squaring to `-1` at a unit vector `x` therefore produces an orthonormal family in `(ℝ ∙ x)ᗮ`,
-which forms an `OrthonormalBasis` of `(ℝ ∙ x)ᗮ` whenever `finrank ℝ E = card ι + 1`.
+which forms an `OrthonormalBasis` of `(ℝ ∙ x)ᗮ` whenever `finrank ℝ E = card ι + 1`. In odd
+finite dimension a skew-symmetric linear map has a nonzero kernel vector, since its matrix in an
+orthonormal basis is antisymmetric of odd size.
 
 ## Main definitions and results
 
@@ -32,6 +35,8 @@ which forms an `OrthonormalBasis` of `(ℝ ∙ x)ᗮ` whenever `finrank ℝ E = 
   and in `(ℝ ∙ x)ᗮ`.
 * `TauCeti.orthonormalBasisOrthogonalOfSkewFamily`: when `finrank ℝ E = card ι + 1`, this family
   is an `OrthonormalBasis ι ℝ (ℝ ∙ x)ᗮ`.
+* `TauCeti.exists_ne_zero_apply_eq_zero_of_skew_of_odd_finrank`: a skew-symmetric linear map of an
+  odd-dimensional space has a nonzero kernel vector.
 
 ## References
 
@@ -87,6 +92,28 @@ theorem norm_apply_of_skew_of_sq_neg_id {f : E → E}
     ‖f x‖ = ‖x‖ := by
   rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner,
     inner_apply_apply_of_skew_of_sq_neg_id hf hsq]
+
+/-- A skew-symmetric linear map of a real inner product space of odd finite dimension has a
+nonzero kernel vector. -/
+theorem exists_ne_zero_apply_eq_zero_of_skew_of_odd_finrank [FiniteDimensional ℝ E]
+    {f : E →ₗ[ℝ] E} (hf : ∀ x y, ⟪f x, y⟫_ℝ = -⟪x, f y⟫_ℝ) (hodd : Odd (finrank ℝ E)) :
+    ∃ x, x ≠ 0 ∧ f x = 0 := by
+  let b := (stdOrthonormalBasis ℝ E).toBasis
+  -- The matrix of `f` in an orthonormal basis is antisymmetric, and has odd size.
+  have hM : (LinearMap.toMatrix b b f).transpose = -LinearMap.toMatrix b b f := by
+    ext i j
+    simp only [b, Matrix.transpose_apply, Matrix.neg_apply, LinearMap.toMatrix_apply,
+      OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.coe_toBasis,
+      OrthonormalBasis.repr_apply_apply]
+    rw [real_inner_comm, hf]
+  have hdet : LinearMap.det f = 0 := by
+    have h := congrArg Matrix.det hM
+    rw [Matrix.det_transpose, Matrix.det_neg, Fintype.card_fin, hodd.neg_one_pow,
+      LinearMap.det_toMatrix] at h
+    linarith
+  obtain ⟨x, hx, hx₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+    (LinearMap.bot_lt_ker_of_det_eq_zero hdet).ne'
+  exact ⟨x, hx₀, hx⟩
 
 /-- Two anticommuting skew-symmetric maps on a real inner product space take orthogonal values at
 every vector `x`. -/
