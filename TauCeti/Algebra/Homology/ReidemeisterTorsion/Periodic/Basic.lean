@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.CharP.Two
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
+public import TauCeti.Algebra.Homology.Periodic.Basic
 public import TauCeti.Algebra.Homology.Periodic.ModuleCat
+public import TauCeti.Algebra.Homology.Periodic.Shift
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
 
 /-!
@@ -50,6 +52,21 @@ torsion by a sign, and rescaling the basis vectors by units multiplies it by a m
 units; these are the ambiguities of torsion invariants defined from bases chosen up to signs and
 deck transformations.
 
+Linear equivalences `e₀ : C₀ ≃ D₀` and `e₁ : C₁ ≃ D₁` intertwining the differentials of `C` and of
+another complex `D` up to a nonzero scalar `u` transport the torsion:
+`τ(D, e c) = τ(C, c) · u ^ q / u ^ p`, where `p` and `q` are the ranks of `d₁ : C₁ → C₀` and
+`d₀ : C₀ → C₁` (`HomologicalComplex.parityTorsion_eq_mul_of_linearEquiv`). In particular the
+torsion is invariant under isomorphisms of based complexes (`HomologicalComplex.parityTorsion_map`).
+If instead the equivalences exchange the parities, `e₀ : C₁ ≃ D₀` and `e₁ : C₀ ≃ D₁`, the odd
+bracket of `D` is the even bracket of `C` and conversely, so the torsion is inverted:
+`τ(D, e c) = τ(C, c)⁻¹ · u ^ p / u ^ q`
+(`HomologicalComplex.parityTorsion_eq_inv_mul_of_linearEquiv`). The shift `C⟦k⟧`, whose term in
+degree `i` is `Cᵢ₊ₖ` and whose differentials are multiplied by `(-1) ^ k`, is of the first kind for
+even `k` and of the second kind for odd `k`. Hence an even shift does not change the torsion
+(`HomologicalComplex.parityTorsion_shift_of_even`), and an odd shift, such as the parity shift
+`C⟦1⟧` exchanging the even and odd terms, turns it into `(-1) ^ n₀ · τ(C, c)⁻¹`, where `n₀` is the
+dimension of `C₀` (`HomologicalComplex.parityTorsion_shift_of_odd`).
+
 The torsion is compatible with scalar extension along a homomorphism of fields `φ : F →+* K`
 (`HomologicalComplex.map_parityTorsion`): if `D` is a two-periodic complex over `K` with bases
 `e i` in which the matrices of the differentials are the images under `φ` of those of `C`, then
@@ -72,6 +89,13 @@ torsion of a closed manifold.
 * `HomologicalComplex.parityTorsion_of_d_zero_one`,
   `HomologicalComplex.parityTorsion_of_d_one_zero`: the torsion when one differential vanishes.
 * `HomologicalComplex.parityTorsion_eq_one`: the zero complex has torsion `1`.
+* `HomologicalComplex.parityTorsion_eq_mul_of_linearEquiv`,
+  `HomologicalComplex.parityTorsion_eq_inv_mul_of_linearEquiv`: the torsion under linear
+  equivalences intertwining the differentials up to a scalar, preserving or exchanging the parities.
+* `HomologicalComplex.parityTorsion_map`: the torsion is invariant under isomorphisms of based
+  complexes.
+* `HomologicalComplex.parityTorsion_shift_of_even`, `HomologicalComplex.parityTorsion_shift_of_odd`:
+  the torsion of a shifted complex; the parity shift inverts the torsion up to the sign `(-1) ^ n₀`.
 * `HomologicalComplex.map_parityTorsion`: the torsion of the scalar extension of a based
   two-periodic complex along a homomorphism of fields is the image of its torsion.
 
@@ -89,6 +113,7 @@ public section
 noncomputable section
 
 open CategoryTheory Module
+open CochainComplex (prev_zmod_two_zero next_zmod_two_zero prev_zmod_two_one next_zmod_two_one)
 
 namespace HomologicalComplex
 
@@ -107,13 +132,11 @@ lifts `s₀`, `s₁`, and `0` otherwise. The quotient does not depend on these c
 def parityTorsion : F := by
   classical
   exact if h : C.Acyclic then
-    torsionBracket c ((ComplexShape.up _).prev_eq' (zero_add 1))
-        ((ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)) (h 1)
+    torsionBracket c prev_zmod_two_one next_zmod_two_one (h 1)
         (chosenBoundaryBasis C c 0 1) (chosenBoundaryBasis C c 1 0) (chosenBoundaryLift C c 1 0)
         (chosenBoundaryLift_spec C c 1 0) *
-      (torsionBracket c ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
-        ((ComplexShape.up _).next_eq' (zero_add 1)) (h 0) (chosenBoundaryBasis C c 1 0)
-        (chosenBoundaryBasis C c 0 1) (chosenBoundaryLift C c 0 1)
+      (torsionBracket c prev_zmod_two_zero next_zmod_two_zero (h 0)
+        (chosenBoundaryBasis C c 1 0) (chosenBoundaryBasis C c 0 1) (chosenBoundaryLift C c 0 1)
         (chosenBoundaryLift_spec C c 0 1))⁻¹
   else 0
 
@@ -134,10 +157,8 @@ theorem parityTorsion_eq (h : C.Acyclic) {p q : ℕ}
     (s₀ : Fin q → C.X 0) (hs₀ : ∀ l, (C.d 0 1).hom (s₀ l) = b₁ l)
     (s₁ : Fin p → C.X 1) (hs₁ : ∀ l, (C.d 1 0).hom (s₁ l) = b₀ l) :
     C.parityTorsion c =
-      torsionBracket c ((ComplexShape.up _).prev_eq' (zero_add 1))
-          ((ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)) (h 1) b₁ b₀ s₁ hs₁ *
-        (torsionBracket c ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
-          ((ComplexShape.up _).next_eq' (zero_add 1)) (h 0) b₀ b₁ s₀ hs₀)⁻¹ := by
+      torsionBracket c prev_zmod_two_one next_zmod_two_one (h 1) b₁ b₀ s₁ hs₁ *
+        (torsionBracket c prev_zmod_two_zero next_zmod_two_zero (h 0) b₀ b₁ s₀ hs₀)⁻¹ := by
   have hp : finrank F (LinearMap.range (C.d 1 0).hom) = p := by
     rw [finrank_eq_card_basis b₀, Fintype.card_fin]
   have hq : finrank F (LinearMap.range (C.d 0 1).hom) = q := by
@@ -370,5 +391,202 @@ theorem parityTorsion_eq_one (h₀ : n 0 = 0) (h₁ : n 1 = 0) : C.parityTorsion
   simp [Basis.det_isEmpty]
 
 end TwoTerm
+
+section Transport
+
+/-! ### Transport along linear equivalences -/
+
+variable {c} {D : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))} {m : ZMod 2 → ℕ}
+  {d : ∀ i, Basis (Fin (m i)) F (D.X i)}
+
+/-- The basis of the boundaries of `D` in degree `j'` transported along `e_j` from a basis `b` of
+the boundaries of `C` in degree `j`. -/
+private def mapRangeBasis {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[F] D.X j')
+    (eₖ : C.X k ≃ₗ[F] D.X k') {u : F} (hu : u ≠ 0)
+    (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) {p : ℕ}
+    (b : Basis (Fin p) F (LinearMap.range (C.d k j).hom)) :
+    Basis (Fin p) F (LinearMap.range (D.d k' j').hom) :=
+  b.map (boundaryEquivOfLinearEquiv eⱼ eₖ hu.isUnit h)
+
+private theorem coe_mapRangeBasis {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[F] D.X j')
+    (eₖ : C.X k ≃ₗ[F] D.X k') {u : F} (hu : u ≠ 0)
+    (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) {p : ℕ}
+    (b : Basis (Fin p) F (LinearMap.range (C.d k j).hom)) (l : Fin p) :
+    (mapRangeBasis eⱼ eₖ hu h b l : D.X j') = eⱼ (b l) := by
+  simp [mapRangeBasis]
+
+/-- Rescaled by `u⁻¹`, the images under `e_j` of lifts through the differential of `C` of a
+basis `b` of its boundaries are lifts through the differential of `D` of the transported basis. -/
+private theorem d_inv_smul_apply {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[F] D.X j')
+    (eₖ : C.X k ≃ₗ[F] D.X k') {u : F} (hu : u ≠ 0)
+    (h : ∀ x, (D.d j' k').hom (eⱼ x) = u • eₖ ((C.d j k).hom x)) {q : ℕ}
+    {b : Basis (Fin q) F (LinearMap.range (C.d j k).hom)} {s : Fin q → C.X j}
+    (hs : ∀ l, (C.d j k).hom (s l) = b l) (l : Fin q) :
+    (D.d j' k').hom (u⁻¹ • eⱼ (s l)) = mapRangeBasis eₖ eⱼ hu h b l := by
+  rw [coe_mapRangeBasis, map_smul, h, smul_smul, inv_mul_cancel₀ hu, one_smul, hs]
+
+/-- **Transport of the torsion along linear equivalences.** Let `e₀ : C₀ ≃ D₀` and `e₁ : C₁ ≃ D₁`
+be linear equivalences intertwining the differentials of `C` and `D` up to a nonzero scalar `u`,
+`D.d ∘ e = u • (e ∘ C.d)`, and let the bases `d i` of `D` be the images of the bases `c i` of `C`.
+Then `τ(D, d) = τ(C, c) · u ^ q / u ^ p`, where `p` and `q` are the ranks of the differentials
+`d₁ : C₁ → C₀` and `d₀ : C₀ → C₁`. This holds for every complex, both sides being `0` when `C` is
+not acyclic. -/
+theorem parityTorsion_eq_mul_of_linearEquiv (e₀ : C.X 0 ≃ₗ[F] D.X 0) (e₁ : C.X 1 ≃ₗ[F] D.X 1)
+    {u : F} (hu : u ≠ 0) (h₀₁ : ∀ x, (D.d 0 1).hom (e₀ x) = u • e₁ ((C.d 0 1).hom x))
+    (h₁₀ : ∀ x, (D.d 1 0).hom (e₁ x) = u • e₀ ((C.d 1 0).hom x)) (hm₀ : m 0 = n 0)
+    (hm₁ : m 1 = n 1) (hd₀ : ∀ l, d 0 l = e₀ (c 0 (Fin.cast hm₀ l)))
+    (hd₁ : ∀ l, d 1 l = e₁ (c 1 (Fin.cast hm₁ l))) :
+    D.parityTorsion d = C.parityTorsion c *
+      (u ^ finrank F (LinearMap.range (C.d 0 1).hom) /
+        u ^ finrank F (LinearMap.range (C.d 1 0).hom)) := by
+  have hDC := acyclic_iff_of_linearEquiv_zmod_two (zero_add 1) e₀ e₁ hu.isUnit h₀₁ h₁₀
+  by_cases hC : C.Acyclic
+  swap
+  · rw [parityTorsion_of_not_acyclic C c hC, parityTorsion_of_not_acyclic D d (mt hDC.1 hC),
+      zero_mul]
+  have hD := hDC.2 hC
+  -- Transport the chosen boundary bases of `C` along `e`, and its lifts rescaled by `u⁻¹`.
+  set b₀ := chosenBoundaryBasis C c 1 0
+  set b₁ := chosenBoundaryBasis C c 0 1
+  set s₀ := chosenBoundaryLift C c 0 1
+  set s₁ := chosenBoundaryLift C c 1 0
+  have hs₀ := d_inv_smul_apply e₀ e₁ hu h₀₁ (chosenBoundaryLift_spec C c 0 1)
+  have hs₁ := d_inv_smul_apply e₁ e₀ hu h₁₀ (chosenBoundaryLift_spec C c 1 0)
+  rw [parityTorsion_eq hC b₀ b₁ s₀ (chosenBoundaryLift_spec C c 0 1) s₁
+      (chosenBoundaryLift_spec C c 1 0),
+    parityTorsion_eq hD _ _ _ hs₀ _ hs₁,
+    torsionBracket_eq_pow_mul c prev_zmod_two_one next_zmod_two_one (hC 1) b₁ b₀ s₁
+      (chosenBoundaryLift_spec C c 1 0) prev_zmod_two_one next_zmod_two_one (hD 1) _ _ _ hs₁
+      e₁ hm₁ hd₁ (coe_mapRangeBasis e₁ e₀ hu h₀₁ b₁) u⁻¹ fun _ ↦ rfl,
+    torsionBracket_eq_pow_mul c prev_zmod_two_zero next_zmod_two_zero (hC 0) b₀ b₁ s₀
+      (chosenBoundaryLift_spec C c 0 1) prev_zmod_two_zero next_zmod_two_zero (hD 0) _ _ _ hs₀
+      e₀ hm₀ hd₀ (coe_mapRangeBasis e₀ e₁ hu h₁₀ b₀) u⁻¹ fun _ ↦ rfl]
+  have := torsionBracket_ne_zero c prev_zmod_two_zero next_zmod_two_zero (hC 0) b₀ b₁ s₀
+    (chosenBoundaryLift_spec C c 0 1)
+  simp only [inv_pow]
+  field_simp
+
+/-- **Transport of the torsion along parity-reversing linear equivalences.** Let
+`e₀ : C₁ ≃ D₀` and `e₁ : C₀ ≃ D₁` be linear equivalences exchanging the parities and intertwining
+the differentials of `C` and `D` up to a nonzero scalar `u`, `D.d ∘ e = u • (e ∘ C.d)`, and let the
+bases `d 0` and `d 1` of `D` be the images of the bases `c 1` and `c 0` of `C`. Then
+`τ(D, d) = τ(C, c)⁻¹ · u ^ p / u ^ q`, where `p` and `q` are the ranks of the differentials
+`d₁ : C₁ → C₀` and `d₀ : C₀ → C₁`. This holds for every complex, both sides being `0` when `C` is
+not acyclic. -/
+theorem parityTorsion_eq_inv_mul_of_linearEquiv (e₀ : C.X 1 ≃ₗ[F] D.X 0)
+    (e₁ : C.X 0 ≃ₗ[F] D.X 1) {u : F} (hu : u ≠ 0)
+    (h₀₁ : ∀ x, (D.d 0 1).hom (e₀ x) = u • e₁ ((C.d 1 0).hom x))
+    (h₁₀ : ∀ x, (D.d 1 0).hom (e₁ x) = u • e₀ ((C.d 0 1).hom x)) (hm₀ : m 0 = n 1)
+    (hm₁ : m 1 = n 0) (hd₀ : ∀ l, d 0 l = e₀ (c 1 (Fin.cast hm₀ l)))
+    (hd₁ : ∀ l, d 1 l = e₁ (c 0 (Fin.cast hm₁ l))) :
+    D.parityTorsion d = (C.parityTorsion c)⁻¹ *
+      (u ^ finrank F (LinearMap.range (C.d 1 0).hom) /
+        u ^ finrank F (LinearMap.range (C.d 0 1).hom)) := by
+  have hDC :=
+    acyclic_iff_of_linearEquiv_zmod_two (CharTwo.add_self_eq_zero 1) e₀ e₁ hu.isUnit h₀₁ h₁₀
+  by_cases hC : C.Acyclic
+  swap
+  · rw [parityTorsion_of_not_acyclic C c hC, parityTorsion_of_not_acyclic D d (mt hDC.1 hC),
+      inv_zero, zero_mul]
+  have hD := hDC.2 hC
+  -- Transport the chosen boundary bases of `C` along `e`, and its lifts rescaled by `u⁻¹`; the
+  -- boundaries of `D` in degree `0` come from those of `C` in degree `1`, and conversely.
+  set b₀ := chosenBoundaryBasis C c 1 0
+  set b₁ := chosenBoundaryBasis C c 0 1
+  set s₀ := chosenBoundaryLift C c 0 1
+  set s₁ := chosenBoundaryLift C c 1 0
+  have hs₀ := d_inv_smul_apply e₀ e₁ hu h₀₁ (chosenBoundaryLift_spec C c 1 0)
+  have hs₁ := d_inv_smul_apply e₁ e₀ hu h₁₀ (chosenBoundaryLift_spec C c 0 1)
+  rw [parityTorsion_eq hC b₀ b₁ s₀ (chosenBoundaryLift_spec C c 0 1) s₁
+      (chosenBoundaryLift_spec C c 1 0),
+    parityTorsion_eq hD _ _ _ hs₀ _ hs₁,
+    torsionBracket_eq_pow_mul c prev_zmod_two_zero next_zmod_two_zero (hC 0) b₀ b₁ s₀
+      (chosenBoundaryLift_spec C c 0 1) prev_zmod_two_one next_zmod_two_one (hD 1) _ _ _ hs₁
+      e₁ hm₁ hd₁ (coe_mapRangeBasis e₁ e₀ hu h₀₁ b₀) u⁻¹ fun _ ↦ rfl,
+    torsionBracket_eq_pow_mul c prev_zmod_two_one next_zmod_two_one (hC 1) b₁ b₀ s₁
+      (chosenBoundaryLift_spec C c 1 0) prev_zmod_two_zero next_zmod_two_zero (hD 0) _ _ _ hs₀
+      e₀ hm₀ hd₀ (coe_mapRangeBasis e₀ e₁ hu h₁₀ b₁) u⁻¹ fun _ ↦ rfl]
+  have := torsionBracket_ne_zero c prev_zmod_two_one next_zmod_two_one (hC 1) b₁ b₀ s₁
+    (chosenBoundaryLift_spec C c 1 0)
+  simp only [inv_pow, mul_inv]
+  field_simp
+
+end Transport
+
+section Iso
+
+variable {D : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))} (e : C ≅ D)
+
+/-- The torsion is invariant under isomorphisms of based two-periodic complexes: transporting the
+bases `c i` of `C` along an isomorphism `e : C ≅ D` gives bases of `D` for which `D` has the same
+torsion as `C`. -/
+theorem parityTorsion_map :
+    D.parityTorsion (fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv) = C.parityTorsion c := by
+  rw [parityTorsion_eq_mul_of_linearEquiv (c := c) (Hom.isoApp e 0).toLinearEquiv
+    (Hom.isoApp e 1).toLinearEquiv one_ne_zero (fun x ↦ ?_) (fun x ↦ ?_) rfl rfl (fun l ↦ ?_)
+    (fun l ↦ ?_)]
+  · simp
+  all_goals simp [Hom.comm_apply]
+
+end Iso
+
+section Shift
+
+/-! ### The parity shift -/
+
+variable (C) in
+/-- The identifications of the terms of the shift `C⟦k⟧` with those of `C` intertwine the
+differentials up to the sign `(-1) ^ k`. -/
+private theorem shift_d_apply (k : ℤ) {i j i' j' : ZMod 2} (hi : i' = i + k) (hj : j' = j + k)
+    (x : C.X i') :
+    ((C⟦k⟧).d i j).hom ((C.XIsoOfEq hi).toLinearEquiv x) =
+      ((k.negOnePow : ℤ) : F) • (C.XIsoOfEq hj).toLinearEquiv ((C.d i' j').hom x) := by
+  have h := congr(($(TauCeti.PeriodicComplex.XIsoOfEq_hom_comp_shiftFunctor_obj_d C k hi hj)).hom x)
+  rw [Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply, ← Int.cast_smul_eq_zsmul F] at h
+  exact h
+
+/-- The basis `c b` is the image of `c a` under the identification `Cₐ ≅ C_b` for `a = b`. -/
+private theorem apply_eq_XIsoOfEq {a b : ZMod 2} (h : a = b) (hn : n b = n a) (l : Fin (n b)) :
+    c b l = (C.XIsoOfEq h).toLinearEquiv (c a (Fin.cast hn l)) := by
+  subst h
+  simp
+
+/-- **The torsion of an even shift.** Shifting a based two-periodic complex by an even integer `k`,
+with the bases `c (i + k)` of its terms `C⟦k⟧ᵢ = Cᵢ₊ₖ`, does not change its torsion. -/
+theorem parityTorsion_shift_of_even {k : ℤ} (hk : Even k) :
+    (C⟦k⟧).parityTorsion (fun i ↦ c (i + k)) = C.parityTorsion c := by
+  have hk' : (k : ZMod 2) = 0 := ZMod.intCast_eq_zero_iff_even.2 hk
+  have h₀ : (0 : ZMod 2) = 0 + k := by rw [hk', add_zero]
+  have h₁ : (1 : ZMod 2) = 1 + k := by rw [hk', add_zero]
+  rw [parityTorsion_eq_mul_of_linearEquiv (D := C⟦k⟧) (m := fun i ↦ n (i + k))
+    (C.XIsoOfEq h₀).toLinearEquiv (C.XIsoOfEq h₁).toLinearEquiv (by simp) (shift_d_apply C k h₀ h₁)
+    (shift_d_apply C k h₁ h₀) (congrArg n h₀.symm) (congrArg n h₁.symm)
+    (apply_eq_XIsoOfEq c h₀ _) (apply_eq_XIsoOfEq c h₁ _), Int.negOnePow_even k hk]
+  simp
+
+/-- **The parity shift formula.** Shifting a based two-periodic complex by an odd integer `k`, for
+instance by `1`, exchanges its even and odd terms, `C⟦k⟧ᵢ = Cᵢ₊ₖ` with the bases `c (i + k)`, and
+negates its differentials; its torsion becomes `(-1) ^ n₀ · τ(C, c)⁻¹`, where `n₀` is the dimension
+of `C₀`. Both sides are `0` when `C` is not acyclic. -/
+theorem parityTorsion_shift_of_odd {k : ℤ} (hk : Odd k) :
+    (C⟦k⟧).parityTorsion (fun i ↦ c (i + k)) = (-1) ^ n 0 * (C.parityTorsion c)⁻¹ := by
+  have hk' : (k : ZMod 2) = 1 := ZMod.intCast_eq_one_iff_odd.2 hk
+  have h₀ : (1 : ZMod 2) = 0 + k := by rw [hk', zero_add]
+  have h₁ : (0 : ZMod 2) = 1 + k := by rw [hk', CharTwo.add_self_eq_zero]
+  rw [parityTorsion_eq_inv_mul_of_linearEquiv (D := C⟦k⟧) (m := fun i ↦ n (i + k))
+    (C.XIsoOfEq h₀).toLinearEquiv (C.XIsoOfEq h₁).toLinearEquiv (by simp) (shift_d_apply C k h₀ h₁)
+    (shift_d_apply C k h₁ h₀) (congrArg n h₀.symm) (congrArg n h₁.symm)
+    (apply_eq_XIsoOfEq c h₀ _) (apply_eq_XIsoOfEq c h₁ _), Int.negOnePow_odd k hk]
+  by_cases hC : C.Acyclic
+  swap
+  · simp [parityTorsion_of_not_acyclic C c hC]
+  -- For an acyclic complex `n₀ = p + q`, the sum of the ranks of the two differentials.
+  rw [eq_add_of_exactAt c prev_zmod_two_zero next_zmod_two_zero (hC 0)
+    (chosenBoundaryBasis C c 1 0) (chosenBoundaryBasis C c 0 1)]
+  simp only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, div_eq_mul_inv, ← inv_pow,
+    inv_neg, inv_one]
+  ring
+
+end Shift
 
 end HomologicalComplex

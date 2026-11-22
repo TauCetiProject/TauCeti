@@ -102,6 +102,8 @@ corresponding cardinality equality.
   when `a` is an `n`th power.
 * `TauCeti.ClassFieldTheory.kummerClass_surjective`: every class of `H¹(G_F, muNRep n F)` is a
   Kummer class.
+* `TauCeti.ClassFieldTheory.muNRepEquivZMod_eq_mul_muNRepEquivZMod_pow`: the chosen-root
+  coordinate of `ζ` is `k` times the chosen-root coordinate of `ζ ^ k`.
 
 ## References
 
@@ -187,6 +189,23 @@ theorem baer_muNRep (hn : IsUnit (n : F)) : Module.Baer (ZMod n) (muNRep n F).V 
   have : NeZero n := .of_neZero_natCast F
   Module.Baer.of_addEquiv_zmod
     ((kummerCoeffEquivMuNRep n F).symm.trans (kummerCoeffAddEquivZMod hn))
+
+/-- An element of `μₙ` is determined by the root of unity of `Fˢ` that it represents. -/
+theorem coe_kummerCoeffEquivMuNRep_symm_injective :
+    Function.Injective fun x : (muNRep n F).V ↦
+      ((((kummerCoeffEquivMuNRep n F).symm x).toMul : (SeparableClosure F)ˣ) :
+        SeparableClosure F) :=
+  fun _ _ h ↦ (kummerCoeffEquivMuNRep n F).symm.injective <| Additive.toMul.injective <|
+    Subtype.ext <| Units.ext h
+
+variable {n F} in
+/-- The root of unity represented by `i • x` is the `i`th power of the root represented by `x`. -/
+theorem coe_kummerCoeffEquivMuNRep_symm_zsmul (x : (muNRep n F).V) (i : ℤ) :
+    ((((kummerCoeffEquivMuNRep n F).symm (i • x)).toMul : (SeparableClosure F)ˣ) :
+        SeparableClosure F) =
+      ((((kummerCoeffEquivMuNRep n F).symm x).toMul : (SeparableClosure F)ˣ) :
+        SeparableClosure F) ^ i := by
+  rw [map_zsmul, toMul_zsmul, Subgroup.coe_zpow, Units.val_zpow_eq_zpow_val]
 
 /-! ### Transport of `H¹` -/
 
@@ -408,6 +427,43 @@ variable {n F} in
 theorem muNRepEquivZMod_generator (ζ : F) (hζ : IsPrimitiveRoot ζ n) :
     muNRepEquivZMod ζ hζ (muNRepGenerator ζ hζ) = 1 := by
   simp only [muNRepGenerator, AddEquiv.apply_symm_apply]
+
+variable {n F} in
+/-- The chosen generator `muNRepGenerator ζ hζ` of `μₙ` represents the root `ζ` of `Fˢ`. -/
+@[simp]
+theorem coe_kummerCoeffEquivMuNRep_symm_muNRepGenerator {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
+    ((((kummerCoeffEquivMuNRep n F).symm (muNRepGenerator ζ hζ)).toMul :
+        (SeparableClosure F)ˣ) : SeparableClosure F) = algebraMap F (SeparableClosure F) ζ := by
+  rw [muNRepGenerator, muNRepEquivZMod_symm_apply]
+  simpa only [Nat.cast_one, pow_one] using
+    coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast n F hζ 1
+
+variable {n F} in
+/-- Every element of `μₙ` is its chosen-root coordinate times the chosen generator. -/
+@[simp]
+theorem muNRepEquivZMod_smul_generator {ζ : F} (hζ : IsPrimitiveRoot ζ n) (x : (muNRep n F).V) :
+    muNRepEquivZMod ζ hζ x • muNRepGenerator ζ hζ = x := by
+  apply (muNRepEquivZMod ζ hζ).injective
+  rw [ZMod.map_smul, muNRepEquivZMod_generator, smul_eq_mul, mul_one]
+
+variable {n F} in
+/-- The chosen generator of the primitive root `ζ ^ k` is `k` times the chosen generator of
+`ζ`. -/
+theorem muNRepGenerator_pow {ζ : F} (hζ : IsPrimitiveRoot ζ n) {k : ℕ}
+    (hζk : IsPrimitiveRoot (ζ ^ k) n) : muNRepGenerator (ζ ^ k) hζk = k • muNRepGenerator ζ hζ := by
+  apply coe_kummerCoeffEquivMuNRep_symm_injective n F
+  simp only [coe_kummerCoeffEquivMuNRep_symm_muNRepGenerator, ← natCast_zsmul,
+    coe_kummerCoeffEquivMuNRep_symm_zsmul, map_pow, zpow_natCast]
+
+variable {n F} in
+/-- **The chosen-root coordinate under a change of root**: if `ζ ^ k` is also a primitive root,
+the coordinate of `x` with respect to `ζ` is `k` times its coordinate with respect to `ζ ^ k`. -/
+theorem muNRepEquivZMod_eq_mul_muNRepEquivZMod_pow {ζ : F} (hζ : IsPrimitiveRoot ζ n) {k : ℕ}
+    (hζk : IsPrimitiveRoot (ζ ^ k) n) (x : (muNRep n F).V) :
+    muNRepEquivZMod ζ hζ x = k * muNRepEquivZMod (ζ ^ k) hζk x := by
+  conv_lhs => rw [← muNRepEquivZMod_smul_generator hζk x, muNRepGenerator_pow hζ hζk]
+  rw [ZMod.map_smul, map_nsmul, muNRepEquivZMod_generator, smul_eq_mul, nsmul_eq_mul, mul_one,
+    mul_comm]
 
 /-- The coefficient identification of a primitive root intertwines the action of `G_F` on `μₙ`
 with the trivial action on `ℤ/n`. -/
