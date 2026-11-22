@@ -193,12 +193,8 @@ theorem continuous_toLp (hW : IsFilteredPreBrownianReal ℱ W P)
     rw [heq_lhs, hinc, hprod_res,
       Measure.restrict_restrict (measurableSet_Ioc.prod MeasurableSet.univ), hinter,
       ← integral_indicator (measurableSet_Ioc.prod MeasurableSet.univ)]
-  have hsingle : timeMeasure T {t.val} = 0 := by
-    rw [timeMeasure_apply T (measurableSet_singleton t.val)]
-    exact measure_mono_null (fun x ⟨y, hy, hyx⟩ ↦ hyx ▸ congrArg ((↑) : ℝ≥0 → ℝ) hy.1)
-      Real.volume_singleton
   have hprod_null : ((timeMeasure T).prod P) ({t.val} ×ˢ Set.univ) = 0 := by
-    rw [Measure.prod_prod, hsingle, zero_mul]
+    rw [Measure.prod_prod, measure_singleton, zero_mul]
   have hlim_int : Tendsto (fun n ↦ ∫ ω, (I (u n) ω - I t ω) ^ 2 ∂P) atTop (𝓝 0) := by
     simp_rw [hsub_sq]
     have hbound : ∀ n, ∀ᵐ p ∂(timeMeasure T).prod P,

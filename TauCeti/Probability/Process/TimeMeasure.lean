@@ -69,6 +69,13 @@ theorem timeMeasure_univ (T : ℝ≥0) : timeMeasure T univ = T := by
 instance (T : ℝ≥0) : IsFiniteMeasure (timeMeasure T) :=
   ⟨by simp⟩
 
+/-- Every finite-horizon time measure gives singletons zero mass. -/
+instance (T : ℝ≥0) : NullSingletonClass (timeMeasure T) where
+  measure_singleton t := by
+    rw [timeMeasure_apply T (measurableSet_singleton t)]
+    exact measure_mono_null (fun _ ⟨_, hy, hyx⟩ ↦ hyx ▸ congrArg ((↑) : ℝ≥0 → ℝ) hy.1)
+      Real.volume_singleton
+
 /-- Almost every time lies in the finite horizon, excluding the origin. -/
 theorem ae_mem_Ioc_timeMeasure (T : ℝ≥0) : ∀ᵐ t ∂timeMeasure T, t ∈ Ioc 0 T := by
   rw [timeMeasure_def]
@@ -80,9 +87,8 @@ theorem timeMeasure_zero : timeMeasure 0 = 0 := by
   simp [timeMeasure_def]
 
 /-- The initial time carries no mass, independently of the horizon. -/
-@[simp]
-theorem timeMeasure_singleton_zero (T : ℝ≥0) : timeMeasure T {0} = 0 := by
-  simp [timeMeasure_apply T (measurableSet_singleton 0)]
+theorem timeMeasure_singleton_zero (T : ℝ≥0) : timeMeasure T {0} = 0 :=
+  measure_singleton 0
 
 /-- Restricting time measure again clips the horizon to the smaller endpoint. -/
 @[simp]

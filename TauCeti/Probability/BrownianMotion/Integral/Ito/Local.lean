@@ -19,10 +19,10 @@ import TauCeti.Probability.Process.StoppingApproximation
 # Stopping and localizing the Brownian Itô integral process
 
 This file proves stability of `TauCeti.Probability.IsItoIntegral` under stopping at raw-filtration
-stopping times (`stoppedProcess`, `ite_Ioc`, `ite_Ioc_mul`) without assuming path continuity of `W`
-or adaptation of `I`, deduces local congruence on `[0, τ]` (`stoppedProcess_indist_of_ae_eq`) and
-the native local-martingale property (`locally_martingale`), and constructs predictable
-almost surely continuous local-martingale Itô integral processes across
+stopping times (`stoppedProcess`, `ite_Ioc`, `ite_Ioc_mul`, `ite_le`) without assuming path
+continuity of `W` or adaptation of `I`, deduces local congruence on `[0, τ]`
+(`stoppedProcess_indist_of_ae_eq`) and the native local-martingale property (`locally_martingale`),
+and constructs predictable almost surely continuous local-martingale Itô integral processes across
 `TauCeti.LocallyBrownianIntegrable` (`LocallyBrownianIntegrable.exists_isItoIntegral`).
 
 ## References
@@ -101,6 +101,17 @@ theorem ite_Ioc {σ : Ω → WithTop ℝ≥0} (hW : IsFilteredPreBrownianReal �
   convert (hI.stoppedProcess hW hτ).sub (hI.stoppedProcess hW (hσ.min hτ)) using 1
   ext t ω; simp only [Pi.sub_apply, le_inf_iff, ← not_le (a := (t : WithTop ℝ≥0))]
   split_ifs <;> simp_all
+
+/-- **Concatenating Itô integrals at a stopping time.** Against a filtered pre-Brownian motion,
+switching from integrand `H` on `[0, τ]` to `K` after a stopping time `τ` yields
+`stoppedProcess I τ + J - stoppedProcess J τ`. -/
+theorem ite_le (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) (hτ : IsStoppingTime ℱ τ) :
+    IsItoIntegral ℱ P W (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else K t ω)
+      (MeasureTheory.stoppedProcess I τ + J - MeasureTheory.stoppedProcess J τ) := by
+  convert (hI.stoppedProcess hW hτ).add (hJ.sub (hJ.stoppedProcess hW hτ)) using 1
+  · ext t ω; simp only [Pi.add_apply, Pi.sub_apply]; split_ifs <;> simp
+  · ext t ω; dsimp only [Pi.add_apply, Pi.sub_apply]; ring
 
 /-- **Predictable `ℱ s`-multiplier rule on `(s, τ]`.** Against a filtered pre-Brownian motion,
 multiplying `H` on `(s, τ]` by an `ℱ s`-measurable `ξ` yields the Itô integral

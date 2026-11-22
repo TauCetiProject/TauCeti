@@ -30,9 +30,9 @@ right-continuous at the finite stopped time
 (`MeasureTheory.IsStoppingTime.aemeasurable_stoppedValue`), without adaptation or a
 finite-measure assumption.
 
-On a fixed finite horizon `T`, `dyadicGrid d T` clips the mesh-`2⁻ᵈ` grid at `T` in
-`dyadicCount d T` steps and `dyadicStopIndex d T u` locates `min T (dyadicCeilTime d u)` as a grid
-point.
+On a fixed finite horizon `T`, `dyadicGrid d T` clips the mesh-`2⁻ᵈ` grid at `T` at the padded
+terminal index `dyadicCount d T`, and `dyadicStopIndex d T u` locates
+`min T (dyadicCeilTime d u)` as a grid point.
 
 Stopped-value convergence is asserted only at finite times: the native value at infinity
 is a fallback, not a terminal path limit.
@@ -224,13 +224,16 @@ theorem tendsto_stoppedProcess_dyadicCeilTime {Ω E : Type*} [TopologicalSpace E
       (τ := fun ω => min (t : WithTop ℝ≥0) (τ ω)) (ω := ω) hfinite hmin
       (Eventually.of_forall fun n => min_le_min_left _ (le_dyadicCeilTime n _)) hX
 
-/-- Number of steps of mesh `2⁻ᵈ` needed to cover `[0, T]`, namely `⌊T * 2 ^ d⌋₊ + 1`. -/
+/-- Padded terminal index `⌊T * 2 ^ d⌋₊ + 1` at which `dyadicGrid d T` reaches `T`.
+When `T` is already a mesh point `k / 2 ^ d` (in particular at `T = 0`), `dyadicGrid d T` already
+hits `T` at `⌊T * 2 ^ d⌋₊`, so the final step `[⌊T * 2 ^ d⌋₊, dyadicCount d T]` is degenerate
+(zero-length); otherwise it is strictly positive. -/
 def dyadicCount (d : ℕ) (T : ℝ≥0) : ℕ := ⌊T * 2 ^ d⌋₊ + 1
 
 /-- Explicit formula for `dyadicCount d T`. -/
 theorem dyadicCount_def (d : ℕ) (T : ℝ≥0) : dyadicCount d T = ⌊T * 2 ^ d⌋₊ + 1 := (rfl)
 
-/-- The horizon-clipped dyadic step count is always positive. -/
+/-- The padded terminal index `dyadicCount d T` is always positive. -/
 theorem dyadicCount_pos (d : ℕ) (T : ℝ≥0) : 0 < dyadicCount d T := Nat.succ_pos _
 
 /-- The nonnegative dyadic grid of mesh `2⁻ᵈ` clipped at horizon `T`. -/
