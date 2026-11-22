@@ -19,7 +19,7 @@ This file defines the complex error functions as entire functions, with the inte
   `TauCeti.Complex.erfc z = 1 − erf z` (DLMF 7.2.2);
 * the Faddeeva function `TauCeti.faddeeva z = e^{−z²} erfc(−iz)` (DLMF 7.2.3).
 
-The Fresnel integrals are in `TauCeti.Analysis.SpecialFunctions.Erf.Fresnel`.
+The Fresnel integrals are in `TauCeti.Analysis.SpecialFunctions.Erf.Fresnel.Basic`.
 
 ## Main results
 
