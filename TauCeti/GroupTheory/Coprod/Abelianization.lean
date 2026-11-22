@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Prod
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.Coprod.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -62,18 +61,8 @@ def coprodMulEquiv :
     (hom_ext _ _ (Monoid.Coprod.hom_ext (by ext; simp [coprodToProd, prodToCoprod])
       (by ext; simp [coprodToProd, prodToCoprod])))
     (by
-      have h1 := DFunLike.congr_fun (hom_ext
-        ((coprodToProd.comp prodToCoprod).comp (.inl (Group.Abelianization G)
-          (Group.Abelianization H)))
-        (.inl _ _) (by ext <;> simp [coprodToProd, prodToCoprod]))
-      have h2 := DFunLike.congr_fun (hom_ext
-        ((coprodToProd.comp prodToCoprod).comp (.inr (Group.Abelianization G)
-          (Group.Abelianization H)))
-        (.inr _ _) (by ext <;> simp [coprodToProd, prodToCoprod]))
-      refine MonoidHom.ext fun ⟨a, b⟩ ↦ ?_
-      have hab : (a, b) = (a, 1) * (1, b) := by simp
-      rw [MonoidHom.id_apply, hab, map_mul]
-      simpa [← hab] using congrArg₂ (· * ·) (h1 a) (h2 b))
+      rw [prodToCoprod, MonoidHom.comp_coprod, ← MonoidHom.coprod_inl_inr]
+      congr 1 <;> exact hom_ext _ _ (by ext <;> simp [coprodToProd]))
 
 @[simp]
 theorem coprodMulEquiv_of_inl (g : G) :

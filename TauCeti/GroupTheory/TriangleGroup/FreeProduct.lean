@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.GroupTheory.Coprod.Abelianization
 public import TauCeti.GroupTheory.Coprod.Torsion

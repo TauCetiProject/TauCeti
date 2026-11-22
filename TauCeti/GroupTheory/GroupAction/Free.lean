@@ -49,6 +49,8 @@ of a quotient chart in the free proper quotient theorem.
 * `MulAction.selfEquivOrbitsQuotientProd_symm_apply`: the inverse of the orbit decomposition of a
   free action evaluated at `(q, g)` is `g • q.out`.
 * `MulAction.injOn_smul_univ_prod_iff`: injectivity of `(g, s) ↦ g • σ s` on a tube `G × U`.
+* `Subgroup.isCancelSMul_quotient_iff`: `K` acts freely on `G ⧸ H` if and only if no nonidentity
+  element of `K` has a conjugate in `H`.
 
 ## References
 
@@ -162,3 +164,26 @@ theorem injOn_smul_univ_prod_iff {S : Type*} {σ : S → X} {U : Set S} :
     rw [hmem]
 
 end MulAction
+
+namespace Subgroup
+
+variable {G : Type*} [Group G]
+
+/-- A subgroup `K` acts freely by left multiplication on the coset space `G ⧸ H` if and only if `K`
+meets every conjugate of `H` trivially. -/
+theorem isCancelSMul_quotient_iff {H K : Subgroup G} :
+    IsCancelSMul K (G ⧸ H) ↔ ∀ k ∈ K, ∀ g : G, g⁻¹ * k * g ∈ H → k = 1 := by
+  rw [isCancelSMul_iff_eq_one_of_smul_eq]
+  refine ⟨fun hfree k hk g hmem ↦ ?_, fun hconj k q hkq ↦ ?_⟩
+  · have hfix : (⟨k⁻¹, inv_mem hk⟩ : K) • (g : G ⧸ H) = (g : G ⧸ H) := by
+      rw [Subgroup.smul_def, MulAction.Quotient.smul_coe, smul_eq_mul, QuotientGroup.eq]
+      simpa [mul_assoc] using hmem
+    have hk1 : (⟨k⁻¹, inv_mem hk⟩ : K) = 1 := hfree ⟨k⁻¹, inv_mem hk⟩ (g : G ⧸ H) hfix
+    exact inv_eq_one.mp (congrArg Subtype.val hk1)
+  · obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+    rw [Subgroup.smul_def, MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq] at hkq
+    have hmem : g⁻¹ * (k : G)⁻¹ * g ∈ H := by
+      simpa [mul_assoc] using hkq
+    exact Subtype.ext (inv_eq_one.mp (hconj (k : G)⁻¹ (inv_mem k.property) g hmem))
+
+end Subgroup

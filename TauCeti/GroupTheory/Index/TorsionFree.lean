@@ -5,36 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.Torsion
 import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
 # Divisibility of the index of a torsion-free subgroup by orders of torsion elements
 
-Let `H` and `K` be subgroups of a group `G`. Left multiplication by `K` on the coset space `G ⧸ H`
-is free (`IsCancelSMul K (G ⧸ H)`) if and only if `K` meets every conjugate of `H` trivially, that
-is, `g⁻¹ * k * g ∈ H → k = 1` for all `k ∈ K` and `g : G`. When this holds, every `K`-orbit in
-`G ⧸ H` is a copy of `K`, so `Nat.card K` divides `H.index` without any finiteness assumption on
-`H` or `G` (`H.index` is `0` for infinite-index subgroups).
+If `H` is a torsion-free subgroup (`IsMulTorsionFree H`) of a group `G`, no nonidentity finite-order
+element of `G` has a conjugate in `H`:
 
-In particular, if `H` is torsion-free (`IsMulTorsionFree H`), no nonidentity finite-order element
-of `G` has a conjugate in `H`:
-
+* any torsion subgroup `K ≤ G` acts freely on `G ⧸ H`;
 * for every finite subgroup `K ≤ G`, `Nat.card K ∣ H.index`;
 * for every element `x : G` of finite order, `orderOf x ∣ H.index`.
 
 ## Main results
 
-* `Subgroup.isCancelSMul_quotient_iff`: `K` acts freely on `G ⧸ H` if and only if no nonidentity
-  element of `K` has a conjugate in `H`.
-* `Subgroup.natCard_dvd_index_of_forall_conj_mem`: under that condition, `Nat.card K ∣ H.index`.
 * `Subgroup.isCancelSMul_quotient_of_isMulTorsionFree`: a torsion subgroup `K` acts freely on
   `G ⧸ H` when `H` is torsion-free.
 * `Subgroup.natCard_dvd_index_of_isMulTorsionFree`: `Nat.card K ∣ H.index` when `H` is torsion-free
   and `K` is finite.
-* `Subgroup.orderOf_dvd_index_of_isMulTorsionFree`,
-  `Subgroup.orderOf_dvd_index_of_forall_isOfFinOrder`: `orderOf x ∣ H.index` for any finite-order
+* `Subgroup.orderOf_dvd_index_of_isMulTorsionFree`: `orderOf x ∣ H.index` for any finite-order
   element `x : G` and torsion-free subgroup `H ≤ G`.
 -/
 
@@ -43,31 +33,6 @@ public section
 namespace Subgroup
 
 variable {G : Type*} [Group G]
-
-/-- A subgroup `K` acts freely by left multiplication on the coset space `G ⧸ H` if and only if `K`
-meets every conjugate of `H` trivially. -/
-theorem isCancelSMul_quotient_iff {H K : Subgroup G} :
-    IsCancelSMul K (G ⧸ H) ↔ ∀ k ∈ K, ∀ g : G, g⁻¹ * k * g ∈ H → k = 1 := by
-  rw [isCancelSMul_iff_eq_one_of_smul_eq]
-  refine ⟨fun hfree k hk g hmem ↦ ?_, fun hconj k q hkq ↦ ?_⟩
-  · have hfix : (⟨k⁻¹, inv_mem hk⟩ : K) • (g : G ⧸ H) = (g : G ⧸ H) := by
-      rw [Subgroup.smul_def, MulAction.Quotient.smul_coe, smul_eq_mul, QuotientGroup.eq]
-      simpa [mul_assoc] using hmem
-    have hk1 : (⟨k⁻¹, inv_mem hk⟩ : K) = 1 := hfree ⟨k⁻¹, inv_mem hk⟩ (g : G ⧸ H) hfix
-    exact inv_eq_one.mp (congrArg Subtype.val hk1)
-  · obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
-    rw [Subgroup.smul_def, MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq] at hkq
-    have hmem : g⁻¹ * (k : G)⁻¹ * g ∈ H := by
-      simpa [mul_assoc] using hkq
-    exact Subtype.ext (inv_eq_one.mp (hconj (k : G)⁻¹ (inv_mem k.property) g hmem))
-
-/-- If a subgroup `K` meets every conjugate of `H` trivially, then `Nat.card K` divides `H.index`.
-No finiteness assumption is needed since `H.index` vanishes when `G ⧸ H` is infinite. -/
-theorem natCard_dvd_index_of_forall_conj_mem {H K : Subgroup G}
-    (h : ∀ k ∈ K, ∀ g : G, g⁻¹ * k * g ∈ H → k = 1) : Nat.card K ∣ H.index := by
-  have : IsCancelSMul K (G ⧸ H) := isCancelSMul_quotient_iff.mpr h
-  rw [H.index_eq_card]
-  exact MulAction.natCard_dvd_natCard_of_isCancelSMul
 
 /-- If `H` is torsion-free, then any subgroup `K` all of whose elements have finite order acts
 freely on `G ⧸ H`. -/
@@ -99,15 +64,5 @@ theorem orderOf_dvd_index_of_isMulTorsionFree (H : Subgroup G) [IsMulTorsionFree
   have : Finite (zpowers x) := hx.finite_zpowers
   rw [← Nat.card_zpowers x]
   exact natCard_dvd_index_of_isMulTorsionFree H (zpowers x)
-
-/-- Elementwise form of `Subgroup.orderOf_dvd_index_of_isMulTorsionFree`: if every finite-order
-element of `H` is `1`, then `orderOf x ∣ H.index` for every finite-order element `x : G`. -/
-theorem orderOf_dvd_index_of_forall_isOfFinOrder {H : Subgroup G}
-    (hH : ∀ g ∈ H, IsOfFinOrder g → g = 1) {x : G} (hx : IsOfFinOrder x) :
-    orderOf x ∣ H.index := by
-  have : IsMulTorsionFree H :=
-    .of_not_isOfFinOrder fun y hy hfin ↦
-      hy (Subtype.ext (hH y.val y.property (H.subtype.isOfFinOrder hfin)))
-  exact orderOf_dvd_index_of_isMulTorsionFree H hx
 
 end Subgroup

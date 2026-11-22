@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Data.ZMod.Basic
-public import TauCeti.GroupTheory.CoprodI
-public import TauCeti.GroupTheory.Index.TorsionFree
+public import TauCeti.GroupTheory.CoprodI.Basic
 public import TauCeti.NumberTheory.Modular.Generators
+import TauCeti.Algebra.Group.Equiv.Pow
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
+import TauCeti.GroupTheory.Coprod.Conj
 import TauCeti.GroupTheory.TriangleGroup.FreeProduct
 
 /-!
@@ -30,8 +30,8 @@ From this decomposition we derive the fundamental group-theoretic invariants of 
   `T` to `1`, `U = S T⁻¹` to `2`, `S` to `3`, and `R = S T` to `4`; hence the commutator subgroup
   of `PSL(2, ℤ)` has index `6`.
 * **Conjugacy of order-three generators**: `R` and `R²` (and likewise `U` and `U²`, as well as `R`
-  and `U`) lie in distinct conjugacy classes of `PSL(2, ℤ)`, detected by their images `4` and `2`
-  in `ZMod 6`, whereas `U` is conjugate to `R²` and `R` is conjugate to `U²`.
+  and `U`) lie in distinct conjugacy classes of `PSL(2, ℤ)`, whereas `U` is conjugate to `R²` and
+  `R` is conjugate to `U²`.
 * **Torsion classification**: every finite-order element of `PSL(2, ℤ)` has order `1`, `2`, or `3`;
   elements of order `2` form the single conjugacy class of `S`, and elements of order `3` split into
   the two conjugacy classes of `R` and `R²` (equivalently `U²` and `U`).
@@ -61,9 +61,8 @@ From this decomposition we derive the fundamental group-theoretic invariants of 
   `TauCeti.ModularGroup.orderOf_eq_three_iff_isConj_coe_R`,
   `TauCeti.ModularGroup.orderOf_eq_three_iff_isConj_coe_U`,
   `TauCeti.ModularGroup.orderOf_mem_of_isOfFinOrder`: complete torsion and order classification.
-* `TauCeti.ModularGroup.six_dvd_index_of_isMulTorsionFree`,
-  `TauCeti.ModularGroup.six_dvd_index_of_torsionFree`: `6` divides the index of any torsion-free
-  subgroup of `PSL(2, ℤ)`.
+* `TauCeti.ModularGroup.six_dvd_index_of_isMulTorsionFree`: `6` divides the index of any
+  torsion-free subgroup of `PSL(2, ℤ)`.
 
 ## References
 
@@ -303,38 +302,25 @@ theorem index_commutator : (commutator PSL(2, ℤ)).index = 6 :=
 
 /-! ### Conjugacy of order-three generators and torsion classification -/
 
-/-- In `PSL(2, ℤ)`, `R` is not conjugate to `R²`, since their images in `ZMod 6` are `4` and `2`. -/
+/-- In `PSL(2, ℤ)`, `R` is not conjugate to `R²`, since they map into `ℤ/3ℤ` with distinct
+images `1` and `2` under `coprodEquiv`. -/
 theorem not_isConj_coe_R_sq : ¬ IsConj (R : PSL(2, ℤ)) ((R : PSL(2, ℤ)) ^ 2) := by
   intro h
-  have hab : Group.Abelianization.of (R : PSL(2, ℤ)) =
-      Group.Abelianization.of ((R : PSL(2, ℤ)) ^ 2) :=
-    isConj_iff_eq.mp (Group.Abelianization.of.map_isConj h)
-  have hval := congrArg (fun z ↦ abelianizationAddEquiv (.ofMul z)) hab
-  simp only [map_pow, ofMul_pow, map_nsmul, abelianizationAddEquiv_ofMul_of_coe_R] at hval
-  revert hval
+  have hc := coprodEquiv.toMonoidHom.map_isConj h
+  rw [MulEquiv.coe_toMonoidHom, map_pow, coprodEquiv_coe_R, ← map_pow,
+    Monoid.Coprod.isConj_inr_iff, isConj_iff_eq] at hc
+  have h12 : (1 : ZMod 3) = 2 := by
+    simpa [← ofAdd_nsmul] using congrArg Multiplicative.toAdd hc
+  revert h12
   decide
 
-/-- In `PSL(2, ℤ)`, `U` is not conjugate to `U²`, since their images in `ZMod 6` are `2` and `4`. -/
-theorem not_isConj_coe_U_sq : ¬ IsConj (U : PSL(2, ℤ)) ((U : PSL(2, ℤ)) ^ 2) := by
-  intro h
-  have hab : Group.Abelianization.of (U : PSL(2, ℤ)) =
-      Group.Abelianization.of ((U : PSL(2, ℤ)) ^ 2) :=
-    isConj_iff_eq.mp (Group.Abelianization.of.map_isConj h)
-  have hval := congrArg (fun z ↦ abelianizationAddEquiv (.ofMul z)) hab
-  simp only [map_pow, ofMul_pow, map_nsmul, abelianizationAddEquiv_ofMul_of_coe_U] at hval
-  revert hval
-  decide
+/-- In `PSL(2, ℤ)`, `U` is not conjugate to `U²`. -/
+theorem not_isConj_coe_U_sq : ¬ IsConj (U : PSL(2, ℤ)) ((U : PSL(2, ℤ)) ^ 2) :=
+  fun h ↦ not_isConj_coe_R_sq ((isConj_coe_R_coe_U_sq.trans h.symm).trans isConj_coe_U_coe_R_sq)
 
-/-- In `PSL(2, ℤ)`, `R = S T` and `U = S T⁻¹` are not conjugate, since their images in `ZMod 6` are
-`4` and `2`. -/
-theorem not_isConj_coe_R_coe_U : ¬ IsConj (R : PSL(2, ℤ)) (U : PSL(2, ℤ)) := by
-  intro h
-  have hab : Group.Abelianization.of (R : PSL(2, ℤ)) = Group.Abelianization.of (U : PSL(2, ℤ)) :=
-    isConj_iff_eq.mp (Group.Abelianization.of.map_isConj h)
-  have hval := congrArg (fun z ↦ abelianizationAddEquiv (.ofMul z)) hab
-  rw [abelianizationAddEquiv_ofMul_of_coe_R, abelianizationAddEquiv_ofMul_of_coe_U] at hval
-  revert hval
-  decide
+/-- In `PSL(2, ℤ)`, `R = S T` and `U = S T⁻¹` are not conjugate. -/
+theorem not_isConj_coe_R_coe_U : ¬ IsConj (R : PSL(2, ℤ)) (U : PSL(2, ℤ)) :=
+  fun h ↦ not_isConj_coe_R_sq (h.trans isConj_coe_U_coe_R_sq)
 
 /-- **Torsion classification in `PSL(2, ℤ)` (in terms of `S` and `R`).** An element of `PSL(2, ℤ)`
 has finite order if and only if it is `1` or conjugate to `S`, `R`, or `R²`. -/
@@ -469,20 +455,10 @@ instance instIsMulTorsionFreeCommutator : IsMulTorsionFree (commutator PSL(2, �
 /-- Every torsion-free subgroup `Γ' ≤ PSL(2, ℤ)` has index divisible by `6`. -/
 theorem six_dvd_index_of_isMulTorsionFree (Γ' : Subgroup PSL(2, ℤ)) [IsMulTorsionFree Γ'] :
     6 ∣ Γ'.index := by
-  have hS : IsOfFinOrder (S : PSL(2, ℤ)) := orderOf_pos_iff.mp (by simp)
-  have hR : IsOfFinOrder (R : PSL(2, ℤ)) := orderOf_pos_iff.mp (by simp)
-  have h2 : 2 ∣ Γ'.index := by
-    simpa [orderOf_coe_S] using Γ'.orderOf_dvd_index_of_isMulTorsionFree hS
-  have h3 : 3 ∣ Γ'.index := by
-    simpa [orderOf_coe_R] using Γ'.orderOf_dvd_index_of_isMulTorsionFree hR
-  exact Nat.Coprime.mul_dvd_of_dvd_of_dvd (by decide : Nat.Coprime 2 3) h2 h3
-
-/-- Predicate-form version of `six_dvd_index_of_isMulTorsionFree`: if `Γ' ≤ PSL(2, ℤ)` contains no
-nontrivial finite-order elements, then `6 ∣ Γ'.index`. -/
-theorem six_dvd_index_of_torsionFree {Γ' : Subgroup PSL(2, ℤ)}
-    (h : ∀ g ∈ Γ', IsOfFinOrder g → g = 1) : 6 ∣ Γ'.index := by
-  have : IsMulTorsionFree Γ' := IsMulTorsionFree.of_not_isOfFinOrder fun ⟨g, hg⟩ hne hfin ↦
-    hne (Subtype.ext (h g hg (Γ'.subtype.isOfFinOrder hfin)))
-  exact six_dvd_index_of_isMulTorsionFree Γ'
+  have : IsMulTorsionFree (Γ'.map triangleGroupEquiv.symm.toMonoidHom) :=
+    (triangleGroupEquiv.symm.subgroupMap Γ').isMulTorsionFree_iff.mp inferInstance
+  simpa [Subgroup.index_map_equiv, show Nat.lcm 3 2 = 6 by decide] using
+    TriangleGroup.lcm_dvd_index_of_isMulTorsionFree (a := 3) (b := 2)
+      (Γ'.map triangleGroupEquiv.symm.toMonoidHom)
 
 end TauCeti.ModularGroup

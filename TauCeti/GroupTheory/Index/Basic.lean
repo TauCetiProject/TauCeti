@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Group.Subgroup.Map
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Tactic.Group
+import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
 # Subgroup index: composition, transversals and adjoining the centre
@@ -76,6 +77,8 @@ centre gives the `Γ.withCenter` readings.
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}` and `a ∉ Γ`.
+* `Subgroup.natCard_dvd_index_of_forall_conj_mem`: if `K` meets every conjugate of `H` trivially,
+  then `Nat.card K ∣ H.index`.
 -/
 
 
@@ -465,6 +468,14 @@ theorem index_eq_two_mul_index_withCenter (ha : a ∈ Subgroup.center G) (haΓ :
     (hcenter : ∀ c ∈ Subgroup.center G, c = 1 ∨ c = a) : Γ.index = 2 * Γ.withCenter.index :=
   Subgroup.withCenter_def Γ ▸
     index_eq_two_mul_index_sup _ Subgroup.le_normalizer_of_normal ha haΓ hcenter
+
+/-- If a subgroup `K` meets every conjugate of `H` trivially, then `Nat.card K` divides `H.index`.
+No finiteness assumption is needed since `H.index` vanishes when `G ⧸ H` is infinite. -/
+theorem natCard_dvd_index_of_forall_conj_mem {H K : Subgroup G}
+    (h : ∀ k ∈ K, ∀ g : G, g⁻¹ * k * g ∈ H → k = 1) : Nat.card K ∣ H.index := by
+  have : IsCancelSMul K (G ⧸ H) := isCancelSMul_quotient_iff.mpr h
+  rw [H.index_eq_card]
+  exact MulAction.natCard_dvd_natCard_of_isCancelSMul
 
 end Subgroup
 

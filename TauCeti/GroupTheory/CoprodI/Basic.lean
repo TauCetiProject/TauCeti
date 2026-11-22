@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.CoprodI
+public import Mathlib.Algebra.Group.ULift
 public import Mathlib.GroupTheory.Coprod.Basic
+public import Mathlib.GroupTheory.CoprodI
 
 /-!
 # Isomorphisms of free products of monoids
@@ -20,7 +21,10 @@ fundamental group of a wedge of circles as a free group.
 The free product of a family of two monoids indexed by `Bool` or `Fin 2` is the binary free
 product `Monoid.Coprod` of its two members, by the isomorphism matching the canonical inclusions.
 Under the `Bool` isomorphism, the homomorphisms induced by a pair of homomorphisms on the two
-members correspond, so one of them is injective exactly when the other is.
+members correspond, so one of them is injective exactly when the other is.  Conversely, for any
+two monoids or groups `M` and `N` in possibly different universes, `Monoid.Coprod.toCoprodI`
+identifies `M ∗ N` with the indexed free product of the universe-lifted `Bool` family
+`Monoid.Coprod.Factors M N`.
 
 A free product of trivial monoids is trivial; in particular, so is the free product of an empty
 family. The free product of a family indexed by a type with a unique element is that single
@@ -35,6 +39,8 @@ from the free product.
 * `Monoid.CoprodI.coprodLift_injective_iff`: for a family `M` indexed by `Bool`, homomorphisms
   `f i : M i →* N` induce an injective homomorphism `Coprod (M false) (M true) →* N` if and only
   if they induce an injective homomorphism `CoprodI M →* N`.
+* `Monoid.Coprod.Factors`, `Monoid.Coprod.toCoprodI`: universe-lifted `Bool`-indexed family for
+  `M ∗ N` and the comparison isomorphism `M ∗ N ≃* CoprodI (Monoid.Coprod.Factors M N)`.
 * `Monoid.CoprodI.finTwoEquivCoprod`: `CoprodI M ≃* Coprod (M 0) (M 1)` for a family `M` indexed
   by `Fin 2`.
 * `Monoid.CoprodI.instUnique`: the free product of a family of trivial monoids is trivial.
@@ -243,3 +249,74 @@ theorem optionEquivOfSubsingleton_symm_of {i : ι} (m : M (some i)) :
 end Option
 
 end Monoid.CoprodI
+
+namespace Monoid.Coprod
+
+universe u v
+
+/-- The factors of `M ∗ N` as a family indexed by `Bool`, lifted to a common universe: `false`
+gives `M` and `true` gives `N`. -/
+@[expose] def Factors (M : Type u) (N : Type v) : Bool → Type max u v
+  | false => ULift.{v} M
+  | true => ULift.{u} N
+
+instance instMonoidFactors (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
+    ∀ b, Monoid (Factors M N b)
+  | false => inferInstanceAs (Monoid (ULift M))
+  | true => inferInstanceAs (Monoid (ULift N))
+
+instance instGroupFactors (G : Type u) (H : Type v) [Group G] [Group H] (b : Bool) :
+    Group (Factors G H b) where
+  toMonoid := instMonoidFactors G H b
+  inv x := match b, x with
+    | false, x => ULift.up x.down⁻¹
+    | true, y => ULift.up y.down⁻¹
+  div x y := match b, x, y with
+    | false, x, y => ULift.up (x.down / y.down)
+    | true, x, y => ULift.up (x.down / y.down)
+  zpow n x := match b, x with
+    | false, x => ULift.up (x.down ^ n)
+    | true, y => ULift.up (y.down ^ n)
+  div_eq_mul_inv a c := by cases b <;> exact ULift.ext (div_eq_mul_inv a.down c.down)
+  zpow_zero' a := by cases b <;> exact ULift.ext (zpow_zero a.down)
+  zpow_succ' n a := by cases b <;> exact ULift.ext (DivInvMonoid.zpow_succ' n a.down)
+  zpow_neg' n a := by cases b <;> exact ULift.ext (DivInvMonoid.zpow_neg' n a.down)
+  inv_mul_cancel a := by cases b <;> exact ULift.ext (inv_mul_cancel a.down)
+
+section Monoid
+
+variable {M : Type u} {N : Type v} [Monoid M] [Monoid N]
+
+/-- The comparison isomorphism from the free product `M ∗ N` of two monoids (possibly in different
+universes) to the indexed free product of the family `Factors M N`. -/
+def toCoprodI : M ∗ N ≃* CoprodI (Factors M N) :=
+  (MulEquiv.coprodCongr MulEquiv.ulift.symm MulEquiv.ulift.symm).trans
+    (CoprodI.boolEquivCoprod (Factors M N)).symm
+
+@[simp]
+theorem toCoprodI_inl (m : M) :
+    toCoprodI (inl m : M ∗ N) = CoprodI.of (i := false) (ULift.up m) := by
+  simp [toCoprodI]
+  rfl
+
+@[simp]
+theorem toCoprodI_inr (n : N) :
+    toCoprodI (inr n : M ∗ N) = CoprodI.of (i := true) (ULift.up n) := by
+  simp [toCoprodI]
+  rfl
+
+@[simp]
+theorem toCoprodI_symm_of_false (m : Factors M N false) :
+    toCoprodI.symm (CoprodI.of (i := false) m) = inl m.down := by
+  simp [toCoprodI]
+  rfl
+
+@[simp]
+theorem toCoprodI_symm_of_true (n : Factors M N true) :
+    toCoprodI.symm (CoprodI.of (i := true) n) = inr n.down := by
+  simp [toCoprodI]
+  rfl
+
+end Monoid
+
+end Monoid.Coprod

@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Coprod.Basic
-import Mathlib.Algebra.Group.ULift
-import TauCeti.GroupTheory.CoprodI
+import TauCeti.GroupTheory.CoprodI.Basic
 
 /-!
 # Uniqueness of reduced words in a free product
@@ -32,8 +31,8 @@ the image under `Monoid.Coprod.map f g` of the word is again a nonempty reduced 
 
 Mathlib builds `M ∗ N` independently of the free product `Monoid.CoprodI` of an indexed family.
 The free product of two monoids, possibly in different universes, is identified with the free
-product `Monoid.CoprodI` of the family of their `ULift`s indexed by `Bool`
-(`Monoid.CoprodI.boolEquivCoprod`), whose reduced words are unique (`Monoid.CoprodI.Word.equiv`),
+product `Monoid.CoprodI` of the family `Monoid.Coprod.Factors M N` of their `ULift`s indexed by
+`Bool` (`Monoid.Coprod.toCoprodI`), whose reduced words are unique (`Monoid.CoprodI.Word.equiv`),
 and reduced words of `M ∗ N` go to reduced words there.
 
 ## References
@@ -50,39 +49,25 @@ universe u v
 
 section Monoid
 
-variable {M : Type u} {N : Type v} [Monoid M] [Monoid N]
+variable {M : Type u} {N : Type v}
 
 /-! ### Reduced words of `M ∗ N` as reduced words of `Monoid.CoprodI` -/
-
-/-- The factors of `M ∗ N` as a family indexed by `Bool`, lifted to a common universe: `false`
-gives `M` and `true` gives `N`. -/
-private abbrev Factors (M : Type u) (N : Type v) : Bool → Type max u v
-  | false => ULift.{v} M
-  | true => ULift.{u} N
-
-private instance : ∀ b, Monoid (Factors M N b)
-  | false => inferInstanceAs (Monoid (ULift M))
-  | true => inferInstanceAs (Monoid (ULift N))
-
-/-- The comparison isomorphism from the free product of two monoids to the free product of the
-family `Factors M N`. -/
-private def toCoprodI : M ∗ N ≃* CoprodI (Factors M N) :=
-  (MulEquiv.coprodCongr MulEquiv.ulift.symm MulEquiv.ulift.symm).trans
-    (CoprodI.boolEquivCoprod (Factors M N)).symm
 
 -- `toSigma` is reducible so that unification identifies the factor `(toSigma s).1` of a letter
 -- `s = .inl m` with `false` (and of `s = .inr n` with `true`): `simp` cannot rewrite `toSigma s`
 -- inside the dependent index of `Monoid.CoprodI.of`.
 /-- A letter of `M ⊕ N` as a letter of the family `Factors M N`. -/
 private abbrev toSigma : M ⊕ N → Σ b, Factors M N b
-  | .inl m => ⟨false, MulEquiv.ulift.symm m⟩
-  | .inr n => ⟨true, MulEquiv.ulift.symm n⟩
+  | .inl m => ⟨false, ULift.up m⟩
+  | .inr n => ⟨true, ULift.up n⟩
 
 private theorem toSigma_fst (s : M ⊕ N) : (toSigma s).1 = s.isRight := by
   cases s <;> rfl
 
 private theorem toSigma_injective : Function.Injective (toSigma (M := M) (N := N)) := by
-  rintro (m | n) (m' | n') h <;> simp_all [toSigma]
+  rintro (m | n) (m' | n') h <;> simp_all [toSigma, Factors]
+
+variable [Monoid M] [Monoid N]
 
 private theorem toCoprodI_mk_ofList (L : List (M ⊕ N)) :
     toCoprodI (mk (FreeMonoid.ofList L)) = (L.map fun s => CoprodI.of (toSigma s).2).prod := by
@@ -90,7 +75,7 @@ private theorem toCoprodI_mk_ofList (L : List (M ⊕ N)) :
   | nil => simp
   | cons s L ih =>
     rw [FreeMonoid.ofList_cons, map_mul, map_mul, ih, List.map_cons, List.prod_cons]
-    cases s <;> simp [toCoprodI, toSigma]
+    cases s <;> simp [toSigma]
 
 /-- A reduced word of `M ∗ N` as a reduced word of `Monoid.CoprodI (Factors M N)`. -/
 private def toWord (L : List (M ⊕ N)) (hc : (L.map Sum.isRight).IsChain (· ≠ ·))
@@ -98,7 +83,11 @@ private def toWord (L : List (M ⊕ N)) (hc : (L.map Sum.isRight).IsChain (· �
   toList := L.map toSigma
   ne_one := by
     simp only [List.mem_map, forall_exists_index, and_imp]
-    rintro _ (m | n) hs rfl h <;> simp_all [toSigma]
+    rintro _ (m | n) hs rfl h
+    · have hm : m = 1 := congrArg ULift.down h
+      exact h₁ (hm ▸ hs)
+    · have hn : n = 1 := congrArg ULift.down h
+      exact h₂ (hn ▸ hs)
   chain_ne := by
     rw [List.isChain_map]
     simpa [toSigma_fst, List.isChain_map] using hc
