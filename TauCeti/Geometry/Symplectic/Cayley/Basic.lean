@@ -314,6 +314,13 @@ lemma isUnit_one_sub_of_mem_cayleyBall [FiniteDimensional ℝ V] {C : Module.End
   rw [hCv] at this
   exact this.false
 
+/-- An element `C` of the Cayley ball has `1 + C` invertible: conjugation by `J₀` exchanges `1 + C`
+and `1 - C`, since `C` anticommutes with `J₀`. -/
+lemma isUnit_one_add_of_mem_cayleyBall [FiniteDimensional ℝ V] {C : Module.End ℝ V}
+    (hC : C ∈ ω.cayleyBall J₀) : IsUnit (1 + C) :=
+  (isUnit_one_add_iff_isUnit_one_sub J₀.toLinearMap_mul_self hC.1).2
+    (isUnit_one_sub_of_mem_cayleyBall hC)
+
 /-- The inverse Cayley transform `J₀ (1 + C)(1 - C)⁻¹` of an element of the Cayley ball squares
 to `-1`. -/
 private lemma inverseCayley_mul_self [FiniteDimensional ℝ V] {C : Module.End ℝ V}
@@ -325,8 +332,7 @@ private lemma inverseCayley_mul_self [FiniteDimensional ℝ V] {C : Module.End �
   -- Anticommutation gives `(1 - C) J₀ = J₀ (1 + C)` and `(1 + C) J₀ = J₀ (1 - C)`.
   have hQj : (1 - C) * j = j * (1 + C) := by
     rw [sub_mul, mul_add, hC.1, one_mul, mul_one, sub_neg_eq_add]
-  have hRj : (1 + C) * j = j * (1 - C) := by
-    rw [add_mul, mul_sub, hC.1, one_mul, mul_one, sub_eq_add_neg]
+  have hRj : (1 + C) * j = j * (1 - C) := one_add_mul_eq_mul_one_sub hC.1
   have h₁ : Ring.inverse (1 - C) * j * (1 + C) = j := by
     rw [mul_assoc, ← hQj, ← mul_assoc, Ring.inverse_mul_cancel _ hQ, one_mul]
   calc j * (1 + C) * Ring.inverse (1 - C) * (j * (1 + C) * Ring.inverse (1 - C))

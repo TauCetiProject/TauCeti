@@ -88,6 +88,14 @@ theorem mem_compactlySupportedForms {k : ℕ} {φ : SmoothForm I M ℝ k} :
       IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.val) :=
   Iff.rfl
 
+variable {I} in
+/-- A function vanishing wherever a compactly supported form vanishes has compact support. -/
+theorem hasCompactSupport_of_compactlySupportedForms {k : ℕ} {f : M → ℝ}
+    (α : compactlySupportedForms I M k) (hf : ∀ x, α.val.val x = 0 → f x = 0) :
+    HasCompactSupport f :=
+  HasCompactSupport.mono' ((mem_compactlySupportedForms I).1 α.property) fun x hx ↦
+    subset_tsupport _ fun h ↦ hx (hf x h)
+
 /-- Transporting the degree of a smooth form preserves compact support. -/
 theorem cast_mem_compactlySupportedForms_iff {a b : ℕ} (h : a = b) {φ : SmoothForm I M ℝ a} :
     LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) h φ ∈
@@ -305,6 +313,17 @@ theorem exactCompactlySupportedForms_le_exactForms (k : ℕ) :
   | succ k =>
       rw [exactCompactlySupportedForms_succ, exactForms_succ]
       exact LinearMap.map_le_range
+
+/-- On a compact manifold every form is compactly supported, so the compactly supported exact
+forms are exactly the exact forms. -/
+@[simp]
+theorem exactCompactlySupportedForms_eq_exactForms [CompactSpace M] (k : ℕ) :
+    exactCompactlySupportedForms I M k = exactForms I M k := by
+  cases k with
+  | zero => rw [exactCompactlySupportedForms_zero, exactForms_zero]
+  | succ k =>
+      rw [exactCompactlySupportedForms_succ, exactForms_succ, compactlySupportedForms_eq_top,
+        Submodule.map_top]
 
 /-- A compactly supported exact form is compactly supported and closed. -/
 theorem exactCompactlySupportedForms_le_compactlySupportedClosedForms (k : ℕ) :

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import TauCeti.LinearAlgebra.Quotient.Prod
 
 /-!

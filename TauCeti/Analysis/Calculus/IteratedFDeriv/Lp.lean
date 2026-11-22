@@ -7,7 +7,12 @@ module
 
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 public import TauCeti.MeasureTheory.Function.Lp.Dilation
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
+import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
+import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Topology.MetricSpace.Thickening
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -34,6 +39,13 @@ Hessian of a function with continuous second derivative supported in a closed ba
 partial derivatives along an orthonormal basis bounded by `B`, is at most the `1/p`-th power of the
 measure of the ball times `(card ι)² B`
 (`MeasureTheory.Measure.toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall`).
+
+The iterated derivatives of order at most `k` of a compactly supported `C^k` function are in every
+`Lᵖ`, also when evaluated on fixed directions (`ContDiff.memLp_iteratedFDeriv_of_hasCompactSupport`,
+`ContDiff.memLp_iteratedFDeriv_apply_of_hasCompactSupport`). For a continuous bilinear map `B`,
+the Leibniz rule and Hölder's inequality bound the `Lᵖ` norm of `D^k (B (u, v))` by a binomial sum
+of products of `Lᵠ` norms of `D^i u` and `Lʳ` norms of `D^(k-i) v`
+(`ContinuousLinearMap.eLpNorm_iteratedFDeriv_le_of_bilinear`).
 -/
 
 public section
@@ -174,3 +186,80 @@ theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall
 end InnerHessian
 
 end MeasureTheory.Measure
+
+section CompactSupport
+
+open MeasureTheory
+open scoped ENNReal
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {N : WithTop ℕ∞} {n : ℕ} {u : E → F} {p : ℝ≥0∞}
+
+/-- The iterated derivatives of order at most `N` of a compactly supported `C^N` function are in
+every `Lᵖ`. -/
+theorem ContDiff.memLp_iteratedFDeriv_of_hasCompactSupport (hn : n ≤ N) (hu : ContDiff 𝕜 N u)
+    (hc : HasCompactSupport u) : MemLp (iteratedFDeriv 𝕜 n u) p μ :=
+  (hu.continuous_iteratedFDeriv hn).memLp_of_hasCompactSupport (hc.iteratedFDeriv n)
+
+/-- The iterated derivatives of order at most `N` of a compactly supported `C^N` function,
+evaluated on fixed directions `v`, are in every `Lᵖ`. -/
+theorem ContDiff.memLp_iteratedFDeriv_apply_of_hasCompactSupport (hn : n ≤ N)
+    (hu : ContDiff 𝕜 N u) (hc : HasCompactSupport u) (v : Fin n → E) :
+    MemLp (fun x ↦ iteratedFDeriv 𝕜 n u x v) p μ :=
+  (hu.continuous_iteratedFDeriv_apply hn v).memLp_of_hasCompactSupport (hc.iteratedFDeriv_apply v)
+
+end CompactSupport
+
+section Bilinear
+
+open MeasureTheory
+open scoped ENNReal NNReal
+
+variable {𝕜 E F G H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [SecondCountableTopology E] [MeasurableSpace E] [OpensMeasurableSpace E]
+  {μ : Measure E} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+/-- **The Leibniz rule in `Lᵖ`.** For a continuous bilinear map `B`, `C^N` functions `u` and `v`,
+`k ≤ N` and `1 ≤ p`, the `Lᵖ` norm of `D^k (B (u, v))` is at most
+`∑ i ≤ k, ‖B‖ C(k, i) ‖D^i u‖_{q i} ‖D^(k-i) v‖_{r i}` whenever `1 / q i + 1 / r i = 1 / p` for all
+`i ≤ k`. This is `ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear` combined with Hölder's
+inequality for each term. -/
+theorem ContinuousLinearMap.eLpNorm_iteratedFDeriv_le_of_bilinear (B : F →L[𝕜] G →L[𝕜] H)
+    {u : E → F} {v : E → G} {N : WithTop ℕ∞} (hu : ContDiff 𝕜 N u) (hv : ContDiff 𝕜 N v) {k : ℕ}
+    (hk : k ≤ N) {p : ℝ≥0∞} (hp : 1 ≤ p) {q r : ℕ → ℝ≥0∞}
+    (hqr : ∀ i ≤ k, ENNReal.HolderTriple (q i) (r i) p) :
+    eLpNorm (iteratedFDeriv 𝕜 k (fun x ↦ B (u x) (v x))) p μ ≤
+      ∑ i ∈ Finset.range (k + 1), ‖B‖ₑ * (k.choose i : ℝ≥0∞) *
+        eLpNorm (iteratedFDeriv 𝕜 i u) (q i) μ * eLpNorm (iteratedFDeriv 𝕜 (k - i) v) (r i) μ := by
+  set f : ℕ → E → ℝ := fun i x ↦
+    ‖B‖ * (k.choose i : ℝ) * ‖iteratedFDeriv 𝕜 i u x‖ * ‖iteratedFDeriv 𝕜 (k - i) v x‖
+  have hcont : ∀ i ≤ k, Continuous (iteratedFDeriv 𝕜 i u) ∧
+      Continuous (iteratedFDeriv 𝕜 (k - i) v) := fun i hi ↦
+    ⟨hu.continuous_iteratedFDeriv ((Nat.cast_le.2 hi).trans hk),
+      hv.continuous_iteratedFDeriv ((Nat.cast_le.2 (Nat.sub_le k i)).trans hk)⟩
+  calc eLpNorm (iteratedFDeriv 𝕜 k (fun x ↦ B (u x) (v x))) p μ
+      ≤ eLpNorm (∑ i ∈ Finset.range (k + 1), f i) p μ := by
+        refine eLpNorm_mono_real ?_ fun x ↦ ?_
+        · exact ((B.isBoundedBilinearMap.contDiff.comp (hu.prodMk hv)).continuous_iteratedFDeriv
+            hk).aestronglyMeasurable
+        · refine (B.norm_iteratedFDeriv_le_of_bilinear hu hv x hk).trans_eq ?_
+          simp [f, Finset.mul_sum, mul_assoc]
+    _ ≤ ∑ i ∈ Finset.range (k + 1), eLpNorm (f i) p μ := eLpNorm_sum_le hp
+    _ ≤ _ := by
+        refine Finset.sum_le_sum fun i hi ↦ ?_
+        have hik : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
+        have := hqr i hik
+        have h := eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm (μ := μ) (p := q i) (q := r i) (r := p)
+          (f := iteratedFDeriv 𝕜 i u) (g := iteratedFDeriv 𝕜 (k - i) v)
+          (fun S T ↦ ‖B‖ * (k.choose i : ℝ) * ‖S‖ * ‖T‖) (‖B‖₊ * (k.choose i : ℝ≥0))
+          (by fun_prop) (hcont i hik).1.aestronglyMeasurable
+          (hcont i hik).2.aestronglyMeasurable
+          (Filter.Eventually.of_forall fun x ↦ by
+            rw [Real.norm_of_nonneg (by positivity)]; exact le_of_eq (by push_cast; ring))
+        refine h.trans_eq ?_
+        push_cast
+        rw [eNorm_eq_nnNorm]
+
+end Bilinear
