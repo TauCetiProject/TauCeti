@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Current.CompletedCoordinateAction
-public import TauCeti.Algebra.Category.ModuleCat.Tower.Summation
+public import TauCeti.Algebra.Lie.Current.Series
 
 import Mathlib.Topology.Algebra.InfiniteSum.Module
-import TauCeti.Algebra.BigOperators.Intervals
-import TauCeti.Algebra.Lie.Derivation.Basic
 
 /-!
 # Normally ordered modes in the completed enveloping algebra
@@ -81,8 +79,6 @@ field and at every central value.
   sum.
 * `TauCeti.CurrentAlgebra.normalOrderedSummand_eq_add_sub`,
   `TauCeti.CurrentAlgebra.tsum_normalOrderedSummand`: moving the cut of the normal ordering.
-* `TauCeti.CurrentAlgebra.sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul`: signed linear-weighted
-  sums of mode commutators `[x_j, y_{n-j}]` between `0` and `k`.
 * `TauCeti.CurrentAlgebra.coordinateEnvelopingAut_homothety_normalOrderedSummand`: homothety
   scaling of each normally ordered summand at any cut.
 * `TauCeti.CurrentAlgebra.coordinateCompletedEnvelopingAut_homothety_tsum_normalOrderedSummand`:
@@ -378,67 +374,6 @@ private theorem envelopingι_mul_normalOrderedSummand_sub_mul (z x y : L) (k n m
       envelopingι_single_tmul_mul_sub_mul, hx, hz]
     simp only [mul_add, add_mul, Algebra.commutes]
     abel
-
-/-- The signed sum of `(b + c * j) • [x_j, y_{n-j}]` between `0` and `k` evaluates to
-`(b * k + c * (k * (k - 1) / 2)) • ⁅x, y⁆_n` minus
-`(b * (k * (k - 1) / 2) + c * (k * (k - 1) * (2 * k - 1) / 6)) • (δ_{n, 0} a Φ(x, y))`. -/
-theorem sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul (x y : L) (b c k n : ℤ) :
-    ∑ j ∈ Finset.Ico 0 k, (b + c * j) • (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) -
-        ∑ j ∈ Finset.Ico k 0, (b + c * j) • (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
-      (b * k + c * (k * (k - 1) / 2)) • ι[⁅x, y⁆, n] -
-        (b * (k * (k - 1) / 2) + c * (k * (k - 1) * (2 * k - 1) / 6)) •
-          algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
-  have hj (j : ℤ) :
-      (b + c * j) • (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
-        (b + c * j) • ι[⁅x, y⁆, n] -
-          (b * j + c * j ^ 2) • algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
-    rw [envelopingι_single_tmul_mul_sub_mul, add_sub_cancel, smul_add]
-    split_ifs with hn
-    · rw [hn, zero_sub, ← map_zsmul, ← map_zsmul, sub_eq_add_neg, ← neg_smul, ← map_zsmul]
-      congr 2
-      simp only [zsmul_eq_mul]
-      push_cast
-      ring
-    · simp
-  simp only [hj, Finset.sum_sub_distrib, ← Finset.sum_smul]
-  rw [sub_sub_sub_comm, ← sub_smul, ← sub_smul]
-  have hmul (d : ℤ) (s : Finset ℤ) : ∑ j ∈ s, d * j = d * ∑ j ∈ s, j :=
-    (Finset.mul_sum s (fun j => j) d).symm
-  have hmul_sq (d : ℤ) (s : Finset ℤ) : ∑ j ∈ s, d * j ^ 2 = d * ∑ j ∈ s, j ^ 2 :=
-    (Finset.mul_sum s (fun j => j ^ 2) d).symm
-  have hcard : ∑ j ∈ Finset.Ico 0 k, (b + c * j) - ∑ j ∈ Finset.Ico k 0, (b + c * j) =
-      b * k + c * (k * (k - 1) / 2) := by
-    have hc : ((Finset.Ico 0 k).card : ℤ) - (Finset.Ico k 0).card = k := by
-      simp only [Int.card_Ico]
-      omega
-    have hlin := Int.eq_ediv_of_mul_eq_right two_ne_zero
-      (Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero k)
-    simp only [Finset.sum_add_distrib, Finset.sum_const, nsmul_eq_mul, hmul]
-    linear_combination b * hc + c * hlin
-  have hquad : ∑ j ∈ Finset.Ico 0 k, (b * j + c * j ^ 2) -
-      ∑ j ∈ Finset.Ico k 0, (b * j + c * j ^ 2) =
-      b * (k * (k - 1) / 2) + c * (k * (k - 1) * (2 * k - 1) / 6) := by
-    have hlin := Int.eq_ediv_of_mul_eq_right two_ne_zero
-      (Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero k)
-    have hsq := Int.eq_ediv_of_mul_eq_right (by decide : (6 : ℤ) ≠ 0)
-      (Finset.six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq k)
-    simp only [Finset.sum_add_distrib, hmul, hmul_sq]
-    linear_combination b * hlin + c * hsq
-  rw [hcard, hquad]
-
-/-- The commutators `[x_j, y_{n-j}]` for `0 ≤ j < k`, minus those for `k ≤ j < 0`, sum to
-`k ⁅x, y⁆_n` minus the central term `(k (k - 1) / 2) a Φ(x, y)` at `n = 0`. -/
-private theorem sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul (x y : L) (k n : ℤ) :
-    ∑ j ∈ Finset.Ico 0 k, (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) -
-        ∑ j ∈ Finset.Ico k 0, (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
-      (k : R) • ι[⁅x, y⁆, n] -
-        algebraMap R UK (if n = 0 then (k * (k - 1) / 2 : ℤ) * a * Φ x y else 0) := by
-  have h := sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs)
-    (a := a) x y 1 0 k n
-  simp only [one_mul, zero_mul, add_zero, one_smul] at h
-  rw [h, Int.cast_smul_eq_zsmul]
-  congr 1
-  split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
 
 /-- **The commutator of a current with a normally ordered mode.** In `Û`, for the current
 generator `z_k` of the mode `z ⊗ tᵏ`,

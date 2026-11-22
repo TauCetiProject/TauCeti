@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Lie.Current.CentralExtension
 public import TauCeti.Algebra.Lie.UniversalEnveloping.CentralExtension
 
+import TauCeti.Algebra.BigOperators.Intervals
+
 /-!
 # Enveloping algebras of residue central extensions at a fixed level
 
@@ -62,6 +64,10 @@ than to `K`.
   currents, with the central term written as a residue.
 * `TauCeti.CurrentAlgebra.envelopingι_single_tmul_mul_sub_mul`: the commutator relations of the
   modes `x ⊗ tᵐ`.
+* `TauCeti.CurrentAlgebra.sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul`,
+  `TauCeti.CurrentAlgebra.sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul`,
+  `TauCeti.CurrentAlgebra.sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul`: signed sums of
+  mode commutators `[x_j, y_{n-j}]` between `0` and `k`.
 * `TauCeti.CurrentAlgebra.envelopingAction_mul_sub_mul`: the commutator relations for the action
   of the currents on a module.
 * `TauCeti.CurrentAlgebra.envelopingι_injective`: over a field, the currents embed.
@@ -143,6 +149,102 @@ theorem envelopingι_single_tmul_mul_sub_mul (x y : L) (m n : ℤ) :
     twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply, LinearEquiv.apply_symm_apply,
     residuePairing_tmul, LaurentSeries.residuePairing_single]
   split_ifs <;> simp [mul_assoc]
+
+section CommutatorSums
+
+variable {Φ hΦ hΦs a}
+
+local notation "ι[" x ", " m "]" => envelopingι c a (HahnSeries.single m (1 : R) ⊗ₜ[R] x)
+
+/-- The signed sum of `w j • [x_j, y_{n-j}]` between `0` and `k` splits into the linear bracket
+term with coefficient `∑_{0 ≤ j < k} w j - ∑_{k ≤ j < 0} w j` and the central term at `n = 0`
+with coefficient `∑_{0 ≤ j < k} j * w j - ∑_{k ≤ j < 0} j * w j`. -/
+private theorem sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul_of_fn (w : ℤ → ℤ)
+    (x y : L) (k n : ℤ) :
+    ∑ j ∈ Finset.Ico 0 k, w j • (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) -
+        ∑ j ∈ Finset.Ico k 0, w j • (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
+      (∑ j ∈ Finset.Ico 0 k, w j - ∑ j ∈ Finset.Ico k 0, w j) • ι[⁅x, y⁆, n] -
+        (∑ j ∈ Finset.Ico 0 k, j * w j - ∑ j ∈ Finset.Ico k 0, j * w j) •
+          algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
+  have hj (j : ℤ) :
+      w j • (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
+        w j • ι[⁅x, y⁆, n] - (j * w j) • algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
+    rw [envelopingι_single_tmul_mul_sub_mul, add_sub_cancel, smul_add]
+    split_ifs with hn
+    · rw [hn, zero_sub, ← map_zsmul, ← map_zsmul, sub_eq_add_neg, ← neg_smul, ← map_zsmul]
+      congr 2
+      simp only [zsmul_eq_mul]
+      push_cast
+      ring
+    · simp
+  simp only [hj, Finset.sum_sub_distrib, ← Finset.sum_smul]
+  rw [sub_sub_sub_comm, ← sub_smul, ← sub_smul]
+
+/-- The signed sum of `(b + d * j) • [x_j, y_{n-j}]` between `0` and `k` evaluates to
+`(b * k + d * (k * (k - 1) / 2)) • ⁅x, y⁆_n` minus
+`(b * (k * (k - 1) / 2) + d * (k * (k - 1) * (2 * k - 1) / 6)) • (δ_{n, 0} a Φ(x, y))`. -/
+theorem sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul (x y : L) (b d k n : ℤ) :
+    ∑ j ∈ Finset.Ico 0 k, (b + d * j) • (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) -
+        ∑ j ∈ Finset.Ico k 0, (b + d * j) • (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
+      (b * k + d * (k * (k - 1) / 2)) • ι[⁅x, y⁆, n] -
+        (b * (k * (k - 1) / 2) + d * (k * (k - 1) * (2 * k - 1) / 6)) •
+          algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
+  rw [sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul_of_fn (fun j ↦ b + d * j) x y k n]
+  have hmul (e : ℤ) (s : Finset ℤ) : ∑ j ∈ s, e * j = e * ∑ j ∈ s, j :=
+    (Finset.mul_sum s (fun j ↦ j) e).symm
+  have hmul_sq (e : ℤ) (s : Finset ℤ) : ∑ j ∈ s, e * j ^ 2 = e * ∑ j ∈ s, j ^ 2 :=
+    (Finset.mul_sum s (fun j ↦ j ^ 2) e).symm
+  have hlin := Int.eq_ediv_of_mul_eq_right two_ne_zero
+    (Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero k)
+  have hcard : ∑ j ∈ Finset.Ico 0 k, (b + d * j) - ∑ j ∈ Finset.Ico k 0, (b + d * j) =
+      b * k + d * (k * (k - 1) / 2) := by
+    have hc : ((Finset.Ico 0 k).card : ℤ) - (Finset.Ico k 0).card = k := by
+      simp only [Int.card_Ico]
+      omega
+    simp only [Finset.sum_add_distrib, Finset.sum_const, nsmul_eq_mul, hmul]
+    linear_combination b * hc + d * hlin
+  have hquad : ∑ j ∈ Finset.Ico 0 k, j * (b + d * j) - ∑ j ∈ Finset.Ico k 0, j * (b + d * j) =
+      b * (k * (k - 1) / 2) + d * (k * (k - 1) * (2 * k - 1) / 6) := by
+    have hsq := Int.eq_ediv_of_mul_eq_right (by decide : (6 : ℤ) ≠ 0)
+      (Finset.six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq k)
+    have hrw (j : ℤ) : j * (b + d * j) = b * j + d * j ^ 2 := by ring
+    simp only [hrw, Finset.sum_add_distrib, hmul, hmul_sq]
+    linear_combination b * hlin + d * hsq
+  rw [hcard, hquad]
+
+/-- The commutators `[x_j, y_{n-j}]` for `0 ≤ j < k`, minus those for `k ≤ j < 0`, sum to
+`k ⁅x, y⁆_n` minus the central term `(k (k - 1) / 2) a Φ(x, y)` at `n = 0`. -/
+theorem sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul (x y : L) (k n : ℤ) :
+    ∑ j ∈ Finset.Ico 0 k, (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) -
+        ∑ j ∈ Finset.Ico k 0, (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
+      (k : R) • ι[⁅x, y⁆, n] -
+        algebraMap R UK (if n = 0 then (k * (k - 1) / 2 : ℤ) * a * Φ x y else 0) := by
+  have h := sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs)
+    (a := a) x y 1 0 k n
+  simp only [one_mul, zero_mul, add_zero, one_smul] at h
+  rw [h, Int.cast_smul_eq_zsmul]
+  congr 1
+  split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
+
+/-- The signed sum of `(m - l) • [x_l, y_{n-l}]` between `0` and `m` evaluates to
+`(m (m + 1) / 2) ⁅x, y⁆_n` minus the central term `((m ^ 3 - m) / 6) a Φ(x, y)` at `n = 0`. -/
+theorem sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul (x y : L) (m n : ℤ) :
+    ∑ l ∈ Finset.Ico 0 m, ((m - l : ℤ) : R) • (ι[x, l] * ι[y, n - l] -
+        ι[y, n - l] * ι[x, l]) -
+      ∑ l ∈ Finset.Ico m 0, ((m - l : ℤ) : R) • (ι[x, l] * ι[y, n - l] -
+        ι[y, n - l] * ι[x, l]) =
+      ((m * (m + 1) / 2 : ℤ) : R) • ι[⁅x, y⁆, n] -
+        algebraMap R UK (if n = 0 then ((m ^ 3 - m) / 6 : ℤ) * a * Φ x y else 0) := by
+  simp only [Int.cast_smul_eq_zsmul]
+  rw [sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul_of_fn (fun l ↦ m - l) x y m n,
+    Int.eq_ediv_of_mul_eq_right two_ne_zero
+      (Finset.two_mul_sum_Ico_zero_sub_sub_sum_Ico_zero_sub m),
+    Int.eq_ediv_of_mul_eq_right (by decide : (6 : ℤ) ≠ 0)
+      (Finset.six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub m)]
+  congr 1
+  split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
+
+end CommutatorSums
 
 variable {A : Type*} [Ring A] [Algebra R A]
 

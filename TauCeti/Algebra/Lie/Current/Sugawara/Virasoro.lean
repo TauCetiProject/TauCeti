@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Lie.Current.Sugawara.Basic
 
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.BigOperators.Intervals
-import TauCeti.Algebra.Lie.Derivation.Basic
 
 /-!
 # The Segal--Sugawara Virasoro relations
@@ -116,40 +115,6 @@ private theorem sugawaraMode_mul_normalOrderedSummand_sub_mul {c : K}
     module
 
 omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-/-- The signed sum of `(m - l) • [x_l, y_{m+n-l}]` between `0` and `m` evaluates to
-`(m (m + 1) / 2) ⁅x, y⁆_{m+n}` minus the central term `((m ^ 3 - m) / 6) a Φ(x, y)` at
-`m + n = 0`. -/
-private theorem sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul (x y : L) (m n : ℤ) :
-    ∑ l ∈ Finset.Ico 0 m, ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] -
-        ι[y, m + n - l] * ι[x, l]) -
-      ∑ l ∈ Finset.Ico m 0, ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] -
-        ι[y, m + n - l] * ι[x, l]) =
-      ((m * (m + 1) / 2 : ℤ) : K) • ι[⁅x, y⁆, m + n] -
-        algebraMap K UK (if m + n = 0 then ((m ^ 3 - m) / 6 : ℤ) * a * Φ x y else 0) := by
-  have hl (l : ℤ) : ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] -
-      ι[y, m + n - l] * ι[x, l]) =
-      (m + (-1 : ℤ) * l) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l]) := by
-    rw [Int.cast_smul_eq_zsmul]
-    congr 1
-    ring
-  simp only [hl]
-  rw [sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul x y m (-1) m (m + n)]
-  have h2 : (m * (m - 1) / 2) * 2 = m * (m - 1) :=
-    Int.ediv_mul_cancel (Int.even_mul_pred_self m).two_dvd
-  have hc₁ : m * m + -1 * (m * (m - 1) / 2) = m * (m + 1) / 2 := by
-    refine Int.eq_ediv_of_mul_eq_right two_ne_zero ?_
-    linear_combination -h2
-  have hc₂ : m * (m * (m - 1) / 2) + -1 * (m * (m - 1) * (2 * m - 1) / 6) =
-      (m ^ 3 - m) / 6 := by
-    refine Int.eq_ediv_of_mul_eq_right (by decide : (6 : ℤ) ≠ 0) ?_
-    have h6 : (m * (m - 1) * (2 * m - 1) / 6) * 6 = m * (m - 1) * (2 * m - 1) :=
-      Int.ediv_mul_cancel ⟨_, (Finset.six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq m).symm⟩
-    linear_combination 3 * m * h2 - h6
-  rw [hc₁, hc₂, Int.cast_smul_eq_zsmul]
-  congr 1
-  split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
-
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
 /-- Reordering the cut-`m` summand into cut `0` splits the combined `l`-th summand into
 `(1 - 2 a c) (m - n)` times the cut-`0` summand plus the finite window difference between `0` and
 `m`. -/
@@ -210,8 +175,8 @@ theorem sugawaraMode_mul_normalOrderedMode_sub_mul_of_eq_smul_killingForm {c : K
     ((hasSum_toCompletedEnveloping_ite_mem (Finset.Ico 0 m) g).const_smul (1 - 2 * a * c))).sub
     ((hasSum_toCompletedEnveloping_ite_mem (Finset.Ico m 0) g).const_smul (1 - 2 * a * c))
   rw [h₁.unique (hA.add hB), hcomb.unique h₂, add_sub_assoc, ← smul_sub, ← map_sub,
-    sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul, map_sub, map_smul, smul_sub, smul_smul,
-    AlgHom.commutes]
+    sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul x y m (m + n), map_sub, map_smul,
+    smul_sub, smul_smul, AlgHom.commutes]
   have hcent : (1 - 2 * a * c) • algebraMap K (CompletedEnveloping Φ hΦ hΦs a)
       (if m + n = 0 then ((m ^ 3 - m) / 6 : ℤ) * a * Φ x y else 0) =
       algebraMap K (CompletedEnveloping Φ hΦ hΦs a)

@@ -20,6 +20,16 @@ In particular this constructs the series `P₀ + ∑_{N ≥ 1} P_N ι((A_N)_N)` 
 conditions on `P_N` or `A_N`. The reason is left-ideal membership, not a norm estimate:
 `P_N ι((A_N)_N)` belongs to `I_N` regardless of `P_N`.
 
+## Main results
+
+* `TauCeti.CurrentAlgebra.hasSum_toCompletedEnveloping_ite_mem`,
+  `TauCeti.CurrentAlgebra.summable_smul_completedEnveloping`: finite-support sums and
+  scalar-weighted summability in `Û`.
+* `TauCeti.CurrentAlgebra.summable_mul_envelopingι`,
+  `TauCeti.CurrentAlgebra.limπ_tsum_mul_envelopingι`,
+  `TauCeti.CurrentAlgebra.limSmul_add_tsum_mul_envelopingι`: convergence, coordinates, and smooth
+  action of high-order current series.
+
 ## References
 
 * E. Frenkel, *Langlands Correspondence for Loop Groups*, §2.1.2 and §3.2.1, for
@@ -41,6 +51,24 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
 local notation "UK" => CentralQuotient R (centralElement c) a
+
+/-- A family supported in a finite set `s` and given there by `toCompletedEnveloping (f m)`
+sums in `Û` to `toCompletedEnveloping (∑ m ∈ s, f m)`. -/
+theorem hasSum_toCompletedEnveloping_ite_mem {ι : Type*} [DecidableEq ι] (s : Finset ι)
+    (f : ι → UK) :
+    HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
+      (toCompletedEnveloping Φ hΦ hΦs a (∑ m ∈ s, f m)) := by
+  have h : HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
+      (∑ m ∈ s, toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0)) :=
+    hasSum_sum_of_ne_finset_zero fun m hm ↦ by simp [hm]
+  rwa [← map_sum, Finset.sum_ite_mem, Finset.inter_self] at h
+
+/-- Multiplying the terms of a summable family in `Û` by arbitrary scalars in `R` preserves
+summability. -/
+theorem summable_smul_completedEnveloping {ι : Type*} {f : ι → CompletedEnveloping Φ hΦ hΦs a}
+    (hf : Summable f) (r : ι → R) : Summable fun i ↦ r i • f i := by
+  simpa only [algebraMap_smul] using
+    (orderQuotientTower Φ hΦ hΦs a).summable_smul hf fun i ↦ algebraMap R UK (r i)
 
 /-- Arbitrary left coefficients may multiply a series of currents whose orders tend to infinity
 at least as fast as the index. The resulting series is unconditionally summable. -/

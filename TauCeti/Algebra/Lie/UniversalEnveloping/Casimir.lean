@@ -9,7 +9,9 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 public import TauCeti.Algebra.Lie.Killing.DualBasis
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 
--- Non-public: the enveloping-algebra dictionary appears only inside proofs.
+-- Non-public: the Killing Casimir tensor and enveloping-algebra dictionary appear only inside
+-- unexposed definitions and proofs.
+import TauCeti.Algebra.Lie.Killing.Duality
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 
 /-!
@@ -29,15 +31,15 @@ Those extra hypotheses are needed only for that application; centrality, the sta
 needs nothing beyond a nondegenerate Killing form.
 
 Two facts make `Ω` an invariant of `L` rather than of the chosen basis. They are developed in
-`TauCeti.LinearAlgebra.BilinearForm.Dual.Basis` and `TauCeti.Algebra.Lie.Killing.DualBasis` and
-applied here.
+`TauCeti.LinearAlgebra.BilinearForm.Dual.Basis`, `TauCeti.Algebra.Lie.Killing.DualBasis`, and
+`TauCeti.Algebra.Lie.Killing.Duality` and applied here.
 
-* `Ω` does not depend on the basis.  The mechanism is `LinearMap.sum_apply_dualBasis_eq`:
-  for *every* `K`-bilinear map `f` out of `L × L`, the value `∑ᵢ f xᵢ yᵢ` is the same for all
-  bases, because expanding one basis in the other exchanges the two dual bases.  The Casimir
-  element is the instance `f x y = x * y` in `U(L)`, so `TauCeti.casimirElement_eq_sum` computes
-  it from any basis at all, and the chosen basis in the definition is immaterial.
-* `Ω` is central (`TauCeti.casimirElement_mem_center`).  The same bilinear mechanism gives
+* `Ω` does not depend on the basis.  The canonical Killing Casimir tensor
+  `TauCeti.killingCasimirTensor K L ∈ L ⊗[K] L` expands as `∑ᵢ bᵢ ⊗ b'ᵢ` in every basis
+  (`TauCeti.killingCasimirTensor_eq_sum`). Applying `TensorProduct.lift` to generator multiplication
+  `x ⊗ y ↦ x * y` defines `Ω` without choosing a basis, so `TauCeti.casimirElement_eq_sum` evaluates
+  `Ω` in any basis at once.
+* `Ω` is central (`TauCeti.casimirElement_mem_center`).  The bilinear contraction mechanism gives
   `TauCeti.sum_apply_lie_killingDualBasis_add_eq_zero`, the statement that the element
   `∑ᵢ xᵢ ⊗ yᵢ` is annihilated by the adjoint action of `L`; this is exactly the invariance
   `κ ⁅z, x⁆ y = -κ x ⁅z, y⁆` of the Killing form, summed.  Feeding it the commutator identity
@@ -118,20 +120,20 @@ private theorem genMul_apply (x y : L) : genMul K L x y = ι K x * ι K y := by
 
 variable (K L) in
 /-- **The Casimir element** `Ω = ∑ᵢ xᵢ yᵢ ∈ U(L)` of a Lie algebra with nondegenerate Killing
-form, built from a basis `x` of `L` and the basis `y` dual to it under the Killing form.
+form, obtained by applying generator multiplication to `TauCeti.killingCasimirTensor K L`.
 
-The definition names a particular basis, but the element does not depend on it:
-`TauCeti.casimirElement_eq_sum` evaluates `Ω` against an arbitrary basis. -/
+`TauCeti.casimirElement_eq_sum` evaluates `Ω` as `∑ᵢ bᵢ b'ᵢ` in any basis `b` and its
+Killing-dual basis `b'`. -/
 noncomputable def casimirElement : UniversalEnvelopingAlgebra K L :=
-  ∑ i, ι K (Module.finBasis K L i) * ι K (killingDualBasis (Module.finBasis K L) i)
+  TensorProduct.lift (genMul K L) (killingCasimirTensor K L)
 
 /-- **The Casimir element is `∑ᵢ xᵢ yᵢ` for every basis `x` of `L`** and its Killing-dual basis
-`y`, so the basis chosen in the definition is immaterial. -/
+`y`. -/
 theorem casimirElement_eq_sum {ι' : Type*} [DecidableEq ι'] [Fintype ι']
     (b : Module.Basis ι' K L) :
     casimirElement K L = ∑ i, ι K (b i) * ι K (killingDualBasis b i) := by
-  simp only [casimirElement, ← genMul_apply]
-  exact (genMul K L).sum_apply_dualBasis_eq _ (Module.finBasis K L) b
+  rw [casimirElement, killingCasimirTensor_eq_sum b, map_sum]
+  simp only [TensorProduct.lift.tmul, genMul_apply]
 
 /-- **The Casimir element acts by zero on a module with trivial action.** Every summand
 `xᵢ yᵢ` of `Ω` acts by a double bracket, and brackets vanish. -/
@@ -145,7 +147,7 @@ theorem representation_casimirElement_apply_eq_zero_of_isTrivial
   refine Finset.sum_eq_zero fun i _ ↦ ?_
   rw [map_mul, mul_apply_eq_comp, UniversalEnvelopingAlgebra.representation_ι,
     UniversalEnvelopingAlgebra.representation_ι]
-  simp [trivial_lie_zero]
+  simp
 
 /-- **The Casimir element commutes with every canonical Lie generator.**  Expanding the commutator
 of `ι z` with each summand `xᵢ yᵢ` by the Leibniz rule replaces the bracket by the adjoint action

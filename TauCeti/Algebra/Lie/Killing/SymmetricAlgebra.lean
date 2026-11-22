@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Killing.DualBasis
 public import TauCeti.Algebra.Lie.Killing.Duality
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 
@@ -25,11 +24,12 @@ polynomials `x ↦ tr (ρ(x) ^ m)` of a representation `ρ`, are compared with t
 central elements of the enveloping algebra, which live in `S(L)^L`, in the proof of the
 Harish-Chandra isomorphism by Chevalley's restriction theorem.
 
-Choosing a basis `xᵢ` of `L` and its Killing-dual basis `yᵢ`, the **quadratic symmetric Casimir**
-`∑ᵢ xᵢ yᵢ ∈ S²(L)` (`TauCeti.symmetricCasimir`) is independent of the basis, homogeneous of degree
-two, and evaluates under `κ(v, ·)` to `κ(v, v)`. Away from characteristic two it is nonzero
-whenever `L` is nontrivial; in characteristic two the Killing form is alternating, so the sum
-vanishes in `S²(L)`.
+Applying generator multiplication to the canonical Killing Casimir tensor
+`TauCeti.killingCasimirTensor K L ∈ L ⊗[K] L` yields the **quadratic symmetric Casimir**
+`∑ᵢ xᵢ yᵢ ∈ S²(L)` (`TauCeti.symmetricCasimir`), which expands identically in any basis, is
+homogeneous of degree two, and evaluates under `κ(v, ·)` to `κ(v, v)`. Away from characteristic
+two it is nonzero whenever `L` is nontrivial; in characteristic two the Killing form is alternating,
+so the sum vanishes in `S²(L)`.
 
 ## Main definitions
 
@@ -135,22 +135,24 @@ omit [FiniteDimensional K L] [IsKilling K L] in
 private theorem symGenMul_apply (x y : L) : symGenMul K L x y = ι K L x * ι K L y := by
   simp only [symGenMul, LinearMap.compl₁₂_apply, LinearMap.mul_apply']
 
-/-- **The quadratic symmetric Casimir** `∑ᵢ xᵢ yᵢ ∈ S(L)` built from a basis `x` of `L` and its
-Killing-dual basis `y`. It is the degree-two PBW symbol of the Casimir element of `U(L)`. -/
+/-- **The quadratic symmetric Casimir** `∑ᵢ xᵢ yᵢ ∈ S(L)`, obtained by applying generator
+multiplication to `TauCeti.killingCasimirTensor K L`. It is the degree-two PBW symbol of the
+Casimir element of `U(L)`. -/
 noncomputable def symmetricCasimir : SymmetricAlgebra K L :=
-  ∑ i, ι K L (Module.finBasis K L i) * ι K L (killingDualBasis (Module.finBasis K L) i)
+  TensorProduct.lift (symGenMul K L) (killingCasimirTensor K L)
 
 variable {K L} in
 /-- **The quadratic symmetric Casimir may be computed in any basis.** -/
 theorem symmetricCasimir_eq_sum {ι' : Type*} [DecidableEq ι'] [Fintype ι']
     (b : Module.Basis ι' K L) :
     symmetricCasimir K L = ∑ i, ι K L (b i) * ι K L (killingDualBasis b i) := by
-  simp only [symmetricCasimir, ← symGenMul_apply]
-  exact (symGenMul K L).sum_apply_dualBasis_eq _ (Module.finBasis K L) b
+  rw [symmetricCasimir, killingCasimirTensor_eq_sum b, map_sum]
+  simp only [TensorProduct.lift.tmul, symGenMul_apply]
 
 /-- **The quadratic symmetric Casimir is homogeneous of degree two.** -/
 theorem symmetricCasimir_mem_homogeneousSubmodule :
     symmetricCasimir K L ∈ homogeneousSubmodule K L 2 := by
+  rw [symmetricCasimir_eq_sum (Module.finBasis K L)]
   refine Submodule.sum_mem _ fun i _ ↦ ?_
   simpa using SetLike.mul_mem_graded
     (ι_mem_homogeneousSubmodule K L (Module.finBasis K L i))

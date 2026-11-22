@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Current.Center
 public import TauCeti.Algebra.Lie.Current.NormalOrder.Basic
-public import TauCeti.Algebra.Lie.Killing.DualBasis
+public import TauCeti.Algebra.Lie.Killing.Duality
 
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
@@ -17,15 +17,17 @@ import TauCeti.LinearAlgebra.BilinearForm.Basic
 Let `L` be a finite-dimensional Lie algebra over a field `K` whose Killing form `κ_L` is
 nondegenerate, let `Φ` be an invariant symmetric form on `L`, and let `Û = lim_N U / I_N` be the
 completed enveloping algebra of the residue central extension of `Φ` at the central value `a`
-(`TauCeti.CurrentAlgebra.CompletedEnveloping`). For a basis `xᵢ` of `L` and the basis `yᵢ` dual to
-it under `κ_L`, the **Segal--Sugawara modes** are
+(`TauCeti.CurrentAlgebra.CompletedEnveloping`). Applying `normalOrderedMode` to the canonical
+Killing Casimir tensor `TauCeti.killingCasimirTensor K L ∈ L ⊗[K] L` yields the **Segal--Sugawara
+modes**
 
 `Sₙ = ∑ᵢ :xᵢ yᵢ:_n ∈ Û`,
 
 the modes of the normally ordered Casimir field `∑ᵢ :J^{xᵢ}(z) J^{yᵢ}(z):`
-(`TauCeti.CurrentAlgebra.sugawaraMode`). They do not depend on the basis
-(`TauCeti.CurrentAlgebra.sugawaraMode_eq_sum`), have finite-window coordinates and smooth-module
-actions (`TauCeti.CurrentAlgebra.limπ_sugawaraMode`, `TauCeti.CurrentAlgebra.limSmul_sugawaraMode`),
+(`TauCeti.CurrentAlgebra.sugawaraMode`), for any basis `xᵢ` of `L` and the basis `yᵢ` dual to it
+under `κ_L`. They do not depend on the basis (`TauCeti.CurrentAlgebra.sugawaraMode_eq_sum`), have
+finite-window coordinates and smooth-module actions
+(`TauCeti.CurrentAlgebra.limπ_sugawaraMode`, `TauCeti.CurrentAlgebra.limSmul_sugawaraMode`),
 rescale inversely under rescaling the invariant form
 (`TauCeti.CurrentAlgebra.sugawaraMode_eq_inv_smul_sum_dualBasis`), and are preserved by the
 completed level comparison (`TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_sugawaraMode`).
@@ -125,13 +127,13 @@ private theorem sum_smul_toCompletedEnveloping {ι : Type*} (s : Finset ι) (r :
 
 variable [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
 
-/-- **The Segal--Sugawara modes** `Sₙ = ∑ᵢ :xᵢ yᵢ:_n` in `Û`, for a basis `xᵢ` of `L` and the basis
-`yᵢ` dual to it under the Killing form: the modes of the normally ordered Casimir field
-`∑ᵢ :J^{xᵢ}(z) J^{yᵢ}(z):`, without any normalising factor. The definition names a particular
-basis, but the modes do not depend on it (`TauCeti.CurrentAlgebra.sugawaraMode_eq_sum`). -/
+/-- **The Segal--Sugawara modes** `Sₙ = ∑ᵢ :xᵢ yᵢ:_n` in `Û`, obtained by applying
+`TauCeti.CurrentAlgebra.normalOrderedMode` to `TauCeti.killingCasimirTensor K L`: the modes of
+the normally ordered Casimir field `∑ᵢ :J^{xᵢ}(z) J^{yᵢ}(z):`, without any normalising factor.
+`TauCeti.CurrentAlgebra.sugawaraMode_eq_sum` evaluates `Sₙ` as `∑ᵢ :bᵢ b'ᵢ:_n` in any basis `b`
+and its Killing-dual basis `b'`. -/
 def sugawaraMode (n : ℤ) : CompletedEnveloping Φ hΦ hΦs a :=
-  ∑ i, normalOrderedMode Φ hΦ hΦs a n (Module.finBasis K L i)
-    (killingDualBasis (Module.finBasis K L) i)
+  TensorProduct.lift (normalOrderedMode Φ hΦ hΦs a n) (killingCasimirTensor K L)
 
 variable {Φ hΦ hΦs a}
 
@@ -139,8 +141,10 @@ variable {Φ hΦ hΦs a}
 `xᵢ` of `L` and its Killing-dual basis `yᵢ`. -/
 theorem sugawaraMode_eq_sum {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Module.Basis ι K L)
     (n : ℤ) :
-    sugawaraMode Φ hΦ hΦs a n = ∑ i, normalOrderedMode Φ hΦ hΦs a n (b i) (killingDualBasis b i) :=
-  (normalOrderedMode Φ hΦ hΦs a n).sum_apply_dualBasis_eq _ (Module.finBasis K L) b
+    sugawaraMode Φ hΦ hΦs a n =
+      ∑ i, normalOrderedMode Φ hΦ hΦs a n (b i) (killingDualBasis b i) := by
+  rw [sugawaraMode, killingCasimirTensor_eq_sum b, map_sum]
+  simp only [TensorProduct.lift.tmul]
 
 /-- Under the coordinate substitution `t ↦ u t`, the Segal--Sugawara mode `Sₙ` maps to
 `u ^ n • Sₙ`. This holds at every central value, without a critical-level assumption. -/
@@ -165,7 +169,7 @@ theorem toCompletedEnveloping_mul_sugawaraMode_sub_mul {z w : L}
   classical
   set b := Module.finBasis K L
   have hnd := LieAlgebra.IsKilling.killingForm_nondegenerate K L
-  rw [sugawaraMode, Finset.mul_sum, Finset.sum_mul, ← Finset.sum_sub_distrib]
+  rw [sugawaraMode_eq_sum b, Finset.mul_sum, Finset.sum_mul, ← Finset.sum_sub_distrib]
   simp only [toCompletedEnveloping_mul_normalOrderedMode_sub_mul, Finset.sum_sub_distrib,
     Finset.sum_add_distrib, sum_apply_lie_killingDualBasis_add_eq_zero, zero_add]
   -- The double brackets sum to `z`: the adjoint Casimir operator is the identity.
