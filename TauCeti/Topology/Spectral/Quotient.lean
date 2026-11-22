@@ -299,18 +299,18 @@ theorem preimage_image_quotientMk_eq_sInter (hX : IsLocallySpectralSpace X) {r :
 /-- **Scholze, *Étale cohomology of diamonds*, Lemma 2.7** (sandwich form): when `X` is locally
 spectral, `{q : X × X | r q.1 q.2}` is locally pro-constructible, and the first projection is
 generalizing and quasi-compact (`IsSpectralMap`), every quasi-compact open `W ⊆ X` is contained in
-an `r`-invariant open subset `U` inside a quasi-compact open `W'` whose `r`-saturation is the
-intersection of the nonempty family of all quasi-compact open subsets containing it. -/
+an `r`-invariant open subset `U` which is contained in an `r`-invariant intersection `⋂₀ 𝒮` of a
+nonempty family `𝒮` of quasi-compact open subsets of `X`. -/
 theorem exists_isOpen_preimage_image_quotientMk_subset_sInter (hX : IsLocallySpectralSpace X)
     {r : Setoid X} (hR : IsLocallyProConstructible {q : X × X | r q.1 q.2})
     (hs_gen : GeneralizingMap fun q : {q : X × X // r q.1 q.2} ↦ q.val.1)
     (hs_qc : IsSpectralMap fun q : {q : X × X // r q.1 q.2} ↦ q.val.1)
     {W : Set X} (hWo : IsOpen W) (hWc : IsCompact W) :
-    ∃ U W' : Set X, IsOpen U ∧ Quotient.mk r ⁻¹' (Quotient.mk r '' U) = U ∧
-      IsOpen W' ∧ IsCompact W' ∧ W ⊆ U ∧ U ⊆ W' ∧
-      {V : Set X | IsOpen V ∧ IsCompact V ∧ Quotient.mk r ⁻¹' (Quotient.mk r '' W') ⊆ V}.Nonempty ∧
-      Quotient.mk r ⁻¹' (Quotient.mk r '' W') =
-        ⋂₀ {V : Set X | IsOpen V ∧ IsCompact V ∧ Quotient.mk r ⁻¹' (Quotient.mk r '' W') ⊆ V} := by
+    ∃ (U : Set X) (𝒮 : Set (Set X)),
+      IsOpen U ∧ Quotient.mk r ⁻¹' (Quotient.mk r '' U) = U ∧
+      𝒮.Nonempty ∧ (∀ V ∈ 𝒮, IsOpen V ∧ IsCompact V) ∧
+      Quotient.mk r ⁻¹' (Quotient.mk r '' ⋂₀ 𝒮) = ⋂₀ 𝒮 ∧
+      W ⊆ U ∧ U ⊆ ⋂₀ 𝒮 := by
   have : PrespectralSpace X := hX.prespectralSpace
   have hEc : IsCompact (Quotient.mk r ⁻¹' (Quotient.mk r '' W)) :=
     hs_qc.isCompact_preimage_image_quotientMk hWo hWc
@@ -328,10 +328,17 @@ theorem exists_isOpen_preimage_image_quotientMk_subset_sInter (hX : IsLocallySpe
     hs_qc.isCompact_preimage_image_quotientMk hW'o hW'c
   have hE'gen : StableUnderGeneralization (Quotient.mk r ⁻¹' (Quotient.mk r '' W')) :=
     hW'o.stableUnderGeneralization_preimage_image_quotientMk hs_gen
+  let 𝒮 : Set (Set X) :=
+    {V : Set X | IsOpen V ∧ IsCompact V ∧ Quotient.mk r ⁻¹' (Quotient.mk r '' W') ⊆ V}
+  have hE'_eq : Quotient.mk r ⁻¹' (Quotient.mk r '' W') = ⋂₀ 𝒮 :=
+    hE'c.eq_sInter_of_stableUnderGeneralization hE'gen
+  have hS_inv : Quotient.mk r ⁻¹' (Quotient.mk r '' ⋂₀ 𝒮) = ⋂₀ 𝒮 := by
+    rw [← hE'_eq, Quotient.mk_surjective.image_preimage]
   obtain ⟨V₀, hV₀c, hV₀o, hE'V₀, -⟩ :=
     PrespectralSpace.exists_isCompact_and_isOpen_between hE'c isOpen_univ (subset_univ _)
-  exact ⟨U, W', hUo, hUinv, hW'o, hW'c, (subset_preimage_image _ _).trans hEU, hUW',
-    ⟨V₀, hV₀o, hV₀c, hE'V₀⟩, hE'c.eq_sInter_of_stableUnderGeneralization hE'gen⟩
+  exact ⟨U, 𝒮, hUo, hUinv, ⟨V₀, hV₀o, hV₀c, hE'V₀⟩, fun _ hV ↦ ⟨hV.1, hV.2.1⟩, hS_inv,
+    (subset_preimage_image _ _).trans hEU,
+    hUW'.trans ((subset_preimage_image _ _).trans hE'_eq.subset)⟩
 
 /-! ### Global spectral quotient criterion -/
 
