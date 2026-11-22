@@ -40,8 +40,8 @@ imposing convergence. It underlies the complex Mellin product formula in this fi
 * `TauCeti.integral_mul_comp_mul_eq_mellinInv`: the Parseval formula (DLMF 2.5.5).
 * `TauCeti.mellinConv`: the multiplicative Mellin convolution `∫₀^∞ f(y) g(x/y) dy/y`, with
   commutativity on `(0, ∞)` without integrability (`TauCeti.mellinConv_comm`), linearity,
-  support bounds (`TauCeti.support_mellinConv_subset_Icc`), and its Mellin product formulas
-  (`TauCeti.hasMellin_mellinConv`, `TauCeti.mellin_mellinConv_of_integrableOn`).
+  support bounds (`TauCeti.support_mellinConv_subset_Icc`), and its Fubini Mellin product formula
+  (`TauCeti.mellin_mellinConv_of_integrableOn`).
 
 ## References
 
@@ -290,13 +290,6 @@ theorem support_mellinConv_subset_Icc {f g : ℝ → ℂ} {a b c d : ℝ} (hc : 
         _ ≤ y * d := mul_le_mul_of_nonneg_left hxycd.2 (le_of_lt hy)
         _ ≤ b * d := mul_le_mul_of_nonneg_right hyab.2 ((hc.trans hxycd.1).trans hxycd.2)
       exact hx' ⟨hlo, hhi⟩
-
-/-- If `mellin f s` and `mellin g s` converge absolutely, then `mellinConv f g` has absolutely
-convergent Mellin transform `mellin f s * mellin g s`. -/
-theorem hasMellin_mellinConv {f g : ℝ → ℂ} {s : ℂ}
-    (hf : MellinConvergent f s) (hg : MellinConvergent g s) :
-    HasMellin (mellinConv f g) s (mellin f s * mellin g s) :=
-  hasMellin_integral_mul_div hf hg
 
 /-- Fubini form of the Mellin convolution product formula: if the joint integrand
 `(x, y) ↦ f y * g (x / y) * x ^ (s - 1) / y` is integrable on `(0, ∞) × (0, ∞)`, then

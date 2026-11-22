@@ -704,16 +704,16 @@ theorem hasMellin_smoothCutoff {ν : ℝ → ℝ} {ε : ℝ} {s : ℂ} (hε : 0 
   have h1 : HasMellin ((Ioc (0 : ℝ) 1).indicator (1 : ℝ → ℂ)) s (1 / s) := hasMellin_one_Ioc hs
   have h2 : MellinConvergent (fun x ↦ (deltaSpike ν ε x : ℂ)) s :=
     (mellinConvergent_deltaSpike_iff hε s).mpr hν
-  have hconv := hasMellin_mellinConv h1.1 h2
+  have hconv := hasMellin_integral_mul_div h1.1 h2
   rw [h1.2, mellin_deltaSpike ν hε s, one_div_mul_eq_div] at hconv
   refine ⟨?_, ?_⟩
   · refine hconv.1.congr_fun (fun x hx ↦ ?_) measurableSet_Ioi
     dsimp only
-    rw [smoothCutoff_eq_mellinConv ν ε hx]
+    rw [smoothCutoff_eq_mellinConv ν ε hx, mellinConv_def]
   · rw [← hconv.2]
     refine setIntegral_congr_fun measurableSet_Ioi fun x hx ↦ ?_
     dsimp only
-    rw [smoothCutoff_eq_mellinConv ν ε hx]
+    rw [smoothCutoff_eq_mellinConv ν ε hx, mellinConv_def]
 
 /-- Mellin transform of the smoothed cutoff: for `ε > 0`, `Re s > 0`, and
 `MellinConvergent ν (ε * s)`, `mellin (smoothCutoff ν ε) s = mellin ν (ε * s) / s`. -/
