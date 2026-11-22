@@ -72,10 +72,12 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 * `SchwartzMap.fourier_smulLeftCLM_fourierInv_eq`: `𝓕 (g • 𝓕⁻ f) = 𝓕⁻ (g (-·) • 𝓕 f)`.
 * `SchwartzMap.integral_bilin_fourierMultiplierCLM_eq`: the transpose of a Fourier multiplier for
   bilinear pairings has the reflected symbol, `∫ M (T_g f) h = ∫ M f (T_{g (-·)} h)`.
+* `SchwartzMap.fourier_fourier_apply`: `𝓕 (𝓕 f) x = f (-x)`.
 * `SchwartzMap.integral_bilin_fourier_fourier`: bilinear Plancherel,
   `∫ M (𝓕 f ξ) (𝓕 g ξ) dξ = ∫ M (f x) (g (-x)) dx`.
 * `SchwartzMap.integral_bilin_fourier_fourier_eq_of_forall_integral_bilin_eq`: an operator with
-  transpose `S` for the spatial pairing has the transpose `R ∘ S ∘ R` for the Fourier-side pairing.
+  transpose `S` for the spatial pairings has the transpose `R ∘ S ∘ R` for the Fourier-side
+  pairings.
 
 * `SchwartzMap.fourier_lineDerivOp_apply`: the Fourier transform of a directional derivative.
 * `SchwartzMap.support_fourier_lineDerivOp_subset`,
@@ -85,8 +87,14 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   translation multiplies the Fourier transform by a phase and keeps its support.
 * `SchwartzMap.fourierMultiplierCLM_compSubConstCLM`: Fourier multipliers commute with
   translations.
-* `SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_apply`: composition with a linear isometry
-  equivalence commutes with the Fourier transform, `𝓕 (u ∘ A) ξ = 𝓕 u (A ξ)`.
+* `SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_apply`,
+  `SchwartzMap.fourierInv_compCLMOfContinuousLinearEquiv_apply`,
+  `SchwartzMap.fourier_compCLMOfContinuousLinearEquiv`,
+  `SchwartzMap.fourierInv_compCLMOfContinuousLinearEquiv`: composition with a linear isometry
+  equivalence commutes with the Fourier transform and its inverse, `𝓕 (u ∘ A) ξ = 𝓕 u (A ξ)`.
+* `SchwartzMap.fourierMultiplierCLM_compCLMOfContinuousLinearEquiv`:
+  composition with a linear isometry equivalence `A` carries the Fourier multiplier with symbol `g`
+  to the one with symbol `g ∘ A`, `T_{g ∘ A} (f ∘ A) = (T_g f) ∘ A`.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
   directional derivative.
 * `SchwartzMap.fourier_laplacian_apply`: the Fourier transform of the Laplacian.
@@ -117,6 +125,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Section 9.4.
+* L. Grafakos, *Classical Fourier Analysis*, 3rd ed., Proposition 2.2.11 (the Fourier transform
+  commutes with orthogonal changes of variables).
 -/
 
 public section
@@ -291,25 +301,31 @@ section BilinearPlancherel
 variable [NormedSpace ℂ F] [CompleteSpace F] {G K : Type*} [NormedAddCommGroup G]
   [NormedSpace ℂ G] [CompleteSpace G] [NormedAddCommGroup K] [NormedSpace ℂ K]
 
+/-- The Fourier transform applied twice is the reflection: `𝓕 (𝓕 f) x = f (-x)`. -/
+@[simp]
+theorem fourier_fourier_apply (f : 𝓢(E, F)) (x : E) : 𝓕 (𝓕 f) x = f (-x) := by
+  have h := fourierInv_apply_eq_fourier_neg (𝓕 f) (-x)
+  rwa [neg_neg, fourierInv_fourier_eq, eq_comm] at h
+
 /-- **Bilinear Plancherel**: the bilinear pairing of the Fourier transforms of two Schwartz
 functions is the pairing of the first with the reflection of the second,
 `∫ M (𝓕 f ξ) (𝓕 g ξ) dξ = ∫ M (f x) (g (-x)) dx`. No complex conjugation is involved; the
-reflection comes from `𝓕 (𝓕 g) x = g (-x)`. -/
+reflection comes from `𝓕 (𝓕 g) x = g (-x)` (`SchwartzMap.fourier_fourier_apply`). -/
 theorem integral_bilin_fourier_fourier (f : 𝓢(E, F)) (g : 𝓢(E, G)) (M : F →L[ℂ] G →L[ℂ] K) :
     ∫ ξ, M (𝓕 f ξ) (𝓕 g ξ) = ∫ x, M (f x) (g (-x)) := by
-  rw [integral_bilin_fourier_eq]
-  congr 1 with x
-  have h := fourierInv_apply_eq_fourier_neg (𝓕 g) (-x)
-  rw [FourierTransform.fourierInv_fourier_eq, neg_neg] at h
-  rw [← h]
+  simp only [integral_bilin_fourier_eq, fourier_fourier_apply]
 
 /-- **Transposes for the Fourier-side pairing.** Write `R g (x) = g (-x)` for the reflection. If
-`S` is the transpose of `T` for the spatial bilinear pairing, `∫ M (T f) g = ∫ M f (S g)`, then
-`R ∘ S ∘ R` is its transpose for the Fourier-side pairing `(f, g) ↦ ∫ M (𝓕 f) (𝓕 g)`. -/
-theorem integral_bilin_fourier_fourier_eq_of_forall_integral_bilin_eq (M : F →L[ℂ] G →L[ℂ] K)
-    {T : 𝓢(E, F) → 𝓢(E, F)} {S : 𝓢(E, G) → 𝓢(E, G)}
-    (hTS : ∀ f g, ∫ x, M (T f x) (g x) = ∫ x, M (f x) (S g x)) (f : 𝓢(E, F)) (g : 𝓢(E, G)) :
-    ∫ ξ, M (𝓕 (T f) ξ) (𝓕 g ξ) = ∫ ξ, M (𝓕 f ξ) (𝓕 (compCLMOfContinuousLinearEquiv ℂ
+`S` is the transpose of `T` for the spatial bilinear pairings, `∫ M (T f) g = ∫ M' f (S g)`, then
+`R ∘ S ∘ R` is its transpose for the Fourier-side pairings `(f, g) ↦ ∫ M (𝓕 f) (𝓕 g)` and
+`(f, g) ↦ ∫ M' (𝓕 f) (𝓕 g)`. The operators may change the value spaces, as for an operator
+between sections of two different bundles and its transpose between the dual bundles. -/
+theorem integral_bilin_fourier_fourier_eq_of_forall_integral_bilin_eq {F' G' : Type*}
+    [NormedAddCommGroup F'] [NormedSpace ℂ F'] [CompleteSpace F'] [NormedAddCommGroup G']
+    [NormedSpace ℂ G'] [CompleteSpace G'] (M : F' →L[ℂ] G →L[ℂ] K) (M' : F →L[ℂ] G' →L[ℂ] K)
+    {T : 𝓢(E, F) → 𝓢(E, F')} {S : 𝓢(E, G) → 𝓢(E, G')}
+    (hTS : ∀ f g, ∫ x, M (T f x) (g x) = ∫ x, M' (f x) (S g x)) (f : 𝓢(E, F)) (g : 𝓢(E, G)) :
+    ∫ ξ, M (𝓕 (T f) ξ) (𝓕 g ξ) = ∫ ξ, M' (𝓕 f ξ) (𝓕 (compCLMOfContinuousLinearEquiv ℂ
       (LinearIsometryEquiv.neg ℝ (E := E)).toContinuousLinearEquiv
         (S (compCLMOfContinuousLinearEquiv ℂ
           (LinearIsometryEquiv.neg ℝ (E := E)).toContinuousLinearEquiv g))) ξ) := by
@@ -395,6 +411,63 @@ theorem fourier_compCLMOfContinuousLinearEquiv_apply {D : Type*} [NormedAddCommG
     𝓕 (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv u) ξ = 𝓕 u (A ξ) := by
   rw [fourier_coe, fourier_coe, compCLMOfContinuousLinearEquiv_apply]
   exact Real.fourier_comp_linearIsometry A u ξ
+
+/-- The inverse Fourier transform commutes with composition by a linear isometry equivalence:
+`𝓕⁻ (u ∘ A) ξ = 𝓕⁻ u (A ξ)`. -/
+theorem fourierInv_compCLMOfContinuousLinearEquiv_apply {D : Type*} [NormedAddCommGroup D]
+    [InnerProductSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace D] [BorelSpace D]
+    (A : D ≃ₗᵢ[ℝ] E) (u : 𝓢(E, F)) (ξ : D) :
+    𝓕⁻ (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv u) ξ = 𝓕⁻ u (A ξ) := by
+  rw [fourierInv_coe, fourierInv_coe, compCLMOfContinuousLinearEquiv_apply]
+  exact Real.fourierInv_comp_linearIsometry A u ξ
+
+/-- The Fourier transform commutes with composition by a linear isometry equivalence:
+`𝓕 (u ∘ A) = (𝓕 u) ∘ A`. -/
+@[simp]
+theorem fourier_compCLMOfContinuousLinearEquiv {D : Type*} [NormedAddCommGroup D]
+    [InnerProductSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace D] [BorelSpace D]
+    (A : D ≃ₗᵢ[ℝ] E) (u : 𝓢(E, F)) :
+    𝓕 (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv u) =
+      compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv (𝓕 u) := by
+  ext ξ
+  rw [fourier_compCLMOfContinuousLinearEquiv_apply, compCLMOfContinuousLinearEquiv_apply,
+    Function.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+
+/-- The inverse Fourier transform commutes with composition by a linear isometry equivalence:
+`𝓕⁻ (u ∘ A) = (𝓕⁻ u) ∘ A`. -/
+@[simp]
+theorem fourierInv_compCLMOfContinuousLinearEquiv {D : Type*} [NormedAddCommGroup D]
+    [InnerProductSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace D] [BorelSpace D]
+    (A : D ≃ₗᵢ[ℝ] E) (u : 𝓢(E, F)) :
+    𝓕⁻ (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv u) =
+      compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv (𝓕⁻ u) := by
+  ext ξ
+  rw [fourierInv_compCLMOfContinuousLinearEquiv_apply, compCLMOfContinuousLinearEquiv_apply,
+    Function.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+
+/-- Composition with a linear isometry equivalence `A` intertwines Fourier multipliers, carrying
+the symbol `g` to `g ∘ A`: `T_{g ∘ A} (f ∘ A) = (T_g f) ∘ A`. In particular a Fourier multiplier
+whose symbol is invariant under a linear isometry of `E` commutes with composition with it. -/
+theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv {D : Type*}
+    [NormedAddCommGroup D] [InnerProductSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace D]
+    [BorelSpace D] {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℂ 𝕜 F]
+    (A : D ≃ₗᵢ[ℝ] E) (g : E → 𝕜) (f : 𝓢(E, F)) :
+    fourierMultiplierCLM F (g ∘ A) (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv f) =
+      compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv (fourierMultiplierCLM F g f) := by
+  by_cases hg : g.HasTemperateGrowth
+  · have hgA' : (g ∘ A).HasTemperateGrowth :=
+      A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.mpr hg
+    have hgA : (g ∘ A) ∘ A.toContinuousLinearEquiv.symm = g := by
+      ext x
+      simp
+    rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply,
+      fourier_compCLMOfContinuousLinearEquiv,
+      smulLeftCLM_compCLMOfContinuousLinearEquiv ℂ hgA', hgA,
+      fourierInv_compCLMOfContinuousLinearEquiv]
+  · have hgA : ¬(g ∘ A).HasTemperateGrowth :=
+      A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.not.mpr hg
+    simp [fourierMultiplierCLM_apply, smulLeftCLM_of_not_hasTemperateGrowth hg,
+      smulLeftCLM_of_not_hasTemperateGrowth hgA]
 
 /-- The Fourier transform of the second directional derivative `∂_v ∂_w u` of a Schwartz function
 is `𝓕 u` multiplied by `-(2π)² ⟪ξ, v⟫ ⟪ξ, w⟫`. -/

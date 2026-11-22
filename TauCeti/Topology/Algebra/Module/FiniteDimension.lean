@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Algebra.Star.Module
 public import Mathlib.Topology.Algebra.Star
 public import Mathlib.LinearAlgebra.Multilinear.Basic
@@ -34,6 +35,17 @@ continuous version.
 Since every linear functional on a finite-dimensional Hausdorff topological vector space is
 continuous, the continuous dual `E →L[𝕜] 𝕜` has the same dimension as `E`:
 `ContinuousLinearMap.dual_finrank_eq`.
+
+A continuous linear map into a finite-dimensional Hausdorff topological vector space, from a space
+of the same `finrank`, is invertible as soon as it is injective
+(`ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq`): the inverse is linear on a
+finite-dimensional Hausdorff space, hence continuous.
+
+Continuous `𝕜`-linear maps from a finite-dimensional space into a space that is finite-dimensional
+over a second division ring `𝕜'`, acting continuously and commuting with `𝕜`, form a
+finite-dimensional space over `𝕜'`, for instance over `ℂ` for real-linear maps into a complex
+space (`ContinuousLinearMap.finiteDimensional_of_smulCommClass`). No topology on the scalars and
+no relation between `𝕜` and `𝕜'` is needed.
 
 A multilinear map `f : MultilinearMap (RingHom.id
 𝕜) M N` on finitely many finite-dimensional Hausdorff
@@ -156,6 +168,46 @@ theorem dual_finrank_eq : Module.finrank 𝕜 (E →L[𝕜] 𝕜) = Module.finra
   rw [← LinearEquiv.finrank_eq
     (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]
   exact Subspace.dual_finrank_eq
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 U G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup U] [TopologicalSpace U] [IsTopologicalAddGroup U]
+  [Module 𝕜 U] [ContinuousSMul 𝕜 U]
+  [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+  [Module 𝕜 G] [ContinuousSMul 𝕜 G] [T2Space G] [FiniteDimensional 𝕜 G]
+
+/-- A continuous linear map into a finite-dimensional Hausdorff topological vector space, from a
+topological vector space of the same `finrank`, is invertible exactly when it is injective. The
+domain need not be assumed finite-dimensional or Hausdorff: an injective continuous linear map
+embeds it into the codomain. -/
+theorem isInvertible_iff_injective_of_finrank_eq {A : U →L[𝕜] G}
+    (hdim : Module.finrank 𝕜 U = Module.finrank 𝕜 G) : A.IsInvertible ↔ Function.Injective A := by
+  refine ⟨IsInvertible.injective, fun hinj ↦ ?_⟩
+  have : T2Space U := .of_injective_continuous hinj A.continuous
+  have := FiniteDimensional.of_injective (A : U →ₗ[𝕜] G) hinj
+  exact ⟨((A : U →ₗ[𝕜] G).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv, by ext; simp⟩
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 𝕜' E F : Type*} [DivisionRing 𝕜] [DivisionRing 𝕜']
+  [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E] [FiniteDimensional 𝕜 E]
+  [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F] [Module 𝕜 F] [Module 𝕜' F]
+  [SMulCommClass 𝕜 𝕜' F] [ContinuousConstSMul 𝕜' F] [FiniteDimensional 𝕜' F]
+
+/-- Continuous `𝕜`-linear maps from a finite-dimensional topological module into a space
+that is finite-dimensional over a second division ring `𝕜'`, acting continuously and commuting with
+`𝕜`, form a finite-dimensional space over `𝕜'`. For instance real-linear maps into a
+finite-dimensional complex space form a finite-dimensional complex space. The two scalar rings
+need not be related: the maps embed `𝕜'`-linearly into the finite-dimensional space of
+`𝕜`-linear maps. This generalizes Mathlib's `ContinuousLinearMap.finiteDimensional`, the case
+`𝕜' = 𝕜` over a field. -/
+theorem finiteDimensional_of_smulCommClass : FiniteDimensional 𝕜' (E →L[𝕜] F) :=
+  .of_injective (coeLM 𝕜' : (E →L[𝕜] F) →ₗ[𝕜'] E →ₗ[𝕜] F) coe_injective
 
 end ContinuousLinearMap
 

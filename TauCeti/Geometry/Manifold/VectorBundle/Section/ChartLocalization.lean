@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Topology
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Chart localization of bundle tests
@@ -33,6 +35,8 @@ gives `ψ • s` when `tsupport ψ` lies in the chart source
 * `Bundle.Trivialization.continuous_chartLocalization`: it is continuous.
 * `Bundle.Trivialization.chartTestSection_chartLocalization`: extending the localization through
   the chart recovers `ψ • s`.
+* `ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`: compactly supported sections are
+  finite sums of chart extensions of native test functions.
 
 The fixed-support part rests on
 `ContDiffMapSupportedIn.continuous_iff_continuous_toContMDiffMap`: on a fixed compact support, the
@@ -233,3 +237,69 @@ theorem chartTestSection_chartLocalization (hc' : ContMDiffOn I 𝓘(ℝ, E) n c
       image_eq_zero_of_notMem_tsupport (fun h ↦ hx (hψc h)), zero_smul]
 
 end Bundle.Trivialization
+
+namespace ContMDiffSection
+
+open Bundle.Trivialization
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] {n : ℕ∞} [IsManifold I n M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle n F V I]
+
+/-- **Compactly supported sections are spanned by chart extensions.** On a boundaryless Hausdorff
+manifold with finite-dimensional model, every compactly supported `C^n` section is a finite sum
+of chart extensions of native test functions. In particular a linear map on compactly supported
+sections is determined by its composites with the chart extensions. -/
+theorem span_iUnion_range_chartTestSection_eq_top :
+    Submodule.span ℝ (⋃ p : ChartTestData I F V n, range p.chartTestSection) = ⊤ := by
+  refine Submodule.eq_top_iff'.2 fun s ↦ ?_
+  let K : Set M := tsupport (s : Cₛ^n⟮I; F, V⟯)
+  have hK : IsCompact K := mem_compactlySupported.1 s.property
+  obtain ⟨α, _, r, χ, hχc, hχs, -, -, hχsum⟩ :=
+    hK.exists_contMDiffMap_partitionOfUnity I (n := n)
+      (U := fun x : M ↦ (TauCeti.bundleChartAt I F V x).source) fun x _ ↦
+        ⟨x, (TauCeti.bundleChartAt I F V x).open_source.mem_nhds
+          (TauCeti.mem_bundleChartAt_source x)⟩
+  have hs_eq : s = ∑ a : α, (trivializationAt F V (r a)).chartTestSection
+      (TauCeti.bundleChartAt I F V (r a)) (TauCeti.contMDiffOn_bundleChartAt (r a))
+      (TauCeti.bundleChartAt_source_subset_baseSet (r a))
+      ((trivializationAt F V (r a)).chartCutoffTestFunction (TauCeti.bundleChartAt I F V (r a))
+        (TauCeti.contMDiffOn_bundleChartAt_symm (r a))
+        (TauCeti.bundleChartAt_source_subset_baseSet (r a)) (χ a) (hχc a) (hχs a) s.val) := by
+    apply Subtype.ext
+    ext x
+    have hcoe : ((∑ a : α, (trivializationAt F V (r a)).chartTestSection
+          (TauCeti.bundleChartAt I F V (r a)) (TauCeti.contMDiffOn_bundleChartAt (r a))
+          (TauCeti.bundleChartAt_source_subset_baseSet (r a))
+          ((trivializationAt F V (r a)).chartCutoffTestFunction
+            (TauCeti.bundleChartAt I F V (r a)) (TauCeti.contMDiffOn_bundleChartAt_symm (r a))
+            (TauCeti.bundleChartAt_source_subset_baseSet (r a)) (χ a) (hχc a) (hχs a) s.val) :
+          compactlySupported I F n V) : Cₛ^n⟮I; F, V⟯) = ∑ a : α, χ a • s.val := by
+      rw [Submodule.coe_sum]
+      exact Finset.sum_congr rfl fun a _ ↦ congrArg Subtype.val
+        ((trivializationAt F V (r a)).chartTestSection_chartCutoffTestFunction
+          (TauCeti.bundleChartAt I F V (r a)) (TauCeti.contMDiffOn_bundleChartAt_symm (r a))
+          (TauCeti.bundleChartAt_source_subset_baseSet (r a))
+          (TauCeti.contMDiffOn_bundleChartAt (r a)) (χ a) (hχc a) (hχs a) s.val)
+    have heval : (∑ a : α, χ a • s.val : Cₛ^n⟮I; F, V⟯) x = ∑ a : α, (χ a • s.val) x := by
+      have h := congrFun (map_sum (coeAddHom I F n V) (fun a : α ↦ χ a • s.val) Finset.univ) x
+      simp only [coeAddHom_apply, Finset.sum_apply] at h
+      exact h
+    rw [hcoe, heval]
+    simp only [ContMDiffSection.smul_apply, ← Finset.sum_smul]
+    by_cases hx : x ∈ K
+    · rw [hχsum x hx, one_smul]
+    · rw [s.val.eq_zero_of_notMem_tsupport hx, smul_zero]
+  rw [hs_eq]
+  refine Submodule.sum_mem _ fun a _ ↦ Submodule.subset_span (mem_iUnion.2
+    ⟨⟨trivializationAt F V (r a), TauCeti.bundleChartAt I F V (r a),
+      TauCeti.contMDiffOn_bundleChartAt (r a),
+      TauCeti.bundleChartAt_source_subset_baseSet (r a)⟩, ?_⟩)
+  rw [ChartTestData.chartTestSection_def]
+  exact mem_range_self _
+
+end ContMDiffSection

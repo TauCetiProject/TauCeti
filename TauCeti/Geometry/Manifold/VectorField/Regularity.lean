@@ -26,6 +26,8 @@ manifold differential of a function to tangent vectors whose base point varies.
 * `contMDiff_tangentBundle_mk_constBase`: smoothness of a varying model vector over a fixed point.
 * `contMDiff_tangentBundle_mk_modelSpace`: smoothness of a varying model vector over a varying
   point of the model space.
+* `ContMDiff.contDiff_tangentBundle_mk_constBase`: a `C^n` function on the tangent bundle is `C^n`
+  along each tangent fibre.
 * `TauCeti.mdifferentiableAt_mvfderiv_apply`: a directional derivative of a `C²` function
   along a differentiable vector field is differentiable at the point.
 * `ContMDiffAt.contMDiffAt_mvfderiv_apply`: applying the differential of a function that is
@@ -142,6 +144,12 @@ theorem contMDiff_tangentBundle_mk_modelSpace {f v : N → E}
   -- `(a, b)` to the bundle point `⟨a, b⟩` by definition, so `h` is the claim.
   rw [tangentBundleModelSpaceHomeomorph_coe_symm] at h
   exact h
+
+/-- A `C^n` function on the tangent bundle is `C^n` along the tangent fibre over each point. -/
+theorem ContMDiff.contDiff_tangentBundle_mk_constBase {g : TangentBundle I M → F}
+    (hg : ContMDiff I.tangent 𝓘(𝕜, F) n g) (x : M) :
+    ContDiff 𝕜 n fun w : E ↦ g (TotalSpace.mk' E x w) :=
+  contMDiff_iff_contDiff.1 (hg.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id x))
 
 end TangentBundleInputs
 

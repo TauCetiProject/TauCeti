@@ -22,7 +22,7 @@ import TauCeti.MeasureTheory.Measure.Restrict
 
 At a plane vortex `x`, the gauge-fixed operator `L_x = d₀* ⊕ d₁` (`gaugeFixedOperator`) has a
 bounded weak right inverse `Q` on `L²(ℂ; ℝ⁴)`: `Q f` is the weak solution of `L_x y = f`
-orthogonal to the weak kernel (`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`).
+orthogonal to the weak kernel (`exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`).
 With `ρ(z) = √(1 + |z|²)` and `|c| < 1/2`, it satisfies the weighted `L²` estimate
 `‖exp(c ρ) Q f‖₂ ≤ K ‖exp(c ρ) f‖₂`
 (`exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq`), and it gains one
@@ -234,7 +234,7 @@ solution of the plane vortex equation with `|α| → 1` at infinity whose coordi
 derivatives through order `k`, let `ρ(z) = √(1 + |z|²)` and `|c| < 1/2`. Let `y` be the
 square-integrable weak solution of `L_x y = f` orthogonal to the weak kernel of `L_x`, that is the
 value at `f` of the weak right inverse `Q` of
-`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`. If `exp(c ρ) f ∈ H^k`, then
+`exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`. If `exp(c ρ) f ∈ H^k`, then
 `exp(c ρ) y ∈ H^(k+1)`. -/
 theorem exp_mul_smul_mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq
     (k : ℕ) (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
@@ -276,7 +276,7 @@ theorem exp_mul_smul_mem_sobolevFields_natCast_add_one_of_forall_mem_framedField
     (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) ∈ sobolevFields (k + 1) :=
   exp_mul_smul_mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k
     (contDiff_of_forall_mem_framedFieldSpace hx hmem) hsol
-    (tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx)
+    (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem)
     (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))) hc
     hweak horth hwf
 
@@ -356,7 +356,7 @@ plane vortex equations with `|α| → 1` and `∇₁ α → 0` at infinity, let 
 `|c| < 1/2`. There is a constant `K` with the following property. Let `y` be the
 square-integrable weak solution of `L_x y = f` orthogonal to the weak kernel of `L_x`, that is the
 value at `f` of the weak right inverse `Q` of
-`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`, and suppose `exp(c ρ) f ∈ L²`.
+`exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`, and suppose `exp(c ρ) f ∈ L²`.
 Then `exp(c ρ) y` is the value of some `w ∈ H¹(ℂ)⁴` with
 
 `‖w‖_{H¹} ≤ K ‖exp(c ρ) f‖₂`,

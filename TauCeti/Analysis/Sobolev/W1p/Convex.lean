@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Convex.Topology
+import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Convex.Measure
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
@@ -26,7 +27,9 @@ import TauCeti.Topology.MetricSpace.Holder
 The precise representative of a real `W^{1,∞}` function on an open set is Lipschitz on
 each convex subset, with constant at most the essential supremum of its weak gradient.
 In particular the whole-space representative has this bound. Neither boundedness of the
-domain nor boundary regularity is needed.
+domain nor boundary regularity is needed. On an arbitrary open domain the representative is
+therefore locally Lipschitz, and by Rademacher's theorem its classical directional derivatives,
+which exist almost everywhere, are the components of the weak gradient.
 
 Local continuity comes from the interior Morrey theorem. Mollification on a neighborhood of
 each segment gives the sharp constant, without assuming that smooth functions are dense in
@@ -60,6 +63,10 @@ then gives the Hölder bound.
 
 * `TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_convex`: the sharp Lipschitz bound for
   `W^{1,∞}` on convex subsets of the domain.
+* `TauCeti.W1p.locallyLipschitzOn_preciseRepresentative`,
+  `TauCeti.W1p.lineDeriv_preciseRepresentative_ae_eq`: on any open domain the `W^{1,∞}`
+  representative is locally Lipschitz, with classical directional derivatives a.e. equal to the
+  components of the weak gradient.
 * `TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le`: the Lipschitz
   bound for `W^{1,p}` functions with essentially bounded value and gradient on a convex subset.
 * `TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le`: Hölder bounds
@@ -83,7 +90,7 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Set Metric Filter TauCeti.MeasureTheory
-open scoped Topology Convolution ENNReal NNReal
+open scoped Topology Convolution ENNReal NNReal InnerProductSpace
 
 namespace TauCeti
 
@@ -277,6 +284,30 @@ theorem W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le {p : ℝ
           ‖preciseRepresentative μ (W1p.value u) y‖ := dist_le_norm_add_norm _ _
       _ ≤ 2 * M₁ := by linarith [hv x (hsub hx), hv y (hsub hy)]
       _ ≤ (2 * M₁).toNNReal := Real.le_coe_toNNReal _
+
+/-- The precise representative of a `W^{1,∞}` class is locally Lipschitz on its open domain: it
+is Lipschitz on every ball contained in the domain. -/
+theorem W1p.locallyLipschitzOn_preciseRepresentative (u : W1p μ Ω ∞) :
+    LocallyLipschitzOn (Ω : Set E) (preciseRepresentative μ (W1p.value u)) := fun x hx ↦ by
+  obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen x hx
+  exact ⟨_, ball x r, mem_nhdsWithin_of_mem_nhds (ball_mem_nhds x hr),
+    W1p.lipschitzOnWith_preciseRepresentative_of_convex u (convex_ball x r) hrΩ⟩
+
+/-- Almost everywhere on its domain, the classical directional derivative of the precise
+representative of a `W^{1,∞}` class is the corresponding component of the weak gradient. -/
+theorem W1p.lineDeriv_preciseRepresentative_ae_eq (u : W1p μ Ω ∞) (v : E) :
+    (fun x ↦ lineDeriv ℝ (preciseRepresentative μ (W1p.value u)) x v) =ᵐ[μ.restrict Ω]
+      fun x ↦ ⟪W1p.gradient u x, v⟫_ℝ := by
+  have hll := W1p.locallyLipschitzOn_preciseRepresentative u
+  -- Both functions are weak derivatives of the precise representative.
+  have h₁ : HasWeakLineDerivOn μ Ω (preciseRepresentative μ (W1p.value u))
+      (fun x ↦ lineDeriv ℝ (preciseRepresentative μ (W1p.value u)) x v) v :=
+    hll.hasWeakLineDerivOn ((hll.ae_differentiableAt_of_mem Ω.isOpen).mono fun _ hx hxΩ ↦
+      (hx hxΩ).lineDifferentiableAt.hasLineDerivAt)
+  have h₂ := ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn v).congr_ae
+    (W1p.ae_eq_preciseRepresentative u)
+  filter_upwards [h₁.ae_eq h₂] with x hx
+  rw [hx, innerSL_apply_apply]
 
 /-! ### Morrey's inequality on bounded convex domains -/
 
