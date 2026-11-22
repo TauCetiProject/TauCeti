@@ -76,7 +76,7 @@ theorem mem_orthogonalGroup_iff_of_finrank_eq_one [Module.IsTorsionFree R N]
 theorem eq_one_or_eq_negOrthogonal_of_finrank_eq_one [Module.IsTorsionFree R N]
     {Q : QuadraticMap R M N} (hQ : Q ≠ 0) (hM : Module.finrank R M = 1) (g : orthogonalGroup Q) :
     g = 1 ∨ g = Q.negOrthogonal :=
-  ((mem_orthogonalGroup_iff_of_finrank_eq_one hQ hM).mp g.2).imp
+  ((mem_orthogonalGroup_iff_of_finrank_eq_one hQ hM).mp g.property).imp
     (fun h ↦ Subtype.ext (by simpa using h)) (fun h ↦ Subtype.ext (by simpa using h))
 
 /-- **The orthogonal group of a line has order two.** On a free module of rank one over a domain

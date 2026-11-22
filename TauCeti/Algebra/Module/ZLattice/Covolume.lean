@@ -150,13 +150,14 @@ theorem _root_.ZLattice.covolume_le_covolume_of_le {L₁ L₂ : Submodule ℤ E}
   have : MeasurableVAdd L₁ E := (inferInstance : MeasurableVAdd L₁.toAddSubgroup E)
   have : VAddInvariantMeasure L₁ E μ :=
     (inferInstance : VAddInvariantMeasure L₁.toAddSubgroup E μ)
-  refine h₁.measure_le_of_disjoint_vadd (ZSpan.fundamentalDomain_measurableSet b₂).nullMeasurableSet
-    fun g hg ↦ Set.disjoint_left.2 ?_
+  refine h₁.measure_le_of_aedisjoint_vadd
+    (ZSpan.fundamentalDomain_measurableSet b₂).nullMeasurableSet
+    fun g hg ↦ Disjoint.aedisjoint <| Set.disjoint_left.2 ?_
   rintro _ ⟨x, hx, rfl⟩ hgx
   -- Both `0` and `g`, viewed in the `ℤ`-span of `b₂`, translate `x` into the parallelepiped.
   have hg₂ : (g : E) ∈ span ℤ (Set.range b₂) := by
     rw [Basis.ofZLatticeBasis_span]
-    exact h g.2
+    exact h g.property
   have hx₀ : (0 : span ℤ (Set.range b₂)) +ᵥ x ∈ ZSpan.fundamentalDomain b₂ := by
     rwa [zero_vadd]
   have hg₀ := (ZSpan.exist_unique_vadd_mem_fundamentalDomain b₂ x).unique

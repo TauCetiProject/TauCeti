@@ -99,19 +99,19 @@ variable (R) in
 mutually inverse bijections. -/
 noncomputable def heightOneSpectrumEquiv :
     {P : Place k F // ∀ r : R, algebraMap R F r ∈ P.integers} ≃ HeightOneSpectrum R where
-  toFun P := P.1.center P.2
+  toFun P := P.val.center P.property
   invFun 𝔭 := ⟨ofPrime k F 𝔭, algebraMap_mem_integers_ofPrime k F 𝔭⟩
-  left_inv P := Subtype.ext (ofPrime_center k F P.1 P.2)
+  left_inv P := Subtype.ext (ofPrime_center k F P.val P.property)
   right_inv 𝔭 := center_ofPrime k F 𝔭
 
 @[simp]
 theorem heightOneSpectrumEquiv_apply
     (P : {P : Place k F // ∀ r : R, algebraMap R F r ∈ P.integers}) :
-    heightOneSpectrumEquiv k F R P = P.1.center P.2 := (rfl)
+    heightOneSpectrumEquiv k F R P = P.val.center P.property := (rfl)
 
 @[simp]
 theorem coe_heightOneSpectrumEquiv_symm_apply (𝔭 : HeightOneSpectrum R) :
-    ((heightOneSpectrumEquiv k F R).symm 𝔭).1 = ofPrime k F 𝔭 := (rfl)
+    ((heightOneSpectrumEquiv k F R).symm 𝔭).val = ofPrime k F 𝔭 := (rfl)
 
 /-- **A place of `F / k` is the place of a height one prime of an affine model `R` exactly when
 it is finite on `R`**: the image of `TauCeti.Place.ofPrime` is the finite chart of the model. -/
@@ -176,7 +176,7 @@ theorem residueRingHom_surjective : Function.Surjective (P.residueRingHom hR) :=
   intro y
   obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective y
   obtain ⟨c, hc⟩ := HeightOneSpectrum.exists_valuation_sub_lt_of_integer (P.center hR)
-    (by rw [P.valuation_center hR]; exact P.mem_integers_iff.mp a.2) 1
+    (by rw [P.valuation_center hR]; exact P.mem_integers_iff.mp a.property) 1
   rw [Units.val_one, P.valuation_center hR] at hc
   refine ⟨c, ?_⟩
   rw [residueRingHom_apply, ← sub_eq_zero, ← map_sub, P.residue_eq_zero_iff_valuation_lt_one]
@@ -271,7 +271,7 @@ noncomputable def holomorphyRingHeightOneSpectrumEquiv (hF : IsFunctionField k F
 theorem holomorphyRingHeightOneSpectrumEquiv_apply (hF : IsFunctionField k F) (P : S) :
     holomorphyRingHeightOneSpectrumEquiv hF P =
       (P : Place k F).center
-        ((forall_algebraMap_mem_integers_holomorphyRing_iff hF).mpr P.2) :=
+        ((forall_algebraMap_mem_integers_holomorphyRing_iff hF).mpr P.property) :=
   Place.heightOneSpectrumEquiv_apply k F _
 
 @[simp]

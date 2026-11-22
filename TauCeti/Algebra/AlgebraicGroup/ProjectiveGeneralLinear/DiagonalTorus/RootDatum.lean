@@ -72,15 +72,15 @@ private lemma projected_root_pairing (a b : Fin (r + 1)) (y : Fin (r + 1) → �
   ring
 
 private lemma projected_pairing (p q : CoordinateRootIndex (Fin (r + 1))) :
-    dotPairing (rootProjection.{u} r (coordinateRoot p.1.1 p.1.2))
-        (corootProjection r (coordinateCoroot q.1.1 q.1.2)) =
+    dotPairing (rootProjection.{u} r (coordinateRoot p.val.1 p.val.2))
+        (corootProjection r (coordinateCoroot q.val.1 q.val.2)) =
       (coordinateRootDatum (Fin (r + 1))).pairing p q := by
   rw [projected_root_pairing, coordinateRootDatum_pairing_apply]
   simp only [coordinateCoroot_apply, eq_comm]
 
 private lemma projected_root_injective : Function.Injective
     (fun p : CoordinateRootIndex (Fin (r + 1)) ↦
-      rootProjection.{u} r (coordinateRoot p.1.1 p.1.2)) := by
+      rootProjection.{u} r (coordinateRoot p.val.1 p.val.2)) := by
   intro p q h
   dsimp only at h
   have ht := projected_pairing.{u} q p
@@ -90,7 +90,7 @@ private lemma projected_root_injective : Function.Injective
 
 private lemma projected_coroot_injective : Function.Injective
     (fun p : CoordinateRootIndex (Fin (r + 1)) ↦
-      corootProjection.{u} r (coordinateCoroot p.1.1 p.1.2)) := by
+      corootProjection.{u} r (coordinateCoroot p.val.1 p.val.2)) := by
   intro p q h
   dsimp only at h
   have ht := projected_pairing.{u} p q
@@ -136,7 +136,7 @@ private lemma rootProjection_single_apply (a : Fin (r + 1)) (i : ULift.{u} (Fin 
 @[simp] theorem diagonalRootDatum_root_apply (p : CoordinateRootIndex (Fin (r + 1)))
     (i : ULift.{u} (Fin r)) :
     (diagonalRootDatum.{u} r).root p i =
-      diagonalTorusWeight r (finProdFinEquiv p.1) i := by
+      diagonalTorusWeight r (finProdFinEquiv p.val) i := by
   simp only [diagonalRootDatum, Function.Embedding.coeFn_mk, coordinateRoot_def,
     map_sub, Finsupp.sub_apply, rootProjection_single_apply, diagonalTorusWeight_apply,
     Equiv.symm_apply_apply]
@@ -145,18 +145,18 @@ private lemma rootProjection_single_apply (a : Fin (r + 1)) (i : ULift.{u} (Fin 
 @[simp] theorem diagonalRootDatum_coroot_apply (p : CoordinateRootIndex (Fin (r + 1)))
     (i : ULift.{u} (Fin r)) :
     (diagonalRootDatum.{u} r).coroot p i =
-      ((if p.1.1 = i.down.castSucc then 1 else 0) -
-        (if p.1.2 = i.down.castSucc then 1 else 0)) -
-      ((if p.1.1 = Fin.last r then 1 else 0) -
-        (if p.1.2 = Fin.last r then 1 else 0)) := by
+      ((if p.val.1 = i.down.castSucc then 1 else 0) -
+        (if p.val.2 = i.down.castSucc then 1 else 0)) -
+      ((if p.val.1 = Fin.last r then 1 else 0) -
+        (if p.val.2 = Fin.last r then 1 else 0)) := by
   simp only [diagonalRootDatum, Function.Embedding.coeFn_mk, corootProjection_apply,
     coordinateCoroot_apply, eq_comm]
 
 /-- The Cartan integers are the usual coordinate-difference pairings of type A. -/
 @[simp] theorem diagonalRootDatum_pairing_apply (p q : CoordinateRootIndex (Fin (r + 1))) :
     (diagonalRootDatum.{u} r).pairing p q =
-      (if p.1.1 = q.1.1 then 1 else 0) - (if p.1.1 = q.1.2 then 1 else 0) -
-        ((if p.1.2 = q.1.1 then 1 else 0) - (if p.1.2 = q.1.2 then 1 else 0)) := by
+      (if p.val.1 = q.val.1 then 1 else 0) - (if p.val.1 = q.val.2 then 1 else 0) -
+        ((if p.val.2 = q.val.1 then 1 else 0) - (if p.val.2 = q.val.2 then 1 else 0)) := by
   have h : (diagonalRootDatum.{u} r).pairing p q =
       (coordinateRootDatum (Fin (r + 1))).pairing p q := projected_pairing p q
   -- The coordinate formula uses classical decidability, whereas this statement uses `Fin`'s.
@@ -165,7 +165,7 @@ private lemma rootProjection_single_apply (a : Fin (r + 1)) (i : ULift.{u} (Fin 
 /-- Reflections transpose both matrix indices. -/
 @[simp] theorem diagonalRootDatum_reflectionPerm (p q : CoordinateRootIndex (Fin (r + 1))) :
     (diagonalRootDatum.{u} r).reflectionPerm p q =
-      coordinatePermRootIndex (Equiv.swap p.1.1 p.1.2) q :=
+      coordinatePermRootIndex (Equiv.swap p.val.1 p.val.2) q :=
   coordinateRootDatum_reflectionPerm p q
 
 /-- The projective diagonal datum is reduced. -/
@@ -208,9 +208,9 @@ theorem charOfPoint_ofAdd_diagonalRootDatum_root
     DiagonalizableGroup.charOfPoint t.ofConv
         (Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p)) =
       torusCharacter (SplitTorus.pointsMulEquiv t)
-        (diagonalTorusWeight r (finProdFinEquiv p.1)) := by
+        (diagonalTorusWeight r (finProdFinEquiv p.val)) := by
   have hroot : Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p) =
-      weightCharacter (diagonalTorusWeight r (finProdFinEquiv p.1)) := by
+      weightCharacter (diagonalTorusWeight r (finProdFinEquiv p.val)) := by
     apply Multiplicative.toAdd.injective
     ext i
     simp
@@ -224,9 +224,9 @@ theorem diagonalTorus_mul_rootSubgroupPoints_mul_inv_eq_root
       (H := MonoidAlgebra R (SplitTorus.characterGroup (ULift.{u} (Fin r)))) A)
     (c : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
     BialgHom.mapDomain (diagonalTorusCoordinateMap r R).hom t *
-        rootSubgroupPoints A p.2 c *
+        rootSubgroupPoints A p.property c *
         (BialgHom.mapDomain (diagonalTorusCoordinateMap r R).hom t)⁻¹ =
-      rootSubgroupPoints A p.2
+      rootSubgroupPoints A p.property
         ((AdditiveGroup.gaPointsMulEquiv (R := R) (A := A)).symm
           (Multiplicative.ofAdd
             ((DiagonalizableGroup.charOfPoint t.ofConv
@@ -235,7 +235,7 @@ theorem diagonalTorus_mul_rootSubgroupPoints_mul_inv_eq_root
   -- The points functor wraps the character lattice as a categorical object.
   -- `erw` unfolds that object to match the explicit lattice in the character lemma.
   erw [charOfPoint_ofAdd_diagonalRootDatum_root]
-  exact diagonalTorus_mul_rootSubgroupPoints_mul_inv A p.2 t c
+  exact diagonalTorus_mul_rootSubgroupPoints_mul_inv A p.property t c
 
 end Points
 

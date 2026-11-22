@@ -204,7 +204,7 @@ theorem affineMarks_pos [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [P.IsI
   · simp
   obtain ⟨f, hf, hθ⟩ := b.exists_root_highestRoot_eq_sum_nat
   rw [b.affineMarks_some_eq_of_root_highestRoot_eq_sum (f := fun j ↦ (f j : ℤ)) ?_ i]
-  · exact_mod_cast hf i i.2
+  · exact_mod_cast hf i i.property
   · rw [hθ, ← Finset.sum_coe_sort b.support]
     simp
 
@@ -432,10 +432,10 @@ theorem affineCartanMatrix_le_zero_of_ne {k l : Option b.support} (hkl : k ≠ l
     b.affineCartanMatrix k l ≤ 0 := by
   rcases k with _ | i <;> rcases l with _ | j
   · exact absurd rfl hkl
-  · simpa using b.pairingIn_highestRoot_nonneg j.2
+  · simpa using b.pairingIn_highestRoot_nonneg j.property
   · -- the simple roots pair nonnegatively with `θ^∨` because `θ` pairs nonnegatively with them
     simpa using (P.pairingIn_lt_zero_iff ℤ (i := i) (j := b.highestRoot)).not.mpr
-      (b.pairingIn_highestRoot_nonneg i.2).not_gt
+      (b.pairingIn_highestRoot_nonneg i.property).not_gt
   · simpa [cartanMatrixIn_def] using
       b.cartanMatrix_le_zero_of_ne i j fun h ↦ hkl (congrArg some h)
 
@@ -605,7 +605,7 @@ private theorem exists_aut_of_mem_matrixSymmetryGroup
   let u : P.Aut := b.equivOfCartanMatrixEq b τ he
   have hu (k : b.support) : u.indexEquiv k = τ k :=
     TauCeti.equivOfCartanMatrixEq_indexEquiv_apply b b τ he k
-  exact ⟨u, b.indexEquiv_highestRoot u fun k hk ↦ hu ⟨k, hk⟩ ▸ (τ ⟨k, hk⟩).2, hu⟩
+  exact ⟨u, b.indexEquiv_highestRoot u fun k hk ↦ hu ⟨k, hk⟩ ▸ (τ ⟨k, hk⟩).property, hu⟩
 
 /-- **A symmetry of the finite Cartan matrix preserves the pairings of the highest root with the
 simple coroots**, `⟨θ, α_{τ j}^∨⟩ = ⟨θ, αⱼ^∨⟩`. -/
@@ -654,7 +654,7 @@ def affineExtension :
     TauCeti.matrixSymmetryGroup b.cartanMatrix →* TauCeti.matrixSymmetryGroup b.affineCartanMatrix
     where
   toFun τ := ⟨(τ : Equiv.Perm b.support).optionCongr,
-    b.optionCongr_mem_matrixSymmetryGroup_affineCartanMatrix τ.2⟩
+    b.optionCongr_mem_matrixSymmetryGroup_affineCartanMatrix τ.property⟩
   map_one' := Subtype.ext Equiv.optionCongr_one
   map_mul' σ τ := Subtype.ext <| by simp [Equiv.Perm.mul_def, Equiv.optionCongr_trans]
 
@@ -686,7 +686,7 @@ theorem range_affineExtension :
     congr($hσ' (some i))
   have hτ : τ ∈ TauCeti.matrixSymmetryGroup b.cartanMatrix := by
     refine TauCeti.mem_matrixSymmetryGroup_iff.mpr (Matrix.ext fun i j ↦ ?_)
-    have h := congrFun₂ (TauCeti.mem_matrixSymmetryGroup_iff.mp σ.2) (some i) (some j)
+    have h := congrFun₂ (TauCeti.mem_matrixSymmetryGroup_iff.mp σ.property) (some i) (some j)
     simp only [Matrix.submatrix_apply, ← hsome, affineCartanMatrix_some_some] at h
     simpa [cartanMatrixIn_def] using h
   exact ⟨⟨τ, hτ⟩, Subtype.ext hσ'⟩

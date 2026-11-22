@@ -319,7 +319,7 @@ variable (h : IsDGAlgebra 𝒞 d) (hd : ∀ (n : ℕ) ⦃a : A⦄, a ∈ 𝒜 n 
 Adams-preserving differential of `A`. -/
 noncomputable def adamsCompletionDifferential : adamsCompletion 𝒜 𝒞 →ₗ[R] adamsCompletion 𝒜 𝒞 where
   toFun f := ⟨PowerSeries.mk fun n => d (coeff n (f : PowerSeries A)),
-    mk_map_coeff_mem_adamsCompletion 𝒜 𝒞 h hd f.2⟩
+    mk_map_coeff_mem_adamsCompletion 𝒜 𝒞 h hd f.property⟩
   map_add' f g := Subtype.ext <| PowerSeries.ext fun n => by
     simp only [coeff_mk, Subalgebra.coe_add, map_add]
   map_smul' r f := Subtype.ext <| PowerSeries.ext fun n => by
@@ -414,7 +414,7 @@ theorem mem_range_toAdamsCompletion_iff {f : adamsCompletion 𝒜 𝒞} :
     f ∈ Set.range (toAdamsCompletion 𝒜 𝒞 h hd hc) ↔
       (Function.support fun n => coeff n (f : PowerSeries A)).Finite := by
   have key := mem_range_gradedComponentSeries_iff 𝒜 (f := (f : PowerSeries A))
-  rw [AlgHom.mem_range, and_iff_right (coeff_mem_of_mem_adamsCompletion 𝒜 𝒞 f.2)] at key
+  rw [AlgHom.mem_range, and_iff_right (coeff_mem_of_mem_adamsCompletion 𝒜 𝒞 f.property)] at key
   rw [Set.mem_range, ← key]
   exact exists_congr fun a => by rw [Subtype.ext_iff, coe_toAdamsCompletion_apply]
 
