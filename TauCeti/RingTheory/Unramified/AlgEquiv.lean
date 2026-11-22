@@ -10,12 +10,14 @@ public import Mathlib.RingTheory.Unramified.Locus
 import Mathlib.RingTheory.Localization.Basic
 
 /-!
-# Unramifiedness at a prime transports along isomorphisms of algebras and rings
+# Unramifiedness transports along isomorphisms of algebras and rings
 
 `Algebra.IsUnramifiedAt R q` says that the localization of the ambient algebra at `q` is formally
 unramified over `R`. An isomorphism `ψ : A ≃ₐ[R] B` of `R`-algebras matches the prime complement
 of `q` with that of `q.comap ψ`, so it induces an isomorphism of the two localizations over `R`
-and unramifiedness at `q` is equivalent to unramifiedness at `q.comap ψ`.
+and unramifiedness at `q` is equivalent to unramifiedness at `q.comap ψ`. Since `ψ` also matches
+the primes of `A` and `B` above a given ideal of `R`, an ideal of `R` is unramified in `A` exactly
+when it is unramified in `B`.
 
 More generally, a commuting square of ring equivalences `(e₁ : R₁ ≃+* R₂, e₂ : A₁ ≃+* A₂)`
 transports formal unramifiedness (`Algebra.FormallyUnramified.of_equiv_equiv`) and hence
@@ -27,6 +29,8 @@ ring to vary by an isomorphism as well.
 
 * `AlgEquiv.isUnramifiedAt_iff_of_eq_comap`: `A` is unramified over `R` at a prime equal to
   `q.comap ψ` if and only if `B` is unramified over `R` at `q`.
+* `AlgEquiv.isUnramifiedIn_iff`: an ideal of `R` is unramified in `A` if and only if it is
+  unramified in `B`.
 * `Algebra.FormallyUnramified.of_equiv_equiv`, `Algebra.FormallyUnramified.iff_of_equiv_equiv`:
   formal unramifiedness transports across a commuting square of ring equivalences.
 * `RingEquiv.isUnramifiedAt_iff_of_eq_comap`: `A₁` is unramified over `R₁` at a prime equal to
@@ -54,6 +58,19 @@ theorem isUnramifiedAt_iff_of_eq_comap (ψ : A ≃ₐ[R] B) {q : Ideal B} [q.IsP
   exact Algebra.FormallyUnramified.iff_of_equiv (IsLocalization.algEquivOfAlgEquiv
     (Localization.AtPrime (q.comap ψ)) (Localization.AtPrime q) ψ
       (Ideal.map_primeCompl_comap_of_surjective ψ ψ.surjective q))
+
+/-- One direction of `AlgEquiv.isUnramifiedIn_iff`: the primes of `B` above `p` are the images
+of the primes of `A` above `p`. -/
+private theorem isUnramifiedIn_of_isUnramifiedIn (ψ : A ≃ₐ[R] B) {p : Ideal R}
+    (h : Algebra.IsUnramifiedIn A p) : Algebra.IsUnramifiedIn B p := fun Q _ _ ↦
+  (ψ.isUnramifiedAt_iff_of_eq_comap (Ideal.map_symm ψ.toRingEquiv)).1
+    (h (Q.map ψ.symm) inferInstance inferInstance)
+
+/-- **Unramifiedness in an algebra transports along an isomorphism of `R`-algebras.** An ideal
+`p` of `R` is unramified in `A` if and only if it is unramified in `B`. -/
+theorem isUnramifiedIn_iff (ψ : A ≃ₐ[R] B) (p : Ideal R) :
+    Algebra.IsUnramifiedIn A p ↔ Algebra.IsUnramifiedIn B p :=
+  ⟨isUnramifiedIn_of_isUnramifiedIn ψ, isUnramifiedIn_of_isUnramifiedIn ψ.symm⟩
 
 end AlgEquiv
 

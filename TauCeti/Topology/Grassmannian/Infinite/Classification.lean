@@ -123,7 +123,7 @@ private theorem homotopic_id_mapContinuousMap_lmapDomain_of_le {s : ℕ → ℕ}
         ((1 - algebraMap ℝ 𝕜 t.val) • (LinearMap.id : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) +
           (algebraMap ℝ 𝕜 t.val) • lmapDomain 𝕜 𝕜 s).comp (Tautological.subtype W) := by ext; simp
       rw [heq]
-      exact (one_sub_smul_id_add_smul_lmapDomain_injective hs hle _).comp
+      exact (smul_id_add_smul_lmapDomain_injective hs hle (sub_add_cancel 1 _)).comp
         (Tautological.subtype_injective W)
 
 private theorem homotopic_id_of_stage_isClassifyingCoordinates
@@ -145,9 +145,9 @@ private theorem homotopic_id_of_stage_isClassifyingCoordinates
       (fun _ ↦ isClassifyingCoordinates_stageTautological.postcomp
         (FiberBundle.continuous_proj (Fin k → 𝕜) _) φ₀ hφ₀)
       (fun n ↦ (hL n).postcomp (FiberBundle.continuous_proj (Fin k → 𝕜) _) φ₁ hφ₁)
-      fun t W ↦ one_sub_smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective
+      fun t W ↦ smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective
         strictMono_even.injective strictMono_odd.injective disjoint_range_even_odd
-        (Tautological.subtype_injective W) (hinj W) (algebraMap ℝ 𝕜 t.val)
+        (Tautological.subtype_injective W) (hinj W) (sub_add_cancel 1 (algebraMap ℝ 𝕜 t.val))
   exact (homotopic_id_mapContinuousMap_lmapDomain_of_le (𝕜 := 𝕜) (k := k)
       strictMono_even.injective strictMono_even.id_le).trans
     (hmid.trans (ContinuousMap.Homotopic.comp
@@ -187,9 +187,9 @@ theorem _root_.TauCeti.IsClassifyingCoordinates.homotopic_classifyContinuousMap
   have hmid : ((hj₀.postcomp hπ φ₀ hφ₀).classifyContinuousMap hk).Homotopic
       ((hj₁.postcomp hπ φ₁ hφ₁).classifyContinuousMap hk) :=
     ⟨(hj₀.postcomp hπ φ₀ hφ₀).homotopyOfLinearCombinationInjective (hj₁.postcomp hπ φ₁ hφ₁)
-      (fun _ x ↦ one_sub_smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective
+      (fun _ x ↦ smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective
         strictMono_even.injective strictMono_odd.injective disjoint_range_even_odd
-        (hj₀.injective x) (hj₁.injective x) _) hk⟩
+        (hj₀.injective x) (hj₁.injective x) (sub_add_cancel 1 _)) hk⟩
   rw [hj₀.classifyContinuousMap_postcomp φ₀ hφ₀ hk,
     hj₁.classifyContinuousMap_postcomp φ₁ hφ₁ hk] at hmid
   exact (ContinuousMap.Homotopic.comp
