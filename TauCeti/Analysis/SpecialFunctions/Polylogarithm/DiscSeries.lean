@@ -43,8 +43,6 @@ open-disc Euler differential relation that analytically continues across `{z | 1
   `polylog n` on `Metric.eball 0 1`.
 * `TauCeti.Polylog.hasDerivAt_polylog_tsum_of_norm_lt_one`,
   `TauCeti.Polylog.hasSum_deriv_polylog`,
-  `TauCeti.Polylog.hasDerivAt_polylog_add_one_tsum`,
-  `TauCeti.Polylog.hasSum_deriv_polylog_add_one`,
   `TauCeti.Polylog.hasDerivAt_polylog_zero`, and `TauCeti.Polylog.deriv_polylog_zero`:
   termwise derivative and its convergent series on the open unit disc, and complex
   derivative `1` at `0` for all `n : ℤ`.
@@ -287,7 +285,9 @@ theorem hasFPowerSeriesOnBall_polylog (n : ℤ) :
     exact hasSum_polylog n hy
 
 /-- On the open unit disc `‖z‖ < 1` (including `z = 0`), `polylog n` has complex derivative given
-by the differentiated power series `∑_{k ≥ 0} z ^ k / (k + 1) ^ (n - 1)`. -/
+by the differentiated power series `∑_{k ≥ 0} z ^ k / (k + 1) ^ (n - 1)`. For weight `n + 1`,
+instantiate at `n + 1` and simplify `(n + 1) - 1 = n` (e.g., via
+`simpa only [add_sub_cancel_right] using hasDerivAt_polylog_tsum_of_norm_lt_one (n + 1) hz`). -/
 theorem hasDerivAt_polylog_tsum_of_norm_lt_one (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
     HasDerivAt (polylog n) (∑' k : ℕ, z ^ k / (k + 1 : ℂ) ^ (n - 1)) z := by
   have hloc : (fun w : ℂ ↦ ∑' k : ℕ, w ^ (k + 1) / (k + 1 : ℂ) ^ n) =ᶠ[𝓝 z] polylog n := by
@@ -296,23 +296,13 @@ theorem hasDerivAt_polylog_tsum_of_norm_lt_one (n : ℤ) {z : ℂ} (hz : ‖z‖
   exact (hasDerivAt_tsum_pow_add_one_div_natCast_add_one_zpow n hz).congr_of_eventuallyEq hloc.symm
 
 /-- On the open unit disc `‖z‖ < 1` (including `z = 0`), the differentiated power series
-`∑_{k ≥ 0} z ^ k / (k + 1) ^ (n - 1)` converges to `deriv (polylog n) z`. -/
+`∑_{k ≥ 0} z ^ k / (k + 1) ^ (n - 1)` converges to `deriv (polylog n) z`. For weight `n + 1`,
+instantiate at `n + 1` and simplify `(n + 1) - 1 = n` (e.g., via
+`simpa only [add_sub_cancel_right] using hasSum_deriv_polylog (n + 1) hz`). -/
 theorem hasSum_deriv_polylog (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
     HasSum (fun k : ℕ ↦ z ^ k / (k + 1 : ℂ) ^ (n - 1)) (deriv (polylog n) z) := by
   rw [(hasDerivAt_polylog_tsum_of_norm_lt_one n hz).deriv]
   exact (hasDerivAt_tsum_div_zpow_and_summable n hz).2.hasSum
-
-/-- On the open unit disc `‖z‖ < 1`, `polylog (n + 1)` has complex derivative
-`∑_{k ≥ 0} z ^ k / (k + 1) ^ n`. -/
-theorem hasDerivAt_polylog_add_one_tsum (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
-    HasDerivAt (polylog (n + 1)) (∑' k : ℕ, z ^ k / (k + 1 : ℂ) ^ n) z := by
-  simpa only [add_sub_cancel_right] using hasDerivAt_polylog_tsum_of_norm_lt_one (n + 1) hz
-
-/-- Power-series expansion (`HasSum` form) of `deriv (polylog (n + 1)) z` on the open unit disc
-`‖z‖ < 1`. -/
-theorem hasSum_deriv_polylog_add_one (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
-    HasSum (fun k : ℕ ↦ z ^ k / (k + 1 : ℂ) ^ n) (deriv (polylog (n + 1)) z) := by
-  simpa only [add_sub_cancel_right] using hasSum_deriv_polylog (n + 1) hz
 
 /-- Every integer-weight polylogarithm has complex derivative `1` at `0`. -/
 theorem hasDerivAt_polylog_zero (n : ℤ) : HasDerivAt (polylog n) 1 0 := by
