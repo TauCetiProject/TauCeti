@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Topology.Sheaves.SheafCondition.Sites
 import TauCeti.AlgebraicGeometry.AdicSpace.CAff.RationalSite
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.PadicInt
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.OpenMapping
@@ -149,10 +150,13 @@ example {A : Type} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopolo
     fun {W} {κ} _ {V} hW hV hcov ↦ isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens P
       S.isRingOfIntegralElements.isPowerBounded_of_mem hW hV
       (fun k ↦ (le_iSup V k).trans_eq hcov) ?_⟩
+  subst hcov
   rw [Presieve.isSheafFor_iff_generate]
-  refine hset.isSheafFor _ fun x hx ↦ ?_
-  obtain ⟨k, hxk⟩ := Opens.mem_iSup.mp (hcov ▸ hx)
-  exact ⟨_, homOfLE ((le_iSup V k).trans_eq hcov), Sieve.ofArrows_mk _ _ k, hxk⟩
+  refine hset.isSheafFor _ ?_
+  convert TopCat.Presheaf.presieveOfCovering.mem_grothendieckTopology (X := TopCat.of _) V
+  funext Z f
+  exact propext ⟨fun ⟨k⟩ ↦ ⟨k, rfl⟩,
+    fun ⟨k, hk⟩ ↦ by subst hk; rw [Subsingleton.elim f (homOfLE (le_iSup V k))]; exact .mk k⟩
 
 /-! ### Sharpness non-examples on `(ℤ_p, ℤ_p)` -/
 

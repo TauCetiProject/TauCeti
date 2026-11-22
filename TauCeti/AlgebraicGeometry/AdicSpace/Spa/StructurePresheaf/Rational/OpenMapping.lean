@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Basic
 
 import Mathlib.CategoryTheory.Sites.Coverage
 import Mathlib.Topology.Metrizable.CompletelyMetrizable
+import Mathlib.Topology.Sheaves.SheafCondition.Sites
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.IsSheafFor
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.KanExtension
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic
@@ -307,12 +308,13 @@ theorem isSheaf_presentationLimitPresheaf_iff_isSheaf_forget
     (TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat) h, fun h ↦ ?_⟩
   refine isSheaf_presentationLimitPresheaf_of_isSheafFor_finite_rationalOpens P hAplus
     fun {W} {κ} _ {V} _ _ hcov ↦ ?_
+  subst hcov
   rw [Presieve.isSheafFor_iff_generate]
-  refine h.isSheafFor _ fun x hx ↦ ?_
-  have hx' : x ∈ ⨆ k, V k := hcov ▸ hx
-  obtain ⟨k, hxk⟩ := Opens.mem_iSup.mp hx'
-  exact ⟨V k, homOfLE ((le_iSup V k).trans_eq hcov),
-    Sieve.ofArrows_mk V (fun k ↦ homOfLE ((le_iSup V k).trans_eq hcov)) k, hxk⟩
+  refine h.isSheafFor _ ?_
+  convert TopCat.Presheaf.presieveOfCovering.mem_grothendieckTopology (X := TopCat.of _) V
+  funext Z f
+  exact propext ⟨fun ⟨k⟩ ↦ ⟨k, rfl⟩,
+    fun ⟨k, hk⟩ ↦ by subst hk; rw [Subsingleton.elim f (homOfLE (le_iSup V k))]; exact .mk k⟩
 
 end TauCeti.ValuationSpectrum
 

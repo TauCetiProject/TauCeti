@@ -148,21 +148,6 @@ variable {A : Type v} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTop
   [CompleteSpace A] [T0Space A] {P : PairOfDefinition A} {Aplus : Subring A}
   (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
 
--- Under `presentationLimitRationalIso`, restriction from the whole spectrum to `R(p)` is the
--- structure map `A → A⟨p⟩`.
-private theorem rationalIso_map_top_apply (p : Presentation P)
-    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) (c : CompleteSeparatedTopCommRingCat.of A) :
-    (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
-        ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.1
-          ((presentationLimitMap le_top).hom.1 ((toPresentationLimit Aplus ⊤).hom.1 c))) =
-      toCompletionLoc P p.num p.den _ p.hasDenominatorPower
-        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1 c) := by
-  have key : toPresentationLimit Aplus ⊤ ≫ presentationLimitMap le_top ≫
-      (presentationLimitRationalIso Aplus hAplus p hp).hom = p.toCompletionLocObjHom := by simp
-  refine (congrArg (fun g ↦ (eqToHom (completionLocObj_obj ..)).1 (g.hom.1 c)) key).trans ?_
-  rw [Presentation.toCompletionLocObjHom_hom]
-  exact eqToHom_symm_apply_eqToHom_apply _ _
-
 -- Under `presentationLimitRationalIso`, the section of `c : A` over the whole spectrum restricts to
 -- `z` over `R(p)` exactly when the structure map `A → A⟨p⟩` sends `c` to the image of `z`.
 private theorem presentationLimitMap_apply_toPresentationLimit_apply_eq_iff (p : Presentation P)
@@ -174,7 +159,7 @@ private theorem presentationLimitMap_apply_toPresentationLimit_apply_eq_iff (p :
         (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
           ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.1 z) :=
   (bijective_presentationLimitRationalIso_hom Aplus hAplus p hp).1.eq_iff.symm.trans
-    (rationalIso_map_top_apply hAplus p hp c).congr_left
+    (rationalIso_map_top_apply Aplus hAplus p hp c).congr_left
 
 end Top
 
@@ -253,7 +238,7 @@ theorem injective_presentationLimitMap_laurentCoverOpen_of_injective_toCompletio
     Function.RightInverse.surjective (asIso (toPresentationLimit Aplus ⊤)).inv_hom_id_apply
   have key (b : Bool) :=
     ((presentationLimitMap_apply_toPresentationLimit_apply_eq_iff hAplus (p b) (hp b)).1
-      (congrFun hcd b)).trans (rationalIso_map_top_apply hAplus (p b) (hp b) d)
+      (congrFun hcd b)).trans (rationalIso_map_top_apply Aplus hAplus (p b) (hp b) d)
   exact injective_eqToHom _ <| hinj (p false).hasDenominatorPower <| Prod.ext (key true) (key false)
 
 /-- **The topology of Laurent restriction transported to the presentation-limit presheaf.**
@@ -326,8 +311,8 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbed
   simp only [Function.comp_apply, RingHom.prod_apply, Homeomorph.coe_prodCongr]
   rw [hd]
   exact Prod.ext
-    ((E_apply true _).trans (rationalIso_map_top_apply hAplus (p true) (hp true) c))
-    ((E_apply false _).trans (rationalIso_map_top_apply hAplus (p false) (hp false) c))
+    ((E_apply true _).trans (rationalIso_map_top_apply Aplus hAplus (p true) (hp true) c))
+    ((E_apply false _).trans (rationalIso_map_top_apply Aplus hAplus (p false) (hp false) c))
 
 -- Sections over the two Laurent pieces that agree on their overlap are, read through
 -- `presentationLimitRationalIso`, the images of one `c : A` under the structure maps `A → A⟨p b⟩`,
