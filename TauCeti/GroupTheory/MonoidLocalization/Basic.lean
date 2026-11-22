@@ -13,9 +13,10 @@ import Mathlib.Algebra.Group.Action.Basic
 
 Let `f : M.LocalizationMap N` exhibit the commutative monoid `N` as a localization of `C` at a
 submonoid `M`. Suppose that `N` acts by monoid actions on types `S` and `E`, and that `S` acts on
-`E`. Every element of `N` is a fraction of elements in the image of `f`, and acting by an element
-`f m` with `m ∈ M` can be cancelled. So `IsScalarTower N S E` holds as soon as
-`(f c • s) • e = f c • (s • e)` holds for every `c : C`.
+`E`. This file shows that compatibility of these actions on the image of `C` extends to all of
+`N`: if `(f c • s) • e = f c • (s • e)` for every `c : C`, then `IsScalarTower N S E`. For
+localizations of commutative semirings, this gives
+`IsLocalization.isScalarTower_of_isScalarTower` in `TauCeti.RingTheory.Localization.Defs`.
 
 ## Main results
 
