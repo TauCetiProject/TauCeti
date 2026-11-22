@@ -97,7 +97,7 @@ private theorem borelRemainder_eq_sum (χ : FrequencyCutoff (CoordinateSpace n))
     borelRemainder χ t a N p = fun r =>
       ∑ k ∈ range J, χ ((t k)⁻¹ • p.2) • (a k).coefficient p r -
         ∑ k ∈ range N, (a k).coefficient p r :=
-  funext fun r => by rw [borelRemainder, Symbol.finsum_cutoff_smul_eq_sum χ ht _ hp]
+  funext fun r => by rw [borelRemainder, χ.finsum_smul_eq_sum ht _ hp]
 
 /-- The `i`-th parameter derivative of the Borel remainder at `r ∈ R` is the Borel remainder of
 the `i`-th parameter derivatives. -/

@@ -345,19 +345,6 @@ private theorem eventually_norm_mixedDeriv_cutoff_smul_le
       (mul_le_mul_of_nonneg_right ((hM' s s' τ).trans (le_max_left _ _))
         (rpow_weight_pos ξ _).le)⟩
 
-/-- With radii `tⱼ ≥ j + 1`, only the terms with `j < J` of a cut-off series `∑ⱼ χ(ξ / tⱼ) fⱼ` can
-be nonzero at frequencies `‖ξ‖ < J`. -/
-theorem finsum_cutoff_smul_eq_sum (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℕ → ℝ}
-    (ht : ∀ j : ℕ, (j : ℝ) + 1 ≤ t j) {M : Type*} [AddCommMonoid M] [Module ℝ M] (f : ℕ → M)
-    {J : ℕ} {ξ : CoordinateSpace n} (hξ : ‖ξ‖ < J) :
-    ∑ᶠ j, χ ((t j)⁻¹ • ξ) • f j = ∑ j ∈ Finset.range J, χ ((t j)⁻¹ • ξ) • f j := by
-  refine finsum_eq_sum_of_support_subset _ fun j hj => ?_
-  rw [Finset.coe_range, Set.mem_Iio]
-  by_contra hjJ
-  have hJj : (J : ℝ) ≤ j := by exact_mod_cast not_lt.1 hjJ
-  have htj : 0 < t j := by linarith [ht j, (Nat.cast_nonneg j : (0 : ℝ) ≤ j)]
-  exact hj (by simp only [χ.apply_inv_smul_eq_zero htj (by linarith [ht j]), zero_smul])
-
 /-- The Borel sum `∑ⱼ χ(ξ / tⱼ) aⱼ(x, ξ)` of a sequence of symbols with cutoff radii `tⱼ`. -/
 def borelSum (χ : FrequencyCutoff (CoordinateSpace n)) (t : ℕ → ℝ) {m : ℕ → ℝ}
     (a : ∀ j, Symbol n V W (m j)) (p : CoordinateSpace n × CoordinateSpace n) : V →L[ℂ] W :=
@@ -369,7 +356,7 @@ theorem borelSum_eq_sum (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℕ → 
     (ht : ∀ j : ℕ, (j : ℝ) + 1 ≤ t j) {m : ℕ → ℝ} (a : ∀ j, Symbol n V W (m j)) {J : ℕ}
     {p : CoordinateSpace n × CoordinateSpace n} (hp : ‖p.2‖ < J) :
     borelSum χ t a p = ∑ j ∈ Finset.range J, χ ((t j)⁻¹ • p.2) • (a j).coefficient p :=
-  finsum_cutoff_smul_eq_sum χ ht _ hp
+  χ.finsum_smul_eq_sum ht _ hp
 
 /-- Near a point with `‖ξ‖ < J`, the Borel sum is the finite sum of its first `J` terms. -/
 private theorem borelSum_eventuallyEq (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℕ → ℝ}
