@@ -61,15 +61,6 @@ open Scheme.Modules
 
 variable {X : Scheme.{u}}
 
-/-- If the range of `ι : Z ⟶ X` is `(X ∖ U) ∪ {x}` for an open `U` containing the closed point `x`,
-then the preimages of `U` and of `X ∖ {x}` are complementary opens of `Z`. -/
-private theorem isCompl_preimage_of_range_eq {Z : Scheme.{u}} (ι : Z ⟶ X) {U : X.Opens} {x : X}
-    (hx : IsClosed ({x} : Set X)) (hxU : x ∈ U) (hrange : Set.range ι = (U : Set X)ᶜ ∪ {x}) :
-    IsCompl (ι ⁻¹ᵁ U) (ι ⁻¹ᵁ ⟨{x}ᶜ, hx.isOpen_compl⟩) := by
-  refine ⟨disjoint_iff.mpr (SetLike.ext' ?_), codisjoint_iff.mpr (SetLike.ext' ?_)⟩ <;> ext y <;>
-    have hy : ι y ∈ (U : Set X)ᶜ ∪ {x} := hrange ▸ ⟨y, rfl⟩ <;> clear hrange <;>
-    by_cases hyx : ι y = x <;> simp_all
-
 /-- If the first cohomology of every ideal sheaf on `X` vanishes, every closed point `x` of `X`
 lies in the basic open `X_f` of a global function `f` with `X_f` affine. Stacks, proof of
 Lemma 30.3.1 (01XF). -/
@@ -85,8 +76,9 @@ theorem exists_isAffineOpen_basicOpen_mem_of_isClosed
   have hUB := isCompl_preimage_of_range_eq I.subschemeι hx hxU hrange
   -- The function on `Z` that is `1` at `x` and `0` on `X ∖ U` lifts to `X`, as `H¹(X, I) = 0`.
   obtain ⟨e, he⟩ := exists_basicOpen_eq_of_isCompl hUB
-  obtain ⟨g, hg⟩ : ∃ g : Γ(X, ⊤), I.subschemeι.app ⊤ g = e :=
-    sections_surjective I.shortExact_toPushforwardSubscheme (h I) e
+  obtain ⟨g, hg⟩ : ∃ g : Γ(X, ⊤), I.subschemeι.app ⊤ g = e := by
+    obtain ⟨g, hg⟩ := sections_surjective I.shortExact_toPushforwardSubscheme (h I) e
+    exact ⟨g, (I.toPushforwardSubscheme_app g).symm.trans hg⟩
   have hpre : I.subschemeι ⁻¹ᵁ X.basicOpen g = I.subschemeι ⁻¹ᵁ U := by
     rw [preimage_basicOpen]
     exact (congrArg I.subscheme.basicOpen hg).trans he

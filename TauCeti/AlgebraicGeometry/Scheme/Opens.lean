@@ -65,6 +65,9 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.Scheme.exists_basicOpen_eq_of_isCompl`: an open and closed subset of a
   scheme is the basic open of a global function, namely the one that is `1` on it and `0` on its
   complement.
+* `AlgebraicGeometry.Scheme.isCompl_preimage_of_range_eq`: if the range of `ι : Z ⟶ X` is
+  `(X ∖ U) ∪ {x}` for an open `U` containing the closed point `x`, the preimages of `U` and of
+  `X ∖ {x}` are complementary opens of `Z`.
 * `AlgebraicGeometry.IsAffineOpen.finset_inf`: on a scheme with affine diagonal, nonempty finite
   intersections of affine opens are affine.
 * `AlgebraicGeometry.Scheme.OpenCover.dense_of_forall_dense_subset`: a subset of a scheme is dense
@@ -390,6 +393,16 @@ theorem _root_.AlgebraicGeometry.Scheme.exists_basicOpen_eq_of_isCompl {V W : X.
   rw [Scheme.basicOpen_res, top_inf_eq]
   calc X.basicOpen a = (V ⊔ W) ⊓ X.basicOpen a := (inf_eq_right.mpr (X.basicOpen_le a)).symm
     _ = V := by rw [inf_sup_right, h1, h0, sup_bot_eq]
+
+/-- If the range of `ι : Z ⟶ X` is `(X ∖ U) ∪ {x}` for an open `U` containing the closed point `x`,
+then the preimages of `U` and of `X ∖ {x}` are complementary opens of `Z`. -/
+theorem _root_.AlgebraicGeometry.Scheme.isCompl_preimage_of_range_eq {Z : Scheme.{u}} (ι : Z ⟶ X)
+    {U : X.Opens} {x : X}
+    (hx : IsClosed ({x} : Set X)) (hxU : x ∈ U) (hrange : Set.range ι = (U : Set X)ᶜ ∪ {x}) :
+    IsCompl (ι ⁻¹ᵁ U) (ι ⁻¹ᵁ ⟨{x}ᶜ, hx.isOpen_compl⟩) := by
+  refine ⟨disjoint_iff.mpr (SetLike.ext' ?_), codisjoint_iff.mpr (SetLike.ext' ?_)⟩ <;> ext y <;>
+    have hy : ι y ∈ (U : Set X)ᶜ ∪ {x} := hrange ▸ ⟨y, rfl⟩ <;> clear hrange <;>
+    by_cases hyx : ι y = x <;> simp_all
 
 /-- Global sections of an affine chart `f : Spec R ⟶ Y` are natural in `R`: precomposing `f` with
 `Spec.map φ` turns the induced map `Γ(Y, V) ⟶ R` into its composite with `φ`. -/
