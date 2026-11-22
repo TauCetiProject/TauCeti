@@ -136,13 +136,21 @@ theorem verschiebungCurve_monomialCurve (F : FormalGroup R) {m n : ℕ} (hm : m 
       F.monomialCurve (n * m) (mul_ne_zero hn hm) c :=
   Curve.ext (by simp [← pow_mul, mul_comm])
 
-/-- Adding a monomial curve `c Tᵐ` does not change the coefficients below degree `m`. -/
-theorem Curve.coeff_add_monomialCurve_of_lt {F : FormalGroup R} (γ : F.Curve) {m k : ℕ}
-    (hm : m ≠ 0) (c : R) (hk : k < m) :
-    PowerSeries.coeff k (γ + F.monomialCurve m hm c).toPowerSeries =
-      PowerSeries.coeff k γ.toPowerSeries :=
-  coeff_add_eq_left_of_forall_lt_coeff_eq_zero γ _ hk fun i hi ↦ by
-    simp [PowerSeries.coeff_X_pow, hi.ne]
+/-- One step of peeling off monomials: if the residual `γ - s` vanishes below degree `m`, then
+after also subtracting its degree-`m` term `c Tᵐ` the residual vanishes up to degree `m`. -/
+theorem Curve.coeff_sub_add_monomialCurve_eq_zero {F : FormalGroup R} [F.IsComm] {γ s : F.Curve}
+    {m : ℕ} (hm : m ≠ 0) (h : ∀ i < m, PowerSeries.coeff i (γ - s).toPowerSeries = 0) {k : ℕ}
+    (hk : k ≤ m) :
+    PowerSeries.coeff k (γ - (s + F.monomialCurve m hm
+      (PowerSeries.coeff m (γ - s).toPowerSeries))).toPowerSeries = 0 := by
+  rw [← sub_sub]
+  let t := F.monomialCurve m hm (PowerSeries.coeff m (γ - s).toPowerSeries)
+  have ht (i : ℕ) (hi : i ≤ k) :
+      PowerSeries.coeff i (γ - s).toPowerSeries = PowerSeries.coeff i t.toPowerSeries := by
+    rcases (hi.trans hk).lt_or_eq with hil | rfl
+    · simp [t, h i hil, PowerSeries.coeff_X_pow, hil.ne]
+    · simp [t]
+  rw [coeff_sub_congr ht (fun _ _ ↦ rfl), sub_self, toPowerSeries_zero, map_zero]
 
 /-- Adding a monomial curve `c Tᵐ` adds `c` to the degree-`m` coefficient. -/
 theorem Curve.coeff_add_monomialCurve_self {F : FormalGroup R} (γ : F.Curve) {m : ℕ}

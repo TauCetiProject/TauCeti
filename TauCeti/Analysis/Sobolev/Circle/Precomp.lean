@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Circle.Rotation
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 
+import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.Monomial
 
 /-!
@@ -181,14 +182,8 @@ theorem precomp_add_const (θ : AddCircle T) (hC : C ≠ ∞)
     (a : CircleSobolev 0 ℂ) :
     precomp T (measurable_add_const θ) hC hmap a = rotate θ a := by
   ext n
-  rw [coeff_precomp, coeff_rotate, ← fourierCoeff_toLpₗᵢ T a, fourierCoeff, fourierCoeff,
-    ← integral_smul, ← integral_add_right_eq_self (μ := haarAddCircle)
-      (fun y ↦ fourier n θ • fourier (-n) y • toLpₗᵢ T a y) θ]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
-  have h : fourier n θ * fourier (-n) θ = 1 := by
-    rw [← fourier_add, add_neg_cancel, fourier_zero]
-  simp only [Function.comp_apply, smul_eq_mul, fourier_apply_add]
-  linear_combination (-(fourier (-n) x * toLpₗᵢ T a (x + θ))) * h
+  rw [coeff_precomp, coeff_rotate, ← fourierCoeff_toLpₗᵢ T a]
+  exact fourierCoeff_comp_add_right (toLpₗᵢ T a) θ n
 
 /-- The `L²` function of the rotation `rotate θ a` of `a ∈ H⁰` is the `L²` function of `a`
 translated by `θ`. -/

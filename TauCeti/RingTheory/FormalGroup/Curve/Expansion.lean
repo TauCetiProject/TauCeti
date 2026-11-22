@@ -32,6 +32,7 @@ expansion coefficients depend on `F` and not only on the power series `γ(T)`. O
   degree `N`.
 * `FormalGroup.Curve.forall_coeff_sum_monomialCurve_eq_iff`: uniqueness of the expansion.
 * `FormalGroup.Curve.expansionCoeff_injective`, `FormalGroup.Curve.map_expansionCoeff`.
+* `FormalGroup.Curve.expansionCoeff_monomialCurve`: the expansion of a monomial curve.
 
 ## References
 
@@ -90,14 +91,9 @@ private theorem coeff_sub_expansionPartialSum [F.IsComm] (γ : F.Curve) (n : ℕ
     exact Curve.coeff_zero_toPowerSeries _
   | succ n ih =>
     intro k hk
-    rw [expansionPartialSum_succ, ← sub_sub]
-    let t := F.monomialCurve (n + 1) n.succ_ne_zero (γ.expansionCoeff (n + 1))
-    have ht (i : ℕ) (hi : i ≤ k) :
-        coeff i (γ - expansionPartialSum γ n).toPowerSeries = coeff i t.toPowerSeries := by
-      rcases (hi.trans hk).lt_or_eq with hil | rfl
-      · simp [t, ih i (Nat.lt_succ_iff.mp hil), PowerSeries.coeff_X_pow, hil.ne]
-      · simp [t, expansionCoeff]
-    rw [Curve.coeff_sub_congr ht (fun _ _ ↦ rfl), sub_self, Curve.toPowerSeries_zero, map_zero]
+    rw [expansionPartialSum]
+    exact Curve.coeff_sub_add_monomialCurve_eq_zero n.succ_ne_zero
+      (fun i hi ↦ ih i (Nat.lt_succ_iff.mp hi)) hk
 
 variable [F.IsComm]
 
@@ -164,6 +160,33 @@ theorem expansionCoeff_injective :
 @[simp]
 theorem expansionCoeff_inj {γ δ : F.Curve} : γ.expansionCoeff = δ.expansionCoeff ↔ γ = δ :=
   expansionCoeff_injective.eq_iff
+
+/-- The expansion of a monomial curve `c Tᵐ` is the single term `c Tᵐ`. -/
+@[simp]
+theorem expansionCoeff_monomialCurve {m : ℕ} (hm : m ≠ 0) (c : R) (n : ℕ) :
+    (F.monomialCurve m hm c).expansionCoeff n = if n = m then c else 0 := by
+  rcases n with _ | n
+  · simp [hm.symm]
+  refine (((F.monomialCurve m hm c).forall_coeff_sum_monomialCurve_eq_iff
+    fun n ↦ if n = m then c else 0).1 (fun N k hk ↦ ?_) n).symm
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hm
+  by_cases hmN : m < N
+  · rw [sum_eq_single_of_mem m (mem_range.mpr hmN) fun j _ hj ↦ by simp [hj]]
+    simp
+  · rw [sum_eq_zero fun j hj ↦ by simp [show j ≠ m by grind]]
+    simp [PowerSeries.coeff_X_pow, show k ≠ m + 1 by omega]
+
+/-- The expansion of the zero curve vanishes. -/
+@[simp]
+theorem expansionCoeff_zero_curve : (0 : F.Curve).expansionCoeff = 0 := by
+  funext n
+  simpa using expansionCoeff_monomialCurve (F := F) one_ne_zero 0 n
+
+/-- The expansion of the tautological curve `T` is the single term `T`. -/
+@[simp]
+theorem expansionCoeff_tautologicalCurve (n : ℕ) :
+    F.tautologicalCurve.expansionCoeff n = if n = 1 then 1 else 0 := by
+  rw [← monomialCurve_one, expansionCoeff_monomialCurve]
 
 /-- Expansion coefficients commute with base change. -/
 @[simp]

@@ -159,6 +159,16 @@ private theorem le_ofReal_mul_rpow_neg_mul_of_forall_div {C ε t : ℝ} (ht : 0 
     (ENNReal.continuous_ofReal.continuousAt.comp hφ)
   simpa using hg.continuousWithinAt.le_of_forall_gt_le h
 
+omit [DecidableEq ι] in
+/-- In dimension `n ≥ 1`, the exponent `n` of `W^{2,n}` exceeds half the dimension, so the precise
+representative of a `W^{2,n}` function is continuous
+(`TauCeti.Wkp.continuousOn_preciseRepresentative`). -/
+private theorem finrank_lt_two_mul_card [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] :
+    (Module.finrank ℝ (EuclideanSpace ℝ ι) : ℝ≥0∞) < 2 * Fintype.card ι := by
+  have h : 1 ≤ Fintype.card ι := by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ Fintype.card ι)
+  rw [finrank_euclideanSpace]
+  exact_mod_cast (by omega : Fintype.card ι < 2 * Fintype.card ι)
+
 /-- **Power decay of the superlevel sets of a strong supersolution** (Gilbarg–Trudinger,
 Section 9.7; Caffarelli–Cabré, Lemma 4.6). Let `κ > 0`. There are constants `C > 0`, `ε > 0` and
 `ε₀ > 0`, depending only on the dimension `n ≥ 1` and on `κ`, with the following property. Let
@@ -419,7 +429,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradien
   set Q := M + r * (eLpNorm f (Fintype.card ι) (volume.restrict B)).toReal / lam
   have hlam : 0 < lam := ha.pos
   have hMū (x : EuclideanSpace ℝ ι) (hx : x ∈ B) : |ū x| ≤ M :=
-    Wkp.abs_preciseRepresentative_le (by simp) u isOpen_ball hΩ hM hx
+    Wkp.abs_preciseRepresentative_le (finrank_lt_two_mul_card (ι := ι)) u isOpen_ball hΩ hM hx
   have hM0 : 0 ≤ M := (abs_nonneg _).trans (hMū x₀ (mem_ball_self (by linarith)))
   have hQ : 0 ≤ Q := add_nonneg hM0 (by positivity)
   -- Points of `B(x₀, r)` closer than `s = r / 4` are compared by the estimate on `B(x, s)`, where
@@ -440,7 +450,8 @@ theorem exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradien
       linarith [dist_triangle z x x₀, mem_closedBall.1 hz, mem_ball.1 hx, hs_def])
     have hSB : ball x (2 * s) ⊆ B := ball_subset_closedBall.trans hxB
     have h0 := (H u hs (hxB.trans hΩ) (ha.mono_set hSB) hLam
-      (Wkp.continuousOn_preciseRepresentative (by simp) u) (Wkp.ae_eq_preciseRepresentative 2 u)
+      (Wkp.continuousOn_preciseRepresentative (finrank_lt_two_mul_card (ι := ι)) u)
+      (Wkp.ae_eq_preciseRepresentative 2 u)
       (fun z hz ↦ hMū z (hSB hz)) (ae_restrict_of_ae_restrict_of_subset hSB hu)
       (hf.mono_measure (Measure.restrict_mono hSB le_rfl))).dist_le (mem_ball_self hs)
       (by rwa [mem_ball, dist_comm])
@@ -721,7 +732,7 @@ theorem exists_preciseRepresentative_le_mul_add_of_abs_sum_mul_iteratedGradient_
   intro lam Lam r x₀ Ω a f u hΩ ha hLam hnonneg habs hf x hx y hy
   set ū := preciseRepresentative volume (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ)
   have hcont : ContinuousOn ū Ω :=
-    Wkp.continuousOn_preciseRepresentative (by rw [finrank_euclideanSpace]) u
+    Wkp.continuousOn_preciseRepresentative (finrank_lt_two_mul_card (ι := ι)) u
   have hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] ū :=
     Wkp.ae_eq_preciseRepresentative 2 u
   -- `ū ≥ 0` on the ball: there it is continuous and nonnegative almost everywhere.
