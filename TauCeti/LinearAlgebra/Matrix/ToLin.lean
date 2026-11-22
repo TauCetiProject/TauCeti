@@ -154,6 +154,7 @@ theorem vecMul_toMatrixRight' (f : (m → R) →ₗ[R] n → R) (v : m → R) :
 possibly noncommutative semiring, an `Rᵐᵒᵖ`-linear map `f : (m → R) → (n → R)` (one commuting with
 right scalar multiplication) is `Matrix.mulVec` by the matrix whose `j`-th column is the image
 `f eⱼ` of the `j`-th standard basis vector. -/
+@[simp]
 theorem of_apply_single_mulVec (f : (m → R) →ₗ[Rᵐᵒᵖ] n → R) (v : m → R) :
     Matrix.mulVec (Matrix.of fun i j ↦ f (Pi.single j 1) i) v = f v := by
   -- Both sides are `Rᵐᵒᵖ`-linear in `v`, and they agree on the `eⱼ`.
