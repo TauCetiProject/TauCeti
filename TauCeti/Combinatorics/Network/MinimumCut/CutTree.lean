@@ -28,6 +28,8 @@ This file develops what these properties give, independently of how such a tree 
   minimizes `f` among all sets separating two vertices, with value that minimum weight.
 * `IsFlowEquivalentTree.card_image_pairMinimumValue_le`: the minimum cut values between distinct
   vertices take at most `|V| - 1` distinct values, since each is a tree-edge weight.
+* `IsFlowEquivalentTree.exists_edge_weight_le_pairMinimumValue`: a minimum tree-edge weight is at
+  most every distinct-pair minimum cut value.
 * `IsCutTree.of_isMinimum_edgeSide`: a tree whose edges all leave minimum cuts between their ends
   is a cut tree for the weights given by those minimum cut values.
 
@@ -106,6 +108,20 @@ theorem exists_weight_le (hT : IsFlowEquivalentTree f T w) {S : Finset V} {s t :
   obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path s t
   obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
   exact ⟨e, p.edges_subset_edgeSet he, hwe ▸ pairMinimumValue_le f hs ht⟩
+
+/-- Some tree edge has weight at most every minimum cut value between distinct vertices. -/
+theorem exists_edge_weight_le_pairMinimumValue [Nontrivial V]
+    (hT : IsFlowEquivalentTree f T w) :
+    ∃ u v, T.Adj u v ∧ ∀ s t, s ≠ t → w s(u, v) ≤ pairMinimumValue f s t := by
+  have hTne : T ≠ ⊥ := by
+    intro h
+    rw [h] at hT
+    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
+  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
+  refine ⟨u, v, huv, fun s t hst ↦ ?_⟩
+  obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path s t
+  obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
+  exact (hmin e (p.edges_subset_edgeSet he)).trans_eq hwe
 
 end IsFlowEquivalentTree
 

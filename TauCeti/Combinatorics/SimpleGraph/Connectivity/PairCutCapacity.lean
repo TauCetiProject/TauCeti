@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Combinatorics.SimpleGraph.Basic
 public import Mathlib.Data.Finset.Sym
+public import Mathlib.Data.Set.Card
 public import TauCeti.Data.Sym.Crosses
 public import TauCeti.Order.Lattice.Submodular
 import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
@@ -22,6 +24,7 @@ support graph. Diagonal pairs never contribute to a cut and are ignored by the s
 
 * `TauCeti.pairCutCapacity`: the capacity of a cut for weights on unordered vertex pairs.
 * `TauCeti.capacitySupport`: the simple support graph of a pair-capacity function.
+* `SimpleGraph.unitCutCapacity`: the number of graph edges crossing a vertex cut.
 
 ## Main result
 
@@ -156,3 +159,73 @@ theorem capacitySupport_eq_of_offDiagonal_eq [Zero K] [LT K]
   · rw [h x y hxy]
 
 end TauCeti
+
+namespace SimpleGraph
+
+variable {V : Type*}
+
+/-- The unit capacity of a vertex cut in a simple graph. Every graph edge crossing the cut
+contributes one, while nonedges and diagonal pairs contribute zero. -/
+noncomputable def unitCutCapacity [Fintype V] (G : SimpleGraph V) (S : Finset V) : ℕ :=
+  TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) S
+
+/-- The defining pair-capacity formula for the unit cut capacity of a simple graph. -/
+theorem unitCutCapacity_def [Fintype V] (G : SimpleGraph V) (S : Finset V) :
+    G.unitCutCapacity S =
+      TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) S :=
+  (rfl)
+
+/-- The empty cut has unit capacity zero. -/
+@[simp]
+theorem unitCutCapacity_empty [Fintype V] (G : SimpleGraph V) :
+    G.unitCutCapacity ∅ = 0 := by
+  classical
+  rw [unitCutCapacity_def, TauCeti.pairCutCapacity]
+  apply sum_eq_zero
+  intro p _
+  have hp : ¬p.Crosses (∅ : Set V) := by
+    induction p using Sym2.inductionOn with
+    | _ x y => simp
+  simp [hp]
+
+/-- The universal cut has unit capacity zero. -/
+@[simp]
+theorem unitCutCapacity_univ [Fintype V] (G : SimpleGraph V) :
+    G.unitCutCapacity Finset.univ = 0 := by
+  classical
+  rw [unitCutCapacity_def, TauCeti.pairCutCapacity]
+  apply sum_eq_zero
+  intro p _
+  have hp : ¬p.Crosses (Set.univ : Set V) := by
+    induction p using Sym2.inductionOn with
+    | _ x y => simp
+  simp [hp]
+
+/-- Exchanging the two sides of a cut does not change its unit capacity. -/
+@[simp]
+theorem unitCutCapacity_compl [Fintype V] [DecidableEq V] (G : SimpleGraph V) (S : Finset V) :
+    G.unitCutCapacity Sᶜ = G.unitCutCapacity S := by
+  rw [unitCutCapacity_def, unitCutCapacity_def, TauCeti.pairCutCapacity_compl]
+
+/-- Unit cut capacity is the number of actual simple-graph edges crossing the cut. -/
+theorem unitCutCapacity_eq_ncard [Fintype V] (G : SimpleGraph V) (S : Finset V) :
+    G.unitCutCapacity S =
+      (G.edgeSet ∩ {e | e.Crosses (S : Set V)}).ncard := by
+  classical
+  rw [unitCutCapacity_def, TauCeti.pairCutCapacity_def]
+  let C := G.edgeSet ∩ {e | e.Crosses (S : Set V)}
+  calc
+    (∑ p : Sym2 V, if p.Crosses (S : Set V) then G.edgeSet.indicator (fun _ ↦ 1) p else 0) =
+        #(Finset.univ.filter fun p : Sym2 V ↦ p ∈ C) := by
+      rw [card_filter]
+      apply sum_congr rfl
+      intro p _
+      by_cases hpG : p ∈ G.edgeSet <;> by_cases hpS : p.Crosses (S : Set V) <;>
+        simp [C, hpG, hpS]
+    _ = C.ncard := by
+      rw [Set.ncard_eq_toFinset_card]
+      congr 1
+      ext p
+      simp [C]
+
+end SimpleGraph

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.Menger.CutValue
 public import TauCeti.Combinatorics.Network.MinimumCut.GomoryHu
-import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # Cut trees for weighted multigraphs
@@ -145,11 +144,7 @@ minimum weight of an edge in any unit-capacity flow-equivalent tree. -/
 theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
     (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) :
     ∃ u v, T.Adj u v ∧ G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
-  have hTne : T ≠ ⊥ := by
-    intro h
-    rw [h] at hT
-    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
-  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
+  obtain ⟨u, v, huv, hmin⟩ := hT.exists_edge_weight_le_pairMinimumValue
   refine ⟨u, v, huv, le_antisymm ?_ ?_⟩
   · calc
       G.edgeConnectivity ≤ G.edgeReachability u v :=
@@ -167,10 +162,8 @@ theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
       subst y
       rw [G.edgeReachability_self hx]
       exact le_top
-    · obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path sx sy
-      obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hxy hp
-      rw [G.edgeReachability_eq_pairMinimumValue hxy]
-      exact_mod_cast (hmin e (p.edges_subset_edgeSet he)).trans_eq hwe
+    · rw [G.edgeReachability_eq_pairMinimumValue hxy]
+      exact_mod_cast hmin sx sy hxy
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 

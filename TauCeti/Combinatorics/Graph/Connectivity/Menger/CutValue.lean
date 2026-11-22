@@ -30,6 +30,8 @@ minimum cut values, such as cut trees, apply to the deletion-based invariant.
   minimum unit cut value, viewed in `ℕ∞`.
 * `Graph.edgeReachability_eq_pairMinimumValue_pairCapacity`: aggregating parallel unit edges by
   their unordered endpoint pairs preserves this value.
+* `SimpleGraph.edgeReachability_eq_pairMinimumValue_unitCutCapacity`: the native simple-graph
+  specialization.
 
 ## References
 
@@ -141,3 +143,41 @@ theorem edgeReachability_eq_pairMinimumValue_pairCapacity [Fintype V(G)] [Fintyp
   rw [hcut, edgeReachability_eq_pairMinimumValue hst]
 
 end Graph
+
+open scoped Graph
+
+namespace SimpleGraph
+
+variable {V : Type*}
+
+/-- For distinct vertices, simple-graph edge reachability is the minimum unit cut value, viewed
+in `ℕ∞`. -/
+theorem edgeReachability_eq_pairMinimumValue_unitCutCapacity [Fintype V] (G : SimpleGraph V)
+    {s t : V} (hst : s ≠ t) :
+    G.edgeReachability s t =
+      ((TerminalCut.pairMinimumValue G.unitCutCapacity s t : ℕ) : ℕ∞) := by
+  let e : V ≃ V(Graph.ofSimpleGraph G) :=
+    { toFun := fun x ↦ ⟨x, by simp⟩
+      invFun := Subtype.val
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ Subtype.ext rfl }
+  have hmap (S : Finset V) :
+      S.map e.toEmbedding = G.toOfSimpleGraphFinset S := by
+    ext x
+    have hx : x = G.toOfSimpleGraphVertex x.1 :=
+      Subtype.ext (G.toOfSimpleGraphVertex_val x.1).symm
+    rw [hx]
+    simp [e]
+  have he (S : Finset V) :
+      (Graph.ofSimpleGraph G).edgeCutCapacity (fun _ ↦ (1 : ℕ))
+          (S.map e.toEmbedding) = G.unitCutCapacity S := by
+    rw [hmap]
+    exact (G.unitCutCapacity_eq_edgeCutCapacity S).symm
+  have hst' : e s ≠ e t := e.injective.ne hst
+  have hreach :=
+    (Graph.ofSimpleGraph G).edgeReachability_eq_pairMinimumValue (s := e s) (t := e t) hst'
+  have hmin := TerminalCut.pairMinimumValue_map G.unitCutCapacity e
+    ((Graph.ofSimpleGraph G).edgeCutCapacity fun _ ↦ (1 : ℕ)) he s t
+  simpa [e, Graph.edgeReachability_ofSimpleGraph] using hreach.trans (congrArg (↑· : ℕ → ℕ∞) hmin)
+
+end SimpleGraph
