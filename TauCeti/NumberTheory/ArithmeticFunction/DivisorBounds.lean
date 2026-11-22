@@ -343,60 +343,48 @@ namespace TauCeti
 
 open Finset
 
-/-- Sending `(c, d)` to `((|c|, |d|), (sign c, sign d))` embeds the integer pairs with `d ∣ c` and
-`0 < |c| < Y` into the natural divisor pairs below `Y`, times a choice of two signs. -/
-private theorem mapsTo_injOn_setOf_dvd_of_abs_lt (Y : ℝ) :
-    Set.MapsTo (fun p : ℤ × ℤ ↦ ((p.1.natAbs, p.2.natAbs), (p.1.sign, p.2.sign)))
-        {p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}
-        ↑(((Ioc 0 ⌊Y⌋₊).biUnion fun a ↦ a.divisors.image fun d ↦ (a, d)) ×ˢ
-          (({1, -1} : Finset ℤ) ×ˢ ({1, -1} : Finset ℤ))) ∧
-      Set.InjOn (fun p : ℤ × ℤ ↦ ((p.1.natAbs, p.2.natAbs), (p.1.sign, p.2.sign)))
-        {p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1} := by
-  have hsign {c : ℤ} (hc : c ≠ 0) : c.sign ∈ ({1, -1} : Finset ℤ) := by
-    rcases lt_or_gt_of_ne hc with h | h
-    · simp [Int.sign_eq_neg_one_of_neg h]
-    · simp [Int.sign_eq_one_of_pos h]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨c, d⟩ ⟨hc, hcY, hd⟩
-    have hd0 : d ≠ 0 := by rintro rfl; exact hc (zero_dvd_iff.mp hd)
-    have hcN : c.natAbs ≤ ⌊Y⌋₊ := Nat.le_floor (by rw [Nat.cast_natAbs, Int.cast_abs]; exact hcY.le)
-    simp only [coe_product, Set.mem_prod, mem_coe, mem_biUnion, mem_Ioc, mem_image,
-      Nat.mem_divisors, Prod.mk.injEq]
-    exact ⟨⟨c.natAbs, ⟨Int.natAbs_pos.mpr hc, hcN⟩, d.natAbs,
-      ⟨Int.natAbs_dvd_natAbs.mpr hd, Int.natAbs_ne_zero.mpr hc⟩, rfl, rfl⟩, hsign hc, hsign hd0⟩
-  · rintro ⟨c, d⟩ - ⟨c', d'⟩ - h
-    simp only [Prod.mk.injEq] at h
-    obtain ⟨⟨h1, h2⟩, h3, h4⟩ := h
-    rw [Prod.mk.injEq, ← Int.sign_mul_natAbs c, ← Int.sign_mul_natAbs c',
-      ← Int.sign_mul_natAbs d, ← Int.sign_mul_natAbs d', h1, h2, h3, h4]
-    exact ⟨rfl, rfl⟩
+/-- An integer pair `(c, d)` with `d ∣ c` and `0 < |c| < Y` has `c = ±a` for a natural number
+`0 < a ≤ Y`, and `d` an integer divisor of `a`. -/
+private theorem setOf_ne_zero_and_abs_lt_and_dvd_subset (Y : ℝ) :
+    {p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1} ⊆
+      ↑((Ioc 0 ⌊Y⌋₊).biUnion fun a : ℕ ↦ ({(a : ℤ), -(a : ℤ)} : Finset ℤ) ×ˢ (a : ℤ).divisors) := by
+  rintro ⟨c, d⟩ ⟨hc, hcY, hd⟩
+  simp only [coe_biUnion, coe_Ioc, Set.mem_iUnion, Set.mem_Ioc, coe_product, Set.mem_prod,
+    mem_coe, mem_insert, mem_singleton, Int.mem_divisors, exists_prop]
+  refine ⟨c.natAbs, ⟨Int.natAbs_pos.mpr hc, Nat.le_floor ?_⟩, Int.natAbs_eq c,
+    Int.dvd_natAbs.mpr hd, by simpa using hc⟩
+  rw [Nat.cast_natAbs, Int.cast_abs]
+  exact hcY.le
 
 /-- There are finitely many integer pairs `(c, d)` with `d ∣ c` and `0 < |c| < Y`. -/
-theorem finite_setOf_dvd_of_abs_lt (Y : ℝ) :
+theorem finite_setOf_ne_zero_and_abs_lt_and_dvd (Y : ℝ) :
     {p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}.Finite :=
-  Set.Finite.of_injOn (mapsTo_injOn_setOf_dvd_of_abs_lt Y).1
-    (mapsTo_injOn_setOf_dvd_of_abs_lt Y).2 (finite_toSet _)
+  (finite_toSet _).subset (setOf_ne_zero_and_abs_lt_and_dvd_subset Y)
 
 /-- The integer pairs `(c, d)` with `d ∣ c` and `0 < |c| < Y` number at most `4 Y (1 + log Y)`
 for `Y ≥ 1`. This is the summatory divisor bound over the integers, both signs of `c` and of
 `d` being counted. -/
-theorem ncard_setOf_dvd_of_abs_lt_le {Y : ℝ} (hY : 1 ≤ Y) :
+theorem ncard_setOf_ne_zero_and_abs_lt_and_dvd_le {Y : ℝ} (hY : 1 ≤ Y) :
     ({p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}.ncard : ℝ) ≤
       4 * (Y * (1 + Real.log Y)) := by
   classical
-  have hle := Set.ncard_le_ncard_of_injOn _ (mapsTo_injOn_setOf_dvd_of_abs_lt Y).1
-    (mapsTo_injOn_setOf_dvd_of_abs_lt Y).2 (finite_toSet _)
-  rw [Set.ncard_coe_finset, card_product, card_product] at hle
-  have hS : ({1, -1} : Finset ℤ).card = 2 := by decide
-  have hR : (((Ioc 0 ⌊Y⌋₊).biUnion fun a ↦ a.divisors.image fun d ↦ (a, d)).card : ℝ) ≤
-      ∑ a ∈ Ioc 0 ⌊Y⌋₊, (ArithmeticFunction.sigma 0 a : ℝ) := by
-    simp only [ArithmeticFunction.sigma_zero_apply]
-    exact_mod_cast card_biUnion_le.trans (sum_le_sum fun a _ ↦ card_image_le)
-  rw [hS] at hle
-  have := ArithmeticFunction.sum_Ioc_sigma_zero_le_mul_one_add_log hY
+  -- Each `a` contributes two signs of `c` and the `2 σ₀(a)` integer divisors of `a`.
+  have hcard : {p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}.ncard ≤
+      ∑ a ∈ Ioc 0 ⌊Y⌋₊, 4 * ArithmeticFunction.sigma 0 a := by
+    refine (Set.ncard_le_ncard (setOf_ne_zero_and_abs_lt_and_dvd_subset Y)
+      (finite_toSet _)).trans ?_
+    rw [Set.ncard_coe_finset]
+    refine card_biUnion_le.trans (sum_le_sum fun a _ ↦ ?_)
+    rw [card_product, Int.divisors, card_disjUnion, card_map, card_map, Int.natAbs_natCast,
+      ArithmeticFunction.sigma_zero_apply]
+    have := Nat.mul_le_mul_right (#a.divisors + #a.divisors)
+      (card_le_two : #({(a : ℤ), -(a : ℤ)} : Finset ℤ) ≤ 2)
+    omega
   calc ({p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}.ncard : ℝ)
-      ≤ (((Ioc 0 ⌊Y⌋₊).biUnion fun a ↦ a.divisors.image fun d ↦ (a, d)).card * (2 * 2) : ℕ) := by
-        exact_mod_cast hle
-    _ ≤ 4 * (Y * (1 + Real.log Y)) := by push_cast; linarith
+      ≤ ∑ a ∈ Ioc 0 ⌊Y⌋₊, 4 * (ArithmeticFunction.sigma 0 a : ℝ) := by exact_mod_cast hcard
+    _ = 4 * ∑ a ∈ Ioc 0 ⌊Y⌋₊, (ArithmeticFunction.sigma 0 a : ℝ) := (mul_sum _ _ _).symm
+    _ ≤ 4 * (Y * (1 + Real.log Y)) := by
+        gcongr
+        exact ArithmeticFunction.sum_Ioc_sigma_zero_le_mul_one_add_log hY
 
 end TauCeti

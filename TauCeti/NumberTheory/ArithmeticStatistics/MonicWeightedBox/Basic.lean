@@ -8,9 +8,10 @@ module
 public import Mathlib.Algebra.Polynomial.Inductions
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Data.Set.Card
-import Mathlib.Algebra.Order.Round
-import Mathlib.Data.Int.Interval
+import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 import Mathlib.Tactic.Positivity
+import TauCeti.Algebra.Polynomial.Card.BoundedCoeff
+import TauCeti.Data.Int.Interval
 
 /-!
 # Monic integer polynomials in a weighted coefficient box
@@ -23,8 +24,8 @@ polynomials with local or Galois conditions are counted. Indexed by the power of
 coefficient of `x^i` is bounded by `X^(n-i)`.
 
 Removing the constant term, `Polynomial.divX` maps the degree `n + 1` box into the degree `n`
-box. Induction along this map shows that the box is finite, with at most
-`3^n X^(n(n+1)/2)` elements once `X ≥ 1`.
+box. The box lies in the coefficient box of `TauCeti.Polynomial.ncard_natDegree_le_coeff_mem_pi`,
+so it is finite, with at most `3^n X^(n(n+1)/2)` elements once `X ≥ 1`.
 -/
 
 public section
@@ -65,75 +66,58 @@ theorem divX_mem_monicWeightedBox {n : ℕ} {X : ℝ} {f : ℤ[X]}
   · rw [coeff_divX]
     simpa using hc (i + 1) (by omega)
 
-/-- A polynomial in the degree `n + 1` box is `X * g + C c` for some `g` in the degree `n` box
-and some constant `c` with `|c| < X^(n+1)`. -/
-private theorem monicWeightedBox_succ_subset (n : ℕ) (X : ℝ) :
-    monicWeightedBox (n + 1) X ⊆ (fun p : ℤ[X] × ℤ ↦ p.1 * Polynomial.X + C p.2) ''
-      (monicWeightedBox n X ×ˢ {c : ℤ | |(c : ℝ)| < X ^ (n + 1)}) := by
-  intro f hf
-  refine ⟨(f.divX, f.coeff 0), ⟨divX_mem_monicWeightedBox hf, ?_⟩, divX_mul_X_add f⟩
-  simpa using (mem_monicWeightedBox.mp hf).2.2 0 (Nat.succ_pos n)
+/-- The allowed values of the coefficient of `x^i` in the degree `n` box: the integers in
+`(-⌈X^(n-i)⌉, ⌈X^(n-i)⌉)` for `i < n`, and `1` for the leading coefficient. -/
+private noncomputable def coeffBox (n : ℕ) (X : ℝ) (i : Fin (n + 1)) : Finset ℤ :=
+  if (i : ℕ) < n then Finset.Ioo (-⌈X ^ (n - i)⌉) ⌈X ^ (n - i)⌉ else {1}
 
-/-- The integers of absolute value less than `Y` lie in a finite interval. -/
-private theorem setOf_abs_lt_subset (Y : ℝ) :
-    {c : ℤ | |(c : ℝ)| < Y} ⊆ ↑(Finset.Ioo (-⌈Y⌉) ⌈Y⌉) := by
-  intro c hc
-  rw [Set.mem_ofPred_eq, abs_lt] at hc
-  simp only [Finset.coe_Ioo, Set.mem_Ioo]
-  constructor
-  · have : (-⌈Y⌉ : ℝ) < c := by linarith [Int.le_ceil Y]
-    exact_mod_cast this
-  · exact Int.cast_lt.mp (hc.2.trans_le (Int.le_ceil Y))
-
-/-- There are at most `3 Y` integers of absolute value less than `Y ≥ 1`. -/
-private theorem ncard_setOf_abs_lt_le {Y : ℝ} (hY : 1 ≤ Y) :
-    ({c : ℤ | |(c : ℝ)| < Y}.ncard : ℝ) ≤ 3 * Y := by
-  have h := Set.ncard_le_ncard (setOf_abs_lt_subset Y) (Finset.finite_toSet _)
-  rw [Set.ncard_coe_finset, Int.card_Ioo] at h
-  have hcast : ((⌈Y⌉ - -⌈Y⌉ - 1).toNat : ℝ) = 2 * ⌈Y⌉ - 1 := by
-    have hpos : 0 ≤ ⌈Y⌉ - -⌈Y⌉ - 1 := by
-      have : (1 : ℤ) ≤ ⌈Y⌉ := Int.one_le_ceil_iff.mpr (by linarith)
-      omega
-    rw [← Int.cast_natCast, Int.toNat_of_nonneg hpos]
-    push_cast
-    ring
-  have hceil : (⌈Y⌉ : ℝ) < Y + 1 := Int.ceil_lt_add_one Y
-  calc ({c : ℤ | |(c : ℝ)| < Y}.ncard : ℝ) ≤ ((⌈Y⌉ - -⌈Y⌉ - 1).toNat : ℝ) := by
-        exact_mod_cast h
-    _ ≤ 3 * Y := by rw [hcast]; linarith
+/-- The weighted box lies among the polynomials of degree at most `n` whose coefficient of `x^i`
+lies in `coeffBox n X i`, the family counted by
+`TauCeti.Polynomial.ncard_natDegree_le_coeff_mem_pi`. -/
+private theorem monicWeightedBox_subset (n : ℕ) (X : ℝ) :
+    monicWeightedBox n X ⊆
+      {f : ℤ[X] | f.natDegree ≤ n ∧ ∀ i : Fin (n + 1), f.coeff i ∈ coeffBox n X i} := by
+  rintro f ⟨hm, hd, hc⟩
+  refine ⟨hd.le, fun i ↦ ?_⟩
+  rw [coeffBox]
+  split_ifs with hi
+  · rw [← Finset.mem_coe, ← setOf_abs_intCast_lt_eq_Ioo]
+    exact hc i hi
+  · rw [Finset.mem_singleton, show (i : ℕ) = n by omega, ← hd]
+    exact hm
 
 /-- The weighted box is finite. -/
-theorem finite_monicWeightedBox (n : ℕ) (X : ℝ) : (monicWeightedBox n X).Finite := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    exact (((ih.prod ((Finset.finite_toSet _).subset (setOf_abs_lt_subset _))).image
-      _).subset (monicWeightedBox_succ_subset n X))
+theorem finite_monicWeightedBox (n : ℕ) (X : ℝ) : (monicWeightedBox n X).Finite :=
+  (TauCeti.Polynomial.finite_setOf_natDegree_le_coeff_mem_pi n
+    fun i ↦ (coeffBox n X i).finite_toSet).subset (monicWeightedBox_subset n X)
 
 /-- For `X ≥ 1`, the degree `n` weighted box has at most `3^n X^(n(n+1)/2)` elements. -/
 theorem ncard_monicWeightedBox_le (n : ℕ) {X : ℝ} (hX : 1 ≤ X) :
     ((monicWeightedBox n X).ncard : ℝ) ≤ 3 ^ n * X ^ (n * (n + 1) / 2) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    have hfin : {c : ℤ | |(c : ℝ)| < X ^ (n + 1)}.Finite :=
-      (Finset.finite_toSet _).subset (setOf_abs_lt_subset _)
-    have hle := Set.ncard_le_ncard (monicWeightedBox_succ_subset n X)
-      (((finite_monicWeightedBox n X).prod hfin).image _)
-    have himage := Set.ncard_image_le (f := fun p : ℤ[X] × ℤ ↦ p.1 * Polynomial.X + C p.2)
-      ((finite_monicWeightedBox n X).prod hfin)
-    rw [Set.ncard_prod] at himage
-    have hexp : (n + 1) * (n + 1 + 1) / 2 = n * (n + 1) / 2 + (n + 1) := by
-      rw [show (n + 1) * (n + 1 + 1) = n * (n + 1) + 2 * (n + 1) by ring,
-        Nat.add_mul_div_left _ _ (by norm_num : 0 < 2)]
-    calc ((monicWeightedBox (n + 1) X).ncard : ℝ)
-        ≤ ((monicWeightedBox n X).ncard : ℝ) * {c : ℤ | |(c : ℝ)| < X ^ (n + 1)}.ncard := by
-          exact_mod_cast hle.trans himage
-      _ ≤ (3 ^ n * X ^ (n * (n + 1) / 2)) * (3 * X ^ (n + 1)) :=
-          mul_le_mul ih (ncard_setOf_abs_lt_le (one_le_pow₀ hX)) (by positivity)
-            (by positivity)
-      _ = 3 ^ (n + 1) * X ^ ((n + 1) * (n + 1 + 1) / 2) := by
-          rw [hexp, pow_add, pow_succ]
-          ring
+  have hcard (i : Fin n) : ((coeffBox n X i.castSucc).card : ℝ) ≤ 3 * X ^ (n - i) := by
+    simp only [coeffBox, Fin.val_castSucc, i.isLt, ↓reduceIte]
+    rw [← Set.ncard_coe_finset, ← setOf_abs_intCast_lt_eq_Ioo]
+    exact ncard_setOf_abs_intCast_lt_le (one_le_pow₀ hX)
+  -- The exponents `n - i` for `i < n` are `1, …, n`, which sum to `n(n+1)/2`.
+  have hsum : ∑ i : Fin n, (n - (i : ℕ)) = n * (n + 1) / 2 := by
+    have hshift : ∑ i ∈ Finset.range n, (i + 1) = ∑ i ∈ Finset.range (n + 1), i := by
+      simp [Finset.sum_range_succ']
+    rw [Fin.sum_univ_eq_sum_range (n - ·), ← Finset.sum_range_reflect, Finset.sum_congr rfl
+      fun i hi ↦ show n - (n - 1 - i) = i + 1 by rw [Finset.mem_range] at hi; omega,
+      hshift, Finset.sum_range_id, Nat.add_sub_cancel, mul_comm]
+  calc ((monicWeightedBox n X).ncard : ℝ)
+      ≤ (∏ i, (coeffBox n X i).card : ℕ) := by
+        exact_mod_cast (Set.ncard_le_ncard (monicWeightedBox_subset n X)
+          (TauCeti.Polynomial.finite_setOf_natDegree_le_coeff_mem_pi n
+            fun i ↦ (coeffBox n X i).finite_toSet)).trans_eq
+          (TauCeti.Polynomial.ncard_natDegree_le_coeff_mem_pi n _)
+    _ = ∏ i : Fin n, ((coeffBox n X i.castSucc).card : ℝ) := by
+        rw [Nat.cast_prod, Fin.prod_univ_castSucc]
+        simp [coeffBox]
+    _ ≤ ∏ i : Fin n, (3 * X ^ (n - (i : ℕ))) :=
+        Finset.prod_le_prod₀ (fun _ _ ↦ by positivity) fun i _ ↦ hcard i
+    _ = 3 ^ n * X ^ (n * (n + 1) / 2) := by
+        rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+          Finset.prod_pow_eq_pow_sum, hsum]
 
 end TauCeti

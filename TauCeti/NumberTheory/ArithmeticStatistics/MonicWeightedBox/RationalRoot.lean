@@ -87,7 +87,7 @@ private theorem ncard_coeff_zero_ne_zero_root_le (n : ℕ) (X : ℝ) :
   rw [← Set.ncard_prod]
   refine Set.ncard_le_ncard_of_injOn (fun f ↦ (f.divX.divX, (f.coeff 0, root f)))
     (fun f hf ↦ ⟨divX_mem_monicWeightedBox (divX_mem_monicWeightedBox hf.1), hf.2.1,
-      ?_, ?_⟩) ?_ ((finite_monicWeightedBox n X).prod (finite_setOf_dvd_of_abs_lt _))
+      ?_, ?_⟩) ?_ ((finite_monicWeightedBox n X).prod (finite_setOf_ne_zero_and_abs_lt_and_dvd _))
   · simpa using (mem_monicWeightedBox.mp hf.1).2.2 0 (by omega)
   · have h := sub_dvd_eval_sub (root f) 0 f
     rwa [sub_zero, hroot hf, ← coeff_zero_eq_eval_zero, zero_sub, dvd_neg] at h
@@ -106,6 +106,12 @@ private theorem ncard_coeff_zero_ne_zero_root_le (n : ℕ) (X : ℝ) :
     · exact h1
     · simpa [coeff_divX] using congrArg (fun p : ℤ[X] ↦ p.coeff k) h2
 
+/-- The weight `k(k+1)/2` of the degree `k` box grows by `k + 1` in degree `k + 1`. This is
+Mathlib's `Nat.triangle_succ`, written for the box weight. -/
+private theorem succ_mul_succ_succ_div_two (k : ℕ) :
+    (k + 1) * (k + 1 + 1) / 2 = k * (k + 1) / 2 + (k + 1) := by
+  simpa only [Nat.add_sub_cancel, Nat.mul_comm] using Nat.triangle_succ (k + 1)
+
 /-- In degree `n + 2`, splitting by the constant term bounds the polynomials with a rational root
 by `3^(n+1) X^(T+n+1) + 4 · 3^n X^(T+n+2) (1 + (n + 2) log X)`, where `T = n(n+1)/2`. -/
 private theorem ncard_rat_root_le_add (n : ℕ) {X : ℝ} (hX : 1 ≤ X) :
@@ -118,10 +124,7 @@ private theorem ncard_rat_root_le_add (n : ℕ) {X : ℝ} (hX : 1 ≤ X) :
     (Set.ncard_union_le _ _)
   have hA : ({f ∈ monicWeightedBox (n + 2) X | f.coeff 0 = 0}.ncard : ℝ) ≤
       3 ^ (n + 1) * X ^ (n * (n + 1) / 2 + (n + 1)) := by
-    have hT : (n + 1) * (n + 1 + 1) / 2 = n * (n + 1) / 2 + (n + 1) := by
-      rw [show (n + 1) * (n + 1 + 1) = n * (n + 1) + 2 * (n + 1) by ring,
-        Nat.add_mul_div_left _ _ (by norm_num : 0 < 2)]
-    rw [← hT]
+    rw [← succ_mul_succ_succ_div_two]
     exact (Nat.cast_le.mpr (ncard_coeff_zero_eq_zero_le (n + 1) X)).trans
       (ncard_monicWeightedBox_le (n + 1) hX)
   have hB : ({f ∈ monicWeightedBox (n + 2) X | f.coeff 0 ≠ 0 ∧ ∃ z : ℤ, f.eval z = 0}.ncard :
@@ -129,7 +132,8 @@ private theorem ncard_rat_root_le_add (n : ℕ) {X : ℝ} (hX : 1 ≤ X) :
     refine (Nat.cast_le.mpr (ncard_coeff_zero_ne_zero_root_le n X)).trans ?_
     push_cast
     refine (mul_le_mul (ncard_monicWeightedBox_le n hX)
-      (ncard_setOf_dvd_of_abs_lt_le (one_le_pow₀ hX)) (by positivity) (by positivity)).trans_eq ?_
+      (ncard_setOf_ne_zero_and_abs_lt_and_dvd_le (one_le_pow₀ hX)) (by positivity)
+      (by positivity)).trans_eq ?_
     rw [Real.log_pow, pow_add]
     push_cast
     ring
@@ -145,10 +149,8 @@ theorem ncard_monicWeightedBox_rat_root_le (n : ℕ) {X : ℝ} (hX : 2 ≤ X) :
       3 ^ n * (n + 2) * X ^ (n * (n + 1) / 2 - n + 1) * Real.log X := by
   have hX1 : 1 ≤ X := by linarith
   have hlog : 1 ≤ 2 * Real.log X := by
-    have := Real.one_sub_inv_le_log_of_pos (by norm_num : (0 : ℝ) < 2)
-    have := Real.log_le_log (by norm_num) hX
-    norm_num at *
-    linarith
+    have h2 : 1 - 2⁻¹ ≤ Real.log 2 := Real.one_sub_inv_le_log_of_pos (by norm_num)
+    linarith [Real.log_le_log (by norm_num) hX]
   have hL : 0 ≤ Real.log X := by linarith
   have hn2 : (2 : ℝ) ≤ n + 2 := by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
   rcases lt_or_ge n 2 with hn | hn
@@ -165,21 +167,30 @@ theorem ncard_monicWeightedBox_rat_root_le (n : ℕ) {X : ℝ} (hX : 2 ≤ X) :
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
   -- With `T = m(m+1)/2`, the target weight `D - n + 1` is `T + m + 2`.
   have hT : (m + 2) * (m + 2 + 1) / 2 - (m + 2) + 1 = m * (m + 1) / 2 + (m + 2) := by
-    rw [show (m + 2) * (m + 2 + 1) = m * (m + 1) + 2 * (2 * m + 3) by ring,
-      Nat.add_mul_div_left _ _ (by norm_num : 0 < 2)]
+    rw [succ_mul_succ_succ_div_two, succ_mul_succ_succ_div_two]
     omega
   have h := ncard_rat_root_le_add m hX1
   rw [hT]
   set T := m * (m + 1) / 2
-  have hk : 0 ≤ 3 ^ m * X ^ (T + (m + 2)) := by positivity
-  have hA : 3 ^ (m + 1) * X ^ (T + (m + 1)) ≤ 3 * (3 ^ m * X ^ (T + (m + 2))) * (2 * Real.log X) :=
-    calc 3 ^ (m + 1) * X ^ (T + (m + 1)) ≤ 3 * (3 ^ m * X ^ (T + (m + 2))) := by
-          rw [pow_succ', mul_assoc]
+  set K := 3 ^ m * X ^ (T + (m + 2)) with hK
+  have hKL : 0 ≤ K * Real.log X := mul_nonneg (by positivity) hL
+  have hA : 3 ^ (m + 1) * X ^ (T + (m + 1)) ≤ 3 * K * (2 * Real.log X) :=
+    calc 3 ^ (m + 1) * X ^ (T + (m + 1)) ≤ 3 * K := by
+          rw [pow_succ', mul_assoc, hK]
           gcongr
           norm_num
       _ ≤ _ := le_mul_of_one_le_right (by positivity) hlog
   push_cast at h ⊢
-  rw [show (3 : ℝ) ^ (m + 2) = 9 * 3 ^ m by ring]
-  nlinarith [mul_nonneg hk hL, mul_nonneg (mul_nonneg hk hL) (Nat.cast_nonneg m : (0 : ℝ) ≤ m)]
+  -- With `K = 3^m X^(T+m+2)` and `L = log X ≥ 1/2`, the two summands of `h` are at most
+  -- `6 K L` and `4 K (2 L + (m + 2) L)`, together `(4m + 22) K L ≤ 9 (m + 4) K L`.
+  calc _ ≤ _ := h
+    _ ≤ 3 * K * (2 * Real.log X) + 4 * K * (2 * Real.log X + (m + 2) * Real.log X) := by
+        gcongr
+    _ = (4 * m + 22) * (K * Real.log X) := by ring
+    _ ≤ (9 * m + 36) * (K * Real.log X) :=
+        mul_le_mul_of_nonneg_right (by linarith [(Nat.cast_nonneg m : (0 : ℝ) ≤ m)]) hKL
+    _ = 3 ^ (m + 2) * (m + 2 + 2) * X ^ (T + (m + 2)) * Real.log X := by
+        rw [hK]
+        ring
 
 end TauCeti
