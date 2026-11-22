@@ -31,12 +31,6 @@ enter, as in the definition of `BialgHom.weylGroup`.
 
 ## Main declarations
 
-* `TauCeti.HopfAlgebra.pointConjugationAlgHom_apply_of_mem_classFunctions`: conjugation by a
-  rational point fixes class functions.
-* `BialgHom.weylInvariants`: the subalgebra of functions on `D(X)` fixed by the Weyl
-  group, with `BialgHom.mem_weylInvariants_iff`.
-* `BialgHom.weylInvariants_eq_top_of_isCocomm`: on a commutative group, such as `𝔾ₘ`, every
-  function on `D(X)` is Weyl invariant.
 * `BialgHom.map_mem_weylInvariants`: the restriction of a class function to `D(X)` is Weyl
   invariant.
 * `BialgHom.classFunctionsRestrict`: restriction as an algebra map from the class functions to
@@ -51,20 +45,6 @@ enter, as in the definition of `BialgHom.weylGroup`.
 
 public section
 
-open TensorProduct
-
-namespace TauCeti.HopfAlgebra
-
-variable {R H : Type*} [CommSemiring R] [CommSemiring H] [_root_.HopfAlgebra R H]
-
-/-- **Conjugation by a rational point fixes every class function.** -/
-theorem pointConjugationAlgHom_apply_of_mem_classFunctions {f : H}
-    (hf : f ∈ classFunctions R H) (g : WithConv (H →ₐ[R] R)) :
-    pointConjugationAlgHom g f = f := by
-  simpa [mem_classFunctions_iff.mp hf] using LinearMap.apply_pointConjugationAlgHom LinearMap.id g f
-
-end TauCeti.HopfAlgebra
-
 namespace BialgHom
 
 open TauCeti TauCeti.HopfAlgebra
@@ -72,30 +52,6 @@ open TauCeti TauCeti.HopfAlgebra
 variable {R H X : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H] [CommGroup X]
   [ConnectedSpace (PrimeSpectrum R)]
 variable (π : H →ₐc[R] MonoidAlgebra R X) (hπ : Function.Surjective π)
-
-/-- The **Weyl-invariant functions** on the closed diagonalizable subgroup `D(X) → G`: the functions
-in `R[X]` fixed by every element of the Weyl group `BialgHom.weylGroup π hπ`, acting
-through its action on the character group `X`. It is the coordinate algebra `O(D(X))^W` of the
-quotient of `D(X)` by the Weyl group. -/
-noncomputable def weylInvariants : Subalgebra R (MonoidAlgebra R X) :=
-  ⨅ w : weylGroup π hπ,
-    AlgHom.equalizer (MonoidAlgebra.domCongr R R (w : MulAut X)).toAlgHom (AlgHom.id R _)
-
-variable {π hπ} in
-/-- A function on `D(X)` is Weyl invariant exactly when every element of the Weyl group fixes
-it. -/
-@[simp]
-theorem mem_weylInvariants_iff {p : MonoidAlgebra R X} :
-    p ∈ weylInvariants π hπ ↔ ∀ w ∈ weylGroup π hπ, MonoidAlgebra.domCongr R R w p = p := by
-  simp [weylInvariants, Algebra.mem_iInf, AlgHom.mem_equalizer]
-
-/-- On a commutative group scheme every function on a closed diagonalizable subgroup is Weyl
-invariant; for instance `O(𝔾ₘ)^W` is the whole Laurent polynomial ring `R[t, t⁻¹]`. -/
-@[simp]
-theorem weylInvariants_eq_top_of_isCocomm [Coalgebra.IsCocomm R H] : weylInvariants π hπ = ⊤ :=
-  eq_top_iff.mpr fun p _ ↦ mem_weylInvariants_iff.mpr fun w hw ↦ by
-    rw [weylGroup_eq_bot_of_isCocomm, Subgroup.mem_bot] at hw
-    simp [hw, MulAut.one_def]
 
 /-- **Class functions restrict to Weyl-invariant functions.** The restriction to the closed
 diagonalizable subgroup `D(X)` of a regular class function of `G` is fixed by the Weyl group. -/
