@@ -22,8 +22,9 @@ On a compact space `X`, every continuous function is integrable against a finite
 (`Continuous.integrable_of_compactSpace`, `ContinuousMap.integrable`), as is its product with an
 integrable function against any measure (`MeasureTheory.Integrable.mul_continuous_of_compactSpace`),
 and integration against a finite measure is Lipschitz, hence continuous, in the integrand for the
-sup norm on `C(X, E)`. This is what lets an identity between integrals pass from a dense subset of
-`C(X, E)` to all of it.
+sup norm on `C(X, E)` (`TauCeti.lipschitzWith_integral_continuousMap`,
+`TauCeti.continuous_integral_continuousMap`). This is what lets an identity between integrals
+pass from a dense subset of `C(X, E)` to all of it.
 
 For `𝕜 = ℝ` or `ℂ`, integration against a finite measure is a positive linear functional on
 `C(X, 𝕜)` (`ContinuousMap.integralPositiveLinearMap`), the compact-space, `𝕜`-valued counterpart of
@@ -120,14 +121,20 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
+/-- On a compact space, integration against a finite measure `μ` is Lipschitz in the integrand,
+with constant the total mass of `μ`, for the sup norm on `C(X, E)`. -/
+theorem lipschitzWith_integral_continuousMap (μ : Measure X) [IsFiniteMeasure μ] :
+    LipschitzWith (μ univ).toNNReal fun f : C(X, E) ↦ ∫ x, f x ∂μ := by
+  refine LipschitzWith.of_dist_le_mul fun f g ↦ ?_
+  rw [dist_eq_norm, dist_eq_norm, ENNReal.coe_toNNReal_eq_toReal, ← measureReal_def, mul_comm,
+    ← integral_sub (f.integrable μ) (g.integrable μ)]
+  exact norm_integral_le_of_norm_le_const (ae_of_all _ fun x ↦ (f - g).norm_coe_le_norm x)
+
 /-- On a compact space, integration against a finite measure is a continuous function of the
 integrand for the topology of uniform convergence on `C(X, E)`. -/
 theorem continuous_integral_continuousMap {μ : Measure X} [IsFiniteMeasure μ] :
-    Continuous fun f : C(X, E) ↦ ∫ x, f x ∂μ := by
-  refine (LipschitzWith.of_dist_le_mul (K := (μ.real univ).toNNReal) fun f g ↦ ?_).continuous
-  rw [dist_eq_norm, dist_eq_norm, Real.coe_toNNReal _ measureReal_nonneg, mul_comm,
-    ← integral_sub (f.integrable μ) (g.integrable μ)]
-  exact norm_integral_le_of_norm_le_const (ae_of_all _ fun x ↦ (f - g).norm_coe_le_norm x)
+    Continuous fun f : C(X, E) ↦ ∫ x, f x ∂μ :=
+  (lipschitzWith_integral_continuousMap μ).continuous
 
 end TauCeti
 
