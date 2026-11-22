@@ -152,14 +152,21 @@ theorem exists_quotient_linearMap_of_map_mul {k A : Type*} [CommSemiring k] [Com
     | add x y _ _ hx hy => intro a; rw [mul_add, map_add]; exact add_mem (hx a) (hy a)
     | smul b x _ hx => intro a; rw [smul_eq_mul, ← mul_assoc]; exact hx (a * b)
   -- Descend `T` by hand: `Submodule.mapQ` would need `k` to be a ring.
-  refine ⟨{ toFun := Quotient.map' T fun x y h ↦ ?_, map_add' := ?_, map_smul' := ?_ },
-    fun x ↦ rfl⟩
-  · rw [Submodule.quotientRel_def] at h ⊢
+  let Q : A ⧸ span s → A ⧸ span s := Quotient.map' T fun x y h ↦ by
+    rw [Submodule.quotientRel_def] at h ⊢
     simpa using hT _ h
-  · rintro ⟨x⟩ ⟨y⟩
-    exact congrArg (Quotient.mk _) (map_add T x y)
-  · rintro c ⟨x⟩
-    exact congrArg (Quotient.mk _) (map_smul T c x)
+  have hQ (x : A) : Q (Quotient.mkₐ k (span s) x) = Quotient.mkₐ k (span s) (T x) := by
+    simp only [Q, Quotient.mkₐ_eq_mk, ← Quotient.mk_eq_mk, ← Submodule.Quotient.mk''_eq_mk,
+      Quotient.map'_mk'']
+  refine ⟨{ toFun := Q, map_add' := ?_, map_smul' := ?_ }, fun x ↦ ?_⟩
+  · intro x y
+    obtain ⟨x, rfl⟩ := Quotient.mkₐ_surjective k (span s) x
+    obtain ⟨y, rfl⟩ := Quotient.mkₐ_surjective k (span s) y
+    simp only [← map_add, hQ]
+  · intro c x
+    obtain ⟨x, rfl⟩ := Quotient.mkₐ_surjective k (span s) x
+    simp only [← map_smul, hQ, RingHom.id_apply]
+  · simpa [Quotient.mkₐ_eq_mk] using hQ x
 
 /-- The linear combination, with coefficients in `R ⧸ I`, of the classes in `S ⧸ IS` of elements
 `b j` of `S`, evaluated at the classes of `c j`, is the class of `∑ j, c j * b j`. -/
@@ -180,8 +187,9 @@ theorem exact_mulLeft_mkₐ_span_singleton {R B : Type*} [CommSemiring R] [CommR
   -- `B ⧸ (p)` is the quotient by the range of `toSpanSingleton B B p`, which is `mulLeft p`.
   have hexact := LinearMap.exact_map_mkQ_range (LinearMap.toSpanSingleton B B p)
   rw [LinearMap.range_toSpanSingleton] at hexact
-  rw [show ⇑(LinearMap.mulLeft R p) = LinearMap.toSpanSingleton B B p from funext (mul_comm p)]
-  exact hexact
+  convert hexact using 1 <;> ext b
+  · simp [mul_comm]
+  · simp [Quotient.mkₐ_eq_mk, ← Quotient.mk_eq_mk]
 
 end Ideal
 
