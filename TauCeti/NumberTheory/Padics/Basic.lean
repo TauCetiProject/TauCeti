@@ -27,7 +27,9 @@ range is the closed unit ball (`TauCeti.range_padicInt_coe_ringHom`). These are 
 under which `ℚ_[p]`-valued measures of norm at most `1` come from `ℤ_[p]`-valued measures. It also
 maps exactly the maximal ideal of `ℤ_[p]` into the open unit ball
 (`PadicInt.norm_coe_ringHom_lt_one_iff`); together with the norm bound, this is the hypothesis under
-which formal and normed Weierstrass degrees over `ℤ_[p]` are compared.
+which formal and normed Weierstrass degrees over `ℤ_[p]` are compared. A `ℚ_[p]`-linear form bounded
+by `r` on a set is bounded by `r` on its `ℤ_[p]`-span
+(`PadicInt.norm_apply_le_of_mem_span_subring`).
 
 For a `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is injective when `K` is nontrivial, and continuous
@@ -87,6 +89,21 @@ theorem norm_coe_ringHom_lt_one_iff {a : ℤ_[p]} :
 /-- The inclusion `ℤ_[p] → ℚ_[p]` is a topological embedding. -/
 theorem isEmbedding_coe_ringHom : Topology.IsEmbedding (Coe.ringHom (p := p)) :=
   isometry_subtypeVal.isEmbedding
+
+/-- A `ℚ_[p]`-linear form whose values on a set `s` have absolute value at most `r` has values of
+absolute value at most `r` on the whole `ℤ_[p]`-span of `s`, by the ultrametric inequality. -/
+theorem norm_apply_le_of_mem_span_subring {V : Type*} [AddCommGroup V] [Module ℚ_[p] V]
+    {f : V →ₗ[ℚ_[p]] ℚ_[p]} {s : Set V} {r : ℝ} (hr : 0 ≤ r) (hf : ∀ y ∈ s, ‖f y‖ ≤ r) {x : V}
+    (hx : x ∈ Submodule.span (subring p) s) : ‖f x‖ ≤ r := by
+  induction hx using Submodule.span_induction with
+  | mem x hx => exact hf x hx
+  | zero => simpa using hr
+  | add x y _ _ hx hy =>
+    rw [map_add]
+    exact (Padic.nonarchimedean _ _).trans (max_le hx hy)
+  | smul c x _ hx =>
+    rw [Subring.smul_def, map_smul, smul_eq_mul, norm_mul]
+    exact (mul_le_of_le_one_left (norm_nonneg _) ((mem_subring_iff p).mp c.property)).trans hx
 
 end PadicInt
 

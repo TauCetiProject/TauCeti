@@ -285,19 +285,22 @@ private theorem norm_trajectoryOperator_smulLeftCLM_translateLIE_sub_le {β : �
     {g : Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hg : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
       β s • trajectoryOperator BL w (s + c) = g s) :
-    ‖trajectoryOperator AL (smulLeftCLM β hβ h₀ h₁ (translateLIE c w)) - g‖ ≤ δ * ‖w‖ := by
+    ‖trajectoryOperator AL (smulLeftCLM β hβ h₀ h₁ (fun _ _ ↦ rfl) (translateLIE c w)) - g‖ ≤
+      δ * ‖w‖ := by
   have hq := (measurePreserving_add_right (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
     c).quasiMeasurePreserving
   refine (Lp.norm_le_mul_norm_of_ae_le_mul (c := δ) (g := prev (ContinuousLinearMap.id ℝ
     (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) (translateLIE c w)) ?_).trans ?_
-  · filter_upwards [Lp.coeFn_sub (trajectoryOperator AL (smulLeftCLM β hβ h₀ h₁ (translateLIE c w)))
-        g, trajectoryOperator_apply_ae AL (smulLeftCLM β hβ h₀ h₁ (translateLIE c w)),
-      prev_smulLeftCLM_ae hβ h₀ h₁ (translateLIE c w),
-      weakFDeriv_smulLeftCLM_ae hβ h₀ h₁ (translateLIE c w), prev_translateLIE_ae c w,
+  · filter_upwards [Lp.coeFn_sub (trajectoryOperator AL
+        (smulLeftCLM β hβ h₀ h₁ (fun _ _ ↦ rfl) (translateLIE c w))) g,
+      trajectoryOperator_apply_ae AL (smulLeftCLM β hβ h₀ h₁ (fun _ _ ↦ rfl) (translateLIE c w)),
+      prev_smulLeftCLM_ae hβ h₀ h₁ (fun _ _ ↦ rfl) (translateLIE c w),
+      weakFDeriv_smulLeftCLM_ae hβ h₀ h₁ (fun _ _ ↦ rfl) (translateLIE c w),
+      prev_translateLIE_ae c w,
       weakFDeriv_translateLIE_ae c w, hq.tendsto_ae.eventually (trajectoryOperator_apply_ae BL w),
       hq.tendsto_ae.eventually hBL, hg, hδB] with s hsub hT hp hd hpt hdt hD hB hgs hδs
     -- `rw` times out matching these coercions; `simp only` rewrites them directly.
-    simp only [hsub, Pi.sub_apply, hT, hd, hp, hpt, hdt]
+    simp only [hsub, Pi.sub_apply, hT, hd, ContinuousLinearMap.id_apply, hp, hpt, hdt]
     rw [← hgs, hD, hB]
     refine (norm_smul_add_smulRight_sub_le _ _ _ _ _ _).trans ?_
     rw [fderiv_apply_one_eq_deriv]
@@ -315,7 +318,7 @@ private def splicedPiece {β : ℝ → ℝ} (hβ : ContDiffOn ℝ ∞ β ((⊤ :
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) →L[ℝ] WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :=
-  (smulLeftCLM β hβ h₀ h₁).comp
+  (smulLeftCLM β hβ h₀ h₁ (fun _ _ ↦ rfl)).comp
     ((translateLIE c : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) ≃ₗᵢ[ℝ] _
       ).toContinuousLinearEquiv.toContinuousLinearMap.comp
@@ -330,7 +333,7 @@ private theorem splicedPiece_apply {β : ℝ → ℝ} (hβ : ContDiffOn ℝ ∞ 
     (Q : Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) →L[ℝ] WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))))
     (f : Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) :
-    splicedPiece hβ h₀ h₁ c S hS Q f = smulLeftCLM β hβ h₀ h₁ (translateLIE c
+    splicedPiece hβ h₀ h₁ c S hS Q f = smulLeftCLM β hβ h₀ h₁ (fun _ _ ↦ rfl) (translateLIE c
       (Q ((volume.restrict ((⊤ : Opens ℝ) : Set ℝ)).translateLp p (-c)
         (Lp.multiplicationOperator (linftyIndicator _ ℝ S hS) f)))) :=
   rfl
