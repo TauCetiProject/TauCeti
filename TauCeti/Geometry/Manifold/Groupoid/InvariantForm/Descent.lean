@@ -229,26 +229,21 @@ private theorem isLocalLiftAt_comp_target_localInverse (Φ : C ⥤ D)
     rw [(ht' a).localInverse_left_inv (ht' a).localInverse_mem_target]
   have hsub : ContMDiffAt I' I' ∞ (Quiver.Total.left ∘ (ht' a).localInverse) a.right :=
     hs'.contMDiff.contMDiffAt.comp a.right (ht' a).contMDiffAt_localInverse
-  have hopen₁ : ∀ᶠ z in 𝓝 a.right,
-      ((ht' a).localInverse z).left ∈ arrowLocalLiftOpen Φ ht' hΦ x₁ a₁ :=
-    hsub.continuousAt.tendsto.eventually
-      (hta_eq.symm ▸ (isOpen_arrowLocalLiftOpen Φ ht' hΦ x₁ a₁ hs').mem_nhds hmem₁)
-  have hta₁_at : ContinuousAt (ht' a₁).localInverse
-      ((Quiver.Total.left ∘ (ht' a).localInverse) a.right) :=
-    (ht' a₁).contMDiffOn_localInverse.continuousOn.continuousAt
-      (hta_eq.symm ▸ (ht' a₁).localInverse_open_source.mem_nhds hmem₁.1)
   have hmatch : ∀ᶠ z in 𝓝 a.right,
       ((ht' a₁).localInverse ((ht' a).localInverse z).left).right = ((ht' a).localInverse z).left :=
-    hopen₁.mono fun z hz ↦ (ht' a₁).localInverse_right_inv hz.1
+    hsub.continuousAt.tendsto.eventually (hta_eq.symm ▸ hlift₁.eventually_right)
+  have hleft₁ : ∀ᶠ z in 𝓝 a.right,
+      ((ht' a₁).localInverse ((ht' a).localInverse z).left).left =
+        Φ.obj ((arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) z) :=
+    hsub.continuousAt.tendsto.eventually (hta_eq.symm ▸ hlift₁.eventually_left)
   obtain ⟨τ₂, hτ₂_cont, hτ₂_eq⟩ := IsTopologicalGroupoid.exists_continuousAt_comp
-    (ContinuousAt.comp hta₁_at hsub.continuousAt) (ht' a).contMDiffAt_localInverse.continuousAt
-    hmatch
+    ((hta_eq.symm ▸ hlift₁.continuousAt).comp hsub.continuousAt)
+    (ht' a).contMDiffAt_localInverse.continuousAt hmatch
   refine ⟨τ₂, (hta_eq.symm ▸ hlift₁.contMDiffAt).comp a.right hsub, hτ₂_cont, ?_, ?_⟩
-  · filter_upwards [hτ₂_eq, hmatch, hopen₁] with z hz hm h1
-    rw [hz hm, Quiver.Total.comp_left]; exact ((hΦ x₁).localInverse_right_inv h1.2).symm
-  · filter_upwards [hτ₂_eq, hmatch,
-      (ht' a).localInverse_open_source.mem_nhds (ht' a).localInverse_mem_source] with z hz hm h2
-    rw [hz hm, Quiver.Total.comp_right]; exact (ht' a).localInverse_right_inv h2
+  · filter_upwards [hτ₂_eq, hmatch, hleft₁] with z hz hm hl
+    rw [hz hm, Quiver.Total.comp_left]; exact hl
+  · filter_upwards [hτ₂_eq, hmatch, (ht' a).localInverse_eventuallyEq_right] with z hz hm hr
+    rw [hz hm, Quiver.Total.comp_right]; exact hr
 
 variable [IsManifold I ∞ C] [IsManifold J ∞ (Quiver.Total C)]
 
@@ -367,10 +362,9 @@ private theorem mpullback_left_eq_right_descendedRoughForm [Φ.Full] [Φ.EssSurj
           (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) α.val) a := by
     ext v; rw [mpullback_apply, hcomp_eq, ← mpullback_apply]
   have hev_a : (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) ∘
-      Quiver.Total.right =ᶠ[𝓝 a] arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left := by
-    filter_upwards [(ht' a).localInverse.open_target.mem_nhds
-      (ht' a).localInverse_mem_target] with b hb
-    simp only [Function.comp_apply, (ht' a).localInverse_left_inv hb]
+      Quiver.Total.right =ᶠ[𝓝 a] arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left :=
+    (ht' a).localInverse_eventuallyEq_left.fun_comp
+      (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left)
   rw [hl, hr, ← mpullback_comp_at (ht'.mdifferentiable (by simp) a)
     (hlift₂.contMDiffAt.mdifferentiableAt (by simp)), hev_a.mpullback_eq]
 

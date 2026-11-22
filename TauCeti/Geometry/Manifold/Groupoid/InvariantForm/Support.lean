@@ -358,8 +358,12 @@ variable (I J hs ht V k) in
 theorem compactlySupportedInvariantForms.mextDerivₗ_comp_mextDerivₗ :
     (compactlySupportedInvariantForms.mextDerivₗ I J hs ht V (k + 1)).comp
       (compactlySupportedInvariantForms.mextDerivₗ I J hs ht V k) = 0 := by
-  ext φ : 1
-  exact Subtype.ext (LinearMap.congr_fun (TauCeti.mextDerivₗ_comp_mextDerivₗ I k) φ.val)
+  rw [compactlySupportedInvariantForms.mextDerivₗ,
+    compactlySupportedInvariantForms.mextDerivₗ,
+    ← LinearMap.restrict_comp (f := TauCeti.mextDerivₗ I k) (g := TauCeti.mextDerivₗ I (k + 1))
+      (fun _ ↦ mextDerivₗ_mem_compactlySupportedInvariantForms)
+      (fun _ ↦ mextDerivₗ_mem_compactlySupportedInvariantForms)]
+  simp only [TauCeti.mextDerivₗ_comp_mextDerivₗ]; rfl
 
 end SingleCoeff
 
@@ -581,6 +585,19 @@ section EtaleEquiv
 
 variable [IsGroupoid D] [TauCeti.IsTopologicalGroupoid D]
 
+omit [TopologicalSpace (Quiver.Total C)] [IsManifold I ∞ C] [IsManifold I' ∞ D]
+  [IsManifold J' ∞ (Quiver.Total D)] [TauCeti.IsTopologicalGroupoid D] in
+private theorem isProperMap_isomorphismClasses_map_of_etale (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
+    [Φ.ReflectsIsomorphisms]
+    (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
+    (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) :
+    IsProperMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map Φ.toCatHom) :=
+  Φ.isProperMap_isomorphismClasses_map_of_essSurj hΦ.contMDiff.continuous hΦ.isOpenMap
+    (@TauCeti.isOpenQuotientMap_isomorphismClassesMk _ Groupoid.ofIsGroupoid _ _
+      hs'.contMDiff.continuous ht'.isOpenMap).isOpenMap
+
 /-- Descent of an invariant form along an étale refinement transports its coarse support by the
 induced map on isomorphism classes. -/
 theorem coarseTSupport_invariantFormsEquiv_symm {V : Type*} [NormedAddCommGroup V]
@@ -625,11 +642,7 @@ def compactlySupportedInvariantFormsEquiv :
     (invariantForms I' J' hs'.contMDiff ht'.contMDiff V k)
   let q := (compactlySupportedInvariantForms I J hs.contMDiff ht V k).submoduleOf
     (invariantForms I J hs.contMDiff ht V k)
-  let hp : IsProperMap (X := Quotient (isIsomorphicSetoid C))
-      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map Φ.toCatHom) :=
-    Φ.isProperMap_isomorphismClasses_map_of_essSurj hΦ.contMDiff.continuous hΦ.isOpenMap
-      (@TauCeti.isOpenQuotientMap_isomorphismClassesMk _ Groupoid.ofIsGroupoid _ _
-        hs'.contMDiff.continuous ht'.isOpenMap).isOpenMap
+  let hp := Φ.isProperMap_isomorphismClasses_map_of_etale hs' ht' hΦ
   have hmap : p.map (e : _ →ₗ[ℝ] _) = q := by
     refine le_antisymm ?_ ?_
     · rintro α ⟨φ, hφ, rfl⟩
@@ -674,21 +687,6 @@ theorem coe_compactlySupportedInvariantFormsEquiv_symm
   congrArg Subtype.val (LinearEquiv.ofSubmodules_symm_apply
     (e := Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁) _
     ⟨⟨α.val, compactlySupportedInvariantForms_le_invariantForms α.property⟩, α.property⟩)
-
-/-- Pulling a descended compact-coarse-support form back along `Φ` recovers the original form. -/
-theorem mpullback_compactlySupportedInvariantFormsEquiv_symm
-    (α : compactlySupportedInvariantForms I J hs.contMDiff ht V k) :
-    SmoothForm.mpullback Φ.obj hΦ.contMDiff
-      ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).val = α.val := by
-  rw [coe_compactlySupportedInvariantFormsEquiv_symm, mpullback_invariantFormsEquiv_symm]
-
-/-- Descent of a compact-coarse-support invariant form transports its coarse support by the induced
-map on isomorphism classes. -/
-theorem coarseTSupport_compactlySupportedInvariantFormsEquiv_symm
-    (α : compactlySupportedInvariantForms I J hs.contMDiff ht V k) :
-    ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).val.coarseTSupport =
-      isomorphismClasses.map Φ.toCatHom '' α.val.coarseTSupport := by
-  rw [coe_compactlySupportedInvariantFormsEquiv_symm, coarseTSupport_invariantFormsEquiv_symm]
 
 /-- Descent of compact-coarse-support invariant forms commutes with exterior differentiation. -/
 theorem compactlySupportedInvariantFormsEquiv_symm_mextDerivₗ
@@ -826,8 +824,14 @@ theorem compactlySupportedInvariantFormsPullback_comp
           rw [isomorphismClasses.map_comp]
           exact hpΨ.comp hpΦ) =
       (Φ.compactlySupportedInvariantFormsPullback (hs' := hs') (ht' := ht') hΦ hΦ₁ hpΦ).comp
-        (Ψ.compactlySupportedInvariantFormsPullback hΨ hΨ₁ hpΨ) :=
-  LinearMap.ext fun φ ↦ Subtype.ext (SmoothForm.mpullback_mpullback _ _ hΦ hΨ φ.val).symm
+        (Ψ.compactlySupportedInvariantFormsPullback hΨ hΨ₁ hpΨ) := by
+  dsimp only [compactlySupportedInvariantFormsPullback]
+  rw [← LinearMap.restrict_comp (f := SmoothForm.mpullback Ψ.obj hΨ)
+    (g := SmoothForm.mpullback Φ.obj hΦ)
+    (fun _ ↦ Ψ.mpullback_mem_compactlySupportedInvariantForms hΨ hΨ₁ hpΨ)
+    (fun _ ↦ Φ.mpullback_mem_compactlySupportedInvariantForms hΦ hΦ₁ hpΦ)]
+  congr 1
+  exact SmoothForm.mpullback_comp Φ.obj Ψ.obj hΦ hΨ
 
 /-- Composing étale refinements reflecting isomorphisms reverses composition of their equivalences
 on compact-coarse-support invariant forms. -/
@@ -856,12 +860,8 @@ theorem compactlySupportedInvariantFormsEquiv_comp [IsGroupoid D] [TauCeti.IsTop
       Φ.compactlySupportedInvariantFormsEquiv_apply hs ht hs' ht' hΦ hΦ₁]
     exact LinearMap.congr_fun
       (compactlySupportedInvariantFormsPullback_comp Φ Ψ hΦ.contMDiff hΦ₁ hΨ.contMDiff hΨ₁
-        (Φ.isProperMap_isomorphismClasses_map_of_essSurj hΦ.contMDiff.continuous hΦ.isOpenMap
-          (@TauCeti.isOpenQuotientMap_isomorphismClassesMk _ Groupoid.ofIsGroupoid _ _
-            hs'.contMDiff.continuous ht'.isOpenMap).isOpenMap)
-        (Ψ.isProperMap_isomorphismClasses_map_of_essSurj hΨ.contMDiff.continuous hΨ.isOpenMap
-          (@TauCeti.isOpenQuotientMap_isomorphismClassesMk _ Groupoid.ofIsGroupoid _ _
-            hs''.contMDiff.continuous ht''.isOpenMap).isOpenMap)) φ
+        (Φ.isProperMap_isomorphismClasses_map_of_etale hs' ht' hΦ)
+        (Ψ.isProperMap_isomorphismClasses_map_of_etale hs'' ht'' hΨ)) φ
 
 end Comp
 
