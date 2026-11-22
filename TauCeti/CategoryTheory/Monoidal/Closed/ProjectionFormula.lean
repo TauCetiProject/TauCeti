@@ -128,14 +128,15 @@ theorem pre_app_comp_ihomLeftAdjointObjEquiv_hom_app {B₁ B₂ : C} [Closed B�
   have h' : Functor.whiskerLeft F (Functor.whiskerRight ((curriedTensor C).map g) L) ≫ e₂.hom =
       e₁.hom ≫ (curriedTensor D).map (L.map g) := by
     ext A
-    exact h A
+    simpa using h A
   have := congr_arg (conjugateEquiv (ihom.adjunction (L.obj B₂))
     (adj₁.comp ((ihom.adjunction B₁).comp adj₂))) h'
   rw [← conjugateEquiv_comp _ (adj₁.comp ((ihom.adjunction B₂).comp adj₂)),
     ← conjugateEquiv_comp _ (ihom.adjunction (L.obj B₁)), conjugateEquiv_whiskerLeft,
     conjugateEquiv_whiskerRight] at this
-  rw [pre, pre]
-  exact (congr_app this A').symm
+  rw [pre, pre, ihomLeftAdjointObjEquiv_apply_hom, ihomLeftAdjointObjEquiv_apply_hom]
+  simpa only [NatTrans.comp_app, Functor.whiskerLeft_app, Functor.whiskerRight_app,
+    tensoringLeft] using (congr_app this A').symm
 
 variable [MonoidalClosed C] [MonoidalClosed D]
 
@@ -247,14 +248,15 @@ theorem pre_app_comp_ihomRightAdjointEquiv_hom_app {A₁ A₂ : D} {B₁ B₂ : 
   have h' : Functor.whiskerLeft L ((curriedTensor D).map g) ≫ e₂.hom =
       e₁.hom ≫ Functor.whiskerRight ((curriedTensor C).map g') L := by
     ext X
-    exact h X
+    simpa using h X
   have := congr_arg (conjugateEquiv ((ihom.adjunction B₂).comp adj)
     (adj.comp (ihom.adjunction A₁))) h'
   rw [← conjugateEquiv_comp _ (adj.comp (ihom.adjunction A₂)),
     ← conjugateEquiv_comp _ ((ihom.adjunction B₁).comp adj), conjugateEquiv_whiskerLeft,
     conjugateEquiv_whiskerRight] at this
-  rw [pre, pre]
-  exact (congr_app this A').symm
+  rw [pre, pre, ihomRightAdjointEquiv_apply_hom, ihomRightAdjointEquiv_apply_hom]
+  simpa only [NatTrans.comp_app, Functor.whiskerLeft_app, Functor.whiskerRight_app,
+    tensoringLeft] using (congr_app this A').symm
 
 variable [MonoidalClosed C] [MonoidalClosed D] {F : D ⥤ C}
 
