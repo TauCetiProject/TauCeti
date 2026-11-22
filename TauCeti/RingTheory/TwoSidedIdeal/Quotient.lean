@@ -225,13 +225,11 @@ def opEquiv (I : TwoSidedIdeal A) : (A ⧸ I)ᵐᵒᵖ ≃+* Aᵐᵒᵖ ⧸ I.op
 
 @[simp]
 theorem opEquiv_op_mk (I : TwoSidedIdeal A) (a : A) :
-    opEquiv I (MulOpposite.op (mk I a)) = mk I.op (MulOpposite.op a) := by
-  rfl
+    opEquiv I (MulOpposite.op (mk I a)) = mk I.op (MulOpposite.op a) := by rfl
 
 @[simp]
 theorem opEquiv_symm_mk (I : TwoSidedIdeal A) (u : Aᵐᵒᵖ) :
-    (opEquiv I).symm (mk I.op u) = MulOpposite.op (mk I u.unop) := by
-  rfl
+    (opEquiv I).symm (mk I.op u) = MulOpposite.op (mk I u.unop) := by rfl
 
 end Quotient
 
@@ -278,8 +276,7 @@ def quotEquivOfEq {I J : TwoSidedIdeal A} (h : I = J) : A ⧸ I ≃+* A ⧸ J wh
 
 @[simp]
 theorem quotEquivOfEq_mk {I J : TwoSidedIdeal A} (h : I = J) (a : A) :
-    quotEquivOfEq h (Quotient.mk I a) = Quotient.mk J a :=
-  (rfl)
+    quotEquivOfEq h (Quotient.mk I a) = Quotient.mk J a := (rfl)
 
 @[simp]
 theorem quotEquivOfEq_symm {I J : TwoSidedIdeal A} (h : I = J) :
@@ -316,30 +313,24 @@ def mkRingHom (I : TwoSidedIdeal A) : A →+* A ⧸ I :=
   { mk I with map_one' := rfl }
 
 @[simp]
-theorem coe_mkRingHom (I : TwoSidedIdeal A) : ⇑(mkRingHom I) = mk I :=
-  (rfl)
+theorem coe_mkRingHom (I : TwoSidedIdeal A) : ⇑(mkRingHom I) = mk I := (rfl)
 
 @[simp]
-theorem mk_one (I : TwoSidedIdeal A) : mk I (1 : A) = 1 :=
-  (rfl)
+theorem mk_one (I : TwoSidedIdeal A) : mk I (1 : A) = 1 := (rfl)
 
 theorem idealQuotientMk_asIdeal_eq_mk (I : TwoSidedIdeal A) (a : A) :
-    (Ideal.Quotient.mk I.asIdeal a : A ⧸ I) = mk I a :=
-  (rfl)
+    (Ideal.Quotient.mk I.asIdeal a : A ⧸ I) = mk I a := (rfl)
 
 theorem algebraMap_apply (I : TwoSidedIdeal A) (r : R) :
-    algebraMap R (A ⧸ I) r = mk I (algebraMap R A r) :=
-  (rfl)
+    algebraMap R (A ⧸ I) r = mk I (algebraMap R A r) := (rfl)
 
 @[simp]
 theorem mk_algebraMap (I : TwoSidedIdeal A) (r : R) :
-    mk I (algebraMap R A r) = algebraMap R (A ⧸ I) r :=
-  (rfl)
+    mk I (algebraMap R A r) = algebraMap R (A ⧸ I) r := (rfl)
 
 @[simp]
 theorem mkRingHom_comp_algebraMap (I : TwoSidedIdeal A) :
-    (mkRingHom I).comp (algebraMap R A) = algebraMap R (A ⧸ I) :=
-  (rfl)
+    (mkRingHom I).comp (algebraMap R A) = algebraMap R (A ⧸ I) := (rfl)
 
 end Quotient
 

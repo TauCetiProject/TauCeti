@@ -108,8 +108,7 @@ instance isClosed_idealSubmodule (J : TwoSidedIdeal A) (E : Type*) [TopologicalS
 
 theorem coe_idealSubmodule (J : TwoSidedIdeal A) :
     (idealSubmodule J E : Set E) =
-      closure (Submodule.span ℂ {y : E | ∃ a ∈ J, ∃ x : E, a • x = y} : Set E) :=
-  (rfl)
+      closure (Submodule.span ℂ {y : E | ∃ a ∈ J, ∃ x : E, a • x = y} : Set E) := (rfl)
 
 theorem smul_mem_idealSubmodule {J : TwoSidedIdeal A} {a : A} (ha : a ∈ J) (x : E) :
     a • x ∈ idealSubmodule J E :=
@@ -187,9 +186,8 @@ theorem coeff_smul_mem_idealSubmodule {J : TwoSidedIdeal A} (b : A) {z : E}
   simpa only [S, Submodule.mem_comap, ContinuousLinearMap.coe_coe, smulCLM_apply] using hle hz
 
 @[simp]
-theorem idealSubmodule_top : idealSubmodule (⊤ : TwoSidedIdeal A) E = ⊤ := by
-  rw [eq_top_iff]
-  intro x _
+theorem idealSubmodule_top : idealSubmodule (⊤ : TwoSidedIdeal A) E = ⊤ :=
+  eq_top_iff.mpr fun x _ => by
   have hl := (CStarAlgebra.increasingApproximateUnit A).toIsApproximateUnit
   have := hl.neBot
   exact (isClosed_idealSubmodule ⊤ E).mem_of_tendsto
@@ -215,13 +213,10 @@ theorem inner_mem_of_mem_idealSubmodule_right (y : E) {z : E} (hz : z ∈ idealS
 
 /-- Pairing `z ∈ idealSubmodule J E` on the left with any vector `y : E` lands in `J`. -/
 theorem inner_mem_of_mem_idealSubmodule_left {z : E} (hz : z ∈ idealSubmodule J E) (y : E) :
-    inner A z y ∈ J := by
-  rw [← star_inner y z]
-  exact J.star_mem_of_isClosed (inner_mem_of_mem_idealSubmodule_right y hz)
+    inner A z y ∈ J :=
+  star_inner (A := A) y z ▸ J.star_mem_of_isClosed (inner_mem_of_mem_idealSubmodule_right y hz)
 
-/-- If `⟪x, x⟫_A ∈ J`, then `x` is a norm limit of elements `e • x` with `e ∈ J` along an
-increasing approximate unit of `J`. -/
-theorem mem_closure_smul_of_inner_self_mem {x : E} (hx : inner A x x ∈ J) :
+private theorem mem_closure_smul_of_isClosed {x : E} (hx : inner A x x ∈ J) :
     x ∈ closure {y : E | ∃ a ∈ J, a • x = y} := by
   have hsqrt_mem : CFC.sqrt (inner A x x) ∈ J := by
     rw [CFC.sqrt_eq_real_sqrt _ inner_self_nonneg]
@@ -242,23 +237,11 @@ theorem mem_closure_smul_of_inner_self_mem {x : E} (hx : inner A x x ∈ J) :
 /-- For a closed two-sided ideal `J` of `A`, `x ∈ idealSubmodule J E` if and only if
 `⟪x, x⟫_A ∈ J`. -/
 theorem mem_idealSubmodule_iff {x : E} :
-    x ∈ idealSubmodule J E ↔ inner A x x ∈ J := by
-  refine ⟨fun hx => inner_mem_of_mem_idealSubmodule_right x hx, fun hx => ?_⟩
-  rw [← SetLike.mem_coe, coe_idealSubmodule]
-  refine closure_mono ?_ (mem_closure_smul_of_inner_self_mem hx)
-  rintro _ ⟨a, ha, rfl⟩
-  exact Submodule.subset_span ⟨a, ha, x, rfl⟩
-
-/-- `x ∈ idealSubmodule J E` if and only if `x` lies in the closure of `{a • x | a ∈ J}` (no linear
-combinations needed). -/
-theorem mem_idealSubmodule_iff_mem_closure {x : E} :
-    x ∈ idealSubmodule J E ↔ x ∈ closure {y : E | ∃ a ∈ J, a • x = y} := by
-  refine ⟨fun hx => mem_closure_smul_of_inner_self_mem (mem_idealSubmodule_iff.mp hx),
-    fun hx => ?_⟩
-  rw [← SetLike.mem_coe, coe_idealSubmodule]
-  refine closure_mono ?_ hx
-  rintro _ ⟨a, ha, rfl⟩
-  exact Submodule.subset_span ⟨a, ha, x, rfl⟩
+    x ∈ idealSubmodule J E ↔ inner A x x ∈ J :=
+  ⟨inner_mem_of_mem_idealSubmodule_right x, fun hx => by
+    rw [← SetLike.mem_coe, coe_idealSubmodule]
+    exact closure_mono (by rintro _ ⟨a, ha, rfl⟩; exact Submodule.subset_span ⟨a, ha, x, rfl⟩)
+      (mem_closure_smul_of_isClosed hx)⟩
 
 theorem mem_idealSubmodule_iff_forall_inner_right {x : E} :
     x ∈ idealSubmodule J E ↔ ∀ y : E, inner A y x ∈ J :=
@@ -275,6 +258,37 @@ theorem coe_idealSubmodule_eq_setOf (J : TwoSidedIdeal A) [IsClosed (J : Set A)]
   Set.ext fun _ => mem_idealSubmodule_iff
 
 end ClosedIdeal
+
+private theorem closure_smul_topologicalClosure_subset (J : TwoSidedIdeal A) (x : E) :
+    closure {y : E | ∃ a ∈ J.topologicalClosure, a • x = y} ⊆
+      closure {y : E | ∃ a ∈ J, a • x = y} := by
+  let f : A →+ E :=
+    ⟨⟨(· • x), (smulWithZero A E).zero_smul x⟩, fun a b => CStarModule.add_smul a b x⟩
+  have hcont : Continuous f :=
+    AddMonoidHomClass.continuous_of_bound f ‖x‖ fun a =>
+      (CStarModule.norm_smul_le a x).trans_eq (mul_comm _ _)
+  exact closure_minimal (fun _ ⟨a, ha, hax⟩ =>
+    hax ▸ image_closure_subset_closure_image hcont ⟨a, J.mem_topologicalClosure.mp ha, rfl⟩)
+    isClosed_closure
+
+/-- If `⟪x, x⟫_A ∈ J`, then `x` is a norm limit of elements `a • x` with `a ∈ J`. -/
+theorem mem_closure_smul_of_inner_self_mem {J : TwoSidedIdeal A} {x : E} (hx : inner A x x ∈ J) :
+    x ∈ closure {y : E | ∃ a ∈ J, a • x = y} :=
+  have := J.isClosed_topologicalClosure
+  closure_smul_topologicalClosure_subset J x
+    (mem_closure_smul_of_isClosed (J.le_topologicalClosure hx))
+
+/-- `x ∈ idealSubmodule J E` if and only if `x` lies in the closure of `{a • x | a ∈ J}` (no linear
+combinations needed). -/
+theorem mem_idealSubmodule_iff_mem_closure {J : TwoSidedIdeal A} {x : E} :
+    x ∈ idealSubmodule J E ↔ x ∈ closure {y : E | ∃ a ∈ J, a • x = y} :=
+  ⟨fun hx => have := J.isClosed_topologicalClosure
+    closure_smul_topologicalClosure_subset J x
+      (mem_closure_smul_of_isClosed
+        (mem_idealSubmodule_iff.mp (idealSubmodule_mono J.le_topologicalClosure hx))),
+   fun hx => by
+    rw [← SetLike.mem_coe, coe_idealSubmodule]
+    exact closure_mono (by rintro _ ⟨a, ha, rfl⟩; exact Submodule.subset_span ⟨a, ha, x, rfl⟩) hx⟩
 
 /-- For closed ideals `J₁` and `J₂`,
 `idealSubmodule (J₁ ⊓ J₂) E = idealSubmodule J₁ E ⊓ idealSubmodule J₂ E`. -/
@@ -319,11 +333,9 @@ instance instSMulQuotient (J : TwoSidedIdeal A) : SMul (A ⧸ J) (E ⧸ idealSub
     fun a₁ z₁ a₂ z₂ ha hz => by
       rw [TwoSidedIdeal.quotientRel_def] at ha
       rw [Submodule.quotientRel_def] at hz
-      rw [Submodule.Quotient.eq]
-      have hsplit : a₁ • z₁ - a₂ • z₂ = (a₁ - a₂) • z₁ + a₂ • (z₁ - z₂) := by
+      rw [Submodule.Quotient.eq, show a₁ • z₁ - a₂ • z₂ = (a₁ - a₂) • z₁ + a₂ • (z₁ - z₂) by
         rw [← smulCLM_apply a₂ (z₁ - z₂), (smulCLM a₂).map_sub, smulCLM_apply, smulCLM_apply,
-          CStarModule.sub_smul, sub_add_sub_cancel]
-      rw [hsplit]
+          CStarModule.sub_smul, sub_add_sub_cancel]]
       exact (idealSubmodule J E).add_mem (smul_mem_idealSubmodule ha z₁)
         (coeff_smul_mem_idealSubmodule a₂ hz)
 
@@ -331,8 +343,7 @@ instance instSMulQuotient (J : TwoSidedIdeal A) : SMul (A ⧸ J) (E ⧸ idealSub
 theorem mk_smul_mk (J : TwoSidedIdeal A) (a : A) (x : E) :
     TwoSidedIdeal.Quotient.mk J a • (Submodule.Quotient.mk x : E ⧸ idealSubmodule J E) =
       Submodule.Quotient.mk (a • x) := by
-  rw [← TwoSidedIdeal.Quotient.quotientAddGroupMk_eq_mk]
-  rfl
+  rw [← TwoSidedIdeal.Quotient.quotientAddGroupMk_eq_mk]; rfl
 
 /-- For any positive contractive element `e ∈ J`, adjusting the representative `x` to `x - e • x`
 yields the squared quotient-norm estimate `‖mk x‖ ^ 2 ≤ ‖⟪x, x⟫_A + z‖ + ‖z - z * e‖` via
@@ -343,9 +354,8 @@ private theorem norm_mk_idealSubmodule_sq_le_of_mem {J : TwoSidedIdeal A} {e : A
       ‖inner A x x + z‖ + ‖z - z * e‖ := by
   set s := CFC.sqrt (inner A x x)
   have hs_star : star s = s := (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq
-  have hs_mul : star s * s = inner A x x := by
-    rw [hs_star]
-    exact CFC.sqrt_mul_sqrt_self _ inner_self_nonneg
+  have hs_mul : star s * s = inner A x x :=
+    hs_star.symm ▸ CFC.sqrt_mul_sqrt_self _ inner_self_nonneg
   have he_star : star e = e := (IsSelfAdjoint.of_nonneg he₀).star_eq
   have hq_eq : (Submodule.Quotient.mk x : E ⧸ idealSubmodule J E) =
       Submodule.Quotient.mk (x - e • x) := by
@@ -387,8 +397,7 @@ instance instInnerQuotient : Inner (A ⧸ J) (E ⧸ idealSubmodule J E) where
 @[simp]
 theorem inner_mk_mk (x y : E) :
     inner (A ⧸ J) (Submodule.Quotient.mk x : E ⧸ idealSubmodule J E) (Submodule.Quotient.mk y) =
-      TwoSidedIdeal.Quotient.mk J (inner A x y) :=
-  (rfl)
+      TwoSidedIdeal.Quotient.mk J (inner A x y) := (rfl)
 
 /-- Upper bound in the quotient norm formula: `‖mk x‖ ^ 2 ≤ ‖mk J ⟪x, x⟫_A‖`, obtained by taking
 the limit of `norm_mk_idealSubmodule_sq_le_of_mem` along an increasing approximate unit of `J` and
@@ -449,8 +458,8 @@ theorem norm_mk_idealSubmodule_sq (x : E) :
 `‖mk x‖ = √‖mk J ⟪x, x⟫_A‖`. -/
 theorem norm_mk_idealSubmodule (x : E) :
     ‖(Submodule.Quotient.mk x : E ⧸ idealSubmodule J E)‖ =
-      √‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖ := by
-  rw [← norm_mk_idealSubmodule_sq J x, Real.sqrt_sq (norm_nonneg _)]
+      √‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖ :=
+  by rw [← norm_mk_idealSubmodule_sq J x, Real.sqrt_sq (norm_nonneg _)]
 
 /-- For any closed two-sided ideal `J` of `A`, `E ⧸ idealSubmodule J E` is a Hilbert
 `(A ⧸ J)`-module with respect to any `StarOrderedRing` partial order on `A ⧸ J` (such as
@@ -550,8 +559,8 @@ theorem norm_mk_idealSubmodule_op_sq (x : E) :
 
 theorem norm_mk_idealSubmodule_op (x : E) :
     ‖(Submodule.Quotient.mk x : E ⧸ idealSubmodule J.op E)‖ =
-      √‖TwoSidedIdeal.Quotient.mk J (unop (inner Aᵐᵒᵖ x x))‖ := by
-  rw [← norm_mk_idealSubmodule_op_sq J x, Real.sqrt_sq (norm_nonneg _)]
+      √‖TwoSidedIdeal.Quotient.mk J (unop (inner Aᵐᵒᵖ x x))‖ :=
+  by rw [← norm_mk_idealSubmodule_op_sq J x, Real.sqrt_sq (norm_nonneg _)]
 
 /-- Right Hilbert `(A ⧸ J)`-module structure on `E ⧸ idealSubmodule J.op E` for a closed two-sided
 ideal `J` of `A`. -/
@@ -563,9 +572,9 @@ noncomputable instance instCStarModuleQuotientMulOpposite [PartialOrder (A ⧸ J
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
     obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
     obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ w
-    apply unop_injective
-    rw [← Submodule.Quotient.mk_add, unop_inner_mk_mk, unop_add, unop_inner_mk_mk,
-      unop_inner_mk_mk, inner_add_right, unop_add, map_add]
+    exact unop_injective (by
+      rw [← Submodule.Quotient.mk_add, unop_inner_mk_mk, unop_add, unop_inner_mk_mk,
+        unop_inner_mk_mk, inner_add_right, unop_add, map_add])
   inner_self_nonneg {u} := by
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
     rw [← unop_nonneg, unop_inner_mk_mk, ← TwoSidedIdeal.Quotient.mkStarAlgHom_apply,
@@ -581,25 +590,24 @@ noncomputable instance instCStarModuleQuotientMulOpposite [PartialOrder (A ⧸ J
     obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective J q
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
     obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
-    apply unop_injective
-    rw [op_mk_smul_mk, unop_inner_mk_mk, unop_mul, unop_op, unop_inner_mk_mk,
-      inner_op_smul_right, unop_mul, unop_op, map_mul]
+    exact unop_injective (by
+      rw [op_mk_smul_mk, unop_inner_mk_mk, unop_mul, unop_op, unop_inner_mk_mk,
+        inner_op_smul_right, unop_mul, unop_op, map_mul])
   inner_smul_right_complex {c u v} := by
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
     obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
-    apply unop_injective
-    rw [← Submodule.Quotient.mk_smul, unop_inner_mk_mk, unop_smul, unop_inner_mk_mk,
-      inner_smul_right_complex, unop_smul, TwoSidedIdeal.Quotient.mk_smul_complex]
+    exact unop_injective (by
+      rw [← Submodule.Quotient.mk_smul, unop_inner_mk_mk, unop_smul, unop_inner_mk_mk,
+        inner_smul_right_complex, unop_smul, TwoSidedIdeal.Quotient.mk_smul_complex])
   star_inner u v := by
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
     obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
-    apply unop_injective
-    rw [unop_star, unop_inner_mk_mk, unop_inner_mk_mk, ← TwoSidedIdeal.Quotient.mk_star,
-      ← unop_star, star_inner]
+    exact unop_injective (by
+      rw [unop_star, unop_inner_mk_mk, unop_inner_mk_mk, ← TwoSidedIdeal.Quotient.mk_star,
+        ← unop_star, star_inner])
   norm_eq_sqrt_norm_inner_self u := by
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
-    rw [← norm_unop, unop_inner_mk_mk]
-    exact norm_mk_idealSubmodule_op J x
+    rw [← norm_unop, unop_inner_mk_mk]; exact norm_mk_idealSubmodule_op J x
 
 end RightQuotientModule
 
@@ -643,8 +651,7 @@ def quotientMapCLM (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
 @[simp]
 theorem quotientMapCLM_mk (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
     (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (x : E) :
-    quotientMapCLM J T hT (Submodule.Quotient.mk x) = Submodule.Quotient.mk (T x) :=
-  (rfl)
+    quotientMapCLM J T hT (Submodule.Quotient.mk x) = Submodule.Quotient.mk (T x) := (rfl)
 
 @[simp]
 theorem quotientMapCLM_id (J : TwoSidedIdeal A) :
@@ -671,13 +678,11 @@ def quotientFactorCLM {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) :
 @[simp]
 theorem quotientFactorCLM_mk {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) (x : E) :
     quotientFactorCLM h (Submodule.Quotient.mk x : E ⧸ idealSubmodule J₁ E) =
-      Submodule.Quotient.mk x :=
-  (rfl)
+      Submodule.Quotient.mk x := (rfl)
 
 theorem quotientFactorCLM_surjective {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) :
-    Function.Surjective (quotientFactorCLM (E := E) h) := by
-  intro u; obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
-  exact ⟨Submodule.Quotient.mk x, rfl⟩
+    Function.Surjective (quotientFactorCLM (E := E) h) := fun u =>
+  let ⟨x, hx⟩ := Submodule.Quotient.mk_surjective _ u; ⟨Submodule.Quotient.mk x, hx⟩
 
 @[simp]
 theorem quotientFactorCLM_refl (J : TwoSidedIdeal A) :
@@ -855,8 +860,8 @@ theorem inner_quotientMapCLM_op_of_inner_eq (J : TwoSidedIdeal A) [IsClosed (J :
       inner (A ⧸ J)ᵐᵒᵖ u v := by
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
   obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
-  apply unop_injective
-  rw [quotientMapCLM_mk, quotientMapCLM_mk, unop_inner_mk_mk, unop_inner_mk_mk, hinner]
+  exact unop_injective (by
+    rw [quotientMapCLM_mk, quotientMapCLM_mk, unop_inner_mk_mk, unop_inner_mk_mk, hinner])
 
 /-- Pointwise adjoint identity on right quotients, without requiring an order on `A ⧸ J`. -/
 theorem inner_quotientMapCLM_op_adjoint (J : TwoSidedIdeal A) [IsClosed (J : Set A)]
@@ -868,8 +873,8 @@ theorem inner_quotientMapCLM_op_adjoint (J : TwoSidedIdeal A) [IsClosed (J : Set
       inner (A ⧸ J)ᵐᵒᵖ u (quotientMapCLM J.op S hS v) := by
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
   obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
-  apply unop_injective
-  rw [quotientMapCLM_mk, quotientMapCLM_mk, unop_inner_mk_mk, unop_inner_mk_mk, hinner]
+  exact unop_injective (by
+    rw [quotientMapCLM_mk, quotientMapCLM_mk, unop_inner_mk_mk, unop_inner_mk_mk, hinner])
 
 /-- Adjoint pairs of bounded operators between right Hilbert `A`-modules descend to adjoint pairs
 between the right quotient Hilbert `(A ⧸ J)`-modules. -/
@@ -909,9 +914,9 @@ theorem inner_quotientFactorCLM_op {J₁ J₂ : TwoSidedIdeal A} [IsClosed (J₁
         (unop (inner (A ⧸ J₁)ᵐᵒᵖ u v))) := by
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
   obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
-  apply unop_injective
-  rw [quotientFactorCLM_mk, quotientFactorCLM_mk, unop_op, unop_inner_mk_mk,
-    unop_inner_mk_mk, TwoSidedIdeal.Quotient.factorStarAlgHom_mk]
+  exact unop_injective (by
+    rw [quotientFactorCLM_mk, quotientFactorCLM_mk, unop_op, unop_inner_mk_mk,
+      unop_inner_mk_mk, TwoSidedIdeal.Quotient.factorStarAlgHom_mk])
 
 end RightModules
 

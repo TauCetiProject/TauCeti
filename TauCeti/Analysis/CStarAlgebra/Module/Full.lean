@@ -211,8 +211,7 @@ theorem op_rightInnerIdeal [Inner Aᵐᵒᵖ E] : (rightInnerIdeal A E).op = inn
   TwoSidedIdeal.opOrderIso.right_inv (innerIdeal Aᵐᵒᵖ E)
 
 @[simp]
-theorem unop_innerIdeal [Inner Aᵐᵒᵖ E] : (innerIdeal Aᵐᵒᵖ E).unop = rightInnerIdeal A E :=
-  (rfl)
+theorem unop_innerIdeal [Inner Aᵐᵒᵖ E] : (innerIdeal Aᵐᵒᵖ E).unop = rightInnerIdeal A E := (rfl)
 
 theorem inner_mem_innerIdeal [Inner A E] (x y : E) : inner A x y ∈ innerIdeal A E :=
   TwoSidedIdeal.le_topologicalClosure _ (TwoSidedIdeal.subset_span ⟨(x, y), rfl⟩)
@@ -255,8 +254,7 @@ instance instInnerInnerIdeal [Inner A E] : Inner (innerIdeal A E) E where
 
 @[simp, norm_cast]
 theorem coe_inner_innerIdeal [Inner A E] (x y : E) :
-    ((inner (innerIdeal A E) x y : innerIdeal A E) : A) = inner A x y :=
-  (rfl)
+    ((inner (innerIdeal A E) x y : innerIdeal A E) : A) = inner A x y := (rfl)
 
 /-- Right action of `rightInnerIdeal A E` on a right module `E` (`[SMul Aᵐᵒᵖ E]`), defined by
 coercing coefficients to `A`. -/
@@ -267,8 +265,7 @@ instance instSMulRightInnerIdeal [Inner Aᵐᵒᵖ E] [SMul Aᵐᵒᵖ E] :
 @[simp]
 theorem rightInnerIdeal_op_smul [Inner Aᵐᵒᵖ E] [SMul Aᵐᵒᵖ E]
     (a : rightInnerIdeal A E) (x : E) :
-    op a • x = op (a : A) • x :=
-  (rfl)
+    op a • x = op (a : A) • x := (rfl)
 
 /-- `(rightInnerIdeal A E)ᵐᵒᵖ`-valued inner product on a right module `E` (`[Inner Aᵐᵒᵖ E]`). -/
 instance instInnerRightInnerIdeal [Inner Aᵐᵒᵖ E] : Inner (rightInnerIdeal A E)ᵐᵒᵖ E where
@@ -277,8 +274,7 @@ instance instInnerRightInnerIdeal [Inner Aᵐᵒᵖ E] : Inner (rightInnerIdeal 
 @[simp, norm_cast]
 theorem coe_unop_inner_rightInnerIdeal [Inner Aᵐᵒᵖ E] (x y : E) :
     ((unop (inner (rightInnerIdeal A E)ᵐᵒᵖ x y) : rightInnerIdeal A E) : A) =
-      unop (inner Aᵐᵒᵖ x y) :=
-  (rfl)
+      unop (inner Aᵐᵒᵖ x y) := (rfl)
 
 end TopologicalRing
 
@@ -309,7 +305,7 @@ theorem isFull_iff_topologicalClosure_eq_top [ContinuousConstSMul ℂ A] :
 
 /-- In a `T₁` coefficient ring, `innerIdeal A E = ⊥` if and only if `E` is a subsingleton. -/
 @[simp]
-theorem innerIdeal_eq_bot_iff [StarModule ℂ A] [T1Space A] :
+theorem innerIdeal_eq_bot_iff [T1Space A] :
     innerIdeal A E = ⊥ ↔ Subsingleton E := by
   refine ⟨fun h => ⟨fun x y => ?_⟩, fun h => ?_⟩
   · apply sub_eq_zero.mp
@@ -320,7 +316,7 @@ theorem innerIdeal_eq_bot_iff [StarModule ℂ A] [T1Space A] :
   · refine le_antisymm ?_ bot_le
     rw [innerIdeal_le_iff]
     intro x y
-    rw [Subsingleton.elim x 0, inner_zero_left, TwoSidedIdeal.mem_bot]
+    rw [Subsingleton.elim x 0, inner_zero_left', TwoSidedIdeal.mem_bot]
 
 end TopologicalCStarModule
 
@@ -334,8 +330,9 @@ private theorem image_linearMap_span_range {B C : Type*} [AddCommMonoid B] [Modu
 
 section RightTopologicalCStarModule
 
-variable {A E : Type*} [NonUnitalSeminormedRing A] [StarRing A] [Module ℂ A]
-  [PartialOrder A] [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
+variable {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A]
+  [PartialOrder A] [TopologicalSpace A] [IsTopologicalRing A] [Norm Aᵐᵒᵖ]
+  [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
 
 /-- For a right Hilbert `A`-module, `(rightInnerIdeal A E : Set A)` is the closure of the complex
 linear span of `{⟨x, y⟩_A | x, y ∈ E}`. -/
@@ -362,7 +359,7 @@ theorem isFull_mulOpposite_iff_dense :
     dense_iff_closure_eq]
 
 @[simp]
-theorem rightInnerIdeal_eq_bot_iff [StarModule ℂ A] [T1Space A] :
+theorem rightInnerIdeal_eq_bot_iff [T1Space A] :
     rightInnerIdeal A E = ⊥ ↔ Subsingleton E := by
   refine ⟨fun h => ⟨fun x y => ?_⟩, fun _ => ?_⟩
   · apply sub_eq_zero.mp
@@ -374,7 +371,7 @@ theorem rightInnerIdeal_eq_bot_iff [StarModule ℂ A] [T1Space A] :
   · refine le_antisymm ?_ bot_le
     rw [rightInnerIdeal_le_iff]
     intro x y
-    rw [Subsingleton.elim x 0, inner_zero_left, unop_zero, TwoSidedIdeal.mem_bot]
+    rw [Subsingleton.elim x 0, inner_zero_left', unop_zero, TwoSidedIdeal.mem_bot]
 
 end RightTopologicalCStarModule
 
@@ -434,8 +431,7 @@ theorem innerIdeal_innerIdeal : innerIdeal (innerIdeal A E) E = ⊤ := by
   exact z.property
 
 /-- Every Hilbert C⋆-module `E` is full as a Hilbert module over `innerIdeal A E`. -/
-theorem isFull_innerIdeal : IsFull (innerIdeal A E) E :=
-  innerIdeal_innerIdeal
+theorem isFull_innerIdeal : IsFull (innerIdeal A E) E := innerIdeal_innerIdeal
 
 end Module
 
@@ -524,8 +520,7 @@ theorem isFull_self : IsFull A A := by
   exact Submodule.subset_span ⟨(e, y), by simp [WithCStarModule.inner_def, he]⟩
 
 @[simp]
-theorem innerIdeal_self : innerIdeal A A = ⊤ :=
-  isFull_self
+theorem innerIdeal_self : innerIdeal A A = ⊤ := isFull_self
 
 end Self
 
@@ -618,9 +613,7 @@ theorem innerIdeal_quotient (J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
     have := TwoSidedIdeal.isClosed_comap (TwoSidedIdeal.Quotient.continuous_mk J)
       (innerIdeal (A ⧸ J) (E ⧸ idealSubmodule J E))
     rw [innerIdeal_le_iff]
-    intro x y
-    rw [TwoSidedIdeal.mem_comap, ← inner_mk_mk J x y]
-    exact inner_mem_innerIdeal _ _
+    exact fun x y => (TwoSidedIdeal.mem_comap _).mpr (inner_mk_mk J x y ▸ inner_mem_innerIdeal _ _)
 
 /-- The quotient module `E ⧸ idealSubmodule J E` is full over `A ⧸ J` if and only if
 `innerIdeal A E ⊔ J = ⊤`. -/
@@ -680,9 +673,8 @@ theorem rightInnerIdeal_quotient (J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
     have := TwoSidedIdeal.isClosed_comap (TwoSidedIdeal.Quotient.continuous_mk J)
       (rightInnerIdeal (A ⧸ J) (E ⧸ idealSubmodule J.op E))
     rw [rightInnerIdeal_le_iff]
-    intro x y
-    rw [TwoSidedIdeal.mem_comap, ← unop_inner_mk_mk J x y]
-    exact unop_inner_mem_rightInnerIdeal _ _
+    exact fun x y =>
+      (TwoSidedIdeal.mem_comap _).mpr (unop_inner_mk_mk J x y ▸ unop_inner_mem_rightInnerIdeal _ _)
 
 /-- Right-module form: `E ⧸ idealSubmodule J.op E` is full as a right Hilbert `(A ⧸ J)`-module if
 and only if `rightInnerIdeal A E ⊔ J = ⊤`. -/
