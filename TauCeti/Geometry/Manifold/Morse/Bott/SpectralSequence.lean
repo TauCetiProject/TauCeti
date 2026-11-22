@@ -320,9 +320,14 @@ theorem finrank_filteredSpaceSpectralSequence_page_two_X (ha : Monotone a) {q : 
         bettiNumber K (S j) (n - r j) := by
   obtain ⟨c, hc, hcrit⟩ := hband.exists_mem_Ioo_forall_eq
   subst hq
+  -- The unit `-1` is `1`, so `2 = 0` in `K`.
+  have h2 : (2 : K) = 0 := by
+    have h : ((-1 : Kˣ) : K) = ((1 : Kˣ) : K) := congrArg _ (Subsingleton.elim _ _)
+    rw [Units.val_neg, Units.val_one] at h
+    linear_combination -h
   rw [(filteredSpaceSpectralSequenceFirstPageXIso (Y := TopCat.of M) (ModuleCat.of K K)
     ((sublevel_mono f).comp ha) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n hpq).toLinearEquiv.finrank_eq,
-    h.finrank_singularHomology_sublevelPair_eq_sum K hr hc.1 hc.2 hcrit n]
+    h.finrank_singularHomology_sublevelPair_eq_sum K h2 hr hc.1 hc.2 hcrit n]
   simp only [h.forall_mem_Ioc_iff_forall_eq hc hcrit]
 
 open scoped Classical in
