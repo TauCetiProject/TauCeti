@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Brauer
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Kummer
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.KummerComparison
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Kummer.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Kummer.Comparison
 
 /-!
 # Field-level orthogonality of the isogeny Kummer images
@@ -18,7 +18,8 @@ the isogeny Weil cup product in `H²(K, μ_n)` and its Brauer-valued pairing in 
 of the maps to point-coefficient cohomology satisfy the same vanishing.
 
 No local-field or unramified-cohomology hypotheses are needed here; nonarchimedean local Tate
-duality and unramified orthogonality are in
+duality is in `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/WeilPairing/Local.lean`,
+and unramified orthogonality is in
 `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/WeilPairing/Orthogonality.lean`.
 
 The proof reduces the cup product via `TauCeti.Isogeny.kerH1WeilPairing_kummerMap` to the
