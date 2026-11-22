@@ -19,9 +19,8 @@ have right adjoints. No closure of Cartesian arrows under composition is needed.
 
 This identifies the fibre-to-comma adjunction used to compare strict fibres with
 comma categories in Quillen's theorems. The adjoint and adjunction are available
-through `Functor.rightAdjoint` and `Adjunction.ofIsLeftAdjoint`; their counit arrows
-are Cartesian by `CostructuredArrow.isCartesian_of_isTerminal` and
-`mkTerminalOfRightAdjoint`.
+through `Functor.rightAdjoint` and `Adjunction.ofIsLeftAdjoint`.
+`Adjunction.isCartesian_counit_app_right` identifies the underlying counit arrows as Cartesian.
 
 ## References
 
@@ -61,7 +60,7 @@ def fiberToStructuredArrow : Fiber p d ⥤ StructuredArrow d p :=
 
 @[simp]
 lemma fiberToStructuredArrow_obj_right (a : Fiber p d) :
-    ((p.fiberToStructuredArrow d).obj a).right = a.val := (rfl)
+    ((p.fiberToStructuredArrow d).obj a).right = fiberInclusion.obj a := (rfl)
 
 @[simp]
 lemma fiberToStructuredArrow_obj_hom (a : Fiber p d) :
@@ -84,20 +83,21 @@ variable {d}
 /-- A comma morphism out of the strict fibre lifts its target's base arrow. -/
 lemma isHomLift_fiberToStructuredArrow_right {a : Fiber p d} {x : StructuredArrow d p}
     (f : (p.fiberToStructuredArrow d).obj a ⟶ x) : p.IsHomLift x.hom f.right :=
-  IsHomLift.of_commsq p x.hom f.right a.property rfl (by
-    have hw : eqToHom a.property.symm ≫ p.map f.right = x.hom := f.w
-    calc
-      _ = eqToHom a.property ≫ (eqToHom a.property.symm ≫ p.map f.right) := by
-        simp [fiberToStructuredArrow, Functor.toStructuredArrow, fiberInclusion]
-      _ = _ := congrArg (eqToHom a.property ≫ ·) hw)
+  IsHomLift.of_fac p x.hom f.right a.property rfl (by
+    rw [eqToHom_refl, comp_id]
+    have hw := f.w.symm
+    rw [fiberToStructuredArrow_obj_hom] at hw
+    exact hw)
 
 /-- Turn a lift of a base arrow into a morphism out of the strict fibre. -/
 def fiberToStructuredArrowHomMk {a : Fiber p d} {x : StructuredArrow d p}
-    (f : a.val ⟶ x.right) [hf : p.IsHomLift x.hom f] :
+    (f : fiberInclusion.obj a ⟶ x.right) [hf : p.IsHomLift x.hom f] :
     (p.fiberToStructuredArrow d).obj a ⟶ x :=
   StructuredArrow.homMk f (by
     have h : p.map f = eqToHom a.property ≫ x.hom := by
-      simpa using (IsHomLift.fac' p x.hom f)
+      have hf' := IsHomLift.fac' p x.hom f
+      rw [eqToHom_refl, comp_id] at hf'
+      exact hf'
     calc
       _ = eqToHom a.property.symm ≫ (eqToHom a.property ≫ x.hom) :=
         congrArg (eqToHom a.property.symm ≫ ·) h
@@ -105,8 +105,9 @@ def fiberToStructuredArrowHomMk {a : Fiber p d} {x : StructuredArrow d p}
 
 @[simp]
 lemma fiberToStructuredArrowHomMk_right {a : Fiber p d} {x : StructuredArrow d p}
-    (f : a.val ⟶ x.right) [p.IsHomLift x.hom f] :
-    (p.fiberToStructuredArrowHomMk f : (p.fiberToStructuredArrow d).obj a ⟶ x).right = f := (rfl)
+    (f : fiberInclusion.obj a ⟶ x.right) [hf : p.IsHomLift x.hom f] :
+    (p.fiberToStructuredArrowHomMk f (hf := hf) :
+      (p.fiberToStructuredArrow d).obj a ⟶ x).right = f := (rfl)
 
 instance : (p.fiberToStructuredArrow d).Full where
   map_surjective {a b} f := by
@@ -141,9 +142,10 @@ noncomputable def isTerminalOfIsCartesian
     (fun s f => by
       apply CostructuredArrow.hom_ext
       apply Fiber.hom_ext
-      -- Supply the verticality proof explicitly across the strict-fibre subtype.
-      exact @IsCartesian.map_uniq D C _ _ p d _ _ _ x.hom t.hom.right hcart
-        _ s.hom.right (p.isHomLift_fiberToStructuredArrow_right s.hom) _ f.left.property
+      have : p.IsHomLift x.hom s.hom.right := p.isHomLift_fiberToStructuredArrow_right s.hom
+      let g := ((p.fiberToStructuredArrow d).map f.left).right
+      have : p.IsHomLift (𝟙 d) g := f.left.property
+      exact IsCartesian.map_uniq p x.hom t.hom.right s.hom.right g
         (congrArg CommaMorphism.right f.w))
 
 /-- The underlying arrow of a universal arrow from the fibre is Cartesian. -/
@@ -152,31 +154,45 @@ lemma isCartesian_of_isTerminal (t : CostructuredArrow (p.fiberToStructuredArrow
   toIsHomLift := p.isHomLift_fiberToStructuredArrow_right t.hom
   universal_property {a} f hf := by
     have : p.IsHomLift x.hom f := hf
-    let a' : Fiber p d := Fiber.mk (domain_eq p x.hom f)
+    let a' : Fiber p d := ⟨a, domain_eq p x.hom f⟩
     let s : CostructuredArrow (p.fiberToStructuredArrow d) x :=
       CostructuredArrow.mk
         (p.fiberToStructuredArrowHomMk (d := d) (x := x) (a := a') f (hf := hf))
+    have hs : s.hom.right = f :=
+      p.fiberToStructuredArrowHomMk_right (a := a') (x := x) f (hf := hf)
     refine ⟨fiberInclusion.map (ht.from s).left, ⟨(ht.from s).left.property, ?_⟩, ?_⟩
-    · have h := congrArg CommaMorphism.right (ht.from s).w
-      dsimp [s, fiberToStructuredArrow, Functor.toStructuredArrow,
-        fiberToStructuredArrowHomMk, StructuredArrow.homMk] at h
-      exact h
+    · have hw := congrArg
+        (fun k : (p.fiberToStructuredArrow d).obj s.left ⟶ x => k.right) (ht.from s).w
+      rw [StructuredArrow.comp_right, fiberToStructuredArrow_map_right, hs] at hw
+      exact hw
     · rintro g ⟨hg, hgf⟩
       let g' : s ⟶ t := CostructuredArrow.homMk ⟨g, hg⟩ (by
         apply StructuredArrow.hom_ext
-        dsimp [s, fiberToStructuredArrow, Functor.toStructuredArrow,
-          fiberToStructuredArrowHomMk, StructuredArrow.homMk]
+        rw [StructuredArrow.comp_right, fiberToStructuredArrow_map_right, hs]
         exact hgf)
       exact congrArg (fun k => fiberInclusion.map k.left) (ht.hom_ext g' (ht.from s))
 
 end CostructuredArrow
 
+namespace Adjunction
+
+variable {p : C ⥤ D} {d : D} {R : StructuredArrow d p ⥤ Functor.Fiber p d}
+
+/-- The underlying arrow of the counit of a strict-fibre inclusion adjunction is a Cartesian
+lift of the base arrow of the structured arrow. -/
+lemma isCartesian_counit_app_right (adj : p.fiberToStructuredArrow d ⊣ R)
+    (x : StructuredArrow d p) : p.IsCartesian x.hom (adj.counit.app x).right := by
+  simpa only [CostructuredArrow.mk_hom_eq_self] using
+    CostructuredArrow.isCartesian_of_isTerminal _ (mkTerminalOfRightAdjoint _ adj x)
+
+end Adjunction
+
 namespace Functor
 
 variable (p : C ⥤ D) (d : D)
 
-/-- The comma category of arrows from the strict fibre to a given base arrow
-has a terminal object, supplied by a Cartesian lift. -/
+/-- For a prefibered functor, the comma category of arrows from the strict fibre to a structured
+arrow has a terminal object. -/
 instance hasTerminal_costructuredArrow_fiberToStructuredArrow [p.IsPreFibered]
     (x : StructuredArrow d p) :
     HasTerminal (CostructuredArrow (p.fiberToStructuredArrow d) x) := by
@@ -205,7 +221,7 @@ theorem isPreFibered_iff_isLeftAdjoint_fiberToStructuredArrow :
   let adj := Adjunction.ofIsLeftAdjoint (p.fiberToStructuredArrow d)
   let x : StructuredArrow d p := StructuredArrow.mk f
   exact ⟨((p.fiberToStructuredArrow d).rightAdjoint.obj x).val, (adj.counit.app x).right,
-    CostructuredArrow.isCartesian_of_isTerminal _ (mkTerminalOfRightAdjoint _ adj x)⟩
+    adj.isCartesian_counit_app_right x⟩
 
 end Functor
 
