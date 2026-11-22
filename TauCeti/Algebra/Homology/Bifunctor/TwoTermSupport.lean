@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import TauCeti.Algebra.Homology.Bifunctor.Basic
+public import TauCeti.Algebra.Homology.Bifunctor.Single
 public import TauCeti.Algebra.Homology.Bifunctor.Support
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.Algebra.Homology.ShortComplex.Splitting
@@ -237,17 +238,13 @@ private theorem singleX_inv_d (A : C₁) (a : ℤ)
       -- Expose the same successor relation in the hypothesis for integer arithmetic.
       change j + 1 = j' at hjj'
       omega
-    have hd₁ : mapBifunctor.d₁ ((single C₁ c a).obj A) N (F) c a (j +
-      -a) j' = 0 := by
-      rw [mapBifunctor.d₁_eq' _ _ _ _ (by simp : (c).Rel a (a + 1))]
-      simp
     -- Cochain totalization has vertical sign (-1)^a; a shift by -a has the same sign.
     have hε : ComplexShape.ε₂ c c c (a, j + -a) = a.negOnePow := rfl
     have hd₂ := mapBifunctor.d₂_eq ((single C₁ c a).obj A) N
       (F) c a hqq' j' (add_neg_cancel_comm_assoc a j')
     rw [singleX_inv, singleX_inv]
     simp only [Category.assoc, mapBifunctor.d_eq, Preadditive.comp_add,
-      mapBifunctor.ι_D₁, mapBifunctor.ι_D₂, hd₁, comp_zero, zero_add,
+      mapBifunctor.ι_D₁, mapBifunctor.ι_D₂, single_mapBifunctor_d₁, comp_zero, zero_add,
       hd₂, hε,
       CochainComplex.shiftFunctor_obj_d', Functor.mapHomologicalComplex_obj_d,
       Int.negOnePow_neg, Linear.comp_units_smul, Linear.units_smul_comp]
