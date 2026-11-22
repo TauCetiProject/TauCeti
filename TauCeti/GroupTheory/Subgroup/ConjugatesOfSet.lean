@@ -13,26 +13,27 @@ import Mathlib.GroupTheory.GroupAction.FixedPoints
 /-!
 # Jordan's covering lemma
 
-A proper subgroup of a finite group misses a whole conjugacy class: if every element of a finite
-group `G` is conjugate to an element of a subgroup `H`, then `H = G`. In Mathlib's language, the
+A proper subgroup of finite index misses a whole conjugacy class: if every element of a group `G`
+is conjugate to an element of a finite-index subgroup `H`, then `H = G`. In Mathlib's language, the
 union of the conjugates of `H`, `Group.conjugatesOfSet (H : Set G)`, is all of `G` exactly when
 `H = ⊤`. No normality of `H` is assumed.
 
 The proof is Burnside's count for the action of `G` on `G ⧸ H`: an element conjugate into `H`
 fixes a coset, the identity fixes all `[G : H]` cosets, and the action is transitive, so the
-average number of fixed cosets is one. This forces `[G : H] = 1`.
+average number of fixed cosets is one. This forces `[G : H] = 1`. For an infinite group `G`, the
+argument runs in the finite quotient of `G` by the normal core of `H`.
 
 This is the group-theoretic input of the Chebotarev arguments that recognise a number field
 from its local behaviour: if the Frobenius class of almost every prime meets the subgroup fixing
 a subfield, Chebotarev makes every class meet it, and the lemma makes the subgroup everything.
 
-Finiteness is needed: every element of `GL₂(ℂ)` is conjugate into the proper subgroup of upper
-triangular matrices.
+Finite index is needed: every element of `GL₂(ℂ)` is conjugate into the proper subgroup of upper
+triangular matrices, which has infinite index.
 
 ## Main results
 
-* `Subgroup.conjugatesOfSet_eq_univ_iff`: the conjugates of a subgroup `H` of a finite group
-  cover the group if and only if `H = ⊤`.
+* `Subgroup.conjugatesOfSet_eq_univ_iff`: the conjugates of a finite-index subgroup `H` cover
+  the group if and only if `H = ⊤`.
 
 ## References
 
@@ -46,12 +47,9 @@ namespace Subgroup
 
 variable {G : Type*} [Group G]
 
-/-- **Jordan's covering lemma.** The conjugates of a subgroup `H` of a finite group `G` cover `G`
-if and only if `H = ⊤`: a proper subgroup misses some conjugacy class. -/
-@[simp]
-theorem conjugatesOfSet_eq_univ_iff [Finite G] {H : Subgroup G} :
-    Group.conjugatesOfSet (H : Set G) = Set.univ ↔ H = ⊤ := by
-  refine ⟨fun h ↦ ?_, fun h ↦ Set.eq_univ_of_univ_subset (h ▸ Group.subset_conjugatesOfSet)⟩
+/-- The finite-group case of `Subgroup.conjugatesOfSet_eq_univ_iff`, by Burnside's count. -/
+private theorem eq_top_of_conjugatesOfSet_eq_univ [Finite G] {H : Subgroup G}
+    (h : Group.conjugatesOfSet (H : Set G) = Set.univ) : H = ⊤ := by
   classical
   have := Fintype.ofFinite G
   -- An element `c x c⁻¹` with `x ∈ H` fixes the coset `c H`.
@@ -78,5 +76,22 @@ theorem conjugatesOfSet_eq_univ_iff [Finite G] {H : Subgroup G} :
   have := Fintype.card_pos (α := G)
   have := H.index_ne_zero_of_finite
   exact index_eq_one.mp (by omega)
+
+/-- **Jordan's covering lemma.** The conjugates of a finite-index subgroup `H` of a group `G`
+cover `G` if and only if `H = ⊤`: a proper subgroup of finite index misses some conjugacy class.
+Finite index is needed. -/
+@[simp]
+theorem conjugatesOfSet_eq_univ_iff {H : Subgroup G} [H.FiniteIndex] :
+    Group.conjugatesOfSet (H : Set G) = Set.univ ↔ H = ⊤ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ Set.eq_univ_of_univ_subset (h ▸ Group.subset_conjugatesOfSet)⟩
+  -- The image of `H` in the finite quotient `G ⧸ H.normalCore` still meets every class.
+  let f := QuotientGroup.mk' H.normalCore
+  have hmap : H.map f = ⊤ := eq_top_of_conjugatesOfSet_eq_univ <| Set.eq_univ_of_forall fun q ↦ by
+    obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective H.normalCore q
+    obtain ⟨x, hx, hxg⟩ := Group.mem_conjugatesOfSet_iff.mp (h ▸ Set.mem_univ g)
+    exact Group.mem_conjugatesOfSet_iff.mpr ⟨f x, mem_map_of_mem f hx, f.map_isConj hxg⟩
+  -- Pull back along the quotient map, whose kernel `H.normalCore` lies in `H`.
+  have := congrArg (comap f) hmap
+  rwa [comap_map_eq, QuotientGroup.ker_mk', sup_eq_left.mpr H.normalCore_le, comap_top] at this
 
 end Subgroup
