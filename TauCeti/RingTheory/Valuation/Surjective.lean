@@ -21,9 +21,9 @@ valuation is nontrivial exactly when its target has an element other than `0` an
 instance a unit other than `1`. For a surjective valuation from a field into a linearly ordered
 commutative group with zero whose units are nontrivial, the valuation ring is a proper subring,
 and a discrete valuation ring if moreover those units form a cyclic group. Finally, two
-equivalent valuations whose value groups are the same cyclic subgroup of the units of the target
-are equal. That the value groups are isomorphic as ordered groups is not enough: equivalence
-always provides such an isomorphism.
+equivalent valuations into a linearly ordered commutative group with zero whose value groups are
+the same cyclic subgroup of the units of the target are equal. That the value groups are
+isomorphic as ordered groups is not enough: equivalence always provides such an isomorphism.
 
 ## Main results
 
@@ -42,10 +42,11 @@ always provides such an isomorphism.
 * `Valuation.valuationSubring_isDiscreteValuationRing_of_surjective`: for a surjective valuation
   from a field into a linearly ordered commutative group with zero `Γ₀` with `Γ₀ˣ` nontrivial and
   cyclic, the valuation ring is a discrete valuation ring.
-* `Valuation.eq_of_isEquiv_of_valueGroup_eq`: two equivalent valuations whose value groups are
-  equal and cyclic, as subgroups of `Γ₀ˣ`, are equal.
-* `Valuation.eq_of_isEquiv_of_surjective`: when `Γ₀ˣ` is cyclic, two equivalent surjective
-  valuations are equal.
+* `Valuation.eq_of_isEquiv_of_valueGroup_eq`: two equivalent valuations into a linearly ordered
+  commutative group with zero `Γ₀` whose value groups are equal and cyclic, as subgroups of `Γ₀ˣ`,
+  are equal.
+* `Valuation.eq_of_isEquiv_of_surjective`: two equivalent surjective valuations into a linearly
+  ordered commutative group with zero `Γ₀` with `Γ₀ˣ` cyclic are equal.
 -/
 
 public section
@@ -132,8 +133,9 @@ section Ring
 
 variable {R : Type*} [Ring R]
 
-/-- **Equivalent valuations with equal cyclic value groups are equal.** The value groups must be
-equal as subgroups of `Γ₀ˣ`. Equivalence always induces an order-preserving isomorphism between
+/-- **Equivalent valuations with equal cyclic value groups are equal**, for valuations into a
+linearly ordered commutative group with zero `Γ₀`. The value groups must be equal as subgroups of
+`Γ₀ˣ`. Equivalence always induces an order-preserving isomorphism between
 them, so isomorphic value groups would not suffice: the `p`-adic valuation and its square are
 equivalent and not equal. When the two subgroups are equal and cyclic, that isomorphism is the
 identity, so the two valuations agree.
@@ -178,8 +180,9 @@ theorem eq_of_isEquiv_of_valueGroup_eq {v w : Valuation R Γ₀} [IsCyclic v.val
   rw [← v.embedding_restrict, ← w.embedding_restrict, ← h.orderMonoidIso₀_spec]
   exact congrArg WithZero.withZeroUnitsEquiv hx.symm
 
-/-- **Equivalent surjective valuations are equal** when `Γ₀ˣ` is cyclic, for instance for
-normalized `ℤᵐ⁰`-valuations. -/
+/-- **Equivalent surjective valuations are equal** when they take values in a linearly ordered
+commutative group with zero `Γ₀` with `Γ₀ˣ` cyclic, for instance for normalized
+`ℤᵐ⁰`-valuations. -/
 theorem eq_of_isEquiv_of_surjective [IsCyclic Γ₀ˣ] {v w : Valuation R Γ₀}
     (hv : Function.Surjective v) (hw : Function.Surjective w) (h : v.IsEquiv w) : v = w :=
   eq_of_isEquiv_of_valueGroup_eq h <| by

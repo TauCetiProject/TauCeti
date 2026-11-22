@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 public import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
@@ -23,10 +24,10 @@ about surjective valuations that do not involve the order are in
 `TauCeti.RingTheory.Valuation.Surjective`, under the conditions on the value group each needs: the
 value group is full with no condition (and for a valuation from a division ring into an ordered
 group with zero, full value group means surjectivity), the valuation is nontrivial exactly when
-its target has an element other than `0` and `1`, equivalent surjective valuations are equal when
-the units of the target form a cyclic group, and for a surjective valuation from a field into a
-linearly ordered commutative group with zero whose units form a nontrivial cyclic group, the
-valuation ring is a discrete valuation ring.
+its target has an element other than `0` and `1`, equivalent surjective valuations into a
+linearly ordered commutative group with zero are equal when its units form a cyclic group, and
+for a surjective valuation from a field into a linearly ordered commutative group with zero whose
+units form a nontrivial cyclic group, the valuation ring is a discrete valuation ring.
 As `WithZero.log 0 = 0`, the order has the junk value `ord_v f = 0` whenever `v f = 0`.
 On a division ring, `v f = 0` is equivalent to `f = 0`; hypotheses excluding zero are
 included where necessary.
@@ -108,11 +109,13 @@ private theorem mk0_exp_neg_one_lt_one :
     Units.mk0 (WithZero.exp (-1) : ℤᵐ⁰) WithZero.exp_ne_zero < 1 :=
   Units.val_lt_val.mp <| by simp
 
-/-- `exp (-1)` generates the units of `ℤᵐ⁰`. -/
+/-- `exp (-1)` generates the units of `ℤᵐ⁰`: its inverse corresponds to `1` under
+`WithZero.unitsWithZeroEquiv`. -/
 private theorem zpowers_mk0_exp_neg_one :
-    Subgroup.zpowers (Units.mk0 (WithZero.exp (-1) : ℤᵐ⁰) WithZero.exp_ne_zero) = ⊤ :=
-  (Subgroup.eq_top_iff' _).mpr fun γ ↦ Subgroup.mem_zpowers_iff.mpr
-    ⟨-WithZero.log (γ : ℤᵐ⁰), Units.ext <| by simp [← WithZero.exp_zsmul]⟩
+    Subgroup.zpowers (Units.mk0 (WithZero.exp (-1) : ℤᵐ⁰) WithZero.exp_ne_zero) = ⊤ := by
+  rw [← Subgroup.zpowers_inv]
+  exact WithZero.unitsWithZeroEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one
+    (WithZero.coe_injective <| by simp [← WithZero.exp_eq_coe_ofAdd])
 
 theorem ord_surjective (v : _root_.Valuation F ℤᵐ⁰) (hv : Function.Surjective v) :
     Function.Surjective (ord v) := fun n => by
