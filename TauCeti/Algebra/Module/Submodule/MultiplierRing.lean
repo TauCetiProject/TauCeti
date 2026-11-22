@@ -74,11 +74,11 @@ theorem smul_subset_multiplierRing {M : Submodule R B} {I : Ideal R} (h : I • 
 noncomputable def toMultiplierRing (M : Submodule R B) : R →+* M.toAddSubgroup.multiplierRing :=
   (algebraMap R B).codRestrict _ M.algebraMap_mem_multiplierRing
 
-/-- The structure map `R → B₀` sends `a` to `a • 1`. -/
+/-- The structure map `R → B₀` agrees with the structure map `R → B`. -/
 @[simp]
 theorem coe_toMultiplierRing (M : Submodule R B) (a : R) :
-    (M.toMultiplierRing a : B) = a • (1 : B) := by
-  rw [toMultiplierRing, RingHom.codRestrict_apply, Algebra.smul_def, mul_one]
+    (M.toMultiplierRing a : B) = algebraMap R B a := by
+  rw [toMultiplierRing, RingHom.codRestrict_apply]
 
 /-- **The multiplier ring of a finitely generated submodule containing `1` is integral.** If `M`
 is a finitely generated `R`-submodule of an `R`-algebra `B` with `1 ∈ M`, every `b ∈ B` with
@@ -121,7 +121,7 @@ theorem coe_map_pow_subset {M : Submodule R B} (h1 : (1 : B) ∈ M) (I : Ideal R
   induction hx using Submodule.span_induction with
   | mem y hy =>
     obtain ⟨a, ha, rfl⟩ := hy
-    rw [SetLike.mem_coe, coe_toMultiplierRing]
+    rw [SetLike.mem_coe, coe_toMultiplierRing, Algebra.algebraMap_eq_smul_one]
     exact Submodule.smul_mem_smul ha h1
   | zero => exact Submodule.zero_mem _
   | add y z _ _ hy hz => exact Submodule.add_mem _ hy hz
@@ -146,7 +146,7 @@ theorem smul_subset_coe_map_pow {M : Submodule R B} {I : Ideal R} {j : ℕ}
   · refine ⟨M.toMultiplierRing a * ⟨y, hj hy⟩, ?_, ?_⟩
     · rw [← Ideal.map_pow]
       exact Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _ ha)
-    · rw [Subring.coe_mul, coe_toMultiplierRing, smul_one_mul]
+    · rw [Subring.coe_mul, coe_toMultiplierRing, ← Algebra.smul_def]
   · rintro _ _ ⟨x, hx, rfl⟩ ⟨y, hy, rfl⟩
     exact ⟨x + y, Ideal.add_mem _ hx hy, rfl⟩
 
