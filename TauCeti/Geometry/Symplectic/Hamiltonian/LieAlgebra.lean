@@ -447,7 +447,8 @@ theorem symplecticLieSubalgebraEquiv_negHamiltonianLieHom (hσ : σ.IsSymplectic
 
 /-- In finite dimension `f ↦ -X_f` on the Poisson Lie algebra is `f ↦ -X_f` on the Hamiltonian
 functions (`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.negVectorFieldLieHom`). -/
-theorem coe_negHamiltonianLieHom (hσ : σ.IsSymplectic) (f : σ.PoissonLieAlgebra hσ) :
+theorem coe_negHamiltonianLieHom_apply_eq_negVectorFieldLieHom (hσ : σ.IsSymplectic)
+    (f : σ.PoissonLieAlgebra hσ) :
     (σ.negHamiltonianLieHom hσ f : (LieAlgebroid.tangent I M).Sections) =
       HamiltonianFunctionLieAlgebra.negVectorFieldLieHom σ hσ
         (σ.poissonLieAlgebraEquivHamiltonianFunctionLieAlgebra hσ f) :=
@@ -460,7 +461,8 @@ theorem coe_negHamiltonianLieHom (hσ : σ.IsSymplectic) (f : σ.PoissonLieAlgeb
 theorem mem_ker_negHamiltonianLieHom_iff (hσ : σ.IsSymplectic) {f : σ.PoissonLieAlgebra hσ} :
     f ∈ (σ.negHamiltonianLieHom hσ).ker ↔
       ∀ x, mvfderiv I (σ.poissonLieAlgebraEquiv hσ f) x = 0 := by
-  rw [LieHom.mem_ker, ← ZeroMemClass.coe_eq_zero, coe_negHamiltonianLieHom, ← LieHom.mem_ker,
+  rw [LieHom.mem_ker, ← ZeroMemClass.coe_eq_zero,
+    coe_negHamiltonianLieHom_apply_eq_negVectorFieldLieHom, ← LieHom.mem_ker,
     HamiltonianFunctionLieAlgebra.mem_ker_negVectorFieldLieHom_iff,
     coe_poissonLieAlgebraEquivHamiltonianFunctionLieAlgebra_apply]
 
