@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.SemidirectProduct
-public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
-public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism

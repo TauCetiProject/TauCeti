@@ -5,12 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.Free
-public import Mathlib.LinearAlgebra.Projection
-public import Mathlib.LinearAlgebra.RootSystem.BaseChange
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
-import Mathlib.GroupTheory.QuotientGroup.Basic
-import Mathlib.LinearAlgebra.Dimension.Finrank
 
 /-!
 # Balanced root pairings and projection onto the root span

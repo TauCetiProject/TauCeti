@@ -7,9 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.FixedSubmodule
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict
-public import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.GroupTheory.Perm.Basic
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 
 /-!
 # Distinct root-orbit sums of a root-pairing automorphism

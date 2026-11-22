@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict
-public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import Mathlib.Geometry.Convex.Cone.Pointed
 
 /-!

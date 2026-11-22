@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict
-public import TauCeti.LinearAlgebra.RootSystem.Positive
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
-import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
 # The dominant chamber of a base
