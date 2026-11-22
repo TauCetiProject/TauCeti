@@ -60,14 +60,16 @@ The weak maximum and comparison principles extend to the operator
 `L u = -∂ᵢ(aⁱʲ ∂ⱼu + eⁱ u) + bⁱ ∂ᵢu + c u`
 
 with a bounded measurable lower-order coefficient `e` in divergence form, whose weak form is
-`a(u, φ) + ∫ u ⟪e, ∇φ⟫`, on an open set of finite measure. The condition `c ≥ 0` is replaced by
+`a(u, φ) + ∫ u ⟪e, ∇φ⟫`, under a Sobolev inequality as above or on an open set of finite
+measure. The condition `c ≥ 0` is replaced by
 the weak sign condition `∫ c φ + ⟪e, ∇φ⟫ ≥ 0` for every nonnegative `φ ∈ H¹₀(Ω)`, that is
 `-∂ᵢeⁱ + c ≥ 0` weakly, under which `c` may change sign. This is the setting of
 Gilbarg–Trudinger, Theorem 8.1. Testing the subsolution inequality against `v = (u - l)⁺`, on
 whose support `u = v + l`, and applying the sign condition to `l v` and to `v²`, whose gradient is
 `2 v ∇v`, leaves `∫ ⟪a ∇v, ∇v⟫ ≤ ∫ ⟪e - b, ∇v⟫ v`: the inequality of the argument above, with
 drift `b - e` and no mass. Since `v²` need not lie in `H¹₀(Ω)`, the sign condition is applied to
-the truncations `v² / (1 + t v²)`, and `t → 0`.
+the truncations `v² / (1 + t v²)`, and `t → 0`. The term `l v` is integrable even if `Ω` has
+infinite measure, since `l ≤ |u|` where `v` or `∇v` is not zero.
 
 ## Main declarations
 
@@ -77,10 +79,13 @@ the truncations `v² / (1 + t v²)`, and `t → 0`.
   on every open set of finite measure, in every dimension.
 * `TauCeti.PDE.UniformlyEllipticOn.value_le_of_forall_eLpNorm_le`,
   `TauCeti.PDE.UniformlyEllipticOn.value_le_of_measure_ne_top`: the comparison principle.
+* `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_forall_integral_nonneg_of_forall_eLpNorm_le`,
+  `TauCeti.PDE.UniformlyEllipticOn.value_le_of_forall_integral_nonneg_of_forall_eLpNorm_le`: the
+  weak maximum and comparison principles with lower-order terms in divergence form under the weak
+  sign condition and a Sobolev inequality on `H¹₀(Ω)`.
 * `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_forall_integral_nonneg_of_measure_ne_top`,
-  `TauCeti.PDE.UniformlyEllipticOn.value_le_of_forall_integral_nonneg_of_measure_ne_top`: the weak
-  maximum and comparison principles with lower-order terms in divergence form under the weak sign
-  condition.
+  `TauCeti.PDE.UniformlyEllipticOn.value_le_of_forall_integral_nonneg_of_measure_ne_top`: the same
+  on every open set of finite measure, in every dimension.
 * Uniqueness of weak solutions of the Dirichlet problem, in the namespace `TauCeti.PDE`:
   `UniformlyEllipticOn.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_forall_eLpNorm_le` and
   `UniformlyEllipticOn.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_measure_ne_top`.
@@ -680,12 +685,43 @@ private theorem ae_energyIntegrand_add_value_mul_inner_eq {l : ℝ} (hl : 0 ≤ 
     simp
 
 omit [DecidableEq ι] in
-/-- **The energy inequality for lower-order terms in divergence form.** Let `Ω` have finite
-measure, and let `c` and `e` be bounded and measurable and satisfy the weak sign condition
-`∫ c φ + ⟪e, ∇φ⟫ ≥ 0` for every nonnegative `φ ∈ H¹₀(Ω)`. For `u ∈ H¹(Ω)` and a level `l ≥ 0`
-with `v = (u - l)⁺ ∈ H¹₀(Ω)`, testing `-∂ᵢ(aⁱʲ ∂ⱼu + eⁱ u) + bⁱ ∂ᵢu + c u` against `v` bounds the
-energy of `v` for the operator `-∂ᵢ(aⁱʲ ∂ⱼ·) + (b - e)ⁱ ∂ᵢ` with no mass:
-`a_{b - e, 0}(v, v) ≤ a_{b, c}(u, v) + ∫ u ⟪e, ∇v⟫`. -/
+/-- Where `(u - l)⁺` or its gradient is not zero, `u > l ≥ 0`. So `l (u - l)⁺ ≤ |u| (u - l)⁺` and
+`l |∇(u - l)⁺| ≤ |u| |∇(u - l)⁺|`, and both are integrable, even if `Ω` has infinite measure. -/
+private theorem integrable_mul_value_posPartAbove_and_integrable_mul_norm_gradient
+    {l : ℝ} (hl : 0 ≤ l) (u : W1p mu Omega 2) :
+    Integrable (fun x ↦ l * W1p.value (W1p.posPartAbove (by norm_num) hl u) x)
+        (mu.restrict Omega) ∧
+      Integrable (fun x ↦ l * ‖W1p.gradient (W1p.posPartAbove (by norm_num) hl u) x‖)
+        (mu.restrict Omega) := by
+  have hvalue := W1p.value_posPartAbove_ae (by norm_num) hl u
+  have hgradv := W1p.gradient_posPartAbove_ae (by norm_num) hl u
+  set v := W1p.posPartAbove (by norm_num) hl u
+  have habs : ∀ x, l < W1p.value u x → l ≤ |W1p.value u x| := fun x hlt ↦ by
+    rw [abs_of_pos (hl.trans_lt hlt)]
+    exact hlt.le
+  refine ⟨((Lp.memLp (W1p.value u)).norm.integrable_mul (Lp.memLp (W1p.value v)).norm).mono'
+    ((Lp.aestronglyMeasurable _).const_mul l) ?_,
+    ((Lp.memLp (W1p.value u)).norm.integrable_mul (Lp.memLp (W1p.gradient v)).norm).mono'
+    ((Lp.aestronglyMeasurable _).norm.const_mul l) ?_⟩
+  · filter_upwards [hvalue] with x hx
+    rw [Pi.mul_apply, hx, norm_mul, Real.norm_of_nonneg hl,
+      Real.norm_of_nonneg (le_max_right _ _), Real.norm_eq_abs]
+    by_cases hlt : l < W1p.value u x
+    · exact mul_le_mul_of_nonneg_right (habs x hlt) (le_max_right _ _)
+    · rw [max_eq_right (by linarith), mul_zero, mul_zero]
+  · filter_upwards [hgradv] with x hx
+    rw [Pi.mul_apply, hx, norm_mul, Real.norm_of_nonneg hl, norm_norm, Real.norm_eq_abs]
+    by_cases hlt : l < W1p.value u x
+    · exact mul_le_mul_of_nonneg_right (habs x hlt) (norm_nonneg _)
+    · rw [indicator_of_notMem (s := {y | l < W1p.value u y}) hlt, norm_zero, mul_zero, mul_zero]
+
+omit [DecidableEq ι] in
+/-- **The energy inequality for lower-order terms in divergence form.** Let `c` and `e` be
+bounded and measurable and satisfy the weak sign condition `∫ c φ + ⟪e, ∇φ⟫ ≥ 0` for every
+nonnegative `φ ∈ H¹₀(Ω)`. For `u ∈ H¹(Ω)` and a level `l ≥ 0` with `v = (u - l)⁺ ∈ H¹₀(Ω)`,
+testing `-∂ᵢ(aⁱʲ ∂ⱼu + eⁱ u) + bⁱ ∂ᵢu + c u` against `v` bounds the energy of `v` for the
+operator `-∂ᵢ(aⁱʲ ∂ⱼ·) + (b - e)ⁱ ∂ᵢ` with no mass:
+`a_{b - e, 0}(v, v) ≤ a_{b, c}(u, v) + ∫ u ⟪e, ∇v⟫`. `Ω` need not have finite measure. -/
 private theorem energyFormH1_sub_zero_posPartAbove_self_le
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoeff' : MemLp (fun x ↦ energyIntegrand (a x) ((b - e) x)
@@ -693,7 +729,6 @@ private theorem energyFormH1_sub_zero_posPartAbove_self_le
     (hc : AEStronglyMeasurable c (mu.restrict Omega))
     (he : AEStronglyMeasurable e (mu.restrict Omega))
     (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma) (he_bound : ∀ x ∈ Omega, ‖e x‖ ≤ sigma)
-    (hOmega : mu Omega ≠ ∞)
     (hsign : ∀ φ : W1p0 mu Omega 2,
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (φ : W1p mu Omega 2) x) →
         0 ≤ ∫ x in Omega, c x * W1p.value (φ : W1p mu Omega 2) x +
@@ -706,37 +741,92 @@ private theorem energyFormH1_sub_zero_posPartAbove_self_le
         ∫ x in Omega, W1p.value u x *
           ⟪e x, W1p.gradient (W1p.posPartAbove (by norm_num) hl u) x⟫_ℝ ∂mu := by
   set μ := mu.restrict Omega
-  have : IsFiniteMeasure μ := isFiniteMeasure_restrict.2 hOmega
+  obtain ⟨hlv, hlg⟩ := integrable_mul_value_posPartAbove_and_integrable_mul_norm_gradient hl u
   set v := W1p.posPartAbove (by norm_num) hl u
   have hv0 : ∀ᵐ x ∂μ, 0 ≤ W1p.value v x := W1p.value_posPartAbove_nonneg_ae (by norm_num) hl u
   -- The two instances of the sign condition: at `v` and, through truncation, at `v²`.
   have hsq := integral_mul_sq_add_two_mul_inner_nonneg hc he hc_bound he_bound hsign hmem hv0
   have hlin : 0 ≤ ∫ x, c x * W1p.value v x + ⟪e x, W1p.gradient v x⟫_ℝ ∂μ :=
     hsign ⟨v, hmem⟩ hv0
-  -- Integrability of the pieces; `Ω` has finite measure, so `L²` functions are integrable.
+  -- Integrability of the pieces. The term `l (c v + ⟪e, ∇v⟫)` is dominated by
+  -- `γ l v + σ l |∇v|`, which is integrable since `l ≤ |u|` where `v` or `∇v` is not zero.
   have hcb : ∀ᵐ x ∂μ, ‖c x‖ ≤ gamma := by
     filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx using hc_bound x hx
   have i₄ : Integrable (fun x ↦ c x * W1p.value v x ^ 2 +
       2 * (W1p.value v x * ⟪e x, W1p.gradient v x⟫_ℝ)) μ :=
     ((Lp.memLp (W1p.value v)).integrable_sq.bdd_mul hc hcb).add
       ((integrable_value_mul_inner_gradient he he_bound v v).const_mul 2)
-  have i₅ : Integrable (fun x ↦ c x * W1p.value v x + ⟪e x, W1p.gradient v x⟫_ℝ) μ :=
-    (((Lp.memLp (W1p.value v)).integrable one_le_two).bdd_mul hc hcb).add
-      (((Lp.memLp (W1p.gradient v)).integrable one_le_two).norm.const_mul sigma |>.mono'
-        (he.inner (Lp.aestronglyMeasurable _)) (by
-          filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
-          exact (norm_inner_le_norm _ _).trans
-            (mul_le_mul_of_nonneg_right (he_bound x hx) (norm_nonneg _))))
+  have i₅ : Integrable (fun x ↦ l * (c x * W1p.value v x + ⟪e x, W1p.gradient v x⟫_ℝ)) μ := by
+    refine ((hlv.norm.const_mul gamma).add (hlg.const_mul sigma)).mono'
+      (aestronglyMeasurable_const.mul ((hc.mul (Lp.aestronglyMeasurable _)).add
+        (he.inner (Lp.aestronglyMeasurable _)))) ?_
+    filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
+    have h₁ : |c x| ≤ gamma := by simpa [Real.norm_eq_abs] using hc_bound x hx
+    have h₂ : |⟪e x, W1p.gradient v x⟫_ℝ| ≤ sigma * ‖W1p.gradient v x‖ :=
+      (abs_real_inner_le_norm _ _).trans
+        (mul_le_mul_of_nonneg_right (he_bound x hx) (norm_nonneg _))
+    have h₃ := abs_add_le (c x * W1p.value v x) ⟪e x, W1p.gradient v x⟫_ℝ
+    simp only [Pi.add_apply, Real.norm_eq_abs, abs_mul, abs_of_nonneg hl] at h₃ ⊢
+    nlinarith [mul_nonneg (sub_nonneg.2 h₁) (mul_nonneg hl (abs_nonneg (W1p.value v x))),
+      mul_nonneg hl (sub_nonneg.2 h₂), mul_le_mul_of_nonneg_left h₃ hl]
   have i₄₅ : Integrable (fun x ↦ (c x * W1p.value v x ^ 2 +
       2 * (W1p.value v x * ⟪e x, W1p.gradient v x⟫_ℝ)) +
-        l * (c x * W1p.value v x + ⟪e x, W1p.gradient v x⟫_ℝ)) μ := i₄.add (i₅.const_mul l)
+        l * (c x * W1p.value v x + ⟪e x, W1p.gradient v x⟫_ℝ)) μ := i₄.add i₅
   rw [energyFormH1_def, energyFormH1_def,
     ← integral_add (integrable_energyIntegrand_jetField hcoeff u v)
       (integrable_value_mul_inner_gradient he he_bound u v),
     integral_congr_ae (ae_energyIntegrand_add_value_mul_inner_eq hl u),
     integral_add (integrable_energyIntegrand_jetField hcoeff' v v) i₄₅,
-    integral_add i₄ (i₅.const_mul l), integral_const_mul]
+    integral_add i₄ i₅, integral_const_mul]
   nlinarith [mul_nonneg hl hlin]
+
+/-- **The weak maximum principle with lower-order terms in divergence form**, under a Sobolev
+inequality (Gilbarg–Trudinger, Theorem 8.1). Let `Ω ⊆ ℝⁿ` be open, and suppose
+`‖w‖_q ≤ S ‖∇w‖₂` on `H¹₀(Ω)` for some exponent `q > 2`. Let
+
+`L u = -∂ᵢ(aⁱʲ ∂ⱼu + eⁱ u) + bⁱ ∂ᵢu + c u`
+
+have measurable, uniformly elliptic `a` with constants `λ, Λ` and bounded measurable `b`, `c`, `e`
+satisfying the weak sign condition `∫ c φ + ⟪e, ∇φ⟫ ≥ 0` for every nonnegative `φ ∈ H¹₀(Ω)`, that is
+`-∂ᵢeⁱ + c ≥ 0` weakly. If `u ∈ H¹(Ω)` is a weak subsolution,
+`a(u, φ) + ∫ u ⟪e, ∇φ⟫ ≤ 0` for every nonnegative `φ ∈ H¹₀(Ω)`, and `(u - k)⁺ ∈ H¹₀(Ω)` for some
+`k ≥ 0`, then `u ≤ k` almost everywhere. Neither `c ≥ 0` nor smallness of `b` or `e` is needed,
+and `Ω` need not have finite measure; for `e = 0` the sign condition is implied by `c ≥ 0`. -/
+theorem UniformlyEllipticOn.value_le_const_of_forall_integral_nonneg_of_forall_eLpNorm_le
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (he : AEStronglyMeasurable e (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta) (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
+    (he_bound : ∀ x ∈ Omega, ‖e x‖ ≤ sigma)
+    (hsign : ∀ φ : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (φ : W1p mu Omega 2) x) →
+        0 ≤ ∫ x in Omega, c x * W1p.value (φ : W1p mu Omega 2) x +
+          ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu)
+    {q : ℝ≥0∞} (hq : 2 < q) {S : ℝ≥0}
+    (hsob : ∀ v ∈ w1p0Submodule mu Omega 2,
+      eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ)
+    {k : ℝ} (hk : 0 ≤ k) {u : W1p mu Omega 2}
+    (hboundary : W1p.posPartAbove (by norm_num) hk u ∈ w1p0Submodule mu Omega 2)
+    (hu : ∀ φ : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (φ : W1p mu Omega 2) x) →
+        energyFormH1 a b c u (φ : W1p mu Omega 2) +
+          ∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu ≤ 0) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k := by
+  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+    (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
+  -- After the sign condition is used, only the drift `b - e` remains, with no mass.
+  have hbe_bound : ∀ x ∈ Omega, ‖(b - e) x‖ ≤ beta + sigma := fun x hx ↦
+    (norm_sub_le _ _).trans (add_le_add (hb_bound x hx) (he_bound x hx))
+  have hcoeff' := memLp_energyIntegrand_of_bounds h.upper_nonneg ha (hb.sub he)
+    aestronglyMeasurable_zero (fun x hx eta xi ↦ h.upper_bound hx eta xi) hbe_bound
+    (gamma := 0) fun x _ ↦ by simp
+  refine h.value_le_const_of_forall_energyFormH1_posPartAbove_self_nonpos hcoeff' hbe_bound
+    (fun _ _ ↦ le_rfl) hq hsob hk hboundary fun l hl hkl ↦ ?_
+  have hmem := W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl hboundary
+  refine (energyFormH1_sub_zero_posPartAbove_self_le hcoeff hcoeff' hc he hc_bound he_bound
+    hsign hl hmem).trans (hu ⟨_, hmem⟩ (W1p.value_posPartAbove_nonneg_ae (by norm_num) hl u))
 
 /-- **The weak maximum principle with lower-order terms in divergence form** (Gilbarg–Trudinger,
 Theorem 8.1). Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be open with finite measure, and let
@@ -768,22 +858,61 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_integral_nonneg_of_measure_
         energyFormH1 a b c u (φ : W1p mu Omega 2) +
           ∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu ≤ 0) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k := by
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
-    (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
-  -- After the sign condition is used, only the drift `b - e` remains, with no mass.
-  have hbe_bound : ∀ x ∈ Omega, ‖(b - e) x‖ ≤ beta + sigma := fun x hx ↦
-    (norm_sub_le _ _).trans (add_le_add (hb_bound x hx) (he_bound x hx))
-  have hcoeff' := memLp_energyIntegrand_of_bounds h.upper_nonneg ha (hb.sub he)
-    aestronglyMeasurable_zero (fun x hx eta xi ↦ h.upper_bound hx eta xi) hbe_bound
-    (gamma := 0) fun x _ ↦ by simp
   obtain ⟨q, hq, S, hsob⟩ :=
     W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top (p := 2) (by norm_num)
       hOmega
-  refine h.value_le_const_of_forall_energyFormH1_posPartAbove_self_nonpos hcoeff' hbe_bound
-    (fun _ _ ↦ le_rfl) hq hsob hk hboundary fun l hl hkl ↦ ?_
-  have hmem := W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl hboundary
-  refine (energyFormH1_sub_zero_posPartAbove_self_le hcoeff hcoeff' hc he hc_bound he_bound hOmega
-    hsign hl hmem).trans (hu ⟨_, hmem⟩ (W1p.value_posPartAbove_nonneg_ae (by norm_num) hl u))
+  exact h.value_le_const_of_forall_integral_nonneg_of_forall_eLpNorm_le ha hb hc he hb_bound
+    hc_bound he_bound hsign hq hsob hk hboundary hu
+
+/-- **The comparison principle with lower-order terms in divergence form**, under a Sobolev
+inequality (Gilbarg–Trudinger, Theorem 8.1). Under the hypotheses of
+`TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_forall_integral_nonneg_of_forall_eLpNorm_le`,
+if `L u ≤ L v` weakly, that is `a(u, φ) + ∫ u ⟪e, ∇φ⟫ ≤ a(v, φ) + ∫ v ⟪e, ∇φ⟫` for every
+nonnegative `φ ∈ H¹₀(Ω)`, and `(u - v)⁺ ∈ H¹₀(Ω)`, then `u ≤ v` almost everywhere. -/
+theorem UniformlyEllipticOn.value_le_of_forall_integral_nonneg_of_forall_eLpNorm_le
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (he : AEStronglyMeasurable e (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta) (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
+    (he_bound : ∀ x ∈ Omega, ‖e x‖ ≤ sigma)
+    (hsign : ∀ φ : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (φ : W1p mu Omega 2) x) →
+        0 ≤ ∫ x in Omega, c x * W1p.value (φ : W1p mu Omega 2) x +
+          ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu)
+    {q : ℝ≥0∞} (hq : 2 < q) {S : ℝ≥0}
+    (hsob : ∀ v ∈ w1p0Submodule mu Omega 2,
+      eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ)
+    {u v : W1p mu Omega 2}
+    (hboundary : W1p.posPart (by norm_num) (u - v) ∈ w1p0Submodule mu Omega 2)
+    (huv : ∀ φ : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (φ : W1p mu Omega 2) x) →
+        energyFormH1 a b c u (φ : W1p mu Omega 2) +
+            ∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu ≤
+          energyFormH1 a b c v (φ : W1p mu Omega 2) +
+            ∫ x in Omega, W1p.value v x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ W1p.value v x := by
+  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+    (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
+  -- The weak form is linear in `u`, so `u - v` is a weak subsolution.
+  have hsub := h.value_le_const_of_forall_integral_nonneg_of_forall_eLpNorm_le ha hb hc he
+    hb_bound hc_bound he_bound hsign hq hsob le_rfl (u := u - v)
+    (by rwa [W1p.posPartAbove_zero]) fun φ hφ ↦ by
+      have hint : ∫ x in Omega, W1p.value (u - v) x *
+            ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu =
+          (∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu) -
+            ∫ x in Omega, W1p.value v x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+        rw [← integral_sub (integrable_value_mul_inner_gradient he he_bound u _)
+          (integrable_value_mul_inner_gradient he he_bound v _)]
+        refine integral_congr_ae ?_
+        filter_upwards [W1p.value_sub_ae u v] with x hx
+        rw [hx, Pi.sub_apply, sub_mul]
+      rw [energyFormH1_sub_left hcoeff, hint]
+      linarith [huv φ hφ]
+  filter_upwards [hsub, W1p.value_sub_ae u v] with x hx hval
+  rw [hval, Pi.sub_apply] at hx
+  exact sub_nonpos.mp hx
 
 /-- **The comparison principle with lower-order terms in divergence form** (Gilbarg–Trudinger,
 Theorem 8.1). Under the hypotheses of
@@ -812,25 +941,11 @@ theorem UniformlyEllipticOn.value_le_of_forall_integral_nonneg_of_measure_ne_top
           energyFormH1 a b c v (φ : W1p mu Omega 2) +
             ∫ x in Omega, W1p.value v x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ W1p.value v x := by
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
-    (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
-  have hsub := h.value_le_const_of_forall_integral_nonneg_of_measure_ne_top ha hb hc he hb_bound
-    hc_bound he_bound hsign hOmega le_rfl (u := u - v) (by rwa [W1p.posPartAbove_zero])
-    fun φ hφ ↦ by
-      have hint : ∫ x in Omega, W1p.value (u - v) x *
-            ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu =
-          (∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu) -
-            ∫ x in Omega, W1p.value v x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu := by
-        rw [← integral_sub (integrable_value_mul_inner_gradient he he_bound u _)
-          (integrable_value_mul_inner_gradient he he_bound v _)]
-        refine integral_congr_ae ?_
-        filter_upwards [W1p.value_sub_ae u v] with x hx
-        rw [hx, Pi.sub_apply, sub_mul]
-      rw [energyFormH1_sub_left hcoeff, hint]
-      linarith [huv φ hφ]
-  filter_upwards [hsub, W1p.value_sub_ae u v] with x hx hval
-  rw [hval, Pi.sub_apply] at hx
-  exact sub_nonpos.mp hx
+  obtain ⟨q, hq, S, hsob⟩ :=
+    W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top (p := 2) (by norm_num)
+      hOmega
+  exact h.value_le_of_forall_integral_nonneg_of_forall_eLpNorm_le ha hb hc he hb_bound hc_bound
+    he_bound hsign hq hsob hboundary huv
 
 end DivergenceLowerOrder
 

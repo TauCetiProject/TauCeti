@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.Fourier.FourierTransform
@@ -41,6 +42,8 @@ it lies in `L^∞` of any measure, with norm one when the measure is nonzero.
 * `Real.hasTemperateGrowth_fourierChar_inner`: the plane wave `x ↦ 𝐞 ⟪x, ξ⟫` has temperate growth.
 * `Real.memLp_top_fourierChar_inner`, `Real.norm_toLp_fourierChar_inner`: the plane wave lies in
   `L^∞` of any measure, with norm one when the measure is nonzero.
+* `ContDiff.fourierChar`: `y ↦ 𝐞 (Φ y)` is `C^n` when the phase `Φ` is.
+* `HasFDerivAt.fourierChar`: the derivative of `y ↦ 𝐞 (Φ y)` is `2πi 𝐞 (Φ y) DΦ(y)`.
 -/
 
 public section
@@ -121,3 +124,19 @@ theorem norm_toLp_fourierChar_inner [NeZero μ] (ξ : E) :
   simp
 
 end Real
+
+/-- The Fourier character composed with a `C^n` real phase is `C^n`. -/
+@[fun_prop]
+theorem ContDiff.fourierChar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n : WithTop ℕ∞} {Φ : F → ℝ} (hΦ : ContDiff ℝ n Φ) : ContDiff ℝ n fun y ↦ (𝐞 (Φ y) : ℂ) := by
+  simp_rw [Real.fourierChar_apply]
+  exact ((Complex.ofRealCLM.contDiff.comp (contDiff_const.mul hΦ)).mul contDiff_const).cexp
+
+/-- The derivative of the Fourier character composed with a real phase `Φ` is
+`2πi 𝐞 (Φ y) DΦ(y)`. -/
+theorem HasFDerivAt.fourierChar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {Φ : F → ℝ} {Φ' : F →L[ℝ] ℝ} {y : F} (hΦ : HasFDerivAt Φ Φ' y) :
+    HasFDerivAt (fun z ↦ (𝐞 (Φ z) : ℂ)) (Φ'.smulRight (2 * Real.pi * Complex.I * 𝐞 (Φ y))) y := by
+  refine ((Real.hasDerivAt_fourierChar (Φ y)).hasFDerivAt.comp y hΦ).congr_fderiv ?_
+  ext w
+  simp [mul_comm]

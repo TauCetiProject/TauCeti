@@ -31,6 +31,8 @@ basis (`HilbertBasis.ext_continuousLinearMap`, `HilbertBasis.ext_linearIsometry`
 `HilbertBasis.ext_linearIsometryEquiv`). Hence a continuous semilinear map between spaces with
 Hilbert bases, for a fixed `σ`, is determined by its matrix entries in those bases
 (`HilbertBasis.ext_inner_apply`).
+A continuous semilinear map out of `E` also sends every vector into any closed submodule containing
+the images of the basis vectors (`HilbertBasis.apply_mem_of_forall_apply_mem`).
 
 Finally, the orthogonal complement of the span of the basis vectors indexed by a set `s` is the
 closed span of the basis vectors indexed by its complement (`HilbertBasis.orthogonal_span_image`).
@@ -64,6 +66,18 @@ theorem inner_eq_zero_of_forall_inner_eq_zero {K : Submodule 𝕜 E} (bK : Hilbe
   have h : (innerSL 𝕜 x).comp K.subtypeL = 0 := bK.ext_continuousLinearMap fun i ↦ by
     simpa [innerSL_apply_apply] using hx i
   simpa [innerSL_apply_apply] using DFunLike.congr_fun h ⟨y, hy⟩
+
+/-- A continuous semilinear map out of `E` sends every vector into a closed submodule that contains
+the images of all vectors of a Hilbert basis of `E`. -/
+theorem apply_mem_of_forall_apply_mem {𝕜' M : Type*} [Semiring 𝕜'] {σ : 𝕜 →+* 𝕜'}
+    [AddCommMonoid M] [Module 𝕜' M] [TopologicalSpace M] (b : HilbertBasis ι 𝕜 E)
+    {S : Submodule 𝕜' M} (hS : IsClosed (S : Set M)) (L : E →SL[σ] M) (h : ∀ i, L (b i) ∈ S)
+    (x : E) : L x ∈ S := by
+  have hle : Submodule.span 𝕜 (Set.range b) ≤ S.comap (L : E →ₛₗ[σ] M) :=
+    Submodule.span_le.2 (Set.range_subset_iff.2 h)
+  have hcl := Submodule.topologicalClosure_minimal _ hle (hS.preimage L.continuous)
+  rw [b.dense_span] at hcl
+  exact hcl Submodule.mem_top
 
 /-- Two semilinear isometries out of `E` into a seminormed module with a Hausdorff topology, with
 the same scalar homomorphism `σ`, agree when they agree on every vector of a Hilbert basis of
