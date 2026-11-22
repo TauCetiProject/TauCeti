@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.SmoothMultiplication
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Chart
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm
+import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Transfer
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Transfer
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Sobolev.Leibniz
@@ -37,8 +38,8 @@ The realization applies the same formula to the chart data `uᵢ` of a Sobolev s
 derivative of `uᵢ` in place of the derivative
 (`TauCeti.IsRealCauchyRiemannOperator.chartValueL_sobolevL_ae`).
 The zeroth-order term is smooth on a neighbourhood of the compact closure of the chart image, so
-multiplication by it is bounded, and the components of the result in each chart are built from the
-components of the section with `TauCeti.Wkp.contDiffOnSMulL`.
+its action as a whole operator coefficient is bounded by `TauCeti.Wkp.contDiffOnCLMApplyL`,
+which constructs the zeroth-order components from the chart data of the section.
 
 These chart data are the components of a one-form: on the overlap of two charts, the weak
 derivative of `uᵢ'` is computed from that of `uᵢ` by the weak chain rule under the chart transition

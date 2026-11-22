@@ -52,10 +52,8 @@ which lifts the pointwise `(0,1)`-projection
   `TauCeti.FiniteBundleAtlas.coord_tangentHom_zeroOnePart`: on the image of a chart, a one-form is a
   `(0,1)`-form exactly when its reading is complex antilinear, and its `(0,1)`-part is read as the
   complex antilinear part of its reading.
-* `TauCeti.FiniteBundleAtlas.sectionChartData_coordChange_tangentHom_apply`,
-  `TauCeti.FiniteBundleAtlas.complexAntilinearPartL_coordChangeL_comp`: on an overlap, the chart
-  data of one-forms change chart by `η ↦ g ∘ η ∘ dτ`, which commutes with taking the complex
-  antilinear part.
+* `TauCeti.FiniteBundleAtlas.complexAntilinearPartL_coordChangeL_comp`: taking the complex
+  antilinear part commutes with the one-form coordinate change `η ↦ g ∘ η ∘ dτ` on overlaps.
 * `TauCeti.mem_zeroOneSobolevSections_iff`: membership is complex antilinearity of the chart data
   almost everywhere.
 * `TauCeti.mem_zeroOneSobolevSections_iff_isZeroOneForm`: an element whose chart data are the
