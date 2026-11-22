@@ -89,6 +89,8 @@ evaluations of elliptic integrals.
   are continuous on `[a, ∞)` and `g` does not vanish there.
 * `Asymptotics.IsBigO.exists_norm_le_div_log`: `f = O((log x)⁻¹)` at `atTop` gives a uniform bound
   `‖f x‖ ≤ C / log x` on `[a, ∞)` (`a > 1`) when `f` is bounded on each `[a, b]`.
+* `TauCeti.abs_sub_sub_le_of_monotoneOn_Icc`: if `f` and `g` are monotone on `[a, b]`, then
+  `|f x - g x - A|` is bounded there by `max |f a - g b - A| |f b - g a - A|`.
 * `TauCeti.tendsto_add_pow_mul_pow_of_lt_one`: `(n + k) ^ k * ρ ^ n` tends to zero when
   `0 ≤ ρ < 1`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
@@ -287,6 +289,25 @@ theorem IsBigO.exists_norm_le_div_log {E : Type*} [Norm E] {f : ℝ → E} {a : 
 end Asymptotics
 
 namespace TauCeti
+
+/-- If `f` and `g` are monotone on a closed interval `[a, b]`, then `|f x - g x - A|` is
+bounded there by `max |f a - g b - A| |f b - g a - A|`. -/
+theorem abs_sub_sub_le_of_monotoneOn_Icc {α G : Type*} [Preorder α] [AddCommGroup G]
+    [LinearOrder G] [IsOrderedAddMonoid G] {f g : α → G} {a b x : α}
+    (hf : MonotoneOn f (Set.Icc a b)) (hg : MonotoneOn g (Set.Icc a b)) (A : G)
+    (hx : x ∈ Set.Icc a b) :
+    |f x - g x - A| ≤ max |f a - g b - A| |f b - g a - A| := by
+  have hab : a ≤ b := hx.1.trans hx.2
+  have ha : a ∈ Set.Icc a b := Set.left_mem_Icc.mpr hab
+  have hb : b ∈ Set.Icc a b := Set.right_mem_Icc.mpr hab
+  have hfa : f a ≤ f x := hf ha hx hx.1
+  have hfb : f x ≤ f b := hf hx hb hx.2
+  have hga : g a ≤ g x := hg ha hx hx.1
+  have hgb : g x ≤ g b := hg hx hb hx.2
+  rw [abs_le]
+  exact ⟨(neg_le_neg (le_max_left _ _)).trans ((neg_abs_le _).trans
+    (sub_le_sub_right (sub_le_sub hfa hgb) A)),
+    (sub_le_sub_right (sub_le_sub hfb hga) A).trans ((le_abs_self _).trans (le_max_right _ _))⟩
 
 /-- For `0 ≤ ρ < 1`, the shifted polynomial-times-geometric sequence `(n + k)ᵏ ρⁿ` tends to `0`.
 This is useful for absorbing polynomial growth after shifting an index. -/

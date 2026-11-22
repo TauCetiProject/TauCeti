@@ -200,49 +200,25 @@ theorem tendsto_sum_primesLE_inv_sub_log_log :
   refine (LFunctions.tendsto_primeSummatory_inv_absNorm_sub_log_log ℚ).congr fun x ↦ ?_
   rw [primeSummatory_rat_eq_sum_primesLE (fun n ↦ (n : ℝ)⁻¹)]
 
-/-- Upgrade an eventual `O(1 / log x)` estimate for a nonnegative prime sum to a uniform bound on
-`[2, ∞)`. -/
-private theorem exists_abs_sum_primesLE_sub_log_log_sub_le_of_isBigO {f : ℕ → ℝ} {A : ℝ}
-    (hf : ∀ p : ℕ, p.Prime → 0 ≤ f p)
-    (hO : (fun x : ℝ ↦ (∑ p ∈ Nat.primesLE ⌊x⌋₊, f p) - Real.log (Real.log x) - A)
-      =O[atTop] fun x ↦ (Real.log x)⁻¹) :
-    ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
-      |(∑ p ∈ Nat.primesLE ⌊x⌋₊, f p) - Real.log (Real.log x) - A| ≤ C / Real.log x := by
-  obtain ⟨C, -, hC⟩ := hO.exists_norm_le_div_log one_lt_two fun b ↦ by
-    refine ⟨(∑ p ∈ Nat.primesLE ⌊b⌋₊, f p) +
-        (|Real.log (Real.log 2)| + |Real.log (Real.log (max b 2))|) + |A|,
-      fun x hx ↦ ?_⟩
-    rw [Real.norm_eq_abs]
-    have hsum_nonneg : 0 ≤ ∑ p ∈ Nat.primesLE ⌊x⌋₊, f p :=
-      sum_nonneg fun p hp ↦ hf p (Nat.prime_of_mem_primesLE hp)
-    have hsum_le : (∑ p ∈ Nat.primesLE ⌊x⌋₊, f p) ≤ ∑ p ∈ Nat.primesLE ⌊b⌋₊, f p :=
-      sum_le_sum_of_subset_of_nonneg (Nat.primesLE_mono (Nat.floor_mono hx.2)) fun p hp _ ↦
-        hf p (Nat.prime_of_mem_primesLE hp)
-    have hll_lo : Real.log (Real.log 2) ≤ Real.log (Real.log x) :=
-      Real.log_le_log (Real.log_pos one_lt_two) (Real.log_le_log zero_lt_two hx.1)
-    have hll_hi : Real.log (Real.log x) ≤ Real.log (Real.log (max b 2)) :=
-      Real.log_le_log (Real.log_pos (one_lt_two.trans_le hx.1))
-        (Real.log_le_log (by linarith [hx.1]) (hx.2.trans (le_max_left _ _)))
-    have hll_abs : |Real.log (Real.log x)| ≤
-        |Real.log (Real.log 2)| + |Real.log (Real.log (max b 2))| := by
-      rw [abs_le]
-      constructor
-      · linarith [neg_abs_le (Real.log (Real.log 2)), abs_nonneg (Real.log (Real.log (max b 2)))]
-      · linarith [le_abs_self (Real.log (Real.log (max b 2))), abs_nonneg (Real.log (Real.log 2))]
-    refine (abs_sub _ _).trans (add_le_add ((abs_sub _ _).trans ?_) le_rfl)
-    rw [abs_of_nonneg hsum_nonneg]
-    exact add_le_add hsum_le hll_abs
-  exact ⟨C, by simpa only [Real.norm_eq_abs] using hC⟩
-
 /-- **Mertens's second theorem, uniform on `[2, ∞)`.** There is an absolute constant `C` such that
 for every real `x ≥ 2`,
 `|∑_{p ≤ x} p⁻¹ - log log x - meisselMertensConstant| ≤ C / log x`. -/
 theorem exists_abs_sum_primesLE_inv_sub_log_log_sub_le :
     ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
       |(∑ p ∈ Nat.primesLE ⌊x⌋₊, (p : ℝ)⁻¹) - Real.log (Real.log x) - meisselMertensConstant| ≤
-        C / Real.log x :=
-  exists_abs_sum_primesLE_sub_log_log_sub_le_of_isBigO (fun _ _ ↦ by positivity)
-    isBigO_sum_primesLE_inv_sub_log_log_sub_meisselMertensConstant
+        C / Real.log x := by
+  have hf : Monotone fun x : ℝ ↦ ∑ p ∈ Nat.primesLE ⌊x⌋₊, (p : ℝ)⁻¹ := fun x y hxy ↦
+    sum_le_sum_of_subset_of_nonneg (Nat.primesLE_mono (Nat.floor_mono hxy)) fun _ _ _ ↦ by
+      positivity
+  have hg : MonotoneOn (fun x : ℝ ↦ Real.log (Real.log x)) (Set.Ici 2) := fun x hx y _ hxy ↦
+    Real.log_le_log (Real.log_pos (one_lt_two.trans_le hx))
+      (Real.log_le_log (zero_lt_two.trans_le hx) hxy)
+  obtain ⟨C, -, hC⟩ :=
+    isBigO_sum_primesLE_inv_sub_log_log_sub_meisselMertensConstant.exists_norm_le_div_log
+      one_lt_two fun b ↦
+        ⟨_, fun x hx ↦ abs_sub_sub_le_of_monotoneOn_Icc (hf.monotoneOn _)
+          (hg.mono Set.Icc_subset_Ici_self) meisselMertensConstant hx⟩
+  exact ⟨C, by simpa only [Real.norm_eq_abs] using hC⟩
 
 /-- For `x ≥ 1`, the inclusive reciprocal-prime sum `∑_{p ≤ x} p⁻¹` exceeds the strict-cutoff sum
 `∑_{p < x} p⁻¹` by a nonnegative amount bounded by `1 / log x`. -/

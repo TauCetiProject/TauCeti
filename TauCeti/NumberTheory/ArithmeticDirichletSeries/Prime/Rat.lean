@@ -93,9 +93,7 @@ theorem finprod_heightOneSpectrum_rat_ite_absNorm_le_eq_prod_primesLE {M : Type*
     (∏ᶠ v : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ),
         if (Ideal.absNorm v.asIdeal : ℝ) ≤ x then f (Ideal.absNorm v.asIdeal) else 1) =
       ∏ p ∈ Nat.primesLE ⌊x⌋₊, f p := by
-  rw [finprod_congr fun v ↦ ?_, finprod_mem_finset_eq_prod _ (primesLE ℚ x),
-    prod_primesLE_rat_eq_prod_primesLE]
-  simp only [finprod_eq_if, mem_normLE]
+  rw [finprod_ite_le_eq_prod_normLE, prod_primesLE_rat_eq_prod_primesLE]
 
 /-- The number of primes of `𝓞 ℚ` of absolute norm at most `x` is the number `π(⌊x⌋₊)` of rational
 primes `p ≤ x`. -/

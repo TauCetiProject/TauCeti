@@ -827,21 +827,6 @@ theorem mertensConstant_lt_eulerMascheroniConstant_add_log_dedekindZeta_residue 
   rw [mertensConstant_eq, hneg]
   linarith
 
-private theorem hasSum_ite_not_absNorm_le {f : HeightOneSpectrum (𝓞 K) → ℝ} (hf : Summable f)
-    (x : ℝ) :
-    HasSum (fun v : HeightOneSpectrum (𝓞 K) ↦
-        if (Ideal.absNorm v.asIdeal : ℝ) ≤ x then 0 else f v)
-      ((∑' v, f v) - primeSummatory K f x) := by
-  have hcompl : HasSum (f ∘ (↑) : ↥((primesLE K x : Set (HeightOneSpectrum (𝓞 K)))ᶜ) → ℝ)
-      ((∑' v, f v) - primeSummatory K f x) := by
-    have hsplit := hf.sum_add_tsum_subtype_compl (primesLE K x)
-    rw [← primeSummatory_apply] at hsplit
-    rw [← hsplit, add_sub_cancel_left]
-    exact (hf.subtype _).hasSum
-  rw [hasSum_subtype_iff_indicator] at hcompl
-  refine hcompl.congr_fun fun v ↦ ?_
-  by_cases hv : (Ideal.absNorm v.asIdeal : ℝ) ≤ x <;> simp [hv]
-
 /-- **Rankin tail bound for the quadratic Euler-product remainders.** Summing
 `-log (1 - N𝔭⁻¹) - N𝔭⁻¹ ≤ N𝔭 ^ (-2) ≤ x ^ (-1/2) N𝔭 ^ (-3/2)` beyond `N𝔭 > x` bounds the tail
 of the convergent remainder series by `O(x ^ (-1/2))`. -/
@@ -860,7 +845,7 @@ theorem isBigO_tsum_sub_primeSummatory_neg_log_one_sub_sub_inv_absNorm :
   refine IsBigO.of_bound (∑' v : HeightOneSpectrum (𝓞 K),
       (Ideal.absNorm v.asIdeal : ℝ) ^ (-(3 / 2 : ℝ))) ?_
   filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx0
-  have htail := hasSum_ite_not_absNorm_le K hr x
+  have htail := hasSum_ite_not_le (fun v : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm v.asIdeal) hr x
   have hnonneg : 0 ≤ (∑' v, r v) - primeSummatory K r x := htail.nonneg fun v ↦ by
     split_ifs
     · exact le_rfl
@@ -934,9 +919,7 @@ private theorem finprod_one_sub_inv_absNorm_eq_exp_primeSummatory (x : ℝ) :
       if (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x then (1 - (Ideal.absNorm 𝔭.asIdeal : ℝ)⁻¹)⁻¹
       else 1) = Real.exp (primeSummatory K
         (fun v ↦ -Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹)) x) := by
-  rw [finprod_congr (g := fun v ↦ ∏ᶠ (_ : v ∈ primesLE K x),
-      (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹)⁻¹) fun v ↦ by simp only [finprod_eq_if, mem_normLE],
-    finprod_mem_finset_eq_prod _ (primesLE K x), primeSummatory_apply, Real.exp_sum]
+  rw [finprod_ite_le_eq_prod_normLE, primeSummatory_apply, Real.exp_sum]
   refine Finset.prod_congr rfl fun v _ ↦ ?_
   have h1 : 0 < 1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹ := sub_pos.mpr
     (inv_lt_one_of_one_lt₀ (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v)))
