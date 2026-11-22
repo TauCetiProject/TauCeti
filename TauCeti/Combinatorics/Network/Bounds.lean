@@ -21,10 +21,14 @@ are capped or otherwise changed.
 The constructions retain arrow identities, including parallel arrows and loops.  They therefore
 change only feasibility, never conservation, excess, or flow value.
 
+`Network.shift` bundles the translated bounds without changing the arrow family. A zero shift is
+the identity, and successive shifts compose by adding their reference assignments.
+
 ## Main definitions
 
 * `TauCeti.Network.replaceBounds` replaces both bound functions of a network.
 * `TauCeti.Network.replaceLower` and `TauCeti.Network.replaceUpper` replace one bound function.
+* `TauCeti.Network.shift` translates both bounds by a reference assignment.
 * `TauCeti.BoundedFlow.mono` regards a bounded terminal assignment as one with weaker bounds.
 * `TauCeti.Flow.mono` regards an ordinary flow as one with larger capacities.
 * `TauCeti.ExcessFlow.mono` regards a prescribed-excess assignment as one with weaker bounds.
@@ -105,6 +109,74 @@ theorem replaceBounds_replaceBounds (lower upper : N.Assignment K)
     (N.replaceBounds lower upper h).replaceBounds lower' upper' h' =
       N.replaceBounds lower' upper' h' :=
   (rfl)
+
+section Shift
+
+variable [AddGroup K] [AddRightMono K]
+
+/-- Translate both bounds of a network by subtracting a reference assignment. The arrow family
+is unchanged, and the translated bounds remain ordered. -/
+@[expose, reducible]
+def shift (N : Network K V) (h : N.Assignment K) : Network K V :=
+  N.replaceBounds (N.lower - h) (N.upper - h) fun e ↦
+    sub_le_sub_right (N.lower_le_upper e) (h e)
+
+/-- Shifting bounds does not change the arrow family. -/
+@[simp]
+theorem shift_Hom (N : Network K V) (h : N.Assignment K) :
+    (N.shift h).Hom = N.Hom :=
+  (rfl)
+
+/-- The lower bound of a shifted network is the original lower bound minus the reference. -/
+@[simp]
+theorem shift_lower (N : Network K V) (h : N.Assignment K) {x y : V}
+    (e : (N.shift h).Hom x y) :
+    (N.shift h).lower e = N.lower e - h e :=
+  (rfl)
+
+/-- The upper bound of a shifted network is the original upper bound minus the reference. -/
+@[simp]
+theorem shift_upper (N : Network K V) (h : N.Assignment K) {x y : V}
+    (e : (N.shift h).Hom x y) :
+    (N.shift h).upper e = N.upper e - h e :=
+  (rfl)
+
+/-- Shifting a network by the zero assignment leaves it unchanged. -/
+@[simp]
+theorem shift_zero (N : Network K V) : N.shift 0 = N := by
+  simpa only [shift, Pi.zero_apply, sub_zero] using N.replaceBounds_self
+
+end Shift
+
+section ShiftCommGroup
+
+variable [AddCommGroup K] [AddRightMono K]
+
+/-- Shifting successively by two reference assignments is shifting by their sum. -/
+@[simp]
+theorem shift_shift (N : Network K V) (h k : N.Assignment K) :
+    (N.shift h).shift k = N.shift (h + k) := by
+  let h₁ : ∀ {x y} (e : N.Hom x y), (N.lower - h) e ≤ (N.upper - h) e := fun e ↦
+    sub_le_sub_right (N.lower_le_upper e) (h e)
+  let h₂ : ∀ {x y} (e : N.Hom x y), ((N.lower - h) - k) e ≤ ((N.upper - h) - k) e :=
+    fun e ↦ sub_le_sub_right (h₁ e) (k e)
+  let h₃ : ∀ {x y} (e : N.Hom x y), (N.lower - (h + k)) e ≤ (N.upper - (h + k)) e :=
+    fun e ↦ sub_le_sub_right (N.lower_le_upper e) ((h + k) e)
+  change
+    (N.replaceBounds (N.lower - h) (N.upper - h) h₁).replaceBounds
+      ((N.lower - h) - k) ((N.upper - h) - k) h₂ =
+        N.replaceBounds (N.lower - (h + k)) (N.upper - (h + k)) h₃
+  calc
+    _ = N.replaceBounds ((N.lower - h) - k) ((N.upper - h) - k) h₂ :=
+      N.replaceBounds_replaceBounds _ _ h₁ _ _ h₂
+    _ = N.replaceBounds (N.lower - (h + k)) (N.upper - (h + k)) h₃ :=
+      (N.replaceBounds_inj (h₁ := h₂) (h₂ := h₃)).mpr ⟨by
+        funext x y e
+        exact sub_sub (N.lower e) (h e) (k e), by
+        funext x y e
+        exact sub_sub (N.upper e) (h e) (k e)⟩
+
+end ShiftCommGroup
 
 /-- Replace only the lower bounds of a network.
 
