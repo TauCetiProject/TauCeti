@@ -45,6 +45,8 @@ almost-everywhere representative of a half-space.
 * `TauCeti.ae_eq_setOf_inner_lt_of_forall_inner_nonpos`: the almost-everywhere classification.
 * `MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_closedBall`,
   `MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall`: the exact half-ball measures.
+* `MeasureTheory.Measure.two_inv_mul_addHaar_closedBall_le_addHaar_inter_setOf_lt_inner`: density
+  at least one half in every closed ball centred in the closed half-space.
 * `TauCeti.hasDensityAt_setOf_inner_lt`: density one half on the boundary hyperplane.
 * `TauCeti.essentialBoundary_setOf_inner_lt`: the essential boundary is the hyperplane.
 
@@ -57,7 +59,7 @@ almost-everywhere representative of a half-space.
 public section
 
 open MeasureTheory Set
-open scoped RealInnerProductSpace
+open scoped NNReal RealInnerProductSpace
 
 namespace TauCeti
 
@@ -205,6 +207,20 @@ theorem _root_.MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall
     ext y
     simp only [mem_ofPred_eq, inner_neg_right, neg_lt_neg_iff]
   rw [h, μ.addHaar_setOf_inner_lt_inter_closedBall (neg_ne_zero.2 hν) (by rw [inner_neg_right, hx])]
+
+/-- The upper half-space `{y | c < ⟪y, ν⟫}` has density at least one half in every closed ball
+centred in its closure, for any additive Haar measure. -/
+theorem _root_.MeasureTheory.Measure.two_inv_mul_addHaar_closedBall_le_addHaar_inter_setOf_lt_inner
+    (μ : Measure E) [μ.IsAddHaarMeasure] {ν x : E} {c : ℝ} (hν : ν ≠ 0) (hx : c ≤ ⟪x, ν⟫)
+    (r : ℝ) :
+    (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ENNReal) * μ (closedBall x r) ≤
+      μ (closedBall x r ∩ {y | c < ⟪y, ν⟫}) := by
+  calc _ = μ ({y | ⟪x, ν⟫ < ⟪y, ν⟫} ∩ closedBall x r) := by
+        rw [μ.addHaar_setOf_lt_inner_inter_closedBall hν rfl, ENNReal.coe_inv two_ne_zero,
+          ENNReal.coe_ofNat, ENNReal.div_eq_inv_mul]
+    _ ≤ _ := by
+        rw [inter_comm]
+        exact measure_mono (inter_subset_inter_right _ fun y hy => hx.trans_lt hy)
 
 /-- At every point of the boundary hyperplane of a half-space with nonzero normal, its
 density with respect to any additive Haar measure is one half. -/

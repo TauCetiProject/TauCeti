@@ -106,8 +106,11 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
 * `exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow`: square mean oscillation decaying like
   `r^{n+2κ}` at `x` keeps the averages bounded, so that `∫_{B(x, r) ∩ Ω} ‖f‖²` decays like `rⁿ`,
   on a set with density bounded below in the balls around `x`.
-* `holderOnWith_preciseRepresentative_of_setAverage_norm_sub_le`: the Hölder bound on a set, from
-  mean oscillation bounds at scales below a fixed radius and a bound on the averages at that radius.
+* `holderOnWith_preciseRepresentative_restrict_of_setAverage_norm_sub_le_of_norm_le`,
+  `holderOnWith_preciseRepresentative_of_setAverage_norm_sub_le`: the Hölder bound on a set, from
+  mean oscillation bounds at scales below a fixed radius and a bound on the averages at that radius,
+  relative to `μ.restrict Ω` on a set with density bounded below (no `S ⊆ Ω` needed) and on the
+  whole space.
 * `holderOnWith_preciseRepresentative_restrict_of_setAverage_norm_sub_le`: **Campanato's
   theorem** on a domain with the measure density property.
 * `holderWith_preciseRepresentative_of_setAverage_norm_sub_le`: **Campanato's theorem** on the
@@ -891,47 +894,9 @@ theorem holderOnWith_preciseRepresentative_of_setAverage_norm_sub_le {α : ℝ�
     HolderOnWith (Real.toNNReal (2 * 2 ^ (α : ℝ) *
       (2 ^ finrank ℝ E / (1 - 2 ^ (-(α : ℝ))) * M + B * ρ ^ (-(α : ℝ))))) α
       (preciseRepresentative μ f) S := by
-  have hα' : (0 : ℝ) < α := hα
-  set C : ℝ := 2 ^ finrank ℝ E / (1 - 2 ^ (-(α : ℝ)))
-  have hC : 0 ≤ C := div_nonneg (by positivity) (one_sub_two_rpow_neg_pos hα').le
-  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-  have hB : 0 ≤ B := (norm_nonneg _).trans (havg x hx)
-  -- The mean oscillation on `closedBall x ρ` is nonnegative, so `M ≥ 0`.
-  have hM : 0 ≤ M := by
-    have h := (average_nonneg fun _ => norm_nonneg _).trans (hosc x hx ρ hρ le_rfl)
-    exact nonneg_of_mul_nonneg_left h (by positivity)
-  rw [Real.coe_toNNReal _ (by positivity)]
-  rcases le_or_gt (2 * dist x y) ρ with hd | hd
-  · -- Nearby points: the local Campanato estimate.
-    have h := dist_preciseRepresentative_le_of_setAverage_norm_sub_le hα'
-      ((hf x hx).mono_set (closedBall_subset_closedBall hd))
-      (fun r hr hr' => hosc x hx r hr (hr'.trans hd))
-      (fun r hr hr' => hosc y hy r hr (by linarith [dist_nonneg (x := x) (y := y)]))
-    have : 0 ≤ 2 * 2 ^ (α : ℝ) * (B * ρ ^ (-(α : ℝ))) * dist x y ^ (α : ℝ) := by positivity
-    calc _ ≤ _ := h
-      _ ≤ _ := by nlinarith
-  · -- Distant points: both values lie within `B + C M ρ^α` of `0`.
-    have hbound : ∀ z ∈ S, ‖preciseRepresentative μ f z‖ ≤ (C * M + B * ρ ^ (-(α : ℝ))) *
-        ρ ^ (α : ℝ) := fun z hz => by
-      have h := norm_setAverage_closedBall_sub_preciseRepresentative_le hα' (hf z hz)
-        (hosc z hz) hρ le_rfl
-      have h' := norm_sub_le (⨍ y in closedBall z ρ, f y ∂μ)
-        ((⨍ y in closedBall z ρ, f y ∂μ) - preciseRepresentative μ f z)
-      rw [sub_sub_cancel] at h'
-      have hρα : ρ ^ (-(α : ℝ)) * ρ ^ (α : ℝ) = 1 := by
-        rw [← Real.rpow_add hρ, neg_add_cancel, Real.rpow_zero]
-      calc _ ≤ _ := h'
-        _ ≤ B + C * (M * ρ ^ (α : ℝ)) := add_le_add (havg z hz) h
-        _ = _ := by rw [add_mul, mul_assoc B, hρα]; ring
-    have hρd : ρ ^ (α : ℝ) ≤ 2 ^ (α : ℝ) * dist x y ^ (α : ℝ) := by
-      rw [← Real.mul_rpow zero_le_two dist_nonneg]
-      exact Real.rpow_le_rpow hρ.le hd.le hα'.le
-    calc dist (preciseRepresentative μ f x) (preciseRepresentative μ f y)
-        ≤ ‖preciseRepresentative μ f x‖ + ‖preciseRepresentative μ f y‖ := dist_le_norm_add_norm _ _
-      _ ≤ 2 * ((C * M + B * ρ ^ (-(α : ℝ))) * ρ ^ (α : ℝ)) := by
-          linarith [hbound x hx, hbound y hy]
-      _ ≤ 2 * ((C * M + B * ρ ^ (-(α : ℝ))) * (2 ^ (α : ℝ) * dist x y ^ (α : ℝ))) := by gcongr
-      _ = _ := by ring
+  simpa using holderOnWith_preciseRepresentative_restrict_of_setAverage_norm_sub_le_of_norm_le
+    (Ω := univ) (c := 1) hα one_pos hρ (by simpa using hf) (fun _ _ _ _ _ ↦ by simp)
+    (by simpa using hosc) (by simpa using havg)
 
 /-- **Campanato's theorem.** Let `α > 0`, and let `f` be locally integrable, with mean oscillation
 on every closed ball of radius `r > 0` at most `M r^α`. Then the precise representative of `f`

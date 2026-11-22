@@ -35,8 +35,8 @@ on `H`, the limit of its averages over the half-balls `B(x, r) ∩ H`, is `β`-H
 
 (`exists_holderOnWith_preciseRepresentative_restrict_gradient_of_holderOnWith_of_memLp`, and its
 case `f = 0`, `β = α`,
-`exists_holderOnWith_preciseRepresentative_restrict_gradient_of_holderOnWith`, both in
-`TauCeti.PDE`). These
+`exists_holderOnWith_preciseRepresentative_restrict_gradient_of_holderOnWith_matrixBilinearForm`,
+both in `TauCeti.PDE`). These
 are the boundary counterparts of the interior estimates of
 `TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Basic`. Unlike the reflection argument of
 `TauCeti.Analysis.PDE.Regularity.Boundary.GradientHolder`, nothing is assumed about `a` or `G` at
@@ -116,8 +116,8 @@ private theorem inner_conormalShiftL_apply (p : EuclideanSpace ℝ (Fin (n + 1))
     (A : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ)
     (η : EuclideanSpace ℝ (Fin (n + 1))) :
     ⟪conormalShiftL p A, η⟫_ℝ = A η p := by
-  rw [conormalShiftL_apply, toDual_symm_apply]
-  rfl
+  rw [conormalShiftL_apply, toDual_symm_apply, ContinuousLinearMap.coe_flipₗᵢ,
+    ContinuousLinearMap.flip_apply]
 
 private theorem norm_conormalShiftL_apply_le (p : EuclideanSpace ℝ (Fin (n + 1)))
     (A : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ) :
@@ -136,30 +136,6 @@ private theorem holderOnWith_conormalShiftL {p : EuclideanSpace ℝ (Fin (n + 1)
     rw [dist_eq_norm, dist_eq_norm, ← map_sub, coe_nnNorm]
     exact norm_conormalShiftL_apply_le p (A - B)
   exact hL.comp_holderOnWith hF
-
-/-- The linear function `⟪p, ·⟫` on a ball, as an element of `H¹`, with gradient `p`. -/
-private theorem exists_gradient_ae_eq_const (x₀ : EuclideanSpace ℝ (Fin (n + 1))) (ρ : ℝ)
-    (p : EuclideanSpace ℝ (Fin (n + 1))) :
-    ∃ L : W1p volume (⟨ball x₀ ρ, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2,
-      W1p.gradient L =ᵐ[volume.restrict (ball x₀ ρ)] fun _ => p := by
-  have : IsFiniteMeasure (volume.restrict (ball x₀ ρ)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hgrad : ∇ (fun y : EuclideanSpace ℝ (Fin (n + 1)) => ⟪p, y⟫_ℝ) = fun _ => p :=
-    funext fun y => gradient_inner_const_left p y
-  have hℓ : MemLp (fun y : EuclideanSpace ℝ (Fin (n + 1)) => ⟪p, y⟫_ℝ) 2
-      (volume.restrict (ball x₀ ρ)) :=
-    MemLp.of_bound (innerSL ℝ p).continuous.aestronglyMeasurable (‖p‖ * (‖x₀‖ + ρ))
-      (ae_restrict_of_forall_mem measurableSet_ball fun y hy => by
-        rw [Real.norm_eq_abs]
-        refine (abs_real_inner_le_norm p y).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-        have := norm_le_norm_add_norm_sub' y x₀
-        rw [← dist_eq_norm] at this
-        linarith [(mem_ball.1 hy).le])
-  obtain ⟨L, -, hLg⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn
-    (Omega := ⟨ball x₀ ρ, isOpen_ball⟩) (p := 2)
-    (u := fun y : EuclideanSpace ℝ (Fin (n + 1)) => ⟪p, y⟫_ℝ)
-    (innerSL ℝ p).contDiff.contDiffOn hℓ (by rw [hgrad]; exact memLp_const p)
-  exact ⟨L, hgrad ▸ hLg⟩
 
 /-- **Subtracting a linear function from a solution.** Let `u ∈ H¹(U)` solve
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` weakly on `U ∩ H`, let `B = ball x₀ ρ ⊆ U ∩ H`, let `a` be uniformly
@@ -194,7 +170,12 @@ private theorem exists_gradient_ae_eq_sub_and_forall_energyFormH1_eq
   have hBU' : B ≤ U := hBU.trans inf_le_left
   have : IsFiniteMeasure (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  obtain ⟨L, hLg⟩ := exists_gradient_ae_eq_const (n := n) x₀ ρ p
+  -- The linear function `⟪p, ·⟫` on `B`, with gradient `p`.
+  obtain ⟨L, -, hLg⟩ := W1p.exists_value_gradient_ae_eq_continuousLinearMap (mu := volume)
+    (Omega := B) (p := 2) isBounded_ball (innerSL ℝ p)
+  have hp : (toDual ℝ (EuclideanSpace ℝ (Fin (n + 1)))).symm (innerSL ℝ p) = p :=
+    (toDual ℝ _).symm_apply_eq.2 (by ext; simp)
+  simp only [hp] at hLg
   refine ⟨W1p.restrictL hBU' u - L, ?_, fun φ => ?_⟩
   · filter_upwards [W1p.gradient_sub_ae (W1p.restrictL hBU' u) L,
       W1p.gradient_restrictL_ae hBU' u, hLg] with y h1 h2 h3
@@ -325,18 +306,27 @@ private theorem exists_setIntegral_ball_norm_gradient_sub_setAverage_sq_le_of_su
   filter_upwards [hwg'] with y hy
   rw [hy, sub_add_eq_sub_sub_swap]
 
-/-- A half-space `H = {y | c₀ < ⟪y, ν⟫}` has density at least one half in every closed ball
-centred in its closure. -/
-private theorem two_inv_mul_volume_closedBall_le_volume_closedBall_inter
-    {H : Set (EuclideanSpace ℝ (Fin (n + 1)))} {ν x : EuclideanSpace ℝ (Fin (n + 1))} {c₀ : ℝ}
-    (hν : ν ≠ 0) (hH : ∀ y, y ∈ H ↔ c₀ < ⟪y, ν⟫_ℝ) (hx : c₀ ≤ ⟪x, ν⟫_ℝ) (r : ℝ) :
-    (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ℝ≥0∞) * volume (closedBall x r) ≤ volume (closedBall x r ∩ H) := by
-  calc _ = volume ({y | ⟪x, ν⟫_ℝ < ⟪y, ν⟫_ℝ} ∩ closedBall x r) := by
-        rw [volume.addHaar_setOf_lt_inner_inter_closedBall hν rfl, ENNReal.coe_inv two_ne_zero,
-          ENNReal.coe_ofNat, ENNReal.div_eq_inv_mul]
-    _ ≤ _ := by
-        rw [inter_comm]
-        exact measure_mono (inter_subset_inter_right _ fun y hy => (hH y).2 (hx.trans_lt hy))
+/-- **The average over a half-ball.** Let `H = {y | c₀ < ⟪y, ν⟫}` and let `z` lie in its closure.
+For `r > 0` and `g ∈ L²(B(z, r) ∩ H)`, `‖(g)_{B(z, r) ∩ H}‖² ω r^{n+1} / 2 ≤ ∫_{B(z, r) ∩ H} ‖g‖²`,
+where `ω` is the volume of the unit ball: the half-ball has at least half the volume of the ball. -/
+private theorem norm_setAverage_ball_inter_sq_mul_le {H : Set (EuclideanSpace ℝ (Fin (n + 1)))}
+    {g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    {ν z : EuclideanSpace ℝ (Fin (n + 1))} {c₀ r : ℝ} (hν : ν ≠ 0)
+    (hH : ∀ y, y ∈ H ↔ c₀ < ⟪y, ν⟫_ℝ) (hz : c₀ ≤ ⟪z, ν⟫_ℝ) (hr : 0 < r)
+    (hg : MemLp g 2 (volume.restrict (ball z r ∩ H))) :
+    ‖⨍ y in ball z r ∩ H, g y‖ ^ 2 *
+        (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * r ^ (n + 1) / 2) ≤
+      ∫ y in ball z r ∩ H, ‖g y‖ ^ 2 := by
+  obtain rfl : H = {y | c₀ < ⟪y, ν⟫_ℝ} := Set.ext hH
+  have hvol : volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * r ^ (n + 1) / 2 ≤
+      volume.real (ball z r ∩ {y | c₀ < ⟪y, ν⟫_ℝ}) := by
+    have h := volume.mul_measureReal_ball_le_measureReal_ball_inter
+      (volume.two_inv_mul_addHaar_closedBall_le_addHaar_inter_setOf_lt_inner hν hz r)
+    rw [volume.addHaar_real_ball_of_pos z hr, finrank_euclideanSpace_fin] at h
+    push_cast at h
+    linarith
+  exact (mul_le_mul_of_nonneg_left hvol (sq_nonneg _)).trans_eq (mul_comm _ _) |>.trans
+    (measureReal_mul_sq_norm_setAverage_le measure_ball_inter_ne_top hg)
 
 /-- The foot `z` of the perpendicular from `x` to the hyperplane `⟪·, ν⟫ = c₀` lies on it, at
 distance `d = (⟪x, ν⟫ - c₀) / ‖ν‖` from `x`, and the ball `B(x, d)` lies in the half-space
@@ -436,13 +426,7 @@ private theorem exists_norm_sq_mul_rpow_le_and_setIntegral_ball_norm_sub_sq_le
       rw [norm_smul, Real.norm_eq_abs, abs_div, abs_of_pos (by positivity : 0 < ‖ν‖ ^ 2),
         div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
       nlinarith [abs_real_inner_le_norm A ν, norm_nonneg A]
-    have hvol : ω * (2 * d) ^ (n + 1) / 2 ≤ volume.real (ball z (2 * d) ∩ H) := by
-      have h := volume.mul_measureReal_ball_le_measureReal_ball_inter
-        (two_inv_mul_volume_closedBall_le_volume_closedBall_inter hν hH hz.ge (2 * d))
-      rw [volume.addHaar_real_ball_of_pos z (by positivity), finrank_euclideanSpace_fin] at h
-      push_cast at h
-      linarith
-    have hA := (measureReal_mul_sq_norm_setAverage_le measure_ball_inter_ne_top hg2).trans hM
+    have hA := (norm_setAverage_ball_inter_sq_mul_le hν hH hz.ge (by positivity) hg2).trans hM
     have hq : (2 * d / (R / 2)) ^ ((n : ℝ) + 1) * R ^ ((n : ℝ) + 1) =
         2 ^ (n + 1) * (2 * d) ^ (n + 1) := by
       rw [← Real.mul_rpow (by positivity) hR.le,
@@ -452,10 +436,9 @@ private theorem exists_norm_sq_mul_rpow_le_and_setIntegral_ball_norm_sub_sq_le
     have h1 : ‖A‖ ^ 2 * R ^ ((n : ℝ) + 1) * (ω * (2 * d) ^ (n + 1) / 2) ≤
         Cm * V * (2 ^ (n + 1) * (2 * d) ^ (n + 1)) := by
       rw [← hq]
-      calc _ = ω * (2 * d) ^ (n + 1) / 2 * ‖A‖ ^ 2 * R ^ ((n : ℝ) + 1) := by ring
+      calc _ = ‖A‖ ^ 2 * (ω * (2 * d) ^ (n + 1) / 2) * R ^ ((n : ℝ) + 1) := by ring
         _ ≤ Cm * V * (2 * d / (R / 2)) ^ ((n : ℝ) + 1) * R ^ ((n : ℝ) + 1) :=
-          mul_le_mul_of_nonneg_right ((mul_le_mul_of_nonneg_right hvol (sq_nonneg _)).trans hA)
-            hR0.le
+          mul_le_mul_of_nonneg_right hA hR0.le
         _ = _ := by ring
     have h2 : Cm * V * (2 ^ (n + 1) * (2 * d) ^ (n + 1)) =
         2 ^ (n + 2) * Cm / ω * V * (ω * (2 * d) ^ (n + 1) / 2) := by
@@ -732,10 +715,7 @@ private theorem exists_setIntegral_ball_inter_norm_gradient_sub_setAverage_sq_le
     subset_inter (hxd₁.trans hBU) (hxd₁H.trans inter_subset_right)
   have hM₁ : (Ka : ℝ) * d₁ ^ (α : ℝ) ≤ M := (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow
     hd₁0.le (hd₁R2.trans (half_le_self hR.le)) α.coe_nonneg) Ka.coe_nonneg).trans hM
-  have hell₁ : UniformlyEllipticOn (ball x d₁) a lam Lam :=
-    uniformlyEllipticOn_iff.2 ⟨hell.pos, (uniformlyEllipticOn_iff.1 hell).2.1,
-      fun y hy => (uniformlyEllipticOn_iff.1 hell).2.2 (hxd₁ hy)⟩
-  have h := hInt hell₁ (haK.mono hxd₁) (hGK.mono hxd₁) hu
+  have h := hInt (hell.mono_set hxd₁) (haK.mono hxd₁) (hGK.mono hxd₁) hu
     (hf.mono_measure (Measure.restrict_mono hxd₁H le_rfl)) hB hd₁0 hM₁ hDx hΦp t ht hcase
   have htH : ball x t ∩ H = ball x t :=
     inter_eq_left.2 ((ball_subset_ball ((hcase.trans (mul_le_of_le_one_left hd₁0.le hθi1)).trans
@@ -874,8 +854,7 @@ theorem
         C₀ * V * (t / R) ^ ((n : ℝ) + 1 + 2 * β) := fun x hx t ht htθ => by
     have hfin : IsFiniteMeasure (volume.restrict (ball x R ∩ H)) :=
       isFiniteMeasure_restrict.2 measure_ball_inter_ne_top
-    refine hdec (uniformlyEllipticOn_iff.2 ⟨hell.pos, (uniformlyEllipticOn_iff.1 hell).2.1,
-        fun y hy => (uniformlyEllipticOn_iff.1 hell).2.2 (hxR x hx hy)⟩) hν hH (hS x hx)
+    refine hdec (hell.mono_set (hxR x hx)) hν hH (hS x hx)
       (haK.mono (hxR x hx)) (hGK.mono (hxR x hx)) hu0 hu
       ((hf.mono_measure (Measure.restrict_mono (inter_subset_inter_left _ (hxR x hx))
         le_rfl)).mono_exponent hq) ((hxR x hx).trans hRS) hR hM
@@ -886,9 +865,12 @@ theorem
     · exact (Lp.setIntegral_norm_sq_le_norm_sq _ (inter_subset_left.trans
         ((hxR x hx).trans hRS))).trans (hX2.trans (le_mul_of_one_le_left (sq_nonneg _) hc₁))
   have hdens : ∀ x ∈ S, ∀ r : ℝ, (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ℝ≥0∞) * volume (closedBall x r) ≤
-      volume (closedBall x r ∩ H) := fun x hx r =>
-    two_inv_mul_volume_closedBall_le_volume_closedBall_inter hν hH (hS x hx) r
+      volume (closedBall x r ∩ H) := fun x hx r => by
+    rw [show (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH]
+    exact volume.two_inv_mul_addHaar_closedBall_le_addHaar_inter_setOf_lt_inner hν (hS x hx) r
   have hθR : θ * R ≤ R := mul_le_of_le_one_left hR.le hθ1
+  have hRn : R ^ ((n : ℝ) + 1) = R ^ (n + 1) := by
+    rw [← Real.rpow_natCast]; push_cast; ring_nf
   -- The mean oscillation of `∇u` on the half-ball `B(x, t) ∩ H` is at most `Mo Q t^β`.
   have hosc : ∀ x ∈ S, ∀ t, 0 < t → t ≤ θ * R →
       ⨍ y in closedBall x t, ‖W1p.gradient u y - ⨍ w in closedBall x t, W1p.gradient u w
@@ -900,11 +882,9 @@ theorem
         push_cast
         ring_nf))
     refine h.trans_eq ?_
-    have hRn : R ^ (n + 1) = R ^ ((n : ℝ) + 1) := by
-      rw [← Real.rpow_natCast]; push_cast; ring_nf
     have key : C₀ * (V / volume.real (ball x R)) / (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ℝ) =
         2 * (C₀ * c₁) / ω * (R ^ (β : ℝ) * Q) ^ 2 := by
-      rw [volume.addHaar_real_ball_of_pos x hR, finrank_euclideanSpace_fin, ← hωdef, hRn, hV,
+      rw [volume.addHaar_real_ball_of_pos x hR, finrank_euclideanSpace_fin, ← hωdef, ← hRn, hV,
         hVR]
       push_cast
       field_simp
@@ -916,16 +896,9 @@ theorem
       Bo * R ^ (β : ℝ) * Q := fun x hx => by
     rw [volume.restrict_restrict_closedBall_eq_restrict_ball_inter]
     have hθR0 : 0 < θ * R := by positivity
-    have h1 := (measureReal_mul_sq_norm_setAverage_le measure_ball_inter_ne_top
+    have h1 := (norm_setAverage_ball_inter_sq_mul_le hν hH (hS x hx) hθR0
       (hgS x hx _ hθR)).trans ((Lp.setIntegral_norm_sq_le_norm_sq _ (inter_subset_left.trans
         (((ball_subset_ball hθR).trans (hxR x hx)).trans hRS))).trans hX2)
-    have hvol : ω * (θ * R) ^ (n + 1) / 2 ≤ volume.real (ball x (θ * R) ∩ H) := by
-      have h := volume.mul_measureReal_ball_le_measureReal_ball_inter (hdens x hx (θ * R))
-      rw [volume.addHaar_real_ball_of_pos x hθR0, finrank_euclideanSpace_fin, ← hωdef] at h
-      push_cast at h
-      linarith
-    have hRn : R ^ ((n : ℝ) + 1) = R ^ (n + 1) := by
-      rw [← Real.rpow_natCast]; push_cast; ring_nf
     rw [hVR, hRn] at h1
     have h2 : ‖⨍ y in ball x (θ * R) ∩ H, W1p.gradient u y‖ ^ 2 ≤ (Bo * R ^ (β : ℝ) * Q) ^ 2 := by
       have h3 : ‖⨍ y in ball x (θ * R) ∩ H, W1p.gradient u y‖ ^ 2 *
@@ -935,7 +908,7 @@ theorem
             R ^ (n + 1) * (R ^ (β : ℝ) * Q) ^ 2 by
           rw [mul_pow, mul_pow, Real.sq_sqrt (by positivity), mul_pow θ]
           field_simp]
-        nlinarith [sq_nonneg ‖⨍ y in ball x (θ * R) ∩ H, W1p.gradient u y‖]
+        exact h1
       exact le_of_mul_le_mul_right h3 (by positivity)
     exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 h2
   have hH' := holderOnWith_preciseRepresentative_restrict_of_setAverage_norm_sub_le_of_norm_le
@@ -963,7 +936,8 @@ This is the case `f = 0`, `q = ∞`, `β = α` of
 `exists_holderOnWith_preciseRepresentative_restrict_gradient_of_holderOnWith_of_memLp`; it is the
 boundary counterpart of the interior estimate
 `exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm`. -/
-theorem exists_holderOnWith_preciseRepresentative_restrict_gradient_of_holderOnWith
+theorem
+    exists_holderOnWith_preciseRepresentative_restrict_gradient_of_holderOnWith_matrixBilinearForm
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {lam Lam M : ℝ} :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {U H : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
       {u : W1p volume U 2}
