@@ -76,7 +76,7 @@ vector-valued derivatives over the two fields.
   `TauCeti.mdifferentiableAt_iff_restrictScalars`: a map differentiable for the scalar
   restrictions is differentiable for the models over `𝕜'` exactly when its derivative for the
   scalar restrictions is the scalar restriction of a `𝕜'`-linear map.
-* `TauCeti.injective_mfderiv_restrictScalars`,
+* `TauCeti.injective_mfderiv_restrictScalars`, `TauCeti.injective_mvfderiv_restrictScalars`,
   `MDifferentiableAt.injective_mfderiv_restrictScalars_iff`,
   `MDifferentiableAt.injective_mvfderiv_restrictScalars_iff`: if the derivative for boundaryless
   models over `𝕜'` is injective, so is the derivative for their scalar restrictions, and at a point
@@ -290,6 +290,18 @@ theorem MDifferentiableAt.injective_mvfderiv_restrictScalars_iff {g : M → E'}
   have H := h.injective_mfderiv_restrictScalars_iff 𝕜
   rw [modelWithCornersSelf_restrictScalars] at H
   simpa only [TauCeti.injective_mvfderiv_iff] using H
+
+/-- If the vector-valued derivative of `g : M → E'` at `x` for a boundaryless model `I` over `𝕜'` is
+injective, then so is its vector-valued derivative for the scalar restriction of `I` to `𝕜`. No
+differentiability is needed: this is `TauCeti.injective_mfderiv_restrictScalars` for the target
+model `𝓘(𝕜', E')`. For instance, if the complex derivative of a map into a complex normed space is
+injective at a point, so is its real derivative there. -/
+theorem TauCeti.injective_mvfderiv_restrictScalars {g : M → E'}
+    (hinj : Function.Injective (mvfderiv I g x)) :
+    Function.Injective (mvfderiv (I.restrictScalars 𝕜) g x) := by
+  rw [TauCeti.injective_mvfderiv_iff] at hinj ⊢
+  have H := TauCeti.injective_mfderiv_restrictScalars 𝕜 hinj
+  rwa [modelWithCornersSelf_restrictScalars] at H
 
 end Boundaryless
 

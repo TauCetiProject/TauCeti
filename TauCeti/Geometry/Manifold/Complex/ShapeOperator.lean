@@ -337,12 +337,12 @@ theorem _root_.ContMDiffAt.ofComplexManifold_mem_genEigenspace_manifoldShapeOper
 
 omit [FiniteDimensional ℂ E] in
 /-- If the complex derivative of a map into a complex normed space is injective at a point, so is
-its real derivative there. -/
+its real derivative there: `TauCeti.injective_mvfderiv_restrictScalars` for the self model
+`𝓘(ℂ, E)`, read through `modelWithCornersSelf_restrictScalars`. -/
 private theorem injective_mvfderiv_real_of_complex (h : Injective (mvfderiv 𝓘(ℂ, E) i x)) :
     Injective (mvfderiv 𝓘(ℝ, E) i x) := by
-  rw [TauCeti.injective_mvfderiv_iff] at h ⊢
-  have hR := TauCeti.injective_mfderiv_restrictScalars ℝ h
-  rwa [modelWithCornersSelf_restrictScalars, modelWithCornersSelf_restrictScalars] at hR
+  have hR := TauCeti.injective_mvfderiv_restrictScalars ℝ h
+  rwa [modelWithCornersSelf_restrictScalars] at hR
 
 /-- **Symmetric focal multiplicities on a complex manifold.** For a `C²` holomorphic immersion
 `i : M → F` and a normal vector `ν ∈ normalSubspace 𝓘(ℝ, E) i x`, the opposite points `i x - ν` and

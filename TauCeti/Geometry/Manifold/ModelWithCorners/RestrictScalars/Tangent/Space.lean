@@ -150,6 +150,12 @@ theorem ContinuousLinearMap.tangentSpaceCastModel_comp_restrictScalarsTangent_co
         ((tangentSpaceCastModel I x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 :=
   (ContinuousLinearEquiv.arrowCongrEquiv _ _).apply_symm_apply _
 
+/- The composition, identity, zero, addition, negation and subtraction laws below rewrite both
+sides to the underlying functions with `coe_restrictScalarsTangent`. Both are then the same
+function, read on the tangent spaces of a model and of its scalar restriction, which are both the
+model space, so `rfl` closes the goal. The two scalar laws simplify both sides pointwise and finish
+with the scalar tower on the target model space. -/
+
 /-- Restricting the scalars of maps between tangent spaces preserves composition. -/
 @[simp]
 theorem ContinuousLinearMap.restrictScalarsTangent_comp {E'' : Type*} [NormedAddCommGroup E'']
@@ -161,19 +167,14 @@ theorem ContinuousLinearMap.restrictScalarsTangent_comp {E'' : Type*} [NormedAdd
     (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
     (g' ∘L f').restrictScalarsTangent 𝕜 =
       g'.restrictScalarsTangent 𝕜 ∘L f'.restrictScalarsTangent 𝕜 :=
-  ContinuousLinearMap.ext fun v ↦ by
-    rw [restrictScalarsTangent_apply, comp_apply (g'.restrictScalarsTangent 𝕜),
-      restrictScalarsTangent_apply, restrictScalarsTangent_apply]
-    exact comp_apply g' f' v
+  DFunLike.coe_injective <| by simp only [coe_restrictScalarsTangent, coe_comp]; rfl
 
 /-- Restricting the scalars of the identity of a tangent space gives the identity. -/
 @[simp]
 theorem ContinuousLinearMap.restrictScalarsTangent_id [LinearMap.CompatibleSMul E E 𝕜 𝕜'] :
     (ContinuousLinearMap.id 𝕜' (TangentSpace I x)).restrictScalarsTangent 𝕜 =
       ContinuousLinearMap.id 𝕜 (TangentSpace (I.restrictScalars 𝕜) x) :=
-  ContinuousLinearMap.ext fun v ↦ by
-    rw [restrictScalarsTangent_apply, id_apply (R₁ := 𝕜)]
-    exact id_apply (R₁ := 𝕜') (M₁ := TangentSpace I x) v
+  DFunLike.coe_injective <| by simp only [coe_restrictScalarsTangent, coe_id']; rfl
 
 /-- The scalar restriction of an endomorphism of a tangent space is the identity if and only if the
 endomorphism is the identity. -/
@@ -188,9 +189,7 @@ theorem ContinuousLinearMap.restrictScalarsTangent_eq_id_iff [LinearMap.Compatib
 @[simp]
 theorem ContinuousLinearMap.restrictScalarsTangent_zero {y : N} :
     (0 : TangentSpace I x →L[𝕜'] TangentSpace I' y).restrictScalarsTangent 𝕜 = 0 :=
-  ContinuousLinearMap.ext fun v ↦ by
-    rw [restrictScalarsTangent_apply, _root_.zero_apply]
-    exact _root_.zero_apply (F := TangentSpace I x →L[𝕜'] TangentSpace I' y) v
+  DFunLike.coe_injective <| by simp only [coe_restrictScalarsTangent, FunLike.coe_zero]; rfl
 
 /-- The scalar restriction of a map between tangent spaces is zero if and only if the map is
 zero. -/
@@ -206,20 +205,14 @@ theorem ContinuousLinearMap.restrictScalarsTangent_add {y : N}
     (f' g' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
     (f' + g').restrictScalarsTangent 𝕜 =
       f'.restrictScalarsTangent 𝕜 + g'.restrictScalarsTangent 𝕜 :=
-  ContinuousLinearMap.ext fun v ↦ by
-    rw [restrictScalarsTangent_apply, _root_.add_apply (f'.restrictScalarsTangent 𝕜),
-      restrictScalarsTangent_apply, restrictScalarsTangent_apply]
-    exact _root_.add_apply f' g' v
+  DFunLike.coe_injective <| by simp only [coe_restrictScalarsTangent, FunLike.coe_add]; rfl
 
 /-- Restricting the scalars of maps between tangent spaces preserves negation. -/
 @[simp]
 theorem ContinuousLinearMap.restrictScalarsTangent_neg {y : N}
     (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
     (-f').restrictScalarsTangent 𝕜 = -f'.restrictScalarsTangent 𝕜 :=
-  ContinuousLinearMap.ext fun v ↦ by
-    rw [restrictScalarsTangent_apply, _root_.neg_apply (f'.restrictScalarsTangent 𝕜),
-      restrictScalarsTangent_apply]
-    exact _root_.neg_apply f' v
+  DFunLike.coe_injective <| by simp only [coe_restrictScalarsTangent, FunLike.coe_neg]; rfl
 
 /-- Restricting the scalars of maps between tangent spaces preserves subtraction. -/
 @[simp]
@@ -227,10 +220,7 @@ theorem ContinuousLinearMap.restrictScalarsTangent_sub {y : N}
     (f' g' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
     (f' - g').restrictScalarsTangent 𝕜 =
       f'.restrictScalarsTangent 𝕜 - g'.restrictScalarsTangent 𝕜 :=
-  ContinuousLinearMap.ext fun v ↦ by
-    rw [restrictScalarsTangent_apply, _root_.sub_apply (f'.restrictScalarsTangent 𝕜),
-      restrictScalarsTangent_apply, restrictScalarsTangent_apply]
-    exact _root_.sub_apply f' g' v
+  DFunLike.coe_injective <| by simp only [coe_restrictScalarsTangent, FunLike.coe_sub]; rfl
 
 /-- Restricting the scalars of maps between tangent spaces turns multiplication by the image
 `algebraMap 𝕜 𝕜' c` of a scalar `c` of the base field into multiplication by `c`. -/
@@ -240,9 +230,8 @@ theorem ContinuousLinearMap.restrictScalarsTangent_algebraMap_smul [Algebra 𝕜
     (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
     (algebraMap 𝕜 𝕜' c • f').restrictScalarsTangent 𝕜 = c • f'.restrictScalarsTangent 𝕜 :=
   ContinuousLinearMap.ext fun v ↦ by
-    rw [restrictScalarsTangent_apply, _root_.smul_apply (f'.restrictScalarsTangent 𝕜) c,
-      restrictScalarsTangent_apply]
-    exact (_root_.smul_apply f' _ v).trans (algebraMap_smul (M := E') 𝕜' c (f' v))
+    simp only [restrictScalarsTangent_apply, _root_.smul_apply]
+    exact algebraMap_smul (M := E') 𝕜' c (f' v)
 
 /-- Restricting the scalars of maps between tangent spaces commutes with multiplication by a scalar
 `c` of the base field, for any action of `𝕜` on the `𝕜'`-linear maps between tangent spaces that
@@ -254,9 +243,8 @@ theorem ContinuousLinearMap.restrictScalarsTangent_smul [SMul 𝕜 𝕜'] [IsSca
     (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
     (c • f').restrictScalarsTangent 𝕜 = c • f'.restrictScalarsTangent 𝕜 :=
   ContinuousLinearMap.ext fun v ↦ by
-    rw [← smul_one_smul 𝕜' c f', restrictScalarsTangent_apply,
-      _root_.smul_apply (f'.restrictScalarsTangent 𝕜) c, restrictScalarsTangent_apply]
-    exact (_root_.smul_apply f' _ v).trans (smul_one_smul (α := E') 𝕜' c (f' v))
+    simp only [← smul_one_smul 𝕜' c f', restrictScalarsTangent_apply, _root_.smul_apply]
+    exact smul_one_smul (α := E') 𝕜' c (f' v)
 
 /-- For the self models `𝓘(𝕜', E)` and `𝓘(𝕜', E')`, whose tangent spaces are `E` and `E'`, the
 scalar restriction of a map between tangent spaces is its ordinary scalar restriction

@@ -124,13 +124,13 @@ end TauCeti
 namespace TauCeti
 
 variable (𝕜 : Type*) {𝕜' E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E] [NormedAddCommGroup F]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E] [SeminormedAddCommGroup F]
   [NormedSpace 𝕜 F] [NormedSpace 𝕜' F] [LinearMap.CompatibleSMul E F 𝕜 𝕜']
 
 /-- A `𝕜'`-linear map is a derivative of `f` along a filter exactly when its scalar restriction to
 `𝕜` is: both are the same `o`-condition. Unlike `HasFDerivAtFilter.restrictScalars`, this needs
 only the scalar compatibility `LinearMap.CompatibleSMul` that `ContinuousLinearMap.restrictScalars`
-assumes, rather than a normed algebra with scalar towers. -/
+assumes, rather than a normed algebra with scalar towers, and the spaces need only be seminormed. -/
 theorem hasFDerivAtFilter_restrictScalars_iff {f : E → F} {f' : E →L[𝕜'] F}
     {L : Filter (E × E)} :
     HasFDerivAtFilter f (f'.restrictScalars 𝕜) L ↔ HasFDerivAtFilter f f' L := by
