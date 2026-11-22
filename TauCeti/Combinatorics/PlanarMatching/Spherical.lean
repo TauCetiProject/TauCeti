@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Spherical
-public import TauCeti.Combinatorics.PlanarMatching.Rigid
+public import TauCeti.Combinatorics.PlanarMatching.Pivotal
 import all TauCeti.Combinatorics.PlanarMatching.Glue
 import all TauCeti.Combinatorics.PlanarMatching.Associativity
 import all TauCeti.Combinatorics.PlanarMatching.Duality
@@ -313,10 +313,11 @@ by `TauCeti.TLDiagram.leftClosure_eq_rightClosure`. -/
 instance : SphericalCategory TLDiagCat where
   leftTrace_eq_rightTrace {X} f := by
     rw [leftTrace_eq_pivotalIsoApp, rightTrace_eq_pivotalIsoApp, pivotalIsoApp_eq_refl]
-    -- `Xᘁ = X`, `η_ = nestedCup`, and `ε_ = nestedCap` definitionally.
-    change nestedCup X.as ≫ X ◁ 𝟙 X ≫ X ◁ f ≫ nestedCap X.as =
-      nestedCup X.as ≫ f ▷ X ≫ 𝟙 X ▷ X ≫ nestedCap X.as
-    rw [MonoidalCategory.whiskerLeft_id, MonoidalCategory.id_whiskerRight,
+    -- `Xᘁ = X` definitionally.
+    change η_ X X ≫ X ◁ 𝟙 X ≫ X ◁ f ≫ ε_ X X =
+      η_ X X ≫ f ▷ X ≫ 𝟙 X ▷ X ≫ ε_ X X
+    rw [coevaluation_eq_nestedCup, evaluation_eq_nestedCap,
+      MonoidalCategory.whiskerLeft_id, MonoidalCategory.id_whiskerRight,
       Category.id_comp, Category.id_comp]
     refine hom_ext ?_
     rw [diagram_comp, diagram_comp, diagram_comp, diagram_comp, diagram_whiskerLeft,
@@ -328,10 +329,11 @@ instance : SphericalCategory TLDiagCat where
 theorem quantumDim_eq_circle_pow (n : ℕ) :
     quantumDim (of n) = ((End.of circle) ^ n).asHom := by
   rw [← trace_id, trace_eq_leftTrace, leftTrace_eq_pivotalIsoApp, pivotalIsoApp_eq_refl]
-  -- `(of n)ᘁ = of n`, `η_ = nestedCup n`, and `ε_ = nestedCap n` definitionally.
-  change nestedCup n ≫ of n ◁ 𝟙 (of n) ≫ of n ◁ 𝟙 (of n) ≫ nestedCap n =
+  -- `(of n)ᘁ = of n` definitionally.
+  change η_ (of n) (of n) ≫ of n ◁ 𝟙 (of n) ≫ of n ◁ 𝟙 (of n) ≫ ε_ (of n) (of n) =
     ((End.of circle) ^ n).asHom
-  rw [MonoidalCategory.whiskerLeft_id, Category.id_comp, Category.id_comp,
+  rw [coevaluation_eq_nestedCup, evaluation_eq_nestedCap,
+    MonoidalCategory.whiskerLeft_id, Category.id_comp, Category.id_comp,
     nestedCup_comp_nestedCap]
 
 end TLDiagCat

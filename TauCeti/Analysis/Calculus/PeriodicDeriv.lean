@@ -122,9 +122,12 @@ end Function
 namespace TauCeti
 
 /-- A scalar twist under translation, `f (x + c) = a • f x`, passes to the Fréchet derivative.
-For `a = 1` this is `Function.Periodic.fderiv`, and for `a = -1` it covers antiperiodic maps. -/
-theorem fderiv_add_eq_smul {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
-    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {c : E} {a : 𝕜}
+For `a = 1` this is `Function.Periodic.fderiv`, and for `a = -1` it covers antiperiodic maps. The
+scalar `a` may lie in any division ring acting on `F` compatibly with `𝕜`, for instance a complex
+twist of a function into a complex space under its real derivative. -/
+theorem fderiv_add_eq_smul {𝕜 R E F : Type*} [NontriviallyNormedField 𝕜] [DivisionRing R]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [Module R F] [SMulCommClass 𝕜 R F] [ContinuousConstSMul R F] {f : E → F} {c : E} {a : R}
     (h : ∀ x, f (x + c) = a • f x) (x : E) : fderiv 𝕜 f (x + c) = a • fderiv 𝕜 f x := by
   have hfun : (fun y ↦ f (y + c)) = a • f := funext h
   rcases eq_or_ne a 0 with rfl | ha

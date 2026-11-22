@@ -37,6 +37,8 @@ limit, so Borel–Moore homology sits in the short exact sequence
 `TauCeti.LocalCoefficientSystem.exact_limOneToBorelMooreHomology_borelMooreHomologyToLim`,
 `TauCeti.LocalCoefficientSystem.borelMooreHomologyToLim_surjective`), whose right-hand map is
 induced by the relative classes (`TauCeti.LocalCoefficientSystem.limπ_borelMooreHomologyToLim`).
+When `lim¹` vanishes that map is bijective
+(`TauCeti.LocalCoefficientSystem.borelMooreHomologyToLim_bijective`).
 
 ## Main declarations
 
@@ -603,6 +605,18 @@ theorem borelMooreHomologyToLim_surjective (j : ℕ) :
   rw [borelMooreHomologyToLim_def, LinearMap.coe_comp]
   exact (ComplexTower.homologyToLim_surjective (relativeChainComplexTower_shift_surjective L K)
     j).comp e.surjective
+
+/-- The map from Borel–Moore homology to the limit of the relative twisted homology modules of a
+compact exhaustion is bijective when `lim¹` of the relative homology modules in degree `j + 1`
+vanishes. -/
+theorem borelMooreHomologyToLim_bijective (j : ℕ)
+    [Subsingleton ((relativeChainComplexTower L K).homology (j + 1)).limOne] :
+    Function.Bijective (borelMooreHomologyToLim L K j) := by
+  let e := (HomologicalComplex.homologyMapIso
+    (locallyFiniteChainComplexIsoLimComplex L K) j).toLinearEquiv
+  rw [borelMooreHomologyToLim_def, LinearMap.coe_comp]
+  exact (ComplexTower.homologyToLim_bijective (relativeChainComplexTower_shift_surjective L K)
+    (ComplexShape.down_mk (j + 1) j rfl)).comp e.bijective
 
 end Milnor
 

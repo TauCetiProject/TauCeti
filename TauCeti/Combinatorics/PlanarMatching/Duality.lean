@@ -492,23 +492,15 @@ namespace TLDiagram
 
 section CastHelpers
 
-variable {n n' n'' m m' m'' : ℕ}
+variable {n n' m m' : ℕ}
 
 @[simp]
 theorem cast_id (hn : n = n') : cast hn hn (id n) = id n' := by
   subst hn; simp
 
-theorem cast_comp (hn : n = n') (hp : m' = m'') (f : TLDiagram n m) (g : TLDiagram m m') :
-    cast hn hp (f.comp g) = (cast hn rfl f).comp (cast rfl hp g) := by
-  subst hn hp; simp
-
 theorem comp_cast_mid (hm : m = m') (f : TLDiagram n m) (g : TLDiagram m' n') :
     (cast rfl hm f).comp g = f.comp (cast hm.symm rfl g) := by
   subst hm; simp
-
-theorem cast_comp_cast (hn : n = n') (hm : m = m') (f : TLDiagram n m) (g : TLDiagram m' p) :
-    (cast hn hm f).comp g = cast hn rfl (f.comp (cast hm.symm rfl g)) := by
-  subst hn hm; simp
 
 @[simp]
 theorem cast_verticalReflect (hn : n = n') (hm : m = m') (f : TLDiagram n m) :
@@ -977,10 +969,10 @@ theorem id_tensor_nestedCap_comp_nestedCap (n m : ℕ) :
       (cast (show n + n = n + (0 + n) by omega) rfl (nestedCap n)) =
       cast (show (n + m) + (n + m) = n + (m + m + n) by omega) rfl (nestedCap (n + m)) := by
   have h1 : (id n).tensor ((nestedCap m).tensor (id n)) =
-      cast (Nat.add_assoc n (m + m) n) (Nat.add_assoc n 0 n)
-        (((id n).tensor (nestedCap m)).tensor (id n)) := by
-    rw [tensor_assoc, cast_cast, cast_refl, Equiv.refl_apply]
-  rw [h1, cast_comp_cast, cast_cast, cast_refl, Equiv.refl_apply]
+      cast (Nat.add_assoc n (m + m) n) rfl
+        (cast rfl (Nat.add_assoc n 0 n) (((id n).tensor (nestedCap m)).tensor (id n))) := by
+    rw [cast_cast, tensor_assoc, cast_cast, cast_refl, Equiv.refl_apply]
+  rw [h1, cast_comp, comp_cast_mid, cast_cast, cast_refl, Equiv.refl_apply]
   have h2 := congrArg (cast (Nat.add_assoc n (m + m) n) rfl)
     (tensor_id_comp_nestedCap ((id n).tensor (nestedCap m)))
   change cast (Nat.add_assoc n (m + m) n) rfl
