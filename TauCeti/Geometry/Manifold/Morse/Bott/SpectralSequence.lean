@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.Geometry.Manifold.Morse.Bott.Inequalities
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
+import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 
 /-!
 # The first page of the critical-band spectral sequence of a Morse–Bott function
@@ -75,8 +76,10 @@ corresponding statements `TauCeti.IsMorse.finrank_filteredSpaceSpectralSequence_
 `TauCeti.IsMorse.filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_ne_add_one` and
 `TauCeti.IsMorse.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_of_forall_ne_add_one` over
 `𝔽₂`. The degeneration and the graded pieces are deduced, in both cases, from the statements for
-any filtered space (`TauCeti.filteredSpaceSpectralSequence_page_d_eq_zero_of_isZero_or_isZero` and
-`TauCeti.nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero`).
+any cohomological spectral sequence
+(`CategoryTheory.SpectralSequence.page_d_eq_zero_of_isZero_or_isZero`) and for any finite
+filtration of a space
+(`TauCeti.nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero`).
 
 ## Main results
 
@@ -383,7 +386,7 @@ theorem filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_eq_zero_or_eq_zer
     (ha : IsCriticalBandCut I f a) (r' : ℤ) (hr' : 2 ≤ r') (pq pq' : ℤ × ℤ) :
     ((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
       ((sublevel_mono f).comp ha.monotone)).page r').d pq pq' = 0 :=
-  filteredSpaceSpectralSequence_page_d_eq_zero_of_isZero_or_isZero _ _
+  SpectralSequence.page_d_eq_zero_of_isZero_or_isZero _
     (fun _ _ ↦ h.isZero_or_isZero_page_two_X hr K hlac ha) r' hr' pq pq'
 
 open scoped Classical in
@@ -410,7 +413,8 @@ theorem finrank_cokernel_abutmentFiltrationMap_of_forall_eq_zero_or_eq_zero
   obtain ⟨e⟩ := nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero
     (Y := TopCat.of M) (ModuleCat.of K K) ((sublevel_mono f).comp ha.monotone)
     (eq_empty_of_forall_notMem fun x hx ↦ (hq₀ x).not_ge hx) (eq_univ_of_forall hq₁)
-    (fun _ _ ↦ h.isZero_or_isZero_page_two_X hr K hlac ha) pq
+    (fun _ hpq' ↦ hpq'.elim (h.isZero_or_isZero_page_two_X hr K hlac ha)
+      fun h' ↦ (h.isZero_or_isZero_page_two_X hr K hlac ha h').symm)
   exact e.toLinearEquiv.finrank_eq
 
 end IsMorseBottFamily

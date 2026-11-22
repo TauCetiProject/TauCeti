@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 import TauCeti.Geometry.Manifold.Morse.Generic.Inequalities
@@ -371,7 +372,7 @@ theorem IsMorse.filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_ne_add_on
     (hr : 2 ≤ r) (pq pq' : ℤ × ℤ) :
     ((filteredSpaceSpectralSequence (Y := TopCat.of M) R
       ((sublevel_mono f).comp ha.monotone)).page r).d pq pq' = 0 :=
-  filteredSpaceSpectralSequence_page_d_eq_zero_of_isZero_or_isZero R _
+  SpectralSequence.page_d_eq_zero_of_isZero_or_isZero _
     (fun _ _ ↦ isZero_or_isZero_page_two_X R hf ha hind) r hr pq pq'
 
 /-- **The graded homology in the lacunary case.** Let `f` be a Morse function and `a : ℤ → ℝ` a
@@ -395,7 +396,8 @@ theorem IsMorse.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_of_forall_ne_a
   obtain ⟨e⟩ := nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero R
     ((sublevel_mono f).comp ha.monotone)
     (eq_empty_of_forall_notMem fun x hx ↦ (hq₀ x).not_ge hx) (eq_univ_of_forall hq₁)
-    (fun _ _ ↦ isZero_or_isZero_page_two_X R hf ha hind) pq
+    (fun _ hpq' ↦ hpq'.elim (isZero_or_isZero_page_two_X R hf ha hind)
+      fun h ↦ (isZero_or_isZero_page_two_X R hf ha hind h).symm)
   exact ⟨e ≪≫ e₂⟩
 
 end TauCeti
