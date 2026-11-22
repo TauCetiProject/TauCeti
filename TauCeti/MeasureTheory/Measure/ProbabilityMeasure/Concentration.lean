@@ -63,7 +63,8 @@ theorem tendsto_of_lipschitz_approx_of_integral_sq_tendsto_zero {E ι : Type*}
           (hle.mono fun y hy ↦ by rwa [Real.norm_eq_abs])
       _ ≤ K * √(∫ y, d i y ^ 2 ∂(μ i : Measure E)) := by
         rw [integral_const_mul]
-        exact mul_le_mul_of_nonneg_left (integral_le_sqrt_integral_sq (hmem i)) K.coe_nonneg
+        exact mul_le_mul_of_nonneg_left (le_of_abs_le (abs_integral_le_sqrt_integral_sq (hmem i)))
+          K.coe_nonneg
   have hzero : Tendsto (fun i ↦ K * √(∫ y, d i y ^ 2 ∂(μ i : Measure E))) L (𝓝 0) := by
     simpa using hlim.sqrt.const_mul (K : ℝ)
   exact tendsto_iff_dist_tendsto_zero.2 (squeeze_zero (fun _ ↦ dist_nonneg) hdist hzero)
@@ -109,7 +110,8 @@ theorem tendsto_dirac_of_integral_dist_sq_tendsto_zero {E ι : Type*}
           integral_const_mul]
         simp
     _ ≤ ε / 2 + C * √(∫ y, dist y x ^ 2 ∂(μ i : Measure E)) := by
-        linarith [mul_le_mul_of_nonneg_left (integral_le_sqrt_integral_sq (hmem i)) hC]
+        linarith [mul_le_mul_of_nonneg_left
+          (le_of_abs_le (abs_integral_le_sqrt_integral_sq (hmem i))) hC]
     _ < ε := by linarith
 
 /-- Mean squared distance from a point tending to zero along a filter implies weak convergence to

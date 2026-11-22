@@ -44,9 +44,9 @@ variances and Borel--Cantelli almost-sure convergence to the mean from summable 
 * `MeasureTheory.MemLp.integrable_norm_sub_sq_prod`: for `f ∈ L²(μ)` and a finite measure `μ`,
   the function `(x, y) ↦ ‖f x - f y‖²` is integrable for `μ ⊗ μ`.
 * `TauCeti.integral_norm_sub_sq_prod`: the identity above.
-* `MeasureTheory.integral_le_sqrt_integral_sq`: on a probability space, the mean of a real
-  square-integrable function is at most the square root of its second moment, which is the
-  nonnegativity of its variance.
+* `MeasureTheory.abs_integral_le_sqrt_integral_sq`: on a probability space, the absolute value
+  of the mean of a real square-integrable function is at most the square root of its second
+  moment, which is the nonnegativity of its variance.
 * `MeasureTheory.MemLp.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul`: on a probability
   space, the `k`-th absolute moment of a function in `L^(2k)` is at most the square root of its
   `2k`-th absolute moment.
@@ -125,12 +125,12 @@ end MeasureTheory.MemLp
 
 namespace MeasureTheory
 
-/-- On a probability space, the mean of a square-integrable function is at most the square root of
-its second moment. -/
-theorem integral_le_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+/-- On a probability space, the absolute value of the mean of a square-integrable function is at
+most the square root of its second moment. -/
+theorem abs_integral_le_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
     [IsProbabilityMeasure μ] {g : Ω → ℝ} (hg : MemLp g 2 μ) :
-    ∫ x, g x ∂μ ≤ √(∫ x, g x ^ 2 ∂μ) := by
-  apply Real.le_sqrt_of_sq_le
+    |∫ x, g x ∂μ| ≤ √(∫ x, g x ^ 2 ∂μ) := by
+  apply Real.abs_le_sqrt
   have h := ProbabilityTheory.variance_nonneg g μ
   rw [ProbabilityTheory.variance_eq_sub hg] at h
   simpa only [Pi.pow_apply, sub_nonneg] using h
@@ -149,7 +149,7 @@ theorem MemLp.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul
     rw [Nat.cast_mul, Nat.cast_ofNat,
       ENNReal.mul_div_cancel_right hk0 (ENNReal.natCast_ne_top _)] at h
     simpa only [ENNReal.toReal_natCast, Real.rpow_natCast] using h
-  simpa only [← pow_mul, mul_comm k 2] using integral_le_sqrt_integral_sq hmem
+  simpa only [← pow_mul, mul_comm k 2] using le_of_abs_le (abs_integral_le_sqrt_integral_sq hmem)
 
 section Centering
 

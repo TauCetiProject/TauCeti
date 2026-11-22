@@ -177,7 +177,7 @@ theorem memLp_two_and_integral_norm_sum_mul_star_mul_le_of_distinct_unordered_pa
   refine ⟨hsum, ?_⟩
   calc
     _ ≤ Real.sqrt (∫ ω, ‖∑ p ∈ s, A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)‖ ^ 2 ∂P) :=
-      integral_le_sqrt_integral_sq hsum.norm
+      le_of_abs_le (abs_integral_le_sqrt_integral_sq hsum.norm)
     _ ≤ Real.sqrt (v ^ 2 * ∑ p ∈ s, ‖A p.1 p.2‖ ^ 2) := by
       rw [hmoment, mul_sum]
       apply Real.sqrt_le_sqrt
