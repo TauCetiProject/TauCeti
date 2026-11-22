@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
+public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
 public import TauCeti.Probability.BrownianMotion.Integral.L2
 public import TauCeti.Probability.BrownianMotion.Integral.Wiener
 import Mathlib.Topology.Sequences
@@ -20,11 +21,10 @@ import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 
 Where `MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P)`, this file identifies
 `TauCeti.Probability.IsItoIntegral` almost surely with `IsFilteredPreBrownianReal.l2Integral`
-(`ae_eq_l2Integral`) and deduces `L²` membership (`memLp_two`), zero expectation
-(`integral_eq_zero`), covariance (`integral_mul`), single-horizon and increment Itô isometries
-(`integral_sq_of_memLp`, `integral_sub_sq_of_memLp`), finite-horizon `L²(P)` continuity
-(`continuous_toLp`), and for deterministic `L²` integrands identification with `wienerIntegral`
-(`ae_eq_wienerIntegral`) and its centered Gaussian law (`hasLaw_gaussianReal`).
+(`ae_eq_l2Integral`) and deduces zero expectation (`integral_eq_zero`), covariance
+(`integral_mul`), increment Itô isometry (`integral_sub_sq_of_memLp`), finite-horizon `L²(P)`
+continuity (`continuous_toLp`), and for deterministic `L²` integrands identification with
+`wienerIntegral` (`ae_eq_wienerIntegral`) and its centered Gaussian law (`hasLaw_gaussianReal`).
 
 ## References
 
@@ -94,12 +94,6 @@ theorem hasLaw_gaussianReal (hW : IsFilteredPreBrownianReal ℱ W P) {u : ℝ≥
   exact hvar ▸ (hW.toIsPreBrownianReal.hasLaw_wienerIntegral t (hu.toLp u)).congr
     (hI.ae_eq_wienerIntegral hW hu)
 
-/-- Every Itô integral with finite expected square energy on `(0, t]` lies in `L²(P)`. -/
-theorem memLp_two (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0}
-    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) : MemLp (I t) 2 P :=
-  (Lp.memLp _).ae_eq (hI.ae_eq_l2Integral hW hH).symm
-
 /-- Every Itô integral against `W` with finite expected square energy on `(0, t]` has zero mean. -/
 theorem integral_eq_zero (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0}
@@ -127,14 +121,6 @@ theorem integral_mul (hW : IsFilteredPreBrownianReal ℱ W P)
     hKp.coeFn_toLp.mono fun _ h₂ h₁ ↦ by simp [h₁, h₂, Function.uncurry, mul_comm]).trans
     (ℱ.integral_predictableMeasure P (hI.isStronglyPredictable.mul hJ.isStronglyPredictable) t)
 
-/-- **Itô's `L²` isometry.** The second moment of an Itô integral at horizon `t` with finite
-expected square energy on `(0, t]` equals its expected square energy on `(0, t] × Ω`. -/
-theorem integral_sq_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0}
-    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
-    ∫ ω, I t ω ^ 2 ∂P = ∫ p, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P := by
-  simpa only [sq] using hI.integral_mul hW hI hH hH
-
 /-- **Itô's increment `L²` isometry.** For `s ≤ t`, the expected squared increment
 `E[(I_t - I_s)²]` equals the expected square energy of `H` over `(s, t] × Ω`. -/
 theorem integral_sub_sq_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -151,7 +137,7 @@ theorem integral_sub_sq_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
       (Eventually.of_forall fun p ↦ ?_)
     dsimp only [Function.uncurry]
     split_ifs <;> simp
-  have hsq := hcut.integral_sq_of_memLp hW hH_mem
+  have hsq := hcut.integral_sq hW hH_mem
   simp only [min_eq_left hst] at hsq
   rw [hsq, ← integral_indicator (measurableSet_Ioc.prod MeasurableSet.univ)]
   refine integral_congr_ae ?_
@@ -168,11 +154,11 @@ theorem continuous_toLp (hW : IsFilteredPreBrownianReal ℱ W P)
     (hH : MemLp (Function.uncurry H) 2 ((timeMeasure T).prod P)) :
     letI := (hW.hasLaw_eval 0).isProbabilityMeasure
     Continuous (fun t : Iic T ↦
-      (hI.memLp_two hW (hH.mono_measure
+      (hI.memLp hW (hH.mono_measure
         (Measure.prod_mono (timeMeasure_mono t.property) le_rfl))).toLp (I t)) := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   let mem (t : Iic T) : MemLp (I t) 2 P :=
-    hI.memLp_two hW (hH.mono_measure (Measure.prod_mono (timeMeasure_mono t.property) le_rfl))
+    hI.memLp hW (hH.mono_measure (Measure.prod_mono (timeMeasure_mono t.property) le_rfl))
   rw [continuous_iff_seqContinuous]
   intro u t hu
   rw [tendsto_iff_edist_tendsto_0]

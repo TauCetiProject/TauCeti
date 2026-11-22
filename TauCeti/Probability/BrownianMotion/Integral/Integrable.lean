@@ -19,7 +19,7 @@ pathwise, on every finite horizon outside one common null set. These are domains
 stochastic integration, not assertions that a stochastic integral has already been constructed.
 
 For s-finite `P`, the expected-energy domain embeds into the pathwise-energy domain by Tonelli
-and a countable cofinal family of horizons. Both are closed under addition, scaling and
+and a countable cofinal family of horizons. Both are closed under addition, subtraction, scaling and
 restriction to predictable sets. The expected-energy domain is also closed under multiplication
 by predictable processes that are essentially bounded on each finite horizon.
 Product-almost-everywhere replacement by predictable processes preserves the expected-energy
@@ -136,6 +136,18 @@ theorem LocallyBrownianIntegrable.const_mul (h : LocallyBrownianIntegrable ℱ P
     LocallyBrownianIntegrable ℱ P (fun t ω ↦ c * H t ω) :=
   ⟨h.isStronglyPredictable.const_mul c,
     h.ae_memLp.mono fun _ hω T ↦ (hω T).const_mul c⟩
+
+/-- The expected-energy domain is closed under subtraction. -/
+theorem BrownianIntegrable.sub (hH : BrownianIntegrable ℱ P H)
+    (hK : BrownianIntegrable ℱ P K) :
+    BrownianIntegrable ℱ P (fun t ω ↦ H t ω - K t ω) := by
+  simpa only [sub_eq_add_neg, neg_one_mul] using hH.add (hK.const_mul (-1))
+
+/-- The pathwise-energy domain is closed under subtraction. -/
+theorem LocallyBrownianIntegrable.sub (hH : LocallyBrownianIntegrable ℱ P H)
+    (hK : LocallyBrownianIntegrable ℱ P K) :
+    LocallyBrownianIntegrable ℱ P (fun t ω ↦ H t ω - K t ω) := by
+  simpa only [sub_eq_add_neg, neg_one_mul] using hH.add (hK.const_mul (-1))
 
 /-- Restriction to a predictable set preserves finite expected square energy. -/
 theorem BrownianIntegrable.indicator (hH : BrownianIntegrable ℱ P H)

@@ -291,7 +291,7 @@ theorem IsFilteredPreBrownianReal.tendstoInMeasure_sum_mul_sub_of_energy
 
 /-- Clipping a grid at `t` and discarding the intervals starting after `t` turns the
 elementary energy into the lower square energy of the holding on `(0,t]`. -/
-private theorem ofReal_elementaryEnergy_min_ite (hτ : MonotoneOn τ (Iic n)) (t : ℝ≥0)
+theorem ofReal_elementaryEnergy_min_ite (hτ : MonotoneOn τ (Iic n)) (t : ℝ≥0)
     (ω : Ω) :
     ENNReal.ofReal (elementaryEnergy (fun i ↦ min (τ i) t)
         (fun i ↦ if τ i ≤ t then a i else 0) n ω) =
