@@ -154,7 +154,7 @@ end IsCartanInvolution
 theorem isCartanInvolution_conj_iff {M : Type*} [LieRing M] [LieAlgebra K M]
     (θ : L ≃ₗ⁅K⁆ L) (e : L ≃ₗ⁅K⁆ M) :
     (e.symm.trans (θ.trans e)).IsCartanInvolution ↔ θ.IsCartanInvolution :=
-  ⟨fun h ↦ by simpa only [symm_symm_trans_conj_symm] using h.conj e.symm, fun h ↦ h.conj e⟩
+  ⟨fun h ↦ by simpa only [symm_symm, trans_conj_symm] using h.conj e.symm, fun h ↦ h.conj e⟩
 
 /-- If `e : L ≃ₗ⁅K⁆ M` intertwines `θ` with `θ'` (`∀ x, θ' (e x) = e (θ x)`), then `θ'` is a
 Cartan involution whenever `θ` is. -/
@@ -374,28 +374,11 @@ variable {L : Type*} [LieRing L] [LieAlgebra ℝ L]
 algebra and `x ∈ θ.cartanP`, the eigenspaces of `ad x` span `L`. -/
 theorem IsCartanInvolution.iSup_eigenspace_ad_eq_top {θ : L ≃ₗ⁅ℝ⁆ L}
     (hθ : θ.IsCartanInvolution) {x : L} (hx : x ∈ θ.cartanP) :
-    ⨆ μ : ℝ, Module.End.eigenspace (ad ℝ L x) μ = ⊤ := by
+    ⨆ μ : ℝ, Module.End.eigenspace (ad ℝ L x) μ = ⊤ :=
   have := hθ.finiteDimensional
-  let q : LinearMap.BilinForm ℝ L := θ.twistedKillingForm.compl₁₂ (ad ℝ L x) LinearMap.id
-  have hself := ad_mem_selfAdjointSubmodule_twistedKillingForm hx
-  rw [LinearMap.mem_selfAdjointSubmodule] at hself
-  have hq : q.IsSymm := LinearMap.BilinForm.isSymm_iff.mpr ⟨fun y z ↦ by
-    simp only [q, LinearMap.compl₁₂_apply, LinearMap.id_apply, RingHom.id_apply]
-    rw [hself y z, hθ.isSymm_twistedKillingForm.eq]⟩
-  have heig (μ : ℝ) :
-      θ.twistedKillingForm.relativeEigenspace q μ = Module.End.eigenspace (ad ℝ L x) μ := by
-    ext v
-    rw [LinearMap.BilinForm.mem_relativeEigenspace_iff, Module.End.mem_eigenspace_iff]
-    refine ⟨fun hv ↦ ?_, fun hv w ↦ by simp [q, hv]⟩
-    by_contra hne
-    exact (hθ.twistedKillingForm_self_pos (sub_ne_zero.mpr hne)).ne' (by
-      rw [map_sub θ.twistedKillingForm, map_smul θ.twistedKillingForm, LinearMap.sub_apply,
-        LinearMap.smul_apply, smul_eq_mul]
-      exact sub_eq_zero.mpr (hv (ad ℝ L x v - μ • v)))
-  have huniv := LinearMap.BilinForm.relativeSpectralSubspace_univ hθ.isSymm_twistedKillingForm
-    (fun _ hv ↦ hθ.twistedKillingForm_self_pos hv) hq
-  rw [LinearMap.BilinForm.relativeSpectralSubspace_def] at huniv
-  simpa only [Set.mem_univ, iSup_pos, heig] using huniv
+  LinearMap.BilinForm.iSup_eigenspace_eq_top_of_isSelfAdjoint hθ.isSymm_twistedKillingForm
+    (fun _ hv ↦ hθ.twistedKillingForm_self_pos hv)
+    ((LinearMap.mem_selfAdjointSubmodule _).mp (ad_mem_selfAdjointSubmodule_twistedKillingForm hx))
 
 end Real
 

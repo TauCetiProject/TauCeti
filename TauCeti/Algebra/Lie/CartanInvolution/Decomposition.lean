@@ -34,6 +34,8 @@ For `x ∈ 𝔨` the operator `ad x` is skew-adjoint for `B_θ`, and for `x ∈ 
 
 ## Main results
 
+* `LieEquiv.cartanP_eq_eigenspace`, `LieEquiv.cartanP_eq_ker`: characterizations of `𝔭` as an
+  eigenspace and kernel.
 * `LieEquiv.isCompl_fixedSubalgebra_cartanP`: `L = 𝔨 ⊕ 𝔭` for an involution when `2` is a unit.
 * `LieEquiv.projection_fixedSubalgebra_cartanP_eq_eigenProjOfInvolutive`,
   `LieEquiv.projection_fixedSubalgebra_cartanP_apply`,
@@ -88,12 +90,24 @@ theorem cartanP_eq_eigenspace :
   (rfl)
 
 variable (θ) in
+/-- `𝔭` is the kernel of `θ + id`, viewed as linear endomorphisms of `L`. -/
+theorem cartanP_eq_ker :
+    θ.cartanP = LinearMap.ker ((θ : L →ₗ[R] L) + LinearMap.id) := by
+  ext x
+  simp [add_eq_zero_iff_eq_neg]
+
+/-- An involutive Lie algebra automorphism is involutive as a linear endomorphism. -/
+theorem involutive_toLinearEquiv (hθ : Function.Involutive θ) :
+    Function.Involutive (θ.toLinearEquiv : Module.End R L) := fun x ↦ by
+  simp only [LinearEquiv.coe_coe, coe_toLinearEquiv, hθ x]
+
+variable (θ) in
 /-- For an involution of a Lie algebra over a ring in which `2` is a unit, the fixed subalgebra
 `𝔨` and the `-1`-eigenspace `𝔭` are complementary: `L = 𝔨 ⊕ 𝔭`. -/
 theorem isCompl_fixedSubalgebra_cartanP (h2 : IsUnit (2 : R)) (hθ : Function.Involutive θ) :
     IsCompl θ.toLieHom.fixedSubalgebra.toSubmodule θ.cartanP := by
   have := TauCeti.isCompl_eigenspace_one_neg_one h2
-    (T := (θ.toLinearEquiv : Module.End R L)) hθ
+    (T := (θ.toLinearEquiv : Module.End R L)) (involutive_toLinearEquiv hθ)
   rw [Module.End.eigenspace_one_eq_fixedSubmodule] at this
   rw [LieHom.fixedSubalgebra_toSubmodule]
   exact this
@@ -105,12 +119,9 @@ theorem projection_fixedSubalgebra_cartanP_eq_eigenProjOfInvolutive [Invertible 
     (h : IsCompl θ.toLieHom.fixedSubalgebra.toSubmodule θ.cartanP) :
     θ.toLieHom.fixedSubalgebra.toSubmodule.projection θ.cartanP h =
       (Module.End.eigenspace (θ.toLinearEquiv : Module.End R L) 1).subtype.comp
-        (Module.End.eigenProjOfInvolutive
-          (show Function.Involutive (θ.toLinearEquiv : Module.End R L) from hθ)
-          (one_mul 1)) := by
+        (Module.End.eigenProjOfInvolutive (involutive_toLinearEquiv hθ) (one_mul 1)) := by
   ext x
-  let g : Module.End R L := (θ.toLinearEquiv : Module.End R L)
-  have hg : Function.Involutive g := hθ
+  let hg := involutive_toLinearEquiv hθ
   let u := Module.End.eigenProjOfInvolutive hg (one_mul (1 : R)) x
   let v := Module.End.eigenProjOfInvolutive hg ((neg_mul_neg (1 : R) 1).trans (one_mul 1)) x
   have hu : (u : L) ∈ θ.toLieHom.fixedSubalgebra.toSubmodule := by
@@ -138,9 +149,7 @@ theorem projection_fixedSubalgebra_cartanP_apply [Invertible (2 : R)]
     θ.toLieHom.fixedSubalgebra.toSubmodule.projection θ.cartanP h x = (⅟2 : R) • (x + θ x) := by
   rw [LinearMap.congr_fun (θ.projection_fixedSubalgebra_cartanP_eq_eigenProjOfInvolutive hθ h) x,
     LinearMap.comp_apply, Submodule.coe_subtype,
-    Module.End.coe_eigenProjOfInvolutive_apply
-      (hg := show Function.Involutive (θ.toLinearEquiv : Module.End R L) from hθ),
-    one_smul]
+    Module.End.coe_eigenProjOfInvolutive_apply (hg := involutive_toLinearEquiv hθ), one_smul]
   simp only [LinearEquiv.coe_coe, coe_toLinearEquiv]
 
 variable (θ) in
@@ -150,30 +159,15 @@ theorem projection_cartanP_fixedSubalgebra_eq_eigenProjOfInvolutive [Invertible 
     (h : IsCompl θ.cartanP θ.toLieHom.fixedSubalgebra.toSubmodule) :
     θ.cartanP.projection θ.toLieHom.fixedSubalgebra.toSubmodule h =
       (Module.End.eigenspace (θ.toLinearEquiv : Module.End R L) (-1)).subtype.comp
-        (Module.End.eigenProjOfInvolutive
-          (show Function.Involutive (θ.toLinearEquiv : Module.End R L) from hθ)
+        (Module.End.eigenProjOfInvolutive (involutive_toLinearEquiv hθ)
           ((neg_mul_neg (1 : R) 1).trans (one_mul 1))) := by
   ext x
-  let g : Module.End R L := (θ.toLinearEquiv : Module.End R L)
-  have hg : Function.Involutive g := hθ
-  let u := Module.End.eigenProjOfInvolutive hg (one_mul (1 : R)) x
-  let v := Module.End.eigenProjOfInvolutive hg ((neg_mul_neg (1 : R) 1).trans (one_mul 1)) x
-  have hu : (u : L) ∈ θ.toLieHom.fixedSubalgebra.toSubmodule := by
-    rw [LieHom.fixedSubalgebra_toSubmodule_eq_eigenspace]
-    exact u.property
-  have hv : (v : L) ∈ θ.cartanP := v.property
-  have huv : (u : L) + v = x :=
-    Module.End.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg hg _ _ x
-  calc
-    θ.cartanP.projection θ.toLieHom.fixedSubalgebra.toSubmodule h x
-        = θ.cartanP.projection θ.toLieHom.fixedSubalgebra.toSubmodule h ((u : L) + v) := by
-          rw [huv]
-    _ = θ.cartanP.projection θ.toLieHom.fixedSubalgebra.toSubmodule h u +
-          θ.cartanP.projection θ.toLieHom.fixedSubalgebra.toSubmodule h v := map_add _ _ _
-    _ = 0 + v := by
-          rw [Submodule.projection_apply_of_mem_right h hu,
-            Submodule.projection_apply_of_mem_left h hv]
-    _ = v := zero_add _
+  rw [Submodule.projection_eq_self_sub_projection h.symm x,
+    LinearMap.congr_fun (θ.projection_fixedSubalgebra_cartanP_eq_eigenProjOfInvolutive hθ h.symm) x,
+    LinearMap.comp_apply, Submodule.coe_subtype, LinearMap.comp_apply, Submodule.coe_subtype]
+  exact sub_eq_of_eq_add'
+    (Module.End.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg (involutive_toLinearEquiv hθ)
+      (one_mul (1 : R)) ((neg_mul_neg (1 : R) 1).trans (one_mul 1)) x).symm
 
 variable (θ) in
 /-- On vectors `x : L`, the Cartan projection onto `𝔭` along `𝔨` is `⅟2 • (x - θ x)`. -/
@@ -183,8 +177,7 @@ theorem projection_cartanP_fixedSubalgebra_apply [Invertible (2 : R)]
     θ.cartanP.projection θ.toLieHom.fixedSubalgebra.toSubmodule h x = (⅟2 : R) • (x - θ x) := by
   rw [LinearMap.congr_fun (θ.projection_cartanP_fixedSubalgebra_eq_eigenProjOfInvolutive hθ h) x,
     LinearMap.comp_apply, Submodule.coe_subtype,
-    Module.End.coe_eigenProjOfInvolutive_apply
-      (hg := show Function.Involutive (θ.toLinearEquiv : Module.End R L) from hθ),
+    Module.End.coe_eigenProjOfInvolutive_apply (hg := involutive_toLinearEquiv hθ),
     neg_one_smul, ← sub_eq_add_neg]
   simp only [LinearEquiv.coe_coe, coe_toLinearEquiv]
 
@@ -231,24 +224,26 @@ theorem maximal_abelian_submodule_cartanP_iff {M : Type*} [LieRing M] [LieAlgebr
         (𝔞.map (e : L →ₗ[R] M)) ↔
       Maximal (fun 𝔟 : Submodule R L ↦ 𝔟 ≤ θ.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0) 𝔞 := by
   let φ : Submodule R L ≃o Submodule R M := Submodule.orderIsoMapComap e.toLinearEquiv
+  have he_lin : (e.toLinearEquiv : L →ₗ[R] M) = (e : L →ₗ[R] M) :=
+    LinearMap.ext fun x ↦ by simp
   have hP (𝔟 : Submodule R L) :
       (φ 𝔟 ≤ θ'.cartanP ∧ ∀ x ∈ φ 𝔟, ∀ y ∈ φ 𝔟, ⁅x, y⁆ = 0) ↔
         (𝔟 ≤ θ.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0) := by
     have hsub : φ 𝔟 ≤ θ'.cartanP ↔ 𝔟 ≤ θ.cartanP := by
-      rw [← map_cartanP (θ := θ) e h]
+      rw [← map_cartanP (θ := θ) e h, ← he_lin]
       exact φ.le_iff_le
     refine and_congr hsub ⟨fun hab x hx y hy ↦ e.injective ?_, fun hab x hx y hy ↦ ?_⟩
     · rw [e.toLieHom.map_lie, map_zero]
-      exact hab (e x) ⟨x, hx, rfl⟩ (e y) ⟨y, hy, rfl⟩
+      exact hab (e x) ⟨x, hx, by simp⟩ (e y) ⟨y, hy, by simp⟩
     · obtain ⟨x₀, hx₀, rfl⟩ := hx
       obtain ⟨y₀, hy₀, rfl⟩ := hy
-      change ⁅e x₀, e y₀⁆ = 0
+      simp only [LinearEquiv.coe_coe, coe_toLinearEquiv]
       rw [← e.map_lie, hab x₀ hx₀ y₀ hy₀, map_zero]
-  refine ⟨fun ⟨hq, hmax⟩ ↦ ⟨(hP 𝔞).mp hq, fun 𝔟 h𝔟 hle ↦
-      φ.le_iff_le.mp (hmax ((hP 𝔟).mpr h𝔟) (φ.monotone hle))⟩,
-    fun ⟨hp, hmax⟩ ↦ ⟨(hP 𝔞).mpr hp, fun 𝔟 h𝔟 hle ↦ by
-      obtain ⟨𝔟₀, rfl⟩ := φ.surjective 𝔟
-      exact φ.monotone (hmax ((hP 𝔟₀).mp h𝔟) (φ.le_iff_le.mp hle))⟩⟩
+  have hmax := φ.toOrderEmbedding.maximal_apply_mem_iff
+    (t := {𝔟 : Submodule R M | 𝔟 ≤ θ'.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0})
+    (x := 𝔞) (by simp [φ.range_eq])
+  simp only [OrderIso.coe_toOrderEmbedding, Set.mem_ofPred_eq, hP] at hmax
+  simpa only [φ, Submodule.orderIsoMapComap_apply, he_lin] using hmax
 
 /-- An intertwining Lie equivalence preserves maximal abelian Lie subalgebras inside `𝔭`. -/
 theorem maximal_isLieAbelian_cartanP_iff {M : Type*} [LieRing M] [LieAlgebra R M]
@@ -256,31 +251,34 @@ theorem maximal_isLieAbelian_cartanP_iff {M : Type*} [LieRing M] [LieAlgebra R M
     Maximal (fun 𝔟 : LieSubalgebra R M ↦ 𝔟.toSubmodule ≤ θ'.cartanP ∧ IsLieAbelian 𝔟)
         (𝔞.map e.toLieHom) ↔
       Maximal (fun 𝔟 : LieSubalgebra R L ↦ 𝔟.toSubmodule ≤ θ.cartanP ∧ IsLieAbelian 𝔟) 𝔞 := by
-  have he_lin : (e.toLieHom : L →ₗ[R] M) = (e : L →ₗ[R] M) := LinearMap.ext fun _ ↦ rfl
-  have hP (𝔟 : LieSubalgebra R L) :
-      ((𝔟.map e.toLieHom).toSubmodule ≤ θ'.cartanP ∧ IsLieAbelian (𝔟.map e.toLieHom)) ↔
-        (𝔟.toSubmodule ≤ θ.cartanP ∧ IsLieAbelian 𝔟) := by
-    have hsub : (𝔟.map e.toLieHom).toSubmodule ≤ θ'.cartanP ↔ 𝔟.toSubmodule ≤ θ.cartanP := by
-      rw [LieSubalgebra.map_toSubmodule, ← map_cartanP (θ := θ) e h, ← he_lin]
-      exact Submodule.map_le_map_iff_of_injective e.injective _ _
-    exact and_congr hsub (lie_abelian_iff_equiv_lie_abelian (e.lieSubalgebraMap 𝔟)).symm
-  have hmap_mono {𝔟₁ 𝔟₂ : LieSubalgebra R L} (hle : 𝔟₁ ≤ 𝔟₂) :
-      𝔟₁.map e.toLieHom ≤ 𝔟₂.map e.toLieHom := fun _ ⟨x, hx, hxy⟩ ↦ hxy ▸ ⟨x, hle hx, rfl⟩
-  have hmap_le_iff {𝔟₁ 𝔟₂ : LieSubalgebra R L} :
-      𝔟₁.map e.toLieHom ≤ 𝔟₂.map e.toLieHom ↔ 𝔟₁ ≤ 𝔟₂ := by
-    rw [← LieSubalgebra.toSubmodule_le_toSubmodule, LieSubalgebra.map_toSubmodule,
-      LieSubalgebra.map_toSubmodule, Submodule.map_le_map_iff_of_injective e.injective _ _,
-      LieSubalgebra.toSubmodule_le_toSubmodule]
-  refine ⟨fun ⟨hq, hmax⟩ ↦ ⟨(hP 𝔞).mp hq, fun 𝔟 h𝔟 hle ↦
-      hmap_le_iff.mp (hmax ((hP 𝔟).mpr h𝔟) (hmap_mono hle))⟩,
-    fun ⟨hp, hmax⟩ ↦ ⟨(hP 𝔞).mpr hp, fun 𝔟 h𝔟 hle ↦ by
-      have hmap_symm : (𝔟.map e.symm.toLieHom).map e.toLieHom = 𝔟 := by
-        ext y
-        simp only [LieSubalgebra.mem_map, coe_toLieHom]
+  let φ : LieSubalgebra R L ≃o LieSubalgebra R M :=
+    { toFun := LieSubalgebra.map e.toLieHom
+      invFun := LieSubalgebra.map e.symm.toLieHom
+      left_inv := fun 𝔟 ↦ by
+        ext x; simp only [LieSubalgebra.mem_map, coe_toLieHom]
+        exact ⟨fun ⟨y, ⟨z, hz, hzy⟩, hyx⟩ ↦ by simpa [← hyx, ← hzy] using hz,
+          fun hx ↦ ⟨e x, ⟨x, hx, rfl⟩, e.symm_apply_apply x⟩⟩
+      right_inv := fun 𝔟 ↦ by
+        ext y; simp only [LieSubalgebra.mem_map, coe_toLieHom]
         exact ⟨fun ⟨x, ⟨z, hz, hzx⟩, hxy⟩ ↦ by simpa [← hxy, ← hzx] using hz,
           fun hy ↦ ⟨e.symm y, ⟨y, hy, rfl⟩, e.apply_symm_apply y⟩⟩
-      rw [← hmap_symm] at h𝔟 hle ⊢
-      exact hmap_mono (hmax ((hP _).mp h𝔟) (hmap_le_iff.mp hle))⟩⟩
+      map_rel_iff' := fun {𝔟₁ 𝔟₂} ↦ by
+        simp only [Equiv.coe_fn_mk, ← LieSubalgebra.toSubmodule_le_toSubmodule,
+          LieSubalgebra.map_toSubmodule, Submodule.map_le_map_iff_of_injective e.injective] }
+  have hφ (𝔟 : LieSubalgebra R L) : φ 𝔟 = 𝔟.map e.toLieHom := rfl
+  have he_lin : (e.toLieHom : L →ₗ[R] M) = (e : L →ₗ[R] M) := LinearMap.ext fun x ↦ by simp
+  have hP (𝔟 : LieSubalgebra R L) :
+      ((φ 𝔟).toSubmodule ≤ θ'.cartanP ∧ IsLieAbelian (φ 𝔟)) ↔
+        (𝔟.toSubmodule ≤ θ.cartanP ∧ IsLieAbelian 𝔟) := by
+    have hsub : (φ 𝔟).toSubmodule ≤ θ'.cartanP ↔ 𝔟.toSubmodule ≤ θ.cartanP := by
+      rw [hφ, LieSubalgebra.map_toSubmodule, ← map_cartanP (θ := θ) e h, ← he_lin]
+      exact Submodule.map_le_map_iff_of_injective e.injective _ _
+    exact and_congr hsub (lie_abelian_iff_equiv_lie_abelian (e.lieSubalgebraMap 𝔟)).symm
+  have hmax := φ.toOrderEmbedding.maximal_apply_mem_iff
+    (t := {𝔟 : LieSubalgebra R M | 𝔟.toSubmodule ≤ θ'.cartanP ∧ IsLieAbelian 𝔟})
+    (x := 𝔞) (by simp [φ.range_eq])
+  simp only [OrderIso.coe_toOrderEmbedding, Set.mem_ofPred_eq, hP] at hmax
+  simpa only [hφ] using hmax
 
 /-- `[𝔨, 𝔭] ⊆ 𝔭`. -/
 theorem lie_mem_cartanP {x y : L} (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy : y ∈ θ.cartanP) :

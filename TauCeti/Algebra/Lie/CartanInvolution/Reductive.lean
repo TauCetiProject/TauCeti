@@ -162,7 +162,7 @@ end IsReductiveCartanInvolution
 @[simp]
 theorem isReductiveCartanInvolution_conj_iff (θ : L ≃ₗ⁅K⁆ L) (e : L ≃ₗ⁅K⁆ M) :
     (e.symm.trans (θ.trans e)).IsReductiveCartanInvolution ↔ θ.IsReductiveCartanInvolution :=
-  ⟨fun h ↦ by simpa only [symm_symm_trans_conj_symm] using h.conj e.symm, fun h ↦ h.conj e⟩
+  ⟨fun h ↦ by simpa only [symm_symm, trans_conj_symm] using h.conj e.symm, fun h ↦ h.conj e⟩
 
 /-- **Extension from the derived ideal and centre**: when `L = Z(L) ⊕ [L, L]`, an assembled
 automorphism `ofCenterDerived hcompl θZ θD` is a reductive Cartan involution iff `θZ` is involutive
@@ -191,16 +191,15 @@ theorem isReductiveCartanInvolution_ofCenterDerived
 
 /-- On an abelian Lie algebra, `[L, L] = 0`, so every involutive automorphism is a reductive Cartan
 involution. -/
-theorem isReductiveCartanInvolution_iff_involutive_of_isLieAbelian [IsStrictOrderedRing K]
+theorem isReductiveCartanInvolution_iff_involutive_of_isLieAbelian
     [IsLieAbelian L] {θ : L ≃ₗ⁅K⁆ L} : θ.IsReductiveCartanInvolution ↔ Function.Involutive θ := by
   have hZ : center K L = ⊤ := (isLieAbelian_iff_center_eq_top K L).mp inferInstance
   have hD : derivedSeries K L 1 = ⊥ := by
     rw [derivedSeries_def, ← LieAlgebra.abelian_iff_derived_one_eq_bot,
       lie_abelian_iff_equiv_lie_abelian LieIdeal.topEquiv]
     infer_instance
-  refine ⟨fun h ↦ h.involutive, fun hθ ↦ ⟨by rw [hZ, hD]; exact isCompl_top_bot, hθ, ?_⟩⟩
-  rw [isCartanInvolution_iff]
-  refine ⟨fun x ↦ Subtype.ext (by simpa using hθ (x : L)), fun x hx ↦ ?_⟩
+  refine ⟨fun h ↦ h.involutive, fun hθ ↦ ⟨by rw [hZ, hD]; exact isCompl_top_bot, hθ,
+    ⟨fun x ↦ Subtype.ext (by simpa using hθ (x : L)), fun x hx ↦ ?_⟩⟩⟩
   have hx' : (x : L) ∈ (⊥ : LieIdeal K L) := hD ▸ x.property
   exact absurd (Subtype.ext ((LieSubmodule.mem_bot _).mp hx')) hx
 

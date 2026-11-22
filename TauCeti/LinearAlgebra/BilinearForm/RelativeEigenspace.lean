@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.Algebra.Group.Pointwise.Set.Basic
 
 /-!
@@ -27,6 +28,8 @@ definite they meet only in `0`. The spectral theory over finite-dimensional real
 ## Main declarations
 
 * `LinearMap.BilinForm.relativeEigenspace`: the eigenspace of `q` relative to `g` at `μ`.
+* `LinearMap.BilinForm.relativeEigenspace_eq_eigenspace`: for left-separating `g`, the relative
+  eigenspaces of `q` represented by `T` are the eigenspaces of `T`.
 * `LinearMap.BilinForm.relativeSpectralSubspace`: the sum of the relative eigenspaces at the
   eigenvalues in `Ω`.
 * `LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂`: naturality under linear
@@ -59,6 +62,19 @@ def relativeEigenspace (g q : LinearMap.BilinForm R V) (μ : R) : Submodule R V 
 theorem mem_relativeEigenspace_iff {v : V} :
     v ∈ g.relativeEigenspace q μ ↔ ∀ w, q v w = μ * g v w := by
   simp [relativeEigenspace, LinearMap.ext_iff, sub_eq_zero]
+
+/-- When `g` is left-separating (`LinearMap.ker g = ⊥`) and `q` is represented on the left by `T`
+(`q x y = g (T x) y`), the relative eigenspaces of `q` with respect to `g` are the eigenspaces
+of `T`. -/
+theorem relativeEigenspace_eq_eigenspace (hg : g.SeparatingLeft) {T : V →ₗ[R] V}
+    (hT : ∀ x y, q x y = g (T x) y) (μ : R) :
+    g.relativeEigenspace q μ = Module.End.eigenspace T μ := by
+  ext x
+  rw [mem_relativeEigenspace_iff, Module.End.mem_eigenspace_iff]
+  refine ⟨fun h ↦ sub_eq_zero.mp (hg _ fun y ↦ ?_), fun h y ↦ by
+    rw [hT, h, map_smul, LinearMap.smul_apply, smul_eq_mul]⟩
+  rw [map_sub, LinearMap.sub_apply, ← hT, h y, map_smul, LinearMap.smul_apply, smul_eq_mul,
+    sub_self]
 
 /-- The relative spectral subspace of `q` relative to `g` selected by `Ω`: the sum of the
 eigenspaces of `q` relative to `g` at the eigenvalues in `Ω`. -/

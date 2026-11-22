@@ -10,7 +10,6 @@ public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 import Mathlib.Algebra.Lie.Derivation.Killing
-import Mathlib.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Algebra.Lie.Spectral
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
 import TauCeti.Analysis.Normed.Operator.Exponential
@@ -33,7 +32,6 @@ algebras).
 public section
 
 open LieAlgebra Module
-open scoped InnerProductSpace
 
 namespace LieEquiv
 
@@ -61,23 +59,12 @@ private theorem exists_basis_eigenvector_sq_trans {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   let P : L ≃ₗ⁅ℝ⁆ L := N.trans N
   have hN_symm (x y : L) : θ.twistedKillingForm (N x) y = θ.twistedKillingForm x (N y) :=
     twistedKillingForm_trans_left hθ.involutive hθ'.involutive x y
-  obtain ⟨e, he⟩ := LinearMap.BilinForm.exists_linearEquiv_euclideanSpace_apply_apply
-    hθ.isSymm_twistedKillingForm (fun _ hv ↦ hθ.twistedKillingForm_self_pos hv)
-  let T : Module.End ℝ (EuclideanSpace ℝ (Fin (finrank ℝ L))) :=
-    e.symm.toLinearMap.comp ((P : L →ₗ[ℝ] L).comp e.toLinearMap)
-  have heT (x : EuclideanSpace ℝ (Fin (finrank ℝ L))) : e (T x) = P (e x) := by simp [T]
-  have hT : T.IsSymmetric := fun x y ↦ by
-    rw [← he (T x) y, ← he x (T y), heT x, heT y]
-    simpa only [P, trans_apply] using (hN_symm (N (e x)) (e y)).trans (hN_symm (e x) (N (e y)))
-  have hn : finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ L))) = finrank ℝ L :=
-    finrank_euclideanSpace_fin
-  let ob := hT.eigenvectorBasis hn
-  let lam := hT.eigenvalues hn
-  let b : Module.Basis (Fin (finrank ℝ L)) ℝ L := ob.toBasis.map e
-  have hbP (i : Fin (finrank ℝ L)) : P (b i) = lam i • b i := calc
-    P (b i) = e (T (ob i)) := (heT (ob i)).symm
-    _ = e (lam i • ob i) := congrArg e (hT.apply_eigenvectorBasis hn i)
-    _ = lam i • b i := map_smul e _ _
+  have hP_self : θ.twistedKillingForm.IsSelfAdjoint (P : L →ₗ[ℝ] L) := fun x y ↦ by
+    simpa only [P, LinearEquiv.coe_coe, coe_toLinearEquiv, trans_apply] using
+      (hN_symm (N x) y).trans (hN_symm x (N y))
+  obtain ⟨b, lam, hbP⟩ := LinearMap.BilinForm.exists_eigenbasis_of_isSelfAdjoint
+    hθ.isSymm_twistedKillingForm (fun _ hv ↦ hθ.twistedKillingForm_self_pos hv) hP_self
+  simp only [LinearEquiv.coe_coe, coe_toLinearEquiv] at hbP
   refine ⟨b, lam, hbP, fun i ↦ ?_⟩
   have hNne : N (b i) ≠ 0 := fun h0 ↦ b.ne_zero i (N.injective (h0.trans (map_zero N).symm))
   have hpos : 0 < θ.twistedKillingForm (P (b i)) (b i) := by

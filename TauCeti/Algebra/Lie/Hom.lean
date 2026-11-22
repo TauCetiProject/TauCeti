@@ -85,12 +85,6 @@ theorem trans_conj_symm (e : L ≃ₗ⁅R⁆ M) (θ : L ≃ₗ⁅R⁆ L) :
     e.trans ((e.symm.trans (θ.trans e)).trans e.symm) = θ := by
   ext x; simp
 
-/-- Conjugating an automorphism by `e` and then by `e.symm` (written with `e.symm.symm`) recovers
-the original automorphism. -/
-theorem symm_symm_trans_conj_symm (e : L ≃ₗ⁅R⁆ M) (θ : L ≃ₗ⁅R⁆ L) :
-    e.symm.symm.trans ((e.symm.trans (θ.trans e)).trans e.symm) = θ := by
-  rw [e.symm_symm, trans_conj_symm]
-
 end LieEquiv
 
 namespace LinearEquiv
