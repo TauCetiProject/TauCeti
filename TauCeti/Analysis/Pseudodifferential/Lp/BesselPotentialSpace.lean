@@ -133,23 +133,15 @@ theorem quantizeUniformBesselPotentialSpace_add {b : Symbol n V W m} (ha : a.IsU
       a.quantizeUniformBesselPotentialSpace ha s p +
         b.quantizeUniformBesselPotentialSpace hb s p :=
   (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_add
-    (hb.hasBesselPotentialSpaceExtension hp hp_top)
-    ((ha.add hb).hasBesselPotentialSpaceExtension hp hp_top) s hp_top
+    (hb.hasBesselPotentialSpaceExtension hp hp_top) s hp_top
 
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` is homogeneous in the symbol. -/
 theorem quantizeUniformBesselPotentialSpace_smul (ha : a.IsUniform) (c : ℂ) (s : ℝ) (hp : 1 < p)
     (hp_top : p ≠ ∞) :
     (c • a).quantizeUniformBesselPotentialSpace (ha.smul c) s p =
       c • a.quantizeUniformBesselPotentialSpace ha s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_smul c
-    ((ha.smul c).hasBesselPotentialSpaceExtension hp hp_top) s hp_top
-
-/-- The zero symbol quantizes to the zero operator `H^{s,p} → H^{s - m,p}`. -/
-@[simp]
-theorem quantizeUniformBesselPotentialSpace_zero (h : (0 : Symbol n V W m).IsUniform) (s : ℝ)
-    (hp : 1 < p) (hp_top : p ≠ ∞) :
-    (0 : Symbol n V W m).quantizeUniformBesselPotentialSpace h s p = 0 :=
-  (h.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_zero s hp_top
+  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_smul c s
+    hp_top
 
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` takes the negated symbol to the negated
 operator. -/
@@ -157,8 +149,8 @@ theorem quantizeUniformBesselPotentialSpace_neg (ha : a.IsUniform) (s : ℝ) (hp
     (hp_top : p ≠ ∞) :
     (-a).quantizeUniformBesselPotentialSpace ha.neg s p =
       -a.quantizeUniformBesselPotentialSpace ha s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_neg
-    (ha.neg.hasBesselPotentialSpaceExtension hp hp_top) s hp_top
+  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_neg s
+    hp_top
 
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` takes differences of symbols to differences of
 operators. -/
@@ -168,8 +160,7 @@ theorem quantizeUniformBesselPotentialSpace_sub {b : Symbol n V W m} (ha : a.IsU
       a.quantizeUniformBesselPotentialSpace ha s p -
         b.quantizeUniformBesselPotentialSpace hb s p :=
   (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_sub
-    (hb.hasBesselPotentialSpaceExtension hp hp_top)
-    ((ha.sub hb).hasBesselPotentialSpaceExtension hp hp_top) s hp_top
+    (hb.hasBesselPotentialSpaceExtension hp hp_top) s hp_top
 
 /-- **Changing the order of the symbol.** Let `1 < p < ∞`. Viewing a symbol of order `m` as a
 symbol of order `m' ≥ m` gives the operator `H^{s,p} → H^{s - m,p}` followed by the inclusion
@@ -179,8 +170,8 @@ theorem quantizeUniformBesselPotentialSpace_inclusion (h : m ≤ m') (ha : a.IsU
     (inclusion h a).quantizeUniformBesselPotentialSpace (ha.inclusion h) s p =
       BesselPotentialSpace.inclusion (by linarith) ∘L
         a.quantizeUniformBesselPotentialSpace ha s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_inclusion h
-    ((ha.inclusion h).hasBesselPotentialSpaceExtension hp hp_top) s hp_top
+  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_inclusion h s
+    hp_top
 
 /-- **Changing the Sobolev order.** Let `1 < p < ∞`. The operators
 `Op(a) : H^{s,p} → H^{s - m,p}` for the different orders `s` are compatible with the inclusions
@@ -246,8 +237,8 @@ theorem toDistr_quantizeUniformBesselPotentialSpace_ofSpatial [FiniteDimensional
     rw [TemperedDistribution.mulLeftCLM_toTemperedDistributionCLM_eq hA]
     congr 1
     ext x
-    rw [quantizeUniformCLM_ofSpatial_apply, SchwartzMap.bilinLeftCLM_apply]
-    rfl
+    simp only [quantizeUniformCLM_ofSpatial_apply, SchwartzMap.bilinLeftCLM_apply,
+      ContinuousLinearMap.apply_apply]
   simpa using congrArg (fun T ↦ T u) key
 
 end Symbol
