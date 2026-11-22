@@ -157,7 +157,7 @@ theorem henselianRing_of_forall_exists_monic_mul_eq {R : Type*} [CommRing R] {I 
       rw [IsRoot, eval_map_apply, Ideal.Quotient.eq_zero_iff_mem]
       exact hpa₀
     have hfac : p.map π = (X - C (π a₀)) * q₀ := (mul_divByMonic_eq_iff_isRoot.mpr hroot).symm
-    have hcop : IsCoprime (X - C (π a₀)) q₀ := isCoprime_X_sub_C_iff_isUnit_eval.mpr <| by
+    have hcop : IsCoprime (X - C (π a₀)) q₀ := (isCoprime_X_sub_C_iff_isUnit_eval q₀).mpr <| by
       rwa [eval_divByMonic_X_sub_C_self, derivative_map, eval_map_apply]
     obtain ⟨g, h, hg, -, hgh, hgmap, -⟩ := H p hp _ q₀ (monic_X_sub_C _)
       ((monic_X_sub_C _).of_mul_monic_left (hfac ▸ hp.map π)) hcop hfac

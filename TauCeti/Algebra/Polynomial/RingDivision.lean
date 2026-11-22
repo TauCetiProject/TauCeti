@@ -38,14 +38,12 @@ theorem isCoprime_sub_C_of_isUnit_sub (p : R[X]) {a b : R} (h : IsUnit (a - b)) 
     IsCoprime (p - C a) (p - C b) := by
   simpa using (isCoprime_X_sub_C_of_isUnit_sub h).map (aeval p).toRingHom
 
-/-- Over any commutative ring, `X - C a` is coprime to `p` exactly when `p.eval a` is a unit:
-evaluating a Bézout identity at `a` inverts `p.eval a`, and conversely `p` is congruent to the
-constant `p.eval a` modulo `X - C a`. -/
+/-- Over any commutative ring, `X - C a` is coprime to `p` exactly when `p.eval a` is a unit. -/
 @[simp]
-theorem isCoprime_X_sub_C_iff_isUnit_eval {p : R[X]} {a : R} :
+theorem isCoprime_X_sub_C_iff_isUnit_eval (p : R[X]) {a : R} :
     IsCoprime (X - C a) p ↔ IsUnit (p.eval a) := by
-  refine ⟨fun ⟨u, v, h⟩ ↦ .of_mul_eq_one_right (v.eval a) ?_, fun h ↦ ?_⟩
-  · simpa using congrArg (eval a) h
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · simpa [isCoprime_zero_left] using h.map (evalRingHom a)
   · rw [← modByMonic_add_div p (X - C a), IsCoprime.add_mul_left_right_iff,
       modByMonic_X_sub_C_eq_C_eval]
     exact isCoprime_one_right.of_isCoprime_of_dvd_right (isUnit_C.2 h).dvd

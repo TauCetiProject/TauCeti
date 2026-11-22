@@ -19,6 +19,7 @@ public import TauCeti.Algebra.Polynomial.LinearFactor
 public import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.Algebra.Group.PowMonoidHom
+import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Collinear
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
@@ -334,6 +335,20 @@ lemma mk_eq_mk_iff [W.IsElliptic] [W.IsCharNeTwoNF] {x : R} (hx : W.f.eval x = 0
   rw [← EquivLike.apply_eq_iff_eq <| W.equivProdA' hx]
   simpa only [equivProdA'_apply] using Prod.mk_inj
 
+variable {W} in
+/-- At a root `x` of `f`, the corrected representative `x - T + fCofactor x` is a unit of the
+cubic quotient algebra. -/
+lemma isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero [W.IsElliptic] [W.IsCharNeTwoNF] {x : R}
+    (h : W.f.eval x = 0) :
+    IsUnit <| AdjoinRoot.mk W.f <| C x - X + W.fCofactor x := by
+  have hc : IsCoprime (X - C x) (W.fCofactor x) :=
+    (W.f_eq_mul_of_eval_eq_zero h ▸ separable_f W).isCoprime.symm
+  rw [W.f_eq_mul_of_eval_eq_zero h, AdjoinRoot.isUnit_mk_mul_X_sub_C_iff]
+  refine ⟨by simpa using (isCoprime_X_sub_C_iff_isUnit_eval _).mp hc, ?_⟩
+  rw [map_add, AdjoinRoot.mk_self, add_zero, AdjoinRoot.isUnit_mk_iff_isCoprime, ← neg_sub,
+    IsCoprime.neg_right_iff]
+  exact hc.symm
+
 /-! ### Square classes of the cubic quotient algebra -/
 
 section SquareClasses
@@ -579,37 +594,6 @@ variable [W.IsCharNeTwoNF]
 lemma y_eq_zero_of_eval_f_eq_zero {x y : K} (h : W.Equation x y) (hf : W.f.eval x = 0) :
     y = 0 := by
   rwa [equation_iff_eval_f_eq_sq, hf, eq_comm, sq_eq_zero_iff] at h
-
-variable [W.IsElliptic]
-
-lemma isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero {x : K} (h : W.f.eval x = 0) :
-    IsUnit <| AdjoinRoot.mk W.f <| C x - X + W.fCofactor x := by
-  rw [W.f_eq_mul_of_eval_eq_zero h, AdjoinRoot.isUnit_mk_mul_X_sub_C_iff]
-  have H₀ : 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ ≠ 0 := deriv_f_ne_zero W h
-  have H₁ : eval x (C x - X + W.fCofactor x) = 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ := by
-    rw [eval_add, W.eval_fCofactor_self]; simp
-  have H₂ : (AdjoinRoot.mk (W.fCofactor x)) (C x - X + W.fCofactor x) =
-      AdjoinRoot.mk (W.fCofactor x) (C x - X) := by
-    simp
-  rw [H₁, H₂, isUnit_iff_ne_zero]
-  refine ⟨H₀, ?_⟩
-  let u := AdjoinRoot.mk (W.fCofactor x) <|
-    C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄)⁻¹ * (X + C (2 * x + W.a₂))
-  rw [isUnit_iff_exists_inv]
-  refine ⟨u, ?_⟩
-  rw [← map_mul]
-  have : (C x - X) * (C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄)⁻¹ * (X + C (2 * x + W.a₂))) =
-      C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄)⁻¹ * (-W.fCofactor x) + 1 := by
-    rw [mul_left_comm]
-    apply_fun (C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) * ·) using
-      mul_right_injective₀ <| C_ne_zero.mpr H₀
-    dsimp only
-    rw [mul_add _ _ 1]
-    simp_rw [← mul_assoc, ← map_mul, mul_inv_cancel₀ H₀, map_one, one_mul, mul_one]
-    simp only [C_eq_algebraMap, fCofactor]
-    algebra
-  rw [this, map_add, map_one, map_mul, map_neg]
-  simp
 
 end
 

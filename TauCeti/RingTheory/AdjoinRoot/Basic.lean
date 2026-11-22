@@ -207,9 +207,8 @@ theorem isUnit_mk_iff_isCoprime {f g : R[X]} : IsUnit (mk f g) ↔ IsCoprime f g
   Ideal.Quotient.isUnit_mk_iff.trans <| (Ideal.sup_eq_top_iff_isCoprime g f).trans isCoprime_comm
 
 /-- Modulo a relator `q * (X - C x)` with a linear factor, the class of `p` is a unit exactly when
-`p.eval x` is a unit and the class of `p` modulo the cofactor `q` is a unit. No hypothesis on `q`
-is needed: coprimality with a product is coprimality with each factor, even when `q` also
-vanishes at `x`. -/
+`p.eval x` is a unit and the class of `p` modulo the cofactor `q` is a unit. This holds for every
+cofactor `q`, including one with `q.eval x = 0`. -/
 theorem isUnit_mk_mul_X_sub_C_iff {q p : R[X]} {x : R} :
     IsUnit (mk (q * (X - C x)) p) ↔ IsUnit (p.eval x) ∧ IsUnit (mk q p) := by
   rw [isUnit_mk_iff_isCoprime, IsCoprime.mul_left_iff, isCoprime_X_sub_C_iff_isUnit_eval,
