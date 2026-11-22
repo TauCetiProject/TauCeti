@@ -350,7 +350,14 @@ theorem _root_.ContinuousOn.analyticAt_of_separately_differentiableAt
   let M : (V₁ × V₂) ≃L[ℂ] (Fin (Module.finrank ℂ V₁) ⊕ Fin (Module.finrank ℂ V₂) → ℂ) :=
     (e₁.prodCongr e₂).trans eS
   have hM : ∀ w, M.symm w = (e₁.symm (w ∘ Sum.inl), e₂.symm (w ∘ Sum.inr)) := fun w => by
-    simp [M, eS, LinearEquiv.sumArrowLequivProdArrow, Equiv.sumArrowEquivProdArrow]
+    have hS : eS.symm w = (w ∘ Sum.inl, w ∘ Sum.inr) := by
+      ext x
+      · simp only [eS, LinearEquiv.coe_toContinuousLinearEquiv_symm', LinearEquiv.symm_symm,
+          LinearEquiv.sumArrowLequivProdArrow_apply_fst, Function.comp_apply]
+      · simp only [eS, LinearEquiv.coe_toContinuousLinearEquiv_symm', LinearEquiv.symm_symm,
+          LinearEquiv.sumArrowLequivProdArrow_apply_snd, Function.comp_apply]
+    simp only [M, ContinuousLinearEquiv.symm_trans_apply, hS,
+      ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.prodCongr_apply]
   have han : AnalyticAt ℂ (f ∘ M.symm) (M p) := by
     refine (hc.comp M.symm.continuous.continuousOn
       (mapsTo_preimage M.symm s)).analyticAt_of_differentiableAt_update

@@ -8,8 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
-import Mathlib.Analysis.PSeries
-import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
 import TauCeti.Analysis.LaplaceTransform.Basic
 
 /-!
@@ -32,10 +30,6 @@ positive reals, so they agree on the half-plane by the identity theorem.
   holomorphic in the rate on the right half-plane.
 * `TauCeti.integral_norm_cpow_mul_exp_neg_mul_Ioi`: the integral of the norm of the integrand is
   `(1 / Re w)^{Re s} Γ(Re s)`.
-* `TauCeti.exists_summable_integral_norm_cpow_mul_exp_neg_natCast_add_le` and
-  `TauCeti.exists_mem_nhds_summable_integral_norm_cpow_mul_exp_neg_natCast_add_le`: compact and
-  local uniform summable majorants for `∫ t in Ioi 0, ‖t ^ (p.1 - 1) * cexp (-((n + p.2) * t))‖`
-  on `{p | 1 < p.1.re ∧ 0 < p.2.re}`.
 
 The proof is adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMFMathlib/Analysis/Asymptotics/WatsonSector.lean`.
@@ -127,79 +121,5 @@ theorem integral_norm_cpow_mul_exp_neg_mul_Ioi {s w : ℂ} (hs : 0 < s.re) (hw :
   rw [← Real.integral_rpow_mul_exp_neg_mul_Ioi hs hw]
   refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
   rw [norm_cpow_mul_exp_neg_mul s w ht, neg_mul]
-
-/-- On any compact subset `K ⊆ {p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}`, the `L¹((0, ∞))`
-norms `∫ t in Ioi 0, ‖t ^ (p.1 - 1) * cexp (-((n + p.2) * t))‖` admit a uniform summable
-majorant. -/
-theorem exists_summable_integral_norm_cpow_mul_exp_neg_natCast_add_le {K : Set (ℂ × ℂ)}
-    (hK : IsCompact K) (hK_sub : K ⊆ {p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}) :
-    ∃ a : ℕ → ℝ, Summable a ∧ ∀ p ∈ K, ∀ n : ℕ,
-      ∫ t in Ioi (0 : ℝ), ‖(t : ℂ) ^ (p.1 - 1) * cexp (-((n + p.2) * t))‖ ≤ a n := by
-  rcases K.eq_empty_or_nonempty with rfl | hKne
-  · exact ⟨fun _ => 0, summable_zero, fun _ hp => False.elim hp⟩
-  obtain ⟨p₀, hp₀, hp₀_min⟩ :=
-    hK.exists_isMinOn hKne (continuous_re.comp continuous_fst).continuousOn
-  obtain ⟨p₁, hp₁, hp₁_min⟩ :=
-    hK.exists_isMinOn hKne (continuous_re.comp continuous_snd).continuousOn
-  obtain ⟨B_re, hB_re⟩ :=
-    hK.exists_bound_of_continuousOn (continuous_re.comp continuous_fst).continuousOn
-  have hB_re' : ∀ p ∈ K, p.1.re ≤ max B_re 0 := fun p hp =>
-    ((le_abs_self _).trans (by simpa [Real.norm_eq_abs] using hB_re p hp)).trans (le_max_left _ _)
-  have hcont_G : ContinuousOn (fun p : ℂ × ℂ => Real.Gamma p.1.re) K :=
-    Real.differentiableOn_Gamma_Ioi.continuousOn.comp
-      (continuous_re.comp continuous_fst).continuousOn
-      fun p hp => lt_trans zero_lt_one (hK_sub hp).1
-  obtain ⟨G, hG⟩ := hK.exists_bound_of_continuousOn hcont_G
-  have hG' : ∀ p ∈ K, Real.Gamma p.1.re ≤ max G 0 := fun p hp =>
-    ((le_abs_self _).trans (by simpa [Real.norm_eq_abs] using hG p hp)).trans (le_max_left _ _)
-  let a : ℕ → ℝ := fun n =>
-    max G 0 * if n = 0 then (max 1 p₁.2.re⁻¹) ^ max B_re 0 else (n : ℝ) ^ (-p₀.1.re)
-  refine ⟨a, ?_, fun p hp n => ?_⟩
-  · rw [← summable_nat_add_iff 1]
-    exact (((summable_nat_add_iff 1).mpr ((Real.summable_nat_rpow (p := -p₀.1.re)).mpr
-      (by linarith [(hK_sub hp₀).1]))).mul_left (max G 0)).congr fun n => by simp [a]
-  · have hpos : 0 < ((n : ℂ) + p.2).re := by
-      simp only [add_re, natCast_re]
-      linarith [(hK_sub hp).2, Nat.cast_nonneg (α := ℝ) n]
-    rw [integral_norm_cpow_mul_exp_neg_mul_Ioi (by linarith [(hK_sub hp).1]) hpos,
-      one_div, ← Real.rpow_neg_eq_inv_rpow, add_re, natCast_re, mul_comm]
-    refine mul_le_mul (hG' p hp) ?_ (Real.rpow_nonneg (by linarith [(hK_sub hp).2]) _)
-      (le_max_right _ _)
-    have hη_pos : 0 < p₁.2.re := (hK_sub hp₁).2
-    rcases n with _ | m
-    · simp only [Nat.cast_zero, zero_add, ↓reduceIte]
-      have h1 : p.2.re ^ (-p.1.re) ≤ p₁.2.re ^ (-p.1.re) :=
-        Real.rpow_le_rpow_of_nonpos hη_pos (hp₁_min hp) (by linarith [(hK_sub hp).1])
-      have h2 : p₁.2.re ^ (-p.1.re) = (p₁.2.re⁻¹) ^ p.1.re := by
-        rw [Real.rpow_neg hη_pos.le, Real.inv_rpow hη_pos.le]
-      exact h1.trans (h2.symm ▸ (Real.rpow_le_rpow (by positivity) (le_max_right _ _)
-        (by linarith [(hK_sub hp).1])).trans
-        (Real.rpow_le_rpow_of_exponent_le (le_max_left _ _) (hB_re' p hp)))
-    · simp only [Nat.succ_ne_zero, ↓reduceIte]
-      exact (Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith [(hK_sub hp).2])
-        (by linarith [(hK_sub hp).1])).trans
-        (Real.rpow_le_rpow_of_exponent_le (by norm_cast; omega) (neg_le_neg (hp₀_min hp)))
-
-/-- Locally around any `(s₀, c₀)` with `1 < s₀.re` and `0 < c₀.re`, the `L¹((0, ∞))`
-norms `∫ t in Ioi 0, ‖t ^ (p.1 - 1) * cexp (-((n + p.2) * t))‖` admit a uniform summable
-majorant. -/
-theorem exists_mem_nhds_summable_integral_norm_cpow_mul_exp_neg_natCast_add_le {s₀ c₀ : ℂ}
-    (hs₀ : 1 < s₀.re) (hc₀ : 0 < c₀.re) :
-    ∃ U ∈ 𝓝 (s₀, c₀), ∃ a : ℕ → ℝ, Summable a ∧ ∀ p ∈ U, ∀ n : ℕ,
-      ∫ t in Ioi (0 : ℝ), ‖(t : ℂ) ^ (p.1 - 1) * cexp (-((n + p.2) * t))‖ ≤ a n := by
-  let r : ℝ := min ((s₀.re - 1) / 2) (c₀.re / 2)
-  let B := Metric.closedBall (s₀, c₀) r
-  have hK_sub : B ⊆ {p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re} := fun p hp => by
-    have hdist : dist p (s₀, c₀) ≤ r := Metric.mem_closedBall.mp hp
-    have h1 : |p.1.re - s₀.re| ≤ r := (abs_re_le_norm (p.1 - s₀)).trans
-      (by rw [← dist_eq]; exact (le_max_left (dist p.1 s₀) (dist p.2 c₀)).trans hdist)
-    have h2 : |p.2.re - c₀.re| ≤ r := (abs_re_le_norm (p.2 - c₀)).trans
-      (by rw [← dist_eq]; exact (le_max_right (dist p.1 s₀) (dist p.2 c₀)).trans hdist)
-    exact ⟨by linarith [(abs_le.mp h1).1, min_le_left ((s₀.re - 1) / 2) (c₀.re / 2)],
-      by linarith [(abs_le.mp h2).1, min_le_right ((s₀.re - 1) / 2) (c₀.re / 2)]⟩
-  obtain ⟨a, ha_sum, ha_le⟩ :=
-    exists_summable_integral_norm_cpow_mul_exp_neg_natCast_add_le
-      (isCompact_closedBall (s₀, c₀) r) hK_sub
-  exact ⟨B, Metric.closedBall_mem_nhds _ (lt_min (by linarith) (by linarith)), a, ha_sum, ha_le⟩
 
 end TauCeti

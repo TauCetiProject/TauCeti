@@ -34,10 +34,6 @@ circle-parametrized Hurwitz zeta function `HurwitzZeta.hurwitzZeta (x : UnitAddC
 * `TauCeti.complexHurwitzSeries`: the Dirichlet-type series `∑' n : ℕ, exp (-s * log (n + c))`.
 * `TauCeti.complexHurwitzSeries_eq_tsum_cpow`: termwise agreement with `∑' n : ℕ, (n + c) ^ (-s)`
   for every `s : ℂ` when `c ∉ -ℕ`.
-* `TauCeti.exists_norm_complexHurwitzSeries_term_le`: compact-uniform summable majorant
-  `C * (n + 1) ^ (-σ)` (`1 < σ`) on compact subsets of
-  `{p : ℂ × ℂ | 1 < p.1.re ∧ ∀ n : ℕ, p.2 ≠ -(n : ℂ)}` (combining `1 < s.re` convergence with
-  `c ∉ -ℕ` termwise agreement).
 * `TauCeti.summable_norm_complexHurwitzSeries_term`, `TauCeti.summable_complexHurwitzSeries_term`,
   `TauCeti.hasSum_complexHurwitzSeries_term`, `TauCeti.hasSum_complexHurwitzSeries`, and
   `TauCeti.hasSum_complexHurwitzSeries_of_re_pos`: for `1 < s.re`, formal absolute convergence and
@@ -89,20 +85,6 @@ theorem complexHurwitzSeries_eq_tsum_cpow {c : ℂ} (hc : ∀ n : ℕ, c ≠ -(n
   refine tsum_congr fun n => ?_
   have hne : (n : ℂ) + c ≠ 0 := fun h => hc n (eq_neg_of_add_eq_zero_right h)
   rw [cpow_def_of_ne_zero hne, mul_comm]
-
-/-- On any compact subset `K` of `{p : ℂ × ℂ | 1 < p.1.re ∧ ∀ n : ℕ, p.2 ≠ -(n : ℂ)}`
-(combining `1 < s.re` convergence with `c ∉ -ℕ` termwise agreement), the defining terms
-`Complex.exp (-p.1 * Complex.log (n + p.2))` admit a uniform summable bound
-`C * ((n : ℝ) + 1) ^ (-σ)` with `1 < σ` and `0 ≤ C`. -/
-theorem exists_norm_complexHurwitzSeries_term_le {K : Set (ℂ × ℂ)} (hK : IsCompact K)
-    (hK_sub : K ⊆ {p : ℂ × ℂ | 1 < p.1.re ∧ ∀ n : ℕ, p.2 ≠ -(n : ℂ)}) :
-    ∃ σ : ℝ, 1 < σ ∧ ∃ C ≥ 0, ∀ p ∈ K, ∀ n : ℕ,
-      ‖Complex.exp (-p.1 * Complex.log (n + p.2))‖ ≤ C * ((n : ℝ) + 1) ^ (-σ) := by
-  obtain ⟨σ, hσ, C, hC, hle⟩ := exists_norm_natCast_add_cpow_neg_le hK hK_sub
-  refine ⟨σ, hσ, C, hC, fun p hp n => ?_⟩
-  have hne : (n : ℂ) + p.2 ≠ 0 := fun h => (hK_sub hp).2 n (eq_neg_of_add_eq_zero_right h)
-  rw [mul_comm (-p.1), ← cpow_def_of_ne_zero hne]
-  exact hle p hp n
 
 /-- For `1 < s.re` and any `c : ℂ`, the defining terms `exp (-s * log (n + c))` are absolutely
 summable. When `c ∉ -ℕ`, this is absolute convergence of `∑' n, (n + c) ^ (-s)`; at `c = -n`

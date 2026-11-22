@@ -13,7 +13,7 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Data.ZMod.Count
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Cotangent
-import TauCeti.NumberTheory.LSeries.ZMod
+import TauCeti.NumberTheory.LSeries.ZMod.Basic
 
 /-!
 # Generalized Bernoulli numbers and primitive character sums

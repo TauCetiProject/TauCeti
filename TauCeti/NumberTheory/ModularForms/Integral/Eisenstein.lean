@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.Integral.Trace
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Dimension
 
 import TauCeti.Analysis.Fourier.ZMod
-import TauCeti.NumberTheory.LSeries.ZMod
+import TauCeti.NumberTheory.LSeries.ZMod.Basic
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 
