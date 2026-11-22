@@ -113,6 +113,10 @@ computed in any chart, also on manifolds with boundary or corners
   `f^[j] x` of the orbit.
 * `HasFDerivAt.isNondegenerateFixedPt_iff_injective_id_sub`: on a normed space, a fixed point at
   which `f` has derivative `D` is nondegenerate exactly when `1 - D` is injective.
+* `HasFDerivAt.isNondegenerateFixedPt_iff_isInvertible_id_sub`: in finite dimensions, exactly when
+  `1 - D` is invertible.
+* `TauCeti.IsNondegenerateFixedPt.isInvertible_id_sub_fderiv`: so `1 - Df(x)` is invertible at a
+  nondegenerate fixed point of a map of a finite-dimensional normed space.
 * `TauCeti.IsNondegenerateFixedPt.det_one_sub_fderiv_ne_zero`: on a finite-dimensional normed
   space, `det (1 - df_x) ≠ 0` at a nondegenerate fixed point `x`.
 * `TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`: in finite dimensions, a fixed point at
@@ -518,6 +522,26 @@ theorem _root_.HasFDerivAt.isNondegenerateFixedPt_iff_injective_id_sub {f : E �
   -- The tangent space `TangentSpace 𝓘(𝕜, E) x` is `E` by definition.
   exact forall_congr' fun v ↦ imp_congr_left
     ⟨fun h ↦ sub_eq_zero.2 h.symm, fun h ↦ (sub_eq_zero.1 h).symm⟩
+
+/-- **Nondegeneracy on a finite-dimensional space.** If `f` has Fréchet derivative `D` at a fixed
+point `x` of a finite-dimensional normed space over a complete field, with its trivial chart, then
+`x` is nondegenerate exactly when `1 - D` is invertible. -/
+theorem _root_.HasFDerivAt.isNondegenerateFixedPt_iff_isInvertible_id_sub [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 E] {f : E → E} {D : E →L[𝕜] E} {x : E} (hD : HasFDerivAt f D x)
+    (hx : IsFixedPt f x) :
+    IsNondegenerateFixedPt 𝓘(𝕜, E) f x ↔ (ContinuousLinearMap.id 𝕜 E - D).IsInvertible := by
+  rw [hD.isNondegenerateFixedPt_iff_injective_id_sub hx]
+  refine ⟨fun h ↦ ⟨(LinearEquiv.ofInjectiveEndo _ h).toContinuousLinearEquiv, by ext; simp⟩, ?_⟩
+  rintro ⟨e, he⟩
+  exact he ▸ e.injective
+
+/-- At a nondegenerate fixed point `x` of a map `f` of a finite-dimensional normed space over a
+complete field, with its trivial chart, the operator `1 - Df(x)` is invertible. -/
+theorem IsNondegenerateFixedPt.isInvertible_id_sub_fderiv [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 E] {f : E → E} {x : E} (h : IsNondegenerateFixedPt 𝓘(𝕜, E) f x) :
+    (ContinuousLinearMap.id 𝕜 E - fderiv 𝕜 f x).IsInvertible :=
+  ((mdifferentiableAt_iff_differentiableAt.1 h.mdifferentiableAt).hasFDerivAt
+    |>.isNondegenerateFixedPt_iff_isInvertible_id_sub h.isFixedPt).1 h
 
 /-- **Nondegeneracy gives a nonzero determinant.** At a nondegenerate fixed point `x` of a self-map
 `f` of a finite-dimensional normed space, with its trivial chart, `det (1 - df_x) ≠ 0`. -/
