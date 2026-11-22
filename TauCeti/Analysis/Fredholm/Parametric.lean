@@ -633,6 +633,12 @@ theorem finiteDimensional_quotient_range_parameterProj
     FiniteDimensional 𝕜 (Λ ⧸ (parameterProj D₁ D₂).range) :=
   (quotientRangeParameterProjEquivRange D₁ D₂).symm.finiteDimensional
 
+/-- The cokernel of `D₁.coprod D₂` is finite dimensional as soon as that of `D₁` is, since the
+cokernel of `D₁` maps onto it (`ContinuousLinearMap.cokerCoprodHom_surjective`). -/
+theorem finiteDimensional_quotient_range_coprod [FiniteDimensional 𝕜 (F ⧸ D₁.range)] :
+    FiniteDimensional 𝕜 (F ⧸ (D₁.coprod D₂).range) :=
+  Module.Finite.of_surjective _ (cokerCoprodHom_surjective D₁ D₂)
+
 /-- Kernel growth is the dimension of the extra variables minus the
 number of independent old obstructions they remove. -/
 theorem finrank_ker_coprod_add_finrank_range_parameterToCoker
