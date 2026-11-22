@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import Mathlib.Analysis.Complex.LocallyUniformLimit
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
+import TauCeti.Analysis.SpecialFunctions.Pochhammer
 
 /-!
 # The regularized Kummer function as a function of its parameters
@@ -28,6 +31,8 @@ The local majorant comes from the shifted Gamma bound `‖1 / Γ(s + n)‖ ≤ �
 * `Complex.norm_regularizedHGFunCoeff_singleton_mul_pow_le` — the termwise majorant.
 * `Complex.exists_summable_eventually_norm_regularizedHGFunCoeff_singleton_mul_pow_le` — a
   summable majorant of the tail of the series, uniform near every point `(a, b, z)`.
+* `Complex.tendstoLocallyUniformly_regularizedHGFun_singleton` — the partial sums of the series
+  converge to `𝐌` locally uniformly in `(a, b, z)`.
 * `Complex.continuous_regularizedHGFun_singleton` — joint continuity of `𝐌` in `(a, b, z)`.
 * `Continuous.regularizedHGFun_singleton` — `x ↦ 𝐌(f x, g x, h x)` is continuous for continuous
   `f`, `g` and `h`.
@@ -52,8 +57,7 @@ namespace Complex
 /-- The coefficients of `𝐌(a, b, ·)` are jointly holomorphic in the parameters `(a, b)`. -/
 theorem differentiable_regularizedHGFunCoeff_singleton (n : ℕ) :
     Differentiable ℂ fun q : ℂ × ℂ => regularizedHGFunCoeff {q.1} {q.2} n := by
-  simp only [regularizedHGFunCoeff, Multiset.map_singleton, Multiset.prod_singleton,
-    div_eq_mul_inv, mul_inv]
+  simp only [regularizedHGFunCoeff_singleton, div_eq_mul_inv, mul_inv]
   exact ((Polynomial.differentiable _).comp differentiable_fst).mul
     ((differentiable_one_div_Gamma.comp
       (by fun_prop : Differentiable ℂ fun q : ℂ × ℂ => q.2 + n)).const_mul _)
@@ -66,26 +70,22 @@ theorem norm_regularizedHGFunCoeff_singleton_mul_pow_le {a b z : ℂ} {A R : ℝ
     ‖regularizedHGFunCoeff {a} {b} (n + N) * z ^ (n + N)‖ ≤
       ‖(Gamma (b + N))⁻¹‖ *
         ‖regularizedHGFunCoeff {(A : ℂ)} {1 - (N : ℂ)} (n + N) * (R : ℂ) ^ (n + N)‖ := by
-  have hA : 0 ≤ A := (norm_nonneg a).trans ha
   have hR : 0 ≤ R := (norm_nonneg z).trans hz
+  -- The Pochhammer bound `‖(a)ₘ‖ ≤ (A)ₘ`, with `(A)ₘ` evaluated in `ℂ` as the cast of a real.
   have hpoch (m : ℕ) : ‖(ascPochhammer ℂ m).eval a‖ ≤ ‖(ascPochhammer ℂ m).eval (A : ℂ)‖ := by
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      rw [ascPochhammer_succ_eval, ascPochhammer_succ_eval, norm_mul, norm_mul]
-      have hlin : ‖a + m‖ ≤ ‖(A : ℂ) + m‖ := by
-        rw [← ofReal_natCast, ← ofReal_add, norm_real, Real.norm_of_nonneg (by positivity)]
-        exact (norm_add_le _ _).trans (by simpa using ha)
-      exact mul_le_mul ih hlin (norm_nonneg _) (norm_nonneg _)
+    have h := TauCeti.norm_ascPochhammer_eval_le_of_norm_le m ha
+    have hcast : (ascPochhammer ℂ m).eval (A : ℂ) = (((ascPochhammer ℝ m).eval A : ℝ) : ℂ) := by
+      rw [← ascPochhammer_map ofRealHom, ← ofRealHom_eq_coe, Polynomial.eval_map_apply,
+        ofRealHom_eq_coe]
+    rwa [hcast, norm_real, Real.norm_of_nonneg ((norm_nonneg _).trans h)]
   have hshift : 1 - (N : ℂ) + ((n + N : ℕ) : ℂ) = n + 1 := by push_cast; ring
   have hΓ : Gamma (1 - (N : ℂ) + ((n + N : ℕ) : ℂ)) = n ! := by
     rw [hshift, Gamma_nat_eq_factorial]
   have hbN : b + N + n = b + ((n + N : ℕ) : ℂ) := by push_cast; ring
   have hG := norm_inv_Gamma_add_natCast_le hb n
   rw [hbN] at hG
-  simp only [regularizedHGFunCoeff, Multiset.map_singleton, Multiset.prod_singleton, hΓ,
-    div_eq_mul_inv, mul_inv, norm_mul, norm_inv, norm_pow, norm_real, norm_natCast,
-    Real.norm_of_nonneg hR]
+  simp only [regularizedHGFunCoeff_singleton, hΓ, div_eq_mul_inv, mul_inv, norm_mul, norm_inv,
+    norm_pow, norm_real, norm_natCast, Real.norm_of_nonneg hR]
   simp only [norm_inv] at hG
   calc _ ≤ ‖(ascPochhammer ℂ (n + N)).eval (A : ℂ)‖ * (((n + N)! : ℝ)⁻¹ *
         (‖Gamma (b + N)‖⁻¹ / n !)) * R ^ (n + N) := by gcongr; exact hpoch _
@@ -123,31 +123,41 @@ theorem exists_summable_eventually_norm_regularizedHGFunCoeff_singleton_mul_pow_
   gcongr
   exact hC _ (Metric.ball_subset_closedBall hpb)
 
-/-- The series of `𝐌(a, b, z)`, split after its first `N` terms. -/
-private theorem regularizedHGFun_singleton_eq_sum_range_add_tsum (a b z : ℂ) (N : ℕ) :
-    regularizedHGFun {a} {b} z =
-      ∑ n ∈ Finset.range N, regularizedHGFunCoeff {a} {b} n * z ^ n +
-        ∑' n : ℕ, regularizedHGFunCoeff {a} {b} (n + N) * z ^ (n + N) := by
-  rw [← (hasSum_regularizedHGFun (by simp) z).tsum_eq,
-    (hasSum_regularizedHGFun (a := {a}) (b := {b}) (by simp) z).summable.sum_add_tsum_nat_add]
+/-- The partial sums of the series of `𝐌(a, b, z)` converge to `𝐌` locally uniformly in the
+parameters and the argument. -/
+theorem tendstoLocallyUniformly_regularizedHGFun_singleton :
+    TendstoLocallyUniformly (fun (M : ℕ) (p : ℂ × ℂ × ℂ) =>
+        ∑ n ∈ Finset.range M, regularizedHGFunCoeff {p.1} {p.2.1} n * p.2.2 ^ n)
+      (fun p => regularizedHGFun {p.1} {p.2.1} p.2.2) atTop := by
+  have heq : (fun p : ℂ × ℂ × ℂ => regularizedHGFun {p.1} {p.2.1} p.2.2) =
+      fun p => ∑' n : ℕ, regularizedHGFunCoeff {p.1} {p.2.1} n * p.2.2 ^ n :=
+    funext fun p => ((hasSum_regularizedHGFun (by simp) p.2.2).tsum_eq).symm
+  rw [heq]
+  refine tendstoLocallyUniformly_of_forall_exists_nhds fun x => ?_
+  obtain ⟨N, u, hu, hev⟩ :=
+    exists_summable_eventually_norm_regularizedHGFunCoeff_singleton_mul_pow_le x
+  -- The eventual M-test, with the majorant `k ↦ u (k - N)` of the terms of index `k ≥ N`.
+  refine ⟨_, hev, tendstoUniformlyOn_tsum_nat_eventually (u := fun k => u (k - N))
+    ((summable_nat_add_iff N).mp (by simpa using hu)) ?_⟩
+  filter_upwards [eventually_ge_atTop N] with k hk p hp
+  have h := hp (k - N)
+  rwa [Nat.sub_add_cancel hk] at h
+
+/-- The partial sums of the series of `𝐌(a, b, z)` are entire in `(a, b, z)`. -/
+private theorem differentiable_sum_regularizedHGFunCoeff_singleton_mul_pow (M : ℕ) :
+    Differentiable ℂ fun p : ℂ × ℂ × ℂ =>
+      ∑ n ∈ Finset.range M, regularizedHGFunCoeff {p.1} {p.2.1} n * p.2.2 ^ n :=
+  Differentiable.fun_sum fun n _ =>
+    ((differentiable_regularizedHGFunCoeff_singleton n).comp
+      (differentiable_fst.prodMk differentiable_snd.fst)).mul (differentiable_snd.snd.pow n)
 
 /-- The regularized Kummer function `𝐌(a, b, z)` is jointly continuous in the parameters and the
 argument. -/
 theorem continuous_regularizedHGFun_singleton :
-    Continuous fun p : ℂ × ℂ × ℂ => regularizedHGFun {p.1} {p.2.1} p.2.2 := by
-  rw [continuous_iff_continuousAt]
-  intro x
-  obtain ⟨N, u, hu, hev⟩ :=
-    exists_summable_eventually_norm_regularizedHGFunCoeff_singleton_mul_pow_le x
-  obtain ⟨U, hU, hUo, hxU⟩ := eventually_nhds_iff.1 hev
-  have hterm (n : ℕ) : Continuous fun p : ℂ × ℂ × ℂ =>
-      regularizedHGFunCoeff {p.1} {p.2.1} n * p.2.2 ^ n :=
-    ((differentiable_regularizedHGFunCoeff_singleton n).continuous.comp
-      (continuous_fst.prodMk continuous_snd.fst)).mul (continuous_snd.snd.pow n)
-  simp_rw [regularizedHGFun_singleton_eq_sum_range_add_tsum _ _ _ N]
-  exact (continuous_finsetSum _ fun n _ => hterm n).continuousAt.add
-    ((continuousOn_tsum (fun n => (hterm (n + N)).continuousOn) hu
-      fun n p hp => hU p hp n).continuousAt (hUo.mem_nhds hxU))
+    Continuous fun p : ℂ × ℂ × ℂ => regularizedHGFun {p.1} {p.2.1} p.2.2 :=
+  tendstoLocallyUniformly_regularizedHGFun_singleton.continuous
+    (Frequently.of_forall fun M => (differentiable_sum_regularizedHGFunCoeff_singleton_mul_pow M
+      ).continuous)
 
 /-- For continuous `f`, `g` and `h`, the function `x ↦ 𝐌(f x, g x, h x)` is continuous. -/
 @[fun_prop]
@@ -161,19 +171,13 @@ theorem _root_.Continuous.regularizedHGFun_singleton {X : Type*} [TopologicalSpa
 theorem _root_.Differentiable.regularizedHGFun_singleton {f g h : ℂ → ℂ}
     (hf : Differentiable ℂ f) (hg : Differentiable ℂ g) (hh : Differentiable ℂ h) :
     Differentiable ℂ fun w => regularizedHGFun {f w} {g w} (h w) := by
-  intro w₀
-  obtain ⟨N, u, hu, hev⟩ :=
-    exists_summable_eventually_norm_regularizedHGFunCoeff_singleton_mul_pow_le
-      (f w₀, g w₀, h w₀)
-  obtain ⟨V, hV, hVo, hw₀V⟩ := eventually_nhds_iff.1
-    ((hf.continuous.prodMk (hg.continuous.prodMk hh.continuous)).continuousAt.eventually hev)
-  have hterm (n : ℕ) : Differentiable ℂ fun w =>
-      regularizedHGFunCoeff {f w} {g w} n * h w ^ n :=
-    ((differentiable_regularizedHGFunCoeff_singleton n).comp (hf.prodMk hg)).mul (hh.pow n)
-  simp_rw [regularizedHGFun_singleton_eq_sum_range_add_tsum _ _ _ N]
-  exact (Differentiable.fun_sum fun n _ => hterm n).differentiableAt.add
-    ((differentiableOn_tsum_of_summable_norm hu (fun n => (hterm (n + N)).differentiableOn) hVo
-      fun n w hw => hV w hw n).differentiableAt (hVo.mem_nhds hw₀V))
+  have hfgh : Differentiable ℂ fun w => (f w, g w, h w) := hf.prodMk (hg.prodMk hh)
+  rw [← differentiableOn_univ]
+  exact (tendstoLocallyUniformlyOn_univ.mpr
+    (tendstoLocallyUniformly_regularizedHGFun_singleton.comp _ hfgh.continuous)).differentiableOn
+      (Eventually.of_forall fun M =>
+        ((differentiable_sum_regularizedHGFunCoeff_singleton_mul_pow M).comp hfgh).differentiableOn)
+      isOpen_univ
 
 /-- For fixed `b` and `z`, the regularized Kummer function `a ↦ 𝐌(a, b, z)` is entire. -/
 theorem differentiable_regularizedHGFun_singleton_left (b z : ℂ) :
