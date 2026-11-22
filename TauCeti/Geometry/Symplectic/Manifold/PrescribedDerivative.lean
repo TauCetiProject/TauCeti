@@ -301,12 +301,8 @@ theorem exists_diffeomorph_opens_mfderiv_eq_iff (i : SmoothEmbedding J I ∞ Q M
   have hd (q : Q) : mfderiv I K Ψ (i q) = A q := by
     obtain ⟨h, -, hdφ⟩ := hφ q
     ext v
-    -- `v` is ascribed to the tangent space of `U₀` at `⟨i q, h⟩`, which is only definitionally the
-    -- tangent space of `M` at `i q`, so that the rewrites below find their patterns.
-    have h1 := Manifold.mfderiv_comp_subtype_val_apply (J := I) (I := K) (f := (Ψ : M → N))
-      (x := (⟨i q, h⟩ : U₀)) (show TangentSpace I (⟨i q, h⟩ : U₀) from v)
-    rw [hΨ, Manifold.mfderiv_subtype_val_comp_apply, hdφ] at h1
-    exact h1.symm
+    exact (Manifold.mfderiv_apply_of_subtype_val_comp_eq (f := φ) (A := Ψ) hΨ.symm v).symm.trans
+      (hdφ v)
   obtain ⟨hg, hgi, hA, hAinv, hAi⟩ :=
     (i.exists_partialDiffeomorph_mfderiv_eq_iff (g := g) (A := A)).1 ⟨Ψ, hsrc, hval, hd⟩
   exact ⟨hg, hgi, hA, hAinv, hAi, hAσ⟩
