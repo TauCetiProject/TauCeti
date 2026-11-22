@@ -90,33 +90,19 @@ theorem pathConnectedSpace_realization_indexedJoin
 indices. -/
 theorem simplyConnectedSpace_realization_indexedJoin
     (hA : {i | Nonempty (A i)}.Infinite) :
-    SimplyConnectedSpace (indexedJoin A).Realization := by
-  rw [simply_connected_iff_loops_nullhomotopic]
-  refine ⟨pathConnectedSpace_realization_indexedJoin hA, fun x γ => ?_⟩
-  refine Path.Homotopic.refl_of_forall_mem_of_nullhomotopic
-    (ContinuousMap.nullhomotopic_to_indexedJoin _ ?_ hA) γ Set.mem_range_self
-  rw [ContinuousMap.coe_mk, Subtype.range_coe]
-  exact isCompact_range γ.continuous
+    SimplyConnectedSpace (indexedJoin A).Realization :=
+  letI := pathConnectedSpace_realization_indexedJoin hA
+  simplyConnectedSpace_of_compact_nullhomotopic fun f =>
+    ContinuousMap.nullhomotopic_to_indexedJoin f (isCompact_range f.continuous) hA
 
 /-- Every positive-dimensional homotopy group of an indexed join is trivial if nonempty family
 members occur at infinitely many indices. -/
 theorem subsingleton_homotopyGroup_realization_indexedJoin
     (hA : {i | Nonempty (A i)}.Infinite) (N : Type*) [Finite N] [Nonempty N]
     (x : (indexedJoin A).Realization) :
-    Subsingleton (HomotopyGroup N (indexedJoin A).Realization x) := by
-  classical
-  let _ : Fintype N := Fintype.ofFinite N
-  let _ : SimplyConnectedSpace (indexedJoin A).Realization :=
-    simplyConnectedSpace_realization_indexedJoin hA
-  have h_one : ∀ a : HomotopyGroup N (indexedJoin A).Realization x, a = 1 := by
-    intro a
-    induction a using Quotient.inductionOn with | h p =>
-    have hp : IsCompact (Set.range (Subtype.val : Set.range p → _)) := by
-      rw [Subtype.range_coe]
-      exact isCompact_range p.val.continuous
-    obtain ⟨g, hg⟩ := one_mem_orbit_of_forall_mem_of_nullhomotopic
-      (ContinuousMap.nullhomotopic_to_indexedJoin _ hp hA) p Set.mem_range_self
-    exact (fundamentalGroup_smul_eq_self g _).symm.trans hg
-  exact ⟨fun a b => (h_one a).trans (h_one b).symm⟩
+    Subsingleton (HomotopyGroup N (indexedJoin A).Realization x) :=
+  letI := simplyConnectedSpace_realization_indexedJoin hA
+  subsingleton_homotopyGroup_of_compact_nullhomotopic N x fun f =>
+    ContinuousMap.nullhomotopic_to_indexedJoin f (isCompact_range f.continuous) hA
 
 end TauCeti

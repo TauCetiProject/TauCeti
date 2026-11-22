@@ -339,18 +339,15 @@ instance instT2Space [T2Space G] : T2Space (MilnorTotalSpace G) :=
     · have ⟨i, hpi, hlpq⟩ : ∃ i, p ∈ coordSet G i ∧ label i p ≠ label i q := by
         by_contra! h; exact hpq (ext_coord hw h)
       have hqi : q ∈ coordSet G i := by rwa [mem_coordSet_iff, ← hw i]
-      obtain ⟨U, V, hU, hV, hpU, hqV, hd⟩ := t2_separation hlpq
-      obtain ⟨U', hU', hU'eq⟩ := continuousOn_iff'.mp (continuousOn_label i) U hU
-      obtain ⟨V', hV', hV'eq⟩ := continuousOn_iff'.mp (continuousOn_label i) V hV
-      exact ⟨U' ∩ coordSet G i, V' ∩ coordSet G i,
-        hU'.inter (isOpen_coordSet i), hV'.inter (isOpen_coordSet i),
-        hU'eq ▸ ⟨hpU, hpi⟩, hV'eq ▸ ⟨hqV, hqi⟩,
-        hU'eq ▸ hV'eq ▸ Disjoint.mono inter_subset_left inter_subset_left (hd.preimage _)⟩
+      have hd : Disjoint (𝓝 p) (𝓝 q) :=
+        ((continuousOn_label i).continuousAt ((isOpen_coordSet i).mem_nhds hpi)).tendsto.disjoint
+          (disjoint_nhds_nhds.mpr hlpq)
+          ((continuousOn_label i).continuousAt ((isOpen_coordSet i).mem_nhds hqi)).tendsto
+      obtain ⟨U, ⟨hpU, hU⟩, V, ⟨hqV, hV⟩, hUV⟩ :=
+        ((nhds_basis_opens p).disjoint_iff (nhds_basis_opens q)).mp hd
+      exact ⟨U, V, hU, hV, hpU, hqV, hUV⟩
     · obtain ⟨i, hi⟩ := not_forall.mp hw
-      obtain ⟨U, V, hU, hV, hpU, hqV, hd⟩ := t2_separation hi
-      exact ⟨weight i ⁻¹' U, weight i ⁻¹' V,
-        hU.preimage (continuous_weight i), hV.preimage (continuous_weight i),
-        hpU, hqV, hd.preimage _⟩⟩
+      exact separated_by_continuous (continuous_weight i) hi⟩
 
 /-- The carrier identification from `universalGSpace G` (weak simplicial realization topology)
 to `MilnorTotalSpace G` (strong coordinate topology) is continuous. -/
@@ -446,16 +443,13 @@ theorem val_op_smul (g : G) (p : MilnorTotalSpace G) :
       Finsupp.mapDomain (fun v : Σ _ : ℕ, G ↦ (⟨v.1, v.2 * g⟩ : Σ _ : ℕ, G)) p.val :=
   val_relabel (· * g) p
 
-theorem op_smul_op_smul (g h : G) (p : MilnorTotalSpace G) :
-    op h • (op g • p) = op (g * h) • p := by
-  rw [smul_def, smul_def, smul_def, relabel_comp]
-  congr 1; funext a; exact mul_assoc a g h
-
 instance instMulActionOp : MulAction Gᵐᵒᵖ (MilnorTotalSpace G) where
   one_smul p := by
     have hid : (· * (1 : G)) = _root_.id := funext mul_one
     rw [smul_def, unop_one, hid, relabel_id]
-  mul_smul g h p := (op_smul_op_smul h.unop g.unop p).symm
+  mul_smul g h p := by
+    rw [smul_def, smul_def, smul_def, relabel_comp, unop_mul]
+    congr 1; funext a; exact (mul_assoc a h.unop g.unop).symm
 
 @[simp] theorem weight_smul (g : Gᵐᵒᵖ) (i : ℕ) (p : MilnorTotalSpace G) :
     weight i (g • p) = weight i p := weight_relabel (· * g.unop) i p

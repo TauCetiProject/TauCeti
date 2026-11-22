@@ -442,13 +442,11 @@ section ConnectivityAndHomotopyGroups
 variable (G : Type u) [TopologicalSpace G]
 
 instance instPathConnectedSpaceMilnorTotalSpace [Nonempty G] :
-    PathConnectedSpace (MilnorTotalSpace G) where
-  nonempty := inferInstance
-  joined x y := by
-    let f : C(Bool, MilnorTotalSpace G) :=
-      ⟨fun b ↦ if b then y else x, continuous_of_discreteTopology⟩
-    obtain ⟨_, ⟨H⟩⟩ := ContinuousMap.nullhomotopic_to_milnorTotalSpace f
-    exact ⟨(H.evalAt false).trans (H.evalAt true).symm⟩
+    PathConnectedSpace (MilnorTotalSpace G) :=
+  letI := pathConnectedSpace_realization_indexedJoin
+    (A := fun _ : ℕ ↦ G) (Set.infinite_univ.mono fun _ _ ↦ ‹Nonempty G›)
+  Function.Surjective.pathConnectedSpace (f := MilnorTotalSpace.ofRealization)
+    (fun p ↦ ⟨p.toRealization, rfl⟩) MilnorTotalSpace.continuous_ofRealization
 
 instance instPathConnectedSpaceMilnorClassifyingSpace [Group G] :
     PathConnectedSpace (MilnorClassifyingSpace G) :=
@@ -457,11 +455,7 @@ instance instPathConnectedSpaceMilnorClassifyingSpace [Group G] :
 
 instance instSimplyConnectedSpaceMilnorTotalSpace [Nonempty G] :
     SimplyConnectedSpace (MilnorTotalSpace G) :=
-  simply_connected_iff_loops_nullhomotopic.mpr ⟨inferInstance, fun _ γ ↦
-    Path.Homotopic.refl_of_forall_mem_of_nullhomotopic
-      (ContinuousMap.nullhomotopic_to_milnorTotalSpace_of_isCompact_range
-        (by rw [ContinuousMap.coe_mk, Subtype.range_coe]; exact isCompact_range γ.continuous))
-      γ Set.mem_range_self⟩
+  simplyConnectedSpace_of_compact_nullhomotopic fun f ↦ f.nullhomotopic_to_milnorTotalSpace
 
 end ConnectivityAndHomotopyGroups
 
@@ -483,17 +477,8 @@ instance subsingleton_milnorTotalSpace
         (pathConnectedSpace_iff_zerothHomotopy.mp inferInstance).2
       exact (homotopyGroupEquivZerothHomotopyOfIsEmpty N x).subsingleton
     · have : Nonempty N := not_isEmpty_iff.mp hemp
-      let _ : Fintype N := Fintype.ofFinite N
-      have h_one (a : HomotopyGroup N (MilnorTotalSpace G) x) : a = 1 := by
-        induction a using Quotient.inductionOn with | h p =>
-        obtain ⟨g, hg⟩ := one_mem_orbit_of_forall_mem_of_nullhomotopic
-          (ContinuousMap.nullhomotopic_to_milnorTotalSpace_of_isCompact_range
-            (by
-              rw [ContinuousMap.coe_mk, Subtype.range_coe]
-              exact isCompact_range p.val.continuous))
-          p Set.mem_range_self
-        exact (fundamentalGroup_smul_eq_self g _).symm.trans hg
-      exact ⟨fun a b ↦ (h_one a).trans (h_one b).symm⟩
+      exact subsingleton_homotopyGroup_of_compact_nullhomotopic N x
+        fun f ↦ f.nullhomotopic_to_milnorTotalSpace
   · have : Infinite N := not_finite_iff_infinite.mp hfin; infer_instance
 
 end HomotopyGroup
