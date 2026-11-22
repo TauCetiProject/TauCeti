@@ -15,7 +15,9 @@ For modules `M` and `N` over a commutative ring `k` and an element `z ∈ M`, th
 `TensorProduct.mk k M N z` as a morphism of `ModuleCat k`. This file records how it interacts
 with the whiskerings of the monoidal structure and that it is additive and `k`-linear in `z`, so
 that a calculation with morphisms out of a tensor product evaluated at a fixed first factor stays
-in the category.
+in the category. Tensoring on the right with a fixed element `α ∈ N`, `c ↦ c ⊗ₜ α`, is the inverse
+right unitor followed by whiskering `a ↦ a • α`
+(`TauCeti.ModuleCat.rightUnitor_inv_whiskerLeft_toSpanSingleton_apply`).
 -/
 
 public section
@@ -63,5 +65,13 @@ lemma tensorMk_smul {M N : ModuleCat.{u} k} (r : k) (z : M) :
     tensorMk (N := N) (r • z) = r • tensorMk z := by
   ext v
   exact TensorProduct.smul_tmul' r z v
+
+/-- Tensoring on the right with a fixed element `α ∈ N`, `c ↦ c ⊗ₜ α`, is the inverse right
+unitor followed by whiskering the morphism `k ⟶ N`, `a ↦ a • α`. -/
+lemma rightUnitor_inv_whiskerLeft_toSpanSingleton_apply {M N : ModuleCat.{u} k} (α : N) (c : M) :
+    ((ρ_ M).inv ≫ (M ◁ ModuleCat.ofHom (LinearMap.toSpanSingleton k N α))) c = c ⊗ₜ[k] α := by
+  rw [ConcreteCategory.comp_apply, ModuleCat.MonoidalCategory.rightUnitor_inv_apply,
+    ModuleCat.MonoidalCategory.whiskerLeft_apply, ModuleCat.ofHom_apply,
+    LinearMap.toSpanSingleton_apply_one]
 
 end TauCeti.ModuleCat

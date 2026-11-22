@@ -85,9 +85,6 @@ private lemma mulHeight_le_of_abv_coeff_le [Finite ι] [Nonempty ι] {A : Matrix
     · obtain ⟨i, j, hij⟩ : ∃ i j, A i j ≠ 0 := by contrapose! hAD; exact ⟨Matrix.ext hAD, hD⟩
       exact Function.ne_iff.mpr ⟨(i, j), pow_ne_zero D hij⟩
   let w : (ι × ι) × P.support → K := fun a ↦ (y ^ D) a.1 * x a.2
-  obtain ⟨q₁, hq₁⟩ := Function.ne_iff.mp hyD
-  have hw : w ≠ 0 :=
-    Function.ne_iff.mpr ⟨(q₁, ⟨c₁, hc₁⟩), mul_ne_zero hq₁ (mem_support_iff.mp hc₁)⟩
   have hwH : Height.mulHeight w = A.mulHeight ^ D * P.mulHeight := by
     rw [Height.mulHeight_fun_mul_eq hyD hx, Height.mulHeight_pow, ← Matrix.mulHeight_def,
       ← mulHeight_eq_support]
@@ -104,7 +101,7 @@ private lemma mulHeight_le_of_abv_coeff_le [Finite ι] [Nonempty ι] {A : Matrix
         Finite.le_ciSup_of_le (q₀, ⟨c₀, hc₀⟩) le_rfl⟩
   have hw0 (v : AbsoluteValue K ℝ) : 0 ≤ ⨆ a, v (w a) := Real.iSup_nonneg fun _ ↦ v.nonneg _
   rw [mul_assoc, ← hwH, mulHeight_eq_support]
-  refine (Height.mulHeight_le_of_forall_iSup_le hw _ hC (p := 1)
+  refine (Height.mulHeight_le_of_forall_iSup_le w _ hC (p := 1)
     (fun v _ ↦ Real.iSup_le (fun t ↦ ?_) (mul_nonneg (zero_le_one.trans hC) (by simpa using hw0 v)))
     fun v hv ↦ Real.iSup_le (fun t ↦ ?_) (by simpa using hw0 v)).trans_eq (by rw [pow_one])
   · obtain ⟨B, C, -, hAB, hPC, hBC⟩ := hlocal v

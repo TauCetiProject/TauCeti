@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.Transcendental.GelfondSchneider.SchneiderAuxi
 
 import TauCeti.Algebra.CharZero.RatCast
 import TauCeti.LinearAlgebra.Vandermonde
-import TauCeti.NumberTheory.NumberField.SiegelsLemma
 
 /-!
 # Gelfond's auxiliary function and its first nonvanishing derivative
@@ -37,12 +36,12 @@ upper bound for `|R⁽ʳ⁾(t₀)| = |λ| ^ r |σ ρ|`.
 
 **Construction.** For a number field `K` and `m ≥ 1`, the conditions `y_k(t) = 0` for `k < n`
 and `1 ≤ t ≤ m` are `m n` linear equations in the `q ^ 2` unknowns `η_{ab}`. When `q ^ 2 = 2 m n`,
-Mathlib's Siegel lemma over `𝓞 K` (`NumberField.house.exists_ne_zero_int_vec_house_le`), whose
-exponent `m n / (q ^ 2 - m n)` is then `1`, solves them with algebraic integers of house at most
-`c ^ n n ^ ((n + 1) / 2)`, for a constant `c` depending only on `K`, `α`, `β`, `γ` and `m`. To
-apply it, each equation is multiplied by `c₀ ^ (n - 1 + 2 q m)` for a nonzero integer `c₀` such
-that `c₀ α`, `c₀ β` and `c₀ γ` are algebraic integers; the entries of the resulting system have
-house at most `q ^ (n - 1) H ^ (n - 1 + 2 q m)`.
+the linear form of Siegel's lemma over `𝓞 K` (`NumberField.exists_siegelConstant_linear`, built
+on Mathlib's `NumberField.house.exists_ne_zero_int_vec_house_le`) solves them with algebraic
+integers of house at most `c ^ n n ^ ((n + 1) / 2)`, for a constant `c` depending only on `K`,
+`α`, `β`, `γ` and `m`. To apply it, each equation is multiplied by `c₀ ^ (n - 1 + 2 q m)` for a
+nonzero integer `c₀` such that `c₀ α`, `c₀ β` and `c₀ γ` are algebraic integers; the entries of
+the resulting system have house at most `q ^ (n - 1) H ^ (n - 1 + 2 q m)`.
 
 **First nonvanishing derivative.** This part makes no arithmetic assumption on `K`: it proves
 that such `r` and `t₀` exist, with `n ≤ r < q ^ 2`, as soon as `λ ≠ 0` and `η ≠ 0`. For each fixed
@@ -169,12 +168,12 @@ theorem gelfond_index_le {q m t k K₀ : ℕ} (a b : Fin q) (ht : t ≤ m) (hk :
   rw [mul_assoc, two_mul]
   omega
 
-/-- The coefficient bound of Gelfond's auxiliary function: if `q ^ 2 = 2 m n` with `m, n ≥ 1` and
-`C ≥ 1`, then the bound `C q ^ 2 A` of Siegel's lemma, for entries of house at most
+/-- The coefficient bound of Gelfond's auxiliary function: if `q ^ 2 = 2 m n` with `m, n ≥ 1`
+and `C ≥ 1`, then the bound `C q ^ 2 A` of Siegel's lemma, for entries of house at most
 `A = q ^ (n - 1) H ^ (n - 1 + 2 q m)`, is at most `c ^ n n ^ ((n + 1) / 2)` with
 `c = C (2 m) H ^ (1 + 4 m ^ 2)`. -/
-private theorem gelfond_siegel_bound_le {C H : ℝ} {m n q : ℕ} (hC1 : 1 ≤ C) (hm : 1 ≤ m)
-    (hn : 1 ≤ n) (hq : q * q = 2 * m * n) (hH : 1 ≤ H) :
+private theorem gelfond_siegel_bound_le {C H : ℝ} {m n q : ℕ} (hm : 1 ≤ m) (hn : 1 ≤ n)
+    (hq : q * q = 2 * m * n) (hC : 1 ≤ C) (hH : 1 ≤ H) :
     C * ((q * q : ℕ) : ℝ) * ((q : ℝ) ^ (n - 1) * H ^ (n - 1 + 2 * q * m)) ≤
       (C * (2 * m) * H ^ (1 + 4 * m ^ 2)) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) := by
   have hqpow : (q : ℝ) ^ (n + 1) ≤ (2 * m) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) := by
@@ -183,16 +182,15 @@ private theorem gelfond_siegel_bound_le {C H : ℝ} {m n q : ℕ} (hC1 : 1 ≤ C
     have := gelfond_two_mul_mul_le hq le_rfl
     rw [add_mul, one_mul]
     omega
-  have hC : C ≤ C ^ n := le_self_pow₀ hC1 (by omega)
   calc C * ((q * q : ℕ) : ℝ) * ((q : ℝ) ^ (n - 1) * H ^ (n - 1 + 2 * q * m))
       = C * ((q : ℝ) ^ (n + 1) * H ^ (n - 1 + 2 * q * m)) := by
         obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
         push_cast
         ring
-    _ ≤ C ^ n * ((2 * m) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) *
-          (H ^ (1 + 4 * m ^ 2)) ^ n) := by
+    _ ≤ C ^ n * ((2 * m) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) * (H ^ (1 + 4 * m ^ 2)) ^ n) := by
         rw [← pow_mul]
         gcongr
+        exact le_self_pow₀ hC (by omega)
     _ = (C * (2 * m) * H ^ (1 + 4 * m ^ 2)) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) := by
         rw [mul_pow, mul_pow]
         ring
@@ -214,11 +212,10 @@ theorem exists_gelfond_auxiliary_algebraic (α β γ : K) {m : ℕ} (hm : 1 ≤ 
             (α ^ ((a + 1 : ℕ) * t) * γ ^ ((b + 1 : ℕ) * t)) = 0 := by
   classical
   obtain ⟨c₀, hc₀, H, hH, -, hterm⟩ := exists_intCast_pow_mul_schneider_term α β γ
-  obtain ⟨C, hC1, hC⟩ := NumberField.exists_ne_zero_mulVec_eq_zero_house_le K
+  obtain ⟨C, hC₁, hC⟩ := exists_siegelConstant_linear.{0, 0} K
   set c := C * (2 * m) * H ^ (1 + 4 * m ^ 2)
-  have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
   have hc : 1 ≤ c := one_le_mul_of_one_le_of_one_le
-    (one_le_mul_of_one_le_of_one_le hC1 (by linarith)) (one_le_pow₀ hH)
+    (one_le_mul_of_one_le_of_one_le hC₁ (by norm_cast; omega)) (one_le_pow₀ hH)
   refine ⟨c, hc, fun n q hn hq ↦ ?_⟩
   rw [sq] at hq
   have hq₀ : 1 ≤ q := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hq; omega
@@ -234,15 +231,13 @@ theorem exists_gelfond_auxiliary_algebraic (α β γ : K) {m : ℕ} (hm : 1 ≤ 
     (he p u).2.trans (by gcongr; exacts [by exact_mod_cast hq₀, by have := p.1.is_lt; omega])
   let e' : Matrix (Fin n × Fin m) (Fin q × Fin q) (𝓞 K) := fun p u ↦ ⟨e p u, (he p u).1⟩
   -- A nonzero solution `ξ` of the system with the required house bound.
-  have hA1 : (1 : ℝ) ≤ (q : ℝ) ^ (n - 1) * H ^ N :=
+  have hA : 1 ≤ (q : ℝ) ^ (n - 1) * H ^ N :=
     one_le_mul_of_one_le_of_one_le (one_le_pow₀ (by exact_mod_cast hq₀)) (one_le_pow₀ hH)
-  obtain ⟨ξ, hξ0, hξ, hξle⟩ := hC e' (by rw [Fintype.card_prod, Fintype.card_fin]; positivity)
-    (by rw [Fintype.card_prod, Fintype.card_prod, Fintype.card_fin, Fintype.card_fin,
-      Fintype.card_fin]; linarith) hA1 heA
-  replace hξle (u) : house (ξ u : K) ≤ c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) := by
-    have hu := hξle u
-    rw [Fintype.card_prod, Fintype.card_fin] at hu
-    exact hu.trans (gelfond_siegel_bound_le hC1 hm hn hq hH)
+  have hcard : Fintype.card (Fin q × Fin q) = q * q := by rw [Fintype.card_prod, Fintype.card_fin]
+  obtain ⟨ξ, hξ0, hξ, hξle⟩ := hC e' hA (by rw [hcard]; exact Nat.mul_le_mul hq₀ hq₀)
+    (by rw [hcard, hq, Fintype.card_prod, Fintype.card_fin, Fintype.card_fin]; linarith) heA
+  replace hξle (u) : house (ξ u : K) ≤ c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) :=
+    (hξle u).trans (by rw [hcard]; exact gelfond_siegel_bound_le hm hn hq hC₁ hH)
   refine ⟨fun a b ↦ ξ (a, b), fun h ↦ hξ0 (funext fun u ↦ congr_fun₂ h u.1 u.2),
     fun a b ↦ hξle (a, b), fun k hk t ht ↦ ?_⟩
   -- The equation of `(k, t)`, divided by `c₀ ^ N`.

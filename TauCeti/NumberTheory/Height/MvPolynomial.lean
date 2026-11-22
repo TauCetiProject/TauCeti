@@ -407,25 +407,6 @@ theorem mulHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial 
   have hK : (1 : ℝ) ≤ (Fintype.card n)! * (2 ^ (∑ k, d k) * C) ^ Fintype.card n :=
     one_le_mul_of_one_le_of_one_le (by exact_mod_cast (Fintype.card n).factorial_pos)
       (one_le_pow₀ (one_le_mul_of_one_le_of_one_le (one_le_pow₀ one_le_two) hC))
-  rcases eq_or_ne P 0 with rfl | hP
-  · -- For `P = 0` every coefficient of `A` vanishes at every place, so the bound is trivial.
-    have hz (v : AbsoluteValue K ℝ) (i j : n) (a : σ →₀ ℕ)
-        (h : ∃ b, v ((A i j).coeff a) ≤ C * v ((0 : MvPolynomial σ K).coeff b)) :
-        v ((A i j).coeff a) ≤ 0 := by simpa using h
-    have hR0 : 0 ≤ 2 ^ (∑ k, d k) * C := by positivity
-    rw [MvPolynomial.mulHeight_zero, one_pow, mul_one, mulHeight_eq_support]
-    refine mulHeight_le_pow_totalWeight hK (fun v hv ↦ Real.iSup_le (fun t ↦ ?_)
-      (zero_le_one.trans hK)) fun v hv ↦ Real.iSup_le (fun t ↦ ?_) zero_le_one
-    · refine (abv_coeff_det_le A (B := 2 ^ ∑ k, d k) (C := 0) hB
-        (fun i j a ↦ hz v i j a (harch v hv i j a)) t).trans ?_
-      rw [nsmul_eq_mul, mul_zero]
-      exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ le_rfl hR0 _) (Nat.cast_nonneg _)
-    · refine (abv_coeff_det_le_of_isNonarchimedean A (isNonarchimedean v hv) (C := 0)
-        (fun i j a ↦ by simpa using hnon v hv i j a) t).trans
-        (pow_le_one₀ le_rfl zero_le_one)
-  have hx : (fun b : P.support ↦ P.coeff b) ≠ 0 := by
-    obtain ⟨b, hb⟩ := support_nonempty.mpr hP
-    exact Function.ne_iff.mpr ⟨⟨b, hb⟩, mem_support_iff.mp hb⟩
   -- Every coefficient of `P` is bounded by the local factor of its nonzero coefficients.
   have hM (v : AbsoluteValue K ℝ) (b : σ →₀ ℕ) :
       v (P.coeff b) ≤ ⨆ c : P.support, v (P.coeff c) := by
@@ -436,7 +417,7 @@ theorem mulHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial 
   have hM0 (v : AbsoluteValue K ℝ) : 0 ≤ (⨆ c : P.support, v (P.coeff c)) ^ Fintype.card n :=
     pow_nonneg (Real.iSup_nonneg fun _ ↦ v.nonneg _) _
   rw [mulHeight_eq_support, mulHeight_eq_support]
-  refine mulHeight_le_of_forall_iSup_le hx _ hK
+  refine mulHeight_le_of_forall_iSup_le _ _ hK
     (fun v hv ↦ Real.iSup_le (fun t ↦ ?_) (mul_nonneg (zero_le_one.trans hK) (hM0 v)))
     fun v hv ↦ Real.iSup_le (fun t ↦ ?_) (hM0 v)
   · refine (abv_coeff_det_le A (C := C * ⨆ c : P.support, v (P.coeff c)) hB
@@ -484,12 +465,6 @@ by `2 ^ P.totalDegree` at archimedean absolute values and by `1` at nonarchimede
 theorem mulHeight_hasseDeriv_le (I : σ →₀ ℕ) (P : MvPolynomial σ K) :
     (hasseDeriv I P).mulHeight ≤ ((2 : ℝ) ^ P.totalDegree) ^ totalWeight K * P.mulHeight := by
   have hC : (1 : ℝ) ≤ (2 : ℝ) ^ P.totalDegree := one_le_pow₀ one_le_two
-  rcases eq_or_ne P 0 with rfl | hP
-  · rw [map_zero, mulHeight_zero, mul_one]
-    exact one_le_pow₀ hC
-  have hx : (fun b : P.support ↦ P.coeff b) ≠ 0 := by
-    obtain ⟨b, hb⟩ := support_nonempty.mpr hP
-    exact Function.ne_iff.mpr ⟨⟨b, hb⟩, mem_support_iff.mp hb⟩
   have hM (v : AbsoluteValue K ℝ) (b : σ →₀ ℕ) :
       v (P.coeff b) ≤ ⨆ c : P.support, v (P.coeff c) := by
     by_cases hb : b ∈ P.support
@@ -499,7 +474,7 @@ theorem mulHeight_hasseDeriv_le (I : σ →₀ ℕ) (P : MvPolynomial σ K) :
   have hM0 (v : AbsoluteValue K ℝ) : 0 ≤ ⨆ c : P.support, v (P.coeff c) :=
     Real.iSup_nonneg fun _ ↦ v.nonneg _
   rw [mulHeight_eq_support, mulHeight_eq_support]
-  refine (mulHeight_le_of_forall_iSup_le hx _ hC (p := 1)
+  refine (mulHeight_le_of_forall_iSup_le _ _ hC (p := 1)
     (fun v _ ↦ Real.iSup_le (fun m ↦ ?_) (mul_nonneg (zero_le_one.trans hC) (by simpa using hM0 v)))
     fun v hv ↦ Real.iSup_le (fun m ↦ ?_) (by simpa using hM0 v)).trans_eq (by rw [pow_one])
   · rw [pow_one]

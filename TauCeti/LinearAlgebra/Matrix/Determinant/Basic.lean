@@ -43,6 +43,8 @@ differences of the remaining columns.
   is nonzero, and `Matrix.det_submatrix_map_ne_zero_iff` is the converse for an injective one.
 * `Matrix.exists_isUnit_det_row_eq`: any row with a unit entry extends to a matrix with unit
   determinant.
+* `RingHom.det_map_ne_zero_of_isUnit_det`: the image of a matrix with unit determinant under a ring
+  homomorphism to a nontrivial commutative ring has nonzero determinant.
 -/
 
 public section
@@ -175,3 +177,15 @@ theorem exists_isUnit_det_row_eq {ι R : Type*} [Fintype ι] [DecidableEq ι] [C
   exact ((Int.castRingHom R).isUnit_map (Units.isUnit _)).mul hj₀
 
 end Matrix
+
+namespace RingHom
+
+/-- The image of a matrix with unit determinant under a ring homomorphism to a nontrivial
+commutative ring has nonzero determinant. -/
+theorem det_map_ne_zero_of_isUnit_det {ι R K : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    [CommRing K] [Nontrivial K] (f : R →+* K) {A : Matrix ι ι R} (hdet : IsUnit A.det) :
+    (A.map f).det ≠ 0 := by
+  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
+  exact (hdet.map _).ne_zero
+
+end RingHom

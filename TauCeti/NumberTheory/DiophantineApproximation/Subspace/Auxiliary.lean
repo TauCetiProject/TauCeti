@@ -267,7 +267,7 @@ private lemma exists_isMultiHomogeneous_coeff_blockSubst_eq_zero {K ι κ : Type
           ∑ h, (N (h, i₀) : ℝ) / d h ≤ θ → (blockSubst (A_f f)⁻¹ P).coeff N = 0 := by
   classical
   have : Nonempty ι := ⟨i₀⟩
-  obtain ⟨C_siegel, hCs1, hsiegel⟩ := NumberField.exists_ne_zero_mulVec_eq_zero_house_le K
+  obtain ⟨C_siegel, hCs1, hsiegel⟩ := NumberField.exists_siegelConstant_linear K
   let K_base : ℝ := C_siegel * Fintype.card ι ^ 2 * B_sys
   have hK1 : 1 ≤ K_base := one_le_mul_of_one_le_of_one_le
     (one_le_mul_of_one_le_of_one_le hCs1 (by exact_mod_cast Nat.pow_le_pow_left Fintype.card_pos 2))
@@ -281,9 +281,10 @@ private lemma exists_isMultiHomogeneous_coeff_blockSubst_eq_zero {K ι κ : Type
   let bad : Finset (κ × ι →₀ ℕ) := {N ∈ multiMons ι d | ∑ h, (N (h, i₀) : ℝ) / d h ≤ θ}
   let sys : Matrix (F' × bad) (multiMons ι d) (𝓞 K) :=
     fun r u ↦ (blockSubst (M_f r.1) (monomial u.val (1 : 𝓞 K))).coeff r.2.val
-  obtain ⟨ξ, hξ0, hsys_eq, hξ_house⟩ := hsiegel sys (by simpa using hcard_pos)
-    (by simpa [Fintype.card_prod] using hcount)
+  obtain ⟨ξ, hξ0, hsys_eq, hξ_house⟩ := hsiegel sys
     (one_le_pow₀ (one_le_mul_of_one_le_of_one_le (by exact_mod_cast Fintype.card_pos) hB1))
+    (by simpa using hcard_pos)
+    (by simpa [Fintype.card_prod] using hcount)
     fun r u ↦ (hM_sys d r.1 u r.2.val).2
   let P : MvPolynomial (κ × ι) K := ∑ u : multiMons ι d, monomial u.val (ξ u : K)
   obtain ⟨hP0, hP_hom, hP_log⟩ :=

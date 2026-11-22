@@ -9,7 +9,8 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.Dimension.RankNullity
-import TauCeti.LinearAlgebra.Submodule.Primitive
+import Mathlib.LinearAlgebra.FreeModule.PID
+import TauCeti.LinearAlgebra.Quotient.Basic
 
 /-!
 # Extending a submodule across a saturated step of rank one
@@ -56,8 +57,8 @@ theorem exists_extending_of_finrank_eq_add_one {N N' : Submodule R M} (hle : N �
     have hPN : finrank R P = finrank R N := (comapSubtypeEquivOfLe hle).finrank_eq
     omega
   have : IsTorsionFree R (N' ⧸ P) :=
-    P.isTorsionFree_quotient_of_smul_mem fun c z hc hz ↦
-      hsat c hc z z.property (by simpa only [hmemP, SetLike.val_smul] using hz)
+    isTorsionFree_quotient_iff.mpr fun c z hc hz ↦
+      hsat c hc.ne_zero z z.property (by simpa only [hmemP, SetLike.val_smul] using hz)
   let e := Module.finBasisOfFinrankEq R (N' ⧸ P) hQrank
   obtain ⟨y, hy⟩ := P.mkQ_surjective (e 0)
   refine ⟨y, y.property, fun y' hy' ↦ ⟨fun c x hx hcx ↦ ?_, fun z hz ↦ ?_⟩⟩
