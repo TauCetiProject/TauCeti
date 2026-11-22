@@ -232,6 +232,34 @@ theorem exists_mem_periodicSolutions_comp_eq {F : Type*} [NormedAddCommGroup F] 
   rw [hex, ← hY t _ (hxK t), hx]
   exact hy t
 
+/-- **Isolated periodic solutions read through `e`.** In the setting of
+`TauCeti.exists_mem_periodicSolutions_comp_eq`, suppose that the `T`-periodic solutions of `X` in
+`K` are isolated: for each such solution `x`, every `T`-periodic solution in `K` starting close
+enough to `x 0` is `x`. Then every `T`-periodic solution `y` of `y' = Y(t, y)` with values in
+`e(K)` is isolated in the uniform distance among the `T`-periodic solutions with values in
+`e(K)`. -/
+theorem exists_pos_forall_eq_of_forall_dist_lt_of_mem_image {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] {e : M → F} {K : Set M} (hK : IsCompact K)
+    (he_inj : InjOn e K) (hde : ∀ p ∈ K, Injective (mvfderiv I e p))
+    {Y : ℝ → F → F} (hY : ∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (X t p))
+    (hiso : ∀ x ∈ periodicSolutions X T, (∀ t, x t ∈ K) →
+      ∀ᶠ p in 𝓝 (x 0), ∀ x' ∈ periodicSolutions X T, (∀ t, x' t ∈ K) → x' 0 = p → x' = x)
+    {y : ℝ → F} (hyper : Periodic y T) (hy : ∀ t, HasDerivAt y (Y t (y t)) t)
+    (hyK : ∀ t, y t ∈ e '' K) :
+    ∃ ε > 0, ∀ y' : ℝ → F, Periodic y' T → (∀ t, HasDerivAt y' (Y t (y' t)) t) →
+      (∀ t, y' t ∈ e '' K) → (∀ t, dist (y' t) (y t) < ε) → y' = y := by
+  have he : ContinuousOn e K := fun p hp ↦ (mdifferentiableAt_of_mfderiv_injective
+    (injective_mvfderiv_iff.1 (hde p hp))).continuousAt.continuousWithinAt
+  obtain ⟨x, hx, hxK, rfl⟩ := exists_mem_periodicSolutions_comp_eq hK he_inj hde hY hyper hy hyK
+  -- Inside `K`, the neighbourhoods of `x 0` are read through `e`.
+  obtain ⟨V, hV, hVx⟩ := hK.exists_mem_nhds_inter_preimage_subset he he_inj (hxK 0)
+    (hiso x hx hxK)
+  obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
+  refine ⟨ε, hε, fun y' hy'per hy' hy'K hdist ↦ ?_⟩
+  obtain ⟨x', hx', hx'K, rfl⟩ :=
+    exists_mem_periodicSolutions_comp_eq hK he_inj hde hY hy'per hy' hy'K
+  rw [hVx ⟨hx'K 0, hεV (Metric.mem_ball.2 (hdist 0))⟩ x' hx' hx'K rfl]
+
 /-- The **contractible** `T`-periodic solutions of `X`: the `T`-periodic solutions `γ` whose loop
 `ℝ ⧸ Tℤ → M`, `t ↦ γ t`, is null-homotopic. -/
 def contractiblePeriodicSolutions (X : ℝ → (x : M) → TangentSpace I x) (T : ℝ) : Set (ℝ → M) :=
@@ -571,8 +599,7 @@ theorem finite_periodicSolutions [FiniteDimensional ℝ E] [CompactSpace M] [T2S
       IsNondegenerateFixedPt I (timeDependentFlowOf X s (s + T)) (γ s)) :
     (periodicSolutions X T).Finite := by
   -- On a compact manifold the flow is defined everywhere, so the return map is continuous.
-  have hcomplete := isCompleteVectorField_timeDependentSuspensionField hX isCompact_univ
-    (fun _ _ hy ↦ (hy (mem_univ _)).elim)
+  have hcomplete := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hX
   have hφ : Continuous (timeDependentFlowOf X s (s + T)) :=
     ((contMDiff_timeDependentFlowOf hcomplete le_rfl hX).comp
       ((contMDiff_const (c := (s, s + T))).prodMk contMDiff_id)).continuous
@@ -613,8 +640,7 @@ theorem finite_contractiblePeriodicSolutions [CompactSpace M] [T2Space M]
   let _ : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let _ : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   -- On a compact manifold the flow is defined everywhere and is continuous.
-  have hcomplete := isCompleteVectorField_timeDependentSuspensionField hX isCompact_univ
-    (fun _ _ hy ↦ (hy (mem_univ _)).elim)
+  have hcomplete := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hX
   have hflow := (contMDiff_timeDependentFlowOf hcomplete le_rfl hX).continuous
   let e := periodicSolutionsEquivFixedPoints hX hT hT0.ne' s
   -- A periodic solution is contractible exactly when its loop over `[s, s + T]` is
