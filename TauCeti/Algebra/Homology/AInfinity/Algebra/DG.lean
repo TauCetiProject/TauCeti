@@ -131,16 +131,8 @@ private theorem stasheffSum_operation (h : IsNonUnitalDGAlgebra 𝒜 d) (n : ℕ
       (operation_of_three_le d le_rfl)]
     simp [operation_two_apply, mul_assoc]
   | n + 4, _ =>
-    -- Each term has an inner operation of arity `s` and an outer one of arity `n + 5 - s`, and
-    -- one of them has arity at least three.
-    rw [AInfinity.stasheffSum_def]
-    refine Finset.sum_eq_zero fun p hp ↦ Finset.sum_eq_zero fun s hs ↦ ?_
-    rw [Finset.mem_range] at hp
-    rw [Finset.mem_Icc] at hs
-    rcases lt_or_ge s 3 with hs3 | hs3
-    · exact AInfinity.stasheffTerm_eq_zero_of_outer_eq_zero _ _ _
-        (operation_of_three_le d (by omega))
-    · exact AInfinity.stasheffTerm_eq_zero_of_inner_eq_zero _ _ _ (operation_of_three_le d hs3)
+    exact AInfinity.stasheffSum_eq_zero_of_m_eq_zero _ _ _ (by omega) fun _ ↦
+      operation_of_three_le d
 
 /-- The `A∞` algebra of a nonunital DG algebra: `m₁ = d`, `m₂` is the product, and `m n = 0` for
 `n ≥ 3`. -/
