@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Ideal.AffineBlowup
+public import TauCeti.RingTheory.Ideal.AffineBlowup.Basic
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
