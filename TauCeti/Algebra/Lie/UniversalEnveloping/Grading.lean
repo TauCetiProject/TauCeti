@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Lie.UniversalEnveloping
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Bialgebra
+public import TauCeti.Algebra.PositiveDegrees.Grading
 
 /-!
 # The Lie-degree grading of a universal enveloping algebra
@@ -105,6 +106,24 @@ theorem homogeneousSubmodule_eq_bot_of_degree_neg (d : Γ →+ ℤ)
   rintro a ⟨l, hl, rfl⟩
   exact (Submodule.mem_bot R).mpr
     (word_eq_zero_of_degree_neg ℒ d hneg l (by simpa only [hl] using hn))
+
+/-- Homogeneous enveloping pieces vanish outside the positive degree monoid. -/
+theorem homogeneousSubmodule_eq_bot_of_not_mem_monoid (d : PositiveDegrees Γ)
+    [IsPositiveGrading d ℒ] {n : Γ} (hn : n ∉ d.monoid) :
+    homogeneousSubmodule ℒ n = ⊥ := by
+  rw [eq_bot_iff]
+  refine (homogeneousSubmodule_le_iff ℒ n ⊥).mpr fun l hl => ?_
+  rw [Submodule.mem_bot]
+  by_cases hall : ∀ a ∈ l, a.1 ∈ d.monoid
+  · refine (hn (hl ▸ list_sum_mem fun m hm => ?_)).elim
+    obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hm
+    exact hall a ha
+  · push Not at hall
+    obtain ⟨a, hal, han⟩ := hall
+    have ha0 : (a.2 : L) = 0 := by
+      simpa only [IsPositiveGrading.eq_bot (d := d) (ℒ := ℒ) a.1 (Or.inl han),
+        Submodule.mem_bot] using a.2.property
+    exact List.prod_eq_zero <| List.mem_map.mpr ⟨a, hal, by simp [ha0]⟩
 
 /-- The homogeneous word spans are compatible with the algebra product. -/
 instance homogeneousSubmodule_gradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule ℒ) where
