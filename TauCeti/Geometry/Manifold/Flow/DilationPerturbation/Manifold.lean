@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.DilationPerturbation
 import TauCeti.Geometry.Manifold.Flow.NormedSpace
+import TauCeti.Geometry.Manifold.Flow.RestPoint
 import TauCeti.Geometry.Manifold.Flow.Straightening
 import TauCeti.LinearAlgebra.Eigenspace.Smul
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
@@ -106,122 +107,25 @@ private theorem exists_forall_smul_mem_ball {u : E} {r : ℝ} (hr : 0 < r) (hT�
     _ = r / 2 := by field_simp
     _ < r := by linarith
 
-omit [T2Space M] in
-/-- A flow-box chart centred at a point where a smooth field does not vanish: a chart of the
-smooth maximal atlas sending `p` to `0`, in which `v` is a constant field `u`. -/
-private theorem exists_chart_mfderiv_eq_const_of_ne_zero
-    (hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞ (fun y ↦ (⟨y, v y⟩ : TangentBundle 𝓘(ℝ, E) M)))
-    (hvp : v p ≠ 0) :
-    ∃ (e : OpenPartialHomeomorph M E) (u : E), e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
-      p ∈ e.source ∧ e p = 0 ∧ ∀ y ∈ e.source, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e y (v y) = u := by
-  obtain ⟨e, u, he, hpe, -, heu⟩ := exists_chart_mfderiv_eq_const (I := 𝓘(ℝ, E)) (m := ⊤)
-    (n := ∞) le_top (by simp) (BoundarylessManifold.isInteriorPoint) hv.contMDiffOn
-    univ_mem hvp
-  -- Translate the chart so that it sends `p` to `0`; this does not change its derivative.
-  have hcoe : (e.transHomeomorph (Homeomorph.addRight (-e p)) : M → E) =
-      (fun z ↦ z + -e p) ∘ e :=
-    rfl
-  refine ⟨e.transHomeomorph (Homeomorph.addRight (-e p)), u, ?_, hpe, by simp [hcoe],
-    fun y hy ↦ ?_⟩
-  · rw [OpenPartialHomeomorph.transHomeomorph_eq_trans]
-    refine trans_mem_maximalAtlas_of_contDiffAt he (fun _ _ ↦ ?_) fun _ _ ↦ ?_
-    · simp only [Homeomorph.toOpenPartialHomeomorph_apply, Homeomorph.coe_addRight]
-      fun_prop
-    · simp only [← Homeomorph.symm_toOpenPartialHomeomorph,
-        Homeomorph.toOpenPartialHomeomorph_apply, Homeomorph.addRight_symm,
-        Homeomorph.coe_addRight]
-      fun_prop
-  · have hy' : y ∈ e.source := hy
-    have ht : HasFDerivAt (fun z : E ↦ z + -e p) (ContinuousLinearMap.id ℝ E) (e y) :=
-      (hasFDerivAt_id _).add_const _
-    have hd := ht.hasMFDerivAt.comp y
-      (mdifferentiableAt_of_mem_maximalAtlas
-        (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy').hasMFDerivAt
-    rw [hcoe, hd.mfderiv]
-    have h := heu y hy'
-    simp only [modelWithCornersSelf_coe, Function.id_comp] at h
-    -- The translation has the identity as derivative.
-    exact h
+omit [FiniteDimensional ℝ E] in
+/-- A closed orbit of positive least period is not a rest point. -/
+private theorem apply_ne_zero_of_forall_flowOf_ne
+    (hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle 𝓘(ℝ, E) M)))
+    (hT₀ : 0 < T₀) (hmin : ∀ t ∈ Ioo 0 T₀, flowOf v t p ≠ p) : v p ≠ 0 := fun h0 ↦
+  hmin (T₀ / 2) ⟨by positivity, by linarith⟩ (flowOf_eq_self_of_eq_zero hv h0 _)
+
+/-- If the linearized return maps of `v + a • W` are `exp a` times that of `v`, then only countably
+many `a` give a positive power of the linearized return map of `v + a • W` the eigenvalue `1`. -/
+private theorem countable_setOf_hasEigenvalue_one_pow_of_returnDerivative_eq
+    {W : (x : M) → TangentSpace 𝓘(ℝ, E) x} {g : M → ℝ}
+    (h : ∀ a : ℝ, returnDerivative (v + a • W) g T₀ p = Real.exp a • returnDerivative v g T₀ p) :
+    {a : ℝ | ∃ m ≠ 0, (returnDerivative (v + a • W) g T₀ p ^ m).HasEigenvalue 1}.Countable := by
+  refine ((Module.End.countable_setOf_exists_hasEigenvalue_one_pow_smul
+    (returnDerivative v g T₀ p)).preimage Real.exp_injective).mono fun a ha ↦ ?_
+  rw [Set.mem_ofPred_eq, h a] at ha
+  exact ha
 
 variable {e : OpenPartialHomeomorph M E}
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M] in
-/-- A chart of the `C¹` maximal atlas and its inverse are differentiable on their domains. -/
-private theorem mdifferentiable_of_mem_maximalAtlas
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M) : e.MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ, E) :=
-  ⟨fun _ hy ↦ (mdifferentiableAt_of_mem_maximalAtlas he hy).mdifferentiableWithinAt,
-    fun _ hz ↦ (mdifferentiableAt_symm_of_mem_maximalAtlas he hz).mdifferentiableWithinAt⟩
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M] in
-/-- The derivative of the inverse of a chart inverts that of the chart. -/
-private theorem mfderiv_symm_apply_mfderiv (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M)
-    {y : M} (hy : y ∈ e.source) (w : E) :
-    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e.symm (e y) (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e y w) = w := by
-  have hmd := mdifferentiable_of_mem_maximalAtlas he
-  exact ContinuousLinearMap.ext_iff.1 (hmd.symm_comp_deriv hy) w
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M] in
-/-- The derivative of a chart inverts that of the inverse of the chart. -/
-private theorem mfderiv_apply_mfderiv_symm (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M)
-    {y : M} (hy : y ∈ e.source) (w : E) :
-    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e y (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e.symm (e y) w) = w := by
-  have hmd := mdifferentiable_of_mem_maximalAtlas he
-  have h := ContinuousLinearMap.ext_iff.1 (hmd.comp_symm_deriv (e.map_source hy)) w
-  rw [e.left_inv hy] at h
-  exact h
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M] in
-/-- The derivative of the inverse of a chart, applied to a field `V` on the model space, is the
-pullback of `V` by the chart, read at the inverse image. -/
-private theorem mfderiv_symm_apply_eq_mpullback
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M) (V : (z : E) → TangentSpace 𝓘(ℝ, E) z)
-    {z : E} (hz : z ∈ e.target) :
-    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e.symm z (V z) =
-      VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V (e.symm z) := by
-  obtain ⟨y, hy, rfl⟩ : ∃ y ∈ e.source, e y = z := ⟨e.symm z, e.map_target hz, e.right_inv hz⟩
-  rw [VectorField.mpullback_apply, e.left_inv hy,
-    ← mfderiv_symm_apply_mfderiv he hy ((mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e y).inverse (V (e y))),
-    (isInvertible_mfderiv_chart he hy).self_apply_inverse]
-  rfl
-
-/-- The pullback by a chart of a smooth field `V` on the model space, compactly supported in the
-chart target, extended by zero: a smooth field on `M`, equal to the pullback on the chart source
-and vanishing off the inverse image of the support of `V`. -/
-private theorem exists_contMDiff_eq_mpullback (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
-    {V : E → E} (hV : ContDiff ℝ ∞ V) (hVc : HasCompactSupport V) (hVt : tsupport V ⊆ e.target) :
-    ∃ W : (x : M) → TangentSpace 𝓘(ℝ, E) x,
-      ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞ (fun y ↦ (⟨y, W y⟩ : TangentBundle 𝓘(ℝ, E) M)) ∧
-      (∀ y ∈ e.source, W y = VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V y) ∧
-      ∀ y ∉ e.symm '' tsupport V, W y = 0 := by
-  classical
-  set W : (x : M) → TangentSpace 𝓘(ℝ, E) x := fun y ↦
-    if y ∈ e.source then VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V y else 0
-  have hK : IsCompact (e.symm '' tsupport V) :=
-    hVc.isCompact.image_of_continuousOn (e.continuousOn_symm.mono hVt)
-  have hW0 : ∀ y ∉ e.symm '' tsupport V, W y = 0 := by
-    intro y hy
-    by_cases hys : y ∈ e.source
-    · have hVy : V (e y) = 0 := image_eq_zero_of_notMem_tsupport fun h ↦
-        hy ⟨e y, h, e.left_inv hys⟩
-      simp only [W, hys, ite_true]
-      -- The pullback is `(de_y)⁻¹ (V (e y))` by definition.
-      exact (congrArg (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e y).inverse hVy).trans
-        (ContinuousLinearMap.map_zero _)
-    · simp [W, hys]
-  refine ⟨W, fun y ↦ ?_, fun y hy ↦ ite_eq_left_iff.2 fun h ↦ (h hy).elim, hW0⟩
-  by_cases hys : y ∈ e.source
-  · -- On the chart source the field is the pullback, which is smooth there.
-    refine ((contMDiffOn_mpullback he hV.contDiffOn).contMDiffAt
-      (e.open_source.mem_nhds hys)).congr_of_eventuallyEq ?_
-    filter_upwards [e.open_source.mem_nhds hys] with y' hy'
-    simp [W, hy']
-  · -- Off the chart source the field vanishes near `y`, off the compact image of the support.
-    have hyK : y ∉ e.symm '' tsupport V := fun ⟨z, hz, hzy⟩ ↦
-      hys (hzy ▸ e.map_target (hVt hz))
-    refine (Bundle.contMDiff_zeroSection ℝ (TangentSpace 𝓘(ℝ, E) : M → Type _)
-      y).congr_of_eventuallyEq ?_
-    filter_upwards [hK.isClosed.isOpen_compl.mem_nhds hyK] with y' hy'
-    simp [hW0 y' hy', Bundle.zeroSection]
 
 /-- **Flows read through the inverse of a chart.** Let `e` be a chart, and let a field `V` on the
 model space be carried to the field `w` on `M` by the inverse chart on an open set `U` of the
@@ -402,11 +306,9 @@ private theorem exists_axis_segment_of_chart
   -- The orbit is not a rest point, so `u ≠ 0`.
   have hu : u ≠ 0 := by
     rintro rfl
-    have h0 : v p = 0 := by
-      rw [← hsymm0, ← hvu 0 (mem_ball_self hr)]
-      exact ContinuousLinearMap.map_zero _
-    exact hmin (T₀ / 2) ⟨by positivity, by linarith⟩
-      (flowOf_eq_of_isMIntegralCurve hv (isMIntegralCurve_const h0) (T₀ / 2))
+    refine apply_ne_zero_of_forall_flowOf_ne hv hT₀ hmin ?_
+    rw [← hsymm0, ← hvu 0 (mem_ball_self hr)]
+    exact ContinuousLinearMap.map_zero _
   -- A smaller ball whose inverse chart image lies in `N`, and an axis segment inside it.
   obtain ⟨r', hr', hr'N⟩ := Metric.mem_nhds_iff.1 (inter_mem (ball_mem_nhds (0 : E) hr)
     ((e.continuousAt_symm h0t).preimage_mem_nhds (hsymm0.symm ▸ hN)))
@@ -513,8 +415,7 @@ theorem exists_contMDiff_returnDerivative_add_smul_eq_exp_smul
   have hv1 : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1
       (fun y ↦ (⟨y, v y⟩ : TangentBundle 𝓘(ℝ, E) M)) := hv.of_le (by simp)
   -- The orbit is not a rest point, so `v p ≠ 0` and `v` is straightened by a chart centred at `p`.
-  have hvp : v p ≠ 0 := fun h0 ↦ hmin (T₀ / 2) ⟨by positivity, by linarith⟩
-    (flowOf_eq_of_isMIntegralCurve hv1 (isMIntegralCurve_const h0) (T₀ / 2))
+  have hvp : v p ≠ 0 := apply_ne_zero_of_forall_flowOf_ne hv1 hT₀ hmin
   obtain ⟨e, u, he, hpe, hep, heu⟩ := exists_chart_mfderiv_eq_const_of_ne_zero hv hvp
   obtain ⟨r, hr, hrt⟩ := Metric.isOpen_iff.1 e.open_target 0 (hep ▸ e.map_source hpe)
   refine exists_contMDiff_returnDerivative_add_smul_eq_exp_smul_of_chart hv1 hT₀ hP hp hmin he
@@ -546,11 +447,8 @@ theorem exists_contMDiff_countable_setOf_hasEigenvalue_one_pow
         {a : ℝ | ∃ m ≠ 0, (returnDerivative (v + a • W) g T₀ p ^ m).HasEigenvalue 1}.Countable := by
   obtain ⟨W, hW, hWK, hWorb, hWa⟩ :=
     exists_contMDiff_returnDerivative_add_smul_eq_exp_smul hv hT₀ hP hp hmin hN
-  refine ⟨W, hW, hWK, hWorb, fun a ↦ ⟨(hWa a).1, (hWa a).2.1⟩, fun g hg hgv ↦ ?_⟩
-  refine ((Module.End.countable_setOf_exists_hasEigenvalue_one_pow_smul
-    (returnDerivative v g T₀ p)).preimage Real.exp_injective).mono fun a ha ↦ ?_
-  rw [Set.mem_ofPred_eq, (hWa a).2.2 g hg hgv] at ha
-  exact ha
+  exact ⟨W, hW, hWK, hWorb, fun a ↦ ⟨(hWa a).1, (hWa a).2.1⟩, fun g hg hgv ↦
+    countable_setOf_hasEigenvalue_one_pow_of_returnDerivative_eq fun a ↦ (hWa a).2.2 g hg hgv⟩
 
 section ModelSpace
 
@@ -611,11 +509,9 @@ theorem exists_contDiff_countable_setOf_hasEigenvalue_one_pow {v : E → E} {u :
           (returnDerivative (I := 𝓘(ℝ, E)) (v + a • W) g T₀ 0 ^ m).HasEigenvalue 1}.Countable := by
   obtain ⟨W, hW, hWc, hWN, hWorb, hWa⟩ :=
     exists_contDiff_returnDerivative_add_smul_eq_exp_smul hv hT₀ hP hp hmin hvu hN
-  refine ⟨W, hW, hWc, hWN, hWorb, fun a ↦ ⟨(hWa a).1, (hWa a).2.1⟩, fun g hg hgv ↦ ?_⟩
-  refine ((Module.End.countable_setOf_exists_hasEigenvalue_one_pow_smul
-    (returnDerivative (I := 𝓘(ℝ, E)) v g T₀ 0)).preimage Real.exp_injective).mono fun a ha ↦ ?_
-  rw [Set.mem_ofPred_eq, (hWa a).2.2 g hg hgv] at ha
-  exact ha
+  exact ⟨W, hW, hWc, hWN, hWorb, fun a ↦ ⟨(hWa a).1, (hWa a).2.1⟩, fun g hg hgv ↦
+    countable_setOf_hasEigenvalue_one_pow_of_returnDerivative_eq (M := E) fun a ↦
+      (hWa a).2.2 g hg hgv⟩
 
 end ModelSpace
 

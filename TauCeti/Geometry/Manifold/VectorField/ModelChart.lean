@@ -22,15 +22,19 @@ Let `M` be a manifold modelled on a real normed space `E` with the trivial model
 field `V` on `E` pulls back by a chart `e` of the maximal atlas to the field
 `VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V` on the source of `e`. This file computes the chart
 derivative of the pullback and the derivative of a function along it, and shows that it is smooth
-when `V` is. The pullbacks of constant fields in the preferred chart give, near any regular point
-of a smooth function, a smooth field along which the function strictly decreases; finitely many
-of them, cut off by bump functions, give a global field of unit-speed decrease near any compact set
-of regular points.
+when `V` is; when `V` is compactly supported in the chart target, the pullback extends by zero to
+a smooth field on all of `M`. The pullbacks of constant fields in the preferred chart give, near
+any regular point of a smooth function, a smooth field along which the function strictly
+decreases; finitely many of them, cut off by bump functions, give a global field of unit-speed
+decrease near any compact set of regular points.
 
 ## Main declarations
 
-* `TauCeti.mfderiv_mpullback_apply`, `TauCeti.mvfderiv_mpullback_apply`,
-  `TauCeti.contMDiffOn_mpullback`: the pullback of a vector field by a chart.
+* `TauCeti.mfderiv_mpullback_apply`, `TauCeti.mfderiv_symm_apply_eq_mpullback`,
+  `TauCeti.mvfderiv_mpullback_apply`, `TauCeti.contMDiffOn_mpullback`: the pullback of a vector
+  field by a chart.
+* `TauCeti.exists_contMDiff_eq_mpullback`: the pullback by a chart of a smooth field compactly
+  supported in the chart target, extended by zero, is a smooth field on the manifold.
 * `TauCeti.mlieBracket_constVectorField`: two constant vector fields on the model space have zero
   bracket.
 * `TauCeti.chartConstField`: a constant field in the preferred chart at a point, on the manifold.
@@ -66,6 +70,17 @@ theorem mfderiv_mpullback_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E)
   rw [VectorField.mpullback_apply]
   exact (isInvertible_mfderiv_chart he hy).self_apply_inverse _
 
+/-- The derivative of the inverse of a chart `e`, applied to a field `V` on the model space, is the
+pullback of `V` by `e`, read at the inverse image. -/
+theorem mfderiv_symm_apply_eq_mpullback (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M)
+    (V : (z : E) → TangentSpace 𝓘(ℝ, E) z) {z : E} (hz : z ∈ e.target) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e.symm z (V z) =
+      VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V (e.symm z) := by
+  have h := mfderiv_symm_apply_mfderiv he (e.map_target hz)
+    (VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V (e.symm z))
+  rw [mfderiv_mpullback_apply he V (e.map_target hz), e.right_inv hz] at h
+  exact h
+
 /-- The derivative of `f` along the pullback of a vector field `V` by a chart `e`, where
 `f = h ∘ e` on the source of `e`. -/
 theorem mvfderiv_mpullback_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M)
@@ -97,6 +112,44 @@ theorem contMDiffOn_mpullback (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) �
   exact (ContMDiffAt.mpullback_vectorField_preimage hVy (contMDiffAt_of_mem_maximalAtlas he hy)
     (isInvertible_mfderiv_chart (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy)
     (by simp)).contMDiffWithinAt
+
+/-- The pullback by a chart of a smooth field `V` on the model space, compactly supported in the
+chart target, extended by zero: a smooth field on `M`, equal to the pullback on the chart source
+and vanishing off the inverse image of the support of `V`. -/
+theorem exists_contMDiff_eq_mpullback [T2Space M] (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    {V : E → E} (hV : ContDiff ℝ ∞ V) (hVc : HasCompactSupport V) (hVt : tsupport V ⊆ e.target) :
+    ∃ W : (x : M) → TangentSpace 𝓘(ℝ, E) x,
+      ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞ (fun y ↦ (⟨y, W y⟩ : TangentBundle 𝓘(ℝ, E) M)) ∧
+      (∀ y ∈ e.source, W y = VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V y) ∧
+      ∀ y ∉ e.symm '' tsupport V, W y = 0 := by
+  classical
+  set W : (x : M) → TangentSpace 𝓘(ℝ, E) x := fun y ↦
+    if y ∈ e.source then VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V y else 0
+  have hK : IsCompact (e.symm '' tsupport V) :=
+    hVc.isCompact.image_of_continuousOn (e.continuousOn_symm.mono hVt)
+  have hW0 : ∀ y ∉ e.symm '' tsupport V, W y = 0 := by
+    intro y hy
+    by_cases hys : y ∈ e.source
+    · have hVy : V (e y) = 0 := image_eq_zero_of_notMem_tsupport fun h ↦
+        hy ⟨e y, h, e.left_inv hys⟩
+      simp only [W, hys, ite_true]
+      exact VectorField.mpullback_apply.trans
+        ((congrArg (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e y).inverse hVy).trans (map_zero _))
+    · simp [W, hys]
+  refine ⟨W, fun y ↦ ?_, fun y hy ↦ ite_eq_left_iff.2 fun h ↦ (h hy).elim, hW0⟩
+  by_cases hys : y ∈ e.source
+  · -- On the chart source the field is the pullback, which is smooth there.
+    refine ((contMDiffOn_mpullback he hV.contDiffOn).contMDiffAt
+      (e.open_source.mem_nhds hys)).congr_of_eventuallyEq ?_
+    filter_upwards [e.open_source.mem_nhds hys] with y' hy'
+    simp [W, hy']
+  · -- Off the chart source the field vanishes near `y`, off the compact image of the support.
+    have hyK : y ∉ e.symm '' tsupport V := fun ⟨z, hz, hzy⟩ ↦
+      hys (hzy ▸ e.map_target (hVt hz))
+    refine (Bundle.contMDiff_zeroSection ℝ (TangentSpace 𝓘(ℝ, E) : M → Type _)
+      y).congr_of_eventuallyEq ?_
+    filter_upwards [hK.isClosed.isOpen_compl.mem_nhds hyK] with y' hy'
+    simp [hW0 y' hy', Bundle.zeroSection]
 
 end Pullback
 

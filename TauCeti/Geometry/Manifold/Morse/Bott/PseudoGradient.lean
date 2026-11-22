@@ -217,9 +217,7 @@ theorem isMIntegralCurveOn_toChart_symm_linearFlow
     simpa [ℓ, Function.comp_def] using
       φ.coordL.symm.hasFDerivAt.comp_hasDerivAt t (φ.hasDerivAt_linearFlow z t)
   have hmd : φ.toChart.MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ, E) :=
-    ⟨fun y hy ↦ (φ.mdifferentiableAt_toChart hy).mdifferentiableWithinAt, fun w hw ↦
-      (mdifferentiableAt_symm_of_mem_maximalAtlas φ.mem_maximalAtlas_one
-        hw).mdifferentiableWithinAt⟩
+    mdifferentiable_of_mem_maximalAtlas φ.mem_maximalAtlas_one
   intro t ht
   have htT : ℓ t ∈ φ.toChart.target := hz t ht
   have hy : φ.toChart.symm (ℓ t) ∈ φ.toChart.source := φ.toChart.map_target htT

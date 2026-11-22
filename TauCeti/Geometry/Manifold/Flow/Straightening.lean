@@ -9,6 +9,7 @@ public import TauCeti.Analysis.ODE.Straightening
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -50,6 +51,8 @@ interior chart of the model, it is a chart of the manifold
 * `TauCeti.exists_chart_mfderiv_eq_const_of_eventually_mlieBracket_eq_zero`: finitely many
   pointwise independent `C^m` vector fields with vanishing brackets are simultaneously constant in a
   suitable chart of the `C^m` maximal atlas.
+* `TauCeti.exists_chart_mfderiv_eq_const_of_ne_zero`: on a smooth manifold modelled on `E`, the
+  chart can moreover be centred at the given point.
 
 ## References
 
@@ -164,5 +167,43 @@ theorem exists_chart_mfderiv_eq_const {m : ℕ∞} {n : ℕ∞ω} (hm : 1 ≤ m)
       hxI (fun _ ↦ hv) hU (linearIndependent_unique_iff.2 hx)
       fun i j h ↦ (h (Subsingleton.elim i j)).elim
   exact ⟨e, u (), he, hxe, linearIndependent_unique_iff.1 hu, fun y hy ↦ heu y hy ()⟩
+
+omit [ChartedSpace H M] in
+/-- **A flow-box chart centred at a point.** On a smooth manifold modelled on `E`, a smooth vector
+field `v` with `v p ≠ 0` is a constant field `u` in some chart of the smooth maximal atlas sending
+`p` to `0`. -/
+theorem exists_chart_mfderiv_eq_const_of_ne_zero [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+    {v : (y : M) → TangentSpace 𝓘(ℝ, E) y} {p : M}
+    (hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞ (fun y ↦ (⟨y, v y⟩ : TangentBundle 𝓘(ℝ, E) M)))
+    (hvp : v p ≠ 0) :
+    ∃ (e : OpenPartialHomeomorph M E) (u : E), e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
+      p ∈ e.source ∧ e p = 0 ∧ ∀ y ∈ e.source, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e y (v y) = u := by
+  obtain ⟨e, u, he, hpe, -, heu⟩ := exists_chart_mfderiv_eq_const (I := 𝓘(ℝ, E)) (m := ⊤)
+    (n := ∞) le_top (by simp) (BoundarylessManifold.isInteriorPoint) hv.contMDiffOn
+    univ_mem hvp
+  -- Translate the chart so that it sends `p` to `0`; this does not change its derivative.
+  have hcoe : (e.transHomeomorph (Homeomorph.addRight (-e p)) : M → E) =
+      (fun z ↦ z + -e p) ∘ e := by
+    rw [OpenPartialHomeomorph.transHomeomorph_apply, Homeomorph.coe_addRight]
+  refine ⟨e.transHomeomorph (Homeomorph.addRight (-e p)), u, ?_, hpe, by simp [hcoe],
+    fun y hy ↦ ?_⟩
+  · rw [OpenPartialHomeomorph.transHomeomorph_eq_trans]
+    refine trans_mem_maximalAtlas_of_contDiffAt he (fun _ _ ↦ ?_) fun _ _ ↦ ?_
+    · simp only [Homeomorph.toOpenPartialHomeomorph_apply, Homeomorph.coe_addRight]
+      fun_prop
+    · simp only [← Homeomorph.symm_toOpenPartialHomeomorph,
+        Homeomorph.toOpenPartialHomeomorph_apply, Homeomorph.addRight_symm,
+        Homeomorph.coe_addRight]
+      fun_prop
+  · have hy' : y ∈ e.source := hy
+    have ht : HasFDerivAt (fun z : E ↦ z + -e p) (ContinuousLinearMap.id ℝ E) (e y) :=
+      (hasFDerivAt_id _).add_const _
+    have hd := ht.hasMFDerivAt.comp y
+      (mdifferentiableAt_of_mem_maximalAtlas
+        (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy').hasMFDerivAt
+    rw [hcoe, hd.mfderiv]
+    have h := heu y hy'
+    simp only [modelWithCornersSelf_coe, Function.id_comp] at h
+    exact (congrArg (fun L : E →L[ℝ] E ↦ L (v y)) (ContinuousLinearMap.id_comp _)).trans h
 
 end TauCeti

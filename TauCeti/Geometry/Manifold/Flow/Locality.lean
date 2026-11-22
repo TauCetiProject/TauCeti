@@ -194,9 +194,10 @@ variable [CompleteSpace E] {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpa
 set `U` and carry `v` to `X` there, `df_y (v y) = X (f y)` for `y ∈ U`. If the trajectory of `x`
 under `v` from time `0` to time `t` lies in `U`, then for all initial points and times `(s, y)`
 near `(t, x)` the flow of `X` is defined at `(s, f y)` and `f` carries the trajectory of `y` to
-it: `f (flowOf v s y) = flowOf X s (f y)`. Neither `f` nor the fields need be defined or related
-outside `U`; for instance `f` can be the inverse of a chart, relating a field on the model space
-to one on a manifold near a segment of a trajectory. -/
+it: `f (flowOf v s y) = flowOf X s (f y)`. The map `f` need only be differentiable on `U`, and the
+fields need only be related there, though both must still be `C¹` everywhere; for instance `f` can
+be the inverse of a chart, relating a field on the model space to one on a manifold near a segment
+of a trajectory. -/
 theorem eventually_apply_flowOf_of_mfderiv_eq
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hX : CMDiff 1 (fun y ↦ (⟨y, X y⟩ : TangentBundle I' M'))) (hU : IsOpen U)
