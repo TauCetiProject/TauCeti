@@ -123,6 +123,25 @@ theorem loopChainAugmentation_lof_succ (k : ℕ)
   rw [loopChainAugmentation, cubicalChainAugmentation_lof,
     cubicalChainAugmentLof_of_ne_zero (Nat.succ_ne_zero k)]
 
+/-- The augmentation of the loop chain algebra is the augmentation of the component of
+dimension zero. -/
+theorem loopChainAugmentation_eq_augment (z : loopChainAlgebra B b R) :
+    loopChainAugmentation B b R z =
+      NormalizedCubicalChain.augment (MooreLoopSpace B b) R (z 0) := by
+  induction z using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    cases n with
+    | zero =>
+      have h0 := loopChainAugmentation_lof_zero (B := B) (b := b) (R := R) y
+      simp only [DirectSum.lof_eq_of] at h0
+      rw [h0, DirectSum.of_eq_same]
+    | succ i =>
+      have h1 := loopChainAugmentation_lof_succ (B := B) (b := b) (R := R) i y
+      simp only [DirectSum.lof_eq_of] at h1
+      rw [h1, DirectSum.of_eq_of_ne _ _ _ (Nat.succ_ne_zero i).symm, map_zero]
+  | add z z' hz hz' => simp [hz, hz']
+
 end Algebra
 
 section Map
