@@ -16,7 +16,6 @@ import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Topology.Algebra.Algebra
-import Mathlib.Topology.ContinuousMap.Units
 import TauCeti.Analysis.Analytic.ContinuousMap
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
@@ -190,6 +189,17 @@ theorem extend_mul (f g : discAlgebra c R) : extend (f * g) = extend f * extend 
   simpa [extend, ← Pi.zero_def] using
     Function.extend_mul Subtype.val (f : C(closedBall c R, ℂ)) g 0 0
 
+/-- Zero extension commutes with positive natural-number powers. -/
+@[simp]
+theorem extend_pow (f : discAlgebra c R) (n : ℕ) (hn : 0 < n) :
+    extend (f ^ n) = extend f ^ n := by
+  induction n with
+  | zero => cases hn
+  | succ n ih =>
+    rcases n with _ | n
+    · simp
+    · rw [pow_succ f, extend_mul, ih (Nat.succ_pos n), ← pow_succ]
+
 /-- The zero extension is continuous on `closedBall c R`. -/
 theorem continuousOn_extend (f : discAlgebra c R) :
     ContinuousOn (extend f) (closedBall c R) := by
@@ -350,19 +360,6 @@ noncomputable def dslope {a : ℂ} (ha : a ∈ ball c R) :
 theorem dslope_apply {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) (z : closedBall c R) :
     (dslope ha f : C(closedBall c R, ℂ)) z = _root_.dslope (extend f) a z := (rfl)
 
-/-- Evaluating `dslope ha f` at the division center `a` returns `deriv (extend f) a`. -/
-theorem dslope_apply_self {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) :
-    (dslope ha f : C(closedBall c R, ℂ)) ⟨a, ball_subset_closedBall ha⟩ =
-      deriv (extend f) a := by
-  rw [dslope_apply, dslope_same]
-
-/-- Evaluating the zero extension of `dslope ha f` at the division center `a` returns
-`deriv (extend f) a`. -/
-@[simp]
-theorem extend_dslope_self {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) :
-    extend (dslope ha f) a = deriv (extend f) a := by
-  rw [extend_apply (dslope ha f) ⟨a, ball_subset_closedBall ha⟩, dslope_apply_self]
-
 /-- Dividing off the value at an interior point `a ∈ ball c R` recovers `f`:
 `(coord c R - a) * dslope ha f + f(a) = f`. -/
 @[simp]
@@ -370,13 +367,6 @@ theorem coord_sub_algebraMap_mul_dslope_add {a : ℂ} (ha : a ∈ ball c R) (f :
     (coord c R - algebraMap ℂ (discAlgebra c R) a) * dslope ha f +
       algebraMap ℂ (discAlgebra c R) (extend f a) = f :=
   coord_sub_algebraMap_mul_dslopeLinear_add ha f
-
-/-- Dividing off the value at `0 ∈ ball c R` recovers `f`:
-`coord c R * dslope ha f + f(0) = f`. -/
-@[simp]
-theorem coord_mul_dslope_add (ha : (0 : ℂ) ∈ ball c R) (f : discAlgebra c R) :
-    coord c R * dslope ha f + algebraMap ℂ (discAlgebra c R) (extend f 0) = f := by
-  simpa using coord_sub_algebraMap_mul_dslope_add ha f
 
 /-- Uniqueness of the divided-difference quotient in `discAlgebra c R`: if
 `(coord c R - a) * q + c₀ = f`, then `q = dslope ha f`. -/
@@ -459,7 +449,7 @@ theorem analyticAt_mkD_of_analyticAt {E : Type*} [NormedAddCommGroup E] [NormedS
   have hcoe (x : E) (hx : x ∈ U) :
       (mkD c R (fun z => F (x, z)) d : C(closedBall c R, ℂ)) = g x := by
     have han : AnalyticOnNhd ℂ (fun z => F (x, z)) (closedBall c R) :=
-      fun z hz => ((hU x hx).1 z hz).comp_of_eq (analyticAt_const.prod analyticAt_id) rfl
+      fun z hz => ((hU x hx).1 z hz).curry_right
     ext z
     dsimp only [g]
     rw [mkD_apply_of_analyticOnNhd han,
@@ -485,42 +475,35 @@ theorem analyticAt_extend_of_analyticAt {E : Type*} [NormedAddCommGroup E] [Norm
   let res : discAlgebra c R →L[ℂ] C(sphere c |R|, ℂ) :=
     (ContinuousMap.compCLM ℂ ℂ (ContinuousMap.inclusion hsphere_sub)).comp
       (discAlgebra c R).valA.toContinuousLinearMap
-  -- The Cauchy kernel `z ↦ (ζ ↦ ζ - z)⁻¹` as a `C(sphere c |R|, ℂ)`-valued analytic map near `z₀`.
-  let ζId : C(sphere c |R|, ℂ) := ContinuousMap.subtypeVal (sphere c |R|)
-  let κ : ℂ → C(sphere c |R|, ℂ) := fun z => ζId - z • (1 : C(sphere c |R|, ℂ))
-  have hne {z : ℂ} (hz : z ∈ ball c R) (ζ : sphere c |R|) : κ z ζ ≠ 0 := by
-    intro h
-    have hdz : dist ζ.val c = dist z c := by
-      rw [(sub_eq_zero.1 (by simpa [κ, ζId] using h) : ζ.val = z)]
-    rw [mem_sphere.1 ζ.property, abs_of_pos hR] at hdz
-    exact (mem_ball.1 hz).ne hdz.symm
-  have hunit {z : ℂ} (hz : z ∈ ball c R) : IsUnit (κ z) :=
-    (ContinuousMap.isUnit_iff_forall_ne_zero _).2 (hne hz)
-  have hκ : AnalyticAt ℂ κ z₀ :=
-    analyticAt_const.sub (analyticAt_id.smul analyticAt_const)
-  have hinv_at : AnalyticAt ℂ Ring.inverse (κ z₀) := by
-    have h := analyticAt_inverse (𝕜 := ℂ) (hunit hz₀).unit
-    rwa [(hunit hz₀).unit_spec] at h
-  have hinv : AnalyticAt ℂ (fun z => Ring.inverse (κ z)) z₀ := hinv_at.comp hκ
+  -- The Cauchy kernel `z ↦ (ζ ↦ (ζ - z)⁻¹)` as a `C(sphere c |R|, ℂ)`-valued analytic map near
+  -- `z₀`.
+  let ker : ℂ → C(sphere c |R|, ℂ) :=
+    fun z => ContinuousMap.mkD (fun ζ : sphere c |R| => (ζ.val - z)⁻¹) 0
+  have hne {z : ℂ} (hz : z ∈ ball c R) (ζ : sphere c |R|) : ζ.val - z ≠ 0 := by
+    refine sub_ne_zero.2 fun h => (mem_ball.1 hz).ne ?_
+    rw [← h, mem_sphere.1 ζ.property, abs_of_pos hR]
+  have hker : AnalyticAt ℂ ker z₀ :=
+    TauCeti.analyticAt_mkD_of_analyticAt continuous_subtypeVal fun ζ =>
+      (analyticAt_snd.sub analyticAt_fst).inv (hne hz₀ ζ)
   -- Represent `extend (W x) z` on `E × ball c R` via Cauchy's integral formula.
   let Φ : E × ℂ → ℂ := fun q =>
-    (2 * Real.pi * I : ℂ)⁻¹ * circleIntegralCLM c R (Ring.inverse (κ q.2) * res (W q.1))
-  have hprod : AnalyticAt ℂ (fun q : E × ℂ => Ring.inverse (κ q.2) * res (W q.1)) (a, z₀) :=
-    (hinv.comp_of_eq analyticAt_snd rfl).fun_mul
+    (2 * Real.pi * I : ℂ)⁻¹ * circleIntegralCLM c R (ker q.2 * res (W q.1))
+  have hprod : AnalyticAt ℂ (fun q : E × ℂ => ker q.2 * res (W q.1)) (a, z₀) :=
+    (hker.comp_of_eq analyticAt_snd rfl).fun_mul
       (((res.analyticAt _).comp hW).comp_of_eq analyticAt_fst rfl)
   have hci : AnalyticAt ℂ
-      (fun q : E × ℂ => circleIntegralCLM c R (Ring.inverse (κ q.2) * res (W q.1))) (a, z₀) :=
+      (fun q : E × ℂ => circleIntegralCLM c R (ker q.2 * res (W q.1))) (a, z₀) :=
     ((circleIntegralCLM (E := ℂ) c R).analyticAt _).comp hprod
   have hΦ : AnalyticAt ℂ Φ (a, z₀) := analyticAt_const.fun_mul hci
   refine hΦ.congr ?_
   filter_upwards [prod_mem_nhds univ_mem (isOpen_ball.mem_nhds hz₀)] with q hq
-  have hinv_eq : Ring.inverse (κ q.2) = ↑(hunit hq.2).unit⁻¹ := by
-    conv_lhs => rw [← (hunit hq.2).unit_spec]
-    exact Ring.inverse_unit (hunit hq.2).unit
-  have hint : circleIntegralCLM c R (Ring.inverse (κ q.2) * res (W q.1)) =
+  have hcont : Continuous fun ζ : sphere c |R| => (ζ.val - q.2)⁻¹ :=
+    continuous_iff_continuousAt.2 fun ζ =>
+      ((continuous_subtypeVal.sub continuous_const).continuousAt).inv₀ (hne hq.2 ζ)
+  have hint : circleIntegralCLM c R (ker q.2 * res (W q.1)) =
       ∮ ζ in C(c, R), (ζ - q.2)⁻¹ • extend (W q.1) ζ := by
     refine circleIntegralCLM_eq_circleIntegral c R _ _ fun ζ => ?_
-    simp [hinv_eq, ← ContinuousMap.unitsLift_symm_apply_apply_inv', κ, ζId, res,
+    simp [ker, ContinuousMap.mkD_apply_of_continuous hcont, res,
       ← extend_apply (W q.1) (ContinuousMap.inclusion hsphere_sub ζ)]
   have hdiff : DiffContOnCl ℂ (extend (W q.1)) (ball c R) :=
     ⟨differentiableOn_extend (W q.1),
