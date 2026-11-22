@@ -16,16 +16,16 @@ import TauCeti.Algebra.Homology.ModuleCat.Basic
 /-!
 # Non-naturality of the cochain universal coefficient splitting
 
-Although `TauCeti.cochainKroneckerSection` provides a splitting of the cochain universal
-coefficient sequence that is natural in the coefficient object `Y`, no splitting can be chosen
-naturally in the cochain complex `K`, even when restricted to strictly bounded finite free
-`ℤ`-cochain complexes with dualizing target `ℤ`.
+Although `CochainComplex.linearHomComplexSingleKroneckerSection` provides a splitting of the
+cochain universal coefficient sequence that is natural in the coefficient object `Y`, no splitting
+can be chosen naturally in the cochain complex `K`, even when restricted to strictly bounded finite
+free `ℤ`-cochain complexes with dualizing target `ℤ`.
 
 ## Main results
 
-* `TauCeti.not_exists_natural_section_cochainKronecker`: the chain map from
+* `TauCeti.not_exists_natural_section_linearHomComplexSingleKronecker`: the chain map from
   `0 ⟶ ℤ xrightarrow{×2} ℤ ⟶ 0` (in degrees `0` and `1`) to `ℤ[0]` rules out any simultaneous
-  natural additive section of `TauCeti.cochainKronecker` in degree `0`.
+  natural additive section of `CochainComplex.linearHomComplexSingleKronecker` in degree `0`.
 
 ## References
 
@@ -145,9 +145,9 @@ private instance : singleIntComplex.IsStrictlyLE 1 :=
 /-- Any degree-0 cocycle of `linearHomComplex ℤ ℤ[0] ℤ[0]` whose Kronecker evaluation is the
 canonical isomorphism `H⁰(ℤ[0]) ≅ ℤ` has underlying degree-0 morphism equal to
 `singleObjXSelf.hom`. -/
-private lemma toSingleLinearEquiv_singleIntComplex_of_cochainKronecker
+private lemma toSingleLinearEquiv_singleIntComplex_of_kronecker
     (cyc : (linearHomComplex ℤ singleIntComplex singleIntComplex).cycles 0)
-    (hcyc : cochainKronecker ℤ singleIntComplex (ModuleCat.of ℤ ℤ) 0
+    (hcyc : linearHomComplexSingleKronecker ℤ singleIntComplex (ModuleCat.of ℤ ℤ) 0
         (((linearHomComplex ℤ singleIntComplex singleIntComplex).homologyπ 0).hom cyc) =
       (singleObjHomologySelfIso (ComplexShape.up ℤ) 0 (ModuleCat.of ℤ ℤ)).hom) :
     Cochain.toSingleLinearEquiv (R := ℤ) (neg_add_cancel 0)
@@ -159,7 +159,7 @@ private lemma toSingleLinearEquiv_singleIntComplex_of_cochainKronecker
         Cochain.toSingleLinearEquiv (R := ℤ) (neg_add_cancel 0)
           (((linearHomComplex ℤ singleIntComplex singleIntComplex).iCycles 0).hom cyc) := by
     rw [← hcyc]
-    exact homologyπ_cochainKronecker (k := ℤ) (K := singleIntComplex)
+    exact homologyπ_linearHomComplexSingleKronecker (k := ℤ) (K := singleIntComplex)
       (Y := ModuleCat.of ℤ ℤ) 0 cyc
   have hkr' := congrArg
     ((singleObjCyclesSelfIso (ComplexShape.up ℤ) 0 (ModuleCat.of ℤ ℤ)).inv ≫ ·) hkr
@@ -170,9 +170,9 @@ private lemma toSingleLinearEquiv_singleIntComplex_of_cochainKronecker
 
 /-- **No simultaneous natural splitting of the cochain universal coefficient sequence exists.**
 Even among strictly bounded finite free `ℤ`-cochain complexes with dualizing target `ℤ`, there is
-no family of additive sections `s K : (H⁰(K) ⟶ ℤ) →+ H⁰(Hom(K, ℤ[0]))` of `cochainKronecker` in
-degree `0` that commutes with chain maps. -/
-theorem not_exists_natural_section_cochainKronecker :
+no family of additive sections `s K : (H⁰(K) ⟶ ℤ) →+ H⁰(Hom(K, ℤ[0]))` of
+`linearHomComplexSingleKronecker` in degree `0` that commutes with chain maps. -/
+theorem not_exists_natural_section_linearHomComplexSingleKronecker :
     ¬ ∃ s : ∀ (K : CochainComplex (ModuleCat.{0} ℤ) ℤ)
         [∀ i, Module.Free ℤ (K.X i)] [∀ i, Module.Finite ℤ (K.X i)]
         [K.IsStrictlyGE 0] [K.IsStrictlyLE 1],
@@ -182,7 +182,7 @@ theorem not_exists_natural_section_cochainKronecker :
       (∀ (K : CochainComplex (ModuleCat.{0} ℤ) ℤ)
           [∀ i, Module.Free ℤ (K.X i)] [∀ i, Module.Finite ℤ (K.X i)]
           [K.IsStrictlyGE 0] [K.IsStrictlyLE 1] (g : K.homology 0 ⟶ ModuleCat.of ℤ ℤ),
-        cochainKronecker ℤ K (ModuleCat.of ℤ ℤ) 0 (s K g) = g) ∧
+        linearHomComplexSingleKronecker ℤ K (ModuleCat.of ℤ ℤ) 0 (s K g) = g) ∧
       (∀ (K₁ K₂ : CochainComplex (ModuleCat.{0} ℤ) ℤ)
           [∀ i, Module.Free ℤ (K₁.X i)] [∀ i, Module.Finite ℤ (K₁.X i)]
           [K₁.IsStrictlyGE 0] [K₁.IsStrictlyLE 1]
@@ -220,9 +220,9 @@ theorem not_exists_natural_section_cochainKronecker :
     rw [← ModuleCat.comp_apply D₂.cyclesIso.inv, D₂.cyclesIso.inv_hom_id,
       ModuleCat.id_apply]
     exact ((homologyLinearEquiv ℤ singleIntComplex singleIntComplex 0).apply_symm_apply _).symm
-  have hf₂ := toSingleLinearEquiv_singleIntComplex_of_cochainKronecker cyc₂'
-    ((congrArg (cochainKronecker ℤ singleIntComplex (ModuleCat.of ℤ ℤ) 0) hcyc₂).trans
-      (hs_sec singleIntComplex g₀))
+  have hf₂ := toSingleLinearEquiv_singleIntComplex_of_kronecker cyc₂'
+    ((congrArg (linearHomComplexSingleKronecker ℤ singleIntComplex (ModuleCat.of ℤ ℤ) 0)
+      hcyc₂).trans (hs_sec singleIntComplex g₀))
   have hi₂ : (L₂.iCycles 0).hom cyc₂' = Cochain.toSingleMk f (add_zero 0) := by
     -- Identify `L₂.iCycles 0` with `(L₂.sc 0).iCycles` for `D₂.cyclesIso_inv_comp_iCycles`.
     change (D₂.cyclesIso.inv ≫ (L₂.sc 0).iCycles).hom

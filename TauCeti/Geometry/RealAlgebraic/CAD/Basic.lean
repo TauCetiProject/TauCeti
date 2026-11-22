@@ -114,14 +114,14 @@ theorem IsSemialgebraicStack.isSemialgebraic (hθ : IsSemialgebraicStack C θ)
 semialgebraic stack. -/
 theorem isSemialgebraicStack_eval (hC : IsSemialgebraic C) (p : Fin k → MvPolynomial (Fin n) ℝ)
     (hp : ∀ x ∈ C, StrictMono fun i ↦ eval x (p i)) :
-    IsSemialgebraicStack C fun i x ↦ eval x.1 (p i) := by
+    IsSemialgebraicStack C fun i x ↦ eval x.val (p i) := by
   -- In ambient coordinates, the value of the `i`-th function is a polynomial in the last `n`
   -- coordinates.
   have hq (i : Fin k) (y : Fin (n + 1) → ℝ) :
       eval y (rename Fin.succ (p i)) = eval (Fin.tail y) (p i) := by
     simp only [eval_rename, Fin.tail_def, comp_def]
-  refine ⟨fun i ↦ (continuous_eval (p i)).comp continuous_subtype_val,
-    fun x ↦ hp x.1 x.2, fun i ↦ ?_, fun j ↦ ?_⟩
+  refine ⟨fun i ↦ (continuous_eval (p i)).comp continuous_subtypeVal,
+    fun x ↦ hp x.val x.property, fun i ↦ ?_, fun j ↦ ?_⟩
   · convert hC.preimage_tail.inter (isSemialgebraic_eval_eq (rename Fin.succ (p i)) (X 0))
       using 1
     ext y
@@ -233,7 +233,7 @@ continuous function on that cell; a sector is open in the cylinder over its base
 projection also keeps the new coordinate `0`. -/
 theorem exists_injective_isOpenEmbedding_comp (h : IsCAD n 𝒞) {E : Set (Fin n → ℝ)}
     (hE : E ∈ 𝒞) :
-    ∃ d, ∃ ι : Fin d → Fin n, Injective ι ∧ IsOpenEmbedding fun x : E ↦ x.1 ∘ ι := by
+    ∃ d, ∃ ι : Fin d → Fin n, Injective ι ∧ IsOpenEmbedding fun x : E ↦ x.val ∘ ι := by
   induction h with
   | zero =>
     rw [mem_singleton_iff.1 hE]
@@ -256,7 +256,7 @@ continuous function on its projection `Fin.tail '' E`: a section is such a graph
 contains one. -/
 theorem exists_continuous_cons_mem {𝒞 : Set (Set (Fin (n + 1) → ℝ))} (h : IsCAD (n + 1) 𝒞)
     {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ 𝒞) :
-    ∃ g : Fin.tail '' E → ℝ, Continuous g ∧ ∀ x, Fin.cons (g x) x.1 ∈ E := by
+    ∃ g : Fin.tail '' E → ℝ, Continuous g ∧ ∀ x, Fin.cons (g x) x.val ∈ E := by
   cases h with
   | succ k θ h𝒟 hθ =>
     obtain ⟨C, hC, hE⟩ := mem_iUnion₂.1 hE
@@ -291,15 +291,15 @@ theorem injOn_tail_of_finite {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
 there. The continuous section supplied by the stack is its inverse on the projected cell. -/
 theorem isEmbedding_tail_of_injOn {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
     (h : IsCAD (n + 1) 𝒞) {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ 𝒞)
-    (hinj : InjOn Fin.tail E) : IsEmbedding fun x : E ↦ Fin.tail x.1 := by
+    (hinj : InjOn Fin.tail E) : IsEmbedding fun x : E ↦ Fin.tail x.val := by
   obtain ⟨g, hg, hgE⟩ := h.exists_continuous_cons_mem hE
-  let p : E → Fin.tail '' E := fun x ↦ ⟨Fin.tail x.1, mem_image_of_mem _ x.2⟩
-  let r : Fin.tail '' E → Fin (n + 1) → ℝ := fun x ↦ Fin.cons (g x) x.1
+  let p : E → Fin.tail '' E := fun x ↦ ⟨Fin.tail x.val, mem_image_of_mem _ x.property⟩
+  let r : Fin.tail '' E → Fin (n + 1) → ℝ := fun x ↦ Fin.cons (g x) x.val
   have hp : Continuous p := by fun_prop
   have hr : Continuous r := by fun_prop
   have hrp : r ∘ p = Subtype.val := by
     funext x
-    exact hinj (hgE (p x)) x.2 (by simp [p])
+    exact hinj (hgE (p x)) x.property (by simp [p])
   exact IsEmbedding.subtypeVal.comp
     (IsEmbedding.of_comp hp hr (hrp ▸ IsEmbedding.subtypeVal))
 
@@ -383,14 +383,14 @@ theorem exists_finite_image_sign_eval_eq (h : IsCAD n 𝒞) {ι : Type*}
     ∃ T : Set (Fin n → ℝ), T.Finite ∧ (∀ E ∈ 𝒞, ∃ x, E ∩ T = {x}) ∧
       (fun x i ↦ SignType.sign (eval x (p i))) '' T =
         range fun x i ↦ SignType.sign (eval x (p i)) := by
-  choose x hx using fun E : 𝒞 ↦ (h.isConnected E.2).nonempty
+  choose x hx using fun E : 𝒞 ↦ (h.isConnected E.property).nonempty
   have := h.finite.to_subtype
   refine ⟨range x, finite_range x, fun E hE ↦ ⟨x ⟨E, hE⟩, ?_⟩, ?_⟩
   · refine Subset.antisymm ?_ (singleton_subset_iff.2 ⟨hx ⟨E, hE⟩, mem_range_self _⟩)
     rintro _ ⟨hyE, E', rfl⟩
     -- the sample of `E'` lies in `E`, so the cells `E'` and `E` meet and are equal
     have hE' : E' = ⟨E, hE⟩ := Subtype.ext <|
-      h.isPartition.pairwiseDisjoint.elim E'.2 hE (not_disjoint_iff.2 ⟨_, hx E', hyE⟩)
+      h.isPartition.pairwiseDisjoint.elim E'.property hE (not_disjoint_iff.2 ⟨_, hx E', hyE⟩)
     rw [mem_singleton_iff, hE']
   · rw [← range_comp]
     exact range_sign_sample_eq h.isPartition.sUnion_eq_univ hp x hx
@@ -403,7 +403,7 @@ theorem isCAD_singleton_univ (n : ℕ) : IsCAD n {univ} := by
   | zero => exact .zero
   | succ n ih =>
     convert IsCAD.succ (fun _ ↦ 0)
-      (fun C i (x : C) ↦ eval x.1 (Fin.elim0 i : MvPolynomial (Fin n) ℝ)) ih fun C hC ↦ ?_
+      (fun C i (x : C) ↦ eval x.val (Fin.elim0 i : MvPolynomial (Fin n) ℝ)) ih fun C hC ↦ ?_
     · ext E
       simp [range_cylinder, eq_comm]
     · rw [mem_singleton_iff.1 hC]

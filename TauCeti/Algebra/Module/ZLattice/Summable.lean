@@ -64,7 +64,7 @@ theorem discreteTopology_of_summable_exp_neg_mul_norm_add_sq (γ : E) {c : ℝ} 
     have := pow_le_pow_left₀ (norm_nonneg _) hv 2
     exact Real.exp_le_exp.mpr (by nlinarith)
   have hnhds : {v : L | ‖(v : E)‖ < 1} ∈ 𝓝 (0 : L) :=
-    (isOpen_lt (continuous_norm.comp continuous_subtype_val) continuous_const).mem_nhds (by simp)
+    (isOpen_lt (continuous_norm.comp continuous_subtypeVal) continuous_const).mem_nhds (by simp)
   refine discreteTopology_of_isOpen_singleton_zero (isOpen_singleton_of_finite_mem_nhds 0 hnhds
     ((hfin (‖γ‖ + 1)).subset fun v hv => ?_))
   have := norm_add_le γ (v : E)

@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
-public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.FiniteType
+import TauCeti.AlgebraicGeometry.Cohomology.Affine
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Zeroth cohomology of the structure sheaf of an affine scheme
@@ -20,7 +23,10 @@ structure sheaf vanishes by Serre's vanishing theorem on affine schemes
 
 So finiteness or flatness over `R` of the cohomology of the structure sheaf of `Spec A` is
 finiteness or flatness of `A` itself. For instance `H⁰(Spec R[t], 𝒪)` is not a finite `R`-module
-when `R` is nonzero: the finiteness of cohomology of coherent sheaves needs properness.
+when `R` is nonzero: the finiteness of cohomology of coherent sheaves needs properness. Conversely,
+for any scheme `Z` finite over `Spec R`, every quasicoherent sheaf of modules of finite type on `Z`
+has finitely generated cohomology over `R` in every degree
+(`AlgebraicGeometry.Scheme.Modules.moduleFinite_cohomology_of_isFinite_over_spec`).
 
 The identification is the composite of the identification of zeroth cohomology with global
 sections, as modules over the base ring (`Scheme.Modules.cohomologyZeroBaseLinearEquiv`), with
@@ -85,3 +91,36 @@ theorem cohomologyZeroTrivialSpecLinearEquiv_symm_apply (a : A) :
   rfl
 
 end TauCeti.AlgebraicGeometry
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+open TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
+
+/-- On a scheme `Z` finite over an affine base `Spec R`, every quasicoherent sheaf of modules of
+finite type has finitely generated cohomology over `R` in every degree: `Z` is affine, so higher
+cohomology vanishes and `H⁰(Z, M) ≅ Γ(M, ⊤)` is finitely generated over the `R`-finite ring
+`Γ(Z, ⊤)`. -/
+theorem moduleFinite_cohomology_of_isFinite_over_spec (R : Type u) [CommRing R]
+    {Z : Scheme.{u}} [Z.Over (Spec (.of R))] [IsFinite (Z ↘ Spec (.of R))]
+    (M : Z.Modules) [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) :
+    Module.Finite R (Cohomology M n) := by
+  have : IsAffine Z := isAffine_of_isAffineHom (Z ↘ Spec (.of R))
+  cases n with
+  | zero =>
+    let : Algebra R Γ(Z, ⊤) :=
+      ((Z.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
+    have := isScalarTower_cohomology R Z M 0
+    have : Module.Finite R Γ(Z, ⊤) := (Z ↘ Spec (.of R)).moduleFinite_appTop <| by
+      rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_top,
+        CommRingCat.hom_ofHom]
+      exact RingHom.ext (baseRingToGlobalSections_apply R Z)
+    have : Module.Finite Γ(Z, ⊤) Γ(M, ⊤) :=
+      finite_sections_of_isAffineOpen M ⊤ (isAffineOpen_top Z)
+    have : Module.Finite Γ(Z, ⊤) (Cohomology M 0) :=
+      Module.Finite.equiv (cohomologyZeroLinearEquiv M).symm
+    exact Module.Finite.trans Γ(Z, ⊤) (Cohomology M 0)
+  | succ n =>
+    have := subsingleton_cohomology_succ_of_isAffine M n
+    infer_instance
+
+end AlgebraicGeometry.Scheme.Modules

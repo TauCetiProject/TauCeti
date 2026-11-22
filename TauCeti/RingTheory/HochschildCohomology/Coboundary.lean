@@ -188,7 +188,7 @@ theorem hochschildBimoduleCofaceFun_hochschildBimoduleCofaceFun
           rw [Fin.succ_last, Fin.succ_last, hochschildBimoduleCofaceFun_succ_castSucc]
           simp only [hochschildBimoduleCofaceFun_last,
             hochschildBimoduleCofaceFun_castSucc_succ]
-          rw [Fin.contractNth_apply_of_gt _ _ _ _ i.2, Fin.init_contractNth_castSucc,
+          rw [Fin.contractNth_apply_of_gt _ _ _ _ i.isLt, Fin.init_contractNth_castSucc,
             Fin.succ_last]
         | cast j =>
           -- two inner contractions: the simplicial identity of `hochschildFace`
@@ -214,7 +214,7 @@ variable (R A M : Type*) [CommSemiring R] [Semiring A] [Algebra R A] [AddCommGro
 /-- The zeroth coface `(∂₀ψ)(a₀, …, aₙ) = a₀ • ψ(a₁, …, aₙ)`. -/
 private def leftCoface :
     ((Fin n → A) →ₘₗ[R] M) →ₗ[R] ((Fin (n + 1) → A) →ₘₗ[R] M) :=
-  (multilinearCurryFirstEquiv R (fun _ : Fin (n + 1) ↦ A) M).symm.toLinearMap ∘ₗ
+  (multilinearCurryFirstEquiv (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M).symm.toLinearMap ∘ₗ
     LinearMap.compMultilinearMapₗ R (Algebra.lsmul R R M).toLinearMap.flip
 
 /-- The last coface `(∂ₙ₊₁ψ)(a₀, …, aₙ) = ψ(a₀, …, aₙ₋₁) • aₙ`. -/

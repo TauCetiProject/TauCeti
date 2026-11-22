@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.WeilRestriction.Basic
 /-!
 # Semilinear functoriality of the Weil restriction and induced Galois actions
 
-Let `B` be a finite projective `A`-algebra and `C`, `D` finitely presented `B`-algebras. Besides
+Let `B` be a finite projective `A`-algebra and `C`, `D` arbitrary `B`-algebras. Besides
 `B`-algebra homomorphisms, the Weil restriction is functorial in pairs `(σ, φ)` consisting of an
 `A`-algebra automorphism `σ` of `B` and a ring homomorphism `φ : C →+* D` that is semilinear
 over `σ`, in the sense that `φ (b • c) = σ b • φ c`. The induced `A`-algebra homomorphism
@@ -38,6 +38,8 @@ point of the fixed-point schemes of Edixhoven's tame descent.
 * `TauCeti.Algebra.WeilRestriction.inducedAction ρB ρC h`: the action of a monoid `Γ` on
   `WeilRestriction A B C` induced by actions `ρB` on `B` and `ρC` on `C` that are compatible
   with the algebra map `B → C`.
+* `TauCeti.Algebra.WeilRestriction.mulSemiringActionOfInduced ρB ρC h`: the left
+  `MulSemiringAction` of `Γ` on `WeilRestriction A B C` attached to `inducedAction`.
 
 ## Main results
 
@@ -49,6 +51,9 @@ point of the fixed-point schemes of Edixhoven's tame descent.
   action of `γ` sends a point `y` to `(γ⁻¹ ⊗ id) ∘ y ∘ γ`.
 * `TauCeti.Algebra.WeilRestriction.comp_inducedAction_eq_iff`: a point is fixed by `γ` if and
   only if the point it classifies is `γ`-equivariant.
+* `TauCeti.Algebra.WeilRestriction.smulCommClass_mulSemiringActionOfInduced` and
+  `TauCeti.Algebra.WeilRestriction.toAlgHom_mulSemiringActionOfInduced`: `A`-linearity and
+  `MulSemiringAction.toAlgHom` identification for `mulSemiringActionOfInduced`.
 
 ## References
 
@@ -70,7 +75,6 @@ variable {A B C D E : Type*} [CommRing A] [CommRing B] [CommRing C] [CommRing D]
 section Semilinear
 
 variable [Module.Finite A B] [Module.Projective A B]
-  [FinitePresentation B C] [FinitePresentation B D] [FinitePresentation B E]
 
 /-- The **semilinear functoriality of the Weil restriction**: a ring homomorphism `φ : C →+* D`
 that is semilinear over an `A`-algebra automorphism `σ` of `B`, in the sense that
@@ -185,7 +189,7 @@ end Semilinear
 
 section Action
 
-variable [Module.Finite A B] [Module.Projective A B] [FinitePresentation B C]
+variable [Module.Finite A B] [Module.Projective A B]
   {Γ : Type*} [Monoid Γ] (ρB : Γ →* (B ≃ₐ[A] B)) (ρC : Γ →* RingAut C)
   (h : ∀ γ b, ρC γ (algebraMap B C b) = algebraMap B C (ρB γ b))
 
@@ -244,6 +248,35 @@ theorem inducedAction_eq_one (hB : ρB = 1) (hC : ρC = 1) : inducedAction ρB �
     semilinearMap_congr (φ := ((1 : Γ →* RingAut C) γ : C →+* C)) (φ' := RingHom.id C)
       (MonoidHom.one_apply γ) (RingHom.ext fun _ ↦ rfl) (h γ), semilinearMap_one,
     AlgHom.id_apply, MonoidHom.one_apply, AlgEquiv.one_apply]
+
+/-- The left `MulSemiringAction` of `Γ` on `WeilRestriction A B C` attached to `inducedAction`. -/
+@[instance_reducible]
+def mulSemiringActionOfInduced : MulSemiringAction Γ (WeilRestriction A B C) :=
+  MulSemiringAction.compHom (WeilRestriction A B C) (inducedAction ρB ρC h)
+
+/-- Scalar multiplication in `mulSemiringActionOfInduced` applies `inducedAction`. -/
+@[simp]
+theorem smul_mulSemiringActionOfInduced (γ : Γ) (x : WeilRestriction A B C) :
+    letI := mulSemiringActionOfInduced ρB ρC h
+    γ • x = inducedAction ρB ρC h γ x :=
+  (rfl)
+
+/-- The action `mulSemiringActionOfInduced` commutes with the `A`-module structure on
+`WeilRestriction A B C`. -/
+theorem smulCommClass_mulSemiringActionOfInduced :
+    letI := mulSemiringActionOfInduced ρB ρC h
+    SMulCommClass Γ A (WeilRestriction A B C) := by
+  let _ := mulSemiringActionOfInduced ρB ρC h
+  exact ⟨fun γ a x ↦ map_smul (inducedAction ρB ρC h γ) a x⟩
+
+/-- Under `mulSemiringActionOfInduced`, `MulSemiringAction.toAlgHom` recovers `inducedAction`. -/
+@[simp]
+theorem toAlgHom_mulSemiringActionOfInduced (γ : Γ) :
+    letI := mulSemiringActionOfInduced ρB ρC h
+    haveI := smulCommClass_mulSemiringActionOfInduced ρB ρC h
+    MulSemiringAction.toAlgHom A (WeilRestriction A B C) γ =
+      (inducedAction ρB ρC h γ : WeilRestriction A B C →ₐ[A] WeilRestriction A B C) :=
+  AlgHom.ext fun _ ↦ rfl
 
 end Action
 

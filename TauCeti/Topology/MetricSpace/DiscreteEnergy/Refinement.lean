@@ -212,7 +212,7 @@ def discreteEnergyForgetMap {t : Fin (n + 2) → ℝ} (ht : StrictMono t)
     C(discreteEnergyStrictSublevel t p q c, discreteEnergyStrictSublevel (t ∘ r) p q c) where
   toFun x := ⟨discreteEnergyForget r p q x, mapsTo_discreteEnergyForget ht r h0 hlast p q c x.prop⟩
   continuous_toFun :=
-    ((continuous_discreteEnergyForget r p q).comp continuous_subtype_val).subtype_mk _
+    ((continuous_discreteEnergyForget r p q).comp continuous_subtypeVal).subtype_mk _
 
 /-- The sublevel map has the same underlying vertex tuple as the ambient
 vertex-forgetting map. -/

@@ -70,13 +70,13 @@ has the norm of the initial velocity. -/
 private theorem maximalIntegralCurve_geodesicSpray_mem_norm_le {K : Set M} {t : ℝ}
     (ht : t ∈ geodesicInterval I M p v) (hK : maximalGeodesic I M p v t ∈ K) :
     maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t ∈
-      {z : TangentBundle I M | z.proj ∈ K ∧ ‖z.2‖ ≤ ‖v‖} := by
+      {z : TangentBundle I M | z.proj ∈ K ∧ ‖z.snd‖ ≤ ‖v‖} := by
   have h := isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v
   rw [maximalIntegralCurve_geodesicSpray ht]
   refine ⟨hK, le_of_eq ?_⟩
   rw [h.isGeodesicCurveOn.norm_curveVelocityWithin_eq isPreconnected_geodesicInterval ht
     zero_mem_geodesicInterval]
-  exact congrArg (fun z : TangentBundle I M ↦ ‖z.2‖) h.initial_eq
+  exact congrArg (fun z : TangentBundle I M ↦ ‖z.snd‖) h.initial_eq
 
 /-- **The escape lemma for geodesics at a finite right endpoint.** If the maximal interval of the
 geodesic with initial data `(p, v)` is bounded above, with least upper bound `b`, the maximal
