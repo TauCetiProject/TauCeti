@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.Free.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.PieceQuotient
 public import TauCeti.RingTheory.GradedAlgebra.Connected
 import Mathlib.LinearAlgebra.InvariantBasisNumber
+import TauCeti.Data.Fintype.Fiber
 
 /-!
 # Head coordinates and shift invariance for graded free modules
@@ -200,6 +201,30 @@ theorem freePieceQuotientEquiv_mk (hneg : ∀ i < 0, 𝒜 i = ⊥)
   simp [freePieceQuotientEquiv]
   rfl
 
+/-- Applying `(freePieceQuotientEquiv hneg hzero s q).symm` to `Pi.single u c` gives the
+`c`-multiple of the quotient class of the `u`-th free generator. -/
+@[simp]
+theorem freePieceQuotientEquiv_symm_single (hneg : ∀ i < 0, 𝒜 i = ⊥)
+    (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
+    {I : Type uI} (s : I → ℤ) (q : ℤ) [Finite {j : I // s j = q}]
+    [DecidableEq {j : I // s j = q}] (u : {j : I // s j = q}) (c : k) :
+    (freePieceQuotientEquiv hneg hzero s q).symm (Pi.single u c) =
+      c • Submodule.Quotient.mk
+        (⟨freeGenerator u.val, mem_pieceSubmodule.mpr <|
+          Eq.mp (congrArg (fun p ↦ freeGenerator u.val ∈ (free 𝒜 s).grading.piece p) u.property)
+            (freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := s) u.val)⟩ :
+          pieceSubmodule (free 𝒜 s) q) := by
+  cases nonempty_fintype {j : I // s j = q}
+  rw [LinearEquiv.symm_apply_eq, map_smul, freePieceQuotientEquiv_mk]
+  have hsingle : freeHeadLift (𝒜 := 𝒜) s q (Pi.single u c) =
+      c • ⟨freeGenerator u.val,
+        Eq.mp (congrArg (fun p ↦ freeGenerator u.val ∈ (free 𝒜 s).grading.piece p) u.property)
+          (freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := s) u.val)⟩ :=
+    Fintype.linearCombination_apply_single k _ u c
+  have hcoord := freeHeadCoord_freeHeadLift hneg hzero s q (Pi.single u c)
+  rw [hsingle, map_smul] at hcoord
+  exact hcoord.symm
+
 /-- Over a nontrivial commutative ring `k`, isomorphic finite shifted free graded modules over a
 connected nonnegatively graded `k`-algebra have the same number of generators in every degree `q`.
 -/
@@ -232,12 +257,9 @@ theorem multiset_map_eq_of_iso_free [Nontrivial k] (hneg : ∀ i < 0, 𝒜 i = �
     Multiset.map d₁ Finset.univ.val = Multiset.map d₂ Finset.univ.val := by
   classical
   refine Multiset.ext.mpr fun q ↦ ?_
-  have hcount : ∀ {I : Type uI} [Fintype I] (d : I → ℤ),
-      Multiset.count q (Multiset.map d Finset.univ.val) = Fintype.card {i : I // d i = q} := by
-    intro I _ d
-    rw [Multiset.count_map, ← Finset.filter_val, ← Finset.card_def, Fintype.card_subtype]
-    simp_rw [eq_comm]
-  rw [hcount d₁, hcount d₂]
+  rw [← Function.occCount_eq_count_map_univ, ← Function.occCount_eq_count_map_univ,
+    Function.occCount_def, Function.occCount_def,
+    Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
   exact card_fiber_eq_of_iso_free hneg hzero Φ q
 
 /-- Over a nontrivial commutative ring `k`, isomorphic finite shifted free graded modules over a

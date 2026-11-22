@@ -74,16 +74,6 @@ theorem mem_free_piece_iff (p : ℤ) (x : free 𝒜 d) :
   simp only [InternalGrading.directSum_piece, InternalGrading.mem_directSumPiece_iff,
     InternalGrading.shift_piece, InternalGrading.ofDecomposition_piece, sub_eq_add_neg]
 
-/-- Under `DirectSum.linearEquivFunOnFintype`, a tuple `v : I → A` lies in the degree-`p` piece
-of `free 𝒜 d` exactly when its `i`-th coordinate lies in `𝒜 (p - d i)`.
-This is not a simp lemma: the direct-sum and shift simp lemmas already simplify its left side. -/
-theorem linearEquivFunOnFintype_symm_mem_free_piece_iff [Fintype I] (p : ℤ) (v : I → A) :
-    dsimp% only ((DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm v ∈
-      (free 𝒜 d).grading.piece p) ↔ ∀ i, v i ∈ 𝒜 (p - d i) := by
-  rw [mem_free_piece_iff]
-  refine forall_congr' fun i ↦ ?_
-  rw [← DirectSum.linearEquivFunOnFintype_apply A, LinearEquiv.apply_symm_apply]
-
 variable {𝒜 d}
 
 /-- The homogeneous basis vector indexed by `i`. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.Algebra.Category.GradedModuleCat.Free.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.Retract.Basic
+import TauCeti.Algebra.Module.GradedModule.Nakayama
 
 /-!
 # Graded retracts and projective modules over connected algebras over a PID
@@ -205,48 +206,22 @@ private theorem freeHeadCoord_eq_zero_of_mem_ker_freeLift (hneg : ∀ i < 0, �
     refine LinearMap.pi_ext fun u c ↦ ?_
     have hu_val : u.val = eqv.symm ⟨q', e_q u⟩ :=
       congrArg Subtype.val (e_q.symm_apply_apply u).symm
-    let x_u : pieceSubmodule (free 𝒜 d') q :=
-      ⟨algebraMap k A c • freeGenerator u.val, by
-        rw [algebraMap_smul]
-        exact ((free 𝒜 d').grading.piece q).smul_mem c
-          (by simpa [u.property] using freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := d') u.val)⟩
-    have hx_coord : freeHeadCoord hneg hzero d' q ⟨x_u.val, x_u.property⟩ = Pi.single u c := by
-      ext v
-      rw [freeHeadCoord_apply]
-      change connectedAugmentation hneg hzero
-        ((algebraMap k A c • freeGenerator u.val) v.val) =
-        (Pi.single u c : {u : J // d' u = q} → k) v
-      rw [DirectSum.smul_apply, freeGenerator_apply]
-      by_cases hvu : v = u
-      · subst hvu
-        simp [smul_eq_mul]
-      · have hne : u.val ≠ v.val := fun h ↦ hvu (Subtype.ext h.symm)
-        simp [hne, Pi.single_eq_of_ne hvu]
-    have hsymm : (freePieceQuotientEquiv hneg hzero d' q).symm (Pi.single u c) =
-        Submodule.Quotient.mk x_u :=
-      (LinearEquiv.symm_apply_eq _).mpr
-        ((freePieceQuotientEquiv_mk hneg hzero d' q x_u).trans hx_coord).symm
-    have hΦ_val : Φ.hom x_u.val = c • (liftGen q' (e_q u)).val := by
-      change (freeLift g').hom (algebraMap k A c • freeGenerator u.val) =
-        c • (liftGen q' (e_q u)).val
-      rw [map_smul, algebraMap_smul, freeLift_generator]
-      have hev : ev u.val.down = ⟨q', e_q u⟩ :=
-        eqv.eq_symm_apply.mp hu_val
-      change c • (liftGen (ev u.val.down).fst (ev u.val.down).snd).val =
-        c • (liftGen q' (e_q u)).val
-      rw [hev]
-    have hpq : pieceQuotientHom Φ q (Submodule.Quotient.mk x_u) = c • bq q' (e_q u) := by
-      rw [pieceQuotientHom_apply]
-      have hsub : (⟨Φ.hom x_u.val, map_mem Φ x_u.property⟩ : pieceSubmodule M q) =
-          c • ⟨(liftGen q' (e_q u)).val, (liftGen q' (e_q u)).property⟩ :=
-        Subtype.ext hΦ_val
-      rw [hsub]
-      change Submodule.Quotient.mk (c • _) = c • bq q' (e_q u)
-      rw [← hliftGen]
-      rfl
     have hLHS : L (Pi.single u c) = Pi.single (e_q u) c := by
-      dsimp only [L, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.restrictScalars_apply]
-      rw [hsymm, hpq, map_smul]
+      dsimp only [L, LinearMap.comp_apply, LinearEquiv.coe_coe]
+      rw [freePieceQuotientEquiv_symm_single, map_smul, LinearMap.restrictScalars_apply,
+        pieceQuotientHom_apply]
+      have hev : ev u.val.down = ⟨q', e_q u⟩ := eqv.eq_symm_apply.mp hu_val
+      have hsub : (⟨Φ.hom (freeGenerator u.val),
+          map_mem Φ (Eq.mp
+            (congrArg (fun p ↦ freeGenerator u.val ∈ (free 𝒜 d').grading.piece p) u.property)
+            (freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := d') u.val))⟩ :
+          pieceSubmodule M q) =
+          ⟨(liftGen q' (e_q u)).val, (liftGen q' (e_q u)).property⟩ := Subtype.ext <| by
+        change (freeLift g').hom (freeGenerator u.val) = (liftGen q' (e_q u)).val
+        rw [freeLift_generator]
+        change (liftGen (ev u.val.down).fst (ev u.val.down).snd).val = (liftGen q' (e_q u)).val
+        rw [hev]
+      rw [hsub, hliftGen, map_smul]
       ext t
       rw [Pi.smul_apply, Module.Basis.equivFun_self, smul_eq_mul, mul_ite, mul_one, mul_zero,
         Pi.single_apply]

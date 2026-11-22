@@ -96,10 +96,11 @@ theorem exists_homogeneous_splitting_of_idempotent_of_connected
   · refine LinearMap.ext fun v ↦ ?_
     have h1 : Φ.hom.hom (Φ.inv.hom (rR.r.hom (eF.symm v))) = rR.r.hom (eF.symm v) :=
       LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom Φ.inv_hom_id) _
-    have h2 : rR.i.hom (rR.r.hom (eF.symm v)) = (freeEndOfPiEnd s p hhom).hom (eF.symm v) :=
+    have h2 : rR.i.hom (rR.r.hom (eF.symm v)) =
+        (GradedModuleCat.freeEndOfPiEnd s p hhom).hom (eF.symm v) :=
       LinearMap.congr_fun (LinearMap.subtype_comp_rangeRestrict _) _
     simp only [ι, π, LinearMap.comp_apply, LinearEquiv.coe_coe, eD.symm_apply_apply, h1, h2]
-    dsimp [freeEndOfPiEnd, GradedModuleCat.ofHom]
+    dsimp [GradedModuleCat.freeEndOfPiEnd, GradedModuleCat.ofHom]
     simp [eF]
   · exact fun q u hu ↦ (GradedModuleCat.mem_free_piece_iff 𝒜 s q _).mp
       (GradedModuleCat.map_mem rR.i (GradedModuleCat.map_mem Φ.hom ((heD_symm q u).mpr hu)))
@@ -127,13 +128,13 @@ theorem exists_homogeneous_basis_range_idempotent_of_connected
   obtain ⟨n, b, d, hb⟩ :=
     GradedModuleCat.exists_homogeneous_basis_of_retract hneg hzero
       (retractRangeOfPiIdempotent s p hp hhom)
-  let equivRange := rangeEquivRangeObj s p hhom
+  let equivRange := GradedModuleCat.rangeEquivRangeObj s p hhom
   refine ⟨n, b.map equivRange.symm, d, fun i ↦ ?_⟩
   have hval : (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm
       (b.map equivRange.symm i).val = (b i).val := by
     change (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm
       (equivRange.symm (b i)).val = (b i).val
-    rw [← coe_rangeEquivRangeObj_apply s p hhom (equivRange.symm (b i)),
+    rw [← GradedModuleCat.coe_rangeEquivRangeObj_apply s p hhom (equivRange.symm (b i)),
       equivRange.apply_symm_apply]
   exact (GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s (d i) _).mp
     (hval ▸ (InternalGrading.mem_submodule_piece _ _ _).mp (hb i))

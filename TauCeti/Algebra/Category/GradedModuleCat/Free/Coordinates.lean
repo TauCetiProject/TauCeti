@@ -9,34 +9,48 @@ public import Mathlib.LinearAlgebra.Pi
 public import TauCeti.Algebra.Category.GradedModuleCat.Free.Basic
 
 /-!
-# Shifted-free coordinate transport and graded endomorphism ranges
+# Shifted-free coordinate transport in `GradedModuleCat`
 
 Let `A` be a `ℤ`-graded `k`-algebra (`𝒜 : ℤ → Submodule k A`), and view the finite function
 module `I → A` (`[Fintype I]`) as the shifted free graded `A`-module with `j`th summand in
 shift `s j : ℤ`, so its homogeneous elements of degree `d` are the tuples `v : I → A` satisfying
 `∀ j, v j ∈ 𝒜 (d - s j)`.
 
-Transporting `I → A` to `GradedModuleCat.free 𝒜 s` via `DirectSum.linearEquivFunOnFintype` yields
-graded endomorphisms and graded range objects in `GradedModuleCat 𝒜` for any degree-zero
-endomorphism of `I → A`:
+Transporting `I → A` to `GradedModuleCat.free 𝒜 s` via `DirectSum.linearEquivFunOnFintype` gives
+a coordinate membership criterion and graded endomorphisms and range objects in
+`GradedModuleCat 𝒜` for any degree-zero endomorphism of `I → A`:
 
-* `TauCeti.freeEndOfPiEnd`, `TauCeti.rangeObjOfPiEnd`, `TauCeti.rangeEquivRangeObj`: graded
-  endomorphism and graded range object in `GradedModuleCat 𝒜` associated to a degree-zero
-  endomorphism of `I → A`.
-* `TauCeti.homogeneous_of_apply_eq_smul`: a rank-one endomorphism `v ↦ v i₀ • w` with
-  `∀ j, w j ∈ 𝒜 (s i₀ - s j)` is homogeneous of degree zero on the shifted free module `I → A`.
+* `TauCeti.GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff`: tuple membership in
+  the degree-`p` piece of `free 𝒜 d`.
+* `TauCeti.GradedModuleCat.freeEndOfPiEnd`, `TauCeti.GradedModuleCat.rangeObjOfPiEnd`,
+  `TauCeti.GradedModuleCat.rangeEquivRangeObj`: graded endomorphism and graded range object in
+  `GradedModuleCat 𝒜` associated to a degree-zero endomorphism of `I → A`.
+* `TauCeti.GradedModuleCat.homogeneous_of_apply_eq_smul`: a rank-one endomorphism
+  `v ↦ v i₀ • w` with `∀ j, w j ∈ 𝒜 (s i₀ - s j)` is homogeneous of degree zero on the shifted
+  free module `I → A`.
 -/
 
 public section
 
 open CategoryTheory _root_.DirectSum
 
-namespace TauCeti
+namespace TauCeti.GradedModuleCat
 
 universe uk uA uI
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
+
+/-- Under `DirectSum.linearEquivFunOnFintype`, a tuple `v : I → A` lies in the degree-`p` piece
+of `free 𝒜 d` exactly when its `i`-th coordinate lies in `𝒜 (p - d i)`.
+This is not a simp lemma: the direct-sum and shift simp lemmas already simplify its left side. -/
+theorem linearEquivFunOnFintype_symm_mem_free_piece_iff (𝒜 : ℤ → Submodule k A) [GradedAlgebra 𝒜]
+    {I : Type uI} (d : I → ℤ) [Fintype I] (p : ℤ) (v : I → A) :
+    dsimp% only ((DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm v ∈
+      (free 𝒜 d).grading.piece p) ↔ ∀ i, v i ∈ 𝒜 (p - d i) := by
+  rw [mem_free_piece_iff]
+  refine forall_congr' fun i ↦ ?_
+  rw [← DirectSum.linearEquivFunOnFintype_apply A, LinearEquiv.apply_symm_apply]
 
 omit [GradedAlgebra 𝒜] in
 /-- Transporting a degree-zero endomorphism of `I → A` to `GradedModuleCat.free 𝒜 s`. -/
@@ -44,13 +58,13 @@ omit [GradedAlgebra 𝒜] in
 noncomputable def freeEndOfPiEnd {I : Type uI} [Fintype I] (s : I → ℤ)
     (p : (I → A) →ₗ[A] (I → A))
     (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
-    GradedModuleCat.free 𝒜 s ⟶ GradedModuleCat.free 𝒜 s :=
+    free 𝒜 s ⟶ free 𝒜 s :=
   let eF := DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)
-  GradedModuleCat.ofHom (eF.symm.conjRingEquiv p) <|
+  ofHom (eF.symm.conjRingEquiv p) <|
     LinearMap.isHomogeneous_def.mpr fun q x hx ↦ by
       rw [add_zero]
-      exact (GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s q _).mpr
-        (hhom q (eF x) ((GradedModuleCat.mem_free_piece_iff 𝒜 s q x).mp hx))
+      exact (linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s q _).mpr
+        (hhom q (eF x) ((mem_free_piece_iff 𝒜 s q x).mp hx))
 
 /-- The graded range object in `GradedModuleCat 𝒜` of a degree-zero endomorphism of `I → A`. -/
 @[expose]
@@ -58,17 +72,17 @@ noncomputable def rangeObjOfPiEnd {I : Type uI} [Fintype I] (s : I → ℤ)
     (p : (I → A) →ₗ[A] (I → A))
     (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
     GradedModuleCat.{max uA uI} 𝒜 :=
-  let _ := (GradedModuleCat.free 𝒜 s).gradedSMul
+  let _ := (free 𝒜 s).gradedSMul
   let p' := freeEndOfPiEnd s p hhom
   { carrier := LinearMap.range p'.hom
     isAddCommGroup := Submodule.addCommGroup _
     isModule := Submodule.module _
     isModuleBase := Submodule.module' _
-    grading := (GradedModuleCat.free 𝒜 s).grading.submodule (LinearMap.range p'.hom)
+    grading := (free 𝒜 s).grading.submodule (LinearMap.range p'.hom)
       p'.isHomogeneous.isHomogeneous_range
     gradedSMul := ⟨fun {_ _} _ _ ha hx ↦ by
       rw [InternalGrading.mem_submodule_piece] at hx ⊢
-      exact SetLike.GradedSMul.smul_mem (B := (GradedModuleCat.free 𝒜 s).grading.piece) ha hx⟩ }
+      exact SetLike.GradedSMul.smul_mem (B := (free 𝒜 s).grading.piece) ha hx⟩ }
 
 /-- `A`-linear identification `LinearMap.range p ≃ₗ[A] rangeObjOfPiEnd s p hhom`. -/
 noncomputable def rangeEquivRangeObj {I : Type uI} [Fintype I] (s : I → ℤ)
@@ -103,4 +117,4 @@ theorem homogeneous_of_apply_eq_smul {I : Type uI} (s : I → ℤ) {p : (I → A
   rw [hp, Pi.smul_apply, smul_eq_mul]
   simpa [sub_add_sub_cancel] using SetLike.mul_mem_graded (hv i₀) (hw j)
 
-end TauCeti
+end TauCeti.GradedModuleCat

@@ -10,9 +10,10 @@ import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.Tactic.FinCases
+import TauCeti.Algebra.Category.GradedModuleCat.Free.Coordinates
+import TauCeti.Algebra.Category.GradedModuleCat.Free.Range
 import TauCeti.Algebra.Module.GradedModule.Idempotent.Head
 import TauCeti.Algebra.Module.GradedModule.Idempotent.PID
-import TauCeti.Algebra.Module.GradedModule.ShiftedFree
 import TauCeti.LinearAlgebra.Pi
 
 /-!
@@ -81,7 +82,7 @@ theorem multiset_map_eq_of_homogeneous_basis_range_idempotent (N : ℕ) {I : Typ
     (b₂ : Module.Basis (Fin n₂) (EquivariantRing N) (LinearMap.range p)) (d₂ : Fin n₂ → ℤ)
     (hb₂ : ∀ i j, (b₂ i).val j ∈ grading N (d₂ i - s j)) :
     Multiset.map d₁ Finset.univ.val = Multiset.map d₂ Finset.univ.val :=
-  TauCeti.multiset_map_eq_of_homogeneous_basis_range_idempotent
+  GradedModuleCat.multiset_map_eq_of_homogeneous_basis_range
     (𝒜 := grading N) (fun _ hm ↦ grading_eq_bot_of_lt_zero N hm)
     (fun _ ha ↦ grading_zero_eq_range N ▸ ha) s p hhom b₁ d₁ hb₁ b₂ d₂ hb₂
 
@@ -170,7 +171,7 @@ private theorem diag_one_zero_degree (N : ℕ) (a b : ℤ) :
     · simp
   obtain ⟨n, basis, d, hb⟩ := exists_homogeneous_basis_range_idempotent N 2 ![a, b] p
     (idempotent_of_apply_eq_smul 0 (fun _ ↦ rfl) rfl)
-    (homogeneous_of_apply_eq_smul ![a, b] 0 (fun _ ↦ rfl) hw)
+    (GradedModuleCat.homogeneous_of_apply_eq_smul ![a, b] 0 (fun _ ↦ rfl) hw)
   exact ⟨n, basis, d, hb, TauCeti.multiset_map_eq_singleton_of_homogeneous_basis_range
     (fun _ hm ↦ EquivariantRing.grading_eq_bot_of_lt_zero N hm)
     (fun _ ha ↦ EquivariantRing.grading_zero_eq_range N ▸ ha)
@@ -201,7 +202,7 @@ private theorem e1_offDiag_degree (N : ℕ) :
     · simpa [w] using EquivariantRing.X_mem_grading (N + 1) 0
   have hp : p.comp p = p := idempotent_of_apply_eq_smul (0 : Fin 2) (w := w) (fun _ ↦ rfl) rfl
   obtain ⟨n, basis, d, hb⟩ := exists_homogeneous_basis_range_idempotent (N + 1) 2 ![2, 0] p hp
-    (homogeneous_of_apply_eq_smul ![2, 0] 0 (fun _ ↦ rfl) hw)
+    (GradedModuleCat.homogeneous_of_apply_eq_smul ![2, 0] 0 (fun _ ↦ rfl) hw)
   exact ⟨hp, n, basis, d, hb,
     TauCeti.multiset_map_eq_singleton_of_homogeneous_basis_range
       (fun _ hm ↦ EquivariantRing.grading_eq_bot_of_lt_zero (N + 1) hm)

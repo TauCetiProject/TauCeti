@@ -80,9 +80,8 @@ theorem weightedHomogeneousSubmodule_zero_eq_range {w : σ → M} (hw : ∀ i, 0
   constructor
   · intro hφ
     refine ⟨φ.coeff 0, ?_⟩
-    rw [Algebra.linearMap_apply, algebraMap_eq, C_apply]
-    exact (IsWeightedHomogeneous.eq_monomial_of_unique_weight hφ
-      fun d hd ↦ (d.weight_eq_zero_iff_of_pos hw).mp hd).symm
+    rw [Algebra.linearMap_apply, algebraMap_eq, ← φ.weightedHomogeneousComponent_zero_of_pos hw]
+    exact weightedHomogeneousComponent_eq_self hφ
   · rintro ⟨c, rfl⟩
     rw [Algebra.linearMap_apply, algebraMap_eq]
     exact isWeightedHomogeneous_C w c
