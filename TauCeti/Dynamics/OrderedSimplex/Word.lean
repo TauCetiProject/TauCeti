@@ -66,8 +66,10 @@ linear maps.
   `γ_{u ++ v} = γ_v γ_u`.
 * `TauCeti.contDiffOn_wordMap`, `TauCeti.contDiffOn_wordDelay`: smoothness on `orderedSimplex d`.
 * `TauCeti.wordMove_of_mem_orderedCone`, `TauCeti.wordDelay_simplexChart`,
-  `TauCeti.wordCount_simplexChart_smul`: the homogeneous identity
-  `γ_u y = y_n e^{T_u (w)} (F_u (w), 1)`, `T_u (w) = log ((γ_u y)_n / y_n)`, and scale invariance.
+  `TauCeti.wordCount_simplexChart_smul`, `TauCeti.wordMove_mem_coneSpan`,
+  `TauCeti.unaccelWordMove_mem_coneSpan`: the homogeneous identity
+  `γ_u y = y_n e^{T_u (w)} (F_u (w), 1)`, `T_u (w) = log ((γ_u y)_n / y_n)`, scale invariance,
+  and preservation of `coneSpan d`.
 * `TauCeti.length_mul_log_le_wordDelay`, `TauCeti.fst_add_three_le_two_mul_exp_wordDelay`: on the
   simplex `T_u (w) ≥ |u| log (3 / 2)`, and every letter `(A, j)` of `u` has
   `A + 3 ≤ 2 e^{T_u (w)}`.
@@ -301,6 +303,18 @@ theorem unaccelWordMove_mapsTo_orderedCone (js : List (Fin (d + 1))) :
   | nil => exact mapsTo_id _
   | cons j _ ih => exact ih.comp (linearMove_mapsTo_orderedCone j)
 
+/-- Every unaccelerated linear word move preserves the hyperplane `coneSpan d`. -/
+theorem unaccelWordMove_mem_coneSpan (js : List (Fin (d + 1))) {y : Fin (d + 2) → ℝ}
+    (hy : y ∈ coneSpan d) : unaccelWordMove js y ∈ coneSpan d := by
+  induction js generalizing y with
+  | nil => exact hy
+  | cons j _ ih => exact ih (linearMove_mem_coneSpan j y)
+
+/-- Every unaccelerated linear word move maps `coneSpan d` into itself. -/
+theorem unaccelWordMove_mapsTo_coneSpan (js : List (Fin (d + 1))) :
+    MapsTo (unaccelWordMove js) (coneSpan d) (coneSpan d) :=
+  fun _ hy => unaccelWordMove_mem_coneSpan js hy
+
 /-- **The homogeneous identity** for words in chart coordinates:
 `γ_u (w, 1) = e^{T_u (w)} (F_u (w), 1)` on the simplex. -/
 theorem wordMove_simplexLift (u : List (ℕ × Fin d)) {x : Fin d → ℝ}
@@ -344,6 +358,18 @@ theorem wordMove_mapsTo_orderedCone (u : List (ℕ × Fin d)) :
     MapsTo (wordMove u) (orderedCone d) (orderedCone d) :=
   fun _ hy => wordMove_mem_orderedCone u hy
 
+/-- Every accelerated linear word move preserves the hyperplane `coneSpan d`. -/
+theorem wordMove_mem_coneSpan (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ}
+    (hy : y ∈ coneSpan d) : wordMove u y ∈ coneSpan d := by
+  induction u generalizing y with
+  | nil => exact hy
+  | cons a _ ih => exact ih (accelMove_mem_coneSpan a y)
+
+/-- Every accelerated linear word move maps `coneSpan d` into itself. -/
+theorem wordMove_mapsTo_coneSpan (u : List (ℕ × Fin d)) :
+    MapsTo (wordMove u) (coneSpan d) (coneSpan d) :=
+  fun _ hy => wordMove_mem_coneSpan u hy
+
 /-- The word map `F_u` is the projective action of `γ_u` on the ordered cone. -/
 theorem simplexChart_wordMove (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ}
     (hy : y ∈ orderedCone d) : simplexChart (wordMove u y) = wordMap u (simplexChart y) := by
@@ -376,18 +402,13 @@ theorem wordCount_simplexChart_smul {c : ℝ} (hc : c ≠ 0) (y : Fin (d + 2) �
     wordCount d (simplexChart (c • y)) r = wordCount d (simplexChart y) r := by
   rw [simplexChart_smul y hc]
 
-/-- Only finitely many letters `(A, j)` have `A + 3 ≤ c`. -/
-private theorem finite_setOf_fst_add_three_le (c : ℝ) :
-    {a : ℕ × Fin d | (a.1 : ℝ) + 3 ≤ c}.Finite :=
-  (TauCeti.finite_setOf_natCast_le (Prod.fst : ℕ × Fin d → ℕ) (c - 3)).subset
-    fun _ ha => by rw [mem_ofPred_eq] at ha ⊢; linarith
-
 /-- On the simplex only finitely many words have delay at most `r`: such a word has length at
 most `r / log (3 / 2)`, and each of its letters `(A, j)` has `A + 3 ≤ 2 e^r`. -/
 theorem finite_setOf_wordDelay_le {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) (r : ℝ) :
     {u : List (ℕ × Fin d) | wordDelay u x ≤ r}.Finite := by
   set T := {a : ℕ × Fin d | (a.1 : ℝ) + 3 ≤ 2 * Real.exp r}
-  have : Finite T := (finite_setOf_fst_add_three_le _).to_subtype
+  have : Finite T :=
+    (TauCeti.finite_setOf_natCast_add_le (Prod.fst : ℕ × Fin d → ℕ) 3 (2 * Real.exp r)).to_subtype
   refine ((List.finite_length_le T ⌊r / Real.log (3 / 2)⌋₊).image
     (List.map Subtype.val)).subset fun u (hu : wordDelay u x ≤ r) => ?_
   have hT : ∀ a ∈ u, a ∈ T := fun a ha =>
@@ -507,8 +528,9 @@ theorem finite_support_wordCount_branchMap {x : Fin d → ℝ} (hx : x ∈ order
     (r : ℝ) :
     (Function.support fun a : ℕ × Fin d =>
       wordCount d (branchMap a x) (r - branchDelay a x)).Finite :=
-  (finite_setOf_fst_add_three_le (2 * Real.exp r)).subset fun a ha =>
-    fst_add_three_le_of_branchDelay_le hx ((mem_support_wordCount_branchMap_iff hx r a).1 ha)
+  (TauCeti.finite_setOf_natCast_add_le (Prod.fst : ℕ × Fin d → ℕ) 3 (2 * Real.exp r)).subset
+    fun a ha =>
+      fst_add_three_le_of_branchDelay_le hx ((mem_support_wordCount_branchMap_iff hx r a).1 ha)
 
 /-- **The renewal equation** `N (w, r) = 1{r ≥ 0} + ∑_a N (F_a w, r - τ_a (w))` on the simplex:
 the empty word counts exactly when `r ≥ 0`, and a nonempty word `a :: u` counts exactly when `u`
@@ -534,7 +556,8 @@ theorem wordCount_eq_add_finsum {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d
         mem_iUnion, mem_image, List.cons.injEq, exists_prop, S]
       refine ⟨fun h => ?_, ?_⟩
       · have hu : u ∈ S a := by simp only [S, mem_ofPred_eq]; linarith
-        have ha : a ∈ T := Set.ncard_ne_zero_of_mem hu (hS a)
+        have ha : a ∈ T := (mem_support_wordCount_branchMap_iff hx r a).2
+          (by linarith [wordDelay_nonneg u (branchMap_mem_orderedSimplex a hx)])
         exact ⟨a, ha, u, hu, rfl, rfl⟩
       · rintro ⟨b, -, v, hv, rfl, rfl⟩
         linarith
@@ -563,7 +586,8 @@ private theorem hasSum_wordCount_branchMap {x : Fin d → ℝ} (hx : x ∈ order
       (∑ a ∈ (finite_support_wordCount_branchMap hx r).toFinset,
         (wordCount d (branchMap a x) (r - branchDelay a x) : ℝ)) :=
   hasSum_sum_of_ne_finset_zero fun a ha => by
-    simp [by_contra fun hne => ha ((finite_support_wordCount_branchMap hx r).mem_toFinset.2 hne)]
+    rw [Set.Finite.mem_toFinset, Function.mem_support, not_not] at ha
+    rw [ha, Nat.cast_zero]
 
 /-- The real-valued terms of the renewal sum are summable (in fact finitely supported). -/
 theorem summable_wordCount_branchMap {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) (r : ℝ) :

@@ -37,6 +37,11 @@ is a natural number and `N` is Northcott. -/
 theorem finite_setOf_natCast_le (x : ℝ) : {i : ι | (N i : ℝ) ≤ x}.Finite :=
   (Northcott.finite_le (h := N) ⌊x⌋₊).subset fun _ hi ↦ Nat.le_floor hi
 
+/-- Only finitely many indices have shifted `N`-value `(N i : ℝ) + c` at most a fixed real
+number `x`. -/
+theorem finite_setOf_natCast_add_le (c x : ℝ) : {i : ι | (N i : ℝ) + c ≤ x}.Finite :=
+  (finite_setOf_natCast_le N (x - c)).subset fun _ hi ↦ le_sub_iff_add_le.2 hi
+
 /-- The finite set of indices whose `N`-value is at most the real cutoff `x`. The cutoff is
 inclusive: an index with `N i = x` belongs to `normLE N x`. -/
 public noncomputable def normLE (x : ℝ) : Finset ι :=

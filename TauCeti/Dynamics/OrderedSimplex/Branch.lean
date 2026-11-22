@@ -15,6 +15,7 @@ import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Group.PowIterate
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.FDeriv.Div
 
 /-!
 # Accelerated branches on the ordered simplex
@@ -43,12 +44,16 @@ In Lean a letter is `a : ℕ × Fin d`, the pair `(A, j - 1)`, and `γ_j` is `li
   `j : Fin (d + 1)`.
 * `TauCeti.linearMove j`: the linear map `γ_{j+1}` of `ℝ^{d+2}`.
 * `TauCeti.accelMove a`: the accelerated linear map `γ_{n-1}^A γ_j` of `ℝ^{d+2}`.
+* `TauCeti.simplexPointCoordFDeriv k`, `TauCeti.branchMapCoordFDeriv a x i`,
+  `TauCeti.unaccelBranchMapCoordFDeriv j x i`: coordinatewise Fréchet derivative functionals.
 
 ## Main results
 
-* `TauCeti.accelMove_simplexLift`, `TauCeti.accelMove_of_mem_orderedCone`: the homogeneous identity
+* `TauCeti.accelMove_simplexLift`, `TauCeti.accelMove_of_mem_orderedCone`,
+  `TauCeti.accelMove_mem_coneSpan`: the homogeneous identity
   `γ_{n-1}^A γ_j y = y_n q_a (w) (F_a (w), 1)`, which identifies `F_a` as the projective action
-  of `γ_{n-1}^A γ_j` and `q_a` as the growth factor of the last coordinate.
+  of `γ_{n-1}^A γ_j` and `q_a` as the growth factor of the last coordinate, and preservation of the
+  hyperplane `coneSpan d`.
 * `TauCeti.branchMap_mem_orderedSimplex`, `TauCeti.mapsTo_branchMap`,
   `TauCeti.unaccelBranchMap_mem_orderedSimplex`, `TauCeti.simplexChart_linearMove`: each
   accelerated or unaccelerated branch maps the ordered simplex into itself and intertwines the
@@ -64,7 +69,8 @@ In Lean a letter is `a : ℕ × Fin d`, the pair `(A, j - 1)`, and `γ_j` is `li
   `TauCeti.norm_fderiv_branchDelay_lt_two`: the delay depends only on `w_j`, with
   `‖D τ_a‖ = (A + 1) / q_a < 2` on the simplex, uniformly in the letter.
 * `TauCeti.contDiffAt_branchMap`, `TauCeti.contDiffOn_unaccelBranchMap`,
-  `TauCeti.hasFDerivAt_branchMap_apply`, `TauCeti.hasFDerivAt_unaccelBranchMap_apply`,
+  `TauCeti.hasFDerivAt_branchMap_apply`, `TauCeti.hasFDerivAt_branchMap`,
+  `TauCeti.hasFDerivAt_unaccelBranchMap_apply`, `TauCeti.hasFDerivAt_unaccelBranchMap`,
   `TauCeti.branchMap_succ`: each accelerated and unaccelerated branch is smooth with explicit
   coordinatewise Fréchet derivatives, and acceleration steps by applying
   `unaccelBranchMap (Fin.last d)`.
@@ -314,38 +320,38 @@ theorem contDiffOn_branchMap (a : ℕ × Fin d) {n : WithTop ℕ∞} :
     ContDiffOn ℝ n (branchMap a) (orderedSimplex d) := fun _ hx =>
   (contDiffAt_branchMap a (branchDenom_pos_of_mem_orderedSimplex a hx).ne').contDiffWithinAt
 
-private theorem hasFDerivAt_div_real {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f g : E → ℝ} {f' g' : E →L[ℝ] ℝ} {x : E}
-    (hf : HasFDerivAt f f' x) (hg : HasFDerivAt g g' x) (hq : g x ≠ 0) :
-    HasFDerivAt (fun y => f y / g y) ((g x)⁻¹ • (f' - (f x / g x) • g')) x := by
-  have hmul : HasFDerivAt (fun y => f y * (g y)⁻¹)
-      (f x • ((ContinuousLinearMap.toSpanSingleton ℝ (-(g x ^ 2)⁻¹)).comp g') +
-        (g x)⁻¹ • f') x :=
-    hf.mul ((hasFDerivAt_inv hq).comp x hg)
-  simp only [← div_eq_mul_inv] at hmul
-  refine hmul.congr_fderiv ?_
-  ext v
-  simp only [add_apply, smul_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.toSpanSingleton_apply, sub_apply, smul_eq_mul]
-  field_simp
-  ring
-
-/-- Each coordinate `x ↦ simplexPoint x k` is affine, with Fréchet derivative `proj m` at
+/-- The Fréchet derivative of the `k`-th coordinate `x ↦ simplexPoint x k`: `proj m` at
 `m.castSucc` and `-∑ m, proj m` at `Fin.last d`. -/
+noncomputable def simplexPointCoordFDeriv (k : Fin (d + 1)) : (Fin d → ℝ) →L[ℝ] ℝ :=
+  Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
+    (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ)) k
+
+@[simp]
+theorem simplexPointCoordFDeriv_castSucc (m : Fin d) :
+    simplexPointCoordFDeriv m.castSucc =
+      (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ) :=
+  Fin.lastCases_castSucc ..
+
+@[simp]
+theorem simplexPointCoordFDeriv_last :
+    simplexPointCoordFDeriv (Fin.last d) =
+      -∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ) :=
+  Fin.lastCases_last ..
+
+/-- Each coordinate `x ↦ simplexPoint x k` is affine, with Fréchet derivative
+`simplexPointCoordFDeriv k`. -/
 theorem hasFDerivAt_simplexPoint_apply (k : Fin (d + 1)) (x : Fin d → ℝ) :
-    HasFDerivAt (fun y => simplexPoint y k)
-      (Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
-        (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ)) k) x := by
+    HasFDerivAt (fun y => simplexPoint y k) (simplexPointCoordFDeriv k) x := by
   induction k using Fin.lastCases with
   | last =>
-    simp only [simplexPoint_last, Fin.lastCases_last]
+    simp only [simplexPoint_last, simplexPointCoordFDeriv_last]
     have hsum : HasFDerivAt (fun y : Fin d → ℝ => ∑ m : Fin d, y m)
         (∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ)) x :=
       HasFDerivAt.fun_sum fun m _ =>
         (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ).hasFDerivAt
     exact ((hasFDerivAt_const (1 : ℝ) x).sub hsum).congr_fderiv (by simp)
   | cast m =>
-    simp only [simplexPoint_castSucc, Fin.lastCases_castSucc]
+    simp only [simplexPoint_castSucc, simplexPointCoordFDeriv_castSucc]
     exact (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ).hasFDerivAt
 
 /-- The denominator `q_a` depends only on `w_j`, with partial derivative `-(A + 1)`. -/
@@ -360,34 +366,38 @@ theorem hasFDerivAt_branchDenom (a : ℕ × Fin d) (x : Fin d → ℝ) :
     neg_add_rev]
   ring
 
+/-- The coordinatewise Fréchet derivative linear functional of `branchMap a` in the `i`-th
+coordinate at `x`. -/
+noncomputable def branchMapCoordFDeriv (a : ℕ × Fin d) (x : Fin d → ℝ) (i : Fin d) :
+    (Fin d → ℝ) →L[ℝ] ℝ :=
+  (branchDenom a x)⁻¹ •
+    (simplexPointCoordFDeriv (a.2.castSucc.succAbove i) +
+      (((a.1 : ℝ) + 1) * branchMap a x i) •
+        (ContinuousLinearMap.proj a.2 : (Fin d → ℝ) →L[ℝ] ℝ))
+
+theorem branchMapCoordFDeriv_def (a : ℕ × Fin d) (x : Fin d → ℝ) (i : Fin d) :
+    branchMapCoordFDeriv a x i =
+      (branchDenom a x)⁻¹ •
+        (simplexPointCoordFDeriv (a.2.castSucc.succAbove i) +
+          (((a.1 : ℝ) + 1) * branchMap a x i) •
+            (ContinuousLinearMap.proj a.2 : (Fin d → ℝ) →L[ℝ] ℝ)) :=
+  (rfl)
+
 /-- Coordinatewise Fréchet derivative of `branchMap a` at a point with nonzero denominator. -/
 theorem hasFDerivAt_branchMap_apply (a : ℕ × Fin d) {x : Fin d → ℝ}
     (hx : branchDenom a x ≠ 0) (i : Fin d) :
-    HasFDerivAt (fun y => branchMap a y i)
-      ((branchDenom a x)⁻¹ •
-        (Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
-          (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
-          (a.2.castSucc.succAbove i) +
-          (((a.1 : ℝ) + 1) * branchMap a x i) •
-            (ContinuousLinearMap.proj a.2 : (Fin d → ℝ) →L[ℝ] ℝ))) x := by
-  refine (hasFDerivAt_div_real (hasFDerivAt_simplexPoint_apply (a.2.castSucc.succAbove i) x)
+    HasFDerivAt (fun y => branchMap a y i) (branchMapCoordFDeriv a x i) x := by
+  refine ((hasFDerivAt_simplexPoint_apply (a.2.castSucc.succAbove i) x).fun_div
     (hasFDerivAt_branchDenom a x) hx).congr_fderiv ?_
   ext v
-  simp only [smul_apply, sub_apply, add_apply, ContinuousLinearMap.proj_apply, smul_eq_mul,
-    branchMap_apply]
+  simp only [branchMapCoordFDeriv_def, smul_apply, sub_apply, add_apply,
+    ContinuousLinearMap.proj_apply, smul_eq_mul, branchMap_apply]
   ring
 
 /-- Fréchet derivative of `branchMap a` at a point with nonzero denominator, expressed in
 coordinates via `ContinuousLinearMap.pi`. -/
 theorem hasFDerivAt_branchMap (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : branchDenom a x ≠ 0) :
-    HasFDerivAt (branchMap a)
-      (ContinuousLinearMap.pi fun i =>
-        (branchDenom a x)⁻¹ •
-          (Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
-            (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
-            (a.2.castSucc.succAbove i) +
-            (((a.1 : ℝ) + 1) * branchMap a x i) •
-              (ContinuousLinearMap.proj a.2 : (Fin d → ℝ) →L[ℝ] ℝ))) x :=
+    HasFDerivAt (branchMap a) (ContinuousLinearMap.pi (branchMapCoordFDeriv a x)) x :=
   hasFDerivAt_pi.2 (hasFDerivAt_branchMap_apply a hx)
 
 /-- The delay `τ_a = log q_a` depends only on `w_j`, with partial derivative `-(A + 1) / q_a`. -/
@@ -627,22 +637,31 @@ theorem contDiffOn_unaccelBranchMap (j : Fin (d + 1)) {n : WithTop ℕ∞} :
   (contDiffAt_unaccelBranchMap j
     (by linarith [simplexPoint_le_one hx j])).contDiffWithinAt
 
+/-- The coordinatewise Fréchet derivative linear functional of `unaccelBranchMap j` in the `i`-th
+coordinate at `x`. -/
+noncomputable def unaccelBranchMapCoordFDeriv (j : Fin (d + 1)) (x : Fin d → ℝ) (i : Fin d) :
+    (Fin d → ℝ) →L[ℝ] ℝ :=
+  (2 - simplexPoint x j)⁻¹ •
+    (simplexPointCoordFDeriv (j.succAbove i) +
+      unaccelBranchMap j x i • simplexPointCoordFDeriv j)
+
+theorem unaccelBranchMapCoordFDeriv_def (j : Fin (d + 1)) (x : Fin d → ℝ) (i : Fin d) :
+    unaccelBranchMapCoordFDeriv j x i =
+      (2 - simplexPoint x j)⁻¹ •
+        (simplexPointCoordFDeriv (j.succAbove i) +
+          unaccelBranchMap j x i • simplexPointCoordFDeriv j) :=
+  (rfl)
+
 /-- Coordinatewise Fréchet derivative of `unaccelBranchMap j` at a point where
 `2 - simplexPoint x j ≠ 0`. -/
 theorem hasFDerivAt_unaccelBranchMap_apply (j : Fin (d + 1)) {x : Fin d → ℝ}
     (hx : 2 - simplexPoint x j ≠ 0) (i : Fin d) :
-    HasFDerivAt (fun y => unaccelBranchMap j y i)
-      ((2 - simplexPoint x j)⁻¹ •
-        (Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
-          (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ)) (j.succAbove i) +
-          unaccelBranchMap j x i •
-            Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
-              (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ)) j)) x := by
-  refine (hasFDerivAt_div_real (hasFDerivAt_simplexPoint_apply (j.succAbove i) x)
+    HasFDerivAt (fun y => unaccelBranchMap j y i) (unaccelBranchMapCoordFDeriv j x i) x := by
+  refine ((hasFDerivAt_simplexPoint_apply (j.succAbove i) x).fun_div
     ((hasFDerivAt_const (2 : ℝ) x).sub (hasFDerivAt_simplexPoint_apply j x)) hx).congr_fderiv ?_
   ext v
-  simp only [smul_apply, sub_apply, add_apply, Pi.sub_apply, zero_sub, neg_apply, smul_eq_mul,
-    unaccelBranchMap_apply]
+  simp only [unaccelBranchMapCoordFDeriv_def, smul_apply, sub_apply, add_apply, Pi.sub_apply,
+    zero_sub, neg_apply, smul_eq_mul, unaccelBranchMap_apply]
   ring
 
 /-- Fréchet derivative of `unaccelBranchMap j` at a point where `2 - simplexPoint x j ≠ 0`,
@@ -650,13 +669,7 @@ expressed in coordinates via `ContinuousLinearMap.pi`. -/
 theorem hasFDerivAt_unaccelBranchMap (j : Fin (d + 1)) {x : Fin d → ℝ}
     (hx : 2 - simplexPoint x j ≠ 0) :
     HasFDerivAt (unaccelBranchMap j)
-      (ContinuousLinearMap.pi fun i =>
-        (2 - simplexPoint x j)⁻¹ •
-          (Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
-            (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ)) (j.succAbove i) +
-            unaccelBranchMap j x i •
-              Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
-                (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ)) j)) x :=
+      (ContinuousLinearMap.pi (unaccelBranchMapCoordFDeriv j x)) x :=
   hasFDerivAt_pi.2 (hasFDerivAt_unaccelBranchMap_apply j hx)
 
 /-- Projective normalisation intertwines `linearMove (Fin.last d)` on `orderedCone d` with
@@ -821,5 +834,14 @@ theorem accelMove_mapsTo_orderedCone (a : ℕ × Fin d) :
   rw [accelMove_of_mem_orderedCone a hy]
   exact smul_mem_orderedCone (simplexLift_mem_orderedCone (branchMap_mem_orderedSimplex a hx))
     (mul_pos (pos_last_of_mem_orderedCone hy) hq)
+
+/-- Every image of `accelMove a` lies in the hyperplane `coneSpan d`. -/
+theorem accelMove_mem_coneSpan (a : ℕ × Fin d) (y : Fin (d + 2) → ℝ) :
+    accelMove a y ∈ coneSpan d := by
+  rcases a with ⟨_ | A, j⟩
+  · rw [accelMove_zero]
+    exact linearMove_mem_coneSpan j.castSucc y
+  · rw [accelMove_succ]
+    exact linearMove_mem_coneSpan (Fin.last d) _
 
 end TauCeti
