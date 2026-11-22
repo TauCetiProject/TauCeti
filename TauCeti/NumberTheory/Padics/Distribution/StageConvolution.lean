@@ -66,8 +66,12 @@ coefficient vector of `x ↦ φ (y ↦ c (x + y))`. -/
 noncomputable def convolveFunRightStage {h : ℕ} :
     (AnalyticStage p h K →L[K] K) →ₗ[K] (AnalyticStage p h K →L[K] AnalyticStage p h K) where
   toFun φ := (compLeft φ (φ.bound.imp fun _ hb ↦ hb.2)).comp (comulCurried K)
-  map_add' φ ψ := by ext c i; simp
-  map_smul' a φ := by ext c i; simp
+  map_add' φ ψ := by
+    rw [compLeft_add φ ψ (φ.bound.imp fun _ hb ↦ hb.2) (ψ.bound.imp fun _ hb ↦ hb.2),
+      ContinuousLinearMap.add_comp]
+  map_smul' a φ := by
+    rw [compLeft_smul a φ (φ.bound.imp fun _ hb ↦ hb.2), ContinuousLinearMap.smul_comp]
+    rfl
 
 /-- Coordinatewise formula for `convolveFunRightStage φ`. -/
 @[simp]
@@ -143,9 +147,20 @@ functionals. -/
 theorem convolveFunRightStage_comp {h : ℕ} (φ ψ : AnalyticStage p h K →L[K] K) :
     convolveFunRightStage (φ.comp (convolveFunRightStage ψ)) =
       (convolveFunRightStage φ).comp (convolveFunRightStage ψ) := by
-  ext c i
-  simp only [ContinuousLinearMap.comp_apply, convolveFunRightStage_apply_eq,
-    comulCurried_compLeft, comulCurried_comulCurried, compLeft_apply]
+  refine ContinuousLinearMap.ext fun c ↦ ?_
+  have hψ : (compLeft ψ (ψ.bound.imp fun _ hb ↦ hb.2)).comp (comulCurried K) =
+      convolveFunRightStage ψ := rfl
+  rw [ContinuousLinearMap.comp_apply, convolveFunRightStage_apply_eq,
+    convolveFunRightStage_apply_eq, convolveFunRightStage_apply_eq,
+    comulCurried_compLeft, comulCurried_comulCurried,
+    ← ContinuousLinearMap.comp_apply (compLeft (compLeft ψ (ψ.bound.imp fun _ hb ↦ hb.2)) _),
+    ← compLeft_comp (α := ZMod (p ^ h) × ℕ) (compLeft ψ (ψ.bound.imp fun _ hb ↦ hb.2))
+      (comulCurried K) (exists_norm_compLeft_apply_le _ _) (exists_norm_comulCurried_le K)
+      (((compLeft ψ (ψ.bound.imp fun _ hb ↦ hb.2)).comp (comulCurried K)).bound.imp
+        fun _ hb ↦ hb.2),
+    hψ, ← ContinuousLinearMap.comp_apply (compLeft φ _),
+    ← compLeft_comp (α := ZMod (p ^ h) × ℕ) φ (convolveFunRightStage ψ)
+      (φ.bound.imp fun _ hb ↦ hb.2) ((convolveFunRightStage ψ).bound.imp fun _ hb ↦ hb.2)]
 
 /-- Stage-level right convolution with coordinate evaluation at `(0, 0)` is the identity
 operator. -/

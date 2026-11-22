@@ -31,6 +31,8 @@ Vandermonde expansion of `comul S (amiceTerm p h n 1)` into outer products `prod
 
 * `TauCeti.AnalyticStage.comulCurried_amiceTerm`: Vandermonde comultiplication formula for
   `amiceTerm p h n e` at arbitrary stage level `h` and degree `n`.
+* `TauCeti.AnalyticStage.comulCurried_amiceTerm_of_lt`: unweighted Vandermonde expansion of
+  `comulCurried` on `amiceTerm p h n e` for `n < p ^ h`.
 * `TauCeti.AnalyticStage.comul_amiceTerm_of_lt`: Vandermonde expansion of `comul` on unweighted
   Amice basis vectors `amiceTerm p h n 1` for `n < p ^ h`.
 
@@ -99,13 +101,21 @@ theorem comulCurried_amiceTerm (n : ℕ) (e : E) :
   refine Finset.sum_congr rfl fun ij _ ↦ ?_
   simp [u]
 
-end Curried
+/-- **Unweighted binomial comultiplication on Amice's vectors.** When `n < p ^ h`, every
+factorial weight in `comulCurried_amiceTerm` equals `1`, so curried comultiplication on
+`amiceTerm p h n e` reduces to the unweighted Vandermonde sum. -/
+theorem comulCurried_amiceTerm_of_lt {n : ℕ} (hn : n < p ^ h) (e : E) :
+    comulCurried S (amiceTerm p h n e) =
+      ∑ ij ∈ Finset.antidiagonal n, amiceTerm p h ij.1 (amiceTerm p h ij.2 e) := by
+  rw [comulCurried_amiceTerm]
+  refine Finset.sum_congr rfl fun ij hij ↦ ?_
+  have hi : ij.1 / p ^ h = 0 :=
+    Nat.div_eq_of_lt ((Finset.HasAntidiagonal.antidiagonal.fst_le hij).trans_lt hn)
+  have hj : ij.2 / p ^ h = 0 :=
+    Nat.div_eq_of_lt ((Finset.HasAntidiagonal.antidiagonal.snd_le hij).trans_lt hn)
+  simp [Nat.div_eq_of_lt hn, hi, hj]
 
-private theorem div_pow_eq_zero_of_mem_antidiagonal {p h n : ℕ} {ij : ℕ × ℕ}
-    (hn : n < p ^ h) (hij : ij ∈ Finset.antidiagonal n) :
-    ij.1 / p ^ h = 0 ∧ ij.2 / p ^ h = 0 := by
-  rw [Finset.mem_antidiagonal] at hij
-  exact ⟨Nat.div_eq_of_lt (by omega), Nat.div_eq_of_lt (by omega)⟩
+end Curried
 
 /-- **Vandermonde formula for `comul` on unweighted Amice basis vectors.** When `n < p ^ h`, so
 that `⌊n / pʰ⌋! = 1` and `amiceTerm p h n 1` represents `x choose n`, stage comultiplication
@@ -119,10 +129,8 @@ theorem comul_amiceTerm_of_lt {p : ℕ} [Fact p.Prime] {h n : ℕ}
         prodMul (amiceTerm p h ij.1 (1 : R)) (amiceTerm p h ij.2 (1 : R)) := by
   rw [comul_eq_comul_padicInt S, ← comul_eq_comul_padicInt R]
   apply (curryEquiv R R).injective
-  rw [curryEquiv_comul, comulCurried_amiceTerm, map_sum]
-  refine Finset.sum_congr rfl fun ij hij ↦ ?_
-  obtain ⟨hi0, hj0⟩ := div_pow_eq_zero_of_mem_antidiagonal hn hij
-  simp only [Nat.div_eq_of_lt hn, hi0, hj0, Nat.factorial_zero, mul_one, Nat.div_one, one_smul]
+  rw [curryEquiv_comul, comulCurried_amiceTerm_of_lt R hn, map_sum]
+  refine Finset.sum_congr rfl fun ij _ ↦ ?_
   rw [curryEquiv_prodMul_eq_compLeft, compLeft_amiceTerm, ContinuousLinearMap.toSpanSingleton_apply,
     one_smul]
 

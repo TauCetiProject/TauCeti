@@ -78,33 +78,26 @@ open AnalyticStage LocallyAnalytic
 variable {K : Type*} [NontriviallyNormedField K] [Algebra ℤ_[p] K]
   [IsBoundedSMul ℤ_[p] K] [IsUltrametricDist K] [CompleteSpace K]
 
-private theorem div_pow_eq_zero_of_mem_antidiagonal {p h n : ℕ} {ij : ℕ × ℕ}
-    (hn : n < p ^ h) (hij : ij ∈ Finset.antidiagonal n) :
-    ij.1 / p ^ h = 0 ∧ ij.2 / p ^ h = 0 := by
-  rw [Finset.mem_antidiagonal] at hij
-  exact ⟨Nat.div_eq_of_lt (by omega), Nat.div_eq_of_lt (by omega)⟩
-
 /-- Right convolution acts on locally analytic Mahler terms via the Vandermonde formula with the
 moments of `ν`. -/
 theorem convolveFunRight_mahlerTerm (ν : LocallyAnalyticDistribution p K) (n : ℕ) :
     convolveFunRight ν (mahlerTerm p K 1 n) =
       ∑ ij ∈ Finset.antidiagonal n, (amiceTransform ν).coeff ij.2 • mahlerTerm p K 1 ij.1 := by
   have hlt : n < p ^ n := Nat.lt_pow_self hp.out.one_lt
-  have hn : n / p ^ n = 0 := Nat.div_eq_of_lt hlt
   rw [mahlerTerm_def, convolveFunRight_ofStage]
   have hstage : convolveFunRightStage (stage n ν) (amiceTerm p n n (1 : K)) =
       ∑ ij ∈ Finset.antidiagonal n, amiceTerm p n ij.1 ((amiceTransform ν).coeff ij.2) := by
     ext i
-    simp only [convolveFunRightStage_apply, comulCurried_amiceTerm,
+    simp only [convolveFunRightStage_apply, comulCurried_amiceTerm_of_lt K hlt,
       ZeroAtInftyContinuousMap.coe_sum, Finset.sum_apply, map_sum]
     refine Finset.sum_congr rfl fun ij hij ↦ ?_
-    obtain ⟨hi, hj⟩ := div_pow_eq_zero_of_mem_antidiagonal hlt hij
-    have hcoeff : stage n ν (amiceTerm p n ij.2 (1 : K)) = (amiceTransform ν).coeff ij.2 := by
-      simp [hj]
-    simp [hn, hi, hj, hcoeff]
+    have hj : ij.2 / p ^ n = 0 :=
+      Nat.div_eq_of_lt ((Finset.HasAntidiagonal.antidiagonal.snd_le hij).trans_lt hlt)
+    simp [hj]
   rw [hstage, map_sum]
   refine Finset.sum_congr rfl fun ij hij ↦ ?_
-  obtain ⟨hi, -⟩ := div_pow_eq_zero_of_mem_antidiagonal hlt hij
+  have hi : ij.1 / p ^ n = 0 :=
+    Nat.div_eq_of_lt ((Finset.HasAntidiagonal.antidiagonal.fst_le hij).trans_lt hlt)
   simp [hi, ← mahlerTerm_smul]
 
 /-- The Amice transform of the point mass `dirac x` is the binomial series `(1 + X) ^ x`. -/
