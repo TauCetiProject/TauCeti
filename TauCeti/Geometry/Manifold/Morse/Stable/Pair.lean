@@ -29,7 +29,8 @@ transverse when the transported pair is Morse–Smale. Unlike the trajectories b
 points of one function, these trajectories are not invariant under a translation of time, so the
 intersection is not divided by an action of `ℝ`, and its expected dimension is `ind p - ind q`
 rather than `ind p - ind q - 1`. The identification of continuation trajectories with these
-intersections is not part of this file.
+intersections is
+`TauCeti.IsContinuationField.eventually_morseContinuationSlice_eq_preimage_mpullback`.
 
 For a Morse–Smale pair the following hold, for critical points `a` of `f₀` and `b` of `f₁`:
 
