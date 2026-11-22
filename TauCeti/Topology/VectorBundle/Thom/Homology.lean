@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.CategoryTheory.Preadditive.Injective.Basic
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
+import TauCeti.Algebra.Category.ModuleCat.Finrank
 import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 
 /-!
@@ -87,11 +88,13 @@ isomorphism in cohomology over an arbitrary base over a field:
 * `TauCeti.isIso_homologyThomMap`, `TauCeti.bijective_homologyThomMap`,
   `TauCeti.homologyThomIso`: for a Thom class `u` with coefficients in a commutative ring `K`, the
   homology Thom isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`A = K`) over any base.
+* `TauCeti.finrank_singularHomology_thomPair_of_isThomClass`: over a field, for a bundle with a Thom
+  class, `dim Hₘ(E, E₀; K) = bₚ(B; K)`.
 * `TauCeti.finrank_singularHomology_thomPair_of_subsingleton_units`: over a field whose only unit
   is `1`, such as `ZMod 2`, `dim Hₘ(E, E₀; K) = bₚ(B; K)` for every bundle, oriented or not.
 * `TauCeti.finrank_singularHomology_thomPair_eq_ite`: over a field, the dimensions of the homology
   of the Thom pair in every degree from those in degrees at least the rank, the homology below the
-  rank vanishing (`TauCeti.finrank_singularHomology_thomPair_eq_zero`).
+  rank vanishing.
 * `TauCeti.bijective_thomMap_of_field`, `TauCeti.thomEquivOfField`: the cohomology Thom isomorphism
   over a field and an arbitrary base with vector-space coefficients `M`.
 * `TauCeti.bijective_homologyThomMap_iff_forall_bijective_thomMap`: over any commutative ring, the
@@ -507,6 +510,19 @@ theorem thomEquivOfField_apply (M : ModuleCat.{w} K) (p m : ℕ) (h : p + finran
     thomEquivOfField F E M p m h u hu a = thomMap F E M (finrank ℝ F) p m h u a := (rfl)
 
 variable (F E) in
+/-- **The homology Thom isomorphism, in dimensions.** Let `E → B` be a real vector bundle with
+fibres of dimension `r` over any base, and `K` a field. If `E` has a Thom class with coefficients in
+`K`, then `dim Hₘ(E, E₀; K)` is the Betti number `bₚ(B; K)` whenever `r + p = m`
+(`TauCeti.homologyThomIso`). -/
+theorem finrank_singularHomology_thomPair_of_isThomClass (p m : ℕ) (h : finrank ℝ F + p = m)
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
+    (hu : IsThomClass F E u) :
+    finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat K) =
+      bettiNumber K B p := by
+  rw [bettiNumber_def]
+  exact (homologyThomIso F E p m h u hu).toLinearEquiv.finrank_eq
+
+variable (F E) in
 /-- **The mod `2` homology Thom isomorphism, in dimensions.** Let `K` be a field whose only unit is
 `1`, such as `ZMod 2`. For a real vector bundle `E → B` with fibres of dimension `r`, over any base
 and with no orientation, `dim Hₘ(E, E₀; K)` is the Betti number `bₚ(B; K)` whenever `r + p = m`:
@@ -518,18 +534,7 @@ theorem finrank_singularHomology_thomPair_of_subsingleton_units [FiniteDimension
     finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat K) =
       bettiNumber K B p := by
   have hu := (existsUnique_isThomClass_of_subsingleton_units (F := F) (E := E) K).exists
-  rw [bettiNumber_def]
-  exact (homologyThomIso F E p m h _ hu.choose_spec).toLinearEquiv.finrank_eq
-
-variable (F E) in
-/-- The homology of the Thom pair of a real vector bundle of rank `r`, over a field `K`, has
-dimension `0` in degrees below `r` (`TauCeti.isZero_singularHomology_thomPair`). -/
-theorem finrank_singularHomology_thomPair_eq_zero [FiniteDimensional ℝ F] {n : ℕ}
-    (hn : n < finrank ℝ F) :
-    finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) n : ModuleCat K) = 0 := by
-  have := ModuleCat.isZero_iff_subsingleton.1
-    (isZero_singularHomology_thomPair (F := F) (E := E) (ModuleCat.of K K) hn)
-  exact Module.finrank_zero_of_subsingleton
+  exact finrank_singularHomology_thomPair_of_isThomClass F E p m h hu.choose_spec
 
 variable (F E) in
 /-- **The dimensions of the homology of a Thom pair in every degree.** Let `E → B` be a real vector
@@ -543,7 +548,8 @@ theorem finrank_singularHomology_thomPair_eq_ite [FiniteDimensional ℝ F] {r : 
       if r ≤ n then d (n - r) else 0 := by
   split_ifs with hrn
   · rw [← hd, Nat.add_sub_cancel' hrn]
-  · exact finrank_singularHomology_thomPair_eq_zero F E (by omega)
+  · exact ModuleCat.finrank_eq_zero_of_isZero
+      (isZero_singularHomology_thomPair (F := F) (E := E) (ModuleCat.of K K) (by omega))
 
 end IsomorphismOfField
 
