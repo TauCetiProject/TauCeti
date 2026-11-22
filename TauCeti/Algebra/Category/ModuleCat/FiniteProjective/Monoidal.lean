@@ -28,6 +28,7 @@ algebraic `K₀` have the same objects and morphisms.
 public section
 
 open CategoryTheory MonoidalCategory
+open scoped TensorProduct
 
 namespace TauCeti
 
@@ -54,6 +55,19 @@ instance finiteProjectiveModulesSymmetricCategory :
   ObjectProperty.fullSymmetricSubcategory _
 
 namespace FiniteProjectiveModules
+
+/-- The monoidal unit in `(finiteProjectiveModules R).FullSubcategory` has underlying module
+`ModuleCat.of R R`. -/
+theorem tensorUnit_obj :
+    (𝟙_ (finiteProjectiveModules R).FullSubcategory).obj = ModuleCat.of R R :=
+  (rfl)
+
+/-- The monoidal tensor product in `(finiteProjectiveModules R).FullSubcategory` has underlying
+module `ModuleCat.of R (P.obj ⊗[R] Q.obj)`. -/
+theorem tensorObj_obj {R : Type u} [CommRing R]
+    (P Q : (finiteProjectiveModules R).FullSubcategory) :
+    (P ⊗ Q).obj = ModuleCat.of R (P.obj ⊗[R] Q.obj) :=
+  (rfl)
 
 /-- The linear dual of a finite projective module is finite projective. -/
 @[expose] def dual (M : (finiteProjectiveModules R).FullSubcategory) :

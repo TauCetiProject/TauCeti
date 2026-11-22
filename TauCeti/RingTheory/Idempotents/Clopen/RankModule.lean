@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.Idempotents.Clopen.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 
 import TauCeti.LinearAlgebra.Pi
-import TauCeti.RingTheory.Idempotents.BaseChange
 import TauCeti.RingTheory.Idempotents.Projective
 import TauCeti.RingTheory.Spectrum.Maximal.Basic
 import TauCeti.RingTheory.Spectrum.Prime.RankDecomposition
@@ -23,8 +22,7 @@ For a locally constant function `f : PrimeSpectrum R → ℕ`, the compact space
 range of `f` to be finite, so the clopen fibers `f⁻¹{k}` yield a complete orthogonal family of
 idempotents. Gluing free modules of rank `k` over each fiber defines the finitely generated
 projective module `TauCeti.ClopenRankModule R f` of stalk rank `f`, compatible with arbitrary
-scalar extension, restricting to `Fin k → Rₖ` over the quotient cutting out the rank-`k` fiber,
-and specializing to `0` and `Rⁿ` on zero and constant functions.
+scalar extension and specializing to `0` and `Rⁿ` on zero and constant functions.
 
 Over a commutative semilocal ring (`Finite (MaximalSpectrum R)`), every constant-rank piece of a
 finitely presented flat module `M` is free over its quotient ring by
@@ -35,8 +33,6 @@ isomorphic to `TauCeti.ClopenRankModule R (Module.rankLocallyConstant R M)`.
 
 * `TauCeti.ClopenRankModule`: the finitely generated projective `R`-module of prescribed locally
   constant rank `f : LocallyConstant (PrimeSpectrum R) ℕ`.
-* `TauCeti.ClopenRankModule.quotientFiberEquiv`: restriction of `ClopenRankModule R f` to the
-  quotient cutting out a rank-`k` fiber, identifying it with `Fin k → Rₖ`.
 * `TauCeti.ClopenRankModule.balancedExtensionEquiv`: compatibility of `ClopenRankModule` with
   arbitrary extension of scalars.
 
@@ -224,35 +220,6 @@ noncomputable def balancedExtensionEquiv {S : Type v} [CommRing S] (φ : R →+*
               _).property.balancedExtensionSpanSingletonEquiv φ).trans
               (LinearEquiv.ofEq _ _ (by rw [hmap]))).trans
     ((LinearEquiv.piRestrictOfSubsingleton S _ hsub hsubsingleton).trans (equivPi S f').symm)
-
-/-- Restricting `ClopenRankModule R f` to the quotient ring cutting out the rank-`k` locus
-identifies the fiber with `Fin k → Rₖ`. -/
-noncomputable def quotientFiberEquiv (k : ℕ) :
-    ((R ⧸ Ideal.span {1 - (isIdempotentElemEquivClopens.symm (f.fiberClopens k)).val}) ⊗[R]
-      ClopenRankModule R f) ≃ₗ[R ⧸ Ideal.span
-        {1 - (isIdempotentElemEquivClopens.symm (f.fiberClopens k)).val}]
-      (Fin k → R ⧸ Ideal.span
-        {1 - (isIdempotentElemEquivClopens.symm (f.fiberClopens k)).val}) := by
-  let e := (isIdempotentElemEquivClopens.symm (f.fiberClopens k)).val
-  let Rk := R ⧸ Ideal.span {1 - e}
-  let φ := algebraMap R Rk
-  let f' := f.comap ⟨PrimeSpectrum.comap φ, PrimeSpectrum.continuous_comap φ⟩
-  have hf' : f' = LocallyConstant.const (PrimeSpectrum Rk) k := by
-    ext q
-    have hker : 1 - e ∈ (q.comap φ).asIdeal := by
-      rw [PrimeSpectrum.comap_asIdeal, Ideal.mem_comap]
-      dsimp only [φ, Rk]
-      rw [Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.subset_span rfl)]
-      exact q.asIdeal.zero_mem
-    have hnotmem : e ∉ (q.comap φ).asIdeal := fun heq ↦
-      (q.comap φ).isPrime.ne_top <| (q.comap φ).asIdeal.eq_top_iff_one.2 <| by
-        simpa using (q.comap φ).asIdeal.add_mem hker heq
-    have hmem : q.comap φ ∈ PrimeSpectrum.basicOpen e := hnotmem
-    rw [PrimeSpectrum.basicOpen_isIdempotentElemEquivClopens_symm] at hmem
-    simpa [f'] using LocallyConstant.mem_fiberClopens.1 hmem
-  exact ((BalancedExtension.equivTensorProduct R Rk (ClopenRankModule R f)).symm.trans
-    (balancedExtensionEquiv R f φ)).trans
-    ((equivOfEq Rk hf').trans (constEquiv Rk k))
 
 end ClopenRankModule
 

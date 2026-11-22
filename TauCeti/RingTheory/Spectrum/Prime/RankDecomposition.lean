@@ -73,10 +73,8 @@ theorem rankAtStalk_rankPiece (k : ranks R M)
   let e := (isIdempotentElemEquivClopens.symm ((rankLocallyConstant R M).fiberClopens k.val)).val
   have he : IsIdempotentElem e := (isIdempotentElemEquivClopens.symm _).property
   rw [rankAtStalk_baseChange]
-  have hD : q.comap (algebraMap R (R ⧸ Ideal.span {1 - e})) ∈ PrimeSpectrum.basicOpen e := by
-    rw [← SetLike.mem_coe, PrimeSpectrum.basicOpen_eq_zeroLocus_of_isIdempotentElem e he,
-      PrimeSpectrum.mem_zeroLocus]
-    rintro x (rfl : x = 1 - e); simp [PrimeSpectrum.comap]
+  have hD : q.comap (algebraMap R (R ⧸ Ideal.span {1 - e})) ∈ PrimeSpectrum.basicOpen e :=
+    he.comap_mem_basicOpen_quotient_one_sub q
   rw [PrimeSpectrum.basicOpen_isIdempotentElemEquivClopens_symm] at hD
   simpa [rankLocallyConstant_apply] using LocallyConstant.mem_fiberClopens.1 hD
 

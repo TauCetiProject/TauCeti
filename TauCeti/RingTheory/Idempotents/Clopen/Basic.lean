@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.Topology.LocallyConstant.Fiber
 
+import TauCeti.Order.Disjoint
+
 /-!
 # Clopen subsets of `PrimeSpectrum` and idempotents
 
@@ -16,7 +18,7 @@ Mathlib's `PrimeSpectrum.isIdempotentElemEquivClopens` identifies idempotents `e
 commutative ring with clopen subsets `U` of `Spec R` via `U = D(e)`. This file records
 compatibility of that identification with membership in prime ideals, disjoint unions, complete
 orthogonal families of idempotents (in particular for the clopen fibers of a locally constant
-function on `Spec R`), and ring homomorphisms.
+function on `Spec R`), quotient prime pullbacks, and ring homomorphisms.
 
 ## Main results
 
@@ -31,6 +33,8 @@ function on `Spec R`), and ring homomorphisms.
   idempotents.
 * `PrimeSpectrum.map_isIdempotentElemEquivClopens_symm`: compatibility of clopen idempotents with
   ring homomorphisms.
+* `IsIdempotentElem.comap_mem_basicOpen_quotient_one_sub`: every prime of `R ⧸ (1 - e)` lies over
+  `D(e)`.
 -/
 
 public section
@@ -73,15 +77,10 @@ idempotents. -/
 theorem isIdempotentElemEquivClopens_symm_finset_sup {ι : Type*} (s : Finset ι)
     (U : ι → Clopens (PrimeSpectrum R)) (hdisj : (s : Set ι).PairwiseDisjoint U) :
     (isIdempotentElemEquivClopens.symm (s.sup U)).val =
-      ∑ i ∈ s, (isIdempotentElemEquivClopens.symm (U i)).val := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => rw [Finset.sup_empty, Finset.sum_empty, isIdempotentElemEquivClopens_symm_bot]
-  | insert a s ha ih =>
-    have hda : Disjoint (U a) (s.sup U) := Finset.disjoint_sup_right.2 fun b hb ↦
-      hdisj (Finset.mem_insert_self a s) (Finset.mem_insert_of_mem hb) (fun h ↦ ha (h ▸ hb))
-    rw [Finset.sup_insert, isIdempotentElemEquivClopens_symm_sup_of_disjoint hda,
-      Finset.sum_insert ha, ih (hdisj.subset (Finset.subset_insert a s))]
+      ∑ i ∈ s, (isIdempotentElemEquivClopens.symm (U i)).val :=
+  hdisj.map_finset_sup (fun V ↦ (isIdempotentElemEquivClopens.symm V).val)
+    (congrArg Subtype.val isIdempotentElemEquivClopens_symm_bot)
+    fun _ _ h ↦ isIdempotentElemEquivClopens_symm_sup_of_disjoint h
 
 /-- A finite clopen partition of `Spec R` gives a complete orthogonal family of idempotents. -/
 theorem completeOrthogonalIdempotents_isIdempotentElemEquivClopens_symm {ι : Type*} [Fintype ι]
@@ -121,3 +120,19 @@ theorem completeOrthogonalIdempotents_fiberClopens {α : Type*}
 end CommRing
 
 end PrimeSpectrum
+
+namespace IsIdempotentElem
+
+/-- For an idempotent `e : R`, every prime ideal of the quotient `R ⧸ (1 - e)` pulls back into
+the basic open set `D(e)` of `Spec R`. -/
+theorem comap_mem_basicOpen_quotient_one_sub {R : Type*} [CommRing R] {e : R}
+    (he : IsIdempotentElem e) (q : PrimeSpectrum (R ⧸ Ideal.span {1 - e})) :
+    q.comap (algebraMap R (R ⧸ Ideal.span {1 - e})) ∈ PrimeSpectrum.basicOpen e := by
+  rw [← SetLike.mem_coe, PrimeSpectrum.basicOpen_eq_zeroLocus_of_isIdempotentElem e he,
+    PrimeSpectrum.mem_zeroLocus]
+  rintro x (rfl : x = 1 - e)
+  rw [SetLike.mem_coe, PrimeSpectrum.comap_asIdeal, Ideal.mem_comap, Ideal.Quotient.algebraMap_eq,
+    Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.subset_span rfl)]
+  exact q.asIdeal.zero_mem
+
+end IsIdempotentElem

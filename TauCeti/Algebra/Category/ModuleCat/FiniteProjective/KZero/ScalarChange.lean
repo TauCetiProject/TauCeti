@@ -45,16 +45,6 @@ open TauCeti
 
 variable {R S T : Type u} [CommRing R] [CommRing S] [CommRing T]
 
--- The monoidal unit in `(finiteProjectiveModules R).FullSubcategory` reduces definitionally to `R`.
-private theorem tensorUnit_obj (R : Type u) [CommRing R] :
-    (𝟙_ (finiteProjectiveModules R).FullSubcategory).obj = ModuleCat.of R R := rfl
-
--- The monoidal tensor product in `(finiteProjectiveModules R).FullSubcategory` reduces
--- definitionally to `⊗[R]`.
-private theorem tensorObj_obj {R : Type u} [CommRing R]
-    (P Q : (finiteProjectiveModules R).FullSubcategory) :
-    (P ⊗ Q).obj = ModuleCat.of R (P.obj ⊗[R] Q.obj) := rfl
-
 /-- Scalar extension preserves multiplication on split `K₀` of finitely generated projective
 modules over commutative rings. -/
 private theorem map_extendScalars_mul (f : R →+* S) :
@@ -74,11 +64,12 @@ private theorem map_extendScalars_mul (f : R →+* S) :
   exact SplitK0.of_extendScalars_obj (P := P ⊗ Q)
     (Q := f.finiteProjectiveModulesExtendScalars.obj P ⊗
       f.finiteProjectiveModulesExtendScalars.obj Q) <|
-    (BalancedExtension.congr f (eqToIso (tensorObj_obj P Q)).toLinearEquiv).trans
+    (BalancedExtension.congr f
+      (eqToIso (FiniteProjectiveModules.tensorObj_obj P Q)).toLinearEquiv).trans
       ((BalancedExtension.equivTensorProduct R S (P.obj ⊗[R] Q.obj)).trans
         ((TensorProduct.AlgebraTensorModule.distribBaseChange R S P.obj Q.obj).trans
           ((TensorProduct.congr (e P) (e Q)).trans
-            (eqToIso (tensorObj_obj _ _)).symm.toLinearEquiv)))
+            (eqToIso (FiniteProjectiveModules.tensorObj_obj _ _)).symm.toLinearEquiv)))
 
 /-- **Extension of scalars as a ring homomorphism on split `K₀`.** For commutative rings, a ring
 homomorphism `f : R →+* S` induces a ring homomorphism
@@ -93,7 +84,7 @@ noncomputable def finiteProjectiveModulesSplitK0Extend (f : R →+* S) :
     exact SplitK0.of_extendScalars_obj (Q := 𝟙_ (finiteProjectiveModules S).FullSubcategory)
       ((BalancedExtension.equivTensorProduct R S R).trans
         ((TensorProduct.AlgebraTensorModule.rid R S S).trans
-          (eqToIso (tensorUnit_obj S)).symm.toLinearEquiv))
+          (eqToIso (FiniteProjectiveModules.tensorUnit_obj S)).symm.toLinearEquiv))
   map_mul' := map_extendScalars_mul f
 
 @[simp]
