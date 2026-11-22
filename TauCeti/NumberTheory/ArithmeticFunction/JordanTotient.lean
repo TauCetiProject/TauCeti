@@ -66,6 +66,7 @@ theorem jordanTotient_apply (k n : ℕ) :
   simp [natCoe_apply, pow_apply, hnd]
 
 /-- `J_k` is multiplicative. -/
+@[arith_mult]
 theorem isMultiplicative_jordanTotient (k : ℕ) : (jordanTotient k).IsMultiplicative :=
   isMultiplicative_moebius.mul isMultiplicative_pow.natCast
 

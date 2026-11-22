@@ -434,6 +434,14 @@ private theorem IsK3CyclicOrbitData.not_dvd_of_not_dvd_sub {n : ℕ} {a : ℕ �
   have hdq' := h.cyclicFixedPointCount_eq hn hdq (one_lt_mul_of_lt_of_le hd1 hq.one_le) hl
   exact hkl (hd ▸ hdq' ▸ prime_dvd_cyclicFixedPointCount_sub a hq hdq)
 
+/-- `ε n` with the prime factors of `n` written as `n.primeFactorsList.toFinset`, the evaluation
+step for concrete values of `ε`. On a numeral `n`, the `Nat.primeFactorsList_ofNat` simproc factors
+`n.primeFactorsList`, so `norm_num [mathieuFunction_eq_primeFactorsList]` computes `ε n`. There is
+no such simproc for `n.primeFactors`, so `mathieuFunction_def` alone does not suffice. -/
+private theorem mathieuFunction_eq_primeFactorsList (n : ℕ) :
+    mathieuFunction n = 24 / (n * ∏ p ∈ n.primeFactorsList.toFinset, (1 + (p : ℚ)⁻¹)) := by
+  rw [Nat.toFinset_factors, mathieuFunction_def]
+
 /-- A divisor `d > 1` of `n` has integral `ε d`, so `d` does not divide `n` when `ε d = k / l` with
 `l` not dividing `k`. -/
 private theorem IsK3CyclicOrbitData.not_dvd_of_mathieuFunction_eq_div {n : ℕ} {a : ℕ → ℕ}
@@ -451,27 +459,27 @@ private theorem IsK3CyclicOrbitData.not_dvd_of_mem {n : ℕ} {a : ℕ → ℕ}
   simp only [Finset.mem_insert, Finset.mem_singleton] at hd
   rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 4) (l := 3) (by norm_num) (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 3) (l := 4) (by norm_num) (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 2) (l := 3) (by norm_num) (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 4) (l := 5) (by norm_num) (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 1) (l := 2) (by norm_num) (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 1) (l := 2) (by norm_num) (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 1) (l := 2) (by norm_num) (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 3) (l := 7) (by norm_num) (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 1) (l := 3) (by norm_num) (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 1) (l := 4) (by norm_num) (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 2) (l := 11) (by norm_num) (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num)
 
 /-- **The possible orders of a symplectic cyclic action.** If the orbit relations hold for the
 cyclic group of order `n ≠ 0` and the exceptional root lattice of the resolved quotient has rank at
@@ -487,13 +495,13 @@ theorem IsK3CyclicOrbitData.mem_candidates {n : ℕ} {a : ℕ → ℕ} (h : IsK3
   -- orders `9`, `12` and `16`: orbit divisibility over the subgroups of orders `3`, `6` and `8`
   · exact h.not_dvd_of_not_dvd_sub hn Nat.prime_three (d := 3) (k := 6) (l := 2) (by norm_num)
       (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num) hdn
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num) hdn
   · exact h.not_dvd_of_not_dvd_sub hn Nat.prime_two (d := 6) (k := 2) (l := 1) (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num) hdn
+      (by norm_num [mathieuFunction_eq_primeFactorsList])
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num) hdn
   · exact h.not_dvd_of_not_dvd_sub hn Nat.prime_two (d := 8) (k := 2) (l := 1) (by norm_num)
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
-      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num) hdn
+      (by norm_num [mathieuFunction_eq_primeFactorsList])
+      (by norm_num [mathieuFunction_eq_primeFactorsList]) (by norm_num) hdn
   -- the remaining orders have nonintegral `ε`
   · exact h.not_dvd_of_mem hn hd hdn
 
@@ -501,7 +509,7 @@ theorem IsK3CyclicOrbitData.mem_candidates {n : ℕ} {a : ℕ → ℕ} (h : IsK3
 theorem IsK3CyclicOrbitData.orbitCounts_eleven {a : ℕ → ℕ} (h : IsK3CyclicOrbitData 11 a) :
     a 11 = 2 := by
   have h11 := h.cyclicFixedPointCount_eq (by norm_num) (dvd_refl 11) (by norm_num) (k := 2)
-    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
+    (by norm_num [mathieuFunction_eq_primeFactorsList])
   simp only [cyclicFixedPointCount_def, Nat.divisors_ofNat] at h11
   simpa [Finset.filter_insert, Finset.filter_singleton] using h11
 
@@ -510,11 +518,11 @@ theorem IsK3CyclicOrbitData.orbitCounts_eleven {a : ℕ → ℕ} (h : IsK3Cyclic
 theorem IsK3CyclicOrbitData.orbitCounts_fourteen {a : ℕ → ℕ} (h : IsK3CyclicOrbitData 14 a) :
     a 2 = 1 ∧ a 7 = 1 ∧ a 14 = 1 := by
   have h2 := h.cyclicFixedPointCount_eq (by norm_num) (by norm_num : 2 ∣ 14) (by norm_num) (k := 8)
-    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
+    (by norm_num [mathieuFunction_eq_primeFactorsList])
   have h7 := h.cyclicFixedPointCount_eq (by norm_num) (by norm_num : 7 ∣ 14) (by norm_num) (k := 3)
-    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
+    (by norm_num [mathieuFunction_eq_primeFactorsList])
   have h14 := h.cyclicFixedPointCount_eq (by norm_num) (dvd_refl 14) (by norm_num) (k := 1)
-    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
+    (by norm_num [mathieuFunction_eq_primeFactorsList])
   simp only [cyclicFixedPointCount_def, Nat.divisors_ofNat] at h2 h7 h14
   simp [Finset.filter_insert, Finset.filter_singleton] at h2 h7 h14
   omega
@@ -524,11 +532,11 @@ theorem IsK3CyclicOrbitData.orbitCounts_fourteen {a : ℕ → ℕ} (h : IsK3Cycl
 theorem IsK3CyclicOrbitData.orbitCounts_fifteen {a : ℕ → ℕ} (h : IsK3CyclicOrbitData 15 a) :
     a 3 = 1 ∧ a 5 = 1 ∧ a 15 = 1 := by
   have h3 := h.cyclicFixedPointCount_eq (by norm_num) (by norm_num : 3 ∣ 15) (by norm_num) (k := 6)
-    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
+    (by norm_num [mathieuFunction_eq_primeFactorsList])
   have h5 := h.cyclicFixedPointCount_eq (by norm_num) (by norm_num : 5 ∣ 15) (by norm_num) (k := 4)
-    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
+    (by norm_num [mathieuFunction_eq_primeFactorsList])
   have h15 := h.cyclicFixedPointCount_eq (by norm_num) (dvd_refl 15) (by norm_num) (k := 1)
-    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
+    (by norm_num [mathieuFunction_eq_primeFactorsList])
   simp only [cyclicFixedPointCount_def, Nat.divisors_ofNat] at h3 h5 h15
   simp [Finset.filter_insert, Finset.filter_singleton] at h3 h5 h15
   omega
