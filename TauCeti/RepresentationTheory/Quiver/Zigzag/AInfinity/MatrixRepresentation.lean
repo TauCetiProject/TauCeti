@@ -186,7 +186,8 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
   have hεf (x : W) : ε (f x) = s x := f.injective.extend_apply s 1 x
   refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_anticyclic
     hn (dartMatrix (f.extendByZero β))
-    (sum_dartMatrix_mul_dartMatrix_symm _ (f.sum_extendByZero_mul_extendByZero β hβ))
+    (sum_dartMatrix_mul_dartMatrix_symm _ fun v ↦
+      f.sum_extendByZero_mul_extendByZero β mul_zero hβ v)
     (traceLinearMap _ k k ∘ₗ LinearMap.mulLeft k (diagonal ε ⊗ₖ 1)) (fun e Y ↦ ?_) _ _ ?_
   · -- The twisted trace is anticyclic, since a nonzero block lies on the image of an edge of `H`.
     refine trace_twist_mul_dartMatrix _ ε (fun d hd ↦ ?_) e Y

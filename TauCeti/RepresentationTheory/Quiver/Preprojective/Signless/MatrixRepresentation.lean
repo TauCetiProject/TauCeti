@@ -299,7 +299,7 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trac
       (vertex G (f c))), fun hx => htr ?_⟩
     have htrace := trace_map_eq_zero_of_mem_commutatorSubmodule
       (signlessMatrixRepresentation k (f.extendByZero β)
-        (f.sum_extendByZero_mul_extendByZero β hβ)) hx
+        fun v => f.sum_extendByZero_mul_extendByZero β mul_zero hβ v) hx
     rw [signlessMatrixRepresentation_vertexIdempotent, trace_kronecker, trace_single_eq_same,
       one_mul] at htrace
     simpa using htrace
@@ -311,8 +311,8 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trac
   rw [List.length_map] at hgrade
   refine ⟨_, hgrade, fun hx => htr ?_⟩
   have htrace := trace_map_eq_zero_of_mem_commutatorSubmodule
-    (signlessMatrixRepresentation k (f.extendByZero β) (f.sum_extendByZero_mul_extendByZero β hβ))
-    hx
+    (signlessMatrixRepresentation k (f.extendByZero β)
+      fun v => f.sum_extendByZero_mul_extendByZero β mul_zero hβ v) hx
   rw [trace_signlessMatrixRepresentation_list_prod_backtrackElem _ _ l' (by simpa [l'] using hl)]
     at htrace
   have h₁ (a : {a // H.Adj c a}) : H.Adj c a := a.property
