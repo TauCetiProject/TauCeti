@@ -214,13 +214,9 @@ theorem exists_seq_simpleHolding_ae_tendsto_lintegral_eNorm_sub_sq
     ((hpred m).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2
   have hE (m : ℕ) : Measurable (E m) := (hmeas m).lintegral_prod_left'
   have hmean (m : ℕ) : ∫⁻ ω, E m ω ∂P ≤ (((1 / 2 : ℝ≥0) ^ 2) ^ m : ℝ≥0∞) := by
-    rw [← lintegral_lintegral_swap (hmeas m).aemeasurable]
-    rw [← lintegral_prod _ (hmeas m).aemeasurable]
-    have hpow := eLpNorm_nnreal_pow_eq_lintegral (p := (2 : ℝ≥0)) (by norm_num)
-      ((hpred m).mono ℱ.predictable_le_prod).aestronglyMeasurable (μ := ν.prod P)
-    simp only [NNReal.coe_ofNat, ENNReal.rpow_two, Function.uncurry_def,
-      ENNReal.coe_ofNat] at hpow
-    rw [← hpow]
+    refine (TauCeti.lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq
+      (f := fun p ↦ L m p.1 p.2 - K m p.1 p.2)
+      ((hpred m).mono ℱ.predictable_le_prod).aestronglyMeasurable).trans_le ?_
     simpa only [← ENNReal.coe_pow, ← pow_mul, Nat.mul_comm] using
       pow_le_pow_left' (herr m).le 2
   have hsum : (∑' m, (((1 / 2 : ℝ≥0) ^ 2) ^ m : ℝ≥0∞)) ≠ ∞ :=
@@ -270,8 +266,7 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm
           ((Probability.timeMeasure T).prod P)) atTop (𝓝 0) := by
   have hex (m : ℕ) := ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P m
     hH.isStronglyPredictable
-    (by simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def]
-        using hH.memLp m)
+    (hH.memLp_timeMeasure m)
     (ε := (m : ℝ≥0∞)⁻¹) (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top m))
   choose n τ a C hτ₀ hτ ha hb herr using hex
   refine ⟨n, τ, a, C, hτ₀, hτ, ha, hb, fun T ↦ ?_⟩

@@ -119,6 +119,8 @@ range, so the value is a `dite` rather than a plain application.
   tuple indexed by `Fin ((k + 1) + (l + 1))` after inserting an entry into one of the two blocks.
 * `Fin.Ioo_eq_empty_of_le_two` and `Fin.eq_empty_of_subset_Ioo_of_le_two`: open intervals in
   `Fin n`, and hence finsets inside them, are empty when `n ≤ 2`.
+* `Fin.partialProd_last_eq_prod_ofFn` and `Fin.partialSum_last_eq_sum_ofFn`: the final partial
+  product (sum) is the ordered product (sum) of all the entries, in any monoid.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `Fin.last_mul_partialProd`: the last entry times the final partial product of the initial
@@ -161,6 +163,8 @@ range, so the value is a `dite` rather than a plain application.
   rays of a `Fin` family and the consecutive closed intervals cover the whole order.
 * `TauCeti.apply_zero_le_of_forall_mem_range`, `TauCeti.le_apply_last_of_forall_mem_range`: points
   that lie in the range of a monotone `Fin` family lie between its first and last values.
+* `TauCeti.apply_fin_eq_of_val_eq`: evaluating a dependent family indexed by `Fin (f i)` at equal
+  outer indices and finite ordinals with equal underlying values gives the same value.
 -/
 
 public section
@@ -249,12 +253,17 @@ theorem sum_shift_mul_eq {K : Type*} [Field K] [NeZero (2 : K)] {N : ℕ} (b : F
   rw [one_div, h4]
   linear_combination (b i - (i : K) + 2⁻¹) * h2
 
+/-- The final partial product is the ordered product of all the entries. -/
+@[to_additive /-- The final partial sum is the ordered sum of all the entries. -/]
+theorem partialProd_last_eq_prod_ofFn {M : Type*} [Monoid M] {n : ℕ} (f : Fin n → M) :
+    partialProd f (last n) = (List.ofFn f).prod := by
+  rw [partialProd, val_last, (List.take_eq_self_iff _).mpr (by simp)]
+
 /-- The final partial product is the product of all the entries. -/
 @[to_additive /-- The final partial sum is the sum of all the entries. -/]
 theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) :
     partialProd f (last n) = ∏ i, f i := by
-  rw [partialProd, val_last]
-  rw [(List.take_eq_self_iff _).mpr (by simp), prod_ofFn]
+  rw [partialProd_last_eq_prod_ofFn, prod_ofFn]
 
 /-- The last entry times the preceding partial product is the product of all entries. -/
 theorem last_mul_partialProd {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
@@ -1132,5 +1141,14 @@ theorem sum_fin_three_rotate {M : Type*} [AddCommMonoid M] (f : Fin 3 → M) (j 
   have h : ∑ m : Fin 3, f (j + m) = ∑ m : Fin 3, f m :=
     Fintype.sum_equiv (Equiv.addLeft j) _ _ fun _ => rfl
   rw [← h, Fin.sum_univ_three, add_zero]
+
+/-- Evaluating a dependent family `x : ∀ i, Fin (f i) → α` at equal outer indices `a = b` and
+finite ordinals with equal underlying values produces the same value. -/
+theorem apply_fin_eq_of_val_eq {ι : Sort*} {f : ι → ℕ} {α : Sort*}
+    (x : ∀ i, Fin (f i) → α) {a b : ι} (hab : a = b)
+    {j₁ : Fin (f a)} {j₂ : Fin (f b)} (hj : j₁.val = j₂.val) :
+    x a j₁ = x b j₂ := by
+  subst hab
+  exact congrArg (x a) (Fin.ext hj)
 
 end TauCeti
