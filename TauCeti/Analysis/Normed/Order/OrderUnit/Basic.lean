@@ -54,8 +54,8 @@ assuming `NormedSpace ℝ E` gives positivity of nonnegative scalar multiplicati
   `TauCeti.IsOrderUnitNorm.isArchimedeanOrderUnit`, `TauCeti.IsOrderUnitNorm.norm_eq_orderUnitNorm`:
   scalar monotonicity, closed positive cone, the Archimedean property, and uniqueness of the norm.
 * `TauCeti.IsOrderUnitNorm.submodule`, `TauCeti.IsOrderUnitNorm.prod`,
-  `TauCeti.IsOrderUnitNorm.pi`, `TauCeti.IsOrderUnitNorm.norm_map_of_orderIso`:
-  permanence under unital subspaces, nonempty finite products, and unital order isomorphisms.
+  `TauCeti.IsOrderUnitNorm.pi`, `TauCeti.IsOrderUnitNorm.norm_map_of_orderEmbedding`:
+  permanence under unital subspaces, nonempty finite products, and unital linear order embeddings.
 * `TauCeti.IsOrderUnitNorm.real_one`, `TauCeti.IsOrderUnitNorm.pi_real_one`,
   `TauCeti.IsOrderUnitNorm.continuousMap_one`,
   `TauCeti.IsOrderUnitNorm.boundedContinuousFunction_one`,
@@ -107,6 +107,22 @@ theorem bddBelow_orderUnitNormSet {E : Type*} [SMul ℝ E] [LE E] (e a : E) :
 theorem orderUnitNorm_nonneg {E : Type*} [SMul ℝ E] [LE E] (e a : E) :
     0 ≤ orderUnitNorm e a :=
   Real.sInf_nonneg fun _ hr => hr.1
+
+@[simp]
+theorem orderUnitNorm_zero {E : Type*} [Zero E] [SMulWithZero ℝ E] [Preorder E] (e : E) :
+    orderUnitNorm e 0 = 0 :=
+  le_antisymm (csInf_le (bddBelow_orderUnitNormSet e 0) ⟨le_rfl, by simp⟩)
+    (orderUnitNorm_nonneg e 0)
+
+@[simp]
+theorem orderUnitNorm_neg {E : Type*} [AddCommGroup E] [Module ℝ E] [Preorder E]
+    [IsOrderedAddMonoid E] (e a : E) :
+    orderUnitNorm e (-a) = orderUnitNorm e a := by
+  simp only [orderUnitNorm_def]
+  congr 1
+  ext r
+  simp only [Set.mem_ofPred_eq, neg_smul, neg_le_neg_iff, neg_le]
+  tauto
 
 namespace IsArchimedeanOrderUnit
 
@@ -172,28 +188,6 @@ theorem neg_orderUnitNorm_smul_le (a : E) : -(orderUnitNorm e a) • e ≤ a :=
 theorem le_orderUnitNorm_smul (a : E) : a ≤ orderUnitNorm e a • e :=
   ((he.orderUnitNorm_le_iff (orderUnitNorm_nonneg e a)).mp le_rfl).2
 
-@[simp]
-theorem orderUnitNorm_zero : orderUnitNorm e 0 = 0 :=
-  le_antisymm ((he.orderUnitNorm_le_iff le_rfl).mpr ⟨by simp, by simp⟩) (orderUnitNorm_nonneg e 0)
-
-@[simp]
-theorem orderUnitNorm_neg (a : E) : orderUnitNorm e (-a) = orderUnitNorm e a := by
-  refine le_antisymm ?_ ?_
-  · rw [he.orderUnitNorm_le_iff (orderUnitNorm_nonneg e a)]
-    refine ⟨?_, ?_⟩
-    · rw [neg_smul]; exact neg_le.mp (by simpa using he.le_orderUnitNorm_smul a)
-    · have := he.neg_orderUnitNorm_smul_le a
-      rw [neg_smul] at this
-      exact neg_le.mp this
-  · rw [he.orderUnitNorm_le_iff (orderUnitNorm_nonneg e (-a))]
-    refine ⟨?_, ?_⟩
-    · have := he.le_orderUnitNorm_smul (-a)
-      rw [neg_smul]
-      exact neg_le.mp this
-    · have := he.neg_orderUnitNorm_smul_le (-a)
-      rw [neg_smul] at this
-      exact neg_le_neg_iff.mp this
-
 /-- Triangle inequality for the constructed order-unit gauge `orderUnitNorm e`, holding on a
 `Preorder` before assuming antisymmetry. -/
 theorem orderUnitNorm_add_le (a b : E) :
@@ -210,7 +204,7 @@ theorem orderUnitNorm_add_le (a b : E) :
 private theorem orderUnitNorm_smul_of_nonneg {r : ℝ} (hr : 0 ≤ r) (a : E) :
     orderUnitNorm e (r • a) = r * orderUnitNorm e a := by
   rcases hr.eq_or_lt with rfl | hrpos
-  · simp [he.orderUnitNorm_zero]
+  · simp
   · refine le_antisymm ?_ ?_
     · rw [he.orderUnitNorm_le_iff (mul_nonneg hrpos.le (orderUnitNorm_nonneg e a))]
       refine ⟨?_, ?_⟩
@@ -237,7 +231,7 @@ theorem orderUnitNorm_smul (r : ℝ) (a : E) :
     orderUnitNorm e (r • a) = |r| * orderUnitNorm e a := by
   rcases le_total 0 r with hr | hr
   · rw [abs_of_nonneg hr, he.orderUnitNorm_smul_of_nonneg hr]
-  · rw [abs_of_nonpos hr, ← he.orderUnitNorm_neg, ← neg_smul,
+  · rw [abs_of_nonpos hr, ← orderUnitNorm_neg, ← neg_smul,
       he.orderUnitNorm_smul_of_nonneg (neg_nonneg.mpr hr)]
 
 end Preorder
@@ -253,7 +247,7 @@ include he
 `a = 0`. -/
 @[simp]
 theorem orderUnitNorm_eq_zero_iff {a : E} : orderUnitNorm e a = 0 ↔ a = 0 := by
-  refine ⟨fun h => ?_, fun h => h ▸ he.orderUnitNorm_zero⟩
+  refine ⟨fun h => ?_, fun h => h ▸ orderUnitNorm_zero e⟩
   have ⟨h1, h2⟩ := (he.orderUnitNorm_le_iff le_rfl).mp h.le
   simp only [neg_zero, zero_smul] at h1 h2
   exact le_antisymm h2 h1
@@ -632,12 +626,13 @@ theorem map_linearIsometryEquiv {E F : Type*} [SeminormedAddCommGroup E] [Module
     rw [Φ.norm_map, he.norm_le_iff a r hr]
     simp only [← map_smul, hord]
 
-/-- Every unital real linear order isomorphism between order-unit spaces is automatically
-isometric. -/
-theorem norm_map_of_orderIso {E F : Type*} [SeminormedAddCommGroup E] [Module ℝ E] [LE E]
-    [SeminormedAddCommGroup F] [Module ℝ F] [LE F]
+/-- Every unital real linear map between order-unit spaces that preserves and reflects order is
+automatically isometric. -/
+theorem norm_map_of_orderEmbedding {E F G : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
+    [LE E] [SeminormedAddCommGroup F] [Module ℝ F] [LE F]
+    [FunLike G E F] [LinearMapClass G ℝ E F]
     {e : E} {f : F} (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f)
-    (Φ : E ≃ₗ[ℝ] F) (hunit : Φ e = f) (hord : ∀ a b : E, Φ a ≤ Φ b ↔ a ≤ b) (a : E) :
+    (Φ : G) (hunit : Φ e = f) (hord : ∀ a b : E, Φ a ≤ Φ b ↔ a ≤ b) (a : E) :
     ‖Φ a‖ = ‖a‖ := by
   refine le_antisymm ?_ ?_
   · rw [hf.norm_le_iff (Φ a) ‖a‖ (norm_nonneg a), ← hunit]
@@ -658,7 +653,7 @@ def linearIsometryEquivOfOrderIso {E F : Type*} [SeminormedAddCommGroup E] [Modu
     (Φ : E ≃ₗ[ℝ] F) (hunit : Φ e = f) (hord : ∀ a b : E, Φ a ≤ Φ b ↔ a ≤ b) :
     E ≃ₗᵢ[ℝ] F where
   toLinearEquiv := Φ
-  norm_map' := he.norm_map_of_orderIso hf Φ hunit hord
+  norm_map' := he.norm_map_of_orderEmbedding hf Φ hunit hord
 
 @[simp]
 theorem linearIsometryEquivOfOrderIso_apply {E F : Type*} [SeminormedAddCommGroup E]
@@ -710,9 +705,10 @@ theorem boundedContinuousFunction_one {K : Type*} [TopologicalSpace K] [Nonempty
       Pi.one_apply, smul_eq_mul, mul_one]
     exact ⟨fun h => ⟨fun x => (h x).1, fun x => (h x).2⟩, fun ⟨h1, h2⟩ x => ⟨h1 x, h2 x⟩⟩
 
-/-- The self-adjoint part `selfAdjoint A` of a unital star-ordered normed algebra with isometric
-real continuous functional calculus (in particular, any nonzero unital C⋆-algebra) is an
-order-unit space with unit `1`. -/
+/-- The self-adjoint part `selfAdjoint A` of a unital star-ordered normed algebra with
+`‖(1 : A)‖ = 1` (`NormOneClass A`) and isometric real continuous functional calculus (in
+particular, any nonzero unital C⋆-algebra equipped with its usual positive-cone order, supplied
+as `PartialOrder A` and `StarOrderedRing A`) is an order-unit space with unit `1`. -/
 theorem selfAdjoint_one {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A]
     [StarModule ℝ A] [PartialOrder A] [StarOrderedRing A]
     [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint] [NonnegSpectrumClass ℝ A]

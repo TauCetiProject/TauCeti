@@ -40,7 +40,9 @@ we establish:
   `TauCeti.IsOrderUnitNorm.norm_eq_iSup_states`,
   `TauCeti.IsOrderUnitNorm.nnNorm_eq_iSup_states`),
 * the weak-star homeomorphism between the C⋆-algebra states `TauCeti.stateSpace A` of a unital
-  C⋆-algebra `A` and the real order-unit states `TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`
+  C⋆-algebra `A` (equipped with a compatible star order, supplied as `PartialOrder A` and
+  `StarOrderedRing A`) and the real order-unit states
+  `TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`
   (`TauCeti.OrderUnit.cstarStateSpaceHomeomorph`).
 
 ## References
@@ -343,22 +345,6 @@ theorem isCompact_stateSpace (he : IsOrderUnitNorm e) : IsCompact (OrderUnit.sta
 
 end Compactness
 
-/-- **State extension from a unital subspace:** every state on a real subspace `S` containing `e`
-extends to a state on `E` via norm-preserving Hahn–Banach extension. -/
-theorem exists_state_extension_submodule {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-    [PartialOrder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
-    (S : Submodule ℝ E) (hmem : e ∈ S) {ψ : WeakDual ℝ S}
-    (hψ : ψ ∈ OrderUnit.stateSpace (⟨e, hmem⟩ : S)) :
-    ∃ φ ∈ OrderUnit.stateSpace e, ∀ x : S, φ x = ψ x := by
-  obtain ⟨g, hg_ext, hg_norm⟩ := _root_.exists_extension_norm_eq S (WeakDual.toStrongDual ψ)
-  have hg_one : g e = 1 := by
-    have := hg_ext ⟨e, hmem⟩
-    simpa [hψ.2] using this
-  have hg_norm_one : ‖g‖ = 1 :=
-    hg_norm.trans ((he.submodule S hmem).opNorm_eq_one_of_mem_stateSpace hψ)
-  refine ⟨WeakDual.toStrongDual.symm g, ?_, fun x => hg_ext x⟩
-  exact (he.mem_stateSpace_iff_opNorm_eq_one).mpr ⟨hg_norm_one, hg_one⟩
-
 /-- **State extension along a unital linear isometry:** every state on `E` extends along any unital
 linear isometry `i : E →ₗᵢ[ℝ] F` into an order-unit space `(F, f)`. -/
 theorem exists_state_extension_linearIsometry {E F : Type*} [SeminormedAddCommGroup E]
@@ -375,6 +361,15 @@ theorem exists_state_extension_linearIsometry {E F : Type*} [SeminormedAddCommGr
   have hg_norm_one : ‖g‖ = 1 := hg_norm.trans (he.opNorm_eq_one_of_mem_stateSpace hψ)
   refine ⟨WeakDual.toStrongDual.symm g, ?_, hg_apply⟩
   exact (hf.mem_stateSpace_iff_opNorm_eq_one).mpr ⟨hg_norm_one, hg_one⟩
+
+/-- **State extension from a unital subspace:** every state on a real subspace `S` containing `e`
+extends to a state on `E` via norm-preserving Hahn–Banach extension. -/
+theorem exists_state_extension_submodule {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    [PartialOrder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
+    (S : Submodule ℝ E) (hmem : e ∈ S) {ψ : WeakDual ℝ S}
+    (hψ : ψ ∈ OrderUnit.stateSpace (⟨e, hmem⟩ : S)) :
+    ∃ φ ∈ OrderUnit.stateSpace e, ∀ x : S, φ x = ψ x :=
+  (he.submodule S hmem).exists_state_extension_linearIsometry he S.subtypeₗᵢ rfl hψ
 
 /-- Restriction of states from `E` to a unital subspace `S` is surjective. -/
 theorem surjective_statePullback_subtype {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
@@ -536,7 +531,11 @@ end SeparationAndNorm
 
 end IsOrderUnitNorm
 
-/-! ### C⋆-algebra state dictionary -/
+/-! ### C⋆-algebra state dictionary
+
+Throughout this section, `A` is a unital C⋆-algebra equipped with a compatible star order,
+supplied via `[PartialOrder A] [StarOrderedRing A]`; this applies to `cstarStateRestrict`,
+`cstarStateExtend`, and `cstarStateSpaceHomeomorph`. -/
 
 namespace OrderUnit
 
@@ -544,7 +543,8 @@ section CStarStates
 
 variable (A : Type*) [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-/-- Restrict a C⋆-algebra state on `A` to a real order-unit state on `selfAdjoint A`. -/
+/-- Restrict a C⋆-algebra state on `A` (with compatible star order `PartialOrder A` and
+`StarOrderedRing A`) to a real order-unit state on `selfAdjoint A`. -/
 def cstarStateRestrict (ψ : TauCeti.stateSpace A) : OrderUnit.stateSpace (1 : selfAdjoint A) :=
   let f : selfAdjoint A →L[ℝ] ℝ :=
     { toFun := fun a => (ψ.1 a).re
@@ -568,8 +568,9 @@ def cstarStateRestrict (ψ : TauCeti.stateSpace A) : OrderUnit.stateSpace (1 : s
 theorem cstarStateRestrict_apply (ψ : TauCeti.stateSpace A) (a : selfAdjoint A) :
     (cstarStateRestrict A ψ).1 a = (ψ.1 a).re := (rfl)
 
-/-- Extend a real order-unit state on `selfAdjoint A` to a C⋆-algebra state on `A` via the
-Cartesian decomposition `a = ℜ a + I • ℑ a`. -/
+/-- Extend a real order-unit state on `selfAdjoint A` to a C⋆-algebra state on `A` (with
+compatible star order `PartialOrder A` and `StarOrderedRing A`) via the Cartesian decomposition
+`a = ℜ a + I • ℑ a`. -/
 def cstarStateExtend (φ : OrderUnit.stateSpace (1 : selfAdjoint A)) : TauCeti.stateSpace A :=
   let g : A →L[ℂ] ℂ :=
     { toFun := fun a => (φ.1 (ℜ a) : ℂ) + Complex.I * (φ.1 (ℑ a) : ℂ)
@@ -609,8 +610,10 @@ theorem cstarStateExtend_apply (φ : OrderUnit.stateSpace (1 : selfAdjoint A)) (
     (cstarStateExtend A φ).1 a = (φ.1 (ℜ a) : ℂ) + Complex.I * (φ.1 (ℑ a) : ℂ) := (rfl)
 
 /-- Restriction to `selfAdjoint A` and unique complex-linear extension via `a = ℜ a + I • ℑ a`
-form a weak-star homeomorphism between the C⋆-states `TauCeti.stateSpace A` of a unital C⋆-algebra
-`A` and the real order-unit states `TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`. -/
+form a weak-star homeomorphism between the C⋆-states `TauCeti.stateSpace A` of a unital
+C⋆-algebra `A` (equipped with a compatible star order, supplied as `PartialOrder A` and
+`StarOrderedRing A`) and the real order-unit states
+`TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`. -/
 def cstarStateSpaceHomeomorph :
     TauCeti.stateSpace A ≃ₜ OrderUnit.stateSpace (1 : selfAdjoint A) where
   toFun := cstarStateRestrict A

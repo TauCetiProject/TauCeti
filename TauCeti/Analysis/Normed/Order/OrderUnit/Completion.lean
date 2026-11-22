@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import TauCeti.Analysis.Normed.Order.OrderUnit.Basic
+import Mathlib.Analysis.Normed.Operator.Extend
 
 /-!
 # Completion of an order-unit space
@@ -35,8 +36,11 @@ local to the wrapper type rather than registering a global order on `UniformSpac
 
 ## Main results
 
-* `TauCeti.OrderUnitCompletion.coe_le_coe_iff`: `coe he` preserves and reflects order (forming
-  an order embedding when `E` is separated).
+* `TauCeti.OrderUnitCompletion.le_iff`: characterizes `x ≤ y` for arbitrary elements of
+  `OrderUnitCompletion he` as membership of `y.toCompletion - x.toCompletion` in the closure of
+  the embedded positive cone.
+* `TauCeti.OrderUnitCompletion.coe_le_coe_iff`: `coe he` preserves and reflects order on embedded
+  elements from `E` (forming an order embedding when `E` is separated).
 * `TauCeti.OrderUnitCompletion.isOrderUnitNorm`: `coe he e` satisfies `IsOrderUnitNorm` on
   `OrderUnitCompletion he`.
 * `TauCeti.OrderUnitCompletion.opNorm_extend`: extending a bounded linear map preserves its
@@ -228,6 +232,9 @@ instance : PartialOrder (OrderUnitCompletion he) where
 private theorem le_iff_mem_closedNonnegCone (x y : OrderUnitCompletion he) :
     x ≤ y ↔ y - x ∈ closedNonnegCone he := Iff.rfl
 
+/-- Order characterization on arbitrary elements of `OrderUnitCompletion he`: `x ≤ y` if and
+only if `y.toCompletion - x.toCompletion` belongs to the closure of the image of the positive cone
+of `E`. -/
 theorem le_iff (x y : OrderUnitCompletion he) :
     x ≤ y ↔ y.toCompletion - x.toCompletion ∈
       closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}) := by
@@ -313,24 +320,22 @@ theorem extend_coe {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Compl
 `S : OrderUnitCompletion he →L[ℝ] F` agreeing with `T` on `coe he` equals `extend he T`. -/
 theorem extend_unique {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     (T : E →L[ℝ] F) {S : OrderUnitCompletion he →L[ℝ] F}
-    (hS : ∀ a : E, S (coe he a) = T a) : S = extend he T := by
-  ext x
-  exact congr_fun (DenseRange.equalizer (denseRange_coe he) S.continuous (extend he T).continuous
-    (funext fun a => (hS a).trans (extend_coe T a).symm)) x
+    (hS : ∀ a : E, S (coe he a) = T a) : S = extend he T :=
+  (ContinuousLinearMap.extend_unique T (e := (coe he).toContinuousLinearMap) (denseRange_coe he)
+    (Isometry.isUniformInducing (coe he).isometry) S (ContinuousLinearMap.ext hS)).symm
 
 /-- Continuous linear extension to `OrderUnitCompletion he` preserves the operator norm:
 `‖extend he T‖ = ‖T‖`. -/
 theorem opNorm_extend {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     (T : E →L[ℝ] F) : ‖extend he T‖ = ‖T‖ := by
   refine le_antisymm ?_ ?_
-  · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg T) fun x => ?_
-    have hclosed : IsClosed {z : OrderUnitCompletion he | ‖extend he T z‖ ≤ ‖T‖ * ‖z‖} :=
-      isClosed_le (extend he T).continuous.norm (continuous_const.mul continuous_norm)
-    have hsub : Set.range (coe he) ⊆
-        {z : OrderUnitCompletion he | ‖extend he T z‖ ≤ ‖T‖ * ‖z‖} := by
-      rintro _ ⟨a, rfl⟩
-      simpa [extend_coe, (coe he).norm_map] using T.le_opNorm a
-    exact closure_minimal hsub hclosed ((denseRange_coe he) x)
+  · have hbound : ∀ a : E, ‖(T : E →ₗ[ℝ] F) a‖ ≤ ‖T‖ * ‖coe he a‖ := fun a => by
+      simpa [(coe he).norm_map] using T.le_opNorm a
+    have heq : (T : E →ₗ[ℝ] F).extendOfNorm (coe he).toLinearMap = extend he T :=
+      LinearMap.extendOfNorm_unique (denseRange_coe he) ‖T‖ hbound (extend he T)
+        (LinearMap.ext fun a => extend_coe T a)
+    rw [← heq]
+    exact LinearMap.opNorm_extendOfNorm_le (denseRange_coe he) (norm_nonneg T) hbound
   · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun a => ?_
     calc ‖T a‖ = ‖extend he T (coe he a)‖ := by rw [extend_coe]
       _ ≤ ‖extend he T‖ * ‖coe he a‖ := (extend he T).le_opNorm _
