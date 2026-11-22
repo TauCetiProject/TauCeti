@@ -166,7 +166,7 @@ noncomputable def shiftClassGroupWeightedAwayPrimeEquiv (w : σ → ℤ)
   have : Nontrivial R := not_subsingleton_iff_nontrivial.mp fun _ ↦
     hprime.ne_zero (Subsingleton.elim f 0)
   shiftClassGroupAwayPrimeEquiv (weightedHomogeneousSubmodule R w)
-    (homogeneousUnitDegrees_weighted w) hf hprime hreg
+    hf hprime hreg ((homogeneousUnitDegrees_weighted w).trans_le bot_le)
 
 /-- The identification of the shift class group of `Localization.Away f` with `ZMod e.natAbs` sends
 the class of a shift `d` to `d mod |e|`. -/
@@ -180,7 +180,7 @@ theorem shiftClassGroupWeightedAwayPrimeEquiv_mk (w : σ → ℤ)
   have : Nontrivial R := not_subsingleton_iff_nontrivial.mp fun _ ↦
     hprime.ne_zero (Subsingleton.elim f 0)
   exact shiftClassGroupAwayPrimeEquiv_mk (weightedHomogeneousSubmodule R w)
-    (homogeneousUnitDegrees_weighted w) hf hprime hreg d
+    hf hprime hreg ((homogeneousUnitDegrees_weighted w).trans_le bot_le) d
 
 end Away
 
