@@ -17,7 +17,10 @@ If `z₀ = (s₀, t₀)` is the only point of its slice with value `u(z₀)`, aw
 `(s, t) ↦ (u(s, t), t)` is injective near `z₀`, then every nearby point is the only point of its
 slice with its value (`TauCeti.eventually_forall_slice_eq_imp_eq_of_tendsto`). The limits confine
 the competitors to a compact interval, and a compactness argument separates them uniformly
-nearby.
+nearby. Without the local injectivity, such a point `z₀` is an injective point of
+`(s, t) ↦ (t, u(s, t))`: the points `z` with `(z.2, u z)` close to `(t₀, u z₀)` are close to `z₀`
+(`TauCeti.comap_nhds_le_nhds_of_tendsto`). The limits confine these points to a compact box, on
+which `z₀` is their only cluster point.
 
 A *partner* of `z` on its slice is a point `(s, z.2)` with `u(s, z.2) = u z`. For a compact set
 `D`, the points with a partner in `D` at distance at least `ε` form a closed set
@@ -88,6 +91,42 @@ theorem eventually_forall_slice_eq_imp_eq_of_tendsto {z₀ : ℝ × ℝ} (hu : C
     rcases le_or_gt Sp s with hle' | hlt'
     · exact h₂ s (hSp s hle') hs
     · exact h₃ s ⟨⟨hlt.le, hlt'.le⟩, hsδ⟩ hs
+
+/-- **Points with a unique value on their slice are injective points of `(s, t) ↦ (t, u(s, t))`.**
+Let `u : ℝ × ℝ → X` be continuous, with values in a Hausdorff space, and suppose that `u(s, t)`
+tends to `xm(t₀)` and `xp(t₀)` as `s → -∞` and `s → +∞` and `t → t₀`. Let `z₀ = (s₀, t₀)` be a
+point with `u(z₀) ≠ xm(t₀)`, `u(z₀) ≠ xp(t₀)` and `u(s, t₀) ≠ u(z₀)` for all `s ≠ s₀`. Then the
+points `z` at which `(z.2, u z)` is close to `(t₀, u z₀)` are close to `z₀`. -/
+theorem comap_nhds_le_nhds_of_tendsto {z₀ : ℝ × ℝ} (hu : Continuous u)
+    (hm : Tendsto u (atBot ×ˢ 𝓝 z₀.2) (𝓝 (xm z₀.2)))
+    (hp : Tendsto u (atTop ×ˢ 𝓝 z₀.2) (𝓝 (xp z₀.2)))
+    (hm₀ : u z₀ ≠ xm z₀.2) (hp₀ : u z₀ ≠ xp z₀.2) (h₀ : ∀ s, u (s, z₀.2) = u z₀ → s = z₀.1) :
+    (𝓝 (z₀.2, u z₀)).comap (fun z ↦ (z.2, u z)) ≤ 𝓝 z₀ := by
+  obtain ⟨s₀, t₀⟩ := z₀
+  set l := (𝓝 (t₀, u (s₀, t₀))).comap (fun z : ℝ × ℝ ↦ (z.2, u z))
+  have hl : Tendsto (fun z : ℝ × ℝ ↦ (z.2, u z)) l (𝓝 (t₀, u (s₀, t₀))) := tendsto_comap
+  have ht : Tendsto Prod.snd l (𝓝 t₀) := (continuous_fst.tendsto _).comp hl
+  have hul : Tendsto u l (𝓝 (u (s₀, t₀))) := (continuous_snd.tendsto _).comp hl
+  -- Along an end, `u` stays near the asymptotic value, away from a neighbourhood of `u z₀`.
+  have hend {f : Filter ℝ} {x : ℝ → X} (h : Tendsto u (f ×ˢ 𝓝 t₀) (𝓝 (x t₀)))
+      (hne : u (s₀, t₀) ≠ x t₀) : ∃ p : ℝ → Prop, (∀ᶠ s in f, p s) ∧ ∀ᶠ z in l, ¬p z.1 := by
+    obtain ⟨A, B, hA, hB, hAx, hBx, hAB⟩ := t2_separation hne
+    obtain ⟨p, hp, q, hq, hpq⟩ := eventually_prod_iff.1 (h (hB.mem_nhds hBx))
+    refine ⟨p, hp, ?_⟩
+    filter_upwards [hul (hA.mem_nhds hAx), ht hq] with z hzA hzq hpz
+    exact disjoint_left.1 hAB hzA (hpq hpz hzq)
+  obtain ⟨pm, hpm, hevm⟩ := hend hm hm₀
+  obtain ⟨pp, hpp, hevp⟩ := hend hp hp₀
+  obtain ⟨Sm, hSm⟩ := eventually_atBot.1 hpm
+  obtain ⟨Sp, hSp⟩ := eventually_atTop.1 hpp
+  -- So `l` lives on a compact box, and its only cluster point there is `z₀`.
+  refine (isCompact_Icc.prod isCompact_Icc).le_nhds_of_unique_clusterPt
+    (s := Icc Sm Sp ×ˢ Icc (t₀ - 1) (t₀ + 1)) ?_ fun w _ hw ↦ ?_
+  · filter_upwards [hevm, hevp, ht (Icc_mem_nhds (sub_one_lt t₀) (lt_add_one t₀))] with z h₁ h₂ h₃
+    exact ⟨⟨(not_le.1 fun h ↦ h₁ (hSm _ h)).le, (not_le.1 fun h ↦ h₂ (hSp _ h)).le⟩, h₃⟩
+  · obtain ⟨h₂, h₁⟩ := Prod.mk.inj (eq_of_nhds_neBot
+      (hw.map (f := fun z : ℝ × ℝ ↦ (z.2, u z)) (continuous_snd.prodMk hu).continuousAt hl))
+    exact Prod.ext (h₀ w.1 (by rw [← h₁, ← h₂])) h₂
 
 /-! ### Partners on a slice -/
 
