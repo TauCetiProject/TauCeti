@@ -134,17 +134,11 @@ def singularCohomologySublevelPairIsoSymmetricBand (hf : ContMDiff I 𝓘(ℝ) �
   have ha : a ≤ c - ε := by linarith [hεδ.trans (min_le_left _ _)]
   have hb : c + ε ≤ b := by linarith [hεδ.trans (min_le_right _ _)]
   -- The collars below `c - ε` and above `c + ε` are compact and hold no critical point.
-  have hsub {a₁ b₁ : ℝ} (ha₁ : a ≤ a₁) (hb₁ : b₁ ≤ b) : IsCompact (f ⁻¹' Icc a₁ b₁) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.continuous)
-      (preimage_mono (Icc_subset_Icc ha₁ hb₁))
-  have hreg {a₁ b₁ : ℝ} (ha₁ : a ≤ a₁) (hb₁ : b₁ ≤ b) (hc : c ∉ Icc a₁ b₁) :
-      ∀ x, a₁ ≤ f x → f x ≤ b₁ → mfderiv I 𝓘(ℝ) f x ≠ 0 := fun x h₁ h₂ h₀ ↦ hc <| by
-    rw [← hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 h₀) ⟨ha₁.trans h₁, h₂.trans hb₁⟩]
-    exact ⟨h₁, h₂⟩
   singularCohomologySublevelPairIsoOfCollars R k N hf ha (by linarith) hb
-    (hsub le_rfl (by linarith)) (hsub (by linarith) le_rfl)
-    (hreg le_rfl (by linarith) fun h ↦ by linarith [h.2])
-    (hreg (by linarith) le_rfl fun h ↦ by linarith [h.1]) n
+    (isCompact_preimage_Icc_of_subset hf.continuous hcompact le_rfl (by linarith))
+    (isCompact_preimage_Icc_of_subset hf.continuous hcompact (by linarith) le_rfl)
+    (mfderiv_ne_zero_of_notMem_Icc hcrit le_rfl (by linarith) fun h ↦ by linarith [h.2])
+    (mfderiv_ne_zero_of_notMem_Icc hcrit (by linarith) le_rfl fun h ↦ by linarith [h.1]) n
 
 /-- The narrowed-band identification `TauCeti.singularCohomologySublevelPairIsoSymmetricBand`
 cuts off the regular collars `f⁻¹[a, c - ε]` and `f⁻¹[c + ε, b]` by
@@ -154,14 +148,14 @@ applies. -/
 lemma singularCohomologySublevelPairIsoSymmetricBand_def (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c ε : ℝ}
     (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
-    (hε : 0 < ε) (hεδ : ε ≤ min (c - a) (b - c)) (n : ℕ)
-    (ha : a ≤ c - ε) (hb : c + ε ≤ b) (hcompact₁ : IsCompact (f ⁻¹' Icc a (c - ε)))
-    (hcompact₂ : IsCompact (f ⁻¹' Icc (c + ε) b))
-    (hreg₁ : ∀ x, a ≤ f x → f x ≤ c - ε → mfderiv I 𝓘(ℝ) f x ≠ 0)
-    (hreg₂ : ∀ x, c + ε ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0) :
+    (hε : 0 < ε) (hεδ : ε ≤ min (c - a) (b - c)) (n : ℕ) :
     singularCohomologySublevelPairIsoSymmetricBand R k N hf hac hcb hcompact hcrit hε hεδ n =
-      singularCohomologySublevelPairIsoOfCollars R k N hf ha (by linarith) hb hcompact₁ hcompact₂
-        hreg₁ hreg₂ n :=
+      singularCohomologySublevelPairIsoOfCollars R k N hf (le_sub_comm.1 (hεδ.trans
+          (min_le_left _ _))) (by linarith) (le_sub_iff_add_le'.1 (hεδ.trans (min_le_right _ _)))
+        (isCompact_preimage_Icc_of_subset hf.continuous hcompact le_rfl (by linarith))
+        (isCompact_preimage_Icc_of_subset hf.continuous hcompact (by linarith) le_rfl)
+        (mfderiv_ne_zero_of_notMem_Icc hcrit le_rfl (by linarith) fun h ↦ by linarith [h.2])
+        (mfderiv_ne_zero_of_notMem_Icc hcrit (by linarith) le_rfl fun h ↦ by linarith [h.1]) n :=
   (rfl)
 
 end TauCeti
