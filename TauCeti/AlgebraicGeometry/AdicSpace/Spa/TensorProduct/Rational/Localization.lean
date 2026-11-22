@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedRati
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.TensorProduct.Rational.Basic
 public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Base
 public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Pair
+public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Presentation
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.PlusComparison
 import TauCeti.Topology.Homeomorph.SetCongr
 

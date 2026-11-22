@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.RingTheory.Huber.TensorProduct.Pair
-import TauCeti.RingTheory.Huber.TensorProduct.Rational.Basic
+import TauCeti.RingTheory.Huber.TensorProduct.Rational.Presentation
 
 /-!
 # Rational preimages on adic spectra of completed tensor products
