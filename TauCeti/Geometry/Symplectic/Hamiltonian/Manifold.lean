@@ -156,7 +156,9 @@ Hamiltonian vector fields and Poisson brackets restrict to open submanifolds, fo
   version `TauCeti.SmoothTwoForm.contMDiff_hamiltonianVectorField_uncurry_of_isInvertible` for
   jointly `C^(n+1)` families of Hamiltonians, such as time-dependent ones, and the
   finite-dimensional forms `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`
-  and `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField_uncurry`.
+  and `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField_uncurry`, the latter
+  with its pointwise form
+  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiffAt_hamiltonianVectorField_uncurry`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`: `X^{cσ}_f = c⁻¹ X^σ_f`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
   of energy along integral curves on preconnected sets of times, with the global case
@@ -726,8 +728,23 @@ theorem contMDiff_hamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
     ContMDiff I I.tangent n (T% (σ.hamiltonianVectorField f)) :=
   contMDiff_hamiltonianVectorField_of_isInvertible h.isInvertible_flat hn hf
 
-/-- **Joint regularity of Hamiltonian vector fields of a family.** For a nondegenerate two-form on
-a finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is jointly
+/-- **Joint regularity of Hamiltonian vector fields of a family at a point.** For a nondegenerate
+two-form on a finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is
+jointly `C^(n+1)` at `q ∈ N × M`, the Hamiltonian vector fields `(p, x) ↦ X_{H p}(x)` are jointly
+`C^n` at `q`, for `n ≤ ∞`. This applies to families which are only regular over an open set of
+parameters, such as Hamiltonian perturbations on a punctured domain. -/
+theorem contMDiffAt_hamiltonianVectorField_uncurry {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] [IsManifold J 1 N] {n : WithTop ℕ∞} (hn : n ≤ ∞) {H : N → M → ℝ}
+    {q : N × M} (hH : ContMDiffAt (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H) q) :
+    ContMDiffAt (J.prod I) I.tangent n
+      (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) q :=
+  ((((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn).comp
+    contMDiff_snd).contMDiffAt (x := q)).clm_bundle_apply
+    hH.contMDiffAt_totalSpaceMk_mvfderiv_uncurry
+
+/-- **Joint regularity of Hamiltonian vector fields of a family.** For a nondegenerate two-form on a
+finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is jointly
 `C^(n+1)` on `N × M`, the Hamiltonian vector fields `(p, x) ↦ X_{H p}(x)` are jointly `C^n`, for
 `n ≤ ∞`. For `N = ℝ` this is the regularity of the vector field of a time-dependent Hamiltonian,
 which is what is needed to integrate it to a time-dependent Hamiltonian flow. -/
@@ -1239,10 +1256,8 @@ theorem hamiltonianVectorField_comp_subtype_val (σ : SmoothTwoForm I M)
       ContinuousLinearEquiv.coe_coe, Manifold.tangentSpaceOpenEquiv_apply,
       Manifold.tangentSpaceOpenEquiv_apply]
     exact (flat_apply σ x v w).symm
-  have hd : mvfderiv I (f ∘ Subtype.val) x = mvfderiv I f (x : M) := by
-    ext v
-    exact Manifold.mfderiv_comp_subtype_val_apply v
-  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hflat, hd,
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hflat,
+    Manifold.mvfderiv_comp_subtype_val,
     Manifold.tangentSpaceOpenEquiv_symm_apply]
   -- The tangent spaces at `x` in `U` and at `(x : M)` in `M` are both the model space `E`.
   exact (rfl)
