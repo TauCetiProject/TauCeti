@@ -47,6 +47,8 @@ The Kirillov–Kostant–Souriau form on `G ⧸ G_ν` and the moment-map propert
   directions of `G → G ⧸ G_ν` at `g` are `d(L_g)(𝔤_ν)`.
 * `Module.Dual.contMDiff_orbitMap_coadjointRepresentation_apply`: each component of the orbit map
   `[g] ↦ Ad*_g ν` is smooth.
+* `Module.Dual.contMDiff_orbitMap_coadjointRepresentation_components`: the components of the
+  orbit map in a basis of `𝔤` form a smooth map to `κ → ℝ`.
 
 ## References
 
@@ -164,5 +166,13 @@ theorem contMDiff_orbitMap_coadjointRepresentation_apply (ξ : GroupLieAlgebra I
     QuotientGroup.mk_surjective le_rfl).1 (by
       simpa only [comp_def, Representation.orbitMap_mk] using
         contMDiff_coadjointRepresentation_apply ν ξ)
+
+/-- The components `[g] ↦ ((Ad*_g ν) (b i))ᵢ` of the orbit map of the coadjoint representation in a
+basis `b` of `𝔤` form a smooth map to `κ → ℝ`. -/
+theorem contMDiff_orbitMap_coadjointRepresentation_components {κ : Type*} [Fintype κ]
+    (b : Basis κ ℝ (GroupLieAlgebra I G)) :
+    ContMDiff 𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
+      𝓘(ℝ, κ → ℝ) ∞ fun x i ↦ (coadjointRepresentation ℝ I G).orbitMap ν x (b i) :=
+  contMDiff_pi_module_iff.2 fun i ↦ ν.contMDiff_orbitMap_coadjointRepresentation_apply (b i)
 
 end Module.Dual

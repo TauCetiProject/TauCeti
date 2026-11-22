@@ -49,8 +49,10 @@ general form, for any equivariant embedding of a `G_c`-manifold into `M`, is
 On `Y_O` the reduced form of reduction at `c` satisfies the orbit-reduction identity
 `q_Y^* ω_red = i_Y^* σ - pr_Y^* ω_KKS` (`existsUnique_isSymplectic_mpullback_orbitProj_eq_sub`, in
 the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`), where `i_Y` and `pr_Y` are the two
-components of `Φ`; through `Φ` it is read on `W_O`, the manifold on which the shifting construction
-on `M × O⁻` performs reduction at zero.
+components of `Φ`
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.coe_orbitFiberProductDiffeomorph_mk`).
+Transporting this identity across `Φ` to `W_O`, and comparing `W_O` with the zero level of the
+shifting map on `M × O⁻`, are not done here.
 
 ## Main definitions
 
@@ -140,23 +142,7 @@ private theorem range_coe_orbitFiberProduct (h : σ.IsEquivariantMomentMap μ)
     h.mem_levelSubMulAction, ← hg]
   exact h.components_eq_orbitMap_iff b
 
-variable [Fintype κ]
-
-/-- The components of a moment map in a basis of `𝔤` are smooth. -/
-private theorem contMDiff_components (h : σ.IsEquivariantMomentMap μ)
-    (b : Basis κ ℝ (GroupLieAlgebra I G)) :
-    ContMDiff I' 𝓘(ℝ, κ → ℝ) ∞ fun x i ↦ μ x (b i) :=
-  contMDiff_pi_module_iff.2 fun i ↦ h.toIsMomentMap.contMDiff (b i)
-
-variable [I.Boundaryless]
-
-/-- The components of the orbit map of the coadjoint orbit `G ⧸ G_c` in a basis of `𝔤` are
-smooth. -/
-private theorem contMDiff_orbitMap_components (b : Basis κ ℝ (GroupLieAlgebra I G)) :
-    ContMDiff
-      𝓘(ℝ, Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c))
-      𝓘(ℝ, κ → ℝ) ∞ fun o i ↦ (Lie.coadjointRepresentation ℝ I G).orbitMap c o (b i) :=
-  contMDiff_pi_module_iff.2 fun i ↦ c.contMDiff_orbitMap_coadjointRepresentation_apply (b i)
+variable [Fintype κ] [I.Boundaryless]
 
 /-- **The moment map is transverse to the orbit map** when `c` is a regular value: at a point `x`
 over the orbit, `dμ_x` is already surjective. -/
@@ -197,8 +183,9 @@ def orbitFiberProductChartedSpace (h : σ.IsEquivariantMomentMap μ)
         (Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
           finrank ℝ (κ → ℝ)) → ℝ)
       (OrbitFiberProduct μ c b) :=
-  transverseFiberProductChartedSpace (by simp) (h.contMDiff_components b)
-    (contMDiff_orbitMap_components b) (h.range_mfderiv_components_sup_eq_top hreg b)
+  transverseFiberProductChartedSpace (by simp) (h.toIsMomentMap.contMDiff_components b)
+    (c.contMDiff_orbitMap_coadjointRepresentation_components b)
+    (h.range_mfderiv_components_sup_eq_top hreg b)
 
 /-- **The orbit fibre product is a smooth manifold**, for the atlas
 `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductChartedSpace`. -/
@@ -210,8 +197,9 @@ theorem isManifold_orbitFiberProduct (h : σ.IsEquivariantMomentMap μ)
         (Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
           finrank ℝ (κ → ℝ)) → ℝ) ∞
       (OrbitFiberProduct μ c b) :=
-  isManifold_transverseFiberProduct (by simp) (h.contMDiff_components b)
-    (contMDiff_orbitMap_components b) (h.range_mfderiv_components_sup_eq_top hreg b)
+  isManifold_transverseFiberProduct (by simp) (h.toIsMomentMap.contMDiff_components b)
+    (c.contMDiff_orbitMap_coadjointRepresentation_components b)
+    (h.range_mfderiv_components_sup_eq_top hreg b)
 
 /-- **The orbit fibre product is an embedded submanifold** of `M × G ⧸ G_c`: its inclusion is a
 smooth embedding. -/
@@ -225,8 +213,9 @@ theorem isSmoothEmbedding_coe_orbitFiberProduct (h : σ.IsEquivariantMomentMap �
       (I'.prod
         𝓘(ℝ, Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)))
       ∞ (Subtype.val : OrbitFiberProduct μ c b → _) :=
-  isSmoothEmbedding_coe_transverseFiberProduct (by simp) (h.contMDiff_components b)
-    (contMDiff_orbitMap_components b) (h.range_mfderiv_components_sup_eq_top hreg b)
+  isSmoothEmbedding_coe_transverseFiberProduct (by simp) (h.toIsMomentMap.contMDiff_components b)
+    (c.contMDiff_orbitMap_coadjointRepresentation_components b)
+    (h.range_mfderiv_components_sup_eq_top hreg b)
 
 /-! ### The diffeomorphism with the balanced product -/
 
@@ -242,10 +231,10 @@ variable [T2Space M] (h : σ.IsEquivariantMomentMap μ) {n : ℕ}
 be a regular value of `μ`, and give the coadjoint stabilizer `G_c` an embedded Lie subgroup
 structure `d`. Then
 
-`Φ : G ×_{G_c} μ⁻¹(c) → W_O`, `[g, z] ↦ (g • z, g G_c)`,
+`Φ : G ×_{G_c} μ⁻¹(c) → W_O`, `[g, z] ↦ (g • z, g G_c)`
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.coe_orbitFiberProductDiffeomorph_mk`),
 
-is a diffeomorphism
-(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.coe_orbitFiberProductDiffeomorph_mk`) with inverse
+is a diffeomorphism with inverse
 `(x, g G_c) ↦ [g, g⁻¹ • x]`
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorph_symm_eq`), for the
 atlas of the balanced product and the transverse fibre-product atlas of `W_O`. -/

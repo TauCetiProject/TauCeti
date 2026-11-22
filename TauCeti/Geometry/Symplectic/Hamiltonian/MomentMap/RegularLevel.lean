@@ -57,6 +57,11 @@ theorem mdifferentiableAt_components (h : σ.IsMomentMap a μ) (b : Basis ι ℝ
     MDifferentiableAt I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x :=
   mdifferentiableAt_pi_space.2 fun i ↦ h.mdifferentiableAt (b i) x
 
+/-- The components of a moment map in a basis of `𝔤` form a smooth map to `ι → ℝ`. -/
+theorem contMDiff_components (h : σ.IsMomentMap a μ) (b : Basis ι ℝ 𝔤) :
+    ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ fun y i ↦ μ y (b i) :=
+  contMDiff_pi_module_iff.2 fun i ↦ h.contMDiff (b i)
+
 /-- The derivative of the components of a moment map in a basis `b` of `𝔤` is the differential
 `dμ_x` read in that basis. -/
 theorem mfderiv_components_apply (h : σ.IsMomentMap a μ) (b : Basis ι ℝ 𝔤) (x : M)

@@ -347,7 +347,7 @@ private theorem contMDiff_of_liftProjRightTranslation_comp_eq (hι : IsSmoothEmb
   let _ := rightTranslationChartedSpace K Z I IZ F
   let _ := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
-  have hinj := injective_liftProjRightTranslation ι hι.isEmbedding.injective
+  have hinj := liftProjRightTranslation_injective ι hι.isEmbedding.injective
   intro w
   have hq := Subgroup.isSubmersion_quotientMk (I := I) ‹IsClosed (K : Set G)›
   obtain ⟨U, hU, hwU, s, hs, hsU⟩ :=
@@ -383,7 +383,7 @@ map `e : W → M × G ⧸ K` with the same image. -/
 private def liftProjEquiv (hι : Function.Injective ι) {e : W → M × G ⧸ K}
     (he : Function.Injective e) (hrange : Set.range e = Set.range (liftProjRightTranslation ι)) :
     BalancedProduct K K.RightTranslation Z ≃ W :=
-  (Equiv.ofInjective _ (injective_liftProjRightTranslation ι hι)).trans
+  (Equiv.ofInjective _ (liftProjRightTranslation_injective ι hι)).trans
     ((Set.equivOfEq hrange.symm).trans (Equiv.ofInjective e he).symm)
 
 omit [TopologicalSpace G] [IsClosed (K : Set G)] [TopologicalSpace Z] [T2Space Z]

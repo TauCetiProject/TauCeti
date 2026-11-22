@@ -62,7 +62,7 @@ Lie group `G` is in `TauCeti.Geometry.Lie.Subgroup.BalancedProduct`.
 * `TauCeti.BalancedProduct.eq_liftRightTranslation`,
   `TauCeti.BalancedProduct.liftEquivRightTranslation`: `G`-equivariant maps out of `G ×_K Z`
   correspond to `K`-equivariant maps out of `Z`.
-* `TauCeti.BalancedProduct.injective_liftProjRightTranslation`,
+* `TauCeti.BalancedProduct.liftProjRightTranslation_injective`,
   `TauCeti.BalancedProduct.mem_range_liftProjRightTranslation_iff`: for injective `ι`, the map
   `[g, z] ↦ (g • ι z, g K)` is a bijection onto the pairs `(m, g K)` with `g⁻¹ • m` in the image of
   `ι`.
@@ -329,7 +329,7 @@ theorem liftEquivRightTranslation_symm_apply_apply
 /-- The map `[g, z] ↦ (g • ι z, g K)` from `G ×_K Z` to `M × G ⧸ K`, which pairs the action map
 `TauCeti.BalancedProduct.liftRightTranslation ι` with the projection onto `G ⧸ K`. It is
 `G`-equivariant, injective when `ι` is
-(`TauCeti.BalancedProduct.injective_liftProjRightTranslation`), and its image consists of the
+(`TauCeti.BalancedProduct.liftProjRightTranslation_injective`), and its image consists of the
 pairs `(m, g K)` with `g⁻¹ • m` in the image of `ι`
 (`TauCeti.BalancedProduct.mem_range_liftProjRightTranslation_iff`). -/
 def liftProjRightTranslation (y : BalancedProduct K K.RightTranslation Z) : M × G ⧸ K :=
@@ -378,7 +378,7 @@ theorem mem_range_liftProjRightTranslation_iff {p : M × G ⧸ K} {g : G} (hg : 
 /-- **`[g, z] ↦ (g • ι z, g K)` is injective when `ι` is.** If `g K = g' K`, then `g' = g h` for
 some `h ∈ K`, and `g • ι z = g h • ι z'` forces `z = h • z'`, so `[g', z'] = [g, h • z'] = [g, z]`.
 -/
-theorem injective_liftProjRightTranslation (hι : Function.Injective ι) :
+theorem liftProjRightTranslation_injective (hι : Function.Injective ι) :
     Function.Injective (liftProjRightTranslation ι) := by
   intro y y' hyy'
   induction y using induction_on_toRightTranslation with
