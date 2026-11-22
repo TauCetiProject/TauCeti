@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Combinatorics.Additive.Convolution
-public import TauCeti.Analysis.InnerProductSpace.Gram.PosSemidef
 import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
@@ -37,7 +37,7 @@ theorem posSemidef_convolution_inv (F : Finset G) :
   let : MeasurableSpace G := ⊤
   let v (g : G) : Lp 𝕜 2 (Measure.count : Measure G) :=
     indicatorConstLp 2 (g • F).measurableSet (by simp) (1 : 𝕜)
-  convert TauCeti.posSemidef_gram 𝕜 v using 1
+  convert Matrix.posSemidef_gram 𝕜 v using 1
   ext g h
   rw [Matrix.of_apply, Matrix.gram_apply,
     L2.inner_indicatorConstLp_one_indicatorConstLp_one _ _ (by simp) (by simp)]

@@ -98,6 +98,22 @@ theorem isRootEnumeration_comp_equiv_iff (e : κ ≃ ι) :
   rw [isRootEnumeration_iff, isRootEnumeration_iff, ← Multiset.map_map,
     Multiset.map_univ_val_equiv]
 
+/-- Base change along a scalar tower preserves root enumerations. -/
+@[simp]
+theorem isRootEnumeration_map {S : Type*} [CommRing S] [Algebra R S] [Algebra S L]
+    [IsScalarTower R S L] (f : R[X]) (x : ι → L) :
+    (f.map (algebraMap R S)).IsRootEnumeration x ↔ f.IsRootEnumeration x := by
+  rw [isRootEnumeration_iff, isRootEnumeration_iff, Polynomial.map_map,
+    ← IsScalarTower.algebraMap_eq]
+
+/-- Base change from `ℤ[X]` along `Int.castRingHom S` preserves root enumerations (`simp`-normal
+companion to `isRootEnumeration_map` after `algebraMap_int_eq`). -/
+@[simp]
+theorem isRootEnumeration_map_intCastRingHom {S : Type*} [CommRing S] [Algebra S L]
+    (f : ℤ[X]) (x : ι → L) :
+    (f.map (Int.castRingHom S)).IsRootEnumeration x ↔ f.IsRootEnumeration x := by
+  simpa only [algebraMap_int_eq] using isRootEnumeration_map (R := ℤ) (S := S) f x
+
 namespace IsRootEnumeration
 
 /-- The number of entries of an enumeration is the number of roots of `f` in `L`. -/
@@ -200,7 +216,7 @@ theorem isRootEnumeration_numbering
   · exact univ.nodup.map fun i j h ↦ e.injective (Subtype.ext h)
   · intro a
     simp only [Multiset.mem_map, Finset.mem_val, mem_univ, true_and]
-    exact ⟨fun ha ↦ ⟨e.symm ⟨a, hmem.mp ha⟩, by simp⟩, fun ⟨i, hi⟩ ↦ hi ▸ hmem.mpr (e i).2⟩
+    exact ⟨fun ha ↦ ⟨e.symm ⟨a, hmem.mp ha⟩, by simp⟩, fun ⟨i, hi⟩ ↦ hi ▸ hmem.mpr (e i).property⟩
 
 /-- **Root enumerations exist exactly for split polynomials.** If the image of `f` in `L` has
 degree `Fintype.card ι`, then `f` has a root enumeration in `L` indexed by `ι` if and only if `f`

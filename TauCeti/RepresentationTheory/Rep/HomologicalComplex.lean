@@ -92,6 +92,21 @@ theorem repResForget₂Iso_def :
         (H := forget₂ (Rep k H) (ModuleCat k)) (Iso.refl _) c).app D :=
   (rfl)
 
+/-- The underlying-module identification `repResForget₂Iso` is natural in morphisms of
+representation complexes. -/
+@[reassoc]
+theorem repResForget₂Iso_hom_naturality {D₁ D₂ : HomologicalComplex (Rep.{w} k H) c}
+    (φ : G →* H) (f : D₁ ⟶ D₂) :
+    ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex c).map
+        (((Rep.resFunctor φ).mapHomologicalComplex c).map f) ≫
+      (D₂.repResForget₂Iso φ).hom =
+    (D₁.repResForget₂Iso φ).hom ≫
+      ((forget₂ (Rep k H) (ModuleCat k)).mapHomologicalComplex c).map f := by
+  simpa only [repResForget₂Iso_def, Iso.app_hom, Functor.comp_map] using
+    (Functor.mapHomologicalComplexCompIso
+      (F := Rep.resFunctor φ) (G := forget₂ (Rep k G) (ModuleCat k))
+      (H := forget₂ (Rep k H) (ModuleCat k)) (Iso.refl _) c).hom.naturality f
+
 /-- The comparison after forgetting restriction is the identity in each degree. -/
 @[simp]
 theorem repResForget₂Iso_hom_f (n : ι) :

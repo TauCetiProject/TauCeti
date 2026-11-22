@@ -92,34 +92,18 @@ local instance : Fact (IsTopologicallyNilpotent (p : ℂ_[p] × ℂ_[p])) :=
 local instance : IsTateRing (uniformTilt p (ℂ_[p] × ℂ_[p])) :=
   (RingHom.id (ℂ_[p] × ℂ_[p])).isTateRing_uniformTilt (p := p) continuous_id
 
-/-- The first projection preserves the maximal rings of integral elements. -/
-private noncomputable def fstPair : Pair.Hom (Pair.powerBounded (ℂ_[p] × ℂ_[p]))
-    (Pair.powerBounded ℂ_[p]) where
-  toRingHom := RingHom.fst _ _
-  continuous_toRingHom := continuous_fst
-  map_mem_plus _ hx := by
-    rw [Pair.powerBounded_plus, mem_powerBoundedSubring] at hx ⊢
-    exact (isPowerBounded_prod_iff.mp hx).1
-
-/-- The second projection preserves the maximal rings of integral elements. -/
-private noncomputable def sndPair : Pair.Hom (Pair.powerBounded (ℂ_[p] × ℂ_[p]))
-    (Pair.powerBounded ℂ_[p]) where
-  toRingHom := RingHom.snd _ _
-  continuous_toRingHom := continuous_snd
-  map_mem_plus _ hx := by
-    rw [Pair.powerBounded_plus, mem_powerBoundedSubring] at hx ⊢
-    exact (isPowerBounded_prod_iff.mp hx).2
-
 example (x : uniformTilt p (ℂ_[p] × ℂ_[p])) (n : ℕ) :
-    uniformTilt.coeff p ℂ_[p] n ((fstPair p).tilt.toRingHom x) =
+    uniformTilt.coeff p ℂ_[p] n ((Pair.powerBoundedFst ℂ_[p] ℂ_[p]).tilt.toRingHom x) =
       (uniformTilt.coeff p (ℂ_[p] × ℂ_[p]) n x).1 := by
-  simp [fstPair]
+  simp
 
-example : (fstPair p).tilt (p := p) ≠ (sndPair p).tilt (p := p) := by
+example :
+    (Pair.powerBoundedFst ℂ_[p] ℂ_[p]).tilt (p := p) ≠
+      (Pair.powerBoundedSnd ℂ_[p] ℂ_[p]).tilt (p := p) := by
   intro h
   let e : uniformTilt p (ℂ_[p] × ℂ_[p]) :=
     uniformTilt.mk (fun _ ↦ (1, 0)) (fun _ ↦ by simp [(Fact.out : p.Prime).ne_zero])
   have he := congrArg (fun f ↦ uniformTilt.coeff p ℂ_[p] 0 (f.toRingHom e)) h
-  simp [fstPair, sndPair, e] at he
+  simp [e] at he
 
 end TauCeti.Examples.UniformTiltPair

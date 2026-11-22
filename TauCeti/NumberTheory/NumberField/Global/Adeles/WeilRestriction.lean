@@ -101,33 +101,34 @@ private theorem semilocalContinuousEquiv_one_tmul (v : HeightOneSpectrum (𝓞 F
     TauCeti.semilocalContinuousEquiv E v (1 ⊗ₜ[F] b) =
       algebraMap E
         ((w : {w : HeightOneSpectrum (𝓞 E) // w.asIdeal.LiesOver v.asIdeal}) →
-          w.1.adicCompletion E) b := by
+          w.val.adicCompletion E) b := by
   ext w
   simp
 
 private theorem infiniteSemilocalContinuousEquiv_one_tmul (v : InfinitePlace F) (b : E) :
     infiniteSemilocalContinuousEquiv E v (1 ⊗ₜ[F] b) =
-      algebraMap E ((w : {w : InfinitePlace E // w.LiesOver v}) → w.1.Completion) b := by
+      algebraMap E ((w : {w : InfinitePlace E // w.LiesOver v}) → w.val.Completion) b := by
   ext w
   simp
 
 private theorem finiteAdeleBaseChangeEquiv_proj_tmul (v : HeightOneSpectrum (𝓞 F))
     (a : FiniteAdeleRing (𝓞 F) F) (b : E)
     (w : {w : HeightOneSpectrum (𝓞 E) // w.asIdeal.LiesOver v.asIdeal}) :
-    FiniteAdeleRing.proj E w.1 (finiteAdeleBaseChangeEquiv F E (a ⊗ₜ[F] b)) =
+    FiniteAdeleRing.proj E w.val (finiteAdeleBaseChangeEquiv F E (a ⊗ₜ[F] b)) =
       TauCeti.semilocalContinuousEquiv E v (FiniteAdeleRing.proj F v a ⊗ₜ[F] b) w := by
   have hf : ⇑(finiteAdeleBaseChangeEquiv F E) = ⇑(finiteAdeleBaseChangeHom F E) := by
     rw [← ContinuousAlgEquiv.coe_toAlgEquiv, finiteAdeleBaseChangeEquiv_toAlgEquiv,
       ← AlgEquiv.coe_toAlgHom, finiteAdeleBaseChangeAlgEquiv_toAlgHom]
-  have hs : ⇑(TauCeti.semilocalContinuousEquiv E v) = ⇑(TauCeti.semilocalHom E v) := by
+  have hs : ⇑(TauCeti.semilocalContinuousEquiv E v) =
+      ⇑(v.adicCompletionSemilocalHom F (𝓞 E) E) := by
     rw [← ContinuousAlgEquiv.coe_toAlgEquiv, TauCeti.semilocalContinuousEquiv_toAlgEquiv,
-      TauCeti.coe_semilocalEquiv]
+      v.coe_adicCompletionSemilocalEquiv]
   rw [FiniteAdeleRing.proj_apply, hf, hs, finiteAdeleBaseChangeHom_apply F E _ v w,
     TensorProduct.map_tmul, LinearMap.id_apply, AlgHom.toLinearMap_apply, ContinuousAlgHom.coe_coe]
 
 private theorem infiniteAdeleBaseChangeEquiv_eval_tmul (v : InfinitePlace F)
     (a : InfiniteAdeleRing F) (b : E) (w : {w : InfinitePlace E // w.LiesOver v}) :
-    infiniteAdeleBaseChangeEquiv F E (a ⊗ₜ[F] b) w.1 =
+    infiniteAdeleBaseChangeEquiv F E (a ⊗ₜ[F] b) w.val =
       infiniteSemilocalContinuousEquiv E v (a v ⊗ₜ[F] b) w := by
   obtain ⟨w, hw⟩ := w
   obtain rfl : w.comap (algebraMap F E) = v := InfinitePlace.LiesOver.comap_eq w v
@@ -417,34 +418,34 @@ variable (F E H : Type*) [Field F] [NumberField F] [Field E] [NumberField E] [Al
 def adicCompletionPointsContinuousMulEquiv (v : HeightOneSpectrum (𝓞 F)) :
     WithConv (WeilRestriction F E H →ₐ[F] v.adicCompletion F) ≃ₜ*
       ∀ w : {w : HeightOneSpectrum (𝓞 E) // w.asIdeal.LiesOver v.asIdeal},
-        WithConv (H →ₐ[E] w.1.adicCompletion E) :=
+        WithConv (H →ₐ[E] w.val.adicCompletion E) :=
   (pointsContinuousMulEquivOfBaseChange F E H (TauCeti.semilocalContinuousEquiv E v)
     (semilocalContinuousEquiv_one_tmul F E v)).trans
     (TauCeti.PointTopology.piPointsContinuousMulEquiv
       fun w : {w : HeightOneSpectrum (𝓞 E) // w.asIdeal.LiesOver v.asIdeal} ↦
-        w.1.adicCompletion E)
+        w.val.adicCompletion E)
 
 /-- **Local decomposition at an infinite place.** At an infinite place `v` of `F`, the
 `F_v`-points of `Res_{E/F} G` decompose as the topological product over the infinite places `w ∣ v`
 of `E` of the `E_w`-points of `G`, via `infiniteSemilocalContinuousEquiv`. -/
 def infiniteCompletionPointsContinuousMulEquiv (v : InfinitePlace F) :
     WithConv (WeilRestriction F E H →ₐ[F] v.Completion) ≃ₜ*
-      ∀ w : {w : InfinitePlace E // w.LiesOver v}, WithConv (H →ₐ[E] w.1.Completion) :=
+      ∀ w : {w : InfinitePlace E // w.LiesOver v}, WithConv (H →ₐ[E] w.val.Completion) :=
   (pointsContinuousMulEquivOfBaseChange F E H (infiniteSemilocalContinuousEquiv E v)
     (infiniteSemilocalContinuousEquiv_one_tmul F E v)).trans
     (TauCeti.PointTopology.piPointsContinuousMulEquiv
-      fun w : {w : InfinitePlace E // w.LiesOver v} ↦ w.1.Completion)
+      fun w : {w : InfinitePlace E // w.LiesOver v} ↦ w.val.Completion)
 
 variable {F E H}
 
 /-- The `w`-component of `adicCompletionPointsContinuousMulEquiv` evaluates `pointsMulEquiv`, swaps
-the tensor factors, and takes the `w`-coordinate of `TauCeti.semilocalEquiv`. -/
+the tensor factors, and takes the `w`-coordinate of `v.adicCompletionSemilocalEquiv`. -/
 @[simp]
 theorem adicCompletionPointsContinuousMulEquiv_apply (v : HeightOneSpectrum (𝓞 F))
     (x : WithConv (WeilRestriction F E H →ₐ[F] v.adicCompletion F))
     (w : {w : HeightOneSpectrum (𝓞 E) // w.asIdeal.LiesOver v.asIdeal}) (h : H) :
     (adicCompletionPointsContinuousMulEquiv F E H v x w).ofConv h =
-      TauCeti.semilocalEquiv E v
+      v.adicCompletionSemilocalEquiv F (𝓞 E) E
         (Algebra.TensorProduct.comm F E (v.adicCompletion F)
           ((pointsMulEquiv F E H (v.adicCompletion F) x).ofConv h)) w := by
   simp [adicCompletionPointsContinuousMulEquiv, ← ContinuousAlgEquiv.coe_toAlgEquiv]
@@ -470,14 +471,14 @@ theorem adicCompletionPointsContinuousMulEquiv_mapValue_proj (v : HeightOneSpect
     adicCompletionPointsContinuousMulEquiv F E H v
         (AlgHom.mapValue (FiniteAdeleRing.proj F v :
           FiniteAdeleRing (𝓞 F) F →ₐ[F] v.adicCompletion F) x) w =
-      AlgHom.mapValue (FiniteAdeleRing.proj E w.1 :
-        FiniteAdeleRing (𝓞 E) E →ₐ[E] w.1.adicCompletion E)
+      AlgHom.mapValue (FiniteAdeleRing.proj E w.val :
+        FiniteAdeleRing (𝓞 E) E →ₐ[E] w.val.adicCompletion E)
         (finiteAdelicPointsContinuousMulEquiv F E H x) := by
   let pT : FiniteAdeleRing (𝓞 F) F →ₐ[F] v.adicCompletion F := FiniteAdeleRing.proj F v
   let pS : FiniteAdeleRing (𝓞 E) E →ₐ[E]
       ∀ w' : {w' : HeightOneSpectrum (𝓞 E) // w'.asIdeal.LiesOver v.asIdeal},
-        w'.1.adicCompletion E :=
-    AlgHom.pi fun w' ↦ (FiniteAdeleRing.proj E w'.1 : _ →ₐ[E] _)
+        w'.val.adicCompletion E :=
+    AlgHom.pi fun w' ↦ (FiniteAdeleRing.proj E w'.val : _ →ₐ[E] _)
   have hloc : pointsContinuousMulEquivOfBaseChange F E H
         (TauCeti.semilocalContinuousEquiv E v) (semilocalContinuousEquiv_one_tmul F E v)
         (AlgHom.mapValue pT x) =
@@ -500,8 +501,8 @@ theorem adicCompletionPointsContinuousMulEquiv_mapValue_proj_comp_snd (v : Heigh
             FiniteAdeleRing (𝓞 F) F →ₐ[F] v.adicCompletion F).comp
           (AlgHom.snd F (InfiniteAdeleRing F) (FiniteAdeleRing (𝓞 F) F) :
             AdeleRing (𝓞 F) F →ₐ[F] FiniteAdeleRing (𝓞 F) F)) x) w =
-      AlgHom.mapValue ((FiniteAdeleRing.proj E w.1 :
-          FiniteAdeleRing (𝓞 E) E →ₐ[E] w.1.adicCompletion E).comp
+      AlgHom.mapValue ((FiniteAdeleRing.proj E w.val :
+          FiniteAdeleRing (𝓞 E) E →ₐ[E] w.val.adicCompletion E).comp
         (AlgHom.snd E (InfiniteAdeleRing E) (FiniteAdeleRing (𝓞 E) E) :
           AdeleRing (𝓞 E) E →ₐ[E] FiniteAdeleRing (𝓞 E) E))
         (adelicPointsContinuousMulEquiv F E H x) := by
@@ -518,14 +519,14 @@ theorem infiniteCompletionPointsContinuousMulEquiv_mapValue_eval (v : InfinitePl
     infiniteCompletionPointsContinuousMulEquiv F E H v
         (AlgHom.mapValue (Pi.evalAlgHom F (fun v' : InfinitePlace F ↦ v'.Completion) v :
           InfiniteAdeleRing F →ₐ[F] v.Completion) x) w =
-      AlgHom.mapValue (Pi.evalAlgHom E (fun w' : InfinitePlace E ↦ w'.Completion) w.1 :
-        InfiniteAdeleRing E →ₐ[E] w.1.Completion)
+      AlgHom.mapValue (Pi.evalAlgHom E (fun w' : InfinitePlace E ↦ w'.Completion) w.val :
+        InfiniteAdeleRing E →ₐ[E] w.val.Completion)
         (infiniteAdelicPointsContinuousMulEquiv F E H x) := by
   let pT : InfiniteAdeleRing F →ₐ[F] v.Completion :=
     Pi.evalAlgHom F (fun v' : InfinitePlace F ↦ v'.Completion) v
   let pS : InfiniteAdeleRing E →ₐ[E]
-      ∀ w' : {w' : InfinitePlace E // w'.LiesOver v}, w'.1.Completion :=
-    AlgHom.pi fun w' ↦ Pi.evalAlgHom E (fun u : InfinitePlace E ↦ u.Completion) w'.1
+      ∀ w' : {w' : InfinitePlace E // w'.LiesOver v}, w'.val.Completion :=
+    AlgHom.pi fun w' ↦ Pi.evalAlgHom E (fun u : InfinitePlace E ↦ u.Completion) w'.val
   have hloc : pointsContinuousMulEquivOfBaseChange F E H
         (infiniteSemilocalContinuousEquiv E v) (infiniteSemilocalContinuousEquiv_one_tmul F E v)
         (AlgHom.mapValue pT x) =
@@ -548,8 +549,8 @@ theorem infiniteCompletionPointsContinuousMulEquiv_mapValue_eval_comp_fst (v : I
             InfiniteAdeleRing F →ₐ[F] v.Completion).comp
           (AlgHom.fst F (InfiniteAdeleRing F) (FiniteAdeleRing (𝓞 F) F) :
             AdeleRing (𝓞 F) F →ₐ[F] InfiniteAdeleRing F)) x) w =
-      AlgHom.mapValue ((Pi.evalAlgHom E (fun w' : InfinitePlace E ↦ w'.Completion) w.1 :
-          InfiniteAdeleRing E →ₐ[E] w.1.Completion).comp
+      AlgHom.mapValue ((Pi.evalAlgHom E (fun w' : InfinitePlace E ↦ w'.Completion) w.val :
+          InfiniteAdeleRing E →ₐ[E] w.val.Completion).comp
         (AlgHom.fst E (InfiniteAdeleRing E) (FiniteAdeleRing (𝓞 E) E) :
           AdeleRing (𝓞 E) E →ₐ[E] InfiniteAdeleRing E))
         (adelicPointsContinuousMulEquiv F E H x) := by

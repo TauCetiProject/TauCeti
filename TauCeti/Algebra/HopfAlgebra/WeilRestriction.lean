@@ -587,7 +587,7 @@ Hopf algebra): on `T`-points it identifies the two-step point isomorphism with t
 through `Algebra.TensorProduct.cancelBaseChange`. -/
 noncomputable def compBialgEquiv
     (hfin : Module.Finite A C := Module.Finite.trans B C)
-    (hproj : Module.Projective A C := Module.Projective.trans B C) :
+    (hproj : Module.Projective A C := Module.Projective.trans A B C) :
     WeilRestriction A B (WeilRestriction B C H) ≃ₐc[A] WeilRestriction A C H :=
   letI := hfin
   letI := hproj

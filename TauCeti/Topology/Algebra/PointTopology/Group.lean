@@ -82,8 +82,8 @@ when the coefficients form a topological semiring. -/
 instance instContinuousMulWithConv : ContinuousMul (WithConv (H →ₐ[k] R)) where
   continuous_mul := continuous_withConv_iff.2 fun h ↦ by
     -- Writing `Δ h = ∑ i, h₁ i ⊗ h₂ i`, the value of `f * g` at `h` is `∑ i, f (h₁ i) * g (h₂ i)`.
-    have hsum (p : WithConv (H →ₐ[k] R) × WithConv (H →ₐ[k] R)) : (p.1 * p.2).ofConv h =
-        ∑ i ∈ (ℛ k h).index, p.1.ofConv ((ℛ k h).left i) * p.2.ofConv ((ℛ k h).right i) := by
+    have hsum (p : WithConv (H →ₐ[k] R) × WithConv (H →ₐ[k] R)) : (p.fst * p.snd).ofConv h =
+        ∑ i ∈ (ℛ k h).index, p.fst.ofConv ((ℛ k h).left i) * p.snd.ofConv ((ℛ k h).right i) := by
       rw [AlgHom.convMul_apply, ← (ℛ k h).eq, map_sum]
       simp
     simp_rw [hsum]
@@ -270,36 +270,45 @@ topological product of the factor convolution monoids `∀ i, WithConv (H →ₐ
 finiteness assumption on the index type or topological-semiring assumption on the factors. -/
 noncomputable def piPointsContinuousMulEquiv :
     WithConv (H →ₐ[k] ∀ i, R i) ≃ₜ* ∀ i, WithConv (H →ₐ[k] R i) where
-  toMulEquiv := AlgHom.piPointsMulEquiv R
+  toMulEquiv := AlgHom.piValueMulEquiv
   continuous_toFun := continuous_pi fun i ↦
-    (AlgHom.continuous_mapValue (continuous_apply i)).congr fun f ↦
-      (AlgHom.piPointsMulEquiv_apply f i).symm
+    (AlgHom.continuous_mapValue (ψ := Pi.evalAlgHom k R i) (continuous_apply i)).congr fun f ↦
+      WithConv.ofConv_injective <| AlgHom.ext fun h ↦ by
+        change (AlgHom.mapValue (Pi.evalAlgHom k R i) f).ofConv h =
+          (AlgHom.piValueMulEquiv f i).ofConv h
+        rw [AlgHom.mapValue_apply, WithConv.ofConv_toConv, AlgHom.comp_apply,
+          Pi.evalAlgHom_apply, AlgHom.piValueMulEquiv_apply]
   continuous_invFun := continuous_withConv_iff.2 fun h ↦
     (continuous_pi fun i ↦ (continuous_eval_ofConv h).comp (continuous_apply i)).congr fun g ↦ by
       ext i
-      simp
+      simp [AlgHom.piValueMulEquiv_symm_apply]
 
 variable {R} in
-/-- Forgetting continuity from `piPointsContinuousMulEquiv` recovers `AlgHom.piPointsMulEquiv`. -/
+/-- Forgetting continuity from `piPointsContinuousMulEquiv` recovers `AlgHom.piValueMulEquiv`. -/
 @[simp]
 theorem toMulEquiv_piPointsContinuousMulEquiv :
     (piPointsContinuousMulEquiv (k := k) (H := H) R :
         WithConv (H →ₐ[k] ∀ i, R i) ≃* ∀ i, WithConv (H →ₐ[k] R i)) =
-      AlgHom.piPointsMulEquiv R := (rfl)
+      AlgHom.piValueMulEquiv := (rfl)
 
 variable {R} in
 /-- The `i`-th coordinate of `piPointsContinuousMulEquiv` projects along `Pi.evalAlgHom`. -/
 @[simp]
 theorem piPointsContinuousMulEquiv_apply (f : WithConv (H →ₐ[k] ∀ i, R i)) (i : ι) :
     piPointsContinuousMulEquiv R f i = AlgHom.mapValue (Pi.evalAlgHom k R i) f :=
-  AlgHom.piPointsMulEquiv_apply f i
+  WithConv.ofConv_injective <| AlgHom.ext fun h ↦ by
+    change (AlgHom.piValueMulEquiv f i).ofConv h = _
+    rw [AlgHom.piValueMulEquiv_apply, AlgHom.mapValue_apply, WithConv.ofConv_toConv,
+      AlgHom.comp_apply, Pi.evalAlgHom_apply]
 
 variable {R} in
 /-- The inverse of `piPointsContinuousMulEquiv` assembles a family of points via `AlgHom.pi`. -/
 @[simp]
 theorem ofConv_piPointsContinuousMulEquiv_symm (g : ∀ i, WithConv (H →ₐ[k] R i)) :
     ((piPointsContinuousMulEquiv R).symm g).ofConv = AlgHom.pi fun i ↦ (g i).ofConv :=
-  AlgHom.ofConv_piPointsMulEquiv_symm g
+  AlgHom.ext fun h ↦ funext fun i ↦ by
+    change (AlgHom.piValueMulEquiv.symm g).ofConv h i = _
+    rw [AlgHom.piValueMulEquiv_symm_apply, AlgHom.pi_apply]
 
 end Pi
 

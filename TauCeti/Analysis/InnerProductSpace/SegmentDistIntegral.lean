@@ -52,7 +52,8 @@ theorem exists_mem_Icc_mul_abs_sub_le_dist (p z w : E) :
   rcases (norm_nonneg (z - w)).eq_or_lt with hL | hL
   · exact ⟨0, ⟨le_rfl, zero_le_one⟩, fun s _ => by simp [← hL]⟩
   set s₀ : ℝ := -⟪w - p, z - w⟫ / ‖z - w‖ ^ 2 with hs₀
-  refine ⟨projIcc (0 : ℝ) 1 zero_le_one s₀, (projIcc (0 : ℝ) 1 zero_le_one s₀).2, fun s hs => ?_⟩
+  refine ⟨projIcc (0 : ℝ) 1 zero_le_one s₀, (projIcc (0 : ℝ) 1 zero_le_one s₀).property,
+      fun s hs => ?_⟩
   -- `projIcc` is a contraction, and it fixes the parameters already in `[0, 1]`
   have hclamp : |s - projIcc (0 : ℝ) 1 zero_le_one s₀| ≤ |s - s₀| := by
     simpa only [projIcc_of_mem _ hs] using abs_projIcc_sub_projIcc (zero_le_one' ℝ) (c := s)

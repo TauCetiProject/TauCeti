@@ -48,13 +48,16 @@ the inverse.
   homomorphisms, `AlgHom.mapValue_id`, `AlgHom.mapValue_comp` recording its
   functoriality in the value algebra and `AlgHom.mapValue_injective` recording that it loses no
   information when `φ` does not.
+* `AlgHom.mem_mrange_mapValue_iff_mapValue_eq_mapValue`: points preserve equalizers; when an
+  injective `φ` maps onto the equalizer of `ψ₁` and `ψ₂`, the points coming from the source of `φ`
+  are those on which `mapValue ψ₁` and `mapValue ψ₂` agree.
 * `AlgHom.mem_mrange_mapValue_iff_mapValue_eq`: when the image of an injective `φ` is the fixed
   ring of an endomorphism `τ`, the points coming from the source of `φ` are those fixed by
   `mapValue τ`.
-* `AlgEquiv.mapValueMulEquiv`: an `R`-algebra isomorphism `A ≃ₐ[R] B` induces a multiplicative
-  equivalence of convolution monoids of points by post-composition.
-* `AlgHom.piPointsMulEquiv`: points with values in an indexed product `∀ i, A i` form the product
-  of the convolution monoids `∀ i, WithConv (H →ₐ[R] A i)`.
+* `AlgEquiv.mapValueMulEquiv`: an isomorphism of value algebras induces an isomorphism of
+  convolution monoids.
+* `AlgHom.piValueMulEquiv`: points valued in a product of commutative algebras are families of
+  points valued in the factors.
 * `WithConv.mapValue_algebraOfId`: mapping a base-valued point through an algebra-valued point
   gives the corresponding constant point.
 
@@ -202,18 +205,28 @@ lemma mem_mrange_mapValue_iff {φ : A →ₐ[R] B} (hφ : Function.Injective φ)
       AlgEquiv.coe_toAlgHom, ← AlgEquiv.ofInjective_apply _ hφ, AlgEquiv.apply_symm_apply,
       AlgHom.coe_codRestrict]
 
+variable {C : Type*} [CommSemiring C] [Algebra R C]
+
+/-- **Points preserve equalizers.** When an injective `φ : A →ₐ[R] B` maps onto the equalizer of
+`ψ₁ ψ₂ : B →ₐ[R] C`, a point comes from a point valued in `A` exactly when its two images under
+`mapValue ψ₁` and `mapValue ψ₂` agree. -/
+lemma mem_mrange_mapValue_iff_mapValue_eq_mapValue {φ : A →ₐ[R] B} (hφ : Function.Injective φ)
+    {ψ₁ ψ₂ : B →ₐ[R] C} (hψ : {b | ψ₁ b = ψ₂ b} = Set.range φ) {f : WithConv (H →ₐ[R] B)} :
+    f ∈ MonoidHom.mrange (mapValue (H := H) φ) ↔ mapValue ψ₁ f = mapValue ψ₂ f := by
+  rw [mem_mrange_mapValue_iff hφ, mapValue_apply, mapValue_apply,
+    WithConv.toConv_injective.eq_iff, AlgHom.ext_iff]
+  refine forall_congr' fun h ↦ ?_
+  rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.mem_range, ← Set.mem_range, ← hψ,
+    Set.mem_ofPred_eq]
+
 /-- When the image of an injective `φ : A →ₐ[R] B` is exactly the set of fixed points of an
 endomorphism `τ` of `B`, a point comes from a point valued in `A` exactly when it is fixed by
 `mapValue τ`: descent of points along an extension of coefficients whose fixed ring is the base. -/
 lemma mem_mrange_mapValue_iff_mapValue_eq {φ : A →ₐ[R] B} (hφ : Function.Injective φ)
     {τ : B →ₐ[R] B} (hτ : {b | τ b = b} = Set.range φ) {f : WithConv (H →ₐ[R] B)} :
     f ∈ MonoidHom.mrange (mapValue (H := H) φ) ↔ mapValue τ f = f := by
-  rw [mem_mrange_mapValue_iff hφ, mapValue_apply, ← WithConv.ofConv_injective.eq_iff,
-    ofConv_toConv, AlgHom.ext_iff]
-  refine forall_congr' fun h ↦ ?_
-  rw [AlgHom.comp_apply, AlgHom.mem_range, ← Set.mem_range, ← hτ, Set.mem_ofPred_eq]
-
-variable {C : Type*} [CommSemiring C] [Algebra R C]
+  rw [mem_mrange_mapValue_iff_mapValue_eq_mapValue hφ (ψ₂ := AlgHom.id R B) hτ, mapValue_id,
+    MonoidHom.id_apply]
 
 /-- `mapValue` preserves composition: `mapValue (ψ ∘ φ) = mapValue ψ ∘ mapValue φ`. -/
 lemma mapValue_comp (ψ : B →ₐ[R] C) (φ : A →ₐ[R] B) :
@@ -222,80 +235,63 @@ lemma mapValue_comp (ψ : B →ₐ[R] C) (φ : A →ₐ[R] B) :
   rw [MonoidHom.comp_apply, mapValue_apply, mapValue_apply, mapValue_apply, toConv_ofConv,
     AlgHom.comp_assoc]
 
-end Bialgebra
-
-section BialgebraValueEquiv
-
-variable [Semiring H] [_root_.Bialgebra R H] [CommSemiring A] [Algebra R A]
-variable {B : Type*} [CommSemiring B] [Algebra R B]
-
-/-- An `R`-algebra isomorphism `e : A ≃ₐ[R] B` induces a multiplicative equivalence of the
-convolution monoids of points by post-composition, upgrading `AlgHom.mapValue`. When `H` is a Hopf
-algebra, these convolution monoids are groups, so this is a group isomorphism. -/
+/-- An isomorphism `e : A ≃ₐ[R] B` of value algebras induces, by post-composition, an
+isomorphism of convolution monoids, with inverse induced by `e.symm`. -/
 noncomputable def _root_.AlgEquiv.mapValueMulEquiv (e : A ≃ₐ[R] B) :
     WithConv (H →ₐ[R] A) ≃* WithConv (H →ₐ[R] B) where
-  toFun := mapValue (H := H) (e : A →ₐ[R] B)
-  invFun := mapValue (H := H) (e.symm : B →ₐ[R] A)
-  map_mul' := map_mul _
+  toFun := mapValue (e : A →ₐ[R] B)
+  invFun := mapValue (e.symm : B →ₐ[R] A)
   left_inv f := by
-    have h : (mapValue (H := H) (e.symm : B →ₐ[R] A)).comp
-        (mapValue (H := H) (e : A →ₐ[R] B)) = MonoidHom.id _ := by
-      rw [← mapValue_comp, e.symm_comp, mapValue_id]
-    exact DFunLike.congr_fun h f
+    rw [← MonoidHom.comp_apply, ← mapValue_comp, AlgEquiv.symm_comp, mapValue_id,
+      MonoidHom.id_apply]
   right_inv f := by
-    have h : (mapValue (H := H) (e : A →ₐ[R] B)).comp
-        (mapValue (H := H) (e.symm : B →ₐ[R] A)) = MonoidHom.id _ := by
-      rw [← mapValue_comp, e.comp_symm, mapValue_id]
-    exact DFunLike.congr_fun h f
+    rw [← MonoidHom.comp_apply, ← mapValue_comp, AlgEquiv.comp_symm, mapValue_id,
+      MonoidHom.id_apply]
+  map_mul' := map_mul _
 
-/-- `AlgEquiv.mapValueMulEquiv` acts by `AlgHom.mapValue` in the forward direction. -/
 @[simp]
 lemma _root_.AlgEquiv.mapValueMulEquiv_apply (e : A ≃ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
-    e.mapValueMulEquiv f = mapValue (e : A →ₐ[R] B) f := (rfl)
+    e.mapValueMulEquiv f = mapValue (e : A →ₐ[R] B) f := by
+  delta AlgEquiv.mapValueMulEquiv
+  rfl
 
-/-- Inverting `AlgEquiv.mapValueMulEquiv` is `mapValueMulEquiv` of the inverse algebra
-equivalence. -/
 @[simp]
-lemma _root_.AlgEquiv.mapValueMulEquiv_symm (e : A ≃ₐ[R] B) :
-    (e.mapValueMulEquiv (H := H)).symm = e.symm.mapValueMulEquiv :=
-  MulEquiv.ext fun _ ↦ rfl
+lemma _root_.AlgEquiv.mapValueMulEquiv_symm_apply (e : A ≃ₐ[R] B) (f : WithConv (H →ₐ[R] B)) :
+    e.mapValueMulEquiv.symm f = mapValue (e.symm : B →ₐ[R] A) f := by
+  delta AlgEquiv.mapValueMulEquiv
+  rfl
 
-/-- The monoid homomorphism underlying `AlgEquiv.mapValueMulEquiv` is `AlgHom.mapValue`. -/
-@[simp]
-lemma _root_.AlgEquiv.toMonoidHom_mapValueMulEquiv (e : A ≃ₐ[R] B) :
-    (e.mapValueMulEquiv (H := H) : WithConv (H →ₐ[R] A) →* WithConv (H →ₐ[R] B)) =
-      mapValue (e : A →ₐ[R] B) := (rfl)
+end Bialgebra
 
-end BialgebraValueEquiv
+section Pi
 
-section BialgebraPi
+variable [Semiring H] [_root_.Bialgebra R H] {ι : Type*} {B : ι → Type*}
+  [∀ i, CommSemiring (B i)] [∀ i, Algebra R (B i)]
 
-variable [Semiring H] [_root_.Bialgebra R H]
-variable {ι : Type*} (A : ι → Type*) [∀ i, CommSemiring (A i)] [∀ i, Algebra R (A i)]
-
-/-- Points of a bialgebra with values in an indexed product `∀ i, A i` form the product of the
-factor convolution monoids `∀ i, WithConv (H →ₐ[R] A i)`, by coordinate projection. -/
-noncomputable def piPointsMulEquiv :
-    WithConv (H →ₐ[R] ∀ i, A i) ≃* ∀ i, WithConv (H →ₐ[R] A i) where
-  toFun f i := mapValue (Pi.evalAlgHom R A i) f
+/-- **Points valued in a product.** A point valued in a product `∀ i, B i` of commutative
+algebras is the family of its components, as an isomorphism of convolution monoids. Its inverse
+is Mathlib's `AlgHom.pi`. -/
+noncomputable def piValueMulEquiv :
+    WithConv (H →ₐ[R] ∀ i, B i) ≃* ∀ i, WithConv (H →ₐ[R] B i) where
+  toFun f i := mapValue (Pi.evalAlgHom R B i) f
   invFun g := toConv (AlgHom.pi fun i ↦ (g i).ofConv)
-  left_inv _ := WithConv.ofConv_injective <| AlgHom.ext fun _ ↦ rfl
-  right_inv _ := funext fun _ ↦ WithConv.ofConv_injective <| AlgHom.ext fun _ ↦ rfl
-  map_mul' f g := funext fun i ↦ map_mul (mapValue (Pi.evalAlgHom R A i)) f g
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' f g := funext fun i ↦ map_mul (mapValue (Pi.evalAlgHom R B i)) f g
 
-variable {A} in
-/-- The `i`-th coordinate of `AlgHom.piPointsMulEquiv` projects along `Pi.evalAlgHom`. -/
 @[simp]
-lemma piPointsMulEquiv_apply (f : WithConv (H →ₐ[R] ∀ i, A i)) (i : ι) :
-    piPointsMulEquiv A f i = mapValue (Pi.evalAlgHom R A i) f := (rfl)
+lemma piValueMulEquiv_apply (f : WithConv (H →ₐ[R] ∀ i, B i)) (i : ι) (h : H) :
+    (piValueMulEquiv f i).ofConv h = f.ofConv h i := by
+  delta piValueMulEquiv
+  rfl
 
-variable {A} in
-/-- The inverse of `AlgHom.piPointsMulEquiv` assembles a family of points via `AlgHom.pi`. -/
 @[simp]
-lemma ofConv_piPointsMulEquiv_symm (g : ∀ i, WithConv (H →ₐ[R] A i)) :
-    ((piPointsMulEquiv A).symm g).ofConv = AlgHom.pi fun i ↦ (g i).ofConv := (rfl)
+lemma piValueMulEquiv_symm_apply (g : ∀ i, WithConv (H →ₐ[R] B i)) (h : H) (i : ι) :
+    (piValueMulEquiv.symm g).ofConv h i = (g i).ofConv h := by
+  delta piValueMulEquiv
+  rfl
 
-end BialgebraPi
+end Pi
 
 section BialgebraConstantPoint
 
