@@ -384,7 +384,7 @@ private theorem scaledExp_sum_right (hI : DividedPowers I) (f : A →+* B)
   have hchar := map_prod (scaledExpAddCharRight hI f c).toMonoidHom
     (fun i : {i // i ∈ s} ↦ Multiplicative.ofAdd (⟨y i.val, hy i.val i.property⟩ : I)) s.attach
   rw [← ofAdd_sum, ← hsum] at hchar
-  change scaledExp hI f c (∑ i ∈ s, y i) = ∏ i ∈ s.attach, scaledExp hI f c (y i.val) at hchar
+  simp only [AddChar.toMonoidHom_apply, toAdd_ofAdd, scaledExpAddCharRight, AddChar.coe_mk] at hchar
   rwa [prod_attach s (fun i ↦ scaledExp hI f c (y i))] at hchar
 
 private theorem extCoeff_eq_coeff_prod_scaledExp (hI : DividedPowers I) (f : A →+* B)
