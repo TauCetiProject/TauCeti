@@ -7,37 +7,42 @@ module
 
 public import Mathlib.NumberTheory.Chebyshev
 import Mathlib.Analysis.Complex.ExponentialBounds
+import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.SpecialFunctions.Log.Base
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.NumberTheory.Chebyshev.Basic
+import TauCeti.NumberTheory.PrimeCounting
 
 /-!
-# Explicit bounds for `ψ - θ`, prime-power counts, and `ψ ↔ θ` transfers
+# Explicit bounds for the difference `ψ − θ`, prime-power counts, and `ψ ↔ θ` transfers
 
-This file develops explicit comparisons between the Chebyshev functions `ψ` and `θ`, together with
-the associated count of prime powers up to `x` and the general-input transfer bounds of
-Broadbent, Kadiri, Lumley, Ng, and Wilk (2021).
+For real `x ≥ 0`, Mathlib's `Chebyshev.psi_eq_sum_theta` writes `ψ(x) = ∑_{k ≥ 1} θ(x^{1/k})`, the
+terms with `k > log x / log 2` vanishing. Splitting off `k = 1` and `k = 2`,
 
-For every `x ≥ 0`, Mathlib's `Chebyshev.psi_eq_theta_add_sum_theta` extends to the exact
-decomposition
-`ψ x - θ x = ∑ k ∈ Icc 2 ⌊log x / log 2⌋₊, θ (x ^ (1 / k))`
-and, splitting off the `k = 2` square-root term,
-`ψ x - θ x = θ √x + ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, θ (x ^ (1 / k))`.
-From any linear upper bound `θ y ≤ c * y` on `[2, ∞)`, the cube-root tail is controlled by the
-dimensionless coefficient
-`psiSubThetaTailCoeff x = ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ (1 / k - 1 / 3)`.
-This function vanishes for `0 ≤ x < 8`, is bounded above by `max (log x / log 2 - 2) 0`, is
-strictly decreasing on each dyadic interval `[2 ^ n, 2 ^ (n + 1))` for `n ≥ 4`, and satisfies
-`f (2 ^ (n + 1)) < f (2 ^ n)` for every `n ≥ 9`. Consequently, for `X ≥ 2 ^ 8` and `x ≥ X`,
-`psiSubThetaTailCoeff x` is bounded uniformly by the antitone envelope
-`psiSubThetaTailBound X = max (f X) (f (2 ^ (⌊log X / log 2⌋₊ + 1)))`.
+`ψ(x) − θ(x) = θ(√x) + ∑_{3 ≤ k ≤ log x / log 2} θ(x^{1/k})`,
 
-Combined with an upper bound on `θ` above `√X` (or a `ψ`-bound above `x₁` together with
-`θ y ≤ y` on `[2, x₁]`), this yields explicit upper bounds for `ψ x - θ x` of the shape
-`c' * √x + c * F X * x ^ (1 / 3)`, while Costa Pereira's inequality
-`Chebyshev.psi_sub_theta_le_psi_add_psi_add_psi` yields explicit lower transfers from `ψ` to `θ`.
-Finally, applying `Chebyshev.sum_PrimePow_eq_sum_sum` to the constant function `1` expresses the
-count of prime powers `m ≤ x` as `∑ k ∈ Icc 1 ⌊log x / log 2⌋₊, π ⌊x ^ (1 / k)⌋₊` and bounds it
-by `6 * x / log x` for every `x ≥ 2`.
+and this file turns that decomposition into the explicit two-sided bounds for `ψ − θ` used to pass
+between bounds for `ψ` and for `θ`:
+
+* from any bound `θ(y) ≤ c y` on `y > 0` (or `y ≥ 2`),
+  `ψ(x) − θ(x) ≤ c (√x + (log x / log 2 − 2)⁺ x^{1/3})`; at `c = log 4`
+  (`Chebyshev.theta_le_log4_mul_x`) this is unconditional;
+* from relative bounds `(1 − ε) y ≤ θ(y) ≤ (1 + ε) y` for `y ≥ y₀`, the sharper
+  `(1 − ε) √x + θ(x^{1/3}) ≤ ψ(x) − θ(x) ≤ (1 + ε) √x + c (log x / log 2 − 2) x^{1/3}`
+  for `x ≥ y₀²` (and `x ≥ 4` on the right);
+* controlling the cube-root tail by the dimensionless coefficient
+  `TauCeti.psiSubThetaTailCoeff x = ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ (1 / k - 1 / 3)`, which
+  vanishes for `0 ≤ x < 8`, is strictly decreasing on `[2 ^ n, 2 ^ (n + 1))` for `n ≥ 4`,
+  satisfies `f (2 ^ (n + 1)) < f (2 ^ n)` for `n ≥ 9`, and is bounded uniformly for `x ≥ X ≥ 2 ^ 8`
+  by the antitone envelope
+  `TauCeti.psiSubThetaTailBound X = max (f X) (f (2 ^ (⌊log X / log 2⌋₊ + 1)))`, yielding
+  Propositions 3–4, Corollary 3.1, and Theorem 5 of Broadbent, Kadiri, Lumley, Ng, and Wilk
+  (2021);
+* conversely, a bound for `ψ` gives one for `θ` through Costa Pereira's comparison
+  `ψ(x) − θ(x) ≤ ψ(x^{1/2}) + ψ(x^{1/3}) + ψ(x^{1/5})` (Lemma 11 of Broadbent et al.).
+
+It also counts the prime powers: the prime powers `m ≤ x` number `∑_{k ≥ 1} π(x^{1/k})`, which is at
+most `π(x) + (log x / log 2 − 1) √x ≤ 6 x / log x` for `x ≥ 2`, giving `O(x / log x)`.
 
 ## Main definitions
 
@@ -48,10 +53,15 @@ by `6 * x / log x` for every `x ≥ 2`.
 
 ## Main results
 
-* `TauCeti.psi_sub_theta_eq_sum_theta`, `TauCeti.psi_sub_theta_eq_theta_sqrt_add_sum`: exact
-  expansions of `ψ x - θ x` for `x ≥ 0`.
-* `TauCeti.theta_sqrt_le_psi_sub_theta`, `TauCeti.theta_sqrt_add_theta_cbrt_le_psi_sub_theta`:
-  unconditional lower bounds on `ψ x - θ x`.
+* `Chebyshev.psi_eq_theta_add_theta_sqrt_add_sum`, `TauCeti.psi_sub_theta_eq_sum_theta`:
+  the exact decompositions of `ψ(x)` and `ψ(x) − θ(x)`.
+* `Chebyshev.theta_sqrt_add_theta_rpow_le_psi_sub_theta`, `TauCeti.theta_sqrt_le_psi_sub_theta`:
+  unconditional lower bounds on `ψ(x) − θ(x)`.
+* `Chebyshev.sum_rpow_one_div_le`:
+  `∑_{3 ≤ k ≤ log x / log 2} x^{1/k} ≤ (log x / log 2 − 2)⁺ x^{1/3}`.
+* `Chebyshev.theta_le_mul_of_nonneg`, `Chebyshev.psi_le_mul_of_nonneg`,
+  `Chebyshev.nonneg_of_forall_theta_le`, `Chebyshev.nonneg_of_forall_psi_le`: a linear bound for
+  `θ` or `ψ` on `y > 0` extends to `y = 0` and has a nonnegative constant.
 * `TauCeti.sum_theta_rpow_le`: bounds the `k ≥ 3` sum by `c * psiSubThetaTailCoeff x * x ^ (1 / 3)`.
 * `TauCeti.psiSubThetaTailCoeff_eq_zero_iff`,
   `TauCeti.psiSubThetaTailCoeff_eq_sum_of_mem_Ico`,
@@ -62,47 +72,367 @@ by `6 * x / log x` for every `x ≥ 2`.
   `TauCeti.psiSubThetaTailBound_le_iff_forall`,
   `TauCeti.antitoneOn_psiSubThetaTailBound`: vanishing, dyadic monotonicity, sharpness, and
   uniform least-upper-bound envelope for `psiSubThetaTailCoeff`.
-* `TauCeti.psi_sub_theta_le_add_max_mul_cbrt`, `TauCeti.psi_sub_theta_le_of_theta_le`,
-  `TauCeti.psi_sub_theta_le_log4_mul`, `TauCeti.mul_sqrt_le_psi_sub_theta`,
-  `TauCeti.psi_sub_theta_le_add_mul_cbrt`: unconditional and general-`θ` bounds on `ψ x - θ x`.
-* `TauCeti.abs_theta_sub_self_le_of_theta_le`, `TauCeti.abs_psi_sub_self_le_of_theta_le`,
-  `TauCeti.psi_sub_theta_le_mul_rpow_of_theta_le`,
+* `Chebyshev.psi_sub_theta_le_of_forall_theta_le`, `Chebyshev.psi_sub_theta_le_log_four_mul`,
+  `TauCeti.psi_sub_theta_le_of_theta_le`, `TauCeti.psi_sub_theta_le_add_max_mul_cbrt`,
+  `TauCeti.psi_sub_theta_le_add_mul_cbrt`, `TauCeti.mul_sqrt_le_psi_sub_theta`,
+  `TauCeti.psi_sub_theta_le_mul_rpow_of_theta_le`: unconditional and general-`θ` bounds on `ψ − θ`.
+* `Chebyshev.psi_sub_theta_le_one_add_mul_sqrt_add`,
+  `Chebyshev.one_sub_mul_sqrt_add_theta_rpow_le_psi_sub_theta`: the transfer of a relative bound
+  for `θ` to `ψ − θ`.
+* `Chebyshev.abs_theta_sub_le_abs_psi_sub_add`, `Chebyshev.abs_psi_sub_le_abs_theta_sub_add`,
+  `TauCeti.abs_theta_sub_self_le_of_theta_le`, `TauCeti.abs_psi_sub_self_le_of_theta_le`,
   `TauCeti.abs_theta_sub_self_le_mul_of_theta_le_of_abs_psi_sub_self_le`,
   `TauCeti.abs_theta_sub_self_le_mul_of_abs_psi_sub_self_le`,
   `TauCeti.abs_psi_sub_self_le_mul_of_theta_le_of_abs_theta_sub_self_le`,
   `TauCeti.abs_psi_sub_self_le_mul_of_abs_theta_sub_self_le`: additive and relative-error
-  conversions between `|ψ x - x|` and `|θ x - x|`.
-* `TauCeti.psi_sub_theta_sub_theta_sqrt_le`, `TauCeti.psi_sub_theta_le_add_psiSubThetaTailBound`,
+  conversions between bounds for `|ψ(x) − x|` and `|θ(x) − x|`.
+* `Chebyshev.theta_le_one_add_mul_of_psi_le`, `Chebyshev.theta_ge_psi_sub_mul`,
+  `Chebyshev.theta_ge_of_psi_ge_of_exp_le`,
+  `TauCeti.psi_sub_theta_sub_theta_sqrt_le`, `TauCeti.psi_sub_theta_le_add_psiSubThetaTailBound`,
   `TauCeti.mul_sqrt_add_theta_cbrt_le_psi_sub_theta`, `TauCeti.theta_le_of_theta_le_self_of_psi_le`,
   `TauCeti.psi_sub_theta_le_of_psi_le_exp`, `TauCeti.psi_sub_theta_le_mul_rpow_sum`,
-  `TauCeti.le_theta_of_le_psi_rpow`, `TauCeti.le_theta_of_le_psi_exp`: general-input transfer
-  bounds of Broadbent, Kadiri, Lumley, Ng, and Wilk.
-* `TauCeti.card_filter_isPrimePow_Ioc_eq_sum_primeCounting`,
-  `TauCeti.card_filter_isPrimePow_Ioc_le_six_mul_div_log`,
-  `TauCeti.isBigO_card_filter_isPrimePow_Ioc_div_log`: exact identity, explicit upper bound
-  `6 * x / log x`, and `O(x / log x)` estimate for the number of prime powers `≤ x`.
+  `TauCeti.psi_sub_theta_le_mul_exp_sum`, `TauCeti.le_theta_of_le_psi_rpow`,
+  `TauCeti.le_theta_of_le_psi_exp`: general-input transfer bounds of Broadbent, Kadiri, Lumley,
+  Ng, and Wilk.
+* `Chebyshev.card_filter_isPrimePow_eq_sum_primeCounting`,
+  `Chebyshev.card_filter_isPrimePow_le_six_mul_div_log`,
+  `Chebyshev.card_filter_range_isPrimePow_le_six_mul_div_log`,
+  `TauCeti.card_filter_isPrimePow_Ioc_nat_le_six_mul_div_log`,
+  `TauCeti.isBigO_card_filter_isPrimePow_Ioc_div_log`,
+  `TauCeti.isBigO_card_filter_isPrimePow_Ioc_nat_div_log`: the number of prime powers up to `x`,
+  below or at an integer `N`, and its `O(x / log x)` asymptotic form.
 
 ## References
 
 * J. B. Rosser and L. Schoenfeld, *Approximate formulas for some functions of prime numbers*,
   Illinois J. Math. 6 (1962), 64–94.
-* L. Schoenfeld, *Sharper bounds for the Chebyshev functions `θ(x)` and `ψ(x)`. II*,
-  Math. Comp. 30 (1976), 337–360.
+* L. Schoenfeld, *Sharper bounds for the Chebyshev functions θ(x) and ψ(x). II*, Math. Comp. 30
+  (1976), 337–360, which displays the same decomposition of `ψ − θ`.
 * N. Costa Pereira, *Estimates for the Chebyshev function `ψ(x) - θ(x)`*,
   Math. Comp. 44 (1985), 211–221.
-* S. Broadbent, H. Kadiri, A. Lumley, N. Ng, and K. Wilk, *Sharper bounds for the Chebyshev
-  function `θ(x)`*, Math. Comp. 90 (2021), 2281–2315 (Propositions 3–4, Corollary 3.1,
-  Theorem 5, and Lemma 11).
+* S. Broadbent, H. Kadiri, A. Lumley, N. Ng, K. Wilk, *Sharper bounds for the Chebyshev function
+  θ(x)*, Math. Comp. 90 (2021), 2281–2315: (2.4), Propositions 3–4, Corollary 3.1, Theorem 5,
+  and Lemma 11.
 -/
 
 public section
+
+section ChebyshevBounds
+
+open Finset Real
+open scoped Chebyshev
+
+namespace Chebyshev
+
+/-! ### The decomposition of `ψ − θ` -/
+
+/-- For `x ≥ 0` and every `N ≥ log x / log 2`,
+`ψ(x) = θ(x) + θ(√x) + ∑_{3 ≤ k ≤ N} θ(x^{1/k})`. -/
+theorem psi_eq_theta_add_theta_sqrt_add_sum' {x : ℝ} (hx : 0 ≤ x) {N : ℕ}
+    (hN : ⌊log x / log 2⌋₊ ≤ N) :
+    ψ x = θ x + θ √x + ∑ k ∈ Icc 3 N, θ (x ^ ((1 : ℝ) / k)) := by
+  have hIcc : Icc 3 (max N 2) = Icc 3 N := by
+    rcases le_total N 2 with h | h
+    · rw [max_eq_right h, Icc_eq_empty (by omega), Icc_eq_empty (by omega)]
+    · rw [max_eq_left h]
+  have hsplit : Icc 1 (max N 2) = insert 1 (insert 2 (Icc 3 (max N 2))) := by
+    ext k
+    simp only [mem_Icc, mem_insert]
+    omega
+  rw [psi_eq_sum_theta' hx (hN.trans (le_max_left N 2)), hsplit, sum_insert (by simp),
+    sum_insert (by simp), hIcc]
+  simp [sqrt_eq_rpow, add_assoc]
+
+/-- For `x ≥ 0`, `ψ(x) = θ(x) + θ(√x) + ∑_{3 ≤ k ≤ log x / log 2} θ(x^{1/k})`. -/
+theorem psi_eq_theta_add_theta_sqrt_add_sum {x : ℝ} (hx : 0 ≤ x) :
+    ψ x = θ x + θ √x + ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, θ (x ^ ((1 : ℝ) / k)) :=
+  psi_eq_theta_add_theta_sqrt_add_sum' hx le_rfl
+
+/-- The square-root and cube-root terms of the decomposition bound `ψ − θ` from below:
+`θ(√x) + θ(x^{1/3}) ≤ ψ(x) − θ(x)` for `x ≥ 0`. -/
+theorem theta_sqrt_add_theta_rpow_le_psi_sub_theta {x : ℝ} (hx : 0 ≤ x) :
+    θ √x + θ (x ^ ((1 : ℝ) / 3)) ≤ ψ x - θ x := by
+  rw [psi_eq_theta_add_theta_sqrt_add_sum' hx (le_max_left _ 3)]
+  have h3 := single_le_sum (f := fun k : ℕ ↦ θ (x ^ ((1 : ℝ) / k))) (fun _ _ ↦ theta_nonneg _)
+    (mem_Icc.mpr ⟨le_rfl, le_max_right ⌊log x / log 2⌋₊ 3⟩)
+  simp only [Nat.cast_ofNat] at h3
+  linarith
+
+/-- The roots `x^{1/k}` with `3 ≤ k ≤ log x / log 2` add up to at most
+`(log x / log 2 − 2)⁺ x^{1/3}`, for `x ≥ 0`. -/
+theorem sum_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) :
+    ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ ((1 : ℝ) / k) ≤
+      max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3) := by
+  rcases lt_or_ge x 1 with hx1 | hx1
+  · have : ⌊log x / log 2⌋₊ = 0 :=
+      Nat.floor_eq_zero.mpr ((div_nonpos_of_nonpos_of_nonneg
+        (log_nonpos hx hx1.le) (log_nonneg one_le_two)).trans_lt one_pos)
+    simp only [this, Icc_eq_empty_of_lt (by norm_num : 0 < 3), sum_empty]
+    positivity
+  refine (TauCeti.sum_Icc_floor_le_max_mul (div_nonneg (log_nonneg hx1) (log_nonneg one_le_two))
+    (rpow_nonneg hx ((1 : ℝ) / 3)) 3 fun k hk ↦ rpow_le_rpow_of_exponent_le hx1 ?_).trans_eq ?_
+  · have : (3 : ℝ) ≤ k := by exact_mod_cast (mem_Icc.mp hk).1
+    gcongr
+  · congr 2
+    push_cast
+    ring
+
+/-- A bound `θ(y) ≤ c y` for `y > 0` extends to `y = 0`. -/
+theorem theta_le_mul_of_nonneg {c y : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y)
+    (hy : 0 ≤ y) : θ y ≤ c * y := by
+  rcases hy.eq_or_lt with rfl | hy
+  · simp [theta_zero]
+  · exact hc y hy
+
+/-- A bound `ψ(y) ≤ c y` for `y > 0` extends to `y = 0`. -/
+theorem psi_le_mul_of_nonneg {c y : ℝ} (hc : ∀ y, 0 < y → ψ y ≤ c * y)
+    (hy : 0 ≤ y) : ψ y ≤ c * y := by
+  rcases hy.eq_or_lt with rfl | hy
+  · simp [psi_zero]
+  · exact hc y hy
+
+/-- A bound `θ(y) ≤ c y` for `y > 0` forces `c ≥ 0`, since `θ(2) = log 2 > 0`. -/
+theorem nonneg_of_forall_theta_le {c : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y) : 0 ≤ c := by
+  have := hc 2 two_pos
+  have := theta_pos (le_refl (2 : ℝ))
+  linarith
+
+/-- A bound `ψ(y) ≤ c y` for `y > 0` forces `c ≥ 0`, since `θ ≤ ψ`. -/
+theorem nonneg_of_forall_psi_le {c : ℝ} (hc : ∀ y, 0 < y → ψ y ≤ c * y) : 0 ≤ c :=
+  nonneg_of_forall_theta_le fun y hy ↦ (theta_le_psi y).trans (hc y hy)
+
+/-- The terms with `k ≥ 3` of the decomposition: if `θ(y) ≤ c y` for every `y > 0`, then
+`∑_{3 ≤ k ≤ N} θ(x^{1/k}) ≤ c ∑_{3 ≤ k ≤ N} x^{1/k}` for `x ≥ 0`. -/
+theorem sum_theta_rpow_le_mul_sum_rpow {c x : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y) (hx : 0 ≤ x)
+    (N : ℕ) :
+    ∑ k ∈ Icc 3 N, θ (x ^ ((1 : ℝ) / k)) ≤ c * ∑ k ∈ Icc 3 N, x ^ ((1 : ℝ) / k) := by
+  rw [mul_sum]
+  exact sum_le_sum fun k _ ↦ theta_le_mul_of_nonneg hc (rpow_nonneg hx _)
+
+/-! ### Upper bounds for `ψ − θ` -/
+
+/-- If `θ(y) ≤ c y` for every `y > 0`, then for `x ≥ 0`,
+`ψ(x) − θ(x) ≤ c (√x + (log x / log 2 − 2)⁺ x^{1/3})`. -/
+theorem psi_sub_theta_le_of_forall_theta_le {c x : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y)
+    (hx : 0 ≤ x) :
+    ψ x - θ x ≤ c * (√x + max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
+  have hc0 := nonneg_of_forall_theta_le hc
+  have hsq := theta_le_mul_of_nonneg hc (sqrt_nonneg x)
+  have hsum := (sum_theta_rpow_le_mul_sum_rpow hc hx ⌊log x / log 2⌋₊).trans
+    (mul_le_mul_of_nonneg_left (sum_rpow_one_div_le hx) hc0)
+  rw [psi_eq_theta_add_theta_sqrt_add_sum hx]
+  linarith
+
+/-- The unconditional bound
+`0 ≤ ψ(x) − θ(x) ≤ (log 4) (√x + (log x / log 2 − 2)⁺ x^{1/3})` for `x ≥ 0`; the lower bound is
+`Chebyshev.theta_le_psi`. -/
+theorem psi_sub_theta_le_log_four_mul {x : ℝ} (hx : 0 ≤ x) :
+    ψ x - θ x ≤ log 4 * (√x + max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) :=
+  psi_sub_theta_le_of_forall_theta_le (fun _ hy ↦ theta_le_log4_mul_x hy.le) hx
+
+/-! ### Transfer of a bound for `θ` to `ψ − θ` -/
+
+/-- Upper transfer: if `θ(y) ≤ c y` for every `y > 0` and `θ(y) ≤ (1 + ε) y` for every `y ≥ y₀`,
+then `ψ(x) − θ(x) ≤ (1 + ε) √x + c (log x / log 2 − 2) x^{1/3}` for every `x ≥ max(4, y₀²)`. -/
+theorem psi_sub_theta_le_one_add_mul_sqrt_add {c ε y₀ x : ℝ}
+    (hc : ∀ y, 0 < y → θ y ≤ c * y) (hε : ∀ y, y₀ ≤ y → θ y ≤ (1 + ε) * y)
+    (hx₀ : y₀ ^ 2 ≤ x) (hx : 4 ≤ x) :
+    ψ x - θ x ≤ (1 + ε) * √x + c * (log x / log 2 - 2) * x ^ ((1 : ℝ) / 3) := by
+  have hc0 := nonneg_of_forall_theta_le hc
+  have hK : 0 ≤ log x / log 2 - 2 := by
+    rw [sub_nonneg, le_div_iff₀ (log_pos one_lt_two), ← log_rpow two_pos]
+    exact log_le_log (by positivity) (by rw [rpow_two]; linarith)
+  have hsq : θ √x ≤ (1 + ε) * √x := hε _ ((le_abs_self y₀).trans (abs_le_sqrt hx₀))
+  have hsum := (sum_theta_rpow_le_mul_sum_rpow hc (by linarith) ⌊log x / log 2⌋₊).trans
+    (mul_le_mul_of_nonneg_left (sum_rpow_one_div_le (by linarith)) hc0)
+  rw [max_eq_left hK] at hsum
+  rw [psi_eq_theta_add_theta_sqrt_add_sum (by linarith)]
+  linarith
+
+/-- Lower transfer: if `(1 − ε) y ≤ θ(y)` for every `y ≥ y₀`, then
+`(1 − ε) √x + θ(x^{1/3}) ≤ ψ(x) − θ(x)` for every `x ≥ y₀²`. -/
+theorem one_sub_mul_sqrt_add_theta_rpow_le_psi_sub_theta {ε y₀ x : ℝ}
+    (hε : ∀ y, y₀ ≤ y → (1 - ε) * y ≤ θ y) (hx₀ : y₀ ^ 2 ≤ x) :
+    (1 - ε) * √x + θ (x ^ ((1 : ℝ) / 3)) ≤ ψ x - θ x := by
+  have := hε _ ((le_abs_self y₀).trans (abs_le_sqrt hx₀))
+  linarith [theta_sqrt_add_theta_rpow_le_psi_sub_theta ((sq_nonneg y₀).trans hx₀)]
+
+/-! ### Conversions between bounds for `ψ` and for `θ` -/
+
+/-- A bound for `|ψ(x) − x|` gives one for `|θ(x) − x|`: if `θ(y) ≤ c y` for every `y > 0`, then
+`|θ(x) − x| ≤ |ψ(x) − x| + c (√x + (log x / log 2 − 2)⁺ x^{1/3})` for `x ≥ 0`. -/
+theorem abs_theta_sub_le_abs_psi_sub_add {c x : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y)
+    (hx : 0 ≤ x) :
+    |θ x - x| ≤ |ψ x - x| + c * (√x + max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
+  have h1 := psi_sub_theta_le_of_forall_theta_le hc hx
+  have h2 := theta_le_psi x
+  rw [abs_le]
+  constructor <;> linarith [neg_abs_le (ψ x - x), le_abs_self (ψ x - x)]
+
+/-- A bound for `|θ(x) − x|` gives one for `|ψ(x) − x|`: if `θ(y) ≤ c y` for every `y > 0`, then
+`|ψ(x) − x| ≤ |θ(x) − x| + c (√x + (log x / log 2 − 2)⁺ x^{1/3})` for `x ≥ 0`. -/
+theorem abs_psi_sub_le_abs_theta_sub_add {c x : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y)
+    (hx : 0 ≤ x) :
+    |ψ x - x| ≤ |θ x - x| + c * (√x + max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
+  have h1 := psi_sub_theta_le_of_forall_theta_le hc hx
+  have h2 := theta_le_psi x
+  rw [abs_le]
+  constructor <;> linarith [neg_abs_le (θ x - x), le_abs_self (θ x - x)]
+
+/-- A global linear bound for `θ` from a bound for `ψ` beyond `x₁` and `θ(y) ≤ y` up to `x₁`:
+if `0 ≤ ε`, `θ(y) ≤ y` for `0 < y ≤ x₁` and `ψ(y) ≤ (1 + ε) y` for `y ≥ x₁`, then
+`θ(x) ≤ (1 + ε) x` for every `x > 0`. -/
+theorem theta_le_one_add_mul_of_psi_le {ε x₁ x : ℝ} (hε : 0 ≤ ε)
+    (hθ : ∀ y, 0 < y → y ≤ x₁ → θ y ≤ y) (hψ : ∀ y, x₁ ≤ y → ψ y ≤ (1 + ε) * y) (hx : 0 < x) :
+    θ x ≤ (1 + ε) * x := by
+  rcases le_total x x₁ with h | h
+  · nlinarith [hθ x hx h]
+  · exact (theta_le_psi x).trans (hψ x h)
+
+/-- A linear upper bound for `ψ` gives a lower bound for `θ` through Costa Pereira's comparison
+`ψ(x) − θ(x) ≤ ψ(x^{1/2}) + ψ(x^{1/3}) + ψ(x^{1/5})`: if `ψ(y) ≤ c₀ y` for every `y > 0`, then
+`ψ(x) − c₀ (√x + x^{1/3} + x^{1/5}) ≤ θ(x)` for `x ≥ 0`. -/
+theorem theta_ge_psi_sub_mul {c₀ x : ℝ} (hc₀ : ∀ y, 0 < y → ψ y ≤ c₀ * y) (hx : 0 ≤ x) :
+    ψ x - c₀ * (√x + x ^ ((1 : ℝ) / 3) + x ^ ((1 : ℝ) / 5)) ≤ θ x := by
+  have := psi_sub_theta_le_psi_add_psi_add_psi x
+  rw [← one_div, ← one_div, ← one_div, ← sqrt_eq_rpow] at this
+  have h2 := psi_le_mul_of_nonneg hc₀ (sqrt_nonneg x)
+  have h3 := psi_le_mul_of_nonneg hc₀ (rpow_nonneg hx ((1 : ℝ) / 3))
+  have h5 := psi_le_mul_of_nonneg hc₀ (rpow_nonneg hx ((1 : ℝ) / 5))
+  linarith
+
+/-- **Broadbent–Kadiri–Lumley–Ng–Wilk, Lemma 11.** If `ψ(y) ≤ c₀ y` for every `y > 0` and
+`(1 − ε) x ≤ ψ(x)`, then `(1 − ε − c₀ (e^{−b/2} + e^{−2b/3} + e^{−4b/5})) x ≤ θ(x)` whenever
+`x ≥ e^b`. -/
+theorem theta_ge_of_psi_ge_of_exp_le {c₀ ε b x : ℝ} (hc₀ : ∀ y, 0 < y → ψ y ≤ c₀ * y)
+    (hψ : (1 - ε) * x ≤ ψ x) (hx : exp b ≤ x) :
+    (1 - ε - c₀ * (exp (-b / 2) + exp (-2 * b / 3) + exp (-4 * b / 5))) * x ≤ θ x := by
+  have hx0 : 0 < x := (exp_pos b).trans_le hx
+  have hc0 : 0 ≤ c₀ := nonneg_of_forall_psi_le hc₀
+  -- `x^{1/k} = x^{−(1 − 1/k)} x ≤ e^{−(1 − 1/k) b} x`, as `log x ≥ b`.
+  have hb : b ≤ log x := (le_log_iff_exp_le hx0).mpr hx
+  have key (k : ℝ) (hk : 1 ≤ k) : x ^ (1 / k) ≤ exp (-((k - 1) / k) * b) * x := by
+    have : 0 ≤ (k - 1) / k := div_nonneg (by linarith) (by linarith)
+    rw [show 1 / k = -((k - 1) / k) + 1 by field_simp; ring, rpow_add_one hx0.ne',
+      rpow_def_of_pos hx0]
+    exact mul_le_mul_of_nonneg_right (exp_le_exp.mpr (by nlinarith)) hx0.le
+  have h2 : √x ≤ exp (-b / 2) * x := by
+    rw [sqrt_eq_rpow]
+    convert key 2 one_le_two using 3
+    ring
+  have h3 : x ^ ((1 : ℝ) / 3) ≤ exp (-2 * b / 3) * x := by
+    convert key 3 (by norm_num) using 3
+    ring
+  have h5 : x ^ ((1 : ℝ) / 5) ≤ exp (-4 * b / 5) * x := by
+    convert key 5 (by norm_num) using 3
+    ring
+  have := theta_ge_psi_sub_mul hc₀ hx0.le
+  nlinarith [mul_le_mul_of_nonneg_left (add_le_add (add_le_add h2 h3) h5) hc0]
+
+/-! ### The number of prime powers -/
+
+/-- The prime powers `m ≤ x` number `∑_{1 ≤ k ≤ log x / log 2} π(x^{1/k})`, for `x ≥ 0`. -/
+theorem card_filter_isPrimePow_eq_sum_primeCounting {x : ℝ} (hx : 0 ≤ x) :
+    #{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} =
+      ∑ k ∈ Icc 1 ⌊log x / log 2⌋₊, Nat.primeCounting ⌊x ^ ((1 : ℝ) / k)⌋₊ := by
+  rw [card_eq_sum_ones]
+  convert sum_PrimePow_eq_sum_sum (fun _ ↦ 1) hx using 2 with k
+  rw [← card_eq_sum_ones, ← Nat.primesLE_eq_filter_Ioc_zero, Nat.primesLE_card_eq_primeCounting]
+
+/-- For `x ≥ 2`, the prime powers `m ≤ x` number at most `π(x) + (log x / log 2 − 1) √x`: each
+`π(x^{1/k})` with `k ≥ 2` is at most `√x`. -/
+theorem card_filter_isPrimePow_le {x : ℝ} (hx : 2 ≤ x) :
+    (#{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} : ℝ) ≤
+      Nat.primeCounting ⌊x⌋₊ + (log x / log 2 - 1) * √x := by
+  have hx0 : 0 ≤ x := by linarith
+  have hL : 1 ≤ log x / log 2 := by
+    rw [le_div_iff₀ (log_pos one_lt_two), one_mul]
+    exact log_le_log two_pos hx
+  have hK : 1 ≤ ⌊log x / log 2⌋₊ := Nat.le_floor (by exact_mod_cast hL)
+  have hsplit : Icc 1 ⌊log x / log 2⌋₊ = insert 1 (Icc 2 ⌊log x / log 2⌋₊) := by
+    ext k
+    simp only [mem_Icc, mem_insert]
+    omega
+  rw [card_filter_isPrimePow_eq_sum_primeCounting hx0, hsplit, sum_insert (by simp),
+    Nat.cast_add, Nat.cast_sum]
+  simp only [Nat.cast_one, div_one, rpow_one]
+  gcongr
+  refine (TauCeti.sum_Icc_floor_le_max_mul (by linarith) (sqrt_nonneg x) 2
+    fun k hk ↦ ?_).trans_eq ?_
+  · have hk2 : (2 : ℝ) ≤ k := by exact_mod_cast (mem_Icc.mp hk).1
+    calc (Nat.primeCounting ⌊x ^ ((1 : ℝ) / k)⌋₊ : ℝ)
+        ≤ ⌊x ^ ((1 : ℝ) / k)⌋₊ := by exact_mod_cast Nat.primeCounting_le_self _
+      _ ≤ x ^ ((1 : ℝ) / k) := Nat.floor_le (rpow_nonneg hx0 _)
+      _ ≤ x ^ ((1 : ℝ) / 2) := rpow_le_rpow_of_exponent_le (by linarith) (by gcongr)
+      _ = √x := (sqrt_eq_rpow x).symm
+  · rw [max_eq_left (by push_cast; linarith)]
+    push_cast
+    ring
+
+/-- For `x ≥ 2`, the prime powers `m ≤ x` number at most `6 x / log x`. -/
+theorem card_filter_isPrimePow_le_six_mul_div_log {x : ℝ} (hx : 2 ≤ x) :
+    (#{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} : ℝ) ≤ 6 * x / log x := by
+  have hx0 : 0 < x := by linarith
+  have hL : 0 < log x := log_pos (by linarith)
+  have hl2 := log_two_gt_d9
+  have hl2' := log_two_lt_d9
+  have he := exp_one_gt_d9
+  have hsx : √x * √x = x := mul_self_sqrt hx0.le
+  have hπ := pi_le_log4_mul_div (by linarith : 1 < x)
+  rw [log_sqrt hx0.le, show (4 : ℝ) = 2 ^ 2 by norm_num, log_pow] at hπ
+  have hkey := sq_log_mul_exp_one_le_sixteen_mul_sqrt (by linarith : (1 : ℝ) ≤ x)
+  have hcount := card_filter_isPrimePow_le hx
+  rw [le_div_iff₀ hL]
+  -- `π(x) ≤ 4 log 2 · x / log x + √x`, and `(log x)² √x ≤ 16 x / e²`.
+  have hπ' : (Nat.primeCounting ⌊x⌋₊ : ℝ) * log x ≤ 4 * log 2 * x + √x * log x := by
+    have e : ((2 : ℕ) : ℝ) * log 2 * x / (log x / 2) * log x = 4 * log 2 * x := by
+      field_simp
+      norm_num
+    have := mul_le_mul_of_nonneg_right hπ hL.le
+    rw [add_mul, e] at this
+    exact this
+  have hsq : log x ^ 2 * √x * exp 1 ^ 2 ≤ 16 * x := by
+    nlinarith [sqrt_nonneg x]
+  have hpos : 0 < log 2 := by linarith
+  calc (#{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} : ℝ) * log x
+      ≤ (Nat.primeCounting ⌊x⌋₊ + (log x / log 2 - 1) * √x) * log x :=
+        mul_le_mul_of_nonneg_right hcount hL.le
+    _ ≤ 4 * log 2 * x + log x ^ 2 * √x / log 2 := by
+        have : (log x / log 2 - 1) * √x * log x = log x ^ 2 * √x / log 2 - √x * log x := by
+          field_simp
+        nlinarith
+    _ ≤ 6 * x := by
+        -- numerically, `4 log 2 + 16 / (e² log 2) < 5.9`
+        have he2 : 7.38 < exp 1 ^ 2 := by nlinarith
+        have hl : 2.23 < (6 - 4 * log 2) * log 2 := by nlinarith
+        have h16 : (16 : ℝ) ≤ (6 - 4 * log 2) * log 2 * exp 1 ^ 2 := by nlinarith
+        have : log x ^ 2 * √x / log 2 ≤ (6 - 4 * log 2) * x := by
+          rw [div_le_iff₀ hpos]
+          refine le_of_mul_le_mul_right ?_ (by positivity : 0 < exp 1 ^ 2)
+          nlinarith
+        linarith
+
+/-- For every integer `N ≥ 2`, the prime powers below `N` number at most `6 N / log N`. -/
+theorem card_filter_range_isPrimePow_le_six_mul_div_log {N : ℕ} (hN : 2 ≤ N) :
+    (#{m ∈ range N | IsPrimePow m} : ℝ) ≤ 6 * N / log N := by
+  refine le_trans ?_ (card_filter_isPrimePow_le_six_mul_div_log (by exact_mod_cast hN))
+  rw [Nat.floor_natCast]
+  exact_mod_cast card_le_card fun m hm ↦ by
+    simp only [mem_filter, mem_range, mem_Ioc] at hm ⊢
+    exact ⟨⟨hm.2.pos, hm.1.le⟩, hm.2⟩
+
+end Chebyshev
+
+end ChebyshevBounds
+
+section TauCetiExtensions
 
 open Finset Filter
 open scoped Chebyshev Asymptotics
 
 namespace TauCeti
 
-/-! ### Exact `ψ - θ` decompositions and lower bounds -/
+/-! ### Exact `ψ - θ` decomposition and square-root lower bound -/
 
 /-- For every `x ≥ 0`, `ψ x - θ x = ∑ k ∈ Icc 2 ⌊log x / log 2⌋₊, θ (x ^ (1 / k))`. -/
 theorem psi_sub_theta_eq_sum_theta {x : ℝ} (hx : 0 ≤ x) :
@@ -114,58 +444,14 @@ theorem psi_sub_theta_eq_sum_theta {x : ℝ} (hx : 0 ≤ x) :
     rw [Icc_eq_empty (by omega), sum_empty]
   · rw [Chebyshev.psi_eq_theta_add_sum_theta hx2, add_sub_cancel_left]
 
-/-- Splitting off the `k = 2` square-root term from the `ψ - θ` identity: for every `x ≥ 0`,
-`ψ x - θ x = θ √x + ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, θ (x ^ (1 / k))`. -/
-theorem psi_sub_theta_eq_theta_sqrt_add_sum {x : ℝ} (hx : 0 ≤ x) :
-    ψ x - θ x = θ √x + ∑ k ∈ Icc 3 ⌊Real.log x / Real.log 2⌋₊, θ (x ^ ((1 : ℝ) / k)) := by
-  rw [psi_sub_theta_eq_sum_theta hx]
-  rcases lt_or_ge x 4 with hx4 | hx4
-  · have hlt : ⌊Real.log x / Real.log 2⌋₊ < 2 :=
-      (Real.natFloor_logb_lt_iff_lt_pow one_lt_two hx (by norm_num)).2 (by norm_num; exact hx4)
-    have hsq : √x < 2 := by
-      rw [Real.sqrt_lt' (by norm_num)]
-      linarith
-    rw [Chebyshev.theta_eq_zero_of_lt_two hsq, Icc_eq_empty (by omega), Icc_eq_empty (by omega),
-      sum_empty, zero_add]
-  · have h2 : 2 ≤ ⌊Real.log x / Real.log 2⌋₊ :=
-      (Real.le_natFloor_logb_iff_pow_le one_lt_two (by linarith) (by norm_num)).2
-        (by norm_num; exact hx4)
-    rw [← add_sum_Ioc_eq_sum_Icc h2, ← Icc_add_one_left_eq_Ioc]
-    congr 1
-    rw [Real.sqrt_eq_rpow]
-    norm_num
-
 /-- Unconditional square-root lower bound: `θ √x ≤ ψ x - θ x` for every real `x`. -/
 theorem theta_sqrt_le_psi_sub_theta (x : ℝ) : θ √x ≤ ψ x - θ x := by
   rcases le_or_gt 0 x with hx | hx
-  · rw [psi_sub_theta_eq_theta_sqrt_add_sum hx]
+  · rw [Chebyshev.psi_eq_theta_add_theta_sqrt_add_sum hx, add_assoc, add_sub_cancel_left]
     exact le_add_of_nonneg_right (sum_nonneg fun _ _ ↦ Chebyshev.theta_nonneg _)
   · rw [Real.sqrt_eq_zero_of_nonpos hx.le, Chebyshev.theta_eq_zero_of_lt_two (by norm_num),
       Chebyshev.psi_eq_zero_of_lt_two (by linarith),
       Chebyshev.theta_eq_zero_of_lt_two (by linarith), sub_zero]
-
-/-- Unconditional square-root plus cube-root lower bound:
-`θ √x + θ (x ^ (1 / 3)) ≤ ψ x - θ x` for every `x ≥ 0`. -/
-theorem theta_sqrt_add_theta_cbrt_le_psi_sub_theta {x : ℝ} (hx : 0 ≤ x) :
-    θ √x + θ (x ^ ((1 : ℝ) / 3)) ≤ ψ x - θ x := by
-  rcases lt_or_ge x 8 with hx8 | hx8
-  · have h8 : (8 : ℝ) = (2 : ℝ) ^ (3 : ℕ) := by norm_num
-    have hcbrt : x ^ ((1 : ℝ) / 3) < 2 := by
-      calc x ^ ((1 : ℝ) / 3) < (8 : ℝ) ^ ((1 : ℝ) / 3) :=
-            Real.rpow_lt_rpow hx hx8 (by norm_num)
-        _ = 2 := by
-            rw [h8, ← Real.rpow_natCast, ← Real.rpow_mul zero_le_two]
-            norm_num
-    rw [Chebyshev.theta_eq_zero_of_lt_two hcbrt, add_zero]
-    exact theta_sqrt_le_psi_sub_theta x
-  · rw [psi_sub_theta_eq_theta_sqrt_add_sum hx]
-    have h3 : 3 ≤ ⌊Real.log x / Real.log 2⌋₊ :=
-      (Real.le_natFloor_logb_iff_pow_le one_lt_two hx (by norm_num)).2 (by norm_num; exact hx8)
-    gcongr
-    have hmem : (3 : ℕ) ∈ Icc 3 ⌊Real.log x / Real.log 2⌋₊ := mem_Icc.mpr ⟨le_rfl, h3⟩
-    simpa only [Nat.cast_ofNat] using
-      single_le_sum (f := fun k : ℕ ↦ θ (x ^ ((1 : ℝ) / k)))
-        (fun _ _ ↦ Chebyshev.theta_nonneg _) hmem
 
 /-! ### The cube-root tail coefficient and its dyadic envelope -/
 
@@ -534,6 +820,7 @@ theorem psiSubThetaTailBound_exp (b : ℝ) :
   rw [psiSubThetaTailBound_def, Real.log_exp]
 
 /-- `psiSubThetaTailBound X ≥ 0` for every real `X`. -/
+@[simp]
 theorem psiSubThetaTailBound_nonneg (X : ℝ) : 0 ≤ psiSubThetaTailBound X :=
   le_max_of_le_right (psiSubThetaTailCoeff_nonneg (by positivity))
 
@@ -588,7 +875,7 @@ theorem antitoneOn_psiSubThetaTailBound :
   fun _ hX₁ _ hX₂ hle ↦ (psiSubThetaTailBound_le_iff_forall hX₂).mpr fun _ hx ↦
     psiSubThetaTailCoeff_le_psiSubThetaTailBound hX₁ (hle.trans hx)
 
-/-! ### Unconditional bounds for `ψ - θ` and `ψ ↔ θ` error transfers -/
+/-! ### General-input `ψ - θ` bounds and `ψ ↔ θ` error transfers -/
 
 /-- Lower transfer from a `θ`-bound on `[y₀, ∞)`: if `y₀ ^ 2 ≤ x` and `a * y ≤ θ y` for `y ≥ y₀`,
 then `a * √x ≤ ψ x - θ x`. -/
@@ -605,7 +892,7 @@ theorem psi_sub_theta_le_add_max_mul_cbrt {c c' y₀ x : ℝ} (hyx : y₀ ^ 2 �
     ψ x - θ x ≤ c' * √x + c * max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3) := by
   have hx : 0 ≤ x := le_trans (sq_nonneg y₀) hyx
   have hc : 0 < c := pos_of_theta_le hθ
-  rw [psi_sub_theta_eq_theta_sqrt_add_sum hx]
+  rw [Chebyshev.psi_eq_theta_add_theta_sqrt_add_sum hx, add_assoc, add_sub_cancel_left]
   have h1 : θ √x ≤ c' * √x := hθ' √x (Real.le_sqrt_of_sq_le hyx)
   have h2 : ∑ k ∈ Icc 3 ⌊Real.log x / Real.log 2⌋₊, θ (x ^ ((1 : ℝ) / k)) ≤
       c * max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3) :=
@@ -618,16 +905,8 @@ theorem psi_sub_theta_le_add_max_mul_cbrt {c c' y₀ x : ℝ} (hyx : y₀ ^ 2 �
 `ψ x - θ x ≤ c * (√x + max (log x / log 2 - 2) 0 * x ^ (1 / 3))`. -/
 theorem psi_sub_theta_le_of_theta_le {c x : ℝ} (hx : 0 ≤ x)
     (hθ : ∀ y, 2 ≤ y → θ y ≤ c * y) :
-    ψ x - θ x ≤ c * (√x + max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
-  have h := psi_sub_theta_le_add_max_mul_cbrt (y₀ := 0) (by simpa using hx) hθ
-    fun _ hy ↦ theta_le_mul_of_two_le hy hθ
-  linarith
-
-/-- Unconditional upper bound for `ψ - θ` via `Chebyshev.theta_le_log4_mul_x`: for every `x ≥ 0`,
-`ψ x - θ x ≤ log 4 * (√x + max (log x / log 2 - 2) 0 * x ^ (1 / 3))`. -/
-theorem psi_sub_theta_le_log4_mul {x : ℝ} (hx : 0 ≤ x) :
-    ψ x - θ x ≤ Real.log 4 * (√x + max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) :=
-  psi_sub_theta_le_of_theta_le hx fun _ hy ↦ Chebyshev.theta_le_log4_mul_x (by linarith)
+    ψ x - θ x ≤ c * (√x + max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) :=
+  Chebyshev.psi_sub_theta_le_of_forall_theta_le (fun _ hy ↦ theta_le_mul_of_two_le hy.le hθ) hx
 
 /-- Upper transfer from `θ`-bounds for `x ≥ max 4 (y₀ ^ 2)`:
 `ψ x - θ x ≤ c' * √x + c * (log x / log 2 - 2) * x ^ (1 / 3)`. -/
@@ -669,24 +948,16 @@ on `[2, ∞)`. -/
 theorem abs_theta_sub_self_le_of_theta_le {c x : ℝ} (hx : 0 ≤ x)
     (hθ : ∀ y, 2 ≤ y → θ y ≤ c * y) :
     |θ x - x| ≤
-      |ψ x - x| + c * (√x + max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
-  have hdiff : θ x - x = (ψ x - x) - (ψ x - θ x) := by ring
-  have hnn : 0 ≤ ψ x - θ x := sub_nonneg.mpr (Chebyshev.theta_le_psi x)
-  calc |θ x - x| ≤ |ψ x - x| + |ψ x - θ x| := by rw [hdiff]; exact abs_sub _ _
-    _ = |ψ x - x| + (ψ x - θ x) := by rw [abs_of_nonneg hnn]
-    _ ≤ _ := by gcongr; exact psi_sub_theta_le_of_theta_le hx hθ
+      |ψ x - x| + c * (√x + max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) :=
+  Chebyshev.abs_theta_sub_le_abs_psi_sub_add (fun _ hy ↦ theta_le_mul_of_two_le hy.le hθ) hx
 
 /-- Additive transfer from `|θ x - x|` to `|ψ x - x|` using a linear bound `θ y ≤ c * y`
 on `[2, ∞)`. -/
 theorem abs_psi_sub_self_le_of_theta_le {c x : ℝ} (hx : 0 ≤ x)
     (hθ : ∀ y, 2 ≤ y → θ y ≤ c * y) :
     |ψ x - x| ≤
-      |θ x - x| + c * (√x + max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
-  have hdiff : ψ x - x = (θ x - x) + (ψ x - θ x) := by ring
-  have hnn : 0 ≤ ψ x - θ x := sub_nonneg.mpr (Chebyshev.theta_le_psi x)
-  calc |ψ x - x| ≤ |θ x - x| + |ψ x - θ x| := by rw [hdiff]; exact abs_add_le _ _
-    _ = |θ x - x| + (ψ x - θ x) := by rw [abs_of_nonneg hnn]
-    _ ≤ _ := by gcongr; exact psi_sub_theta_le_of_theta_le hx hθ
+      |θ x - x| + c * (√x + max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) :=
+  Chebyshev.abs_psi_sub_le_abs_theta_sub_add (fun _ hy ↦ theta_le_mul_of_two_le hy.le hθ) hx
 
 /-- Unconditional additive transfer from `|ψ x - x|` to `|θ x - x|`. -/
 theorem abs_theta_sub_self_le_abs_psi_sub_self_add {x : ℝ} (hx : 0 ≤ x) :
@@ -760,7 +1031,8 @@ theorem psi_sub_theta_sub_theta_sqrt_le {c X x : ℝ} (hX : (2 : ℝ) ^ 8 ≤ X)
     ψ x - θ x - θ √x ≤ c * psiSubThetaTailBound X * x ^ ((1 : ℝ) / 3) := by
   have hx : 0 ≤ x := le_trans (le_trans (by positivity) hX) hXx
   have hc : 0 < c := pos_of_theta_le hθ
-  rw [psi_sub_theta_eq_theta_sqrt_add_sum hx, add_sub_cancel_left]
+  rw [Chebyshev.psi_eq_theta_add_theta_sqrt_add_sum hx, add_assoc, add_sub_cancel_left,
+    add_sub_cancel_left]
   exact (sum_theta_rpow_le hx hθ).trans (by
     gcongr
     exact psiSubThetaTailCoeff_le_psiSubThetaTailBound hX hXx)
@@ -783,7 +1055,7 @@ theorem mul_sqrt_add_theta_cbrt_le_psi_sub_theta {a X x : ℝ} (hx : 0 ≤ x) (h
     (hθ : ∀ y, √X ≤ y → a * y ≤ θ y) :
     a * √x + θ (x ^ ((1 : ℝ) / 3)) ≤ ψ x - θ x := by
   have h1 : a * √x ≤ θ √x := hθ √x (Real.sqrt_le_sqrt hXx)
-  linarith [theta_sqrt_add_theta_cbrt_le_psi_sub_theta hx]
+  linarith [Chebyshev.theta_sqrt_add_theta_rpow_le_psi_sub_theta hx]
 
 /-- Global linear upper bound on `θ` from a finite-range verification `θ y ≤ y` on `[2, x₁]`
 and a `ψ`-bound `ψ y ≤ c * y` on `[x₁, ∞)` with `1 ≤ c` (Broadbent, Kadiri, Lumley, Ng, and Wilk,
@@ -881,105 +1153,14 @@ theorem le_theta_of_le_psi_exp {a c₀ b x : ℝ} (hbx : Real.exp b ≤ x)
       θ x := by
   linarith [psi_sub_theta_le_mul_exp_sum hbx hψ]
 
-/-! ### The number of prime powers `≤ x` -/
-
-/-- Exact identity for the number of prime powers `m ≤ x`: for every `x ≥ 0`,
-`#{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} = ∑ k ∈ Icc 1 ⌊log x / log 2⌋₊, π ⌊x ^ (1 / k)⌋₊`. -/
-theorem card_filter_isPrimePow_Ioc_eq_sum_primeCounting {x : ℝ} (hx : 0 ≤ x) :
-    #{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} =
-      ∑ k ∈ Icc 1 ⌊Real.log x / Real.log 2⌋₊, Nat.primeCounting ⌊x ^ ((1 : ℝ) / k)⌋₊ := by
-  have h := Chebyshev.sum_PrimePow_eq_sum_sum (fun _ ↦ (1 : ℕ)) hx
-  simpa only [sum_const, smul_eq_mul, mul_one, ← Nat.primesLE_eq_filter_Ioc_zero,
-    Nat.primesLE_card_eq_primeCounting] using h
-
-/-- Splitting off the primes (`k = 1`) from the prime-power count: for every `x ≥ 2`,
-`#{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} ≤ π ⌊x⌋₊ + (log x / log 2 - 1) * √x`. -/
-theorem card_filter_isPrimePow_Ioc_le_primeCounting_add {x : ℝ} (hx : 2 ≤ x) :
-    (#{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} : ℝ) ≤
-      (Nat.primeCounting ⌊x⌋₊ : ℝ) + (Real.log x / Real.log 2 - 1) * √x := by
-  rw [card_filter_isPrimePow_Ioc_eq_sum_primeCounting (by linarith)]
-  have h1 : 1 ≤ ⌊Real.log x / Real.log 2⌋₊ :=
-    (Real.le_natFloor_logb_iff_pow_le one_lt_two (by linarith) one_ne_zero).2 (by simpa using hx)
-  rw [← add_sum_Ioc_eq_sum_Icc h1, ← Icc_add_one_left_eq_Ioc]
-  norm_num only [Nat.cast_one, div_one, Real.rpow_one, Nat.cast_add, Nat.cast_sum]
-  gcongr
-  have hterm : ∀ k ∈ Icc 2 ⌊Real.log x / Real.log 2⌋₊,
-      (Nat.primeCounting ⌊x ^ ((1 : ℝ) / k)⌋₊ : ℝ) ≤ √x := by
-    intro k hk
-    have hpi : Nat.primeCounting ⌊x ^ ((1 : ℝ) / k)⌋₊ ≤ ⌊x ^ ((1 : ℝ) / k)⌋₊ := by
-      rw [← Nat.primesLE_card_eq_primeCounting, Nat.primesLE_eq_filter_Ioc_zero]
-      exact (card_filter_le _ _).trans (by simp)
-    have hk2 : (2 : ℝ) ≤ k := Nat.cast_le.mpr (mem_Icc.mp hk).1
-    calc (Nat.primeCounting ⌊x ^ ((1 : ℝ) / k)⌋₊ : ℝ)
-        ≤ (⌊x ^ ((1 : ℝ) / k)⌋₊ : ℝ) := Nat.cast_le.mpr hpi
-      _ ≤ x ^ ((1 : ℝ) / k) := Nat.floor_le (by positivity)
-      _ ≤ x ^ ((1 : ℝ) / 2) :=
-          Real.rpow_le_rpow_of_exponent_le (by linarith)
-            (one_div_le_one_div_of_le (by norm_num) hk2)
-      _ = √x := (Real.sqrt_eq_rpow x).symm
-  have hdiv : 0 ≤ Real.log x / Real.log 2 :=
-    div_nonneg (Real.log_nonneg (by linarith)) (Real.log_pos one_lt_two).le
-  calc ∑ k ∈ Icc 2 ⌊Real.log x / Real.log 2⌋₊, (Nat.primeCounting ⌊x ^ ((1 : ℝ) / k)⌋₊ : ℝ)
-      ≤ ∑ _k ∈ Icc 2 ⌊Real.log x / Real.log 2⌋₊, √x := sum_le_sum hterm
-    _ = ((⌊Real.log x / Real.log 2⌋₊ + 1 - 2 : ℕ) : ℝ) * √x := by simp
-    _ = ((⌊Real.log x / Real.log 2⌋₊ : ℝ) - 1) * √x := by
-        have : ⌊Real.log x / Real.log 2⌋₊ + 1 - 2 = ⌊Real.log x / Real.log 2⌋₊ - 1 := by omega
-        rw [this, Nat.cast_sub h1, Nat.cast_one]
-    _ ≤ (Real.log x / Real.log 2 - 1) * √x := by
-        gcongr
-        exact Nat.floor_le hdiv
-
-/-- Explicit upper bound on the number of prime powers `m ≤ x`: for every real `x ≥ 2`,
-`#{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} ≤ 6 * x / log x`. -/
-theorem card_filter_isPrimePow_Ioc_le_six_mul_div_log {x : ℝ} (hx : 2 ≤ x) :
-    (#{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} : ℝ) ≤ 6 * x / Real.log x := by
-  have hx0 : 0 < x := by linarith
-  have hlogx : 0 < Real.log x := Real.log_pos (by linarith)
-  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
-  have hsqrt : 0 < √x := Real.sqrt_pos.mpr hx0
-  have hpi := Chebyshev.pi_le_log4_mul_div (by linarith : (1 : ℝ) < x)
-  have hstep : (#{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} : ℝ) ≤
-      (2 * Real.log 4 + (Real.log x) ^ 2 / √x / Real.log 2) * (x / Real.log x) := by
-    have h1 := card_filter_isPrimePow_Ioc_le_primeCounting_add hx
-    rw [Real.log_sqrt hx0.le] at hpi
-    have hmul : (Real.log x / Real.log 2) * √x =
-        ((Real.log x) ^ 2 / √x / Real.log 2) * (x / Real.log x) := by
-      field_simp [hlogx.ne', hlog2.ne', hsqrt.ne']
-      rw [Real.sq_sqrt hx0.le]
-    have hpi' : Real.log 4 * x / (Real.log x / 2) = 2 * Real.log 4 * (x / Real.log x) := by ring
-    linarith
-  have hlogsq : (Real.log x) ^ 2 / √x ≤ 16 / (Real.exp 1) ^ 2 := by
-    have hsq := pow_le_pow_left₀ (by positivity)
-      (Real.mul_exp_neg_le_exp_neg_one (Real.log x / 4)) 2
-    have hexp : Real.exp (-(Real.log x / 4)) ^ 2 = (√x)⁻¹ := by
-      rw [← Real.exp_nat_mul, Real.sqrt_eq_rpow, Real.rpow_def_of_pos hx0, ← Real.exp_neg]
-      congr 1
-      ring
-    rw [mul_pow, hexp, Real.exp_neg, inv_pow] at hsq
-    rw [div_eq_mul_inv, div_eq_mul_inv]
-    linarith
-  have hconst : 2 * Real.log 4 + (Real.log x) ^ 2 / √x / Real.log 2 ≤ 6 := by
-    have h1 : Real.log 2 < 7 / 10 := by linarith [Real.log_two_lt_d9]
-    have h2 : 69 / 100 < Real.log 2 := by linarith [Real.log_two_gt_d9]
-    have h3 : 27 / 10 < Real.exp 1 := by linarith [Real.exp_one_gt_d9]
-    have h4 : (Real.log x) ^ 2 / √x / Real.log 2 ≤ 16 / ((27 / 10 : ℝ) ^ 2 * (69 / 100)) := by
-      calc (Real.log x) ^ 2 / √x / Real.log 2
-          ≤ (16 / (Real.exp 1) ^ 2) / Real.log 2 := div_le_div_of_nonneg_right hlogsq hlog2.le
-        _ = 16 / ((Real.exp 1) ^ 2 * Real.log 2) := div_div _ _ _
-        _ ≤ 16 / ((27 / 10 : ℝ) ^ 2 * (69 / 100)) := by gcongr
-    rw [Real.log_four_eq]
-    linarith
-  calc (#{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} : ℝ)
-      ≤ (2 * Real.log 4 + (Real.log x) ^ 2 / √x / Real.log 2) * (x / Real.log x) := hstep
-    _ ≤ 6 * (x / Real.log x) := by gcongr
-    _ = 6 * x / Real.log x := by ring
+/-! ### Prime-power counts up to `N` and `O(x / log x)` estimates -/
 
 /-- Natural-number form of the prime-power count bound: for every integer `N ≥ 2`,
 `#{n ∈ Ioc 0 N | IsPrimePow n} ≤ 6 * N / log N`. -/
 theorem card_filter_isPrimePow_Ioc_nat_le_six_mul_div_log {N : ℕ} (hN : 2 ≤ N) :
     (#{n ∈ Ioc 0 N | IsPrimePow n} : ℝ) ≤ 6 * N / Real.log N := by
   simpa only [Nat.floor_natCast] using
-    card_filter_isPrimePow_Ioc_le_six_mul_div_log (by exact_mod_cast hN : (2 : ℝ) ≤ N)
+    Chebyshev.card_filter_isPrimePow_le_six_mul_div_log (by exact_mod_cast hN : (2 : ℝ) ≤ N)
 
 /-- Asymptotic bound for the prime-power count on `ℝ`:
 `#{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} = O(x / log x)` as `x → ∞`. -/
@@ -990,7 +1171,7 @@ theorem isBigO_card_filter_isPrimePow_Ioc_div_log :
   filter_upwards [eventually_ge_atTop (2 : ℝ)] with x hx
   have hlog : 0 < Real.log x := Real.log_pos (by linarith)
   rw [Real.norm_of_nonneg (Nat.cast_nonneg _), Real.norm_of_nonneg (by positivity)]
-  simpa only [mul_div_assoc] using card_filter_isPrimePow_Ioc_le_six_mul_div_log hx
+  simpa only [mul_div_assoc] using Chebyshev.card_filter_isPrimePow_le_six_mul_div_log hx
 
 /-- Asymptotic bound for the prime-power count on `ℕ`:
 `#{n ∈ Ioc 0 N | IsPrimePow n} = O(N / log N)` as `N → ∞`. -/
@@ -1001,3 +1182,5 @@ theorem isBigO_card_filter_isPrimePow_Ioc_nat_div_log :
     isBigO_card_filter_isPrimePow_Ioc_div_log.comp_tendsto tendsto_natCast_atTop_atTop
 
 end TauCeti
+
+end TauCetiExtensions

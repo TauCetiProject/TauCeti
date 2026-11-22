@@ -6,14 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.DysonSeries
+public import TauCeti.Analysis.ODE.FrameTrivialization
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
-public import TauCeti.Geometry.Symplectic.Floer.Linearization
+public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
+public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Analysis.ODE.Regularity
+import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+import TauCeti.Geometry.Symplectic.Transport
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -30,6 +36,8 @@ Floer operator `∂s u + J(∂t u - X_{H_t}(u))` has linearization
 slice `s = const` the operator `D = TauCeti.Floer.stationaryCylinderOperator` is `∂s + A` for the
 asymptotic operator `A ζ = J_t (ζ' - S_t ζ)` acting on loops
 (`TauCeti.Floer.asymptoticOperator`, `Floer.stationaryCylinderOperator_eq_add_asymptoticOperator`).
+On a product section `φ(s) e(t)` whose loop solves `e' = S_t e - λ J_t e`, so that `A e = λ e`, it
+is the scalar operator `(φ' + λ φ) e` (`Floer.stationaryCylinderOperator_smul_of_hasDerivAt`).
 These are the operators which describe the linearized Floer equation on cylindrical ends
 asymptotic to `x`.
 
@@ -79,22 +87,31 @@ nondegenerate orbit of a Hamiltonian
 On the cylinder, the same cancellation gives the integrated form of `D* D = -∂s² + A²` over
 `[a, b] × [0, 1]`, in which the cross term only contributes the slice pairings
 `∫₀¹ ω(∂t ξ - S_t ξ, ξ) dt` at `s = a` and `s = b`
-(`Floer.setIntegral_associatedBilinForm_stationaryCylinderOperator`). For compatible `J_t` it
+(`Floer.setIntegral_associatedBilinForm_stationaryCylinderOperator`). The same identity holds on
+the strip `ℝ × [0, 1]` for maps with boundary values `ξ (s, 0) ∈ F₀` and `ξ (s, 1) ∈ F₁` in
+isotropic subspaces, such as the tangent spaces of two Lagrangians at the ends of a Hamiltonian
+chord: periodicity is replaced by the vanishing of `ω(ξ, ∂s ξ)` on the two boundary lines
+(`Floer.setIntegral_associatedBilinForm_stationaryCylinderOperator_of_isIsotropic`). For
+compatible `J_t` the cylinder identity
 shows that a solution of `D ξ = 0` which decays at both ends together with `∂t ξ` vanishes
 (`Floer.eq_zero_of_stationaryCylinderOperator_eq_zero`), with no nondegeneracy assumption.
 
 These are statements in a symplectic vector space with a constant form, matching the
 local-coordinate linearization `TauCeti.SymplecticForm.floerLinearization`. When the vector space
-is a finite-dimensional complex space, the loop operator `ζ ↦ ζ' - S_t ζ`, of which `A` is the
+is a finite-dimensional complex space, or along a differentiable one-periodic invertible frame from
+one via `TauCeti.trivializedCoeff`, the loop operator `ζ ↦ ζ' - S_t ζ`, of which `A` is the
 composite with the pointwise invertible `J_t`, has the Sobolev realization
 `TauCeti.CircleSobolev.loopOperator : H¹ → H⁰`, a Fredholm operator of index zero. Along a
-nondegenerate orbit it is invertible
-(`SymplecticForm.isInvertible_loopOperator_of_isNondegenerateFixedPt`), and so are the loop
-operators of the weighted shifts `A - δ` for all small weights `δ`
-(`SymplecticForm.eventually_isInvertible_loopOperator_sub_smul`). The Sobolev realization of the
-cylinder operator `D` is not treated here. For an actual orbit,
+one-periodic orbit it is invertible if and only if the orbit is nondegenerate
+(`SymplecticForm.isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff` and its
+identity-frame case `SymplecticForm.isInvertible_loopOperator_iff_isNondegenerateFixedPt`), and at
+a nondegenerate orbit so are the loop operators of the weighted shifts `A - δ` for all small
+weights `δ` (`SymplecticForm.eventually_isInvertible_loopOperator_sub_smul`). The Sobolev
+realization of the cylinder operator `D` is not treated here. For an actual orbit,
 the continuity hypothesis on `S` is
-`TauCeti.SymplecticForm.continuous_fderiv_hamiltonianVectorField_comp`. The model case of a
+`TauCeti.SymplecticForm.continuous_fderiv_hamiltonianVectorField_comp`, and for a one-periodic orbit
+of a one-periodic `C³` Hamiltonian, `S` is a `C¹` loop on the circle
+(`SymplecticForm.exists_loop_eq_fderiv_hamiltonianVectorField`). The model case of a
 constant orthogonal complex structure on an inner product space is the operator
 `TauCeti.orbitTorusOperator`.
 
@@ -466,7 +483,40 @@ theorem stationaryCylinderOperator_of_notMem_tsupport (hz : z ∉ tsupport ξ) :
     fderiv_of_notMem_tsupport ℝ hz]
   simp
 
+/-- **Product sections with an eigenmode.** If a loop `e` solves `e' = S_t e - λ J_t e`, then on
+the product section `φ(s) e(t)` the stationary cylinder operator acts as the scalar operator
+`d/ds + λ`: `D (φ e) = (φ' + λ φ) e`. -/
+theorem stationaryCylinderOperator_smul_of_hasDerivAt {e : ℝ → V} {lam : ℝ}
+    (he : ∀ y, HasDerivAt e (S y (e y) - lam • J y (e y)) y) {φ : ℝ → ℝ}
+    (hφ : Differentiable ℝ φ) (z : ℝ × ℝ) :
+    stationaryCylinderOperator J S (fun w ↦ φ w.1 • e w.2) z =
+      (deriv φ z.1 + lam * φ z.1) • e z.2 := by
+  have h1 : HasFDerivAt (fun w : ℝ × ℝ ↦ φ w.1)
+      (deriv φ z.1 • ContinuousLinearMap.fst ℝ ℝ ℝ) z :=
+    (hφ z.1).hasDerivAt.comp_hasFDerivAt z hasFDerivAt_fst
+  have h2 := (he z.2).hasFDerivAt.comp z (hasFDerivAt_snd (p := z))
+  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ φ w.1 • e w.2) _ z := h1.smul h2
+  have hJ : J z.2 (J z.2 (e z.2)) = -e z.2 := AlmostComplexStructure.apply_apply _ _
+  rw [stationaryCylinderOperator_def, h.fderiv]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_snd', ContinuousLinearMap.toSpanSingleton_apply,
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.coe_fst', stdComplexLineReal_fst,
+    stdComplexLineReal_snd, stdComplexLineImag_fst, stdComplexLineImag_snd, smul_eq_mul,
+    mul_one, mul_zero, zero_smul, one_smul, smul_zero, zero_add, add_zero, map_smul,
+    AlmostComplexStructure.apply_sub]
+  rw [hJ]
+  module
+
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
+
+/-- For continuous `J_t` and `S_t`, the stationary cylinder operator of a `C¹` map is continuous. -/
+theorem continuous_stationaryCylinderOperator
+    (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S)
+    (hξ : ContDiff ℝ 1 ξ) : Continuous (stationaryCylinderOperator J S ξ) := by
+  have h := hξ.continuous_fderiv one_ne_zero
+  simp only [funext (stationaryCylinderOperator_def J S ξ)]
+  exact (h.clm_apply continuous_const).add (((hJc.comp continuous_snd).clm_apply
+    ((h.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hξ.continuous))))
 
 /-- **Shifting the stationary cylinder operator by a weight.** Replacing `S_t` by `S_t - δ J_t`
 shifts the stationary cylinder operator by `-δ`. -/
@@ -579,39 +629,14 @@ private theorem hasDerivAt_apply_fderiv_fst_snd (hξ : ContDiff ℝ 2 ξ) (s t :
     (hasDerivAt_fderiv_apply_snd
       ((hξ.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero (s, t)) (1, 0))
 
-/-- The `t`-derivative `∂t ω(ξ, ∂s ξ)` of a map of period one in `t` integrates to zero over
-`[a, b] × [0, 1]`. -/
-private theorem setIntegral_rect_apply_fderiv_fst_snd_eq_zero (hξ : ContDiff ℝ 2 ξ)
-    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) {a b : ℝ}
-    (hφ : Continuous fun z : ℝ × ℝ ↦
-      ω (ξ z) (fderiv ℝ (fderiv ℝ ξ) z (1, 0) (0, 1)) +
-        ω (fderiv ℝ ξ z (0, 1)) (fderiv ℝ ξ z (1, 0))) :
-    ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1,
-      (ω (ξ z) (fderiv ℝ (fderiv ℝ ξ) z (1, 0) (0, 1)) +
-        ω (fderiv ℝ ξ z (0, 1)) (fderiv ℝ ξ z (1, 0))) = 0 := by
-  have hχp (s : ℝ) : ω (ξ (s, 1)) (fderiv ℝ ξ (s, 1) (1, 0)) =
-      ω (ξ (s, 0)) (fderiv ℝ ξ (s, 0) (1, 0)) := by
-    have h1 := fderiv_add_snd_of_periodic_snd (𝕜 := ℝ) hper s 0
-    rw [zero_add] at h1
-    have hξ1 : ξ (s, 1) = ξ (s, 0) := by simpa using hper s 0
-    simp only [h1, hξ1]
-  exact setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ
-    (Φ := fun z ↦ ω (ξ z) (fderiv ℝ ξ z (1, 0))) (hasDerivAt_apply_fderiv_fst_snd hξ) hχp
-
-/-- **The energy identity of the stationary cylinder operator.** Let each `J_t` leave `ω`
-invariant, depend continuously on `t`, and let each `S_t` be infinitesimally symplectic. For a
-`C²` map `ξ` of period one in `t` and `a ≤ b`, the `L²` norm of `D ξ` over `[a, b] × [0, 1]`
-for `g_t = ω(·, J_t ·)` splits as
-
-`∫ g(D ξ, D ξ) = ∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ)) + Φ(b) - Φ(a)`,
-
-where `Φ(s) = ∫₀¹ ω(∂t ξ - S_t ξ, ξ) dt` is the pairing of the slice at `s` with its image under
-the asymptotic operator. This is the integrated form of `D* D = -∂s² + A²`; only the boundary
-slices contribute to the cross term. -/
-theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
+/-- The energy identity of the stationary cylinder operator over `[a, b] × [0, 1]`, for a `C²`
+map `ξ` whose pairing `ω(ξ, ∂s ξ)` takes the same values on the two horizontal sides `t = 0` and
+`t = 1`. This holds for maps of period one in `t` and for maps with isotropic boundary values. -/
+private theorem setIntegral_associatedBilinForm_stationaryCylinderOperator_of_forall_eq
     (hJ : ∀ t, ω.Invariant (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
     (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) (hξ : ContDiff ℝ 2 ξ)
-    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) {a b : ℝ} (hab : a ≤ b) :
+    (hχ : ∀ s, ω (ξ (s, 1)) (fderiv ℝ ξ (s, 1) (1, 0)) = ω (ξ (s, 0)) (fderiv ℝ ξ (s, 0) (1, 0)))
+    {a b : ℝ} (hab : a ≤ b) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
         (stationaryCylinderOperator J S ξ z) (stationaryCylinderOperator J S ξ z) =
       (∫ z in Icc a b ×ˢ Icc 0 1,
@@ -657,9 +682,10 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
       (ω.associatedBilinForm (J z.2) (ξs z) (ξs z) +
         ω.associatedBilinForm (J z.2) (w z) (w z)) + (φ₁ z + φ₂ z) := fun z ↦
     associatedBilinForm_add_apply_self (hJ z.2) (hS z.2) (ξ z) (ξt z) (ξs z) (M z)
-  -- `χ` has period one in `t`, so `∂t χ` integrates to zero.
+  -- `χ` takes the same values on the two horizontal sides, so `∂t χ` integrates to zero.
   have h₂ : ∫ z in Icc a b ×ˢ Icc 0 1, φ₂ z = 0 :=
-    setIntegral_rect_apply_fderiv_fst_snd_eq_zero hξ hper hφ₂
+    setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ₂
+      (Φ := fun z ↦ ω (ξ z) (fderiv ℝ ξ z (1, 0))) (hasDerivAt_apply_fderiv_fst_snd hξ) hχ
   -- `∂s ψ` integrates to the difference of the boundary slice pairings.
   have h₁ : ∫ z in Icc a b ×ˢ Icc 0 1, φ₁ z =
       (∫ t in (0 : ℝ)..1, ω (w (b, t)) (ξ (b, t))) -
@@ -674,6 +700,80 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
       (hc₂.continuousOn.integrableOn_compact hR),
     integral_add (hφ₁.continuousOn.integrableOn_compact hR)
       (hφ₂.continuousOn.integrableOn_compact hR), h₁, h₂, add_zero]
+
+/-- **The energy identity of the stationary cylinder operator.** Let each `J_t` leave `ω`
+invariant, depend continuously on `t`, and let each `S_t` be infinitesimally symplectic. For a
+`C²` map `ξ` of period one in `t` and `a ≤ b`, the `L²` norm of `D ξ` over `[a, b] × [0, 1]`
+for `g_t = ω(·, J_t ·)` splits as
+
+`∫ g(D ξ, D ξ) = ∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ)) + Φ(b) - Φ(a)`,
+
+where `Φ(s) = ∫₀¹ ω(∂t ξ - S_t ξ, ξ) dt` is the pairing of the slice at `s` with its image under
+the asymptotic operator. This is the integrated form of `D* D = -∂s² + A²`; only the boundary
+slices contribute to the cross term. -/
+theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
+    (hJ : ∀ t, ω.Invariant (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
+    (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) (hξ : ContDiff ℝ 2 ξ)
+    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) {a b : ℝ} (hab : a ≤ b) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
+        (stationaryCylinderOperator J S ξ z) (stationaryCylinderOperator J S ξ z) =
+      (∫ z in Icc a b ×ˢ Icc 0 1,
+        (ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+            (fderiv ℝ ξ z stdComplexLineReal) +
+          ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+            (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z)))) +
+        ((∫ t in (0 : ℝ)..1,
+            ω (fderiv ℝ ξ (b, t) stdComplexLineImag - S t (ξ (b, t))) (ξ (b, t))) -
+          ∫ t in (0 : ℝ)..1,
+            ω (fderiv ℝ ξ (a, t) stdComplexLineImag - S t (ξ (a, t))) (ξ (a, t))) := by
+  refine setIntegral_associatedBilinForm_stationaryCylinderOperator_of_forall_eq hJ hJc hS hSc hξ
+    (fun s ↦ ?_) hab
+  have h1 := fderiv_add_snd_of_periodic_snd (𝕜 := ℝ) hper s 0
+  rw [zero_add] at h1
+  have hξ1 : ξ (s, 1) = ξ (s, 0) := by simpa using hper s 0
+  simp only [h1, hξ1]
+
+/-- **The energy identity of the stationary strip operator.** Let each `J_t` leave `ω` invariant,
+depend continuously on `t`, and let each `S_t` be infinitesimally symplectic. Let `F₀` and `F₁` be
+isotropic subspaces, for instance Lagrangian ones. For a `C²` map `ξ` with boundary values
+`ξ (s, 0) ∈ F₀` and `ξ (s, 1) ∈ F₁` and `a ≤ b`, the `L²` norm of `D ξ` over the piece
+`[a, b] × [0, 1]` of the strip splits as
+
+`∫ g(D ξ, D ξ) = ∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ)) + Φ(b) - Φ(a)`,
+
+for `g_t = ω(·, J_t ·)`, the operator `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ)` and the slice pairing
+`Φ(s) = ∫₀¹ ω(∂t ξ - S_t ξ, ξ) dt`, exactly as on the cylinder: the boundary terms `ω(ξ, ∂s ξ)`
+on the two sides `t = 0` and `t = 1` vanish because `ξ` and `∂s ξ` lie in an isotropic subspace
+there. -/
+theorem setIntegral_associatedBilinForm_stationaryCylinderOperator_of_isIsotropic
+    (hJ : ∀ t, ω.Invariant (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
+    (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) (hξ : ContDiff ℝ 2 ξ)
+    {F₀ F₁ : Submodule ℝ V} (hF₀ : ω.IsIsotropic F₀) (hF₁ : ω.IsIsotropic F₁)
+    (h₀ : ∀ s, ξ (s, 0) ∈ F₀) (h₁ : ∀ s, ξ (s, 1) ∈ F₁) {a b : ℝ} (hab : a ≤ b) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
+        (stationaryCylinderOperator J S ξ z) (stationaryCylinderOperator J S ξ z) =
+      (∫ z in Icc a b ×ˢ Icc 0 1,
+        (ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+            (fderiv ℝ ξ z stdComplexLineReal) +
+          ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+            (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z)))) +
+        ((∫ t in (0 : ℝ)..1,
+            ω (fderiv ℝ ξ (b, t) stdComplexLineImag - S t (ξ (b, t))) (ξ (b, t))) -
+          ∫ t in (0 : ℝ)..1,
+            ω (fderiv ℝ ξ (a, t) stdComplexLineImag - S t (ξ (a, t))) (ξ (a, t))) := by
+  -- Along a side `t = c` with values in a subspace `F`, the derivative `∂s ξ` lies in `F` too.
+  have hside {F : Submodule ℝ V} (hF : ω.IsIsotropic F) {c : ℝ} (hc : ∀ s, ξ (s, c) ∈ F)
+      (s : ℝ) : ω (ξ (s, c)) (fderiv ℝ ξ (s, c) (1, 0)) = 0 := by
+    have hd : HasDerivAt (fun s ↦ ξ (s, c)) (fderiv ℝ ξ (s, c) (1, 0)) s :=
+      (hξ.differentiable (by norm_num) _).hasFDerivAt.comp_hasDerivAt s
+        (hasDerivAt_prodMk_left s c)
+    have hmem : fderiv ℝ ξ (s, c) (1, 0) ∈ F := by
+      simpa using hd.hasFDerivAt.apply_mem_of_eventually_sub_mem F.isClosed_of_finiteDimensional
+        (Eventually.of_forall fun y ↦ F.sub_mem (hc y) (hc s)) 1
+    exact SymplecticForm.isIsotropic_iff.1 hF _ (hc s) _ hmem
+  refine setIntegral_associatedBilinForm_stationaryCylinderOperator_of_forall_eq hJ hJc hS hSc hξ
+    (fun s ↦ ?_) hab
+  rw [hside hF₀ h₀ s, hside hF₁ h₁ s]
 
 /-- The slice pairing `s ↦ ∫₀¹ ω(∂t ξ - S_t ξ, ξ) dt` tends to zero as `|s| → ∞` when `ξ` and
 `∂t ξ` do, uniformly in `t`. -/
@@ -848,8 +948,7 @@ theorem isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero
 time-dependent Hamiltonian `H` whose suspended vector field is globally Lipschitz, with `x(0)` a
 nondegenerate fixed point of the time-one map. Then the return map `Ψ(1)` of the linearized
 Hamiltonian equation `ζ' = S_t ζ`, with `S_t = dX_{H_t}(x(t))`, satisfies `det (1 - Ψ(1)) ≠ 0`:
-`Ψ(1)` is the derivative of the time-one map at `x(0)`
-(`fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft`), which fixes no nonzero vector. -/
+`Ψ(1)` fixes no nonzero vector (`eq_zero_of_dysonSeriesLeft_apply_eq_self`). -/
 theorem det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt (ω : SymplecticForm V)
     {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
     (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V}
@@ -860,13 +959,10 @@ theorem det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt (ω : Symp
       0 := by
   intro h
   obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff _).1 (LinearMap.det_eq_zero_iff_ker_ne_bot.1 h)
-  refine hv0 (hnd.eq_zero_of_mfderiv_apply_eq ?_)
-  rw [hnd.mdifferentiableAt.differentiableAt.hasFDerivAt.hasMFDerivAt.mfderiv,
-    ω.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft hX hH hx 0 1]
+  refine hv0 (ω.eq_zero_of_dysonSeriesLeft_apply_eq_self hX hH hx hnd ?_)
   have hv' : v - dysonSeriesLeft
       (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = 0 := by
     simpa using hv
-  simp only [zero_add, sub_zero]
   exact (sub_eq_zero.1 hv').symm
 
 /-- **Small weights preserve nondegeneracy.** At a nondegenerate one-periodic orbit `x` of a
@@ -897,6 +993,30 @@ theorem eventually_eq_zero_of_asymptoticOperator_eq_smul
     hne (h₀ ζ hζ hζp fun t ↦ by simpa using hA t)) fun δ hδ ζ hζ hζp hA ↦ ?_
   by_contra hne
   exact hδ ⟨ζ, hζ, hζp, hne, hA⟩
+
+/-- **The linearized Hamiltonian vector field along a periodic orbit is a loop.** Along a
+one-periodic orbit `x` of a one-periodic, jointly `C³` time-dependent Hamiltonian `H`, the
+linearized Hamiltonian vector field `S_t = dX_{H_t}(x(t))` descends to a continuous loop on the
+circle `ℝ / ℤ`, and it is of class `C¹` in `t`. -/
+theorem exists_loop_eq_fderiv_hamiltonianVectorField (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ 3 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1) :
+    ∃ S : C(AddCircle (1 : ℝ), V →L[ℝ] V),
+      (∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ∧
+        ContDiff ℝ 1 fun t : ℝ ↦ S t := by
+  set f : ℝ → V →L[ℝ] V := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)
+  have hxc : ContDiff ℝ 1 x :=
+    contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 0)
+        (by simpa using hH.of_le (by norm_num))).continuous hx
+  have hf : ContDiff ℝ 1 f :=
+    ContDiff.fderiv (f := fun t ↦ ω.hamiltonianVectorField (H t))
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 2) (hH.of_le (by norm_num))) hxc
+      (by norm_num)
+  have hper : Periodic f 1 := fun t ↦ by simp only [f, hHp t, hxp t]
+  refine ⟨⟨hper.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hf.continuous⟩,
+    fun t ↦ hper.lift_coe t, ?_⟩
+  simpa only [ContinuousMap.coe_mk, hper.lift_coe] using hf
 
 section Sobolev
 
@@ -953,26 +1073,71 @@ theorem eventually_isInvertible_loopOperator_sub_smul (ω : SymplecticForm E) {H
   obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
   exact congrFun h0 t
 
-/-- **The loop operator at a nondegenerate orbit is invertible.** Along a nondegenerate
-one-periodic orbit `x`, the loop operator `ζ ↦ ζ' - S_t ζ` of the linearized Hamiltonian vector
-field `S_t = dX_{H_t}(x(t))` is a continuous linear isomorphism `H¹ → H⁰` of one-periodic loops. -/
-theorem isInvertible_loopOperator_of_isNondegenerateFixedPt (ω : SymplecticForm E)
+/-- Along a `1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian `H` with globally
+Lipschitz suspended vector field, in a differentiable `1`-periodic invertible frame `Φ` trivializing
+`dX_{H_t}(x(t))` as `S`, `CircleSobolev.loopOperator 1 S` is invertible iff `x(0)` is a
+nondegenerate fixed point of the time-one flow. -/
+theorem isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
+    {Φ : ℝ → E →L[ℝ] V} (hΦd : Differentiable ℝ Φ) (hΦp : Periodic Φ 1)
+    (hΦ : ∀ t, (Φ t).IsInvertible) {S : C(AddCircle (1 : ℝ), E →L[ℝ] E)} (hS : ∀ t : ℝ, S t =
+      trivializedCoeff Φ (fun r ↦ fderiv ℝ (ω.hamiltonianVectorField (H r)) (x r)) t) :
+    (CircleSobolev.loopOperator 1 S).IsInvertible ↔
+      IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0) := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
+  obtain ⟨e₀, _⟩ := hΦ 0
+  let J₀ : AlmostComplexStructure V :=
+    (AlmostComplexStructure.ofComplexModule E).transport e₀.toLinearEquiv
+  rw [CircleSobolev.isInvertible_loopOperator_iff,
+    ω.isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero hX hH hHp hx hxp
+      fun _ ↦ J₀]
+  refine ⟨fun hloop ξ hξd hξp hA ↦ ?_, fun hnd ζ hζ ↦ ?_⟩
+  · have hΦinv : Differentiable ℝ fun t ↦ (Φ t).inverse := fun t ↦
+      (((hΦ t).contDiffAt_map_inverse (n := 1)).differentiableAt one_ne_zero).comp t (hΦd t)
+    set ζ₀ : ℝ → E := fun t ↦ (Φ t).inverse (ξ t)
+    have hζ₀d : Differentiable ℝ ζ₀ := hΦinv.clm_apply hξd
+    have hζ₀p : Periodic ζ₀ 1 := fun t ↦ by simp only [ζ₀, hΦp t, hξp t]
+    let ζ : C(AddCircle (1 : ℝ), E) :=
+      ⟨hζ₀p.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hζ₀d.continuous⟩
+    have hζeq (t : ℝ) : ζ t = (Φ t).inverse (ξ t) := by simp [ζ, ζ₀]
+    have hfun : (fun r ↦ Φ r (ζ₀ r)) = ξ := funext fun r ↦ (hΦ r).self_apply_inverse (ξ r)
+    have h0 := hloop ζ fun t ↦ by
+      rw [funext hζeq, hS t]
+      refine (hasDerivAt_clm_apply_iff_hasDerivAt_trivializedCoeff (hΦd t) (hΦ t) (hζ₀d t)).1 ?_
+      simpa only [hfun, ζ₀, (hΦ t).self_apply_inverse] using
+        (Floer.asymptoticOperator_eq_zero_iff (hξd t)).1 (hA t)
+    funext t
+    rw [Pi.zero_apply, ← (hΦ t).self_apply_inverse (ξ t), ← hζeq t, h0, ContinuousMap.zero_apply,
+      map_zero]
+  · have hζd : Differentiable ℝ fun y : ℝ ↦ ζ y := fun y ↦ (hζ y).differentiableAt
+    have hξd : Differentiable ℝ fun t ↦ Φ t (ζ t) := hΦd.clm_apply hζd
+    have hξp : Periodic (fun t ↦ Φ t (ζ t)) 1 := fun t ↦ by simp [hΦp t]
+    have h0 := hnd (fun t ↦ Φ t (ζ t)) hξd hξp fun t ↦
+      (Floer.asymptoticOperator_eq_zero_iff (hξd t)).2 <|
+        (hasDerivAt_clm_apply_iff_hasDerivAt_trivializedCoeff (hΦd t) (hΦ t) (hζd t)).2
+          (by simpa only [hS t] using hζ t)
+    ext θ; obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+    exact (hΦ t).injective (by simpa using congrFun h0 t)
+
+/-- **The loop operator is invertible if and only if the orbit is nondegenerate.** Along a
+one-periodic orbit `x` of a one-periodic, jointly `C²` Hamiltonian `H` with globally Lipschitz
+suspended vector field, `loopOperator 1 S` (`S_t = dX_{H_t}(x(t))`) is invertible iff `x(0)` is a
+nondegenerate fixed point of the time-one flow. -/
+theorem isInvertible_loopOperator_iff_isNondegenerateFixedPt (ω : SymplecticForm E)
     {H : ℝ → E → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
     (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → E}
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, E) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
     {S : C(AddCircle (1 : ℝ), E →L[ℝ] E)}
     (hS : ∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) :
-    (CircleSobolev.loopOperator 1 S).IsInvertible := by
-  -- Any family of almost complex structures may be used, for instance multiplication by `i`.
-  let J₀ : AlmostComplexStructure E :=
-    ⟨(Complex.I • LinearMap.id : E →ₗ[ℂ] E).restrictScalars ℝ, by ext v; simp [smul_smul]⟩
-  have h := (eventually_isInvertible_loopOperator_sub_smul ω hX hH hHp hx hxp hnd hS
-    (J := fun _ ↦ J₀) (Jc := ContinuousMap.const _ (LinearMap.toContinuousLinearMap J₀.toLinearMap))
-    fun _ ↦ rfl).self_of_nhds
-  convert h using 2
-  ext θ : 1
-  simp
+    (CircleSobolev.loopOperator 1 S).IsInvertible ↔
+      IsNondegenerateFixedPt 𝓘(ℝ, E) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0) :=
+  ω.isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff
+    (Φ := fun _ ↦ ContinuousLinearMap.id ℝ E) hX hH hHp hx hxp (differentiable_const _)
+    (fun _ ↦ rfl) (fun _ ↦ ContinuousLinearMap.isInvertible_equiv (f := .refl ℝ E))
+    fun t ↦ by simp [hS t]
 
 end Sobolev
 

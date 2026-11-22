@@ -152,7 +152,7 @@ theorem formallySmooth_of_ker_eq_span_of_sum_mul_mem_sq [IsLocalRing P] [IsLocal
   choose c' hc' using fun t ↦ hκsurj (c t)
   have hgJ (t : τ) : g t ∈ RingHom.ker (algebraMap P κ) := by
     rw [IsScalarTower.algebraMap_eq P S κ, RingHom.mem_ker, RingHom.comp_apply,
-      (RingHom.mem_ker.mp (v t).2), map_zero]
+      (RingHom.mem_ker.mp (v t).property), map_zero]
   have h0 : kerCotangentToTensor K P κ
       ((RingHom.ker (algebraMap P κ)).toCotangent (∑ t, c' t • ⟨g t, hgJ t⟩)) = 0 := by
     rw [← hc]

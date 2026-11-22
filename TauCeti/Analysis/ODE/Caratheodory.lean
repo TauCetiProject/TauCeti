@@ -31,7 +31,9 @@ that is `x = ODE.picard (fun s y ↦ M s y + F s) a x₀ x` on `[a, b]`, for `x`
 solutions on the whole line, `Continuous.eq_of_hasDerivAt_clm_apply` deduces uniqueness for
 `v' = B(t) v` from Mathlib's `ODE_solution_unique_of_mem_Ioo`, and
 `Continuous.eqOn_Ici_of_hasDerivAt_clm_apply` does the same in forward time on a half-line
-`[a, ∞)` from `ODE_solution_unique_of_mem_Icc_right`.
+`[a, ∞)` from `ODE_solution_unique_of_mem_Icc_right`. A solution of `v' = B(t) v` that lies at one
+time in a closed complemented subspace invariant under every `B(t)` lies in it at all times
+(`Continuous.mem_of_hasDerivAt_clm_apply`).
 
 Linear equations with merely measurable, bounded coefficients arise as the Galerkin
 approximations of linear parabolic equations, whose coefficients are only measurable in time.
@@ -93,7 +95,7 @@ private noncomputable def next (hab : a ≤ b)
       exact integrableOn_Icc hab hM hK hF y
     have h := continuousOn_primitive_interval hI
     rw [uIcc_of_le hab] at h
-    exact (continuousOn_const.add h).comp_continuous continuous_subtype_val Subtype.prop
+    exact (continuousOn_const.add h).comp_continuous continuous_subtypeVal Subtype.prop
 
 private theorem next_apply (hab : a ≤ b)
     (hM : AEStronglyMeasurable M (volume.restrict (Ioo a b)))
@@ -119,21 +121,21 @@ private theorem dist_iterate_next_apply_le {L : ℝ} (hL : ∀ᵐ t ∂volume.re
     set Z := (next hab hM hK hF x₀)^[n] z
     have hint : ∀ W : C(Icc a b, E), IntervalIntegrable
         (fun s ↦ M s (IccExtend hab W s) + F s) volume a t := fun W ↦
-      (intervalIntegrable_iff_integrableOn_Icc_of_le t.2.1).2
-        ((integrableOn_Icc hab hM hK hF W).mono_set (Icc_subset_Icc_right t.2.2))
+      (intervalIntegrable_iff_integrableOn_Icc_of_le t.property.1).2
+        ((integrableOn_Icc hab hM hK hF W).mono_set (Icc_subset_Icc_right t.property.2))
     have hLae : ∀ᵐ s, s ∈ Ioc a b → ‖M s‖ ≤ L := by
       rwa [← ae_restrict_iff' measurableSet_Ioc, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
     rw [iterate_succ_apply', iterate_succ_apply', dist_eq_norm, next_apply, next_apply,
       ODE.picard_apply, ODE.picard_apply, add_sub_add_left_eq_sub,
       ← intervalIntegral.integral_sub (hint Y) (hint Z)]
     calc _ ≤ ∫ s in a..t, L * ((L * (s - a)) ^ n / n ! * dist y z) := by
-          refine norm_integral_le_of_norm_le t.2.1 ?_
+          refine norm_integral_le_of_norm_le t.property.1 ?_
             (Continuous.intervalIntegrable (by fun_prop) _ _)
           filter_upwards [hLae] with s hs hst
-          have hs' : s ∈ Icc a b := ⟨hst.1.le, hst.2.trans t.2.2⟩
+          have hs' : s ∈ Icc a b := ⟨hst.1.le, hst.2.trans t.property.2⟩
           rw [add_sub_add_right_eq_sub, ← map_sub, IccExtend_of_mem hab _ hs',
             IccExtend_of_mem hab _ hs']
-          refine ((M s).le_opNorm _).trans (mul_le_mul (hs ⟨hst.1, hst.2.trans t.2.2⟩) ?_
+          refine ((M s).le_opNorm _).trans (mul_le_mul (hs ⟨hst.1, hst.2.trans t.property.2⟩) ?_
             (norm_nonneg _) hL₀)
           simpa [dist_eq_norm] using ih ⟨s, hs'⟩
       _ = (L * (t - a)) ^ (n + 1) / (n + 1)! * dist y z := by
@@ -167,9 +169,9 @@ private theorem exists_contractingWith_iterate_next :
   rw [Real.coe_toNNReal _ h₀, ContinuousMap.dist_le (by positivity)]
   intro t
   refine (dist_iterate_next_apply_le hab hM hK hF hK' (le_max_right _ _) n y z t).trans ?_
-  have h₁ : 0 ≤ K' * (t - a) := mul_nonneg (le_max_right _ _) (sub_nonneg.2 t.2.1)
+  have h₁ : 0 ≤ K' * (t - a) := mul_nonneg (le_max_right _ _) (sub_nonneg.2 t.property.1)
   have h₂ : K' * (t - a) ≤ K' * (b - a) :=
-    mul_le_mul_of_nonneg_left (sub_le_sub_right t.2.2 a) (le_max_right _ _)
+    mul_le_mul_of_nonneg_left (sub_le_sub_right t.property.2 a) (le_max_right _ _)
   gcongr
 
 include hab hM hK hF in
@@ -179,11 +181,11 @@ private theorem isFixedPt_next {x : ℝ → E} (hx : ContinuousOn x (Icc a b))
     (h : ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) a x₀ x t) :
     IsFixedPt (next hab hM hK hF x₀) ⟨(Icc a b).domRestrict x, hx.domRestrict⟩ := by
   ext t
-  rw [next_apply, ContinuousMap.coe_mk, domRestrict_apply, h t t.2, ODE.picard_apply,
+  rw [next_apply, ContinuousMap.coe_mk, domRestrict_apply, h t t.property, ODE.picard_apply,
     ODE.picard_apply]
   congr 1
   refine intervalIntegral.integral_congr fun s hs ↦ ?_
-  have hs' : s ∈ Icc a b := uIcc_subset_Icc ⟨le_rfl, hab⟩ t.2 hs
+  have hs' : s ∈ Icc a b := uIcc_subset_Icc ⟨le_rfl, hab⟩ t.property hs
   simp [IccExtend_of_mem hab _ hs']
 
 end CaratheodoryLinear
@@ -269,3 +271,29 @@ theorem Continuous.eqOn_Ici_of_hasDerivAt_clm_apply {X : Type*} [NormedAddCommGr
     (HasDerivAt.continuousOn fun s hs ↦ hv s hs.1) (fun s hs ↦ (hv s hs.1).hasDerivWithinAt)
     (fun _ _ ↦ mem_univ _) (HasDerivAt.continuousOn fun s hs ↦ hw s hs.1)
     (fun s hs ↦ (hw s hs.1).hasDerivWithinAt) (fun _ _ ↦ mem_univ _) h ⟨ht, le_rfl⟩
+
+/-- **A linear equation preserves the invariant subspaces of its coefficients.** Let `V` be a
+closed complemented subspace invariant under every operator of a continuous family `B`. A solution
+of `w' = B(t) w` on the line that lies in `V` at one time lies in `V` at all times: for a continuous
+projection `P` onto `V`, the component `w - P w` solves a linear equation and vanishes at that
+time. -/
+theorem Continuous.mem_of_hasDerivAt_clm_apply {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] {B : ℝ → X →L[ℝ] X} (hB : Continuous B) {V : Submodule ℝ X}
+    (hVc : V.ClosedComplemented) (hV : ∀ t, ∀ x ∈ V, B t x ∈ V) {w : ℝ → X}
+    (hw : ∀ t, HasDerivAt w (B t (w t)) t) {t₀ : ℝ} (h : w t₀ ∈ V) (t : ℝ) : w t ∈ V := by
+  obtain ⟨P, hP⟩ := hVc
+  set Q := ContinuousLinearMap.id ℝ X - V.subtypeL ∘L P
+  have hQV {x : X} (hx : x ∈ V) : Q x = 0 := by
+    simp [Q, hP ⟨x, hx⟩]
+  -- `Q w` solves `u' = Q B(t) u`, since `Q B(t)` kills `V`.
+  have hQ (t : ℝ) (x : X) : Q (B t x) = (Q ∘L B t) (Q x) := by
+    have hx : Q x = x - P x := by simp [Q]
+    simp [hx, hQV (hV t _ (P x).property)]
+  have hQw : (fun t ↦ Q (w t)) = fun _ ↦ 0 :=
+    (continuous_const.clm_comp hB).eq_of_hasDerivAt_clm_apply (B := fun t ↦ Q ∘L B t)
+      (fun t ↦ (Q.hasFDerivAt.comp_hasDerivAt t (hw t)).congr_deriv (hQ t (w t)))
+      (fun t ↦ by simpa using hasDerivAt_const t (0 : X)) (hQV h)
+  have h0 : w t - P (w t) = 0 := congrFun hQw t
+  rw [sub_eq_zero] at h0
+  rw [h0]
+  exact (P (w t)).property

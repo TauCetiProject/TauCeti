@@ -51,7 +51,8 @@ The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction an
 
 Conversely, `TauCeti.LocalSymbol.ofEventuallyEq` builds a local symbol from a function that agrees,
 near every position in `U`, with a symbol on `ℝⁿ`: the estimates of a local symbol only involve
-the coefficient near positions of `U`.
+the coefficient near positions of `U`. Over all of `ℝⁿ`, `TauCeti.Symbol.ofEventuallyEq` glues a
+symbol on `ℝⁿ × ℝⁿ` in the same way.
 
 ## References
 
@@ -112,7 +113,7 @@ private theorem exists_contDiff_eventually_eq_coefficient (a : LocalSymbol U V W
     {x : CoordinateSpace n} (hx : x ∈ U) :
     ∃ g : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W, ContDiff ℝ ∞ g ∧
       ∀ᶠ y in 𝓝 x, ∀ η, g (y, η) = a.coefficient (y, η) :=
-  let ⟨g, hg, hga⟩ := a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ
+  let ⟨g, hg, hga, _⟩ := a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ
     isCompact_singleton U.isOpen (singleton_subset_iff.2 hx)
   ⟨g, hg, hga x rfl⟩
 
@@ -378,6 +379,22 @@ theorem coefficient_restrictTopEquiv_symm_apply
     (a : LocalSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m) :
     (restrictTopEquiv.symm a : Symbol n V W m).coefficient = a.coefficient := (rfl)
 
+/-- A function on `ℝⁿ × ℝⁿ` is a symbol of order `m` as soon as, near every position, it agrees
+with a symbol of order `m`: the estimates on a compact set of positions only involve the
+coefficient near its points. This glues symbols from local data, the global counterpart of
+`TauCeti.LocalSymbol.ofEventuallyEq`. -/
+def ofEventuallyEq (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (h : ∀ x, ∃ s : Symbol n V W m, ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = f (y, η)) :
+    Symbol n V W m :=
+  restrictTopEquiv.symm (LocalSymbol.ofEventuallyEq f
+    (fun x hx => absurd (TopologicalSpace.Opens.mem_top x) hx) fun x _ => h x)
+
+@[simp]
+theorem coefficient_ofEventuallyEq (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (h : ∀ x, ∃ s : Symbol n V W m, ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = f (y, η)) :
+    (ofEventuallyEq f h).coefficient = f :=
+  (rfl)
+
 /-- The restriction of a symbol on `ℝⁿ × ℝⁿ` to the open set `U` of positions, extended by zero
 at positions outside `U`: the restriction from `⊤` to `U` of the corresponding local symbol. It
 satisfies the same estimates on the compact subsets of `U`. -/
@@ -452,7 +469,7 @@ private theorem exists_bound_extend (a : LocalSymbol U V W m) (hψ : ContDiff �
   set L := K ∩ tsupport ψ
   have hL : IsCompact L := hK.inter_right (isClosed_tsupport ψ)
   have hLU : L ⊆ U := inter_subset_right.trans hψU
-  obtain ⟨b, hb, hab⟩ :=
+  obtain ⟨b, hb, hab, -⟩ :=
     a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ hL U.isOpen hLU
   -- Bounds for the derivatives of `ψ` and the mixed derivatives of `a` on `L`.
   choose B hB using fun i : ℕ => hL.exists_bound_of_continuousOn

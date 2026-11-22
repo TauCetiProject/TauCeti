@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The turning points of the spherical pendulum
@@ -40,6 +41,11 @@ the pendulum, such as its rotation angle, as integrals with continuous integrand
 * `TauCeti.image_apply_two_preimage_sphericalPendulumEnergyMomentum_eq_Icc`: the heights of the
   fibre form the interval `[z₋, z₊]`.
 * `TauCeti.two_mul_sub_mul_one_sub_sq_sub_sq_eq`: the factorization of the radicand.
+* `TauCeti.two_mul_sub_mul_one_sub_sq_sub_sq_pos`,
+  `TauCeti.two_mul_sub_mul_one_sub_sq_sub_sq_nonpos`: the radicand is positive strictly between the
+  turning points and nonpositive elsewhere below the north pole.
+* `TauCeti.integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq`: integrals over `(-1, 1)`
+  against the inverse square root of the radicand run between the turning points.
 * `TauCeti.continuousOn_sphericalPendulumLowerTurningPoint`,
   `TauCeti.continuousOn_sphericalPendulumUpperTurningPoint`: continuity of the turning points.
 
@@ -66,6 +72,15 @@ def sphericalPendulumTurningPointDomain : Set (ℝ × ℝ) :=
 theorem mem_sphericalPendulumTurningPointDomain_iff {c : ℝ × ℝ} :
     c ∈ sphericalPendulumTurningPointDomain ↔
       c.2 ≠ 0 ∧ ∃ z ∈ Ioo (-1) 1, sphericalPendulumEffectivePotential c.2 z < c.1 := (Iff.rfl)
+
+/-- A value `(h, j)` with `j ≠ 0` and `j² < 2 h` lies strictly above the curve of relative
+equilibria, since the effective potential at the equator is `V_j(0) = j² / 2 < h`. -/
+theorem mem_sphericalPendulumTurningPointDomain_of_sq_lt {h j : ℝ} (hj : j ≠ 0)
+    (hjh : j ^ 2 < 2 * h) : (h, j) ∈ sphericalPendulumTurningPointDomain :=
+  ⟨hj, 0, ⟨by norm_num, by norm_num⟩, by
+    rw [sphericalPendulumEffectivePotential_def,
+      show j ^ 2 / (2 * (1 - (0 : ℝ) ^ 2)) + 0 = j ^ 2 / 2 by ring]
+    linarith⟩
 
 /-- The **lower turning point** `z₋` of the spherical pendulum at energy `h` and vertical angular
 momentum `j`: the infimum of the heights `q₃` of the points of the fibre `F⁻¹(h, j)` of the
@@ -262,6 +277,61 @@ theorem one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpper
   have : 0 ≤ (1 - a) * (1 - b) * (1 - (h - a - b)) :=
     mul_nonneg (mul_nonneg (by linarith) (by linarith)) (by linarith)
   nlinarith
+
+/-- Above the curve of relative equilibria, the radicand `2 (h - z) (1 - z²) - j²` is positive
+strictly between the turning points. -/
+theorem two_mul_sub_mul_one_sub_sq_sub_sq_pos (hj : j ≠ 0) (hz₀ : z₀ ∈ Ioo (-1) 1)
+    (hV : sphericalPendulumEffectivePotential j z₀ < h) {z : ℝ}
+    (hz : z ∈ Ioo (sphericalPendulumLowerTurningPoint h j)
+      (sphericalPendulumUpperTurningPoint h j)) :
+    0 < 2 * (h - z) * (1 - z ^ 2) - j ^ 2 := by
+  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
+  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
+    hj hz₀ hV
+  rw [two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV z]
+  have := mul_pos (mul_pos (sub_pos.2 hz.1) (sub_pos.2 hz.2))
+    (by linarith [hz.2] : (0 : ℝ) < h - sphericalPendulumLowerTurningPoint h j -
+      sphericalPendulumUpperTurningPoint h j - z)
+  linarith
+
+/-- Above the curve of relative equilibria, the radicand `2 (h - z) (1 - z²) - j²` is nonpositive
+at every height `z ≤ 1` outside the open interval between the turning points, since its third root
+`h - z₋ - z₊` lies above the north pole. -/
+theorem two_mul_sub_mul_one_sub_sq_sub_sq_nonpos (hj : j ≠ 0) (hz₀ : z₀ ∈ Ioo (-1) 1)
+    (hV : sphericalPendulumEffectivePotential j z₀ < h) {z : ℝ} (hz : z ≤ 1)
+    (hzab : z ∉ Ioo (sphericalPendulumLowerTurningPoint h j)
+      (sphericalPendulumUpperTurningPoint h j)) :
+    2 * (h - z) * (1 - z ^ 2) - j ^ 2 ≤ 0 := by
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
+  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
+    hj hz₀ hV
+  rw [two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV z]
+  set a := sphericalPendulumLowerTurningPoint h j
+  set b := sphericalPendulumUpperTurningPoint h j
+  have hz3 : 0 < h - a - b - z := by linarith
+  rcases le_or_gt z a with hza | hza
+  · nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hza) (by linarith : (0 : ℝ) ≤ b - z)) hz3.le]
+  · have hbz : b ≤ z := not_lt.1 fun hzb ↦ hzab ⟨hza, hzb⟩
+    nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hbz) (by linarith : (0 : ℝ) ≤ z - a)) hz3.le]
+
+/-- **Height quadratures run between the turning points.** Above the curve of relative equilibria,
+the square root of the radicand `2 (h - z) (1 - z²) - j²` vanishes at every height of `[-1, 1]`
+outside the open interval between the turning points. So the integral over `(-1, 1)` of any
+function divided by it is the integral from `z₋` to `z₊`. -/
+theorem integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq (hj : j ≠ 0)
+    (hz₀ : z₀ ∈ Ioo (-1) 1) (hV : sphericalPendulumEffectivePotential j z₀ < h) (g : ℝ → ℝ) :
+    ∫ z in (-1)..1, g z / √(2 * (h - z) * (1 - z ^ 2) - j ^ 2) =
+      ∫ z in (sphericalPendulumLowerTurningPoint h j)..(sphericalPendulumUpperTurningPoint h j),
+        g z / √(2 * (h - z) * (1 - z ^ 2) - j ^ 2) := by
+  have ha := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz₀ hV
+  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
+  rw [intervalIntegral.integral_of_le (by norm_num), intervalIntegral.integral_of_le hab.le,
+    ← MeasureTheory.integral_Icc_eq_integral_Ioc, MeasureTheory.integral_Ioc_eq_integral_Ioo,
+    MeasureTheory.setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Icc
+      (s := Ioo _ _) fun z hz ↦ ⟨ha.le.trans hz.1.le, hz.2.le.trans hb.le⟩]
+  rintro z ⟨hz, hzab⟩
+  rw [Real.sqrt_eq_zero'.2 (two_mul_sub_mul_one_sub_sq_sub_sq_nonpos hj hz₀ hV hz.2 hzab), div_zero]
 
 /-- **The heights of a fibre.** Above the curve of relative equilibria, the heights `q₃` of the
 points of the fibre `F⁻¹(h, j)` of the energy–momentum map form the interval `[z₋, z₊]` between

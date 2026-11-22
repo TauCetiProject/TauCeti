@@ -98,7 +98,7 @@ private lemma singularHomologyMap_complZeroMap_of_det_pos [FiniteDimensional ℝ
   let H : ContinuousMap.Homotopy (ContinuousMap.id E) (f : C(E, E)) :=
     { toFun p := γ p.1 p.2
       continuous_toFun :=
-        (hγ.continuous.comp (continuous_subtype_val.comp continuous_fst)).clm_apply continuous_snd
+        (hγ.continuous.comp (continuous_subtypeVal.comp continuous_fst)).clm_apply continuous_snd
       map_zero_left x := by simp [hγ0]
       map_one_left x := by simp [hγ1] }
   have h := (TopPair.ofSubsetHomotopy (g₀ := 𝟙 (TopCat.of E))
