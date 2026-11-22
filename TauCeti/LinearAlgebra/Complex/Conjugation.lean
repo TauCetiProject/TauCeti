@@ -10,8 +10,10 @@ public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.TensorProduct.Basic
+import Mathlib.Dynamics.FixedPoints.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # The real points of a conjugate-linear involution
@@ -65,8 +67,7 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   `ℂ`, so an identity between `ℂ`-linear or `ℂ`-bilinear maps may be checked on real vectors
   alone.
 * `TauCeti.comp_eq_comp_iff_mapsTo_realPoints`: in particular a `ℂ`-linear map intertwines two
-  conjugations exactly when it carries the real points of one into those of the other;
-  `TauCeti.mapsTo_realPoints_of_comp_eq_comp` is the forward direction, for any conjugations.
+  conjugations exactly when it carries the real points of one into those of the other.
 * `TauCeti.finrank_realPoints`: the real points have the `ℝ`-dimension that `V` has over `ℂ`.
 * `TauCeti.finrank_selfAdjoint_submodule`: in particular, the self-adjoint elements of a complex
   star module have the `ℝ`-dimension that the module has over `ℂ`.
@@ -208,9 +209,8 @@ imaginary part.  Once `K` is involutive both summands lie in `TauCeti.realPoints
 what exhibits `V` as the complexification of that subspace. -/
 theorem conjRealPart_add_I_smul_conjImaginaryPart (v : V) :
     conjRealPart K v + Complex.I • conjImaginaryPart K v = v := by
-  -- `I • I • x = -x` is the only step beyond linear arithmetic.
-  rw [conjRealPart_def, conjImaginaryPart_def, smul_comm Complex.I, smul_smul Complex.I,
-    Complex.I_mul_I, neg_one_smul]
+  -- `I • c • I • x = -(c • x)` is the only step beyond linear arithmetic.
+  rw [conjRealPart_def, conjImaginaryPart_def, Complex.I_smul_smul_I_smul]
   module
 
 /-- **The real points of a conjugation span the whole space over `ℂ`.**  Every vector is a
@@ -224,22 +224,16 @@ theorem span_realPoints_eq_top (hK : Function.Involutive K) :
   exact Submodule.add_mem _ (Submodule.subset_span (conjRealPart_mem hK v))
     (Submodule.smul_mem _ _ (Submodule.subset_span (conjImaginaryPart_mem hK v)))
 
-/-- **A `ℂ`-linear map intertwining two conjugations carries real points to real points**: if
-`K v = v` then `K' (A v) = A (K v) = A v`.  Neither conjugation need be involutive. -/
-theorem mapsTo_realPoints_of_comp_eq_comp {V' : Type*} [AddCommGroup V'] [Module ℂ V']
-    {K' : V' →ₛₗ[starRingEnd ℂ] V'} (A : V →ₗ[ℂ] V') (h : K' ∘ₛₗ A = A ∘ₛₗ K) :
-    Set.MapsTo A (realPoints K : Set V) (realPoints K' : Set V') := fun v hv ↦ by
-  rw [SetLike.mem_coe, mem_realPoints, ← LinearMap.comp_apply, h, LinearMap.comp_apply,
-    mem_realPoints.mp hv]
-
 /-- **A `ℂ`-linear map intertwines two conjugations exactly when it carries real points to real
 points.**  For the reverse direction both sides are conjugate-linear and agree on the real points
-of `K`, which span `V` over `ℂ`.  Only `K` need be involutive, and the forward direction,
-`TauCeti.mapsTo_realPoints_of_comp_eq_comp`, needs no involutivity at all. -/
+of `K`, which span `V` over `ℂ`.  Only `K` need be involutive.  The forward direction needs no
+involutivity at all: real points are fixed points, so it is Mathlib's
+`Function.Semiconj.mapsTo_fixedPoints`. -/
 theorem comp_eq_comp_iff_mapsTo_realPoints {V' : Type*} [AddCommGroup V'] [Module ℂ V']
     {K' : V' →ₛₗ[starRingEnd ℂ] V'} (hK : Function.Involutive K) (A : V →ₗ[ℂ] V') :
     K' ∘ₛₗ A = A ∘ₛₗ K ↔ Set.MapsTo A (realPoints K : Set V) (realPoints K' : Set V') := by
-  refine ⟨mapsTo_realPoints_of_comp_eq_comp A, fun hA ↦ ?_⟩
+  refine ⟨fun h ↦ Function.Semiconj.mapsTo_fixedPoints fun v ↦ (LinearMap.congr_fun h v).symm,
+    fun hA ↦ ?_⟩
   refine LinearMap.ext_on (span_realPoints_eq_top hK) fun v hv ↦ ?_
   rw [LinearMap.comp_apply, LinearMap.comp_apply, mem_realPoints.mp (hA hv),
     mem_realPoints.mp hv]
