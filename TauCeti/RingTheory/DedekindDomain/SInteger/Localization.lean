@@ -40,6 +40,12 @@ a single denominator exactly when each of its primes contains a candidate denomi
 prime `p = (2, 1 + √-5)` is not principal, but `p ^ 2 = (2)` and inverting `2` gives the
 `{p}`-integers.
 
+Inverting a single nonzero element `r` always gives the `S`-integers for the set `S` of primes
+containing `r` (`integer_isLocalization_away_setOf_mem`). Elementwise, some `r ^ n * x` lies in
+`R` exactly when `x` is integral at every prime not containing `r`
+(`exists_pow_mul_mem_range_iff_valuation_le_one`); this describes the elements of a number field
+that are integral away from a rational prime `l`, as `ℤ[1/l]`-multiples of algebraic integers.
+
 ## References
 
 * Charles A. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter I, Section 3,
@@ -200,5 +206,31 @@ denominator from each prime of `S` works as `s`. -/
 theorem exists_integer_isLocalization_away [Fact (IsMulTorsion (ClassGroup R))] [Finite S] :
     ∃ s ∈ Localization.submonoid S, IsLocalization.Away s (S.integer K) :=
   (exists_integer_isLocalization_away_iff K S).2 fun _ hv ↦ exists_mem_submonoid_mem_asIdeal S hv
+
+/-- Inverting a nonzero element `r` of `R` gives the ring of `S`-integers for the set `S` of primes
+containing `r`: `R[1/r]` consists of the elements of `K` integral at every prime not containing
+`r`. -/
+theorem integer_isLocalization_away_setOf_mem {r : R} (hr : r ≠ 0) :
+    IsLocalization.Away r ({v : HeightOneSpectrum R | r ∈ v.asIdeal}.integer K) :=
+  (integer_isLocalization_iff K _ _).2
+    ⟨Submonoid.powers_le.2 ((Localization.mem_submonoid_iff _).2
+      ⟨fun _ hv ↦ hv, mem_nonZeroDivisors_of_ne_zero hr⟩),
+    fun _ hv ↦ ⟨r, Submonoid.mem_powers r, hv⟩⟩
+
+/-- An element `x` of `K` becomes an element of `R` after multiplication by some power of `r`
+exactly when `x` is integral at every prime not containing `r`. For `r = 0` both sides hold for
+every `x`. -/
+theorem exists_pow_mul_mem_range_iff_valuation_le_one (r : R) (x : K) :
+    (∃ n : ℕ, algebraMap R K r ^ n * x ∈ (algebraMap R K).range) ↔
+      ∀ v : HeightOneSpectrum R, r ∉ v.asIdeal → v.valuation K x ≤ 1 := by
+  refine ⟨fun ⟨n, a, ha⟩ v hv ↦ ?_, fun h ↦ ?_⟩
+  · have hle : v.valuation K (algebraMap R K a) ≤ 1 := v.valuation_le_one a
+    rwa [ha, map_mul, map_pow, (v.valuation_eq_one_iff_notMem).2 hv, one_pow, one_mul] at hle
+  obtain rfl | hr := eq_or_ne r 0
+  · exact ⟨1, 0, by simp⟩
+  have := integer_isLocalization_away_setOf_mem K hr
+  obtain ⟨n, a, ha⟩ := IsLocalization.Away.surj r (⟨x, h⟩ :
+    {v : HeightOneSpectrum R | r ∈ v.asIdeal}.integer K)
+  exact ⟨n, a, by simpa [mul_comm] using (congrArg Subtype.val ha).symm⟩
 
 end IsDedekindDomain
