@@ -26,6 +26,7 @@ import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ChartEquality
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SchemeTheoreticallyDominant
 import TauCeti.RingTheory.Spectrum.Prime.Polynomial
+import Mathlib.RingTheory.PolynomialAlgebra
 
 /-!
 # The projective line over a commutative ring
@@ -45,7 +46,8 @@ module
 (`TauCeti.SymmetricAlgebra.instIsProperOver`), and smooth of relative dimension one over `R`, since
 each chart is the affine line `Spec R[X]`; it is integral when `R` is a domain, and its local
 rings are regular when `R` is a regular ring. Its formation commutes with every change of base
-ring `R → S`: `ℙ¹_S` is the fibre product `ℙ¹_R ×_{Spec R} Spec S`. Over a domain, its function
+ring `R → S`: `ℙ¹_S` is the fibre product `ℙ¹_R ×_{Spec R} Spec S`, and each chart `Spec S[X]` of
+`ℙ¹_S` is the preimage of the corresponding chart `Spec R[X]` of `ℙ¹_R`. Over a domain, its function
 field is the fraction field `R(X)` of the ring `R[X]` of functions on the chart `D₊(X₀)`, the
 function `X₁ / X₀` on that chart going to `X`.
 
@@ -105,9 +107,14 @@ function `X₁ / X₀` on that chart going to `X`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.isRegularLocalRing_stalk`: its local rings are
   regular over a regular ring.
 * `TauCeti.AlgebraicGeometry.projectiveLine.smoothOfRelativeDimension`: `ℙ¹_R` is smooth of
-  relative dimension one over `Spec R`.
+  relative dimension one over `Spec R`, so in particular it is smooth
+  (`TauCeti.AlgebraicGeometry.projectiveLine.smooth`) and locally of finite presentation.
 * `TauCeti.AlgebraicGeometry.projectiveLine.isPullback_baseChangeProjection`: `ℙ¹_S` is the base
   change of `ℙ¹_R` along `Spec S ⟶ Spec R`.
+* `TauCeti.AlgebraicGeometry.isPullback_SpecMap_polynomial` and
+  `TauCeti.AlgebraicGeometry.projectiveLine.isPullback_polynomialChartι_baseChangeProjection`:
+  `Spec S[X]` is the base change of `Spec R[X]` along `Spec S ⟶ Spec R`, and its embedding as a
+  chart of `ℙ¹_S` is the base change of the corresponding chart of `ℙ¹_R`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.functionFieldEquiv_germToFunctionField`: on the chart
   `D₊(X₀)`, the identification of the function field with `R(X)` is `chartSectionsEquiv`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.functionFieldEquiv_symm_X`: that identification sends
@@ -865,6 +872,11 @@ instance smoothOfRelativeDimension :
     fun i ↦ (HasRingHomProperty.iff_of_isAffine (P := @SmoothOfRelativeDimension 1)).mp
       (smoothOfRelativeDimension_awayι R i)
 
+/-- The projective line is smooth over `Spec R`; in particular it is locally of finite
+presentation over `Spec R`. -/
+instance smooth : Smooth (projectiveLine R ↘ Spec (.of R)) :=
+  SmoothOfRelativeDimension.smooth 1 _
+
 /-! ### Base change -/
 
 section BaseChange
@@ -1223,5 +1235,53 @@ noncomputable abbrev toOver : Over (Spec (.of R)) :=
 /-- The projective line as an over-category object has its usual structure morphism. -/
 @[simp]
 lemma toOver_hom : (toOver R).hom = (projectiveLine R ↘ Spec (.of R)) := (rfl)
+
+end TauCeti.AlgebraicGeometry.projectiveLine
+
+namespace TauCeti.AlgebraicGeometry
+
+variable (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
+
+/-- **Base change of the affine line**: for an `R`-algebra `S`, the square formed by extension of
+coefficients `Spec S[X] ⟶ Spec R[X]`, the structure morphisms and `Spec S ⟶ Spec R` is a
+pullback, that is, `Spec S[X] = Spec R[X] ×_{Spec R} Spec S`. -/
+lemma isPullback_SpecMap_polynomial :
+    IsPullback (Spec.map (CommRingCat.ofHom (Polynomial.mapRingHom (algebraMap R S))))
+      (Spec.map (CommRingCat.ofHom (algebraMap S S[X])))
+      (Spec.map (CommRingCat.ofHom (algebraMap R R[X])))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))) := by
+  -- `R[X] → S[X]` is the algebra map of the non-instance `Polynomial.algebra`, which makes
+  -- `R[X] ⊗[R] S = S[X]` a pushout of commutative rings.
+  let := Polynomial.algebra R S
+  exact isPullback_SpecMap_of_isPushout _ _ _ _
+    (CommRingCat.isPushout_of_isPushout R S R[X] S[X]).flip
+
+end TauCeti.AlgebraicGeometry
+
+namespace TauCeti.AlgebraicGeometry.projectiveLine
+
+variable (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
+
+/-- The polynomial charts commute with base change: the chart `D₊(Xᵢ)` of `ℙ¹_S` lies over the
+chart `D₊(Xᵢ)` of `ℙ¹_R`, through extension of coefficients `R[X] → S[X]`. -/
+@[reassoc]
+lemma polynomialChartι_comp_baseChangeProjection (i : Fin 2) :
+    polynomialChartι S i ≫ baseChangeProjection R S =
+      Spec.map (CommRingCat.ofHom (Polynomial.mapRingHom (algebraMap R S))) ≫
+        polynomialChartι R i := by
+  have h : Polynomial.eval₂RingHom (Polynomial.C.comp (algebraMap R S)) Polynomial.X =
+      Polynomial.mapRingHom (algebraMap R S) := by ext <;> simp
+  rw [← polynomialPoint_X, polynomialPoint_comp_baseChangeProjection, polynomialPoint_def, h]
+
+/-- **Base change of a polynomial chart**: for an `R`-algebra `S`, the chart `D₊(Xᵢ)` of `ℙ¹_S`
+is the preimage of the chart `D₊(Xᵢ)` of `ℙ¹_R` under the projection `ℙ¹_S ⟶ ℙ¹_R`, that is,
+`Spec S[X] = Spec R[X] ×_{ℙ¹_R} ℙ¹_S`. -/
+lemma isPullback_polynomialChartι_baseChangeProjection (i : Fin 2) :
+    IsPullback (Spec.map (CommRingCat.ofHom (Polynomial.mapRingHom (algebraMap R S))))
+      (polynomialChartι S i) (polynomialChartι R i) (baseChangeProjection R S) := by
+  refine IsPullback.of_bot ?_ (polynomialChartι_comp_baseChangeProjection R S i).symm
+    (isPullback_baseChangeProjection R S)
+  rw [polynomialChartι_over, polynomialChartι_over]
+  exact isPullback_SpecMap_polynomial R S
 
 end TauCeti.AlgebraicGeometry.projectiveLine
