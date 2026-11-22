@@ -57,7 +57,7 @@ without any growth hypothesis on `f`.
 * `Complex.hasProdUniformlyOn_weierstrassFactor_div_pow`,
   `Complex.hasProdLocallyUniformlyOn_weierstrassFactor_div_pow`,
   `Complex.analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective`,
-  `Complex.divisor_tprod_weierstrassFactor_div_pow_eq_zero`: grouped finite multiplicity fibers.
+  `Complex.divisor_tprod_weierstrassFactor_div_pow`: grouped finite multiplicity fibers.
 * `Differentiable.analyticOrderAt_pow_mul_tprod_weierstrassFactor_div_pow`: exact analytic-order
   comparison between a nonzero entire function and its origin-plus-zero-subtype Weierstrass product.
 * `Differentiable.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable`:
@@ -243,8 +243,8 @@ theorem analyticOrderAt_tprod_weierstrassFactor_div
     · rw [analyticOrderAt_weierstrassFactor_div (p i) hai z]
       simp [s, hai, Set.indicator_apply, eq_comm]
   have : Fintype s := hf.fintype
-  rw [hcongr, ← tsum_subtype, tsum_fintype, Finset.sum_const, Finset.card_univ, nsmul_one,
-    ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
+  rw [hcongr, ← tsum_subtype, tsum_fintype]
+  simp [s, Set.fintypeCard_eq_ncard]
 
 /-- Whole-plane divisor of a variable-genus Weierstrass primary product. -/
 theorem divisor_tprod_weierstrassFactor_div
@@ -266,29 +266,33 @@ private theorem summable_sigma_div_pow (m : ι → ℕ)
   fun R hR ↦ (TauCeti.summable_sigma_fin_iff
     (fun i ↦ pow_nonneg (div_nonneg hR.le (norm_nonneg (a i))) _) m).mpr (hm R hR)
 
+private theorem hasProdUniformlyOn_weierstrassFactor_div_pow_sigma
+    (hm : ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / ‖a i‖) ^ (p i + 1))
+    {K : Set ℂ} (hK : IsCompact K) :
+    HasProdUniformlyOn (fun i z ↦ weierstrassFactor (p i) (z / a i) ^ m i)
+      (fun z ↦ ∏' q : Σ i, Fin (m i), weierstrassFactor (p q.1) (z / a q.1)) K := by
+  have h := (hasProdUniformlyOn_weierstrassFactor_div
+    (a := fun q : Σ i, Fin (m i) ↦ a q.1) (p := fun q : Σ i, Fin (m i) ↦ p q.1)
+    (summable_sigma_div_pow m hm) hK).sigma_of_finite
+  simpa only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] using h
+
 /-- Grouping finite multiplicity fibers `Fin (m i)` over `Σ i, Fin (m i)` preserves the value of
 the primary product. -/
 theorem tprod_weierstrassFactor_div_pow_eq_sigma
     (hm : ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / ‖a i‖) ^ (p i + 1)) (z : ℂ) :
     (∏' i, weierstrassFactor (p i) (z / a i) ^ m i) =
-      ∏' q : Σ i, Fin (m i), weierstrassFactor (p q.1) (z / a q.1) := by
-  have h := (hasProdUniformlyOn_weierstrassFactor_div
-    (a := fun q : Σ i, Fin (m i) ↦ a q.1) (p := fun q : Σ i, Fin (m i) ↦ p q.1)
-    (summable_sigma_div_pow m hm) (isCompact_singleton (x := z))).sigma_of_finite
-  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] at h
-  exact (h.hasProd (mem_singleton z)).tprod_eq
+      ∏' q : Σ i, Fin (m i), weierstrassFactor (p q.1) (z / a q.1) :=
+  ((hasProdUniformlyOn_weierstrassFactor_div_pow_sigma hm
+    (isCompact_singleton (x := z))).hasProd (mem_singleton z)).tprod_eq
 
 /-- Weighted primary products with natural multiplicities converge uniformly on compact sets. -/
 theorem hasProdUniformlyOn_weierstrassFactor_div_pow
     (hm : ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / ‖a i‖) ^ (p i + 1))
     {K : Set ℂ} (hK : IsCompact K) :
     HasProdUniformlyOn (fun i z ↦ weierstrassFactor (p i) (z / a i) ^ m i)
-      (fun z ↦ ∏' i, weierstrassFactor (p i) (z / a i) ^ m i) K := by
-  have h := (hasProdUniformlyOn_weierstrassFactor_div
-    (a := fun q : Σ i, Fin (m i) ↦ a q.1) (p := fun q : Σ i, Fin (m i) ↦ p q.1)
-    (summable_sigma_div_pow m hm) hK).sigma_of_finite
-  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] at h
-  exact h.multipliableUniformlyOn.hasProdUniformlyOn
+      (fun z ↦ ∏' i, weierstrassFactor (p i) (z / a i) ^ m i) K :=
+  (hasProdUniformlyOn_weierstrassFactor_div_pow_sigma hm
+    hK).multipliableUniformlyOn.hasProdUniformlyOn
 
 /-- Weighted primary products with natural multiplicities converge locally uniformly on `ℂ`. -/
 theorem hasProdLocallyUniformlyOn_weierstrassFactor_div_pow
@@ -346,8 +350,8 @@ theorem analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective (i : ι)
   have hset : {q : Σ j, Fin (m j) | a q.1 ≠ 0 ∧ a q.1 = a i} = Set.range (Sigma.mk i) := by
     rw [Set.range_sigmaMk]
     ext ⟨j, k⟩
+    simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff]
     refine ⟨fun ⟨_, hq⟩ ↦ hinj hq, fun hq ↦ ?_⟩
-    change j = i at hq
     subst hq
     exact ⟨ha (Nat.ne_zero_of_lt k.isLt), rfl⟩
   rw [analyticOrderAt_tprod_weierstrassFactor_div_pow hm (a i), hset,
@@ -383,17 +387,6 @@ theorem divisor_tprod_weierstrassFactor_div_pow_of_injective (i : ι)
       (m i : ℤ) :=
   divisor_univ_eq_of_analyticOrderAt_eq (differentiable_tprod_weierstrassFactor_div_pow hm)
     (analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective i ha hm hinj)
-
-/-- Outside the active roots (`∀ j, m j ≠ 0 → a j ≠ 0 → a j ≠ z`), a weighted primary product has
-whole-plane divisor `0`. -/
-theorem divisor_tprod_weierstrassFactor_div_pow_eq_zero
-    (hm : ∀ R : ℝ, 0 < R → Summable fun j ↦ (m j : ℝ) * (R / ‖a j‖) ^ (p j + 1)) {z : ℂ}
-    (hz : ∀ j, m j ≠ 0 → a j ≠ 0 → a j ≠ z) :
-    MeromorphicOn.divisor
-      (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ z = 0 := by
-  simpa using divisor_univ_eq_of_analyticOrderAt_eq
-    (differentiable_tprod_weierstrassFactor_div_pow hm) (n := 0)
-    (by simpa using analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero hm hz)
 
 end Weighted
 

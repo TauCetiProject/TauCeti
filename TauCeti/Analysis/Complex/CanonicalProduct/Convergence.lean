@@ -12,7 +12,6 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Complex.CanonicalProduct.PrimaryProduct
-import TauCeti.Topology.Algebra.InfiniteSum.UniformOn
 
 /-!
 # Convergence and multiplicities of genus-one canonical products
@@ -163,22 +162,18 @@ theorem tprod_weierstrassFactor_one_pow_eq_tprod_sigma (z : ℂ) :
 @[fun_prop]
 theorem differentiable_tprod_weierstrassFactor_one_pow :
     Differentiable ℂ (fun z ↦ ∏' i, weierstrassFactor 1 (a i * z) ^ m i) := by
-  have heq : (fun z ↦ ∏' i, weierstrassFactor 1 (a i * z) ^ m i) =
-      fun z ↦ ∏' q : Σ i, Fin (m i), weierstrassFactor 1 (a q.1 * z) :=
-    funext (tprod_weierstrassFactor_one_pow_eq_tprod_sigma a m hm)
-  rw [heq]
-  exact differentiable_tprod_weierstrassFactor_one _ (summable_sigma_sq a m hm)
+  simpa only [← weierstrassFactor_one_mul_eq_div_inv a] using
+    differentiable_tprod_weierstrassFactor_div_pow (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1)
+      (m := m) (summable_mul_div_pow_inv a m hm)
 
 /-- With arbitrary repeated slopes, the order counts the vanishing factors with their
 natural multiplicities, represented by the finite fibers of the multiplicity family. -/
 theorem analyticOrderAt_tprod_weierstrassFactor_one_pow (z : ℂ) :
     analyticOrderAt (fun w ↦ ∏' j, weierstrassFactor 1 (a j * w) ^ m j) z =
       ({p : Σ j, Fin (m j) | a p.1 * z = 1}.ncard : ℕ∞) := by
-  have heq : (fun w ↦ ∏' j, weierstrassFactor 1 (a j * w) ^ m j) =
-      fun w ↦ ∏' q : Σ j, Fin (m j), weierstrassFactor 1 (a q.1 * w) :=
-    funext (tprod_weierstrassFactor_one_pow_eq_tprod_sigma a m hm)
-  rw [heq]
-  exact analyticOrderAt_tprod_weierstrassFactor_one _ (summable_sigma_sq a m hm) z
+  simpa only [← weierstrassFactor_one_mul_eq_div_inv a, inv_ne_zero_and_inv_eq_iff] using
+    analyticOrderAt_tprod_weierstrassFactor_div_pow (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1)
+      (m := m) (summable_mul_div_pow_inv a m hm) z
 
 /-- For distinct slopes, the prescribed multiplicity is the exact order at the corresponding
 root. -/
@@ -195,10 +190,9 @@ theorem analyticOrderAt_tprod_weierstrassFactor_one_pow_of_injective {z : ℂ} {
 theorem hasProdUniformlyOn_weierstrassFactor_one_pow {K : Set ℂ} (hK : Bornology.IsBounded K) :
     HasProdUniformlyOn (fun i z ↦ weierstrassFactor 1 (a i * z) ^ m i)
       (fun z ↦ ∏' i, weierstrassFactor 1 (a i * z) ^ m i) K := by
-  have h := (hasProdUniformlyOn_weierstrassFactor_one _ (summable_sigma_sq a m hm)
-    hK).sigma_of_finite
-  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] at h
-  exact h.multipliableUniformlyOn.hasProdUniformlyOn
+  have h := (hasProdUniformlyOn_weierstrassFactor_div_pow (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1)
+    (m := m) (summable_mul_div_pow_inv a m hm) hK.isCompact_closure).mono subset_closure
+  simpa only [← weierstrassFactor_one_mul_eq_div_inv a] using h
 
 /-- Products with natural multiplicities converge locally uniformly on the whole plane. -/
 theorem hasProdLocallyUniformlyOn_weierstrassFactor_one_pow :

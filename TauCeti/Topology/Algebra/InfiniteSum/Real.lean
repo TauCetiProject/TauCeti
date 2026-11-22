@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
 import Mathlib.Algebra.Order.Ring.Pow
+import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
@@ -295,29 +296,20 @@ theorem Filter.Tendsto.exists_summable_mul_div_pow {ι : Type*} {r : ι → ℝ}
   refine ⟨fun i ↦ idx i + m i, fun R hR ↦ ?_⟩
   have hgeom : Summable fun i ↦ (1 / 2 : ℝ) ^ (idx i + 1) :=
     ((summable_nat_add_iff 1).mpr summable_geometric_two).comp_injective hidx
-  classical
-  refine (hgeom.of_nonneg_of_le
-    (g := fun i ↦ if 2 * R < r i then (m i : ℝ) * (R / r i) ^ (idx i + m i + 1) else 0)
-    (fun i ↦ ?_) (fun i ↦ ?_)).congr_cofinite ?_
-  · split_ifs with hi
-    · have hr_pos : 0 < r i := by linarith
-      positivity
-    · exact le_rfl
-  · split_ifs with hi
-    · have hr_pos : 0 < r i := by linarith
-      have hhalf : R / r i ≤ 1 / 2 := (div_le_iff₀ hr_pos).mpr (by linarith)
-      have hm_two : (m i : ℝ) * (1 / 2 : ℝ) ^ m i ≤ 1 := by
-        have hlt : (m i : ℝ) ≤ (2 : ℝ) ^ m i := by exact_mod_cast (m i).lt_two_pow_self.le
-        calc (m i : ℝ) * (1 / 2 : ℝ) ^ m i ≤ (2 : ℝ) ^ m i * (1 / 2 : ℝ) ^ m i := by gcongr
-          _ = 1 := by rw [← mul_pow]; norm_num
-      calc
-        (m i : ℝ) * (R / r i) ^ (idx i + m i + 1)
-          ≤ (m i : ℝ) * (1 / 2 : ℝ) ^ (idx i + m i + 1) := by gcongr
-        _ = ((m i : ℝ) * (1 / 2 : ℝ) ^ m i) * (1 / 2 : ℝ) ^ (idx i + 1) := by
-            rw [add_right_comm, add_assoc, pow_add]; ring
-        _ ≤ 1 * (1 / 2 : ℝ) ^ (idx i + 1) := by gcongr
-        _ = (1 / 2 : ℝ) ^ (idx i + 1) := one_mul _
-    · positivity
-  · filter_upwards [hr.eventually_gt_atTop (2 * R)] with i hi
-    simp [hi]
+  refine Summable.of_norm_bounded_eventually hgeom ?_
+  filter_upwards [hr.eventually_gt_atTop (2 * R)] with i hi
+  have hr_pos : 0 < r i := by linarith
+  have hhalf : R / r i ≤ 1 / 2 := (div_le_iff₀ hr_pos).mpr (by linarith)
+  have hm_two : (m i : ℝ) * (1 / 2 : ℝ) ^ m i ≤ 1 := by
+    have hlt : (m i : ℝ) ≤ (2 : ℝ) ^ m i := by exact_mod_cast (m i).lt_two_pow_self.le
+    calc (m i : ℝ) * (1 / 2 : ℝ) ^ m i ≤ (2 : ℝ) ^ m i * (1 / 2 : ℝ) ^ m i := by gcongr
+      _ = 1 := by rw [← mul_pow]; norm_num
+  rw [Real.norm_of_nonneg (by positivity)]
+  calc
+    (m i : ℝ) * (R / r i) ^ (idx i + m i + 1)
+      ≤ (m i : ℝ) * (1 / 2 : ℝ) ^ (idx i + m i + 1) := by gcongr
+    _ = ((m i : ℝ) * (1 / 2 : ℝ) ^ m i) * (1 / 2 : ℝ) ^ (idx i + 1) := by
+        rw [add_right_comm, add_assoc, pow_add]; ring
+    _ ≤ 1 * (1 / 2 : ℝ) ^ (idx i + 1) := by gcongr
+    _ = (1 / 2 : ℝ) ^ (idx i + 1) := one_mul _
 
