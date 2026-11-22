@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Cylinder.Fredholm
+public import TauCeti.Analysis.Sobolev.Strip.Operator
 public import TauCeti.Analysis.Sobolev.Strip.Rellich
 
 /-!
@@ -16,17 +16,18 @@ fibre `V` over the strip `ℝ × [0, 1]` whose boundary values lie in two subspa
 `V`, the tangent spaces of the Lagrangians in a trivialization along the strip. Such an operator
 `D ξ = M (ξ, ∂s ξ, ∂t ξ)`, with an essentially bounded coefficient field
 `M : ℝ × ℝ → (V × V × V →L[ℝ] W)`, acts on `L²` jets of the strip by
-`TauCeti.CylinderSobolev.jetOperator M`. That operator only involves the strip measure, so it
+`TauCeti.StripSobolev.jetOperator M`. That operator only involves the strip measure, so it
 serves the cylinder and the strip alike, and its restriction to the Sobolev space
 `TauCeti.StripSobolev.H1 F₀ F₁` is the realization `W^{1,2}_F(ℝ × [0, 1], V) → L²(ℝ × [0, 1], W)`
 of `D`.
 
 This file turns an elliptic estimate for `D` into the functional-analytic properties of that
 realization, as `TauCeti.Analysis.Sobolev.Cylinder` does on the cylinder. The steps that do not
-depend on the boundary conditions are proved there once for every space of sections with square
-integrable jets (`TauCeti.CylinderSobolev.norm_jetLp_le_of_setIntegral_le`,
-`TauCeti.CylinderSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le`,
-`TauCeti.CylinderSobolev.isFredholm_and_index_eq_of_isPreconnected`); this file supplies the
+depend on the boundary conditions are proved once for every space of sections with square
+integrable jets in `TauCeti.Analysis.Sobolev.Strip.Operator`
+(`TauCeti.StripSobolev.norm_jetLp_le_of_setIntegral_le`,
+`TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le`,
+`TauCeti.StripSobolev.isFredholm_and_index_eq_of_isPreconnected`); this file supplies the
 semi-Fredholm estimate for sections with boundary values in `F₀` and `F₁` and Rellich's theorem
 on the strip.
 
@@ -42,7 +43,7 @@ on the strip.
   finite-dimensional kernel (`TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL`)
   and closed range (`TauCeti.StripSobolev.isClosed_range_jetOperator_comp_subtypeL`).
 * **Families.** The realization depends continuously on `M` in `L^∞`
-  (`TauCeti.CylinderSobolev.continuousOn_jetOperator`). So along a family of coefficient fields,
+  (`TauCeti.StripSobolev.continuousOn_jetOperator`). So along a family of coefficient fields,
   continuous in `L^∞` on a preconnected set and each satisfying a semi-Fredholm estimate, the
   realizations are all Fredholm with the same index as soon as one of them is Fredholm
   (`TauCeti.StripSobolev.isFredholm_and_index_eq_of_hasSemiFredholmEstimate`). This is how the
@@ -77,11 +78,6 @@ open MeasureTheory Set Filter Topology
 open scoped ENNReal NNReal
 
 namespace TauCeti.StripSobolev
-
-open CylinderSobolev (jetOperator norm_jetLp_le_of_setIntegral_le norm_restrictValue_jetLp_le
-  finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
-  isClosed_range_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
-  norm_le_mul_norm_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le)
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
   [NormedSpace ℝ W] {F₀ F₁ : Submodule ℝ V}
@@ -173,7 +169,7 @@ theorem isFredholm_and_index_eq_of_hasSemiFredholmEstimate [FiniteDimensional �
     ((jetOperator (M x)).comp (H1 F₀ F₁).subtypeL).IsFredholm ∧
       ((jetOperator (M x)).comp (H1 F₀ F₁).subtypeL).index =
         ((jetOperator (M x₀)).comp (H1 F₀ F₁).subtypeL).index :=
-  CylinderSobolev.isFredholm_and_index_eq_of_isPreconnected hs hM hcont
+  isFredholm_and_index_eq_of_isPreconnected hs hM hcont
     (fun z hz ↦ (hest z hz).elim fun _ ⟨_, h⟩ ↦
       finiteDimensional_ker_jetOperator_comp_subtypeL (hM z hz) h)
     (fun z hz ↦ (hest z hz).elim fun _ ⟨_, h⟩ ↦

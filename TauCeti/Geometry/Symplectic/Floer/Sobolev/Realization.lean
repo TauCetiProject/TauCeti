@@ -103,7 +103,8 @@ open scoped NNReal ENNReal Manifold
 namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp jetOperator
+  coeFn_jetOperator)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -139,7 +140,7 @@ def floerSobolevOperator (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →
   (jetOperator (ω.floerJetCoeff J Ks Kt u)).comp (H1 V).subtypeL
 
 /-- The definition of the Sobolev realization of the linearized Floer operator: the first-order
-operator `TauCeti.CylinderSobolev.jetOperator` of the coefficient field on jets, restricted to
+operator `TauCeti.StripSobolev.jetOperator` of the coefficient field on jets, restricted to
 `TauCeti.CylinderSobolev.H1`. -/
 theorem floerSobolevOperator_def (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) :
