@@ -64,8 +64,10 @@ In Lean a letter is `a : ℕ × Fin d`, the pair `(A, j - 1)`, and `γ_j` is `li
   `TauCeti.norm_fderiv_branchDelay_lt_two`: the delay depends only on `w_j`, with
   `‖D τ_a‖ = (A + 1) / q_a < 2` on the simplex, uniformly in the letter.
 * `TauCeti.contDiffAt_branchMap`, `TauCeti.contDiffOn_unaccelBranchMap`,
-  `TauCeti.branchMap_succ`: each accelerated and unaccelerated branch is smooth on the simplex, and
-  acceleration steps by applying `unaccelBranchMap (Fin.last d)`.
+  `TauCeti.hasFDerivAt_branchMap_apply`, `TauCeti.hasFDerivAt_unaccelBranchMap_apply`,
+  `TauCeti.branchMap_succ`: each accelerated and unaccelerated branch is smooth with explicit
+  coordinatewise Fréchet derivatives, and acceleration steps by applying
+  `unaccelBranchMap (Fin.last d)`.
 
 ## References
 
@@ -91,6 +93,12 @@ def branchDenom (a : ℕ × Fin d) (x : Fin d → ℝ) : ℝ :=
 theorem branchDenom_def (a : ℕ × Fin d) (x : Fin d → ℝ) :
     branchDenom a x = 1 + ((a.1 : ℝ) + 1) * (1 - x a.2) :=
   (rfl)
+
+/-- Stepping the acceleration index by `1` adds `1 - x j` to the denominator `q_a (x)`. -/
+theorem branchDenom_succ (A : ℕ) (j : Fin d) (x : Fin d → ℝ) :
+    branchDenom (A + 1, j) x = branchDenom (A, j) x + (1 - x j) := by
+  simp only [branchDenom_def, Nat.cast_succ]
+  ring
 
 /-- The logarithmic delay `τ_a (w) = log (q_a (w))` of the accelerated branch `a`. -/
 noncomputable def branchDelay (a : ℕ × Fin d) (x : Fin d → ℝ) : ℝ :=
@@ -306,6 +314,40 @@ theorem contDiffOn_branchMap (a : ℕ × Fin d) {n : WithTop ℕ∞} :
     ContDiffOn ℝ n (branchMap a) (orderedSimplex d) := fun _ hx =>
   (contDiffAt_branchMap a (branchDenom_pos_of_mem_orderedSimplex a hx).ne').contDiffWithinAt
 
+private theorem hasFDerivAt_div_real {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f g : E → ℝ} {f' g' : E →L[ℝ] ℝ} {x : E}
+    (hf : HasFDerivAt f f' x) (hg : HasFDerivAt g g' x) (hq : g x ≠ 0) :
+    HasFDerivAt (fun y => f y / g y) ((g x)⁻¹ • (f' - (f x / g x) • g')) x := by
+  have hmul : HasFDerivAt (fun y => f y * (g y)⁻¹)
+      (f x • ((ContinuousLinearMap.toSpanSingleton ℝ (-(g x ^ 2)⁻¹)).comp g') +
+        (g x)⁻¹ • f') x :=
+    hf.mul ((hasFDerivAt_inv hq).comp x hg)
+  simp only [← div_eq_mul_inv] at hmul
+  refine hmul.congr_fderiv ?_
+  ext v
+  simp only [add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.toSpanSingleton_apply, sub_apply, smul_eq_mul]
+  field_simp
+  ring
+
+/-- Each coordinate `x ↦ simplexPoint x k` is affine, with Fréchet derivative `proj m` at
+`m.castSucc` and `-∑ m, proj m` at `Fin.last d`. -/
+theorem hasFDerivAt_simplexPoint_apply (k : Fin (d + 1)) (x : Fin d → ℝ) :
+    HasFDerivAt (fun y => simplexPoint y k)
+      (Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
+        (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ)) k) x := by
+  induction k using Fin.lastCases with
+  | last =>
+    simp only [simplexPoint_last, Fin.lastCases_last]
+    have hsum : HasFDerivAt (fun y : Fin d → ℝ => ∑ m : Fin d, y m)
+        (∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ)) x :=
+      HasFDerivAt.fun_sum fun m _ =>
+        (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ).hasFDerivAt
+    exact ((hasFDerivAt_const (1 : ℝ) x).sub hsum).congr_fderiv (by simp)
+  | cast m =>
+    simp only [simplexPoint_castSucc, Fin.lastCases_castSucc]
+    exact (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ).hasFDerivAt
+
 /-- The denominator `q_a` depends only on `w_j`, with partial derivative `-(A + 1)`. -/
 theorem hasFDerivAt_branchDenom (a : ℕ × Fin d) (x : Fin d → ℝ) :
     HasFDerivAt (branchDenom a)
@@ -317,6 +359,36 @@ theorem hasFDerivAt_branchDenom (a : ℕ × Fin d) (x : Fin d → ℝ) :
   simp only [smul_neg, neg_apply, smul_apply, ContinuousLinearMap.proj_apply, smul_eq_mul,
     neg_add_rev]
   ring
+
+/-- Coordinatewise Fréchet derivative of `branchMap a` at a point with nonzero denominator. -/
+theorem hasFDerivAt_branchMap_apply (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : branchDenom a x ≠ 0) (i : Fin d) :
+    HasFDerivAt (fun y => branchMap a y i)
+      ((branchDenom a x)⁻¹ •
+        (Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
+          (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
+          (a.2.castSucc.succAbove i) +
+          (((a.1 : ℝ) + 1) * branchMap a x i) •
+            (ContinuousLinearMap.proj a.2 : (Fin d → ℝ) →L[ℝ] ℝ))) x := by
+  refine (hasFDerivAt_div_real (hasFDerivAt_simplexPoint_apply (a.2.castSucc.succAbove i) x)
+    (hasFDerivAt_branchDenom a x) hx).congr_fderiv ?_
+  ext v
+  simp only [smul_apply, sub_apply, add_apply, ContinuousLinearMap.proj_apply, smul_eq_mul,
+    branchMap_apply]
+  ring
+
+/-- Fréchet derivative of `branchMap a` at a point with nonzero denominator, expressed in
+coordinates via `ContinuousLinearMap.pi`. -/
+theorem hasFDerivAt_branchMap (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : branchDenom a x ≠ 0) :
+    HasFDerivAt (branchMap a)
+      (ContinuousLinearMap.pi fun i =>
+        (branchDenom a x)⁻¹ •
+          (Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
+            (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
+            (a.2.castSucc.succAbove i) +
+            (((a.1 : ℝ) + 1) * branchMap a x i) •
+              (ContinuousLinearMap.proj a.2 : (Fin d → ℝ) →L[ℝ] ℝ))) x :=
+  hasFDerivAt_pi.2 (hasFDerivAt_branchMap_apply a hx)
 
 /-- The delay `τ_a = log q_a` depends only on `w_j`, with partial derivative `-(A + 1) / q_a`. -/
 theorem hasFDerivAt_branchDelay (a : ℕ × Fin d) {x : Fin d → ℝ}
@@ -555,6 +627,38 @@ theorem contDiffOn_unaccelBranchMap (j : Fin (d + 1)) {n : WithTop ℕ∞} :
   (contDiffAt_unaccelBranchMap j
     (by linarith [simplexPoint_le_one hx j])).contDiffWithinAt
 
+/-- Coordinatewise Fréchet derivative of `unaccelBranchMap j` at a point where
+`2 - simplexPoint x j ≠ 0`. -/
+theorem hasFDerivAt_unaccelBranchMap_apply (j : Fin (d + 1)) {x : Fin d → ℝ}
+    (hx : 2 - simplexPoint x j ≠ 0) (i : Fin d) :
+    HasFDerivAt (fun y => unaccelBranchMap j y i)
+      ((2 - simplexPoint x j)⁻¹ •
+        (Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
+          (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ)) (j.succAbove i) +
+          unaccelBranchMap j x i •
+            Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
+              (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ)) j)) x := by
+  refine (hasFDerivAt_div_real (hasFDerivAt_simplexPoint_apply (j.succAbove i) x)
+    ((hasFDerivAt_const (2 : ℝ) x).sub (hasFDerivAt_simplexPoint_apply j x)) hx).congr_fderiv ?_
+  ext v
+  simp only [smul_apply, sub_apply, add_apply, Pi.sub_apply, zero_sub, neg_apply, smul_eq_mul,
+    unaccelBranchMap_apply]
+  ring
+
+/-- Fréchet derivative of `unaccelBranchMap j` at a point where `2 - simplexPoint x j ≠ 0`,
+expressed in coordinates via `ContinuousLinearMap.pi`. -/
+theorem hasFDerivAt_unaccelBranchMap (j : Fin (d + 1)) {x : Fin d → ℝ}
+    (hx : 2 - simplexPoint x j ≠ 0) :
+    HasFDerivAt (unaccelBranchMap j)
+      (ContinuousLinearMap.pi fun i =>
+        (2 - simplexPoint x j)⁻¹ •
+          (Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
+            (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ)) (j.succAbove i) +
+            unaccelBranchMap j x i •
+              Fin.lastCases (-∑ m : Fin d, (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ))
+                (fun m => (ContinuousLinearMap.proj m : (Fin d → ℝ) →L[ℝ] ℝ)) j)) x :=
+  hasFDerivAt_pi.2 (hasFDerivAt_unaccelBranchMap_apply j hx)
+
 /-- Projective normalisation intertwines `linearMove (Fin.last d)` on `orderedCone d` with
 dividing chart coordinates by `1 + ∑ k, w k`. -/
 theorem simplexChart_linearMove_last {y : Fin (d + 2) → ℝ} (hy : y ∈ orderedCone d) :
@@ -618,13 +722,15 @@ coordinates wherever `q_{(A, j)} (x) ≠ 0`, in particular on `orderedSimplex d`
 theorem branchMap_succ (A : ℕ) (j : Fin d) {x : Fin d → ℝ}
     (hx : branchDenom (A, j) x ≠ 0) :
     branchMap (A + 1, j) x = unaccelBranchMap (Fin.last d) (branchMap (A, j) x) := by
+  have hq : branchDenom (A + 1, j) x = branchDenom (A, j) x + (1 - x j) :=
+    branchDenom_succ A j x
+  have hdiv : branchDenom (A, j) x * (1 + ∑ k, branchMap (A, j) x k) =
+      branchDenom (A + 1, j) x := by
+    rw [sum_branchMap, mul_add, mul_one, mul_div_cancel₀ _ hx, hq]
   ext i
   rw [unaccelBranchMap_last]
   dsimp only
-  rw [sum_branchMap, branchMap_apply, branchMap_apply, div_div, mul_add, mul_one,
-    mul_div_cancel₀ _ hx, branchDenom_def, branchDenom_def]
-  push_cast
-  ring
+  rw [branchMap_apply, branchMap_apply, div_div, hdiv]
 
 /-- The image of the lift `(w, 1)` under `γ_j` for `j ≤ n - 2`. -/
 private theorem linearMove_castSucc_simplexLift (x : Fin d → ℝ) (j : Fin d) :

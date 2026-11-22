@@ -21,8 +21,10 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
+import TauCeti.Data.List.Infix
 import TauCeti.Order.Fin.Basic
 import TauCeti.Order.Northcott.Basic
+import TauCeti.Order.Northcott.Prod
 
 /-!
 # Words of accelerated branches, delays, renewal counting, and semigroup freeness
@@ -376,10 +378,8 @@ theorem wordCount_simplexChart_smul {c : ℝ} (hc : c ≠ 0) (y : Fin (d + 2) �
 
 /-- Only finitely many letters `(A, j)` have `A + 3 ≤ c`. -/
 private theorem finite_setOf_fst_add_three_le (c : ℝ) :
-    {a : ℕ × Fin d | (a.1 : ℝ) + 3 ≤ c}.Finite := by
-  have : Northcott (Prod.fst : ℕ × Fin d → ℕ) :=
-    ⟨fun b => ((finite_Iic b).prod finite_univ).subset fun _ ha => ⟨ha, mem_univ _⟩⟩
-  exact (TauCeti.finite_setOf_natCast_le (Prod.fst : ℕ × Fin d → ℕ) (c - 3)).subset
+    {a : ℕ × Fin d | (a.1 : ℝ) + 3 ≤ c}.Finite :=
+  (TauCeti.finite_setOf_natCast_le (Prod.fst : ℕ × Fin d → ℕ) (c - 3)).subset
     fun _ ha => by rw [mem_ofPred_eq] at ha ⊢; linarith
 
 /-- On the simplex only finitely many words have delay at most `r`: such a word has length at
@@ -440,24 +440,9 @@ theorem wordCount_eq_sum_indicator {x : Fin d → ℝ} (hx : x ∈ orderedSimple
 
 private theorem wordCount_eventuallyEq_nhdsGE {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
     (r : ℝ) : ∀ᶠ t in 𝓝[≥] r, wordCount d x t = wordCount d x r := by
-  have hS : {u : List (ℕ × Fin d) | wordDelay u x ≤ r + 1}.Finite :=
-    finite_setOf_wordDelay_le hx (r + 1)
-  have hfin : ∀ᶠ t in 𝓝[≥] r,
-      ∀ u ∈ {u : List (ℕ × Fin d) | wordDelay u x ≤ r + 1},
-        wordDelay u x ≤ t ↔ wordDelay u x ≤ r :=
-    (Filter.eventually_all_finite hS).2 fun u _ => by
-      by_cases hu : wordDelay u x ≤ r
-      · filter_upwards [self_mem_nhdsWithin] with t ht
-        exact iff_of_true (hu.trans ht) hu
-      · filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds (not_le.1 hu))] with t ht
-        exact iff_of_false (not_le.2 ht) hu
-  filter_upwards [hfin, nhdsWithin_le_nhds (Iio_mem_nhds (lt_add_one r))] with t ht hlt
-  rw [wordCount_def, wordCount_def]
-  congr 1; ext u
-  by_cases hu : wordDelay u x ≤ r + 1
-  · exact ht u hu
-  · have hlt_u : r + 1 < wordDelay u x := not_le.1 hu
-    exact iff_of_false (not_le.2 (hlt.trans hlt_u)) (not_le.2 ((lt_add_one r).trans hlt_u))
+  have : Northcott (fun u => wordDelay u x) := ⟨finite_setOf_wordDelay_le hx⟩
+  exact (Northcott.eventuallyEq_setOf_le_nhdsGE (fun u => wordDelay u x) r).mono
+    fun _ h => congrArg Set.ncard h
 
 /-- The renewal count `r ↦ wordCount d x r` is locally constant on the right at every `r : ℝ`. -/
 theorem eventually_wordCount_eq_of_Ici {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) (r : ℝ) :
@@ -513,9 +498,9 @@ theorem mem_support_wordCount_branchMap_iff {x : Fin d → ℝ} (hx : x ∈ orde
 private theorem fst_add_three_le_of_branchDelay_le {x : Fin d → ℝ}
     (hx : x ∈ orderedSimplex d) {r : ℝ} {a : ℕ × Fin d} (ha : branchDelay a x ≤ r) :
     (a.1 : ℝ) + 3 ≤ 2 * Real.exp r := by
-  have h := Real.exp_le_exp.2 ((log_le_branchDelay a hx).trans ha)
-  rw [Real.exp_log (by positivity)] at h
-  linarith
+  have h := fst_add_three_le_two_mul_exp_wordDelay (List.mem_singleton_self a) hx
+  rw [wordDelay_singleton] at h
+  exact h.trans (by gcongr)
 
 /-- At each time only finitely many letters contribute to the renewal equation. -/
 theorem finite_support_wordCount_branchMap {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
@@ -774,25 +759,10 @@ private theorem expandWord_ne_last_cons (u : List (ℕ × Fin d)) (t : List (Fin
     simp only [expandWord_cons, List.cons_append, ne_eq, List.cons.injEq, not_and]
     exact fun h => absurd h (Fin.castSucc_ne_last a.2)
 
-private theorem replicate_append_expandWord_inj {A₁ A₂ : ℕ} {v₁ v₂ : List (ℕ × Fin d)}
-    (h : List.replicate A₁ (Fin.last d) ++ expandWord v₁ =
-      List.replicate A₂ (Fin.last d) ++ expandWord v₂) :
-    A₁ = A₂ ∧ expandWord v₁ = expandWord v₂ := by
-  induction A₁ generalizing A₂ with
-  | zero =>
-    cases A₂ with
-    | zero => simpa using h
-    | succ A₂ =>
-      simp only [List.replicate_zero, List.nil_append, List.replicate_succ, List.cons_append] at h
-      exact absurd h (expandWord_ne_last_cons v₁ _)
-  | succ A₁ ih =>
-    cases A₂ with
-    | zero =>
-      simp only [List.replicate_zero, List.nil_append, List.replicate_succ, List.cons_append] at h
-      exact absurd h.symm (expandWord_ne_last_cons v₂ _)
-    | succ A₂ =>
-      simp only [List.replicate_succ, List.cons_append, List.cons.injEq, true_and] at h
-      exact (ih h).imp_left (congrArg Nat.succ)
+private theorem expandWord_head?_ne_last (u : List (ℕ × Fin d)) :
+    (expandWord u).head? ≠ some (Fin.last d) := fun h =>
+  let ⟨t, ht⟩ := List.head?_eq_some_iff.1 h
+  expandWord_ne_last_cons u t ht
 
 /-- The expansion from accelerated words to unaccelerated words is injective. -/
 theorem expandWord_injective : Function.Injective (expandWord (d := d)) := by
@@ -803,7 +773,8 @@ theorem expandWord_injective : Function.Injective (expandWord (d := d)) := by
     rintro (_ | ⟨a₂, v₂⟩) h
     · simp at h
     · simp only [expandWord_cons, List.cons_append, List.cons.injEq] at h
-      rcases replicate_append_expandWord_inj h.2 with ⟨hA, hv⟩
+      rcases (List.replicate_append_eq_replicate_append_iff
+        (expandWord_head?_ne_last v₁) (expandWord_head?_ne_last v₂)).1 h.2 with ⟨hA, hv⟩
       rw [Prod.ext hA (Fin.castSucc_injective d h.1), ih hv]
 
 /-- Distinct accelerated words induce distinct linear maps on `Fin (d + 2) → ℝ` for every `d : ℕ`

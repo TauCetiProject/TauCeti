@@ -231,3 +231,37 @@ theorem eventually_summatory_indicator_sub_eq (w : ι → ℝ) {S T : Set ι}
   · rw [Set.indicator_of_notMem hS, Set.indicator_of_notMem (by tauto)]
 
 end TauCeti
+
+namespace Northcott
+
+open Filter
+open scoped Topology
+
+/-- For a Northcott function into a linearly ordered topological space with the order topology, the
+sublevel sets `{i | f i ≤ t}` are eventually equal to `{i | f i ≤ r}` as `t → r⁺`. -/
+theorem eventuallyEq_setOf_le_nhdsGE {ι α : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderTopology α] (f : ι → α) [Northcott f] (r : α) :
+    (fun t => {i : ι | f i ≤ t}) =ᶠ[𝓝[≥] r] fun _ => {i : ι | f i ≤ r} := by
+  by_cases hgt : ∃ R, r < R
+  · rcases hgt with ⟨R, hR⟩
+    have hS : {i : ι | f i ≤ R}.Finite := finite_le (h := f) R
+    have hfin : ∀ᶠ t in 𝓝[≥] r, ∀ i ∈ {i : ι | f i ≤ R}, f i ≤ t ↔ f i ≤ r :=
+      (Filter.eventually_all_finite hS).2 fun i _ => by
+        by_cases hi : f i ≤ r
+        · filter_upwards [self_mem_nhdsWithin] with t ht
+          exact iff_of_true (hi.trans ht) hi
+        · filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds (not_le.1 hi))] with t ht
+          exact iff_of_false (not_le.2 ht) hi
+    filter_upwards [hfin, nhdsWithin_le_nhds (Iio_mem_nhds hR)] with t ht hlt
+    ext i
+    simp only [Set.mem_ofPred_eq]
+    by_cases hi : f i ≤ R
+    · exact ht i hi
+    · have hlt_i : R < f i := not_le.1 hi
+      exact iff_of_false (not_le.2 (hlt.trans hlt_i)) (not_le.2 (hR.trans hlt_i))
+  · filter_upwards [self_mem_nhdsWithin] with t (ht : r ≤ t)
+    have hmax : ∀ s, s ≤ r := fun s => not_lt.1 fun hs => hgt ⟨s, hs⟩
+    obtain rfl : t = r := le_antisymm (hmax t) ht
+    rfl
+
+end Northcott
