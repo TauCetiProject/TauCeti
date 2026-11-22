@@ -420,21 +420,10 @@ theorem mapRange_constantCoeff_knotDifferential (hfin : ∀ x y, (H.minusDomains
     (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
     Finsupp.mapRange constantCoeff (map_zero _) (H.knotDifferential χ w z c) =
       (H.withBasepoints ![H.basepoint w, H.basepoint z]).hatDifferential χ
-        (Finsupp.mapRange constantCoeff (map_zero _) c) := by
-  have h (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
-      Finsupp.mapRange constantCoeff (map_zero _) c =
-        Finsupp.mapRange Polynomial.constantCoeff (map_zero _)
-          (Finsupp.mapRange (aeval ![(Polynomial.X : Polynomial (ZMod 2)), Polynomial.X])
-            (map_zero _) c) := by
-    ext x
-    rw [Finsupp.mapRange_apply, Finsupp.mapRange_apply, Finsupp.mapRange_apply,
-      Polynomial.constantCoeff_apply,
-      Matrix.vec_single_eq_const (Polynomial.X : Polynomial (ZMod 2)), Matrix.vecCons_const,
-      coeff_zero_aeval_const_X]
-  rw [h, h, mapRange_aeval_X_X_knotDifferential,
-    mapRange_constantCoeff_minusDifferential fun x y => by
-      rw [minusDomains_withBasepoints]
-      exact hfin x y]
+        (Finsupp.mapRange constantCoeff (map_zero _) c) :=
+  mapRange_knotDifferential (H := H) _
+    (hatDifferential_apply (H := H.withBasepoints ![H.basepoint w, H.basepoint z]))
+    (fun x y => constantCoeff_knotCoefficient (hfin x y)) c
 
 /-- **Setting `U = 0` and `V = 1` gives the hat differential of the ambient manifold.** When the
 counts are finite, evaluating `U = 0` and `V = 1` in the coefficients of a chain intertwines the
@@ -445,21 +434,10 @@ theorem mapRange_aeval_zero_one_knotDifferential (hfin : ∀ x y, (H.minusDomain
     (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
     Finsupp.mapRange (aeval ![(0 : ZMod 2), 1]) (map_zero _) (H.knotDifferential χ w z c) =
       (H.withBasepoints fun _ : Unit => H.basepoint w).hatDifferential χ
-        (Finsupp.mapRange (aeval ![(0 : ZMod 2), 1]) (map_zero _) c) := by
-  have h (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
-      Finsupp.mapRange (aeval ![(0 : ZMod 2), 1]) (map_zero _) c =
-        Finsupp.mapRange Polynomial.constantCoeff (map_zero _)
-          (Finsupp.mapRange (aeval ![(Polynomial.X : Polynomial (ZMod 2)), 1]) (map_zero _) c) := by
-    ext x
-    rw [Finsupp.mapRange_apply, Finsupp.mapRange_apply, Finsupp.mapRange_apply,
-      Polynomial.constantCoeff_apply, coeff_zero_aeval, aeval_eq_eval]
-    congr
-    ext i
-    fin_cases i <;> simp
-  rw [h, h, mapRange_aeval_X_one_knotDifferential,
-    mapRange_constantCoeff_minusDifferential fun x y => by
-      rw [minusDomains_withBasepoints]
-      exact hfin x y]
+        (Finsupp.mapRange (aeval ![(0 : ZMod 2), 1]) (map_zero _) c) :=
+  mapRange_knotDifferential (H := H) _
+    (hatDifferential_apply (H := H.withBasepoints fun _ : Unit => H.basepoint w))
+    (fun x y => aeval_knotCoefficient_zero_one (hfin x y)) c
 
 end Differential
 
