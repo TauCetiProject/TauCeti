@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Transformation
 
 /-!
 # Tricomi's entire incomplete Gamma function
@@ -255,8 +256,8 @@ theorem differentiable_tricomiIncompleteGamma_left (z : ℂ) :
 
 /-! ### The series in powers of `−z` and the integral -/
 
-/- The second form of 8.7.1 is the Cauchy product of the first with the exponential series, and
-the integral 8.2.7 follows from it by termwise integration. -/
+/- By Kummer's transformation, `γ*(a, z) = e^{−z} 𝐌(1, a + 1, z) = 𝐌(a, a + 1, −z)`, whose series
+is the second form of 8.7.1; the integral 8.2.7 follows from it by termwise integration. -/
 
 /-- The power series of Tricomi's function in `−z` (DLMF 8.7.1): for `a ∉ −ℕ`,
 `γ*(a, z) = Γ(a)⁻¹ ∑ (−z)ᵏ / (k! (a + k))`. -/
@@ -264,22 +265,18 @@ theorem hasSum_tricomiIncompleteGamma_of_ne_neg_natCast {a : ℂ} (ha : ∀ n : 
     (z : ℂ) :
     HasSum (fun k : ℕ => (Gamma a)⁻¹ * ((-z) ^ k / (k ! * (a + k))))
       (tricomiIncompleteGamma a z) := by
-  have hexp : HasSum (fun k : ℕ => (-z) ^ k / k !) (cexp (-z)) :=
-    Complex.exp_eq_exp_ℂ ▸ NormedSpace.expSeries_div_hasSum_exp (-z)
-  have hM := hasSum_regularizedHGFun (a := {1}) (b := {a + 1}) (by simp) z
-  have hnorm := summable_norm_regularizedHGFun (a := {1}) (b := {a + 1}) (by simp) z
-  have h := hasSum_sum_range_mul_of_summable_norm (NormedSpace.norm_expSeries_div_summable (-z))
-    hnorm
-  rw [hexp.tsum_eq, hM.tsum_eq, ← tricomiIncompleteGamma_def] at h
-  refine h.congr_fun fun m => ?_
-  have hterm : ∀ i ∈ range (m + 1), (-z) ^ i / i ! *
-      (regularizedHGFunCoeff {1} {a + 1} (m - i) * z ^ (m - i)) =
-        z ^ m * ((-1 : ℂ) ^ i / (i ! * Gamma (a + (m - i : ℕ) + 1))) := fun i hi => by
-    have hi' : i ≤ m := Nat.lt_succ_iff.1 (mem_range.1 hi)
-    rw [regularizedHGFunCoeff_one_singleton, neg_pow, ← pow_mul_pow_sub z hi', add_right_comm]
-    ring
-  rw [sum_congr rfl hterm, ← mul_sum, sum_range_neg_one_pow_div_factorial_mul_Gamma ha, neg_pow]
-  ring
+  have hT : tricomiIncompleteGamma a z = regularizedHGFun {a} {a + 1} (-z) := by
+    rw [regularizedHGFun_singleton_eq_exp_mul, add_sub_cancel_left, neg_neg,
+      tricomiIncompleteGamma_def]
+  rw [hT]
+  refine (hasSum_regularizedHGFun (a := {a}) (b := {a + 1}) (by simp) (-z)).congr_fun fun k => ?_
+  have hak : a + k ≠ 0 := fun h => ha k (by linear_combination h)
+  have hΓk : Gamma (a + k) ≠ 0 :=
+    Gamma_ne_zero fun n h => ha (n + k) (by push_cast; linear_combination h)
+  -- `(a)ₖ / Γ(a + k + 1) = 1 / (Γ(a) (a + k))`, by `Γ(a + k + 1) = (a + k) Γ(a + k)`.
+  rw [regularizedHGFunCoeff_singleton, add_right_comm, Gamma_add_one _ hak,
+    inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast a k]
+  field_simp
 
 /-- The real form of the series DLMF 8.7.1 in powers of `−x`: for real `a ∉ −ℕ` and real `x`,
 `∑ (−x)ᵏ / (k! (a + k)) = Γ(a) γ*(a, x)`, where `γ*(a, x)` is real
