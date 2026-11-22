@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.Distribution
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
-import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.VectorBundle.ConstantRank
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
@@ -63,29 +62,6 @@ section Orthogonal
 
 variable [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-/-- The bundle map `v ↦ (⟪X₁ y, v⟫, …, ⟪X_k y, v⟫)` into the trivial bundle with fibre `ℝᵏ`
-is `C^n` where the vector fields `X i` are. -/
-private theorem contMDiffOn_pi_innerSL
-    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
-    {X : Fin k → Π y : M, TangentSpace I y} {U : Set M} (hX : ∀ i, CMDiff[U] n (T% (X i))) :
-    ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] (Fin k → ℝ))) n
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] (Fin k → ℝ))
-        (E := fun y : M ↦ TangentSpace I y →L[ℝ] Trivial M (Fin k → ℝ) y) y
-        (ContinuousLinearMap.pi fun i ↦ innerSL ℝ (X i y))) U := by
-  intro x₀ hx₀
-  rw [contMDiffWithinAt_hom_bundle]
-  refine ⟨contMDiffWithinAt_id, ?_⟩
-  refine contMDiffWithinAt_clm_apply.mpr fun u ↦ contMDiffWithinAt_pi_module_iff.mpr fun i ↦ ?_
-  -- Each coordinate of the bundle map is the covector field `⟪X i ·, ·⟫`, which is `C^n`.
-  have h := ((contMDiffWithinAt_hom_bundle _).mp (ContMDiffWithinAt.innerSL_bundle (F := E)
-    (V := fun x : M ↦ TangentSpace I x) (hX i x₀ hx₀))).2
-  -- The trivializations of the trivial bundles are the identity, so in coordinates both sides
-  -- are `u ↦ ⟪X i y, e⁻¹ u⟫` for the trivialization `e` of the tangent bundle at `x₀`.
-  simpa only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
-    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.pi_apply] using
-    contMDiffWithinAt_clm_apply.mp h u
-
 /-- **Orthogonal complements of distributions.** For a `C^n` Riemannian metric on a `C^(n + 1)`
 manifold modelled on a finite-dimensional real space, the orthogonal complements `(D x)ᗮ` of a
 `C^n` distribution `D` of rank `k` form a `C^n` distribution of rank `dim M - k`. -/
@@ -116,7 +92,9 @@ theorem IsContMDiffDistribution.orthogonal [IsManifold I (n + 1) M]
     rw [hker hy] at h₁
     omega
   obtain ⟨V, hVU, hV, hx₀V, Y, hY, hYn⟩ :=
-    exists_isSubbundleFrameOn_ker hU (contMDiffOn_pi_innerSL hX.contMDiffOn) hr hx₀U
+    exists_isSubbundleFrameOn_ker hU
+      (fun y hy ↦ contMDiffWithinAt_pi_innerSL_bundle (F := E) (V := fun x : M ↦ TangentSpace I x)
+        fun i ↦ hX.contMDiffOn i y hy) hr hx₀U
   exact ⟨V, hV, hx₀V, Y,
     ⟨hYn, hY.linearIndependent, fun hy ↦ (hY.span_eq hy).trans (hker (hVU hy))⟩⟩
 
