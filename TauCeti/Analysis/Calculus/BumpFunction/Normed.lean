@@ -159,12 +159,10 @@ an additive Haar measure `μ`, uniform in the center `x₀`, radius `ρ > 0`, an
 theorem norm_normed_ballBump_le [μ.IsAddHaarMeasure] (x₀ : E) {ρ : ℝ} (hρ : 0 < ρ) (y : E) :
     ‖(ballBump x₀ hρ).normed μ y‖ ≤
       (4 ^ finrank ℝ E / μ.real (closedBall (0 : E) 1)) * ρ ^ (-(finrank ℝ E : ℝ)) := by
-  refine ((ballBump x₀ hρ).norm_normed_le μ 2 (by simp; linarith) y).trans (le_of_eq ?_)
-  rw [ballBump_rOut, Real.rpow_neg (by positivity), Real.rpow_neg hρ.le, Real.rpow_natCast,
-    Real.rpow_natCast, div_pow, inv_div]
-  have h4 : (4 : ℝ) ^ finrank ℝ E = (2 : ℝ) ^ finrank ℝ E * (2 : ℝ) ^ finrank ℝ E := by
-    rw [← mul_pow]; norm_num
-  rw [h4]
+  rw [Real.norm_of_nonneg ((ballBump x₀ hρ).nonneg_normed y)]
+  refine ((ballBump x₀ hρ).normed_le_div_measure_closedBall_rIn μ y).trans (le_of_eq ?_)
+  rw [ballBump_rIn, Measure.addHaar_real_closedBall' μ x₀ (by positivity),
+    Real.rpow_neg hρ.le, Real.rpow_natCast, div_pow, one_div, mul_inv, inv_div]
   ring
 
 /-- Existential form of `norm_normed_ballBump_le`: there is a nonnegative constant `C`, depending

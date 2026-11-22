@@ -153,9 +153,9 @@ theorem setIntegral_halfSpace_of_even {E F : Type*} [NormedAddCommGroup E] [Norm
     {L : E →L[ℝ] ℝ} (hL : L ≠ 0) :
     ∫ y in {y : E | 0 ≤ L y}, φ y ∂μ = (2 : ℝ)⁻¹ • ∫ y, φ y ∂μ := by
   have hker : μ {y : E | L y = 0} = 0 := by
-    have hneq : LinearMap.ker L.toLinearMap ≠ ⊤ := fun htop ↦
-      let ⟨v, hv⟩ := DFunLike.ne_iff.mp hL
-      hv (htop ▸ Submodule.mem_top : v ∈ LinearMap.ker L.toLinearMap)
+    have hneq : LinearMap.ker L.toLinearMap ≠ ⊤ := by
+      rw [ne_eq, LinearMap.ker_eq_top]
+      exact fun h ↦ hL (ContinuousLinearMap.coe_inj.mp h)
     have hset : ({y : E | L y = 0} : Set E) = (LinearMap.ker L.toLinearMap : Set E) := by
       ext y; simp
     exact hset ▸ Measure.addHaar_submodule μ (LinearMap.ker L.toLinearMap) hneq
