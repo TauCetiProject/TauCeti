@@ -44,10 +44,14 @@ Otherwise the norms below `1` are dense up to `1`, so any `0 < ε < 1` factors t
 * exactness on finite free modules (`TauCeti.IsAlmostNoetherianModule.of_finite`) reduces the
   statement from finite `T°`-modules to ideals `I` of `T°`;
 * for `I ≠ ⊥`, an element `g ∈ I` whose Gauss norm exceeds `‖d‖ · sup_{f ∈ I} ‖f‖` normalizes to a
-  series `g₀` of Gauss norm `1`, which an isometric triangular automorphism makes distinguished of
-  some degree `s` in one separated variable `Y`;
-* Weierstrass division by `g₀` writes `d • f` as an integral multiple of `g` plus a remainder in `I`
-  of degree less than `s` in `Y`, reducing to a submodule of `(T'°)^s` in one fewer variable.
+  series `g₀` of Gauss norm `1`, which Nagata's isometric triangular change of variables
+  (`TauCeti.MvPowerSeries.restrictedTriangularEquiv`, via
+  `TauCeti.MvPowerSeries.exists_restrictedTriangularEquiv_isDistinguished_isUnit`) makes
+  multiplicatively distinguished of some degree `s` in one separated variable `Y`;
+* Weierstrass division by the normalized distinguished series
+  (`TauCeti.MvPowerSeries.exists_mul_add_eq_of_isMulDistinguished`) writes `d • f` as an integral
+  multiple of `g` plus a remainder in `I` of degree less than `s` in `Y`, reducing to a submodule
+  of `(T'°)^s` in one fewer variable.
 
 ## Main results
 
@@ -71,6 +75,8 @@ Otherwise the norms below `1` are dense up to `1`, so any `0 < ε < 1` factors t
 
 * R. Kiehl, *Der Endlichkeitssatz für eigentliche Abbildungen in der nichtarchimedischen
   Funktionentheorie*, Inventiones Mathematicae 2 (1967), 191–214, §5 (Anhang), Satz 5.1.
+* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §§5.2.1 and 5.2.4,
+  for Weierstrass division and Nagata's triangular change of variables.
 * S. Bosch, *Lectures on Formal and Rigid Geometry*, Lecture Notes in Mathematics 2105, Springer
   (2014), §6.4, proof of Lemma 5 (pp. 137–138).
 * K. S. Kedlaya, *Noetherian properties of Fargues–Fontaine curves*, Int. Math. Res. Not. 2016
