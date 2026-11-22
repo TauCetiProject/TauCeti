@@ -491,11 +491,9 @@ theorem mpullback_piAddCases_torusVolumeForm (p : Fin (m + k) → ℝ) [∀ i, F
   -- The differential of the concatenation sends `b` to the coordinate basis of `Fin (m + k) → ℝ`,
   -- so the left side takes the value `1` on `b`.
   have hd : (fun i ↦ mfderiv _ _ (Diffeomorph.piAddCases (fun _ ↦ 𝓘(ℝ))
-      (fun i ↦ AddCircle (p i)) ∞) q (b i)) = Pi.basisFun ℝ (Fin (m + k)) := funext fun i ↦ by
-    refine (Diffeomorph.mfderiv_piAddCases_apply (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞ q
-      (b i).1 (b i).2).trans (funext fun l ↦ ?_)
-    induction i using Fin.addCases <;> induction l using Fin.addCases <;>
-      simp [b, Module.Basis.prod_apply, Pi.single_apply, Fin.ext_iff] <;> omega
+      (fun i ↦ AddCircle (p i)) ∞) q (b i)) = Pi.basisFun ℝ (Fin (m + k)) := funext fun i ↦
+    (Diffeomorph.mfderiv_piAddCases_apply (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞ q
+      (b i).1 (b i).2).trans (Module.Basis.addCases_basisFun_prod_reindex_finSumFinEquiv i)
   have hL : (SmoothForm.mpullback _ (Diffeomorph.piAddCases (fun _ ↦ 𝓘(ℝ))
       (fun i ↦ AddCircle (p i)) ∞).contMDiff (torusVolumeForm p)).val q b = 1 :=
     (SmoothForm.mpullback_apply _ _ _ q b).trans (by rw [hd, torusVolumeForm_apply_basisFun])
