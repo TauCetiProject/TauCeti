@@ -68,6 +68,14 @@ theorem map_comp (n : ℕ) (f : A →+* B) (g : B →+* C) :
   ext x i
   simp only [map_coeff, RingHom.comp_apply]
 
+/-- The map of truncated Witt vectors induced by a surjection is surjective. -/
+theorem map_surjective (n : ℕ) (f : A →+* B) (hf : Function.Surjective f) :
+    Function.Surjective (map (p := p) n f) := by
+  intro y
+  obtain ⟨x, rfl⟩ := WittVector.truncate_surjective (p := p) n B y
+  obtain ⟨x, rfl⟩ := WittVector.map_surjective f hf x
+  exact ⟨WittVector.truncate n x, map_wittVector_truncate n f x⟩
+
 /-- The zeroth ghost component of the length-two Witt ring. -/
 def constantCoeff : TruncatedWittVector p 2 A →+* A :=
   RingHom.liftOfRightInverse (WittVector.truncate 2) out truncateFun_out
