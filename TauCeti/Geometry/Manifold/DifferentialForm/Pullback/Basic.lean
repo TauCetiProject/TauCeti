@@ -303,18 +303,22 @@ theorem _root_.Filter.EventuallyEq.mpullback_eq {f g : M → M'} {x : M} (h : f 
   rw [← mpullbackWithin_univ, ← mpullbackWithin_univ]
   exact (h.filter_mono nhdsWithin_le_nhds).mpullbackWithin_eq h.eq_of_nhds ω
 
+/-- Two forms that agree at `f x` have the same pullback along `f` at `x`. -/
+theorem mpullback_apply_congr {f : M → M'} {ω η : RoughForm I' M' F k} {x : M}
+    (h : ω (f x) = η (f x)) : mpullback I I' f ω x = mpullback I I' f η x := by
+  ext v
+  simp [mpullback_apply, h]
+
 /-- If the derivative of `f` at `x` is surjective, two forms have the same pullback along `f` at
 `x` exactly when they agree at `f x`. -/
 theorem mpullback_apply_eq_mpullback_apply_iff {f : M → M'} {x : M}
     (hf : Function.Surjective (mfderiv I I' f x)) {ω η : RoughForm I' M' F k} :
     mpullback I I' f ω x = mpullback I I' f η x ↔ ω (f x) = η (f x) := by
-  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, fun h ↦ ?_⟩
-  · choose w hw using fun i ↦ hf (v i)
-    have h₁ := DFunLike.congr_fun h w
-    simp only [mpullback_apply, hw] at h₁
-    exact h₁
-  · refine ContinuousAlternatingMap.ext fun v ↦ ?_
-    rw [mpullback_apply, mpullback_apply, h]
+  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, mpullback_apply_congr⟩
+  choose w hw using fun i ↦ hf (v i)
+  have h₁ := DFunLike.congr_fun h w
+  simp only [mpullback_apply, hw] at h₁
+  exact h₁
 
 /-- A pullback vanishes at every point where the form vanishes at the image point. -/
 theorem mpullback_apply_eq_zero {f : M → M'} {ω : RoughForm I' M' F k} {x : M}
@@ -392,6 +396,17 @@ theorem mpullback_fun_smul {S : Type*} [Monoid S] [DistribMulAction S F]
   funext x
   ext v
   simp only [mpullback_apply, ContinuousAlternatingMap.smul_apply]
+
+/-- Pullback of a pointwise finite weighted sum of forms, whose finite index set may depend on the
+point, is the weighted sum of the pullbacks, with index set and weights read at the image point. -/
+theorem mpullback_sum_smul [ContinuousAdd F] [ContinuousConstSMul ℝ F] {ι : Type*} (f : M → M')
+    (S : M' → Finset ι) (c : ι → M' → ℝ) (φ : ι → RoughForm I' M' F k) :
+    mpullback I I' f (fun y ↦ ∑ i ∈ S y, c i y • φ i y) =
+      fun x ↦ ∑ i ∈ S (f x), c i (f x) • mpullback I I' f (φ i) x := by
+  funext x
+  ext v
+  simp only [mpullback_apply, ContinuousAlternatingMap.sum_apply,
+    ContinuousAlternatingMap.smul_apply]
 
 /-- Within-set pullback by the identity fixes forms wherever the derivative is unique. -/
 @[simp]

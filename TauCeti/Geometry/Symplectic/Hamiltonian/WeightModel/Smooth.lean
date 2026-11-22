@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
+public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.IsManifold.Pi
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
 import Mathlib.Geometry.Manifold.Algebra.Structures
@@ -22,6 +23,10 @@ descend to smooth functions on the circle (`Function.Periodic.contMDiff_lift_iff
 
 This makes the rotation torus, and its closed subgroups, act smoothly on `ℂ^ι` and on the
 invariant submanifolds of `ℂ^ι`, such as the levels used in Delzant's construction.
+
+The differential at `0` of the orbit map `θ ↦ θ • z`, read in the angle coordinates `ℝ^ι` of the
+torus, sends `τ` to the infinitesimal rotation `weightGenerator (-τ) z`
+(`TauCeti.mfderiv_torusRotation_zero`): these are the fundamental vector fields of the action.
 -/
 
 public section
@@ -77,5 +82,51 @@ theorem contMDiff_torusRotation :
     (htoLp.comp (contMDiff_pi_module_iff.2 fun j ↦ ?_))
   · exact ((hcos.comp (hθ j)).mul (hq j)).add ((hsin.comp (hθ j)).mul (hp j))
   · exact ((hsin.comp (hθ j)).mul (hq j)).neg.add ((hcos.comp (hθ j)).mul (hp j))
+
+/-- **The fundamental vector fields of the rotation torus.** The differential at `0` of the orbit
+map `θ ↦ θ • z` of the rotation torus, read in the angle coordinates `ℝ^ι` of the torus
+`(ℝ / 2πℤ)^ι`, sends `τ` to the infinitesimal rotation `z_j ↦ -i τ_j z_j`. -/
+theorem mfderiv_torusRotation_zero (z : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (τ : ι → ℝ) :
+    mfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+      (fun θ : ι → AddCircle (2 * π) ↦ torusRotation θ z) 0 τ = weightGenerator (-τ) z := by
+  set F := fun θ : ι → AddCircle (2 * π) ↦ torusRotation θ z
+  have hF : ContMDiff (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∞ F :=
+    contMDiff_torusRotation.comp (contMDiff_id.prodMk contMDiff_const)
+  -- Through the covering map `ℝ^ι → (ℝ / 2πℤ)^ι`, whose differential is the identity, the orbit
+  -- map is `t ↦ weightRotation (-t) z`.
+  set g := fun t : ι → ℝ ↦ weightRotation (-t) z
+  have hg : (F ∘ fun t : ι → ℝ ↦ fun j ↦ (t j : AddCircle (2 * π))) = g :=
+    funext fun t ↦ congrArg (· z) (torusRotation_coe t)
+  have hc0 : (fun j ↦ ((0 : ι → ℝ) j : AddCircle (2 * π))) = 0 := funext fun _ ↦ rfl
+  have hcomp := ((hF _).mdifferentiableAt (by simp)).hasMFDerivAt.comp (0 : ι → ℝ)
+    (AddCircle.hasMFDerivAt_coe_pi (2 * π) (0 : ι → ℝ))
+  rw [hg] at hcomp
+  have hgd : DifferentiableAt ℝ g 0 :=
+    mdifferentiableAt_iff_differentiableAt.1 (hcomp.mdifferentiableAt)
+  have hgm := (hasMFDerivAt_iff_hasFDerivAt.2 hgd.hasFDerivAt).mfderiv
+  have hmf := hcomp.mfderiv
+  rw [hgm] at hmf
+  -- The derivative of `g` along the line through `τ` is the infinitesimal rotation.
+  have hline : HasDerivAt (fun s : ℝ ↦ g (s • τ)) (fderiv ℝ g 0 τ) 0 := by
+    have h := hgd.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ)
+      ((hasDerivAt_id (0 : ℝ)).smul_const τ) (by simp)
+    rw [one_smul] at h
+    exact h
+  have hrot : HasDerivAt (fun s : ℝ ↦ g (s • τ)) (weightGenerator (-τ) z) 0 := by
+    have h := hasDerivAt_weightRotation_smul (-τ) z 0
+    rw [zero_smul, weightRotation_zero, ContinuousLinearMap.id_apply] at h
+    exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s ↦ by simp [g, smul_neg])
+  have h : mfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) F
+        (fun j ↦ ((0 : ι → ℝ) j : AddCircle (2 * π))) τ = weightGenerator (-τ) z := by
+    rw [← hline.unique hrot]
+    -- The derivative of the covering map is the identity of `ℝ^ι`.
+    exact congrArg (fun L ↦ L τ) (hmf.trans (ContinuousLinearMap.comp_id
+      (mfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+        𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) F
+        (fun j ↦ ((0 : ι → ℝ) j : AddCircle (2 * π))) :
+        (ι → ℝ) →L[ℝ] EuclideanSpace ℝ ι × EuclideanSpace ℝ ι))).symm
+  rwa [hc0] at h
 
 end TauCeti
