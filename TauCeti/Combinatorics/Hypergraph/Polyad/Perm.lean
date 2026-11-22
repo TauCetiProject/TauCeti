@@ -395,6 +395,24 @@ noncomputable def perm (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3)) :
       (P.mem_pairSupportAt (σ.injective.ne (by decide)) p).1
         (Q.pairGraph_subset_pairSupportAt (σ 1) (σ 2) hp))
 
+/-- The `pair₀₁` field of `Q.perm σ` is `Q.pairGraph (σ 0) (σ 1)`. -/
+@[simp]
+theorem perm_pair₀₁ (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3)) :
+    (Q.perm σ).pair₀₁ = Q.pairGraph (σ 0) (σ 1) :=
+  (rfl)
+
+/-- The `pair₀₂` field of `Q.perm σ` is `Q.pairGraph (σ 0) (σ 2)`. -/
+@[simp]
+theorem perm_pair₀₂ (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3)) :
+    (Q.perm σ).pair₀₂ = Q.pairGraph (σ 0) (σ 2) :=
+  (rfl)
+
+/-- The `pair₁₂` field of `Q.perm σ` is `Q.pairGraph (σ 1) (σ 2)`. -/
+@[simp]
+theorem perm_pair₁₂ (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3)) :
+    (Q.perm σ).pair₁₂ = Q.pairGraph (σ 1) (σ 2) :=
+  (rfl)
+
 /-- The pair graph from role `i` to role `j` in `Q.perm σ` is the pair graph from role `σ i`
 to role `σ j` in `Q`. -/
 @[simp]
@@ -402,12 +420,9 @@ theorem perm_pairGraph (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3)) (i j : Fin 3
     (Q.perm σ).pairGraph i j = Q.pairGraph (σ i) (σ j) := by
   rcases eq_or_ne i j with rfl | hij
   · simp
-  · have h01 : (Q.perm σ).pairGraph 0 1 = Q.pairGraph (σ 0) (σ 1) := by
-      rw [pairGraph_zero_one]; rfl
-    have h02 : (Q.perm σ).pairGraph 0 2 = Q.pairGraph (σ 0) (σ 2) := by
-      rw [pairGraph_zero_two]; rfl
-    have h12 : (Q.perm σ).pairGraph 1 2 = Q.pairGraph (σ 1) (σ 2) := by
-      rw [pairGraph_one_two]; rfl
+  · have h01 : (Q.perm σ).pairGraph 0 1 = Q.pairGraph (σ 0) (σ 1) := by simp
+    have h02 : (Q.perm σ).pairGraph 0 2 = Q.pairGraph (σ 0) (σ 2) := by simp
+    have h12 : (Q.perm σ).pairGraph 1 2 = Q.pairGraph (σ 1) (σ 2) := by simp
     have hswap (a b : Fin 3) (hab : a ≠ b)
         (h : (Q.perm σ).pairGraph b a = Q.pairGraph (σ b) (σ a)) :
         (Q.perm σ).pairGraph a b = Q.pairGraph (σ a) (σ b) := by

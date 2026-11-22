@@ -21,7 +21,9 @@ diagonal matrix of pairwise distinct entries is itself diagonal.
 
 Neither statement needs a unit or an associative multiplication in the entries: the first holds
 over a `NonUnitalNonAssocSemiring`, and the second adds commutativity and cancellation by nonzero
-elements, which is what forces the off-diagonal entries to vanish.
+elements, which is what forces the off-diagonal entries to vanish. Its converse, that a matrix
+vanishing wherever the diagonal matrix separates two coordinates commutes with it, needs only
+commutativity.
 
 For linear maps between based modules, the coordinate matrix is diagonal exactly when each source
 basis vector maps to the corresponding scalar multiple of the target basis vector.
@@ -39,6 +41,9 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
 * `TauCeti.isUnit_diagonal_snoc_one_iff`: `diagonal (1, …, 1, x)` is a unit exactly when `x` is.
 * `TauCeti.apply_eq_zero_of_commute_diagonal`: a matrix commuting with a diagonal matrix has
   vanishing `(i, j)` entry wherever that diagonal matrix separates `i` from `j`.
+* `TauCeti.commute_diagonal_of_apply_eq_zero`: conversely, a matrix vanishing wherever a diagonal
+  matrix separates `i` from `j` commutes with it, over any commutative semiring;
+  `TauCeti.commute_diagonal_iff` combines the two directions.
 * `TauCeti.isDiag_of_commute_diagonal`: a matrix commuting with a diagonal matrix of pairwise
   distinct entries is itself diagonal.
 * `Module.Basis.toMatrix_eq_diagonal_iff`: a linear map has a specified diagonal matrix in two
@@ -108,7 +113,20 @@ theorem isUnit_diagonal_snoc_one_iff {R : Type*} [Semiring R] {d : ℕ} (x : R) 
 section Commute
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-variable {k : Type*} [NonUnitalNonAssocCommSemiring k] [IsLeftCancelMulZero k]
+variable {k : Type*} [NonUnitalNonAssocCommSemiring k]
+
+/-- A matrix whose `(i, j)` entry vanishes whenever the diagonal matrix `diagonal t` separates the
+coordinates `i` and `j` commutes with `diagonal t`. -/
+theorem commute_diagonal_of_apply_eq_zero {t : ι → k} {g : Matrix ι ι k}
+    (hg : ∀ i j, t i ≠ t j → g i j = 0) : Commute (Matrix.diagonal t) g := by
+  rw [commute_iff_eq]
+  ext i j
+  rw [Matrix.diagonal_mul, Matrix.mul_diagonal]
+  by_cases hij : t i = t j
+  · rw [hij, mul_comm]
+  · rw [hg i j hij, mul_zero, zero_mul]
+
+variable [IsLeftCancelMulZero k]
 
 /-- A matrix commuting with a diagonal matrix has vanishing `(i, j)` entry whenever the diagonal
 matrix separates the coordinates `i` and `j`. -/
@@ -123,6 +141,12 @@ theorem apply_eq_zero_of_commute_diagonal {t : ι → k} {g : Matrix ι ι k}
 theorem isDiag_of_commute_diagonal {t : ι → k} (ht : Function.Injective t)
     {g : Matrix ι ι k} (hg : Commute (Matrix.diagonal t) g) : g.IsDiag :=
   fun _ _ hij => apply_eq_zero_of_commute_diagonal hg (ht.ne hij)
+
+/-- A matrix commutes with a diagonal matrix exactly when its `(i, j)` entry vanishes wherever
+that diagonal matrix separates the coordinates `i` and `j`. -/
+theorem commute_diagonal_iff {t : ι → k} {g : Matrix ι ι k} :
+    Commute (Matrix.diagonal t) g ↔ ∀ i j, t i ≠ t j → g i j = 0 :=
+  ⟨fun hg _ _ ↦ apply_eq_zero_of_commute_diagonal hg, commute_diagonal_of_apply_eq_zero⟩
 
 end Commute
 

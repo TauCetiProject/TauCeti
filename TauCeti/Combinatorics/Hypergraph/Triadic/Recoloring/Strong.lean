@@ -14,6 +14,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 import TauCeti.Combinatorics.Hypergraph.Triadic.Recoloring.Coupled
+import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
 # Strong top-regular approximation
@@ -21,8 +22,10 @@ import TauCeti.Combinatorics.Hypergraph.Triadic.Recoloring.Coupled
 Combining strong top regularization (`Colored3Graph.exists_strong_topRegularOverMostPolyads`) with
 coupled triple recoloring
 (`Colored3Graph.TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le`) and rank
-amplification (`Colored3Graph.TopRegularOverMostPolyads.of_rank_one_div_pow`) yields the full
-scheduled strong top-regular approximation theorem
+amplification (`Colored3Graph.TopRegularOverMostPolyads.of_rank_one_div_pow`) yields the scheduled
+coupled recoloring step at `recoloringHostBound`
+(`Colored3Graph.TopRegularOverMostPolyads.exists_approximates3_of_recoloringHostBound_le`) and the
+full scheduled strong top-regular approximation theorem
 (`Colored3Graph.exists_approximates3_topRegularOverMostPolyads`):
 
 For any edit budget `ε > 0`, positive schedules `δ μ : ℕ → ℝ`, and rank schedule `r : ℕ → ℕ`, every
@@ -34,10 +37,16 @@ distinct pair its own color.
 
 ## Main definitions
 
+* `TauCeti.recoloringTolerance`: fine rank-one tolerance required for scheduled recoloring.
+* `TauCeti.recoloringMass`: fine exceptional proportion required for scheduled recoloring.
+* `TauCeti.recoloringHostBound`: host size threshold above which scheduled coupled recoloring runs.
 * `TauCeti.topRegularApproximationPaletteBound`: host-independent bound on `C.pairColorCount`.
 
 ## Main results
 
+* `TauCeti.Colored3Graph.TopRegularOverMostPolyads.exists_approximates3_of_recoloringHostBound_le`:
+  scheduled coupled recoloring across a polyad energy gap on a host of size at least
+  `recoloringHostBound`.
 * `TauCeti.Colored3Graph.exists_approximates3_topRegularOverMostPolyads`: scheduled strong
   top-regular approximation over any lower skeleton on any finite vertex set.
 
@@ -67,13 +76,10 @@ private theorem small_polyad_mass_le {v q cardD : ℕ} {P β μ' : ℝ}
     (hv4 : 4 ≤ v) (hDP : (cardD : ℝ) ≤ P) (hP : 0 ≤ P) (hβ : 0 < β) (hμ' : 0 < μ')
     (hv_real : 4 * P * 221 * ((q : ℝ) + 10) / (β ^ 2 * μ') < v) :
     (cardD : ℝ) * (221 * (3 * (v : ℝ) ^ 2 + q + 7) / β ^ 2) / v.descFactorial 3 ≤ μ' := by
-  have hv_desc : v ^ 3 ≤ 4 * v.descFactorial 3 := by
-    rw [Nat.descFactorial_succ, Nat.descFactorial_succ, Nat.descFactorial_one]
-    have h1 : v ≤ 2 * (v - 1) := by omega
-    have h2 : v ≤ 2 * (v - 2) := by omega
-    calc v ^ 3 = v * (v * v) := by ring
-      _ ≤ v * ((2 * (v - 1)) * (2 * (v - 2))) := Nat.mul_le_mul_left v (Nat.mul_le_mul h1 h2)
-      _ = 4 * ((v - 2) * ((v - 1) * v)) := by ring
+  have hv_desc : v ^ 3 ≤ 4 * v.descFactorial 3 :=
+    Nat.pow_le_mul_descFactorial (by norm_num) (by
+      have : 4 * Nat.choose 3 2 = 12 := by decide
+      omega)
   have hv_desc_pos : (0 : ℝ) < v.descFactorial 3 := by
     have : 0 < v.descFactorial 3 := by
       have := (pow_pos (by omega : 0 < v) 3).trans_le hv_desc; omega
@@ -100,42 +106,159 @@ private theorem small_polyad_mass_le {v q cardD : ℕ} {P β μ' : ℝ}
 
 end Helpers
 
-/-! ### Explicit bound for scheduled top-regular approximation -/
+/-! ### Explicit bounds for scheduled top-regular approximation -/
+
+/-- The fine tolerance in scheduled coupled recoloring: to reach `(δ n, r n)`-top regularity over
+a coarse complex of complexity `n` for a palette of `q` top colors, a fine palette refinement is
+required to be rank-one top-regular at this tolerance. -/
+noncomputable def recoloringTolerance (q : ℕ) (δ : ℕ → ℝ) (r : ℕ → ℕ) (n : ℕ) : ℝ :=
+  ((δ n) ^ 2 / (2 : ℝ) ^ r n) ^ 2 / (8 * ((q : ℝ) + 1))
+
+/-- Unfolding lemma for `recoloringTolerance`. -/
+theorem recoloringTolerance_def (q : ℕ) (δ : ℕ → ℝ) (r : ℕ → ℕ) (n : ℕ) :
+    recoloringTolerance q δ r n = ((δ n) ^ 2 / (2 : ℝ) ^ r n) ^ 2 / (8 * ((q : ℝ) + 1)) :=
+  (rfl)
+
+/-- The fine tolerance is positive wherever the coarse tolerance is. -/
+theorem recoloringTolerance_pos (q : ℕ) {δ : ℕ → ℝ} (r : ℕ → ℕ) {n : ℕ} (hδ : 0 < δ n) :
+    0 < recoloringTolerance q δ r n := by
+  rw [recoloringTolerance_def]
+  positivity
+
+/-- The fine exceptional proportion in scheduled coupled recoloring: to reach an exceptional
+proportion `μ n` over a coarse complex of complexity `n`, a fine palette refinement is required
+to be top-regular off this proportion. -/
+noncomputable def recoloringMass (δ μ : ℕ → ℝ) (r : ℕ → ℕ) (n : ℕ) : ℝ :=
+  μ n * (((δ n) ^ 2 / (2 : ℝ) ^ r n) ^ 2 / 4) / 2
+
+/-- Unfolding lemma for `recoloringMass`. -/
+theorem recoloringMass_def (δ μ : ℕ → ℝ) (r : ℕ → ℕ) (n : ℕ) :
+    recoloringMass δ μ r n = μ n * (((δ n) ^ 2 / (2 : ℝ) ^ r n) ^ 2 / 4) / 2 :=
+  (rfl)
+
+/-- The fine exceptional proportion is positive wherever the coarse tolerance and exceptional
+proportion are. -/
+theorem recoloringMass_pos {δ μ : ℕ → ℝ} (r : ℕ → ℕ) {n : ℕ} (hδ : 0 < δ n) (hμ : 0 < μ n) :
+    0 < recoloringMass δ μ r n := by
+  rw [recoloringMass_def]
+  positivity
+
+/-- The host size required by scheduled coupled recoloring with edit budget `ε`, over a coarse
+complex of complexity at most `K` whose fine palette refinement has at most `P` polyads: each fine
+polyad with fewer triples than the Hoeffding support bound is left unrecolored, and on such a
+host these polyads carry a negligible proportion of the triples. -/
+noncomputable def recoloringHostBound (q : ℕ) (ε : ℝ) (δ μ : ℕ → ℝ) (r : ℕ → ℕ) (K P : ℕ) :
+    ℕ :=
+  max 4 ((range (K + 1)).sup fun n ↦
+    ⌊4 * (P : ℝ) * 221 * ((q : ℝ) + 10) /
+      ((min (ε / (2 * ((q : ℝ) + 1))) (recoloringTolerance q δ r n)) ^ 2 *
+        recoloringMass δ μ r n)⌋₊ + 1)
+
+/-- Unfolding lemma for `recoloringHostBound`. -/
+theorem recoloringHostBound_def (q : ℕ) (ε : ℝ) (δ μ : ℕ → ℝ) (r : ℕ → ℕ) (K P : ℕ) :
+    recoloringHostBound q ε δ μ r K P =
+      max 4 ((range (K + 1)).sup fun n ↦
+        ⌊4 * (P : ℝ) * 221 * ((q : ℝ) + 10) /
+          ((min (ε / (2 * ((q : ℝ) + 1))) (recoloringTolerance q δ r n)) ^ 2 *
+            recoloringMass δ μ r n)⌋₊ + 1) :=
+  (rfl)
 
 /-- Host-independent upper bound on `C.pairColorCount` in
 `Colored3Graph.exists_approximates3_topRegularOverMostPolyads`, for top palette size `q`, `t`
 vertex cells, `m` initial pair colors, edit budget `ε`, positive schedules `δ` and `μ`, and rank
-schedule `r`. The maximum with `N²` absorbs the discrete palette refinement on small hosts. -/
+schedule `r`. The square of the host bound absorbs the discrete palette refinement on small
+hosts. -/
 noncomputable def topRegularApproximationPaletteBound (q t : ℕ) (ε : ℝ) (δ μ : ℕ → ℝ)
     (r : ℕ → ℕ) (m : ℕ) : ℕ :=
-  let η' : ℕ → ℝ := fun n ↦ ((δ n) ^ 2 / (2 : ℝ) ^ r n) ^ 2 / (8 * ((q : ℝ) + 1))
-  let μ' : ℕ → ℝ := fun n ↦ μ n * (((δ n) ^ 2 / (2 : ℝ) ^ r n) ^ 2 / 4) / 2
-  let M := strongTopRegularityBound t ((ε / (2 * ((q : ℝ) + 1))) ^ 2) η' μ' (fun _ ↦ 1) m
-  let M' := strongTopRegularityStep t η' μ' (fun _ ↦ 1) M
-  let P : ℝ := ((t ^ 3 * M' ^ 3 + 1 : ℕ) : ℝ)
-  let β : ℕ → ℝ := fun n ↦ min (ε / (2 * ((q : ℝ) + 1))) (η' n)
-  let N := max 4 ((range (t + M + t ^ 3 * M ^ 3 + 1)).sup fun n ↦
-    ⌊4 * P * 221 * ((q : ℝ) + 10) / ((β n) ^ 2 * μ' n)⌋₊ + 1)
-  max M (N ^ 2)
+  let M := strongTopRegularityBound t ((ε / (2 * ((q : ℝ) + 1))) ^ 2) (recoloringTolerance q δ r)
+    (recoloringMass δ μ r) (fun _ ↦ 1) m
+  let M' := strongTopRegularityStep t (recoloringTolerance q δ r) (recoloringMass δ μ r)
+    (fun _ ↦ 1) M
+  max M (recoloringHostBound q ε δ μ r (t + M + t ^ 3 * M ^ 3) (t ^ 3 * M' ^ 3) ^ 2)
 
 /-- Unfolding lemma for `topRegularApproximationPaletteBound`. -/
 theorem topRegularApproximationPaletteBound_def (q t : ℕ) (ε : ℝ) (δ μ : ℕ → ℝ) (r : ℕ → ℕ)
     (m : ℕ) :
     topRegularApproximationPaletteBound q t ε δ μ r m =
-      let η' : ℕ → ℝ := fun n ↦ ((δ n) ^ 2 / (2 : ℝ) ^ r n) ^ 2 / (8 * ((q : ℝ) + 1))
-      let μ' : ℕ → ℝ := fun n ↦ μ n * (((δ n) ^ 2 / (2 : ℝ) ^ r n) ^ 2 / 4) / 2
-      let M := strongTopRegularityBound t ((ε / (2 * ((q : ℝ) + 1))) ^ 2) η' μ' (fun _ ↦ 1) m
-      let M' := strongTopRegularityStep t η' μ' (fun _ ↦ 1) M
-      let P : ℝ := ((t ^ 3 * M' ^ 3 + 1 : ℕ) : ℝ)
-      let β : ℕ → ℝ := fun n ↦ min (ε / (2 * ((q : ℝ) + 1))) (η' n)
-      let N := max 4 ((range (t + M + t ^ 3 * M ^ 3 + 1)).sup fun n ↦
-        ⌊4 * P * 221 * ((q : ℝ) + 10) / ((β n) ^ 2 * μ' n)⌋₊ + 1)
-      max M (N ^ 2) :=
+      let M := strongTopRegularityBound t ((ε / (2 * ((q : ℝ) + 1))) ^ 2)
+        (recoloringTolerance q δ r) (recoloringMass δ μ r) (fun _ ↦ 1) m
+      let M' := strongTopRegularityStep t (recoloringTolerance q δ r) (recoloringMass δ μ r)
+        (fun _ ↦ 1) M
+      max M (recoloringHostBound q ε δ μ r (t + M + t ^ 3 * M ^ 3) (t ^ 3 * M' ^ 3) ^ 2) :=
   (rfl)
 
 namespace Colored3Graph
 
 variable {κ κ₂ V : Type*} [Fintype V] [DecidableEq V] [DecidableEq κ]
+
+/-- **Scheduled coupled recoloring across a small polyad energy gap.** Let `D` refine `C` along a
+pair-color projection `f` recovering `C.skeleton.pairColors.color`, with both complexes selecting
+polyad decompositions, let `n = C.complexity`, and let `ε`, `δ n` and `μ n` be positive. Suppose
+that `H` is rank-one top-regular over all polyads of `D` at tolerance `recoloringTolerance q δ r n`
+outside a `recoloringMass δ μ r n`-proportion of the injective triples, where `q` is the number of
+top colors, and that the polyad energy gap from `C` to `D` is at most `(ε / (2 (q + 1)))²`. On a
+host of size at least `recoloringHostBound q ε δ μ r K P`, where `n ≤ K` and `D` has at most `P`
+polyads, there is a coloring `H'` within edit discrepancy `ε` of `H` that is
+`(δ n, r n)`-top-regular over `C` outside a `μ n`-proportion of the injective triples. -/
+theorem TopRegularOverMostPolyads.exists_approximates3_of_recoloringHostBound_le [Fintype κ]
+    {H : Colored3Graph κ V} {C D : TriadicComplex3 V} {ε : ℝ} {δ μ : ℕ → ℝ} {r : ℕ → ℕ}
+    (h : H.TopRegularOverMostPolyads D (recoloringTolerance (Fintype.card κ) δ r C.complexity)
+      (recoloringMass δ μ r C.complexity) 1)
+    (hC : C.IsPolyadDecomposition) (hD : D.IsPolyadDecomposition)
+    (hV : D.skeleton.vertexPart ≤ C.skeleton.vertexPart)
+    (f : Fin D.pairColorCount → Fin C.pairColorCount)
+    (hf : ∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p))
+    (hgap : H.polyadEnergy D.skeleton - H.polyadEnergy C.skeleton ≤
+      (ε / (2 * ((Fintype.card κ : ℝ) + 1))) ^ 2)
+    (hε : 0 < ε) (hδ : 0 < δ C.complexity) (hμ : 0 < μ C.complexity) {K P : ℕ}
+    (hK : C.complexity ≤ K) (hP : Fintype.card (Polyad3 D.skeleton) ≤ P)
+    (hcard : recoloringHostBound (Fintype.card κ) ε δ μ r K P ≤ Fintype.card V) :
+    ∃ H' : Colored3Graph κ V, H.Approximates3 H' ε ∧
+      H'.TopRegularOverMostPolyads C (δ C.complexity) (μ C.complexity) (r C.complexity) := by
+  set q := Fintype.card κ
+  set n := C.complexity
+  set γ : ℝ := ε / (2 * ((q : ℝ) + 1))
+  set δ₁ : ℝ := (δ n) ^ 2 / (2 : ℝ) ^ r n
+  set θ : ℝ := δ₁ ^ 2 / 4
+  set β : ℝ := min γ (recoloringTolerance q δ r n)
+  have hγ : 0 < γ := by positivity
+  have hδ₁ : 0 < δ₁ := by positivity
+  have hθ : 0 < θ := by positivity
+  have hη : 0 < recoloringTolerance q δ r n := recoloringTolerance_pos q r hδ
+  have hμ' : 0 < recoloringMass δ μ r n := recoloringMass_pos r hδ hμ
+  have hβ : 0 < β := lt_min hγ hη
+  -- The host is large enough for the Hoeffding support bound at complexity `n ≤ K`.
+  rw [recoloringHostBound_def] at hcard
+  have hv4 : 4 ≤ Fintype.card V := (le_max_left _ _).trans hcard
+  have hv_sup : ⌊4 * (P : ℝ) * 221 * ((q : ℝ) + 10) / (β ^ 2 * recoloringMass δ μ r n)⌋₊ + 1 ≤
+      Fintype.card V :=
+    (le_sup (f := fun k ↦ ⌊4 * (P : ℝ) * 221 * ((q : ℝ) + 10) /
+      ((min γ (recoloringTolerance q δ r k)) ^ 2 * recoloringMass δ μ r k)⌋₊ + 1)
+      (mem_range.2 (Nat.lt_succ_of_le hK))).trans ((le_max_right _ _).trans hcard)
+  have hv_real : 4 * (P : ℝ) * 221 * ((q : ℝ) + 10) / (β ^ 2 * recoloringMass δ μ r n) <
+      Fintype.card V :=
+    (Nat.lt_floor_add_one _).trans_le (by exact_mod_cast hv_sup)
+  set N₀ : ℝ := 221 * (3 * (Fintype.card V : ℝ) ^ 2 + q + 7) / β ^ 2
+  have hN₀ : 221 * (3 * (Fintype.card V : ℝ) ^ 2 + q + 7) ≤ β ^ 2 * N₀ := by
+    rw [mul_div_cancel₀ _ (pow_ne_zero 2 hβ.ne')]
+  have htol : 2 * ((q : ℝ) * (recoloringTolerance q δ r n + β) + θ) ≤ δ₁ ^ 2 := by
+    have hqη : (q : ℝ) * (recoloringTolerance q δ r n + β) ≤ δ₁ ^ 2 / 4 :=
+      mul_add_le_of_div_two_add_one q (by positivity)
+        (by rw [recoloringTolerance_def, div_div]; congr 1; ring) (min_le_right _ _)
+    dsimp only [θ]
+    linarith
+  -- Recolor at rank one, then amplify the rank.
+  obtain ⟨H', happrox, hreg₁⟩ :=
+    h.exists_approximates3_of_polyadEnergy_sub_le hC hD hV f hf hgap hη.le hδ₁ hβ hθ hN₀ htol
+  refine ⟨H', happrox.mono ?_, (hreg₁.mono le_rfl ?_ le_rfl).of_rank_one_div_pow hδ⟩
+  · rw [Real.sqrt_sq hγ.le]
+    exact mul_add_le_of_div_two_add_one q hε.le rfl (min_le_left _ _)
+  · have hsmall := small_polyad_mass_le hv4 (by exact_mod_cast hP) (Nat.cast_nonneg _) hβ hμ'
+      hv_real
+    rw [div_le_iff₀ hθ]
+    have : recoloringMass δ μ r n + recoloringMass δ μ r n = μ n * θ := by
+      rw [recoloringMass_def]; ring
+    linarith
 
 /-- Discrete palette refinement: giving every ordered distinct pair its own pair color yields a
 triadic complex over `S.vertexPart` with at most `|V|²` pair colors whose polyads each have
@@ -199,71 +322,36 @@ theorem exists_approximates3_topRegularOverMostPolyads [Finite κ] [Fintype κ�
       H.Approximates3 H' ε ∧
       H'.TopRegularOverMostPolyads C (δ C.complexity) (μ C.complexity) (r C.complexity) := by
   have := Fintype.ofFinite κ
-  set q := Nat.card κ
+  rw [Nat.card_eq_fintype_card]
+  set q := Fintype.card κ
   set t := #S.vertexPart.parts
-  set m₀ := Fintype.card κ₂
-  let δ₁ : ℕ → ℝ := fun n ↦ (δ n) ^ 2 / (2 : ℝ) ^ r n
-  let θ : ℕ → ℝ := fun n ↦ (δ₁ n) ^ 2 / 4
-  let η' : ℕ → ℝ := fun n ↦ (δ₁ n) ^ 2 / (8 * ((q : ℝ) + 1))
-  let μ' : ℕ → ℝ := fun n ↦ μ n * θ n / 2
-  let β : ℕ → ℝ := fun n ↦ min (ε / (2 * ((q : ℝ) + 1))) (η' n)
+  set η := recoloringTolerance q δ r
+  set μ' := recoloringMass δ μ r
   set γ : ℝ := ε / (2 * ((q : ℝ) + 1))
-  set M := strongTopRegularityBound t (γ ^ 2) η' μ' (fun _ ↦ 1) m₀
-  set M' := strongTopRegularityStep t η' μ' (fun _ ↦ 1) M
-  set P : ℝ := ((t ^ 3 * M' ^ 3 + 1 : ℕ) : ℝ)
-  set N := max 4 ((range (t + M + t ^ 3 * M ^ 3 + 1)).sup fun n ↦
-    ⌊4 * P * 221 * ((q : ℝ) + 10) / ((β n) ^ 2 * μ' n)⌋₊ + 1)
-  have hbound : topRegularApproximationPaletteBound q t ε δ μ r m₀ = max M (N ^ 2) := by
+  set M := strongTopRegularityBound t (γ ^ 2) η μ' (fun _ ↦ 1) (Fintype.card κ₂)
+  set M' := strongTopRegularityStep t η μ' (fun _ ↦ 1) M
+  set N := recoloringHostBound q ε δ μ r (t + M + t ^ 3 * M ^ 3) (t ^ 3 * M' ^ 3)
+  have hbound : topRegularApproximationPaletteBound q t ε δ μ r (Fintype.card κ₂) =
+      max M (N ^ 2) := by
     rw [topRegularApproximationPaletteBound_def]
   rw [hbound]
   by_cases hcard : N ≤ Fintype.card V
-  · have hγ : 0 < γ := by positivity
-    have hδ₁ (n : ℕ) : 0 < δ₁ n := by have := hδ n; positivity
-    have hθ (n : ℕ) : 0 < θ n := by have := hδ₁ n; positivity
-    have hη' (n : ℕ) : 0 < η' n := by have := hδ₁ n; positivity
-    have hμ' (n : ℕ) : 0 < μ' n := by have := hμ n; have := hθ n; positivity
-    have hβ (n : ℕ) : 0 < β n := lt_min hγ (hη' n)
-    obtain ⟨C, D, π, f, hCcard, hDcard, hCV, hDV, hπ, hrev, hf, -, hCpol, hDpol, hDreg, hgap⟩ :=
-      H.exists_strong_topRegularOverMostPolyads S (pow_pos hγ 2) hη' hμ' (fun _ ↦ 1)
-    have hCM : C.pairColorCount ≤ M := hCcard
+  · obtain ⟨C, D, π, f, hCcard, hDcard, hCV, hDV, hπ, hrev, hf, -, hCpol, hDpol, hDreg, hgap⟩ :=
+      H.exists_strong_topRegularOverMostPolyads S (g := γ ^ 2) (η := η) (μ := μ')
+        (by positivity) (fun n ↦ recoloringTolerance_pos q r (hδ n))
+        (fun n ↦ recoloringMass_pos r (hδ n) (hμ n)) (fun _ ↦ 1)
     have hCcomp : C.complexity ≤ t + M + t ^ 3 * M ^ 3 :=
       C.complexity_le.trans (by rw [hCV]; gcongr)
     have hDM' : D.pairColorCount ≤ M' :=
-      hDcard.trans (topRegularRefinementBound_le_strongTopRegularityStep η' μ' (fun _ ↦ 1) hCM
+      hDcard.trans (topRegularRefinementBound_le_strongTopRegularityStep η μ' (fun _ ↦ 1) hCcard
         hCcomp)
     have hDpoly : Fintype.card (Polyad3 D.skeleton) ≤ t ^ 3 * M' ^ 3 :=
       (card_polyad3_le D.skeleton).trans (by rw [hDV, Fintype.card_fin]; gcongr)
-    set n := C.complexity
-    have hv4 : 4 ≤ Fintype.card V := (le_max_left _ _).trans hcard
-    have hv_sup : ⌊4 * P * 221 * ((q : ℝ) + 10) / ((β n) ^ 2 * μ' n)⌋₊ + 1 ≤ Fintype.card V :=
-      (le_sup (f := fun k ↦ ⌊4 * P * 221 * ((q : ℝ) + 10) / ((β k) ^ 2 * μ' k)⌋₊ + 1)
-        (mem_range.2 (Nat.lt_succ_of_le hCcomp))).trans ((le_max_right _ _).trans hcard)
-    have hv_real : 4 * P * 221 * ((q : ℝ) + 10) / ((β n) ^ 2 * μ' n) < Fintype.card V :=
-      (Nat.lt_floor_add_one _).trans_le (by exact_mod_cast hv_sup)
-    set N₀ : ℝ := 221 * (3 * (Fintype.card V : ℝ) ^ 2 + q + 7) / (β n) ^ 2
-    have hN₀_bound : 221 * (3 * (Fintype.card V : ℝ) ^ 2 + q + 7) ≤ (β n) ^ 2 * N₀ := by
-      dsimp only [N₀]; rw [mul_div_cancel₀ _ (pow_ne_zero 2 (hβ n).ne')]
-    have htol_n : 2 * ((q : ℝ) * (η' n + β n) + θ n) ≤ (δ₁ n) ^ 2 := by
-      have hqη : (q : ℝ) * (η' n + β n) ≤ (δ₁ n) ^ 2 / 4 :=
-        mul_add_le_of_div_two_add_one q (by positivity)
-          (by dsimp only [η']; rw [div_div]; congr 1; ring) (min_le_right _ _)
-      dsimp only [θ]; linarith
-    have hq_card : q = Fintype.card κ := Nat.card_eq_fintype_card
-    obtain ⟨H', happrox, hreg₁⟩ := hDreg.exists_approximates3_of_polyadEnergy_sub_le
+    obtain ⟨H', happrox, hreg⟩ := hDreg.exists_approximates3_of_recoloringHostBound_le
       (C.isPolyadDecomposition_of_polyads_eq_univ hCpol)
       (D.isPolyadDecomposition_of_polyads_eq_univ hDpol) (hDV.trans hCV.symm).le f
-      (fun p ↦ (hf p).symm) hgap (hη' n).le (hδ₁ n) (hβ n) (hθ n)
-      (by rwa [← hq_card]) (by rwa [← hq_card])
-    refine ⟨C, π, H', hCM.trans (le_max_left _ _), hCV, hπ, hrev, hCpol, happrox.mono ?_,
-      (hreg₁.mono le_rfl ?_ le_rfl).of_rank_one_div_pow (hδ n)⟩
-    · rw [← hq_card, Real.sqrt_sq hγ.le]
-      exact mul_add_le_of_div_two_add_one q hε.le rfl (min_le_left _ _)
-    · have hDP : (Fintype.card (Polyad3 D.skeleton) : ℝ) ≤ P := by
-        dsimp only [P]; exact_mod_cast hDpoly.trans (Nat.le_succ _)
-      have hsmall := small_polyad_mass_le hv4 hDP (by positivity) (hβ n) (hμ' n) hv_real
-      rw [div_le_iff₀ (hθ n)]
-      have : μ' n + μ' n = μ n * θ n := by dsimp only [μ']; ring
-      linarith
+      (fun p ↦ (hf p).symm) hgap hε (hδ _) (hμ _) hCcomp hDpoly hcard
+    exact ⟨C, π, H', hCcard.trans (le_max_left _ _), hCV, hπ, hrev, hCpol, happrox, hreg⟩
   · obtain ⟨C, π, hCcard, hCV, hπ, hrev, hCpol, hreg⟩ :=
       exists_discrete_topRegularOverMostPolyads H S hδ hμ r
     refine ⟨C, π, H, (hCcard.trans (Nat.pow_le_pow_left (not_le.1 hcard).le 2)).trans

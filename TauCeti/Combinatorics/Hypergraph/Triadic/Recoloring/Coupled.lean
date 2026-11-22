@@ -292,7 +292,8 @@ theorem TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le
         ((μ + Fintype.card (Polyad3 D.skeleton) * N₀ /
           (Fintype.card V).descFactorial 3) / θ) 1 := by
   classical
-  have hN₀_pos : 0 < N₀ := pos_of_support_lower_bound hN₀
+  have hN₀_pos : 0 < N₀ :=
+    pos_of_mul_pos_right (lt_of_lt_of_le (by positivity) hN₀) (sq_nonneg β)
   obtain ⟨H', happrox, hchild⟩ :=
     exists_coupled_recoloring_of_polyadEnergy_sub_le (H := H) (C := C) (D := D) hV f hf hgap hβ hN₀
   refine ⟨H', happrox, ?_⟩

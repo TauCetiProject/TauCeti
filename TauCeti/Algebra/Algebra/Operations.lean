@@ -9,9 +9,10 @@ public import Mathlib.Algebra.Algebra.Operations
 import Mathlib.Tactic.Ring
 
 /-!
-# Powers of submodules of an algebra
+# Products and powers of submodules of an algebra
 
-Four facts about the powers of a submodule of an algebra.
+Four facts about the powers of a submodule of an algebra, and how left multiplication by an element
+interacts with products of submodules.
 
 Once the powers of a submodule `M` repeat once, `M ^ (n + 1) = M ^ n`, they are constant from `n`
 on. This is `TauCeti.pow_eq_pow_of_pow_succ_eq_pow` for submodules, which Mathlib makes a monoid
@@ -38,6 +39,10 @@ the computation of the cohomology of the twisting sheaves on the projective line
 `Ideal.sup_pow_add_le_pow_sup_pow` is the analogous bound for ideals, where the cofactors
 `V ^ j` and `V ^ i` are absorbed.
 
+The image of a submodule `P` under left multiplication by `c` is the product `span R {c} * P`
+(`Submodule.map_mulLeft_eq_span_singleton_mul`), so in a commutative algebra left multiplication by
+`c` commutes with products of submodules (`Submodule.mul_map_mulLeft`).
+
 ## Main results
 
 * `Submodule.pow_eq_pow_of_pow_succ_eq_pow`: `M ^ (n + 1) = M ^ n` propagates to all `k ≥ n`.
@@ -47,6 +52,8 @@ the computation of the cohomology of the twisting sheaves on the projective line
   mapping `M` into `N` maps `M ^ n` into `N ^ n`.
 * `Submodule.sup_pow_add_add_one_le`: `(X ⊔ Y) ^ (i + j + 1)` is contained in
   `X ^ (i + 1) * (X ⊔ Y) ^ j ⊔ Y ^ (j + 1) * (X ⊔ Y) ^ i`.
+* `Submodule.map_mulLeft_eq_span_singleton_mul`, `Submodule.mul_map_mulLeft`: left multiplication
+  by `c` maps `P` to `span R {c} * P`, and commutes with products of submodules.
 -/
 
 public section
@@ -103,6 +110,12 @@ theorem _root_.AlgHom.apply_mem_pow_of_mem_pow {B : Type*} [Semiring B] [Algebra
     {n : ℕ} {a : A} (ha : a ∈ M ^ n) : f a ∈ N ^ n := by
   simpa only [AlgHom.toLinearMap_apply] using Submodule.map_pow_le_pow f hf n (mem_map_of_mem ha)
 
+/-- The image of a submodule `P` under left multiplication by `c` is `span R {c} * P`. -/
+theorem map_mulLeft_eq_span_singleton_mul (P : Submodule R A) (c : A) :
+    P.map (LinearMap.mulLeft R c) = span R {c} * P := by
+  ext z
+  simp [mem_span_singleton_mul]
+
 end Algebra
 
 section CommSemiring
@@ -154,6 +167,12 @@ theorem sup_pow_add_add_one_le (X Y : Submodule R A) (i j : ℕ) :
               simp only [← add_eq_sup]; ring
           _ ≤ X ^ (i + 1 + 1) * (X ⊔ Y) ^ (j + 1) ⊔ Y ^ (j + 1 + 1) * (X ⊔ Y) ^ (i + 1) := by
               rw [pow_succ' _ j]; gcongr; exact le_sup_right
+
+/-- In a commutative algebra, left multiplication by `c` commutes with products of submodules:
+`M * c N = c (M * N)`. -/
+theorem mul_map_mulLeft (M N : Submodule R A) (c : A) :
+    M * N.map (LinearMap.mulLeft R c) = (M * N).map (LinearMap.mulLeft R c) := by
+  rw [map_mulLeft_eq_span_singleton_mul, map_mulLeft_eq_span_singleton_mul, mul_left_comm]
 
 end CommSemiring
 

@@ -47,6 +47,9 @@ that are not surjective and is invariant under proper homotopies, that is homoto
 ## Main results
 
 * `TauCeti.HomologicalOrientation.localDegree_eq_iff`: the defining property of the local degree.
+* `TauCeti.HomologicalOrientation.singularHomologyToLocalHomology_mapFundamentalClass`: for compact
+  `M`, the image of `f_*[M]` in the local homology at `y` is the local degree at `y` times the
+  local orientation, with no connectedness of `N`.
 * `TauCeti.HomologicalOrientation.localDegree_comap_comp`: excision, the local degree at `y` is
   unchanged on restricting to an open subset containing the fibre over `y`.
 * `TauCeti.HomologicalOrientation.isLocallyConstant_localDegree`: the local degree of a proper
@@ -57,7 +60,10 @@ that are not surjective and is invariant under proper homotopies, that is homoto
   `TauCeti.HomologicalOrientation.degree_eq_iff` for nonempty `K`.
 * `TauCeti.HomologicalOrientation.degree_id`, `TauCeti.HomologicalOrientation.degree_neg_left`,
   `TauCeti.HomologicalOrientation.degree_neg_right`, `TauCeti.HomologicalOrientation.degree_comp`:
-  normalization, orientation reversal and multiplicativity. Local degrees are multiplicative
+  normalization, orientation reversal and multiplicativity. On a connected manifold the degree of
+  a self-map, and the local degree of a map from an open subset, do not depend on the orientation
+  (`TauCeti.HomologicalOrientation.degree_self_eq`,
+  `TauCeti.HomologicalOrientation.localDegree_comap_self_eq`). Local degrees are multiplicative
   as well, `localDegree (g ∘ f) z = deg f * localDegree g z`, as soon as `f` is proper onto a
   preconnected `N` and the fibre of `g` over `z` is compact
   (`TauCeti.HomologicalOrientation.localDegree_comp`).
@@ -156,6 +162,11 @@ theorem localDegree_eq_zero_of_notMem_range (hF : finrank ℝ F = n) (f : C(M, N
     eq_zero_of_forall_localHomologyRestriction_eq_zero _ hE hc (o.fundamentalClassOn hE hc)
       fun x hx ↦ (h.subset hx).elim, map_zero]
 
+/-- A point at which `f` has nonzero local degree lies in the range of `f`. -/
+theorem mem_range_of_localDegree_ne_zero (hF : finrank ℝ F = n) {f : C(M, N)} {y : N}
+    (h : o.localDegree o' hE f y ≠ 0) : y ∈ range f :=
+  by_contra fun hy ↦ h (o.localDegree_eq_zero_of_notMem_range o' hE hF f hy)
+
 /-- **Excision for the local degree**: if `j : M' → M` is an open embedding whose image contains
 the fibre of `f : M → N` over `y`, then `f ∘ j` has the same local degree at `y` as `f`, for the
 orientation `o` pulled back along `j`. -/
@@ -193,6 +204,19 @@ theorem localHomologyRestriction_localHomologyMap_fundamentalClassOn (f : C(M, N
       (preimage_mono (singleton_subset_iff.2 hy)),
     ← ModuleCat.comp_apply, ← ModuleCat.comp_apply, localHomologyMap_comp_localHomologyRestriction,
     localHomologyRestriction_comp_localHomologyMap]
+
+/-- **The local image of the image of the fundamental class.** For a compact oriented manifold `M`,
+the image of `f_*[M]` in the local homology `Hₙ(N, N ∖ {y}; ℤ)` is the local degree of `f` at `y`
+times the local orientation. No connectedness of `N` is needed. -/
+theorem singularHomologyToLocalHomology_mapFundamentalClass [CompactSpace M] (f : C(M, N))
+    (y : N) :
+    singularHomologyToLocalHomology (ModuleCat.of ℤ (ULift.{0} ℤ)) y n
+        (o.mapFundamentalClass hE f) =
+      o.localDegree o' hE f y • (o' y).val := by
+  refine (singularHomologyToLocalHomology_apply _ y (o.mapFundamentalClass hE f)).trans ?_
+  rw [o.singularHomologyπ_mapFundamentalClass]
+  exact localHomologyRestriction_localHomologyMap_fundamentalClassOn o o' hE f (K := univ)
+    (by simpa using isCompact_univ) (mem_univ y)
 
 /-- **The local degree of a proper map is locally constant.** -/
 theorem isLocallyConstant_localDegree (hF : finrank ℝ F = n) {f : C(M, N)} (hf : IsProperMap f) :
@@ -331,6 +355,27 @@ theorem degree_neg_right (hF : finrank ℝ F = n) (f : C(M, N)) :
   · rw [degree_of_isEmpty, degree_of_isEmpty, neg_zero]
   · rw [degree_eq_localDegree_some _ _ hE f h, degree_eq_localDegree_some o o' hE f h,
       localDegree_neg_right o o' hE hF]
+
+/-- **The local degree on an open subset does not depend on the orientation.** On a connected
+manifold `M`, the local degree of a map `f : U → M` from an open subset, for an orientation of `M`
+restricted to `U` on the source and used on the target, is the same for every orientation of `M`:
+reversing it reverses both. -/
+theorem localDegree_comap_self_eq [ConnectedSpace M] (o₁ : HomologicalOrientation M E n) {U : Type}
+    [TopologicalSpace U] [T2Space U] [ChartedSpace E U] {j : U → M} (hj : IsOpenEmbedding j)
+    (f : C(U, M)) (y : M) :
+    (o₁.comap hj).localDegree o₁ hE f y = (o.comap hj).localDegree o hE f y := by
+  rcases eq_or_eq_neg hE o o₁ with rfl | rfl
+  · rfl
+  · rw [comap_neg, localDegree_neg_left _ _ _ hE, localDegree_neg_right _ _ _ hE, neg_neg]
+
+/-- **The degree of a self-map does not depend on the orientation.** On a connected manifold, the
+degree of a self-map for an orientation used on both sides is the same for every orientation:
+reversing it reverses both. -/
+theorem degree_self_eq [ConnectedSpace M] (o₁ : HomologicalOrientation M E n) (f : C(M, M)) :
+    o₁.degree o₁ hE f = o.degree o hE f := by
+  rcases eq_or_eq_neg hE o o₁ with rfl | rfl
+  · rfl
+  · rw [degree_neg_left _ _ _ hE, degree_neg_right _ _ _ hE, neg_neg]
 
 /-- **Local degrees multiply under composition**: for a proper map `f : M → N` with `N`
 preconnected and a map `g : N → P` whose fibre over `z` is compact, the local degree of `g ∘ f` at

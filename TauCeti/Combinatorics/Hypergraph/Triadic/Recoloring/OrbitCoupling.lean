@@ -59,7 +59,7 @@ open scoped Matrix
 namespace TauCeti
 
 /-- The Hoeffding support lower bound `221 * (3 * n² + q + 7) ≤ β² * N₀` forces `0 < N₀`. -/
-theorem pos_of_support_lower_bound {n q : ℕ} {β N₀ : ℝ}
+private theorem pos_of_support_lower_bound {n q : ℕ} {β N₀ : ℝ}
     (hN₀ : 221 * (3 * (n : ℝ) ^ 2 + q + 7) ≤ β ^ 2 * N₀) : 0 < N₀ :=
   pos_of_mul_pos_right (lt_of_lt_of_le (by positivity) hN₀) (sq_nonneg β)
 
@@ -100,35 +100,15 @@ private theorem testIdx_union_bound {κ₂ : Type*} {T : PairSkeleton3 κ₂ V} 
       2 * Fintype.card (TestIdx Q₀) * Fintype.card κ *
         exp (-2 * ((β / 21) * (#Q₀.support : ℝ)) ^ 2 / (#Q₀.support : ℝ)) < 1 := by
   set n := Fintype.card V
-  set B : ℝ := 3 * (n : ℝ) ^ 2 + Fintype.card κ + 7
   have hQpos : (0 : ℝ) < #Q₀.support := (pos_of_support_lower_bound hN₀).trans_le hQ₀
-  refine ⟨by positivity, ?_⟩
-  have hcard2 : 2 * Fintype.card (TestIdx Q₀) ≤ 2 ^ (3 * n ^ 2 + 7) := by
-    have h1 := Nat.mul_le_mul_left 2 (card_testIdx_le Q₀)
-    have h27 : (2 : ℕ) ^ 7 = 128 := by norm_num
-    rw [pow_add, h27]
-    linarith
-  have hIexp : (2 : ℝ) * Fintype.card (TestIdx Q₀) ≤ exp (3 * (n : ℝ) ^ 2 + 7) := by
-    have h2e : (2 : ℝ) ≤ exp 1 := by linarith [add_one_le_exp (1 : ℝ)]
-    calc (2 : ℝ) * Fintype.card (TestIdx Q₀)
-        ≤ (2 : ℝ) ^ (3 * n ^ 2 + 7) := by exact_mod_cast hcard2
-      _ ≤ exp 1 ^ (3 * n ^ 2 + 7) := pow_le_pow_left₀ (by norm_num) h2e _
-      _ = exp (3 * (n : ℝ) ^ 2 + 7) := by rw [← exp_natCast_mul, mul_one]; push_cast; rfl
-  have hKexp : (Fintype.card κ : ℝ) ≤ exp (Fintype.card κ) := by
-    linarith [add_one_le_exp (Fintype.card κ : ℝ)]
-  have hexp_eq : -2 * ((β / 21) * (#Q₀.support : ℝ)) ^ 2 / (#Q₀.support : ℝ) =
-      -(2 / 441) * (β ^ 2 * (#Q₀.support : ℝ)) := by field_simp [hQpos.ne']; ring
-  have hBN : 221 * B ≤ β ^ 2 * (#Q₀.support : ℝ) :=
-    hN₀.trans (mul_le_mul_of_nonneg_left hQ₀ (by positivity))
-  have hexp_lt : -2 * ((β / 21) * (#Q₀.support : ℝ)) ^ 2 / (#Q₀.support : ℝ) < -B := by
-    have hBpos : 0 < B := by positivity
-    rw [hexp_eq]; linarith
-  calc 2 * (Fintype.card (TestIdx Q₀) : ℝ) * Fintype.card κ *
-          exp (-2 * ((β / 21) * (#Q₀.support : ℝ)) ^ 2 / (#Q₀.support : ℝ))
-      ≤ exp (3 * (n : ℝ) ^ 2 + 7) * exp (Fintype.card κ) *
-          exp (-2 * ((β / 21) * (#Q₀.support : ℝ)) ^ 2 / (#Q₀.support : ℝ)) := by gcongr
-    _ < exp (3 * (n : ℝ) ^ 2 + 7) * exp (Fintype.card κ) * exp (-B) := by gcongr
-    _ = 1 := by rw [← exp_add, ← exp_add]; convert exp_zero; dsimp only [B]; ring
+  refine ⟨by positivity, two_mul_mul_exp_lt_of_le_two_pow (m := 3 * n ^ 2 + 6) ?_ ?_⟩
+  · calc Fintype.card (TestIdx Q₀) ≤ 36 * 2 ^ (3 * n ^ 2) := card_testIdx_le Q₀
+      _ ≤ 2 ^ 6 * 2 ^ (3 * n ^ 2) := Nat.mul_le_mul_right _ (by decide)
+      _ = 2 ^ (3 * n ^ 2 + 6) := by rw [← pow_add, add_comm]
+  · have hBN : 221 * (3 * (n : ℝ) ^ 2 + Fintype.card κ + 7) ≤ β ^ 2 * (#Q₀.support : ℝ) :=
+      hN₀.trans (mul_le_mul_of_nonneg_left hQ₀ (by positivity))
+    push_cast
+    linarith [sq_nonneg (n : ℝ), Nat.cast_nonneg (α := ℝ) (Fintype.card κ)]
 
 /-- Canonical representative of the `(Equiv.Perm (Fin 3))ᵐᵒᵖ`-orbit of a fine polyad `Q`. -/
 private noncomputable def canonPolyad {κ₂ : Type*} {T : PairSkeleton3 κ₂ V} (Q : Polyad3 T) :
