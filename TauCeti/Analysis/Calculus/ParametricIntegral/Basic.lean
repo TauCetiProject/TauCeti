@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import TauCeti.Topology.Compactness.Compact
 public import TauCeti.Topology.Compactness.Normed
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 
 /-!
@@ -167,11 +168,6 @@ theorem hasDerivAt_deriv_intervalIntegral_of_contDiffOn {G : ℝ × ℝ → F}
   set G₁ : ℝ × ℝ → F := fun z ↦ fderiv ℝ G z (1, 0)
   have hG₁ : ContDiffOn ℝ 1 G₁ U :=
     (hG.fderiv_of_isOpen hU (by norm_num)).clm_apply contDiffOn_const
-  have hslice {W : ℝ × ℝ → F} {n : ℕ∞} (hW : ContDiffOn ℝ n W U) (hn : n ≠ 0) {x t : ℝ}
-      (hz : (x, t) ∈ U) : HasDerivAt (fun x ↦ W (x, t)) (fderiv ℝ W (x, t) (1, 0)) x :=
-    ((hW.differentiableOn (by exact_mod_cast hn) (x, t) hz).differentiableAt
-      (hU.mem_nhds hz)).hasFDerivAt.comp_hasDerivAt x ((hasDerivAt_id x).prodMk
-        (hasDerivAt_const x t))
   have hderiv : deriv (fun x ↦ ∫ t in a..b, G (x, t)) =ᶠ[nhds x₀]
       fun x ↦ ∫ t in a..b, G₁ (x, t) := by
     filter_upwards [huo.mem_nhds hx₀u] with x hx
@@ -184,9 +180,11 @@ theorem hasDerivAt_deriv_intervalIntegral_of_contDiffOn {G : ℝ × ℝ → F}
     intro t ht
     have h₁ : deriv (fun x ↦ G (x, t)) =ᶠ[nhds x₀] fun x ↦ G₁ (x, t) := by
       filter_upwards [huo.mem_nhds hx₀u] with x hx
-      exact (hslice hG two_ne_zero (huv ⟨hx, hv ht⟩)).deriv
+      exact (hasDerivAt_slice_left ((hG.differentiableOn (by norm_num) _ (huv ⟨hx, hv ht⟩))
+        |>.differentiableAt (hU.mem_nhds (huv ⟨hx, hv ht⟩)))).deriv
     simp only [h₁.deriv_eq]
-    exact (hslice hG₁ one_ne_zero (huv ⟨hx₀u, hv ht⟩)).deriv.symm
+    exact fderiv_apply_mk_one_zero ((hG₁.differentiableOn one_ne_zero _ (huv ⟨hx₀u, hv ht⟩))
+      |>.differentiableAt (hU.mem_nhds (huv ⟨hx₀u, hv ht⟩)))
   refine ⟨hint.congr_uIoo fun t ht ↦ hpt (Set.uIoo_subset_uIcc_self ht), ?_⟩
   rw [← intervalIntegral.integral_congr hpt]
   exact hmain.congr_of_eventuallyEq hderiv

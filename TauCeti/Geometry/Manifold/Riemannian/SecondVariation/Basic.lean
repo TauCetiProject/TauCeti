@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Metric
@@ -216,37 +217,13 @@ theorem hasDerivAt_deriv_energy_integral {a b : ℝ}
         volume a b ∧
       HasDerivAt (deriv fun s ↦ energy I (F s) a b)
         ((∫ t in a..b, deriv (deriv fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2) 0) / 2) 0 := by
-  obtain ⟨U, V, hUo, hVo, h0U, hV, hFUV⟩ :=
-    TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc (by simp) hF
-  have hUVo : IsOpen (U ×ˢ V) := hUo.prod hVo
-  -- The squared speed `G` as a `C²` function of `(s, t)` on `U ×ˢ V`.
-  set G : ℝ × ℝ → ℝ := fun z ↦
-    inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
-  have hG : ContDiffOn ℝ 2 G (U ×ˢ V) := hFUV.contDiffOn_inner_mfderiv (by norm_num) hUVo _ _
-  have hGeq {s t : ℝ} (hs : s ∈ U) (ht : t ∈ V) : G (s, t) = ‖curveVelocity I (F s) t‖ ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, curveVelocity_eq_mfderiv_snd
-      ((hFUV.contMDiffAt (hUVo.mem_nhds ⟨hs, ht⟩)).mdifferentiableAt (by norm_num))]
-  obtain ⟨hint, hmain⟩ := TauCeti.hasDerivAt_deriv_intervalIntegral_of_contDiffOn hUVo hG
-    (prod_mono (singleton_subset_iff.mpr h0U) hV)
-  -- On `[a, b]`, the second partial derivatives of `G` in `s` are those of the squared speed.
-  have hpt : EqOn (fun t ↦ deriv (deriv fun s ↦ G (s, t)) 0)
-      (fun t ↦ deriv (deriv fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2) 0) (uIcc a b) :=
-    fun t ht ↦ by
-      have h : (fun s ↦ G (s, t)) =ᶠ[𝓝 0] fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2 :=
-        eventually_of_mem (hUo.mem_nhds h0U) fun _ hs ↦ hGeq hs (hV ht)
-      exact h.deriv.deriv_eq
-  -- Near `0`, the energy is half the integral of `G`.
-  have henergy : (fun s ↦ energy I (F s) a b) =ᶠ[𝓝 0] fun s ↦ (∫ t in a..b, G (s, t)) / 2 := by
-    filter_upwards [hUo.mem_nhds h0U] with s hs
-    rw [energy_def]
-    refine congrArg (· / 2) (intervalIntegral.integral_congr fun t ht ↦ ?_)
-    exact (hGeq hs (hV ht)).symm
-  refine ⟨hint.congr_uIoo fun t ht ↦ hpt (uIoo_subset_uIcc_self ht), ?_⟩
-  rw [← intervalIntegral.integral_congr hpt]
-  refine (hmain.div_const 2).congr_of_eventuallyEq ?_
-  filter_upwards [henergy.deriv] with s hs
-  rw [hs, deriv_div_const]
+  obtain ⟨U, V, hUo, hVo, h0U, hV, -, hG⟩ :=
+    exists_isOpen_prod_contDiffOn_norm_sq_curveVelocity (m := 2) (by norm_num) (by simp) hF
+  obtain ⟨hint, hmain⟩ := TauCeti.hasDerivAt_deriv_intervalIntegral_of_contDiffOn (hUo.prod hVo)
+    hG (prod_mono (singleton_subset_iff.mpr h0U) hV)
+  refine ⟨hint, (hmain.div_const 2).congr_of_eventuallyEq (Eventually.of_forall fun s ↦ ?_)⟩
+  -- the energy is half the integral of the squared speed
+  simp only [energy_def, deriv_div_const]
 
 /-- **The second variation of energy.** Let `F` be a two-parameter family which is `C³` at every
 point of `{0} × [a, b]`, with central curve `γ = F 0`, variation field `V` and transverse

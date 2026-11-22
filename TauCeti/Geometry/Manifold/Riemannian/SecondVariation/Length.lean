@@ -9,12 +9,9 @@ public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Length
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Tangential
 public import TauCeti.Geometry.Manifold.Riemannian.SecondVariation.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Metric
 
 /-!
 # The second variation of length
@@ -40,7 +37,9 @@ If `γ` has constant speed `C > 0`, integrating and comparing with the second va
 Along a geodesic, write `V^⊥ = V - ⟪V, γ'⟫ γ' / ‖γ'‖²` for the normal part of `V`, the orthogonal
 projection of `V` onto the orthogonal complement of the velocity. Covariant differentiation
 commutes with this projection, and the curvature term does not see the tangential part, so the
-index-form integrand of `V^⊥` is that of `V` minus `⟪D_t V, γ'⟫² / ‖γ'‖²`. For a unit-speed
+index-form integrand of `V^⊥` is that of `V` minus `⟪D_t V, γ'⟫² / ‖γ'‖²`
+(`TauCeti.Manifold.IsGeodesicCurveOn.indexFormIntegrand_sub_starProjection_singleton`, in
+`TauCeti.Geometry.Manifold.Riemannian.Jacobi.Tangential`). For a unit-speed
 geodesic this gives the **second variation of length with free endpoints**
 
 `L''(0) = ∫_a^b (‖D_t V^⊥‖² - ⟪R(V^⊥, γ') γ', V^⊥⟫) dt + ⟪A(b), γ'(b)⟫ - ⟪A(a), γ'(a)⟫`.
@@ -58,9 +57,6 @@ variation of length.
   the speed.
 * `TauCeti.Manifold.hasDerivAt_deriv_toReal_pathELength`: the second variation of length of a
   constant-speed curve, in terms of the second variation of energy.
-* `TauCeti.Manifold.IsGeodesicCurveOn.indexFormIntegrandWithin_sub_starProjection_singleton` and
-  `TauCeti.Manifold.IsGeodesicCurveOn.indexFormIntegrand_sub_starProjection_singleton`: along a
-  geodesic, the index-form integrand of the normal part of a field.
 * `TauCeti.Manifold.hasDerivAt_deriv_toReal_pathELength_of_norm_curveVelocity_eq_one`: **the second
   variation of length** of a unit-speed geodesic with free endpoints, and its constant-speed
   version `TauCeti.Manifold.hasDerivAt_deriv_toReal_pathELength_of_acceleration_eq_zero`.
@@ -167,59 +163,10 @@ private theorem hasDerivAt_deriv_toReal_pathELength_integral {a b : ℝ} (hab : 
     (hγ : ∀ t ∈ Icc a b, curveVelocity I (F 0) t ≠ 0) :
     HasDerivAt (deriv fun s ↦ (Manifold.pathELength I (F s) a b).toReal)
       (∫ t in a..b, deriv (deriv fun s ↦ ‖curveVelocity I (F s) t‖) 0) 0 := by
-  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
-  rw [← uIcc_of_le hab] at hF hγ
-  obtain ⟨U, V, hUo, hVo, h0U, hV, hfUV⟩ :=
-    TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc (by simp) hF
-  have hUVo : IsOpen (U ×ˢ V) := hUo.prod hVo
-  -- the squared speed `G (s, t) = ‖∂_t F (s, t)‖ ^ 2`, jointly `C²` on `U ×ˢ V`
-  let G : ℝ × ℝ → ℝ := fun z ↦
-    ⟪mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z ↦ F z.1 z.2) z (0, 1),
-      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z ↦ F z.1 z.2) z (0, 1)⟫_ℝ
-  have hG : ContDiffOn ℝ 2 G (U ×ˢ V) :=
-    hfUV.contDiffOn_inner_mfderiv (by norm_num) hUVo (0, 1) (0, 1)
-  have hGeq {s t : ℝ} (hs : s ∈ U) (ht : t ∈ V) : G (s, t) = ‖curveVelocity I (F s) t‖ ^ 2 := by
-    dsimp only [G]
-    rw [← curveVelocity_eq_mfderiv_snd
-      ((hfUV.contMDiffAt (hUVo.mem_nhds ⟨hs, ht⟩)).mdifferentiableAt (by norm_num)),
-      real_inner_self_eq_norm_sq]
-  -- the speed `L = √G` is `C²` on the open set `W` where `G` is positive, which contains
-  -- `{0} × [a, b]` because `γ` is regular there
-  let W := (U ×ˢ V) ∩ G ⁻¹' Ioi 0
-  have hWo : IsOpen W := hG.continuousOn.isOpen_inter_preimage hUVo isOpen_Ioi
-  let L : ℝ × ℝ → ℝ := fun z ↦ Real.sqrt (G z)
-  have hL : ContDiffOn ℝ 2 L W :=
-    (hG.mono inter_subset_left).sqrt fun _ hz ↦ ne_of_gt hz.2
-  have hsub : {0} ×ˢ uIcc a b ⊆ W := by
-    rintro ⟨s, t⟩ ⟨rfl, ht⟩
-    refine ⟨⟨h0U, hV ht⟩, ?_⟩
-    rw [mem_preimage, mem_Ioi, hGeq h0U (hV ht)]
-    exact pow_pos (norm_pos_iff.2 (hγ t ht)) 2
-  have hLeq {s t : ℝ} (hs : s ∈ U) (ht : t ∈ V) : L (s, t) = ‖curveVelocity I (F s) t‖ := by
-    dsimp only [L]
-    rw [hGeq hs ht, Real.sqrt_sq (norm_nonneg _)]
-  have hmain := (TauCeti.hasDerivAt_deriv_intervalIntegral_of_contDiffOn hWo hL hsub).2
-  -- on `[a, b]`, the second partial derivatives of `L` in `s` are those of the speed
-  have hpt : EqOn (fun t ↦ deriv (deriv fun s ↦ L (s, t)) 0)
-      (fun t ↦ deriv (deriv fun s ↦ ‖curveVelocity I (F s) t‖) 0) (uIcc a b) := fun t ht ↦ by
-    have h : (fun s ↦ L (s, t)) =ᶠ[𝓝 0] fun s ↦ ‖curveVelocity I (F s) t‖ :=
-      eventually_of_mem (hUo.mem_nhds h0U) fun _ hs ↦ hLeq hs (hV ht)
-    exact h.deriv.deriv_eq
-  -- near `0`, the length is the integral of `L`
-  have hlength : (fun s ↦ (Manifold.pathELength I (F s) a b).toReal) =ᶠ[𝓝 0]
-      fun s ↦ ∫ t in a..b, L (s, t) := by
-    filter_upwards [hUo.mem_nhds h0U] with s hs
-    have hγs : ContMDiffOn 𝓘(ℝ, ℝ) I 1 (F s) V :=
-      (hfUV.of_le (by norm_num : (1 : ℕ∞ω) ≤ 3)).comp
-        (contDiff_prodMk_right s).contMDiff.contMDiffOn (fun t ht ↦ ⟨hs, ht⟩)
-    have hVs : Icc a b ⊆ V := by simpa only [uIcc_of_le hab] using hV
-    rw [hγs.pathELength_eq_ofReal_integral_norm_curveVelocityWithin hVs,
-      ENNReal.toReal_ofReal (intervalIntegral.integral_nonneg hab (fun _ _ ↦ norm_nonneg _))]
-    refine intervalIntegral.integral_congr fun t ht ↦ ?_
-    rw [curveVelocityWithin_of_mem_nhds (hVo.mem_nhds (hV ht)), hLeq hs (hV ht)]
-  rw [← intervalIntegral.integral_congr hpt]
-  exact hmain.congr_of_eventuallyEq hlength.deriv
+  obtain ⟨W, hWo, hsub, hL, hlength⟩ :=
+    exists_isOpen_contDiffOn_norm_curveVelocity (m := 2) (by norm_num) (by simp) hab hF hγ
+  exact (TauCeti.hasDerivAt_deriv_intervalIntegral_of_contDiffOn hWo hL hsub).2
+    |>.congr_of_eventuallyEq hlength.deriv
 
 /-- **The second variation of length of a regular curve.** Let `F` be a two-parameter family which
 is `C³` at every point of `{0} × [a, b]`, whose central curve `γ = F 0` has nonzero velocity on
@@ -297,85 +244,6 @@ theorem hasDerivAt_deriv_toReal_pathELength {a b : ℝ} (hab : a ≤ b)
     ((hint.div_const 2).div_const C) hcint, intervalIntegral.integral_div,
     intervalIntegral.integral_div, intervalIntegral.integral_div, henergy]
 
-/-! ### The normal part of a field along a geodesic -/
-
-section NormalPart
-
-variable {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)} {s : Set ℝ} {t : ℝ}
-
-/-- The curvature pairing `⟪R(w, v) v, w⟫` does not change when a multiple of `v` is subtracted
-from `w`, by the antisymmetry of `R` in its first two arguments and its skew-adjointness. -/
-private theorem inner_curvatureTensor_sub_smul {x : M} (w v : TangentSpace I x) (c : ℝ) :
-    ⟪(leviCivitaConnection I M).curvatureTensor x (w - c • v) v v, w - c • v⟫_ℝ =
-      ⟪(leviCivitaConnection I M).curvatureTensor x w v v, w⟫_ℝ := by
-  set R := (leviCivitaConnection I M).curvatureTensor x w v v
-  have hskew : ⟪R, v⟫_ℝ = -⟪v, R⟫_ℝ :=
-    (isMetricCompatible_leviCivitaConnection (I := I) (M := M)).inner_curvatureTensor_eq_neg
-      x w v v v
-  have h0 : ⟪R, v⟫_ℝ = 0 := by linarith [real_inner_comm v R]
-  simp only [map_sub, map_smul, curvatureTensor_self, smul_zero, sub_zero,
-    LinearMap.sub_apply, LinearMap.smul_apply, inner_sub_right, inner_smul_right]
-  rw [h0, mul_zero, sub_zero]
-
-/-- **The index form sees only the normal part, up to its tangential derivative.** Along a
-geodesic on a preconnected parameter set, let `V^⊥ = V - proj_{γ'} V` be the normal part of a
-field `V` whose coordinates are differentiable at `t`. Then the index-form integrand of `V^⊥`
-against itself is that of `V` minus `‖proj_{γ'} D_t V‖²`, computed with derivatives within the
-parameter set. -/
-theorem IsGeodesicCurveOn.indexFormIntegrandWithin_sub_starProjection_singleton
-    (h : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s) (ht : t ∈ s)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t) :
-    indexFormIntegrandWithin I γ
-        (fun r ↦ V r - (ℝ ∙ curveVelocityWithin I γ s r).starProjection (V r))
-        (fun r ↦ V r - (ℝ ∙ curveVelocityWithin I γ s r).starProjection (V r)) s t =
-      indexFormIntegrandWithin I γ V V s t -
-        ‖(ℝ ∙ curveVelocityWithin I γ s t).starProjection
-          (alongCurveWithin (leviCivitaConnection I M) γ V s t)‖ ^ 2 := by
-  rw [indexFormIntegrandWithin_def, indexFormIntegrandWithin_def,
-    h.alongCurveWithin_sub_starProjection_singleton hs ht hV]
-  set v := curveVelocityWithin I γ s t
-  set D := alongCurveWithin (leviCivitaConnection I M) γ V s t
-  -- the projection of `V t` is a multiple of `v`, invisible to the curvature term
-  have hproj : (ℝ ∙ v).starProjection (V t) = (⟪v, V t⟫_ℝ / ‖v‖ ^ 2) • v := by
-    rw [Submodule.starProjection_singleton, RCLike.ofReal_real_eq_id, id_eq]
-  rw [hproj, inner_curvatureTensor_sub_smul (V t) v]
-  -- `D - proj D` is orthogonal to `proj D`
-  have horth := Submodule.starProjection_inner_eq_zero (K := ℝ ∙ v) D
-    ((ℝ ∙ v).starProjection D) (Submodule.starProjection_apply_mem _ D)
-  rw [← real_inner_self_eq_norm_sq ((ℝ ∙ v).starProjection D)]
-  rw [inner_sub_left] at horth
-  simp only [inner_sub_left, inner_sub_right] at horth ⊢
-  rw [real_inner_comm D ((ℝ ∙ v).starProjection D)]
-  linarith
-
-/-- The unrestricted form of
-`TauCeti.Manifold.IsGeodesicCurveOn.indexFormIntegrandWithin_sub_starProjection_singleton`: along
-a geodesic on a preconnected neighbourhood of `t`, the index-form integrand of the normal part
-`V - proj_{γ'} V` of a field `V` with differentiable coordinates at `t` is that of `V` minus
-`‖proj_{γ'} D_t V‖²`. -/
-theorem IsGeodesicCurveOn.indexFormIntegrand_sub_starProjection_singleton
-    (h : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s) (hst : s ∈ 𝓝 t)
-    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t) :
-    indexFormIntegrand I γ
-        (fun r ↦ V r - (ℝ ∙ curveVelocity I γ r).starProjection (V r))
-        (fun r ↦ V r - (ℝ ∙ curveVelocity I γ r).starProjection (V r)) t =
-      indexFormIntegrand I γ V V t -
-        ‖(ℝ ∙ curveVelocity I γ t).starProjection
-          (alongCurve (leviCivitaConnection I M) γ V t)‖ ^ 2 := by
-  -- near `t`, derivatives within `s` are unrestricted derivatives
-  have hfield : ∀ᶠ r in 𝓝 t,
-      HEq (V r - (ℝ ∙ curveVelocity I γ r).starProjection (V r))
-        (V r - (ℝ ∙ curveVelocityWithin I γ s r).starProjection (V r)) := by
-    filter_upwards [eventually_mem_nhds_iff.2 hst] with r hr
-    rw [curveVelocityWithin_of_mem_nhds hr]
-  rw [indexFormIntegrand_congr (δ := γ) EventuallyEq.rfl hfield hfield,
-    ← indexFormIntegrandWithin_of_mem_nhds hst, ← indexFormIntegrandWithin_of_mem_nhds hst,
-    h.indexFormIntegrandWithin_sub_starProjection_singleton hs (mem_of_mem_nhds hst)
-      (hV.differentiableWithinAt), curveVelocityWithin_of_mem_nhds hst,
-    alongCurveWithin_of_mem_nhds _ γ V hst]
-
-end NormalPart
-
 /-! ### The second variation of length along a geodesic -/
 
 /-- **The second variation of length of a constant-speed geodesic.** Let `F` be a two-parameter
@@ -407,8 +275,7 @@ theorem hasDerivAt_deriv_toReal_pathELength_of_acceleration_eq_zero {a b : ℝ} 
       0 := by
     refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ 0) fun t ht ↦ ?_).trans
       intervalIntegral.integral_zero
-    rw [uIoo_of_le hab] at ht
-    rw [hacc t ht, inner_zero_right]
+    rw [hacc t (by rwa [uIoo_of_le hab] at ht), inner_zero_right]
   -- on `(a, b)` the central curve is a geodesic
   have hgeod : IsGeodesicCurveOn I (F 0) (Ioo a b) := by
     refine ⟨isOpen_Ioo.uniqueDiffOn, fun t ht ↦ ?_, fun t ht ↦ ?_⟩
@@ -441,9 +308,11 @@ theorem hasDerivAt_deriv_toReal_pathELength_of_acceleration_eq_zero {a b : ℝ} 
         |>.differentiableAt_sectionCoord_curveVelocity_fst (f := F)
           (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (F 0 t))
     rw [hgeod.indexFormIntegrand_sub_starProjection_singleton isPreconnected_Ioo
-      (isOpen_Ioo.mem_nhds ht) hdiff, Submodule.starProjection_singleton,
-      RCLike.ofReal_real_eq_id, id_eq, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs,
-      hγ t (Ioo_subset_Icc_self ht), real_inner_comm]
+      (isOpen_Ioo.mem_nhds ht) hdiff]
+    -- `‖proj_{γ'} D_t V‖² = ⟪γ', D_t V⟫² / ‖γ'‖²`
+    simp only [Submodule.starProjection_singleton, norm_smul, norm_div, norm_pow, Real.norm_eq_abs,
+      RCLike.ofReal_real_eq_id, id_eq, mul_pow, div_pow, sq_abs, hγ t (Ioo_subset_Icc_self ht),
+      abs_of_pos hC, real_inner_comm _ (curveVelocity I (F 0) t)]
     field_simp
     ring
   rw [hzero, hnormal]
