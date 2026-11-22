@@ -426,8 +426,17 @@ theorem sup_dpow_bot (hI : DividedPowers I)
   · have hz' : z ∉ I ⊔ (⊥ : Ideal A) := by simpa only [sup_bot_eq] using hz
     rw [(hI.sup (dividedPowersBot A) h).dpow_null hz', hI.dpow_null hz]
 
+/-- Gluing `dividedPowersBot A` with `hI` recovers the original operations of `hI` on all of `A`. -/
+@[simp]
+theorem bot_sup_dpow (hI : DividedPowers I)
+    (h : ∀ n, ∀ w ∈ (⊥ : Ideal A) ⊓ I, (dividedPowersBot A).dpow n w = hI.dpow n w)
+    (n : ℕ) (z : A) :
+    ((dividedPowersBot A).sup hI h).dpow n z = hI.dpow n z := by
+  rw [sup_dpow_comm, sup_dpow_bot]
+
 /-- The identity ring homomorphism is a divided power morphism from `(I, hI)` to
 `(I ⊔ J, hI.sup hJ h)`. -/
+@[simp high]
 theorem isDPMorphism_id_sup_left (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) :
     IsDPMorphism hI (hI.sup hJ h) (RingHom.id A) where
@@ -436,6 +445,7 @@ theorem isDPMorphism_id_sup_left (hI : DividedPowers I) (hJ : DividedPowers J)
 
 /-- The identity ring homomorphism is a divided power morphism from `(J, hJ)` to
 `(I ⊔ J, hI.sup hJ h)`. -/
+@[simp high]
 theorem isDPMorphism_id_sup_right (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) :
     IsDPMorphism hJ (hI.sup hJ h) (RingHom.id A) where

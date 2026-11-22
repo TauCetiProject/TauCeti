@@ -115,6 +115,15 @@ theorem _root_.DividedPowers.toAdditiveDividedPowers_dpow (hI : DividedPowers I)
     hI.toAdditiveDividedPowers.dpow = hI.dpow := by
   rfl
 
+/-- Two `DividedPowers` structures are equal if and only if their underlying
+`AdditiveDividedPowers` structures are equal. -/
+@[simp]
+theorem _root_.DividedPowers.toAdditiveDividedPowers_inj {hI hI' : DividedPowers I} :
+    hI.toAdditiveDividedPowers = hI'.toAdditiveDividedPowers ↔ hI = hI' :=
+  ⟨fun h ↦ DividedPowers.ext hI hI' fun n x _ ↦
+    congrFun (congrFun (congrArg AdditiveDividedPowers.dpow h) n) x,
+   fun h ↦ h ▸ rfl⟩
+
 namespace AdditiveDividedPowers
 
 /-- Two additive divided power structures on `I` are equal if their operations agree on `I`. -/
