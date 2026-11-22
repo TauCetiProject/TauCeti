@@ -656,21 +656,15 @@ private noncomputable def modularFormsToComplexAdjoin :
 private theorem modularFormsToComplexAdjoin_E₄ :
     modularFormsToComplexAdjoin (DirectSum.of (ModularForm 𝒮ℒ) 4 E₄) =
       Algebra.TensorProduct.includeRight (adjoinGen 0) := by
-  have h : DirectSum.of (ModularForm 𝒮ℒ) 4 E₄ =
-      ModularForm.mvPolynomialEquiv (MvPolynomial.X 0) := by
-    simp
-  rw [h, modularFormsToComplexAdjoin, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    AlgEquiv.symm_apply_apply]
+  rw [← ModularForm.evalE₄E₆_X_zero, modularFormsToComplexAdjoin, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom, ModularForm.mvPolynomialEquiv_symm_evalE₄E₆]
   simp only [MvPolynomial.aeval_X, Matrix.cons_val_zero]
 
 private theorem modularFormsToComplexAdjoin_E₆ :
     modularFormsToComplexAdjoin (DirectSum.of (ModularForm 𝒮ℒ) 6 E₆) =
       Algebra.TensorProduct.includeRight (-adjoinGen 1) := by
-  have h : DirectSum.of (ModularForm 𝒮ℒ) 6 E₆ =
-      ModularForm.mvPolynomialEquiv (MvPolynomial.X 1) := by
-    simp
-  rw [h, modularFormsToComplexAdjoin, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    AlgEquiv.symm_apply_apply]
+  rw [← ModularForm.evalE₄E₆_X_one, modularFormsToComplexAdjoin, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom, ModularForm.mvPolynomialEquiv_symm_evalE₄E₆]
   simp only [MvPolynomial.aeval_X, Matrix.cons_val_one, Matrix.cons_val_zero]
 
 private theorem modularFormsToComplexAdjoin_discriminant :
@@ -695,14 +689,10 @@ private theorem modularFormsToComplexAdjoin_discriminant :
 
 private theorem complexAdjoinToModularForms_comp_modularFormsToComplexAdjoin :
     complexAdjoinToModularForms.comp modularFormsToComplexAdjoin = AlgHom.id ℂ _ := by
-  have hpoly : (complexAdjoinToModularForms.comp modularFormsToComplexAdjoin).comp
-      ModularForm.mvPolynomialEquiv.toAlgHom = ModularForm.mvPolynomialEquiv.toAlgHom := by
-    refine MvPolynomial.algHom_ext fun i ↦ match i with
-    | 0 => by simp [modularFormsToComplexAdjoin_E₄, complexAdjoinToModularForms]
-    | 1 => by simp [modularFormsToComplexAdjoin_E₆, complexAdjoinToModularForms]
-  refine AlgHom.ext fun x ↦ ?_
-  obtain ⟨p, rfl⟩ := ModularForm.mvPolynomialEquiv.surjective x
-  exact DFunLike.congr_fun hpoly p
+  refine AlgHom.ext_of_adjoin_eq_top ModularForm.adjoin_E₄_E₆_eq_top ?_
+  rintro _ (rfl | rfl)
+  · simp [modularFormsToComplexAdjoin_E₄, complexAdjoinToModularForms]
+  · simp [modularFormsToComplexAdjoin_E₆, complexAdjoinToModularForms]
 
 private theorem modularFormsToComplexAdjoin_adjoinC₄C₆ΔToModularForms
     (x : Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ}) :
