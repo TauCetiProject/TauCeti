@@ -162,7 +162,7 @@ private theorem exists_isProperMap_eqOn_localIndex_eq_degree {f : C(E, E)} {x : 
       (∀ y, ‖y - f x‖ < δ → g ⁻¹' {y} = {z ∈ ball x r | f z = y}) ∧
       o.localIndex o f x = o.degree o hE g := by
   obtain ⟨g, hgp, hgf, hgout⟩ :=
-    f.continuous.continuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub hr hδ hfδ
+    f.continuous.continuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub hr.le hδ hfδ
   -- Outside the open ball `g` stays at distance at least `δ` from `f x`, so its fibre over a value
   -- `y` within `δ` of `f x` is the set of solutions in the open ball.
   have hgfib (y : E) (hy : ‖y - f x‖ < δ) : g ⁻¹' {y} = {z ∈ ball x r | f z = y} := by
