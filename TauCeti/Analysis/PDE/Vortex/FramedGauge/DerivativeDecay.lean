@@ -32,8 +32,7 @@ of `ℓ` is `O(exp (-c |z|))` for every rate `c < 1 / 2`
 (`TauCeti.Vortex.isBigO_iteratedFDeriv_log_normSq`), and the derivatives of `exp (ℓ / 2) - 1`
 inherit this decay by the Leibniz rule (`ContDiff.isBigO_iteratedFDeriv_exp_sub_one`). Hence the
 end-trivialized field tends to the vacuum `(0, 1)` together with all its derivatives, at every rate
-`c < 1 / 2`. This upgrades the zeroth-order convergence
-`TauCeti.Vortex.exists_norm_sub_referenceField_le_mul_exp`.
+`c < 1 / 2`.
 
 These are estimates for one vortex; uniformity over compact families of divisors and decay of
 derivatives in the divisor parameters are not treated here.

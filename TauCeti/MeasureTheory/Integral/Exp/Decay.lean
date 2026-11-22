@@ -238,9 +238,7 @@ theorem _root_.Continuous.memLp_of_isBigO_exp_neg_mul_norm {E F : Type*}
     (hf : Continuous f) {a : ℝ} (ha : 0 < a)
     (hdec : f =O[Filter.cocompact E] fun x ↦ Real.exp (-(a * ‖x‖))) (p : ℝ≥0∞) :
     MemLp f p μ := by
-  obtain ⟨C, hC⟩ := hdec.bound
-  obtain ⟨K, hK⟩ := exists_forall_le_mul_exp_of_eventually_le hf.norm
-    (hC.mono fun x hx ↦ by rwa [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] at hx)
+  obtain ⟨K, hK⟩ := exists_forall_norm_le_mul_exp_of_isBigO hf.norm hdec
   refine ((memLp_exp_neg_mul_norm μ ha p).const_mul K).of_le hf.aestronglyMeasurable
     (.of_forall fun x ↦ (hK x).trans ?_)
   rw [Real.norm_eq_abs]

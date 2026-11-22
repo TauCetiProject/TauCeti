@@ -37,9 +37,9 @@ derivative of `x - x_ref` (and of each coordinate) decays exponentially
 (`isBigO_iteratedFDeriv_sub_referenceField`, `isBigO_iteratedFDeriv_sub_referenceField_apply`),
 upgrading to a global bound when `x` is `C^n`
 (`exists_norm_iteratedFDeriv_sub_referenceField_le_mul_exp`). A smooth field with this decay lies
-in every `A_m^s` (`TauCeti.Vortex.mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`,
-`mem_framedFieldSpace_of_sectionValue_eq_mul_windingPhase`). One normalizing smooth framed gauge
-works simultaneously for all cutoffs `f` and all orders `s : ℝ`
+in every `A_m^s`
+(`TauCeti.Vortex.mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`). One normalizing
+smooth framed gauge works simultaneously for all cutoffs `f` and all orders `s : ℝ`
 (`exists_framedGaugeGroup_smul_mem_framedFieldSpace`).
 
 With Taubes's existence theorem (`TauCeti.Vortex.framedVortexDivisor_surjective`) this shows that
@@ -63,8 +63,7 @@ All in the namespace `TauCeti.Vortex`:
   each coordinate) is `O(exp (-c |z|))` for every `c < 1 / 2`.
 * `exists_norm_iteratedFDeriv_sub_referenceField_le_mul_exp`: when `x` is `C^n` with `C²` section,
   `‖Dⁿ(x - x_ref)(z)‖ ≤ K exp (-c |z|)` globally on `ℂ`.
-* `mem_framedFieldSpace_of_sectionValue_eq_mul_windingPhase`,
-  `gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq`: a smooth end-normalized
+* `gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq`: a smooth end-normalized
   vortex lies in `A_m^s` for every cutoff `f` and real order `s`.
 * `exists_framedGaugeGroup_smul_mem_framedFieldSpace`: every smooth framed vortex has a smooth
   framed gauge representative lying in `A_m^s` for every cutoff `f` and order `s`, with global
@@ -157,8 +156,7 @@ private theorem exists_contDiff_isBigO_eventuallyEq_sub_referenceField (f : Cont
 /-- **Exponential decay of all derivatives of `x - x_ref`.** Let `x` be a plane vortex with `C²`
 section and `|α| → 1` at infinity whose section is `|α|` times the winding phase `(z / |z|)^m`
 outside a compact set. Then for every order `n` and every rate `c < 1 / 2`, the `n`-th derivative
-of `x - x_ref` is `O(exp (-c |z|))` at infinity. This extends the first-order estimate
-`TauCeti.Vortex.exists_eventually_norm_fderiv_sub_referenceField_le_mul_exp` to every order. -/
+of `x - x_ref` is `O(exp (-c |z|))` at infinity. -/
 theorem isBigO_iteratedFDeriv_sub_referenceField (f : ContDiffBump (0 : ℝ))
     (hp : ContDiff ℝ 2 (fun z ↦ x z 2)) (hq : ContDiff ℝ 2 (fun z ↦ x z 3))
     (hsol : ∀ z, equation x z = 0)
@@ -211,19 +209,6 @@ theorem exists_norm_iteratedFDeriv_sub_referenceField_le_mul_exp (f : ContDiffBu
     ((hx.sub ((contDiff_referenceField f m).of_le (by simp))).continuous_iteratedFDeriv
       le_rfl).norm
     (isBigO_iteratedFDeriv_sub_referenceField f hp hq hsol hlim hphase hc n)
-
-/-- **Sobolev membership of a smooth end-normalized vortex.** A smooth plane vortex with `|α| → 1`
-at infinity whose section equals `|α|` times `windingPhase m` outside a compact set lies in the
-affine Sobolev field space `framedFieldSpace f m s` for every cutoff `f` and real order `s`. -/
-theorem mem_framedFieldSpace_of_sectionValue_eq_mul_windingPhase (hx : ContDiff ℝ ∞ x)
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
-    (f : ContDiffBump (0 : ℝ)) (s : ℝ) :
-    x ∈ framedFieldSpace f m s :=
-  mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField hx (c := 1 / 4) (by norm_num)
-    (isBigO_iteratedFDeriv_sub_referenceField f ((contDiff_euclidean.1 hx 2).of_le (by simp))
-      ((contDiff_euclidean.1 hx 3).of_le (by simp)) hsol hlim hphase (by norm_num)) s
 
 /-! ### Smooth framed vortices have representatives in `A_m^s` -/
 
