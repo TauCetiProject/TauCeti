@@ -216,19 +216,23 @@ private theorem ray_pullback_eqOn (a b c z : ℂ) {ρ : ℝ} :
         (1 - z * u) ^ (-a)) (Ioo ρ 1) :=
   fun _ hu => hypergeometricLoopInfinityRay_pullback a b c z hu.2
 
+private theorem re_pos_one_sub_mul_circleMap {z : ℂ} {ρ : ℝ}
+    (hzρ : ‖z‖ * |ρ| < 1) (θ : ℝ) : 0 < (1 - z * circleMap 0 ρ θ).re := by
+  apply TauCeti.re_pos_of_norm_sub_one_lt_one
+  simpa [norm_mul, norm_circleMap_zero] using hzρ
+
 private theorem infinityCircle_eq_affineCircIntegrand (a b c z : ℂ) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) (hzρ : ‖z‖ * ρ < 1) :
     hypergeometricLoopInfinityCircle a b c z ρ = affineCircIntegrand a b (c - b) 1 z ρ := by
   rw [affineCircIntegrand_unit]
   funext θ
   have hs : 0 < (1 - circleMap 0 ρ θ).re := by
-    apply TauCeti.re_pos_of_norm_sub_one_lt_one
-    simpa [norm_circleMap_zero, abs_of_pos hρ] using hρ1
+    simpa only [one_mul] using re_pos_one_sub_mul_circleMap (z := 1)
+      (by simpa only [norm_one, one_mul, abs_of_pos hρ] using hρ1) θ
   refine hypergeometricLoopInfinityCircle_pullback a b c z hρ θ
     (mem_slitPlane_iff.mpr (Or.inl hs)) ?_
-  have hq : 0 < (1 - z * circleMap 0 ρ θ).re := by
-    apply TauCeti.re_pos_of_norm_sub_one_lt_one
-    simpa [norm_mul, norm_circleMap_zero, abs_of_pos hρ] using hzρ
+  have hq := re_pos_one_sub_mul_circleMap (z := z) (ρ := ρ)
+    (by simpa only [abs_of_pos hρ] using hzρ) θ
   have hqarg := abs_arg_lt_pi_div_two_iff.mpr (Or.inl hq)
   have hsarg := abs_arg_lt_pi_div_two_iff.mpr (Or.inl (inv_re_pos.mpr hs))
   exact ⟨by linarith [abs_lt.mp hqarg, abs_lt.mp hsarg],
@@ -283,8 +287,8 @@ theorem intervalIntegrable_hypergeometricLoopInfinityCircle (a b c z : ℂ) {ρ 
   let g := fun θ => 1 + v θ - z * v θ
   have hu : Continuous u := continuous_circleMap 0 ρ
   have hhalf (θ : ℝ) : 0 < (1 - u θ).re := by
-    apply TauCeti.re_pos_of_norm_sub_one_lt_one
-    simpa [u, norm_circleMap_zero, abs_of_pos hρ] using hρ1
+    simpa only [u, one_mul] using re_pos_one_sub_mul_circleMap (z := 1)
+      (by simpa only [norm_one, one_mul, abs_of_pos hρ] using hρ1) θ
   have hs (θ : ℝ) : 1 - u θ ≠ 0 := ne_zero_of_re_pos (hhalf θ)
   have hv : Continuous v := hu.div (continuous_const.sub hu) hs
   have hg : Continuous g := (continuous_const.add hv).sub (continuous_const.mul hv)

@@ -87,6 +87,11 @@ namespace Complex
 
 /-! ### Internal `(0+)` keyhole functional -/
 
+private theorem sub_mul_mem_closedBall_of_norm_le (w₀ w₁ : ℂ) {u : ℂ} {ρ : ℝ}
+    (hu : ‖u‖ ≤ ρ) : w₀ - w₁ * u ∈ closedBall w₀ (‖w₁‖ * ρ) := by
+  rw [mem_closedBall_iff_norm, sub_sub_cancel_left, norm_neg, norm_mul]
+  exact mul_le_mul_of_nonneg_left hu (norm_nonneg w₁)
+
 private def affineSegIntegrand (a β γ w₀ w₁ : ℂ) (u : ℝ) : ℂ :=
   (u : ℂ) ^ (β - 1) * (1 - (u : ℂ)) ^ (γ - 1) * (w₀ - w₁ * u) ^ (-a)
 
@@ -208,7 +213,7 @@ private theorem affineLoopZero_eq_of_radius (a β γ w₀ w₁ : ℂ) {A ρ₁ �
   have hw_max : closedBall w₀ (‖w₁‖ * max ρ₁ ρ₂) ⊆ slitPlane := by
     rcases le_total ρ₁ ρ₂ with h | h <;> simp only [max_eq_right, max_eq_left, h, hw₁, hw₂]
   have hw_mem {u : ℂ} (hu : ‖u‖ ≤ max ρ₁ ρ₂) : w₀ - w₁ * u ∈ slitPlane :=
-    hw_max (by rw [mem_closedBall, dist_eq_norm, sub_sub_cancel_left, norm_neg, norm_mul]; gcongr)
+    hw_max (sub_mul_mem_closedBall_of_norm_le w₀ w₁ hu)
   have hrect := integral_boundary_rect_eq_zero_of_differentiableOn
     (affineLogIntegrand a β γ w₀ w₁)
     ((Real.log ρ₁ : ℂ) + (0 : ℝ) * I) ((Real.log ρ₂ : ℂ) + (2 * π : ℝ) * I)
@@ -260,8 +265,7 @@ private theorem norm_affineCircIntegrand_bound (a β γ w₀ w₁ : ℂ) {ρ : �
       exact mem_slitPlane_of_norm_lt_one (by rw [norm_neg]; exact hu.trans_lt hρ1)
     exact (ContinuousAt.cpow (continuousAt_const.sub continuousAt_id) continuousAt_const h1).mul
       (ContinuousAt.cpow (continuousAt_const.sub (continuousAt_const.mul continuousAt_id))
-        continuousAt_const (hw (by
-          rw [mem_closedBall, dist_eq_norm, sub_sub_cancel_left, norm_neg, norm_mul]; gcongr)))
+        continuousAt_const (hw (sub_mul_mem_closedBall_of_norm_le w₀ w₁ hu)))
   obtain ⟨M, hM⟩ := (isCompact_closedBall (0 : ℂ) ρ).exists_bound_of_continuousOn hcont
   refine ⟨Real.exp (2 * π * |(β - 1).im|) * M, fun ρ' hρ' hρ'ρ θ hθ => ?_⟩
   have hu_mem : (ρ' : ℂ) * exp (θ * I) ∈ closedBall (0 : ℂ) ρ := by
@@ -385,7 +389,7 @@ private theorem analyticAt_integral_affineCircIntegrand {V : Type*} [NormedAddCo
       rw [sub_eq_add_neg]
       exact mem_slitPlane_of_norm_lt_one (by rw [norm_neg]; exact hu_norm.trans_lt hρ1)
     have h2 : fw₀ p - fw₁ p * ((ρ : ℂ) * exp ((θ : ℂ) * I)) ∈ slitPlane :=
-      hslit (by rw [mem_closedBall, dist_eq_norm, sub_sub_cancel_left, norm_neg, norm_mul, hu_norm])
+      hslit (sub_mul_mem_closedBall_of_norm_le (fw₀ p) (fw₁ p) hu_norm.le)
     have hρpow : ∀ q : V × ℂ, (ρ : ℂ) ^ (fβ q.1 - 1) = exp ((fβ q.1 - 1) * Real.log ρ) :=
       fun q => by
         have h := TauCeti.ofReal_exp_cpow (Real.log ρ) (fβ q.1 - 1)
@@ -773,11 +777,10 @@ theorem hypergeometricLoopZero_eq_of_integrableOn (a b c z : ℂ)
   have hseg : IntervalIntegrable (affineSegIntegrand a b (c - b) 1 z) volume
       (min ρ₁ ρ₂) (max ρ₁ ρ₂) :=
     (continuousOn_affineSegIntegrand_Icc a b (c - b) 1 z (lt_min hρ₁ hρ₂) hmax1
-      (fun u hu => (closedBall_one_subset_slitPlane_iff.mpr hzmax) (by
-        rw [mem_closedBall, dist_eq_norm, sub_sub_cancel_left, norm_neg, norm_mul,
-          Complex.norm_real, Real.norm_of_nonneg ((lt_min hρ₁ hρ₂).le.trans hu.1)]
-        exact mul_le_mul_of_nonneg_left hu.2 (norm_nonneg z)))).intervalIntegrable_of_Icc
-        min_le_max
+      (fun u hu => (closedBall_one_subset_slitPlane_iff.mpr hzmax)
+        (sub_mul_mem_closedBall_of_norm_le 1 z (by
+          rw [Complex.norm_real, Real.norm_of_nonneg ((lt_min hρ₁ hρ₂).le.trans hu.1)]
+          exact hu.2)))).intervalIntegrable_of_Icc min_le_max
   have htail : IntervalIntegrable (affineSegIntegrand a b (c - b) 1 z) volume (max ρ₁ ρ₂) 1 := by
     apply (intervalIntegrable_iff_integrableOn_Ioo_of_le hmax1.le).mpr
     rwa [affineSegIntegrand_unit]
