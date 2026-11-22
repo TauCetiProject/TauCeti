@@ -54,6 +54,8 @@ taking invariants under it.
 
 ## Main results
 
+* `Representation.IntertwiningMap.lcomp_comp_toLinearMap`: following an intertwining map into a
+  conjugation representation by `lcomp u` is `compl₂` with `u` on the underlying bilinear maps.
 * `Representation.IntertwiningMap.equivLinearMapAsModule_apply`: the attached module map acts
   by the original intertwining map on the underlying types.
 * `Representation.IntertwiningMap.stabilizer_apply_eq_of_injective`: an injective intertwining
@@ -197,6 +199,14 @@ def lcomp (u : IntertwiningMap ρ' ρ) (σ : Representation A G W) :
 @[simp]
 theorem lcomp_apply (u : IntertwiningMap ρ' ρ) (σ : Representation A G W) (φ : V →ₗ[A] W) :
     u.lcomp σ φ = φ ∘ₗ u.toLinearMap :=
+  (rfl)
+
+/-- Composing an intertwining map `q : ρ₀ → linHom ρ σ` into a conjugation representation with
+precomposition by `u` is `q.compl₂ u` on the underlying bilinear maps. -/
+theorem lcomp_comp_toLinearMap {V₀ : Type*} [AddCommMonoid V₀] [Module A V₀]
+    {ρ₀ : Representation A G V₀} (u : IntertwiningMap ρ' ρ) (σ : Representation A G W)
+    (q : IntertwiningMap ρ₀ (linHom ρ σ)) :
+    ((u.lcomp σ).comp q).toLinearMap = q.toLinearMap.compl₂ u.toLinearMap :=
   (rfl)
 
 end lcomp
