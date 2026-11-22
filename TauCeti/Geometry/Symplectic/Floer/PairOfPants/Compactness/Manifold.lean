@@ -89,18 +89,13 @@ theorem contDiffOn_pairOfPantsPerturbation_comp_symm {n : ℕ∞} {m : WithTop �
     ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦
         pairOfPantsPerturbation H (equivRealProdCLM.symm p.1) (φ.symm p.2) v)
       (thricePuncturedSphereReal ×ˢ φ.target) := by
-  rintro ⟨z, y⟩ ⟨hz, hy⟩
-  refine ContDiffAt.contDiffWithinAt ?_
-  -- The point `z` of `S` and the chart inverse `φ⁻¹` are `C^n` into the product `ℂ × M`.
-  have hsymm : ContMDiffAt 𝓘(ℝ, V) I n φ.symm y :=
-    (φ.symm.contMDiffOn.of_le hnm).contMDiffAt (φ.open_target.mem_nhds hy)
-  have hpair : ContMDiffAt 𝓘(ℝ, (ℝ × ℝ) × V) (𝓘(ℝ, ℂ).prod I) n
-      (fun p : (ℝ × ℝ) × V ↦ (equivRealProdCLM.symm p.1, φ.symm p.2)) (z, y) :=
-    ((equivRealProdCLM.symm.contDiff.comp contDiff_fst).contMDiff.contMDiffAt).prodMk
-      (hsymm.comp (z, y) contDiff_snd.contMDiff.contMDiffAt)
-  have hK := (contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩
-    (φ.symm y)).comp (z, y) hpair
-  exact (contMDiffAt_iff_contDiffAt.1 hK).clm_apply contDiffAt_const
+  refine (φ.contDiffOn_comp_symm_of_contMDiffOn
+    (K := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x)
+    isOpen_thricePuncturedSphereReal ?_ hnm).clm_apply contDiffOn_const
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  exact ((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
+    ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
+      contMDiff_snd).contMDiffAt).contMDiffWithinAt
 
 end Floer
 
