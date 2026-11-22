@@ -52,8 +52,9 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Real.tendsto_cosh_atTop` and `Real.tendsto_cosh_atBot` — `Real.cosh` tends to infinity at both
   ends of the line.
 * `Real.bijOn_cosh_sub_one_Ioi` — `u ↦ cosh u - 1` maps `(0, ∞)` bijectively onto `(0, ∞)`.
-* `Real.hasDerivAt_log_cosh` and `Real.abs_sub_log_two_le_log_cosh` — `log (cosh x)` has
-  derivative `tanh x` and is at least `|x| - log 2`, so it is a smooth version of `|x|`.
+* `Real.hasDerivAt_log_cosh`, `Real.abs_sub_log_two_le_log_cosh` and `Real.log_cosh_le_abs` —
+  `log (cosh x)` has derivative `tanh x` and lies between `|x| - log 2` and `|x|`, so it is a
+  smooth version of `|x|`.
 * `Real.tendsto_cosh_sub_div_cosh_add_atTop` — `cosh (x - a) / cosh (x + a) → exp (-(2 * a))` as
   `x → ∞`.
 * `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` —
@@ -357,6 +358,11 @@ theorem abs_sub_log_two_le_log_cosh (x : ℝ) :
     linarith [exp_abs_le x]
   have := log_le_log (by positivity) hcosh
   rwa [log_div (exp_pos _).ne' two_ne_zero, log_exp] at this
+
+/-- `log (cosh x)` is at most `|x|`, because `cosh x ≤ exp |x|`. -/
+theorem log_cosh_le_abs (x : ℝ) : log (cosh x) ≤ |x| := by
+  rw [log_le_iff_le_exp (cosh_pos x), cosh_eq]
+  linarith [exp_le_exp.2 (le_abs_self x), exp_le_exp.2 (neg_le_abs x)]
 
 /-- The ratio `cosh (x - a) / cosh (x + a)` tends to `exp (-(2 * a))` as `x → ∞`. -/
 theorem tendsto_cosh_sub_div_cosh_add_atTop (a : ℝ) :

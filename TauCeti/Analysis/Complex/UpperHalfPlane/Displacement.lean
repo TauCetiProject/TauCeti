@@ -58,7 +58,8 @@ by both kinds of element, except by dilations with `s` close to `0`.
 
 ## Main results
 
-* `Matrix.SpecialLinearGroup.cosh_dist_smul_I`: the distance moved by `I`.
+* `Matrix.SpecialLinearGroup.cosh_dist_smul_I`: the distance moved by `I`, at most the logarithm
+  of the sum of the squares of the entries by `Matrix.SpecialLinearGroup.dist_smul_I_le_log`.
 * `Matrix.SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self`: the displacement of a point by an
   element fixing `z`.
 * `Matrix.SpecialLinearGroup.cosh_dist_dilation_smul`: the displacement of a point by a dilation,
@@ -122,6 +123,18 @@ theorem cosh_dist_smul_I (g : SL(2, ℝ)) :
   simp only [I_re, sub_zero, one_div, inv_pow, I_im, one_pow, mul_one]
   field_simp
   linear_combination -(g 0 0 * g 1 1 - g 0 1 * g 1 0 + 1) * hdet
+
+/-- The distance moved by `I` is at most the logarithm of the sum of the squares of the entries:
+`dist (g • I) I ≤ log (a² + b² + c² + d²)` for `g = !![a, b; c, d] ∈ SL(2, ℝ)`, since
+`exp δ ≤ 2 cosh δ` (`Matrix.SpecialLinearGroup.cosh_dist_smul_I`). -/
+theorem dist_smul_I_le_log (g : SL(2, ℝ)) :
+    dist (g • I) I ≤ Real.log (g 0 0 ^ 2 + g 0 1 ^ 2 + g 1 0 ^ 2 + g 1 1 ^ 2) := by
+  have h := cosh_dist_smul_I g
+  rw [Real.cosh_eq] at h
+  have h₁ := Real.exp_pos (dist (g • I) I)
+  have h₂ := Real.exp_pos (-dist (g • I) I)
+  rw [Real.le_log_iff_exp_le (by linarith)]
+  linarith
 
 /-- The base-point displacement of a conjugate of `k = !![a, b; -b, a]`:
 `N(B k B⁻¹) - 2 = b² (N(B)² - 4)`, where `N` is the sum of the squares of the entries. -/

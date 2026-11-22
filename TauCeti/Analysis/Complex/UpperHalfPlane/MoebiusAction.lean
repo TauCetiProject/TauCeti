@@ -46,6 +46,8 @@ unfolded by hand.
 * `Matrix.SpecialLinearGroup.toGL_smul`, `Matrix.SpecialLinearGroup.mapGL_smul`: the
   `SL(2, ℝ)`- and `SL(2, R)`-actions on `ℍ` agree with the `GL(2, ℝ)`-action of the underlying
   matrix, generalizing Mathlib's `ModularGroup.sl_moeb`.
+* `Matrix.SpecialLinearGroup.map_intCastRingHom_smul`: an integral matrix acts on `ℍ` as its
+  image in `SL(2, ℝ)`.
 * `Matrix.SpecialLinearGroup.denom_mapGL_mul`: the automorphy factor is a cocycle for the
   `SL(2, R)`-action.
 * `TauCeti.UpperHalfPlane.transformationLawSubgroup`: by that cocycle law, the elements of
@@ -110,6 +112,12 @@ theorem _root_.Matrix.SpecialLinearGroup.mapGL_smul {R : Type*} [CommRing R] [Al
     (g : SL(2, R)) (τ : ℍ) :
     Matrix.SpecialLinearGroup.mapGL ℝ g • τ = g • τ :=
   (MulAction.compHom_smul_def _ _ _).symm
+
+/-- An integral matrix acts on `ℍ` as its image in `SL(2, ℝ)`. -/
+theorem _root_.Matrix.SpecialLinearGroup.map_intCastRingHom_smul (g : SL(2, ℤ)) (τ : ℍ) :
+    Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) g • τ = g • τ := by
+  ext1
+  simp [coe_specialLinearGroup_apply]
 
 /-- The automorphy factor is a cocycle for the `SL(2, R)`-action on `ℍ`:
 `denom (a * b) τ = denom a (b • τ) * denom b τ`. -/
