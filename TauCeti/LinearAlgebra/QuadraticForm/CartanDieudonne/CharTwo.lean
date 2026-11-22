@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.QuadraticForm.CharTwo
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 import TauCeti.Algebra.CharP.Two
 import TauCeti.Algebra.GroupWithZero.Units.Basic
-import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.Dual.Lemmas
@@ -26,9 +25,11 @@ polar orthogonal hyperplane of `v`, which contains `v`. For a quadratic form who
 nondegenerate, these transvections generate the orthogonal group, the one exception being the
 orthogonal sum of two hyperbolic planes over the field with two elements. Together with the
 Cartan--Dieudonné theorem in characteristic different from two this gives generation by reflections
-over every field. In characteristic two the theorem is the step that lets
-reflections in roots of an even lattice `M` realize every isometry of the quadratic space `M / 2 M`,
-for instance in describing the image of `O(M(2))` in the orthogonal group of its discriminant form.
+over every field. In characteristic two the theorem applies to the quadratic space `M / 2 M` of an
+even unimodular lattice `M`, whose polar form is nondegenerate: if `M / 2 M` is not the exceptional
+space and every class of norm one contains a root of `M`, then reflections in roots induce every
+isometry of `M / 2 M`. This is a step in describing the image of `O(M(2))` in the orthogonal group
+of its discriminant form.
 
 ## Implementation notes
 
@@ -91,23 +92,30 @@ private theorem polar_self_eq_zero (x : V) : polar Q x x = 0 := by
 
 omit [CharP K 2] in
 private theorem coe_mul_apply (g h : orthogonalGroup Q) (x : V) :
-    ((g * h : orthogonalGroup Q) : V ≃ₗ[K] V) x = (g : V ≃ₗ[K] V) ((h : V ≃ₗ[K] V) x) :=
-  rfl
+    ((g * h : orthogonalGroup Q) : V ≃ₗ[K] V) x = (g : V ≃ₗ[K] V) ((h : V ≃ₗ[K] V) x) := by
+  rw [Subgroup.coe_mul, mul_apply_eq_comp]
+
+/-- In characteristic two, `Q (x + y)` is the polar pairing of `x` and `y` when `Q x = Q y`. -/
+private theorem map_add_eq_polar_of_map_eq {x y : V} (hxy : Q x = Q y) :
+    Q (x + y) = polar Q x y := by
+  rw [QuadraticMap.map_add (⇑Q), hxy, CharTwo.add_self_eq_zero, zero_add]
 
 private theorem map_add_ne_zero_of_polar_ne_zero {x y : V} (hxy : Q x = Q y)
     (hp : polar Q x y ≠ 0) : Q (x + y) ≠ 0 := by
-  rwa [QuadraticMap.map_add (⇑Q), hxy, CharTwo.add_self_eq_zero, zero_add]
+  rwa [map_add_eq_polar_of_map_eq Q hxy]
 
 /-- The transvection in `x + y` sends `x` to `y` when `x` and `y` have equal norm and nonzero
-polar pairing. -/
+polar pairing: in characteristic two, `x + y = x - y`, so this is
+`reflection_sub_apply_eq_of_map_eq`. -/
 private theorem tv_add_apply_left {x y : V} (hxy : Q x = Q y) (hp : polar Q x y ≠ 0) :
     (tv Q (x + y) (map_add_ne_zero_of_polar_ne_zero Q hxy hp) : V ≃ₗ[K] V) x = y := by
-  have h1 : Q (x + y) = polar Q x y := by
-    rw [QuadraticMap.map_add (⇑Q), hxy, CharTwo.add_self_eq_zero, zero_add]
-  have h2 : polar Q (x + y) x = polar Q x y := by
-    rw [polar_add_left, polar_self_eq_zero, zero_add, polar_comm]
-  rw [tv_apply, h1, h2, inv_mul_cancel₀ hp, one_smul, ← add_assoc, add_self_eq_zero_of_charTwo K,
-    zero_add]
+  have key (a : V) (ha : Q a ≠ 0) (h : a = x - y) : (tv Q a ha : V ≃ₗ[K] V) x = y := by
+    subst h
+    let _ := invertibleOfNonzero ha
+    rw [tv, coe_reflectionOrthogonal]
+    exact reflection_sub_apply_eq_of_map_eq Q x y hxy
+  exact key _ _ (by
+    rw [sub_eq_add_neg, neg_eq_of_add_eq_zero_left (add_self_eq_zero_of_charTwo K y)])
 
 variable {Q} (H : Subgroup (orthogonalGroup Q))
 
@@ -159,7 +167,7 @@ private theorem exists_mem_apply_eq (hH : ∀ a ha, tv Q a ha ∈ H)
       ∃ w, Q w ≠ 0 ∧ polar Q x w ≠ 0 ∧ polar Q y w ≠ 0)
     {x y : V} (hxy : Q x = Q y) (hx : Q x ≠ 0) : ∃ h ∈ H, (h : V ≃ₗ[K] V) x = y := by
   by_cases hxy' : x = y
-  · exact ⟨1, H.one_mem, by rw [hxy']; rfl⟩
+  · exact ⟨1, H.one_mem, by rw [hxy', Subgroup.coe_one, one_apply_eq_self]⟩
   by_cases hp : polar Q x y = 0
   · obtain ⟨w, hw, hxw, hyw⟩ := hgood x y hxy hx hp hxy'
     set c := (Q w)⁻¹ * polar Q w x
@@ -186,27 +194,11 @@ section Nondegenerate
 
 variable {Q : QuadraticForm K V}
 
-omit [AddCommGroup V] [Module K V] in
-private theorem natCard_eq_two_of_forall (h : ∀ d : K, d = 0 ∨ d = 1) : Nat.card K = 2 :=
-  Nat.card_eq_two_iff.mpr ⟨0, 1, zero_ne_one, Set.eq_univ_of_forall fun d ↦ by simpa using h d⟩
-
-omit [AddCommGroup V] [Module K V] in
-private theorem eq_zero_or_eq_one_of_natCard_eq_two (h : Nat.card K = 2) (d : K) :
-    d = 0 ∨ d = 1 := by
-  have := subsingleton_units_of_natCard_eq_two h
-  by_cases hd : d = 0
-  · exact Or.inl hd
-  · exact Or.inr (congrArg Units.val (Subsingleton.elim (Units.mk0 d hd) 1))
-
-private theorem exists_polar_ne_zero (hB : Q.polarBilin.Nondegenerate) {x : V} (hx : x ≠ 0) :
-    ∃ u, polar Q x u ≠ 0 := by
-  by_contra! h
-  exact hx (hB.1 x fun n ↦ by rw [polarBilin_apply_apply, h n])
-
 private theorem exists_polar_ne_zero_ne_zero (hB : Q.polarBilin.Nondegenerate) {x y : V}
     (hx : x ≠ 0) (hy : y ≠ 0) : ∃ f, polar Q x f ≠ 0 ∧ polar Q y f ≠ 0 := by
-  obtain ⟨u, hu⟩ := exists_polar_ne_zero hB hx
-  obtain ⟨v, hv⟩ := exists_polar_ne_zero hB hy
+  obtain ⟨u, hu⟩ := LinearMap.BilinForm.Nondegenerate.exists_apply_ne_zero hB hx
+  obtain ⟨v, hv⟩ := LinearMap.BilinForm.Nondegenerate.exists_apply_ne_zero hB hy
+  rw [polarBilin_apply_apply] at hu hv
   by_cases hyu : polar Q y u = 0
   · by_cases hxv : polar Q x v = 0
     · exact ⟨u + v, by rwa [polar_add_right, hxv, add_zero], by rwa [polar_add_right, hyu,
@@ -219,7 +211,8 @@ with `polar Q e f = 1`. -/
 private theorem exists_frame [CharP K 2] [Nontrivial V] (hB : Q.polarBilin.Nondegenerate) :
     ∃ e f : V, Q e ≠ 0 ∧ polar Q e f = 1 := by
   obtain ⟨x, hx⟩ := exists_ne (0 : V)
-  obtain ⟨u, hu⟩ := exists_polar_ne_zero hB hx
+  obtain ⟨u, hu⟩ := LinearMap.BilinForm.Nondegenerate.exists_apply_ne_zero hB hx
+  rw [polarBilin_apply_apply] at hu
   set y := (polar Q x u)⁻¹ • u
   have hxy : polar Q x y = 1 := by rw [polar_smul_right, smul_eq_mul, inv_mul_cancel₀ hu]
   by_cases hQx : Q x = 0
@@ -235,12 +228,6 @@ subspace. -/
 private def Exc (Q : QuadraticForm K V) : Prop :=
   Nat.card K = 2 ∧ finrank K V = 4 ∧
     ∃ U : Submodule K V, Q.IsTotallyIsotropic U ∧ finrank K U = 2
-
-private theorem mem_orthogonal_span_pair_iff {x y u : V} :
-    u ∈ LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {x, y}) ↔
-      polar Q x u = 0 ∧ polar Q y u = 0 := by
-  simp [LinearMap.BilinForm.orthogonal, Submodule.mem_orthogonalBilin_span,
-    polarBilin_apply_apply]
 
 /-- If every `f + c • x` is singular, where `Q x ≠ 0` and `polar Q f x ≠ 0`, then the field has
 two elements: the quadratic polynomial `c ↦ Q (f + c • x)` has at most two roots. -/
@@ -272,7 +259,8 @@ private theorem finrank_le_four_of_map_add_eq_zero [CharP K 2] [FiniteDimensiona
   have hQf : Q f = 0 := by
     simpa using hf 0 (polar_zero_right (Q := Q) x) (polar_zero_right (Q := Q) y)
   have hQU {u : V} (hu : u ∈ U) : Q u = polar Q f u := by
-    obtain ⟨hxu, hyu⟩ := mem_orthogonal_span_pair_iff.mp hu
+    obtain ⟨hxu, hyu⟩ := LinearMap.BilinForm.mem_orthogonal_span_pair_iff.mp hu
+    rw [polarBilin_apply_apply] at hxu hyu
     have h := hf u hxu hyu
     rw [QuadraticMap.map_add (⇑Q), hQf, zero_add, CharTwo.add_eq_zero] at h
     exact h
@@ -300,7 +288,7 @@ private theorem exists_isTotallyIsotropic_finrank_eq_two [CharP K 2] {x y f : V}
   have hpxy : polar Q f (x + y) = 0 := by
     rw [polar_add_right, hfxy, CharTwo.add_self_eq_zero]
   have hQxy : Q (x + y) = 0 := by
-    rw [QuadraticMap.map_add (⇑Q), hp, hxy, CharTwo.add_self_eq_zero, add_zero]
+    rw [map_add_eq_polar_of_map_eq Q hxy, hp]
   have hxy0 : x + y ≠ 0 := fun h ↦
     hne ((add_eq_zero_iff_eq_of_charTwo K).mp h)
   have hli : LinearIndependent K ![f, x + y] := by
@@ -352,47 +340,12 @@ private theorem exists_good [CharP K 2] [FiniteDimensional K V]
   obtain ⟨S, hS, hS2⟩ := exists_isTotallyIsotropic_finrank_eq_two hxy hp hne
     (by simpa using hcand 0) hxf (by rw [(hK _).resolve_left hfx, (hK _).resolve_left hfy])
   have hSle := hS.two_mul_finrank_le_finrank hB
-  exact hexc ⟨natCard_eq_two_of_forall hK, by omega, S, hS, hS2⟩
+  exact hexc ⟨natCard_eq_two_iff_forall_eq_zero_or_eq_one.mpr hK, by omega, S, hS, hS2⟩
 
 omit [AddCommGroup V] [Module K V] in
 private theorem polarBilin_apply_eq_one_of_polar_eq_one {M : Type*} [AddCommGroup M] [Module K M]
     {Q : QuadraticForm K M} {e f : M} (hef : polar Q e f = 1) : Q.polarBilin f e = 1 := by
   rw [polarBilin_apply_apply, polar_comm, hef]
-
-/-- Prescribed polar pairings with a linearly independent family are realized by some vector. -/
-private theorem exists_polar_eq [FiniteDimensional K V] (hB : Q.polarBilin.Nondegenerate)
-    {ι : Type*} [Finite ι] {v : ι → V} (hv : LinearIndependent K v) (c : ι → K) :
-    ∃ w, ∀ i, polar Q (v i) w = c i := by
-  classical
-  have := Fintype.ofFinite ι
-  obtain ⟨f, hf⟩ := hv.exists_dual_forall_apply_eq_ite
-  refine ⟨(LinearMap.BilinForm.toDual Q.polarBilin hB).symm (∑ i, c i • f i), fun i ↦ ?_⟩
-  rw [polar_comm, ← polarBilin_apply_apply, ← LinearMap.BilinForm.toDual_def hB,
-    LinearEquiv.apply_symm_apply]
-  simp [hf]
-
-/-- Expansion in a pair of polar-dual families spanning the space. -/
-private theorem eq_sum_polar_smul [FiniteDimensional K V] (hB : Q.polarBilin.Nondegenerate)
-    {ι : Type*} [Fintype ι] [DecidableEq ι] {v w : ι → V}
-    (h : ∀ i j, polar Q (v i) (w j) = if i = j then 1 else 0)
-    (hcard : Fintype.card ι = finrank K V) (u : V) : u = ∑ i, polar Q u (w i) • v i := by
-  have hpolar (j : ι) : polar Q (∑ i, polar Q u (w i) • v i) (w j) = polar Q u (w j) := by
-    rw [← polarBilin_apply_apply, map_sum, LinearMap.sum_apply]
-    simp [polarBilin_apply_apply, h]
-  have hw : LinearIndependent K w := by
-    refine Fintype.linearIndependent_iff.mpr fun g hg j ↦ ?_
-    have := congrArg (fun x ↦ polar Q (v j) x) hg
-    simp only [← polarBilin_apply_apply, map_sum, map_smul] at this
-    simpa [polarBilin_apply_apply, h, eq_comm] using this
-  rw [← sub_eq_zero]
-  refine hB.2 _ fun x ↦ ?_
-  have hx : x ∈ Submodule.span K (Set.range w) := by
-    rw [hw.span_eq_top_of_card_eq_finrank' hcard]
-    trivial
-  refine LinearMap.BilinForm.apply_eq_zero_of_mem_span ?_ hx
-    (Submodule.mem_span_singleton_self _)
-  rintro _ ⟨j, rfl⟩ _ rfl
-  rw [polarBilin_apply_apply, polar_comm, polar_sub_left, hpolar j, sub_self]
 
 end Nondegenerate
 
@@ -401,23 +354,9 @@ section Restriction
 variable [CharP K 2] {Q : QuadraticForm K V}
 
 omit [CharP K 2] in
-/-- An orthogonal map fixing `e` and `f` maps the polar orthogonal complement of the plane they
-span onto itself. -/
-private theorem map_orthogonal_span_pair_eq (g : orthogonalGroup Q) {e f : V}
-    (hge : (g : V ≃ₗ[K] V) e = e) (hgf : (g : V ≃ₗ[K] V) f = f) :
-    (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {e, f})).map
-      (g : V ≃ₗ[K] V).toLinearMap =
-      LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {e, f}) := by
-  have hg : TauCeti.BilinForm.IsIsometry Q.polarBilin (g : V ≃ₗ[K] V).toLinearMap :=
-    TauCeti.BilinForm.isIsometry_iff.mpr fun x y ↦ by simp [polarBilin_apply_apply]
-  rw [hg.map_orthogonal (g : V ≃ₗ[K] V).surjective, Submodule.map_span, Set.image_pair]
-  simp [hge, hgf]
-
-omit [CharP K 2] in
 private theorem inv_apply_eq_of_apply_eq {g : orthogonalGroup Q} {x y : V}
     (h : (g : V ≃ₗ[K] V) x = y) : ((g⁻¹ : orthogonalGroup Q) : V ≃ₗ[K] V) y = x := by
-  rw [← h, ← coe_mul_apply, inv_mul_cancel]
-  rfl
+  rw [← h, ← coe_mul_apply, inv_mul_cancel, Subgroup.coe_one, one_apply_eq_self]
 
 omit [CharP K 2] in
 /-- The orthogonal maps of the restriction of `Q` to `W` that extend to an element of `H` fixing
@@ -429,16 +368,15 @@ private def extensionSubgroup (H : Subgroup (orthogonalGroup Q)) (W P : Submodul
   mul_mem' := by
     rintro k₁ k₂ ⟨g₁, hg₁, hg₁W, hg₁P⟩ ⟨g₂, hg₂, hg₂W, hg₂P⟩
     refine ⟨g₁ * g₂, H.mul_mem hg₁ hg₂, fun u ↦ ?_, fun z hz ↦ ?_⟩
-    · rw [coe_mul_apply, hg₂W, hg₁W]
-      rfl
+    · rw [coe_mul_apply, hg₂W, hg₁W, coe_mul_apply]
     · rw [coe_mul_apply, hg₂P z hz, hg₁P z hz]
-  one_mem' := ⟨1, H.one_mem, fun _ ↦ rfl, fun _ _ ↦ rfl⟩
+  one_mem' := ⟨1, H.one_mem, fun _ ↦ by simp only [Subgroup.coe_one, one_apply_eq_self],
+    fun _ _ ↦ by rw [Subgroup.coe_one, one_apply_eq_self]⟩
   inv_mem' := by
     rintro k ⟨g, hg, hgW, hgP⟩
     refine ⟨g⁻¹, H.inv_mem hg, fun u ↦ inv_apply_eq_of_apply_eq ?_, fun z hz ↦
       inv_apply_eq_of_apply_eq (hgP z hz)⟩
-    rw [hgW, ← coe_mul_apply, mul_inv_cancel]
-    rfl
+    rw [hgW, ← coe_mul_apply, mul_inv_cancel, Subgroup.coe_one, one_apply_eq_self]
 
 /-- The transvections of the restriction of `Q` to `W` extend to transvections of `Q` fixing every
 vector polar orthogonal to `W`. -/
@@ -446,10 +384,13 @@ private theorem tv_mem_extensionSubgroup {H : Subgroup (orthogonalGroup Q)}
     (hH : ∀ a ha, tv Q a ha ∈ H) {W P : Submodule K V}
     (hWP : W ≤ LinearMap.BilinForm.orthogonal Q.polarBilin P) (a : W)
     (ha : (Q.restrict W) a ≠ 0) : tv (Q.restrict W) a ha ∈ extensionSubgroup H W P := by
-  have ha' : Q a ≠ 0 := ha
+  have ha' : Q a ≠ 0 := by simpa only [QuadraticMap.restrict_apply] using ha
   refine ⟨tv Q a ha', hH a ha', fun u ↦ ?_, fun z hz ↦ ?_⟩
-  · rw [tv_apply Q (a : V) ha', tv_apply]
-    simp [polar]
+  · have hpolar : polar (Q.restrict W) a u = polar Q a u := by
+      simpa only [polarBilin_apply_apply, LinearMap.domRestrict₁₂_apply] using
+        LinearMap.congr_fun₂ (polarBilin_restrict Q W) a u
+    rw [tv_apply Q (a : V) ha', tv_apply, hpolar, Submodule.coe_add, Submodule.coe_smul,
+      QuadraticMap.restrict_apply]
   · refine tv_apply_of_polar_eq_zero Q a ha' ?_
     rw [polar_comm]
     exact (LinearMap.BilinForm.mem_orthogonal_iff.mp (hWP a.property)) z hz
@@ -467,7 +408,8 @@ private theorem mem_of_apply_eq_self {e f : V} (hef : polar Q e f = 1)
   set P := Submodule.span K {e, f}
   set W := LinearMap.BilinForm.orthogonal Q.polarBilin P
   obtain ⟨g', hg', hg'W, hg'P⟩ :
-      orthogonalGroup.restrict g (map_orthogonal_span_pair_eq g hge hgf) ∈
+      orthogonalGroup.restrict g (map_orthogonal_polarBilin_of_mem_orthogonalGroup g.property
+        (by rw [Submodule.map_span, Set.image_pair, LinearEquiv.coe_coe, hge, hgf])) ∈
         extensionSubgroup H W P := by
     rw [ih _ (tv_mem_extensionSubgroup hH le_rfl)]
     trivial
@@ -492,7 +434,7 @@ omit [AddCommGroup V] [Module K V] in
 /-- Over the field with two elements, the binary form `(p + q)² + q p` is anisotropic. -/
 private theorem eq_zero_and_eq_zero_of_natCard_eq_two (hcard : Nat.card K = 2) {p q : K}
     (h : (p + q) * (p + q) + q * p = 0) : p = 0 ∧ q = 0 := by
-  have hK := eq_zero_or_eq_one_of_natCard_eq_two hcard
+  have hK := natCard_eq_two_iff_forall_eq_zero_or_eq_one.mp hcard
   have h11 : (1 : K) + 1 = 0 := CharTwo.add_self_eq_zero 1
   rcases hK p with rfl | rfl <;> rcases hK q with rfl | rfl
   · exact ⟨rfl, rfl⟩
@@ -508,12 +450,14 @@ private theorem exists_hyperbolic_partner [FiniteDimensional K V]
     [DecidableEq ι] {v : ι → V} (hv : LinearIndependent K v) (i₀ : ι) (hQ : Q (v i₀) = 0)
     (hp : ∀ j, polar Q (v j) (v i₀) = 0) :
     ∃ w, Q w = 0 ∧ ∀ j, polar Q (v j) w = if j = i₀ then 1 else 0 := by
-  obtain ⟨t, ht⟩ := exists_polar_eq hB hv fun j ↦ if j = i₀ then 1 else 0
+  obtain ⟨t, ht⟩ := LinearMap.BilinForm.Nondegenerate.exists_forall_apply_eq hB hv
+    fun j ↦ if j = i₀ then 1 else 0
+  simp only [polarBilin_apply_apply] at ht
   refine ⟨t + Q t • v i₀, ?_, fun j ↦ ?_⟩
-  · have h : polar Q t (v i₀) = 1 := by rw [polar_comm, ht i₀]; simp
+  · have h : polar Q t (v i₀) = 1 := by simpa using ht i₀
     rw [QuadraticMap.map_add (⇑Q), QuadraticMap.map_smul, hQ, polar_smul_right, h]
     simp [CharTwo.add_self_eq_zero]
-  · rw [polar_add_right, polar_smul_right, hp j, smul_zero, add_zero, ht j]
+  · rw [polar_add_right, polar_smul_right, hp j, smul_zero, add_zero, polar_comm, ht j]
 
 omit [CharP K 2] in
 /-- Expansion in a symplectic family `x i, y i` spanning the space. -/
@@ -523,7 +467,9 @@ private theorem eq_sum_polar_smul_add_polar_smul [FiniteDimensional K V]
     (hxx : ∀ i j, polar Q (x i) (x j) = 0) (hyy : ∀ i j, polar Q (y i) (y j) = 0)
     (hn : finrank K V = 2 * m) (u : V) :
     u = ∑ i, (polar Q u (y i) • x i + polar Q u (x i) • y i) := by
-  have h := eq_sum_polar_smul hB (v := Sum.elim x y) (w := Sum.elim y x) (fun a b ↦ by
+  have h := LinearMap.BilinForm.Nondegenerate.eq_sum_apply_smul hB (v := Sum.elim x y)
+    (w := Sum.elim y x) (fun a b ↦ by
+      rw [polarBilin_apply_apply]
       rcases a with i | i <;> rcases b with j | j
       · simp [hxy]
       · simp [hxx]
@@ -531,6 +477,7 @@ private theorem eq_sum_polar_smul_add_polar_smul [FiniteDimensional K V]
       · rw [Sum.elim_inr, Sum.elim_inr, polar_comm, hxy]
         simp [eq_comm])
     (by simp [hn, two_mul]) u
+  simp only [polarBilin_apply_apply] at h
   rwa [Fintype.sum_sum_type, ← Finset.sum_add_distrib] at h
 
 omit [CharP K 2] in
@@ -590,7 +537,8 @@ private theorem not_exc_orthogonal_span_pair_add [FiniteDimensional K V]
     ¬ Exc (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin
       (Submodule.span K {x 0, y 0 + x 1 + y 1}))) := by
   refine not_exc_of_eq_smul_add_smul (by simpa using hxy 2 2) fun u hu hQu hCD ↦ ?_
-  obtain ⟨hx₀u, hfu⟩ := mem_orthogonal_span_pair_iff.mp hu
+  obtain ⟨hx₀u, hfu⟩ := LinearMap.BilinForm.mem_orthogonal_span_pair_iff.mp hu
+  rw [polarBilin_apply_apply] at hx₀u hfu
   rw [polar_add_left, polar_add_left] at hfu
   have hux₀ : polar Q u (x 0) = 0 := by rw [polar_comm, hx₀u]
   have huy₀ : polar Q u (y 0) = polar Q u (x 1) + polar Q u (y 1) := by
@@ -628,8 +576,9 @@ private theorem exists_singular_pair_of_exc [FiniteDimensional K V] {Q : Quadrat
   have hU : Q.IsTotallyIsotropic U := isTotallyIsotropic_restrict_iff.mp hU'
   let b := Module.finBasisOfFinrankEq K U (by rw [Submodule.finrank_map_subtype_eq, hU'2])
   have hUW : U ≤ W := Submodule.map_subtype_le W U'
-  obtain ⟨hes₁, hfs₁⟩ := mem_orthogonal_span_pair_iff.mp (hUW (b 0).property)
-  obtain ⟨hes₂, hfs₂⟩ := mem_orthogonal_span_pair_iff.mp (hUW (b 1).property)
+  obtain ⟨hes₁, hfs₁⟩ := LinearMap.BilinForm.mem_orthogonal_span_pair_iff.mp (hUW (b 0).property)
+  obtain ⟨hes₂, hfs₂⟩ := LinearMap.BilinForm.mem_orthogonal_span_pair_iff.mp (hUW (b 1).property)
+  rw [polarBilin_apply_apply] at hes₁ hfs₁ hes₂ hfs₂
   have hfe : polar Q f e = 1 := by rw [polar_comm, hef]
   have hli₂ : LinearIndependent K ![(b 0 : V), b 1] := by
     convert b.linearIndependent.map' U.subtype U.ker_subtype using 1
@@ -720,7 +669,7 @@ private theorem exists_frame_not_exc_of_exc [FiniteDimensional K V]
     (fun i j ↦ by
       fin_cases i <;> fin_cases j <;> simp [polar_self_eq_zero Q, hfs₁',
         hfs₂', polar_comm (⇑Q) s₁' f, polar_comm (⇑Q) s₂' f, polar_comm (⇑Q) s₂' s₁', hs₁'s₂'])
-    (by simpa using (eq_zero_or_eq_one_of_natCard_eq_two hcard _).resolve_left he)
+    (by simpa using (natCard_eq_two_iff_forall_eq_zero_or_eq_one.mp hcard _).resolve_left he)
     hQs₁ hQs₂ hQs₁' hQs₂'
   exact h
 

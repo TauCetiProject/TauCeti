@@ -15,6 +15,7 @@ import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Orthogonal complements of bilinear forms
@@ -41,6 +42,12 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   self-orthogonal submodule is zero and pairwise orthogonal submodules are independent.
 * `LinearMap.BilinForm.apply_eq_zero_of_mem_span`: the spans of two mutually orthogonal sets of
   vectors are orthogonal.
+* `LinearMap.BilinForm.mem_orthogonal_span_pair_iff`: orthogonality to the span of two vectors.
+* `LinearMap.BilinForm.Nondegenerate.exists_apply_ne_zero`,
+  `LinearMap.BilinForm.Nondegenerate.exists_forall_apply_eq` and
+  `LinearMap.BilinForm.Nondegenerate.eq_sum_apply_smul`: a nonzero vector pairs nontrivially with
+  some vector, prescribed pairings with a linearly independent family are realized, and vectors
+  expand in a pair of dual families.
 * `LinearMap.BilinForm.apply_eq_zero_of_mem_biSup`: in a pairwise orthogonal family, the sums over
   disjoint sets of indices are orthogonal.
 * `LinearMap.BilinForm.iIsOrtho.apply_sum_sum`: the self-pairing of the sum of a finite
@@ -146,6 +153,18 @@ theorem apply_eq_zero_of_mem_span {B : LinearMap.BilinForm K V} {s t : Set V}
     (hy : y ∈ Submodule.span K t) : B x y = 0 :=
   (Submodule.span_le.mpr fun y hy ↦ Submodule.mem_orthogonalBilin_span.mpr fun x hx ↦
     h x hx y hy : Submodule.span K t ≤ (Submodule.span K s).orthogonalBilin B) hy x hx
+
+/-- A vector is orthogonal to the span of `x` and `y` exactly when it is orthogonal to `x` and to
+`y`. -/
+theorem mem_orthogonal_span_pair_iff {B : LinearMap.BilinForm K V} {x y u : V} :
+    u ∈ B.orthogonal (Submodule.span K {x, y}) ↔ B x u = 0 ∧ B y u = 0 := by
+  simp [orthogonal, Submodule.mem_orthogonalBilin_span]
+
+/-- For a nondegenerate form, a nonzero vector pairs nontrivially with some vector. -/
+theorem Nondegenerate.exists_apply_ne_zero {B : LinearMap.BilinForm K V} (hB : B.Nondegenerate)
+    {x : V} (hx : x ≠ 0) : ∃ y, B x y ≠ 0 := by
+  by_contra! h
+  exact hx (hB.1 x h)
 
 /-- In a family of pairwise orthogonal submodules, the sums of the members indexed by two disjoint
 sets are orthogonal. -/
@@ -727,6 +746,34 @@ theorem IsAlt.finrank_orthogonal_span_pair_add_two (hB : B.IsAlt) {e f : V} (hfe
     rw [← Matrix.range_cons_cons_empty e f ![], finrank_span_eq_card
       (hB.linearIndependent_pair_of_apply_eq_one hfe), Fintype.card_fin]
   omega
+
+/-- **Prescribed pairings with a linearly independent family.** For a nondegenerate form, any
+values `c i` are the pairings `B w (v i)` of a single vector `w` with a linearly independent
+family `v`. -/
+theorem Nondegenerate.exists_forall_apply_eq (hB : B.Nondegenerate) {ι : Type*} [Finite ι]
+    {v : ι → V} (hv : LinearIndependent K v) (c : ι → K) : ∃ w, ∀ i, B w (v i) = c i := by
+  classical
+  have := Fintype.ofFinite ι
+  obtain ⟨f, hf⟩ := hv.exists_dual_forall_apply_eq_ite
+  refine ⟨(B.toDual hB).symm (∑ i, c i • f i), fun i ↦ ?_⟩
+  rw [← toDual_def hB, LinearEquiv.apply_symm_apply]
+  simp [hf]
+
+/-- **Expansion in dual families.** If `B (v i) (w j)` is `1` for `i = j` and `0` otherwise, and
+there are as many indices as the dimension, then every vector `u` is `∑ i, B u (w i) • v i`. -/
+theorem Nondegenerate.eq_sum_apply_smul (hB : B.Nondegenerate) {ι : Type*} [Fintype ι]
+    [DecidableEq ι] {v w : ι → V} (h : ∀ i j, B (v i) (w j) = if i = j then 1 else 0)
+    (hcard : Fintype.card ι = finrank K V) (u : V) : u = ∑ i, B u (w i) • v i := by
+  have hw : LinearIndependent K w := by
+    refine Fintype.linearIndependent_iff.mpr fun g hg j ↦ ?_
+    simpa [h, eq_comm] using congrArg (B (v j)) hg
+  rw [← sub_eq_zero]
+  refine hB.1 _ fun x ↦ apply_eq_zero_of_mem_span ?_ (Submodule.mem_span_singleton_self _)
+    (show x ∈ Submodule.span K (Set.range w) by
+      rw [hw.span_eq_top_of_card_eq_finrank' hcard]
+      trivial)
+  rintro _ rfl _ ⟨j, rfl⟩
+  simp [h]
 
 variable [Invertible (2 : K)]
 
