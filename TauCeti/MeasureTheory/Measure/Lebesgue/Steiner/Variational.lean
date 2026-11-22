@@ -10,11 +10,10 @@ public import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.BoundedVariation.Slicing.Excess
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
-import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Convolution
+import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.Analysis.Sobolev.Mollification.Basic
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
@@ -72,206 +71,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Transverse coordinate projection `E →L[ℝ] (ℝ ∙ e)ᗮ` along the unit vector `e`. -/
-private def orthogonalLineFstCLM (e : E) (he : ‖e‖ = 1) : E →L[ℝ] (ℝ ∙ e)ᗮ :=
-  (ContinuousLinearMap.fst ℝ (ℝ ∙ e)ᗮ ℝ).comp
-    (orthogonalLineEquiv e he).symm.toContinuousLinearMap
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-@[simp]
-private theorem orthogonalLineFstCLM_apply (e : E) (he : ‖e‖ = 1) (x : E) :
-    orthogonalLineFstCLM e he x = ((orthogonalLineEquiv e he).symm x).1 := by
-  rw [orthogonalLineFstCLM, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
-    ContinuousLinearEquiv.coe_coe]
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- Decompose `divergenceCLM ψ₀` in orthogonal line coordinates into the hyperplane divergence of
-its transverse projection plus the longitudinal derivative along `e`. -/
-private theorem divergenceCLM_orthogonalLine_eq (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓(⊤, E))
-    (y : (ℝ ∙ e)ᗮ) (t : ℝ) :
-    divergenceCLM ψ₀ ((y : E) + t • e) =
-      traceCLM ℝ (ℝ ∙ e)ᗮ
-        (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => ((orthogonalLineEquiv e he).symm (ψ₀ ((z : E) + t • e))).1)
-          y) +
-        deriv (fun s : ℝ => ⟪e, ψ₀ ((y : E) + s • e)⟫) t := by
-  set g : E → (ℝ ∙ e)ᗮ := fun x => orthogonalLineFstCLM e he (ψ₀ x) with hg_def
-  have hdecomp : (ψ₀ : E → E) = fun x => (ℝ ∙ e)ᗮ.subtypeL (g x) + ⟪e, ψ₀ x⟫ • e := by
-    ext x
-    simp [hg_def, orthogonalLineEquiv_symm_fst]
-  set x₀ : E := (y : E) + t • e
-  have hψd : DifferentiableAt ℝ (ψ₀ : E → E) x₀ := ψ₀.contDiff.differentiable (by simp) x₀
-  have hgd : DifferentiableAt ℝ g x₀ := (orthogonalLineFstCLM e he).differentiableAt.comp x₀ hψd
-  have h1d : DifferentiableAt ℝ (fun x => (ℝ ∙ e)ᗮ.subtypeL (g x)) x₀ :=
-    (ℝ ∙ e)ᗮ.subtypeL.differentiableAt.comp x₀ hgd
-  have hinner : DifferentiableAt ℝ (fun x => ⟪e, ψ₀ x⟫) x₀ :=
-    (innerSL ℝ e).differentiableAt.comp x₀ hψd
-  conv_lhs =>
-    rw [divergenceCLM_apply, hdecomp, fderiv_fun_add h1d (hinner.smul_const e),
-      ContinuousLinearMap.toLinearMap_add, map_add, trace_fderiv_smul_const hinner e]
-  congr 1
-  · have hf1 : fderiv ℝ (fun x => (ℝ ∙ e)ᗮ.subtypeL (g x)) x₀ =
-        (ℝ ∙ e)ᗮ.subtypeL.comp (fderiv ℝ g x₀) :=
-      ((ℝ ∙ e)ᗮ.subtypeL.hasFDerivAt.comp x₀ hgd.hasFDerivAt).fderiv
-    have haff : HasFDerivAt (fun z : (ℝ ∙ e)ᗮ => (z : E) + t • e) (ℝ ∙ e)ᗮ.subtypeL y :=
-      ((ℝ ∙ e)ᗮ.subtypeL.hasFDerivAt (x := y)).add_const (t • e)
-    have hf2 : fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => g ((z : E) + t • e)) y =
-        (fderiv ℝ g x₀).comp (ℝ ∙ e)ᗮ.subtypeL :=
-      (HasFDerivAt.comp (f := fun z : (ℝ ∙ e)ᗮ => (z : E) + t • e) y
-        hgd.hasFDerivAt haff).fderiv
-    have hg_slice :
-        (fun z : (ℝ ∙ e)ᗮ => ((orthogonalLineEquiv e he).symm (ψ₀ ((z : E) + t • e))).1) =
-          fun z : (ℝ ∙ e)ᗮ => g ((z : E) + t • e) := by
-      ext z
-      simp [hg_def]
-    rw [hg_slice, hf1, traceCLM_apply, hf2, ContinuousLinearMap.toLinearMap_comp,
-      ContinuousLinearMap.toLinearMap_comp]
-    exact LinearMap.trace_comp_comm' _ _
-  · have hl : HasDerivAt (fun s : ℝ => (y : E) + s • e) e t := by
-      simpa using ((hasDerivAt_id t).smul_const e).const_add (y : E)
-    exact (hinner.hasFDerivAt.comp_hasDerivAt t hl).deriv.symm
-
-/-- Pointwise Leibniz-and-chain-rule identity for the rescaled horizontal field
-`z ↦ (ℓ z / 2) • A z ((ℓ z / 2) * u)`. -/
-private theorem trace_fderiv_slabRescaledField_eq {H : Type*} [NormedAddCommGroup H]
-    [NormedSpace ℝ H] [FiniteDimensional ℝ H] {A : H → ℝ → H}
-    (hA : ContDiff ℝ ∞ (Function.uncurry A)) {ℓ : H → ℝ} (hℓ : ContDiff ℝ ∞ ℓ)
-    (u : ℝ) (y : H) :
-    traceCLM ℝ H (fderiv ℝ (fun z : H => (ℓ z / 2) • A z ((ℓ z / 2) * u)) y) =
-      (ℓ y / 2) * traceCLM ℝ H (fderiv ℝ (fun z : H => A z ((ℓ y / 2) * u)) y) +
-        deriv (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) u := by
-  have hℓd : DifferentiableAt ℝ ℓ y := hℓ.differentiable (by simp) y
-  have hhalf : HasFDerivAt (fun z : H => ℓ z / 2) ((2 : ℝ)⁻¹ • fderiv ℝ ℓ y) y :=
-    (hℓd.hasFDerivAt.const_mul (2 : ℝ)⁻¹).congr_of_eventuallyEq
-      (.of_forall fun z => div_eq_inv_mul (ℓ z) 2)
-  have hmul : HasFDerivAt (fun z : H => (ℓ z / 2) * u) ((u * (2 : ℝ)⁻¹) • fderiv ℝ ℓ y) y :=
-    ((hhalf.const_mul u).congr_of_eventuallyEq
-      (.of_forall fun z => mul_comm (ℓ z / 2) u)).congr_fderiv
-      (smul_smul u (2 : ℝ)⁻¹ (fderiv ℝ ℓ y))
-  have hFA : DifferentiableAt ℝ (Function.uncurry A) (y, (ℓ y / 2) * u) :=
-    hA.differentiable (by simp) (y, (ℓ y / 2) * u)
-  have hAd : DifferentiableAt ℝ (A y) ((ℓ y / 2) * u) :=
-    (hA.comp (contDiff_const.prodMk contDiff_id)).differentiable (by simp) _
-  have hcomp_diff : DifferentiableAt ℝ (fun z : H => A z ((ℓ z / 2) * u)) y :=
-    hFA.fun_comp' y (differentiableAt_id.prodMk hmul.differentiableAt)
-  have hcomp_eq : fderiv ℝ (fun z : H => A z ((ℓ z / 2) * u)) y =
-      fderiv ℝ (fun z : H => A z ((ℓ y / 2) * u)) y +
-        ((u * (2 : ℝ)⁻¹) • fderiv ℝ ℓ y).smulRight (deriv (A y) ((ℓ y / 2) * u)) := by
-    ext v
-    have hg := fderiv_comp_graph_apply (f := Function.uncurry A) hmul.differentiableAt hFA v
-    have hleft := congrArg (fun L => L v) (fderiv_slice_left hFA)
-    simp only [Function.uncurry, ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply]
-      at hg hleft
-    rw [hg, ← hleft, hmul.fderiv, hAd.hasDerivAt.hasFDerivAt.fderiv]
-    simp [ContinuousLinearMap.smulRight_apply]
-  have hlin : HasDerivAt (fun s : ℝ => (ℓ y / 2) * s) (ℓ y / 2) u := by
-    simpa using (hasDerivAt_id u).const_mul (ℓ y / 2)
-  have hsm := (hasDerivAt_id u).smul (hAd.hasDerivAt.scomp u hlin)
-  have hΦd : HasDerivAt (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s)))
-      ((2 : ℝ)⁻¹ * fderiv ℝ ℓ y
-        (u • (ℓ y / 2) • deriv (A y) ((ℓ y / 2) * u) + (1 : ℝ) • A y ((ℓ y / 2) * u))) u :=
-    ((fderiv ℝ ℓ y).hasFDerivAt.comp_hasDerivAt u hsm).const_mul (2 : ℝ)⁻¹
-  rw [traceCLM_apply, trace_fderiv_smul hhalf.differentiableAt hcomp_diff, hhalf.fderiv,
-    hcomp_eq, hΦd.deriv]
-  simp [traceCLM_apply, smul_eq_mul]
-  ring
-
-/-- Continuity of the two slab-rescaled integrands `P1` and `P2` on `ℝ × H`. -/
-private theorem continuous_slabRescaledPieces {H : Type*} [NormedAddCommGroup H]
-    [NormedSpace ℝ H] [FiniteDimensional ℝ H] {A : H → ℝ → H}
-    (hA : ContDiff ℝ ∞ (Function.uncurry A)) {ℓ : H → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) :
-    Continuous (fun q : ℝ × H =>
-        (ℓ q.2 / 2) * traceCLM ℝ H (fderiv ℝ (fun z : H => A z ((ℓ q.2 / 2) * q.1)) q.2)) ∧
-      Continuous (fun q : ℝ × H =>
-        deriv (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ q.2 (s • A q.2 ((ℓ q.2 / 2) * s))) q.1) := by
-  have hFA : (fun p : H × ℝ => fderiv ℝ (fun z : H => A z p.2) p.1) =
-      fun p => (fderiv ℝ (Function.uncurry A) p).comp (.inl ℝ H ℝ) :=
-    funext fun p => fderiv_slice_left (hA.differentiable (by simp) (p.1, p.2))
-  have hFA_cont : Continuous (fun p : H × ℝ => fderiv ℝ (fun z : H => A z p.2) p.1) := by
-    rw [hFA]
-    exact (((ContinuousLinearMap.compL ℝ H (H × ℝ) H).flip (.inl ℝ H ℝ)).continuous.comp
-      (hA.continuous_fderiv (by simp)))
-  have hP1 : Continuous (fun q : ℝ × H =>
-      (ℓ q.2 / 2) * traceCLM ℝ H (fderiv ℝ (fun z : H => A z ((ℓ q.2 / 2) * q.1)) q.2)) :=
-    ((hℓ.continuous.comp continuous_snd).div_const 2).mul <|
-      (traceCLM ℝ H).continuous.comp <| hFA_cont.comp
-        (continuous_snd.prodMk (((hℓ.continuous.comp continuous_snd).div_const 2).mul
-          continuous_fst))
-  have hWu : ContDiff ℝ ∞ (fun q : ℝ × H => (ℓ q.2 / 2) • A q.2 ((ℓ q.2 / 2) * q.1)) :=
-    ((hℓ.comp contDiff_snd).div_const 2).smul (hA.comp (contDiff_snd.prodMk
-      (((hℓ.comp contDiff_snd).div_const 2).mul contDiff_fst)))
-  have hdiv_eq : (fun q : ℝ × H => traceCLM ℝ H
-        (fderiv ℝ (fun z : H => (ℓ z / 2) • A z ((ℓ z / 2) * q.1)) q.2)) =
-      fun q => traceCLM ℝ H
-        ((fderiv ℝ (fun p : ℝ × H => (ℓ p.2 / 2) • A p.2 ((ℓ p.2 / 2) * p.1)) q).comp
-          (.inr ℝ ℝ H)) :=
-    funext fun q => congrArg (traceCLM ℝ H)
-      (fderiv_slice_right (f := fun p : ℝ × H => (ℓ p.2 / 2) • A p.2 ((ℓ p.2 / 2) * p.1))
-        (hWu.differentiable (by simp) (q.1, q.2)))
-  have hdiv : Continuous (fun q : ℝ × H => traceCLM ℝ H
-      (fderiv ℝ (fun z : H => (ℓ z / 2) • A z ((ℓ z / 2) * q.1)) q.2)) := by
-    rw [hdiv_eq]
-    exact (traceCLM ℝ H).continuous.comp
-      (((ContinuousLinearMap.compL ℝ H (ℝ × H) H).flip (.inr ℝ ℝ H)).continuous.comp
-        (hWu.continuous_fderiv (by simp)))
-  refine ⟨hP1, ?_⟩
-  convert hdiv.sub hP1 using 1
-  ext ⟨u, y⟩
-  simp only [Pi.sub_apply]
-  linarith [trace_fderiv_slabRescaledField_eq hA hℓ u y]
-
-/-- Off a closed set `K` outside which `A` vanishes, both slab-rescaled integrands vanish. -/
-private theorem slabRescaledPieces_eq_zero_of_notMem {H : Type*} [NormedAddCommGroup H]
-    [NormedSpace ℝ H] [FiniteDimensional ℝ H] {K : Set H} (hK : IsClosed K) {A : H → ℝ → H}
-    (hA0 : ∀ {y : H}, y ∉ K → ∀ t, A y t = 0) (ℓ : H → ℝ) (u : ℝ) {y : H} (hy : y ∉ K) :
-    (ℓ y / 2) * traceCLM ℝ H (fderiv ℝ (fun z : H => A z ((ℓ y / 2) * u)) y) = 0 ∧
-      deriv (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) u = 0 := by
-  refine ⟨?_, ?_⟩
-  · have hloc : (fun z : H => A z ((ℓ y / 2) * u)) =ᶠ[𝓝 y] 0 :=
-      Filter.eventually_of_mem (hK.isOpen_compl.mem_nhds hy) fun z hz => hA0 hz _
-    simp [hloc.fderiv_eq]
-  · have hloc : (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) = 0 :=
-      funext fun s => by simp [hA0 hy]
-    rw [hloc]
-    simp
-
-/-- For each fixed rescaled height `u : ℝ`, the hyperplane integral of the rescaled horizontal
-divergence equals minus the integral of the `u`-derivative term, since their sum is the divergence
-of a compactly supported test field. -/
-private theorem integral_slabRescaledPiece_eq_neg {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℝ H] [FiniteDimensional ℝ H] [MeasurableSpace H] [BorelSpace H]
-    {K : Set H} (hK : IsCompact K) {A : H → ℝ → H} (hA : ContDiff ℝ ∞ (Function.uncurry A))
-    (hA0 : ∀ {y : H}, y ∉ K → ∀ t, A y t = 0) {ℓ : H → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) (u : ℝ) :
-    (∫ y : H, (ℓ y / 2) * traceCLM ℝ H (fderiv ℝ (fun z : H => A z ((ℓ y / 2) * u)) y)) =
-      -∫ y : H, deriv (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) u := by
-  let W : 𝓓(⊤, H) :=
-    ⟨fun y => (ℓ y / 2) • A y ((ℓ y / 2) * u),
-      (hℓ.div_const 2).smul (hA.comp (contDiff_id.prodMk ((hℓ.div_const 2).mul contDiff_const))),
-      .of_support_subset_isCompact hK fun y hy => by by_contra hyK; exact hy (by simp [hA0 hyK]),
-      subset_univ _⟩
-  obtain ⟨hP1c, hP2c⟩ := continuous_slabRescaledPieces hA hℓ
-  have hi1 : Integrable (fun y : H => (ℓ y / 2) * traceCLM ℝ H
-      (fderiv ℝ (fun z : H => A z ((ℓ y / 2) * u)) y)) volume :=
-    (hP1c.comp (continuous_const.prodMk continuous_id)).integrable_of_hasCompactSupport
-      (.of_support_subset_isCompact hK fun y hy => by
-        by_contra hyK
-        exact hy (slabRescaledPieces_eq_zero_of_notMem hK.isClosed hA0 ℓ u hyK).1)
-  have hi2 : Integrable (fun y : H =>
-      deriv (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) u) volume :=
-    (hP2c.comp (continuous_const.prodMk continuous_id)).integrable_of_hasCompactSupport
-      (.of_support_subset_isCompact hK fun y hy => by
-        by_contra hyK
-        exact hy (slabRescaledPieces_eq_zero_of_notMem hK.isClosed hA0 ℓ u hyK).2)
-  have hsum : (∫ y : H, (ℓ y / 2) * traceCLM ℝ H
-        (fderiv ℝ (fun z : H => A z ((ℓ y / 2) * u)) y)) +
-      (∫ y : H, deriv (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) u) =
-      ∫ y : H, divergenceCLM W y := by
-    rw [← integral_add hi1 hi2]
-    exact integral_congr_ae (.of_forall fun y =>
-      (trace_fderiv_slabRescaledField_eq hA hℓ u y).symm.trans
-        (by rw [divergenceCLM_apply, TestFunction.coe_mk, ← traceCLM_apply]))
-  linarith [hsum, TestFunction.integral_divergenceCLM_eq_zero (μ := volume) W]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem isCompact_fst_image_tsupport (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓(⊤, E)) :
     IsCompact (Prod.fst '' ((orthogonalLineEquiv e he).symm '' tsupport ψ₀)) ∧
       ∀ {y : (ℝ ∙ e)ᗮ}, y ∉ Prod.fst '' ((orthogonalLineEquiv e he).symm '' tsupport ψ₀) →
@@ -287,24 +86,23 @@ smooth slab thickness `ℓ`. -/
 private def slabHorizAvg (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓((⊤ : Opens E), E))
     {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) : 𝓓((⊤ : Opens (ℝ ∙ e)ᗮ), (ℝ ∙ e)ᗮ) where
   toFun y := (2 : ℝ)⁻¹ •
-    (((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (ℓ y / 2) • e))).1 +
-      ((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))).1)
+    ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((y : E) + (ℓ y / 2) • e)) +
+      (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((y : E) + (-(ℓ y / 2)) • e)))
   contDiff' := by
     have h1 : ContDiff ℝ ∞ (fun y : (ℝ ∙ e)ᗮ =>
-        orthogonalLineFstCLM e he (ψ₀ ((y : E) + (ℓ y / 2) • e))) :=
-      (orthogonalLineFstCLM e he).contDiff.comp (ψ₀.contDiff.comp
+        (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((y : E) + (ℓ y / 2) • e))) :=
+      (ℝ ∙ e)ᗮ.orthogonalProjectionOnto.contDiff.comp (ψ₀.contDiff.comp
         ((ℝ ∙ e)ᗮ.subtypeL.contDiff.add ((hℓ.div_const 2).smul (contDiff_const (c := e)))))
     have h2 : ContDiff ℝ ∞ (fun y : (ℝ ∙ e)ᗮ =>
-        orthogonalLineFstCLM e he (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))) :=
-      (orthogonalLineFstCLM e he).contDiff.comp (ψ₀.contDiff.comp
+        (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))) :=
+      (ℝ ∙ e)ᗮ.orthogonalProjectionOnto.contDiff.comp (ψ₀.contDiff.comp
         ((ℝ ∙ e)ᗮ.subtypeL.contDiff.add ((hℓ.div_const 2).neg.smul (contDiff_const (c := e)))))
-    simpa only [orthogonalLineFstCLM_apply] using (h1.add h2).const_smul (2 : ℝ)⁻¹
+    exact (h1.add h2).const_smul (2 : ℝ)⁻¹
   hasCompactSupport' := by
     obtain ⟨hK, h0⟩ := isCompact_fst_image_tsupport e he ψ₀
     refine .of_support_subset_isCompact hK fun y hy => ?_
     by_contra hyK
-    exact hy (by simp only [h0 hyK (ℓ y / 2), h0 hyK (-(ℓ y / 2)), map_zero, Prod.fst_zero,
-      add_zero, smul_zero])
+    exact hy (by simp only [h0 hyK (ℓ y / 2), h0 hyK (-(ℓ y / 2)), map_zero, add_zero, smul_zero])
   tsupport_subset' := subset_univ _
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
@@ -312,31 +110,35 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem slabHorizAvg_apply (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓((⊤ : Opens E), E))
     {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) (y : (ℝ ∙ e)ᗮ) :
     slabHorizAvg e he ψ₀ hℓ y = (2 : ℝ)⁻¹ •
-      (((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (ℓ y / 2) • e))).1 +
-        ((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))).1) := (rfl)
+      ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((y : E) + (ℓ y / 2) • e)) +
+        (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))) := (rfl)
 
 /-- Integrating the horizontal divergence of `ψ₀` over the smooth symmetric slab `{|t| < ℓ y / 2}`
 gives `-∫ y, Dℓ(y) (slabHorizAvg e he ψ₀ hℓ y)` and proves `y`-integrability. -/
 private theorem integrable_and_integral_horizontal_divergence_symmSlab_eq (e : E) (he : ‖e‖ = 1)
     (ψ₀ : 𝓓(⊤, E)) {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) :
     Integrable (fun y : (ℝ ∙ e)ᗮ => ∫ t in (-(ℓ y / 2))..(ℓ y / 2),
-        traceCLM ℝ (ℝ ∙ e)ᗮ
-          (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => ((orthogonalLineEquiv e he).symm (ψ₀ ((z : E) + t • e))).1)
-            y)) volume ∧
+        LinearMap.trace ℝ (ℝ ∙ e)ᗮ
+          (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ =>
+            (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((z : E) + t • e))) y :
+            (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ)) volume ∧
       (∫ y : (ℝ ∙ e)ᗮ, ∫ t in (-(ℓ y / 2))..(ℓ y / 2),
-          traceCLM ℝ (ℝ ∙ e)ᗮ
+          LinearMap.trace ℝ (ℝ ∙ e)ᗮ
             (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ =>
-              ((orthogonalLineEquiv e he).symm (ψ₀ ((z : E) + t • e))).1) y)) =
+              (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((z : E) + t • e))) y :
+              (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ)) =
         -∫ y : (ℝ ∙ e)ᗮ, fderiv ℝ ℓ y (slabHorizAvg e he ψ₀ hℓ y) := by
   set A : (ℝ ∙ e)ᗮ → ℝ → (ℝ ∙ e)ᗮ :=
-    fun y t => orthogonalLineFstCLM e he (ψ₀ ((y : E) + t • e)) with hA_def
+    fun y t => (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((y : E) + t • e)) with hA_def
   have hA : ContDiff ℝ ∞ (Function.uncurry A) :=
-    (orthogonalLineFstCLM e he).contDiff.comp (ψ₀.contDiff.comp
+    (ℝ ∙ e)ᗮ.orthogonalProjectionOnto.contDiff.comp (ψ₀.contDiff.comp
       (((ℝ ∙ e)ᗮ.subtypeL.contDiff.comp contDiff_fst).add (contDiff_snd.smul contDiff_const)))
+  let a : (ℝ ∙ e)ᗮ → ℝ := fun y => ℓ y / 2
+  have ha : ContDiff ℝ 1 a := (hℓ.div_const 2).of_le (by simp)
   obtain ⟨hK, hψ0⟩ := isCompact_fst_image_tsupport e he ψ₀
   have hA0 {y : (ℝ ∙ e)ᗮ} (hy : y ∉ Prod.fst '' ((orthogonalLineEquiv e he).symm '' tsupport ψ₀))
       (t : ℝ) : A y t = 0 := by simp [hA_def, hψ0 hy t]
-  obtain ⟨hP1c, hP2c⟩ := continuous_slabRescaledPieces hA hℓ
+  obtain ⟨hP1c, hP2c⟩ := continuous_trace_fderiv_comp_mul (hA.of_le (by simp)) ha
   have hswap {P : ℝ × (ℝ ∙ e)ᗮ → ℝ} (hP : Continuous P)
       (hvan : ∀ u, ∀ y ∉ Prod.fst '' ((orthogonalLineEquiv e he).symm '' tsupport ψ₀),
         P (u, y) = 0) :
@@ -352,38 +154,42 @@ private theorem integrable_and_integral_horizontal_divergence_symmSlab_eq (e : E
     simpa only [intervalIntegral.integral_of_le (by norm_num : (-1 : ℝ) ≤ 1),
       uIoc_of_le (by norm_num : (-1 : ℝ) ≤ 1)] using hint.integral_prod_right
   have h1 := hswap hP1c fun u y hy =>
-    (slabRescaledPieces_eq_zero_of_notMem hK.isClosed hA0 ℓ u hy).1
+    (trace_fderiv_comp_mul_eq_zero_of_notMem hK.isClosed hA0 a u hy).1
   have h2 := hswap hP2c fun u y hy =>
-    (slabRescaledPieces_eq_zero_of_notMem hK.isClosed hA0 ℓ u hy).2
-  have hA_slice (t : ℝ) :
-      (fun z : (ℝ ∙ e)ᗮ => ((orthogonalLineEquiv e he).symm (ψ₀ ((z : E) + t • e))).1) =
-        fun z : (ℝ ∙ e)ᗮ => A z t := by
-    ext z
-    simp [hA_def]
+    (trace_fderiv_comp_mul_eq_zero_of_notMem hK.isClosed hA0 a u hy).2
   have hp1_eq (y : (ℝ ∙ e)ᗮ) : (∫ u in (-1 : ℝ)..1,
-      (ℓ y / 2) * traceCLM ℝ (ℝ ∙ e)ᗮ (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => A z ((ℓ y / 2) * u)) y)) =
+      a y * LinearMap.trace ℝ (ℝ ∙ e)ᗮ
+        (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => A z (a y * u)) y : (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ)) =
       ∫ t in (-(ℓ y / 2))..(ℓ y / 2),
-        traceCLM ℝ (ℝ ∙ e)ᗮ (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ =>
-          ((orthogonalLineEquiv e he).symm (ψ₀ ((z : E) + t • e))).1) y) := by
-    simp_rw [hA_slice]
+        LinearMap.trace ℝ (ℝ ∙ e)ᗮ (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ =>
+          (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((z : E) + t • e))) y :
+          (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ) := by
+    change (∫ u in (-1 : ℝ)..1,
+        (ℓ y / 2) * LinearMap.trace ℝ (ℝ ∙ e)ᗮ
+          (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => A z ((ℓ y / 2) * u)) y : (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ)) = _
     rw [intervalIntegral.integral_const_mul, ← smul_eq_mul,
       intervalIntegral.smul_integral_comp_mul_left
-        (f := fun t => traceCLM ℝ (ℝ ∙ e)ᗮ (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => A z t) y)),
+        (f := fun t => LinearMap.trace ℝ (ℝ ∙ e)ᗮ
+          (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => A z t) y : (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ)),
       mul_neg_one, mul_one]
   have hp2_eq (y : (ℝ ∙ e)ᗮ) : (∫ u in (-1 : ℝ)..1,
-      deriv (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) u) =
+      deriv (fun s : ℝ => fderiv ℝ a y (s • A y (a y * s))) u) =
       fderiv ℝ ℓ y (slabHorizAvg e he ψ₀ hℓ y) := by
-    have hΦ : ContDiff ℝ ∞ (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) :=
-      contDiff_const.mul ((fderiv ℝ ℓ y).contDiff.comp
-        (contDiff_id.smul (hA.comp (contDiff_const.prodMk (contDiff_const.mul contDiff_id)))))
+    have hΦ : ContDiff ℝ ∞ (fun s : ℝ => fderiv ℝ a y (s • A y (a y * s))) :=
+      (fderiv ℝ a y).contDiff.comp
+        (contDiff_id.smul (hA.comp (contDiff_const.prodMk (contDiff_const.mul contDiff_id))))
+    have ha_fderiv : fderiv ℝ a y = (2 : ℝ)⁻¹ • fderiv ℝ ℓ y :=
+      (((hℓ.differentiable (by simp) y).hasFDerivAt.const_mul (2 : ℝ)⁻¹).congr_of_eventuallyEq
+        (.of_forall fun z => div_eq_inv_mul (ℓ z) 2)).fderiv
     rw [intervalIntegral.integral_deriv_eq_sub (fun s _ => hΦ.differentiable (by simp) s)
       ((hΦ.continuous_deriv (by simp)).intervalIntegrable _ _)]
-    simp only [slabHorizAvg_apply, hA_def, orthogonalLineFstCLM_apply, one_smul, mul_one,
-      mul_neg_one, neg_one_smul, map_neg, map_add, map_smul, smul_eq_mul]
+    simp only [ha_fderiv, slabHorizAvg_apply, hA_def, a, _root_.smul_apply,
+      smul_eq_mul, one_smul, mul_one, mul_neg_one, neg_one_smul, map_neg, map_add, map_smul]
     ring
   refine ⟨h1.1.congr (.of_forall hp1_eq), ?_⟩
   simp_rw [← hp1_eq, ← hp2_eq, ← h1.2, ← h2.2,
-    integral_slabRescaledPiece_eq_neg hK hA hA0 hℓ, intervalIntegral.integral_neg]
+    integral_mul_trace_fderiv_comp_mul_eq_neg hK (hA.of_le (by simp)) hA0 ha,
+    intervalIntegral.integral_neg]
 
 /-- Continuity and integrability of the longitudinal boundary half-difference `d` on a smooth
 symmetric slab. -/
@@ -426,9 +232,10 @@ private theorem integrable_and_integral_divergenceCLM_symmSlab_eq (e : E) (he : 
     (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (ℓ y / 2) • e)⟫ - ⟪e, ψ₀ ((y : E) + (-(ℓ y / 2)) • e)⟫)
   have hline (y : (ℝ ∙ e)ᗮ) :
       (∫ t in (-(ℓ y / 2))..(ℓ y / 2), divergenceCLM ψ₀ ((y : E) + t • e)) =
-        (∫ t in (-(ℓ y / 2))..(ℓ y / 2), traceCLM ℝ (ℝ ∙ e)ᗮ
+        (∫ t in (-(ℓ y / 2))..(ℓ y / 2), LinearMap.trace ℝ (ℝ ∙ e)ᗮ
           (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ =>
-            ((orthogonalLineEquiv e he).symm (ψ₀ ((z : E) + t • e))).1) y)) +
+            (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((z : E) + t • e))) y :
+            (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ)) +
         2 * d y := by
     have hg : ContDiff ℝ ∞ (fun s : ℝ => ⟪e, ψ₀ ((y : E) + s • e)⟫) :=
       (innerSL ℝ e).contDiff.comp (ψ₀.contDiff.comp
@@ -440,13 +247,14 @@ private theorem integrable_and_integral_divergenceCLM_symmSlab_eq (e : E) (he : 
     have hi_v : IntervalIntegrable (deriv fun s : ℝ => ⟪e, ψ₀ ((y : E) + s • e)⟫) volume
         (-(ℓ y / 2)) (ℓ y / 2) :=
       (hg.continuous_deriv (by simp)).intervalIntegrable _ _
-    have hi_h : IntervalIntegrable (fun t => traceCLM ℝ (ℝ ∙ e)ᗮ
+    have hi_h : IntervalIntegrable (fun t => LinearMap.trace ℝ (ℝ ∙ e)ᗮ
         (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ =>
-          ((orthogonalLineEquiv e he).symm (ψ₀ ((z : E) + t • e))).1) y))
+          (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((z : E) + t • e))) y :
+          (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ))
         volume (-(ℓ y / 2)) (ℓ y / 2) := by
       convert hi_div.sub hi_v using 1
-      ext t; linarith [divergenceCLM_orthogonalLine_eq e he ψ₀ y t]
-    simp_rw [divergenceCLM_orthogonalLine_eq e he ψ₀ y]
+      ext t; linarith [TauCeti.divergenceCLM_orthogonalLine_eq e he ψ₀ y t]
+    simp_rw [TauCeti.divergenceCLM_orthogonalLine_eq e he ψ₀ y]
     rw [intervalIntegral.integral_add hi_h hi_v,
       intervalIntegral.integral_deriv_eq_sub (fun s _ => hg.differentiable (by simp) s) hi_v]
     simp only [d]; ring
@@ -466,13 +274,14 @@ private theorem norm_sq_slabBoundaryAvg_le_one (e : E) (he : ‖e‖ = 1) (ψ₀
   rw [slabHorizAvg_apply]
   set x1 := (y : E) + (ℓ y / 2) • e
   set x2 := (y : E) + (-(ℓ y / 2)) • e
-  set u1 := ((orthogonalLineEquiv e he).symm (ψ₀ x1)).1
-  set u2 := ((orthogonalLineEquiv e he).symm (ψ₀ x2)).1
+  set u1 := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ x1)
+  set u2 := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ x2)
   set v1 := ⟪e, ψ₀ x1⟫
   set v2 := ⟪e, ψ₀ x2⟫
   have hdecomp (x : E) :
-      (((orthogonalLineEquiv e he).symm (ψ₀ x)).1 : E) + ⟪e, ψ₀ x⟫ • e = ψ₀ x := by
-    rw [orthogonalLineEquiv_symm_fst, sub_add_cancel]
+      ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ x) : E) + ⟪e, ψ₀ x⟫ • e = ψ₀ x := by
+    rw [← orthogonalLineEquiv_symm_fst_eq_orthogonalProjectionOnto e he,
+      orthogonalLineEquiv_symm_fst, sub_add_cancel]
   have hn1 : ‖(u1 : E) + v1 • e‖ ≤ 1 := by rw [hdecomp]; exact hψ1 x1
   have hn2 : ‖(u2 : E) + (-v2) • e‖ ≤ 1 := by
     have hsq : ‖(u2 : E) + (-v2) • e‖ ^ 2 ≤ 1 := by

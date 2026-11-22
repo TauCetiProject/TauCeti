@@ -72,6 +72,8 @@ diffeomorphisms.
   orthonormal families is invariant under conjugation by a linear isometry equivalence.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
+* `TauCeti.orthogonalLineEquiv_symm_fst_eq_orthogonalProjectionOnto`: the transverse inverse
+  coordinate in `orthogonalLineEquiv` equals the orthogonal projection onto `(ℝ ∙ e)ᗮ`.
 -/
 
 public section
@@ -331,6 +333,18 @@ theorem orthogonalLineEquiv_symm_fst (e : E) (he : ‖e‖ = 1) (x : E) :
   rw [← Prod.eta (p := (orthogonalLineEquiv e he).symm x),
     orthogonalLineEquiv_apply, orthogonalLineEquiv_symm_snd] at h
   exact eq_sub_iff_add_eq.mpr h
+
+/-- The transverse inverse coordinate along a unit vector is the orthogonal projection onto its
+orthogonal complement. -/
+theorem orthogonalLineEquiv_symm_fst_eq_orthogonalProjectionOnto (e : E) (he : ‖e‖ = 1) (x : E) :
+    ((orthogonalLineEquiv e he).symm x).1 = (ℝ ∙ e)ᗮ.orthogonalProjectionOnto x := by
+  apply Subtype.ext
+  rw [Submodule.coe_orthogonalProjectionOnto_apply]
+  refine (Submodule.eq_starProjection_of_mem_orthogonal'
+    ((orthogonalLineEquiv e he).symm x).1.property
+    (Submodule.le_orthogonal_orthogonal _
+      (Submodule.smul_mem _ ⟪e, x⟫ (Submodule.mem_span_singleton_self e))) ?_).symm
+  rw [orthogonalLineEquiv_symm_fst, sub_add_cancel]
 
 /-- Pythagoras in orthogonal line coordinates. -/
 theorem norm_add_smul_sq (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : ℝ) :

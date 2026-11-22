@@ -113,12 +113,13 @@ theorem fderiv_mollify (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaarMeasure]
     (ρ.continuous_normed (μ := μ)).locallyIntegrable (φ.contDiff.of_le (by simp)) x).fderiv, hpre]
 
 /-- Divergence commutes with mollification of test vector fields. -/
+@[simp]
 theorem divergenceCLM_mollify (φ : 𝓓(Ω, E)) (μ : Measure E) [μ.IsAddHaarMeasure]
     (ρ : ContDiffBump (0 : E))
-    (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E))
-    (hdiv : closedBall (0 : E) ρ.rOut + tsupport (divergenceCLM φ) ⊆ (Ω : Set E) :=
-      (Set.add_subset_add_left (tsupport_divergenceCLM_subset φ)).trans h) :
-    divergenceCLM (mollify φ μ ρ h) = mollify (divergenceCLM φ) μ ρ hdiv := by
+    (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E)) :
+    divergenceCLM (mollify φ μ ρ h) =
+      mollify (divergenceCLM φ) μ ρ
+        ((Set.add_subset_add_left (tsupport_divergenceCLM_subset φ)).trans h) := by
   ext x
   have hφ1 : ContDiff ℝ 1 (φ : E → E) := φ.contDiff.of_le (by simp)
   have hex := (ρ.hasCompactSupport_normed (μ := μ)).convolutionExists_left_of_continuous_right
