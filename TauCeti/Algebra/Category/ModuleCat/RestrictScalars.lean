@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Finiteness.Basic
-import TauCeti.Algebra.Ring.Prod
 
 /-!
 # Semilinear maps, finite generation and projectivity under restriction of scalars
@@ -65,8 +64,6 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   scalars along a ring homomorphism `f : R →+* S` making `S` a finitely generated `R`-module.
 * `RingHom.projective_restrictScalars_of_projective`: projectivity is preserved by restriction of
   scalars along a ring homomorphism `f : R →+* S` making `S` a projective `R`-module.
-* `RingHom.finite_toModule_of_surjective` and `RingHom.projective_toModule_of_split`: criteria for
-  `S` to be finitely generated or projective over `R` through a ring homomorphism `f : R →+* S`.
 * `RingEquiv.projective_restrictScalars_iff`: projectivity is invariant under restriction of
   scalars along a ring isomorphism.
 * `Function.Exact.smul_mem_range`: if `P → Q → M` is exact with `M` a module with scalars
@@ -164,67 +161,6 @@ theorem projective_restrictScalars_of_projective (f : R →+* S)
   -- is the local one carrying the scalar tower; the goal's is defeq but not syntactically equal.
   have hRM : Module.Projective R M := Module.Projective.trans R S M
   exact hRM
-
-/-- If `f : R →+* S` is surjective, then `S` is finitely generated as an `R`-module through `f`. -/
-theorem finite_toModule_of_surjective (f : R →+* S) (hf : Function.Surjective f) :
-    letI := f.toModule; Module.Finite R S :=
-  letI := f.toModule
-  Module.Finite.of_surjective ({ f with map_smul' := f.map_mul } : R →ₗ[R] S) hf
-
-/-- If `f : R →+* S` admits an additive right inverse `j : S →+ R` with `r * j s = j (f r * s)`,
-then `S` is projective as an `R`-module through `f`. -/
-theorem projective_toModule_of_split (f : R →+* S) (j : S →+ R)
-    (hfj : ∀ s, f (j s) = s) (hmul_left : ∀ r s, r * j s = j (f r * s)) :
-    letI := f.toModule; Module.Projective R S :=
-  letI := f.toModule
-  Module.Projective.of_split ({ j with map_smul' r s := (hmul_left r s).symm } : S →ₗ[R] R)
-    ({ f with map_smul' := f.map_mul } : R →ₗ[R] S) (LinearMap.ext hfj)
-
-/-- `R` is finitely generated as an `(R × S)`-module via `RingHom.fst R S`. -/
-theorem finite_fst (R S : Type*) [Ring R] [Ring S] :
-    letI := (fst R S).toModule; Module.Finite (R × S) R :=
-  finite_toModule_of_surjective _ Prod.fst_surjective
-
-/-- `R` is projective as an `(R × S)`-module via `RingHom.fst R S`. -/
-theorem projective_fst (R S : Type*) [Ring R] [Ring S] :
-    letI := (fst R S).toModule; Module.Projective (R × S) R :=
-  projective_toModule_of_split _ (AddMonoidHom.inl R S) (fun _ ↦ rfl) AddMonoidHom.mul_inl
-
-/-- `S` is finitely generated as an `(R × S)`-module via `RingHom.snd R S`. -/
-theorem finite_snd (R S : Type*) [Ring R] [Ring S] :
-    letI := (snd R S).toModule; Module.Finite (R × S) S :=
-  finite_toModule_of_surjective _ Prod.snd_surjective
-
-/-- `S` is projective as an `(R × S)`-module via `RingHom.snd R S`. -/
-theorem projective_snd (R S : Type*) [Ring R] [Ring S] :
-    letI := (snd R S).toModule; Module.Projective (R × S) S :=
-  projective_toModule_of_split _ (AddMonoidHom.inr R S) (fun _ ↦ rfl) AddMonoidHom.mul_inr
-
-/-- `Rᵐᵒᵖ` is finitely generated as an `(R × S)ᵐᵒᵖ`-module via `RingHom.op (RingHom.fst R S)`. -/
-theorem finite_op_fst (R S : Type*) [Ring R] [Ring S] :
-    letI := (op (fst R S)).toModule; Module.Finite (R × S)ᵐᵒᵖ Rᵐᵒᵖ :=
-  finite_toModule_of_surjective _ fun a ↦ ⟨MulOpposite.op (a.unop, 0), rfl⟩
-
-/-- `Rᵐᵒᵖ` is projective as an `(R × S)ᵐᵒᵖ`-module via `RingHom.op (RingHom.fst R S)`. -/
-theorem projective_op_fst (R S : Type*) [Ring R] [Ring S] :
-    letI := (op (fst R S)).toModule; Module.Projective (R × S)ᵐᵒᵖ Rᵐᵒᵖ :=
-  projective_toModule_of_split _
-    ((MulOpposite.opAddEquiv.toAddMonoidHom.comp (AddMonoidHom.inl R S)).comp
-      MulOpposite.opAddEquiv.symm.toAddMonoidHom)
-    (fun _ ↦ rfl) fun _ _ ↦ MulOpposite.unop_injective (by ext <;> simp)
-
-/-- `Sᵐᵒᵖ` is finitely generated as an `(R × S)ᵐᵒᵖ`-module via `RingHom.op (RingHom.snd R S)`. -/
-theorem finite_op_snd (R S : Type*) [Ring R] [Ring S] :
-    letI := (op (snd R S)).toModule; Module.Finite (R × S)ᵐᵒᵖ Sᵐᵒᵖ :=
-  finite_toModule_of_surjective _ fun b ↦ ⟨MulOpposite.op (0, b.unop), rfl⟩
-
-/-- `Sᵐᵒᵖ` is projective as an `(R × S)ᵐᵒᵖ`-module via `RingHom.op (RingHom.snd R S)`. -/
-theorem projective_op_snd (R S : Type*) [Ring R] [Ring S] :
-    letI := (op (snd R S)).toModule; Module.Projective (R × S)ᵐᵒᵖ Sᵐᵒᵖ :=
-  projective_toModule_of_split _
-    ((MulOpposite.opAddEquiv.toAddMonoidHom.comp (AddMonoidHom.inr R S)).comp
-      MulOpposite.opAddEquiv.symm.toAddMonoidHom)
-    (fun _ ↦ rfl) fun _ _ ↦ MulOpposite.unop_injective (by ext <;> simp)
 
 /-- **Restriction of scalars on finitely generated modules.** A ring homomorphism
 `f : R →+* S` making `S` a finitely generated `R`-module induces a functor from the finitely

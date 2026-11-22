@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Morita.Basic
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Equivalence
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Equivalence
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Basic
 public import TauCeti.CategoryTheory.Adjunction.Additive
 
 /-!
@@ -41,21 +43,14 @@ different universes; only the Morita corollaries put them in one, as Mathlib's
 
 ## Main definitions
 
-* `CategoryTheory.Equivalence.finiteModulesEquivalence` and
-  `CategoryTheory.Equivalence.finiteProjectiveModulesEquivalence`: the restrictions of an
-  equivalence of module categories to the finitely generated, respectively finitely generated
-  projective, modules over the two rings.
+* `CategoryTheory.Equivalence.finiteModulesEquivalence`: the restriction of an equivalence of
+  module categories to the finitely generated modules over the two rings.
 * `CategoryTheory.Equivalence.finiteModulesK0Equiv` and
   `CategoryTheory.Equivalence.finiteProjectiveModulesK0Equiv`: the induced isomorphisms
   `G₀(mod A) ≃+ G₀(mod B)` and `K₀(proj A) ≃+ K₀(proj B)`.
-* `CategoryTheory.Equivalence.finiteProjectiveModulesSplitK0Equiv`: Morita invariance on split `K₀`
-  of finitely generated projective modules.
 
 ## Main results
 
-* `CategoryTheory.Equivalence.finiteProjectiveModules_inverseImage`: an equivalence of module
-  categories pulls the finitely generated projective modules back to the finitely generated
-  projective modules.
 * `Equivalence.finiteProjectiveModulesSplitK0EquivExactK0_finiteProjectiveModulesSplitK0Equiv`:
   the split/exact `K₀` comparison intertwines Morita equivalences.
 * `CategoryTheory.Equivalence.cartanMap_comp_finiteProjectiveModulesK0Equiv` and
@@ -84,17 +79,6 @@ universe u u'
 
 variable {A : Type u} [Ring A] {B : Type u'} [Ring B] (e : ModuleCat.{u} A ≌ ModuleCat.{u'} B)
 
-/-! ### The two object properties -/
-
-/-- An equivalence of module categories pulls the finitely generated projective `B`-modules back
-to the finitely generated projective `A`-modules. -/
-@[simp]
-theorem finiteProjectiveModules_inverseImage :
-    (finiteProjectiveModules B).inverseImage e.functor = finiteProjectiveModules A := by
-  funext M
-  rw [prop_inverseImage_iff, finiteProjectiveModules_iff, finiteProjectiveModules_iff,
-    e.finite_functor_obj_iff, e.projective_functor_obj_iff]
-
 /-! ### The equivalences of module subcategories -/
 
 /-- **Finitely generated modules along an equivalence of module categories.** An equivalence
@@ -103,19 +87,8 @@ theorem finiteProjectiveModules_inverseImage :
 noncomputable def finiteModulesEquivalence : FGModuleCat.{u} A ≌ FGModuleCat.{u'} B :=
   e.congrFullSubcategory e.isFG_inverseImage
 
-/-- **Finitely generated projective modules along an equivalence of module categories.** An
-equivalence `e : ModuleCat A ≌ ModuleCat B` restricts to an equivalence from the finitely
-generated projective `A`-modules to the finitely generated projective `B`-modules. -/
-noncomputable def finiteProjectiveModulesEquivalence :
-    (finiteProjectiveModules A).FullSubcategory ≌ (finiteProjectiveModules B).FullSubcategory :=
-  e.congrFullSubcategory e.finiteProjectiveModules_inverseImage
-
 instance : e.finiteModulesEquivalence.functor.Additive := by
   unfold finiteModulesEquivalence
-  infer_instance
-
-instance : e.finiteProjectiveModulesEquivalence.functor.Additive := by
-  unfold finiteProjectiveModulesEquivalence
   infer_instance
 
 open scoped ModuleCat.Algebra in
@@ -149,34 +122,6 @@ theorem finiteModulesEquivalence_inverse_map_hom {M N : FGModuleCat.{u'} B} (f :
         eqToHom (e.finiteModulesEquivalence_inverse_obj_obj N).symm :=
   e.congrFullSubcategory_inverse_map_hom _ f
 
-@[simp]
-theorem finiteProjectiveModulesEquivalence_functor_obj_obj
-    (M : (finiteProjectiveModules A).FullSubcategory) :
-    (e.finiteProjectiveModulesEquivalence.functor.obj M).obj = e.functor.obj M.obj :=
-  e.congrFullSubcategory_functor_obj_obj _ M
-
-@[simp]
-theorem finiteProjectiveModulesEquivalence_functor_map_hom
-    {M N : (finiteProjectiveModules A).FullSubcategory} (f : M ⟶ N) :
-    (e.finiteProjectiveModulesEquivalence.functor.map f).hom =
-      eqToHom (e.finiteProjectiveModulesEquivalence_functor_obj_obj M) ≫ e.functor.map f.hom ≫
-        eqToHom (e.finiteProjectiveModulesEquivalence_functor_obj_obj N).symm :=
-  e.congrFullSubcategory_functor_map_hom _ f
-
-@[simp]
-theorem finiteProjectiveModulesEquivalence_inverse_obj_obj
-    (M : (finiteProjectiveModules B).FullSubcategory) :
-    (e.finiteProjectiveModulesEquivalence.inverse.obj M).obj = e.inverse.obj M.obj :=
-  e.congrFullSubcategory_inverse_obj_obj _ M
-
-@[simp]
-theorem finiteProjectiveModulesEquivalence_inverse_map_hom
-    {M N : (finiteProjectiveModules B).FullSubcategory} (f : M ⟶ N) :
-    (e.finiteProjectiveModulesEquivalence.inverse.map f).hom =
-      eqToHom (e.finiteProjectiveModulesEquivalence_inverse_obj_obj M) ≫ e.inverse.map f.hom ≫
-        eqToHom (e.finiteProjectiveModulesEquivalence_inverse_obj_obj N).symm :=
-  e.congrFullSubcategory_inverse_map_hom _ f
-
 /-! ### Exactness of the restricted equivalences -/
 
 /-- The restriction of an equivalence of module categories to the finitely generated modules is
@@ -197,15 +142,19 @@ theorem isConflationExact_finiteModulesEquivalence_inverse :
 modules is conflation-exact. -/
 theorem isConflationExact_finiteProjectiveModulesEquivalence_functor :
     (finiteProjectiveModulesExactStructure A).IsConflationExact
-      (finiteProjectiveModulesExactStructure B) e.finiteProjectiveModulesEquivalence.functor :=
-  isConflationExact_finiteProjectiveModules_congrFullSubcategory_functor _ _
+      (finiteProjectiveModulesExactStructure B) e.finiteProjectiveModulesEquivalence.functor := by
+  rw [finiteProjectiveModulesExactStructure_eq_split,
+    finiteProjectiveModulesExactStructure_eq_split]
+  exact ExactStructure.isConflationExact_split _
 
 /-- The inverse of the restriction of an equivalence of module categories to the finitely
 generated projective modules is conflation-exact. -/
 theorem isConflationExact_finiteProjectiveModulesEquivalence_inverse :
     (finiteProjectiveModulesExactStructure B).IsConflationExact
-      (finiteProjectiveModulesExactStructure A) e.finiteProjectiveModulesEquivalence.inverse :=
-  isConflationExact_finiteProjectiveModules_congrFullSubcategory_inverse _ _
+      (finiteProjectiveModulesExactStructure A) e.finiteProjectiveModulesEquivalence.inverse := by
+  rw [finiteProjectiveModulesExactStructure_eq_split,
+    finiteProjectiveModulesExactStructure_eq_split]
+  exact ExactStructure.isConflationExact_split _
 
 /-! ### The induced isomorphisms of Grothendieck groups -/
 
@@ -250,29 +199,6 @@ theorem finiteProjectiveModulesK0Equiv_symm_of
     e.finiteProjectiveModulesK0Equiv.symm (ExactK0.of.{u'} M) =
       ExactK0.of.{u} (e.finiteProjectiveModulesEquivalence.inverse.obj M) :=
   ExactK0.mapEquiv_symm_of.{u, u'} _ _ _ M
-
-/-- **Morita invariance of `SplitK0` of finitely generated projective modules.** -/
-noncomputable def finiteProjectiveModulesSplitK0Equiv :
-    SplitK0.{u} (finiteProjectiveModules A).FullSubcategory ≃+
-      SplitK0.{u'} (finiteProjectiveModules B).FullSubcategory :=
-  SplitK0.mapEquiv.{u, u'} e.finiteProjectiveModulesEquivalence
-
-@[simp] theorem finiteProjectiveModulesSplitK0Equiv_of (P) :
-    e.finiteProjectiveModulesSplitK0Equiv (SplitK0.of.{u} P) =
-      SplitK0.of.{u'} (e.finiteProjectiveModulesEquivalence.functor.obj P) :=
-  SplitK0.mapEquiv_of.{u, u'} _ P
-
-@[simp] theorem finiteProjectiveModulesSplitK0Equiv_symm_of (Q) :
-    e.finiteProjectiveModulesSplitK0Equiv.symm (SplitK0.of.{u'} Q) =
-      SplitK0.of.{u} (e.finiteProjectiveModulesEquivalence.inverse.obj Q) :=
-  SplitK0.mapEquiv_symm_of.{u, u'} _ Q
-
-@[simp] theorem finiteProjectiveModulesSplitK0Equiv_toAddMonoidHom :
-    (e.finiteProjectiveModulesSplitK0Equiv :
-        SplitK0.{u} (finiteProjectiveModules A).FullSubcategory →+
-          SplitK0.{u'} (finiteProjectiveModules B).FullSubcategory) =
-      SplitK0.map.{u, u'} e.finiteProjectiveModulesEquivalence.functor :=
-  SplitK0.mapEquiv_toAddMonoidHom.{u, u'} _
 
 /-- `finiteProjectiveModulesSplitK0EquivExactK0` intertwines Morita equivalences on `SplitK0` and
 `ExactK0`. -/

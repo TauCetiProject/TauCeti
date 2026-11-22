@@ -6,29 +6,31 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Basic
 
 import TauCeti.Algebra.Ring.Opposite
 
 /-!
-# Algebraic `K₀` of a ring, functoriality, and Morita invariance
+# Algebraic `K₀` of a ring and covariant functoriality
 
 Built on `TauCeti.KZero R` and `TauCeti.KZero.regular` (from
-`TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs`), this file provides covariant
-functoriality (`KZero.map`, `RingEquiv.kZeroEquiv`), comparison with left-module `SplitK0` for
-commutative rings (`KZero.commRingLeftSplitK0Equiv`), binary product decomposition
-(`KZero.prodEquiv`), and matrix Morita invariance (`KZero.matrixEquiv`).
+`TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs`), this file provides:
+
+* the standard normal form `[P] - n • [R]` (`TauCeti.KZero.exists_eq_of_sub_nsmul_regular`),
+* covariant functoriality (`TauCeti.KZero.map`, `RingEquiv.kZeroEquiv`),
+* comparison with left-module `SplitK0` for commutative rings
+  (`TauCeti.KZero.commRingLeftSplitK0Equiv`).
 
 ## References
 
-* C. A. Weibel, *The K-book*, Chapter II, §2, Lemma 2.1, Examples 2.1.1–2.1.2, Prop. 2.4, §2.8.
+* C. A. Weibel, *The K-book*, Chapter II, §2, Lemma 2.1, Examples 2.1.1–2.1.2, §2.8.
 -/
 
 public section
 
 open CategoryTheory MulOpposite
 
-universe u v
+universe u
 
 namespace TauCeti.KZero
 
@@ -42,7 +44,7 @@ theorem exists_eq_of_sub_nsmul_regular (x : KZero R) :
 
 /-- **Covariant functoriality of `KZero`**, via balanced extension of scalars along
 `RingHom.op f : Rᵐᵒᵖ →+* Sᵐᵒᵖ`. -/
-noncomputable def map (f : R →+* S) : KZero R →+ KZero S :=
+@[expose] noncomputable def map (f : R →+* S) : KZero R →+ KZero S :=
   SplitK0.map.{u, u} (RingHom.op f).finiteProjectiveModulesExtendScalars
 
 @[simp] theorem map_of (f : R →+* S) (P) : map f (SplitK0.of.{u} P) =
@@ -127,68 +129,5 @@ theorem commRingLeftSplitK0Equiv_symm_apply (x) : (commRingLeftSplitK0Equiv R).s
   simp [commRingLeftSplitK0Equiv_apply, regular_def]
 
 end CommRing
-
-/-- **Product decomposition:** `KZero (R × S) ≃+ KZero R × KZero S`. -/
-noncomputable def prodEquiv (R S : Type u) [Ring R] [Ring S] :
-    KZero (R × S) ≃+ KZero R × KZero S :=
-  (RingEquiv.prodMulOpposite R S).finiteProjectiveModulesSplitK0Equiv.trans
-    (finiteProjectiveModulesProdSplitK0Equiv Rᵐᵒᵖ Sᵐᵒᵖ)
-
-@[simp] theorem prodEquiv_apply (R S : Type u) [Ring R] [Ring S] (x : KZero (R × S)) :
-    prodEquiv R S x = (map (RingHom.fst R S) x, map (RingHom.snd R S) x) := by
-  simp only [prodEquiv, AddEquiv.trans_apply, RingEquiv.finiteProjectiveModulesSplitK0Equiv_apply,
-    finiteProjectiveModulesProdSplitK0Equiv_apply,
-    SplitK0.map_finiteProjectiveModulesExtendScalars_apply_map]
-  exact Prod.ext (DFunLike.congr_fun (SplitK0.map_finiteProjectiveModulesExtendScalars_congr
-    (RingEquiv.fst_comp_prodMulOpposite R S)) x) (DFunLike.congr_fun
-      (SplitK0.map_finiteProjectiveModulesExtendScalars_congr
-        (RingEquiv.snd_comp_prodMulOpposite R S)) x)
-
-@[simp] theorem prodEquiv_symm_apply (R S : Type u) [Ring R] [Ring S]
-    (x : KZero R × KZero S) : (prodEquiv R S).symm x =
-      SplitK0.map.{u, u} ((RingHom.op (RingHom.fst R S)).finiteProjectiveModulesRestrictScalars
-        (RingHom.finite_op_fst R S) (RingHom.projective_op_fst R S)) x.1 +
-      SplitK0.map.{u, u} ((RingHom.op (RingHom.snd R S)).finiteProjectiveModulesRestrictScalars
-        (RingHom.finite_op_snd R S) (RingHom.projective_op_snd R S)) x.2 := by
-  apply (prodEquiv R S).injective
-  rw [AddEquiv.apply_symm_apply, prodEquiv_apply, map_add, map_add]
-  refine Prod.ext ?_ ?_ <;>
-    (dsimp only; rw [map, ← AddMonoidHom.comp_apply, ← AddMonoidHom.comp_apply])
-  · rw [SplitK0.map_extendScalars_comp_restrictScalars_self _ (fun a ↦ ⟨op (a.unop, 0), rfl⟩),
-      SplitK0.map_extendScalars_comp_restrictScalars_eq_zero _ _ _ _ (op (1, 0)) rfl rfl]; simp
-  · rw [SplitK0.map_extendScalars_comp_restrictScalars_eq_zero _ _ _ _ (op (0, 1)) rfl rfl,
-      SplitK0.map_extendScalars_comp_restrictScalars_self _ (fun b ↦ ⟨op (0, b.unop), rfl⟩)]; simp
-
-section Matrix
-
-variable (R : Type u) [Ring R] (ι : Type v) [Fintype ι] [DecidableEq ι] [Nonempty ι]
-
-/-- **Matrix Morita invariance:** canonical isomorphism
-`KZero.{u} R ≃+ KZero.{max u v} (Matrix ι ι R)` sending `|ι| • [R]` to `[M_ι(R)]`. -/
-noncomputable def matrixEquiv : KZero.{u} R ≃+ KZero.{max u v} (Matrix ι ι R) :=
-  (finiteProjectiveModulesMatrixSplitK0Equiv Rᵐᵒᵖ ι).trans
-    (RingEquiv.mopMatrix (m := ι) (α := R)).finiteProjectiveModulesSplitK0Equiv
-
-theorem matrixEquiv_apply (x : KZero.{u} R) :
-    matrixEquiv R ι x = (RingEquiv.mopMatrix (m := ι) (α := R)).finiteProjectiveModulesSplitK0Equiv
-      (finiteProjectiveModulesMatrixSplitK0Equiv Rᵐᵒᵖ ι x) := (rfl)
-
-@[simp] theorem matrixEquiv_of (P) : matrixEquiv R ι (SplitK0.of.{u} P) = SplitK0.of.{max u v}
-    ((RingEquiv.mopMatrix (m := ι) (α := R)).toRingHom.finiteProjectiveModulesExtendScalars.obj
-      ((finiteProjectiveModulesToMatrixFunctor Rᵐᵒᵖ ι).obj P)) := by simp [matrixEquiv_apply]
-
-@[simp] theorem matrixEquiv_card_nsmul_regular :
-    matrixEquiv R ι (Fintype.card ι • regular R) = regular (Matrix ι ι R) := by
-  simp [matrixEquiv_apply, regular_def]
-
-end Matrix
-
-/-- For every `i : ι`, `matrixEquiv` agrees with `ModuleCat.matrixEquivalence` composed with
-`RingEquiv.mopMatrix`. -/
-theorem matrixEquiv_eq (R : Type u) [Ring R] (ι : Type u) [Fintype ι] [DecidableEq ι] [Nonempty ι]
-    (i : ι) : matrixEquiv R ι =
-      (ModuleCat.matrixEquivalence Rᵐᵒᵖ (ι := ι) i).finiteProjectiveModulesSplitK0Equiv.trans
-        (RingEquiv.mopMatrix (m := ι) (α := R)).finiteProjectiveModulesSplitK0Equiv := by
-  rw [matrixEquiv, finiteProjectiveModulesMatrixSplitK0Equiv_eq Rᵐᵒᵖ ι i]
 
 end TauCeti.KZero

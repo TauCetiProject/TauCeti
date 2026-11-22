@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
 public import TauCeti.RingTheory.Morita.Matrix
 
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Category.ModuleCat.Equivalence
-import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # Matrix Morita functor on finitely generated projective modules

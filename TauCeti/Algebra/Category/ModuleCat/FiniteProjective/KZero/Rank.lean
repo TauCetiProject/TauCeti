@@ -5,10 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.StablyFree.Basic
-public import Mathlib.LinearAlgebra.FreeModule.PID
-public import Mathlib.RingTheory.Flat.TorsionFree
-public import Mathlib.RingTheory.PrincipalIdealDomain
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.RingTheory.PrincipalIdealDomain.MulOpposite
@@ -176,11 +172,14 @@ section PID
 variable (R : Type u) [Ring R] [Nontrivial R] [NoZeroDivisors R] [IsPrincipalIdealRing Rᵐᵒᵖ]
 
 /-- **Rank isomorphism `KZero R ≃+ ℤ` over a principal right-ideal domain `R`** (including any
-commutative PID and any division ring), sending `[R] ↦ 1`. -/
+commutative PID and any division ring), sending the class of a finitely generated projective right
+module to its rank (`Module.finrank` over `Rᵐᵒᵖ`) and `[R] ↦ 1`. -/
 noncomputable def rankEquivPID : KZero R ≃+ ℤ :=
   FiniteProjectiveModules.rankEquiv Rᵐᵒᵖ fun _ ↦
     Module.IsStablyFree.of_projective_of_isPrincipalIdealRing
 
+/-- Under `KZero.rankEquivPID`, the class of a finitely generated projective right `R`-module maps
+to its rank, computed as `Module.finrank` over `Rᵐᵒᵖ`. -/
 @[simp] theorem rankEquivPID_of (P) :
     rankEquivPID R (SplitK0.of.{u} P) = (Module.finrank Rᵐᵒᵖ P.obj : ℤ) :=
   have : Module.Free Rᵐᵒᵖ P.obj := Module.Free.of_projective_of_isPrincipalIdealRing

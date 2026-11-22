@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
-public import TauCeti.Algebra.Ring.Prod
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Extension
-public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.CategoryTheory.Adjunction.Unique
+
+import TauCeti.Algebra.Ring.Prod
 
 /-!
 # Extension of scalars along a ring homomorphism of noncommutative rings, as a functor
