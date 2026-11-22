@@ -107,25 +107,24 @@ variable (φ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (k :
 `M_{c-ε}` viewed inside `M_{c+ε}`. -/
 private def morseFiberwiseBase :
     C({x | f x ≤ c - ε}, PUnit.{u + 1} × {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :=
-  ⟨fun x ↦ (PUnit.unit, ⟨⟨x, (mem_ofPred.1 x.property).trans
-      ((sub_le_self c hε).trans (le_add_of_nonneg_right hε))⟩, x.property⟩),
-    continuous_const.prodMk ((continuous_subtypeVal.subtype_mk _).subtype_mk _)⟩
+  (ContinuousMap.const _ PUnit.unit).prodMk
+    (sublevelInclusionHomeomorph f (c - ε) (c + ε) (by linarith) : C(_, _))
 
 /-- The projection of `PUnit × M_{c-ε}`, with `M_{c-ε}` viewed inside `M_{c+ε}`, to the lower
 sublevel `M_{c-ε}`: the inverse of `TauCeti.morseFiberwiseBase`. -/
 private def morseFiberwiseBaseInv :
     C(PUnit.{u + 1} × {y : {x | f x ≤ c + ε} | f y ≤ c - ε}, {x | f x ≤ c - ε}) :=
-  ⟨fun x ↦ ⟨x.2.val.val, x.2.property⟩,
-    (continuous_subtypeVal.comp (continuous_subtypeVal.comp continuous_snd)).subtype_mk _⟩
+  ((sublevelInclusionHomeomorph f (c - ε) (c + ε) (by linarith)).symm : C(_, _)).comp
+    ContinuousMap.snd
 
 private theorem morseFiberwiseBaseInv_morseFiberwiseBase (p : PUnit.{u + 1})
-    (x : {x | f x ≤ c - ε}) : morseFiberwiseBaseInv (p, (morseFiberwiseBase hε x).2) = x :=
-  rfl
+    (x : {x | f x ≤ c - ε}) : morseFiberwiseBaseInv hε (p, (morseFiberwiseBase hε x).2) = x :=
+  Homeomorph.symm_apply_apply _ x
 
 private theorem coe_morseFiberwiseBaseInv (p : PUnit.{u + 1})
     (y : {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :
-    (morseFiberwiseBaseInv (p, y) : M) = y :=
-  rfl
+    (morseFiberwiseBaseInv hε (p, y) : M) = y :=
+  coe_sublevelInclusionHomeomorph_symm_apply f _ y
 
 /-- The attaching maps of the cells of `φ`, as families over a point. -/
 private def morseFiberwiseAttachingMap (i : ι) :
@@ -148,13 +147,13 @@ private theorem coe_morseFiberwiseAttachingMap (i : ι) (p : PUnit.{u + 1})
     (s : TopCat.diskBoundary.{u} (k i)) :
     (morseFiberwiseAttachingMap φ k hk hε hball hf i (p, s)).val.val =
       ((φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s).val :=
-  rfl
+  coe_coe_sublevelInclusionHomeomorph_apply f _ _
 
 private theorem morseFiberwiseBaseInv_morseFiberwiseAttachingMap (i : ι) (p q : PUnit.{u + 1})
     (s : TopCat.diskBoundary.{u} (k i)) :
-    morseFiberwiseBaseInv (q, morseFiberwiseAttachingMap φ k hk hε hball hf i (p, s)) =
+    morseFiberwiseBaseInv hε (q, morseFiberwiseAttachingMap φ k hk hε hball hf i (p, s)) =
       (φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s :=
-  rfl
+  Homeomorph.symm_apply_apply _ _
 
 private theorem morseFiberwiseCharacteristicMap_diskBoundaryInclusion (i : ι) (p : PUnit.{u + 1})
     (s : TopCat.diskBoundary.{u} (k i)) :
@@ -181,7 +180,7 @@ private def morseCellAttachmentOfFiberwise :
     fiberwiseCellAttachment (morseFiberwiseAttachingMap φ k hk hε hball hf) ⟶
       morseCellAttachment φ k hk hε hball hf :=
   fiberwiseCellAttachmentDesc _
-    (TopCat.ofHom morseFiberwiseBaseInv ≫ morseCellAttachmentIncl φ k hk hε hball hf)
+    (TopCat.ofHom (morseFiberwiseBaseInv hε) ≫ morseCellAttachmentIncl φ k hk hε hball hf)
     (fun i ↦ TopCat.ofHom ContinuousMap.snd ≫ morseCellAttachmentCell φ k hk hε hball hf i)
     fun i p s ↦ by
       rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopCat.ofHom_apply,
@@ -206,7 +205,7 @@ private theorem morseCellAttachmentToFiberwise_morseCellAttachmentCell (i : ι)
 private theorem morseCellAttachmentOfFiberwise_fiberwiseCellAttachmentIncl
     (x : PUnit.{u + 1} × {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :
     morseCellAttachmentOfFiberwise φ k hk hε hball hf (fiberwiseCellAttachmentIncl _ x) =
-      morseCellAttachmentIncl φ k hk hε hball hf (morseFiberwiseBaseInv x) :=
+      morseCellAttachmentIncl φ k hk hε hball hf (morseFiberwiseBaseInv hε x) :=
   ConcreteCategory.congr_hom (fiberwiseCellAttachmentIncl_desc _ _ _ _) x
 
 private theorem morseCellAttachmentOfFiberwise_fiberwiseCellAttachmentCell (i : ι)
@@ -239,7 +238,8 @@ private theorem morseCellComparison_morseCellAttachmentOfFiberwise
   refine fiberwiseCellAttachment_induction _ (fun x ↦ ?_) (fun i x ↦ ?_) y
   · rw [morseCellAttachmentOfFiberwise_fiberwiseCellAttachmentIncl,
       fiberwiseCellComparison_fiberwiseCellAttachmentIncl]
-    exact Subtype.ext (coe_morseCellComparison_morseCellAttachmentIncl _ _ _ _ _ hε _)
+    exact Subtype.ext ((coe_morseCellComparison_morseCellAttachmentIncl _ _ _ _ _ hε _).trans
+      (coe_morseFiberwiseBaseInv hε x.1 x.2))
   · rw [morseCellAttachmentOfFiberwise_fiberwiseCellAttachmentCell,
       fiberwiseCellComparison_fiberwiseCellAttachmentCell]
     exact ConcreteCategory.congr_hom

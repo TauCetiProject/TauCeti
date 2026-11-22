@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Integral.Average
 public import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube
 import TauCeti.Analysis.Normed.Group.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 
 /-!
 # The Calderón–Zygmund decomposition
@@ -497,9 +498,7 @@ theorem sq_eLpNorm_calderonZygmundGood_le [Nonempty ι] (hf : Integrable f) (ht 
     eLpNorm (calderonZygmundGood f t) 2 volume ^ 2 ≤
       2 ^ Fintype.card ι * t * ∫⁻ x, ‖f x‖ₑ := by
   have hg := aestronglyMeasurable_calderonZygmundGood hf.1 t
-  have h := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hg
-  simp only [ENNReal.coe_ofNat, NNReal.coe_ofNat, ENNReal.rpow_two] at h
-  rw [h]
+  rw [eLpNorm_two_sq_eq_lintegral hg]
   calc ∫⁻ x, ‖calderonZygmundGood f t x‖ₑ ^ 2
       ≤ ∫⁻ x, 2 ^ Fintype.card ι * t * ‖calderonZygmundGood f t x‖ₑ := by
         refine lintegral_mono_ae ?_

@@ -19,6 +19,7 @@ public import TauCeti.Algebra.AddCircle
 public import TauCeti.Dynamics.Flow.Basic
 public import TauCeti.Topology.Instances.AddCircle.Cover
 import Mathlib.GroupTheory.Archimedean
+import Mathlib.GroupTheory.ArchimedeanDensely
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.Topology.Algebra.Order.Archimedean
 
@@ -253,6 +254,16 @@ theorem apply_minimalPeriod (x : α) : ϕ (ϕ.minimalPeriod x) x = x := by
     exact (ϕ.minimalPeriod_le (ϕ.mem_periods.1 ht) ht₀).trans (by linarith)
   rw [h0]
   exact ϕ.mem_periods.1 (zero_mem _)
+
+/-- If the periods of `x` are the integer multiples of `t ≥ 0`, then `t` is the minimal period of
+`x`. No separation assumption on the space is needed. -/
+theorem minimalPeriod_eq_of_periods_eq_zmultiples (h : ϕ.periods x = AddSubgroup.zmultiples t)
+    (ht : 0 ≤ t) : ϕ.minimalPeriod x = t := by
+  rcases ht.eq_or_lt with rfl | ht
+  · have hT := ϕ.apply_minimalPeriod x
+    rwa [← mem_periods, h, AddSubgroup.zmultiples_zero_eq_bot, AddSubgroup.mem_bot] at hT
+  rw [minimalPeriod, h]
+  exact (AddSubgroup.isLeast_of_closure_iff_eq_abs.2 ⟨(abs_of_pos ht).symm, ht⟩).csInf_eq
 
 /-- The minimal period is positive exactly at periodic points which are not rest points. -/
 theorem minimalPeriod_pos_iff [T1Space α] :

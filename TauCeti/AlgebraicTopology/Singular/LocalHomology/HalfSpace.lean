@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
 public import TauCeti.Topology.Homotopy.StarConvexComplement
 public import Mathlib.Geometry.Manifold.Instances.Real
+import TauCeti.Geometry.Manifold.ModelTransport.Homeomorph
 
 /-!
 # Local homology of compact sets in manifolds with boundary
@@ -265,8 +266,7 @@ theorem isZero_localHomology_of_isCompact_euclideanHalfSpace {Λ : Type} [Ring �
   -- `EuclideanSpace.proj 0`.
   let H := ↥{x : EuclideanSpace ℝ (Fin n) | 0 ≤ EuclideanSpace.proj (0 : Fin n) x}
   let e : EuclideanHalfSpace n ≃ₜ H := (Homeomorph.refl _).subtype fun x ↦ by simp
-  let _ : ChartedSpace H (EuclideanHalfSpace n) := e.isOpenEmbedding.singletonChartedSpace
-  let _ : ChartedSpace H M := ChartedSpace.comp H (EuclideanHalfSpace n) M
+  let _ : ChartedSpace H M := e.chartedSpaceComp M
   exact isZero_localHomology_of_isCompact_halfSpace N hf finrank_euclideanSpace_fin hA hk
 
 end HalfSpaceModule

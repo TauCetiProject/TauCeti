@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Group.FundamentalDomain
+public import Mathlib.MeasureTheory.Measure.OpenPos
 
 /-!
 # Measure on an orbit space from a fundamental domain
 
 For a countable group acting measurably and preserving a measure `μ`, a fundamental domain
 induces a measure on the orbit space. We use Mathlib's `QuotientMeasureEqMeasurePreimage` to
-characterize this measure. Its total mass is the covolume, and a measurable set downstairs
-is null exactly when its entire preimage upstairs is null, not just its part in the domain.
+characterize this measure. Its total mass is the covolume. For any measure satisfying this
+characterization, a set downstairs is null exactly when its entire preimage upstairs is null,
+not just its part in the domain. This also transfers positivity on nonempty open sets.
 -/
 
 public noncomputable section
@@ -49,14 +51,16 @@ instance instQuotientMeasureEqMeasurePreimageOrbitQuotientMeasure :
   h.quotientMeasureEqMeasurePreimage_quotientMeasure
 
 /-- A set in the orbit space is null if and only if its saturated preimage is null. -/
-theorem orbitQuotientMeasure_apply_eq_zero_iff (s : Set (orbitRel.Quotient G α)) :
-    orbitQuotientMeasure G μ s = 0 ↔ μ (Quotient.mk (orbitRel G α) ⁻¹' s) = 0 := by
+theorem QuotientMeasureEqMeasurePreimage.apply_eq_zero_iff
+    (ν : Measure (orbitRel.Quotient G α)) [QuotientMeasureEqMeasurePreimage μ ν]
+    (s : Set (orbitRel.Quotient G α)) :
+    ν s = 0 ↔ μ (Quotient.mk (orbitRel G α) ⁻¹' s) = 0 := by
   let p := Quotient.mk (orbitRel G α)
   obtain ⟨F, hF⟩ := HasFundamentalDomain.ExistsIsFundamentalDomain (G := G) (ν := μ)
   constructor
   · intro h
     obtain ⟨t, hst, ht, ht₀⟩ := exists_measurable_superset_of_null h
-    rw [hF.projection_respects_measure_apply (orbitQuotientMeasure G μ) ht] at ht₀
+    rw [hF.projection_respects_measure_apply ν ht] at ht₀
     apply measure_mono_null (preimage_mono hst)
     refine hF.measure_zero_of_invariant (p ⁻¹' t) (fun g ↦ ?_) ht₀
     ext x
@@ -70,7 +74,22 @@ theorem orbitQuotientMeasure_apply_eq_zero_iff (s : Set (orbitRel.Quotient G α)
       exact .iUnion fun g ↦ ht.const_smul g
     have hsub : s ⊆ p '' t := (image_preimage_eq s Quotient.mk_surjective) ▸ image_mono hst
     apply measure_mono_null hsub
-    rw [hF.projection_respects_measure_apply (orbitQuotientMeasure G μ) hmeas, hsat]
+    rw [hF.projection_respects_measure_apply ν hmeas, hsat]
     exact measure_inter_null_of_null_left _ (measure_iUnion_null fun g ↦ measure_smul_null ht₀ g)
+
+/-- A quotient measure pushed forward by a measurable surjection is positive on nonempty open
+sets if the composite with the quotient projection is continuous and the measure upstairs is
+positive on nonempty open sets. In particular one can take `f` to be the identity. -/
+theorem QuotientMeasureEqMeasurePreimage.isOpenPosMeasure_map
+    {β : Type*} [TopologicalSpace α] [TopologicalSpace β] [MeasurableSpace β]
+    [μ.IsOpenPosMeasure] (ν : Measure (orbitRel.Quotient G α))
+    [QuotientMeasureEqMeasurePreimage μ ν] {f : orbitRel.Quotient G α → β}
+    (hf : Measurable f) (hc : Continuous (f ∘ Quotient.mk (orbitRel G α)))
+    (hsurj : Function.Surjective f) : (ν.map f).IsOpenPosMeasure where
+  open_pos s hs hne h₀ := by
+    have hν := Measure.preimage_null_of_map_null hf.aemeasurable h₀
+    exact (hs.preimage hc).measure_ne_zero μ
+      (hne.preimage (hsurj.comp Quotient.mk_surjective))
+      ((QuotientMeasureEqMeasurePreimage.apply_eq_zero_iff ν _).mp hν)
 
 end MeasureTheory
