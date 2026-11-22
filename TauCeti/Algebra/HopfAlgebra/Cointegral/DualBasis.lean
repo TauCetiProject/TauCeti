@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.FiniteType
+public import Mathlib.RingTheory.OrzechProperty
 public import TauCeti.Algebra.HopfAlgebra.Integral
 public import TauCeti.Algebra.HopfAlgebra.InverseAntipode
 import TauCeti.LinearAlgebra.BilinearForm.Dual.Reconstruction

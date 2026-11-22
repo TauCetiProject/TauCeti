@@ -120,7 +120,7 @@ theorem natCast_card_ne_zero_of_isLinearlyReductive
       rw [hsmul, leftTranslationAlgEquiv_apply, Comodule.matrixCoefficientBilinear_apply_apply]
       rfl
   have hone : (1 : H) ∈ Comodule.fixedSubcomodule k H H := by
-    simp [Comodule.mem_fixedSubcomodule, Algebra.TensorProduct.one_def]
+    simp
   -- Linear reductivity lifts `1` to an invariant, hence constant, function.
   obtain ⟨m, hm, hTm⟩ :=
     T.exists_fixed_preimage_of_isLinearlyReductive hH hone ⟨c, (hT c).trans hc⟩

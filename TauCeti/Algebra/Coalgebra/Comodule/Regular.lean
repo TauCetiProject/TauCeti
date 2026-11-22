@@ -186,6 +186,7 @@ variable {R : Type u} {H : Type v} [CommSemiring R] [Semiring H] [Bialgebra R H]
 
 /-- The coinvariants of the regular right comodule `H` over itself are the scalar multiples of
 `1`. -/
+@[simp high]
 theorem mem_fixedSubcomodule_self {x : H} :
     x ∈ fixedSubcomodule R H H ↔ x = algebraMap R H (Coalgebra.counit (R := R) x) := by
   rw [mem_fixedSubcomodule, instSelf_coact]
@@ -197,7 +198,6 @@ theorem mem_fixedSubcomodule_self {x : H} :
       Algebra.TensorProduct.one_def, TensorProduct.smul_tmul']
 
 /-- Every scalar multiple `algebraMap R H r` is fixed in the regular right comodule `H`. -/
-@[simp high]
 theorem algebraMap_mem_fixedSubcomodule_self (r : R) :
     algebraMap R H r ∈ fixedSubcomodule R H H := by
   rw [mem_fixedSubcomodule_self, Bialgebra.counit_algebraMap]

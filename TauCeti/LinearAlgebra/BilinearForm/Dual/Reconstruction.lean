@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearMap
-public import Mathlib.RingTheory.FiniteType
+public import Mathlib.RingTheory.OrzechProperty
 
 /-!
 # Finite dual-family reconstruction for bilinear forms
