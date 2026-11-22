@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import Mathlib.Geometry.Manifold.Notation
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
 # Smoothness of the zeroth-order terms of real Cauchy–Riemann operators
@@ -24,6 +25,8 @@ a set to `C^n` sections of `Hom(TM, V)` there.
 
 ## Main results
 
+* `TauCeti.IsRealCauchyRiemannOperator.contMDiffCovariantDerivativeOn_mono_of_isOpen`: a real
+  Cauchy–Riemann operator which is `C^n` on a set is `C^n` on each open subset, by locality.
 * `TauCeti.IsRealCauchyRiemannOperator.contMDiffOn_difference` and
   `TauCeti.IsRealCauchyRiemannOperator.contMDiffOn_antilinearPart`: smoothness of the zeroth-order
   terms of smooth real Cauchy–Riemann operators.
@@ -59,6 +62,18 @@ variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
 variable [FiniteDimensional ℝ E] [T2Space M] {u : Set M} {n : ℕ∞ω}
 
 omit [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
+/-- **Locality of the regularity of a real Cauchy–Riemann operator.** If a real Cauchy–Riemann
+operator is `C^n` on a set `s`, sending sections which are `C^(n + 1)` on `s` to `C^n` one-forms
+on `s`, then it is `C^n` on every open subset `u ⊆ s`. This is the analogue for real
+Cauchy–Riemann operators of `ContMDiffCovariantDerivativeOn.mono_of_isOpen`. -/
+theorem IsRealCauchyRiemannOperator.contMDiffCovariantDerivativeOn_mono_of_isOpen
+    [VectorBundle ℝ F V] [ENat.LEInfty n] {s : Set M} (hD : IsRealCauchyRiemannOperator F j D)
+    (h : ContMDiffCovariantDerivativeOn F n D s) (hu : IsOpen u) (hus : u ⊆ s) :
+    ContMDiffCovariantDerivativeOn F n D u :=
+  h.mono_of_isOpen_of_eventuallyEq (fun _ _ _ _ _ hσ' hσσ' ↦ hD.apply_eq_of_eventuallyEq hσ' hσσ')
+    hu hus
+
+omit [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
 /-- If two real Cauchy–Riemann operators send `C^(n + 1)` sections over `u` to `C^n` sections of
 `Hom(TM, V)` over `u`, then their difference is a `C^n` section over `u` of the bundle
 `Hom(V, Hom(TM, V))`: the zeroth-order term by which two smooth real Cauchy–Riemann operators
@@ -75,7 +90,7 @@ theorem IsRealCauchyRiemannOperator.contMDiffOn_difference [VectorBundle ℝ F V
   have : ContMDiffVectorBundle n F V I := .of_le (le_self_add.trans hn)
   have : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
     .of_le (le_self_add.trans hn)
-  refine Manifold.contMDiffOn_hom_of_forall_contMDiff (le_self_add.trans hn) fun τ hτ ↦ ?_
+  refine Manifold.contMDiffOn_hom_of_forall_contMDiff (le_self_add.trans hn) le_rfl fun τ hτ ↦ ?_
   have hτu : CMDiff[u] (n + 1) (T% τ) := (hτ.of_le hn).contMDiffOn
   refine ((hDs.contMDiff hτu).sub_section (hD's.contMDiff hτu)).congr fun y _ ↦ ?_
   rw [hD.difference_apply hD' ((hτ y).mdifferentiableAt (by simp)), Pi.sub_apply]

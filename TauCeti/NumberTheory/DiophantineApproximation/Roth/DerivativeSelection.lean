@@ -77,7 +77,7 @@ theorem exists_roth_hasseDeriv {P : MvPolynomial σ ℤ} {r : σ → ℕ}
   have hC₀ : 0 ≤ C₁ := (Real.log_nonneg one_le_two).trans hC₁
   have hr₀ : 0 ≤ ∑ i, (r i : ℝ) := by positivity
   refine (hcoeff μ).trans ?_
-  rw [← Real.exp_log (two_pos (α := ℝ)), ← Real.exp_nat_mul, ← Real.exp_add, Nat.cast_sum]
+  rw [← Real.exp_log (two_pos (α := ℝ)), ← Real.exp_natCast_mul, ← Real.exp_add, Nat.cast_sum]
   gcongr
   calc (∑ i, (r i : ℝ)) * Real.log 2 + C₁ * ∑ i, (r i : ℝ) ≤ 2 * C₁ * ∑ i, (r i : ℝ) := by
         nlinarith

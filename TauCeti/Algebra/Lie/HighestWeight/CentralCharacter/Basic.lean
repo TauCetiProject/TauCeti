@@ -126,12 +126,12 @@ private theorem exists_representation_eq_smul_of_mem_center
 
 private noncomputable def centralScalarAux (hv : IsHighestWeightVector b lam v)
     (hgen : LieSubmodule.lieSpan K L {v} = ⊤) (u : Subalgebra.center K U) : K :=
-  (exists_representation_eq_smul_of_mem_center u.2 hv hgen).choose
+  (exists_representation_eq_smul_of_mem_center u.property hv hgen).choose
 
 private theorem representation_eq_centralScalarAux_smul (hv : IsHighestWeightVector b lam v)
     (hgen : LieSubmodule.lieSpan K L {v} = ⊤) (u : Subalgebra.center K U) :
     UniversalEnvelopingAlgebra.representation K L M (u : U) v = centralScalarAux hv hgen u • v :=
-  (exists_representation_eq_smul_of_mem_center u.2 hv hgen).choose_spec
+  (exists_representation_eq_smul_of_mem_center u.property hv hgen).choose_spec
 
 private theorem centralScalarAux_eq (hv : IsHighestWeightVector b lam v)
     (hgen : LieSubmodule.lieSpan K L {v} = ⊤) {u : Subalgebra.center K U} {c : K}
@@ -218,7 +218,7 @@ theorem IsHighestWeightVector.representation_eq_vermaCentralCharacter_smul_of_li
     (u : Subalgebra.center K U) (m : M) :
     UniversalEnvelopingAlgebra.representation K L M (u : U) m =
       vermaCentralCharacter b lam u • m :=
-  UniversalEnvelopingAlgebra.representation_eq_smul_of_mem_center_of_lieSpan_eq_top K L M u.2
+  UniversalEnvelopingAlgebra.representation_eq_smul_of_mem_center_of_lieSpan_eq_top K L M u.property
     (by simpa only [Set.mem_singleton_iff, forall_eq] using
       hv.representation_eq_vermaCentralCharacter_smul u) hgen m
 

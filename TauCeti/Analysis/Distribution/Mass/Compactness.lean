@@ -60,7 +60,7 @@ theorem mass_le_iff_exists_extension {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F
       norm_apply_le_of_mass_le T hT φ
     let f' := (LinearMap.ofClass T).compLeftInverse j
     obtain ⟨L, hL, hnorm⟩ := exists_extension_norm_eq (LinearMap.range j) f'
-    refine ⟨L, hnorm.trans_le (LinearMap.opNorm_compLeftInverse_le C.2 hbound), fun φ => ?_⟩
+    refine ⟨L, hnorm.trans_le (LinearMap.opNorm_compLeftInverse_le C.property hbound), fun φ => ?_⟩
     calc L (φ : E →ᵇ F) = L (j φ) :=
            congrArg L (TestFunction.toBoundedContinuousFunctionCLM_apply ℝ φ).symm
          _ = f' ⟨j φ, LinearMap.mem_range_self j φ⟩ :=
@@ -95,8 +95,6 @@ theorem isCompact_image_coe_mass_le (C : ℝ≥0) :
     -- composition, the test inclusion preserves values, and toStrongDual only changes topology.
     refine ⟨L.toStrongDual ∘L TestFunction.toBoundedContinuousFunctionCLM ℝ, ?_, rfl⟩
     exact (mass_le_iff_exists_extension _ C).2 ⟨L.toStrongDual, by simpa using hL, fun _ => rfl⟩
-
-variable [FiniteDimensional ℝ E]
 
 /-- The evaluation functions of real continuous linear functionals with mass at most
 `C` and distributional support in a closed set `K` form a compact set in the product

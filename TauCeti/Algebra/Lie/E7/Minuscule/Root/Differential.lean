@@ -69,9 +69,7 @@ private theorem map_genericMatrix_rootSubgroup (k : Fin 7 ⊕ Fin 7) :
     BialgHom.mapDomain_apply] at h
   simp only [q, AlgHom.id_comp] at h
   rw [h, hu]
-  rcases k with i | i
-  · exact coe_rootSubgroupPoints_inl i _ _
-  · exact coe_rootSubgroupPoints_inr i _ _
+  exact coe_rootSubgroupPoints_eq_one_add_smul k _ _
 
 variable {B : Type v} [CommRing B] [Algebra R B]
 

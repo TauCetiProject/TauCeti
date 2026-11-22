@@ -7,15 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Unramified
-public import TauCeti.NumberTheory.LocalField.Unramified.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Bound
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TorsionReduction
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel.ValuativeExtension
-import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
-import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
-import TauCeti.NumberTheory.LocalField.Henselian
 
 /-!
 # Good reduction from an unramified Tate module
@@ -75,9 +69,8 @@ section FiniteExtension
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [IsUnramified K L]
-  [DecidableEq L] {W : WeierstrassCurve K} [W.IsElliptic] [IsIntegral 𝒪[K] W]
+  [DecidableEq L] {W : WeierstrassCurve K} [IsIntegral 𝒪[K] W]
 
-omit [W.IsElliptic] in
 /-- **Full torsion over an unramified extension is bounded at bad reduction** (Silverman AEC
 VII.7.1). Let `L/K` be an unramified extension of nonarchimedean local fields, and suppose that
 Tate's algorithm, run with a uniformiser `ϖ` of `K`, stops on the integral model of `W` at a
@@ -117,7 +110,7 @@ theorem le_componentCount_of_natCard_torsionBy_eq {ϖ : 𝒪[K]} (hϖ : Irreduci
     have hunit : ¬ IsUnit (algebraMap 𝒪[K] A ϖ) :=
       (mem_maximalIdeal _).1 (hϖA ▸ Ideal.mem_span_singleton_self _)
     rw [← integralModel_Δ_eq A (W⁄L)]
-    exact (hint.le_of_dvd hdvd).trans_lt <| lt_of_le_of_ne (hint.2 _)
+    exact (hint.le_of_dvd hdvd).trans_lt <| lt_of_le_of_ne (hint.map_le_one _)
       (mt hint.isUnit_iff_valuation_eq_one.2 hunit)
   -- At the maximal ideal of `A`, whose adic valuation is equivalent to that of `L`, full
   -- `n`-torsion makes `n` divide the index of `E₀(L)`.
@@ -173,9 +166,7 @@ theorem hasGoodReduction_of_forall_mem_inertiaSubgroup_tateModuleGaloisRepresent
   -- Let `n = ℓ ^ k` with `k` the number of components of `s`, and `M = K(E[n])`.
   set k := s.componentCount
   set n := ℓ ^ k
-  have hℓK : (ℓ : K) ≠ 0 := fun h₀ ↦ hℓ <| by
-    have : (ℓ : 𝒪[K]) = 0 := Subtype.ext (by simpa using h₀)
-    rw [← map_natCast (residue 𝒪[K]), this, map_zero]
+  have hℓK : (ℓ : K) ≠ 0 := natCast_ne_zero_of_residueField_natCast_ne_zero hℓ
   have hnK : (n : K) ≠ 0 := by simpa [n] using pow_ne_zero k hℓK
   have : NeZero n := ⟨pow_ne_zero k (Fact.out : ℓ.Prime).ne_zero⟩
   set M := W.divisionField n
