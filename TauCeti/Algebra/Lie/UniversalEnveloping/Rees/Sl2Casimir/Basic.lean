@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Sl2.Basic
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.PoissonBracket.Basic
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.Gradient
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.DividedCommutator
 import Mathlib.Tactic.NoncommRing
 
 /-!
-# The deformed `sl₂` Casimir element in the PBW Rees algebra and its Poisson-central symbol
+# The deformed `sl₂` Casimir element in the PBW Rees algebra
 
 Let `L` be a Lie algebra over a commutative ring `R`, and let `h, e, f : L` satisfy the `sl₂`
 relations `⁅e, f⁆ = h`, `⁅h, e⁆ = (2 : R) • e`, and `⁅h, f⁆ = -((2 : R) • f)`. Inside
@@ -27,20 +26,13 @@ ring `R` without characteristic or nontriviality assumptions.
 For `L = LieAlgebra.SpecialLinear.sl (Fin 2) R`, the standard triple
 `(slFinTwoBasis R 2, slFinTwoBasis R 0, slFinTwoBasis R 1)` spans `sl (Fin 2) R`, so
 `reesSl2Casimir` belongs to `Subalgebra.center R (reesAlgebra R (SpecialLinear.sl (Fin 2) R))`.
-Under `reesSpecializationZero`, the subleading `2 * t * j(h)` term vanishes while `j(f) * j(e)`
-specializes to `ι(e) * ι(f)`, yielding the Poisson-central quadratic polynomial
-
-`sl2CasimirSymbol R L h e f = ι(h)² + 4 * ι(e) * ι(f)`
-
-in `lieInvariants R (SpecialLinear.sl (Fin 2) R) (SpecialLinear.sl (Fin 2) R)`. By contrast, when
-`(2 : R) ≠ 0`, `{ι(h), ι(e)} = (2 : R) • ι(e) ≠ 0`, so `ι(e)` is not Poisson-central.
 
 ## Main definitions
 
 * `TauCeti.UniversalEnvelopingAlgebra.reesSl2Casimir`: `j(h)² + 2 * t * j(h) + 4 * j(f) * j(e)` in
   `reesAlgebra R L`.
-* `TauCeti.UniversalEnvelopingAlgebra.sl2CasimirSymbol`: `ι(h)² + 4 * ι(e) * ι(f)` in
-  `SymmetricAlgebra R L`.
+* `TauCeti.UniversalEnvelopingAlgebra.reesSlFinTwoCasimir`: specialization to the standard basis of
+  `sl (Fin 2) R`.
 
 ## Main results
 
@@ -49,13 +41,6 @@ in `lieInvariants R (SpecialLinear.sl (Fin 2) R) (SpecialLinear.sl (Fin 2) R)`. 
   of `reesSl2Casimir` with the Rees generators of any `sl₂` triple.
 * `TauCeti.UniversalEnvelopingAlgebra.reesSlFinTwoCasimir_mem_center`: centrality in
   `reesAlgebra R (SpecialLinear.sl (Fin 2) R)`.
-* `TauCeti.UniversalEnvelopingAlgebra.reesSpecializationZero_reesSl2Casimir`,
-  `TauCeti.UniversalEnvelopingAlgebra.slFinTwoCasimirSymbol_mem_lieInvariants`,
-  `TauCeti.UniversalEnvelopingAlgebra.reesZeroFiberBracket_slFinTwoCasimirSymbol_left`: zero-fibre
-  specialization and Poisson-centrality of `h² + 4ef`.
-* `Module.Basis.symmetricGradient_sl2CasimirSymbol` and
-  `TauCeti.UniversalEnvelopingAlgebra.reesZeroFiberBracket_slFinTwo_h_e_ne_zero`: explicit gradient
-  formula `2ξ(h)h + 4ξ(f)e + 4ξ(e)f` and non-centrality of `ι(e)` when `(2 : R) ≠ 0`.
 
 ## References
 
@@ -89,16 +74,6 @@ theorem reesSl2Casimir_def (h e f : L) :
         4 * reesGenerator R L f * reesGenerator R L e :=
   (rfl)
 
-/-- The classical quadratic Casimir symbol `ι(h)² + 4 * ι(e) * ι(f)` in `SymmetricAlgebra R L`. -/
-noncomputable def sl2CasimirSymbol (h e f : L) : SymmetricAlgebra R L :=
-  SymmetricAlgebra.ι R L h ^ 2 + 4 * SymmetricAlgebra.ι R L e * SymmetricAlgebra.ι R L f
-
-/-- Defining polynomial expression for `sl2CasimirSymbol`. -/
-theorem sl2CasimirSymbol_def (h e f : L) :
-    sl2CasimirSymbol R L h e f =
-      SymmetricAlgebra.ι R L h ^ 2 + 4 * SymmetricAlgebra.ι R L e * SymmetricAlgebra.ι R L f :=
-  (rfl)
-
 @[simp]
 theorem evalOne_reesSl2Casimir (h e f : L) :
     coeffSubalgebra.evalOne (pbwFiltration R L) (reesSl2Casimir R L h e f) =
@@ -107,13 +82,6 @@ theorem evalOne_reesSl2Casimir (h e f : L) :
         4 * _root_.UniversalEnvelopingAlgebra.ι R f *
           _root_.UniversalEnvelopingAlgebra.ι R e := by
   simp [reesSl2Casimir, map_ofNat]
-
-@[simp]
-theorem reesSpecializationZero_reesSl2Casimir [Module.Free R L] (h e f : L) :
-    reesSpecializationZero R L (reesSl2Casimir R L h e f) = sl2CasimirSymbol R L h e f := by
-  simp only [reesSl2Casimir, sl2CasimirSymbol, map_add, map_pow, map_mul, map_ofNat,
-    reesSpecializationZero_reesGenerator, reesSpecializationZero_reesParameter]
-  ring
 
 /-- Negating `h` and swapping `e` and `f` leaves `reesSl2Casimir` unchanged whenever
 `⁅e, f⁆ = h`. -/
@@ -197,29 +165,6 @@ theorem commute_reesSl2Casimir_reesGenerator_h {R : Type u} {L : Type v} [CommRi
 
 end AbstractTriple
 
-end TauCeti.UniversalEnvelopingAlgebra
-
-namespace Module.Basis
-
-/-- Gradient of `TauCeti.UniversalEnvelopingAlgebra.sl2CasimirSymbol R L h e f` at
-`ξ : Module.Dual R L`: `(2 * ξ h) • h + (4 * ξ f) • e + (4 * ξ e) • f`. -/
-theorem symmetricGradient_sl2CasimirSymbol {R L ι : Type*}
-    [CommRing R] [LieRing L] [LieAlgebra R L] [Fintype ι]
-    (b : Module.Basis ι R L) (h e f : L) (ξ : Module.Dual R L) :
-    b.symmetricGradient (TauCeti.UniversalEnvelopingAlgebra.sl2CasimirSymbol R L h e f) ξ =
-      (2 * ξ h) • h + (4 * ξ f) • e + (4 * ξ e) • f := by
-  rw [TauCeti.UniversalEnvelopingAlgebra.sl2CasimirSymbol, mul_assoc,
-    b.symmetricGradient_add, b.symmetricGradient_pow, b.symmetricGradient_mul,
-    b.symmetricGradient_mul, b.symmetricGradient_ι, b.symmetricGradient_ι,
-    b.symmetricGradient_ι, b.symmetricGradient_ofNat]
-  simp only [Nat.reduceSub, pow_one, nsmul_eq_mul, Nat.cast_ofNat, map_mul,
-    SymmetricAlgebra.lift_ι_apply, map_ofNat, smul_zero, add_zero, smul_add, smul_smul]
-  abel
-
-end Module.Basis
-
-namespace TauCeti.UniversalEnvelopingAlgebra
-
 /-! ### Specialization to `sl (Fin 2) R` -/
 
 section SlFinTwo
@@ -230,12 +175,6 @@ variable (R : Type u) [CommRing R]
 noncomputable abbrev reesSlFinTwoCasimir :
     reesAlgebra R (SpecialLinear.sl (Fin 2) R) :=
   reesSl2Casimir R (SpecialLinear.sl (Fin 2) R)
-    (TauCeti.slFinTwoBasis R 2) (TauCeti.slFinTwoBasis R 0) (TauCeti.slFinTwoBasis R 1)
-
-/-- The quadratic Casimir symbol `h² + 4ef` in `SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R)`. -/
-noncomputable abbrev slFinTwoCasimirSymbol :
-    SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R) :=
-  sl2CasimirSymbol R (SpecialLinear.sl (Fin 2) R)
     (TauCeti.slFinTwoBasis R 2) (TauCeti.slFinTwoBasis R 0) (TauCeti.slFinTwoBasis R 1)
 
 /-- **Centrality of the deformed `sl₂` Casimir element** in
@@ -256,44 +195,6 @@ theorem reesSlFinTwoCasimir_mem_center :
     ← TauCeti.slFinTwoBasis_zero, ← TauCeti.slFinTwoBasis_one, ← TauCeti.slFinTwoBasis_two,
     map_add, map_add, map_smul, map_smul, map_smul]
   exact ((hce.smul_right _).add_right (hcf.smul_right _)).add_right (hch.smul_right _)
-
-/-- **Poisson-centrality of `h² + 4ef`** in `SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R)`: its
-zero-fibre symbol belongs to the Lie invariants. -/
-theorem slFinTwoCasimirSymbol_mem_lieInvariants :
-    slFinTwoCasimirSymbol R ∈
-      TauCeti.SymmetricAlgebra.lieInvariants R
-        (SpecialLinear.sl (Fin 2) R) (SpecialLinear.sl (Fin 2) R) := by
-  rw [slFinTwoCasimirSymbol, ← reesSpecializationZero_reesSl2Casimir]
-  exact reesSpecializationZero_mem_lieInvariants_of_mem_center _ _
-    (reesSlFinTwoCasimir_mem_center R)
-
-/-- `slFinTwoCasimirSymbol R` has vanishing zero-fibre Poisson bracket with every element of
-`SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R)`. -/
-@[simp]
-theorem reesZeroFiberBracket_slFinTwoCasimirSymbol_left
-    (q : SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R)) :
-    reesZeroFiberBracket R (SpecialLinear.sl (Fin 2) R) (slFinTwoCasimirSymbol R) q = 0 :=
-  (forall_reesZeroFiberBracket_eq_zero_iff_mem_lieInvariants _ _).mpr
-    (slFinTwoCasimirSymbol_mem_lieInvariants R) q
-
-@[simp]
-theorem reesZeroFiberBracket_slFinTwoCasimirSymbol_right
-    (p : SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R)) :
-    reesZeroFiberBracket R (SpecialLinear.sl (Fin 2) R) p (slFinTwoCasimirSymbol R) = 0 := by
-  rw [reesZeroFiberBracket_swap, reesZeroFiberBracket_slFinTwoCasimirSymbol_left, neg_zero]
-
-/-- When `(2 : R) ≠ 0`, `{ι(h), ι(e)} = (2 : R) • ι(e) ≠ 0` in
-`SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R)`, so `ι(e)` is not Poisson-central. -/
-theorem reesZeroFiberBracket_slFinTwo_h_e_ne_zero {R : Type u} [CommRing R] (h2 : (2 : R) ≠ 0) :
-    reesZeroFiberBracket R (SpecialLinear.sl (Fin 2) R)
-      (SymmetricAlgebra.ι R _ (TauCeti.slFinTwoBasis R 2))
-      (SymmetricAlgebra.ι R _ (TauCeti.slFinTwoBasis R 0)) ≠ 0 := by
-  rw [reesZeroFiberBracket_ι_ι, TauCeti.lie_slFinTwoBasis_two_zero, map_smul]
-  intro hzero
-  have heval := congrArg (SymmetricAlgebra.lift ((TauCeti.slFinTwoBasis R).coord 0)) hzero
-  rw [map_smul, SymmetricAlgebra.lift_ι_apply, Module.Basis.coord_apply,
-    Module.Basis.repr_self, Finsupp.single_eq_same, smul_eq_mul, mul_one, map_zero] at heval
-  exact h2 heval
 
 end SlFinTwo
 

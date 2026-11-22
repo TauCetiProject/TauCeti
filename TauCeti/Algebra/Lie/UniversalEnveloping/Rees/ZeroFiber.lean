@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Functoriality
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Injective
 public import TauCeti.Algebra.WordFiltration.Rees

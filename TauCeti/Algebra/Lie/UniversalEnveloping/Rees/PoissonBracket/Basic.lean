@@ -66,21 +66,9 @@ section ZeroFiberBracket
 
 variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L] [Module.Free R L]
 
-omit [Module.Free R L] in
-private noncomputable def reesDividedCommutatorR :
-    reesAlgebra R L →ₗ[R] reesAlgebra R L →ₗ[R] reesAlgebra R L where
-  toFun a := (reesDividedCommutator R L a).restrictScalars R
-  map_add' a₁ a₂ := LinearMap.ext fun b ↦ by simp
-  map_smul' r a := LinearMap.ext fun b ↦ by simp
-
-omit [Module.Free R L] in
-private theorem reesDividedCommutatorR_apply (a b : reesAlgebra R L) :
-    reesDividedCommutatorR R L a b = reesDividedCommutator R L a b :=
-  rfl
-
 private theorem ker_le_compr₂_reesDividedCommutator_left :
     LinearMap.ker (reesSpecializationZero R L).toLinearMap ≤
-      LinearMap.ker ((reesDividedCommutatorR R L).compr₂
+      LinearMap.ker (((reesDividedCommutator R L).restrictScalars₁₂ R R).compr₂
         (reesSpecializationZero R L).toLinearMap) := by
   intro a ha
   obtain ⟨p, rfl⟩ :=
@@ -88,19 +76,15 @@ private theorem ker_le_compr₂_reesDividedCommutator_left :
       (LinearMap.mem_ker.mp ha)
   rw [LinearMap.mem_ker]
   ext b
-  simp [reesDividedCommutatorR_apply, mul_comm]
+  simp [LinearMap.restrictScalars₁₂_apply_apply, mul_comm]
 
-private theorem ker_le_compr₂_reesDividedCommutator_right :
-    LinearMap.ker (reesSpecializationZero R L).toLinearMap ≤
-      LinearMap.ker ((reesDividedCommutatorR R L).compr₂
-        (reesSpecializationZero R L).toLinearMap).flip := by
-  intro b hb
-  obtain ⟨q, rfl⟩ :=
-    (reesSpecializationZero_eq_zero_iff_exists_reesParameter_mul R L b).mp
-      (LinearMap.mem_ker.mp hb)
-  rw [LinearMap.mem_ker]
-  ext a
-  simp [reesDividedCommutatorR_apply, mul_comm]
+private theorem isRefl_compr₂_reesDividedCommutator :
+    (((reesDividedCommutator R L).restrictScalars₁₂ R R).compr₂
+      (reesSpecializationZero R L).toLinearMap).IsRefl := by
+  intro a b hab
+  simp only [LinearMap.compr₂_apply, AlgHom.toLinearMap_apply,
+    LinearMap.restrictScalars₁₂_apply_apply] at hab ⊢
+  rw [reesDividedCommutator_swap, map_neg, hab, neg_zero]
 
 /-- The **zero-fibre Poisson bracket** on `SymmetricAlgebra R L`, induced by descending
 `reesDividedCommutator R L` modulo `reesParameter R L` in both arguments. -/
@@ -108,9 +92,10 @@ noncomputable def reesZeroFiberBracket :
     SymmetricAlgebra R L →ₗ[R] SymmetricAlgebra R L →ₗ[R] SymmetricAlgebra R L :=
   let π := (reesSpecializationZero R L).toLinearMap
   let e := (π.quotKerEquivOfSurjective (reesSpecializationZero_surjective R L)).symm.toLinearMap
-  (((reesDividedCommutatorR R L).compr₂ π).liftQ₂ (LinearMap.ker π) (LinearMap.ker π)
-    (ker_le_compr₂_reesDividedCommutator_left R L)
-    (ker_le_compr₂_reesDividedCommutator_right R L)).compl₁₂ e e
+  (LinearMap.IsRefl.liftQ₂
+    (((reesDividedCommutator R L).restrictScalars₁₂ R R).compr₂ π) (LinearMap.ker π)
+    (isRefl_compr₂_reesDividedCommutator R L)
+    (ker_le_compr₂_reesDividedCommutator_left R L)).compl₁₂ e e
 
 /-- `reesZeroFiberBracket` intertwines `reesSpecializationZero` with `reesDividedCommutator`. -/
 @[simp]
@@ -125,7 +110,7 @@ theorem reesZeroFiberBracket_reesSpecializationZero (a b : reesAlgebra R L) :
     ← AlgHom.toLinearMap_apply (reesSpecializationZero R L) a,
     ← AlgHom.toLinearMap_apply (reesSpecializationZero R L) b, ha, hb,
     LinearMap.liftQ₂_mk, LinearMap.compr₂_apply, AlgHom.toLinearMap_apply,
-    reesDividedCommutatorR_apply]
+    LinearMap.restrictScalars₁₂_apply_apply]
 
 /-- **Divided-commutator characterization of `reesZeroFiberBracket`.** Whenever
 `a * b - b * a = reesParameter R L * c` in `reesAlgebra R L`, the bracket of the zero-fibre
@@ -241,10 +226,8 @@ theorem reesZeroFiberBracket_mul_left (p q r : SymmetricAlgebra R L) :
 
 /-- `reesZeroFiberBracket R L p` bundled as an `R`-derivation of `SymmetricAlgebra R L`. -/
 noncomputable def reesZeroFiberDerivation (p : SymmetricAlgebra R L) :
-    Derivation R (SymmetricAlgebra R L) (SymmetricAlgebra R L) where
-  toLinearMap := reesZeroFiberBracket R L p
-  map_one_eq_zero' := reesZeroFiberBracket_one_right R L p
-  leibniz' q r := by
+    Derivation R (SymmetricAlgebra R L) (SymmetricAlgebra R L) :=
+  Derivation.mk' (reesZeroFiberBracket R L p) fun q r ↦ by
     rw [reesZeroFiberBracket_mul_right, smul_eq_mul, smul_eq_mul,
       mul_comm (reesZeroFiberBracket R L p q), add_comm]
 
@@ -265,22 +248,13 @@ theorem eq_reesZeroFiberBracket_of_leibniz {R L} [CommRing R]
     B = reesZeroFiberBracket R L := by
   let Dright (p : SymmetricAlgebra R L) :
       Derivation R (SymmetricAlgebra R L) (SymmetricAlgebra R L) :=
-    { toLinearMap := B p
-      map_one_eq_zero' := by
-        have h1 := hright p 1 1
-        rw [mul_one, one_mul, mul_one] at h1
-        exact right_eq_add.mp h1
-      leibniz' q r := by rw [hright, smul_eq_mul, smul_eq_mul, mul_comm (B p q), add_comm] }
+    Derivation.mk' (B p) fun q r ↦ by
+      rw [hright, smul_eq_mul, smul_eq_mul, mul_comm (B p q), add_comm]
   let Dleft (r : SymmetricAlgebra R L) :
       Derivation R (SymmetricAlgebra R L) (SymmetricAlgebra R L) :=
-    { toLinearMap := B.flip r
-      map_one_eq_zero' := by
-        have h1 := hleft 1 1 r
-        rw [mul_one, one_mul, mul_one] at h1
-        exact right_eq_add.mp h1
-      leibniz' p q := by
-        simp only [LinearMap.flip_apply, hleft, smul_eq_mul]
-        rw [mul_comm (B p r), add_comm] }
+    Derivation.mk' (B.flip r) fun p q ↦ by
+      simp only [LinearMap.flip_apply, hleft, smul_eq_mul]
+      rw [mul_comm (B p r), add_comm]
   have hgen : ∀ (x : L) (r : SymmetricAlgebra R L),
       B (SymmetricAlgebra.ι R L x) r = reesZeroFiberBracket R L (SymmetricAlgebra.ι R L x) r :=
     fun x ↦ Derivation.congr_fun <| SymmetricAlgebra.derivation_ext
@@ -417,14 +391,6 @@ theorem map_reesZeroFiberBracket {M : Type w} [LieRing M] [LieAlgebra R M] [Modu
   rw [reesZeroFiberBracket_reesSpecializationZero, ← reesSpecializationZero_reesMap,
     ← reesSpecializationZero_reesMap, ← reesSpecializationZero_reesMap,
     reesMap_reesDividedCommutator, reesZeroFiberBracket_reesSpecializationZero]
-
-/-- Over an abelian Lie algebra free over `R`, the zero-fibre Poisson bracket vanishes. -/
-@[simp]
-theorem reesZeroFiberBracket_eq_zero [IsLieAbelian L] (p q : SymmetricAlgebra R L) :
-    reesZeroFiberBracket R L p q = 0 := by
-  obtain ⟨a, rfl⟩ := reesSpecializationZero_surjective R L p
-  obtain ⟨b, rfl⟩ := reesSpecializationZero_surjective R L q
-  simp [reesZeroFiberBracket_reesSpecializationZero]
 
 /-- Scaling check on generators: if `⁅x, y⁆ = c • y`, then `{ι x, ι y} = c • ι y`. -/
 theorem reesZeroFiberBracket_ι_of_lie_eq_smul {x y : L} {c : R} (h : ⁅x, y⁆ = c • y) :

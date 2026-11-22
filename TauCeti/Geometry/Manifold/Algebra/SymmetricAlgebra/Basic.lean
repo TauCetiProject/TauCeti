@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.SymmetricAlgebra
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
@@ -24,15 +25,12 @@ evaluating each symmetric tensor `p` at a continuous linear form `ξ` by
 `SymmetricAlgebra.lift ξ.toLinearMap p`.
 
 When `E` is finite-dimensional over a complete nontrivially normed field `𝕜`, every linear form on
-`E` is continuous and `𝕜` is infinite, so `SymmetricAlgebra.contMDiffEval` is injective. Whenever
-`E` has a finite basis `b`, combining `SymmetricAlgebra.contMDiffEval_apply` with the manifold-free
-derivative formulas in `TauCeti.Analysis.Calculus.SymmetricAlgebra` identifies the Fréchet
-derivative of `SymmetricAlgebra.contMDiffEval 𝕜 E n p` at `ξ` with evaluation at the gradient
-vector `b.symmetricGradient p ξ.toLinearMap`, and its directional derivative along `t ↦ ξ + t • η`
-at `t = 0` with `η (b.symmetricGradient p ξ.toLinearMap)`.
+`E` is continuous and `𝕜` is infinite, so `SymmetricAlgebra.contMDiffEval` is injective.
 
 ## Main definitions
 
+* `SymmetricAlgebra.contMDiffLinearEval`: the `𝕜`-linear map sending `x : E` to `ξ ↦ ξ x` in
+  `C^n⟮𝓘(𝕜, StrongDual 𝕜 E), StrongDual 𝕜 E; 𝕜⟯`.
 * `SymmetricAlgebra.contMDiffEval`: the `𝕜`-algebra homomorphism sending `p : SymmetricAlgebra 𝕜 E`
   to the `C^n` polynomial function `ξ ↦ SymmetricAlgebra.lift ξ.toLinearMap p` on `StrongDual 𝕜 E`.
 
@@ -45,16 +43,11 @@ at `t = 0` with `η (b.symmetricGradient p ξ.toLinearMap)`.
   `u : E →L[𝕜] F` and its transpose `u.precomp 𝕜 : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E`.
 * `SymmetricAlgebra.contMDiffEval_injective`: injectivity for finite-dimensional `E` over a
   complete nontrivially normed field.
-* `Module.Basis.hasFDerivAt_contMDiffEval`, `Module.Basis.fderiv_contMDiffEval`,
-  `Module.Basis.fderiv_contMDiffEval_apply`, `Module.Basis.hasDerivAt_contMDiffEval_add_smul_zero`:
-  Fréchet and directional derivatives of smooth polynomial evaluation on `StrongDual 𝕜 E`,
-  identified via `ContinuousLinearMap.apply` with `b.symmetricGradient`.
 
 ## References
 
 * J. E. Marsden and T. S. Ratiu, *Introduction to Mechanics and Symmetry*, 2nd ed., Springer
-  (1999), §10.1 (smooth polynomial functions and functional derivatives on the dual of a Lie
-  algebra).
+  (1999), §10.1 (smooth polynomial functions on the dual of a Lie algebra).
 -/
 
 public section
@@ -151,45 +144,3 @@ theorem contMDiffEval_injective [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] 
 end Eval
 
 end SymmetricAlgebra
-
-namespace Module.Basis
-
-section FDeriv
-
-variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [Fintype ι]
-
-/-- **Fréchet derivative of `SymmetricAlgebra.contMDiffEval`.** -/
-theorem hasFDerivAt_contMDiffEval (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E)
-    (ξ : StrongDual 𝕜 E) :
-    HasFDerivAt (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p))
-      (ContinuousLinearMap.apply 𝕜 𝕜 (b.symmetricGradient p ξ.toLinearMap)) ξ := by
-  have hfun : ⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p) =
-      fun η : StrongDual 𝕜 E ↦ SymmetricAlgebra.lift η.toLinearMap p :=
-    funext (SymmetricAlgebra.contMDiffEval_apply p)
-  rw [hfun]
-  exact b.hasFDerivAt_lift p ξ
-
-theorem fderiv_contMDiffEval (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E)
-    (ξ : StrongDual 𝕜 E) :
-    fderiv 𝕜 (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p)) ξ =
-      ContinuousLinearMap.apply 𝕜 𝕜 (b.symmetricGradient p ξ.toLinearMap) :=
-  (b.hasFDerivAt_contMDiffEval n p ξ).fderiv
-
-theorem fderiv_contMDiffEval_apply (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E)
-    (ξ η : StrongDual 𝕜 E) :
-    fderiv 𝕜 (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p)) ξ η =
-      η (b.symmetricGradient p ξ.toLinearMap) := by
-  rw [b.fderiv_contMDiffEval]
-  rfl
-
-theorem hasDerivAt_contMDiffEval_add_smul_zero (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω)
-    (p : SymmetricAlgebra 𝕜 E) (ξ η : StrongDual 𝕜 E) :
-    HasDerivAt (fun t : 𝕜 ↦ SymmetricAlgebra.contMDiffEval 𝕜 E n p (ξ + t • η))
-      (η (b.symmetricGradient p ξ.toLinearMap)) 0 := by
-  simpa [SymmetricAlgebra.contMDiffEval_apply, ContinuousLinearMap.toLinearMap_add,
-    FunLike.coe_smul] using b.hasDerivAt_lift_add_smul_zero p ξ.toLinearMap η.toLinearMap
-
-end FDeriv
-
-end Module.Basis

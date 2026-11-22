@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Abelian
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Functoriality
 import Mathlib.Tactic.NoncommRing
 
@@ -144,6 +143,17 @@ theorem reesDividedCommutator_mul_reesParameter (a b : reesAlgebra R L) :
     reesDividedCommutator R L a b * reesParameter R L = a * b - b * a := by
   rw [← (commute_reesParameter R L _).eq, reesParameter_mul_reesDividedCommutator]
 
+@[simp]
+theorem evalOne_reesDividedCommutator (a b : reesAlgebra R L) :
+    coeffSubalgebra.evalOne (pbwFiltration R L) (reesDividedCommutator R L a b) =
+      coeffSubalgebra.evalOne (pbwFiltration R L) a *
+          coeffSubalgebra.evalOne (pbwFiltration R L) b -
+        coeffSubalgebra.evalOne (pbwFiltration R L) b *
+          coeffSubalgebra.evalOne (pbwFiltration R L) a := by
+  have h := congrArg (coeffSubalgebra.evalOne (pbwFiltration R L))
+    (reesParameter_mul_reesDividedCommutator R L a b)
+  simpa only [map_mul, coeffSubalgebra.evalOne_X, one_mul, map_sub] using h
+
 /-- `reesDividedCommutator R L a b` is the unique solution `c` to `a * b - b * a = t * c`. -/
 theorem reesDividedCommutator_eq_iff {a b c : reesAlgebra R L} :
     reesDividedCommutator R L a b = c ↔ a * b - b * a = reesParameter R L * c := by
@@ -195,6 +205,16 @@ theorem reesDividedCommutator_algebraMap_left (r : R) (a : reesAlgebra R L) :
 theorem reesDividedCommutator_algebraMap_right (a : reesAlgebra R L) (r : R) :
     reesDividedCommutator R L a (algebraMap R (reesAlgebra R L) r) = 0 :=
   reesDividedCommutator_of_commute R L (Algebra.commutes r a).symm
+
+@[simp]
+theorem reesDividedCommutator_algebraMap_polynomial_left (q : R[X]) (a : reesAlgebra R L) :
+    reesDividedCommutator R L (algebraMap R[X] (reesAlgebra R L) q) a = 0 :=
+  reesDividedCommutator_of_commute R L (Algebra.commutes q a)
+
+@[simp]
+theorem reesDividedCommutator_algebraMap_polynomial_right (a : reesAlgebra R L) (q : R[X]) :
+    reesDividedCommutator R L a (algebraMap R[X] (reesAlgebra R L) q) = 0 :=
+  reesDividedCommutator_of_commute R L (Algebra.commutes q a).symm
 
 @[simp]
 theorem reesDividedCommutator_one_left (a : reesAlgebra R L) :
@@ -256,7 +276,11 @@ theorem reesDividedCommutator_jacobi (a b c : reesAlgebra R L) :
     (commute_reesParameter R L a).left_comm, reesParameter_mul_reesDividedCommutator,
     ← mul_assoc (reesParameter R L), reesParameter_mul_reesDividedCommutator,
     (commute_reesParameter R L b).left_comm, reesParameter_mul_reesDividedCommutator]
-  noncomm_ring [neg_neg]
+  change ⁅⁅a, b⁆, c⁆ + ⁅⁅b, c⁆, a⁆ + ⁅⁅c, a⁆, b⁆ = 0
+  rw [← lie_skew ⁅a, b⁆ c, ← lie_skew ⁅b, c⁆ a, ← lie_skew ⁅c, a⁆ b]
+  have hj := congrArg Neg.neg (lie_jacobi c a b)
+  rw [neg_add, neg_add, neg_zero] at hj
+  rw [← hj]
 
 /-- Naturality of `reesDividedCommutator` along a Lie algebra homomorphism. -/
 @[simp]
@@ -272,13 +296,6 @@ theorem reesMap_reesDividedCommutator {M : Type w} [LieRing M] [LieAlgebra R M]
           rw [← reesParameter_mul_reesDividedCommutator]
       _ = reesParameter R M * reesMap R f (reesDividedCommutator R L a b) := by
           rw [map_mul, reesMap_reesParameter]).symm
-
-/-- Over an abelian Lie algebra, `reesAlgebra R L` is commutative (`Abelian.instCommRing`), so its
-divided commutator vanishes identically. -/
-@[simp]
-theorem reesDividedCommutator_eq_zero [IsLieAbelian L] (a b : reesAlgebra R L) :
-    reesDividedCommutator R L a b = 0 :=
-  reesDividedCommutator_of_commute R L (mul_comm a b)
 
 end DividedCommutator
 
