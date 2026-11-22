@@ -40,6 +40,60 @@ least `k`.  The equality alternative is necessary because `pairMinimumValue f s 
 def ThresholdRelated (f : Finset V → K) (k : K) (s t : V) : Prop :=
   s = t ∨ k ≤ pairMinimumValue f s t
 
+@[simp]
+theorem thresholdRelated_def (f : Finset V → K) (k : K) (s t : V) :
+    ThresholdRelated f k s t ↔ s = t ∨ k ≤ pairMinimumValue f s t :=
+  Iff.rfl
+
+/-- Threshold relatedness is an equivalence relation whenever the minimum cut value is
+symmetric. -/
+theorem thresholdRelated_equivalence
+    (hsymm : ∀ s t, pairMinimumValue f s t = pairMinimumValue f t s) (k : K) :
+    Equivalence (ThresholdRelated f k) := by
+  refine ⟨?_, ?_, ?_⟩
+  · intro s
+    exact Or.inl rfl
+  · rintro s t (rfl | hst)
+    · exact Or.inl rfl
+    · exact Or.inr <| (hsymm s t) ▸ hst
+  · rintro s t u (rfl | hst) (rfl | htu)
+    · exact Or.inl rfl
+    · exact Or.inr htu
+    · exact Or.inr hst
+    · by_cases hsu : s = u
+      · exact Or.inl hsu
+      · exact Or.inr <| (le_min hst htu).trans (min_pairMinimumValue_le f hsu t)
+
+/-- The equivalence relation whose classes are the threshold components. -/
+def thresholdSetoid (f : Finset V → K)
+    (hsymm : ∀ s t, pairMinimumValue f s t = pairMinimumValue f t s) (k : K) : Setoid V where
+  r := ThresholdRelated f k
+  iseqv := thresholdRelated_equivalence hsymm k
+
+@[simp]
+theorem thresholdSetoid_rel (f : Finset V → K)
+    (hsymm : ∀ s t, pairMinimumValue f s t = pairMinimumValue f t s) (k : K) (s t : V) :
+    thresholdSetoid f hsymm k s t ↔ s = t ∨ k ≤ pairMinimumValue f s t :=
+  Iff.rfl
+
+/-- The abstract type of threshold classes. -/
+def ThresholdComponent (f : Finset V → K)
+    (hsymm : ∀ s t, pairMinimumValue f s t = pairMinimumValue f t s) (k : K) :=
+  Quotient (thresholdSetoid f hsymm k)
+
+/-- The threshold class containing a vertex. -/
+def thresholdComponentMk (f : Finset V → K)
+    (hsymm : ∀ s t, pairMinimumValue f s t = pairMinimumValue f t s)
+    (k : K) (v : V) : ThresholdComponent f hsymm k :=
+  Quotient.mk _ v
+
+@[simp]
+theorem thresholdComponentMk_eq_iff (f : Finset V → K)
+    (hsymm : ∀ s t, pairMinimumValue f s t = pairMinimumValue f t s) (k : K) (s t : V) :
+    thresholdComponentMk f hsymm k s = thresholdComponentMk f hsymm k t ↔
+      s = t ∨ k ≤ pairMinimumValue f s t :=
+  Quotient.eq'
+
 namespace IsFlowEquivalentTree
 
 /-- Threshold relatedness is precisely reachability after deleting the tree edges lighter than
@@ -48,56 +102,40 @@ theorem thresholdRelated_iff_reachable (hT : IsFlowEquivalentTree f T w) (k : K)
     ThresholdRelated f k s t ↔ (T.deleteEdges {e | w e < k}).Reachable s t :=
   (hT.reachable_deleteEdges_iff k).symm
 
-/-- Threshold relatedness is an equivalence relation. -/
-theorem thresholdRelated_equivalence (hT : IsFlowEquivalentTree f T w) (k : K) :
-    Equivalence (ThresholdRelated f k) := by
-  refine ⟨?_, ?_, ?_⟩
-  · intro s
-    exact Or.inl rfl
-  · intro s t hst
-    rw [hT.thresholdRelated_iff_reachable k] at hst ⊢
-    exact hst.symm
-  · intro s t u hst htu
-    rw [hT.thresholdRelated_iff_reachable k] at hst htu ⊢
-    exact hst.trans htu
-
-/-- The equivalence relation whose classes are the threshold components. -/
-def thresholdSetoid (hT : IsFlowEquivalentTree f T w) (k : K) : Setoid V where
-  r := ThresholdRelated f k
-  iseqv := hT.thresholdRelated_equivalence k
-
-@[simp]
-theorem thresholdSetoid_rel (hT : IsFlowEquivalentTree f T w) (k : K) (s t : V) :
-    hT.thresholdSetoid k s t ↔ s = t ∨ k ≤ pairMinimumValue f s t :=
-  Iff.rfl
-
-/-- The abstract type of threshold classes. -/
-def ThresholdComponent (hT : IsFlowEquivalentTree f T w) (k : K) :=
-  Quotient (hT.thresholdSetoid k)
-
-/-- The threshold class containing a vertex. -/
-def thresholdComponentMk (hT : IsFlowEquivalentTree f T w) (k : K) (v : V) :
-    hT.ThresholdComponent k :=
-  Quotient.mk _ v
-
-@[simp]
-theorem thresholdComponentMk_eq_iff (hT : IsFlowEquivalentTree f T w) (k : K) (s t : V) :
-    hT.thresholdComponentMk k s = hT.thresholdComponentMk k t ↔
-      s = t ∨ k ≤ pairMinimumValue f s t :=
-  Quotient.eq'
+/-- A flow-equivalent tree makes the minimum cut value symmetric. -/
+theorem pairMinimumValue_symmetric (hT : IsFlowEquivalentTree f T w) :
+    ∀ s t, pairMinimumValue f s t = pairMinimumValue f t s := by
+  intro s t
+  by_cases hst : s = t
+  · subst t
+    rfl
+  · apply le_antisymm
+    · have hreach :=
+        (hT.reachable_deleteEdges_iff (pairMinimumValue f s t)).2 (Or.inr le_rfl)
+      exact ((hT.reachable_deleteEdges_iff (pairMinimumValue f s t)).1 hreach.symm).resolve_left
+        (Ne.symm hst)
+    · have hreach :=
+        (hT.reachable_deleteEdges_iff (pairMinimumValue f t s)).2 (Or.inr le_rfl)
+      exact ((hT.reachable_deleteEdges_iff (pairMinimumValue f t s)).1 hreach.symm).resolve_left
+        hst
 
 /-- Threshold classes are canonically the connected components of the threshold graph. -/
 def thresholdComponentEquiv (hT : IsFlowEquivalentTree f T w) (k : K) :
-    hT.ThresholdComponent k ≃ (T.deleteEdges {e | w e < k}).ConnectedComponent :=
-  show Quotient (hT.thresholdSetoid k) ≃
-    Quotient (T.deleteEdges {e | w e < k}).reachableSetoid from
-    Quotient.congrRight fun s t ↦ hT.thresholdRelated_iff_reachable k s t
+    ThresholdComponent f hT.pairMinimumValue_symmetric k ≃
+      (T.deleteEdges {e | w e < k}).ConnectedComponent :=
+  Quotient.congrRight
+    (r := thresholdSetoid f hT.pairMinimumValue_symmetric k)
+    (r' := (T.deleteEdges {e | w e < k}).reachableSetoid)
+    fun s t ↦ hT.thresholdRelated_iff_reachable k s t
 
 @[simp]
 theorem thresholdComponentEquiv_apply_mk (hT : IsFlowEquivalentTree f T w) (k : K) (v : V) :
-    hT.thresholdComponentEquiv k (hT.thresholdComponentMk k v) =
+    hT.thresholdComponentEquiv k
+        (thresholdComponentMk f hT.pairMinimumValue_symmetric k v) =
       (T.deleteEdges {e | w e < k}).connectedComponentMk v := by
-  exact Quotient.congr_mk (Equiv.refl V)
+  exact Quotient.congr_mk
+    (ra := thresholdSetoid f hT.pairMinimumValue_symmetric k)
+    (rb := (T.deleteEdges {e | w e < k}).reachableSetoid) (Equiv.refl V)
     (fun s t ↦ hT.thresholdRelated_iff_reachable k s t) v
 
 @[simp]
@@ -105,7 +143,7 @@ theorem thresholdComponentEquiv_symm_apply_mk
     (hT : IsFlowEquivalentTree f T w) (k : K) (v : V) :
     (hT.thresholdComponentEquiv k).symm
         ((T.deleteEdges {e | w e < k}).connectedComponentMk v) =
-      hT.thresholdComponentMk k v := by
+      thresholdComponentMk f hT.pairMinimumValue_symmetric k v := by
   apply (hT.thresholdComponentEquiv k).injective
   simp
 
@@ -130,7 +168,7 @@ theorem mem_thresholdComponent_iff (hT : IsFlowEquivalentTree f T w) (k : K) (s 
 /-- The abstract threshold quotient and the graph's connected-component type have the same
 cardinality. -/
 theorem natCard_thresholdComponent_eq (hT : IsFlowEquivalentTree f T w) (k : K) :
-    Nat.card (hT.ThresholdComponent k) =
+    Nat.card (ThresholdComponent f hT.pairMinimumValue_symmetric k) =
       Nat.card (T.deleteEdges {e | w e < k}).ConnectedComponent :=
   Nat.card_congr (hT.thresholdComponentEquiv k)
 
