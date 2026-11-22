@@ -41,7 +41,10 @@ a nonnegative constant preserves integrability without assuming a finite measure
 (`MeasureTheory.Integrable.const_inf`). A function nonzero at an atom of infinite mass is not
 integrable (`MeasureTheory.not_integrable_of_measure_singleton_eq_top`). A multiplier bounded on
 a set containing the support of an integrable function keeps it integrable
-(`MeasureTheory.Integrable.smul_of_support_subset`).
+(`MeasureTheory.Integrable.smul_of_support_subset`), and so does an operator-valued function
+bounded on a set outside which the integrable function vanishes
+(`MeasureTheory.Integrable.apply_of_norm_le`). An `Lᵖ` function with `1 ≤ p` vanishing outside
+a set of finite measure is integrable (`MeasureTheory.MemLp.integrable_of_ae_notMem_eq_zero`).
 Scalar multiplication by a finite product of multiplicative indicators, each constant on a
 null-measurable set and equal to `1` off it, preserves integrability
 (`MeasureTheory.Integrable.prod_mulIndicator_const_smul`).
@@ -207,6 +210,29 @@ theorem Integrable.smul_of_support_subset {α 𝕜 E : Type*} [NormedRing 𝕜]
     Integrable (fun x ↦ g x • f x) μ :=
   (hf.norm.const_mul K).mono' (hg.smul hf.1)
     (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
+
+/-- An integrable function vanishing almost everywhere outside a set stays integrable when an
+operator-valued function bounded on that set is applied to it. -/
+theorem Integrable.apply_of_norm_le {α 𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [MeasurableSpace α] {μ : Measure α} {f : α → E} {A : α → E →L[𝕜] F} {t : Set α} {M : ℝ}
+    (hf : Integrable f μ) (hA : AEStronglyMeasurable A μ) (hM : ∀ y ∈ t, ‖A y‖ ≤ M)
+    (hft : ∀ᵐ y ∂μ, y ∉ t → f y = 0) : Integrable (fun y ↦ A y (f y)) μ := by
+  refine (hf.norm.const_mul M).mono'
+    ((isBoundedBilinearMap_apply.continuous).comp_aestronglyMeasurable
+      (hA.prodMk hf.aestronglyMeasurable)) ?_
+  filter_upwards [hft] with y hy
+  by_cases hyt : y ∈ t
+  · exact ((A y).le_opNorm _).trans (mul_le_mul_of_nonneg_right (hM y hyt) (norm_nonneg _))
+  · simp [hy hyt]
+
+/-- An `Lᵖ` function, `1 ≤ p`, vanishing almost everywhere outside a set of finite measure is
+integrable. -/
+theorem MemLp.integrable_of_ae_notMem_eq_zero {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] {f : α → E} {p : ENNReal} (hf : MemLp f p μ) (hp : 1 ≤ p) {s : Set α}
+    (hs : μ s ≠ ⊤) (hfs : ∀ᵐ x ∂μ, x ∉ s → f x = 0) : Integrable f μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  exact IntegrableOn.integrable_of_ae_notMem_eq_zero ((hf.restrict s).integrable hp) hfs
 
 end MeasureTheory
 

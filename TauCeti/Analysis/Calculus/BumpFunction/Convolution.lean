@@ -10,6 +10,7 @@ public import Mathlib.Topology.MetricSpace.Lipschitz
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.Calculus.BumpFunction.Rescale
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.Holder
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -82,6 +83,12 @@ theorem rOut_shrinking (hR : 0 < R) (n : ℕ) :
     (shrinking hR n : ContDiffBump c).rOut = R / (n + 1) :=
   (rfl)
 
+/-- The outer radius of `ContDiffBump.shrinking` is at most `R`. -/
+theorem rOut_shrinking_le (hR : 0 < R) (n : ℕ) :
+    (shrinking hR n : ContDiffBump c).rOut ≤ R := by
+  rw [rOut_shrinking]
+  exact div_le_self hR.le (by simp)
+
 /-- The outer radius of `ContDiffBump.shrinking` is twice its inner radius. -/
 theorem rOut_shrinking_eq_two_mul_rIn (hR : 0 < R) (n : ℕ) :
     (shrinking hR n : ContDiffBump c).rOut = 2 * (shrinking hR n : ContDiffBump c).rIn := by
@@ -106,11 +113,10 @@ theorem exists_seq_sub_tsupport_subset {E : Type*} [NormedAddCommGroup E] [Norme
   obtain ⟨δ, hδ, hδΩ⟩ := hWc.exists_cthickening_subset_open Ω.isOpen hWΩ
   refine ⟨shrinking hδ, tendsto_rOut_shrinking hδ, ?_⟩
   intro n x hx y hy
-  rw [(shrinking hδ n).tsupport_normed_eq, mem_closedBall, dist_zero_right,
-    rOut_shrinking] at hy
+  rw [(shrinking hδ n).tsupport_normed_eq, mem_closedBall, dist_zero_right] at hy
   refine hδΩ (mem_cthickening_of_dist_le _ x δ _ (subset_closure hx) ?_)
   rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
-  exact hy.trans (div_le_self hδ.le (by simp))
+  exact hy.trans (rOut_shrinking_le hδ n)
 
 /-- `ContDiffBump.shrinking hR n` is `ContDiffBump.shrinking hR 0` rescaled by the factor `n + 1`,
 so all the bumps of the sequence are rescalings of one kernel. -/
@@ -118,17 +124,12 @@ theorem shrinking_apply_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E
     [HasContDiffBump E] (hR : 0 < R) (n : ℕ) (x : E) :
     (shrinking hR n : ContDiffBump (0 : E)) x =
       (shrinking hR 0 : ContDiffBump (0 : E)) (((n : ℝ) + 1) • x) := by
-  have hratio : (R / ((n : ℝ) + 1)) / (R / (2 * ((n : ℝ) + 1))) =
-      (R / ((0 : ℕ) + 1 : ℝ)) / (R / (2 * ((0 : ℕ) + 1 : ℝ))) := by
-    field_simp
-  have hscale : (R / (2 * ((n : ℝ) + 1)))⁻¹ • x =
-      (R / (2 * ((0 : ℕ) + 1 : ℝ)))⁻¹ • (((n : ℝ) + 1) • x) := by
-    rw [smul_smul]
-    congr 1
-    field_simp
-    norm_num
-  simp only [ContDiffBump.apply, sub_zero, rIn_shrinking, rOut_shrinking]
-  rw [hratio, hscale]
+  rw [apply_eq_apply_smul_of_rOut_div_rIn_eq _ (shrinking hR 0)
+    (by simp only [rOut_shrinking, rIn_shrinking]; field_simp)]
+  congr 2
+  simp only [rIn_shrinking]
+  field_simp
+  norm_num
 
 end Shrinking
 
@@ -157,23 +158,21 @@ theorem integral_shrinking_normed_mul {R : ℝ} (hR : 0 < R) (n : ℕ) (f : G �
   set S : ℝ := (n : ℝ) + 1
   have hS : 0 < S := by positivity
   set d := Module.finrank ℝ G
-  have hI : ∫ t, (shrinking (c := (0 : G)) hR n) t ∂μ =
-      (S ^ d)⁻¹ * ∫ s, (shrinking (c := (0 : G)) hR 0) s ∂μ := by
-    simp_rw [shrinking_apply_eq hR n]
-    rw [Measure.integral_comp_smul_of_nonneg μ _ S (hR := hS.le), smul_eq_mul]
-  have hI0 : ∫ s, (shrinking (c := (0 : G)) hR 0) s ∂μ ≠ 0 := (integral_pos _).ne'
-  have hSd : S ^ d ≠ 0 := pow_ne_zero _ hS.ne'
-  set g : G → ℝ := fun s => (shrinking (c := (0 : G)) hR 0).normed μ s * f (S⁻¹ • s) * S ^ d
-  have hg (t : G) : (shrinking (c := (0 : G)) hR n).normed μ t * f t = g (S • t) := by
-    simp only [g, normed_def]
-    rw [hI, shrinking_apply_eq hR n, inv_smul_smul₀ hS.ne']
+  have hc : (shrinking (c := (0 : G)) hR 0).rIn / (shrinking (c := (0 : G)) hR n).rIn = S := by
+    simp only [rIn_shrinking, S]
     field_simp
-    exact mul_comm _ _
+    norm_num
+  set g : G → ℝ := fun s => S ^ d * ((shrinking (c := (0 : G)) hR 0).normed μ s * f (S⁻¹ • s))
+  have hg (t : G) : (shrinking (c := (0 : G)) hR n).normed μ t * f t = g (S • t) := by
+    rw [normed_eq_mul_normed_smul_of_rOut_div_rIn_eq _ (shrinking hR 0)
+      (by simp only [rOut_shrinking, rIn_shrinking]; field_simp), hc]
+    simp only [g, inv_smul_smul₀ hS.ne']
+    ring
   calc ∫ t, (shrinking (c := (0 : G)) hR n).normed μ t * f t ∂μ = ∫ t, g (S • t) ∂μ :=
         integral_congr_ae (.of_forall hg)
     _ = (S ^ d)⁻¹ • ∫ s, g s ∂μ := Measure.integral_comp_smul_of_nonneg μ g S (hR := hS.le)
     _ = _ := by
-        simp only [g, smul_eq_mul, integral_mul_const]
+        simp only [g, smul_eq_mul, integral_const_mul]
         field_simp
 
 /-- Normalized bumps of shrinking radius approximate a function uniformly on a set `s` when the

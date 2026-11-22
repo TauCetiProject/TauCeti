@@ -25,7 +25,13 @@ so that positions move by `ρ(g)` and frequencies, being covectors, by the inver
 quantization intertwines the two actions exactly: `Op(g • a) = g • Op(a) • g⁻¹`
 (`TauCeti.Symbol.quantizeSchwartzValue_transport`). This is the linear change of coordinates of
 `TauCeti.Symbol.quantizeSchwartzValue_compProdMap_symm_adjointEquiv`, followed by conjugation of
-the coefficients.
+the coefficients. More generally a symbol can be transported along isomorphisms `V ≃ V'`,
+`W ≃ W'` of the coefficient spaces (`TauCeti.Symbol.transport`). Transport is functorial
+(`TauCeti.Symbol.transport_transport`, `TauCeti.Symbol.transport_mul`), and, as a linear change of
+variables followed by a change of coefficients (`TauCeti.Symbol.transport_eq_map_compProdMap`), it
+preserves smoothing symbols, uniform estimates and compact spatial support
+(`TauCeti.Symbol.IsSmoothing.transport`, `TauCeti.Symbol.IsUniform.transport`,
+`TauCeti.Symbol.HasCompactSpatialSupport.transport`).
 
 For a left-invariant finite measure `μ` on `G`, such as the normalized Haar measure
 `TauCeti.haarProb G`, the **average** `∫ g • a dμ(g)` of a symbol `a` of order `m` is again a
@@ -103,24 +109,27 @@ end SchwartzRep
 
 namespace Symbol
 
-variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
-  [NormedSpace ℂ W] {m : ℝ}
+variable {n : ℕ} {V W V' W' V'' W'' : Type*}
+  [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
+  [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W'] [NormedSpace ℂ W']
+  [NormedAddCommGroup V''] [NormedSpace ℂ V''] [NormedAddCommGroup W''] [NormedSpace ℂ W'']
+  {m : ℝ}
 
 section Transport
 
 /-- **Transport of a symbol along a linear symmetry.** For a linear automorphism `A` of `ℝⁿ` and
-automorphisms `e` of `V` and `f` of `W`, the symbol `(x, ξ) ↦ f ∘ a(A⁻¹ x, Aᵀ ξ) ∘ e⁻¹` of order
-`m`. Its quantization is `Op(a)` conjugated by `u ↦ e ∘ u ∘ A⁻¹` on inputs and by
+isomorphisms `e : V ≃ V'` and `f : W ≃ W'`, the symbol `(x, ξ) ↦ f ∘ a(A⁻¹ x, Aᵀ ξ) ∘ e⁻¹` of
+order `m`. Its quantization is `Op(a)` conjugated by `u ↦ e ∘ u ∘ A⁻¹` on inputs and by
 `v ↦ f ∘ v ∘ A⁻¹` on outputs (`TauCeti.Symbol.quantizeSchwartzValue_transport`). -/
-def transport (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V) (f : W ≃L[ℂ] W)
-    (a : Symbol n V W m) : Symbol n V W m :=
+def transport (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W')
+    (a : Symbol n V W m) : Symbol n V' W' m :=
   (compProdMap (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) A.adjointEquiv a).map
     ((e.arrowCongr f).toContinuousLinearMap.restrictScalars ℝ)
 
 /-- The coefficient of the transported symbol, as the conjugation `T ↦ f ∘ T ∘ e⁻¹` applied to a
 linear change of variables of the coefficient. -/
 private theorem coefficient_transport_eq_comp (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
-    (e : V ≃L[ℂ] V) (f : W ≃L[ℂ] W) (a : Symbol n V W m) :
+    (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') (a : Symbol n V W m) :
     (transport A e f a).coefficient =
       ((e.arrowCongr f).toContinuousLinearMap.restrictScalars ℝ) ∘
         (a.coefficient ∘ (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n).prodMap
@@ -128,27 +137,27 @@ private theorem coefficient_transport_eq_comp (A : CoordinateSpace n ≃L[ℝ] C
   funext fun ⟨x, ξ⟩ ↦ by simp [transport]
 
 @[simp]
-theorem coefficient_transport (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V)
-    (f : W ≃L[ℂ] W) (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
+theorem coefficient_transport (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V')
+    (f : W ≃L[ℂ] W') (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
     (transport A e f a).coefficient p =
-      (f : W →L[ℂ] W) ∘L a.coefficient (A.symm p.1, A.adjointEquiv p.2) ∘L
-        (e.symm : V →L[ℂ] V) :=
+      (f : W →L[ℂ] W') ∘L a.coefficient (A.symm p.1, A.adjointEquiv p.2) ∘L
+        (e.symm : V' →L[ℂ] V) :=
   ContinuousLinearMap.ext fun v ↦ by simp [transport]
 
 @[simp]
-theorem transport_zero (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V)
-    (f : W ≃L[ℂ] W) : transport A e f (0 : Symbol n V W m) = 0 :=
+theorem transport_zero (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V')
+    (f : W ≃L[ℂ] W') : transport A e f (0 : Symbol n V W m) = 0 :=
   Symbol.ext (funext fun p ↦ ContinuousLinearMap.ext fun v ↦ by simp)
 
 @[simp]
-theorem transport_add (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V)
-    (f : W ≃L[ℂ] W) (a b : Symbol n V W m) :
+theorem transport_add (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V')
+    (f : W ≃L[ℂ] W') (a b : Symbol n V W m) :
     transport A e f (a + b) = transport A e f a + transport A e f b :=
   Symbol.ext (funext fun p ↦ ContinuousLinearMap.ext fun v ↦ by simp)
 
 @[simp]
-theorem transport_smul (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V)
-    (f : W ≃L[ℂ] W) (c : ℂ) (a : Symbol n V W m) :
+theorem transport_smul (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V')
+    (f : W ≃L[ℂ] W') (c : ℂ) (a : Symbol n V W m) :
     transport A e f (c • a) = c • transport A e f a :=
   Symbol.ext (funext fun p ↦ ContinuousLinearMap.ext fun v ↦ by simp)
 
@@ -159,14 +168,78 @@ theorem transport_one (a : Symbol n V W m) : transport 1 1 1 a = a := by
   simp [ContinuousLinearEquiv.one_eq_refl, ContinuousLinearEquiv.adjointEquiv_apply,
     ContinuousLinearMap.adjoint_id]
 
-/-- Transport is compatible with composition of the symmetries: transporting along
-`(B, e', f')` and then along `(A, e, f)` is transporting along `(A B, e e', f f')`. -/
-theorem transport_transport (A B : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e e' : V ≃L[ℂ] V)
-    (f f' : W ≃L[ℂ] W) (a : Symbol n V W m) :
-    transport A e f (transport B e' f' a) = transport (A * B) (e * e') (f * f') a := by
+/-- Transport along the identity symmetries leaves a symbol unchanged. -/
+@[simp]
+theorem transport_refl (a : Symbol n V W m) :
+    transport (.refl ℝ (CoordinateSpace n)) (.refl ℂ V) (.refl ℂ W) a = a := by
+  simpa only [ContinuousLinearEquiv.one_eq_refl] using transport_one a
+
+/-- Transport is functorial: transporting along `(B, e₁, f₁)` and then along `(A, e₂, f₂)` is
+transporting along the composites. -/
+@[simp]
+theorem transport_transport (A B : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e₁ : V ≃L[ℂ] V')
+    (e₂ : V' ≃L[ℂ] V'') (f₁ : W ≃L[ℂ] W') (f₂ : W' ≃L[ℂ] W'') (a : Symbol n V W m) :
+    transport A e₂ f₂ (transport B e₁ f₁ a) =
+      transport (B.trans A) (e₁.trans e₂) (f₁.trans f₂) a := by
   refine Symbol.ext (funext fun p ↦ ContinuousLinearMap.ext fun v ↦ ?_)
-  simp [ContinuousLinearEquiv.mul_eq_trans, ContinuousLinearEquiv.adjointEquiv_apply,
-    ← ContinuousLinearEquiv.comp_coe, ContinuousLinearMap.adjoint_comp]
+  simp [ContinuousLinearEquiv.adjointEquiv_apply, ← ContinuousLinearEquiv.comp_coe,
+    ContinuousLinearMap.adjoint_comp]
+
+/-- For automorphisms, transport turns products into composites, so a group homomorphism into the
+linear symmetries gives an action on symbols. -/
+theorem transport_mul (A B : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e e' : V ≃L[ℂ] V)
+    (f f' : W ≃L[ℂ] W) (a : Symbol n V W m) :
+    transport (A * B) (e * e') (f * f') a = transport A e f (transport B e' f' a) := by
+  simp only [ContinuousLinearEquiv.mul_eq_trans, transport_transport]
+
+/-- Transport is the linear change of variables `(y, η) ↦ (A⁻¹ y, Aᵀ η)` followed by the change
+`T ↦ f ∘ T ∘ e⁻¹` of coefficients. -/
+theorem transport_eq_map_compProdMap (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+    (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') (a : Symbol n V W m) :
+    transport A e f a = (compProdMap (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+      A.adjointEquiv a).map ((e.arrowCongr f).toContinuousLinearMap.restrictScalars ℝ) := by
+  rw [transport]
+
+/-- The mixed derivatives of a transported symbol are the conjugated mixed derivatives of the
+symbol with the positions and frequencies changed. -/
+theorem mixedDeriv_transport (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+    (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') (a : Symbol n V W m) (α β : List (Fin n))
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (transport A e f a).coefficient x ξ =
+      (f : W →L[ℂ] W') ∘L mixedDeriv α β (a.coefficient ∘
+        (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n).prodMap
+          (A.adjointEquiv : CoordinateSpace n →L[ℝ] CoordinateSpace n)) x ξ ∘L
+            (e.symm : V' →L[ℂ] V) := by
+  rw [coefficient_transport_eq_comp, ContinuousLinearMap.mixedDeriv_comp_left _
+    (a.contDiff_coefficient.comp (ContinuousLinearMap.contDiff _))]
+  ext v
+  simp
+
+/-- Transport commutes with the inclusion of symbol classes. -/
+@[simp]
+theorem transport_inclusion {m' : ℝ} (h : m ≤ m') (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+    (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') (a : Symbol n V W m) :
+    transport A e f (inclusion h a) = inclusion h (transport A e f a) :=
+  Symbol.ext (funext fun _ ↦ by simp [coefficient_inclusion])
+
+/-- Transport preserves smoothing symbols. -/
+theorem IsSmoothing.transport {a : Symbol n V W m} (ha : a.IsSmoothing)
+    (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') :
+    (Symbol.transport A e f a).IsSmoothing :=
+  (ha.compProdMap _ _).map _
+
+/-- Transport preserves estimates uniform in the position. -/
+theorem IsUniform.transport {a : Symbol n V W m} (ha : a.IsUniform)
+    (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') :
+    (Symbol.transport A e f a).IsUniform :=
+  (ha.compProdMap _ _).map _
+
+/-- Transport preserves compact spatial support: if `a` vanishes outside `K`, its transport
+vanishes outside `A K`. -/
+theorem HasCompactSpatialSupport.transport {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+    (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') : (Symbol.transport A e f a).HasCompactSpatialSupport :=
+  (ha.compProdMap A.symm A.adjointEquiv).map _
 
 open scoped FourierTransform
 
@@ -174,10 +247,10 @@ open scoped FourierTransform
 conjugates `Op(a)` by the actions `u ↦ e ∘ u ∘ A⁻¹` on inputs and `w ↦ f ∘ w ∘ A⁻¹` on outputs:
 `Op(transport A e f a)(e ∘ v ∘ A⁻¹)(y) = f (Op(a) v (A⁻¹ y))`. -/
 theorem quantizeSchwartzValue_transport (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
-    (e : V ≃L[ℂ] V) (f : W ≃L[ℂ] W) (a : Symbol n V W m) (v : 𝓢(CoordinateSpace n, V))
+    (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') (a : Symbol n V W m) (v : 𝓢(CoordinateSpace n, V))
     (y : CoordinateSpace n) :
     quantizeSchwartzValue (transport A e f a).coefficient
-        ((SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.symm v).postcompCLM (e : V →L[ℂ] V)) y =
+        ((SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.symm v).postcompCLM (e : V →L[ℂ] V')) y =
       f (quantizeSchwartzValue a.coefficient v (A.symm y)) := by
   have hv : SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A
       (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.symm v) = v := by
@@ -216,11 +289,27 @@ theorem quantizeSchwartzValue_schwartzRep {G : Type*} [Group G]
     simp
   rw [hrep, quantizeSchwartzValue_of_transport_eq (ha g), ContinuousLinearEquiv.symm_apply_apply]
 
+/-- The quantization of a transported symbol on an arbitrary input `u`: at `y` it is
+`f (Op(a) (e⁻¹ ∘ u ∘ A) (A⁻¹ y))`. -/
+theorem quantizeSchwartzValue_transport_apply (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+    (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V'))
+    (y : CoordinateSpace n) :
+    quantizeSchwartzValue (transport A e f a).coefficient u y =
+      f (quantizeSchwartzValue a.coefficient
+        (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A (u.postcompCLM (e.symm : V' →L[ℂ] V)))
+        (A.symm y)) := by
+  have hu : (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.symm
+      (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A
+        (u.postcompCLM (e.symm : V' →L[ℂ] V)))).postcompCLM (e : V →L[ℂ] V') = u := by
+    ext z
+    simp
+  rw [← quantizeSchwartzValue_transport A e f a, hu]
+
 end Transport
 
 section Average
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousInv G] [CompactSpace G]
   [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G) [IsFiniteMeasure μ]
   (ρ : G →* (CoordinateSpace n ≃L[ℝ] CoordinateSpace n)) (σ : G →* (V ≃L[ℂ] V))
   (τ : G →* (W ≃L[ℂ] W))
@@ -286,7 +375,8 @@ private theorem exists_bound_mixedDeriv_transport (a : Symbol n V W m)
   have hρc (g : G) : ‖(ρ g : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ ≤ c :=
     ((BoundedContinuousFunction.mkOfCompact ⟨_, hρ⟩).norm_coe_le_norm g).trans (le_max_right _ _)
   obtain ⟨B, hB0, hB⟩ :=
-    exists_bound_mixedDeriv_comp_prodMap (m := m) a.contDiff_coefficient (le_max_left 1 Cρ) C α β
+    exists_bound_mixedDeriv_comp_prodMap_of_norm_le_mul_norm (m := m) a.contDiff_coefficient
+      (le_max_left 1 Cρ) C α β
   refine ⟨Cτ * B * Cσ, by positivity, fun g x hx ξ ↦ ?_⟩
   -- The position map is `ρ(g⁻¹)` and the frequency map is the adjoint of `ρ(g)`, with inverse the
   -- adjoint of `ρ(g⁻¹)`; all three have norm at most `c`.
@@ -408,7 +498,7 @@ theorem transport_average (a : Symbol n V W m) (h : G) :
   have hgh (g : G) : (σ h).arrowCongr (τ h) ((transport (ρ g) (σ g) (τ g) a).coefficient
       ((ρ h).symm p.1, (ρ h).adjointEquiv p.2)) =
       (transport (ρ (h * g)) (σ (h * g)) (τ (h * g)) a).coefficient p := by
-    rw [← hconj, ← coefficient_transport, transport_transport, map_mul, map_mul, map_mul]
+    rw [← hconj, ← coefficient_transport, map_mul, map_mul, map_mul, transport_mul]
   calc (transport (ρ h) (σ h) (τ h) (average μ hρ hσ hτ a)).coefficient p
       = (σ h).arrowCongr (τ h) (∫ g, (transport (ρ g) (σ g) (τ g) a).coefficient
           ((ρ h).symm p.1, (ρ h).adjointEquiv p.2) ∂μ) := by
@@ -449,7 +539,7 @@ theorem quantizeSchwartzValue_average (a : Symbol n V W m) (u : 𝓢(CoordinateS
     ext y
     simp
   dsimp only
-  rw [← quantizeSchwartzValue_transport, hu]
+  rw [← quantizeSchwartzValue_transport (ρ g) (σ g) (τ g), hu]
 
 omit [MeasurableMul G] [μ.IsMulLeftInvariant] in
 /-- **Averaging an invariant symbol.** A symbol invariant under the action of every `g ∈ G`
@@ -501,7 +591,7 @@ theorem IsUniform.average {a : Symbol n V W m} (ha : a.IsUniform) :
     (fun α' β' y _ η ↦ hC α' β' y η) α β
   refine ⟨μ.real Set.univ * B, mul_nonneg measureReal_nonneg hB0, fun x ξ ↦ ?_⟩
   have hcoef : (Symbol.average μ hρ hσ hτ a).coefficient =
-      fun p ↦ ∫ g, (transport (ρ g) (σ g) (τ g) a).coefficient p ∂μ :=
+      fun p ↦ ∫ g, (Symbol.transport (ρ g) (σ g) (τ g) a).coefficient p ∂μ :=
     funext fun p ↦ by rw [Symbol.average, coefficient_integral]
   rw [hcoef]
   exact norm_mixedDeriv_integral_le μ _ (continuous_iteratedFDeriv_transport hρ hσ hτ a) α β x ξ
