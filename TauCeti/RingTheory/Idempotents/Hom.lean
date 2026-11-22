@@ -123,7 +123,7 @@ variable {e f : A}
 theorem apply_generator_mem_cornerSubmodule (he : IsIdempotentElem e)
     (φ : (Ideal.span {e} : Ideal A) →ₗ[A] (Ideal.span {f} : Ideal A)) :
     (φ (spanSingletonGenerator e) : A) ∈ cornerSubmodule k e f := by
-  obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp (φ (spanSingletonGenerator e)).2
+  obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp (φ (spanSingletonGenerator e)).property
   have hleft : e * (φ (spanSingletonGenerator e) : A) = (φ (spanSingletonGenerator e) : A) := by
     simpa only [coe_spanSingletonGenerator] using
       (coe_apply_eq_mul_apply_generator he φ (spanSingletonGenerator e)).symm
@@ -134,7 +134,7 @@ theorem apply_generator_mem_cornerSubmodule (he : IsIdempotentElem e)
 def cornerToSpanSingletonHom (x : cornerSubmodule k e f) :
     (Ideal.span {e} : Ideal A) →ₗ[A] (Ideal.span {f} : Ideal A) where
   toFun y := ⟨(y : A) * (x : A), (Ideal.span {f}).mul_mem_left (y : A)
-    (mem_span_singleton_of_mem_cornerSubmodule x.2)⟩
+    (mem_span_singleton_of_mem_cornerSubmodule x.property)⟩
   map_add' y z := Subtype.ext (by simpa using add_mul (y : A) (z : A) (x : A))
   map_smul' a y := Subtype.ext (by simpa using mul_assoc a (y : A) (x : A))
 
@@ -161,7 +161,7 @@ def spanSingletonHomEquivCorner (he : IsIdempotentElem e) :
   right_inv x := by
     refine Subtype.ext ?_
     rw [coe_cornerToSpanSingletonHom_apply, coe_spanSingletonGenerator]
-    exact mul_eq_self_of_mem_cornerSubmodule he x.2
+    exact mul_eq_self_of_mem_cornerSubmodule he x.property
 
 @[simp]
 theorem coe_spanSingletonHomEquivCorner_apply (he : IsIdempotentElem e)
@@ -203,16 +203,16 @@ noncomputable def endSpanSingletonRingEquiv (he : IsIdempotentElem e) :
 @[simp]
 theorem val_endSpanSingletonRingEquiv_apply (he : IsIdempotentElem e)
     (φ : (Module.End A (Ideal.span {e} : Ideal A))ᵐᵒᵖ) :
-    (he.endSpanSingletonRingEquiv φ).1 = (unop φ (spanSingletonGenerator e) : A) := by
+    (he.endSpanSingletonRingEquiv φ).val = (unop φ (spanSingletonGenerator e) : A) := by
   -- Unfold the definition to the two dictionary equivalences, which have `simp` lemmas.
   change ((he.cornerLinearEquivCornerSubmodule (R := ℕ)).symm
-    (spanSingletonHomEquivCorner (k := ℕ) he (unop φ))).1 = _
+    (spanSingletonHomEquivCorner (k := ℕ) he (unop φ))).val = _
   simp
 
 @[simp]
 theorem coe_unop_endSpanSingletonRingEquiv_symm_apply (he : IsIdempotentElem e) (c : he.Corner)
     (y : (Ideal.span {e} : Ideal A)) :
-    (unop (he.endSpanSingletonRingEquiv.symm c) y : A) = (y : A) * c.1 := by
+    (unop (he.endSpanSingletonRingEquiv.symm c) y : A) = (y : A) * c.val := by
   -- Unfold the definition to the two dictionary equivalences, which have `simp` lemmas.
   change ((spanSingletonHomEquivCorner (k := ℕ) he).symm
     (he.cornerLinearEquivCornerSubmodule (R := ℕ) c) y : A) = _
@@ -232,10 +232,10 @@ theorem exists_mul_eq_of_linearEquiv (he : IsIdempotentElem e) (hf : IsIdempoten
     simpa only [coe_spanSingletonGenerator, LinearEquiv.coe_coe] using
       (coe_apply_eq_mul_apply_generator hf φ.symm.toLinearMap (spanSingletonGenerator f)).symm
   have haf : (φ (spanSingletonGenerator e) : A) * f = φ (spanSingletonGenerator e) := by
-    obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp (φ (spanSingletonGenerator e)).2
+    obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp (φ (spanSingletonGenerator e)).property
     rw [← hc, mul_assoc, hf.eq]
   have hbe : (φ.symm (spanSingletonGenerator f) : A) * e = φ.symm (spanSingletonGenerator f) := by
-    obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp (φ.symm (spanSingletonGenerator f)).2
+    obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp (φ.symm (spanSingletonGenerator f)).property
     rw [← hc, mul_assoc, he.eq]
   -- The value of `φ` at the generator is `a` times the generator of `Af`, and dually.
   have hφ : φ (spanSingletonGenerator e) =

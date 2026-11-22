@@ -133,7 +133,7 @@ theorem simple_ne_one {s : T.WeylGroup} (hs : s ∈ T.simple) : s ≠ 1 := by
   obtain ⟨r, hr, b, hb⟩ := T.exists_conj_not_mem 1 hs
   have hrB : (r : G) ∈ T.subgroupB :=
     (T.mem_intersection r).mp ((QuotientGroup.eq_one_iff r).mp hr)
-  exact hb (mul_mem (mul_mem hrB b.2) (inv_mem hrB))
+  exact hb (mul_mem (mul_mem hrB b.property) (inv_mem hrB))
 
 end TitsSystem
 

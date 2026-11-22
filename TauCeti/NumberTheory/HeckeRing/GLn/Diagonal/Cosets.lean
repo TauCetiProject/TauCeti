@@ -220,7 +220,7 @@ private lemma double_coset_eq_of_SLnZ_equiv (α : posDetInt n) (A : Matrix (Fin 
 private lemma mk_eq_diagCoset (α : posDetInt n) :
     ∃ a : Fin n → ℕ, (∀ i, 0 < a i) ∧ IsDvdChain a ∧
       HeckeCoset.mk (SLnZ n) (SLnZ n) α = diagCoset a := by
-  obtain ⟨hint, hdet⟩ := (mem_posDetInt_iff n).mp α.2
+  obtain ⟨hint, hdet⟩ := (mem_posDetInt_iff n).mp α.property
   obtain ⟨A, hA⟩ := (hasIntEntries_iff n).mp hint
   have hdet_pos : 0 < A.det := by
     have h1 : (A.det : ℚ) = (↑(↑α : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det := by
@@ -273,7 +273,7 @@ theorem eq_of_diagCoset_eq {a b : Fin n → ℕ} (ha : ∀ i, 0 < a i)
     have h := congr_arg (fun (g : GL (Fin n) ℚ) ↦ (↑g : Matrix _ _ ℚ) i j) hmat
     simp only [natDiagGL_coe n a ha, natDiagGL_coe n b hb, Matrix.diagonal_apply,
       Units.val_mul, Matrix.mul_apply, mapGL_coe_matrix, map_apply_coe,
-      RingHom.mapMatrix_apply, Matrix.map_apply, algebraMap_int_eq, eq_intCast] at h
+      Matrix.map_apply, algebraMap_int_eq, eq_intCast] at h
     simp only [Matrix.diagonal_apply, Matrix.mul_apply]
     exact_mod_cast h.symm
   have hcast : (fun i ↦ (a i : ℤ)) = (fun i ↦ (b i : ℤ)) :=
@@ -288,7 +288,7 @@ theorem eq_of_diagCoset_eq {a b : Fin n → ℕ} (ha : ∀ i, 0 < a i)
 /-- **Classification of the double cosets** (Shimura §3.2): positive divisibility chains
 biject with the double cosets of the arithmetic Hecke triple. -/
 theorem diagCoset_bijective :
-    Function.Bijective (fun a : CanonicalDiagonal n ↦ diagCoset a.1) := by
+    Function.Bijective (fun a : CanonicalDiagonal n ↦ diagCoset a.val) := by
   constructor
   · rintro ⟨a, hapos, hachain⟩ ⟨b, hbpos, hbchain⟩ h
     exact Subtype.ext (eq_of_diagCoset_eq hapos hbpos hachain hbchain h)
@@ -304,15 +304,15 @@ noncomputable def diagCosetEquiv :
   Equiv.ofBijective _ diagCoset_bijective
 
 @[simp] lemma diagCosetEquiv_apply (a : CanonicalDiagonal n) :
-    diagCosetEquiv a = diagCoset a.1 := (rfl)
+    diagCosetEquiv a = diagCoset a.val := (rfl)
 
 /-- The Hecke ring of the arithmetic triple is spanned by the diagonal double coset elements
 `T(a₁,...,aₙ)` with positive entries and divisibility chain. -/
 theorem span_diagElem_eq_top :
-    Submodule.span ℤ (Set.range fun a : CanonicalDiagonal n ↦ diagElem a.1) = ⊤ := by
+    Submodule.span ℤ (Set.range fun a : CanonicalDiagonal n ↦ diagElem a.val) = ⊤ := by
   have hmem : ∀ (D : HeckeCoset (posDetInt n) (SLnZ n) (SLnZ n)) (c : ℤ),
       HeckeCosetModule.single ℤ D c ∈ Submodule.span ℤ
-        (Set.range fun a : CanonicalDiagonal n ↦ diagElem a.1) := by
+        (Set.range fun a : CanonicalDiagonal n ↦ diagElem a.val) := by
     intro D c
     obtain ⟨a, hpos, hchain, hrep⟩ := exists_diagonal_representative D
     subst hrep

@@ -65,6 +65,8 @@ singular chains that underlies the de Rham homomorphism to singular cohomology.
 * `TauCeti.SmoothSimplex.integral_add`, `TauCeti.SmoothSimplex.integral_neg`,
   `TauCeti.SmoothSimplex.integral_sub`, `TauCeti.SmoothSimplex.integral_smul`,
   `TauCeti.SmoothSimplex.integral_sum`: linearity.
+* `TauCeti.SmoothSimplex.integral_const`: forms of positive degree integrate to zero over constant
+  simplices.
 * `TauCeti.SmoothSimplex.integral_map`, `TauCeti.SmoothSimplex.integral_δ`,
   `TauCeti.SmoothSimplex.integral_map_eq_zero_of_lt`, `TauCeti.SmoothSimplex.integral_σ`:
   simplicial operators and degeneracy vanishing.
@@ -191,6 +193,18 @@ theorem integral_neg (σ : SmoothSimplex I M p) (φ : RoughForm I M F p) :
     σ.integral (-φ) = -σ.integral φ := by
   simpa only [neg_one_smul] using σ.integral_smul (-1 : ℝ) φ
 
+/-- A form of positive degree integrates to zero over a constant smooth simplex, whose derivative
+vanishes. -/
+@[simp]
+theorem integral_const (x₀ : M) (φ : RoughForm I M F (p + 1)) :
+    (const (I := I) x₀).integral φ = 0 := by
+  rw [(const x₀).integral_eq_setIntegral_mpullback φ (g := fun _ ↦ x₀)
+    (fun y ↦ (toContinuousMap_const_apply x₀ y).symm) fun _ _ ↦ mdifferentiableAt_const]
+  refine setIntegral_eq_zero_of_forall_eq_zero fun y _ ↦ ?_
+  refine (mpullback_apply (fun _ ↦ x₀) φ y _).trans ((φ x₀).map_coord_zero 0 ?_)
+  rw [mfderiv_const (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin (p + 1)))) (I' := I)]
+  exact zero_apply _
+
 variable [IsManifold I 1 M]
 
 /-- Along a map that agrees with a smooth simplex on `Δᵖ`, a `k`-form that is `C^n` at each point
@@ -282,7 +296,7 @@ theorem integral_map {q : ℕ} (σ : SmoothSimplex I M p) (f : ⦋q⦌ ⟶ ⦋p�
   let L := simplexMapAmbient f.toOrderHom
   rw [integral_eq_setIntegral_mpullbackWithin _ φ (g := σ.extension ∘ L) fun x ↦ by
     rw [Function.comp_apply, σ.toContinuousMap_map_apply,
-      ← σ.extension_coe ⟨L x, mapsTo_simplexMapAmbient _ x.2⟩]]
+      ← σ.extension_coe ⟨L x, mapsTo_simplexMapAmbient _ x.property⟩]]
   refine setIntegral_congr_fun (isClosed_fullSimplex q).measurableSet fun x hx ↦ ?_
   rw [mpullbackWithin_comp_simplexMapAmbient f.toOrderHom hx
     ((σ.contMDiffOn_extension (L x) (mapsTo_simplexMapAmbient _ hx)).mdifferentiableWithinAt
@@ -362,7 +376,7 @@ theorem integral_ofFunction [CompleteSpace F] (σ : SmoothSimplex I M 0) (a : M 
     σ.integral (RoughForm.ofFunction I a) = a (σ.toContinuousMap ⟨0, zero_mem_fullSimplex 0⟩) := by
   have hx : ∀ x : EuclideanSpace ℝ (Fin 0), x = 0 := fun x ↦ Subsingleton.elim x 0
   rw [integral_eq_setIntegral_mpullbackWithin σ _ (g := fun _ ↦ σ.toContinuousMap
-    ⟨0, zero_mem_fullSimplex 0⟩) fun x ↦ congrArg σ.toContinuousMap (Subtype.ext (hx x.1).symm)]
+    ⟨0, zero_mem_fullSimplex 0⟩) fun x ↦ congrArg σ.toContinuousMap (Subtype.ext (hx x.val).symm)]
   rw [mpullbackWithin_ofFunction]
   refine (setIntegral_congr_fun (isClosed_fullSimplex 0).measurableSet
     (g := fun _ ↦ a (σ.toContinuousMap ⟨0, zero_mem_fullSimplex 0⟩))
@@ -433,8 +447,8 @@ theorem integral_ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ 
 pinning the orientation convention of `SmoothSimplex.ofCurve` and `SmoothSimplex.integral`. -/
 @[simp]
 theorem integral_ofCurve_id_realLineCoordForm :
-    (ofCurve (I := 𝓘(ℝ)) (γ := id) contMDiff_id).integral SmoothForm.realLineCoordForm.1 = 1 := by
-  have hd : SmoothForm.realLineCoordForm.1 = mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) := by
+    (ofCurve (I := 𝓘(ℝ)) (γ := id) contMDiff_id).integral SmoothForm.realLineCoordForm.val = 1 := by
+  have hd : SmoothForm.realLineCoordForm.val = mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) := by
     simpa only [mpullback_id] using SmoothForm.mpullback_realLineCoordForm (I := 𝓘(ℝ)) id
   rw [integral_ofCurve, hd, pathIntegral_mextDeriv_ofFunction contMDiff_id contMDiff_id 0 1]
   norm_num

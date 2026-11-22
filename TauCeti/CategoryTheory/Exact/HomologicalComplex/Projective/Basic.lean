@@ -123,15 +123,16 @@ private noncomputable def homNeg : ∀ k : ℕ,
   | 0 => ⟨hA.homotopyStepDown (n := Int.negSucc 0) φ (hP _) 0 (sub_comp_p_eq_zero_zero hA φ),
       hA.sub_d_comp_homotopyStepDown_comp_p (n := Int.negSucc 0) φ (hP _) 0
         (sub_comp_p_eq_zero_zero hA φ)⟩
-  | k + 1 => ⟨hA.homotopyStepDown (n := Int.negSucc (k + 1)) φ (hP _) (homNeg k).1 (homNeg k).2,
-      hA.sub_d_comp_homotopyStepDown_comp_p (n := Int.negSucc (k + 1)) φ (hP _) (homNeg k).1
-        (homNeg k).2⟩
+  | k + 1 => ⟨hA.homotopyStepDown (n := Int.negSucc (k + 1)) φ (hP _) (homNeg k).val
+      (homNeg k).property,
+      hA.sub_d_comp_homotopyStepDown_comp_p (n := Int.negSucc (k + 1)) φ (hP _) (homNeg k).val
+        (homNeg k).property⟩
 
 /-- The components `Pⁿ⁺¹ ⟶ Aⁿ` of the null-homotopy: zero in nonnegative degrees, where
 `Pⁿ⁺¹ = 0`. -/
 private noncomputable def homotopyHom : ∀ n : ℤ, P.X (n + 1) ⟶ A.X n
   | Int.ofNat _ => 0
-  | Int.negSucc k => (homNeg hA φ hP k).1
+  | Int.negSucc k => (homNeg hA φ hP k).val
 
 private theorem comm_ofNat (k : ℕ) :
     φ.f (Int.ofNat k + 1) = P.d (Int.ofNat k + 1) (Int.ofNat k + 1 + 1) ≫
@@ -155,7 +156,7 @@ private theorem comm_negSucc_succ (k : ℕ) :
             A.d (Int.negSucc (k + 1)) (Int.negSucc (k + 1) + 1) := by
   rw [← sub_eq_iff_eq_add']
   exact (hA.homotopyStepDown_comp_d (n := Int.negSucc (k + 1)) φ (hP _) _
-    (homNeg hA φ hP k).2).symm
+    (homNeg hA φ hP k).property).symm
 
 /-- **Maps from complexes of projectives to acyclic complexes are null-homotopic**: a map from a
 complex of `E`-projective objects vanishing in positive degrees to an `E`-acyclic complex. -/

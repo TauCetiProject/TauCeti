@@ -176,7 +176,7 @@ theorem pathIntegral_sub_pathIntegral_hamiltonianFlowAction_eq_integral
     (hps : ∀ c ∈ D, p c ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c))
     (hβ : IsSmoothForm I 1 β)
     (hdβ : ∀ c ∈ D, ∀ v, mextDeriv β ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c)) =
-      -σ.1 ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c)))
+      -σ.val ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c)))
     {κ : ℝ → ι → ℝ} (hκ : ContDiff ℝ 2 κ) (hκD : ∀ r, κ r ∈ D) :
     pathIntegral β
         (fun τ ↦ (hσ.hamiltonianFlowAction hF hcomm hc (τ • p (κ 1))).toMul (s (κ 1))) 0 1 -
@@ -232,7 +232,7 @@ theorem hasFDerivAt_inv_two_pi_mul_pathIntegral_hamiltonianFlowAction (hD : IsOp
     (hps : ∀ c ∈ D, p c ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c))
     (hβ : IsSmoothForm I 1 β)
     (hdβ : ∀ c ∈ D, ∀ v, mextDeriv β ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c)) =
-      -σ.1 ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c)))
+      -σ.val ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c)))
     {c : ι → ℝ} (hcD : c ∈ D) :
     HasFDerivAt (fun c ↦ (2 * π)⁻¹ * pathIntegral β
         (fun τ ↦ (hσ.hamiltonianFlowAction hF hcomm hc (τ • p c)).toMul (s c)) 0 1)

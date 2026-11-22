@@ -165,22 +165,22 @@ theorem exists_dense_open_flat
     ∃ U : Y.Opens, Dense (U : Set Y) ∧ Flat (f ∣_ U) := by
   classical
   have h (A : Y.affineOpens) :
-      ∃ V : A.1.toScheme.Opens, Dense (V : Set A.1.toScheme) ∧ Flat (f ∣_ A.1 ∣_ V) := by
-    have : IsAffine A.1.toScheme := A.2
-    exact exists_dense_open_flat_of_isAffine (f ∣_ A.1)
+      ∃ V : A.val.toScheme.Opens, Dense (V : Set A.val.toScheme) ∧ Flat (f ∣_ A.val ∣_ V) := by
+    have : IsAffine A.val.toScheme := A.property
+    exact exists_dense_open_flat_of_isAffine (f ∣_ A.val)
   choose V hV hflat using h
-  let U : Y.Opens := ⨆ A : Y.affineOpens, A.1.ι ''ᵁ V A
+  let U : Y.Opens := ⨆ A : Y.affineOpens, A.val.ι ''ᵁ V A
   have hU : Dense (U : Set Y) := by
     intro y
     obtain ⟨A, hA, hy, -⟩ := exists_isAffineOpen_mem_and_subset (x := y) (U := ⊤) trivial
     have hcl := mem_closure_image A.ι.continuous.continuousAt (hV ⟨A, hA⟩ ⟨y, hy⟩)
-    exact closure_mono (le_iSup (fun A : Y.affineOpens ↦ A.1.ι ''ᵁ V A) ⟨A, hA⟩) hcl
+    exact closure_mono (le_iSup (fun A : Y.affineOpens ↦ A.val.ι ''ᵁ V A) ⟨A, hA⟩) hcl
   refine ⟨U, hU, (flat_restrict_iff f U).mpr ?_⟩
   intro x hx
   obtain ⟨A, y, hy, hxy⟩ := Opens.mem_iSup.mp hx
-  exact (flat_restrict_iff f (A.1.ι ''ᵁ V A)).mp
+  exact (flat_restrict_iff f (A.val.ι ''ᵁ V A)).mp
     ((MorphismProperty.arrow_mk_iso_iff (@Flat : MorphismProperty Scheme.{u})
-      (morphismRestrictRestrict f A.1 (V A))).mp (hflat A)) x ⟨y, hy, hxy⟩
+      (morphismRestrictRestrict f A.val (V A))).mp (hflat A)) x ⟨y, hy, hxy⟩
 
 /-- **Generic flatness** over an integral base. A finite-type morphism to an integral scheme is
 flat over a dense open subset of its target. The target need not be Noetherian. -/

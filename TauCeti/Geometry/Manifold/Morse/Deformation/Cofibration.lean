@@ -154,7 +154,7 @@ theorem exists_homotopyEquiv_of_homotopyEquiv_sublevel (hf : ContMDiff I 𝓘(�
     rw [sublevelInclusion_eq_inclusion] at h
     exact (congrArg _ (range_inclusion (sublevel_mono f (ha n.le_succ)))).mp h
   · have huniv : ((↑) ⁻¹' {x | f x ≤ a n} : Set {x | f x ≤ a (n + 1)}) = univ :=
-      eq_univ_of_forall fun x ↦ by rw [mem_preimage, mem_ofPred_eq, heq]; exact x.2
+      eq_univ_of_forall fun x ↦ by rw [mem_preimage, mem_ofPred_eq, heq]; exact x.property
     rw [huniv]
     exact isClopen_univ.hasHomotopyExtensionProperty
 
