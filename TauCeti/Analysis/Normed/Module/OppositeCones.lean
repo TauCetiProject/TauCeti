@@ -42,8 +42,8 @@ contain the frequencies of the wave front sets of the factors and those of the p
 * `TauCeti.exists_cones_of_notMem_add`: thickenings of `Γ₁` and `Γ₂`, and an open cone around a
   frequency off `Γ₁ + Γ₂`, on which a summand in one thickening leaves the other summand
   comparable to the sum.
-* `TauCeti.forall_smul_mem_insert_zero`, `TauCeti.forall_neg_mem_insert_zero_imp_eq_zero`:
-  adjoining `0` preserves both conditions on the cones.
+* `TauCeti.forall_neg_mem_insert_zero_imp_eq_zero`: adjoining `0` to the cones creates no
+  opposite nonzero vectors.
 -/
 
 public section
@@ -54,14 +54,6 @@ open scoped Pointwise
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Γ₁ Γ₂ : Set E}
-
-/-- Adjoining `0` to a set closed under multiplication by positive reals keeps it closed under
-multiplication by positive reals. -/
-theorem forall_smul_mem_insert_zero {Γ : Set E} (hc : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ, t • ξ ∈ Γ) :
-    ∀ t : ℝ, 0 < t → ∀ ξ ∈ insert 0 Γ, t • ξ ∈ insert 0 Γ := by
-  rintro t ht ξ (rfl | hξ)
-  · simp
-  · exact mem_insert_of_mem _ (hc t ht ξ hξ)
 
 omit [NormedSpace ℝ E] in
 /-- Adjoining `0` to `Γ₁` and `Γ₂` creates no opposite nonzero vectors. -/
