@@ -35,8 +35,9 @@ unfolded by hand.
   `g • z` cleared.
 * `UpperHalfPlane.coe_smul_of_apply_zero_one_eq_zero`: an upper triangular element
   `!![a, b; 0, a⁻¹]` of `SL(2, ℝ)` acts on `ℍ` by `τ ↦ a ^ 2 * τ + a * b`.
-* `UpperHalfPlane.J_smul_re`, `UpperHalfPlane.J_smul_im`: the involution `J : z ↦ -conj z`
-  negates the real part and preserves the imaginary part.
+* `UpperHalfPlane.J_smul_re`, `UpperHalfPlane.J_smul_im`, `UpperHalfPlane.J_smul_J_smul`: the
+  involution `J : z ↦ -conj z` negates the real part, preserves the imaginary part, and is an
+  involution of `ℍ`.
 * `Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J`, `Matrix.SpecialLinearGroup.J_mul_mapGL`:
   conjugation by `J` realizes `conjJ` on the image of `SL(2, R)` in `GL(2, ℝ)`.
 * `ModularGroup.sl_smul_set`: the `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action
@@ -131,6 +132,11 @@ theorem J_smul_re (τ : ℍ) : (J • τ).re = -τ.re := by
 @[simp]
 theorem J_smul_im (τ : ℍ) : (J • τ).im = τ.im := by
   rw [← coe_im, coe_J_smul, Complex.neg_im, Complex.conj_im, neg_neg, coe_im]
+
+/-- The map `J : z ↦ -conj z` is an involution of `ℍ`, as `J ^ 2 = 1`. -/
+@[simp]
+theorem J_smul_J_smul (τ : ℍ) : J • J • τ = τ := by
+  rw [← mul_smul, ← sq, J_sq, one_smul]
 
 /-- Conjugation by `J` realizes `conjJ` on the image of `SL(2, R)` in `GL(2, ℝ)`. -/
 theorem _root_.Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J {R : Type*} [CommRing R]
