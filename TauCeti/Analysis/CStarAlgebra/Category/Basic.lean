@@ -240,14 +240,13 @@ theorem norm_id_eq_zero_or_one (X : C) : ‖(𝟙 X : X ⟶ X)‖ = 0 ∨ ‖(�
   norm_eq_zero_or_one_of_idempotent_of_dagger (Category.id_comp (𝟙 X)) (dagger_id X)
 
 /-- The identity of an object has norm at most one. -/
-theorem norm_id_le_one (X : C) : ‖𝟙 X‖ ≤ 1 := by
-  nlinarith [norm_nonneg (𝟙 X), sq_norm_id X]
+theorem norm_id_le_one (X : C) : ‖𝟙 X‖ ≤ 1 :=
+  norm_le_one_of_idempotent_of_dagger (Category.id_comp (𝟙 X)) (dagger_id X)
 
 /-- The identity of an object that is not a zero object has norm one. -/
-theorem norm_id {X : C} (hX : ¬ Limits.IsZero X) : ‖𝟙 X‖ = 1 := by
-  have hne : ‖𝟙 X‖ ≠ 0 := by
-    rwa [Ne, norm_eq_zero, ← Limits.IsZero.iff_id_eq_zero]
-  exact (mul_eq_left₀ hne).1 (by rw [← pow_two, sq_norm_id])
+theorem norm_id {X : C} (hX : ¬ Limits.IsZero X) : ‖𝟙 X‖ = 1 :=
+  norm_eq_one_of_idempotent_of_dagger (Category.id_comp (𝟙 X)) (dagger_id X)
+    (mt (Limits.IsZero.iff_id_eq_zero X).mpr hX)
 
 /-- Every arrow out of a zero object has norm `0`. -/
 theorem _root_.CategoryTheory.Limits.IsZero.norm_hom_left (hX : Limits.IsZero X) (f : X ⟶ Y) :

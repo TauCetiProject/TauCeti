@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.StarAlgHom
+public import Mathlib.CategoryTheory.Conj
 public import Mathlib.CategoryTheory.NatIso
 public import TauCeti.CategoryTheory.Dagger.Basic
 public import TauCeti.CategoryTheory.Linear.Endomorphism
@@ -113,16 +114,16 @@ def mapEndStarAlgHom (X : C) : End X →⋆ₐ[R] End (F.obj X) where
   F.mapEndAlgHom_asHom R X a
 
 variable (R) in
-/-- A faithful linear dagger functor embeds each endomorphism star-algebra. -/
-theorem mapEndStarAlgHom_injective [F.Faithful] (X : C) :
-    Function.Injective (F.mapEndStarAlgHom R X) :=
-  F.mapEndAlgHom_injective R X
-
-variable (R) in
 /-- A full linear dagger functor surjects onto the image object's endomorphism star-algebra. -/
 theorem mapEndStarAlgHom_surjective [F.Full] (X : C) :
-    Function.Surjective (F.mapEndStarAlgHom R X) := fun g =>
-  ⟨End.of (F.preimage g.asHom), by ext; simp⟩
+    Function.Surjective (F.mapEndStarAlgHom R X) := by
+  have h : (F.mapEndStarAlgHom R X : End X → End (F.obj X)) =
+      (End.homEquiv (X := F.obj X)).symm ∘ F.map ∘ End.homEquiv := by
+    funext a
+    exact End.ext (F.mapEndStarAlgHom_asHom X a)
+  rw [h]
+  exact (End.homEquiv (X := F.obj X)).symm.surjective.comp
+    (F.map_surjective.comp End.homEquiv.surjective)
 
 end Linear
 
@@ -136,10 +137,9 @@ variable (F : C ⥤ D) (R : Type w) [Semiring R]
 algebras over any `Semiring R`. -/
 noncomputable def mapEndStarAlgEquiv (X : C) :
     End X ≃⋆ₐ[R] End (F.obj X) where
-  toFun f := End.of (F.map f.asHom)
-  invFun g := End.of (F.preimage g.asHom)
-  left_inv f := by ext; simp
-  right_inv g := by ext; simp
+  __ := (End.homEquiv (X := X)).trans
+    (((Functor.FullyFaithful.ofFullyFaithful F).homEquiv).trans
+      (End.homEquiv (X := F.obj X)).symm)
   map_mul' f g := by ext; simp
   map_add' f g := by ext; simp
   map_smul' r f := by ext; simp
@@ -249,24 +249,26 @@ variable (R : Type w) [Semiring R] [Preadditive C] [CategoryTheory.Linear R C]
 star-algebra equivalence. -/
 def endStarAlgEquiv {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) :
     End X ≃⋆ₐ[R] End Y where
-  toFun f := End.of (dagger e.hom ≫ f.asHom ≫ e.hom)
-  invFun g := End.of (e.hom ≫ g.asHom ≫ dagger e.hom)
-  left_inv f := by ext; simp [he.hom_dagger_id_assoc, he.hom_dagger_id]
-  right_inv g := by ext; simp [he.dagger_hom_id_assoc, he.dagger_hom_id]
-  map_mul' f g := by ext; simp [he.hom_dagger_id_assoc]
+  __ := e.conj
   map_add' f g := by ext; simp
   map_smul' r f := by ext; simp
-  map_star' f := by ext; simp
+  map_star' f := by
+    ext
+    simp [← e.dagger_hom_eq_inv_of_isUnitary he]
 
 /-- Conjugation by a unitary isomorphism acts as `dagger e.hom ≫ f.asHom ≫ e.hom`. -/
 @[simp, grind =] theorem endStarAlgEquiv_apply_asHom {X Y : C} (e : X ≅ Y)
     (he : IsUnitary e.hom) (f : End X) :
-    (e.endStarAlgEquiv R he f).asHom = dagger e.hom ≫ f.asHom ≫ e.hom := (rfl)
+    (e.endStarAlgEquiv R he f).asHom = dagger e.hom ≫ f.asHom ≫ e.hom := by
+  rw [e.dagger_hom_eq_inv_of_isUnitary he]
+  rfl
 
 /-- Inverse conjugation by a unitary isomorphism acts as `e.hom ≫ g.asHom ≫ dagger e.hom`. -/
 @[simp, grind =] theorem endStarAlgEquiv_symm_apply_asHom {X Y : C} (e : X ≅ Y)
     (he : IsUnitary e.hom) (g : End Y) :
-    ((e.endStarAlgEquiv R he).symm g).asHom = e.hom ≫ g.asHom ≫ dagger e.hom := (rfl)
+    ((e.endStarAlgEquiv R he).symm g).asHom = e.hom ≫ g.asHom ≫ dagger e.hom := by
+  rw [e.dagger_hom_eq_inv_of_isUnitary he]
+  rfl
 
 end EndStarAlgEquiv
 

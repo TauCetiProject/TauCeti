@@ -414,33 +414,6 @@ def endStarAlgEquiv (X : HilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X →L
 @[simp] theorem endStarAlgEquiv_symm_apply (X : HilbertCat.{u, v} 𝕜) (f : X →L[𝕜] X) :
     X.endStarAlgEquiv.symm f = End.of f := (rfl)
 
-/-- `HilbertCat.endStarAlgEquiv` is norm-preserving on `End X`. -/
-theorem norm_endStarAlgEquiv (X : HilbertCat.{0, v} ℂ) (a : End X) :
-    ‖X.endStarAlgEquiv a‖ = ‖a‖ :=
-  (End.norm_def a).symm
-
-/-- `HilbertCat.endStarAlgEquiv` identifies the spectral order on `End X` with the Loewner
-inner-product order on `X →L[ℂ] X`. -/
-theorem endStarAlgEquiv_le_iff (X : HilbertCat.{0, v} ℂ) {a b : End X} :
-    X.endStarAlgEquiv a ≤ X.endStarAlgEquiv b ↔ a ≤ b :=
-  NonUnitalStarAlgHom.map_le_map_iff X.endStarAlgEquiv.toStarAlgHom X.endStarAlgEquiv.injective
-
-/-- `HilbertCat.endStarAlgEquiv` identifies positivity in `End X` with operator positivity on
-`X →L[ℂ] X`. -/
-theorem endStarAlgEquiv_nonneg_iff (X : HilbertCat.{0, v} ℂ) {a : End X} :
-    0 ≤ X.endStarAlgEquiv a ↔ 0 ≤ a := by
-  simpa only [map_zero] using X.endStarAlgEquiv_le_iff (a := 0) (b := a)
-
-/-- The identity arrow of a subsingleton complex Hilbert space has norm `0`. -/
-@[simp] theorem norm_id_of_subsingleton (X : HilbertCat.{0, v} ℂ) [Subsingleton X] :
-    ‖(𝟙 X : X ⟶ X)‖ = 0 :=
-  (isZero_of_subsingleton X).norm_id
-
-/-- The identity arrow of a nontrivial complex Hilbert space has norm `1`. -/
-@[simp] theorem norm_id_of_nontrivial (X : HilbertCat.{0, v} ℂ) [Nontrivial X] :
-    ‖(𝟙 X : X ⟶ X)‖ = 1 :=
-  (CStarCategory.not_isZero_iff_norm_id_eq_one X).mp (not_isZero_of_nontrivial X)
-
 /-- Finite-dimensional Hilbert spaces, as an object property on `HilbertCat 𝕜`. -/
 abbrev isFiniteDimensional (𝕜 : Type u) [RCLike 𝕜] : ObjectProperty (HilbertCat.{u, v} 𝕜) :=
   fun H => FiniteDimensional 𝕜 H
@@ -534,41 +507,14 @@ theorem endStarAlgEquiv_eq_trans (X : FDHilbertCat.{u, v} 𝕜) :
 -- `FDHilbertCat ℂ` inherits `CStarCategory` automatically as a full subcategory of `HilbertCat ℂ`.
 example : CStarCategory (FDHilbertCat.{0, v} ℂ) := inferInstance
 
-/-- `FDHilbertCat.endStarAlgEquiv` preserves norms on endomorphisms. -/
-theorem norm_endStarAlgEquiv (X : FDHilbertCat.{0, v} ℂ) (a : End X) :
-    ‖X.endStarAlgEquiv a‖ = ‖a‖ :=
-  StarAlgEquiv.norm_map X.endStarAlgEquiv a
-
-/-- `FDHilbertCat.endStarAlgEquiv` identifies the spectral order on `End X` with the Loewner order
-on `X →L[ℂ] X`. -/
-theorem endStarAlgEquiv_le_iff (X : FDHilbertCat.{0, v} ℂ) {a b : End X} :
-    X.endStarAlgEquiv a ≤ X.endStarAlgEquiv b ↔ a ≤ b :=
-  NonUnitalStarAlgHom.map_le_map_iff X.endStarAlgEquiv.toStarAlgHom X.endStarAlgEquiv.injective
-
-/-- `FDHilbertCat.endStarAlgEquiv` identifies positivity in `End X` with operator positivity on
-`X →L[ℂ] X`. -/
-theorem endStarAlgEquiv_nonneg_iff (X : FDHilbertCat.{0, v} ℂ) {a : End X} :
-    0 ≤ X.endStarAlgEquiv a ↔ 0 ≤ a := by
-  simpa only [map_zero] using X.endStarAlgEquiv_le_iff (a := 0) (b := a)
-
-/-- In `FDHilbertCat ℂ`, a subsingleton Hilbert space (such as `FDHilbertCat.of ℂ PUnit`) has
-identity arrow of norm `0`. -/
-@[simp] theorem norm_id_of_subsingleton (X : FDHilbertCat.{0, v} ℂ) [Subsingleton X] :
-    ‖(𝟙 X : X ⟶ X)‖ = 0 :=
-  (isZero_of_subsingleton X).norm_id
-
-/-- In `FDHilbertCat ℂ`, a nontrivial Hilbert space (such as `FDHilbertCat.of ℂ ℂ`) has identity
-arrow of norm `1`. -/
-@[simp] theorem norm_id_of_nontrivial (X : FDHilbertCat.{0, v} ℂ) [Nontrivial X] :
-    ‖(𝟙 X : X ⟶ X)‖ = 1 :=
-  (CStarCategory.not_isZero_iff_norm_id_eq_one X).mp (not_isZero_of_nontrivial X)
-
 -- Explicit zero-object (`PUnit`) vs nontrivial-object (`ℂ`) norm checks in `FDHilbertCat ℂ`.
-example : ‖(𝟙 (FDHilbertCat.of ℂ PUnit.{v + 1}))‖ = 0 :=
-  norm_id_of_subsingleton (FDHilbertCat.of ℂ PUnit.{v + 1})
+example : ‖(𝟙 (FDHilbertCat.of ℂ PUnit.{v + 1}))‖ = 0 := by
+  rw [ObjectProperty.norm_def]
+  exact ContinuousLinearMap.opNorm_subsingleton _
 
-example : ‖(𝟙 (FDHilbertCat.of ℂ ℂ))‖ = 1 :=
-  norm_id_of_nontrivial (FDHilbertCat.of ℂ ℂ)
+example : ‖(𝟙 (FDHilbertCat.of ℂ ℂ))‖ = 1 := by
+  rw [ObjectProperty.norm_def]
+  exact ContinuousLinearMap.norm_id
 
 end FDHilbertCat
 

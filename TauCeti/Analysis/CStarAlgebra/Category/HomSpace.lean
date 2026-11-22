@@ -221,11 +221,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
 /-- `End.asHom` and `End.of` form a `ℂ`-linear isometric equivalence between `End X` and
 `X ⟶ X` (with its norm-induced structure). -/
 def linearIsometryEquiv (X : C) : End X ≃ₗᵢ[ℂ] (X ⟶ X) where
-  toFun := End.asHom
-  invFun := End.of
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := rfl
+  __ := End.addEquiv
   map_smul' _ _ := rfl
   norm_map' _ := rfl
 

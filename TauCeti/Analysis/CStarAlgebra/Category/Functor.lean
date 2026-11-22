@@ -120,15 +120,6 @@ theorem isClosed_kerIdeal (X Y : C) :
   rw [hset]
   exact (F.mapCLM X Y).isClosed_ker
 
-/-- `F.mapEndStarAlgHom ℂ X` is monotone with respect to the spectral order on `End`. -/
-theorem mapEndStarAlgHom_mono (X : C) : Monotone (F.mapEndStarAlgHom ℂ X) :=
-  OrderHomClass.mono (F.mapEndStarAlgHom ℂ X)
-
-/-- `F.mapEndStarAlgHom ℂ X` preserves positive endomorphisms. -/
-theorem mapEndStarAlgHom_nonneg (X : C) {a : End X} (ha : 0 ≤ a) :
-    0 ≤ F.mapEndStarAlgHom ℂ X a :=
-  map_nonneg (F.mapEndStarAlgHom ℂ X) ha
-
 /-! ### Faithful and fully faithful linear dagger functors -/
 
 /-- A faithful complex linear dagger functor between C*-categories is isometric on Hom
@@ -171,8 +162,10 @@ theorem faithful_iff_forall_norm_map_eq :
 
 /-- A faithful `ℂ`-linear dagger functor reflects and preserves the spectral order on `End X`. -/
 @[simp] theorem mapEndStarAlgHom_le_iff [F.Faithful] (X : C) {a b : End X} :
-    F.mapEndStarAlgHom ℂ X a ≤ F.mapEndStarAlgHom ℂ X b ↔ a ≤ b :=
-  NonUnitalStarAlgHom.map_le_map_iff (F.mapEndStarAlgHom ℂ X) (F.mapEndStarAlgHom_injective ℂ X)
+    F.mapEndStarAlgHom ℂ X a ≤ F.mapEndStarAlgHom ℂ X b ↔ a ≤ b := by
+  have hinj := F.mapEndAlgHom_injective ℂ X
+  rw [← toAlgHom_mapEndStarAlgHom, StarAlgHom.coe_toAlgHom] at hinj
+  exact NonUnitalStarAlgHom.map_le_map_iff (F.mapEndStarAlgHom ℂ X) hinj
 
 /-- A faithful `ℂ`-linear dagger functor reflects and preserves positivity in `End X`. -/
 @[simp] theorem mapEndStarAlgHom_nonneg_iff [F.Faithful] (X : C) {a : End X} :
@@ -204,23 +197,3 @@ def mapLinearIsometryEquiv [F.Full] [F.Faithful] (X Y : C) :
   rw [← F.norm_map (F.preimage g), F.map_preimage]
 
 end CategoryTheory.Functor
-
-namespace CategoryTheory.Iso
-
-variable {C : Type u₁} [Category.{v₁} C] [Preadditive C] [CategoryTheory.Linear ℂ C]
-  [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
-  [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C]
-
-/-- Conjugation by a unitary isomorphism is norm-preserving on endomorphism C*-algebras. -/
-@[simp] theorem norm_endStarAlgEquiv {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) (a : End X) :
-    ‖e.endStarAlgEquiv ℂ he a‖ = ‖a‖ :=
-  StarAlgEquiv.norm_map (e.endStarAlgEquiv ℂ he) a
-
-/-- Conjugation by a unitary isomorphism is an order isomorphism on endomorphism C*-algebras. -/
-theorem endStarAlgEquiv_le_iff {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom)
-    {a b : End X} :
-    e.endStarAlgEquiv ℂ he a ≤ e.endStarAlgEquiv ℂ he b ↔ a ≤ b :=
-  NonUnitalStarAlgHom.map_le_map_iff (e.endStarAlgEquiv ℂ he).toStarAlgHom
-    (e.endStarAlgEquiv ℂ he).injective
-
-end CategoryTheory.Iso
