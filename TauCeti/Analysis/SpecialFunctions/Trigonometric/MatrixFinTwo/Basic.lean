@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!

@@ -61,8 +61,10 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.Gamma1_le_Gamma1_of_dvd`, `CongruenceSubgroup.Gamma0_le_Gamma0_of_dvd`,
   `CongruenceSubgroup.Gamma_le_Gamma_of_dvd`: all three families are antitone in the level,
   `Γ(N) ≤ Γ(M)` whenever `M ∣ N`.
-* `CongruenceSubgroup.index_Gamma`: `[SL₂(ℤ) : Γ(N)] = |SL₂(ℤ/Nℤ)|`; in particular
-  `CongruenceSubgroup.index_Gamma_three`: `[SL₂(ℤ) : Γ(3)] = 24`.
+* `CongruenceSubgroup.quotientGammaEquiv`, `CongruenceSubgroup.quotientGammaEquiv_mk`,
+  `CongruenceSubgroup.index_Gamma`: `(SL₂(ℤ) ⧸ Γ(N)) ≃* SL₂(ℤ/Nℤ)` and hence
+  `[SL₂(ℤ) : Γ(N)] = |SL₂(ℤ/Nℤ)|`; in particular `CongruenceSubgroup.index_Gamma_three`:
+  `[SL₂(ℤ) : Γ(3)] = 24`.
 * `CongruenceSubgroup.ker_map_intCast_zmod`, `CongruenceSubgroup.map_eq_one_of_mem_Gamma`,
   `CongruenceSubgroup.mem_Gamma_iff_dvd`: `Γ(N)` is the kernel of reduction modulo `N`, and its
   membership is equivalent to four entrywise integer divisibilities (valid at `N = 0` as well).
@@ -233,13 +235,32 @@ theorem mem_Gamma_iff_dvd {N : ℕ} {γ : SL(2, ℤ)} :
   simp only [eq_comm (b := (1 : ZMod N)), ← ZMod.intCast_eq_intCast_iff_dvd_sub, Int.cast_one,
     ZMod.intCast_zmod_eq_zero_iff_dvd]
 
+section
+
+attribute [local instance] Gamma_normal
+
+/-- **Canonical isomorphism `(SL(2, ℤ) ⧸ Γ(N)) ≃* SL(2, ZMod N)`** induced by entrywise reduction
+modulo `N` and strong approximation (`Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`). -/
+noncomputable def quotientGammaEquiv (N : ℕ) :
+    (SL(2, ℤ) ⧸ Gamma N) ≃* SL(2, ZMod N) :=
+  QuotientGroup.quotientKerEquivOfSurjective
+    (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)))
+    Matrix.SpecialLinearGroup.map_intCast_zmod_surjective
+
+/-- `quotientGammaEquiv N` evaluates on coset representatives by entrywise reduction modulo `N`. -/
+@[simp]
+theorem quotientGammaEquiv_mk (N : ℕ) (γ : SL(2, ℤ)) :
+    quotientGammaEquiv N (QuotientGroup.mk γ) =
+      Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ := (rfl)
+
+end
+
 /-- **The index of the principal congruence subgroup** is the order of `SL₂(ℤ/Nℤ)`: `Γ(N)` is
 the kernel of reduction modulo `N`, which is surjective by strong approximation
 (`Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`). At `N = 0` both sides are `0`. -/
 theorem index_Gamma (N : ℕ) : (Gamma N).index = Nat.card SL(2, ZMod N) := by
-  rw [Gamma, Subgroup.index_ker,
-    MonoidHom.range_eq_top.mpr Matrix.SpecialLinearGroup.map_intCast_zmod_surjective,
-    Subgroup.card_top]
+  let := Gamma_normal N
+  rw [Subgroup.index_eq_card, Nat.card_congr (quotientGammaEquiv N).toEquiv]
 
 /-- `Γ(3)` has index `24 = |SL₂(𝔽₃)|` in `SL₂(ℤ)`. -/
 theorem index_Gamma_three : (Gamma 3).index = 24 := by

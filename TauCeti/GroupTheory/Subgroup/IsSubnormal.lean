@@ -9,7 +9,6 @@ public import Mathlib.GroupTheory.IsSubnormal
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.GroupTheory.Solvable
 import TauCeti.GroupTheory.QuotientGroup.Subquotient
-import TauCeti.GroupTheory.Solvable
 
 /-!
 # Subnormal sections and simple composition factors of groups
@@ -166,9 +165,8 @@ theorem of_isSubnormal {M : Subgroup G} (hM : M.IsSubnormal) (h : HasSubnormalSe
 theorem isMulCommutative_of_isSolvable [Group.IsSolvable G] [IsSimpleGroup S]
     (h : HasSubnormalSection G S) : IsMulCommutative S := by
   rcases h with ⟨H, K, _, _, _, ⟨e⟩⟩
-  have := e.isSimpleGroup
-  have := isMulCommutative_quotient_of_isSolvable H K
-  exact e.surjective.isMulCommutative
+  have : Group.IsSolvable S := Group.isSolvable_of_surjective (f := e.toMonoidHom) e.surjective
+  exact IsMulCommutative.of_comm (IsSimpleGroup.comm_iff_isSolvable.mpr this)
 
 /-- Every nontrivial subnormal section of a simple group is isomorphic to that group. -/
 theorem nonempty_mulEquiv_of_isSimpleGroup [IsSimpleGroup G] [Nontrivial S]
@@ -186,10 +184,9 @@ private theorem of_normal_map_eq_bot {H K N : Subgroup G} [N.Normal] (hH : H.IsS
   let πN := QuotientGroup.mk' N
   let ψ : H →* H.map πN := πN.subgroupMap H
   have hψ_surj : Function.Surjective ψ := πN.subgroupMap_surjective H
-  have hNK : N.subgroupOf H ≤ K.subgroupOf H := by
-    rwa [Subgroup.map_eq_bot_iff, QuotientGroup.ker_mk'] at hbot
   have hker_le : ψ.ker ≤ K.subgroupOf H := by
-    rwa [H.ker_subgroupMap πN, QuotientGroup.ker_mk']
+    rw [H.ker_subgroupMap πN, QuotientGroup.ker_mk']
+    rwa [Subgroup.map_eq_bot_iff, QuotientGroup.ker_mk'] at hbot
   have hmap : (K.subgroupOf H).map ψ = (K.map πN).subgroupOf (H.map πN) := by
     have hmem : K.map πN = ((K.subgroupOf H).map ψ).map (H.map πN).subtype := by
       conv_lhs => rw [← Subgroup.map_subgroupOf_eq_of_le hKH]
@@ -197,15 +194,15 @@ private theorem of_normal_map_eq_bot {H K N : Subgroup G} [N.Normal] (hH : H.IsS
       rfl
     rw [hmem, Subgroup.subgroupOf]
     exact (Subgroup.comap_map_eq_self_of_injective (H.map πN).subtype_injective _).symm
-  have hcomap : ((K.map πN).subgroupOf (H.map πN)).comap ψ = K.subgroupOf H := by
-    rw [← hmap, Subgroup.comap_map_eq_self hker_le]
   have hK'N : ((K.map πN).subgroupOf (H.map πN)).Normal := hmap ▸ hKN.map ψ hψ_surj
-  let φ := (QuotientGroup.mk' ((K.map πN).subgroupOf (H.map πN))).comp ψ
-  have hφ_ker : φ.ker = K.subgroupOf H := by
-    rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk', hcomap]
+  let eψ := QuotientGroup.quotientKerEquivOfSurjective ψ hψ_surj
+  have heψ_map : ((K.subgroupOf H).map (QuotientGroup.mk' ψ.ker)).map eψ.toMonoidHom =
+      (K.map πN).subgroupOf (H.map πN) := by
+    rw [Subgroup.map_map]
+    exact hmap
   exact ⟨H.map πN, K.map πN, hH.quotient, map_mono hKH, hK'N,
-    ⟨(QuotientGroup.liftEquiv (K.subgroupOf H) (φ := φ)
-      ((QuotientGroup.mk'_surjective _).comp hψ_surj) hφ_ker.symm).symm.trans e⟩⟩
+    ⟨(QuotientGroup.congr _ _ eψ heψ_map).symm.trans
+      ((QuotientGroup.quotientQuotientEquivQuotient ψ.ker (K.subgroupOf H) hker_le).trans e)⟩⟩
 
 /-- When `(N ∩ H)` surjects onto `H ⧸ K.subgroupOf H`, the section is realized inside `N` via
 `H.subgroupOf N` and `K.subgroupOf N`. -/

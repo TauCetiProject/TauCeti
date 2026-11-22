@@ -6,7 +6,7 @@ Authors: The Tau Ceti authors
 module
 
 public import Mathlib.Topology.Algebra.Group.Matrix
-public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
 public import TauCeti.Topology.Algebra.Group.Subgroup
 

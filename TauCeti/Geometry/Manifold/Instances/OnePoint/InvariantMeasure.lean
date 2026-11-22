@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Group.Action
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.ContinuousSMul
 public import TauCeti.GroupTheory.Amenable.DiscreteFoelner
-public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.Basic
 
 import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 import Mathlib.Topology.MetricSpace.ProperSpace

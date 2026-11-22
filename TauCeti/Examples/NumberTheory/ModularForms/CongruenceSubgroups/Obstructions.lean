@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Obstructions
-public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective
 import Mathlib.Algebra.Field.ZMod
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.Card
+import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.ZMod
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.SignedQuotient
 
 /-!
 # Explicit fixed-level checks for principal modular quotients and obstructions
@@ -100,24 +100,16 @@ theorem gammaProjective_index_checks :
       card_zmod_mul_of_coprime (Fin 2) (by decide),
       card_fin_two_zmod_prime Nat.prime_two, card_fin_two_zmod_prime Nat.prime_three] at h
     norm_num at h; omega
-  have h8 : (GammaProjective 8).index = 192 := by
-    have h := two_mul_index_map_Gamma (N := 8) (by omega)
-    rw [← GammaProjective_def, show (8 : ℕ) = 2 ^ 3 by norm_num,
-      card_fin_two_zmod_prime_pow (p := 2) (k := 3) Nat.prime_two (by omega)] at h
-    norm_num at h; omega
+  have h8 : (GammaProjective 8).index = 192 :=
+    GammaProjective_index_eq_card 8 ▸ card_fin_two_zmod_eight.2.1
   have h10 : (GammaProjective 10).index = 360 := by
     have h := two_mul_index_map_Gamma (N := 10) (by omega)
     rw [← GammaProjective_def, show (10 : ℕ) = 2 * 5 by norm_num,
       card_zmod_mul_of_coprime (Fin 2) (by decide),
       card_fin_two_zmod_prime Nat.prime_two, card_fin_two_zmod_prime Nat.prime_five] at h
     norm_num at h; omega
-  have h12 : (GammaProjective 12).index = 576 := by
-    have h := two_mul_index_map_Gamma (N := 12) (by omega)
-    rw [← GammaProjective_def, show (12 : ℕ) = 2 ^ 2 * 3 by norm_num,
-      card_zmod_mul_of_coprime (Fin 2) (by decide),
-      card_fin_two_zmod_prime_pow Nat.prime_two (by omega),
-      card_fin_two_zmod_prime Nat.prime_three] at h
-    norm_num at h; omega
+  have h12 : (GammaProjective 12).index = 576 :=
+    GammaProjective_index_eq_card 12 ▸ card_fin_two_zmod_twelve.2.1
   refine ⟨⟨h6, ?_⟩, h8, ⟨h10, ?_⟩, gammaProjective_index_eleven, ⟨h12, ?_⟩⟩ <;> omega
 
 /-- Separation of the composition-factor obstruction from the order obstruction (`N = 11`,

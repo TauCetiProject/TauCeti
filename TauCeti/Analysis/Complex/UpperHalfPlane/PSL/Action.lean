@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
-public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.Basic
 -- supplies the `FaithfulSMul PGL(2, ℝ) ℍ` instance behind the projective faithfulness
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 

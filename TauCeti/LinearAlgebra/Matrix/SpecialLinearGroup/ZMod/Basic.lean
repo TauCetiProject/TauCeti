@@ -5,23 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.Data.ZMod.QuotientRing
-public import Mathlib.GroupTheory.PGroup
-public import Mathlib.GroupTheory.Solvable
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.SignedQuotient
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import Mathlib.Algebra.Field.ZMod
-import Mathlib.GroupTheory.Nilpotent
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Data.ZMod.MulCastHom
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 
 /-!
-# Structure, cardinality, and signed quotients of `SL₂(ℤ/Nℤ)`
+# Structure and cardinality of `SL₂(ℤ/Nℤ)`
 
-This file develops the finite-group arithmetic of `SL₂(ℤ/Nℤ)` and its signed quotient
-`Q_N = SL₂(ℤ/Nℤ) ⧸ {±I}` (`TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N)`, defined over general
-rings in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.SignedQuotient`):
+This file develops the finite-group arithmetic of `SL₂(ℤ/Nℤ)`:
 
 1. **Chinese remainder decompositions and reduction**: `SL(n, ℤ/MNℤ) ≃* SL(n, ℤ/Mℤ) × SL(n, ℤ/Nℤ)`
    for coprime `M, N`, the prime-power decomposition
@@ -30,13 +24,15 @@ rings in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.SignedQuotient`):
 2. **Prime-power kernel and exact orders**: for `0 < p` and `1 ≤ k`, the kernel of
    `SL₂(ℤ/p^{k+1}ℤ) →* SL₂(ℤ/p^kℤ)` is in explicit bijection with `(ZMod p)³` via matrices
    `I + p^k X` of trace zero (`det(I + p^k X) = 1` since `p^{2k} ≡ 0 mod p^{k+1}`). Combined with
-   `|SL₂(𝔽_p)| = p(p² - 1)`, this gives `|SL₂(ℤ/p^kℤ)| = p^{3k - 2}(p² - 1)`, the cleared Euler
-   product `|SL₂(ℤ/Nℤ)| · ∏_{p ∣ N} p² = N³ · ∏_{p ∣ N} (p² - 1)`, and the `p`-group / solvability
-   structure of `ker(SL₂(ℤ/p^kℤ) →* SL₂(𝔽_p))`.
-3. **Orders of `Q_N = SL₂(ℤ/Nℤ) ⧸ {±I}` and `PSL₂(𝔽_p)`**: at `N ∣ 2`, `-I = I` so `|Q_N| = |SL₂|`
-   (`1` at `N = 1`, `6` at `N = 2`, with `|PSL₂(𝔽₂)| = 6`); for `N ≥ 3`, `2 · |Q_N| = |SL₂(ℤ/Nℤ)|`,
-   giving the cleared Euler product `2 · |Q_N| · ∏_{p ∣ N} p² = N³ · ∏_{p ∣ N} (p² - 1)` and
-   `2 · |PSL₂(𝔽_p)| = p(p² - 1)` for odd primes `p`.
+   `|SL₂(𝔽_p)| = p(p² - 1)`, this gives `|SL₂(ℤ/p^kℤ)| = p^{3k - 2}(p² - 1)` and the cleared Euler
+   product `|SL₂(ℤ/Nℤ)| · ∏_{p ∣ N} p² = N³ · ∏_{p ∣ N} (p² - 1)`.
+3. **The sign `-I` modulo `N`**: `-I = I` in `SL₂(ℤ/Nℤ)` if and only if `N ∣ 2`
+   (`neg_one_eq_one_zmod_iff`).
+
+The `p`-group/solvability structure of congruence kernels is in
+`TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.CongruenceKernel`, signed-quotient orders
+are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.SignedQuotient`, and prime-field
+`PSL₂(𝔽_p)` orders are in `TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.ZMod`.
 
 The factorization product and cleared Euler product proofs are adapted from Mathlib's
 `Nat.totient_eq_prod_factorization` and `Nat.totient_mul_prod_primeFactors`.
@@ -286,20 +282,6 @@ theorem card_ker_map_zmod_prime_pow {p k : ℕ} (hp : p.Prime) (hk : 1 ≤ k) :
   rw [hlag, ← mul_assoc, ← pow_succ]
   congr 1; exact congrArg (p ^ ·) (by omega)
 
-/-- For prime `p` and `1 ≤ k`, the kernel of `SL₂(ℤ/p^kℤ) →* SL₂(𝔽_p)` is a `p`-group. -/
-theorem isPGroup_ker_map_zmod_prime_pow {p k : ℕ} (hp : p.Prime) (hk : 1 ≤ k) :
-    IsPGroup p (map (ZMod.castHom (dvd_pow_self p (by omega)) (ZMod p)) :
-      SL(2, ZMod (p ^ k)) →* SL(2, ZMod p)).ker :=
-  IsPGroup.of_card (card_ker_map_zmod_prime_pow hp hk)
-
-/-- For prime `p` and `1 ≤ k`, the kernel of `SL₂(ℤ/p^kℤ) →* SL₂(𝔽_p)` is solvable. -/
-theorem isSolvable_ker_map_zmod_prime_pow {p k : ℕ} (hp : p.Prime) (hk : 1 ≤ k) :
-    Group.IsSolvable (map (ZMod.castHom (dvd_pow_self p (by omega)) (ZMod p)) :
-      SL(2, ZMod (p ^ k)) →* SL(2, ZMod p)).ker := by
-  have : Fact p.Prime := ⟨hp⟩
-  have : NeZero (p ^ k) := ⟨pow_ne_zero k hp.ne_zero⟩
-  exact (isPGroup_ker_map_zmod_prime_pow hp hk).isNilpotent.to_isSolvable
-
 end PrimePowerKernel
 
 /-! ### Multiplicativity and global formulas for `|SL₂(ℤ/Nℤ)|` -/
@@ -357,96 +339,9 @@ theorem card_fin_two_zmod_mul_prod_primeFactors_sq (N : ℕ) :
 
 /-- `-1 = 1` in `SL₂(ℤ/Nℤ)` if and only if `N ∣ 2`. -/
 theorem neg_one_eq_one_zmod_iff {N : ℕ} : (-1 : SL(2, ZMod N)) = 1 ↔ N ∣ 2 := by
+  rw [Nat.dvd_prime Nat.prime_two, ← ZMod.neg_one_eq_one_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have h00 := congrArg (fun M : SL(2, ZMod N) ↦ (M : Matrix (Fin 2) (Fin 2) (ZMod N)) 0 0) h
-    simp only [coe_neg, coe_one, Matrix.neg_apply, Matrix.one_apply_eq] at h00
-    exact (ZMod.natCast_eq_zero_iff 2 N).mp (by rw [Nat.cast_ofNat]; linear_combination -h00)
-  · have h2 : (2 : ZMod N) = 0 := by
-      simpa only [Nat.cast_ofNat] using (ZMod.natCast_eq_zero_iff 2 N).mpr h
-    have hneg : (-1 : ZMod N) = 1 := by linear_combination -h2
-    ext i j; fin_cases i <;> fin_cases j <;> simp [hneg]
+  · simpa using congrArg (fun M : SL(2, ZMod N) ↦ (M : Matrix (Fin 2) (Fin 2) (ZMod N)) 0 0) h
+  · ext i j; fin_cases i <;> fin_cases j <;> simp [h]
 
 end Matrix.SpecialLinearGroup
-
-/-! ### Orders of `{±I}` and the signed quotient `Q_N = SL₂(ℤ/Nℤ) ⧸ {±I}` -/
-
-namespace TauCeti.Matrix.SpecialLinearGroup
-
-open _root_.Matrix.SpecialLinearGroup
-
-/-- When `N ∣ 2` (`N = 1` or `N = 2`), `{±I} ≤ SL₂(ℤ/Nℤ)` is trivial of order `1`. -/
-theorem card_negOneSubgroup_zmod_eq_one_of_dvd_two {N : ℕ} (h : N ∣ 2) :
-    Nat.card (negOneSubgroup (Fin 2) (ZMod N)) = 1 := by
-  rw [negOneSubgroup_def, Nat.card_zpowers, neg_one_eq_one_zmod_iff.mpr h, orderOf_one]
-
-/-- When `¬ (N ∣ 2)`, `{±I} ≤ SL₂(ℤ/Nℤ)` has order `2`. -/
-theorem card_negOneSubgroup_zmod_eq_two {N : ℕ} (h : ¬ N ∣ 2) :
-    Nat.card (negOneSubgroup (Fin 2) (ZMod N)) = 2 := by
-  rw [negOneSubgroup_def, Nat.card_zpowers]
-  exact orderOf_eq_prime neg_one_sq fun heq ↦ h (neg_one_eq_one_zmod_iff.mp heq)
-
-end TauCeti.Matrix.SpecialLinearGroup
-
-namespace TauCeti.Matrix.SignedQuotient
-
-open _root_.Matrix.SpecialLinearGroup
-open TauCeti.Matrix.SpecialLinearGroup
-
-/-- When `N ∣ 2` (`N = 1` or `N = 2`), `-I = I` modulo `N`, so `|Q_N| = |SL₂(ℤ/Nℤ)|`. -/
-theorem card_fin_two_zmod_of_dvd_two {N : ℕ} (h : N ∣ 2) :
-    Nat.card (SignedQuotient (Fin 2) (ZMod N)) = Nat.card SL(2, ZMod N) := by
-  have hlag := Subgroup.card_eq_card_quotient_mul_card_subgroup (negOneSubgroup (Fin 2) (ZMod N))
-  rw [card_negOneSubgroup_zmod_eq_one_of_dvd_two h, mul_one] at hlag; exact hlag.symm
-
-/-- When `¬ (N ∣ 2)` (in particular for all `N ≥ 3`, and at `N = 0`), `2 · |Q_N| = |SL₂(ℤ/Nℤ)|`. -/
-theorem two_mul_card_fin_two_zmod_of_not_dvd_two {N : ℕ} (h : ¬ N ∣ 2) :
-    2 * Nat.card (SignedQuotient (Fin 2) (ZMod N)) = Nat.card SL(2, ZMod N) := by
-  have hlag := Subgroup.card_eq_card_quotient_mul_card_subgroup (negOneSubgroup (Fin 2) (ZMod N))
-  rw [card_negOneSubgroup_zmod_eq_two h, mul_comm] at hlag; exact hlag.symm
-
-/-- For `N ≥ 3`, `2 · |Q_N| = |SL₂(ℤ/Nℤ)|`. -/
-theorem two_mul_card_fin_two_zmod {N : ℕ} (hN : 3 ≤ N) :
-    2 * Nat.card (SignedQuotient (Fin 2) (ZMod N)) = Nat.card SL(2, ZMod N) :=
-  two_mul_card_fin_two_zmod_of_not_dvd_two fun h ↦ by have := Nat.le_of_dvd two_pos h; omega
-
-/-- **Cleared Euler product for `|Q_N|` at `N ≥ 3`:**
-`2 · |Q_N| · ∏_{p ∣ N} p² = N³ · ∏_{p ∣ N} (p² - 1)`. -/
-theorem two_mul_card_fin_two_zmod_mul_prod_primeFactors_sq {N : ℕ} (hN : 3 ≤ N) :
-    2 * Nat.card (SignedQuotient (Fin 2) (ZMod N)) * ∏ p ∈ N.primeFactors, p ^ 2 =
-      N ^ 3 * ∏ p ∈ N.primeFactors, (p ^ 2 - 1) := by
-  rw [two_mul_card_fin_two_zmod hN, card_fin_two_zmod_mul_prod_primeFactors_sq]
-
-/-- At level `1`, the signed quotient `Q_1 = SL₂(ℤ/1ℤ) ⧸ {±I}` is trivial of order `1`. -/
-@[simp]
-theorem card_fin_two_zmod_one : Nat.card (SignedQuotient (Fin 2) (ZMod 1)) = 1 := by
-  rw [card_fin_two_zmod_of_dvd_two (one_dvd 2), card_zmod_one]
-
-/-- At level `2`, `-I = I` modulo `2`, so the signed quotient `Q_2 = SL₂(ℤ/2ℤ) ⧸ {±I}` has order
-`6 = |SL₂(𝔽₂)|`. -/
-@[simp]
-theorem card_fin_two_zmod_two : Nat.card (SignedQuotient (Fin 2) (ZMod 2)) = 6 := by
-  rw [card_fin_two_zmod_of_dvd_two dvd_rfl, card_fin_two_zmod_prime Nat.prime_two]; norm_num
-
-end TauCeti.Matrix.SignedQuotient
-
-/-! ### Prime-field orders of `PSL₂(𝔽_p)` -/
-
-namespace Matrix.ProjectiveSpecialLinearGroup
-
-open Matrix.SpecialLinearGroup
-
-/-- Over `𝔽₂`, the center of `SL₂(𝔽₂)` is trivial, so `|PSL₂(𝔽₂)| = |SL₂(𝔽₂)| = 6`. -/
-theorem card_fin_two_zmod_two : Nat.card PSL(2, ZMod 2) = 6 := by
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  rw [← Nat.card_congr (TauCeti.Matrix.SignedQuotient.equivPSL (ZMod 2)).toEquiv,
-    TauCeti.Matrix.SignedQuotient.card_fin_two_zmod_two]
-
-/-- For an odd prime `p`, `2 · |PSL₂(𝔽_p)| = p(p² - 1)`. -/
-theorem two_mul_card_fin_two_zmod_prime {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) :
-    2 * Nat.card PSL(2, ZMod p) = p * (p ^ 2 - 1) := by
-  have : Fact p.Prime := ⟨hp⟩
-  rw [← Nat.card_congr (TauCeti.Matrix.SignedQuotient.equivPSL (ZMod p)).toEquiv,
-    TauCeti.Matrix.SignedQuotient.two_mul_card_fin_two_zmod (by have := hp.two_le; omega),
-    card_fin_two_zmod_prime hp]
-
-end Matrix.ProjectiveSpecialLinearGroup

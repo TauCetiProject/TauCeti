@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
 # The `{±I}` subgroup and signed quotient `SL(n, R) ⧸ {±I}`
@@ -48,9 +47,7 @@ theorem negOneSubgroup_le_center :
 
 /-- The central subgroup `negOneSubgroup n R` is normal in `SL(n, R)`. -/
 instance instNormalNegOneSubgroup : (negOneSubgroup n R).Normal :=
-  ⟨fun _ hx _ ↦ by
-    rw [negOneSubgroup_def, Subgroup.mem_zpowers_neg_one_iff] at hx
-    rcases hx with rfl | rfl <;> simp [negOneSubgroup_def]⟩
+  Subgroup.normal_of_le_center negOneSubgroup_le_center
 
 end TauCeti.Matrix.SpecialLinearGroup
 
@@ -97,17 +94,22 @@ noncomputable def equivPSL (R : Type*) [CommRing R] [NoZeroDivisors R] :
 theorem equivPSL_mk (R : Type*) [CommRing R] [NoZeroDivisors R] (g : SL(2, R)) :
     equivPSL R (QuotientGroup.mk g) = QuotientGroup.mk g := by rw [equivPSL]; rfl
 
+private theorem map_negOneSubgroup_le {n R S : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [CommRing S] [Fact (Even (Fintype.card n))] (f : R →+* S) :
+    negOneSubgroup n R ≤
+      (negOneSubgroup n S).comap (_root_.Matrix.SpecialLinearGroup.map f) :=
+  Subgroup.map_le_iff_le_comap.mp <| by
+    rw [negOneSubgroup_def, negOneSubgroup_def, MonoidHom.map_zpowers, Subgroup.zpowers_le]
+    rw [show _root_.Matrix.SpecialLinearGroup.map f (-1) = -1 by
+      ext i j; by_cases hij : i = j <;> simp [hij]]
+    exact Subgroup.mem_zpowers (-1)
+
 /-- Extension of scalars on signed quotients `SL(n, R) ⧸ {±I} →* SL(n, S) ⧸ {±I}`. -/
 noncomputable def map {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
     [Fact (Even (Fintype.card n))] (f : R →+* S) :
     SignedQuotient n R →* SignedQuotient n S :=
   QuotientGroup.map (negOneSubgroup n R) (negOneSubgroup n S)
-    (_root_.Matrix.SpecialLinearGroup.map f) fun _ hg ↦ by
-      rw [Subgroup.mem_comap, negOneSubgroup_def, Subgroup.mem_zpowers_neg_one_iff]
-      rw [negOneSubgroup_def, Subgroup.mem_zpowers_neg_one_iff] at hg
-      rcases hg with rfl | rfl
-      · exact Or.inl (map_one _)
-      · exact Or.inr (by ext i j; by_cases hij : i = j <;> simp [hij])
+    (_root_.Matrix.SpecialLinearGroup.map f) (map_negOneSubgroup_le f)
 
 /-- `SignedQuotient.map f` acts on coset representatives by entrywise application of `f`. -/
 @[simp]
@@ -128,13 +130,23 @@ theorem map_surjective {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] 
 @[simp]
 theorem map_id (n R : Type*) [Fintype n] [DecidableEq n] [CommRing R]
     [Fact (Even (Fintype.card n))] :
-    map (n := n) (RingHom.id R) = MonoidHom.id (SignedQuotient n R) := by ext g; simp
+    map (n := n) (RingHom.id R) = MonoidHom.id (SignedQuotient n R) := by
+  rw [map]
+  simpa only [_root_.Matrix.SpecialLinearGroup.map_id] using
+    QuotientGroup.map_id (negOneSubgroup n R)
 
 /-- Extension of scalars on signed quotients respects composition of ring homomorphisms. -/
 @[simp]
 theorem map_comp {n R S T : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
     [CommRing T] [Fact (Even (Fintype.card n))] (f : R →+* S) (g : S →+* T) :
-    (map (n := n) g).comp (map (n := n) f) = map (n := n) (g.comp f) := by ext x; rfl
+    (map (n := n) g).comp (map (n := n) f) = map (n := n) (g.comp f) := by
+  rw [map, map, map]
+  simpa only [_root_.Matrix.SpecialLinearGroup.map_comp_map] using
+    QuotientGroup.map_comp_map (negOneSubgroup n R) (negOneSubgroup n S) (negOneSubgroup n T)
+      (_root_.Matrix.SpecialLinearGroup.map f) (_root_.Matrix.SpecialLinearGroup.map g)
+      (map_negOneSubgroup_le f) (map_negOneSubgroup_le g)
+      (by simpa only [← _root_.Matrix.SpecialLinearGroup.map_comp_map] using
+        map_negOneSubgroup_le (g.comp f))
 
 end SignedQuotient
 

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.RingTheory.RootsOfUnity.Basic
-import Mathlib.GroupTheory.Coset.Card
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!

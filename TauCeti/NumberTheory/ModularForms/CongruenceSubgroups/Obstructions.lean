@@ -7,24 +7,23 @@ module
 
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
 public import TauCeti.GroupTheory.Subgroup.IsSubnormal
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Principal
-public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective.Principal
 import Mathlib.Algebra.Field.ZMod
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Solvable
+import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.ZMod
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.FinTwo.Solvable
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.CompositionFactors
 import TauCeti.LinearAlgebra.Projectivization.PSL.Simple
 
 /-!
-# Order and composition-factor obstructions for principal modular quotients
+# Composition-factor obstructions for principal modular quotients
 
-This file establishes the finite group-theoretic obstructions — both by group order and by
-Jordan–Hölder composition factors — that principal congruence quotients place on congruence
-subgroups of `SL₂(ℤ)` and `PSL₂(ℤ)`:
+This file establishes the Jordan–Hölder composition-factor obstructions that principal congruence
+quotients place on congruence subgroups of `SL₂(ℤ)` and `PSL₂(ℤ)` (order obstructions live in
+`TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Principal` and
+`TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective.Principal`):
 
-* **Order obstructions**: if `Γ(N) ≤ Δ` (respectively `Γ(N) ≤ Γ.liftSL`), then
-  `|SL₂(ℤ) ⧸ Δ.normalCore| ∣ |SL₂(ℤ/Nℤ)|` (respectively
-  `|PSL₂(ℤ) ⧸ Γ.normalCore| ∣ |SL₂(ℤ/Nℤ) ⧸ {±I}| = (GammaProjective N).index`).
 * **Composition-factor obstructions**: for `N ≠ 0`, every nonabelian simple subnormal section of
   `SL₂(ℤ) ⧸ Δ.normalCore` or `PSL₂(ℤ) ⧸ Γ.normalCore` is isomorphic to `PSL₂(𝔽_ℓ)` for a prime
   `ℓ ≥ 5` dividing `N` (with level-free forms for arbitrary congruence subgroups, and prime-level
@@ -54,46 +53,7 @@ open scoped MatrixGroups
 
 namespace CongruenceSubgroup
 
-attribute [local instance] Gamma_normal
-
-/-! ### Order and composition-factor obstructions in `SL₂(ℤ)` -/
-
-/-- If `Γ(N) ≤ Δ`, then `[SL₂(ℤ) : Δ] ∣ |SL₂(ℤ/Nℤ)|`. -/
-theorem index_dvd_card_sl_zmod_of_Gamma_le {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ) :
-    Δ.index ∣ Nat.card SL(2, ZMod N) := by
-  rw [← index_Gamma]; exact Subgroup.index_dvd_of_le h
-
-/-- When `Γ(N) ≤ Δ`, the canonical surjective homomorphism `SL₂(ℤ/Nℤ) →* SL₂(ℤ) ⧸ Δ.normalCore`
-obtained by composing `(quotientGammaEquiv N).symm` with the quotient map from `Γ(N)` to
-`Δ.normalCore`. -/
-noncomputable def slZModToQuotientNormalCore {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ) :
-    SL(2, ZMod N) →* SL(2, ℤ) ⧸ Δ.normalCore :=
-  (QuotientGroup.map (Gamma N) Δ.normalCore (MonoidHom.id _)
-    (Subgroup.normal_le_normalCore.mpr h)).comp (quotientGammaEquiv N).symm.toMonoidHom
-
-/-- Evaluation of `slZModToQuotientNormalCore` on reductions of integer matrices. -/
-@[simp]
-theorem slZModToQuotientNormalCore_map_intCast {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ)
-    (γ : SL(2, ℤ)) :
-    slZModToQuotientNormalCore h (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ) =
-      QuotientGroup.mk γ := by
-  rw [slZModToQuotientNormalCore, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    ← quotientGammaEquiv_mk, MulEquiv.symm_apply_apply]
-  rfl
-
-/-- The canonical reduction homomorphism `SL₂(ℤ/Nℤ) →* SL₂(ℤ) ⧸ Δ.normalCore` is surjective. -/
-theorem slZModToQuotientNormalCore_surjective {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ) :
-    Function.Surjective (slZModToQuotientNormalCore h) :=
-  (QuotientGroup.map_surjective_of_surjective _ _ (MonoidHom.id _)
-    (QuotientGroup.mk'_surjective _) (Subgroup.normal_le_normalCore.mpr h)).comp
-    (quotientGammaEquiv N).symm.surjective
-
-/-- **Order obstruction in `SL₂(ℤ)`:** if `Γ(N) ≤ Δ`, then
-`|SL₂(ℤ) ⧸ Δ.normalCore| ∣ |SL₂(ℤ/Nℤ)|`. -/
-theorem card_quotient_normalCore_dvd_of_Gamma_le {N : ℕ} {Δ : Subgroup SL(2, ℤ)}
-    (h : Gamma N ≤ Δ) :
-    Nat.card (SL(2, ℤ) ⧸ Δ.normalCore) ∣ Nat.card SL(2, ZMod N) :=
-  Subgroup.card_dvd_of_surjective (slZModToQuotientNormalCore_surjective h)
+/-! ### Composition-factor obstructions in `SL₂(ℤ)` -/
 
 /-- **Level-`N` composition-factor obstruction in `SL₂(ℤ)`:** if `Γ(N) ≤ Δ` with `N ≠ 0`, then
 every nonabelian simple subnormal section `S` of `SL₂(ℤ) ⧸ Δ.normalCore` is isomorphic to
@@ -131,53 +91,20 @@ end CongruenceSubgroup
 
 namespace TauCeti.CongruenceSubgroup
 
-/-! ### Order and composition-factor obstructions in `PSL₂(ℤ)` -/
+/-! ### Composition-factor obstructions in `PSL₂(ℤ)` -/
 
-/-- **Order obstruction on the index in `PSL₂(ℤ)`:** if `Γ(N) ≤ Γ.liftSL` (equivalently
-`GammaProjective N ≤ Γ`), then
-`[PSL₂(ℤ) : Γ] ∣ (GammaProjective N).index = |SL₂(ℤ/Nℤ) ⧸ {±I}|`. -/
-theorem index_dvd_of_Gamma_le_liftSL {N : ℕ} {Γ : Subgroup PSL(2, ℤ)}
-    (h : CongruenceSubgroup.Gamma N ≤ Γ.liftSL) :
-    Γ.index ∣ Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N)) := by
-  rw [← GammaProjective_index_eq_card]
-  exact Subgroup.index_dvd_of_le (GammaProjective_le_iff.mpr h)
-
-/-- When `Γ(N) ≤ Γ.liftSL`, the canonical surjective homomorphism
-`SL₂(ℤ/Nℤ) ⧸ {±I} →* PSL₂(ℤ) ⧸ Γ.normalCore` obtained from `GammaProjective N ≤ Γ.normalCore` and
-`quotientGammaProjectiveEquiv N`. -/
-noncomputable def signedQuotientToQuotientNormalCore {N : ℕ} {Γ : Subgroup PSL(2, ℤ)}
-    (h : CongruenceSubgroup.Gamma N ≤ Γ.liftSL) :
-    TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N) →* PSL(2, ℤ) ⧸ Γ.normalCore :=
-  (QuotientGroup.map (GammaProjective N) Γ.normalCore (MonoidHom.id _)
-    (Subgroup.normal_le_normalCore.mpr (GammaProjective_le_iff.mpr h))).comp
-    (quotientGammaProjectiveEquiv N).symm.toMonoidHom
-
-/-- Evaluation of `signedQuotientToQuotientNormalCore` on reductions of elements of `PSL₂(ℤ)`. -/
-@[simp]
-theorem signedQuotientToQuotientNormalCore_psl2zToSignedQuotient {N : ℕ} {Γ : Subgroup PSL(2, ℤ)}
-    (h : CongruenceSubgroup.Gamma N ≤ Γ.liftSL) (x : PSL(2, ℤ)) :
-    signedQuotientToQuotientNormalCore h (psl2zToSignedQuotient N x) = QuotientGroup.mk x := by
-  rw [signedQuotientToQuotientNormalCore, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    ← quotientGammaProjectiveEquiv_mk, MulEquiv.symm_apply_apply]
-  rfl
-
-/-- The canonical homomorphism `SL₂(ℤ/Nℤ) ⧸ {±I} →* PSL₂(ℤ) ⧸ Γ.normalCore` is surjective. -/
-theorem signedQuotientToQuotientNormalCore_surjective {N : ℕ} {Γ : Subgroup PSL(2, ℤ)}
-    (h : CongruenceSubgroup.Gamma N ≤ Γ.liftSL) :
-    Function.Surjective (signedQuotientToQuotientNormalCore h) :=
-  (QuotientGroup.map_surjective_of_surjective _ _ (MonoidHom.id _)
-    (QuotientGroup.mk'_surjective _)
-    (Subgroup.normal_le_normalCore.mpr (GammaProjective_le_iff.mpr h))).comp
-    (quotientGammaProjectiveEquiv N).symm.surjective
-
-/-- **Order obstruction on the monodromy / normal-core quotient in `PSL₂(ℤ)`:** if
-`Γ(N) ≤ Γ.liftSL`, then `|PSL₂(ℤ) ⧸ Γ.normalCore| ∣ |SL₂(ℤ/Nℤ) ⧸ {±I}|`
-(`= (GammaProjective N).index`). -/
-theorem card_quotient_normalCore_dvd_of_Gamma_le_liftSL {N : ℕ} {Γ : Subgroup PSL(2, ℤ)}
-    (h : CongruenceSubgroup.Gamma N ≤ Γ.liftSL) :
-    Nat.card (PSL(2, ℤ) ⧸ Γ.normalCore) ∣
-      Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N)) :=
-  Subgroup.card_dvd_of_surjective (signedQuotientToQuotientNormalCore_surjective h)
+/-- The quotient of `SL₂(ℤ)` by the normal core of `Γ.liftSL` is canonically isomorphic to the
+quotient of `PSL₂(ℤ)` by the normal core of `Γ`, since `SL₂(ℤ) →* PSL₂(ℤ)` is surjective. -/
+private noncomputable def quotientNormalCoreLiftSLEquiv (Γ : Subgroup PSL(2, ℤ)) :
+    (SL(2, ℤ) ⧸ Γ.liftSL.normalCore) ≃* (PSL(2, ℤ) ⧸ Γ.normalCore) :=
+  let π : SL(2, ℤ) →* PSL(2, ℤ) := QuotientGroup.mk' (Subgroup.center SL(2, ℤ))
+  let φ : SL(2, ℤ) →* PSL(2, ℤ) ⧸ Γ.normalCore := (QuotientGroup.mk' Γ.normalCore).comp π
+  have hker : Γ.liftSL.normalCore = φ.ker := by
+    rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk', Subgroup.liftSL_def]
+    exact Subgroup.normalCore_comap_of_forall_exists_mul_eq π fun g ↦
+      let ⟨x, hx⟩ := QuotientGroup.mk'_surjective _ g; ⟨x, 1, one_mem _, by rw [mul_one]; exact hx⟩
+  QuotientGroup.liftEquiv Γ.liftSL.normalCore
+    ((QuotientGroup.mk'_surjective _).comp (QuotientGroup.mk'_surjective _)) hker
 
 /-- **Level-`N` composition-factor obstruction in `PSL₂(ℤ)`:** if `Γ(N) ≤ Γ.liftSL` with `N ≠ 0`,
 then every nonabelian simple subnormal section `S` of `PSL₂(ℤ) ⧸ Γ.normalCore` is isomorphic to
@@ -187,10 +114,8 @@ theorem exists_prime_dvd_and_mulEquiv_of_Gamma_le_liftSL {N : ℕ} (hN : N ≠ 0
     {S : Type*} [Group S] [IsSimpleGroup S] (hcomm : ¬ IsMulCommutative S)
     (hsec : TauCeti.HasSubnormalSection (PSL(2, ℤ) ⧸ Γ.normalCore) S) :
     ∃ ℓ : ℕ, ℓ.Prime ∧ 5 ≤ ℓ ∧ ℓ ∣ N ∧ Nonempty (S ≃* PSL(2, ZMod ℓ)) :=
-  exists_prime_dvd_psl_mulEquiv_of_hasSubnormalSection hN hcomm
-    ((hsec.of_surjective (signedQuotientToQuotientNormalCore_surjective h)).of_surjective
-      (QuotientGroup.mk'_surjective
-        (TauCeti.Matrix.SpecialLinearGroup.negOneSubgroup (Fin 2) (ZMod N))))
+  CongruenceSubgroup.exists_prime_dvd_and_mulEquiv_of_Gamma_le hN h hcomm
+    (hsec.congr_left (quotientNormalCoreLiftSLEquiv Γ).symm)
 
 /-- **Composition-factor obstruction for projective congruence subgroups:** if `Γ.liftSL` is a
 congruence subgroup of `SL₂(ℤ)`, then every nonabelian simple subnormal section `S` of
@@ -200,9 +125,8 @@ theorem compositionFactor_quotient_normalCore_of_isCongruenceSubgroup_liftSL
     {S : Type*} [Group S] [IsSimpleGroup S] (hcomm : ¬ IsMulCommutative S)
     (hsec : TauCeti.HasSubnormalSection (PSL(2, ℤ) ⧸ Γ.normalCore) S) :
     ∃ ℓ : ℕ, ℓ.Prime ∧ 5 ≤ ℓ ∧ Nonempty (S ≃* PSL(2, ZMod ℓ)) :=
-  let ⟨_, hN, hle⟩ := hΓ
-  let ⟨ℓ, hℓ, h5, _, heq⟩ := exists_prime_dvd_and_mulEquiv_of_Gamma_le_liftSL hN hle hcomm hsec
-  ⟨ℓ, hℓ, h5, heq⟩
+  CongruenceSubgroup.compositionFactor_quotient_normalCore_of_isCongruenceSubgroup hΓ hcomm
+    (hsec.congr_left (quotientNormalCoreLiftSLEquiv Γ).symm)
 
 /-- **Prime-level divisibility criterion:** if `PSL₂(ℤ) ⧸ Γ.normalCore` admits `PSL(2, ZMod ℓ)`
 (`ℓ` prime, `5 ≤ ℓ`) as a subnormal section and `Γ(N) ≤ Γ.liftSL` with `N ≠ 0`, then `ℓ ∣ N`. -/
@@ -231,11 +155,9 @@ congruence subgroup of `SL₂(ℤ)`. -/
 theorem not_isCongruenceSubgroup_liftSL_of_hasSubnormalSection_alternatingGroup
     {Γ : Subgroup PSL(2, ℤ)} {α : Type*} [Fintype α] [DecidableEq α] (hα : 6 ≤ Nat.card α)
     (hsec : TauCeti.HasSubnormalSection (PSL(2, ℤ) ⧸ Γ.normalCore) (alternatingGroup α)) :
-    ¬ CongruenceSubgroup.IsCongruenceSubgroup Γ.liftSL := fun ⟨N, hN, hle⟩ ↦
-  Matrix.SpecialLinearGroup.not_hasSubnormalSection_alternatingGroup hN hα
-    ((hsec.of_surjective (signedQuotientToQuotientNormalCore_surjective hle)).of_surjective
-      (QuotientGroup.mk'_surjective
-        (TauCeti.Matrix.SpecialLinearGroup.negOneSubgroup (Fin 2) (ZMod N))))
+    ¬ CongruenceSubgroup.IsCongruenceSubgroup Γ.liftSL :=
+  CongruenceSubgroup.not_isCongruenceSubgroup_of_hasSubnormalSection_alternatingGroup hα
+    (hsec.congr_left (quotientNormalCoreLiftSLEquiv Γ).symm)
 
 /-- **Alternating monodromy noncongruence theorem (`A_n`, `n ≥ 6`):** if
 `(PSL₂(ℤ) ⧸ Γ.normalCore) ≃* alternatingGroup α` with `6 ≤ Nat.card α`, then `Γ.liftSL` is not a

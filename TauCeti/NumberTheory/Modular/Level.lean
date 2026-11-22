@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.PermutationTriple.GeometryType
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 public import TauCeti.NumberTheory.Modular.CosetTriple
-public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Wohlfahrt
 public import Mathlib.NumberTheory.Chebyshev
 import TauCeti.GroupTheory.Perm.Partition

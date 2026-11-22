@@ -10,14 +10,17 @@ public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.Basic
 
 /-!
-# Principal congruence quotients and index formulas
+# Principal congruence quotients, index formulas, and order obstructions
 
-This file develops the finite-quotient and index arithmetic of `Γ(N) ≤ Γ₁(N) ≤ SL₂(ℤ)`:
-* `CongruenceSubgroup.quotientGammaEquiv`: `(SL₂(ℤ) ⧸ Γ(N)) ≃* SL₂(ℤ/Nℤ)`.
+This file develops the finite-quotient arithmetic, index formulas, and order obstructions for
+`Γ(N) ≤ Γ₁(N) ≤ SL₂(ℤ)`:
 * `CongruenceSubgroup.gamma1UpperRightHom` and `gamma1QuotientGammaEquiv`:
   `(Γ₁(N) ⧸ Γ(N)) ≃* Multiplicative (ZMod N)`, `[Γ₁(N) : Γ(N)] = N`, and
   `[SL₂(ℤ) : Γ(N)] = |ZMod N| · [SL₂(ℤ) : Γ₁(N)]`.
 * Prime, prime-power, prime-factorization, and cleared Euler-product formulas for `[SL₂(ℤ) : Γ(N)]`.
+* Order obstructions in `SL₂(ℤ)`: if `Γ(N) ≤ Δ`, then `[SL₂(ℤ) : Δ] ∣ |SL₂(ℤ/Nℤ)|` and
+  `|SL₂(ℤ) ⧸ Δ.normalCore| ∣ |SL₂(ℤ/Nℤ)|`, via the canonical surjective reduction
+  `CongruenceSubgroup.slZModToQuotientNormalCore`.
 
 ## References
 
@@ -37,20 +40,6 @@ namespace CongruenceSubgroup
 attribute [local instance] Gamma_normal
 
 /-! ### Principal quotients and `Γ₁(N) ⧸ Γ(N) ≃* Multiplicative (ZMod N)` -/
-
-/-- **Canonical isomorphism `(SL(2, ℤ) ⧸ Γ(N)) ≃* SL(2, ZMod N)`** induced by entrywise reduction
-modulo `N` and strong approximation (`Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`). -/
-noncomputable def quotientGammaEquiv (N : ℕ) :
-    (SL(2, ℤ) ⧸ Gamma N) ≃* SL(2, ZMod N) :=
-  QuotientGroup.quotientKerEquivOfSurjective
-    (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)))
-    Matrix.SpecialLinearGroup.map_intCast_zmod_surjective
-
-/-- `quotientGammaEquiv N` evaluates on coset representatives by entrywise reduction modulo `N`. -/
-@[simp]
-theorem quotientGammaEquiv_mk (N : ℕ) (γ : SL(2, ℤ)) :
-    quotientGammaEquiv N (QuotientGroup.mk γ) =
-      Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ := (rfl)
 
 /-- The upper-right-entry homomorphism `Γ₁(N) →* Multiplicative (ZMod N)` sending `γ` to
 `Multiplicative.ofAdd (γ 0 1 : ZMod N)`. Since matrices in `Γ₁(N)` are congruent to `!![1, *; 0, 1]`
@@ -142,5 +131,44 @@ theorem index_Gamma_mul_prod_primeFactors_sq (N : ℕ) :
     (Gamma N).index * ∏ p ∈ N.primeFactors, p ^ 2 =
       N ^ 3 * ∏ p ∈ N.primeFactors, (p ^ 2 - 1) := by
   rw [index_Gamma, card_fin_two_zmod_mul_prod_primeFactors_sq]
+
+/-! ### Order obstructions in `SL₂(ℤ)` -/
+
+/-- If `Γ(N) ≤ Δ`, then `[SL₂(ℤ) : Δ] ∣ |SL₂(ℤ/Nℤ)|`. -/
+theorem index_dvd_card_sl_zmod_of_Gamma_le {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ) :
+    Δ.index ∣ Nat.card SL(2, ZMod N) := by
+  rw [← index_Gamma]; exact Subgroup.index_dvd_of_le h
+
+/-- When `Γ(N) ≤ Δ`, the canonical surjective homomorphism `SL₂(ℤ/Nℤ) →* SL₂(ℤ) ⧸ Δ.normalCore`
+obtained by composing `(quotientGammaEquiv N).symm` with the quotient map from `Γ(N)` to
+`Δ.normalCore`. -/
+noncomputable def slZModToQuotientNormalCore {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ) :
+    SL(2, ZMod N) →* SL(2, ℤ) ⧸ Δ.normalCore :=
+  (QuotientGroup.map (Gamma N) Δ.normalCore (MonoidHom.id _)
+    (Subgroup.normal_le_normalCore.mpr h)).comp (quotientGammaEquiv N).symm.toMonoidHom
+
+/-- Evaluation of `slZModToQuotientNormalCore` on reductions of integer matrices. -/
+@[simp]
+theorem slZModToQuotientNormalCore_map_intCast {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ)
+    (γ : SL(2, ℤ)) :
+    slZModToQuotientNormalCore h (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ) =
+      QuotientGroup.mk γ := by
+  rw [slZModToQuotientNormalCore, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    ← quotientGammaEquiv_mk, MulEquiv.symm_apply_apply]
+  rfl
+
+/-- The canonical reduction homomorphism `SL₂(ℤ/Nℤ) →* SL₂(ℤ) ⧸ Δ.normalCore` is surjective. -/
+theorem slZModToQuotientNormalCore_surjective {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ) :
+    Function.Surjective (slZModToQuotientNormalCore h) :=
+  (QuotientGroup.map_surjective_of_surjective _ _ (MonoidHom.id _)
+    (QuotientGroup.mk'_surjective _) (Subgroup.normal_le_normalCore.mpr h)).comp
+    (quotientGammaEquiv N).symm.surjective
+
+/-- **Order obstruction in `SL₂(ℤ)`:** if `Γ(N) ≤ Δ`, then
+`|SL₂(ℤ) ⧸ Δ.normalCore| ∣ |SL₂(ℤ/Nℤ)|`. -/
+theorem card_quotient_normalCore_dvd_of_Gamma_le {N : ℕ} {Δ : Subgroup SL(2, ℤ)}
+    (h : Gamma N ≤ Δ) :
+    Nat.card (SL(2, ℤ) ⧸ Δ.normalCore) ∣ Nat.card SL(2, ZMod N) :=
+  Subgroup.card_dvd_of_surjective (slZModToQuotientNormalCore_surjective h)
 
 end CongruenceSubgroup
