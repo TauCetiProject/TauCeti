@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 public import Mathlib.Topology.ContinuousMap.Compact
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 
 /-!
 # Compact chart seminorms
@@ -147,6 +148,15 @@ theorem chartCkSeminorm_le_of_le (x : M)
   refine (chartCkSeminorm_le_iff x K k _ f (apply_nonneg _ _)).mpr fun m hm z hz ↦ ?_
   exact (chartCkSeminorm_le_iff x K l hl f (apply_nonneg _ _)).mp le_rfl m (hm.trans hkl) z hz
 
+/-- The compact chart `C^k` seminorm bounds every derivative seminorm of order at most `k`. -/
+theorem chartDerivativeSeminorm_le_chartCkSeminorm (x : M)
+    (K : TopologicalSpace.Compacts (extChartAt I x).target) {m k : ℕ} (hm : m ≤ n) (hk : k ≤ n)
+    (hmk : m ≤ k) :
+    chartDerivativeSeminorm (F := F) x K m hm ≤ chartCkSeminorm x K k hk := by
+  intro f
+  exact (chartDerivativeSeminorm_le_iff x K m hm f (apply_nonneg _ _)).mpr fun z hz ↦
+    (chartCkSeminorm_le_iff x K k hk f (apply_nonneg _ _)).mp le_rfl m hmk z hz
+
 /-- The compact chart `C^k` seminorm on the empty coordinate set is zero. -/
 @[simp]
 theorem chartCkSeminorm_bot (x : M) (k : ℕ) (hk : k ≤ n) :
@@ -179,6 +189,20 @@ theorem chartCkSeminorm_eq_zero_of_eventuallyEq_zero (x : M)
   refine le_antisymm ((chartCkSeminorm_le_iff x K k hk f le_rfl).mpr fun m hm z hz ↦ ?_)
     (apply_nonneg _ _)
   rw [chartIteratedFDeriv_eq_zero_of_eventuallyEq_zero x m _ z (hf z hz), norm_zero]
+
+/-- The compact chart `C^k` seminorm of a constant map is at most the norm of its value: in every
+chart a constant map has vanishing coordinate derivatives of positive order. -/
+theorem chartCkSeminorm_const_le (x : M)
+    (K : TopologicalSpace.Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n) (v : F) :
+    chartCkSeminorm x K k hk (const v : C^n⟮I, M; 𝓘(𝕜, F), F⟯) ≤ ‖v‖ := by
+  refine (chartCkSeminorm_le_iff x K k hk _ (norm_nonneg v)).mpr fun m _ z _ ↦ ?_
+  have hconst : (const v : C^n⟮I, M; 𝓘(𝕜, F), F⟯) ∘ (extChartAt I x).symm = fun _ ↦ v :=
+    funext fun _ ↦ const_apply v _
+  rw [chartIteratedFDeriv_self_target_apply, hconst]
+  rcases eq_or_ne m 0 with rfl | hm
+  · rw [norm_iteratedFDerivWithin_zero]
+  · rw [iteratedFDerivWithin_const_of_ne hm, Pi.zero_apply, norm_zero]
+    exact norm_nonneg v
 
 /-- Positive strict `C^k` control is equivalent to pointwise strict control of every coordinate
 derivative through order `k`. -/

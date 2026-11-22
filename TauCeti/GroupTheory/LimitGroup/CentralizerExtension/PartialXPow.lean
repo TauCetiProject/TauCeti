@@ -447,7 +447,7 @@ example {α : Type*} (a : α) :
 
 /-- The generators of a free group are top elements of every partial exponentiation on it. -/
 example {α : Type*} (S : PartialXPow (FreeGroup α)) (a : α) : S.IsTop (FreeGroup.of a) :=
-  isTop_of_centralizer_le_zpowers (FreeGroup.of_ne_one a) (FreeGroup.centralizer_singleton_of a).le
+  isTop_of_centralizer_le_zpowers (FreeGroup.of_ne_one a) (FreeGroup.centralizer_of a).le
 
 end PartialXPow
 

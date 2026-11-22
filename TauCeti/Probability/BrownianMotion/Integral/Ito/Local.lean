@@ -398,8 +398,8 @@ theorem isItoIntegral_ite_le_stoppedProcess_of_brownianIntegrable
         ((hH.ite_le (hτ.dyadicCeilTime m)).isStronglyPredictable.sub
           (hH.ite_le hτ).isStronglyPredictable)
     simp_rw [heq]
-    have hHmem : MemLp (Function.uncurry H) 2 ((timeMeasure T).prod P) := by
-      simpa only [NNReal.comap_volume_restrict_Ioc, timeMeasure_def] using hH.memLp T
+    have hHmem : MemLp (Function.uncurry H) 2 ((timeMeasure T).prod P) :=
+      hH.memLp_timeMeasure T
     refine tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (by norm_num)
       (Eventually.of_forall fun m ↦ ((hH.ite_le (hτ.dyadicCeilTime m)).isStronglyPredictable.mono
         ℱ.predictable_le_prod).aestronglyMeasurable) hHmem
@@ -413,10 +413,10 @@ theorem isItoIntegral_ite_le_stoppedProcess_of_brownianIntegrable
       filter_upwards [(tendsto_dyadicCeilTime (τ p.snd)).eventually (gt_mem_nhds (not_le.mp hp))]
         with m hm
       rw [ite_eq_right hp, ite_eq_right (not_le.mpr hm)]
-  have hR_lim := (hW.martingale_of_isItoIntegral hH hI hI_adapt)
+  have hR_lim := (hI.martingale hW hH hI_adapt)
     |>.tendsto_eLpNorm_stoppedProcess_dyadicCeilTime
       (hI.ae_continuous.mono fun _ hω ↦ hω.isRightContinuous) hτ T one_le_two (by norm_num)
-      (hW.memLp_of_isItoIntegral hH hI T)
+      (hI.memLp hW hH T)
   have hzero : eLpNorm (stoppedProcess I τ T - L) 2 P = 0 :=
     tendsto_nhds_unique tendsto_const_nhds <|
       tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
@@ -453,7 +453,7 @@ private theorem exists_energyLocalized_integrals (hW : IsFilteredPreBrownianReal
   have hHseq (n : ℕ) : BrownianIntegrable ℱ P (Hseq n) :=
     hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer ((n : ℝ≥0) + 1)
   choose U hUI hUpred hUmart using fun n ↦
-    hW.exists_isItoIntegral_of_brownianIntegrable hcont (hHseq n)
+    (hHseq n).exists_isItoIntegral hW hcont
   have hcompat (m n : ℕ) (hmn : m ≤ n) : stoppedProcess (U n) (σ m) ≡ᵐ[P] U m := by
     have hσ_le (ω : Ω) : σ m ω ≤ σ n ω :=
       nnvolume.monotone_energyLocalizer H ω (add_le_add_left (Nat.cast_le.mpr hmn) 1)
