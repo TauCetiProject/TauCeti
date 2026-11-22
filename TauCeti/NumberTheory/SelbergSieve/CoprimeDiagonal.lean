@@ -84,14 +84,15 @@ theorem totient_div_mul_log_le_diagonalMass (s : BoundingSieve) (k : ℕ) {z : �
       exact mem_filter.mpr ⟨Nat.mem_divisors.mpr ⟨hdP, s.prodPrimes_ne_zero⟩, hdz⟩
 
 /-- The finite Selberg normalizer is at least the logarithm of any nonnegative cutoff
-whose primes are in the sieve and have density at least the reciprocal prime. -/
+whose primes strictly below it are in the sieve and have density at least the reciprocal
+prime. -/
 theorem log_le_sum_selbergTerms (s : BoundingSieve) (z : ℝ) (hz : 0 ≤ z)
-    (hP : ∀ p : ℕ, p.Prime → (p : ℝ) ≤ z → p ∣ s.prodPrimes)
-    (hnu : ∀ p : ℕ, p.Prime → (p : ℝ) ≤ z → (p : ℝ)⁻¹ ≤ s.nu p) :
+    (hP : ∀ p : ℕ, p.Prime → (p : ℝ) < z → p ∣ s.prodPrimes)
+    (hnu : ∀ p : ℕ, p.Prime → (p : ℝ) < z → (p : ℝ)⁻¹ ≤ s.nu p) :
     Real.log z ≤
       ∑ d ∈ s.prodPrimes.divisors, if (d : ℝ) ≤ z then s.selbergTerms d else 0 := by
-  have h := s.totient_div_mul_log_le_diagonalMass 1 hz (fun p hp hpz _ ↦ hP p hp hpz.le)
-    fun p hp hpz _ ↦ hnu p hp hpz.le
+  have h := s.totient_div_mul_log_le_diagonalMass 1 hz (fun p hp hpz _ ↦ hP p hp hpz)
+    fun p hp hpz _ ↦ hnu p hp hpz
   rw [Nat.totient_one, Nat.cast_one, div_one, one_mul, diagonalMass_def] at h
   rw [← sum_filter]
   exact h.trans <| sum_le_sum_of_subset_of_nonneg
