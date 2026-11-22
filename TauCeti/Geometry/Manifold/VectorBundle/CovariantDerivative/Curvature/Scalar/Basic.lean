@@ -148,12 +148,6 @@ theorem scalarCurvature_eq_zero_of_curvatureTensor_eq_zero (x : M)
   scalarCurvature_eq_zero_of_ricciTensor_eq_zero cov x
     (ricciTensor_eq_zero_of_curvatureTensor_eq_zero cov x h)
 
-/-- A smooth connection on a manifold of dimension at most one has zero scalar curvature. -/
-theorem scalarCurvature_eq_zero_of_finrank_le_one (x : M)
-    (h : Module.finrank ℝ E ≤ 1) : cov.scalarCurvature x = 0 :=
-  cov.scalarCurvature_eq_zero_of_ricciTensor_eq_zero x
-    (cov.ricciTensor_eq_zero_of_finrank_le_one x h)
-
 /-- If Ricci curvature is a scalar multiple of the metric, scalar curvature is that scalar times
 the real dimension. -/
 theorem scalarCurvature_eq_of_ricciTensor_eq_smul_inner (x : M) (c : ℝ)
@@ -257,13 +251,6 @@ theorem scalarCurvature_eq_scalarCurvature_leviCivitaConnection
   obtain ⟨_⟩ := inst
   subst hg
   rfl
-
-/-- A smooth Riemannian metric on a manifold of dimension at most one has zero scalar curvature. -/
-theorem scalarCurvature_eq_zero_of_finrank_le_one (x : M) (h : Module.finrank ℝ E ≤ 1) :
-    g.scalarCurvature x = 0 := by
-  rw [scalarCurvature_def]
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  exact (CovariantDerivative.leviCivitaConnection I M).scalarCurvature_eq_zero_of_finrank_le_one x h
 
 /-- The scalar curvature of a rescaled metric `f g` at `x`, computed in an orthonormal basis `b` of
 `T_x M` for `g`: it is `(f x)⁻¹ ∑ⱼ Ric^(f g)_x (b j) (b j)`, since dividing `b` by `√(f x)` gives a

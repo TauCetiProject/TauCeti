@@ -160,7 +160,7 @@ theorem yamabeQuotient_rescale_const
         let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨h.toRiemannianMetric⟩
         rw [Subsingleton.elim (mgradient I u y) 0]
         exact sq_eq_zero_iff.2 norm_zero
-      simp [hm, h.scalarCurvature_eq_zero_of_finrank_le_one y (by omega)]
+      simp [hm, h.scalarCurvature_eq_zero_of_subsingleton y]
     simp only [hzero, integral_zero, zero_div]
   · have hd' : (finrank ℝ E : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hd
     rw [WithMetric.integral_riemannianVolume_rescale fun y ↦
