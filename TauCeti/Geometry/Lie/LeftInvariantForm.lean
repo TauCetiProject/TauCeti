@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.GroupLieAlgebra
-public import TauCeti.Algebra.Lie.Cohomology.ChevalleyEilenberg
+public import TauCeti.Algebra.Lie.Cohomology.FiniteDimensional
 public import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
-public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 
@@ -32,8 +31,8 @@ form preserved by every left translation is the extension of its value at the id
 `TauCeti.leftInvariantSmoothForm`.
 
 The exterior derivative of a left-invariant form is left-invariant, and on `𝔤` it is the
-Chevalley–Eilenberg differential `d` with trivial coefficients
-(`TauCeti.mextDeriv_leftInvariantForm`):
+Chevalley–Eilenberg differential `d` with trivial coefficients,
+`TauCeti.LieModule.Cohomology.trivialD` (`TauCeti.mextDeriv_leftInvariantForm`):
 
 `d (α^L) = (d α)^L`, where
 `(d α)(X₀, …, Xₖ) = ∑_{i < j} (-1)^(i + j) α (⁅Xᵢ, Xⱼ⁆, X₀, …, X̂ᵢ, …, X̂ⱼ, …, Xₖ)`.
@@ -48,10 +47,10 @@ coefficients, the left-invariant form of a covector is also constructed as a pul
 Liouville form, `Module.Dual.leftInvariantForm`, which agrees with this extension
 (`Module.Dual.leftInvariantForm_eq_leftInvariantSmoothForm`).
 
-The coefficient space `F` is a normed space, regarded as a trivial module over `𝔤` through
-Mathlib's type synonym `TrivialLieModule ℝ 𝔤 F`, so no Lie module structure on `F` itself is
-needed. The trivial action is what makes `d` the de Rham differential, since the exterior
-derivative has no term in which `𝔤` acts on the values of the form.
+The coefficient space `F` is a normed space. The definition of `trivialD` regards it as a
+trivial module over `𝔤` through Mathlib's type synonym `TrivialLieModule ℝ 𝔤 F`, so no Lie module
+structure on `F` itself is needed. The trivial action is what makes `d` the de Rham differential,
+since the exterior derivative has no term in which `𝔤` acts on the values of the form.
 
 ## Main definitions
 
@@ -272,12 +271,8 @@ module over the Lie algebra (`TrivialLieModule`): `d (α^L) = (d α)^L`. -/
 @[simp]
 theorem mextDeriv_leftInvariantForm (α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
     mextDeriv (leftInvariantForm I G F k α) =
-      leftInvariantForm I G F (k + 1) (AlternatingMap.toContinuousAlternatingMap
-        ((TrivialLieModule.equiv ℝ (GroupLieAlgebra I G) F).alternatingMapCongrRight
-          (LieModule.Cohomology.d ℝ (GroupLieAlgebra I G)
-            (TrivialLieModule ℝ (GroupLieAlgebra I G) F) k
-            ((TrivialLieModule.equiv ℝ (GroupLieAlgebra I G) F).alternatingMapCongrRight.symm
-              α.toAlternatingMap)))) := by
+      leftInvariantForm I G F (k + 1)
+        (LieModule.Cohomology.trivialD ℝ (GroupLieAlgebra I G) F k α) := by
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have : ContMDiffMul I 1 G := ContMDiffMul.of_le (n := 3) (by norm_num)
   funext x
@@ -295,15 +290,14 @@ theorem mextDeriv_leftInvariantForm (α : GroupLieAlgebra I G [⋀^Fin k]→L[�
   have hconst (i : Fin (k + 1)) : (fun y ↦ leftInvariantForm I G F k α y
       (i.removeNth fun j ↦ mulInvariantVectorField (X j) y)) = fun _ ↦ α (i.removeNth X) :=
     funext fun y ↦ leftInvariantForm_apply_mulInvariantVectorField α y (i.removeNth X)
-  rw [leftInvariantForm_apply_mulInvariantVectorField,
-    AlternatingMap.coe_toContinuousAlternatingMap, LinearEquiv.alternatingMapCongrRight_apply_apply]
+  rw [leftInvariantForm_apply_mulInvariantVectorField]
   cases k with
   | zero =>
     rw [mextDeriv_apply_vectorField_of_mlieBracket_eq_zero hφ hV fun i j ↦ by
       rw [Subsingleton.elim (α := Fin 1) i j, mlieBracket_self, Pi.zero_apply],
-      LieModule.Cohomology.d_zero_apply]
+      LieModule.Cohomology.trivialD_zero]
     simp only [hconst, mvfderiv_const, zero_apply, smul_zero, Finset.sum_const_zero,
-      LieModule.IsTrivial.trivial, map_zero]
+      LinearMap.zero_apply, ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
   | succ n =>
     -- The bracket terms are values of `α` on brackets in the Lie algebra.
     have hvec (i j : Fin (n + 1)) :
@@ -315,23 +309,18 @@ theorem mextDeriv_leftInvariantForm (α : GroupLieAlgebra I G [⋀^Fin k]→L[�
       rw [← mulInvariantVector_mlieBracket, ← GroupLieAlgebra.bracket_def]
       ext k
       exact Fin.cases rfl (fun k ↦ rfl) k
-    rw [mextDeriv_apply_vectorField hφ hV, LieModule.Cohomology.d_succ_apply]
+    rw [mextDeriv_apply_vectorField hφ hV, LieModule.Cohomology.trivialD_succ_apply]
     simp only [hconst, mvfderiv_const, zero_apply, smul_zero, Finset.sum_const_zero, zero_sub,
-      hvec, leftInvariantForm_apply_mulInvariantVectorField, LieModule.IsTrivial.trivial,
-      LinearEquiv.alternatingMapCongrRight_symm_apply_apply,
-      ContinuousAlternatingMap.coe_toAlternatingMap]
-    simp [pow_succ, ← Finset.sum_neg_distrib, map_sum, map_zsmul]
+      hvec, leftInvariantForm_apply_mulInvariantVectorField]
+    simp [pow_succ, ← Finset.sum_neg_distrib]
 
 /-- **A left-invariant form is closed exactly when its value at the identity is a
 Chevalley–Eilenberg cocycle**, with `F` regarded as a trivial module over the Lie algebra. -/
 theorem mextDeriv_leftInvariantForm_eq_zero_iff (α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
     mextDeriv (leftInvariantForm I G F k α) = 0 ↔
-      LieModule.Cohomology.d ℝ (GroupLieAlgebra I G) (TrivialLieModule ℝ (GroupLieAlgebra I G) F) k
-        ((TrivialLieModule.equiv ℝ (GroupLieAlgebra I G) F).alternatingMapCongrRight.symm
-          α.toAlternatingMap) = 0 := by
+      LieModule.Cohomology.trivialD ℝ (GroupLieAlgebra I G) F k α = 0 := by
   rw [mextDeriv_leftInvariantForm, ← map_zero (leftInvariantForm I G F (k + 1)),
-    leftInvariantForm_injective.eq_iff, ← map_zero AlternatingMap.toContinuousAlternatingMap,
-    AlternatingMap.toContinuousAlternatingMap.injective.eq_iff, LinearEquiv.map_eq_zero_iff]
+    leftInvariantForm_injective.eq_iff]
 
 /-- **The exterior derivative of a smooth left-invariant form** is the smooth left-invariant
 extension of the Chevalley–Eilenberg differential of its value at the identity, with `F` regarded
@@ -340,12 +329,8 @@ as a trivial module over the Lie algebra. -/
 theorem mextDerivₗ_leftInvariantSmoothForm [IsManifold I 1 G] [LieGroup I ∞ G]
     (α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
     mextDerivₗ I k (leftInvariantSmoothForm I G F k α) =
-      leftInvariantSmoothForm I G F (k + 1) (AlternatingMap.toContinuousAlternatingMap
-        ((TrivialLieModule.equiv ℝ (GroupLieAlgebra I G) F).alternatingMapCongrRight
-          (LieModule.Cohomology.d ℝ (GroupLieAlgebra I G)
-            (TrivialLieModule ℝ (GroupLieAlgebra I G) F) k
-            ((TrivialLieModule.equiv ℝ (GroupLieAlgebra I G) F).alternatingMapCongrRight.symm
-              α.toAlternatingMap)))) :=
+      leftInvariantSmoothForm I G F (k + 1)
+        (LieModule.Cohomology.trivialD ℝ (GroupLieAlgebra I G) F k α) :=
   Subtype.ext <| by
     rw [mextDerivₗ_apply, leftInvariantSmoothForm_val, leftInvariantSmoothForm_val,
       mextDeriv_leftInvariantForm]
@@ -355,9 +340,7 @@ Chevalley–Eilenberg cocycle**, with `F` regarded as a trivial module over the 
 theorem isClosed_leftInvariantSmoothForm_iff [IsManifold I 1 G] [LieGroup I ∞ G]
     (α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
     (leftInvariantSmoothForm I G F k α).IsClosed ↔
-      LieModule.Cohomology.d ℝ (GroupLieAlgebra I G) (TrivialLieModule ℝ (GroupLieAlgebra I G) F) k
-        ((TrivialLieModule.equiv ℝ (GroupLieAlgebra I G) F).alternatingMapCongrRight.symm
-          α.toAlternatingMap) = 0 := by
+      LieModule.Cohomology.trivialD ℝ (GroupLieAlgebra I G) F k α = 0 := by
   rw [SmoothForm.isClosed_def, leftInvariantSmoothForm_val,
     mextDeriv_leftInvariantForm_eq_zero_iff]
 

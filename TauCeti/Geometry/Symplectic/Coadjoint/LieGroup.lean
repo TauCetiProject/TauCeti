@@ -261,9 +261,8 @@ theorem eval₂_leftInvariantKirillovForm_mulInvariantVectorField (ξ η : Group
     leftInvariantForm_eq_leftInvariantSmoothForm, TauCeti.mextDerivₗ_leftInvariantSmoothForm,
     TauCeti.leftInvariantSmoothForm_val, ContinuousAlternatingMap.neg_apply, h,
     TauCeti.leftInvariantForm_apply_mulInvariantVectorField,
-    AlternatingMap.coe_toContinuousAlternatingMap, LinearEquiv.alternatingMapCongrRight_apply_apply,
-    TauCeti.LieModule.Cohomology.d_succ_apply]
-  simp [trivial_lie_zero]
+    TauCeti.LieModule.Cohomology.trivialD_succ_apply]
+  simp
 
 /-- At the identity the left-invariant Kirillov form of `ν` is the Kirillov form
 `ν ⁅ξ, η⁆`. -/
