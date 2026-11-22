@@ -73,6 +73,17 @@ section NormedField
 
 variable {k : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
+/-- Membership of a classical point in a basic open `Spv(K⟨T⟩)(f/g)` reduces to comparing norms
+of evaluations: `‖f(a)‖ ≤ ‖g(a)‖` and `0 < ‖g(a)‖`. -/
+theorem classicalPoint_mem_basicOpen_iff (x : spa (powerBoundedSubring K)) (a : Fin k → K)
+    (ha : ∀ i, IsPowerBounded (a i))
+    (f g : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) :
+    (classicalPoint x a ha).val ∈ basicOpen f g ↔
+      ‖evalAtHom a ha f‖ ≤ ‖evalAtHom a ha g‖ ∧ 0 < ‖evalAtHom a ha g‖ := by
+  rw [mem_basicOpen_iff, classicalPoint_vle, classicalPoint_vle, map_zero,
+    vle_iff_norm_le_of_mem_spa x.property, vle_iff_norm_le_of_mem_spa x.property, norm_zero,
+    not_le]
+
 /-- **Continuity of the classical-point map `(K°)ᵏ → closedPolydisc k K`.** Every basic open
 `Spv(K⟨T⟩)(f/g)` pulls back to `{a | ‖f(a)‖ ≤ ‖g(a)‖ ∧ 0 < ‖g(a)‖}`. By continuity of evaluation
 and the ultrametric inequality, if `a₀` satisfies these conditions then they persist on the open
@@ -85,9 +96,7 @@ theorem continuous_classicalPoint (x : spa (powerBoundedSubring K)) :
   rintro _ ⟨f, g, rfl⟩
   rw [isOpen_iff_mem_nhds]
   intro a₀ ha₀
-  rw [Set.mem_preimage, mem_basicOpen_iff, classicalPoint_vle, classicalPoint_vle, map_zero,
-    vle_iff_norm_le_of_mem_spa x.property, vle_iff_norm_le_of_mem_spa x.property, norm_zero,
-    not_le] at ha₀
+  rw [Set.mem_preimage, Function.comp_apply, classicalPoint_mem_basicOpen_iff] at ha₀
   obtain ⟨hfg, hgpos⟩ := ha₀
   set r : ℝ := ‖evalAtHom a₀.val a₀.property g‖
   have hopen : IsOpen ({a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} |
@@ -104,9 +113,7 @@ theorem continuous_classicalPoint (x : spa (powerBoundedSubring K)) :
   have hfa : ‖evalAtHom a.val a.property f‖ ≤ r := by
     rw [← sub_add_cancel (evalAtHom a.val a.property f) (evalAtHom a₀.val a₀.property f)]
     exact (IsUltrametricDist.norm_add_le_max _ _).trans (max_le hf_lt.le hfg)
-  rw [Set.mem_preimage, mem_basicOpen_iff, classicalPoint_vle, classicalPoint_vle, map_zero,
-    vle_iff_norm_le_of_mem_spa x.property, vle_iff_norm_le_of_mem_spa x.property, norm_zero,
-    not_le, hga]
+  rw [Set.mem_preimage, Function.comp_apply, classicalPoint_mem_basicOpen_iff, hga]
   exact ⟨hfa, hgpos⟩
 
 open scoped Classical in
@@ -162,12 +169,8 @@ theorem isEmbedding_classicalPoint (x : spa (powerBoundedSubring K)) :
   have hpre : (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
       classicalPoint x a.val a.property) ⁻¹' V = Metric.closedBall a₀ ‖c‖ :=
     preimage_rationalSubset_classicalPoint_closedBall x a₀ hc
-  have hVopen : IsOpen V := by
-    have h := isOpen_val_preimage_rationalSubset
-      (powerBoundedSubring (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
-        isWeightFamily_one_weight)) T (weightedC _ _ c)
-    rw [← closedPolydisc_def] at h
-    exact h
+  have hVopen : IsOpen V :=
+    isOpen_val_preimage_rationalSubset_closedPolydisc T (weightedC _ _ c)
   have ha₀V : classicalPoint x a₀.val a₀.property ∈ V :=
     (Set.ext_iff.mp hpre a₀).mpr (Metric.mem_closedBall_self (norm_nonneg c))
   refine Filter.mem_comap.mpr ⟨V, hVopen.mem_nhds ha₀V, ?_⟩

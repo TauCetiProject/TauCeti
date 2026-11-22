@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Valued.LocallyCompact
 public import Mathlib.Topology.Algebra.LinearTopology
 
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import TauCeti.Topology.Algebra.Valued.NormedValued
 
 /-!
 # Integer rings of valued rings and nonarchimedean normed fields
@@ -99,8 +100,9 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K]
 when its norm is less than `1`. -/
 theorem Valued.integer.mem_maximalIdeal_iff {x : Valued.integer K} :
     x ∈ IsLocalRing.maximalIdeal (Valued.integer K) ↔ ‖x‖ < 1 := by
-  rw [mem_maximalIdeal, mem_nonunits_iff, Valuation.Integer.not_isUnit_iff_valuation_lt_one]
-  exact (NNReal.coe_lt_coe (r₁ := ‖(x : K)‖₊) (r₂ := 1)).symm
+  rw [mem_maximalIdeal, mem_nonunits_iff, Valuation.Integer.not_isUnit_iff_valuation_lt_one,
+    TauCeti.NormedField.v_eq_valuation, NormedField.valuation_apply]
+  exact NNReal.coe_lt_coe.symm
 
 /-- An element of the valuation ring of a nonarchimedean field has residue zero exactly when its
 norm is less than `1`. -/

@@ -155,6 +155,21 @@ theorem comap_weightedC_mem_spa (v : closedPolydisc k A) :
       (isPowerBounded_weightedC _ (mem_powerBoundedSubring.mp ha)))
           (closedPolydisc_def k A ▸ v.property)
 
+variable {k A} in
+/-- The preimage of a rational subset `R(T/s)` in the closed polydisc `closedPolydisc k A` is
+open. -/
+theorem isOpen_val_preimage_rationalSubset_closedPolydisc
+    (T : Finset (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight))
+    (s : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    IsOpen (Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s :
+      Set (closedPolydisc k A)) := by
+  have h := isOpen_val_preimage_rationalSubset
+    (powerBoundedSubring (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight)) T s
+  rw [← closedPolydisc_def] at h
+  exact h
+
 end Polydisc
 
 section ClassicalPoints

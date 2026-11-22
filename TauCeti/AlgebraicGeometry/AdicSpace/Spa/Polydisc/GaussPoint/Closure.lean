@@ -216,8 +216,9 @@ theorem unitGaussPoint_mem_closure_range_classicalPoint [Infinite (CanonicalRedu
   have hηeU : e (unitGaussPoint n K) ∈ e.symm ⁻¹' U := by simpa [e] using hηU
   obtain ⟨V, hVmem, hηV, hVU⟩ := hbasis.exists_subset_of_mem_open hηeU heU
   obtain ⟨T, s, -, rfl⟩ := mem_spaRationalFamily_iff.mp hVmem
-  have hηV' : unitGaussPoint n K ∈ Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s :=
-    hηV
+  have hηV' : unitGaussPoint n K ∈ Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s := by
+    simpa only [Set.mem_preimage, e, Homeomorph.setCongr, Homeomorph.homeomorph_mk_coe,
+      Set.equivOfEq_apply] using hηV
   obtain ⟨a, ha⟩ := exists_classicalPoint_mem_rationalSubset_of_unitGaussPoint_mem x T s hηV'
   have haU : classicalPoint x a.val a.property ∈ U := by
     have : e (classicalPoint x a.val a.property) ∈ e.symm ⁻¹' U := hVU ha
@@ -282,12 +283,7 @@ theorem unitGaussPoint_notMem_closure_range_classicalPoint_of_finite
   set s := T₀ ^ q - T₀
   set U : Set (closedPolydisc n K) :=
     Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) {1} s
-  have hUopen : IsOpen U := by
-    have h := isOpen_val_preimage_rationalSubset
-      (powerBoundedSubring (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K))
-        isWeightFamily_one_weight)) {1} s
-    rw [← closedPolydisc_def] at h
-    exact h
+  have hUopen : IsOpen U := isOpen_val_preimage_rationalSubset_closedPolydisc {1} s
   have hs_norm_ge : 1 ≤ ‖restrictedMvPowerSeriesGaussEquiv s‖ :=
     one_le_norm_weightedX_pow_sub_weightedX 0 Fintype.one_lt_card
   have hηU : unitGaussPoint n K ∈ U := by

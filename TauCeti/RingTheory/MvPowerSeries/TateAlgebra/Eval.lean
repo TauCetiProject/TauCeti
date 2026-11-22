@@ -264,7 +264,8 @@ theorem lipschitzWith_restrictedEval₂_arg (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖
       _ ≤ (M : ℝ) * dist a b * c i := by gcongr
   rw [dist_eq_norm, NNReal.coe_mul, coe_nnNorm]
   exact (norm_restrictedEval₂_sub_le φ hφ a.property b.property
-    (mul_nonneg M.coe_nonneg dist_nonneg) hle f).trans (by ring_nf; rfl)
+    (mul_nonneg M.coe_nonneg dist_nonneg) hle f).trans_eq
+    (mul_right_comm (M : ℝ) (dist a b) ‖f‖)
 
 /-- **Evaluation of a fixed restricted series is continuous in its argument** on the closed
 polydisc `{a | ∀ i, ‖a i‖ ≤ c i}`. -/
