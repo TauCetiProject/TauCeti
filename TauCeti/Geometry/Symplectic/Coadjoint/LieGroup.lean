@@ -377,26 +377,21 @@ variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDim
 /-- **Naturality of the left-invariant one-form.** A smooth homomorphism `φ : K → G` pulls the
 left-invariant one-form of `ν` back to the left-invariant one-form of `ν ∘ dφ`. -/
 @[simp]
-theorem mpullback_leftInvariantForm (φ : K →* G) (hφ : ContMDiff I' I ∞ φ) :
-    SmoothForm.mpullback φ hφ ν.leftInvariantForm =
-      leftInvariantForm (ν ∘ₗ (φ.groupLieAlgebraMap I' I).toLinearMap) := by
-  apply Subtype.ext
-  funext k
+theorem mpullback_leftInvariantForm (φ : ContMDiffMonoidMorphism I' I ∞ K G) :
+    SmoothForm.mpullback φ φ.contMDiff_toFun ν.leftInvariantForm =
+      leftInvariantForm (ν ∘ₗ (φ.toMonoidHom.groupLieAlgebraMap I' I).toLinearMap) := by
+  rw [leftInvariantForm_eq_leftInvariantSmoothForm, leftInvariantForm_eq_leftInvariantSmoothForm,
+    TauCeti.mpullback_leftInvariantSmoothForm]
+  congr 1
   ext v
-  obtain ⟨ξ, hξ⟩ := exists_mulInvariantVectorField_eq (v 0)
-  have hφξ : mfderiv I' I φ k (mulInvariantVectorField ξ k) =
-      mulInvariantVectorField (φ.groupLieAlgebraMap I' I ξ) (φ k) :=
-    (ContMDiffMonoidMorphism.mk φ hφ).mfderiv_mulInvariantVectorField k ξ
-  rw [SmoothForm.mpullback_apply, leftInvariantForm_apply, leftInvariantForm_apply, ← hξ, hφξ,
-    mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField,
-    LinearMap.comp_apply, ContinuousLinearMap.coe_coe]
+  simp
 
 /-- **Naturality of the left-invariant Kirillov form.** A smooth homomorphism `φ : K → G` pulls the
 left-invariant Kirillov form of `ν` back to the left-invariant Kirillov form of `ν ∘ dφ`. -/
 @[simp]
-theorem mpullback_leftInvariantKirillovForm (φ : K →* G) (hφ : ContMDiff I' I ∞ φ) :
-    SmoothForm.mpullback φ hφ ν.leftInvariantKirillovForm =
-      leftInvariantKirillovForm (ν ∘ₗ (φ.groupLieAlgebraMap I' I).toLinearMap) := by
+theorem mpullback_leftInvariantKirillovForm (φ : ContMDiffMonoidMorphism I' I ∞ K G) :
+    SmoothForm.mpullback φ φ.contMDiff_toFun ν.leftInvariantKirillovForm =
+      leftInvariantKirillovForm (ν ∘ₗ (φ.toMonoidHom.groupLieAlgebraMap I' I).toLinearMap) := by
   rw [leftInvariantKirillovForm, leftInvariantKirillovForm, map_neg,
     ← SmoothForm.mextDerivₗ_mpullback, mpullback_leftInvariantForm]
 
