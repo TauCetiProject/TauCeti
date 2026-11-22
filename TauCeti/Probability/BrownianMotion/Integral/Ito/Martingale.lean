@@ -7,29 +7,22 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
 public import TauCeti.Probability.BrownianMotion.Integral.L2
-public import TauCeti.Probability.BrownianMotion.Integral.Simple
 public import TauCeti.Probability.BrownianMotion.Integral.Wiener
-public import Mathlib.Probability.Martingale.Basic
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Probability.BrownianMotion.Integral.Deterministic
-import TauCeti.Probability.BrownianMotion.Martingale
+import TauCeti.Probability.BrownianMotion.Integral.Simple
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
-import TauCeti.Probability.Finance.SimpleStrategy.Energy
-import TauCeti.Probability.Martingale.ContinuousLimit
 
 /-!
-# The square-integrable Itô integral process and Itô's isometry
+# The square-integrable Itô integral process and Itô's covariance
 
 Where `MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P)`, this file identifies
 `TauCeti.Probability.IsItoIntegral` almost surely with `IsFilteredPreBrownianReal.l2Integral`
 (`ae_eq_l2Integral`) and deduces `L²` membership (`memLp_two`), zero expectation
-(`integral_eq_zero`), covariance (`integral_mul`), Itô's isometry (`integral_sq`), and for
-deterministic `L²` integrands identification with `wienerIntegral` (`ae_eq_wienerIntegral`) and its
-centered Gaussian law (`hasLaw_gaussianReal`). For `TauCeti.BrownianIntegrable` integrands, every
-strongly adapted Itô integral is a martingale (`martingale`), and when `W` has a.s. continuous
-paths a predictable a.s. continuous martingale Itô integral exists (`exists_isItoIntegral`).
+(`integral_eq_zero`), covariance (`integral_mul`), single-horizon Itô isometry
+(`integral_sq_of_memLp`), and for deterministic `L²` integrands identification with
+`wienerIntegral` (`ae_eq_wienerIntegral`) and its centered Gaussian law (`hasLaw_gaussianReal`).
 
 ## References
 
@@ -134,58 +127,12 @@ theorem integral_mul (hW : IsFilteredPreBrownianReal ℱ W P)
 
 /-- **Itô's `L²` isometry.** The second moment of an Itô integral at horizon `t` with finite
 expected square energy on `(0, t]` equals its expected square energy on `(0, t] × Ω`. -/
-theorem integral_sq (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem integral_sq_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0}
     (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
     ∫ ω, I t ω ^ 2 ∂P = ∫ p, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P := by
   simpa only [sq] using hI.integral_mul hW hI hH hH
 
-/-- Against a filtered pre-Brownian motion, any strongly adapted Itô integral of a
-`BrownianIntegrable` integrand is a true martingale on the raw filtration. -/
-theorem martingale (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) (hH : BrownianIntegrable ℱ P H)
-    (hAdapt : StronglyAdapted ℱ I) : Martingale I ℱ P := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, C, -, hτ, ha, hb, hhold⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
-  refine martingale_of_tendsto_eLpNorm_one
-    (fun m ↦ hW.martingale.simpleGains_of_bdd (hτ m).monotoneOn (ha m) fun j hj ↦
-      ⟨C m, .of_forall fun ω ↦ by simpa only [Real.norm_eq_abs] using hb m j hj ω⟩) hAdapt fun t ↦
-    MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm (by norm_num : (1 : ℝ≥0∞) ≤ 2) <|
-      (hW.tendsto_eLpNorm_simpleGains_l2Integral hH.isStronglyPredictable (hH.memLp_timeMeasure t)
-        (fun m ↦ (hτ m).monotoneOn) ha (fun m j hj ↦ .of_bound
-          ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable (C m) (.of_forall (hb m j hj)))
-        (hhold t)).congr fun _ ↦ eLpNorm_congr_ae
-          (EventuallyEq.rfl.sub (hI.ae_eq_l2Integral hW (hH.memLp_timeMeasure t)).symm)
-
 end Probability.IsItoIntegral
-
-/-- **Existence of the `L²` Brownian Itô integral process.** Against a filtered pre-Brownian motion
-`W` with almost surely continuous paths, every `BrownianIntegrable` integrand admits a predictable
-almost surely continuous martingale Itô integral on the raw filtration. -/
-theorem BrownianIntegrable.exists_isItoIntegral (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω)) (hH : BrownianIntegrable ℱ P H) :
-    ∃ I : ℝ≥0 → Ω → ℝ, Probability.IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧
-      Martingale I ℱ P := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, C, -, hτ, ha, hb, hhold⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
-  have ha₂ (m j : ℕ) (hj : j < n m) : MemLp (a m j) 2 P :=
-    .of_bound ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable (C m) (.of_forall (hb m j hj))
-  have hmem (m : ℕ) (t : ℝ≥0) : MemLp (Finance.simpleGains (τ m) (n m) (a m) W t) 2 P :=
-    (Lp.memLp _).ae_eq (hW.coeFn_l2Integral_simpleHolding (hτ m).monotoneOn (ha m) t
-      (Finance.memLp_simpleHolding_predictableMeasure (ha m) (ha₂ m) t))
-  obtain ⟨I, hImart, hIpred, hIlim, _, _, _, hIpath⟩ := exists_continuous_martingale_of_cauchySeq_Lp
-    (p := 2) (fun m ↦ hW.martingale.simpleGains_of_bdd (hτ m).monotoneOn (ha m) fun j hj ↦
-      ⟨C m, .of_forall fun ω ↦ by simpa only [Real.norm_eq_abs] using hb m j hj ω⟩)
-    (fun _ ↦ hcont.mono fun _ hω ↦ Finance.continuous_simpleGains hω) hmem fun t ↦
-      let g := hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H))
-      Tendsto.cauchySeq (x := (Lp.memLp g).toLp g) <|
-        (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ (fun m ↦ hmem m t) g (Lp.memLp g)).2
-          (hW.tendsto_eLpNorm_simpleGains_l2Integral hH.isStronglyPredictable
-            (hH.memLp_timeMeasure t) (fun m ↦ (hτ m).monotoneOn) ha ha₂ (hhold t))
-  exact ⟨I, ⟨hH.isStronglyPredictable, hIpath.mono fun _ h ↦ h.1, fun t ↦
-    ⟨n, τ, a, fun m ↦ (hτ m).monotoneOn, ha, fun _ hε ↦
-      TauCeti.tendsto_measure_lintegral_enorm_pow_of_tendsto_eLpNorm two_ne_zero (hhold t) hε,
-      tendstoInMeasure_of_tendsto_eLpNorm (by norm_num : (2 : ℝ≥0∞) ≠ 0) (hIlim t).2⟩⟩,
-    hIpred, hImart⟩
 
 end TauCeti

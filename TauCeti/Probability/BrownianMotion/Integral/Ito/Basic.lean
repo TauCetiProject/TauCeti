@@ -30,11 +30,18 @@ elementary integrals at `t` converge in probability to `I t`. Square energy is a
 integral, so an infinite energy is never read as the default value zero of a divergent Bochner
 integral. The heights need not be bounded; bounded approximants are a special case.
 
-Against a pre-Brownian motion relative to the filtration, the predicate determines the integral
-up to indistinguishability (`TauCeti.Probability.isItoIntegral_unique`). Conversely, the predicate
-is invariant under indistinguishability (`TauCeti.Probability.IsItoIntegral.congr`), so it
-determines its integrals exactly up to indistinguishability
-(`TauCeti.Probability.isItoIntegral_iff_indist`).
+Against a pre-Brownian motion relative to the filtration, any limit in probability of the
+elementary integrals of simple holdings approximating the integrand on `(0,t]` in square energy
+in probability agrees almost surely with the Itô integral at `t`
+(`TauCeti.Probability.IsItoIntegral.ae_eq_of_tendstoInMeasure`). More generally, any simple holdings
+converging in pathwise square energy on `(0, T]` along a filter have gains converging in
+probability at `v ≤ T` to `I v` (`IsItoIntegral.tendstoInMeasure_simpleGains`, `..._of_le`).
+Hence the predicate determines the integral up to indistinguishability
+(`TauCeti.Probability.isItoIntegral_unique`): two integrals agree almost surely at each time,
+and continuity of their paths makes them indistinguishable. Neither path continuity of `W` nor
+usual conditions on the filtration are needed. Conversely, the predicate is invariant under
+indistinguishability (`TauCeti.Probability.IsItoIntegral.congr`), so it determines its
+integrals exactly up to indistinguishability (`TauCeti.Probability.isItoIntegral_iff_indist`).
 
 The elementary integral of a simple holding is its Itô integral against every process with
 almost surely continuous paths (`TauCeti.Probability.isItoIntegral_simpleGains`). Every such
@@ -43,9 +50,7 @@ integrand satisfies `LocallyBrownianIntegrable` (`IsItoIntegral.locallyBrownianI
 product-a.e. replacement (`IsItoIntegral.congr_ae_prod`), linearity (`IsItoIntegral.const_mul`,
 `IsItoIntegral.add`, `IsItoIntegral.sub`), sequential limits (`IsItoIntegral.of_seq`), and against
 a filtered pre-Brownian motion `W`, `(s, ∞)` multiplication by `ℱ s`-measurable variables
-(`IsItoIntegral.ite_lt_mul`). Against `W`, any simple holdings converging in pathwise square energy
-on `(0, T]` have gains converging in probability at `v ≤ T` to `I v`
-(`IsItoIntegral.tendstoInMeasure_simpleGains`, `..._of_le`).
+(`IsItoIntegral.ite_lt_mul`). Existence of the integral is not proved here.
 
 ## References
 
@@ -123,14 +128,30 @@ theorem IsItoIntegral.tendstoInMeasure_simpleGains (hW : IsFilteredPreBrownianRe
         (fun ε hε ↦ (hG₂ ε hε).comp tendsto_snd : TendstoInMeasure P _ lp (I t))
   intro ε hε; rw [← Filter.map_fst_prod l (atTop : Filter ℕ), tendsto_map'_iff]; exact htot ε hε
 
+/-- **Identification of the Itô integral at a time.** Against a pre-Brownian motion relative
+to the filtration, if simple holdings with heights known at the left endpoints of their
+intervals approximate the integrand on `(0,t]` in square energy in probability, then every
+limit in probability of their elementary integrals at `t` agrees almost surely with the Itô
+integral at `t`. -/
+theorem IsItoIntegral.ae_eq_of_tendstoInMeasure (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0} {m : ℕ → ℕ} {σ : ℕ → ℕ → ℝ≥0}
+    {b : ℕ → ℕ → Ω → ℝ} {X : Ω → ℝ} (hσ : ∀ k, MonotoneOn (σ k) (Iic (m k)))
+    (hb : ∀ k j, j < m k → StronglyMeasurable[ℱ (σ k j)] (b k j))
+    (hLH : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
+      ∫⁻ s, ‖Finance.simpleHolding (σ k) (m k) (b k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t})
+        atTop (𝓝 0))
+    (hLX : TendstoInMeasure P (fun k ↦ Finance.simpleGains (σ k) (m k) (b k) W t) atTop X) :
+    I t =ᵐ[P] X :=
+  tendstoInMeasure_ae_unique (hI.tendstoInMeasure_simpleGains hW hσ hb hLH) hLX
+
 /-- **Uniqueness of the Itô integral.** Against a pre-Brownian motion relative to the
 filtration, two Itô integrals of the same integrand are indistinguishable. Neither path
 continuity of the integrator nor usual conditions on the filtration are needed. -/
 theorem isItoIntegral_unique (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W H J) : I ≡ᵐ[P] J :=
-  indist_of_forall_ae_eq hI.ae_continuous hJ.ae_continuous fun t ↦
-    let ⟨_, _, _, hσ, hb, hLH, hLJ⟩ := hJ.exists_approx t
-    tendstoInMeasure_ae_unique (hI.tendstoInMeasure_simpleGains hW hσ hb hLH) hLJ
+    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W H J) : I ≡ᵐ[P] J := by
+  refine indist_of_forall_ae_eq hI.ae_continuous hJ.ae_continuous fun t ↦ ?_
+  obtain ⟨m, σ, b, hσ, hb, hLH, hLJ⟩ := hJ.exists_approx t
+  exact hI.ae_eq_of_tendstoInMeasure hW hσ hb hLH hLJ
 
 /-- An Itô integral may be replaced by any indistinguishable process. -/
 theorem IsItoIntegral.congr (hI : IsItoIntegral ℱ P W H I) (hIJ : I ≡ᵐ[P] J) :

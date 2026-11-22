@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.Integral.Ito.Martingale
+public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
 public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
 import TauCeti.Probability.BrownianMotion.Integral.Stopping
 import TauCeti.Probability.BrownianMotion.Martingale
