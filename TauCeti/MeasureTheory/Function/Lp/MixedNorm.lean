@@ -39,8 +39,9 @@ This turns estimates proved in weak form, by testing against `L²`-valued functi
 estimates. The typical application is to Strichartz estimates, where the `TT*` argument bounds the
 pairings `∫ ⟪U(t) f, G(t)⟫ dt` for `L²`-valued `G`.
 
-Mixed norms are invariant under the reflection `b ↦ -b` of the parameter when `ρ` is
-(`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_comp_neg`), which reverses time in such
+Mixed norms are invariant under the reflection `b ↦ -b` of the parameter when `ρ` is invariant
+under negation (`ρ.IsNegInvariant`), as Lebesgue measure on the time line is
+(`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_comp_neg`); this reverses time in such
 estimates.
 
 ## The argument

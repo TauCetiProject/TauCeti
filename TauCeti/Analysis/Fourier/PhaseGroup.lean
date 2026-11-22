@@ -63,6 +63,8 @@ of times, and the pointwise limit is `i ω 𝓕 f`.
 * `TauCeti.aestronglyMeasurable_phasePropagator_apply`, `TauCeti.integrable_phasePropagator_apply`,
   `TauCeti.aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub`: measurability and
   integrability of `a ↦ exp(iτ(a)ω(D)) G(a)` and of retarded integrals.
+* `TauCeti.inner_setIntegral_Iio_phasePropagator_sub`,
+  `TauCeti.integrable_inner_setIntegral_Iio_phasePropagator_sub`: pairings of retarded integrals.
 * `TauCeti.phaseGroup`, `TauCeti.isUnitary_phaseGroup`: the unitary C₀-group.
 * `TauCeti.mem_domain_phaseGroup_iff`: the domain of its generator is `{f | ω 𝓕 f ∈ L²}`.
 * `TauCeti.coeFn_fourier_complexGenerator_phaseGroup`,
@@ -390,6 +392,29 @@ theorem aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub
   refine integral_congr_ae (ae_of_all _ fun s ↦ ?_)
   -- `(t, s)` lies in the half-plane `s < t` exactly when `s ∈ Iio t`.
   by_cases hs : s < t <;> simp [K, hs]
+
+/-- The pairing of a retarded integral `∫_{s < t} exp(i(t - s)ω(D)) G(s) ds` of an integrable
+`G : ℝ → L²` with `g` is the integral of the pairings. -/
+theorem inner_setIntegral_Iio_phasePropagator_sub {G : ℝ → Lp F 2 (volume : Measure E)}
+    (hG : Integrable G) (t : ℝ) (g : Lp F 2 (volume : Measure E)) :
+    ⟪∫ s in Set.Iio t, phasePropagator F ω (t - s) (G s), g⟫ =
+      ∫ s in Set.Iio t, ⟪phasePropagator F ω (t - s) (G s), g⟫ := by
+  rw [← inner_conj_symm, ← integral_inner (integrable_phasePropagator_apply ω
+    (continuous_sub_left t).aestronglyMeasurable hG).integrableOn, ← integral_conj]
+  simp_rw [inner_conj_symm]
+
+/-- For integrable `G, H : ℝ → L²`, the pairing `t ↦ ⟪∫_{s < t} exp(i(t - s)ω(D)) G(s) ds, H(t)⟫`
+is integrable, being at most `‖G‖_{L¹} ‖H(t)‖`. -/
+theorem integrable_inner_setIntegral_Iio_phasePropagator_sub
+    {G H : ℝ → Lp F 2 (volume : Measure E)} (hG : Integrable G) (hH : Integrable H) :
+    Integrable fun t ↦ ⟪∫ s in Set.Iio t, phasePropagator F ω (t - s) (G s), H t⟫ := by
+  refine (hH.norm.const_mul (∫ s, ‖G s‖)).mono'
+    ((aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub ω
+      hG.aestronglyMeasurable).inner hH.aestronglyMeasurable) (ae_of_all _ fun t ↦ ?_)
+  refine (norm_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
+  refine (norm_integral_le_integral_norm _).trans ?_
+  simp_rw [norm_phasePropagator_apply]
+  exact setIntegral_le_integral hG.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
 
 /-! ### The generator -/
 
