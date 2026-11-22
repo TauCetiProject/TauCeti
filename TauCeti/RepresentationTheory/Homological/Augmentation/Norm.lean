@@ -49,7 +49,9 @@ namespace Rep
 
 open MonoidAlgebra TauCeti.AugmentationIdeal
 
-variable {Q : Type} [CommGroup Q]
+section Group
+
+variable {Q : Type} [Group Q]
 
 /-- An augmentation-ideal morphism intertwines the associated monoid-algebra action. -/
 private theorem augmentationHom_apply_asModule_smul {B : Rep ℤ Q}
@@ -62,7 +64,7 @@ private theorem augmentationHom_apply_asModule_smul {B : Rep ℤ Q}
 /-- Lifts `x i` of the generators `[σ i] - 1` of `I_Q`, together with generators of the kernel of
 `π : B → I_Q`, span `B` as a `ℤ[Q]`-module. -/
 private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
-    (π : B ⟶ augmentationIdeal ℤ Q) {ι : Type} [Finite ι] {σ : ι → Q}
+    (π : B ⟶ augmentationIdeal ℤ Q) {ι : Type} {σ : ι → Q}
     (hσ : Subgroup.closure (Set.range σ) = ⊤) {x : ι → B.ρ.asModule}
     (hx : ∀ i, π.hom (B.ρ.asModuleEquiv (x i)) = singleSub ℤ Q 1 (σ i))
     {s : Finset B}
@@ -72,7 +74,6 @@ private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
   classical
   -- Use the associated module's scalar instance for the linear-equivalence transport.
   let : Module ℤ B.ρ.asModule := B.ρ.instModuleAsModule
-  have := Fintype.ofFinite ι
   refine eq_top_iff.2 fun m _ ↦ ?_
   -- `π m` is a combination of the `[σ i] - 1`, since these generate `I_Q`.
   have hmem : (augmentationι ℤ Q).hom (π.hom (B.ρ.asModuleEquiv m)) ∈
@@ -84,23 +85,23 @@ private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
     simpa using h
   rw [TauCeti.MonoidAlgebra.ker_augmentation_eq_span_of_closure_eq_top ℤ hσ, ← Set.range_comp]
     at hmem
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun _).1 hmem
-  have hπm : π.hom (B.ρ.asModuleEquiv m) =
-      ∑ i, (augmentationIdeal ℤ Q).ρ.asAlgebraHom (c i) (singleSub ℤ Q 1 (σ i)) := by
+  obtain ⟨c, hc⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1 hmem
+  have hπm : π.hom (B.ρ.asModuleEquiv m) = ∑ i ∈ c.support,
+      (augmentationIdeal ℤ Q).ρ.asAlgebraHom (c i) (singleSub ℤ Q 1 (σ i)) := by
     apply augmentationι_injective ℤ Q
-    rw [← hc, map_sum]
+    rw [← hc, Finsupp.sum, map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [Representation.IntertwiningMap.apply_asAlgebraHom, ι_singleSub,
       Representation.asAlgebraHom_ofMulAction_smul_eq_mul, smul_eq_mul, one_def]
     rfl
-  have hm : B.ρ.asModuleEquiv (m - ∑ i, c i • x i) ∈
+  have hm : B.ρ.asModuleEquiv (m - ∑ i ∈ c.support, c i • x i) ∈
       LinearMap.ker π.hom.toLinearMap := by
     rw [LinearMap.mem_ker]
     simp only [Representation.IntertwiningMap.toLinearMap_apply, map_sub, map_sum,
       augmentationHom_apply_asModule_smul, hx]
     rw [← hπm, sub_self]
   rw [← hs] at hm
-  rw [← sub_add_cancel m (∑ i, c i • x i)]
+  rw [← sub_add_cancel m (∑ i ∈ c.support, c i • x i)]
   refine Submodule.add_mem _ ?_ (Submodule.sum_mem _ fun i _ ↦
     Submodule.smul_mem _ _ (Submodule.subset_span ⟨Sum.inl i, rfl⟩))
   have hmem := Submodule.mem_map_of_mem (f := B.ρ.asModuleEquiv.symm.toLinearMap) hm
@@ -161,14 +162,18 @@ private theorem norm_eq_zero_of_smul_eq_zero [Fintype Q] (B : Rep ℤ Q) {γ : M
     (hγ : ∀ y : B.ρ.asModule, γ • y = 0) (hinv : ∀ q : Q, γ * single q 1 = γ)
     (hεγ : MonoidAlgebra.augmentation ℤ Q γ = Fintype.card Q) :
     B.ρ.norm = 0 := by
+  -- `γ` is the norm element.
+  have hγnorm := MonoidAlgebra.eq_sum_single_of_mul_single_eq_self
+    (IsSMulRegular.of_ne_zero Fintype.card_ne_zero) hinv hεγ
   ext v
   have h := congrArg B.ρ.asModuleEquiv (hγ (B.ρ.asModuleEquiv.symm v))
-  rw [Representation.asModuleEquiv_map_smul, LinearEquiv.apply_symm_apply, map_zero,
-    MonoidAlgebra.eq_sum_single_of_mul_single_eq_self
-      (IsSMulRegular.of_ne_zero Fintype.card_ne_zero) hinv hεγ, map_sum, LinearMap.sum_apply] at h
-  simp only [Representation.asAlgebraHom_single_one] at h
-  rw [Representation.norm, LinearMap.sum_apply, LinearMap.zero_apply]
-  exact h
+  rw [Representation.asModuleEquiv_map_smul, hγnorm] at h
+  simpa only [LinearEquiv.apply_symm_apply, map_zero, map_sum, LinearMap.sum_apply,
+    Representation.asAlgebraHom_single_one, Representation.norm, LinearMap.zero_apply] using h
+
+end Group
+
+variable {Q : Type} [CommGroup Q]
 
 /-- **The norm kills an extension of the augmentation ideal by part of `I_Q B`** (Artin–Tate).
 Let `Q` be a finite abelian group and `π : B → I_Q` a surjection of integral representations whose

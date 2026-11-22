@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.Ideal.Maps
+public import TauCeti.Algebra.MonoidAlgebra.RightInvariant
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 
 /-!
@@ -121,14 +122,8 @@ theorem eq_sum_single_of_mul_single_eq_self {R G : Type*} [Semiring R] [Group G]
     (hG : IsSMulRegular R (Fintype.card G)) {γ : MonoidAlgebra R G}
     (hinv : ∀ g, γ * single g 1 = γ) (hε : augmentation R G γ = Fintype.card G) :
     γ = ∑ g, single g (1 : R) := by
-  classical
-  have hcoeff (g : G) : γ.coeff g = γ.coeff 1 := by
-    simpa using congrArg (fun z : MonoidAlgebra R G ↦ z.coeff 1) (hinv g⁻¹)
   -- Right invariance makes `γ` the constant combination with coefficient `γ.coeff 1`.
-  have hγ : γ = ∑ g, single g (γ.coeff 1) := by
-    conv_lhs => rw [← sum_coeff_single γ]
-    rw [Finsupp.sum_fintype _ _ (by simp)]
-    simp [hcoeff]
+  have hγ := eq_sum_single_coeff_one_of_mul_single_eq_self hinv
   -- Its augmentation is then `|G| • γ.coeff 1`, so `hε` and `hG` force `γ.coeff 1 = 1`.
   have hγ1 : γ.coeff 1 = 1 := hG <| by
     rw [hγ, map_sum] at hε
