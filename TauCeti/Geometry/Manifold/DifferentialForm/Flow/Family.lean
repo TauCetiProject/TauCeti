@@ -553,7 +553,8 @@ private theorem hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk_suspen
       (flowOf (timeDependentSuspensionField X) (t - s) (s, x)) := by
     rwa [flowOf_timeDependentSuspensionField h]
   have hd := ((compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt
-    (t - s) (hasDerivAt_mpullback_flowOf hZ (mem_timeDependentFlowDomain.1 h) hαΨ)).comp_sub_const
+    (t - s) (hasDerivAt_mpullback_flowOf (hZ.of_le one_le_two) (mem_timeDependentFlowDomain.1 h)
+      hαΨ)).comp_sub_const
     t s
   exact (hd.congr_of_eventuallyEq (hkey α)).congr_deriv (hkey _).self_of_nhds.symm
 

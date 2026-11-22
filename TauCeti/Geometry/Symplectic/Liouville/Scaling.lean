@@ -84,7 +84,8 @@ theorem IsLiouvilleVectorField.mpullback_flowOf_apply_eq_exp_smul {σ : RoughFor
   have hL : mlieDerivForm Z σ = fun y ↦ (fun _ : M ↦ (1 : ℝ)) y • σ y := by
     simp only [one_smul]
     exact isLiouvilleVectorField_iff.mp hZσ
-  simpa using mpullback_flowOf_apply_eq_exp_integral_smul hZ continuous_const hσ hL hx
+  simpa using mpullback_flowOf_apply_eq_exp_integral_smul (hZ.of_le one_le_two) continuous_const
+    hσ hL hx
 
 /-- **The local Liouville flow rescales the primitive.** If `α` is a differentiable primitive of
 the two-form `σ`, and the `C²` vector field `Z` is its Liouville field, `ι_Z σ = α`, then wherever
@@ -101,7 +102,8 @@ theorem mpullback_flowOf_apply_eq_exp_smul_of_interior_eq {α : RoughForm I M �
     simp only [one_smul]
     exact mlieDerivForm_eq_self_of_interior_eq hα (hZ.mdifferentiable (by norm_num))
       (by rw [hdα, hZα])
-  simpa using mpullback_flowOf_apply_eq_exp_integral_smul hZ continuous_const hα hL hx
+  simpa using mpullback_flowOf_apply_eq_exp_integral_smul (hZ.of_le one_le_two) continuous_const
+    hα hL hx
 
 end MaximalFlow
 

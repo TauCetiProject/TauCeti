@@ -642,6 +642,35 @@ theorem eventually_hasDerivAt_extChartAt_family [I.Boundaryless] {ψ : 𝕜 → 
   -- (`TangentBundle.trivializationAt_apply`, `tangentCoordChange_def`).
   rfl
 
+/-- Read in the chart at `y`, a family fixing `y` at time `t`, continuous at `(t, y)` and moving
+the points near `y` with the velocity of `V` at every time near `t`, moves the points near the
+chart centre at every time near `t` with the coordinate velocity of `V`, the pullback of `V` to the
+chart, evaluated at their current position. -/
+theorem eventually_hasDerivAt_extChartAt_family_of_forall {ψ : 𝕜 → M → M}
+    {V : (x : M) → TangentSpace I x} {t : 𝕜} {y : M} (hy : ψ t y = y)
+    (hψ : ContinuousAt (fun p : 𝕜 × M ↦ ψ p.1 p.2) (t, y))
+    (hvel : ∀ᶠ p in 𝓝 (t, y),
+      HasMFDerivAt 𝓘(𝕜, 𝕜) I (fun u ↦ ψ u p.2) p.1 ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (V (ψ p.1 p.2)))) :
+    ∀ᶠ p in 𝓝 (t, extChartAt I y y), HasDerivAt
+      (fun u ↦ extChartAt I y (ψ u ((extChartAt I y).symm p.2)))
+      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I y).symm V (range I)
+        (extChartAt I y (ψ p.1 ((extChartAt I y).symm p.2)))) p.1 := by
+  -- The inverse chart in the second factor carries `(t, extChartAt I y y)` to `(t, y)`.
+  have hc : ContinuousAt (fun p : 𝕜 × E ↦ (p.1, (extChartAt I y).symm p.2))
+      (t, extChartAt I y y) :=
+    continuousAt_fst.prodMk ((continuousAt_extChartAt_symm y).comp
+      (f := Prod.snd) (x := (t, extChartAt I y y)) continuousAt_snd)
+  have hpt : ((t, extChartAt I y y).1, (extChartAt I y).symm (t, extChartAt I y y).2) = (t, y) :=
+    by rw [extChartAt_to_inv]
+  have hsrc : ∀ᶠ p in 𝓝 (t, extChartAt I y y),
+      ψ p.1 ((extChartAt I y).symm p.2) ∈ (extChartAt I y).source :=
+    (hψ.comp_of_eq hc hpt).eventually_mem (by
+      simp only [Function.comp_apply, extChartAt_to_inv, hy]
+      exact extChartAt_source_mem_nhds y)
+  filter_upwards [hc.eventually (hpt ▸ hvel), hsrc] with p hpv hps
+  exact (hpv.hasDerivAt_extChartAt_comp hps).congr_deriv
+    (VectorField.mpullbackWithin_extChartAt_symm_apply V hps).symm
+
 end ChartVelocity
 
 end TauCeti
