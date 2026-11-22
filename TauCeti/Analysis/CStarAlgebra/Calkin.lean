@@ -251,14 +251,14 @@ theorem isSimpleRing_iff :
 
 /-- For any infinite index type `ι`, `CalkinAlgebra ℓ²(ι, ℂ)` is nontrivial. -/
 instance instNontrivialL2 {ι : Type*} [Infinite ι] : Nontrivial (CalkinAlgebra ℓ²(ι, ℂ)) :=
-  nontrivial_iff_not_finiteDimensional.mpr lp.not_finiteDimensional
+  nontrivial_iff_not_finiteDimensional.mpr (lp.not_finite (𝕜 := ℂ))
 
 /-- For any countably infinite index type `ι` (in particular `ι = ℕ`), `CalkinAlgebra ℓ²(ι, ℂ)` is
 a simple C⋆-algebra. -/
 instance instIsSimpleRingL2 {ι : Type*} [Countable ι] [Infinite ι] :
     IsSimpleRing (CalkinAlgebra ℓ²(ι, ℂ)) := by
   have : SeparableSpace ℓ²(ι, ℂ) := lp.separableSpace (by norm_num)
-  exact isSimpleRing lp.not_finiteDimensional
+  exact isSimpleRing (lp.not_finite (𝕜 := ℂ))
 
 -- Non-vacuity check on `ℓ²(ℕ, ℂ)` with zero hypotheses.
 example : IsSimpleRing (CalkinAlgebra ℓ²(ℕ, ℂ)) := inferInstance
