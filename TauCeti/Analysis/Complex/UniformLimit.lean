@@ -37,11 +37,12 @@ produced by Montel's theorem in several variables.
   holomorphic.
 * `TendstoLocallyUniformlyOn.differentiableOn_of_locallyCompactSpace`: on a locally compact
   complex normed space, a locally uniform limit of holomorphic maps on an open set is holomorphic.
-* `TauCeti.exists_differentiableOn_eqOn_add_tsum`: the telescoping step in exhaustion proofs of
-  the `\bar∂`-lemma. On any open set `U` in a complex normed space, if each `P k` is holomorphic on
-  `U` and for `k ≥ m` the consecutive differences `h (k + 1) - h k` are holomorphic on `U` and
-  approximated by `P k` within a summable bound `u k`, then the corrected series
-  `h 0 + ∑' k, (h (k + 1) - h k - P k)` is `h m` plus a holomorphic function on `U`.
+* `IsOpen.exists_differentiableOn_eqOn_add_tsum`: the telescoping step in exhaustion proofs of
+  the `\bar∂`-lemma. Local solutions `h k` whose consecutive differences are holomorphic on an open
+  set `U`, corrected by holomorphic approximations `P k` of these differences, converge to a
+  function that is `h m` plus a holomorphic function on `U`.
+* `TauCeti.exists_differentiableOn_eqOn_add_tsum`: the same step on growing balls, with entire
+  corrections.
 
 ## References
 
@@ -138,32 +139,45 @@ theorem TendstoLocallyUniformlyOn.differentiableOn_of_locallyCompactSpace [Local
 
 namespace TauCeti
 
-/-- **Telescoping step.** Let `U` be an open subset of a complex normed space `V`, and let
-`h P : ℕ → V → E` be sequences of functions into a complex Banach space `E`. If every `P k` is
-holomorphic on `U`, and for `k ≥ m` each consecutive difference `h (k + 1) - h k` is holomorphic on
-`U` and approximated on `U` by `P k` within a summable bound `u k`, then on `U` the corrected series
+/-- **Telescoping step.** If consecutive differences `h (k + 1) - h k`, from the `m`-th on, are
+holomorphic on an open set `U` of a complex normed space and are approximated within `2⁻ᵏ` on `U`
+by functions `P k` holomorphic on `U`, then on `U` the corrected limit
 `h 0 + ∑' k, (h (k + 1) - h k - P k)` is `h m` plus a holomorphic function. -/
-theorem exists_differentiableOn_eqOn_add_tsum [CompleteSpace E] {U : Set V} (hU : IsOpen U)
-    {h P : ℕ → V → E} {u : ℕ → ℝ} (hu : Summable u) {m : ℕ}
-    (hP : ∀ k, DifferentiableOn ℂ (P k) U)
-    (hdiff : ∀ k ≥ m, DifferentiableOn ℂ (h (k + 1) - h k) U)
-    (hP_le : ∀ k ≥ m, ∀ z ∈ U, ‖(h (k + 1) - h k) z - P k z‖ ≤ u k) :
+theorem _root_.IsOpen.exists_differentiableOn_eqOn_add_tsum [CompleteSpace E] {h P : ℕ → V → E}
+    {U : Set V} (hU : IsOpen U) {m : ℕ} (hP : ∀ k, DifferentiableOn ℂ (P k) U)
+    (hdiff : ∀ k, m ≤ k → DifferentiableOn ℂ (h (k + 1) - h k) U)
+    (hP_le : ∀ k, m ≤ k → ∀ z ∈ U, ‖(h (k + 1) - h k) z - P k z‖ ≤ (1 / 2 : ℝ) ^ k) :
     ∃ K : V → E, DifferentiableOn ℂ K U ∧
       EqOn (fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z) (h m + K) U := by
   set e : ℕ → V → E := fun k ↦ h (k + 1) - h k - P k
-  have hsumm : Summable fun k ↦ u (k + m) := (summable_nat_add_iff m).2 hu
+  have hsumm : Summable fun k ↦ (1 / 2 : ℝ) ^ (k + m) :=
+    (summable_nat_add_iff m).2 summable_geometric_two
   refine ⟨fun z ↦ ∑' k, e (k + m) z - ∑ k ∈ Finset.range m, P k z, ?_, fun z hz ↦ ?_⟩
   · refine DifferentiableOn.sub ?_ (DifferentiableOn.fun_sum fun k _ ↦ hP k)
-    refine (tendstoUniformlyOn_tsum hsumm fun k z hz ↦
-        hP_le (k + m) (Nat.le_add_left m k) z hz)
-      |>.differentiableOn (Eventually.of_forall fun s ↦ DifferentiableOn.fun_sum fun k _ ↦
-        (hdiff (k + m) (Nat.le_add_left m k)).sub (hP (k + m))) hU
+    refine (tendstoUniformlyOn_tsum hsumm fun k z hz ↦ hP_le _ (Nat.le_add_left m k) z hz)
+      |>.differentiableOn (Eventually.of_forall fun s ↦ DifferentiableOn.fun_sum fun k _ ↦ ?_) hU
+    exact (hdiff (k + m) (Nat.le_add_left m k)).sub (hP (k + m))
   · have hs : Summable fun k ↦ e k z := (summable_nat_add_iff m).1 <|
-      .of_norm_bounded hsumm fun k ↦ hP_le (k + m) (Nat.le_add_left m k) z hz
+      .of_norm_bounded hsumm fun k ↦ hP_le _ (Nat.le_add_left m k) z hz
     have htel : ∑ k ∈ Finset.range m, e k z = h m z - h 0 z - ∑ k ∈ Finset.range m, P k z := by
       simp only [e, Pi.sub_apply, Finset.sum_sub_distrib, Finset.sum_range_sub fun k ↦ h k z]
     simp only [Pi.add_apply]
     rw [← hs.sum_add_tsum_nat_add m, htel]
     abel
+
+/-- **Telescoping step on growing balls.** If consecutive differences `h (k + 1) - h k` are
+holomorphic on the growing balls `ball c (r k)` of a complex normed space and are approximated
+within `2⁻ᵏ` on `closedBall c (r k)` by entire functions `P k`, then on `ball c (r m)` the corrected
+limit `h 0 + ∑' k, (h (k + 1) - h k - P k)` is `h m` plus a holomorphic function. -/
+theorem exists_differentiableOn_eqOn_add_tsum [CompleteSpace E] {h P : ℕ → V → E} {c : V}
+    {r : ℕ → ℝ} (hr : Monotone r) (hP : ∀ k, Differentiable ℂ (P k))
+    (hdiff : ∀ k, DifferentiableOn ℂ (h (k + 1) - h k) (ball c (r k)))
+    (hP_lt : ∀ k, ∀ z ∈ closedBall c (r k), ‖(h (k + 1) - h k) z - P k z‖ < (1 / 2 : ℝ) ^ k)
+    (m : ℕ) : ∃ K : V → E, DifferentiableOn ℂ K (ball c (r m)) ∧
+      EqOn (fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z) (h m + K) (ball c (r m)) :=
+  isOpen_ball.exists_differentiableOn_eqOn_add_tsum (fun k ↦ (hP k).differentiableOn)
+    (fun k hk ↦ (hdiff k).mono (ball_subset_ball (hr hk)))
+    fun k hk z hz ↦
+      (hP_lt k z (closedBall_subset_closedBall (hr hk) (ball_subset_closedBall hz))).le
 
 end TauCeti

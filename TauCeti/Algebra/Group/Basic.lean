@@ -15,8 +15,6 @@ public import Mathlib.Algebra.Group.Basic
 * `TauCeti.inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv`: in a group, `b⁻¹ * a = d⁻¹ * c` if and only
   if `a * c⁻¹ = b * d⁻¹`. In a commutative group, Mathlib's
   `inv_mul_eq_inv_mul_iff_mul_eq_mul` gives the equivalent `a * d = c * b`.
-* `TauCeti.mul_inv_eq_of_mul_mul_eq_one` and `TauCeti.sub_eq_of_add_add_eq_zero`: pointwise cocycle
-  cancellation in groups (and additive groups) without `3`-torsion on the diagonal term.
 -/
 
 public section
@@ -31,26 +29,5 @@ variable {G : Type*} [Group G] {a b c d : G}
 differences `a + -c` and `b + -d` are. -/]
 theorem inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv : b⁻¹ * a = d⁻¹ * c ↔ a * c⁻¹ = b * d⁻¹ := by
   rw [inv_mul_eq_iff_eq_mul, mul_inv_eq_iff_eq_mul, mul_assoc]
-
-/-- Pointwise cocycle cancellation: in a group where the diagonal term has no `3`-torsion, the
-cocycle equations `e * e * e = 1`, `d * c * e = 1`, and `a * b * c = 1` imply `d * b⁻¹ = a`. -/
-@[to_additive /-- Pointwise additive cocycle cancellation: in an additive group where the diagonal
-term has no `3`-torsion, the cocycle equations `e + e + e = 0`, `d + c + e = 0`, and
-`a + b + c = 0` imply `d + -b = a`. -/]
-theorem mul_inv_eq_of_mul_mul_eq_one {e : G} (h3 : e ^ 3 = 1 → e = 1) (hee : e * e * e = 1)
-    (hdc : d * c * e = 1) (habc : a * b * c = 1) : d * b⁻¹ = a := by
-  have he : e = 1 := h3 (by rw [pow_three, ← mul_assoc, hee])
-  rw [he, mul_one] at hdc
-  have ha : a = (b * c)⁻¹ := eq_inv_of_mul_eq_one_left (by rw [mul_assoc] at habc; exact habc)
-  rw [eq_inv_of_mul_eq_one_left hdc, ← mul_inv_rev, ha]
-
-/-- Pointwise additive cocycle cancellation in subtraction form: in an additive group where
-`3 • e = 0 → e = 0`, the cocycle equations `e + e + e = 0`, `d + c + e = 0`, and `a + b + c = 0`
-imply `d - b = a`. -/
-theorem sub_eq_of_add_add_eq_zero {A : Type*} [AddGroup A] {a b c d e : A}
-    (h3 : 3 • e = 0 → e = 0) (hee : e + e + e = 0) (hdc : d + c + e = 0)
-    (habc : a + b + c = 0) : d - b = a := by
-  rw [sub_eq_add_neg]
-  exact add_neg_eq_of_add_add_eq_zero h3 hee hdc habc
 
 end TauCeti

@@ -8,10 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Geometry.Manifold.PartitionOfUnity
-import TauCeti.Algebra.Group.Basic
-import TauCeti.Analysis.Complex.Wirtinger.OpenSet
+import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.PartitionOfUnity.CechSplitting
 import TauCeti.Logic.Function.Extend
 
 /-!
@@ -24,12 +23,11 @@ holomorphic functions `b i` on `U i` solving `b i - b j = c i j` on `U i ∩ U j
 (`TauCeti.exists_differentiableOn_sub_eq`). Neither connectedness of `⋃ i, U i` nor local
 finiteness or countability of the cover is required.
 
-The proof resolves the cocycle smoothly using a smooth partition of unity `ρ` subordinate to the
-cover on the open submanifold `Ω = ⋃ i, U i` (`SmoothPartitionOfUnity.exists_isSubordinate`):
-the locally finite sums `g i = ∑ᶠ k, ρ k • c i k` are smooth on `U i` and satisfy
-`g i - g j = c i j` on `U i ∩ U j`. Because `c i j` is holomorphic, the differences `g i - g j`
-are holomorphic on overlaps, so global Dolbeault gluing on open sets
-(`TauCeti.exists_contDiffOn_differentiableOn_sub`) gives one smooth `f` on `Ω` with every
+The proof resolves the cocycle smoothly on the open submanifold `Ω = ⋃ i, U i` using
+`TauCeti.exists_contMDiffOn_eq_smul_sub_of_cocycle`: this produces smooth functions `g i` on
+`U i` satisfying `g i - g j = c i j` on `U i ∩ U j`. Because `c i j` is holomorphic, the
+differences `g i - g j` are holomorphic on overlaps, so global Dolbeault gluing on open sets
+(`IsOpen.exists_contDiffOn_differentiableOn_sub`) gives one smooth `f` on `Ω` with every
 `f - g i` holomorphic on `U i`; setting `b i = g i - f` yields holomorphic functions with the
 same differences.
 
@@ -74,51 +72,52 @@ theorem exists_differentiableOn_sub_eq [CompleteSpace W] {U : ι → Set ℂ}
   let Ω : Opens ℂ := ⟨⋃ i, U i, isOpen_iUnion hU⟩
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   let V : ι → Set Ω := fun i ↦ Subtype.val ⁻¹' U i
-  have hVopen : ∀ i, IsOpen (V i) := fun i ↦ (hU i).preimage continuous_subtypeVal
-  have hVcover : (univ : Set Ω) ⊆ ⋃ i, V i := fun x _ ↦ by
+  have hVo : ∀ i, IsOpen (V i) := fun i ↦ (hU i).preimage continuous_subtypeVal
+  have hV : ⋃ i, V i = univ := eq_univ_iff_forall.2 fun x ↦ by
     obtain ⟨i, hi⟩ := mem_iUnion.1 x.property
     exact mem_iUnion.2 ⟨i, hi⟩
-  obtain ⟨ρ, hρ⟩ :=
-    SmoothPartitionOfUnity.exists_isSubordinate 𝓘(ℝ, ℂ) isClosed_univ V hVopen hVcover
-  -- Smooth splitting `g i = ∑ᶠ k, ρ k • c i k` on `U i`.
-  let gΩ : ι → Ω → W := fun i x ↦ ∑ᶠ k, ρ k x • c i k x
-  let g : ι → ℂ → W := fun i ↦ Subtype.val.extend (gΩ i) 0
+  -- Antisymmetry and cocycle identity `c i j + c j k = c i k` on triple overlaps.
+  have hcoc : ∀ i j k, ∀ x ∈ V i ∩ V j ∩ V k,
+      c i j (x : ℂ) + (1 : ℝ) • c j k (x : ℂ) = c i k (x : ℂ) := fun i j k x hx ↦ by
+    have hii : (3 : ℂ) • c i i (x : ℂ) = 0 := by
+      have h3 : (3 : ℂ) • c i i (x : ℂ) = c i i (x : ℂ) + c i i (x : ℂ) + c i i (x : ℂ) := by
+        module
+      rw [h3, hcycle i i i x ⟨⟨hx.1.1, hx.1.1⟩, hx.1.1⟩]
+    have hci : c i i (x : ℂ) = 0 := (smul_eq_zero.1 hii).resolve_left (by norm_num)
+    have hki : c i k (x : ℂ) + c k i (x : ℂ) = 0 := by
+      simpa [hci] using hcycle i k i x ⟨⟨hx.1.1, hx.2⟩, hx.1.1⟩
+    have hijk := hcycle i j k x hx
+    rw [one_smul]
+    exact eq_of_sub_eq_zero (by
+      calc c i j (x : ℂ) + c j k (x : ℂ) - c i k (x : ℂ)
+          = (c i j (x : ℂ) + c j k (x : ℂ) + c k i (x : ℂ)) -
+              (c i k (x : ℂ) + c k i (x : ℂ)) := by abel
+        _ = 0 := by rw [hijk, hki, sub_self])
+  -- Smoothness of the cocycle on `V i ∩ V j` and smooth Čech splitting on `Ω`.
+  have hξ (i j : ι) :
+      ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, W) (⊤ : ℕ∞) (fun x : Ω ↦ c i j (x : ℂ)) (V i ∩ V j) :=
+    (contMDiffOn_iff_contDiffOn.2
+      ((((hc i j).contDiffOn ((hU i).inter (hU j))).of_le le_top).restrict_scalars ℝ)).comp
+      contMDiff_subtypeVal.contMDiffOn fun _ hx ↦ hx
+  obtain ⟨gΩ, hgΩ, hgΩ_eq, -⟩ :=
+    exists_contMDiffOn_eq_smul_sub_of_cocycle (I := 𝓘(ℝ, ℂ)) (n := (⊤ : ℕ∞))
+      (ψ := fun _ _ _ ↦ (1 : ℝ)) hVo hV hξ hcoc
+  let g : ι → ℂ → W := fun i ↦ Subtype.val.extend (-gΩ i) 0
   have hg_sub {i j : ι} {z : ℂ} (hz : z ∈ U i ∩ U j) : g i z - g j z = c i j z := by
     set x : Ω := ⟨z, mem_iUnion.2 ⟨i, hz.1⟩⟩
-    have hgi : g i z = gΩ i x := Subtype.val_injective.extend_apply (gΩ i) 0 x
-    have hgj : g j z = gΩ j x := Subtype.val_injective.extend_apply (gΩ j) 0 x
-    rw [hgi, hgj]
-    dsimp only [gΩ]
-    rw [← ρ.sum_finsupport_smul_eq_finsum x (fun k (y : Ω) ↦ c i k y),
-      ← ρ.sum_finsupport_smul_eq_finsum x (fun k (y : Ω) ↦ c j k y),
-      ← Finset.sum_sub_distrib]
-    have hcongr : ∑ k ∈ ρ.finsupport x, (ρ k x • c i k z - ρ k x • c j k z) =
-        ∑ k ∈ ρ.finsupport x, ρ k x • c i j z := by
-      refine Finset.sum_congr rfl fun k hk ↦ ?_
-      have hzk : z ∈ U k := hρ k (subset_tsupport _ ((ρ.mem_finsupport x).1 hk))
-      rw [← smul_sub, sub_eq_of_add_add_eq_zero
-        (fun h ↦ by
-          rw [← Nat.cast_smul_eq_nsmul ℂ 3] at h
-          exact (smul_eq_zero.1 h).resolve_left (by norm_num))
-        (hcycle i i i z ⟨⟨hz.1, hz.1⟩, hz.1⟩)
-        (hcycle i k i z ⟨⟨hz.1, hzk⟩, hz.1⟩)
-        (hcycle i j k z ⟨hz, hzk⟩)]
-    rw [hcongr, ← Finset.sum_smul, ρ.sum_finsupport x (mem_univ x), one_smul]
+    have hgi : g i z = -gΩ i x := Subtype.val_injective.extend_apply (-gΩ i) 0 x
+    have hgj : g j z = -gΩ j x := Subtype.val_injective.extend_apply (-gΩ j) 0 x
+    rw [hgi, hgj, neg_sub_neg, hgΩ_eq i j x hz, one_smul]
   have hg_smooth (i : ι) : ContDiffOn ℝ ∞ (g i) (U i) := fun z₀ hz₀ ↦ by
     set x₀ : Ω := ⟨z₀, mem_iUnion.2 ⟨i, hz₀⟩⟩
-    have hΩ : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, W) ∞ (gΩ i) x₀ := by
-      refine ρ.contMDiffAt_finsum (g := fun k (x : Ω) ↦ c i k x) fun k hk ↦ ?_
-      have hzk : z₀ ∈ U k := hρ k hk
-      have hck : ContDiffAt ℝ ∞ (c i k) z₀ :=
-        (((hc i k).contDiffOn ((hU i).inter (hU k))).of_le le_top).restrict_scalars ℝ
-          |>.contDiffAt (((hU i).inter (hU k)).mem_nhds ⟨hz₀, hzk⟩)
-      exact contMDiffAt_subtype_iff.2 (contMDiffAt_iff_contDiffAt.2 hck)
-    exact (contMDiffAt_iff_contDiffAt.1 (hΩ.extend_subtypeVal 0)).contDiffWithinAt
+    have hAt : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, W) (⊤ : ℕ∞) (-gΩ i) x₀ :=
+      ((hgΩ i).neg.contMDiffAt ((hVo i).mem_nhds hz₀))
+    exact (contMDiffAt_iff_contDiffAt.1 (hAt.extend_subtypeVal 0)).contDiffWithinAt
   -- Holomorphic pairwise differences allow global Dolbeault gluing on `Ω = ⋃ i, U i`.
   have hg_diff (k l : ι) : DifferentiableOn ℂ (g k - g l) (U k ∩ U l) :=
     (hc k l).congr fun _ hz ↦ hg_sub hz
   obtain ⟨f, -, hfg⟩ :=
-    exists_contDiffOn_differentiableOn_sub (isOpen_iUnion hU) hU hg_smooth hg_diff Subset.rfl
+    (isOpen_iUnion hU).exists_contDiffOn_differentiableOn_sub hU hg_smooth hg_diff Subset.rfl
   refine ⟨fun i ↦ g i - f, fun i ↦ ?_, fun i j z hz ↦ ?_⟩
   · simpa only [inter_eq_self_of_subset_right (subset_iUnion U i), neg_sub] using (hfg i).neg
   · simp only [Pi.sub_apply, sub_sub_sub_cancel_right]

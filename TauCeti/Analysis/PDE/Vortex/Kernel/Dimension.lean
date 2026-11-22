@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.PrincipalPart
 public import TauCeti.Analysis.PDE.Vortex.TranslationKernel
 import TauCeti.Analysis.Meromorphic.PrincipalPart
 import TauCeti.Analysis.PDE.Vortex.Kernel.Existence
-import TauCeti.Analysis.Complex.Wirtinger.OpenSet
+import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
@@ -137,9 +137,11 @@ private theorem forall_mem_linearizedEquation_eq_zero
   · rw [← gaugeFixedOperator_apply_three, hker w, PiLp.zero_apply]
 
 omit [μ.IsAddHaarMeasure] in
-/-- Decomposition `δα = α G + e^ν H` for every element of a space `V` of `C²` solutions of
-`L_x y = 0`. -/
-private theorem exists_decomposition_of_gaugeFixedOperator_eq_zero (hx : ContDiff ℝ 2 x)
+/-- **Decomposition of the kernel.** At a `C²` field satisfying the holomorphicity rows
+`∂bar_a α = 0`, every element of a space `V` of `C²` solutions of `L_x y = 0` has section variation
+`δα = α G + e^ν H` with `G` continuous and `H` entire, where `∂bar ν = (b₂ - i b₁) / 2`. This is the
+hypothesis of `principalPartMap`. -/
+theorem exists_decomposition_of_gaugeFixedOperator_eq_zero (hx : ContDiff ℝ 2 x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) {ν : ℂ → ℂ}
     (hν : Differentiable ℝ ν)
     (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2)
@@ -167,14 +169,13 @@ private theorem principalPartMap_injective_of_gaugeFixedOperator_eq_zero (hx : C
       (exists_decomposition_of_gaugeFixedOperator_eq_zero hx hhol hν hνeq hV)) := by
   have hi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i := contDiff_euclidean.1 hx i
   -- Upgrade `ν` to `C²` by comparing with a `C²` Dolbeault solution: their difference is entire.
-  obtain ⟨ν₀, hν₀_on, hν₀eq⟩ := exists_contDiffOn_conjWirtingerDeriv_apply_one_eq (by norm_num)
-    isOpen_univ (contDiff_connectionCoeff (hi 0) (hi 1)).contDiffOn
-  have hν₀ : ContDiff ℝ 2 ν₀ := contDiffOn_univ.1 hν₀_on
+  obtain ⟨ν₀, hν₀, hν₀eq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eq (by norm_num)
+    (contDiff_connectionCoeff (hi 0) (hi 1))
   have hν₀d : Differentiable ℝ ν₀ := hν₀.differentiable (by norm_num)
   have hhol_diff : Differentiable ℂ (ν - ν₀) := fun w ↦
     (differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero (hν.sub hν₀d w)).2 <| by
-      rw [conjWirtingerDeriv_sub (hν w) (hν₀d w), FunLike.coe_sub, Pi.sub_apply, hνeq w,
-        hν₀eq w (Set.mem_univ w), sub_self]
+      rw [conjWirtingerDeriv_sub (hν w) (hν₀d w), FunLike.coe_sub, Pi.sub_apply, hνeq w, hν₀eq w,
+        sub_self]
   have hν2 : ContDiff ℝ 2 ν := by
     simpa only [Pi.sub_apply, sub_add_cancel] using
       ((hhol_diff.contDiff (n := 2)).restrict_scalars ℝ).add hν₀
@@ -195,11 +196,10 @@ private theorem exists_injective_linearMap (hx : ContDiff ℝ 2 x)
     (hV : ∀ y ∈ V, ContDiff ℝ 2 y ∧ MemLp y 2 μ ∧ ∀ w, gaugeFixedOperator x y w = 0) :
     ∃ Φ : V →ₗ[ℝ] Multiset.ToType D → ℂ, Function.Injective Φ := by
   have hi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i := contDiff_euclidean.1 hx i
-  obtain ⟨ν, hν_on, hνeq⟩ := exists_contDiffOn_conjWirtingerDeriv_apply_one_eq (by norm_num)
-    isOpen_univ (contDiff_connectionCoeff (hi 0) (hi 1)).contDiffOn
-  have hν : ContDiff ℝ 2 ν := contDiffOn_univ.1 hν_on
+  obtain ⟨ν, hν, hνeq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eq (by norm_num)
+    (contDiff_connectionCoeff (hi 0) (hi 1))
   exact ⟨_, principalPartMap_injective_of_gaugeFixedOperator_eq_zero hx hhol hlim hD
-    (hν.differentiable (by norm_num)) (fun w ↦ hνeq w (Set.mem_univ w)) hV⟩
+    (hν.differentiable (by norm_num)) hνeq hV⟩
 
 /-- **Kernel elements of the gauge-fixed operator form a finite-dimensional space.** Let `x` be a
 `C²` field with vanishing holomorphicity rows and `|α|² → 1` at infinity. Then every real vector

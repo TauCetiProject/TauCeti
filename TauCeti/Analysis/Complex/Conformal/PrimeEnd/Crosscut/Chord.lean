@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Basic
 import TauCeti.Analysis.Complex.Inner
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Topology.ConnectedComponents
 import Mathlib.Analysis.InnerProductSpace.Continuous
@@ -105,7 +106,7 @@ theorem unitDiscChord_subset_closedBall (hζ : ‖ζ‖ = 1) (ht : |t| ≤ 1) :
 private lemma mem_unitDiscChord_of_inner_eq (hζ : ‖ζ‖ = 1) (ht : |t| < 1) {z : ℂ}
     (hz : ‖z‖ ≤ 1) (hzt : inner ℝ ζ z = t) : z ∈ unitDiscChord ζ t := by
   set w := (starRingEnd ℂ) ζ * z with hw
-  have hzw : z = ζ * w := by rw [hw, ← mul_assoc, mul_conj_eq_one_of_norm_eq_one hζ, one_mul]
+  have hzw : z = ζ * w := by simp [hw, ← mul_assoc, RCLike.mul_conj_eq_one_iff.2 hζ]
   have hre : w.re = t := by rw [← hzt, hzw, inner_mul_left_of_norm_eq_one hζ]
   have hwn : ‖w‖ ≤ 1 := by rwa [hw, norm_mul, Complex.norm_conj, hζ, one_mul]
   have hwsq : w.re ^ 2 + w.im ^ 2 ≤ 1 := by

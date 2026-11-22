@@ -25,10 +25,9 @@ all of `ℂⁿ` is `bar∂`-exact: some smooth `u` has `∂u/∂(conj z_j) = f_j
 (`TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_single_eq_of_polydisc`) only solves the
 equation on a strictly smaller polydisc.
 
-The proof is the exhaustion argument of the Dolbeault lemma on open sets
-(`TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq`), with balls of the sup norm,
-which are polydiscs, in place of discs. The polydisc lemma gives local solutions `h k` on the
-balls `ball 0 (k + 2)`. Consecutive ones differ by a holomorphic function
+The proof exhausts `ℂⁿ` by the balls of the sup norm, which are polydiscs. The polydisc lemma
+gives local solutions `h k` on the balls `ball 0 (k + 2)`. Consecutive ones differ by a
+holomorphic function
 (`TauCeti.differentiableAt_iff_forall_conjWirtingerDeriv_apply_single_eq_zero`), which a partial
 sum of its multivariate Cauchy expansion approximates within `2⁻ᵏ` on `closedBall 0 (k + 1)`
 (`DifferentiableOn.exists_differentiable_norm_sub_lt_of_pi`). Subtracting these polynomials makes
@@ -119,11 +118,8 @@ theorem exists_contDiff_conjWirtingerDeriv_apply_single_eq {f : ι → (ι → �
   set u : (ι → ℂ) → F := fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z
   have hkey (m : ℕ) : ∃ K : (ι → ℂ) → F, DifferentiableOn ℂ K (ball 0 (r m)) ∧
       EqOn u (h m + K) (ball 0 (r m)) :=
-    exists_differentiableOn_eqOn_add_tsum isOpen_ball summable_geometric_two
-      (fun k ↦ (hP k).differentiableOn)
-      (fun k hmk ↦ (hdiff k).mono (ball_subset_ball (hr_mono.monotone (hmk.trans k.le_succ))))
-      (fun k hmk z hz ↦ (hP_lt k z (closedBall_subset_closedBall (hr_mono.monotone hmk)
-        (ball_subset_closedBall hz))).le)
+    exists_differentiableOn_eqOn_add_tsum hr_mono.monotone hP
+      (fun k ↦ (hdiff k).mono (ball_subset_ball (hr_mono k.lt_succ_self).le)) hP_lt m
   -- Every point lies in some `ball 0 (r m)`, where `u` is `h m` plus a holomorphic function.
   have hglue := contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add (G := u) (U := univ)
     (v := fun j ↦ Pi.single j 1) (f := f) (n := ∞) (by simp) fun z _ ↦ by

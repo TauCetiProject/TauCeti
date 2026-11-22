@@ -44,8 +44,8 @@ differentiable function is closed exactly when the function is locally constant.
 * `TauCeti.mextDerivWithin_eq_extDerivWithin`, `TauCeti.mextDeriv_eq_extDeriv`: over the model
   space, the manifold exterior derivative is the flat one.
 * `TauCeti.mextDerivWithin_ofFunction`, `TauCeti.mextDeriv_ofFunction`,
-  `TauCeti.mextDeriv_ofFunction_apply`, `TauCeti.mextDeriv_ofFunction_apply_finOne`: the exterior
-  derivative of a function is its manifold derivative.
+  `TauCeti.mextDeriv_ofFunction_apply`: the exterior derivative of a function is its manifold
+  derivative.
 * `TauCeti.mextDeriv_ofFunction_continuousLinearMap`: on the model space, the exterior
   derivative of a continuous linear map is the associated constant `1`-form.
 * `TauCeti.mextDeriv_ofFunction_eq_zero_iff`: the `0`-form of a differentiable function is closed
@@ -405,13 +405,13 @@ theorem mextDeriv_ofFunction_apply (f : M → F) (x : M) (v : TangentSpace I x) 
   rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
     mvfderiv_apply_eq_mfderiv_apply, Matrix.cons_val_zero]
 
-/-- The exterior derivative of the `0`-form of a function, evaluated on an arbitrary `Fin 1` tuple
-of tangent vectors, is the manifold derivative of the function applied to the vector `v 0`. -/
-theorem mextDeriv_ofFunction_apply_finOne (f : M → F) (x : M) (v : Fin 1 → TangentSpace I x) :
-    mextDeriv (RoughForm.ofFunction I f) x v = mfderiv I 𝓘(ℝ, F) f x (v 0) := by
-  have hv : v = ![v 0] := funext fun i ↦ by rw [Subsingleton.elim i 0]; rfl
-  nth_rw 1 [hv]
-  rw [mextDeriv_ofFunction_apply]
+/-- The differential `dt` of the coordinate of `ℝ` sends a tangent vector to itself. -/
+theorem mextDeriv_ofFunction_id_apply (z : ℝ) (v : Fin 1 → TangentSpace 𝓘(ℝ) z) :
+    mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) z v = v 0 := by
+  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_eq_fderiv, fderiv_id]
+  -- Tangent vectors of `ℝ` are real numbers, on which the identity of `ℝ` acts.
+  rfl
 
 /-- **The chain rule for the exterior derivative of a `0`-form.** If `f` is differentiable at `x`
 and `g` has derivative `g'` at `f x`, then `d (g ∘ f) = g' • df` at `x`. -/

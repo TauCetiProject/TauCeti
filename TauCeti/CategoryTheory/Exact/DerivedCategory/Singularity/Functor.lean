@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.DerivedCategory.Functor
-public import TauCeti.CategoryTheory.Exact.DerivedCategory.Singularity.Stable
+public import TauCeti.CategoryTheory.Exact.DerivedCategory.Functor.Conflation
+public import TauCeti.CategoryTheory.Exact.DerivedCategory.Singularity.Stable.Basic
 
 /-!
 # Conflation-exact functors on singularity categories
@@ -33,6 +33,8 @@ commutes with placing an object in degree zero.
 
 * `TauCeti.ExactStructure.IsConflationExact.boundedProjective_le_inverseImage`: the functor
   `Dᵇ(E) ⥤ Dᵇ(E')` preserves the classes of bounded complexes of projectives.
+* `TauCeti.ExactStructure.IsConflationExact.mapSingularityCategory_map_conflationδ`: the functor
+  `D_sg(E) ⥤ D_sg(E')` preserves connecting morphisms of conflations.
 
 ## References
 
@@ -128,6 +130,31 @@ theorem mapSingularityCategoryFactors_hom_naturality {X Y : E.BoundedDerivedCate
       (hF.mapSingularityCategoryFactors hP).hom.app X ≫
         (SingularityCategory.Q E').map (hF.mapBoundedDerivedCategory.map f) :=
   (hF.mapSingularityCategoryFactors hP).hom.naturality f
+
+/-- The functor `D_sg(E) ⥤ D_sg(E')` preserves connecting morphisms of conflations. -/
+@[reassoc]
+theorem mapSingularityCategory_map_conflationδ {S : ShortComplex C} (hS : E.Conflation S) :
+    (hF.mapSingularityCategory hP).map ((SingularityCategory.Q E).map
+        (BoundedDerivedCategory.conflationδ hS)) ≫
+      (hF.mapSingularityCategory hP).map
+        (((SingularityCategory.Q E).commShiftIso (1 : ℤ)).hom.app _) ≫
+      ((hF.mapSingularityCategory hP).commShiftIso (1 : ℤ)).hom.app _ ≫
+      ((hF.mapSingularityCategoryFactors hP).hom.app _)⟦(1 : ℤ)⟧' ≫
+      ((SingularityCategory.Q E').map
+        ((hF.mapBoundedDerivedCategorySingleFunctorIso 0).hom.app S.X₁))⟦(1 : ℤ)⟧' =
+    (hF.mapSingularityCategoryFactors hP).hom.app _ ≫ (SingularityCategory.Q E').map
+      ((hF.mapBoundedDerivedCategorySingleFunctorIso 0).hom.app S.X₃) ≫
+      (SingularityCategory.Q E').map (BoundedDerivedCategory.conflationδ (hF.map_conflation hS)) ≫
+      ((SingularityCategory.Q E').commShiftIso (1 : ℤ)).hom.app _ := by
+  have h := NatTrans.shift_app_comm (hF.mapSingularityCategoryFactors hP).hom (1 : ℤ)
+    ((BoundedDerivedCategory.Q E).obj ((HomotopyCategory.Bounded.singleFunctor C 0).obj S.X₁))
+  rw [Functor.commShiftIso_comp_hom_app, Functor.commShiftIso_comp_hom_app] at h
+  simp only [Functor.comp_obj, Category.assoc] at h
+  rw [← Functor.map_comp_assoc (SingularityCategory.Q E'),
+    ← hF.mapBoundedDerivedCategory_map_conflationδ hS]
+  simp only [Functor.map_comp, Category.assoc, reassoc_of% h,
+    mapSingularityCategoryFactors_hom_naturality_assoc, ← Functor.commShiftIso_hom_naturality,
+    Functor.comp_obj, ShortComplex.map_X₁]
 
 /-- The functor `hF.mapSingularityCategory hP` commutes with placing an object in degree zero. -/
 noncomputable def singleToSingularityCompMapSingularityCategoryIso :

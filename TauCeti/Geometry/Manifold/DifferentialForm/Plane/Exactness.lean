@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Plane.Opens
-import TauCeti.Analysis.Complex.Wirtinger.OpenSet
+import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import TauCeti.Analysis.Normed.Module.Complexification
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
@@ -16,7 +16,7 @@ import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 
 Combining the planar coordinate calculus on open subsets `U : TopologicalSpace.Opens ℂ`
 (`TauCeti.Geometry.Manifold.DifferentialForm.Plane.Opens`) with global `\bar∂` solvability on
-arbitrary open subsets of `ℂ` (`TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq`)
+arbitrary open subsets of `ℂ` (`IsOpen.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq`)
 yields:
 
 * **Form-level closed completion**
@@ -76,7 +76,7 @@ theorem exists_contMDiff_mextDeriv_wedgeWith_complexDz_add_eq_zero {U : Opens �
   have hf' : ContDiffOn ℝ n f' (U : Set ℂ) :=
     contMDiffOn_iff_contDiffOn.1 (ContMDiffMap.contMDiffOn_extend U ⟨f, hf⟩ 0)
   obtain ⟨g', hg', hsol⟩ :=
-    exists_contDiffOn_conjWirtingerDeriv_eq_wirtingerDeriv hm hmn U.isOpen hf'
+    U.isOpen.exists_contDiffOn_conjWirtingerDeriv_eq_wirtingerDeriv hm hmn hf'
   let g : U → W := g' ∘ Subtype.val
   have hg : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, W) m g := hg'.contMDiff_comp_subtypeVal
   refine ⟨g, hg, ?_⟩
@@ -129,7 +129,7 @@ theorem exists_contMDiff_mextDeriv_wedgeWith_complexDz_eq {U : Opens ℂ} {W : T
   have hh' : ContDiffOn ℝ n h' (U : Set ℂ) :=
     contMDiffOn_iff_contDiffOn.1 (ContMDiffMap.contMDiffOn_extend U ⟨h, hh⟩ 0)
   obtain ⟨g', hg', hsol⟩ :=
-    exists_contDiffOn_conjWirtingerDeriv_apply_one_eq hn U.isOpen hh'
+    U.isOpen.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq hn hh'
   let g : U → W := g' ∘ Subtype.val
   have hg : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, W) n g := hg'.contMDiff_comp_subtypeVal
   refine ⟨g, hg, ?_⟩

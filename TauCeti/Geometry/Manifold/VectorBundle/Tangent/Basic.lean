@@ -46,8 +46,10 @@ are those of its summands, so its tangent coordinate changes are those of the su
 
 ## Main results
 
-* `TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet`: the inverse of the extended
-  chart at `x` maps its target into the base set of the canonical trivialization at `x`.
+* `TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source` and
+  `TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet`: the source of the extended chart
+  at `x`, and the image of its target under the inverse chart, lie in the base set of the
+  canonical trivialization at `x`.
 * `TangentBundle.chartFrame`: the canonical tangent trivialization of the intrinsic chart source
   at its centre, which covers the whole source
   (`TangentBundle.trivializationAt_chartSource_baseSet`).
@@ -65,6 +67,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
   inverse act as the identity on the fibre over `x`.
 * `TauCeti.Manifold.extChartAt_tangent_self_snd`: in the tangent-bundle chart at `v`, the fibre
   coordinate of `v` is `v` itself.
+* `TangentBundle.extChartAt_modelSpace_apply` and `TangentBundle.extChartAt_modelSpace_symm_apply`:
+  the charts of the tangent bundle of a model space `E` identify `w ∈ T_q E` with `(q, w)`.
 * `TauCeti.Manifold.extChartAt_tangent_symm_mem_baseSet_and_snd`: a point with coordinates `y` in
   the tangent-bundle chart at `v` lies over the base set of the trivialization at `v.proj`, with
   fibre coordinate `y.2` there.
@@ -111,9 +115,6 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.mvfderiv_subtype_val_apply` and
   `TauCeti.Manifold.injective_mvfderiv_subtype_val`: for an open subset of a normed space, the
   derivative of the inclusion, read in the normed space, fixes each tangent vector.
-* `TauCeti.Manifold.mvfderiv_opens_eq_fderiv_apply`: for a map from an open subset of a normed
-  space into a normed space, its manifold derivative equals the Fréchet derivative of any ambient
-  representative agreeing with it on the open subset.
 * `TauCeti.Manifold.mfderiv_apply_of_subtype_val_comp_eq`: the differential of a map between open
   submanifolds is that of any ambient map it restricts; in particular one is the identity exactly
   when the other is (`TauCeti.Manifold.mfderiv_eq_id_iff_of_comp_subtype_val`).
@@ -186,13 +187,19 @@ theorem trivializationAt_snd_eq_tangentCoordChange [IsManifold I 1 M] {x y : M}
   rw [TangentBundle.trivializationAt_apply, tangentCoordChange_def]
   rfl
 
+/-- A point of the source of the extended chart at `x` lies in the base set of the canonical
+tangent-bundle trivialization at `x`. -/
+theorem mem_trivializationAt_baseSet_of_mem_extChartAt_source [IsManifold I 1 M] {x y : M}
+    (hy : y ∈ (extChartAt I x).source) :
+    y ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
+  rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+
 /-- The inverse of the extended chart at `x` sends its target into the base set of the canonical
 tangent-bundle trivialization at `x`. -/
 theorem extChartAt_symm_mem_trivializationAt_baseSet [IsManifold I 1 M] {x : M} {z : E}
     (hz : z ∈ (extChartAt I x).target) :
-    (extChartAt I x).symm z ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
-  rw [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
-  exact (extChartAt I x).map_target hz
+    (extChartAt I x).symm z ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
+  mem_trivializationAt_baseSet_of_mem_extChartAt_source ((extChartAt I x).map_target hz)
 
 /-- The canonical tangent trivialization of an intrinsic chart source covers that whole source. -/
 theorem trivializationAt_chartSource_baseSet [IsManifold I 1 M] (x : M) :
@@ -292,6 +299,25 @@ theorem extChartAt_tangent_self_snd (v : TangentBundle I M) :
   simp only [extChartAt_coe, Function.comp_apply, modelWithCorners_prod_coe, Prod.map_snd,
     modelWithCornersSelf_coe, id_eq, TangentBundle.coe_chartAt_snd]
   exact tangentCoordChange_self (mem_extChartAt_source v.proj)
+
+/-- Every chart of the tangent bundle of the model space `E` reads a tangent vector `w ∈ T_q E` as
+the pair `(q, w)`. -/
+theorem _root_.TangentBundle.extChartAt_modelSpace_apply (v w : TangentBundle 𝓘(𝕜, E) E) :
+    extChartAt 𝓘(𝕜, E).tangent v w = ((w.proj, w.snd) : E × E) := by
+  rw [extChartAt_coe, tangentBundle_model_space_coe_chartAt, modelWithCorners_prod_coe,
+    modelWithCornersSelf_coe, Prod.map_id]
+  -- The left side is `(id ∘ TotalSpace.toProd E E) w`, definitionally `TotalSpace.toProd E E w`.
+  exact TotalSpace.toProd_apply E E w
+
+/-- The inverse of every chart of the tangent bundle of the model space `E` sends the pair
+`(q, w)` to the tangent vector `w ∈ T_q E`. -/
+theorem _root_.TangentBundle.extChartAt_modelSpace_symm_apply (v : TangentBundle 𝓘(𝕜, E) E)
+    (y : E × E) :
+    (extChartAt 𝓘(𝕜, E).tangent v).symm y = (⟨y.1, y.2⟩ : TangentBundle 𝓘(𝕜, E) E) := by
+  rw [extChartAt_coe_symm, tangentBundle_model_space_coe_chartAt_symm,
+    modelWithCorners_prod_coe_symm, modelWithCornersSelf_coe_symm, Prod.map_id]
+  exact TotalSpace.ext (TotalSpace.toProd_symm_apply_proj E E y)
+    (heq_of_eq (TotalSpace.toProd_symm_apply_snd E E y))
 
 /-- A point with coordinates `y` in the tangent-bundle chart at `v` lies over the base set of the
 trivialization at `v.proj`, and its fibre coordinate there is `y.2`. -/
@@ -896,6 +922,13 @@ theorem mfderiv_subtype_val {U : Opens M} (x : U) :
       (I.uniqueDiffOn.uniqueDiffWithinAt hxRange)]
   rfl
 
+/-- The differential of the inclusion of an open submanifold fixes every tangent vector, the
+tangent spaces of the open submanifold and of the ambient manifold being the same. -/
+theorem mfderiv_subtype_val_apply {U : Opens M} (x : U) (v : TangentSpace I x) :
+    mfderiv I I (Subtype.val : U → M) x v = v := by
+  rw [mfderiv_subtype_val]
+  exact tangentSpaceOpenEquiv_apply x v
+
 /-- The differential of an open-submanifold inclusion is injective. -/
 theorem mfderiv_subtype_val_injective {U : Opens M} (x : U) :
     Function.Injective (mfderiv I I (Subtype.val : U → M) x) := by
@@ -949,8 +982,8 @@ theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
     mfderiv J I ((Subtype.val : U → M) ∘ f) x v = mfderiv J I f x v := by
   by_cases hf : MDifferentiableAt J I f x
   · rw [mfderiv_comp x (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hf,
-      ContinuousLinearMap.comp_apply, mfderiv_subtype_val]
-    exact tangentSpaceOpenEquiv_apply _ _
+      ContinuousLinearMap.comp_apply]
+    exact mfderiv_subtype_val_apply _ _
   · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
       mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_subtype_val_comp_iff.not.mpr hf)]
     rfl
@@ -1012,22 +1045,6 @@ is injective. -/
 theorem injective_mvfderiv_subtype_val {U : Opens E} (x : U) :
     Function.Injective (mvfderiv 𝓘(𝕜, E) (Subtype.val : U → E) x) :=
   TauCeti.injective_mvfderiv_iff.2 (mfderiv_subtype_val_injective x)
-
-/-- For a map `u : U → F` from an open subset `U` of a normed space `E` into a normed space `F`
-and any ambient representative `u' : E → F` agreeing with `u` on `U`, the manifold derivative of
-`u` at `x : U`, read in `F`, equals the Fréchet derivative of `u'` at `x` (both are `0` when
-`u'` is not differentiable at `x`). -/
-theorem mvfderiv_opens_eq_fderiv_apply {U : Opens E} {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {u : U → F} {u' : E → F}
-    (hu : ∀ x : U, u' x = u x) (x : U) (v : TangentSpace 𝓘(𝕜, E) x) :
-    mvfderiv 𝓘(𝕜, E) u x v =
-      fderiv 𝕜 u' (x : E)
-        (NormedSpace.fromTangentSpace (x : E) (tangentSpaceOpenEquiv x v)) := by
-  have hcomp : u = u' ∘ (Subtype.val : U → E) := funext fun y ↦ (hu y).symm
-  rw [hcomp, mvfderiv_apply_eq_mfderiv_apply, mfderiv_comp_subtype_val_apply]
-  nth_rw 1 [← tangentSpaceOpenEquiv_apply x v]
-  rw [← mvfderiv_apply_eq_mfderiv_apply, mvfderiv_eq_fderiv_apply,
-    NormedSpace.fromTangentSpace_apply]
 
 /-- The tangent bundle of a model space is Hausdorff. -/
 theorem instT2SpaceTangentBundleModelSpace :
