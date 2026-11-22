@@ -149,6 +149,20 @@ theorem compRightAlgHomOfDiscrete_coe (φ : G →ₜ* H) :
     compRightAlgHomOfDiscrete (φ : G → H) = compRightAlgHom φ :=
   AlgHom.ext fun _ => ext fun _ => by simp
 
+/-- The pullback along the identity map is the identity. -/
+@[to_additive (attr := simp) /-- The pullback along the identity map is the identity. -/]
+theorem compRightAlgHomOfDiscrete_id :
+    compRightAlgHomOfDiscrete (id : G → G) = AlgHom.id ℝ (UCB G) :=
+  AlgHom.ext fun _ => ext fun _ => rfl
+
+/-- Pulling back along `s ∘ r` is pulling back along `s` and then along `r`. -/
+@[to_additive /-- Pulling back along `s ∘ r` is pulling back along `s` and then along `r`. -/]
+theorem compRightAlgHomOfDiscrete_comp {K : Type*} [Group K] [TopologicalSpace K]
+    [IsTopologicalGroup K] [DiscreteTopology H] (s : H → K) (r : G → H) :
+    compRightAlgHomOfDiscrete (s ∘ r) =
+      (compRightAlgHomOfDiscrete r).comp (compRightAlgHomOfDiscrete s) :=
+  AlgHom.ext fun _ => ext fun _ => rfl
+
 /-- The pullback preserves the pointwise order. -/
 @[to_additive /-- The pullback preserves the pointwise order. -/]
 theorem monotone_compRightAlgHomOfDiscrete (r : G → H) :

@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.Mean
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom.TypeTags
 public import TauCeti.Topology.Algebra.Group.UCB.Additive
-public import TauCeti.Topology.Algebra.Group.UCB.CompRight
 
 /-!
 # Amenable topological groups
@@ -152,6 +150,16 @@ theorem map_map (ψ : H →ₜ* K) (φ : G →ₜ* H) (m : Mean G) :
     (m.map φ).map ψ = m.map (ψ.comp φ) :=
   ext fun f => by simp [UCB.compRightAlgHom_comp]
 
+/-- Pushing forward along a topological group isomorphism and then along its inverse is the
+identity. -/
+@[to_additive
+  /-- Pushing forward along a topological additive-group isomorphism and then along its inverse is
+  the identity. -/]
+theorem map_symm_map (e : G ≃ₜ* H) (m : Mean G) :
+    (m.map (e : G →ₜ* H)).map (e.symm : H →ₜ* G) = m := by
+  rw [map_map, show ((e.symm : H →ₜ* G).comp (e : G →ₜ* H)) = ContinuousMonoidHom.id G from
+    ContinuousMonoidHom.ext fun x => e.symm_apply_apply x, map_id]
+
 end Mean
 
 namespace AddMean
@@ -257,37 +265,21 @@ variable {A : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
 /-- Precomposition with `AddUCB.equivMultiplicative.symm` (and its inverse
 `AddUCB.equivMultiplicative`) identifies additive means on `AddUCB A` with means on
 `UCB (Multiplicative A)`. -/
-def equivMultiplicative : AddMean A ≃ Mean (Multiplicative A) where
-  toFun m := Mean.mk₀
-    (m.toPositiveLinearMap.toLinearMap ∘ₗ AddUCB.equivMultiplicative.symm.toLinearMap)
-    (fun _ hf => by
-      simp only [LinearMap.comp_apply, PositiveLinearMap.coe_toLinearMap, coe_toPositiveLinearMap,
-        AlgEquiv.toLinearMap_apply]
-      exact map_nonneg m (by
-        simpa only [map_zero] using
-          AddUCB.equivMultiplicative_symm_le_equivMultiplicative_symm_iff.2 hf))
-    (by simp)
-  invFun m := mk₀
-    (m.toPositiveLinearMap.toLinearMap ∘ₗ AddUCB.equivMultiplicative.toLinearMap)
-    (fun _ hf => by
-      simp only [LinearMap.comp_apply, PositiveLinearMap.coe_toLinearMap,
-        Mean.coe_toPositiveLinearMap, AlgEquiv.toLinearMap_apply]
-      exact map_nonneg m (by
-        simpa only [map_zero] using
-          AddUCB.equivMultiplicative_le_equivMultiplicative_iff.2 hf))
-    (by simp)
-  left_inv m := ext fun f => by simp [mk₀_apply, Mean.mk₀_apply]
-  right_inv m := Mean.ext fun f => by simp [mk₀_apply, Mean.mk₀_apply]
+def equivMultiplicative : AddMean A ≃ Mean (Multiplicative A) :=
+  ((equivNormalizedPositiveLinearMap A).trans
+    (PositiveLinearMap.normalizedEquivOfAlgEquiv AddUCB.equivMultiplicative
+      AddUCB.equivMultiplicative_symm_le_equivMultiplicative_symm_iff)).trans
+    (Mean.equivNormalizedPositiveLinearMap (Multiplicative A)).symm
 
 @[simp]
 theorem equivMultiplicative_apply (m : AddMean A) (f : UCB (Multiplicative A)) :
-    equivMultiplicative m f = m (AddUCB.equivMultiplicative.symm f) :=
-  Mean.mk₀_apply _ _ _ f
+    equivMultiplicative m f = m (AddUCB.equivMultiplicative.symm f) := by
+  simp [equivMultiplicative]
 
 @[simp]
 theorem equivMultiplicative_symm_apply (m : Mean (Multiplicative A)) (f : AddUCB A) :
-    equivMultiplicative.symm m f = m (AddUCB.equivMultiplicative f) :=
-  mk₀_apply _ _ _ f
+    equivMultiplicative.symm m f = m (AddUCB.equivMultiplicative f) := by
+  simp [equivMultiplicative]
 
 /-- `equivMultiplicative` preserves and reflects left invariance. -/
 @[simp]
@@ -348,21 +340,20 @@ private def equivMultiplicativeAdditive : Mean G ≃ Mean (Multiplicative (Addit
     G →ₜ* Multiplicative (Additive G))
   invFun m := m.map (ContinuousMulEquiv.multiplicativeAdditive G :
     Multiplicative (Additive G) →ₜ* G)
-  left_inv m := by
-    dsimp only
-    rw [map_map, show ((ContinuousMulEquiv.multiplicativeAdditive G :
-        Multiplicative (Additive G) →ₜ* G).comp
-      ((ContinuousMulEquiv.multiplicativeAdditive G).symm :
-        G →ₜ* Multiplicative (Additive G))) = ContinuousMonoidHom.id G from
-      ContinuousMonoidHom.ext fun _ => by simp, map_id]
-  right_inv m := by
-    dsimp only
-    rw [map_map, show (((ContinuousMulEquiv.multiplicativeAdditive G).symm :
-        G →ₜ* Multiplicative (Additive G)).comp
-      (ContinuousMulEquiv.multiplicativeAdditive G :
-        Multiplicative (Additive G) →ₜ* G)) =
-      ContinuousMonoidHom.id (Multiplicative (Additive G)) from
-      ContinuousMonoidHom.ext fun _ => by simp, map_id]
+  left_inv m := map_symm_map (ContinuousMulEquiv.multiplicativeAdditive G).symm m
+  right_inv m := map_symm_map (ContinuousMulEquiv.multiplicativeAdditive G) m
+
+private theorem equivMultiplicativeAdditive_apply (m : Mean G) :
+    equivMultiplicativeAdditive G m =
+      m.map ((ContinuousMulEquiv.multiplicativeAdditive G).symm :
+        G →ₜ* Multiplicative (Additive G)) :=
+  (rfl)
+
+private theorem equivMultiplicativeAdditive_symm_apply (m : Mean (Multiplicative (Additive G))) :
+    (equivMultiplicativeAdditive G).symm m =
+      m.map (ContinuousMulEquiv.multiplicativeAdditive G :
+        Multiplicative (Additive G) →ₜ* G) :=
+  (rfl)
 
 /-- Precomposition with `UCB.equivAdditive.symm` (and its inverse `UCB.equivAdditive`) identifies
 means on `UCB G` with additive means on `AddUCB (Additive G)`. -/
@@ -372,7 +363,7 @@ def equivAdditive : Mean G ≃ AddMean (Additive G) :=
 @[simp]
 theorem equivAdditive_apply (m : Mean G) (f : AddUCB (Additive G)) :
     equivAdditive m f = m (UCB.equivAdditive.symm f) := by
-  simp only [equivAdditive, equivMultiplicativeAdditive, Equiv.trans_apply, Equiv.coe_fn_mk,
+  simp only [equivAdditive, Equiv.trans_apply, equivMultiplicativeAdditive_apply,
     AddMean.equivMultiplicative_symm_apply, map_apply]
   congr 1
   ext x
@@ -381,8 +372,8 @@ theorem equivAdditive_apply (m : Mean G) (f : AddUCB (Additive G)) :
 @[simp]
 theorem equivAdditive_symm_apply (m : AddMean (Additive G)) (f : UCB G) :
     equivAdditive.symm m f = m (UCB.equivAdditive f) := by
-  simp only [equivAdditive, equivMultiplicativeAdditive, Equiv.symm_trans_apply, Equiv.symm_symm,
-    Equiv.coe_fn_symm_mk, map_apply, AddMean.equivMultiplicative_apply]
+  simp only [equivAdditive, Equiv.symm_trans_apply, equivMultiplicativeAdditive_symm_apply,
+    map_apply, Equiv.symm_symm, AddMean.equivMultiplicative_apply]
   congr 1
   ext x
   simp
@@ -397,9 +388,7 @@ theorem isLeftInvariant_equivAdditive_iff {m : Mean G} :
   refine ⟨fun hm => ?_, fun hm =>
     hm.map (φ := (e.symm : G →ₜ* Multiplicative (Additive G))) e.symm.surjective.denseRange⟩
   have h := hm.map (φ := (e : Multiplicative (Additive G) →ₜ* G)) e.surjective.denseRange
-  rwa [show ((equivMultiplicativeAdditive G m).map
-    (e : Multiplicative (Additive G) →ₜ* G)) = m from
-    (equivMultiplicativeAdditive G).left_inv m] at h
+  rwa [← equivMultiplicativeAdditive_symm_apply, Equiv.symm_apply_apply] at h
 
 /-- `equivAdditive.symm` preserves and reflects left invariance. -/
 @[simp]

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.Amenable.Basic
 public import TauCeti.Topology.Algebra.Group.UCB.Discrete
-import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # Discrete invariant means
@@ -50,35 +49,7 @@ section Discrete
 
 variable [DiscreteTopology G]
 
-private def positiveLinearMapEquivOfAlgEquiv {U V : Type*}
-    [Semiring U] [PartialOrder U] [Algebra ℝ U]
-    [Semiring V] [PartialOrder V] [Algebra ℝ V]
-    (e : U ≃ₐ[ℝ] V) (hle : ∀ {f g : V}, e.symm f ≤ e.symm g ↔ f ≤ g) :
-    {m : U →ₚ[ℝ] ℝ // m 1 = 1} ≃ {m : V →ₚ[ℝ] ℝ // m 1 = 1} where
-  toFun m := ⟨{
-    toLinearMap := m.val.toLinearMap ∘ₗ e.symm.toLinearMap
-    monotone' := fun _ _ h => OrderHomClass.mono m.val (hle.2 h) },
-    (congrArg m.val e.symm.map_one).trans m.property⟩
-  invFun m := ⟨{
-    toLinearMap := m.val.toLinearMap ∘ₗ e.toLinearMap
-    monotone' := fun _ _ h => OrderHomClass.mono m.val <| hle.1 <| by
-      simpa only [AlgEquiv.toLinearMap_apply, AlgEquiv.symm_apply_apply] using h },
-    (congrArg m.val e.map_one).trans m.property⟩
-  left_inv m := Subtype.ext <| PositiveLinearMap.toLinearMap_injective <| LinearMap.ext fun f =>
-    congrArg m.val (e.symm_apply_apply f)
-  right_inv m := Subtype.ext <| PositiveLinearMap.toLinearMap_injective <| LinearMap.ext fun f =>
-    congrArg m.val (e.apply_symm_apply f)
-
 namespace Mean
-
-@[to_additive]
-private def equivNormalizedPositiveLinearMap (G : Type*) [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] : Mean G ≃ {m : UCB G →ₚ[ℝ] ℝ // m 1 = 1} where
-  toFun m := ⟨m.toPositiveLinearMap, m.map_one⟩
-  invFun m := mk₀ m.val.toLinearMap (fun _ hf => map_nonneg m.val hf) m.property
-  left_inv _ := ext fun f => mk₀_apply _ _ _ f
-  right_inv _ := Subtype.ext <| PositiveLinearMap.toLinearMap_injective <| LinearMap.ext fun f =>
-    mk₀_apply _ _ _ f
 
 variable (G) in
 /-- Means on a discrete group correspond to normalized positive linear functionals on all
@@ -86,20 +57,19 @@ bounded functions. -/
 def boundedContinuousFunctionEquiv :
     Mean G ≃ {m : (G →ᵇ ℝ) →ₚ[ℝ] ℝ // m 1 = 1} :=
   (equivNormalizedPositiveLinearMap G).trans
-    (positiveLinearMapEquivOfAlgEquiv (UCB.discreteAlgEquiv G)
+    (PositiveLinearMap.normalizedEquivOfAlgEquiv (UCB.discreteAlgEquiv G)
       UCB.discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff)
 
 @[simp]
 theorem boundedContinuousFunctionEquiv_apply (m : Mean G) (f : G →ᵇ ℝ) :
-    (boundedContinuousFunctionEquiv G m).val f = m ((UCB.discreteAlgEquiv G).symm f) :=
-  (rfl)
+    (boundedContinuousFunctionEquiv G m).val f = m ((UCB.discreteAlgEquiv G).symm f) := by
+  simp [boundedContinuousFunctionEquiv]
 
 @[simp]
 theorem boundedContinuousFunctionEquiv_symm_apply
     (m : {m : (G →ᵇ ℝ) →ₚ[ℝ] ℝ // m 1 = 1}) (f : UCB G) :
     (boundedContinuousFunctionEquiv G).symm m f = m.val (f : G →ᵇ ℝ) := by
-  simp [boundedContinuousFunctionEquiv, equivNormalizedPositiveLinearMap,
-    positiveLinearMapEquivOfAlgEquiv, mk₀_apply]
+  simp [boundedContinuousFunctionEquiv]
 
 /-- The correspondence of means preserves and reflects left invariance. -/
 theorem isLeftInvariant_iff_boundedContinuousFunction (m : Mean G) :
@@ -151,7 +121,7 @@ theorem mapOfDiscrete_coe (φ : G →ₜ* H) (m : Mean G) : m.mapOfDiscrete (φ 
   /-- Pushing forward an additive mean on a discrete additive group along the identity map is the
   identity. -/]
 theorem mapOfDiscrete_id (m : Mean G) : m.mapOfDiscrete id = m :=
-  ext fun _ => by simp only [mapOfDiscrete_apply]; exact congrArg m (UCB.ext fun _ => by simp)
+  (mapOfDiscrete_coe (ContinuousMonoidHom.id G) m).trans (map_id m)
 
 /-- If `r (φ b + x) = b + r x` for an additive homomorphism `φ : B →+ A`, then the pushforward
 of a left-invariant additive mean along `r` is left invariant. -/
@@ -182,23 +152,7 @@ theorem mapOfDiscrete_mapOfDiscrete {H K : Type*} [Group H] [TopologicalSpace H]
     [DiscreteTopology H] [Group K] [TopologicalSpace K] [IsTopologicalGroup K]
     (s : H → K) (r : G → H) (m : Mean G) :
     (m.mapOfDiscrete r).mapOfDiscrete s = m.mapOfDiscrete (s ∘ r) :=
-  ext fun _ => by simp only [mapOfDiscrete_apply]; exact congrArg m (UCB.ext fun _ => by simp)
-
-/-- Pushing forward a mean on a discrete group along the quotient-by-kernel isomorphism agrees with
-pushing forward directly to the range. -/
-@[to_additive
-  /-- Pushing forward an additive mean on a discrete additive group along the quotient-by-kernel
-  isomorphism agrees with pushing forward directly to the range. -/]
-theorem mapOfDiscrete_quotientKerEquivRange {H : Type*} [Group H] [TopologicalSpace H]
-    [IsTopologicalGroup H] (φ : G →* H) (m : Mean G) :
-    letI := QuotientGroup.discreteTopology (isOpen_discrete (φ.ker : Set G))
-    (m.mapOfDiscrete (QuotientGroup.mk' φ.ker)).mapOfDiscrete
-        (QuotientGroup.quotientKerEquivRange φ) =
-      m.mapOfDiscrete φ.rangeRestrict := by
-  have := QuotientGroup.discreteTopology (isOpen_discrete (φ.ker : Set G))
-  rw [mapOfDiscrete_mapOfDiscrete]
-  exact congrArg (m.mapOfDiscrete ·)
-    (funext (TauCeti.QuotientGroup.quotientKerEquivRange_apply_mk φ))
+  ext fun f => by simp [UCB.compRightAlgHomOfDiscrete_comp]
 
 end Mean
 
@@ -212,20 +166,19 @@ functionals on all bounded functions. -/
 def boundedContinuousFunctionEquiv :
     AddMean A ≃ {m : (A →ᵇ ℝ) →ₚ[ℝ] ℝ // m 1 = 1} :=
   (equivNormalizedPositiveLinearMap A).trans
-    (positiveLinearMapEquivOfAlgEquiv (AddUCB.discreteAlgEquiv A)
+    (PositiveLinearMap.normalizedEquivOfAlgEquiv (AddUCB.discreteAlgEquiv A)
       AddUCB.discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff)
 
 @[simp]
 theorem boundedContinuousFunctionEquiv_apply (m : AddMean A) (f : A →ᵇ ℝ) :
-    (boundedContinuousFunctionEquiv A m).val f = m ((AddUCB.discreteAlgEquiv A).symm f) :=
-  (rfl)
+    (boundedContinuousFunctionEquiv A m).val f = m ((AddUCB.discreteAlgEquiv A).symm f) := by
+  simp [boundedContinuousFunctionEquiv]
 
 @[simp]
 theorem boundedContinuousFunctionEquiv_symm_apply
     (m : {m : (A →ᵇ ℝ) →ₚ[ℝ] ℝ // m 1 = 1}) (f : AddUCB A) :
     (boundedContinuousFunctionEquiv A).symm m f = m.val (f : A →ᵇ ℝ) := by
-  simp [boundedContinuousFunctionEquiv, equivNormalizedPositiveLinearMap,
-    positiveLinearMapEquivOfAlgEquiv, mk₀_apply]
+  simp [boundedContinuousFunctionEquiv]
 
 /-- The correspondence of additive means preserves and reflects left invariance. -/
 theorem isLeftInvariant_iff_boundedContinuousFunction (m : AddMean A) :

@@ -34,15 +34,16 @@ restricts to a function in the `UCB` space of each of them.
 
 ## Main results
 
-* `TauCeti.Amenable.of_forall_finset_subset_range`: a topological group is amenable if each of its
-  finite subsets lies in the range of a continuous homomorphism from an amenable topological group,
-  drawn from a fixed family.
-* `TauCeti.amenable_iSup_of_directed`: the supremum of a directed family of amenable subgroups is
-  an amenable subgroup.
-* `TauCeti.Amenable.of_directed_of_iSup_eq_top`: a topological group which is the supremum of a
-  directed family of amenable subgroups is amenable.
-* `TauCeti.Amenable.of_forall_fg`: a topological group whose finitely generated subgroups are
-  amenable is amenable.
+* `TauCeti.Amenable.of_forall_finset_subset_range`,
+  `TauCeti.AddAmenable.of_forall_finset_subset_range`: a topological group is amenable if each of
+  its finite subsets lies in the range of a continuous homomorphism from an amenable topological
+  group, drawn from a fixed family.
+* `TauCeti.amenable_iSup_of_directed`, `TauCeti.addAmenable_iSup_of_directed`: the supremum of a
+  directed family of amenable subgroups is an amenable subgroup.
+* `TauCeti.Amenable.of_directed_of_iSup_eq_top`, `TauCeti.AddAmenable.of_directed_of_iSup_eq_top`:
+  a topological group which is the supremum of a directed family of amenable subgroups is amenable.
+* `TauCeti.Amenable.of_forall_fg`, `TauCeti.AddAmenable.of_forall_fg`: a topological group whose
+  finitely generated subgroups are amenable is amenable.
 
 ## References
 
@@ -105,5 +106,69 @@ theorem Amenable.of_forall_fg (h : ∀ K : Subgroup G, K.FG → Amenable K) : Am
     (fun K : {K : Subgroup G // K.FG} => ContinuousMonoidHom.subgroupSubtype K.val) fun s => ?_
   refine ⟨⟨Subgroup.closure s, (Group.fg_iff_subgroup_fg _).1 inferInstance⟩, fun x hx => ?_⟩
   exact ⟨⟨x, Subgroup.subset_closure hx⟩, rfl⟩
+
+section Additive
+
+variable {A : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+
+/-- An additive topological group `A` is amenable if, for a family of continuous additive
+homomorphisms `φ i : K i →ₜ+ A` from amenable additive topological groups, every finite subset of
+`A` lies in the range of some `φ i`. -/
+theorem AddAmenable.of_forall_finset_subset_range {ι : Type*} {K : ι → Type*}
+    [∀ i, AddGroup (K i)] [∀ i, TopologicalSpace (K i)] [∀ i, IsTopologicalAddGroup (K i)]
+    [∀ i, AddAmenable (K i)] (φ : ∀ i, K i →ₜ+ A)
+    (h : ∀ s : Finset A, ∃ i, (s : Set A) ⊆ Set.range (φ i)) : AddAmenable A := by
+  classical
+  refine ⟨.of_forall_finset_subset_range (fun i => (φ i).toMultiplicative) fun s => ?_⟩
+  obtain ⟨i, hi⟩ := h (s.image Multiplicative.toAdd)
+  refine ⟨i, fun x hx => ?_⟩
+  obtain ⟨k, hk⟩ := hi (Finset.mem_coe.2 (Finset.mem_image_of_mem Multiplicative.toAdd hx))
+  exact ⟨Multiplicative.ofAdd k, by simp [hk]⟩
+
+attribute [to_additive existing] Amenable.of_forall_finset_subset_range
+
+/-- The supremum `⨆ i, H i` of a directed family of amenable additive subgroups `H i` of an
+additive topological group is an amenable additive subgroup. -/
+theorem addAmenable_iSup_of_directed {ι : Type*} {H : ι → AddSubgroup A}
+    (hH : Directed (· ≤ ·) H) [∀ i, AddAmenable (H i)] : AddAmenable ↥(⨆ i, H i) := by
+  have : ∀ i, Amenable ((H i).toSubgroup) :=
+    fun i => (H i).toSubgroupContinuousMulEquiv.amenable_iff.1 inferInstance
+  have hdir : Directed (· ≤ ·) fun i => (H i).toSubgroup := fun i j => by
+    obtain ⟨k, hik, hjk⟩ := hH i j
+    exact ⟨k, AddSubgroup.toSubgroup.monotone hik, AddSubgroup.toSubgroup.monotone hjk⟩
+  have hsup : Amenable ↥((⨆ i, H i).toSubgroup) := by
+    rw [OrderIso.map_iSup AddSubgroup.toSubgroup]
+    exact amenable_iSup_of_directed hdir
+  exact ⟨(⨆ i, H i).toSubgroupContinuousMulEquiv.amenable_iff.2 hsup⟩
+
+attribute [to_additive existing addAmenable_iSup_of_directed] amenable_iSup_of_directed
+
+/-- An additive topological group which is the supremum of a directed family of amenable additive
+subgroups is amenable. -/
+theorem AddAmenable.of_directed_of_iSup_eq_top {ι : Type*} {H : ι → AddSubgroup A}
+    (hH : Directed (· ≤ ·) H) (htop : ⨆ i, H i = ⊤) [∀ i, AddAmenable (H i)] : AddAmenable A := by
+  have : ∀ i, Amenable ((H i).toSubgroup) :=
+    fun i => (H i).toSubgroupContinuousMulEquiv.amenable_iff.1 inferInstance
+  have hdir : Directed (· ≤ ·) fun i => (H i).toSubgroup := fun i j => by
+    obtain ⟨k, hik, hjk⟩ := hH i j
+    exact ⟨k, AddSubgroup.toSubgroup.monotone hik, AddSubgroup.toSubgroup.monotone hjk⟩
+  refine ⟨.of_directed_of_iSup_eq_top hdir ?_⟩
+  rw [← OrderIso.map_iSup AddSubgroup.toSubgroup, htop, OrderIso.map_top]
+
+attribute [to_additive existing] Amenable.of_directed_of_iSup_eq_top
+
+/-- An additive topological group all of whose finitely generated additive subgroups are amenable
+is amenable. -/
+theorem AddAmenable.of_forall_fg (h : ∀ K : AddSubgroup A, K.FG → AddAmenable K) :
+    AddAmenable A := by
+  refine ⟨.of_forall_fg fun K hK => ?_⟩
+  let K' : AddSubgroup A := AddSubgroup.toSubgroup.symm K
+  have hK' : AddAmenable K' := h K' ((AddSubgroup.fg_iff_mul_fg K').2 (by simpa [K'] using hK))
+  have heq : K'.toSubgroup = K := AddSubgroup.toSubgroup.apply_symm_apply K
+  exact heq ▸ K'.toSubgroupContinuousMulEquiv.amenable_iff.1 inferInstance
+
+attribute [to_additive existing] Amenable.of_forall_fg
+
+end Additive
 
 end TauCeti
