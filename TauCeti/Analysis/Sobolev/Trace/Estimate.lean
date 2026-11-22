@@ -24,8 +24,8 @@ of the norm of its value at the endpoint of a half-line bounded by the integral 
 `(r - 1) ‖g‖ʳ + ‖g'‖ʳ` on that half-line (`TauCeti.norm_rpow_le_integral_Ioi`); for `r = 2` this
 is the `H¹` energy. Integrating this estimate over the transverse variables supplies the
 flat-boundary `W^{1,p}` trace inequality. The energy density `(r - 1) ‖u‖ʳ + ‖Du‖ʳ` of a
-compactly supported `C¹` function between normed spaces is continuous with compact support
-(`TauCeti.continuous_rpow_energy`, `TauCeti.hasCompactSupport_rpow_energy`), and
+compactly supported `C¹` function between normed spaces is continuous for `0 ≤ r` and has
+compact support (`TauCeti.continuous_rpow_energy`, `TauCeti.hasCompactSupport_rpow_energy`), and
 `TauCeti.le_rpow_inv_mul_of_rpow_le` turns an inequality `xʳ ≤ (r - 1) yʳ + zʳ` into the linear
 bound `x ≤ r ^ r⁻¹ n` for `0 ≤ y, z ≤ n`.
 
@@ -96,28 +96,30 @@ section Energy
 variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G]
   [NormedSpace ℝ G]
 
-/-- For `1 ≤ r`, the `Lʳ` energy density `(r - 1) ‖u‖ʳ + ‖Du‖ʳ` of a `C¹` function is
-continuous. -/
-theorem continuous_rpow_energy {u : F → G} (hu : ContDiff ℝ 1 u) {r : ℝ} (hr : 1 ≤ r) :
+/-- For `0 ≤ r`, the density `(r - 1) ‖u‖ʳ + ‖Du‖ʳ` of a `C¹` function is continuous. For
+`1 ≤ r` this is the `Lʳ` energy density. -/
+theorem continuous_rpow_energy {u : F → G} (hu : ContDiff ℝ 1 u) {r : ℝ} (hr : 0 ≤ r) :
     Continuous fun x ↦ (r - 1) * ‖u x‖ ^ r + ‖fderiv ℝ u x‖ ^ r :=
-  (continuous_const.mul (hu.continuous.norm.rpow_const fun _ ↦ Or.inr (zero_le_one.trans hr))).add
-    ((hu.continuous_fderiv one_ne_zero).norm.rpow_const fun _ ↦ Or.inr (zero_le_one.trans hr))
+  (continuous_const.mul (hu.continuous.norm.rpow_const fun _ ↦ Or.inr hr)).add
+    ((hu.continuous_fderiv one_ne_zero).norm.rpow_const fun _ ↦ Or.inr hr)
 
-/-- For `1 ≤ r`, the `Lʳ` energy density `(r - 1) ‖u‖ʳ + ‖Du‖ʳ` of a compactly supported
-function has compact support. -/
-theorem hasCompactSupport_rpow_energy {u : F → G} (hsupp : HasCompactSupport u) {r : ℝ}
-    (hr : 1 ≤ r) : HasCompactSupport fun x ↦ (r - 1) * ‖u x‖ ^ r + ‖fderiv ℝ u x‖ ^ r := by
-  have hr0 : r ≠ 0 := (zero_lt_one.trans_le hr).ne'
+/-- The density `(r - 1) ‖u‖ʳ + ‖Du‖ʳ` of a compactly supported function has compact support,
+for every exponent `r`. For `r = 0` it vanishes identically. -/
+theorem hasCompactSupport_rpow_energy {u : F → G} (hsupp : HasCompactSupport u) (r : ℝ) :
+    HasCompactSupport fun x ↦ (r - 1) * ‖u x‖ ^ r + ‖fderiv ℝ u x‖ ^ r := by
+  rcases eq_or_ne r 0 with rfl | hr0
+  · simp only [Real.rpow_zero, zero_sub, mul_one, neg_add_cancel]
+    exact HasCompactSupport.zero
   exact (hsupp.mono fun x hx hz ↦ hx (by simp [hz, hr0])).add
     ((hsupp.fderiv ℝ).mono fun x hx hz ↦ hx (by simp [hz, hr0]))
 
 /-- The energy density of a compactly supported `C¹` curve is integrable. -/
 private theorem integrable_rpow_energy {g : ℝ → G} (hg : ContDiff ℝ 1 g)
-    (hs : HasCompactSupport g) {r : ℝ} (hr : 1 ≤ r) :
+    (hs : HasCompactSupport g) {r : ℝ} (hr : 0 ≤ r) :
     Integrable (fun t ↦ (r - 1) * ‖g t‖ ^ r + ‖deriv g t‖ ^ r) volume := by
   simpa only [← norm_deriv_eq_norm_fderiv] using
     (continuous_rpow_energy hg hr).integrable_of_hasCompactSupport
-      (hasCompactSupport_rpow_energy hs hr)
+      (hasCompactSupport_rpow_energy hs r)
 
 end Energy
 
@@ -152,7 +154,7 @@ theorem norm_rpow_le_integral_Ioi {g : ℝ → E} (hg : ContDiff ℝ 1 g) (hs : 
   rcases hr.eq_or_lt with rfl | hr1
   · -- For `r = 1`, the displacement from `a` to a point `c` beyond the support is at most the
     -- integral of the speed.
-    have hint := integrable_rpow_energy hg hs le_rfl
+    have hint := integrable_rpow_energy hg hs zero_le_one
     simp only [Real.rpow_one, sub_self, zero_mul, zero_add] at hint ⊢
     obtain ⟨b, hb⟩ := hs.isCompact.bddAbove
     set c := max a b + 1
@@ -193,7 +195,8 @@ theorem norm_rpow_le_integral_Ioi {g : ℝ → E} (hg : ContDiff ℝ 1 g) (hs : 
     calc ‖g a‖ ^ r = ∫ t in Ioi a, -deriv (fun t ↦ ‖g t‖ ^ r) t := by
           rw [integral_neg, hi, neg_neg]
       _ ≤ ∫ t in Ioi a, (r - 1) * ‖g t‖ ^ r + ‖deriv g t‖ ^ r :=
-          integral_mono hdv.neg.integrableOn (integrable_rpow_energy hg hs hr).integrableOn
+          integral_mono hdv.neg.integrableOn
+            (integrable_rpow_energy hg hs (zero_le_one.trans hr)).integrableOn
             fun t ↦ (neg_le_abs _).trans (hyoung t)
 
 /-- For `1 ≤ r`, the `r`-th power of the norm of a point value of a compactly supported `C¹`
@@ -202,7 +205,7 @@ theorem norm_rpow_le_integral {g : ℝ → E} (hg : ContDiff ℝ 1 g) (hs : HasC
     (a : ℝ) {r : ℝ} (hr : 1 ≤ r) :
     ‖g a‖ ^ r ≤ ∫ t, (r - 1) * ‖g t‖ ^ r + ‖deriv g t‖ ^ r :=
   (norm_rpow_le_integral_Ioi hg hs a hr).trans
-    (setIntegral_le_integral (integrable_rpow_energy hg hs hr)
+    (setIntegral_le_integral (integrable_rpow_energy hg hs (zero_le_one.trans hr))
       (.of_forall fun t ↦ by have := sub_nonneg.2 hr; positivity))
 
 end Curve

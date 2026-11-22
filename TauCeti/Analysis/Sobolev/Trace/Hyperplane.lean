@@ -87,9 +87,10 @@ private theorem abs_rpow_le_integral_Ioi_energy
       ∫ t : ℝ in Ioi a, ((r - 1) * |u (WithLp.toLp 2 (t, y))| ^ r +
         ‖fderiv ℝ u (WithLp.toLp 2 (t, y))‖ ^ r) := by
   set F : WithLp 2 (ℝ × E) → ℝ := fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r
-  have hFc : Continuous F := by simpa only [Real.norm_eq_abs] using continuous_rpow_energy hu hr
+  have hFc : Continuous F := by
+    simpa only [Real.norm_eq_abs] using continuous_rpow_energy hu (by linarith)
   have hs : HasCompactSupport F := by
-    simpa only [Real.norm_eq_abs] using hasCompactSupport_rpow_energy hsupp hr
+    simpa only [Real.norm_eq_abs] using hasCompactSupport_rpow_energy hsupp r
   have he : IsClosedEmbedding (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
     (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
       (.of_isEmbedding_isClosedMap (isEmbedding_prodMkLeft y) (isClosedMap_prodMk_right y))
@@ -129,9 +130,10 @@ theorem integral_hyperplane_abs_rpow_le_integral_halfSpace
       ∫ x : WithLp 2 (ℝ × E) in {x | a < (WithLp.ofLp x).1},
         (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r := by
   set F : WithLp 2 (ℝ × E) → ℝ := fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r
-  have hFc : Continuous F := by simpa only [Real.norm_eq_abs] using continuous_rpow_energy hu hr
+  have hFc : Continuous F := by
+    simpa only [Real.norm_eq_abs] using continuous_rpow_energy hu (by linarith)
   have hs : HasCompactSupport F := by
-    simpa only [Real.norm_eq_abs] using hasCompactSupport_rpow_energy hsupp hr
+    simpa only [Real.norm_eq_abs] using hasCompactSupport_rpow_energy hsupp r
   have hint : Integrable F volume := hFc.integrable_of_hasCompactSupport hs
   have hprod : Integrable (fun z : ℝ × E ↦ F (WithLp.toLp 2 z)) (volume.prod volume) :=
     (WithLp.volume_preserving_toLp ℝ E).integrable_comp hint.aestronglyMeasurable |>.mpr hint
@@ -168,8 +170,8 @@ theorem integral_hyperplane_abs_rpow_le_integral
   (integral_hyperplane_abs_rpow_le_integral_halfSpace hu hsupp a hr).trans
     (setIntegral_le_integral (by
       simpa only [Real.norm_eq_abs] using
-        (continuous_rpow_energy hu hr).integrable_of_hasCompactSupport
-          (hasCompactSupport_rpow_energy hsupp hr))
+        (continuous_rpow_energy hu (by linarith)).integrable_of_hasCompactSupport
+          (hasCompactSupport_rpow_energy hsupp r))
       (Filter.Eventually.of_forall (rpow_energy_nonneg u hr)))
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
