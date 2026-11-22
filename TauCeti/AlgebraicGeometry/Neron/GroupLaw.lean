@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 public import Mathlib.CategoryTheory.Monoidal.CommMon_
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Over
 public import TauCeti.AlgebraicGeometry.Neron.Model
 
 /-!
@@ -66,29 +67,11 @@ universe u
 
 variable {T S : Scheme.{u}}
 
-/-- The product in `Over S` of two smooth `S`-schemes is smooth over `S`. -/
-instance smooth_tensorObj_hom (X Y : Over S) [Smooth X.hom] [Smooth Y.hom] :
-    Smooth (X ⊗ Y).hom := by
-  rw [Over.tensorObj_hom]
-  infer_instance
-
-/-- The monoidal unit of `Over S`, the base `S` itself, is smooth over `S`. -/
-instance smooth_tensorUnit_hom : Smooth (𝟙_ (Over S)).hom := by
-  rw [Over.tensorUnit_hom]
-  exact inferInstanceAs (Smooth (𝟙 S))
-
 namespace Neron
 
 namespace NeronModel
 
 variable {j : T ⟶ S} {A B : Over T} [GrpObj A] (M : NeronModel j A)
-
-omit [GrpObj A] in
-/-- The base change of the extension of `f` is `f` followed by the inverse of the marking. -/
-private theorem map_extend_eq_comp_inv {Y : Over S} [Smooth Y.hom]
-    (f : (Over.pullback j).obj Y ⟶ A) :
-    (Over.pullback j).map (M.extend Y f) = f ≫ M.genericIso.inv := by
-  simp [← cancel_mono M.genericIso.hom]
 
 /-- The group law of a Néron model: the identity, multiplication and inverse are the extensions
 of those of `A`, transported to the base change of the model along the marking
