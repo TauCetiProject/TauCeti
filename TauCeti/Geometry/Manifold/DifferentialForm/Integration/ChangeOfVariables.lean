@@ -384,27 +384,34 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn
     (e.isOpen_inter_preimage_symm (chartAt H _).open_source).inter (chartAt H' q).open_source
   obtain ⟨t, ht⟩ := hφ.isCompact.elim_finite_subcover v hv fun y hy ↦
     mem_iUnion.mpr ⟨y, ⟨hφt hy, mem_chart_source H (e.symm y)⟩, mem_chart_source H' y⟩
-  let α : Fin t.card → N := fun i ↦ t.equivFin.symm i
-  let w : Fin t.card → Set N := fun i ↦ v (α i)
+  let t' := t.filter fun q ↦ (v q).Nonempty
+  let α : Fin t'.card → N := fun i ↦ t'.equivFin.symm i
+  let w : Fin t'.card → Set N := fun i ↦ v (α i)
   have hcover : _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ ⋃ i, w i := by
     intro y hy
     obtain ⟨q, hq, hyq⟩ := mem_iUnion₂.mp (ht hy)
-    exact mem_iUnion.mpr ⟨t.equivFin ⟨q, hq⟩, by simpa only [w, α, Equiv.symm_apply_apply]⟩
-  have hw (i : Fin t.card) : w i ⊆ (extChartAt J (α i)).source := fun y hy ↦ by
+    exact mem_iUnion.mpr ⟨t'.equivFin ⟨q, Finset.mem_filter.mpr ⟨hq, ⟨y, hyq⟩⟩⟩,
+      by simpa only [w, α, Equiv.symm_apply_apply]⟩
+  have hw (i : Fin t'.card) : w i ⊆ (extChartAt J (α i)).source := fun y hy ↦ by
     simpa only [extChartAt_source] using hy.2
-  let u : Fin t.card → Set M := fun i ↦ e.source ∩ e ⁻¹' w i
-  have hu (i : Fin t.card) : IsOpen (u i) := e.isOpen_inter_preimage (hv _)
-  have hus (i : Fin t.card) : u i ⊆ (extChartAt I (e.symm (α i))).source := fun x hx ↦ by
+  have hw_ne (i : Fin t'.card) : (w i).Nonempty :=
+    (Finset.mem_filter.mp (t'.equivFin.symm i).property).2
+  let u : Fin t'.card → Set M := fun i ↦ e.source ∩ e ⁻¹' w i
+  have hu (i : Fin t'.card) : IsOpen (u i) := e.isOpen_inter_preimage (hv _)
+  have hus (i : Fin t'.card) : u i ⊆ (extChartAt I (e.symm (α i))).source := fun x hx ↦ by
     have h := hx.2.1.2
     rw [mem_preimage, e.left_inv hx.1] at h
     simpa only [extChartAt_source] using h
+  have hu_ne (i : Fin t'.card) : (u i).Nonempty :=
+    let ⟨y, hy⟩ := hw_ne i
+    ⟨e.symm y, e.map_target hy.1.1, by simpa [w, mem_preimage, e.right_inv hy.1.1] using hy⟩
   have hψcover : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ ⊆ ⋃ i, u i := fun x hx ↦ by
     obtain ⟨i, hi⟩ := mem_iUnion.mp (hcover (e.mapsTo_tsupport_of_eq_mpullback hfe hψ hψφ hx))
     exact mem_iUnion.mpr ⟨i, hψ hx, hi⟩
   let cψ : ChartCover I (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ) :=
-    ⟨t.card, fun i ↦ e.symm (α i), u, hu, hus, hψcover⟩
+    ⟨t'.card, fun i ↦ e.symm (α i), u, hu, hus, hu_ne, hψcover⟩
   let cφ : ChartCover J (_root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ) :=
-    ⟨t.card, α, w, fun i ↦ hv _, hw, hcover⟩
+    ⟨t'.card, α, w, fun i ↦ hv _, hw, hw_ne, hcover⟩
   rw [integralTopForm_eq_chartCover_integral l ψ hψi b cψ Subset.rfl,
     integralTopForm_eq_chartCover_integral l' φ hφ (b.map C.toLinearEquiv) cφ Subset.rfl,
     ChartCover.integral_eq_sum, ChartCover.integral_eq_sum, hl, Orientation.signBasis_map]
@@ -417,8 +424,8 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn
     exact ⟨fun ⟨⟨hs, hw⟩, h⟩ ↦ ⟨hs, hw, fun j hj hj' ↦ h j hj ⟨hs, hj'⟩⟩,
       fun ⟨hs, hw, h⟩ ↦ ⟨⟨hs, hw⟩, fun j hj hj' ↦ h j hj hj'.2⟩⟩
   have hs : IsChartMeasurable I (disjointed u i) := by
-    rw [disjointed_apply, Finset.sup_set_eq_biUnion]
-    exact (hu i).isChartMeasurable.diff (isOpen_biUnion fun j _ ↦ hu j).isChartMeasurable
+    have h := cψ.isChartMeasurable_piece i
+    rwa [ChartCover.piece_eq_disjointed] at h
   have hβ : disjointed u i ⊆ (extChartAt I (e.symm (α i))).source :=
     (disjointed_subset u i).trans (hus i)
   rw [hdisj] at hs hβ ⊢
@@ -546,12 +553,15 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt {f : M → N}
     obtain ⟨y, hy, hyx⟩ := hx
     rw [← hf.injective hyx]
     simpa only [extChartAt_source] using hy.1
+  have hw_ne (i : Fin t.card) : (w i).Nonempty :=
+    ⟨f (α i), mem_image_of_mem f ⟨mem_chart_source H (α i), mem_chart_source H' (f (α i))⟩⟩
   let cψ : ChartCover I (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (mpullback I J f φ)) :=
     ⟨t.card, α, fun i ↦ f ⁻¹' w i, fun i ↦ (hv _).preimage hf.continuous, hu,
+      fun i ↦ ⟨α i, mem_image_of_mem f ⟨mem_chart_source H (α i), mem_chart_source H' (f (α i))⟩⟩,
       (RoughForm.tsupport_mpullback_subset_preimage hf.continuous φ).trans
         (by simpa only [preimage_iUnion] using preimage_mono hcover)⟩
   let cφ : ChartCover J (_root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ) :=
-    ⟨t.card, fun i ↦ f (α i), w, fun i ↦ hv _, hw, hcover⟩
+    ⟨t.card, fun i ↦ f (α i), w, fun i ↦ hv _, hw, hw_ne, hcover⟩
   rw [integralTopForm_eq_chartCover_integral l _ (hint.mpr hφi) b cψ Subset.rfl,
     integralTopForm_eq_chartCover_integral l' φ hφi (b.map C.toLinearEquiv) cφ Subset.rfl,
     ChartCover.integral_eq_sum, ChartCover.integral_eq_sum, hl, Orientation.signBasis_map]
@@ -560,9 +570,9 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt {f : M → N}
   have hdisj : disjointed (fun j ↦ f ⁻¹' w j) i = f ⁻¹' disjointed w i := by
     simp only [disjointed_eq_inter_compl, preimage_inter, preimage_iInter, preimage_compl]
   have hs : IsChartMeasurable I (f ⁻¹' disjointed w i) := by
-    rw [disjointed_apply, preimage_sdiff, Finset.sup_set_eq_biUnion, preimage_iUnion₂]
-    exact ((hv _).preimage hf.continuous).isChartMeasurable.diff
-      (isOpen_biUnion fun j _ ↦ (hv _).preimage hf.continuous).isChartMeasurable
+    rw [← hdisj]
+    have h := cψ.isChartMeasurable_piece i
+    rwa [ChartCover.piece_eq_disjointed] at h
   have h := φ.integral_signedInChartAt_mpullback_eq b C l l' hl hf.injective.injOn
     (fun x _ ↦ ho x) hs
     (fun x hx ↦ ⟨hu i (preimage_mono (disjointed_subset w i) hx),

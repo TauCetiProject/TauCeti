@@ -50,6 +50,24 @@ public def IntegrableTopForm (φ : RoughForm I M ℝ k) : Prop := by
     ∀ (b : Module.Basis (Fin k) ℝ E) (α : M),
       Integrable (φ.signedInChartAt b α (fun _ ↦ 1)) b.addHaar
 
+/-- The support of the unsigned chart coefficient of `φ` at `α` lies in the coordinate image of
+`(extChartAt I α).source ∩ tsupport φ`. -/
+public theorem RoughForm.support_signedInChartAt_one_subset (φ : RoughForm I M ℝ k)
+    (b : Module.Basis (Fin k) ℝ E) (α : M) :
+    Function.support (φ.signedInChartAt b α (fun _ ↦ 1)) ⊆
+      (extChartAt I α) '' ((extChartAt I α).source ∩
+        _root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) := by
+  intro y hy
+  have hn := Function.mem_support.mp hy
+  by_cases ht : y ∈ (extChartAt I α).target
+  · have hne : φ ((extChartAt I α).symm y) ≠ 0 := fun hz ↦ hn <| by
+      rw [RoughForm.signedInChartAt_apply, dite_eq_left ht, RoughForm.inChartAt_apply, hz]
+      simp only [Units.val_one, Int.cast_one, one_mul, ContinuousAlternatingMap.coe_zero,
+        Pi.zero_apply]
+    exact ⟨(extChartAt I α).symm y, ⟨(extChartAt I α).map_target ht,
+      _root_.subset_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ hne⟩, (extChartAt I α).right_inv ht⟩
+  · exact False.elim (hn (by rw [RoughForm.signedInChartAt_apply, dite_eq_right ht]))
+
 section WithMeasure
 
 variable [MeasurableSpace E] [BorelSpace E]
@@ -84,16 +102,7 @@ public theorem RoughForm.integrableTopForm_of_open_cover {J : Type*}
   have hcoef (α : M) : Integrable (φ.signedInChartAt b α (fun _ ↦ 1)) b.addHaar :=
     integrable_of_open_cover_extChartAt (I := I) hc
       (fun γ ↦ φ.signedInChartAt b γ (fun _ ↦ 1)) b.addHaar β u hu hcover hlocal α
-      (fun y hy ↦ by
-        have hn := Function.mem_support.mp hy
-        by_cases ht : y ∈ (extChartAt I α).target
-        · have hne : φ ((extChartAt I α).symm y) ≠ 0 := fun hz ↦ hn <| by
-            rw [RoughForm.signedInChartAt_apply, dite_eq_left ht, RoughForm.inChartAt_apply, hz]
-            simp only [Units.val_one, Int.cast_one, one_mul, ContinuousAlternatingMap.coe_zero,
-              Pi.zero_apply]
-          exact ⟨(extChartAt I α).symm y, ⟨(extChartAt I α).map_target ht,
-            _root_.subset_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ hne⟩, (extChartAt I α).right_inv ht⟩
-        · exact False.elim (hn (by rw [RoughForm.signedInChartAt_apply, dite_eq_right ht])))
+      (φ.support_signedInChartAt_one_subset b α)
       fun i hi ↦ (φ.integrableOn_signedInChartAt_one_changeChart b α (β i)
         (s := (extChartAt I α).source ∩ u i)
         (fun _ hx ↦ ⟨hx.1, by simpa only [extChartAt_source] using hsource i hx.2⟩)

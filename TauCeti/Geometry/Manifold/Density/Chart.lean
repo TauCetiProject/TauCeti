@@ -19,8 +19,10 @@ import TauCeti.Geometry.Manifold.ExtChartAt.Cover
 # Coordinate expressions and chart coefficients of rough densities
 
 Defines `TauCeti.RoughDensity.inChartAt` and `TauCeti.RoughDensity.coeffInChartAt`, proves overlap
-Jacobian laws (`inChartAt_eq_compLinearMap`, `coeffInChartAt_changeChart`), bundle continuity
-(`continuousOn_inChartAt_of_continuousOn_section`), and `RoughForm.coeffInChartAt_toDensity`.
+Jacobian laws (`inChartAt_eq_compLinearMap`, `coeffInChartAt_changeChart`), chart transport and
+model-space normalization (`inChartAt_chart_eq_compLinearEquiv`, `inChartAt_modelSpace`,
+`coeffInChartAt_modelSpace`), bundle continuity (`continuousOn_inChartAt_of_continuousOn_section`),
+and `RoughForm.coeffInChartAt_toDensity`.
 
 ## References
 
@@ -102,7 +104,17 @@ theorem inChartAt_extChartAt_self (μ : RoughDensity I M m) (x : M) :
   -- `TangentSpace I x` is definitionally `E`, so `id ∘ v` agrees with `v`.
   ext v; rw [inChartAt_apply, (extChartAt I x).left_inv (mem_extChartAt_source x), hmf]; rfl
 
-private theorem inChartAt_chart_eq_compLinearEquiv [IsManifold I 1 M] (μ : RoughDensity I M m)
+/-- On a model normed space `E`, `inChartAt` in any preferred chart `α` is `μ` itself. -/
+theorem inChartAt_modelSpace (μ : RoughDensity 𝓘(ℝ, E) E m) (α : E) : μ.inChartAt α = μ := by
+  funext x; ext v
+  rw [inChartAt_apply, extChartAt_model_space_eq_id]
+  simp only [PartialEquiv.refl_symm, PartialEquiv.refl_coe, modelWithCornersSelf_coe, range_id,
+    mfderivWithin_univ, mfderiv_id]
+  rfl
+
+/-- At the chart image of `x ∈ (extChartAt I α).source`, `μ.inChartAt α` is the pullback of `μ x`
+along the inverse preferred tangent-bundle trivialization at `α`. -/
+theorem inChartAt_chart_eq_compLinearEquiv [IsManifold I 1 M] (μ : RoughDensity I M m)
     {α x : M} (hx : x ∈ (extChartAt I α).source) :
     μ.inChartAt α (extChartAt I α x) = Density.compLinearEquiv
       ((trivializationAt E (TangentSpace I) α).linearEquivAt ℝ x
@@ -176,10 +188,9 @@ def coeffInChartAt (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) 
 
 /-- `coeffInChartAt` agrees with evaluating the zero-extended coordinate density on `b`. -/
 theorem coeffInChartAt_eq_indicator_apply (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M)
-    (y : E) : μ.coeffInChartAt b α y = ((extChartAt I α).target.indicator (μ.inChartAt α) y) b := by
-  by_cases hy : y ∈ (extChartAt I α).target
-  · rw [coeffInChartAt, indicator_of_mem hy, indicator_of_mem hy]
-  · rw [coeffInChartAt, indicator_of_notMem hy, indicator_of_notMem hy, Density.zero_apply]
+    (y : E) : μ.coeffInChartAt b α y = ((extChartAt I α).target.indicator (μ.inChartAt α) y) b :=
+  congrFun (Set.indicator_comp_of_zero (f := μ.inChartAt α)
+    (g := fun d : Density E m ↦ d b) (Density.zero_apply b)) y
 
 open scoped Classical in
 /-- Pointwise formula for `coeffInChartAt`, zero outside `(extChartAt I α).target`. -/
@@ -254,14 +265,20 @@ theorem coeffInChartAt_indicator (s : Set M) (μ : RoughDensity I M m) (b : Basi
     coeffInChartAt (I := I) (fun x ↦ s.indicator (fun _ ↦ (1 : ℝ)) x • μ x) b α y =
       ((extChartAt I α).target ∩ (extChartAt I α).symm ⁻¹' s).indicator
         (μ.coeffInChartAt b α) y := by
-  rw [coeffInChartAt_fun_smul]
-  by_cases hy : y ∈ (extChartAt I α).target
-  · by_cases hs : (extChartAt I α).symm y ∈ s
-    · rw [indicator_of_mem hs, one_mul, indicator_of_mem (mem_inter hy (mem_preimage.mpr hs))]
-    · rw [indicator_of_notMem hs, zero_mul,
-        indicator_of_notMem (mt mem_of_mem_inter_right (mt mem_preimage.mp hs))]
-  · rw [μ.coeffInChartAt_apply_of_notMem_target b α hy, mul_zero,
-      indicator_of_notMem (mt mem_of_mem_inter_left hy)]
+  have hidem : (extChartAt I α).target.indicator (μ.coeffInChartAt b α) y =
+      μ.coeffInChartAt b α y := by
+    rw [coeffInChartAt, Set.indicator_indicator, inter_self]
+  rw [coeffInChartAt_fun_smul, ← Set.indicator_comp_right, mul_comm, ← hidem,
+    ← Set.inter_indicator_mul]
+  simp only [Function.comp_apply, mul_one]
+
+/-- On a model normed space `E`, `coeffInChartAt` in any preferred chart `α` reduces to
+evaluating `μ` directly on `b`. -/
+@[simp] theorem coeffInChartAt_modelSpace (μ : RoughDensity 𝓘(ℝ, E) E m)
+    (b : Basis (Fin m) ℝ E) (α : E) : μ.coeffInChartAt b α = fun x ↦ μ x b := by
+  funext x
+  rw [μ.coeffInChartAt_apply_of_mem_target b α (by simp), μ.inChartAt_modelSpace]
+  rfl
 
 /-- Equal densities on `s ⊆ (extChartAt I α).source` have equal `coeffInChartAt` on `e '' s`. -/
 theorem eqOn_coeffInChartAt_image {μ ν : RoughDensity I M m} {s : Set M} (h : ∀ x ∈ s, μ x = ν x)
@@ -429,8 +446,8 @@ theorem inChartAt_toDensity_apply_basis (φ : RoughForm I M ℝ m)
       (Orientation.signBasis l.modelOrientation b : ℝ) *
         (l.signAt α ((extChartAt I α).symm y) : ℝ) * φ.inChartAt α y b := by
   set x := (extChartAt I α).symm y
-  have hx : x ∈ (chartAt H α).source := by
-    simpa only [extChartAt_source] using (extChartAt I α).map_target hy
+  have hxs : x ∈ (extChartAt I α).source := (extChartAt I α).map_target hy
+  have hx : x ∈ (chartAt H α).source := by simpa only [extChartAt_source] using hxs
   let e : TangentSpace I x ≃ₗ[ℝ] E := (trivializationAt E (TangentSpace I) α).linearEquivAt ℝ x
     (by rwa [TangentBundle.trivializationAt_baseSet])
   let b' : Basis (Fin m) ℝ (TangentSpace I x) := b.map e.symm
@@ -445,8 +462,10 @@ theorem inChartAt_toDensity_apply_basis (φ : RoughForm I M ℝ m)
       l.chartOrientation_eq_ite, l.signAt_of_mem hx]
     rcases Int.units_eq_one_or (l.sign α ⟨x, hx⟩) with hs | hs <;>
       simp [hs, Orientation.signBasis_neg]
-  rw [RoughDensity.inChartAt_apply, RoughForm.inChartAt_apply, ← hb',
-    φ.toDensity_apply_basis, Manifold.Orientation.orientationAt_mk, hsign]
+  rw [← (extChartAt I α).right_inv hy, RoughDensity.inChartAt_chart_eq_compLinearEquiv _ hxs,
+    Density.compLinearEquiv_apply, (extChartAt I α).right_inv hy, RoughForm.inChartAt_apply, ← hb',
+    ← Basis.coe_map]
+  rw [φ.toDensity_apply_basis, Manifold.Orientation.orientationAt_mk, hsign]
 
 /-- At every point of `E`, `coeffInChartAt` of `φ.toDensity (Orientation.mk l)` equals
 `φ.signedInChartAt` weighted by the model-basis sign. -/

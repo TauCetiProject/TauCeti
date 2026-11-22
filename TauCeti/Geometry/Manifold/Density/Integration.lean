@@ -11,6 +11,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 public import TauCeti.Geometry.Manifold.ExtChartAt.Cover
 public import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Topology.PartitionOfUnity.Basic
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # Orientation-free integration of densities on manifolds
@@ -189,11 +190,14 @@ public theorem RoughDensity.integrableDensity_of_continuousOn_inChartAt [IsManif
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   let : MeasurableSpace E := borel E; have : BorelSpace E := ⟨rfl⟩
   let : LocallyCompactSpace H := I.locallyCompactSpace
-  obtain ⟨_, β, u, _, hu, hcover⟩ := exists_finite_precompact_chart_cover (I := I) hc
-  exact μ.integrableDensity_of_open_cover hc b β u (fun i ↦ (hu i).1)
-    (fun i ↦ by simpa only [extChartAt_source] using (hu i).2.1) hcover fun i ↦
-    (((μ.continuousOn_coeffInChartAt b (β i) (hμ (β i))).mono
-      (hu i).2.2.2.1).integrableOn_compact (hu i).2.2.1 (μ := b.addHaar)).mono_set (hu i).2.2.2.2
+  exact (integrableDensity_iff μ).mpr ⟨hc, ⟨b⟩, fun b' α ↦
+    (μ.integrable_coeffInChartAt_basis_iff b b' α).mpr <|
+      integrable_of_continuousOn_extChartAt hc (μ.coeffInChartAt b) b.addHaar
+        (fun γ ↦ μ.continuousOn_coeffInChartAt b γ (hμ γ)) α
+        (μ.support_coeffInChartAt_subset b α) fun γ u hu hsource ↦
+        (μ.coeffInChartAt_changeChart b α γ (s := (extChartAt I α).source ∩ u)
+          (fun _ hx ↦ ⟨hx.1, hsource hx.2⟩)
+          (hu.measurableSet_image_extChartAt_source_inter α) b.addHaar).2.mpr⟩
 
 /-- Every compactly supported continuous section of `TauCeti.DensityBundle` is integrable. -/
 public theorem RoughDensity.integrableDensity_of_continuous_section
@@ -451,15 +455,6 @@ public theorem integralDensity_eq_chartIntegral [IsManifold I 1 M]
   integralDensity_eq_chartIntegral_of_ae_support μ hi b α ((isNullSet_boundary (I := I)).mono
     fun _ hx ↦ False.elim (hx.2 (hs (_root_.subset_tsupport (α := Density E m) μ hx.1))))
 
-private theorem coeffInChartAt_model_zero (μ : RoughDensity 𝓘(ℝ, E) E m)
-    (b : Basis (Fin m) ℝ E) : μ.coeffInChartAt b 0 = fun x ↦ μ x b := by
-  funext x
-  rw [μ.coeffInChartAt_apply_of_mem_target b 0 (by simp), RoughDensity.inChartAt_apply,
-    extChartAt_model_space_eq_id]
-  simp only [PartialEquiv.refl_symm, PartialEquiv.refl_coe, modelWithCornersSelf_coe, range_id,
-    mfderivWithin_univ, mfderiv_id]
-  rfl
-
 /-- On a model normed space `E`, `μ` is integrable iff `tsupport μ` is compact and `x ↦ μ x b` is
 Haar-integrable against `b.addHaar` in any model basis `b`. -/
 public theorem integrableDensity_model_iff [MeasurableSpace E] [BorelSpace E]
@@ -467,10 +462,10 @@ public theorem integrableDensity_model_iff [MeasurableSpace E] [BorelSpace E]
     IntegrableDensity μ ↔
       IsCompact (_root_.tsupport (α := Density E m) μ) ∧ Integrable (fun x ↦ μ x b) b.addHaar := by
   refine ⟨fun hi ↦ ⟨hi.isCompact, ?_⟩, fun ⟨hc, hint⟩ ↦ ?_⟩
-  · rw [← coeffInChartAt_model_zero μ b]
+  · rw [← μ.coeffInChartAt_modelSpace b 0]
     exact hi.integrable_coeffInChartAt b 0
   · refine (μ.integrableDensity_iff_of_tsupport_subset_chart b 0 hc (by simp)).mpr ?_
-    rwa [coeffInChartAt_model_zero]
+    rwa [μ.coeffInChartAt_modelSpace b 0]
 
 /-- On `ℝ`, a `1`-density `μ` is integrable iff `tsupport μ` is compact and
 `t ↦ μ t (fun _ ↦ 1)` is Lebesgue-integrable. -/
@@ -486,7 +481,7 @@ public theorem integrableDensity_real_iff {μ : RoughDensity 𝓘(ℝ, ℝ) ℝ 
 public theorem integralDensity_model_eq_integral [MeasurableSpace E] [BorelSpace E]
     {μ : RoughDensity 𝓘(ℝ, E) E m} (hi : IntegrableDensity μ) (b : Basis (Fin m) ℝ E) :
     integralDensity μ = ∫ x, μ x b ∂b.addHaar := by
-  rw [integralDensity_eq_chartIntegral μ hi b 0 (by simp), coeffInChartAt_model_zero]
+  rw [integralDensity_eq_chartIntegral μ hi b 0 (by simp), μ.coeffInChartAt_modelSpace b 0]
 
 /-- On `ℝ`, the integral of an integrable `1`-density is `∫ t, μ t (fun _ ↦ 1)`. -/
 public theorem integralDensity_real_eq_integral {μ : RoughDensity 𝓘(ℝ, ℝ) ℝ 1}
@@ -498,18 +493,13 @@ section ZeroDim
 
 variable [Subsingleton E]
 
-private theorem tsupport_zeroDim_eq_support (μ : RoughDensity I M 0) :
-    _root_.tsupport (α := Density E 0) μ = {x | μ x ≠ 0} :=
-  have : DiscreteTopology M := I.discreteTopology M
-  ((isClosed_discrete _).closure_eq).trans
-    (Set.ext fun _ ↦ Function.mem_support (f := (show M → Density E 0 from μ)))
-
 /-- On a zero-dimensional manifold, a rough density is integrable iff its support is finite. -/
 public theorem integrableDensity_zeroDim_iff (μ : RoughDensity I M 0) :
     IntegrableDensity μ ↔ {x | μ x ≠ 0}.Finite := by
   have : DiscreteTopology M := I.discreteTopology M
   let : MeasurableSpace E := borel E; have : BorelSpace E := ⟨rfl⟩
-  rw [integrableDensity_iff, tsupport_zeroDim_eq_support μ, isCompact_iff_finite]
+  rw [integrableDensity_iff, TauCeti.tsupport_eq_support (show M → Density E 0 from μ),
+    isCompact_iff_finite]
   exact ⟨fun h ↦ h.1, fun hfin ↦ ⟨hfin, ⟨Basis.empty E⟩, fun _ _ ↦ by
     rw [Basis.addHaar_eq_dirac]; exact integrable_dirac (by simp)⟩⟩
 
@@ -524,6 +514,7 @@ public theorem integralDensity_zeroDim (μ : RoughDensity I M 0) :
   by_cases hfin : {x | μ x ≠ 0}.Finite
   swap; · rw [integralDensity_eq_zero_of_not_integrable μ (mt (integrableDensity_zeroDim_iff μ).mp
       hfin), finsum_of_infinite_support (by rwa [hsupp_eq])]
+  have : DiscreteTopology M := I.discreteTopology M
   have : IsManifold I 1 M := isManifold_of_contDiffOn I 1 M fun _ _ _ _ ↦
     contDiffOn_const (c := (0 : E)).congr fun _ _ ↦ Subsingleton.elim _ _
   let : MeasurableSpace E := borel E; have : BorelSpace E := ⟨rfl⟩
@@ -535,8 +526,9 @@ public theorem integralDensity_zeroDim (μ : RoughDensity I M 0) :
     ⟨s.card, α, fun i ↦ {α i},
       fun i ↦ extChartAt_source_zeroDim (I := I) (α i) ▸ isOpen_extChartAt_source (α i),
       fun i ↦ (extChartAt_source_zeroDim (I := I) (α i)).ge,
-      by rw [tsupport_zeroDim_eq_support]; exact fun x hx ↦
-        mem_iUnion.mpr ⟨e ⟨x, hfin.mem_toFinset.mpr hx⟩, by simp [α]⟩⟩
+      fun _ ↦ singleton_nonempty _,
+      by rw [TauCeti.tsupport_eq_support (show M → Density E 0 from μ)]
+         exact fun x hx ↦ mem_iUnion.mpr ⟨e ⟨x, hfin.mem_toFinset.mpr hx⟩, by simp [α]⟩⟩
   rw [integralDensity_eq_chartCover_integral μ ((integrableDensity_zeroDim_iff μ).mpr hfin) b c
       Subset.rfl, ChartCover.integral_eq_sum]
   simp only [c, ChartCover.piece_eq_disjointed]

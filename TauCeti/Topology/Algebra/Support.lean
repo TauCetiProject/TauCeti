@@ -36,6 +36,8 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
 * `TauCeti.tsupport_subset_of_forall_notMem_eq_zero`: a function vanishing off a closed set `s`
   has topological support in `s`, with multiplicative version
   `TauCeti.mulTSupport_subset_of_forall_notMem_eq_one`.
+* `TauCeti.tsupport_eq_support`: on a discrete space, the topological support of a function equals
+  its support, with multiplicative version `TauCeti.mulTSupport_eq_mulSupport`.
 * `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
   compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
 * `HasCompactSupport.of_tsupport_subset_ball`: in a proper space, a function whose topological
@@ -97,6 +99,14 @@ end Prod
 theorem mulTSupport_subset_of_forall_notMem_eq_one {Y M : Type*} [TopologicalSpace Y] [One M]
     {f : Y → M} {s : Set Y} (hf : ∀ x ∉ s, f x = 1) (hs : IsClosed s) : mulTSupport f ⊆ s :=
   hs.closure_subset_iff.2 (Function.mulSupport_subset_iff'.2 hf)
+
+/-- On a discrete topological space, the topological multiplicative support of a function equals
+its multiplicative support. -/
+@[to_additive /-- On a discrete topological space, the topological support of a function equals its
+support. -/]
+theorem mulTSupport_eq_mulSupport {Y M : Type*} [TopologicalSpace Y] [DiscreteTopology Y] [One M]
+    (f : Y → M) : mulTSupport f = Function.mulSupport f :=
+  (isClosed_discrete _).closure_eq
 
 end TauCeti
 

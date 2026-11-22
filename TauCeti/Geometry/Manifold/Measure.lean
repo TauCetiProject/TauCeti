@@ -76,11 +76,11 @@ theorem IsNullSet.ae_extChartAt_symm_notMem_of_sdiff_source {I : ModelWithCorner
     (μ : Measure E) [μ.IsAddHaarMeasure] :
     ∀ᵐ y ∂μ, y ∉ (extChartAt I β) '' ((extChartAt I β).source ∩ (extChartAt I α).source) →
       y ∈ (extChartAt I β).target → (extChartAt I β).symm y ∉ A := by
-  filter_upwards [measure_eq_zero_iff_ae_notMem.mp (hs.chartwise β μ)] with y hy ho ht hA
-  exact hy ⟨(extChartAt I β).symm y,
-    ⟨⟨hA, fun ha ↦ ho ⟨(extChartAt I β).symm y,
-      ⟨(extChartAt I β).map_target ht, ha⟩, (extChartAt I β).right_inv ht⟩⟩,
-      (extChartAt I β).map_target ht⟩, (extChartAt I β).right_inv ht⟩
+  have hs' := hs.chartwise β μ
+  rw [inter_comm, (extChartAt I β).image_source_inter_eq'] at hs'
+  rw [(extChartAt I β).image_source_inter_eq']
+  filter_upwards [measure_eq_zero_iff_ae_notMem.mp hs'] with y hy ho ht hA
+  exact hy ⟨ht, hA, fun ha ↦ ho ⟨ht, ha⟩⟩
 
 /-- A subset of a null set is null. -/
 theorem IsNullSet.mono {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [hE : BorelSpace E]

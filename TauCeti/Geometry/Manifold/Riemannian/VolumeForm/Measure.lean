@@ -173,30 +173,27 @@ theorem integralTopForm_smul_riemannianVolumeForm
   have hi : IntegrableTopForm φ :=
     hφ.integrableTopForm (hc.of_isClosed_subset isClosed_closure hsupp) b
   -- Compute both integrals on the disjointed pieces of a chart cover of the support of `f`.
-  obtain ⟨n, α, u, _, hu, hcover⟩ := exists_finite_precompact_chart_cover (I := I) hc
-  have hpiece (i : Fin n) : disjointed u i ⊆ (extChartAt I (α i)).source :=
-    (disjointed_subset u i).trans (hu i).2.1
-  have hmeas (i : Fin n) : MeasurableSet (disjointed u i) := by
-    rw [disjointed_apply, Finset.sup_set_eq_biUnion]
-    exact (hu i).1.measurableSet.diff
-      (Finset.measurableSet_biUnion _ fun j _ ↦ (hu j).1.measurableSet)
-  let c : ChartCover I (tsupport f) :=
-    ⟨n, α, u, fun i ↦ (hu i).1, fun i ↦ (hu i).2.1, hcover⟩
+  let c := ChartCover.choose I hc
+  have hmeas (i : Fin c.n) : MeasurableSet (c.piece i) := by
+    rw [ChartCover.piece_eq_disjointed, disjointed_apply, Finset.sup_set_eq_biUnion]
+    exact (c.isOpen_domain i).measurableSet.diff
+      (Finset.measurableSet_biUnion _ fun j _ ↦ (c.isOpen_domain j).measurableSet)
   rw [integralTopForm_eq_chartCover_integral l φ hi b c hsupp, ChartCover.integral_eq_sum,
     Finset.mul_sum,
-    ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := ⋃ i, disjointed u i) fun x hx ↦
-      image_eq_zero_of_notMem_tsupport fun h ↦ hx (by rw [iUnion_disjointed]; exact hcover h),
-    integral_iUnion_fintype hmeas (disjoint_disjointed u)
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := ⋃ i, c.piece i) fun x hx ↦
+      image_eq_zero_of_notMem_tsupport fun h ↦ hx (c.piece_covers h),
+    integral_iUnion_fintype hmeas c.pairwise_disjoint
       fun i ↦ (hf.integrable_of_hasCompactSupport hc).integrableOn]
-  simp only [c, ChartCover.piece_eq_disjointed]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [setIntegral_riemannianVolume_of_subset (by simpa only [extChartAt_source] using hpiece i)
-    (hmeas i), ← integral_const_mul, Basis.addHaar_reindex]
-  refine setIntegral_congr_fun ((hmeas i).image_extChartAt (α i) (hpiece i)) ?_
+  rw [setIntegral_riemannianVolume_of_subset
+      (by simpa only [extChartAt_source] using c.piece_subset i) (hmeas i),
+    ← integral_const_mul, Basis.addHaar_reindex]
+  refine setIntegral_congr_fun ((hmeas i).image_extChartAt (c.center i) (c.piece_subset i)) ?_
   rintro _ ⟨x, hx, rfl⟩
   dsimp only
-  rw [(extChartAt I (α i)).left_inv (hpiece i hx), smul_eq_mul]
-  exact signBasis_mul_signedInChartAt_smul_riemannianVolumeForm l σ f (α i) (hpiece i hx)
+  rw [(extChartAt I (c.center i)).left_inv (c.piece_subset i hx), smul_eq_mul]
+  exact signBasis_mul_signedInChartAt_smul_riemannianVolumeForm l σ f (c.center i)
+    (c.piece_subset i hx)
 
 omit [LindelofSpace M] in
 /-- **The integral of the volume form is the total volume.** On a compact oriented manifold with a
