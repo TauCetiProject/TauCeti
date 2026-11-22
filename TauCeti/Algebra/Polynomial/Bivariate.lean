@@ -30,8 +30,9 @@ fiber `X = β`.
 * `Polynomial.Bivariate.coeff_coeff_swap`, `Polynomial.Bivariate.natDegree_swap_le_iff`,
   `Polynomial.Bivariate.natDegree_coeff_le_natDegree_swap`: coefficient transposition and inner
   degree bounds via `Bivariate.swap`.
-* `Polynomial.totalDegree_aevalAeval_le`, `Polynomial.eval_aevalAeval`: total-degree bound and
-  pointwise evaluation for substituting multivariate polynomials into a bivariate polynomial.
+* `Polynomial.totalDegree_aevalAeval_le`, `Polynomial.eval_aevalAeval`,
+  `Polynomial.eval_eval_aeval_C`: total-degree bound and pointwise evaluation for substituting
+  multivariate polynomials into a bivariate polynomial.
 * `Polynomial.aevalAeval_linear_injective`: injectivity of invertible 2 × 2 linear coordinate
   substitutions into `MvPolynomial (Fin 2) R`.
 * `Irreducible.map_evalRingHom_ne_zero`: an irreducible bivariate polynomial of positive outer
@@ -138,6 +139,16 @@ theorem eval_aevalAeval {R σ : Type*} [CommSemiring R] (f : σ → R)
       aevalAeval (MvPolynomial.eval f x) (MvPolynomial.eval f y) :=
     (aevalAevalEquiv R R).symm.injective (by simp)
   simpa using AlgHom.congr_fun hhom p
+
+/-- Simp form of `Polynomial.eval_aevalAeval` matching the expanded expression
+`eval x (aeval (C y) p)` produced by `Polynomial.aevalAevalEquiv_apply_apply`. -/
+@[simp]
+theorem eval_eval_aeval_C {R σ : Type*} [CommSemiring R] (f : σ → R)
+    (x y : MvPolynomial σ R) (p : R[X][Y]) :
+    MvPolynomial.eval f
+        (eval x (let := Polynomial.algebra (R := R) (A := MvPolynomial σ R); aeval (C y) p)) =
+      p.evalEval (MvPolynomial.eval f x) (MvPolynomial.eval f y) := by
+  simpa only [aevalAevalEquiv_apply_apply] using eval_aevalAeval f x y p
 
 /-- Substituting an invertible linear pair `(a X₀ + b X₁, c X₀ + d X₁)` with
 `IsUnit (a * d - b * c)` into bivariate polynomials `R[X][Y]` is injective. -/

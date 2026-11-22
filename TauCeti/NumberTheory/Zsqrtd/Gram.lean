@@ -8,22 +8,27 @@ module
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.NumberTheory.Zsqrtd.Basic
+public import TauCeti.Analysis.InnerProductSpace.Gram.Integral
 public import TauCeti.NumberTheory.Zsqrtd.ComplexEmbedding
-import TauCeti.Analysis.InnerProductSpace.Gram.Integral
 
 /-!
 # Euclidean realizations and integer Gram matrices for `ℤ√d`-families
 
 A tuple `v : κ → ℤ√d` embeds `ℤ`-linearly into `EuclideanSpace ℝ (κ × Fin 2)` via
-`Zsqrtd.famToLp d κ`, scaling the real part by `√2` and the imaginary part by `√(2 * |d|)`.
-Its real inner product recovers the trace-type integer Gram pairing
+`Zsqrtd.famToLp d κ`, defined as the composition of integer coordinate extraction
+`Zsqrtd.famCoords d κ` with `TauCeti.weightedToLp (Zsqrtd.famWeight d κ)` (scaling the real part
+by `√2` and the imaginary part by `√(2 * |d|)`). Its real inner product recovers the trace-type
+integer Gram pairing
 `Zsqrtd.intGram d v i j = ∑ k, 2 * ((v i k).re * (v j k).re + |d| * (v i k).im * (v j k).im)`,
 and its squared Euclidean norm equals `∑ k, (‖embPos d (v k)‖ ^ 2 + ‖embNeg d (v k)‖ ^ 2)`.
 
 ## Main results
 
+* `Zsqrtd.famCoords`, `Zsqrtd.famWeight`: integer coordinate extraction and real weights.
 * `Zsqrtd.famToLp`: bundled `ℤ`-linear Euclidean realization
   `(κ → ℤ√d) →ₗ[ℤ] EuclideanSpace ℝ (κ × Fin 2)`.
+* `Zsqrtd.famToLp_eq_weightedToLp`, `Zsqrtd.famToLp_apply`: explicit factorization through
+  `TauCeti.weightedToLp`.
 * `Zsqrtd.famToLp_ofLp_zero`, `Zsqrtd.famToLp_ofLp_one`: coordinate evaluations.
 * `Zsqrtd.famToLp_sum_zsmul`: compatibility with `ℤ`-linear combinations.
 * `Zsqrtd.inner_famToLp`, `Zsqrtd.norm_sq_famToLp`: inner product and squared norm formulas.
@@ -37,34 +42,77 @@ open scoped InnerProductSpace
 
 namespace Zsqrtd
 
+/-- Bundled `ℤ`-linear coordinate extraction `(κ → ℤ√d) →ₗ[ℤ] (κ × Fin 2 → ℤ)`, sending `v` to
+`(k, 0) ↦ (v k).re` and `(k, 1) ↦ (v k).im`. -/
+def famCoords (d : ℤ) (κ : Type*) : (κ → ℤ√d) →ₗ[ℤ] (κ × Fin 2 → ℤ) where
+  toFun v p := if p.2 = 0 then (v p.1).re else (v p.1).im
+  map_add' v w := by
+    ext p
+    by_cases h : p.2 = 0 <;> simp [h]
+  map_smul' c v := by
+    ext p
+    by_cases h : p.2 = 0 <;> simp [h, zsmul_eq_mul]
+
+/-- Real-part coordinate extraction of `Zsqrtd.famCoords`. -/
+@[simp]
+theorem famCoords_zero (d : ℤ) {κ : Type*} (v : κ → ℤ√d) (k : κ) :
+    famCoords d κ v (k, 0) = (v k).re := by
+  simp [famCoords]
+
+/-- Imaginary-part coordinate extraction of `Zsqrtd.famCoords`. -/
+@[simp]
+theorem famCoords_one (d : ℤ) {κ : Type*} (v : κ → ℤ√d) (k : κ) :
+    famCoords d κ v (k, 1) = (v k).im := by
+  simp [famCoords]
+
+/-- Real coordinate weights for `Zsqrtd.famToLp`: `2` on real-part coordinates `(k, 0)` and
+`2 * |d|` on imaginary-part coordinates `(k, 1)`. -/
+def famWeight (d : ℤ) (κ : Type*) (p : κ × Fin 2) : ℝ :=
+  if p.2 = 0 then 2 else 2 * d.natAbs
+
+/-- Nonnegativity of `Zsqrtd.famWeight`. -/
+theorem famWeight_nonneg (d : ℤ) (κ : Type*) (p : κ × Fin 2) : 0 ≤ famWeight d κ p := by
+  dsimp [famWeight]
+  split_ifs <;> positivity
+
+/-- Weight `2` on real-part coordinates `(k, 0)` in `Zsqrtd.famWeight`. -/
+@[simp]
+theorem famWeight_zero (d : ℤ) {κ : Type*} (k : κ) : famWeight d κ (k, 0) = 2 := by
+  simp [famWeight]
+
+/-- Weight `2 * |d|` on imaginary-part coordinates `(k, 1)` in `Zsqrtd.famWeight`. -/
+@[simp]
+theorem famWeight_one (d : ℤ) {κ : Type*} (k : κ) :
+    famWeight d κ (k, 1) = 2 * d.natAbs := by
+  simp [famWeight]
+
 /-- Bundled `ℤ`-linear Euclidean realization of a tuple in `(ℤ√d) ^ κ` whose real inner product
 recovers the trace pairing `∑ k, 2 * (re₁ * re₂ + |d| * im₁ * im₂)`. -/
 noncomputable def famToLp (d : ℤ) (κ : Type*) :
-    (κ → ℤ√d) →ₗ[ℤ] EuclideanSpace ℝ (κ × Fin 2) where
-  toFun v := WithLp.toLp 2 fun p ↦
-    if p.2 = 0 then Real.sqrt 2 * (v p.1).re else Real.sqrt (2 * d.natAbs) * (v p.1).im
-  map_add' v w := by
-    ext p
-    rcases Fin.eq_zero_or_eq_succ p.2 with hp | ⟨j, hj⟩
-    · simp [hp, mul_add]
-    · simp [hj, mul_add]
-  map_smul' c v := by
-    ext p
-    rcases Fin.eq_zero_or_eq_succ p.2 with hp | ⟨j, hj⟩
-    · simp [hp, zsmul_eq_mul]; ring
-    · simp [hj, zsmul_eq_mul]; ring
+    (κ → ℤ√d) →ₗ[ℤ] EuclideanSpace ℝ (κ × Fin 2) :=
+  (TauCeti.weightedToLp (famWeight d κ)).comp (famCoords d κ)
+
+/-- Relation between `Zsqrtd.famToLp` and `TauCeti.weightedToLp`. -/
+theorem famToLp_eq_weightedToLp (d : ℤ) (κ : Type*) :
+    famToLp d κ = (TauCeti.weightedToLp (famWeight d κ)).comp (famCoords d κ) := by
+  rfl
+
+/-- Applying `Zsqrtd.famToLp` evaluates `TauCeti.weightedToLp` on `Zsqrtd.famCoords`. -/
+theorem famToLp_apply (d : ℤ) {κ : Type*} (v : κ → ℤ√d) :
+    famToLp d κ v = TauCeti.weightedToLp (famWeight d κ) (famCoords d κ v) := by
+  rfl
 
 /-- Real-part coordinate evaluation of `Zsqrtd.famToLp`. -/
 @[simp]
 theorem famToLp_ofLp_zero (d : ℤ) {κ : Type*} (v : κ → ℤ√d) (k : κ) :
     (famToLp d κ v).ofLp (k, 0) = Real.sqrt 2 * (v k).re := by
-  rfl
+  simp [famToLp_apply]
 
 /-- Imaginary-part coordinate evaluation of `Zsqrtd.famToLp`. -/
 @[simp]
 theorem famToLp_ofLp_one (d : ℤ) {κ : Type*} (v : κ → ℤ√d) (k : κ) :
     (famToLp d κ v).ofLp (k, 1) = Real.sqrt (2 * d.natAbs) * (v k).im := by
-  simp [famToLp]
+  simp [famToLp_apply]
 
 /-- Compatibility of `Zsqrtd.famToLp` with finite `ℤ`-linear combinations. -/
 theorem famToLp_sum_zsmul (d : ℤ) {κ ι : Type*} (s : Finset ι) (c : ι → ℤ)
@@ -76,15 +124,14 @@ theorem famToLp_sum_zsmul (d : ℤ) {κ ι : Type*} (s : Finset ι) (c : ι → 
 theorem inner_famToLp (d : ℤ) {κ : Type*} [Fintype κ] (v w : κ → ℤ√d) :
     ⟪famToLp d κ v, famToLp d κ w⟫_ℝ =
       ((∑ k : κ, 2 * ((v k).re * (w k).re + (d.natAbs : ℤ) * (v k).im * (w k).im) : ℤ) : ℝ) := by
-  rw [PiLp.inner_apply, Fintype.sum_prod_type]
+  rw [famToLp_apply, famToLp_apply, TauCeti.inner_weightedToLp (famWeight_nonneg d κ),
+    Fintype.sum_prod_type]
   push_cast
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [Fin.sum_univ_two]
-  simp only [famToLp_ofLp_zero, famToLp_ofLp_one, RCLike.inner_apply, conj_trivial]
-  have h2 : Real.sqrt 2 * Real.sqrt 2 = 2 := Real.mul_self_sqrt (by positivity)
-  have hd : Real.sqrt (2 * (d.natAbs : ℝ)) * Real.sqrt (2 * (d.natAbs : ℝ)) = 2 * |(d : ℝ)| := by
-    rw [Real.mul_self_sqrt (by positivity), Nat.cast_natAbs, Int.cast_abs]
-  linear_combination (v k).re * (w k).re * h2 + (v k).im * (w k).im * hd
+  simp only [famWeight_zero, famWeight_one, famCoords_zero, famCoords_one, Nat.cast_natAbs,
+    Int.cast_abs]
+  ring
 
 /-- Squared norm of a `ℤ√d`-tuple realization in terms of the two complex embeddings. -/
 theorem norm_sq_famToLp (d : ℤ) {κ : Type*} [Fintype κ] (v : κ → ℤ√d) :

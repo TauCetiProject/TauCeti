@@ -97,30 +97,59 @@ private theorem grid_deg_lt_cube {q C : ℕ} (hq3 : 3 ≤ q) (hC6 : 6 ≤ C) (hC
   have hX_pos : 1 ≤ X := by omega
   have hN_pos : 1 ≤ N := by rw [hN_eq]; nlinarith
   rw [hN3_eq]
-  change N * (X - 1 + (S - 1)) + 2 * (X - 1) * (S - 1) < X ^ 2
   have hXS : (X - 1) + (S - 1) < 2 * X := by omega
   have hlt1 : N * ((X - 1) + (S - 1)) < 2 * N * X := by nlinarith
   have hle2 : 2 * (X - 1) * (S - 1) ≤ 2 * X * S :=
     Nat.mul_le_mul (Nat.mul_le_mul_left 2 (Nat.sub_le X 1)) (Nat.sub_le S 1)
   nlinarith
 
-private theorem sum_exp_mul_log_le_log {d : ℤ} {C X D : ℕ} {e : ℕ → ℕ} (hC_pos : 0 < C)
-    (hD_pos : 0 < D) (hD_dvd : ∀ p : ℕ, p.Prime → Odd p → jacobiSym d p = -1 → p ^ e p ∣ D) :
-    let P := (Nat.primesLE X).filter fun p : ℕ ↦ 2 * C < p ∧ jacobiSym d p = -1
-    ∑ p ∈ P, (e p : ℝ) * Real.log p ≤ Real.log (D : ℝ) := by
-  intro P
-  have hprod_dvd : (∏ p ∈ P, (p : ℤ) ^ e p) ∣ (D : ℤ) := by
-    refine Finset.prod_dvd_of_coprime (fun p hp p' hp' hne ↦ ?_) (fun p hp ↦ ?_)
-    · have hp_pr := (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2
-      have hp'_pr := (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp').1).2
-      simpa only [Nat.cast_pow] using ((hp_pr.coprime_iff_not_dvd.mpr fun h ↦
-        hne ((Nat.prime_dvd_prime_iff_eq hp_pr hp'_pr).mp h)).pow _ _).isCoprime
-    · obtain ⟨hpX, h2C, hjac⟩ := Finset.mem_filter.mp hp
-      have hp_pr := (Nat.mem_primesLE.mp hpX).2
-      exact Int.ofNat_dvd.mpr (hD_dvd p hp_pr (hp_pr.odd_of_ne_two (by omega)) hjac)
-  have hle := Int.sum_mul_log_le_log_abs e (Int.natCast_ne_zero.mpr hD_pos.ne') hprod_dvd
-  have hD_real_pos : (0 : ℝ) < D := by exact_mod_cast hD_pos
-  rwa [Int.cast_natCast, abs_of_pos hD_real_pos] at hle
+private theorem log_grid_error_le {q C : ℕ} (hq3 : 3 ≤ q) (hC3 : 3 ∣ C) :
+    let X := q ^ C
+    let N := q ^ (2 * (C / 3))
+    Real.log (2 * (N : ℝ) ^ 3) + 2 * N * Real.log X ≤ 13 * X := by
+  intro X N
+  obtain ⟨hX_eq, hN_eq, -⟩ := grid_pow_identities q hC3
+  set u := q ^ (C / 3)
+  have hu1 : (1 : ℝ) ≤ u := by exact_mod_cast Nat.one_le_pow (C / 3) q (by omega)
+  have hX_u : (X : ℝ) = (u : ℝ) ^ 3 := by exact_mod_cast hX_eq
+  have hN_u : (N : ℝ) = (u : ℝ) ^ 2 := by exact_mod_cast hN_eq
+  have hlogu : Real.log u ≤ u :=
+    (Real.log_le_sub_one_of_pos (by positivity)).trans (by linarith)
+  have hlog2 : Real.log 2 ≤ 1 :=
+    (Real.log_le_sub_one_of_pos (by positivity)).trans (by norm_num)
+  rw [hN_u, hX_u, Real.log_mul (by positivity) (by positivity),
+    Real.log_pow, Real.log_pow, Real.log_pow]
+  push_cast
+  have hu2_log : (u : ℝ) ^ 2 * Real.log u ≤ (u : ℝ) ^ 3 := by
+    calc (u : ℝ) ^ 2 * Real.log u
+        ≤ (u : ℝ) ^ 2 * u := mul_le_mul_of_nonneg_left hlogu (by positivity)
+      _ = (u : ℝ) ^ 3 := by ring
+  have hu_le : (u : ℝ) ≤ (u : ℝ) ^ 3 := by nlinarith
+  have _ : (1 : ℝ) ≤ (u : ℝ) ^ 3 := by nlinarith
+  nlinarith
+
+private theorem log_two_mul_grid_mul_sqrt_eq {q C : ℕ} (hq : 0 < q) (hC : 0 < C)
+    (hC3 : 3 ∣ C) :
+    let N := q ^ (2 * (C / 3))
+    Real.log (2 * (N : ℝ) * Real.sqrt q) =
+      Real.log 2 + (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) := by
+  intro N
+  obtain ⟨-, -, hN3_eq⟩ := grid_pow_identities q hC3
+  have hq_pos : (0 : ℝ) < q := by positivity
+  have hC_ne : (C : ℝ) ≠ 0 := by positivity
+  have hN3_X2 : (N : ℝ) ^ 3 = ((q ^ C : ℕ) : ℝ) ^ 2 := by exact_mod_cast hN3_eq
+  have hlogN : Real.log (N : ℝ) = 2 / 3 * Real.log ((q : ℝ) ^ C) := by
+    have hpow : Real.log ((N : ℝ) ^ 3) = Real.log (((q ^ C : ℕ) : ℝ) ^ 2) :=
+      congrArg Real.log hN3_X2
+    rw [Real.log_pow, Real.log_pow] at hpow
+    push_cast at hpow
+    linarith
+  have hlogsq : Real.log (Real.sqrt q) = 1 / (2 * (C : ℝ)) * Real.log ((q : ℝ) ^ C) := by
+    rw [Real.log_sqrt hq_pos.le, Real.log_pow]
+    field_simp
+  rw [Real.log_mul (by positivity) (by positivity),
+    Real.log_mul (by positivity) (by positivity), hlogN, hlogsq]
+  ring
 
 private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq3 : 3 ≤ q)
     (hdq : d.natAbs ≤ q) (hC6 : 6 ≤ C) (hC3 : 3 ∣ C) :
@@ -133,49 +162,15 @@ private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq
         Real.log ((q : ℝ) ^ C) + 15) := by
   intro X S N
   obtain ⟨-, -, hN_pos, -⟩ := grid_deg_lt_cube hq3 hC6 hC3
-  obtain ⟨hX_eq, hN_eq, hN3_eq⟩ := grid_pow_identities q hC3
-  set u := q ^ (C / 3)
-  have hu1 : (1 : ℝ) ≤ u := by exact_mod_cast Nat.one_le_pow (C / 3) q (by omega)
-  have hX_u : (X : ℝ) = (u : ℝ) ^ 3 := by exact_mod_cast hX_eq
-  have hN_u : (N : ℝ) = (u : ℝ) ^ 2 := by exact_mod_cast hN_eq
-  have hN3_X2 : (N : ℝ) ^ 3 = (X : ℝ) ^ 2 := by exact_mod_cast hN3_eq
-  have hlogu : Real.log u ≤ u :=
-    (Real.log_le_sub_one_of_pos (by positivity)).trans (by linarith)
   have hlog2 : Real.log 2 ≤ 1 :=
     (Real.log_le_sub_one_of_pos (by positivity)).trans (by norm_num)
-  have herr1 : Real.log (2 * (N : ℝ) ^ 3) + 2 * N * Real.log X ≤ 13 * X := by
-    rw [hN_u, hX_u, Real.log_mul (by positivity) (by positivity),
-      Real.log_pow, Real.log_pow, Real.log_pow]
-    push_cast
-    have hu2_log : (u : ℝ) ^ 2 * Real.log u ≤ (u : ℝ) ^ 3 := by
-      calc (u : ℝ) ^ 2 * Real.log u
-          ≤ (u : ℝ) ^ 2 * u := mul_le_mul_of_nonneg_left hlogu (by positivity)
-        _ = (u : ℝ) ^ 3 := by ring
-    have hu_le : (u : ℝ) ≤ (u : ℝ) ^ 3 := by nlinarith
-    have _ : (1 : ℝ) ≤ (u : ℝ) ^ 3 := by nlinarith
-    nlinarith
+  have herr1 := log_grid_error_le hq3 hC3
+  have h2Nq_log := log_two_mul_grid_mul_sqrt_eq (by omega : 0 < q) (by omega : 0 < C) hC3
   have hlog_dq : Real.log (2 * N * Real.sqrt d.natAbs) ≤ Real.log (2 * N * Real.sqrt q) := by
     have _ : (0 : ℝ) < Real.sqrt d.natAbs :=
       Real.sqrt_pos.mpr (by exact_mod_cast Int.natAbs_pos.mpr hd0)
     exact Real.log_le_log (by positivity)
       (mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (by exact_mod_cast hdq)) (by positivity))
-  have h2Nq_log : Real.log (2 * N * Real.sqrt q) =
-      Real.log 2 + (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) := by
-    have hq_pos : (0 : ℝ) < q := by positivity
-    have hC_ne : (C : ℝ) ≠ 0 := by positivity
-    have hlogN : Real.log (N : ℝ) = 2 / 3 * Real.log ((q : ℝ) ^ C) := by
-      have hpow : Real.log ((N : ℝ) ^ 3) = Real.log ((X : ℝ) ^ 2) := congrArg Real.log hN3_X2
-      rw [Real.log_pow, Real.log_pow] at hpow
-      push_cast at hpow
-      have hX_cast : (X : ℝ) = (q : ℝ) ^ C := by dsimp [X]; exact Nat.cast_pow q C
-      rw [← hX_cast]
-      linarith
-    have hlogsq : Real.log (Real.sqrt q) = 1 / (2 * (C : ℝ)) * Real.log ((q : ℝ) ^ C) := by
-      rw [Real.log_sqrt hq_pos.le, Real.log_pow]
-      field_simp
-    rw [Real.log_mul (by positivity) (by positivity),
-      Real.log_mul (by positivity) (by positivity), hlogN, hlogsq]
-    ring
   have hSC : (S : ℝ) ≤ (X : ℝ) / C :=
     (le_div_iff₀ (by positivity)).mpr (by exact_mod_cast Nat.div_mul_le_self X C)
   have hXS_sum : (X : ℝ) + S ≤ (1 + 1 / (C : ℝ)) * X := by
@@ -209,6 +204,24 @@ private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq
         have h1C_nn : 0 ≤ 1 + 1 / (C : ℝ) := by positivity
         nlinarith
 
+private theorem sum_log_le_of_subset_primesLE {P : Finset ℕ} {B : ℕ}
+    (hP : P ⊆ Nat.primesLE B) :
+    ∑ p ∈ P, Real.log p ≤ Real.log 4 * B :=
+  calc ∑ p ∈ P, Real.log p
+      ≤ ∑ p ∈ Nat.primesLE B, Real.log p :=
+        Finset.sum_le_sum_of_subset_of_nonneg hP fun p hp _ ↦
+          Real.log_nonneg (by exact_mod_cast (Nat.mem_primesLE.mp hp).2.one_le)
+    _ = Chebyshev.theta B := (Chebyshev.theta_eq_sum_primesLE_log B).symm
+    _ ≤ Real.log 4 * B := Chebyshev.theta_le_log4_mul_x (by positivity)
+
+private theorem sum_log_div_le_of_subset_primesLE {P : Finset ℕ} {B : ℕ}
+    (hP : P ⊆ Nat.primesLE B) :
+    ∑ p ∈ P, Real.log p / p ≤ Real.log 4 * B := by
+  refine le_trans (Finset.sum_le_sum fun p hp ↦ ?_) (sum_log_le_of_subset_primesLE hP)
+  have hp_pr := (Nat.mem_primesLE.mp (hP hp)).2
+  exact div_le_self (Real.log_nonneg (by exact_mod_cast hp_pr.one_le))
+    (by exact_mod_cast hp_pr.one_le)
+
 private theorem prime_error_sums_le {P : Finset ℕ} {X S C : ℕ}
     (hP : ∀ p ∈ P, p ∈ Nat.primesLE X ∧ 2 * C < p) (hS_pos : 0 < S) (hC_pos : 0 < C)
     (hS_eq : S = X / C) :
@@ -216,18 +229,10 @@ private theorem prime_error_sums_le {P : Finset ℕ} {X S C : ℕ}
         2 * (X : ℝ) * S * (∑ p ∈ P, Real.log p) +
         (X : ℝ) ^ 3 * (∑ p ∈ P, Real.log p / (p : ℝ) ^ 2) ≤
       (X : ℝ) ^ 2 * S * (4 * (C : ℝ) * Real.log 4 + 4 * Real.log 4) := by
-  have htheta_P : ∑ p ∈ P, Real.log p ≤ Real.log 4 * X := by
-    calc ∑ p ∈ P, Real.log p
-        ≤ ∑ p ∈ Nat.primesLE X, Real.log p :=
-          Finset.sum_le_sum_of_subset_of_nonneg (fun p hp ↦ (hP p hp).1) fun p hp _ ↦
-            Real.log_nonneg (by exact_mod_cast (Nat.mem_primesLE.mp hp).2.one_le)
-      _ = Chebyshev.theta X := (Chebyshev.theta_eq_sum_primesLE_log X).symm
-      _ ≤ Real.log 4 * X := Chebyshev.theta_le_log4_mul_x (by positivity)
-  have hsum_p_le : ∑ p ∈ P, Real.log p / p ≤ Real.log 4 * X := by
-    refine le_trans (Finset.sum_le_sum fun p hp ↦ ?_) htheta_P
-    have hp_pr := (Nat.mem_primesLE.mp (hP p hp).1).2
-    exact div_le_self (Real.log_nonneg (by exact_mod_cast hp_pr.one_le))
-      (by exact_mod_cast hp_pr.one_le)
+  have hsub : P ⊆ Nat.primesLE X := fun p hp ↦ (hP p hp).1
+  have htheta_P : ∑ p ∈ P, Real.log p ≤ Real.log 4 * X := sum_log_le_of_subset_primesLE hsub
+  have hsum_p_le : ∑ p ∈ P, Real.log p / p ≤ Real.log 4 * X :=
+    sum_log_div_le_of_subset_primesLE hsub
   have htail_sq : ∑ p ∈ P, Real.log p / (p : ℝ) ^ 2 ≤ Real.log 4 / C := by
     calc ∑ p ∈ P, Real.log p / (p : ℝ) ^ 2
         ≤ 2 * Real.log 4 / (2 * (C : ℝ)) :=
@@ -325,7 +330,13 @@ theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : Squarefree d) (hd1 
           Real.log p ≤
         Real.log (D : ℝ) := by
     simpa [Nat.cast_mul, Nat.cast_sum] using
-      sum_exp_mul_log_le_log (C := C) (X := X) (by omega) hD_pos hD_dvd
+      Nat.sum_mul_log_le_log_of_prime
+        (fun p ↦ 2 * ∑ i : Fin X × Fin S, min (i.1.val / p) (S - 1 - i.2.val)) hD_pos
+        (fun p hp ↦ (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2)
+        (fun p hp ↦ by
+          obtain ⟨hpX, _, hjac⟩ := Finset.mem_filter.mp hp
+          have hp_pr := (Nat.mem_primesLE.mp hpX).2
+          exact hD_dvd p hp_pr (hp_pr.odd_of_ne_two (by omega)) hjac)
   have hSX : S ≤ X := Nat.div_le_self X C
   have hlhs_ge :
       (X : ℝ) ^ 2 * S * (∑ p ∈ P, Real.log p / p) -
@@ -373,21 +384,14 @@ theorem DirichletCharacter.IsPrimitive.sum_primesLE_filter_eq_neg_one_le {R : Ty
   set S_all := (Nat.primesLE (q ^ C)).filter fun p : ℕ ↦ χ (p : ZMod q) = -1
   have hsplit := (Finset.sum_filter_add_sum_filter_not S_all (fun p : ℕ ↦ p ≤ 2 * C)
     (fun p : ℕ ↦ Real.log p / (p : ℝ))).symm
-  have hsmall : ∑ p ∈ S_all.filter (· ≤ 2 * C), Real.log p / (p : ℝ) ≤ 2 * (C : ℝ) * Real.log 4 :=
-    calc ∑ p ∈ S_all.filter (· ≤ 2 * C), Real.log p / (p : ℝ)
-        ≤ ∑ p ∈ Nat.primesLE (2 * C), Real.log p := by
-          refine (Finset.sum_le_sum fun p hp ↦ ?_).trans
-            (Finset.sum_le_sum_of_subset_of_nonneg (fun p hp ↦ ?_) fun p hp _ ↦
-              Real.log_nonneg (by exact_mod_cast (Nat.mem_primesLE.mp hp).2.one_le))
-          · have hp_pr :=
-              (Nat.mem_primesLE.mp (Finset.mem_filter.mp (Finset.mem_filter.mp hp).1).1).2
-            exact div_le_self (Real.log_nonneg (by exact_mod_cast hp_pr.one_le))
-              (by exact_mod_cast hp_pr.one_le)
-          · obtain ⟨hpS, hp2C⟩ := Finset.mem_filter.mp hp
-            exact Nat.mem_primesLE.mpr ⟨hp2C, (Nat.mem_primesLE.mp (Finset.mem_filter.mp hpS).1).2⟩
-      _ = Chebyshev.theta (2 * C : ℕ) := (Chebyshev.theta_eq_sum_primesLE_log (2 * C)).symm
-      _ ≤ Real.log 4 * (2 * C : ℕ) := Chebyshev.theta_le_log4_mul_x (by positivity)
-      _ = 2 * (C : ℝ) * Real.log 4 := by push_cast; ring
+  have hsmall : ∑ p ∈ S_all.filter (· ≤ 2 * C), Real.log p / (p : ℝ) ≤
+      2 * (C : ℝ) * Real.log 4 := by
+    have hsub : S_all.filter (· ≤ 2 * C) ⊆ Nat.primesLE (2 * C) := by
+      intro p hp
+      obtain ⟨hpS, hp2C⟩ := Finset.mem_filter.mp hp
+      exact Nat.mem_primesLE.mpr ⟨hp2C, (Nat.mem_primesLE.mp (Finset.mem_filter.mp hpS).1).2⟩
+    exact (TauCeti.InertPrimeSum.sum_log_div_le_of_subset_primesLE hsub).trans_eq
+      (by push_cast; ring)
   have hlarge_sub : S_all.filter (¬ · ≤ 2 * C) ⊆
       (Nat.primesLE (q ^ C)).filter (fun p : ℕ ↦ 2 * C < p ∧ jacobiSym d p = -1) := by
     intro p hp

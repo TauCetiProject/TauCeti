@@ -16,6 +16,8 @@ logarithms gives `∑ p ∈ P, e p * log p ≤ log |z|`.
 ## Main results
 
 * `Int.sum_mul_log_le_log_abs`: `∑ p ∈ P, e p * log p ≤ log |z|` when `∏ p ∈ P, p ^ e p ∣ z ≠ 0`.
+* `Int.sum_mul_log_le_log_abs_of_prime`, `Nat.sum_mul_log_le_log_of_prime`: pointwise prime-power
+  divisibility versions for an arbitrary finite set of primes `P`.
 -/
 
 public section
@@ -33,3 +35,25 @@ theorem Int.sum_mul_log_le_log_abs {P : Finset ℕ} (e : ℕ → ℕ) {z : ℤ} 
         rw [Real.log_prod fun p hp => (Finset.prod_ne_zero_iff.1 hpos.ne' p hp)]
         simp [Real.log_pow]
     _ ≤ Real.log |(z : ℝ)| := Real.log_le_log hpos hle
+
+/-- If `P` is a finite set of primes and `(p : ℤ) ^ e p` divides a nonzero integer `z` for each
+`p ∈ P`, then `∑ p ∈ P, e p * log p ≤ log |z|`. -/
+theorem Int.sum_mul_log_le_log_abs_of_prime {P : Finset ℕ} (e : ℕ → ℕ) {z : ℤ} (hz : z ≠ 0)
+    (hP : ∀ p ∈ P, p.Prime) (hdvd : ∀ p ∈ P, (p : ℤ) ^ e p ∣ z) :
+    ∑ p ∈ P, (e p : ℝ) * Real.log p ≤ Real.log |(z : ℝ)| := by
+  refine Int.sum_mul_log_le_log_abs e hz
+    (Finset.prod_dvd_of_coprime (fun p hp p' hp' hne => ?_) hdvd)
+  have hp_pr := hP p hp
+  have hp'_pr := hP p' hp'
+  simpa only [Nat.cast_pow] using ((hp_pr.coprime_iff_not_dvd.mpr fun h =>
+    hne ((Nat.prime_dvd_prime_iff_eq hp_pr hp'_pr).mp h)).pow _ _).isCoprime
+
+/-- If `P` is a finite set of primes and `p ^ e p` divides a positive natural number `n` for each
+`p ∈ P`, then `∑ p ∈ P, e p * log p ≤ log n`. -/
+theorem Nat.sum_mul_log_le_log_of_prime {P : Finset ℕ} (e : ℕ → ℕ) {n : ℕ} (hn : 0 < n)
+    (hP : ∀ p ∈ P, p.Prime) (hdvd : ∀ p ∈ P, p ^ e p ∣ n) :
+    ∑ p ∈ P, (e p : ℝ) * Real.log p ≤ Real.log (n : ℝ) := by
+  have hle := Int.sum_mul_log_le_log_abs_of_prime e (Int.natCast_ne_zero.mpr hn.ne') hP
+    fun p hp => Int.ofNat_dvd.mpr (hdvd p hp)
+  have hn_real : (0 : ℝ) < n := by exact_mod_cast hn
+  rwa [Int.cast_natCast, abs_of_pos hn_real] at hle

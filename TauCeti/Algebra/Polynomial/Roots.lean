@@ -16,13 +16,13 @@ at each label depends only on which labels coincide. Consequently an eventually 
 collision relation gives eventually constant multiplicities, without any continuity or
 splitting assumptions on the polynomial family.
 
-We also count the root zero: it occurs in `f.roots` with multiplicity the order of vanishing
-`f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
-`f.natTrailingDegree` plus the nonzero roots satisfying it. Over any integral domain, summing
-`f.rootMultiplicity` over any finite set of points never exceeds `f.natDegree`
-(`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`, and summing it over the
-distinct roots gives the number of roots counted with multiplicity
-(`Polynomial.sum_rootMultiplicity_roots_toFinset_eq_card_roots`).
+It occurs in `f.roots` with multiplicity `f.natTrailingDegree`, so the roots satisfying a
+predicate that holds at zero number `f.natTrailingDegree` plus the nonzero roots satisfying it.
+Over any integral domain, summing `f.rootMultiplicity` over any finite set of points never exceeds
+`f.natDegree` (`Polynomial.sum_rootMultiplicity_le_natDegree`, and
+`Polynomial.sum_rootMultiplicity_comp_le_natDegree` for indexed evaluation points injective on the
+indexing set), including for `f = 0`, and summing it over the distinct roots gives the number of
+roots counted with multiplicity (`Polynomial.sum_rootMultiplicity_roots_toFinset_eq_card_roots`).
 
 Finally, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a`
 occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`).
@@ -95,6 +95,17 @@ theorem sum_rootMultiplicity_le_natDegree (f : R[X]) (s : Finset R) :
           Multiset.mem_toFinset.mpr (Multiset.count_pos.mp (Nat.pos_of_ne_zero ha))
     _ = f.roots.card := Multiset.toFinset_sum_count_eq f.roots
     _ ≤ f.natDegree := card_roots' f
+
+/-- Over a domain, the sum of root multiplicities of a polynomial `f` over an indexed finite set
+with evaluation points injective on the set is at most `f.natDegree`. -/
+theorem sum_rootMultiplicity_comp_le_natDegree {ι : Type*} (f : R[X]) (s : Finset ι)
+    {β : ι → R} (hβ : Set.InjOn β s) :
+    ∑ i ∈ s, f.rootMultiplicity (β i) ≤ f.natDegree := by
+  classical
+  calc ∑ i ∈ s, f.rootMultiplicity (β i)
+      = ∑ b ∈ s.image β, f.rootMultiplicity b :=
+        (Finset.sum_image (f := fun b ↦ f.rootMultiplicity b) fun _ hx _ hy h ↦ hβ hx hy h).symm
+    _ ≤ f.natDegree := f.sum_rootMultiplicity_le_natDegree (s.image β)
 
 /-- A nonzero constant multiple of a product of linear factors vanishes exactly at the
 `r i`. -/

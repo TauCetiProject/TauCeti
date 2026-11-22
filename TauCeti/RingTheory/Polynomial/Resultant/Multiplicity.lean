@@ -115,6 +115,20 @@ end DegreeBounds
 
 section ResultantMultiplicity
 
+private theorem dvd_sylvester_of_dvd_coeff {A : Type*} [CommRing A] {f g : A[X]} {a : A}
+    {m n k : ℕ} (hf : ∀ r < k, a ∣ f.coeff r) (hg : ∀ r < k, a ∣ g.coeff r)
+    {i j : Fin (m + n)} (hi : (i : ℕ) < k) :
+    a ∣ sylvester f g m n i j := by
+  by_cases hj : (j : ℕ) < m
+  · rw [sylvester_apply_of_lt _ _ _ j hj]
+    split_ifs
+    · exact hg _ (by omega)
+    · exact dvd_zero _
+  · rw [sylvester_apply_of_le _ _ _ j (Nat.le_of_not_lt hj)]
+    split_ifs
+    · exact hf _ (by omega)
+    · exact dvd_zero _
+
 /-- **Resultant bound on fiber root multiplicities.** Over an integral domain `R`, if `Q : R[X][X]`
 has nonzero formal derivative resultant `Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)`,
 then the multiplicity of `α` as a root of the specialized polynomial `Q.map (evalRingHom β)` is at
@@ -156,30 +170,18 @@ theorem rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero {R : Type*} [Co
     Finset.univ.image (Fin.castLE (by omega : m - 1 ≤ d + (d - 1)))
   have hs_card : s.card = m - 1 := by
     rw [Finset.card_image_of_injective _ (Fin.castLE_injective _), Finset.card_fin]
-  have hs_dvd (i : Fin (d + (d - 1))) (hi : i ∈ s) (j : Fin (d + (d - 1))) :
-      X - C β ∣ sylvester P P.derivative d (d - 1) i j := by
-    rcases Finset.mem_image.mp hi with ⟨i₀, -, rfl⟩
-    have hi₀ : (i₀ : ℕ) < m - 1 := i₀.isLt
-    by_cases hj : (j : ℕ) < d
-    · rw [sylvester_apply_of_lt _ _ _ j hj]
-      split_ifs
-      · exact hdvd_P' (by simp only [Fin.val_castLE] at *; omega)
-      · exact dvd_zero _
-    · rw [sylvester_apply_of_le _ _ _ j (Nat.le_of_not_lt hj)]
-      split_ifs
-      · exact hdvd_P (by simp only [Fin.val_castLE] at *; omega)
-      · exact dvd_zero _
   have hdvd_res : (X - C β) ^ (m - 1) ∣ Q.resultant Q.derivative d (d - 1) := by
     rw [← resultant_taylor_deriv Q (C α), resultant, ← hs_card]
     have hprod : (X - C β) ^ s.card =
         ∏ i : Fin (d + (d - 1)), if i ∈ s then X - C β else 1 := by
-      rw [Finset.prod_ite, Finset.filter_mem_eq_inter, Finset.univ_inter, Finset.prod_const,
-        Finset.prod_const_one, mul_one]
+      rw [Finset.prod_ite_mem, Finset.univ_inter, Finset.prod_const]
     rw [hprod]
-    exact Matrix.prod_dvd_det_of_dvd_row _ _ fun i j ↦ by
-      split_ifs with hi
-      · exact hs_dvd i hi j
-      · exact one_dvd _
+    refine Matrix.prod_dvd_det_of_dvd_row _ _ fun i j ↦ ?_
+    split_ifs with hi
+    · rcases Finset.mem_image.mp hi with ⟨i₀, -, rfl⟩
+      exact dvd_sylvester_of_dvd_coeff (fun _ hk ↦ hdvd_P (by omega)) (fun _ hk ↦ hdvd_P' hk)
+        i₀.isLt
+    · exact one_dvd _
   have hle := (le_rootMultiplicity_iff hres).mpr hdvd_res
   omega
 
@@ -237,17 +239,6 @@ private theorem cappedFiberMult_mul_le {K : Type*} [Field K] (α β : K) (N : �
   simp only [hA, hB, hAB, ↓reduceIte, rootMultiplicity_mul hAB]
   omega
 
-/-- Sum of root multiplicities of a polynomial over an indexed finite set with injective evaluation
-points is at most its degree. -/
-private theorem sum_rootMultiplicity_comp_le_natDegree {K ι : Type*} [Field K] {p : K[X]}
-    (Z : Finset ι) {β : ι → K} (hβ : Function.Injective β) :
-    ∑ i ∈ Z, p.rootMultiplicity (β i) ≤ p.natDegree := by
-  classical
-  calc ∑ i ∈ Z, p.rootMultiplicity (β i)
-      = ∑ b ∈ Z.image β, p.rootMultiplicity b :=
-        (Finset.sum_image (f := fun b ↦ p.rootMultiplicity b) fun _ _ _ _ h ↦ hβ h).symm
-    _ ≤ p.natDegree := p.sum_rootMultiplicity_le_natDegree (Z.image β)
-
 /-- The bivariate multiplicity bound on a single irreducible factor `Q : K[X][X]`. -/
 private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [CharZero K]
     [DecidableEq K] [Fintype ι] {α β : ι → K} (hβ : Function.Injective β) {N : ℕ}
@@ -271,11 +262,10 @@ private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [
       calc Z.card = ∑ i ∈ Z, 1 := by simp
         _ ≤ ∑ i ∈ Z, q.rootMultiplicity (β i) := Finset.sum_le_sum fun i hi ↦
             Nat.succ_le_of_lt ((rootMultiplicity_pos hq0).mpr (Finset.mem_filter.mp hi).2)
-        _ ≤ q.natDegree := sum_rootMultiplicity_comp_le_natDegree Z hβ
+        _ ≤ q.natDegree := q.sum_rootMultiplicity_comp_le_natDegree Z hβ.injOn
     simp_rw [hterm]
-    rw [Finset.sum_ite, Finset.filter_mem_eq_inter, Finset.univ_inter, Finset.sum_const,
-      Finset.sum_const_zero, add_zero, smul_eq_mul, natDegree_C, hswap, zero_add, mul_zero,
-      zero_mul, add_zero, mul_comm]
+    rw [Finset.sum_ite_mem, Finset.univ_inter, Finset.sum_const, smul_eq_mul, natDegree_C, hswap,
+      zero_add, mul_zero, zero_mul, add_zero, mul_comm]
     exact Nat.mul_le_mul_left N hZ
   · let Z := Finset.univ.filter fun i : ι ↦ (Q.map (evalRingHom (β i))).eval (α i) = 0
     have hne (i : ι) : Q.map (evalRingHom (β i)) ≠ 0 := hQ.map_evalRingHom_ne_zero hdeg _
@@ -296,7 +286,8 @@ private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [
           rw [Finset.sum_add_distrib, Finset.sum_const, smul_eq_mul, mul_one]
       _ ≤ N * (Q.natDegree + (Bivariate.swap Q).natDegree) +
             (Q.resultant Q.derivative).natDegree :=
-          add_le_add (hzero Q hQ.ne_zero) (sum_rootMultiplicity_comp_le_natDegree Z hβ)
+          add_le_add (hzero Q hQ.ne_zero)
+            ((Q.resultant Q.derivative).sum_rootMultiplicity_comp_le_natDegree Z hβ.injOn)
       _ ≤ N * (Q.natDegree + (Bivariate.swap Q).natDegree) +
             2 * Q.natDegree * (Bivariate.swap Q).natDegree :=
           Nat.add_le_add_left (natDegree_resultant_deriv_le Q) _

@@ -28,8 +28,8 @@ that Mathlib does not provide directly, used across the multiquadratic developme
   holding `ha : Squarefree a` and `hu : ¬ IsUnit a` can write `ha.not_isSquare hu`.
 * `Squarefree.neg`: negation preserves squarefreeness in any ring with distributive negation.
 * `TauCeti.squarefree_map_iff`: a multiplicative equivalence preserves and reflects squarefreeness.
-* `not_isSquare_intCast_of_squarefree_of_ne_one`: a squarefree integer other than `1` is not a
-  rational square.
+* `Int.not_isSquare_of_squarefree_of_ne_one` and `not_isSquare_intCast_of_squarefree_of_ne_one`: a
+  squarefree integer other than `1` is neither an integer square nor a rational square.
 * `isSquare_mul_sq_iff`: in a commutative group with zero, multiplying by a nonzero square does
   not change squareness — the statement that squareness depends only on the square class.
 * `Int.exists_squarefree_mul_sq` and `Rat.exists_squarefree_int_mul_sq`: the **squarefree part**.
@@ -142,13 +142,17 @@ theorem TauCeti.squarefree_map_iff {F M N : Type*} [Monoid M] [Monoid N] [EquivL
   rw [← map_mul, map_dvd_iff] at hy
   exact (h x hy).map f
 
-/-- A squarefree integer other than `1` is not a rational square. -/
-theorem not_isSquare_intCast_of_squarefree_of_ne_one {n : ℤ}
-    (hsf : Squarefree n) (hne : n ≠ 1) : ¬ IsSquare ((n : ℤ) : ℚ) := by
-  rw [Rat.isSquare_intCast_iff]
+/-- A squarefree integer other than `1` is not an integer square. -/
+theorem Int.not_isSquare_of_squarefree_of_ne_one {n : ℤ}
+    (hsf : Squarefree n) (hne : n ≠ 1) : ¬ IsSquare n := by
   rintro ⟨a, ha⟩
   have hu : IsUnit a := hsf a (ha ▸ dvd_rfl)
   rcases Int.isUnit_iff.mp hu with rfl | rfl <;> simp_all
+
+/-- A squarefree integer other than `1` is not a rational square. -/
+theorem not_isSquare_intCast_of_squarefree_of_ne_one {n : ℤ}
+    (hsf : Squarefree n) (hne : n ≠ 1) : ¬ IsSquare ((n : ℤ) : ℚ) :=
+  Rat.isSquare_intCast_iff.not.mpr (Int.not_isSquare_of_squarefree_of_ne_one hsf hne)
 
 /-- **Squareness depends only on the square class.** Multiplying by the square of a nonzero
 element does not change whether an element is a square. -/

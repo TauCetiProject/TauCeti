@@ -13,6 +13,7 @@ import Mathlib.Data.Nat.Choose.Dvd
 import Mathlib.NumberTheory.Zsqrtd.Basic
 import TauCeti.Algebra.Polynomial.Bivariate
 import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.Algebra.Squarefree
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.InnerProductSpace.Gram.ChangeOfFamily
 import TauCeti.Analysis.InnerProductSpace.Gram.Integral
@@ -232,15 +233,10 @@ private theorem gridL₂_injOn_gridFinset {d : ℤ} (hd : ¬ IsSquare d) (N : �
   rcases Finset.mem_image.mp hx₂ with ⟨nx₂, -, rfl⟩
   rcases Finset.mem_image.mp hy₂ with ⟨ny₂, -, rfl⟩
   have hemb : Zsqrtd.embPos d ⟨nx₁, -(ny₁ : ℤ)⟩ = Zsqrtd.embPos d ⟨nx₂, -(ny₂ : ℤ)⟩ := by
-    simpa [eval_gridL₂_natCast, sub_eq_add_neg] using heq
+    simpa [eval_gridL₂_natCast, sub_eq_add_neg, Zsqrtd.embPos_apply] using heq
   obtain ⟨hre, him⟩ := Zsqrtd.ext_iff.mp (Zsqrtd.embPos_injective hd hemb)
   dsimp at hre him
   exact ⟨by exact_mod_cast (by omega : nx₁ = nx₂), by exact_mod_cast (by omega : ny₁ = ny₂)⟩
-
-private theorem not_isSquare_of_squarefree_of_ne_one {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1) :
-    ¬ IsSquare d := by
-  rintro ⟨n, rfl⟩
-  rcases Int.isUnit_iff.mp (hd n dvd_rfl) with rfl | rfl <;> simp at hd1
 
 /-- **Fact 1: Linear independence of the jet vectors**, hence `1 ≤ G.det`. -/
 private theorem linearIndependent_baseVec {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1)
@@ -267,7 +263,7 @@ private theorem linearIndependent_baseVec {d : ℤ} (hd : Squarefree d) (hd1 : d
   have hF0 : F = 0 := eq_zero_of_pow_dvd_map_evalRingHom_of_lt_card_cube (gridFinset N)
     (totalDegree_gridL₁_le d) (totalDegree_gridL₂_le d) (aevalAeval_grid_injective hd.ne_zero)
     (fun _ hx₁ _ hy₁ _ hx₂ _ hy₂ ↦ gridL₂_injOn_gridFinset
-      (not_isSquare_of_squarefree_of_ne_one hd hd1) N hx₁ hy₁ hx₂ hy₂)
+      (Int.not_isSquare_of_squarefree_of_ne_one hd hd1) N hx₁ hy₁ hx₂ hy₂)
     hmult hdeg_lt
   intro i
   have hval : (F.coeff i.1.val).coeff i.2.val = (c i : ℂ) := coeff_coeff_relationPoly c i
@@ -480,24 +476,35 @@ private noncomputable def shiftFam (d : ℤ) (p N R S : ℕ) (i : Fin R × Fin S
     Fin N × Fin N × Fin N → ℤ√d :=
   jetEval d N (shiftPoly d p i)
 
-private def shiftMatrix (p : ℕ) {R S : ℕ} : Matrix (Fin R × Fin S) (Fin R × Fin S) ℤ :=
-  Matrix.of fun i j ↦
-    (if i = j then 1 else 0) +
-      ∑ m ∈ Finset.range (shiftExp p S i),
-        if j.1.val = i.1.val - p * shiftExp p S i + p * m ∧
-            j.2.val = i.2.val + (shiftExp p S i - m) then
-          (-1 : ℤ) ^ (shiftExp p S i - m) * (shiftExp p S i).choose m
-        else 0
+private def shiftIdx {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S)
+    (m : Fin (shiftExp p S i)) : Fin R × Fin S :=
+  (⟨i.1.val - p * shiftExp p S i + p * m.val, (shift_fst_lt hp m.isLt).trans i.1.isLt⟩,
+   ⟨i.2.val + (shiftExp p S i - m.val), by
+     have : shiftExp p S i ≤ S - 1 - i.2.val := min_le_right _ _
+     have := i.2.isLt
+     omega⟩)
 
-private theorem shiftPoly_eq_sum_basePoly (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S) :
-    shiftPoly d p i = ∑ j : Fin R × Fin S, shiftMatrix p i j • basePoly d j := by
+private theorem shiftIdx_fst_lt {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S)
+    (m : Fin (shiftExp p S i)) : (shiftIdx hp i m).1.val < i.1.val :=
+  shift_fst_lt hp m.isLt
+
+private theorem basePoly_shiftIdx (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S)
+    (m : Fin (shiftExp p S i)) :
+    basePoly d (shiftIdx hp i m) =
+      C (X ^ (i.2.val + (shiftExp p S i - m.val))) *
+        X ^ (i.1.val - p * shiftExp p S i + p * m.val) :=
+  rfl
+
+private theorem shiftPoly_eq_add_sum (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S) :
+    shiftPoly d p i =
+      basePoly d i +
+        ∑ m : Fin (shiftExp p S i),
+          ((-1 : ℤ) ^ (shiftExp p S i - m.val) * (shiftExp p S i).choose m.val) •
+            basePoly d (shiftIdx hp i m) := by
   have htop : Polynomial.C (Polynomial.X ^ i.2.val : (ℤ√d)[X]) *
       (Polynomial.X ^ (i.1.val - p * shiftExp p S i) *
         (Polynomial.X ^ p) ^ shiftExp p S i) = basePoly d i := by
     rw [← pow_mul, ← pow_add, Nat.sub_add_cancel (mul_shiftExp_le p S i), basePoly]
-  simp only [shiftMatrix, Matrix.of_apply, add_smul, Finset.sum_add_distrib, ite_smul, one_smul,
-    zero_smul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, Finset.sum_smul]
-  rw [Finset.sum_comm]
   have hsub_pow : (X ^ p - C X : (ℤ√d)[X][X]) ^ shiftExp p S i =
       (∑ m ∈ Finset.range (shiftExp p S i),
         (X ^ p) ^ m * (-(C (X : (ℤ√d)[X])) : (ℤ√d)[X][X]) ^ (shiftExp p S i - m) *
@@ -508,37 +515,36 @@ private theorem shiftPoly_eq_sum_basePoly (d : ℤ) {p R S : ℕ} (hp : 0 < p) (
       Finset.sum_range_succ, Nat.sub_self, pow_zero, mul_one, Nat.choose_self, Nat.cast_one,
       mul_one]
   dsimp only [shiftPoly]
-  rw [hsub_pow, mul_add, mul_add, htop, add_comm _ (basePoly d i)]
+  rw [hsub_pow, mul_add, mul_add, htop, add_comm _ (basePoly d i), Finset.mul_sum,
+    Finset.mul_sum, ← Fin.sum_univ_eq_sum_range]
   congr 1
-  rw [Finset.mul_sum, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun m hm ↦ ?_
-  have hm_lt : m < shiftExp p S i := Finset.mem_range.mp hm
-  have hr' : i.1.val - p * shiftExp p S i + p * m < R :=
-    (shift_fst_lt hp hm_lt).trans i.1.isLt
-  have hs' : i.2.val + (shiftExp p S i - m) < S := by
-    have : shiftExp p S i ≤ S - 1 - i.2.val := min_le_right _ _
-    have := i.2.isLt
-    omega
-  let j₀ : Fin R × Fin S := (⟨_, hr'⟩, ⟨_, hs'⟩)
-  rw [Finset.sum_eq_single j₀
-    (fun j _ hj ↦ by
-      have hcond : ¬ (j.1.val = j₀.1.val ∧ j.2.val = j₀.2.val) := fun ⟨h1, h2⟩ ↦
-        hj (Prod.ext (Fin.ext h1) (Fin.ext h2))
-      simp [j₀, hcond])
-    (fun h ↦ absurd (Finset.mem_univ j₀) h)]
-  have hbase : basePoly d j₀ =
-      C (X ^ i.2.val) * C (X ^ (shiftExp p S i - m)) *
-        (X ^ (i.1.val - p * shiftExp p S i) * (X ^ p) ^ m) := by
-    dsimp [basePoly, j₀]; rw [pow_add, C_mul, pow_add, pow_mul]
-  rw [ite_eq_left ⟨rfl, rfl⟩, hbase, neg_pow (C (X : (ℤ√d)[X])), ← C_pow, zsmul_eq_mul]
+  refine Finset.sum_congr rfl fun m _ ↦ ?_
+  rw [basePoly_shiftIdx, pow_add, C_mul, pow_add, pow_mul, neg_pow (C (X : (ℤ√d)[X])), ← C_pow,
+    zsmul_eq_mul]
   push_cast
   ring
+
+private def shiftMatrix {p R S : ℕ} (hp : 0 < p) : Matrix (Fin R × Fin S) (Fin R × Fin S) ℤ :=
+  Matrix.of fun i j ↦
+    (if i = j then 1 else 0) +
+      ∑ m : Fin (shiftExp p S i),
+        if j = shiftIdx hp i m then
+          (-1 : ℤ) ^ (shiftExp p S i - m.val) * (shiftExp p S i).choose m.val
+        else 0
+
+private theorem shiftPoly_eq_sum_basePoly (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S) :
+    shiftPoly d p i = ∑ j : Fin R × Fin S, shiftMatrix hp i j • basePoly d j := by
+  rw [shiftPoly_eq_add_sum d hp i]
+  simp only [shiftMatrix, Matrix.of_apply, add_smul, Finset.sum_add_distrib, ite_smul, one_smul,
+    zero_smul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, Finset.sum_smul]
+  rw [Finset.sum_comm]
+  simp only [Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
 
 /-- Unitriangularity of the change of basis `basePoly ↦ shiftPoly` in reverse lexicographic
 order preserves the integer Gram determinant. -/
 private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
     (Zsqrtd.intGram d (shiftFam d p N R S)).det = (Zsqrtd.intGram d (baseFam d N R S)).det := by
-  let U : Matrix (Fin R × Fin S) (Fin R × Fin S) ℤ := shiftMatrix p
+  let U : Matrix (Fin R × Fin S) (Fin R × Fin S) ℤ := shiftMatrix hp
   have hvec (i : Fin R × Fin S) :
       Zsqrtd.famToLp d _ (shiftFam d p N R S i) =
         ∑ j : Fin R × Fin S, (U i j : ℝ) • baseVec d N R S j := by
@@ -548,13 +554,9 @@ private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
         Finset.sum_apply, Pi.smul_apply]
     rw [hfam, Zsqrtd.famToLp_sum_zsmul]
     rfl
-  have hno_match {i j : Fin R × Fin S} (hij : i.1.val ≤ j.1.val) (m : ℕ)
-      (hm : m ∈ Finset.range (shiftExp p S i)) :
-      ¬ (j.1.val = i.1.val - p * shiftExp p S i + p * m ∧
-        j.2.val = i.2.val + (shiftExp p S i - m)) := by
-    intro ⟨h1, _⟩
-    have hlt := shift_fst_lt hp (Finset.mem_range.mp hm)
-    omega
+  have hno_match {i j : Fin R × Fin S} (hij : i.1.val ≤ j.1.val) (m : Fin (shiftExp p S i)) :
+      j ≠ shiftIdx hp i m :=
+    fun h ↦ absurd (h ▸ shiftIdx_fst_lt hp i m) (Nat.not_lt.mpr hij)
   let rank : Fin R × Fin S → OrderDual (Fin R ×ₗ Fin S) := OrderDual.toDual ∘ toLex
   have htri : (U.map (Int.castRingHom ℝ)).BlockTriangular rank := by
     intro i j hij
@@ -566,11 +568,11 @@ private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
       · exact Nat.le_of_lt h1
       · exact le_of_eq (congrArg Fin.val h1)
     simp only [Matrix.map_apply, U, shiftMatrix, Matrix.of_apply, hij_ne, ↓reduceIte, zero_add]
-    rw [Finset.sum_eq_zero fun m hm ↦
-      ite_eq_right_iff.mpr fun h ↦ absurd h (hno_match hi_le_j m hm), map_zero]
+    rw [Finset.sum_eq_zero fun m _ ↦ ite_eq_right_iff.mpr fun h ↦ absurd h (hno_match hi_le_j m),
+      map_zero]
   have hdiag (i : Fin R × Fin S) : (U.map (Int.castRingHom ℝ)) i i = 1 := by
     simp only [Matrix.map_apply, U, shiftMatrix, Matrix.of_apply, ↓reduceIte]
-    rw [Finset.sum_eq_zero fun m hm ↦ ite_eq_right_iff.mpr fun h ↦ absurd h (hno_match le_rfl m hm),
+    rw [Finset.sum_eq_zero fun m _ ↦ ite_eq_right_iff.mpr fun h ↦ absurd h (hno_match le_rfl m),
       add_zero, map_one]
   have hdetU : (U.map (Int.castRingHom ℝ)).det = 1 := by
     rw [htri.det_eq_prod_diag (OrderDual.toDual.injective.comp toLex.injective)]
@@ -592,7 +594,7 @@ private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime) (hodd : Odd 
   set α_bar : ℤ√d := ⟨k.1.val, -(k.2.1.val : ℤ)⟩
   set j := k.2.2.val
   set f : (ℤ√d)[X] := (shiftPoly d p i).map (evalRingHom α_bar)
-  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, ← taylor_coeff, nsmul_eq_mul]
+  rw [eval_iterate_derivative_eq_factorial_mul, ← taylor_coeff]
   have hf : f = C (α_bar ^ i.2.val) * X ^ (i.1.val - p * h) * (X ^ p - C α_bar) ^ h := by
     simp [f, shiftPoly, h, mul_assoc]
   obtain ⟨A, hA⟩ := exists_taylor_X_pow_sub_C_eq_C_mul_add_X_pow hp

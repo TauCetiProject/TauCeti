@@ -41,8 +41,6 @@ of Evertse's integer-grid nonvanishing lemma: for every `B > 0` and every nonzer
 
 ## Main results
 
-* `Polynomial.eval_iterate_derivative_eq_factorial_mul`: `(derivative^[k] f).eval a` is `k!` times
-  `(hasseDeriv k f).eval a`.
 * `Polynomial.iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero`,
   `Polynomial.eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero`: if `k!` is a unit, the
   ordinary derivative (or jet at a point) of order `k` vanishes if and only if the Hasse one does;
@@ -75,11 +73,6 @@ section Factorial
 open Nat
 
 variable {R : Type*} [Semiring R] {k : ℕ}
-
-/-- Evaluating `derivative^[k] f` at `a` gives `k!` times `(hasseDeriv k f).eval a`. -/
-theorem eval_iterate_derivative_eq_factorial_mul (k : ℕ) (f : R[X]) (a : R) :
-    (derivative^[k] f).eval a = (k ! : R) * (hasseDeriv k f).eval a := by
-  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, nsmul_eq_mul]
 
 /-- If `k!` is a unit, the `k`-th ordinary derivative of `f` vanishes exactly when the `k`-th
 Hasse derivative does. -/
