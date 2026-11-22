@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.SpecialOrthogonal
 public import TauCeti.Topology.VectorBundle.Orientation.OrthonormalFrame
-import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction
 
 /-!
 # The oriented orthonormal frame bundle
@@ -28,10 +28,9 @@ frames that are positively oriented for the opposite orientation `-o`
 `g` of `V` keeps a positively oriented frame positively oriented exactly when `g` lies in the
 special orthogonal group `TauCeti.specialOrthogonalGroup V`
 (`TauCeti.OrthonormalFrameBundle.smul_mem_orientedFrames_iff`). So the special orthogonal group
-acts on the positively oriented frames on the right, continuously, freely
-(`TauCeti.OrthonormalFrameBundle.orientedFrames_smul_eq_self_iff`) and transitively on each fibre
-(`TauCeti.OrthonormalFrameBundle.exists_orientedFrames_smul_eq_iff`), and every fibre contains a
-positively oriented frame when the rank is positive
+acts on the positively oriented frames on the right, continuously, freely and transitively on each
+fibre, by the action shared by such reductions (`TauCeti.OrthonormalFrameBundle.SMulMemIff`), and
+every fibre contains a positively oriented frame when the rank is positive
 (`TauCeti.OrthonormalFrameBundle.exists_mem_orientedFrames`).
 
 In positive rank the positively oriented frames are locally trivial with fibre the special
@@ -49,7 +48,9 @@ to the special orthogonal group given by the orientation.
 
 * `TauCeti.OrthonormalFrameBundle.orientedFrames s o`: the orthonormal frames transporting the
   orientation `o` of `V` to the orientation `s` of the bundle.
-* The right action of `TauCeti.specialOrthogonalGroup V` on `orientedFrames s o`.
+* The instance `TauCeti.OrthonormalFrameBundle.SMulMemIff (TauCeti.specialOrthogonalGroup V)
+  (orientedFrames s o)`, giving the right action of the special orthogonal group on the positively
+  oriented frames.
 
 ## Main results
 
@@ -175,64 +176,14 @@ theorem smul_mem_orientedFrames_iff (hι : Fintype.card ι = finrank ℝ V)
       ← notMem_orientedFrames_iff hι]
     exact iff_of_false (not_not.2 hp) hg
 
-/-- Two positively oriented frames over the same base point differ by a special orthogonal
-transformation. -/
-theorem exists_mem_specialOrthogonalGroup_smul_eq (hι : Fintype.card ι = finrank ℝ V)
-    {p q : OrthonormalFrameBundle ℝ F E V} (hp : p ∈ orientedFrames s o)
-    (hq : q ∈ orientedFrames s o) (h : p.proj = q.proj) :
-    ∃ g ∈ specialOrthogonalGroup V, op g • p = q := by
-  obtain ⟨g, rfl⟩ := exists_smul_eq_iff.2 h
-  exact ⟨g, (smul_mem_orientedFrames_iff hι hp).1 hq, rfl⟩
-
-/-! ### The right action of the special orthogonal group -/
-
-variable [Fact (Fintype.card ι = finrank ℝ V)]
-
-/-- The right action of the special orthogonal group of `V` on the positively oriented frames, by
-precomposition. -/
-instance : MulAction (specialOrthogonalGroup V)ᵐᵒᵖ (orientedFrames s o) where
-  smul g p := ⟨op (g.unop : unitary (V →L[ℝ] V)) • p.val,
-    (smul_mem_orientedFrames_iff Fact.out p.property).2 g.unop.property⟩
-  one_smul p := Subtype.ext (one_smul _ p.val)
-  mul_smul g h p := Subtype.ext (mul_smul (op (g.unop : unitary (V →L[ℝ] V)))
-    (op (h.unop : unitary (V →L[ℝ] V))) p.val)
-
-/-- The action on positively oriented frames is the action on all orthonormal frames. -/
-@[simp]
-theorem coe_orientedFrames_smul (g : (specialOrthogonalGroup V)ᵐᵒᵖ) (p : orientedFrames s o) :
-    ((g • p : orientedFrames s o) : OrthonormalFrameBundle ℝ F E V) =
-      op (g.unop : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) :=
-  rfl
-
-/-- The action of the special orthogonal group on positively oriented frames is free. -/
-@[simp↓]
-theorem orientedFrames_smul_eq_self_iff {g : specialOrthogonalGroup V} {p : orientedFrames s o} :
-    op g • p = p ↔ g = 1 := by
-  rw [← Subtype.coe_inj, coe_orientedFrames_smul, unop_op, smul_eq_self_iff,
-    OneMemClass.coe_eq_one]
-
-/-- The action of the special orthogonal group on positively oriented frames is transitive on
-fibres: two positively oriented frames differ by a special orthogonal transformation exactly when
-they lie over the same base point. -/
-theorem exists_orientedFrames_smul_eq_iff {p q : orientedFrames s o} :
-    (∃ g : specialOrthogonalGroup V, op g • p = q) ↔ p.val.proj = q.val.proj := by
-  refine ⟨fun ⟨g, h⟩ ↦ by rw [← h, coe_orientedFrames_smul, proj_smul], fun h ↦ ?_⟩
-  obtain ⟨g, hg, hgq⟩ := exists_mem_specialOrthogonalGroup_smul_eq Fact.out p.property q.property h
-  exact ⟨⟨g, hg⟩, Subtype.ext hgq⟩
+/-- The orthogonal transformations carrying a positively oriented frame to a positively oriented
+frame are the special orthogonal ones, which therefore act on the positively oriented frames on the
+right, freely and transitively on fibres. -/
+instance [Fact (Fintype.card ι = finrank ℝ V)] :
+    SMulMemIff (specialOrthogonalGroup V) (orientedFrames s o) :=
+  ⟨smul_mem_orientedFrames_iff Fact.out⟩
 
 end Action
-
-section ContinuousSMul
-
-variable [FiniteDimensional ℝ V] [Fact (Fintype.card ι = finrank ℝ V)]
-
-/-- The right action of the special orthogonal group on positively oriented frames is
-continuous. -/
-instance : ContinuousSMul (specialOrthogonalGroup V)ᵐᵒᵖ (orientedFrames s o) where
-  continuous_smul := ((continuous_op.comp ((continuous_subtypeVal.comp continuous_unop).comp
-    continuous_fst)).smul (continuous_subtypeVal.comp continuous_snd)).subtype_mk _
-
-end ContinuousSMul
 
 end Oriented
 
@@ -320,12 +271,11 @@ theorem exists_trivialization_orientedFrames [ContinuousFiberNorm F E] [Nonempty
     T.isEquivariant_orthonormalFrameBundleFiber_iff.2 fun p _ g ↦ congrArg Prod.snd (hT g p)
   -- The local frame of `T`, corrected by `correction`, is positively oriented over `T.baseSet`.
   obtain ⟨t, ht, hteq⟩ := exists_trivialization_of_continuousOn_smul_mem
-    (fun _ hp _ ↦ smul_mem_orientedFrames_iff hι hp) subset_rfl
+    (H := specialOrthogonalGroup V) subset_rfl
     (fun y _ ↦ smul_localFrame_mem (s := s) (o := o) hr' y) T.open_baseSet
     (fun _ hy ↦ (continuousAt_correction (s := s) (o := o) (r := r) (·⁻¹) hy).continuousWithinAt)
     hx
-  exact ⟨t, ht ▸ hx, fun g p hp ↦
-    (congrArg t (Subtype.ext (coe_orientedFrames_smul _ _))).trans (hteq g p (ht ▸ hp))⟩
+  exact ⟨t, ht ▸ hx, fun g p hp ↦ hteq g p (ht ▸ hp)⟩
 
 end OrientedTrivialization
 

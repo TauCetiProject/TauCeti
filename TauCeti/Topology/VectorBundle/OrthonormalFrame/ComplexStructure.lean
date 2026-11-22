@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
-import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 
 /-!
@@ -25,9 +24,8 @@ structure group of the orthonormal frame bundle from `O(4)` to `U(2)`.
 Acting by an orthogonal transformation `g` of `V` keeps a unitary frame unitary exactly when `g`
 commutes with `J₀` (`TauCeti.OrthonormalFrameBundle.smul_mem_unitaryFrames_iff`). So the
 centralizer of `J₀` in the orthogonal group, the unitary group `U(V, J₀)`, acts on the unitary
-frames on the right, continuously, freely
-(`TauCeti.OrthonormalFrameBundle.unitaryFrames_smul_eq_self_iff`) and transitively on each fibre
-(`TauCeti.OrthonormalFrameBundle.exists_unitaryFrames_smul_eq_iff`).
+frames on the right, continuously, freely and transitively on each fibre, by the action shared by
+such reductions (`TauCeti.OrthonormalFrameBundle.SMulMemIff`).
 
 In rank four, when `J` is continuous on the total space, the unitary frames are locally trivial
 with fibre `U(V, J₀)`, by trivializations equivariant for the action
@@ -49,15 +47,13 @@ frame trivializes the unitary frames, through the construction shared by such re
 
 * `TauCeti.OrthonormalFrameBundle.unitaryFrames F J J₀`: the orthonormal frames carrying `J₀` to
   `J`.
-* The right action of `Subgroup.centralizer {J₀}` on `unitaryFrames F J J₀`.
+* The instance `TauCeti.OrthonormalFrameBundle.SMulMemIff (Subgroup.centralizer {J₀})
+  (unitaryFrames F J J₀)`, giving the right action of the centralizer on the unitary frames.
 
 ## Main results
 
 * `TauCeti.OrthonormalFrameBundle.smul_mem_unitaryFrames_iff`: an orthogonal transformation keeps
   a unitary frame unitary exactly when it commutes with `J₀`.
-* `TauCeti.OrthonormalFrameBundle.unitaryFrames_smul_eq_self_iff`,
-  `TauCeti.OrthonormalFrameBundle.exists_unitaryFrames_smul_eq_iff`: the action is free, and
-  transitive on fibres.
 * `TauCeti.OrthonormalFrameBundle.exists_trivialization_unitaryFrames`: in rank four the unitary
   frames are locally trivial with fibre the centralizer of `J₀`, equivariantly for the action.
 
@@ -117,52 +113,11 @@ theorem smul_mem_unitaryFrames_iff {p : OrthonormalFrameBundle ℝ F E V}
   refine forall_congr' fun v ↦ ?_
   rw [← hp, p.frame.injective.eq_iff]
 
-/-- Two unitary frames over the same base point differ by an orthogonal transformation commuting
-with `J₀`. -/
-theorem exists_mem_centralizer_smul_eq {p q : OrthonormalFrameBundle ℝ F E V}
-    (hp : p ∈ unitaryFrames F J J₀) (hq : q ∈ unitaryFrames F J J₀) (h : p.proj = q.proj) :
-    ∃ g ∈ Subgroup.centralizer {J₀}, op g • p = q := by
-  obtain ⟨g, rfl⟩ := exists_smul_eq_iff.2 h
-  exact ⟨g, (smul_mem_unitaryFrames_iff hp).1 hq, rfl⟩
-
-/-- The right action of the centralizer of `J₀`, the unitary group `U(V, J₀)`, on the unitary
-frames, by precomposition. -/
-instance : MulAction (Subgroup.centralizer {J₀})ᵐᵒᵖ (unitaryFrames F J J₀) where
-  smul g p := ⟨op (g.unop : unitary (V →L[ℝ] V)) • p.val,
-    (smul_mem_unitaryFrames_iff p.property).2 g.unop.property⟩
-  one_smul p := Subtype.ext (one_smul _ p.val)
-  mul_smul g h p := Subtype.ext (mul_smul (op (g.unop : unitary (V →L[ℝ] V)))
-    (op (h.unop : unitary (V →L[ℝ] V))) p.val)
-
-/-- The action on unitary frames is the action on all orthonormal frames. -/
-@[simp]
-theorem coe_unitaryFrames_smul (g : (Subgroup.centralizer {J₀})ᵐᵒᵖ) (p : unitaryFrames F J J₀) :
-    ((g • p : unitaryFrames F J J₀) : OrthonormalFrameBundle ℝ F E V) =
-      op (g.unop : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) :=
-  rfl
-
-/-- The action of the centralizer of `J₀` on unitary frames is free. -/
-@[simp↓]
-theorem unitaryFrames_smul_eq_self_iff {g : Subgroup.centralizer {J₀}} {p : unitaryFrames F J J₀} :
-    op g • p = p ↔ g = 1 := by
-  rw [← Subtype.coe_inj, coe_unitaryFrames_smul, unop_op, smul_eq_self_iff,
-    OneMemClass.coe_eq_one]
-
-/-- The action of the centralizer of `J₀` on unitary frames is transitive on fibres: two unitary
-frames differ by an element of the centralizer exactly when they lie over the same base point. -/
-theorem exists_unitaryFrames_smul_eq_iff {p q : unitaryFrames F J J₀} :
-    (∃ g : Subgroup.centralizer {J₀}, op g • p = q) ↔ p.val.proj = q.val.proj := by
-  refine ⟨fun ⟨g, h⟩ ↦ by rw [← h, coe_unitaryFrames_smul, proj_smul], fun h ↦ ?_⟩
-  obtain ⟨g, hg, hgq⟩ := exists_mem_centralizer_smul_eq p.property q.property h
-  exact ⟨⟨g, hg⟩, Subtype.ext hgq⟩
-
-variable [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace B]
-  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E] [FiniteDimensional ℝ V]
-
-/-- The right action of the centralizer of `J₀` on unitary frames is continuous. -/
-instance : ContinuousSMul (Subgroup.centralizer {J₀})ᵐᵒᵖ (unitaryFrames F J J₀) where
-  continuous_smul := ((continuous_op.comp ((continuous_subtypeVal.comp continuous_unop).comp
-    continuous_fst)).smul (continuous_subtypeVal.comp continuous_snd)).subtype_mk _
+/-- The orthogonal transformations carrying a unitary frame to a unitary frame are those of the
+centralizer of `J₀`, which therefore acts on the unitary frames on the right, freely and
+transitively on fibres. -/
+instance : SMulMemIff (Subgroup.centralizer {J₀}) (unitaryFrames F J J₀) :=
+  ⟨smul_mem_unitaryFrames_iff⟩
 
 end Unitary
 
@@ -295,14 +250,12 @@ theorem exists_trivialization_unitaryFrames {B : Type*} [TopologicalSpace B] {F 
   -- The local frame of `e`, corrected by `unitaryToAdaptedFourBasis`, is a continuous local unitary
   -- frame over the good set.
   obtain ⟨t, ht, hteq⟩ := exists_trivialization_of_continuousOn_smul_mem
-    (U := goodSet J e cF β (β j))
-    (fun _ hp _ ↦ smul_mem_unitaryFrames_iff hp)
+    (H := Subgroup.centralizer {J₀}) (U := goodSet J e cF β (β j))
     (fun _ hy ↦ (e.baseSet_orthonormalFrameBundle cF β).symm ▸ hy.1)
     (fun _ hy ↦ smul_symm_apply_one_mem_unitaryFrames hJ₂ hJ₀ hβ₁.symm hβ₃.symm hy)
     (isOpen_goodSet e cF β (β j) hJ)
     (continuousOn_unitaryToAdaptedFourBasis_localStructure hJ₂ hJ)
     hx
-  exact ⟨t, ht ▸ hx, fun g p hp ↦
-    (congrArg t (Subtype.ext (coe_unitaryFrames_smul _ _))).trans (hteq g p (ht ▸ hp))⟩
+  exact ⟨t, ht ▸ hx, fun g p hp ↦ hteq g p (ht ▸ hp)⟩
 
 end TauCeti.OrthonormalFrameBundle
