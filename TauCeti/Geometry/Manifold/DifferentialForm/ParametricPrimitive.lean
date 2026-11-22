@@ -250,11 +250,10 @@ private theorem exists_eq_sub_of_slices {r : ℕ∞} {B : RoughForm (I.prod IP) 
   set c := extChartAt I x₁
   -- The neighbourhood is the image under the inverse chart of the convex set `ball ∩ range I`.
   have himage : c.source ∩ c ⁻¹' ball (c x₁) ε = c.symm '' (ball (c x₁) ε ∩ range I) := by
-    ext x
-    refine ⟨fun hx ↦ ⟨c x, ⟨hx.2, extChartAt_target_subset_range x₁ (c.map_source hx.1)⟩,
-      c.left_inv hx.1⟩, ?_⟩
-    rintro ⟨y, hy, rfl⟩
-    exact ⟨c.map_target (hεs hy), by rw [Set.mem_preimage, c.right_inv (hεs hy)]; exact hy.1⟩
+    have hsub : c.source ∩ c ⁻¹' ball (c x₁) ε ⊆ c ⁻¹' range I := fun x hx ↦
+      extChartAt_target_subset_range x₁ (c.map_source hx.1)
+    rw [c.symm_image_eq_source_inter_preimage hεs, Set.preimage_inter, ← Set.inter_assoc,
+      Set.inter_eq_left.2 hsub]
   refine ⟨_, isOpen_extChartAt_preimage' x₁ isOpen_ball, ?_,
     ⟨mem_extChartAt_source x₁, mem_ball_self hε⟩, exists_eq_sub_of_slices_of_ball hB hf hfB hε hεs⟩
   rw [himage]
@@ -322,18 +321,11 @@ private theorem exists_contMDiff_eventuallyEq_sub {r : ℕ∞}
       ∀ (p : P) (x : M), ∃ c : V, (fun y ↦ F (y, p)) =ᶠ[𝓝 x] fun y ↦ f p y - c := by
   have hloc := exists_eq_sub_of_slices hB hf hfB
   -- A base point of each connected component, depending only on the component.
-  let rep : M → M := fun x ↦
-    Set.Nonempty.some (s := connectedComponent x) ⟨x, mem_connectedComponent⟩
-  have hrep_eq {x y : M} (h : y ∈ connectedComponent x) : rep y = rep x := by
-    have key (s t : Set M) (hs : s.Nonempty) (ht : t.Nonempty) (hst : s = t) :
-        hs.some = ht.some := by
-      subst hst
-      rfl
-    exact key _ _ _ _ (connectedComponent_eq h).symm
-  have hmem_rep (x : M) : x ∈ connectedComponent (rep x) := by
-    have hx : rep x ∈ connectedComponent x := Set.Nonempty.some_mem _
-    rw [← connectedComponent_eq hx]
-    exact mem_connectedComponent
+  let rep : M → M := fun x ↦ Quotient.out (ConnectedComponents.mk x)
+  have hrep_eq {x y : M} (h : y ∈ connectedComponent x) : rep y = rep x :=
+    congrArg Quotient.out (ConnectedComponents.coe_eq_coe'.2 h)
+  have hmem_rep (x : M) : x ∈ connectedComponent (rep x) :=
+    ConnectedComponents.coe_eq_coe'.1 (Quotient.out_eq _).symm
   refine ⟨fun z ↦ f z.2 z.1 - f z.2 (rep z.1), ?_, fun p x ↦ ⟨f p (rep x), ?_⟩⟩
   · -- Near `(x₁, p₁)` the base point is constant, and the normalized primitive is its value at
     -- `x₁` plus the local formula.

@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Smooth time maps into the unit interval
@@ -487,11 +488,9 @@ theorem contMDiff_one_tangentSpace_Icc {n : WithTop ℕ∞} :
     if (x₀ : ℝ) < b then (1 : ℝ) else -1)).congr_of_eventuallyEq (.of_forall fun x ↦ ?_)
   -- In the chart at `x₀` the vector `1` at `x` is `tangentCoordChange x x₀ x 1`, whose coordinate
   -- is the product of the two chart signs times the sign of the chart at `x`.
-  have hc : (trivializationAt (EuclideanSpace ℝ (Fin 1)) (TangentSpace (𝓡∂ 1)) x₀
-      ⟨x, (1 : TangentSpace (𝓡∂ 1) x)⟩).2 =
-        tangentCoordChange (𝓡∂ 1) x x₀ x (1 : TangentSpace (𝓡∂ 1) x) := (rfl)
   beta_reduce
-  rw [hc, tangentCoordChange_Icc x x₀ x (mem_extChartAt_source x)]
+  rw [TangentBundle.trivializationAt_snd_eq_tangentCoordChange,
+    tangentCoordChange_Icc x x₀ x (mem_extChartAt_source x)]
   ext i
   -- A scalar multiple of the identity scales each coordinate; the tangent space at `x` is
   -- `EuclideanSpace ℝ (Fin 1)` up to unfolding `TangentSpace`.
