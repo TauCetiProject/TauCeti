@@ -85,7 +85,9 @@ theorem principalUnitGradedZeroEquiv_mk (u : (maximalIdeal S ^ 0).principalUnitG
       (Ideal.unitsQuotientPrincipalUnitGroupEquiv_mk
         (Ideal.jacobson_bot.trans (ringJacobson_eq_maximalIdeal S)).ge _).trans ?_
   simp only [MulEquiv.trans_apply, Subgroup.topEquiv_apply, MulEquiv.subgroupCongr_apply]
-  rfl
+  exact Units.ext (by
+    simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe]
+    rfl)
 
 /-- The underlying residue-field value of `principalUnitGradedZeroEquiv S (QuotientGroup.mk u)` is
 `residue S u`. -/

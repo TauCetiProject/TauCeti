@@ -75,6 +75,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
   of unity, then some `m`-th root of unity is a primitive `k`-th root of unity.
 * `TauCeti.natCard_powMonoidHom_ker`: with enough `n`-th roots of unity, the kernel of the `n`-th
   power map has `n` elements.
+* `TauCeti.not_dvd_card_of_injective_units`: a finite group embedding into the units of a reduced
+  commutative ring of prime characteristic `p` has order prime to `p`.
 -/
 
 public section
@@ -402,5 +404,21 @@ theorem subsingleton_rootsOfUnity_prime_pow [IsReduced R] (p j : ℕ) [ExpChar R
       (mem_rootsOfUnity_prime_pow_mul_iff R p j 1).1 (by simp)
     exact Subtype.ext (by simpa [mem_rootsOfUnity] using h)
   exact ⟨fun x y ↦ (key x).trans (key y).symm⟩
+
+/-- A finite group that embeds into the units of a reduced commutative ring of prime
+characteristic `p` has order prime to `p`. -/
+theorem not_dvd_card_of_injective_units {H : Type*} [Group H] [Finite H] [IsReduced R]
+    (p : ℕ) [Fact p.Prime] [CharP R p] (φ : H →* Rˣ) (hφ : Function.Injective φ) :
+    ¬ p ∣ Nat.card H := by
+  intro hp
+  obtain ⟨x, hx⟩ := exists_prime_orderOf_dvd_card' p hp
+  have h1 : φ x ∈ rootsOfUnity (p ^ 1) R := by
+    rw [pow_one, mem_rootsOfUnity, ← map_pow, ← hx, pow_orderOf_eq_one, map_one]
+  have := subsingleton_rootsOfUnity_prime_pow (R := R) p 1
+  have hx1 : x = 1 := hφ <| by
+    have hsub := congrArg Subtype.val (Subsingleton.elim (⟨φ x, h1⟩ : rootsOfUnity (p ^ 1) R) 1)
+    simpa only [OneMemClass.coe_one, map_one] using hsub
+  rw [hx1, orderOf_one] at hx
+  exact (Fact.out : p.Prime).ne_one hx.symm
 
 end TauCeti

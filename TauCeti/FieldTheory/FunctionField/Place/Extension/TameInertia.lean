@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.WildInertia
 import Mathlib.RingTheory.IntegralDomain
-import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # The tame character of a place
@@ -463,16 +463,9 @@ theorem not_dvd_index_ramificationGroup_one (p : ℕ) [Fact p.Prime] [CharP P.Re
     ¬ p ∣ ((ramificationGroup F P 1).subgroupOf (ramificationGroup F P 0)).index := by
   obtain ⟨t, ht⟩ := P.exists_isUniformizer
   rw [isUniformizer_iff_ord_eq_one] at ht
-  let φ := tameCharacterGraded F P ht
-  have hφ := tameCharacterGraded_injective F P ht
-  intro hp
-  obtain ⟨x, hx⟩ := exists_prime_orderOf_dvd_card' p hp
-  -- The image of `x` is a primitive `p`-th root of unity, impossible in characteristic `p`.
-  have hord : orderOf ((φ x : P.ResidueFieldˣ) : P.ResidueField) = p := by
-    rw [orderOf_units, orderOf_injective φ hφ x, hx]
-  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
-  have hroot := hord ▸ IsPrimitiveRoot.orderOf ((φ x : P.ResidueFieldˣ) : P.ResidueField)
-  exact hroot.neZero'.out (CharP.cast_eq_zero _ p)
+  rw [Subgroup.index_eq_card]
+  exact TauCeti.not_dvd_card_of_injective_units p (tameCharacterGraded F P ht)
+    (tameCharacterGraded_injective F P ht)
 
 /-- **A place has no wild inertia exactly when the residue characteristic `p` does not divide the
 order of its inertia group**, when that group is finite and the residue extension is separable:

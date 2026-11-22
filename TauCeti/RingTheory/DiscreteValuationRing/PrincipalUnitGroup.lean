@@ -72,7 +72,7 @@ theorem principalUnitGradedSuccEquivResidueField_apply (n : ℕ) {ϖ : S} (hϖ :
 /-- Applying `residueFieldEquivMaximalIdealGradedOfUniformizer` to the uniformizer coordinate of
 `u ∈ U(S, n + 1)` recovers the class of `u - 1` in `𝔪 ^ (n + 1) ⧸ 𝔪 ^ (n + 2)`. -/
 @[simp]
-theorem apply_principalUnitGradedSuccEquivResidueField_ofMul_mk (n : ℕ) {ϖ : S}
+theorem principalUnitGradedSuccEquivResidueField_ofMul_mk (n : ℕ) {ϖ : S}
     (hϖ : Irreducible ϖ) (u : (maximalIdeal S ^ (n + 1)).principalUnitGroup) :
     residueFieldEquivMaximalIdealGradedOfUniformizer ϖ hϖ (n + 1)
         (principalUnitGradedSuccEquivResidueField n hϖ
@@ -90,7 +90,7 @@ theorem principalUnitGradedSuccEquivResidueField_ofMul_mk_eq_residue (n : ℕ) {
     principalUnitGradedSuccEquivResidueField n hϖ
         (Additive.ofMul (QuotientGroup.mk u)) = residue S y := by
   apply (residueFieldEquivMaximalIdealGradedOfUniformizer ϖ hϖ (n + 1)).injective
-  rw [apply_principalUnitGradedSuccEquivResidueField_ofMul_mk,
+  rw [principalUnitGradedSuccEquivResidueField_ofMul_mk,
     residueFieldEquivMaximalIdealGradedOfUniformizer_mk]
   exact congrArg Submodule.Quotient.mk (Subtype.ext hu)
 
