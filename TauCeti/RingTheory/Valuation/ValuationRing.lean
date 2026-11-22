@@ -36,6 +36,8 @@ Finally, on a monoid with total divisibility, a multiplicative map preserving ze
 determined by divisibility when it is at most `1` everywhere, below `1` on the nonunits and zero
 only at `0`: then `v x ≤ v y` exactly when `y ∣ x`. This describes the `𝔪`-adic valuation of a
 discrete valuation ring on its own elements, and the points with zero support of its adic spectrum.
+For Mathlib's valuation of a valuation ring on its fraction field, the same comparison reads: the
+fraction `x / y` has value at most that of `x' / y'` exactly when `x' y ∣ x y'`.
 
 ## Main results
 
@@ -49,6 +51,9 @@ discrete valuation ring on its own elements, and the points with zero support of
   of a commutative ring, the image of the `k`-th power of the maximal ideal is `ϖ ^ k • s`.
 * `MonoidWithZeroHom.le_iff_dvd`: a multiplicative map at most `1`, below `1` on the nonunits
   and zero only at `0` compares elements by divisibility.
+* `ValuationRing.valuation_surjective`, `ValuationRing.valuation_div_le_valuation_div_iff_dvd`:
+  every element of the value group of a valuation ring is a value, and values of fractions compare
+  by divisibility of cross products.
 
 ## References
 
@@ -144,6 +149,28 @@ theorem _root_.Irreducible.image_maximalIdeal_pow_eq_smul {A S : Type*} [CommRin
 end ValuationRing
 
 end TauCeti
+
+namespace ValuationRing
+
+variable {A K : Type*} [CommRing A] [IsDomain A] [ValuationRing A] [Field K] [Algebra A K]
+  [IsFractionRing A K]
+
+/-- Every element of the value group of a valuation ring is a value of its valuation. -/
+theorem valuation_surjective : Function.Surjective (valuation A K) :=
+  fun a ↦ Quotient.inductionOn' a fun z ↦ ⟨z, rfl⟩
+
+/-- In a valuation ring `A` with fraction field `K`, the fraction `x / y` has value at most that of
+`x' / y'` exactly when `x' y` divides `x y'`. -/
+theorem valuation_div_le_valuation_div_iff_dvd {x y x' y' : A} (hy : y ≠ 0) (hy' : y' ≠ 0) :
+    valuation A K (algebraMap A K x / algebraMap A K y) ≤
+        valuation A K (algebraMap A K x' / algebraMap A K y') ↔ x' * y ∣ x * y' := by
+  have hpos {z : A} (hz : z ≠ 0) : 0 < valuation A K (algebraMap A K z) :=
+    pos_iff_ne_zero.mpr <| (map_ne_zero _).mpr <|
+      (map_ne_zero_iff _ (IsFractionRing.injective A K)).mpr hz
+  rw [map_div₀, map_div₀, div_le_div_iff₀ (hpos hy) (hpos hy'), ← map_mul, ← map_mul, ← map_mul,
+    ← map_mul, (integers A K).le_iff_dvd]
+
+end ValuationRing
 
 namespace MonoidWithZeroHom
 
