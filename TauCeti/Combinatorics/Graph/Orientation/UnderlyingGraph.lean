@@ -14,7 +14,7 @@ public import TauCeti.Combinatorics.Quiver.Reachable
 
 An orientation of a multigraph gives an explicit arrow family on its actual vertices. Forgetting
 the directions and multiplicities of these arrows recovers the multigraph's underlying simple
-graph. Thus weak connectivity of the orientation is precisely connectivity in that simple graph.
+graph. Thus weak connectivity of the orientation is precisely preconnectivity in that simple graph.
 
 ## Main results
 
@@ -22,8 +22,6 @@ graph. Thus weak connectivity of the orientation is precisely connectivity in th
   family is the underlying simple graph of the original multigraph.
 * `Graph.Orientation.isStronglyConnected_symmetrify_hom_iff`: the symmetrized arrow family is
   strongly connected exactly when the underlying simple graph is preconnected.
-* `Graph.Orientation.weaklyConnectedComponent_mk_eq_mk_iff`: two vertices belong to the same weak
-  component of the orientation exactly when they are connected in the underlying simple graph.
 -/
 
 public section
@@ -64,18 +62,7 @@ theorem isStronglyConnected_symmetrify_hom_iff :
     @Quiver.IsStronglyConnected (Quiver.Symmetrify G.vertexSet)
         (@Quiver.symmetrifyQuiver G.vertexSet ⟨o.Hom⟩) ↔
       G.toSimpleGraph.Preconnected := by
-  rw [Quiver.isStronglyConnected_iff]
-  refine forall_congr' fun x ↦ forall_congr' fun y ↦ ?_
-  rw [@TauCeti.Quiver.nonempty_path_symmetrify_iff_reachable G.vertexSet ⟨o.Hom⟩ x y,
-    o.underlyingGraph_hom]
-
-/-- Two vertices lie in the same weakly connected component of an orientation exactly when they
-are connected in the underlying simple graph of the original multigraph. -/
-theorem weaklyConnectedComponent_mk_eq_mk_iff {x y : G.vertexSet} :
-    @Quiver.WeaklyConnectedComponent.mk G.vertexSet ⟨o.Hom⟩ x =
-        @Quiver.WeaklyConnectedComponent.mk G.vertexSet ⟨o.Hom⟩ y ↔
-      G.toSimpleGraph.Reachable x y := by
-  rw [@TauCeti.Quiver.weaklyConnectedComponent_mk_eq_mk_iff G.vertexSet ⟨o.Hom⟩,
+  rw [@TauCeti.Quiver.isStronglyConnected_symmetrify_iff_preconnected G.vertexSet ⟨o.Hom⟩,
     o.underlyingGraph_hom]
 
 end Graph.Orientation
