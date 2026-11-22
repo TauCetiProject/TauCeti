@@ -66,8 +66,8 @@ characteristic `p`, `a_V = X ^ p - X`.
 * `Polynomial.aeval_C_X_add_Y_eq_iff_mem_span`: in prime characteristic `p`, the additive
   polynomials are the `R`-linear combinations of the `X ^ p ^ i`.
 * `AddSubgroup.aeval_additivePolynomial_add_algebraMap`: `a_V (x + c) = a_V x` for `c ∈ V`.
-* `AddSubgroup.aeval_additivePolynomial_eq_zero_iff`: the roots of `a_V` in a ring without zero
-  divisors are the elements of `V`.
+* `AddSubgroup.aeval_additivePolynomial_eq_zero_iff`: the roots of `a_V` in an `R`-algebra
+  without zero divisors are the images under `algebraMap R A` of the elements of `V`.
 * `AddSubgroup.aeval_additivePolynomial_add`: `a_V (x + y) = a_V x + a_V y`.
 * `AddSubgroup.map_additivePolynomial_sub_C_eq_prod`: `a_V - u = ∏_{c ∈ V} (X - (y + c))`.
 * `AddSubgroup.splits_additivePolynomial_sub_C`: `a_V - u` splits in any commutative `R`-algebra
@@ -230,31 +230,29 @@ theorem aeval_additivePolynomial_algebraMap {c : R} (hc : c ∈ V) :
   rw [aeval_algebraMap_apply_eq_algebraMap_eval, additivePolynomial,
     Lagrange.eval_nodal_at_node (v := ((↑) : V → R)) (Finset.mem_univ ⟨c, hc⟩), map_zero]
 
-end Semiring
-
-section Ring
-
-variable {A : Type*} [Ring A] [Algebra R A]
-
-/-- The roots of `a_V` in a ring without zero divisors, such as a domain or a division ring, are
-exactly the elements of `V`. -/
+/-- The roots of `a_V` in an `R`-algebra `A` without zero divisors, such as a domain or a division
+ring, are exactly the images under `algebraMap R A` of the elements of `V`. -/
 theorem aeval_additivePolynomial_eq_zero_iff [NoZeroDivisors A] {x : A} :
     aeval x V.additivePolynomial = 0 ↔ ∃ c ∈ V, algebraMap R A c = x := by
   refine ⟨fun hx ↦ ?_, fun ⟨c, hc, hcx⟩ ↦ hcx ▸ V.aeval_additivePolynomial_algebraMap hc⟩
   -- In the zero ring `x = algebraMap R A 0`.
   rcases subsingleton_or_nontrivial A with _ | _
   · exact ⟨0, V.zero_mem, Subsingleton.elim _ _⟩
-  -- In the commutative subalgebra `R[x]`, which has no zero divisors, `a_V` evaluated at `x` is
-  -- the product of the factors `x - c`, so one of them vanishes.
+  -- An algebra over a commutative ring is a ring.
+  let := Algebra.semiringToRing (A := A) R
+  -- In the commutative subalgebra `R[x]` (Mathlib's `Algebra.instCommRingAdjoinSingleton`), which
+  -- has no zero divisors, `a_V` evaluated at `x` is the product of the factors `x - c`, so one of
+  -- them vanishes.
   let y : Algebra.adjoin R {x} := ⟨x, Algebra.self_mem_adjoin_singleton R x⟩
+  have hy_coe : (y : A) = x := rfl
   have hy : aeval y V.additivePolynomial = 0 :=
-    Subtype.val_injective <| by rw [aeval_subalgebra_coe, ZeroMemClass.coe_zero]; exact hx
+    Subtype.val_injective <| by rw [aeval_subalgebra_coe, hy_coe, hx, ZeroMemClass.coe_zero]
   obtain ⟨c, -, hc⟩ := Finset.prod_eq_zero_iff.mp ((V.aeval_additivePolynomial y).symm.trans hy)
   have hcx := congrArg Subtype.val (sub_eq_zero.mp hc)
-  rw [Subalgebra.coe_algebraMap] at hcx
+  rw [Subalgebra.coe_algebraMap, hy_coe] at hcx
   exact ⟨c, c.property, hcx.symm⟩
 
-end Ring
+end Semiring
 
 end CommRing
 
