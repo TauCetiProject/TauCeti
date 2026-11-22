@@ -371,9 +371,7 @@ private theorem sum_ite_mem_boxGradedPart {M' : Type*} [AddCommGroup M'] [Module
   -- treat homogeneous entries.
   refine ((LinearMap.applyₗ m).compMultilinearMap Φ).map_mem_of_mem_homogeneousMatrices hF x
     fun g a hg ha ↦ Submodule.mem_iSup_of_mem ⟨_, ?_⟩ (hΦ g a s m ha hm)
-  rw [← hz, BalancedProduct.mk_inv_prod_ofFn_smul l g (fun j ↦ gr (x j)) hg, ← Subgroup.coe_pow,
-    ← Subgroup.coe_inv, BalancedProduct.mk_center_smul_left,
-    BalancedProduct.mk_center_smul_left, hs, smul_smul, mul_inv_cancel, one_smul, inv_inv]
+  rw [← hz, BalancedProduct.mk_inv_prod_ofFn_pow_mul_inv_smul l k g (fun j ↦ gr (x j)) hg, hs]
 
 /-- **The operations of the matrix module along homogeneous matrices.** Let `M` be a graded `A∞`
 module with differentials of central degree `l`, and let `F₁, …, Fₙ` be matrices homogeneous of
