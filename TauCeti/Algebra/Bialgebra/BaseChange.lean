@@ -44,8 +44,6 @@ Galois extension be recognised over an algebraic closure.
 * `TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_symm_tmul`: the value of its
   inverse on pure tensors.
 * `TensorProduct.baseChangeTowerBialgEquiv_symm_map`: its inverse is natural in the outer ring.
-* `TensorProduct.baseChangeTowerBialgEquiv_symm_map_eq_one_tmul`: the inverse tower
-  comparison sends a scalar-extension map on `L ⊗[k] H` to `1 ⊗ₜ[L] x`.
 
 ## References
 
@@ -219,17 +217,6 @@ theorem _root_.TensorProduct.baseChangeTowerBialgEquiv_symm_map {K' : Type*} [Co
   induction x using _root_.TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul s h => simp
-
-/-- On a scalar-extended element, the inverse tower comparison for a `k`-linear map agreeing
-with `algebraMap L K` inserts `1` on the left. -/
-theorem _root_.TensorProduct.baseChangeTowerBialgEquiv_symm_map_eq_one_tmul
-    (f : L →ₗ[k] K) (hf : ∀ s : L, algebraMap L K s = f s) (x : L ⊗[k] H) :
-    (baseChangeTowerBialgEquiv k L H K).symm (_root_.TensorProduct.map f LinearMap.id x) =
-      (1 : K) ⊗ₜ[L] x := by
-  have h : f = (IsScalarTower.toAlgHom k L K).toLinearMap := LinearMap.ext fun s ↦ (hf s).symm
-  rw [h, ← BialgEquiv.symm_apply_apply (baseChangeTowerBialgEquiv k L H K) ((1 : K) ⊗ₜ[L] x),
-    _root_.TensorProduct.baseChangeTowerBialgEquiv_one_tmul]
-  rfl
 
 end Tower
 

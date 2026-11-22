@@ -202,15 +202,16 @@ theorem mapBaseChangeHopfIdeal_unipotentRadicalDefiningIdeal
     CommHopfAlgCat.mapBaseChangeHopfIdeal e
         (unipotentRadicalDefiningIdeal (baseChange (K := K) H)) =
       unipotentRadicalDefiningIdeal (baseChange (K := E) H) := by
-  refine le_antisymm ?_ ?_
-  · rw [← CommHopfAlgCat.mapBaseChangeHopfIdeal_le_mapBaseChangeHopfIdeal_iff e.symm,
-      CommHopfAlgCat.mapBaseChangeHopfIdeal_symm_mapBaseChangeHopfIdeal]
-    exact unipotentRadicalDefiningIdeal_le (baseChange (K := K) H) _
-      ((isUnipotentRadicalCandidate_unipotentRadicalDefiningIdeal
-        (baseChange (K := E) H)).mapBaseChangeHopfIdeal e.symm)
-  · exact unipotentRadicalDefiningIdeal_le (baseChange (K := E) H) _
-      ((isUnipotentRadicalCandidate_unipotentRadicalDefiningIdeal
-        (baseChange (K := K) H)).mapBaseChangeHopfIdeal e)
+  let _ : Algebra K E := e.toRingHom.toAlgebra
+  have _ : IsScalarTower k K E :=
+    IsScalarTower.of_algebraMap_eq fun c ↦ (e.commutes c).symm
+  rw [CommHopfAlgCat.mapBaseChangeHopfIdeal_eq_comapOfSurjective_baseChangeTowerIso e
+      (fun _ ↦ rfl),
+    baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_of_surjective _ e.surjective,
+    ← comapOfSurjective_unipotentRadicalDefiningIdeal (baseChangeTowerIso (E := K) k E H).symm]
+  ext x
+  simp only [HopfIdeal.mem_comapOfSurjective, Iso.symm_hom, toBialgHom,
+    baseChangeTowerIso_inv_hom]
 
 /-- Along a Galois extension `K / k`, the defining Hopf ideal of the unipotent radical commutes
 with base change. -/
