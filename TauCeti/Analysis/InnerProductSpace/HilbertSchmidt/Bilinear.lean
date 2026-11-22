@@ -83,8 +83,10 @@ theorem bilinearHilbertSchmidtEnergy_smul (c : 𝕜) (T : E →L[𝕜] E₂ →L
 
 /-- The two-slot contraction is nonnegative. -/
 theorem bilinearHilbertSchmidtEnergy_nonneg (T : E →L[𝕜] E₂ →L[𝕜] F) :
-    0 ≤ bilinearHilbertSchmidtEnergy T :=
-  Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+    0 ≤ bilinearHilbertSchmidtEnergy T := by
+  rw [bilinearHilbertSchmidtEnergy_eq_sum
+    (stdOrthonormalBasis 𝕜 E) (stdOrthonormalBasis 𝕜 E₂)]
+  exact Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
 
 /-- The zero bilinear map has zero energy. -/
 @[simp]
@@ -100,6 +102,7 @@ theorem bilinearHilbertSchmidtEnergy_eq_zero_iff (T : E →L[𝕜] E₂ →L[�
   · intro h
     let b := stdOrthonormalBasis 𝕜 E
     let b₂ := stdOrthonormalBasis 𝕜 E₂
+    rw [bilinearHilbertSchmidtEnergy_eq_sum b b₂] at h
     have hi : ∀ i, (∑ j, ‖T (b i) (b₂ j)‖ ^ 2) = 0 := by
       exact fun i ↦ (Finset.sum_eq_zero_iff_of_nonneg
         (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)).1 h i (Finset.mem_univ i)
@@ -114,7 +117,8 @@ theorem bilinearHilbertSchmidtEnergy_eq_zero_iff (T : E →L[𝕜] E₂ →L[�
     apply ContinuousLinearMap.coe_injective
     apply b₂.toBasis.ext
     intro j
-    exact hij i j
+    simpa only [OrthonormalBasis.coe_toBasis, ContinuousLinearMap.coe_coe,
+      _root_.zero_apply] using hij i j
   · rintro rfl
     exact bilinearHilbertSchmidtEnergy_zero
 
