@@ -92,9 +92,6 @@ local notation "μ₀" => (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
 variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddCommGroup H]
   [InnerProductSpace ℝ H] {ι : D →L[ℝ] H}
 
-/-- Almost everywhere for `μ₀` is almost everywhere on the line. -/
-private theorem ae_restrict_top : ae μ₀ = ae (volume : Measure ℝ) := by simp
-
 /-! ### Multiplication operators -/
 
 /-- Multiplication of `L²(ℝ, H)` by a bounded continuous function `φ`. -/
@@ -106,24 +103,6 @@ private def mulLp (φ : ℝ → ℝ) (hφ : Continuous φ) {C : ℝ} (hC : ∀ s
 private theorem mulLp_ae {φ : ℝ → ℝ} (hφ : Continuous φ) {C : ℝ} (hC : ∀ s, |φ s| ≤ C)
     (g : Lp H 2 μ₀) : mulLp φ hφ hC g =ᵐ[μ₀] fun s ↦ φ s • g s :=
   Lp.multiplicationOperator_linftyOfContinuousOn_ae _ _ _ g
-
-private theorem norm_mulLp_le {φ : ℝ → ℝ} (hφ : Continuous φ) (hC : ∀ s, |φ s| ≤ 1)
-    (g : Lp H 2 μ₀) : ‖mulLp φ hφ hC g‖ ≤ ‖g‖ := by
-  refine (Lp.norm_le_mul_norm_of_ae_le_mul (c := 1) ?_).trans_eq (one_mul _)
-  filter_upwards [mulLp_ae hφ hC g] with s hs
-  rw [hs, norm_smul, Real.norm_eq_abs]
-  exact mul_le_mul_of_nonneg_right (hC s) (norm_nonneg _)
-
-/-- Multiplications by two functions summing to one add up to the identity. -/
-private theorem mulLp_add_mulLp {φ ψ : ℝ → ℝ} (hφ : Continuous φ) (hψ : Continuous ψ) {C C' : ℝ}
-    (hC : ∀ s, |φ s| ≤ C) (hC' : ∀ s, |ψ s| ≤ C') (h : ∀ s, φ s + ψ s = 1) :
-    mulLp (H := H) φ hφ hC + mulLp ψ hψ hC' = 1 := by
-  ext g : 1
-  refine Lp.ext ?_
-  filter_upwards [Lp.coeFn_add (mulLp φ hφ hC g) (mulLp ψ hψ hC' g), mulLp_ae hφ hC g,
-    mulLp_ae hψ hC' g] with s h₁ h₂ h₃
-  rw [add_apply, h₁, Pi.add_apply, h₂, h₃, ← add_smul, h s, one_smul,
-    one_apply_eq_self]
 
 variable [CompleteSpace H]
 
@@ -200,6 +179,19 @@ private theorem norm_coeffL_le (AL : Lp (D →L[ℝ] H) ∞ μ₀) (B : D →L[�
             (mul_le_mul_of_nonneg_right (hsε hφs) (norm_nonneg _))) (norm_nonneg _) zero_le_one
       _ = ε * ‖prev _ u s‖ := one_mul _
 
+/-- An operator from the graph space to `L²(ℝ, H)` that is bounded pointwise by `c ‖ι (u s)‖` and
+vanishes off a bounded window `(-b, b)` is compact, by the Aubin–Lions lemma. -/
+private theorem isCompactOperator_of_ae_norm_le [CompleteSpace D] (hι : IsCompactOperator ι)
+    {T : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ] Lp H 2 μ₀} {b c : ℝ} (hc : 0 ≤ c)
+    (hT : ∀ u, ∀ᵐ s ∂μ₀, ‖T u s‖ ≤ c * ‖ι (prev _ u s)‖)
+    (hT₀ : ∀ u, ∀ᵐ s ∂μ₀, s ∉ Ioo (-b) b → T u s = 0) : IsCompactOperator T := by
+  have hW : (⟨Ioo (-b) b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤ := le_top
+  have hμ : ae μ₀ = ae volume := by simp
+  refine IsCompactOperator.of_norm_le_mul_norm (C := c)
+    (isCompactOperator_restrictBaseL_compLpL (p := 2) hι hW)
+    fun u ↦ norm_le_mul_norm_restrictBaseL hc u ?_ ?_ <;> rw [← hμ]
+  exacts [hT u, hT₀ u]
+
 /-- Where `A(s) - B` is bounded through `ι` on the support of `φ`, and `φ` vanishes off a bounded
 window, the coefficient error is compact. -/
 private theorem isCompactOperator_coeffL [CompleteSpace D] (hι : IsCompactOperator ι)
@@ -207,40 +199,26 @@ private theorem isCompactOperator_coeffL [CompleteSpace D] (hι : IsCompactOpera
     (hC : ∀ s, |φ s| ≤ 1) {b c : ℝ} (hc₀ : 0 ≤ c)
     (h : ∀ᵐ s ∂μ₀, φ s ≠ 0 → ∀ x, ‖(AL s - B) x‖ ≤ c * ‖ι x‖)
     (hφ₀ : ∀ s ∉ Ioo (-b) b, φ s = 0) : IsCompactOperator (coeffL ι AL B φ hφ hC) := by
-  have hW : (⟨Ioo (-b) b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤ := le_top
-  refine IsCompactOperator.of_norm_le_mul_norm (C := c)
-    (isCompactOperator_restrictBaseL_compLpL (p := 2) hι hW)
-    fun u ↦ norm_le_mul_norm_restrictBaseL hc₀ u ?_ ?_
-  · simp only [ContinuousLinearMap.coe_coe]
-    rw [← ae_restrict_top]
-    filter_upwards [coeffL_ae AL B hφ hC u, h] with s hs hsc
+  refine isCompactOperator_of_ae_norm_le hι (b := b) hc₀ (fun u ↦ ?_) fun u ↦ ?_
+  · filter_upwards [coeffL_ae AL B hφ hC u, h] with s hs hsc
     rw [hs, norm_smul, Real.norm_eq_abs]
     by_cases hφs : φ s = 0
     · rw [hφs, abs_zero, zero_mul]
       exact mul_nonneg hc₀ (norm_nonneg _)
     · exact (mul_le_mul (hC s) (hsc hφs _) (norm_nonneg _) zero_le_one).trans_eq (one_mul _)
-  · simp only [ContinuousLinearMap.coe_coe]
-    rw [← ae_restrict_top]
-    filter_upwards [coeffL_ae AL B hφ hC u] with s hs hsW
+  · filter_upwards [coeffL_ae AL B hφ hC u] with s hs hsW
     rw [hs, hφ₀ s hsW, zero_smul]
 
 /-- A commutator term whose coefficient vanishes off a bounded window is compact. -/
 private theorem isCompactOperator_commL [CompleteSpace D] (hι : IsCompactOperator ι) {φ : ℝ → ℝ}
     (hφ : Continuous φ) {L b : ℝ} (hC : ∀ s, |φ s| ≤ L) (hφ₀ : ∀ s ∉ Ioo (-b) b, φ s = 0) :
     IsCompactOperator (commL ι φ hφ hC) := by
-  have hL : 0 ≤ L := (abs_nonneg _).trans (hC 0)
-  have hW : (⟨Ioo (-b) b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤ := le_top
-  refine IsCompactOperator.of_norm_le_mul_norm (C := L)
-    (isCompactOperator_restrictBaseL_compLpL (p := 2) hι hW)
-    fun u ↦ norm_le_mul_norm_restrictBaseL hL u ?_ ?_
-  · simp only [ContinuousLinearMap.coe_coe]
-    rw [← ae_restrict_top]
-    filter_upwards [commL_ae hφ hC u] with s hs
+  refine isCompactOperator_of_ae_norm_le hι (b := b) ((abs_nonneg _).trans (hC 0))
+    (fun u ↦ ?_) fun u ↦ ?_
+  · filter_upwards [commL_ae hφ hC u] with s hs
     rw [hs, norm_smul, Real.norm_eq_abs]
     exact mul_le_mul_of_nonneg_right (hC s) (norm_nonneg _)
-  · simp only [ContinuousLinearMap.coe_coe]
-    rw [← ae_restrict_top]
-    filter_upwards [commL_ae hφ hC u] with s hs hsW
+  · filter_upwards [commL_ae hφ hC u] with s hs hsW
     rw [hs, hφ₀ s hsW, zero_smul]
 
 /-! ### One piece of the parametrix -/
@@ -320,42 +298,10 @@ private theorem exists_familyDomainTrajectoryOperator_comp_mulGraph_eq [Complete
   · refine (norm_coeffL_le AL B _ hb₂ hε hsmall (R (mulLp γ hγ hγ₀ f))).trans ?_
     rw [mul_assoc]
     refine mul_le_mul_of_nonneg_left ((R.le_opNorm _).trans ?_) hε
-    exact mul_le_mul_of_nonneg_left (norm_mulLp_le hγ hγ₀ f) (by positivity)
+    exact mul_le_mul_of_nonneg_left (Lp.norm_multiplicationOperator_linftyOfContinuousOn_apply_le
+      _ _ _ (fun s _ ↦ (Real.norm_eq_abs _).trans_le (hγ₀ s)) f) (by positivity)
   · refine ((isCompactOperator_coeffL hι AL B _ hb₁ hc₀ hlow hρβ).add
       (isCompactOperator_commL hι _ hβ₁ hβ')).comp_clm (R.comp (mulLp γ hγ hγ₀))
-
-/-! ### The cutoffs -/
-
-private theorem continuous_smoothTransition_sub (c : ℝ) :
-    Continuous fun s ↦ Real.smoothTransition (s - c) :=
-  Real.smoothTransition.continuous.comp (continuous_id.sub continuous_const)
-
-/-- The rising cutoff `s ↦ ψ (s - c)` and the falling cutoff `s ↦ 1 - ψ (s - c)`, for the smooth
-transition `ψ`, are smooth, and their derivatives are bounded by a common constant and vanish off
-`(c, c + 1)`. -/
-private theorem exists_forall_smoothTransition_sub : ∃ L, ∀ c : ℝ,
-    (ContDiff ℝ ∞ fun s ↦ Real.smoothTransition (s - c)) ∧
-    (∀ s, |deriv (fun s ↦ Real.smoothTransition (s - c)) s| ≤ L) ∧
-    (∀ s ∉ Ioo c (c + 1), deriv (fun s ↦ Real.smoothTransition (s - c)) s = 0) ∧
-    (ContDiff ℝ ∞ fun s ↦ 1 - Real.smoothTransition (s - c)) ∧
-    (∀ s, |deriv (fun s ↦ 1 - Real.smoothTransition (s - c)) s| ≤ L) ∧
-    (∀ s ∉ Ioo c (c + 1), deriv (fun s ↦ 1 - Real.smoothTransition (s - c)) s = 0) := by
-  obtain ⟨L, hL⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
-  have hc (c : ℝ) : ContDiff ℝ ∞ fun s ↦ Real.smoothTransition (s - c) :=
-    Real.smoothTransition.contDiff.comp (contDiff_id.sub contDiff_const)
-  have h0 (c s : ℝ) (hs : s ∉ Ioo c (c + 1)) : deriv Real.smoothTransition (s - c) = 0 := by
-    rw [mem_Ioo, not_and_or, not_lt, not_lt] at hs
-    rcases hs with hs | hs
-    · exact Real.smoothTransition.deriv_of_nonpos (by linarith)
-    · exact Real.smoothTransition.deriv_of_one_le (by linarith)
-  refine ⟨L, fun c ↦ ⟨hc c, fun s ↦ ?_, fun s hs ↦ ?_, contDiff_const.sub (hc c), fun s ↦ ?_,
-    fun s hs ↦ ?_⟩⟩
-  · rw [deriv_comp_sub_const, ← Real.norm_eq_abs]
-    exact hL _
-  · rw [deriv_comp_sub_const, h0 c s hs]
-  · rw [deriv_const_sub, deriv_comp_sub_const, abs_neg, ← Real.norm_eq_abs]
-    exact hL _
-  · rw [deriv_const_sub, deriv_comp_sub_const, h0 c s hs, neg_zero]
 
 /-! ### The parametrix -/
 
@@ -371,11 +317,14 @@ private theorem exists_familyDomainTrajectoryOperator_comp_eq_bot [CompleteSpace
       (S K : Lp H 2 μ₀ →L[ℝ] Lp H 2 μ₀),
       (familyDomainTrajectoryOperator ι AL).comp Q =
           mulLp (fun s ↦ 1 - Real.smoothTransition (s - (t - 2)))
-            (continuous_const.sub (continuous_smoothTransition_sub _))
+            (by fun_prop)
             (fun s ↦ Real.smoothTransition.abs_one_sub_le_one _) + S + K ∧
         (∀ f, ‖S f‖ ≤ ε * ‖R‖ * ‖f‖) ∧ IsCompactOperator K := by
-  obtain ⟨L, hψ⟩ := exists_forall_smoothTransition_sub
-  obtain ⟨-, -, -, hβ, hβ₁, hβ'⟩ := hψ (t - 1)
+  obtain ⟨L, hL⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
+  have hβ : ContDiff ℝ ∞ fun s ↦ 1 - Real.smoothTransition (s - (t - 1)) := by fun_prop
+  have hβ₁ (s : ℝ) : |deriv (fun s ↦ 1 - Real.smoothTransition (s - (t - 1))) s| ≤ L := by
+    rw [deriv_const_sub, abs_neg]
+    exact Real.smoothTransition.abs_deriv_comp_sub_const_le hL _ _
   have hβ₀ (s : ℝ) := Real.smoothTransition.abs_one_sub_le_one (s - (t - 1))
   -- The cutoff `β(s) = 1 - ψ(s - (t - 1))` is one where `γ` is nonzero, and vanishes for `s ≥ t`.
   have hβγ (s : ℝ) : (1 - Real.smoothTransition (s - (t - 1))) *
@@ -392,10 +341,11 @@ private theorem exists_familyDomainTrajectoryOperator_comp_eq_bot [CompleteSpace
     rw [Real.smoothTransition.one_of_one_le (x := s - (t - 1)) (by linarith), sub_zero,
       sub_self, mul_zero]
   have hβ'' : ∀ s ∉ Ioo (-(|t| + 2)) (|t| + 2),
-      deriv (fun s ↦ 1 - Real.smoothTransition (s - (t - 1))) s = 0 := fun s hs ↦
-    hβ' s fun h ↦ hs ⟨by linarith [h.1, neg_abs_le t], by linarith [h.2, le_abs_self t]⟩
+      deriv (fun s ↦ 1 - Real.smoothTransition (s - (t - 1))) s = 0 := fun s hs ↦ by
+    rw [deriv_const_sub, Real.smoothTransition.deriv_comp_sub_const_of_notMem_Ioo, neg_zero]
+    exact fun h ↦ hs ⟨by linarith [h.1, neg_abs_le t], by linarith [h.2, le_abs_self t]⟩
   obtain ⟨S, K, hQ, hS, hK⟩ := exists_familyDomainTrajectoryOperator_comp_mulGraph_eq hι AL hR hβ
-    hβ₀ hβ₁ (continuous_const.sub (continuous_smoothTransition_sub _))
+    hβ₀ hβ₁ (by fun_prop)
     (fun s ↦ Real.smoothTransition.abs_one_sub_le_one _) hβγ (ρ := fun _ ↦ 0) continuous_const
     (fun _ ↦ ⟨le_rfl, zero_le_one⟩) (c := 0) hε le_rfl hsmall'
     (Eventually.of_forall fun s h ↦ absurd (zero_mul _) h) (fun s _ ↦ zero_mul _) hβ''
@@ -414,12 +364,11 @@ private theorem exists_familyDomainTrajectoryOperator_comp_eq_top [CompleteSpace
     ∃ (Q : Lp H 2 μ₀ →L[ℝ] WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀))
       (S K : Lp H 2 μ₀ →L[ℝ] Lp H 2 μ₀),
       (familyDomainTrajectoryOperator ι AL).comp Q =
-          mulLp (fun s ↦ Real.smoothTransition (s - (t - 2))) (continuous_smoothTransition_sub _)
+          mulLp (fun s ↦ Real.smoothTransition (s - (t - 2))) (by fun_prop)
             (fun s ↦ Real.smoothTransition.abs_le_one _) + S + K ∧
         (∀ f, ‖S f‖ ≤ ε * ‖R‖ * ‖f‖) ∧ IsCompactOperator K := by
-  obtain ⟨L, hψ⟩ := exists_forall_smoothTransition_sub
-  obtain ⟨hβ, hβ₁, hβ', -, -, -⟩ := hψ (t - 3)
-  obtain ⟨-, -, -, hρ, -, -⟩ := hψ t'
+  obtain ⟨L, hL⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
+  have hβ : ContDiff ℝ ∞ fun s ↦ Real.smoothTransition (s - (t - 3)) := by fun_prop
   set b := |t| + |t'| + 4
   obtain ⟨c, hc⟩ := hc b
   -- The cutoff `β(s) = ψ(s - (t - 3))` is one where `χ` is nonzero, and `ρ(s) = 1 - ψ(s - t')`
@@ -449,11 +398,13 @@ private theorem exists_familyDomainTrajectoryOperator_comp_eq_top [CompleteSpace
     refine (hs (by_contra fun hsb ↦ h (hρβ s hsb)) x).trans ?_
     exact mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)
   have hβ'' : ∀ s ∉ Ioo (-b) b, deriv (fun s ↦ Real.smoothTransition (s - (t - 3))) s = 0 :=
-    fun s hs ↦ hβ' s fun h ↦ hs ⟨by linarith [h.1, neg_abs_le t, abs_nonneg t'],
-      by linarith [h.2, le_abs_self t, abs_nonneg t']⟩
+    fun s hs ↦ Real.smoothTransition.deriv_comp_sub_const_of_notMem_Ioo fun h ↦
+      hs ⟨by linarith [h.1, neg_abs_le t, abs_nonneg t'],
+        by linarith [h.2, le_abs_self t, abs_nonneg t']⟩
   obtain ⟨S, K, hQ, hS, hK⟩ := exists_familyDomainTrajectoryOperator_comp_mulGraph_eq hι AL hR hβ
-    (fun s ↦ Real.smoothTransition.abs_le_one _) hβ₁ (continuous_smoothTransition_sub _)
-    (fun s ↦ Real.smoothTransition.abs_le_one _) hβχ hρ.continuous
+    (fun s ↦ Real.smoothTransition.abs_le_one _)
+    (Real.smoothTransition.abs_deriv_comp_sub_const_le hL _) (by fun_prop)
+    (fun s ↦ Real.smoothTransition.abs_le_one _) hβχ (by fun_prop)
     (fun s ↦ ⟨sub_nonneg.2 (Real.smoothTransition.le_one _),
       sub_le_self _ (Real.smoothTransition.nonneg _)⟩) hε (le_max_right c 0) hsmall' hlow hρβ hβ''
   exact ⟨_, S, K, hQ, hS, hK⟩
@@ -478,13 +429,13 @@ private theorem exists_familyDomainTrajectoryOperator_comp_eq_one_add_add [Compl
   obtain ⟨Qtop, Stop, Ktop, htop, hStop, hKtop⟩ :=
     exists_familyDomainTrajectoryOperator_comp_eq_top hι AL hRtop (t := t) hε htop hc
   refine ⟨Qbot + Qtop, Sbot + Stop, Kbot + Ktop, ?_, fun f ↦ ?_, hKbot.add hKtop⟩
-  · rw [ContinuousLinearMap.comp_add, hbot, htop, ← mulLp_add_mulLp
-      (φ := fun s ↦ 1 - Real.smoothTransition (s - (t - 2)))
-      (ψ := fun s ↦ Real.smoothTransition (s - (t - 2)))
-      (continuous_const.sub (continuous_smoothTransition_sub (t - 2)))
-      (continuous_smoothTransition_sub (t - 2))
-      (fun s ↦ Real.smoothTransition.abs_one_sub_le_one _)
-      (fun s ↦ Real.smoothTransition.abs_le_one _) fun s ↦ sub_add_cancel _ _]
+  · have h₁ : mulLp (H := H) (fun s ↦ 1 - Real.smoothTransition (s - (t - 2))) (by fun_prop)
+          (fun s ↦ Real.smoothTransition.abs_one_sub_le_one _) +
+        mulLp (fun s ↦ Real.smoothTransition (s - (t - 2))) (by fun_prop)
+          (fun s ↦ Real.smoothTransition.abs_le_one _) = 1 :=
+      Lp.multiplicationOperator_linftyOfContinuousOn_add_eq_one _ _ _ _ _
+        fun s _ ↦ sub_add_cancel _ _
+    rw [ContinuousLinearMap.comp_add, hbot, htop, ← h₁]
     ac_rfl
   · rw [add_apply, mul_add, add_mul]
     exact (norm_add_le _ _).trans (add_le_add (hSbot f) (hStop f))

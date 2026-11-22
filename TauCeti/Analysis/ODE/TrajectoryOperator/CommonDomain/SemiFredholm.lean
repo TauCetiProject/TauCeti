@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Sobolev.GraphStep.AubinLions
 public import TauCeti.Analysis.Sobolev.GraphStep.Multiplication
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
 # The semi-Fredholm estimate for the trajectory operator over a compactly embedded domain
@@ -118,33 +117,6 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [CompleteSpace
 
 /-- Almost everywhere for `μ₀` is almost everywhere on the line. -/
 private theorem ae_top_iff {P : ℝ → Prop} : (∀ᵐ s ∂μ₀, P s) ↔ ∀ᵐ s ∂volume, P s := by simp
-
-/-! ### The window term -/
-
-omit [CompleteSpace D] in
-/-- An `L²` path bounded pointwise by `c ‖ι (u s)‖` and vanishing off the window `(-b, b)` has norm
-at most `c` times the `L²` norm of `ι ∘ u` on the window. -/
-theorem norm_le_mul_norm_restrictBaseL {b c : ℝ} (hc : 0 ≤ c)
-    (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) {f : Lp H 2 μ₀}
-    (hf : ∀ᵐ s ∂volume, ‖f s‖ ≤ c * ‖ι (prev _ u s)‖)
-    (hf₀ : ∀ᵐ s ∂volume, s ∉ Ioo (-b) b → f s = 0) :
-    ‖f‖ ≤ c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u‖ := by
-  have hμW : Measure.restrict μ₀ (Ioo (-b) b) = volume.restrict (Ioo (-b) b) := by simp
-  -- The `L²` norm of `f` is its `L²` norm on the window, where it is dominated by `ι ∘ u`.
-  have hR : ∀ᵐ s ∂volume.restrict (Ioo (-b) b), ‖f s‖ ≤
-      c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u s‖ := by
-    have h₂ := ae_restrict_of_ae (s := Ioo (-b) b) (ι.coeFn_compLpL (μ := μ₀) (prev _ u))
-    rw [hμW] at h₂
-    filter_upwards [restrictBaseL_apply_ae (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) _ le_top u, h₂,
-      ae_restrict_of_ae hf] with s h₁ h₂ h₃
-    rwa [h₁, h₂]
-  have hle := eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-    ((Lp.aestronglyMeasurable f).restrict.mono_measure (by rw [hμW])) hR 2
-  rw [Lp.norm_def, Lp.norm_def, ← eLpNorm_restrict_eq_of_ae_compl_eq_zero
-    measurableSet_Ioo.nullMeasurableSet (ae_top_iff.2 hf₀), hμW]
-  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (Lp.eLpNorm_ne_top _))
-    hle).trans_eq ?_
-  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal hc]
 
 /-! ### Multiplication by a cutoff -/
 

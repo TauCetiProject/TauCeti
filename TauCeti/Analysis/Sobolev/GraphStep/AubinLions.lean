@@ -12,6 +12,7 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
 # Compactness of the window restriction over a compactly embedded domain
@@ -55,6 +56,10 @@ Letting `N → ∞`, it is a limit of compact operators in operator norm, hence 
 
 * `TauCeti.WeakDerivStep.isCompactOperator_restrictBaseL_compLpL`: the restriction of `ι ∘ u` to
   a bounded open interval in `Ω` is a compact operator on the graph space.
+* `TauCeti.WeakDerivStep.norm_le_mul_norm_restrictBaseL`: on the line, for `p = 2`, an `L²` path
+  bounded pointwise by `c ‖ι (u s)‖` and vanishing off a window `(-b, b)` has norm at most `c`
+  times that of the restriction of `ι ∘ u` to the window. With the compactness of that
+  restriction, this makes such operators compact.
 
 ## References
 
@@ -319,5 +324,38 @@ theorem isCompactOperator_restrictBaseL_compLpL (hι : IsCompactOperator ι)
     linarith
   exact (dist_eq_norm (E := WeakDerivStep volume Omega p base →L[ℝ]
     Lp H p (volume.restrict (Ioo a b))) _ _).trans_lt (hle.trans_lt hlt)
+
+/-! ### Operators dominated by the window restriction on the line -/
+
+section Line
+
+local notation "μ₀" => (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
+
+omit [CompleteSpace D] in
+/-- An `L²` path bounded pointwise by `c ‖ι (u s)‖` and vanishing off the window `(-b, b)` has norm
+at most `c` times the `L²` norm of `ι ∘ u` on the window. -/
+theorem norm_le_mul_norm_restrictBaseL {c : ℝ} (hc : 0 ≤ c)
+    (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) {f : Lp H 2 μ₀}
+    (hf : ∀ᵐ s ∂volume, ‖f s‖ ≤ c * ‖ι (prev _ u s)‖)
+    (hf₀ : ∀ᵐ s ∂volume, s ∉ Ioo (-b) b → f s = 0) :
+    ‖f‖ ≤ c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u‖ := by
+  have hμW : Measure.restrict μ₀ (Ioo (-b) b) = volume.restrict (Ioo (-b) b) := by simp
+  -- The `L²` norm of `f` is its `L²` norm on the window, where it is dominated by `ι ∘ u`.
+  have hR : ∀ᵐ s ∂volume.restrict (Ioo (-b) b), ‖f s‖ ≤
+      c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u s‖ := by
+    have h₂ := ae_restrict_of_ae (s := Ioo (-b) b) (ι.coeFn_compLpL (μ := μ₀) (prev _ u))
+    rw [hμW] at h₂
+    filter_upwards [restrictBaseL_apply_ae (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) _ le_top u, h₂,
+      ae_restrict_of_ae hf] with s h₁ h₂ h₃
+    rwa [h₁, h₂]
+  have hle := eLpNorm_le_mul_eLpNorm_of_ae_le_mul
+    ((Lp.aestronglyMeasurable f).restrict.mono_measure (by rw [hμW])) hR 2
+  rw [Lp.norm_def, Lp.norm_def, ← eLpNorm_restrict_eq_of_ae_compl_eq_zero
+    measurableSet_Ioo.nullMeasurableSet (by simpa using hf₀), hμW]
+  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (Lp.eLpNorm_ne_top _))
+    hle).trans_eq ?_
+  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal hc]
+
+end Line
 
 end TauCeti.WeakDerivStep
