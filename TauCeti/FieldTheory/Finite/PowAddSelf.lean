@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Index
+import TauCeti.FieldTheory.Finite.Card
 import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
@@ -63,14 +64,13 @@ theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
   have := finite_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
   have := Fintype.ofFinite K
   have hq := one_lt_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
-  rw [Nat.card_eq_fintype_card] at hK
   set q := p ^ n with hqdef
   -- The additive maps `T b = b ^ q + b` and `T' c = c ^ q - c`.
   let T : K →+ K := (iterateFrobenius K p n).toAddMonoidHom + .id K
   let T' : K →+ K := (iterateFrobenius K p n).toAddMonoidHom - .id K
   have hT (b : K) : T b = b ^ q + b := by simp [T, iterateFrobenius_def, hqdef]
   have hT' (c : K) : T' c = c ^ q - c := by simp [T', iterateFrobenius_def, hqdef]
-  have hpow (b : K) : b ^ q ^ 2 = b := by rw [← hK]; exact FiniteField.pow_card b
+  have hpow (b : K) : b ^ q ^ 2 = b := by rw [← hK]; exact pow_natCard b
   -- The image of `T` lies in the kernel of `T'`, since `(b ^ q + b) ^ q = b + b ^ q`.
   have hle : T.range ≤ T'.ker := by
     rintro _ ⟨b, rfl⟩
@@ -94,7 +94,7 @@ theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
     simpa [hT'] using hc
   -- `|ker T| · |im T| = q²` and both factors are at most `q`, so both are `q`.
   have hmul : Nat.card T.ker * Nat.card T.range = q ^ 2 := by
-    rw [AddSubgroup.card_ker_mul_card_range, Nat.card_eq_fintype_card, hK]
+    rw [AddSubgroup.card_ker_mul_card_range, hK]
   have hrange : Nat.card T.range ≤ q := (AddSubgroup.card_le_of_le hle).trans hker'
   have hkerq : Nat.card T.ker = q := by nlinarith
   have hrangeq : Nat.card T.range = q := by nlinarith
@@ -135,19 +135,16 @@ a power of the exponential characteristic, and for `ε = (-1) ^ k`, some nonzero
 `b + ε b ^ q = 0`. -/
 theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero
     (hK : Nat.card K = (p ^ n) ^ 2) (k : ℕ) : ∃ b ≠ (0 : K), b + (-1) ^ k * b ^ p ^ n = 0 := by
-  have := finite_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
   rcases neg_one_pow_eq_or K k with h | h <;> rw [h]
   · -- The `q` roots of `b ^ q + b = 0` are not all zero.
-    have : Finite {b : K // b ^ p ^ n + b = 0} := Subtype.finite
     have hq := one_lt_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
-    have hcard : 1 < Nat.card {b : K // b ^ p ^ n + b = 0} := by
-      rwa [natCard_pow_add_self_eq hK (zero_pow (expChar_pow_pos K p n).ne')]
-    have : Nontrivial {b : K // b ^ p ^ n + b = 0} := Finite.one_lt_card_iff_nontrivial.mp hcard
-    have hzero : (0 : K) ^ p ^ n + 0 = 0 := by
-      rw [zero_pow (expChar_pow_pos K p n).ne', add_zero]
-    obtain ⟨⟨b, hb⟩, hne⟩ := exists_ne (⟨0, hzero⟩ : {b : K // b ^ p ^ n + b = 0})
-    refine ⟨b, fun hb0 ↦ hne (Subtype.ext hb0), ?_⟩
-    rw [one_mul, add_comm, hb]
+    have hcard : 1 < {b : K | b ^ p ^ n + b = 0}.ncard := by
+      rwa [← Nat.card_coe_set_eq, Set.coe_ofPred,
+        natCard_pow_add_self_eq hK (zero_pow (expChar_pow_pos K p n).ne')]
+    obtain ⟨b, hb, hne⟩ := Set.exists_ne_of_one_lt_ncard hcard 0
+    refine ⟨b, hne, ?_⟩
+    rw [one_mul, add_comm]
+    exact hb
   · exact ⟨1, one_ne_zero, by simp⟩
 
 /-- The quadratic finite-field involution admits an element of trace one, in every
@@ -182,9 +179,7 @@ theorem natCard_add_pow_eq_pow_mul {q : ℕ} (hK : Nat.card K = q ^ 2) :
     rw [← hcard, ← Nat.card_eq_fintype_card, hK]
     exact dvd_pow_self q two_ne_zero
   obtain ⟨n, -, rfl⟩ := (Nat.dvd_prime_pow hprime).mp hdvd
-  have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by
-    rw [← hK, Nat.card_eq_fintype_card]
-    exact _root_.FiniteField.pow_card a
+  have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by rw [← hK]; exact pow_natCard a
   have hfib (x : K) : Nat.card {z : K // z ^ p ^ n + z = x ^ p ^ n * x} = p ^ n := by
     apply natCard_pow_add_self_eq hK
     rw [mul_pow, ← pow_mul, ← sq, hpow, mul_comm]

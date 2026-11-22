@@ -15,8 +15,13 @@ nonzero in `K` exactly when `p ∤ n`, so `q` and `n` are then coprime. This is 
 order `q` of a residue field enters arguments about torsion of order prime to the residue
 characteristic: multiplication by `q` is injective on such torsion.
 
+Every element of a finite field is fixed by the `Nat.card K`-th power map. Mathlib states this as
+`FiniteField.pow_card`, with the order written as `Fintype.card K`; here it is restated for
+`Nat.card K` under `[Finite K]`, the form in which an equation `Nat.card K = q ^ 2` is rewritten.
+
 ## Main results
 
+* `TauCeti.FiniteField.pow_natCard`: in a finite group with zero, `a ^ Nat.card K = a`.
 * `TauCeti.FiniteField.natCard_coprime_of_natCast_ne_zero`: if `(n : K) ≠ 0`, then `Nat.card K`
   and `n` are coprime.
 * `TauCeti.FiniteField.odd_card_of_not_isSquare`: a finite field with a nonsquare has odd order.
@@ -27,6 +32,14 @@ characteristic: multiplication by `q` is injective on such torsion.
 public section
 
 namespace TauCeti.FiniteField
+
+/-- In a finite group with zero `K`, for instance a finite field, every element is fixed by the
+`Nat.card K`-th power map: Mathlib's `FiniteField.pow_card`, with the order written as `Nat.card K`
+and only `[Finite K]` assumed. -/
+theorem pow_natCard {K : Type*} [GroupWithZero K] [Finite K] (a : K) : a ^ Nat.card K = a := by
+  let := Fintype.ofFinite K
+  rw [Nat.card_eq_fintype_card]
+  exact _root_.FiniteField.pow_card a
 
 /-- **The order of a finite field is prime to every integer nonzero in it.** If `(n : K) ≠ 0` in a
 finite field `K`, then `Nat.card K = p ^ k` and `n` are coprime, `p` being the characteristic. -/

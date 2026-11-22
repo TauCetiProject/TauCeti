@@ -164,7 +164,8 @@ theorem finite_of_natCast_card_ne_zero {α R : Type*} [AddMonoidWithOne R]
   Nat.finite_of_card_ne_zero fun hcard ↦ h (by simp [hcard])
 
 /-- A type `α` with `Nat.card α = q ^ k` for some `q ≠ 0` is finite, since `Nat.card` of an
-infinite type is `0`. No `[Finite α]` is assumed: the `Nat.card` equation alone gives it. -/
+infinite type is `0`. No `[Finite α]` is assumed: the `Nat.card` equation and `q ≠ 0` together
+give it. -/
 theorem finite_of_natCard_eq_pow {α : Type*} {q k : ℕ} (hq : q ≠ 0) (h : Nat.card α = q ^ k) :
     Finite α :=
   Nat.finite_of_card_ne_zero (h ▸ pow_ne_zero k hq)

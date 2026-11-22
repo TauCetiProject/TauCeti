@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 import TauCeti.Algebra.CharP.Frobenius.Fixed
+import TauCeti.FieldTheory.Finite.Card
 import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
@@ -158,11 +159,9 @@ the involution `x ↦ x ^ q`. -/
 theorem iterateFrobenius_involutive {n : ℕ} (hK : Nat.card K = p ^ (n * 2)) :
     Function.Involutive (iterateFrobenius K p n) := by
   have := finite_of_natCard_eq_pow (expChar_pos K p).ne' hK
-  let := Fintype.ofFinite K
   intro x
   -- Two passes of the `p ^ n`-power map make the `Nat.card K`-power map, which fixes `x`.
-  rw [← iterateFrobenius_add_apply, ← mul_two, iterateFrobenius_def, ← hK,
-    Nat.card_eq_fintype_card, FiniteField.pow_card]
+  rw [← iterateFrobenius_add_apply, ← mul_two, iterateFrobenius_def, ← hK, pow_natCard]
 
 /-- On a field of exponential characteristic `p` with `Nat.card K = p ^ 2`, the Frobenius
 automorphism `x ↦ x ^ p` is an involution: the case `n = 1` of `iterateFrobenius_involutive`.

@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.Algebra.Group.Pow
+import TauCeti.FieldTheory.Finite.Card
 import TauCeti.FieldTheory.Finite.PowAddSelf
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.RatFunc.Transcendental
@@ -49,9 +50,10 @@ the two generators: `σ_{a,b} ∘ σ_{a',b'} = σ_{a + a', b + b' + a a'^q}` and
 `σ_{a,b}⁻¹ = σ_{-a, b^q}` (`TauCeti.IsHermitianCoordinates.translation_mul` and
 `TauCeti.IsHermitianCoordinates.translation_inv`). The subgroup `TauCeti.hermitianTranslations`
 is defined by this action on `x` and `y`, so it makes sense with no hypothesis on `x` and `y`.
-Over `K = 𝔽_{q²}` every `a` satisfies `a ^ (q ^ 2) = a`, and `c = a ^ (q + 1)` satisfies
-`c ^ q = c`, so `TauCeti.FiniteField.natCard_pow_add_self_eq` gives exactly `q` choices of `b`
-for each of the `q²` choices of `a`.
+Over `K = 𝔽_{q²}` every `a` satisfies `a ^ (q ^ 2) = a`, so the translations correspond to the
+pairs `(a, b)` with `b ^ q + b = a ^ (q + 1)`. Swapped, these are the solutions `(b, a)` of the
+affine trace equation `b + b ^ q = a ^ q a`, and `TauCeti.FiniteField.natCard_add_pow_eq_pow_mul`
+counts `q³` of them: `q` choices of `b` for each of the `q²` choices of `a`.
 
 ## Main definitions
 
@@ -369,13 +371,9 @@ omit hq in
 `[Finite K]` is assumed: the `Nat.card` equation implies it. -/
 theorem natCard_hermitianTranslations (hK : Nat.card K = (p ^ n) ^ 2) :
     Nat.card (hermitianTranslations K p n x y) = (p ^ n) ^ 3 := by
-  classical
   have := finite_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
-  have := Fintype.ofFinite K
   have hq := one_lt_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
-  have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by
-    rw [← hK, Nat.card_eq_fintype_card]
-    exact _root_.FiniteField.pow_card a
+  have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by rw [← hK]; exact FiniteField.pow_natCard a
   -- The translations are in bijection with the pairs `(a, b)` with `b ^ q + b = a ^ (q + 1)`.
   let f : {ab : K × K // ab.2 ^ p ^ n + ab.2 = ab.1 ^ (p ^ n + 1)} →
       hermitianTranslations K p n x y := fun ab ↦
@@ -386,16 +384,11 @@ theorem natCard_hermitianTranslations (hK : Nat.card K = (p ^ n) ^ 2) :
       exact Subtype.ext (Prod.ext h1 h2)
     · obtain ⟨a, b, ha, hb, hσ⟩ := h.exists_translation_eq hq σ.property
       exact ⟨⟨(a, b), hb⟩, Subtype.ext hσ⟩
-  rw [← Nat.card_congr (Equiv.ofBijective f hf),
-    Nat.card_congr (Equiv.subtypeProdEquivSigmaSubtype fun a b ↦ b ^ p ^ n + b = a ^ (p ^ n + 1)),
-    Nat.card_sigma]
-  -- For each `a`, the norm `a ^ (q + 1)` satisfies `c ^ q = c`, so there are `q` choices of `b`.
-  have hfib (a : K) : Nat.card {b : K // b ^ p ^ n + b = a ^ (p ^ n + 1)} = p ^ n := by
-    refine FiniteField.natCard_pow_add_self_eq hK ?_
-    rw [← pow_mul, add_mul, one_mul, pow_add, ← sq, hpow, ← pow_succ']
-  rw [Nat.card_eq_fintype_card] at hK
-  simp only [hfib, Finset.sum_const, Finset.card_univ, hK, smul_eq_mul]
-  ring
+  -- Swapping them, these pairs are the `q³` solutions `(b, a)` of the affine trace equation
+  -- `b + b ^ q = a ^ q * a`.
+  rw [← Nat.card_congr (Equiv.ofBijective f hf), ← FiniteField.natCard_add_pow_eq_pow_mul hK]
+  exact Nat.card_congr <| Equiv.subtypeEquiv (Equiv.prodComm K K) fun ab ↦ by
+    rw [Equiv.prodComm_apply, Prod.fst_swap, Prod.snd_swap, pow_succ, add_comm (ab.2 ^ p ^ n)]
 
 end IsHermitianCoordinates
 
