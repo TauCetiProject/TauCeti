@@ -51,10 +51,6 @@ Monticone.
   `RestrictedProduct.isTopologicalBasis_cofiniteOpenBoxes`: when `A i` is open for cofinitely many
   `i`, the open cofinitely-`A i` boxes form a neighbourhood basis at every point and a topological
   basis of `Πʳ i, [R i, A i]`.
-* `TauCeti.isTopologicalBasis_restrictedProduct_boxes`: when `A i` is open for cofinitely many `i`,
-  boxes restricting finitely many coordinates (covering all indices where `A i` is not open) to
-  topological-basis elements of the factors and the remaining coordinates to `A i` form a
-  topological basis of `Πʳ i, [R i, A i]`.
 
 ## References
 
@@ -490,53 +486,3 @@ theorem isTopologicalBasis_cofiniteOpenBoxes (hA : ∀ᶠ i in cofinite, IsOpen 
 end Topology
 
 end RestrictedProduct
-
-namespace TauCeti
-
-section Bases
-
-open RestrictedProduct
-
-variable {ι : Type*} {R : ι → Type*} {A : ∀ i, Set (R i)} [∀ i, TopologicalSpace (R i)]
-
-open Classical in
-/-- Given a topological basis `b i` on each factor `R i` and reference sets `A i` that are open for
-cofinitely many `i`, the boxes restricting finitely many coordinates `S` (covering all indices where
-`A i` is not open) to elements of `b i` and the remaining coordinates to `A i` form a topological
-basis of the restricted product `Πʳ i, [R i, A i]`. -/
-theorem isTopologicalBasis_restrictedProduct_boxes (hA : ∀ᶠ i in cofinite, IsOpen (A i))
-    {b : ∀ i, Set (Set (R i))} (hb : ∀ i, TopologicalSpace.IsTopologicalBasis (b i)) :
-    TopologicalSpace.IsTopologicalBasis
-      {s : Set (Πʳ i, [R i, A i]) |
-        ∃ (S : Finset ι) (U : ∀ i : S, Set (R i)),
-          (∀ i ∉ S, IsOpen (A i)) ∧ (∀ i : S, U i ∈ b i.val) ∧
-          s = box fun i ↦ if hi : i ∈ S then U ⟨i, hi⟩ else A i} := by
-  refine (isTopologicalBasis_cofiniteOpenBoxes hA).isTopologicalBasis_of_exists_subset ?_ ?_
-  · rintro _ ⟨S, U, hS, hU, rfl⟩
-    refine isOpen_box_of_eventually_eq (fun i ↦ ?_) ?_
-    · split_ifs with hi
-      exacts [(hb i).isOpen (hU ⟨i, hi⟩), hS i hi]
-    · filter_upwards [S.finite_toSet.compl_mem_cofinite] with i hi
-      exact dite_eq_right (fun hi' ↦ absurd hi' hi)
-  · intro s hs x hx
-    obtain ⟨C, hCopen, hCA, rfl⟩ := mem_cofiniteOpenBoxes_iff.mp hs
-    have hxC : ∀ i, x i ∈ C i := mem_box.mp hx
-    let S : Finset ι := (mem_cofinite.mp (hCA.and hA)).toFinset
-    have hS : ∀ i ∉ S, C i = A i ∧ IsOpen (A i) := fun i hi ↦
-      Classical.byContradiction fun hne ↦ hi ((Set.Finite.mem_toFinset _).mpr hne)
-    have hU_ex : ∀ i : S, ∃ U ∈ b i.val, x i.val ∈ U ∧ U ⊆ C i.val := fun i ↦
-      (hb i.val).exists_subset_of_mem_open (hxC i.val) (hCopen i.val)
-    choose U hUb hxU hUC using hU_ex
-    refine ⟨box fun i ↦ if hi : i ∈ S then U ⟨i, hi⟩ else A i,
-      ⟨S, U, fun i hi ↦ (hS i hi).2, hUb, rfl⟩,
-      mem_box.mpr fun i ↦ ?_, box_mono fun i ↦ ?_⟩
-    · split_ifs with hi
-      · exact hxU ⟨i, hi⟩
-      · simpa [(hS i hi).1] using hxC i
-    · split_ifs with hi
-      · exact hUC ⟨i, hi⟩
-      · rw [(hS i hi).1]
-
-end Bases
-
-end TauCeti

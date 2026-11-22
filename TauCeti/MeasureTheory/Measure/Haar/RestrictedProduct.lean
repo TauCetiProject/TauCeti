@@ -36,9 +36,9 @@ measures on `Πʳ i, [G i, B i]` in two regimes:
    `Πʳ i, [G i, B i]` is locally compact
    (`TauCeti.locallyCompactSpace_restrictedProduct_of_measure_ne_top_of_isMulLeftInvariant`). The
    measure is determined among *all* measures by its values on open boxes
-   (`TauCeti.eq_restrictedHaar_of_box`), and on each principal piece it is the product
-   `TauCeti.restrictedPrincipalPieceMeasure` of a finite product Haar measure with Kolmogorov's
-   infinite product of probability Haar measures.
+   (`TauCeti.eq_restrictedHaar_of_box`), and on each principal piece (for any finite set `T` with
+   `μ i (B i) = 1` for every `i ∉ T`) it is the product `TauCeti.restrictedPrincipalPieceMeasure`
+   of a finite product Haar measure with Kolmogorov's infinite product of probability Haar measures.
 2. **Convergent restricted Haar product** (`TauCeti.convergentHaarProduct`,
    `TauCeti.exists_unique_convergentHaarProduct`): assuming only
    `Summable fun i : {i // i ∉ S} ↦ |(μ i.1 (B i.1)).toReal - 1|` outside a finite set `S`, there
@@ -133,7 +133,7 @@ theorem isHaarMeasure_restrictedPrincipalPieceMeasure {B : ∀ i, K i} {T : Fins
     (restrictedPrincipalPieceMeasure B T μ).IsHaarMeasure := by
   have _ (i : {i // i ∉ T}) :
       IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
-    (isProbabilityMeasure_comap_subtype (μ i.val)).mpr
+    (isProbabilityMeasure_comap_subtype_iff (μ i.val)).mpr
       ⟨(hBopen i.val i.property).measurableSet.nullMeasurableSet, hμT i.val i.property⟩
   have _ (i : {i // i ∉ T}) : ((μ i.val).comap (Subtype.val : B i.val → G i.val)).IsHaarMeasure :=
     IsHaarMeasure.comap (mH := inferInstance) (μ i.val) (f := SubgroupClass.subtype (B i.val))
@@ -221,7 +221,7 @@ private theorem comap_levelMonoidHom_eq (B : ∀ i, K i)
       (hBopen.out i.val).isOpenEmbedding_subtypeVal
   have _ (i : {i // i ∉ T}) :
       IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
-    (isProbabilityMeasure_comap_subtype (μ i.val)).mpr
+    (isProbabilityMeasure_comap_subtype_iff (μ i.val)).mpr
       ⟨(hBopen.out i.val).measurableSet.nullMeasurableSet, hT i.val i.property⟩
   have _ (i : {i // i ∉ T}) : CompactSpace (B i.val) := by
     have _ : LocallyCompactSpace (B i.val) :=
@@ -340,7 +340,7 @@ theorem exists_unique_restrictedHaar :
       (Finset.prod_subset hS₀T fun i _ hiS₀ ↦ by rw [hKref_eq i hiS₀, (hS₀ i hiS₀).2]).symm
     have _ (i : {i // i ∉ T}) :
         IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
-      (isProbabilityMeasure_comap_subtype (μ i.val)).mpr
+      (isProbabilityMeasure_comap_subtype_iff (μ i.val)).mpr
         ⟨(hBopen.out i.val).measurableSet.nullMeasurableSet, hT_one i.val i.property⟩
     rw [← image_levelMonoidHom_pi_prod_univ B T hCBT,
       ← (isOpenEmbedding_levelMonoidHom B T).measurableEmbedding.comap_apply,
@@ -407,10 +407,12 @@ theorem comap_levelMonoidHom_restrictedHaar {T : Finset ι} (hT : ∀ i ∉ T, �
   exact finprod_eq_prod_of_mulSupport_subset _ (s := T) fun i hi ↦
     Classical.byContradiction fun hiT ↦ hi (by dsimp only; rw [hCB i hiT, hT i hiT])
 
-/-- Pulling `restrictedHaar` back to `levelOpenSubgroup B T _` identifies it via
-`levelOpenSubgroupEquiv` with `restrictedPrincipalPieceMeasure B T μ`. -/
-@[to_additive /-- Pulling `restrictedAddHaar` back to `levelOpenAddSubgroup B T _` identifies it
-via `levelOpenAddSubgroupEquiv` with `restrictedPrincipalPieceMeasure B T μ`. -/]
+/-- Pulling `restrictedHaar` back to `levelOpenSubgroup B T _` (for any finite set `T` with
+`μ i (B i) = 1` for every `i ∉ T`) identifies it via `levelOpenSubgroupEquiv` with
+`restrictedPrincipalPieceMeasure B T μ`. -/
+@[to_additive /-- Pulling `restrictedAddHaar` back to `levelOpenAddSubgroup B T _` (for any finite
+set `T` with `μ i (B i) = 1` for every `i ∉ T`) identifies it via `levelOpenAddSubgroupEquiv` with
+`restrictedPrincipalPieceMeasure B T μ`. -/]
 theorem comap_levelOpenSubgroup_restrictedHaar {T : Finset ι} (hT : ∀ i ∉ T, μ i (B i) = 1) :
     (restrictedHaar B μ hμB).comap
         ((↑) : levelOpenSubgroup B T (fun i _ ↦ hBopen.out i) → Πʳ i, [G i, B i]) =
@@ -418,14 +420,12 @@ theorem comap_levelOpenSubgroup_restrictedHaar {T : Finset ι} (hT : ∀ i ∉ T
         (levelOpenSubgroupEquiv B T fun i _ ↦ hBopen.out i) := by
   let U := levelOpenSubgroup B T fun i _ ↦ hBopen.out i
   let e := levelOpenSubgroupEquiv B T fun i _ ↦ hBopen.out i
-  let he := e.toHomeomorph.toMeasurableEquiv
-  have hmu : MeasurableEmbedding ((↑) : U → Πʳ i, [G i, B i]) :=
+  have hmu : MeasurableEmbedding (Subtype.val : U → Πʳ i, [G i, B i]) :=
     MeasurableEmbedding.subtypeVal U.isOpen.measurableSet
-  change _ = (restrictedPrincipalPieceMeasure B T μ).map he
-  rw [eq_comm, he.map_apply_eq_iff_map_symm_apply_eq, he.map_symm, hmu.comap_comap]
-  change _ = (restrictedHaar B μ hμB).comap (((↑) : U → Πʳ i, [G i, B i]) ∘ e)
-  rw [show (((↑) : U → Πʳ i, [G i, B i]) ∘ e) = levelMonoidHom B T from
-      funext (coe_levelOpenSubgroupEquiv B T _),
+  have he : (e : _ → _) = e.toHomeomorph.toMeasurableEquiv :=
+    e.toHomeomorph.toMeasurableEquiv_coe.symm
+  rw [eq_comm, he, e.toHomeomorph.toMeasurableEquiv.map_apply_eq_iff_map_symm_apply_eq,
+    MeasurableEquiv.map_symm, hmu.comap_comap, ← he, coe_comp_levelOpenSubgroupEquiv,
     comap_levelMonoidHom_restrictedHaar B μ hμB hT]
 
 /-- Value of `restrictedHaar` on a coordinate box `box C` agreeing with `B i` outside a finite set
@@ -438,7 +438,7 @@ theorem restrictedHaar_box {T : Finset ι} (hT : ∀ i ∉ T, μ i (B i) = 1)
     restrictedHaar B μ hμB (box C) = ∏ i ∈ T, μ i (C i) := by
   have _ (i : {i // i ∉ T}) :
       IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
-    (isProbabilityMeasure_comap_subtype (μ i.val)).mpr
+    (isProbabilityMeasure_comap_subtype_iff (μ i.val)).mpr
       ⟨(hBopen.out i.val).measurableSet.nullMeasurableSet, hT i.val i.property⟩
   rw [← image_levelMonoidHom_pi_prod_univ B T hCB,
     ← (isOpenEmbedding_levelMonoidHom B T).measurableEmbedding.comap_apply,
