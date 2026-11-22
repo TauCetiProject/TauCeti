@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Logic.Equiv.PartialEquiv
 public import Mathlib.LinearAlgebra.Projectivization.Basic
-public import TauCeti.Algebra.Field.Fin.Tuple
+public import TauCeti.Algebra.GroupWithZero.Fin.Tuple
 public import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -130,10 +130,10 @@ the `i`-th homogeneous coordinate is nonzero, it is given by the ratios of the o
 that one, enumerated by `Fin.succAbove i`. Its inverse sends `z` to `[Fin.insertNth i 1 z]`. -/
 noncomputable def affineChart (i : Fin (n + 1)) : PartialEquiv (ℙ K (Fin (n + 1) → K)) (Fin n → K)
     where
-  toFun := Projectivization.lift (fun v j ↦ v.1 (i.succAbove j) / v.1 i) fun a b t h ↦ by
+  toFun := Projectivization.lift (fun v j ↦ v.val (i.succAbove j) / v.val i) fun a b t h ↦ by
     have ht : t ≠ 0 := by
       rintro rfl
-      exact a.2 (by simpa using h)
+      exact a.property (by simpa using h)
     ext j
     simp [h, mul_div_mul_left _ _ ht]
   invFun z := mk K (Fin.insertNth (α := fun _ ↦ K) i 1 z)

@@ -86,7 +86,7 @@ theorem mulByIntIsogeny_map [W.IsElliptic] {n : ℤ} (hn : psiFunctionField W n 
     (mulByIntIsogeny W hn).map f = mulByIntIsogeny (W.map f) (n := n)
       (map_psiFunctionField W f n ▸
         (map_ne_zero_iff _ (FunctionField.map W f).injective).2 hn) := by
-  refine eq_of_pullback_coords rfl _ _ ?_ ?_
+  refine eq_of_pullback_coords (U := W.map f) (V := W.map f) rfl _ _ ?_ ?_
   · rw [map_pullback, CoordinatePullback.map_of_X, mulByIntIsogeny_pullback,
       mulByIntIsogeny_pullback, mulByIntPullback_X, mulByIntPullback_X, map_mulByIntX]
   · rw [map_pullback, CoordinatePullback.map_root, mulByIntIsogeny_pullback,

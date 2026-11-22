@@ -28,16 +28,16 @@ variable {R : Type*} [CommRing R] (I : Ideal R) {n : ℕ} (m k : ℕ) (hn : n = 
 /-- Composing a point of the universal coprime factorization ring with values in `R` with the
 reduction `R → R ⧸ I` reduces its first factor modulo `I`. -/
 lemma homEquiv_mkₐ_comp_fst :
-    (homEquiv (R ⧸ I) m k hn P ((Ideal.Quotient.mkₐ R I).comp φ)).1.1.1 =
-      (homEquiv R m k hn P φ).1.1.1.map (Ideal.Quotient.mk I) := by
+    (homEquiv (R ⧸ I) m k hn P ((Ideal.Quotient.mkₐ R I).comp φ)).val.1.val =
+      (homEquiv R m k hn P φ).val.1.val.map (Ideal.Quotient.mk I) := by
   rw [homEquiv_comp_fst, ← AlgHom.toRingHom_eq_coe, Ideal.Quotient.mkₐ_toRingHom]
   simp
 
 /-- Composing a point of the universal coprime factorization ring with values in `R` with the
 reduction `R → R ⧸ I` reduces its second factor modulo `I`. -/
 lemma homEquiv_mkₐ_comp_snd :
-    (homEquiv (R ⧸ I) m k hn P ((Ideal.Quotient.mkₐ R I).comp φ)).1.2.1 =
-      (homEquiv R m k hn P φ).1.2.1.map (Ideal.Quotient.mk I) := by
+    (homEquiv (R ⧸ I) m k hn P ((Ideal.Quotient.mkₐ R I).comp φ)).val.2.val =
+      (homEquiv R m k hn P φ).val.2.val.map (Ideal.Quotient.mk I) := by
   rw [homEquiv_comp_snd, ← AlgHom.toRingHom_eq_coe, Ideal.Quotient.mkₐ_toRingHom]
   simp
 

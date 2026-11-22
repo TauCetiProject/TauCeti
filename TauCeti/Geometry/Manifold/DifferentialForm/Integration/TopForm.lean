@@ -672,6 +672,14 @@ public theorem integralTopForm_smul (o : Manifold.Orientation I M (Fin k))
     rw [integralTopForm_eq_zero_of_not_integrable _ _ hi',
       integralTopForm_eq_zero_of_not_integrable _ _ hi, mul_zero]
 
+/-- The top-form integral respects subtraction of integrable rough forms. -/
+public theorem integralTopForm_sub_of_integrable [IsManifold I 1 M]
+    (o : Manifold.Orientation I M (Fin k)) {φ ψ : RoughForm I M ℝ k}
+    (hφ : IntegrableTopForm φ) (hψ : IntegrableTopForm ψ) :
+    integralTopForm o (φ - ψ) = integralTopForm o φ - integralTopForm o ψ := by
+  rw [sub_eq_add_neg, integralTopForm_add_of_integrable o hφ hψ.neg, ← neg_one_smul ℝ ψ,
+    integralTopForm_smul, neg_one_mul, ← sub_eq_add_neg]
+
 /-- A preferred chart computes the whole integral when the form vanishes outside that
 chart up to a chartwise null set. The premise uses the actual nonzero values, rather than
 their closure, so null faces or endpoints may be omitted from the chart. -/

@@ -125,6 +125,33 @@ private lemma sections_ladder {M N : X.Modules} (f : M ⟶ N) :
   ext x
   exact (cohomologyZeroEquiv_cohomologyMap f x).symm
 
+/-- A monomorphism of sheaves of modules is injective on cohomology in degree zero. -/
+theorem cohomologyMap_injective {M N : X.Modules} (f : M ⟶ N) [Mono f] :
+    Function.Injective (cohomologyMap f 0) :=
+  CategoryTheory.Sheaf.H.map_injective ((toSheaf X).map f)
+
+/-- Global sections are left exact: a monomorphism of sheaves of modules is injective on global
+sections. -/
+theorem sections_injective {M N : X.Modules} (f : M ⟶ N) [Mono f] :
+    Function.Injective ⇑(f.app ⊤) := by
+  intro a b hab
+  apply (cohomologyZeroEquiv M).symm.injective
+  apply cohomologyMap_injective f
+  apply (cohomologyZeroEquiv N).injective
+  rw [cohomologyZeroEquiv_cohomologyMap, cohomologyZeroEquiv_cohomologyMap,
+    AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply, hab]
+
+/-- Multiplication by a global function on cohomology is the map induced by multiplication by
+that function on the coefficient sheaf. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyMap_globalSectionsSmul_apply (M : X.Modules)
+    (i : ℕ) (r : Γ(X, ⊤)) (x : Cohomology M i) :
+    cohomologyMap (globalSectionsSmul M r) i x = r • x := by
+  rw [cohomology_smul, cohomologyFunctor_map]
+  rfl
+
+section ShortExact
+
 variable {S : ShortComplex X.Modules} (hS : S.ShortExact)
 
 include hS
@@ -155,12 +182,6 @@ theorem exact_cohomologyMap_cohomologyδ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
 theorem exact_cohomologyδ_cohomologyMap (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
     Function.Exact (cohomologyδ hS n₀ n₁ h) (cohomologyMap S.f n₁) :=
   CategoryTheory.Sheaf.H.exact_δ_map (shortExact_map_toSheaf hS) n₀ n₁ h
-
-omit hS in
-/-- A monomorphism of sheaves of modules is injective on cohomology in degree zero. -/
-theorem cohomologyMap_injective {M N : X.Modules} (f : M ⟶ N) [Mono f] :
-    Function.Injective (cohomologyMap f 0) :=
-  CategoryTheory.Sheaf.H.map_injective ((toSheaf X).map f)
 
 /-- If `Hⁿ¹(X, M₁)` vanishes, then `Hⁿ⁰(X, M₂) →+ Hⁿ⁰(X, M₃)` is surjective. -/
 theorem cohomologyMap_surjective (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
@@ -205,18 +226,6 @@ theorem exact_sections : Function.Exact ⇑(S.f.app ⊤) ⇑(S.g.app ⊤) :=
     (cohomologyZeroEquiv S.X₂) (cohomologyZeroEquiv S.X₃) (sections_ladder S.f)
     (sections_ladder S.g) (exact_cohomologyMap_cohomologyMap hS 0)
 
-omit hS in
-/-- Global sections are left exact: a monomorphism of sheaves of modules is injective on global
-sections. -/
-theorem sections_injective {M N : X.Modules} (f : M ⟶ N) [Mono f] :
-    Function.Injective ⇑(f.app ⊤) := by
-  intro a b hab
-  apply (cohomologyZeroEquiv M).symm.injective
-  apply cohomologyMap_injective f
-  apply (cohomologyZeroEquiv N).injective
-  rw [cohomologyZeroEquiv_cohomologyMap, cohomologyZeroEquiv_cohomologyMap,
-    AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply, hab]
-
 /-- If `H¹(X, M₁)` vanishes, then every global section of `M₃` lifts to a global section of `M₂`.
 This is the form in which the long exact sequence is normally used. -/
 theorem sections_surjective (h₁ : Subsingleton (Cohomology S.X₁ 1)) :
@@ -227,17 +236,8 @@ theorem sections_surjective (h₁ : Subsingleton (Cohomology S.X₁ 1)) :
   refine ⟨cohomologyZeroEquiv S.X₂ x, ?_⟩
   rw [← cohomologyZeroEquiv_cohomologyMap, hx, AddEquiv.apply_symm_apply]
 
-omit hS in
-/-- Multiplication by a global function on cohomology is the map induced by multiplication by
-that function on the coefficient sheaf. -/
-@[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyMap_globalSectionsSmul_apply (M : X.Modules)
-    (i : ℕ) (r : Γ(X, ⊤)) (x : Cohomology M i) :
-    cohomologyMap (globalSectionsSmul M r) i x = r • x := by
-  rw [cohomology_smul, cohomologyFunctor_map]
-  rfl
+end ShortExact
 
-omit hS in
 /-- The connecting map is natural in the short exact sequence: a morphism `φ : S₁ ⟶ S₂` of short
 exact sequences of sheaves of modules makes the square formed by the two connecting maps and the
 maps induced by `φ.τ₃` and `φ.τ₁` commute. -/
@@ -247,6 +247,12 @@ theorem cohomologyδ_naturality {S₁ S₂ : ShortComplex X.Modules} (h₁ : S�
       cohomologyδ h₂ n₀ n₁ h (cohomologyMap φ.τ₃ n₀ x) :=
   (CategoryTheory.Sheaf.H.δ_naturality n₀ n₁ h (shortExact_map_toSheaf h₁)
     (shortExact_map_toSheaf h₂) ((toSheaf X).mapShortComplex.map φ) x).symm
+
+section ShortExactLinear
+
+variable {S : ShortComplex X.Modules} (hS : S.ShortExact)
+
+include hS
 
 /-- The connecting map of the long exact cohomology sequence is linear over the ring of global
 functions. -/
@@ -272,12 +278,13 @@ lemma cohomologyδLinear_apply (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) (x : Coho
     cohomologyδLinear hS n₀ n₁ h x = cohomologyδ hS n₀ n₁ h x :=
   (rfl)
 
+end ShortExactLinear
+
 section Base
 
 variable (R : Type u) [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
   {S : ShortComplex X.Modules}
 
-omit hS in
 /-- For a scheme over a commutative ring, the connecting map of the long exact cohomology
 sequence is linear over the base ring. -/
 def cohomologyδBaseLinear (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
@@ -292,14 +299,12 @@ def cohomologyδBaseLinear (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n₀ + 1 =
       (baseRingToGlobalSections R X r) • cohomologyδLinear hS n₀ n₁ h x
     exact (cohomologyδLinear hS n₀ n₁ h).map_smul _ x
 
-omit hS in
 @[simp]
 lemma cohomologyδBaseLinear_apply (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
     (x : Cohomology S.X₃ n₀) :
     cohomologyδBaseLinear R X hS n₀ n₁ h x = cohomologyδ hS n₀ n₁ h x :=
   (rfl)
 
-omit hS in
 /-- The base-linear map induced on cohomology by a morphism of sheaves of modules has the same
 underlying function as `cohomologyMap`. -/
 @[simp]
@@ -309,14 +314,12 @@ lemma coe_cohomologyMapBaseLinear {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
   rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
   exact AddCommGrpCat.ofHom_apply _ x
 
-omit hS in
 /-- The base-linear connecting map has the same underlying function as `cohomologyδ`. -/
 @[simp]
 lemma coe_cohomologyδBaseLinear (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
     ⇑(cohomologyδBaseLinear R X hS n₀ n₁ h) = ⇑(cohomologyδ hS n₀ n₁ h) :=
   funext (cohomologyδBaseLinear_apply R X hS n₀ n₁ h)
 
-omit hS in
 /-- The long exact cohomology sequence is exact at `Hⁱ(X, M₃)`, as a sequence of modules over
 the base ring. -/
 theorem exact_cohomologyMapBaseLinear_cohomologyδBaseLinear (hS : S.ShortExact) (i : ℕ) :
@@ -332,7 +335,6 @@ section Field
 variable (k : Type u) [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))]
   {S : ShortComplex X.Modules}
 
-omit hS in
 /-- `Hⁱ(X, M₂)` is squeezed by the exact sequence between `Hⁱ(X, M₁)` and `Hⁱ(X, M₃)`, so it is
 finite-dimensional as soon as those two are. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X₂
@@ -343,9 +345,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
       (cohomologyMapBaseLinear k X S.g i) := by
     rw [coe_cohomologyMapBaseLinear, coe_cohomologyMapBaseLinear]
     exact exact_cohomologyMap_cohomologyMap hS i
-  exact finiteDimensional_of_exact hex
+  exact hex.moduleFinite
 
-omit hS in
 /-- `Hⁿ¹(X, M₁)` is squeezed by the exact sequence between `Hⁿ⁰(X, M₃)` and `Hⁿ¹(X, M₂)`, where
 `n₀ + 1 = n₁`, so it is finite-dimensional as soon as those two are. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X₁
@@ -356,9 +357,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
       (cohomologyMapBaseLinear k X S.f n₁) := by
     simpa only [coe_cohomologyδBaseLinear, coe_cohomologyMapBaseLinear] using
       exact_cohomologyδ_cohomologyMap hS n₀ n₁ h
-  exact finiteDimensional_of_exact hex
+  exact hex.moduleFinite
 
-omit hS in
 /-- A monomorphism `M ⟶ N` embeds `H⁰(X, M)` into `H⁰(X, N)`, so `H⁰(X, M)` is
 finite-dimensional as soon as `H⁰(X, N)` is. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_zero_of_mono
