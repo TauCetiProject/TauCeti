@@ -115,6 +115,40 @@ theorem matrixMutationRight_submatrix [DecidableEq K'] {row' : K' ↪ I'} {f : I
   ext i j
   simp only [matrixMutationRight_apply, submatrix_apply, Matrix.one_apply, hg.eq_iff, h]
 
+/-- The left factor after mutation in the same direction uses the opposite sign at the
+original matrix. -/
+@[simp]
+theorem matrixMutationLeft_matrixMutation (row : K ↪ I) (B : Matrix I K ℤ)
+    (k : K) (ε : ℤ) :
+    matrixMutationLeft row (matrixMutation row B k) k ε = matrixMutationLeft row B k (-ε) := by
+  ext i j
+  simp [matrixMutationLeft_apply, matrixMutation_apply_col]
+
+/-- The right factor after mutation in the same direction uses the opposite sign at the
+original matrix. -/
+@[simp]
+theorem matrixMutationRight_matrixMutation (row : K ↪ I) (B : Matrix I K ℤ)
+    (k : K) (ε : ℤ) :
+    matrixMutationRight row (matrixMutation row B k) k ε = matrixMutationRight row B k (-ε) := by
+  ext i j
+  simp [matrixMutationRight_apply, matrixMutation_apply_row]
+
+omit [DecidableEq K] in
+/-- Negating the matrix exchanges the sign of its left mutation factor. -/
+@[simp]
+theorem matrixMutationLeft_neg :
+    matrixMutationLeft row (-B) k ε = matrixMutationLeft row B k (-ε) := by
+  ext i j
+  simp [matrixMutationLeft_apply]
+
+omit [DecidableEq I] in
+/-- Negating the matrix exchanges the sign of its right mutation factor. -/
+@[simp]
+theorem matrixMutationRight_neg :
+    matrixMutationRight row (-B) k ε = matrixMutationRight row B k (-ε) := by
+  ext i j
+  simp [matrixMutationRight_apply]
+
 section Products
 
 variable [Fintype I] [Fintype K]
@@ -190,13 +224,15 @@ theorem matrixMutation_eq_mul (hkk : B (row k) k = 0) (hε : ε = 1 ∨ ε = -1)
     linear_combination (B (row k) j)⁻ * (posPart_sub_negPart (B i k)) +
       (B i k)⁺ * (posPart_sub_negPart (B (row k) j))
 
-omit [Fintype I] in
+omit [Fintype I] [Fintype K] in
 /-- Mutation preserves rank after scalar change to any commutative ring. In particular,
 choosing `R = ℚ` gives preservation of rational column rank. -/
 theorem rank_matrixMutation [Finite I] {R : Type*} [CommRing R] (hkk : B (row k) k = 0) :
     ((matrixMutation row B k).map (Int.castRingHom R)).rank =
       (B.map (Int.castRingHom R)).rank := by
   let := Fintype.ofFinite I
+  have : Finite K := Finite.of_injective row row.injective
+  let := Fintype.ofFinite K
   have hL : IsUnit ((matrixMutationLeft row B k 1).map (Int.castRingHom R)).det := by
     apply Matrix.isUnit_det_of_left_inverse
     rw [← Matrix.map_mul, matrixMutationLeft_mul_self]
@@ -218,8 +254,8 @@ theorem linearIndependent_col_matrixMutation_iff [Finite I] [Finite K] {R : Type
       LinearIndependent R (B.map (Int.castRingHom R)).col := by
   let := Fintype.ofFinite I
   let := Fintype.ofFinite K
-  simp_rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank,
-    ← rank_eq_finrank_span_cols, rank_matrixMutation row B k hkk]
+  rw [linearIndependent_iff_card_eq_finrank_span, linearIndependent_iff_card_eq_finrank_span]
+  exact Iff.of_eq (congrArg (Fintype.card K = ·) (rank_matrixMutation row B k hkk))
 
 end Products
 

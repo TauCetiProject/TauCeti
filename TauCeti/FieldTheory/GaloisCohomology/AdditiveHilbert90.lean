@@ -13,6 +13,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuot
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 import TauCeti.Algebra.GroupAction.Equiv
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
+import TauCeti.RepresentationTheory.Homological.ContCohomology.TraceHomotopy
 
 /-!
 # The additive Hilbert 90
@@ -38,9 +39,11 @@ For a finite extension `L/K` the automorphisms of `L/K` are linearly independent
 (Dedekind), so their sum is not identically zero: some `z ∈ L` has `c = ∑_τ τ z ≠ 0`, and `c` is
 fixed by every automorphism. For a `1`-cocycle `f`, the cocycle identity
 `f (σ τ) = σ (f τ) + f σ` gives `σ (∑_τ f τ · τ z) = ∑_τ f τ · τ z - f σ · c`, so
-`x = -(∑_τ f τ · τ z) / c` satisfies `σ x - x = f σ`. The infinite case passes to finite layers,
-exactly as for Hilbert 90: every continuous class is inflated from a finite quotient
-`Gal(L/K) ⧸ U`, which is the Galois group of the finite Galois subextension fixed by `U`.
+`x = -(∑_τ f τ · τ z) / c` satisfies `σ x - x = f σ`. This `x` is the trace homotopy
+`TauCeti.ContCohomology.traceHomotopy` of `f` for the trace-one weight `c⁻¹ z`. The infinite case
+passes to finite layers, exactly as for Hilbert 90: every continuous class is inflated from a
+finite quotient `Gal(L/K) ⧸ U`, which is the Galois group of the finite Galois subextension fixed
+by `U`.
 
 ## Main results
 
@@ -91,21 +94,13 @@ theorem isCoboundary₁_of_isCocycle₁_of_aut (f : Gal(L/K) → L) (hf : IsCocy
   have hσc (σ : Gal(L/K)) : σ c = c := by
     rw [map_sum]
     exact Fintype.sum_bijective (σ * ·) (Group.mulLeft_bijective σ) _ _ fun τ => rfl
-  refine ⟨-(∑ τ : Gal(L/K), f τ * τ z) / c, fun σ => ?_⟩
-  -- Apply the cocycle identity to `σ (∑ f τ · τ z)` and reindex by `τ ↦ σ τ`.
-  have hS : σ (∑ τ : Gal(L/K), f τ * τ z) = ∑ τ : Gal(L/K), f τ * τ z - f σ * c := by
-    simp only [map_sum, map_mul]
-    have h (τ : Gal(L/K)) : σ (f τ) * σ (τ z) = f (σ * τ) * (σ * τ) z - f σ * (σ * τ) z := by
-      rw [hf σ τ, AlgEquiv.smul_def, AlgEquiv.mul_apply]
-      ring
-    simp_rw [h, Finset.sum_sub_distrib, ← Finset.mul_sum]
-    congr 1
-    · exact Fintype.sum_bijective (σ * ·) (Group.mulLeft_bijective σ) _ _ fun τ => rfl
-    · simp_rw [AlgEquiv.mul_apply, ← map_sum]
-      exact congrArg (f σ * ·) (hσc σ)
-  rw [AlgEquiv.smul_def, map_div₀, map_neg, hσc, hS]
-  field_simp
-  ring
+  -- The weight `c⁻¹ z` has trace one, so the trace homotopy of `f` is the required `x`.
+  have hα : ∑ τ : Gal(L/K), τ • (c⁻¹ * z) = 1 := by
+    simp_rw [smul_mul', smul_inv'', AlgEquiv.smul_def, hσc, ← Finset.mul_sum]
+    exact inv_mul_cancel₀ hz
+  have : SMulDistribClass Gal(L/K) L L := ⟨fun g r m ↦ smul_mul' g r m⟩
+  exact ⟨traceHomotopy (c⁻¹ * z) f, fun σ ↦ by
+    rw [← d0_apply, d0_traceHomotopy_of_isCocycle₁ hα hf]⟩
 
 variable (K L : Type) [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
 
@@ -115,8 +110,8 @@ the additive group of `L`, is trivial. -/
 noncomputable instance H1ofAutUnique : Unique (H1 (Rep.ofAlgebraAut K L)) where
   default := 0
   uniq := fun a => H1_induction_on a fun x => (H1π_eq_zero_iff _).2 <| by
-    refine (coboundariesOfIsCoboundary₁ ?_).2
-    exact isCoboundary₁_of_isCocycle₁_of_aut x.1 (isCocycle₁_of_mem_cocycles₁ _ x.2)
+    refine (coboundariesOfIsCoboundary₁ ?_).property
+    exact isCoboundary₁_of_isCocycle₁_of_aut x.val (isCocycle₁_of_mem_cocycles₁ _ x.property)
 
 end FiniteExtension
 
@@ -148,7 +143,7 @@ theorem isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints_forcedDiscret
   -- An element of `L` fixed by `U` lies in `F`.
   have hmem (m : FixedPoints.addSubgroup U.toSubgroup (ForcedDiscrete L)) :
       (ForcedDiscrete.addEquiv L).symm m ∈ F :=
-    (IntermediateField.mem_fixedField_iff _ _).2 fun σ hσ => m.2 ⟨σ, hσ⟩
+    (IntermediateField.mem_fixedField_iff _ _).2 fun σ hσ => m.property ⟨σ, hσ⟩
   -- The cocycle `f`, transported to `Gal(F/K) → F`.
   let g : Gal(F/K) → F := fun τ => ⟨_, hmem (f (e.symm τ))⟩
   have hg_apply (q : Gal(L/K) ⧸ U.toSubgroup) :
@@ -167,7 +162,7 @@ theorem isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints_forcedDiscret
   obtain ⟨β, hβ⟩ := isCoboundary₁_of_isCocycle₁_of_aut g hg
   refine ⟨⟨ForcedDiscrete.addEquiv L (β : L), fun σ => ?_⟩, fun q => ?_⟩
   · simpa [Subgroup.smul_def] using
-      (IntermediateField.mem_fixedField_iff _ _).1 β.2 σ σ.2
+      (IntermediateField.mem_fixedField_iff _ _).1 β.property σ σ.property
   · obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective q
     refine Subtype.ext ?_
     rw [← (ForcedDiscrete.addEquiv L).apply_symm_apply (f _), ← hg_apply, ← hβ]
@@ -183,7 +178,7 @@ theorem subsingleton_H1_forcedDiscrete : Subsingleton (H1 Gal(L/K) (ForcedDiscre
     | H z =>
       exact H1pi_eq_zero_iff.2 (mem_B1_iff.2
         (isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints_forcedDiscrete U
-          (mem_Z1_iff.1 z.2).2))
+          (mem_Z1_iff.1 z.property).2))
 
 /-- **The additive Hilbert 90 for explicit cocycles.** For a Galois extension `L/K`, finite or
 not, every locally constant `1`-cocycle `f : Gal(L/K) → L`, that is

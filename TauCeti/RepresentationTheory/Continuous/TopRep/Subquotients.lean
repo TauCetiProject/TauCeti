@@ -35,7 +35,7 @@ abbrev subrepresentation (X : TopRep R G) (W : Submodule R X.V)
 theorem subrepresentation_ρ_apply (X : TopRep R G) (W : Submodule R X.V)
     (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) (g : G)
     (x : subrepresentation X W hW) :
-    (subrepresentation X W hW).ρ g x = ⟨X.ρ g x.1, hW g x.1 x.2⟩ := by
+    (subrepresentation X W hW).ρ g x = ⟨X.ρ g x.val, hW g x.val x.property⟩ := by
   apply Subtype.ext
   exact ContRepresentation.coe_subrepresentation_apply g x
 
@@ -48,7 +48,7 @@ noncomputable def subrepresentationι (X : TopRep R G) (W : Submodule R X.V)
 @[simp]
 theorem subrepresentationι_apply (X : TopRep R G) (W : Submodule R X.V)
     (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) (x : subrepresentation X W hW) :
-    (subrepresentationι X W hW).hom x = x.1 := by
+    (subrepresentationι X W hW).hom x = x.val := by
   simpa [subrepresentationι] using
     ContRepresentation.subrepresentationInclusion_apply X.ρ
       ⟨W, fun g x hx ↦ hW g x hx⟩ x
@@ -58,9 +58,9 @@ theorem subrepresentationι_injective (X : TopRep R G) (W : Submodule R X.V)
     (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) :
     Function.Injective (subrepresentationι X W hW).hom :=
   fun x y h ↦ Subtype.ext <| calc
-    x.1 = (subrepresentationι X W hW).hom x := (subrepresentationι_apply X W hW x).symm
+    x.val = (subrepresentationι X W hW).hom x := (subrepresentationι_apply X W hW x).symm
     _ = (subrepresentationι X W hW).hom y := h
-    _ = y.1 := subrepresentationι_apply X W hW y
+    _ = y.val := subrepresentationι_apply X W hW y
 
 /-- Factor a morphism into an invariant subrepresentation when its image is contained there. -/
 def subrepresentationLift (X : TopRep R G) (W : Submodule R X.V)

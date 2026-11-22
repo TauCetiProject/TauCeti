@@ -377,12 +377,12 @@ theorem natCard_hermitianTranslations [Finite K] (hK : Nat.card K = (p ^ n) ^ 2)
   -- The translations are in bijection with the pairs `(a, b)` with `b ^ q + b = a ^ (q + 1)`.
   let f : {ab : K × K // ab.2 ^ p ^ n + ab.2 = ab.1 ^ (p ^ n + 1)} →
       hermitianTranslations K p n x y := fun ab ↦
-    ⟨h.translation hq (hpow ab.1.1) ab.2, h.translation_mem_hermitianTranslations hq _ _⟩
+    ⟨h.translation hq (hpow ab.val.1) ab.property, h.translation_mem_hermitianTranslations hq _ _⟩
   have hf : Function.Bijective f := by
     refine ⟨fun ab ab' heq ↦ ?_, fun σ ↦ ?_⟩
     · obtain ⟨h1, h2⟩ := (h.translation_inj hq _ _ _ _).mp (congrArg Subtype.val heq)
       exact Subtype.ext (Prod.ext h1 h2)
-    · obtain ⟨a, b, ha, hb, hσ⟩ := h.exists_translation_eq hq σ.2
+    · obtain ⟨a, b, ha, hb, hσ⟩ := h.exists_translation_eq hq σ.property
       exact ⟨⟨(a, b), hb⟩, Subtype.ext hσ⟩
   rw [← Nat.card_congr (Equiv.ofBijective f hf),
     Nat.card_congr (Equiv.subtypeProdEquivSigmaSubtype fun a b ↦ b ^ p ^ n + b = a ^ (p ^ n + 1)),

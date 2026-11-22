@@ -180,10 +180,11 @@ private theorem continuous_comp_of_tendsto_iteratedFDerivWithin {X : Type*} [Top
   simp only [mem_chartJetSet]
   -- A compactness argument over `K` reduces the test to a neighbourhood of each of its points.
   refine hK.eventually_forall_of_forall_eventually fun w hw ↦ ?_
-  have h := eventually_comp_mem_source_and_iteratedFDerivWithin_mem hF.continuousAt (hG x₀ z) w.2
+  have h := eventually_comp_mem_source_and_iteratedFDerivWithin_mem hF.continuousAt (hG x₀ z)
+    w.property
     ((mem_chartJetSet.mp h₀) w hw).1 hm (hV.mem_nhds ((mem_chartJetSet.mp h₀) w hw).2)
   rw [nhds_prod_eq]
-  exact (tendsto_id.prodMap (map_nhds_subtype_val w).le).eventually h
+  exact (tendsto_id.prodMap (map_nhds_subtypeVal w).le).eventually h
 
 /-- Composition of `C^n` maps is jointly continuous for the manifold weak Whitney topologies,
 provided the models of the source and of the middle manifold are locally compact. -/

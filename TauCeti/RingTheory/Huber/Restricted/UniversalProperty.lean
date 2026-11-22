@@ -102,7 +102,8 @@ private theorem tendsto_cofinite_apply_coeff {φ : (Fin k →₀ ℕ) → M →�
     (hφ : EquicontinuousAt (fun s ↦ ⇑(φ s)) 0) (f : restrictedMvPowerSeriesSubmodule k A M) :
     Tendsto (fun s ↦ φ s (((f : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) s)) cofinite
       (𝓝 0) := fun W hW ↦ mem_map.mpr <| by
-  filter_upwards [(isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp f.2)).eventually
+  filter_upwards [(isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp
+      f.property)).eventually
     (hφ.eventually_forall_apply_mem hW)] with s hs
   exact hs s
 
@@ -175,7 +176,7 @@ theorem hasSum_restrictedMvPowerSeriesSubmoduleMonomial
   refine (UniformFun.hasBasis_nhds (Fin k →₀ ℕ) M (UniformFun.ofFun a)).tendsto_right_iff.mpr
     fun V hV ↦ ?_
   have hfin := eventually_cofinite.mp
-    ((isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp f.2)).eventually
+    ((isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp f.property)).eventually
       (mem_nhds_right 0 hV))
   filter_upwards [eventually_ge_atTop hfin.toFinset] with S hS t
   -- Reading off the coefficient at `t` is additive, so it commutes with the partial sum.

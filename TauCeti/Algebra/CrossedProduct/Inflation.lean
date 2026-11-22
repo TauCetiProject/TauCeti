@@ -166,8 +166,9 @@ inclusions into `Kˢ`, before inflation does not change the cocycle on the absol
 group. -/
 theorem inflate_comap (c : TwoCocycle K L) : (c.comap π ι hπι).inflate M = c.inflate L := by
   ext g k
-  rw [inflate_toFun, comap_toFun, inflate_toFun, restrictNormalHom_of_compatible π ι hπι hι,
-    restrictNormalHom_of_compatible π ι hπι hι]
+  rw [inflate_toFun, comap_toFun, inflate_toFun,
+    AlgEquiv.restrictNormalHom_of_compatible π ι hπι hι,
+    AlgEquiv.restrictNormalHom_of_compatible π ι hπι hι]
   simpa using hι (c.toFun (AlgEquiv.restrictNormalHom L g) (AlgEquiv.restrictNormalHom L k))
 
 variable [FiniteDimensional K L] [FiniteDimensional K M]
@@ -204,9 +205,9 @@ theorem val_refine_toFun_restrictNormalHom [Normal K M] (hLM : L ≤ M) (c : Two
         (AlgEquiv.restrictNormalHom M k)) =
       L.val (c.toFun (AlgEquiv.restrictNormalHom L g) (AlgEquiv.restrictNormalHom L k)) := by
   rw [refine_def, comap_toFun,
-    restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes
+    AlgEquiv.restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes
       (coe_inclusion hLM),
-    restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes
+    AlgEquiv.restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes
       (coe_inclusion hLM),
     Units.coe_map, MonoidHom.coe_ofClass, coe_val, coe_val, coe_inclusion]
 
@@ -275,7 +276,7 @@ private theorem exists_one_cohomologous_refine_of_inflateZ2_mem_B2 {c : TwoCocyc
     rw [AlgHom.ker_restrictNormalHom] at hker
     rw [← hbV, ← hbV]
     exact congrArg (fun q ↦ (bV q : UnitsCoeff K)) (QuotientGroup.eq.2 hker)
-  choose b' hb' using fun g ↦ mem_H0_fixingSubgroup_unitsCoeff_iff.1 (hbV g ▸ (bV g).2)
+  choose b' hb' using fun g ↦ mem_H0_fixingSubgroup_unitsCoeff_iff.1 (hbV g ▸ (bV g).property)
   have hsurj := AlgEquiv.restrictNormalHom_surjective (F := K) (K₁ := M) (SeparableClosure K)
   let B : Gal(M/K) → Mˣ := fun σ ↦ b' (Function.surjInv hsurj σ)
   have hB (g : Gal(SeparableClosure K/K)) :
@@ -483,6 +484,14 @@ private theorem ofMul_unitsMap_finiteLevelCoeffEquiv_symm
   (coe_finiteLevelCoeffHom L _).symm.trans <| by
     rw [finiteLevelCoeffHom_apply, AddEquiv.apply_symm_apply]
 
+section DiscreteUnits
+
+-- The discrete topology on `Additive Lˣ`, under which cocycles of the finite group `Gal(L/K)`
+-- are continuous cocycles.
+private local instance : TopologicalSpace (Additive Lˣ) := ⊥
+
+private local instance : DiscreteTopology (Additive Lˣ) := ⟨rfl⟩
+
 /-- A cocycle at the finite quotient associated to `L` as a crossed-product cocycle of
 `Gal(L/K)`. -/
 private def ofFiniteLevelZ2
@@ -490,8 +499,6 @@ private def ofFiniteLevelZ2
       (galoisOpenNormalSubgroup K L L.val).toSubgroup)
       (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L L.val).toSubgroup
         (UnitsCoeff K))) : TwoCocycle K L :=
-  letI : TopologicalSpace (Additive Lˣ) := ⊥
-  letI : DiscreteTopology (Additive Lˣ) := ⟨rfl⟩
   let z' := cocyclesMap2 _ _ _ _ (galoisQuotientHomInv L)
     (finiteLevelCoeffEquiv L).symm.toAddMonoidHom
     continuous_of_discreteTopology (finiteLevelCoeffEquiv_symm_smul L) z
@@ -499,7 +506,7 @@ private def ofFiniteLevelZ2
     isMulCocycle₂ := fun g h j ↦ by
       apply Additive.ofMul.injective
       simpa only [ofMul_mul, ofMul_toMul, Additive.ofMul_smul] using
-        (mem_Z2_iff.1 z'.2).2 g h j }
+        (mem_Z2_iff.1 z'.property).2 g h j }
 
 /-- The crossed-product cocycle obtained from a finite-level cocycle evaluates by pulling the
 automorphisms back through the quotient identification and the coefficient through the invariant
@@ -512,8 +519,6 @@ private theorem ofFiniteLevelZ2_toFun
     (ofFiniteLevelZ2 L z).toFun g h =
       Additive.toMul ((finiteLevelCoeffEquiv L).symm
         ((z : _ → _) (galoisQuotientHomInv L g, galoisQuotientHomInv L h))) :=
-  letI : TopologicalSpace (Additive Lˣ) := ⊥
-  haveI : DiscreteTopology (Additive Lˣ) := ⟨rfl⟩
   congrArg Additive.toMul <|
     cocyclesMap2_apply _ _ _ _ _ _ continuous_of_discreteTopology
       (finiteLevelCoeffEquiv_symm_smul L) z g h
@@ -526,20 +531,20 @@ def finiteLevelZ2 (c : TwoCocycle K L) :
     Z2 (AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L L.val).toSubgroup)
       (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L L.val).toSubgroup
         (UnitsCoeff K)) :=
-  letI : TopologicalSpace (Additive Lˣ) := ⊥
-  haveI : DiscreteTopology (Additive Lˣ) := ⟨rfl⟩
   cocyclesMap2 (L ≃ₐ[K] L) (Additive Lˣ) _ _ (galoisQuotientHom L) (finiteLevelCoeffHom L)
     continuous_of_discreteTopology (finiteLevelCoeffHom_smul L)
     -- as in `inflateZ2`, `IsCocycle₂ (Additive.ofMul ∘ f)` unfolds to `IsMulCocycle₂ f`
     ⟨fun p ↦ Additive.ofMul (c.toFun p.1 p.2),
       mem_Z2_iff.2 ⟨continuous_of_discreteTopology, c.isMulCocycle₂⟩⟩
 
+end DiscreteUnits
+
 /-- The finite-level cocycle evaluates by restricting the two quotient classes and embedding the
 value of the original cocycle into the separable closure. -/
 @[simp]
 theorem finiteLevelZ2_apply (c : TwoCocycle K L)
     (q r : AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L L.val).toSubgroup) :
-    ((c.finiteLevelZ2 L).1 (q, r) : UnitsCoeff K) =
+    ((c.finiteLevelZ2 L).val (q, r) : UnitsCoeff K) =
       Additive.ofMul (Units.map L.val.toRingHom.toMonoidHom
         (c.toFun (quotientFixingSubgroupFieldRangeEquiv K L L.val q)
           (quotientFixingSubgroupFieldRangeEquiv K L L.val r))) := by
