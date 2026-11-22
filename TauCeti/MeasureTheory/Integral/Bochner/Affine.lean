@@ -23,12 +23,12 @@ uses the totalized Bochner integral, and
 is equivalent to integrability in the parameters. In particular, both integrals vanish
 when the integrands are not integrable.
 
-Read on the preimage `T ⁻¹' s` of a set `s` under `T x = p + L x`, the formula says that
-precomposing with `T` divides the integral over `s` by `|det L|`
-(`ContinuousLinearEquiv.integral_preimage_affine`). Over the whole space and without translation:
-precomposing an integrand with a continuous linear automorphism `A` of a finite-dimensional real
-normed space divides its integral against an additive Haar measure by `|det A|`
-(`MeasureTheory.Measure.integral_comp_continuousLinearEquiv`).
+Read on preimages: for an additive Haar measure on a finite-dimensional real normed space with
+its Borel σ-algebra, `T x = p + L x` with `L` invertible, any set `s` and any integrand `f`, the
+integral of `f ∘ T` over `T ⁻¹' s` equals the integral of `f` over `s` divided by `|det L|`
+(`ContinuousLinearEquiv.integral_preimage_affine`). Over the whole space and without translation,
+the integral of `f ∘ A` for a continuous linear automorphism `A` equals the integral of `f`
+divided by `|det A|` (`MeasureTheory.Measure.integral_comp_continuousLinearEquiv`).
 
 On `ι → ℝ` with Lebesgue measure, taking the parameter set to be `Set.Icc 0 1` gives invariance
 under single-coordinate reflections `u k ↦ 1 - u k`
@@ -101,9 +101,11 @@ theorem integral_image_affine [NormedSpace ℝ E] (L : V ≃L[ℝ] V) (p : V) (f
       rw [smul_smul, abs_inv, mul_inv_cancel₀ (abs_ne_zero.mpr hdet), one_smul]
     _ = _ := congrArg (|LinearMap.det (L : V →ₗ[ℝ] V)| • ·) h
 
-/-- **Affine change of variables on a preimage.** Precomposing an integrand with an invertible
-affine map `T x = p + L x` divides its integral over the preimage `T ⁻¹' s` of any set `s` by
-`|det L|`: `∫ x in T ⁻¹' s, f (T x) ∂μ = |det L|⁻¹ • ∫ y in s, f y ∂μ`. This is
+/-- **Affine change of variables on a preimage.** Let `μ` be an additive Haar measure on a
+finite-dimensional real normed space with its Borel σ-algebra, and `T x = p + L x` with `L`
+invertible. For any set `s`, the integral of `f ∘ T` over the preimage `T ⁻¹' s` equals the
+integral of `f` over `s` divided by `|det L|`:
+`∫ x in T ⁻¹' s, f (T x) ∂μ = |det L|⁻¹ • ∫ y in s, f y ∂μ`. This is
 `ContinuousLinearEquiv.integral_image_affine` for the parameter set `T ⁻¹' s`, whose image is `s`;
 as there, neither measurability nor integrability is required. -/
 theorem integral_preimage_affine [NormedSpace ℝ E] (L : V ≃L[ℝ] V) (p : V) (f : V → E)
@@ -118,11 +120,12 @@ theorem integral_preimage_affine [NormedSpace ℝ E] (L : V ≃L[ℝ] V) (p : V)
 
 -- Credit: the statement and name follow the sketch in Tau Ceti PR #37628,
 -- https://github.com/TauCetiProject/TauCeti/pull/37628.
-/-- **Linear change of variables.** Precomposing an integrand with a continuous linear
-automorphism `A` of a finite-dimensional real normed space divides its integral against an
-additive Haar measure `μ` by `|det A|`: `∫ x, f (A x) ∂μ = |det A|⁻¹ • ∫ x, f x ∂μ`. No
-integrability or measurability of `f` is needed. This is the whole-space, translation-free case of
-`ContinuousLinearEquiv.integral_preimage_affine`. -/
+/-- **Linear change of variables.** Let `μ` be an additive Haar measure on a finite-dimensional
+real normed space with its Borel σ-algebra, and `A` a continuous linear automorphism. The integral
+of `f ∘ A` equals the integral of `f` divided by `|det A|`:
+`∫ x, f (A x) ∂μ = |det A|⁻¹ • ∫ x, f x ∂μ`. No integrability or measurability of `f` is needed.
+This is the whole-space, translation-free case of `ContinuousLinearEquiv.integral_preimage_affine`.
+-/
 theorem _root_.MeasureTheory.Measure.integral_comp_continuousLinearEquiv [NormedSpace ℝ E]
     (μ : Measure V) [μ.IsAddHaarMeasure] (f : V → E) (A : V ≃L[ℝ] V) :
     ∫ x, f (A x) ∂μ = |LinearMap.det (A : V →ₗ[ℝ] V)|⁻¹ • ∫ x, f x ∂μ := by

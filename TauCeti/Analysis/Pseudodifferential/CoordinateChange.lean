@@ -126,12 +126,14 @@ private theorem integral_fourierChar_smul_apply_eq_abs_det_smul {N : E →L[ℝ]
   simpa only [e, ContinuousLinearEquiv.unitsEquiv_apply] using h
 
 omit [CompleteSpace W] in
-/-- **Transport of an absolutely convergent quantization.** Let `κ` be a `C¹` homeomorphism of `E`
-and `A` a continuous compactly supported coefficient of the frequency. If `v ∘ κ = ψ • u` and
-`⟪N(y) ζ, Φ(y) h⟫ = ⟪ζ, h⟫` for `y` in the support of `ψ`, which makes `N(y)` invertible, where
-`Φ(y) = hadamardFactor κ y x` satisfies `κ x - κ y = Φ(y) (x - y)`, then the absolutely
-convergent integral `∫ e(⟪ζ, κ x⟫) A(ζ) (𝓕 v ζ) dζ` is the corresponding integral for the
-amplitude `(y, ζ) ↦ ψ(y) |det Dκ(y)| |det N(y)| A(N(y) ζ)` at `x`. -/
+/-- **Transport of a quantization with compactly supported coefficient.** Let `κ` be a `C¹`
+homeomorphism of `E` and `A` a continuous compactly supported coefficient of the frequency. If
+`v ∘ κ = ψ • u` and `⟪N(y) ζ, Φ(y) h⟫ = ⟪ζ, h⟫` for `y` in the support of `ψ`, which makes `N(y)`
+invertible, where `Φ(y) = hadamardFactor κ y x` satisfies `κ x - κ y = Φ(y) (x - y)`, then the
+Bochner integral `∫ e(⟪ζ, κ x⟫) A(ζ) (𝓕 v ζ) dζ` equals the corresponding integral for the
+amplitude `(y, ζ) ↦ ψ(y) |det Dκ(y)| |det N(y)| A(N(y) ζ)` at `x`. The identity is between
+totalized Bochner integrals: when `W` is complete, both integrals converge absolutely; otherwise
+both are `0`. -/
 private theorem integral_fourierChar_smul_apply_fourier_comp_eq {κ : E ≃ₜ E}
     (hκ : ContDiff ℝ 1 κ) (x : E) {A : E → V →L[ℂ] W} (hA : Continuous A)
     (hAc : HasCompactSupport A) {ψ : E → ℝ} (hψ : Continuous ψ) (hψc : HasCompactSupport ψ)
@@ -599,6 +601,7 @@ private theorem smul_apply_eq_of_diagonal_eq {F : Type*} [AddCommGroup F] [Modul
     · rw [hg₁ x hx, hM₁ x hx (subset_tsupport _ hψx)]
   · simp [hf _ hx]
 
+omit [CompleteSpace V] [CompleteSpace W] in
 /-- **Kuranishi's trick.** Let `κ` be a smooth homeomorphism of `ℝⁿ`, `K` a compact set, and `ψ`
 a smooth compactly supported cutoff such that `Dκ` is invertible on the support of `ψ`. Suppose the
 averaged derivative `hadamardFactor κ y x` of `κ` on the segment from `y` to `x` is invertible
@@ -687,7 +690,15 @@ theorem exists_forall_quantizeSchwartzValue_comp_eq_compAmplitude {K : Set (Coor
     simp
   · have hxS : (x, x) ∈ tsupport φ ×ˢ tsupport ψ := ⟨hφx x hx, hxψ⟩
     rw [hMS _ hxS, hΦx]
-  · set c := a.compAmplitude hκ hM hg hgc hgM with hc_def
+  · -- Both sides are `0` when `V` is incomplete, where `𝓕 u = 𝓕 v = 0`, or when `W` is.
+    by_cases hV : CompleteSpace V
+    swap
+    · simp [quantizeSchwartzValue_def, SchwartzMap.fourier_coe, Real.fourier_eq,
+        integral_of_not_completeSpace hV]
+    by_cases hW : CompleteSpace W
+    swap
+    · simp only [quantizeSchwartzValue_def, integral_of_not_completeSpace hW]
+    set c := a.compAmplitude hκ hM hg hgc hgM with hc_def
     have hc : c.HasProperInputSupport := a.hasProperInputSupport_compAmplitude hκ hM hg hgc hgM
     rw [Amplitude.quantizeSchwartzValue_leftSymbol hc]
     by_cases hx : κ x ∈ K
@@ -755,6 +766,7 @@ theorem exists_forall_quantizeSchwartzValue_comp_eq_compAmplitude {K : Set (Coor
     congr 1
     ring
 
+omit [CompleteSpace V] [CompleteSpace W] in
 /-- **Changes of coordinates for pseudodifferential operators.** Let `κ` be a smooth homeomorphism
 of `ℝⁿ`, `a` a symbol of order `m` vanishing at positions outside a compact set `K`, and `ψ` a
 smooth compactly supported cutoff such that `Dκ` is invertible on the support of `ψ`. Suppose the
@@ -793,6 +805,7 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
       hΦ
   exact ⟨M, g, hM, hg, hgc, hgM, hg₁, hM₁, hop a haK⟩
 
+omit [CompleteSpace V] in
 /-- **Changes of coordinates, the leading term.** Under the hypotheses of
 `TauCeti.Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq`, the transported operator
 `u ↦ Op(a) ((ψ u) ∘ κ⁻¹) ∘ κ` is `Op(b)` for a symbol `b` of order `m` with
@@ -821,6 +834,7 @@ theorem Symbol.exists_quantizeSchwartzValue_comp_eq (a : Symbol n V W m)
   rw [Amplitude.leftSymbol_eq_diagonal_add_leftRemainder_one hc]
   simp [smul_apply_eq_of_diagonal_eq a.coefficient haK hg₁ hM₁ x ξ]
 
+omit [CompleteSpace V] in
 /-- **Changes of coordinates for classical symbols.** Under the hypotheses of
 `TauCeti.Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq`, if `a` is a classical symbol, then
 the transported operator `u ↦ Op(a) ((ψ u) ∘ κ⁻¹) ∘ κ` is `Op(b)` for a classical symbol `b` of
