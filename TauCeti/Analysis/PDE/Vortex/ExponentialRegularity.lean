@@ -349,7 +349,7 @@ private theorem le_sqrt_mul_of_sq_le_mul_add {N C F S B A b K : ℝ} (hC : 0 ≤
   have hN2 : N ^ 2 ≤ C * ((1 + b * K) ^ 2 + 4 * K ^ 2) * A ^ 2 :=
     h.trans <| (mul_le_mul_of_nonneg_left (b := F ^ 2 + S)
       (c := ((1 + b * K) * A) ^ 2 + 4 * (K * A) ^ 2) (by linarith) hC).trans_eq (by ring)
-  exact Real.le_sqrt_mul_of_sq_le_mul hA hN2
+  exact (le_abs_self N).trans (Real.abs_le_sqrt_mul_of_sq_le_mul hA hN2)
 
 /-- **The weighted `H¹` estimate for the right inverse.** Let `x` be a bounded `C¹` solution of the
 plane vortex equations with `|α| → 1` and `∇₁ α → 0` at infinity, let `ρ(z) = √(1 + |z|²)` and

@@ -527,7 +527,7 @@ theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
     have hp : d ^ (2 * β) = (d ^ β) ^ 2 := by
       simpa only [Nat.cast_ofNat, mul_comm] using rpow_mul_natCast hd.le β 2
     rwa [hp, ← mul_pow] at h
-  have h' := le_sqrt_mul_of_sq_le_mul (rpow_nonneg hd.le β) hsq
+  have h' := (le_abs_self _).trans (abs_le_sqrt_mul_of_sq_le_mul (rpow_nonneg hd.le β) hsq)
   rw [rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
   linarith
 

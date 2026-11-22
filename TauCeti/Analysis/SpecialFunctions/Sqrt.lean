@@ -44,7 +44,7 @@ the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of t
   `|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|)`.
 * `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub`: `t ↦ √(1 + t²)` is `1`-Lipschitz.
 * `Real.one_add_div_two_le_sqrt_one_add_sq`: for every real `t`, `(1 + t) / 2 ≤ √(1 + t²)`.
-* `Real.le_sqrt_mul_of_sq_le_mul`: if `0 ≤ b` and `a² ≤ c b²` then `a ≤ √c * b`.
+* `Real.abs_le_sqrt_mul_of_sq_le_mul`: if `0 ≤ b` and `a² ≤ c b²` then `|a| ≤ √c * b`.
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
   `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
 * `Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq`: `((√2)⁻¹)² + ((√2)⁻¹)² = 1`.
@@ -52,8 +52,8 @@ the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of t
 * `Real.tendsto_mul_sqrt_nhdsGT_zero`, `Real.tendsto_sqrt_nhdsGT_zero`: for `c > 0`,
   `c √u → 0⁺` as `u → 0⁺`.
 * `Real.add_sqrt_sq_add_pos`, `Real.hasDerivAt_add_sqrt_sq_add`,
-  `Real.image_add_sqrt_sq_add_eq_Ioi`: the substitution `t ↦ t + √(t² + p)`
-  is positive, has an explicit derivative, and maps `ℝ` onto `(0, ∞)` for `p > 0`.
+  `Real.image_add_sqrt_sq_add_eq_Ioi`: the substitution `t ↦ t + √(t² + p)` has an explicit
+  derivative wherever `t² + p > 0`, and is positive and maps `ℝ` onto `(0, ∞)` for `p > 0`.
 * `Real.hasDerivAt_div_mul_add_sqrt_sq_add`, `Real.tendsto_div_mul_add_sqrt_sq_add_atTop`: the
   function `y ↦ α / (β y + √(y² + c))` has an explicit derivative where `y² + c` and the
   denominator do not vanish and, for `β ≠ −1`, tends to `0` at `+∞`.
@@ -231,13 +231,10 @@ theorem abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub (a b : ℝ) :
 theorem one_add_div_two_le_sqrt_one_add_sq (t : ℝ) : (1 + t) / 2 ≤ √(1 + t ^ 2) :=
   le_sqrt_of_sq_le (by nlinarith [sq_nonneg (t - 1)])
 
-/-- If `a² ≤ c b²` with `0 ≤ b`, then `a ≤ √c * b`. -/
-theorem le_sqrt_mul_of_sq_le_mul {a b c : ℝ} (hb : 0 ≤ b) (h : a ^ 2 ≤ c * b ^ 2) :
-    a ≤ √c * b :=
-  calc a ≤ |a| := le_abs_self a
-    _ = √(a ^ 2) := (sqrt_sq_eq_abs a).symm
-    _ ≤ √(c * b ^ 2) := sqrt_le_sqrt h
-    _ = √c * b := by rw [sqrt_mul' _ (sq_nonneg b), sqrt_sq hb]
+/-- If `a² ≤ c b²` with `0 ≤ b`, then `|a| ≤ √c * b`. -/
+theorem abs_le_sqrt_mul_of_sq_le_mul {a b c : ℝ} (hb : 0 ≤ b) (h : a ^ 2 ≤ c * b ^ 2) :
+    |a| ≤ √c * b :=
+  (abs_le_sqrt h).trans_eq (by rw [sqrt_mul' _ (sq_nonneg b), sqrt_sq hb])
 
 /-- **A square factor cancels against its absolute value.** For `d ≠ 0` and `0 ≤ c`,
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`. This is the cancellation of the Jacobian `|d|` of a change
@@ -292,13 +289,13 @@ theorem add_sqrt_sq_add_pos {p : ℝ} (hp : 0 < p) (t : ℝ) : 0 < t + √(t ^ 2
   nth_rw 1 [← abs_of_nonpos ht.le, ← sqrt_sq_eq_abs, ← add_zero (t ^ 2)]
   gcongr
 
-/-- The derivative of `t ↦ t + √(t² + p)` for `0 < p`. -/
-theorem hasDerivAt_add_sqrt_sq_add {p : ℝ} (hp : 0 < p) (t : ℝ) :
+/-- The derivative of `t ↦ t + √(t² + p)` at a point `t` where `0 < t² + p`. -/
+theorem hasDerivAt_add_sqrt_sq_add {p t : ℝ} (h : 0 < t ^ 2 + p) :
     HasDerivAt (fun t : ℝ ↦ t + √(t ^ 2 + p)) ((t + √(t ^ 2 + p)) / √(t ^ 2 + p)) t := by
-  rw [← div_add_one (by positivity), add_comm]
+  rw [← div_add_one (sqrt_pos.2 h).ne', add_comm]
   apply (hasDerivAt_id' _).fun_add
   rw [← mul_div_mul_left _ _ two_ne_zero]
-  refine ((HasDerivAt.add_const _) ?_).sqrt (by positivity)
+  refine ((HasDerivAt.add_const _) ?_).sqrt h.ne'
   convert hasDerivAt_pow 2 t using 1
   ring
 

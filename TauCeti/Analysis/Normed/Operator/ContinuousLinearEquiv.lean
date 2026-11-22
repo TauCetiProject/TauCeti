@@ -121,7 +121,7 @@ theorem norm_symm_apply_le_inv_sqrt_mul_norm (e : E ≃L[𝕜] F) {lam : ℝ} (h
   have hx := h (e.symm x)
   rw [e.apply_symm_apply] at hx
   rw [← Real.sqrt_inv]
-  refine Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg x) ?_
+  refine (le_abs_self _).trans (Real.abs_le_sqrt_mul_of_sq_le_mul (norm_nonneg x) ?_)
   rw [inv_mul_eq_div, le_div_iff₀ hlam, mul_comm]
   exact hx
 
