@@ -42,17 +42,17 @@ and a unitary matrix acts as a linear isometry equivalence of Euclidean space; e
 isometry equivalence arises in this way.
 The rows of a unitary matrix form an orthonormal basis, so the values of the quadratic form of a
 matrix `A` on an orthonormal basis are the diagonal entries of a unitary conjugate of `A`; for a
-diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² conj(wᵢ)`.
+diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
 
 ## Main results
 
 * `Matrix.inner_toEuclideanLin_toEuclideanLin` — the quadratic form of `B` at `A x` is the
   quadratic form of `Aᴴ * B * A` at `x`;
-* `Matrix.inner_toEuclideanLin_piLpExtendByZero` — the quadratic form of `A` at a vector extended
-  by zero is the quadratic form of the principal submatrix at the original vector;
-
-* `TauCeti.inner_toEuclideanLin_diagonal_apply_self` — the quadratic form of `diag(w)` is
-  `x ↦ ∑ᵢ |xᵢ|² conj(wᵢ)`; for real weights its real part is `∑ᵢ |xᵢ|² wᵢ`
+* `Matrix.inner_toEuclideanLin_piLpExtendByZero` — the form `y ↦ ⟪A y, y⟫` (the conjugate of the
+  quadratic form `⟪y, A y⟫`) at a vector extended by zero is the same form of the principal
+  submatrix at the original vector;
+* `TauCeti.inner_self_toEuclideanLin_diagonal_apply` — the quadratic form `⟪x, diag(w) x⟫` of
+  `diag(w)` is `∑ᵢ |xᵢ|² wᵢ`; for real weights the real part of `⟪diag(w) x, x⟫` is the same sum
   (`Matrix.re_inner_toEuclideanLin_diagonal_apply_self`);
 * `Matrix.dotProduct_mulVec_eq_inner_toEuclideanLin` — over the reals, the coordinate quadratic
   form `xᵀ A x` is `⟪x, A x⟫`;
@@ -132,35 +132,37 @@ theorem inner_toEuclideanLin_toEuclideanLin (A : Matrix κ ι 𝕜) (B : Matrix 
   rw [← LinearMap.adjoint_inner_right, ← toEuclideanLin_conjTranspose_eq_adjoint]
   simp only [toEuclideanLin, toLpLin_mul_same, LinearMap.comp_apply]
 
-/-- The quadratic form of `A` at a vector extended by zero along `f` is the quadratic form of the
-principal submatrix `A.submatrix f f` at the original vector. -/
+/-- The form `y ↦ ⟪A y, y⟫`, the conjugate of the quadratic form `⟪y, A y⟫`, at a vector extended
+by zero along `f` is the same form of the principal submatrix `A.submatrix f f` at the original
+vector. -/
 theorem inner_toEuclideanLin_piLpExtendByZero (A : Matrix κ κ 𝕜) (f : ι ↪ κ)
     (x : EuclideanSpace 𝕜 ι) :
     ⟪A.toEuclideanLin (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x),
         LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x⟫_𝕜 =
       ⟪(A.submatrix f f).toEuclideanLin x, x⟫_𝕜 := by
-  have hmul : ∀ b, (A.mulVec (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x).ofLp) b =
-      ∑ c, A b (f c) * x c := fun b => by
-    simpa [mulVec, dotProduct] using LinearIsometry.sum_mul_piLpExtendByZero f x (A b)
   simp only [PiLp.inner_apply, toLpLin_apply, RCLike.inner_apply',
-    LinearIsometry.sum_mul_piLpExtendByZero, hmul]
-  simp [mulVec, dotProduct]
+    LinearIsometry.sum_mul_piLpExtendByZero]
+  rw [funext (LinearIsometry.piLpExtendByZero_apply_ofLp 2 𝕜 𝕜 f x),
+    mulVec_extend_zero f.injective]
+  rfl
 
-/-- The quadratic form of the diagonal operator `diag(w)` on Euclidean space is
-`x ↦ ∑ᵢ |xᵢ|² conj(wᵢ)`. -/
-theorem _root_.TauCeti.inner_toEuclideanLin_diagonal_apply_self (w : ι → 𝕜)
+/-- The quadratic form `x ↦ ⟪x, diag(w) x⟫` of the diagonal operator `diag(w)` on Euclidean space
+is `x ↦ ∑ᵢ |xᵢ|² wᵢ`. -/
+theorem _root_.TauCeti.inner_self_toEuclideanLin_diagonal_apply (w : ι → 𝕜)
     (x : EuclideanSpace 𝕜 ι) :
-    ⟪toEuclideanLin (diagonal w) x, x⟫_𝕜 = ∑ i, (‖x i‖ : 𝕜) ^ 2 * starRingEnd 𝕜 (w i) := by
-  simp only [toLpLin_apply, PiLp.inner_apply, mulVec_diagonal, RCLike.inner_apply', map_mul]
+    ⟪x, toEuclideanLin (diagonal w) x⟫_𝕜 = ∑ i, (‖x i‖ : 𝕜) ^ 2 * w i := by
+  simp only [toLpLin_apply, PiLp.inner_apply, mulVec_diagonal, RCLike.inner_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [mul_assoc, RCLike.conj_mul, mul_comm]
+  rw [mul_assoc, RCLike.mul_conj, mul_comm]
 
-/-- The real part of the quadratic form of the diagonal operator `diag(w)` of real weights is
-`x ↦ ∑ᵢ |xᵢ|² wᵢ`. -/
+/-- For real weights `w`, the real part of `⟪diag(w) x, x⟫`, with the operator in the first slot
+of the inner product, is `∑ᵢ |xᵢ|² wᵢ`. It agrees with the real part of the quadratic form
+`⟪x, diag(w) x⟫`, since the two inner products are complex conjugates. -/
 theorem re_inner_toEuclideanLin_diagonal_apply_self (w : ι → ℝ) (x : EuclideanSpace 𝕜 ι) :
     RCLike.re ⟪toEuclideanLin (diagonal fun i ↦ (w i : 𝕜)) x, x⟫_𝕜 = ∑ i, ‖x i‖ ^ 2 * w i := by
-  simp only [TauCeti.inner_toEuclideanLin_diagonal_apply_self, RCLike.conj_ofReal,
-    ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, ← RCLike.ofReal_sum, RCLike.ofReal_re]
+  rw [inner_re_symm]
+  simp only [TauCeti.inner_self_toEuclideanLin_diagonal_apply, ← RCLike.ofReal_pow,
+    ← RCLike.ofReal_mul, ← RCLike.ofReal_sum, RCLike.ofReal_re]
 
 /-- Over the reals, the coordinate quadratic form `xᵀ A x` is the inner product `⟪x, A x⟫` on
 Euclidean space. -/
