@@ -7,7 +7,11 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Conjugacy.Containment
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.IdentityComponent
+public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Scheme
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 public import Mathlib.RingTheory.KrullDimension.Basic
+import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Solvability
+import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.StabilizerDimension
 import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
 import TauCeti.RingTheory.KrullDimension.Quotient
 
@@ -23,18 +27,30 @@ component has the same dimension and is a Borel candidate. Borel containment con
 candidate into the prescribed Borel, and conjugation preserves dimension through its quotient
 Hopf-algebra isomorphism.
 
+Combined with the dimension formula for projective orbits, the bound gives a closedness criterion
+for orbits: if every line of a closed set `Z` of projective space has a stabilizer with solvable
+rational points, then the orbit in `Z` of a line whose stabilizer contains a Borel subgroup has
+minimal dimension among the orbits in `Z`, so it is closed and its orbit scheme is proper. This is
+the dimension count in the proof that `G/B` is complete, where `Z` is the variety of full flags of
+a representation.
+
 ## Main declarations
 
 * `TauCeti.HopfIdeal.IsBorelOverAlgClosed.ringKrullDim_quotient_le`: the dimension bound for
   arbitrary closed subgroups with solvable rational points.
+* `TauCeti.HopfIdeal.IsBorelOverAlgClosed.isProper_projectiveOrbitToSpec_of_forall_mem_isSolvable`:
+  an orbit whose stabilizer contains a Borel subgroup, inside a closed set of lines with solvable
+  stabilizers, is proper.
 
 ## References
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §21.3.
-* J. S. Milne, *Algebraic Groups* (2017), §17.a.
+* J. S. Milne, *Algebraic Groups* (2017), §17.a and Theorem 17.9.
 -/
 
 public section
+
+open AlgebraicGeometry
 
 namespace TauCeti.HopfIdeal
 
@@ -88,5 +104,36 @@ theorem IsBorelOverAlgClosed.ringKrullDim_quotient_le {B : HopfIdeal k H}
       ringKrullDim_le_of_surjective
         (CommHopfAlgCat.quotientMapOfLe H.obj hg).hom.toAlgHom.toRingHom
         (CommHopfAlgCat.quotientMapOfLe_surjective H.obj hg)
+
+/-- **An orbit with a Borel subgroup in its stabilizer is proper.** Let `B` be a Borel subgroup of
+a reduced affine group of finite type over an algebraically closed field, and let `D ≤ B` cut out
+the stabilizer of a line `[m]`, so that `B` fixes `[m]`. If the orbit of `[m]` lies in a closed
+subset `Z` of projective space every line of which has a stabilizer with solvable rational points,
+then the orbit scheme of `[m]` is proper over the base field. -/
+theorem IsBorelOverAlgClosed.isProper_projectiveOrbitToSpec_of_forall_mem_isSolvable
+    [IsReduced H] {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
+    {B : HopfIdeal k H} (hB : IsBorelOverAlgClosed k H B)
+    (m : M) (hm : Module.IsUnimodular k m) (D : HopfIdeal k H) (hDB : D ≤ B)
+    (hstab : ∀ a : WithConv (H →ₐ[k] k),
+      a ∈ CommHopfAlgCat.quotientPointsSubgroup H.obj D (CommAlgCat.of k k) ↔
+        Comodule.projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint a.ofConv) =
+          Comodule.projectiveOrbitMap (H := H) m hm
+            (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)))
+    {Z : Set (Proj (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M)))}
+    (hZ : IsClosed Z) (hmZ : Set.range (Comodule.projectiveOrbitMap (H := H) m hm) ⊆ Z)
+    (hsolv : ∀ (m' : M) (hm' : Module.IsUnimodular k m'),
+      Comodule.projectiveOrbitMap (H := H) m' hm'
+          (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈ Z →
+        Group.IsSolvable
+          (WithConv ((H ⧸ ((k ∙ m').stabilizerHopfIdeal H).toIdeal) →ₐ[k] k))) :
+    IsProper (Comodule.projectiveOrbitToSpec (H := H) m hm) := by
+  rw [Comodule.isProper_projectiveOrbitToSpec_iff_isClosed]
+  refine Comodule.isClosed_range_projectiveOrbitMap_of_forall_mem_ringKrullDim_le m hm D hstab hZ
+    hmZ fun m' hm' hm'Z ↦
+      ⟨_, Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff m' hm', ?_⟩
+  have := hsolv m' hm' hm'Z
+  exact (hB.ringKrullDim_quotient_le _).trans (ringKrullDim_le_of_surjective
+    (CommHopfAlgCat.quotientMapOfLe H.obj hDB).hom.toAlgHom.toRingHom
+    (CommHopfAlgCat.quotientMapOfLe_surjective H.obj hDB))
 
 end TauCeti.HopfIdeal

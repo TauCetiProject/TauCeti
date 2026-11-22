@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Flat
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
+import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedOrbit
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Dimension
 import TauCeti.Algebra.AlgebraicGroup.Tangent.KrullDimension
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ClosedPoints
 import TauCeti.AlgebraicGeometry.Fibers.Dimension
 import TauCeti.AlgebraicGeometry.Morphisms.Generalizing.Dimension
+import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.Topology.KrullDimension.Basic
 
 /-!
@@ -47,7 +49,9 @@ identity. The three codimensions are identified as follows.
   `dim D`.
 
 This is the dimension count that relates the closed-orbit lemma, which concerns orbits of minimal
-dimension, to stabilizers of maximal dimension, as in the conjugacy of Borel subgroups.
+dimension, to stabilizers of maximal dimension, as in the conjugacy of Borel subgroups. In this
+form the closed-orbit lemma says that an orbit is closed when its stabilizer has maximal
+dimension among the stabilizers of the lines in a closed set containing it.
 
 ## Main declarations
 
@@ -57,6 +61,8 @@ dimension, to stabilizers of maximal dimension, as in the conjugacy of Borel sub
   through the identity is the closed subset cut out by the stabilizer.
 * `TauCeti.Comodule.topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq`: the
   dimension of the orbit plus that of the stabilizer is that of the group.
+* `TauCeti.Comodule.isClosed_range_projectiveOrbitMap_of_forall_mem_ringKrullDim_le`: an orbit
+  whose stabilizer has maximal dimension among the lines of a closed set containing it is closed.
 
 ## References
 
@@ -183,5 +189,61 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq
     rw [hx₀I, ← hε, AlgHom.comp_toRingHom, ← RingHom.comap_ker]
     exact congrArg Ideal.height (Ideal.map_comap_of_surjective _ Ideal.Quotient.mk_surjective _)
   rw [← h₁, hB, WithBot.coe_add, h₂, h₃]
+
+/-- **Closed-orbit lemma, stabilizer form.** Let `Z` be a closed subset of projective space
+containing the orbit of `[m]`, and let `D` cut out the stabilizer of `[m]`. If the stabilizer of
+every line in `Z` is cut out by a closed subgroup of dimension at most `dim D`, then the orbit of
+`[m]` is closed. -/
+theorem isClosed_range_projectiveOrbitMap_of_forall_mem_ringKrullDim_le
+    (m : M) (hm : Module.IsUnimodular k m) (D : HopfIdeal k H)
+    (hstab : ∀ a : WithConv (H →ₐ[k] k),
+      a ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H) D
+          (CommAlgCat.of k k) ↔
+        projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint a.ofConv) =
+          projectiveOrbitMap (H := H) m hm
+            (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)))
+    {Z : Set (Proj (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M)))}
+    (hZ : IsClosed Z) (hmZ : Set.range (projectiveOrbitMap (H := H) m hm) ⊆ Z)
+    (hmax : ∀ (m' : M) (hm' : Module.IsUnimodular k m'),
+      projectiveOrbitMap (H := H) m' hm' (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈ Z →
+        ∃ D' : HopfIdeal k H, (∀ a : WithConv (H →ₐ[k] k),
+          a ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H) D'
+              (CommAlgCat.of k k) ↔
+            projectiveOrbitMap (H := H) m' hm' (AlgHom.kernelPoint a.ofConv) =
+              projectiveOrbitMap (H := H) m' hm'
+                (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H))) ∧
+          ringKrullDim (H ⧸ D'.toIdeal) ≤ ringKrullDim (H ⧸ D.toIdeal)) :
+    IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) := by
+  refine isClosed_range_projectiveOrbitMap_of_forall_mem m hm hZ hmZ fun m' hm' hm'Z ↦ ?_
+  obtain ⟨D', hstab', hle⟩ := hmax m' hm' hm'Z
+  have h := topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq m hm D hstab
+  have h' := topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq m' hm' D' hstab'
+  obtain ⟨n, hn⟩ := exists_topologicalKrullDim_range_projectiveOrbitMap_eq_natCast (H := H) m hm
+  obtain ⟨n', hn'⟩ :=
+    exists_topologicalKrullDim_range_projectiveOrbitMap_eq_natCast (H := H) m' hm'
+  rw [hn] at h ⊢
+  rw [hn'] at h' ⊢
+  -- The group has finite nonnegative dimension, so both stabilizer dimensions are finite.
+  have := Bialgebra.nontrivial k (A := H)
+  have htop := ringKrullDim_lt_top_of_finiteType k H
+  have hbot : (0 : WithBot ℕ∞) ≤ ringKrullDim H := ringKrullDim_nonneg_of_nontrivial
+  generalize ringKrullDim (H ⧸ D.toIdeal) = d at h hle
+  generalize ringKrullDim (H ⧸ D'.toIdeal) = d' at h' hle
+  generalize ringKrullDim H = N at h h' htop hbot
+  subst h
+  induction d using WithBot.recBotCoe with
+  | bot => simp at hbot
+  | coe d =>
+  induction d using ENat.recTopCoe with
+  | top => simp at htop
+  | coe d =>
+  induction d' using WithBot.recBotCoe with
+  | bot => norm_cast at h'
+  | coe d' =>
+  induction d' using ENat.recTopCoe with
+  | top => norm_cast at h'
+  | coe d' =>
+  norm_cast at h' hle ⊢
+  omega
 
 end TauCeti.Comodule
