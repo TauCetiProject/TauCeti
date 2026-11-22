@@ -642,7 +642,7 @@ whose fibres carry inner products with norm continuous on the total space, the p
 unit disc bundle `D(E)` onto the base is a proper map. In particular it is a closed map, and the
 unit disc of each fibre is compact. -/
 theorem isProperMap_discBundle_proj :
-    IsProperMap fun v : discBundle F E ↦ (v : TotalSpace F E).proj := by
+    IsProperMap (discBundleProj F E) := by
   let V := EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 F))
   have hV : Module.finrank 𝕜 V = Module.finrank 𝕜 F := finrank_euclideanSpace_fin
   have : CompactSpace (Metric.closedBall (0 : V) 1) :=
@@ -671,7 +671,7 @@ theorem isClosed_image_proj_of_subset_discBundle {S : Set (TotalSpace F E)}
   have h := (isProperMap_discBundle_proj 𝕜 F E).isClosedMap _ (hS.preimage continuous_subtypeVal)
   convert h using 1
   ext b
-  simp only [mem_image, mem_preimage, Subtype.exists, exists_and_left, exists_prop]
+  simp only [mem_image, mem_preimage, Subtype.exists, exists_and_left]
   exact ⟨fun ⟨v, hv, hvb⟩ ↦ ⟨v, hv, hSD hv, hvb⟩, fun ⟨v, hv, _, hvb⟩ ↦ ⟨v, hv, hvb⟩⟩
 
 /-- The unit disc of each fibre is compact. -/

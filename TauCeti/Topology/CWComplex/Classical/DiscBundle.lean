@@ -529,24 +529,64 @@ theorem cellFrontier_relCWComplexDiscBundle :
   rw [cellFrontier, coe_map_relCWComplexDiscBundle]
   exact image_sphere_discCellFun c
 
-/-- The disc bundle over a finite CW complex is a finite relative CW complex. -/
-theorem finite_relCWComplexDiscBundle [RelCWComplex.Finite C] :
+variable (F E C) in
+/-- **Weak topology of a unit disc bundle over a relative CW complex.** A subset `S` of the unit
+disc bundle over `C` is closed in `D(E)` if and only if its intersections with the preimages of
+every closed cell of `C` and of `D` are closed. -/
+theorem closed_discBundleProj_preimage (S : Set (discBundle F E))
+    (hS : S ⊆ discBundleProj F E ⁻¹' C) :
+    IsClosed S ↔
+      (∀ n (j : cell C n), IsClosed (S ∩ discBundleProj F E ⁻¹' closedCell n j)) ∧
+      IsClosed (S ∩ discBundleProj F E ⁻¹' D) := by
+  refine ⟨fun h ↦ ⟨fun n j ↦ h.inter (isClosed_closedCell.preimage (discBundleProj F E).continuous),
+      h.inter ((isClosedBase C).preimage (discBundleProj F E).continuous)⟩, fun ⟨hcell, hD⟩ ↦ ?_⟩
+  have hemb : IsClosedEmbedding (Subtype.val : discBundle F E → TotalSpace F E) :=
+    IsClosedEmbedding.subtypeVal (isClosed_discBundle F E)
+  have himg (K : Set B) : (Subtype.val '' S) ∩ TotalSpace.proj ⁻¹' K =
+      Subtype.val '' (S ∩ discBundleProj F E ⁻¹' K) := by
+    ext v
+    simp only [mem_inter_iff, mem_image, mem_preimage, discBundleProj_apply]
+    exact ⟨fun ⟨⟨w, hwS, hwv⟩, hvK⟩ ↦ ⟨w, ⟨hwS, hwv ▸ hvK⟩, hwv⟩,
+      fun ⟨w, ⟨hwS, hwK⟩, hwv⟩ ↦ ⟨⟨w, hwS, hwv⟩, hwv ▸ hwK⟩⟩
+  refine hemb.isClosed_iff_image_isClosed.2 (isClosed_of_isClosed_inter_proj_preimage (C := C)
+    ?_ (fun m j ↦ ?_) ?_)
+  · rintro _ ⟨v, hv, rfl⟩
+    exact ⟨v.property, by simpa only [mem_preimage, discBundleProj_apply] using hS hv⟩
+  · rw [himg]
+    exact hemb.isClosedMap _ (hcell m j)
+  · rw [himg]
+    exact hemb.isClosedMap _ hD
+
+/-- The disc bundle over a finite-dimensional CW complex is finite-dimensional. -/
+theorem finiteDimensional_relCWComplexDiscBundle [RelCWComplex.FiniteDimensional C] :
     letI := relCWComplexDiscBundle F E C
-    RelCWComplex.Finite (discBundle F E ∩ TotalSpace.proj ⁻¹' C) := by
+    RelCWComplex.FiniteDimensional (discBundle F E ∩ TotalSpace.proj ⁻¹' C) := by
+  let := relCWComplexDiscBundle F E C
+  refine ⟨?_⟩
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1
+    (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D))
+  refine Filter.eventually_atTop.2 ⟨N + Module.finrank ℝ F, fun k hk ↦ ⟨fun c ↦ ?_⟩⟩
+  obtain ⟨⟨m, hm⟩, j⟩ := (cellDiscBundleEquiv F E C k) c
+  exact (hN m (by omega)).false j
+
+/-- The disc bundle over a CW complex of finite type has finite type. -/
+theorem finiteType_relCWComplexDiscBundle [RelCWComplex.FiniteType C] :
+    letI := relCWComplexDiscBundle F E C
+    RelCWComplex.FiniteType (discBundle F E ∩ TotalSpace.proj ⁻¹' C) :=
   let := relCWComplexDiscBundle F E C
   have (m : ℕ) : _root_.Finite (cell C m) := FiniteType.finite_cell m
   have (k : ℕ) : Subsingleton {m : ℕ // m + Module.finrank ℝ F = k} :=
     ⟨fun a b ↦ Subtype.ext (by have := a.property; have := b.property; omega)⟩
-  have : RelCWComplex.FiniteDimensional (discBundle F E ∩ TotalSpace.proj ⁻¹' C) := by
-    refine ⟨?_⟩
-    obtain ⟨N, hN⟩ := Filter.eventually_atTop.1
-      (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D))
-    refine Filter.eventually_atTop.2 ⟨N + Module.finrank ℝ F, fun k hk ↦ ⟨fun c ↦ ?_⟩⟩
-    obtain ⟨⟨m, hm⟩, j⟩ := (cellDiscBundleEquiv F E C k) c
-    exact (hN m (by omega)).false j
-  have : RelCWComplex.FiniteType (discBundle F E ∩ TotalSpace.proj ⁻¹' C) :=
-    ⟨fun k ↦ Finite.of_equiv _ (cellDiscBundleEquiv F E C k).symm⟩
-  exact finite_of_finiteDimensional_finiteType _
+  ⟨fun k ↦ Finite.of_equiv _ (cellDiscBundleEquiv F E C k).symm⟩
+
+/-- The disc bundle over a finite CW complex is a finite relative CW complex. -/
+theorem finite_relCWComplexDiscBundle [RelCWComplex.Finite C] :
+    letI := relCWComplexDiscBundle F E C
+    RelCWComplex.Finite (discBundle F E ∩ TotalSpace.proj ⁻¹' C) :=
+  letI := relCWComplexDiscBundle F E C
+  have := finiteDimensional_relCWComplexDiscBundle (F := F) (E := E) (C := C)
+  have := finiteType_relCWComplexDiscBundle (F := F) (E := E) (C := C)
+  finite_of_finiteDimensional_finiteType _
 
 end Structure
 
@@ -570,14 +610,24 @@ private theorem image_id_sphereBundle_union :
       discBundle F E ∩ TotalSpace.proj ⁻¹' (∅ : Set B)) = sphereBundle F E := by
   simp
 
+/-- The base of the relative CW structure of the disc bundle over `(univ, A)` is
+`S(E) ∪ D(E)|_A`. -/
+private theorem image_id_sphereBundle_union_rel (A : Set B) :
+    id '' (sphereBundle F E ∩ TotalSpace.proj ⁻¹' (univ : Set B) ∪
+      discBundle F E ∩ TotalSpace.proj ⁻¹' A) =
+      sphereBundle F E ∪ discBundle F E ∩ TotalSpace.proj ⁻¹' A := by
+  simp
+
 end Sets
 
 variable {B : Type u} [TopologicalSpace B] [T2Space B] (F : Type*) [NormedAddCommGroup F]
   [NormedSpace ℝ F] [FiniteDimensional ℝ F] (E : B → Type u) [∀ b, NormedAddCommGroup (E b)]
   [∀ b, InnerProductSpace ℝ (E b)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
-  [VectorBundle ℝ F E] [ContinuousFiberNorm F E] [CWComplex (univ : Set B)]
+  [VectorBundle ℝ F E] [ContinuousFiberNorm F E]
 
 section DiscBundle
+
+variable [CWComplex (univ : Set B)]
 
 /-- **The disc bundle over a CW complex, relative to the sphere bundle.** If `B` is a CW complex,
 the unit disc bundle `D(E)` is a CW complex relative to the unit sphere bundle `S(E)`, with one
@@ -600,7 +650,20 @@ def relCWComplexDiscBundleSphereBundleCellEquiv (n : ℕ) :
   (IsClosedEmbedding.id.relCWComplexCellEquiv (image_id_discBundle_inter_preimage_univ F E)
     (image_id_sphereBundle_union F E) n).trans (cellDiscBundleEquiv F E univ n)
 
-variable {F E} {n : ℕ} (c : Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell (univ : Set B) m)
+variable {F E}
+
+/-- The disc bundle relative to the sphere bundle has no cells below the rank of the bundle. -/
+theorem isEmpty_cell_relCWComplexDiscBundleSphereBundle_of_lt {n : ℕ}
+    (hn : n < Module.finrank ℝ F) :
+    letI := relCWComplexDiscBundleSphereBundle F E
+    IsEmpty (cell (discBundle F E) n) :=
+  letI := relCWComplexDiscBundleSphereBundle F E
+  letI := relCWComplexDiscBundle F E (univ : Set B)
+  have := isEmpty_cell_relCWComplexDiscBundle_of_lt (F := F) (E := E) (C := (univ : Set B)) hn
+  (IsClosedEmbedding.id.relCWComplexCellEquiv (image_id_discBundle_inter_preimage_univ F E)
+    (image_id_sphereBundle_union F E) n).isEmpty_congr.2 inferInstance
+
+variable {n : ℕ} (c : Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell (univ : Set B) m)
 
 /-- The characteristic maps of `TauCeti.relCWComplexDiscBundleSphereBundle` are those of
 `TauCeti.relCWComplexDiscBundle` for the whole of `B`. -/
@@ -659,20 +722,181 @@ theorem cellFrontier_relCWComplexDiscBundleSphereBundle :
   exact cellFrontier_relCWComplexDiscBundle (E := E) c
 
 variable (F E) in
+/-- The disc bundle over a finite-dimensional CW complex is finite-dimensional relative to the
+sphere bundle. -/
+theorem finiteDimensional_relCWComplexDiscBundleSphereBundle
+    [RelCWComplex.FiniteDimensional (univ : Set B)] :
+    letI := relCWComplexDiscBundleSphereBundle F E
+    RelCWComplex.FiniteDimensional (discBundle F E) := by
+  let := relCWComplexDiscBundleSphereBundle F E
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  have hfd := finiteDimensional_relCWComplexDiscBundle (F := F) (E := E) (C := (univ : Set B))
+  refine ⟨?_⟩
+  filter_upwards [hfd.eventually_isEmpty_cell] with k _
+  exact (IsClosedEmbedding.id.relCWComplexCellEquiv
+    (image_id_discBundle_inter_preimage_univ F E)
+    (image_id_sphereBundle_union F E) k).isEmpty_congr.2 inferInstance
+
+variable (F E) in
+/-- The disc bundle over a CW complex of finite type has finite type relative to the sphere
+bundle. -/
+theorem finiteType_relCWComplexDiscBundleSphereBundle [RelCWComplex.FiniteType (univ : Set B)] :
+    letI := relCWComplexDiscBundleSphereBundle F E
+    RelCWComplex.FiniteType (discBundle F E) :=
+  let := relCWComplexDiscBundleSphereBundle F E
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  ⟨fun k ↦
+    have :=
+      (finiteType_relCWComplexDiscBundle (F := F) (E := E) (C := (univ : Set B))).finite_cell k
+    (IsClosedEmbedding.id.relCWComplexCellEquiv
+      (image_id_discBundle_inter_preimage_univ F E)
+      (image_id_sphereBundle_union F E) k).finite_iff.2 inferInstance⟩
+
+variable (F E) in
 /-- The disc bundle over a finite CW complex is a finite CW complex relative to the sphere
 bundle. -/
 theorem finite_relCWComplexDiscBundleSphereBundle [RelCWComplex.Finite (univ : Set B)] :
     letI := relCWComplexDiscBundleSphereBundle F E
     RelCWComplex.Finite (discBundle F E) :=
-  letI := relCWComplexDiscBundleSphereBundle F E
-  letI := relCWComplexDiscBundle F E (univ : Set B)
-  have := finite_relCWComplexDiscBundle (F := F) (E := E) (C := (univ : Set B))
-  have := RelCWComplex.finite_cells_of_finite (C := discBundle F E ∩ TotalSpace.proj ⁻¹' univ)
-  -- The cells are those of the disc bundle over the whole of `B`.
-  RelCWComplex.finite_of_finite_cells (.of_equiv _
-    (Equiv.sigmaCongrRight fun n ↦ (IsClosedEmbedding.id.relCWComplexCellEquiv
-      (image_id_discBundle_inter_preimage_univ F E) (image_id_sphereBundle_union F E) n).symm))
+  let := relCWComplexDiscBundleSphereBundle F E
+  have := finiteDimensional_relCWComplexDiscBundleSphereBundle F E
+  have := finiteType_relCWComplexDiscBundleSphereBundle F E
+  finite_of_finiteDimensional_finiteType _
 
 end DiscBundle
+
+section DiscBundleRel
+
+variable (A : Set B) [RelCWComplex (univ : Set B) A]
+
+/-- **The disc bundle over a relative CW pair `(B, A)`, relative to `S(E) ∪ D(E)|_A`.** If
+`(univ : Set B)` is a CW complex relative to `A`, the unit disc bundle `D(E)` is a CW complex
+relative to `S(E) ∪ D(E)|_A`, with one `(m + r)`-cell for each relative `m`-cell of `(B, A)`
+(`TauCeti.relCWComplexDiscBundleRelCellEquiv`). It is `TauCeti.relCWComplexDiscBundle` specialized
+to `C = univ` and `D = A`. -/
+@[instance_reducible]
+def relCWComplexDiscBundleRel :
+    RelCWComplex (discBundle F E) (sphereBundle F E ∪ discBundle F E ∩ TotalSpace.proj ⁻¹' A) :=
+  letI := relCWComplexDiscBundle F E (univ : Set B)
+  IsClosedEmbedding.id.relCWComplex (image_id_discBundle_inter_preimage_univ F E)
+    (image_id_sphereBundle_union_rel F E A)
+
+/-- The `n`-cells of `D(E)` relative to `S(E) ∪ D(E)|_A` are the relative `m`-cells of `(B, A)`
+with `m + r = n`, where `r` is the rank of the bundle. -/
+def relCWComplexDiscBundleRelCellEquiv (n : ℕ) :
+    letI := relCWComplexDiscBundleRel F E A
+    cell (discBundle F E) n ≃
+      Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell (univ : Set B) m :=
+  letI := relCWComplexDiscBundle F E (univ : Set B)
+  (IsClosedEmbedding.id.relCWComplexCellEquiv (image_id_discBundle_inter_preimage_univ F E)
+    (image_id_sphereBundle_union_rel F E A) n).trans (cellDiscBundleEquiv F E univ n)
+
+variable {F E A}
+
+/-- Below the rank of the bundle, `relCWComplexDiscBundleRel` has no cells. -/
+theorem isEmpty_cell_relCWComplexDiscBundleRel_of_lt {n : ℕ} (hn : n < Module.finrank ℝ F) :
+    letI := relCWComplexDiscBundleRel F E A
+    IsEmpty (cell (discBundle F E) n) :=
+  let := relCWComplexDiscBundleRel F E A
+  letI := relCWComplexDiscBundle F E (univ : Set B)
+  have := isEmpty_cell_relCWComplexDiscBundle_of_lt (F := F) (E := E) (C := (univ : Set B)) hn
+  (IsClosedEmbedding.id.relCWComplexCellEquiv (image_id_discBundle_inter_preimage_univ F E)
+    (image_id_sphereBundle_union_rel F E A) n).isEmpty_congr.2 inferInstance
+
+variable {n : ℕ} (c : Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell (univ : Set B) m)
+
+private theorem map_relCWComplexDiscBundleRel :
+    letI := relCWComplexDiscBundleRel F E A
+    letI := relCWComplexDiscBundle F E (univ : Set B)
+    ⇑(map n ((relCWComplexDiscBundleRelCellEquiv F E A n).symm c)) =
+      ⇑(map n ((cellDiscBundleEquiv F E univ n).symm c)) := by
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  rw [IsClosedEmbedding.coe_map_relCWComplex, relCWComplexDiscBundleRelCellEquiv,
+    Equiv.symm_trans_apply, Equiv.apply_symm_apply, Function.id_comp]
+
+/-- The characteristic map of the cell of `D(E)` over a relative `m`-cell of `(B, A)` lies over
+the characteristic map of that cell, applied to the first `m` coordinates. -/
+theorem proj_map_relCWComplexDiscBundleRel {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
+    letI := relCWComplexDiscBundleRel F E A
+    (map n ((relCWComplexDiscBundleRelCellEquiv F E A n).symm c) x).proj =
+      map c.1.val c.2 ((Fin.appendIsometryOfEq c.1.property).symm x).1 := by
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  rw [map_relCWComplexDiscBundleRel]
+  exact proj_map_relCWComplexDiscBundle c hx
+
+/-- The closed cell of `relCWComplexDiscBundleRel` over a relative `m`-cell `j` of `(B, A)` is the
+part of the disc bundle over the closed cell of `j`. -/
+theorem closedCell_relCWComplexDiscBundleRel :
+    letI := relCWComplexDiscBundleRel F E A
+    closedCell n ((relCWComplexDiscBundleRelCellEquiv F E A n).symm c) =
+      discBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.val c.2 := by
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  rw [IsClosedEmbedding.closedCell_relCWComplex, image_id, relCWComplexDiscBundleRelCellEquiv,
+    Equiv.symm_trans_apply, Equiv.apply_symm_apply]
+  exact closedCell_relCWComplexDiscBundle (E := E) c
+
+/-- The open cell of `relCWComplexDiscBundleRel` over a relative `m`-cell `j` of `(B, A)` consists
+of the vectors of norm less than one over the open cell of `j`. -/
+theorem openCell_relCWComplexDiscBundleRel :
+    letI := relCWComplexDiscBundleRel F E A
+    openCell n ((relCWComplexDiscBundleRelCellEquiv F E A n).symm c) =
+      {v : TotalSpace F E | ‖v.snd‖ < 1} ∩ TotalSpace.proj ⁻¹' openCell c.1.val c.2 := by
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  rw [IsClosedEmbedding.openCell_relCWComplex, image_id, relCWComplexDiscBundleRelCellEquiv,
+    Equiv.symm_trans_apply, Equiv.apply_symm_apply]
+  exact openCell_relCWComplexDiscBundle (E := E) c
+
+/-- The boundary of the cell of `relCWComplexDiscBundleRel` over a relative `m`-cell `j` of
+`(B, A)` is the part of the sphere bundle over the closed cell of `j` together with the part of the
+disc bundle over the boundary of `j`. -/
+theorem cellFrontier_relCWComplexDiscBundleRel :
+    letI := relCWComplexDiscBundleRel F E A
+    cellFrontier n ((relCWComplexDiscBundleRelCellEquiv F E A n).symm c) =
+      sphereBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.val c.2 ∪
+        discBundle F E ∩ TotalSpace.proj ⁻¹' cellFrontier c.1.val c.2 := by
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  rw [IsClosedEmbedding.cellFrontier_relCWComplex, image_id, relCWComplexDiscBundleRelCellEquiv,
+    Equiv.symm_trans_apply, Equiv.apply_symm_apply]
+  exact cellFrontier_relCWComplexDiscBundle (E := E) c
+
+variable (F E A)
+
+/-- `relCWComplexDiscBundleRel` is finite-dimensional when `(B, A)` is finite-dimensional. -/
+theorem finiteDimensional_relCWComplexDiscBundleRel
+    [RelCWComplex.FiniteDimensional (univ : Set B)] :
+    letI := relCWComplexDiscBundleRel F E A
+    RelCWComplex.FiniteDimensional (discBundle F E) := by
+  let := relCWComplexDiscBundleRel F E A
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  have hfd := finiteDimensional_relCWComplexDiscBundle (F := F) (E := E) (C := (univ : Set B))
+  refine ⟨?_⟩
+  filter_upwards [hfd.eventually_isEmpty_cell] with k _
+  exact (IsClosedEmbedding.id.relCWComplexCellEquiv
+    (image_id_discBundle_inter_preimage_univ F E)
+    (image_id_sphereBundle_union_rel F E A) k).isEmpty_congr.2 inferInstance
+
+/-- `relCWComplexDiscBundleRel` has finite type when `(B, A)` has finite type. -/
+theorem finiteType_relCWComplexDiscBundleRel [RelCWComplex.FiniteType (univ : Set B)] :
+    letI := relCWComplexDiscBundleRel F E A
+    RelCWComplex.FiniteType (discBundle F E) :=
+  let := relCWComplexDiscBundleRel F E A
+  let := relCWComplexDiscBundle F E (univ : Set B)
+  ⟨fun k ↦
+    have :=
+      (finiteType_relCWComplexDiscBundle (F := F) (E := E) (C := (univ : Set B))).finite_cell k
+    (IsClosedEmbedding.id.relCWComplexCellEquiv
+      (image_id_discBundle_inter_preimage_univ F E)
+      (image_id_sphereBundle_union_rel F E A) k).finite_iff.2 inferInstance⟩
+
+/-- `relCWComplexDiscBundleRel` is finite when `(B, A)` is finite. -/
+theorem finite_relCWComplexDiscBundleRel [RelCWComplex.Finite (univ : Set B)] :
+    letI := relCWComplexDiscBundleRel F E A
+    RelCWComplex.Finite (discBundle F E) :=
+  let := relCWComplexDiscBundleRel F E A
+  have := finiteDimensional_relCWComplexDiscBundleRel F E A
+  have := finiteType_relCWComplexDiscBundleRel F E A
+  finite_of_finiteDimensional_finiteType _
+
+end DiscBundleRel
 
 end TauCeti

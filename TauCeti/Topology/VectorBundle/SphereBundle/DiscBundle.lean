@@ -5,25 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.FiberBundle.Proper
 public import TauCeti.Topology.VectorBundle.OrthonormalTrivialization
 public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
-# Local triviality, properness, and radial metric-change homeomorphisms of disc bundles
+# Local triviality and radial metric-change homeomorphisms of disc bundles
 
 For a real vector bundle `E → B` with normed fibres, `TauCeti.discBundle F E` and
 `TauCeti.sphereBundle F E` are the unit disc and unit sphere subsets of `TotalSpace F E` (defined in
-`TauCeti.Topology.VectorBundle.SphereBundle.Basic`). This file develops local triviality,
-properness, and radial metric-change homeomorphisms for disc and sphere bundles:
+`TauCeti.Topology.VectorBundle.SphereBundle.Basic`). This file develops local triviality and radial
+metric-change homeomorphisms for disc and sphere bundles:
 
 * `Bundle.Trivialization.discBundle`: restriction of a norm-preserving local trivialization of `E`
   to a local trivialization of `discBundleProj F E` with fibre `closedBall (0 : F) 1`;
-* `TauCeti.exists_trivialization_discBundleProj` and `TauCeti.isProperMap_discBundleProj`: for a
-  finite-rank continuous Riemannian vector bundle, `discBundleProj F E` is locally trivial with
-  compact fibre `closedBall (0 : F) 1` and hence proper;
+* `TauCeti.exists_trivialization_discBundleProj`: for a finite-rank continuous Riemannian vector
+  bundle, `discBundleProj F E` is locally trivial with fibre `closedBall (0 : F) 1`;
 * `TauCeti.radialBundleHomeomorph`, `TauCeti.discBundleRadialHomeomorph`, and
   `TauCeti.sphereBundleRadialHomeomorph`: radial rescaling `v ↦ (‖v‖₁ / ‖Φ v‖₂) • Φ v` turns any
   continuous bundle isomorphism `Φ : E₁ ≃ E₂` between real vector bundles with continuous fibre
@@ -158,7 +156,7 @@ end Bundle.Trivialization
 
 namespace TauCeti
 
-section Proper
+section LocalTriviality
 
 variable {B : Type w} [TopologicalSpace B]
   (F : Type*) [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
@@ -174,13 +172,7 @@ theorem exists_trivialization_discBundleProj (b : B) :
     OrthonormalBasis.exists_orthonormal_trivialization (E := E) (stdOrthonormalBasis ℝ F) b
   exact ⟨e.discBundle hiso, hb⟩
 
-/-- **The unit disc bundle projection of a finite-rank continuous Riemannian bundle is proper.** -/
-theorem isProperMap_discBundleProj : IsProperMap (discBundleProj F E) :=
-  have : CompactSpace (closedBall (0 : F) 1) :=
-    isCompact_iff_compactSpace.1 (isCompact_closedBall _ _)
-  isProperMap_of_forall_exists_trivialization (exists_trivialization_discBundleProj F E)
-
-end Proper
+end LocalTriviality
 
 section RadialMetricChange
 
@@ -256,6 +248,71 @@ variable {B : Type*} [TopologicalSpace B]
   [FiberBundle F₂ E₂] [VectorBundle ℝ F₂ E₂]
 
 omit [TopologicalSpace F₁] in
+/-- Compactness bound on the unit sphere at a base point `b₀` in the trivialization `e₂`:
+there exists `C ≥ 0` such that `‖(Φ b₀).symm (e₂.symmL ℝ b₀ y)‖ < C * ‖e₂.symmL ℝ b₀ y‖` for
+all `y ∈ sphere (0 : F₂) 1`. -/
+private lemma exists_sphere_radial_ratio_lt [FiniteDimensional ℝ F₂] (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
+    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.snd‖)
+    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.snd‖)
+    (hΦ_symm : Continuous fun w : TotalSpace F₂ E₂ ↦
+      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.snd))
+    (b₀ : B) :
+    let e₂ := trivializationAt F₂ E₂ b₀
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ y ∈ sphere (0 : F₂) 1,
+      ‖(Φ b₀).symm (e₂.symmL ℝ b₀ y)‖ < C * ‖e₂.symmL ℝ b₀ y‖ := by
+  let e₂ := trivializationAt F₂ E₂ b₀
+  have hb₀ : b₀ ∈ e₂.baseSet := mem_baseSet_trivializationAt F₂ E₂ b₀
+  let ψ : sphere (0 : F₂) 1 → TotalSpace F₂ E₂ :=
+    fun y ↦ TotalSpace.mk' F₂ b₀ (e₂.symmL ℝ b₀ y.val)
+  have hψ : Continuous ψ :=
+    (e₂.continuousOn_symm.comp_continuous (continuous_const.prodMk continuous_subtypeVal)
+      fun y ↦ ⟨hb₀, mem_univ _⟩).congr fun y ↦ by simp [ψ, hb₀]
+  let φ₁ : sphere (0 : F₂) 1 → ℝ := fun y ↦ ‖(Φ b₀).symm (ψ y).snd‖
+  let φ₂ : sphere (0 : F₂) 1 → ℝ := fun y ↦ ‖(ψ y).snd‖
+  have hφ₁ : Continuous φ₁ := hnorm₁.comp (hΦ_symm.comp hψ)
+  have hφ₂ : Continuous φ₂ := hnorm₂.comp hψ
+  have hφ₂_pos (y : sphere (0 : F₂) 1) : 0 < φ₂ y := by
+    refine norm_pos_iff.2 fun h0 ↦ ?_
+    dsimp only [φ₂, ψ] at h0
+    have hy : (y : F₂) = 0 := by
+      rw [← e₂.continuousLinearMapAt_symmL (R := ℝ) hb₀ y.val, h0, map_zero]
+    have hmem := y.property
+    rw [mem_sphere_zero_iff_norm, hy, norm_zero] at hmem
+    exact zero_ne_one hmem
+  have : CompactSpace (sphere (0 : F₂) 1) := isCompact_iff_compactSpace.1 (isCompact_sphere 0 1)
+  obtain ⟨M, hM⟩ :=
+    (isCompact_univ.image (hφ₁.div hφ₂ fun y ↦ (hφ₂_pos y).ne')).bddAbove
+  refine ⟨max M 0 + 1, by positivity, fun y hy ↦ ?_⟩
+  let y' : sphere (0 : F₂) 1 := ⟨y, hy⟩
+  have hle : φ₁ y' / φ₂ y' ≤ M := hM ⟨y', mem_univ _, rfl⟩
+  exact (div_lt_iff₀ (hφ₂_pos y')).1 (hle.trans_lt ((le_max_left M 0).trans_lt (lt_add_one _)))
+
+omit [TopologicalSpace F₁] [VectorBundle ℝ F₂ E₂] in
+/-- Rescaling an arbitrary vector `u : E₁ b` to the unit sphere in `F₂` turns a unit-sphere
+bound in `e₂` into the uniform ratio bound `‖u‖ / ‖Φ b u‖ ≤ C`. -/
+private lemma radial_ratio_le_of_sphere_lt (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
+    {b : B} {e₂ : Trivialization F₂ (π F₂ E₂)} [e₂.IsLinear ℝ] (hb : b ∈ e₂.baseSet)
+    {C : ℝ} (hC : 0 ≤ C)
+    (hsphere : ∀ y ∈ sphere (0 : F₂) 1,
+      ‖(Φ b).symm (e₂.symmL ℝ b y)‖ < C * ‖e₂.symmL ℝ b y‖)
+    (u : E₁ b) : ‖u‖ / ‖Φ b u‖ ≤ C := by
+  by_cases hu : u = 0
+  · simp [hu, hC]
+  · set w : E₂ b := Φ b u
+    have hw : w ≠ 0 := (map_ne_zero_iff _ (Φ b).injective).2 hu
+    set z : F₂ := e₂.continuousLinearMapAt ℝ b w
+    have hzw : e₂.symmL ℝ b z = w := e₂.symmL_continuousLinearMapAt hb w
+    have hz : z ≠ 0 := fun hz0 ↦ hw (by rw [← hzw, hz0, map_zero])
+    have hy : ‖z‖⁻¹ • z ∈ sphere (0 : F₂) 1 := by
+      simp [norm_smul, norm_ne_zero_iff.2 hz]
+    have hlt := hsphere (‖z‖⁻¹ • z) hy
+    have hpos_z : 0 < ‖z‖⁻¹ := inv_pos.2 (norm_pos_iff.2 hz)
+    have hΦw : (Φ b).symm w = u := (Φ b).symm_apply_apply u
+    rw [map_smul, hzw, map_smul, hΦw, norm_smul, norm_smul,
+      Real.norm_of_nonneg hpos_z.le, mul_left_comm C] at hlt
+    exact (div_le_iff₀ (norm_pos_iff.2 hw)).2 ((mul_lt_mul_iff_right₀ hpos_z).1 hlt).le
+
+omit [TopologicalSpace F₁] in
 /-- Near any base point `b₀`, the radial distortion `‖u‖ / ‖Φ b u‖` is uniformly bounded on fibres
 over a neighbourhood of `b₀`. -/
 private lemma exists_nhds_radial_ratio_le [FiniteDimensional ℝ F₂] (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
@@ -267,6 +324,10 @@ private lemma exists_nhds_radial_ratio_le [FiniteDimensional ℝ F₂] (Φ : ∀
     ∃ U ∈ 𝓝 b₀, ∃ C : ℝ, 0 ≤ C ∧ ∀ (b : B), b ∈ U → ∀ u : E₁ b, ‖u‖ / ‖Φ b u‖ ≤ C := by
   let e₂ := trivializationAt F₂ E₂ b₀
   have hb₀ : b₀ ∈ e₂.baseSet := mem_baseSet_trivializationAt F₂ E₂ b₀
+  -- Stage 1: obtain a strict bound `C` on the unit sphere over `b₀` by compactness.
+  obtain ⟨C, hC₀, hC⟩ := exists_sphere_radial_ratio_lt F₁ F₂ Φ hnorm₁ hnorm₂ hΦ_symm b₀
+  -- Stage 2: propagate the strict inequality from `{b₀} × S(F₂)` to a neighbourhood of `b₀`
+  -- using the generalized tube lemma.
   let g : e₂.baseSet × sphere (0 : F₂) 1 → TotalSpace F₂ E₂ :=
     fun q ↦ TotalSpace.mk' F₂ q.1.val (e₂.symmL ℝ q.1.val q.2.val)
   have hg : Continuous g :=
@@ -278,51 +339,19 @@ private lemma exists_nhds_radial_ratio_le [FiniteDimensional ℝ F₂] (Φ : ∀
   let φ₂ : e₂.baseSet × sphere (0 : F₂) 1 → ℝ := fun q ↦ ‖(g q).snd‖
   have hφ₁ : Continuous φ₁ := hnorm₁.comp (hΦ_symm.comp hg)
   have hφ₂ : Continuous φ₂ := hnorm₂.comp hg
-  have hφ₂_pos (y : sphere (0 : F₂) 1) : 0 < φ₂ (⟨b₀, hb₀⟩, y) := by
-    refine norm_pos_iff.2 fun h0 ↦ ?_
-    dsimp only [φ₂, g] at h0
-    have hy : (y : F₂) = 0 := by
-      rw [← e₂.continuousLinearMapAt_symmL (R := ℝ) hb₀ y.val, h0, map_zero]
-    have hmem := y.property
-    rw [mem_sphere_zero_iff_norm, hy, norm_zero] at hmem
-    exact zero_ne_one hmem
   have : CompactSpace (sphere (0 : F₂) 1) := isCompact_iff_compactSpace.1 (isCompact_sphere 0 1)
-  let K : Set (e₂.baseSet × sphere (0 : F₂) 1) := {⟨b₀, hb₀⟩} ×ˢ univ
-  have hKc : IsCompact K := isCompact_singleton.prod isCompact_univ
-  have hφ₂_ne : ∀ q ∈ K, φ₂ q ≠ 0 := by
+  have hKC : ({⟨b₀, hb₀⟩} ×ˢ (univ : Set (sphere (0 : F₂) 1))) ⊆ {q | φ₁ q < C * φ₂ q} := by
     rintro ⟨b, y⟩ ⟨hb', -⟩
     obtain rfl : b = ⟨b₀, hb₀⟩ := mem_singleton_iff.1 hb'
-    exact (hφ₂_pos y).ne'
-  obtain ⟨M, hM⟩ :=
-    (hKc.image_of_continuousOn (hφ₁.continuousOn.div hφ₂.continuousOn hφ₂_ne)).bddAbove
-  let C : ℝ := max M 0 + 1
-  have hC₀ : 0 ≤ C := by positivity
-  have hKC : K ⊆ {q | φ₁ q < C * φ₂ q} := by
-    rintro ⟨b, y⟩ hq
-    obtain rfl : b = ⟨b₀, hb₀⟩ := mem_singleton_iff.1 hq.1
-    have hle : φ₁ (⟨b₀, hb₀⟩, y) / φ₂ (⟨b₀, hb₀⟩, y) ≤ M :=
-      hM ⟨(⟨b₀, hb₀⟩, y), hq, rfl⟩
-    exact (div_lt_iff₀ (hφ₂_pos y)).1 (hle.trans_lt ((le_max_left M 0).trans_lt (lt_add_one _)))
+    exact hC y.val y.property
   obtain ⟨V, W, hVo, -, hb₀V, hKW, hVW⟩ := generalized_tube_lemma isCompact_singleton isCompact_univ
     (isOpen_lt hφ₁ (continuous_const.mul hφ₂)) hKC
+  -- Stage 3: rescale arbitrary vectors in fibres over `V` to the unit sphere.
   refine ⟨Subtype.val '' V, (e₂.open_baseSet.isOpenMap_subtypeVal V hVo).mem_nhds
     ⟨⟨b₀, hb₀⟩, hb₀V (mem_singleton _), rfl⟩, C, hC₀, ?_⟩
   rintro _ ⟨⟨b, hb⟩, hbV, rfl⟩ u
-  by_cases hu : u = 0
-  · simp [hu, hC₀]
-  · set w : E₂ b := Φ b u
-    have hw : w ≠ 0 := (map_ne_zero_iff _ (Φ b).injective).2 hu
-    set z : F₂ := e₂.continuousLinearMapAt ℝ b w
-    have hzw : e₂.symmL ℝ b z = w := e₂.symmL_continuousLinearMapAt hb w
-    have hz : z ≠ 0 := fun hz0 ↦ hw (by rw [← hzw, hz0, map_zero])
-    let y : sphere (0 : F₂) 1 := ⟨‖z‖⁻¹ • z, by simp [norm_smul, norm_ne_zero_iff.2 hz]⟩
-    have hlt : φ₁ (⟨b, hb⟩, y) < C * φ₂ (⟨b, hb⟩, y) := hVW ⟨hbV, hKW (mem_univ y)⟩
-    have hgy : (g (⟨b, hb⟩, y)).snd = ‖z‖⁻¹ • w := by simp [g, y, map_smul, hzw]
-    have hΦw : (Φ b).symm w = u := (Φ b).symm_apply_apply u
-    have hpos_z : 0 < ‖z‖⁻¹ := inv_pos.2 (norm_pos_iff.2 hz)
-    simp only [φ₁, φ₂, hgy, map_smul, hΦw, norm_smul, Real.norm_of_nonneg hpos_z.le] at hlt
-    rw [mul_left_comm C] at hlt
-    exact (div_le_iff₀ (norm_pos_iff.2 hw)).2 ((mul_lt_mul_iff_right₀ hpos_z).1 hlt).le
+  exact radial_ratio_le_of_sphere_lt F₂ Φ hb hC₀
+    (fun y hy ↦ hVW (mk_mem_prod hbV (hKW (mem_univ (⟨y, hy⟩ : sphere (0 : F₂) 1))))) u
 
 /-- **Continuity of radial bundle rescaling.** Rescaling a continuous bundle isomorphism
 `Φ : E₁ ≃ E₂` fibrewise by `‖v‖ / ‖Φ v‖` is continuous whenever both bundles have continuous fibre
