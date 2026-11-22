@@ -107,16 +107,24 @@ noncomputable def biproduct (f : J → D) (b : ∀ j, F.RelativeHalfBraiding (f 
   β := biproductβ f b
   monoidal U U' := by
     refine rightDistributor_ext_left fun j ↦ ?_
-    rw [← whisker_exchange_assoc, biproduct_ι_comp_biproductβ_hom, (b j).monoidal_assoc,
-      associator_inv_naturality_left_assoc, ← MonoidalCategory.comp_whiskerRight_assoc,
-      biproduct_ι_comp_biproductβ_hom, MonoidalCategory.comp_whiskerRight_assoc,
-      associator_naturality_middle_assoc, ← MonoidalCategory.whiskerLeft_comp_assoc,
-      biproduct_ι_comp_biproductβ_hom, MonoidalCategory.whiskerLeft_comp_assoc,
-      associator_inv_naturality_right_assoc, whisker_exchange]
+    calc
+      _ = (f j ◁ μ F U U' ≫ ((b j).β (U ⊗ U')).hom) ≫ F.obj (U ⊗ U') ◁ biproduct.ι f j := by
+        rw [← whisker_exchange_assoc, biproduct_ι_comp_biproductβ_hom, Category.assoc]
+      _ = 𝟙 _ ⊗≫ ((b j).β U).hom ▷ F.obj U' ⊗≫ F.obj U ◁ ((b j).β U').hom ⊗≫
+            (μ F U U' ▷ f j ≫ F.obj (U ⊗ U') ◁ biproduct.ι f j) := by
+        rw [(b j).monoidal]; monoidal
+      _ = 𝟙 _ ⊗≫ ((b j).β U).hom ▷ F.obj U' ⊗≫
+            F.obj U ◁ (((b j).β U').hom ≫ F.obj U' ◁ biproduct.ι f j) ⊗≫ μ F U U' ▷ ⨁ f := by
+        rw [← whisker_exchange]; monoidal
+      _ = 𝟙 _ ⊗≫ (((b j).β U).hom ≫ F.obj U ◁ biproduct.ι f j) ▷ F.obj U' ⊗≫
+            F.obj U ◁ (biproductβ f b U').hom ⊗≫ μ F U U' ▷ ⨁ f := by
+        rw [← biproduct_ι_comp_biproductβ_hom f b U' j]; monoidal
+      _ = _ := by
+        rw [← biproduct_ι_comp_biproductβ_hom f b U j]; monoidal
   unit := by
     refine rightDistributor_ext_left fun j ↦ ?_
-    rw [← whisker_exchange_assoc, biproduct_ι_comp_biproductβ_hom, (b j).unit_assoc,
-      rightUnitor_naturality_assoc, cancel_epi, leftUnitor_inv_naturality_assoc, whisker_exchange]
+    rw [← whisker_exchange_assoc, biproduct_ι_comp_biproductβ_hom, (b j).unit_assoc]
+    simp [← whisker_exchange]
   naturality g := by
     refine rightDistributor_ext_left fun j ↦ ?_
     rw [← whisker_exchange_assoc]

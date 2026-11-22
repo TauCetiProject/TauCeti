@@ -13,7 +13,7 @@ public import Mathlib.CategoryTheory.Monoidal.Center
 Let `F : C ⥤ D` be a lax monoidal functor between monoidal categories. A half-braiding relative
 to `F` on an object `X : D` is a family of isomorphisms `β U : X ⊗ F.obj U ≅ F.obj U ⊗ X`,
 natural in `U : C`, which is compatible with the tensorator `μ` and the unit `ε` of `F`: moving
-`X` past `F.obj (U ⊗ U')` is moving it past `F.obj U'` and then past `F.obj U`, and moving it past
+`X` past `F.obj (U ⊗ U')` is moving it past `F.obj U` and then past `F.obj U'`, and moving it past
 `F.obj (𝟙_ C)` is trivial. The centre `Functor.RelativeCenter F` of `F` (the relative centre
 `Z(F)` of Gainutdinov–Haferkamp–Schweigert) has as objects the pairs of an object of `D` and a
 half-braiding relative to `F` on it, and as morphisms the morphisms of `D` commuting with the
@@ -70,7 +70,7 @@ tensorator and the unit of `F`. -/
 structure RelativeHalfBraiding (X : D) where
   /-- The family of isomorphisms `X ⊗ F.obj U ≅ F.obj U ⊗ X`. -/
   β : ∀ U, X ⊗ F.obj U ≅ F.obj U ⊗ X
-  /-- Moving `X` past `F.obj (U ⊗ U')` is moving it past `F.obj U'` and then past `F.obj U`. -/
+  /-- Moving `X` past `F.obj (U ⊗ U')` is moving it past `F.obj U` and then past `F.obj U'`. -/
   monoidal : ∀ U U', X ◁ μ F U U' ≫ (β (U ⊗ U')).hom =
       (α_ _ _ _).inv ≫ (β U).hom ▷ F.obj U' ≫ (α_ _ _ _).hom ≫ F.obj U ◁ (β U').hom ≫
         (α_ _ _ _).inv ≫ μ F U U' ▷ X := by
