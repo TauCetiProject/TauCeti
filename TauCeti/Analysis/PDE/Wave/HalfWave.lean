@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Fourier.LaplacianSymbol
 public import TauCeti.Analysis.Fourier.PhaseGroup
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The half-wave propagators on `L²`
@@ -90,6 +91,18 @@ theorem adjoint_halfWavePropagator (t : ℝ) :
 /-- `W₊(t)` is a contraction on `L²`. -/
 theorem norm_halfWavePropagator_le (t : ℝ) : ‖halfWavePropagator (E := E) F t‖ ≤ 1 :=
   norm_phasePropagator_le _ t
+
+/-- If the symbol `m` is bounded by `B` almost everywhere, then `‖W₊(t) T_m‖ ≤ B`. -/
+theorem norm_halfWavePropagator_comp_fourierMultiplierCLM_le {m : Lp ℂ ∞ (volume : Measure E)}
+    {B : ℝ} (hB : 0 ≤ B) (hm : ∀ᵐ ξ ∂volume, ‖m ξ‖ ≤ B) (t : ℝ) :
+    ‖halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m‖ ≤ B := by
+  calc _ ≤ ‖halfWavePropagator (E := E) F t‖ * ‖Lp.fourierMultiplierCLM F m‖ :=
+        ContinuousLinearMap.opNorm_comp_le _ _
+    _ ≤ 1 * B := by
+        gcongr
+        · exact norm_halfWavePropagator_le _
+        · exact (Lp.norm_fourierMultiplierCLM_le m).trans (Lp.norm_top_le_of_ae_bound hB hm)
+    _ = B := one_mul B
 
 /-- `W₊(t)` commutes with every `L²` Fourier multiplier. -/
 theorem halfWavePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :

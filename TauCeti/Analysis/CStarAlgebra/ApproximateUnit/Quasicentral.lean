@@ -13,7 +13,6 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Decomposition
-import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Unitization
 import TauCeti.Analysis.CStarAlgebra.Representation.Ideal
 import TauCeti.Analysis.LocallyConvex.Mazur
 import TauCeti.Analysis.Normed.Ring.ApproximateUnit
@@ -104,7 +103,7 @@ theorem tendsto_toWeakSpace_commutator {l : Filter I.toNonUnitalStarSubalgebra} 
   rw [TauCeti.CStarAlgebra.tendsto_toWeakSpace_iff_forall_positiveContinuousLinearMap]
   intro ω
   rw [map_zero]
-  let f : A⁺¹ →ₚ[ℂ] ℂ := ω.extendUnitization.toPositiveLinearMap
+  let f : A⁺¹ →ₚ[ℂ] ℂ := ω.unitization.toPositiveLinearMap
   let πS : S →⋆ₙₐ[ℂ] (f.GNS →L[ℂ] f.GNS) :=
     ω.gnsInr.comp (NonUnitalStarSubalgebraClass.subtype S)
   let P : f.GNS →L[ℂ] f.GNS := πS.nonUnitalMultiplierExtension 1

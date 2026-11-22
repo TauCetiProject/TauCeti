@@ -38,9 +38,10 @@ consequences:
 * `PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_self_eq_zero` and
   `PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_self_eq_zero`: if a positive linear functional
   vanishes on `x * star x` (resp. `star y * y`), it vanishes on `x * y`.
-* `PositiveLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero` and
-  `PositiveLinearMap.map_eq_zero_of_map_mul_star_self_eq_zero`: on a C⋆-algebra, a positive linear
-  functional vanishing on `star x * x` or `x * star x` vanishes on `x`.
+* `PositiveLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero`,
+  `PositiveLinearMap.map_eq_zero_of_map_mul_star_self_eq_zero`, and
+  `PositiveContinuousLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero`: on a C⋆-algebra, a
+  positive linear functional vanishing on `star x * x` or `x * star x` vanishes on `x`.
 * `PositiveLinearMap.map_eq_zero_of_re_eq_zero`: a positive map vanishing in real part on a
   nonnegative element vanishes on that element.
 
@@ -131,6 +132,13 @@ theorem opNorm_comp_ofClass_of_surjective (ω : B →P[ℂ] ℂ) (f : F) (hf : F
   exact Complex.ofReal_injective <| tendsto_nhds_unique
     ((ω.comp (.ofClass f)).tendsto_nhds_opNorm hl)
     (Filter.tendsto_map'_iff.mp (ω.tendsto_nhds_opNorm (hl.map f hf)))
+
+/-- A positive functional vanishes at every element `a` with `ω (star a * a) = 0`, since
+`‖ω a‖ ^ 2 ≤ ‖ω‖ ‖ω (star a * a)‖`. -/
+theorem map_eq_zero_of_map_star_mul_self_eq_zero {A : Type*} [NonUnitalCStarAlgebra A]
+    [PartialOrder A] [StarOrderedRing A] (ω : A →P[ℂ] ℂ) {a : A}
+    (ha : ω (star a * a) = 0) : ω a = 0 := by
+  simpa [ha] using ω.norm_map_sq_le_opNorm_mul a
 
 end PositiveContinuousLinearMap
 

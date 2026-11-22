@@ -25,7 +25,6 @@ import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Basic
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Decomposition
-import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Unitization
 import TauCeti.Analysis.InnerProductSpace.Positive.VectorFunctional
 import TauCeti.Analysis.LocallyConvex.Mazur
 import TauCeti.Analysis.Normed.Operator.Dense
@@ -482,7 +481,7 @@ private theorem dense_range_mul_left_of_forall_pos {h : A} (hh : 0 ≤ h)
     (fun n => subset_closure (strictlyPositiveApproximateUnit_mul_mem_range h n a)) ?_
   rw [tendsto_toWeakSpace_iff_forall_positiveContinuousLinearMap]
   intro ω
-  let ξ := ω.extendUnitization.toPositiveLinearMap.gnsVector
+  let ξ := ω.unitization.toPositiveLinearMap.gnsVector
   have hstrong : Tendsto (fun n => ω.gnsInr (strictlyPositiveApproximateUnit h n) (ω.gnsInr a ξ))
       atTop (𝓝 (ω.gnsInr a ξ)) :=
     tendsto_apply_strictlyPositiveApproximateUnit_of_forall_re_apply_pos ω.gnsInr
