@@ -387,8 +387,7 @@ theorem isMicrolocallySmoothAt_compCLMOfSubmersion_iff (T : 𝓓'(Ω', ℂ)) {x 
   rw [← isMicrolocallySmoothAt_restrictCLM_iff (show U ≤ Ω from hΘΩ) hxU,
     restrictCLM_compCLMOfSubmersion_eq μ ν hf hfΩ hsurj T hΘ hΘ' (U := U) rfl hΘΩ hΘUV hfΘ
       (hAV := hAV) (hAsurj := hAsurj'),
-    isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff (hUΩ := hΘUV) hxU (subset_refl _)
-      (fun z hz ↦ Θ.map_target hz : MapsTo Θ.symm V U),
+    isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff (hUΩ := hΘUV) hxU,
     isMicrolocallySmoothAt_compCLMOfSubmersion_linear_iff hAsurj μ ν _ hAV _ T
       (Θ.map_source hxΘ) fun h0 ↦ hξ (by
         rw [← Θ.adjoint_fderiv_apply_adjoint_fderiv_symm_apply hxΘ hd hds ξ, h0, map_zero])]
