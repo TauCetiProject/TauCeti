@@ -9,9 +9,7 @@ public import TauCeti.AlgebraicTopology.DGLocalSystem.Classical.EssImage
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Fibration
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.TotallyDisconnected
 public import TauCeti.Topology.PathSpace.Moore.Covering
-public import Mathlib.Topology.Covering.AddCircle
-public import Mathlib.Topology.Covering.FundamentalGroupCircle
-public import TauCeti.Algebra.AddCircle
+public import TauCeti.Topology.Covering.AddCircle
 
 /-!
 # The DG local system of a covering map
@@ -37,8 +35,10 @@ basis vector at the image of `f` under Mathlib's monodromy permutation
 
 For the double cover `x ↦ 2 • x` of the circle `ℝ ⧸ ℤ` (`TauCeti.addCircleDoubleCover`) the fibre
 over `0` has the two points `0` and `1 / 2` (`TauCeti.natCard_fiber_addCircleDoubleCover`), which
-the generator of the fundamental group exchanges: the DG local system is `R²` in degree zero, with
-the generator acting by the swap
+the generator of the fundamental group exchanges
+(`TauCeti.coe_monodromyPerm_addCircleDoubleCover_zero`,
+`TauCeti.coe_monodromyPerm_addCircleDoubleCover_half`): the DG local system is `R²` in degree
+zero, with the generator acting by the swap
 (`TauCeti.representation_liftingLocalSystemEquiv_addCircleDoubleCover`). It is the permutation
 module of the fibre, not the sign representation.
 
@@ -46,7 +46,6 @@ module of the fibre, not the sign representation.
 
 * `IsCoveringMap.liftingLocalSystemEquiv`: the DG local system of a covering map is, as a module,
   the free module on the points of the fibre.
-* `TauCeti.addCircleDoubleCover`: the double cover of the circle.
 
 ## Main results
 
@@ -161,104 +160,28 @@ namespace TauCeti
 
 /-! ### The double cover of the circle -/
 
-/-- The **double cover of the circle** `x ↦ 2 • x` of `ℝ ⧸ ℤ`, with its target read as a
-topological space in `TopCat`, where the DG local systems of a covering live. -/
-def addCircleDoubleCover : C(AddCircle (1 : ℝ), TopCat.of (AddCircle (1 : ℝ))) :=
-  ⟨fun x ↦ 2 • x, continuous_id.nsmul 2⟩
-
-@[simp]
-theorem addCircleDoubleCover_apply (x : AddCircle (1 : ℝ)) : addCircleDoubleCover x = 2 • x :=
-  (rfl)
-
-/-- The doubling map of the circle is a covering map. -/
-theorem isCoveringMap_addCircleDoubleCover : IsCoveringMap addCircleDoubleCover :=
-  (AddCircle.isAddQuotientCoveringMap_nsmul_of_ne_zero (1 : ℝ) 2).isCoveringMap
-
-/-- **The fibre of the double cover over `0` has the two points `0` and `1 / 2`.** -/
-theorem addCircleDoubleCover_eq_zero_iff (x : AddCircle (1 : ℝ)) :
-    addCircleDoubleCover x = ((0 : ℝ) : AddCircle (1 : ℝ)) ↔
-      x = ((0 : ℝ) : AddCircle (1 : ℝ)) ∨ x = ((1 / 2 : ℝ) : AddCircle (1 : ℝ)) := by
-  rw [addCircleDoubleCover_apply, AddCircle.coe_zero]
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · simpa using AddCircle.eq_zero_or_eq_coe_period_div_two (1 : ℝ) two_ne_zero
-      (by rwa [ofNat_zsmul])
-  · rintro (rfl | rfl)
-    · simp
-    · rw [← AddCircle.coe_nsmul]
-      norm_num [AddCircle.coe_period]
-
-/-- **The fibre of the double cover over `0` has two points**: it is the `2`-torsion of the
-circle (`AddCircle.natCard_torsionBy`). -/
-theorem natCard_fiber_addCircleDoubleCover :
-    Nat.card {x // addCircleDoubleCover x = ((0 : ℝ) : AddCircle (1 : ℝ))} = 2 := by
-  rw [← AddCircle.natCard_torsionBy (1 : ℝ) (n := 2)]
-  refine Nat.card_congr (Equiv.subtypeEquivRight fun x ↦ ?_)
-  rw [addCircleDoubleCover_apply, AddCircle.coe_zero, AddSubgroup.torsionBy.nsmul_iff]
-
-/-- `0` lies in the fibre of the double cover over `0`. -/
-theorem addCircleDoubleCover_zero :
-    addCircleDoubleCover ((0 : ℝ) : AddCircle (1 : ℝ)) = ((0 : ℝ) : AddCircle (1 : ℝ)) :=
-  (addCircleDoubleCover_eq_zero_iff _).2 (Or.inl rfl)
-
-/-- `1 / 2` lies in the fibre of the double cover over `0`. -/
-theorem addCircleDoubleCover_half :
-    addCircleDoubleCover ((1 / 2 : ℝ) : AddCircle (1 : ℝ)) = ((0 : ℝ) : AddCircle (1 : ℝ)) :=
-  (addCircleDoubleCover_eq_zero_iff _).2 (Or.inr rfl)
-
-/-- **The generator of the fundamental group moves `0` to `1 / 2`**: the loop `t ↦ t` of the circle
-lifts along the double cover from `0` to the path `t ↦ t / 2`. -/
-theorem coe_monodromyPerm_addCircleDoubleCover_zero :
-    (isCoveringMap_addCircleDoubleCover.monodromyPerm _
-        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (AddCircle.zsmulLoop 1 0 1)))
-        ⟨_, addCircleDoubleCover_zero⟩ : AddCircle (1 : ℝ)) =
-      ((1 / 2 : ℝ) : AddCircle (1 : ℝ)) := by
-  rw [IsCoveringMap.coe_monodromyPerm]
-  refine isCoveringMap_addCircleDoubleCover.monodromy_eq_apply_one
-    (Γ := ⟨fun t ↦ ((t / 2 : ℝ) : AddCircle (1 : ℝ)), by fun_prop⟩) ?_ ?_
-  · funext t
-    have h : (2 • ((t : ℝ) / 2) : ℝ) = t := by rw [nsmul_eq_mul]; push_cast; ring
-    rw [Function.comp_apply, addCircleDoubleCover_apply, ContinuousMap.coe_mk,
-      ← AddCircle.coe_nsmul, h, AddCircle.zsmulLoop_apply]
-    simp
-  · simp
-
-/-- **The generator of the fundamental group moves `1 / 2` back to `0`**: the loop `t ↦ t` of the
-circle lifts along the double cover from `1 / 2` to the path `t ↦ (1 + t) / 2`. -/
-theorem coe_monodromyPerm_addCircleDoubleCover_half :
-    (isCoveringMap_addCircleDoubleCover.monodromyPerm _
-        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (AddCircle.zsmulLoop 1 0 1)))
-        ⟨_, addCircleDoubleCover_half⟩ : AddCircle (1 : ℝ)) = ((0 : ℝ) : AddCircle (1 : ℝ)) := by
-  rw [IsCoveringMap.coe_monodromyPerm]
-  refine (isCoveringMap_addCircleDoubleCover.monodromy_eq_apply_one
-    (Γ := ⟨fun t ↦ (((1 + t) / 2 : ℝ) : AddCircle (1 : ℝ)), by fun_prop⟩) ?_ ?_).trans ?_
-  · funext t
-    have h : (2 • ((1 + (t : ℝ)) / 2) : ℝ) = t + 1 := by rw [nsmul_eq_mul]; push_cast; ring
-    rw [Function.comp_apply, addCircleDoubleCover_apply, ContinuousMap.coe_mk,
-      ← AddCircle.coe_nsmul, h, AddCircle.coe_add_period, AddCircle.zsmulLoop_apply]
-    simp
-  · simp
-  · norm_num [AddCircle.coe_period]
-
 /-- **The DG local system of the double cover of the circle is the permutation module of the
 fibre**: the generator of the fundamental group exchanges the basis vectors at the two points `0`
 and `1 / 2` of the fibre over `0`. So the DG local system is `R²` in degree zero with the generator
-acting by the swap, not by a sign. -/
+acting by the swap, not by a sign. The target of the double cover is read in `TopCat`, where the
+DG local systems of a covering live. -/
 theorem representation_liftingLocalSystemEquiv_addCircleDoubleCover {R : Type} [CommRing R]
-    (Φ : MooreLiftingFunction addCircleDoubleCover) (r : R) :
+    (Φ : MooreLiftingFunction (B := TopCat.of (AddCircle (1 : ℝ))) addCircleDoubleCover) (r : R) :
     let hM := isCoveringMap_addCircleDoubleCover.isConcentratedInDegreeZero_liftingLocalSystem Φ
-      ((0 : ℝ) : AddCircle (1 : ℝ)) R
+      (B := TopCat.of (AddCircle (1 : ℝ))) ((0 : ℝ) : AddCircle (1 : ℝ)) R
     let e := isCoveringMap_addCircleDoubleCover.liftingLocalSystemEquiv Φ
-      ((0 : ℝ) : AddCircle (1 : ℝ)) R
+      (B := TopCat.of (AddCircle (1 : ℝ))) ((0 : ℝ) : AddCircle (1 : ℝ)) R
     let g := FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (AddCircle.zsmulLoop 1 0 1))
     hM.representation g (e (Finsupp.single ⟨_, addCircleDoubleCover_zero⟩ r)) =
         e (Finsupp.single ⟨_, addCircleDoubleCover_half⟩ r) ∧
       hM.representation g (e (Finsupp.single ⟨_, addCircleDoubleCover_half⟩ r)) =
         e (Finsupp.single ⟨_, addCircleDoubleCover_zero⟩ r) := by
-  refine ⟨?_, ?_⟩ <;>
+  constructor
   · rw [IsCoveringMap.representation_liftingLocalSystemEquiv_single]
     congr 2
-    exact Subtype.ext (by first
-      | exact coe_monodromyPerm_addCircleDoubleCover_zero
-      | exact coe_monodromyPerm_addCircleDoubleCover_half)
+    exact Subtype.ext coe_monodromyPerm_addCircleDoubleCover_zero
+  · rw [IsCoveringMap.representation_liftingLocalSystemEquiv_single]
+    congr 2
+    exact Subtype.ext coe_monodromyPerm_addCircleDoubleCover_half
 
 end TauCeti

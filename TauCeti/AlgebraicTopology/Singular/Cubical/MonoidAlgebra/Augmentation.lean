@@ -244,8 +244,8 @@ theorem op_point_smul_cubicalChainModulePoint (g : G) (y : Y) :
     act_def, crossProduct_ofCube, map_ofCube]
   congr 2
   ext t
-  rw [ContinuousMap.comp_apply, actMap_apply, SingularCube.crossProduct_apply,
-    SingularCube.point_apply, SingularCube.point_apply, SingularCube.point_apply]
+  rw [ContinuousMap.comp_apply, actMap_apply, SingularCube.crossProduct_apply]
+  simp [SingularCube.point_apply]
 
 end RightAction
 

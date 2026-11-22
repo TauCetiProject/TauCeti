@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.Finsupp.Supported
+public import Mathlib.Topology.CompactOpen
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Chains
 
 /-!
@@ -484,21 +485,22 @@ theorem map_const_succ (y : Y) (n : ℕ) :
 
 variable (X) in
 /-- **Normalized `0`-chains are the free module on the points**: a `0`-cube is the constant cube
-at a point (`TauCeti.SingularCube.eq_point`), and no `0`-cube is degenerate
+at a point (`Homeomorph.continuousMapOfUnique`), and no `0`-cube is degenerate
 (`TauCeti.CubicalChain.degenerate_zero`). -/
 def zeroChainEquiv : (X →₀ R) ≃ₗ[R] NormalizedCubicalChain X R 0 :=
-  (Finsupp.domLCongr ⟨SingularCube.point, fun c ↦ c fun i ↦ i.elim0,
-      fun x ↦ SingularCube.point_apply x _, fun c ↦ (SingularCube.eq_point c).symm⟩).trans
+  (Finsupp.domLCongr (Homeomorph.continuousMapOfUnique (X := Fin 0 → I) (Y := X)).toEquiv).trans
     (Submodule.quotEquivOfEqBot _ (CubicalChain.degenerate_zero (X := X) R)).symm
 
 /-- The basis vector at a point is the class of the `0`-cube at that point. -/
 @[simp]
 theorem zeroChainEquiv_single (x : X) (r : R) :
     zeroChainEquiv X R (Finsupp.single x r) = r • ofCube X R (SingularCube.point x) := by
-  rw [zeroChainEquiv, LinearEquiv.trans_apply, Finsupp.domLCongr_single,
+  rw [zeroChainEquiv, LinearEquiv.trans_apply, Finsupp.domLCongr_single, Homeomorph.coe_toEquiv,
     Submodule.quotEquivOfEqBot_symm_apply, ofCube_def, ← Submodule.Quotient.mk_smul,
     smul_single_one]
-  rfl
+  congr 2
+  ext t
+  rw [Homeomorph.continuousMapOfUnique_apply, SingularCube.point_apply]
 
 /-- **A totally disconnected space has no nonzero normalized chains of positive dimension**: every
 cube in it is constant, since the cube `Iⁿ` is connected, and a constant cube of positive dimension
