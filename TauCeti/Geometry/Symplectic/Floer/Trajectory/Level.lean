@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Trajectory
 import TauCeti.Algebra.Order.BigOperators.Sum.SubSumBound
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.Breaking.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
@@ -55,8 +56,8 @@ orbit in `K`.
   (`TauCeti.SymplecticForm.exists_pos_forall_ofReal_le_lintegral_floerEnergyDensity`). Choosing a
   regular action value `b` between them, the shift `σ` puts the loop of action `b` at `s = 0`, by
   the continuity of the action along the trajectory
-  (`TauCeti.SymplecticForm.continuous_hamiltonianAction_slice`). The chosen values range over a
-  finite set, so along a subsequence they converge to a regular action value, and the
+  (`TauCeti.SymplecticForm.exists_hamiltonianAction_slice_eq_of_tendsto`). The chosen values range
+  over a finite set, so along a subsequence they converge to a regular action value, and the
   Arzelà–Ascoli theorem for translates
   (`TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add_of_lipschitzWith`) gives a convergent
   subsequence of the translates. No energy bound is assumed: the actions of loops in `K` of
@@ -317,10 +318,8 @@ theorem exists_subseq_tendstoLocallyUniformly_comp_add_of_floer
       (x := fun k ↦ m (a₀ k, a₁ k)) fun k ↦ ⟨_, ⟨⟨ha₀ k, ha₁ k⟩, hlt k⟩, rfl⟩
   -- Normalize each trajectory so that its loop at `s = 0` has the action `m (a₀ k, a₁ k)`.
   have hσ (k : ℕ) : ∃ σ, ω.hamiltonianAction H (fun t ↦ u k (σ, t)) = m (a₀ k, a₁ k) :=
-    mem_range_of_exists_le_of_exists_ge
-      (ω.continuous_hamiltonianAction_slice hH.continuous ((hu k).of_le one_le_two))
-      (((hbot k).eventually (gt_mem_nhds (hm (a₀ k, a₁ k) (hlt k)).1)).exists.imp fun _ h ↦ h.le)
-      (((htop k).eventually (lt_mem_nhds (hm (a₀ k, a₁ k) (hlt k)).2)).exists.imp fun _ h ↦ h.le)
+    exists_hamiltonianAction_slice_eq_of_tendsto hH.continuous ((hu k).of_le one_le_two) (hbot k)
+      (htop k) (hm (a₀ k, a₁ k) (hlt k))
   choose σ hσ using hσ
   -- The translates are uniformly Lipschitz with values in `K`, so a subsequence converges.
   obtain ⟨φ₂, hφ₂, g, hg⟩ := exists_subseq_tendstoLocallyUniformly_comp_add_of_lipschitzWith hK
@@ -400,11 +399,9 @@ private theorem forall_apply_eq_apply_zero_of_tendsto_sub (hH : ContDiff ℝ 1 (
     (hg.tendstoLocallyUniformlyOn (s := univ ×ˢ Icc 0 1))
   -- The limit is `1`-periodic in `t`, so it does not depend on `s` on the whole plane.
   have hgper (s : ℝ) : Periodic (fun t ↦ g (s, t)) 1 := fun t ↦ by
-    have hat (z : ℝ × ℝ) : Tendsto (fun k ↦ u k (z + (σ k, 0))) atTop (𝓝 (g z)) :=
-      (hg.tendstoLocallyUniformlyOn (s := univ)).tendsto_at (mem_univ z)
     have hzσ (z : ℝ × ℝ) (r : ℝ) : z + (r, 0) = (z.1 + r, z.2) := by ext <;> simp
-    exact tendsto_nhds_unique ((hat (s, t + 1)).congr fun k ↦ by
-      simpa [hzσ] using hper k (s + σ k) t) (hat (s, t))
+    exact tendsto_nhds_unique ((hg.tendsto_at (s, t + 1)).congr fun k ↦ by
+      simpa [hzσ] using hper k (s + σ k) t) (hg.tendsto_at (s, t))
   intro s t
   have hfract (s : ℝ) : g (s, t) = g (s, Int.fract t) := by
     rw [Int.fract, ← (hgper s).sub_int_mul_eq ⌊t⌋, mul_one]
@@ -496,20 +493,9 @@ theorem exists_eq_comp_add_of_tendstoLocallyUniformly (hH : ContDiff ℝ 1 (uncu
     have h := hT (u k) (J k) (hu k) (hper k) (huK k) (hJc k) (hJM k) (hfloer k) (hL k)
     exact ⟨by linarith [h _ _ (hσ' k).1 (hσ k).2], h _ _ (hσ k).1 (hσ' k).2⟩
   obtain ⟨δ, -, φ, hφ, hδ⟩ := isCompact_Icc.tendsto_subseq hd
-  refine ⟨δ, fun z ↦ ?_⟩
-  have hat {f : ℕ → ℝ × ℝ → V} {F : ℝ × ℝ → V} (hF : TendstoLocallyUniformly f F atTop)
-      (y : ℝ × ℝ) : Tendsto (fun k ↦ f (φ k) y) atTop (𝓝 (F y)) :=
-    ((hF.tendstoLocallyUniformlyOn (s := univ)).tendsto_at (mem_univ y)).comp hφ.tendsto_atTop
-  -- Along the subsequence, the translate at `σ'` is within `L |σ' - σ - δ|` of the translate of
-  -- the one at `σ` by `δ`.
-  refine tendsto_nhds_unique (hat hg' z) ((hat hg (z + (δ, 0))).congr_dist ?_)
-  have hδ' : Tendsto (fun k ↦ (L : ℝ) * |σ' (φ k) - σ (φ k) - δ|) atTop (𝓝 0) := by
-    simpa using (((continuous_sub_right δ).abs.tendsto δ).comp hδ).const_mul (L : ℝ)
-  refine squeeze_zero (fun _ ↦ dist_nonneg) (fun k ↦ ?_) hδ'
-  have hdist : dist (z + (δ, 0) + (σ (φ k), 0)) (z + (σ' (φ k), 0)) =
-      |σ' (φ k) - σ (φ k) - δ| := by
-    rw [dist_comm]
-    simp [Prod.dist_eq, Real.dist_eq, sub_add_eq_sub_sub, sub_right_comm _ δ]
-  exact hdist ▸ (hL (φ k)).dist_le_mul _ _
+  -- Along the subsequence, the shifts `σ' k - σ k` converge to `δ`.
+  exact ⟨δ, apply_eq_apply_add_prodMk_zero_of_tendsto_sub (u := fun k ↦ u (φ k))
+    (fun k ↦ hL (φ k)) (σ := fun k ↦ σ (φ k)) (σ' := fun k ↦ σ' (φ k)) hδ
+    (hg.comp_tendsto hφ.tendsto_atTop).tendsto_at (hg'.comp_tendsto hφ.tendsto_atTop).tendsto_at⟩
 
 end TauCeti.SymplecticForm

@@ -48,14 +48,18 @@ are proved for it. The zero sets are invariant
 `Γ_I` (`TauCeti.ImplicitAtlas.Core.act_mem_range_footprintMap`), the zero-set domains of the
 cocycle condition match (`TauCeti.ImplicitAtlas.Core.mem_kuranishiZeroSet_iff_footprintMap_mem`),
 the footprints are open and cover `X` (`TauCeti.ImplicitAtlas.Core.isOpen_footprint`,
-`TauCeti.ImplicitAtlas.Core.iUnion_footprint`), they satisfy the *footprint conditions*
-`V_I ∩ V_K ⊆ V_J` for `I ⊆ J ⊆ K` and `V_I ∩ V_J ⊆ V_(I ∪ J)`
+`TauCeti.ImplicitAtlas.Core.iUnion_footprint`) and are empty where the regular locus is
+(`TauCeti.ImplicitAtlas.Core.footprint_eq_empty_of_regLocus_eq_empty`), they satisfy the
+*footprint conditions* `V_I ∩ V_K ⊆ V_J` for `I ⊆ J ⊆ K` and `V_I ∩ V_J ⊆ V_(I ∪ J)`
 (`TauCeti.ImplicitAtlas.Core.footprint_inter_footprint_subset_footprint`,
 `TauCeti.ImplicitAtlas.Core.footprint_inter_footprint_subset_footprint_union`), which make the
 cover `{V_I}` suitable for gluing local data indexed by pairs `I ⊆ J`, and the regular locus is
 empty where the expected dimension `d + m_I` is negative
 (`TauCeti.ImplicitAtlas.regLocus_eq_empty_of_neg`), so that a nonempty space carries no atlas
 whose expected dimensions are all negative (`TauCeti.ImplicitAtlas.isEmpty_of_forall_neg`).
+A point of `Z_IJ` fixed by a nontrivial element of `Γ_(J \ I)` does not lie over `X_I^reg`
+(`TauCeti.ImplicitAtlas.Core.footprintMap_notMem_regLocus_of_act_eq`), so an ineffective point
+has no regular base (`TauCeti.ImplicitAtlas.Core.regLocus_empty_eq_empty_of_nontrivial`).
 Examples are in `TauCeti.Topology.ImplicitAtlas.Examples`.
 
 ## Implementation notes
@@ -295,6 +299,11 @@ theorem mem_footprint {I : Finset A} {y : X} :
       x.val ∈ 𝒜.regLocus I ∧ 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset I) x) = y := by
   simp [footprint]
 
+/-- The regular footprint `V_I` is empty when the regular locus `X_I^reg` is. -/
+theorem footprint_eq_empty_of_regLocus_eq_empty {I : Finset A} (h : 𝒜.regLocus I = ∅) :
+    𝒜.footprint I = ∅ := by
+  simp [footprint, h]
+
 /-- The regular footprints are open. The set `X_I^reg ∩ Z_∅I` is open in `Z_∅I` and is a union
 of fibres of `ψ_∅I`, so its image is open in `U_∅I` by the quotient axiom, and `U_∅I` is open in
 `X_∅ ≃ₜ X`. -/
@@ -318,6 +327,34 @@ theorem iUnion_footprint : ⋃ I, 𝒜.footprint I = univ :=
   eq_univ_of_forall fun y ↦ mem_iUnion.2 <|
     let ⟨I, x, hx, hxy⟩ := 𝒜.exists_footprintMap_eq y
     ⟨I, 𝒜.mem_footprint.2 ⟨x, hx, hxy⟩⟩
+
+/-- A point of `Z_IJ` fixed by a nontrivial element of `Γ_(J \ I)` does not lie over the regular
+locus of `X_I`: `Γ_(J \ I)` acts freely on `ψ_IJ⁻¹(X_I^reg)`. -/
+theorem footprintMap_notMem_regLocus_of_act_eq {I J : Finset A} (h : I ⊆ J)
+    (x : kuranishiZeroSet 𝒜.kuranishi I J) {g : (α : J) → Γ α} (hg : g ≠ 1)
+    (hgI : Finset.restrict₂ (π := Γ) h g = 1) (hx : act J g x = x) :
+    𝒜.footprintMap h x ∉ 𝒜.regLocus I :=
+  fun hreg ↦ hg (𝒜.eq_one_of_act_eq h x hreg g hgI hx)
+
+/-- **An ineffective point has no regular base.** Suppose that for some index `α` the obstruction
+space `E_α` is zero, the thickenings `X_∅` and `X_α` are single points and the group `Γ_α` is
+nontrivial, so that it acts on `X_α` ineffectively. Then the regular locus of `X_∅` is empty,
+since `Γ_α` cannot act freely over `ψ_∅α⁻¹(X_∅^reg)`. -/
+theorem regLocus_empty_eq_empty_of_nontrivial (α : A) [Nontrivial (Γ α)] [Subsingleton (E α)]
+    [Subsingleton (T ∅)] [Subsingleton (T {α})] [Nonempty (T {α})] : 𝒜.regLocus ∅ = ∅ := by
+  -- A nontrivial element of `Γ_α` fixes the point of `Z_∅α = X_α`, which `ψ_∅α` sends to the
+  -- point of `X_∅`.
+  refine eq_empty_of_forall_notMem fun y hy ↦ ?_
+  obtain ⟨x⟩ := ‹Nonempty (T {α})›
+  have hx : x ∈ kuranishiZeroSet 𝒜.kuranishi ∅ {α} := mem_kuranishiZeroSet.2 fun ⟨β, hβ⟩ _ ↦ by
+    obtain rfl := Finset.mem_singleton.1 hβ
+    exact Subsingleton.elim _ _
+  obtain ⟨γ, hγ⟩ := exists_ne (1 : Γ α)
+  refine 𝒜.footprintMap_notMem_regLocus_of_act_eq (Finset.empty_subset {α}) ⟨x, hx⟩
+    (g := Pi.mulSingle (M := fun β : ({α} : Finset A) ↦ Γ β) ⟨α, Finset.mem_singleton_self α⟩ γ)
+    (fun hg ↦ hγ (by simpa using congr_fun hg ⟨α, Finset.mem_singleton_self α⟩))
+    (funext fun β ↦ (Finset.notMem_empty _ β.property).elim) (Subsingleton.elim _ _)
+    (Subsingleton.elim y (𝒜.footprintMap _ ⟨x, hx⟩) ▸ hy)
 
 /-! ### Footprint conditions -/
 
