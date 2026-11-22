@@ -22,9 +22,10 @@ or invertibility assumptions on the parameter.
 
 Together with `LinearMap.star_mem_traceRadical_iff` and `LinearMap.ker_traceSesqForm`, the adjoint
 identity shows that the trace radical is star-stable (`IsMarkovTrace.instIsStarTraceRadical`) and
-is precisely the kernel of the Hermitian form, so `IsMarkovTrace.quotientStrandIncl` preserves
-the adjoint (`IsMarkovTrace.quotientStrandIncl_star`) and bundles as the `⋆`-algebra homomorphism
-`IsMarkovTrace.quotientStrandStarAlgHom` at every level `n ≥ 0` without hypotheses on `δ`.
+is precisely the kernel of the Hermitian form, so for self-adjoint `δ`,
+`IsMarkovTrace.quotientStrandIncl` preserves the adjoint (`IsMarkovTrace.quotientStrandIncl_star`)
+and bundles as the `⋆`-algebra homomorphism `IsMarkovTrace.quotientStrandStarAlgHom` at every
+level `n ≥ 0`, without positivity or invertibility assumptions on `δ`.
 Positivity and the identification of that kernel with the zero-length vectors are separate
 questions.
 
