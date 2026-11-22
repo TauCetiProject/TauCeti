@@ -44,8 +44,8 @@ theorem sqrt_eq_zero_iff {z : ℂ} : sqrt z = 0 ↔ z = 0 := by
   rw [← sq_sqrt z, h, zero_pow two_ne_zero]
 
 /-- The principal square root splits across a nonnegative real factor: `√(r z) = √r √z`. -/
-theorem sqrt_ofReal_mul {r : ℝ} (hr : 0 ≤ r) (z : ℂ) : sqrt (r * z) = sqrt r * sqrt z :=
-  Complex.ofReal_mul_cpow hr z 2⁻¹
+theorem sqrt_ofReal_mul {r : ℝ} (hr : 0 ≤ r) (z : ℂ) : sqrt (r * z) = sqrt r * sqrt z := by
+  simpa only [Complex.sqrt] using Complex.ofReal_mul_cpow hr z 2⁻¹
 
 /-- The principal square root of `i` is `e^{π i / 4}`. -/
 theorem sqrt_I_eq_exp : sqrt I = exp (π * I / 4) := by

@@ -145,10 +145,8 @@ theorem eta_neg_one_div_ofReal_mul_mul {c : ℝ} (hc : 0 < c) {τ : ℂ} (hτ : 
     simpa using _root_.ModularForm.eta_comp_eq_csqrt_I_inv hcτ
   have h₂ : η (-1 / τ) = (Complex.sqrt I)⁻¹ * (Complex.sqrt τ * η τ) := by
     simpa using _root_.ModularForm.eta_comp_eq_csqrt_I_inv hτ
-  -- `Complex.sqrt` is the principal power `2⁻¹`, which splits across the real factor `c ≥ 0`.
-  have hsqrt : Complex.sqrt (c * τ) = √c * Complex.sqrt τ :=
-    (Complex.ofReal_mul_cpow hc.le τ 2⁻¹).trans
-      (congrArg (· * Complex.sqrt τ) (Complex.sqrt_of_nonneg (zero_le_real.2 hc.le)))
+  have hsqrt : Complex.sqrt (c * τ) = √c * Complex.sqrt τ := by
+    rw [Complex.sqrt_ofReal_mul hc.le τ, Complex.sqrt_of_nonneg (zero_le_real.2 hc.le), ofReal_re]
   rw [h₁, h₂, hsqrt]
   ring
 
