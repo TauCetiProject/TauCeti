@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.ApproximateUnit
 public import TauCeti.Analysis.Normed.Algebra.Derivation.Basic
 public import TauCeti.Analysis.Normed.Module.Essential
 import TauCeti.Analysis.Normed.Module.Dual.ClusterPt
+import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 
 /-!
 # Essential-module reductions for bounded derivations
@@ -59,22 +61,6 @@ open Filter Topology Submodule ContinuousLinearMap
 namespace TauCeti
 
 section Reduction
-
-/-- Lift an ambient intertwining identity `T (M₁ a x) = M₂ b (T x)` to restricted actions along a
-map `ι : p₁ → p₂` compatible with the subtype inclusions (`(ι x : E₂) = T (x : E₁)`). -/
-private theorem restrictAction_intertwine {𝕜 B₁ B₂ E₁ E₂ : Type*} [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup B₁] [NormedSpace 𝕜 B₁]
-    [SeminormedAddCommGroup B₂] [NormedSpace 𝕜 B₂]
-    [SeminormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
-    [SeminormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
-    {M₁ : B₁ →L[𝕜] E₁ →L[𝕜] E₁} {M₂ : B₂ →L[𝕜] E₂ →L[𝕜] E₂}
-    {p₁ : Submodule 𝕜 E₁} {p₂ : Submodule 𝕜 E₂}
-    {hp₁ : ∀ a x, x ∈ p₁ → M₁ a x ∈ p₁} {hp₂ : ∀ b y, y ∈ p₂ → M₂ b y ∈ p₂}
-    {ι : p₁ → p₂} (T : E₁ → E₂) (hι : ∀ x : p₁, (ι x : E₂) = T (x : E₁))
-    {a : B₁} {b : B₂} (hM : ∀ x : E₁, T (M₁ a x) = M₂ b (T x)) (x : p₁) :
-    ι (M₁.restrictAction p₁ hp₁ a x) = M₂.restrictAction p₂ hp₂ b (ι x) :=
-  Subtype.ext <| by
-    rw [hι, coe_restrictAction_apply, hM, ← hι, coe_restrictAction_apply]
 
 variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [ProperSpace 𝕜]
   [NonUnitalSeminormedRing A] [NormedSpace 𝕜 A]
@@ -159,12 +145,6 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential
     simp [Rop, unopL, hL]
   have hLRop (a b : Aᵐᵒᵖ) (x : E) : Lop a (Rop b x) = Rop b (Lop a x) := by
     simp [Lop, Rop, unopL, hLR]
-  have hCop : ∀ᶠ e in l.map MulOpposite.op, ‖e‖ ≤ C :=
-    eventually_map.2 <| hC.mono fun e he ↦ by rw [MulOpposite.norm_op]; exact he
-  have hlop : ∀ a : Aᵐᵒᵖ, Tendsto (a * ·) (l.map MulOpposite.op) (𝓝 a) := fun a ↦ by
-    rw [tendsto_map'_iff]
-    simpa only [Function.comp_def, MulOpposite.op_mul, MulOpposite.op_unop] using
-      (MulOpposite.continuous_op.tendsto a.unop).comp (hl a.unop)
   let Dop : Aᵐᵒᵖ →L[𝕜] StrongDual 𝕜 E := D.comp unopL
   have hDop (a b : Aᵐᵒᵖ) :
       Dop (a * b) = dualAction Rop a (Dop b) + dualAction Lop b (Dop a) := by
@@ -173,19 +153,16 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential
       MulOpposite.opContinuousLinearEquiv_symm_apply, MulOpposite.unop_mul, hD, add_apply,
       dualAction_apply_apply]
     exact add_comm _ _
-  have hE_eq : Lop.essentialSubmodule = R.essentialSubmodule := by
-    have hset : Set.range (fun p : Aᵐᵒᵖ × E ↦ Lop p.1 p.2) =
-        Set.range fun p : A × E ↦ R p.1 p.2 :=
-      (MulOpposite.unop_surjective.prodMap Function.surjective_id).range_comp
-        (fun p : A × E ↦ R p.1 p.2)
-    simp only [essentialSubmodule_eq_topologicalClosure_span, hset]
+  have hE_eq : Lop.essentialSubmodule = R.essentialSubmodule :=
+    essentialSubmodule_comp_of_surjective R MulOpposite.unop_surjective
   obtain ⟨ψ₀, hψ₀⟩ := hER
   let eSub : Lop.essentialSubmodule →L[𝕜] R.essentialSubmodule :=
     (LinearIsometryEquiv.ofEq _ _ hE_eq).toLinearIsometry.toContinuousLinearMap
   have heSub_coe (x : Lop.essentialSubmodule) : (eSub x : E) = (x : E) :=
     LinearIsometryEquiv.coe_ofEq_apply hE_eq x
   obtain ⟨φ, hφ⟩ := exists_eq_dualAction_sub_dualAction_of_restrict_leftEssential
-    hLop hRop hLRop hCop hlop Dop hDop ⟨-(ψ₀.comp eSub), fun a ↦ by
+    hLop hRop hLRop (eventually_norm_le_map_op hC) (tendsto_mul_left_map_op hl)
+    Dop hDop ⟨-(ψ₀.comp eSub), fun a ↦ by
       ext x
       have hx := congr($(hψ₀ a.unop) (eSub x))
       have hRe :

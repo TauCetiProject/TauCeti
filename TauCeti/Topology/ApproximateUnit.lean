@@ -96,4 +96,30 @@ theorem tendsto_mul_star_of_tendsto_mul {R : Type*} [Mul R] [StarMul R] [Topolog
     (hz : Tendsto (z * ·) l (𝓝 z)) : Tendsto (· * star z) l (𝓝 (star z)) :=
   hz.star.congr' (he.mono fun _ he ↦ by rw [star_mul, he.star_eq])
 
+/-- Shared opposite-filter transport: a one-sided approximate identity on `α` pushes forward along
+`MulOpposite.op` to the opposite-handed approximate identity on `αᵐᵒᵖ`. -/
+private theorem tendsto_mul_map_op_aux {α : Type*} [TopologicalSpace α] [Mul α]
+    {l : Filter α} (left : Bool)
+    (hl : ∀ a, Tendsto (cond left (· * a) (a * ·)) l (𝓝 a)) (a : αᵐᵒᵖ) :
+    Tendsto (cond left (a * ·) (· * a)) (l.map MulOpposite.op) (𝓝 a) := by
+  rw [tendsto_map'_iff]
+  have h := (MulOpposite.continuous_op.tendsto a.unop).comp (hl a.unop)
+  cases left <;>
+    simpa only [Bool.cond_false, Bool.cond_true, Function.comp_def, MulOpposite.op_mul,
+      MulOpposite.op_unop] using h
+
+/-- A right approximate identity on `α` pushes forward along `MulOpposite.op` to a left
+approximate identity on `αᵐᵒᵖ`. -/
+theorem tendsto_mul_right_map_op {α : Type*} [TopologicalSpace α] [Mul α]
+    {l : Filter α} (hl : ∀ a, Tendsto (a * ·) l (𝓝 a)) (a : αᵐᵒᵖ) :
+    Tendsto (· * a) (l.map MulOpposite.op) (𝓝 a) :=
+  tendsto_mul_map_op_aux false hl a
+
+/-- A left approximate identity on `α` pushes forward along `MulOpposite.op` to a right
+approximate identity on `αᵐᵒᵖ`. -/
+theorem tendsto_mul_left_map_op {α : Type*} [TopologicalSpace α] [Mul α]
+    {l : Filter α} (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) (a : αᵐᵒᵖ) :
+    Tendsto (a * ·) (l.map MulOpposite.op) (𝓝 a) :=
+  tendsto_mul_map_op_aux true hl a
+
 end TauCeti

@@ -29,7 +29,8 @@ virtual and bounded approximate diagonals:
    is a bounded derivation with values in `ker Δ**`. By Cohen–Hewitt factorization `Δ = mul' 𝕜 A`
    is surjective, so `TauCeti.IsAmenable.exists_mem_ker_precomp_precomp_eq_dualAction_sub` (from
    `TauCeti.Analysis.Normed.Algebra.Amenable.Bidual`) supplies `N ∈ ker Δ**` such that `M = E₀ - N`
-   is a virtual diagonal, and Goldstine's theorem turns `M` into a bounded approximate diagonal.
+   is a virtual diagonal, and bidual norm approximation turns `M` into a bounded approximate
+   diagonal.
 
 Consequently, for a Banach algebra `A` over `ℝ` or `ℂ`, amenability is equivalent to the existence
 of a virtual diagonal and to the existence of a bounded approximate diagonal, and implies innerness
@@ -303,7 +304,7 @@ private theorem IsAmenable.exists_ker_mul'_eq_commutator
       rw [LinearMap.mem_ker]
       ext f
       simpa only [D₀, coe_coe, precomp_apply, comp_apply, sub_apply, flip_apply,
-        dualAction_apply, sub_eq_zero, zero_apply] using hE₀ a f
+        dualAction_dualAction_apply_apply, sub_eq_zero, zero_apply] using hE₀ a f
   exact ⟨N, LinearMap.mem_ker.mp hN_ker, fun a ↦ by
     simpa only [D₀, sub_apply, flip_apply] using (hN_comm a).symm⟩
 
@@ -327,7 +328,7 @@ theorem IsAmenable.exists_isVirtualDiagonal (h : IsAmenable 𝕜 A) :
   · simpa only [map_sub] using sub_eq_sub_iff_sub_eq_sub.2 (hNcomm a).symm
   · rw [map_sub, hN0, sub_zero]
     ext f
-    simpa only [dualAction_apply_apply, dualAction_apply, precomp_apply, comp_apply, dual_def]
+    simpa only [dualAction_dualAction_apply_apply, precomp_apply, comp_apply, dual_def]
       using hE₀L a f
 
 /-- **Amenability implies the existence of a bounded approximate diagonal.** Every amenable Banach

@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Normed.Algebra.ApproximateDiagonal
 public import TauCeti.Analysis.Normed.Algebra.Arens.Basic
 public import TauCeti.Analysis.Normed.Module.Dual.Bimodule
+import TauCeti.Analysis.Normed.Module.Dual.BidualApproximation
 import TauCeti.Analysis.Normed.Module.Dual.ClusterPt
-import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 
 /-!
 # Virtual diagonals of Banach algebras
@@ -34,8 +34,8 @@ and `arensMulRev 𝕜 A (Δ** M) F = F`).
 
 Any weak-star cluster point in `(A ⊗̂π A)**` of an approximate diagonal is a virtual diagonal, so
 over a proper scalar field an approximate diagonal bounded by `C` yields a virtual diagonal of norm
-at most `C` by Banach–Alaoglu. Conversely, over `ℝ` or `ℂ`, Goldstine's theorem and convex
-weak-norm closure (`StrongDual.exists_norm_le_and_forall_norm_sub_lt`) approximate a virtual
+at most `C` by Banach–Alaoglu. Conversely, over `ℝ` or `ℂ`, bidual norm approximation
+(`StrongDual.exists_norm_le_and_forall_norm_sub_lt`) approximates a virtual
 diagonal `M` on every finite subset of `A` by tensors of norm at most `‖M‖`, producing an
 approximate diagonal bounded by `‖M‖`. Thus a Banach algebra over `ℝ` or `ℂ` has a virtual diagonal
 of norm at most `C` if and only if it has an approximate diagonal bounded by `C`.

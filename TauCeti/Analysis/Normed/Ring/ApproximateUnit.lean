@@ -50,6 +50,11 @@ open Filter Topology
 
 namespace TauCeti
 
+/-- A norm bound along a filter on `A` transfers to its image under `MulOpposite.op`. -/
+theorem eventually_norm_le_map_op {A : Type*} [SeminormedAddGroup A] {l : Filter A} {C : ℝ}
+    (hC : ∀ᶠ e in l, ‖e‖ ≤ C) : ∀ᶠ e in l.map MulOpposite.op, ‖e‖ ≤ C :=
+  eventually_map.2 <| hC.mono fun e he ↦ by rwa [MulOpposite.norm_op]
+
 variable {A : Type*} [NonUnitalSeminormedRing A] {C D : ℝ}
 
 /-! ### Finite-set and net criteria -/

@@ -161,4 +161,20 @@ theorem restrictAction_apply_comm {L R : B →L[𝕜] E →L[𝕜] E}
       R.restrictAction p hRp b (L.restrictAction p hLp a x) :=
   Subtype.ext (by simp only [coe_restrictAction_apply, hLR])
 
+/-- Lift an ambient intertwining identity `T (M₁ a x) = M₂ b (T x)` to restricted actions along a
+map `ι : p₁ → p₂` compatible with the subtype inclusions (`(ι x : E₂) = T (x : E₁)`). -/
+theorem restrictAction_intertwine {B₁ B₂ E₁ E₂ : Type*}
+    [SeminormedAddCommGroup B₁] [NormedSpace 𝕜 B₁]
+    [SeminormedAddCommGroup B₂] [NormedSpace 𝕜 B₂]
+    [SeminormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
+    [SeminormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
+    {M₁ : B₁ →L[𝕜] E₁ →L[𝕜] E₁} {M₂ : B₂ →L[𝕜] E₂ →L[𝕜] E₂}
+    {p₁ : Submodule 𝕜 E₁} {p₂ : Submodule 𝕜 E₂}
+    {hp₁ : ∀ a x, x ∈ p₁ → M₁ a x ∈ p₁} {hp₂ : ∀ b y, y ∈ p₂ → M₂ b y ∈ p₂}
+    {ι : p₁ → p₂} (T : E₁ → E₂) (hι : ∀ x : p₁, (ι x : E₂) = T (x : E₁))
+    {a : B₁} {b : B₂} (hM : ∀ x : E₁, T (M₁ a x) = M₂ b (T x)) (x : p₁) :
+    ι (M₁.restrictAction p₁ hp₁ a x) = M₂.restrictAction p₂ hp₂ b (ι x) :=
+  Subtype.ext <| by
+    rw [hι, coe_restrictAction_apply, hM, ← hι, coe_restrictAction_apply]
+
 end ContinuousLinearMap

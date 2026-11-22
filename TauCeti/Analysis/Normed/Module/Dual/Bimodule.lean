@@ -154,6 +154,13 @@ theorem dualAction_restrictAction_comp_subtypeL (M : A →L[𝕜] E →L[𝕜] E
   ext x
   simp
 
+/-- The iterated dual action on the bidual evaluates as
+`dualAction (dualAction M) a Φ f = Φ (f.comp (M a))`. -/
+theorem dualAction_dualAction_apply_apply (M : A →L[𝕜] E →L[𝕜] E) (a : A)
+    (Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) (f : StrongDual 𝕜 E) :
+    dualAction (dualAction M) a Φ f = Φ (f.comp (M a)) := by
+  simp [dualAction_apply]
+
 /-- The iterated dual action on the bidual extends the original action along the canonical
 embedding `NormedSpace.inclusionInDoubleDual`. -/
 @[simp]

@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-public import Mathlib.Topology.ApproximateUnit
 public import TauCeti.Analysis.Normed.Operator.Restrict
 import TauCeti.Analysis.Normed.Operator.Dense
+import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 import TauCeti.Topology.Algebra.Module.Span
 
 /-!
@@ -26,14 +26,18 @@ two-sided essential submodule is the closed linear span
 `ContinuousLinearMap.essentialBimoduleSubmodule L R = closure (span (A · E · A))`.
 This file proves:
 
-* invariance of `M.essentialSubmodule` under any commuting bounded action, and invariance of
-  `essentialBimoduleSubmodule L R` under both `L` and `R`;
+* invariance of `M.essentialSubmodule` under any commuting bounded action, symmetry of
+  `essentialBimoduleSubmodule` under commuting actions, invariance under both `L` and `R`, and
+  preservation under precomposition with surjective maps;
+* that an eventually norm-bounded filter converging to the identity on generators `M a w`
+  converges to the identity on `M.essentialSubmodule`, and that pointwise convergence along a proper
+  filter implies membership in `M.essentialSubmodule` (and essentiality of a restricted action);
 * that a bounded one-sided approximate identity converges to the identity pointwise on the
   corresponding essential submodule, that for a proper filter the essential submodule consists
   exactly of the points where it does, and that restricting an action to an invariant submodule
   inside its essential submodule produces an essential restricted action;
-* that in the presence of a bounded right approximate identity, `essentialBimoduleSubmodule L R`
-  equals `L.essentialSubmodule ⊓ R.essentialSubmodule`.
+* that in the presence of a bounded left or right approximate identity,
+  `essentialBimoduleSubmodule L R` equals `L.essentialSubmodule ⊓ R.essentialSubmodule`.
 
 ## Main definitions
 
@@ -54,6 +58,10 @@ This file proves:
   `ContinuousLinearMap.apply_left_mem_essentialBimoduleSubmodule`, and
   `ContinuousLinearMap.apply_right_mem_essentialBimoduleSubmodule`: generator membership and
   invariance of `essentialBimoduleSubmodule L R` under both actions.
+* `ContinuousLinearMap.tendsto_apply_of_mem_essentialSubmodule_of_tendsto_apply`,
+  `ContinuousLinearMap.mem_essentialSubmodule_of_tendsto_apply`, and
+  `ContinuousLinearMap.essentialSubmodule_restrictAction_eq_top_of_tendsto`: generator-to-closure
+  convergence, limit-to-membership, and restriction essentiality without multiplication on `A`.
 * `ContinuousLinearMap.tendsto_apply_of_mem_essentialSubmodule` and
   `ContinuousLinearMap.tendsto_apply_iff_mem_essentialSubmodule`: convergence and characterization
   on the left essential submodule.
@@ -63,8 +71,10 @@ This file proves:
 * `ContinuousLinearMap.essentialSubmodule_restrictAction_eq_top` and
   `ContinuousLinearMap.essentialSubmodule_restrictAction_eq_top_right`: restricted actions on
   invariant submodules of the essential part are essential.
-* `ContinuousLinearMap.essentialBimoduleSubmodule_eq_inf`: with a bounded right approximate
-  identity, `essentialBimoduleSubmodule L R = L.essentialSubmodule ⊓ R.essentialSubmodule`.
+* `ContinuousLinearMap.essentialBimoduleSubmodule_eq_inf` and
+  `ContinuousLinearMap.essentialBimoduleSubmodule_eq_inf_of_tendsto_mul_right`: with a bounded
+  right or left approximate identity,
+  `essentialBimoduleSubmodule L R = L.essentialSubmodule ⊓ R.essentialSubmodule`.
 
 ## References
 
@@ -100,6 +110,7 @@ theorem isClosed_essentialSubmodule (M : A →L[𝕜] E →L[𝕜] E) :
   isClosed_topologicalClosure _
 
 /-- Every image `M a x` lies in `M.essentialSubmodule`. -/
+@[simp]
 theorem apply_mem_essentialSubmodule (M : A →L[𝕜] E →L[𝕜] E) (a : A) (x : E) :
     M a x ∈ M.essentialSubmodule :=
   le_topologicalClosure _ (subset_span ⟨(a, x), rfl⟩)
@@ -144,6 +155,7 @@ theorem isClosed_essentialBimoduleSubmodule (L R : A →L[𝕜] E →L[𝕜] E) 
   isClosed_topologicalClosure _
 
 /-- Every double action value `L a (R b x)` lies in `essentialBimoduleSubmodule L R`. -/
+@[simp]
 theorem apply_left_apply_right_mem_essentialBimoduleSubmodule (L R : A →L[𝕜] E →L[𝕜] E)
     (a b : A) (x : E) :
     L a (R b x) ∈ essentialBimoduleSubmodule L R :=
@@ -158,6 +170,42 @@ theorem essentialBimoduleSubmodule_le_iff {L R : A →L[𝕜] E →L[𝕜] E} {p
     rw [essentialBimoduleSubmodule_eq_topologicalClosure_span]
     exact topologicalClosure_minimal _
       (span_le.2 (by rintro _ ⟨⟨a, b, x⟩, rfl⟩; exact h a b x)) hp⟩
+
+/-- When two bounded actions commute, swapping them does not change the two-sided essential
+submodule. -/
+theorem essentialBimoduleSubmodule_comm {L R : A →L[𝕜] E →L[𝕜] E}
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) :
+    essentialBimoduleSubmodule L R = essentialBimoduleSubmodule R L := by
+  refine le_antisymm ?_ ?_
+  · exact (essentialBimoduleSubmodule_le_iff (isClosed_essentialBimoduleSubmodule R L)).2
+      fun a b x ↦ by
+        rw [hLR]
+        exact apply_left_apply_right_mem_essentialBimoduleSubmodule R L b a x
+  · exact (essentialBimoduleSubmodule_le_iff (isClosed_essentialBimoduleSubmodule L R)).2
+      fun a b x ↦ by
+        rw [← hLR]
+        exact apply_left_apply_right_mem_essentialBimoduleSubmodule L R b a x
+
+/-- Precomposing an action with a surjective bounded linear map preserves its essential
+submodule. -/
+theorem essentialSubmodule_comp_of_surjective {B : Type*} [SeminormedAddCommGroup B]
+    [NormedSpace 𝕜 B] (M : A →L[𝕜] E →L[𝕜] E) {f : B →L[𝕜] A} (hf : Function.Surjective f) :
+    (M.comp f).essentialSubmodule = M.essentialSubmodule := by
+  have hset : Set.range (fun p : B × E ↦ (M.comp f) p.1 p.2) =
+      Set.range fun p : A × E ↦ M p.1 p.2 :=
+    (hf.prodMap Function.surjective_id).range_comp (fun p : A × E ↦ M p.1 p.2)
+  simp only [essentialSubmodule_eq_topologicalClosure_span, hset]
+
+/-- Precomposing two actions with a surjective bounded linear map preserves their two-sided
+essential submodule. -/
+theorem essentialBimoduleSubmodule_comp_of_surjective {B : Type*} [SeminormedAddCommGroup B]
+    [NormedSpace 𝕜 B] (L R : A →L[𝕜] E →L[𝕜] E) {f : B →L[𝕜] A} (hf : Function.Surjective f) :
+    essentialBimoduleSubmodule (L.comp f) (R.comp f) = essentialBimoduleSubmodule L R := by
+  have hset : Set.range (fun p : B × B × E ↦ (L.comp f) p.1 ((R.comp f) p.2.1 p.2.2)) =
+      Set.range fun p : A × A × E ↦ L p.1 (R p.2.1 p.2.2) :=
+    (hf.prodMap (hf.prodMap Function.surjective_id)).range_comp
+      (fun p : A × A × E ↦ L p.1 (R p.2.1 p.2.2))
+  simp only [essentialBimoduleSubmodule_eq_topologicalClosure_span, hset]
 
 /-- The two-sided essential submodule is contained in the left essential submodule. -/
 theorem essentialBimoduleSubmodule_le_left (L R : A →L[𝕜] E →L[𝕜] E) :
@@ -202,17 +250,10 @@ theorem apply_right_mem_essentialBimoduleSubmodule [Mul A] {L R : A →L[𝕜] E
       exact apply_left_apply_right_mem_essentialBimoduleSubmodule L R b (c * a) y)
     ((essentialBimoduleSubmodule_eq_topologicalClosure_span L R).symm ▸ hx)
 
-end EssentialSubmodule
-
-section ApproximateIdentity
-
-variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [NonUnitalSeminormedRing A]
-  [NormedSpace 𝕜 A] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-
-/-- Shared convergence argument: if an eventually bounded filter `l` acts as the identity in the
-limit on every generator `M a w`, then it does so on the entire essential submodule
+/-- If an eventually norm-bounded filter `l` acts as the identity in the limit on every generator
+`M a w`, then it converges pointwise to the identity on the entire essential submodule
 `M.essentialSubmodule`. -/
-private theorem tendsto_apply_of_mem_essentialSubmodule_aux (M : A →L[𝕜] E →L[𝕜] E)
+theorem tendsto_apply_of_mem_essentialSubmodule_of_tendsto_apply (M : A →L[𝕜] E →L[𝕜] E)
     {l : Filter A} {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
     (hgen : ∀ a w, Tendsto (fun e ↦ M e (M a w)) l (𝓝 (M a w))) {z : E}
     (hz : z ∈ M.essentialSubmodule) :
@@ -241,6 +282,30 @@ private theorem tendsto_apply_of_mem_essentialSubmodule_aux (M : A →L[𝕜] E 
     | smul c _ _ hu => simpa using hu.const_smul c
   exact tendsto_apply_of_dense hd hbound htendsto ⟨z, hz⟩
 
+/-- If `M e z → z` along a proper filter `l`, then `z` lies in `M.essentialSubmodule`. -/
+theorem mem_essentialSubmodule_of_tendsto_apply (M : A →L[𝕜] E →L[𝕜] E)
+    {l : Filter A} [l.NeBot] {z : E} (h : Tendsto (fun e ↦ M e z) l (𝓝 z)) :
+    z ∈ M.essentialSubmodule :=
+  (isClosed_essentialSubmodule M).mem_of_tendsto h <| .of_forall fun e ↦
+    apply_mem_essentialSubmodule M e z
+
+/-- If `M e x → x` along a proper filter `l` for every `x` in an `M`-invariant submodule `p`,
+then the restricted action `M.restrictAction p hMp` is essential. -/
+theorem essentialSubmodule_restrictAction_eq_top_of_tendsto (M : A →L[𝕜] E →L[𝕜] E)
+    {l : Filter A} [l.NeBot] (p : Submodule 𝕜 E) (hMp : ∀ a x, x ∈ p → M a x ∈ p)
+    (htendsto : ∀ x ∈ p, Tendsto (fun e ↦ M e x) l (𝓝 x)) :
+    (M.restrictAction p hMp).essentialSubmodule = ⊤ :=
+  eq_top_iff.2 fun x _ ↦ mem_essentialSubmodule_of_tendsto_apply (M.restrictAction p hMp) <|
+    tendsto_subtype_rng.2 <| (htendsto x x.property).congr fun e ↦
+      (coe_restrictAction_apply M p hMp e x).symm
+
+end EssentialSubmodule
+
+section ApproximateIdentity
+
+variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [NonUnitalSeminormedRing A]
+  [NormedSpace 𝕜 A] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
 /-- A bounded left approximate identity of `A` converges to the identity at every point of
 `L.essentialSubmodule`. -/
 theorem tendsto_apply_of_mem_essentialSubmodule (L : A →L[𝕜] E →L[𝕜] E)
@@ -248,7 +313,7 @@ theorem tendsto_apply_of_mem_essentialSubmodule (L : A →L[𝕜] E →L[𝕜] E
     (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) {z : E}
     (hz : z ∈ L.essentialSubmodule) :
     Tendsto (fun e ↦ L e z) l (𝓝 z) :=
-  tendsto_apply_of_mem_essentialSubmodule_aux L hC
+  tendsto_apply_of_mem_essentialSubmodule_of_tendsto_apply L hC
     (fun a w ↦ by simpa [Function.comp_def, hL] using ((L.flip w).continuous.tendsto a).comp (hl a))
     hz
 
@@ -258,9 +323,7 @@ theorem tendsto_apply_iff_mem_essentialSubmodule (L : A →L[𝕜] E →L[𝕜] 
     (hL : ∀ a b z, L (a * b) z = L a (L b z)) {l : Filter A} [l.NeBot] {C : ℝ}
     (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) {z : E} :
     Tendsto (fun e ↦ L e z) l (𝓝 z) ↔ z ∈ L.essentialSubmodule :=
-  ⟨fun h ↦ (isClosed_essentialSubmodule L).mem_of_tendsto h <| .of_forall fun e ↦
-      apply_mem_essentialSubmodule L e z,
-    tendsto_apply_of_mem_essentialSubmodule L hL hC hl⟩
+  ⟨mem_essentialSubmodule_of_tendsto_apply L, tendsto_apply_of_mem_essentialSubmodule L hL hC hl⟩
 
 /-- A bounded right approximate identity of `A` converges to the identity at every point of
 `R.essentialSubmodule`. -/
@@ -269,7 +332,7 @@ theorem tendsto_apply_of_mem_essentialSubmodule_right (R : A →L[𝕜] E →L[�
     (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (a * ·) l (𝓝 a)) {z : E}
     (hz : z ∈ R.essentialSubmodule) :
     Tendsto (fun e ↦ R e z) l (𝓝 z) :=
-  tendsto_apply_of_mem_essentialSubmodule_aux R hC
+  tendsto_apply_of_mem_essentialSubmodule_of_tendsto_apply R hC
     (fun a w ↦ by simpa [Function.comp_def, hR] using ((R.flip w).continuous.tendsto a).comp (hl a))
     hz
 
@@ -279,8 +342,7 @@ theorem tendsto_apply_iff_mem_essentialSubmodule_right (R : A →L[𝕜] E →L[
     (hR : ∀ a b z, R (a * b) z = R b (R a z)) {l : Filter A} [l.NeBot] {C : ℝ}
     (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (a * ·) l (𝓝 a)) {z : E} :
     Tendsto (fun e ↦ R e z) l (𝓝 z) ↔ z ∈ R.essentialSubmodule :=
-  ⟨fun h ↦ (isClosed_essentialSubmodule R).mem_of_tendsto h <| .of_forall fun e ↦
-      apply_mem_essentialSubmodule R e z,
+  ⟨mem_essentialSubmodule_of_tendsto_apply R,
     tendsto_apply_of_mem_essentialSubmodule_right R hR hC hl⟩
 
 /-- Restricting a left action `L` to an `L`-invariant submodule `p ≤ L.essentialSubmodule` yields
@@ -291,12 +353,8 @@ theorem essentialSubmodule_restrictAction_eq_top (L : A →L[𝕜] E →L[𝕜] 
     (p : Submodule 𝕜 E) (hp : p ≤ L.essentialSubmodule)
     (hLp : ∀ a x, x ∈ p → L a x ∈ p) :
     (L.restrictAction p hLp).essentialSubmodule = ⊤ :=
-  eq_top_iff.2 fun x _ ↦
-    (tendsto_apply_iff_mem_essentialSubmodule (L.restrictAction p hLp)
-      (L.restrictAction_mul_apply_of_left hL p hLp) hC hl).1 <|
-      tendsto_subtype_rng.2 <|
-        (tendsto_apply_of_mem_essentialSubmodule L hL hC hl (hp x.property)).congr
-          fun e ↦ (coe_restrictAction_apply L p hLp e x).symm
+  essentialSubmodule_restrictAction_eq_top_of_tendsto L p hLp fun _ hx ↦
+    tendsto_apply_of_mem_essentialSubmodule L hL hC hl (hp hx)
 
 /-- Restricting a right action `R` to an `R`-invariant submodule `p ≤ R.essentialSubmodule` yields
 an essential right action when `A` has a bounded right approximate identity. -/
@@ -306,12 +364,8 @@ theorem essentialSubmodule_restrictAction_eq_top_right (R : A →L[𝕜] E →L[
     (p : Submodule 𝕜 E) (hp : p ≤ R.essentialSubmodule)
     (hRp : ∀ a x, x ∈ p → R a x ∈ p) :
     (R.restrictAction p hRp).essentialSubmodule = ⊤ :=
-  eq_top_iff.2 fun x _ ↦
-    (tendsto_apply_iff_mem_essentialSubmodule_right (R.restrictAction p hRp)
-      (R.restrictAction_mul_apply_of_right hR p hRp) hC hl).1 <|
-      tendsto_subtype_rng.2 <|
-        (tendsto_apply_of_mem_essentialSubmodule_right R hR hC hl (hp x.property)).congr
-          fun e ↦ (coe_restrictAction_apply R p hRp e x).symm
+  essentialSubmodule_restrictAction_eq_top_of_tendsto R p hRp fun _ hx ↦
+    tendsto_apply_of_mem_essentialSubmodule_right R hR hC hl (hp hx)
 
 /-- In a bounded bimodule over a normed algebra with a bounded right approximate identity, the
 two-sided essential submodule `essentialBimoduleSubmodule L R` equals the intersection
@@ -338,6 +392,29 @@ theorem essentialBimoduleSubmodule_eq_inf
   exact (isClosed_essentialBimoduleSubmodule L R).mem_of_tendsto
     (tendsto_apply_of_mem_essentialSubmodule_right R hR hC hl hx.2)
     (.of_forall fun e ↦ hmem e x hx.1)
+
+/-- In a bounded bimodule over a normed algebra with a bounded left approximate identity, the
+two-sided essential submodule `essentialBimoduleSubmodule L R` equals the intersection
+`L.essentialSubmodule ⊓ R.essentialSubmodule`. -/
+theorem essentialBimoduleSubmodule_eq_inf_of_tendsto_mul_right
+    {L R : A →L[𝕜] E →L[𝕜] E}
+    (hL : ∀ a b x, L (a * b) x = L a (L b x))
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) {l : Filter A} [l.NeBot] {C : ℝ}
+    (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) :
+    essentialBimoduleSubmodule L R = L.essentialSubmodule ⊓ R.essentialSubmodule := by
+  let unopL : Aᵐᵒᵖ →L[𝕜] A := (MulOpposite.opContinuousLinearEquiv 𝕜 (M := A)).symm
+  let Lop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E := L.comp unopL
+  let Rop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E := R.comp unopL
+  have hLop : ∀ a b x, Lop (a * b) x = Lop b (Lop a x) := fun a b x ↦ by
+    simp [Lop, unopL, hL]
+  have hRLop : ∀ a b x, Rop a (Lop b x) = Lop b (Rop a x) := fun a b x ↦
+    (hLR b.unop a.unop x).symm
+  have h := essentialBimoduleSubmodule_eq_inf hLop hRLop
+    (TauCeti.eventually_norm_le_map_op hC) (TauCeti.tendsto_mul_left_map_op hl)
+  rwa [essentialBimoduleSubmodule_comp_of_surjective R L MulOpposite.unop_surjective,
+    ← essentialBimoduleSubmodule_comm hLR,
+    essentialSubmodule_comp_of_surjective R MulOpposite.unop_surjective,
+    essentialSubmodule_comp_of_surjective L MulOpposite.unop_surjective, inf_comm] at h
 
 end ApproximateIdentity
 

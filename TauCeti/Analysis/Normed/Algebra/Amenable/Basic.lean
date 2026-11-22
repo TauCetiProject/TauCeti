@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Topology.ApproximateUnit
 public import TauCeti.Analysis.Normed.Module.Dual.Bimodule
-import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.Completion
+import TauCeti.Analysis.Normed.Module.Dual.BidualApproximation
 import TauCeti.Analysis.Normed.Module.Dual.Bilinear
-import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 
 /-!
@@ -31,8 +30,9 @@ This file defines `TauCeti.IsAmenable`, proves basic examples (`TauCeti.isAmenab
 (`TauCeti.IsAmenable.exists_eq_bidual_dualAction_sub_dualAction`), and deduces that every amenable
 normed algebra over `ℝ` or `ℂ` has a bounded two-sided approximate identity
 (`TauCeti.IsAmenable.exists_isApproximateUnit`) by applying amenability to the canonical inclusion
-`J_A : A →L[𝕜] A**` for the one-sided actions `(mul, 0)` and `(0, mul.flip)` and using Goldstine's
-theorem and Dixon's combination.
+`J_A : A →L[𝕜] A**` for the one-sided actions `(mul, 0)` and `(0, mul.flip)` and using bidual norm
+approximation (`StrongDual.exists_neBot_eventually_norm_le_and_forall_tendsto`) and Dixon's
+combination.
 
 For innerness on invariant bidual kernels, see `TauCeti.Analysis.Normed.Algebra.Amenable.Bidual`,
 and for Johnson's virtual and bounded approximate diagonal characterizations, see
@@ -238,8 +238,8 @@ private theorem IsAmenable.exists_tendsto_mul_left (h : IsAmenable 𝕜 A) :
   obtain ⟨l, hl, hle, ht⟩ := Φ.exists_neBot_eventually_norm_le_and_forall_tendsto
     (fun a ↦ ContinuousLinearMap.mul 𝕜 A a) id (fun a f ↦ by
       have ha := congr($(hΦ a) f)
-      simpa only [sub_apply, dualAction_apply_apply, dualAction_apply, comp_apply, precomp_apply,
-        zero_apply, comp_zero, map_zero, sub_zero, dual_def, id_eq] using ha.symm) le_rfl
+      simpa only [sub_apply, dualAction_dualAction_apply_apply, zero_apply, comp_zero, map_zero,
+        sub_zero, dual_def, id_eq] using ha.symm) le_rfl
   exact ⟨‖Φ‖, l, hl, hle, fun a ↦ (ht a).congr fun e ↦ mul_apply' 𝕜 A a e⟩
 
 /-- Every amenable normed algebra over `ℝ` or `ℂ` has a bounded left approximate identity. -/
@@ -257,9 +257,8 @@ private theorem IsAmenable.exists_tendsto_mul_right (h : IsAmenable 𝕜 A) :
   obtain ⟨l, hl, hle, ht⟩ := Φ.exists_neBot_eventually_norm_le_and_forall_tendsto
     (fun a ↦ (ContinuousLinearMap.mul 𝕜 A).flip a) id (fun a f ↦ by
       have ha := congr($(hΦ a) f)
-      simpa only [neg_apply, sub_apply, dualAction_apply_apply, dualAction_apply, comp_apply,
-        precomp_apply, zero_apply, comp_zero, map_zero, zero_sub, neg_inj, dual_def, id_eq]
-        using ha.symm) le_rfl
+      simpa only [neg_apply, sub_apply, dualAction_dualAction_apply_apply, zero_apply, comp_zero,
+        map_zero, zero_sub, neg_inj, dual_def, id_eq] using ha.symm) le_rfl
   exact ⟨‖Φ‖, l, hl, hle, fun a ↦ (ht a).congr fun _ ↦ by simp⟩
 
 /-- Every amenable normed algebra over `ℝ` or `ℂ` has a bounded two-sided approximate identity. -/
