@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pi
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.Deriv.Star
 import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Matrix.Normed
@@ -34,7 +35,9 @@ matrices.
 
 Vector curves obey the product rules `(x ⬝ᵥ y)' = x' ⬝ᵥ y + x ⬝ᵥ y'` (`HasDerivAt.dotProduct`)
 and `(A *ᵥ y)' = A' *ᵥ y + A *ᵥ y'` (`Matrix.hasDerivAt_mulVec_of_entries`), with the matrix
-again differentiated entrywise.
+again differentiated entrywise. Combining them differentiates the real quadratic form
+`Re ⟪w, C w⟫` along real curves over `RCLike 𝕜`
+(`Matrix.hasDerivAt_re_star_dotProduct_mulVec_of_entries`).
 -/
 
 public section
@@ -84,6 +87,18 @@ theorem hasDerivAt_mulVec_of_entries {𝕜 𝕜' ι κ : Type*} [NontriviallyNor
     HasDerivAt (fun τ ↦ A τ *ᵥ y τ) (A' *ᵥ y t + A t *ᵥ y') t :=
   hasDerivAt_pi.2 fun i ↦ by
     simpa only [mulVec, Pi.add_apply] using (hasDerivAt_pi.2 fun j ↦ hA i j).dotProduct hy
+
+/-- The derivative of the real quadratic form `t ↦ Re ⟪w t, C t w t⟫` along a real curve `w` of
+vectors and an entrywise differentiable real curve `C` of matrices over `RCLike 𝕜`. -/
+theorem hasDerivAt_re_star_dotProduct_mulVec_of_entries {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι]
+    {w : ℝ → ι → 𝕜} {w' : ι → 𝕜} {C : ℝ → Matrix ι ι 𝕜} {C' : Matrix ι ι 𝕜} {t : ℝ}
+    (hw : HasDerivAt w w' t) (hC : ∀ a b, HasDerivAt (fun s ↦ C s a b) (C' a b) t) :
+    HasDerivAt (fun s ↦ RCLike.re (star (w s) ⬝ᵥ (C s *ᵥ w s)))
+      (RCLike.re (star w' ⬝ᵥ (C t *ᵥ w t)) + RCLike.re (star (w t) ⬝ᵥ (C' *ᵥ w t)) +
+        RCLike.re (star (w t) ⬝ᵥ (C t *ᵥ w'))) t := by
+  have h := RCLike.reCLM.hasFDerivAt.comp_hasDerivAt t
+    (hw.star.dotProduct (hasDerivAt_mulVec_of_entries hC hw))
+  simpa only [Function.comp_def, RCLike.reCLM_apply, dotProduct_add, map_add, add_assoc] using h
 
 variable {𝕜 𝕜' ι : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
   [NormedAlgebra 𝕜 𝕜'] [Fintype ι] [DecidableEq ι]

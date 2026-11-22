@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Matrix.Eigenvalues.Smooth
 import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.Calculus.Deriv.Star
 import TauCeti.Analysis.Calculus.Deriv.Matrix
 import TauCeti.Analysis.Calculus.FDeriv.Matrix
 import TauCeti.Analysis.Matrix.Eigenvalues.Basic
@@ -149,9 +148,9 @@ private theorem re_star_dotProduct_sub_smul_eq_sum {A B : Matrix n n 𝕜} (hA :
   · have hgap : ((μ - d k : ℝ) : 𝕜) ≠ 0 := by exact_mod_cast sub_ne_zero.2 (Ne.symm hk)
     have hyk : y k = z k / ((μ - d k : ℝ) : 𝕜) := by
       rw [eq_div_iff hgap, mul_comm, ← hv₁, hv₂ k hk]
-    rw [hv₂ k hk, Pi.star_apply, hyk, star_div₀, RCLike.star_def, RCLike.conj_ofReal,
-      div_mul_eq_mul_div, RCLike.conj_mul, ← RCLike.ofReal_pow, ← RCLike.ofReal_div,
-      RCLike.ofReal_re]
+    rw [hv₂ k hk, Pi.star_apply, hyk, star_div₀, div_mul_eq_mul_div]
+    simp only [RCLike.star_def, RCLike.conj_ofReal, RCLike.conj_mul]
+    norm_cast
   · rw [hv₁, not_not.1 hk, sub_self, RCLike.ofReal_zero, zero_mul, mul_zero, map_zero]
 
 /-! ### Curves of eigenvectors -/
@@ -177,8 +176,9 @@ private theorem deriv_eigenvalues₀_eq_div (hM : ∀ t, (M t).IsHermitian) {t :
   have hu : M t *ᵥ (c • w) = ((hM t).eigenvalues₀ i : 𝕜) • (c • w) := by
     rw [mulVec_smul, hw, smul_comm]
   have hu1 : star (c • w) ⬝ᵥ (c • w) = 1 := by
-    rw [star_smul, smul_dotProduct, dotProduct_smul, smul_smul, smul_eq_mul, hcc, ← hrw,
-      ← RCLike.ofReal_mul, inv_mul_cancel₀ hr.ne', RCLike.ofReal_one]
+    rw [star_smul, smul_dotProduct, dotProduct_smul, smul_smul, smul_eq_mul, hcc, ← hrw]
+    norm_cast
+    exact inv_mul_cancel₀ hr.ne'
   rw [← fderiv_apply_one_eq_deriv, fderiv_eigenvalues₀_apply hM hMd hi hu hu1, ← hrw,
     RCLike.ofReal_re]
   simp only [fderiv_apply_one_eq_deriv, star_smul, mulVec_smul, smul_dotProduct, dotProduct_smul,
@@ -197,10 +197,11 @@ private theorem exists_eigenvector_curve (hM : ∀ t, (M t).IsHermitian) {t₀ :
   set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
   set p : 𝕜 := ∏ k ∈ Finset.univ.erase (e i),
     (((hM t₀).eigenvalues₀ i - (hM t₀).eigenvalues k : ℝ) : 𝕜)
-  have hp : p ≠ 0 := Finset.prod_ne_zero_iff.2 fun k hk ↦ by
-    have h := (hM t₀).eigenvalues_ne_eigenvalues_equivOfCardEq hi k (Finset.ne_of_mem_erase hk)
+  have hp : p ≠ 0 := by
+    have h := (hM t₀).prod_erase_sub_eigenvalues_ne_zero hi
     rw [(hM t₀).eigenvalues_apply_equivOfCardEq] at h
-    exact_mod_cast sub_ne_zero.2 (Ne.symm h)
+    simp only [p, ← RCLike.ofReal_prod]
+    exact_mod_cast h
   refine ⟨fun t ↦ p⁻¹ • (adjugate (scalar n ((hM t).eigenvalues₀ i : 𝕜) - M t) *ᵥ u), ?_, ?_,
     fun t ↦ ?_⟩
   · dsimp only
@@ -227,11 +228,9 @@ private theorem exists_eigenvector_curve (hM : ∀ t, (M t).IsHermitian) {t₀ :
     -- adjugate maps into its kernel.
     set μ := (hM t).eigenvalues₀ i
     set v := adjugate (scalar n (μ : 𝕜) - M t) *ᵥ u
-    have hdet : (scalar n (μ : 𝕜) - M t).det = 0 := by
-      rw [← eval_charpoly, (hM t).charpoly_eq, Polynomial.eval_prod]
-      exact Finset.prod_eq_zero (Finset.mem_univ (e i)) (by simp [μ, e])
     have h0 : (scalar n (μ : 𝕜) - M t) *ᵥ v = 0 := by
-      rw [mulVec_mulVec, mul_adjugate, hdet, zero_smul, zero_mulVec]
+      rw [mulVec_mulVec, mul_adjugate, (hM t).det_scalar_eigenvalues₀_sub_eq_zero, zero_smul,
+        zero_mulVec]
     rw [sub_mulVec, sub_eq_zero, scalar_apply, ← smul_one_eq_diagonal, smul_mulVec,
       one_mulVec] at h0
     dsimp only
@@ -259,19 +258,6 @@ private theorem mulVec_sub_smul_eq_of_hasDerivAt {t₀ : ℝ}
   linear_combination (exp := 1) h'
 
 /-! ### The second variation formula -/
-
-omit [DecidableEq n] in
-/-- The derivative of `t ↦ Re ⟪w t, C t w t⟫` along a differentiable curve `w` of vectors and an
-entrywise differentiable curve `C` of matrices. -/
-private theorem hasDerivAt_re_star_dotProduct_mulVec {w : ℝ → n → 𝕜} {w' : n → 𝕜}
-    {C : ℝ → Matrix n n 𝕜} {C' : Matrix n n 𝕜} {t : ℝ} (hw : HasDerivAt w w' t)
-    (hC : ∀ a b, HasDerivAt (fun s ↦ C s a b) (C' a b) t) :
-    HasDerivAt (fun s ↦ RCLike.re (star (w s) ⬝ᵥ (C s *ᵥ w s)))
-      (RCLike.re (star w' ⬝ᵥ (C t *ᵥ w t)) + RCLike.re (star (w t) ⬝ᵥ (C' *ᵥ w t)) +
-        RCLike.re (star (w t) ⬝ᵥ (C t *ᵥ w'))) t := by
-  have h := RCLike.reCLM.hasFDerivAt.comp_hasDerivAt t
-    (hw.star.dotProduct (hasDerivAt_mulVec_of_entries hC hw))
-  simpa only [Function.comp_def, RCLike.reCLM_apply, dotProduct_add, map_add, add_assoc] using h
 
 /-- **Hadamard's second variation formula.** Let `M` be a curve of Hermitian matrices whose
 entries are differentiable near `t₀` and whose entrywise derivative `M'` is differentiable at
@@ -322,18 +308,18 @@ theorem hasDerivAt_deriv_eigenvalues₀ (hM : ∀ t, (M t).IsHermitian) {t₀ : 
   -- Differentiating `M w = λᵢ w` at `t₀` determines `w'` off the eigenvalue `λᵢ`.
   have hfirst := mulVec_sub_smul_eq_of_hasDerivAt hMd₀
     (hasFDerivAt_eigenvalues₀ hM hMd₀ hi hu hu1).differentiableAt.hasDerivAt hw' hw₀ hweig
-  have hf := hasDerivAt_re_star_dotProduct_mulVec (C := M')
+  have hf := hasDerivAt_re_star_dotProduct_mulVec_of_entries (C := M')
     (C' := of fun a b ↦ deriv (deriv fun s ↦ M s a b) t₀) hw' fun a b ↦ (hM₂ a b).hasDerivAt
-  have hg := hasDerivAt_re_star_dotProduct_mulVec (C := fun _ ↦ 1) (C' := 0) hw' fun _ _ ↦
-    hasDerivAt_const t₀ _
+  have hg := hasDerivAt_re_star_dotProduct_mulVec_of_entries (C := fun _ ↦ 1) (C' := 0) hw'
+    fun _ _ ↦ hasDerivAt_const t₀ _
   simp only [one_mulVec, zero_mulVec, dotProduct_zero, map_zero, add_zero] at hg
   have hR := hf.div hg (by simp [hw₀, hu1])
   refine (hR.congr_of_eventuallyEq hev).congr_deriv ?_
   -- Assemble `λᵢ'' = Re ⟪u, M'' u⟫ + 2 Re ⟪w', M' u - λᵢ' u⟫` and evaluate the last term.
   have hS := re_star_dotProduct_sub_smul_eq_sum (hM t₀) hu hfirst
   rw [dotProduct_sub, dotProduct_smul, map_sub, smul_eq_mul, RCLike.re_ofReal_mul] at hS
-  rw [hw₀, hu1, RCLike.one_re, one_pow, div_one, mul_one, ← hlam', ← hS,
-    ← hB.star_dotProduct_mulVec_comm, star_dotProduct u (deriv w t₀)]
+  simp only [hw₀, hu1, RCLike.one_re, one_pow, div_one, mul_one, ← hlam']
+  rw [← hS, ← hB.star_dotProduct_mulVec_comm, star_dotProduct u (deriv w t₀)]
   simp only [RCLike.star_def, RCLike.conj_re]
   ring
 

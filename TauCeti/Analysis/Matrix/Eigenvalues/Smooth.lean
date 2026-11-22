@@ -42,6 +42,8 @@ formula gives
 
 `DG (x₀, λᵢ) (v, s) = ∏_{j ≠ i} (λᵢ - d j) * (s - Re (Uᴴ (DM (x₀) v) U)ᵢᵢ)`.
 
+Its zeros come from `Matrix.IsHermitian.det_scalar_eigenvalues₀_sub_eq_zero`, and at a simple
+eigenvalue the gap product is nonzero (`Matrix.IsHermitian.prod_erase_sub_eigenvalues_ne_zero`).
 Simplicity makes the partial derivative in `μ` invertible, so over a complete parameter space the
 implicit function theorem produces a `C^k` function `ψ` whose graph is the zero set of `G` near
 `(x₀, λᵢ)`. Since `x ↦ λᵢ (M x)` is continuous and takes values in that zero set, it agrees with
@@ -180,13 +182,22 @@ private theorem fderiv_reDetScalarSub_apply {M : E → Matrix n n 𝕜} {x₀ : 
 
 /-- At a simple ordered eigenvalue `λᵢ`, the product `∏_{j ≠ i} (λᵢ - λⱼ)` over the remaining
 matrix-indexed eigenvalues does not vanish. -/
-private theorem prod_erase_sub_eigenvalues_ne_zero {A : Matrix n n 𝕜} (hA : A.IsHermitian)
+theorem IsHermitian.prod_erase_sub_eigenvalues_ne_zero {A : Matrix n n 𝕜} (hA : A.IsHermitian)
     {i : Fin (Fintype.card n)} (hi : ∀ j ≠ i, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ i) :
     ∏ j ∈ Finset.univ.erase (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) i),
       (hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) i) -
         hA.eigenvalues j) ≠ 0 :=
   Finset.prod_ne_zero_iff.2 fun j hj ↦ sub_ne_zero.2
     (hA.eigenvalues_ne_eigenvalues_equivOfCardEq hi j (Finset.ne_of_mem_erase hj)).symm
+
+/-- Every ordered eigenvalue `μ` of a Hermitian matrix `A` is a root of its characteristic
+polynomial, so `μ - A` is singular. -/
+theorem IsHermitian.det_scalar_eigenvalues₀_sub_eq_zero {A : Matrix n n 𝕜} (hA : A.IsHermitian)
+    (i : Fin (Fintype.card n)) : (scalar n (hA.eigenvalues₀ i : 𝕜) - A).det = 0 := by
+  have hroot : (hA.eigenvalues₀ i : 𝕜) ∈ A.charpoly.roots := by
+    rw [hA.roots_charpoly_eq_eigenvalues₀]
+    exact Multiset.mem_map_of_mem _ (Finset.mem_univ_val i)
+  rw [← eval_charpoly, ((Polynomial.mem_roots (charpoly_monic _).ne_zero).1 hroot).eq_zero]
 
 /-! ### Smoothness and first variation -/
 
@@ -208,11 +219,7 @@ omit [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] in
 /-- Every ordered eigenvalue of `M x` is a zero of `μ ↦ Re det (μ - M x)`. -/
 private theorem reDetScalarSub_eigenvalues₀ (hM : ∀ x, (M x).IsHermitian) (x : E)
     (i : Fin (Fintype.card n)) : reDetScalarSub M (x, (hM x).eigenvalues₀ i) = 0 := by
-  have hroot : ((hM x).eigenvalues₀ i : 𝕜) ∈ (M x).charpoly.roots := by
-    rw [(hM x).roots_charpoly_eq_eigenvalues₀]
-    exact Multiset.mem_map_of_mem _ (Finset.mem_univ_val i)
-  rw [reDetScalarSub, ← eval_charpoly, ((Polynomial.mem_roots (charpoly_monic _).ne_zero).1
-    hroot).eq_zero, map_zero]
+  rw [reDetScalarSub, (hM x).det_scalar_eigenvalues₀_sub_eq_zero, map_zero]
 
 /-- The implicit function theorem for a simple ordered eigenvalue of a `C^k` family over a complete
 parameter space. -/
@@ -223,7 +230,7 @@ private theorem contDiffAt_eigenvalues₀_of_completeSpace (hM : ∀ x, (M x).Is
   set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
   have he : (hM x₀).eigenvalues (e i) = (hM x₀).eigenvalues₀ i :=
     (hM x₀).eigenvalues_apply_equivOfCardEq i
-  have hc := prod_erase_sub_eigenvalues_ne_zero (hM x₀) hi
+  have hc := (hM x₀).prod_erase_sub_eigenvalues_ne_zero hi
   have hG := contDiffAt_reDetScalarSub hMk ((hM x₀).eigenvalues₀ i)
   -- The partial derivative in `μ` is multiplication by `∏_{j ≠ i} (λᵢ - λⱼ) ≠ 0`.
   have hpartial : fderiv ℝ (reDetScalarSub M) (x₀, (hM x₀).eigenvalues₀ i) ∘L
@@ -258,7 +265,7 @@ private theorem hasFDerivAt_eigenvalues₀_of_completeSpace (hM : ∀ x, (M x).I
   set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
   have he : (hM x₀).eigenvalues (e i) = (hM x₀).eigenvalues₀ i :=
     (hM x₀).eigenvalues_apply_equivOfCardEq i
-  have hc := prod_erase_sub_eigenvalues_ne_zero (hM x₀) hi
+  have hc := (hM x₀).prod_erase_sub_eigenvalues_ne_zero hi
   have hG := (contDiffAt_reDetScalarSub hM1 ((hM x₀).eigenvalues₀ i)).differentiableAt one_ne_zero
   have hlam :=
     (contDiffAt_eigenvalues₀_of_completeSpace hM one_ne_zero hM1 hi).differentiableAt one_ne_zero
