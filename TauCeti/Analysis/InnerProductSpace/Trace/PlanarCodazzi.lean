@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
+public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Inner
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.LinearAlgebra.Trace
@@ -14,10 +14,9 @@ public import Mathlib.Tactic.Ring
 /-!
 # Hilbert–Schmidt contractions and planar Codazzi tensors
 
-The Hilbert–Schmidt pairing on finite-dimensional real endomorphisms is the trace of an adjoint
-composition. Contracting it with the source metric gives the squared tensor norm of a linear
-endomorphism-valued map. These definitions retain the ordinary topology on continuous linear
-maps and do not identify its operator norm with a tensor norm.
+Contracting `ContinuousLinearMap.hilbertSchmidtInner` with the source metric gives the squared
+tensor norm of a linear endomorphism-valued map. This definition retains the ordinary topology
+on continuous linear maps and does not identify its operator norm with a tensor norm.
 
 For a symmetric trace-free endomorphism on a real plane, contracting it with a fully symmetric
 trace-free cubic tensor gives the exact two-dimensional Kato identity. The contraction is
@@ -33,76 +32,33 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- The Hilbert–Schmidt pairing of real endomorphisms. -/
-def endomorphismHilbertSchmidtForm (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    [FiniteDimensional ℝ V] : LinearMap.BilinForm ℝ (V →L[ℝ] V) :=
-  LinearMap.mk₂ ℝ
-    (fun A B ↦ LinearMap.trace ℝ V (A.toLinearMap.adjoint.comp B.toLinearMap))
-    (fun A B C ↦ by simp [LinearMap.add_comp])
-    (fun c A B ↦ by simp [LinearMap.smul_comp])
-    (fun A B C ↦ by simp [LinearMap.comp_add])
-    (fun c A B ↦ by simp [LinearMap.comp_smul])
-
-/-- The Hilbert–Schmidt pairing evaluates as a trace of an adjoint composition. -/
-theorem endomorphismHilbertSchmidtForm_apply (A B : V →L[ℝ] V) :
-    endomorphismHilbertSchmidtForm V A B =
-      LinearMap.trace ℝ V (A.toLinearMap.adjoint.comp B.toLinearMap) := (rfl)
-
-/-- In an orthonormal basis the pairing is the sum of its column pairings. -/
-theorem endomorphismHilbertSchmidtForm_eq_sum {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ V) (A B : V →L[ℝ] V) :
-    endomorphismHilbertSchmidtForm V A B = ∑ i, inner ℝ (A (b i)) (B (b i)) := by
-  rw [endomorphismHilbertSchmidtForm_apply, LinearMap.trace_eq_sum_inner _ b]
-  exact Finset.sum_congr rfl fun i _ ↦ LinearMap.adjoint_inner_right A.toLinearMap _ _
-
-/-- The Hilbert–Schmidt pairing is the sum of products of matrix coefficients. -/
-theorem endomorphismHilbertSchmidtForm_eq_sum_inner_mul {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ V) (A B : V →L[ℝ] V) :
-    endomorphismHilbertSchmidtForm V A B =
-      ∑ i, ∑ j, inner ℝ (A (b i)) (b j) * inner ℝ (B (b i)) (b j) := by
-  rw [endomorphismHilbertSchmidtForm_eq_sum b]
-  apply Finset.sum_congr rfl
-  intro i _
-  simpa only [real_inner_comm (B (b i))] using
-    (b.sum_inner_mul_inner (A (b i)) (B (b i))).symm
-
-/-- The pairing with a symmetric endomorphism is its ordinary composition trace. -/
-theorem endomorphismHilbertSchmidtForm_apply_of_isSymmetric (A B : V →L[ℝ] V)
-    (hA : A.toLinearMap.IsSymmetric) :
-    endomorphismHilbertSchmidtForm V A B =
-      LinearMap.trace ℝ V (A.toLinearMap.comp B.toLinearMap) := by
-  rw [endomorphismHilbertSchmidtForm_apply, hA.adjoint_eq]
-
-/-- The diagonal Hilbert–Schmidt pairing is nonnegative. -/
-theorem endomorphismHilbertSchmidtForm_self_nonneg (A : V →L[ℝ] V) :
-    0 ≤ endomorphismHilbertSchmidtForm V A A := by
-  rw [endomorphismHilbertSchmidtForm_eq_sum (stdOrthonormalBasis ℝ V)]
-  exact Finset.sum_nonneg fun _ _ ↦ real_inner_self_nonneg
-
 /-- The squared tensor norm of an endomorphism-valued linear map. -/
 def endomorphismDerivativeEnergy (D : V →L[ℝ] (V →L[ℝ] V)) : ℝ :=
-  bilinFormTrace ((endomorphismHilbertSchmidtForm V).compl₁₂ D.toLinearMap D.toLinearMap)
+  bilinFormTrace
+    ((ContinuousLinearMap.hilbertSchmidtBilinForm V V).compl₁₂ D.toLinearMap D.toLinearMap)
 
 /-- The derivative energy contracts the Hilbert–Schmidt pairing with the source metric. -/
 theorem endomorphismDerivativeEnergy_def (D : V →L[ℝ] (V →L[ℝ] V)) :
     endomorphismDerivativeEnergy D =
-      bilinFormTrace ((endomorphismHilbertSchmidtForm V).compl₁₂ D.toLinearMap D.toLinearMap) :=
+      bilinFormTrace
+        ((ContinuousLinearMap.hilbertSchmidtBilinForm V V).compl₁₂ D.toLinearMap D.toLinearMap) :=
   (rfl)
 
 /-- In an orthonormal basis the energy is the sum of the squared Hilbert–Schmidt norms. -/
 theorem endomorphismDerivativeEnergy_eq_sum {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) (D : V →L[ℝ] (V →L[ℝ] V)) :
     endomorphismDerivativeEnergy D =
-      ∑ i, endomorphismHilbertSchmidtForm V (D (b i)) (D (b i)) := by
+      ∑ i, (D (b i)).hilbertSchmidtInner (D (b i)) := by
   rw [endomorphismDerivativeEnergy_def, bilinFormTrace_eq_sum _ b]
-  exact (rfl)
+  simp only [LinearMap.compl₁₂_apply, ContinuousLinearMap.hilbertSchmidtBilinForm_apply,
+    ContinuousLinearMap.coe_coe]
 
 /-- The energy is the squared norm summed over its first two orthonormal slots. -/
 theorem endomorphismDerivativeEnergy_eq_sum_sum_norm_sq {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) (D : V →L[ℝ] (V →L[ℝ] V)) :
     endomorphismDerivativeEnergy D = ∑ i, ∑ j, ‖D (b i) (b j)‖ ^ 2 := by
-  simp only [endomorphismDerivativeEnergy_eq_sum b, endomorphismHilbertSchmidtForm_eq_sum b,
-    real_inner_self_eq_norm_sq]
+  simp only [endomorphismDerivativeEnergy_eq_sum b,
+    ContinuousLinearMap.hilbertSchmidtInner_eq_sum _ _ b, real_inner_self_eq_norm_sq]
 
 /-- The energy is the sum of squares of all its coefficients in an orthonormal basis. -/
 theorem endomorphismDerivativeEnergy_eq_sum_inner_sq {ι : Type*} [Fintype ι]
@@ -148,8 +104,8 @@ theorem planar_codazzi_identity (b : OrthonormalBasis (Fin 2) ℝ V)
     (hD : ∀ w, (D w).toLinearMap.IsSymmetric)
     (hDtrace : ∀ w, LinearMap.trace ℝ V (D w).toLinearMap = 0)
     (hCodazzi : ∀ u v, D u v = D v u) :
-    (∑ i, (2 * endomorphismHilbertSchmidtForm V S (D (b i))) ^ 2) =
-      2 * endomorphismHilbertSchmidtForm V S S * endomorphismDerivativeEnergy D := by
+    (∑ i, (2 * S.hilbertSchmidtInner (D (b i))) ^ 2) =
+      2 * S.hilbertSchmidtInner S * endomorphismDerivativeEnergy D := by
   have htrace (A : V →L[ℝ] V) :
       inner ℝ (A (b 0)) (b 0) + inner ℝ (A (b 1)) (b 1) =
         LinearMap.trace ℝ V A.toLinearMap := by
@@ -164,7 +120,7 @@ theorem planar_codazzi_identity (b : OrthonormalBasis (Fin 2) ℝ V)
     (fun i j k ↦ (hD (b i) (b j) (b k)).trans (real_inner_comm _ _))
     (fun i j k ↦ congrArg (fun v ↦ inner ℝ v (b k)) (hCodazzi (b i) (b j)))
     (fun i ↦ (htrace (D (b i))).trans (hDtrace (b i)))
-  simpa only [endomorphismHilbertSchmidtForm_eq_sum_inner_mul b,
+  simpa only [ContinuousLinearMap.hilbertSchmidtInner_eq_sum_inner_mul _ _ b b,
     endomorphismDerivativeEnergy_eq_sum_inner_sq b, pow_two] using h
 
 end TauCeti

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Basic
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!
 # The Hilbert–Schmidt inner product
@@ -64,6 +66,33 @@ theorem hilbertSchmidtInner_eq_sum (A B : W →L[ℝ] V) {ι : Type*} [Fintype �
   simp only [hilbertSchmidtInner_def, TauCeti.bilinFormTrace_eq_sum _ b, LinearMap.compl₁₂_apply,
     innerₗ_apply_apply, coe_coe]
 
+/-- The Hilbert–Schmidt inner product is the sum of products of matrix coefficients. -/
+theorem hilbertSchmidtInner_eq_sum_inner_mul (A B : W →L[ℝ] V)
+    {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (b : OrthonormalBasis ι ℝ W) (c : OrthonormalBasis κ ℝ V) :
+    A.hilbertSchmidtInner B =
+      ∑ i, ∑ j, inner ℝ (A (b i)) (c j) * inner ℝ (B (b i)) (c j) := by
+  rw [hilbertSchmidtInner_eq_sum A B b]
+  apply Finset.sum_congr rfl
+  intro i _
+  simpa only [real_inner_comm (B (b i))] using
+    (c.sum_inner_mul_inner (A (b i)) (B (b i))).symm
+
+/-- For endomorphisms, the Hilbert–Schmidt inner product is the trace of an adjoint
+composition. -/
+theorem hilbertSchmidtInner_eq_trace_adjoint_comp (A B : W →L[ℝ] W) :
+    A.hilbertSchmidtInner B =
+      LinearMap.trace ℝ W (A.toLinearMap.adjoint.comp B.toLinearMap) := by
+  let b := stdOrthonormalBasis ℝ W
+  rw [hilbertSchmidtInner_eq_sum A B b, LinearMap.trace_eq_sum_inner _ b]
+  exact Finset.sum_congr rfl fun i _ ↦ (LinearMap.adjoint_inner_right A.toLinearMap _ _).symm
+
+/-- Pairing with a symmetric endomorphism gives its ordinary composition trace. -/
+theorem hilbertSchmidtInner_eq_trace_comp_of_isSymmetric (A B : W →L[ℝ] W)
+    (hA : A.toLinearMap.IsSymmetric) :
+    A.hilbertSchmidtInner B = LinearMap.trace ℝ W (A.toLinearMap.comp B.toLinearMap) := by
+  rw [hilbertSchmidtInner_eq_trace_adjoint_comp, hA.adjoint_eq]
+
 /-- The Hilbert–Schmidt inner product is symmetric. -/
 theorem hilbertSchmidtInner_comm (A B : W →L[ℝ] V) :
     A.hilbertSchmidtInner B = B.hilbertSchmidtInner A := by
@@ -103,6 +132,18 @@ theorem hilbertSchmidtInner_smul_right (c : ℝ) (A B : W →L[ℝ] V) :
     A.hilbertSchmidtInner (c • B) = c * A.hilbertSchmidtInner B := by
   simp only [hilbertSchmidtInner_eq_sum _ _ (stdOrthonormalBasis ℝ W), smul_apply,
     real_inner_smul_right, Finset.mul_sum]
+
+/-- The Hilbert–Schmidt inner product bundled as a bilinear form, for tensor contractions. -/
+noncomputable def hilbertSchmidtBilinForm (W V : Type*)
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] : LinearMap.BilinForm ℝ (W →L[ℝ] V) :=
+  LinearMap.mk₂ ℝ hilbertSchmidtInner hilbertSchmidtInner_add_left
+    hilbertSchmidtInner_smul_left hilbertSchmidtInner_add_right hilbertSchmidtInner_smul_right
+
+/-- Evaluating the bundled form gives the Hilbert–Schmidt inner product. -/
+@[simp]
+theorem hilbertSchmidtBilinForm_apply (A B : W →L[ℝ] V) :
+    hilbertSchmidtBilinForm W V A B = A.hilbertSchmidtInner B := (rfl)
 
 /-- On the diagonal, the Hilbert–Schmidt inner product is the square of the Frobenius seminorm:
 `⟪A, A⟫_HS = ‖A‖_F²`. -/
