@@ -22,13 +22,13 @@ Pontryagin–Thom collapse onto the sphere (`TauCeti.map_snd_thomCollapse`).
 
 The Thom space carries the framed tube `S × V → OnePoint (S × V)` around its zero section
 (`TauCeti.isFramedTube_coe`), whose complement is contractible
-(`TauCeti.contractibleSpace_compl_range_zeroSection`). So the homology of the Thom space in a
-positive degree `n + k` is its homology relative to that complement, which is the shifted
+(`TauCeti.contractibleSpace_compl_range_onePoint_zeroSection`). So the homology of the Thom space
+in a positive degree `n + k` is its homology relative to that complement, which is the shifted
 homology of the zero section:
 
 `H_{n+k}(OnePoint (S × V)) ≅ H_{n+k}(OnePoint (S × V), OnePoint (S × V) ∖ S) ≅ Hₙ(S)`
 
-(`TauCeti.TopCat.thomSpaceHomologyIso`). This is the Thom isomorphism of the trivial bundle, read
+(`TauCeti.TopCat.onePointProdHomologyIso`). This is the Thom isomorphism of the trivial bundle, read
 on its Thom space.
 
 The **shriek map** `i_! : H_{n+k}(B) → Hₙ(S)` of the framed submanifold is the map to the homology
@@ -48,14 +48,14 @@ enters only when `i_!` is compared with `[S] ⌢ i^* D_B⁻¹`.
 * `TauCeti.thomCollapse τ`: the collapse of `B` onto the Thom space `OnePoint (S × V)`, and
   `TauCeti.IsFramedTube.thomCollapseHom`, the same as a morphism of topological spaces.
 * `TauCeti.IsFramedTube.coreHom`: the core `S → f(S)` as a morphism of topological spaces.
-* `TauCeti.TopCat.thomSpaceHomologyIso`: `H_{n+k}(OnePoint (S × V)) ≅ Hₙ(S)` in positive degrees.
+* `TauCeti.TopCat.onePointProdHomologyIso`: `H_{n+k}(OnePoint (S × V)) ≅ Hₙ(S)` in positive degrees.
 
 ## Main results
 
 * `TauCeti.continuous_thomCollapse`: the Thom collapse is continuous.
 * `TauCeti.map_snd_thomCollapse`: the Thom collapse followed by the projection is the
   Pontryagin–Thom collapse onto the sphere.
-* `TauCeti.TopCat.thomSpaceHomologyIso_hom_comp_map_coreHom`: the Thom isomorphism of the Thom
+* `TauCeti.TopCat.onePointProdHomologyIso_hom_comp_map_coreHom`: the Thom isomorphism of the Thom
   space, read in its zero section, is the local homology along the zero section.
 * `TauCeti.TopCat.singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom`: the shriek map
   of the core is the Thom collapse followed by the Thom isomorphism of the Thom space.
@@ -103,6 +103,10 @@ def thomCollapse (τ : S × V → M) : M → OnePoint (S × V) :=
 
 variable {τ : S × V → M}
 
+/-- The Thom collapse is the collapse `TauCeti.onePointCollapse τ id`. -/
+theorem thomCollapse_eq_onePointCollapse : thomCollapse τ = onePointCollapse τ id :=
+  (rfl)
+
 @[simp]
 theorem thomCollapse_apply (hτ : Injective τ) (z : S × V) : thomCollapse τ (τ z) = z :=
   onePointCollapse_apply hτ id z
@@ -110,6 +114,17 @@ theorem thomCollapse_apply (hτ : Injective τ) (z : S × V) : thomCollapse τ (
 @[simp]
 theorem thomCollapse_of_notMem_range {m : M} (hm : m ∉ range τ) : thomCollapse τ m = ∞ :=
   onePointCollapse_of_notMem_range hm
+
+/-- The Thom collapse sends exactly the points outside the tube to `∞`. -/
+theorem thomCollapse_eq_infty_iff (hτ : Injective τ) {m : M} :
+    thomCollapse τ m = ∞ ↔ m ∉ range τ :=
+  onePointCollapse_eq_infty_iff hτ
+
+/-- The Thom collapse sends `m` to the point `z` of `S × V` exactly when `m = τ z`. -/
+theorem thomCollapse_eq_coe_iff (hτ : Injective τ) {m : M} {z : S × V} :
+    thomCollapse τ m = z ↔ τ z = m := by
+  rw [thomCollapse, onePointCollapse_eq_coe_iff hτ]
+  exact ⟨fun ⟨_, hz, hm⟩ ↦ hz ▸ hm, fun hm ↦ ⟨z, rfl, hm⟩⟩
 
 /-- The Thom collapse followed by the projection `OnePoint (S × V) → OnePoint V` is the
 Pontryagin–Thom collapse onto `OnePoint V`. -/
@@ -123,6 +138,8 @@ theorem map_snd_thomCollapse (hτ : Injective τ) (m : M) :
 
 variable [TopologicalSpace S] [TopologicalSpace V] [TopologicalSpace M]
 
+/-- The Thom collapse of an open embedding `τ : S × V → M` into a Hausdorff space is
+continuous. -/
 theorem continuous_thomCollapse [T2Space M] (hτ : IsOpenEmbedding τ) :
     Continuous (thomCollapse τ) :=
   continuous_onePointCollapse hτ isProperMap_id
@@ -134,6 +151,12 @@ the inclusion of `S × V`. -/
 theorem isFramedTube_coe :
     IsFramedTube (fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V))) ((↑) : S × V → OnePoint (S × V)) :=
   ⟨isOpenEmbedding_coe, fun _ ↦ rfl⟩
+
+/-- The Thom collapse sends the core of a framed tube to the zero section. -/
+@[simp]
+theorem IsFramedTube.thomCollapse_apply_self {f : S → M} (h : IsFramedTube f τ) (x : S) :
+    thomCollapse τ (f x) = ((x, (0 : V)) : S × V) := by
+  rw [← h.apply_zero, thomCollapse_apply h.isOpenEmbedding.injective]
 
 /-- The Thom collapse of a framed tube sends exactly the points of the core to the zero section. -/
 theorem IsFramedTube.thomCollapse_mem_range_iff {f : S → M} (hτ : IsFramedTube f τ) {m : M} :
@@ -186,13 +209,13 @@ variable {S V : Type u} [TopologicalSpace S] [CompactSpace S] [T2Space S] [Norme
 omit [CompactSpace S] [FiniteDimensional ℝ V] in
 /-- The quotient map from the homology of the Thom space to its homology relative to the complement
 of the zero section is an isomorphism in positive degrees, since that complement is contractible. -/
-theorem isIso_singularHomologyπ_thomSpace (m : ℕ) :
+theorem isIso_singularHomologyπ_onePointProd (m : ℕ) :
     IsIso ((TopPair.ofSubset ((𝟙 (_root_.TopCat.of (OnePoint (S × V)))) ⁻¹'
       range fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V)))ᶜ).singularHomologyπ M (m + 1)) :=
   -- Instance search does not see through the subspace of `TopPair.ofSubset`, so the
   -- contractibility of the complement of the zero section is supplied explicitly.
   @TopPair.isIso_singularHomologyπ_of_contractibleSpace _ _ _ _ _ M
-    contractibleSpace_compl_range_zeroSection m
+    contractibleSpace_compl_range_onePoint_zeroSection m
 
 omit [CompactSpace S] [T2Space S] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
 /-- The zero section `S → OnePoint (S × V)` is a homeomorphism onto its image. -/
@@ -215,19 +238,19 @@ private lemma isoOfHomeo_zeroSectionHomeomorph_hom :
 quotient map onto the homology relative to the complement of the zero section, an isomorphism
 because that complement is contractible, followed by the local homology along the zero section
 (`TauCeti.TopCat.singularHomologyComplPreimageCoreIso`) and the identification of the zero section
-with `S` (`TauCeti.TopCat.thomSpaceHomologyIso_hom_comp_map_coreHom`). -/
-def thomSpaceHomologyIso (n m : ℕ) (h : n + finrank ℝ V = m + 1) :
+with `S` (`TauCeti.TopCat.onePointProdHomologyIso_hom_comp_map_coreHom`). -/
+def onePointProdHomologyIso (n m : ℕ) (h : n + finrank ℝ V = m + 1) :
     (_root_.TopCat.toSSet.obj (_root_.TopCat.of (OnePoint (S × V)))).homology M (m + 1) ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).obj
         (_root_.TopCat.of S) :=
-  @asIso _ _ _ _ _ (isIso_singularHomologyπ_thomSpace M m) ≪≫
+  @asIso _ _ _ _ _ (isIso_singularHomologyπ_onePointProd M m) ≪≫
     singularHomologyComplPreimageCoreIso isFramedTube_coe M isFramedTube_coe.isClosed_range one_pos
       (serreFibrations.of_isIso _) n (m + 1) h ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).mapIso
       (_root_.TopCat.isoOfHomeo zeroSectionHomeomorph).symm
 
-private lemma thomSpaceHomologyIso_hom_eq (n m : ℕ) (h : n + finrank ℝ V = m + 1) :
-    (thomSpaceHomologyIso M n m h).hom =
+private lemma onePointProdHomologyIso_hom_eq (n m : ℕ) (h : n + finrank ℝ V = m + 1) :
+    (onePointProdHomologyIso M n m h).hom =
       (TopPair.ofSubset ((𝟙 (_root_.TopCat.of (OnePoint (S × V)))) ⁻¹'
           range fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V)))ᶜ).singularHomologyπ M (m + 1) ≫
         (singularHomologyComplPreimageCoreIso isFramedTube_coe M isFramedTube_coe.isClosed_range
@@ -236,19 +259,19 @@ private lemma thomSpaceHomologyIso_hom_eq (n m : ℕ) (h : n + finrank ℝ V = m
           (_root_.TopCat.isoOfHomeo zeroSectionHomeomorph).inv :=
   (rfl)
 
-/-- `TauCeti.TopCat.thomSpaceHomologyIso`, read in the zero section of the Thom space, is the
+/-- `TauCeti.TopCat.onePointProdHomologyIso`, read in the zero section of the Thom space, is the
 quotient map onto the homology relative to the complement of the zero section followed by the
 local homology along the zero section. -/
 @[reassoc]
-lemma thomSpaceHomologyIso_hom_comp_map_coreHom (n m : ℕ) (h : n + finrank ℝ V = m + 1) :
-    (thomSpaceHomologyIso M n m h).hom ≫
+lemma onePointProdHomologyIso_hom_comp_map_coreHom (n m : ℕ) (h : n + finrank ℝ V = m + 1) :
+    (onePointProdHomologyIso M n m h).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
           (isFramedTube_coe.coreHom) =
       (TopPair.ofSubset ((𝟙 (_root_.TopCat.of (OnePoint (S × V)))) ⁻¹'
           range fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V)))ᶜ).singularHomologyπ M (m + 1) ≫
         (singularHomologyComplPreimageCoreIso isFramedTube_coe M isFramedTube_coe.isClosed_range
           one_pos (serreFibrations.of_isIso _) n (m + 1) h).hom := by
-  rw [thomSpaceHomologyIso_hom_eq]
+  rw [onePointProdHomologyIso_hom_eq]
   -- The source of the quotient map is the homology of the Thom space only up to unfolding, which
   -- `rw` does not see through, so the first reassociation is applied as a term.
   refine (Category.assoc _ _ _).trans ?_
@@ -272,14 +295,14 @@ Hausdorff and `B` Hausdorff, and let `m + 1 = n + dim V`. The shriek map
 followed by the local homology along the core
 (`TauCeti.TopCat.singularHomologyComplPreimageCoreIso`), is the map induced by the Thom collapse
 `B → OnePoint (S × V)`, followed by the Thom isomorphism `H_{m+1}(OnePoint (S × V)) ≅ Hₙ(S)` of
-the Thom space (`TauCeti.TopCat.thomSpaceHomologyIso`) and the map induced by `f : S → f(S)`. -/
+the Thom space (`TauCeti.TopCat.onePointProdHomologyIso`) and the map induced by `f : S → f(S)`. -/
 theorem singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom (n m : ℕ)
     (h : n + finrank ℝ V = m + 1) :
     (TopPair.ofSubset ((𝟙 B) ⁻¹' range f)ᶜ).singularHomologyπ M (m + 1) ≫
         (singularHomologyComplPreimageCoreIso hτ M hτ.isClosed_range one_pos
           (serreFibrations.of_isIso _) n (m + 1) h).hom =
       SSet.homologyMap (_root_.TopCat.toSSet.map (hτ.thomCollapseHom)) M (m + 1) ≫
-        (thomSpaceHomologyIso M n m h).hom ≫
+        (onePointProdHomologyIso M n m h).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
           (hτ.coreHom) := by
   have hg : hτ.thomCollapseHom ≫ 𝟙 _ = 𝟙 B ≫ hτ.thomCollapseHom := by simp
@@ -302,12 +325,10 @@ theorem singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom (n m : 
     have hx' : zeroSectionHomeomorph.symm
         ((hτ.thomCollapseHom).preimageMapOver hg
           (mapsTo_range_of_apply_eq isFramedTube_coe hτ (φ := id) hs) ⟨f x, x, rfl⟩) = x := by
-      have hc : thomCollapse τ (f x) = ((x, (0 : V)) : OnePoint (S × V)) := by
-        rw [← hτ.apply_zero, thomCollapse_apply hτ.isOpenEmbedding.injective]
       rw [Homeomorph.symm_apply_eq]
       apply Subtype.ext
       rw [TopCat.Hom.coe_preimageMapOver_apply, IsFramedTube.thomCollapseHom_apply]
-      exact hc
+      exact hτ.thomCollapse_apply_self x
     simp only [ConcreteCategory.comp_apply, _root_.TopCat.isoOfHomeo_inv, _root_.TopCat.hom_ofHom,
       ContinuousMap.coe_ofClass, hx']
     rfl
@@ -323,7 +344,7 @@ theorem singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom (n m : 
     rw [singularHomologyComplPreimageCoreIso_hom_naturality_of_apply_eq_assoc isFramedTube_coe hτ hg
       hs hsf, ← Functor.map_comp, ← Functor.map_comp, hid, CategoryTheory.Functor.map_id,
       Category.comp_id]
-  rw [← key, ← Category.assoc, ← hπ, thomSpaceHomologyIso_hom_eq]
+  rw [← key, ← Category.assoc, ← hπ, onePointProdHomologyIso_hom_eq]
   -- The two sides differ by associativity, across the identification of the source of the
   -- quotient map with the homology of the Thom space, which `rw` does not see through.
   exact (Category.assoc _ _ _).trans

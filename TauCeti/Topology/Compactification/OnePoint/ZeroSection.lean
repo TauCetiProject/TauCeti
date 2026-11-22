@@ -16,8 +16,8 @@ public import Mathlib.Topology.UnitInterval
 Let `S` be a Hausdorff space and `V` a real normed space. The one-point compactification
 `OnePoint (S × V)` of the trivial bundle `S × V → S` contains the zero section
 `x ↦ (x, 0)`. Its complement is contractible
-(`TauCeti.contractibleSpace_compl_range_zeroSection`): pushing every point radially to infinity,
-`(x, v) ↦ (x, (1 - t)⁻¹ • v)` for `t < 1` and `∞` at `t = 1`, contracts it onto `∞`.
+(`TauCeti.contractibleSpace_compl_range_onePoint_zeroSection`): pushing every point radially to
+infinity, `(x, v) ↦ (x, (1 - t)⁻¹ • v)` for `t < 1` and `∞` at `t = 1`, contracts it onto `∞`.
 
 For compact `S`, `OnePoint (S × V)` is the Thom space `S₊ ∧ Sᵏ` of the trivial bundle of rank
 `k = dim V`, and the contractibility of the complement of the zero section identifies its
@@ -27,8 +27,8 @@ Thom space.
 
 ## Main results
 
-* `TauCeti.contractibleSpace_compl_range_zeroSection`: the complement of the zero section is
-  contractible.
+* `TauCeti.contractibleSpace_compl_range_onePoint_zeroSection`: the complement of the zero section
+  is contractible.
 
 ## References
 
@@ -208,7 +208,7 @@ private def onePointPushOutHomotopy :
 
 /-- **The complement of the zero section of `OnePoint (S × V)` is contractible**: the radial push
 `(x, v) ↦ (x, (1 - t)⁻¹ • v)` contracts it onto `∞`. -/
-theorem contractibleSpace_compl_range_zeroSection :
+theorem contractibleSpace_compl_range_onePoint_zeroSection :
     ContractibleSpace ↥(range fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V)))ᶜ :=
   (contractible_iff_id_nullhomotopic _).2 ⟨_, ⟨onePointPushOutHomotopy⟩⟩
 
