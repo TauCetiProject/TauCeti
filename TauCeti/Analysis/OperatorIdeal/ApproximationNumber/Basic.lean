@@ -204,10 +204,8 @@ theorem continuous_singularValue (n : ℕ) : Continuous fun T : E →L[𝕜] F �
 /-- **Mixed-index product inequality.** `a_{m+n}(S T) ≤ aₘ(S) aₙ(T)`. -/
 theorem singularValue_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) (m n : ℕ) :
     (S.comp T).singularValue (m + n) ≤ S.singularValue m * T.singularValue n := by
-  rw [S.singularValue_def m, T.singularValue_def n, NNReal.iInf_mul]
-  refine le_ciInf fun R₁ ↦ ?_
-  rw [NNReal.mul_iInf]
-  refine le_ciInf fun R₂ ↦ ?_
+  rw [S.singularValue_def m, T.singularValue_def n]
+  refine NNReal.le_iInf_mul fun R₁ ↦ NNReal.le_mul_iInf fun R₂ ↦ ?_
   -- `S T - (R₁ T + (S - R₁) R₂) = (S - R₁)(T - R₂)`, and the subtracted map has rank `≤ m + n`.
   have h₁ : (R₁.val.comp T).rank ≤ m := by
     rw [toLinearMap_comp]
