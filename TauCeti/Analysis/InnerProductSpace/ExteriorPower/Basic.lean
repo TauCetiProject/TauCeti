@@ -601,3 +601,47 @@ theorem twoVectorAlternatingSum_swap₂₃ (θ : V → ⋀[ℝ]^2 V) (a b c : V)
 end TwoVectorAlternatingSum
 
 end TauCeti
+
+namespace OrthonormalBasis
+
+open exteriorPower TauCeti
+open scoped RealInnerProductSpace
+
+variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [Fintype ι]
+
+/-- **Coordinates of a two-vector over all ordered pairs.** For an orthonormal basis `b` of `E`,
+`∑ₚ ∑_q ⟪x, bₚ ∧ b_q⟫ • (bₚ ∧ b_q) = 2 • x`: each unordered pair `{p, q}` contributes twice. -/
+theorem sum_sum_inner_smul_ιMulti_two (b : OrthonormalBasis ι ℝ E) (x : ⋀[ℝ]^2 E) :
+    ∑ p, ∑ q, ⟪x, ιMulti ℝ 2 ![b p, b q]⟫ • ιMulti ℝ 2 ![b p, b q] = (2 : ℝ) • x := by
+  refine ext_inner_ιMulti_two fun a c ↦ ?_
+  have hA (y z : E) : ⟪x, ιMulti ℝ 2 ![y, z]⟫ = ⟪twoVectorContraction x y, z⟫ :=
+    (inner_twoVectorContraction_apply ..).symm
+  simp only [sum_inner, real_inner_smul_left, inner_ιMulti_two, hA]
+  calc ∑ p, ∑ q, ⟪twoVectorContraction x (b p), b q⟫ * (⟪b p, a⟫ * ⟪b q, c⟫ - ⟪b p, c⟫ * ⟪b q, a⟫)
+      = ∑ p, (⟪b p, a⟫ * ∑ q, ⟪twoVectorContraction x (b p), b q⟫ * ⟪b q, c⟫ -
+          ⟪b p, c⟫ * ∑ q, ⟪twoVectorContraction x (b p), b q⟫ * ⟪b q, a⟫) := by
+        simp only [Finset.mul_sum, ← Finset.sum_sub_distrib]
+        exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
+    _ = ∑ p, (⟪c, b p⟫ * ⟪b p, twoVectorContraction x a⟫ -
+          ⟪a, b p⟫ * ⟪b p, twoVectorContraction x c⟫) := by
+        simp only [b.sum_inner_mul_inner]
+        simp only [inner_twoVectorContraction_apply_left x (b _), real_inner_comm a (b _),
+          real_inner_comm c (b _)]
+        exact Finset.sum_congr rfl fun _ _ ↦ by ring
+    _ = 2 * ⟪twoVectorContraction x a, c⟫ := by
+        rw [Finset.sum_sub_distrib, b.sum_inner_mul_inner, b.sum_inner_mul_inner,
+          real_inner_comm (twoVectorContraction x a) c, inner_twoVectorContraction_apply_left x a c]
+        ring
+
+/-- **The inner product of two-vectors in coordinates over all ordered pairs.** For an orthonormal
+basis `b` of `E`, `∑ₚ ∑_q ⟪x, bₚ ∧ b_q⟫ ⟪y, bₚ ∧ b_q⟫ = 2 ⟪x, y⟫`. -/
+theorem sum_sum_inner_ιMulti_two_mul_inner_ιMulti_two (b : OrthonormalBasis ι ℝ E)
+    (x y : ⋀[ℝ]^2 E) :
+    ∑ p, ∑ q, ⟪x, ιMulti ℝ 2 ![b p, b q]⟫ * ⟪y, ιMulti ℝ 2 ![b p, b q]⟫ = 2 * ⟪x, y⟫ := by
+  have h := congrArg (⟪·, y⟫) (b.sum_sum_inner_smul_ιMulti_two x)
+  simp only [sum_inner, real_inner_smul_left] at h
+  rw [← h]
+  simp only [real_inner_comm _ y]
+
+end OrthonormalBasis
