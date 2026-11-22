@@ -76,12 +76,11 @@ lemma flip_leftDerived₂FlipLift_comp (γ₁ γ₂ : F.flip ⟶ F)
         leftDerived₂FlipLift LF α W γ₂ =
       (flipping (C := D) (D := D) (E := H)).counitIso.hom.app LF := by
   refine LF.leftDerived₂_ext α W W (hγ := ?_)
-  rw [Functor.map_comp_assoc, leftDerived₂FlipLift_fac, whiskeringLeft₂FlipIso_naturality_assoc,
-    ← (flipFunctor _ _ _).map_comp_assoc, leftDerived₂FlipLift_fac]
-  simp only [Functor.map_comp, Category.assoc]
-  rw [h]
   ext X Y
-  simp
+  have hXY := congr_app (congr_app h X) Y
+  simp only [NatTrans.comp_app, flipFunctor_map_app_app,
+    flipping_counitIso_hom_app_app_app] at hXY
+  simp [leftDerived₂FlipLift_app_app_assoc, hXY]
 
 /-- Transport a flip isomorphism `e : F.flip ≅ F` along a left derived bifunctor `(LF, α)` of `F`
 with respect to `W` to obtain a natural isomorphism `LF.flip ≅ LF`. -/
@@ -102,8 +101,8 @@ def leftDerived₂FlipIso (e : F.flip ≅ F) : LF.flip ≅ LF where
     rw [flip_leftDerived₂FlipLift_comp LF α W e.hom
       ((flipFunctor _ _ _).map e.inv ≫
         (flipping (C := C) (D := C) (E := H)).counitIso.hom.app F) (by
-        rw [← Category.assoc, ← Functor.map_comp, e.hom_inv_id, Functor.map_id,
-          Category.id_comp])]
+        rw [← Functor.map_comp_assoc]
+        simp)]
     ext X Y
     simp
   inv_hom_id := by
@@ -139,7 +138,7 @@ lemma leftDerived₂FlipIso_inv_fac (e : F.flip ≅ F) :
             (leftDerived₂FlipIso LF α W e).hom ≫ α := by
         simp only [Category.assoc, leftDerived₂FlipIso_hom_fac]
     _ = (α ≫ e.inv) ≫ e.hom := by
-        rw [← Functor.map_comp_assoc, Iso.inv_hom_id, Functor.map_id, Category.id_comp]
+        rw [← Functor.map_comp_assoc]
         simp
 
 /-- Compatibility of `(leftDerived₂FlipIso LF α W e).hom` with `α` and `e.hom` on images of
