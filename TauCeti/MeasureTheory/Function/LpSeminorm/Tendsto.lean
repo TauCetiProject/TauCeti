@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
-import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.L2
-import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.Probability.BrownianMotion.Integral.Restriction
 import TauCeti.Probability.Process.ElementaryDensity

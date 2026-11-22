@@ -7,15 +7,16 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.Probability.Process.Indistinguishable
-public import TauCeti.Probability.BrownianMotion.Filtered
+public import TauCeti.Probability.BrownianMotion.Integral.Integrable
+public import TauCeti.Probability.BrownianMotion.UsualFiltration
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
-public import TauCeti.Probability.Process.TimeMeasure
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
+import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Process.Indistinguishable
-import TauCeti.Probability.Process.Predictable.Basic
 
 /-!
 # Itô integrals against Brownian motion and their uniqueness
@@ -28,13 +29,18 @@ elementary integrals at `t` converge in probability to `I t`. Square energy is a
 integral, so an infinite energy is never read as the default value zero of a divergent Bochner
 integral. The heights need not be bounded; bounded approximants are a special case.
 
-Directly from the specification, every Itô integral vanishes almost surely at `0`
-(`TauCeti.Probability.IsItoIntegral.ae_eval_zero`), and the relation is preserved under zero
-(`TauCeti.Probability.IsItoIntegral.zero`), product-almost-everywhere integrand replacement
+Directly from the specification, every integrand admitting an Itô integral belongs to the
+pathwise-energy domain (`TauCeti.Probability.IsItoIntegral.locallyBrownianIntegrable`), every
+Itô integral vanishes almost surely at `0` (`TauCeti.Probability.IsItoIntegral.ae_eval_zero`), and
+the relation is preserved under zero (`TauCeti.Probability.IsItoIntegral.zero`),
+product-almost-everywhere integrand replacement
 (`TauCeti.Probability.IsItoIntegral.congr_integrand`), scalar multiplication
 (`TauCeti.Probability.IsItoIntegral.const_mul`), negation (`TauCeti.Probability.IsItoIntegral.neg`),
-addition (`TauCeti.Probability.IsItoIntegral.add`), and subtraction
-(`TauCeti.Probability.IsItoIntegral.sub`).
+addition (`TauCeti.Probability.IsItoIntegral.add`), subtraction
+(`TauCeti.Probability.IsItoIntegral.sub`), filtration enlargement
+(`TauCeti.Probability.IsItoIntegral.mono`), and usual null/right-continuous augmentation
+(`TauCeti.Probability.IsItoIntegral.nullAugment`,
+`TauCeti.Probability.IsItoIntegral.rightCont_nullAugment`).
 
 Against a pre-Brownian motion relative to the filtration, any limit in probability of the
 elementary integrals of simple holdings approximating the integrand on `(0,t]` in square energy
@@ -45,8 +51,9 @@ converging to zero in probability, so its elementary integral at `t` converges t
 probability by the energy estimate
 `TauCeti.Probability.IsFilteredPreBrownianReal.tendstoInMeasure_simpleGains_of_energy`. Hence
 the predicate determines the integral up to indistinguishability
-(`TauCeti.Probability.isItoIntegral_unique`) and depends on the integrand only up to
-product-almost-everywhere equality on finite horizons
+(`TauCeti.Probability.isItoIntegral_unique`), identifies raw integrals with integrals constructed
+on the usual augmentation (`TauCeti.Probability.isItoIntegral_indist_rightCont_nullAugment`), and
+depends on the integrand only up to product-almost-everywhere equality on finite horizons
 (`TauCeti.Probability.isItoIntegral_indist_of_ae_eq`): two integrals agree almost surely at each
 time, and continuity of their paths makes them indistinguishable. Neither path continuity of `W`
 nor usual conditions on the filtration are needed. Conversely, the predicate is invariant under
@@ -97,6 +104,55 @@ structure IsItoIntegral (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H I :
       ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t})
         atTop (𝓝 0)) ∧
     TendstoInMeasure P (fun k ↦ Finance.simpleGains (τ k) (n k) (a k) W t) atTop (I t)
+
+/-- Every integrand admitting an Itô integral belongs to the pathwise square-energy domain
+`LocallyBrownianIntegrable`, directly from the elementary-approximation specification. -/
+theorem IsItoIntegral.locallyBrownianIntegrable (hI : IsItoIntegral ℱ P W H I) :
+    LocallyBrownianIntegrable ℱ P H := by
+  refine locallyBrownianIntegrable_iff_nat.mpr ⟨hI.isStronglyPredictable, fun n ↦ ?_⟩
+  obtain ⟨m, τ, a, hτ, ha, hen, -⟩ := hI.exists_approx n
+  let A (k : ℕ) : Set Ω := {ω | 1 ≤ ∫⁻ s,
+    ‖Finance.simpleHolding (τ k) (m k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure n}
+  have hinter : P (⋂ k, A k) = 0 := le_antisymm
+    (le_of_tendsto_of_tendsto' tendsto_const_nhds (hen 1 zero_lt_one)
+      fun k ↦ measure_mono (iInter_subset A k)) zero_le
+  have hae : ∀ᵐ ω ∂P, ∃ k, ∫⁻ s,
+      ‖Finance.simpleHolding (τ k) (m k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure n < 1 := by
+    have hinter' : ∀ᵐ ω ∂P, ω ∉ ⋂ k, A k := compl_mem_ae_iff.mpr hinter
+    filter_upwards [hinter'] with ω hω
+    obtain ⟨k, hk⟩ := not_forall.mp (mt mem_iInter.mpr hω)
+    exact ⟨k, not_le.mp hk⟩
+  filter_upwards [hae] with ω ⟨k, hk⟩
+  have hK_sm : AEStronglyMeasurable (fun s ↦ Finance.simpleHolding (τ k) (m k) (a k) s ω)
+      ((volume.restrict (Ioc 0 (n : ℝ))).comap ((↑) : ℝ≥0 → ℝ)) :=
+    (((Finance.isStronglyPredictable_simpleHolding (ha k)).mono
+      ℱ.predictable_le_prod).comp_measurable
+        (measurable_id.prodMk measurable_const)).aestronglyMeasurable
+  have hK_fin : ∫⁻ s, ‖Finance.simpleHolding (τ k) (m k) (a k) s ω‖ₑ ^ 2
+      ∂((volume.restrict (Ioc 0 (n : ℝ))).comap ((↑) : ℝ≥0 → ℝ)) < ∞ := by
+    rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def,
+      Finance.lintegral_enorm_sq_simpleHolding_timeMeasure (hτ k)]
+    exact ENNReal.sum_lt_top.mpr fun j _ ↦
+      ENNReal.mul_lt_top (ENNReal.pow_lt_top eNorm_lt_top) ENNReal.ofReal_lt_top
+  have hK_mem : MemLp (fun s ↦ Finance.simpleHolding (τ k) (m k) (a k) s ω) 2
+      ((volume.restrict (Ioc 0 (n : ℝ))).comap ((↑) : ℝ≥0 → ℝ)) :=
+    hK_sm.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr hK_fin
+  have hdiff_sm : AEStronglyMeasurable (fun s ↦
+        Finance.simpleHolding (τ k) (m k) (a k) s ω - H s ω)
+      ((volume.restrict (Ioc 0 (n : ℝ))).comap ((↑) : ℝ≥0 → ℝ)) :=
+    ((((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
+      hI.isStronglyPredictable).mono ℱ.predictable_le_prod).comp_measurable
+        (measurable_id.prodMk measurable_const)).aestronglyMeasurable
+  have hdiff_fin : ∫⁻ s, ‖Finance.simpleHolding (τ k) (m k) (a k) s ω - H s ω‖ₑ ^ 2
+      ∂((volume.restrict (Ioc 0 (n : ℝ))).comap ((↑) : ℝ≥0 → ℝ)) < ∞ := by
+    rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def]
+    exact hk.trans ENNReal.one_lt_top
+  have hdiff_mem : MemLp (fun s ↦ Finance.simpleHolding (τ k) (m k) (a k) s ω - H s ω) 2
+      ((volume.restrict (Ioc 0 (n : ℝ))).comap ((↑) : ℝ≥0 → ℝ)) :=
+    hdiff_sm.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr hdiff_fin
+  convert hK_mem.sub hdiff_mem using 1
+  ext s
+  simp
 
 /-- The zero process is an Itô integral of the zero integrand. -/
 @[simp]
@@ -291,5 +347,72 @@ theorem isItoIntegral_simpleGains {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → 
     exact Finance.continuous_simpleGains hω
   exists_approx t := ⟨fun _ ↦ n, fun _ ↦ τ, fun _ ↦ a, fun _ ↦ hτ, fun _ ↦ ha,
     fun ε hε ↦ by simp [hε.ne'], fun ε hε ↦ by simp [hε.ne']⟩
+
+/-- Enlarging the filtration preserves `IsItoIntegral`. -/
+theorem IsItoIntegral.mono {𝒢 : Filtration ℝ≥0 mΩ} (hI : IsItoIntegral ℱ P W H I)
+    (hFG : ℱ ≤ 𝒢) : IsItoIntegral 𝒢 P W H I where
+  isStronglyPredictable := hI.isStronglyPredictable.mono (Filtration.predictable_mono hFG)
+  ae_continuous := hI.ae_continuous
+  exists_approx t := by
+    obtain ⟨n, τ, a, hτ, ha, hen, hg⟩ := hI.exists_approx t
+    exact ⟨n, τ, a, hτ, fun k j hj ↦ (ha k j hj).mono (hFG _), hen, hg⟩
+
+/-- Transporting `IsItoIntegral` to a larger filtration on the completed ambient space
+`(NullMeasurableSpace Ω P, P.completion)`. -/
+theorem IsItoIntegral.mono_completion (hI : IsItoIntegral ℱ P W H I)
+    {𝒢 : Filtration ℝ≥0 (eventuallyMeasurableSpace mΩ (ae P))}
+    (hFG : ∀ t, ℱ t ≤ 𝒢 t) :
+    @IsItoIntegral (NullMeasurableSpace Ω P) inferInstance 𝒢 P.completion
+      (fun t (ω : NullMeasurableSpace Ω P) ↦ W t ω)
+      (fun t (ω : NullMeasurableSpace Ω P) ↦ H t ω)
+      (fun t (ω : NullMeasurableSpace Ω P) ↦ I t ω) where
+  isStronglyPredictable := hI.isStronglyPredictable.mono
+    (measurableSpace_le_predictable_of_measurableSet
+      (fun _ hA ↦ measurableSet_predictable_singleton_bot_prod (hFG ⊥ _ hA))
+      (fun i _ hA ↦ measurableSet_predictable_Ioi_prod (i := i) (hFG i _ hA)))
+  ae_continuous := hI.ae_continuous.filter_mono P.ae_completion.le
+  exists_approx t := by
+    obtain ⟨n, τ, a, hτ, ha, hen, hg⟩ := hI.exists_approx t
+    refine ⟨n, τ, a, hτ, fun k j hj ↦ (ha k j hj).mono (hFG _), fun ε hε ↦ ?_, fun ε hε ↦ ?_⟩
+    · exact (hen ε hε).congr fun k ↦ (Measure.completion_apply P _).symm
+    · exact (hg ε hε).congr fun k ↦ (Measure.completion_apply P _).symm
+
+/-- Completing the ambient space and adjoining all ambient null sets to the filtration preserves
+`IsItoIntegral`. -/
+theorem IsItoIntegral.nullAugment (hI : IsItoIntegral ℱ P W H I) :
+    @IsItoIntegral (NullMeasurableSpace Ω P) inferInstance (ℱ.nullAugment P) P.completion
+      (fun t (ω : NullMeasurableSpace Ω P) ↦ W t ω)
+      (fun t (ω : NullMeasurableSpace Ω P) ↦ H t ω)
+      (fun t (ω : NullMeasurableSpace Ω P) ↦ I t ω) :=
+  hI.mono_completion (ℱ.le_nullAugment P)
+
+/-- Passing to the usual right-continuous null augmentation preserves `IsItoIntegral`. -/
+theorem IsItoIntegral.rightCont_nullAugment (hI : IsItoIntegral ℱ P W H I) :
+    @IsItoIntegral (NullMeasurableSpace Ω P) inferInstance (ℱ.nullAugment P).rightCont P.completion
+      (fun t (ω : NullMeasurableSpace Ω P) ↦ W t ω)
+      (fun t (ω : NullMeasurableSpace Ω P) ↦ H t ω)
+      (fun t (ω : NullMeasurableSpace Ω P) ↦ I t ω) :=
+  @IsItoIntegral.mono (NullMeasurableSpace Ω P) inferInstance (ℱ.nullAugment P) P.completion _ _ _
+    (ℱ.nullAugment P).rightCont hI.nullAugment ((ℱ.nullAugment P).le_rightCont)
+
+/-- Against a filtered pre-Brownian motion with paths almost surely right-continuous at each
+fixed time, any raw Itô integral is indistinguishable from any Itô integral constructed on the
+usual right-continuous null augmentation `(ℱ.nullAugment P).rightCont`. -/
+theorem isItoIntegral_indist_rightCont_nullAugment
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ s, ∀ᵐ ω ∂P, ContinuousWithinAt (W · ω) (Ioi s) s)
+    (hI : IsItoIntegral ℱ P W H I)
+    {J : ℝ≥0 → NullMeasurableSpace Ω P → ℝ}
+    (hJ : @IsItoIntegral (NullMeasurableSpace Ω P) inferInstance
+      (ℱ.nullAugment P).rightCont P.completion
+      (fun t (ω : NullMeasurableSpace Ω P) ↦ W t ω)
+      (fun t (ω : NullMeasurableSpace Ω P) ↦ H t ω) J) :
+    (fun t (ω : NullMeasurableSpace Ω P) ↦ I t ω) ≡ᵐ[P.completion] J :=
+  @isItoIntegral_unique (NullMeasurableSpace Ω P) inferInstance
+    (ℱ.nullAugment P).rightCont P.completion
+    (fun t (ω : NullMeasurableSpace Ω P) ↦ W t ω)
+    (fun t (ω : NullMeasurableSpace Ω P) ↦ H t ω)
+    (fun t (ω : NullMeasurableSpace Ω P) ↦ I t ω) J
+    (hW.rightCont_nullAugment hcont) hI.rightCont_nullAugment hJ
 
 end TauCeti.Probability

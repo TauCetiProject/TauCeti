@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Simple
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 import TauCeti.Probability.BrownianMotion.Integral.Restriction
@@ -24,9 +23,10 @@ For a filtration-relative Brownian motion `W` and an integrand `H` in
 `TauCeti.BrownianIntegrable ℱ P H`, the finite-horizon terminal maps
 `IsFilteredPreBrownianReal.l2Integral` assemble into a time-indexed stochastic integral process.
 
-First, `eLpNorm_l2Integral_toPredictableLp_sub_of_le` and
-`norm_l2Integral_toPredictableLp_sub_sq_of_le` express the `L²` norm of increments of
-`t ↦ hW.l2Integral t (hH.toPredictableLp t)`, yielding `L²` continuity in time
+First, using `eLpNorm_l2Integral_toPredictableLp_sub_of_le` and
+`norm_l2Integral_toPredictableLp_sub_sq_of_le` from
+`TauCeti.Probability.BrownianMotion.Integral.Restriction`, the process
+`t ↦ hW.l2Integral t (hH.toPredictableLp t)` is `L²`-continuous in time
 (`continuous_l2Integral_toPredictableLp`).
 
 Second, any adapted modification `I` of `t ↦ hW.l2Integral t (hH.toPredictableLp t)` inherits the
@@ -62,87 +62,6 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
-
-private theorem l2Integral_indicator_Ioc_prod_univ_eq_sub
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) {s t : ℝ≥0} (hst : s ≤ t) :
-    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    hW.l2Integral t ((hH.indicator_Ioc_prod s t (@MeasurableSet.univ Ω (ℱ s))).toPredictableLp t) =
-      hW.l2Integral t (hH.toPredictableLp t) - hW.l2Integral s (hH.toPredictableLp s) := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  have hmem : ∀ᵐ p ∂ℱ.predictableMeasure P t, p ∈ Ioc 0 t ×ˢ univ := by
-    have hb := ae_restrict_mem (μ := ℱ.predictableMeasure P t)
-      (measurableSet_predictable_Ioc_prod 0 t (𝓕 := ℱ) MeasurableSet.univ)
-    simpa only [ℱ.predictableMeasure_restrict, min_self] using hb
-  have hind : (hH.indicator_Ioc_prod s t (@MeasurableSet.univ Ω (ℱ s))).toPredictableLp t =
-      hH.toPredictableLp t - ℱ.predictableMeasureExtendLp P ℝ hst (hH.toPredictableLp s) := by
-    apply Lp.ext
-    filter_upwards
-      [(hH.indicator_Ioc_prod s t (@MeasurableSet.univ Ω (ℱ s))).coeFn_toPredictableLp t,
-      Lp.coeFn_sub (hH.toPredictableLp t)
-        (ℱ.predictableMeasureExtendLp P ℝ hst (hH.toPredictableLp s)),
-      hH.coeFn_toPredictableLp t,
-      ℱ.coeFn_predictableMeasureExtendLp_of_ae_eq P (𝕜 := ℝ) hst (hH.coeFn_toPredictableLp s),
-      hmem] with ⟨u, ω⟩ h1 hsub ht hs hu
-    rw [h1, hsub]
-    dsimp only [Pi.sub_apply]
-    rw [ht, hs]
-    simp only [Function.uncurry_apply_pair, Set.indicator, Set.mem_prod, Set.mem_Ioc,
-      Set.mem_univ, and_true, hu.1.1, hu.1.2, true_and]
-    by_cases hsu : s < u
-    · simp [hsu, not_le_of_gt hsu]
-    · simp [hsu, not_lt.mp hsu]
-  rw [hind, map_sub, hW.l2Integral_predictableMeasureExtendLp hst]
-
-/-- For `s ≤ t`, the sample-space `L²` distance between `hW.l2Integral t (hH.toPredictableLp t)`
-and `hW.l2Integral s (hH.toPredictableLp s)` equals the ambient time-product `L²` norm of `H`
-restricted to `(s, t]`. -/
-theorem eLpNorm_l2Integral_toPredictableLp_sub_of_le (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) {s t : ℝ≥0} (hst : s ≤ t) :
-    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    eLpNorm (fun ω ↦ hW.l2Integral t (hH.toPredictableLp t) ω -
-        hW.l2Integral s (hH.toPredictableLp s) ω) 2 P =
-      eLpNorm (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun u ↦ H u p.2) p.1) 2
-        ((timeMeasure t).prod P) := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hdiff := hW.l2Integral_indicator_Ioc_prod_univ_eq_sub hH hst
-  have hzero := hW.eLpNorm_l2Integral_sub_l2Integral
-    (hH.indicator_Ioc_prod s t (@MeasurableSet.univ Ω (ℱ s))) BrownianIntegrable.zero t
-  rw [BrownianIntegrable.toPredictableLp_zero, map_zero] at hzero
-  refine (eLpNorm_congr_ae ?_).trans (hzero.trans ?_)
-  · filter_upwards [Lp.coeFn_sub (hW.l2Integral t (hH.toPredictableLp t))
-      (hW.l2Integral s (hH.toPredictableLp s)), Lp.coeFn_zero ℝ 2 P] with ω hsub hz
-    have hω := congrArg (fun f : Lp ℝ 2 P ↦ f ω) hdiff
-    rw [hω, hsub, hz]
-    simp
-  · congr 1
-    ext ⟨u, ω⟩
-    by_cases hu : u ∈ Ioc s t <;> simp [hu]
-
-/-- For `s ≤ t`, the squared `Lp ℝ 2 P` norm of the increment
-`hW.l2Integral t (hH.toPredictableLp t) - hW.l2Integral s (hH.toPredictableLp s)` equals the
-expected square integral of `H` over `(s, t]`. -/
-theorem norm_l2Integral_toPredictableLp_sub_sq_of_le (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) {s t : ℝ≥0} (hst : s ≤ t) :
-    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    ‖hW.l2Integral t (hH.toPredictableLp t) -
-        hW.l2Integral s (hH.toPredictableLp s)‖ ^ 2 =
-      ∫ p in Ioc s t ×ˢ Set.univ, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hdiff := hW.l2Integral_indicator_Ioc_prod_univ_eq_sub hH hst
-  rw [← hdiff]
-  let f := hW.l2Integral t
-    ((hH.indicator_Ioc_prod s t (@MeasurableSet.univ Ω (ℱ s))).toPredictableLp t)
-  have hnorm : ‖f‖ ^ 2 = ∫ ω, f ω ^ 2 ∂P := by
-    rw [← real_inner_self_eq_norm_sq, L2.inner_def]
-    refine integral_congr_ae (.of_forall fun ω ↦ ?_)
-    simp [sq]
-  rw [hnorm, hW.integral_sq_l2Integral_toPredictableLp
-    (hH.indicator_Ioc_prod s t (@MeasurableSet.univ Ω (ℱ s))) t,
-    ← integral_indicator ((measurableSet_Ioc (a := s) (b := t)).prod MeasurableSet.univ)]
-  refine integral_congr_ae (.of_forall fun ⟨u, ω⟩ ↦ ?_)
-  by_cases hu : u ∈ Ioc s t <;> simp [hu]
 
 /-- The predictable `L²` Brownian integral process `t ↦ hW.l2Integral t (hH.toPredictableLp t)`
 is continuous in `Lp ℝ 2 P`. -/
@@ -216,39 +135,6 @@ theorem continuous_l2Integral_toPredictableLp (hW : IsFilteredPreBrownianReal �
 section Modification
 
 variable {H K I J : ℝ≥0 → Ω → ℝ}
-
-/-- Any modification of the predictable `L²` integral process vanishes almost surely at `0`. -/
-theorem ae_eval_zero_of_ae_eq_l2Integral
-    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
-    (hI : ∀ t, I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t)) :
-    I 0 =ᵐ[P] 0 := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  exact (hI 0).trans ((hW.l2Integral_zero _) ▸ Lp.coeFn_zero ℝ 2 P)
-
-/-- Any modification of the predictable `L²` integral process is in `L²(P)` at every time. -/
-theorem memLp_of_ae_eq_l2Integral
-    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
-    (hI : ∀ t, I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t)) (t : ℝ≥0) :
-    MemLp (I t) 2 P := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  exact (Lp.memLp (hW.l2Integral t (hH.toPredictableLp t))).ae_eq (hI t).symm
-
-/-- Cross-isometry for modifications of the predictable `L²` integral processes. -/
-theorem integral_mul_of_ae_eq_l2Integral
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K)
-    (hI : ∀ t, I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t))
-    (hJ : ∀ t, J t =ᵐ[P] hW.l2Integral t (hK.toPredictableLp t)) (T : ℝ≥0) :
-    ∫ ω, I T ω * J T ω ∂P = ∫ p, H p.1 p.2 * K p.1 p.2 ∂(timeMeasure T).prod P :=
-  (integral_congr_ae ((hI T).mul (hJ T))).trans
-    (hW.integral_mul_l2Integral_toPredictableLp hH hK T)
-
-/-- Itô isometry for any modification of the predictable `L²` integral process. -/
-theorem integral_sq_of_ae_eq_l2Integral
-    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
-    (hI : ∀ t, I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t)) (T : ℝ≥0) :
-    ∫ ω, I T ω ^ 2 ∂P = ∫ p, H p.1 p.2 ^ 2 ∂(timeMeasure T).prod P := by
-  simpa only [sq] using hW.integral_mul_of_ae_eq_l2Integral hH hH hI hI T
 
 /-- Any strongly adapted modification of `t ↦ hW.l2Integral t (hH.toPredictableLp t)` is a
 martingale on the original raw filtration. -/

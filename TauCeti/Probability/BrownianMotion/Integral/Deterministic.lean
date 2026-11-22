@@ -16,8 +16,13 @@ For a Brownian motion relative to an arbitrary filtration, the predictable L² i
 of a deterministic integrand equals its Wiener integral. Deterministic time L² classes
 are viewed as predictable classes using Mathlib's native pullback
 `Lp.compMeasurePreserving` along the time projection, bundled as the linear isometry
-`Lp.compMeasurePreservingₗᵢ`. This comparison concerns the
-terminal L² integral at a finite horizon and needs no sample-path continuity.
+`Lp.compMeasurePreservingₗᵢ` (`l2Integral_compMeasurePreserving_fst`). For a
+`BrownianIntegrable` deterministic integrand `fun t _ ↦ f t`,
+`l2Integral_toPredictableLp_fst` identifies `hW.l2Integral T (hH.toPredictableLp T)` with
+`hW.toIsPreBrownianReal.wienerIntegral T (hf.toLp f)`, and
+`ae_eq_wienerIntegral_of_ae_eq_l2Integral` transfers this equality to any modification of the
+integral process. These comparisons concern the terminal L² integral at a finite horizon and
+need no sample-path continuity.
 
 The identification follows from the common elementary increment formula and continuity
 of the two linear maps, using the uniqueness theorem for the Wiener integral.
@@ -79,5 +84,38 @@ theorem l2Integral_compMeasurePreserving_fst (hW : IsFilteredPreBrownianReal ℱ
   simpa only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
     Lp.compMeasurePreservingₗᵢ_apply] using
     congrArg (fun J : Lp ℝ 2 (timeMeasure T) →L[ℝ] Lp ℝ 2 P ↦ J f) hmap
+
+/-- For a deterministic integrand `f` whose time-constant lifting `fun t _ ↦ f t` is
+`BrownianIntegrable`, its finite-horizon predictable `L²` Brownian integral equals the
+deterministic Wiener integral of `f` in `Lp ℝ 2 P`. -/
+theorem l2Integral_toPredictableLp_fst (hW : IsFilteredPreBrownianReal ℱ W P)
+    {f : ℝ≥0 → ℝ} {T : ℝ≥0} (hf : MemLp f 2 (timeMeasure T))
+    (hH : BrownianIntegrable ℱ P (fun t _ ↦ f t)) :
+    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+    hW.l2Integral T (hH.toPredictableLp T) =
+      hW.toIsPreBrownianReal.wienerIntegral T (hf.toLp f) := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  have hcomp : Lp.compMeasurePreserving Prod.fst
+      (ℱ.measurePreserving_fst_predictableMeasure P T) (hf.toLp f) =
+      hH.toPredictableLp T := by
+    apply Lp.ext
+    refine (Lp.coeFn_compMeasurePreserving (hf.toLp f)
+      (ℱ.measurePreserving_fst_predictableMeasure P T)).trans ?_
+    filter_upwards [(ℱ.measurePreserving_fst_predictableMeasure P T).quasiMeasurePreserving.ae
+      hf.coeFn_toLp, hH.coeFn_toPredictableLp T] with ⟨t, ω⟩ h1 h2
+    exact h1.trans h2.symm
+  rw [← hcomp]
+  exact hW.l2Integral_compMeasurePreserving_fst T (hf.toLp f)
+
+/-- Any modification of the predictable `L²` integral process of a deterministic integrand
+agrees almost surely at each time `T` with its Wiener integral. -/
+theorem ae_eq_wienerIntegral_of_ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
+    {f : ℝ≥0 → ℝ} {T : ℝ≥0} (hf : MemLp f 2 (timeMeasure T))
+    (hH : BrownianIntegrable ℱ P (fun t _ ↦ f t)) {I : ℝ≥0 → Ω → ℝ}
+    (hI : ∀ t, I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t)) :
+    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+    I T =ᵐ[P] hW.toIsPreBrownianReal.wienerIntegral T (hf.toLp f) :=
+  (hI T).trans (by rw [hW.l2Integral_toPredictableLp_fst hf hH])
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import Mathlib.Topology.ContinuousOn
 
 /-!
 # Continuous processes and time-product almost-everywhere identities

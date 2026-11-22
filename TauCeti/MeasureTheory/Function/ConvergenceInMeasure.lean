@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.Probability.Moments.Chebyshev
 

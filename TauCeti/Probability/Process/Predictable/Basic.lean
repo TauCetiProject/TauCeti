@@ -66,6 +66,31 @@ theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioc_predictable
   simpa [S, indicator_apply] using
     (ha.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
 
+/-- A random variable known at time `s`, extended by zero at times `≤ s` and held constant
+strictly after `s`, is strongly predictable. -/
+theorem MeasureTheory.Filtration.isStronglyPredictable_ite_lt
+    {ι Ω E : Type*} {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace E] [Zero E] (ℱ : Filtration ι m) (s : ι) {ξ : Ω → E}
+    (hξ : StronglyMeasurable[ℱ s] ξ) :
+    IsStronglyPredictable ℱ (fun t ω ↦ if s < t then ξ ω else 0) := by
+  classical
+  let : MeasurableSpace Ω := ℱ s
+  let : MeasurableSpace (ι × Ω) := ℱ.predictable
+  let S : Set (ι × Ω) := Ioi s ×ˢ univ
+  have hS : MeasurableSet S :=
+    measurableSet_predictable_Ioi_prod (𝓕 := ℱ) (i := s) MeasurableSet.univ
+  have hproj : Measurable (fun p : S ↦ p.val.2) := by
+    intro A hA
+    refine ⟨Ioi s ×ˢ A, measurableSet_predictable_Ioi_prod (𝓕 := ℱ) (i := s) hA, ?_⟩
+    ext p
+    simp [S, p.property.1]
+  change StronglyMeasurable (fun p : ι × Ω ↦ if s < p.1 then ξ p.2 else 0)
+  have hd : StronglyMeasurable (fun p : ι × Ω ↦ if p ∈ S then ξ p.2 else 0) :=
+    (hξ.comp_measurable hproj).dite stronglyMeasurable_const hS
+  convert hd using 1
+  ext ⟨t, ω⟩
+  simp [S]
+
 section Arithmetic
 
 variable {ι Ω E : Type*} {m : MeasurableSpace Ω} [Preorder ι] [OrderBot ι]

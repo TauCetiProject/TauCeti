@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
-import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
