@@ -45,6 +45,8 @@ a chain of nonzero entries of one gives a chain of nonzero entries of the other.
 * `Matrix.det_blockDiagonal'`: `(blockDiagonal' M).det = ∏ i, (M i).det`.
 * `Matrix.BlockTriangular.toSquareBlockProp_mul_of_toDual` and
   `Matrix.BlockTriangular.toSquareBlockProp_mul`: square blocks of products on down-closed sets.
+* `Matrix.det_toSquareBlockProp_mul_mul`: the minor of `L * M * U` on a down-closed set is the
+  product of the minors of `L`, `M` and `U`.
 * `Matrix.isUnit_det_toSquareBlockProp_lt`: unit leading block minors give unit determinants of
   the leading blocks on the strict initial segments.
 * `Matrix.BlockTriangular.isUnit_det_toSquareBlockProp`: leading blocks of an invertible
@@ -188,6 +190,15 @@ public theorem isUnit_det_toSquareBlockProp_lt [DecidableEq m] [CommRing R] (M :
   exact hM k
 
 variable [DecidableEq m] [CommRing R] {A L M U : Matrix m m R} {p : m → Prop} [DecidablePred p]
+
+/-- **Minors of `L * M * U` on down-closed sets.** For a block lower triangular `L` and a block
+upper triangular `U`, the determinant of the square block of `L * M * U` on a down-closed set of
+indices is the product of the determinants of the square blocks of `L`, `M` and `U`. -/
+public theorem det_toSquareBlockProp_mul_mul (hL : L.BlockTriangular (toDual ∘ b))
+    (hU : U.BlockTriangular b) (hp : ∀ ⦃i j⦄, b j ≤ b i → p i → p j) :
+    ((L * M * U).toSquareBlockProp p).det =
+      (L.toSquareBlockProp p).det * (M.toSquareBlockProp p).det * (U.toSquareBlockProp p).det := by
+  rw [hU.toSquareBlockProp_mul hp, hL.toSquareBlockProp_mul_of_toDual hp, det_mul, det_mul]
 
 /-- A leading block of a block upper triangular matrix with unit determinant also has unit
 determinant. The set of indices may be any down-closed union of blocks. -/

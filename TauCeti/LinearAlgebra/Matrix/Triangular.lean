@@ -62,6 +62,9 @@ Lie-algebra theory.
   entrywise: `M⁻¹ i i * M i i = 1`.
 * `Matrix.inv_apply_diag_of_isUpperTriangular` — where an upper-triangular matrix carries a `1`
   on the diagonal, so does its inverse.
+* `Matrix.inv_apply_diag_mul_of_isLowerTriangular` and
+  `Matrix.inv_apply_diag_of_isLowerTriangular` — the corresponding facts for lower-triangular
+  matrices.
 * `Matrix.IsUpperUnitriangular` — an upper-triangular matrix with diagonal one.
 * `Matrix.IsUpperUnitriangular.ext` — upper-unitriangular matrices are determined by their
   entries strictly above the diagonal.
@@ -502,6 +505,20 @@ The hypothesis is needed only at the entry asked about. -/
 theorem inv_apply_diag_of_isUpperTriangular [Invertible M] (hM : M.IsUpperTriangular) {i : n}
     (hdiag : M i i = 1) : M⁻¹ i i = 1 := by
   simpa [hdiag] using inv_apply_diag_mul_of_isUpperTriangular hM i
+
+/-- On the diagonal, the inverse of an invertible lower-triangular matrix inverts entrywise:
+`M⁻¹ i i * M i i = 1`. -/
+theorem inv_apply_diag_mul_of_isLowerTriangular [Invertible M] (hM : M.IsLowerTriangular)
+    (i : n) : M⁻¹ i i * M i i = 1 := by
+  have hinv : M⁻¹.IsLowerTriangular := blockTriangular_inv_of_blockTriangular hM
+  have h := congrFun (congrFun (nonsing_inv_mul M (isUnit_det_of_invertible M)) i) i
+  rwa [mul_apply_diag_of_isLowerTriangular hinv hM i, one_apply_eq] at h
+
+/-- Where an invertible lower-triangular matrix has a `1` on the diagonal, so does its inverse.
+The hypothesis is needed only at the entry asked about. -/
+theorem inv_apply_diag_of_isLowerTriangular [Invertible M] (hM : M.IsLowerTriangular) {i : n}
+    (hdiag : M i i = 1) : M⁻¹ i i = 1 := by
+  simpa [hdiag] using inv_apply_diag_mul_of_isLowerTriangular hM i
 
 /-- A product of upper-unitriangular matrices is upper unitriangular. -/
 theorem IsUpperUnitriangular.mul {T p : Type*} [NonAssocSemiring T] [Fintype p]
