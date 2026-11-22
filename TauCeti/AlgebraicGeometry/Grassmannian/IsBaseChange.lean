@@ -124,7 +124,7 @@ theorem isBaseChangeEquiv_map {k : ℕ} (g : A →ₐ[R'] B) (N : G(k, A ⊗[R']
   ext : 1
   simp only [toSubmodule_isBaseChangeEquiv, map_toSubmodule_eq_span, Submodule.map_span,
     Submodule.map_coe, ← Set.image_comp]
-  refine congrArg _ (Set.image_congr' fun x ↦ ?_)
+  refine congrArg _ (Set.image_congr' rfl fun x ↦ ?_)
   induction x using hf.forall_tmul A with
   | add x y hx hy => simp only [Function.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
   | tmul a m => simp
