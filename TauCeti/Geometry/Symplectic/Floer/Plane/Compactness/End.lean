@@ -102,6 +102,25 @@ open Floer Floer.PSSPlane
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {H : ℝ → V → ℝ}
 
+omit [FiniteDimensional ℝ V] in
+/-- **The end datum of a PSS plane.** The Hamiltonian `ε H(ε t)` of the end of `p`, for which `p`
+is the positive plane, is `C³`, and so is its cylindrical datum `ε H(ε t) dt`. -/
+private theorem contDiff_uncurry_endSign_mul_and_contDiff_uncurry_snd (p : PSSPlane)
+    (hHs : ContDiff ℝ 3 (uncurry H)) :
+    ContDiff ℝ 3 (uncurry fun t x ↦ p.endSign * H (p.endSign * t) x) ∧
+      ContDiff ℝ 3 (uncurry fun (w : ℝ × ℝ) x ↦ p.endSign * H (p.endSign * w.2) x) := by
+  have hHs' : ContDiff ℝ 3 (uncurry fun t x ↦ p.endSign * H (p.endSign * t) x) :=
+    contDiff_const.mul (hHs.comp ((contDiff_const.mul contDiff_fst).prodMk contDiff_snd))
+  exact ⟨hHs', hHs'.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)⟩
+
+omit [FiniteDimensional ℝ V] in
+/-- A translated end `v(z) = u(φ(z + (R, 0)))` of the positive plane is `Cⁿ` when `u` is. -/
+private theorem contDiff_comp_realChart_positive_add {n : WithTop ℕ∞} {u : ℝ × ℝ → V} (R : ℝ)
+    (hu : ContDiff ℝ n u) :
+    ContDiff ℝ n (fun z ↦ u (realChart positive.cylindricalEndLift (z + (R, 0)))) :=
+  hu.comp ((contDiff_realChart positive.contDiff_cylindricalEndLift).comp
+    (contDiff_id.add contDiff_const))
+
 /-- **A translated end of the positive plane.** Let `u` be a `C³` solution on the plane of the
 Floer equation for the perturbation of the positive plane given by `H`, with energy at most `E`,
 for structures `J` with `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀`. If the translate by `(R, 0)` of
@@ -135,9 +154,7 @@ private theorem contDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_p
         (fun z ↦ u (realChart positive.cylindricalEndLift (z + (R, 0)))) z ≤ E := by
   set e := realChart positive.cylindricalEndLift
   set v : ℝ × ℝ → V := fun z ↦ u (e (z + (R, 0)))
-  have hvC : ContDiff ℝ 3 v :=
-    hu.comp ((contDiff_realChart positive.contDiff_cylindricalEndLift).comp
-      (contDiff_id.add contDiff_const))
+  have hvC : ContDiff ℝ 3 v := contDiff_comp_realChart_positive_add R hu
   -- Beyond `T₀` the structure is `J_∞(t)` and beyond `2` the datum is `H(t) dt`, so `v` solves the
   -- cylindrical equation.
   have hvfl (z : ℝ × ℝ) (hz : z ∈ Ω) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
@@ -211,12 +228,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) B ∧
         TendstoLocallyUniformlyOn (fun n z ↦ u (ψ n) (realChart positive.cylindricalEndLift
           (z + (R (ψ n), 0)))) v atTop (Ω \ ↑Z) := by
-  -- The plane `p` is the positive plane for the Hamiltonian `ε H(ε t)`.
-  have hHs' : ContDiff ℝ 3 (uncurry fun t x ↦ p.endSign * H (p.endSign * t) x) :=
-    contDiff_const.mul (hHs.comp ((contDiff_const.mul contDiff_fst).prodMk contDiff_snd))
-  -- The cylindrical datum `ε H(ε t) dt` and the structures `J_∞(t)` of the end are smooth.
-  have hKt : ContDiff ℝ 3 (uncurry fun (w : ℝ × ℝ) x ↦ p.endSign * H (p.endSign * w.2) x) :=
-    hHs'.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
+  -- The plane `p` is the positive plane for the Hamiltonian `ε H(ε t)`, and the cylindrical datum
+  -- `ε H(ε t) dt` of the end is smooth.
+  obtain ⟨hHs', hKt⟩ := contDiff_uncurry_endSign_mul_and_contDiff_uncurry_snd p hHs
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
     (Ks := fun _ _ ↦ 0) (J := fun z ↦ Jend z.2) hW contDiffOn_const hKt.contDiffOn hJend hD hB
     hDBW hJt
@@ -286,12 +300,9 @@ theorem
           (fun w x ↦ p.endSign * H (p.endSign * w.2) x) v) (Ω \ ↑Z) ∧
         ∫ z in Ω \ ↑Z, ω.floerEnergyDensity (fun _ _ ↦ 0)
           (fun w x ↦ p.endSign * H (p.endSign * w.2) x) v z ≤ E := by
-  -- The plane `p` is the positive plane for the Hamiltonian `ε H(ε t)`.
-  have hHs' : ContDiff ℝ 3 (uncurry fun t x ↦ p.endSign * H (p.endSign * t) x) :=
-    contDiff_const.mul (hHs.comp ((contDiff_const.mul contDiff_fst).prodMk contDiff_snd))
-  -- The cylindrical datum `ε H(ε t) dt` and the structures `J_∞(t)` of the end are smooth.
-  have hKt : ContDiff ℝ 3 (uncurry fun (w : ℝ × ℝ) x ↦ p.endSign * H (p.endSign * w.2) x) :=
-    hHs'.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
+  -- The plane `p` is the positive plane for the Hamiltonian `ε H(ε t)`, and the cylindrical datum
+  -- `ε H(ε t) dt` of the end is smooth.
+  obtain ⟨hHs', hKt⟩ := contDiff_uncurry_endSign_mul_and_contDiff_uncurry_snd p hHs
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
     (Ks := fun _ _ ↦ 0) (J := fun z ↦ Jend z.2) hW contDiffOn_const hKt.contDiffOn hJend hD hB
     hDBW hJt
@@ -305,8 +316,7 @@ theorem
     contDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add ω
       (p.periodic_endSign_mul hH) hHs' hJ (fun z hz ↦ hJt z (hΩD hz)) hΩ (hΩT k)
       ((hu k).of_le (WithTop.coe_le_coe.2 le_top)) (hfl k) hE0 (hE k) (huB k)
-  exact hconv hΩ hΩD (fun k ↦ ((hu k).comp ((contDiff_realChart
-    positive.contDiff_cylindricalEndLift).comp (contDiff_id.add contDiff_const))).contDiffOn)
+  exact hconv hΩ hΩD (fun k ↦ (contDiff_comp_realChart_positive_add (R k) (hu k)).contDiffOn)
     (fun k ↦ (h k).2.1) huB (fun k ↦ (h k).2.2.1) fun k ↦ (h k).2.2.2
 
 end SymplecticForm

@@ -92,6 +92,36 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ}
 
+omit [FiniteDimensional ℝ V] in
+/-- The cylindrical datum `H'_q(t) dt` of the positive end is `C³` when `H_q` is. -/
+private theorem contDiff_uncurry_positiveEndHamiltonian_snd {q : Puncture}
+    (hHq : ContDiff ℝ 3 (uncurry (H q))) :
+    ContDiff ℝ 3 (uncurry fun w : ℝ × ℝ ↦ positiveEndHamiltonian H q w.2) :=
+  (contDiff_uncurry_positiveEndHamiltonian hHq).comp
+    ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
+
+/-- The structures `J_q(±t, x)` of the positive end are `C²` in `((s, t), x)` when `J_q` is `C²`
+in `(t, x)`. -/
+private theorem contDiff_toContinuousLinearMap_endSign_mul_snd
+    {Jq : ℝ → V → AlmostComplexStructure V}
+    (hJq : ContDiff ℝ 2 fun p : ℝ × V ↦ (Jq p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (q : Puncture) :
+    ContDiff ℝ 2 fun p : (ℝ × ℝ) × V ↦
+      (Jq (q.endSign * p.1.2) p.2).toLinearMap.toContinuousLinearMap :=
+  hJq.comp ((contDiff_const.mul (contDiff_snd.comp contDiff_fst)).prodMk contDiff_snd)
+
+omit [FiniteDimensional ℝ V] in
+/-- A translated end `v(z) = u(φ'_q(z + (R, 0)))`, on a window `Ω` whose translate lies in a band
+`(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end, is `Cⁿ` on `Ω` when `u` is `Cⁿ` on `S`. -/
+private theorem contDiffOn_comp_positiveEndChart_add {n : WithTop ℕ∞} {q : Puncture}
+    {Ω : Set (ℝ × ℝ)} {u : ℝ × ℝ → V} {R T₀ t₀ : ℝ}
+    (hΩT : ∀ z ∈ Ω, z + (R, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1))
+    (hu : ContDiffOn ℝ n u thricePuncturedSphereReal) :
+    ContDiffOn ℝ n (fun z ↦ u (positiveEndChart q (z + (R, 0)))) Ω :=
+  hu.comp ((contDiff_positiveEndChart q n).comp (contDiff_id.add contDiff_const)).contDiffOn
+    fun z hz ↦ positiveEndChart_mem_thricePuncturedSphereReal
+      ((le_max_right _ _).trans_lt (hΩT z hz).1)
+
 /-- A translated end `v(z) = u(φ'_q(z + (R, 0)))` of a Floer solution on `S`, on an open window `Ω`
 whose translate lies in a band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end, solves the
 cylindrical Floer equation of the positive end on `Ω`, with integrable energy density and energy
@@ -124,13 +154,8 @@ private theorem isComplexLinearMap_and_integral_le_comp_positiveEndChart_add
         (fun z ↦ u (positiveEndChart q (z + (R, 0))))) Ω ∧
       ∫ z in Ω, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
         (fun z ↦ u (positiveEndChart q (z + (R, 0)))) z ≤ E := by
-  have hKt : ContDiff ℝ 3 (uncurry fun w : ℝ × ℝ ↦ positiveEndHamiltonian H q w.2) :=
-    (contDiff_uncurry_positiveEndHamiltonian hHq).comp
-      ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
-  have hvC : ContDiffOn ℝ 3 (fun z ↦ u (positiveEndChart q (z + (R, 0)))) Ω :=
-    hu.comp ((contDiff_positiveEndChart q 3).comp (contDiff_id.add contDiff_const)).contDiffOn
-      fun z hz ↦ positiveEndChart_mem_thricePuncturedSphereReal
-        ((le_max_right _ _).trans_lt (hΩT z hz).1)
+  have hKt := contDiff_uncurry_positiveEndHamiltonian_snd hHq
+  have hvC := contDiffOn_comp_positiveEndChart_add (q := q) hΩT hu
   have hvfl (z : ℝ × ℝ) (hz : z ∈ Ω) :=
     isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_add hKH hH hHd
       (hu.differentiableOn (by norm_num)) hfl (fun s t hs ↦ hJ s t _ hs) R (hΩT z hz).1
@@ -192,12 +217,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
         TendstoLocallyUniformlyOn (fun n z ↦ u (φ n) (positiveEndChart q (z + (R (φ n), 0)))) v
           atTop (Ω \ ↑Z) := by
   -- The cylindrical datum of the positive end is smooth.
-  have hKt : ContDiff ℝ 3 (uncurry fun w : ℝ × ℝ ↦ positiveEndHamiltonian H q w.2) :=
-    (contDiff_uncurry_positiveEndHamiltonian hHq).comp
-      ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
-  have hJq' : ContDiff ℝ 2 fun p : (ℝ × ℝ) × V ↦
-      (Jq (q.endSign * p.1.2) p.2).toLinearMap.toContinuousLinearMap :=
-    hJq.comp ((contDiff_const.mul (contDiff_snd.comp contDiff_fst)).prodMk contDiff_snd)
+  have hKt := contDiff_uncurry_positiveEndHamiltonian_snd hHq
+  have hJq' := contDiff_toContinuousLinearMap_endSign_mul_snd hJq q
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
     (Ks := fun _ _ ↦ 0) (J := fun z ↦ Jq (q.endSign * z.2)) isOpen_univ contDiffOn_const
     hKt.contDiffOn hJq'.contDiffOn hD hB (subset_univ _) fun _ _ x _ ↦ hJqt _ x
@@ -207,10 +228,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
   have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
       z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) :=
     add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
-  have hvC (k : ℕ) : ContDiffOn ℝ 3 (fun z ↦ u k (positiveEndChart q (z + (R k, 0)))) Ω :=
-    (hu k).comp ((contDiff_positiveEndChart q 3).comp (contDiff_id.add contDiff_const)).contDiffOn
-      fun z hz ↦ positiveEndChart_mem_thricePuncturedSphereReal
-        ((le_max_right _ _).trans_lt (hΩT k z hz).1)
+  have hvC (k : ℕ) := contDiffOn_comp_positiveEndChart_add (q := q) (hΩT k) (hu k)
   have h (k : ℕ) := isComplexLinearMap_and_integral_le_comp_positiveEndChart_add ω hKH hH hHd
     hHq hJqt hJ hΩ (hΩT k) (hu k) (hfl k) hE0 (hE k)
   exact hconv hΩ hΩD hvC (fun k ↦ (h k).1) huK (fun k ↦ (h k).2.1) fun k ↦ (h k).2.2
@@ -270,12 +288,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_com
         ∫ z in Ω \ ↑Z, ω.floerEnergyDensity (fun _ _ ↦ 0)
           (fun w ↦ positiveEndHamiltonian H q w.2) v z ≤ E := by
   -- The cylindrical datum of the positive end is smooth.
-  have hKt : ContDiff ℝ 3 (uncurry fun w : ℝ × ℝ ↦ positiveEndHamiltonian H q w.2) :=
-    (contDiff_uncurry_positiveEndHamiltonian hHq).comp
-      ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
-  have hJq' : ContDiff ℝ 2 fun p : (ℝ × ℝ) × V ↦
-      (Jq (q.endSign * p.1.2) p.2).toLinearMap.toContinuousLinearMap :=
-    hJq.comp ((contDiff_const.mul (contDiff_snd.comp contDiff_fst)).prodMk contDiff_snd)
+  have hKt := contDiff_uncurry_positiveEndHamiltonian_snd hHq
+  have hJq' := contDiff_toContinuousLinearMap_endSign_mul_snd hJq q
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
     (Ks := fun _ _ ↦ 0) (J := fun z ↦ Jq (q.endSign * z.2)) isOpen_univ contDiffOn_const
     hKt.contDiffOn hJq'.contDiffOn hD hB (subset_univ _) fun _ _ x _ ↦ hJqt _ x
@@ -285,11 +299,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_com
   have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
       z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) :=
     add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
-  have hvC (k : ℕ) :
-      ContDiffOn ℝ (⊤ : ℕ∞) (fun z ↦ u k (positiveEndChart q (z + (R k, 0)))) Ω :=
-    (hu k).comp ((contDiff_positiveEndChart q _).comp (contDiff_id.add contDiff_const)).contDiffOn
-      fun z hz ↦ positiveEndChart_mem_thricePuncturedSphereReal
-        ((le_max_right _ _).trans_lt (hΩT k z hz).1)
+  have hvC (k : ℕ) := contDiffOn_comp_positiveEndChart_add (q := q) (hΩT k) (hu k)
   have h (k : ℕ) := isComplexLinearMap_and_integral_le_comp_positiveEndChart_add ω hKH hH hHd
     hHq hJqt hJ hΩ (hΩT k) ((hu k).of_le (WithTop.coe_le_coe.2 le_top)) (hfl k) hE0 (hE k)
   exact hconv hΩ hΩD hvC (fun k ↦ (h k).1) huK (fun k ↦ (h k).2.1) fun k ↦ (h k).2.2
