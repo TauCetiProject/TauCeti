@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Descent
+import Mathlib.LinearAlgebra.Matrix.Dual
 
 /-!
 # The dot-product metric on `ι → ℝ` and its quotients by discrete subgroups
@@ -162,13 +163,13 @@ theorem mgradient_eq_of_inner_eq_dotProduct {x : M}
     (f : M → ℝ) :
     mgradient 𝓘(ℝ, ι → ℝ) f x = fun i ↦ mvfderiv 𝓘(ℝ, ι → ℝ) f x (Pi.single i 1) := by
   refine (eq_mgradient_iff.2 fun v ↦ (hx _ v).trans ?_).symm
-  -- expand `v` in the standard basis
+  -- the values on the standard basis represent the derivative under the dot product
   have h (L : (ι → ℝ) →L[ℝ] ℝ) (v : ι → ℝ) : dotProduct (fun i ↦ L (Pi.single i 1)) v = L v := by
-    conv_rhs => rw [← Finset.univ_sum_single v]
-    rw [map_sum, dotProduct]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have hi : (Pi.single i (v i) : ι → ℝ) = v i • Pi.single i 1 := by simp [← Pi.single_smul']
-    rw [hi, map_smul, smul_eq_mul, mul_comm]
+    have hL : (fun i ↦ L (Pi.single i 1)) = (dotProductEquiv ℝ ι).symm L.toLinearMap := by
+      funext i
+      simp only [dotProductEquiv_symm_apply, LinearMap.single_apply, ContinuousLinearMap.coe_coe]
+    rw [hL, ← dotProductEquiv_apply_apply, LinearEquiv.apply_symm_apply,
+      ContinuousLinearMap.coe_coe]
   exact h (mvfderiv 𝓘(ℝ, ι → ℝ) f x) v
 
 end TauCeti.Manifold

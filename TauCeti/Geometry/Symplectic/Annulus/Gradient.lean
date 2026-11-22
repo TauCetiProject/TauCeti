@@ -21,7 +21,8 @@ descended action, whose negative is the vector field of the gradient flow on the
 
 The Euclidean metric `⟪v, w⟫ = Σ_i v_i w_i` of the configuration space is invariant under the
 diagonal translations, and descends to the quotient
-(`AddSubgroup.quotientDotProductMetric (AddSubgroup.zmultiples 1)`), for which the projection is
+(`AddSubgroup.quotientDotProductMetric (AddSubgroup.zmultiples 1)`, installed as
+`TauCeti.diagonalQuotientRiemannianBundle`), for which the projection is
 a local Riemannian isometry (`AddSubgroup.isLocalRiemannianIsometry_quotientMk`). Read in the
 charts of the quotient, the descended metric is again the dot product, so the gradient of the
 descended action at the class of `q` is the vector of partial derivatives of `W` at `q`:
@@ -39,6 +40,10 @@ negative gradient is a `C^n` vector field on the quotient
 `TauCeti.contMDiff_neg_mgradient_quotientCyclicAction`), and the projection of a solution of
 `dx_i / dt = y_i - Y_(i-1)` on the configuration space is an integral curve of it
 (`TauCeti.isMIntegralCurve_mk_comp_neg_mgradient_quotientCyclicAction`).
+
+## Main definitions
+
+* `TauCeti.diagonalQuotientRiemannianBundle`: the dot-product metric of the diagonal quotient.
 
 ## Main results
 
@@ -68,6 +73,13 @@ noncomputable section
 
 namespace TauCeti
 
+/-- The Riemannian metric of the diagonal quotient `(ι → ℝ) ⧸ ℤ 1`: the dot-product metric
+`⟪v, w⟫ = Σ_i v_i w_i`, descended from `ι → ℝ`. -/
+abbrev diagonalQuotientRiemannianBundle (ι : Type*) [Fintype ι] :
+    RiemannianBundle (fun y : (ι → ℝ) ⧸ AddSubgroup.zmultiples (1 : ι → ℝ) ↦
+      TangentSpace 𝓘(ℝ, ι → ℝ) y) :=
+  ⟨(AddSubgroup.zmultiples (1 : ι → ℝ)).quotientDotProductMetric.toRiemannianMetric⟩
+
 variable {N : ℕ} [NeZero N] {S : ZMod N → ℝ × ℝ → ℝ} (hS : ∀ i, Function.Periodic (S i) (1, 1))
 
 /-- **The gradient of the cyclic action on the diagonal quotient.** For the Euclidean metric
@@ -78,16 +90,12 @@ of the `(i-1)`-th map minus the momentum `y_i = -∂₁ S_i(q_i, q_(i+1))` of th
 `i`-th map. -/
 theorem mgradient_quotientCyclicAction {q : ZMod N → ℝ}
     (h : ∀ i, DifferentiableAt ℝ (S i) (q i, q (i + 1))) :
-    letI : RiemannianBundle (fun y : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ) ↦
-        TangentSpace 𝓘(ℝ, ZMod N → ℝ) y) :=
-      ⟨(AddSubgroup.zmultiples (1 : ZMod N → ℝ)).quotientDotProductMetric.toRiemannianMetric⟩
+    letI := diagonalQuotientRiemannianBundle (ZMod N)
     mgradient 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS)
         (q : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ)) =
       fun i ↦ (stripGeneratingTarget (S (i - 1)) (q (i - 1), q i)).2 -
         (stripGeneratingSource (S i) (q i, q (i + 1))).2 := by
-  let : RiemannianBundle (fun y : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ) ↦
-      TangentSpace 𝓘(ℝ, ZMod N → ℝ) y) :=
-    ⟨(AddSubgroup.zmultiples (1 : ZMod N → ℝ)).quotientDotProductMetric.toRiemannianMetric⟩
+  let := diagonalQuotientRiemannianBundle (ZMod N)
   rw [mgradient_eq_of_inner_eq_dotProduct fun v w ↦ by
     rw [ContMDiffRiemannianMetric.inner_riemannianBundle,
       AddSubgroup.quotientDotProductMetric_inner]]
@@ -99,7 +107,9 @@ theorem mgradient_quotientCyclicAction {q : ZMod N → ℝ}
         fderiv ℝ (cyclicAction S) q v := by
     have h' := congrArg (fun L ↦ L v) (mvfderiv_quotientCyclicAction_comp hS q)
     simp only [AddSubgroup.mfderiv_quotientMk, mvfderiv_eq_fderiv] at h'
-    -- both sides of `h'` evaluate the two derivatives at `v` through identity maps
+    -- both sides of `h'` evaluate the two derivatives at `v` through identity maps: the identity
+    -- of the tangent space and `NormedSpace.fromTangentSpace q`, which are the identity of
+    -- `ZMod N → ℝ` by Mathlib's definitional identification of the tangent spaces with the model
     exact h'
   rw [hd, fderiv_cyclicAction_apply h]
   simp [Pi.single_apply, sub_eq_add_neg, add_comm]
@@ -110,16 +120,12 @@ vertex the target point `(q_i, Y_(i-1))` of the `(i-1)`-th map is the source poi
 the `i`-th map, that is when `q` is a critical configuration. -/
 theorem mgradient_quotientCyclicAction_eq_zero_iff {q : ZMod N → ℝ}
     (h : ∀ i, DifferentiableAt ℝ (S i) (q i, q (i + 1))) :
-    letI : RiemannianBundle (fun y : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ) ↦
-        TangentSpace 𝓘(ℝ, ZMod N → ℝ) y) :=
-      ⟨(AddSubgroup.zmultiples (1 : ZMod N → ℝ)).quotientDotProductMetric.toRiemannianMetric⟩
+    letI := diagonalQuotientRiemannianBundle (ZMod N)
     mgradient 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS)
         (q : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ)) = 0 ↔
       ∀ i, stripGeneratingTarget (S (i - 1)) (q (i - 1), q i) =
         stripGeneratingSource (S i) (q i, q (i + 1)) := by
-  let : RiemannianBundle (fun y : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ) ↦
-      TangentSpace 𝓘(ℝ, ZMod N → ℝ) y) :=
-    ⟨(AddSubgroup.zmultiples (1 : ZMod N → ℝ)).quotientDotProductMetric.toRiemannianMetric⟩
+  let := diagonalQuotientRiemannianBundle (ZMod N)
   rw [mgradient_eq_zero_iff, mvfderiv_quotientCyclicAction_eq_zero_iff,
     fderiv_cyclicAction_eq_zero_iff h]
 
@@ -127,16 +133,12 @@ theorem mgradient_quotientCyclicAction_eq_zero_iff {q : ZMod N → ℝ}
 a configuration `q` if every generating function `S_i` is `C^(n+1)` at the edge `(q_i, q_(i+1))`. -/
 theorem contMDiffAt_neg_mgradient_quotientCyclicAction {n : ℕ∞} {q : ZMod N → ℝ}
     (h : ∀ i, ContDiffAt ℝ (n + 1) (S i) (q i, q (i + 1))) :
-    letI : RiemannianBundle (fun y : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ) ↦
-        TangentSpace 𝓘(ℝ, ZMod N → ℝ) y) :=
-      ⟨(AddSubgroup.zmultiples (1 : ZMod N → ℝ)).quotientDotProductMetric.toRiemannianMetric⟩
+    letI := diagonalQuotientRiemannianBundle (ZMod N)
     ContMDiffAt 𝓘(ℝ, ZMod N → ℝ) 𝓘(ℝ, ZMod N → ℝ).tangent n
       (fun y ↦ (⟨y, -mgradient 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) y⟩ :
         TangentBundle 𝓘(ℝ, ZMod N → ℝ) ((ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ))))
       (q : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ)) := by
-  let : RiemannianBundle (fun y : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ) ↦
-      TangentSpace 𝓘(ℝ, ZMod N → ℝ) y) :=
-    ⟨(AddSubgroup.zmultiples (1 : ZMod N → ℝ)).quotientDotProductMetric.toRiemannianMetric⟩
+  let := diagonalQuotientRiemannianBundle (ZMod N)
   have := Bundle.instIsContMDiffRiemannianBundle
     (AddSubgroup.zmultiples (1 : ZMod N → ℝ)).quotientDotProductMetric
   simpa only [mgradient_neg] using
@@ -147,9 +149,7 @@ theorem contMDiffAt_neg_mgradient_quotientCyclicAction {n : ℕ∞} {q : ZMod N 
 if the generating functions are `C^(n+1)`. -/
 theorem contMDiff_neg_mgradient_quotientCyclicAction {n : ℕ∞}
     (h : ∀ i, ContDiff ℝ (n + 1) (S i)) :
-    letI : RiemannianBundle (fun y : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ) ↦
-        TangentSpace 𝓘(ℝ, ZMod N → ℝ) y) :=
-      ⟨(AddSubgroup.zmultiples (1 : ZMod N → ℝ)).quotientDotProductMetric.toRiemannianMetric⟩
+    letI := diagonalQuotientRiemannianBundle (ZMod N)
     ContMDiff 𝓘(ℝ, ZMod N → ℝ) 𝓘(ℝ, ZMod N → ℝ).tangent n
       (fun y ↦ (⟨y, -mgradient 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) y⟩ :
         TangentBundle 𝓘(ℝ, ZMod N → ℝ)
@@ -166,15 +166,11 @@ theorem isMIntegralCurve_mk_comp_neg_mgradient_quotientCyclicAction {γ : ℝ �
     (h : ∀ t i, DifferentiableAt ℝ (S i) (γ t i, γ t (i + 1)))
     (hγ : ∀ t, HasDerivAt γ (fun i ↦ (stripGeneratingSource (S i) (γ t i, γ t (i + 1))).2 -
       (stripGeneratingTarget (S (i - 1)) (γ t (i - 1), γ t i)).2) t) :
-    letI : RiemannianBundle (fun y : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ) ↦
-        TangentSpace 𝓘(ℝ, ZMod N → ℝ) y) :=
-      ⟨(AddSubgroup.zmultiples (1 : ZMod N → ℝ)).quotientDotProductMetric.toRiemannianMetric⟩
+    letI := diagonalQuotientRiemannianBundle (ZMod N)
     IsMIntegralCurve
       (fun t ↦ (γ t : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ)))
       (fun y ↦ -mgradient 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) y) := by
-  let : RiemannianBundle (fun y : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ) ↦
-      TangentSpace 𝓘(ℝ, ZMod N → ℝ) y) :=
-    ⟨(AddSubgroup.zmultiples (1 : ZMod N → ℝ)).quotientDotProductMetric.toRiemannianMetric⟩
+  let := diagonalQuotientRiemannianBundle (ZMod N)
   intro t
   have hc := ((AddSubgroup.zmultiples (1 : ZMod N → ℝ)).hasMFDerivAt_quotientMk (𝕜 := ℝ)
     (γ t)).comp t (hγ t).hasFDerivAt.hasMFDerivAt
@@ -188,8 +184,8 @@ theorem isMIntegralCurve_mk_comp_neg_mgradient_quotientCyclicAction {γ : ℝ �
         (stripGeneratingSource (S i) (γ t i, γ t (i + 1))).2 := by
     funext i
     simp only [Pi.neg_apply, neg_sub]
-  -- the composite with the identity of `ZMod N → ℝ`, the differential of the projection, is the
-  -- map itself
+  -- the differential of the projection is the identity of the tangent spaces, which Mathlib
+  -- identifies with `ZMod N → ℝ` by definition, so its composite with the map is the map itself
   exact congrArg (ContinuousLinearMap.toSpanSingleton ℝ) hv
 
 end TauCeti
