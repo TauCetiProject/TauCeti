@@ -37,8 +37,8 @@ Morse function (`TauCeti.SmoothTwoForm.IsMomentMap.isMorse_of_eq_top`), and the 
 `bⱼ(M; k)` is the number of fixed points at which `μ^ξ` has index `j`
 (`TauCeti.SmoothTwoForm.IsMomentMap.bettiNumber_eq_ncard`).
 
-For a torus, that is a compact connected abelian Lie group, such `ξ` exist, and the topology of
-`M` is that of a space with only even cells, one for each fixed point:
+For a torus, that is a compact connected abelian Lie group, such `ξ` exist, and the Betti numbers
+of `M` are those of a space with only even cells, one for each fixed point:
 
 * the fixed points are finite in number
   (`TauCeti.SmoothTwoForm.IsMomentMap.finite_fixedPoints`);
@@ -198,8 +198,8 @@ theorem bettiNumber_eq_zero_of_odd
     (hiso : ∀ p ∈ MulAction.fixedPoints G M, ∀ᶠ q in 𝓝 p, q ∈ MulAction.fixedPoints G M → q = p)
     {j : ℕ} (hj : Odd j) : bettiNumber k M j = 0 := by
   obtain ⟨ξ, hξ⟩ := (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).nonempty
-  exact ((h.isPerfectMorse hσ hσG k (h.isMorse_of_eq_top hσ hξ hiso)).bettiNumber_eq_zero_iff
-    j).2 fun _ hp hpj ↦ Nat.not_even_iff_odd.2 hj (hpj ▸ h.even_manifoldMorseIndex hσ hσG hp)
+  exact (h.isMorse_of_eq_top hσ hξ hiso).bettiNumber_eq_zero_of_odd
+    (fun _ hp ↦ h.even_manifoldMorseIndex hσ hσG hp) hj
 
 /-- **The total Betti number is the number of fixed points.** For a torus acting smoothly by
 symplectomorphisms of a compact manifold, with a moment map and isolated fixed points, the sum of

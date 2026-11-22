@@ -41,10 +41,10 @@ perfect Morse function exists depends on the coefficients, as projective spaces 
 * **The lacunary principle.** A Morse function on a compact manifold no two of whose critical
   points have indices differing by one is perfect for every choice of coefficients
   (`TauCeti.IsMorse.isPerfectMorse_of_forall_ne_add_one`). In particular a Morse function all of
-  whose critical points have even index is perfect, and its odd Betti numbers vanish
-  (`TauCeti.IsMorse.isPerfectMorse_of_even`). On `ℂℙⁿ` the moment function
-  `[z] ↦ (∑ⱼ wⱼ |zⱼ|²) / ∑ⱼ |zⱼ|²` with pairwise distinct weights has only even indices, so it is
-  perfect for every division ring of coefficients
+  whose critical points have even index is perfect (`TauCeti.IsMorse.isPerfectMorse_of_even`),
+  and its odd Betti numbers vanish (`TauCeti.IsMorse.bettiNumber_eq_zero_of_odd`). On `ℂℙⁿ` the
+  moment function `[z] ↦ (∑ⱼ wⱼ |zⱼ|²) / ∑ⱼ |zⱼ|²` with pairwise distinct weights has only even
+  indices, so it is perfect for every division ring of coefficients
   (`TauCeti.isPerfectMorse_projectiveMomentFunction_complex`).
 * **Real projective space in characteristic two.** On `ℝPᴺ` the same moment function has one
   critical point of each index `0, …, N`, and `Hⱼ(ℝPᴺ; k)` is one-dimensional for `j ≤ N` when
@@ -188,6 +188,15 @@ theorem IsMorse.isPerfectMorse_of_even (hf : IsMorse I f)
     IsPerfectMorse I k f :=
   hf.isPerfectMorse_of_forall_ne_add_one fun x hx y hy h ↦
     Nat.even_add_one.1 (h ▸ heven x hx) (heven y hy)
+
+/-- **Odd Betti numbers vanish for a Morse function with only even indices.** On a compact
+manifold carrying a Morse function all of whose critical points have even index, the odd Betti
+numbers vanish for every division ring of coefficients. -/
+theorem IsMorse.bettiNumber_eq_zero_of_odd (hf : IsMorse I f)
+    (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x)) {j : ℕ} (hj : Odd j) :
+    bettiNumber k M j = 0 :=
+  ((hf.isPerfectMorse_of_even heven).bettiNumber_eq_zero_iff j).2 fun x hx hxj ↦
+    Nat.not_even_iff_odd.2 hj (hxj ▸ heven x hx)
 
 /-- **A Morse function is perfect exactly when its Morse polynomial vanishes.** If `Q` is the
 polynomial of the Morse polynomial identity `cⱼ = bⱼ + coeff ((1 + X) * Q) j` of a Morse function
