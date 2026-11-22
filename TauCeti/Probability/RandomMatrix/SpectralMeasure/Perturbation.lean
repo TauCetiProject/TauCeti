@@ -13,11 +13,13 @@ public import TauCeti.Topology.Instances.Matrix
 # Mean-square perturbations of random spectral statistics
 
 The Hoffman–Wielandt bound transfers a small expected normalized squared Frobenius
-perturbation to a small mean-square difference of Lipschitz spectral statistics, and to a
-probability bound for their difference. The matrices may be dependent. Only the squared
-Frobenius perturbation needs to be integrable; almost-everywhere measurability of the matrices
-is needed only to make the squared difference of the statistics integrable. All matrix norms
-here are Frobenius norms.
+perturbation to a small difference of Lipschitz spectral statistics, and to a probability bound
+for their difference. The matrices may be dependent, and only the squared Frobenius perturbation
+needs to be integrable. Without measurability, the bound for the squared difference of the
+statistics is an inequality between Bochner integrals: if that squared difference is not
+integrable, its integral is zero by convention. Almost-everywhere measurability of the matrices
+makes it integrable (`integrable_norm_integral_spectralMeasure_sub_sq`), and the bound is then
+genuine mean-square control. All matrix norms here are Frobenius norms.
 
 ## References
 
@@ -69,9 +71,12 @@ theorem integrable_norm_integral_spectralMeasure_sub_sq
   exact pow_le_pow_left₀ (norm_nonneg _)
     (Matrix.norm_integral_spectralMeasure_sub_integral_spectralMeasure_le (hA ω) (hB ω) hf) 2
 
-/-- Mean-square Frobenius control gives mean-square control of every Lipschitz linear
-spectral statistic, with the normalization by matrix dimension. The matrices need not be
-measurable. -/
+/-- The expected squared Frobenius error bounds the Bochner integral of the squared difference
+of every Lipschitz linear spectral statistic, with the normalization by matrix dimension. The
+matrices need not be measurable, but then the squared difference may fail to be integrable and
+its integral is zero by convention. For almost everywhere measurable matrices,
+`integrable_norm_integral_spectralMeasure_sub_sq` gives integrability, and this is mean-square
+control. -/
 theorem integral_norm_integral_spectralMeasure_sub_sq_le :
     ∫ ω, ‖(∫ x, f x ∂((A ω).spectralMeasure (hA ω) : Measure ℝ)) -
       ∫ x, f x ∂((B ω).spectralMeasure (hB ω) : Measure ℝ)‖ ^ 2 ∂P ≤

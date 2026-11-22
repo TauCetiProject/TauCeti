@@ -13,8 +13,9 @@ import TauCeti.Probability.RandomMatrix.Wigner.Corner.Enumeration
 /-!
 # Maximum entry of a Wigner corner
 
-A finite fourth moment controls the maximum absolute normalized entry of a zero-diagonal
-Wigner corner almost surely, even with dependent upper entries.
+If the upper entries share a common law with finite fourth moment, the maximum absolute
+normalized entry of a zero-diagonal Wigner corner tends to zero almost surely. Independence of
+the entries is unnecessary.
 -/
 
 public section
@@ -41,7 +42,7 @@ theorem ae_eventually_norm_wignerMatrix_zero_apply_le
       rw [hpow]
       exact_mod_cast Nat.choose_le_pow (n + 1) 2
   filter_upwards [ae_eventually_forall_lt_norm_le_mul_of_identDistrib
-    (p := 4) (fun k ↦ hid (strictUpperEquivNat.symm k)) hX Real.tendsto_sqrt_natCast_add_one_atTop
+    (p := 4) (fun k ↦ hid (strictUpperEquivNat.symm k)) hX tendsto_sqrt_natCast_add_one_atTop
     (by simpa only [NNReal.coe_ofNat, ← Real.rpow_natCast, Nat.cast_ofNat] using hm)] with ω hω
   intro ε hε
   filter_upwards [hω ε hε] with n hn i j

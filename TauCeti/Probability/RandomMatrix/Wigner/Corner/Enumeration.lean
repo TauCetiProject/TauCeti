@@ -56,8 +56,8 @@ def strictUpperEquivNat : StrictUpper ≃ ℕ := by
         omega
       · refine ⟨⟨(0, j + 1), Nat.zero_lt_succ _⟩, ?_⟩
         dsimp only
-        rw [show (j + 1).choose 2 = j.choose 1 + j.choose 2 from Nat.choose_succ_succ' j 1,
-          Nat.choose_one_right]
+        rw [Nat.choose_succ_succ' j 1, Nat.choose_one_right]
+        simp only [Nat.reduceAdd]
         omega
 
 /-- The index of a strictly upper entry is the size of the preceding columns plus its row. -/

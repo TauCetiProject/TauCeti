@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.HardThreshold
 public import TauCeti.Probability.RandomMatrix.Wigner.Basic
 public import TauCeti.Probability.Moments.CenteredTruncation
 
@@ -22,9 +21,6 @@ entries. Independence is needed only to assert independence of the approximating
 and is not used in the error estimates. This is the bounded-approximation reduction used when
 extending the moment method to finite-second-moment entry laws.
 
-For zero-diagonal corners, the matrix of discarded entries is the entrywise hard threshold
-of the original corner at the normalized cutoff.
-
 ## References
 
 * G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*,
@@ -40,35 +36,6 @@ open scoped Topology NNReal Matrix.Norms.Frobenius
 
 namespace TauCeti.Probability
 
-section HardThreshold
-
-open Set
-
-variable {Ω : Type*} {ξ : StrictUpper → Ω → ℂ}
-
-/-- The discarded part of a zero-diagonal Wigner corner is exactly the entrywise
-hard threshold at the cutoff divided by the square root of the dimension. -/
-theorem wignerMatrix_zero_sub_indicator_eq_hardThreshold {n : ℕ}
-    (r : ℝ≥0) (ω : Ω) :
-    wignerMatrix ξ (fun _ _ ↦ 0) n ω -
-      wignerMatrix (fun ij ↦ {ω' | ‖ξ ij ω'‖ ≤ r}.indicator (ξ ij)) (fun _ _ ↦ 0) n ω =
-    (wignerMatrix ξ (fun _ _ ↦ 0) n ω).hardThreshold (r / Real.sqrt n) := by
-  ext i j
-  by_cases hij : i = j
-  · subst j
-    simp [Matrix.hardThreshold_apply]
-  simp only [wignerMatrix_sub, Matrix.hardThreshold_apply,
-    div_lt_norm_wignerMatrix_apply_iff _ _ _ hij]
-  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h, min_eq_left h.le, max_eq_right h.le,
-      indicator_apply, mem_ofPred_eq, ← not_lt, ite_not]
-    split_ifs <;> simp
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h, min_eq_right h.le, max_eq_left h.le,
-      indicator_apply, mem_ofPred_eq, ← not_lt, ite_not]
-    split_ifs <;> simp
-
-end HardThreshold
-
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
@@ -79,19 +46,13 @@ theorem _root_.ProbabilityTheory.iIndepFun.wignerMatrix_centeredTruncation
       Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P) (R : ℝ≥0) :
     iIndepFun (fun k : StrictUpper ⊕ ℕ ↦
       Sum.elim (fun ij ↦ centeredTruncation (ξ ij) P R) (fun i ω ↦ (η i ω : ℂ)) k) P := by
-  let g (k : StrictUpper ⊕ ℕ) : ℂ → ℂ := match k with
-    | .inl ij => fun z ↦ {z | ‖z‖ ≤ R}.indicator id z -
-        ∫ ω, {ω | ‖ξ ij ω‖ ≤ R}.indicator (ξ ij) ω ∂P
-    | .inr _ => id
-  have hg (k) : Measurable (g k) := by
-    cases k
-    · exact (measurable_id.indicator
-        (measurableSet_le measurable_norm measurable_const)).sub measurable_const
-    · exact measurable_id
-  convert h.comp g hg using 1
-  funext k ω
-  cases k <;> simp only [g, Function.comp_def, Sum.elim_inl, Sum.elim_inr,
-    centeredTruncation_def, Set.indicator_apply, Set.mem_ofPred_eq, id_eq]
+  choose g hg hgξ using fun ij ↦ exists_measurable_comp_eq_centeredTruncation (ξ ij) P R
+  convert h.comp (fun k ↦ Sum.elim g (fun _ ↦ id) k) (fun k ↦ by
+    cases k with
+    | inl ij => exact hg ij
+    | inr _ => exact measurable_id) using 1
+  funext k
+  cases k <;> simp only [Sum.elim_inl, Sum.elim_inr, hgξ, Function.id_comp]
 
 end TauCeti.Probability
 
@@ -158,12 +119,13 @@ end TauCeti
 
 namespace TauCeti.Probability
 
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
-/-- The squared Frobenius error of bounded centered off-diagonal approximation is integrable
-when the upper entries of the corner are square-integrable, regardless of the diagonal law. -/
-theorem integrable_norm_wignerMatrix_sub_centeredTruncation_sq {n : ℕ}
+/-- The squared Frobenius error of bounded centered off-diagonal approximation is integrable on a
+finite measure space when the upper entries of the corner are square-integrable, regardless of the
+diagonal law. -/
+theorem integrable_norm_wignerMatrix_sub_centeredTruncation_sq [IsFiniteMeasure P] {n : ℕ}
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) 2 P) (R : ℝ≥0) :
     Integrable (fun ω ↦ ‖wignerMatrix ξ η n ω -
       wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η n ω‖ ^ 2) P := by
@@ -174,62 +136,35 @@ theorem integrable_norm_wignerMatrix_sub_centeredTruncation_sq {n : ℕ}
 
 variable {Ω' : Type*} [MeasurableSpace Ω'] {Q : Measure Ω'} {X : Ω' → ℂ}
 
-private theorem inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le_of_forall
-    (hX : MemLp X 2 Q) (hmean : ∫ ω, X ω ∂Q = 0) (hd : ∀ ij, IdentDistrib (ξ ij) X P Q)
-    (R : ℝ≥0) (n : ℕ) :
-    (n + 1 : ℝ)⁻¹ * ∫ ω, ‖wignerMatrix ξ η (n + 1) ω -
-      wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η (n + 1) ω‖ ^ 2 ∂P ≤
-        ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂Q := by
-  have hm (ij : StrictUpper) : MemLp (fun ω ↦ ξ ij ω - centeredTruncation (ξ ij) P R ω) 2 P :=
-    ((hd ij).symm.memLp_snd hX).sub
-      (((hd ij).symm.memLp_snd hX).aestronglyMeasurable.memLp_centeredTruncation R)
-  rw [integral_norm_wignerMatrix_sub_sq hm
-    (fun ij ↦ (((hd ij).sub_centeredTruncation R).comp
-      (measurable_norm.pow_const 2)).integral_eq)]
-  have : IsProbabilityMeasure Q := ⟨by
-    simpa only [Set.preimage_univ, measure_univ] using
-      ((hd ⟨(0, 1), by decide⟩).measure_mem_eq (s := Set.univ) MeasurableSet.univ).symm⟩
-  have he : 0 ≤ ∫ ω, ‖X ω - centeredTruncation X Q R ω‖ ^ 2 ∂Q :=
-    integral_nonneg fun _ ↦ sq_nonneg _
-  calc
-    _ ≤ ∫ ω, ‖X ω - centeredTruncation X Q R ω‖ ^ 2 ∂Q := by
-      have hc : (n : ℝ) / (n + 1) ≤ 1 := by
-        exact (div_le_one (by positivity)).mpr (by linarith)
-      simpa only [div_eq_inv_mul, mul_assoc, Function.comp_def] using
-        mul_le_of_le_one_left he hc
-    _ ≤ _ := hX.integral_norm_sub_centeredTruncation_sq_le hmean R
-
 /-- Uniform normalized mean-square approximation by bounded centered upper entries.
 For upper entries of the corner with a common centered, square-integrable law, on a probability
 space, the bound is the second absolute moment discarded outside the cutoff. -/
-theorem inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le
+theorem inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le [IsProbabilityMeasure P]
     (hX : MemLp X 2 Q) (hmean : ∫ ω, X ω ∂Q = 0) (R : ℝ≥0) (n : ℕ)
     (hd : ∀ ij : StrictUpper, ij.val.2 < n + 1 → IdentDistrib (ξ ij) X P Q) :
     (n + 1 : ℝ)⁻¹ * ∫ ω, ‖wignerMatrix ξ η (n + 1) ω -
       wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η (n + 1) ω‖ ^ 2 ∂P ≤
         ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂Q := by
+  have hm (ij : StrictUpper) (hij : ij.val.2 < n + 1) :
+      MemLp (fun ω ↦ ξ ij ω - centeredTruncation (ξ ij) P R ω) 2 P :=
+    ((hd ij hij).symm.memLp_snd hX).sub
+      (((hd ij hij).symm.memLp_snd hX).aestronglyMeasurable.memLp_centeredTruncation R)
+  rw [integral_norm_wignerMatrix_sub_sq hm fun ij hij ↦
+    (((hd ij hij).sub_centeredTruncation R).comp (measurable_norm.pow_const 2)).integral_eq]
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · -- A corner of size one has no upper entries, so the error vanishes.
-    have h0 (ω : Ω) : wignerMatrix ξ η (0 + 1) ω -
-        wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η (0 + 1) ω = 0 := by
-      ext i j
-      obtain rfl : i = j := Fin.ext (by omega)
-      simp
-    simpa [h0] using integral_nonneg fun _ ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _
-  -- Outside the corner, replace the entries by an entry of the corner.
-  let ξ' (ij : StrictUpper) := if ij.val.2 < n + 1 then ξ ij else ξ ⟨(0, 1), by decide⟩
-  have hd' (ij : StrictUpper) : IdentDistrib (ξ' ij) X P Q := by
-    by_cases h : ij.val.2 < n + 1
-    · simpa only [ξ', ite_eq_left h] using hd ij h
-    · simpa only [ξ', ite_eq_right h] using hd _ (by dsimp only; omega)
-  have hcongr (ζ : StrictUpper → Ω → ℂ) (hζ : ∀ ij : StrictUpper, ij.val.2 < n + 1 → ζ ij = ξ ij)
-      (ω : Ω) : wignerMatrix ζ η (n + 1) ω -
-        wignerMatrix (fun ij ↦ centeredTruncation (ζ ij) P R) η (n + 1) ω =
-        wignerMatrix ξ η (n + 1) ω -
-        wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η (n + 1) ω := by
-    congr 1 <;> exact wignerMatrix_congr ω (fun ij hij ↦ by rw [hζ ij hij]) fun _ _ ↦ rfl
-  simpa only [hcongr ξ' fun _ hij ↦ ite_eq_left hij] using
-    inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le_of_forall
-      (η := η) hX hmean hd' R n
+    simpa using integral_nonneg fun _ ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _
+  have : IsProbabilityMeasure Q := ⟨by
+    simpa only [Set.preimage_univ, measure_univ] using
+      ((hd ⟨(0, 1), by decide⟩ (by dsimp only; omega)).measure_mem_eq
+        (s := Set.univ) MeasurableSet.univ).symm⟩
+  have he : 0 ≤ ∫ ω, ‖X ω - centeredTruncation X Q R ω‖ ^ 2 ∂Q :=
+    integral_nonneg fun _ ↦ sq_nonneg _
+  calc
+    _ ≤ ∫ ω, ‖X ω - centeredTruncation X Q R ω‖ ^ 2 ∂Q := by
+      have hc : (n : ℝ) / (n + 1) ≤ 1 := (div_le_one (by positivity)).mpr (by linarith)
+      simpa only [div_eq_inv_mul, mul_assoc, Function.comp_def] using
+        mul_le_of_le_one_left he hc
+    _ ≤ _ := hX.integral_norm_sub_centeredTruncation_sq_le hmean R
 
 end TauCeti.Probability

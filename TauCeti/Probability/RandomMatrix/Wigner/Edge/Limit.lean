@@ -89,10 +89,10 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
     · simpa only [B, RCLike.re_to_complex] using htrace'
   have happrox : ∀ᵐ ω ∂P, Tendsto (fun n ↦ ‖Z n ω - B n ω‖) atTop (𝓝 0) := by
     simpa only [B, Z] using
-      ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_centeredTruncation_zero
-        (η := fun _ _ ↦ 0) (Y := fun _ : Ω ↦ 0) (fun _ ↦
+      ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_centeredTruncation
+        (η := fun _ _ ↦ 0) (fun _ ↦
           (hind.precomp Subtype.val_injective).wignerMatrix_row_apply_of_ne)
-        hid hξ hmean (fun _ ↦ IdentDistrib.refl aemeasurable_const) (memLp_const 0) ha
+        hid hξ hmean ha
   have hweak := ae_tendsto_spectralMeasure_wignerMatrix_zero_of_memLp hind
     (fun ij ↦ (hid ij).trans (hid e₀).symm)
     (((hid e₀).symm.memLp_snd hξ).mono_exponent (by norm_num))

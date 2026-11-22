@@ -17,8 +17,9 @@ import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 # Upper spectral bounds from growing even moments
 
 At a norm threshold `r > s > 0`, where `s` is the exponential scale of the trace bound,
-a sufficiently large multiple of `log (n + 1)` in the moment order offsets a polynomial
-prefactor in the sequence index `n`. The norm tails have a summable eventual majorant.
+a sufficiently large multiple of `log (n + 1)` in the half-exponent `k n` of the even trace
+power `2 * k n` offsets a polynomial prefactor in the sequence index `n`. The norm tails have a
+summable eventual majorant.
 Full-series summability also requires finite tail measures at the initial indices where
 Hermiticity and trace integrability are not assumed. The Borel–Cantelli step applies
 without independence across indices. For the almost-sure bound below every threshold above a
@@ -63,10 +64,10 @@ theorem meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul_div_pow
 variable {m : ℕ → Type*} [∀ n, Fintype (m n)] [∀ n, DecidableEq (m n)]
   {A : (n : ℕ) → Ω → Matrix (m n) (m n) 𝕜} {k : ℕ → ℕ}
 
-/-- At a threshold `r > s > 0`, an eventual even trace bound with exponential scale `s`
-and polynomial prefactor of degree `d` gives a summable eventual majorant for the norm tails.
-It suffices that the moment order is eventually at least `B * log (n + 1)` and
-`d + 1 < 2 * B * log (r / s)`. -/
+/-- At a threshold `r > s > 0`, an eventual bound on the expected real trace of the
+`2 * k n`-th powers, with exponential scale `s` and polynomial prefactor of degree `d`, gives a
+summable eventual majorant for the norm tails. The trace exponent is `2 * k n`, and it suffices
+that `k n ≥ B * log (n + 1)` eventually and `d + 1 < 2 * B * log (r / s)`. -/
 theorem exists_tsum_lt_top_and_eventually_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_two_mul_le
     (hA : ∀ᶠ n in atTop, ∀ᵐ ω ∂P, (A n ω).IsHermitian)
     (hint : ∀ᶠ n in atTop, Integrable (fun ω ↦ RCLike.re ((A n ω) ^ (2 * k n)).trace) P)

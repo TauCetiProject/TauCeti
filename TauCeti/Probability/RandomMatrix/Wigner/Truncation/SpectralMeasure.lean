@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrix.Wigner.Truncation.Basic
-public import TauCeti.Probability.RandomMatrix.Perturbation
+public import TauCeti.Probability.RandomMatrix.SpectralMeasure.Perturbation
 
 /-!
 # Spectral statistics of truncated Wigner corners
 
-The expected normalized squared Frobenius error controls the difference of Lipschitz
-spectral statistics in mean square and in probability, uniformly over positive dimensions.
-At a fixed dimension, only the upper entries of that corner need a common centered,
-square-integrable law, and the diagonal is unrestricted.
+The expected normalized squared Frobenius error bounds the Bochner integral of the squared
+difference of Lipschitz spectral statistics and the probability of a large difference, uniformly
+over positive dimensions. At a fixed dimension, only the upper entries of that corner need a
+common centered, square-integrable law, and both bounds hold for an unrestricted diagonal. The
+common diagonal cancels in the matrix difference, but not necessarily in the difference of the
+nonlinear spectral statistics. So the integral bound is mean-square control only when that
+squared difference is integrable, for instance when the diagonal entries of the corner are almost
+everywhere measurable.
 
 ## References
 
@@ -42,9 +46,11 @@ include hX hmean
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
-/-- Mean-square control of a Lipschitz spectral statistic at a positive dimension, with a
-bound independent of the dimension. The upper entries of the corner share a centered,
-square-integrable law. The diagonal entries need no assumption, not even measurability. -/
+/-- At a positive dimension, the Bochner integral of the squared difference of a Lipschitz
+spectral statistic is bounded independently of the dimension. The upper entries of the corner
+share a centered, square-integrable law, and the inequality needs no assumption on the diagonal
+entries. It is mean-square control when the squared difference is integrable, for instance when
+the diagonal entries of the corner are almost everywhere measurable. -/
 theorem integral_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_sq_le
     {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) (R : ℝ≥0) (n : ℕ)
     (hd : ∀ ij : StrictUpper, ij.val.2 < n + 1 → IdentDistrib (ξ ij) X P Q) :
@@ -63,9 +69,10 @@ theorem integral_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_sq_le
       (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean R n hd)
       (sq_nonneg (K : ℝ))
 
-/-- A spectral-statistic approximation probability bound at a positive dimension, with a bound
-independent of the dimension. The upper entries of the corner share a centered,
-square-integrable law, and the diagonal is unrestricted. -/
+/-- At a positive dimension, the probability that a Lipschitz spectral statistic of the corner
+and of its centered truncation differ by at least a positive threshold is bounded independently
+of the dimension. The upper entries of the corner share a centered, square-integrable law, and
+the diagonal is unrestricted. -/
 theorem measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
     {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) {ε : ℝ} (hε : 0 < ε)
     (R : ℝ≥0) (n : ℕ) (hd : ∀ ij : StrictUpper, ij.val.2 < n + 1 → IdentDistrib (ξ ij) X P Q) :

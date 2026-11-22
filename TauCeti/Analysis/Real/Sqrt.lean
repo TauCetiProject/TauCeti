@@ -56,7 +56,7 @@ For nonnegative `a` and `b`, the geometric mean is at most the arithmetic mean,
 * `Real.sq_sqrt_sub_sqrt`: `(√a - √b)² = a + b - 2√(ab)` for `0 ≤ a` and `0 ≤ b`.
 * `Real.sqrt_bounds_of_abs_sub_le`: `√y / r ≤ √x ≤ r √y` when `|x - y| ≤ (1 - r⁻²) y`
   and `1 ≤ r`.
-* `Real.tendsto_sqrt_natCast_add_one_atTop`: `√(n + 1) → ∞` along the natural numbers, the
+* `TauCeti.tendsto_sqrt_natCast_add_one_atTop`: `√(n + 1) → ∞` along the natural numbers, the
   divergence of the normalization of an `(n + 1) × (n + 1)` random matrix.
 -/
 
@@ -426,10 +426,14 @@ theorem exists_forall_sqrt_le_quadratic_add_cubic (d L₀ Q₀ C₀ : ℝ) (hd :
   exact (Real.sqrt_le_sqrt hyz).trans
     (sqrt_expansion_bound hd hdc hr hr1 ha' hq' hδ he)
 
+end Real
+
+namespace TauCeti
+
 open Filter in
 /-- The square roots of the successive natural numbers `n + 1` tend to infinity. -/
 theorem tendsto_sqrt_natCast_add_one_atTop :
     Tendsto (fun n : ℕ ↦ √((n + 1 : ℕ) : ℝ)) atTop atTop :=
-  tendsto_sqrt_atTop.comp (tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1))
+  Real.tendsto_sqrt_atTop.comp (tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1))
 
-end Real
+end TauCeti

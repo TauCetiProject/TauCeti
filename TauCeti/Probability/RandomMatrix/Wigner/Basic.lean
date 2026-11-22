@@ -53,11 +53,12 @@ and resolvent methods:
   (`integrable_prod_wignerMatrix_apply`);
 * the normalisation check `E trₙ Hₙ² = (σ² + (n - 1) s)/n` when the diagonal entries have second
   moment `σ²` and the off-diagonal ones second absolute moment `s`
-  (`integral_re_trace_wignerMatrix_mul_self`), and its consequence that two Wigner arrays sharing
-  a diagonal whose upper differences have second absolute moment `s` differ at size `n + 1` by
-  expected squared Frobenius norm `n s` (`integral_norm_wignerMatrix_sub_sq`). Pointwise, the
-  squared Frobenius distance of two such matrices is `2/n` times the sum of the squared upper
-  differences in the corner (`TauCeti.Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin`).
+  (`integral_re_trace_wignerMatrix_mul_self`);
+* the squared Frobenius distance of two Wigner matrices sharing a diagonal is `2/n` times the sum
+  of the squared upper differences in the corner
+  (`TauCeti.Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin`). Hence, if the upper
+  differences in the corner of size `n + 1` have second absolute moment `s`, the matrices differ
+  by expected squared Frobenius norm `n s` (`integral_norm_wignerMatrix_sub_sq`).
 
 Centring, the second-moment normalisation and independence of the entries are not properties of
 the constructor: each theorem that uses one states it as a hypothesis.
@@ -398,10 +399,7 @@ theorem Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin
       Subtype.ext (wignerUpperIndex_val _)
     simpa only [D, d, hp, min_eq_left p.prop.le, max_eq_right p.prop.le] using
       norm_wignerMatrix_apply_sq_of_ne d (fun _ _ ↦ 0) ω (Fin.ne_of_val_ne p.prop.ne)
-  rw [hD, Matrix.frobenius_norm_def, ← Real.sqrt_eq_rpow]
-  simp only [Real.rpow_two]
-  rw [Real.sq_sqrt (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _),
-    sum_symmetric_pairs _ hsymm]
+  rw [hD, Matrix.frobenius_norm_sq_eq_sum_norm_sq, sum_symmetric_pairs _ hsymm]
   simp only [hdiag, Finset.sum_const_zero, zero_add, hupper, ← Finset.mul_sum, nsmul_eq_mul,
     Nat.cast_ofNat, div_eq_mul_inv, mul_assoc]
   rfl
@@ -825,35 +823,26 @@ theorem integral_re_trace_wignerMatrix_mul_self {σ2 s : ℝ}
 
 open scoped Matrix.Norms.Frobenius in
 /-- Keeping the same diagonal, a common second absolute moment `s` of the upper-coordinate
-differences gives expected squared Frobenius error `n * s` at size `n + 1`. -/
-theorem integral_norm_wignerMatrix_sub_sq {ξ' : StrictUpper → Ω → ℂ}
-    (hξ : ∀ ij, MemLp (fun ω ↦ ξ ij ω - ξ' ij ω) 2 P)
-    {s : ℝ} (hs : ∀ ij, ∫ ω, ‖ξ ij ω - ξ' ij ω‖ ^ 2 ∂P = s) (n : ℕ) :
+differences in the corner gives expected squared Frobenius error `n * s` at size `n + 1`.
+Entries outside the corner are unrestricted. -/
+theorem integral_norm_wignerMatrix_sub_sq {ξ' : StrictUpper → Ω → ℂ} {n : ℕ}
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n + 1 → MemLp (fun ω ↦ ξ ij ω - ξ' ij ω) 2 P)
+    {s : ℝ} (hs : ∀ ij : StrictUpper, ij.val.2 < n + 1 → ∫ ω, ‖ξ ij ω - ξ' ij ω‖ ^ 2 ∂P = s) :
     ∫ ω, ‖wignerMatrix ξ η (n + 1) ω - wignerMatrix ξ' η (n + 1) ω‖ ^ 2 ∂P = n * s := by
-  let d (ij : StrictUpper) (ω : Ω) := ξ ij ω - ξ' ij ω
-  have heq (ω : Ω) : wignerMatrix ξ η (n + 1) ω - wignerMatrix ξ' η (n + 1) ω =
-      wignerMatrix d (fun _ _ ↦ 0) (n + 1) ω := by
-    simp only [wignerMatrix_sub, sub_self, d]
-  have hn (ω : Ω) :
-      (((n + 1 : ℂ)⁻¹ *
-        (wignerMatrix d (fun _ _ ↦ 0) (n + 1) ω *
-          wignerMatrix d (fun _ _ ↦ 0) (n + 1) ω).trace).re) =
-        (n + 1 : ℝ)⁻¹ * ‖wignerMatrix d (fun _ _ ↦ 0) (n + 1) ω‖ ^ 2 := by
-    rw [(wignerMatrix_isHermitian d (fun _ _ ↦ 0) ω _).trace_mul_self_eq_sum_norm_sq,
-      Matrix.frobenius_norm_sq_eq_sum_normSq]
-    simp only [Complex.normSq_eq_norm_sq,
-      ← Complex.ofReal_natCast, ← Complex.ofReal_one, ← Complex.ofReal_add,
-      ← Complex.ofReal_inv, ← Complex.ofReal_mul, Complex.ofReal_re]
-  have h := integral_re_trace_wignerMatrix_mul_self (ξ := d) (η := fun _ _ ↦ 0) (σ2 := 0)
-    (fun ij ↦ (memLp_two_iff_integrable_sq_norm (hξ ij).aestronglyMeasurable).mp (hξ ij))
-    hs (fun _ ↦ by simp) (fun _ ↦ by simp) (n + 1)
-  simp only [Nat.cast_add, Nat.cast_one] at h
-  simp only [hn, integral_const_mul] at h
-  simp_rw [heq]
-  have hN : (n + 1 : ℝ) ≠ 0 := by positivity
-  simp only [add_sub_cancel_right, zero_add] at h
-  field_simp at h
-  exact h
+  have hj (u : StrictUpperFin (n + 1)) : (wignerUpperIndex u).val.2 < n + 1 := u.val.2.isLt
+  have hcard : (Fintype.card (StrictUpperFin (n + 1)) : ℝ) * 2 = (n + 1) * n := by
+    have h := Nat.add_one_mul_choose_eq n 1
+    rw [Nat.choose_one_right] at h
+    rw [Fintype.card_subtype]
+    simp only [Fin.val_fin_lt, Fintype.card_product_filter_lt, Fintype.card_fin]
+    exact_mod_cast h.symm
+  simp_rw [Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin]
+  rw [integral_const_mul, integral_finsetSum _ fun u _ ↦
+    (memLp_two_iff_integrable_sq_norm (hξ _ (hj u)).aestronglyMeasurable).mp (hξ _ (hj u))]
+  simp only [hs _ (hj _), Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+  push_cast
+  field_simp
+  linear_combination s * hcard
 
 end SecondMoment
 

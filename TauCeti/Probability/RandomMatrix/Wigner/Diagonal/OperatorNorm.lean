@@ -38,7 +38,7 @@ theorem ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_zero
   have hm : ∀ᶠ n : ℕ in atTop, ((n + 1 : ℕ) : ℝ) ≤ Real.sqrt (n + 1 : ℕ) ^ 2 :=
     .of_forall fun n ↦ (Real.sq_sqrt (Nat.cast_nonneg (n + 1))).ge
   filter_upwards [ae_eventually_forall_lt_norm_le_mul_of_identDistrib (p := 2) hid hη
-    Real.tendsto_sqrt_natCast_add_one_atTop
+    tendsto_sqrt_natCast_add_one_atTop
     (by simpa only [NNReal.coe_ofNat, Real.rpow_two] using hm)] with ω hω
   refine Metric.tendsto_atTop.2 fun ε hε ↦ eventually_atTop.1 ?_
   filter_upwards [hω (ε / 2) (half_pos hε)] with n hn

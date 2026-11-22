@@ -13,19 +13,21 @@ import TauCeti.Probability.Independence.Basic
 import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.OperatorNorm
 import TauCeti.Probability.Moments.Chebyshev
 import TauCeti.Probability.RandomMatrix.Wigner.Centering.Basic
-import TauCeti.Probability.RandomMatrix.Wigner.Truncation.Basic
+import TauCeti.Probability.RandomMatrix.Wigner.Truncation.HardThreshold
 import TauCeti.Analysis.SpecialFunctions.Pow.Summable
 
 /-!
 # Operator-norm truncation of Wigner corners
 
-A finite fourth moment makes the largest normalized off-diagonal entry tend to zero
-almost surely. Above a cutoff of order `n^a` in the unnormalized matrix, with
-`1/4 < a`, the number of discarded entries per row is eventually bounded uniformly.
-Thus their operator norm vanishes. The mean subtracted in recentering also contributes
-a vanishing operator norm, and the real diagonal can be removed under its finite
-second moment. For `a < 1/2` the retained normalized entries are polynomially small,
-as needed for growing trace moments.
+Let the upper entries share a common law with finite fourth moment. Then the largest normalized
+off-diagonal entry tends to zero almost surely, without any independence. Above a cutoff of order
+`n^a` in the unnormalized matrix, with `1/4 < a`, independence of the off-diagonal entries within
+each row makes the number of discarded entries per row eventually bounded uniformly. Thus their
+operator norm vanishes. When the common upper law is centered, the mean subtracted in recentering
+also contributes a vanishing operator norm. Hence the corners and their centered truncations with
+the same diagonal differ by a vanishing operator norm, whatever the diagonal. When the diagonal
+entries share a law with finite second moment, the diagonal can also be removed. For `a < 1/2`
+the retained normalized entries are polynomially small, as needed for growing trace moments.
 
 ## References
 
@@ -200,6 +202,58 @@ theorem ae_tendsto_l2_opNorm_wignerMatrix_zero_hardThreshold
     _ < (r / (q + 1 : ℝ)) * (q + 1) := mul_lt_mul_of_pos_left (by linarith) hε
     _ = r := div_mul_cancel₀ _ (by positivity)
 
+/-- The original Wigner corners and their centered truncations at radius `(n+1)^a`, with
+`a > 1/4` and the same diagonal, differ by a vanishing operator norm almost surely. The upper
+entries have a common centered law with finite fourth moment, and independence is required only
+among the off-diagonal entries within each row. The diagonal is arbitrary. -/
+theorem ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_centeredTruncation
+    (hind : ∀ n : ℕ, ∀ i : Fin (n + 1), iIndepFun (fun (j : {j : Fin (n + 1) // i ≠ j}) ω ↦
+      wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j) P)
+    (hid : ∀ ij, IdentDistrib (ξ ij) X P Q) (hX : MemLp X 4 Q)
+    (hmean : ∫ ω, X ω ∂Q = 0) {a : ℝ} (ha : 1 / 4 < a) :
+    ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦ ‖wignerMatrix ξ η (n + 1) ω -
+      wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P
+        ⟨((n + 1 : ℕ) : ℝ) ^ a, Real.rpow_nonneg (by positivity) _⟩)
+        η (n + 1) ω‖) atTop (𝓝 0) := by
+  filter_upwards [ae_tendsto_l2_opNorm_wignerMatrix_zero_hardThreshold hind hid hX ha]
+    with ω htail
+  have hquot : Tendsto (fun n : ℕ ↦ Real.sqrt (n + 1 : ℕ) / ((((n + 1 : ℕ) : ℝ) ^ a) ^ 3))
+      atTop (𝓝 0) := by
+    refine ((tendsto_rpow_neg_atTop (by linarith : 0 < 3 * a - 1 / 2)).comp
+      (tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1))).congr fun n ↦ ?_
+    have hN : 0 < ((n + 1 : ℕ) : ℝ) := by positivity
+    rw [Function.comp_apply, Function.comp_apply, Real.sqrt_eq_rpow,
+      ← Real.rpow_mul_natCast hN.le, ← Real.rpow_sub hN]
+    congr 1
+    push_cast
+    ring
+  have hcenterLimit := hX.tendsto_mul_norm_integral_indicator_setOf_norm_le_nhds_zero
+    (k := 3) hmean (fun _ ↦ Real.rpow_pos_of_pos (by positivity) _)
+    (fun _ ↦ Real.sqrt_nonneg _) hquot
+  refine squeeze_zero (fun n ↦ norm_nonneg _) (fun n ↦ ?_)
+    (by simpa only [add_zero] using htail.add hcenterLimit)
+  let R : ℝ≥0 := ⟨((n + 1 : ℕ) : ℝ) ^ a, Real.rpow_nonneg (by positivity) _⟩
+  let Z := wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω
+  let T := wignerMatrix (fun ij ↦ {ω' | ‖ξ ij ω'‖ ≤ R}.indicator (ξ ij)) (fun _ _ ↦ 0) (n + 1) ω
+  let B := wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) (fun _ _ ↦ 0) (n + 1) ω
+  let c := ∫ ω', {ω'' | ‖X ω''‖ ≤ R}.indicator X ω' ∂Q
+  -- The common diagonal cancels in the difference.
+  have hdiag : wignerMatrix ξ η (n + 1) ω -
+      wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η (n + 1) ω = Z - B := by
+    simp only [Z, B, wignerMatrix_sub, sub_self]
+  have hcenter : (fun ij ω' ↦ {x | ‖ξ ij x‖ ≤ R}.indicator (ξ ij) ω' - c) =
+      (fun ij ↦ centeredTruncation (ξ ij) P R) := by
+    funext ij
+    rw [centeredTruncation_def, (hid ij).integral_indicator_setOf_norm_le_eq]
+  have hTB : ‖T - B‖ ≤ Real.sqrt (n + 1 : ℕ) * ‖c‖ := by
+    simpa only [hcenter] using l2_opNorm_wignerMatrix_sub_center_le
+      (fun ij ↦ {x | ‖ξ ij x‖ ≤ R}.indicator (ξ ij)) (fun _ _ ↦ 0) c (n + 1) ω
+  have hZT := wignerMatrix_zero_sub_indicator_eq_hardThreshold (ξ := ξ) (n := n + 1) R ω
+  calc
+    _ = ‖Z - B‖ := congrArg norm hdiag
+    _ ≤ ‖Z - T‖ + ‖T - B‖ := norm_sub_le_norm_sub_add_norm_sub _ T _
+    _ ≤ _ := add_le_add (congrArg norm hZT).le hTB
+
 /-- The original Wigner corners and their zero-diagonal centered truncations at radius
 `(n+1)^a`, with `a > 1/4`, differ by a vanishing operator norm almost surely. The upper
 entries have a common centered law with finite fourth moment, and the diagonal entries have
@@ -217,43 +271,11 @@ theorem ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_centeredTruncation_ze
       wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P
         ⟨((n + 1 : ℕ) : ℝ) ^ a, Real.rpow_nonneg (by positivity) _⟩)
         (fun _ _ ↦ 0) (n + 1) ω‖) atTop (𝓝 0) := by
-  filter_upwards [ae_tendsto_l2_opNorm_wignerMatrix_zero_hardThreshold hind hid hX ha,
-    ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_zero (ξ := ξ) hd hη] with ω htail hdiag
-  have hquot : Tendsto (fun n : ℕ ↦ Real.sqrt (n + 1 : ℕ) / ((((n + 1 : ℕ) : ℝ) ^ a) ^ 3))
-      atTop (𝓝 0) := by
-    refine ((tendsto_rpow_neg_atTop (by linarith : 0 < 3 * a - 1 / 2)).comp
-      (tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1))).congr fun n ↦ ?_
-    have hN : 0 < ((n + 1 : ℕ) : ℝ) := by positivity
-    rw [Function.comp_apply, Function.comp_apply, Real.sqrt_eq_rpow,
-      ← Real.rpow_mul_natCast hN.le, ← Real.rpow_sub hN]
-    congr 1
-    push_cast
-    ring
-  have hcenterLimit := hX.tendsto_mul_norm_integral_indicator_setOf_norm_le_nhds_zero
-    (k := 3) hmean (fun _ ↦ Real.rpow_pos_of_pos (by positivity) _)
-    (fun _ ↦ Real.sqrt_nonneg _) hquot
-  refine squeeze_zero (fun n ↦ norm_nonneg _) (fun n ↦ ?_)
-    (by simpa only [add_zero] using (hdiag.add htail).add hcenterLimit)
-  let R : ℝ≥0 := ⟨((n + 1 : ℕ) : ℝ) ^ a, Real.rpow_nonneg (by positivity) _⟩
-  let Z := wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω
-  let T := wignerMatrix (fun ij ↦ {ω' | ‖ξ ij ω'‖ ≤ R}.indicator (ξ ij)) (fun _ _ ↦ 0) (n + 1) ω
-  let B := wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) (fun _ _ ↦ 0) (n + 1) ω
-  let c := ∫ ω', {ω'' | ‖X ω''‖ ≤ R}.indicator X ω' ∂Q
-  have hcenter : (fun ij ω' ↦ {x | ‖ξ ij x‖ ≤ R}.indicator (ξ ij) ω' - c) =
-      (fun ij ↦ centeredTruncation (ξ ij) P R) := by
-    funext ij
-    rw [centeredTruncation_def, (hid ij).integral_indicator_setOf_norm_le_eq]
-  have hTB : ‖T - B‖ ≤ Real.sqrt (n + 1 : ℕ) * ‖c‖ := by
-    simpa only [hcenter] using l2_opNorm_wignerMatrix_sub_center_le
-      (fun ij ↦ {x | ‖ξ ij x‖ ≤ R}.indicator (ξ ij)) (fun _ _ ↦ 0) c (n + 1) ω
-  have hZT := wignerMatrix_zero_sub_indicator_eq_hardThreshold (ξ := ξ) (n := n + 1) R ω
-  calc
-    _ ≤ ‖wignerMatrix ξ η (n + 1) ω - Z‖ + ‖Z - T‖ + ‖T - B‖ := by
-      exact (norm_sub_le_norm_sub_add_norm_sub _ T _).trans
-        (add_le_add_left (norm_sub_le_norm_sub_add_norm_sub _ Z _) _)
-    _ ≤ _ := by
-      have h1 : ‖Z - T‖ = ‖Z.hardThreshold ((R : ℝ) / Real.sqrt (n + 1 : ℕ))‖ :=
-        congrArg norm hZT
-      exact add_le_add (add_le_add_right h1.le _) hTB
+  filter_upwards [ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_zero (ξ := ξ) hd hη,
+    ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_centeredTruncation (η := fun _ _ ↦ 0)
+      hind hid hX hmean ha] with ω hdiag htrunc
+  refine squeeze_zero (fun n ↦ norm_nonneg _)
+    (fun n ↦ norm_sub_le_norm_sub_add_norm_sub _ (wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω) _) ?_
+  simpa only [add_zero] using hdiag.add htrunc
 
 end TauCeti.Probability

@@ -13,8 +13,9 @@ public import Mathlib.Probability.Independence.Basic
 # Bounded centered approximations in mean square
 
 `centeredTruncation X P R` keeps `X` on the closed norm ball of radius `R` and subtracts
-the integral of the truncated variable. On a probability space it is bounded by `2R` and,
-when `X` is almost everywhere strongly measurable, has every finite absolute moment.
+the integral of the truncated variable. It is a measurable function of `X`, so it preserves
+independence. On a probability space it is bounded by `2R`. On a finite measure space, when `X`
+is almost everywhere strongly measurable, it has every finite absolute moment.
 Its integral is zero when `P` is a probability measure, `X` is almost everywhere strongly
 measurable, and the target space is complete.
 For a centered square-integrable variable on a probability space with values in a complete
@@ -54,6 +55,16 @@ theorem centeredTruncation_def (R : ℝ≥0) :
     centeredTruncation X P R = fun ω ↦
       {ω | ‖X ω‖ ≤ R}.indicator X ω - ∫ ω, {ω | ‖X ω‖ ≤ R}.indicator X ω ∂P := (rfl)
 
+/-- Centered truncation is a measurable function of the original variable: truncation outside the
+closed ball of radius `R`, followed by subtraction of the truncated mean. -/
+theorem exists_measurable_comp_eq_centeredTruncation [MeasurableSpace E] [BorelSpace E]
+    (R : ℝ≥0) : ∃ g : E → E, Measurable g ∧ g ∘ X = centeredTruncation X P R :=
+  ⟨fun z ↦ {z | ‖z‖ ≤ R}.indicator id z - ∫ ω, {ω | ‖X ω‖ ≤ R}.indicator X ω ∂P,
+    (measurable_id.indicator_setOf_norm_le R).sub_const _, by
+      funext ω
+      simp only [Function.comp_apply, centeredTruncation_def, Set.indicator_apply,
+        Set.mem_ofPred_eq, id_eq]⟩
+
 variable {X P}
 
 /-- Truncation at radius zero is the zero variable. -/
@@ -79,6 +90,15 @@ theorem _root_.MeasureTheory.AEStronglyMeasurable.centeredTruncation
   (hX.indicator₀ (nullMeasurableSet_le hX.norm.aemeasurable aemeasurable_const)).sub
     aestronglyMeasurable_const
 
+/-- Every finite absolute moment of a centered truncation exists on a finite measure space. -/
+theorem _root_.MeasureTheory.AEStronglyMeasurable.memLp_centeredTruncation [IsFiniteMeasure P]
+    (hX : AEStronglyMeasurable X P) (R : ℝ≥0)
+    {p : ℝ≥0∞} : MemLp (centeredTruncation X P R) p P := by
+  rw [centeredTruncation_def]
+  exact ((memLp_const (R : ℝ)).mono'
+    (hX.indicator₀ (nullMeasurableSet_le hX.norm.aemeasurable aemeasurable_const))
+    (.of_forall (norm_indicator_setOf_norm_le_le X R.coe_nonneg))).sub (memLp_const _)
+
 variable [IsProbabilityMeasure P]
 
 /-- Centered truncation has norm at most twice the cutoff, including cutoff zero. -/
@@ -89,13 +109,6 @@ theorem norm_centeredTruncation_le (R : ℝ≥0) (ω : Ω) :
       add_le_add (norm_indicator_setOf_norm_le_le X R.coe_nonneg ω)
       (norm_integral_le_of_norm_le_const (μ := P) (f := {ω | ‖X ω‖ ≤ R}.indicator X)
         (.of_forall (norm_indicator_setOf_norm_le_le X R.coe_nonneg))))
-
-/-- Every finite absolute moment of a centered truncation exists. -/
-theorem _root_.MeasureTheory.AEStronglyMeasurable.memLp_centeredTruncation
-    (hX : AEStronglyMeasurable X P) (R : ℝ≥0)
-    {p : ℝ≥0∞} : MemLp (centeredTruncation X P R) p P :=
-  (memLp_const (2 * (R : ℝ))).mono' (hX.centeredTruncation R)
-    (.of_forall (norm_centeredTruncation_le R))
 
 variable [CompleteSpace E]
 
@@ -313,12 +326,7 @@ The cutoffs and coordinate laws may differ. -/
 theorem iIndepFun.centeredTruncation {ι : Type*} {X : ι → Ω → E}
     (h : iIndepFun X P) (R : ι → ℝ≥0) :
     iIndepFun (fun i ↦ centeredTruncation (X i) P (R i)) P := by
-  let g (i : ι) (z : E) := {z | ‖z‖ ≤ R i}.indicator id z -
-    ∫ ω, {ω | ‖X i ω‖ ≤ R i}.indicator (X i) ω ∂P
-  have hg (i : ι) : Measurable (g i) :=
-    (measurable_id.indicator_setOf_norm_le (R i)).sub_const _
-  simpa only [Function.comp_def, g, centeredTruncation_def, Set.indicator_apply,
-    Set.mem_ofPred_eq, id_eq]
-    using h.comp g hg
+  choose g hg hgX using fun i ↦ exists_measurable_comp_eq_centeredTruncation (X i) P (R i)
+  simpa only [hgX] using h.comp g hg
 
 end ProbabilityTheory
