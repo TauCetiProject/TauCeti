@@ -25,22 +25,23 @@ the `R`-submodule `I • M` of `B` lies in `B₀` only under a hypothesis such a
 element of `B₀` is integral over `R` (`Submodule.FG.isIntegral_of_mem_multiplierRing`), and so
 is every right multiplier `b`, with `M b ⊆ M` (`Submodule.FG.isIntegral_of_forall_mul_mem`).
 
-The last part of the file assumes that `B` is commutative. It compares `I • M` with the extension
-of `I` to `B₀` along the structure map `R → B₀`. These comparisons are how a lattice in a finite
-algebra over a Huber ring yields a pair of definition.
+The image of `R` is central in `B₀`, so the extension `J = I B₀` of an ideal `I` of `R` along the
+structure map `R → B₀` is a two-sided ideal whose powers are the extensions of the powers of `I`.
+The last part of the file compares `I • M` with `J`. These comparisons are how a lattice in a
+finite algebra over a Huber ring yields a pair of definition.
 
 ## Main results
 
 * `Submodule.toMultiplierRing`: the structure map `R → B₀`.
+* `Submodule.commute_toMultiplierRing`: the image of `R` in `B₀` is central.
 * `Submodule.smul_subset_multiplierRing`: if `I` carries `M * M` into `M`, then `I • M ⊆ B₀`.
 * `Submodule.FG.isIntegral_of_mem_multiplierRing`: if `M` is finitely generated and contains `1`,
   every element of `B₀` is integral over `R`.
 * `Submodule.FG.isIntegral_of_forall_mul_mem`: if `M` is finitely generated and contains `1`,
   every `b` with `M b ⊆ M` is integral over `R`.
-* `Submodule.coe_map_pow_subset`: if `B` is commutative and `1 ∈ M`, the powers of the extension
-  `J = I B₀` satisfy `Jⁿ ⊆ Iⁿ • M`.
-* `Submodule.smul_subset_coe_map_pow`: if `B` is commutative and `Iʲ • M ⊆ B₀`, then
-  `I^(n + j) • M ⊆ Jⁿ`.
+* `Submodule.coe_map_pow_subset`: if `1 ∈ M`, the powers of the extension `J = I B₀` satisfy
+  `Jⁿ ⊆ Iⁿ • M`.
+* `Submodule.smul_subset_coe_map_pow`: if `Iʲ • M ⊆ B₀`, then `I^(n + j) • M ⊆ Jⁿ`.
 -/
 
 public section
@@ -48,6 +49,38 @@ public section
 open scoped Pointwise
 
 namespace Submodule
+
+/-- The extension of an ideal along a ring map whose image is central is two-sided. -/
+private theorem isTwoSided_map_of_commute {R S : Type*} [Semiring R] [Semiring S] {f : R →+* S}
+    (hf : ∀ a y, Commute (f a) y) (I : Ideal R) : (I.map f).IsTwoSided where
+  mul_mem_of_left b hx := by
+    induction hx using Submodule.span_induction with
+    | mem x hx =>
+      obtain ⟨a, ha, rfl⟩ := hx
+      rw [(hf a b).eq]
+      exact Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem f ha)
+    | zero => rw [zero_mul]; exact Ideal.zero_mem _
+    | add x y _ _ hx hy => rw [add_mul]; exact Ideal.add_mem _ hx hy
+    | smul c x _ hx => rw [smul_eq_mul, mul_assoc]; exact Ideal.mul_mem_left _ _ hx
+
+/-- Extension of ideals along a ring map whose image is central commutes with powers. This is
+Mathlib's `Ideal.map_pow` without assuming the target commutative. -/
+private theorem map_pow_of_commute {R S : Type*} [Semiring R] [Semiring S] {f : R →+* S}
+    (hf : ∀ a y, Commute (f a) y) (I : Ideal R) (n : ℕ) : (I ^ n).map f = I.map f ^ n := by
+  induction n with
+  | zero =>
+    rw [Submodule.pow_zero, Submodule.pow_zero, Ideal.one_eq_top, Ideal.one_eq_top, Ideal.map_top]
+  | succ n ih =>
+    rw [Submodule.pow_succ, Submodule.pow_succ, ← ih]
+    refine le_antisymm (Ideal.map_le_iff_le_comap.mpr <| Ideal.mul_le.mpr fun r hr s hs ↦ ?_) ?_
+    · rw [Ideal.mem_comap, map_mul]
+      exact Ideal.mul_mem_mul (Ideal.mem_map_of_mem f hr) (Ideal.mem_map_of_mem f hs)
+    · -- The product of two spans is the span of the products, as the first factor is two-sided.
+      have : (Ideal.span (f '' (I ^ n : Ideal R))).IsTwoSided :=
+        isTwoSided_map_of_commute hf (I ^ n)
+      rw [Ideal.map, Ideal.map, Ideal.span_mul_span, Ideal.span_le]
+      rintro _ ⟨_, ⟨r, hr, rfl⟩, _, ⟨s, hs, rfl⟩, rfl⟩
+      simpa only [map_mul, SetLike.mem_coe] using Ideal.mem_map_of_mem f (Ideal.mul_mem_mul hr hs)
 
 variable {R : Type*} [CommRing R]
 
@@ -82,6 +115,13 @@ noncomputable def toMultiplierRing (M : Submodule R B) : R →+* M.toAddSubgroup
 theorem coe_toMultiplierRing (M : Submodule R B) (a : R) :
     (M.toMultiplierRing a : B) = algebraMap R B a := by
   rw [toMultiplierRing, RingHom.codRestrict_apply]
+
+/-- The image of the structure map `R → B₀` is central in the multiplier ring `B₀`. -/
+theorem commute_toMultiplierRing (M : Submodule R B) (a : R)
+    (x : M.toAddSubgroup.multiplierRing) : Commute (M.toMultiplierRing a) x :=
+  Subtype.ext <| by
+    rw [Subring.coe_mul, Subring.coe_mul, coe_toMultiplierRing]
+    exact Algebra.commutes a _
 
 /-- **The multiplier ring of a finitely generated submodule containing `1` is integral.** If `M`
 is a finitely generated `R`-submodule of an `R`-algebra `B` with `1 ∈ M`, every `b ∈ B` with
@@ -125,19 +165,13 @@ theorem FG.isIntegral_of_forall_mul_mem {M : Submodule R B} (hM : M.FG) (h1 : (1
   rw [← Polynomial.aeval_def, Polynomial.aeval_op_apply, MulOpposite.op_eq_zero_iff] at hpb
   exact ⟨p, hp, by rwa [← Polynomial.aeval_def]⟩
 
-end Ring
-
-section CommRing
-
-variable {B : Type*} [CommRing B] [Algebra R B]
-
 /-- The powers of the extension `J = I B₀` of an ideal `I` of `R` to the multiplier ring lie in
 `Iⁿ • M` when `1 ∈ M`. -/
 theorem coe_map_pow_subset {M : Submodule R B} (h1 : (1 : B) ∈ M) (I : Ideal R) (n : ℕ) :
     Subtype.val '' ((I.map M.toMultiplierRing ^ n : Ideal M.toAddSubgroup.multiplierRing) :
       Set M.toAddSubgroup.multiplierRing) ⊆ ((I ^ n • M : Submodule R B) : Set B) := by
   rintro _ ⟨x, hx, rfl⟩
-  rw [SetLike.mem_coe, ← Ideal.map_pow] at hx
+  rw [SetLike.mem_coe, ← map_pow_of_commute M.commute_toMultiplierRing] at hx
   induction hx using Submodule.span_induction with
   | mem y hy =>
     obtain ⟨a, ha, rfl⟩ := hy
@@ -164,12 +198,12 @@ theorem smul_subset_coe_map_pow {M : Submodule R B} {I : Ideal R} {j : ℕ}
   rw [pow_add, Submodule.mul_smul] at hx
   refine Submodule.smul_induction_on hx (fun a ha y hy ↦ ?_) ?_
   · refine ⟨M.toMultiplierRing a * ⟨y, hj hy⟩, ?_, ?_⟩
-    · rw [← Ideal.map_pow]
-      exact Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _ ha)
+    · rw [← map_pow_of_commute M.commute_toMultiplierRing, (M.commute_toMultiplierRing _ _).eq]
+      exact Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem _ ha)
     · rw [Subring.coe_mul, coe_toMultiplierRing, ← Algebra.smul_def]
   · rintro _ _ ⟨x, hx, rfl⟩ ⟨y, hy, rfl⟩
     exact ⟨x + y, Ideal.add_mem _ hx hy, rfl⟩
 
-end CommRing
+end Ring
 
 end Submodule
