@@ -201,7 +201,8 @@ private lemma shiftEval_mem_span {S : Set N} [Fintype S] {g : Finset (S → R[X]
   | mem κ hκ =>
     rcases le_or_gt m D with h | h
     · exact Submodule.subset_span ⟨(m, κ), ⟨h, hκ⟩, rfl⟩
-    · simp [shiftEval, iterate_divX_eq_zero_of_natDegree_lt ((hD κ hκ _).trans_lt h)]
+    · simp [shiftEval, iterate_divX_eq_zero_iff.2
+        ((degree_le_of_natDegree_le (hD κ hκ _)).trans_lt (WithBot.coe_lt_coe.2 h))]
   | zero => simp
   | add κ κ' _ _ h h' => rw [map_add]; exact add_mem (h m) (h' m)
   | smul c κ hκ h =>

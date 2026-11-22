@@ -36,7 +36,9 @@ map whose range contains the homogeneous projections of its elements, with
 
 A third group is about maps compatible with a decomposition. Two linear maps out of a finite
 product `P → M` agree as soon as they agree on the homogeneous single-coordinate functions
-`Pi.single x α`, `LinearMap.pi_ext_of_decomposition`.
+`Pi.single x α`, `LinearMap.pi_ext_of_decomposition`, and two additive maps out of `α →₀ M`
+agree as soon as they agree on the homogeneous singles `Finsupp.single x c`,
+`Finsupp.addHom_ext_of_decomposition`.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
 `DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types, and
@@ -365,6 +367,22 @@ theorem pi_ext_of_decomposition {R ι M N P : Type*} [Semiring R] [AddCommMonoid
   simpa using h x α.property
 
 end LinearMap
+
+namespace Finsupp
+
+/-- Two additive maps out of `α →₀ M` agree if they agree on `Finsupp.single x c` for every `x`
+and every `c` in a piece `ℳ i` of a decomposition of `M`. -/
+theorem addHom_ext_of_decomposition {ι α M N σ : Type*} [DecidableEq ι] [AddCommMonoid M]
+    [SetLike σ M] [AddSubmonoidClass σ M] (ℳ : ι → σ) [DirectSum.Decomposition ℳ]
+    [AddZeroClass N] {φ ψ : (α →₀ M) →+ N}
+    (h : ∀ x i (c : M), c ∈ ℳ i → φ (single x c) = ψ (single x c)) : φ = ψ :=
+  addHom_ext fun x c ↦ by
+    induction c using DirectSum.Decomposition.inductionOn ℳ with
+    | zero => simp
+    | @homogeneous i c => exact h x i c c.property
+    | add c c' hc hc' => rw [single_add, map_add, map_add, hc, hc']
+
+end Finsupp
 
 namespace DirectSum.IsInternal
 

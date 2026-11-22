@@ -69,6 +69,9 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMoment
   `isSubmersion_quotientMk_levelSubMulAction`: the reduced space `μ⁻¹(c) / G_c` is a smooth
   manifold and the orbit projection is a submersion.
 * `ker_mfderiv_quotientMk_levelSubMulAction`: the vertical directions of the orbit projection.
+* `contMDiffSMul_orbitRelQuotient`, `contMDiffConstSMul_orbitRelQuotient`: a smooth action on the
+  level commuting with `G_c`, or an action by smooth maps commuting with it, descends to one on the
+  reduced space.
 * `existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback`: **the Marsden–Weinstein–Meyer
   theorem**, the unique reduced symplectic form.
 * `finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator`: when the level is nonempty,
@@ -260,6 +263,43 @@ theorem isManifold_orbitRelQuotient :
   let := h.levelSubMulActionChartedSpace c hreg hn
   obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
   exact ProperSMul.instIsManifoldOrbitRelQuotient
+
+/-- **Commuting actions descend smoothly to the reduced space.** A smooth action of `L` on the
+regular level `μ⁻¹(c)` commuting with that of `G_c` induces a smooth action `l • [z] = [l • z]` on
+the reduced space `μ⁻¹(c) / G_c`. -/
+theorem contMDiffSMul_orbitRelQuotient {EL HL L : Type*} [NormedAddCommGroup EL]
+    [NormedSpace ℝ EL] [TopologicalSpace HL] {IL : ModelWithCorners ℝ EL HL} [IL.Boundaryless]
+    [TopologicalSpace L] [ChartedSpace HL L] [IsManifold IL ∞ L]
+    [SMul L (h.levelSubMulAction c)]
+    [SMulCommClass L ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] :
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    ContMDiffSMul IL 𝓘(ℝ, Fin n → ℝ) ∞ L (h.levelSubMulAction c) →
+      ContMDiffSMul IL 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ)) ∞ L
+        (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
+          (h.levelSubMulAction c)) := by
+  let := d.chartedSpace
+  let := h.levelSubMulActionChartedSpace c hreg hn
+  obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
+  intro
+  exact ProperSMul.contMDiffSMul_orbitRelQuotient le_rfl
+
+/-- **Commuting actions by smooth maps descend to the reduced space.** An action of `L` on the
+regular level `μ⁻¹(c)` by smooth maps commuting with that of `G_c` induces an action
+`l • [z] = [l • z]` on the reduced space `μ⁻¹(c) / G_c` by smooth maps. -/
+theorem contMDiffConstSMul_orbitRelQuotient {L : Type*} [SMul L (h.levelSubMulAction c)]
+    [SMulCommClass L ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] :
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    ContMDiffConstSMul 𝓘(ℝ, Fin n → ℝ) ∞ L (h.levelSubMulAction c) →
+      ContMDiffConstSMul 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ)) ∞ L
+        (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
+          (h.levelSubMulAction c)) := by
+  let := d.chartedSpace
+  let := h.levelSubMulActionChartedSpace c hreg hn
+  obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
+  intro
+  exact ProperSMul.contMDiffConstSMul_orbitRelQuotient le_rfl
 
 /-- **The orbit projection onto the reduced space is a smooth submersion.** -/
 theorem isSubmersion_quotientMk_levelSubMulAction :
