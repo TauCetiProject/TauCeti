@@ -117,8 +117,10 @@ private theorem baseChangeFromTensor_comp_toTensor
     baseChangeFromTensor.comp (baseChangeToTensorAux (A' := A') hAB).val = LinearMap.id := by
   have hA'B' := baseChange_isTopologicallyFiniteType (A' := A') hAB
   have : IsNoetherianType (CompletedTensor A B A') := .of_isTopologicallyFiniteType hA'B'
-  refine linearMap_ext_of_dense_adjoin hA'B' (CompletedTensor.dense_adjoin_range_inl A B A') ?_
-  rintro _ ⟨b, rfl⟩
+  have := isNoetherianType_of_isTopologicallyFiniteType (B := CompletedTensor A B A') hA'B'
+  refine LinearMap.ext_on
+    (span_image_D_eq_top (CompletedTensor.dense_adjoin_range_inl A B A')) ?_
+  rintro _ ⟨_, ⟨b, rfl⟩, rfl⟩
   simp [(baseChangeToTensorAux (A' := A') hAB).property, baseChangeFromTensor]
 
 /-- **Huber Proposition 1.6.3(iii) (Base change of continuous differentials)**: for `A → B`

@@ -131,8 +131,9 @@ theorem exact_mapBaseChange_mapTower_of_isTopologicallyFiniteType_comp
       map_one_eq_zero' := by simp, leibniz' _ _ := by simp [Derivation.leibniz] }
   have hδB : Continuous δB :=
     (IsModuleTopology.continuous_of_linearMap R.mkQ).comp (continuous_D hAC)
+  have := isNoetherianType_of_isTopologicallyFiniteType (B := C) hAC
   have hs : (liftOfFinite δB hδB).comp (mapTower A B C) = R.mkQ :=
-    linearMap_ext hAC fun c ↦ by simp; rfl
+    linearMap_ext fun c ↦ by simp; rfl
   intro ω hω
   have hq := (LinearMap.congr_fun hs ω).symm
   simp only [LinearMap.comp_apply, LinearMap.mem_ker.mp hω, map_zero] at hq
@@ -187,7 +188,8 @@ theorem mapBaseChange_surjective
     (hc : Continuous (algebraMap B C)) (hsurj : Function.Surjective (algebraMap B C))
     (hAC : IsTopologicallyFiniteType (algebraMap A C)) :
     Function.Surjective (mapBaseChange A B C hc) := by
-  rw [← LinearMap.range_eq_top, eq_top_iff, ← span_range_derivation hAC, Submodule.span_le]
+  have := isNoetherianType_of_isTopologicallyFiniteType (B := C) hAC
+  rw [← LinearMap.range_eq_top, eq_top_iff, ← span_range_D_eq_top, Submodule.span_le]
   rintro _ ⟨c, rfl⟩; obtain ⟨b, rfl⟩ := hsurj c; exact ⟨1 ⊗ₜ[B] D A B b, by simp⟩
 
 end MapBaseChangeSurjective

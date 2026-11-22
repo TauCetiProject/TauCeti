@@ -39,7 +39,9 @@ theorem hom_ext (h : IsTopologicallyFiniteType (algebraMap A B))
     {M : Type*} [AddCommGroup M] [TopologicalSpace M] [Module B M]
     {f₁ f₂ : ContinuousKaehlerDifferential A B →L[B] M}
     (heq : ∀ b, f₁ (D A B b) = f₂ (D A B b)) : f₁ = f₂ :=
-  ContinuousLinearMap.ext fun ω ↦ DFunLike.congr_fun (linearMap_ext h heq) ω
+  ContinuousLinearMap.ext fun ω ↦
+    have := CompletedTensor.isNoetherianType_of_isTopologicallyFiniteType (B := B) h
+    DFunLike.congr_fun (linearMap_ext heq) ω
 
 section UniversalEquiv
 
@@ -97,7 +99,9 @@ end UniversalEquiv
     {N : Type*} [AddCommGroup N] [Module A N] [Module B N] [IsScalarTower A B N]
     [Module.Finite B N] [TopologicalSpace N] [IsModuleTopology B N]
     (f : ContinuousKaehlerDifferential A B →ₗ[B] N) (hf : Continuous (f.compDer (D A B))) :
-    liftOfFinite (f.compDer (D A B)) hf = f := linearMap_ext h fun b ↦ liftOfFinite_D _ _ b
+    liftOfFinite (f.compDer (D A B)) hf = f :=
+  have := CompletedTensor.isNoetherianType_of_isTopologicallyFiniteType (B := B) h
+  linearMap_ext fun b ↦ liftOfFinite_D _ _ b
 
 end FiniteType
 
