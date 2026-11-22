@@ -343,12 +343,29 @@ theorem completionEmbedding_restrictConstants (P' : Place k' F') (x : F') :
     (P'.restrictConstants k).completionEmbedding x = P'.completionEmbedding x := by
   rw [completionEmbedding_apply, completionEmbedding_apply]
 
+/-- Restricting the constant field of `P'` commutes with `completionPlace` under the induced
+scalar tower `k → k' → P'.Completion`. -/
+@[simp]
+theorem completionPlace_restrictConstants (P' : Place k' F') :
+    letI := (P'.restrictConstants k).instAlgebraCompletion
+    haveI : @IsScalarTower k k' P'.Completion Algebra.toSMul P'.instAlgebraCompletion.toSMul
+        (P'.restrictConstants k).instAlgebraCompletion.toSMul :=
+      IsScalarTower.of_algebraMap_eq fun c ↦ by
+        change algebraMap k P'.Completion c = algebraMap k' P'.Completion (algebraMap k k' c)
+        rw [← (P'.restrictConstants k).completionEmbedding.commutes c,
+          ← P'.completionEmbedding.commutes (algebraMap k k' c),
+          completionEmbedding_restrictConstants, IsScalarTower.algebraMap_apply k k' F']
+    (P'.restrictConstants k).completionPlace =
+      @Place.restrictConstants k' P'.Completion _ _ P'.instAlgebraCompletion
+        k _ _ (P'.restrictConstants k).instAlgebraCompletion this P'.completionPlace := by
+  ext x
+  simp
+
 /-- Restricting the constant field of `P'` does not change the completed valuation ring
 `𝒪̂_{P'}`. -/
-@[simp]
 theorem integers_completionPlace_restrictConstants (P' : Place k' F') :
-    (P'.restrictConstants k).completionPlace.integers = P'.completionPlace.integers :=
-  SetLike.ext fun _ ↦ by simp
+    (P'.restrictConstants k).completionPlace.integers = P'.completionPlace.integers := by
+  simp
 
 variable [Algebra.IsIntegral F F']
 

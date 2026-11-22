@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.LocalDegree
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.ResidueExtension
 import Mathlib.FieldTheory.SeparableClosure
+import TauCeti.FieldTheory.FunctionField.Place.Completion.Adic
 
 /-!
 # Integral closure, separability, and local invariants of completed places
@@ -36,8 +38,11 @@ discrete valuation rings.
 
 The integral-closure identification parallels the affine-model theorem in
 `TauCeti/RingTheory/DedekindDomain/AdicValuation/IntegralClosure.lean`, and the separability
-transfer provides the intrinsic-place counterpart of
-`TauCeti/NumberTheory/NumberField/LocalGlobal/Separable.lean`.
+transfer (`TauCeti.Place.isSeparable_completion` in
+`TauCeti/FieldTheory/FunctionField/Place/Completion/LocalDegree.lean`) is the intrinsic-place
+counterpart of `IsDedekindDomain.HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable` in
+`TauCeti/RingTheory/DedekindDomain/AdicValuation/Semilocal.lean`, proved by the place proof's
+residue-basis and mapped-minimal-polynomial argument.
 
 ## Main definitions
 
@@ -48,6 +53,8 @@ transfer provides the intrinsic-place counterpart of
 
 * `TauCeti.Place.completionIntegersIntegralClosureHom_injective`: the canonical homomorphism
   `𝒪'_P →+* 𝒪̂_{P'}` is injective.
+* `TauCeti.Place.map_centerIntegralClosure_completionIntegers`: the centre of `P'` on `𝒪'_P`
+  generates the completed maximal ideal `𝔪̂_{P'}`.
 * `TauCeti.Place.isIntegralClosure_completionIntegers`: when the residue extension is finite,
   `𝒪̂_{P'}` is the integral closure of `𝒪̂_P` in `F̂_{P'}`.
 * `TauCeti.Place.isSeparable_completionEmbedding` and `TauCeti.Place.isSeparable_completion`:
@@ -128,40 +135,38 @@ theorem completionIntegersIntegralClosureHom_injective :
     simpa only [coe_completionIntegersIntegralClosureHom, AlgHom.toRingHom_eq_coe,
       RingHom.coe_coe] using congrArg Subtype.val h
 
-/-- An ideal `I` of `𝒪'_P` whose nonzero elements have `P'`-order at least `n`, and which contains
-a nonzero element of `P'`-order `n`, generates `𝔪̂_{P'} ^ n` in `𝒪̂_{P'}`. -/
-theorem map_completionIntegersIntegralClosureHom_eq_maximalIdeal_pow
-    {I : Ideal (integralClosure P.integers F')} {n : ℕ}
-    (hle : ∀ y ∈ I, y ≠ 0 → (n : ℤ) ≤ P'.ord (y : F'))
-    (hex : ∃ y ∈ I, y ≠ 0 ∧ P'.ord (y : F') = n) :
-    I.map (P.completionIntegersIntegralClosureHom P' hP) =
-      IsLocalRing.maximalIdeal P'.completionPlace.integers ^ n := by
-  refine le_antisymm (Ideal.map_le_iff_le_comap.mpr fun y hy ↦ ?_) fun z hz ↦ ?_
-  · rw [Ideal.mem_comap, P'.completionPlace.mem_maximalIdeal_pow_iff_coe_mem_filtration,
-      coe_completionIntegersIntegralClosureHom, P'.completionEmbedding_mem_filtration_iff]
-    rcases eq_or_ne y 0 with rfl | hy0
-    · simp
-    exact (P'.mem_filtration_iff_le_ord (by simpa using hy0)).mpr (hle y hy hy0)
-  · obtain ⟨y, hy, hy0, hord⟩ := hex
-    let yc := P.completionIntegersIntegralClosureHom P' hP y
-    have hyc0 : (yc : P'.Completion) ≠ 0 := by
-      rw [coe_completionIntegersIntegralClosureHom]
-      exact (_root_.map_ne_zero _).mpr (by simpa using hy0)
-    have hinv_ord : P'.completionPlace.ord (yc : P'.Completion)⁻¹ = -(n : ℤ) := by
-      rw [P'.completionPlace.ord_inv, coe_completionIntegersIntegralClosureHom,
-        ord_completionEmbedding, hord]
-    have hq_int : (yc : P'.Completion)⁻¹ * (z : P'.Completion) ∈ P'.completionPlace.integers :=
-      P'.completionPlace.mul_mem_integers_of_mem_filtration hinv_ord
-        ((P'.completionPlace.mem_maximalIdeal_pow_iff_coe_mem_filtration n z).mp hz)
-    have hz_eq : z = ⟨(yc : P'.Completion)⁻¹ * (z : P'.Completion), hq_int⟩ * yc :=
-      Subtype.ext (by rw [MulMemClass.coe_mul, mul_comm, mul_inv_cancel_left₀ hyc0])
-    exact hz_eq ▸ Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem _ hy)
-
-section FiniteResidue
-
-variable [FiniteDimensional (P'.restrict k F).ResidueField P'.ResidueField]
-
-end FiniteResidue
+variable (k F) in
+/-- **The centre of `P'` on `𝒪'_P` generates the completed maximal ideal `𝔪̂_{P'}`.** -/
+theorem map_centerIntegralClosure_completionIntegers
+    [FiniteDimensional F F'] [Algebra.IsSeparable F F'] (P' : Place k' F') :
+    (centerIntegralClosure k F P').asIdeal.map
+        ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl) =
+      maximalIdeal P'.completionPlace.integers := by
+  let w := centerIntegralClosure k F P'
+  have hw : P'.valuation = w.valuation F' :=
+    (P'.valuation_center _).symm.trans
+      (congrArg (IsDedekindDomain.HeightOneSpectrum.valuation F')
+        (centerIntegralClosure_def k F P').symm)
+  let eB := completionIntegersRingEquivAdicCompletionIntegersOfValuationEq k' F' w P' hw
+  have hcomp : eB.toRingHom.comp ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl) =
+      algebraMap (integralClosure (P'.restrict k F).integers F') (w.adicCompletionIntegers F') := by
+    ext b
+    rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+      completionIntegersRingEquivAdicCompletionIntegersOfValuationEq_apply,
+      coe_completionIntegersIntegralClosureHom,
+      completionEquivAdicCompletionOfValuationEq_completionEmbedding]
+    rfl
+  have hmap : ((w.asIdeal.map ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl)).map
+      eB.toRingHom) = (maximalIdeal P'.completionPlace.integers).map eB.toRingHom := by
+    rw [Ideal.map_map, hcomp, w.map_asIdeal_adicCompletionIntegers (K := F'),
+      RingEquiv.toRingHom_eq_coe, ← IsLocalRing.map_ringEquiv_maximalIdeal eB]
+    rfl
+  have hmap' := congrArg (Ideal.map eB.symm.toRingHom) hmap
+  rw [Ideal.map_map eB.toRingHom eB.symm.toRingHom,
+    Ideal.map_map eB.toRingHom eB.symm.toRingHom,
+    show eB.symm.toRingHom.comp eB.toRingHom = RingHom.id _ from by ext x; simp] at hmap'
+  simp only [Ideal.map_id] at hmap'
+  exact hmap'
 
 end General
 

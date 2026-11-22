@@ -533,27 +533,20 @@ theorem isSeparable_completion [Algebra.IsSeparable F F'] :
     letI := P.completionExtensionAlgebra P' hP
     Algebra.IsSeparable P.Completion P'.Completion := by
   let _ := P.completionExtensionAlgebra P' hP
-  obtain ⟨u, t, -, hsp, ht⟩ := exists_residue_basis (k := k) (F := F) P'
   have hcomp : (algebraMap P.Completion P'.Completion).comp P.completionEmbedding.toRingHom =
       P'.completionEmbedding.toRingHom.comp (algebraMap F F') :=
     RingHom.ext fun x ↦ by simp [P.algebraMap_completionExtensionAlgebra P' hP]
-  rw [← separableClosure.eq_top_iff, eq_top_iff]
-  have hsub : Submodule.span P.Completion (Set.range fun p :
-      Fin (relativeDegree k F P') × Fin (ramificationIdx F P') ↦
-        P'.completionEmbedding ((u p.1 : F') * (t : F') ^ (p.2 : ℕ))) ≤
-      (separableClosure P.Completion P'.Completion).toSubalgebra.toSubmodule := by
-    refine Submodule.span_le.mpr ?_
-    rintro _ ⟨p, rfl⟩
-    dsimp only
-    set y : F' := (u p.1 : F') * (t : F') ^ (p.2 : ℕ)
-    have haeval : Polynomial.aeval (P'.completionEmbedding.toRingHom y)
-        ((minpoly F y).map P.completionEmbedding.toRingHom) = 0 := by
-      rw [Polynomial.aeval_def, Polynomial.eval₂_map, hcomp, ← Polynomial.hom_eval₂,
-        ← Polynomial.aeval_def, minpoly.aeval, map_zero]
-    exact mem_separableClosure_iff.mpr <|
-      (Polynomial.Separable.map (Algebra.IsSeparable.isSeparable F y)).of_dvd
-        (minpoly.dvd P.Completion _ haeval)
-  exact fun z _ ↦ hsub (span_completion_eq_top P P' hP u hsp ht ▸ Submodule.mem_top)
+  rw [← AlgEquiv.Algebra.isSeparable_iff <|
+      (IntermediateField.equivOfEq (P.adjoin_range_completionEmbedding_eq_top P' hP)).trans
+        IntermediateField.topEquiv,
+    IntermediateField.isSeparable_adjoin_iff_isSeparable]
+  rintro _ ⟨y, rfl⟩
+  have haeval : Polynomial.aeval (P'.completionEmbedding.toRingHom y)
+      ((minpoly F y).map P.completionEmbedding.toRingHom) = 0 := by
+    rw [Polynomial.aeval_def, Polynomial.eval₂_map, hcomp, ← Polynomial.hom_eval₂,
+      ← Polynomial.aeval_def, minpoly.aeval, map_zero]
+  exact (Polynomial.Separable.map (Algebra.IsSeparable.isSeparable F y)).of_dvd
+    (minpoly.dvd P.Completion _ haeval)
 
 end Degree
 

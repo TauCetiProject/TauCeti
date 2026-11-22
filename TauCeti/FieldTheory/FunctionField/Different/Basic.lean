@@ -43,18 +43,11 @@ fields, and nothing needs `k` perfect.
 
 ## Main definitions
 
-* `TauCeti.Place.centerIntegralClosure`: the centre of `P'` on the local model `𝒪'_P`.
 * `TauCeti.Place.differentExponent`: the different exponent `d(P' ∣ P)` (Stichtenoth,
   Definition 3.4.3).
 
 ## Main results
 
-* `TauCeti.Place.centerIntegralClosure_liesOver_maximalIdeal`: the centre of `P'` on the local
-  model lies over the maximal ideal of `𝒪_P` (identified with the centre of `P` on `𝒪_P` by
-  `TauCeti.Place.center_integers_asIdeal`), so the residue extension the different exponent reads
-  is the residue-field extension of the two places.
-* `TauCeti.Place.exists_mem_centerIntegralClosure_ord_eq_one`: the centre of `P'` on `𝒪'_P`
-  contains a local uniformizer of `P'`.
 * `TauCeti.Place.pow_dvd_differentIdeal_iff_le_differentExponent`: the characteristic property of
   the different exponent, `𝔓'^n ∣ differentIdeal 𝒪_P 𝒪'_P ↔ n ≤ d(P' ∣ P)`.
 * `TauCeti.Place.ramificationIdx_le_differentExponent_add_one`: **Dedekind's different theorem**
@@ -174,43 +167,6 @@ attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExte
 
 variable [Algebra.IsSeparable F F']
 
-/-- **The centre of `P'` on the local model `𝒪'_P`**: the height one prime of the integral closure
-of `𝒪_P` in `F'` consisting of the functions that vanish at `P'`. -/
-noncomputable def centerIntegralClosure :
-    HeightOneSpectrum (integralClosure ((P'.restrict k F).integers) F') :=
-  P'.center (algebraMap_mem_integers_of_mem_integralClosure k F P')
-
-theorem centerIntegralClosure_def : centerIntegralClosure k F P' =
-    P'.center (algebraMap_mem_integers_of_mem_integralClosure k F P') := (rfl)
-
-/-- The centre of `P'` on the local model lies over the maximal ideal of `𝒪_P`, so the residue
-extension of the local model is read at the residue field of `P`. -/
-instance centerIntegralClosure_liesOver_maximalIdeal :
-    (centerIntegralClosure k F P').asIdeal.LiesOver
-      (IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) := by
-  rw [← (P'.restrict k F).center_integers_asIdeal fun c ↦ c.property, centerIntegralClosure_def]
-  exact center_liesOver k F P' _
-
-/-- The centre of `P'` on `𝒪'_P` contains a nonzero element of `P'`-order `1`. -/
-theorem exists_mem_centerIntegralClosure_ord_eq_one :
-    ∃ π ∈ (centerIntegralClosure k F P').asIdeal,
-      π ≠ 0 ∧ P'.ord (π : F') = 1 := by
-  obtain ⟨π, hπ⟩ := (centerIntegralClosure k F P').intValuation_exists_uniformizer
-  have hπ0 : π ≠ 0 := by
-    rintro rfl
-    rw [map_zero] at hπ
-    exact WithZero.coe_ne_zero hπ.symm
-  have hπ0' : (π : F') ≠ 0 := by simpa using hπ0
-  have hval : P'.valuation (π : F') = WithZero.exp (-1 : ℤ) := by
-    rw [← Subalgebra.algebraMap_apply,
-      ← P'.valuation_center (algebraMap_mem_integers_of_mem_integralClosure k F P'),
-      ← centerIntegralClosure_def, HeightOneSpectrum.valuation_of_algebraMap, hπ]
-  have hmem : π ∈ (centerIntegralClosure k F P').asIdeal := by
-    rw [centerIntegralClosure_def, mem_center_asIdeal, Subalgebra.algebraMap_apply, hval,
-      ← WithZero.exp_zero, WithZero.exp_lt_exp]
-    omega
-  exact ⟨π, hmem, hπ0, (P'.ord_eq_iff_valuation_eq_exp_neg hπ0').mpr hval⟩
-
 /-- **The different exponent `d(P' ∣ P)`** of a place `P'` of `F' / k'` over the place
 `P = P'.restrict k F` of `F / k` (Stichtenoth, Definition 3.4.3), for `F' / F` finite and
 separable: the multiplicity with which the centre of `P'` on the local model `𝒪'_P` divides the
@@ -296,7 +252,9 @@ theorem differentExponent_eq_zero_iff_formallyUnramified :
   let eB : HeightOneSpectrum.valuationSubringAtPrime F' q ≃ₐ[B] P'.integers :=
     AlgEquiv.ofRingEquiv
       (f := RingEquiv.subringCongr
-        (congrArg ValuationSubring.toSubring (P'.valuationSubringAtPrime_eq_integers hB)))
+        (congrArg ValuationSubring.toSubring
+          ((congrArg (HeightOneSpectrum.valuationSubringAtPrime F')
+            (centerIntegralClosure_def k F P')).trans (P'.valuationSubringAtPrime_eq_integers hB))))
       fun _ ↦ rfl
   have : IsLocalization q.asIdeal.primeCompl P'.integers :=
     IsLocalization.isLocalization_of_algEquiv q.asIdeal.primeCompl eB

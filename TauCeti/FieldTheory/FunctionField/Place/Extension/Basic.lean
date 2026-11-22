@@ -50,10 +50,9 @@ to the canonical fraction fields used by Mathlib's different API.
 
 * `TauCeti.Place.constantsEquiv`: the places of `F' / k` are the places of `F' / k'`, for `k'`
   integral over `k`; enlarging the constants by an algebraic extension changes nothing.
-* `TauCeti.Place.algebraIntegersExtension`, `TauCeti.Place.isScalarTowerIntegersExtension`, and
-  `TauCeti.Place.isScalarTower_constants_integersExtension`: the action of the valuation ring of a
-  place of `F / k` on an `F`-algebra `F'` and its scalar towers, to be installed with
-  `attribute [local instance 10]`.
+* `TauCeti.Place.algebraIntegersExtension` and `TauCeti.Place.isScalarTowerIntegersExtension`: the
+  action of the valuation ring of a place of `F / k` on an `F`-algebra `F'`, to be installed
+  with `attribute [local instance 10]`.
 * `TauCeti.Place.algebraConstantsIntegralClosure` and
   `TauCeti.Place.isScalarTower_constants_integralClosure`: the action of an integral constant
   extension `k'` on the local integral closure `𝒪'_P`, to be installed locally when needed.
@@ -187,12 +186,6 @@ theorem isScalarTowerIntegersExtension : IsScalarTower (P.integers) F F' :=
 
 attribute [local instance 10] isScalarTowerIntegersExtension
 
-/-- The constant-field action on `F'` factors through `TauCeti.Place.algebraIntegersExtension`. -/
-theorem isScalarTower_constants_integersExtension [Algebra k F'] [IsScalarTower k F F'] :
-    IsScalarTower k (P.integers) F' := .of_algebraMap_eq fun c ↦ by
-  rw [IsScalarTower.algebraMap_apply (P.integers) F F',
-    ← IsScalarTower.algebraMap_apply k (P.integers) F, ← IsScalarTower.algebraMap_apply k F F']
-
 /-- An `F`-algebra is torsion-free over the valuation ring of a place of `F / k`. -/
 instance isTorsionFree_integersExtension : Module.IsTorsionFree (P.integers) F' :=
   Module.IsTorsionFree.trans F
@@ -300,6 +293,7 @@ abbrev restrictConstants (k : Type u) [Field k] [Algebra k k'] [Algebra k F']
     rw [IsScalarTower.algebraMap_apply k k' F']
     exact Q.isTrivialOn.eq_one _ fun h ↦ hc ((algebraMap k k').injective (by rw [h, map_zero]))⟩
 
+@[simp]
 theorem valuation_restrictConstants (Q : Place k' F') :
     (Q.restrictConstants k).valuation = Q.valuation := rfl
 
@@ -344,13 +338,6 @@ theorem valuation_constantsEquiv (Q : Place k F') :
 theorem integers_constantsEquiv (Q : Place k F') :
     (constantsEquiv k k' F' Q).integers = Q.integers :=
   SetLike.ext fun x ↦ by rw [mem_integers_iff, mem_integers_iff, valuation_constantsEquiv]
-
-theorem valuation_constantsEquiv_symm (Q : Place k' F') :
-    ((constantsEquiv k k' F').symm Q).valuation = Q.valuation := (rfl)
-
-theorem integers_constantsEquiv_symm (Q : Place k' F') :
-    ((constantsEquiv k k' F').symm Q).integers = Q.integers :=
-  SetLike.ext fun x ↦ by rw [mem_integers_iff, mem_integers_iff, valuation_constantsEquiv_symm]
 
 end Constants
 

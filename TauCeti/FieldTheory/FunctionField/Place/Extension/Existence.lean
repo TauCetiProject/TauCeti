@@ -120,7 +120,7 @@ theorem ramificationIdxIn_pos (hF' : IsFunctionField k' F') {P : Place k F} :
     0 < P.ramificationIdxIn F' := by
   obtain ⟨Q', hQ'⟩ := restrict_surjective hF' P
   have hQ : ((constantsEquiv k k' F').symm Q').restrict k F = P := by
-    rw [restrict_eq_iff_integers_le, integers_constantsEquiv_symm]
+    rw [restrict_eq_iff_integers_le, constantsEquiv_symm_apply, integers_restrictConstants Q']
     exact (restrict_eq_iff_integers_le k F Q' P).mp hQ'
   rw [ramificationIdxIn_of_exists ⟨_, hQ⟩]
   exact ramificationIdx_pos F _

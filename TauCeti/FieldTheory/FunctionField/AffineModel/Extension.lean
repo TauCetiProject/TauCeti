@@ -37,6 +37,7 @@ device.
 
 ## Main definitions
 
+* `TauCeti.Place.centerIntegralClosure`: the centre of `P'` on the local model `𝒪'_P`.
 * `TauCeti.Place.restrictOfPrimeEquivPrimesOver`: the places of `F' / k'` lying over the place of a
   height one prime `𝔭` of `R` are exactly the primes of `S` lying over `𝔭`.
 
@@ -44,6 +45,8 @@ device.
 
 * `TauCeti.Place.center_liesOver`: the centre on `S` of a place of `F' / k'` finite on `S` lies
   over the centre on `R` of its restriction to `F`.
+* `TauCeti.Place.centerIntegralClosure_liesOver_maximalIdeal`: the centre of `P'` on the local
+  model `𝒪'_P` lies over the maximal ideal of `𝒪_P`.
 * `TauCeti.Place.ramificationIdx_eq_ramificationIdx_center` and
   `TauCeti.Place.relativeDegree_eq_inertiaDeg_center`: the two bridge lemmas
   `e(P' ∣ P) = Ideal.ramificationIdx` and `f(P' ∣ P) = Ideal.inertiaDeg`, with
@@ -188,6 +191,31 @@ end Dedekind
 end FiniteOnModel
 
 end Restrict
+
+section CenterIntegralClosure
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+variable (k F) (P' : Place k' F') [FiniteDimensional F F']
+
+/-- **The centre of `P'` on the local model `𝒪'_P`**: the height one prime of the integral closure
+of `𝒪_P` in `F'` consisting of the functions that vanish at `P'`. -/
+noncomputable def centerIntegralClosure :
+    HeightOneSpectrum (integralClosure ((P'.restrict k F).integers) F') :=
+  P'.center (algebraMap_mem_integers_of_mem_integralClosure k F P')
+
+theorem centerIntegralClosure_def : centerIntegralClosure k F P' =
+    P'.center (algebraMap_mem_integers_of_mem_integralClosure k F P') := (rfl)
+
+/-- The centre of `P'` on the local model lies over the maximal ideal of `𝒪_P`, so the residue
+extension of the local model is read at the residue field of `P`. -/
+instance centerIntegralClosure_liesOver_maximalIdeal :
+    (centerIntegralClosure k F P').asIdeal.LiesOver
+      (IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) := by
+  rw [← (P'.restrict k F).center_integers_asIdeal fun c ↦ c.property, centerIntegralClosure_def]
+  exact center_liesOver k F P' _
+
+end CenterIntegralClosure
 
 section FiniteExtension
 
