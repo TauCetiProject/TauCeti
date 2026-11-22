@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Inverse
 
 import TauCeti.Data.SignType.Basic
-import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.UnitCompatibility
 
 /-!
 # The archimedean value of a presentation

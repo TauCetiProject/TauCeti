@@ -47,6 +47,8 @@ a `FiniteOrderInfinityType`: signs at the real places and nothing else.
 
 * `TauCeti.GlobalNumberFields.HeckeCharacter.infinityType_eq_iff`: the infinity type is the
   unique continuous infinity type whose parameters describe every real and complex component.
+* `HeckeCharacter.prod_infiniteComponent_mul_ofFiniteIdele_unitEmbedding`:
+  product formula for a Hecke character on a principal idele.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.infiniteComponent_neg_one_eq_one_iff`: a Hecke
   character is trivial on the sign `-1` at a real place exactly when its real parity there is zero.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.infinityType_mul`: multiplying Hecke characters adds
@@ -132,6 +134,25 @@ theorem infiniteComponent_pow (χ : HeckeCharacter K) (n : ℕ) (w : InfinitePla
   induction n with
   | zero => simp
   | succ n ih => simp [pow_succ, ih]
+
+/-- **Product formula for a Hecke character on a principal idele.** For `x : Kˣ`, the product of
+the infinite components of `χ` at `x` times `χ` evaluated on the diagonal finite idele of `x` is
+`1`. -/
+theorem prod_infiniteComponent_mul_ofFiniteIdele_unitEmbedding (χ : HeckeCharacter K) (x : Kˣ) :
+    (∏ w : InfinitePlace K,
+        χ.infiniteComponent w (Units.map (algebraMap K w.Completion).toMonoidHom x)) *
+      χ (QuotientGroup.mk
+        (IdeleGroup.ofFiniteIdele (𝓞 K) K
+          (IsDedekindDomain.FiniteAdeleRing.unitEmbedding (𝓞 K) K x))) = 1 := by
+  have hprincipal :
+      (QuotientGroup.mk (IdeleGroup.unitEmbedding (𝓞 K) K x) : IdeleClassGroup (𝓞 K) K) = 1 :=
+    (QuotientGroup.eq_one_iff _).mpr ⟨x, rfl⟩
+  have hsplit := congrArg (fun z : IdeleGroup (𝓞 K) K ↦ χ (QuotientGroup.mk z))
+    (IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele (IdeleGroup.unitEmbedding (𝓞 K) K x))
+  rw [QuotientGroup.mk_mul, map_mul, hprincipal, map_one,
+    QuotientGroup.mk_prod, map_prod, IdeleGroup.toFiniteIdele_unitEmbedding] at hsplit
+  simpa only [infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply,
+    InfinitePlace.ideleInfiniteCoord_unitEmbedding] using hsplit
 
 /-- The **component of a Hecke character at a real place `w`**, as a character of `ℝˣ`: the
 component at `w` transported along the isomorphism `ℝ ≃ K_w` inverse to the real extension

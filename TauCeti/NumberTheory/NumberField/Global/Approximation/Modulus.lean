@@ -102,18 +102,20 @@ theorem exists_primeToSubgroup_approx_localUnit {𝔪 : Modulus K} {v₀ : Heigh
         rw [map_one]
         exact (hother v hv' heq).trans (hvpos v hv')
       rw [Valuation.map_eq_of_sub_lt _ hlt, map_one]
-  refine ⟨⟨x, hx_mem⟩,
-    v₀.mul_inv_mem_unitFiltration_of_sub_lt hz_mem.1 (by simpa using hxz),
+  have hxz_filt :
+      Units.map (algebraMap K (v₀.adicCompletion K)).toMonoidHom x * z⁻¹ ∈
+        TauCeti.unitFiltration (v₀.adicCompletion K) (𝔪.exponent v₀) :=
+    v₀.mul_inv_mem_unitFiltration_of_sub_lt hz_mem.1 (by simpa using hxz)
+  refine ⟨⟨x, hx_mem⟩, hxz_filt,
     fun v hv hne ↦ (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔪.exponent v) x).mpr
       ⟨mem_primeToSubgroup.mp hx_mem v ((𝔪.mem_support_iff v).mp hv), (hother v hv hne).le⟩,
     ?_⟩
-  have hle : WithZero.exp (-(𝔪.exponent v₀ : ℤ)) ≤ WithZero.exp (-(k : ℤ)) :=
-    WithZero.exp_le_exp.mpr (by omega)
-  have hsub : Valued.v (algebraMap K (v₀.adicCompletion K) (x : K) - 1) ≤
-      WithZero.exp (-(k : ℤ)) :=
-    (valued_sub_le_max _ (z : v₀.adicCompletion K) 1).trans
-      (max_le (hxz.le.trans hle) hz_mem.2)
-  simpa only [← map_one (algebraMap K (v₀.adicCompletion K)), ← map_sub,
-    valued_algebraMap_adicCompletion] using hsub
+  have hx_filt :
+      Units.map (algebraMap K (v₀.adicCompletion K)).toMonoidHom x ∈
+        TauCeti.unitFiltration (v₀.adicCompletion K) k := by
+    simpa only [inv_mul_cancel_right] using
+      (TauCeti.unitFiltration (v₀.adicCompletion K) k).mul_mem
+        (TauCeti.unitFiltration_antitone hk hxz_filt) hz
+  exact ((v₀.unitsMap_algebraMap_mem_unitFiltration_iff k x).mp hx_filt).2
 
 end TauCeti.GlobalNumberFields

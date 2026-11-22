@@ -8,12 +8,10 @@ module
 public import Mathlib.NumberTheory.MulChar.Lemmas
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.ArchimedeanValue
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
 
 import TauCeti.NumberTheory.MulChar.Lemmas
 import TauCeti.NumberTheory.MulChar.Real
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Modulus
-import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Ideal.Quotient.Representative
 
@@ -41,8 +39,9 @@ monomial alone, the odd character `χ₄` modulo `4∞` of `ℚ`, of exponent `0
 function `a ↦ χ₄(|a|)` on `ℤ`, which is `1` at `-1` and `-1` at `3`, so does not even factor
 through the residues modulo `4`.
 
-The point of the correction is that `χ_f` only sees residues modulo the finite part `𝔪₀` of `𝔪`.
-On the fractions prime to `𝔪₀` (the subgroup `primeToSubgroup 𝔪` of `Kˣ`), the finite character
+The point of the correction is that on `primeToSubgroup 𝔪` and on **nonzero** algebraic integers,
+`χ_f` only depends on the residue class modulo the finite part `𝔪₀` of `𝔪`. On the fractions prime
+to `𝔪₀` (the subgroup `primeToSubgroup 𝔪` of `Kˣ`), the finite character
 `Grossencharacter.finiteCharacterK` is the ideal character of the presented Hecke character at
 `(x)` times `χ_∞(x)`, which also equals the inverse product of the local finite components at
 `𝔪.support` (`finiteCharacterK_eq_prod_finiteComponent_inv`). An `x ≡ 1 mod 𝔪₀` is congruent to `1`
@@ -58,13 +57,14 @@ integers, `Grossencharacter.finiteCharacter` is the coefficient that the twisted
 attaches to a lattice point: it is `0` exactly at the integers not prime to `𝔪` (`0` included),
 and the residue character at the class of every nonzero integer
 (`Grossencharacter.finiteCharacter_eq_residueCharacter`), which pins the residue character down
-(`Grossencharacter.existsUnique_residueCharacter`). On `K`, `Grossencharacter.finiteCharacterK'`
-extends `Grossencharacter.finiteCharacterK` by zero off `primeToSubgroup 𝔪` and restricts to
-`Grossencharacter.finiteCharacter` on algebraic integers.
+(`Grossencharacter.existsUnique_residueCharacter`). Separately, `Grossencharacter.finiteCharacterK'`
+is the coefficient function `K → ℂ` extending `Grossencharacter.finiteCharacterK` by `0` outside
+`primeToSubgroup 𝔪` (and at `0`), restricting to `Grossencharacter.finiteCharacter` on `𝓞 K`.
 
 The coefficient and the residue character must be kept apart at `0`. When `𝔪₀ = 𝓞 K`, the residue
 ring has one element, a unit, at which the residue character is `1`, while the coefficient at the
-integer `0` is `0`. Accordingly the comparison is stated for nonzero integers only.
+integer `0` is `0`. Accordingly residue invariance fails at `0` for the unit finite modulus, and
+the comparison is stated for nonzero algebraic integers only.
 
 ## Main definitions
 
@@ -72,8 +72,9 @@ integer `0` is `0`. Accordingly the comparison is stated for nonzero integers on
   prime to `𝔪`.
 * `TauCeti.LFunctions.Grossencharacter.residueCharacter`: the induced character of `𝓞 K ⧸ 𝔪₀`.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacter`: the finite character on `𝓞 K`.
-* `TauCeti.LFunctions.Grossencharacter.finiteCharacterK'`: the extension of `finiteCharacterK` by
-  `0` off `primeToSubgroup 𝔪` to all of `K`, restricting to `finiteCharacter` on `𝓞 K`.
+* `TauCeti.LFunctions.Grossencharacter.finiteCharacterK'`: the coefficient function `K → ℂ`
+  extending `finiteCharacterK` by `0` off `primeToSubgroup 𝔪` and restricting to `finiteCharacter`
+  on `𝓞 K`.
 
 ## Main results
 
@@ -175,25 +176,17 @@ theorem finiteCharacterK_eq_prod_finiteComponent_inv (χ : Grossencharacter K �
   have h𝔣 : 𝔣 ∣ 𝔪 := χ.mk_finiteConductor_dvd
   have hx𝔣 : (x : Kˣ) ∈ primeToSubgroup 𝔣 :=
     primeToSubgroup_le_of_dvd (Modulus.dvd_iff.mp h𝔣).1 x.property
-  have hxideal : toPrincipalIdeal (𝓞 K) K (x : Kˣ) ∈ idealsPrimeTo 𝔣 :=
-    NumberFieldArithmetic.toPrincipalIdeal_mem_idealsAway_iff.mpr hx𝔣
-  let y : finiteIdelesAway K 𝔣.support := ⟨unitEmbedding (𝓞 K) K (x : Kˣ), by
-    rw [mem_finiteIdelesAway_iff]
-    exact (toFractionalIdeal_mem_idealsAway_iff 𝔣.support _).mp
-      ((toFractionalIdeal_unitEmbedding (R := 𝓞 K) (x : Kˣ)).symm ▸ hxideal)⟩
-  have hyideal : toIdealsAway K 𝔣.support y =
-      NumberFieldArithmetic.idealsAwayInclusion K (Modulus.support_mono h𝔣)
-        (NumberFieldArithmetic.principalIdealAway K 𝔪.support x) := by
-    apply Subtype.ext
-    rw [coe_toIdealsAway, toFractionalIdeal_unitEmbedding,
-      NumberFieldArithmetic.coe_idealsAwayInclusion,
-      NumberFieldArithmetic.coe_principalIdealAway]
-  have hsplit := ψ.prod_infiniteComponent_mul_ofFiniteIdele_unitEmbedding (x : Kˣ)
-  rw [← χ.archimedeanValue_apply (x : Kˣ)] at hsplit
-  have hprod_eq := χ.prod_finiteComponent_eq_finiteConductor_support x
-  rw [finiteCharacterK_apply, ← hyideal, ψ.idealCharacter_apply_toIdealsAway y]
-  simp only [y, HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_unitEmbedding]
-  rw [← hprod_eq, mul_right_comm, mul_comm (ψ _), hsplit, one_mul]
+  have harg : NumberFieldArithmetic.idealsAwayInclusion K (Modulus.support_mono h𝔣)
+        (NumberFieldArithmetic.principalIdealAway K 𝔪.support x) =
+      ⟨toPrincipalIdeal (𝓞 K) K (x : Kˣ),
+        NumberFieldArithmetic.toPrincipalIdeal_mem_idealsAway_iff.mpr hx𝔣⟩ :=
+    Subtype.ext (by
+      rw [NumberFieldArithmetic.coe_idealsAwayInclusion,
+        NumberFieldArithmetic.coe_principalIdealAway])
+  rw [finiteCharacterK_apply, harg,
+    ψ.idealCharacter_apply_toPrincipalIdeal_of_mem_primeToSubgroup (x : Kˣ) hx𝔣,
+    archimedeanValue_apply, ← χ.prod_finiteComponent_eq_finiteConductor_support x,
+    mul_right_comm, inv_mul_cancel, one_mul]
 
 /-- **The finite character is trivial on the fractions congruent to `1` modulo `𝔪₀`**, with no
 condition at the real places. Such an `x` is congruent to `1` modulo the finite conductor, where
@@ -358,14 +351,27 @@ theorem residueCharacter_comp_finiteUnitsMap {𝔫 : Modulus K} {χ : Grossencha
 
 /-! ### Finite-conductor characterization and primitivity -/
 
-private theorem factor_residueHom_eq_one_iff {𝔪 𝔫 : Modulus K}
+private theorem factor_residueHom_eq_one_iff_forall_mem_unitFiltration {𝔪 𝔫 : Modulus K}
     (hdvd : 𝔫.finitePart ∣ 𝔪.finitePart) (x : primeToSubgroup 𝔪) :
     Ideal.Quotient.factor (Ideal.le_of_dvd hdvd)
         ((residueHom 𝔪 x : (𝓞 K ⧸ 𝔪.finitePart)ˣ) : 𝓞 K ⧸ 𝔪.finitePart) = 1 ↔
-      residue 𝔫 (Subgroup.inclusion (primeToSubgroup_le_of_dvd hdvd) x) = 1 := by
+      ∀ v ∈ 𝔪.support,
+        Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ) ∈
+          TauCeti.unitFiltration (v.adicCompletion K) (𝔫.exponent v) := by
   have hf := congrArg Units.val (finiteUnitsMap_residueHom hdvd x)
   rw [coe_finiteUnitsMap, coe_residueHom, coe_residueHom] at hf
-  rw [coe_residueHom, hf]
+  rw [coe_residueHom, hf, residue_eq_one_iff]
+  refine ⟨fun h v hv ↦ ?_, fun h v hvI ↦ ?_⟩
+  · have hx_unit : v.valuation K ((x : Kˣ) : K) = 1 :=
+      mem_primeToSubgroup.mp x.property v ((𝔪.mem_support_iff v).mp hv)
+    by_cases hvI : v.asIdeal ∣ 𝔫.finitePart
+    · exact (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔫.exponent v) (x : Kˣ)).mpr
+        ⟨hx_unit, h v hvI⟩
+    · rw [Modulus.exponent_eq_zero_of_not_mem_support ((𝔫.mem_support_iff v).not.mpr hvI)]
+      exact (v.unitsMap_algebraMap_mem_unitFiltration_zero_iff (x : Kˣ)).mpr hx_unit
+  · have hv𝔪 : v ∈ 𝔪.support := (𝔪.mem_support_iff v).mpr (hvI.trans hdvd)
+    exact ((v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔫.exponent v) (x : Kˣ)).mp
+      (h v hv𝔪)).2
 
 /-- Forward direction of `finiteConductor_dvd_iff_residueCharacter_eq_one`. -/
 private theorem residueCharacter_eq_one_of_finiteConductor_dvd (χ : Grossencharacter K 𝔪)
@@ -375,23 +381,16 @@ private theorem residueCharacter_eq_one_of_finiteConductor_dvd (χ : Grossenchar
     (hu : Ideal.Quotient.factor (Ideal.le_of_dvd hdvd) (u : 𝓞 K ⧸ 𝔪.finitePart) = 1) :
     χ.residueCharacter u = 1 := by
   obtain ⟨x, rfl⟩ := residueHom_surjective 𝔪 u
-  have hval := (residue_eq_one_iff (Subgroup.inclusion (primeToSubgroup_le_of_dvd hdvd) x)).mp
-    ((factor_residueHom_eq_one_iff hdvd x).mp hu)
+  have hmem := (factor_residueHom_eq_one_iff_forall_mem_unitFiltration hdvd x).mp hu
   rw [coe_residueHom, χ.residueCharacter_residue x,
     χ.finiteCharacterK_eq_prod_finiteComponent_inv x]
   have hprod : (∏ v ∈ 𝔪.support,
       χ.toHeckeCharacter.finiteComponent v
-        (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ))) = 1 := by
-    refine Finset.prod_eq_one fun v hv ↦ ?_
-    have hexp := (χ.toHeckeCharacter.finiteConductor_dvd_finitePart_iff 𝔫).mp hcond v
-    refine χ.toHeckeCharacter.finiteComponent_eq_one_of_mem_unitFiltration
-      (TauCeti.unitFiltration_antitone hexp ?_)
-    by_cases hvI : v.asIdeal ∣ 𝔫.finitePart
-    · exact (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔫.exponent v) (x : Kˣ)).mpr
-        ⟨mem_primeToSubgroup.mp x.property v ((𝔪.mem_support_iff v).mp hv), hval v hvI⟩
-    · rw [Modulus.exponent_eq_zero_of_not_mem_support ((𝔫.mem_support_iff v).not.mpr hvI)]
-      exact (v.unitsMap_algebraMap_mem_unitFiltration_zero_iff (x : Kˣ)).mpr
-        (mem_primeToSubgroup.mp x.property v ((𝔪.mem_support_iff v).mp hv))
+        (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ))) = 1 :=
+    Finset.prod_eq_one fun v hv ↦
+      χ.toHeckeCharacter.finiteComponent_eq_one_of_mem_unitFiltration
+        (TauCeti.unitFiltration_antitone
+          ((χ.toHeckeCharacter.finiteConductor_dvd_finitePart_iff 𝔫).mp hcond v) (hmem v hv))
   rw [hprod, inv_one, Units.val_one]
 
 /-- Local conductor-exponent bound from residue-kernel triviality modulo `𝔫.finitePart`:
@@ -413,18 +412,15 @@ private theorem conductorExponent_le_exponent_of_residueCharacter_eq_one
         ((𝔫.pow_exponent_dvd_finitePart w).trans hdvd)
     obtain ⟨x, hxz, hother, hxv⟩ := exists_primeToSubgroup_approx_localUnit hv (hle_exp v) z hz
     -- Show `x` reduces to `1` modulo `𝔫.finitePart`, so `χ.residueCharacter (residueHom 𝔪 x) = 1`.
-    have hres𝔫 : residue 𝔫 (Subgroup.inclusion (primeToSubgroup_le_of_dvd hdvd) x) = 1 := by
-      rw [residue_eq_one_iff]
-      intro w hwI
-      have hw𝔪 : w ∈ 𝔪.support := (𝔪.mem_support_iff w).mpr (hwI.trans hdvd)
+    have hfac : Ideal.Quotient.factor (Ideal.le_of_dvd hdvd)
+        ((residueHom 𝔪 x : (𝓞 K ⧸ 𝔪.finitePart)ˣ) : 𝓞 K ⧸ 𝔪.finitePart) = 1 := by
+      refine (factor_residueHom_eq_one_iff_forall_mem_unitFiltration hdvd x).mpr fun w hw ↦ ?_
       by_cases hwv : w = v
       · subst hwv
-        exact hxv
-      · have hw_mem :=
-          (w.unitsMap_algebraMap_mem_unitFiltration_iff (𝔪.exponent w) (x : Kˣ)).mp
-            (hother w hw𝔪 hwv)
-        exact hw_mem.2.trans (WithZero.exp_le_exp.mpr (by have := hle_exp w; omega))
-    have h1 := htriv (residueHom 𝔪 x) ((factor_residueHom_eq_one_iff hdvd x).mpr hres𝔫)
+        exact (w.unitsMap_algebraMap_mem_unitFiltration_iff (𝔫.exponent w) (x : Kˣ)).mpr
+          ⟨mem_primeToSubgroup.mp x.property w ((𝔪.mem_support_iff w).mp hv), hxv⟩
+      · exact TauCeti.unitFiltration_antitone (hle_exp w) (hother w hw hwv)
+    have h1 := htriv (residueHom 𝔪 x) hfac
     rw [coe_residueHom, χ.residueCharacter_residue x,
       χ.finiteCharacterK_eq_prod_finiteComponent_inv x] at h1
     have h1' : (∏ w ∈ 𝔪.support,
@@ -497,11 +493,12 @@ theorem exists_residueCharacter_ne_one_of_finiteConductor_eq (χ : Grossencharac
 /-! ### The finite character on algebraic integers -/
 
 /-- **Hecke's finite character** of a presentation on the algebraic integers:
-`χ_f(a) = χ_u((a)) N(a) ^ σ χ_∞(a)` at `a ≠ 0`, and `0` at `a = 0`. It is the product of the norm
-twist of the unitary weight at `(a)` and the archimedean value, extended by `0` to a character of
-`K`, at `a`. It is the coefficient of the twisted theta series: it vanishes exactly at the integers
-not prime to `𝔪` (`finiteCharacter_eq_zero_iff`), and at a nonzero integer it is the residue
-character at its class modulo `𝔪₀` (`finiteCharacter_eq_residueCharacter`). -/
+`χ_f(a) = χ_u((a)) N(a) ^ σ χ_∞(a)` at `a ≠ 0`, and `0` at `a = 0`. In this formula, the norm
+twist of the unitary weight at `(a)` is multiplied by the archimedean value `χ.archimedeanValue`
+extended from `Kˣ` to `K` by `0` at `0` (via `MulChar.ofUnitHom`) and evaluated at `a`. It is the
+coefficient of the twisted theta series: it vanishes exactly at the integers not prime to `𝔪`
+(`finiteCharacter_eq_zero_iff`), and at a nonzero integer it is the residue character at its class
+modulo `𝔪₀` (`finiteCharacter_eq_residueCharacter`). -/
 def finiteCharacter (χ : Grossencharacter K 𝔪) : 𝓞 K →*₀ ℂ :=
   (MultiplicativeIdealWeight.normTwist (-(χ.idealShift : ℂ))
       χ.unitaryWeight.val).toMonoidWithZeroHom.comp (Submodule.spanSingleton (𝓞 K)) *
@@ -509,7 +506,7 @@ def finiteCharacter (χ : Grossencharacter K 𝔪) : 𝓞 K →*₀ ℂ :=
       (algebraMap (𝓞 K) K : 𝓞 K →*₀ K)
 
 /-- The finite character as the norm twist of the unitary weight at `(a)` times the archimedean
-value, extended by `0`, at `a`. -/
+value (extended from `Kˣ` to `K` by `0` at `0`) evaluated at `a`. -/
 private theorem finiteCharacter_apply (χ : Grossencharacter K 𝔪) (a : 𝓞 K) :
     χ.finiteCharacter a =
       MultiplicativeIdealWeight.normTwist (-(χ.idealShift : ℂ)) χ.unitaryWeight.val
@@ -602,8 +599,8 @@ theorem finiteCharacter_eq_residueCharacter (χ : Grossencharacter K 𝔪) {a : 
     exact fun hu ↦ hcop (Modulus.isCoprimeTo_iff_sup_eq_top.mpr
       ⟨Ideal.span_singleton_eq_bot.not.mpr ha, Ideal.Quotient.isUnit_mk_iff.mp hu⟩)
 
-/-- **The finite character only sees residues modulo `𝔪₀`**: nonzero integers congruent modulo
-the finite part of `𝔪` have the same finite character. -/
+/-- **On nonzero algebraic integers, the finite character only depends on residues modulo `𝔪₀`**:
+nonzero integers congruent modulo the finite part of `𝔪` have the same finite character. -/
 theorem finiteCharacter_eq_of_sub_mem (χ : Grossencharacter K 𝔪) {a b : 𝓞 K} (ha : a ≠ 0)
     (hb : b ≠ 0) (hab : a - b ∈ 𝔪.finitePart) : χ.finiteCharacter a = χ.finiteCharacter b := by
   rw [χ.finiteCharacter_eq_residueCharacter ha, χ.finiteCharacter_eq_residueCharacter hb,
@@ -686,8 +683,10 @@ theorem existsUnique_finiteCharacterK (χ : Grossencharacter K 𝔪) :
 /-! ### Extension of `finiteCharacterK` by zero to `K` -/
 
 open scoped Classical in
-/-- **Hecke's finite character on `K`**, extended by `0` at `0` and outside `primeToSubgroup 𝔪`:
-the finite-character coefficient evaluated on elements of fractional ideals. -/
+/-- **Hecke's finite character as a coefficient function on `K`**, extending `finiteCharacterK`
+by `0` at `0` and outside `primeToSubgroup 𝔪` (not a multiplicative character on all of `K`). It
+restricts to `finiteCharacter` on `𝓞 K` (`finiteCharacterK'_algebraMap`) and evaluates the
+coefficients of fractional ideals. -/
 def finiteCharacterK' (χ : Grossencharacter K 𝔪) (x : K) : ℂ :=
   if h : x = 0 then 0 else
     if hx : Units.mk0 x h ∈ primeToSubgroup 𝔪 then
