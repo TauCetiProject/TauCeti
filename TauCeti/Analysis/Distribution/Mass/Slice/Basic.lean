@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Mass.Extension
 public import TauCeti.Analysis.Distribution.Mass.Normal
+public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Distribution.TestFunction.Separable
 import TauCeti.Analysis.Normed.Module.Multilinear.SecondCountable
 
@@ -63,7 +64,8 @@ form is zero, so every current and every slice is zero.
   `t ↦ localMass ⟨T, u, t⟩ U` and `t ↦ M(⟨T, u, t⟩)`.
 * `Distribution.slice_comp_monoCLM`, `Distribution.slice_comp_pullbackCLM`: compatibility with
   open restriction and proper smooth pushforward.
-* `Distribution.continuous_neg_oneFormWedgeCLM_smoothTransition`,
+* `Distribution.continuous_apply_smulLeftCLM_smoothTransition`,
+  `Distribution.continuous_neg_oneFormWedgeCLM_smoothTransition`,
   `Distribution.tendsto_neg_oneFormWedgeCLM_slice_apply`: continuity and weak convergence of the
   smooth-transition slice approximants.
 * `Distribution.lintegral_mass_slice_le`,
@@ -503,6 +505,31 @@ theorem slice_comp_pullbackCLM_of_measurable {E' : Type*} [NormedAddCommGroup E'
 The slice `⟨T, u, t⟩` is approximated by `-T ⌞ dfₘ` for the smooth multipliers
 `fₘ x = ψ(cₘ (t - u x))`, where `ψ = Real.smoothTransition` and `cₘ = m + 1`. They increase to the
 indicator of `{u < t}`, and `‖dfₘ‖ = cₘ ψ'(cₘ (t - u)) ‖du‖`, whose integral in `t` is `‖du‖`. -/
+
+/-- Continuity of `s ↦ S (ψ(c (s - u ·)) • η)` for a locally finite-mass functional `S`. -/
+theorem continuous_apply_smulLeftCLM_smoothTransition {n : ℕ∞} {S : 𝓓^{n}(Ω, F) →L[ℝ] ℝ}
+    (hS : HasLocallyFiniteMass S) {u : E → ℝ} (hu : ContDiff ℝ n u)
+    (η : 𝓓^{n}(Ω, F)) (c : ℝ) :
+    Continuous fun s : ℝ =>
+      S (TestFunction.smulLeftCLM (hu.smoothTransition_mul_sub c s) η) := by
+  have hmem (s : ℝ) : MemLp (fun x : Ω =>
+      Real.smoothTransition (c * (s - u x)) • η x) 1 (massMeasure S) := by
+    simpa [TestFunction.smulLeftCLM_apply] using TestFunction.memLp_subtype (p := 1)
+      (μ := massMeasure S) (TestFunction.smulLeftCLM (hu.smoothTransition_mul_sub c s) η)
+  simp_rw [← extendL1_toLp hS]
+  refine (extendL1 S).continuous.comp (continuous_iff_continuousAt.2 fun s₀ => ?_)
+  have htoLp (s : ℝ) :
+      TestFunction.toLp 1 (massMeasure S)
+          (TestFunction.smulLeftCLM (hu.smoothTransition_mul_sub c s) η) = (hmem s).toLp _ := by
+    rw [TestFunction.toLp_apply, MemLp.toLp_eq_toLp_iff]
+    exact ae_of_all _ fun x => by simp [TestFunction.smulLeftCLM_apply]
+  simp_rw [ContinuousAt, htoLp]
+  refine TestFunction.tendsto_toLp_smul_of_dominated ENNReal.one_ne_top hmem (hmem s₀) 2
+    (.of_forall fun s x _ => (abs_sub _ _).trans <| by
+      linarith [Real.smoothTransition.abs_le_one (c * (s - u x)),
+        Real.smoothTransition.abs_le_one (c * (s₀ - u x))])
+    fun x _ => (Real.smoothTransition.continuous.comp
+      (continuous_const.mul (continuous_id.sub continuous_const))).tendsto s₀
 
 /-- Continuity of the smooth-transition slice approximant `t ↦ -T (df(t) ∧ φ)` in `t`, where
 `f(t) x = ψ(c (t - u x))`. -/

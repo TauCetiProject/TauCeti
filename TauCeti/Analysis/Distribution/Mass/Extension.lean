@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Distribution.Mass.Support
 public import TauCeti.Analysis.Distribution.TestFunction.Lp
 public import TauCeti.Analysis.Distribution.TestFunction.Pullback
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
-public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Analysis.Distribution.Mass.Restriction
@@ -57,8 +56,6 @@ and is `T` itself for `A = Ω`. Its boundary need not have locally finite mass.
 * `Distribution.dsupport_massRestrict_subset`: `T ⌞ A` is supported in the support of `T`.
 * `Distribution.tendsto_apply_smulLeftCLM_massRestrict`: smooth multiples `T (fᵢ φ)` converge to
   `(T ⌞ A) φ` when the bounded smooth functions `fᵢ` converge pointwise on `Ω` to `1_A`.
-* `Distribution.continuous_apply_smulLeftCLM_smoothTransition`: continuity of smooth-transition
-  approximants to Borel restriction in the level parameter.
 * `Distribution.massRestrict_add`, `Distribution.massRestrict_smul`,
   `Distribution.massRestrict_neg`, `Distribution.massRestrict_sub`: linearity in the current.
 * `Distribution.massRestrict_massRestrict`: iterated Borel restriction `(T ⌞ A) ⌞ B = T ⌞ (A ∩ B)`.
@@ -370,31 +367,6 @@ theorem tendsto_apply_smulLeftCLM_massRestrict (hT : HasLocallyFiniteMass T)
   · have h := ENNReal.Tendsto.mul_const ((hlim x).sub_const (A.indicator 1 x)).eNorm
       (Or.inr eNorm_ne_top) (b := ‖φ x‖ₑ)
     simpa [sub_self, eNorm_smul] using h
-
-/-- Continuity of `s ↦ S (ψ(c (s - u ·)) • η)` for a locally finite-mass functional `S`. -/
-theorem continuous_apply_smulLeftCLM_smoothTransition {S : 𝓓^{n}(Ω, F) →L[ℝ] ℝ}
-    (hS : HasLocallyFiniteMass S) {u : E → ℝ} (hu : ContDiff ℝ n u)
-    (η : 𝓓^{n}(Ω, F)) (c : ℝ) :
-    Continuous fun s : ℝ =>
-      S (TestFunction.smulLeftCLM (hu.smoothTransition_mul_sub c s) η) := by
-  have hmem (s : ℝ) : MemLp (fun x : Ω =>
-      Real.smoothTransition (c * (s - u x)) • η x) 1 (massMeasure S) := by
-    simpa [TestFunction.smulLeftCLM_apply] using TestFunction.memLp_subtype (p := 1)
-      (μ := massMeasure S) (TestFunction.smulLeftCLM (hu.smoothTransition_mul_sub c s) η)
-  simp_rw [← extendL1_toLp hS]
-  refine (extendL1 S).continuous.comp (continuous_iff_continuousAt.2 fun s₀ => ?_)
-  have htoLp (s : ℝ) :
-      TestFunction.toLp 1 (massMeasure S)
-          (TestFunction.smulLeftCLM (hu.smoothTransition_mul_sub c s) η) = (hmem s).toLp _ := by
-    rw [TestFunction.toLp_apply, MemLp.toLp_eq_toLp_iff]
-    exact ae_of_all _ fun x => by simp [TestFunction.smulLeftCLM_apply]
-  simp_rw [ContinuousAt, htoLp]
-  refine TestFunction.tendsto_toLp_smul_of_dominated ENNReal.one_ne_top hmem (hmem s₀) 2
-    (.of_forall fun s x _ => (abs_sub _ _).trans <| by
-      linarith [Real.smoothTransition.abs_le_one (c * (s - u x)),
-        Real.smoothTransition.abs_le_one (c * (s₀ - u x))])
-    fun x _ => (Real.smoothTransition.continuous.comp
-      (continuous_const.mul (continuous_id.sub continuous_const))).tendsto s₀
 
 /-! ### Linearity, iterated restriction, and open restriction -/
 
