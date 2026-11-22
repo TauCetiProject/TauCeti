@@ -47,7 +47,10 @@ An enclosure of width zero, on the other hand, determines the enclosed number
 
 ## References
 
-* B. M. M. de Weger, *Algorithms for Diophantine equations*, CWI Tract 65, 1989, §2.5.
+* B. M. M. de Weger, *Algorithms for Diophantine equations*, CWI Tract 65, 1989, §2.5, printed
+  pp. 33–34.
+* J. R. Doyle, D. Krumm, *Computing algebraic numbers of bounded height*, arXiv:1111.4963, §4
+  (before §4.1).
 -/
 
 public section
@@ -80,10 +83,8 @@ theorem abs_sub_le_length (E : RealEnclosure t) {q : ℚ} (hq : q ∈ E.interval
     |t - q| ≤ E.interval.length := by
   have h₁ : (E.interval.fst : ℝ) ≤ q := by exact_mod_cast hq.1
   have h₂ : (q : ℝ) ≤ E.interval.snd := by exact_mod_cast hq.2
-  have h₃ := E.fst_le
-  have h₄ := E.le_snd
-  rw [NonemptyInterval.length, Rat.cast_sub, abs_sub_le_iff]
-  constructor <;> linarith
+  rw [NonemptyInterval.length, Rat.cast_sub]
+  exact abs_sub_le_of_le_of_le E.fst_le E.le_snd h₁ h₂
 
 /-- The enclosed number is within the width of the interval of its lower endpoint. -/
 theorem abs_sub_fst_le_length (E : RealEnclosure t) :
@@ -177,15 +178,9 @@ def box (E : ComplexEnclosure z) : Set ℂ :=
   Set.Icc (E.re.interval.fst : ℝ) E.re.interval.snd ×ℂ
     Set.Icc (E.im.interval.fst : ℝ) E.im.interval.snd
 
-@[simp]
-theorem mem_box (E : ComplexEnclosure z) {w : ℂ} :
-    w ∈ E.box ↔ w.re ∈ Set.Icc (E.re.interval.fst : ℝ) E.re.interval.snd ∧
-      w.im ∈ Set.Icc (E.im.interval.fst : ℝ) E.im.interval.snd :=
-  mem_reProdIm
-
 /-- The enclosed complex number lies in the box of the enclosure. -/
 theorem self_mem_box (E : ComplexEnclosure z) : z ∈ E.box :=
-  E.mem_box.mpr ⟨E.re.mem_Icc, E.im.mem_Icc⟩
+  mem_reProdIm.mpr ⟨E.re.mem_Icc, E.im.mem_Icc⟩
 
 /-- The error bound of a complex enclosure: the larger of the widths of its two intervals. -/
 def width (E : ComplexEnclosure z) : ℚ :=
@@ -241,26 +236,18 @@ theorem normSqBound_def (E : ComplexEnclosure z) :
       max (E.im.interval.fst ^ 2) (E.im.interval.snd ^ 2) :=
   (rfl)
 
-/-- A real number between `l` and `u` has square at most `max (l², u²)`. -/
-private theorem sq_le_max_sq {l u x : ℝ} (hl : l ≤ x) (hu : x ≤ u) :
-    x ^ 2 ≤ max (l ^ 2) (u ^ 2) := by
-  rcases le_total 0 x with hx | hx
-  · exact le_max_of_le_right (pow_le_pow_left₀ hx hu 2)
-  · exact le_max_of_le_left (by nlinarith)
-
 /-- The square of the modulus of the enclosed number is bounded by the rational number
 `max (l_R², u_R²) + max (l_I², u_I²)`. -/
 theorem normSq_le_normSqBound (E : ComplexEnclosure z) : normSq z ≤ E.normSqBound := by
   rw [normSq_apply, normSqBound_def]
   push_cast
-  have hre := sq_le_max_sq E.re.fst_le E.re.le_snd
-  have him := sq_le_max_sq E.im.fst_le E.im.le_snd
+  -- A real number between `l` and `u` has square at most `max (l², u²)`.
+  have key {l u x : ℝ} (hl : l ≤ x) (hu : x ≤ u) : x ^ 2 ≤ max (l ^ 2) (u ^ 2) := by
+    rw [← sq_abs x, ← sq_abs l, ← sq_abs u, ← max_pow_of_nonneg (abs_nonneg l) (abs_nonneg u)]
+    exact pow_le_pow_left₀ (abs_nonneg x) (abs_le_max_abs_abs hl hu) 2
+  have hre := key E.re.fst_le E.re.le_snd
+  have him := key E.im.fst_le E.im.le_snd
   nlinarith
-
-/-- The square of the norm of the enclosed number is bounded by `normSqBound`. -/
-theorem sq_norm_le_normSqBound (E : ComplexEnclosure z) : ‖z‖ ^ 2 ≤ E.normSqBound := by
-  rw [Complex.sq_norm]
-  exact E.normSq_le_normSqBound
 
 /-- A real enclosure of `t` is a complex enclosure of `t`, with imaginary interval `[0, 0]`. -/
 def ofReal {t : ℝ} (E : RealEnclosure t) : ComplexEnclosure t where
@@ -279,7 +266,7 @@ theorem ofReal_im_interval {t : ℝ} (E : RealEnclosure t) :
 
 /-- A complex enclosure whose imaginary interval is `[0, 0]` encloses a real number: `z` is the
 real number `Re z`, which is enclosed by the real interval of the enclosure. -/
-theorem ofReal_re_eq_self_of_im_interval_eq_pure_zero (E : ComplexEnclosure z)
+theorem re_eq_self_of_im_interval_eq_pure_zero (E : ComplexEnclosure z)
     (h : E.im.interval = NonemptyInterval.pure 0) : (z.re : ℂ) = z := by
   have him := E.im.eq_of_interval_eq_pure h
   apply Complex.ext <;> simp [him]
@@ -299,7 +286,7 @@ example : ComplexEnclosure Complex.I where
 
 example (E : ComplexEnclosure Complex.I) (h : E.re.interval = NonemptyInterval.pure 0)
     (h' : E.im.interval = NonemptyInterval.pure 1) : (1 : ℂ) ∉ E.box ∧ (0 : ℂ) ∉ E.box := by
-  simp [h, h']
+  simp [ComplexEnclosure.box, Complex.mem_reProdIm, h, h']
 
 /-- The decimal enclosure `[141/100, 142/100]` of `√2`. -/
 private def sqrtTwoEnclosure : RealEnclosure (Real.sqrt 2) where
