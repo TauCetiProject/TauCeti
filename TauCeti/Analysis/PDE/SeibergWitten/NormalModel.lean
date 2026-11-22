@@ -391,10 +391,19 @@ end NormalModel
 
 section Family
 
-/-- Reindexing the frame by `i ↦ i + 2` swaps its base and normal planes. -/
-private theorem reindex_addRight_two_apply (i : Fin 4) :
-    e.reindex (Equiv.addRight 2) (i + 2) = e i := by
-  simp
+/-! Reindexing the frame by `i ↦ i + 2` swaps its base and normal planes. -/
+
+private theorem reindex_addRight_two_apply_zero : e.reindex (Equiv.addRight 2) 0 = e 2 := by
+  simp [show (-2 : Fin 4) = 2 by decide]
+
+private theorem reindex_addRight_two_apply_one : e.reindex (Equiv.addRight 2) 1 = e 3 := by
+  simp [show (-2 : Fin 4) = 2 by decide]
+
+private theorem reindex_addRight_two_apply_two : e.reindex (Equiv.addRight 2) 2 = e 0 := by
+  simp [show (-2 : Fin 4) = 2 by decide]
+
+private theorem reindex_addRight_two_apply_three : e.reindex (Equiv.addRight 2) 3 = e 1 := by
+  simp [show (-2 : Fin 4) = 2 by decide]
 
 variable (e) in
 /-- The **base coordinate** `w = ⟪e₀, v⟫ + i ⟪e₁, v⟫` of `V = ℂ_base × ℂ_normal` in the frame `e`,
@@ -405,13 +414,11 @@ def baseCoord : V →L[ℝ] ℂ :=
 
 @[simp]
 theorem baseCoord_re (v : V) : (baseCoord e v).re = ⟪e 0, v⟫ := by
-  rw [baseCoord, normalCoord_re, ← reindex_addRight_two_apply (e := e) 0]
-  rfl
+  rw [baseCoord, normalCoord_re, reindex_addRight_two_apply_two]
 
 @[simp]
 theorem baseCoord_im (v : V) : (baseCoord e v).im = ⟪e 1, v⟫ := by
-  rw [baseCoord, normalCoord_im, ← reindex_addRight_two_apply (e := e) 1]
-  rfl
+  rw [baseCoord, normalCoord_im, reindex_addRight_two_apply_three]
 
 theorem baseCoord_apply (v : V) : baseCoord e v = ⟪e 0, v⟫ + ⟪e 1, v⟫ * I := by
   apply Complex.ext <;> simp
@@ -419,25 +426,25 @@ theorem baseCoord_apply (v : V) : baseCoord e v = ⟪e 0, v⟫ + ⟪e 1, v⟫ * 
 /-- The base coordinate of `e₀` is `1`. -/
 @[simp]
 theorem baseCoord_apply_zero : baseCoord e (e 0) = 1 := by
-  rw [baseCoord, ← reindex_addRight_two_apply (e := e) 0]
+  rw [baseCoord, ← reindex_addRight_two_apply_two]
   exact normalCoord_apply_two
 
 /-- The base coordinate of `e₁` is `i`. -/
 @[simp]
 theorem baseCoord_apply_one : baseCoord e (e 1) = I := by
-  rw [baseCoord, ← reindex_addRight_two_apply (e := e) 1]
+  rw [baseCoord, ← reindex_addRight_two_apply_three]
   exact normalCoord_apply_three
 
 /-- The base coordinate of `e₂` is `0`. -/
 @[simp]
 theorem baseCoord_apply_two : baseCoord e (e 2) = 0 := by
-  rw [baseCoord, ← reindex_addRight_two_apply (e := e) 2]
+  rw [baseCoord, ← reindex_addRight_two_apply_zero]
   exact normalCoord_apply_zero
 
 /-- The base coordinate of `e₃` is `0`. -/
 @[simp]
 theorem baseCoord_apply_three : baseCoord e (e 3) = 0 := by
-  rw [baseCoord, ← reindex_addRight_two_apply (e := e) 3]
+  rw [baseCoord, ← reindex_addRight_two_apply_one]
   exact normalCoord_apply_one
 
 /-- **Chain rule through the base and normal coordinates**: the derivative along `v` of a function
