@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Regularity
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Limits of gauges and the closed gauge orbit relation
@@ -248,7 +249,7 @@ private theorem tendsto_sectionValue_of_tendstoLocallyUniformly
   have hsec : Continuous fun p : EuclideanSpace ℝ (Fin 4) ↦ 2 * ((p 2 : ℂ) + (p 3 : ℂ) * I) := by
     fun_prop
   simp only [sectionValue_apply]
-  exact (hsec.tendsto _).comp ((tendstoLocallyUniformlyOn_univ.2 h).tendsto_at (mem_univ z))
+  exact (hsec.tendsto _).comp (h.tendsto_at z)
 
 /-- The limit theorem for gauge equivalent fields, given the limit of the gauges at one point. -/
 private theorem exists_gaugeTransform_eq_of_tendsto_apply [l.NeBot]
@@ -271,7 +272,7 @@ private theorem exists_gaugeTransform_eq_of_tendsto_apply [l.NeBot]
   refine ⟨v, hvd, gaugeTransform_eq_iff.2 fun z ↦
     ⟨by rw [hvω]; exact connectionDifferenceCLM_apply (x z, y z), ?_⟩, hv⟩
   -- Pass to the limit in `us i z * α(xs i) z = α(ys i) z`.
-  have hvz := (tendstoLocallyUniformlyOn_univ.2 hv).tendsto_at (mem_univ z)
+  have hvz := hv.tendsto_at z
   refine tendsto_nhds_unique (hvz.mul (tendsto_sectionValue_of_tendstoLocallyUniformly hx z)) ?_
   exact (tendsto_sectionValue_of_tendstoLocallyUniformly hy z).congr fun i ↦
     ((gaugeTransform_eq_iff.1 (hxy i) z).2).symm

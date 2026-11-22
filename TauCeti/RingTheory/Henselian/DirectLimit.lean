@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Henselian
-public import TauCeti.Algebra.Colimit.Ring
+public import TauCeti.Algebra.Colimit.Ring.Ideal
+public import TauCeti.Algebra.Colimit.Ring.Polynomial
 
 /-!
 # Henselian pairs under directed colimits
@@ -18,11 +19,12 @@ result, `Ring.DirectLimit.henselianRing`, is that if every `(G i, I i)` is Hense
 
 For a nonempty index type, a monic polynomial over the colimit with a simple root modulo the
 colimit ideal comes, together with its approximate root and the witnesses for both conditions,
-from a single stage (using the descent lemmas of `TauCeti.Algebra.Colimit.Ring`); the root found
-there maps to the required root in the colimit. For an empty index type the colimit ideal is `⊥`,
-and every ring is Henselian along `⊥`. This is the filtered-colimit case of the permanence
-properties of Henselian pairs. Directedness is essential: the coproduct of two copies of
-`(ℤ_[p], (p))`, which is not a directed colimit, is not Henselian along `p`.
+from a single stage (using the monic lift of `TauCeti.Algebra.Colimit.Ring.Polynomial` and the
+descent lemmas of `TauCeti.Algebra.Colimit.Ring.Ideal`); the root found there maps to the required
+root in the colimit. For an empty index type the colimit ideal is `⊥`, and every ring is Henselian
+along `⊥`. This is the filtered-colimit case of the permanence properties of Henselian pairs.
+Directedness is essential: the coproduct of two copies of `(ℤ_[p], (p))`, which is not a directed
+colimit, is not Henselian along `p`.
 
 ## Main results
 
@@ -52,7 +54,7 @@ private theorem henselianRing_of_nonempty [Nonempty ι] [IsDirectedOrder ι]
     (hI : ∀ i j (hij : i ≤ j), I i ≤ (I j).comap (f i j hij)) :
     HenselianRing (DirectLimit G (f · · ·)) (⨆ i, (I i).map (of G (f · · ·) i)) where
   jac z hz := by
-    obtain ⟨i, x, hx, rfl⟩ := (mem_iSup_map_of_iff hI).1 hz
+    obtain ⟨i, x, hx, rfl⟩ := (TauCeti.Ring.DirectLimit.mem_iSup_map_of_iff hI).1 hz
     refine Ring.mem_jacobson_iff.2 fun c ↦ ?_
     induction c using DirectLimit.induction_on with
     | ih j y =>
@@ -62,17 +64,17 @@ private theorem henselianRing_of_nonempty [Nonempty ι] [IsDirectedOrder ι]
       simpa using hu.map (of G (f · · ·) k)
   is_henselian P hP a₀ h₁ h₂ := by
     -- Lift `P` to a monic polynomial `q` and `a₀` to an element `b`, at a common stage `k`.
-    obtain ⟨i, q, hqm, rfl⟩ := Polynomial.exists_monic_of hP
+    obtain ⟨i, q, hqm, -, rfl⟩ := TauCeti.Ring.DirectLimit.Polynomial.exists_monic_of hP
     obtain ⟨j, b, rfl⟩ := exists_of a₀
     obtain ⟨k, hik, hjk⟩ := exists_ge_ge i j
     have hqm := hqm.map (f i k hik)
-    rw [← of_f hjk, ← of_comp_f hik, ← Polynomial.map_map] at h₁ h₂ ⊢
+    rw [← of_f hjk, ← TauCeti.Ring.DirectLimit.of_comp_f hik, ← Polynomial.map_map] at h₁ h₂ ⊢
     generalize q.map (f i k hik) = q at hqm h₁ h₂ ⊢
     generalize f j k hjk b = b at h₁ h₂ ⊢
     simp only [derivative_map, eval_map_apply] at h₁ h₂
     -- Both conditions descend to a common later stage `l`, where `(G l, I l)` is Henselian.
-    obtain ⟨l₁, hkl₁, h₁⟩ := exists_f_mem_of_of_mem_iSup_map hI h₁
-    obtain ⟨l₂, hkl₂, h₂⟩ := exists_isUnit_mk_f_of_isUnit_mk_of hI h₂
+    obtain ⟨l₁, hkl₁, h₁⟩ := (TauCeti.Ring.DirectLimit.of_mem_iSup_map_of_iff hI).1 h₁
+    obtain ⟨l₂, hkl₂, h₂⟩ := (TauCeti.Ring.DirectLimit.isUnit_quotientMk_of_iff hI).1 h₂
     obtain ⟨l, hl₁l, hl₂l⟩ := exists_ge_ge l₁ l₂
     have h₂ := h₂.map (Ideal.quotientMap (I l) (f l₂ l hl₂l) (hI l₂ l hl₂l))
     obtain ⟨a, ha, hab⟩ := HenselianRing.is_henselian (I := I l)
@@ -80,7 +82,7 @@ private theorem henselianRing_of_nonempty [Nonempty ι] [IsDirectedOrder ι]
       (by simpa [DirectedSystem.map_map' f] using hI l₁ l hl₁l h₁)
       (by simpa [DirectedSystem.map_map' f] using h₂)
     refine ⟨of G (f · · ·) l a, by simpa [Polynomial.map_map] using ha.map (of G (f · · ·) l), ?_⟩
-    simpa using (mem_iSup_map_of_iff hI).2 ⟨l, _, hab, rfl⟩
+    simpa using (TauCeti.Ring.DirectLimit.mem_iSup_map_of_iff hI).2 ⟨l, _, hab, rfl⟩
 
 /-- **Henselian pairs are stable under directed colimits.** If every `(G i, I i)` is a
 Henselian pair and the transition maps carry `I i` into `I j`, then the directed colimit

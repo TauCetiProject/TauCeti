@@ -619,6 +619,14 @@ theorem contDiff_of_forall_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m 
       (contDiff_and_bounded_sub_referenceField_apply hx (hmem (n + 2)) i).1
   simpa using hd.add (contDiff_referenceField f m)
 
+/-- A continuous field lying in `A_m^k` for every `k` has `|α|² = 4 (p² + q²) → 1` at infinity
+(`tendsto_normSq_of_mem_framedFieldSpace` in `A_m^2`). -/
+theorem tendsto_normSq_of_forall_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x)
+    (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) :
+    Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) :=
+  tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx
+
 /-- **Fields in `A_m^(n+2)` have bounded derivatives of order `n`.** The `n`-th iterated
 derivative of every coordinate of a continuous field lying in `A_m^(n+2)` is bounded on the whole
 plane: the reference field has bounded derivatives, and so has the defect, by the Sobolev
