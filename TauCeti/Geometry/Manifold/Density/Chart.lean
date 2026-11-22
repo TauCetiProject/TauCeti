@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Integral.Bochner.Density
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Chart.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Lift
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Symm
 import TauCeti.Geometry.Manifold.ExtChartAt.Cover
 
 /-!

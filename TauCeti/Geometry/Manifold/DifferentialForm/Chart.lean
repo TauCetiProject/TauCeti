@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.UniqueDifferential
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import Mathlib.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Symm
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
