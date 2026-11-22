@@ -10,7 +10,6 @@ public import Mathlib.CategoryTheory.Abelian.SerreClass.MorphismProperty
 public import Mathlib.CategoryTheory.Filtered.Final
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
-public import Mathlib.Order.SuccPred.Basic
 
 /-!
 # Pro-zero diagrams and pro-isomorphisms
@@ -34,6 +33,8 @@ the error terms that derived limits of towers cannot see.
 * `CategoryTheory.Functor.isProZero_iff_forall_exists_le`: the form of the condition for inverse
   systems indexed by a preorder.
 * `CategoryTheory.Functor.IsProZero.isZero_of_isLimit`: a limit of a pro-zero diagram is zero.
+* `CategoryTheory.Functor.IsProZero.of_mono`, `CategoryTheory.Functor.IsProZero.of_epi`: closure
+  of pro-zero diagrams under componentwise subobjects and quotients.
 * `CategoryTheory.MorphismProperty.forall_exists_iff_forall_exists_le` and
   `CategoryTheory.MorphismProperty.forall_exists_map_iff_of_initial`: the preorder form and the
   cofinal reindexing of the condition that every object is the target of a morphism with a given
@@ -140,12 +141,6 @@ lemma isProZero_iff_forall_exists_le {ι : Type u₃} [Preorder ι] (F : ιᵒ�
     F.IsProZero ↔ ∀ i, ∃ (j : ι) (h : i ≤ j), F.map (homOfLE h).op = 0 :=
   MorphismProperty.forall_exists_iff_forall_exists_le fun _ _ f ↦ F.map f = 0
 
-/-- An inverse system over a successor order whose successive transitions `F (succ i) ⟶ F i` are
-zero is pro-zero, whatever its terms. For a tower `ℕᵒᵖ ⥤ C`, `Order.succ n` is `n + 1`. -/
-lemma isProZero_of_map_succ_eq_zero {ι : Type u₃} [Preorder ι] [SuccOrder ι] (F : ιᵒᵖ ⥤ C)
-    (hF : ∀ i, F.map (homOfLE (Order.le_succ i)).op = 0) : F.IsProZero :=
-  (isProZero_iff_forall_exists_le F).2 fun i ↦ ⟨Order.succ i, Order.le_succ i, hF i⟩
-
 /-- The limit of a pro-zero diagram is a zero object. -/
 lemma IsProZero.isZero_of_isLimit {F : J ⥤ C} (hF : F.IsProZero) {c : Cone F} (hc : IsLimit c) :
     IsZero c.pt := by
@@ -154,6 +149,22 @@ lemma IsProZero.isZero_of_isLimit {F : J ⥤ C} (hF : F.IsProZero) {c : Cone F} 
   obtain ⟨i, f, hf⟩ := hF j
   rw [← c.w f, hf]
   simp
+
+/-- A subdiagram of a pro-zero diagram is pro-zero. It suffices that `f` is a monomorphism in each
+component, which holds for every monomorphism of diagrams when `C` has pullbacks, e.g. when `C` is
+abelian. -/
+lemma IsProZero.of_mono {X Y : J ⥤ C} (f : X ⟶ Y) [∀ j, Mono (f.app j)] (hY : Y.IsProZero) :
+    X.IsProZero := fun j ↦
+  have ⟨i, g, hg⟩ := hY j
+  ⟨i, g, zero_of_comp_mono (f.app j) (by rw [f.naturality, hg, comp_zero])⟩
+
+/-- A quotient of a pro-zero diagram is pro-zero. It suffices that `f` is an epimorphism in each
+component, which holds for every epimorphism of diagrams when `C` has pushouts, e.g. when `C` is
+abelian. -/
+lemma IsProZero.of_epi {X Y : J ⥤ C} (f : X ⟶ Y) [∀ j, Epi (f.app j)] (hX : X.IsProZero) :
+    Y.IsProZero := fun j ↦
+  have ⟨i, g, hg⟩ := hX j
+  ⟨i, g, zero_of_epi_comp (f.app i) (by rw [← f.naturality, hg, zero_comp])⟩
 
 /-- **Cofinal reindexing.** For an initial functor `G : I ⥤ J` out of a cofiltered category, a
 diagram `F : J ⥤ C` is pro-zero exactly when `G ⋙ F` is. -/
@@ -266,9 +277,8 @@ pullbacks, e.g. when `C` is abelian. -/
 lemma IsProTorsionBy.of_mono {r : R} {X Y : J ⥤ C} (f : X ⟶ Y) [∀ j, Mono (f.app j)]
     (hY : Y.IsProTorsionBy r) : X.IsProTorsionBy r := fun j ↦ by
   obtain ⟨i, g, hg⟩ := hY j
-  refine ⟨i, g, (cancel_mono (f.app j)).1 ?_⟩
-  rw [Linear.smul_comp, f.naturality, ← Linear.comp_smul, hg]
-  simp
+  refine ⟨i, g, zero_of_comp_mono (f.app j) ?_⟩
+  rw [Linear.smul_comp, f.naturality, ← Linear.comp_smul, hg, comp_zero]
 
 /-- A quotient of a pro-`r`-torsion diagram is pro-`r`-torsion. It suffices that `f` is an
 epimorphism in each component, which holds for every epimorphism of diagrams when `C` has
@@ -276,9 +286,8 @@ pushouts, e.g. when `C` is abelian. -/
 lemma IsProTorsionBy.of_epi {r : R} {X Y : J ⥤ C} (f : X ⟶ Y) [∀ j, Epi (f.app j)]
     (hX : X.IsProTorsionBy r) : Y.IsProTorsionBy r := fun j ↦ by
   obtain ⟨i, g, hg⟩ := hX j
-  refine ⟨i, g, (cancel_epi (f.app i)).1 ?_⟩
-  rw [Linear.comp_smul, ← f.naturality, ← Linear.smul_comp, hg]
-  simp
+  refine ⟨i, g, zero_of_epi_comp (f.app i) ?_⟩
+  rw [Linear.comp_smul, ← f.naturality, ← Linear.smul_comp, hg, zero_comp]
 
 end Linear
 
@@ -314,14 +323,12 @@ lemma IsProTorsionBy.of_shortExact {T : ShortComplex (J ⥤ C)} (hT : T.ShortExa
 end Linear
 
 /-- In an abelian category, pro-zero diagrams form a Serre class of the functor category: they
-contain zero and are closed under subobjects, quotients and extensions. These are the cases
-`r = 1` of the closure properties of pro-`r`-torsion diagrams, for the `ℕ`-linear structure. -/
+contain zero and are closed under subobjects, quotients and extensions. Closure under extensions
+is the case `r = 1` of `IsProTorsionBy.of_shortExact`, for the `ℕ`-linear structure. -/
 instance isSerreClass_isProZero : ObjectProperty.IsSerreClass (IsProZero (J := J) (C := C)) where
   exists_zero := ⟨0, isZero_zero _, isProZero_zero⟩
-  prop_of_mono f _ hY :=
-    isProTorsionBy_one_iff.mp (((isProTorsionBy_one_iff (R := ℕ)).mpr hY).of_mono f)
-  prop_of_epi f _ hX :=
-    isProTorsionBy_one_iff.mp (((isProTorsionBy_one_iff (R := ℕ)).mpr hX).of_epi f)
+  prop_of_mono f _ hY := hY.of_mono f
+  prop_of_epi f _ hX := hX.of_epi f
   prop_X₂_of_shortExact hS h₁ h₃ := by
     simpa using
       ((isProTorsionBy_one_iff (R := ℕ)).mpr h₁).of_shortExact hS (isProTorsionBy_one_iff.mpr h₃)
@@ -364,9 +371,8 @@ theorem proIsomorphisms_kernel_ι_smul_id_iff (r : R) (F : J ⥤ C) :
         (Abelian.factorThruCoimage g).app j = r • F.map f := by
       rw [← NatTrans.naturality_assoc, ← NatTrans.comp_app, Abelian.coimage.fac]
       simp [g]
-    rw [← cancel_epi ((Abelian.coimage.π g).app i),
-      ← cancel_mono ((Abelian.factorThruCoimage g).app j)]
-    simp only [Category.assoc, h, comp_zero, zero_comp]
+    rw [← comp_eq_zero_iff_of_epi ((Abelian.coimage.π g).app i),
+      ← comp_eq_zero_iff_of_mono ((Abelian.factorThruCoimage g).app j), Category.assoc, h]
   refine (ObjectProperty.isoModSerre_iff_of_mono (P := IsProZero) (kernel.ι g)).trans ?_
   exact forall_congr' fun j ↦ exists_congr fun i ↦ exists_congr fun f ↦ key f
 
