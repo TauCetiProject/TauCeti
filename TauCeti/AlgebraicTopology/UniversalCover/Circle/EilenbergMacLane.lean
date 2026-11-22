@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.HigherHomotopy
+
+import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 
 /-!
 # Circles as Eilenberg--Mac Lane spaces
@@ -23,6 +26,8 @@ vanishing is supplied by `AddCircle.subsingleton_homotopyGroup`.
 
 * `AddCircle.isAspherical`: every real additive circle is aspherical.
 * `AddCircle.isEilenbergMacLaneSpaceOne`: a nondegenerate real circle is a `K(ℤ, 1)`.
+* `Circle.isAspherical`: the unit circle of `ℂ` is aspherical, through its homeomorphism
+  `AddCircle.homeomorphCircle'` with the real circle of period `2π`.
 -/
 
 public section
@@ -48,5 +53,16 @@ theorem isEilenbergMacLaneSpaceOne (p : ℝ) (hp : p ≠ 0) (x : AddCircle p) :
     (isAspherical p _) ⟨fundamentalGroupMulEquiv p hp ⟨e, rfl⟩⟩
 
 end AddCircle
+
+namespace Circle
+
+/-- The unit circle of `ℂ` is aspherical: it is homeomorphic to the real circle of period `2π`
+(`AddCircle.homeomorphCircle'`). -/
+theorem isAspherical (x : Circle) : TauCeti.IsAspherical Circle x := by
+  have h := (AddCircle.homeomorphCircle'.isAspherical_iff (AddCircle.homeomorphCircle'.symm x)).1
+    (AddCircle.isAspherical _ _)
+  rwa [Homeomorph.apply_symm_apply] at h
+
+end Circle
 
 end

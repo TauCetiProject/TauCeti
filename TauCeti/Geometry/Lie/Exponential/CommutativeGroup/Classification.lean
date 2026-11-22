@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Topology.Circle.AddCircle
 
+import TauCeti.Analysis.Complex.Circle
+
 /-!
 # Compact connected commutative Lie groups are products of circles
 
@@ -19,6 +21,11 @@ groups, with one factor for each dimension of the manifold model.
 
 The basis-dependent equivalences include their values on exponentials, so that circle
 coordinates and their inverses can be computed without choosing a logarithm.
+
+The finite-dimensionality of the model cannot be dropped: an infinite power `ι → S¹` of the
+circle is a compact connected commutative topological group, but it is not isomorphic to a finite
+power, so it carries no finite-dimensional Lie group structure (`TauCeti.not_lieGroup_pi_circle`).
+It is nevertheless aspherical, like every power of the circle (`Circle.isAspherical_pi`).
 
 ## References
 
@@ -136,5 +143,20 @@ theorem nonempty_continuousMulEquiv_pi_circle :
       (finrank_leftInvariantDerivation_eq_modelVectorSpace
         (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)))
   exact ⟨Module.Basis.lieGroupPiCircleEquiv (Module.finBasisOfFinrankEq ℤ L hdim)⟩
+
+/-- **An infinite power of the circle is not a finite-dimensional Lie group.** For `ι` infinite,
+`ι → S¹` is a compact connected commutative topological group, aspherical by
+`Circle.isAspherical_pi`, but no structure of a Lie group modelled on a finite-dimensional real
+space is compatible with its topology and group law: the group would be a finite power of the
+circle (`TauCeti.nonempty_continuousMulEquiv_pi_circle`), and no infinite power of the circle
+embeds in a finite one (`MonoidHom.not_injective_pi_circle`). So a compact connected aspherical
+topological group need not be a torus without the Lie hypothesis. -/
+theorem not_lieGroup_pi_circle {ι : Type*} [Infinite ι] {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] {H' : Type*} [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} [ChartedSpace H' (ι → Circle)] :
+    ¬ LieGroup I' ∞ (ι → Circle) := fun _ ↦ by
+  have : IsMulCommutative Circle := ⟨⟨mul_comm⟩⟩
+  obtain ⟨e⟩ := nonempty_continuousMulEquiv_pi_circle (I := I') (G := ι → Circle)
+  exact e.toMulEquiv.toMonoidHom.not_injective_pi_circle e.injective
 
 end TauCeti

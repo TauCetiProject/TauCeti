@@ -41,7 +41,7 @@ an aspherical space is an aspherical space of CW type, which reduces statements 
 * `TauCeti.IsEilenbergMacLaneSpace.isWeakHomotopyEquivalence_iff`: a map between `K(G, n)` and
   `K(H, n)` spaces is a weak homotopy equivalence exactly when it is bijective on `πₙ`.
 * `ContinuousMap.IsWeakHomotopyEquivalence.isAspherical_iff`: asphericity is invariant under weak
-  homotopy equivalences.
+  homotopy equivalences, and in particular under homeomorphisms (`Homeomorph.isAspherical_iff`).
 
 ## References
 
@@ -124,3 +124,9 @@ theorem isAspherical_iff (hf : f.IsWeakHomotopyEquivalence) (x : X) :
   exact (Equiv.ofBijective _ (hf.bijective (n + 2) x)).subsingleton_congr
 
 end ContinuousMap.IsWeakHomotopyEquivalence
+
+/-- **Asphericity is invariant under homeomorphisms**: `X` is aspherical at `x` exactly when `Y` is
+aspherical at `e x`. -/
+theorem Homeomorph.isAspherical_iff {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    (e : X ≃ₜ Y) (x : X) : TauCeti.IsAspherical X x ↔ TauCeti.IsAspherical Y (e x) :=
+  e.isWeakHomotopyEquivalence.isAspherical_iff x
