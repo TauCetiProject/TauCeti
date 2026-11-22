@@ -130,14 +130,11 @@ def singularKunnethTotalHomologyIso (n : ℕ) :
   -- the singular chain modules, with coefficients the flat module `R`, are flat
   have (Z : TopCat.{u}) (i : ℕ) : Module.Flat R (((TauCeti.singularChains R).obj Z).X i) :=
     SSet.flat_chainComplex_X (toSSet.obj Z) (ModuleCat.of R R) i
-  have := quasiIso_kunnethBicomplexAugmentation
-    ((TauCeti.singularChains R).obj X) ((TauCeti.singularChains R).obj Y)
-  -- the homology of `C(X × Y; R)` is by definition `Hₙ(X × Y; R)`; the ascription keeps the
-  -- composite syntactically well typed, so that `Iso.trans_hom` applies to it
-  (isoOfQuasiIsoAt (kunnethBicomplexAugmentation
-      ((TauCeti.singularChains R).obj X) ((TauCeti.singularChains R).obj Y)) n ≪≫
-    isoOfQuasiIsoAt (TauCeti.singularCrossProduct R X Y) n :
-      _ ≅ ((TauCeti.singularChains R).obj (X ⊗ Y)).homology n)
+  have := quasiIso_kunnethBicomplexAugmentation ((TauCeti.singularChains R).obj X)
+    ((TauCeti.singularChains R).obj Y)
+  -- the homology of `C(X × Y; R)` is by definition `Hₙ(X × Y; R)`
+  isoOfQuasiIsoAt (kunnethBicomplexAugmentation ((TauCeti.singularChains R).obj X)
+    ((TauCeti.singularChains R).obj Y) ≫ TauCeti.singularCrossProduct R X Y) n
 
 /-- The isomorphism `TopCat.singularKunnethTotalHomologyIso` is induced by the augmentation of the
 total complex, followed by the simplicial cross product. -/
@@ -146,10 +143,7 @@ lemma singularKunnethTotalHomologyIso_hom (n : ℕ) :
       homologyMap (kunnethBicomplexAugmentation
           ((TauCeti.singularChains R).obj X) ((TauCeti.singularChains R).obj Y)) n ≫
         homologyMap (TauCeti.singularCrossProduct R X Y) n := by
-  simp only [singularKunnethTotalHomologyIso, Iso.trans_hom, isoOfQuasiIsoAt_hom]
-  -- the two sides agree syntactically except for the proofs of the `Prop`-valued instance
-  -- arguments, which simp does not identify
-  with_reducible rfl
+  rw [singularKunnethTotalHomologyIso, isoOfQuasiIsoAt_hom, homologyMap_comp]
 
 /-- The spectral object of the filtration of the total complex of the flipped Künneth bicomplex of
 `C(X; R)` and `C(Y; R)` by its rows, whose spectral sequence is
