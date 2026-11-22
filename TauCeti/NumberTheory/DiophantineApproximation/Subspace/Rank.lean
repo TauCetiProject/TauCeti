@@ -20,7 +20,8 @@ spans of domains use the geometry of their successive minima without choosing a 
 
 Equivalently, below the ambient dimension a successive minimum is at most one exactly when its
 index is below the rank (`TauCeti.NumberField.successiveMinimum_approx_le_one_iff`); these minima
-are positive (`TauCeti.NumberField.successiveMinimum_approx_pos`).
+are positive (`TauCeti.NumberField.successiveMinimum_approx_pos`) and nondecreasing
+(`TauCeti.NumberField.monotoneOn_successiveMinimum_approx`).
 
 The threshold is non-strict: vectors on the boundary of the closed approximation body belong
 to the domain. Only indices below the ambient dimension are counted, since later successive
@@ -102,6 +103,21 @@ theorem successiveMinimum_approx_pos {S₀ : Finset (FinitePlace K)}
   obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
   rw [← hcoe]
   exact Submodule.successiveMinimum_pos hB hl
+
+/-- Below `#ι`, the successive minima over `K` of an approximation domain of positive level are
+nondecreasing. -/
+theorem monotoneOn_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
+    MonotoneOn ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q))
+      (Iio (Fintype.card ι)) := by
+  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
+  let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
+  obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
+  rw [← hcoe]
+  exact Submodule.monotoneOn_successiveMinimum hB
 
 /-- Below `#ι`, a successive minimum over `K` of an approximation domain of positive level is at
 most one exactly when its index is below the rank of the domain. -/

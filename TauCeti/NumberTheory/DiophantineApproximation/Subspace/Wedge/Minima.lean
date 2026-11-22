@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Rank
-public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.WedgeDomain
+public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Wedge.Domain
 
 import TauCeti.LinearAlgebra.LinearIndependent.Unitriangular
 
@@ -27,9 +27,10 @@ and of `k` (`TauCeti.NumberField.exists_successiveMinimum_wedge`). The first sta
 because the `M - 1` Plücker vectors above lie in `S(Q)` and span a hyperplane, Lemma 7.5.33
 (`TauCeti.finrank_wedgeSpan_add_one`). For the second, Minkowski's second theorem over `K` bounds
 `∏ l, ν l ^ d`, with `d = [K : ℚ]`, below by a constant times `Q ^ (-w)`, where `w` is the weight of
-`S(Q)`; since every minimum but the last is at most `1`, so is `ν (M - 1) ^ d`. The weight of `S(Q)`
-is at most a constant times `(μ (k - 1) / μ k) ^ d` by Minkowski's second theorem for the original
-domain (`TauCeti.NumberField.rpow_approxWeight_wedgeExponent_le`).
+`S(Q)`; since every minimum but the last is at most `1`, the same lower bound holds for
+`ν (M - 1) ^ d` (`TauCeti.NumberField.exists_pos_mul_rpow_le_successiveMinimum_pow`). `Q` raised to
+the weight of `S(Q)` is at most a constant times `(μ (k - 1) / μ k) ^ d` by Minkowski's second
+theorem for the original domain (`TauCeti.NumberField.rpow_approxWeight_wedgeExponent_le`).
 
 A large jump between consecutive minima exists whenever the domain has rank `R` with
 `1 ≤ R < N` (Bombieri–Gubler (7.41)): some `k ∈ [R, N)` has
@@ -65,35 +66,6 @@ namespace TauCeti.NumberField
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι]
 
 /-! ### The successive minima of the wedge domain -/
-
-/-- **The last minimum of a domain controls its weight.** For forms independent at the infinite
-places and at `S₀` there is `A > 0` such that for all exponents `c` and levels `0 < Q`, if every
-successive minimum over `K` of `approxDomain S₀ L c Q` but the last is at most `1`, then the
-`[K : ℚ]`-th power of the last is at least `A · Q ^ (-approxWeight S₀ c)`. -/
-private theorem exists_pos_mul_rpow_le_successiveMinimum_pow {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (hι : 0 < Fintype.card ι) :
-    ∃ A : ℝ, 0 < A ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 0 < Q →
-      (∀ l < Fintype.card ι - 1,
-        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ≤ 1) →
-      A * Q ^ (-approxWeight S₀ c) ≤
-        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
-          (Fintype.card ι - 1) ^ finrank ℚ K := by
-  classical
-  have := approxConst_pos hLinf hLfin
-  have := zero_lt_one.trans_le (one_le_integralBasisHouse (K := K))
-  refine ⟨_, by positivity, fun c Q hQ h₁ ↦
-    (le_prod_successiveMinimum_approx hLinf hLfin c hQ).trans ?_⟩
-  -- Split off the last factor; the others are at most `1`.
-  let l₀ : Fin (Fintype.card ι) := ⟨Fintype.card ι - 1, by omega⟩
-  rw [← mul_prod_erase _ _ (mem_univ l₀)]
-  refine mul_le_of_le_one_right (pow_nonneg (Submodule.successiveMinimum_nonneg _ _ _) _)
-    (prod_le_one₀ (fun _ _ ↦ pow_nonneg (Submodule.successiveMinimum_nonneg _ _ _) _)
-      fun l hl ↦ pow_le_one₀ (Submodule.successiveMinimum_nonneg _ _ _) (h₁ l ?_))
-  have hl' : l ≠ l₀ := ne_of_mem_erase hl
-  have : (l : ℕ) ≠ Fintype.card ι - 1 := fun h ↦ hl' (Fin.ext h)
-  omega
 
 /-- For fixed forms, exterior degree `0 < p`, jump index `k` with `k + p = card ι` and constant
 `C > 0`, there is `A > 0` such that `Q ^ approxWeight` of the wedge exponents is at most
@@ -262,13 +234,8 @@ theorem exists_successiveMinimum_wedge :
   refine ⟨c₀, hc₀, fun c Q k p x hQ hQ₁ hp hkp hx hxΛ hxB ↦ ?_⟩
   set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
   have hμ (l : ℕ) (hl : l < N) : 0 < μ l := successiveMinimum_approx_pos hLinf hLfin c hQ hl
-  have hμm : MonotoneOn μ (Set.Iio N) := by
-    let _ := discreteTopology_mixedImage_approxModule hLfin c Q
-    let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
-    obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
-    simp only [μ, ← hcoe]
-    exact Submodule.monotoneOn_successiveMinimum hB
-  obtain ⟨y, σ, hspan, hmem⟩ := hE S₀ L c Q x μ hLinf hLfin hQ hQ₁ hx hμm hμ hxΛ
+  obtain ⟨y, σ, hspan, hmem⟩ := hE S₀ L c Q x μ hLinf hLfin hQ hQ₁ hx
+    (monotoneOn_successiveMinimum_approx hLinf hLfin c hQ) hμ hxΛ
     fun v i l ↦ (mixedEmbedding_mem_smul_approxBody_iff (hμ l l.isLt)).1 (hxB l) v i
   set L' : AbsoluteValue K ℝ → Set.powersetCard ι p → Dual K (Set.powersetCard ι p → K) :=
     fun v ↦ wedgeForms (L v) p

@@ -26,11 +26,11 @@ exactly when it sends that vector to a multiple of itself. Finally, a submodule 
 subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
 subspace over the larger field as the family `y`. A unitriangular change of a family indexed by a
 well-founded order, where each `z j` is `x j` plus a combination of the earlier `x l`, preserves
-the spans of initial segments. A ring homomorphism carries a span over `A` into a span over `B`
-as soon as it carries the generators into the target span and the scalars in `A` to scalars in `B`.
-Over a scalar extension, the image span of a semilinear map is spanned by its values on any
-spanning family of the domain. The span of any countable set admits a spanning sequence indexed
-by `ℕ` (`Set.Countable.exists_span_range_eq_top`).
+the spans of initial segments and of the whole family. A ring homomorphism carries a span over
+`A` into a span over `B` as soon as it carries the generators into the target span and the
+scalars in `A` to scalars in `B`. Over a scalar extension, the image span of a semilinear map is
+spanned by its values on any spanning family of the domain. The span of any countable set admits
+a spanning sequence indexed by `ℕ` (`Set.Countable.exists_span_range_eq_top`).
 -/
 
 public section
@@ -163,6 +163,22 @@ theorem span_image_Iio_eq_span_image_Iio {x z : ι → M}
     rintro _ ⟨l, hl, rfl⟩
     have hmem := sub_mem (subset_span (R := R) (Set.mem_image_of_mem z hl)) <|
       span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (ih l hl (h l))
+    rwa [sub_sub_cancel] at hmem
+
+/-- Two families span the same submodule when every `z j` is `x j` plus a combination of the
+earlier `x l`. -/
+theorem span_range_eq_span_range_of_sub_mem_span {x z : ι → M}
+    (h : ∀ j, z j - x j ∈ span R (x '' Set.Iio j)) :
+    span R (Set.range z) = span R (Set.range x) := by
+  refine le_antisymm (span_le.2 ?_) (span_le.2 ?_)
+  · rintro _ ⟨j, rfl⟩
+    have hmem := add_mem (span_mono (Set.image_subset_range x _) (h j))
+      (subset_span (R := R) (Set.mem_range_self j))
+    rwa [sub_add_cancel] at hmem
+  · rintro _ ⟨j, rfl⟩
+    have hj : z j - x j ∈ span R (z '' Set.Iio j) := span_image_Iio_eq_span_image_Iio h j ▸ h j
+    have hmem := sub_mem (subset_span (R := R) (Set.mem_range_self (f := z) j))
+      (span_mono (Set.image_subset_range z _) hj)
     rwa [sub_sub_cancel] at hmem
 
 end Unitriangular
