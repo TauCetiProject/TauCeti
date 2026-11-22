@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.LinearMap.FiniteRange
-public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -31,12 +30,16 @@ for a real seminormed space `X`, and the complexification of bounded operators, 
   embedding, and the decomposition `z = re z + i im z`; `TauCeti.Complexification.reLm`,
   `TauCeti.Complexification.imLm` and `TauCeti.Complexification.ofRealLm` are the real-linear
   real part, imaginary part and real embedding.
+* `TauCeti.Complexification.equivProdLm`: `X_ℂ` is real-linearly equivalent to `X × X`, so it is
+  finite-dimensional over `ℝ` when `X` is (`TauCeti.Complexification.instFiniteReal`).
 * `TauCeti.Complexification.ext_ofReal`: complex-(semi)linear maps out of `X_ℂ` are determined on
   `X`.
 * `LinearMap.complexify`: the complex-linear extension `T_ℂ` of a real-linear map `T`, the unique
   one (`LinearMap.eq_complexify_iff`); it has finite rank exactly when `T` does
-  (`LinearMap.hasFiniteRange_complexify_iff`).
-* `TauCeti.tensorEquivComplexification`: the algebraic isomorphism `ℂ ⊗[ℝ] W ≃ₗ[ℂ] W_ℂ`.
+  (`LinearMap.hasFiniteRange_complexify_iff`); it commutes with conjugation
+  (`TauCeti.Complexification.conj_complexify`).
+* `TauCeti.tensorEquivComplexification`: the algebraic isomorphism `ℂ ⊗[ℝ] W ≃ₗ[ℂ] W_ℂ`, which
+  turns base change into complexification (`TauCeti.tensorEquivComplexification_baseChange`).
 * `TauCeti.Complexification.instFiniteComplex`, `TauCeti.Complexification.finrank_complex`: the
   complexification of a finite-dimensional real vector space is finite-dimensional over `ℂ`, of
   complex dimension the real dimension of the original space.
@@ -175,6 +178,27 @@ variable {X}
 @[simp] theorem imLm_apply (z : Complexification X) : imLm X z = z.im := (rfl)
 @[simp] theorem ofRealLm_apply (x : X) : ofRealLm X x = ofReal x := (rfl)
 
+variable (X) in
+/-- The complexification is real-linearly equivalent to `X × X` via `z ↦ (re z, im z)`. -/
+def equivProdLm : Complexification X ≃ₗ[ℝ] X × X where
+  toFun z := (z.re, z.im)
+  invFun p := ⟨p.1, p.2⟩
+  map_add' _ _ := (rfl)
+  map_smul' _ _ := by ext <;> simp
+  left_inv _ := (rfl)
+  right_inv _ := (rfl)
+
+@[simp]
+theorem equivProdLm_apply (z : Complexification X) : equivProdLm X z = (z.re, z.im) := (rfl)
+
+@[simp]
+theorem equivProdLm_symm_apply (p : X × X) : (equivProdLm X).symm p = ⟨p.1, p.2⟩ := (rfl)
+
+/-- The complexification of a finite-dimensional real vector space is finite-dimensional over
+`ℝ`. -/
+instance instFiniteReal [Module.Finite ℝ X] : Module.Finite ℝ (Complexification X) :=
+  .equiv (equivProdLm X).symm
+
 end Module
 
 /-- Complex conjugation `x + i y ↦ x - i y` on `TauCeti.Complexification W`, as a
@@ -261,6 +285,16 @@ theorem eq_complexify_iff (T : X →ₗ[ℝ] Y) (S : Complexification X →ₗ[�
 
 end LinearMap
 
+namespace TauCeti.Complexification
+
+variable {X Y : Type*} [AddCommGroup X] [Module ℝ X] [AddCommGroup Y] [Module ℝ Y]
+
+/-- Complexification of a real-linear map commutes with complex conjugation. -/
+theorem conj_complexify (T : X →ₗ[ℝ] Y) (z : Complexification X) :
+    conj Y (T.complexify z) = T.complexify (conj X z) := by ext <;> simp
+
+end TauCeti.Complexification
+
 namespace TauCeti
 
 variable {W : Type*} [AddCommGroup W] [Module ℝ W]
@@ -289,6 +323,13 @@ def tensorEquivComplexification : ℂ ⊗[ℝ] W ≃ₗ[ℂ] Complexification W 
 theorem tensorEquivComplexification_tmulConj (u : ℂ ⊗[ℝ] W) :
     tensorEquivComplexification W (tmulConj W u) =
       Complexification.conj W (tensorEquivComplexification W u) := by ext <;> simp
+
+/-- `tensorEquivComplexification` intertwines `LinearMap.baseChange ℂ` with
+`LinearMap.complexify`. -/
+theorem tensorEquivComplexification_baseChange {Y : Type*} [AddCommGroup Y] [Module ℝ Y]
+    (T : W →ₗ[ℝ] Y) (u : ℂ ⊗[ℝ] W) :
+    tensorEquivComplexification Y (T.baseChange ℂ u) =
+      T.complexify (tensorEquivComplexification W u) := by ext <;> simp
 
 /-- The complexification of a finite-dimensional real vector space is finite-dimensional over
 `ℂ`. -/
