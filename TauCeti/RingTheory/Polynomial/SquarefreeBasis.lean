@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Polynomial.Content
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 
-import Mathlib.Algebra.Squarefree.Basic
 import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.RingTheory.Polynomial.Localization
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
