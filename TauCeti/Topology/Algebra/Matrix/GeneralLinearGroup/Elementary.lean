@@ -56,6 +56,18 @@ namespace TauCeti
 
 variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n]
 
+omit [Fintype n] in
+private theorem continuous_one_add_single [NonAssocSemiring 𝕜] [TopologicalSpace 𝕜]
+    {i j : n} (hij : i ≠ j) :
+    Continuous fun c : 𝕜 ↦ (1 : Matrix n n 𝕜) + Matrix.single i j c := by
+  refine continuous_matrix fun p q ↦ ?_
+  simp only [Matrix.add_apply, Matrix.single_apply]
+  by_cases h : i = p ∧ j = q
+  · rcases h with ⟨rfl, rfl⟩
+    simpa [Matrix.one_apply, hij] using continuous_id'
+  · simp only [h, ↓reduceIte, add_zero]
+    exact continuous_const
+
 /-- A transvection `1 + c Eᵢⱼ` in `GL n 𝕜` varies continuously in its parameter `c`. -/
 @[fun_prop]
 theorem continuous_transvectionUnit [Ring 𝕜] [TopologicalSpace 𝕜]
@@ -63,24 +75,19 @@ theorem continuous_transvectionUnit [Ring 𝕜] [TopologicalSpace 𝕜]
     Continuous (transvectionUnit hij : 𝕜 → GL n 𝕜) := by
   rw [Units.continuous_iff]
   constructor
-  · refine continuous_matrix fun p q ↦ ?_
-    simp only [Function.comp_apply, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply,
-      Matrix.single_apply]
-    by_cases h : i = p ∧ j = q
-    · rcases h with ⟨rfl, rfl⟩
-      simpa [Matrix.one_apply, hij] using continuous_id'
-    · simp only [h, ↓reduceIte, add_zero]
-      exact continuous_const
-  · refine continuous_matrix fun p q ↦ ?_
-    have hinv :
-        ∀ a : 𝕜, (↑(transvectionUnit hij a)⁻¹ : Matrix n n 𝕜) = 1 + single i j (-a) :=
-      fun a ↦ by rw [transvectionUnit_inv, coe_transvectionUnit_eq_one_add_single]
-    simp only [hinv, Matrix.add_apply, Matrix.single_apply]
-    by_cases h : i = p ∧ j = q
-    · rcases h with ⟨rfl, rfl⟩
-      simpa [Matrix.one_apply, hij] using continuous_neg
-    · simp only [h, ↓reduceIte, add_zero]
-      exact continuous_const
+  · have hval :
+        (Units.val ∘ (transvectionUnit hij : 𝕜 → GL n 𝕜)) = fun a : 𝕜 ↦ 1 + single i j a := by
+      funext a
+      exact coe_transvectionUnit_eq_one_add_single hij a
+    rw [hval]
+    exact continuous_one_add_single (𝕜 := 𝕜) hij
+  · have hinv :
+        (fun a : 𝕜 ↦ (↑(transvectionUnit hij a)⁻¹ : Matrix n n 𝕜)) =
+          fun a : 𝕜 ↦ 1 + single i j (-a) := by
+      funext a
+      rw [transvectionUnit_inv, coe_transvectionUnit_eq_one_add_single]
+    rw [hinv]
+    exact (continuous_one_add_single (𝕜 := 𝕜) hij).comp (continuous_neg (G := 𝕜))
 
 end TauCeti
 
@@ -94,18 +101,7 @@ theorem continuous_transvection [CommRing 𝕜] [TopologicalSpace 𝕜]
     {i j : n} (hij : i ≠ j) :
     Continuous (transvection hij : 𝕜 → SpecialLinearGroup n 𝕜) := by
   have hcont : Continuous fun a : 𝕜 ↦ (transvection hij a : Matrix n n 𝕜) := by
-    refine continuous_matrix fun p q ↦ ?_
-    have hentry :
-        (fun a : 𝕜 ↦ (transvection hij a : Matrix n n 𝕜) p q) =
-          fun a : 𝕜 ↦ (1 : Matrix n n 𝕜) p q + (if i = p ∧ j = q then a else 0) := by
-      ext a
-      simp [transvection_coe, Matrix.single_apply]
-    rw [hentry]
-    by_cases h : i = p ∧ j = q
-    · rcases h with ⟨rfl, rfl⟩
-      simpa [Matrix.one_apply, hij] using continuous_id'
-    · simp only [h, ↓reduceIte, add_zero]
-      exact continuous_const
+    simpa only [transvection_coe] using TauCeti.continuous_one_add_single (𝕜 := 𝕜) hij
   exact hcont.subtype_mk fun a ↦ (transvection hij a).2
 
 end Matrix.SpecialLinearGroup
@@ -170,6 +166,15 @@ def mapGLContinuousMap (f : A →+* C(X, 𝕜)) : GL n A →* C(X, GL n 𝕜) wh
   map_mul' g₁ g₂ := by
     ext x i j
     simp [map_mul]
+
+/-- Evaluating `f.mapGLContinuousMap g` at `x : X` is entrywise base change along the evaluation
+ring homomorphism `a ↦ f a x`. -/
+theorem mapGLContinuousMap_apply (f : A →+* C(X, 𝕜)) (g : GL n A) (x : X) :
+    f.mapGLContinuousMap g x =
+      Units.map
+        ((((Pi.evalRingHom (fun _ : X ↦ 𝕜) x).comp ContinuousMap.coeFnRingHom).comp f).mapMatrix
+          (m := n)).toMonoidHom g :=
+  (rfl)
 
 /-- The `(i, j)` entry of `f.mapGLContinuousMap g x` is `f (g i j) x`. -/
 @[simp]
@@ -239,6 +244,13 @@ def mapSLContinuousMap (f : R →+* C(X, 𝕜)) :
   map_mul' g₁ g₂ := by
     ext x i j
     simp [map_mul]
+
+/-- Evaluating `f.mapSLContinuousMap g` at `x : X` is entrywise base change along the evaluation
+ring homomorphism `a ↦ f a x`. -/
+theorem mapSLContinuousMap_apply (f : R →+* C(X, 𝕜)) (g : SpecialLinearGroup n R) (x : X) :
+    f.mapSLContinuousMap g x =
+      SpecialLinearGroup.map ((ContinuousMap.evalAlgHom 𝕜 𝕜 x).toRingHom.comp f) g :=
+  (rfl)
 
 /-- The `(i, j)` entry of `f.mapSLContinuousMap g x` is `f (g i j) x`. -/
 @[simp]
