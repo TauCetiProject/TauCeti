@@ -443,7 +443,7 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationO
       congrArg (fun L ↦ L x) (ModuleCat.hom_zsmul s F)
     rw [map_zsmul, ← ConcreteCategory.comp_apply, key, hz, ConcreteCategory.comp_apply]
     -- `erw` matches the concrete action across the excision-selected class `w`.
-    erw [φ.localHomologyMap_comp_inclusion_localOrientationOfOrientedChart
+    erw [φ.localHomologyMap_sourceRestrict_comp_inclusion_localOrientationOfOrientedChart
       haφ ω hE hWo haW hWφ]
     rw [localHomologyMap_translate_localOrientationOfOrientedChart_refl (mem_refl_source (φ a))
         (mem_refl_source b) (translate_preimage_subset (φ a) b) ω hE,
