@@ -132,7 +132,8 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le (hq 
     hF.aestronglyMeasurable
     |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (q' := p)
       (r' := (1 - r⁻¹)⁻¹) ENNReal.coe_ne_top hr2 fun G hG _ ↦ ?_)⟩
-  simp_rw [inner_setIntegral_Iio_schrodingerPropagator_sub hF]
+  -- Move the pairing with `G t` inside the integral over `s < t`.
+  simp_rw [inner_setIntegral_Iio_phasePropagator_sub _ hF]
   exact hC F G hF.aestronglyMeasurable hG.aestronglyMeasurable
     (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable hF)
     (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable hG)

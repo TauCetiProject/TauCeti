@@ -277,7 +277,7 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le_of_e
     hF.aestronglyMeasurable
     |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (q' := 2) (r' := r')
       ENNReal.ofNat_ne_top hr2 fun G hG _ ↦ ?_)⟩
-  simp_rw [inner_setIntegral_Iio_schrodingerPropagator_sub hF]
+  simp_rw [inner_setIntegral_Iio_phasePropagator_sub _ hF]
   exact hC F G hF hG
 
 end TauCeti

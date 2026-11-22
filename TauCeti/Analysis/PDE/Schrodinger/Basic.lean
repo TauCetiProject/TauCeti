@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Fourier.LaplacianSymbol
 public import TauCeti.Analysis.Fourier.PhaseGroup
-import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # The Schrödinger propagator on `L²`
@@ -32,8 +31,6 @@ is the strongly continuous unitary Schrödinger group. The dispersive estimate
 * `TauCeti.adjoint_schrodingerPropagator`: the adjoint of `S(t)` is `S(-t)`.
 * `TauCeti.inner_schrodingerPropagator_sub_apply`: the Duhamel pairing `⟪S(t - s) f, g⟫` is
   `⟪S(-s) f, S(-t) g⟫`.
-* `TauCeti.inner_setIntegral_Iio_schrodingerPropagator_sub`: the pairing with a test function
-  moves inside the retarded Duhamel integral `∫_{s < t} S(t - s) u(s) ds`.
 * `TauCeti.hasTemperateGrowth_phaseSymbol_laplacianSymbol`: its symbol has temperate growth.
 
 ## References
@@ -79,15 +76,6 @@ theorem inner_schrodingerPropagator_sub_apply (s t : ℝ) (f g : Lp F 2 (volume 
       ⟪schrodingerPropagator F (-s) f, schrodingerPropagator F (-t) g⟫_ℂ := by
   rw [← adjoint_schrodingerPropagator, ← adjoint_schrodingerPropagator]
   exact inner_phasePropagator_sub_apply laplacianSymbol s t f g
-
-/-- The pairing of the retarded Duhamel integral `∫_{s < t} S(t - s) u(s) ds` of an integrable
-forcing term with `g` is the integral over `s < t` of the pairings `⟪S(t - s) u(s), g⟫`. -/
-theorem inner_setIntegral_Iio_schrodingerPropagator_sub {u : ℝ → Lp F 2 (volume : Measure E)}
-    (hu : Integrable u) (t : ℝ) (g : Lp F 2 (volume : Measure E)) :
-    ⟪∫ s in Set.Iio t, schrodingerPropagator F (t - s) (u s), g⟫_ℂ =
-      ∫ s in Set.Iio t, ⟪schrodingerPropagator F (t - s) (u s), g⟫_ℂ :=
-  (integral_inner_left (integrable_phasePropagator_apply _
-    (continuous_const.sub continuous_id).aestronglyMeasurable hu).integrableOn g).symm
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The Schrödinger symbol `exp(-4π² i t ‖ξ‖²)` has temperate growth. -/
