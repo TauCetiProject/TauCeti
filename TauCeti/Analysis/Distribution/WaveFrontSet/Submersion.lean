@@ -40,7 +40,7 @@ pullback is functorial (`Distribution.compCLMOfSubmersion_comp`) and local
 along `Θ` of `A^* T`, and the wave front set transforms along `Θ` by
 `Distribution.isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff`. This leaves the case of
 a surjective linear map `A`. Write `x = s (A x) + P x` with `P` a projection onto `ker A` and `s` a
-linear section of `A` (`TestFunction.linearSection_add_linearCoord_snd`). Then:
+linear section of `A` (`ContinuousLinearMap.linearSection_add_linearCoord_snd`). Then:
 
 * `∂_k (A^* T) = 0` for `k ∈ ker A` (`Distribution.lineDerivOp_compCLMOfSubmersion_eq_zero`).
   Microlocal elliptic regularity for `∂_k` shows that `A^* T` is microlocally smooth in every
@@ -87,15 +87,16 @@ variable {A : E →L[ℝ] E'} (hA : Function.Surjective A)
 
 /-- `sᵀ` is a left inverse of `Aᵀ`, where `s` is the linear section `linearSection` of `A`. -/
 private theorem adjoint_linearSection_adjoint_apply (η : E') :
-    ((linearSection hA)†) ((A†) η) = η := by
-  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp, comp_linearSection,
+    ((A.linearSection hA)†) ((A†) η) = η := by
+  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+    ContinuousLinearMap.comp_linearSection,
     ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
 
 /-- A frequency `ζ` pairs with `x` as `sᵀ ζ` with `A x` plus `ζ` with the `ker A`-coordinate of
 `x`, where `s` is the linear section `linearSection` of `A`. -/
 private theorem inner_eq_inner_linearCoord (x ζ : E) :
-    ⟪x, ζ⟫ = ⟪A x, ((linearSection hA)†) ζ⟫ + ⟪((linearCoord hA x).2 : E), ζ⟫ := by
-  conv_lhs => rw [← linearSection_add_linearCoord_snd hA x]
+    ⟪x, ζ⟫ = ⟪A x, ((A.linearSection hA)†) ζ⟫ + ⟪((A.linearCoord hA x).2 : E), ζ⟫ := by
+  conv_lhs => rw [← A.linearSection_add_linearCoord_snd hA x]
   rw [inner_add_left, ContinuousLinearMap.adjoint_inner_right]
 
 /-- A cutoff `φ x' = φ₁ (A x') ρ (P x')` adapted to the coordinates `x' ↦ (A x', P x')`, equal to
@@ -103,10 +104,10 @@ private theorem inner_eq_inner_linearCoord (x ζ : E) :
 of `x`, where `ρ` is a bump function on `ker A`. -/
 private theorem exists_coord_cutoff (hAΩ : MapsTo A Ω Ω') {x : E} (hx : x ∈ Ω) {W : Set E'}
     (hW : W ∈ 𝓝 (A x)) {U : Set E} (hU : U ∈ 𝓝 x) :
-    ∃ (φ₁ : 𝓓(Ω', ℂ)) (ρ : ContDiffBump (linearCoord hA x).2) (φ : 𝓓(Ω, ℂ)), tsupport φ₁ ⊆ W ∧
+    ∃ (φ₁ : 𝓓(Ω', ℂ)) (ρ : ContDiffBump (A.linearCoord hA x).2) (φ : 𝓓(Ω, ℂ)), tsupport φ₁ ⊆ W ∧
       φ₁ (A x) = 1 ∧ tsupport φ ⊆ U ∧ φ x = 1 ∧
-        ∀ x', φ x' = φ₁ (A x') * ρ (linearCoord hA x').2 := by
-  set L := linearCoord hA
+        ∀ x', φ x' = φ₁ (A x') * ρ (A.linearCoord hA x').2 := by
+  set L := A.linearCoord hA
   -- A radius `r` with `L⁻¹ (ball (L x) r) ⊆ Ω ∩ U`.
   obtain ⟨r, hr, hrΩ⟩ : ∃ r > 0, ball (L x) r ⊆ L.symm ⁻¹' (Ω ∩ U) :=
     Metric.mem_nhds_iff.1 ((L.symm.continuous.continuousAt (x := L x)).preimage_mem_nhds
@@ -122,13 +123,13 @@ private theorem exists_coord_cutoff (hAΩ : MapsTo A Ω Ω') {x : E} (hx : x ∈
   have hSΩ : S ⊆ Ω ∩ U := by
     rintro _ ⟨p, ⟨hp₁, hp₂⟩, rfl⟩
     refine hrΩ (mem_ball.2 (lt_of_le_of_lt ?_ (half_lt_self hr)))
-    rw [Prod.dist_eq, linearCoord_apply_fst]
+    rw [Prod.dist_eq, ContinuousLinearMap.linearCoord_apply_fst]
     exact max_le (mem_closedBall.1 hp₁) (mem_closedBall.1 hp₂)
   have hsupp : support (fun x' ↦ φ₁ (A x') * (ρ (L x').2 : ℂ)) ⊆ S := by
     intro x' hx'
     refine ⟨L x', ⟨?_, ?_⟩, L.symm_apply_apply x'⟩
     · have h := ((hφ₁s (subset_tsupport _ (left_ne_zero_of_mul hx'))).1).2
-      rw [linearCoord_apply_fst]
+      rw [ContinuousLinearMap.linearCoord_apply_fst]
       exact ball_subset_closedBall h
     · have h := right_ne_zero_of_mul hx'
       rw [Complex.ofReal_ne_zero, ← mem_support, ρ.support_eq] at h
@@ -138,7 +139,7 @@ private theorem exists_coord_cutoff (hAΩ : MapsTo A Ω Ω') {x : E} (hx : x ∈
     (φ₁.contDiff.comp A.contDiff).mul (Complex.ofRealCLM.contDiff.comp
       (ρ.contDiff.comp L.contDiff.snd)), .of_isClosed_subset hS (isClosed_tsupport _) htsupp,
     htsupp.trans (hSΩ.trans inter_subset_left)⟩
-  have hφ (x' : E) : φ x' = φ₁ (A x') * ρ (L x').2 := rfl
+  have hφ (x' : E) : φ x' = φ₁ (A x') * ρ (L x').2 := congrFun TestFunction.coe_mk x'
   refine ⟨φ₁, ρ, φ, hφ₁s.trans (inter_subset_left.trans inter_subset_left), hφ₁x,
     htsupp.trans (hSΩ.trans inter_subset_right), ?_, hφ⟩
   rw [hφ, hφ₁x, ρ.one_of_mem_closedBall (mem_closedBall_self (by positivity))]
@@ -173,26 +174,26 @@ transform of `A^* T` at `ζ` is that of `T` with cutoff `φ₁` at `sᵀ ζ`, wh
 `linearScale` comparing the Haar measures. -/
 private theorem localFourier_compCLMOfSubmersion_eq (T : 𝓓'(Ω', ℂ)) (φ₁ : 𝓓(Ω', ℂ))
     (ρ : (A : E →ₗ[ℝ] E').ker → ℂ) {φ : 𝓓(Ω, ℂ)}
-    (hφ : ∀ x, φ x = φ₁ (A x) * ρ (linearCoord hA x).2) (ζ : E) :
+    (hφ : ∀ x, φ x = φ₁ (A x) * ρ (A.linearCoord hA x).2) (ζ : E) :
     (compCLMOfSubmersion μ ν A hf hAΩ hsurj T).localFourier φ ζ =
-      ((linearScale hA μ ν : ℝ) *
+      ((A.linearScale hA μ ν : ℝ) *
         ∫ k, ρ k * TauCeti.fourierAtom ζ (k : E) ∂Measure.addHaar) *
-      T.localFourier φ₁ (((linearSection hA)†) ζ) := by
+      T.localFourier φ₁ (((A.linearSection hA)†) ζ) := by
   rw [localFourier_def, localFourier_def, ← smul_eq_mul, ← map_smul]
   refine complexPairing_compCLMOfSubmersion μ ν hf hAΩ hsurj T fun g _ _ _ ↦ ?_
-  set η := ((linearSection hA)†) ζ
+  set η := ((A.linearSection hA)†) ζ
   -- In the coordinates `(A x, P x)` the integrand is a product.
   have hprod (x : E) : φ x * TauCeti.fourierAtom ζ x * (g (A x) : ℂ) =
-      (φ₁ (linearCoord hA x).1 * TauCeti.fourierAtom η (linearCoord hA x).1 *
-          g (linearCoord hA x).1) *
-        (ρ (linearCoord hA x).2 * TauCeti.fourierAtom ζ ((linearCoord hA x).2 : E)) := by
-    simp only [linearCoord_apply_fst, hφ, TauCeti.fourierAtom_eq_fourierChar,
+      (φ₁ (A.linearCoord hA x).1 * TauCeti.fourierAtom η (A.linearCoord hA x).1 *
+          g (A.linearCoord hA x).1) *
+        (ρ (A.linearCoord hA x).2 * TauCeti.fourierAtom ζ ((A.linearCoord hA x).2 : E)) := by
+    simp only [ContinuousLinearMap.linearCoord_apply_fst, hφ, TauCeti.fourierAtom_eq_fourierChar,
       inner_eq_inner_linearCoord hA x ζ, neg_add, AddChar.map_add_eq_mul, Circle.coe_mul, η]
     ring
   simp only [FunLike.coe_smul, Pi.smul_apply, bilinLeftCLM_apply,
     ContinuousLinearMap.mul_apply', smul_eq_mul, hprod]
   symm
-  refine (integral_mul_linearCoord hA μ ν (fun y ↦ φ₁ y * TauCeti.fourierAtom η y * g y)
+  refine (A.integral_mul_linearCoord hA μ ν (fun y ↦ φ₁ y * TauCeti.fourierAtom η y * g y)
     (fun k ↦ ρ k * TauCeti.fourierAtom ζ (k : E))).trans ?_
   simp only [Complex.real_smul, mul_assoc, integral_const_mul]
   ring
@@ -205,7 +206,7 @@ private theorem isMicrolocallySmoothAt_compCLMOfSubmersion_adjoint (T : 𝓓'(Ω
     (compCLMOfSubmersion μ ν A hf hAΩ hsurj T).IsMicrolocallySmoothAt x ((A†) η) := by
   obtain ⟨W, hW, Γ, hΓo, hηΓ, hΓc, hdecay⟩ := h.exists_nhds_cone
   obtain ⟨φ₁, ρ, φ, hφ₁W, -, -, hφx, hφ⟩ := exists_coord_cutoff hA hAΩ hx hW univ_mem
-  set s := linearSection hA
+  set s := A.linearSection hA
   -- The frequencies `ζ` with `sᵀ ζ ∈ Γ` and `‖ζ‖ < M ‖sᵀ ζ‖` form an open cone around `Aᵀ η`.
   have hsA : (s†) ((A†) η) = η := adjoint_linearSection_adjoint_apply hA η
   set M := ‖(A†) η‖ / ‖η‖ + 1
@@ -220,7 +221,7 @@ private theorem isMicrolocallySmoothAt_compCLMOfSubmersion_adjoint (T : 𝓓'(Ω
     exact mul_lt_mul_of_pos_left hζ.2 ht
   -- The decay of `T` with cutoff `φ₁` transfers through the product formula.
   obtain ⟨C, hC⟩ := hdecay φ₁ hφ₁W N
-  set c := (linearScale hA μ ν : ℝ)
+  set c := (A.linearScale hA μ ν : ℝ)
   set R := ∫ k, ρ k ∂Measure.addHaar
   refine ⟨max 1 M ^ N * (c * R * C), fun ζ hζ ↦ ?_⟩
   rw [localFourier_compCLMOfSubmersion_eq hA μ ν hf hAΩ hsurj T φ₁ (fun k ↦ (ρ k : ℂ)) hφ ζ]
@@ -255,16 +256,16 @@ private theorem IsMicrolocallySmoothAt.of_compCLMOfSubmersion_adjoint (T : 𝓓'
     T.IsMicrolocallySmoothAt (A x) η := by
   obtain ⟨U, hU, Γ, hΓo, hηΓ, hΓc, hdecay⟩ := h.exists_nhds_cone
   obtain ⟨φ₁, ρ, φ, -, hφ₁x, hφU, -, hφ⟩ := exists_coord_cutoff hA hAΩ hx univ_mem hU
-  set s := linearSection hA
+  set s := A.linearSection hA
   have hsA (η' : E') : (s†) ((A†) η') = η' := adjoint_linearSection_adjoint_apply hA η'
   refine isMicrolocallySmoothAt_iff.2 ⟨φ₁, by simp [hφ₁x], (A†) ⁻¹' Γ,
     hΓo.preimage (A†).continuous, hηΓ, fun t ht η' hη' ↦ by simpa using hΓc t ht _ hη',
     fun N ↦ ?_⟩
   obtain ⟨C, hC⟩ := hdecay φ hφU N
   -- Along `Aᵀ η'` the Fourier transform of `ρ` is its integral, since `ker A ⟂ range Aᵀ`.
-  set c := (linearScale hA μ ν : ℝ)
+  set c := (A.linearScale hA μ ν : ℝ)
   set R := ∫ k, ρ k ∂Measure.addHaar
-  have hcR : 0 < c * R := mul_pos (NNReal.coe_pos.2 (linearScale_pos hA μ ν))
+  have hcR : 0 < c * R := mul_pos (NNReal.coe_pos.2 (A.linearScale_pos hA μ ν))
     (ρ.integral_pos)
   refine ⟨max 1 ‖s†‖ ^ N * C / (c * R), fun η' hη' ↦ ?_⟩
   have hF := localFourier_compCLMOfSubmersion_eq hA μ ν hf hAΩ hsurj T φ₁ (fun k ↦ (ρ k : ℂ)) hφ
@@ -368,12 +369,11 @@ theorem isMicrolocallySmoothAt_compCLMOfSubmersion_iff (T : 𝓓'(Ω', ℂ)) {x 
   rw [hA] at hfΘ hAsurj
   let U : Opens E := ⟨Θ.source, Θ.open_source⟩
   let V : Opens E := ⟨Θ.target, Θ.open_target⟩
-  have hxU : x ∈ U := hxΘ
-  have hΘUV : MapsTo Θ U V := fun z hz ↦ Θ.map_source hz
-  have hd : DifferentiableAt ℝ Θ x :=
-    (hΘ.differentiableOn (by simp)).differentiableAt (Θ.open_source.mem_nhds hxΘ)
-  have hds : DifferentiableAt ℝ Θ.symm (Θ x) :=
-    (hΘ'.differentiableOn (by simp)).differentiableAt (Θ.open_target.mem_nhds (Θ.map_source hxΘ))
+  have hUΩ : U ≤ Ω := by simpa [U, ← SetLike.coe_subset_coe] using hΘΩ
+  have hxU : x ∈ U := by simpa [U] using hxΘ
+  have hΘUV : MapsTo Θ U V := fun z hz ↦ by simpa [V] using Θ.map_source (by simpa [U] using hz)
+  obtain ⟨hd, hds⟩ := Θ.differentiableAt_and_differentiableAt_symm_of_contDiffOn hΘ hΘ' (by simp)
+    hxΘ
   have hAV : MapsTo A V Ω' := fun z hz ↦ by
     have h := hfΘ (Θ.map_target hz)
     simp only [comp_apply, Θ.right_inv hz] at h
@@ -384,8 +384,8 @@ theorem isMicrolocallySmoothAt_compCLMOfSubmersion_iff (T : 𝓓'(Ω', ℂ)) {x 
     exact hAsurj
   -- On `U`, `f^* T` is the pullback along `Θ` of `A^* T`, and microlocal smoothness transforms
   -- along `Θ` and along `A`.
-  rw [← isMicrolocallySmoothAt_restrictCLM_iff (show U ≤ Ω from hΘΩ) hxU,
-    restrictCLM_compCLMOfSubmersion_eq μ ν hf hfΩ hsurj T hΘ hΘ' (U := U) rfl hΘΩ hΘUV hfΘ
+  rw [← isMicrolocallySmoothAt_restrictCLM_iff hUΩ hxU,
+    restrictCLM_compCLMOfSubmersion_eq μ ν hf hfΩ hsurj T hΘ hΘ' (U := U) rfl hUΩ hΘUV hfΘ
       (hAV := hAV) (hAsurj := hAsurj'),
     isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff (hUΩ := hΘUV) hxU,
     isMicrolocallySmoothAt_compCLMOfSubmersion_linear_iff hAsurj μ ν _ hAV _ T

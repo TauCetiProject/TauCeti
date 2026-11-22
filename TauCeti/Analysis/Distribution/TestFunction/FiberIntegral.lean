@@ -42,12 +42,12 @@ Since the defining identity determines `f_♯ φ`, fibre integration only depend
 ## Construction
 
 For a surjective linear map `A`, choose a linear equivalence `L : E ≃ E' × ker A` whose first
-component is `A` (`TestFunction.linearCoord`, with linear section `TestFunction.linearSection` of
-`A`). Then `A_♯ ψ` is, up to the constant `TestFunction.linearScale` comparing `μ` with the image
-of the product measure (`TestFunction.map_linearCoord`), the partial integral
-`y ↦ ∫ k, ψ (L⁻¹ (y, k)) dk` over the second factor; it is a test function by
-`Distribution.partialPairing`, and the defining identity is Fubini's theorem. Near a point `a`
-of `Ω`, the local normal form of a submersion
+component is `A` (`ContinuousLinearMap.linearCoord`, with linear section
+`ContinuousLinearMap.linearSection` of `A`). Then `A_♯ ψ` is, up to the constant
+`ContinuousLinearMap.linearScale` comparing `μ` with the image of the product measure
+(`ContinuousLinearMap.map_linearCoord`), the partial integral `y ↦ ∫ k, ψ (L⁻¹ (y, k)) dk` over
+the second factor; it is a test function by `Distribution.partialPairing`, and the defining
+identity is Fubini's theorem. Near a point `a` of `Ω`, the local normal form of a submersion
 (`ContDiffOn.exists_openPartialHomeomorph_eqOn_fderiv_comp`) writes `f = Df(a) ∘ Θ` for a
 diffeomorphism `Θ`, so `f_♯ = Df(a)_♯ ∘ Θ_*` on tests supported near `a`. These local maps satisfy
 the same defining identity, which determines a continuous function by the fundamental lemma of the
@@ -66,6 +66,88 @@ noncomputable section
 open Set Filter TopologicalSpace MeasureTheory
 open scoped Topology Distributions ContDiff
 
+namespace ContinuousLinearMap
+
+variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+
+/-! ### Linear coordinates adapted to a surjective linear map -/
+
+variable (A : E →L[ℝ] E') (hA : Function.Surjective A)
+
+/-- The linear equivalence `L : E ≃ E' × ker A` whose first component is `A`, that is,
+`L x = (A x, P x)` for a projection `P` onto `ker A`. -/
+def linearCoord : E ≃L[ℝ] E' × (A : E →ₗ[ℝ] E').ker :=
+  A.implicitCoordEquiv (LinearMap.range_eq_top.2 hA) (.of_finiteDimensional _)
+
+/-- The first component of `linearCoord` is `A`. -/
+@[simp]
+theorem linearCoord_apply_fst (x : E) : (A.linearCoord hA x).1 = A x := by
+  simp [linearCoord]
+
+/-- The linear section `y ↦ L⁻¹ (y, 0)` of `A`, where `L = linearCoord`. -/
+def linearSection : E' →L[ℝ] E :=
+  ((A.linearCoord hA).symm : E' × (A : E →ₗ[ℝ] E').ker →L[ℝ] E).comp
+    (ContinuousLinearMap.inl ℝ E' (A : E →ₗ[ℝ] E').ker)
+
+/-- `linearSection` is a pointwise right inverse of `A`. -/
+@[simp]
+theorem apply_linearSection (y : E') : A (A.linearSection hA y) = y := by
+  rw [← A.linearCoord_apply_fst hA]
+  simp [linearSection]
+
+/-- `linearSection` is a right inverse of `A`. -/
+theorem comp_linearSection : A.comp (A.linearSection hA) = ContinuousLinearMap.id ℝ E' := by
+  ext y
+  exact A.apply_linearSection hA y
+
+/-- Every `x` decomposes as `s (A x) + P x`, where `s = linearSection` and `P x ∈ ker A` is the
+second component of `linearCoord`. -/
+theorem linearSection_add_linearCoord_snd (x : E) :
+    A.linearSection hA (A x) + ((A.linearCoord hA x).2 : E) = x := by
+  symm
+  conv_lhs => rw [← (A.linearCoord hA).symm_apply_apply x]
+  rw [← A.linearCoord_apply_fst hA x, ← Prod.fst_add_snd (A.linearCoord hA x)]
+  simp only [map_add, linearSection, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
+    Function.comp_apply, ContinuousLinearMap.inl_apply, Prod.fst_add, Prod.snd_add, add_zero,
+    zero_add]
+  congr 1
+  exact A.implicitCoordEquiv_symm_apply_zero_mk _ _ _
+
+section Measure
+
+variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E']
+  (μ : Measure E) [μ.IsAddHaarMeasure] (ν : Measure E') [ν.IsAddHaarMeasure]
+
+/-- The constant comparing `μ` with the product of `ν` and a Haar measure on `ker A`, through
+`linearCoord`. -/
+def linearScale : NNReal :=
+  Measure.addHaarScalarFactor (μ.map (A.linearCoord hA)) (ν.prod Measure.addHaar)
+
+/-- The constant `linearScale` is positive. -/
+theorem linearScale_pos : 0 < A.linearScale hA μ ν :=
+  Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _
+
+/-- The image of `μ` under `linearCoord` is `linearScale` times the product of `ν` and a Haar
+measure on `ker A`. -/
+theorem map_linearCoord :
+    μ.map (A.linearCoord hA) = A.linearScale hA μ ν • ν.prod Measure.addHaar :=
+  Measure.isAddLeftInvariant_eq_smul _ _
+
+/-- **Fubini in the linear coordinates.** Integrating a product `u (A x) v (P x)` against `μ`
+gives `linearScale` times the product of the integrals. -/
+theorem integral_mul_linearCoord {𝕜 : Type*} [RCLike 𝕜] (u : E' → 𝕜)
+    (v : (A : E →ₗ[ℝ] E').ker → 𝕜) :
+    ∫ x, u (A.linearCoord hA x).1 * v (A.linearCoord hA x).2 ∂μ =
+      (A.linearScale hA μ ν : ℝ) • ((∫ y, u y ∂ν) * ∫ k, v k ∂Measure.addHaar) := by
+  rw [← integral_prod_mul, ← NNReal.smul_def, ← integral_smul_nnreal_measure,
+    ← map_linearCoord, ← (A.linearCoord hA).coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe,
+    integral_map_equiv]
+
+end Measure
+
+end ContinuousLinearMap
+
 namespace TestFunction
 
 variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -78,52 +160,13 @@ section Linear
 
 variable {A : E →L[ℝ] E'} (hA : Function.Surjective A)
 
-/-- The linear equivalence `L : E ≃ E' × ker A` whose first component is `A`, that is,
-`L x = (A x, P x)` for a projection `P` onto `ker A`. -/
-def linearCoord : E ≃L[ℝ] E' × (A : E →ₗ[ℝ] E').ker :=
-  A.implicitCoordEquiv (LinearMap.range_eq_top.2 hA) (.of_finiteDimensional _)
-
-/-- The first component of `linearCoord` is `A`. -/
-@[simp]
-theorem linearCoord_apply_fst (x : E) : (linearCoord hA x).1 = A x := by
-  simp [linearCoord]
-
-/-- The linear section `y ↦ L⁻¹ (y, 0)` of `A`, where `L = linearCoord`. -/
-def linearSection : E' →L[ℝ] E :=
-  ((linearCoord hA).symm : E' × (A : E →ₗ[ℝ] E').ker →L[ℝ] E).comp
-    (ContinuousLinearMap.inl ℝ E' (A : E →ₗ[ℝ] E').ker)
-
-/-- `linearSection` is a pointwise right inverse of `A`. -/
-@[simp]
-theorem apply_linearSection (y : E') : A (linearSection hA y) = y := by
-  rw [← linearCoord_apply_fst hA]
-  simp [linearSection]
-
-/-- `linearSection` is a right inverse of `A`. -/
-theorem comp_linearSection : A.comp (linearSection hA) = ContinuousLinearMap.id ℝ E' := by
-  ext y
-  exact apply_linearSection hA y
-
-/-- Every `x` decomposes as `s (A x) + P x`, where `s = linearSection` and `P x ∈ ker A` is the
-second component of `linearCoord`. -/
-theorem linearSection_add_linearCoord_snd (x : E) :
-    linearSection hA (A x) + ((linearCoord hA x).2 : E) = x := by
-  symm
-  conv_lhs => rw [← (linearCoord hA).symm_apply_apply x]
-  rw [← linearCoord_apply_fst hA x, ← Prod.fst_add_snd (linearCoord hA x)]
-  simp only [map_add, linearSection, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
-    Function.comp_apply, ContinuousLinearMap.inl_apply, Prod.fst_add, Prod.snd_add, add_zero,
-    zero_add]
-  congr 1
-  exact A.implicitCoordEquiv_symm_apply_zero_mk _ _ _
-
 variable (W : Opens E)
 
 /-- The open set `L(W)` of `E' × ker A`. -/
 private def linearCoordImage : Opens (E' × (A : E →ₗ[ℝ] E').ker) :=
-  ⟨(linearCoord hA).symm ⁻¹' W, W.isOpen.preimage (linearCoord hA).symm.continuous⟩
+  ⟨(A.linearCoord hA).symm ⁻¹' W, W.isOpen.preimage (A.linearCoord hA).symm.continuous⟩
 
-private theorem mapsTo_linearCoord : MapsTo (linearCoord hA) W (linearCoordImage hA W) :=
+private theorem mapsTo_linearCoord : MapsTo (A.linearCoord hA) W (linearCoordImage hA W) :=
   fun x hx ↦ by simpa [linearCoordImage] using hx
 
 variable {W} (hW : MapsTo A W Ω')
@@ -134,47 +177,22 @@ private theorem linearCoordImage_subset :
   intro p hp
   refine ⟨?_, trivial⟩
   have h := hW (by simpa [linearCoordImage] using hp)
-  rwa [← linearCoord_apply_fst hA, ContinuousLinearEquiv.apply_symm_apply] at h
+  rwa [← A.linearCoord_apply_fst hA, ContinuousLinearEquiv.apply_symm_apply] at h
 
 variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E']
   {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
   (μ : Measure E) [μ.IsAddHaarMeasure] (ν : Measure E') [ν.IsAddHaarMeasure]
 
-/-- The constant comparing `μ` with the product of `ν` and a Haar measure on `ker A`, through
-`linearCoord`. -/
-def linearScale : NNReal :=
-  Measure.addHaarScalarFactor (μ.map (linearCoord hA)) (ν.prod Measure.addHaar)
-
-/-- The constant `linearScale` is positive. -/
-theorem linearScale_pos : 0 < linearScale hA μ ν :=
-  Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _
-
-/-- The image of `μ` under `linearCoord` is `linearScale` times the product of `ν` and a Haar
-measure on `ker A`. -/
-theorem map_linearCoord :
-    μ.map (linearCoord hA) = linearScale hA μ ν • ν.prod Measure.addHaar :=
-  Measure.isAddLeftInvariant_eq_smul _ _
-
-/-- **Fubini in the linear coordinates.** Integrating a product `u (A x) v (P x)` against `μ`
-gives `linearScale` times the product of the integrals. -/
-theorem integral_mul_linearCoord {𝕜 : Type*} [RCLike 𝕜] (u : E' → 𝕜)
-    (v : (A : E →ₗ[ℝ] E').ker → 𝕜) :
-    ∫ x, u (linearCoord hA x).1 * v (linearCoord hA x).2 ∂μ =
-      (linearScale hA μ ν : ℝ) • ((∫ y, u y ∂ν) * ∫ k, v k ∂Measure.addHaar) := by
-  rw [← integral_prod_mul, ← NNReal.smul_def, ← integral_smul_nnreal_measure,
-    ← map_linearCoord, ← (linearCoord hA).coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe,
-    integral_map_equiv]
-
 /-- Fibre integration along a surjective linear map `A`: `y ↦ c ∫ k, ψ (L⁻¹ (y, k)) dk`. -/
 private def linearFiberIntegral : 𝓓(W, ℝ) →L[ℝ] 𝓓(Ω', ℝ) :=
-  (linearScale hA μ ν : ℝ) •
+  (A.linearScale hA μ ν : ℝ) •
     (Distribution.ofFun ⊤ (fun _ ↦ (1 : ℝ)) Measure.addHaar ⊤).partialPairing
       (linearCoordImage_subset hA hW) ∘L
-    (linearCoord hA).transportTestFunction (mapsTo_linearCoord hA W)
+    (A.linearCoord hA).transportTestFunction (mapsTo_linearCoord hA W)
 
 private theorem linearFiberIntegral_apply (ψ : 𝓓(W, ℝ)) (y : E') :
     linearFiberIntegral hA hW μ ν ψ y =
-      (linearScale hA μ ν : ℝ) * ∫ k, ψ ((linearCoord hA).symm (y, k)) ∂Measure.addHaar := by
+      (A.linearScale hA μ ν : ℝ) * ∫ k, ψ ((A.linearCoord hA).symm (y, k)) ∂Measure.addHaar := by
   simp only [linearFiberIntegral, ContinuousLinearMap.comp_apply, smul_apply,
     Distribution.partialPairing_apply, smul_eq_mul]
   rw [Distribution.ofFun_apply (locallyIntegrableOn_const _)]
@@ -184,7 +202,7 @@ private theorem linearFiberIntegral_apply (ψ : 𝓓(W, ℝ)) (y : E') :
 private theorem integral_linearFiberIntegral_smul (ψ : 𝓓(W, ℝ)) {g : E' → G}
     (hg : ContinuousOn g Ω') :
     ∫ y, linearFiberIntegral hA hW μ ν ψ y • g y ∂ν = ∫ x, ψ x • g (A x) ∂μ := by
-  set L := linearCoord hA
+  set L := A.linearCoord hA
   set ψ' := L.transportTestFunction (mapsTo_linearCoord hA W) ψ
   have hψ' (p : E' × (A : E →ₗ[ℝ] E').ker) : ψ' p = ψ (L.symm p) :=
     ContinuousLinearEquiv.transportTestFunction_apply ..
@@ -200,13 +218,13 @@ private theorem integral_linearFiberIntegral_smul (ψ : 𝓓(W, ℝ)) {g : E' �
       ((Function.support_smul_subset_left _ _).trans (subset_tsupport _))).1
       (hc.integrableOn_compact hK)
   calc ∫ y, linearFiberIntegral hA hW μ ν ψ y • g y ∂ν
-      = (linearScale hA μ ν : ℝ) • ∫ y, (∫ k, ψ' (y, k) ∂Measure.addHaar) • g y ∂ν := by
+      = (A.linearScale hA μ ν : ℝ) • ∫ y, (∫ k, ψ' (y, k) ∂Measure.addHaar) • g y ∂ν := by
         simp_rw [linearFiberIntegral_apply, mul_smul, integral_smul, hψ', L]
-    _ = (linearScale hA μ ν : ℝ) • ∫ p, ψ' p • g p.1 ∂(ν.prod Measure.addHaar) := by
+    _ = (A.linearScale hA μ ν : ℝ) • ∫ p, ψ' p • g p.1 ∂(ν.prod Measure.addHaar) := by
         rw [integral_prod _ hint]
         simp_rw [integral_smul_const]
     _ = ∫ p, ψ' p • g p.1 ∂(μ.map L) := by
-        rw [map_linearCoord hA μ ν, integral_smul_nnreal_measure, NNReal.smul_def]
+        rw [A.map_linearCoord hA μ ν, integral_smul_nnreal_measure, NNReal.smul_def]
     _ = ∫ x, ψ x • g (A x) ∂μ := by
         rw [← L.coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe, integral_map_equiv]
         simp [hψ', L]

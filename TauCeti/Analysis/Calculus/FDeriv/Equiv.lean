@@ -178,14 +178,6 @@ theorem isInvertible_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ 
   .of_inverse (e.fderiv_comp_fderiv_symm_of_mem_source hy he hes)
     (e.fderiv_symm_comp_fderiv_of_mem_source hy he hes)
 
-/-- An open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on its
-target, has an invertible derivative at every point of its source. -/
-theorem isInvertible_fderiv_of_contDiffOn (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞}
-    (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
-    (hx : x ∈ e.source) : (fderiv 𝕜 e x).IsInvertible :=
-  e.isInvertible_fderiv hx ((he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx))
-    ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
-
 /-- Under the same hypotheses, the inverse of the derivative at a point of the source is the
 derivative of the inverse at the image point. -/
 theorem inverse_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ e.source)
@@ -223,6 +215,14 @@ theorem differentiableAt_and_differentiableAt_symm_of_contDiffOn (e : OpenPartia
     DifferentiableAt 𝕜 e x ∧ DifferentiableAt 𝕜 e.symm (e x) :=
   ⟨(he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx),
     (hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx))⟩
+
+/-- An open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on its
+target, has an invertible derivative at every point of its source. -/
+theorem isInvertible_fderiv_of_contDiffOn (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞}
+    (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ e.source) : (fderiv 𝕜 e x).IsInvertible :=
+  have hd := e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he hes hn hx
+  e.isInvertible_fderiv hx hd.1 hd.2
 
 /-- An open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
 with inverse `C^n` on its target, has a derivative with nonzero determinant at every point of its
