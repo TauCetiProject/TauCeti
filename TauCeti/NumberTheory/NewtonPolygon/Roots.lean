@@ -258,7 +258,7 @@ theorem norm_le_rpow_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0) {m 
     exact hPd.map (algebraMap K L) (norm_algebraMap' L)
   have hroot : (P.map (algebraMap K L)).eval x = 0 := by
     rw [eval_map_algebraMap, map_mul, aeval_C, hx, mul_zero]
-  exact hPdL.norm_le_of_eval_eq_zero (fun a n _ ↦ norm_pow a n) hc
+  exact hPdL.norm_le_of_eval_eq_zero (MulHomClass.isPowMul normHom) hc
     ⟨hmonic.natDegree_map (algebraMap K L), hmonic.map (algebraMap K L)⟩ hroot
 
 /-- Every nonzero root `x` of a nonzero polynomial pure of slope `m`, in any normed field extension

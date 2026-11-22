@@ -11,7 +11,6 @@ public import Mathlib.Analysis.Normed.Ring.WithAbs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 
-import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import Mathlib.Analysis.Normed.Field.Ultra
 import Mathlib.Analysis.Normed.Field.WithAbs
 import TauCeti.Algebra.Polynomial.Eval.Nonarchimedean
@@ -153,7 +152,7 @@ theorem apply_le_one_of_isIntegral (hv : IsNonarchimedean v)
   obtain ⟨p, hpm, hp⟩ := hx
   -- Some coefficient `aᵢ` of the equation of integrality has `v x ^ (n - i) ≤ v aᵢ ≤ 1`.
   obtain ⟨i, hi, hle⟩ := (hpm.map (algebraMap R F)).exists_apply_pow_le_apply_coeff_of_eval_eq_zero
-    v.nonneg (fun a b ↦ (v.map_mul a b).le) (fun a n _ ↦ v.map_pow a n) hv (by rwa [eval_map])
+    v.nonneg (fun a b ↦ (v.map_mul a b).le) (MulHomClass.isPowMul v) hv (by rwa [eval_map])
   rw [coeff_map] at hle
   exact (one_lt_pow₀ hx1 (Nat.sub_pos_of_lt hi).ne').not_ge (hle.trans (h _))
 

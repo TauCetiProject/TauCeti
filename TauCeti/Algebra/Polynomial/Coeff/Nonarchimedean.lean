@@ -47,16 +47,15 @@ theorem apply_coeff_mul_le_pow (hf_nn : ∀ a, 0 ≤ f a)
   -- The coefficient is a sum over `i + j = k`, dominated by one of its terms.
   rw [coeff_mul]
   obtain ⟨⟨i, j⟩, hij, hle⟩ := hf_na.finset_image_add_of_nonempty
-    (fun x : ℕ × ℕ ↦ p.coeff x.1 * q.coeff x.2) (s := antidiagonal k)
-    ⟨(k, 0), mem_antidiagonal.mpr (add_zero k)⟩
+    (fun x : ℕ × ℕ ↦ p.coeff x.1 * q.coeff x.2) (HasAntidiagonal.nonempty_antidiagonal k)
   rw [mem_antidiagonal] at hij
+  dsimp only at hle
   refine hle.trans ?_
   have key (a b : ℕ) : f (p.coeff a * q.coeff b) ≤ M ^ (d - a + (e - b)) := by
     rw [pow_add]
     exact (hf_mul _ _).trans (mul_le_mul (hp a) (hq b) (hf_nn _) ((hf_nn _).trans (hp a)))
   -- A term with a vanishing factor is rewritten as `p.coeff (d + 1) * q.coeff (k - d)` or
   -- `p.coeff (k - e) * q.coeff (e + 1)`, which also vanishes and is bounded by `M ^ (d + e - k)`.
-  change f (p.coeff i * q.coeff j) ≤ _
   rcases le_or_gt j e with hj | hj
   · rcases le_or_gt i d with hi | hi
     · exact (key i j).trans_eq (by congr 1; omega)

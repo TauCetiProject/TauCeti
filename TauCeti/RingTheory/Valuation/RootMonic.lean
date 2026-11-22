@@ -9,10 +9,7 @@ public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.Valuation.Basic
 
-import Mathlib.Algebra.Polynomial.Eval.Coeff
-import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Data.Finset.Order
-import Mathlib.Algebra.Polynomial.Monic
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
