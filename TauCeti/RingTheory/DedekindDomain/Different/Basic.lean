@@ -27,7 +27,9 @@ the complementary-module quotient. Whenever compatible ring homomorphisms `S →
 `L →+* L'` transport the submodule trace dual of `S / R` to a generating set of that of `S' / R'`,
 extending the fractional-ideal trace dual and the different ideal along `S →+* S'` yields those of
 `S' / R'`. Finally, `FractionalIdeal.dualEquiv` packages `FractionalIdeal.dual` as an involutive
-permutation of the invertible fractional ideals.
+permutation of the invertible fractional ideals, and
+`FractionalIdeal.trace_mem_range_of_mem_dual_one` records that an element of the trace dual of one
+has its trace in the base ring.
 -/
 
 public section
@@ -445,13 +447,19 @@ end RingEquiv
 
 namespace FractionalIdeal
 
-section DualEquiv
-
 variable (R K : Type*) {S L : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
   [Field K] [Algebra R K] [IsFractionRing R K] [Field L] [Algebra K L] [FiniteDimensional K L]
   [Algebra.IsSeparable K L] [CommRing S] [IsDedekindDomain S] [Algebra R L] [Algebra R S]
   [Algebra S L] [IsScalarTower R K L] [IsScalarTower R S L] [IsFractionRing S L]
   [IsIntegralClosure S R L]
+
+variable {R K} in
+/-- An element of the trace dual of one (the inverse different) has its trace in the base ring. -/
+theorem trace_mem_range_of_mem_dual_one {x : L} (hx : x ∈ dual R K (1 : FractionalIdeal S⁰ L)) :
+    Algebra.trace K L x ∈ (algebraMap R K).range := by
+  simpa using (mem_dual one_ne_zero).1 hx 1 (one_mem_one _)
+
+section DualEquiv
 
 /-- In a finite separable extension of fraction fields of Dedekind domains, the trace dual
 `FractionalIdeal.dual` restricts to an involutive permutation of `(FractionalIdeal S⁰ L)ˣ`. -/

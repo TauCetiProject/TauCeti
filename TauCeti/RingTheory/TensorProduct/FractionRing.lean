@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.LinearDisjoint
 import Mathlib.RingTheory.Localization.BaseChange
+import TauCeti.RingTheory.Localization.Defs
 import TauCeti.RingTheory.Localization.FractionRing
 
 /-!
