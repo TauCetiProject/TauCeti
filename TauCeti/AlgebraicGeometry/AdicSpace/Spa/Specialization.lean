@@ -158,13 +158,9 @@ theorem continuous_specialization (Aplus : Subring A) :
 quasi-compact opens of the reduction spectrum are quasi-compact. -/
 theorem isSpectralMap_specialization [IsTopologicalRing A] [Huber.IsHuberRing A]
     (Aplus : Subring A) : IsSpectralMap (specialization (Aplus := Aplus)) := by
-  refine ⟨continuous_specialization Aplus, fun U hUo hUc ↦ ?_⟩
-  obtain ⟨s, hs, rfl⟩ := (isCompact_open_iff_eq_finite_iUnion_of_isTopologicalBasis _
-    (isTopologicalBasis_reductionSpectrum Aplus)
-    (fun a ↦ (isClosed_reductionSpectrum Aplus).isClosedEmbedding_subtypeVal.isCompact_preimage
-      (PrimeSpectrum.isCompact_basicOpen a)) U).mp ⟨hUc, hUo⟩
-  rw [Set.preimage_iUnion₂]
-  refine hs.isCompact_biUnion fun a _ ↦ ?_
+  refine isSpectralMap_of_isTopologicalBasis (isTopologicalBasis_reductionSpectrum Aplus)
+    (continuous_specialization Aplus) ?_
+  rintro _ ⟨a, rfl⟩
   rw [specialization_preimage_basicOpen, ← val_preimage_rationalSubset_singleton_one]
   exact isCompact_of_mem_spaRationalFamily
     (val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit_mem Aplus
