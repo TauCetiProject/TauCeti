@@ -62,6 +62,26 @@ noncomputable def orthogonalLeftInverse : H →L[𝕜] E :=
     (by simpa only [LinearMap.coe_range, coe_coe] using hclo)).symm.toContinuousLinearMap ∘L
     f.range.orthogonalProjectionOnto
 
+/-- Defining equation for `f.orthogonalLeftInverse`. -/
+theorem orthogonalLeftInverse_def :
+    f.orthogonalLeftInverse hf hclo =
+      (f.equivRange hf
+        (by simpa only [LinearMap.coe_range, coe_coe] using hclo)).symm.toContinuousLinearMap ∘L
+        (@Submodule.orthogonalProjectionOnto 𝕜 H _ _ _ f.range
+          (@Submodule.HasOrthogonalProjection.ofCompleteSpace 𝕜 H _ _ _ f.range
+            hclo.completeSpace_coe)) := by
+  rw [orthogonalLeftInverse]
+
+/-- Evaluation formula for `f.orthogonalLeftInverse`: project `y` orthogonally onto `range f`
+and apply the inverse of `f.equivRange`. -/
+theorem orthogonalLeftInverse_apply (y : H) :
+    f.orthogonalLeftInverse hf hclo y =
+      (f.equivRange hf (by simpa only [LinearMap.coe_range, coe_coe] using hclo)).symm
+        (@Submodule.orthogonalProjectionOnto 𝕜 H _ _ _ f.range
+          (@Submodule.HasOrthogonalProjection.ofCompleteSpace 𝕜 H _ _ _ f.range
+            hclo.completeSpace_coe) y) := by
+  simp only [orthogonalLeftInverse, comp_apply, ContinuousLinearEquiv.coe_coe]
+
 /-- `f.orthogonalLeftInverse` is a left inverse of `f`. -/
 theorem leftInverse_orthogonalLeftInverse :
     Function.LeftInverse (f.orthogonalLeftInverse hf hclo) f := fun x ↦ by
@@ -84,8 +104,11 @@ theorem leftInverse_orthogonalLeftInverse :
 
 /-- Composing `f` on the left of its orthogonal left inverse recovers the orthogonal projection
 onto `range f`. -/
-@[simp] theorem self_comp_orthogonalLeftInverse [f.range.HasOrthogonalProjection] :
-    f ∘L f.orthogonalLeftInverse hf hclo = f.range.starProjection := by
+@[simp] theorem self_comp_orthogonalLeftInverse :
+    f ∘L f.orthogonalLeftInverse hf hclo =
+      @Submodule.starProjection 𝕜 H _ _ _ f.range
+        (@Submodule.HasOrthogonalProjection.ofCompleteSpace 𝕜 H _ _ _ f.range
+          hclo.completeSpace_coe) := by
   have : CompleteSpace f.range := hclo.completeSpace_coe
   have hclo' : IsClosed (Set.range f) := by simpa only [LinearMap.coe_range, coe_coe] using hclo
   ext y
@@ -153,6 +176,29 @@ noncomputable def orthogonalRightInverse : F →L[𝕜] H :=
     (ContinuousLinearEquiv.ofBijective (g ∘L g.kerᗮ.subtypeL) g.ker_comp_subtypeL_orthogonal
       (g.range_comp_subtypeL_orthogonal.trans
         (LinearMap.range_eq_top.2 hg))).symm.toContinuousLinearMap
+
+/-- Defining equation for `g.orthogonalRightInverse`. -/
+theorem orthogonalRightInverse_def :
+    g.orthogonalRightInverse hg =
+      g.kerᗮ.subtypeL ∘L
+        (ContinuousLinearEquiv.ofBijective (g ∘L g.kerᗮ.subtypeL) g.ker_comp_subtypeL_orthogonal
+          (by
+            have : CompleteSpace g.ker := g.isClosed_ker.completeSpace_coe
+            exact g.range_comp_subtypeL_orthogonal.trans
+              (LinearMap.range_eq_top.2 hg))).symm.toContinuousLinearMap := by
+  rw [orthogonalRightInverse]
+
+/-- Evaluation formula for `g.orthogonalRightInverse`: apply the inverse of the restriction
+`g ∘L g.kerᗮ.subtypeL : g.kerᗮ →L[𝕜] F` and coerce into `H`. -/
+theorem orthogonalRightInverse_apply (y : F) :
+    g.orthogonalRightInverse hg y =
+      ((ContinuousLinearEquiv.ofBijective (g ∘L g.kerᗮ.subtypeL) g.ker_comp_subtypeL_orthogonal
+        (by
+          have : CompleteSpace g.ker := g.isClosed_ker.completeSpace_coe
+          exact g.range_comp_subtypeL_orthogonal.trans
+            (LinearMap.range_eq_top.2 hg))).symm y : H) := by
+  simp only [orthogonalRightInverse, comp_apply, Submodule.subtypeL_apply,
+    ContinuousLinearEquiv.coe_coe]
 
 /-- `g.orthogonalRightInverse` is a right inverse of `g`. -/
 theorem rightInverse_orthogonalRightInverse :
