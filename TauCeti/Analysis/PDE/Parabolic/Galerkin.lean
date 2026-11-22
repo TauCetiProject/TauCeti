@@ -190,7 +190,8 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_of_finiteDimensional (hι : Inject
   have hxg := ((hasWeakLineDerivOn_const (μ := volume) (Ω := ⟨Ioo a b, isOpen_Ioo⟩) (v := 1)
     u₀).add (hasWeakLineDerivOn_intervalIntegral_left
       ((IntegrableOn.clm_apply_continuousOn_of_subset (Integrable.of_bound hM _ hMK) hx
-        measurableSet_Ioo isCompact_Icc Ioo_subset_Icc_self).add hF))).congr_ae
+        isCompact_Icc (ae_restrict_of_forall_mem measurableSet_Ioo fun _ ht ↦
+          Ioo_subset_Icc_self ht)).add hF))).congr_ae
     ((ae_restrict_iff' measurableSet_Ioo).2 (Eventually.of_forall fun t ht ↦
       (hxeq t (Ioo_subset_Icc_self ht)).symm)) |>.congr_ae_deriv (EventuallyEq.of_eq (zero_add _))
   -- Applying `G` gives the weak derivative `G (M x + F) = f - A x` of `G x`.
