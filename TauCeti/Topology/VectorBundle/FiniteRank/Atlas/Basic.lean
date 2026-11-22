@@ -274,24 +274,17 @@ def totalSpaceHomeomorphOfCoordChangeEqId
       (A.charts n).coordChange i j x v = v)
     (p : TotalSpace Unit A.Fiber) :
     A.totalSpaceHomeomorphOfCoordChangeEqId hcoord p = ⟨A.rank p.proj, (⟨p.proj, rfl⟩, p.snd)⟩ := by
-  rw [totalSpaceHomeomorphOfCoordChangeEqId, Homeomorph.trans_apply,
-    A.totalSpaceHomeomorph_symm_apply, Homeomorph.sigmaCongrRight_apply]
-  dsimp only
-  rw [VectorBundleCore.totalSpaceHomeomorphOfCoordChangeEqId_apply]
+  simp [totalSpaceHomeomorphOfCoordChangeEqId]
   rfl
 
 /-- Inverse evaluation of `FiniteRankAtlas.totalSpaceHomeomorphOfCoordChangeEqId`. -/
 @[simp] theorem totalSpaceHomeomorphOfCoordChangeEqId_symm_apply
     (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
       (A.charts n).coordChange i j x v = v)
-    (n : ℕ) (x : {x : X // A.rank x = n}) (v : Fin n → 𝕜) :
-    (A.totalSpaceHomeomorphOfCoordChangeEqId hcoord).symm ⟨n, (x, v)⟩ =
-      ⟨x.val, fun i => v (Fin.cast x.property i)⟩ := by
-  rw [totalSpaceHomeomorphOfCoordChangeEqId, Homeomorph.symm_trans_apply,
-    Homeomorph.symm_symm, Homeomorph.sigmaCongrRight_symm_apply]
-  dsimp only
-  rw [VectorBundleCore.totalSpaceHomeomorphOfCoordChangeEqId_symm_apply,
-    A.totalSpaceHomeomorph_apply]
+    (p : Σ n : ℕ, {x : X // A.rank x = n} × (Fin n → 𝕜)) :
+    (A.totalSpaceHomeomorphOfCoordChangeEqId hcoord).symm p =
+      ⟨p.2.1.val, fun i => p.2.2 (Fin.cast p.2.1.property i)⟩ := by
+  simp [totalSpaceHomeomorphOfCoordChangeEqId]
 
 end CoordChangeEqId
 
@@ -331,20 +324,6 @@ private noncomputable def gluedReconstructionHomeomorph :
     (ofBundles 𝕜 r E).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
   Homeomorph.sigmaCongrRight fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)
 
-private theorem gluedReconstructionHomeomorph_apply
-    (p : (ofBundles 𝕜 r E).GluedTotalSpace) :
-    gluedReconstructionHomeomorph 𝕜 r E p =
-      ⟨p.1, pointIndexedCoreHomeomorph 𝕜 (Fin p.1 → 𝕜) (E p.1) p.2⟩ := by
-  exact Homeomorph.sigmaCongrRight_apply
-    (fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)) p
-
-private theorem gluedReconstructionHomeomorph_symm_apply
-    (n : ℕ) (p : TotalSpace (Fin n → 𝕜) (E n)) :
-    (gluedReconstructionHomeomorph 𝕜 r E).symm ⟨n, p⟩ =
-      ⟨n, (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).symm p⟩ := by
-  exact Homeomorph.sigmaCongrRight_symm_apply
-    (fun m => pointIndexedCoreHomeomorph 𝕜 (Fin m → 𝕜) (E m)) ⟨n, p⟩
-
 /-- The reconstructed atlas is homeomorphic, over the base, to the disjoint union
 of the original bundles. The fibre maps are the preferred-chart continuous linear
 equivalences `pointIndexedCoreFiberEquiv`. -/
@@ -357,28 +336,42 @@ noncomputable def reconstructionHomeomorph :
     reconstructionHomeomorph 𝕜 r E p =
       ⟨r p.proj, ⟨⟨p.proj, rfl⟩,
         pointIndexedCoreFiberEquiv 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) ⟨p.proj, rfl⟩ p.snd⟩⟩ := by
-  rw [reconstructionHomeomorph, Homeomorph.trans_apply, totalSpaceHomeomorph_symm_apply,
-    gluedReconstructionHomeomorph_apply]
-  dsimp only
-  exact congrArg (Sigma.mk (r p.proj))
-    (pointIndexedCoreHomeomorph_apply 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) _)
+  have h : (gluedReconstructionHomeomorph 𝕜 r E) ((ofBundles 𝕜 r E).totalSpaceHomeomorph.symm p) =
+      ⟨r p.proj, pointIndexedCoreHomeomorph 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj))
+        ⟨⟨p.proj, rfl⟩, p.snd⟩⟩ :=
+    Homeomorph.sigmaCongrRight_apply
+      (fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n))
+      ((ofBundles 𝕜 r E).totalSpaceHomeomorph.symm p)
+  rw [reconstructionHomeomorph, Homeomorph.trans_apply, h]
+  simp
 
 /-- The inverse comparison is the inverse preferred-chart fibre equivalence, followed
 by the canonical inclusion of that stratum into the reconstructed total space. -/
 @[simp] theorem reconstructionHomeomorph_symm_apply
-    (n : ℕ) (p : TotalSpace (Fin n → 𝕜) (E n)) :
-    (reconstructionHomeomorph 𝕜 r E).symm ⟨n, p⟩ =
+    (p : Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n)) :
+    (reconstructionHomeomorph 𝕜 r E).symm p =
       (ofBundles 𝕜 r E).totalSpaceHomeomorph
-        ⟨n, ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) (E n) p.proj).symm p.snd⟩⟩ := by
-  rw [reconstructionHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
-    gluedReconstructionHomeomorph_symm_apply, pointIndexedCoreHomeomorph_symm_apply]
-  rfl
+        ⟨p.1, ⟨p.2.proj,
+          (pointIndexedCoreFiberEquiv 𝕜 (Fin p.1 → 𝕜) (E p.1) p.2.proj).symm p.2.snd⟩⟩ := by
+  have h : (gluedReconstructionHomeomorph 𝕜 r E).symm p =
+      ⟨p.1, (pointIndexedCoreHomeomorph 𝕜 (Fin p.1 → 𝕜) (E p.1)).symm p.2⟩ :=
+    Homeomorph.sigmaCongrRight_symm_apply
+      (fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)) p
+  simp [reconstructionHomeomorph, h]
 
 /-- The reconstruction comparison covers the identity map on the original base. -/
 @[simp] theorem proj_reconstructionHomeomorph
     (p : TotalSpace Unit (ofBundles 𝕜 r E).Fiber) :
     (reconstructionHomeomorph 𝕜 r E p).2.proj.val = p.proj := by
   rw [reconstructionHomeomorph_apply]
+
+/-- The inverse reconstruction comparison covers the identity map on the original base. -/
+-- Not `@[simp]`: `simp` already simplifies the LHS via `reconstructionHomeomorph_symm_apply`
+-- and `totalSpaceHomeomorph_apply` (so `simpNF` rejects `@[simp]` here).
+theorem proj_reconstructionHomeomorph_symm
+    (p : Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n)) :
+    ((reconstructionHomeomorph 𝕜 r E).symm p).proj = p.2.proj.val := by
+  simp
 
 end Reconstruction
 end FiniteRankAtlas

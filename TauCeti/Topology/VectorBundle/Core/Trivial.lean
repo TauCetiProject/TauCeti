@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.VectorBundle.Basic
+public import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Global trivialization of a vector bundle core with identity transitions
@@ -100,19 +101,15 @@ instance globalTrivializationOfCoordChangeEqId_isLinear :
 /-- A vector bundle core whose transitions are the identity on chart overlaps has total space
 homeomorphic to `B × F`. -/
 def totalSpaceHomeomorphOfCoordChangeEqId : Z.TotalSpace ≃ₜ B × F :=
-  let t := Z.globalTrivializationOfCoordChangeEqId hcoord
-  t.toOpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv
-    (by
-      rw [t.source_eq, Z.globalTrivializationOfCoordChangeEqId_baseSet hcoord, Set.preimage_univ])
-    (by
-      rw [t.target_eq, Z.globalTrivializationOfCoordChangeEqId_baseSet hcoord, Set.univ_prod_univ])
+  (Z.globalTrivializationOfCoordChangeEqId hcoord).toHomeomorphOfBaseSetEqUniv
+    (Z.globalTrivializationOfCoordChangeEqId_baseSet hcoord)
 
 /-- Forward evaluation of `VectorBundleCore.totalSpaceHomeomorphOfCoordChangeEqId`. -/
 @[simp]
 theorem totalSpaceHomeomorphOfCoordChangeEqId_apply (q : Z.TotalSpace) :
     Z.totalSpaceHomeomorphOfCoordChangeEqId hcoord q = (q.proj, q.snd) := by
   rw [totalSpaceHomeomorphOfCoordChangeEqId,
-    OpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv_apply]
+    Bundle.Trivialization.coe_toHomeomorphOfBaseSetEqUniv]
   exact Z.globalTrivializationOfCoordChangeEqId_apply hcoord q
 
 /-- Inverse evaluation of `VectorBundleCore.totalSpaceHomeomorphOfCoordChangeEqId`. -/

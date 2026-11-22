@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Additivity
 public import TauCeti.AlgebraicTopology.Singular.DiskSphere
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
+import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # The cellular chain group is a coproduct of copies of the coefficients, one per cell
@@ -65,22 +66,24 @@ union of Euclidean disks to `(TauCeti.sigmaDiskPair ι n).fst`. -/
 private def sigmaDiskIso :
     TopCat.of (Σ _ : ι, TopCat.disk.{w} n) ≅
       TopCat.of (Σ _ : ι, closedBall (0 : Fin n → ℝ) 1) :=
-  TopCat.isoOfHomeo
-    { toEquiv := Equiv.sigmaCongrRight fun _ ↦ (diskHomeomorphClosedBall n).toEquiv
-      continuous_toFun := continuous_sigma fun _ ↦ continuous_sigmaMk.comp
-        (diskHomeomorphClosedBall n).continuous
-      continuous_invFun := continuous_sigma fun _ ↦ continuous_sigmaMk.comp
-        (diskHomeomorphClosedBall n).symm.continuous }
+  TopCat.isoOfHomeo (Homeomorph.sigmaCongrRight fun _ ↦ diskHomeomorphClosedBall n)
 
 /-- The map of pairs `∐ᵢ (Dⁿ, Sⁿ⁻¹) ⟶ TauCeti.sigmaDiskPair ι n` from the disjoint union of
 Euclidean disk pairs, given by `TauCeti.diskHomeomorphClosedBall` on every summand. -/
 private def sigmaDiskBoundaryPairHom :
     TopPair.sigma (fun _ : ι ↦ diskBoundaryPair.{w} n) ⟶ sigmaDiskPair ι n :=
+  have hmem (p : (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).snd) :
+      (sigmaDiskIso ι n).hom ((TopPair.sigma _).map p) ∈
+        {q : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1 | ‖(q.2 : Fin n → ℝ)‖ = 1} := by
+    have h : (sigmaDiskIso ι n).hom ((TopPair.sigma _).map p) =
+        (Homeomorph.sigmaCongrRight fun _ ↦ diskHomeomorphClosedBall n)
+          ⟨p.1, TopCat.diskBoundaryInclusion n p.2⟩ := rfl
+    rw [h, Homeomorph.sigmaCongrRight_apply]
+    exact (norm_diskHomeomorphClosedBall_eq_one_iff _).2 ⟨p.2, rfl⟩
   TopPair.ofHom (sigmaDiskIso ι n).hom
-    (TopCat.ofHom ⟨fun p ↦ ⟨(sigmaDiskIso ι n).hom ((TopPair.sigma _).map p),
-      (norm_diskHomeomorphClosedBall_eq_one_iff _).2 ⟨p.2, rfl⟩⟩,
+    (TopCat.ofHom ⟨fun p ↦ ⟨(sigmaDiskIso ι n).hom ((TopPair.sigma _).map p), hmem p⟩,
       ((sigmaDiskIso ι n).hom.hom.continuous.comp
-        (TopPair.sigma _).map.hom.continuous).subtype_mk _⟩)
+        (TopPair.sigma _).map.hom.continuous).subtype_mk hmem⟩)
     (by ext; rfl)
 
 private lemma surjective_snd_sigmaDiskBoundaryPairHom :
@@ -88,7 +91,12 @@ private lemma surjective_snd_sigmaDiskBoundaryPairHom :
   rintro ⟨⟨i, x⟩, hx : ‖(x : Fin n → ℝ)‖ = 1⟩
   obtain ⟨y, hy⟩ := (norm_diskHomeomorphClosedBall_eq_one_iff
     ((diskHomeomorphClosedBall n).symm x)).1 (by rwa [Homeomorph.apply_symm_apply])
-  refine ⟨⟨i, y⟩, Subtype.ext (Sigma.ext rfl (heq_of_eq ?_))⟩
+  refine ⟨⟨i, y⟩, Subtype.ext ?_⟩
+  have h : (TopPair.Hom.snd (sigmaDiskBoundaryPairHom ι n) ⟨i, y⟩).val =
+      (Homeomorph.sigmaCongrRight fun _ ↦ diskHomeomorphClosedBall n)
+        ⟨i, TopCat.diskBoundaryInclusion n y⟩ := rfl
+  rw [h, Homeomorph.sigmaCongrRight_apply]
+  refine Sigma.ext rfl (heq_of_eq ?_)
   -- On the summand `i`, the ambient component of the map is `diskHomeomorphClosedBall n`.
   change diskHomeomorphClosedBall n (TopCat.diskBoundaryInclusion n y) = x
   rw [hy, Homeomorph.apply_symm_apply]
@@ -110,8 +118,10 @@ def sigmaDiskBoundaryPairIso :
 @[simp]
 lemma sigmaDiskBoundaryPairIso_hom_fst_apply_fst
     (p : (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).fst) :
-    (TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).hom p).1 = p.1 :=
-  (rfl)
+    (TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).hom p).1 = p.1 := by
+  rcases p with ⟨i, x⟩
+  change ((Homeomorph.sigmaCongrRight fun _ ↦ diskHomeomorphClosedBall n) ⟨i, x⟩).1 = i
+  rw [Homeomorph.sigmaCongrRight_apply]
 
 /-- On the ambient spaces, `TauCeti.sigmaDiskBoundaryPairIso` is the radial rescaling of the
 coordinate identification `EuclideanSpace.equiv` in every summand. -/
@@ -121,8 +131,12 @@ lemma coe_sigmaDiskBoundaryPairIso_hom_fst_apply_snd
     ((TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).hom p).2 : Fin n → ℝ) =
       (EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph
         ((p.2 : ULift.{w} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
-          EuclideanSpace ℝ (Fin n)) :=
-  coe_diskHomeomorphClosedBall_apply p.2
+          EuclideanSpace ℝ (Fin n)) := by
+  rcases p with ⟨i, x⟩
+  change (((Homeomorph.sigmaCongrRight fun _ ↦ diskHomeomorphClosedBall n) ⟨i, x⟩).2 :
+      Fin n → ℝ) = _
+  rw [Homeomorph.sigmaCongrRight_apply]
+  exact coe_diskHomeomorphClosedBall_apply x
 
 end DiskPair
 

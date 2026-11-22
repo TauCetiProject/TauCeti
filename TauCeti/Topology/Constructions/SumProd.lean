@@ -67,8 +67,8 @@ def Homeomorph.sigmaCongrRight {α : Type*} {β₁ β₂ : α → Type*}
     [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
     (F : ∀ a, β₁ a ≃ₜ β₂ a) : (Σ a, β₁ a) ≃ₜ Σ a, β₂ a where
   toEquiv := Equiv.sigmaCongrRight fun a ↦ (F a).toEquiv
-  continuous_toFun := continuous_sigma fun a ↦ continuous_sigmaMk.comp (F a).continuous
-  continuous_invFun := continuous_sigma fun a ↦ continuous_sigmaMk.comp (F a).symm.continuous
+  continuous_toFun := Continuous.sigma_map (f₁ := id) fun a ↦ (F a).continuous
+  continuous_invFun := Continuous.sigma_map (f₁ := id) fun a ↦ (F a).symm.continuous
 
 /-- `Homeomorph.sigmaCongrRight F` applies `F a` on each summand `a`. -/
 @[simp]
@@ -79,12 +79,38 @@ theorem Homeomorph.sigmaCongrRight_apply {α : Type*} {β₁ β₂ : α → Type
   (rfl)
 
 /-- The inverse of `Homeomorph.sigmaCongrRight F` applies `(F a).symm` on each summand `a`. -/
-@[simp]
 theorem Homeomorph.sigmaCongrRight_symm_apply {α : Type*} {β₁ β₂ : α → Type*}
     [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
     (F : ∀ a, β₁ a ≃ₜ β₂ a) (p : Σ a, β₂ a) :
     (Homeomorph.sigmaCongrRight F).symm p = ⟨p.1, (F p.1).symm p.2⟩ :=
   (rfl)
+
+/-- Bundled `Homeomorph.sigmaCongrRight` of identity homeomorphisms is the identity. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_refl {α : Type*} {β : α → Type*}
+    [∀ a, TopologicalSpace (β a)] :
+    (Homeomorph.sigmaCongrRight fun a ↦ Homeomorph.refl (β a)) =
+      Homeomorph.refl (Σ a, β a) :=
+  Homeomorph.ext fun p ↦ by simp
+
+/-- The inverse of `Homeomorph.sigmaCongrRight F` is `Homeomorph.sigmaCongrRight` of the
+componentwise inverses. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_symm {α : Type*} {β₁ β₂ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) :
+    (Homeomorph.sigmaCongrRight F).symm = Homeomorph.sigmaCongrRight fun a ↦ (F a).symm :=
+  Homeomorph.ext fun p ↦ by simp [Homeomorph.sigmaCongrRight_symm_apply]
+
+/-- Composing two `Homeomorph.sigmaCongrRight` homeomorphisms composes the component
+homeomorphisms. -/
+theorem Homeomorph.sigmaCongrRight_trans {α : Type*} {β₁ β₂ β₃ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    [∀ a, TopologicalSpace (β₃ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) (G : ∀ a, β₂ a ≃ₜ β₃ a) :
+    (Homeomorph.sigmaCongrRight F).trans (Homeomorph.sigmaCongrRight G) =
+      Homeomorph.sigmaCongrRight fun a ↦ (F a).trans (G a) :=
+  Homeomorph.ext fun p ↦ by simp
 
 /-- If `f` is eventually constant near `(x, y)`, then its slice `y' ↦ f (x, y')` is eventually
 equal to `f (x, y)` near `y`. -/
