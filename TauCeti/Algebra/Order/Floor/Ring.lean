@@ -77,6 +77,7 @@ theorem _root_.Nat.cast_lt_iff_le_ceil_sub_one {R : Type*} [Ring R] [LinearOrder
 
 /-- In a linearly ordered semiring with a natural ceiling, `n ∈ [⌈a⌉₊, ⌈b⌉₊)` if and only if
 `(n : R) ∈ [a, b)`. -/
+@[simp 1100] -- Fire before `Finset.mem_Ico`.
 theorem mem_Ico_ceil_iff {R : Type*} [Semiring R] [LinearOrder R] [FloorSemiring R]
     {a b : R} {n : ℕ} :
     n ∈ Finset.Ico ⌈a⌉₊ ⌈b⌉₊ ↔ (n : R) ∈ Set.Ico a b := by
@@ -84,6 +85,7 @@ theorem mem_Ico_ceil_iff {R : Type*} [Semiring R] [LinearOrder R] [FloorSemiring
 
 /-- In a linearly ordered ring with a natural ceiling, `n ∈ [⌈-b⌉₊, ⌈-a⌉₊)` if and only if
 `-(n : R) ∈ (a, b]`. -/
+@[simp 1200] -- Fire before `mem_Ico_ceil_iff` and `Finset.mem_Ico`.
 theorem mem_Ico_ceil_neg_iff {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
     [FloorSemiring R] {a b : R} {n : ℕ} :
     n ∈ Finset.Ico ⌈-b⌉₊ ⌈-a⌉₊ ↔ -(n : R) ∈ Set.Ioc a b := by
