@@ -71,6 +71,11 @@ its infinite coordinate is the identity point, not zero.
   `TauCeti.AdelicPoints.prodContinuousMulEquiv_finiteEmbed`.
 * `TauCeti.AdelicPoints.finiteEmbed`, with `TauCeti.AdelicPoints.finiteProjection_finiteEmbed`
   and `TauCeti.AdelicPoints.infiniteProjection_finiteEmbed`.
+* `TauCeti.AdelicPoints.ext_iff_projection`: an adelic point is determined by its infinite and
+  finite components.
+* `TauCeti.AdelicPoints.exists_finiteEmbed_eq_iff`, `TauCeti.AdelicPoints.mrange_finiteEmbed`,
+  `TauCeti.AdelicPoints.isEmbedding_finiteEmbed`: `finiteEmbed` is a topological embedding onto
+  the adelic points with trivial infinite component.
 
 ## References
 
@@ -381,6 +386,56 @@ theorem infiniteProjection_finiteEmbed (x : FiniteAdelicPoints R K H) :
 @[fun_prop]
 theorem continuous_finiteEmbed : Continuous (finiteEmbed R K H) :=
   (prodContinuousMulEquiv R K H).symm.continuous.comp (continuous_const.prodMk continuous_id)
+
+/-- An adelic point is determined by its infinite and finite components. -/
+theorem ext_iff_projection {x y : AdelicPoints R K H} :
+    x = y ↔ infiniteProjection R K H x = infiniteProjection R K H y ∧
+      finiteProjection R K H x = finiteProjection R K H y := by
+  rw [← (prodContinuousMulEquiv R K H).injective.eq_iff, prodContinuousMulEquiv_apply,
+    prodContinuousMulEquiv_apply, Prod.ext_iff]
+
+/-- An adelic point is determined by its infinite and finite components. -/
+theorem ext_projection {x y : AdelicPoints R K H}
+    (h₁ : infiniteProjection R K H x = infiniteProjection R K H y)
+    (h₂ : finiteProjection R K H x = finiteProjection R K H y) : x = y :=
+  ext_iff_projection.mpr ⟨h₁, h₂⟩
+
+/-- The component of `finiteEmbed x` at a finite place `v` is the component of `x` at `v`. -/
+@[simp]
+theorem localProjection_finiteEmbed (v : HeightOneSpectrum R) (x : FiniteAdelicPoints R K H) :
+    localProjection R K H v (finiteEmbed R K H x) = finiteLocalProjection R K H v x := by
+  rw [localProjection_apply, finiteProjection_finiteEmbed]
+
+theorem finiteEmbed_injective : Function.Injective (finiteEmbed R K H) :=
+  Function.LeftInverse.injective finiteProjection_finiteEmbed
+
+/-- An adelic point is in the image of `finiteEmbed` exactly when its infinite component is the
+identity point. This is the simp normal form of `mem_mrange_finiteEmbed_iff`. -/
+@[simp]
+theorem exists_finiteEmbed_eq_iff {y : AdelicPoints R K H} :
+    (∃ x, finiteEmbed R K H x = y) ↔ infiniteProjection R K H y = 1 := by
+  refine ⟨?_, fun hy ↦ ⟨finiteProjection R K H y, ?_⟩⟩
+  · rintro ⟨x, rfl⟩
+    exact infiniteProjection_finiteEmbed x
+  · exact ext_projection (by rw [infiniteProjection_finiteEmbed, hy])
+      (finiteProjection_finiteEmbed _)
+
+/-- An adelic point is in the image of `finiteEmbed` exactly when its infinite component is the
+identity point. -/
+theorem mem_mrange_finiteEmbed_iff {y : AdelicPoints R K H} :
+    y ∈ MonoidHom.mrange (finiteEmbed R K H) ↔ infiniteProjection R K H y = 1 :=
+  MonoidHom.mem_mrange.trans exists_finiteEmbed_eq_iff
+
+/-- The image of `finiteEmbed` consists of the adelic points with trivial infinite component. -/
+theorem mrange_finiteEmbed :
+    MonoidHom.mrange (finiteEmbed R K H) = MonoidHom.mker (infiniteProjection R K H) :=
+  SetLike.ext fun _ ↦ mem_mrange_finiteEmbed_iff.trans MonoidHom.mem_mker.symm
+
+/-- `finiteEmbed` is a topological embedding: it has the continuous left inverse
+`finiteProjection`. -/
+theorem isEmbedding_finiteEmbed : Topology.IsEmbedding (finiteEmbed R K H) :=
+  Function.LeftInverse.isEmbedding finiteProjection_finiteEmbed continuous_finiteProjection
+    continuous_finiteEmbed
 
 end AdelicPoints
 
