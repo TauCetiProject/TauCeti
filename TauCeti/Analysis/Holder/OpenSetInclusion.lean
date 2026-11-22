@@ -7,17 +7,13 @@ module
 
 public import TauCeti.Analysis.Holder.OpenSet
 public import Mathlib.Topology.MetricSpace.Bounded
-import Mathlib.Analysis.Calculus.ContDiff.Basic
-import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Exponent and order inclusions for `C^{k,α}(Ω, F)`
 
 This file provides the continuous exponent-lowering inclusions for `TauCeti.CkHolderSpaceOn` and
-`TauCeti.CkHolderSpace`, the whole-space order inclusion `TauCeti.CkHolderSpace.inclusionSuccL`,
-and a counterexample showing that convexity cannot be omitted in
-`TauCeti.CkHolderSpaceOn.inclusionSuccL`:
+`TauCeti.CkHolderSpace`, and the whole-space order inclusion `TauCeti.CkHolderSpace.inclusionSuccL`:
 
 * `TauCeti.CkHolderSpaceOn.ofExponentLEL`: for `β ≤ α` on any open set `Ω`,
   `CkHolderSpaceOn k α Ω F →L[ℝ] CkHolderSpaceOn k β Ω F` has operator norm at most `3`, and at
@@ -26,11 +22,8 @@ and a counterexample showing that convexity cannot be omitted in
   norm at most `3`.
 * `TauCeti.CkHolderSpace.inclusionSuccL`: whole-space order inclusion
   `CkHolderSpace (k + 1) α E F →L[ℝ] CkHolderSpace k α E F` for `α ≤ 1`, of operator norm at
-  most `3`.
-* `TauCeti.not_exists_ckHolderSpaceOn_zero_eq_slitSign`: on the bounded disconnected open set
-  `(-1, 0) ∪ (0, 1) ⊆ ℝ`, the locally constant sign function belongs to
-  `CkHolderSpaceOn (k + 1) α` for every `k` and `α`, yet is not `α`-Hölder of order `0` across
-  `0` whenever `0 < α`.
+  most `3`. For the counterexample showing that convexity cannot be dropped on open sets, see
+  `TauCeti.not_exists_ckHolderSpaceOn_zero_eq_sign` in `TauCeti.Analysis.Holder.Examples`.
 
 ## References
 
@@ -44,7 +37,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Filter Set Topology TopologicalSpace
+open TopologicalSpace
 open scoped NNReal BoundedContinuousFunction
 
 namespace CkHolderSpaceOn
@@ -258,107 +251,5 @@ theorem inclusionSuccL_injective (hα : α ≤ 1) :
   fun _ _ h ↦ ext fun x ↦ by simpa using DFunLike.congr_fun h x
 
 end CkHolderSpace
-
-/-! ### Non-convex counterexample to order inclusion -/
-
-/-- The punctured interval `(-1, 0) ∪ (0, 1)`, a bounded disconnected open subset of `ℝ`. -/
-def slitUnitInterval : Opens ℝ :=
-  ⟨Set.Ioo (-1) 0 ∪ Set.Ioo 0 1, isOpen_Ioo.union isOpen_Ioo⟩
-
-/-- The underlying set of `slitUnitInterval` is `(-1, 0) ∪ (0, 1)`. -/
-@[simp, norm_cast] theorem coe_slitUnitInterval :
-    (slitUnitInterval : Set ℝ) = Set.Ioo (-1) 0 ∪ Set.Ioo 0 1 := (rfl)
-
-/-- Membership in `slitUnitInterval` means lying in `(-1, 0)` or `(0, 1)`. -/
-@[simp] theorem mem_slitUnitInterval {x : ℝ} :
-    x ∈ slitUnitInterval ↔ x ∈ Set.Ioo (-1) 0 ∪ Set.Ioo 0 1 := Iff.rfl
-
-private def signFn (x : ℝ) : ℝ := if 0 < x then 1 else -1
-
-private theorem signFn_eventuallyEq_const {x : ℝ} (hx : x ∈ (slitUnitInterval : Set ℝ)) :
-    ∃ c : ℝ, ‖c‖ = 1 ∧ signFn =ᶠ[𝓝 x] fun _ ↦ c := by
-  rcases hx with hx | hx
-  · refine ⟨-1, by norm_num, ?_⟩
-    filter_upwards [isOpen_Iio.mem_nhds hx.2] with y (hy : y < 0)
-    simp [signFn, not_lt.mpr hy.le]
-  · refine ⟨1, by norm_num, ?_⟩
-    filter_upwards [isOpen_Ioi.mem_nhds hx.1] with y (hy : 0 < y)
-    simp [signFn, hy]
-
-private theorem iteratedFDeriv_signFn_pos {i : ℕ} (hi : i ≠ 0) {x : ℝ}
-    (hx : x ∈ (slitUnitInterval : Set ℝ)) :
-    _root_.iteratedFDeriv ℝ i signFn x = 0 := by
-  obtain ⟨c, -, heq⟩ := signFn_eventuallyEq_const hx
-  rw [(heq.iteratedFDeriv ℝ i).eq_of_nhds, iteratedFDeriv_const_of_ne hi, Pi.zero_apply]
-
-private theorem norm_iteratedFDeriv_signFn_le (i : ℕ) {x : ℝ}
-    (hx : x ∈ (slitUnitInterval : Set ℝ)) :
-    ‖_root_.iteratedFDeriv ℝ i signFn x‖ ≤ 1 := by
-  rcases eq_or_ne i 0 with rfl | hi
-  · obtain ⟨c, hc, heq⟩ := signFn_eventuallyEq_const hx
-    rw [norm_iteratedFDeriv_zero, heq.eq_of_nhds, hc]
-  · simp [iteratedFDeriv_signFn_pos hi hx]
-
-private theorem contDiffOn_signFn (k : ℕ) :
-    ContDiffOn ℝ (k + 1 : ℕ) signFn (slitUnitInterval : Set ℝ) := fun _ hx ↦ by
-  obtain ⟨_, -, heq⟩ := signFn_eventuallyEq_const hx
-  exact (contDiffAt_const.congr_of_eventuallyEq heq).contDiffWithinAt
-
-private theorem holderOnWith_signFn (k : ℕ) (α : ℝ≥0) :
-    HolderOnWith 0 α (_root_.iteratedFDeriv ℝ (k + 1) signFn) (slitUnitInterval : Set ℝ) :=
-  fun _ hx _ hy ↦ by
-    simp [iteratedFDeriv_signFn_pos (Nat.succ_ne_zero k) hx,
-      iteratedFDeriv_signFn_pos (Nat.succ_ne_zero k) hy]
-
-/-- The locally constant sign function `(x ↦ ±1)` on `(-1, 0) ∪ (0, 1)` as an element of
-`CkHolderSpaceOn (k + 1) α slitUnitInterval ℝ`. Every derivative of positive order vanishes on
-`slitUnitInterval`, so the `(k + 1)`-st derivative has `α`-Hölder seminorm `0`. -/
-def slitSign (k : ℕ) (α : ℝ≥0) : CkHolderSpaceOn (k + 1) α slitUnitInterval ℝ :=
-  CkHolderSpaceOn.ofContDiffOn signFn (contDiffOn_signFn k)
-    (fun i _ ↦ ⟨1, fun x ↦ norm_iteratedFDeriv_signFn_le i x.property⟩)
-    (HolderWith.memHolder fun x y ↦ holderOnWith_signFn k α x x.property y y.property)
-
-/-- On the positive half `(0, 1)`, `slitSign` equals `1`. -/
-@[simp] theorem slitSign_of_pos (k : ℕ) (α : ℝ≥0) {x : slitUnitInterval} (hx : 0 < (x : ℝ)) :
-    slitSign k α x = 1 := by simp [slitSign, signFn, hx]
-
-/-- On the negative half `(-1, 0)`, `slitSign` equals `-1`. -/
-@[simp] theorem slitSign_of_neg (k : ℕ) (α : ℝ≥0) {x : slitUnitInterval} (hx : (x : ℝ) < 0) :
-    slitSign k α x = -1 := by simp [slitSign, signFn, not_lt.mpr hx.le]
-
-/-- Convexity of `Ω` cannot be dropped in `CkHolderSpaceOn.inclusionSuccL`: for every `k : ℕ` and
-every `0 < α`, `slitSign k α` belongs to `CkHolderSpaceOn (k + 1) α slitUnitInterval ℝ`, yet no
-element of `CkHolderSpaceOn 0 α slitUnitInterval ℝ` agrees with it on `slitUnitInterval`. -/
-theorem not_exists_ckHolderSpaceOn_zero_eq_slitSign (k : ℕ) {α : ℝ≥0} (hα : 0 < α) :
-    ¬ ∃ g : CkHolderSpaceOn 0 α slitUnitInterval ℝ, ∀ x, g x = slitSign k α x := by
-  rintro ⟨g, hg⟩
-  obtain ⟨C, hC⟩ := (CkHolderSpaceOn.equivHolderSpace g).memHolder
-  have hbound (n : ℕ) : (2 : ℝ) ≤ (C : ℝ) * ((2⁻¹ : ℝ) ^ (α : ℝ)) ^ n := by
-    set t : ℝ := (2⁻¹ : ℝ) ^ (n + 1)
-    have ht0 : 0 < t := by positivity
-    have ht1 : t < 1 := pow_lt_one₀ (by norm_num) (by norm_num) (Nat.succ_ne_zero n)
-    let xp : slitUnitInterval := ⟨t, Or.inr ⟨ht0, ht1⟩⟩
-    let xm : slitUnitInterval := ⟨-t, Or.inl ⟨by linarith, by linarith⟩⟩
-    have hxp : CkHolderSpaceOn.equivHolderSpace g xp = 1 := by
-      rw [CkHolderSpaceOn.equivHolderSpace_apply, hg xp, slitSign_of_pos k α ht0]
-    have hxm : CkHolderSpaceOn.equivHolderSpace g xm = -1 := by
-      rw [CkHolderSpaceOn.equivHolderSpace_apply, hg xm, slitSign_of_neg k α (by linarith)]
-    have hdist := hC.dist_le xp xm
-    rw [HolderSpace.toBoundedContinuousFunction_apply,
-      HolderSpace.toBoundedContinuousFunction_apply] at hdist
-    have hxy : dist xp xm = (2⁻¹ : ℝ) ^ n := by
-      rw [Subtype.dist_eq, Real.dist_eq, abs_of_pos (by linarith : 0 < t - -t)]
-      dsimp only [t]
-      ring
-    have h11 : |(1 : ℝ) - -1| = 2 := by norm_num
-    rw [hxp, hxm, Real.dist_eq, h11, hxy, ← Real.rpow_pow_comm (by norm_num)] at hdist
-    exact hdist
-  have hq : (2⁻¹ : ℝ) ^ (α : ℝ) < 1 :=
-    Real.rpow_lt_one (by norm_num) (by norm_num) (NNReal.coe_pos.mpr hα)
-  have hlim : Tendsto (fun n : ℕ ↦ (C : ℝ) * ((2⁻¹ : ℝ) ^ (α : ℝ)) ^ n) atTop (𝓝 ((C : ℝ) * 0)) :=
-    tendsto_const_nhds.mul (tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity) hq)
-  have hle : (2 : ℝ) ≤ (C : ℝ) * 0 :=
-    le_of_tendsto_of_tendsto' tendsto_const_nhds hlim hbound
-  linarith
 
 end TauCeti
