@@ -116,24 +116,21 @@ theorem range_permutationOrbit :
   have hT : ∀ f ∈ Set.range (jimbo (Fin n) q ∘ T (n := n) q), ∀ v ∈ P, f • v ∈ P := by
     rintro _ ⟨i, rfl⟩ v hv
     rw [Function.comp_apply, Module.End.smul_def]
-    induction hv using Submodule.span_induction with
-    | mem v hv =>
-      obtain ⟨σ, rfl⟩ := hv
-      rw [jimbo_T_single_perm]
-      split_ifs
-      · exact Submodule.subset_span ⟨_, rfl⟩
-      · exact P.add_mem (Submodule.subset_span ⟨_, rfl⟩)
-          (P.smul_mem _ (Submodule.subset_span ⟨σ, rfl⟩))
-    | zero => simp
-    | add x y hx hy ihx ihy => simpa only [map_add] using P.add_mem ihx ihy
-    | smul r x hx ih => simpa only [map_smul] using P.smul_mem r ih
+    -- It suffices to check the spanning permutation words.
+    refine (Submodule.image_span_subset _ _ P).2 ?_ ⟨v, hv, rfl⟩
+    rintro _ ⟨σ, rfl⟩
+    rw [jimbo_T_single_perm]
+    split_ifs
+    · exact Submodule.subset_span ⟨_, rfl⟩
+    · exact P.add_mem (Submodule.subset_span ⟨_, rfl⟩)
+        (P.smul_mem _ (Submodule.subset_span ⟨σ, rfl⟩))
   refine le_antisymm ?_ (Submodule.span_le.mpr ?_)
   · rintro v ⟨x, rfl⟩
     -- The Jimbo images of the generators generate the Jimbo image of the Hecke algebra.
     have hx : jimbo (Fin n) q x ∈
         Algebra.adjoin R (Set.range (jimbo (Fin n) q ∘ T (n := n) q)) := by
-      rw [Set.range_comp, ← AlgHom.map_adjoin, adjoin_range_T]
-      exact ⟨x, trivial, rfl⟩
+      rw [Set.range_comp, Algebra.adjoin_image_eq_range _ adjoin_range_T]
+      exact AlgHom.mem_range_self _ x
     rw [permutationOrbit_apply, ← Module.End.smul_def]
     exact P.smul_mem_of_mem_adjoin hT hx (Submodule.subset_span ⟨1, rfl⟩)
   · rintro v ⟨σ, rfl⟩
