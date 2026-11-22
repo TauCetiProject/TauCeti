@@ -29,7 +29,8 @@ In particular, every compactly supported `C^n` section is a finite sum of chart 
 native test functions for any covering family of two-sided `C^n` charts subordinate to atlas
 trivializations (`ContMDiffSection.span_iUnion_range_chartTestSection_eq_top_of_chart_cover`), and
 on a boundaryless Hausdorff manifold for all `ChartTestData`
-(`ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`).
+(`ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`), using the subordinate smooth chart
+at each point (`TauCeti.exists_chart_source_subset_baseSet`).
 
 The fixed-support continuity proofs rest on
 `ContDiffMapSupportedIn.continuous_iff_continuous_toContMDiffMap`: on a fixed compact support, the
@@ -222,6 +223,27 @@ theorem continuous_chartCutoffTestFunction
   · simp [hy]
 
 end Bundle.Trivialization
+
+section TestChart
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace F]
+  (V : M → Type*) [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V]
+
+variable (I F) in
+/-- On a manifold without boundary, every point `x` lies in the source of a smooth chart into the
+model space with smooth inverse, whose source lies in the base set of the trivialization at `x`. -/
+theorem TauCeti.exists_chart_source_subset_baseSet {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+    ∃ c : OpenPartialHomeomorph M E, ContMDiffOn I 𝓘(ℝ, E) n c c.source ∧
+      ContMDiffOn 𝓘(ℝ, E) I n c.symm c.target ∧ c.source ⊆ (trivializationAt F V x).baseSet ∧
+      x ∈ c.source :=
+  ⟨TauCeti.bundleChartAt I F V x, TauCeti.contMDiffOn_bundleChartAt x,
+    TauCeti.contMDiffOn_bundleChartAt_symm x, TauCeti.bundleChartAt_source_subset_baseSet x,
+    TauCeti.mem_bundleChartAt_source x⟩
+
+end TestChart
 
 namespace ContMDiffSection
 
