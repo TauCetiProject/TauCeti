@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Symplectic.Darboux.Momenta
 import TauCeti.Geometry.Symplectic.Hamiltonian.Bracket
+import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive.Extension
 
 /-!
 # Darboux charts in which commuting functions are the momenta
@@ -29,6 +30,17 @@ diffeomorphism `chart` from `M` to `(ι → ℝ) × (ι → ℝ)` with `chart x 
 (`TauCeti.SmoothTwoForm.IsSymplectic.exists_darbouxChart_snd_eq`). No compactness of the levels of
 `F` and no completeness of the Hamiltonian vector fields is needed, in contrast with the local
 action-angle coordinates near a compact regular level.
+
+The general theorem allows any number `k ≤ n` of functions: `k` smooth functions `F₁, …, F_k`
+which Poisson-commute near `x` and have independent differentials at `x` are the first `k` momenta
+`p₁, …, p_k` of Darboux coordinates near `x`
+(`TauCeti.SmoothTwoForm.IsSymplectic.exists_darbouxChart_castLE_eq`). On a boundaryless Hausdorff
+manifold the family extends to `n` such functions
+(`TauCeti.SmoothTwoForm.IsSymplectic.exists_isRegularPoint_castLE`), to which the case `k = n`
+applies. The conjugate coordinates `q_i` are canonical: in any Darboux chart the Hamiltonian vector
+field of the momentum `p_j` is the coordinate field `∂/∂q_j`
+(`PartialDiffeomorph.mvfderiv_hamiltonianVectorField_eq_of_eval₂_eq`): the differential of the
+chart sends `X_{F_i}` to the constant vector `(e_i, 0)`.
 
 The proof has two steps.
 
@@ -317,6 +329,81 @@ theorem exists_darbouxChart_snd_eq [BoundarylessManifold I M]
             (mvfderiv I chart y w).1 i * (mvfderiv I chart y v).2 i) :=
   exists_darbouxChart_snd_eq_of_isInteriorPoint hσ hF hcomm BoundarylessManifold.isInteriorPoint
     hreg hdim
+
+omit [FiniteDimensional ℝ E] in
+/-- **In a Darboux chart, the Hamiltonian vector field of a momentum is the conjugate coordinate
+field.** Let `chart` be a smooth partial diffeomorphism from `M` to `(ι → ℝ) × (ι → ℝ)` pulling the
+standard form `∑ᵢ dqᵢ ∧ dpᵢ` back to `σ` at a point `y` of its source. If a function `f` agrees
+near `y` with the momentum `p_j`, then the Hamiltonian vector field of `f` at `y` is sent to
+`(e_j, 0)`: in the chart, `X_f = ∂/∂q_j`. -/
+theorem _root_.PartialDiffeomorph.mvfderiv_hamiltonianVectorField_eq_of_eval₂_eq
+    [DecidableEq ι]
+    (chart : PartialDiffeomorph I 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) M ((ι → ℝ) × (ι → ℝ)) ∞) {y : M}
+    (hy : y ∈ chart.source)
+    (hform : ∀ v w : TangentSpace I y, SmoothBundleForm.eval₂ σ y v w =
+      ∑ i, ((mvfderiv I chart y v).1 i * (mvfderiv I chart y w).2 i -
+        (mvfderiv I chart y w).1 i * (mvfderiv I chart y v).2 i))
+    {f : M → ℝ} {j : ι} (hf : f =ᶠ[𝓝 y] fun z ↦ (chart z).2 j) :
+    mvfderiv I chart y (σ.hamiltonianVectorField f y) = (Pi.single j 1, 0) := by
+  have hbij := chart.bijective_mvfderiv (by simp) hy
+  -- The differential of the chart identifies `E` with the finite-dimensional model space.
+  have : FiniteDimensional ℝ E :=
+    (LinearEquiv.ofBijective (mvfderiv I chart y).toLinearMap hbij).symm.finiteDimensional
+  -- `σ` is nondegenerate at `y`, since the standard form is and `d chart` is bijective.
+  have hinv : (σ.flat y).IsInvertible := by
+    refine isInvertible_flat_iff.2 <| (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
+      (SmoothForm.isAlt_bilinFormAt σ y).isRefl).2 fun v hv ↦
+        hbij.1 (eq_of_forall_sum_mul_sub_mul_eq fun b ↦ ?_)
+    obtain ⟨w, rfl⟩ := hbij.2 b
+    have h0 : SmoothBundleForm.eval₂ σ y v w = 0 := by
+      simpa only [SmoothForm.bilinFormAt_apply] using hv w
+    rw [← hform, h0, map_zero]
+    simp
+  -- Pairing `X_f` with `w` gives `df(w)`, the `p_j`-component of `d chart w`.
+  refine eq_of_forall_sum_mul_sub_mul_eq fun b ↦ ?_
+  obtain ⟨w, rfl⟩ := hbij.2 b
+  rw [← hform, ← flat_apply, hamiltonianVectorField_def, hinv.self_apply_inverse, hf.mvfderiv_eq]
+  have hp : mvfderiv I (fun z ↦ (chart z).2 j) y w = (mvfderiv I chart y w).2 j :=
+    -- The momentum `fun z ↦ (chart z).2 j` is `proj j ∘ snd ∘ chart` by definition.
+    ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) j).comp
+      (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ))).mvfderiv_comp_apply
+      (chart.mdifferentiableAt (by simp) hy) w
+  simp [hp, Pi.single_apply]
+
+include hσ in
+/-- **The Carathéodory–Jacobi–Lie theorem.** On a boundaryless Hausdorff symplectic manifold of
+dimension `2n`, let `F₁, …, F_k` be smooth functions, `k ≤ n`, which pairwise Poisson-commute near
+`x` and have independent differentials at `x`. Then they are the first `k` momenta of Darboux
+coordinates near `x`: there is a smooth partial diffeomorphism `chart` from `M` to
+`(Fin n → ℝ) × (Fin n → ℝ)`, with `x` in its source and `(chart x).1 = 0`, whose momentum
+coordinates `p_i` for `i < k` are the `F_i`, and which pulls the standard form `∑ᵢ dqᵢ ∧ dpᵢ`
+back to `σ`. The conjugate coordinates `q_i` are canonical: in the chart, the Hamiltonian vector
+field of each `F_i` is the coordinate field `∂/∂q_i`. -/
+theorem exists_darbouxChart_castLE_eq [BoundarylessManifold I M] [T2Space M] {n k : ℕ}
+    (hdim : 2 * n = finrank ℝ E) (hkn : k ≤ n) {F : M → Fin k → ℝ}
+    (hF : ContMDiff I 𝓘(ℝ, Fin k → ℝ) ∞ F)
+    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) =ᶠ[𝓝 x] fun _ ↦ 0)
+    (hreg : IsRegularPoint I 𝓘(ℝ, Fin k → ℝ) F x) :
+    ∃ chart : PartialDiffeomorph I 𝓘(ℝ, (Fin n → ℝ) × (Fin n → ℝ)) M
+        ((Fin n → ℝ) × (Fin n → ℝ)) ∞,
+      x ∈ chart.source ∧ (chart x).1 = 0 ∧
+        (∀ y ∈ chart.source, ∀ i, (chart y).2 (Fin.castLE hkn i) = F y i) ∧
+        (∀ y ∈ chart.source, ∀ v w : TangentSpace I y, SmoothBundleForm.eval₂ σ y v w =
+          ∑ i, ((mvfderiv I chart y v).1 i * (mvfderiv I chart y w).2 i -
+            (mvfderiv I chart y w).1 i * (mvfderiv I chart y v).2 i)) ∧
+        ∀ y ∈ chart.source, ∀ i, mvfderiv I chart y (σ.hamiltonianVectorField (F · i) y) =
+          (Pi.single (Fin.castLE hkn i) 1, 0) := by
+  -- Extend the `F_i` to `n` functions with the same properties, and take Darboux coordinates
+  -- whose momenta are these `n` functions.
+  obtain ⟨G, hG, hGc, hGr, hGF⟩ := hσ.exists_isRegularPoint_castLE hdim.le hkn hF hcomm hreg
+  obtain ⟨chart, hx, hcx, hcG, hform⟩ :=
+    hσ.exists_darbouxChart_snd_eq hG hGc hGr (by rw [Fintype.card_fin, hdim])
+  have hcF {y : M} (hy : y ∈ chart.source) (i : Fin k) :
+      (chart y).2 (Fin.castLE hkn i) = F y i := by
+    rw [hcG y hy, ← congrFun (hGF i) y]
+  refine ⟨chart, hx, by rw [hcx], fun y hy ↦ hcF hy, hform, fun y hy i ↦ ?_⟩
+  exact chart.mvfderiv_hamiltonianVectorField_eq_of_eval₂_eq hy (hform y hy)
+    (eventuallyEq_of_mem (chart.open_source.mem_nhds hy) fun z hz ↦ (hcF hz i).symm)
 
 end IsSymplectic
 

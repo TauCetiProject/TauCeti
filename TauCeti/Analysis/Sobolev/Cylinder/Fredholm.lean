@@ -15,7 +15,7 @@ import TauCeti.Analysis.Fredholm.ContinuousFamily
 # Fredholm property of first-order operators on the cylinder along families
 
 Let `D ξ = M (ξ, ∂s ξ, ∂t ξ)` be a first-order operator on the cylinder `ℝ × S¹` with an essentially
-bounded coefficient field `M`, realized as `TauCeti.CylinderSobolev.jetOperator M` on the Sobolev
+bounded coefficient field `M`, realized as `TauCeti.jetOperator stripMeasure M` on the Sobolev
 space `W^{1,2}(ℝ × S¹, V)` with values in `L²(ℝ × S¹, W)`. Peetre's argument turns the
 semi-Fredholm estimate (`TauCeti.CylinderSobolev.HasSemiFredholmEstimate`) into finite-dimensional
 kernel and closed range, but not into a finite-dimensional cokernel. This file shows that the
@@ -63,14 +63,14 @@ theorem isFredholm_and_index_eq_of_hasSemiFredholmEstimate {s : Set X} (hs : IsP
     {M : X → ℝ × ℝ → V × V × V →L[ℝ] W} (hM : ∀ x ∈ s, MemLp (M x) ∞ stripMeasure)
     (hcont : ∀ x ∈ s, Tendsto (fun y ↦ eLpNorm (M y - M x) ∞ stripMeasure) (𝓝[s] x) (𝓝 0))
     (hest : ∀ x ∈ s, ∃ C T, HasSemiFredholmEstimate (M x) C T) {x₀ x : X} (hx₀ : x₀ ∈ s)
-    (hx : x ∈ s) (h₀ : ((jetOperator (M x₀)).comp (H1 V).subtypeL).IsFredholm) :
-    ((jetOperator (M x)).comp (H1 V).subtypeL).IsFredholm ∧
-      ((jetOperator (M x)).comp (H1 V).subtypeL).index =
-        ((jetOperator (M x₀)).comp (H1 V).subtypeL).index := by
-  have hT : ContinuousOn (fun y ↦ (jetOperator (M y)).comp (H1 V).subtypeL) s :=
+    (hx : x ∈ s) (h₀ : ((jetOperator stripMeasure (M x₀)).comp (H1 V).subtypeL).IsFredholm) :
+    ((jetOperator stripMeasure (M x)).comp (H1 V).subtypeL).IsFredholm ∧
+      ((jetOperator stripMeasure (M x)).comp (H1 V).subtypeL).index =
+        ((jetOperator stripMeasure (M x₀)).comp (H1 V).subtypeL).index := by
+  have hT : ContinuousOn (fun y ↦ (jetOperator stripMeasure (M y)).comp (H1 V).subtypeL) s :=
     (continuousOn_jetOperator hM hcont).clm_comp continuousOn_const
-  have hF : ∀ y ∈ s, ((jetOperator (M y)).comp (H1 V).subtypeL).IsFredholm := fun y hy ↦
-    hT.isFredholm_of_isPreconnected
+  have hF : ∀ y ∈ s, ((jetOperator stripMeasure (M y)).comp (H1 V).subtypeL).IsFredholm :=
+    fun y hy ↦ hT.isFredholm_of_isPreconnected
       (fun z hz ↦ (hest z hz).elim fun _ ⟨_, h⟩ ↦
         finiteDimensional_ker_jetOperator_comp_subtypeL (hM z hz) h)
       (fun z hz ↦ (hest z hz).elim fun _ ⟨_, h⟩ ↦
