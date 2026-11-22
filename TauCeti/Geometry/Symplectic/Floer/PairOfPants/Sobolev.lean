@@ -43,10 +43,13 @@ times the Jacobian agree up to the factors `2` and `20π²`
 `TauCeti.Floer.det_fderiv_endChart_mul_le`). By the change of variables formula, the
 `W^{1,2}` energy of `ξ` over the image `φ_q(P × [0, 1))` of a band of the end and the energy of
 `ζ` over the band agree up to the same factors
-(`TauCeti.Floer.lintegral_comp_endChart_le`, `TauCeti.Floer.lintegral_image_endChart_le`). So
-estimates stated in the end coordinates, such as the semi-Fredholm estimate of the linearized
-Floer operator along a Floer pair of pants, transfer to the norm of `H1`. Pointwise, the weight is
-at least `|w - c_q|⁻²` for the center `c_q` of every end
+(`TauCeti.Floer.lintegral_comp_endChart_le`, `TauCeti.Floer.lintegral_image_endChart_le`), and
+the same comparison holds in the positive end charts `φ'_q`, which read every end as a positive end
+(`TauCeti.Floer.det_fderiv_positiveEndChart_mul_le`,
+`TauCeti.Floer.lintegral_image_positiveEndChart_le`). So estimates stated in the end coordinates,
+such as the semi-Fredholm estimate of the linearized Floer operator along a Floer pair of pants,
+transfer to the norm of `H1`. Pointwise, the weight is at least `|w - c_q|⁻²` for the center `c_q`
+of every end
 (`TauCeti.Floer.inv_norm_sub_endCenter_sq_le_cylindricalWeight`,
 `TauCeti.Floer.inv_sqrt_cylindricalWeight_le_norm_sub_endCenter`): the distance `|w - c_q|` to the
 center of the end is, up to the constant `2π`, the conformal factor of the end chart.
@@ -297,5 +300,56 @@ theorem lintegral_image_endChart_le (q : Puncture) {P : Set ℝ} (hP : Measurabl
   rw [← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (by positivity),
     abs_of_pos (det_fderiv_endChart_pos q z)]
   exact ENNReal.ofReal_le_ofReal (det_fderiv_endChart_mul_le q (hP0 z.1 hz.1) (hξ z hz))
+
+/-- **The weighted density, from the `W^{1,2}` density in the positive end chart.** On the part
+`s ≥ 0` of the positive end chart `φ'_q`, the Jacobian of `φ'_q` times the weighted density
+`ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²` at `φ'_q(ζ)` is at most `20π²` times the `W^{1,2}` density of
+`ξ ∘ φ'_q` at `ζ`. -/
+theorem det_fderiv_positiveEndChart_mul_le (q : Puncture) {ξ : ℝ × ℝ → V} {ζ : ℝ × ℝ}
+    (hζ : 0 ≤ ζ.1) (hξ : DifferentiableAt ℝ ξ (positiveEndChart q ζ)) :
+    (fderiv ℝ (positiveEndChart q) ζ).det *
+        (cylindricalWeight (positiveEndChart q ζ) * ‖ξ (positiveEndChart q ζ)‖ ^ 2 +
+          ‖fderiv ℝ ξ (positiveEndChart q ζ) (1, 0)‖ ^ 2 +
+          ‖fderiv ℝ ξ (positiveEndChart q ζ) (0, 1)‖ ^ 2) ≤
+      20 * π ^ 2 * (‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ (1, 0)‖ ^ 2 +
+        ‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ (0, 1)‖ ^ 2 + ‖ξ (positiveEndChart q ζ)‖ ^ 2) := by
+  -- The positive end chart is the end chart at the reflected point `±ζ`.
+  have hφ : positiveEndChart q ζ = endChart q (q.endSign • ζ) := positiveEndChart_apply q ζ
+  have hz : 0 ≤ q.endSign * (q.endSign • ζ).1 := by
+    rwa [Prod.smul_fst, smul_eq_mul, ← mul_assoc, endSign_mul_self, one_mul]
+  have hdet : (fderiv ℝ (positiveEndChart q) ζ).det =
+      (fderiv ℝ (endChart q) (q.endSign • ζ)).det := by
+    rw [det_fderiv_positiveEndChart, det_fderiv_endChart, hφ]
+  have hd (v : ℝ × ℝ) : ‖fderiv ℝ (ξ ∘ endChart q) (q.endSign • ζ) v‖ =
+      ‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ v‖ := by
+    rw [fderiv_comp_endChart, smul_smul, endSign_mul_self, one_smul,
+      smul_apply, norm_smul, Real.norm_eq_abs, abs_endSign, one_mul]
+  have h := det_fderiv_endChart_mul_le q hz (hφ ▸ hξ)
+  rwa [hd, hd, ← hdet, ← hφ] at h
+
+/-- **The weighted energy on the image of a band of the positive end chart, from the `W^{1,2}`
+energy.** For a band `P × [0, 1)` of the part `s ≥ 0` of the positive end chart `φ'_q` and a `ξ`
+differentiable on the image of the band, the weighted energy `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` of `ξ`
+over the image of the band is at most `20π²` times the `W^{1,2}` energy of `ξ ∘ φ'_q` over the
+band. -/
+theorem lintegral_image_positiveEndChart_le (q : Puncture) {P : Set ℝ} (hP : MeasurableSet P)
+    (hP0 : ∀ s ∈ P, 0 ≤ s) {ξ : ℝ × ℝ → V}
+    (hξ : ∀ ζ ∈ P ×ˢ Ico 0 1, DifferentiableAt ℝ ξ (positiveEndChart q ζ)) :
+    ∫⁻ w in positiveEndChart q '' (P ×ˢ Ico 0 1),
+        ENNReal.ofReal (cylindricalWeight w * ‖ξ w‖ ^ 2 + ‖fderiv ℝ ξ w (1, 0)‖ ^ 2 +
+          ‖fderiv ℝ ξ w (0, 1)‖ ^ 2) ≤
+      ENNReal.ofReal (20 * π ^ 2) * ∫⁻ ζ in P ×ˢ Ico 0 1,
+        ENNReal.ofReal (‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ (1, 0)‖ ^ 2 +
+          ‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ (0, 1)‖ ^ 2 + ‖ξ (positiveEndChart q ζ)‖ ^ 2) := by
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume (hP.prod measurableSet_Ico)
+    (fun ζ _ ↦ ((contDiff_positiveEndChart q 1).differentiable one_ne_zero
+      ζ).hasFDerivAt.hasFDerivWithinAt)
+    ((injOn_positiveEndChart q 0).mono (prod_mono (subset_univ _) (by norm_num))),
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  refine setLIntegral_mono' (hP.prod measurableSet_Ico) fun ζ hζ ↦ ?_
+  rw [← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (by positivity),
+    abs_of_pos (det_fderiv_positiveEndChart_pos q ζ)]
+  exact ENNReal.ofReal_le_ofReal (det_fderiv_positiveEndChart_mul_le q (hP0 ζ.1 hζ.1) (hξ ζ hζ))
 
 end TauCeti.Floer
