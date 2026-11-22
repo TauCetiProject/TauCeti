@@ -67,9 +67,9 @@ variable (I M) in
 elements `w` with `D(w, v) = μ ⟪w, v⟫_{L²}` for every `v ∈ H¹(M)`, where `D` is the Dirichlet
 form (`TauCeti.Manifold.SobolevH1.mem_weakEigenspace_iff`). -/
 def weakEigenspace (μ : ℝ) : Submodule ℝ (SobolevH1 I M) :=
-  LinearMap.ker (dirichletForm (I := I) (M := M) - μ •
+  (dirichletForm (I := I) (M := M) - μ •
     ((innerSL ℝ).bilinearComp (toLp (I := I) (M := M)) toLp :
-      SobolevH1 I M →L[ℝ] SobolevH1 I M →L[ℝ] ℝ) : SobolevH1 I M →ₗ[ℝ] SobolevH1 I M →L[ℝ] ℝ)
+      SobolevH1 I M →L[ℝ] SobolevH1 I M →L[ℝ] ℝ)).ker
 
 /-- `w ∈ H¹(M)` is a weak `μ`-eigenfunction exactly when `D(w, v) = μ ⟪w, v⟫_{L²}` for every
 `v ∈ H¹(M)`. -/
@@ -79,13 +79,8 @@ theorem mem_weakEigenspace_iff {μ : ℝ} {w : SobolevH1 I M} :
 
 /-- The weak eigenspaces are closed. -/
 theorem isClosed_weakEigenspace (μ : ℝ) :
-    IsClosed (weakEigenspace I M μ : Set (SobolevH1 I M)) := by
-  have h : (weakEigenspace I M μ : Set (SobolevH1 I M)) =
-      ⋂ v, {w | dirichletForm w v = μ * ⟪toLp w, toLp v⟫_ℝ} := by
-    ext w
-    simp [mem_weakEigenspace_iff]
-  rw [h]
-  exact isClosed_iInter fun v ↦ isClosed_eq (by fun_prop) (by fun_prop)
+    IsClosed (weakEigenspace I M μ : Set (SobolevH1 I M)) :=
+  ContinuousLinearMap.isClosed_ker _
 
 /-- It suffices to test the weak eigenvalue equation against smooth functions:
 `w ∈ H¹(M)` is a weak eigenfunction exactly when `D(w, φ) = μ ∫ w φ dV` for every smooth `φ`. -/
