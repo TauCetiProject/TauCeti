@@ -79,7 +79,8 @@ open scoped InnerProductSpace ENNReal NNReal ComplexConjugate
 
 universe u
 
-variable {𝕜 : Type*} {E : Type u} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {𝕜 : Type*} {E : Type u} {F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+  [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
 /-! ### Diagonal sums of nuclear series -/
 
@@ -113,21 +114,21 @@ end HilbertBasis
 
 namespace ContinuousLinearMap
 
-variable [CompleteSpace E] {T : E →L[𝕜] E}
+variable [CompleteSpace E] [CompleteSpace F] {T : E →L[𝕜] E}
 
 /-! ### Trace-class operators as nuclear series -/
 
 /-- **Trace-class operators are nuclear series.** A trace-class operator is an operator-norm sum
 `T = ∑ₖ ⟪uₖ, ·⟫ vₖ` of rank-one operators with `∑ₖ ‖uₖ‖ ‖vₖ‖ ≤ ∑ₙ aₙ(T)`. -/
-theorem exists_hasSum_rankOne_of_mem_traceClass
-    (hT : T ∈ ((traceClass 𝕜).operatorGauge E E).finiteSubmodule) :
-    ∃ (κ : Type u) (u v : κ → E), Summable (fun k ↦ ‖u k‖ * ‖v k‖) ∧
+theorem exists_hasSum_rankOne_of_mem_traceClass {T : E →L[𝕜] F}
+    (hT : T ∈ ((traceClass 𝕜).operatorGauge E F).finiteSubmodule) :
+    ∃ (κ : Type u) (u : κ → E) (v : κ → F), Summable (fun k ↦ ‖u k‖ * ‖v k‖) ∧
       ∑' k, ‖u k‖ * ‖v k‖ ≤ ∑' n, (T.singularValue n : ℝ) ∧
         HasSum (fun k ↦ rankOne 𝕜 (v k) (u k)) T := by
   have hsv := (mem_finiteSubmodule_traceClass_iff T).1 hT
-  obtain ⟨κ, e, f, σ, -, he, hf, hσ0, hσ, hTσ, hdec⟩ :=
-    (isCompactOperator_of_nuclearENorm_ne_top
-      ((nuclearENorm_ne_top_iff_summable T).2 hsv)).exists_orthonormal_hasSum_rankOne
+  have hc := isCompactOperator_of_nuclearENorm_ne_top
+    ((mem_finiteSubmodule_traceClass_iff_nuclearENorm_ne_top T).1 hT)
+  obtain ⟨κ, e, f, σ, -, he, hf, hσ0, hσ, hTσ, hdec⟩ := hc.exists_orthonormal_hasSum_rankOne
   -- Every finite sum of the `σₖ` is bounded by a sum of approximation numbers.
   have hle (s : Finset κ) : ∑ k ∈ s, σ k ≤ ∑' n, (T.singularValue n : ℝ) :=
     calc ∑ k ∈ s, σ k ≤ ∑ n ∈ Finset.range s.card, decreasingRearrangement σ n :=
@@ -143,10 +144,10 @@ theorem exists_hasSum_rankOne_of_mem_traceClass
 
 /-- **Nuclear series are trace class.** An operator-norm sum `T = ∑ₖ ⟪uₖ, ·⟫ vₖ` of rank-one
 operators with `∑ₖ ‖uₖ‖ ‖vₖ‖ < ∞` is a trace-class operator. -/
-theorem mem_traceClass_of_hasSum_rankOne {κ : Type*} {u v : κ → E}
+theorem mem_traceClass_of_hasSum_rankOne {κ : Type*} {u : κ → E} {v : κ → F} {T : E →L[𝕜] F}
     (huv : Summable fun k ↦ ‖u k‖ * ‖v k‖) (hT : HasSum (fun k ↦ rankOne 𝕜 (v k) (u k)) T) :
-    T ∈ ((traceClass 𝕜).operatorGauge E E).finiteSubmodule := by
-  rw [OperatorGauge.mem_finiteSubmodule, operatorGauge_apply, gauge_traceClass, lt_top_iff_ne_top]
+    T ∈ ((traceClass 𝕜).operatorGauge E F).finiteSubmodule := by
+  rw [mem_finiteSubmodule_traceClass_iff_nuclearENorm_ne_top]
   refine ne_top_of_le_ne_top ?_ (nuclearENorm_le_tsum_of_hasSum hT)
   simp_rw [nuclearENorm_rankOne, ← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _), mul_comm]
   rw [← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) huv]
@@ -259,32 +260,31 @@ theorem enorm_trace_le (T : E →L[𝕜] E) : ‖T.trace‖ₑ ≤ T.nuclearENor
     refine (ENNReal.ofReal_le_ofReal hnorm).trans_eq ?_
     rw [ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ NNReal.coe_nonneg _) hsv]
     simp
-  · have hT' : T.nuclearENorm = ∞ := by
-      simpa [OperatorGauge.mem_finiteSubmodule, lt_top_iff_ne_top] using hT
+  · have hT' : T.nuclearENorm = ∞ :=
+      not_ne_iff.1 ((mem_finiteSubmodule_traceClass_iff_nuclearENorm_ne_top T).not.1 hT)
     simp [hT']
 
 /-- **The trace is bounded by the trace norm**: `|Tr T| ≤ ∑ₙ aₙ(T)`. -/
 theorem norm_trace_le (hT : T ∈ ((traceClass 𝕜).operatorGauge E E).finiteSubmodule) :
     ‖T.trace‖ ≤ T.nuclearENorm.toReal := by
-  have hne : T.nuclearENorm ≠ ∞ := by
-    simpa [OperatorGauge.mem_finiteSubmodule, lt_top_iff_ne_top] using hT
+  have hne := (mem_finiteSubmodule_traceClass_iff_nuclearENorm_ne_top T).1 hT
   have h := enorm_trace_le T
   rw [← ofReal_norm] at h
   exact (ENNReal.ofReal_le_iff_le_toReal hne).1 h
 
 /-! ### The trace property and the adjoint -/
 
-/-- **The trace property.** For a trace-class operator `T` and a bounded operator `A`,
-`Tr (A T) = Tr (T A)`. -/
-theorem trace_comp_comm (A : E →L[𝕜] E)
-    (hT : T ∈ ((traceClass 𝕜).operatorGauge E E).finiteSubmodule) :
+/-- **The trace property.** For a trace-class operator `T : F →L[𝕜] E` and a bounded operator
+`A : E →L[𝕜] F`, `Tr (A T) = Tr (T A)`. -/
+theorem trace_comp_comm {T : F →L[𝕜] E} (A : E →L[𝕜] F)
+    (hT : T ∈ ((traceClass 𝕜).operatorGauge F E).finiteSubmodule) :
     (A ∘L T).trace = (T ∘L A).trace := by
   obtain ⟨κ, u, v, huv, -, hTuv⟩ := exists_hasSum_rankOne_of_mem_traceClass hT
   -- `A T = ∑ₖ ⟪uₖ, ·⟫ A vₖ` and `T A = ∑ₖ ⟪A† uₖ, ·⟫ vₖ`.
   have hAT : HasSum (fun k ↦ rankOne 𝕜 (A (v k)) (u k)) (A ∘L T) := by
-    simpa [comp_rankOne] using hTuv.mapL (compL 𝕜 E E E A)
+    simpa [comp_rankOne] using hTuv.mapL (compL 𝕜 F E F A)
   have hTA : HasSum (fun k ↦ rankOne 𝕜 (v k) (adjoint A (u k))) (T ∘L A) := by
-    simpa [rankOne_comp] using hTuv.mapL ((compL 𝕜 E E E).flip A)
+    simpa [rankOne_comp] using hTuv.mapL ((compL 𝕜 E F E).flip A)
   rw [trace_eq_tsum_of_hasSum_rankOne ?_ hAT, trace_eq_tsum_of_hasSum_rankOne ?_ hTA]
   · simp [adjoint_inner_left]
   · refine (huv.mul_left ‖A‖).of_nonneg_of_le (fun _ ↦ by positivity) fun k ↦ ?_
@@ -308,7 +308,7 @@ theorem trace_adjoint (T : E →L[𝕜] E) : (adjoint T).trace = conj T.trace :=
       trace_eq_tsum_of_hasSum_rankOne huv hTuv, RCLike.conj_tsum]
     simp
   · have hT' : adjoint T ∉ ((traceClass 𝕜).operatorGauge E E).finiteSubmodule := by
-      simpa [OperatorGauge.mem_finiteSubmodule] using hT
+      simpa [mem_finiteSubmodule_traceClass_iff_nuclearENorm_ne_top] using hT
     simp [hT, hT']
 
 /-! ### Finite dimension -/
@@ -318,8 +318,7 @@ class, and its trace is the trace of the underlying linear map. -/
 theorem trace_eq_linearMap_trace [FiniteDimensional 𝕜 E] (T : E →L[𝕜] E) :
     T.trace = LinearMap.trace 𝕜 E T := by
   have hT : T ∈ ((traceClass 𝕜).operatorGauge E E).finiteSubmodule := by
-    rw [OperatorGauge.mem_finiteSubmodule, operatorGauge_apply, gauge_traceClass,
-      lt_top_iff_ne_top]
+    rw [mem_finiteSubmodule_traceClass_iff_nuclearENorm_ne_top]
     exact T.nuclearENorm_ne_top_of_rank_le (k := Module.finrank 𝕜 E)
       ((Submodule.rank_le _).trans (Module.finrank_eq_rank 𝕜 E).symm.le)
   set b := stdOrthonormalBasis 𝕜 E
