@@ -48,8 +48,8 @@ theorem finite_continuousMonoidHom_of_finite_setOf_isOpen_index_le {Q : Type*} [
   let 𝒲 := {H : Subgroup G | IsOpen (H : Set G) ∧ H.FiniteIndex ∧ H.index ≤ Nat.card Q}
   have : Finite 𝒲 := h.to_subtype
   -- the intersection `N` of the open subgroups of index at most `#Q` has finite index
-  let N : Subgroup G := ⨅ H : 𝒲, H.1
-  have : N.FiniteIndex := Subgroup.finiteIndex_iInf fun H ↦ H.2.2.1
+  let N : Subgroup G := ⨅ H : 𝒲, H.val
+  have : N.FiniteIndex := Subgroup.finiteIndex_iInf fun H ↦ H.property.2.1
   -- and lies in every kernel
   have hN (χ : G →ₜ* Q) : N ≤ (χ : G →* Q).ker := by
     refine iInf_le_of_le ⟨(χ : G →* Q).ker, ?_, ⟨?_⟩, ?_⟩ le_rfl
@@ -77,7 +77,7 @@ theorem finite_setOf_isOpen_index_le_of_isOpen {V : Subgroup G} (hV : IsOpen (V 
   rintro H ⟨hH, hfin, hn⟩
   refine ⟨?_, ⟨?_⟩, ?_⟩
   · rw [Subgroup.coe_map]
-    exact IsOpen.isOpenMap_subtype_val hV _ hH
+    exact IsOpen.isOpenMap_subtypeVal hV _ hH
   · rw [Subgroup.index_map_subtype]
     exact mul_ne_zero hfin.index_ne_zero Subgroup.FiniteIndex.index_ne_zero
   · rw [Subgroup.index_map_subtype, mul_comm]

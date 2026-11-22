@@ -27,10 +27,10 @@ unramifiedness of an ideal `p` of `𝓞 K` in the finite subextensions of `Ω / 
 * `IntermediateField.isUnramifiedIn_of_le`: unramifiedness descends to subextensions;
 * `IntermediateField.isUnramifiedIn_bot`: every finite place is unramified in `⊥`.
 
-Unramifiedness is invariant under isomorphisms of extensions (`AlgEquiv.isUnramifiedIn_iff`). The
-compositum statement moves the fields into an algebraic closure of `L₁ ⊔ L₂`, where they lie in a
-finite Galois extension of `K`, and there reads unramifiedness on inertia groups
-(`Ideal.isUnramifiedIn_sup_iff`).
+Unramifiedness is invariant under isomorphisms of extensions (`AlgEquiv.isUnramifiedIn_iff`,
+applied to `NumberField.RingOfIntegers.mapAlgEquiv`). The compositum statement moves the fields
+into an algebraic closure of `L₁ ⊔ L₂`, where they lie in a finite Galois extension of `K`, and
+there reads unramifiedness on inertia groups (`Ideal.isUnramifiedIn_sup_iff`).
 -/
 
 public section
@@ -38,6 +38,8 @@ public section
 open IsDedekindDomain Module
 
 open scoped NumberField
+
+open NumberField.RingOfIntegers (mapAlgEquiv)
 
 namespace IntermediateField
 
@@ -48,7 +50,7 @@ omit [NumberField K] in
 `σ L` exactly when it is unramified in `L`. -/
 theorem isUnramifiedIn_map_iff (L : IntermediateField K Ω) (σ : Ω →ₐ[K] Ω) (p : Ideal (𝓞 K)) :
     Algebra.IsUnramifiedIn (𝓞 (L.map σ)) p ↔ Algebra.IsUnramifiedIn (𝓞 L) p :=
-  (NumberField.RingOfIntegers.mapAlgEquiv (L.equivMap σ)).isUnramifiedIn_iff p |>.symm
+  (mapAlgEquiv (L.equivMap σ)).isUnramifiedIn_iff p |>.symm
 
 /-- Unramifiedness in a compositum, inside a Galois extension `Ω / K`: the three fields are compared
 inside the normal closure of `L₁ ⊔ L₂`, a finite Galois extension of `K`, where unramifiedness is
@@ -64,8 +66,9 @@ private theorem isUnramifiedIn_sup_iff_of_isGalois [IsGalois K Ω] (L₁ L₂ : 
   have h₂ : L₂ ≤ M := le_sup_right.trans h
   have hsup : restrict h = restrict h₁ ⊔ restrict h₂ :=
     lift_injective _ (by rw [lift_sup, lift_restrict, lift_restrict, lift_restrict])
-  rw [(restrictAlgEquiv h).isUnramifiedIn_iff, (restrictAlgEquiv h₁).isUnramifiedIn_iff,
-    (restrictAlgEquiv h₂).isUnramifiedIn_iff, hsup, Ideal.isUnramifiedIn_sup_iff]
+  rw [(mapAlgEquiv (restrictAlgEquiv h)).isUnramifiedIn_iff,
+    (mapAlgEquiv (restrictAlgEquiv h₁)).isUnramifiedIn_iff,
+    (mapAlgEquiv (restrictAlgEquiv h₂)).isUnramifiedIn_iff, hsup, Ideal.isUnramifiedIn_sup_iff]
 
 /-- **Unramifiedness in a compositum.** For finite subextensions `L₁` and `L₂` of `Ω / K`, an
 ideal of `𝓞 K` is unramified in `L₁ ⊔ L₂` exactly when it is unramified in `L₁` and in `L₂`.
@@ -87,8 +90,9 @@ theorem isUnramifiedIn_sup_iff (L₁ L₂ : IntermediateField K Ω)
   have : FiniteDimensional K ((restrict h₂).map ι) := (e h₂).toLinearEquiv.finiteDimensional
   have hsup : restrict (le_refl E) = restrict h₁ ⊔ restrict h₂ :=
     lift_injective _ (by rw [lift_sup, lift_restrict, lift_restrict, lift_restrict])
-  rw [(e (le_refl E)).isUnramifiedIn_iff, (e h₁).isUnramifiedIn_iff, (e h₂).isUnramifiedIn_iff,
-    hsup, IntermediateField.map_sup, isUnramifiedIn_sup_iff_of_isGalois]
+  rw [(mapAlgEquiv (e (le_refl E))).isUnramifiedIn_iff,
+    (mapAlgEquiv (e h₁)).isUnramifiedIn_iff, (mapAlgEquiv (e h₂)).isUnramifiedIn_iff, hsup,
+    IntermediateField.map_sup, isUnramifiedIn_sup_iff_of_isGalois]
 
 /-- **Unramifiedness descends to subextensions.** For `L ≤ E` with `E` finite over `K`, an ideal of
 `𝓞 K` unramified in `E` is unramified in `L`. -/
@@ -104,7 +108,7 @@ variable (K Ω) in
 /-- **The bottom field is unramified outside every set of places.** -/
 theorem isUnramifiedIn_bot (v : HeightOneSpectrum (𝓞 K)) :
     Algebra.IsUnramifiedIn (𝓞 (⊥ : IntermediateField K Ω)) v.asIdeal := by
-  rw [(botEquiv K Ω).isUnramifiedIn_iff]
+  rw [(mapAlgEquiv (botEquiv K Ω)).isUnramifiedIn_iff]
   intro Q _ _
   refine TauCeti.NumberField.isUnramifiedAway_ramifiedSupport (K := K) (L := K) v ?_ Q
   rw [TauCeti.NumberField.ramifiedSupport_self]

@@ -115,7 +115,7 @@ theorem adjoin_le_maxUnramifiedOutside_iff {S : Set (HeightOneSpectrum (𝓞 K))
   -- the generating family, indexed by a subtype
   let ι := {E : IntermediateField K Ω //
     FiniteDimensional K E ∧ ∀ v ∉ S, Algebra.IsUnramifiedIn (𝓞 E) v.asIdeal}
-  let f : ι → IntermediateField K Ω := fun E ↦ E.1
+  let f : ι → IntermediateField K Ω := fun E ↦ E.val
   replace ht : adjoin K (t : Set Ω) ≤ ⨆ E, f E := ht.trans <| iSup₂_le fun E hE ↦ iSup_le fun hE' ↦
     le_iSup_of_le (f := f) ⟨E, hE, hE'⟩ le_rfl
   -- `adjoin K t` is a compact element, so it lies in a finite subcompositum
@@ -129,9 +129,10 @@ theorem adjoin_le_maxUnramifiedOutside_iff {S : Set (HeightOneSpectrum (𝓞 K))
     exact ⟨inferInstance, fun v _ ↦ isUnramifiedIn_bot K Ω v⟩
   | insert E s _ ih =>
     rw [Finset.iSup_insert]
-    have := E.2.1
+    have := E.property.1
     have := ih.1
-    exact ⟨inferInstance, fun v hv ↦ (isUnramifiedIn_sup_iff _ _ _).2 ⟨E.2.2 v hv, ih.2 v hv⟩⟩
+    exact ⟨inferInstance, fun v hv ↦
+      (isUnramifiedIn_sup_iff _ _ _).2 ⟨E.property.2 v hv, ih.2 v hv⟩⟩
 
 /-- **The elements of `K_S`.** An element of `Ω` lies in `K_S` exactly when it lies in a finite
 subextension of `Ω / K` unramified outside `S`. -/
@@ -186,7 +187,7 @@ theorem finite_unramifiedOutside_of_finrank_le (S : Set (HeightOneSpectrum (𝓞
   rw [Set.Finite.mem_toFinset]
   by_contra hvS
   obtain ⟨P, hP⟩ := TauCeti.NumberField.mem_ramifiedSupport_iff_exists.1 hv
-  have := P.2.1
-  exact hP.ne' ((hL v hvS).ramificationIdx_eq_one P.2.2)
+  have := P.property.1
+  exact hP.ne' ((hL v hvS).ramificationIdx_eq_one P.property.2)
 
 end TauCeti.RestrictedRamification
