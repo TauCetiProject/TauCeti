@@ -326,7 +326,8 @@ theorem exists_hasSemiFredholmEstimate_cauchyRiemannAddJetCoeff
   have hQ := setIntegral_mono_set (μ := volume) (s := Icc a b ×ˢ Icc (0 : ℝ) 1)
     (t := univ ×ˢ Icc (0 : ℝ) 1)
     (f := fun z ↦ ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2)
-    (integrable_of_jet_eq_zero hR (continuous_energy hξ) fun _ ↦ energy_eq_zero_of_jet_eq_zero)
+    (integrable_of_jet_eq_zero hR (continuous_energyDensity hξ)
+      fun _ ↦ energyDensity_eq_zero_of_jet_eq_zero)
     (Eventually.of_forall fun z ↦ by positivity)
     (Eventually.of_forall (prod_mono (subset_univ _) subset_rfl))
   have hFnn : 0 ≤ ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖cauchyRiemannAddJetCoeff J A z (jet ξ z)‖ ^ 2 :=
@@ -381,8 +382,8 @@ theorem exists_norm_le_mul_norm_cauchyRiemann (hg : ∀ v w, ω v (J w) = ⟪v, 
       obtain ⟨R, hR⟩ := IsTestSpace.exists_forall_le_abs_eq_zero _ ξ.property
       have hξ := IsTestSpace.contDiff _ ξ.property
       refine (integral_mono (integrable_norm_sq_of_continuous hξ.continuous hR)
-        (integrable_of_jet_eq_zero hR (continuous_energy hξ)
-        fun _ ↦ energy_eq_zero_of_jet_eq_zero) fun z ↦
+        (integrable_of_jet_eq_zero hR (continuous_energyDensity hξ)
+        fun _ ↦ energyDensity_eq_zero_of_jet_eq_zero) fun z ↦
           le_add_of_nonneg_left (by positivity)).trans ?_
       simpa only [cauchyRiemannJetCoeff_jet, stdComplexLineReal_eq, stdComplexLineImag_eq] using
         hest ξ ξ.property
