@@ -161,17 +161,6 @@ variable [IsManifold I ∞ M] {D : Π x : M, Submodule ℝ (TangentSpace I x)}
 
 open SmoothForm
 
-omit [FiniteDimensional ℝ E] in
-/-- **The Lie derivative of a one-form on a vector field tangent to its kernel.** If `W` is
-differentiable at `x` and tangent to `ker α` near `x`, then `L_X α (W) = -α([X, W])` at `x`: the
-derivative of `α(W)` vanishes there. -/
-theorem SmoothForm.mlieDerivForm_apply_eq_neg_apply_mlieBracket {W : Π y : M, TangentSpace I y}
-    (hWd : MDiffAt (T% W) x) (hW : ∀ᶠ y in 𝓝 x, W y ∈ α.kerDistribution y) :
-    mlieDerivForm X α.val x ![W x] = -α.val x ![mlieBracket I X W x] := by
-  rw [mlieDerivForm_apply_one (α.mdifferentiableAt x) hWd,
-    Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ (0 : ℝ))
-      (hW.mono fun y hy ↦ mem_kerDistribution.1 hy), mvfderiv_const, zero_apply, zero_sub]
-
 namespace PreservesDistributionAt
 
 omit [FiniteDimensional ℝ E] in

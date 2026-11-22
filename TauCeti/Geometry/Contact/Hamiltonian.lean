@@ -69,6 +69,8 @@ contact form, `X_f` vanishes exactly where `f` vanishes and `df` vanishes on `ξ
 * `TauCeti.SmoothForm.IsContactHamiltonianVectorField.mlieDerivForm_eq`: `L_X α = (R_α f) α`.
 * `TauCeti.SmoothForm.IsContactHamiltonianVectorField.mlieBracket_mem_kerDistribution`:
   infinitesimal preservation of the contact distribution.
+* `TauCeti.SmoothForm.mlieDerivForm_apply_eq_neg_apply_mlieBracket`: `L_X α (W) = -α([X, W])` at a
+  point, for `W` tangent to `ker α` near that point.
 * `TauCeti.SmoothForm.mlieDerivForm_apply_eq_of_eventuallyEq`,
   `TauCeti.SmoothForm.mlieBracket_mem_kerDistribution_of_eventuallyEq`: the same two statements at
   a point, for a vector field satisfying the defining equations only near that point.
@@ -132,6 +134,17 @@ section Pointwise
 
 variable {x : M}
 
+/-- **The Lie derivative of a one-form on a vector field tangent to its kernel.** If `W` is
+differentiable at `x` and tangent to `ker α` near `x`, then `L_X α (W) = -α([X, W])` at `x`: the
+derivative of `α(W)` vanishes there. -/
+theorem mlieDerivForm_apply_eq_neg_apply_mlieBracket {W : (y : M) → TangentSpace I y}
+    (hWd : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x)
+    (hW : ∀ᶠ y in 𝓝 x, W y ∈ α.kerDistribution y) :
+    mlieDerivForm X α.val x ![W x] = -α.val x ![mlieBracket I X W x] := by
+  rw [mlieDerivForm_apply_one (α.mdifferentiableAt x) hWd,
+    Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ (0 : ℝ))
+      (hW.mono fun y hy ↦ mem_kerDistribution.1 hy), mvfderiv_const, zero_apply, zero_sub]
+
 /-- **Cartan's formula for a vector field satisfying the contact Hamiltonian equations at a
 point.** If `α(X) = f` near `x`, `ι_X dα = (R_α f) α - df` at `x` and `X` is differentiable at `x`,
 then `L_X α = (R_α f) α` at `x`. -/
@@ -157,16 +170,10 @@ theorem mlieBracket_mem_kerDistribution_of_eventuallyEq
     (hWd : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x)
     (hW : ∀ᶠ y in 𝓝 x, W y ∈ α.kerDistribution y) :
     mlieBracket I X W x ∈ α.kerDistribution x := by
-  -- The bracket formula `X(α(W)) - α([X, W]) = (R_α f) α(W)`, where `α(W) = 0` near `x`.
-  have h := mlieDerivForm_apply_one (V := X) (α.mdifferentiableAt x) hWd
+  -- `-α([X, W]) = L_X α (W) = (R_α f) α(W)`, where `α(W) = 0` at `x`.
+  have h := mlieDerivForm_apply_eq_neg_apply_mlieBracket (X := X) hWd hW
   rw [mlieDerivForm_apply_eq_of_eventuallyEq hf hd hXd, ContinuousAlternatingMap.smul_apply,
-    smul_eq_mul] at h
-  have h0 : mvfderiv I (fun y ↦ α.val y ![W y]) x = 0 := by
-    rw [Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ (0 : ℝ))
-      (hW.mono fun y hy ↦ mem_kerDistribution.1 hy)]
-    exact mvfderiv_const (0 : ℝ)
-  rw [mem_kerDistribution.1 hW.self_of_nhds, h0, mul_zero, zero_apply, zero_sub, eq_comm,
-    neg_eq_zero] at h
+    smul_eq_mul, mem_kerDistribution.1 hW.self_of_nhds, mul_zero, eq_comm, neg_eq_zero] at h
   exact mem_kerDistribution.2 h
 
 end Pointwise
