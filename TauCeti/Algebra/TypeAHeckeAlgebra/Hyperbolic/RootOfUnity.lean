@@ -67,10 +67,9 @@ namespace TauCeti
 theorem wenzlParam_neg_two_hyperbolicHeckeParam_rootOfUnity_sq (l : ℕ) :
     wenzlParam (-2) ((hyperbolicHeckeParam (π * I / l) : ℂ) ^ 2) =
       (((4 * Real.cos (π / l) ^ 2)⁻¹ : ℝ) : ℂ) := by
-  have hq : (hyperbolicHeckeParam (π * I / l) : ℂ) ^ 2 = exp (2 * (-(π / l : ℂ)) * I) := by
-    rw [val_hyperbolicHeckeParam, ← exp_natCast_mul]
-    ring_nf
-  rw [hq, wenzlParam_neg_two_exp_mul_I, cos_neg, ← ofReal_natCast, ← ofReal_div, ← ofReal_cos]
+  have harg : -2 * ((π : ℂ) * I / l) = -(2 * (π / (l : ℂ)) * I) := by ring
+  rw [val_hyperbolicHeckeParam_sq, harg, wenzlParam_exp_neg, wenzlParam_neg_two_exp_mul_I,
+    ← ofReal_natCast, ← ofReal_div, ← ofReal_cos]
   norm_cast
 
 private theorem pi_mul_I_div_natCast_eq (l : ℕ) :
@@ -130,8 +129,8 @@ theorem hyperbolicWenzlProjParam_rootOfUnity {l k : ℕ} (hl : 3 ≤ l) (hk₀ :
     hyperbolicWenzlProjParam (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) =
       wenzlParam (k : ℤ) (exp (-(2 * π * I / l))) := by
   have hsum := wenzlParam_add_wenzlParam_neg_exp_two_pi_mul_I_div hl hk₀ hkl
-  rw [hyperbolicWenzlProjParam_eq_one_sub, hyperbolicProjParam_rootOfUnity hl hk₀ hkl, exp_neg,
-    wenzlParam_inv, wenzlParam_inv]
+  rw [hyperbolicWenzlProjParam_eq_one_sub, hyperbolicProjParam_rootOfUnity hl hk₀ hkl]
+  simp only [wenzlParam_exp_neg]
   linear_combination -hsum
 
 /-- **Complementary state `l - k` at the roots of unity (Wenzl convention).** Replacing `k` by
@@ -188,7 +187,7 @@ theorem exists_mem_Ioo_hyperbolicWenzlProjParam_rootOfUnity_iff {l k : ℕ} (hl 
     (∃ η ∈ Set.Ioo (0 : ℝ) 1,
       hyperbolicWenzlProjParam (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) = η) ↔
         2 ≤ k ∧ k + 2 ≤ l := by
-  rw [hyperbolicWenzlProjParam_rootOfUnity hl hk₀ hkl, exp_neg, wenzlParam_inv,
+  rw [hyperbolicWenzlProjParam_rootOfUnity hl hk₀ hkl, wenzlParam_exp_neg,
     exists_mem_Ioo_wenzlParam_exp_two_pi_mul_I_div_iff hl hk₀ hkl]
 
 /-- **Nontrivial `(0, 1)` interior characterization at the roots of unity (native convention).**
@@ -210,7 +209,7 @@ theorem hyperbolicWenzlProjParam_rootOfUnity_mem_pair_iff {l k : ℕ} (hl : 3 �
     (hkl : k < l) :
     hyperbolicWenzlProjParam (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) ∈ ({0, 1} : Set ℂ) ↔
       k = 1 ∨ k + 1 = l := by
-  rw [hyperbolicWenzlProjParam_rootOfUnity hl hk₀ hkl, exp_neg, wenzlParam_inv,
+  rw [hyperbolicWenzlProjParam_rootOfUnity hl hk₀ hkl, wenzlParam_exp_neg,
     wenzlParam_exp_two_pi_mul_I_div_mem_pair_iff hl hk₀ hkl]
 
 /-- **Scalar-endpoint `{0, 1}` characterization at the roots of unity (native convention).** For

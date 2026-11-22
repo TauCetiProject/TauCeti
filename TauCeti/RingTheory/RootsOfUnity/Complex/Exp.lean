@@ -18,6 +18,7 @@ unity. This file records that these roots are compatible along the power maps: f
 
 * `TauCeti.exp_two_pi_I_div_pow_div`: `exp(2πi / m) ^ (m / n) = exp(2πi / n)` for `n ∣ m`,
   `m ≠ 0`.
+* `TauCeti.one_add_exp_two_pi_mul_I_div_ne_zero`: `1 + exp(2πi / l) ≠ 0` for `3 ≤ l`.
 -/
 
 public section
@@ -37,5 +38,15 @@ theorem exp_two_pi_I_div_pow_div {m n : ℕ} (hm : m ≠ 0) (h : n ∣ m) :
   congr 1
   push_cast
   field_simp
+
+/-- `1 + exp (2 * π * I / l) ≠ 0` for `3 ≤ l`: if `exp (2 * π * I / l) = -1`, then its square
+would be `1`, contradicting that it is a primitive `l`-th root of unity. -/
+theorem one_add_exp_two_pi_mul_I_div_ne_zero {l : ℕ} (hl : 3 ≤ l) :
+    1 + exp (2 * π * I / l) ≠ 0 := by
+  intro h0
+  have hζ : exp (2 * π * I / l) = -1 := eq_neg_of_add_eq_zero_right h0
+  have hsq : exp (2 * π * I / l) ^ 2 = 1 := by rw [hζ, neg_one_sq]
+  exact (Complex.isPrimitiveRoot_exp l (by omega)).pow_ne_one_of_pos_of_lt two_ne_zero
+    (by omega) hsq
 
 end TauCeti

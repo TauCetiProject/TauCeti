@@ -10,7 +10,6 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam.Analytic
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # The hyperbolic parameter dictionary for Wenzl's Markov trace parameters
@@ -89,14 +88,14 @@ theorem IsMarkovTrace.map_mul_hyperbolic_wenzlProjection (hτ : IsMarkovTrace z 
     (hx : x ∈ stage ℂ (hyperbolicHeckeParam θ) (n + 1)) :
     τ (x * (1 + exp (-2 * θ))⁻¹ • (algebraMap ℂ _ (exp (-2 * θ)) - exp (-θ) • T _ n)) =
       ηW * τ x := by
-  have hq2 : exp (-θ) ^ 2 = exp (-2 * θ) := by rw [← exp_natCast_mul]; ring_nf
   have hu0 : 1 + exp (-2 * θ) ≠ 0 := by
     rw [neg_mul, ← mul_neg, one_add_exp_two_mul, cosh_neg]
     exact mul_ne_zero (mul_ne_zero two_ne_zero hθ) (exp_ne_zero _)
   have h := hτ.map_mul_wenzlProjection (Units.mk0 (1 + exp (-2 * θ)) hu0)
-    (by rw [Units.val_mk0, val_hyperbolicHeckeParam, hq2]) (η := 1 - ηW)
+    (by rw [Units.val_mk0, val_hyperbolicHeckeParam_sq]) (η := 1 - ηW)
     (by rw [val_hyperbolicHeckeParam, val_inv_hyperbolicHeckeParam, sub_sub_cancel, hz]) hx
-  simpa only [Units.val_inv_eq_inv_val, Units.val_mk0, val_hyperbolicHeckeParam, hq2,
+  rw [val_hyperbolicHeckeParam_sq] at h
+  simpa only [Units.val_inv_eq_inv_val, Units.val_mk0, val_hyperbolicHeckeParam,
     sub_sub_cancel] using h
 
 end InfiniteTypeAHeckeAlgebra
@@ -125,10 +124,7 @@ theorem hyperbolicWenzlProjParam_mul_add_pi_mul_I_div_two {k : ℤ} {θ : ℂ} (
     hyperbolicWenzlProjParam (k * θ + π * I / 2) θ = wenzlParam k (exp (-2 * θ)) := by
   have hθ' : cosh (-θ) ≠ 0 := by simpa using hθ
   have hk' : sinh ((-k : ℤ) * (-θ)) ≠ 0 := by simpa using hk
-  have h := hyperbolicProjParam_mul_add_pi_mul_I_div_two hθ' hk'
-  rw [Int.cast_neg, neg_mul_neg, hyperbolicProjParam_neg_right, neg_neg, mul_neg, exp_neg,
-    wenzlParam_inv] at h
-  exact h
+  simpa [mul_neg] using hyperbolicProjParam_mul_add_pi_mul_I_div_two hθ' hk'
 
 /-- **Common stabilization constant on the exceptional line.** At `α = k * θ + π * I / 2` and
 `η = a_(-k)(exp (-2 * θ))`, the common stabilization constant is `-sinh θ / sinh (k * θ)`. -/
@@ -159,11 +155,8 @@ theorem hyperbolicWenzlProjParam_ofReal_mul_add_pi_mul_I_div_two {k : ℤ} (hk :
     (hθ : θ ≠ 0) :
     hyperbolicWenzlProjParam (k * (θ : ℂ) + π * I / 2) θ =
       ↑(wenzlParam k (Real.exp (-2 * θ))) := by
-  have h := hyperbolicProjParam_ofReal_mul_add_pi_mul_I_div_two (neg_ne_zero.2 hk)
-    (neg_ne_zero.2 hθ)
-  rw [Int.cast_neg, ofReal_neg, neg_mul_neg, hyperbolicProjParam_neg_right, neg_neg, mul_neg,
-    Real.exp_neg, wenzlParam_inv] at h
-  exact h
+  simpa [mul_neg] using
+    hyperbolicProjParam_ofReal_mul_add_pi_mul_I_div_two (neg_ne_zero.2 hk) (neg_ne_zero.2 hθ)
 
 namespace InfiniteTypeAHeckeAlgebra
 

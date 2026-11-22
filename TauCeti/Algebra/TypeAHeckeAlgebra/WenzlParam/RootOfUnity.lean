@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam.Analytic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
-import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Positivity
 
 /-!
@@ -49,14 +48,6 @@ private theorem isPrimitiveRoot_exp_two_pi_mul_I_div {l : ℕ} (hl : l ≠ 0) :
     IsPrimitiveRoot (exp (2 * π * I / l)) l :=
   Complex.isPrimitiveRoot_exp l hl
 
-private theorem one_add_exp_two_pi_mul_I_div_ne_zero {l : ℕ} (hl : 3 ≤ l) :
-    1 + exp (2 * π * I / l) ≠ 0 := by
-  intro h0
-  have hζ : exp (2 * π * I / l) = -1 := eq_neg_of_add_eq_zero_right h0
-  have hsq : exp (2 * π * I / l) ^ 2 = 1 := by rw [hζ]; norm_num
-  exact (isPrimitiveRoot_exp_two_pi_mul_I_div (by omega)).pow_ne_one_of_pos_of_lt two_ne_zero
-    (by omega) hsq
-
 /-- **The values at the roots of unity.** For `l ≥ 3` and `0 < k < l`, at `Q = exp (2 π i / l)`,
 `a_k(Q) = sin ((k + 1) π / l) / (2 * cos (π / l) * sin (k π / l))`, a real number. -/
 theorem wenzlParam_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
@@ -76,7 +67,7 @@ theorem wenzlParam_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < 
 theorem wenzlParam_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
     wenzlParam (k : ℤ) (exp (-(2 * π * I / l))) =
       ↑(Real.sin ((k + 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))) := by
-  rw [exp_neg, wenzlParam_inv, wenzlParam_exp_two_pi_mul_I_div hl hk₀ hkl]
+  rw [wenzlParam_exp_neg, wenzlParam_exp_two_pi_mul_I_div hl hk₀ hkl]
 
 /-- **The negative-index values at the roots of unity.** For `l ≥ 3` and `0 < k < l`, at
 `Q = exp (2 π i / l)`, `a_(-k)(Q) = sin ((k - 1) π / l) / (2 * cos (π / l) * sin (k π / l))`. -/
@@ -100,7 +91,7 @@ theorem wenzlParam_neg_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk�
     (hkl : k < l) :
     wenzlParam (-(k : ℤ)) (exp (-(2 * π * I / l))) =
       ↑(Real.sin ((k - 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))) := by
-  rw [exp_neg, wenzlParam_inv, wenzlParam_neg_exp_two_pi_mul_I_div hl hk₀ hkl]
+  rw [wenzlParam_exp_neg, wenzlParam_neg_exp_two_pi_mul_I_div hl hk₀ hkl]
 
 /-- **Complement identity at the roots of unity.** For `l ≥ 3` and `0 < k < l`, at
 `Q = exp (2 π i / l)`, `a_k(Q) + a_(-k)(Q) = 1`. -/
@@ -130,7 +121,7 @@ theorem wenzlParam_sub_exp_two_pi_mul_I_div {l k : ℕ} (hl : 2 ≤ l) (hkl : k 
 theorem wenzlParam_sub_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 2 ≤ l) (hkl : k ≤ l) :
     wenzlParam ((l - k : ℕ) : ℤ) (exp (-(2 * π * I / l))) =
       wenzlParam (-(k : ℤ)) (exp (-(2 * π * I / l))) := by
-  rw [exp_neg, wenzlParam_inv, wenzlParam_inv, wenzlParam_sub_exp_two_pi_mul_I_div hl hkl]
+  simp only [wenzlParam_exp_neg, wenzlParam_sub_exp_two_pi_mul_I_div hl hkl]
 
 /-- **The middle value.** For `l = 2 * m ≥ 4`, at `Q = exp (2 π i / l)`, `a_m(Q) = 1 / 2`. -/
 theorem wenzlParam_exp_two_pi_mul_I_div_two_mul {m : ℕ} (hm : 2 ≤ m) :
@@ -151,17 +142,17 @@ theorem wenzlParam_one_exp_two_pi_mul_I_div {l : ℕ} (hl : 3 ≤ l) :
     wenzlParam 1 (exp (2 * π * I / l)) = 1 :=
   wenzlParam_one_left (one_add_exp_two_pi_mul_I_div_ne_zero hl)
 
-/-- At `Q = exp (2 π i / l)` with `l ≥ 3`, the last parameter `a_(l - 1)(Q)` is `0`. -/
-theorem wenzlParam_sub_one_exp_two_pi_mul_I_div {l : ℕ} (hl : 3 ≤ l) :
+/-- At `Q = exp (2 π i / l)` with `l ≥ 2`, the last parameter `a_(l - 1)(Q)` is `0`. -/
+theorem wenzlParam_sub_one_exp_two_pi_mul_I_div {l : ℕ} (hl : 2 ≤ l) :
     wenzlParam ((l - 1 : ℕ) : ℤ) (exp (2 * π * I / l)) = 0 := by
-  rw [wenzlParam_sub_exp_two_pi_mul_I_div (by omega) (by omega), Nat.cast_one, wenzlParam_neg_one]
+  rw [wenzlParam_sub_exp_two_pi_mul_I_div hl (by omega), Nat.cast_one, wenzlParam_neg_one]
 
 /-- At `Q = exp (2 π i / l)` with `l ≥ 3`, `a_(-(l - 1))(Q) = 1`. -/
 theorem wenzlParam_neg_sub_one_exp_two_pi_mul_I_div {l : ℕ} (hl : 3 ≤ l) :
     wenzlParam (-((l - 1 : ℕ) : ℤ)) (exp (2 * π * I / l)) = 1 := by
   have h := wenzlParam_add_wenzlParam_neg_exp_two_pi_mul_I_div (l := l) (k := l - 1) hl
     (by omega) (by omega)
-  rwa [wenzlParam_sub_one_exp_two_pi_mul_I_div hl, zero_add] at h
+  rwa [wenzlParam_sub_one_exp_two_pi_mul_I_div (by omega), zero_add] at h
 
 /-- **Strict `(0, 1)` interior values for `2 ≤ k ≤ l - 2` (`l ≥ 4`).** When `2 ≤ k` and
 `k + 2 ≤ l`, `a_k(exp (2 π i / l))` is a real number `η ∈ (0, 1)`, and `a_(-k)(exp (2 π i / l))` is
@@ -206,7 +197,7 @@ theorem exists_mem_Ioo_wenzlParam_exp_two_pi_mul_I_div_iff {l k : ℕ} (hl : 3 �
     rcases hk_end with rfl | rfl
     · rw [Nat.cast_one, wenzlParam_one_exp_two_pi_mul_I_div hl, ← ofReal_one] at heq
       exact hη.2.ne' (Complex.ofReal_injective heq)
-    · rw [wenzlParam_sub_one_exp_two_pi_mul_I_div hl, ← ofReal_zero] at heq
+    · rw [wenzlParam_sub_one_exp_two_pi_mul_I_div (by omega), ← ofReal_zero] at heq
       exact hη.1.ne (Complex.ofReal_injective heq)
   · obtain ⟨η, hη, h1, _⟩ := exists_mem_Ioo_wenzlParam_exp_two_pi_mul_I_div hk hkl'
     exact ⟨η, hη, h1⟩
@@ -228,7 +219,7 @@ theorem wenzlParam_exp_two_pi_mul_I_div_mem_pair_iff {l k : ℕ} (hl : 3 ≤ l) 
   · rcases h with rfl | h
     · simp [wenzlParam_one_exp_two_pi_mul_I_div hl]
     · obtain rfl : k = l - 1 := by omega
-      simp [wenzlParam_sub_one_exp_two_pi_mul_I_div hl]
+      simp [wenzlParam_sub_one_exp_two_pi_mul_I_div (l := l) (by omega)]
 
 end RootOfUnity
 

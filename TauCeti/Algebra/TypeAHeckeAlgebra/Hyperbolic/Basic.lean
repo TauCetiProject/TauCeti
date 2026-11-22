@@ -114,6 +114,14 @@ theorem val_hyperbolicHeckeParam (θ : ℂ) : (hyperbolicHeckeParam θ : ℂ) = 
 theorem val_inv_hyperbolicHeckeParam (θ : ℂ) : (↑(hyperbolicHeckeParam θ)⁻¹ : ℂ) = exp θ := by
   simp [hyperbolicHeckeParam, ← exp_neg]
 
+/-- The square of the hyperbolic Hecke parameter is `exp (-2 * θ)`. -/
+theorem val_hyperbolicHeckeParam_sq (θ : ℂ) :
+    (hyperbolicHeckeParam θ : ℂ) ^ 2 = exp (-2 * θ) := by
+  rw [val_hyperbolicHeckeParam, ← exp_natCast_mul]
+  congr 1
+  push_cast
+  ring
+
 /-- The native hyperbolic projection parameter `η = (1 - tanh α * tanh θ) / 2` at which the
 positive and negative stabilization constants of `γ i = I * exp (-α) • T i` agree on the Hecke
 algebra with parameter `q = exp (-θ)`. -/

@@ -79,6 +79,18 @@ section Exponential
 open Complex
 open scoped Real Topology
 
+/-- Inversion symmetry at a complex exponential `exp (-z)`: `a_d(exp (-z)) = a_d(exp z)`. -/
+@[simp]
+theorem wenzlParam_exp_neg (d : ℤ) (z : ℂ) :
+    wenzlParam d (exp (-z)) = wenzlParam d (exp z) := by
+  rw [exp_neg, wenzlParam_inv]
+
+/-- Inversion symmetry at a real exponential `Real.exp (-x)`: `a_d(exp (-x)) = a_d(exp x)`. -/
+@[simp]
+theorem wenzlParam_real_exp_neg (d : ℤ) (x : ℝ) :
+    wenzlParam d (Real.exp (-x)) = wenzlParam d (Real.exp x) := by
+  rw [Real.exp_neg, wenzlParam_inv]
+
 /-- **The trigonometric form.** At `Q = exp (2 θ i)`,
 `a_k(Q) = sin ((k + 1) θ) / (2 * cos θ * sin (k θ))`, whenever `cos θ ≠ 0` and `sin (k θ) ≠ 0`. -/
 theorem wenzlParam_exp_mul_I (k : ℤ) {θ : ℂ} (hθ : cos θ ≠ 0) (hk : sin (k * θ) ≠ 0) :
@@ -130,7 +142,7 @@ theorem wenzlParam_exp_two_mul (k : ℤ) {θ : ℂ} (hθ : cosh θ ≠ 0) (hk : 
 `sinh (k * θ) ≠ 0`. -/
 theorem wenzlParam_exp_neg_two_mul (k : ℤ) {θ : ℂ} (hθ : cosh θ ≠ 0) (hk : sinh (k * θ) ≠ 0) :
     wenzlParam k (exp (-2 * θ)) = sinh ((k + 1) * θ) / (2 * cosh θ * sinh (k * θ)) := by
-  rw [neg_mul, exp_neg, wenzlParam_inv, wenzlParam_exp_two_mul k hθ hk]
+  rw [neg_mul, wenzlParam_exp_neg, wenzlParam_exp_two_mul k hθ hk]
 
 /-- **The real hyperbolic form at `Real.exp (2 θ)`.** For `k ≠ 0` and real `θ ≠ 0`,
 `a_k(exp (2 * θ)) = sinh ((k + 1) * θ) / (2 * cosh θ * sinh (k * θ))`. -/
@@ -148,7 +160,7 @@ theorem wenzlParam_real_exp_two_mul {k : ℤ} (hk : k ≠ 0) {θ : ℝ} (hθ : �
 theorem wenzlParam_real_exp_neg_two_mul {k : ℤ} (hk : k ≠ 0) {θ : ℝ} (hθ : θ ≠ 0) :
     wenzlParam k (Real.exp (-2 * θ)) =
       Real.sinh ((k + 1) * θ) / (2 * Real.cosh θ * Real.sinh (k * θ)) := by
-  rw [neg_mul, Real.exp_neg, wenzlParam_inv, wenzlParam_real_exp_two_mul hk hθ]
+  rw [neg_mul, wenzlParam_real_exp_neg, wenzlParam_real_exp_two_mul hk hθ]
 
 /-- **The hyperbolic Jones parameter at `exp (2 θ)`.** For every `θ : ℂ`,
 `a_(-2)(exp (2 * θ)) = (4 * cosh θ ^ 2)⁻¹`. -/
@@ -170,7 +182,7 @@ theorem wenzlParam_neg_two_exp_mul_I (θ : ℂ) :
 `a_(-2)(exp (-2 * θ)) = (4 * cosh θ ^ 2)⁻¹`. -/
 theorem wenzlParam_neg_two_exp_neg_two_mul (θ : ℂ) :
     wenzlParam (-2) (exp (-2 * θ)) = (4 * cosh θ ^ 2)⁻¹ := by
-  rw [neg_mul, exp_neg, wenzlParam_inv, wenzlParam_neg_two_exp_two_mul]
+  rw [neg_mul, wenzlParam_exp_neg, wenzlParam_neg_two_exp_two_mul]
 
 /-- **The real hyperbolic Jones parameter at `Real.exp (2 θ)`.** For every `θ : ℝ`,
 `a_(-2)(exp (2 * θ)) = (4 * cosh θ ^ 2)⁻¹`. -/
@@ -184,7 +196,7 @@ theorem wenzlParam_neg_two_real_exp_two_mul (θ : ℝ) :
 `a_(-2)(exp (-2 * θ)) = (4 * Real.cosh θ ^ 2)⁻¹`. -/
 theorem wenzlParam_neg_two_real_exp_neg_two_mul (θ : ℝ) :
     wenzlParam (-2) (Real.exp (-2 * θ)) = (4 * Real.cosh θ ^ 2)⁻¹ := by
-  rw [neg_mul, Real.exp_neg, wenzlParam_inv, wenzlParam_neg_two_real_exp_two_mul]
+  rw [neg_mul, wenzlParam_real_exp_neg, wenzlParam_neg_two_real_exp_two_mul]
 
 /-- **Scalar limit of the Jones parameter as `θ → +∞` (`Q → 0⁺`).** -/
 theorem tendsto_wenzlParam_neg_two_real_exp_neg_two_mul_atTop :
