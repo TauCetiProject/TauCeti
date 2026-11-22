@@ -240,6 +240,8 @@ theorem tangentPairing_apply (f : SmoothEmbedding I J n M N) (σ : SmoothTwoForm
     (v : TangentSpace J (f x)) :
     f.tangentPairing σ x v = (flat σ (f x) v).comp (mfderiv I J f x) := by
   rw [tangentPairing]
+  -- `comp_apply`, `flip_apply` and `compL_apply` hold by `rfl` but cannot be applied here: the
+  -- tangent-space instances do not unify with the model-space instances they expect.
   rfl
 
 omit [FiniteDimensional ℝ V] in

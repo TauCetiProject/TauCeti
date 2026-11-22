@@ -48,11 +48,12 @@ Moser (`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq`
 symplectomorphism of neighbourhoods with the same differential. This proves the **symplectic
 neighbourhood theorem**
 (`TauCeti.SmoothEmbedding.exists_diffeomorph_opens_mfderiv_eq_symplecticNormalExtension`): for
-compact `Q`, a symplectomorphism of the submanifolds together with a smooth symplectic isomorphism
-of their normal bundles over it extends to a symplectomorphism `φ` of open neighbourhoods, with
-`φ ∘ i = j ∘ f` and differential the ambient extension along `i(Q)`. In particular, for closed
-forms, if a compact nonempty symplectic submanifold is symplectomorphic to another by `f` and their
-symplectic normal bundles are isomorphic over `f`, they have symplectomorphic neighbourhoods.
+closed nondegenerate `θ` and `σ` on Hausdorff, second-countable manifolds without boundary, and
+compact nonempty `Q`, a symplectomorphism of the submanifolds together with a smooth symplectic
+isomorphism of their normal bundles over it extends to a symplectomorphism `φ` of open
+neighbourhoods, with `φ ∘ i = j ∘ f` and differential the ambient extension along `i(Q)`. In other
+words, two compact nonempty symplectic submanifolds that are symplectomorphic by `f`, and whose
+symplectic normal bundles are isomorphic over `f`, have symplectomorphic neighbourhoods.
 
 ## References
 
