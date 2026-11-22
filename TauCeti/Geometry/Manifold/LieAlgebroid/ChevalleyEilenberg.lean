@@ -78,27 +78,21 @@ continuous `k`-alternating linear forms on `V`. -/
 abbrev Cochain (_A : LieAlgebroid I F V) (k : ℕ) : Type _ :=
   Cₛ^∞⟮I; F [⋀^Fin k]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin k]→L[ℝ] ℝ⟯
 
-omit [IsManifold I ∞ M] in
-private theorem cochain_add_apply {m : ℕ}
-    (φ₁ φ₂ : Cₛ^∞⟮I; F [⋀^Fin m]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin m]→L[ℝ] ℝ⟯)
-    (x : M) (v : Fin m → V x) : (φ₁ + φ₂) x v = φ₁ x v + φ₂ x v := (rfl)
-
-omit [IsManifold I ∞ M] in
-private theorem cochain_sub_apply {m : ℕ}
-    (φ₁ φ₂ : Cₛ^∞⟮I; F [⋀^Fin m]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin m]→L[ℝ] ℝ⟯)
-    (x : M) (v : Fin m → V x) : (φ₁ - φ₂) x v = φ₁ x v - φ₂ x v := (rfl)
-
-omit [IsManifold I ∞ M] in
-private theorem cochain_smul_apply {m : ℕ} (c : ℝ)
-    (φ : Cₛ^∞⟮I; F [⋀^Fin m]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin m]→L[ℝ] ℝ⟯)
-    (x : M) (v : Fin m → V x) : (c • φ) x v = c • φ x v := (rfl)
-
 private theorem comp_removeNth {α β : Type*} {n : ℕ} (f : α → β) (i : Fin (n + 1))
     (v : Fin (n + 1) → α) :
     f ∘ i.removeNth v = i.removeNth (f ∘ v) := (rfl)
 
+private theorem eval_removeNth {M : Type*} {V : M → Type*} {α : Type*} [DFunLike α M V]
+    {n : ℕ} (i : Fin (n + 1)) (s : Fin (n + 1) → α) (x : M) :
+    (fun j ↦ i.removeNth s j x) = i.removeNth (fun j ↦ s j x) := (rfl)
+
 private theorem comp_vecCons {α β : Type*} {n : ℕ} (f : α → β) (x : α) (v : Fin n → α) :
     f ∘ Matrix.vecCons x v = Matrix.vecCons (f x) (f ∘ v) := by
+  ext i; cases i using Fin.cases <;> rfl
+
+private theorem eval_vecCons {M : Type*} {V : M → Type*} {α : Type*} [DFunLike α M V]
+    {n : ℕ} (a : α) (s : Fin n → α) (x : M) :
+    (fun i ↦ Matrix.vecCons a s i x) = Matrix.vecCons (a x) (fun i ↦ s i x) := by
   ext i; cases i using Fin.cases <;> rfl
 
 variable (A : LieAlgebroid I F V)
@@ -195,11 +189,7 @@ private theorem cochain_ext_evalSection {k : ℕ} {φ₁ φ₂ : A.Cochain k}
   ext s x
   simp only [cochainSectionsEquiv_apply, ContMDiffSection.evalSection_apply,
     ContMDiffSection.curryLeft_apply_apply, AlternatingMap.curryLeft_apply_apply]
-  change φ x (Matrix.vecCons (a x) ((fun z : Cₛ^∞⟮I; F, V⟯ ↦ z x) ∘ (A.sectionsEquiv ∘ s))) =
-    φ x ((fun z : Cₛ^∞⟮I; F, V⟯ ↦ z x) ∘
-      (A.sectionsEquiv ∘ Matrix.vecCons (A.sectionsEquiv.symm a) s))
-  rw [comp_vecCons A.sectionsEquiv, LinearEquiv.apply_symm_apply,
-    comp_vecCons (fun z : Cₛ^∞⟮I; F, V⟯ ↦ z x)]
+  rw [comp_vecCons A.sectionsEquiv, LinearEquiv.apply_symm_apply, eval_vecCons]
 
 /-! ### Lie derivative and Chevalley–Eilenberg differential -/
 
@@ -453,7 +443,8 @@ private theorem extDeriv_wedge_zero_right {k : ℕ} (φ : A.Cochain k) (ψ : A.C
     ext x w
     have hpow : (-1 : ℝ) ^ (k + 1) * (-1 : ℝ) ^ (k + 1) = 1 := by rw [← mul_pow]; norm_num
     simp only [ContMDiffSection.curryLeft_wedge_zero_right, A.curryLeft_extDeriv_succ,
-      ContMDiffSection.wedge_sub_left, cochain_add_apply, cochain_sub_apply, cochain_smul_apply,
+      ContMDiffSection.wedge_sub_left, ContMDiffSection.alternating_add_apply,
+      ContMDiffSection.alternating_sub_apply, ContMDiffSection.alternating_smul_apply,
       ContMDiffSection.curryLeft_wedge_apply φ (A.extDeriv 0 ψ) a x w,
       curryLeft_extDeriv_zero, smul_eq_mul, Function.comp_def, Fin.cast_eq_self]
     simp only [mul_add, ← mul_assoc, hpow, one_mul]
@@ -472,7 +463,8 @@ private theorem extDeriv_wedge_zero_left {l : ℕ} (φ : A.Cochain 0) (ψ : A.Co
     simpa using ContMDiffSection.wedge_comm φ ψ
   rw [hcomm, A.extDeriv_cast_cochain, A.extDeriv_wedge_zero_right]
   ext x v
-  simp only [ContMDiffSection.cast_alternating_apply, cochain_add_apply, cochain_smul_apply]
+  simp only [ContMDiffSection.cast_alternating_apply, ContMDiffSection.alternating_add_apply,
+    ContMDiffSection.alternating_smul_apply]
   rw [ContMDiffSection.wedge_comm_apply (A.extDeriv l ψ) φ,
     ContMDiffSection.wedge_comm_apply ψ (A.extDeriv 0 φ)]
   simp only [zero_add, mul_zero, mul_one, pow_zero, one_smul, Function.comp_def, Fin.cast_cast,
@@ -487,7 +479,8 @@ private theorem curryLeft_wedge_extDeriv_succ_apply {k l : ℕ} (φ : A.Cochain 
       (-1 : ℝ) ^ (k + 1) * (φ.wedge (A.lieDeriv a ψ) x w -
         φ.wedge (A.extDeriv l (ψ.curryLeft a)) x w) := by
   rw [ContMDiffSection.curryLeft_wedge_apply φ (A.extDeriv (l + 1) ψ) a x w,
-    A.curryLeft_extDeriv_succ a ψ, ContMDiffSection.wedge_sub_right, cochain_sub_apply, smul_eq_mul]
+    A.curryLeft_extDeriv_succ a ψ, ContMDiffSection.wedge_sub_right,
+    ContMDiffSection.alternating_sub_apply, smul_eq_mul]
 
 /-- Sign cancellation identity used in the `succ`/`succ` inductive step of `extDeriv_wedge`. -/
 private theorem extDeriv_wedge_sign_cancel (k : ℕ) (a₁ b₁ g₁ f₁ d₁ e₁ : ℝ) :
@@ -503,7 +496,7 @@ private theorem extDeriv_wedge_sign_cancel (k : ℕ) (a₁ b₁ g₁ f₁ d₁ e
 /-- Inductive step of `extDeriv_wedge` when both cochains have positive degree. -/
 private theorem extDeriv_wedge_succ_succ {k l : ℕ} (φ : A.Cochain (k + 1)) (ψ : A.Cochain (l + 1))
     (ih₁ : ∀ a : Cₛ^∞⟮I; F, V⟯,
-      A.extDeriv (k + (l + 1)) ((φ.curryLeft a).wedge ψ) =
+      A.extDeriv (k + l).succ ((φ.curryLeft a).wedge ψ) =
         LinearEquiv.cast (R := ℝ) (M := A.Cochain)
           (Nat.succ_add k (l + 1))
           ((A.extDeriv k (φ.curryLeft a)).wedge ψ) +
@@ -533,7 +526,8 @@ private theorem extDeriv_wedge_succ_succ {k l : ℕ} (φ : A.Cochain (k + 1)) (�
   ext x w
   simp only [map_add, ContMDiffSection.curryLeft_cast_alternating,
     ContMDiffSection.curryLeft_wedge_apply, A.curryLeft_extDeriv_succ,
-    ContMDiffSection.wedge_sub_left, cochain_add_apply, cochain_sub_apply, cochain_smul_apply,
+    ContMDiffSection.wedge_sub_left, ContMDiffSection.alternating_add_apply,
+    ContMDiffSection.alternating_sub_apply, ContMDiffSection.alternating_smul_apply,
     ContMDiffSection.cast_alternating_apply, smul_eq_mul, Function.comp_def, Fin.cast_cast,
     Fin.cast_eq_self, A.curryLeft_wedge_extDeriv_succ_apply]
   exact extDeriv_wedge_sign_cancel k _ _ _ _ _ _
@@ -567,7 +561,8 @@ theorem extDeriv_wedge_apply {k l : ℕ} (φ : A.Cochain k) (ψ : A.Cochain l)
     A.extDeriv (k + l) (φ.wedge ψ) x v =
       (A.extDeriv k φ).wedge ψ x (v ∘ Fin.cast (Nat.succ_add k l)) +
         (-1 : ℝ) ^ k • φ.wedge (A.extDeriv l ψ) x v := by
-  simpa only [cochain_add_apply, ContMDiffSection.cast_alternating_apply, cochain_smul_apply] using
+  simpa only [ContMDiffSection.alternating_add_apply, ContMDiffSection.cast_alternating_apply,
+    ContMDiffSection.alternating_smul_apply] using
     DFunLike.congr_fun (congrArg (· x) (A.extDeriv_wedge φ ψ)) v
 
 end Complex
@@ -607,10 +602,7 @@ private theorem evalSection_removeNth_coeFn {m : ℕ} (φ : (tangent I M).Cochai
     (s : Fin (m + 2) → Cₛ^∞⟮I; E, TangentSpace I⟯) (i : Fin (m + 2)) :
     ⇑(φ.evalSection (i.removeNth s)) = fun y ↦ φ y (i.removeNth (s · y)) :=
   funext fun y ↦ by
-    rw [ContMDiffSection.evalSection_apply]
-    change φ y ((fun z : Cₛ^∞⟮I; E, TangentSpace I⟯ ↦ z y) ∘ i.removeNth s) =
-      φ y (i.removeNth ((fun z : Cₛ^∞⟮I; E, TangentSpace I⟯ ↦ z y) ∘ s))
-    rw [comp_removeNth]
+    rw [ContMDiffSection.evalSection_apply, eval_removeNth]
 
 private theorem cochainZeroEquiv_coeFn (φ : (tangent I M).Cochain 0)
     (v : ∀ y : M, Fin 0 → TangentSpace I y) :
@@ -646,12 +638,7 @@ private theorem tangent_extDeriv_succ_evalSection_apply (m : ℕ)
     refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
     rw [pow_succ, mul_neg, mul_one, neg_zsmul]
     refine congrArg (- ·) (congrArg (_ • ·) (congrArg (φ x) ?_))
-    change (fun z : Cₛ^∞⟮I; E, TangentSpace I⟯ ↦ z x) ∘
-        Matrix.vecCons ((tangent I M).bracket (s i.castSucc) (s j.succ))
-          (j.removeNth (i.castSucc.removeNth s)) =
-      Matrix.vecCons (mlieBracket I (s i.castSucc) (s j.succ) x)
-        (j.removeNth (i.castSucc.removeNth ((fun z : Cₛ^∞⟮I; E, TangentSpace I⟯ ↦ z x) ∘ s)))
-    rw [comp_vecCons, comp_removeNth, comp_removeNth, tangent_bracket_apply]
+    rw [eval_vecCons, eval_removeNth, eval_removeNth, tangent_bracket_apply]
 
 /-- On the tangent Lie algebroid `LieAlgebroid.tangent I M`, the Chevalley–Eilenberg differential
 agrees pointwise with the manifold exterior derivative `mextDeriv`. -/

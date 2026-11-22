@@ -207,14 +207,13 @@ private theorem curryLeft_d_restrictScalars_smul {n : ℕ} (ω : L [⋀^Fin n]�
     obtain rfl : v = ![] := Subsingleton.elim v ![]
     simp [LieModule.Cohomology.curryLeft_d_zero, AlternatingMap.lie_apply]
   | succ m =>
-    ext v
     have hcurry : (ω.restrictScalars R).curryLeft (a • x) = a • (ω.restrictScalars R).curryLeft x :=
       ext fun w ↦ by simp [Matrix.vecCons]
-    rw [LieModule.Cohomology.curryLeft_d_succ, LieModule.Cohomology.curryLeft_d_succ,
-      sub_apply, smul_apply, sub_apply, smul_eq_mul, hcurry, LieModule.Cohomology.d_smul_apply,
-      ← restrictScalars_lieDeriv (a • x) ω, ← restrictScalars_lieDeriv x ω,
-      restrictScalars_apply, restrictScalars_apply, lieDeriv_smul_left_apply]
-    simp only [curryLeft_restrictScalars, restrictScalars_apply]
+    rw [LieModule.Cohomology.curryLeft_d_succ, LieModule.Cohomology.curryLeft_d_succ, hcurry,
+      ← restrictScalars_lieDeriv (a • x) ω, ← restrictScalars_lieDeriv x ω]
+    ext v
+    simp only [sub_apply, smul_apply, smul_eq_mul, LieModule.Cohomology.d_smul_apply,
+      restrictScalars_apply, lieDeriv_smul_left_apply, curryLeft_restrictScalars]
     ring
 
 variable (R A L)

@@ -170,8 +170,7 @@ theorem wedge_comm :
       (M := fun r : ℕ ↦ Cₛ^n⟮I; F [⋀^Fin r]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin r]→L[ℝ] ℝ⟯)
       (Nat.add_comm l k) (ψ.wedge φ) := by
   ext x v
-  rw [ContMDiffSection.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
-    cast_alternating_apply]
+  rw [alternating_smul_apply, cast_alternating_apply]
   exact wedge_comm_apply φ ψ x v
 
 /-- **Associativity** of the scalar wedge product, evaluated on fibre vectors. -/
@@ -238,7 +237,7 @@ variable (φ : Cₛ^n⟮I; F [⋀^Fin (k + 1)]→L[ℝ] ℝ, fun x ↦ V x [⋀^
 vectors: `ι_a (φ ∧ ψ) = ι_a φ ∧ ψ + (-1)^(k + 1) • φ ∧ ι_a ψ`. -/
 theorem curryLeft_wedge_apply (x : M) (w : Fin (k + 1 + l) → V x) :
     (φ.wedge ψ).curryLeft a x w =
-      (φ.curryLeft a).wedge ψ x (w ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) +
+      (φ.curryLeft a).wedge ψ x (w ∘ Fin.cast (Nat.succ_add k l).symm) +
         (-1 : ℝ) ^ (k + 1) • φ.wedge (ψ.curryLeft a) x w := by
   simp only [curryLeft_apply, wedge_apply]
   exact ContinuousAlternatingMap.curryLeftTopological_pairedWedge
@@ -250,12 +249,10 @@ sections. -/
 theorem curryLeft_wedge :
     (φ.wedge ψ).curryLeft a = LinearEquiv.cast (R := ℝ)
         (M := fun r : ℕ ↦ Cₛ^n⟮I; F [⋀^Fin r]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin r]→L[ℝ] ℝ⟯)
-        (show k + (l + 1) = k + 1 + l by omega) ((φ.curryLeft a).wedge ψ) +
+        (Nat.succ_add k l).symm ((φ.curryLeft a).wedge ψ) +
       (-1 : ℝ) ^ (k + 1) • φ.wedge (ψ.curryLeft a) := by
   ext x w
-  rw [ContMDiffSection.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    cast_alternating_apply, ContMDiffSection.coe_smul, Pi.smul_apply,
-    ContinuousAlternatingMap.smul_apply]
+  rw [alternating_add_apply, cast_alternating_apply, alternating_smul_apply]
   exact curryLeft_wedge_apply φ ψ a x w
 
 end CurryWedge

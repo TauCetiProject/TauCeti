@@ -75,6 +75,25 @@ theorem cast_alternating_apply {p q : ℕ} (h : p = q)
       φ x (v ∘ Fin.cast h) := by
   cases h; rfl
 
+/-- Pointwise addition of alternating bundle sections evaluates at each point and tuple. -/
+theorem alternating_add_apply {ι : Type*} [Fintype ι]
+    (φ₁ φ₂ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯)
+    (x : M) (v : ι → V x) : (φ₁ + φ₂) x v = φ₁ x v + φ₂ x v := by
+  rw [ContMDiffSection.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply]
+
+/-- Pointwise subtraction of alternating bundle sections evaluates at each point and tuple. -/
+theorem alternating_sub_apply {ι : Type*} [Fintype ι]
+    (φ₁ φ₂ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯)
+    (x : M) (v : ι → V x) : (φ₁ - φ₂) x v = φ₁ x v - φ₂ x v := by
+  rw [ContMDiffSection.coe_sub, Pi.sub_apply, ContinuousAlternatingMap.sub_apply]
+
+/-- Pointwise scalar multiplication of an alternating bundle section evaluates at each point and
+tuple. -/
+theorem alternating_smul_apply {ι : Type*} [Fintype ι] (c : 𝕜)
+    (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯)
+    (x : M) (v : ι → V x) : (c • φ) x v = c • φ x v := by
+  rw [ContMDiffSection.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply]
+
 /-! ### Empty-index / degree-zero sections -/
 
 section IsEmpty
