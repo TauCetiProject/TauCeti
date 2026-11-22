@@ -7,7 +7,9 @@ module
 
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.GroupTheory.OrderOfElement
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Frobenius.Fixed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapEquiv
+import TauCeti.Algebra.CharP.Lemmas
 
 /-!
 # The twisted Frobenius kernel of a Weierstrass curve over a finite field
@@ -34,7 +36,8 @@ zero, and it is transported by every `k`-algebra map of fields.
 
 * `WeierstrassCurve.twistedFrobeniusKernel W L i`: the subgroup `B_i(W, L)`.
 * `WeierstrassCurve.twistedFrobeniusKernelEquiv W i e`: the additive equivalence
-  `B_i(W, L) ≃+ B_i(W, L')` induced by a `k`-algebra equivalence `e : L ≃ₐ[k] L'`.
+  `B_i(W, L) ≃+ B_i(W, L')` induced by a `k`-algebra equivalence `e : L ≃ₐ[k] L'`, acting by the
+  point maps along `e` and `e.symm`.
 
 ## Main results
 
@@ -109,13 +112,6 @@ section Rational
 
 variable [DecidableEq k]
 
-variable (W L) in
-/-- The `q`-power map fixes every point coming from the base field. -/
-private theorem map_frobeniusAlgHom_baseChange (P : (W⁄k).toAffine.Point) :
-    Point.map (W' := W) (FiniteField.frobeniusAlgHom k L) (Point.baseChange (W' := W) k L P) =
-      Point.baseChange (W' := W) k L P :=
-  Point.map_baseChange (W' := W) (FiniteField.frobeniusAlgHom k L) P
-
 /-- **A rational point lies in the twisted Frobenius kernel** after base change exactly when it is
 killed by a positive integer prime to `p` and by `q ^ i - 1`, the `q`-power map fixing it. -/
 theorem baseChange_mem_twistedFrobeniusKernel_iff (P : (W⁄k).toAffine.Point) :
@@ -123,7 +119,7 @@ theorem baseChange_mem_twistedFrobeniusKernel_iff (P : (W⁄k).toAffine.Point) :
       (∃ m : ℕ, 0 < m ∧ m.Coprime (ringChar k) ∧ m • P = 0) ∧ (Nat.card k ^ i - 1) • P = 0 := by
   have hinj := Point.map_injective (W' := W) (Algebra.ofId k L)
   have hq : 1 ≤ Nat.card k ^ i := Nat.one_le_pow _ _ Nat.card_pos
-  rw [mem_twistedFrobeniusKernel_iff, map_frobeniusAlgHom_baseChange]
+  rw [mem_twistedFrobeniusKernel_iff, Point.map_baseChange (FiniteField.frobeniusAlgHom k L)]
   refine and_congr (exists_congr fun m ↦ and_congr_right' <| and_congr_right' ?_) ?_
   · rw [← map_nsmul, ← map_zero (Point.baseChange (W' := W) k L), hinj.eq_iff]
   · conv_lhs => rw [← Nat.sub_add_cancel hq, add_nsmul, one_nsmul, add_eq_right, ← map_nsmul,
@@ -149,23 +145,12 @@ theorem baseChange_mem_twistedFrobeniusKernel_iff_of_one_le
   · have := Nat.one_lt_pow (Nat.one_le_iff_ne_zero.mp hi) (Fintype.one_lt_card (α := k))
     rw [Nat.card_eq_fintype_card]
     omega
-  · -- `q ^ i - 1` is `-1` in `k`, so the characteristic does not divide it.
-    refine ((CharP.prime_ringChar k).coprime_iff_not_dvd.2 fun h ↦ ?_).symm
-    have h0 := (ringChar.spec k _).2 h
-    rw [Nat.cast_sub (Nat.one_le_pow _ _ Nat.card_pos), Nat.cast_pow, Nat.card_eq_fintype_card,
-      FiniteField.cast_card_eq_zero, zero_pow (Nat.one_le_iff_ne_zero.mp hi), Nat.cast_one,
-      zero_sub, neg_eq_zero] at h0
-    exact one_ne_zero h0
+  · -- `q ^ i - 1` is `-1` in `k`, so it is prime to the characteristic.
+    refine TauCeti.coprime_ringChar_of_natCast_ne_zero (CharP.prime_ringChar k) ?_
+    simp [Nat.card_eq_fintype_card, Nat.cast_sub (Nat.one_le_pow _ _ Fintype.card_pos),
+      Nat.one_le_iff_ne_zero.mp hi]
 
 end Rational
-
-/-- A `k`-algebra map of fields commutes with the `q`-power maps on points. -/
-private theorem map_map_frobeniusAlgHom (g : L →ₐ[k] L') (P : (W⁄L).toAffine.Point) :
-    Point.map (W' := W) g (Point.map (W' := W) (FiniteField.frobeniusAlgHom k L) P) =
-      Point.map (W' := W) (FiniteField.frobeniusAlgHom k L') (Point.map (W' := W) g P) := by
-  have h : g.comp (FiniteField.frobeniusAlgHom k L) = (FiniteField.frobeniusAlgHom k L').comp g :=
-    AlgHom.ext fun x ↦ by simp
-  rw [Point.map_map, Point.map_map, h]
 
 /-- **A `k`-algebra map of fields detects the twisted Frobenius kernel**: a point lies in it
 exactly when its image under the induced point map does. -/
@@ -173,7 +158,7 @@ exactly when its image under the induced point map does. -/
 theorem map_mem_twistedFrobeniusKernel_iff (g : L →ₐ[k] L') {P : (W⁄L).toAffine.Point} :
     Point.map (W' := W) g P ∈ W.twistedFrobeniusKernel L' i ↔ P ∈ W.twistedFrobeniusKernel L i := by
   have hinj := Point.map_injective (W' := W) g
-  simp only [mem_twistedFrobeniusKernel_iff, ← map_map_frobeniusAlgHom, ← map_nsmul,
+  simp only [mem_twistedFrobeniusKernel_iff, ← Point.map_map_frobeniusAlgHom, ← map_nsmul,
     ← map_zero (Point.map (W' := W) g), hinj.eq_iff]
 
 /-- The twisted Frobenius kernel over `L` is the preimage of the one over `L'` under the point map
@@ -206,6 +191,14 @@ theorem coe_twistedFrobeniusKernelEquiv_apply (e : L ≃ₐ[k] L')
     (twistedFrobeniusKernelEquiv W i e P : (W⁄L').toAffine.Point) =
       Point.map (W' := W) e.toAlgHom P :=
   Point.mapEquiv_apply W e (P : (W⁄L).toAffine.Point)
+
+/-- The inverse of `twistedFrobeniusKernelEquiv W i e` is the point map along `e.symm`. -/
+@[simp]
+theorem coe_twistedFrobeniusKernelEquiv_symm_apply (e : L ≃ₐ[k] L')
+    (P : W.twistedFrobeniusKernel L' i) :
+    ((twistedFrobeniusKernelEquiv W i e).symm P : (W⁄L).toAffine.Point) =
+      Point.map (W' := W) e.symm.toAlgHom P :=
+  Point.mapEquiv_symm_apply W e (P : (W⁄L').toAffine.Point)
 
 end WeierstrassCurve
 

@@ -15,6 +15,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Place
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 -- Proof-only: a place has finitely many extensions.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
+-- Proof-only: a separable isogeny's point fibres over a separably closed field have degree size.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Fiber
 -- Proof-only: an elliptic curve over a separably closed field has `ℓ ²` points of order `ℓ`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 
@@ -31,7 +33,8 @@ that map, `Hom.pointMap`, and proves the facts that make it the action of `f` on
   and composites act by composition;
 * the zero morphism sends every point to `O` and the identity fixes every point;
 * for a separable isogeny over a separably closed field it agrees with the additive class-group
-  point map `TauCeti.Isogeny.toPointHom`, so it is additive there.
+  point map `TauCeti.Isogeny.toPointHom`, so it is additive there and its fibres have degree many
+  points.
 
 **Rigidity.** A nonzero morphism has finite fibres on points. Thus two morphisms agreeing on
 infinitely many points are equal. Over a separably closed field the points are infinitely many,
@@ -55,6 +58,8 @@ the inner morphism over every field, is proved in `Isogeny/Hom/Ring.lean`.
 * `TauCeti.Isogeny.Hom.pointMap_ofIsogeny_eq_toPointHom`: for a separable isogeny over a
   separably closed field the action is the class-group point map.
 * `TauCeti.Isogeny.Hom.finite_setOf_pointMap_eq`: a nonzero morphism has finite fibres.
+* `TauCeti.Isogeny.Hom.ncard_setOf_pointMap_eq`: over a separably closed field, a nonzero
+  separable morphism has fibres of size its degree.
 * `TauCeti.Isogeny.Hom.eq_of_infinite_setOf_pointMap_eq` and `TauCeti.Isogeny.Hom.ext_pointMap`:
   rigidity.
 * `TauCeti.Isogeny.Hom.ext_pointMap_of_prime_zsmul_eq_zero`: rigidity on prime torsion, over a
@@ -264,6 +269,17 @@ theorem finite_setOf_pointMap_eq {f : Hom W₁ W₂} (hf : f ≠ 0) (Q : W₂.Po
   rintro _ ⟨P, hP, rfl⟩
   exact (Place.restrict_eq_iff_isEquiv_comap F W₂.FunctionField _ _).mpr
     ((pointMap_ofIsogeny_eq_iff φ).mp hP)
+
+/-- **The fibres of a nonzero separable morphism over a separably closed field have degree many
+points** (Silverman III.4.10). -/
+theorem ncard_setOf_pointMap_eq [IsSepClosed F] {f : Hom W₁ W₂} (hf : f ≠ 0)
+    [Algebra.IsSeparable (toIsogeny hf).fieldPullback.fieldRange W₁.FunctionField] (Q : W₂.Point) :
+    {P | f.pointMap P = Q}.ncard = f.degree := by
+  conv_rhs => rw [← ofIsogeny_toIsogeny hf, degree_ofIsogeny]
+  rw [← ncard_fiber_toPointHom_eq_degree _ Q]
+  congr 1
+  ext P
+  rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, ← pointMap_ofIsogeny_eq_toPointHom, ofIsogeny_toIsogeny]
 
 /-- **Rigidity: two morphisms agreeing on infinitely many points are equal.** -/
 theorem eq_of_infinite_setOf_pointMap_eq {f g : Hom W₁ W₂}
