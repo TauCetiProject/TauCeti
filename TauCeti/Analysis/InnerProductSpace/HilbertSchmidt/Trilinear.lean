@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Basic
-public import TauCeti.Analysis.Normed.Module.TensorProduct.Trilinear
+public import TauCeti.LinearAlgebra.TensorProduct.Trilinear
 
 /-!
 # The Hilbert–Schmidt energy of a trilinear map
@@ -42,7 +42,16 @@ local instance trilinearCompleteSpace₃ : CompleteSpace E₃ := FiniteDimension
 /-- Squared Frobenius energy of the tensor-product linearization of a continuous trilinear map. -/
 def trilinearHilbertSchmidtEnergy (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) : ℝ :=
   TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 _ F
-    (trilinearTensorLinearMap T) ^ 2
+    (LinearMap.trilinearTensorLinearMap 𝕜 E₁ E₂ E₃ F
+      ((LinearMap.compRight 𝕜 toLinearMap₁₂) T.toLinearMap)) ^ 2
+
+/-- The trilinear energy is the squared Frobenius seminorm of its tensor linearization. -/
+theorem trilinearHilbertSchmidtEnergy_eq_sq_frobenius
+    (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) :
+    trilinearHilbertSchmidtEnergy T =
+      TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 _ F
+        (LinearMap.trilinearTensorLinearMap 𝕜 E₁ E₂ E₃ F
+          ((LinearMap.compRight 𝕜 toLinearMap₁₂) T.toLinearMap)) ^ 2 := (rfl)
 
 /-- The three-slot energy is the sum of squared output norms over all triples of vectors
 from three independently chosen orthonormal bases. -/
@@ -52,11 +61,12 @@ theorem trilinearHilbertSchmidtEnergy_eq_sum {ι₁ ι₂ ι₃ : Type*}
     (b₃ : OrthonormalBasis ι₃ 𝕜 E₃) (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) :
     trilinearHilbertSchmidtEnergy T =
       ∑ i, ∑ j, ∑ k, ‖T (b₁ i) (b₂ j) (b₃ k)‖ ^ 2 := by
-  rw [trilinearHilbertSchmidtEnergy,
+  rw [trilinearHilbertSchmidtEnergy_eq_sq_frobenius,
     TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply
       ((b₁.tensorProduct b₂).tensorProduct b₃)]
   simp only [Fintype.sum_prod_type, OrthonormalBasis.tensorProduct_apply,
-    trilinearTensorLinearMap_tmul]
+    LinearMap.trilinearTensorLinearMap_tmul, LinearMap.compRight_apply,
+    LinearMap.comp_apply, toLinearMap₁₂_apply_apply_apply, coe_coe]
 
 /-- Compute the trilinear energy in the standard orthonormal bases of its input spaces. -/
 theorem trilinearHilbertSchmidtEnergy_eq_sum_stdOrthonormalBasis
@@ -66,7 +76,7 @@ theorem trilinearHilbertSchmidtEnergy_eq_sum_stdOrthonormalBasis
         (stdOrthonormalBasis 𝕜 E₂ j) (stdOrthonormalBasis 𝕜 E₃ k)‖ ^ 2 :=
   trilinearHilbertSchmidtEnergy_eq_sum _ _ _ T
 
-/-- The three-slot energy is the sum of one-slot Hilbert–Schmidt energies of its slices.
+/-- The three-slot energy is the sum of squared Hilbert–Schmidt norms of its slices.
 The first two slots use independently chosen orthonormal bases. -/
 theorem trilinearHilbertSchmidtEnergy_eq_sum_sq_hilbertSchmidtNorm
     {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
@@ -83,28 +93,30 @@ theorem trilinearHilbertSchmidtEnergy_eq_sum_sq_hilbertSchmidtNorm
 theorem trilinearHilbertSchmidtEnergy_smul (c : 𝕜)
     (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) :
     trilinearHilbertSchmidtEnergy (c • T) = ‖c‖ ^ 2 * trilinearHilbertSchmidtEnergy T := by
-  simp [trilinearHilbertSchmidtEnergy_eq_sum_stdOrthonormalBasis, Finset.mul_sum,
-    norm_smul, mul_pow]
+  simp only [trilinearHilbertSchmidtEnergy_eq_sq_frobenius, toLinearMap_smul,
+    map_smul, map_smul_eq_mul, mul_pow]
 
 /-- Negating a trilinear map preserves its energy. -/
 @[simp]
 theorem trilinearHilbertSchmidtEnergy_neg
     (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) :
     trilinearHilbertSchmidtEnergy (-T) = trilinearHilbertSchmidtEnergy T := by
-  simp [trilinearHilbertSchmidtEnergy_eq_sum_stdOrthonormalBasis]
+  simpa only [neg_one_smul 𝕜 T, norm_neg, norm_one, one_pow, one_mul] using
+    trilinearHilbertSchmidtEnergy_smul (-1 : 𝕜) T
 
 /-- The three-slot energy is nonnegative. -/
 theorem trilinearHilbertSchmidtEnergy_nonneg
     (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) :
     0 ≤ trilinearHilbertSchmidtEnergy T := by
-  rw [trilinearHilbertSchmidtEnergy]
+  rw [trilinearHilbertSchmidtEnergy_eq_sq_frobenius]
   exact sq_nonneg _
 
 /-- The zero trilinear map has zero energy. -/
 @[simp]
 theorem trilinearHilbertSchmidtEnergy_zero :
     trilinearHilbertSchmidtEnergy (0 : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) = 0 := by
-  simp [trilinearHilbertSchmidtEnergy_eq_sum_stdOrthonormalBasis]
+  simp only [trilinearHilbertSchmidtEnergy_eq_sq_frobenius, toLinearMap_zero,
+    map_zero, zero_pow two_ne_zero]
 
 /-- The energy vanishes exactly when the trilinear map vanishes. -/
 @[simp]
@@ -113,18 +125,21 @@ theorem trilinearHilbertSchmidtEnergy_eq_zero_iff
     trilinearHilbertSchmidtEnergy T = 0 ↔ T = 0 := by
   constructor
   · intro h
-    let L := (trilinearTensorLinearMap T).toContinuousLinearMap
+    let L := (LinearMap.trilinearTensorLinearMap 𝕜 E₁ E₂ E₃ F
+      ((LinearMap.compRight 𝕜 toLinearMap₁₂) T.toLinearMap)).toContinuousLinearMap
     let b := (stdOrthonormalBasis 𝕜 ((E₁ ⊗[𝕜] E₂) ⊗[𝕜] E₃)).toHilbertBasis
     have hL := L.enorm_sq_le_hilbertSchmidtEnergy b
     have henergy : L.hilbertSchmidtEnergy b = ENNReal.ofReal (trilinearHilbertSchmidtEnergy T) := by
       rw [hilbertSchmidtEnergy_eq_ofReal_sq_frobenius]
-      simp only [L, LinearMap.coe_toContinuousLinearMap, trilinearHilbertSchmidtEnergy]
+      simp only [L, LinearMap.coe_toContinuousLinearMap,
+        trilinearHilbertSchmidtEnergy_eq_sq_frobenius]
     rw [henergy, h, ENNReal.ofReal_zero] at hL
     have hLzero : L = 0 := by
       simpa using hL
     ext x y z
-    simpa only [L, LinearMap.coe_toContinuousLinearMap', trilinearTensorLinearMap_tmul,
-      zero_apply] using congrArg (fun f ↦ f ((x ⊗ₜ[𝕜] y) ⊗ₜ[𝕜] z)) hLzero
+    simpa only [L, LinearMap.coe_toContinuousLinearMap', LinearMap.trilinearTensorLinearMap_tmul,
+      LinearMap.compRight_apply, LinearMap.comp_apply, toLinearMap₁₂_apply_apply_apply,
+      coe_coe, zero_apply] using congrArg (fun f ↦ f ((x ⊗ₜ[𝕜] y) ⊗ₜ[𝕜] z)) hLzero
   · rintro rfl
     exact trilinearHilbertSchmidtEnergy_zero
 
@@ -154,8 +169,9 @@ theorem trilinearHilbertSchmidtEnergy_eq_of_norm_eq {G : Type*} [NormedAddCommGr
     (S : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] G)
     (h : ∀ x y z, ‖T x y z‖ = ‖S x y z‖) :
     trilinearHilbertSchmidtEnergy T = trilinearHilbertSchmidtEnergy S := by
-  exact trilinearHilbertSchmidtEnergy_eq_of_linearIsometryEquivs_of_norm_eq S T
-    (.refl 𝕜 E₁) (.refl 𝕜 E₂) (.refl 𝕜 E₃) h
+  apply trilinearHilbertSchmidtEnergy_eq_of_linearIsometryEquivs_of_norm_eq S T
+    (.refl 𝕜 E₁) (.refl 𝕜 E₂) (.refl 𝕜 E₃)
+  simpa only [LinearIsometryEquiv.coe_refl, id_eq] using h
 
 /-- Independent input linear isometric equivalences and an output linear isometry preserve
 trilinear energy. The output isometry need not be surjective. -/
