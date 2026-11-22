@@ -25,7 +25,8 @@ determinant is `|f'|²`, so the Jacobian determinant of the real chart is nonneg
 that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
 The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`), and so is
 the real chart of a map injective on a set, on the corresponding set
-(`TauCeti.Complex.injOn_realChart`).
+(`TauCeti.Complex.injOn_realChart`). The real chart maps the real coordinates of a set onto those
+of its image (`TauCeti.Complex.image_realChart_preimage`).
 -/
 
 public section
@@ -102,5 +103,14 @@ theorem injOn_realChart {f : ℂ → ℂ} {s : Set (ℝ × ℝ)}
   fun _ hp _ hq h ↦ Complex.equivRealProdCLM.symm.injective <|
     hf (Set.mem_image_of_mem _ hp) (Set.mem_image_of_mem _ hq)
       (by simpa using congrArg Complex.equivRealProdCLM.symm h)
+
+/-- The real chart of `f` maps the real coordinates of a set `s` onto the real coordinates of
+`f '' s`. -/
+theorem image_realChart_preimage (f : ℂ → ℂ) (s : Set ℂ) :
+    realChart f '' (Complex.equivRealProdCLM.symm ⁻¹' s) =
+      Complex.equivRealProdCLM.symm ⁻¹' (f '' s) := by
+  rw [realChart, Set.image_comp, Set.image_comp,
+    Set.image_preimage_eq _ Complex.equivRealProdCLM.symm.surjective,
+    Complex.equivRealProdCLM.image_eq_preimage_symm]
 
 end TauCeti.Complex

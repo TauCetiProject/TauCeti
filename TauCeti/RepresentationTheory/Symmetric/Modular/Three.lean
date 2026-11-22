@@ -63,7 +63,7 @@ noncomputable def standardThreeSignQuotient :
       (augmentationSubrepresentation k (Equiv.Perm (Fin 3)) (Fin 3)).toSubmodule.subtype
   isIntertwining' g := by
     ext v
-    have hv := mem_augmentationSubrepresentation_iff.mp v.2
+    have hv := mem_augmentationSubrepresentation_iff.mp v.property
     have hv : v.val.coeff 0 + v.val.coeff 1 + v.val.coeff 2 = 0 := by
       simpa [Fin.sum_univ_succ, add_assoc] using hv
     have h3 : (3 : k) = 0 := CharP.cast_eq_zero k 3
@@ -123,7 +123,7 @@ theorem exact_standardThreeTrivialInclusion_standardThreeSignQuotient :
   constructor
   · intro hv
     have h01 : v.val.coeff 0 - v.val.coeff 1 = 0 := by simpa using hv
-    have hsum := mem_augmentationSubrepresentation_iff.mp v.2
+    have hsum := mem_augmentationSubrepresentation_iff.mp v.property
     have hsum : v.val.coeff 0 + v.val.coeff 1 + v.val.coeff 2 = 0 := by
       simpa [Fin.sum_univ_succ, add_assoc] using hsum
     have h02 : v.val.coeff 2 = v.val.coeff 0 := by
@@ -204,7 +204,7 @@ theorem not_exists_rightInverse_standardThreeSignQuotient :
   have h3 : (3 : k) = 0 := CharP.cast_eq_zero k 3
   have hv0 : v.val.coeff 0 = 0 := by linear_combination v.val.coeff 0 * h3 + h0
   have hv2 : v.val.coeff 2 = 0 := by linear_combination v.val.coeff 2 * h3 + h2
-  have hsum := mem_augmentationSubrepresentation_iff.mp v.2
+  have hsum := mem_augmentationSubrepresentation_iff.mp v.property
   have hv1 : v.val.coeff 1 = 0 := by
     simpa [Fin.sum_univ_succ, hv0, hv2] using hsum
   have h : standardThreeSignQuotient k v = 1 := hs 1

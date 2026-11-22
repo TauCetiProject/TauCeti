@@ -281,4 +281,21 @@ theorem finrank_cotangentSpace_holomorphicStalk :
   simpa only [Fintype.card_fin] using Module.finrank_eq_card_basis
     (e.holomorphicCotangentBasis x hx he (Module.finBasis ℂ E))
 
+section Curves
+
+variable {C : Type} [TopologicalSpace C] [ChartedSpace ℂ C] [IsManifold 𝓘(ℂ) 1 C]
+  (e : OpenPartialHomeomorph C ℂ) (he : e ∈ maximalAtlas 𝓘(ℂ) 1 C)
+  (x : C) (hx : x ∈ e.source)
+
+/-- A centered curve coordinate has derivative the identity in its own chart. -/
+@[simp]
+theorem holomorphicStalkFDeriv_holomorphicCoordinateGerm :
+    e.holomorphicStalkFDeriv x hx (e.holomorphicCoordinateGerm he x hx) = .id ℂ ℂ := by
+  have heω : e ∈ maximalAtlas 𝓘(ℂ) ω C := by
+    rwa [maximalAtlas_eq_of_ne_zero (m := ω) (n := 1) (by simp) one_ne_zero]
+  rw [← e.holomorphicLinearCoordinateGerm_id heω x hx,
+    holomorphicStalkFDeriv_holomorphicLinearCoordinateGerm]
+
+end Curves
+
 end OpenPartialHomeomorph

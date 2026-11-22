@@ -114,7 +114,11 @@ open scoped Pointwise
 
 universe u w
 
-variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
+variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V)
+
+section Finite
+
+variable [Finite V]
 
 /-! ### The vertex projectives as finite graded projectives -/
 
@@ -447,6 +451,8 @@ theorem zigzagGradedSimpleClassBasis_repr_gradedCartanMap_zigzagGradedProjective
   rw [zigzagGradedSimpleClassBasis_repr_apply,
     gradedIdempotentCoordinate_gradedCartanMap_zigzagGradedProjectiveClass_eq_toLaurent]
 
+end Finite
+
 /-- **The image of `[P_j]` under the graded Cartan map** is `∑ᵢ C_G(q)_{ij} [S_i]` in
 `G₀^gr(mod Z)`: the `j`th column of the graded Cartan matrix in the simple basis. -/
 theorem gradedCartanMap_zigzagGradedProjectiveClass_eq_sum [Fintype V] (j : V) :
@@ -457,6 +463,10 @@ theorem gradedCartanMap_zigzagGradedProjectiveClass_eq_sum [Fintype V] (j : V) :
     (gradedCartanMap (zigzagIntegerGrade k G) (zigzagGradedProjectiveClass k G j))]
   simp only [
     zigzagGradedSimpleClassBasis_repr_gradedCartanMap_zigzagGradedProjectiveClass_eq_toLaurent]
+
+section Finite
+
+variable [Finite V]
 
 /-- **The graded Cartan matrix `(1 + q²) I + q A_G` in the simple basis**, for a graph without
 isolated vertices: the `[S_i]`-coordinate of the image of `[P_j]` is `1 + q²` for `i = j`, `q` on
@@ -528,6 +538,8 @@ noncomputable def zigzagGradedProjectiveClassBasis :
 theorem zigzagGradedProjectiveClassBasis_apply (i : V) :
     zigzagGradedProjectiveClassBasis k G i = zigzagGradedProjectiveClass k G i :=
   Module.Basis.mk_apply _ _ i
+
+end Finite
 
 /-- The combinatorial graded Cartan matrix is the matrix of the categorical graded Cartan
 map in the vertex-projective and vertex-simple class bases. -/

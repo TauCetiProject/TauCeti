@@ -37,8 +37,9 @@ exponents have unbounded denominators, shows that the Puiseux field is a proper 
 * `TauCeti.puiseuxField.single K q a`: the monomial `a t ^ q` as a Puiseux series.
 * `TauCeti.puiseuxField.levelEmbedding K n`: the level-`n` embedding `K⸨X⸩ →ₐ[K] puiseuxField K`,
   `X ↦ t ^ (1 / n)`.
-* The `K⸨X⸩`-algebra structure on `puiseuxField K` given by `levelEmbedding K 1`, with
-  `IsScalarTower K K⸨X⸩ (puiseuxField K)`.
+* The `K⸨X⸩`-algebra and `K⟦X⟧`-algebra (`TauCeti.puiseuxField.algebraPowerSeries`) structures on
+  `puiseuxField K` given by `levelEmbedding K 1`, with their `IsScalarTower` and
+  `Module.IsTorsionFree` instances.
 
 ## Main results
 
@@ -47,19 +48,25 @@ exponents have unbounded denominators, shows that the Puiseux field is a proper 
 * `TauCeti.mem_puiseuxField_iff_exists_den_dvd`: a Hahn series is a Puiseux series exactly when
   the denominators of its exponents are bounded in divisibility by a single `n`.
 * `TauCeti.puiseuxField_eq_iSup_fieldRange`: the Puiseux field is the supremum of the levels.
+* `TauCeti.puiseuxField.single_zero_one`, `TauCeti.puiseuxField.single_zpow`,
+  `TauCeti.puiseuxField.algebraMap_eq_single`: unit, integer-power, and constant formulas for
+  Puiseux monomials.
 * `TauCeti.puiseuxField.exists_forall_mem_range_levelEmbedding`: a finite family of Puiseux series
   lies in a common level.
 * `TauCeti.puiseuxField.exists_map_levelEmbedding_eq`: every polynomial over the Puiseux field is
   the image of a polynomial over `K⸨X⸩` under a single level embedding.
 * `TauCeti.puiseuxField.levelEmbedding_expand_self`: the level-`n` embedding restricted along
   `X ↦ X ^ n` is the `K⸨X⸩`-algebra map.
+* `TauCeti.puiseuxField.algebraMap_laurentSeries_single_one`,
+  `TauCeti.puiseuxField.algebraMap_powerSeries_X`: the `K⸨X⸩`- and `K⟦X⟧`-algebra maps send `X` to
+  the Puiseux parameter `single K 1 1`.
 * `TauCeti.puiseuxField_lt_top`: the Puiseux field is a proper subfield of `HahnSeries ℚ K`.
 -/
 
 public section
 
 open HahnSeries LaurentSeries Polynomial
-open scoped LaurentSeries
+open scoped LaurentSeries PowerSeries
 
 namespace TauCeti
 
@@ -127,6 +134,11 @@ theorem coe_single (q : ℚ) (a : K) : (single K q a : HahnSeries ℚ K) = HahnS
 theorem single_eq_zero_iff {q : ℚ} {a : K} : single K q a = 0 ↔ a = 0 := by
   rw [← Subtype.coe_inj, coe_single, ZeroMemClass.coe_zero, HahnSeries.single_eq_zero_iff]
 
+/-- The monomial `1 * t ^ 0` is the multiplicative identity `1`. -/
+@[simp]
+theorem single_zero_one : single K 0 (1 : K) = 1 :=
+  Subtype.ext (by rw [coe_single, ← HahnSeries.C_apply, map_one, OneMemClass.coe_one])
+
 /-- The `n`-th power of a monomial `a t ^ q` is the monomial `a ^ n t ^ (n * q)`. -/
 @[simp]
 theorem single_pow (q : ℚ) (a : K) (n : ℕ) : single K q a ^ n = single K (n * q) (a ^ n) := by
@@ -138,12 +150,27 @@ theorem single_pow (q : ℚ) (a : K) (n : ℕ) : single K q a ^ n = single K (n 
 theorem inv_single (q : ℚ) (a : K) : (single K q a)⁻¹ = single K (-q) a⁻¹ :=
   Subtype.ext <| by rw [IntermediateField.coe_inv, coe_single, coe_single, HahnSeries.inv_single]
 
+/-- Integer power of a Puiseux monomial `single K q a`. -/
+@[simp]
+theorem single_zpow (q : ℚ) (a : K) (k : ℤ) :
+    single K q a ^ k = single K (k * q) (a ^ k) := by
+  cases k with
+  | ofNat m =>
+    simp [Int.ofNat_eq_natCast, single_pow]
+  | negSucc m =>
+    rw [zpow_negSucc, zpow_negSucc, single_pow, inv_single, Int.cast_negSucc, neg_mul]
+
 /-- Multiplying a monomial by a constant multiplies its coefficient. -/
 @[simp]
 theorem algebraMap_mul_single (c : K) (q : ℚ) (a : K) :
     algebraMap K (puiseuxField K) c * single K q a = single K q (c * a) := by
   apply Subtype.ext
   simp [HahnSeries.algebraMap_apply', HahnSeries.single_mul_single]
+
+/-- A constant `c : K` in the Puiseux field is the degree-zero monomial `single K 0 c`. -/
+theorem algebraMap_eq_single (c : K) :
+    algebraMap K (puiseuxField K) c = single K 0 c := by
+  simpa using algebraMap_mul_single c 0 (1 : K)
 
 end puiseuxField
 
@@ -216,7 +243,7 @@ theorem mem_range_levelEmbedding_iff {n : ℕ+} {x : puiseuxField K} :
 /-- Every Puiseux series lies in some level. -/
 theorem exists_mem_range_levelEmbedding (x : puiseuxField K) :
     ∃ n : ℕ+, x ∈ (levelEmbedding K n).range := by
-  simpa only [mem_range_levelEmbedding_iff] using mem_puiseuxField_iff.mp x.2
+  simpa only [mem_range_levelEmbedding_iff] using mem_puiseuxField_iff.mp x.property
 
 /-- For `n ∣ m`, the image of level `n` in the Puiseux field is contained in that of level `m`. -/
 theorem range_levelEmbedding_le_of_dvd {n m : ℕ+} (h : n ∣ m) :
@@ -275,6 +302,51 @@ map: as a subfield of the Puiseux field, level `n` contains `K⸨X⸩` with `X` 
 theorem levelEmbedding_expand_self (n : ℕ+) (f : K⸨X⸩) :
     levelEmbedding K n (expand K n f) = algebraMap K⸨X⸩ (puiseuxField K) f := by
   rw [algebraMap_laurentSeries_apply, ← levelEmbedding_expand 1 n, one_mul]
+
+/-- The `K⸨X⸩`-algebra map sends `single 1 1` to the Puiseux parameter `t = single K 1 1`. -/
+@[simp]
+theorem algebraMap_laurentSeries_single_one :
+    algebraMap K⸨X⸩ (puiseuxField K) (HahnSeries.single 1 1) = single K 1 1 := by
+  rw [algebraMap_laurentSeries_apply]
+  exact levelEmbedding_single_self 1
+
+variable (K) in
+/-- The Puiseux field is a `K⟦X⟧`-algebra through `K⟦X⟧ → K⸨X⸩ → puiseuxField K`. -/
+noncomputable instance algebraPowerSeries : Algebra K⟦X⟧ (puiseuxField K) :=
+  ((algebraMap K⸨X⸩ (puiseuxField K)).comp (algebraMap K⟦X⟧ K⸨X⸩)).toAlgebra
+
+/-- The `K⟦X⟧`-algebra map into the Puiseux field factors through coercion to `K⸨X⸩`. -/
+theorem algebraMap_powerSeries_apply (f : K⟦X⟧) :
+    algebraMap K⟦X⟧ (puiseuxField K) f = algebraMap K⸨X⸩ (puiseuxField K) (f : K⸨X⸩) :=
+  (rfl)
+
+/-- As a Hahn series, the image of `f : K⟦X⟧` in the Puiseux field is its level-one embedding. -/
+@[simp]
+theorem coe_algebraMap_powerSeries (f : K⟦X⟧) :
+    (algebraMap K⟦X⟧ (puiseuxField K) f : HahnSeries ℚ K) = ramifiedEmbedding K 1 (f : K⸨X⸩) := by
+  rw [algebraMap_powerSeries_apply, coe_algebraMap_laurentSeries]
+
+/-- Scalar actions of `K⟦X⟧` and `K⸨X⸩` on `puiseuxField K` form a scalar tower. -/
+instance isScalarTower_powerSeries_laurentSeries :
+    IsScalarTower K⟦X⟧ K⸨X⸩ (puiseuxField K) :=
+  IsScalarTower.of_algebraMap_eq' rfl
+
+/-- Scalar actions of `K` and `K⟦X⟧` on `puiseuxField K` form a scalar tower. -/
+instance isScalarTower_powerSeries : IsScalarTower K K⟦X⟧ (puiseuxField K) :=
+  IsScalarTower.of_algebraMap_eq fun c ↦ by
+    rw [algebraMap_powerSeries_apply, ← _root_.LaurentSeries.coe_algebraMap,
+      ← IsScalarTower.algebraMap_apply K K⟦X⟧ K⸨X⸩,
+      ← IsScalarTower.algebraMap_apply K K⸨X⸩ (puiseuxField K)]
+
+/-- The Puiseux field is torsion-free as a `K⟦X⟧`-module. -/
+instance isTorsionFree_powerSeries : Module.IsTorsionFree K⟦X⟧ (puiseuxField K) :=
+  .trans_faithfulSMul K⟦X⟧ K⸨X⸩ (puiseuxField K)
+
+/-- The `K⟦X⟧`-algebra map sends `X` to the Puiseux parameter `t = single K 1 1`. -/
+@[simp]
+theorem algebraMap_powerSeries_X :
+    algebraMap K⟦X⟧ (puiseuxField K) PowerSeries.X = single K 1 1 := by
+  rw [algebraMap_powerSeries_apply, PowerSeries.coe_X, algebraMap_laurentSeries_single_one]
 
 /-! ### A series with exponents of unbounded denominator -/
 

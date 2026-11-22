@@ -312,7 +312,7 @@ theorem properQuantizeValue_eq_integral_offDiagonalKernel [CompleteSpace V] [Com
   have hK : Integrable fun y ↦ offDiagonalKernel a x y (u y) := by
     refine (integrableOn_iff_integrable_of_support_subset hsupp).1 ?_
     refine ContinuousOn.integrableOn_compact hu.isCompact ?_
-    exact ((continuousOn_offDiagonalKernel_right a x).mono fun y hy (hxy : y = x) ↦
+    exact ((continuousOn_offDiagonalKernel_compl_singleton a x).mono fun y hy (hxy : y = x) ↦
       hx (hxy ▸ hy)).clm_apply u.continuous.continuousOn
   have hR : Integrable fun y ↦ smoothingKernel a χ x y (u y) :=
     ((continuous_smoothingKernel_right a hχ hχ0 x).clm_apply

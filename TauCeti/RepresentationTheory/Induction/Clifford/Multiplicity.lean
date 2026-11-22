@@ -196,14 +196,14 @@ noncomputable def conjSubrepMap (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) (x : �
   -- is `Subrepresentation.mem_asSubmodule_iff`, but that lemma cannot be *rewritten* with here: it
   -- states the membership for an element of `V`, and these elements carry the synonym as their
   -- type, so only the definitional identification applies.
-  ⟨asModuleConjEquiv ρ g x.1, h x.1 x.2⟩
+  ⟨asModuleConjEquiv ρ g x.val, h x.val x.property⟩
 
 omit [N.Normal] in
 /-- The underlying vector of a translated vector. -/
 @[simp]
 theorem coe_conjSubrepMap (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) (x : σ.asSubmodule) :
     (conjSubrepMap ρ g h x : Representation.asModule (ρ.comp N.subtype))
-      = asModuleConjEquiv ρ g x.1 :=
+      = asModuleConjEquiv ρ g x.val :=
   (rfl)
 
 omit [N.Normal] in

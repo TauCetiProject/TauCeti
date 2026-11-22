@@ -39,8 +39,9 @@ convergent kernel itself.
 * `TauCeti.Symbol.quantizeSchwartzValue_eq_integral_offDiagonalKernel`: **kernel representation**,
   `Op(a) u (x) = ∫ K(x, y) u(y) dy` for compactly supported `u` vanishing near `x`.
 * `TauCeti.Symbol.continuousOn_offDiagonalKernel`, `TauCeti.Symbol.contDiffOn_offDiagonalKernel`:
-  the kernel is continuous, and indeed smooth, off the diagonal;
-  `TauCeti.Symbol.continuousOn_offDiagonalKernel_right` is continuity in `y ≠ x` for fixed `x`.
+  the kernel is continuous, and indeed smooth, off the diagonal.
+* `TauCeti.Symbol.stronglyMeasurable_uncurry_offDiagonalKernel`: the kernel, with its value `0` on
+  the diagonal, is strongly measurable.
 * `TauCeti.Symbol.contDiffOn_quantizationKernel`: the absolutely convergent kernel of a symbol of
   order `m < -n` is smooth off the diagonal.
 * `TauCeti.Symbol.eqOn_offDiagonalKernel_of_forall`: **uniqueness**, on an open set `U` not
@@ -193,16 +194,27 @@ theorem continuousOn_offDiagonalKernel (a : Symbol n V W m) :
       pow_ne_zero _ (norm_ne_zero_iff.2 (sub_ne_zero.2 hp))
   exact hs.smul hK.continuousOn
 
-/-- For a fixed output position `x`, the off-diagonal kernel `y ↦ K(x, y)` is continuous on
-`{y | y ≠ x}`. -/
-theorem continuousOn_offDiagonalKernel_right (a : Symbol n V W m) (x : CoordinateSpace n) :
-    ContinuousOn (offDiagonalKernel a x) {x}ᶜ := by
+/-- **Continuity in the second variable.** For fixed `x`, the off-diagonal kernel `y ↦ K(x, y)` is
+continuous away from `x`. -/
+theorem continuousOn_offDiagonalKernel_compl_singleton (a : Symbol n V W m)
+    (x : CoordinateSpace n) : ContinuousOn (offDiagonalKernel a x) {x}ᶜ := by
   have hmaps : Set.MapsTo (fun y ↦ (x, y)) {x}ᶜ
       {p : CoordinateSpace n × CoordinateSpace n | p.1 ≠ p.2} :=
-    fun _ hy hxy ↦ hy hxy.symm
+    fun y hy (hxy : x = y) ↦ hy (Set.mem_singleton_iff.2 hxy.symm)
   exact ((continuousOn_offDiagonalKernel a).comp
     (continuous_const.prodMk continuous_id).continuousOn hmaps).congr
     fun y _ ↦ (Function.uncurry_apply_pair _ x y).symm
+
+/-- **Measurability.** The off-diagonal kernel, with its value `0` on the diagonal, is strongly
+measurable as a function of `(x, y)`, as integral operators with this kernel require. -/
+theorem stronglyMeasurable_uncurry_offDiagonalKernel (a : Symbol n V W m) :
+    MeasureTheory.StronglyMeasurable (Function.uncurry (offDiagonalKernel a)) := by
+  set N := ⌊(m + n) / 2⌋₊ + 1
+  have hK := (frequencyLaplacianPow N a).continuous_quantizationKernel (sub_two_mul_floor_lt m n)
+  have hs : Measurable (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      (-1 : ℝ) ^ N / ‖p.1 - p.2‖ ^ (2 * N)) := by fun_prop
+  -- By definition, the kernel is this measurable scalar times a continuous kernel.
+  exact hs.stronglyMeasurable.smul hK.stronglyMeasurable
 
 /-- **Smoothness off the diagonal.** The off-diagonal kernel is smooth on `{(x, y) | x ≠ y}`: for
 each `k`, choosing `N` with `m - 2N + k < -n` makes the kernel of `Δ_ξ^N a` of class `C^k`
@@ -241,7 +253,8 @@ theorem eqOn_offDiagonalKernel_of_forall [CompleteSpace V] [CompleteSpace W] (a 
       quantizeSchwartzValue a.coefficient u x = ∫ y, K y (u y)) :
     Set.EqOn K (offDiagonalKernel a x) U := by
   have hK₀ : ContinuousOn (offDiagonalKernel a x) U :=
-    (continuousOn_offDiagonalKernel_right a x).mono fun y hy (hxy : y = x) ↦ hxU (hxy ▸ hy)
+    (continuousOn_offDiagonalKernel_compl_singleton a x).mono fun y hy (hyx : y = x) ↦
+      hxU (hyx ▸ hy)
   refine hU.eqOn_of_integral_clm_apply_eq (μ := volume) hK hK₀ fun u hu huU ↦ ?_
   rw [← h u hu huU,
     quantizeSchwartzValue_eq_integral_offDiagonalKernel a hu fun hx ↦ hxU (huU hx)]
