@@ -67,8 +67,8 @@ Morse–Smale pseudo-gradient `X` adapted to `f`, vanishes
 their trajectories project to trajectories of `X`, which lower the index. For the constant family of
 constant continuation fields, whose continuation maps are the identity, the digon identity then
 reads `0 = id + id`, which holds over `ZMod 2`
-(`morseBoundary_comp_morseDegreeOneMap_add_eq_constantContinuationField`, in the namespace
-`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`).
+(`morseBoundary_comp_morseDegreeOneMap_morseDigonSlice_add_eq_constantContinuationField`, in the
+namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`).
 
 ## Main declarations
 
@@ -224,8 +224,8 @@ condition, for `C > 0`, the constant family of constant continuation fields `(X 
 satisfies the digon identity `∂ ∘ K + K ∘ ∂ = F⁰ + F¹`: its digon homotopy `K` vanishes, as for
 every product family, and both edges have the identity as continuation map, so the identity reads
 `0 = id + id`, which holds over `ZMod 2`. -/
-theorem morseBoundary_comp_morseDegreeOneMap_add_eq_constantContinuationField {C : ℝ}
-    (hC : 0 < C) :
+theorem morseBoundary_comp_morseDegreeOneMap_morseDigonSlice_add_eq_constantContinuationField
+    {C : ℝ} (hC : 0 < C) :
     h.morseBoundary hf ∘ₗ
         morseDegreeOneMap f hf (morseDigonSlice fun _ ↦ constantContinuationField X C) +
       morseDegreeOneMap f hf (morseDigonSlice fun _ ↦ constantContinuationField X C) ∘ₗ
