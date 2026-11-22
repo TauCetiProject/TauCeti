@@ -46,8 +46,10 @@ are those of its summands, so its tangent coordinate changes are those of the su
 
 ## Main results
 
-* `TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet`: the inverse of the extended
-  chart at `x` maps its target into the base set of the canonical trivialization at `x`.
+* `TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source` and
+  `TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet`: the source of the extended chart
+  at `x`, and the image of its target under the inverse chart, lie in the base set of the
+  canonical trivialization at `x`.
 * `TangentBundle.chartFrame`: the canonical tangent trivialization of the intrinsic chart source
   at its centre, which covers the whole source
   (`TangentBundle.trivializationAt_chartSource_baseSet`).
@@ -183,13 +185,19 @@ theorem trivializationAt_snd_eq_tangentCoordChange [IsManifold I 1 M] {x y : M}
   rw [TangentBundle.trivializationAt_apply, tangentCoordChange_def]
   rfl
 
+/-- A point of the source of the extended chart at `x` lies in the base set of the canonical
+tangent-bundle trivialization at `x`. -/
+theorem mem_trivializationAt_baseSet_of_mem_extChartAt_source [IsManifold I 1 M] {x y : M}
+    (hy : y ∈ (extChartAt I x).source) :
+    y ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
+  rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+
 /-- The inverse of the extended chart at `x` sends its target into the base set of the canonical
 tangent-bundle trivialization at `x`. -/
 theorem extChartAt_symm_mem_trivializationAt_baseSet [IsManifold I 1 M] {x : M} {z : E}
     (hz : z ∈ (extChartAt I x).target) :
-    (extChartAt I x).symm z ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
-  rw [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
-  exact (extChartAt I x).map_target hz
+    (extChartAt I x).symm z ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
+  mem_trivializationAt_baseSet_of_mem_extChartAt_source ((extChartAt I x).map_target hz)
 
 /-- The canonical tangent trivialization of an intrinsic chart source covers that whole source. -/
 theorem trivializationAt_chartSource_baseSet [IsManifold I 1 M] (x : M) :
@@ -893,6 +901,13 @@ theorem mfderiv_subtype_val {U : Opens M} (x : U) :
       (I.uniqueDiffOn.uniqueDiffWithinAt hxRange)]
   rfl
 
+/-- The differential of the inclusion of an open submanifold fixes every tangent vector, the
+tangent spaces of the open submanifold and of the ambient manifold being the same. -/
+theorem mfderiv_subtype_val_apply {U : Opens M} (x : U) (v : TangentSpace I x) :
+    mfderiv I I (Subtype.val : U → M) x v = v := by
+  rw [mfderiv_subtype_val]
+  exact tangentSpaceOpenEquiv_apply x v
+
 /-- The differential of an open-submanifold inclusion is injective. -/
 theorem mfderiv_subtype_val_injective {U : Opens M} (x : U) :
     Function.Injective (mfderiv I I (Subtype.val : U → M) x) := by
@@ -946,8 +961,8 @@ theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
     mfderiv J I ((Subtype.val : U → M) ∘ f) x v = mfderiv J I f x v := by
   by_cases hf : MDifferentiableAt J I f x
   · rw [mfderiv_comp x (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hf,
-      ContinuousLinearMap.comp_apply, mfderiv_subtype_val]
-    exact tangentSpaceOpenEquiv_apply _ _
+      ContinuousLinearMap.comp_apply]
+    exact mfderiv_subtype_val_apply _ _
   · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
       mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_subtype_val_comp_iff.not.mpr hf)]
     rfl
