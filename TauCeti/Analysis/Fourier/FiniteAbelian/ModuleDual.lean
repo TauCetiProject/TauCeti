@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+-- Private: used only inside the proof of `AddChar.sum_dual_apply_eq_ite`.
+import TauCeti.LinearAlgebra.Dual.Basis
 
 /-!
 # The finite Fourier transform on a module and its dual
@@ -43,9 +45,11 @@ It holds for every nontrivial character into a domain (`AddChar.sum_eq_zero_of_n
   transforms.
 * `AddChar.fourierTransform_sum_fiberwise`: the transform of the push-forward of `t` along a linear
   map `f` is the transform of `t` composed with the dual map `f^∨`.
-* `AddChar.fourierTransform_inv`: transforming with `φ⁻¹` composes the transform with `w' ↦ -w'`.
+* `AddChar.inv_fourierTransform`: transforming with `φ⁻¹` composes the transform with `w' ↦ -w'`.
 * `AddChar.sum_apply_eq_zero_of_dual_ne_zero`: orthogonality, `∑ v, φ (f v) = 0` for a nonzero
   linear form `f` on a finite vector space.
+* `AddChar.sum_apply_dual_eq_ite`: orthogonality, `∑ v, φ (f v)` is `|V|` at `f = 0` and `0`
+  elsewhere.
 * `AddChar.sum_dual_apply_eq_ite`: orthogonality on the dual, `∑ w', φ (w' u)` is `|W|` at `u = 0`
   and `0` elsewhere.
 * `AddChar.fourierTransform_fourierTransform_eval`: inversion, `𝔉 (𝔉 t) (eval w) = |W| t (-w)`.
@@ -153,7 +157,7 @@ end AddCommGroup
 
 /-- **The inverse character.** Transforming with `φ⁻¹` is transforming with `φ` and then
 composing with `w' ↦ -w'`. -/
-theorem fourierTransform_inv {R Λ W : Type*} [CommRing R] [CommSemiring Λ] [AddCommMonoid W]
+theorem inv_fourierTransform {R Λ W : Type*} [CommRing R] [CommSemiring Λ] [AddCommMonoid W]
     [Module R W] [Fintype W] (φ : AddChar R Λ) (t : W → Λ) (w' : Module.Dual R W) :
     φ⁻¹.fourierTransform t w' = φ.fourierTransform t (-w') := by
   simp [fourierTransform_apply]
@@ -174,20 +178,25 @@ theorem sum_apply_eq_zero_of_dual_ne_zero (hφ : ∑ r, φ r = 0) {f : Module.Du
     AddMonoidHom.card_fiber_eq_of_mem_range f.toAddMonoidHom (hsurj r) (hsurj 0)
   simp only [hfib, ← smul_sum, hφ, smul_zero]
 
+/-- Orthogonality, `∑ v, φ (f v)` is `|V|` at `f = 0` and `0` for every other linear form `f`. -/
+theorem sum_apply_dual_eq_ite [DecidableEq (Module.Dual k V)] (hφ : ∑ r, φ r = 0)
+    (f : Module.Dual k V) : ∑ v, φ (f v) = if f = 0 then (Fintype.card V : Λ) else 0 := by
+  split_ifs with hf
+  · simp [hf]
+  · exact sum_apply_eq_zero_of_dual_ne_zero hφ hf
+
 omit [Fintype W] in
 /-- Orthogonality on the dual: `∑ w', φ (w' u) = 0` for every nonzero vector `u`. -/
 theorem sum_dual_apply_eq_zero [Fintype (Module.Dual k W)] (hφ : ∑ r, φ r = 0) {u : W}
-    (hu : u ≠ 0) : ∑ w' : Module.Dual k W, φ (w' u) = 0 :=
-  sum_apply_eq_zero_of_dual_ne_zero hφ ((Module.eval_apply_eq_zero_iff k u).not.mpr hu)
+    (hu : u ≠ 0) : ∑ w' : Module.Dual k W, φ (w' u) = 0 := by
+  simpa only [Module.Dual.eval_apply] using sum_apply_eq_zero_of_dual_ne_zero hφ
+    (f := Module.Dual.eval k W u) ((Module.eval_apply_eq_zero_iff k u).not.mpr hu)
 
 /-- `∑ w', φ (w' u)` is `|W|` at `u = 0` and `0` elsewhere. -/
 theorem sum_dual_apply_eq_ite [Fintype (Module.Dual k W)] [DecidableEq W] (hφ : ∑ r, φ r = 0)
     (u : W) : ∑ w' : Module.Dual k W, φ (w' u) = if u = 0 then (Fintype.card W : Λ) else 0 := by
   split_ifs with hu
-  · -- A finite vector space and its dual have the same number of elements.
-    have hcard : Fintype.card (Module.Dual k W) = Fintype.card W :=
-      Fintype.card_congr (Module.Free.chooseBasis k W).toDualEquiv.toEquiv.symm
-    simp [hu, hcard]
+  · simp [hu, Fintype.card_eq_nat_card, TauCeti.Module.natCard_dual, -Nat.card_eq_fintype_card]
   · exact sum_dual_apply_eq_zero hφ hu
 
 /-- **Fourier inversion.** If `∑ r, φ r = 0`, transforming twice gives `|W| · t (-w)` at the image
@@ -210,28 +219,17 @@ theorem sum_fourierTransform_mul_fourierTransform [Fintype (Module.Dual k W)]
     (hφ : ∑ r, φ r = 0) (t₁ t₂ : W → Λ) :
     ∑ w', φ.fourierTransform t₁ w' * φ.fourierTransform t₂ w' =
       Fintype.card W * ∑ w, t₁ w * t₂ (-w) := by
-  classical
-  have key (w' : Module.Dual k W) :
-      φ.fourierTransform t₁ w' * φ.fourierTransform t₂ w' =
-        ∑ u, ∑ v, t₁ u * t₂ v * φ (w' (u + v)) := by
-    simp only [fourierTransform_apply, sum_mul_sum, map_add, map_add_eq_mul]
-    exact sum_congr rfl fun _ _ ↦ sum_congr rfl fun _ _ ↦ by ring
-  simp only [key]
+  have h (v : W) :
+      ∑ w', φ.fourierTransform t₁ w' * φ (w' v) = Fintype.card W * t₁ (-v) := by
+    rw [← fourierTransform_fourierTransform_eval hφ,
+      fourierTransform_apply φ (φ.fourierTransform t₁)]
+    simp only [Module.Dual.eval_apply]
+  simp only [fourierTransform_apply φ t₂, mul_sum]
   rw [sum_comm]
-  refine (sum_congr rfl fun u _ ↦ ?_).trans (mul_sum ..).symm
-  rw [sum_comm]
-  simp only [← mul_sum, sum_dual_apply_eq_ite hφ, mul_ite, mul_zero, add_eq_zero_iff_eq_neg',
-    sum_ite_eq', mem_univ, ite_true]
-  ring
-
-/-- The transform of the constant function `1` is `|W|` times the indicator of `0`. -/
-theorem fourierTransform_one [DecidableEq (Module.Dual k W)] (hφ : ∑ r, φ r = 0) :
-    φ.fourierTransform (1 : W → Λ) = Pi.single 0 (Fintype.card W : Λ) := by
-  ext w'
-  rw [fourierTransform_apply, Pi.single_apply]
-  split_ifs with hw'
-  · simp [hw']
-  · simpa using sum_apply_eq_zero_of_dual_ne_zero hφ hw'
+  simp only [mul_left_comm _ (t₂ _), ← mul_sum, h]
+  rw [← Equiv.sum_comp (Equiv.neg W)]
+  simp only [Equiv.neg_apply, neg_neg, mul_sum]
+  exact sum_congr rfl fun _ _ ↦ by ring
 
 /-- The transform of the indicator of a subspace `U` is `|U|` times the indicator of its
 annihilator `U^⊥ ⊆ W^∨`. -/
@@ -255,6 +253,13 @@ theorem fourierTransform_indicator_submodule (hφ : ∑ r, φ r = 0) (U : Submod
       fun u hu ↦ by simpa using LinearMap.congr_fun h ⟨u, hu⟩
     rw [sum_apply_eq_zero_of_dual_ne_zero hφ h0, mul_zero]
 
+/-- The transform of the constant function `1` is `|W|` times the indicator of `0`. -/
+theorem fourierTransform_one [DecidableEq (Module.Dual k W)] (hφ : ∑ r, φ r = 0) :
+    φ.fourierTransform (1 : W → Λ) = Pi.single 0 (Fintype.card W : Λ) := by
+  ext w'
+  simpa [Pi.single_apply, Nat.card_eq_fintype_card, Set.indicator_apply] using
+    congr_fun (fourierTransform_indicator_submodule hφ (⊤ : Submodule k W)) w'
+
 variable [Fintype (Module.Dual k W)]
 
 /-- **The finite Fourier transform as a linear equivalence.** If `∑ r, φ r = 0` and `|W|` is a
@@ -276,10 +281,8 @@ noncomputable def fourierTransformEquiv (hφ : ∑ r, φ r = 0) (hW : IsUnit (Fi
     rw [sum_comm]
     have h (x : Module.Dual k W) :
         ∑ w, φ (x (-w)) * φ (w' w) = if x = w' then (Fintype.card W : Λ) else 0 := by
-      simp only [map_neg, ← map_add_eq_mul, neg_add_eq_sub, ← LinearMap.sub_apply]
-      split_ifs with hx
-      · simp [hx]
-      · exact sum_apply_eq_zero_of_dual_ne_zero hφ (sub_ne_zero.mpr (Ne.symm hx))
+      simp only [map_neg, ← map_add_eq_mul, neg_add_eq_sub, ← LinearMap.sub_apply,
+        sum_apply_dual_eq_ite hφ, sub_eq_zero, eq_comm]
     simp only [← mul_sum, h, mul_ite, mul_zero, sum_ite_eq', mem_univ, ite_true]
     rw [mul_comm (t' w'), ← mul_assoc, IsUnit.val_inv_mul, one_mul]
 
@@ -290,6 +293,7 @@ theorem coe_fourierTransformEquiv (hφ : ∑ r, φ r = 0) (hW : IsUnit (Fintype.
   (rfl)
 
 /-- The inverse of the finite Fourier transform is `t' ↦ (w ↦ |W|⁻¹ · 𝔉_{W^∨} t' (eval (-w)))`. -/
+@[simp]
 theorem fourierTransformEquiv_symm_apply (hφ : ∑ r, φ r = 0) (hW : IsUnit (Fintype.card W : Λ))
     (t' : Module.Dual k W → Λ) (w : W) :
     (fourierTransformEquiv hφ hW).symm t' w =
