@@ -49,6 +49,8 @@ near the support.
   of the support in `Ω`.
 * `Distribution.dsupport_eq_empty_iff`, `Distribution.eq_zero_of_dsupport_subset_empty`: an
   additive map on test functions vanishes when and only when its support is empty.
+* `Distribution.dsupport_comp_subset_of_tsupport_subset`: precomposing with an operator that does
+  not enlarge supports shrinks the support.
 * `Distribution.dsupport_comp_smulLeftCLM_subset`, `Distribution.dsupport_comp_cutoffCLM_subset`,
   `Distribution.dsupport_comp_monoCLM_subset`,
   `Distribution.isCompact_dsupport_and_subset_of_eventually_eq_one`,
@@ -374,14 +376,19 @@ theorem dsupport_comp_monoCLM_subset {Ω' : Opens E} {m : ℕ∞} (f : 𝓓^{n}(
   · exact hφ
   · simp
 
-/-- The support of a boundary `T ∘ d` lies in the support of `T`. -/
-theorem dsupport_comp_extDerivCLM_subset {k : ℕ} (f : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) → V) :
-    dsupport (f ∘ TestFunction.extDerivCLM (k := k)) ⊆ dsupport f := by
+/-- Precomposing a map on test functions with an operator that does not enlarge supports shrinks
+its distributional support. -/
+theorem dsupport_comp_subset_of_tsupport_subset {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {m : ℕ∞} (f : 𝓓^{n}(Ω, F) → V) {P : 𝓓^{m}(Ω, G) → 𝓓^{n}(Ω, F)}
+    (hP : ∀ φ, tsupport (P φ) ⊆ tsupport φ) : dsupport (f ∘ P) ⊆ dsupport f := by
   refine compl_subset_compl.1 fun x hx ↦ ?_
   obtain ⟨s, hf, hs, hxs⟩ := (notMem_dsupport_iff x).1 hx
-  exact (notMem_dsupport_iff x).2 ⟨s, fun φ hφ ↦
-    hf (TestFunction.extDerivCLM φ) ((TestFunction.tsupport_extDerivCLM_subset φ).trans hφ),
-    hs, hxs⟩
+  exact (notMem_dsupport_iff x).2 ⟨s, fun φ hφ ↦ hf (P φ) ((hP φ).trans hφ), hs, hxs⟩
+
+/-- The support of a boundary `T ∘ d` lies in the support of `T`. -/
+theorem dsupport_comp_extDerivCLM_subset {k : ℕ} (f : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) → V) :
+    dsupport (f ∘ TestFunction.extDerivCLM (k := k)) ⊆ dsupport f :=
+  dsupport_comp_subset_of_tsupport_subset f TestFunction.tsupport_extDerivCLM_subset
 
 end Augmentation
 
