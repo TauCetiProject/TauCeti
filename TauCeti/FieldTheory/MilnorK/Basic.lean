@@ -9,20 +9,23 @@ public import Mathlib.Algebra.DirectSum.Ring
 public import Mathlib.Algebra.RingQuot
 public import Mathlib.GroupTheory.Perm.Sign
 public import Mathlib.LinearAlgebra.TensorAlgebra.Grading
+public import Mathlib.LinearAlgebra.TensorAlgebra.ToTensorPower
+public import Mathlib.LinearAlgebra.TensorPower.Basic
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Submodule
 public import Mathlib.RingTheory.Ideal.Maps
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.FieldTheory.MilnorK.SteinbergPairing
+public import TauCeti.LinearAlgebra.TensorAlgebra.ToTensorPower
+import TauCeti.Data.List.OfFn
 
 /-!
 # Native Milnor K-theory
 
 This file defines the native Milnor K-theory ring `TauCeti.MilnorK R` as the quotient of the
-tensor algebra `TensorAlgebra ℤ (Additive Rˣ)` by the two-sided Steinberg ideal, equips it with
-its `ℕ`-grading `TauCeti.MilnorK.degree`, proves the universal property, functoriality,
-graded-commutativity / permutation-sign rules over fields, and finite-field vanishing in degrees
-at least two.
+tensor algebra `TensorAlgebra ℤ (Additive Rˣ)` by the two-sided Steinberg ideal, characterizes its
+kernel degree by degree via `TauCeti.MilnorK.relationSubmodule`, equips it with its `ℕ`-grading
+`TauCeti.MilnorK.degree`, proves the universal property, functoriality, graded-commutativity /
+permutation-sign rules over fields, and vanishing in degrees at least two for finite fields.
 
 ## Main definitions
 
@@ -31,15 +34,20 @@ at least two.
 * `TauCeti.MilnorK.ofUnit`: the degree-one unit class `{a}`.
 * `TauCeti.MilnorK.symbol`: the ordered `n`-symbol `{a₁, …, aₙ}`.
 * `TauCeti.MilnorK.degree`: the degree-`n` `ℤ`-submodule of `MilnorK R`.
+* `TauCeti.MilnorK.relationSubmodule`: the degree-`n` Steinberg relation submodule of
+  `(⨂[ℤ]^n) (Additive Rˣ)`.
 * `TauCeti.MilnorK.lift`: universal property lifting a Steinberg multiplicative map to `MilnorK R`.
 * `TauCeti.MilnorK.map` and `TauCeti.MilnorK.mapDegree`: functoriality in ring homomorphisms.
 
 ## Main results
 
+* `TauCeti.MilnorK.mem_ker_mkRingHom_iff` and `TauCeti.MilnorK.toTensorAlgebra_mem_ker_iff`:
+  characterization of the Steinberg kernel degree by degree.
 * `TauCeti.MilnorK.isInternal_degree`: `MilnorK R` is internally `ℕ`-graded by `MilnorK.degree R`.
 * `TauCeti.MilnorK.mul_comm_of_mem_degree`: graded commutativity over a field.
 * `TauCeti.MilnorK.symbol_ofFn_comp_perm`: permuting symbol entries multiplies by the sign.
-* `TauCeti.MilnorK.finiteField_vanishing`: `MilnorK.degree F n` vanishes for finite `F` and `n ≥ 2`.
+* `TauCeti.MilnorK.subsingleton_degree_of_finite`: `MilnorK.degree F n` vanishes for finite `F`
+  and `n ≥ 2`.
 
 ## References
 
@@ -50,7 +58,7 @@ public section
 
 namespace TauCeti
 
-open scoped DirectSum
+open scoped DirectSum TensorProduct
 
 section Defs
 
@@ -133,7 +141,7 @@ theorem ofUnit_zpow (a : Rˣ) (n : ℤ) : ofUnit (a ^ n) = n • ofUnit a := by
   simp only [ofUnit_def, ofMul_zpow, map_zsmul]
 
 /-- The Steinberg relation in `MilnorK R`: `ofUnit a * ofUnit b = 0` when `(a : R) + b = 1`. -/
-theorem ofUnit_mul_ofUnit_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
+theorem ofUnit_mul_ofUnit_eq_zero_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
     ofUnit a * ofUnit b = 0 := by
   rw [ofUnit_def, ofUnit_def, ← map_mul]
   simpa only [map_zero] using RingQuot.mkRingHom_rel (r := milnorRel R) ⟨a, b, h, rfl, rfl⟩
@@ -143,7 +151,7 @@ theorem isSteinbergPairing_ofUnit_mul :
     IsSteinbergPairing (fun a b : Rˣ ↦ ofUnit a * ofUnit b) where
   map_mul_left a₁ a₂ b := by rw [ofUnit_mul, add_mul]
   map_mul_right a b₁ b₂ := by rw [ofUnit_mul, mul_add]
-  steinberg := ofUnit_mul_ofUnit_of_add_eq_one
+  steinberg := ofUnit_mul_ofUnit_eq_zero_of_add_eq_one
 
 /-- The empty symbol equals `1`. -/
 @[simp]
@@ -196,12 +204,222 @@ theorem symbol_zpow_at (l₁ : List Rˣ) (a : Rˣ) (n : ℤ) (l₂ : List Rˣ) :
   rw [smul_mul_assoc n (ofUnit a), mul_smul_comm n (symbol l₁)]
 
 /-- Adjacent complementary entries kill a symbol of any length. -/
-theorem symbol_of_add_eq_one_at (l₁ : List Rˣ) {a b : Rˣ} (h : (a : R) + b = 1) (l₂ : List Rˣ) :
+theorem symbol_eq_zero_of_add_eq_one_at (l₁ : List Rˣ) {a b : Rˣ} (h : (a : R) + b = 1)
+    (l₂ : List Rˣ) :
     symbol (l₁ ++ a :: b :: l₂) = 0 := by
   simp only [symbol_append, symbol_cons, ← mul_assoc (ofUnit a)]
-  rw [ofUnit_mul_ofUnit_of_add_eq_one h, zero_mul, mul_zero]
+  rw [ofUnit_mul_ofUnit_eq_zero_of_add_eq_one h, zero_mul, mul_zero]
 
 end Basic
+
+section RelationSubmodule
+
+variable (R : Type u) [CommSemiring R]
+
+/-- The degree-`n` Steinberg relation submodule of `(⨂[ℤ]^n) (Additive Rˣ)`, spanned by pure
+tensors having two consecutive entries whose underlying ring elements sum to `1`. -/
+def relationSubmodule (n : ℕ) : Submodule ℤ ((⨂[ℤ]^n) (Additive Rˣ)) :=
+  Submodule.span ℤ {t | ∃ (x : Fin n → Additive Rˣ) (i : ℕ) (hi : i + 1 < n),
+    ((Additive.toMul (x ⟨i, by omega⟩) : Rˣ) : R) +
+      ((Additive.toMul (x ⟨i + 1, hi⟩) : Rˣ) : R) = 1 ∧
+    t = PiTensorProduct.tprod ℤ x}
+
+/-- Definitional unfolding of `MilnorK.relationSubmodule`. -/
+theorem relationSubmodule_def (n : ℕ) :
+    relationSubmodule R n =
+      Submodule.span ℤ {t | ∃ (x : Fin n → Additive Rˣ) (i : ℕ) (hi : i + 1 < n),
+        ((Additive.toMul (x ⟨i, by omega⟩) : Rˣ) : R) +
+          ((Additive.toMul (x ⟨i + 1, hi⟩) : Rˣ) : R) = 1 ∧
+        t = PiTensorProduct.tprod ℤ x} :=
+  (rfl)
+
+/-- In degree `0`, the Steinberg relation submodule is `⊥`. -/
+@[simp]
+theorem relationSubmodule_zero : relationSubmodule R 0 = ⊥ :=
+  eq_bot_iff.mpr <| Submodule.span_le.mpr fun _ ⟨_, _, hi, _, _⟩ ↦ by omega
+
+/-- In degree `1`, the Steinberg relation submodule is `⊥`. -/
+@[simp]
+theorem relationSubmodule_one : relationSubmodule R 1 = ⊥ :=
+  eq_bot_iff.mpr <| Submodule.span_le.mpr fun _ ⟨_, _, hi, _, _⟩ ↦ by omega
+
+variable {R}
+
+/-- A pure tensor with consecutive complementary entries belongs to `relationSubmodule R n`. -/
+theorem tprod_mem_relationSubmodule {n : ℕ} (x : Fin n → Additive Rˣ) {i : ℕ} (hi : i + 1 < n)
+    (h : ((Additive.toMul (x ⟨i, by omega⟩) : Rˣ) : R) +
+      ((Additive.toMul (x ⟨i + 1, hi⟩) : Rˣ) : R) = 1) :
+    PiTensorProduct.tprod ℤ x ∈ relationSubmodule R n :=
+  Submodule.subset_span ⟨x, i, hi, h, rfl⟩
+
+/-- Any `ℤ`-linear map between tensor powers sending generating pure tensors into
+`relationSubmodule` preserves `relationSubmodule`. -/
+theorem map_mem_relationSubmodule {S : Type*} [CommSemiring S] {m n : ℕ}
+    (f : (⨂[ℤ]^m) (Additive Rˣ) →ₗ[ℤ] (⨂[ℤ]^n) (Additive Sˣ))
+    (hf : ∀ (x : Fin m → Additive Rˣ) (i : ℕ) (hi : i + 1 < m),
+      ((Additive.toMul (x ⟨i, by omega⟩) : Rˣ) : R) +
+        ((Additive.toMul (x ⟨i + 1, hi⟩) : Rˣ) : R) = 1 →
+      f (PiTensorProduct.tprod ℤ x) ∈ relationSubmodule S n)
+    {a : (⨂[ℤ]^m) (Additive Rˣ)} (ha : a ∈ relationSubmodule R m) :
+    f a ∈ relationSubmodule S n := by
+  refine Submodule.span_induction ?_ (by simp)
+    (fun _ _ _ _ hu hv ↦ by rw [map_add]; exact Submodule.add_mem _ hu hv)
+    (fun k _ _ hu ↦ by rw [map_smul]; exact Submodule.smul_mem _ k hu) ha
+  rintro _ ⟨x, i, hi, hxy, rfl⟩
+  exact hf x i hi hxy
+
+/-- Graded multiplication on the right preserves `relationSubmodule`. -/
+theorem gMul_mem_relationSubmodule_left {m n : ℕ}
+    {a : (⨂[ℤ]^m) (Additive Rˣ)} {b : (⨂[ℤ]^n) (Additive Rˣ)}
+    (ha : a ∈ relationSubmodule R m) :
+    GradedMonoid.GMul.mul (A := fun k ↦ (⨂[ℤ]^k) (Additive Rˣ)) a b ∈
+      relationSubmodule R (m + n) := by
+  induction b using PiTensorProduct.induction_on with
+  | smul_tprod r y =>
+    rw [← DirectSum.gMulLHom_apply_apply (R := ℤ), ← LinearMap.flip_apply, map_smul]
+    refine Submodule.smul_mem _ r (map_mem_relationSubmodule
+      ((DirectSum.gMulLHom (R := ℤ) (A := fun k ↦ (⨂[ℤ]^k) (Additive Rˣ))).flip
+        (PiTensorProduct.tprod ℤ y))
+      (fun x i hi hxy ↦ ?_) ha)
+    rw [LinearMap.flip_apply, DirectSum.gMulLHom_apply_apply, TensorPower.tprod_mul_tprod]
+    refine tprod_mem_relationSubmodule (Fin.append x y) (i := i) (by omega) ?_
+    have h1 : Fin.append x y ⟨i, by omega⟩ = x ⟨i, by omega⟩ := Fin.append_left x y ⟨i, by omega⟩
+    have h2 : Fin.append x y ⟨i + 1, by omega⟩ = x ⟨i + 1, hi⟩ := Fin.append_left x y ⟨i + 1, hi⟩
+    rwa [h1, h2]
+  | add _ _ hy₁ hy₂ =>
+    rw [← DirectSum.gMulLHom_apply_apply (R := ℤ), map_add, DirectSum.gMulLHom_apply_apply,
+      DirectSum.gMulLHom_apply_apply]
+    exact Submodule.add_mem _ hy₁ hy₂
+
+/-- Graded multiplication on the left preserves `relationSubmodule`. -/
+theorem gMul_mem_relationSubmodule_right {m n : ℕ}
+    {a : (⨂[ℤ]^m) (Additive Rˣ)} {b : (⨂[ℤ]^n) (Additive Rˣ)}
+    (hb : b ∈ relationSubmodule R n) :
+    GradedMonoid.GMul.mul (A := fun k ↦ (⨂[ℤ]^k) (Additive Rˣ)) a b ∈
+      relationSubmodule R (m + n) := by
+  induction a using PiTensorProduct.induction_on with
+  | smul_tprod r x =>
+    rw [← DirectSum.gMulLHom_apply_apply (R := ℤ), map_smul, LinearMap.smul_apply]
+    refine Submodule.smul_mem _ r (map_mem_relationSubmodule
+      (DirectSum.gMulLHom (R := ℤ) (A := fun k ↦ (⨂[ℤ]^k) (Additive Rˣ))
+        (PiTensorProduct.tprod ℤ x))
+      (fun y i hi hxy ↦ ?_) hb)
+    rw [DirectSum.gMulLHom_apply_apply, TensorPower.tprod_mul_tprod]
+    refine tprod_mem_relationSubmodule (Fin.append x y) (i := m + i) (by omega) ?_
+    have h1 : Fin.append x y ⟨m + i, by omega⟩ = y ⟨i, by omega⟩ :=
+      Fin.append_right x y ⟨i, by omega⟩
+    have h2 : Fin.append x y ⟨m + i + 1, by omega⟩ = y ⟨i + 1, hi⟩ := by
+      rw [show (⟨m + i + 1, by omega⟩ : Fin (m + n)) = Fin.natAdd m ⟨i + 1, hi⟩ from
+        Fin.ext (by dsimp [Fin.natAdd]; omega), Fin.append_right]
+    rwa [h1, h2]
+  | add _ _ hx₁ hx₂ =>
+    rw [← DirectSum.gMulLHom_apply_apply (R := ℤ), map_add, LinearMap.add_apply,
+      DirectSum.gMulLHom_apply_apply, DirectSum.gMulLHom_apply_apply]
+    exact Submodule.add_mem _ hx₁ hx₂
+
+end RelationSubmodule
+
+section KernelBridge
+
+variable (R : Type u) [CommSemiring R]
+
+/-- The image of a pure tensor under `TensorPower.toTensorAlgebra` and `RingQuot.mkRingHom` is the
+corresponding Milnor symbol. -/
+theorem mkRingHom_toTensorAlgebra_tprod {n : ℕ} (x : Fin n → Additive Rˣ) :
+    RingQuot.mkRingHom (milnorRel R) (TensorPower.toTensorAlgebra (PiTensorProduct.tprod ℤ x)) =
+      symbol (List.ofFn fun i ↦ Additive.toMul (x i)) := by
+  rw [TensorPower.toTensorAlgebra_tprod, TensorAlgebra.tprod_apply, map_list_prod, symbol_def,
+    List.map_ofFn, List.map_ofFn]
+  congr 1
+
+private theorem mkRingHom_toTensorAlgebra_eq_zero_of_mem_relationSubmodule {n : ℕ}
+    {t : (⨂[ℤ]^n) (Additive Rˣ)} (ht : t ∈ relationSubmodule R n) :
+    RingQuot.mkRingHom (milnorRel R) (TensorPower.toTensorAlgebra t) = 0 := by
+  refine Submodule.span_induction ?_ (by simp)
+    (fun _ _ _ _ hu hv ↦ by rw [map_add, map_add, hu, hv, add_zero])
+    (fun _ _ _ hu ↦ by rw [map_zsmul, map_zsmul, hu, smul_zero]) ht
+  rintro _ ⟨x, i, hi, hab, rfl⟩
+  rw [mkRingHom_toTensorAlgebra_tprod]
+  have hsplit := List.ofFn_eq_take_cons_of_lt (fun j ↦ Additive.toMul (x j))
+    (i := ⟨i, by omega⟩) (j := ⟨i + 1, hi⟩) (by simp)
+  simp only [Nat.add_sub_cancel_left, Nat.sub_self, List.take_zero, List.append_assoc,
+    List.cons_append, List.nil_append] at hsplit
+  rw [hsplit]
+  exact symbol_eq_zero_of_add_eq_one_at _ hab _
+
+private theorem directSum_mul_mem_relationSubmodule
+    {u v : ⨁ k : ℕ, (⨂[ℤ]^k) (Additive Rˣ)}
+    (h : (∀ k, u k ∈ relationSubmodule R k) ∨ (∀ k, v k ∈ relationSubmodule R k)) (n : ℕ) :
+    (u * v) n ∈ relationSubmodule R n := by
+  classical
+  rw [← DirectSum.sum_support_of u, ← DirectSum.sum_support_of v, Finset.sum_mul,
+    DirectSum.sum_apply]
+  refine Submodule.sum_mem _ fun i _ ↦ ?_
+  rw [Finset.mul_sum, DirectSum.sum_apply]
+  refine Submodule.sum_mem _ fun j _ ↦ ?_
+  rw [DirectSum.of_mul_of]
+  by_cases hij : i + j = n
+  · subst hij; rw [DirectSum.of_eq_same]
+    exact h.elim (fun hu ↦ gMul_mem_relationSubmodule_left (hu i))
+      (fun hv ↦ gMul_mem_relationSubmodule_right (hv j))
+  · rw [DirectSum.of_eq_of_ne (i + j) n _ (Ne.symm hij)]; exact Submodule.zero_mem _
+
+/-- An element of `TensorAlgebra ℤ (Additive Rˣ)` lies in the kernel of the Steinberg quotient map
+if and only if each of its homogeneous tensor-power components lies in `relationSubmodule R n`. -/
+theorem mem_ker_mkRingHom_iff (z : TensorAlgebra ℤ (Additive Rˣ)) :
+    z ∈ RingHom.ker (RingQuot.mkRingHom (milnorRel R)) ↔
+      ∀ n : ℕ, TensorAlgebra.toDirectSum z n ∈ relationSubmodule R n := by
+  constructor
+  · intro hz
+    let H : Set (TensorAlgebra ℤ (Additive Rˣ)) :=
+      {w | ∀ n, TensorAlgebra.toDirectSum w n ∈ relationSubmodule R n}
+    have hadd : ∀ {x y}, x ∈ H → y ∈ H → x + y ∈ H := fun hx hy n ↦ by
+      rw [map_add, DirectSum.add_apply]; exact Submodule.add_mem _ (hx n) (hy n)
+    let I : TwoSidedIdeal (TensorAlgebra ℤ (Additive Rˣ)) :=
+      TwoSidedIdeal.mk' H (fun _ ↦ by simp) hadd
+        (fun {x} hx n ↦ by
+          rw [show -x = (-1 : ℤ) • x by abel, map_smul, DirectSum.smul_apply]
+          exact Submodule.smul_mem _ _ (hx n))
+        (fun hy n ↦ by rw [map_mul]; exact directSum_mul_mem_relationSubmodule R (.inr hy) n)
+        (fun hx n ↦ by rw [map_mul]; exact directSum_mul_mem_relationSubmodule R (.inl hx) n)
+    have hrel : ∀ x y, milnorRel R x y → I.ringCon.mk' x = I.ringCon.mk' y := by
+      intro _ _ h
+      rcases (milnorRel_def R _ _).mp h with ⟨a, b, hab, rfl, rfl⟩
+      refine I.ringCon.eq.mpr fun n ↦ ?_
+      rw [sub_zero, map_mul, TensorAlgebra.toDirectSum_ι, TensorAlgebra.toDirectSum_ι,
+        DirectSum.of_mul_of, TensorPower.tprod_mul_tprod]
+      by_cases hn : 1 + 1 = n
+      · subst hn; rw [DirectSum.of_eq_same]
+        refine tprod_mem_relationSubmodule _ (i := 0) (by omega) ?_
+        rw [show (⟨0, by omega⟩ : Fin (1 + 1)) = Fin.castAdd 1 0 from rfl, Fin.append_left,
+          show (⟨1, by omega⟩ : Fin (1 + 1)) = Fin.natAdd 1 0 from rfl, Fin.append_right]
+        simpa using hab
+      · rw [DirectSum.of_eq_of_ne (1 + 1) n _ (Ne.symm hn)]; exact Submodule.zero_mem _
+    have hq := RingQuot.lift_mkRingHom_apply I.ringCon.mk' hrel z
+    rw [RingHom.mem_ker.mp hz, map_zero] at hq
+    have hrc : z - 0 ∈ H := I.ringCon.eq.mp hq.symm
+    rwa [sub_zero] at hrc
+  · intro hz
+    classical
+    rw [RingHom.mem_ker, ← TensorAlgebra.ofDirectSum_toDirectSum z]
+    conv_lhs => rw [← DirectSum.sum_support_of (TensorAlgebra.toDirectSum z)]
+    rw [map_sum, map_sum]
+    exact Finset.sum_eq_zero fun n _ ↦ by
+      rw [TensorAlgebra.ofDirectSum_of]
+      exact mkRingHom_toTensorAlgebra_eq_zero_of_mem_relationSubmodule R (hz n)
+
+/-- A degree-`n` tensor lies in the kernel of the Steinberg quotient map if and only if it belongs
+to `relationSubmodule R n`. -/
+theorem toTensorAlgebra_mem_ker_iff {n : ℕ} (t : (⨂[ℤ]^n) (Additive Rˣ)) :
+    TensorPower.toTensorAlgebra t ∈ RingHom.ker (RingQuot.mkRingHom (milnorRel R)) ↔
+      t ∈ relationSubmodule R n := by
+  rw [mem_ker_mkRingHom_iff, TensorAlgebra.toDirectSum_toTensorAlgebra]
+  refine ⟨fun h ↦ by simpa [DirectSum.of_eq_same] using h n, fun ht k ↦ ?_⟩
+  by_cases hnk : n = k
+  · subst hnk; simpa [DirectSum.of_eq_same] using ht
+  · rw [DirectSum.of_eq_of_ne n k _ (Ne.symm hnk)]; exact Submodule.zero_mem _
+
+end KernelBridge
 
 section Grading
 
@@ -209,103 +427,83 @@ variable (R : Type u) [CommSemiring R]
 
 /-- The kernel of `RingQuot.mkRingHom (milnorRel R)` is a homogeneous ideal of
 `TensorAlgebra ℤ (Additive Rˣ)`. -/
-theorem isHomogeneous_ker_mkAlgHom :
+theorem isHomogeneous_ker_mkRingHom :
     (RingHom.ker (RingQuot.mkRingHom (milnorRel R))).IsHomogeneous
       (fun n : ℕ ↦
         (TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n) := by
   classical
   let 𝒜 : ℕ → Submodule ℤ (TensorAlgebra ℤ (Additive Rˣ)) :=
     fun n ↦ (TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n
-  let mk := RingQuot.mkRingHom (milnorRel R)
-  let H : Set (TensorAlgebra ℤ (Additive Rˣ)) :=
-    {z | ∀ i : ℕ, mk (DirectSum.decompose 𝒜 z i : TensorAlgebra ℤ (Additive Rˣ)) = 0}
-  have hH_zero : (0 : TensorAlgebra ℤ (Additive Rˣ)) ∈ H := fun _ ↦ by simp [mk]
-  have hH_add : ∀ {x y}, x ∈ H → y ∈ H → x + y ∈ H := fun hx hy i ↦ by
-    rw [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add, map_add, hx i, hy i,
-      add_zero]
-  have hH_neg : ∀ {x}, x ∈ H → -x ∈ H := fun hx i ↦ by
-    rw [DirectSum.decompose_neg, DFinsupp.neg_apply, Submodule.coe_neg, map_neg, hx i, neg_zero]
-  have hH_mul : ∀ {x y}, (x ∈ H ∨ y ∈ H) → x * y ∈ H := fun {x y} hxy i ↦ by
-    let d := DirectSum.decompose 𝒜
-    have hdecomp : x * y = ∑ j ∈ (d x).support, ∑ k ∈ (d y).support,
-        ((d x j : TensorAlgebra ℤ (Additive Rˣ)) * (d y k : TensorAlgebra ℤ (Additive Rˣ))) := by
-      conv_lhs => rw [← DirectSum.sum_support_decompose 𝒜 x, ← DirectSum.sum_support_decompose 𝒜 y]
-      rw [Finset.sum_mul]; exact Finset.sum_congr rfl fun j _ ↦ Finset.mul_sum _ _ _
-    rw [hdecomp, DirectSum.decompose_sum, DirectSum.sum_apply]
-    change mk ((𝒜 i).subtype _) = 0; rw [map_sum, map_sum]
-    refine Finset.sum_eq_zero fun j _ ↦ ?_
-    change mk (DirectSum.decompose 𝒜 _ i : TensorAlgebra ℤ (Additive Rˣ)) = 0
-    rw [DirectSum.decompose_sum, DirectSum.sum_apply]
-    change mk ((𝒜 i).subtype _) = 0; rw [map_sum, map_sum]
-    refine Finset.sum_eq_zero fun k _ ↦ ?_
-    change mk (DirectSum.decompose 𝒜 _ i : TensorAlgebra ℤ (Additive Rˣ)) = 0
-    rw [DirectSum.decompose_of_mem 𝒜 (SetLike.mul_mem_graded (d x j).property (d y k).property)]
-    by_cases hjk : j + k = i
-    · subst hjk; rw [DirectSum.of_eq_same, map_mul]
-      rcases hxy with hx | hy
-      · rw [hx j, zero_mul]
-      · rw [hy k, mul_zero]
-    · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hjk), Submodule.coe_zero, map_zero]
-  let I : TwoSidedIdeal (TensorAlgebra ℤ (Additive Rˣ)) :=
-    TwoSidedIdeal.mk' H hH_zero hH_add hH_neg (fun h ↦ hH_mul (.inr h)) (fun h ↦ hH_mul (.inl h))
-  have hrel : ∀ x y, milnorRel R x y → I.ringCon.mk' x = I.ringCon.mk' y := by
-    rintro _ _ ⟨a, b, hab, rfl, rfl⟩
-    refine I.ringCon.eq.mpr ?_
-    change TensorAlgebra.ι ℤ (Additive.ofMul a) * TensorAlgebra.ι ℤ (Additive.ofMul b) - 0 ∈ H
-    rw [sub_zero]
-    have hmem : TensorAlgebra.ι ℤ (Additive.ofMul a) * TensorAlgebra.ι ℤ (Additive.ofMul b) ∈ 𝒜 2 :=
-      by rw [show 𝒜 2 = _ ^ 2 from rfl, pow_two]; exact Submodule.mul_mem_mul ⟨_, rfl⟩ ⟨_, rfl⟩
-    intro i
-    rw [DirectSum.decompose_of_mem 𝒜 hmem]
-    by_cases hi : 2 = i
-    · subst hi; rw [DirectSum.of_eq_same]
-      simpa only [map_zero] using RingQuot.mkRingHom_rel (r := milnorRel R) ⟨a, b, hab, rfl, rfl⟩
-    · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hi), Submodule.coe_zero, map_zero]
-  intro i x hx
-  have hq := RingQuot.lift_mkRingHom_apply I.ringCon.mk' hrel x
-  rw [RingHom.mem_ker.mp hx, map_zero] at hq
-  have hrc : x - 0 ∈ H := I.ringCon.eq.mp hq.symm
-  exact RingHom.mem_ker.mpr ((sub_zero x ▸ hrc) i)
+  intro i z hz
+  -- Each homogeneous piece of `z` coincides with the image of `toDirectSum z i`.
+  have hcomp : (DirectSum.decompose 𝒜 z i : TensorAlgebra ℤ (Additive Rˣ)) =
+      TensorPower.toTensorAlgebra (TensorAlgebra.toDirectSum z i) := by
+    have hdecomp : DirectSum.decompose 𝒜 z =
+        ∑ k ∈ (TensorAlgebra.toDirectSum z).support,
+          DirectSum.of (fun k ↦ ↥(𝒜 k)) k
+            (⟨TensorPower.toTensorAlgebra (TensorAlgebra.toDirectSum z k),
+              TensorPower.toTensorAlgebra_mem_range_pow _⟩ : 𝒜 k) := by
+      conv_lhs => rw [← TensorAlgebra.ofDirectSum_toDirectSum z,
+        ← DirectSum.sum_support_of (TensorAlgebra.toDirectSum z)]
+      rw [map_sum, DirectSum.decompose_sum]
+      refine Finset.sum_congr rfl fun k _ ↦ ?_
+      rw [TensorAlgebra.ofDirectSum_of]
+      exact DirectSum.decompose_of_mem 𝒜 (TensorPower.toTensorAlgebra_mem_range_pow _)
+    rw [hdecomp, DirectSum.sum_apply, Submodule.coe_sum]
+    by_cases hi : i ∈ (TensorAlgebra.toDirectSum z).support
+    · rw [Finset.sum_eq_single i (fun k _ hki ↦ by simp [DirectSum.of_eq_of_ne k i _ hki.symm])
+        (fun h ↦ absurd hi h), DirectSum.of_eq_same]
+    · rw [Finset.sum_eq_zero (fun k hk ↦ by
+          simp [DirectSum.of_eq_of_ne k i _ (fun h ↦ hi (h ▸ hk))]),
+        DFinsupp.notMem_support_iff.mp hi, map_zero]
+  rw [RingHom.mem_ker, hcomp]
+  exact RingHom.mem_ker.mp
+    ((toTensorAlgebra_mem_ker_iff R _).mpr ((mem_ker_mkRingHom_iff R z).mp hz i))
 
 /-- `MilnorK.degree R` defines a graded monoid structure on `MilnorK R`. -/
 instance gradedMonoidDegree : SetLike.GradedMonoid (degree R) where
   one_mem := ⟨1, SetLike.GradedOne.one_mem, map_one (RingQuot.mkRingHom (milnorRel R))⟩
   mul_mem _ _ _ _ := fun ⟨a, ha, ha'⟩ ⟨b, hb, hb'⟩ ↦
     ⟨a * b, SetLike.GradedMul.mul_mem ha hb, by
-      change RingQuot.mkRingHom (milnorRel R) (a * b) = _
-      rw [map_mul]; exact congrArg₂ (· * ·) ha' hb'⟩
+      simp only [AlgHom.toLinearMap_apply, RingHom.toIntAlgHom_apply] at ha' hb' ⊢
+      rw [map_mul, ha', hb']⟩
 
 /-- `MilnorK R` is internally `ℕ`-graded by `MilnorK.degree R`. -/
 theorem isInternal_degree : DirectSum.IsInternal (degree R) := by
-  let f : TensorAlgebra ℤ (Additive Rˣ) →ₐ[ℤ] MilnorK R :=
-    (RingQuot.mkRingHom (milnorRel R)).toIntAlgHom
+  let f := (RingQuot.mkRingHom (milnorRel R)).toIntAlgHom
   let 𝒜 : ℕ → Submodule ℤ (TensorAlgebra ℤ (Additive Rˣ)) :=
     fun n ↦ (TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n
   let ψ : ∀ i, 𝒜 i →+ degree R i := fun i ↦
-    AddMonoidHom.mk' (fun a : 𝒜 i ↦ (⟨f a.val, ⟨a.val, a.property, rfl⟩⟩ : degree R i))
-      fun _ _ ↦ Subtype.ext (map_add f _ _)
+    ((LinearEquiv.ofEq _ _ (degree_def R i).symm).toLinearMap.comp
+      (f.toLinearMap.submoduleMap (𝒜 i))).toAddMonoidHom
   let φ : (⨁ i, 𝒜 i) →+ (⨁ i, degree R i) := DirectSum.map ψ
+  have hψ : ∀ i (a : 𝒜 i), ((ψ i a : degree R i) : MilnorK R) = f a := fun i a ↦ by
+    dsimp only [ψ]
+    rw [LinearMap.toAddMonoidHom_coe, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      LinearEquiv.coe_ofEq_apply, LinearMap.submoduleMap_coe_apply, AlgHom.toLinearMap_apply]
   have hφ_coe : ∀ w, DirectSum.coeAddMonoidHom (degree R) (φ w) =
       f (DirectSum.coeAddMonoidHom 𝒜 w) := fun w ↦ by
     induction w using DirectSum.induction_on with
     | zero => simp
-    | of i a => simp [φ, ψ]
+    | of i a =>
+      dsimp only [φ]
+      rw [DirectSum.map_of, DirectSum.coeAddMonoidHom_of, DirectSum.coeAddMonoidHom_of, hψ]
     | add _ _ hx hy => simp [hx, hy]
   have hφ_apply : ∀ w i, ((φ w i : degree R i) : MilnorK R) =
       f (w i : TensorAlgebra ℤ (Additive Rˣ)) := fun w i ↦ by
-    rw [DirectSum.map_apply]; rfl
-  have hφ_surj : Function.Surjective φ := (DirectSum.map_surjective ψ).mpr fun i b ↦ by
-    obtain ⟨a, ha, hab⟩ := b.property
-    exact ⟨⟨a, ha⟩, Subtype.ext hab⟩
+    dsimp only [φ]; rw [DirectSum.map_apply, hψ]
+  have hφ_surj : Function.Surjective φ :=
+    (DirectSum.map_surjective ψ).mpr fun i ↦
+      (LinearEquiv.ofEq _ _ (degree_def R i).symm).surjective.comp
+        (f.toLinearMap.submoduleMap_surjective (𝒜 i))
   constructor
   · intro x y hxy
     obtain ⟨wx, rfl⟩ := hφ_surj x; obtain ⟨wy, rfl⟩ := hφ_surj y
     have hdiff : DirectSum.coeAddMonoidHom 𝒜 (wx - wy) ∈ RingHom.ker f.toRingHom := by
-      rw [RingHom.mem_ker, map_sub, map_sub]
-      change f (DirectSum.coeAddMonoidHom 𝒜 wx) - f (DirectSum.coeAddMonoidHom 𝒜 wy) = 0
-      rw [← hφ_coe, ← hφ_coe, hxy, sub_self]
+      rw [RingHom.mem_ker, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, map_sub, map_sub,
+        ← hφ_coe, ← hφ_coe, hxy, sub_self]
     ext i
-    have hi := isHomogeneous_ker_mkAlgHom R i hdiff
+    have hi := isHomogeneous_ker_mkRingHom R i hdiff
     rw [show DirectSum.decompose 𝒜 (DirectSum.coeAddMonoidHom 𝒜 (wx - wy)) = wx - wy from
       DirectSum.Decomposition.right_inv (wx - wy)] at hi
     have h0 : f (wx i : TensorAlgebra ℤ (Additive Rˣ)) -
@@ -349,20 +547,18 @@ theorem degree_eq_span_symbol (R : Type u) [CommSemiring R] (n : ℕ) :
   refine le_antisymm ?_
     (Submodule.span_le.mpr fun _ ⟨l, hl, h⟩ ↦ h ▸ symbol_mem_degree_of_length hl)
   rintro _ ⟨z, hz, rfl⟩
+  rw [AlgHom.toLinearMap_apply, RingHom.toIntAlgHom_apply]
   induction n generalizing z with
   | zero =>
     rw [pow_zero, Submodule.one_eq_span, SetLike.mem_coe, Submodule.mem_span_singleton] at hz
     obtain ⟨k, rfl⟩ := hz
-    change RingQuot.mkRingHom (milnorRel R) (k • 1) ∈ _
     rw [map_zsmul, map_one]
     exact Submodule.smul_mem _ k (Submodule.subset_span ⟨[], rfl, symbol_nil.symm⟩)
   | succ n ih =>
     rw [pow_succ'] at hz
     refine Submodule.mul_induction_on' ?_ (fun _ _ _ _ hx hy ↦ by
-      change RingQuot.mkRingHom (milnorRel R) (_ + _) ∈ _
       rw [map_add]; exact Submodule.add_mem _ hx hy) hz
     rintro _ ⟨u, rfl⟩ w hw
-    change RingQuot.mkRingHom (milnorRel R) (TensorAlgebra.ι ℤ u * w) ∈ _
     rw [map_mul]
     refine Submodule.span_induction ?_ (by rw [mul_zero]; exact Submodule.zero_mem _)
       (fun _ _ _ _ hx hy ↦ by rw [mul_add]; exact Submodule.add_mem _ hx hy)
@@ -400,23 +596,9 @@ theorem ringHom_ext {A : Type*} [Semiring A] {f g : MilnorK R →+* A}
   refine RingQuot.ringQuot_ext f g (RingHom.ext fun z ↦ ?_)
   induction z using TensorAlgebra.induction with
   | algebraMap k =>
-    let ιℤ := algebraMap ℤ (TensorAlgebra ℤ (Additive Rˣ))
-    cases k with
-    | ofNat n =>
-      change f (RingQuot.mkRingHom (milnorRel R) (ιℤ (n : ℕ))) =
-        g (RingQuot.mkRingHom (milnorRel R) (ιℤ (n : ℕ)))
-      simp [ιℤ]
-    | negSucc n =>
-      let a := RingQuot.mkRingHom (milnorRel R) (ιℤ (Int.negSucc n))
-      let b := RingQuot.mkRingHom (milnorRel R) (ιℤ ((n + 1 : ℕ) : ℤ))
-      have hsum : ∀ (φ : MilnorK R →+* A), φ a + φ b = 0 := fun φ ↦ by
-        rw [← map_add, ← map_add, ← map_add, show Int.negSucc n + ((n + 1 : ℕ) : ℤ) = 0 by omega,
-          map_zero, map_zero, map_zero]
-      have hpos : f b = g b := by simp [b, ιℤ]
-      change f a = g a
-      calc f a = f a + (f b + g a) := by rw [hpos, add_comm (g b), hsum g, add_zero]
-        _ = (f a + f b) + g a := (add_assoc _ _ _).symm
-        _ = g a := by rw [hsum f, zero_add]
+    exact RingHom.congr_fun
+      (RingHom.ext_int ((f.comp (RingQuot.mkRingHom _)).comp (algebraMap ℤ _))
+        ((g.comp (RingQuot.mkRingHom _)).comp (algebraMap ℤ _))) k
   | ι u => simpa only [RingHom.comp_apply, ofUnit_def, ofMul_toMul] using h (Additive.toMul u)
   | mul _ _ hx hy => simp only [map_mul, hx, hy]
   | add _ _ hx hy => simp only [map_add, hx, hy]
@@ -486,8 +668,9 @@ variable {R : Type u} [CommSemiring R] {S : Type v} [CommSemiring S] {T : Type w
 def map (f : R →+* S) : MilnorK R →+* MilnorK S :=
   lift (fun a ↦ ofUnit (Units.map f.toMonoidHom a))
     (fun _ _ ↦ by rw [map_mul, ofUnit_mul])
-    (fun a b hab ↦ ofUnit_mul_ofUnit_of_add_eq_one <| by
-      change f (a : R) + f (b : R) = 1; rw [← map_add, hab, map_one])
+    (fun a b hab ↦ ofUnit_mul_ofUnit_eq_zero_of_add_eq_one <| by
+      rw [Units.coe_map, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+        ← map_add, hab, map_one])
 
 /-- `MilnorK.map f` sends `ofUnit a` to `ofUnit (f a)`. -/
 @[simp]
@@ -498,7 +681,8 @@ theorem map_ofUnit (f : R →+* S) (a : Rˣ) :
 @[simp]
 theorem map_symbol (f : R →+* S) (l : List Rˣ) :
     map f (symbol l) = symbol (l.map (Units.map f.toMonoidHom)) := by
-  rw [map, lift_symbol, symbol_def, List.map_map]; rfl
+  rw [symbol_def, map_list_prod, List.map_map, symbol_def, List.map_map]
+  congr 1; exact List.map_congr_left fun a _ ↦ map_ofUnit f a
 
 /-- `MilnorK.map f` preserves grading degrees. -/
 theorem map_mem_degree (f : R →+* S) {n : ℕ} {x : MilnorK R} (hx : x ∈ degree R n) :
@@ -513,7 +697,8 @@ def mapDegree (f : R →+* S) (n : ℕ) : degree R n →ₗ[ℤ] degree S n wher
 /-- Underlying value of `mapDegree f n x`. -/
 @[simp]
 theorem mapDegree_apply (f : R →+* S) (n : ℕ) (x : degree R n) :
-    (mapDegree f n x : MilnorK S) = map f x.val := by rfl
+    (mapDegree f n x : MilnorK S) = map f x.val := by
+  rw [mapDegree, LinearMap.coe_mk, AddHom.coe_mk]
 
 /-- `MilnorK.map` preserves the identity ring homomorphism. -/
 @[simp]
@@ -542,8 +727,8 @@ theorem ofUnit_mul_ofUnit_neg (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 :=
   isSteinbergPairing_ofUnit_mul.map_neg_self a
 
 /-- Over a field, degree-one classes anticommute: `ofUnit a * ofUnit b = -(ofUnit b * ofUnit a)`. -/
-theorem ofUnit_mul_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * ofUnit a) :=
-  isSteinbergPairing_ofUnit_mul.map_comm a b
+theorem ofUnit_mul_anticomm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * ofUnit a) :=
+  isSteinbergPairing_ofUnit_mul.map_anticomm a b
 
 /-- Over a field, `ofUnit a * ofUnit a = ofUnit a * ofUnit (-1)`. -/
 theorem ofUnit_mul_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1 : Fˣ) :=
@@ -561,7 +746,7 @@ theorem ofUnit_mul_self_of_charTwo [CharP F 2] (a : Fˣ) : ofUnit a * ofUnit a =
 theorem symbol_swap_adjacent (l₁ : List Fˣ) (a b : Fˣ) (l₂ : List Fˣ) :
     symbol (l₁ ++ a :: b :: l₂) = -symbol (l₁ ++ b :: a :: l₂) := by
   simp only [symbol_append, symbol_cons, ← mul_assoc (ofUnit a), ← mul_assoc (ofUnit b)]
-  rw [ofUnit_mul_comm a b, neg_mul (ofUnit b * ofUnit a), mul_neg (symbol l₁)]
+  rw [ofUnit_mul_anticomm a b, neg_mul (ofUnit b * ofUnit a), mul_neg (symbol l₁)]
 
 /-- A consecutive repeated entry `a, a` may be replaced by `a, -1`. -/
 theorem symbol_repeat_adjacent (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
@@ -588,10 +773,9 @@ theorem ofUnit_mul_symbol (a : Fˣ) (l : List Fˣ) :
   induction l with
   | nil => simp
   | cons b l ih =>
-    rw [symbol_cons, List.length_cons, pow_succ', ← mul_assoc, ofUnit_mul_comm a b,
-      neg_mul (ofUnit b * ofUnit a), mul_assoc (ofUnit b), ih,
-      mul_smul_comm ((-1 : ℤ) ^ l.length) (ofUnit b), ← neg_smul, ← mul_assoc (ofUnit b),
-      neg_one_mul]
+    rw [symbol_cons, ← mul_assoc, ofUnit_mul_anticomm a b, neg_mul (ofUnit b * ofUnit a),
+      mul_assoc, ih, mul_smul_comm, ← neg_smul, ← neg_one_mul, ← pow_succ', List.length_cons,
+      mul_assoc]
 
 /-- Multiplying two symbols commutes up to `(-1) ^ (l₁.length * l₂.length)`. -/
 theorem symbol_mul_symbol (l₁ l₂ : List Fˣ) :
@@ -599,10 +783,9 @@ theorem symbol_mul_symbol (l₁ l₂ : List Fˣ) :
   induction l₁ with
   | nil => simp
   | cons a l₁ ih =>
-    rw [symbol_cons, mul_assoc (ofUnit a), ih,
-      mul_smul_comm ((-1 : ℤ) ^ (l₁.length * l₂.length)) (ofUnit a), ← mul_assoc (ofUnit a),
-      ofUnit_mul_symbol a l₂, smul_mul_assoc ((-1 : ℤ) ^ l₂.length) (symbol l₂ * ofUnit a),
-      smul_smul, mul_assoc (symbol l₂), List.length_cons, Nat.add_mul, Nat.one_mul, pow_add]
+    rw [symbol_cons, mul_assoc, ih, mul_smul_comm, ← mul_assoc, ofUnit_mul_symbol]
+    simp only [smul_mul_assoc, smul_smul, mul_assoc, List.length_cons, Nat.add_mul, Nat.one_mul,
+      pow_add]
 
 /-- Graded commutativity of `MilnorK F`: homogeneous elements `x ∈ degree F m` and `y ∈ degree F n`
 satisfy `x * y = (-1) ^ (m * n) • (y * x)`. -/
@@ -620,49 +803,15 @@ theorem mul_comm_of_mem_degree {m n : ℕ} {x y : MilnorK F}
   rintro _ ⟨l₂, rfl, rfl⟩
   exact symbol_mul_symbol l₁ l₂
 
-private theorem list_ofFn_split_two {α : Type*} {n : ℕ} (f : Fin n → α)
-    {i j : Fin n} (hij : i.1 < j.1) :
-    List.ofFn f = (List.ofFn f).take i.1 ++ f i ::
-      ((List.ofFn f).drop (i.1 + 1)).take (j.1 - i.1 - 1) ++
-        f j :: (List.ofFn f).drop (j.1 + 1) := by
-  have _ := i.isLt; have _ := j.isLt
-  refine List.ext_getElem (by simp; omega) fun k hk₁ _ ↦ ?_
-  simp only [List.length_ofFn] at hk₁
-  simp only [List.getElem_ofFn, List.getElem_append, List.getElem_cons, List.getElem_take,
-    List.getElem_drop, List.length_append, List.length_cons, List.length_take, List.length_drop,
-    List.length_ofFn]
-  split_ifs <;> first | rfl | (congr 1; exact Fin.ext (by dsimp only; omega))
-
-private theorem list_ofFn_comp_swap_split_two {α : Type*} {n : ℕ} (f : Fin n → α)
-    {i j : Fin n} (hij : i.1 < j.1) :
-    List.ofFn (f ∘ Equiv.swap i j) = (List.ofFn f).take i.1 ++ f j ::
-      ((List.ofFn f).drop (i.1 + 1)).take (j.1 - i.1 - 1) ++
-        f i :: (List.ofFn f).drop (j.1 + 1) := by
-  have _ := i.isLt; have _ := j.isLt
-  refine List.ext_getElem (by simp; omega) fun k hk₁ _ ↦ ?_
-  simp only [List.length_ofFn] at hk₁
-  simp only [List.getElem_ofFn, Function.comp_apply, List.getElem_append, List.getElem_cons,
-    List.getElem_take, List.getElem_drop, List.length_append, List.length_cons, List.length_take,
-    List.length_drop, List.length_ofFn]
-  split_ifs <;> first
-    | rw [show (⟨k, hk₁⟩ : Fin n) = i from Fin.ext (by dsimp only; omega), Equiv.swap_apply_left]
-    | rw [show (⟨k, hk₁⟩ : Fin n) = j from Fin.ext (by dsimp only; omega), Equiv.swap_apply_right]
-    | (rw [Equiv.swap_apply_of_ne_of_ne (mt (congrArg Fin.val) (by dsimp only; omega))
-        (mt (congrArg Fin.val) (by dsimp only; omega))]; done)
-    | (rw [Equiv.swap_apply_of_ne_of_ne (mt (congrArg Fin.val) (by dsimp only; omega))
-        (mt (congrArg Fin.val) (by dsimp only; omega))]
-       exact congrArg f (Fin.ext (by dsimp only; omega)))
-
 private theorem symbol_swap_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) (b : Fˣ) (l₃ : List Fˣ) :
     symbol (l₁ ++ a :: l₂ ++ b :: l₃) = -symbol (l₁ ++ b :: l₂ ++ a :: l₃) := by
   have hba : ofUnit b * symbol l₂ * ofUnit a = -(ofUnit a * symbol l₂ * ofUnit b) := by
-    rw [ofUnit_mul_symbol b, smul_mul_assoc ((-1 : ℤ) ^ l₂.length), mul_assoc, ofUnit_mul_comm b a,
-      mul_neg (symbol l₂), smul_neg, ← mul_assoc (symbol l₂),
-      ← smul_mul_assoc ((-1 : ℤ) ^ l₂.length), ← ofUnit_mul_symbol a]
+    rw [ofUnit_mul_symbol, smul_mul_assoc, mul_assoc, ofUnit_mul_anticomm b a, mul_neg (symbol l₂),
+      smul_neg, ← mul_assoc (symbol l₂), ← smul_mul_assoc, ← ofUnit_mul_symbol]
   simp only [symbol_append, symbol_cons, mul_assoc]
-  rw [← mul_assoc (ofUnit b) (symbol l₂) (ofUnit a * symbol l₃),
-    ← mul_assoc (ofUnit b * symbol l₂) (ofUnit a) (symbol l₃), hba,
-    neg_mul (ofUnit a * symbol l₂ * ofUnit b), mul_neg (symbol l₁), neg_neg, mul_assoc, mul_assoc]
+  rw [← mul_assoc (ofUnit a), ← mul_assoc (ofUnit a * symbol l₂), ← mul_assoc (ofUnit b),
+    ← mul_assoc (ofUnit b * symbol l₂), ← neg_eq_iff_eq_neg.mpr hba,
+    neg_mul (ofUnit b * symbol l₂ * ofUnit a), mul_neg (symbol l₁)]
 
 /-- Applying a transposition to the entries of a Milnor symbol negates it. -/
 theorem symbol_ofFn_comp_swap {n : ℕ} (a : Fin n → Fˣ) {i j : Fin n} (hij : i ≠ j) :
@@ -670,8 +819,8 @@ theorem symbol_ofFn_comp_swap {n : ℕ} (a : Fin n → Fˣ) {i j : Fin n} (hij :
   wlog hlt : i.1 < j.1 generalizing i j
   · rw [Equiv.swap_comm]
     exact this hij.symm (lt_of_le_of_ne (not_lt.mp hlt) (Fin.val_ne_of_ne hij).symm)
-  conv_lhs => rw [list_ofFn_comp_swap_split_two a hlt]
-  conv_rhs => rw [list_ofFn_split_two a hlt]
+  conv_lhs => rw [List.ofFn_comp_swap_of_lt a hlt]
+  conv_rhs => rw [List.ofFn_eq_take_cons_of_lt a hlt]
   exact symbol_swap_middle _ (a j) _ (a i) _
 
 /-- Permuting the entries of a Milnor symbol multiplies it by the sign of the permutation. -/
@@ -704,12 +853,10 @@ theorem symbol_ofFn_eq_zero_of_charTwo_of_eq [CharP F 2] {n : ℕ} {a : Fin n �
     symbol (List.ofFn a) = 0 := by
   wlog hlt : i.1 < j.1 generalizing i j
   · exact this hij.symm ha.symm (lt_of_le_of_ne (not_lt.mp hlt) (Fin.val_ne_of_ne hij).symm)
-  rw [list_ofFn_split_two a hlt, ha]
+  rw [List.ofFn_eq_take_cons_of_lt a hlt, ha]
   simp only [symbol_append, symbol_cons, mul_assoc]
-  rw [← mul_assoc (ofUnit (a j)) (symbol _) (ofUnit (a j) * symbol _),
-    ofUnit_mul_symbol (a j), smul_mul_assoc ((-1 : ℤ) ^ _), mul_assoc (symbol _),
-    ← mul_assoc (ofUnit (a j)), ofUnit_mul_self_of_charTwo, zero_mul, mul_zero, smul_zero,
-    mul_zero]
+  rw [← mul_assoc (ofUnit (a j)), ofUnit_mul_symbol, smul_mul_assoc, mul_assoc (symbol _),
+    ← mul_assoc (ofUnit (a j)), ofUnit_mul_self_of_charTwo, zero_mul, mul_zero, smul_zero, mul_zero]
 
 end FieldIdentities
 
@@ -745,7 +892,7 @@ theorem subsingleton_degree_of_isCyclic_of_ringChar_ne_zero [IsCyclic Fˣ] (hcha
   | smul k x hx => rw [hx, smul_zero]
 
 /-- Milnor K-groups of finite fields vanish in every degree at least two. -/
-theorem finiteField_vanishing (F : Type u) [Field F] [Finite F] (n : ℕ) (hn : 2 ≤ n) :
+theorem subsingleton_degree_of_finite (F : Type u) [Field F] [Finite F] (n : ℕ) (hn : 2 ≤ n) :
     Subsingleton (degree F n) :=
   subsingleton_degree_of_isCyclic_of_ringChar_ne_zero (CharP.ringChar_ne_zero_of_finite F) n hn
 

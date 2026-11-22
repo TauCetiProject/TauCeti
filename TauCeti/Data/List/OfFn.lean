@@ -6,13 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.Card
+public import Mathlib.Logic.Equiv.Defs
+import Mathlib.Data.List.OfFn
 
 /-!
-# Counting letters in prefixes of `List.ofFn`
+# Prefixes and splits of `List.ofFn`
 
 The number of occurrences of a letter `s` among the first `j` letters of the word
 `f 0, …, f (k - 1)` is the number of positions `a < j` with `f a = s`
 (`List.count_take_ofFn`). This is the occurrence-count form of `List.sum_take_ofFn`.
+
+This file also records two-index splits of `List.ofFn f` (`List.ofFn_eq_take_cons_of_lt`) and
+their behaviour under swapping two positions (`List.ofFn_comp_swap_of_lt`).
 -/
 
 public section
@@ -42,5 +47,42 @@ theorem count_take_ofFn {α : Type*} [DecidableEq α] {k : ℕ} (f : Fin k → �
       split_ifs with hs <;> simp [hs]
     · rw [card_eq_zero.mpr (filter_eq_empty_iff.mpr fun a _ ⟨h, _⟩ => hj (h ▸ a.isLt))]
       simp [hj]
+
+/-- Splitting `List.ofFn f` at two indices `i < j`. -/
+theorem ofFn_eq_take_cons_of_lt {α : Type*} {n : ℕ} (f : Fin n → α) {i j : Fin n}
+    (hij : i.1 < j.1) :
+    ofFn f = (ofFn f).take i.1 ++ f i ::
+      ((ofFn f).drop (i.1 + 1)).take (j.1 - i.1 - 1) ++
+        f j :: (ofFn f).drop (j.1 + 1) := by
+  have _ := i.isLt; have _ := j.isLt
+  refine ext_getElem (by simp; omega) fun k hk₁ _ ↦ ?_
+  simp only [length_ofFn] at hk₁
+  simp only [List.getElem_ofFn, getElem_append, getElem_cons, getElem_take, getElem_drop,
+    length_append, length_cons, length_take, length_drop, length_ofFn]
+  split_ifs <;> first | rfl | exact congrArg f (Fin.ext (by dsimp only; omega))
+
+/-- Splitting `List.ofFn (f ∘ Equiv.swap i j)` at `i < j` swaps the entries at `i` and `j`. -/
+theorem ofFn_comp_swap_of_lt {α : Type*} {n : ℕ} (f : Fin n → α) {i j : Fin n}
+    (hij : i.1 < j.1) :
+    ofFn (f ∘ Equiv.swap i j) = (ofFn f).take i.1 ++ f j ::
+      ((ofFn f).drop (i.1 + 1)).take (j.1 - i.1 - 1) ++
+        f i :: (ofFn f).drop (j.1 + 1) := by
+  rw [ofFn_eq_take_cons_of_lt (f ∘ Equiv.swap i j) hij]
+  have hswap (k : ℕ) (hk : k < n) (hki : k ≠ i.1) (hkj : k ≠ j.1) :
+      (f ∘ Equiv.swap i j) ⟨k, hk⟩ = f ⟨k, hk⟩ := by
+    rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne
+      (mt (congrArg Fin.val) hki) (mt (congrArg Fin.val) hkj)]
+  have htake : (ofFn (f ∘ Equiv.swap i j)).take i.1 = (ofFn f).take i.1 :=
+    ext_getElem (by simp) fun k hk _ ↦ by
+      simpa using hswap k (by simp at hk; omega) (by simp at hk; omega) (by simp at hk; omega)
+  have hmid : ((ofFn (f ∘ Equiv.swap i j)).drop (i.1 + 1)).take (j.1 - i.1 - 1) =
+      ((ofFn f).drop (i.1 + 1)).take (j.1 - i.1 - 1) :=
+    ext_getElem (by simp) fun k hk _ ↦ by
+      simpa using hswap (i.1 + 1 + k) (by simp at hk; omega) (by omega) (by simp at hk; omega)
+  have hdrop : (ofFn (f ∘ Equiv.swap i j)).drop (j.1 + 1) = (ofFn f).drop (j.1 + 1) :=
+    ext_getElem (by simp) fun k hk _ ↦ by
+      simpa using hswap (j.1 + 1 + k) (by simp at hk; omega) (by omega) (by omega)
+  simp only [htake, hmid, hdrop, Function.comp_apply, Equiv.swap_apply_left,
+    Equiv.swap_apply_right]
 
 end List

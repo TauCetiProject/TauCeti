@@ -8,30 +8,29 @@ module
 public import Mathlib.Algebra.Group.TypeTags.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
-public import Mathlib.LinearAlgebra.TensorProduct.Map
 public import TauCeti.FieldTheory.MilnorK.SteinbergPairing
 
 /-!
 # The universal degree-two symbol group
 
-This file defines `TauCeti.steinbergRelations`, `TauCeti.SymbolGroup`, and `TauCeti.symbol`,
-establishes the universal property identifying `ℤ`-linear maps out of `SymbolGroup R` with
-Steinberg pairings on `R`, develops functoriality and field identities, and proves that
-`SymbolGroup F` is trivial for every finite field `F`.
+This file defines `TauCeti.steinbergRelations`, `TauCeti.SymbolGroup`, and
+`TauCeti.SymbolGroup.symbol`, establishes the universal property identifying `ℤ`-linear maps out
+of `SymbolGroup R` with Steinberg pairings on `R`, develops functoriality and field identities, and
+proves that `SymbolGroup F` is trivial for every finite field `F`.
 
 ## Main definitions
 
 * `TauCeti.steinbergRelations`: the `ℤ`-submodule of `Additive Rˣ ⊗[ℤ] Additive Rˣ` spanned by
   `Additive.ofMul a ⊗ₜ Additive.ofMul b` with `(a : R) + b = 1`.
 * `TauCeti.SymbolGroup`: the quotient `(Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ steinbergRelations R`.
-* `TauCeti.symbol`: the universal symbol `{a, b}` in `SymbolGroup R`.
+* `TauCeti.SymbolGroup.symbol`: the universal symbol `{a, b}` in `SymbolGroup R`.
 * `TauCeti.SymbolGroup.lift` and `TauCeti.SymbolGroup.liftEquiv`: universal property of
   `SymbolGroup R` with respect to Steinberg pairings.
 * `TauCeti.SymbolGroup.map`: functorial `ℤ`-linear map induced by a ring homomorphism.
 
 ## Main results
 
-* `TauCeti.isSteinbergPairing_symbol`: `symbol` is a Steinberg pairing.
+* `TauCeti.SymbolGroup.isSteinbergPairing_symbol`: `SymbolGroup.symbol` is a Steinberg pairing.
 * `TauCeti.SymbolGroup.subsingleton_of_finite`: `SymbolGroup F` is subsingleton for any finite
   field `F`.
 
@@ -63,21 +62,21 @@ theorem steinbergRelations_def :
 Steinberg pairings on `R`. -/
 abbrev SymbolGroup : Type u := (Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ steinbergRelations R
 
-variable {R}
+end Defs
+
+namespace SymbolGroup
+
+section Basic
+
+variable {R : Type u} [CommSemiring R]
 
 /-- The class `{a, b}` of `Additive.ofMul a ⊗ₜ Additive.ofMul b` in `SymbolGroup R`. -/
 def symbol (a b : Rˣ) : SymbolGroup R :=
   Submodule.Quotient.mk (Additive.ofMul a ⊗ₜ Additive.ofMul b)
 
-/-- Definitional unfolding of `symbol`. -/
+/-- Definitional unfolding of `SymbolGroup.symbol`. -/
 theorem symbol_def (a b : Rˣ) :
     symbol a b = Submodule.Quotient.mk (Additive.ofMul a ⊗ₜ Additive.ofMul b) := (rfl)
-
-end Defs
-
-section Basic
-
-variable {R : Type u} [CommSemiring R]
 
 /-- `symbol` is multiplicative in the left unit argument. -/
 theorem symbol_mul_left (a₁ a₂ b : Rˣ) : symbol (a₁ * a₂) b = symbol a₁ b + symbol a₂ b := by
@@ -88,14 +87,14 @@ theorem symbol_mul_right (a b₁ b₂ : Rˣ) : symbol a (b₁ * b₂) = symbol a
   simp only [symbol_def, ofMul_mul, TensorProduct.tmul_add, Submodule.Quotient.mk_add]
 
 /-- The Steinberg relation holds for `symbol`. -/
-theorem symbol_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) : symbol a b = 0 :=
+theorem symbol_eq_zero_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) : symbol a b = 0 :=
   (Submodule.Quotient.mk_eq_zero _).mpr <| Submodule.subset_span ⟨a, b, h, rfl⟩
 
 /-- `symbol` is a Steinberg pairing on `R`. -/
 theorem isSteinbergPairing_symbol : IsSteinbergPairing (symbol (R := R)) where
   map_mul_left := symbol_mul_left
   map_mul_right := symbol_mul_right
-  steinberg := symbol_of_add_eq_one
+  steinberg := symbol_eq_zero_of_add_eq_one
 
 /-- `symbol 1 b = 0`. -/
 @[simp]
@@ -133,8 +132,6 @@ theorem symbol_zpow_right (a b : Rˣ) (n : ℤ) : symbol a (b ^ n) = n • symbo
 
 end Basic
 
-namespace SymbolGroup
-
 section Universal
 
 variable {R : Type u} [CommSemiring R] {A : Type*} [AddCommGroup A]
@@ -147,7 +144,8 @@ theorem inductionOn {motive : SymbolGroup R → Prop} (x : SymbolGroup R)
   induction x using Submodule.Quotient.induction_on with | _ t =>
   induction t using TensorProduct.inductionOn with
   | tmul u v =>
-    simpa only [symbol_def, ofMul_toMul] using symbol (Additive.toMul u) (Additive.toMul v)
+    simpa only [SymbolGroup.symbol_def, ofMul_toMul] using
+      symbol (Additive.toMul u) (Additive.toMul v)
   | add _ _ ht₁ ht₂ => rw [Submodule.Quotient.mk_add]; exact add _ _ ht₁ ht₂
 
 /-- Two `ℤ`-linear maps out of `SymbolGroup R` agreeing on every symbol are equal. -/
@@ -178,18 +176,21 @@ private def liftB (c : Rˣ → Rˣ → A) (hc : IsSteinbergPairing c) :
 
 /-- Lift a Steinberg pairing `c : Rˣ → Rˣ → A` to a `ℤ`-linear map `SymbolGroup R →ₗ[ℤ] A`. -/
 def lift (c : Rˣ → Rˣ → A) (hc : IsSteinbergPairing c) : SymbolGroup R →ₗ[ℤ] A :=
-  Submodule.liftQ (steinbergRelations R) (TensorProduct.lift (liftB c hc)) <| by
+  Submodule.liftQ (steinbergRelations R)
+    (TensorProduct.lift (liftB c hc)).toAddMonoidHom.toIntLinearMap <| by
     rw [steinbergRelations_def, Submodule.span_le]
     rintro _ ⟨a, b, hab, rfl⟩
-    change TensorProduct.lift (liftB c hc) (Additive.ofMul a ⊗ₜ[ℤ] Additive.ofMul b) = 0
-    rw [TensorProduct.lift.tmul]; simpa [liftB] using hc.steinberg hab
+    rw [SetLike.mem_coe, LinearMap.mem_ker, AddMonoidHom.coe_toIntLinearMap,
+      LinearMap.toAddMonoidHom_coe, TensorProduct.lift.tmul]
+    simpa [liftB] using hc.steinberg hab
 
 /-- On generators, `SymbolGroup.lift c hc` evaluates `c`. -/
 @[simp]
 theorem lift_symbol (c : Rˣ → Rˣ → A) (hc : IsSteinbergPairing c) (a b : Rˣ) :
     lift c hc (symbol a b) = c a b := by
-  change TensorProduct.lift (liftB c hc) (Additive.ofMul a ⊗ₜ[ℤ] Additive.ofMul b) = c a b
-  rw [TensorProduct.lift.tmul]; simp [liftB]
+  rw [lift, symbol_def, Submodule.liftQ_apply, AddMonoidHom.coe_toIntLinearMap,
+    LinearMap.toAddMonoidHom_coe, TensorProduct.lift.tmul]
+  simp [liftB]
 
 /-- The universal equivalence between `ℤ`-linear maps `SymbolGroup R →ₗ[ℤ] A` and Steinberg
 pairings `Rˣ → Rˣ → A`. -/
@@ -239,7 +240,8 @@ theorem symbol_self (a : Fˣ) : symbol a a = symbol a (-1 : Fˣ) :=
   isSteinbergPairing_symbol.map_self a
 
 /-- Over a field, `symbol` is skew-symmetric. -/
-theorem symbol_comm (a b : Fˣ) : symbol a b = -symbol b a := isSteinbergPairing_symbol.map_comm a b
+theorem symbol_anticomm (a b : Fˣ) : symbol a b = -symbol b a :=
+  isSteinbergPairing_symbol.map_anticomm a b
 
 /-- Over a field, `2 • symbol a a = 0`. -/
 theorem two_nsmul_symbol_self (a : Fˣ) : 2 • symbol a a = 0 :=
