@@ -108,14 +108,6 @@ theorem vectorPartitionCount_def (A : Matrix κ ι ℤ) (b : κ → ℤ) :
 
 section Height
 
-/-- A coordinate of a nonnegative vector `x` is at most its dot product with a vector `w` whose
-entries are at least `1`. Both coordinate bounds by a positive height are instances. -/
-private theorem le_dotProduct_of_one_le {R : Type*} [Semiring R] [PartialOrder R]
-    [IsOrderedRing R] {w x : ι → R} (hw : ∀ k, 1 ≤ w k) (hx : 0 ≤ x) (j : ι) : x j ≤ w ⬝ᵥ x :=
-  (le_mul_of_one_le_left (hx j) (hw j)).trans <|
-    Finset.single_le_sum (f := fun k => w k * x k)
-      (fun k _ => mul_nonneg (zero_le_one.trans (hw k)) (hx k)) (Finset.mem_univ j)
-
 variable [Fintype κ] {A : Matrix κ ι ℤ} {h : κ → ℤ}
 
 /-- Under a positive height `h`, each coordinate of a vector partition of `b` is at most
@@ -123,7 +115,8 @@ variable [Fintype κ] {A : Matrix κ ι ℤ} {h : κ → ℤ}
 theorem natCast_le_dotProduct_of_mem_vectorPartitions (hh : ∀ j, 0 < (h ᵥ* A) j) {b : κ → ℤ}
     {c : ι → ℕ} (hc : c ∈ A.vectorPartitions b) (j : ι) : (c j : ℤ) ≤ h ⬝ᵥ b := by
   rw [← mem_vectorPartitions.1 hc, dotProduct_mulVec]
-  exact le_dotProduct_of_one_le hh (x := fun k => (c k : ℤ)) (fun k => Int.natCast_nonneg _) j
+  exact le_dotProduct_of_one_le (fun k => (zero_add 1).symm.trans_le (Int.add_one_le_of_lt (hh k)))
+    (x := fun k => (c k : ℤ)) (fun k => Int.natCast_nonneg _) j
 
 variable [DecidableEq ι]
 
@@ -133,16 +126,22 @@ height `h` this is all of them (`Matrix.coe_vectorPartitionsFinset`). -/
 def vectorPartitionsFinset (b : κ → ℤ) : Finset (ι → ℕ) :=
   {c ∈ Fintype.piFinset fun _ => Finset.range ((h ⬝ᵥ b).toNat + 1) | c ∈ A.vectorPartitions b}
 
+/-- Membership in `Matrix.vectorPartitionsFinset`, with no height hypothesis: a vector partition
+of `b` inside the box. -/
+@[simp] theorem mem_vectorPartitionsFinset {b : κ → ℤ} {c : ι → ℕ} :
+    c ∈ A.vectorPartitionsFinset h b ↔
+      (∀ j, c j ≤ (h ⬝ᵥ b).toNat) ∧ c ∈ A.vectorPartitions b := by
+  simp [vectorPartitionsFinset]
+
 @[simp] theorem coe_vectorPartitionsFinset (hh : ∀ j, 0 < (h ᵥ* A) j) (b : κ → ℤ) :
     (A.vectorPartitionsFinset h b : Set (ι → ℕ)) = A.vectorPartitions b := by
   ext c
-  simp only [vectorPartitionsFinset, Finset.coe_filter, Fintype.mem_piFinset, Finset.mem_range,
-    Set.mem_ofPred_eq, and_iff_right_iff_imp]
+  simp only [Finset.mem_coe, mem_vectorPartitionsFinset, and_iff_right_iff_imp]
   intro hc j
   have := natCast_le_dotProduct_of_mem_vectorPartitions hh hc j
   omega
 
-theorem mem_vectorPartitionsFinset (hh : ∀ j, 0 < (h ᵥ* A) j) {b : κ → ℤ} {c : ι → ℕ} :
+theorem mem_vectorPartitionsFinset_of_pos (hh : ∀ j, 0 < (h ᵥ* A) j) {b : κ → ℤ} {c : ι → ℕ} :
     c ∈ A.vectorPartitionsFinset h b ↔ c ∈ A.vectorPartitions b := by
   rw [← Finset.mem_coe, coe_vectorPartitionsFinset hh]
 
@@ -239,7 +238,8 @@ theorem le_dotProduct_of_mem_partitionPolyhedron [Fintype κ] {A : Matrix κ ι 
     (j : ι) : x j ≤ (fun k => (h k : ℝ)) ⬝ᵥ b := by
   obtain ⟨hx0, hxb⟩ := hx
   rw [← hxb, dotProduct_mulVec, map_intCast_vecMul]
-  exact le_dotProduct_of_one_le (fun k => by exact_mod_cast (hh k : 1 ≤ (h ᵥ* A) k)) hx0 j
+  exact le_dotProduct_of_one_le
+    (fun k => by exact_mod_cast (zero_add 1).symm.trans_le (Int.add_one_le_of_lt (hh k))) hx0 j
 
 /-- Under a positive height every partition polyhedron is compact. -/
 theorem isCompact_partitionPolyhedron [Fintype κ] {A : Matrix κ ι ℤ} {h : κ → ℤ}
@@ -287,11 +287,11 @@ theorem IsTotallyUnimodular.vectorPartitionCount_pos_iff [Fintype κ] {A : Matri
 
 /-! ### Examples -/
 
-/-- The `1 × 1` matrix `[2]` has the positive height `1` and nonzero maximal minor, but is not
-unimodular: `1` lies in its column cone (the partition polyhedron contains `1 / 2`) while it has no
-vector partition. So the unimodularity hypothesis of `Matrix.vectorPartitionCount_pos_iff` cannot
-be dropped. -/
-theorem vectorPartitionCount_two_one :
+-- The `1 × 1` matrix `[2]` has the positive height `1` and nonzero maximal minor, but is not
+-- unimodular: `1` lies in its column cone (the partition polyhedron contains `1 / 2`) while it has
+-- no vector partition. So the unimodularity hypothesis of `Matrix.vectorPartitionCount_pos_iff`
+-- cannot be dropped.
+example :
     (!![2] : Matrix (Fin 1) (Fin 1) ℤ).vectorPartitionCount ![1] = 0 ∧
       ((!![2] : Matrix (Fin 1) (Fin 1) ℤ).partitionPolyhedron ![1]).Nonempty := by
   refine ⟨?_, ⟨![1 / 2], fun _ => by simp, by ext i; fin_cases i; simp [mulVec]⟩⟩
@@ -302,10 +302,10 @@ theorem vectorPartitionCount_two_one :
       omega
   simp [vectorPartitionCount_def, this]
 
-/-- Without a positive height the vector partition fibres can be infinite: for the matrix with no
-rows and one column every vector is a vector partition of `0`, so the count, which is `0` on
-infinite fibres, is not `1` at `0`. -/
-theorem vectorPartitionCount_empty_rows_zero :
+-- Without a positive height the vector partition fibres can be infinite: for the matrix with no
+-- rows and one column every vector is a vector partition of `0`, so the count, which is `0` on
+-- infinite fibres, is not `1` at `0`.
+example :
     (0 : Matrix (Fin 0) (Fin 1) ℤ).vectorPartitionCount 0 = 0 := by
   have : (0 : Matrix (Fin 0) (Fin 1) ℤ).vectorPartitions 0 = Set.univ :=
     Set.eq_univ_of_forall fun c => funext fun i => i.elim0

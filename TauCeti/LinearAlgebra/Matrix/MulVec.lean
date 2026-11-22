@@ -18,8 +18,9 @@ square-zero matrix annihilates every vector in two steps. This is the form in wh
 of a root operator reaches the vector it acts on.
 
 Over an ordered semiring, multiplication by an entrywise nonnegative matrix is monotone and
-preserves nonnegativity, and an entrywise strictly positive matrix sends a nonzero nonnegative
-vector to a strictly positive one.
+preserves nonnegativity, a dot product with a vector of entries at least `1` bounds each
+coordinate of a nonnegative vector, and an entrywise strictly positive matrix sends a nonzero
+nonnegative vector to a strictly positive one.
 
 When row `i` of a matrix vanishes off the diagonal, coordinate `i` of a product with a vector only
 sees coordinate `i` of that vector. In particular such a matrix maps the coordinate hyperplane
@@ -51,6 +52,8 @@ permutation to vectors invariant under the row map.
 * `Matrix.pow_mulVec_eq_pow_smul`: if `A v = μ • v`, then `A ^ k v = μ ^ k • v`.
 * `Matrix.mulVec_mono` and `Matrix.mulVec_nonneg`: multiplication by an entrywise nonnegative
   matrix is monotone and preserves nonnegativity.
+* `Matrix.le_dotProduct_of_one_le`: a coordinate of a nonnegative vector is at most its dot
+  product with a vector whose entries are at least `1`.
 * `Matrix.mulVec_pos`: a strictly positive matrix sends a nonzero nonnegative vector to a strictly
   positive one.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
@@ -186,6 +189,14 @@ theorem mulVec_mono (hA : ∀ i j, 0 ≤ A i j) (hxy : x ≤ y) : A *ᵥ x ≤ A
 /-- An entrywise nonnegative matrix sends nonnegative vectors to nonnegative vectors. -/
 theorem mulVec_nonneg (hA : ∀ i j, 0 ≤ A i j) (hx : 0 ≤ x) : 0 ≤ A *ᵥ x := fun i =>
   dotProduct_nonneg_of_nonneg (hA i) hx
+
+/-- A coordinate of a nonnegative vector `x` is at most its dot product with a vector `w` whose
+entries are at least `1`. -/
+theorem le_dotProduct_of_one_le {w : n → R} (hw : ∀ k, 1 ≤ w k) (hx : 0 ≤ x) (j : n) :
+    x j ≤ w ⬝ᵥ x :=
+  (le_mul_of_one_le_left (hx j) (hw j)).trans <|
+    Finset.single_le_sum (f := fun k => w k * x k)
+      (fun k _ => mul_nonneg (zero_le_one.trans (hw k)) (hx k)) (Finset.mem_univ j)
 
 end OrderedSemiring
 

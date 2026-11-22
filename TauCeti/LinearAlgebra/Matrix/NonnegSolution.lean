@@ -173,6 +173,7 @@ theorem exists_natCast_mulVec_eq_of_nonneg [Fintype κ] [DecidableEq κ] (A : Ma
   have hNy : N.map (Int.cast : ℤ → K) *ᵥ (fun k => y (f k)) = fun i => (b i : K) := by
     rw [← hxb, ← hyx]
     funext i
+    simp only [mulVec, dotProduct, N, map_apply, submatrix_apply, id_eq]
     exact Fintype.sum_of_injective f f.injective _ _ (fun j hj => by simp [hyf' j hj]) fun k => rfl
   have hNz : N.map (Int.cast : ℤ → K) *ᵥ (fun k => ((N⁻¹ *ᵥ b) k : K)) =
       fun i => (b i : K) := by
