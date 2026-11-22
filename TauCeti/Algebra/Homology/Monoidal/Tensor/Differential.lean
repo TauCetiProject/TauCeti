@@ -26,9 +26,6 @@ whose factor of degree zero it would differentiate.
 * `HomologicalComplex.ι_tensorObj_d`: the differential of `X ⊗ Y` restricted to the summand
   `X.X p ⊗ Y.X q`, for cochain complexes of modules, and `HomologicalComplex.ι_tensorObj_d'`,
   the same formula with arbitrary names for the successor degrees.
-* `HomologicalComplex.single_tensor_d₁` and `HomologicalComplex.tensor_single_d₂`: the partial
-  differential of a tensor product with a single complex that would differentiate the single
-  complex vanishes.
 * `ChainComplex.ιTensorObj_D₁_succ`, `ChainComplex.ιTensorObj_D₁_zero`,
   `ChainComplex.ιTensorObj_D₂_succ` and `ChainComplex.ιTensorObj_D₂_zero`: the two parts of the
   differential of `K₁ ⊗ K₂` on a homogeneous summand, for chain complexes indexed by `ℕ`.
@@ -86,40 +83,6 @@ lemma ι_tensorObj_d' (X Y : CochainComplex (ModuleCat.{v} R) ℤ) {p q j p' q' 
         p.negOnePow • ((X.X p ◁ Y.d q q') ≫ ιTensorObj X Y p q' j' (by omega)) := by
   subst hp hq hj
   simp
-
-section Single
-
-variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C]
-  [HasZeroObject C] {I : Type*} [AddMonoid I] {c : ComplexShape I} [c.TensorSigns] [DecidableEq I]
-  (K : HomologicalComplex C c) (j : I) (A : C)
-
-/-- The first partial differential of `A[j] ⊗ K` vanishes, as the differential of the single
-complex `A[j]` does. Mathlib's `HomologicalComplex.unit_tensor_d₁` is the case of the monoidal
-unit in degree `0`. -/
-@[simp]
-lemma single_tensor_d₁ [((single C c j).obj A).HasTensor K] (i₁ i₂ i : I) :
-    mapBifunctor.d₁ ((single C c j).obj A) K (curriedTensor C) c i₁ i₂ i = 0 := by
-  by_cases h₁ : c.Rel i₁ (c.next i₁)
-  · by_cases h₂ : ComplexShape.π c c c (c.next i₁, i₂) = i
-    · rw [mapBifunctor.d₁_eq _ _ _ _ h₁ _ _ h₂, single_obj_d, Functor.map_zero, zero_app,
-        zero_comp, smul_zero]
-    · rw [mapBifunctor.d₁_eq_zero' _ _ _ _ h₁ _ _ h₂]
-  · rw [mapBifunctor.d₁_eq_zero _ _ _ _ _ _ _ h₁]
-
-/-- The second partial differential of `K ⊗ A[j]` vanishes, as the differential of the single
-complex `A[j]` does. Mathlib's `HomologicalComplex.tensor_unit_d₂` is the case of the monoidal
-unit in degree `0`. -/
-@[simp]
-lemma tensor_single_d₂ [K.HasTensor ((single C c j).obj A)] (i₁ i₂ i : I) :
-    mapBifunctor.d₂ K ((single C c j).obj A) (curriedTensor C) c i₁ i₂ i = 0 := by
-  by_cases h₁ : c.Rel i₂ (c.next i₂)
-  · by_cases h₂ : ComplexShape.π c c c (i₁, c.next i₂) = i
-    · rw [mapBifunctor.d₂_eq _ _ _ _ _ h₁ _ h₂, single_obj_d, Functor.map_zero, zero_comp,
-        smul_zero]
-    · rw [mapBifunctor.d₂_eq_zero' _ _ _ _ _ h₁ _ h₂]
-  · rw [mapBifunctor.d₂_eq_zero _ _ _ _ _ _ _ h₁]
-
-end Single
 
 end HomologicalComplex
 

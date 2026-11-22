@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Embedding.Regrade
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Symmetry
-import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
+import TauCeti.Algebra.Homology.Bifunctor.Unitor
 import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
@@ -52,7 +52,7 @@ Floer complexes and the cohomological grading in which graded commutativity read
 
 The comparison is also compatible with the unitors. Write `𝟙[m]` for the monoidal unit of `C`
 placed in chain degree `m`; its regrading by `m` is the unit of cochain complexes
-(`ChainComplex.regradeSingleIso`). For `m ≠ 0` the left unitor `𝟙 ⊗ L_q ≅ L_q` is not a chain map
+(`ChainComplex.regradeSingleIso`). For odd `m` the left unitor `𝟙 ⊗ L_q ≅ L_q` is not a chain map
 `𝟙[m] ⊗ L → L` of degree `-m`, since the differential of `𝟙[m] ⊗ L` is `(-1)^m` times that of `L`.
 Twisted by `(-1)^(m q)` it is a morphism `ChainComplex.regradeSingleLeftUnitor` between the
 regradings, and the comparison composed with it is the left unitor of cochain complexes, with no
@@ -624,7 +624,7 @@ private lemma regradeSingleLeftUnitorSummand_comp_d (k p q : ℤ) (h : p + q = n
         mapBifunctorDesc (fun p' q' h' ↦
           regradeSingleLeftUnitorSummand n₁ n₂ L (k + 1) p' q' h') := by
   rw [mapBifunctor.d_eq, Preadditive.add_comp, Preadditive.comp_add, mapBifunctor.ι_D₁_assoc,
-    mapBifunctor.ι_D₂_assoc, single_tensor_d₁, zero_comp, zero_add,
+    mapBifunctor.ι_D₂_assoc, single_mapBifunctor_d₁, zero_comp, zero_add,
     mapBifunctor.d₂_eq _ _ _ _ p (down_mk q (q - 1) (by omega)) (n₁ + n₂ - (k + 1))
       (by dsimp; omega)]
   simp only [ε₂_def, ε_down_ℤ, curriedTensor_obj_map, Linear.units_smul_comp, Category.assoc,
@@ -723,7 +723,7 @@ private lemma regradeSingleRightUnitorSummand_comp_d (k p q : ℤ) (h : p + q = 
         mapBifunctorDesc (fun p' q' h' ↦
           regradeSingleRightUnitorSummand n₁ n₂ K (k + 1) p' q' h') := by
   rw [mapBifunctor.d_eq, Preadditive.add_comp, Preadditive.comp_add, mapBifunctor.ι_D₁_assoc,
-    mapBifunctor.ι_D₂_assoc, tensor_single_d₂, zero_comp, add_zero,
+    mapBifunctor.ι_D₂_assoc, mapBifunctor_single_d₂, zero_comp, add_zero,
     mapBifunctor.d₁_eq _ _ _ _ (down_mk p (p - 1) (by omega)) q (n₁ + n₂ - (k + 1))
       (by dsimp; omega)]
   simp only [ε₁_def, one_smul, curriedTensor_map_app, Category.assoc, ι_mapBifunctorDesc]

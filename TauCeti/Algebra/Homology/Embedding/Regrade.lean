@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.CochainComplexOpposite
 public import Mathlib.Algebra.Homology.Embedding.RestrictionHomology
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Homology.Embedding.Restriction.Basic
 
 /-!
 # Regrading a chain complex as a cochain complex
@@ -279,18 +280,12 @@ section Single
 
 variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasZeroObject C]
 
-/-- An object `X` placed in chain degree `n` regrades by `n` to `X` placed in cochain degree `0`:
-both complexes have `X` in cochain degree `0`, zero objects elsewhere and zero differentials. -/
+/-- An object `X` placed in chain degree `n` regrades by `n` to `X` placed in cochain degree `0`.
+This is `HomologicalComplex.restrictionSingleIso` for the embedding `k ↦ n - k`. -/
 noncomputable def regradeSingleIso (n : ℤ) (X : C) :
     ((single C (down ℤ) n).obj X).restriction (embeddingUpIntDownIntSub n) ≅
       (single C (up ℤ) 0).obj X :=
-  Hom.isoOfComponents
-    (fun k ↦ if hk : k = 0 then
-        singleObjXIsoOfEq (down ℤ) n X (n - k) (by omega) ≪≫
-          (singleObjXIsoOfEq (up ℤ) 0 X k hk).symm
-      else (isZero_single_obj_X (down ℤ) n X (n - k) (by omega)).iso
-        (isZero_single_obj_X (up ℤ) 0 X k hk))
-    (fun _ _ _ ↦ by simp)
+  restrictionSingleIso (embeddingUpIntDownIntSub n) X 0 n (sub_zero n)
 
 /-- In cochain degree `0`, `ChainComplex.regradeSingleIso` is the identification of both terms
 with `X`. -/
@@ -298,10 +293,8 @@ with `X`. -/
 theorem regradeSingleIso_hom_f_zero (n : ℤ) (X : C) :
     (regradeSingleIso n X).hom.f 0 =
       (singleObjXIsoOfEq (down ℤ) n X (n - 0) (by omega)).hom ≫
-        (singleObjXSelf (up ℤ) 0 X).inv := by
-  dsimp only [regradeSingleIso, Hom.isoOfComponents_hom_f, ↓reduceDIte]
-  -- `Iso.trans` and `Iso.symm` compute their `hom` by definition.
-  rfl
+        (singleObjXSelf (up ℤ) 0 X).inv :=
+  restrictionSingleIso_hom_f _ X 0 n _
 
 /-- In cochain degree `0`, the inverse of `ChainComplex.regradeSingleIso` is the identification of
 both terms with `X`. -/
@@ -309,10 +302,8 @@ both terms with `X`. -/
 theorem regradeSingleIso_inv_f_zero (n : ℤ) (X : C) :
     (regradeSingleIso n X).inv.f 0 =
       (singleObjXSelf (up ℤ) 0 X).hom ≫
-        (singleObjXIsoOfEq (down ℤ) n X (n - 0) (by omega)).inv := by
-  dsimp only [regradeSingleIso, Hom.isoOfComponents_inv_f, ↓reduceDIte]
-  -- `Iso.trans` and `Iso.symm` compute their `inv` by definition.
-  rfl
+        (singleObjXIsoOfEq (down ℤ) n X (n - 0) (by omega)).inv :=
+  restrictionSingleIso_inv_f _ X 0 n _
 
 end Single
 

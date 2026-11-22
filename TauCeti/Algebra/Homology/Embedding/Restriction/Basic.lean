@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Embedding.Restriction
+public import Mathlib.Algebra.Homology.Single
 
 /-!
 # Mapping restricted homological complexes
@@ -16,10 +17,16 @@ restricting it. This transports mapped or forgotten complexes through shape rein
 results about a restricted complex to be compared with the corresponding restriction of the
 mapped complex.
 
-## Main result
+It also restricts single complexes: an object placed in a degree `e.f i` of the image of the
+embedding restricts to the same object placed in degree `i`.
+
+## Main results
 
 * `ComplexShape.Embedding.mapRestrictionIso`: mapping homological complexes commutes with
   restriction along a shape embedding.
+* `HomologicalComplex.restrictionSingleIso`: the restriction of the single complex `X[i']` along
+  an embedding `e` with `e.f i = i'` is the single complex `X[i]`. This is the restriction
+  counterpart of Mathlib's `HomologicalComplex.extendSingleIso`.
 -/
 
 public section
@@ -66,3 +73,49 @@ theorem mapRestrictionIso_inv_f
   rfl
 
 end ComplexShape.Embedding
+
+namespace HomologicalComplex
+
+section Single
+
+variable {C ι ι' : Type*} [Category* C] [HasZeroMorphisms C] [HasZeroObject C]
+  {c : ComplexShape ι} {c' : ComplexShape ι'} [DecidableEq ι] [DecidableEq ι']
+  (e : c.Embedding c') [e.IsRelIff]
+  (X : C) (i : ι) (i' : ι') (h : e.f i = i')
+
+/-- The restriction of the single complex `X[i']` along an embedding `e` with `e.f i = i'` is the
+single complex `X[i]`: since `e.f` is injective, both complexes have `X` in degree `i`, zero
+objects elsewhere and zero differentials. -/
+noncomputable def restrictionSingleIso :
+    ((single C c' i').obj X).restriction e ≅ (single C c i).obj X :=
+  Hom.isoOfComponents
+    (fun k ↦ if hk : k = i then
+        singleObjXIsoOfEq c' i' X (e.f k) (by rw [hk, h]) ≪≫ (singleObjXIsoOfEq c i X k hk).symm
+      else (isZero_single_obj_X c' i' X (e.f k)
+          (fun hk' ↦ hk (e.injective_f (hk'.trans h.symm)))).iso
+        (isZero_single_obj_X c i X k hk))
+    (fun _ _ _ ↦ by simp)
+
+/-- In degree `i`, `HomologicalComplex.restrictionSingleIso` is the identification of both terms
+with `X`. -/
+@[simp]
+lemma restrictionSingleIso_hom_f :
+    (restrictionSingleIso e X i i' h).hom.f i =
+      (singleObjXIsoOfEq c' i' X (e.f i) h).hom ≫ (singleObjXSelf c i X).inv := by
+  rw [restrictionSingleIso, Hom.isoOfComponents_hom_f, dite_eq_left rfl]
+  -- `Iso.trans` and `Iso.symm` compute their `hom` by definition.
+  rfl
+
+/-- In degree `i`, the inverse of `HomologicalComplex.restrictionSingleIso` is the identification
+of both terms with `X`. -/
+@[simp]
+lemma restrictionSingleIso_inv_f :
+    (restrictionSingleIso e X i i' h).inv.f i =
+      (singleObjXSelf c i X).hom ≫ (singleObjXIsoOfEq c' i' X (e.f i) h).inv := by
+  rw [restrictionSingleIso, Hom.isoOfComponents_inv_f, dite_eq_left rfl]
+  -- `Iso.trans` and `Iso.symm` compute their `inv` by definition.
+  rfl
+
+end Single
+
+end HomologicalComplex
