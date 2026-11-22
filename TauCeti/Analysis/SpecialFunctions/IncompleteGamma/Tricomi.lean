@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.EulerIntegral
 
 /-!
 # Tricomi's entire incomplete Gamma function
@@ -62,7 +62,7 @@ public section
 
 noncomputable section
 
-open Complex Filter Finset Set MeasureTheory
+open Complex Filter Finset Set
 open scoped Nat Topology Interval
 
 namespace Complex
@@ -237,7 +237,7 @@ theorem differentiable_tricomiIncompleteGamma_left (z : ℂ) :
 /-! ### The series in powers of `−z` and the integral -/
 
 /- The second form of 8.7.1 is the Cauchy product of the first with the exponential series, and
-the integral 8.2.7 follows from it by termwise integration. -/
+the integral 8.2.7 is Kummer's integral for `𝐌(1, a + 1, z)`. -/
 
 /-- The power series of Tricomi's function in `−z` (DLMF 8.7.1): for `a ∉ −ℕ`,
 `γ*(a, z) = Γ(a)⁻¹ ∑ (−z)ᵏ / (k! (a + k))`. -/
@@ -263,60 +263,24 @@ theorem hasSum_tricomiIncompleteGamma_of_ne_neg_natCast {a : ℂ} (ha : ∀ n : 
   ring
 
 /-- Tricomi's integral (DLMF 8.2.7): for `0 < Re a`,
-`γ*(a, z) = Γ(a)⁻¹ ∫₀¹ t^{a−1} e^{−zt} dt`. -/
+`γ*(a, z) = Γ(a)⁻¹ ∫₀¹ t^{a−1} e^{−zt} dt`. It is Kummer's integral for `𝐌(1, a + 1, z)` after
+the substitution `t ↦ 1 − t`. -/
 theorem tricomiIncompleteGamma_eq_integral {a : ℂ} (ha : 0 < a.re) (z : ℂ) :
     tricomiIncompleteGamma a z =
       (Gamma a)⁻¹ * ∫ t in (0 : ℝ)..1, (t : ℂ) ^ (a - 1) * cexp (-(z * t)) := by
-  have ha' : ∀ n : ℕ, a ≠ -n := fun n h => by
-    have := congr_arg re h
-    rw [neg_re, natCast_re] at this
-    linarith [n.cast_nonneg (α := ℝ)]
-  -- integrate the exponential series termwise
-  have hint : HasSum (fun k : ℕ => (-z) ^ k / (k ! * (a + k)))
-      (∫ t in (0 : ℝ)..1, (t : ℂ) ^ (a - 1) * cexp (-(z * t))) := by
-    have hterm : ∀ k : ℕ, ∫ t in (0 : ℝ)..1, (t : ℂ) ^ (a - 1) * ((-(z * t)) ^ k / k !) =
-        (-z) ^ k / (k ! * (a + k)) := fun k => by
-      have hcongr : ∀ᵐ t ∂volume, t ∈ Ι (0 : ℝ) 1 →
-          (t : ℂ) ^ (a - 1) * ((-(z * t)) ^ k / k !) = (-z) ^ k / k ! * (t : ℂ) ^ (a - 1 + k) :=
-        Eventually.of_forall fun t ht => by
-          rw [uIoc_of_le (zero_le_one' ℝ)] at ht
-          have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.2 ht.1.ne'
-          rw [cpow_add _ _ ht0, cpow_natCast, neg_mul_eq_neg_mul, mul_pow]
-          ring
-      have hak : a + k ≠ 0 := fun h => by
-        have := congr_arg re h
-        rw [add_re, natCast_re, zero_re] at this
-        linarith [k.cast_nonneg (α := ℝ)]
-      have hre : -1 < (a - 1 + k).re := by
-        rw [add_re, sub_re, one_re, natCast_re]
-        linarith [k.cast_nonneg (α := ℝ)]
-      rw [intervalIntegral.integral_congr_ae hcongr, intervalIntegral.integral_const_mul,
-        integral_cpow (Or.inl hre), show a - 1 + (k : ℂ) + 1 = a + k by ring, ofReal_one, one_cpow,
-        ofReal_zero, zero_cpow hak, sub_zero]
-      field_simp
-    have hbound : ∀ k : ℕ, ∀ᵐ t ∂volume, t ∈ Ι (0 : ℝ) 1 →
-        ‖(t : ℂ) ^ (a - 1) * ((-(z * t)) ^ k / k !)‖ ≤ t ^ (a.re - 1) * (‖z‖ ^ k / k !) :=
-      fun k => Eventually.of_forall fun t ht => by
-        rw [uIoc_of_le zero_le_one] at ht
-        rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht.1, sub_re, one_re, norm_div, norm_pow,
-          norm_neg, norm_mul, Complex.norm_real, Real.norm_of_nonneg ht.1.le, Complex.norm_natCast]
-        refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg ht.1.le _)
-        have hzt : ‖z‖ * t ≤ ‖z‖ := mul_le_of_le_one_right (norm_nonneg z) ht.2
-        have hzt₀ : 0 ≤ ‖z‖ * t := mul_nonneg (norm_nonneg z) ht.1.le
-        gcongr
-    convert intervalIntegral.hasSum_integral_of_dominated_convergence
-      (fun k t => t ^ (a.re - 1) * (‖z‖ ^ k / k !)) (fun k => ?_) hbound
-      (Eventually.of_forall fun t _ => (Real.summable_pow_div_factorial ‖z‖).mul_left _) ?_
-      (Eventually.of_forall fun t _ => ?_) using 1
-    · exact funext fun k => (hterm k).symm
-    · refine (ContinuousOn.aestronglyMeasurable ?_ measurableSet_uIoc)
-      refine ContinuousOn.mul (fun t ht => ?_) (Continuous.continuousOn (by fun_prop))
-      rw [uIoc_of_le zero_le_one] at ht
-      exact (continuousAt_ofReal_cpow_const _ _ (Or.inr ht.1.ne')).continuousWithinAt
-    · simp_rw [tsum_mul_left]
-      exact (intervalIntegral.intervalIntegrable_rpow' (by linarith)).mul_const _
-    · exact (Complex.exp_eq_exp_ℂ ▸ NormedSpace.expSeries_div_hasSum_exp (-(z * t)) :
-        HasSum (fun k : ℕ => (-(z * t)) ^ k / k !) (cexp (-(z * t)))).mul_left _
-  exact (hasSum_tricomiIncompleteGamma_of_ne_neg_natCast ha' z).unique (hint.mul_left _)
+  have h1 : (1 : ℂ).re < (a + 1).re := by simpa using ha
+  have hsub := intervalIntegral.integral_comp_sub_left (a := (0 : ℝ)) (b := 1)
+    (fun t : ℝ => (t : ℂ) ^ (a - 1) * cexp (-(z * t))) 1
+  rw [sub_self, sub_zero] at hsub
+  rw [tricomiIncompleteGamma_def, regularizedHGFun_singleton_eq_integral (by simp) h1, ← hsub,
+    add_sub_cancel_right, Gamma_one, one_mul, mul_left_comm,
+    ← intervalIntegral.integral_const_mul]
+  congr 1
+  refine intervalIntegral.integral_congr fun t _ => ?_
+  have he : cexp (-(z * (1 - (t : ℂ)))) = cexp (-z) * cexp (z * t) := by
+    rw [← Complex.exp_add]
+    ring_nf
+  simp only [ofReal_sub, ofReal_one, sub_self, cpow_zero, one_mul, he]
+  ring
 
 end Complex
