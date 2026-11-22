@@ -9,30 +9,41 @@ public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
+import Mathlib.Analysis.Convex.Measure
+import TauCeti.Algebra.Module.ZLattice.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.Lp.BilinearMap
 
 /-!
-# A Poincaré inequality for Schrödinger forms with a potential positive at infinity
+# A Poincaré inequality for Schrödinger forms with a potential positive off a set of finite measure
 
 On the whole of a finite-dimensional space no Poincaré inequality `‖u‖₂ ≤ C ‖Du‖₂` holds
 (`TauCeti.not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv`). A nonnegative potential `P` that is
-bounded below by a constant `a > 0` outside a ball restores it: there is `c > 0` with
+bounded below by a constant `a > 0` outside a set `B` of finite measure restores it: there is
+`c > 0` with
 
 `c ∫ ‖u‖² ≤ ∫ ‖Du‖² + ∫ P ‖u‖²`
 
 for every compactly supported `C¹` map `u`. In other words the quadratic form of the
 Schrödinger operator `-Δ + P` is bounded below by `c` times the squared `L²` norm, so `-Δ + P` has a
-spectral gap, although `P` may vanish on a large set inside the ball. The constant depends on
-`P` only through `a` and the radius of the ball.
+spectral gap, although `P` may vanish on `B`. The constant depends on `P` only through `a` and an
+upper bound for the measure of `B`
+(`exists_pos_forall_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq`).
+In particular it does not depend on where `B` lies: `B` may be a union of finitely many discs of
+a fixed radius around arbitrary centres, for instance around the zeros of a field, and the bound is
+uniform as the centres move apart. A ball of radius `R` is the special case where the constant
+depends only on `a` and `R`.
 
-Outside a ball `Ω` containing the ball where `P` may be small, the potential term alone controls
-`‖u‖²`. Inside `Ω`, the Poincaré–Wirtinger inequality with the mean taken over the annulus
-`S ⊆ Ω` on which `P ≥ a` controls the deviation of `u` from that mean by `Du`, and the mean itself
-is controlled by the integral of `‖u‖²` over `S`, hence again by the potential term
-(`TauCeti.setIntegral_norm_sq_le_of_convex`).
+The proof tiles the space by the lattice translates of a parallelepiped `T` of measure at least
+twice the bound on `μ(B)`. On every tile `Ω`, the part `S` of `Ω` off `B` carries at least half
+of its measure, so the Poincaré–Wirtinger inequality with the mean taken over `S` controls the
+deviation of `u` from that mean by `Du`, and the mean itself by the integral of `‖u‖²` over `S`,
+hence by the potential term (`TauCeti.setIntegral_norm_sq_le_of_convex`). The resulting
+inequality on a tile (`TauCeti.mul_setIntegral_norm_sq_le_of_convex`) has constants depending only
+on `a`, the measure of the tile and its diameter, which are the same for all tiles, and summing
+over the tiles gives the inequality on the whole space.
 
 Such an estimate makes `L L*` coercive for a first-order operator `L` whose Weitzenböck formula
 has a potential of this kind.
@@ -44,8 +55,12 @@ Schrödinger form `TauCeti.schrodingerForm`, `(u, v) ↦ ∫ ⟪∇u, ∇v⟫ + 
 
 ## Main results
 
+* `TauCeti.mul_setIntegral_norm_sq_le_of_convex`: the inequality on a bounded convex set, at
+  least half of which lies off `B`.
+* `exists_pos_forall_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq`:
+  the inequality above, with a constant depending only on `a` and the bound on `μ(B)`.
 * `TauCeti.exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq`:
-  the inequality above.
+  the case where `B` is a ball.
 * `TauCeti.schrodingerForm`: the Schrödinger form of a bounded potential as a continuous
   bilinear form on `H¹(E)`.
 * `TauCeti.integral_value_mul_eq_schrodingerForm`: testing `u ∈ H¹(E)` against `-Δφ + P φ` for
@@ -65,8 +80,8 @@ public section
 
 namespace TauCeti
 
-open MeasureTheory Metric Set Module
-open scoped ENNReal
+open MeasureTheory Metric Set Module Filter
+open scoped ENNReal Pointwise
 
 section TestFunction
 
@@ -75,74 +90,152 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [CompleteSpace F]
   {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- **Poincaré inequality for a Schrödinger form.** Let `P` be locally integrable, almost
-everywhere nonnegative, and almost everywhere at least `a > 0` outside the closed ball of radius
-`R`. Then there is `c > 0` such that `c ∫ ‖u‖² ≤ ∫ ‖Du‖² + ∫ P ‖u‖²` for every compactly
-supported `C¹` map `u`. -/
-theorem exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq
-    {P : E → ℝ} (hP : LocallyIntegrable P μ) (hP₀ : ∀ᵐ z ∂μ, 0 ≤ P z) {a R : ℝ} (ha : 0 < a)
-    (haP : ∀ᵐ z ∂μ, R < ‖z‖ → a ≤ P z) :
-    ∃ c > 0, ∀ u : E → F, ContDiff ℝ 1 u → HasCompactSupport u →
-      c * ∫ z, ‖u z‖ ^ 2 ∂μ ≤ ∫ z, ‖fderiv ℝ u z‖ ^ 2 ∂μ + ∫ z, P z * ‖u z‖ ^ 2 ∂μ := by
-  -- `Ω` is a ball beyond the radius `R`, and `S ⊆ Ω` the annulus on which `P ≥ a`.
-  set ρ := max R 0
-  set Ω := ball (0 : E) (ρ + 1)
-  set S := Ω ∩ (closedBall (0 : E) ρ)ᶜ
-  have hSΩ : S ⊆ Ω := inter_subset_left
-  have hS : MeasurableSet S := measurableSet_ball.inter measurableSet_closedBall.compl
-  have hρR : R ≤ ρ := le_max_left R 0
-  have haS : ∀ᵐ z ∂μ, z ∈ S → a ≤ P z := haP.mono fun z h hz ↦
-    h (hρR.trans_lt (by simpa using hz.2 : ρ < ‖z‖))
-  have haΩ : ∀ᵐ z ∂μ, z ∈ Ωᶜ → a ≤ P z := haP.mono fun z h hz ↦ by
-    have : ρ + 1 ≤ ‖z‖ := by simpa [Ω] using hz
-    exact h (by linarith)
-  have hS₀ : μ S ≠ 0 := by
-    refine (isOpen_ball.inter isClosed_closedBall.isOpen_compl).measure_ne_zero μ ?_
-    obtain ⟨v, hv⟩ := exists_norm_eq E (by positivity : 0 ≤ ρ + 1 / 2)
-    exact ⟨v, by simp only [mem_ball_zero_iff, hv]; linarith,
-      by simp only [mem_compl_iff, mem_closedBall_zero_iff, hv, not_le]; linarith⟩
-  -- The constants of the Poincaré inequality on `Ω` relative to `S`.
-  set A := (2 + 4 * μ.real Ω / μ.real S) *
-    (μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S) ^ 2
-  set B := 4 * μ.real Ω / μ.real S
-  have hA : 0 ≤ A := by positivity
-  have hB : 0 ≤ B := by positivity
-  refine ⟨a / (a * A + B + 1), by positivity, fun u hu hc ↦ ?_⟩
+omit [Nontrivial E] in
+/-- **A Schrödinger–Poincaré inequality on a convex set.** Let `Ω` be a bounded convex set of
+positive measure, and let `P` be almost everywhere nonnegative and almost everywhere at least
+`a > 0` outside a set `B` of at most half the measure of `Ω`. Then, with
+`K = 10 (2 μ(B(0, 1)) (diam Ω) ^ (n + 1) / μ(Ω)) ^ 2`, where `n` is the dimension of `E`,
+
+`a ∫_Ω ‖u‖² ≤ a K ∫_Ω ‖Du‖² + 8 ∫_Ω P ‖u‖²`
+
+for every `C¹` map `u` with `P ‖u‖²` integrable on `Ω`. The constants depend on `Ω` only through its
+measure and diameter, and on `B` only through the bound on its measure. -/
+theorem mul_setIntegral_norm_sq_le_of_convex {P : E → ℝ} {B Ω : Set E} {a : ℝ} (ha : 0 < a)
+    (hΩc : Convex ℝ Ω) (hΩb : Bornology.IsBounded Ω) (hΩ₀ : μ Ω ≠ 0) (hB : 2 * μ B ≤ μ Ω)
+    (hP₀ : ∀ᵐ z ∂μ, 0 ≤ P z) (haP : ∀ᵐ z ∂μ, z ∉ B → a ≤ P z) {u : E → F}
+    (hu : ContDiff ℝ 1 u) (hPu : IntegrableOn (fun z ↦ P z * ‖u z‖ ^ 2) Ω μ) :
+    a * ∫ z in Ω, ‖u z‖ ^ 2 ∂μ ≤
+      a * (10 * (2 * (μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1)) / μ.real Ω) ^ 2) *
+          ∫ z in Ω, ‖fderiv ℝ u z‖ ^ 2 ∂μ +
+        8 * ∫ z in Ω, P z * ‖u z‖ ^ 2 ∂μ := by
+  -- `S` is the part of `Ω` off a measurable hull of `B`; it carries at least half of `Ω`.
+  set S := Ω \ toMeasurable μ B
+  have hSΩ : S ⊆ Ω := sdiff_subset
+  have hΩfin : μ Ω ≠ ∞ := hΩb.measure_lt_top.ne
+  have hΩS : μ Ω ≤ 2 * μ S := by
+    have h : μ Ω - μ B ≤ μ S := measure_toMeasurable B ▸ le_measure_sdiff
+    calc μ Ω = 2 * μ Ω - μ Ω := by rw [two_mul, ENNReal.add_sub_cancel_right hΩfin]
+      _ ≤ 2 * μ Ω - 2 * μ B := by gcongr
+      _ = 2 * (μ Ω - μ B) := (ENNReal.mul_sub fun _ _ ↦ by simp).symm
+      _ ≤ 2 * μ S := by gcongr
+  have hS : NullMeasurableSet S μ :=
+    (hΩc.nullMeasurableSet μ).diff (measurableSet_toMeasurable μ B).nullMeasurableSet
+  have hVΩ : 0 < μ.real Ω := ENNReal.toReal_pos hΩ₀ hΩfin
+  have hVS : μ.real Ω ≤ 2 * μ.real S := by
+    simpa [measureReal_def, ENNReal.toReal_mul] using ENNReal.toReal_mono
+      (ENNReal.mul_ne_top (by simp) (ne_top_of_le_ne_top hΩfin (measure_mono hSΩ))) hΩS
+  have hVS₀ : 0 < μ.real S := by linarith
+  have hS₀ : μ S ≠ 0 := fun h ↦ by simp [measureReal_def, h] at hVS₀
+  -- The Poincaré inequality on `Ω` relative to `S`, with its constants bounded through
+  -- `μ(Ω) ≤ 2 μ(S)`.
+  have hW := setIntegral_norm_sq_le_of_convex (μ := μ) hΩc hΩb hu hSΩ hS₀
+  set C := μ.real (ball (0 : E) 1) * diam Ω ^ (finrank ℝ E + 1)
+  have h4 : 4 * μ.real Ω / μ.real S ≤ 8 := by rw [div_le_iff₀ hVS₀]; linarith
+  have hCS : C / μ.real S ≤ 2 * C / μ.real Ω := by
+    rw [div_le_div_iff₀ hVS₀ hVΩ]; nlinarith [(by positivity : 0 ≤ C)]
+  have hA : (2 + 4 * μ.real Ω / μ.real S) * (C / μ.real S) ^ 2 ≤ 10 * (2 * C / μ.real Ω) ^ 2 := by
+    have hsq := pow_le_pow_left₀ (by positivity : 0 ≤ C / μ.real S) hCS 2
+    nlinarith [sq_nonneg (C / μ.real S)]
+  -- Off `B`, the potential controls `‖u‖²`.
+  have hpot : a * ∫ z in S, ‖u z‖ ^ 2 ∂μ ≤ ∫ z in Ω, P z * ‖u z‖ ^ 2 ∂μ := by
+    rw [← integral_const_mul]
+    have hUS : IntegrableOn (fun z ↦ ‖u z‖ ^ 2) S μ :=
+      ((hu.continuous.norm.pow 2).continuousOn.integrableOn_compact
+        hΩb.isCompact_closure).mono_set (hSΩ.trans subset_closure)
+    refine (setIntegral_mono_on_ae₀ (hUS.const_mul a) (hPu.mono_set hSΩ) hS ?_).trans
+      (setIntegral_mono_set hPu
+        (ae_restrict_of_ae (hP₀.mono fun z hz ↦ by positivity)) (.of_forall hSΩ))
+    filter_upwards [haP] with z hz hzS
+    exact mul_le_mul_of_nonneg_right (hz fun hB ↦ hzS.2 (subset_toMeasurable μ B hB))
+      (by positivity)
+  calc a * ∫ z in Ω, ‖u z‖ ^ 2 ∂μ
+      ≤ a * ((2 + 4 * μ.real Ω / μ.real S) * (C / μ.real S) ^ 2 *
+          ∫ z in Ω, ‖fderiv ℝ u z‖ ^ 2 ∂μ + 4 * μ.real Ω / μ.real S * ∫ z in S, ‖u z‖ ^ 2 ∂μ) :=
+        mul_le_mul_of_nonneg_left hW ha.le
+    _ ≤ a * (10 * (2 * C / μ.real Ω) ^ 2) * ∫ z in Ω, ‖fderiv ℝ u z‖ ^ 2 ∂μ +
+          8 * (a * ∫ z in S, ‖u z‖ ^ 2 ∂μ) := by
+        nlinarith [mul_le_mul_of_nonneg_right hA (integral_nonneg fun _ ↦ by positivity :
+          0 ≤ ∫ z in Ω, ‖fderiv ℝ u z‖ ^ 2 ∂μ), mul_le_mul_of_nonneg_right h4
+          (integral_nonneg fun _ ↦ by positivity : 0 ≤ ∫ z in S, ‖u z‖ ^ 2 ∂μ)]
+    _ ≤ _ := by linarith [hpot]
+
+/-- **Uniform Poincaré inequality for Schrödinger forms.** Let `a > 0` and `M < ∞`. There is
+`c > 0`, depending only on `a` and `M` (and on `E` and `μ`), with the following property. If `P`
+is locally integrable, almost everywhere nonnegative, and almost everywhere at least `a` outside a
+set `B` of measure at most `M`, then `c ∫ ‖u‖² ≤ ∫ ‖Du‖² + ∫ P ‖u‖²` for every compactly
+supported `C¹` map `u`. The set `B` where `P` may be small is arbitrary: it need not be bounded,
+connected or close to the origin. -/
+theorem exists_pos_forall_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq
+    {a : ℝ} (ha : 0 < a) {M : ℝ≥0∞} (hM : M ≠ ∞) :
+    ∃ c > 0, ∀ (P : E → ℝ) (B : Set E), LocallyIntegrable P μ → (∀ᵐ z ∂μ, 0 ≤ P z) →
+      μ B ≤ M → (∀ᵐ z ∂μ, z ∉ B → a ≤ P z) →
+      ∀ u : E → F, ContDiff ℝ 1 u → HasCompactSupport u →
+        c * ∫ z, ‖u z‖ ^ 2 ∂μ ≤ ∫ z, ‖fderiv ℝ u z‖ ^ 2 ∂μ + ∫ z, P z * ‖u z‖ ^ 2 ∂μ := by
+  -- Tile `E` by the lattice translates of a parallelepiped `T` of measure at least `2 M`.
+  obtain ⟨G, T, _, hT, hTc, hTb, hTM⟩ := exists_isAddFundamentalDomain_convex_le_measure μ
+    (ENNReal.mul_ne_top (by simp) hM : 2 * M ≠ ∞)
+  have hT₀ : μ T ≠ 0 := hT.measure_ne_zero (NeZero.ne μ)
+  set K := 10 * (2 * (μ.real (ball (0 : E) 1) * diam T ^ (finrank ℝ E + 1)) / μ.real T) ^ 2
+    with hK
+  have hK₀ : 0 ≤ K := by positivity
+  refine ⟨a / (a * K + 8), by positivity, fun P B hP hP₀ hBM haP u hu hc ↦ ?_⟩
   have hn : HasCompactSupport fun z ↦ ‖u z‖ ^ 2 := hc.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp)
   have hI : Integrable (fun z ↦ ‖u z‖ ^ 2) μ :=
     (hu.continuous.norm.pow 2).integrable_of_hasCompactSupport hn
-  have hDc : Continuous fun z ↦ ‖fderiv ℝ u z‖ ^ 2 := (hu.continuous_fderiv one_ne_zero).norm.pow 2
+  have hDc : Continuous fun z ↦ ‖fderiv ℝ u z‖ ^ 2 :=
+    (hu.continuous_fderiv one_ne_zero).norm.pow 2
   have hDs : HasCompactSupport fun z ↦ ‖fderiv ℝ u z‖ ^ 2 :=
     (hc.fderiv (𝕜 := ℝ)).comp_left (g := fun L ↦ ‖L‖ ^ 2) (by simp)
   have hD : Integrable (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) μ := hDc.integrable_of_hasCompactSupport hDs
   have hQ : Integrable (fun z ↦ P z * ‖u z‖ ^ 2) μ :=
     hP.integrable_smul_right_of_hasCompactSupport (g := fun z ↦ ‖u z‖ ^ 2)
       (hu.continuous.norm.pow 2) hn
-  have hQ₀ : ∀ᵐ z ∂μ, 0 ≤ P z * ‖u z‖ ^ 2 := hP₀.mono fun z h ↦ mul_nonneg h (by positivity)
-  -- Inside `Ω`, the Poincaré inequality relative to `S`.
-  have hΩ := setIntegral_norm_sq_le_of_convex (μ := μ) (convex_ball 0 (ρ + 1))
-    isBounded_ball hu hSΩ hS₀
-  have hDΩ : ∫ z in Ω, ‖fderiv ℝ u z‖ ^ 2 ∂μ ≤ ∫ z, ‖fderiv ℝ u z‖ ^ 2 ∂μ :=
-    setIntegral_le_integral hD (ae_of_all _ fun _ ↦ by positivity)
-  -- Where `P ≥ a`, the potential term controls `‖u‖²`.
-  have hpot {T : Set E} (hT : MeasurableSet T) (haT : ∀ᵐ z ∂μ, z ∈ T → a ≤ P z) :
-      a * ∫ z in T, ‖u z‖ ^ 2 ∂μ ≤ ∫ z in T, P z * ‖u z‖ ^ 2 ∂μ := by
-    rw [← integral_const_mul]
-    exact setIntegral_mono_on_ae (hI.integrableOn.const_mul a) hQ.integrableOn hT
-      (haT.mono fun z h hz ↦ mul_le_mul_of_nonneg_right (h hz) (by positivity))
-  have hYS := (hpot hS haS).trans (setIntegral_mono_set hQ.integrableOn (ae_restrict_of_ae hQ₀)
-    hSΩ.eventuallySubset)
-  have hYC := hpot measurableSet_ball.compl haΩ
-  have hQΩ : 0 ≤ ∫ z in Ω, P z * ‖u z‖ ^ 2 ∂μ := integral_nonneg_of_ae (ae_restrict_of_ae hQ₀)
-  have hQC : 0 ≤ ∫ z in Ωᶜ, P z * ‖u z‖ ^ 2 ∂μ := integral_nonneg_of_ae (ae_restrict_of_ae hQ₀)
+  have hR : Integrable (fun z ↦ a * K * ‖fderiv ℝ u z‖ ^ 2 + 8 * (P z * ‖u z‖ ^ 2)) μ :=
+    (hD.const_mul (a * K)).fun_add (hQ.const_mul 8)
+  -- On each tile the inequality of `mul_setIntegral_norm_sq_le_of_convex` holds with the same
+  -- constant `K`; summing over the tiles gives it on `E`.
+  set f : E → ℝ := fun z ↦ a * ‖u z‖ ^ 2 - (a * K * ‖fderiv ℝ u z‖ ^ 2 + 8 * (P z * ‖u z‖ ^ 2))
+    with hf
+  -- The integral of `f` against any measure `ν ≤ μ`, split into its three pieces.
+  have hfν (ν : Measure E) (hν : ν ≤ μ) : ∫ z, f z ∂ν = a * ∫ z, ‖u z‖ ^ 2 ∂ν -
+      (a * K * ∫ z, ‖fderiv ℝ u z‖ ^ 2 ∂ν + 8 * ∫ z, P z * ‖u z‖ ^ 2 ∂ν) := by
+    rw [hf, integral_sub ((hI.const_mul a).mono_measure hν) (hR.mono_measure hν),
+      integral_add ((hD.const_mul (a * K)).mono_measure hν) ((hQ.const_mul 8).mono_measure hν),
+      integral_const_mul, integral_const_mul, integral_const_mul]
+  have htile (g : G) : ∫ z in g +ᵥ T, f z ∂μ ≤ 0 := by
+    -- The tile `g +ᵥ T` is the translate of `T` by the vector `g`.
+    have hgT : g +ᵥ T = (g : E) +ᵥ T := rfl
+    have hμ : μ ((g : E) +ᵥ T) = μ T := measure_vadd μ (g : E) T
+    have hμr : μ.real ((g : E) +ᵥ T) = μ.real T := by simp [measureReal_def, hμ]
+    have h := mul_setIntegral_norm_sq_le_of_convex (μ := μ) ha (hTc.vadd (g : E))
+      (hTb.vadd (g : E)) (by rwa [hμ]) (by rw [hμ]; exact (mul_le_mul_right hBM 2).trans hTM)
+      hP₀ haP hu hQ.integrableOn
+    rw [diam_vadd, hμr, ← hK] at h
+    rw [hgT, hfν _ Measure.restrict_le_self]
+    linarith
+  have hsum : ∫ z, f z ∂μ ≤ 0 :=
+    (hT.integral_eq_tsum f ((hI.const_mul a).sub hR)).trans_le (tsum_nonpos htile)
+  rw [hfν μ le_rfl] at hsum
   have hD₀ : 0 ≤ ∫ z, ‖fderiv ℝ u z‖ ^ 2 ∂μ := integral_nonneg fun _ ↦ by positivity
-  -- Combine: `a ∫ ‖u‖² ≤ (a A + B + 1) (∫ ‖Du‖² + ∫ P ‖u‖²)`.
-  rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity),
-    ← integral_add_compl measurableSet_ball hI, ← integral_add_compl measurableSet_ball hQ]
-  nlinarith [mul_le_mul_of_nonneg_left hΩ ha.le,
-    mul_le_mul_of_nonneg_left hDΩ (mul_nonneg ha.le hA), mul_le_mul_of_nonneg_left hYS hB,
-    mul_nonneg (by positivity : 0 ≤ a * A + 1) hQΩ,
-    mul_nonneg (by positivity : 0 ≤ a * A + B) hQC, mul_nonneg (by positivity : 0 ≤ B + 1) hD₀]
+  have hQ₀ : 0 ≤ ∫ z, P z * ‖u z‖ ^ 2 ∂μ :=
+    integral_nonneg_of_ae (hP₀.mono fun z hz ↦ by positivity)
+  rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+  nlinarith [mul_nonneg (mul_nonneg ha.le hK₀) hQ₀, mul_nonneg (by norm_num : (0 : ℝ) ≤ 8) hD₀]
+
+/-- **Poincaré inequality for a Schrödinger form.** Let `P` be locally integrable, almost
+everywhere nonnegative, and almost everywhere at least `a > 0` outside the closed ball of radius
+`R`. Then there is `c > 0` such that `c ∫ ‖u‖² ≤ ∫ ‖Du‖² + ∫ P ‖u‖²` for every compactly
+supported `C¹` map `u`. The constant depends on `P` only through `a` and `R`. -/
+theorem exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq
+    {P : E → ℝ} (hP : LocallyIntegrable P μ) (hP₀ : ∀ᵐ z ∂μ, 0 ≤ P z) {a R : ℝ} (ha : 0 < a)
+    (haP : ∀ᵐ z ∂μ, R < ‖z‖ → a ≤ P z) :
+    ∃ c > 0, ∀ u : E → F, ContDiff ℝ 1 u → HasCompactSupport u →
+      c * ∫ z, ‖u z‖ ^ 2 ∂μ ≤ ∫ z, ‖fderiv ℝ u z‖ ^ 2 ∂μ + ∫ z, P z * ‖u z‖ ^ 2 ∂μ := by
+  obtain ⟨c, hc, h⟩ :=
+    exists_pos_forall_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq
+      (μ := μ) (F := F) ha (measure_closedBall_lt_top (μ := μ) (x := (0 : E)) (r := R)).ne
+  exact ⟨c, hc, h P _ hP hP₀ le_rfl
+    (haP.mono fun z h hz ↦ h (by simpa only [mem_closedBall_zero_iff, not_le] using hz))⟩
 
 end TestFunction
 

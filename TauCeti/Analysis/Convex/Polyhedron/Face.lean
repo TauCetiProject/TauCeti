@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.ZeroLocus
 public import TauCeti.Analysis.Convex.Polyhedron.Basic
 public import Mathlib.Analysis.Convex.Exposed
+import TauCeti.Analysis.Convex.Exposed
 
 import Mathlib.Data.Fintype.Powerset
 import Mathlib.Tactic.Linarith
@@ -191,10 +192,6 @@ theorem TauCeti.IsConvexPolyhedron.finite_setOf_isExposed {P : Set V}
     (hP : TauCeti.IsConvexPolyhedron P) : {F : Set V | IsExposed ℝ P F}.Finite :=
   hP.finite_setOf_convex_isExtreme.subset fun _ hF => ⟨hF.convex hP.convex, hF.isExtreme⟩
 
-section Group
-
-variable [IsTopologicalAddGroup V]
-
 /-- Making a finite set of the defining inequalities equalities exposes a subset. When the locus
 where every selected row vanishes is nonempty, the sum of the selected affine functions is
 maximized exactly there; when it is empty, the subset is the empty set, which satisfies
@@ -202,27 +199,18 @@ maximized exactly there; when it is empty, the subset is the empty set, which sa
 theorem TauCeti.isExposed_setOf_active (g : ι → (V →ᴬ[ℝ] ℝ)) (I : Finset ι) :
     IsExposed ℝ {x | ∀ j, g j x ≤ 0}
       {x | (∀ j, g j x ≤ 0) ∧ ∀ j ∈ I, g j x = 0} := by
-  intro ⟨p, hp, hpI⟩
-  let l : V →L[ℝ] ℝ := ∑ j ∈ I, (g j).contLinear
-  have hl (x : V) : l x = (∑ j ∈ I, g j x) - ∑ j ∈ I, g j 0 := by
-    simp only [l, sum_apply, ← Finset.sum_sub_distrib]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    simpa using (g j).contLinear_apply_vsub x 0
-  have hpzero : ∑ j ∈ I, g j p = 0 := Finset.sum_eq_zero hpI
-  refine ⟨l, Set.ext fun x => ⟨?_, ?_⟩⟩
-  · rintro ⟨hx, hxI⟩
-    refine ⟨hx, fun y hy => ?_⟩
-    rw [hl y, hl x, Finset.sum_eq_zero hxI]
-    have hyzero : ∑ j ∈ I, g j y ≤ 0 := Finset.sum_nonpos fun j _ => hy j
-    linarith
-  · rintro ⟨hx, hmax⟩
-    refine ⟨hx, ?_⟩
-    have hsum : ∑ j ∈ I, g j x = 0 := by
-      have hle : ∑ j ∈ I, g j x ≤ 0 := Finset.sum_nonpos fun j _ => hx j
-      have hge := hmax p hp
-      rw [hl p, hl x, hpzero] at hge
-      linarith
-    exact (Finset.sum_eq_zero_iff_of_nonpos (fun j _ => hx j)).mp hsum
+  have hsum (x : V) : (∑ j ∈ I, g j) x = ∑ j ∈ I, g j x := by
+    let ev : (V →ᴬ[ℝ] ℝ) →+ ℝ :=
+      { toFun := fun f => f x, map_zero' := rfl, map_add' := fun _ _ => rfl }
+    exact map_sum ev g I
+  convert (∑ j ∈ I, g j).isExposed_setOf_eq_of_le (c := 0)
+    (P := {x | ∀ j, g j x ≤ 0}) (fun x hx => by
+      rw [hsum]
+      exact Finset.sum_nonpos fun j _ => hx j) using 1
+  ext x
+  simp only [Set.mem_ofPred_eq, hsum]
+  exact and_congr_right fun hx =>
+    (Finset.sum_eq_zero_iff_of_nonpos (fun j _ => hx j)).symm
 
 /-- Every convex extreme subset of a polyhedron is exposed, including the empty subset. -/
 theorem IsExtreme.isExposed_of_isConvexPolyhedron {P F : Set V} (hF : IsExtreme ℝ P F)
@@ -240,7 +228,5 @@ theorem IsExposed.trans_of_isConvexPolyhedron {P F G : Set V}
     (hP : TauCeti.IsConvexPolyhedron P) : IsExposed ℝ P G :=
   (hF.isExtreme.trans hG.isExtreme).isExposed_of_isConvexPolyhedron hP
     (hG.convex (hF.convex hP.convex))
-
-end Group
 
 end Topology

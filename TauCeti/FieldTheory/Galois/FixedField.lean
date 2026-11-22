@@ -7,10 +7,12 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.KrullTopology
-public import Mathlib.FieldTheory.PurelyInseparable.Basic
+public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.FieldTheory.Galois.Infinite
+import Mathlib.RingTheory.Invariant.Basic
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
 # Fixed fields and fixing subgroups
@@ -49,7 +51,8 @@ once `⟨σ⟩` is finite.
 Neither `M / K` Galois nor `M / K` finite is needed, and neither is faithfulness of the action:
 `FixedPoints.toAlgAut_surjective` asks only that the group be finite, and cyclicity passes along
 its surjection. The fixed-point subfield it produces is the one underlying
-`IntermediateField.fixedField`.
+`IntermediateField.fixedField`. Finiteness of the group alone also makes `M` algebraic over any
+`K` over which the fixed field is purely inseparable.
 
 A simple extension `K⟮x⟯` is fixed pointwise by exactly those automorphisms that fix `x`, so
 its fixing subgroup is the stabilizer of `x`; this too needs no hypothesis on `M / K` at all.
@@ -90,6 +93,8 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
   fixing `E ∩ F` fixes `F`, for `E` finite normal over a smaller base, `F ≤ L(E)` and `Ω / F`
   Galois
 * `FixedPoints.isCyclic_algEquiv`
+* `Algebra.IsAlgebraic.of_fixedPoints_le_perfectClosure`: a field is algebraic over `K` when the
+  fixed field of a finite group acting on it is purely inseparable over `K`
 * `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top` and
   `AlgEquiv.card_algEquiv_fixedField_zpowers`
 * `AlgEquiv.fixedField_zpowers_mul_comm` and `AlgEquiv.restrictScalars_mem_zpowers`: the
@@ -552,6 +557,22 @@ theorem isCyclic_algEquiv (G F : Type*) [Group G] [Field F] [MulSemiringAction G
 
 end FixedPoints
 
+namespace Algebra.IsAlgebraic
+
+/-- If the fixed field of a finite group acting on `L` by automorphisms fixing `K` is purely
+inseparable over `K`, then `L` is algebraic over `K`: it is integral over the fixed field, hence
+over `perfectClosure K L`. -/
+theorem of_fixedPoints_le_perfectClosure {K L G : Type*} [Field K] [Field L] [Algebra K L]
+    [Group G] [Finite G] [MulSemiringAction G L] [SMulCommClass G K L]
+    (hG : FixedPoints.intermediateField (F := K) G ≤ perfectClosure K L) :
+    Algebra.IsAlgebraic K L :=
+  have : Algebra.IsInvariant (perfectClosure K L) L G :=
+    ⟨fun b hb ↦ ⟨⟨b, hG ((FixedPoints.mem_intermediateField_iff (F := K)).mpr hb)⟩, rfl⟩⟩
+  have := Algebra.IsInvariant.isIntegral (perfectClosure K L) L G
+  .trans K (perfectClosure K L) L
+
+end Algebra.IsAlgebraic
+
 namespace AlgEquiv
 
 variable {K M : Type*} [Field K] [Field M] [Algebra K M]
@@ -758,7 +779,8 @@ theorem apply_fixedField_stabilizer_out_of_injective (K : Type*) [Field K] {M X 
     (hx : (Quotient.mk'' (g x) : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) Y) = ω) :
     f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) ω.out)) =
       f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) := by
-  rw [apply_fixedField_stabilizer_out K hf hx, MulAction.stabilizer_eq_of_injective g hg he]
+  rw [apply_fixedField_stabilizer_out K hf hx,
+    TauCeti.MulAction.stabilizer_eq_of_injective g hg (he · x)]
 
 /-- Translating a point does not change the degree of its stabilizer's fixed field. -/
 @[simp]
