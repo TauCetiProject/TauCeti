@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Herbrand.Basic
 public import TauCeti.NumberTheory.LocalField.LowerIndex
-import TauCeti.RingTheory.DiscreteValuationRing.Herbrand.Basic
 
 /-!
 # Herbrand's theorem: the lower filtration of a quotient
@@ -119,13 +118,11 @@ theorem coe_herbrand_lowerIndex_sub_one (σ : M ≃ₐ[K] M) {j : ℕ}
     (herbrand L M ⟨(j : ℝ) - 1, by simp⟩ : ℝ) =
       ((lowerIndex 𝒪[L] (σ.restrictNormal L)).toNat : ℝ) - 1 := by
   have hsum := ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum_card σ hj hσ
-  obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.1
-    (lowerIndex_restrictNormal_ne_top σ (hj ▸ ENat.natCast_ne_top j) hσ)
-  rw [← hn, ← Nat.cast_mul, ← Nat.cast_sum, Nat.cast_inj, ← natCard_lowerRamificationGroup_zero]
-    at hsum
+  rw [← natCard_lowerRamificationGroup_zero] at hsum
   simp_rw [lowerRamificationGroup_def] at hsum
-  rw [← hn, ENat.toNat_natCast, coe_herbrand_eq_herbrandFun]
-  exact TauCeti.IsLocalRing.herbrandFun_sub_one_of_card_mul_eq_sum (M ≃ₐ[L] M) 𝒪[M] hsum
+  rw [coe_herbrand_eq_herbrandFun]
+  exact TauCeti.IsLocalRing.herbrandFun_sub_one_of_card_mul_eq_sum (M ≃ₐ[L] M) 𝒪[M]
+    (lowerIndex_restrictNormal_ne_top σ (hj ▸ ENat.natCast_ne_top j) hσ) hsum
 
 /-- For `σ` of largest lower index in its coset `σ H`, the restriction `σ|_L` lies in the lower
 ramification group of `L/K` at `φ_{M/L}(u)` exactly when `σ` lies in that of `M/K` at `u`. -/

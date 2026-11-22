@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 import Mathlib.Analysis.Convex.Slope
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Order.IntermediateValue
@@ -17,10 +17,13 @@ import Mathlib.Topology.Order.IntermediateValue
 
 For a group `G` acting by ring automorphisms on a local ring `S`, we define the **Herbrand
 function** `herbrandFun G S u = ∫ t in 0..u, #G_t / #G_0`, its inverse `inverseHerbrandFun G S`,
-`upperRamificationGroup G S v = G_{ψ(v)}`, and `UpperJump G S`. For finite `G`, `herbrandFun G S`
-is a continuous, strictly increasing, concave bijection of `ℝ` restricting to `herbrandOrderIso G S`
-on `[-1, ∞)`, `ψ` maps `ℕ` to `ℕ` (`psiNat G S`), and `(G^u).subgroupOf H = H^{φ_H(ψ_G(u))}`
-(`subgroupOf_upperRamificationGroup`). Adapts
+`upperRamificationGroup G S v = G_{ψ(v)}`, and `UpperJump G S`. These are finite-level
+constructions intended for `[Finite G]`: the unrestricted definitions accept infinite `G` only for
+signature simplicity, do not provide the inverse-limit filtration (since `Nat.card` collapses to `0`
+on infinite subgroups), and the inverse characterization requires `[Finite G]`. For finite `G`,
+`herbrandFun G S` is a continuous, strictly increasing, concave bijection of `ℝ` restricting to
+`herbrandOrderIso G S` on `[-1, ∞)`, `ψ` maps `ℕ` to `ℕ` (`psiNat G S`), and
+`(G^u).subgroupOf H = H^{φ_H(ψ_G(u))}` (`subgroupOf_upperRamificationGroup`). Adapts
 `NumberTheory/LocalField/Herbrand/{Basic,Jump,Quotient}.lean`.
 
 ## References
@@ -37,17 +40,24 @@ namespace TauCeti.IsLocalRing
 
 section Defs
 variable (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
-/-- The **Herbrand function** `φ(u) = ∫_0^u #G_t / #G_0 dt` (meaningful on `[-1, ∞)`). -/
+/-- The **Herbrand function** `φ(u) = ∫_0^u #G_t / #G_0 dt` (meaningful on `[-1, ∞)`). This is a
+finite-level construction: for infinite `G` it does not give the inverse-limit filtration, since
+`Nat.card` collapses to `0` on infinite subgroups. -/
 def herbrandFun (u : ℝ) : ℝ :=
   ∫ t in (0 : ℝ)..u,
     (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0)
 theorem herbrandFun_def (u : ℝ) : herbrandFun G S u = ∫ t in (0 : ℝ)..u,
     (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0) := (rfl)
-/-- The **inverse Herbrand function** `ψ(v) = sInf {u : ℝ | v ≤ φ(u)}`. -/
+/-- The **inverse Herbrand function** `ψ(v) = sInf {u : ℝ | v ≤ φ(u)}`. This is a finite-level
+construction: the unrestricted definition does not provide the inverse-limit filtration, and the
+inverse characterization (`isLeast_inverseHerbrandFun`, `herbrandFun_inverseHerbrandFun`) requires
+`[Finite G]`. -/
 def inverseHerbrandFun (v : ℝ) : ℝ := sInf {u : ℝ | v ≤ herbrandFun G S u}
 theorem inverseHerbrandFun_def (v : ℝ) :
     inverseHerbrandFun G S v = sInf {u : ℝ | v ≤ herbrandFun G S u} := (rfl)
-/-- The **upper-numbering ramification group** `G^v = G_{ψ(v)}` of `G` acting on `S`. -/
+/-- The **upper-numbering ramification group** `G^v = G_{ψ(v)}` of `G` acting on `S`. This is a
+finite-level construction: the unrestricted definition does not provide the inverse-limit
+filtration, and its inverse properties require `[Finite G]`. -/
 def upperRamificationGroup (v : ℝ) : Subgroup G :=
   ramificationGroupReal G S (inverseHerbrandFun G S v)
 theorem upperRamificationGroup_def (v : ℝ) :
@@ -58,12 +68,16 @@ variable {G S} in
 instance instNormalUpperRamificationGroup (v : ℝ) : (upperRamificationGroup G S v).Normal := by
   rw [upperRamificationGroup_def]; infer_instance
 @[simp] theorem herbrandFun_zero : herbrandFun G S 0 = 0 := by rw [herbrandFun_def, integral_same]
-/-- An **upper break** of the ramification filtration: `G^v < G^u` for every `v > u`. -/
+/-- An **upper break** of the ramification filtration: `G^v < G^u` for every `v > u`. This is a
+finite-level construction: for infinite `G` the underlying upper filtration does not provide the
+inverse-limit filtration, and the Herbrand break correspondence requires `[Finite G]`. -/
 def UpperJump (u : ℝ) : Prop :=
   ∀ v : ℝ, u < v → upperRamificationGroup G S v < upperRamificationGroup G S u
 theorem upperJump_iff (u : ℝ) : UpperJump G S u ↔
     ∀ v : ℝ, u < v → upperRamificationGroup G S v < upperRamificationGroup G S u := Iff.rfl
-/-- The **integral inverse Herbrand function** `ψℕ : ℕ → ℕ` (`coe_psiNat`). -/
+/-- The **integral inverse Herbrand function** `ψℕ : ℕ → ℕ` (`coe_psiNat`). This is a
+finite-level construction: the unrestricted definition does not provide the inverse-limit
+filtration, and its characterization (`coe_psiNat`, `psiNat_eq_iff`) requires `[Finite G]`. -/
 def psiNat (n : ℕ) : ℕ := ⌊inverseHerbrandFun G S n⌋₊
 theorem psiNat_def (n : ℕ) : psiNat G S n = ⌊inverseHerbrandFun G S n⌋₊ := (rfl)
 end Defs
@@ -135,14 +149,12 @@ private theorem herbrandFun_sub (a b : ℝ) :
     herbrandFun G S b - herbrandFun G S a = ∫ t in a..b, herbrandDensity G S t :=
   integral_interval_sub_left (herbrandDensity_antitone G S).intervalIntegrable
     (herbrandDensity_antitone G S).intervalIntegrable
-private theorem integral_const_real (a b c : ℝ) : ∫ _ in a..b, c = (b - a) * c := by
-  rw [intervalIntegral.integral_const, smul_eq_mul]
 /-- On `[a, b]` where `(a, b]` has constant `G_t = H`, `herbrandFun` has slope `#H / #G_0`. -/
 theorem herbrandFun_sub_of_forall_eq {a b : ℝ} (hab : a ≤ b) {H : Subgroup G}
     (h : ∀ t : ℝ, a < t → t ≤ b → ramificationGroupReal G S t = H) :
     herbrandFun G S b - herbrandFun G S a =
       (b - a) * (Nat.card H / Nat.card (ramificationGroup G S 0)) := by
-  rw [herbrandFun_sub, ← integral_const_real]
+  rw [herbrandFun_sub, ← smul_eq_mul, ← intervalIntegral.integral_const]
   exact integral_congr_ae <| Filter.Eventually.of_forall fun t ht ↦ by
     rw [uIoc_of_le hab] at ht; rw [herbrandDensity, h t ht.1 ht.2]
 /-- On any subinterval `[a, b] ⊆ [i - 1, i]`, `herbrandFun` is affine of slope `#G_i / #G_0`. -/
@@ -153,7 +165,7 @@ theorem herbrandFun_sub_of_sub_one_le_of_le {i : ℤ} {a b : ℝ} (ha : (i : ℝ
     ramificationGroupReal_eq_of_sub_one_lt_of_le G S (ha.trans_lt ht₁) (ht₂.trans hb)
 private theorem div_sub_le_herbrandFun_sub {a b : ℝ} (hab : a ≤ b) :
     (b - a) / Nat.card (ramificationGroup G S 0) ≤ herbrandFun G S b - herbrandFun G S a := by
-  rw [herbrandFun_sub, div_eq_mul_inv, ← integral_const_real]
+  rw [herbrandFun_sub, div_eq_mul_inv, ← smul_eq_mul, ← intervalIntegral.integral_const]
   exact integral_mono_on hab intervalIntegrable_const
     (herbrandDensity_antitone G S).intervalIntegrable fun _ _ ↦ by
       rw [herbrandDensity, div_eq_mul_inv]
@@ -172,7 +184,7 @@ theorem herbrandFun_slope_anti_adjacent {u v w : ℝ} (huv : u < v) (hvw : v < w
   have hd := herbrandDensity_antitone G S
   refine le_trans (b := herbrandDensity G S v)
     ((div_le_iff₀' (sub_pos.2 hvw)).2 ?_) ((le_div_iff₀' (sub_pos.2 huv)).2 ?_) <;>
-    rw [herbrandFun_sub, ← integral_const_real]
+    rw [herbrandFun_sub, ← smul_eq_mul, ← intervalIntegral.integral_const]
   · exact integral_mono_on hvw.le hd.intervalIntegrable intervalIntegrable_const fun _ ht ↦ hd ht.1
   · exact integral_mono_on huv.le intervalIntegrable_const hd.intervalIntegrable fun _ ht ↦ hd ht.2
 /-- The Herbrand function is concave on `ℝ`. -/
@@ -219,13 +231,17 @@ theorem herbrandFun_intCast_of_nonneg {m : ℤ} (hm : 0 ≤ m) : herbrandFun G S
     (∑ i ∈ Finset.Icc 1 m.toNat, (Nat.card (ramificationGroup G S i) : ℝ)) /
       Nat.card (ramificationGroup G S 0) := by
   rw [← herbrandFun_natCast]; congr 1; exact_mod_cast (Int.toNat_of_nonneg hm).symm
-/-- Arithmetic core of Serre's lemma: if `#G_0 · n = ∑ k ∈ range j, #G_k`, then
-`φ_G(j - 1) = n - 1`. Adapts `TauCeti.LocalFieldsRamification.coe_herbrand_lowerIndex_sub_one`
-from `NumberTheory/LocalField/Herbrand/Quotient.lean`. -/
-theorem herbrandFun_sub_one_of_card_mul_eq_sum {j n : ℕ}
-    (hsum : Nat.card (ramificationGroup G S 0) * n =
-      ∑ k ∈ Finset.range j, Nat.card (ramificationGroup G S k)) :
-    herbrandFun G S ((j : ℝ) - 1) = (n : ℝ) - 1 := by
+/-- Arithmetic core of Serre's lemma: if `#G_0 · n = ∑ k ∈ range j, #G_k` in `ℕ∞` with `n ≠ ⊤`,
+then `φ_G(j - 1) = n.toNat - 1`. Adapts
+`TauCeti.LocalFieldsRamification.coe_herbrand_lowerIndex_sub_one` from
+`NumberTheory/LocalField/Herbrand/Quotient.lean`. -/
+theorem herbrandFun_sub_one_of_card_mul_eq_sum {j : ℕ} {n : ℕ∞} (hn : n ≠ ⊤)
+    (hsum : (Nat.card (ramificationGroup G S 0) : ℕ∞) * n =
+      ∑ k ∈ Finset.range j, (Nat.card (ramificationGroup G S k) : ℕ∞)) :
+    herbrandFun G S ((j : ℝ) - 1) = (n.toNat : ℝ) - 1 := by
+  obtain ⟨n, rfl⟩ := ENat.ne_top_iff_exists.1 hn
+  rw [← Nat.cast_mul, ← Nat.cast_sum, Nat.cast_inj] at hsum
+  rw [ENat.toNat_natCast]
   rcases j with _ | m
   · rw [herbrandFun_eq_self_of_neg_one_le_of_nonpos G S (by norm_num) (by norm_num)]
     simp only [Finset.range_zero, Finset.sum_empty, mul_eq_zero, Nat.card_pos.ne', false_or] at hsum
@@ -360,7 +376,8 @@ def herbrandOrderIso : Ici (-1 : ℝ) ≃o Ici (-1 : ℝ) :=
     (herbrandOrderIso G S u : ℝ) = herbrandFun G S u := (rfl)
 @[simp] theorem coe_herbrandOrderIso_symm_apply (v : Ici (-1 : ℝ)) :
     ((herbrandOrderIso G S).symm v : ℝ) = inverseHerbrandFun G S v :=
-  (inverseHerbrandFun_eq_symm G S v).symm
+  (herbrandFun_strictMono G S).injective <| by
+    rw [← coe_herbrandOrderIso_apply, OrderIso.apply_symm_apply, herbrandFun_inverseHerbrandFun]
 /-- When inertia is trivial (`G_0 = ⊥`), `herbrandFun` is the identity on `[-1, ∞)`. -/
 theorem herbrandFun_eq_self_of_ramificationGroup_zero_eq_bot (h0 : ramificationGroup G S 0 = ⊥)
     {u : ℝ} (hu : -1 ≤ u) : herbrandFun G S u = u := by

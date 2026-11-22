@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.IsGaloisGroup.Defs
 public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.AddValuation
 import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
@@ -102,6 +102,37 @@ theorem ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top {x : B}
 
 end Monogenic
 
+private noncomputable def residueFieldEquivQuotient
+    (R : Type*) [CommRing R] [_root_.IsLocalRing R] :
+    ResidueField R ≃+* R ⧸ maximalIdeal R :=
+  let := Ideal.Quotient.field (maximalIdeal R)
+  have : IsLocalHom (Ideal.Quotient.mk (maximalIdeal R)) :=
+    ⟨fun _ h ↦ not_not.1 fun hnot ↦
+      (isUnit_iff_ne_zero.1 h) (Ideal.Quotient.eq_zero_iff_mem.2 ((mem_maximalIdeal _).2 hnot))⟩
+  let toHom := ResidueField.lift (Ideal.Quotient.mk (maximalIdeal R))
+  let invHom := Ideal.Quotient.lift (maximalIdeal R) (residue R)
+    fun _ h ↦ (residue_eq_zero_iff _).2 h
+  { toFun := toHom
+    invFun := invHom
+    left_inv x := by obtain ⟨r, rfl⟩ := residue_surjective x; rfl
+    right_inv x := by obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x; rfl
+    map_mul' := toHom.map_mul
+    map_add' := toHom.map_add }
+
+private theorem isSeparable_quotient_of_residueField
+    (A B : Type*) [CommRing A] [_root_.IsLocalRing A]
+    [CommRing B] [_root_.IsLocalRing B] [Algebra A B] [IsLocalHom (algebraMap A B)]
+    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
+    let := Ideal.Quotient.field (maximalIdeal A)
+    let := Ideal.Quotient.field (maximalIdeal B)
+    Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) := by
+  let := Ideal.Quotient.field (maximalIdeal A)
+  let := Ideal.Quotient.field (maximalIdeal B)
+  refine Algebra.IsSeparable.of_equiv_equiv (residueFieldEquivQuotient A)
+    (residueFieldEquivQuotient B) (RingHom.ext fun x ↦ ?_)
+  obtain ⟨a, rfl⟩ := residue_surjective x
+  rfl
+
 /-- For a faithful finite Galois action `G` on a DVR `B` with invariant DVR `A` and separable
 residue extension, `#G_0 = e(B / A)`. -/
 theorem natCard_ramificationGroup_zero {A B G : Type*} [CommRing A] [IsDomain A]
@@ -114,9 +145,8 @@ theorem natCard_ramificationGroup_zero {A B G : Type*} [CommRing A] [IsDomain A]
   have _ : Module.Finite A B := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
   let := Ideal.Quotient.field (maximalIdeal A)
   let := Ideal.Quotient.field (maximalIdeal B)
-  have _ : Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) := by
-    change Algebra.IsSeparable (ResidueField A) (ResidueField B)
-    infer_instance
+  have _ : Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) :=
+    isSeparable_quotient_of_residueField A B
   rw [ramificationGroup_zero_eq_inertia,
     ← Ideal.ramificationIdxIn_eq_ramificationIdx (maximalIdeal A) (maximalIdeal B) G]
   exact Ideal.card_inertia_eq_ramificationIdxIn_of_isSeparable (G := G)
@@ -150,10 +180,9 @@ theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum (H : Subgroup G) [
   have hle : R₀ ≤ C := fun _ hx h ↦ hx h.val
   let _ : Algebra R₀ C := (Subalgebra.inclusion hle).toAlgebra
   have _ : IsScalarTower A R₀ B := IsScalarTower.subalgebra' A B B R₀
-  have _ : IsScalarTower R₀ C B := .of_algebraMap_eq fun _ ↦ rfl
+  have _ : IsScalarTower R₀ C B := Subalgebra.inclusion.isScalarTower_right hle B
   have _ : FaithfulSMul R₀ B := (faithfulSMul_iff_algebraMap_injective R₀ B).2 Subtype.val_injective
-  have _ : FaithfulSMul R₀ C :=
-    (faithfulSMul_iff_algebraMap_injective R₀ C).2 (Subalgebra.inclusion_injective hle)
+  have _ : FaithfulSMul R₀ C := Subalgebra.inclusion.faithfulSMul hle
   have _ : IsLocalHom ((algebraMap C B).comp (algebraMap R₀ C)) :=
     IsScalarTower.algebraMap_eq R₀ C B ▸ inferInstance
   have _ : IsLocalHom (algebraMap R₀ C) := isLocalHom_of_comp _ (algebraMap C B)

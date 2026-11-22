@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Invariant.Basic
-public import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 public import TauCeti.RingTheory.LocalRing.Herbrand.Basic
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.IntegralClosure
 
 /-!
-# Integral-closure and fixed-field transport of ramification filtrations
+# Integral-closure and fixed-field transport of Herbrand functions and upper filtrations
 
-This module transports lower and upper ramification filtrations, Herbrand functions, and upper
-breaks along algebra equivalences of `integralClosure` (`AlgEquiv.autCongr`) and along Galois
-fixed fields (`IsGalois.normalAutEquivQuotient`).
+This module transports Herbrand functions, upper ramification filtrations, and upper breaks along
+algebra equivalences of `integralClosure` (`AlgEquiv.autCongr`) and along Galois fixed fields
+(`IsGalois.normalAutEquivQuotient`).
 -/
 
 public section
@@ -23,32 +22,6 @@ noncomputable section
 open IsLocalRing
 
 namespace TauCeti.IsLocalRing
-
-/-- `e : E ≃ₐ[K] E'` over `A` pulls back lower ramification groups on `integralClosure`. -/
-theorem _root_.AlgEquiv.ramificationGroup_integralClosure_eq_comap_autCongr {A K E E' : Type*}
-    [CommRing A] [CommRing K] [CommRing E] [CommRing E'] [Algebra A K] [Algebra K E] [Algebra A E]
-    [IsScalarTower A K E] [Algebra K E'] [Algebra A E'] [IsScalarTower A K E']
-    [IsLocalRing (integralClosure A E)] [IsLocalRing (integralClosure A E')] (e : E ≃ₐ[K] E')
-    (i : ℤ) : ramificationGroup (E ≃ₐ[K] E) (integralClosure A E) i =
-      (ramificationGroup (E' ≃ₐ[K] E') (integralClosure A E') i).comap
-        (e.autCongr : (E ≃ₐ[K] E) →* (E' ≃ₐ[K] E')) :=
-  ramificationGroup_eq_comap_of_ringEquiv
-    (e := (e.restrictScalars A).mapIntegralClosure.toRingEquiv)
-    (fun _ _ ↦ Subtype.ext <| by simp [AlgEquiv.smul_def, AlgEquiv.autCongr_apply]) i
-
-open IntermediateField in
-/-- `IsGalois.normalAutEquivQuotient H` pulls back lower ramification groups from
-`integralClosure A (fixedField H)` to `FixedPoints.subalgebra A (integralClosure A L) H`. -/
-theorem ramificationGroup_fixedPoints_integralClosure_eq_comap (A : Type*) {K L : Type*}
-    [CommRing A] [Field K] [Field L] [Algebra A K] [Algebra K L] [Algebra A L]
-    [IsScalarTower A K L] [FiniteDimensional K L] [IsGalois K L]
-    [IsLocalRing (integralClosure A L)] (H : Subgroup (L ≃ₐ[K] L)) [H.Normal] (i : ℤ) :
-    ramificationGroup ((L ≃ₐ[K] L) ⧸ H) (FixedPoints.subalgebra A (integralClosure A L) H) i =
-      (ramificationGroup (fixedField H ≃ₐ[K] fixedField H) (integralClosure A (fixedField H))
-        i).comap (IsGalois.normalAutEquivQuotient H : _ →* _) :=
-  ramificationGroup_eq_comap_of_ringEquiv
-    (e := (TauCeti.fixedPointsSubalgebraIntegralClosureEquiv A H).toRingEquiv)
-    (TauCeti.fixedPointsSubalgebraIntegralClosureEquiv_smul A H) i
 
 section IntegralClosure
 

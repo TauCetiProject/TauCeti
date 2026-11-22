@@ -103,22 +103,8 @@ private theorem tower_integralClosure_bridge (v : RamificationIndexDomain) :
       upperRamificationGroup L M (inverseHerbrand K L v)) ∧
     (UpperJump K M v ↔ UpperJump K L v ∨ UpperJump L M (inverseHerbrand K L v)) := by
   have : Module.Finite K M := Module.Finite.trans L M
-  have := IsGalois.tower_top_of_isGalois K L M; let _ := IsScalarTower.to₁₃₄ 𝒪[K] K L M
-  let eM := TauCeti.integerRingEquivIntegralClosure K M
-  have := RingEquivClass.isDiscreteValuationRing eM
-  have : IsLocalHom (algebraMap 𝒪[K] (integralClosure 𝒪[K] M)) :=
-    eM.toAlgHom.comp_algebraMap ▸ inferInstance
-  have := Finite.of_equiv (ResidueField 𝒪[M]) (ResidueField.mapEquiv eM.toRingEquiv).toEquiv
-  let _ := TauCeti.isLocalRing_integralClosure_of_tower 𝒪[K] L M
-  have hMK (i : ℤ) : ramificationGroup (M ≃ₐ[K] M) 𝒪[M] i =
-      (ramificationGroup (M ≃ₐ[K] M) (integralClosure 𝒪[K] M) i).comap (MonoidHom.id _) := by
-    simpa using ramificationGroup_integerRing_eq_integralClosure K K M i
-  have hML (i : ℤ) : ramificationGroup (M ≃ₐ[L] M) 𝒪[M] i =
-      (ramificationGroup (M ≃ₐ[L] M) (integralClosure 𝒪[K] M) i).comap (MonoidHom.id _) := by
-    simpa using ramificationGroup_integerRing_eq_integralClosure K L M i
-  have hLK (i : ℤ) : ramificationGroup (L ≃ₐ[K] L) 𝒪[L] i =
-      (ramificationGroup (L ≃ₐ[K] L) (integralClosure 𝒪[K] L) i).comap (MonoidHom.id _) := by
-    simpa using ramificationGroup_integerRing_eq_integralClosure K K L i
+  have := IsGalois.tower_top_of_isGalois K L M
+  refine withIntegralClosureTower K L M fun hMK hML hLK ↦ ?_
   simp only [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup,
     coe_inverseHerbrand_eq_inverseHerbrandFun, upperJump_iff_isLocalRingUpperJump,
     upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap Function.bijective_id hMK,

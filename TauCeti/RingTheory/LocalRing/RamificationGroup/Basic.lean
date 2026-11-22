@@ -95,7 +95,12 @@ integer indexing that Herbrand theory uses. The coset-maximizer lemmas for `lowe
   `TauCeti.IsLocalRing.mem_ramificationGroupReal_iff_of_lowerIndex_eq`: when `i_G(σ) = n` is
   finite, `σ ∈ G_i ↔ i + 1 ≤ n` and `σ ∈ G_u ↔ u ≤ n - 1`.
 * `TauCeti.IsLocalRing.lowerJump_eq_intCast` and `TauCeti.IsLocalRing.lowerJump_intCast_iff`:
-  every lower break is an integer `i ≥ -1`, characterized by `G_{i+1} < G_i`.
+  every lower break is an integer `i ≥ -1`, characterized by `G_{i+1} < G_i`, and
+  `TauCeti.IsLocalRing.lowerJump_iff_of_ramificationGroup_eq_comap` transports lower breaks along
+  surjective homomorphisms pulling back the lower filtration.
+* `TauCeti.IsLocalRing.apply_mem_ramificationGroupReal_iff` and
+  `TauCeti.IsLocalRing.map_ramificationGroupReal_eq_of_surjective`: general maximal-lift
+  membership and surjective-image comparisons for real-indexed lower ramification groups on DVRs.
 
 ## References
 
@@ -837,24 +842,16 @@ theorem lowerJump_eq_intCast {u : ℝ} (hu : LowerJump G S u) : ∃ i : ℤ, -1 
      rw [ramificationGroupReal_intCast, ramificationGroupReal_def]
      exact (ramificationGroup_antitone G S (Int.add_one_le_iff.2 (Int.lt_ceil.2 hv))).trans_lt h⟩
 
+/-- A surjective `φ : G →* H` pulling back lower ramification groups preserves `LowerJump`. -/
+theorem lowerJump_iff_of_ramificationGroup_eq_comap {G : Type*} [Group G] {S : Type*}
+    [CommRing S] [IsLocalRing S] [MulSemiringAction G S] {H : Type*} [Group H] {T : Type*}
+    [CommRing T] [IsLocalRing T] [MulSemiringAction H T] {φ : G →* H}
+    (hφ : Function.Surjective φ)
+    (he : ∀ i : ℤ, ramificationGroup G S i = (ramificationGroup H T i).comap φ) (u : ℝ) :
+    LowerJump G S u ↔ LowerJump H T u := by
+  simp_rw [lowerJump_iff, ramificationGroupReal_def, he, Subgroup.comap_lt_comap_of_surjective hφ]
+
 end Real
-
-section RealDiscreteValuationRing
-
-variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
-variable [MulSemiringAction G S]
-
-/-- When the lower index of `σ` is the natural number `n`, `σ ∈ G_u` for a real `u` exactly when
-`u ≤ n - 1`. -/
-theorem mem_ramificationGroupReal_iff_of_lowerIndex_eq {u : ℝ} {σ : G} {n : ℕ}
-    (hn : lowerIndex S σ = n) :
-    σ ∈ ramificationGroupReal G S u ↔ u ≤ (n : ℝ) - 1 := by
-  rw [ramificationGroupReal_def, mem_ramificationGroup_iff_of_lowerIndex_eq hn, Int.add_one_le_iff,
-    ← Int.le_sub_one_iff, Int.ceil_le]
-  push_cast
-  exact Iff.rfl
-
-end RealDiscreteValuationRing
 
 end IsLocalRing
 
@@ -875,3 +872,80 @@ theorem exists_mem_forall_lowerIndex_mul_le (H : Subgroup G) [Finite H] (σ : G)
   simpa only [coe_mul, mul_assoc] using hτ₀ (τ₀ * ⟨τ, hτ⟩)
 
 end Subgroup
+
+namespace TauCeti.IsLocalRing
+
+section RealDiscreteValuationRing
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
+variable [MulSemiringAction G S]
+
+/-- When the lower index of `σ` is the natural number `n`, `σ ∈ G_u` for a real `u` exactly when
+`u ≤ n - 1`. -/
+theorem mem_ramificationGroupReal_iff_of_lowerIndex_eq {u : ℝ} {σ : G} {n : ℕ}
+    (hn : lowerIndex S σ = n) :
+    σ ∈ ramificationGroupReal G S u ↔ u ≤ (n : ℝ) - 1 := by
+  rw [ramificationGroupReal_def, mem_ramificationGroup_iff_of_lowerIndex_eq hn, Int.add_one_le_iff,
+    ← Int.le_sub_one_iff, Int.ceil_le]
+  push_cast
+  exact Iff.rfl
+
+/-- If `π : G →* G'` sends `g` to an element whose `C`-lower index stays finite when `i_B(g) ≠ ⊤`
+and satisfies `φ (i_B(g) - 1) = i_C(π g) - 1` for a strictly monotone `φ : ℝ → ℝ`, then
+`π g ∈ G'_{φ(u)} ↔ g ∈ G_u`. -/
+theorem apply_mem_ramificationGroupReal_iff
+    {G G' B C : Type*} [Group G] [Group G']
+    [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [MulSemiringAction G B]
+    [FaithfulSMul G B]
+    [CommRing C] [IsDomain C] [IsDiscreteValuationRing C] [MulSemiringAction G' C]
+    {π : G →* G'} {φ : ℝ → ℝ} (hφ : StrictMono φ) {g : G}
+    (hne : lowerIndex B g ≠ ⊤ → lowerIndex C (π g) ≠ ⊤)
+    (h_eq : ∀ {j : ℕ}, lowerIndex B g = j →
+      φ ((j : ℝ) - 1) = ((lowerIndex C (π g)).toNat : ℝ) - 1)
+    (u : ℝ) :
+    π g ∈ ramificationGroupReal G' C (φ u) ↔ g ∈ ramificationGroupReal G B u := by
+  rcases eq_or_ne (lowerIndex B g) ⊤ with htop | htop
+  · obtain rfl := lowerIndex_eq_top_iff.1 htop
+    simp [one_mem]
+  obtain ⟨j, hj⟩ := ENat.ne_top_iff_exists.1 htop
+  rw [mem_ramificationGroupReal_iff_of_lowerIndex_eq (ENat.natCast_toNat (hne htop)).symm,
+    ← h_eq hj.symm, mem_ramificationGroupReal_iff_of_lowerIndex_eq hj.symm, hφ.le_iff_le]
+
+/-- **Herbrand-style quotient image**: if `π : G →* G'` is surjective with finite kernel, `φ` is
+strictly monotone, and coset-maximal lifts `g` satisfy `i_B(g) ≠ ⊤ → i_C(π g) ≠ ⊤` and
+`φ (i_B(g) - 1) = i_C(π g) - 1`, then `(G_u).map π = G'_{φ(u)}`. -/
+theorem map_ramificationGroupReal_eq_of_surjective
+    {G G' B C : Type*} [Group G] [Group G']
+    [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [MulSemiringAction G B]
+    [FaithfulSMul G B]
+    [CommRing C] [IsDomain C] [IsDiscreteValuationRing C] [MulSemiringAction G' C]
+    {π : G →* G'} (hπ : Function.Surjective π) [Finite π.ker]
+    {φ : ℝ → ℝ} (hφ : StrictMono φ)
+    (hne : ∀ g : G, (∀ h ∈ π.ker, lowerIndex B (g * h) ≤ lowerIndex B g) →
+      lowerIndex B g ≠ ⊤ → lowerIndex C (π g) ≠ ⊤)
+    (h_eq : ∀ g : G, (∀ h ∈ π.ker, lowerIndex B (g * h) ≤ lowerIndex B g) →
+      ∀ {j : ℕ}, lowerIndex B g = j →
+        φ ((j : ℝ) - 1) = ((lowerIndex C (π g)).toNat : ℝ) - 1)
+    (u : ℝ) :
+    (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (φ u) := by
+  have hmk (g : G) {h : G} (hh : h ∈ π.ker) : π (g * h) = π g := by
+    rw [map_mul, MonoidHom.mem_ker.1 hh, mul_one]
+  ext q
+  rw [Subgroup.mem_map]
+  refine ⟨fun ⟨g, hg, hq⟩ ↦ ?_, fun hq ↦ ?_⟩
+  · obtain ⟨h₀, hh₀_mem, hh₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) π.ker g
+    rw [← hq, ← hmk g hh₀_mem,
+      apply_mem_ramificationGroupReal_iff hφ (hne _ hh₀) (h_eq _ hh₀),
+      ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex]
+    rw [ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex] at hg
+    exact hg.trans (by simpa [mul_inv_cancel_right] using hh₀ h₀⁻¹ (π.ker.inv_mem hh₀_mem))
+  · obtain ⟨g, rfl⟩ := hπ q
+    obtain ⟨h₀, hh₀_mem, hh₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) π.ker g
+    exact ⟨g * h₀,
+      (apply_mem_ramificationGroupReal_iff hφ (hne _ hh₀) (h_eq _ hh₀) u).1
+        (hmk g hh₀_mem ▸ hq),
+      hmk g hh₀_mem⟩
+
+end RealDiscreteValuationRing
+
+end TauCeti.IsLocalRing

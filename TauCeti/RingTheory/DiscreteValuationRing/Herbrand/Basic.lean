@@ -17,10 +17,8 @@ extension (no completeness or residue-finiteness), we prove Herbrand's lemma
 `inverseHerbrandFun_tower`, `herbrandOrderIso_tower`, `psiNat_tower`), Herbrand's theorem
 (`upperRamificationGroup_quotient_eq_map`), and upper breaks in quotients.
 
-We also extract the general maximal-lift membership and surjective-image lemmas
-(`apply_mem_ramificationGroupReal_iff` and `map_ramificationGroupReal_eq_of_surjective`),
-instantiated both for `QuotientGroup.mk' H` here and for `AlgEquiv.restrictNormalHom L` on local
-fields.
+Adapts the quotient, tower, and upper-break proofs from
+`TauCeti/NumberTheory/LocalField/Herbrand/{Quotient,Tower,UpperQuotient}.lean`.
 
 ## References
 
@@ -34,66 +32,6 @@ noncomputable section
 open IsLocalRing
 namespace TauCeti.IsLocalRing
 
-section Map
-
-/-- If `π : G →* G'` sends `g` to an element whose `C`-lower index stays finite when `i_B(g) ≠ ⊤`
-and satisfies `φ (i_B(g) - 1) = i_C(π g) - 1` for a strictly monotone `φ : ℝ → ℝ`, then
-`π g ∈ G'_{φ(u)} ↔ g ∈ G_u`. -/
-theorem apply_mem_ramificationGroupReal_iff
-    {G G' B C : Type*} [Group G] [Group G']
-    [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B] [MulSemiringAction G B]
-    [FaithfulSMul G B]
-    [CommRing C] [IsDomain C] [_root_.IsDiscreteValuationRing C] [MulSemiringAction G' C]
-    {π : G →* G'} {φ : ℝ → ℝ} (hφ : StrictMono φ) {g : G}
-    (hne : lowerIndex B g ≠ ⊤ → lowerIndex C (π g) ≠ ⊤)
-    (h_eq : ∀ {j : ℕ}, lowerIndex B g = j →
-      φ ((j : ℝ) - 1) = ((lowerIndex C (π g)).toNat : ℝ) - 1)
-    (u : ℝ) :
-    π g ∈ ramificationGroupReal G' C (φ u) ↔ g ∈ ramificationGroupReal G B u := by
-  rcases eq_or_ne (lowerIndex B g) ⊤ with htop | htop
-  · obtain rfl := lowerIndex_eq_top_iff.1 htop
-    simp [one_mem]
-  obtain ⟨j, hj⟩ := ENat.ne_top_iff_exists.1 htop
-  rw [mem_ramificationGroupReal_iff_of_lowerIndex_eq (ENat.natCast_toNat (hne htop)).symm,
-    ← h_eq hj.symm, mem_ramificationGroupReal_iff_of_lowerIndex_eq hj.symm, hφ.le_iff_le]
-
-/-- **Herbrand-style quotient image**: if `π : G →* G'` is surjective with finite kernel, `φ` is
-strictly monotone, and coset-maximal lifts `g` satisfy `i_B(g) ≠ ⊤ → i_C(π g) ≠ ⊤` and
-`φ (i_B(g) - 1) = i_C(π g) - 1`, then `(G_u).map π = G'_{φ(u)}`. -/
-theorem map_ramificationGroupReal_eq_of_surjective
-    {G G' B C : Type*} [Group G] [Group G']
-    [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B] [MulSemiringAction G B]
-    [FaithfulSMul G B]
-    [CommRing C] [IsDomain C] [_root_.IsDiscreteValuationRing C] [MulSemiringAction G' C]
-    {π : G →* G'} (hπ : Function.Surjective π) [Finite π.ker]
-    {φ : ℝ → ℝ} (hφ : StrictMono φ)
-    (hne : ∀ g : G, (∀ h ∈ π.ker, lowerIndex B (g * h) ≤ lowerIndex B g) →
-      lowerIndex B g ≠ ⊤ → lowerIndex C (π g) ≠ ⊤)
-    (h_eq : ∀ g : G, (∀ h ∈ π.ker, lowerIndex B (g * h) ≤ lowerIndex B g) →
-      ∀ {j : ℕ}, lowerIndex B g = j →
-        φ ((j : ℝ) - 1) = ((lowerIndex C (π g)).toNat : ℝ) - 1)
-    (u : ℝ) :
-    (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (φ u) := by
-  have hmk (g : G) {h : G} (hh : h ∈ π.ker) : π (g * h) = π g := by
-    rw [map_mul, MonoidHom.mem_ker.1 hh, mul_one]
-  ext q
-  rw [Subgroup.mem_map]
-  refine ⟨fun ⟨g, hg, hq⟩ ↦ ?_, fun hq ↦ ?_⟩
-  · obtain ⟨h₀, hh₀_mem, hh₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) π.ker g
-    rw [← hq, ← hmk g hh₀_mem,
-      apply_mem_ramificationGroupReal_iff hφ (hne _ hh₀) (h_eq _ hh₀),
-      ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex]
-    rw [ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex] at hg
-    exact hg.trans (by simpa [mul_inv_cancel_right] using hh₀ h₀⁻¹ (π.ker.inv_mem hh₀_mem))
-  · obtain ⟨g, rfl⟩ := hπ q
-    obtain ⟨h₀, hh₀_mem, hh₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) π.ker g
-    exact ⟨g * h₀,
-      (apply_mem_ramificationGroupReal_iff hφ (hne _ hh₀) (h_eq _ hh₀) u).1
-        (hmk g hh₀_mem ▸ hq),
-      hmk g hh₀_mem⟩
-
-end Map
-
 section Quotient
 variable (A B G : Type*) [CommRing A] [IsLocalRing A] [CommRing B] [IsDomain B]
   [IsDiscreteValuationRing B] [Algebra A B] [IsLocalHom (algebraMap A B)] [Group G] [Finite G]
@@ -106,12 +44,9 @@ theorem herbrandFun_lowerIndex_sub_one (g : G) {j : ℕ} (hj : lowerIndex B g = 
     herbrandFun H B ((j : ℝ) - 1) =
       ((lowerIndex (FixedPoints.subalgebra A B H) (QuotientGroup.mk' H g)).toNat : ℝ) - 1 := by
   have hsum := ramificationIdx_mul_lowerIndex_quotient_mk'_eq_sum_card A B G H g hj hg
-  obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.1
-    (lowerIndex_quotient_mk'_ne_top A B G H g (hj ▸ ENat.natCast_ne_top j) hg)
-  rw [← hn, ← Nat.cast_mul, ← Nat.cast_sum, Nat.cast_inj,
-    ← natCard_ramificationGroup_zero_fixedPoints A B H] at hsum
-  rw [← hn, ENat.toNat_natCast]
-  exact herbrandFun_sub_one_of_card_mul_eq_sum H B hsum
+  rw [← natCard_ramificationGroup_zero_fixedPoints A B H] at hsum
+  exact herbrandFun_sub_one_of_card_mul_eq_sum H B
+    (lowerIndex_quotient_mk'_ne_top A B G H g (hj ▸ ENat.natCast_ne_top j) hg) hsum
 /-- **Herbrand's lemma**: `(G ⧸ H)_{φ_H(u)} = (G_u).map (QuotientGroup.mk' H)` for normal `H`. -/
 theorem ramificationGroupReal_quotient_herbrandFun (u : ℝ) :
     ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) =

@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.GaloisAction
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.NumberTheory.RamificationInertia.Galois
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 import TauCeti.GroupTheory.Index.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
@@ -82,6 +82,10 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal_eq_ramificationGroupReal` and
   `TauCeti.LocalFieldsRamification.lowerJump_iff_isLocalRingLowerJump`: agreement with the
   `TauCeti.IsLocalRing` lower filtration and lower breaks on `𝒪[L]`.
+* `TauCeti.LocalFieldsRamification.ramificationGroup_integerRing_eq_integralClosure` and
+  `TauCeti.LocalFieldsRamification.ramificationGroup_integerRing_eq_comap_integralClosure`:
+  agreement of the lower filtration on `𝒪[L]` with that on `integralClosure 𝒪[K₀] L` for
+  `K₀ ⊆ K ⊆ L`.
 
 ## References
 
@@ -104,6 +108,8 @@ abbrev RamificationIndexDomain : Set ℝ := Set.Ici (-1 : ℝ)
 theorem _root_.Nat.cast_mem_ramificationIndexDomain (n : ℕ) :
     (n : ℝ) ∈ RamificationIndexDomain :=
   le_trans (by norm_num : (-1 : ℝ) ≤ 0) (Nat.cast_nonneg n)
+
+section
 
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -541,5 +547,42 @@ theorem map_autCongr_lowerRamificationGroup (φ : L ≃ₐ[K] L') (i : ℤ) :
 end AlgEquiv
 
 end Transport
+
+end
+
+section IntegralClosure
+
+open TauCeti.IsLocalRing in
+/-- Comap form of `ramificationGroup_integerRing_eq_integralClosure` along `MonoidHom.id`,
+for transport lemmas expecting `ramificationGroup ... = (...).comap φ`. -/
+theorem ramificationGroup_integerRing_eq_comap_integralClosure (K₀ K L : Type*)
+    [Field K₀] [ValuativeRel K₀] [TopologicalSpace K₀] [IsNonarchimedeanLocalField K₀]
+    [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+    [Algebra K₀ K] [Algebra K L] [Algebra K₀ L] [ValuativeExtension K₀ L] [ValuativeExtension K L]
+    [Module.Finite K L] [Algebra.IsAlgebraic K₀ L]
+    [IsScalarTower 𝒪[K₀] K L] [IsLocalRing (integralClosure 𝒪[K₀] L)] (i : ℤ) :
+    ramificationGroup (L ≃ₐ[K] L) 𝒪[L] i =
+      (ramificationGroup (L ≃ₐ[K] L) (integralClosure 𝒪[K₀] L) i).comap (MonoidHom.id _) :=
+  ramificationGroup_eq_comap_of_ringEquiv (φ := MonoidHom.id (L ≃ₐ[K] L))
+    (e := (TauCeti.integerRingEquivIntegralClosure K₀ L).toRingEquiv)
+    (fun _ _ ↦ Subtype.ext (by simp)) i
+
+open TauCeti.IsLocalRing in
+/-- For a tower `K₀ ⊆ K ⊆ L` of nonarchimedean local fields, the lower ramification filtration
+of `Gal(L/K)` on `𝒪[L]` equals its lower ramification filtration on `integralClosure 𝒪[K₀] L`. -/
+theorem ramificationGroup_integerRing_eq_integralClosure (K₀ K L : Type*)
+    [Field K₀] [ValuativeRel K₀] [TopologicalSpace K₀] [IsNonarchimedeanLocalField K₀]
+    [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+    [Algebra K₀ K] [Algebra K L] [Algebra K₀ L] [ValuativeExtension K₀ L] [ValuativeExtension K L]
+    [Module.Finite K L] [Algebra.IsAlgebraic K₀ L]
+    [IsScalarTower 𝒪[K₀] K L] [IsLocalRing (integralClosure 𝒪[K₀] L)] (i : ℤ) :
+    ramificationGroup (L ≃ₐ[K] L) 𝒪[L] i =
+      ramificationGroup (L ≃ₐ[K] L) (integralClosure 𝒪[K₀] L) i := by
+  simpa only [Subgroup.comap_id] using
+    ramificationGroup_integerRing_eq_comap_integralClosure K₀ K L i
+
+end IntegralClosure
 
 end TauCeti.LocalFieldsRamification

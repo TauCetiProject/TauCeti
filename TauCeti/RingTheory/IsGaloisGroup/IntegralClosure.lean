@@ -247,6 +247,7 @@ section Galois
 variable [FiniteDimensional K L] [IsGalois K L] [H.Normal]
 /-- `fixedPointsSubalgebraIntegralClosureEquiv` intertwines the quotient action of `Gal(L/K) ⧸ H`
 with the Galois action of `Gal(fixedField H / K)` via `IsGalois.normalAutEquivQuotient H`. -/
+@[simp]
 theorem fixedPointsSubalgebraIntegralClosureEquiv_smul (q : (L ≃ₐ[K] L) ⧸ H)
     (x : FixedPoints.subalgebra A (integralClosure A L) H) :
     fixedPointsSubalgebraIntegralClosureEquiv A H (q • x) =
@@ -257,13 +258,14 @@ theorem fixedPointsSubalgebraIntegralClosureEquiv_smul (q : (L ≃ₐ[K] L) ⧸ 
         AlgEquiv.smul_def, Subgroup.coe_mk_smul]
 /-- `(fixedPointsSubalgebraIntegralClosureEquiv A H).symm` intertwines the Galois action of
 `Gal(fixedField H / K)` with `(IsGalois.normalAutEquivQuotient H).symm`. -/
+@[simp]
 theorem fixedPointsSubalgebraIntegralClosureEquiv_symm_smul (τ : fixedField H ≃ₐ[K] fixedField H)
     (y : integralClosure A (fixedField H)) :
     (fixedPointsSubalgebraIntegralClosureEquiv A H).symm (τ • y) =
       (IsGalois.normalAutEquivQuotient H).symm τ •
         (fixedPointsSubalgebraIntegralClosureEquiv A H).symm y :=
   (fixedPointsSubalgebraIntegralClosureEquiv A H).injective <| by
-    simp [fixedPointsSubalgebraIntegralClosureEquiv_smul]
+    simp
 end Galois
 variable {A H} in
 /-- If `integralClosure A L` is local, so is `integralClosure A (fixedField H)`. -/

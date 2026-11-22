@@ -7,12 +7,10 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.RepresentationTheory.Invariants
-public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Invariant.Basic
 public import TauCeti.Algebra.Ring.Action.Invariant
 import Mathlib.Algebra.Polynomial.Derivative
 import TauCeti.Algebra.BigOperators.Finset.Average
-import TauCeti.RingTheory.LocalRing.FixedPoints
 
 /-!
 # Invariant rings and characteristic polynomials of group actions
@@ -602,6 +600,7 @@ end TauCeti.MulSemiringAction
 namespace TauCeti
 
 /-- `fixedPointsSubringEquivSubalgebra` is equivariant for the quotient action of `G ⧸ H`. -/
+@[simp]
 theorem fixedPointsSubringEquivSubalgebra_smul (A B G : Type*) [CommRing A] [CommRing B]
     [Algebra A B] [Group G] [MulSemiringAction G B] [SMulCommClass G A B] {H : Subgroup G}
     [H.Normal] (q : G ⧸ H) (x : FixedPoints.subring B H) :

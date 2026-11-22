@@ -126,10 +126,6 @@ def herbrandOrderIso [_hGal : IsGalois K L] : RamificationIndexDomain ≃o Ramif
 
 variable [IsGalois K L]
 
-/-- `herbrandOrderIso` agrees with `TauCeti.IsLocalRing.herbrandOrderIso` on `𝒪[L]`. -/
-theorem herbrandOrderIso_eq_isLocalRingHerbrandOrderIso :
-    herbrandOrderIso K L = TauCeti.IsLocalRing.herbrandOrderIso (L ≃ₐ[K] L) 𝒪[L] := (rfl)
-
 /-- The **Herbrand function** `φ_{L/K}`, the forward map of `herbrandOrderIso K L`. -/
 def herbrand (u : RamificationIndexDomain) : RamificationIndexDomain :=
   herbrandOrderIso K L u
