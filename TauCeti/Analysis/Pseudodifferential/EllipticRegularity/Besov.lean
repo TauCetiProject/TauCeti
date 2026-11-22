@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Pseudodifferential.EllipticRegularity.Basic
 public import TauCeti.Analysis.Pseudodifferential.BesovSpace
 public import TauCeti.Analysis.Holder.Zygmund
 import TauCeti.Analysis.Pseudodifferential.Smoothing
-import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 
 /-!
 # Interior elliptic regularity on Besov and Hölder–Zygmund spaces
@@ -76,24 +75,6 @@ namespace TauCeti
 namespace Symbol
 
 variable {n : ℕ} {m : ℝ} {φ : ContDiffBump (0 : CoordinateSpace n)}
-
-/-! ### Smoothing operators -/
-
-section Smoothing
-
-variable {r : Symbol n ℂ ℂ m}
-
-/-- **Smoothing operators on Besov spaces.** A smoothing symbol `r` with compact spatial support
-maps every tempered distribution `T`, of any order and growth, into every Besov space
-`B^s_{p,q}`, `q ≠ 0`. -/
-theorem IsSmoothing.memBesov_quantizeTempered (hsm : r.IsSmoothing)
-    (hr : r.HasCompactSpatialSupport) (T : 𝓢'(CoordinateSpace n, ℂ))
-    (φ : ContDiffBump (0 : CoordinateSpace n)) (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] {q : ℝ≥0∞}
-    (hq : q ≠ 0) : (quantizeTempered ℂ r hr.isUniform T).MemBesov φ s p q := by
-  obtain ⟨f, -, hf⟩ := hsm.exists_hasCompactSupport_quantizeTempered_eq hr T
-  exact hf ▸ f.memBesov φ s p hq
-
-end Smoothing
 
 /-! ### Interior regularity -/
 

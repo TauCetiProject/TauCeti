@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.FiniteOrder
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
 /-!
@@ -67,6 +69,8 @@ multiplication by the Schwartz function `ψ y_j` preserves every `H^t`.
 * `TauCeti.Symbol.IsSmoothing.exists_hasCompactSupport_quantizeTempered_eq`: in fact `Op(r) T` is a
   compactly supported Schwartz function, since it is not changed by a compactly supported cutoff
   equal to `1` on the spatial support of `r`.
+* `TauCeti.Symbol.IsSmoothing.memBesov_quantizeTempered`: hence `Op(r) T` lies in every Besov
+  space `B^s_{p,q}`, `q ≠ 0`.
 
 ## References
 
@@ -83,7 +87,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TemperedDistribution
-open scoped SchwartzMap BesselPotentialSpace ContDiff
+open scoped SchwartzMap BesselPotentialSpace ContDiff ENNReal
 
 namespace TauCeti
 
@@ -355,6 +359,16 @@ theorem IsSmoothing.exists_hasCompactSupport_quantizeTempered_eq (hsm : r.IsSmoo
   refine integral_congr_ae (.of_forall fun x ↦ ?_)
   simp only [SchwartzMap.smulLeftCLM_apply_apply ψ.hasTemperateGrowth, smul_eq_mul]
   ring
+
+/-- **Smoothing operators on Besov spaces.** A smoothing symbol `r` with compact spatial support
+maps every tempered distribution `T`, of any order and growth, into every Besov space
+`B^s_{p,q}`, `q ≠ 0`. -/
+theorem IsSmoothing.memBesov_quantizeTempered (hsm : r.IsSmoothing)
+    (hr : r.HasCompactSpatialSupport) (T : 𝓢'(CoordinateSpace n, ℂ))
+    (φ : ContDiffBump (0 : CoordinateSpace n)) (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] {q : ℝ≥0∞}
+    (hq : q ≠ 0) : (quantizeTempered ℂ r hr.isUniform T).MemBesov φ s p q := by
+  obtain ⟨f, -, hf⟩ := hsm.exists_hasCompactSupport_quantizeTempered_eq hr T
+  exact hf ▸ f.memBesov φ s p hq
 
 end Tempered
 
