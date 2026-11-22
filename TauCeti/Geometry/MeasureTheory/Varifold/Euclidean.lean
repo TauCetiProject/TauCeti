@@ -85,6 +85,11 @@ private theorem measurable_coe_fst : Measurable fun p : W × grassmannian E k �
 
 variable {V V₁ V₂ : Measure (W × grassmannian E k)}
 
+/-- The weight is the pushforward of `V` under the projection `(x, P) ↦ x`. -/
+theorem weight_def (V : Measure (W × grassmannian E k)) :
+    weight V = V.map fun p ↦ (p.1 : E) :=
+  (rfl)
+
 /-- The weight of a Borel set `A` is the mass that `V` gives to the pairs with base point in
 `A`. -/
 theorem weight_apply {A : Set E} (hA : MeasurableSet A) :
@@ -141,6 +146,11 @@ Theory*, §38). -/
 noncomputable def restrictOpens (V : Measure (W × grassmannian E k)) (h : W' ≤ W) :
     Measure (W' × grassmannian E k) :=
   V.comap (Prod.map (inclusion h) id)
+
+/-- The restriction to `W'` is the pullback of `V` along the inclusion of `W' × G(E, k)`. -/
+theorem restrictOpens_def (V : Measure (W × grassmannian E k)) (h : W' ≤ W) :
+    restrictOpens V h = V.comap (Prod.map (inclusion h) id) :=
+  (rfl)
 
 /-- Restricting a varifold to the whole of `W` does nothing. -/
 @[simp]
@@ -213,10 +223,9 @@ theorem map_restrictOpens (h : W' ≤ W) :
 
 /-- The restriction of a varifold to an open subset is a varifold. -/
 instance isFiniteMeasureOnCompacts_restrictOpens [IsFiniteMeasureOnCompacts V] (h : W' ≤ W) :
-    IsFiniteMeasureOnCompacts (restrictOpens V h) where
-  lt_top_of_isCompact _ hK := by
-    rw [restrictOpens_apply]
-    exact (hK.image ((continuous_inclusion h).prodMap continuous_id)).measure_lt_top
+    IsFiniteMeasureOnCompacts (restrictOpens V h) :=
+  IsFiniteMeasureOnCompacts.comap' V ((continuous_inclusion h).prodMap continuous_id)
+    (measurableEmbedding_inclusion_prodMap h)
 
 /-- Restriction to open subsets is transitive. -/
 @[simp]
@@ -230,9 +239,8 @@ theorem restrictOpens_restrictOpens (h' : W'' ≤ W') (h : W' ≤ W) :
 
 @[simp]
 theorem restrictOpens_add (V₁ V₂ : Measure (W × grassmannian E k)) (h : W' ≤ W) :
-    restrictOpens (V₁ + V₂) h = restrictOpens V₁ h + restrictOpens V₂ h := by
-  ext s
-  simp [restrictOpens_apply]
+    restrictOpens (V₁ + V₂) h = restrictOpens V₁ h + restrictOpens V₂ h :=
+  (measurableEmbedding_inclusion_prodMap h).comap_add V₁ V₂
 
 /-- Restriction to an open subset commutes with the restriction `V⌞A` to the pairs with base point
 in a set `A`. -/
