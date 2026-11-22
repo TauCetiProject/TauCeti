@@ -275,6 +275,17 @@ theorem isPTypical_map_iff {φ : R →+* S} (hφ : Function.Injective φ) (p : �
   refine ⟨fun h q hq hqp ↦ Curve.map_injective hφ ?_, fun h ↦ h.map φ⟩
   rw [F.map_frobeniusCurve φ q hq.ne_zero, h q hq hqp, map_zero]
 
+/-- `p`-typicality is closed under coefficientwise limits: a curve that agrees up to every degree
+with some `p`-typical curve is `p`-typical. -/
+theorem isPTypical_of_forall_exists_coeff_eq {p : ℕ} {γ : F.Curve}
+    (h : ∀ N, ∃ δ : F.Curve, δ.IsPTypical p ∧
+      ∀ k ≤ N, PowerSeries.coeff k δ.toPowerSeries = PowerSeries.coeff k γ.toPowerSeries) :
+    γ.IsPTypical p := by
+  intro q hq hqp
+  ext k : 2
+  obtain ⟨δ, hδ, hδγ⟩ := h (k * q)
+  rw [← F.coeff_frobeniusCurve_congr hq.ne_zero hδγ, hδ q hq hqp]
+
 /-- Pushing forward along a homomorphism of formal group laws preserves `p`-typicality. -/
 theorem IsPTypical.mapCurve {p : ℕ} {γ : F.Curve} (hγ : γ.IsPTypical p)
     (f : TauCeti.FormalGroupHom F G) : (f.mapCurve γ).IsPTypical p :=

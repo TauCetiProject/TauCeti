@@ -136,6 +136,23 @@ theorem verschiebungCurve_monomialCurve (F : FormalGroup R) {m n : ℕ} (hm : m 
       F.monomialCurve (n * m) (mul_ne_zero hn hm) c :=
   Curve.ext (by simp [← pow_mul, mul_comm])
 
+/-- Adding a monomial curve `c Tᵐ` does not change the coefficients below degree `m`. -/
+theorem Curve.coeff_add_monomialCurve_of_lt {F : FormalGroup R} (γ : F.Curve) {m k : ℕ}
+    (hm : m ≠ 0) (c : R) (hk : k < m) :
+    PowerSeries.coeff k (γ + F.monomialCurve m hm c).toPowerSeries =
+      PowerSeries.coeff k γ.toPowerSeries :=
+  coeff_add_eq_left_of_forall_lt_coeff_eq_zero γ _ hk fun i hi ↦ by
+    simp [PowerSeries.coeff_X_pow, hi.ne]
+
+/-- Adding a monomial curve `c Tᵐ` adds `c` to the degree-`m` coefficient. -/
+theorem Curve.coeff_add_monomialCurve_self {F : FormalGroup R} (γ : F.Curve) {m : ℕ}
+    (hm : m ≠ 0) (c : R) :
+    PowerSeries.coeff m (γ + F.monomialCurve m hm c).toPowerSeries =
+      PowerSeries.coeff m γ.toPowerSeries + c := by
+  rw [coeff_add_of_forall_lt_coeff_eq_zero γ _ hm le_rfl fun i hi ↦ by
+    simp [PowerSeries.coeff_X_pow, hi.ne]]
+  simp
+
 /-! ### Division by invertible natural numbers -/
 
 section CurveDivision
