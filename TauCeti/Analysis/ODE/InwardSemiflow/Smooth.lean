@@ -128,7 +128,9 @@ private theorem eventually_norm_sub_dysonSeriesLeft_le {C U : Set E} (hC : Conve
     norm_sub_dysonSeriesLeft_le_add_mul_integral hτ (by positivity) (hγ_cont hy) (hγ_cont hy₀)
       (hX_cont hy) (hX_cont hy₀) hM₀_cont hCD_bound (hint y hy) (hint y₀ hy₀) hTaylor_s ht
   calc ‖w t₀‖ ≤ R₀ * τ * Real.exp (CD * (t₀ - 0)) :=
-        le_mul_exp_of_le_add_mul_integral hw_cont hCD hw_bound t₀ ht₀
+        le_mul_exp_of_le_add_mul_integral hw_cont.integrableOn_Icc hCD
+          (MeasureTheory.ae_restrict_of_forall_mem measurableSet_Icc hw_bound) ht₀
+          (hw_bound t₀ ht₀)
     _ ≤ R₀ * τ * Real.exp (CD * τ) := by gcongr; linarith [ht₀.2]
     _ = ε / 4 * ‖y - y₀‖ := by have := hτ.ne'; have := hK'.ne'; simp only [R₀, η]; field_simp
     _ ≤ ε / 2 * ‖y - y₀‖ := by nlinarith [norm_nonneg (y - y₀)]
