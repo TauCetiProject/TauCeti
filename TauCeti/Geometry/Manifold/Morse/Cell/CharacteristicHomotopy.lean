@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Morse.Cell.InnerDisc
 public import TauCeti.Geometry.Manifold.Morse.Cell.NegativeDisc
 public import TauCeti.Geometry.Manifold.Morse.Cell.Width
 public import TauCeti.Topology.Category.TopCat.Limits.Homotopy
-public import TauCeti.Topology.Homotopy.Sigma
 
 /-!
 # Comparing the characteristic maps of two Morse charts
