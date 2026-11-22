@@ -80,8 +80,8 @@ namespace CircleRing
 sending `x ↦ (z ↦ Re z)` and `y ↦ (z ↦ Im z)`. -/
 def evalContinuousMap : CircleRing →ₐ[ℝ] C(Circle, ℝ) :=
   CircleQuotient.liftAlgHom
-    ⟨fun z : Circle ↦ (z : ℂ).re, Complex.continuous_re.comp continuous_subtype_val⟩
-    ⟨fun z : Circle ↦ (z : ℂ).im, Complex.continuous_im.comp continuous_subtype_val⟩
+    ⟨fun z : Circle ↦ (z : ℂ).re, Complex.continuous_re.comp continuous_subtypeVal⟩
+    ⟨fun z : Circle ↦ (z : ℂ).im, Complex.continuous_im.comp continuous_subtypeVal⟩
     (by
       ext z
       exact Circle.re_sq_add_im_sq z)
@@ -199,9 +199,9 @@ private def evalCircleRotationSO (N : ℕ) (hN : 2 ≤ N) (z : Circle) :
       (stabilizeSL hN circleRotation) z : Matrix (Fin N) (Fin N) ℝ), by
     rw [Matrix.mem_specialOrthogonalGroup_iff]
     refine ⟨?_, (CircleRing.evalContinuousMap.toRingHom.mapSLContinuousMap
-      (stabilizeSL hN circleRotation) z).2⟩
+      (stabilizeSL hN circleRotation) z).property⟩
     rw [Matrix.mem_orthogonalGroup_iff, RingHom.mapSLContinuousMap_apply,
-      SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, ← Matrix.transpose_map,
+      SpecialLinearGroup.map_apply_coe, ← Matrix.transpose_map,
       ← Matrix.map_mul, circleRotationStabilizedSL_mul_transpose N hN,
       Matrix.map_one _ (map_zero _) (map_one _)]⟩
 
@@ -320,7 +320,7 @@ private theorem realCliffordSpinProjectionZero_spinRotationPath_eq (N : ℕ) (hN
     CliffordAlgebra.spinRotation_eq_spinCircle]
   have hz_sq : ((Circle.exp (Real.pi * (u : ℝ)) : ℂ) ^ 2) =
       (Circle.exp (2 * Real.pi * (u : ℝ)) : ℂ) := by
-    simp only [Circle.coe_exp, ← Complex.exp_nat_mul]
+    simp only [Circle.coe_exp, ← Complex.exp_natCast_mul]
     congr 1
     push_cast
     ring
@@ -362,13 +362,13 @@ theorem circleRotation_not_mem_elementarySubgroup (N : ℕ) (hN : 2 ≤ N) :
   -- Precompose with `u ↦ Circle.exp (2π u)` to get a based nullhomotopy of loops in `SL(N, ℝ)`.
   let circleLoop : C(I, Circle) :=
     ⟨fun u : I ↦ Circle.exp (2 * Real.pi * (u : ℝ)),
-      Circle.exp.continuous.comp (continuous_const.mul continuous_subtype_val)⟩
+      Circle.exp.continuous.comp (continuous_const.mul continuous_subtypeVal)⟩
   have hpre : ({0, 1} : Set I) ⊆ circleLoop ⁻¹' {1} := by
     rintro u (rfl | rfl)
     · simp [circleLoop]
     · simp only [Set.mem_preimage, Set.mem_singleton_iff, circleLoop, ContinuousMap.coe_mk,
         Set.Icc.coe_one, mul_one]
-      exact Circle.ext (by simp [Circle.coe_exp, Complex.exp_two_pi_mul_I])
+      exact Circle.ext (by simp)
   have hloopSL : ContinuousMap.HomotopicRel
       ((1 : C(Circle, SpecialLinearGroup (Fin N) ℝ)).comp circleLoop)
       ((CircleRing.evalContinuousMap.toRingHom.mapSLContinuousMap gSL).comp circleLoop)

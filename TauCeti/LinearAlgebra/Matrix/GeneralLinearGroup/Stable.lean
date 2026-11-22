@@ -186,7 +186,7 @@ def stabilizeSL {R : Type*} [CommRing R] {m n : ℕ} (h : m ≤ n) :
       have hdet := congrArg Units.val
         (det_stabilizeGL (R := R) h (SpecialLinearGroup.toGL g))
       rw [GeneralLinearGroup.val_det_apply, GeneralLinearGroup.val_det_apply] at hdet
-      exact hdet.trans g.2⟩
+      exact hdet.trans g.property⟩
   map_one' := Subtype.ext (by simp)
   map_mul' g₁ g₂ := Subtype.ext (by simp; rfl)
 

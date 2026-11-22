@@ -102,7 +102,7 @@ theorem continuous_transvection [CommRing 𝕜] [TopologicalSpace 𝕜]
     Continuous (transvection hij : 𝕜 → SpecialLinearGroup n 𝕜) := by
   have hcont : Continuous fun a : 𝕜 ↦ (transvection hij a : Matrix n n 𝕜) := by
     simpa only [transvection_coe] using TauCeti.continuous_one_add_single (𝕜 := 𝕜) hij
-  exact hcont.subtype_mk fun a ↦ (transvection hij a).2
+  exact hcont.subtype_mk fun a ↦ (transvection hij a).property
 
 end Matrix.SpecialLinearGroup
 
@@ -237,7 +237,7 @@ def mapSLContinuousMap (f : R →+* C(X, 𝕜)) :
               Matrix n n 𝕜) :=
           continuous_matrix fun i j ↦ (f ((g : Matrix n n R) i j)).continuous
         exact hcont.subtype_mk fun x ↦
-          (SpecialLinearGroup.map ((ContinuousMap.evalAlgHom 𝕜 𝕜 x).toRingHom.comp f) g).2 }
+          (SpecialLinearGroup.map ((ContinuousMap.evalAlgHom 𝕜 𝕜 x).toRingHom.comp f) g).property }
   map_one' := by
     ext x i j
     simp
