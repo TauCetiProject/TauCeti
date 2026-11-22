@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralCoordinates
 public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.Basic
 public import TauCeti.MeasureTheory.Function.Jacobian
+import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
 # Local spectral change of variables
@@ -55,8 +56,7 @@ theorem lintegral_image_spectralCoordinates (μ : Measure (SelfAdjointCoordinate
     T.hasFDerivAt.comp x (hasFDerivAt_spectralCoordinates x).differentiableAt.hasFDerivAt
   have hjac (x : SelfAdjointCoordinates n 𝕜) :
       |(T.comp (fderiv ℝ spectralCoordinates x)).det| = |(fderiv ℝ spectralCoordinates x).det| := by
-    rw [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp,
-      abs_mul, abs_det_unitaryConjCoordinates, one_mul]
+    rw [ContinuousLinearMap.det_comp, abs_mul, abs_det_unitaryConjCoordinates, one_mul]
   have he := lintegral_image_eq_lintegral_abs_det_fderiv_mul₀ μ hs
     (fun x _ ↦ (hF x).hasFDerivWithinAt) ((unitaryConjCoordinates U).injective.comp_injOn h) g
   simp only [hjac, abs_det_fderiv_spectralCoordinates, Function.comp_apply] at he
