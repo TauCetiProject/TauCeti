@@ -541,8 +541,7 @@ number of points of `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` counted with their signs. 
 noncomputable def signedPairMap (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (R : Type*) [Ring R] :
     (criticalPoints 𝓘(ℝ, E) f₀ →₀ R) →ₗ[R] (criticalPoints 𝓘(ℝ, E) f₁ →₀ R) :=
   haveI := hf₁.finite_criticalPoints.to_subtype
-  Finsupp.linearCombination R fun p ↦
-    Finsupp.ofSupportFinite (fun q ↦ (hX₀.signedPairCoeff hX₁ 𝔬₀ 𝔬₁ p q : R)) (toFinite _)
+  Finsupp.intMatrixMap R (hX₀.signedPairCoeff hX₁ 𝔬₀ 𝔬₁)
 
 variable (hf₁ : IsMorse 𝓘(ℝ, E) f₁) {R : Type*} [Ring R]
 
@@ -551,8 +550,9 @@ variable (hf₁ : IsMorse 𝓘(ℝ, E) f₁) {R : Type*} [Ring R]
 theorem signedPairMap_apply (c : criticalPoints 𝓘(ℝ, E) f₀ →₀ R)
     (q : criticalPoints 𝓘(ℝ, E) f₁) :
     hX₀.signedPairMap hX₁ 𝔬₀ 𝔬₁ hf₁ R c q =
-      c.sum fun p a ↦ a * (hX₀.signedPairCoeff hX₁ 𝔬₀ 𝔬₁ p q : R) := by
-  simp [signedPairMap, Finsupp.linearCombination_apply, Finsupp.ofSupportFinite_coe]
+      c.sum fun p a ↦ a * (hX₀.signedPairCoeff hX₁ 𝔬₀ 𝔬₁ p q : R) :=
+  haveI := hf₁.finite_criticalPoints.to_subtype
+  Finsupp.intMatrixMap_apply _ c q
 
 /-- The coefficient of `q` in the image of `a • p` is `a` times the coefficient `signedPairCoeff`
 of `q` in the image of `p`. -/
@@ -560,8 +560,9 @@ of `q` in the image of `p`. -/
 theorem signedPairMap_single_apply (p : criticalPoints 𝓘(ℝ, E) f₀)
     (q : criticalPoints 𝓘(ℝ, E) f₁) (a : R) :
     hX₀.signedPairMap hX₁ 𝔬₀ 𝔬₁ hf₁ R (Finsupp.single p a) q =
-      a * (hX₀.signedPairCoeff hX₁ 𝔬₀ 𝔬₁ p q : R) := by
-  rw [signedPairMap_apply, Finsupp.sum_single_index (zero_mul _)]
+      a * (hX₀.signedPairCoeff hX₁ 𝔬₀ 𝔬₁ p q : R) :=
+  haveI := hf₁.finite_criticalPoints.to_subtype
+  Finsupp.intMatrixMap_single_apply _ p a q
 
 /-- **Change of coefficients.** An additive map `g : R → R'`, for instance a ring homomorphism,
 applied to the coefficients of the chains, intertwines the signed pair maps with coefficients in
@@ -569,11 +570,9 @@ applied to the coefficients of the chains, intertwines the signed pair maps with
 theorem mapRange_signedPairMap {R' F : Type*} [Ring R'] [FunLike F R R']
     [AddMonoidHomClass F R R'] (g : F) (c : criticalPoints 𝓘(ℝ, E) f₀ →₀ R) :
     Finsupp.mapRange g (map_zero g) (hX₀.signedPairMap hX₁ 𝔬₀ 𝔬₁ hf₁ R c) =
-      hX₀.signedPairMap hX₁ 𝔬₀ 𝔬₁ hf₁ R' (Finsupp.mapRange g (map_zero g) c) := by
-  ext q
-  rw [Finsupp.mapRange_apply, signedPairMap_apply, signedPairMap_apply,
-    Finsupp.sum_mapRange_index (fun _ ↦ zero_mul _), map_finsuppSum]
-  simp only [← zsmul_eq_mul', map_zsmul]
+      hX₀.signedPairMap hX₁ 𝔬₀ 𝔬₁ hf₁ R' (Finsupp.mapRange g (map_zero g) c) :=
+  haveI := hf₁.finite_criticalPoints.to_subtype
+  Finsupp.mapRange_intMatrixMap _ g c
 
 /-- **Reversing orientations conjugates the signed pair map.** The signed pair map for the
 orientations reversed at the critical points of `S₀` and `S₁` is the original map composed on both
@@ -582,12 +581,9 @@ theorem signedPairMap_reverse (S₀ : Set (criticalPoints 𝓘(ℝ, E) f₀)) [D
     (S₁ : Set (criticalPoints 𝓘(ℝ, E) f₁)) [DecidablePred (· ∈ S₁)] :
     hX₀.signedPairMap hX₁ (𝔬₀.reverse S₀) (𝔬₁.reverse S₁) hf₁ R =
       (Finsupp.signReversal R S₁).toLinearMap ∘ₗ hX₀.signedPairMap hX₁ 𝔬₀ 𝔬₁ hf₁ R ∘ₗ
-        (Finsupp.signReversal R S₀).toLinearMap := by
-  refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ ?_
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
-  rw [signedPairMap_single_apply, Finsupp.signReversal_single, Finsupp.signReversal_apply,
-    signedPairCoeff_reverse]
-  by_cases hp : p ∈ S₀ <;> by_cases hq : q ∈ S₁ <;> simp [hp, hq]
+        (Finsupp.signReversal R S₀).toLinearMap :=
+  haveI := hf₁.finite_criticalPoints.to_subtype
+  Finsupp.intMatrixMap_eq_signReversal_comp _ S₀ S₁ (signedPairCoeff_reverse S₀ S₁)
 
 /-- **For a single Morse–Smale pseudo-gradient, the signed pair map is the identity**, with the
 same orientation data at both ends. -/
