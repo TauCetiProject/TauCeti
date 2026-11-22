@@ -9,12 +9,13 @@ public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import TauCeti.Geometry.Manifold.FiberBundle.MapFiber
 public import TauCeti.Geometry.Manifold.FiberBundle.Principal
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Topology.FiberBundle.Principal.Projection
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
+import TauCeti.GroupTheory.GroupAction.Free
 import TauCeti.Geometry.Lie.Interior
 import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -24,7 +25,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Basic
 /-!
 # Smooth principal bundles from free orbit-exact submersions
 
-This file constructs `C^n` principal `G`-bundle structures on `TauCeti.ProjectionFiber G p` for an
+This file constructs `C^n` principal `G`-bundle structures on `TauCeti.MapFiber p` for an
 unbundled surjective `C^n` submersion `p : P → B` (`1 ≤ n`) with a free `C^n` right action of a
 group manifold `G` whose orbits are the fibres of `p` (the automatic real Lie-group version,
 Kolář–Michor–Slovák Lemma 10.3, follows in
@@ -35,9 +36,8 @@ Kolář–Michor–Slovák Lemma 10.3, follows in
    injective and spans `ker (dp_x)`, then the action sweep `(b, g) ↦ op g • s b` of any `C^n` local
    section `s` over open `U ⊆ B` is a `C^n` local diffeomorphism on `U ×ˢ univ`; when the action
    is also free along `s` and orbit-exact it is injective with image `p ⁻¹' U`, which gives
-   `contMDiffOn_sectionCoord`, `C^n` principal bundle structures on `ProjectionFiber G p`, and a
-   `G`-equivariant `C^n` diffeomorphism `ManifoldTotalSpace G (ProjectionFiber G p) ≃ₘ^n P`
-   over `B`.
+   `contMDiffOn_sectionCoord`, `C^n` principal bundle structures on `MapFiber p`, and a
+   `G`-equivariant `C^n` diffeomorphism `ManifoldTotalSpace G (MapFiber p) ≃ₘ^n P` over `B`.
 2. **Finite-dimensional `C^n` criterion (`1 ≤ n`, over `𝕜`):** injectivity of `d(g ↦ op g • x)_1`
    and `P → finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG` imply the vertical-range condition by
    rank-nullity (`ker_mfderiv_le_range_mfderiv_op_smul_one_of_finrank_eq`), and
@@ -55,9 +55,11 @@ Kolář–Michor–Slovák Lemma 10.3, follows in
   `actionTrivializationOfContMDiffSection_coordChange`: action sweep local diffeomorphism and `C^n`
   section coordinates.
 * `TauCeti.PrincipalBundle.fiberBundleOfSubmersion`,
-  `mem_trivializationAtlas_fiberBundleOfSubmersion_iff`, `principalBundleOfSubmersion`,
-  `contMDiffFiberBundleOfSubmersion`, `diffeomorphManifoldTotalSpaceOfSubmersion`: Banach `C^n`
-  principal bundle structures, atlas characterization, and total-space diffeomorphism.
+  `mem_trivializationAtlas_fiberBundleOfSubmersion_iff`,
+  `toMapFiber_actionTrivializationOfContMDiffSection_mem_trivializationAtlas`,
+  `principalBundleOfSubmersion`, `contMDiffFiberBundleOfSubmersion`,
+  `diffeomorphManifoldTotalSpaceOfSubmersion`: Banach `C^n` principal bundle structures, atlas
+  characterization, and total-space diffeomorphism.
 * `TauCeti.PrincipalBundle.contMDiffWithinAt_actionDivision_of_section`,
   `contMDiffWithinAt_actionDivision`, `contMDiffAt_actionDivision`, `contMDiffOn_actionDivision`,
   `contMDiff_actionDivision`: `C^n` regularity of `actionDivision` for a `C^n` Lie group `G`.
@@ -82,9 +84,6 @@ open Bundle Filter Function Manifold Module MulOpposite Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti.PrincipalBundle
-
-private theorem ne_zero_of_one_le {n : ℕ∞ω} (hn : 1 ≤ n) : n ≠ 0 := by
-  rintro rfl; simp at hn
 
 section ManifoldBase
 
@@ -142,15 +141,10 @@ theorem isRegularValue_of_isRegularPoint_of_orbit_eq_fiber {p : P → B} {x : P}
     (hreg : IsRegularPoint IP IB p x) : IsRegularValue IP IB p (p x) := by
   rw [isRegularValue_iff]; intro y hy
   obtain ⟨g, rfl⟩ := horbit y hy.symm
-  have hcomp : (mfderiv IP IB p x : EP →L[𝕜] EB) =
-      (mfderiv IP IB p (op g • x) : EP →L[𝕜] EB).comp
-        (mfderiv IP IP (fun z : P ↦ op g • z) x : EP →L[𝕜] EP) :=
-    (mfderiv_congr (funext fun z ↦ (horbit_inv g z).symm)).trans
-      (mfderiv_comp (I := IP) (I' := IP) (I'' := IB) x (hp _ hy) (hsmul g))
-  rw [isRegularPoint_iff] at hreg ⊢
-  have hsurj : Surjective ((mfderiv IP IB p (op g • x) : EP →L[𝕜] EB).comp
-      (mfderiv IP IP (fun z : P ↦ op g • z) x : EP →L[𝕜] EP)) := hcomp ▸ hreg
-  rw [ContinuousLinearMap.coe_comp] at hsurj; exact hsurj.of_comp
+  have hcomp : (fun z : P ↦ p (op g • z)) = p := funext (horbit_inv g)
+  have hreg' : IsRegularPoint IP IB (p ∘ fun z : P ↦ op g • z) x := by
+    rwa [Function.comp_def, hcomp]
+  exact hreg'.of_comp (hp _ hy) (hsmul g)
 
 end VerticalTangent
 
@@ -242,7 +236,7 @@ private theorem bijective_mfderiv_op_smul_section_one {U : Set B} (hU : IsOpen U
     (hinj : Injective (mfderiv IG IP (fun g : G ↦ op g • s b) 1))
     (hker : (mfderiv IP IB p (s b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s b) 1).range) :
     Bijective (mfderiv (IB.prod IG) IP (fun q : B × G ↦ op q.2 • s q.1) (b, 1)) := by
-  have hn0 : n ≠ 0 := ne_zero_of_one_le hn
+  have hn0 : n ≠ 0 := ENat.one_le_iff_ne_zero_withTop.mp hn
   let Ψ : B × G → P := fun q ↦ op q.2 • s q.1
   have hΨ_diff : MDifferentiableAt (IB.prod IG) IP Ψ (b, 1) :=
     ((contMDiffOn_op_smul_section hsmul hs_smooth).contMDiffAt
@@ -256,21 +250,21 @@ private theorem bijective_mfderiv_op_smul_section_one {U : Set B} (hU : IsOpen U
       mfderiv_congr (funext fun b' ↦ by simp only [Ψ, op_one, one_smul])
     exact (mfderiv_prod_eq_add_apply (I := IB) (I' := IG) (I'' := IP) (v := (u, w)) hΨ_diff).trans
       (by dsimp only; exact congrArg (· + dorb w) (DFunLike.congr_fun h1 u))
-  have hps (u : EB) : dp (ds u) = u :=
+  have hps : Function.RightInverse ds dp := fun u ↦
     mfderiv_apply_mfderiv_of_eventuallyEq_id ((hp (s b)).mdifferentiableAt hn0)
       ((hs_smooth.contMDiffAt (hU.mem_nhds hb)).mdifferentiableAt hn0)
       (eventually_of_mem (hU.mem_nhds hb) hs) u
   have horb_ker : dorb.range ≤ dp.ker := range_mfderiv_op_smul_one_le_ker horbit_inv
-  refine ⟨(injective_iff_map_eq_zero dΨ).2 fun ⟨u, w⟩ huw ↦ ?_, fun (v : EP) ↦ ?_⟩
-  · have huw' : ds u + dorb w = 0 := (hdecomp u w).symm.trans huw
-    have hw0 : dp (dorb w) = 0 := horb_ker ⟨w, rfl⟩
-    have hu0 : u = 0 := by simpa [hps u, hw0] using congrArg dp huw'
-    subst hu0; rw [map_zero, zero_add] at huw'
-    exact Prod.ext rfl (hinj (huw'.trans (map_zero dorb).symm))
-  · have hvert : v - ds (dp v) ∈ dp.ker := by
-      rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, hps (dp v), sub_self]
-    obtain ⟨w, hw⟩ : ∃ w : EG, dorb w = v - ds (dp v) := hker hvert
-    exact ⟨(dp v, w), (hdecomp (dp v) w).trans (by rw [hw, add_sub_cancel])⟩
+  let e_ker : EG ≃ dp.ker :=
+    Equiv.ofBijective (fun w ↦ ⟨dorb w, horb_ker ⟨w, rfl⟩⟩)
+      ⟨fun _ _ h ↦ hinj (congrArg Subtype.val h), fun ⟨_, hv⟩ ↦
+        let ⟨w, hw⟩ := hker hv; ⟨w, Subtype.ext hw⟩⟩
+  let e : (EB × EG) ≃ EP := (Equiv.prodCongr (Equiv.refl EB) e_ker).trans
+    (ContinuousLinearEquiv.equivOfRightInverse dp ds hps).symm.toEquiv
+  have he : (dΨ : EB × EG → EP) = e := funext fun ⟨u, w⟩ ↦ by
+    dsimp [e, e_ker]
+    exact hdecomp u w
+  exact he ▸ e.bijective
 
 /-- **Action sweep of a local section is a `C^n` local diffeomorphism.** Over an open set `U ⊆ B`
 supporting a `C^n` local section `s` of `p : P → B` (`1 ≤ n`) whose orbits are preserved by `p`, if
@@ -283,7 +277,7 @@ theorem isLocalDiffeomorphOn_op_smul_section {U : Set B} (hU : IsOpen U) {s : B 
     (hker : ∀ b ∈ U,
       (mfderiv IP IB p (s b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s b) 1).range) :
     IsLocalDiffeomorphOn (IB.prod IG) IP n (fun q : B × G ↦ op q.2 • s q.1) (U ×ˢ univ) := by
-  have hn0 : n ≠ 0 := ne_zero_of_one_le hn
+  have hn0 : n ≠ 0 := ENat.one_le_iff_ne_zero_withTop.mp hn
   have : IsManifold IP 1 P := .of_le hn; have : IsManifold IB 1 B := .of_le hn
   have : IsManifold IG 1 G := .of_le hn
   set Ψ : B × G → P := fun q ↦ op q.2 • s q.1
@@ -334,11 +328,19 @@ theorem contMDiffOn_sectionCoord
     isLocalDiffeomorphOn_op_smul_section hn hsmul hp hU hs_smooth hs
       (fun b _ g ↦ map_op_smul_of_orbit_iff horbit g (s b)) hinj hker
   have hinj_Ψ : InjOn Ψ (U ×ˢ univ) := by
+    have hstab : ∀ b ∈ U, MulAction.stabilizer Gᵐᵒᵖ (s b) = ⊥ := fun b hb ↦
+      (Subgroup.eq_bot_iff_forall _).2 fun g hg ↦
+        MulOpposite.unop_injective (hfree b hb (unop g) (by simpa using hg))
+    have hquot : InjOn (fun b ↦ Quotient.mk (MulAction.orbitRel Gᵐᵒᵖ P) (s b)) U := by
+      intro b₁ hb₁ b₂ hb₂ hq
+      obtain ⟨g, hg⟩ := Quotient.exact hq
+      simpa only [hs b₁ hb₁, hs b₂ hb₂, map_smul_of_orbit_iff horbit] using
+        congrArg p hg.symm
+    have hinj_swap := (MulAction.injOn_smul_univ_prod_iff (G := Gᵐᵒᵖ)).2 ⟨hstab, hquot⟩
     rintro ⟨b₁, g₁⟩ ⟨hb₁, -⟩ ⟨b₂, g₂⟩ ⟨hb₂, -⟩ hEq
-    have hb : b₁ = b₂ := by
-      simpa only [Ψ, map_op_smul_of_orbit_iff horbit, hs b₁ hb₁, hs b₂ hb₂] using congrArg p hEq
-    subst hb
-    exact Prod.ext rfl ((op_smul_eq_op_smul_iff_of_op_smul_eq_self_imp (hfree b₁ hb₁)).1 hEq)
+    have hpair :=
+      @hinj_swap (op g₁, b₁) ⟨mem_univ _, hb₁⟩ (op g₂, b₂) ⟨mem_univ _, hb₂⟩ hEq
+    exact Prod.ext (congrArg Prod.snd hpair) (MulOpposite.op_injective (congrArg Prod.fst hpair))
   have himg : Ψ '' (U ×ˢ univ) = p ⁻¹' U := subset_antisymm
     (by rintro _ ⟨⟨b, g⟩, ⟨hb, -⟩, rfl⟩; simp [Ψ, map_op_smul_of_orbit_iff horbit, hs b hb, hb])
     fun x hx ↦ ⟨(p x, sectionCoord horbit hs x), ⟨hx, mem_univ _⟩,
@@ -441,39 +443,70 @@ private theorem exists_mem_submersionTrivializationAtlas (b : B) :
   obtain ⟨U, hU, hxU, s, -, hs_smooth, hs⟩ := (hsub.isSubmersionAt x).exists_contMDiffOn_section
   exact ⟨_, ⟨U, hU, s, hs_smooth, hs, rfl⟩, by simpa using hxU⟩
 
-/-- **`FiberBundle` structure on the fibres of a free orbit-exact `C^n` submersion** (Banach
-version). Install locally via `letI := fiberBundleOfSubmersion ...`. -/
-@[instance_reducible]
-def fiberBundleOfSubmersion : FiberBundle G (ProjectionFiber G p) :=
-  ProjectionFiber.fiberBundle
+private def submersionAtlas : MapFiber.Atlas G p :=
+  MapFiber.Atlas.ofSet
     (submersionTrivializationAtlas hn hsmul hsub hfree horbit hinj hker)
     (exists_mem_submersionTrivializationAtlas hn hsmul hsub hsurj hfree horbit hinj hker)
 
+private theorem isContMDiff_submersionAtlas :
+    (submersionAtlas hn hsmul hsub hsurj hfree horbit hinj hker).IsContMDiff n IB IG IP := by
+  refine ⟨fun {t} ht ↦ ?_, fun {t} ht ↦ ?_⟩
+  · rw [submersionAtlas, MapFiber.Atlas.charts_ofSet] at ht
+    rcases ht with ⟨U, hU, s, hs_smooth, hs, rfl⟩
+    have hcoord := contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU hs_smooth hs
+      (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))
+    have hsrc : (actionTrivializationOfContMDiffSection hn hsmul hsub.contMDiff hfree horbit hU
+        hs_smooth hs (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).source = p ⁻¹' U := by
+      ext x
+      rw [Trivialization.mem_source, baseSet_actionTrivializationOfContMDiffSection, mem_preimage]
+    rw [hsrc]
+    exact (hsub.contMDiff.contMDiffOn.prodMk hcoord).congr fun x _ ↦
+      actionTrivializationOfContMDiffSection_apply hn hsmul hsub.contMDiff hfree horbit hU
+        hs_smooth hs (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b)) x
+  · rw [submersionAtlas, MapFiber.Atlas.charts_ofSet] at ht
+    rcases ht with ⟨U, hU, s, hs_smooth, hs, rfl⟩
+    have htgt : (actionTrivializationOfContMDiffSection hn hsmul hsub.contMDiff hfree horbit hU
+        hs_smooth hs (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).target = U ×ˢ univ := by
+      ext q
+      rw [Trivialization.mem_target, baseSet_actionTrivializationOfContMDiffSection]
+      exact ⟨fun hq ↦ ⟨hq, mem_univ _⟩, fun hq ↦ hq.1⟩
+    rw [htgt]
+    exact (contMDiffOn_op_smul_section hsmul hs_smooth).congr fun q _ ↦
+      actionTrivializationOfContMDiffSection_symm_apply hn hsmul hsub.contMDiff hfree horbit hU
+        hs_smooth hs (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b)) q
+
+/-- **`FiberBundle` structure on the fibres of a free orbit-exact `C^n` submersion** (Banach
+version). Install locally via `letI := fiberBundleOfSubmersion ...`. -/
+@[instance_reducible]
+def fiberBundleOfSubmersion : FiberBundle G (MapFiber p) :=
+  (submersionAtlas hn hsmul hsub hsurj hfree horbit hinj hker).fiberBundle
+
 /-- A trivialization belongs to the atlas of `fiberBundleOfSubmersion` iff it is the
-`ProjectionFiber` transport of `actionTrivializationOfContMDiffSection` for some `C^n` local
+`MapFiber` transport of `actionTrivializationOfContMDiffSection` for some `C^n` local
 section `s` of `p` over an open set `U ⊆ B`. -/
 theorem mem_trivializationAtlas_fiberBundleOfSubmersion_iff
-    (e : Trivialization G (π G (ProjectionFiber G p))) :
+    (e : Trivialization G (π G (MapFiber p))) :
     (letI := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker;
-      e ∈ trivializationAtlas G (ProjectionFiber G p)) ↔
+      e ∈ trivializationAtlas G (MapFiber p)) ↔
       ∃ (U : Set B) (hU : IsOpen U) (s : B → P) (hs_smooth : ContMDiffOn IB IP n s U)
         (hs : ∀ b ∈ U, p (s b) = b),
         e = (actionTrivializationOfContMDiffSection hn hsmul hsub.contMDiff hfree horbit hU
-          hs_smooth hs (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).projectionFiber := by
-  simp only [ProjectionFiber.trivializationAtlas_fiberBundle, mem_image,
-    submersionTrivializationAtlas, mem_ofPred_eq]
+          hs_smooth hs (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).toMapFiber := by
+  simp only [MapFiber.Atlas.trivializationAtlas_fiberBundle,
+    submersionAtlas, MapFiber.Atlas.charts_ofSet, mem_image, submersionTrivializationAtlas,
+    mem_ofPred_eq]
   exact ⟨fun ⟨_, ⟨U, hU, s, hs_s, hs, rfl⟩, ht⟩ ↦ ⟨U, hU, s, hs_s, hs, ht.symm⟩,
     fun ⟨U, hU, s, hs_s, hs, ht⟩ ↦ ⟨_, ⟨U, hU, s, hs_s, hs, rfl⟩, ht.symm⟩⟩
 
-/-- The `ProjectionFiber` transport of `actionTrivializationOfContMDiffSection` for any `C^n` local
+/-- The `MapFiber` transport of `actionTrivializationOfContMDiffSection` for any `C^n` local
 section `s` of `p` over open `U ⊆ B` belongs to the atlas of `fiberBundleOfSubmersion`. -/
-theorem projectionFiber_actionTrivializationOfContMDiffSection_mem_trivializationAtlas
+theorem toMapFiber_actionTrivializationOfContMDiffSection_mem_trivializationAtlas
     {U : Set B} (hU : IsOpen U) {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U)
     (hs : ∀ b ∈ U, p (s b) = b) :
     letI := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
     (actionTrivializationOfContMDiffSection hn hsmul hsub.contMDiff hfree horbit hU hs_smooth hs
-      (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).projectionFiber ∈
-      trivializationAtlas G (ProjectionFiber G p) :=
+      (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).toMapFiber ∈
+      trivializationAtlas G (MapFiber p) :=
   (mem_trivializationAtlas_fiberBundleOfSubmersion_iff hn hsmul hsub hsurj hfree horbit hinj hker
     _).2 ⟨U, hU, s, hs_smooth, hs, rfl⟩
 
@@ -481,122 +514,42 @@ theorem projectionFiber_actionTrivializationOfContMDiffSection_mem_trivializatio
 version). -/
 theorem principalBundleOfSubmersion :
     letI := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-    letI := ProjectionFiber.mulAction G (map_smul_of_orbit_iff horbit)
-    PrincipalBundle G (ProjectionFiber G p) :=
-  ProjectionFiber.principalBundle
-    (submersionTrivializationAtlas hn hsmul hsub hfree horbit hinj hker)
-    (exists_mem_submersionTrivializationAtlas hn hsmul hsub hsurj hfree horbit hinj hker)
+    letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (map_smul_of_orbit_iff horbit)
+    PrincipalBundle G (MapFiber p) :=
+  (submersionAtlas hn hsmul hsub hsurj hfree horbit hinj hker).principalBundle
     (map_smul_of_orbit_iff horbit)
-    fun _ ⟨_, _, _, _, hs, ht⟩ x hx g ↦ by
-      subst ht; simpa using sectionCoord_op_smul horbit hfree hs (by simpa using hx) g
+    fun t ht x hx g ↦ by
+      rw [submersionAtlas, MapFiber.Atlas.charts_ofSet] at ht
+      rcases ht with ⟨_, _, _, _, hs, rfl⟩
+      rw [actionTrivializationOfContMDiffSection_apply,
+        actionTrivializationOfContMDiffSection_apply]
+      exact sectionCoord_op_smul horbit hfree hs
+        (by rwa [baseSet_actionTrivializationOfContMDiffSection] at hx) g
 
 /-- **`ContMDiffFiberBundle` structure on the fibres of a free orbit-exact `C^n` submersion**
 (Banach version, requiring only `[ContMDiffMul IG n G]`). -/
 theorem contMDiffFiberBundleOfSubmersion :
     letI := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-    ContMDiffFiberBundle n G (ProjectionFiber G p) IB IG := by
-  have hatlas := mem_trivializationAtlas_fiberBundleOfSubmersion_iff hn hsmul hsub hsurj hfree
-    horbit hinj hker
-  let := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-  let := ProjectionFiber.mulAction G (map_smul_of_orbit_iff horbit)
-  have := principalBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-  rw [PrincipalBundle.contMDiffFiberBundle_iff]
-  intro e₁ e₂ he₁ he₂
-  rcases (hatlas e₁).1 he₁.out with ⟨U₁, hU₁, s₁, hs₁_smooth, hs₁, rfl⟩
-  rcases (hatlas e₂).1 he₂.out with ⟨U₂, hU₂, s₂, hs₂_smooth, hs₂, rfl⟩
-  have hcoord₂ := contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU₂ hs₂_smooth hs₂
-    (fun b _ ↦ hfree (s₂ b)) (fun b _ ↦ hinj (s₂ b)) (fun b _ ↦ hker (s₂ b))
-  refine (hcoord₂.comp (hs₁_smooth.mono ?_) fun b hb ↦ ?_).congr fun b _ ↦ ?_
-  · simp only [Trivialization.projectionFiber_baseSet,
-      baseSet_actionTrivializationOfContMDiffSection]
-    exact inter_subset_left
-  · simp only [mem_inter_iff, Trivialization.projectionFiber_baseSet,
-      baseSet_actionTrivializationOfContMDiffSection] at hb
-    have hmem : p (s₁ b) ∈ U₂ := (hs₁ b hb.1).symm ▸ hb.2
-    exact Set.mem_preimage.2 hmem
-  · rw [Trivialization.projectionFiber_coordChange,
-      actionTrivializationOfContMDiffSection_coordChange, op_one, one_smul]
-    exact Function.comp_apply.symm
+    ContMDiffFiberBundle n G (MapFiber p) IB IG :=
+  (submersionAtlas hn hsmul hsub hsurj hfree horbit hinj hker).contMDiffFiberBundle
+    (isContMDiff_submersionAtlas hn hsmul hsub hsurj hfree horbit hinj hker)
 
-private theorem exists_section_trivializationAt (b : B) :
-    letI := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-    ∃ (U : Set B) (hU : IsOpen U) (s : B → P) (hs_smooth : ContMDiffOn IB IP n s U)
-      (hs : ∀ b' ∈ U, p (s b') = b'), b ∈ U ∧
-      trivializationAt G (ProjectionFiber G p) b =
-        (actionTrivializationOfContMDiffSection hn hsmul hsub.contMDiff hfree horbit hU hs_smooth
-          hs (fun b' _ ↦ hinj (s b')) (fun b' _ ↦ hker (s b'))).projectionFiber := by
-  let := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-  rcases (mem_trivializationAtlas_fiberBundleOfSubmersion_iff hn hsmul hsub hsurj hfree horbit
-    hinj hker _).1 (trivialization_mem_atlas G (ProjectionFiber G p) b) with
-    ⟨U, hU, s, hs_smooth, hs, ht_eq⟩
-  exact ⟨U, hU, s, hs_smooth, hs,
-    by simpa [ht_eq] using mem_baseSet_trivializationAt G (ProjectionFiber G p) b, ht_eq⟩
-
-private theorem contMDiff_diffeomorphManifoldTotalSpace_toFun :
-    letI := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-    ContMDiff (IB.prod IG) IP n fun q : ManifoldTotalSpace G (ProjectionFiber G p) ↦
-      ProjectionFiber.totalSpaceEquiv G p
-        ((ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)).symm q) := by
-  let := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-  have := contMDiffFiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-  intro q₀
-  set z₀ := (ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)).symm q₀
-  rcases exists_section_trivializationAt hn hsmul hsub hsurj hfree horbit hinj hker z₀.proj with
-    ⟨U, hU, s, hs_smooth, hs, hz₀U, ht_eq⟩
-  have hproj := ManifoldTotalSpace.contMDiff_proj n G (ProjectionFiber G p) IB IG q₀
-  refine (hsmul.contMDiffAt.comp q₀ (((hs_smooth.contMDiffAt (hU.mem_nhds hz₀U)).comp q₀
-    hproj).prodMk (ManifoldTotalSpace.contMDiffAt_trivializationAt_snd n IB IG
-    q₀))).congr_of_eventuallyEq ?_
-  filter_upwards [hproj.continuousAt (hU.mem_nhds hz₀U)] with q hqU
-  set z := (ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)).symm q
-  have hzp : p z.snd.val = z.proj := z.snd.map_val
-  have hxU : p z.snd.val ∈ U := by rwa [hzp]
-  dsimp only [z₀] at ht_eq
-  simp only [ProjectionFiber.totalSpaceEquiv_apply, comp_apply, ht_eq,
-    Trivialization.projectionFiber_apply, actionTrivializationOfContMDiffSection_apply]
-  have hsec := (op_sectionCoord_smul horbit hs hxU).symm
-  rwa [hzp] at hsec
-
-private theorem contMDiff_diffeomorphManifoldTotalSpace_invFun :
-    letI := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-    ContMDiff IP (IB.prod IG) n fun x : P ↦
-      ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)
-        ((ProjectionFiber.totalSpaceEquiv G p).symm x) := by
-  let := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-  have := contMDiffFiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-  intro x₀
-  refine ManifoldTotalSpace.contMDiffAt_iff.2 ⟨(hsub.contMDiff x₀).congr_of_eventuallyEq
-    (Eventually.of_forall fun x ↦ ProjectionFiber.proj_totalSpaceEquiv_symm G p x), ?_⟩
-  rw [ProjectionFiber.proj_totalSpaceEquiv_symm]
-  rcases exists_section_trivializationAt hn hsmul hsub hsurj hfree horbit hinj hker (p x₀) with
-    ⟨U, hU, s, hs_smooth, hs, hx₀U, ht_eq⟩
-  have hcoord := contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU hs_smooth hs
-    (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))
-  exact (hcoord.contMDiffAt ((hU.preimage hsub.contMDiff.continuous).mem_nhds
-    hx₀U)).congr_of_eventuallyEq (Eventually.of_forall fun x ↦ by simp [ht_eq])
-
-/-- **The charted total space `ManifoldTotalSpace G (ProjectionFiber G p)` is `C^n` diffeomorphic
-to `P`.** -/
+/-- **The charted total space `ManifoldTotalSpace G (MapFiber p)` is `C^n` diffeomorphic to
+`P`.** -/
 def diffeomorphManifoldTotalSpaceOfSubmersion :
     letI := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-    ManifoldTotalSpace G (ProjectionFiber G p) ≃ₘ^n⟮IB.prod IG, IP⟯ P :=
-  letI := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-  have := contMDiffFiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-  { toEquiv := (ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)).symm.toEquiv.trans
-      (ProjectionFiber.totalSpaceEquiv G p)
-    contMDiff_toFun :=
-      contMDiff_diffeomorphManifoldTotalSpace_toFun hn hsmul hsub hsurj hfree horbit hinj hker
-    contMDiff_invFun :=
-      contMDiff_diffeomorphManifoldTotalSpace_invFun hn hsmul hsub hsurj hfree horbit hinj hker }
+    ManifoldTotalSpace G (MapFiber p) ≃ₘ^n⟮IB.prod IG, IP⟯ P :=
+  (submersionAtlas hn hsmul hsub hsurj hfree horbit hinj hker).totalSpaceDiffeomorph
+    (isContMDiff_submersionAtlas hn hsmul hsub hsurj hfree horbit hinj hker)
 
 /-- Forward map of `diffeomorphManifoldTotalSpaceOfSubmersion`. -/
 @[simp]
 theorem diffeomorphManifoldTotalSpaceOfSubmersion_apply
-    (q : ManifoldTotalSpace G (ProjectionFiber G p)) :
+    (q : ManifoldTotalSpace G (MapFiber p)) :
     diffeomorphManifoldTotalSpaceOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker q =
-      ((ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)).symm q).snd.val := by
+      ((ManifoldTotalSpace.homeomorph G (MapFiber p)).symm q).snd.val := by
   dsimp [diffeomorphManifoldTotalSpaceOfSubmersion]
-  exact ProjectionFiber.totalSpaceEquiv_apply G p _
+  rw [MapFiber.Atlas.totalSpaceDiffeomorph_apply, MapFiber.totalSpaceHomeomorph_apply]
 
 /-- Inverse map of `diffeomorphManifoldTotalSpaceOfSubmersion`. -/
 @[simp]
@@ -604,30 +557,26 @@ theorem diffeomorphManifoldTotalSpaceOfSubmersion_symm_apply (x : P) :
     (letI := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker;
       (diffeomorphManifoldTotalSpaceOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker).symm
         x) =
-      ManifoldTotalSpace.homeomorph G (ProjectionFiber G p) ⟨p x, ⟨x, rfl⟩⟩ := by
+      ManifoldTotalSpace.homeomorph G (MapFiber p) ⟨p x, ⟨x, rfl⟩⟩ := by
   dsimp [diffeomorphManifoldTotalSpaceOfSubmersion]
-  exact congrArg (ManifoldTotalSpace.homeomorph G (ProjectionFiber G p))
-    (ProjectionFiber.totalSpaceEquiv_symm_apply G p x)
+  rw [MapFiber.Atlas.totalSpaceDiffeomorph_symm_apply, MapFiber.totalSpaceHomeomorph_symm_apply]
 
 /-- `diffeomorphManifoldTotalSpaceOfSubmersion` commutes with the projections onto `B`. -/
 theorem proj_diffeomorphManifoldTotalSpaceOfSubmersion
-    (q : ManifoldTotalSpace G (ProjectionFiber G p)) :
+    (q : ManifoldTotalSpace G (MapFiber p)) :
     p (diffeomorphManifoldTotalSpaceOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker q) =
-      ((ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)).symm q).proj :=
-  ProjectionFiber.map_totalSpaceEquiv G p _
+      ((ManifoldTotalSpace.homeomorph G (MapFiber p)).symm q).proj :=
+  MapFiber.Atlas.proj_totalSpaceDiffeomorph _ q
 
 /-- `diffeomorphManifoldTotalSpaceOfSubmersion` is `G`-equivariant for the right `G`-actions. -/
 theorem diffeomorphManifoldTotalSpaceOfSubmersion_op_smul
-    (g : G) (q : ManifoldTotalSpace G (ProjectionFiber G p)) :
-    (letI := ProjectionFiber.mulAction G (map_smul_of_orbit_iff horbit);
+    (g : G) (q : ManifoldTotalSpace G (MapFiber p)) :
+    (letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (map_smul_of_orbit_iff horbit);
       diffeomorphManifoldTotalSpaceOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
         (op g • q)) =
       op g • diffeomorphManifoldTotalSpaceOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-        q := by
-  let := ProjectionFiber.mulAction G (map_smul_of_orbit_iff horbit)
-  rw [diffeomorphManifoldTotalSpaceOfSubmersion_apply,
-    diffeomorphManifoldTotalSpaceOfSubmersion_apply, ManifoldTotalSpace.homeomorph_symm_smul]
-  exact ProjectionFiber.val_smul G (map_smul_of_orbit_iff horbit) (op g) _
+        q :=
+  MapFiber.Atlas.totalSpaceDiffeomorph_smul _ (map_smul_of_orbit_iff horbit) (op g) q
 
 end Submersion
 
@@ -719,7 +668,8 @@ theorem contMDiffOn_sectionCoord_of_finrank_eq [BoundarylessManifold IP P] (hn :
   have := FiniteDimensional.completeSpace 𝕜 EG
   exact contMDiffOn_sectionCoord hn hsmul hp horbit hU hs_smooth hs hfree hinj fun b hb ↦
     (range_mfderiv_op_smul_one_eq_ker_of_finrank_eq
-      (isRegularPoint_of_contMDiffOn_section (ne_zero_of_one_le hn) hU hs_smooth hs hb (hp (s b)))
+      (isRegularPoint_of_contMDiffOn_section (ENat.one_le_iff_ne_zero_withTop.mp hn)
+        hU hs_smooth hs hb (hp (s b)))
       (fun g ↦ map_op_smul_of_orbit_iff horbit g (s b)) (hinj b hb) (hdim b hb)).ge
 
 omit [IP.Boundaryless] [IsManifold IP n P] [FiniteDimensional 𝕜 EB] [IsManifold IB n B]
@@ -734,7 +684,7 @@ theorem ker_mfderiv_le_range_mfderiv_op_smul_one_of_finrank_eq (hn : 1 ≤ n)
     (hdim : P → finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG) (x : P) :
     (mfderiv IP IB p x).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • x) 1).range :=
   (range_mfderiv_op_smul_one_eq_ker_of_finrank_eq
-    (isRegularPoint_iff.2 (hsub.surjective_mfderiv (ne_zero_of_one_le hn) x))
+    (isRegularPoint_iff.2 (hsub.surjective_mfderiv (ENat.one_le_iff_ne_zero_withTop.mp hn) x))
     (fun g ↦ map_op_smul_of_orbit_iff horbit g x) (hinj x) (hdim x)).ge
 
 end FiniteDimensional

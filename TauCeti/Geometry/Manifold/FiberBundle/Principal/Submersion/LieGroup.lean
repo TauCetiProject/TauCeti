@@ -16,7 +16,7 @@ import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 /-!
 # Smooth principal bundles from Lie-group submersions (Kolář–Michor–Slovák, Lemma 10.3)
 
-`TauCeti.Geometry.Manifold.FiberBundle.Principal.Submersion.Basic` equips `ProjectionFiber G p`
+`TauCeti.Geometry.Manifold.FiberBundle.Principal.Submersion.Basic` equips `TauCeti.MapFiber p`
 with `C^n` principal bundle structures assuming injective orbit differentials spanning
 `ker (dp_x)`, and reduces that spanning condition in finite dimensions to
 `finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG`
@@ -37,7 +37,7 @@ hypothesis on `G` is essential (e.g. `ℝ → PUnit` under translation by discre
 * `TauCeti.PrincipalBundle.contMDiffOn_sectionCoord_of_lieGroup`: `C^n` section coordinates.
 * `TauCeti.PrincipalBundle.fiberBundleOfSubmersionLieGroup`,
   `mem_trivializationAtlas_fiberBundleOfSubmersionLieGroup_iff`,
-  `projectionFiber_actionTrivializationOfSection_mem_trivializationAtlas_of_lieGroup`,
+  `toMapFiber_actionTrivializationOfSection_mem_trivializationAtlas_of_lieGroup`,
   `principalBundleOfSubmersionLieGroup`, `contMDiffFiberBundleOfSubmersionLieGroup`,
   `diffeomorphManifoldTotalSpaceOfSubmersionLieGroup`: Kolář–Michor–Slovák, Lemma 10.3.
 * `TauCeti.PrincipalBundle.contMDiffWithinAt_actionDivision_of_lieGroup`,
@@ -64,9 +64,6 @@ namespace TauCeti.PrincipalBundle
 
 private theorem one_le_of_three_le {n : ℕ∞ω} (hn : 3 ≤ n) : 1 ≤ n :=
   (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn
-
-private theorem ne_zero_of_three_le {n : ℕ∞ω} (hn : 3 ≤ n) : n ≠ 0 := by
-  rintro rfl; simp at hn
 
 variable {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP] [FiniteDimensional ℝ EP]
   {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP} [IP.Boundaryless]
@@ -151,7 +148,7 @@ theorem finrank_eq_add_finrank_of_isSubmersion_of_orbit_eq_fiber (hn : 3 ≤ n)
   exact finrank_eq_add_finrank_of_isRegularValue_of_orbit_eq_fiber hn (hsmul.of_le hn1)
     (hsub.contMDiff.of_le hn1)
     (isRegularValue_iff.2 fun y _ ↦ isRegularPoint_iff.2
-      (hsub.surjective_mfderiv (ne_zero_of_three_le hn) y))
+      (hsub.surjective_mfderiv (ENat.one_le_iff_ne_zero_withTop.mp hn1) y))
     (hfree x) (horbit x)
 
 /-- **Smoothness of `sectionCoord` under a free `C^n` Lindelöf Lie-group action (`3 ≤ n`).** If `s`
@@ -165,7 +162,7 @@ theorem contMDiffOn_sectionCoord_of_lieGroup (hn : 3 ≤ n)
     (hs : ∀ b ∈ U, p (s b) = b) (hfree : ∀ b ∈ U, ∀ g : G, op g • s b = s b → g = 1) :
     ContMDiffOn IP IG n (sectionCoord horbit hs) (p ⁻¹' U) := by
   have hn1 : (1 : ℕ∞ω) ≤ n := one_le_of_three_le hn
-  have hn0 : n ≠ 0 := ne_zero_of_three_le hn
+  have hn0 : n ≠ 0 := ENat.one_le_iff_ne_zero_withTop.mp hn1
   have : IsManifold IP 1 P := .of_le hn1; have : IsManifold IB 1 B := .of_le hn1
   refine contMDiffOn_sectionCoord_of_finrank_eq hn1 hsmul hp horbit hU hs_smooth hs hfree
     (fun b hb ↦ hsmul.injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp hn0 hn (hfree b hb))
@@ -203,26 +200,26 @@ private theorem ker_mfderiv_le_range_mfderiv_op_smul_one_of_lieGroup (x : P) :
 
 /-- **Kolář–Michor–Slovák, Lemma 10.3 (`FiberBundle` structure).** A surjective `C^n` submersion
 (`3 ≤ n`) with a free orbit-exact `C^n` right action of a Lindelöf finite-dimensional real `C^n`
-Lie group `G` equips `ProjectionFiber G p` with a `FiberBundle` structure. -/
+Lie group `G` equips `MapFiber p` with a `FiberBundle` structure. -/
 @[instance_reducible]
-def fiberBundleOfSubmersionLieGroup : FiberBundle G (ProjectionFiber G p) :=
+def fiberBundleOfSubmersionLieGroup : FiberBundle G (MapFiber p) :=
   fiberBundleOfSubmersion (one_le_of_three_le hn) hsmul hsub hsurj hfree horbit
     (injective_mfderiv_op_smul_one hn hsmul hfree)
     (ker_mfderiv_le_range_mfderiv_op_smul_one_of_lieGroup hn hsmul hsub hfree horbit)
 
 /-- A trivialization belongs to the atlas of `fiberBundleOfSubmersionLieGroup` iff it is the
-`ProjectionFiber` transport of `actionTrivializationOfSection` for some `C^n` local section `s` of
+`MapFiber` transport of `actionTrivializationOfSection` for some `C^n` local section `s` of
 `p` over an open set `U ⊆ B`. -/
 theorem mem_trivializationAtlas_fiberBundleOfSubmersionLieGroup_iff
-    (e : Trivialization G (π G (ProjectionFiber G p))) :
+    (e : Trivialization G (π G (MapFiber p))) :
     (letI := fiberBundleOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit;
-      e ∈ trivializationAtlas G (ProjectionFiber G p)) ↔
+      e ∈ trivializationAtlas G (MapFiber p)) ↔
       ∃ (U : Set B) (hU : IsOpen U) (s : B → P) (_ : ContMDiffOn IB IP n s U)
         (hs : ∀ b ∈ U, p (s b) = b)
         (hcoord : ContinuousOn (sectionCoord horbit hs) (p ⁻¹' U))
         (hsmul_s : ContinuousOn (fun q : B × G ↦ op q.2 • s q.1) (U ×ˢ univ)),
         e = (actionTrivializationOfSection hsub.contMDiff.continuous horbit hfree hU hs hcoord
-          hsmul_s).projectionFiber := by
+          hsmul_s).toMapFiber := by
   have hn1 := one_le_of_three_le hn
   rw [fiberBundleOfSubmersionLieGroup,
     mem_trivializationAtlas_fiberBundleOfSubmersion_iff hn1 hsmul hsub hsurj hfree horbit
@@ -247,30 +244,28 @@ theorem mem_trivializationAtlas_fiberBundleOfSubmersionLieGroup_iff
         hs fun b _ ↦ hfree (s b)).continuousOn
       have hsmul_s := (contMDiffOn_op_smul_section hsmul hs_s).continuousOn
       exact ⟨U, hU, s, hs_s, hs, hcoord, hsmul_s,
-        ht.trans (congrArg Trivialization.projectionFiber
-          (htriv U hU s hs_s hs hcoord hsmul_s))⟩,
+        ht.trans (congrArg Trivialization.toMapFiber (htriv U hU s hs_s hs hcoord hsmul_s))⟩,
     fun ⟨U, hU, s, hs_s, hs, hcoord, hsmul_s, ht⟩ ↦
-      ⟨U, hU, s, hs_s, hs,
-        ht.trans (congrArg Trivialization.projectionFiber
-          (htriv U hU s hs_s hs hcoord hsmul_s).symm)⟩⟩
+      ⟨U, hU, s, hs_s, hs, ht.trans
+        (congrArg Trivialization.toMapFiber (htriv U hU s hs_s hs hcoord hsmul_s).symm)⟩⟩
 
-/-- The `ProjectionFiber` transport of `actionTrivializationOfSection` for any `C^n` local section
+/-- The `MapFiber` transport of `actionTrivializationOfSection` for any `C^n` local section
 `s` of `p` over open `U ⊆ B` belongs to the atlas of `fiberBundleOfSubmersionLieGroup`. -/
-theorem projectionFiber_actionTrivializationOfSection_mem_trivializationAtlas_of_lieGroup
+theorem toMapFiber_actionTrivializationOfSection_mem_trivializationAtlas_of_lieGroup
     {U : Set B} (hU : IsOpen U) {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U)
     (hs : ∀ b ∈ U, p (s b) = b) (hcoord : ContinuousOn (sectionCoord horbit hs) (p ⁻¹' U))
     (hsmul_s : ContinuousOn (fun q : B × G ↦ op q.2 • s q.1) (U ×ˢ univ)) :
     letI := fiberBundleOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit
     (actionTrivializationOfSection hsub.contMDiff.continuous horbit hfree hU hs hcoord
-      hsmul_s).projectionFiber ∈ trivializationAtlas G (ProjectionFiber G p) :=
+      hsmul_s).toMapFiber ∈ trivializationAtlas G (MapFiber p) :=
   (mem_trivializationAtlas_fiberBundleOfSubmersionLieGroup_iff hn hsmul hsub hsurj hfree horbit
     _).2 ⟨U, hU, s, hs_smooth, hs, hcoord, hsmul_s, rfl⟩
 
 /-- **Kolář–Michor–Slovák, Lemma 10.3 (`PrincipalBundle` structure).** -/
 theorem principalBundleOfSubmersionLieGroup :
     letI := fiberBundleOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit
-    letI := ProjectionFiber.mulAction G (map_smul_of_orbit_iff horbit)
-    PrincipalBundle G (ProjectionFiber G p) :=
+    letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (map_smul_of_orbit_iff horbit)
+    PrincipalBundle G (MapFiber p) :=
   principalBundleOfSubmersion (one_le_of_three_le hn) hsmul hsub hsurj hfree
     horbit (injective_mfderiv_op_smul_one hn hsmul hfree)
     (ker_mfderiv_le_range_mfderiv_op_smul_one_of_lieGroup hn hsmul hsub hfree horbit)
@@ -278,7 +273,7 @@ theorem principalBundleOfSubmersionLieGroup :
 /-- **Kolář–Michor–Slovák, Lemma 10.3 (`ContMDiffFiberBundle` structure).** -/
 theorem contMDiffFiberBundleOfSubmersionLieGroup :
     letI := fiberBundleOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit
-    ContMDiffFiberBundle n G (ProjectionFiber G p) IB IG :=
+    ContMDiffFiberBundle n G (MapFiber p) IB IG :=
   contMDiffFiberBundleOfSubmersion (one_le_of_three_le hn) hsmul hsub hsurj hfree
     horbit (injective_mfderiv_op_smul_one hn hsmul hfree)
     (ker_mfderiv_le_range_mfderiv_op_smul_one_of_lieGroup hn hsmul hsub hfree horbit)
@@ -286,7 +281,7 @@ theorem contMDiffFiberBundleOfSubmersionLieGroup :
 /-- **Kolář–Michor–Slovák, Lemma 10.3 (total-space `C^n` diffeomorphism).** -/
 def diffeomorphManifoldTotalSpaceOfSubmersionLieGroup :
     letI := fiberBundleOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit
-    ManifoldTotalSpace G (ProjectionFiber G p) ≃ₘ^n⟮IB.prod IG, IP⟯ P :=
+    ManifoldTotalSpace G (MapFiber p) ≃ₘ^n⟮IB.prod IG, IP⟯ P :=
   diffeomorphManifoldTotalSpaceOfSubmersion (one_le_of_three_le hn) hsmul hsub
     hsurj hfree horbit (injective_mfderiv_op_smul_one hn hsmul hfree)
     (ker_mfderiv_le_range_mfderiv_op_smul_one_of_lieGroup hn hsmul hsub hfree horbit)
@@ -294,9 +289,9 @@ def diffeomorphManifoldTotalSpaceOfSubmersionLieGroup :
 /-- Forward map of `diffeomorphManifoldTotalSpaceOfSubmersionLieGroup`. -/
 @[simp]
 theorem diffeomorphManifoldTotalSpaceOfSubmersionLieGroup_apply
-    (q : ManifoldTotalSpace G (ProjectionFiber G p)) :
+    (q : ManifoldTotalSpace G (MapFiber p)) :
     diffeomorphManifoldTotalSpaceOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit q =
-      ((ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)).symm q).snd.val :=
+      ((ManifoldTotalSpace.homeomorph G (MapFiber p)).symm q).snd.val :=
   diffeomorphManifoldTotalSpaceOfSubmersion_apply _ _ _ _ _ _ _ _ q
 
 /-- Inverse map of `diffeomorphManifoldTotalSpaceOfSubmersionLieGroup`. -/
@@ -305,20 +300,20 @@ theorem diffeomorphManifoldTotalSpaceOfSubmersionLieGroup_symm_apply (x : P) :
     (letI := fiberBundleOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit;
       (diffeomorphManifoldTotalSpaceOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit).symm
         x) =
-      ManifoldTotalSpace.homeomorph G (ProjectionFiber G p) ⟨p x, ⟨x, rfl⟩⟩ :=
+      ManifoldTotalSpace.homeomorph G (MapFiber p) ⟨p x, ⟨x, rfl⟩⟩ :=
   diffeomorphManifoldTotalSpaceOfSubmersion_symm_apply _ _ _ _ _ _ _ _ x
 
 /-- `diffeomorphManifoldTotalSpaceOfSubmersionLieGroup` commutes with projections onto `B`. -/
 theorem proj_diffeomorphManifoldTotalSpaceOfSubmersionLieGroup
-    (q : ManifoldTotalSpace G (ProjectionFiber G p)) :
+    (q : ManifoldTotalSpace G (MapFiber p)) :
     p (diffeomorphManifoldTotalSpaceOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit q) =
-      ((ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)).symm q).proj :=
+      ((ManifoldTotalSpace.homeomorph G (MapFiber p)).symm q).proj :=
   proj_diffeomorphManifoldTotalSpaceOfSubmersion _ _ _ _ _ _ _ _ q
 
 /-- `diffeomorphManifoldTotalSpaceOfSubmersionLieGroup` is `G`-equivariant for right `G`-actions. -/
 theorem diffeomorphManifoldTotalSpaceOfSubmersionLieGroup_op_smul
-    (g : G) (q : ManifoldTotalSpace G (ProjectionFiber G p)) :
-    (letI := ProjectionFiber.mulAction G (map_smul_of_orbit_iff horbit);
+    (g : G) (q : ManifoldTotalSpace G (MapFiber p)) :
+    (letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (map_smul_of_orbit_iff horbit);
       diffeomorphManifoldTotalSpaceOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit
         (op g • q)) =
       op g • diffeomorphManifoldTotalSpaceOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit

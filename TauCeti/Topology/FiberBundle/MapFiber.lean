@@ -22,8 +22,10 @@ coordinate changes.
 
 This is the passage from a bundle given by its total space, as in classical differential geometry,
 to Mathlib's `FiberBundle` on a family of fibres. The trivializations are packaged as a
-`TauCeti.MapFiber.Atlas F proj`, and the fibre bundle is the definition
-`TauCeti.MapFiber.Atlas.fiberBundle` rather than an instance, because it depends on the atlas.
+`TauCeti.MapFiber.Atlas F proj` (optionally with an explicit covering set `charts` containing each
+`trivAt b`, or built from a covering set via `TauCeti.MapFiber.Atlas.ofSet`), and the fibre bundle
+is the definition `TauCeti.MapFiber.Atlas.fiberBundle` rather than an instance, because it depends
+on the atlas.
 
 When `G` is a group with a right action on `P` (an action of `Gᵐᵒᵖ`) preserving each fibre of
 `proj`, the action restricts to the fibres (`TauCeti.MapFiber.mulAction`). If every trivialization
@@ -36,7 +38,9 @@ of the atlas intertwines it with right multiplication on `G`, the bundle of fibr
 * `TauCeti.MapFiber.totalSpaceHomeomorph`: the total space of the fibres is homeomorphic to `P`.
 * `Bundle.Trivialization.toMapFiber`: a trivialization of `proj` as a trivialization of the bundle
   of its fibres.
-* `TauCeti.MapFiber.Atlas`: a choice of a trivialization of `proj` around every point of `B`.
+* `TauCeti.MapFiber.Atlas`: a choice of a trivialization of `proj` around every point of `B`,
+  together with a set `charts` of trivializations containing each chosen chart.
+* `TauCeti.MapFiber.Atlas.ofSet`: builds an atlas from any covering set of trivializations.
 * `TauCeti.MapFiber.Atlas.fiberBundle`: the fibre bundle structure on the fibres of `proj`.
 * `TauCeti.MapFiber.mulAction`: a fibre-preserving action restricted to the fibres.
 
@@ -209,16 +213,46 @@ namespace MapFiber
 
 variable (F) in
 /-- An atlas of a map `proj : P → B` with model fibre `F`: a trivialization `trivAt b` of `proj`
-whose base set contains `b`, for every point `b` of `B`. -/
+whose base set contains `b`, for every point `b` of `B`, together with the set `charts` of
+trivializations belonging to the atlas. -/
 structure Atlas (proj : P → B) where
   /-- The trivialization chosen at a point of the base. -/
   trivAt : B → Trivialization F proj
   /-- The trivialization chosen at `b` trivializes `proj` over a neighbourhood of `b`. -/
   mem_baseSet_trivAt : ∀ b, b ∈ (trivAt b).baseSet
+  /-- The set of trivializations belonging to the atlas. -/
+  charts : Set (Trivialization F proj)
+  /-- Every chosen trivialization `trivAt b` belongs to `charts`. -/
+  trivAt_mem_charts : ∀ b, trivAt b ∈ charts
 
 namespace Atlas
 
 variable {proj : P → B} (A : Atlas F proj)
+
+/-- Construct a `MapFiber.Atlas` from a choice of trivialization `trivAt b` at every base point
+`b`. -/
+def ofTrivAt (trivAt : B → Trivialization F proj)
+    (mem_baseSet_trivAt : ∀ b, b ∈ (trivAt b).baseSet) :
+    Atlas F proj where
+  trivAt := trivAt
+  mem_baseSet_trivAt := mem_baseSet_trivAt
+  charts := range trivAt
+  trivAt_mem_charts := mem_range_self
+
+/-- Construct a `MapFiber.Atlas` from a covering set `charts` of trivializations of `proj`. -/
+noncomputable def ofSet (charts : Set (Trivialization F proj))
+    (hcharts : ∀ b : B, ∃ t ∈ charts, b ∈ t.baseSet) : Atlas F proj where
+  trivAt b := (hcharts b).choose
+  mem_baseSet_trivAt b := (hcharts b).choose_spec.2
+  charts := charts
+  trivAt_mem_charts b := (hcharts b).choose_spec.1
+
+/-- The chart set of `Atlas.ofSet charts hcharts` is `charts`. -/
+@[simp]
+theorem charts_ofSet (charts : Set (Trivialization F proj))
+    (hcharts : ∀ b : B, ∃ t ∈ charts, b ∈ t.baseSet) :
+    (ofSet charts hcharts).charts = charts :=
+  (rfl)
 
 /-- **The fibre bundle of a locally trivial map.** The fibres of `proj`, with their subspace
 topologies, form a fibre bundle over `B` with model fibre `F` and total space `P`, whose atlas
@@ -226,20 +260,28 @@ consists of the trivializations of `A`. -/
 @[instance_reducible]
 def fiberBundle : FiberBundle F (MapFiber proj) where
   totalSpaceMk_isInducing' := isInducing_totalSpaceMk F
-  trivializationAtlas' := range fun b ↦ (A.trivAt b).toMapFiber
+  trivializationAtlas' := Bundle.Trivialization.toMapFiber '' A.charts
   trivializationAt' b := (A.trivAt b).toMapFiber
   mem_baseSet_trivializationAt' := A.mem_baseSet_trivAt
-  trivialization_mem_atlas' b := mem_range_self b
+  trivialization_mem_atlas' b := ⟨A.trivAt b, A.trivAt_mem_charts b, rfl⟩
 
 theorem trivializationAt_eq (b : B) :
     letI := A.fiberBundle
     trivializationAt F (MapFiber proj) b = (A.trivAt b).toMapFiber :=
   (rfl)
 
+/-- The trivialization atlas of `A.fiberBundle` is
+`Bundle.Trivialization.toMapFiber '' A.charts`. -/
+@[simp]
+theorem trivializationAtlas_fiberBundle :
+    letI := A.fiberBundle
+    trivializationAtlas F (MapFiber proj) = Bundle.Trivialization.toMapFiber '' A.charts :=
+  (rfl)
+
 /-- The trivializations of the atlas of the bundle of fibres are those of `A`. -/
 theorem mem_trivializationAtlas_iff (e : Trivialization F (π F (MapFiber proj))) :
     letI := A.fiberBundle
-    e ∈ trivializationAtlas F (MapFiber proj) ↔ ∃ b, (A.trivAt b).toMapFiber = e :=
+    e ∈ trivializationAtlas F (MapFiber proj) ↔ ∃ t ∈ A.charts, t.toMapFiber = e :=
   Iff.rfl
 
 end Atlas
@@ -254,19 +296,19 @@ the fibres of `proj`, and let every trivialization of the atlas `A` intertwine t
 multiplication on `G`. Then the fibres of `proj` form a principal `G`-bundle. -/
 theorem Atlas.principalBundle (A : Atlas G proj)
     (hproj : ∀ (g : Gᵐᵒᵖ) (p : P), proj (g • p) = proj p)
-    (hA : ∀ b (p : P), proj p ∈ (A.trivAt b).baseSet → ∀ g : G,
-      (A.trivAt b (op g • p)).2 = (A.trivAt b p).2 * g) :
+    (hA : ∀ t ∈ A.charts, ∀ (p : P), proj p ∈ t.baseSet → ∀ g : G,
+      (t (op g • p)).2 = (t p).2 * g) :
     letI := A.fiberBundle
     letI := mulAction hproj
     PrincipalBundle G (MapFiber proj) := by
   let := A.fiberBundle
   let := mulAction hproj
   refine ⟨fun e he ↦ ?_⟩
-  obtain ⟨b, rfl⟩ := he.out
+  obtain ⟨t, ht, rfl⟩ := he.out
   refine ⟨fun b' hb' p g ↦ ?_⟩
   rw [Bundle.Trivialization.toMapFiber_baseSet, ← p.property] at hb'
   simpa only [Bundle.Trivialization.toMapFiber_apply, totalSpaceHomeomorph_apply, coe_smul] using
-    hA b p.val hb' g
+    hA t ht p.val hb' g
 
 end MapFiber
 

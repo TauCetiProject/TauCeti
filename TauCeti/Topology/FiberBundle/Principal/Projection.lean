@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.FiberBundle.Principal.Basic
-public import TauCeti.Topology.FiberBundle.Projection
+public import TauCeti.Topology.FiberBundle.MapFiber
 import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
@@ -18,17 +18,16 @@ Given `f : E → B` and a right `G`-action on `E` whose orbits are the fibres
 If `f` is continuous and `s : B → E` is a local section over open `U ⊆ B` such that
 `sectionCoord horbit hs` is continuous on `f ⁻¹' U` and `(b, g) ↦ op g • s b` is continuous on
 `U ×ˢ univ`, then `s` defines an equivariant `Bundle.Trivialization G f` over `U`. Transporting a
-covering family along `Bundle.Trivialization.projectionFiber` equips `TauCeti.ProjectionFiber G f`
-with `PrincipalBundle G (ProjectionFiber G f)` whose `PrincipalBundle.division` equals
-`actionDivision`.
+covering family along `Bundle.Trivialization.toMapFiber` equips `TauCeti.MapFiber f` with
+`PrincipalBundle G (MapFiber f)` (via `TauCeti.MapFiber.Atlas.principalBundle`) whose
+`PrincipalBundle.division` equals `actionDivision`.
 
 ## Main definitions and results
 
-* `Bundle.Trivialization.isEquivariant_projectionFiber_iff`,
-  `TauCeti.ProjectionFiber.principalBundle`: equivariance characterization and `PrincipalBundle`
-  packaging on `ProjectionFiber G f`.
+* `Bundle.Trivialization.isEquivariant_toMapFiber_iff`: equivariance characterization for
+  `t.toMapFiber`.
 * `TauCeti.PrincipalBundle.actionDivision`, `actionDivision_eq_iff`,
-  `division_projectionFiber_eq_actionDivision`: fibrewise torsor division and cocycle identities.
+  `division_mapFiber_eq_actionDivision`: fibrewise torsor division and cocycle identities.
 * `TauCeti.PrincipalBundle.sectionCoord`, `actionTrivializationOfSection`: fibre coordinate and
   equivariant `Trivialization G f` determined by a local section `s` over open `U`.
 
@@ -48,43 +47,22 @@ namespace Bundle.Trivialization
 variable {G E B : Type*} [TopologicalSpace B] [Group G] [TopologicalSpace G] [TopologicalSpace E]
   [MulAction Gᵐᵒᵖ E] {f : E → B}
 
-/-- `t.projectionFiber` is `G`-equivariant iff `t` intertwines the right `G`-action on
+/-- `t.toMapFiber` is `G`-equivariant iff `t` intertwines the right `G`-action on
 `f ⁻¹' t.baseSet` with right multiplication on the second factor `G`. -/
-theorem isEquivariant_projectionFiber_iff (t : Trivialization G f)
+theorem isEquivariant_toMapFiber_iff (t : Trivialization G f)
     (hinv : ∀ (g : Gᵐᵒᵖ) (x : E), f (g • x) = f x) :
-    (letI := TauCeti.ProjectionFiber.mulAction G hinv; t.projectionFiber.IsEquivariant) ↔
+    (letI := TauCeti.MapFiber.mulAction hinv; t.toMapFiber.IsEquivariant) ↔
       ∀ x : E, f x ∈ t.baseSet → ∀ g : G, (t (op g • x)).2 = (t x).2 * g :=
-  letI := TauCeti.ProjectionFiber.mulAction G hinv
-  isEquivariant_iff_of_equiv t.projectionFiber t (TauCeti.ProjectionFiber.totalSpaceEquiv G f)
-    t.projectionFiber_baseSet
-    (fun p ↦ by rw [TauCeti.ProjectionFiber.totalSpaceEquiv_apply]; exact p.snd.map_val)
-    (fun p ↦ t.projectionFiber_apply p)
-    fun g p ↦ TauCeti.ProjectionFiber.totalSpaceEquiv_smul G hinv (op g) p
+  letI := TauCeti.MapFiber.mulAction hinv
+  isEquivariant_iff_of_equiv t.toMapFiber t (TauCeti.MapFiber.totalSpaceHomeomorph G f).toEquiv
+    t.toMapFiber_baseSet
+    (fun p ↦ TauCeti.MapFiber.proj_totalSpaceHomeomorph p)
+    (fun p ↦ t.toMapFiber_apply p)
+    fun g p ↦ by
+      simp only [Homeomorph.coe_toEquiv, TauCeti.MapFiber.totalSpaceHomeomorph_apply]
+      exact TauCeti.MapFiber.coe_smul hinv (op g) p.snd
 
 end Bundle.Trivialization
-
-namespace TauCeti.ProjectionFiber
-
-variable {G E B : Type*} [TopologicalSpace B] [Group G] [TopologicalSpace G] [TopologicalSpace E]
-  [MulAction Gᵐᵒᵖ E] {f : E → B}
-
-/-- Package a covering set `A` of right-equivariant local trivializations of `f : E → B` into a
-`PrincipalBundle G (ProjectionFiber G f)` structure. -/
-theorem principalBundle (A : Set (Trivialization G f))
-    (hA : ∀ b : B, ∃ t ∈ A, b ∈ t.baseSet)
-    (hinv : ∀ (g : Gᵐᵒᵖ) (x : E), f (g • x) = f x)
-    (heq : ∀ t ∈ A, ∀ x : E, f x ∈ t.baseSet → ∀ g : G, (t (op g • x)).2 = (t x).2 * g) :
-    letI := fiberBundle A hA
-    letI := mulAction G hinv
-    PrincipalBundle G (ProjectionFiber G f) := by
-  let := fiberBundle A hA
-  let := mulAction G hinv
-  refine ⟨fun e he ↦ ?_⟩
-  have he' := he.out; rw [trivializationAtlas_fiberBundle] at he'
-  rcases he' with ⟨t, htA, rfl⟩
-  exact (t.isEquivariant_projectionFiber_iff hinv).2 (heq t htA)
-
-end TauCeti.ProjectionFiber
 
 namespace TauCeti.PrincipalBundle
 
@@ -101,7 +79,7 @@ invariant under the right `G`-action. -/
 theorem map_op_smul_of_orbit_iff (g : G) (x : E) : f (op g • x) = f x :=
   ((horbit x (op g • x)).2 ⟨g, rfl⟩).symm
 
-/-- `Gᵐᵒᵖ`-form of `map_op_smul_of_orbit_iff`, suitable for `ProjectionFiber.mulAction`. -/
+/-- `Gᵐᵒᵖ`-form of `map_op_smul_of_orbit_iff`, suitable for `MapFiber.mulAction`. -/
 theorem map_smul_of_orbit_iff (g : Gᵐᵒᵖ) (x : E) : f (g • x) = f x :=
   map_op_smul_of_orbit_iff horbit (unop g) x
 
@@ -160,17 +138,18 @@ theorem inv_actionDivision {x y : E} (hxy : f x = f y) :
 
 end Free
 
-/-- On `ProjectionFiber G f`, the abstract `PrincipalBundle.division` coincides with
+/-- On `MapFiber f`, the abstract `PrincipalBundle.division` coincides with
 `actionDivision` on the underlying points in `E`. -/
-theorem division_projectionFiber_eq_actionDivision [TopologicalSpace B] [TopologicalSpace G]
-    [TopologicalSpace E] [FiberBundle G (ProjectionFiber G f)] {b : B} :
-    letI := ProjectionFiber.mulAction G (map_smul_of_orbit_iff horbit)
-    ∀ [PrincipalBundle G (ProjectionFiber G f)] (p q : ProjectionFiber G f b),
-      division G p q = actionDivision horbit (p.map_val.trans q.map_val.symm) := by
-  let := ProjectionFiber.mulAction G (map_smul_of_orbit_iff horbit)
+theorem division_mapFiber_eq_actionDivision [TopologicalSpace B] [TopologicalSpace G]
+    [TopologicalSpace E] [FiberBundle G (MapFiber f)] {b : B} :
+    letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (map_smul_of_orbit_iff horbit)
+    ∀ [PrincipalBundle G (MapFiber f)] (p q : MapFiber f b),
+      division G p q = actionDivision horbit (p.property.trans q.property.symm) := by
+  let := MapFiber.mulAction (M := Gᵐᵒᵖ) (map_smul_of_orbit_iff horbit)
   intro _ p q
-  exact division_eq_iff.2 (ProjectionFiber.ext
-    ((ProjectionFiber.val_smul G _ _ _).trans (op_actionDivision_smul horbit _)))
+  exact division_eq_iff.2 (Subtype.ext
+    ((MapFiber.coe_smul (map_smul_of_orbit_iff horbit) _ _).trans
+      (op_actionDivision_smul horbit _)))
 
 end ActionDivision
 
@@ -282,13 +261,13 @@ theorem baseSet_actionTrivializationOfSection :
     (actionTrivializationOfSection hf horbit hfree hU hs hcoord hsmul).baseSet = U := (rfl)
 
 /-- Every `actionTrivializationOfSection` transports to an equivariant trivialization of
-`ProjectionFiber G f`. -/
-theorem isEquivariant_projectionFiber_actionTrivializationOfSection :
-    letI := ProjectionFiber.mulAction G (map_smul_of_orbit_iff horbit)
+`MapFiber f`. -/
+theorem isEquivariant_toMapFiber_actionTrivializationOfSection :
+    letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (map_smul_of_orbit_iff horbit)
     (actionTrivializationOfSection hf horbit hfree hU hs hcoord
-      hsmul).projectionFiber.IsEquivariant :=
+      hsmul).toMapFiber.IsEquivariant :=
   ((actionTrivializationOfSection hf horbit hfree hU hs hcoord
-    hsmul).isEquivariant_projectionFiber_iff (map_smul_of_orbit_iff horbit)).2
+    hsmul).isEquivariant_toMapFiber_iff (map_smul_of_orbit_iff horbit)).2
       fun _ hx g ↦ sectionCoord_op_smul horbit hfree hs hx g
 
 end ActionTriv
