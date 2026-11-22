@@ -27,6 +27,8 @@ import TauCeti.Algebra.CentralSimple.Splitting
 import TauCeti.Algebra.CrossedProduct.Splitting.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.LinearMap
+-- Used only in proofs: the trace of left multiplication by a quaternion.
+import TauCeti.Algebra.Quaternion.AlgEquiv
 -- Used only by the worked examples: the real numbers and the real quaternions, with their
 -- centrality.
 import Mathlib.Basic.Real.Basic
@@ -367,8 +369,7 @@ theorem reducedTrace_quaternionAlgebra [NeZero (2 : K)] (x : ℍ[K,c₁,c₂,c�
   have hdeg : deg K ℍ[K,c₁,c₂,c₃] = 2 :=
     deg_eq_of_finrank_eq_sq (by rw [QuaternionAlgebra.finrank_eq_four]; norm_num)
   have h := trace_mulLeft_eq_deg_mul_reducedTrace (K := K) x
-  rw [QuaternionAlgebra.trace_mulLeft, hdeg, Nat.cast_two,
-    ← QuaternionAlgebra.reducedTrace_apply] at h
+  rw [QuaternionAlgebra.trace_mulLeft, hdeg, Nat.cast_two] at h
   exact (mul_left_cancel₀ two_ne_zero h).symm
 
 end Quaternion
@@ -395,12 +396,8 @@ example (x : Matrix (Fin 2) (Fin 2) ℚ) :
 
 /-- The real quaternions do not split over `ℝ`, yet their reduced trace is the familiar `2 re`. -/
 example (x : ℍ[ℝ]) : reducedTrace ℝ ℍ[ℝ] x = 2 * x.re := by
-  have hdeg : deg ℝ ℍ[ℝ] = 2 :=
-    deg_eq_of_finrank_eq_sq (by rw [Quaternion.finrank_eq_four]; norm_num)
-  have h := trace_mulLeft_eq_deg_mul_reducedTrace (K := ℝ) x
-  rw [QuaternionAlgebra.trace_mulLeft, hdeg] at h
-  norm_num at h
-  linarith
+  rw [reducedTrace_quaternionAlgebra, QuaternionAlgebra.reducedTrace_apply]
+  simp
 
 end Examples
 

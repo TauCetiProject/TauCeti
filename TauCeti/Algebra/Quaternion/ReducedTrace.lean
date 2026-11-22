@@ -12,8 +12,10 @@ public import Mathlib.Algebra.QuadraticAlgebra.Discriminant
 -- about the dual lattice, `LinearMap.BilinForm.toMatrix` in those about the Gram matrix.
 public import Mathlib.LinearAlgebra.BilinearForm.DualLattice
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
--- The norm form and the naturality of the reduced trace under algebra equivalences.
-public import TauCeti.Algebra.Quaternion.AlgEquiv
+-- The norm form, whose polar form is related to the reduced trace pairing.
+public import TauCeti.Algebra.Quaternion.NormForm
+-- Used only in proofs.
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The reduced trace pairing of a quaternion algebra
@@ -33,13 +35,15 @@ the pairing is nondegenerate. Over a field the dual basis of `1, i, j, k` is the
 `1/2, i/(2a), j/(2b), -k/(2ab)`, and the trace dual of the lattice spanned by `1, i, j, k` over any
 subring is spanned by these four elements.
 
-The trace of left multiplication by `x` is `2 trd x` (`QuaternionAlgebra.trace_mulLeft`), so the
-regular trace pairing `(x, y) ↦ Tr (x * y)` vanishes identically in characteristic two, while the
-reduced trace pairing stays nondegenerate there whenever `c₂ c₃ ≠ 0`. An algebra equivalence of
-quaternion algebras carries one reduced trace pairing to the other once `2` is regular. On a
-central simple quaternion algebra over a field of characteristic other than two, `reducedTrace` is
-the reduced trace of the central simple algebra (`TauCeti.Algebra.reducedTrace_quaternionAlgebra`,
-in `TauCeti/Algebra/CentralSimple/ReducedTrace.lean`).
+The trace of left multiplication by `x` is `2 trd x` (`QuaternionAlgebra.trace_mulLeft`, in
+`TauCeti/Algebra/Quaternion/AlgEquiv.lean`), so the regular trace pairing `(x, y) ↦ Tr (x * y)`
+vanishes identically in characteristic two, while over a domain of characteristic two the reduced
+trace pairing stays nondegenerate whenever `c₂ c₃ ≠ 0`. An algebra equivalence of quaternion
+algebras carries one reduced trace pairing to the other once `2` is regular
+(`QuaternionAlgebra.congr_reducedTraceForm`, also in `AlgEquiv.lean`). On a central simple
+quaternion algebra over a field of characteristic other than two, `reducedTrace` is the reduced
+trace of the central simple algebra (`TauCeti.Algebra.reducedTrace_quaternionAlgebra`, in
+`TauCeti/Algebra/CentralSimple/ReducedTrace.lean`).
 
 ## Main definitions
 
@@ -61,8 +65,6 @@ in `TauCeti/Algebra/CentralSimple/ReducedTrace.lean`).
 * `QuaternionAlgebra.dualBasis_reducedTraceForm` and
   `QuaternionAlgebra.dualSubmodule_reducedTraceForm_span_basisOneIJK`: the dual basis of
   `1, i, j, k` in `ℍ[K,a,b]` and the trace dual of the lattice it spans.
-* `QuaternionAlgebra.congr_reducedTraceForm`: an algebra equivalence transports the reduced trace
-  pairing.
 
 ## References
 
@@ -163,25 +165,6 @@ theorem nondegenerate_reducedTraceForm_iff [IsDomain R] :
     (reducedTraceForm c₁ c₂ c₃).Nondegenerate ↔ c₃ * QuadraticAlgebra.discr c₁ c₂ ≠ 0 := by
   rw [BilinForm.nondegenerate_iff_det_ne_zero (basisOneIJK c₁ c₂ c₃),
     det_toMatrix_reducedTraceForm, neg_ne_zero, pow_ne_zero_iff two_ne_zero]
-
-/-- An algebra equivalence of quaternion algebras preserves the reduced trace pairing, once `2`
-is regular. -/
-theorem reducedTraceForm_eq_of_algEquiv {d₁ d₂ d₃ : R} (h2 : IsRegular (2 : R))
-    (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) (x y : ℍ[R,c₁,c₂,c₃]) :
-    reducedTraceForm d₁ d₂ d₃ (f x) (f y) = reducedTraceForm c₁ c₂ c₃ x y := by
-  rw [reducedTraceForm_apply, reducedTraceForm_apply, ← map_mul, reducedTrace_apply,
-    reducedTrace_apply]
-  exact reducedTrace_eq_of_algEquiv h2 f (x * y)
-
-/-- **An algebra equivalence of quaternion algebras transports the reduced trace pairing**, once
-`2` is regular. -/
-theorem congr_reducedTraceForm {d₁ d₂ d₃ : R} (h2 : IsRegular (2 : R))
-    (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) :
-    BilinForm.congr f.toLinearEquiv (reducedTraceForm c₁ c₂ c₃) = reducedTraceForm d₁ d₂ d₃ := by
-  ext x y
-  obtain ⟨x, rfl⟩ := f.surjective x
-  obtain ⟨y, rfl⟩ := f.surjective y
-  simp [BilinForm.congr_apply, reducedTraceForm_eq_of_algEquiv _ _ _ h2]
 
 end General
 
