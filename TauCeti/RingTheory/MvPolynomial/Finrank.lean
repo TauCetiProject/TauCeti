@@ -143,10 +143,7 @@ theorem finrank_homogeneousSubmodule (σ R : Type*) [CommSemiring R]
 theorem finrank_homogeneousSubmodule_eq_multichoose (σ R : Type*) [Fintype σ]
     [CommSemiring R] [StrongRankCondition R] (n : ℕ) :
     Module.finrank R (homogeneousSubmodule σ R n) = (Fintype.card σ).multichoose n := by
-  classical
-  rw [finrank_homogeneousSubmodule]
-  exact (Nat.card_eq_fintype_card (α := {s : σ →₀ ℕ // s.degree = n})).trans
-    (Finsupp.card_degree_eq n)
+  rw [finrank_homogeneousSubmodule, Nat.card_coe_set_eq, Finsupp.ncard_setOf_degree_eq]
 
 /-- The polynomials of total degree at most `m` in `d = card σ` variables have dimension
 `(m + d choose d)`. -/

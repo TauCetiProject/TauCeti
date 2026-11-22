@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
 # A priori estimates and straightening for maps approximating linear maps
@@ -32,6 +33,11 @@ injective at every point of `S`: `P` of the map approximates the identity
 
 By the mean value inequality, a map on a convex set whose derivative stays within `c` of `L`
 approximates `L` with constant `c` (`Convex.approximatesLinearOn_of_nnnorm_fderiv_sub_le`).
+
+Combining the last two facts, a zero at which a continuous field of operators `D` is invertible
+persists: every map whose derivative stays close to `D` on a small ball around `x`, and which
+nearly vanishes at `x`, has a unique zero in the ball, with invertible derivative and at distance
+linear in its value at `x` (`ContinuousLinearMap.IsInvertible.exists_eq_zero_perturbation`).
 
 Maps approximating a linear equivalence `L` on one ball with one constant below `‖L⁻¹‖⁻¹` have
 targets containing one common ball around any point near their values at the centre
@@ -312,6 +318,76 @@ theorem Convex.approximatesLinearOn_of_nnnorm_fderiv_sub_le {𝕜 E F : Type*}
     (hb : ∀ x ∈ s, ‖fderiv 𝕜 f x - L‖₊ ≤ c) :
     ApproximatesLinearOn f L s c :=
   fun _ hx _ hy ↦ hs.norm_image_sub_le_of_norm_fderiv_le' hd (fun z hz ↦ hb z hz) hy hx
+
+namespace ContinuousLinearMap.IsInvertible
+
+open Metric
+
+/-- **Persistence of a zero under perturbations with nearby derivative.**
+
+Let `D` be a field of operators, continuous at `x`, with `D x` invertible. For every sufficiently
+small radius `r` there is `δ > 0` with the following property. If `G` is differentiable at every
+point of the closed ball of radius `r` around `x`, its derivative stays within `δ` of `D` on the
+ball, and `‖G x‖ ≤ δ`, then `G` approximates `D x` on the ball with a constant `c` independent of
+`r`, and it has a zero `y` in the ball, which is the only one there. At `y` the derivative of `G`
+is invertible, and `y` lies within `K * ‖G x‖` of `x`, for a constant `K` depending only on `D`
+and `x`.
+
+Taking `D = fderiv 𝕜 Φ` for a map `Φ` with `Φ x = 0` gives the persistence of a nondegenerate
+zero of `Φ` under small `C¹` perturbations. -/
+theorem exists_eq_zero_perturbation {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [IsRCLikeNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E]
+    [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {D : E → E →L[𝕜] F} {x : E}
+    (hinv : (D x).IsInvertible) (hD : ContinuousAt D x) :
+    ∃ (K : ℝ) (c : ℝ≥0), ∀ᶠ r in 𝓝[>] 0, ∃ δ > 0, ∀ G : E → F,
+      (∀ y ∈ closedBall x r, DifferentiableAt 𝕜 G y) →
+      (∀ y ∈ closedBall x r, ‖fderiv 𝕜 G y - D y‖ ≤ δ) → ‖G x‖ ≤ δ →
+      ApproximatesLinearOn G (D x) (closedBall x r) c ∧
+        ∃ y ∈ closedBall x r, G y = 0 ∧ (fderiv 𝕜 G y).IsInvertible ∧
+          dist y x ≤ K * ‖G x‖ ∧ ∀ z ∈ closedBall x r, G z = 0 → z = y := by
+  -- On a small ball the derivative of `G` stays within `κ` of the invertible operator
+  -- `L = D x`, so `G` has a unique zero there by `exists_eq_zero_of_two_mul_norm_le`.
+  obtain ⟨L, hL⟩ := hinv
+  -- `C` bounds the inverse of `L` and is positive even on the zero space.
+  set C : ℝ := ‖(L.symm : F →L[𝕜] E)‖ + 1
+  have hLsymm : ‖(L.symm : F →L[𝕜] E)‖ ≤ C := le_add_of_nonneg_right zero_le_one
+  obtain ⟨ε₀, hε₀, hinv'⟩ :=
+    Metric.eventually_nhds_iff.1 (ContinuousLinearMap.IsInvertible.eventually_nhds ⟨L, hL⟩)
+  -- `κ` is the admissible distance from `L` on the ball.
+  set κ : ℝ := min (2 * C)⁻¹ (ε₀ / 2)
+  have hκ : 0 < κ := by positivity
+  have hκC : 2 * C * κ ≤ 1 :=
+    calc 2 * C * κ ≤ 2 * C * (2 * C)⁻¹ := by gcongr; exact min_le_left _ _
+      _ = 1 := mul_inv_cancel₀ (by positivity)
+  have hκε₀ : κ < ε₀ := (min_le_right _ _).trans_lt (half_lt_self hε₀)
+  obtain ⟨ρ, hρ, hρD⟩ := Metric.eventually_nhds_iff.1
+    (hD.eventually (Metric.ball_mem_nhds _ (half_pos hκ)))
+  refine ⟨2 * C, ⟨κ, hκ.le⟩, ?_⟩
+  filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
+  refine ⟨min (κ / 2) (r / (2 * C)), by have := hr.1; positivity, fun G hG hGD hGx ↦ ?_⟩
+  -- On the ball, the derivative of `G` is within `κ` of `L`.
+  have hclose (y : E) (hy : y ∈ closedBall x r) : ‖fderiv 𝕜 G y - L‖ ≤ κ :=
+    calc ‖fderiv 𝕜 G y - L‖ ≤ ‖fderiv 𝕜 G y - D y‖ + ‖D y - L‖ :=
+          norm_sub_le_norm_sub_add_norm_sub _ _ _
+      _ ≤ κ / 2 + κ / 2 := by
+          gcongr
+          · exact (hGD y hy).trans (min_le_left _ _)
+          · rw [hL, ← dist_eq_norm]
+            exact (hρD (lt_of_le_of_lt (mem_closedBall.1 hy) hr.2)).le
+      _ = κ := add_halves κ
+  have happrox : ApproximatesLinearOn G (L : E →L[𝕜] F) (closedBall x r) ⟨κ, hκ.le⟩ :=
+    (convex_closedBall x r).approximatesLinearOn_of_nnnorm_fderiv_sub_le hG fun y hy ↦ by
+      exact_mod_cast hclose y hy
+  have hεr : 2 * C * ‖G x‖ ≤ r := by
+    have : ‖G x‖ ≤ r / (2 * C) := hGx.trans (min_le_right _ _)
+    rwa [le_div_iff₀ (by positivity), mul_comm] at this
+  obtain ⟨y, hyε, hy0, huniq⟩ := happrox.exists_eq_zero_of_two_mul_norm_le hLsymm hκC hεr
+  have hsub : closedBall x (2 * C * ‖G x‖) ⊆ closedBall x r := closedBall_subset_closedBall hεr
+  refine ⟨hL ▸ happrox, y, hsub hyε, hy0, hinv' ?_, mem_closedBall.1 hyε, huniq⟩
+  rw [dist_eq_norm, ← hL]
+  exact (hclose y (hsub hyε)).trans_lt hκε₀
+
+end ContinuousLinearMap.IsInvertible
 
 /-- **A map vanishing on the zero section grows linearly away from it.** Let `Φ` be strictly
 differentiable at `(a, 0)` with derivative `D`, and let `Φ (b, 0) = 0` for every `b` near `a`. If
