@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Boundary.Invariance
 public import TauCeti.Geometry.Manifold.Boundary.Model
 public import TauCeti.Geometry.Manifold.Boundary.OfHomeomorph
+import TauCeti.Topology.Homeomorph.Prod
 
 /-!
 # The boundary of a manifold with boundary is a manifold
@@ -57,6 +58,8 @@ step and are not proved here.
   the vanishing zeroth coordinate in any ambient chart.
 * `TauCeti.ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff`: interior points are detected
   by the positive zeroth coordinate in any ambient chart.
+* `TauCeti.mem_boundary_iff_transHomeomorph_prodUnique`: the same boundary criterion in an ambient
+  chart read with a trivial second factor, the form taken by the hyperplane and product charts.
 * `TauCeti.boundaryChartedSpace_atlas`: the boundary atlas is the range of its preferred charts.
 * `TauCeti.boundaryChartedSpace_chartAt_source` and its companions characterize the preferred
   boundary charts induced by the ambient preferred charts.
@@ -147,6 +150,16 @@ private theorem coe_euclideanHalfSpaceFrontierHomeomorph_symm_apply
     ((euclideanHalfSpaceFrontierHomeomorph n).symm z : EuclideanHalfSpace (n + 1)) =
       EuclideanHalfSpace.boundaryParam n z :=
   (rfl)
+
+variable (e) in
+/-- In any ambient chart, read with a trivial second factor, the boundary is the hyperplane where
+the zeroth coordinate vanishes. -/
+theorem mem_boundary_iff_transHomeomorph_prodUnique {F : Type*} [TopologicalSpace F] [Unique F] :
+    ∀ w ∈ (e.transHomeomorph (Homeomorph.prodUnique _ F).symm).source,
+      w ∈ (𝓡∂ (n + 1)).boundary M ↔
+        (e.transHomeomorph (Homeomorph.prodUnique _ F).symm w).1.val 0 = 0 :=
+  fun _ hw ↦ by
+    simpa using ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (by simpa using hw)
 
 section BoundaryChartedSpace
 
