@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import TauCeti.Analysis.Normed.Group.Star

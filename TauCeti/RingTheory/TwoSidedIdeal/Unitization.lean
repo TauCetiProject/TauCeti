@@ -86,4 +86,20 @@ theorem annihilator_eq_comap_annihilator_unitization_of_smul_mem {R A : Type*} [
     I.mem_annihilator_unitizationOfSMulMem_iff hsmul]
   simp
 
+/-- For an `R`-invariant two-sided ideal `I` of a nonunital `R`-algebra `A`, the preimage of
+`(Module.annihilator (Unitization R A) I).toTwoSided` along `Unitization.inrNonUnitalAlgHom R A` is
+closed under compatible scalar multiplication. -/
+theorem smul_mem_comap_toTwoSided_annihilator {R A M : Type*} [CommRing R]
+    [NonUnitalRing A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+    [SMulZeroClass M A] [IsScalarTower M A A]
+    (I : TwoSidedIdeal A) (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) (c : M) {a : A} :
+    letI := I.unitizationModuleOfSMulMem hsmul
+    a ∈ TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom R A)
+          (Module.annihilator (Unitization R A) I).toTwoSided →
+      c • a ∈ TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom R A)
+          (Module.annihilator (Unitization R A) I).toTwoSided := by
+  let _ : Module (Unitization R A) I := I.unitizationModuleOfSMulMem hsmul
+  rw [← I.annihilator_eq_comap_annihilator_unitization_of_smul_mem hsmul]
+  exact I.smul_mem_annihilator c
+
 end TwoSidedIdeal

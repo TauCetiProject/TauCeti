@@ -9,7 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
 public import TauCeti.Algebra.Star.Basic
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
-public import TauCeti.Analysis.CStarAlgebra.Basic
+public import TauCeti.Analysis.Normed.Group.Star
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
