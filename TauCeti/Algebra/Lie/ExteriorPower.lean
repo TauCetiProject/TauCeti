@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
 public import Mathlib.LinearAlgebra.Trace
 import TauCeti.Data.Fin.Tuple.Basic
-import TauCeti.LinearAlgebra.Alternating.LinearDependent
+import TauCeti.LinearAlgebra.Alternating.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 import TauCeti.LinearAlgebra.Trace.Basic
 
