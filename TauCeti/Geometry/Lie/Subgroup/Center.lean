@@ -305,8 +305,9 @@ theorem mem_centerSubrepresentation_iff {Y : LeftInvariantDerivation I G} :
     Y ∈ centerSubrepresentation I G ↔ Y ∈ center ℝ (LeftInvariantDerivation I G) :=
   Iff.rfl
 
-/-- The centre subrepresentation acts by the adjoint action. -/
-@[simp]
+/-- The centre subrepresentation acts by the adjoint action. Not `@[simp]`:
+`Subrepresentation.coe_toRepresentation_apply` and `continuousAdjointRepresentation_apply`
+already prove it. -/
 theorem coe_toRepresentation_centerSubrepresentation_apply (g : G)
     (Y : (centerSubrepresentation I G).toSubmodule) :
     ((centerSubrepresentation I G).toRepresentation g Y : LeftInvariantDerivation I G) =

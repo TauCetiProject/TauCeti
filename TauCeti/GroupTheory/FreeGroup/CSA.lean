@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic
-public import TauCeti.GroupTheory.HNNExtension
+public import TauCeti.GroupTheory.HNNExtension.Basic
 import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 
 /-!
