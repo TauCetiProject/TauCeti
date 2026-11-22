@@ -64,6 +64,18 @@ theorem sum_ite_eq_card_nsmul {ι M : Type*} [Fintype ι] [AddCommMonoid M] {p :
   rw [Fintype.card_subtype, ← sum_filter]
   exact sum_eq_card_nsmul fun i hi ↦ hf i (mem_filter.1 hi).2
 
+/-- For an injective map `e : ι → κ`, the product of `if e s = x then a else 1` over `s : ι` is
+`a` if `x ∈ Set.range e` and `1` otherwise. -/
+@[to_additive /-- For an injective map `e : ι → κ`, the sum of `if e s = x then a else 0` over
+`s : ι` is `a` if `x ∈ Set.range e` and `0` otherwise. -/]
+theorem prod_ite_eq_of_injective {ι κ M : Type*} [Fintype ι] [CommMonoid M]
+    {e : ι → κ} (he : Function.Injective e) (x : κ) [DecidablePred fun s => e s = x]
+    [Decidable (x ∈ Set.range e)] (a : M) :
+    (∏ s : ι, if e s = x then a else 1) = if x ∈ Set.range e then a else 1 := by
+  rw [Fintype.prod_ite_eq_ite_exists (fun s => e s = x)
+    (fun _ _ h₁ h₂ => he (h₁.trans h₂.symm)) a]
+  exact if_congr Set.mem_range.symm rfl rfl
+
 /-- Prescribing the values `a m ∈ s m` of the maps in a finite box at the coordinates `m` of a
 finset `I` leaves as many maps as the volume of the cells outside `I`. -/
 theorem card_filter_piFinset_forall_eq_of_forall_mem {ι : Type*} {κ : ι → Type*} [Fintype ι]

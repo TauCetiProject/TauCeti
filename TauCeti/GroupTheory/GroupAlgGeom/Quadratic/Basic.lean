@@ -20,6 +20,7 @@ import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Set.Finite.Range
 import Mathlib.Algebra.Group.Submonoid.BigOperators
+import TauCeti.Data.Fintype.BigOperators
 import TauCeti.GroupTheory.GroupAlgGeom.VarSubgroup
 
 /-!
@@ -997,26 +998,31 @@ private theorem isCyclicallyReduced_ofFn_append_conjLetters {n m : ℕ}
       List (Fin n ⊕ Fin m)).Nodup :=
     ((List.nodup_finRange n).map Sum.inl_injective).append
       ((List.nodup_finRange m).map Sum.inr_injective) (by simp [List.Disjoint])
-  refine GX.isCyclicallyReduced_flatten_append_inl ?_ ?_ ?_ ?_ ?_ hd
+  refine GX.isCyclicallyReduced_flatten_append_singleton ?_ ?_ ?_ (fun l hl x hx => ?_)
+    (fun l hl x hx => ?_) (by simpa using hd)
   · simp [or_imp, forall_and, hne, conjLetters]
   · simp only [List.mem_append, List.mem_ofFn, or_imp, forall_and, forall_exists_index,
       forall_apply_eq_imp_iff]
     exact ⟨hred, fun j => by simp [conjLetters, hc j]⟩
   · rw [hblocks, List.isChain_map]; exact hnd.isChain.imp hsep
-  · intro l hl
-    rcases n with _ | n
-    · rw [List.ofFn_zero, List.nil_append] at hl
-      obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (List.mem_of_head? hl)
-      simp [conjLetters]
-    · rw [List.head?_append_of_ne_nil _ (by simp)] at hl
-      exact hhead l hl
-  · intro l hl
-    rcases m with _ | m
-    · rw [List.ofFn_zero, List.append_nil] at hl
-      exact hlast rfl l hl
-    · rw [List.getLast?_append_of_ne_nil _ (by simp)] at hl
-      obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (List.mem_of_getLast? hl)
-      simp [conjLetters]
+  · rcases x with g | p
+    · have hl' : l ∈ (List.ofFn f ++ List.ofFn fun j => conjLetters (z j) (c j)).head? := hl
+      rcases n with _ | n
+      · rw [List.ofFn_zero, List.nil_append] at hl'
+        obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (List.mem_of_head? hl')
+        simp [conjLetters] at hx
+      · rw [List.head?_append_of_ne_nil _ (by simp)] at hl'
+        exact absurd rfl (hhead l hl' (.inl g) hx g)
+    · simp
+  · rcases x with g | p
+    · have hl' : l ∈ (List.ofFn f ++ List.ofFn fun j => conjLetters (z j) (c j)).getLast? := hl
+      rcases m with _ | m
+      · rw [List.ofFn_zero, List.append_nil] at hl'
+        exact absurd rfl (hlast rfl l hl' (.inl g) hx g)
+      · rw [List.getLast?_append_of_ne_nil _ (by simp)] at hl'
+        obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (List.mem_of_getLast? hl')
+        simp [conjLetters] at hx
+    · simp
 
 private theorem isCyclicallyReduced_orientableCoeff {n m : ℕ} {x y : Fin n → X} {z : Fin m → X}
     {c : Fin m → G} {d : G} (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
@@ -1101,17 +1107,12 @@ theorem occurrences_toWord (S : Standard G X) (x : X) :
     by_cases hu : u = x <;> simp [sqLetters, hu]
   have hconj (u : X) (c : G) : GX.countVar x (conjLetters u c) = if u = x then 2 else 0 := by
     by_cases hu : u = x <;> simp [conjLetters, hu]
-  have hsum {ι : Type} [Fintype ι] {e : ι → X} (he : e.Injective) :
-      (∑ s : ι, if e s = x then 2 else 0) = if x ∈ Set.range e then 2 else 0 := by
-    rw [← Finset.sum_image (f := fun y => if y = x then 2 else 0) (fun _ _ _ _ h => he h),
-      Finset.sum_ite_eq']
-    exact ite_congr (by simp) (fun _ => rfl) (fun _ => rfl)
   rw [← prod_wordLetters S, (isCyclicallyReduced_wordLetters S).isReduced.occurrences_prod]
   cases S with
   | orientable n hn a b inj =>
     simp only [wordLetters, atomBlocks, GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn,
       Function.comp_def, hcomm, Finset.sum_add_distrib, vars_orientable]
-    have h := hsum inj
+    have h := Fintype.sum_ite_eq_of_injective inj x 2
     simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at h
     exact h
   | orientableCoeff n m hnm a b z inj c hc d hd =>
@@ -1119,18 +1120,18 @@ theorem occurrences_toWord (S : Standard G X) (x : X) :
       GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn, Function.comp_def, hcomm, hconj,
       GX.countVar_cons_inl, GX.countVar_nil, Finset.sum_add_distrib, vars_orientableCoeff,
       add_zero]
-    have h := hsum inj
+    have h := Fintype.sum_ite_eq_of_injective inj x 2
     simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at h
     exact h
   | nonorientable n hn a inj =>
     simp only [wordLetters, atomBlocks, GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn,
       Function.comp_def, hsq, vars_nonorientable]
-    exact hsum inj
+    exact Fintype.sum_ite_eq_of_injective inj x 2
   | nonorientableCoeff n m hn a z inj c hc d hd =>
     simp only [wordLetters, atomBlocks, GX.countVar_append, List.flatten_append,
       GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn, Function.comp_def, hsq, hconj,
       GX.countVar_cons_inl, GX.countVar_nil, vars_nonorientableCoeff, add_zero]
-    have h := hsum inj
+    have h := Fintype.sum_ite_eq_of_injective inj x 2
     simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at h
     exact h
 
@@ -1161,6 +1162,11 @@ theorem mem_vars_iff_occurrences_toWord_ne_zero {S : Standard G X} {x : X} :
   classical
   rw [occurrences_toWord]
   split_ifs with hx <;> simp [hx]
+
+/-- The finite support of `S.toWord` coerces to `S.vars`. -/
+theorem coe_occVars_toWord (S : Standard G X) : (occVars S.toWord : Set X) = S.vars := by
+  ext x
+  simp [mem_vars_iff_occurrences_toWord_ne_zero]
 
 @[simp] theorem occurrences_toWord_eq_zero_iff {S : Standard G X} {x : X} :
     occurrences x S.toWord = 0 ↔ x ∉ S.vars := by
