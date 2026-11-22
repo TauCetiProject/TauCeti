@@ -73,7 +73,7 @@ Tauberian theorem needs to count prime ideals.
 * `TauCeti.tendsto_sub_one_mul_of_eqOn_dedekindZeta`: `(s - 1) * f s → dedekindZeta_residue K` as
   `s → 1` along `𝓝[≠] 1` for any local continuation `f` of `ζ_K` differentiable near `1`.
 * `TauCeti.UnitaryIdealWeight.ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq`: `3-4-1`
-  nonvanishing on `Re s = 1` away from `1 + (u / 2) * I` when `(χ ^ 2).1.IsNormTwistOnGood u`.
+  nonvanishing on `Re s = 1` away from `1 + (u / 2) * I` when `(χ ^ 2).val.IsNormTwistOnGood u`.
 
 ## References
 
@@ -389,14 +389,14 @@ variable {K} in
 unitary weight `χ` whose square is a purely imaginary norm twist `I ↦ N(I) ^ (u * I)` on its good
 ideals. -/
 theorem UnitaryIdealWeight.ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq
-    (χ : UnitaryIdealWeight K) {u : ℝ} (hχ₂ : (χ ^ 2).1.IsNormTwistOnGood u) {L : ℂ → ℂ}
+    (χ : UnitaryIdealWeight K) {u : ℝ} (hχ₂ : (χ ^ 2).val.IsNormTwistOnGood u) {L : ℂ → ℂ}
     {s : ℂ} (hs : s.re = 1) (hsu : s ≠ 1 + (u : ℂ) / 2 * Complex.I)
     (hLs : DifferentiableAt ℂ L s)
     (hLL : Set.EqOn L (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {z | 1 < z.re}) :
     L s ≠ 0 := by
   obtain ⟨S, hS⟩ : ∃ S : Finset (HeightOneSpectrum (𝓞 K)),
-      (χ ^ 2).1.badPrimes = (S : Set (HeightOneSpectrum (𝓞 K))) :=
-    ⟨(χ ^ 2).1.finite_badPrimes.toFinset, (χ ^ 2).1.finite_badPrimes.coe_toFinset.symm⟩
+      (χ ^ 2).val.badPrimes = (S : Set (HeightOneSpectrum (𝓞 K))) :=
+    ⟨(χ ^ 2).val.finite_badPrimes.toFinset, (χ ^ 2).val.finite_badPrimes.coe_toFinset.symm⟩
   obtain ⟨G, hG, hGL⟩ := exists_differentiableOn_eq_LSeries_ofBadPrimes_sub K S
   set ρ : ℂ := dedekindZeta_residue K * ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-1 : ℂ))
   set w₀ : ℂ := 2 * s - 1 - (u : ℂ) * Complex.I

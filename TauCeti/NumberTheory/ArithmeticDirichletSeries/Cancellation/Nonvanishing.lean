@@ -81,7 +81,7 @@ theorem continuedLFunctionOfWeight_ne_zero_of_one_lt_re (χ : UnitaryIdealWeight
     (hs : 1 < s.re) : continuedLFunctionOfWeight χ s ≠ 0 := by
   rw [continuedLFunctionOfWeight_eq_LSeries χ hs,
     UnitaryIdealWeight.toIdealArithmeticFunction_eq_val]
-  refine χ.1.LSeries_ne_zero_of_summable_idealTerm ?_
+  refine χ.val.LSeries_ne_zero_of_summable_idealTerm ?_
   rw [← UnitaryIdealWeight.toIdealArithmeticFunction_eq_val]
   exact summable_idealTerm_of_unitary_of_one_lt_re χ hs
 
@@ -104,7 +104,7 @@ weight with cancellation whose pointwise square agrees with `I ↦ N(I) ^ (u * I
 ideals. Then the continued L-function of `χ` has no zeros on `Re s ≥ 1` except possibly at
 `s = 1 + (u / 2) * I`, where the `L`-series of `χ ^ 2` has its pole at `2s - 1 = 1 + u * I`. -/
 theorem continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq {χ : UnitaryIdealWeight K}
-    (hχ : HasCancellation χ) {u : ℝ} (hχ₂ : (χ ^ 2).1.IsNormTwistOnGood u) {s : ℂ}
+    (hχ : HasCancellation χ) {u : ℝ} (hχ₂ : (χ ^ 2).val.IsNormTwistOnGood u) {s : ℂ}
     (hs : 1 ≤ s.re) (hsu : s ≠ 1 + (u : ℂ) / 2 * I) :
     continuedLFunctionOfWeight χ s ≠ 0 := by
   rcases hs.lt_or_eq with hs | hs
@@ -117,7 +117,7 @@ theorem continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq {χ : Unitary
 If a unitary weight `χ` has cancellation and `χ ^ 2` takes the value `1` on its good ideals, the
 continued L-function of `χ` has no zeros on `Re s ≥ 1` except possibly at `s = 1`. -/
 theorem continuedLFunctionOfWeight_ne_zero_of_isTrivialOnGood_sq {χ : UnitaryIdealWeight K}
-    (hχ : HasCancellation χ) (hχ₂ : (χ ^ 2).1.IsTrivialOnGood) {s : ℂ} (hs : 1 ≤ s.re)
+    (hχ : HasCancellation χ) (hχ₂ : (χ ^ 2).val.IsTrivialOnGood) {s : ℂ} (hs : 1 ≤ s.re)
     (hs1 : s ≠ 1) : continuedLFunctionOfWeight χ s ≠ 0 :=
   continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq hχ
     ((MultiplicativeIdealWeight.isNormTwistOnGood_zero_iff _).mpr hχ₂) hs (by simpa using hs1)
@@ -127,7 +127,7 @@ theorem continuedLFunctionOfWeight_ne_zero_of_isTrivialOnGood_sq {χ : UnitaryId
 `Re s > 0`, discharging both continuation hypotheses of Landau's theorem unconditionally. -/
 theorem continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq_of_finrank_eq_one
     (hK : Module.finrank ℚ K = 1) {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ)
-    {u : ℝ} (hχ₂ : (χ ^ 2).1.IsNormTwistOnGood u) {s : ℂ} (hs : 1 ≤ s.re) :
+    {u : ℝ} (hχ₂ : (χ ^ 2).val.IsNormTwistOnGood u) {s : ℂ} (hs : 1 ≤ s.re) :
     continuedLFunctionOfWeight χ s ≠ 0 := by
   have hdiff : DifferentiableOn ℂ (continuedLFunctionOfWeight χ) {z | (0 : ℝ) < z.re} := by
     simpa [hK] using differentiableOn_continuedLFunctionOfWeight hχ
@@ -141,10 +141,10 @@ theorem continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq_of_finrank_eq
     (hdiff.differentiableAt (hopen.mem_nhds (by norm_num))).continuousAt hs
 
 /-- **Unconditional nonvanishing of `continuedLFunctionOfWeight` on `Re s ≥ 1` when
-`[K : ℚ] = 1` and `(χ ^ 2).1.IsTrivialOnGood`.** -/
+`[K : ℚ] = 1` and `(χ ^ 2).val.IsTrivialOnGood`.** -/
 theorem continuedLFunctionOfWeight_ne_zero_of_isTrivialOnGood_sq_of_finrank_eq_one
     (hK : Module.finrank ℚ K = 1) {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ)
-    (hχ₂ : (χ ^ 2).1.IsTrivialOnGood) {s : ℂ} (hs : 1 ≤ s.re) :
+    (hχ₂ : (χ ^ 2).val.IsTrivialOnGood) {s : ℂ} (hs : 1 ≤ s.re) :
     continuedLFunctionOfWeight χ s ≠ 0 :=
   continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq_of_finrank_eq_one hK hχ
     ((MultiplicativeIdealWeight.isNormTwistOnGood_zero_iff _).mpr hχ₂) hs

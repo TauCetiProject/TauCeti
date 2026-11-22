@@ -138,7 +138,7 @@ ideals, then `(1 * χ)(A) ≥ 0` (as a nonnegative real number in `ℂ`) for eve
 theorem convolution_one_nonneg {χ : MultiplicativeIdealWeight K}
     (hχ : (χ ^ 2).IsTrivialOnGood) (A : (Ideal (𝓞 K))⁰) :
     0 ≤ IdealArithmeticFunction.convolution 1 χ.toIdealArithmeticFunction A := by
-  obtain ⟨S, e, hA⟩ := Ideal.exists_eq_prod_pow (mem_nonZeroDivisors_iff_ne_zero.mp A.2)
+  obtain ⟨S, e, hA⟩ := Ideal.exists_eq_prod_pow (mem_nonZeroDivisors_iff_ne_zero.mp A.property)
   have hmul :
       (IdealArithmeticFunction.convolution 1 χ.toIdealArithmeticFunction).IsMultiplicative :=
     IdealArithmeticFunction.isMultiplicative_one.convolution
@@ -156,7 +156,7 @@ theorem convolution_one_nonneg {χ : MultiplicativeIdealWeight K}
 theorem one_le_convolution_one_sq {χ : MultiplicativeIdealWeight K}
     (hχ : (χ ^ 2).IsTrivialOnGood) (A : (Ideal (𝓞 K))⁰) :
     1 ≤ IdealArithmeticFunction.convolution 1 χ.toIdealArithmeticFunction (A ^ 2) := by
-  obtain ⟨S, e, hA⟩ := Ideal.exists_eq_prod_pow (mem_nonZeroDivisors_iff_ne_zero.mp A.2)
+  obtain ⟨S, e, hA⟩ := Ideal.exists_eq_prod_pow (mem_nonZeroDivisors_iff_ne_zero.mp A.property)
   have hA2 : ((A ^ 2 : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) = ∏ P ∈ S, P.asIdeal ^ (2 * e P) := by
     rw [SubmonoidClass.coe_pow, hA, ← Finset.prod_pow]
     refine Finset.prod_congr rfl fun P _ ↦ ?_
@@ -336,7 +336,7 @@ theorem convolution_one_liouville_apply (A : (Ideal (𝓞 K))⁰) :
     IdealArithmeticFunction.convolution 1
         (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction A =
       if ∃ B : (Ideal (𝓞 K))⁰, A = B ^ 2 then 1 else 0 := by
-  obtain ⟨S, e, hA⟩ := Ideal.exists_eq_prod_pow (mem_nonZeroDivisors_iff_ne_zero.mp A.2)
+  obtain ⟨S, e, hA⟩ := Ideal.exists_eq_prod_pow (mem_nonZeroDivisors_iff_ne_zero.mp A.property)
   have hmul : (IdealArithmeticFunction.convolution 1
       (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction).IsMultiplicative :=
     IdealArithmeticFunction.isMultiplicative_one.convolution
@@ -366,12 +366,13 @@ theorem convolution_one_liouville_apply (A : (Ideal (𝓞 K))⁰) :
     exact Finset.prod_eq_one fun P hP ↦ ite_eq_left (hall P hP)
   · push Not at hall
     obtain ⟨P, hPS, hPodd⟩ := hall
+    have hPne : ¬ Even (e P) := Nat.not_even_iff_odd.mpr hPodd
     have hnsq : ¬ ∃ B : (Ideal (𝓞 K))⁰, A = B ^ 2 := by
       rintro ⟨B, rfl⟩
-      exact hPodd (Ideal.even_of_sq_eq_prod_pow
+      exact hPne (Ideal.even_of_sq_eq_prod_pow
         (by simpa [SubmonoidClass.coe_pow] using hA) hPS)
     rw [ite_eq_right hnsq]
-    exact Finset.prod_eq_zero hPS (ite_eq_right hPodd)
+    exact Finset.prod_eq_zero hPS (ite_eq_right hPne)
 
 open Classical in
 /-- At a square index `m ^ 2`, the norm coefficient of `1 * λ_K` equals `normCoeff K 1 m`. -/

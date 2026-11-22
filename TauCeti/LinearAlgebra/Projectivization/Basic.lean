@@ -41,7 +41,9 @@ sends every other vector into a single line
 (`Projectivization.exists_mk_eq_and_mk_mulVec_eq_of_det_eq_zero`).
 
 The file also records `Projectivization.submodule_map`: the line of the image of a projective
-point under an injective semilinear map is the image of its line.
+point under an injective semilinear map is the image of its line, and
+`Projectivization.mk_eq_mk_iff_forall_mul_eq`: over a field, two nonzero coordinate vectors span
+the same line iff all their `2 × 2` homogeneous minors vanish.
 
 The normalization lemmas are adapted from Ralf Stephan's `ArithmeticHeights/Northcott.lean` in
 [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/e443c2479e19f7665b31d8e94e2317c8ced1ca06/ArithmeticHeights/Northcott.lean),
@@ -59,7 +61,7 @@ variable (K : Type*) {V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 /-- The equivalence with one-dimensional subspaces retains the underlying line. -/
 @[simp]
 theorem coe_equivSubmodule (p : Projectivization K V) :
-    (equivSubmodule K V p).1 = p.submodule :=
+    (equivSubmodule K V p).val = p.submodule :=
   -- Mathlib has no equivSubmodule_apply lemma; its forward map is definitionally submodule.
   (rfl)
 
@@ -169,6 +171,21 @@ theorem linearProjection_mk [Nonempty (Projectivization K W)] (G : V →ₗ[K] W
 end LinearProjection
 
 variable {K : Type*} [Field K] {ι : Type*}
+
+/-- Two nonzero coordinate vectors over a field span the same line if and only if all their
+`2 × 2` homogeneous minors vanish. -/
+theorem mk_eq_mk_iff_forall_mul_eq {x y : ι → K} (hx : x ≠ 0) (hy : y ≠ 0) :
+    mk K x hx = mk K y hy ↔ ∀ i j : ι, x i * y j = x j * y i := by
+  rw [mk_eq_mk_iff']
+  constructor
+  · rintro ⟨c, rfl⟩ i j
+    simp only [Pi.smul_apply, smul_eq_mul]
+    rw [mul_assoc, mul_comm (y i), ← mul_assoc]
+  · intro h
+    obtain ⟨j₀, hj₀⟩ := Function.ne_iff.1 hy
+    refine ⟨x j₀ / y j₀, funext fun i ↦ ?_⟩
+    simp only [Pi.smul_apply, smul_eq_mul, div_mul_eq_mul_div, div_eq_iff hj₀]
+    exact (h i j₀).symm
 
 /-- At any nonzero coordinate of a projective point, there is a representative normalized
 to `1` whose coordinates are the ratios of the chosen representative's coordinates. -/

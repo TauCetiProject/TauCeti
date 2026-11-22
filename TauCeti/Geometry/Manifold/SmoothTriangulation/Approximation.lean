@@ -56,18 +56,18 @@ theorem exists_eventually_norm_linearCombination_sub_le_edgewiseSubdivision
       ∀ ε > 0, ∀ᶠ k in atTop, ∀ (K : PreAbstractSimplicialComplex ι)
         (ρ : Finset (K.EdgewiseVertex k)), ρ ∈ K.edgewiseSubdivision k →
         ∀ p : ρ → StandardSimplex σ,
-        (∀ a, (p a : ι →₀ ℝ) = edgewisePoint a.1.1) →
-        ∀ y ∈ convexHull ℝ (range fun a : ρ => fun i : σ => (p a).1 i),
+        (∀ a, (p a : ι →₀ ℝ) = edgewisePoint a.val.val) →
+        ∀ y ∈ convexHull ℝ (range fun a : ρ => fun i : σ => (p a).val i),
         ∀ v : ρ → ℝ, ∑ a, v a = 0 →
-          ‖(∑ a, v a • F (fun i : σ => (p a).1 i)) -
-            F' y (∑ a, v a • fun i : σ => (p a).1 i)‖ ≤
-              ε * ‖∑ a, v a • fun i : σ => (p a).1 i‖ := by
+          ‖(∑ a, v a • F (fun i : σ => (p a).val i)) -
+            F' y (∑ a, v a • fun i : σ => (p a).val i)‖ ≤
+              ε * ‖∑ a, v a • fun i : σ => (p a).val i‖ := by
   obtain ⟨F', hFd, hFc⟩ := hF.exists_continuousOn_hasFDerivWithinAt_stdSimplex
   refine ⟨F', hFd, hFc, fun ε hε => ?_⟩
   rcases σ.eq_empty_or_nonempty with rfl | hσ
   · refine Eventually.of_forall fun k K ρ hρ p _ => ?_
     obtain ⟨a, ha⟩ := (mem_edgewiseSubdivision_iff.mp hρ).1
-    have hmem := (p ⟨a, ha⟩).2
+    have hmem := (p ⟨a, ha⟩).property
     simp at hmem
   have hS : IsCompact (range fun x : Convexity.StdSimplex ℝ σ => ⇑x.weights) :=
     isCompact_range
@@ -79,17 +79,17 @@ theorem exists_eventually_norm_linearCombination_sub_le_edgewiseSubdivision
   filter_upwards [eventually_ge_atTop N] with k hk K ρ hρ p hp
   have hkδ : δ⁻¹ < k := hN.trans_le (Nat.cast_le.mpr hk)
   have hmem (a : ρ) :
-      (fun i : σ => (p a).1 i) ∈ range fun x : Convexity.StdSimplex ℝ σ => ⇑x.weights :=
+      (fun i : σ => (p a).val i) ∈ range fun x : Convexity.StdSimplex ℝ σ => ⇑x.weights :=
     Finset.range_standardSimplex_coordinates σ ▸ mem_range_self (p a)
-  have hentries : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ := by
+  have hentries : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ := by
     intro u hu l
     have hsupp := StandardSimplex.support_subset (p ⟨u, hu⟩)
     rw [hp, support_edgewisePoint] at hsupp
     exact hsupp (mem_image_of_mem _ (mem_univ l))
   simpa only [Fintype.linearCombination_apply] using
-    happrox (fun a i => (p a).1 i) k⁻¹ hmem (inv_lt_of_inv_lt₀ hδ hkδ)
+    happrox (fun a i => (p a).val i) k⁻¹ hmem (inv_lt_of_inv_lt₀ hδ hkδ)
       (fun a b => by simpa only [hp] using
-        norm_edgewisePoint_sub_edgewisePoint_le hρ a.2 b.2 σ)
+        norm_edgewisePoint_sub_edgewisePoint_le hρ a.property b.property σ)
       (fun v hv => by simpa only [Fintype.linearCombination_apply, hp] using
         mul_sum_abs_le_norm_sum_smul_edgewisePoint hρ hentries v hv)
 

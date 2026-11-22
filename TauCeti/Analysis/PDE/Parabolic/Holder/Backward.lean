@@ -238,9 +238,7 @@ private theorem timeReverseLIE_slabMk_left
     timeReverseLIE (t₀ + t₁) left_eq_add_sub right_eq_add_sub u
         (slabMk x ⟨t₀, left_mem_Icc.2 ht.le⟩) =
       u (slabMk x ⟨t₁, right_mem_Icc.2 ht.le⟩) := by
-  rw [timeReverseLIE_apply, slabTimeReverse_slabMk]
-  congr
-  ring
+  rw [timeReverseLIE_apply, slabTimeReverse_slabMk, iccTimeReverse_left _ _ _ ht.le]
 
 /-- The time reversal of `u` about `t₀ + t₁`, evaluated at the reversal of `p`, is `u p`. -/
 private theorem timeReverseLIE_symm_apply
@@ -350,6 +348,18 @@ theorem parabolicOperatorL_compLipschitzL_euclidean {a b a' b' T : ℝ} (hab : a
         (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith C) := by
   ext u p
   simp [parabolicOperatorL_apply, HolderSpace.compLipschitzL_apply]
+
+/-- Uniform ellipticity of the coefficients `aⁱʲ` passes to the precomposed coefficients
+`aⁱʲ ∘ g`, with the same constant. -/
+theorem mul_norm_sq_le_toQuadraticForm'_compLipschitzL {X : Type*} [MetricSpace X]
+    {K : ℝ≥0} {g : X → slab (E := EuclideanSpace ℝ ι) t₀ t₁} (hg : LipschitzWith K g)
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ} {lam : ℝ}
+    (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    (p : X) (ξ : EuclideanSpace ℝ ι) :
+    lam * ‖ξ‖ ^ 2 ≤
+      (Matrix.of fun i j ↦ HolderSpace.compLipschitzL g hg (a i j) p).toQuadraticForm' ξ := by
+  simpa only [HolderSpace.compLipschitzL_apply] using ha (g p) ξ
 
 variable {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
   {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
