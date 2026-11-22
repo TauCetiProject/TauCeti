@@ -28,11 +28,13 @@ big-O or pointwise bound by `exp (-p * u ^ α)` at infinity upgrades to a unifor
 real `N` preserves stretched-exponential asymptotic bounds `f =O[atTop] fun u ↦ exp (-c * u ^ α)`,
 rescaling the coefficient from `c` to `c / N ^ α`.
 
-On the complex side, for `c > 0` and the principal fourth root `z^{1/4}`, the real part of
-`c z^{1/4}` is at least `c |z|^{1/4} / 2` on the whole plane, so `exp(-c z^{1/4})` decays faster
-than every power of `z⁻¹` along `cobounded ℂ`: see `TauCeti.norm_cexp_neg_mul_cpow_quarter_le`
-and `TauCeti.isBigO_cexp_neg_mul_cpow_quarter`. These two estimates are adapted from the lean-DLMF
-project (<https://github.com/bjbraams/lean-DLMF>), file
+On the complex side, for `c ≥ 0` and `|α| ≤ 1` the principal power satisfies
+`c cos (α π) ‖z‖ ^ α ≤ Re (c z ^ α)` on the whole plane, which gives the pointwise bound
+`TauCeti.norm_cexp_neg_mul_cpow_le`. For `c > 0` and `0 < α < 1/2` the constant `cos (α π)` is
+positive, so `exp (-c z ^ α)` is little-o of every real power of `‖z‖` along `cobounded ℂ`:
+`TauCeti.isLittleO_cexp_neg_mul_cpow_cobounded`. For `α = 1/2` there is no decay, since
+`exp (-c z ^ (1/2))` has norm one on the negative real axis. These estimates generalize the
+fourth-root case of the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
 -/
 
@@ -99,35 +101,31 @@ theorem exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_eventually {F : Type*} [Semin
   filter_upwards [h] with u hu
   rwa [Real.norm_eq_abs, abs_of_pos (exp_pos _)]
 
-section CpowQuarter
+section Cpow
 
 open Complex Bornology
 
-/-- For `c > 0`, `‖exp(-c z^{1/4})‖ ≤ (4N)! (2/c)^{4N} |z|⁻ᴺ`. -/
-theorem norm_cexp_neg_mul_cpow_quarter_le {c : ℝ} (hc : 0 < c) (N : ℕ) {z : ℂ} (hz : z ≠ 0) :
-    ‖cexp (-(c * z ^ (1 / 4 : ℂ)))‖ ≤ (4 * N).factorial * (2 / c) ^ (4 * N) * (‖z‖ ^ N)⁻¹ := by
-  have ht : 0 < ‖z‖ ^ (1 / 4 : ℝ) := Real.rpow_pos_of_pos (norm_pos_iff.2 hz) _
-  set t := ‖z‖ ^ (1 / 4 : ℝ) with ht_def
-  have h4 : t ^ (4 * N) = ‖z‖ ^ N := by
-    rw [pow_mul, ht_def, ← Real.rpow_mul_natCast (norm_nonneg z)]
-    norm_num
-  have hre := norm_rpow_le_two_mul_re_cpow_quarter (z := z)
-  have hexp := Real.pow_div_factorial_le_exp (c / 2 * t) (by positivity) (4 * N)
-  rw [Complex.norm_exp, neg_re, re_ofReal_mul]
-  calc Real.exp (-(c * (z ^ (1 / 4 : ℂ)).re)) ≤ Real.exp (-(c / 2 * t)) :=
-        Real.exp_le_exp.2 (by nlinarith)
-    _ = (Real.exp (c / 2 * t))⁻¹ := Real.exp_neg _
-    _ ≤ ((c / 2 * t) ^ (4 * N) / (4 * N).factorial)⁻¹ := inv_anti₀ (by positivity) hexp
-    _ = _ := by rw [← h4]; field_simp; rw [← mul_pow]; congr 1; field_simp
+/-- For `c ≥ 0` and `|α| ≤ 1`, the principal power gives the pointwise bound
+`‖exp (-c z ^ α)‖ ≤ exp (-(c cos (α π)) ‖z‖ ^ α)` on the whole plane. -/
+theorem norm_cexp_neg_mul_cpow_le {c α : ℝ} (hc : 0 ≤ c) (hα : |α| ≤ 1) (z : ℂ) :
+    ‖cexp (-(c * z ^ (α : ℂ)))‖ ≤ Real.exp (-(c * Real.cos (α * π)) * ‖z‖ ^ α) := by
+  rw [Complex.norm_exp, neg_re, re_ofReal_mul, Real.exp_le_exp, neg_mul, neg_le_neg_iff,
+    mul_assoc]
+  exact mul_le_mul_of_nonneg_left (cos_mul_norm_rpow_le_re_cpow hα) hc
 
-/-- For `c > 0`, `exp(-c z^{1/4}) = O(z⁻ᴺ)` at infinity for every `N`. -/
-theorem isBigO_cexp_neg_mul_cpow_quarter {c : ℝ} (hc : 0 < c) (N : ℕ) :
-    (fun z : ℂ => cexp (-(c * z ^ (1 / 4 : ℂ)))) =O[cobounded ℂ] fun z => (z ^ N)⁻¹ := by
-  refine Asymptotics.IsBigO.of_bound ((4 * N).factorial * (2 / c) ^ (4 * N)) ?_
-  filter_upwards [tendsto_norm_cobounded_atTop.eventually_gt_atTop 0] with z hz
-  rw [norm_inv, norm_pow]
-  exact norm_cexp_neg_mul_cpow_quarter_le hc N (norm_pos_iff.1 hz)
+/-- For `c > 0` and `0 < α < 1/2`, the function `exp (-c z ^ α)` is little-o of every real power
+of `‖z‖` along `cobounded ℂ`. -/
+theorem isLittleO_cexp_neg_mul_cpow_cobounded {c α : ℝ} (hc : 0 < c) (hα : 0 < α)
+    (hα2 : α < 1 / 2) (r : ℝ) :
+    (fun z : ℂ => cexp (-(c * z ^ (α : ℂ)))) =o[cobounded ℂ] fun z => ‖z‖ ^ r := by
+  have hcos : 0 < Real.cos (α * π) :=
+    Real.cos_pos_of_mem_Ioo ⟨by nlinarith [pi_pos], by nlinarith [pi_pos]⟩
+  have h := (isLittleO_exp_neg_mul_rpow_rpow_atTop (mul_pos hc hcos) hα r).comp_tendsto
+    (tendsto_norm_cobounded_atTop (E := ℂ))
+  refine IsBigO.trans_isLittleO (IsBigO.of_bound 1 (Eventually.of_forall fun z => ?_)) h
+  rw [Function.comp_apply, Real.norm_of_nonneg (Real.exp_pos _).le, one_mul]
+  exact norm_cexp_neg_mul_cpow_le hc.le (abs_le.2 ⟨by linarith, by linarith⟩) z
 
-end CpowQuarter
+end Cpow
 
 end TauCeti

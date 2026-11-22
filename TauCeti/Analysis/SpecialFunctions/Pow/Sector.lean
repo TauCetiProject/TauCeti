@@ -26,14 +26,16 @@ from its principal root is `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc`.
   part of a set to its closed upper part by continuity.
 * `TauCeti.im_I_mul_cpow_inv_eq_zero` sends the boundary rays of a sector to the real axis under
   the power coordinate `I * w ^ (1 / β)`.
+* `TauCeti.cos_mul_norm_rpow_le_re_exp_mul_cpow` is the cone inequality
+  `cos δ ‖z‖ ^ y ≤ Re (exp (-φ i) z ^ y)` when the phase `arg z * y` lies within `δ ≤ π` of `φ`;
+  the next three results are its special cases.
 * `TauCeti.cos_mul_norm_le_re_exp_mul_cpow` bounds `z ^ β` on the closed upper half-plane below
   by a cone inequality, for `0 ≤ β ≤ 2`.
 * `TauCeti.cos_mul_norm_le_re_cpow` is the same cone inequality on the closed right half-plane.
 * `TauCeti.cos_mul_pi_div_two_pos`: the cone constant `cos (β π / 2)` is positive for
   `0 ≤ β < 1`.
 * `TauCeti.cos_mul_norm_rpow_le_re_cpow` bounds the real part of `z ^ y` below by
-  `cos (y π) ‖z‖ ^ y` on the whole plane, for `|y| ≤ 1`; for the principal fourth root,
-  `TauCeti.norm_rpow_le_two_mul_re_cpow_quarter` gives `‖z‖ ^ (1/4) ≤ 2 Re (z ^ (1/4))`.
+  `cos (y π) ‖z‖ ^ y` on the whole plane, for `|y| ≤ 1`.
 -/
 
 public section
@@ -116,16 +118,32 @@ theorem cos_mul_pi_div_two_pos {β : ℝ} (hβ : 0 ≤ β) (hβ1 : β < 1) :
     0 < Real.cos (β * Real.pi / 2) :=
   Real.cos_pos_of_mem_Ioo ⟨by nlinarith [Real.pi_pos], by nlinarith [Real.pi_pos]⟩
 
+/-- **Cone bound for a rotated real power.** If the phase `arg z * y` of the cosine formula for
+the real part of `z ^ y` lies within `δ ≤ π` of `φ`, then `z ^ y`, rotated by `exp (-φ i)`, has
+real part at least `cos δ` times `‖z‖ ^ y`. -/
+theorem cos_mul_norm_rpow_le_re_exp_mul_cpow {z : ℂ} {y φ δ : ℝ} (h : |arg z * y - φ| ≤ δ)
+    (hδ : δ ≤ Real.pi) :
+    Real.cos δ * ‖z‖ ^ y ≤ (exp ((-φ : ℝ) * Complex.I) * z ^ (y : ℂ)).re := by
+  have hre : (exp ((-φ : ℝ) * Complex.I) * z ^ (y : ℂ)).re =
+      ‖z‖ ^ y * Real.cos (arg z * y - φ) := by
+    rw [mul_re, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im, cpow_ofReal_re, cpow_ofReal_im,
+      Real.cos_neg, Real.sin_neg, Real.cos_sub]
+    ring
+  rw [hre, mul_comm]
+  refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg (norm_nonneg z) y)
+  rw [← Real.cos_abs (arg z * y - φ)]
+  exact Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg _) hδ h
+
 /-- In the closed right half-plane with `0 ≤ β ≤ 2`, the power `z ^ β` lies in the cone of real
 part at least `cos (β π / 2)` times the norm. -/
 theorem cos_mul_norm_le_re_cpow {z : ℂ} {β : ℝ} (hβ : 0 ≤ β) (hβ2 : β ≤ 2) (hz : 0 ≤ z.re) :
     Real.cos (β * Real.pi / 2) * ‖z ^ (β : ℂ)‖ ≤ (z ^ (β : ℂ)).re := by
-  rw [cpow_ofReal_re, norm_cpow_real, mul_comm]
-  gcongr
   have harg : |z.arg| ≤ Real.pi / 2 := abs_arg_le_pi_div_two_iff.mpr hz
-  rw [← Real.cos_abs (z.arg * β), abs_mul, abs_of_nonneg hβ]
-  refine Real.cos_le_cos_of_nonneg_of_le_pi (by positivity) (by nlinarith [Real.pi_pos]) ?_
-  nlinarith
+  have h := cos_mul_norm_rpow_le_re_exp_mul_cpow (z := z) (y := β) (φ := 0)
+    (δ := β * Real.pi / 2) (by
+      rw [sub_zero, abs_mul, abs_of_nonneg hβ]
+      nlinarith) (by nlinarith [Real.pi_pos])
+  simpa [norm_cpow_real] using h
 
 /-- In the closed upper half-plane with `0 ≤ β ≤ 2`, the power `z ^ β`, rotated by
 `exp (-(β π / 2) i)`, lies in the cone of real part at least `cos (β π / 2)` times the norm. -/
@@ -133,55 +151,22 @@ theorem cos_mul_norm_le_re_exp_mul_cpow {z : ℂ} {β : ℝ} (hβ : 0 ≤ β) (h
     (hz : 0 ≤ z.im) :
     Real.cos (β * Real.pi / 2) * ‖z ^ (β : ℂ)‖ ≤
       (exp ((-(β * Real.pi / 2) : ℝ) * Complex.I) * z ^ (β : ℂ)).re := by
-  rcases hβ.eq_or_lt with rfl | hβ
-  · simp
-  set θ : ℝ := β * Real.pi / 2 with hθdef
-  have hθ : 0 ≤ θ ∧ θ ≤ Real.pi := by
-    constructor <;> nlinarith [Real.pi_pos]
-  set u : ℂ := exp ((-θ : ℝ) * Complex.I)
-  set P : ℂ := z ^ (β : ℂ)
-  have harg : |z.arg * β - θ| ≤ θ := by
-    apply abs_le.mpr
-    constructor <;> dsimp [θ] <;>
-      nlinarith [arg_nonneg_iff.mpr hz, arg_le_pi z]
-  have hcos : Real.cos θ ≤ Real.cos (z.arg * β - θ) := by
-    simpa only [Real.cos_abs] using
-      Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg _) hθ.2 harg
-  have hure : u.re = Real.cos θ := by
-    simpa only [Real.cos_neg] using exp_ofReal_mul_I_re (-θ)
-  have huim : u.im = -Real.sin θ := by
-    simpa only [Real.sin_neg] using exp_ofReal_mul_I_im (-θ)
-  have hre : (u * P).re = ‖P‖ * Real.cos (z.arg * β - θ) := by
-    rcases eq_or_ne z 0 with rfl | _
-    · simp [P, hβ.ne']
-    have hPn : ‖P‖ = ‖z‖ ^ β := by
-      simp [P]
-    simp [P, Complex.mul_re, cpow_ofReal_re, cpow_ofReal_im, hure, huim, Real.cos_sub, hPn]
-    ring
-  rw [hre]
-  simpa only [mul_comm] using mul_le_mul_of_nonneg_left hcos (norm_nonneg P)
+  rw [norm_cpow_real]
+  refine cos_mul_norm_rpow_le_re_exp_mul_cpow (abs_le.mpr ⟨?_, ?_⟩) (by nlinarith [Real.pi_pos])
+  · nlinarith [arg_nonneg_iff.mpr hz]
+  · nlinarith [arg_le_pi z]
 
-/-- For `|y| ≤ 1`, the principal power `z ^ y` has real part at least `cos (y π) ‖z‖ ^ y`: its
-argument `y arg z` has modulus at most `|y| π ≤ π`. -/
+/-- For `|y| ≤ 1`, the principal power `z ^ y` has real part at least `cos (y π) ‖z‖ ^ y`: the
+phase `arg z * y` of the cosine formula for its real part has modulus at most `|y| π ≤ π`. -/
 theorem cos_mul_norm_rpow_le_re_cpow {z : ℂ} {y : ℝ} (hy : |y| ≤ 1) :
     Real.cos (y * Real.pi) * ‖z‖ ^ y ≤ (z ^ (y : ℂ)).re := by
-  rw [cpow_ofReal_re, mul_comm (Real.cos _)]
-  refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg (norm_nonneg z) y)
-  rw [← Real.cos_abs (y * Real.pi), ← Real.cos_abs (arg z * y), abs_mul, abs_mul,
-    abs_of_pos Real.pi_pos]
-  refine Real.cos_le_cos_of_nonneg_of_le_pi (by positivity) (by nlinarith [Real.pi_pos]) ?_
-  rw [mul_comm]
-  exact mul_le_mul_of_nonneg_left (abs_arg_le_pi z) (abs_nonneg y)
-
-/-- The real part of the principal fourth root is at least half its modulus:
-`‖z‖ ^ (1/4) ≤ 2 Re (z ^ (1/4))`, since `cos (π/4) = √2/2 > 1/2`. -/
-theorem norm_rpow_le_two_mul_re_cpow_quarter {z : ℂ} :
-    ‖z‖ ^ (1 / 4 : ℝ) ≤ 2 * (z ^ (1 / 4 : ℂ)).re := by
-  have h := cos_mul_norm_rpow_le_re_cpow (z := z) (y := 1 / 4)
-    (by rw [abs_of_pos (by norm_num)]; norm_num)
-  rw [one_div_mul_eq_div, Real.cos_pi_div_four] at h
-  push_cast at h
-  nlinarith [Real.one_lt_sqrt_two, Real.rpow_nonneg (norm_nonneg z) (1 / 4 : ℝ)]
+  have h := cos_mul_norm_rpow_le_re_exp_mul_cpow (z := z) (φ := 0) (δ := |y| * Real.pi)
+    (by
+      rw [sub_zero, abs_mul, mul_comm]
+      exact mul_le_mul_of_nonneg_left (abs_arg_le_pi z) (abs_nonneg y))
+    (by nlinarith [Real.pi_pos])
+  rw [← abs_of_pos Real.pi_pos, ← abs_mul, Real.cos_abs] at h
+  simpa using h
 
 end TauCeti
 
