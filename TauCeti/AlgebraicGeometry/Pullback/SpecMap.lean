@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Pullbacks
+public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 import Mathlib.AlgebraicGeometry.PullbackCarrier
 import Mathlib.RingTheory.TensorProduct.Pi
 
@@ -25,9 +26,9 @@ arbitrary schemes over an affine base, and they are the underlying comparisons o
 functors on affine group schemes in
 `TauCeti/AlgebraicGeometry/AffineGroupScheme/BaseChange/Basic.lean`.
 
-The same pullback along `Spec.map` of a ring map `k → K` carries affine charts: if `Spec A` is an
-open subscheme of `X` over `Spec k`, then `Spec (A ⊗[k] K)` is an open subscheme of the base
-change `X ×_k Spec K`, over `Spec K`.
+Compatible affine charts on any pullback square give an affine tensor-product chart on the fibre
+product (`exists_isOpenImmersion_spec_tensorProduct_of_isPullback`) and pointwise lifts of primes
+with contracted-prime identification (`exists_isOpenImmersion_spec_tensorProduct_at_of_isPullback`).
 
 A split scheme `Spec (ι → L)` stays split after base change to a commutative `L`-algebra `F`,
 with model `Spec (ι → F)` and compatibility with both pullback projections.
@@ -38,11 +39,14 @@ with model `Spec (ι → F)` and compatibility with both pullback projections.
   identity functor.
 * `TauCeti.AlgebraicGeometry.Over.pullbackSpecMapComp`: pullback along `Spec.map (f ≫ g)` is a
   composite of pullbacks.
-* `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_tensorProduct_of_isPullback`: the base change
-  of an affine chart is an affine chart of the base change.
 * `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_spec_tensorProduct_of_isPullback`: compatible
   affine charts on any pullback square give an affine tensor-product chart on the fibre product
   with explicit projections and range.
+* `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_spec_tensorProduct_at_of_isPullback`: pointwise
+  affine chart extraction on a pullback square with projected prime identification.
+* `TauCeti.AlgebraicGeometry.isDominant_of_isPullback_spec` and
+  `TauCeti.AlgebraicGeometry.isDominant_of_baseChange`: dominance of base-change projections and
+  base-changed dominant morphisms along field extensions.
 * `TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv`: an algebra equivalence
   identifies an affine base change over its new base.
 * `CategoryTheory.IsPullback.exists_split`: a scheme split over a commutative ring stays split
@@ -76,22 +80,6 @@ noncomputable def Over.pullbackSpecMapComp (f : R ⟶ S) (g : S ⟶ T) :
     Over.pullback (Spec.map (f ≫ g)) ≅
       Over.pullback (Spec.map f) ⋙ Over.pullback (Spec.map g) :=
   eqToIso (by simp only [Spec.map_comp]) ≪≫ Over.pullbackComp (Spec.map g) (Spec.map f)
-
-/-- **The base change of an affine chart is an affine chart of the base change.** Let
-`φ : Spec A ⟶ X` be an open immersion of schemes over `Spec k`, and let `Y = X ×_k Spec K` be a
-base change of `X`. Then `Spec (A ⊗[k] K)` is an open subscheme of `Y`, over `Spec K`. -/
-theorem exists_isOpenImmersion_tensorProduct_of_isPullback {k A K : Type u} [CommRing k]
-    [CommRing A] [CommRing K] [Algebra k A] [Algebra k K] {X Y : Scheme.{u}}
-    {f : X ⟶ Spec (.of k)} {φ : Spec (.of A) ⟶ X} [IsOpenImmersion φ]
-    (hφ : φ ≫ f = Spec.map (CommRingCat.ofHom (algebraMap k A))) {g : Y ⟶ X}
-    {q : Y ⟶ Spec (.of K)} (H : IsPullback g q f (Spec.map (CommRingCat.ofHom (algebraMap k K)))) :
-    ∃ ι : Spec (.of (A ⊗[k] K)) ⟶ Y, IsOpenImmersion ι ∧
-      ι ≫ q = Spec.map (CommRingCat.ofHom
-        (Algebra.TensorProduct.includeRight : K →ₐ[k] A ⊗[k] K).toRingHom) := by
-  refine ⟨(pullbackSpecIso k A K).inv ≫ (pullback.congrHom hφ.symm rfl).hom ≫
-    (pullbackRightPullbackFstIso _ _ _).inv ≫ pullback.snd _ _ ≫ H.isoPullback.inv,
-    inferInstance, ?_⟩
-  simp
 
 /-- **Affine charts on a pullback square.** Given a pullback square `H : IsPullback gX f' f gY` of
 schemes, a monomorphism `iY : Spec R ⟶ Y`, and open immersions `iY' : Spec S ⟶ Y'` and
@@ -133,6 +121,64 @@ theorem exists_isOpenImmersion_spec_tensorProduct_of_isPullback
       (g := Spec.map (CommRingCat.ofHom (algebraMap R A))) gY f iY' iX iY eY' eX] at hw
     obtain ⟨p, hp⟩ := hw
     exact ⟨(pullbackSpecIso R S A).hom p, by simp [ι, m, hp]⟩
+
+/-- **Pointwise affine chart on a pullback square.** Under the hypotheses of
+`exists_isOpenImmersion_spec_tensorProduct_of_isPullback`, any point `x' : X'` whose images under
+`f'` and `gX` lie in the ranges of `iY'` and `iX` lifts to a prime `q` of `S ⊗[R] A` along an
+open immersion `ι : Spec (S ⊗[R] A) ⟶ X'`, whose right projection `p : Spec A` has prime equal
+to `q.asIdeal.under A` and satisfies `gX (ι q) = iX p`. -/
+theorem exists_isOpenImmersion_spec_tensorProduct_at_of_isPullback
+    {R S A : Type u} [CommRing R] [CommRing S] [CommRing A] [Algebra R S] [Algebra R A]
+    {X Y X' Y' : Scheme.{u}} {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {gY : Y' ⟶ Y}
+    (H : IsPullback gX f' f gY)
+    {iY : Spec (.of R) ⟶ Y} {iY' : Spec (.of S) ⟶ Y'} {iX : Spec (.of A) ⟶ X}
+    [Mono iY] [IsOpenImmersion iY'] [IsOpenImmersion iX]
+    (eY' : Spec.map (CommRingCat.ofHom (algebraMap R S)) ≫ iY = iY' ≫ gY)
+    (eX : Spec.map (CommRingCat.ofHom (algebraMap R A)) ≫ iY = iX ≫ f)
+    {x' : X'} (hy' : f' x' ∈ Set.range iY') (hx : gX x' ∈ Set.range iX) :
+    ∃ (ι : Spec (.of (S ⊗[R] A)) ⟶ X') (_ : IsOpenImmersion ι)
+      (q : Spec (.of (S ⊗[R] A))) (p : Spec (.of A)),
+      letI : Algebra A (S ⊗[R] A) := Algebra.TensorProduct.rightAlgebra
+      ι q = x' ∧
+      ι ≫ f' = Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫ iY' ∧
+      ι ≫ gX = Spec.map (CommRingCat.ofHom
+        (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom) ≫ iX ∧
+      gX (ι q) = iX p ∧
+      p.asIdeal = q.asIdeal.under A := by
+  obtain ⟨ι, hι, h₁, h₂, hrange⟩ :=
+    exists_isOpenImmersion_spec_tensorProduct_of_isPullback H eY' eX
+  obtain ⟨q, rfl⟩ : x' ∈ Set.range ι := hrange.symm ▸ ⟨hy', hx⟩
+  let _ : Algebra A (S ⊗[R] A) := Algebra.TensorProduct.rightAlgebra
+  let φR := CommRingCat.ofHom
+    (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom
+  refine ⟨ι, hι, q, Spec.map φR q, rfl, h₁, h₂,
+    by simpa only [Scheme.Hom.comp_apply] using congrArg (fun k : _ ⟶ X ↦ k q) h₂,
+    (congrArg PrimeSpectrum.asIdeal (Spec.map_apply φR q)).trans (PrimeSpectrum.comap_asIdeal _ q)⟩
+
+/-- The projection from the base change along any field extension `K / k` is dominant. -/
+theorem isDominant_of_isPullback_spec {k K : Type u} [Field k] [Field K] [Algebra k K]
+    {X Y : Scheme.{u}} [X.Over (Spec (.of k))] [Y.Over (Spec (.of K))] {g : Y ⟶ X}
+    (H : IsPullback g (Y ↘ Spec (.of K)) (X ↘ Spec (.of k))
+      (Spec.map (CommRingCat.ofHom (algebraMap k K)))) :
+    IsDominant g :=
+  have : Surjective g := MorphismProperty.of_isPullback (P := @Surjective) H.flip inferInstance
+  inferInstance
+
+/-- The base change of a dominant `k`-morphism between integral `k`-schemes along any field
+extension `K / k` is dominant. -/
+theorem isDominant_of_baseChange {k K : Type u} [Field k] [Field K] [Algebra k K]
+    {X₁ X₂ X₁' X₂' : Scheme.{u}} [X₁.Over (Spec (.of k))] [X₂.Over (Spec (.of k))]
+    [X₁'.Over (Spec (.of K))] [X₂'.Over (Spec (.of K))] [IsIntegral X₁] [IsIntegral X₂]
+    {f : X₁ ⟶ X₂} [f.IsOver (Spec (.of k))] [IsDominant f]
+    {g₁ : X₁' ⟶ X₁} {g₂ : X₂' ⟶ X₂} {f' : X₁' ⟶ X₂'} [f'.IsOver (Spec (.of K))]
+    (H₁ : IsPullback g₁ (X₁' ↘ Spec (.of K)) (X₁ ↘ Spec (.of k))
+      (Spec.map (CommRingCat.ofHom (algebraMap k K))))
+    (H₂ : IsPullback g₂ (X₂' ↘ Spec (.of K)) (X₂ ↘ Spec (.of k))
+      (Spec.map (CommRingCat.ofHom (algebraMap k K))))
+    (hf' : f' ≫ g₂ = g₁ ≫ f) :
+    IsDominant f' :=
+  have : Flat g₂ := MorphismProperty.of_isPullback (P := @Flat) H₂.flip inferInstance
+  IsDominant.of_isPullback_of_flat (IsPullback.of_bot (by simpa [comp_over] using H₁) hf'.symm H₂)
 
 /-- An algebraic identification of a base-changed algebra induces an isomorphism over the
 new affine base. No finiteness or étaleness assumptions are needed for this transport. -/

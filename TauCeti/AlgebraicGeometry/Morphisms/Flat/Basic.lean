@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
 public import Mathlib.AlgebraicGeometry.FunctionField
+public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import TauCeti.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import TauCeti.RingTheory.Flat.Tower
@@ -44,6 +45,8 @@ the generic fibre.
   then `f` is flat.
 * `AlgebraicGeometry.Scheme.Hom.genericPoint_eq_of_flat`: a flat morphism between irreducible
   schemes sends the generic point to the generic point.
+* `AlgebraicGeometry.IsDominant.of_flat` and `AlgebraicGeometry.IsDominant.of_isPullback_of_flat`:
+  flat morphisms between irreducible schemes and flat pullbacks of dominant morphisms are dominant.
 
 ## References
 
@@ -142,5 +145,23 @@ theorem Flat.of_comp_surjective {X' : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y) [
   Flat.of_stalkMap f fun x ↦ by
     obtain ⟨x', rfl⟩ := g.surjective x
     exact g.flat_stalkMap_of_comp f x' (Flat.stalkMap g x') (Flat.stalkMap (g ≫ f) x')
+
+/-- Any flat morphism between irreducible schemes sends the generic point to the generic point and
+is therefore dominant. -/
+theorem IsDominant.of_flat {X Y : Scheme.{u}} [IrreducibleSpace X] [IrreducibleSpace Y]
+    (g : X ⟶ Y) [Flat g] : IsDominant g :=
+  isDominant_iff_genericPoint_eq.mpr g.genericPoint_eq_of_flat
+
+/-- The pullback of a dominant morphism between irreducible schemes along any flat morphism is
+dominant, with no irreducibility or openness assumption on the base change. -/
+theorem IsDominant.of_isPullback_of_flat {X Y X' Y' : Scheme.{u}} [IrreducibleSpace X]
+    [IrreducibleSpace Y] {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {gY : Y' ⟶ Y}
+    [IsDominant f] [Flat gY] (H : IsPullback gX f' f gY) : IsDominant f' := by
+  rw [isDominant_iff, denseRange_iff_closure_range, Set.eq_univ_iff_forall]
+  intro y'
+  obtain ⟨z', hz', hgz'⟩ := Flat.generalizingMap gY ((genericPoint_spec Y).specializes trivial)
+  obtain ⟨w, -, hw⟩ := Scheme.exists_preimage_of_isPullback H (genericPoint X) z'
+    (f.genericPoint_eq_of_isDominant.trans hgz'.symm)
+  exact hz'.mem_closed isClosed_closure (subset_closure ⟨w, hw⟩)
 
 end AlgebraicGeometry

@@ -38,7 +38,8 @@ differentials commute with base change and localization:
 * `TauCeti.KaehlerDifferential.mem_range_map_iff_forall_isMaximal`: membership in the global
   image can be checked using any family of maximal localizations.
 * `TauCeti.KaehlerDifferential.atPrimePushoutEquiv`: base change and localization of Kähler
-  differentials at a prime in a pushout `B = S ⊗[R] A`.
+  differentials at a prime in a pushout `B = S ⊗[R] A`, with pure-tensor formula
+  `TauCeti.KaehlerDifferential.atPrimePushoutEquiv_tmul_D`.
 
 ## References
 
@@ -134,24 +135,84 @@ def atPrimePushoutEquiv (q : Ideal B) [q.IsPrime] :
     letI := Localization.AtPrime.algebraOfLiesOver (q.under A) q
     (Localization.AtPrime q ⊗[Localization.AtPrime (q.under A)]
       Ω[Localization.AtPrime (q.under A)⁄R]) ≃ₗ[Localization.AtPrime q]
-      Ω[Localization.AtPrime q⁄S] := by
+      Ω[Localization.AtPrime q⁄S] :=
   let p := q.under A
   let Ap := Localization.AtPrime p
   let Bq := Localization.AtPrime q
   let := Localization.AtPrime.algebraOfLiesOver p q
-  let eAp : Ω[Ap⁄R] ≃ₗ[Ap] Ap ⊗[A] Ω[A⁄R] :=
-    (LinearEquiv.extendScalarsOfIsLocalization p.primeCompl Ap
-      (IsLocalizedModule.iso p.primeCompl (KaehlerDifferential.map R R A Ap)).symm) ≪≫ₗ
-      LocalizedModule.equivTensorProduct p.primeCompl Ω[A⁄R]
-  let eBq : Bq ⊗[B] Ω[B⁄S] ≃ₗ[Bq] Ω[Bq⁄S] :=
-    (LocalizedModule.equivTensorProduct q.primeCompl Ω[B⁄S]).symm ≪≫ₗ
-      (LinearEquiv.extendScalarsOfIsLocalization q.primeCompl Bq
-        (IsLocalizedModule.iso q.primeCompl (KaehlerDifferential.map S S B Bq)))
-  exact AlgebraTensorModule.congr (LinearEquiv.refl Bq Bq) eAp ≪≫ₗ
+  have : Algebra.FormallyEtale A Ap := Algebra.FormallyEtale.of_isLocalization p.primeCompl
+  have : Algebra.FormallyEtale B Bq := Algebra.FormallyEtale.of_isLocalization q.primeCompl
+  AlgebraTensorModule.congr (LinearEquiv.refl Bq Bq)
+      (KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale R A Ap).symm ≪≫ₗ
     AlgebraTensorModule.cancelBaseChange A Ap Bq Bq Ω[A⁄R] ≪≫ₗ
     (AlgebraTensorModule.cancelBaseChange A B Bq Bq Ω[A⁄R]).symm ≪≫ₗ
     AlgebraTensorModule.congr (LinearEquiv.refl Bq Bq)
-      (KaehlerDifferential.tensorKaehlerEquiv R S A B) ≪≫ₗ eBq
+      (KaehlerDifferential.tensorKaehlerEquiv R S A B) ≪≫ₗ
+    KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale S B Bq
+
+/-- Evaluating `atPrimePushoutEquiv` on a pure tensor `b ⊗ₜ D R A_p a`. -/
+@[simp]
+theorem atPrimePushoutEquiv_tmul_D (q : Ideal B) [q.IsPrime]
+    (b : Localization.AtPrime q) (a : Localization.AtPrime (q.under A)) :
+    letI := Localization.AtPrime.algebraOfLiesOver (q.under A) q
+    atPrimePushoutEquiv R S A q (b ⊗ₜ D R (Localization.AtPrime (q.under A)) a) =
+      b • D S (Localization.AtPrime q)
+        (algebraMap (Localization.AtPrime (q.under A)) (Localization.AtPrime q) a) := by
+  let p := q.under A
+  let Ap := Localization.AtPrime p
+  let Bq := Localization.AtPrime q
+  let := Localization.AtPrime.algebraOfLiesOver p q
+  have : Algebra.FormallyEtale A Ap := Algebra.FormallyEtale.of_isLocalization p.primeCompl
+  have : Algebra.FormallyEtale B Bq := Algebra.FormallyEtale.of_isLocalization q.primeCompl
+  have hAlg (x : A) :
+      atPrimePushoutEquiv R S A q (1 ⊗ₜ D R Ap (algebraMap A Ap x)) =
+        D S Bq (algebraMap Ap Bq (algebraMap A Ap x)) := by
+    dsimp only [atPrimePushoutEquiv, Ap, Bq, p]
+    simp only [LinearEquiv.trans_apply, AlgebraTensorModule.congr_tmul, LinearEquiv.refl_apply,
+      KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale_symm_D_algebraMap,
+      AlgebraTensorModule.cancelBaseChange_tmul,
+      AlgebraTensorModule.cancelBaseChange_symm_tmul,
+      KaehlerDifferential.tensorKaehlerEquiv_tmul_D, one_smul,
+      KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale_apply,
+      KaehlerDifferential.mapBaseChange_tmul, KaehlerDifferential.map_D]
+    congr 1
+    rw [← IsScalarTower.algebraMap_apply A B Bq, ← IsScalarTower.algebraMap_apply A Ap Bq]
+  have hOne : atPrimePushoutEquiv R S A q (1 ⊗ₜ D R Ap a) =
+      D S Bq (algebraMap Ap Bq a) := by
+    obtain ⟨⟨a', s⟩, ha⟩ := IsLocalization.surj p.primeCompl a
+    have hD : (algebraMap A Ap (s : A)) • D R Ap a =
+        D R Ap (algebraMap A Ap a') - a • D R Ap (algebraMap A Ap (s : A)) := by
+      have hmul := congrArg (D R Ap) ha
+      rw [Derivation.leibniz, add_comm] at hmul
+      exact eq_sub_of_add_eq hmul
+    have hEq : (algebraMap Ap Bq (algebraMap A Ap (s : A))) •
+        atPrimePushoutEquiv R S A q (1 ⊗ₜ D R Ap a) =
+        (algebraMap Ap Bq (algebraMap A Ap (s : A))) • D S Bq (algebraMap Ap Bq a) := by
+      calc (algebraMap Ap Bq (algebraMap A Ap (s : A))) •
+            atPrimePushoutEquiv R S A q (1 ⊗ₜ D R Ap a)
+          = atPrimePushoutEquiv R S A q
+              (((algebraMap A Ap (s : A)) • (1 : Bq)) ⊗ₜ[Ap] D R Ap a) := by
+            rw [← (atPrimePushoutEquiv R S A q).map_smul, TensorProduct.smul_tmul',
+              algebraMap_smul Bq]
+        _ = atPrimePushoutEquiv R S A q
+              (1 ⊗ₜ[Ap] ((algebraMap A Ap (s : A)) • D R Ap a)) := by
+            rw [TensorProduct.smul_tmul]
+        _ = D S Bq (algebraMap Ap Bq (algebraMap A Ap a')) -
+              (algebraMap Ap Bq a) • D S Bq (algebraMap Ap Bq (algebraMap A Ap (s : A))) := by
+            rw [hD, TensorProduct.tmul_sub, map_sub, hAlg,
+              ← TensorProduct.smul_tmul, ← algebraMap_smul Bq a (1 : Bq),
+              ← TensorProduct.smul_tmul', (atPrimePushoutEquiv R S A q).map_smul, hAlg]
+        _ = (algebraMap Ap Bq (algebraMap A Ap (s : A))) • D S Bq (algebraMap Ap Bq a) := by
+            have hmulB : algebraMap Ap Bq (algebraMap A Ap a') =
+                algebraMap Ap Bq a * algebraMap Ap Bq (algebraMap A Ap (s : A)) := by
+              rw [← ha, map_mul]
+            rw [hmulB, Derivation.leibniz, add_sub_cancel_left]
+    have hu : IsUnit (algebraMap Ap Bq (algebraMap A Ap (s : A))) :=
+      (IsLocalization.map_units Ap s).map (algebraMap Ap Bq)
+    exact (IsUnit.smul_left_cancel hu).mp hEq
+  rw [show (b ⊗ₜ[Ap] D R Ap a) = b • (1 ⊗ₜ[Ap] D R Ap a) by
+      rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one],
+    (atPrimePushoutEquiv R S A q).map_smul, hOne]
 
 end Pushout
 

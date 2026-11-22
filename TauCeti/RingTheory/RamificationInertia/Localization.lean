@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RamificationInertia.Ramification
+import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.LocalRing.Localization
 
 /-!
@@ -38,12 +39,12 @@ theorem ramificationIdx_maximalIdeal {R S : Type*} [CommRing R] [CommRing S] [Is
   let e : S ≃ₐ[S] Sm := algEquivLocalizationAtMaximalIdeal S S
   have he : (e : S →+* Sm) = algebraMap S Sm :=
     RingHom.ext (algEquivLocalizationAtMaximalIdeal_apply S S)
-  have hIJ : (((maximalIdeal S).under R).map (algebraMap R S)).map e =
+  have hIJ : (((maximalIdeal S).under R).map (algebraMap R S)).map (e : S →+* Sm) =
       ((maximalIdeal S).under R).map (algebraMap R Sm) := by
-    rw [IsScalarTower.algebraMap_eq R S Sm, ← Ideal.map_map, ← he]; rfl
-  have hsurj : Function.Surjective (algebraMap S Sm) := he ▸ e.surjective
-  rw [Ideal.ramificationIdx_def, ← Module.length_eq_of_surjective hsurj,
-    ← (Ideal.quotientEquivAlg _ _ e hIJ.symm).toLinearEquiv.length_eq]
+    rw [IsScalarTower.algebraMap_eq R S Sm, ← Ideal.map_map, ← he]
+  rw [Ideal.ramificationIdx_def, ← hIJ,
+    Ideal.length_quotient_map_of_surjective (ψ := (e : S →+* Sm)) _ e.surjective,
+    (RingHom.injective_iff_ker_eq_bot (e : S →+* Sm)).mp e.injective, sup_bot_eq]
 
 /-- For a local homomorphism `R → S` of local rings, the ramification index of `maximalIdeal S`
 over `R` is the `S`-length of `S ⧸ (maximalIdeal R) S`. -/

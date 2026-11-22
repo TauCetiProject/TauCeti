@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 public import TauCeti.RingTheory.LocalRing.Localization
+import TauCeti.RingTheory.RamificationInertia.Localization
 
 /-!
 # Unramifiedness and separability at one prime
@@ -31,15 +32,13 @@ theorem isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable_residueField
     Algebra.IsUnramifiedAt R q ↔ q.ramificationIdx R = 1 ∧
       let := Localization.AtPrime.algebraOfLiesOver (q.under R) q
       Algebra.IsSeparable (q.under R).ResidueField q.ResidueField := by
-  -- The length reduction follows Mathlib's Ideal.ramificationIdx_eq_one_iff, combined with
-  -- the local criterion Algebra.isUnramifiedAt_iff_map_eq.
   let := Localization.AtPrime.algebraOfLiesOver (q.under R) q
   have he : q.ramificationIdx R = 1 ↔
       (q.under R).map (algebraMap R (Localization.AtPrime q)) =
         IsLocalRing.maximalIdeal (Localization.AtPrime q) := by
-    rw [ramificationIdx_def, ENat.toNat_eq_iff_eq_natCast, Nat.cast_one,
-      Module.length_eq_one_iff, isSimpleModule_iff_isCoatom, ← Ideal.isMaximal_def,
-      IsLocalRing.isMaximal_iff]
+    rw [← Ideal.ramificationIdx_maximalIdeal_localization,
+      IsLocalRing.ramificationIdx_maximalIdeal_eq_one_iff,
+      ← Ideal.under_under (B := S), Localization.AtPrime.under_maximalIdeal]
   rw [Algebra.isUnramifiedAt_iff_map_eq R (q.under R) q, he, and_comm]
 
 /-- At a maximal prime `q` over a maximal ideal `p`, unramifiedness is ramification index one

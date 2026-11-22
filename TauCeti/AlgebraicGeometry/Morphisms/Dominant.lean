@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.FunctionField
-public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.Stalk
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
-import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
 
 /-!
 # Dominant morphisms and rational functions
@@ -40,8 +38,6 @@ the generic point, and a dominant one by its pullback of rational functions.
 * `AlgebraicGeometry.IsDominant.pullback_fst_of_isOpenMap`: base change of a dominant morphism
   along a morphism with open underlying map (for instance an étale morphism) is dominant, without
   reducedness or irreducibility assumptions.
-* `AlgebraicGeometry.IsDominant.of_flat` and `AlgebraicGeometry.IsDominant.of_isPullback_of_flat`:
-  flat morphisms between irreducible schemes and flat pullbacks of dominant morphisms are dominant.
 * `AlgebraicGeometry.Scheme.Hom.isDominant_of_isOpenMap`: a morphism with open underlying map
   (for instance an open immersion) from a nonempty scheme into a preirreducible scheme is dominant.
 * `AlgebraicGeometry.Scheme.Hom.genericPoint_eq_of_isDominant`: a dominant morphism of
@@ -144,28 +140,6 @@ theorem isDominant_iff_genericPoint_eq {f : X ⟶ Y} :
   ⟨fun _ ↦ f.genericPoint_eq_of_isDominant, fun h ↦
     ⟨(dense_iff_closure_eq.mpr (genericPoint_closure _)).mono
       (Set.singleton_subset_iff.mpr ⟨_, h⟩)⟩⟩
-
-open CategoryTheory.Limits in
-/-- Any flat morphism between irreducible schemes sends the generic point to the generic point and
-is therefore dominant. -/
-theorem IsDominant.of_flat {X Y : Scheme.{u}} [IrreducibleSpace X] [IrreducibleSpace Y]
-    (g : X ⟶ Y) [Flat g] : IsDominant g := by
-  obtain ⟨z, hz, hgz⟩ := Flat.generalizingMap g ((genericPoint_spec Y).specializes trivial)
-  rw [isDominant_iff_genericPoint_eq, ← hgz]
-  exact congrArg g (((genericPoint_spec X).specializes trivial).antisymm hz).eq
-
-open CategoryTheory.Limits in
-/-- The pullback of a dominant morphism between irreducible schemes along any flat morphism is
-dominant, with no irreducibility or openness assumption on the base change. -/
-theorem IsDominant.of_isPullback_of_flat {X Y X' Y' : Scheme.{u}} [IrreducibleSpace X]
-    [IrreducibleSpace Y] {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {gY : Y' ⟶ Y}
-    [IsDominant f] [Flat gY] (H : IsPullback gX f' f gY) : IsDominant f' := by
-  rw [isDominant_iff, denseRange_iff_closure_range, Set.eq_univ_iff_forall]
-  intro y'
-  obtain ⟨z', hz', hgz'⟩ := Flat.generalizingMap gY ((genericPoint_spec Y).specializes trivial)
-  obtain ⟨w, -, hw⟩ := Scheme.exists_preimage_of_isPullback H (genericPoint X) z'
-    (f.genericPoint_eq_of_isDominant.trans hgz'.symm)
-  exact hz'.mem_closed isClosed_closure (subset_closure ⟨w, hw⟩)
 
 /-- The canonical morphism `Spec K(X) ⟶ X` from the spectrum of the generic stalk of an
 irreducible scheme is dominant: its image is the generic point, which is dense. -/

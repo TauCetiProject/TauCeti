@@ -7,11 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.BaseChangeSection
 public import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus.Basic
-public import TauCeti.AlgebraicGeometry.Pullback.SpecMap
-public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
-public import TauCeti.AlgebraicGeometry.ResidueField
-public import TauCeti.RingTheory.Unramified.BaseChange
-import Mathlib.AlgebraicGeometry.AffineScheme
 
 /-!
 # Base change and descent of the ramification, non-étale and branch loci
@@ -19,10 +14,6 @@ import Mathlib.AlgebraicGeometry.AffineScheme
 For a pullback square `H : IsPullback gX f' f gY` of schemes, this file compares the ramification,
 non-étale, and branch loci of `f' : X' ⟶ Y'` with those of `f : X ⟶ Y`:
 
-* `AlgebraicGeometry.Scheme.Hom.formallyUnramified_stalkMap_of_isPullback`,
-  `AlgebraicGeometry.Scheme.Hom.formallyUnramified_stalkMap_iff_of_isPullback_of_flat_stalkMap`,
-  `AlgebraicGeometry.Scheme.Hom.formallyUnramified_stalkMap_iff_of_isPullback`: preservation and
-  flat descent of formal unramifiedness on stalks (with no finite-type hypothesis).
 * `AlgebraicGeometry.Scheme.Hom.ramificationLocus_subset_preimage_of_isPullback`,
   `AlgebraicGeometry.Scheme.Hom.branchLocus_subset_preimage_of_isPullback`,
   `AlgebraicGeometry.Scheme.Hom.nonEtaleLocus_subset_preimage_of_isPullback`, and their flat
@@ -32,11 +23,8 @@ non-étale, and branch loci of `f' : X' ⟶ Y'` with those of `f : X ⟶ Y`:
   `AlgebraicGeometry.Scheme.Hom.branchLocus_subset_iff_of_isPullback`,
   `AlgebraicGeometry.Scheme.Hom.etale_morphismRestrict_iff_of_isPullback`: faithfully flat descent
   for the branch locus and étaleness over opens.
-* `TauCeti.AlgebraicGeometry.preimage_range_section_of_isPullback`,
-  `TauCeti.AlgebraicGeometry.preimage_range_section_eq_range_baseChangeSection`,
-  `TauCeti.AlgebraicGeometry.preimage_singleton_section_closedPoint_of_isPullback`, and
-  `AlgebraicGeometry.Scheme.Hom.branchLocus_subset_iUnion_range_section_iff_of_isPullback`:
-  preimages of sections and faithfully flat descent of section-supported branch-locus bounds.
+* `AlgebraicGeometry.Scheme.Hom.branchLocus_subset_iUnion_range_section_iff_of_isPullback`:
+  faithfully flat descent of section-supported branch-locus bounds.
 
 ## References
 
@@ -48,7 +36,6 @@ non-étale, and branch loci of `f' : X' ⟶ Y'` with those of `f : X ⟶ Y`:
 public section
 
 open CategoryTheory Limits AlgebraicGeometry
-open scoped TensorProduct
 
 universe u
 
@@ -57,93 +44,6 @@ namespace AlgebraicGeometry.Scheme.Hom
 section Pullback
 
 variable {X Y X' Y' : Scheme.{u}} {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {gY : Y' ⟶ Y}
-
-/-- Extract an affine tensor-product chart around `x' : X'`, reducing the horizontal stalk maps at
-`x'` and `gX x'` and flatness of `gX.stalkMap x'` to an affine pushout `S ⊗[R] A`. -/
-private theorem exists_isPushout_stalkMap_iff_of_isPullback
-    (H : IsPullback gX f' f gY) (x' : X') :
-    ∃ (R S A : Type u) (_ : CommRing R) (_ : CommRing S) (_ : CommRing A)
-      (_ : Algebra R S) (_ : Algebra R A) (q : PrimeSpectrum (S ⊗[R] A)),
-      letI : Algebra A (S ⊗[R] A) := Algebra.TensorProduct.rightAlgebra
-      ((f'.stalkMap x').hom.FormallyUnramified ↔ Algebra.IsUnramifiedAt S q.asIdeal) ∧
-      ((f.stalkMap (gX x')).hom.FormallyUnramified ↔
-        Algebra.IsUnramifiedAt R (q.asIdeal.under A)) ∧
-      ((gX.stalkMap x').hom.Flat ↔ Module.Flat A (Localization.AtPrime q.asIdeal)) := by
-  have hcomm : gY (f' x') = f (gX x') := by
-    rw [← Scheme.Hom.comp_apply, ← H.w, Scheme.Hom.comp_apply]
-  obtain ⟨_, ⟨U, hU : IsAffineOpen U, rfl⟩, hxU, -⟩ :=
-    Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f (gX x'))) isOpen_univ
-  have hx'U : gY (f' x') ∈ U := hcomm ▸ hxU
-  obtain ⟨_, ⟨U', hU' : IsAffineOpen U', rfl⟩, hx'U', hU'U⟩ :=
-    Y'.isBasis_affineOpens.exists_subset_of_mem_open hx'U (U.is_open'.preimage gY.continuous)
-  obtain ⟨_, ⟨V, hV : IsAffineOpen V, rfl⟩, hxV, hVU⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.is_open'.preimage f.continuous)
-  algebraize [(gY.appLE U U' hU'U).hom, (f.appLE U V hVU).hom]
-  let _ : Algebra Γ(X, V) (Γ(Y', U') ⊗[Γ(Y, U)] Γ(X, V)) := Algebra.TensorProduct.rightAlgebra
-  have := hU.isOpenImmersion_fromSpec
-  have := hU'.isOpenImmersion_fromSpec
-  have := hV.isOpenImmersion_fromSpec
-  obtain ⟨ι, hι, h₁, h₂, hrange⟩ :=
-    TauCeti.AlgebraicGeometry.exists_isOpenImmersion_spec_tensorProduct_of_isPullback H
-      (iY := hU.fromSpec) (iY' := hU'.fromSpec) (iX := hV.fromSpec)
-      (hU.SpecMap_appLE_fromSpec gY hU' hU'U) (hU.SpecMap_appLE_fromSpec f hV hVU)
-  obtain ⟨q, rfl⟩ : x' ∈ Set.range ι := by
-    rw [hrange, hU'.range_fromSpec, hV.range_fromSpec]; exact ⟨hx'U', hxV⟩
-  let φR := CommRingCat.ofHom
-    (Algebra.TensorProduct.includeRight : Γ(X, V) →ₐ[Γ(Y, U)]
-      Γ(Y', U') ⊗[Γ(Y, U)] Γ(X, V)).toRingHom
-  let qA := Spec.map φR q
-  have hgx : gX (ι q) = hV.fromSpec qA := by
-    simpa only [Scheme.Hom.comp_apply] using congrArg (fun k : _ ⟶ X ↦ k q) h₂
-  have hqA : PrimeSpectrum.asIdeal qA = q.asIdeal.under Γ(X, V) :=
-    (congrArg PrimeSpectrum.asIdeal (Spec.map_apply φR q)).trans (PrimeSpectrum.comap_asIdeal _ q)
-  refine ⟨Γ(Y, U), Γ(Y', U'), Γ(X, V), inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, q,
-    (RingHom.FormallyUnramified.respectsIso.stalkMap_iff_of_isOpenImmersion_square
-      ι f' _ hU'.fromSpec h₁ q).trans (formallyUnramified_stalkMap_specMap_iff q), ?_,
-    (RingHom.Flat.respectsIso.stalkMap_iff_of_isOpenImmersion_square
-      ι gX _ hV.fromSpec h₂ q).trans (flat_stalkMap_specMap_iff q)⟩
-  rw [hgx]
-  simpa only [hqA] using
-    (RingHom.FormallyUnramified.respectsIso.stalkMap_iff_of_isOpenImmersion_square
-      hV.fromSpec f (Spec.map (f.appLE U V hVU)) hU.fromSpec
-      (hU.SpecMap_appLE_fromSpec f hV hVU).symm qA).trans
-      (formallyUnramified_stalkMap_specMap_iff qA)
-
-/-- **Formal unramifiedness of stalk maps is preserved under arbitrary pullback** (no flatness
-or finite-type hypothesis). -/
-theorem formallyUnramified_stalkMap_of_isPullback (H : IsPullback gX f' f gY) (x' : X')
-    (h : (f.stalkMap (gX x')).hom.FormallyUnramified) :
-    (f'.stalkMap x').hom.FormallyUnramified := by
-  obtain ⟨R, S, A, _, _, _, _, _, q, hf', hf, -⟩ := exists_isPushout_stalkMap_iff_of_isPullback H x'
-  let _ : Algebra A (S ⊗[R] A) := Algebra.TensorProduct.rightAlgebra
-  have : Algebra.IsUnramifiedAt R (q.asIdeal.under A) := hf.mp h
-  exact hf'.mpr (Algebra.IsUnramifiedAt.of_isPushout R A q.asIdeal)
-
-/-- If `gX` has a flat stalk map at `x'`, then `f'` is formally unramified on stalks at `x'` iff
-`f` is at `gX x'`. -/
-theorem formallyUnramified_stalkMap_iff_of_isPullback_of_flat_stalkMap
-    (H : IsPullback gX f' f gY) (x' : X') (hflat : (gX.stalkMap x').hom.Flat) :
-    (f'.stalkMap x').hom.FormallyUnramified ↔ (f.stalkMap (gX x')).hom.FormallyUnramified := by
-  obtain ⟨R, S, A, _, _, _, _, _, q, hf', hf, hfl⟩ :=
-    exists_isPushout_stalkMap_iff_of_isPullback H x'
-  let _ : Algebra A (S ⊗[R] A) := Algebra.TensorProduct.rightAlgebra
-  let _ := Localization.AtPrime.algebraOfLiesOver (q.asIdeal.under A) q.asIdeal
-  have : Module.Flat A (Localization.AtPrime q.asIdeal) := hfl.mp hflat
-  have hloc : Module.Flat (Localization.AtPrime (q.asIdeal.under A))
-      (Localization.AtPrime q.asIdeal) :=
-    (Module.flat_iff_of_isLocalization (Localization.AtPrime (q.asIdeal.under A))
-      (q.asIdeal.under A).primeCompl (Localization.AtPrime q.asIdeal)).mpr inferInstance
-  exact hf'.trans <| (Algebra.isUnramifiedAt_iff_of_isPushout_of_flat (R := R) (S := S) (A := A)
-    q.asIdeal hloc).trans hf.symm
-
-/-- **Flat base change of unramified stalk maps.** For flat `gY`, `f'` is formally unramified on
-stalks at `x'` iff `f` is at `gX x'`. -/
-theorem formallyUnramified_stalkMap_iff_of_isPullback (H : IsPullback gX f' f gY) [Flat gY]
-    (x' : X') :
-    (f'.stalkMap x').hom.FormallyUnramified ↔ (f.stalkMap (gX x')).hom.FormallyUnramified :=
-  haveI : Flat gX := MorphismProperty.of_isPullback (P := @Flat) H.flip inferInstance
-  formallyUnramified_stalkMap_iff_of_isPullback_of_flat_stalkMap H x' (Flat.stalkMap gX x')
 
 /-- Under an arbitrary pullback, `f'.ramificationLocus ⊆ gX ⁻¹' f.ramificationLocus`. -/
 theorem ramificationLocus_subset_preimage_of_isPullback (H : IsPullback gX f' f gY) :
@@ -220,54 +120,6 @@ theorem etale_morphismRestrict_iff_of_isPullback (H : IsPullback gX f' f gY) [Fl
 end Pullback
 
 end AlgebraicGeometry.Scheme.Hom
-
-namespace TauCeti.AlgebraicGeometry
-
-section SectionPullback
-
-variable {S S' Y Y' : Scheme.{u}} {gY : Y' ⟶ Y} {p' : Y' ⟶ S'} {p : Y ⟶ S} {b : S' ⟶ S}
-
-/-- **The preimage of a section in a pullback square is the lifted section.** Let `Y'` be the
-pullback of `p : Y ⟶ S` along `b : S' ⟶ S`, let `s : S ⟶ Y` be a section of `p`, and let
-`s' : S' ⟶ Y'` be a section of `p'` satisfying `s' ≫ gY = b ≫ s`. Then
-`gY ⁻¹' Set.range s = Set.range s'`, with no assumption on `b`. -/
-theorem preimage_range_section_of_isPullback (H : IsPullback gY p' p b)
-    {s : S ⟶ Y} (hs : s ≫ p = 𝟙 S) {s' : S' ⟶ Y'} (hs'p : s' ≫ p' = 𝟙 S')
-    (hs'g : s' ≫ gY = b ≫ s) :
-    gY ⁻¹' Set.range s = Set.range s' := by
-  have htop : IsPullback b (s' ≫ p') (s ≫ p) b := by
-    rw [hs'p, hs]
-    exact IsPullback.id_vert b
-  have hsec : IsPullback b s' s gY := IsPullback.of_bot htop hs'g.symm H
-  simpa only [Set.preimage_univ, Set.image_univ] using
-    (Scheme.image_preimage_eq_of_isPullback hsec Set.univ).symm
-
-/-- Specialization of `preimage_range_section_of_isPullback` to `baseChangeSection`. -/
-@[simp]
-theorem preimage_range_section_eq_range_baseChangeSection {s : S ⟶ Y} (hs : s ≫ p = 𝟙 S)
-    (b : S' ⟶ S) :
-    pullback.snd b p ⁻¹' Set.range s = Set.range (baseChangeSection p s hs (Over.mk b)) :=
-  preimage_range_section_of_isPullback (IsPullback.of_hasPullback b p).flip hs
-    (baseChangeSection_fst p s hs (Over.mk b)) (baseChangeSection_snd p s hs (Over.mk b))
-
-/-- Over a field extension `L / k`, the preimage of a `k`-rational point `s (closedPoint k)` under
-the base-change projection `Y' ⟶ Y` is the single `L`-rational point `s' (closedPoint L)`. -/
-theorem preimage_singleton_section_closedPoint_of_isPullback {k L : Type u} [Field k] [Field L]
-    [Algebra k L] {gY : Y' ⟶ Y} {p' : Y' ⟶ Spec (.of L)} {p : Y ⟶ Spec (.of k)}
-    (H : IsPullback gY p' p (Spec.map (CommRingCat.ofHom (algebraMap k L))))
-    {s : Spec (.of k) ⟶ Y} (hs : s ≫ p = 𝟙 _) {s' : Spec (.of L) ⟶ Y'} (hs'p : s' ≫ p' = 𝟙 _)
-    (hs'g : s' ≫ gY = Spec.map (CommRingCat.ofHom (algebraMap k L)) ≫ s) :
-    gY ⁻¹' {s (IsLocalRing.closedPoint k)} = {s' (IsLocalRing.closedPoint L)} := by
-  have hrk : Set.range s = {s (IsLocalRing.closedPoint k)} :=
-    Set.ext fun _ ↦ ⟨fun ⟨z, hz⟩ ↦ hz ▸ congrArg s (Subsingleton.elim z _), fun h ↦ ⟨_, h.symm⟩⟩
-  have hrL : Set.range s' = {s' (IsLocalRing.closedPoint L)} :=
-    Set.ext fun _ ↦ ⟨fun ⟨z, hz⟩ ↦ hz ▸ congrArg s' (Subsingleton.elim z _), fun h ↦ ⟨_, h.symm⟩⟩
-  rw [← hrk, ← hrL]
-  exact preimage_range_section_of_isPullback H hs hs'p hs'g
-
-end SectionPullback
-
-end TauCeti.AlgebraicGeometry
 
 namespace AlgebraicGeometry.Scheme.Hom
 

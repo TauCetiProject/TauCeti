@@ -80,9 +80,11 @@ theorem ramificationIdx_eq_one_of_isPushout_of_isSeparable (q : Ideal B) [q.IsPr
       (Q.asIdeal.comap (Algebra.TensorProduct.includeRight (R := A) (A := p.ResidueField) (B := B)))
     exact MulEquiv.isField hFieldQ
       (Ideal.Fiber.localizationAlgEquivQuotient p Q.asIdeal).symm.toMulEquiv
-  rw [ramificationIdx_def, ENat.toNat_eq_iff_eq_natCast, Nat.cast_one, Module.length_eq_one_iff,
-    isSimpleModule_iff_isCoatom, ← Ideal.isMaximal_def]
-  exact (Ideal.Quotient.maximal_ideal_iff_isField_quotient _).mpr (key q hQunder)
+  rw [← Ideal.ramificationIdx_maximalIdeal_localization,
+    IsLocalRing.ramificationIdx_maximalIdeal_eq_one_iff,
+    ← Ideal.under_under (B := B), Localization.AtPrime.under_maximalIdeal]
+  exact IsLocalRing.eq_maximalIdeal
+    ((Ideal.Quotient.maximal_ideal_iff_isField_quotient _).mpr (key q hQunder))
 
 include hL hP in
 /-- Over a perfect field `k` (in particular in characteristic zero), every prime `q` of a pushout

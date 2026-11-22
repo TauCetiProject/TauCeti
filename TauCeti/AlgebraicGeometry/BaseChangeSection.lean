@@ -27,6 +27,12 @@ Over an open `U` of `S`, a section `σ` of `g : Z ⟶ S` restricts functions on 
 giving a `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` (`sectionAlgHom`). More generally, a
 morphism `f : X ⟶ Y` over `S` induces a `Γ(S, ⊤)`-algebra homomorphism
 `Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤)` (`Scheme.Hom.appTopAlgHom`).
+
+In any pullback square `gY : Y' ⟶ Y` over `b : S' ⟶ S`, the preimage `gY ⁻¹' Set.range s` of a
+section `s` is the range of a compatible lifted section `s'`
+(`preimage_range_section_of_isPullback`, specialized to `baseChangeSection` and to closed rational
+points over field extensions in `preimage_range_section_eq_range_baseChangeSection` and
+`preimage_singleton_section_closedPoint_of_isPullback`).
 -/
 
 public section
@@ -246,6 +252,50 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.coe_appTopAlgHom {X Y S : Scheme.{u}
     (f.appTopAlgHom hfg : Γ(Y, ⊤) →+* Γ(X, ⊤)) = f.appTop.hom := (rfl)
 
 end SectionAlgHom
+
+section SectionPullback
+
+variable {S S' Y Y' : Scheme.{u}} {gY : Y' ⟶ Y} {p' : Y' ⟶ S'} {p : Y ⟶ S} {b : S' ⟶ S}
+
+/-- **The preimage of a section in a pullback square is the lifted section.** Let `Y'` be the
+pullback of `p : Y ⟶ S` along `b : S' ⟶ S`, let `s : S ⟶ Y` be a section of `p`, and let
+`s' : S' ⟶ Y'` be a section of `p'` satisfying `s' ≫ gY = b ≫ s`. Then
+`gY ⁻¹' Set.range s = Set.range s'`, with no assumption on `b`. -/
+theorem preimage_range_section_of_isPullback (H : IsPullback gY p' p b)
+    {s : S ⟶ Y} (hs : s ≫ p = 𝟙 S) {s' : S' ⟶ Y'} (hs'p : s' ≫ p' = 𝟙 S')
+    (hs'g : s' ≫ gY = b ≫ s) :
+    gY ⁻¹' Set.range s = Set.range s' := by
+  have htop : IsPullback b (s' ≫ p') (s ≫ p) b := by
+    rw [hs'p, hs]
+    exact IsPullback.id_vert b
+  have hsec : IsPullback b s' s gY := IsPullback.of_bot htop hs'g.symm H
+  simpa only [Set.preimage_univ, Set.image_univ] using
+    (Scheme.image_preimage_eq_of_isPullback hsec Set.univ).symm
+
+/-- Specialization of `preimage_range_section_of_isPullback` to `baseChangeSection`. -/
+@[simp]
+theorem preimage_range_section_eq_range_baseChangeSection {s : S ⟶ Y} (hs : s ≫ p = 𝟙 S)
+    (b : S' ⟶ S) :
+    pullback.snd b p ⁻¹' Set.range s = Set.range (baseChangeSection p s hs (Over.mk b)) :=
+  preimage_range_section_of_isPullback (IsPullback.of_hasPullback b p).flip hs
+    (baseChangeSection_fst p s hs (Over.mk b)) (baseChangeSection_snd p s hs (Over.mk b))
+
+/-- Over a field extension `L / k`, the preimage of a `k`-rational point `s (closedPoint k)` under
+the base-change projection `Y' ⟶ Y` is the single `L`-rational point `s' (closedPoint L)`. -/
+theorem preimage_singleton_section_closedPoint_of_isPullback {k L : Type u} [Field k] [Field L]
+    [Algebra k L] {gY : Y' ⟶ Y} {p' : Y' ⟶ Spec (.of L)} {p : Y ⟶ Spec (.of k)}
+    (H : IsPullback gY p' p (Spec.map (CommRingCat.ofHom (algebraMap k L))))
+    {s : Spec (.of k) ⟶ Y} (hs : s ≫ p = 𝟙 _) {s' : Spec (.of L) ⟶ Y'} (hs'p : s' ≫ p' = 𝟙 _)
+    (hs'g : s' ≫ gY = Spec.map (CommRingCat.ofHom (algebraMap k L)) ≫ s) :
+    gY ⁻¹' {s (IsLocalRing.closedPoint k)} = {s' (IsLocalRing.closedPoint L)} := by
+  have hrk : Set.range s = {s (IsLocalRing.closedPoint k)} :=
+    Set.range_eq_singleton fun z ↦ congrArg s (Subsingleton.elim z _)
+  have hrL : Set.range s' = {s' (IsLocalRing.closedPoint L)} :=
+    Set.range_eq_singleton fun z ↦ congrArg s' (Subsingleton.elim z _)
+  rw [← hrk, ← hrL]
+  exact preimage_range_section_of_isPullback H hs hs'p hs'g
+
+end SectionPullback
 
 end AlgebraicGeometry
 end TauCeti

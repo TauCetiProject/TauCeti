@@ -12,8 +12,9 @@ public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.ConstantField
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.FractionField
-public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Parameter
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.TensorProduct
+public import TauCeti.RingTheory.TensorProduct.FractionRing
 public import TauCeti.RingTheory.TensorProduct.IsDomain
 
 /-!
@@ -72,9 +73,8 @@ The chart arguments use `TauCeti.AlgebraicGeometry.exists_affineOpen_isFractionR
 `AlgebraicGeometry.Scheme.Hom.nonempty_functionField_algEquiv_of_isOpenImmersion` (the function
 field of an integral scheme is the fraction field of any affine chart), from
 `TauCeti/AlgebraicGeometry/Scheme/BaseAlgebra.lean`, and
-`TauCeti.AlgebraicGeometry.exists_isOpenImmersion_tensorProduct_of_isPullback` (the base change of
-an affine chart is an affine chart of the base change), from
-`TauCeti/AlgebraicGeometry/Pullback/SpecMap.lean`.
+`TauCeti.AlgebraicGeometry.exists_isOpenImmersion_spec_tensorProduct_of_isPullback` (affine
+tensor-product charts on a pullback square), from `TauCeti/AlgebraicGeometry/Pullback/SpecMap.lean`.
 -/
 
 public section
@@ -106,8 +106,14 @@ instance isDomain_functionField_tensorProduct_of_geometricallyIntegral (L : Type
   have : Nontrivial (Γ(X, U) ⊗[k] L) :=
     Algebra.TensorProduct.nontrivial_of_algebraMap_injective_of_isDomain k _ _
       (algebraMap k Γ(X, U)).injective (algebraMap k L).injective
-  obtain ⟨ι, _, -⟩ := exists_isOpenImmersion_tensorProduct_of_isPullback hw
+  have := hU.isOpenImmersion_fromSpec
+  let cIso := (Algebra.TensorProduct.comm k L Γ(X, U)).toRingEquiv.toCommRingCatIso
+  obtain ⟨ι₀, _, -, -, -⟩ := exists_isOpenImmersion_spec_tensorProduct_of_isPullback
     (IsPullback.of_hasPullback (X ↘ Spec (.of k)) s)
+    (iY := 𝟙 (Spec (.of k))) (iY' := 𝟙 (Spec (.of L))) (iX := hU.fromSpec)
+    rfl ((Category.comp_id _).trans hw.symm)
+  let ι : Spec (.of (Γ(X, U) ⊗[k] L)) ⟶ pullback (X ↘ Spec (.of k)) s :=
+    Spec.map cIso.hom ≫ ι₀
   have : IsIntegral (Spec (.of (Γ(X, U) ⊗[k] L))) := isIntegral_of_isOpenImmersion ι
   have : IsDomain (Γ(X, U) ⊗[k] L) := (affine_isIntegral_iff _).mp this
   exact isDomain_tensorProduct_of_isLocalization (nonZeroDivisors Γ(X, U)) le_rfl
@@ -134,9 +140,18 @@ theorem nonempty_functionField_algEquiv_of_isPullback {K : Type u} [Field K] [Al
     haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
     Nonempty (Y.functionField ≃ₐ[K] F') := by
   have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
-  obtain ⟨U, _, _, _, _, _, hw⟩ := exists_affineOpen_isFractionRing (k := k) (X := X)
+  obtain ⟨U, hU, _, _, _, _, hw⟩ := exists_affineOpen_isFractionRing (k := k) (X := X)
+  have := hU.isOpenImmersion_fromSpec
   -- the base change `Spec (Γ(X, U) ⊗[k] K)` of `U` is an open subscheme of `Y` over `Spec K`
-  obtain ⟨ι, _, hι⟩ := exists_isOpenImmersion_tensorProduct_of_isPullback hw H
+  let cIso := (Algebra.TensorProduct.comm k K Γ(X, U)).toRingEquiv.toCommRingCatIso
+  obtain ⟨ι₀, _, hι₀, -, -⟩ := exists_isOpenImmersion_spec_tensorProduct_of_isPullback H
+    (iY := 𝟙 (Spec (.of k))) (iY' := 𝟙 (Spec (.of K))) (iX := hU.fromSpec)
+    rfl ((Category.comp_id _).trans hw.symm)
+  let ι : Spec (.of (Γ(X, U) ⊗[k] K)) ⟶ Y := Spec.map cIso.hom ≫ ι₀
+  have hι : ι ≫ (Y ↘ Spec (.of K)) = Spec.map (CommRingCat.ofHom
+      (Algebra.TensorProduct.includeRight : K →ₐ[k] Γ(X, U) ⊗[k] K).toRingHom) := by
+    rw [Category.assoc, hι₀, Category.comp_id, ← Spec.map_comp]
+    congr 1
   let _ : Algebra K (Γ(X, U) ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
   -- and `F' = k(X) · K` is a fraction field of `Γ(X, U) ⊗[k] K`
   let _ : Algebra (Γ(X, U) ⊗[k] K) F' := (((Algebra.TensorProduct.productMap
@@ -178,33 +193,14 @@ variable {K : Type u} [Field K] [Algebra k K] {Y : Scheme.{u}} [Y.Over (Spec (.o
 
 include H
 
-omit [IsIntegral X] in
-/-- The base change of a geometrically integral `k`-scheme along any `K / k` is integral. -/
-theorem isIntegral_of_isPullback_spec : IsIntegral Y :=
-  GeometricallyIntegral.geometrically_isIntegral _ _ _ H
-
-omit [IsIntegral X] [GeometricallyIntegral (X ↘ Spec (.of k))] in
-/-- The projection from the base change along any field extension `K / k` is surjective. -/
-theorem surjective_of_isPullback_spec : Surjective g :=
-  MorphismProperty.of_isPullback (P := @Surjective) H.flip inferInstance
-
-omit [IsIntegral X] [GeometricallyIntegral (X ↘ Spec (.of k))] in
-/-- The projection from the base change along any field extension `K / k` is flat. -/
-theorem flat_of_isPullback_spec : Flat g :=
-  MorphismProperty.of_isPullback (P := @Flat) H.flip inferInstance
-
-omit [IsIntegral X] [GeometricallyIntegral (X ↘ Spec (.of k))] in
-/-- The projection from the base change along any field extension `K / k` is dominant. -/
-theorem isDominant_of_isPullback_spec : IsDominant g :=
-  have := surjective_of_isPullback_spec H; inferInstance
-
 /-- Pullback of rational functions along `g : Y ⟶ X` agrees on `k` with `k → K → K(Y)`. -/
 theorem functionFieldMap_baseChange_algebraMap (c : k) :
-    haveI := isIntegral_of_isPullback_spec H
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
     haveI := isDominant_of_isPullback_spec H
     g.functionFieldMap (algebraMap k X.functionField c) =
       algebraMap K Y.functionField (algebraMap k K c) := by
-  have := isIntegral_of_isPullback_spec H; have := isDominant_of_isPullback_spec H
+  have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
+  have := isDominant_of_isPullback_spec H
   have h : Spec.map (CommRingCat.ofHom (algebraMap k X.functionField) ≫ g.functionFieldMap) =
       Spec.map (CommRingCat.ofHom ((algebraMap K Y.functionField).comp (algebraMap k K))) := by
     rw [Spec.map_comp, ← Scheme.fromSpecStalk_genericPoint_comp_over,
@@ -215,10 +211,10 @@ theorem functionFieldMap_baseChange_algebraMap (c : k) :
 
 /-- The canonical `K`-algebra map `k(X) ⊗[k] K →ₐ[K] K(Y)` for `Y = X ×_k Spec K`. -/
 noncomputable def functionFieldTensorToBaseChange :
-    haveI := isIntegral_of_isPullback_spec H
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
     letI : Algebra K (X.functionField ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
     (X.functionField ⊗[k] K) →ₐ[K] Y.functionField :=
-  haveI := isIntegral_of_isPullback_spec H
+  haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
   haveI := isDominant_of_isPullback_spec H
   letI : Algebra K (X.functionField ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
   letI : Algebra k Y.functionField :=
@@ -232,7 +228,7 @@ noncomputable def functionFieldTensorToBaseChange :
 /-- On pure tensors, `functionFieldTensorToBaseChange` sends `a ⊗ₜ c` to `g^* a * c`. -/
 @[simp]
 theorem functionFieldTensorToBaseChange_tmul (a : X.functionField) (c : K) :
-    haveI := isIntegral_of_isPullback_spec H
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
     haveI := isDominant_of_isPullback_spec H
     letI : Algebra K (X.functionField ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
     functionFieldTensorToBaseChange H (a ⊗ₜ[k] c) =
@@ -244,13 +240,14 @@ theorem functionFieldTensorToBaseChange_tmul (a : X.functionField) (c : K) :
 private lemma exists_chart_to_baseChange_functionField {U : X.Opens} (hU : IsAffineOpen U)
     [Nonempty U] [Algebra k Γ(X, U)]
     (hw : hU.fromSpec ≫ (X ↘ Spec (.of k)) = Spec.map (CommRingCat.ofHom (algebraMap k Γ(X, U)))) :
-    haveI := isIntegral_of_isPullback_spec H
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
     haveI := isDominant_of_isPullback_spec H
     ∃ (_ : IsDomain (Γ(X, U) ⊗[k] K)) (α : (Γ(X, U) ⊗[k] K) →+* Y.functionField),
       (letI := α.toAlgebra; IsFractionRing (Γ(X, U) ⊗[k] K) Y.functionField) ∧
       (∀ a : Γ(X, U), α (a ⊗ₜ[k] 1) = g.functionFieldMap (algebraMap Γ(X, U) X.functionField a)) ∧
       (∀ c : K, α (1 ⊗ₜ[k] c) = algebraMap K Y.functionField c) := by
-  have := isIntegral_of_isPullback_spec H; have := isDominant_of_isPullback_spec H
+  have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
+  have := isDominant_of_isPullback_spec H
   let A := Γ(X, U); let R := CommRingCat.of (A ⊗[k] K)
   have := hU.isOpenImmersion_fromSpec
   obtain ⟨ι₀, _, hι₀K, hι₀g, -⟩ := exists_isOpenImmersion_spec_tensorProduct_of_isPullback H
@@ -273,7 +270,12 @@ private lemma exists_chart_to_baseChange_functionField {U : X.Opens} (hU : IsAff
   let e : (Spec R).functionField ≃+* Y.functionField :=
     (asIso ι.functionFieldMap).symm.commRingCatIsoToRingEquiv
   let α : (A ⊗[k] K) →+* Y.functionField := e.toRingHom.comp φ₀.hom
-  have hα_eq : CommRingCat.ofHom α = φ₀ ≫ inv ι.functionFieldMap := rfl
+  have hα_eq : CommRingCat.ofHom α = φ₀ ≫ inv ι.functionFieldMap := by
+    apply CommRingCat.hom_ext
+    rw [CommRingCat.hom_ofHom, CommRingCat.hom_comp]
+    exact congrArg (·.comp φ₀.hom)
+      ((Iso.commRingCatIsoToRingEquiv_toRingHom (asIso ι.functionFieldMap).symm).trans
+        (by rw [Iso.symm_hom, asIso_inv]))
   have hSpecα : Spec.map (CommRingCat.ofHom α) ≫ ι = Y.fromSpecStalk (genericPoint Y) := by
     have hφ₀ : Spec.map φ₀ = (Spec R).fromSpecStalk (genericPoint (Spec R)) :=
       (_root_.AlgebraicGeometry.Spec.fromSpecStalk_eq' R (genericPoint (Spec R))).symm
@@ -284,7 +286,9 @@ private lemma exists_chart_to_baseChange_functionField {U : X.Opens} (hU : IsAff
   refine ⟨hDomR, α,
       @IsFractionRing.of_algEquiv (A ⊗[k] K) _ (Spec R).functionField Y.functionField _
         φ₀.hom.toAlgebra _ α.toAlgebra (functionField_isFractionRing_of_affine R)
-        (AlgEquiv.ofRingEquiv (f := e) fun _ ↦ rfl), fun a ↦ ?_, fun c ↦ ?_⟩
+        (AlgEquiv.ofRingEquiv (f := e) fun a ↦ by
+          simp only [RingHom.algebraMap_toAlgebra]; rfl),
+      fun a ↦ ?_, fun c ↦ ?_⟩
   · have hxU : genericPoint X ∈ U :=
       ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
     have h1 : Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom ≫
@@ -305,47 +309,40 @@ private lemma exists_chart_to_baseChange_functionField {U : X.Opens} (hU : IsAff
 /-- **The function field of any field-extension base change:** `K(Y)` is the fraction field of
 `k(X) ⊗[k] K` via `functionFieldTensorToBaseChange H` for arbitrary `K / k`. -/
 theorem isFractionRing_functionField_tensorProduct_of_isPullback :
-    haveI := isIntegral_of_isPullback_spec H
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
     letI : Algebra K (X.functionField ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
     letI : Algebra (X.functionField ⊗[k] K) Y.functionField :=
       (functionFieldTensorToBaseChange H).toRingHom.toAlgebra
     IsFractionRing (X.functionField ⊗[k] K) Y.functionField := by
-  have := isIntegral_of_isPullback_spec H; have := isDominant_of_isPullback_spec H
+  have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
+  have := isDominant_of_isPullback_spec H
   obtain ⟨U, hU, _, _, _, _, hw⟩ := exists_affineOpen_isFractionRing (k := k) (X := X)
   let A := Γ(X, U)
   obtain ⟨_, α, hFracA, hα_left, hα_right⟩ := exists_chart_to_baseChange_functionField H hU hw
-  let ρ : (A ⊗[k] K) →ₐ[k] (X.functionField ⊗[k] K) :=
-    Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A X.functionField) (AlgHom.id k K)
   let _ : Algebra K (X.functionField ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
   let _ : Algebra (X.functionField ⊗[k] K) Y.functionField :=
     (functionFieldTensorToBaseChange H).toRingHom.toAlgebra
-  let _ : Algebra (A ⊗[k] K) (X.functionField ⊗[k] K) := ρ.toRingHom.toAlgebra
   let _ : Algebra (A ⊗[k] K) Y.functionField := α.toAlgebra
   have : IsFractionRing (A ⊗[k] K) Y.functionField := hFracA
-  have hα_eq : α = (algebraMap (X.functionField ⊗[k] K) Y.functionField).comp ρ.toRingHom :=
-    RingHom.ext fun z ↦ TensorProduct.inductionOn z (fun a c ↦ by
-      have hmul : (a ⊗ₜ[k] c : A ⊗[k] K) = (a ⊗ₜ[k] 1) * (1 ⊗ₜ[k] c) := by simp
-      rw [hmul, map_mul, RingHom.comp_apply, map_mul, hα_left, hα_right]
-      simp [RingHom.algebraMap_toAlgebra, ρ]) fun _ _ hx hy ↦ by simp [hx, hy]
-  have : IsScalarTower (A ⊗[k] K) (X.functionField ⊗[k] K) Y.functionField :=
-    .of_algebraMap_eq' hα_eq
-  have : IsScalarTower A (A ⊗[k] K) (X.functionField ⊗[k] K) :=
-    .of_algebraMap_eq fun a ↦ by simp [RingHom.algebraMap_toAlgebra, ρ]
-  have : IsLocalization (Algebra.algebraMapSubmonoid (A ⊗[k] K) (nonZeroDivisors A))
-      (X.functionField ⊗[k] K) :=
-    IsLocalization.tensorProduct_tensorProduct k K (nonZeroDivisors A) X.functionField
-      (by ext; simp [RingHom.algebraMap_toAlgebra, ρ])
-  exact IsFractionRing.isFractionRing_of_isDomain_of_isLocalization
-    (Algebra.algebraMapSubmonoid (A ⊗[k] K) (nonZeroDivisors A))
-    (X.functionField ⊗[k] K) Y.functionField
+  exact isFractionRing_tensorProduct_of_isFractionRing_base_tensorProduct fun a c ↦ by
+    have hmul : (a ⊗ₜ[k] c : A ⊗[k] K) = (a ⊗ₜ[k] 1) * (1 ⊗ₜ[k] c) := by simp
+    calc
+      (algebraMap (A ⊗[k] K) Y.functionField) (a ⊗ₜ[k] c)
+        = α ((a ⊗ₜ[k] 1) * (1 ⊗ₜ[k] c)) := by rw [RingHom.algebraMap_toAlgebra, hmul]
+      _ = g.functionFieldMap (algebraMap A X.functionField a) * algebraMap K Y.functionField c := by
+        rw [map_mul, hα_left, hα_right]
+      _ = (algebraMap (X.functionField ⊗[k] K) Y.functionField)
+          (algebraMap A X.functionField a ⊗ₜ[k] c) :=
+        (functionFieldTensorToBaseChange_tmul H (algebraMap A X.functionField a) c).symm
 
 /-- For any field extension `K / k`, `K(Y)` is generated as a field by `k(X)` and `K`. -/
 theorem constantCompositum_functionField_eq_top_of_isPullback :
-    haveI := isIntegral_of_isPullback_spec H
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
     haveI := isDominant_of_isPullback_spec H
     letI : Algebra X.functionField Y.functionField := g.functionFieldMap.hom.toAlgebra
     constantCompositum X.functionField K Y.functionField = ⊤ := by
-  have := isIntegral_of_isPullback_spec H; have := isDominant_of_isPullback_spec H
+  have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
+  have := isDominant_of_isPullback_spec H
   let _ : Algebra K (X.functionField ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
   let _ : Algebra X.functionField Y.functionField := g.functionFieldMap.hom.toAlgebra
   let _ : Algebra (X.functionField ⊗[k] K) Y.functionField :=
@@ -361,7 +358,7 @@ theorem constantCompositum_functionField_eq_top_of_isPullback :
 
 /-- For any field extension `K / k`, `K` and `k(X)` are linearly disjoint over `k` in `K(Y)`. -/
 theorem linearDisjoint_functionField_of_isPullback :
-    haveI := isIntegral_of_isPullback_spec H
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
     haveI := isDominant_of_isPullback_spec H
     letI : Algebra X.functionField Y.functionField := g.functionFieldMap.hom.toAlgebra
     letI : Algebra k Y.functionField :=
@@ -370,7 +367,8 @@ theorem linearDisjoint_functionField_of_isPullback :
     haveI : IsScalarTower k X.functionField Y.functionField :=
       .of_algebraMap_eq fun c ↦ (functionFieldMap_baseChange_algebraMap H c).symm
     (IsScalarTower.toAlgHom k K Y.functionField).fieldRange.LinearDisjoint X.functionField := by
-  have := isIntegral_of_isPullback_spec H; have := isDominant_of_isPullback_spec H
+  have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
+  have := isDominant_of_isPullback_spec H
   let _ : Algebra K (X.functionField ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
   let _ : Algebra X.functionField Y.functionField := g.functionFieldMap.hom.toAlgebra
   let _ : Algebra k Y.functionField :=
@@ -415,32 +413,32 @@ variable {k K : Type u} [Field k] [Field K] [Algebra k K]
 
 include H₁ H₂ hf'
 
-omit [GeometricallyIntegral (X₁ ↘ Spec (.of k))] [GeometricallyIntegral (X₂ ↘ Spec (.of k))] in
-/-- The base change of a dominant `k`-morphism between integral `k`-schemes along any field
-extension `K / k` is dominant. -/
-theorem isDominant_of_baseChange : IsDominant f' :=
-  have : Flat g₂ := flat_of_isPullback_spec H₂
-  IsDominant.of_isPullback_of_flat (IsPullback.of_bot (by simpa [comp_over] using H₁) hf'.symm H₂)
-
 /-- Pullback of rational functions commutes with base change along any field extension `K / k`. -/
 theorem functionFieldMap_comp_of_baseChange :
-    haveI := isIntegral_of_isPullback_spec H₁
-    haveI := isIntegral_of_isPullback_spec H₂
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H₁
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H₂
     haveI := isDominant_of_isPullback_spec H₁
     haveI := isDominant_of_isPullback_spec H₂
     haveI := isDominant_of_baseChange H₁ H₂ hf'
     f.functionFieldMap ≫ g₁.functionFieldMap = g₂.functionFieldMap ≫ f'.functionFieldMap := by
-  have := isIntegral_of_isPullback_spec H₁; have := isIntegral_of_isPullback_spec H₂
-  have := isDominant_of_isPullback_spec H₁; have := isDominant_of_isPullback_spec H₂
+  have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H₁
+  have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H₂
+  have := isDominant_of_isPullback_spec H₁
+  have := isDominant_of_isPullback_spec H₂
   have := isDominant_of_baseChange H₁ H₂ hf'
-  rw [← Scheme.Hom.functionFieldMap_comp, eq_comm, Scheme.Hom.eq_functionFieldMap_iff,
-    Spec.map_comp_assoc, g₂.SpecMap_functionFieldMap_fromSpecStalk,
-    f'.SpecMap_functionFieldMap_fromSpecStalk_assoc, hf']
+  have : IsDominant (f' ≫ g₂) := inferInstance
+  have : IsDominant (g₁ ≫ f) := inferInstance
+  have hcomp : (g₁ ≫ f).functionFieldMap = (f' ≫ g₂).functionFieldMap := by
+    have key : ∀ {a b : X₁' ⟶ X₂} [IsDominant a] [IsDominant b], a = b →
+        a.functionFieldMap = b.functionFieldMap := by
+      rintro a b _ _ rfl; rfl
+    exact key hf'.symm
+  rwa [Scheme.Hom.functionFieldMap_comp, Scheme.Hom.functionFieldMap_comp] at hcomp
 
 /-- Shared tower setup for generic degree and generic separability invariance. -/
 private theorem finrank_and_isSeparable_functionField_of_isPullback :
-    haveI := isIntegral_of_isPullback_spec H₁
-    haveI := isIntegral_of_isPullback_spec H₂
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H₁
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H₂
     haveI := isDominant_of_baseChange H₁ H₂ hf'
     ((letI := f'.functionFieldMap.hom.toAlgebra;
         Module.finrank X₂'.functionField X₁'.functionField) =
@@ -452,8 +450,10 @@ private theorem finrank_and_isSeparable_functionField_of_isPullback :
           Algebra.IsSeparable X₂'.functionField X₁'.functionField) ↔
         (letI := f.functionFieldMap.hom.toAlgebra;
           Algebra.IsSeparable X₂.functionField X₁.functionField))) := by
-  have := isIntegral_of_isPullback_spec H₁; have := isIntegral_of_isPullback_spec H₂
-  have := isDominant_of_isPullback_spec H₁; have := isDominant_of_isPullback_spec H₂
+  have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H₁
+  have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H₂
+  have := isDominant_of_isPullback_spec H₁
+  have := isDominant_of_isPullback_spec H₂
   have := isDominant_of_baseChange H₁ H₂ hf'
   let _ : Algebra X₂.functionField X₁.functionField := f.functionFieldMap.hom.toAlgebra
   let _ : Algebra X₂'.functionField X₁'.functionField := f'.functionFieldMap.hom.toAlgebra
@@ -490,8 +490,8 @@ dominant `k`-morphism between geometrically integral `k`-schemes, and let `f' : 
 base change along an arbitrary field extension `K / k` (algebraic or transcendental, separable or
 not). Then `[K(X₁') : K(X₂')] = [k(X₁) : k(X₂)]`. -/
 theorem finrank_functionField_eq_of_isPullback :
-    haveI := isIntegral_of_isPullback_spec H₁
-    haveI := isIntegral_of_isPullback_spec H₂
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H₁
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H₂
     haveI := isDominant_of_baseChange H₁ H₂ hf'
     (letI := f'.functionFieldMap.hom.toAlgebra;
       Module.finrank X₂'.functionField X₁'.functionField) =
@@ -506,8 +506,8 @@ Then `K(X₁') / K(X₂')` is separable if and only if `k(X₁) / k(X₂)` is se
 theorem isSeparable_functionField_iff_of_isPullback
     (hAlg : letI := f.functionFieldMap.hom.toAlgebra;
       Algebra.IsAlgebraic X₂.functionField X₁.functionField) :
-    haveI := isIntegral_of_isPullback_spec H₁
-    haveI := isIntegral_of_isPullback_spec H₂
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H₁
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H₂
     haveI := isDominant_of_baseChange H₁ H₂ hf'
     (letI := f'.functionFieldMap.hom.toAlgebra;
       Algebra.IsSeparable X₂'.functionField X₁'.functionField) ↔
