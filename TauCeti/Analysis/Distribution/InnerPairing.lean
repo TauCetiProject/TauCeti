@@ -284,7 +284,7 @@ def smulRightCLM (w : W) : 𝓓'^{n}(Ω, ℂ) →L[ℂ] 𝓓'^{n}(Ω, W) where
   map_add' := map_add _
   map_smul' c T := by
     ext φ
-    simp [mul_smul]
+    simp
   cont := (mapCLM _).continuous
 
 @[simp]

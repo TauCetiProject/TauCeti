@@ -310,6 +310,10 @@ theorem norm_apply_le (f : HolderSpace α X Y) (x : X) : ‖f x‖ ≤ ‖f‖ :
   simpa using (f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
     f.norm_toBoundedContinuousFunction_le
 
+/-- A scalar Hölder function is bounded pointwise by its norm: `|c(p)| ≤ ‖c‖`. -/
+theorem abs_apply_le_norm (c : HolderSpace α X ℝ) (p : X) : |c p| ≤ ‖c‖ :=
+  (Real.norm_eq_abs _).symm.trans_le (norm_apply_le c p)
+
 /-- A Hölder function bounded pointwise by `M` and `α`-Hölder with constant `K` has
 supremum-plus-Hölder norm at most `M + K`. -/
 theorem norm_le_of_norm_le_of_holderWith {f : HolderSpace α X Y} {M : ℝ} {K : ℝ≥0}
