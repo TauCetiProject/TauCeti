@@ -21,8 +21,8 @@ Nor does it describe the graphs containing a disjoint sum: `SimpleGraph.sum_le_i
 `V ⊕ W` contains `G ⊕g H` exactly when its two sides contain `G` and `H`, which is how containing a
 disjoint union of patterns splits into two independent containment events.
 
-`SimpleGraph.sum` has no `bot` law in Mathlib either: `SimpleGraph.sum_bot_bot` says a disjoint
-sum of edgeless graphs is edgeless, the form in which a graph parameter that is multiplicative over
+`SimpleGraph.sum` has no `bot` law in Mathlib either: `TauCeti.sum_bot_bot` says a disjoint sum
+of edgeless graphs is edgeless, the form in which a graph parameter that is multiplicative over
 disjoint sums is evaluated on an edgeless graph.
 
 Finally, Mathlib's `SimpleGraph.edgeSetSumEquiv`, implemented by `Sym2.fromRelNdrec`, comes with
@@ -36,7 +36,7 @@ splits into products over the edges of `G` and of `H`.
 * `TauCeti.instDecidableRelSumAdj` — adjacency in a disjoint sum is decidable;
 * `SimpleGraph.sum_le_iff` — a graph contains a disjoint sum exactly when its two sides contain the
   summands;
-* `SimpleGraph.sum_bot_bot` — a disjoint sum of edgeless graphs is edgeless;
+* `TauCeti.sum_bot_bot` — a disjoint sum of edgeless graphs is edgeless;
 * `SimpleGraph.coe_edgeSetSumEquiv_symm_inl`, `SimpleGraph.coe_edgeSetSumEquiv_symm_inr` — the
   edges of the two summands sit in the disjoint sum through the two inclusions.
 -/
@@ -71,8 +71,9 @@ theorem _root_.SimpleGraph.sum_le_iff {K : SimpleGraph (V ⊕ W)} :
 /-- A disjoint sum of edgeless graphs is edgeless: no edge is contributed by either summand, and
 none across the two sides. -/
 @[simp]
-theorem _root_.SimpleGraph.sum_bot_bot : ((⊥ : SimpleGraph V) ⊕g (⊥ : SimpleGraph W)) = ⊥ := by
-  ext (u | u) (v | v) <;> simp
+theorem sum_bot_bot : ((⊥ : SimpleGraph V) ⊕g (⊥ : SimpleGraph W)) = ⊥ := by
+  rw [eq_bot_iff, sum_le_iff]
+  exact ⟨bot_le, bot_le⟩
 
 -- Both evaluation lemmas reduce the `Sym2.fromRelNdrec` implementation of `edgeSetSumEquiv` on an
 -- edge `s(a, b)`, which holds by `rfl` once the edge is split into its endpoints.
