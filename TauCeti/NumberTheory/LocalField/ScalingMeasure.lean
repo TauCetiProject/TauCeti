@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.NumberTheory.LocalField.NormedField
 
 /-!
@@ -26,9 +27,10 @@ the measure gives `𝒪[K]` the same mass as `μ` does. When `μ` is the Haar me
 `μ 𝒪[K] = 1`, its restriction to `𝒪[K]` is then a probability measure.
 
 Multiplication by `a ∈ K` scales the measure by `|a|_K ^ β` (Haar measure itself is the case
-`β = 1`), and the shell `|x|_K = q ^ (-k)` of elements of valuation `k` has mass
-`(1 - q ^ (-β)) q ^ (-kβ) μ(𝒪[K])`. At a prime `p` and `K = ℚ_[p]` these are the local factors of
-Neshveyev's measure `μ_β` on the finite adeles, the measure whose rational scaling law
+`β = 1`), and for `β > 0` the shell `|x|_K = q ^ (-k)` of elements of valuation `k` has mass
+`(1 - q ^ (-β)) q ^ (-kβ) μ(𝒪[K])`; for `β ≤ 0` the density, hence every mass, vanishes. At a
+prime `p` and `K = ℚ_[p]` these are the local factors of Neshveyev's measure `μ_β` on the finite
+adeles, the measure whose rational scaling law
 `μ_β(q⁻¹ E) = q ^ β μ_β(E)` underlies the classification of the KMS states of the Bost–Connes
 system.
 
@@ -38,8 +40,9 @@ system.
 
 ## Main results
 
-* `MeasureTheory.Measure.withDensity_scalingDensity_setOf_eq_zpow`: the shell `|x|_K = q ^ (-k)`
-  has mass `(1 - q ^ (-β)) q ^ (-kβ) μ(𝒪[K])`, for every integer `k`.
+* `MeasureTheory.Measure.withDensity_scalingDensity_setOf_eq_zpow`: for `β > 0` the shell
+  `|x|_K = q ^ (-k)` has mass `(1 - q ^ (-β)) q ^ (-kβ) μ(𝒪[K])`, for every integer `k`; the
+  statement truncates the real factor at `0`, matching the zero mass for `β ≤ 0`.
 * `MeasureTheory.Measure.withDensity_scalingDensity_integer`: for `β > 0`, the ring of integers
   has mass `μ(𝒪[K])`.
 * `MeasureTheory.Measure.withDensity_scalingDensity_smul` and
@@ -108,22 +111,22 @@ theorem scalingDensity_eq_zero_of_nonpos (hβ : β ≤ 0) : scalingDensity K β 
   ext x
   rcases eq_or_ne x 0 with rfl | hx
   · simp
-  have hq : (1 : ℝ) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
   rw [scalingDensity_apply_of_ne_zero hx, Pi.zero_apply, ENNReal.ofReal_eq_zero]
-  refine mul_nonpos_of_nonpos_of_nonneg (div_nonpos_of_nonpos_of_nonneg ?_ ?_) (by positivity)
-  · linarith [Real.one_le_rpow hq.le (neg_nonneg.2 hβ)]
-  · linarith [inv_lt_one_of_one_lt₀ hq]
+  refine mul_nonpos_of_nonpos_of_nonneg
+    (div_nonpos_of_nonpos_of_nonneg ?_ sub_inv_residueFieldCard_pos.le) (by positivity)
+  linarith [Real.one_le_rpow (one_lt_residueFieldCard (K := K)).le (neg_nonneg.2 hβ)]
 
 /-- At `β = 1` the density is the indicator function of `K ∖ {0}`. -/
 theorem scalingDensity_one : scalingDensity K 1 = ({0}ᶜ : Set K).indicator 1 := by
   ext x
   rcases eq_or_ne x 0 with rfl | hx
   · simp
-  have hq : (1 : ℝ) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
   rw [scalingDensity_apply_of_ne_zero hx, Set.indicator_of_mem (by simpa using hx),
-    Real.rpow_neg_one, div_self (by linarith [inv_lt_one_of_one_lt₀ hq]), sub_self,
+    Real.rpow_neg_one, div_self (sub_inv_residueFieldCard_pos (K := K)).ne', sub_self,
     Real.rpow_zero, one_mul, ENNReal.ofReal_one, Pi.one_apply]
 
+/-- The density is measurable: it is locally constant away from `0`. -/
+@[fun_prop]
 theorem measurable_scalingDensity [MeasurableSpace K] [OpensMeasurableSpace K] (β : ℝ) :
     Measurable (scalingDensity K β) := by
   refine measurable_of_continuousOn_compl_singleton 0 fun x hx ↦ ?_
@@ -139,31 +142,12 @@ theorem measurable_scalingDensity [MeasurableSpace K] [OpensMeasurableSpace K] (
       ((normalizedAbsoluteValue_le_normalizedAbsoluteValue_iff _ _).2 hy.ge)
   rw [scalingDensity_apply_of_ne_zero hx, scalingDensity_apply_of_ne_zero hy0, habs]
 
-private theorem measurableSet_setOf_normalizedAbsoluteValue_eq [MeasurableSpace K]
-    [OpensMeasurableSpace K] (r : ℚ≥0) :
-    MeasurableSet {x : K | normalizedAbsoluteValue K x = r} := by
-  simp_rw [← NNRat.cast_inj (α := ℝ)]
-  exact (isClosed_eq continuous_normalizedAbsoluteValue continuous_const).measurableSet
-
-/-- The ring of integers is `{0}` together with the shells `|x|_K = q ^ (-n)`, `n : ℕ`. -/
-private theorem integer_eq_union_iUnion_setOf_normalizedAbsoluteValue_eq :
-    (𝒪[K] : Set K) = {0} ∪
-      ⋃ n : ℕ, {x | normalizedAbsoluteValue K x = (Nat.card 𝓀[K] : ℚ≥0) ^ (-(n : ℤ))} := by
-  have hq : (1 : ℚ≥0) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
-  ext x
-  simp only [SetLike.mem_coe, mem_integer_iff_normalizedAbsoluteValue_le_one,
-    Set.mem_union, Set.mem_singleton_iff, Set.mem_iUnion, Set.mem_ofPred_eq]
-  constructor
-  · intro hx
-    rcases eq_or_ne x 0 with rfl | hx0
-    · exact Or.inl rfl
-    rw [normalizedAbsoluteValue_apply_ne_zero x hx0] at hx ⊢
-    rw [zpow_le_one_iff_right₀ hq, neg_nonpos] at hx
-    exact Or.inr ⟨_, by rw [Int.toNat_of_nonneg hx]⟩
-  · rintro (rfl | ⟨n, hn⟩)
-    · simp
-    rw [hn]
-    exact zpow_le_one_of_nonpos₀ hq.le (by simp)
+/-- The factor `1 - q⁻¹` of the sphere masses, as the extended nonnegative real of a real
+number. -/
+private theorem one_sub_inv_residueFieldCard_eq_ofReal :
+    1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ = ENNReal.ofReal (1 - (Nat.card 𝓀[K] : ℝ)⁻¹) := by
+  rw [ENNReal.ofReal_sub _ (by positivity), ENNReal.ofReal_one,
+    ENNReal.ofReal_inv_of_pos (zero_lt_one.trans one_lt_residueFieldCard), ENNReal.ofReal_natCast]
 
 end TauCeti
 
@@ -177,21 +161,21 @@ variable [MeasurableSpace K] [BorelSpace K] (μ : Measure K) [μ.IsAddHaarMeasur
 
 /-- **Mass of a valuation shell.** For every additive Haar measure `μ` and every integer `k`, the
 shell `|x|_K = q ^ (-k)` of elements of normalized valuation `k` has mass
-`(1 - q ^ (-β)) q ^ (-kβ) μ(𝒪[K])` for the `β`-scaling measure. -/
+`(1 - q ^ (-β)) q ^ (-kβ) μ(𝒪[K])` for the `β`-scaling measure when `β > 0`. The real factor is
+truncated at `0` by `ENNReal.ofReal`, so for `β ≤ 0` the stated mass is `0`, as it must be since
+the density vanishes (`scalingDensity_eq_zero_of_nonpos`). -/
 theorem withDensity_scalingDensity_setOf_eq_zpow (β : ℝ) (k : ℤ) :
     μ.withDensity (scalingDensity K β)
         {x | normalizedAbsoluteValue K x = (Nat.card 𝓀[K] : ℚ≥0) ^ (-k)} =
       ENNReal.ofReal ((1 - (Nat.card 𝓀[K] : ℝ) ^ (-β)) * (Nat.card 𝓀[K] : ℝ) ^ (-(k * β))) *
         μ 𝒪[K] := by
-  have hq : (1 : ℝ) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
-  have hq0 : (0 : ℝ) < Nat.card 𝓀[K] := zero_lt_one.trans hq
+  have hq0 : (0 : ℝ) < Nat.card 𝓀[K] := zero_lt_one.trans one_lt_residueFieldCard
   -- Write the shell as the sphere `|x|_K = |a|_K` through `a = ϖ ^ k`; the density is constant
   -- on it.
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  set a : K := (ϖ : K) ^ k with ha_def
+  set a : K := (ϖ : K) ^ k
   have ha0 : a ≠ 0 := zpow_ne_zero _ fun h ↦ hϖ.ne_zero (Subtype.ext h)
-  have ha : normalizedAbsoluteValue K a = (Nat.card 𝓀[K] : ℚ≥0) ^ (-k) := by
-    rw [ha_def, map_zpow₀, normalizedAbsoluteValue_irreducible hϖ, inv_zpow', zpow_neg]
+  have ha : normalizedAbsoluteValue K a = _ := normalizedAbsoluteValue_zpow_irreducible hϖ k
   have hmeas :=
     measurableSet_setOf_normalizedAbsoluteValue_eq (K := K) (normalizedAbsoluteValue K a)
   rw [← ha, withDensity_apply _ hmeas,
@@ -199,16 +183,9 @@ theorem withDensity_scalingDensity_setOf_eq_zpow (β : ℝ) (k : ℤ) :
     setLIntegral_const, addHaar_setOf_normalizedAbsoluteValue_eq,
     scalingDensity_apply_of_ne_zero ha0, ← mul_assoc]
   · congr 1
-    have h1 : (1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹) = ENNReal.ofReal (1 - (Nat.card 𝓀[K] : ℝ)⁻¹) := by
-      rw [ENNReal.ofReal_sub _ (by positivity), ENNReal.ofReal_one, ENNReal.ofReal_inv_of_pos hq0,
-        ENNReal.ofReal_natCast]
-    have h2 : ((normalizedAbsoluteValue K a : ℝ≥0) : ℝ≥0∞) =
-        ENNReal.ofReal (normalizedAbsoluteValue K a : ℝ) := by
-      have hc : ((normalizedAbsoluteValue K a : ℝ≥0) : ℝ) = normalizedAbsoluteValue K a :=
-        map_nnratCast NNReal.toRealHom _
-      rw [← ENNReal.ofReal_coe_nnreal, hc]
-    have hq1 : 0 < 1 - (Nat.card 𝓀[K] : ℝ)⁻¹ := by linarith [inv_lt_one_of_one_lt₀ hq]
-    rw [h1, h2, ← ENNReal.ofReal_mul hq1.le, ← ENNReal.ofReal_mul' (by positivity)]
+    rw [one_sub_inv_residueFieldCard_eq_ofReal, ← ENNReal.ofReal_coe_nnreal,
+      ← ENNReal.ofReal_mul sub_inv_residueFieldCard_pos.le,
+      ← ENNReal.ofReal_mul' (mul_nonneg sub_inv_residueFieldCard_pos.le (by positivity))]
     congr 1
     have hx : ((Nat.card 𝓀[K] : ℝ) ^ (-k)) ^ (β - 1) * (Nat.card 𝓀[K] : ℝ) ^ (-k) =
         (Nat.card 𝓀[K] : ℝ) ^ (-(k * β)) := by
@@ -216,15 +193,17 @@ theorem withDensity_scalingDensity_setOf_eq_zpow (β : ℝ) (k : ℤ) :
         ← Real.rpow_mul hq0.le]
       push_cast
       ring_nf
-    rw [ha, NNRat.cast_zpow, NNRat.cast_natCast, ← hx]
-    field_simp
+    norm_cast
+    push_cast [ha, ← hx]
+    field_simp [(sub_pos.2 (one_lt_residueFieldCard (K := K) (R := ℝ))).ne']
   · have hx0 : x ≠ 0 := by
       rintro rfl
       exact ha0 (by simpa using hx.symm)
     rw [scalingDensity_apply_of_ne_zero hx0, scalingDensity_apply_of_ne_zero ha0, hx]
 
-/-- **Mass of the units.** The units `|x|_K = 1` of `𝒪[K]` have mass `(1 - q ^ (-β)) μ(𝒪[K])`
-for the `β`-scaling measure. -/
+/-- **Mass of the units.** For `β > 0`, the units `|x|_K = 1` of `𝒪[K]` have mass
+`(1 - q ^ (-β)) μ(𝒪[K])` for the `β`-scaling measure. The real factor is truncated at `0` by
+`ENNReal.ofReal`, so for `β ≤ 0` the stated mass is `0`. -/
 theorem withDensity_scalingDensity_setOf_eq_one (β : ℝ) :
     μ.withDensity (scalingDensity K β) {x | normalizedAbsoluteValue K x = 1} =
       ENNReal.ofReal (1 - (Nat.card 𝓀[K] : ℝ) ^ (-β)) * μ 𝒪[K] := by
@@ -246,51 +225,30 @@ theorem withDensity_scalingDensity_one : μ.withDensity (scalingDensity K 1) = �
     withDensity_one]
   exact restrict_eq_self_of_ae_mem (compl_mem_ae_iff.2 h0)
 
-private theorem withDensity_scalingDensity_smul_of_measurableSet {a : K} (ha : a ≠ 0) (β : ℝ)
-    {s : Set K} (hs : MeasurableSet s) :
-    μ.withDensity (scalingDensity K β) (a • s) =
-      ENNReal.ofReal ((normalizedAbsoluteValue K a : ℝ) ^ β) *
-        μ.withDensity (scalingDensity K β) s := by
-  have hna : ((normalizedAbsoluteValue K a : ℝ≥0) : ℝ≥0∞) ≠ 0 := by
-    simpa using ((normalizedAbsoluteValue K).pos ha).ne'
-  -- Change variables `x = a • y`: Haar measure pushes forward to `|a|_K⁻¹ • μ`.
-  have hcov (g : K → ℝ≥0∞) : ∫⁻ x, g x ∂μ = ((normalizedAbsoluteValue K a : ℝ≥0) : ℝ≥0∞) *
-      ∫⁻ y, g (a • y) ∂μ := by
-    have h := lintegral_map_equiv g (MeasurableEquiv.smul₀ (α := K) a ha) (μ := μ)
-    rw [MeasurableEquiv.coe_smul₀, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ ha,
-      lintegral_smul_measure] at h
-    rw [← h, ENNReal.smul_def, smul_eq_mul, ENNReal.coe_inv (by simpa using ha), ← mul_assoc,
-      ENNReal.mul_inv_cancel hna ENNReal.coe_ne_top, one_mul]
-  have has : MeasurableSet (a • s) := hs.const_smul_of_ne_zero ha
-  have hind (y : K) : (a • s).indicator (scalingDensity K β) (a • y) =
-      ENNReal.ofReal ((normalizedAbsoluteValue K a : ℝ) ^ (β - 1)) *
-        s.indicator (scalingDensity K β) y := by
-    by_cases hy : y ∈ s
-    · rw [Set.indicator_of_mem (Set.smul_mem_smul_set hy), Set.indicator_of_mem hy, smul_eq_mul,
-        scalingDensity_mul ha]
-    · rw [Set.indicator_of_notMem ((Set.smul_mem_smul_set_iff₀ ha _ _).not.2 hy),
-        Set.indicator_of_notMem hy, mul_zero]
-  have hc : ((normalizedAbsoluteValue K a : ℝ≥0) : ℝ) = normalizedAbsoluteValue K a :=
-    map_nnratCast NNReal.toRealHom _
-  rw [withDensity_apply _ has, withDensity_apply _ hs, ← lintegral_indicator has, hcov,
-    ← lintegral_indicator hs, funext hind, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-    ← mul_assoc, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (by positivity), hc,
-    mul_comm (normalizedAbsoluteValue K a : ℝ),
-    ← Real.rpow_add_one (by exact_mod_cast ((normalizedAbsoluteValue K).pos ha).ne'),
-    sub_add_cancel]
-
 /-- **Pushforward under dilation.** For `a ≠ 0`, multiplication by `a` pushes the `β`-scaling
 measure forward to `|a|_K ^ (-β)` times itself. -/
 theorem map_smul_withDensity_scalingDensity {a : K} (ha : a ≠ 0) (β : ℝ) :
     (μ.withDensity (scalingDensity K β)).map (a • ·) =
       ENNReal.ofReal ((normalizedAbsoluteValue K a : ℝ) ^ (-β)) •
         μ.withDensity (scalingDensity K β) := by
-  ext s hs
   have hpos : (0 : ℝ) < normalizedAbsoluteValue K a := by
     exact_mod_cast (normalizedAbsoluteValue K).pos ha
-  rw [map_apply (measurable_const_smul a) hs, Set.preimage_smul₀ ha,
-    withDensity_scalingDensity_smul_of_measurableSet μ (inv_ne_zero ha) β hs, smul_apply,
-    smul_eq_mul, map_inv₀, NNRat.cast_inv, Real.inv_rpow hpos.le, Real.rpow_neg hpos.le]
+  -- Changing variables `x = a • y` multiplies the density by `|a|_K⁻¹ ^ (β - 1)`.
+  have hf : (fun y ↦ scalingDensity K β (a⁻¹ • y)) =
+      ENNReal.ofReal ((normalizedAbsoluteValue K a : ℝ) ^ (1 - β)) • scalingDensity K β := by
+    ext y
+    rw [smul_eq_mul, scalingDensity_mul (inv_ne_zero ha), map_inv₀, NNRat.cast_inv,
+      Real.inv_rpow hpos.le, ← Real.rpow_neg hpos.le, neg_sub, Pi.smul_apply, smul_eq_mul]
+  rw [← MeasurableEquiv.coe_smul₀ (α := K) ha, MeasurableEquiv.map_withDensity,
+    MeasurableEquiv.symm_smul₀, MeasurableEquiv.coe_smul₀, MeasurableEquiv.coe_smul₀,
+    map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ ha, ENNReal.smul_def,
+    withDensity_smul_measure, hf, withDensity_smul' _ _ ENNReal.ofReal_ne_top, smul_smul]
+  congr 1
+  rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (by positivity), NNReal.coe_inv]
+  -- The real number underlying `|a|_K : ℝ≥0` is the real cast of `|a|_K : ℚ≥0`.
+  change ENNReal.ofReal ((normalizedAbsoluteValue K a : ℝ)⁻¹ * _) = _
+  rw [← Real.rpow_neg_one, ← Real.rpow_add hpos]
+  ring_nf
 
 /-- **The scaling law.** For every `a ∈ K` and every set `s`, the `β`-scaling measure of `a • s`
 is `|a|_K ^ β` times that of `s`. -/
@@ -320,7 +278,7 @@ mass as the Haar measure `μ`; in particular it is a probability measure on `�
 `μ 𝒪[K] = 1`. -/
 theorem withDensity_scalingDensity_integer {β : ℝ} (hβ : 0 < β) :
     μ.withDensity (scalingDensity K β) 𝒪[K] = μ 𝒪[K] := by
-  have hq : (1 : ℚ≥0) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
+  have hq : (1 : ℚ≥0) < Nat.card 𝓀[K] := one_lt_residueFieldCard
   have hdisj : Pairwise (Function.onFun Disjoint fun n : ℕ ↦
       {x | normalizedAbsoluteValue K x = (Nat.card 𝓀[K] : ℚ≥0) ^ (-(n : ℤ))}) := by
     intro m n hmn
@@ -340,10 +298,9 @@ theorem withDensity_scalingDensity_integer {β : ℝ} (hβ : 0 < β) :
   rw [ENNReal.tsum_mul_right]
   convert one_mul (μ 𝒪[K])
   -- The shell masses `(1 - r) r ^ n`, with `r = q ^ (-β) < 1`, sum to `1`.
-  have hq' : (1 : ℝ) < Nat.card 𝓀[K] := by exact_mod_cast hq
   set r : ℝ := (Nat.card 𝓀[K] : ℝ) ^ (-β) with hr
   have hr0 : 0 ≤ r := by positivity
-  have hr1 : r < 1 := Real.rpow_lt_one_of_one_lt_of_neg hq' (by linarith)
+  have hr1 : r < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_residueFieldCard (by linarith)
   have hterm (n : ℕ) :
       (1 - r) * (Nat.card 𝓀[K] : ℝ) ^ (-(((n : ℤ) : ℝ) * β)) = (1 - r) * r ^ n := by
     rw [hr, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
@@ -354,22 +311,21 @@ theorem withDensity_scalingDensity_integer {β : ℝ} (hβ : 0 < β) :
       ((summable_geometric_of_lt_one hr0 hr1).mul_left _), tsum_mul_left,
     tsum_geometric_of_lt_one hr0 hr1, mul_inv_cancel₀ (by linarith), ENNReal.ofReal_one]
 
-/-- The `β`-scaling measure is finite on compact sets. For `β > 0`, a compact set lies in some
-ball `|x|_K ≤ q ^ n`, whose mass is `q ^ (nβ) μ(𝒪[K])` by the scaling law; for `β ≤ 0` the
-measure is zero. -/
+/-- The `β`-scaling measure is finite on compact sets, for every real `β`. -/
 instance isFiniteMeasureOnCompacts_withDensity_scalingDensity (β : ℝ) :
     IsFiniteMeasureOnCompacts (μ.withDensity (scalingDensity K β)) := by
   refine ⟨fun s hs ↦ ?_⟩
   rcases le_or_gt β 0 with hβ | hβ
   · simp [scalingDensity_eq_zero_of_nonpos hβ]
-  have hq : (1 : ℝ) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
+  -- For `β > 0`, a compact set lies in some ball `|x|_K ≤ q ^ n`, whose mass is
+  -- `q ^ (nβ) μ(𝒪[K])` by the scaling law.
   obtain ⟨M, hM⟩ := hs.bddAbove_image continuous_normalizedAbsoluteValue.continuousOn
-  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt M hq
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt M (one_lt_residueFieldCard (K := K))
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   have hsub : s ⊆ ((ϖ : K) ^ (-(n : ℤ))) • (𝒪[K] : Set K) := by
     intro x hx
-    rw [smul_integer_eq_setOf_normalizedAbsoluteValue_le, Set.mem_ofPred_eq, map_zpow₀,
-      normalizedAbsoluteValue_irreducible hϖ, inv_zpow', neg_neg, zpow_natCast]
+    rw [smul_integer_eq_setOf_normalizedAbsoluteValue_le, Set.mem_ofPred_eq,
+      normalizedAbsoluteValue_zpow_irreducible hϖ, neg_neg, zpow_natCast]
     have h : (normalizedAbsoluteValue K x : ℝ) ≤ (Nat.card 𝓀[K] : ℝ) ^ n :=
       (hM ⟨x, hx, rfl⟩).trans hn.le
     exact_mod_cast h

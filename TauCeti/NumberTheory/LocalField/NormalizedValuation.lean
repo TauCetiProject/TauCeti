@@ -70,6 +70,8 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
   orders the elements of `K` as `ValuativeRel.valuation` does.
 * `TauCeti.normalizedAbsoluteValue_lt_iff_le_inv_mul`: the values of the normalized absolute value
   are discrete, so `|x|_K < |a|_K` exactly when `|x|_K ≤ q⁻¹ |a|_K`.
+* `TauCeti.integer_eq_union_iUnion_setOf_normalizedAbsoluteValue_eq`: the ring of integers is
+  `{0}` together with the shells `|x|_K = q ^ (-n)`, `n : ℕ`.
 * `TauCeti.eq_normalizedValuation`: the kernel condition together with the uniformizer equation
   characterizes the normalized valuation among homomorphisms `Kˣ →* Multiplicative ℤ`.
 * `TauCeti.isUnit_iff_normalizedValuationWithZero_eq_one`,
@@ -464,9 +466,19 @@ section NormalizedAbsoluteValue
 
 open scoped NNRat
 
-private theorem one_lt_residueFieldCard :
-    (1 : ℚ≥0) < Nat.card 𝓀[K] := by
-  exact_mod_cast (Finite.one_lt_card : 1 < Nat.card 𝓀[K])
+/-- The residue field of a nonarchimedean local field has more than one element, so its
+cardinality `q` satisfies `1 < q` in every ordered semiring of characteristic zero. -/
+theorem one_lt_residueFieldCard {R : Type*} [AddMonoidWithOne R] [PartialOrder R]
+    [AddLeftMono R] [ZeroLEOneClass R] [CharZero R] :
+    (1 : R) < Nat.card 𝓀[K] :=
+  Nat.one_lt_cast.2 Finite.one_lt_card
+
+/-- The inverse `q⁻¹` of the residue-field cardinality is less than one, so `1 - q⁻¹` is
+positive. -/
+theorem sub_inv_residueFieldCard_pos {R : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] :
+    (0 : R) < 1 - (Nat.card 𝓀[K] : R)⁻¹ :=
+  sub_pos.2 (inv_lt_one_of_one_lt₀ one_lt_residueFieldCard)
 
 variable (K) in
 /-- The normalized absolute value of a nonarchimedean local field, with values in `ℚ≥0`.
@@ -507,6 +519,11 @@ theorem normalizedAbsoluteValue_irreducible {π : 𝒪[K]} (hπ : Irreducible π
       (fun h ↦ hπ.ne_zero (Subtype.ext h)),
     normalizedValuation_irreducible hπ]
   simp
+
+/-- The normalized absolute value of an integer power `π ^ k` of a uniformizer is `q ^ (-k)`. -/
+theorem normalizedAbsoluteValue_zpow_irreducible {π : 𝒪[K]} (hπ : Irreducible π) (k : ℤ) :
+    normalizedAbsoluteValue K ((π : K) ^ k) = (Nat.card 𝓀[K] : ℚ≥0) ^ (-k) := by
+  rw [map_zpow₀, normalizedAbsoluteValue_irreducible hπ, inv_zpow']
 
 /-- The normalized absolute value satisfies the strong triangle inequality. -/
 theorem isNonarchimedean_normalizedAbsoluteValue :
@@ -577,6 +594,26 @@ theorem mem_integer_iff_normalizedAbsoluteValue_le_one (x : K) :
       (OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
         (a := valuation K x) (b := 1)).symm
   · exact one_lt_residueFieldCard (K := K)
+
+/-- The ring of integers is `{0}` together with the shells `|x|_K = q ^ (-n)`, `n : ℕ`, where `q`
+is the cardinality of the residue field. -/
+theorem integer_eq_union_iUnion_setOf_normalizedAbsoluteValue_eq :
+    (𝒪[K] : Set K) = {0} ∪
+      ⋃ n : ℕ, {x | normalizedAbsoluteValue K x = (Nat.card 𝓀[K] : ℚ≥0) ^ (-(n : ℤ))} := by
+  ext x
+  simp only [SetLike.mem_coe, mem_integer_iff_normalizedAbsoluteValue_le_one,
+    Set.mem_union, Set.mem_singleton_iff, Set.mem_iUnion, Set.mem_ofPred_eq]
+  constructor
+  · intro hx
+    rcases eq_or_ne x 0 with rfl | hx0
+    · exact Or.inl rfl
+    rw [normalizedAbsoluteValue_apply_ne_zero x hx0] at hx ⊢
+    rw [zpow_le_one_iff_right₀ one_lt_residueFieldCard, neg_nonpos] at hx
+    exact Or.inr ⟨_, by rw [Int.toNat_of_nonneg hx]⟩
+  · rintro (rfl | ⟨n, hn⟩)
+    · simp
+    rw [hn]
+    exact zpow_le_one_of_nonpos₀ one_lt_residueFieldCard.le (by simp)
 
 /-- The normalized absolute value is one on every unit of the ring of integers. -/
 @[simp]

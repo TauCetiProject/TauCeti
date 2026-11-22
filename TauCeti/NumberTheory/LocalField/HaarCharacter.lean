@@ -59,6 +59,10 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
   `MeasureTheory.Measure.addHaar_setOf_normalizedAbsoluteValue_eq`: the ball `|x|_K ≤ |a|_K`, the
   ball `|x|_K < |a|_K` and the sphere `|x|_K = |a|_K` have masses `|a|_K`, `q⁻¹ |a|_K` and
   `(1 - q⁻¹) |a|_K` times that of `𝒪[K]`.
+* `TauCeti.measurableSet_setOf_normalizedAbsoluteValue_le`,
+  `TauCeti.measurableSet_setOf_normalizedAbsoluteValue_lt` and
+  `TauCeti.measurableSet_setOf_normalizedAbsoluteValue_eq`: these balls and spheres are
+  measurable.
 
 ## References
 
@@ -111,6 +115,33 @@ theorem smul_integer_eq_setOf_normalizedAbsoluteValue_le (a : K) :
   rw [Set.mem_smul_set_iff_inv_smul_mem₀ ha, SetLike.mem_coe,
     mem_integer_iff_normalizedAbsoluteValue_le_one, smul_eq_mul, map_mul, map_inv₀,
     Set.mem_ofPred_eq, inv_mul_le_one₀ ((normalizedAbsoluteValue K).pos ha)]
+
+section MeasurableSet
+
+variable {K} [MeasurableSpace K] [OpensMeasurableSpace K]
+
+/-- The closed ball `|x|_K ≤ r` is measurable. -/
+@[measurability]
+theorem measurableSet_setOf_normalizedAbsoluteValue_le (r : ℚ≥0) :
+    MeasurableSet {x : K | normalizedAbsoluteValue K x ≤ r} := by
+  simp_rw [← NNRat.cast_le (K := ℝ)]
+  exact (isClosed_le continuous_normalizedAbsoluteValue continuous_const).measurableSet
+
+/-- The open ball `|x|_K < r` is measurable. -/
+@[measurability]
+theorem measurableSet_setOf_normalizedAbsoluteValue_lt (r : ℚ≥0) :
+    MeasurableSet {x : K | normalizedAbsoluteValue K x < r} := by
+  simp_rw [← NNRat.cast_lt (K := ℝ)]
+  exact (isOpen_lt continuous_normalizedAbsoluteValue continuous_const).measurableSet
+
+/-- The sphere `|x|_K = r` is measurable. -/
+@[measurability]
+theorem measurableSet_setOf_normalizedAbsoluteValue_eq (r : ℚ≥0) :
+    MeasurableSet {x : K | normalizedAbsoluteValue K x = r} := by
+  simp_rw [← NNRat.cast_inj (α := ℝ)]
+  exact (isClosed_eq continuous_normalizedAbsoluteValue continuous_const).measurableSet
+
+end MeasurableSet
 
 end TauCeti
 
@@ -238,8 +269,8 @@ theorem addHaar_setOf_normalizedAbsoluteValue_lt (a : K) :
       map_mul, normalizedAbsoluteValue_irreducible hϖ]
   have hq : (Nat.card 𝓀[K] : ℝ≥0) ≠ 0 := by exact_mod_cast Nat.card_pos.ne'
   rw [h, addHaar_setOf_normalizedAbsoluteValue_le, map_mul,
-    normalizedAbsoluteValue_irreducible hϖ, NNRat.cast_mul, NNRat.cast_inv, NNRat.cast_natCast,
-    ENNReal.coe_mul, ENNReal.coe_inv hq, ENNReal.coe_natCast]
+    normalizedAbsoluteValue_irreducible hϖ]
+  simp [ENNReal.coe_inv hq]
 
 /-- **Haar measure of a sphere.** For every additive Haar measure `μ` on `K` and every `a ∈ K`,
 the sphere `|x|_K = |a|_K` has mass `(1 - q⁻¹) |a|_K μ(𝒪[K])`, where `q` is the cardinality of
@@ -253,9 +284,8 @@ theorem addHaar_setOf_normalizedAbsoluteValue_eq (a : K) :
     ext x
     simp only [Set.mem_ofPred_eq, Set.mem_sdiff]
     exact ⟨fun h ↦ ⟨h.le, not_lt.2 h.ge⟩, fun h ↦ h.1.antisymm (not_lt.1 h.2)⟩
-  have hmeas : MeasurableSet {x | normalizedAbsoluteValue K x < normalizedAbsoluteValue K a} := by
-    simp_rw [← NNRat.cast_lt (K := ℝ)]
-    exact (isOpen_lt continuous_normalizedAbsoluteValue continuous_const).measurableSet
+  have hmeas :=
+    measurableSet_setOf_normalizedAbsoluteValue_lt (K := K) (normalizedAbsoluteValue K a)
   have hfin : μ 𝒪[K] ≠ ∞ := (integerPositiveCompacts K).isCompact.measure_ne_top
   have hq : (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ ≠ ∞ :=
     ENNReal.inv_ne_top.2 (by exact_mod_cast Nat.card_pos.ne')
