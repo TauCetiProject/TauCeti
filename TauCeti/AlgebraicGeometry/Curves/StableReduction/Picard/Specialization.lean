@@ -23,7 +23,8 @@ Following [Stacks, Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag
 line-bundle class `a` on `X_{s,red}` (and, by pullback, on `X_s` or `X`) has `(a · Cᵢ)_k` divisible
 by `wᵢ`, giving additive **multidegrees** `Pic(X) → Pic(X_s) → Pic(X_{s,red}) → (T.Component → ℤ)`
 compatible with pullback along `X_{s,red} ↪ X_s ↪ X` (reusing
-`AlgebraicGeometry.Scheme.Hom.specialFiberMultidegreeOnFiber` and
+`AlgebraicGeometry.Scheme.Hom.componentMultidegreeHom`,
+`AlgebraicGeometry.Scheme.Hom.specialFiberMultidegreeOnFiber`, and
 `AlgebraicGeometry.Scheme.Hom.specialFiberMultidegree`). Since `𝒪_X(Cⱼ)` has multidegree
 `T.weightedIntersection j ∈ T.principalDivisors`, quotienting gives **specialization** homomorphisms
 `Pic(X) → Pic(X_s) → Pic(X_{s,red}) → T.Pic` killing all vertical component bundles `𝒪_X(Cⱼ)`,
@@ -33,12 +34,12 @@ matching `i ↦ (a · Cᵢ)_k` under `T.picToCoker`
 
 ## Main definitions and results
 
-* `AlgebraicGeometry.Scheme.Hom.nilradicalSpecialFiberMultidegree`, `totalSpecialFiberMultidegree`,
+* `AlgebraicGeometry.Scheme.Hom.nilradicalSpecialFiberMultidegree`,
   `reducedSpecialFiberPicSpecialization`, `specialFiberPicSpecialization`,
   `totalSpecialFiberPicSpecialization`, and uniformizer-free `TauCeti.Model` counterparts
-  (`totalMultidegree`, `totalPicSpecialization`, etc.).
-* `AlgebraicGeometry.Scheme.Hom.totalSpecialFiberMultidegree_ofMul_inv_mk_toInvertibleSheaf`,
-  `totalSpecialFiberPicSpecialization_ofMul_inv_mk_toInvertibleSheaf`,
+  (`reducedSpecialFiberMultidegree`, `specialFiberMultidegree`, `totalMultidegree`,
+  `totalPicSpecialization`, etc.).
+* `AlgebraicGeometry.Scheme.Hom.totalSpecialFiberPicSpecialization_ofMul_inv_mk_toInvertibleSheaf`,
   `mem_ker_totalSpecialFiberPicSpecialization_iff`, `picToCoker_totalSpecialFiberPicSpecialization`,
   `degree_totalSpecialFiberPicSpecialization`, and
   `totalSpecialFiberPicSpecialization_mem_degreeZeroSubgroup_iff`.
@@ -55,6 +56,7 @@ public section
 noncomputable section
 
 open CategoryTheory AlgebraicGeometry IsLocalRing Order
+open Set.Finite (mem_toFinset)
 open scoped Matrix
 open TauCeti TauCeti.AlgebraicGeometry
 open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal
@@ -73,47 +75,29 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
   (hX : ∀ x : X, coheight x ≤ 2)
   {π : R} (hπ : maximalIdeal R = Ideal.span {π}) (hreg : IsSMulRegular R π)
 
-/-! ### Multidegrees on the reduced special fibre, special fibre, and total space -/
+private lemma specialFiberNumericalType_weightedIntersection :
+    (toBase.specialFiberNumericalType hX hπ hreg).weightedIntersection =
+      toBase.specialFiberWeightedIntersectionMatrix hX
+        (toBase.base_genericPoint_ne_closedPoint_of_isSMulRegular
+          (hπ ▸ Ideal.mem_span_singleton_self π) hreg) := by
+  ext i j
+  exact (NumericalType.weightedIntersection_apply _ i j).trans
+    (toBase.specialFiberWeightedIntersectionMatrix_apply hX _ i j).symm
+
+/-! ### Multidegrees on the reduced special fibre -/
 
 /-- The **constant-field multidegree** of a line-bundle class on the reduced special fibre
 `X_{s,red} = (specialFiber R toBase).left.nilradical.subscheme`: at a component `Cᵢ`, it is
 `(a · Cᵢ)_k / wᵢ`, the degree of `a|_{Cᵢ}` over the constant field `κᵢ` of `Cᵢ`. -/
 def nilradicalSpecialFiberMultidegree :
     Additive (LineBundleClass (specialFiber R toBase).left.nilradical.subscheme) →+
-      (toBase.specialFiberNumericalType hX hπ hreg).Component → ℤ where
-  toFun a i :=
-    letI := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-      (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hπ hreg i))
-    LineBundleClass.intersectionNumber (ResidueField R)
-      (subschemeToSpecialFiber (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-        (toBase.base_eq_closedPoint_of_specialFiberNumericalType
-          hX hπ hreg i))).liftNilradicalSubscheme a.toMul /
-      ((toBase.specialFiberNumericalType hX hπ hreg).weight i : ℤ)
-  map_zero' := funext fun i ↦ by
-    let hI := toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-      (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hπ hreg i)
-    let := subschemeOverResidueField hI
-    exact (congrArg (· / ((toBase.specialFiberNumericalType hX hπ hreg).weight i : ℤ))
-      (LineBundleClass.intersectionNumber_one (ResidueField R)
-        (subschemeToSpecialFiber hI).liftNilradicalSubscheme)).trans (Int.zero_ediv _)
-  map_add' a b := funext fun i ↦ by
-    let hi := toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hπ hreg i
-    let hI := toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi
-    let := subschemeOverResidueField hI
-    have := isProper_subschemeOverResidueField hI
-    have := toBase.relativeDimensionLE_subscheme_vanishingIdeal_closure_singleton hX
-      (fun h ↦ one_ne_zero (i.val.property.symm.trans (coheight_eq_zero.mpr h))) hi
-    have := toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hi 0
-    have := toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hi 1
-    have hw : ((toBase.specialFiberNumericalType hX hπ hreg).weight i : ℤ) =
-        (toBase.specialFiberWeight hi : ℤ) := by
-      exact_mod_cast toBase.specialFiberNumericalType_weight hX hπ hreg i
-    have hdvd : ((toBase.specialFiberNumericalType hX hπ hreg).weight i : ℤ) ∣
-        LineBundleClass.intersectionNumber (ResidueField R)
-          (subschemeToSpecialFiber hI).liftNilradicalSubscheme a.toMul :=
-      hw ▸ toBase.specialFiberWeight_dvd_intersectionNumber hi _ a.toMul
-    simp only [toMul_add, LineBundleClass.intersectionNumber_mul_of_isIntegral, Pi.add_apply]
-    exact Int.add_ediv_of_dvd_left hdvd
+      (toBase.specialFiberNumericalType hX hπ hreg).Component → ℤ :=
+  toBase.componentMultidegreeHom hX
+    (toBase.base_genericPoint_ne_closedPoint_of_isSMulRegular
+      (hπ ▸ Ideal.mem_span_singleton_self π) hreg)
+    fun i ↦ (subschemeToSpecialFiber
+      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
+        ((mem_toFinset _).mp i.property))).liftNilradicalSubscheme
 
 /-- Coordinates of `nilradicalSpecialFiberMultidegree`. -/
 theorem nilradicalSpecialFiberMultidegree_apply
@@ -127,7 +111,8 @@ theorem nilradicalSpecialFiberMultidegree_apply
         (subschemeToSpecialFiber (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
           (toBase.base_eq_closedPoint_of_specialFiberNumericalType
             hX hπ hreg i))).liftNilradicalSubscheme a.toMul /
-        ((toBase.specialFiberNumericalType hX hπ hreg).weight i : ℤ) := (rfl)
+        ((toBase.specialFiberNumericalType hX hπ hreg).weight i : ℤ) :=
+  toBase.componentMultidegreeHom_apply hX _ a i
 
 /-- Rescaling `nilradicalSpecialFiberMultidegree` by the component weights recovers `(a · Cᵢ)_k`. -/
 theorem weightScaling_nilradicalSpecialFiberMultidegree
@@ -141,13 +126,8 @@ theorem weightScaling_nilradicalSpecialFiberMultidegree
         (subschemeToSpecialFiber (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
           (toBase.base_eq_closedPoint_of_specialFiberNumericalType
             hX hπ hreg i))).liftNilradicalSubscheme a.toMul := by
-  let hi := toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hπ hreg i
-  let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
-  have hw : ((toBase.specialFiberNumericalType hX hπ hreg).weight i : ℤ) =
-      (toBase.specialFiberWeight hi : ℤ) := by
-    exact_mod_cast toBase.specialFiberNumericalType_weight hX hπ hreg i
-  rw [NumericalType.weightScaling_apply, nilradicalSpecialFiberMultidegree_apply, hw]
-  exact Int.ediv_mul_cancel (toBase.specialFiberWeight_dvd_intersectionNumber hi _ a.toMul)
+  rw [NumericalType.weightScaling_apply, specialFiberNumericalType_weight]
+  exact toBase.componentMultidegreeHom_mul_specialFiberWeight hX _ a i
 
 /-- Pulling a line-bundle class on `X_s` back to `X_{s,red}` preserves its multidegree. -/
 theorem nilradicalSpecialFiberMultidegree_pullback
@@ -156,110 +136,12 @@ theorem nilradicalSpecialFiberMultidegree_pullback
         (LineBundleClass.pullback (specialFiber R toBase).left.nilradical.subschemeι a)) =
       toBase.specialFiberMultidegreeOnFiber hX
         (toBase.base_genericPoint_ne_closedPoint_of_isSMulRegular
-          (hπ ▸ Ideal.mem_span_singleton_self π) hreg)
-        (fun _ hc ↦ toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hc 0)
-        (fun _ hc ↦ toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hc 1)
-        (Additive.ofMul a) := funext fun i ↦ by
+          (hπ ▸ Ideal.mem_span_singleton_self π) hreg) (Additive.ofMul a) := funext fun i ↦ by
   let hi := toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hπ hreg i
   let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
-  have hw : ((toBase.specialFiberNumericalType hX hπ hreg).weight i : ℤ) =
-      (toBase.specialFiberWeight hi : ℤ) := by
-    exact_mod_cast toBase.specialFiberNumericalType_weight hX hπ hreg i
-  rw [nilradicalSpecialFiberMultidegree_apply, hw, toMul_ofMul,
+  rw [nilradicalSpecialFiberMultidegree_apply, specialFiberNumericalType_weight, toMul_ofMul,
     LineBundleClass.intersectionNumber_pullback, liftNilradicalSubscheme_subschemeι]
-  exact (toBase.specialFiberMultidegreeOnFiber_apply hX _ _ _ (Additive.ofMul a) i).symm
-
-/-- The **constant-field multidegree** of a line-bundle class on `X`, reusing
-`AlgebraicGeometry.Scheme.Hom.specialFiberMultidegree`. -/
-def totalSpecialFiberMultidegree :
-    Additive (LineBundleClass X) →+ (toBase.specialFiberNumericalType hX hπ hreg).Component → ℤ :=
-  toBase.specialFiberMultidegree hX
-    (toBase.base_genericPoint_ne_closedPoint_of_isSMulRegular
-      (hπ ▸ Ideal.mem_span_singleton_self π) hreg)
-    (fun _ hc ↦ toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hc 0)
-    (fun _ hc ↦ toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hc 1)
-
-/-- Pulling a line-bundle class on `X` back to `X_s` preserves its multidegree. -/
-theorem specialFiberMultidegreeOnFiber_pullback (a : LineBundleClass X) :
-    toBase.specialFiberMultidegreeOnFiber hX
-        (toBase.base_genericPoint_ne_closedPoint_of_isSMulRegular
-          (hπ ▸ Ideal.mem_span_singleton_self π) hreg)
-        (fun _ hc ↦ toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hc 0)
-        (fun _ hc ↦ toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hc 1)
-        (Additive.ofMul (LineBundleClass.pullback (specialFiberι R toBase) a)) =
-      toBase.totalSpecialFiberMultidegree hX hπ hreg (Additive.ofMul a) :=
-  (toBase.specialFiberMultidegree_eq_specialFiberMultidegreeOnFiber_pullback hX _ _ _ a).symm
-
-/-- Coordinates of `totalSpecialFiberMultidegree`: at `i`, `(a · Cᵢ)_k / wᵢ`. -/
-@[simp]
-theorem totalSpecialFiberMultidegree_apply (a : Additive (LineBundleClass X))
-    (i : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
-    toBase.totalSpecialFiberMultidegree hX hπ hreg a i =
-      letI := subschemeOverResidueField
-        (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-          (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hπ hreg i))
-      LineBundleClass.intersectionNumber (ResidueField R)
-        (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subschemeι a.toMul /
-        ((toBase.specialFiberNumericalType hX hπ hreg).weight i : ℤ) :=
-  toBase.specialFiberMultidegree_apply hX _ _ _ a i
-
-/-- Rescaling `totalSpecialFiberMultidegree` by the component weights recovers `(a · Cᵢ)_k`. -/
-theorem weightScaling_totalSpecialFiberMultidegree (a : Additive (LineBundleClass X))
-    (i : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
-    letI := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-      (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hπ hreg i))
-    (toBase.specialFiberNumericalType hX hπ hreg).weightScaling
-        (toBase.totalSpecialFiberMultidegree hX hπ hreg a) i =
-      LineBundleClass.intersectionNumber (ResidueField R)
-        (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subschemeι a.toMul := by
-  rw [NumericalType.weightScaling_apply, specialFiberNumericalType_weight]
-  exact toBase.specialFiberMultidegree_mul_specialFiberWeight hX _ _ _ a i
-
-/-- **Multidegree of a vertical component.** `𝒪_X(Cⱼ)` has multidegree `T.weightedIntersection j`
-([Stacks, Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y)). -/
-theorem totalSpecialFiberMultidegree_ofMul_inv_mk_toInvertibleSheaf
-    (j : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
-    toBase.totalSpecialFiberMultidegree hX hπ hreg (Additive.ofMul (LineBundleClass.mk
-        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX j.val.property).toInvertibleSheaf)⁻¹) =
-      (toBase.specialFiberNumericalType hX hπ hreg).weightedIntersection j := by
-  ext i
-  rw [totalSpecialFiberMultidegree_apply, NumericalType.weightedIntersection_apply,
-    NumericalType.intersection_comm, specialFiberNumericalType_intersection_apply, toMul_ofMul]
-
-/-- The ideal-sheaf bundle `𝒪_X(-Cⱼ)` has multidegree `-T.weightedIntersection j`. -/
-@[simp]
-theorem totalSpecialFiberMultidegree_ofMul_mk_toInvertibleSheaf
-    (j : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
-    toBase.totalSpecialFiberMultidegree hX hπ hreg (Additive.ofMul (LineBundleClass.mk
-        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX j.val.property).toInvertibleSheaf)) =
-      -(toBase.specialFiberNumericalType hX hπ hreg).weightedIntersection j := by
-  rw [← neg_inj, ← map_neg, ← ofMul_inv,
-    totalSpecialFiberMultidegree_ofMul_inv_mk_toInvertibleSheaf, neg_neg]
-
-/-- A `ℤ`-linear combination of `𝒪_X(Cⱼ)` with coefficients `v` has multidegree
-`v ᵥ* T.weightedIntersection`. -/
-theorem totalSpecialFiberMultidegree_sum_smul_eq_vecMul
-    (v : (toBase.specialFiberNumericalType hX hπ hreg).Component → ℤ) :
-    toBase.totalSpecialFiberMultidegree hX hπ hreg (∑ j, v j • Additive.ofMul (LineBundleClass.mk
-        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX j.val.property).toInvertibleSheaf)⁻¹) =
-      v ᵥ* (toBase.specialFiberNumericalType hX hπ hreg).weightedIntersection := by
-  rw [map_sum]
-  simp only [map_zsmul, totalSpecialFiberMultidegree_ofMul_inv_mk_toInvertibleSheaf]
-  funext i; simp [Matrix.vecMul, dotProduct]
-
-/-- The multidegree of `𝒪_X(Cⱼ)` is a principal multidegree of the numerical type. -/
-theorem totalSpecialFiberMultidegree_ofMul_inv_mk_toInvertibleSheaf_mem_principalDivisors
-    (j : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
-    toBase.totalSpecialFiberMultidegree hX hπ hreg (Additive.ofMul (LineBundleClass.mk
-        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX j.val.property).toInvertibleSheaf)⁻¹) ∈
-      (toBase.specialFiberNumericalType hX hπ hreg).principalDivisors := by
-  rw [totalSpecialFiberMultidegree_ofMul_inv_mk_toInvertibleSheaf,
-    NumericalType.mem_principalDivisors_iff]
-  exact ⟨Pi.single j 1, by ext; simp⟩
+  exact (toBase.specialFiberMultidegreeOnFiber_apply hX _ (Additive.ofMul a) i).symm
 
 /-! ### Specialization to the Picard group of the numerical type -/
 
@@ -285,9 +167,7 @@ def specialFiberPicSpecialization :
   (toBase.specialFiberNumericalType hX hπ hreg).principalDivisors.mkQ.toAddMonoidHom.comp
     (toBase.specialFiberMultidegreeOnFiber hX
       (toBase.base_genericPoint_ne_closedPoint_of_isSMulRegular
-        (hπ ▸ Ideal.mem_span_singleton_self π) hreg)
-      (fun _ hc ↦ toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hc 0)
-      (fun _ hc ↦ toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hc 1))
+        (hπ ▸ Ideal.mem_span_singleton_self π) hreg))
 
 /-- `specialFiberPicSpecialization` sends `a` to the quotient class of its multidegree. -/
 theorem specialFiberPicSpecialization_apply
@@ -295,10 +175,7 @@ theorem specialFiberPicSpecialization_apply
     toBase.specialFiberPicSpecialization hX hπ hreg a =
       Submodule.Quotient.mk (toBase.specialFiberMultidegreeOnFiber hX
         (toBase.base_genericPoint_ne_closedPoint_of_isSMulRegular
-          (hπ ▸ Ideal.mem_span_singleton_self π) hreg)
-        (fun _ hc ↦ toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hc 0)
-        (fun _ hc ↦ toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hc 1)
-        a) := (rfl)
+          (hπ ▸ Ideal.mem_span_singleton_self π) hreg) a) := (rfl)
 
 /-- `specialFiberPicSpecialization` factors through pullback to `X_{s,red}`. -/
 theorem specialFiberPicSpecialization_eq_comp :
@@ -326,12 +203,16 @@ theorem reducedSpecialFiberPicSpecialization_pullback
 def totalSpecialFiberPicSpecialization :
     Additive (LineBundleClass X) →+ (toBase.specialFiberNumericalType hX hπ hreg).Pic :=
   (toBase.specialFiberNumericalType hX hπ hreg).principalDivisors.mkQ.toAddMonoidHom.comp
-    (toBase.totalSpecialFiberMultidegree hX hπ hreg)
+    (toBase.specialFiberMultidegree hX
+      (toBase.base_genericPoint_ne_closedPoint_of_isSMulRegular
+        (hπ ▸ Ideal.mem_span_singleton_self π) hreg))
 
 /-- `totalSpecialFiberPicSpecialization` sends `a` to the quotient class of its multidegree. -/
 theorem totalSpecialFiberPicSpecialization_apply (a : Additive (LineBundleClass X)) :
     toBase.totalSpecialFiberPicSpecialization hX hπ hreg a =
-      Submodule.Quotient.mk (toBase.totalSpecialFiberMultidegree hX hπ hreg a) := (rfl)
+      Submodule.Quotient.mk (toBase.specialFiberMultidegree hX
+        (toBase.base_genericPoint_ne_closedPoint_of_isSMulRegular
+          (hπ ▸ Ideal.mem_span_singleton_self π) hreg) a) := (rfl)
 
 /-- `totalSpecialFiberPicSpecialization` factors through pullback to `X_s`. -/
 theorem totalSpecialFiberPicSpecialization_eq_comp :
@@ -343,7 +224,7 @@ theorem totalSpecialFiberPicSpecialization_eq_comp :
     specialFiberPicSpecialization_apply, MonoidHom.toAdditive_apply_apply,
     LineBundleClass.pullbackHom_apply]
   exact congrArg Submodule.Quotient.mk
-    (toBase.specialFiberMultidegreeOnFiber_pullback hX hπ hreg a.toMul).symm
+    (toBase.specialFiberMultidegree_eq_specialFiberMultidegreeOnFiber_pullback hX _ a.toMul)
 
 /-- Pulling a line-bundle class on `X` back to `X_s` preserves its class in `T.Pic`. -/
 theorem specialFiberPicSpecialization_pullback (a : LineBundleClass X) :
@@ -361,9 +242,11 @@ theorem totalSpecialFiberPicSpecialization_ofMul_inv_mk_toInvertibleSheaf
     toBase.totalSpecialFiberPicSpecialization hX hπ hreg (Additive.ofMul (LineBundleClass.mk
         (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
           hX j.val.property).toInvertibleSheaf)⁻¹) = 0 := by
-  rw [totalSpecialFiberPicSpecialization_apply, Submodule.Quotient.mk_eq_zero]
-  exact toBase.totalSpecialFiberMultidegree_ofMul_inv_mk_toInvertibleSheaf_mem_principalDivisors
-    hX hπ hreg j
+  rw [totalSpecialFiberPicSpecialization_apply]
+  refine (Submodule.Quotient.mk_eq_zero _).mpr ?_
+  rw [(toBase.specialFiberMultidegree_inv_mk_toInvertibleSheaf hX _ j).trans
+    (congrFun (toBase.specialFiberNumericalType_weightedIntersection hX hπ hreg).symm j)]
+  exact (NumericalType.mem_principalDivisors_iff _).mpr ⟨Pi.single j 1, by ext; simp⟩
 
 /-- The ideal-sheaf bundle `𝒪_X(-Cⱼ)` maps to `0` under `totalSpecialFiberPicSpecialization`. -/
 @[simp]
@@ -389,14 +272,38 @@ a `ℤ`-linear combination of the vertical component bundles `𝒪_X(Cⱼ)`. -/
 theorem mem_ker_totalSpecialFiberPicSpecialization_iff {a : Additive (LineBundleClass X)} :
     a ∈ AddMonoidHom.ker (toBase.totalSpecialFiberPicSpecialization hX hπ hreg) ↔
       ∃ v : (toBase.specialFiberNumericalType hX hπ hreg).Component → ℤ,
-        toBase.totalSpecialFiberMultidegree hX hπ hreg a =
-          toBase.totalSpecialFiberMultidegree hX hπ hreg (∑ j, v j • Additive.ofMul
-            (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-              hX j.val.property).toInvertibleSheaf)⁻¹) := by
-  rw [AddMonoidHom.mem_ker, totalSpecialFiberPicSpecialization_apply, Submodule.Quotient.mk_eq_zero,
-    NumericalType.mem_principalDivisors_iff]
-  exact exists_congr fun v ↦ by
-    rw [toBase.totalSpecialFiberMultidegree_sum_smul_eq_vecMul hX hπ hreg v, eq_comm]
+        toBase.specialFiberMultidegree hX
+            (toBase.base_genericPoint_ne_closedPoint_of_isSMulRegular
+              (hπ ▸ Ideal.mem_span_singleton_self π) hreg) a =
+          toBase.specialFiberMultidegree hX
+            (toBase.base_genericPoint_ne_closedPoint_of_isSMulRegular
+              (hπ ▸ Ideal.mem_span_singleton_self π) hreg)
+            (∑ j, v j • Additive.ofMul (LineBundleClass.mk
+              (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+                hX j.val.property).toInvertibleSheaf)⁻¹) := by
+  rw [AddMonoidHom.mem_ker, totalSpecialFiberPicSpecialization_apply]
+  refine (Submodule.Quotient.mk_eq_zero _).trans
+    ((NumericalType.mem_principalDivisors_iff _).trans (exists_congr fun v ↦ ?_))
+  have hsum : (∑ j, v j • Additive.ofMul (LineBundleClass.mk
+      (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+        hX j.val.property).toInvertibleSheaf)⁻¹) =
+      Additive.ofMul (∏ j, (LineBundleClass.mk
+        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+          hX j.val.property).toInvertibleSheaf)⁻¹ ^ v j) := by
+    simp [ofMul_prod, ofMul_zpow]
+  have hv : v ᵥ* (toBase.specialFiberNumericalType hX hπ hreg).weightedIntersection =
+      toBase.specialFiberMultidegree hX
+        (toBase.base_genericPoint_ne_closedPoint_of_isSMulRegular
+          (hπ ▸ Ideal.mem_span_singleton_self π) hreg)
+        (∑ j, v j • Additive.ofMul (LineBundleClass.mk
+          (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+            hX j.val.property).toInvertibleSheaf)⁻¹) := by
+    rw [hsum]
+    exact (congr_arg (v ᵥ* ·)
+      (toBase.specialFiberNumericalType_weightedIntersection hX hπ hreg)).trans
+      (toBase.specialFiberMultidegree_prod_zpow hX _ v).symm
+  rw [hv]
+  exact eq_comm
 
 /-- Under `T.picToCoker : T.Pic →ₗ[ℤ] T.Coker`
 ([Stacks, Tag 0CE7](https://stacks.math.columbia.edu/tag/0CE7)),
@@ -410,9 +317,13 @@ theorem picToCoker_totalSpecialFiberPicSpecialization (a : Additive (LineBundleC
             (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hπ hreg i))
         LineBundleClass.intersectionNumber (ResidueField R)
           (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subschemeι a.toMul := by
-  rw [totalSpecialFiberPicSpecialization_apply, NumericalType.picToCoker_mk]
-  exact congrArg Submodule.Quotient.mk
-    (funext fun i ↦ toBase.weightScaling_totalSpecialFiberMultidegree hX hπ hreg a i)
+  rw [totalSpecialFiberPicSpecialization_apply]
+  refine (NumericalType.picToCoker_mk _ _).trans
+    (congrArg Submodule.Quotient.mk (funext fun i ↦ ?_))
+  exact (NumericalType.weightScaling_apply _ _ i).trans <|
+    (congrArg (_ * ·)
+      (by exact_mod_cast toBase.specialFiberNumericalType_weight hX hπ hreg i)).trans
+      (toBase.specialFiberMultidegree_mul_specialFiberWeight hX _ a i)
 
 /-! ### Numerical total degree and the degree-zero subgroup -/
 
@@ -511,11 +422,23 @@ private theorem chosen_reg :
     IsSMulRegular R (IsDiscreteValuationRing.exists_irreducible R).choose :=
   .of_ne_zero (IsDiscreteValuationRing.exists_irreducible R).choose_spec.ne_zero
 
+private lemma numericalType_weightedIntersection :
+    (M.numericalType hX).weightedIntersection =
+      M.toBase.specialFiberWeightedIntersectionMatrix hX
+        (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R)) := by
+  ext i j
+  exact (NumericalType.weightedIntersection_apply _ i j).trans
+    (M.toBase.specialFiberWeightedIntersectionMatrix_apply hX _ i j).symm
+
 /-- Uniformizer-free constant-field multidegree on the reduced special fibre of `M`. -/
 def reducedSpecialFiberMultidegree :
     Additive (LineBundleClass (specialFiber R M.toBase).left.nilradical.subscheme) →+
       (M.numericalType hX).Component → ℤ :=
-  M.toBase.nilradicalSpecialFiberMultidegree hX chosen_span chosen_reg
+  M.toBase.componentMultidegreeHom hX
+    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
+    fun i ↦ (subschemeToSpecialFiber
+      (M.toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
+        ((Set.Finite.mem_toFinset _).mp i.property))).liftNilradicalSubscheme
 
 /-- Coordinates of `M.reducedSpecialFiberMultidegree`. -/
 theorem reducedSpecialFiberMultidegree_apply
@@ -528,7 +451,8 @@ theorem reducedSpecialFiberMultidegree_apply
       LineBundleClass.intersectionNumber (ResidueField R)
         (subschemeToSpecialFiber (M.toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
           (M.base_eq_closedPoint_of_numericalType hX i))).liftNilradicalSubscheme a.toMul /
-        ((M.numericalType hX).weight i : ℤ) := (rfl)
+        ((M.numericalType hX).weight i : ℤ) :=
+  M.toBase.componentMultidegreeHom_apply hX _ a i
 
 /-- Rescaling `M.reducedSpecialFiberMultidegree` by the component weights recovers `(a · Cᵢ)_k`. -/
 theorem weightScaling_reducedSpecialFiberMultidegree
@@ -540,8 +464,9 @@ theorem weightScaling_reducedSpecialFiberMultidegree
     (M.numericalType hX).weightScaling (M.reducedSpecialFiberMultidegree hX a) i =
       LineBundleClass.intersectionNumber (ResidueField R)
         (subschemeToSpecialFiber (M.toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-          (M.base_eq_closedPoint_of_numericalType hX i))).liftNilradicalSubscheme a.toMul :=
-  M.toBase.weightScaling_nilradicalSpecialFiberMultidegree hX chosen_span chosen_reg a i
+          (M.base_eq_closedPoint_of_numericalType hX i))).liftNilradicalSubscheme a.toMul := by
+  rw [NumericalType.weightScaling_apply, Model.numericalType_weight]
+  exact M.toBase.componentMultidegreeHom_mul_specialFiberWeight hX _ a i
 
 /-- Uniformizer-free constant-field multidegree on the special fibre of `M`, reusing
 `AlgebraicGeometry.Scheme.Hom.specialFiberMultidegreeOnFiber`. -/
@@ -550,28 +475,6 @@ def specialFiberMultidegree :
       (M.numericalType hX).Component → ℤ :=
   M.toBase.specialFiberMultidegreeOnFiber hX
     (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
-    (fun _ hc ↦ M.toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hc 0)
-    (fun _ hc ↦ M.toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hc 1)
-
-/-- `M.specialFiberMultidegree` factors through pullback to the reduced special fibre. -/
-theorem specialFiberMultidegree_eq_comp :
-    M.specialFiberMultidegree hX =
-      (M.reducedSpecialFiberMultidegree hX).comp (MonoidHom.toAdditive
-        (LineBundleClass.pullbackHom (specialFiber R M.toBase).left.nilradical.subschemeι)) := by
-  refine AddMonoidHom.ext fun a ↦ funext fun i ↦ ?_
-  simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply,
-    LineBundleClass.pullbackHom_apply]
-  exact (congrFun (M.toBase.nilradicalSpecialFiberMultidegree_pullback hX chosen_span chosen_reg
-    a.toMul) i).symm
-
-/-- Pulling a class on `(specialFiber R M.toBase).left` back to `X_{s,red}` preserves its
-multidegree. -/
-theorem reducedSpecialFiberMultidegree_pullback
-    (a : LineBundleClass (specialFiber R M.toBase).left) :
-    M.reducedSpecialFiberMultidegree hX (Additive.ofMul
-        (LineBundleClass.pullback (specialFiber R M.toBase).left.nilradical.subschemeι a)) =
-      M.specialFiberMultidegree hX (Additive.ofMul a) :=
-  M.toBase.nilradicalSpecialFiberMultidegree_pullback hX chosen_span chosen_reg a
 
 /-- Coordinates of `M.specialFiberMultidegree`. -/
 theorem specialFiberMultidegree_apply
@@ -585,7 +488,31 @@ theorem specialFiberMultidegree_apply
         (subschemeToSpecialFiber (M.toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
           (M.base_eq_closedPoint_of_numericalType hX i))) a.toMul /
         ((M.numericalType hX).weight i : ℤ) :=
-  M.toBase.specialFiberMultidegreeOnFiber_apply hX _ _ _ a i
+  M.toBase.specialFiberMultidegreeOnFiber_apply hX _ a i
+
+/-- Pulling a class on `(specialFiber R M.toBase).left` back to `X_{s,red}` preserves its
+multidegree. -/
+theorem reducedSpecialFiberMultidegree_pullback
+    (a : LineBundleClass (specialFiber R M.toBase).left) :
+    M.reducedSpecialFiberMultidegree hX (Additive.ofMul
+        (LineBundleClass.pullback (specialFiber R M.toBase).left.nilradical.subschemeι a)) =
+      M.specialFiberMultidegree hX (Additive.ofMul a) := funext fun i ↦ by
+  let := subschemeOverResidueField
+    (M.toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
+      (M.base_eq_closedPoint_of_numericalType hX i))
+  rw [reducedSpecialFiberMultidegree_apply, specialFiberMultidegree_apply,
+    toMul_ofMul, toMul_ofMul, LineBundleClass.intersectionNumber_pullback,
+    Scheme.Hom.liftNilradicalSubscheme_subschemeι]
+
+/-- `M.specialFiberMultidegree` factors through pullback to the reduced special fibre. -/
+theorem specialFiberMultidegree_eq_comp :
+    M.specialFiberMultidegree hX =
+      (M.reducedSpecialFiberMultidegree hX).comp (MonoidHom.toAdditive
+        (LineBundleClass.pullbackHom (specialFiber R M.toBase).left.nilradical.subschemeι)) := by
+  refine AddMonoidHom.ext fun a ↦ ?_
+  simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply,
+    LineBundleClass.pullbackHom_apply]
+  exact (M.reducedSpecialFiberMultidegree_pullback hX a.toMul).symm
 
 /-- Rescaling `M.specialFiberMultidegree` by the component weights recovers `(a · Cᵢ)_k`. -/
 theorem weightScaling_specialFiberMultidegree
@@ -597,33 +524,33 @@ theorem weightScaling_specialFiberMultidegree
     (M.numericalType hX).weightScaling (M.specialFiberMultidegree hX a) i =
       LineBundleClass.intersectionNumber (ResidueField R)
         (subschemeToSpecialFiber (M.toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-          (M.base_eq_closedPoint_of_numericalType hX i))) a.toMul :=
-  (by
-    rw [NumericalType.weightScaling_apply, Model.numericalType_weight]
-    exact M.toBase.specialFiberMultidegreeOnFiber_mul_specialFiberWeight hX _ _ _ a i)
+          (M.base_eq_closedPoint_of_numericalType hX i))) a.toMul := by
+  rw [NumericalType.weightScaling_apply, Model.numericalType_weight]
+  exact M.toBase.specialFiberMultidegreeOnFiber_mul_specialFiberWeight hX _ a i
 
-/-- Uniformizer-free constant-field multidegree on the total space `M.total`. -/
+/-- Uniformizer-free constant-field multidegree on the total space `M.total`, reusing
+`AlgebraicGeometry.Scheme.Hom.specialFiberMultidegree`. -/
 def totalMultidegree :
     Additive (LineBundleClass M.total) →+ (M.numericalType hX).Component → ℤ :=
-  M.toBase.totalSpecialFiberMultidegree hX chosen_span chosen_reg
+  M.toBase.specialFiberMultidegree hX
+    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
 
 /-- `M.totalMultidegree` factors through pullback to the special fibre. -/
 theorem totalMultidegree_eq_comp :
     M.totalMultidegree hX =
       (M.specialFiberMultidegree hX).comp
         (MonoidHom.toAdditive (LineBundleClass.pullbackHom (specialFiberι R M.toBase))) := by
-  refine AddMonoidHom.ext fun a ↦ funext fun i ↦ ?_
+  refine AddMonoidHom.ext fun a ↦ ?_
   simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply,
     LineBundleClass.pullbackHom_apply]
-  exact (congrFun (M.toBase.specialFiberMultidegreeOnFiber_pullback hX chosen_span chosen_reg
-    a.toMul) i).symm
+  exact M.toBase.specialFiberMultidegree_eq_specialFiberMultidegreeOnFiber_pullback hX _ a.toMul
 
 /-- Pulling a line-bundle class on `M.total` back to the special fibre preserves its multidegree. -/
 theorem specialFiberMultidegree_pullback (a : LineBundleClass M.total) :
     M.specialFiberMultidegree hX
         (Additive.ofMul (LineBundleClass.pullback (specialFiberι R M.toBase) a)) =
       M.totalMultidegree hX (Additive.ofMul a) :=
-  M.toBase.specialFiberMultidegreeOnFiber_pullback hX chosen_span chosen_reg a
+  (M.toBase.specialFiberMultidegree_eq_specialFiberMultidegreeOnFiber_pullback hX _ a).symm
 
 /-- Coordinates of `M.totalMultidegree`. -/
 @[simp]
@@ -636,7 +563,7 @@ theorem totalMultidegree_apply (a : Additive (LineBundleClass M.total))
       LineBundleClass.intersectionNumber (ResidueField R)
         (vanishingIdeal ⟨closure {(i.val : M.total)}, isClosed_closure⟩).subschemeι a.toMul /
         ((M.numericalType hX).weight i : ℤ) :=
-  M.toBase.totalSpecialFiberMultidegree_apply hX chosen_span chosen_reg a i
+  M.toBase.specialFiberMultidegree_apply hX _ a i
 
 /-- Rescaling `M.totalMultidegree` by the component weights recovers `(a · Cᵢ)_k`. -/
 theorem weightScaling_totalMultidegree (a : Additive (LineBundleClass M.total))
@@ -646,8 +573,9 @@ theorem weightScaling_totalMultidegree (a : Additive (LineBundleClass M.total))
         (M.base_eq_closedPoint_of_numericalType hX i))
     (M.numericalType hX).weightScaling (M.totalMultidegree hX a) i =
       LineBundleClass.intersectionNumber (ResidueField R)
-        (vanishingIdeal ⟨closure {(i.val : M.total)}, isClosed_closure⟩).subschemeι a.toMul :=
-  M.toBase.weightScaling_totalSpecialFiberMultidegree hX chosen_span chosen_reg a i
+        (vanishingIdeal ⟨closure {(i.val : M.total)}, isClosed_closure⟩).subschemeι a.toMul := by
+  rw [NumericalType.weightScaling_apply, Model.numericalType_weight]
+  exact M.toBase.specialFiberMultidegree_mul_specialFiberWeight hX _ a i
 
 /-- On `M.total`, `𝒪_{M.total}(Cⱼ)` has multidegree
 `(M.numericalType hX).weightedIntersection j`. -/
@@ -656,7 +584,8 @@ theorem totalMultidegree_ofMul_inv_mk_toInvertibleSheaf (j : (M.numericalType hX
         (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
           hX j.val.property).toInvertibleSheaf)⁻¹) =
       (M.numericalType hX).weightedIntersection j :=
-  M.toBase.totalSpecialFiberMultidegree_ofMul_inv_mk_toInvertibleSheaf hX chosen_span chosen_reg j
+  (M.toBase.specialFiberMultidegree_inv_mk_toInvertibleSheaf hX _ j).trans
+    (congrFun (M.numericalType_weightedIntersection hX).symm j)
 
 /-- On `M.total`, `𝒪_{M.total}(-Cⱼ)` has multidegree
 `-(M.numericalType hX).weightedIntersection j`. -/
@@ -665,8 +594,9 @@ theorem totalMultidegree_ofMul_mk_toInvertibleSheaf (j : (M.numericalType hX).Co
     M.totalMultidegree hX (Additive.ofMul (LineBundleClass.mk
         (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
           hX j.val.property).toInvertibleSheaf)) =
-      -(M.numericalType hX).weightedIntersection j :=
-  M.toBase.totalSpecialFiberMultidegree_ofMul_mk_toInvertibleSheaf hX chosen_span chosen_reg j
+      -(M.numericalType hX).weightedIntersection j := by
+  rw [← neg_inj, ← map_neg, ← ofMul_inv,
+    totalMultidegree_ofMul_inv_mk_toInvertibleSheaf, neg_neg]
 
 /-- A `ℤ`-linear combination of `𝒪_{M.total}(Cⱼ)` with coefficients `v` has multidegree
 `v ᵥ* (M.numericalType hX).weightedIntersection`. -/
@@ -674,8 +604,17 @@ theorem totalMultidegree_sum_smul_eq_vecMul (v : (M.numericalType hX).Component 
     M.totalMultidegree hX (∑ j, v j • Additive.ofMul (LineBundleClass.mk
         (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
           hX j.val.property).toInvertibleSheaf)⁻¹) =
-      v ᵥ* (M.numericalType hX).weightedIntersection :=
-  M.toBase.totalSpecialFiberMultidegree_sum_smul_eq_vecMul hX chosen_span chosen_reg v
+      v ᵥ* (M.numericalType hX).weightedIntersection := by
+  have hsum : (∑ j, v j • Additive.ofMul (LineBundleClass.mk
+      (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+        hX j.val.property).toInvertibleSheaf)⁻¹) =
+      Additive.ofMul (∏ j, (LineBundleClass.mk
+        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+          hX j.val.property).toInvertibleSheaf)⁻¹ ^ v j) := by
+    simp [ofMul_prod, ofMul_zpow]
+  exact (congrArg (M.toBase.specialFiberMultidegree hX _) hsum).trans
+    ((M.toBase.specialFiberMultidegree_prod_zpow hX _ v).trans
+      (congrArg (v ᵥ* ·) (M.numericalType_weightedIntersection hX).symm))
 
 /-- On `M.total`, the multidegree of `𝒪_{M.total}(Cⱼ)` lies in
 `(M.numericalType hX).principalDivisors`. -/
@@ -684,9 +623,9 @@ theorem totalMultidegree_ofMul_inv_mk_toInvertibleSheaf_mem_principalDivisors
     M.totalMultidegree hX (Additive.ofMul (LineBundleClass.mk
         (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
           hX j.val.property).toInvertibleSheaf)⁻¹) ∈
-      (M.numericalType hX).principalDivisors :=
-  M.toBase.totalSpecialFiberMultidegree_ofMul_inv_mk_toInvertibleSheaf_mem_principalDivisors
-    hX chosen_span chosen_reg j
+      (M.numericalType hX).principalDivisors := by
+  rw [totalMultidegree_ofMul_inv_mk_toInvertibleSheaf, NumericalType.mem_principalDivisors_iff]
+  exact ⟨Pi.single j 1, by ext; simp⟩
 
 /-- Uniformizer-free specialization from the reduced special fibre of `M` to
 `(M.numericalType hX).Pic` ([Stacks, Tag 0C5Y](https://stacks.math.columbia.edu/tag/0C5Y)). -/

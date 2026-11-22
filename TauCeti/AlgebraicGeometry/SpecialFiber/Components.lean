@@ -385,10 +385,7 @@ is closed and contains a point of `Spec R`, hence contains the closed point. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.nonempty_setOf_base_eq_closedPoint
     [UniversallyClosed toBase] (hη : toBase (genericPoint X) ≠ closedPoint R) :
     {η : CodimensionOnePoint X | toBase η = closedPoint R}.Nonempty := by
-  obtain ⟨x, hx⟩ : closedPoint R ∈ Set.range toBase :=
-    (specializes_closedPoint _).mem_closed toBase.isClosedMap.isClosed_range
-      (Set.mem_range_self (genericPoint X))
-  have hx' : x ∈ toBase ⁻¹' {closedPoint R} := hx
+  obtain ⟨x, hx'⟩ := toBase.preimage_closedPoint_nonempty
   rw [← toBase.biUnion_closure_eq_preimage_closedPoint hη] at hx'
   obtain ⟨η, hη', -⟩ := Set.mem_iUnion₂.mp hx'
   exact ⟨η, hη'⟩

@@ -8,11 +8,15 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs
+public import Mathlib.Topology.KrullDimension
+import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.LocalRing.Module
 import TauCeti.RingTheory.QuasiFinite.Basic
+import TauCeti.Topology.KrullDimension.Irreducible
 
 /-!
 # Sections of finite morphisms
@@ -43,7 +47,8 @@ and hence transfer from a closed immersion composite `i ≫ f` to `i.ker.subsche
 
 Finiteness of a morphism is local on the target (`TauCeti.isZariskiLocalAtTarget_isFinite`); this
 is recorded as an instance because instance search does not derive it from Mathlib's affine
-description of `IsFinite`.
+description of `IsFinite`. A proper morphism from a Noetherian scheme of Krull dimension at most
+zero is finite (`AlgebraicGeometry.Scheme.Hom.isFinite_of_topologicalKrullDim_le_zero`).
 -/
 
 public section
@@ -157,5 +162,26 @@ instance flat_ker_subschemeι_comp [Flat (i ≫ f)] : Flat (i.ker.subschemeι �
 instance locallyOfFinitePresentation_ker_subschemeι_comp [LocallyOfFinitePresentation (i ≫ f)] :
     LocallyOfFinitePresentation (i.ker.subschemeι ≫ f) := by
   rw [← (Iso.inv_comp_eq (asIso i.toImage)).mpr (i.toImage_imageι_assoc f).symm]; infer_instance
+
+/-- A proper morphism from a Noetherian scheme of Krull dimension at most zero has finite fibres and
+is therefore finite. -/
+theorem isFinite_of_topologicalKrullDim_le_zero {X Y : Scheme.{u}} (f : X ⟶ Y) [IsProper f]
+    [TopologicalSpace.NoetherianSpace X] (hX : topologicalKrullDim X ≤ 0) : IsFinite f := by
+  have hsub (Z : irreducibleComponents X) : (Z : Set X).Subsingleton := by
+    let Zs : Set X := Z.val
+    have : IrreducibleSpace Zs := Subtype.irreducibleSpace Z.property.left
+    have : Nonempty (TopologicalSpace.IrreducibleCloseds Zs) :=
+      ⟨⟨Set.univ, IrreducibleSpace.isIrreducible_univ Zs, isClosed_univ⟩⟩
+    have hZ0 : topologicalKrullDim Zs = 0 := le_antisymm
+      (Topology.IsInducing.subtypeVal.topologicalKrullDim_le.trans hX) Order.krullDim_nonneg
+    have := TauCeti.topologicalKrullDim_eq_zero_iff_subsingleton.mp hZ0
+    exact fun a ha b hb ↦ congrArg Subtype.val (Subsingleton.elim (⟨a, ha⟩ : Zs) ⟨b, hb⟩)
+  have hfin : (Set.univ : Set X).Finite := by
+    rw [← sUnion_irreducibleComponents, Set.sUnion_eq_biUnion]
+    exact TopologicalSpace.NoetherianSpace.finite_irreducibleComponents.biUnion
+      fun Z hZ ↦ (hsub ⟨Z, hZ⟩).finite
+  have : LocallyQuasiFinite f :=
+    .of_finite_preimage_singleton _ fun _ ↦ hfin.subset (Set.subset_univ _)
+  exact .of_isProper_of_locallyQuasiFinite f
 
 end AlgebraicGeometry.Scheme.Hom

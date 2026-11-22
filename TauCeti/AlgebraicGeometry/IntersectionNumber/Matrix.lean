@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.SpecialFiber
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Dimension
 public import TauCeti.LinearAlgebra.Matrix.NegSemidef
-import TauCeti.AlgebraicGeometry.Curves.Cohomology.Basic
+import TauCeti.AlgebraicGeometry.SpecialFiber.Cohomology
 import TauCeti.Topology.Connected.Basic
 
 /-!
@@ -147,31 +147,6 @@ section Finiteness
 
 variable (hX : ∀ x : X, coheight x ≤ 2) (hη : toBase (genericPoint X) ≠ closedPoint R)
 include hX
-
-omit [Ring.DimensionLEOne R] [IsIntegral X] [IsNoetherian X]
-  [TauCeti.AlgebraicGeometry.IsRegular X] in
-/-- For a scheme `X` proper over a local ring `R` with all points of codimension at most two, the
-structure-sheaf cohomology of the reduced closure of any codimension-one point in the special fibre
-is finite-dimensional over `ResidueField R` in every degree. -/
-theorem finiteDimensional_cohomology_trivial_subscheme_closure_singleton
-    {η : CodimensionOnePoint X} (hη' : toBase η = closedPoint R) (n : ℕ) :
-    letI := subschemeOverResidueField
-      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hη')
-    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj n) := by
-  let hI := toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hη'
-  let := subschemeOverResidueField hI
-  have := isProper_subschemeOverResidueField hI
-  have hdim := (relativeDimensionLE_iff_of_field _).mp
-    (toBase.relativeDimensionLE_subscheme_vanishingIdeal_closure_singleton hX
-      (fun h ↦ one_ne_zero (η.property.symm.trans (coheight_eq_zero.mpr h))) hη')
-  let Y := (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme
-  let L := InvertibleSheaf.trivial Y
-  have : TauCeti.SheafOfModules.IsInvertible (R := Y.ringCatSheaf) L.obj := L.property
-  let F : _root_.SheafOfModules Y.ringCatSheaf := L.obj
-  have : L.obj.IsFiniteType := inferInstanceAs F.IsFiniteType
-  exact Scheme.Modules.finiteDimensional_cohomology_of_topologicalKrullDim_le_one
-    (ResidueField R) hdim L.obj n
 
 omit [Ring.DimensionLEOne R] [IsIntegral X] [IsNoetherian X]
   [TauCeti.AlgebraicGeometry.IsRegular X] in

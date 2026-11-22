@@ -11,7 +11,9 @@ public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveLine.Finite
 public import TauCeti.AlgebraicGeometry.Curves.AffineCover
 public import TauCeti.AlgebraicGeometry.Curves.ProjectiveLine
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
-import TauCeti.AlgebraicGeometry.Birational.Irreducible
+import TauCeti.AlgebraicGeometry.Cohomology.PushforwardAcyclic.Affine
+import TauCeti.AlgebraicGeometry.Cohomology.Spec
+import TauCeti.AlgebraicGeometry.Curves.Resolution
 import TauCeti.AlgebraicGeometry.Curves.Smooth
 import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
@@ -20,16 +22,12 @@ import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Images
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Stalk
 import TauCeti.AlgebraicGeometry.Modules.Restriction.FiniteType
 import TauCeti.AlgebraicGeometry.Modules.SchemeTheoreticSupport
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
-import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Modification.Finite
 import TauCeti.AlgebraicGeometry.Noetherian
-import TauCeti.AlgebraicGeometry.Normalization.Modification
-import TauCeti.AlgebraicGeometry.Normalization.Regular
-import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
+import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
-import TauCeti.RingTheory.UniversallyJapanese
-import TauCeti.Topology.KrullDimension.Irreducible
 
 /-!
 # Vanishing above degree one and finiteness of quasi-coherent cohomology on a curve
@@ -160,37 +158,17 @@ end IsCurveOverDVR
 
 section Finiteness
 
-private theorem isFinite_of_topologicalKrullDim_le_zero [IsProper (X ↘ Spec (.of k))]
-    (hX : topologicalKrullDim X ≤ 0) : IsFinite (X ↘ Spec (.of k)) := by
-  have : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
-  have hsub (Z : irreducibleComponents X) : (Z : Set X).Subsingleton := by
-    let Zs : Set X := Z.val
-    have : IrreducibleSpace Zs := Subtype.irreducibleSpace Z.property.left
-    have : Nonempty (TopologicalSpace.IrreducibleCloseds Zs) :=
-      ⟨⟨Set.univ, IrreducibleSpace.isIrreducible_univ Zs, isClosed_univ⟩⟩
-    have hZ0 : topologicalKrullDim Zs = 0 := le_antisymm
-      (Topology.IsInducing.subtypeVal.topologicalKrullDim_le.trans hX) Order.krullDim_nonneg
-    have := TauCeti.topologicalKrullDim_eq_zero_iff_subsingleton.mp hZ0
-    exact fun a ha b hb ↦ congrArg Subtype.val (Subsingleton.elim (⟨a, ha⟩ : Zs) ⟨b, hb⟩)
-  have hfin : (Set.univ : Set X).Finite := by
-    rw [← sUnion_irreducibleComponents, Set.sUnion_eq_biUnion]
-    exact TopologicalSpace.NoetherianSpace.finite_irreducibleComponents.biUnion
-      fun Z hZ ↦ (hsub ⟨Z, hZ⟩).finite
-  have : LocallyQuasiFinite (X ↘ Spec (.of k)) :=
-    .of_finite_preimage_singleton _ fun _ ↦ hfin.subset (Set.subset_univ _)
-  exact .of_locallyQuasiFinite (X ↘ Spec (.of k))
-
 private theorem finiteDimensional_cohomology_of_topologicalKrullDim_le_zero
     [IsProper (X ↘ Spec (.of k))] (hX : topologicalKrullDim X ≤ 0) (M : X.Modules)
     [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) : FiniteDimensional k (Cohomology M n) := by
-  have := isFinite_of_topologicalKrullDim_le_zero (k := k) hX
-  let g : X ⟶ projectiveLine k := (X ↘ Spec (.of k)) ≫ projectiveLine.infinitySection k
-  have : g.IsOver (Spec (.of k)) := ⟨by simp [g]⟩
-  exact finite_cohomology_of_isFinite_to_projectiveLine k g M n
+  have : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
+  have : IsFinite (X ↘ Spec (.of k)) :=
+    (X ↘ Spec (.of k)).isFinite_of_topologicalKrullDim_le_zero hX
+  exact moduleFinite_cohomology_of_isFinite_over_spec k M n
 
-private theorem finiteDimensional_cohomology_of_not_nontrivial_stalk_genericPoint
+private theorem finiteDimensional_cohomology_of_subsingleton_stalk_genericPoint
     [X.IsCurveOver k] (Q : X.Modules) [Q.IsQuasicoherent] [Q.IsFiniteType]
-    (hQη : ¬ Nontrivial (Q.presheaf.stalk (genericPoint X))) (n : ℕ) :
+    (hQη : Subsingleton (Q.presheaf.stalk (genericPoint X))) (n : ℕ) :
     FiniteDimensional k (Cohomology Q n) := by
   let hQ (U : X.affineOpens) : Module.Finite Γ(X, U) Γ(Q, U) :=
     Q.finite_sections_of_isAffineOpen U.val U.property
@@ -200,7 +178,8 @@ private theorem finiteDimensional_cohomology_of_not_nontrivial_stalk_genericPoin
   have : i.IsOver (Spec (.of k)) := ⟨rfl⟩
   have : IsProper (I.subscheme ↘ Spec (.of k)) := inferInstanceAs (IsProper (i ≫ (X ↘ _)))
   have hnotmem : genericPoint X ∉ Set.range i := IdealSheafData.range_subschemeι I ▸
-    mt (Q.mem_support_annihilator_iff_nontrivial_stalk hQ).mp hQη
+    mt (Q.mem_support_annihilator_iff_nontrivial_stalk hQ).mp
+      (not_nontrivial_iff_subsingleton.mpr hQη)
   have hnotdense : ¬ DenseRange i := fun hd ↦ hnotmem
     (i.isClosedEmbedding.isClosed_range.closure_eq ▸ dense_iff_closure_eq.mp hd ▸ Set.mem_univ _)
   have hIdim : topologicalKrullDim I.subscheme ≤ 0 := by
@@ -216,108 +195,66 @@ private theorem finiteDimensional_cohomology_of_not_nontrivial_stalk_genericPoin
     (finiteDimensional_cohomology_of_topologicalKrullDim_le_zero hIdim ((pullback i).obj Q) n)
   exact Module.Finite.equiv (cohomologyBaseLinearEquivOfIso k e n).symm
 
-private lemma not_nontrivial_stalk_of_subsingleton_sections {U : X.Opens} (hU : IsAffineOpen U)
-    (Q : X.Modules) [Q.IsQuasicoherent] {x : X} (hx : x ∈ U) (hsub : Subsingleton Γ(Q, U)) :
-    ¬ Nontrivial (Q.presheaf.stalk x) := by
-  let _ := Q.moduleSectionStalk (U := U) ⟨x, hx⟩
-  have := Q.isLocalizedModule_germₗ ⟨x, hx⟩ hU
-  let S := (hU.primeIdealOf ⟨x, hx⟩).asIdeal.primeCompl
-  have : Subsingleton (LocalizedModule S Γ(Q, U)) := ⟨fun p q ↦ by
-    induction p, q using LocalizedModule.induction_on₂ with
-    | _ a b _ _ => exact LocalizedModule.mk_eq.mpr ⟨1, by simp [hsub.elim a 0, hsub.elim b 0]⟩⟩
-  exact (IsLocalizedModule.iso S (Q.germₗ ⟨x, hx⟩)).toEquiv.nontrivial_congr.not.mp
-    (not_nontrivial _)
-
-variable (k) in
-/-- **Finiteness of coherent cohomology on a curve.** On any proper integral curve over a field `k`
-(not necessarily regular or smooth), the cohomology of a quasi-coherent sheaf of modules of finite
-type is finite-dimensional over `k` in every degree. -/
-theorem finiteDimensional_cohomology_of_isCurveOver [X.IsCurveOver k] (M : X.Modules)
-    [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) : FiniteDimensional k (Cohomology M n) := by
-  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  let f := X.fromSpecStalk (genericPoint X)
-  let ν : f.normalization ⟶ X := f.fromNormalization
-  have : IsFinite ν := isFinite_fromNormalization_fromSpecStalk_genericPoint_iff.mpr fun U hU _ ↦ by
-    let _ : Algebra k Γ(X, U) :=
-      ((Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appLE ⊤ U le_top).hom.toAlgebra
-    have : Algebra.FiniteType k Γ(X, U) := (X ↘ Spec (.of k)).finiteType_ΓSpecIso_inv_comp_appLE hU
-    have := Ring.IsUniversallyJapanese.isJapanese k Γ(X, U); infer_instance
-  have : IsRegular f.normalization := isRegular_normalization_fromSpecStalk_genericPoint
-    (IsCurveOver.topologicalKrullDim_eq_one (X := X) k).le
-  have := (IsModification.birational ν).irreducibleSpace
-  have : IsNormalScheme f.normalization := IsRegular.isNormal
-  have : IsIntegral f.normalization := isIntegral_of_irreducibleSpace_of_isReduced _
-  let _ : f.normalization.Over (Spec (.of k)) := ⟨ν ≫ (X ↘ Spec (.of k))⟩
-  have : ν.IsOver (Spec (.of k)) := ⟨rfl⟩
-  have : IsProper (f.normalization ↘ Spec (.of k)) := inferInstanceAs (IsProper (ν ≫ (X ↘ _)))
-  obtain ⟨_, ⟨V, hV, rfl⟩, hηV, -⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
-    (Set.mem_univ (genericPoint X)) isOpen_univ
-  have : Nonempty V := ⟨⟨_, hηV⟩⟩
-  have := isFinite_fromNormalization_fromSpecStalk_genericPoint_iff.mp ‹_› V hV ‹_›
-  obtain ⟨s, hs, _⟩ := Ring.IsN1.exists_isIntegrallyClosed_localization_away (R := Γ(X, V))
-  have := hV.isLocalization_basicOpen s
-  have : IsIntegrallyClosed Γ(X, X.basicOpen s) := .of_equiv
-    (IsLocalization.algEquiv (Submonoid.powers s) (Localization.Away s) _).toRingEquiv
-  let U₀ : X.Opens := X.basicOpen s
-  have hU₀ : IsAffineOpen U₀ := hV.basicOpen s
-  have hiso : IsIso (ν ∣_ U₀) := isIso_morphismRestrict_fromNormalization_of_isIntegrallyClosed hU₀
-  have hηU₀ : genericPoint X ∈ U₀ := by
-    by_contra hnot
-    exact (basicOpen_eq_bot_iff s).not.mpr hs (Scheme.eq_bot_of_genericPoint_notMem hnot)
-  have : Nonempty U₀ := ⟨⟨genericPoint X, hηU₀⟩⟩
-  have : Nonempty (ν ⁻¹ᵁ U₀) := ⟨(asIso (ν ∣_ U₀)).inv ⟨genericPoint X, hηU₀⟩⟩
-  have : f.normalization.IsCurveOver k := ⟨by
-    rw [← topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType
-        (f.normalization ↘ Spec (.of k)) (ν ⁻¹ᵁ U₀).ι.isOpenEmbedding,
-      (asIso (ν ∣_ U₀)).hom.homeomorph.isHomeomorph.topologicalKrullDim_eq,
-      topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType
-        (X ↘ Spec (.of k)) U₀.ι.isOpenEmbedding,
-      IsCurveOver.topologicalKrullDim_eq_one (X := X) k]⟩
-  let N : X.Modules := (pushforward ν).obj ((pullback ν).obj M)
-  have : N.IsFinitePresentation := isFinitePresentation_pushforward_of_isFinite ν _
-  have : N.IsFiniteType := inferInstance
-  have hN (m : ℕ) : FiniteDimensional k (Cohomology N m) :=
-    (ν.moduleFinite_cohomology_pushforward_iff_of_isAffineHom k ((pullback ν).obj M) m).mpr
-      (finiteDimensional_cohomology_of_isCurveOver_of_isDiscreteValuationRing k _ m)
-  let η : M ⟶ N := (pullbackPushforwardAdjunction ν).unit.app M
+/-- If `ν : Y ⟶ X` restricts to an isomorphism over an affine open `U₀` of `X`, then the
+pullback–pushforward unit `M ⟶ ν_* ν^* M` of any quasi-coherent `𝒪_X`-module `M` is bijective on
+sections over `U₀`. -/
+private lemma bijective_unit_app_of_isIso_morphismRestrict {Y : Scheme.{u}} (ν : Y ⟶ X)
+    [IsAffineHom ν] (M : X.Modules) [M.IsQuasicoherent] {U₀ : X.Opens} (hU₀ : IsAffineOpen U₀)
+    (hiso : IsIso (ν ∣_ U₀)) :
+    Function.Bijective (((pullbackPushforwardAdjunction ν).unit.app M).app U₀) := by
   have : IsIso (ν.app U₀) := (isIso_morphismRestrict_iff_isIso_app ν hU₀).mp hiso
   have hbij_ν : Function.Bijective (ν.app U₀).hom := ConcreteCategory.bijective_of_isIso (ν.app U₀)
-  have hbij_η : Function.Bijective (η.app U₀) := by
-    let _ := (ν.app U₀).hom.toAlgebra
-    have hker : RingHom.ker (algebraMap Γ(X, U₀) Γ(f.normalization, ν ⁻¹ᵁ U₀)) ≤
-        Module.annihilator Γ(X, U₀) Γ(M, U₀) := fun r hr ↦ by
-      rw [hbij_ν.injective ((RingHom.mem_ker.mp hr).trans (map_zero _).symm)]
-      exact Submodule.zero_mem _
-    have hb := TensorProduct.mk_one_bijective_of_ker_le_annihilator (R := Γ(X, U₀))
-      (S := Γ(f.normalization, ν ⁻¹ᵁ U₀)) (M := Γ(M, U₀)) hbij_ν.surjective hker
-    let e := ν.pullbackSectionsEquiv M hU₀ (hU₀.preimage ν)
-    have key : e.symm ∘ ν.pullbackSections M U₀ =
-        TensorProduct.mk Γ(X, U₀) Γ(f.normalization, ν ⁻¹ᵁ U₀) Γ(M, U₀) 1 :=
-      funext fun t ↦ ν.pullbackSectionsEquiv_symm_pullbackSections M hU₀ (hU₀.preimage ν) t
-    have hp := (e.symm.bijective.of_comp_iff' (ν.pullbackSections M U₀)).mp (key ▸ hb)
-    rwa [show ⇑(ν.pullbackSections M U₀) = _ from funext (ν.pullbackSections_apply M U₀)] at hp
+  let _ := (ν.app U₀).hom.toAlgebra
+  have hker : RingHom.ker (algebraMap Γ(X, U₀) Γ(Y, ν ⁻¹ᵁ U₀)) ≤
+      Module.annihilator Γ(X, U₀) Γ(M, U₀) := fun r hr ↦ by
+    rw [hbij_ν.injective ((RingHom.mem_ker.mp hr).trans (map_zero _).symm)]
+    exact Submodule.zero_mem _
+  have hb := TensorProduct.mk_one_bijective_of_ker_le_annihilator (R := Γ(X, U₀))
+    (S := Γ(Y, ν ⁻¹ᵁ U₀)) (M := Γ(M, U₀)) hbij_ν.surjective hker
+  let e := ν.pullbackSectionsEquiv M hU₀ (hU₀.preimage ν)
+  have key : e.symm ∘ ν.pullbackSections M U₀ =
+      TensorProduct.mk Γ(X, U₀) Γ(Y, ν ⁻¹ᵁ U₀) Γ(M, U₀) 1 :=
+    funext fun t ↦ ν.pullbackSectionsEquiv_symm_pullbackSections M hU₀ (hU₀.preimage ν) t
+  have hp := (e.symm.bijective.of_comp_iff' (ν.pullbackSections M U₀)).mp (key ▸ hb)
+  have hfn : ⇑(((pullbackPushforwardAdjunction ν).unit.app M).app U₀) = ν.pullbackSections M U₀ :=
+    funext fun t ↦ (ν.pullbackSections_apply M U₀ t).symm
+  exact hfn ▸ hp
+
+/-- If `η : M ⟶ N` is a morphism of finite-type quasi-coherent sheaves on a curve `X` over `k`
+that is bijective on sections over a nonempty affine open `U₀`, and `N` has finite-dimensional
+cohomology in all degrees, then so does `M`. -/
+private theorem finiteDimensional_cohomology_of_bijective_app [X.IsCurveOver k]
+    {M N : X.Modules} [M.IsQuasicoherent] [M.IsFiniteType] [N.IsQuasicoherent] [N.IsFiniteType]
+    (η : M ⟶ N) {U₀ : X.Opens} (hU₀ : IsAffineOpen U₀) (hηU₀ : genericPoint X ∈ U₀)
+    (hbij : Function.Bijective (η.app U₀))
+    (hN : ∀ m : ℕ, FiniteDimensional k (Cohomology N m)) (n : ℕ) :
+    FiniteDimensional k (Cohomology M n) := by
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  -- Kernel and cokernel of `η` vanish on sections over `U₀`, hence vanish at the generic point.
   have hsub_ker : Subsingleton Γ(kernel η, U₀) := by
     have : Mono ((toPresheaf X).map (kernel.ι η)) := (toPresheaf X).map_mono _
     have hmono : Mono ((kernel.ι η).app U₀) := by
       simpa using (inferInstance : Mono (((toPresheaf X).map (kernel.ι η)).app (Opposite.op U₀)))
     refine subsingleton_of_forall_eq 0 fun a ↦
-      (AddCommGrpCat.mono_iff_injective _).mp hmono (hbij_η.injective ?_)
+      (AddCommGrpCat.mono_iff_injective _).mp hmono (hbij.injective ?_)
     rw [map_zero, ← ConcreteCategory.comp_apply, ← Hom.comp_app, kernel.condition, Hom.zero_app]
     simp
   have hsub_coker : Subsingleton Γ(cokernel η, U₀) := by
     refine subsingleton_of_forall_eq 0 fun a ↦ ?_
     obtain ⟨a', rfl⟩ := (cokernel.π η).app_surjective_of_epi_of_isAffineOpen U₀ hU₀ a
-    obtain ⟨a₀, rfl⟩ := hbij_η.surjective a'
+    obtain ⟨a₀, rfl⟩ := hbij.surjective a'
     rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, cokernel.condition, Hom.zero_app]; simp
   have : (kernel η).IsFinitePresentation := isFinitePresentation_kernel η
   have : (kernel η).IsFiniteType := inferInstance
   have : (cokernel η).IsFiniteType := isFiniteType_of_epi (cokernel.π η)
-  have hker_fin (m : ℕ) := finiteDimensional_cohomology_of_not_nontrivial_stalk_genericPoint
+  have hker_fin (m : ℕ) := finiteDimensional_cohomology_of_subsingleton_stalk_genericPoint
     (k := k) (kernel η)
-    (not_nontrivial_stalk_of_subsingleton_sections hU₀ (kernel η) hηU₀ hsub_ker) m
-  have hcoker_fin (m : ℕ) := finiteDimensional_cohomology_of_not_nontrivial_stalk_genericPoint
+    ((kernel η).subsingleton_stalk_of_subsingleton_sections ⟨_, hηU₀⟩ hU₀ hsub_ker) m
+  have hcoker_fin (m : ℕ) := finiteDimensional_cohomology_of_subsingleton_stalk_genericPoint
     (k := k) (cokernel η)
-    (not_nontrivial_stalk_of_subsingleton_sections hU₀ (cokernel η) hηU₀ hsub_coker) m
+    ((cokernel η).subsingleton_stalk_of_subsingleton_sections ⟨_, hηU₀⟩ hU₀ hsub_coker) m
+  -- Transfer finiteness from `N` and `cokernel η` to `image η`, then from `kernel η` and `image η`
+  -- to `M`.
   have himg_fin (m : ℕ) : FiniteDimensional k (Cohomology (image η) m) := by
     let S₂ := ShortComplex.kernelSequence (cokernel.π η)
     have hS₂ : S₂.ShortExact :=
@@ -341,6 +278,41 @@ theorem finiteDimensional_cohomology_of_isCurveOver [X.IsCurveOver k] (M : X.Mod
       (cohomologyBaseLinearEquivOfIso k (Limits.kernelFactorThruImage η) n).symm
   have : FiniteDimensional k (Cohomology S₁.X₃ n) := himg_fin n
   exact finiteDimensional_cohomology_X₂ k X hS₁ n
+
+variable (k) in
+/-- **Finiteness of coherent cohomology on a curve.** On any proper integral curve over a field `k`
+(not necessarily regular or smooth), the cohomology of a quasi-coherent sheaf of modules of finite
+type is finite-dimensional over `k` in every degree. -/
+theorem finiteDimensional_cohomology_of_isCurveOver [X.IsCurveOver k] (M : X.Modules)
+    [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) : FiniteDimensional k (Cohomology M n) := by
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  -- Normalize `X` in `k(X)`: `ν : X^ν ⟶ X` is a finite modification from a regular curve over `k`.
+  let ν := (X.fromSpecStalk (genericPoint X)).fromNormalization
+  have := isFinite_fromNormalization_fromSpecStalk_genericPoint_of_locallyOfFiniteType
+    (X ↘ Spec (.of k))
+  have := IsCurveOver.isRegular_normalization k (X := X)
+  let _ : (X.fromSpecStalk (genericPoint X)).normalization.Over (Spec (.of k)) :=
+    ⟨ν ≫ (X ↘ Spec (.of k))⟩
+  have : ν.IsOver (Spec (.of k)) := ⟨rfl⟩
+  have : ((X.fromSpecStalk (genericPoint X)).normalization).IsCurveOver k := inferInstance
+  -- Shrink the isomorphism locus of `ν` to an affine open neighborhood `U₀` of the generic point.
+  obtain ⟨U, hU_dense, -, hisoU⟩ := IsModification.exists_isIso_morphismRestrict (f := ν)
+  have hηU : genericPoint X ∈ U :=
+    ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using hU_dense.nonempty)
+  obtain ⟨_, ⟨U₀, hU₀, rfl⟩, hηU₀, hU₀U⟩ :=
+    X.isBasis_affineOpens.exists_subset_of_mem_open hηU U.isOpen
+  have hiso : IsIso (ν ∣_ U₀) :=
+    IsZariskiLocalAtTarget.restrict_of_le (MorphismProperty.isomorphisms Scheme) hisoU hU₀U
+  -- Push forward `ν^* M`, whose cohomology is finite-dimensional on the regular curve `X^ν`.
+  let N : X.Modules := (pushforward ν).obj ((pullback ν).obj M)
+  have : N.IsFinitePresentation := isFinitePresentation_pushforward_of_isFinite ν _
+  have : N.IsFiniteType := inferInstance
+  have hN (m : ℕ) : FiniteDimensional k (Cohomology N m) :=
+    (ν.moduleFinite_cohomology_pushforward_iff_of_isAffineHom k ((pullback ν).obj M) m).mpr
+      (finiteDimensional_cohomology_of_isCurveOver_of_isDiscreteValuationRing k _ m)
+  exact finiteDimensional_cohomology_of_bijective_app (M := M) (N := N)
+    ((pullbackPushforwardAdjunction ν).unit.app M)
+    hU₀ hηU₀ (bijective_unit_app_of_isIso_morphismRestrict ν M hU₀ hiso) hN n
 
 variable (k) in
 /-- **Finiteness of coherent cohomology in dimension at most one.** On any proper integral scheme

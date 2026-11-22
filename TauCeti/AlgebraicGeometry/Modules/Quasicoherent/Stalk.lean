@@ -28,7 +28,9 @@ This is the affine computation of the stalks of a quasi-coherent module, and so 
   `U`, the germ map `Γ(M, U) → M_x` (`AlgebraicGeometry.Scheme.Modules.germₗ`) is the
   localization at the prime ideal of `x`;
 * `AlgebraicGeometry.Scheme.Modules.isBaseChange_germₗ`: equivalently, it is the base change along
-  `Γ(X, U) ⟶ 𝒪_{X,x}`.
+  `Γ(X, U) ⟶ 𝒪_{X,x}`;
+* `AlgebraicGeometry.Scheme.Modules.subsingleton_stalk_of_subsingleton_sections`: if sections over
+  an affine open `U` vanish, then every stalk `M_x` for `x ∈ U` is a subsingleton.
 
 ## References
 
@@ -99,5 +101,13 @@ theorem isBaseChange_germₗ [M.IsQuasicoherent] (hU : IsAffineOpen U) :
   have := hU.isLocalization_stalk x
   have := M.isLocalizedModule_germₗ x hU
   IsLocalizedModule.isBaseChange (hU.primeIdealOf x).asIdeal.primeCompl _ _
+
+/-- If a quasi-coherent `𝒪_X`-module `M` has subsingleton sections over an affine open `U`, then
+its stalk `M_x` is a subsingleton at every point `x` of `U`. -/
+theorem subsingleton_stalk_of_subsingleton_sections [M.IsQuasicoherent] (hU : IsAffineOpen U)
+    (hsub : Subsingleton Γ(M, U)) : Subsingleton (M.presheaf.stalk x) :=
+  have := hsub
+  have := M.isLocalizedModule_germₗ x hU
+  IsLocalizedModule.subsingleton_of_subsingleton (hU.primeIdealOf x).asIdeal.primeCompl (M.germₗ x)
 
 end AlgebraicGeometry.Scheme.Modules

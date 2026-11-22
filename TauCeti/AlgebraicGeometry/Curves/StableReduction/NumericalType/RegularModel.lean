@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Basic
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Weight
+public import TauCeti.AlgebraicGeometry.SpecialFiber.Cohomology
 import TauCeti.AlgebraicGeometry.SpecialFiber.Reduced
 
 /-!
