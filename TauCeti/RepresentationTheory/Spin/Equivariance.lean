@@ -48,7 +48,7 @@ public section
 
 namespace TauCeti
 
-open CliffordAlgebra
+open _root_.CliffordAlgebra
 
 universe u v
 
@@ -92,7 +92,7 @@ theorem spinRep_mul_spinAction_ι (g : spinGroup Q) (v : V) :
         (((spinToSpecialOrthogonal Q g : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[K] V) v)) *
         spinRep Q P g := by
   have h := pinRep_mul_spinAction_ι P (spinToPin Q g) (p := 0)
-    (by rw [coe_spinToPin_apply]; exact spinGroup.mem_even g.2) v
+    (by rw [coe_spinToPin_apply]; exact spinGroup.mem_even g.property) v
   simpa only [pinRep_apply, spinRep_apply, coe_spinToPin_apply, pinToOrthogonal_spinToPin,
     coe_spinToOrthogonal_apply, coe_spinToSpecialOrthogonal_apply, uzpow_zero, one_smul] using h
 

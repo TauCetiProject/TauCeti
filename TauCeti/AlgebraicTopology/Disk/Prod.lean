@@ -102,9 +102,9 @@ theorem norm_diskProdHomeomorphClosedBall_eq_one_iff {k l : ℕ} (hF : Module.fi
     ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff, mem_range_diskBoundaryInclusion_iff,
     mem_range_diskBoundaryInclusion_iff, Prod.norm_def]
   have h₁ := mem_closedBall_zero_iff.1
-    (z.1 : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin k)) 1)).down.2
+    (z.1 : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin k)) 1)).down.property
   have h₂ := mem_closedBall_zero_iff.1
-    (z.2 : ULift.{v} (closedBall (0 : EuclideanSpace ℝ (Fin l)) 1)).down.2
+    (z.2 : ULift.{v} (closedBall (0 : EuclideanSpace ℝ (Fin l)) 1)).down.property
   rw [max_eq_iff]
   constructor
   · rintro (⟨h, -⟩ | ⟨h, -⟩)
