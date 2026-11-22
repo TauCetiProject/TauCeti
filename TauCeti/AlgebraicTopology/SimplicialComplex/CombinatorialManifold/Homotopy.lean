@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Realization
 public import TauCeti.AlgebraicTopology.Sphere.Contractible
-import Mathlib.Analysis.Convex.Contractible
+import TauCeti.Analysis.Convex.Contractible
 
 /-!
 # Distinguishing combinatorial balls and spheres
@@ -43,8 +43,6 @@ theorem IsCombinatorialBall.contractibleSpace (h : IsCombinatorialBall P n)
     (hA : P ≤ A.toPreAbstractSimplicialComplex) :
     ContractibleSpace {x : Realization A // x.val.support ∈ P} := by
   obtain ⟨e⟩ := h.nonempty_homeomorph_closedBall hA
-  let := Metric.contractibleSpace_closedBall
-    (x := (0 : EuclideanSpace ℝ (Fin n))) (r := 1) zero_le_one
   exact e.contractibleSpace
 
 /-- The weak polyhedron of a combinatorial sphere is not contractible, including the

@@ -410,6 +410,39 @@ theorem perturbation_negative (H : ℝ → M → ℝ) :
   congr 1
   ring
 
+/-- **Normalizing the Hamiltonian.** Adding a function `c` of time to the Hamiltonian adds the
+perturbation of the target-independent Hamiltonian `c`. -/
+theorem perturbation_add_const (p : PSSPlane) (H : ℝ → M → ℝ) (c : ℝ → ℝ) (w : ℂ) (x : M) :
+    p.perturbation (fun t y ↦ H t y + c t) w x =
+      p.perturbation H w x + p.perturbation (fun t (_ : M) ↦ c t) w x := by
+  simp only [perturbation_def, mul_add, add_smul]
+
+/-- The perturbation of a target-independent Hamiltonian does not depend on the target point. -/
+theorem perturbation_const_target (p : PSSPlane) (c : ℝ → ℝ) (w : ℂ) (x y : M) :
+    p.perturbation (fun t (_ : M) ↦ c t) w x = p.perturbation (fun t (_ : M) ↦ c t) w y := by
+  simp only [perturbation_def]
+
+/-- **Every PSS plane is the positive plane for a reflected Hamiltonian.** The perturbation of a
+PSS plane `p` with end sign `ε` given by `H` is the perturbation of the positive plane given by the
+Hamiltonian `ε H(ε t)`: this is `H` for the positive plane, and `-H(-t)` for the negative plane
+(`TauCeti.Floer.PSSPlane.perturbation_negative`). -/
+theorem perturbation_eq_positive (p : PSSPlane) (H : ℝ → M → ℝ) :
+    p.perturbation H = positive.perturbation (fun t x ↦ p.endSign * H (p.endSign * t) x) := by
+  cases p
+  · simp only [endSign_positive, one_mul]
+  · simp only [endSign_negative, neg_one_mul, perturbation_negative]
+
+/-- The reflected Hamiltonian `ε H(ε t)` of a plane with end sign `ε`, for which the perturbation
+of the plane is that of the positive plane (`TauCeti.Floer.PSSPlane.perturbation_eq_positive`), is
+of period one when `H` is. -/
+theorem periodic_endSign_mul (p : PSSPlane) {H : ℝ → M → ℝ} (hH : Function.Periodic H 1) :
+    Function.Periodic (fun t x ↦ p.endSign * H (p.endSign * t) x) 1 := by
+  intro t
+  funext x
+  cases p
+  · simp only [endSign_positive, one_mul, hH t]
+  · simp only [endSign_negative, neg_one_mul, neg_add, ← sub_eq_add_neg, hH.sub_eq]
+
 variable {p : PSSPlane} {H : ℝ → M → ℝ}
 
 /-- **The perturbation vanishes on the pole disc.** On the closed disc `‖w‖ ≤ exp (2π)` about the
@@ -540,6 +573,18 @@ theorem contDiff_uncurry_perturbation {V : Type*} [NormedAddCommGroup V] [Normed
       (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff))).contDiff.comp
     ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk contDiff_snd)).clm_apply
     contDiff_const
+
+/-- In the end coordinates of the plane, the component of the perturbation of a PSS plane along a
+tangent vector `v` is `C^n` jointly in the domain point and the target point, for a period-one
+`C^n` Hamiltonian. -/
+theorem contDiff_uncurry_endComponent {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {H : ℝ → V → ℝ} {n : ℕ∞} (hH : Function.Periodic H 1)
+    (hHs : ContDiff ℝ n (Function.uncurry H)) (v : ℂ) :
+    ContDiff ℝ n (Function.uncurry (p.endComponent H v)) := by
+  rw [endComponent_eq hH]
+  exact contDiff_const.mul ((smoothTransition.contDiff.comp
+    ((contDiff_const.mul (contDiff_fst.comp contDiff_fst)).sub contDiff_const)).mul
+    (hHs.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)))
 
 /-- In the real coordinates `ℝ × ℝ ≃ ℂ` of the plane, the component of the perturbation of a PSS
 plane along a tangent vector `v` is `C^n` jointly in the domain point and the point of the
