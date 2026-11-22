@@ -5,18 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Analytic.Basic
-public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.NumberTheory.BernoulliPolynomials
 public import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
-public import TauCeti.NumberTheory.LSeries.RiemannZeta.BernoulliKernel
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Analytic.IteratedDeriv
-import TauCeti.Analysis.Analytic.TaylorSeries
+public import TauCeti.Analysis.Analytic.TaylorSeries
 import TauCeti.Analysis.Calculus.DSlope.Analytic
 import TauCeti.Analysis.Calculus.DSlope.Parametric
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
@@ -26,14 +23,16 @@ import TauCeti.Analysis.SpecialFunctions.Exp.TaylorSeries
 # Exponential-Bernoulli kernel and uniform Taylor remainder for Hurwitz continuation
 
 The Mellin-Laplace integrand for the complex Hurwitz zeta function involves the generating kernel
-`F_c(z) = z * exp (-c * z) / (1 - exp (-z))`, extended across `z = 0` by `F_c(0) = 1` via
-`oneSubExpNegDivSelf ℂ z` (which agrees everywhere with `dslope Complex.exp 0 (-z)`). Because
-`dslope Complex.exp 0 (-z)` vanishes only at nonzero integer multiples of `2 * π * I`,
-`(c, z) ↦ hurwitzKernel c z` is jointly analytic on the full nonvanishing locus
-`{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}` (and in particular on
-`Set.univ ×ˢ Metric.ball 0 (2 * π)` and `Set.univ ×ˢ (Complex.ofReal '' Set.univ)`). At `c = 1`
-and real `t`, `hurwitzKernel 1 (t : ℂ)` specializes to the real Bernoulli kernel
-`(bernoulliKernel t : ℂ)`.
+`F_c(z) = z * exp (-c * z) / (1 - exp (-z))`, defined globally via `oneSubExpNegDivSelf ℂ z`
+(which agrees everywhere with `dslope Complex.exp 0 (-z)`). This fills in the removable singularity
+at `z = 0` (`hurwitzKernel c 0 = 1`), whereas at the nonzero poles `z = 2 * π * I * k`
+(`k : ℤ`, `k ≠ 0`), `dslope Complex.exp 0 (-z)` and `oneSubExpNegDivSelf ℂ z` vanish and
+`hurwitzKernel c z` takes the totalized value `0`. Accordingly, `(c, z) ↦ hurwitzKernel c z` is
+jointly analytic on the full nonvanishing locus `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`
+(and in particular on `Set.univ ×ˢ Metric.ball 0 (2 * π)` and
+`Set.univ ×ˢ (Complex.ofReal '' Set.univ)`). For the specialization `hurwitzKernel 1 (t : ℂ) =
+(bernoulliKernel t : ℂ)` on real `t`, see
+`TauCeti.NumberTheory.LSeries.HurwitzZeta.BernoulliKernel`.
 
 On the nonvanishing locus `{z : ℂ | dslope Complex.exp 0 (-z) ≠ 0}` (in particular near `z = 0`),
 multiplying by `exp z - 1` yields `hurwitzKernel c z * (exp z - 1) = z * exp ((1 - c) * z)`.
@@ -46,22 +45,23 @@ jointly analytic on `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}` and s
 identity `hurwitzKernel c z - ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k c * z ^ k =
 z ^ (M + 1) * hurwitzTaylorQuot M c z` for all `c, z : ℂ`. Compactness then gives uniform
 bounds on `‖∂_c^d (hurwitzTaylorQuot M c z)‖` and Taylor remainder bounds
-`‖F_c(z) - ∑_{k ≤ M} b_k(c) z^k‖ ≤ C * ‖z‖ ^ (M + 1)` on any compact subset `S` of
+`‖∂_c^d (F_c(z) - ∑_{k ≤ M} b_k(c) z^k)‖ ≤ C * ‖z‖ ^ (M + 1)` on any compact subset `S` of
 `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`.
 
 ## Main definitions and results
 
-* `TauCeti.hurwitzKernel`: the removable generating kernel `exp (-c * z) / oneSubExpNegDivSelf ℂ z`.
-* `TauCeti.hurwitzKernel_one_ofReal`: identification
-  `hurwitzKernel 1 (t : ℂ) = (bernoulliKernel t : ℂ)` for every real `t`.
+* `TauCeti.hurwitzKernel`: the generating kernel `exp (-c * z) / oneSubExpNegDivSelf ℂ z`.
 * `TauCeti.analyticAt_hurwitzKernel_zero`: analyticity of `hurwitzKernel c` at `0`.
 * `TauCeti.hurwitzBernoulliCoeff`: the Taylor coefficient `(-1) ^ k * B_k(c) / k!`.
 * `TauCeti.iteratedDeriv_right_hurwitzKernel_zero`: identification of
   `iteratedDeriv n (hurwitzKernel c) 0` with `(-1) ^ n * B_n(c)`.
+* `TauCeti.coeff_taylorSeries_hurwitzKernel_zero`: identification of the `k`-th formal Taylor
+  coefficient of `hurwitzKernel c` at `0` with `hurwitzBernoulliCoeff k c`.
 * `TauCeti.hurwitzTaylorQuot` and `TauCeti.hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot`:
   jointly analytic iterated-`dslope` remainder quotient and exact Taylor decomposition.
 * `TauCeti.exists_norm_iteratedDeriv_left_hurwitzTaylorQuot_le`,
-  `TauCeti.exists_norm_hurwitzTaylorQuot_le`, and
+  `TauCeti.exists_norm_hurwitzTaylorQuot_le`,
+  `TauCeti.exists_norm_iteratedDeriv_left_hurwitzKernel_sub_sum_le`, and
   `TauCeti.exists_norm_hurwitzKernel_sub_sum_le`: compact-uniform Taylor quotient and remainder
   estimates on compact subsets of `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`.
 
@@ -80,7 +80,10 @@ open scoped Topology Real
 namespace TauCeti
 
 /-- The exponential-Bernoulli generating kernel `z * exp (-c * z) / (1 - exp (-z))`, defined via
-the filled-in exponential quotient `oneSubExpNegDivSelf ℂ z` with `hurwitzKernel c 0 = 1`. -/
+the filled-in exponential quotient `oneSubExpNegDivSelf ℂ z`. This fills in the removable
+singularity at `z = 0` (`hurwitzKernel c 0 = 1`); at the nonzero poles `z = 2 * π * I * k`
+(`k : ℤ`, `k ≠ 0`), where `oneSubExpNegDivSelf ℂ z = 0`, Lean's division by zero gives the
+totalized value `0`. -/
 noncomputable def hurwitzKernel (c z : ℂ) : ℂ :=
   Complex.exp (-c * z) / oneSubExpNegDivSelf ℂ z
 
@@ -92,32 +95,14 @@ theorem hurwitzKernel_def (c z : ℂ) :
 theorem hurwitzKernel_zero_right (c : ℂ) : hurwitzKernel c 0 = 1 := by
   simp [hurwitzKernel]
 
-/-- Away from `z = 0`, `hurwitzKernel c z` equals `z * exp (-c * z) / (1 - exp (-z))`. -/
+/-- For `z ≠ 0`, `hurwitzKernel c z` equals `z * exp (-c * z) / (1 - exp (-z))`. At the nonzero
+poles `z = 2 * π * I * k` (`k : ℤ`, `k ≠ 0`), both denominators vanish and this equality holds as a
+totalized Lean identity `0 = 0`. -/
 theorem hurwitzKernel_of_ne_zero (c : ℂ) {z : ℂ} (hz : z ≠ 0) :
     hurwitzKernel c z = z * Complex.exp (-c * z) / (1 - Complex.exp (-z)) := by
   have hmul : z * oneSubExpNegDivSelf ℂ z = 1 - Complex.exp (-z) := by
     simp [Complex.exp_eq_exp_ℂ]
   rw [hurwitzKernel, ← hmul, mul_div_mul_left _ _ hz]
-
-/-- At `c = 1` and real `t`, `hurwitzKernel 1 (t : ℂ)` coincides with the real Bernoulli kernel
-`(bernoulliKernel t : ℂ)` (including at `t = 0`). -/
-theorem hurwitzKernel_one_ofReal (t : ℝ) :
-    hurwitzKernel 1 (t : ℂ) = (bernoulliKernel t : ℂ) := by
-  rcases eq_or_ne t 0 with rfl | ht
-  · simp
-  · rw [hurwitzKernel_of_ne_zero 1 (ofReal_ne_zero.mpr ht), neg_one_mul,
-      bernoulliKernel_of_ne_zero ht]
-    push_cast
-    have hexp : Complex.exp (-(t : ℂ)) * (Complex.exp (t : ℂ) - 1) =
-        1 - Complex.exp (-(t : ℂ)) := by
-      rw [mul_sub, mul_one, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero]
-    have hne1 : Complex.exp (t : ℂ) - 1 ≠ 0 := by
-      exact_mod_cast sub_ne_zero.mpr (by simpa using Real.exp_injective.ne ht)
-    have hne2 : 1 - Complex.exp (-(t : ℂ)) ≠ 0 := by
-      rw [← hexp]
-      exact mul_ne_zero (Complex.exp_ne_zero _) hne1
-    rw [div_eq_div_iff hne2 hne1]
-    linear_combination (t : ℂ) * hexp
 
 /-- Whenever `dslope Complex.exp 0 (-z) ≠ 0`,
 `hurwitzKernel c z * (exp z - 1) = z * exp ((1 - c) * z)`. -/
@@ -126,7 +111,7 @@ theorem hurwitzKernel_mul_exp_sub_one (c : ℂ) {z : ℂ} (hz : dslope Complex.e
   rcases eq_or_ne z 0 with rfl | hz0
   · simp
   · have hne : 1 - Complex.exp (-z) ≠ 0 := by
-      rw [← Complex.oneSubExpNegDivSelf_eq_dslope_exp_neg] at hz
+      rw [← Complex.oneSubExpNegDivSelf_eq_dslope_exp_zero_neg] at hz
       simpa [Complex.exp_eq_exp_ℂ] using mul_ne_zero hz0 hz
     rw [hurwitzKernel_of_ne_zero c hz0]
     have hexp : Complex.exp z - 1 = Complex.exp z * (1 - Complex.exp (-z)) := by
@@ -144,7 +129,7 @@ theorem analyticOnNhd_hurwitzKernel :
   have heq : (fun p : ℂ × ℂ => hurwitzKernel p.1 p.2) =
       fun p : ℂ × ℂ => Complex.exp (-p.1 * p.2) / dslope Complex.exp 0 (-p.2) := by
     ext p
-    simp [hurwitzKernel, Complex.oneSubExpNegDivSelf_eq_dslope_exp_neg]
+    simp [hurwitzKernel, Complex.oneSubExpNegDivSelf_eq_dslope_exp_zero_neg]
   rw [heq]
   intro p hp
   exact (((analyticAt_fst.neg).mul analyticAt_snd).cexp).div
@@ -173,8 +158,12 @@ theorem hurwitzBernoulliCoeff_def (k : ℕ) (c : ℂ) :
 
 /-- Each Bernoulli coefficient `c ↦ hurwitzBernoulliCoeff k c` is an entire polynomial in `c`. -/
 theorem differentiable_hurwitzBernoulliCoeff (k : ℕ) :
-    Differentiable ℂ (hurwitzBernoulliCoeff k) :=
-  ((Polynomial.bernoulli k).differentiable_aeval.const_mul _).div_const _
+    Differentiable ℂ (hurwitzBernoulliCoeff k) := by
+  rw [show hurwitzBernoulliCoeff k = fun c : ℂ =>
+      (-1 : ℂ) ^ k * Polynomial.aeval c (Polynomial.bernoulli k) / k.factorial from
+    funext (hurwitzBernoulliCoeff_def k)]
+  exact ((Polynomial.bernoulli k).differentiable_aeval.const_mul ((-1 : ℂ) ^ k)).div_const
+    (k.factorial : ℂ)
 
 @[simp]
 theorem hurwitzBernoulliCoeff_zero (c : ℂ) : hurwitzBernoulliCoeff 0 c = 1 := by
@@ -208,8 +197,12 @@ private theorem iteratedDeriv_right_hurwitzKernel_zero_eq_aeval_one_sub (m : ℕ
   rw [taylorSeries_mul hf hexp1, taylorSeries_mul hid_an hexp2] at ht
   have hid : taylorSeries (fun z : ℂ => z) 0 = PowerSeries.X := by
     simpa only [sub_zero] using taylorSeries_sub_const (𝕜 := ℂ) (a := (0 : ℂ))
-  rw [hid, Complex.taylorSeries_exp_sub_one_at_zero,
-    Complex.taylorSeries_exp_const_mul_at_zero (1 - c),
+  rw [hid, show (fun z : ℂ => Complex.exp z - 1) = fun z : ℂ => NormedSpace.exp z - 1 by
+      simp [Complex.exp_eq_exp_ℂ],
+    show (fun z : ℂ => Complex.exp ((1 - c) * z)) =
+      fun z : ℂ => NormedSpace.exp ((1 - c) * z) by simp [Complex.exp_eq_exp_ℂ],
+    NormedSpace.taylorSeries_exp_sub_one_at_zero,
+    NormedSpace.taylorSeries_exp_const_mul_at_zero (1 - c),
     ← Polynomial.bernoulli_generating_function (A := ℂ) (1 - c)] at ht
   have hne : PowerSeries.exp ℂ - (1 : PowerSeries ℂ) ≠ 0 := fun h0 => by
     have := congrArg (PowerSeries.coeff 1) h0
@@ -238,6 +231,14 @@ private theorem inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero (k : �
     (k.factorial : ℂ)⁻¹ • iteratedDeriv k (hurwitzKernel c) 0 = hurwitzBernoulliCoeff k c := by
   rw [smul_eq_mul, iteratedDeriv_right_hurwitzKernel_zero, hurwitzBernoulliCoeff]
   ring
+
+/-- The `k`-th formal Taylor coefficient of `hurwitzKernel c` at `0` is
+`hurwitzBernoulliCoeff k c`. -/
+theorem coeff_taylorSeries_hurwitzKernel_zero (k : ℕ) (c : ℂ) :
+    PowerSeries.coeff k (TauCeti.taylorSeries (hurwitzKernel c) 0) =
+      hurwitzBernoulliCoeff k c := by
+  rw [(analyticAt_hurwitzKernel_zero c).coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv k,
+    inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero]
 
 /-- The order-`M` Taylor remainder quotient of `hurwitzKernel c` at `z = 0`, defined as the
 `(M + 1)`-fold divided difference `(Function.swap dslope 0)^[M + 1] (hurwitzKernel c) z`. -/
@@ -321,6 +322,25 @@ theorem exists_norm_hurwitzTaylorQuot_le {S : Set (ℂ × ℂ)} (hS : IsCompact 
   exact ⟨B, hB0, fun p hp => by simpa using hB p hp⟩
 
 /-- Compact-uniform Taylor remainder estimate on a compact subset `S` of the nonvanishing locus
+after any fixed order `d` of differentiation in the parameter `c`. -/
+theorem exists_norm_iteratedDeriv_left_hurwitzKernel_sub_sum_le {S : Set (ℂ × ℂ)}
+    (hS : IsCompact S) (hS_sub : S ⊆ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0})
+    (M d : ℕ) :
+    ∃ C ≥ 0, ∀ p ∈ S,
+      ‖iteratedDeriv d
+          (fun w => hurwitzKernel w p.2 -
+            ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k w * p.2 ^ k) p.1‖ ≤
+        C * ‖p.2‖ ^ (M + 1) := by
+  obtain ⟨B, hB0, hB⟩ := exists_norm_iteratedDeriv_left_hurwitzTaylorQuot_le hS hS_sub M d
+  refine ⟨B, hB0, fun p hp => ?_⟩
+  have hfun : (fun w => hurwitzKernel w p.2 -
+        ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k w * p.2 ^ k) =
+      fun w => p.2 ^ (M + 1) * hurwitzTaylorQuot M w p.2 :=
+    funext fun w => hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot M w p.2
+  rw [hfun, iteratedDeriv_const_mul_field, norm_mul, norm_pow, mul_comm (‖p.2‖ ^ (M + 1))]
+  exact mul_le_mul_of_nonneg_right (hB p hp) (pow_nonneg (norm_nonneg _) _)
+
+/-- Compact-uniform Taylor remainder estimate on a compact subset `S` of the nonvanishing locus
 for `hurwitzKernel p.1 p.2`. -/
 theorem exists_norm_hurwitzKernel_sub_sum_le {S : Set (ℂ × ℂ)} (hS : IsCompact S)
     (hS_sub : S ⊆ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}) (M : ℕ) :
@@ -328,11 +348,8 @@ theorem exists_norm_hurwitzKernel_sub_sum_le {S : Set (ℂ × ℂ)} (hS : IsComp
       ‖hurwitzKernel p.1 p.2 -
           ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k p.1 * p.2 ^ k‖ ≤
         C * ‖p.2‖ ^ (M + 1) := by
-  obtain ⟨B, hB0, hB⟩ := exists_norm_hurwitzTaylorQuot_le hS hS_sub M
-  refine ⟨B, hB0, fun p hp => ?_⟩
-  rw [hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot, norm_mul, norm_pow,
-    mul_comm (‖p.2‖ ^ (M + 1))]
-  exact mul_le_mul_of_nonneg_right (hB p hp) (pow_nonneg (norm_nonneg _) _)
+  obtain ⟨C, hC0, hC⟩ := exists_norm_iteratedDeriv_left_hurwitzKernel_sub_sum_le hS hS_sub M 0
+  exact ⟨C, hC0, fun p hp => by simpa using hC p hp⟩
 
 end TauCeti
 

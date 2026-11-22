@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import TauCeti.Analysis.Calculus.DSlope.Basic
 import Mathlib.Analysis.Analytic.IsolatedZeros
@@ -20,6 +19,8 @@ functions `f : 𝕜 → E`:
 * `AnalyticAt.iterate_dslope`: iterated divided differences preserve analyticity.
 * `HasFPowerSeriesAt.iterate_dslope_apply_eq_coeff`: at the base point `z₀`, the `n`-th iterated
   divided difference equals the `n`-th Taylor coefficient `p.coeff n`.
+* `AnalyticAt.factorial_smul_iterate_dslope_apply`: into a complete space `E`,
+  `n! • (swap dslope z₀)^[n] f z₀ = iteratedDeriv n f z₀` without characteristic assumptions.
 * Over a characteristic-zero nontrivially normed field `𝕜` into a complete space `F`,
   `AnalyticAt.iterate_dslope_apply_eq_inv_factorial_smul_iteratedDeriv`,
   `AnalyticAt.sub_sum_inv_factorial_smul_iteratedDeriv_eq_pow_smul_iterate_dslope`, and
@@ -49,6 +50,18 @@ theorem HasFPowerSeriesAt.iterate_dslope_apply_eq_coeff {p : FormalMultilinearSe
   rw [← (hp.has_fpower_series_iterate_dslope_fslope n).coeff_zero 1,
     ← FormalMultilinearSeries.coeff, FormalMultilinearSeries.coeff_iterate_fslope, zero_add]
 
+/-- If `f : 𝕜 → E` is analytic at `z₀` into a complete space `E`, then `n!` times the `n`-th
+iterated divided difference at `z₀` equals `iteratedDeriv n f z₀`, without any characteristic
+assumption on `𝕜`. -/
+theorem AnalyticAt.factorial_smul_iterate_dslope_apply [CompleteSpace E] {z₀ : 𝕜}
+    (hf : AnalyticAt 𝕜 f z₀) (n : ℕ) :
+    n.factorial • (swap dslope z₀)^[n] f z₀ = iteratedDeriv n f z₀ := by
+  obtain ⟨p, r, hr⟩ := hf
+  have hfact := hr.factorial_smul 1 n
+  rw [← iteratedDeriv_eq_iteratedFDeriv] at hfact
+  rw [hr.hasFPowerSeriesAt.iterate_dslope_apply_eq_coeff n, FormalMultilinearSeries.coeff]
+  exact hfact
+
 section CharZero
 
 variable {F : Type*} [CharZero 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
@@ -59,17 +72,9 @@ to `(n.factorial : 𝕜)⁻¹ • iteratedDeriv n f z₀`. -/
 theorem AnalyticAt.iterate_dslope_apply_eq_inv_factorial_smul_iteratedDeriv
     {f : 𝕜 → F} {z₀ : 𝕜} (hf : AnalyticAt 𝕜 f z₀) (n : ℕ) :
     (swap dslope z₀)^[n] f z₀ = (n.factorial : 𝕜)⁻¹ • iteratedDeriv n f z₀ := by
-  obtain ⟨p, hp⟩ := hf
-  obtain ⟨r, hr⟩ := hp
-  have hfact := hr.factorial_smul 1 n
-  rw [← iteratedDeriv_eq_iteratedFDeriv] at hfact
-  have hcoeff : n.factorial • p.coeff n = iteratedDeriv n f z₀ := by
-    rw [FormalMultilinearSeries.coeff]
-    exact hfact
-  have hp_eq : p.coeff n = (n.factorial : 𝕜)⁻¹ • iteratedDeriv n f z₀ := by
-    have hne : (n.factorial : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
-    rw [← hcoeff, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul, inv_mul_cancel₀ hne, one_smul]
-  rw [hr.hasFPowerSeriesAt.iterate_dslope_apply_eq_coeff n, hp_eq]
+  have hne : (n.factorial : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
+  rw [← hf.factorial_smul_iterate_dslope_apply n, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul,
+    inv_mul_cancel₀ hne, one_smul]
 
 /-- **Taylor's formula with analytic divided-difference remainder**: over a characteristic-zero
 nontrivially normed field `𝕜`, for `f : 𝕜 → F` analytic at `z₀` into a complete space `F`,

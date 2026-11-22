@@ -298,9 +298,7 @@ iterated derivative at `a`. -/
 theorem AnalyticAt.factorial_smul_coeff_taylorSeries [CompleteSpace A] (hf : AnalyticAt 𝕜 f a)
     (n : ℕ) :
     n.factorial • PowerSeries.coeff n (TauCeti.taylorSeries f a) = iteratedDeriv n f a := by
-  obtain ⟨p, r, hp⟩ := hf
-  rw [hp.hasFPowerSeriesAt.coeff_taylorSeries, iteratedDeriv_eq_iteratedFDeriv,
-    ← hp.factorial_smul, p.apply_eq_pow_smul_coeff, one_pow, one_smul]
+  rw [TauCeti.coeff_taylorSeries, hf.factorial_smul_iterate_dslope_apply n]
 
 namespace TauCeti
 

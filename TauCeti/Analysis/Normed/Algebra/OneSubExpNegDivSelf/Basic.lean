@@ -32,8 +32,9 @@ map.
 * `norm_oneSubExpNegDivSelf_sub_one_le`: over `ℝ` or `ℂ`, the series differs from `1` by at most
   `exp ‖a‖ - 1`.
 * `isUnit_oneSubExpNegDivSelf`: consequently it is a unit when `‖a‖ < log 2`.
-* `oneSubExpNegDivSelf_eq_dslope_exp_neg` and `Complex.oneSubExpNegDivSelf_eq_dslope_exp_neg`:
-  identification of `oneSubExpNegDivSelf` with the divided difference `dslope exp 0 (-z)`.
+* `oneSubExpNegDivSelf_eq_dslope_exp_zero_neg` and
+  `Complex.oneSubExpNegDivSelf_eq_dslope_exp_zero_neg`: identification of `oneSubExpNegDivSelf`
+  with the divided difference `dslope exp 0 (-z)`.
 
 ## References
 
@@ -177,7 +178,7 @@ section DSlope
 
 /-- Over `ℝ` or `ℂ`, the filled-in quotient `oneSubExpNegDivSelf 𝕜 z` coincides everywhere with
 `dslope NormedSpace.exp 0 (-z)`. -/
-theorem oneSubExpNegDivSelf_eq_dslope_exp_neg {𝕜 : Type*} [RCLike 𝕜] (z : 𝕜) :
+theorem oneSubExpNegDivSelf_eq_dslope_exp_zero_neg {𝕜 : Type*} [RCLike 𝕜] (z : 𝕜) :
     oneSubExpNegDivSelf 𝕜 z = dslope (exp : 𝕜 → 𝕜) 0 (-z) := by
   rcases eq_or_ne z 0 with rfl | hz
   · simp [dslope_same, (hasDerivAt_exp (𝕂 := 𝕜) (x := 0)).deriv]
@@ -191,8 +192,8 @@ theorem oneSubExpNegDivSelf_eq_dslope_exp_neg {𝕜 : Type*} [RCLike 𝕜] (z : 
 
 /-- The complex filled-in quotient `oneSubExpNegDivSelf ℂ z` coincides everywhere with
 `dslope Complex.exp 0 (-z)`. -/
-theorem _root_.Complex.oneSubExpNegDivSelf_eq_dslope_exp_neg (z : ℂ) :
+theorem _root_.Complex.oneSubExpNegDivSelf_eq_dslope_exp_zero_neg (z : ℂ) :
     oneSubExpNegDivSelf ℂ z = dslope Complex.exp 0 (-z) := by
-  simpa only [Complex.exp_eq_exp_ℂ] using _root_.oneSubExpNegDivSelf_eq_dslope_exp_neg z
+  simpa only [Complex.exp_eq_exp_ℂ] using _root_.oneSubExpNegDivSelf_eq_dslope_exp_zero_neg z
 
 end DSlope

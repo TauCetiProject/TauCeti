@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import TauCeti.Analysis.Analytic.ConstantOrder.Basic
+import TauCeti.Analysis.Analytic.Hadamard
 
 /-!
 # Joint analyticity of parametric divided differences
@@ -32,7 +32,7 @@ the diagonal, it is `(w - z₀)⁻¹ • (f (x, w) - f (x, z₀))`.
 * `AnalyticAt.iterate_dslope_snd`: joint analyticity of the `n`-th iterated second-variable
   divided difference at a point.
 * `AnalyticOnNhd.iterate_dslope_snd`: joint analyticity of the `n`-th iterated second-variable
-  divided difference on a set closed under `(x, w) ↦ (x, z₀)`.
+  divided difference at every point of a set `S` closed under `(x, w) ↦ (x, z₀)`.
 -/
 
 public section
@@ -106,9 +106,9 @@ theorem AnalyticAt.iterate_dslope_snd {f : E × 𝕜 → F} {x₀ : E} {z₀ w�
       hf₀.iterate_dslope_snd hf n
     simpa only [Function.iterate_succ_apply'] using ih₀.dslope_snd ih
 
-/-- If `f : E × 𝕜 → F` into a complete space `F` is analytic on `S` and `∀ p ∈ S, (p.1, z₀) ∈ S`,
-then for every `n : ℕ` the `n`-th iterated second-variable divided difference at `z₀` is analytic
-on `S`. -/
+/-- If `f : E × 𝕜 → F` into a complete space `F` is analytic at every point of `S` and
+`∀ p ∈ S, (p.1, z₀) ∈ S`, then for every `n : ℕ` the `n`-th iterated second-variable divided
+difference at `z₀` is analytic at every point of `S`. -/
 theorem AnalyticOnNhd.iterate_dslope_snd {f : E × 𝕜 → F} {S : Set (E × 𝕜)} {z₀ : 𝕜}
     (hf : AnalyticOnNhd 𝕜 f S) (hz₀ : ∀ p ∈ S, (p.1, z₀) ∈ S) (n : ℕ) :
     AnalyticOnNhd 𝕜

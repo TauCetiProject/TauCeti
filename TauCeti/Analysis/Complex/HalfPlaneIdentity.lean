@@ -12,32 +12,31 @@ import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
-# Identity theorems from a right half-plane
+# Identity theorems from local agreement and right half-planes
 
-Functions holomorphic on an open preconnected set `U` meeting some right half-plane `Re s > b`
-(in particular on a right half-plane `Re s > a` or on a punctured complex plane `{w}ᶜ`) that agree
-on `U ∩ {s | b < s.re}` agree throughout `U`. The codomain is any complete complex normed space.
+Functions holomorphic on an open preconnected set `U` that agree near some point `z₀ ∈ U` agree
+throughout `U` (`DifferentiableOn.eqOn_of_isOpen_of_isPreconnected_of_eventuallyEq`). In
+particular, functions holomorphic on a right half-plane `Re s > a` or on a punctured complex plane
+`{w}ᶜ` that agree on the intersection with `{s | b < s.re}` agree throughout their domain. The
+codomain is any complete complex normed space.
 -/
 
 public section
 
 open Set
+open scoped Topology
 
-/-- **Identity theorem from a right half-plane on an open preconnected domain.** Two functions
-holomorphic on an open preconnected set `U ⊆ ℂ` meeting `{s | b < s.re}` that agree on
-`U ∩ {s | b < s.re}` agree throughout `U`. -/
-theorem DifferentiableOn.eqOn_of_isOpen_of_isPreconnected_of_eqOn_re_gt
+/-- **Identity theorem on an open preconnected domain from local agreement.** Two functions
+holomorphic on an open preconnected set `U ⊆ ℂ` that agree near some point `z₀ ∈ U` agree
+throughout `U`. -/
+theorem DifferentiableOn.eqOn_of_isOpen_of_isPreconnected_of_eventuallyEq
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
-    {f g : ℂ → E} {U : Set ℂ} {b : ℝ}
+    {f g : ℂ → E} {U : Set ℂ} {z₀ : ℂ}
     (hf : DifferentiableOn ℂ f U) (hg : DifferentiableOn ℂ g U)
     (hU_open : IsOpen U) (hU_conn : IsPreconnected U)
-    (hne : (U ∩ {s | b < s.re}).Nonempty)
-    (hfg : EqOn f g (U ∩ {s | b < s.re})) : EqOn f g U := by
-  obtain ⟨z₀, hz₀U, hz₀b⟩ := hne
-  have hopen : IsOpen {s : ℂ | b < s.re} := isOpen_lt continuous_const Complex.continuous_re
-  exact (hf.analyticOnNhd hU_open).eqOn_of_preconnected_of_eventuallyEq
-    (hg.analyticOnNhd hU_open) hU_conn hz₀U
-    (hfg.eventuallyEq_of_mem ((hU_open.inter hopen).mem_nhds ⟨hz₀U, hz₀b⟩))
+    (hz₀ : z₀ ∈ U) (hfg : f =ᶠ[𝓝 z₀] g) : EqOn f g U :=
+  (hf.analyticOnNhd hU_open).eqOn_of_preconnected_of_eventuallyEq
+    (hg.analyticOnNhd hU_open) hU_conn hz₀ hfg
 
 /-- **Identity theorem on a right half-plane.** Two functions holomorphic on `Re s > a` that
 agree on `{s | a < s.re} ∩ {s | b < s.re}` agree throughout `Re s > a`. -/
@@ -45,11 +44,18 @@ theorem DifferentiableOn.eqOn_of_eqOn_re_gt {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℂ E] [CompleteSpace E] {f g : ℂ → E} {a b : ℝ}
     (hf : DifferentiableOn ℂ f {s | a < s.re}) (hg : DifferentiableOn ℂ g {s | a < s.re})
     (hfg : EqOn f g ({s | a < s.re} ∩ {s | b < s.re})) : EqOn f g {s | a < s.re} := by
-  refine hf.eqOn_of_isOpen_of_isPreconnected_of_eqOn_re_gt hg
-    (isOpen_lt continuous_const Complex.continuous_re) (convex_halfSpace_re_gt a).isPreconnected
-    ⟨((max a b + 1 : ℝ) : ℂ), ?_⟩ hfg
-  simp only [mem_inter_iff, mem_ofPred_eq, Complex.ofReal_re]
-  exact ⟨by linarith [le_max_left a b], by linarith [le_max_right a b]⟩
+  have hopenA : IsOpen {s : ℂ | a < s.re} := isOpen_lt continuous_const Complex.continuous_re
+  have hopenB : IsOpen {s : ℂ | b < s.re} := isOpen_lt continuous_const Complex.continuous_re
+  let z₀ : ℂ := ((max a b + 1 : ℝ) : ℂ)
+  have hz₀A : z₀ ∈ {s : ℂ | a < s.re} := by
+    simp only [z₀, mem_ofPred_eq, Complex.ofReal_re]
+    linarith [le_max_left a b]
+  have hz₀B : z₀ ∈ {s : ℂ | b < s.re} := by
+    simp only [z₀, mem_ofPred_eq, Complex.ofReal_re]
+    linarith [le_max_right a b]
+  exact hf.eqOn_of_isOpen_of_isPreconnected_of_eventuallyEq hg hopenA
+    (convex_halfSpace_re_gt a).isPreconnected hz₀A
+    (hfg.eventuallyEq_of_mem ((hopenA.inter hopenB).mem_nhds ⟨hz₀A, hz₀B⟩))
 
 /-- **Identity theorem on a punctured plane from a right half-plane.** Two functions holomorphic on
 `{w}ᶜ` that agree on `{w}ᶜ ∩ {s | b < s.re}` agree throughout `{w}ᶜ`. -/
@@ -57,13 +63,16 @@ theorem DifferentiableOn.eqOn_compl_singleton_of_eqOn_re_gt {E : Type*} [NormedA
     [NormedSpace ℂ E] [CompleteSpace E] {f g : ℂ → E} {w : ℂ} {b : ℝ}
     (hf : DifferentiableOn ℂ f {w}ᶜ) (hg : DifferentiableOn ℂ g {w}ᶜ)
     (hfg : EqOn f g ({w}ᶜ ∩ {s | b < s.re})) : EqOn f g {w}ᶜ := by
-  refine hf.eqOn_of_isOpen_of_isPreconnected_of_eqOn_re_gt hg isOpen_compl_singleton
+  have hopenB : IsOpen {s : ℂ | b < s.re} := isOpen_lt continuous_const Complex.continuous_re
+  let z₀ : ℂ := ((max w.re b + 1 : ℝ) : ℂ)
+  have hz₀w : z₀ ∈ ({w}ᶜ : Set ℂ) := fun h => by
+    have hre := congrArg Complex.re (mem_singleton_iff.mp h)
+    simp only [z₀, Complex.ofReal_re] at hre
+    linarith [le_max_left w.re b]
+  have hz₀B : z₀ ∈ {s : ℂ | b < s.re} := by
+    simp only [z₀, mem_ofPred_eq, Complex.ofReal_re]
+    linarith [le_max_right w.re b]
+  exact hf.eqOn_of_isOpen_of_isPreconnected_of_eventuallyEq hg isOpen_compl_singleton
     (isConnected_compl_singleton_of_one_lt_rank
       (Complex.rank_real_complex ▸ Nat.one_lt_ofNat) w).isPreconnected
-    ⟨((max w.re b + 1 : ℝ) : ℂ), ?_⟩ hfg
-  refine ⟨fun h => ?_, ?_⟩
-  · have hre := congrArg Complex.re (mem_singleton_iff.mp h)
-    simp only [Complex.ofReal_re] at hre
-    linarith [le_max_left w.re b]
-  · simp only [mem_ofPred_eq, Complex.ofReal_re]
-    linarith [le_max_right w.re b]
+    hz₀w (hfg.eventuallyEq_of_mem ((isOpen_compl_singleton.inter hopenB).mem_nhds ⟨hz₀w, hz₀B⟩))

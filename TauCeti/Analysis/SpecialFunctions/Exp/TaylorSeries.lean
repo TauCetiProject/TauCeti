@@ -5,58 +5,71 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+public import Mathlib.Analysis.Normed.Algebra.Exponential
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.RingTheory.PowerSeries.Exp
 public import TauCeti.Analysis.Analytic.TaylorSeries
-import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
-# Formal Taylor series for the complex exponential function
+# Formal Taylor series for the exponential function
 
-Identities evaluating `TauCeti.taylorSeries` at `0` for `z ↦ Complex.exp (a * z)`,
-`Complex.exp`, and `z ↦ Complex.exp z - 1`.
+Identities evaluating `TauCeti.taylorSeries` at `0` for `z ↦ NormedSpace.exp (a * z)`,
+`NormedSpace.exp`, and `z ↦ NormedSpace.exp z - 1` over any `[RCLike 𝕜]`.
 
 ## Main results
 
-* `Complex.taylorSeries_exp_const_mul_at_zero`:
-  `TauCeti.taylorSeries (fun z ↦ Complex.exp (a * z)) 0 =`
-  `PowerSeries.rescale a (PowerSeries.exp ℂ)`.
-* `Complex.taylorSeries_exp_at_zero`: `TauCeti.taylorSeries Complex.exp 0 = PowerSeries.exp ℂ`.
-* `Complex.taylorSeries_exp_sub_one_at_zero`:
-  `TauCeti.taylorSeries (fun z ↦ Complex.exp z - 1) 0 = PowerSeries.exp ℂ - 1`.
+* `NormedSpace.taylorSeries_exp_const_mul_at_zero`:
+  `TauCeti.taylorSeries (fun z ↦ NormedSpace.exp (a * z)) 0 =`
+  `PowerSeries.rescale a (PowerSeries.exp 𝕜)`.
+* `NormedSpace.taylorSeries_exp_at_zero`:
+  `TauCeti.taylorSeries (NormedSpace.exp : 𝕜 → 𝕜) 0 = PowerSeries.exp 𝕜`.
+* `NormedSpace.taylorSeries_exp_sub_one_at_zero`:
+  `TauCeti.taylorSeries (fun z ↦ NormedSpace.exp z - 1) 0 = PowerSeries.exp 𝕜 - 1`.
 -/
 
 public section
 
 noncomputable section
 
-namespace Complex
+namespace NormedSpace
 
-/-- The formal Taylor series at `0` of `z ↦ Complex.exp (a * z)` is
-`PowerSeries.rescale a (PowerSeries.exp ℂ)`. -/
-theorem taylorSeries_exp_const_mul_at_zero (a : ℂ) :
-    TauCeti.taylorSeries (fun z : ℂ => Complex.exp (a * z)) 0 =
-      PowerSeries.rescale a (PowerSeries.exp ℂ) := by
-  have hexp : AnalyticAt ℂ (fun z : ℂ => Complex.exp (a * z)) 0 := by fun_prop
+variable {𝕜 : Type*} [RCLike 𝕜]
+
+/-- The formal Taylor series at `0` of `z ↦ NormedSpace.exp (a * z)` is
+`PowerSeries.rescale a (PowerSeries.exp 𝕜)`. -/
+theorem taylorSeries_exp_const_mul_at_zero (a : 𝕜) :
+    TauCeti.taylorSeries (fun z : 𝕜 => NormedSpace.exp (a * z)) 0 =
+      PowerSeries.rescale a (PowerSeries.exp 𝕜) := by
+  have hexp : HasFPowerSeriesAt (fun z : 𝕜 => NormedSpace.exp (a * z))
+      ((expSeries 𝕜 𝕜).compContinuousLinearMap (a • ContinuousLinearMap.id 𝕜 𝕜)) 0 := by
+    have h0 : HasFPowerSeriesAt (NormedSpace.exp : 𝕜 → 𝕜) (expSeries 𝕜 𝕜)
+        ((a • ContinuousLinearMap.id 𝕜 𝕜) 0) := by
+      simpa using hasFPowerSeriesAt_exp_zero_of_radius_pos (expSeries_radius_pos 𝕜 𝕜)
+    simpa [Function.comp_def, smul_eq_mul] using h0.compContinuousLinearMap
   ext n
-  rw [hexp.coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv n,
-    PowerSeries.coeff_rescale, PowerSeries.coeff_exp, _root_.iteratedDeriv_cexp_const_mul]
-  simp [smul_eq_mul, div_eq_mul_inv, mul_comm]
+  rw [hexp.coeff_taylorSeries n, PowerSeries.coeff_rescale, PowerSeries.coeff_exp,
+    FormalMultilinearSeries.coeff]
+  simp only [FormalMultilinearSeries.compContinuousLinearMap,
+    ContinuousMultilinearMap.compContinuousLinearMap_apply, smul_apply,
+    ContinuousLinearMap.id_apply, smul_eq_mul, Pi.one_apply, mul_one, expSeries_apply_eq,
+    one_div, map_inv₀, map_natCast, mul_comm]
 
-/-- The formal Taylor series at `0` of `Complex.exp` is `PowerSeries.exp ℂ`. -/
+/-- The formal Taylor series at `0` of `NormedSpace.exp` is `PowerSeries.exp 𝕜`. -/
 theorem taylorSeries_exp_at_zero :
-    TauCeti.taylorSeries Complex.exp 0 = PowerSeries.exp ℂ := by
-  simpa using taylorSeries_exp_const_mul_at_zero (1 : ℂ)
+    TauCeti.taylorSeries (NormedSpace.exp : 𝕜 → 𝕜) 0 = PowerSeries.exp 𝕜 := by
+  simpa using taylorSeries_exp_const_mul_at_zero (1 : 𝕜)
 
-/-- The formal Taylor series at `0` of `z ↦ Complex.exp z - 1` is `PowerSeries.exp ℂ - 1`. -/
+/-- The formal Taylor series at `0` of `z ↦ NormedSpace.exp z - 1` is
+`PowerSeries.exp 𝕜 - 1`. -/
 theorem taylorSeries_exp_sub_one_at_zero :
-    TauCeti.taylorSeries (fun z : ℂ => Complex.exp z - 1) 0 = PowerSeries.exp ℂ - 1 := by
-  have hfn : (fun z : ℂ => Complex.exp z - 1) = Complex.exp - fun _ : ℂ => (1 : ℂ) := by
-    ext z
-    exact (Pi.sub_apply Complex.exp (fun _ : ℂ => (1 : ℂ)) z).symm
-  rw [hfn, TauCeti.taylorSeries_sub (by fun_prop) (by fun_prop), taylorSeries_exp_at_zero,
-    TauCeti.taylorSeries_const, map_one]
+    TauCeti.taylorSeries (fun z : 𝕜 => NormedSpace.exp z - 1) 0 = PowerSeries.exp 𝕜 - 1 := by
+  have hfn : (fun z : 𝕜 => NormedSpace.exp z - 1) =
+      (NormedSpace.exp : 𝕜 → 𝕜) - fun _ : 𝕜 => (1 : 𝕜) := rfl
+  have hexp : AnalyticAt 𝕜 (NormedSpace.exp : 𝕜 → 𝕜) 0 :=
+    (hasFPowerSeriesAt_exp_zero_of_radius_pos (expSeries_radius_pos 𝕜 𝕜)).analyticAt
+  rw [hfn, TauCeti.taylorSeries_sub hexp analyticAt_const,
+    taylorSeries_exp_at_zero, TauCeti.taylorSeries_const, map_one]
 
-end Complex
+end NormedSpace
 
 end

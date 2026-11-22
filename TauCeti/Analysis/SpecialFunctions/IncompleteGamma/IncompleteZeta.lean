@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import TauCeti.Analysis.SpecialFunctions.Exp.LatticeSum
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
+import TauCeti.Analysis.SpecialFunctions.Pow.Summable
 
 /-!
 # The incomplete Riemann zeta function
@@ -22,7 +23,8 @@ left side tends to `Γ(s)⁻¹ ∫₀^∞ t^{s−1}/(e^t − 1) dt = ζ(s)` (DLM
 ## Main results
 
 * `TauCeti.hasSum_setIntegral_cpow_mul_exp_neg_mul`: termwise integration of
-  `t^{s−1}/(e^t − 1) = ∑_{k ≥ 1} t^{s−1} e^{−kt}` over any subset of `(0, ∞)`;
+  `t^{s−1} e^{(1−c)t}/(e^t − 1) = ∑_{k ≥ 0} t^{s−1} e^{−(k+c)t}` over any subset of `(0, ∞)` for
+  `1 < Re s` and `0 < Re c`;
 * `TauCeti.integral_cpow_div_exp_sub_one_eq_Gamma_mul_riemannZeta`: DLMF 25.5.1,
   `∫₀^∞ t^{s−1}/(e^t − 1) dt = Γ(s) ζ(s)` for `1 < Re s`;
 * `TauCeti.hasSum_cpow_neg_mul_regularizedGamma` and
@@ -59,35 +61,45 @@ namespace TauCeti
 
 open Complex
 
-/-- Expansion of `1/(e^t − 1)` under the integral: for `1 < Re s` and every set
-`A ⊆ (0, ∞)`, `∫_A t^{s−1}/(e^t − 1) dt = ∑_{k ≥ 0} ∫_A t^{s−1} e^{−(k+1)t} dt`. -/
-theorem hasSum_setIntegral_cpow_mul_exp_neg_mul {s : ℂ} (hs : 1 < s.re) {A : Set ℝ}
-    (hA0 : A ⊆ Ioi 0) :
-    HasSum (fun k : ℕ => ∫ t in A, (t : ℂ) ^ (s - 1) * cexp (-((k + 1) * t)))
-      (∫ t in A, (t : ℂ) ^ (s - 1) / (cexp t - 1)) := by
+/-- Expansion of `exp ((1 - c) * t) / (exp t - 1)` under the integral: for `1 < Re s`,
+`0 < Re c`, and every set `A ⊆ (0, ∞)`,
+`∫_A t^{s−1} e^{(1−c)t}/(e^t − 1) dt = ∑_{k ≥ 0} ∫_A t^{s−1} e^{−(k+c)t} dt`. -/
+theorem hasSum_setIntegral_cpow_mul_exp_neg_mul {s c : ℂ} (hs : 1 < s.re) (hc : 0 < c.re)
+    {A : Set ℝ} (hA0 : A ⊆ Ioi 0) :
+    HasSum (fun k : ℕ => ∫ t in A, (t : ℂ) ^ (s - 1) * cexp (-(((k : ℂ) + c) * t)))
+      (∫ t in A, (t : ℂ) ^ (s - 1) * (cexp ((1 - c) * t) / (cexp t - 1))) := by
   have hs0 : 0 < s.re := by linarith
-  have hk (k : ℕ) : 0 < ((k : ℂ) + 1).re := by
-    rw [add_re, natCast_re, one_re]
+  have hk (k : ℕ) : 0 < ((k : ℂ) + c).re := by
+    rw [add_re, natCast_re]
     positivity
-  have hF (k : ℕ) : IntegrableOn (fun t : ℝ => (t : ℂ) ^ (s - 1) * cexp (-((k + 1) * t)))
+  have hF (k : ℕ) : IntegrableOn (fun t : ℝ => (t : ℂ) ^ (s - 1) * cexp (-(((k : ℂ) + c) * t)))
       (Ioi 0) := integrableOn_cpow_mul_exp_neg_mul_Ioi hs0 (hk k)
-  have hsum : Summable fun k : ℕ => ∫ t in A, ‖(t : ℂ) ^ (s - 1) * cexp (-((k + 1) * t))‖ := by
+  have hsum :
+      Summable fun k : ℕ => ∫ t in A, ‖(t : ℂ) ^ (s - 1) * cexp (-(((k : ℂ) + c) * t))‖ := by
     refine Summable.of_nonneg_of_le (fun k => integral_nonneg fun t => norm_nonneg _)
       (fun k => setIntegral_mono_set (hF k).norm (ae_of_all _ fun t => norm_nonneg _)
         (ae_of_all _ hA0)) ?_
-    have h := ((summable_nat_add_iff 1).mpr (Real.summable_one_div_nat_rpow.mpr hs)).mul_right
-      (Real.Gamma s.re)
+    have h := (summable_norm_natCast_add_cpow_neg hs (c.re : ℂ)).mul_left (Real.Gamma s.re)
     refine h.congr fun k => ?_
-    rw [integral_norm_cpow_mul_exp_neg_mul_Ioi hs0 (hk k), add_re, natCast_re, one_re,
-      Real.div_rpow zero_le_one (by positivity), Real.one_rpow]
-    push_cast
-    ring
+    have hre_pos : 0 < (k : ℝ) + c.re := by positivity
+    rw [integral_norm_cpow_mul_exp_neg_mul_Ioi hs0 (hk k)]
+    have hcpow : ‖((k : ℂ) + (c.re : ℂ)) ^ (-s)‖ = (((k : ℂ) + c).re⁻¹) ^ s.re := by
+      have hsum_eq : (k : ℂ) + (c.re : ℂ) = (((k : ℝ) + c.re : ℝ) : ℂ) := by push_cast; ring
+      rw [hsum_eq, norm_cpow_eq_rpow_re_of_pos hre_pos, neg_re, Real.rpow_neg hre_pos.le,
+        ← Real.inv_rpow hre_pos.le, add_re, natCast_re]
+    simp only [hcpow, ← one_div, mul_comm (Real.Gamma s.re)]
   convert hasSum_integral_of_summable_integral_norm (fun k => (hF k).mono_set hA0) hsum using 1
   refine integral_congr_ae ?_
   filter_upwards [ae_restrict_of_ae_restrict_of_subset hA0 (ae_restrict_mem measurableSet_Ioi)]
     with t ht0
-  rw [((hasSum_exp_neg_natCast_add_one_mul (z := t) (by simpa using ht0)).mul_left
-    ((t : ℂ) ^ (s - 1))).tsum_eq, div_eq_mul_one_div]
+  have htsum := ((hasSum_exp_neg_natCast_add_one_mul (z := t) (by simpa using ht0)).mul_left
+    ((t : ℂ) ^ (s - 1) * cexp ((1 - c) * t))).tsum_eq
+  rw [mul_one_div, ← mul_div_assoc'] at htsum
+  rw [← htsum]
+  refine tsum_congr fun k => ?_
+  rw [mul_assoc, ← exp_add]
+  congr 2
+  ring
 
 /-- For `1 < Re s`, `t ↦ t^{s−1}/(e^t − 1)` is integrable on `(0, ∞)`. -/
 theorem integrableOn_cpow_div_exp_sub_one {s : ℂ} (hs : 1 < s.re) :
@@ -124,8 +136,9 @@ theorem integrableOn_cpow_div_exp_sub_one {s : ℂ} (hs : 1 < s.re) :
 theorem integral_cpow_div_exp_sub_one_eq_Gamma_mul_riemannZeta {s : ℂ} (hs : 1 < s.re) :
     ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) / (cexp t - 1) = Gamma s * riemannZeta s := by
   rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs, ← tsum_mul_left]
-  refine (hasSum_setIntegral_cpow_mul_exp_neg_mul hs subset_rfl).tsum_eq.symm
-    |>.trans (tsum_congr fun k => ?_)
+  have hsum := hasSum_setIntegral_cpow_mul_exp_neg_mul hs (c := 1) one_pos subset_rfl
+  simp only [sub_self, zero_mul, exp_zero, one_div, ← div_eq_mul_inv] at hsum
+  refine hsum.tsum_eq.symm.trans (tsum_congr fun k => ?_)
   have hk : 0 < ((k : ℂ) + 1).re := by
     rw [add_re, natCast_re, one_re]
     positivity
@@ -142,8 +155,10 @@ theorem hasSum_cpow_neg_mul_regularizedGamma {s : ℂ} (hs : 1 < s.re) {x : ℝ}
   refine (hasSum_nat_add_iff' 1).mp ?_
   rw [Finset.sum_range_one, Nat.cast_zero, zero_cpow hs1, zero_mul, sub_zero,
     intervalIntegral.integral_of_le hx]
-  convert (hasSum_setIntegral_cpow_mul_exp_neg_mul hs
-    Ioc_subset_Ioi_self).mul_left (Gamma s)⁻¹ using 1
+  have hsum := (hasSum_setIntegral_cpow_mul_exp_neg_mul hs (c := 1) one_pos
+    (A := Ioc 0 x) Ioc_subset_Ioi_self).mul_left (Gamma s)⁻¹
+  simp only [sub_self, zero_mul, exp_zero, one_div, ← div_eq_mul_inv] at hsum
+  convert hsum using 1
   funext k
   have h := intervalIntegral_cpow_mul_exp_neg_mul hs0 (Nat.cast_add_one_ne_zero k) hx
   rw [intervalIntegral.integral_of_le hx] at h

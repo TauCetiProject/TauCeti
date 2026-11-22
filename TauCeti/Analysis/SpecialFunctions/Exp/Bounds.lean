@@ -61,9 +61,10 @@ is bounded on `x ≥ 0`.
   `((y ^ m)⁻¹ + y ^ m) exp (-a ((y - 1)² / y)) ≤ 2 max (m! / (a / 4) ^ m) (2 ^ m)` for `0 < a`,
   `0 < y`.
 * `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
-* `TauCeti.norm_exp_neg_mul_div_one_sub_exp_neg_le`,
-  `TauCeti.rpow_mul_norm_exp_neg_mul_div_one_sub_exp_neg_le`: uniform bounds for
-  `exp (-c * t) / (1 - exp (-t))` and its `t ^ a`-weighted form on `0 < T ≤ t`.
+* `TauCeti.norm_exp_neg_mul_div_one_sub_exp_neg_le`: uniform bound for
+  `exp (-c * t) / (1 - exp (-t))` on `0 < T ≤ t`.
+* `TauCeti.rpow_mul_norm_exp_neg_mul_div_one_sub_exp_neg_le`: uniform bound for
+  `t ^ a * ‖exp (-c * t) / (1 - exp (-t))‖` for `0 < T ≤ t`, `1 ≤ t`, `a ≤ A`, and `η ≤ c.re`.
 * `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
 -/
 

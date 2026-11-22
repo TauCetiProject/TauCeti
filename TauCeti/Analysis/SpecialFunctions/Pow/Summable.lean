@@ -49,10 +49,9 @@ theorem tendsto_cofinite_zero_of_summable_rpow {ι : Type*} {f : ι → ℝ} {p 
 /-- For any `c : ℂ`, `(n : ℂ) + c` has positive real part for all sufficiently large `n : ℕ`. -/
 theorem eventually_re_natCast_add_pos (c : ℂ) :
     ∀ᶠ n : ℕ in Filter.atTop, 0 < ((n : ℂ) + c).re := by
-  obtain ⟨N, hN⟩ := exists_nat_gt (-c.re)
-  refine Filter.eventually_atTop.mpr ⟨N, fun n hn => ?_⟩
+  filter_upwards [(Filter.eventually_gt_atTop (-c.re)).natCast_atTop] with n hn
   simp only [add_re, natCast_re]
-  linarith [show (N : ℝ) ≤ n from Nat.cast_le.mpr hn]
+  linarith
 
 /-- For `1 < s.re` and any `c : ℂ`, the principal-power series `∑' n : ℕ, ‖(n + c) ^ (-s)‖` is
 summable (for `c = -n` with `n : ℕ`, the `n`-th summand uses the totalized principal power

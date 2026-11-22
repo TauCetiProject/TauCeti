@@ -92,11 +92,9 @@ summable. When `c ∉ -ℕ`, this is absolute convergence of `∑' n, (n + c) ^ 
 holds formally there as well. -/
 theorem summable_norm_complexHurwitzSeries_term {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
     Summable (fun n : ℕ => ‖Complex.exp (-s * Complex.log (n + c))‖) := by
-  obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp (eventually_re_natCast_add_pos c)
-  refine (summable_nat_add_iff N).mp
-    (((summable_nat_add_iff N).mpr (summable_norm_natCast_add_cpow_neg hs c)).congr fun n => ?_)
-  have hne : (((n + N : ℕ) : ℂ) + c) ≠ 0 := fun h0 =>
-    (hN (n + N) (Nat.le_add_left N n)).ne' (by rw [h0, zero_re])
+  refine (summable_norm_natCast_add_cpow_neg hs c).congr_atTop ?_
+  filter_upwards [eventually_re_natCast_add_pos c] with n hn
+  have hne : (n : ℂ) + c ≠ 0 := fun h0 => hn.ne' (by rw [h0, zero_re])
   rw [cpow_def_of_ne_zero hne, mul_comm]
 
 /-- For `1 < s.re` and any `c : ℂ`, the defining terms of `complexHurwitzSeries s c` are

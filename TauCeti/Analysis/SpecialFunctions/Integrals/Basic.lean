@@ -30,9 +30,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   `r > -1`;
 * `TauCeti.intervalIntegrable_sub_rpow`, `TauCeti.integral_sub_rpow`:
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
-* `TauCeti.integrableOn_Ioc_zero_cpow`, `TauCeti.integral_Ioc_zero_cpow`:
-  `t ↦ (t : ℂ) ^ r` is integrable on `Set.Ioc 0 b` for `-1 < r.re`, with integral
-  `(b : ℂ) ^ (r + 1) / (r + 1)` when `0 ≤ b`.
+* `TauCeti.integral_Ioc_zero_cpow`: for `-1 < r.re` and `0 ≤ b`,
+  `∫ t in Set.Ioc (0 : ℝ) b, (t : ℂ) ^ r = (b : ℂ) ^ (r + 1) / (r + 1)`.
 * `TauCeti.integral_abs_sub_rpow_of_le`: for `r > -1` and `a ≤ c ≤ b`,
   `∫ x in a..b, |x - c|^r = ((c - a)^(r + 1) + (b - c)^(r + 1)) / (r + 1)`.
 * `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
@@ -119,14 +118,6 @@ theorem integral_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
   rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_self,
     integral_rpow (Or.inl hr), Real.zero_rpow (by linarith : r + 1 ≠ 0), sub_zero]
 
-/-- For `-1 < r.re`, the complex power `t ↦ (t : ℂ) ^ r` is integrable on `Set.Ioc (0 : ℝ) b` for
-every real `b`. -/
-theorem integrableOn_Ioc_zero_cpow {r : ℂ} (hr : -1 < r.re) (b : ℝ) :
-    MeasureTheory.IntegrableOn (fun t : ℝ => (t : ℂ) ^ r) (Set.Ioc 0 b) := by
-  rcases le_total 0 b with _ | hb
-  · exact (intervalIntegral.intervalIntegrable_cpow' hr).1
-  · rw [Set.Ioc_eq_empty (not_lt.mpr hb)]
-    exact MeasureTheory.integrableOn_empty
 
 /-- For `-1 < r.re` and `0 ≤ b`, the set integral of `(t : ℂ) ^ r` over `(0, b]` is
 `(b : ℂ) ^ (r + 1) / (r + 1)`. -/
