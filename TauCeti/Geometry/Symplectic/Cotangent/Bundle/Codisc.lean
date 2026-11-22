@@ -26,10 +26,11 @@ of a compact manifold is the standard example of a Liouville domain, and these a
 which the symplectic capacities of cotangent bundles are computed. This file establishes their
 point-set and smooth structure.
 
-Both sets are closed, and compact when `M` is compact
-(`TauCeti.CotangentBundle.isCompact_codiscBundle`) by `IsCompact.norm_le_bundle_of_continuous`:
-near each point the bundle coordinates of a covector are bounded by a multiple of its norm, since
-the inverse tangent trivialization is locally bounded.
+Both sets are closed, and their parts over a compact subset of `M` are compact
+(`TauCeti.CotangentBundle.isCompact_codiscBundle_inter_preimage_proj`), by
+`IsCompact.norm_le_bundle_of_continuous`: near each point the bundle coordinates of a covector are
+bounded by a multiple of its norm, since the inverse tangent trivialization is locally bounded. In
+particular both are compact when `M` is compact (`TauCeti.CotangentBundle.isCompact_codiscBundle`).
 
 Since every nonzero value is a regular value of the norm of covectors
 (`TauCeti.CotangentBundle.isRegularValue_norm_snd`), `S*M` is a regular level. For a smooth metric
@@ -52,9 +53,10 @@ normalizing a smooth family of nonzero covectors gives a smooth map into `S*M`
 
 ## Main results
 
-* `TauCeti.CotangentBundle.isClosed_codiscBundle` and
-  `TauCeti.CotangentBundle.isCompact_codiscBundle`: `D*M` is closed, and compact over a compact
-  manifold; similarly for `S*M`.
+* `TauCeti.CotangentBundle.isClosed_codiscBundle`,
+  `TauCeti.CotangentBundle.isCompact_codiscBundle_inter_preimage_proj` and
+  `TauCeti.CotangentBundle.isCompact_codiscBundle`: `D*M` is closed, compact over every compact
+  subset of `M`, and compact over a compact manifold; similarly for `S*M`.
 * `TauCeti.CotangentBundle.instIsManifoldCosphereBundle`: `S*M` is a smooth manifold.
 * `TauCeti.CotangentBundle.isSmoothEmbedding_coe_cosphereBundle`: its inclusion into `T*M` is a
   smooth embedding.
@@ -166,13 +168,15 @@ theorem isClosed_codiscBundle : IsClosed (codiscBundle I M) :=
 theorem isClosed_cosphereBundle : IsClosed (cosphereBundle I M) :=
   isClosed_eq continuous_norm_snd continuous_const
 
-/-- **The unit codisc bundle of a compact Riemannian manifold is compact.** -/
-theorem isCompact_codiscBundle [CompactSpace M] : IsCompact (codiscBundle I M) := by
+/-- **The unit codisc bundle over a compact set is compact.** The covectors of norm at most one
+lying over a compact subset of a Riemannian manifold form a compact subset of `T*M`. -/
+theorem isCompact_codiscBundle_inter_preimage_proj {K : Set M} (hK : IsCompact K) :
+    IsCompact (codiscBundle I M ∩ π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ⁻¹' K) := by
   have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 0) (F := E)
     (V := fun x : M ↦ TangentSpace I x)
-  convert (isCompact_univ (X := M)).norm_le_bundle_of_continuous (F := E →L[ℝ] ℝ)
+  convert hK.norm_le_bundle_of_continuous (F := E →L[ℝ] ℝ)
     (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) continuous_norm_snd (fun x ↦ ?_) 1 using 1
-  · ext; simp
+  · ext; simp [and_comm]
   -- In bundle coordinates, a covector is composed with the inverse tangent trivialization, which
   -- is locally bounded.
   set e := trivializationAt E (TangentSpace I) x
@@ -188,10 +192,21 @@ theorem isCompact_codiscBundle [CompactSpace M] : IsCompact (codiscBundle I M) :
   exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
     (mul_le_mul_of_nonneg_left hy.le (norm_nonneg _))
 
+/-- The unit cosphere bundle over a compact subset of a Riemannian manifold is compact. -/
+theorem isCompact_cosphereBundle_inter_preimage_proj {K : Set M} (hK : IsCompact K) :
+    IsCompact (cosphereBundle I M ∩
+      π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ⁻¹' K) := by
+  have := (isCompact_codiscBundle_inter_preimage_proj (I := I) hK).inter_right
+    (isClosed_cosphereBundle (I := I))
+  rwa [inter_right_comm, inter_eq_right.2 cosphereBundle_subset_codiscBundle] at this
+
+/-- **The unit codisc bundle of a compact Riemannian manifold is compact.** -/
+theorem isCompact_codiscBundle [CompactSpace M] : IsCompact (codiscBundle I M) := by
+  simpa using isCompact_codiscBundle_inter_preimage_proj (I := I) (isCompact_univ (X := M))
+
 /-- The unit cosphere bundle of a compact Riemannian manifold is compact. -/
-theorem isCompact_cosphereBundle [CompactSpace M] : IsCompact (cosphereBundle I M) :=
-  isCompact_codiscBundle.of_isClosed_subset isClosed_cosphereBundle
-    cosphereBundle_subset_codiscBundle
+theorem isCompact_cosphereBundle [CompactSpace M] : IsCompact (cosphereBundle I M) := by
+  simpa using isCompact_cosphereBundle_inter_preimage_proj (I := I) (isCompact_univ (X := M))
 
 instance [CompactSpace M] : CompactSpace (cosphereBundle I M) :=
   isCompact_iff_compactSpace.1 isCompact_cosphereBundle

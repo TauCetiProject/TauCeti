@@ -348,7 +348,7 @@ private lemma localHom_self (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 j
   unfold localHom localTrans
   rw [D.hom_self _ (i := ⟨j, k⟩) _ (by rw [← Category.assoc, hb, Category.assoc, ha]),
     Category.id_comp]
-  erw [← pullHom_comp, Iso.hom_inv_id, pullHom_id']
+  erw [← pullHom_comp, Iso.hom_inv_id, pullHom_id_self]
   simp only [Category.id_comp, Cat.Hom.inv_hom_id_toNatTrans_app]
   rfl
 
@@ -365,7 +365,7 @@ private lemma localHom_comp (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 j
       localHom D M α ha₁ ha₃ r b₁ b₃ hb₁ hb₃ := by
   unfold localHom localTrans
   simp only [Category.assoc, Cat.Hom.hom_inv_id_toNatTrans_app_assoc]
-  erw [← pullHom_comp_assoc, Iso.inv_hom_id, pullHom_id']
+  erw [← pullHom_comp_assoc, Iso.inv_hom_id, pullHom_id_self]
   rw [Category.id_comp, D.hom_comp_assoc]
 
 private lemma localHom_precomp (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
@@ -384,11 +384,11 @@ private lemma localHom_precomp (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.
   rw [pullHom_comp _ _ g (g ≫ r) ((g ≫ r) ≫ a₁) (g ≫ r) rfl (Category.assoc g r a₁).symm rfl,
     pullHom_comp _ _ g ((g ≫ r) ≫ a₁) ((g ≫ r) ≫ a₂) (g ≫ r)
       (Category.assoc g r a₁).symm (Category.assoc g r a₂).symm rfl,
-    pullHom_mapComp'_inv (M j₁) a₁ r (r ≫ a₁) rfl g (g ≫ r) ((g ≫ r) ≫ a₁) rfl
+    pullHom_mapComp'_inv a₁ (M j₁) r (r ≫ a₁) rfl g (g ≫ r) ((g ≫ r) ≫ a₁) rfl
       (Category.assoc g r a₁).symm,
     pullHom_localTrans D M α _ _ g b₁ b₂ hb₁ hb₂ ((g ≫ r) ≫ a₁) ((g ≫ r) ≫ a₂) ((g ≫ r) ≫ q)
       (Category.assoc g r a₁).symm (Category.assoc g r a₂).symm (Category.assoc g r q).symm,
-    pullHom_mapComp'_hom (M j₂) a₂ r (r ≫ a₂) rfl g (g ≫ r) ((g ≫ r) ≫ a₂) rfl
+    pullHom_mapComp'_hom a₂ (M j₂) r (r ≫ a₂) rfl g (g ≫ r) ((g ≫ r) ≫ a₂) rfl
       (Category.assoc g r a₂).symm]
 
 /-- Existence and uniqueness of the glued transition morphism `a₁^* (M j₁) ⟶ a₂^* (M j₂)` on `W`

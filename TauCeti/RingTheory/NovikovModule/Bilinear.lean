@@ -120,6 +120,10 @@ output, the reference coordinates are given by the corresponding products of the
   a matrix.
 * `TauCeti.NovikovModule.eq_novikovProductOfMatrix`: every Novikov-bilinear map is the product of a
   matrix.
+* `TauCeti.NovikovModule.kernelOfMatrix_vadd_single_mul`,
+  `TauCeti.NovikovModule.novikovProductOfMatrix_vadd_single_mul`: moving the reference generators
+  by `g₁`, `g₂` and `g₀` and multiplying the entries by `e^(g₁ + g₂ - g₀)` gives the same kernel
+  and product.
 * `TauCeti.NovikovModule.coordinates_novikovMapOfMatrix_novikovProductOfMatrix`,
   `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left`,
   `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right`,
@@ -891,6 +895,19 @@ theorem kernelOfMatrix_kernelMatrix [Finite ι₀]
     abel
   rw [kernelOfMatrix_apply, kernelMatrix_coeff, e, hp]
 
+/-- **Change of reference generators.** Moving the reference generators to `g₁ i +ᵥ r₁ i`,
+`g₂ j +ᵥ r₂ j` and `g₀ k +ᵥ r₀ k`, and multiplying the `(i, j, k)` entry by the monomial
+`e^(g₁ i + g₂ j - g₀ k)`, gives the same kernel. -/
+theorem kernelOfMatrix_vadd_single_mul (g₁ : ι₁ → H) (g₂ : ι₂ → H) (g₀ : ι₀ → H) :
+    kernelOfMatrix (fun i => g₁ i +ᵥ r₁ i) (fun j => g₂ j +ᵥ r₂ j) (fun k => g₀ k +ᵥ r₀ k)
+        (fun i j k => NovikovSeries.single (g₁ i + g₂ j - g₀ k) 1 * M i j k) =
+      kernelOfMatrix r₁ r₂ r₀ M := by
+  funext ⟨i, p₁⟩ ⟨j, p₂⟩ ⟨k, p₀⟩
+  rw [kernelOfMatrix_apply, kernelOfMatrix_apply, NovikovSeries.coeff_single_mul, one_mul,
+    vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub]
+  congr 1
+  abel
+
 end Semiring
 
 section AddGroup
@@ -959,6 +976,21 @@ theorem novikovProductOfMatrix_eq_kernelProduct {C : ℝ}
       kernelProduct hn (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ M) a b := by
   ext p₀
   rw [novikovProductOfMatrix_apply_val, kernelProduct_apply_val]
+
+/-- **The product of a matrix does not depend on the reference generators.** Moving the reference
+generators to `g₁ i +ᵥ r₁ i`, `g₂ j +ᵥ r₂ j` and `g₀ k +ᵥ r₀ k`, and multiplying the `(i, j, k)`
+entry by the monomial `e^(g₁ i + g₂ j - g₀ k)`, gives the same product. -/
+theorem novikovProductOfMatrix_vadd_single_mul (g₁ : ι₁ → H) (g₂ : ι₂ → H) (g₀ : ι₀ → H) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ (fun i => g₁ i +ᵥ r₁ i) (fun j => g₂ j +ᵥ r₂ j)
+        (fun k => g₀ k +ᵥ r₀ k)
+        (fun i j k => NovikovSeries.single (g₁ i + g₂ j - g₀ k) 1 * M i j k) =
+      novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ M := by
+  let := module (R := R) hF₁
+  let := module (R := R) hF₂
+  let := module (R := R) hF₀
+  refine LinearMap.ext fun a => LinearMap.ext fun b => Subtype.ext (funext fun p₀ => ?_)
+  rw [novikovProductOfMatrix_apply_val, novikovProductOfMatrix_apply_val,
+    kernelOfMatrix_vadd_single_mul]
 
 end Product
 
