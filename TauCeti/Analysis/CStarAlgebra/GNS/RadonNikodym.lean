@@ -76,24 +76,21 @@ private def gnsDominationMap (f g : A →ₚ[ℂ] ℂ) : f.GNS →L[ℂ] g.GNS :
 private theorem norm_toGNS_le_of_dominated {f g : A →ₚ[ℂ] ℂ} {C : ℝ}
     (hfg : ∀ a, 0 ≤ a → g a ≤ (C : ℂ) * f a) (a : A) :
     ‖g.toGNS a‖ ≤ Real.sqrt (max C 0) * ‖f.toGNS a‖ := by
-  have hle := hfg (star a * a) (star_mul_self_nonneg a)
   have hf_re : 0 ≤ (f (star a * a)).re :=
     (Complex.le_def.mp (f.map_nonneg (star_mul_self_nonneg a))).1
-  have hre : (g (star a * a)).re ≤ max C 0 * (f (star a * a)).re := by
-    have h1 := (Complex.le_def.mp hle).1
-    simp only [Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero] at h1
-    exact h1.trans (mul_le_mul_of_nonneg_right (le_max_left C 0) hf_re)
-  calc
-    ‖g.toGNS a‖ = Real.sqrt (g (star a * a)).re := by simp [toGNS_apply, preGNS_norm_def]
-    _ ≤ Real.sqrt (max C 0 * (f (star a * a)).re) := Real.sqrt_le_sqrt hre
-    _ = Real.sqrt (max C 0) * Real.sqrt (f (star a * a)).re := Real.sqrt_mul (le_max_right C 0) _
-    _ = Real.sqrt (max C 0) * ‖f.toGNS a‖ := by simp [toGNS_apply, preGNS_norm_def]
+  have h1 := (Complex.le_def.mp (hfg (star a * a) (star_mul_self_nonneg a))).1
+  simp only [Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero] at h1
+  calc ‖g.toGNS a‖ = Real.sqrt (g (star a * a)).re := by simp [toGNS_apply, preGNS_norm_def]
+    _ ≤ Real.sqrt (max C 0 * (f (star a * a)).re) :=
+        Real.sqrt_le_sqrt (h1.trans (mul_le_mul_of_nonneg_right (le_max_left C 0) hf_re))
+    _ = Real.sqrt (max C 0) * ‖f.toGNS a‖ := by
+        rw [Real.sqrt_mul (le_max_right C 0)]; simp [toGNS_apply, preGNS_norm_def]
 
 private theorem gnsDominationMap_apply_toGNS {f g : A →ₚ[ℂ] ℂ} {C : ℝ}
     (hfg : ∀ a, 0 ≤ a → g a ≤ (C : ℂ) * f a) (a : A) :
     f.gnsDominationMap g (f.toGNS a) = g.toGNS a :=
-  LinearMap.extendOfNorm_eq f.denseRange_toGNS ⟨Real.sqrt (max C 0), norm_toGNS_le_of_dominated hfg⟩
-    a
+  LinearMap.extendOfNorm_eq f.denseRange_toGNS
+    ⟨Real.sqrt (max C 0), norm_toGNS_le_of_dominated hfg⟩ a
 
 private theorem opNorm_gnsDominationMap_le {f g : A →ₚ[ℂ] ℂ} {C : ℝ} (hC : 0 ≤ C)
     (hfg : ∀ a, 0 ≤ a → g a ≤ (C : ℂ) * f a) :
@@ -143,10 +140,8 @@ theorem opNorm_gnsRadonNikodym_le {f g : A →ₚ[ℂ] ℂ} {C : ℝ} (hC : 0 �
     (hfg : ∀ a, 0 ≤ a → g a ≤ (C : ℂ) * f a) : ‖f.gnsRadonNikodym g‖ ≤ C := by
   rw [gnsRadonNikodym, norm_adjoint_comp_self]
   have h := opNorm_gnsDominationMap_le hC hfg
-  calc
-    ‖f.gnsDominationMap g‖ * ‖f.gnsDominationMap g‖ ≤ Real.sqrt C * Real.sqrt C :=
-      mul_le_mul h h (norm_nonneg (f.gnsDominationMap g)) (Real.sqrt_nonneg C)
-    _ = C := Real.mul_self_sqrt hC
+  exact (mul_le_mul h h (norm_nonneg (f.gnsDominationMap g))
+    (Real.sqrt_nonneg C)).trans_eq (Real.mul_self_sqrt hC)
 
 /-- If `g ≤ C • f` with `0 ≤ C`, then `C • 1 - T` is positive. -/
 theorem isPositive_smul_one_sub_gnsRadonNikodym {f g : A →ₚ[ℂ] ℂ} {C : ℝ} (hC : 0 ≤ C)
@@ -167,10 +162,10 @@ theorem gnsRadonNikodym_mem_centralizer {f g : A →ₚ[ℂ] ℂ} {C : ℝ}
   rintro _ ⟨a, rfl⟩
   have h1 : f.gnsNonUnitalStarAlgHom a ∘L (f.gnsDominationMap g).adjoint =
       (f.gnsDominationMap g).adjoint ∘L g.gnsNonUnitalStarAlgHom a := by
-    have h := congrArg ContinuousLinearMap.adjoint (gnsDominationMap_intertwines hfg (star a))
-    simpa only [adjoint_comp, ← star_eq_adjoint, ← map_star, star_star] using h
-  ext v
-  simp only [mul_apply_eq_comp, gnsRadonNikodym, ContinuousLinearMap.coe_comp, Function.comp_apply]
+    simpa only [adjoint_comp, ← star_eq_adjoint, ← map_star, star_star] using
+      congrArg ContinuousLinearMap.adjoint (gnsDominationMap_intertwines hfg (star a))
+  ext v; simp only [mul_apply_eq_comp, gnsRadonNikodym, ContinuousLinearMap.coe_comp,
+    Function.comp_apply]
   have h1' := DFunLike.congr_fun h1 (f.gnsDominationMap g v)
   have h2' := DFunLike.congr_fun (gnsDominationMap_intertwines hfg a) v
   simp only [ContinuousLinearMap.coe_comp, Function.comp_apply] at h1' h2'
@@ -182,8 +177,7 @@ theorem eq_gnsRadonNikodym_of_inner_eq {f g : A →ₚ[ℂ] ℂ} {C : ℝ}
     (hfg : ∀ a, 0 ≤ a → g a ≤ (C : ℂ) * f a) {T : f.GNS →L[ℂ] f.GNS}
     (hT : ∀ a b, ⟪f.toGNS a, T (f.toGNS b)⟫_ℂ = g (star a * b)) :
     T = f.gnsRadonNikodym g := by
-  ext v
-  refine ext_inner_left ℂ fun u => ?_
+  ext v; refine ext_inner_left ℂ fun u => ?_
   refine f.denseRange_toGNS.induction_on u (isClosed_eq (by fun_prop) (by fun_prop)) fun a => ?_
   refine f.denseRange_toGNS.induction_on v (isClosed_eq (by fun_prop) (by fun_prop)) fun b => ?_
   rw [hT a b, inner_gnsRadonNikodym_toGNS hfg a b]
@@ -234,63 +228,45 @@ theorem gnsVectorFunctional_apply (f : B →ₚ[ℂ] ℂ) (T : f.GNS →L[ℂ] f
   simp [gnsVectorFunctional, toGNS_apply]
 
 /-- The vector functional of the identity operator is `f`. -/
--- Not a simp lemma: `gnsVectorFunctional_apply` already simplifies `f.gnsVectorFunctional 1 a` to
--- `f a`.
+-- Not a simp lemma: `gnsVectorFunctional_apply` already simplifies `f.gnsVectorFunctional 1 a`.
 theorem gnsVectorFunctional_one (f : B →ₚ[ℂ] ℂ) (a : B) :
-    f.gnsVectorFunctional 1 a = f a := by
-  simp
+    f.gnsVectorFunctional 1 a = f a := by simp
 
 /-- The vector functional of the zero operator is `0`. -/
-@[simp]
-theorem gnsVectorFunctional_zero (f : B →ₚ[ℂ] ℂ) :
-    f.gnsVectorFunctional 0 = 0 := by
-  ext a
-  simp
+@[simp] theorem gnsVectorFunctional_zero (f : B →ₚ[ℂ] ℂ) :
+    f.gnsVectorFunctional 0 = 0 := by ext a; simp
 
 /-- The vector functional is additive in the operator. -/
-@[simp]
-theorem gnsVectorFunctional_add (f : B →ₚ[ℂ] ℂ) (S T : f.GNS →L[ℂ] f.GNS) :
+@[simp] theorem gnsVectorFunctional_add (f : B →ₚ[ℂ] ℂ) (S T : f.GNS →L[ℂ] f.GNS) :
     f.gnsVectorFunctional (S + T) = f.gnsVectorFunctional S + f.gnsVectorFunctional T := by
-  ext a
-  simp [inner_add_right]
+  ext a; simp [inner_add_right]
 
 /-- The vector functional negates with the operator. -/
-@[simp]
-theorem gnsVectorFunctional_neg (f : B →ₚ[ℂ] ℂ) (T : f.GNS →L[ℂ] f.GNS) :
-    f.gnsVectorFunctional (-T) = -f.gnsVectorFunctional T := by
-  ext a
-  simp [inner_neg_right]
+@[simp] theorem gnsVectorFunctional_neg (f : B →ₚ[ℂ] ℂ) (T : f.GNS →L[ℂ] f.GNS) :
+    f.gnsVectorFunctional (-T) = -f.gnsVectorFunctional T := by ext a; simp [inner_neg_right]
 
 /-- The vector functional is subtractive in the operator. -/
-@[simp]
-theorem gnsVectorFunctional_sub (f : B →ₚ[ℂ] ℂ) (S T : f.GNS →L[ℂ] f.GNS) :
+@[simp] theorem gnsVectorFunctional_sub (f : B →ₚ[ℂ] ℂ) (S T : f.GNS →L[ℂ] f.GNS) :
     f.gnsVectorFunctional (S - T) = f.gnsVectorFunctional S - f.gnsVectorFunctional T := by
-  ext a
-  simp [inner_sub_right]
+  ext a; simp [inner_sub_right]
 
 /-- The vector functional is linear in scalar multiples of the operator. -/
-@[simp]
-theorem gnsVectorFunctional_smul (f : B →ₚ[ℂ] ℂ) (c : ℂ) (T : f.GNS →L[ℂ] f.GNS) :
-    f.gnsVectorFunctional (c • T) = c • f.gnsVectorFunctional T := by
-  ext a
-  simp [inner_smul_right]
+@[simp] theorem gnsVectorFunctional_smul (f : B →ₚ[ℂ] ℂ) (c : ℂ) (T : f.GNS →L[ℂ] f.GNS) :
+    f.gnsVectorFunctional (c • T) = c • f.gnsVectorFunctional T := by ext a; simp [inner_smul_right]
 
 /-- For an operator `T` in the GNS commutant, the star pairing of `f.gnsVectorFunctional T` is
 the matrix coefficient `⟪[a]_f, T [b]_f⟫`. -/
 theorem gnsVectorFunctional_star_mul (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] f.GNS}
     (hT : T ∈ Set.centralizer (Set.range f.gnsStarAlgHom)) (a b : B) :
     f.gnsVectorFunctional T (star a * b) = ⟪f.toGNS a, T (f.toGNS b)⟫_ℂ := by
-  have hcomm : f.gnsStarAlgHom (star a) * T = T * f.gnsStarAlgHom (star a) :=
-    hT _ ⟨star a, rfl⟩
-  calc
-    f.gnsVectorFunctional T (star a * b)
-        = ⟪f.gnsVector, (T * f.gnsStarAlgHom (star a)) (f.gnsStarAlgHom b f.gnsVector)⟫_ℂ := by
-          simp [map_mul, mul_apply_eq_comp]
+  have hcomm := hT _ ⟨star a, rfl⟩
+  calc f.gnsVectorFunctional T (star a * b)
+      = ⟪f.gnsVector, (T * f.gnsStarAlgHom (star a)) (f.gnsStarAlgHom b f.gnsVector)⟫_ℂ := by
+        simp [map_mul, mul_apply_eq_comp]
     _ = ⟪f.gnsVector, f.gnsStarAlgHom (star a) (T (f.gnsStarAlgHom b f.gnsVector))⟫_ℂ := by
-          rw [← hcomm, mul_apply_eq_comp]
+        rw [← hcomm, mul_apply_eq_comp]
     _ = ⟪f.toGNS a, T (f.toGNS b)⟫_ℂ := by
-          rw [map_star, star_eq_adjoint, adjoint_inner_right]
-          simp [toGNS_apply]
+        rw [map_star, star_eq_adjoint, adjoint_inner_right]; simp [toGNS_apply]
 
 /-- A positive operator in the GNS commutant defines a nonnegative functional on nonnegative
 elements of `B`. -/
@@ -298,11 +274,9 @@ theorem gnsVectorFunctional_nonneg (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] 
     (hT : T ∈ Set.centralizer (Set.range f.gnsStarAlgHom)) (hTpos : T.IsPositive)
     {a : B} (ha : 0 ≤ a) : 0 ≤ f.gnsVectorFunctional T a := by
   rw [StarOrderedRing.nonneg_iff] at ha
-  refine AddSubmonoid.closure_induction ?_ (by simp) (fun x y _ _ hx hy => by
-    rw [map_add]
-    exact add_nonneg hx hy) ha
-  rintro _ ⟨x, rfl⟩
-  rw [gnsVectorFunctional_star_mul f hT x x]
+  refine AddSubmonoid.closure_induction ?_ (by simp)
+    (fun _ _ _ _ hx hy => by rw [map_add]; exact add_nonneg hx hy) ha
+  rintro _ ⟨x, rfl⟩; rw [gnsVectorFunctional_star_mul f hT x x]
   exact hTpos.inner_nonneg_right (f.toGNS x)
 
 /-- If `T` lies in the GNS commutant and `C • 1 - T` is positive, then the vector functional of `T`
@@ -312,22 +286,34 @@ theorem gnsVectorFunctional_le (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] f.GN
     (hTC : ((C : ℂ) • (1 : f.GNS →L[ℂ] f.GNS) - T).IsPositive) {a : B} (ha : 0 ≤ a) :
     f.gnsVectorFunctional T a ≤ (C : ℂ) * f a := by
   have hmem : (C : ℂ) • (1 : f.GNS →L[ℂ] f.GNS) - T ∈
-      Set.centralizer (Set.range f.gnsStarAlgHom) := by
-    rintro S hS
+      Set.centralizer (Set.range f.gnsStarAlgHom) := fun S hS => by
     rw [mul_sub, sub_mul, mul_smul_comm, smul_mul_assoc, mul_one, one_mul, hT S hS]
   have h := gnsVectorFunctional_nonneg f hmem hTC ha
   simp only [gnsVectorFunctional_sub, gnsVectorFunctional_smul, sub_apply, smul_apply,
     gnsVectorFunctional_one, smul_eq_mul, sub_nonneg] at h
   exact h
 
-/-- For a positive operator `T` in the GNS commutant, its vector functional is dominated by
+/-- For a self-adjoint operator `T` in the GNS commutant, its vector functional is dominated by
 `‖T‖ • f`. -/
 theorem gnsVectorFunctional_le_opNorm_mul (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] f.GNS}
-    (hT : T ∈ Set.centralizer (Set.range f.gnsStarAlgHom)) (hTpos : T.IsPositive)
+    (hT : T ∈ Set.centralizer (Set.range f.gnsStarAlgHom)) (hTsa : IsSelfAdjoint T)
     {a : B} (ha : 0 ≤ a) : f.gnsVectorFunctional T a ≤ (‖T‖ : ℂ) * f a := by
   refine gnsVectorFunctional_le f hT ?_ ha
   rw [Complex.coe_smul, ← Algebra.algebraMap_eq_smul_one, ← ContinuousLinearMap.le_def]
-  exact IsSelfAdjoint.le_algebraMap_norm_self T hTpos.isSelfAdjoint
+  exact IsSelfAdjoint.le_algebraMap_norm_self T hTsa
+
+/-- An operator in the GNS commutant whose vector functional vanishes kills the cyclic vector. -/
+theorem apply_gnsVector_eq_zero_of_gnsVectorFunctional_eq_zero (f : B →ₚ[ℂ] ℂ)
+    {T : f.GNS →L[ℂ] f.GNS} (hT : T ∈ Set.centralizer (Set.range f.gnsStarAlgHom))
+    (hvan : f.gnsVectorFunctional T = 0) : T f.gnsVector = 0 := by
+  refine ext_inner_left ℂ fun u =>
+    f.denseRange_toGNS.induction_on u (isClosed_eq (by fun_prop) (by fun_prop)) fun a => ?_
+  calc ⟪f.toGNS a, T f.gnsVector⟫_ℂ
+      = ⟪f.gnsVector, (f.gnsStarAlgHom (star a) * T) f.gnsVector⟫_ℂ := by
+        rw [mul_apply_eq_comp, map_star, star_eq_adjoint, adjoint_inner_right]; simp [toGNS_apply]
+    _ = f.gnsVectorFunctional T (star a) := by
+        rw [hT _ ⟨star a, rfl⟩, mul_apply_eq_comp, ← gnsVectorFunctional_apply]
+    _ = ⟪f.toGNS a, 0⟫_ℂ := by simp [hvan]
 
 /-- The vector functional of the GNS Radon–Nikodym operator of `g` recovers `g`. -/
 theorem gnsVectorFunctional_gnsRadonNikodym {f g : B →ₚ[ℂ] ℂ} {C : ℝ}
@@ -339,12 +325,11 @@ theorem gnsVectorFunctional_gnsRadonNikodym {f g : B →ₚ[ℂ] ℂ} {C : ℝ}
 recovers `T`. -/
 theorem gnsRadonNikodym_gnsVectorFunctional (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] f.GNS}
     (hT : T ∈ Set.centralizer (Set.range f.gnsStarAlgHom)) (hTpos : T.IsPositive) :
-    f.gnsRadonNikodym
-        (.mk₀ (f.gnsVectorFunctional T).toLinearMap fun _ =>
-          gnsVectorFunctional_nonneg f hT hTpos) = T := by
-  refine (eq_gnsRadonNikodym_of_inner_eq (C := ‖T‖)
-    (fun _ ha => gnsVectorFunctional_le_opNorm_mul f hT hTpos ha) fun a b => ?_).symm
-  exact (gnsVectorFunctional_star_mul f hT a b).symm
+    f.gnsRadonNikodym (.mk₀ (f.gnsVectorFunctional T).toLinearMap fun _ =>
+        gnsVectorFunctional_nonneg f hT hTpos) = T :=
+  (eq_gnsRadonNikodym_of_inner_eq (C := ‖T‖)
+    (fun _ ha => gnsVectorFunctional_le_opNorm_mul f hT hTpos.isSelfAdjoint ha)
+    fun a b => (gnsVectorFunctional_star_mul f hT a b).symm).symm
 
 end Unital
 

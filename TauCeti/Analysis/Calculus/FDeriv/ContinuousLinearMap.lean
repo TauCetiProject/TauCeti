@@ -60,6 +60,9 @@ the corresponding affine expression vanish.
   pointwise forms: the same criteria for families of bilinear maps, tested on pairs of vectors.
 * `HasDerivAt.const_clm_comp`: composing a family of continuous linear maps on the left with a
   fixed continuous linear map composes its derivative with that map.
+* `HasDerivAt.clm_apply_of_norm_le`, `TauCeti.differentiable_clm_apply_of_locallyBounded`: product
+  rule and differentiability for a strongly differentiable, locally norm-bounded operator family
+  applied to a differentiable curve.
 * `TauCeti.deriv_eq_zero_of_injective_of_deriv_clm_apply_add_eq_zero`: recover a zero
   derivative through an injective operator when its parameter derivative vanishes.
 * `TauCeti.deriv_eq_zero_of_injective_of_deriv_clm_apply_eq_zero`: the unshifted case.
@@ -262,6 +265,45 @@ theorem _root_.HasDerivAt.const_clm_comp {c : 𝕜 → E →L[𝕜] F} {c' : E �
     (hc : HasDerivAt c c' t) (g : F →L[𝕜] G) :
     HasDerivAt (fun s ↦ g.comp (c s)) (g.comp c') t := by
   simpa using (hasDerivAt_const t g).clm_comp hc
+
+/-- Product rule for a locally norm-bounded operator family applied to a differentiable curve: if
+`s ↦ c s (u t)` has derivative `c'` at `t`, `u` has derivative `u'` at `t`, `s ↦ c s u'` is
+continuous at `t`, and `‖c s‖` is eventually bounded near `t`, then `s ↦ c s (u s)` has
+derivative `c' + c t u'` at `t`. -/
+theorem _root_.HasDerivAt.clm_apply_of_norm_le {c : 𝕜 → E →L[𝕜] F} {u : 𝕜 → E}
+    {c' : F} {u' : E} {t : 𝕜} {M : ℝ}
+    (hc : HasDerivAt (fun s ↦ c s (u t)) c' t) (hu : HasDerivAt u u' t)
+    (hcont : ContinuousAt (fun s ↦ c s u') t) (hb : ∀ᶠ s in 𝓝 t, ‖c s‖ ≤ M) :
+    HasDerivAt (fun s ↦ c s (u s)) (c' + c t u') t := by
+  refine hasDerivAt_iff_isLittleO.mpr ?_
+  have ho1 := hasDerivAt_iff_isLittleO.mp hc
+  have ho2 : (fun s ↦ c s (u s - u t - (s - t) • u')) =o[𝓝 t] fun s ↦ s - t :=
+    (isBigO_iff.mpr ⟨max M 0, hb.mono fun s hs ↦
+      (c s).le_opNorm _ |>.trans (mul_le_mul_of_nonneg_right
+        (hs.trans (le_max_left M 0)) (norm_nonneg _))⟩).trans_isLittleO
+      (hasDerivAt_iff_isLittleO.mp hu)
+  have ho3 : (fun s ↦ (s - t) • (c s u' - c t u')) =o[𝓝 t] fun s ↦ s - t := by
+    rw [isLittleO_iff]
+    intro ε hε
+    have ht : Tendsto (fun s ↦ c s u' - c t u') (𝓝 t) (𝓝 0) := by
+      simpa only [sub_self] using hcont.tendsto.sub (tendsto_const_nhds (x := c t u'))
+    filter_upwards [ht.eventually (Metric.ball_mem_nhds 0 hε)] with s hs
+    rw [norm_smul, mul_comm]
+    exact mul_le_mul_of_nonneg_right (by simpa [Metric.mem_ball, dist_eq_norm] using hs.le)
+      (norm_nonneg _)
+  refine ((ho1.add ho2).add ho3).congr' (.of_forall fun s ↦ ?_) (.of_forall fun _ ↦ rfl)
+  simp only [map_sub, map_smul, smul_add, smul_sub]
+  abel
+
+/-- A strongly differentiable, locally norm-bounded operator family composed with a differentiable
+curve is differentiable. -/
+theorem differentiable_clm_apply_of_locallyBounded {c : 𝕜 → E →L[𝕜] F} {u : 𝕜 → E}
+    (hc : ∀ v, Differentiable 𝕜 fun s ↦ c s v) (hu : Differentiable 𝕜 u)
+    (hb : ∀ t₀, ∃ r > 0, ∃ M, ∀ t ∈ Metric.ball t₀ r, ‖c t‖ ≤ M) :
+    Differentiable 𝕜 fun s ↦ c s (u s) := fun t₀ ↦
+  let ⟨r, hr, _, hM⟩ := hb t₀
+  ((hc (u t₀) t₀).hasDerivAt.clm_apply_of_norm_le (hu t₀).hasDerivAt
+    (hc _ t₀).continuousAt (Metric.eventually_nhds_iff.mpr ⟨r, hr, hM⟩)).differentiableAt
 
 variable {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
 
