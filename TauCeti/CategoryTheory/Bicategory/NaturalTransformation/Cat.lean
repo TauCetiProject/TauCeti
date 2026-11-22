@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Equivalence
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Category.Cat
 import Mathlib.CategoryTheory.Equivalence
 
@@ -36,7 +37,9 @@ equivalences, for an arbitrary source bicategory. Specializing `StrongTrans.equi
 the chosen component quasi-inverses, units, and counits gives
 `StrongTrans.equivalenceOfIsEquivalence`. Its inverse naturality satisfies compatibility with
 those counits; the component equations allow callers to use the equivalence without unfolding
-its construction.
+its construction. Conversely, the component functors of an equivalence in the bicategory of
+pseudofunctors into `Cat`, and those of its inverse, are equivalences of categories
+(`Bicategory.Equivalence.isEquivalence_hom_app`, `Bicategory.Equivalence.isEquivalence_inv_app`).
 -/
 
 public section
@@ -273,3 +276,27 @@ lemma map_equivalenceOfIsEquivalence_inv_naturality_hom_app_comp
   exact hc.trans (Category.comp_id _)
 
 end CategoryTheory.Pseudofunctor.StrongTrans
+
+namespace CategoryTheory.Bicategory.Equivalence
+
+open Pseudofunctor.StrongTrans
+
+variable {B : Type u₁} [Bicategory.{w₁, v₁} B] {F G : B ⥤ᵖ Cat.{v, w}}
+
+/-- The component functors of an equivalence of pseudofunctors into `Cat` are equivalences of
+categories, with quasi-inverses the components of the inverse transformation. -/
+lemma isEquivalence_hom_app (e : Bicategory.Equivalence F G) (a : B) :
+    (e.hom.app a).toFunctor.IsEquivalence :=
+  (CategoryTheory.Equivalence.mk (e.hom.app a).toFunctor (e.inv.app a).toFunctor
+    (Cat.Hom.toNatIso (isoApp e.unit a))
+    (Cat.Hom.toNatIso (isoApp e.counit a))).isEquivalence_functor
+
+/-- The component functors of the inverse of an equivalence of pseudofunctors into `Cat` are
+equivalences of categories. -/
+lemma isEquivalence_inv_app (e : Bicategory.Equivalence F G) (a : B) :
+    (e.inv.app a).toFunctor.IsEquivalence :=
+  (CategoryTheory.Equivalence.mk (e.hom.app a).toFunctor (e.inv.app a).toFunctor
+    (Cat.Hom.toNatIso (isoApp e.unit a))
+    (Cat.Hom.toNatIso (isoApp e.counit a))).isEquivalence_inverse
+
+end CategoryTheory.Bicategory.Equivalence
