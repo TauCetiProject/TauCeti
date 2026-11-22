@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Functoriality
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Injective
 public import TauCeti.Algebra.WordFiltration.Rees
 
@@ -20,14 +21,15 @@ which kills `j(x)`.
 The comparison composes the generic word-filtration symbol map with the inverse of the
 native PBW equivalence `pbwAssociatedGradedEquiv`. Its coefficientwise kernel description
 records precisely the loss of one filtration step needed to divide a commutator by the
-parameter and then take its symbol.
+parameter and then take its symbol. We also record naturality of `reesZeroFiberMap` and
+of `reesSpecializationZero` and `reesZeroFiberEquiv` along Lie algebra homomorphisms.
 -/
 
 public section
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-universe u v
+universe u v w x
 
 variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
@@ -55,6 +57,45 @@ private theorem wordReesEquiv_reesParameter :
         (TauCeti.Algebra.one_mem_wordFiltration _ 1) := by
   apply Subtype.ext
   simp [coe_wordReesEquiv]
+
+section ZeroFiberMap
+
+variable {L} {M : Type w} {N : Type x}
+variable [LieRing M] [LieAlgebra R M]
+variable [LieRing N] [LieAlgebra R N]
+
+/-- The `R`-algebra map on `t = 0` Rees quotients induced by a Lie algebra homomorphism, requiring
+no freeness hypothesis on `L` or `M`. -/
+noncomputable def reesZeroFiberMap (f : L →ₗ⁅R⁆ M) :
+    (reesAlgebra R L ⧸ Ideal.span {reesParameter R L}) →ₐ[R]
+      (reesAlgebra R M ⧸ Ideal.span {reesParameter R M}) :=
+  Ideal.quotientMapₐ (Ideal.span {reesParameter R M}) ((reesMap R f).restrictScalars R) <|
+    Ideal.span_le.mpr <| by
+      rintro p (rfl : p = reesParameter R L)
+      simp
+
+@[simp]
+theorem reesZeroFiberMap_mk (f : L →ₗ⁅R⁆ M) (p : reesAlgebra R L) :
+    reesZeroFiberMap R f (Ideal.Quotient.mk _ p) = Ideal.Quotient.mk _ (reesMap R f p) :=
+  (rfl)
+
+@[simp]
+theorem reesZeroFiberMap_id :
+    reesZeroFiberMap R (LieHom.id : L →ₗ⁅R⁆ L) =
+      AlgHom.id R (reesAlgebra R L ⧸ Ideal.span {reesParameter R L}) := by
+  ext q
+  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective q
+  simp
+
+@[simp]
+theorem reesZeroFiberMap_comp (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ N) :
+    reesZeroFiberMap R (g.comp f) =
+      (reesZeroFiberMap R g).comp (reesZeroFiberMap R f) := by
+  ext q
+  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective q
+  simp
+
+end ZeroFiberMap
 
 variable [Module.Free R L]
 
@@ -148,5 +189,33 @@ theorem reesZeroFiberEquiv_symm_ι (x : L) :
       Ideal.Quotient.mk _ (reesGenerator R L x) := by
   apply (reesZeroFiberEquiv R L).symm_apply_eq.mpr
   simp
+
+section Functoriality
+
+variable {L} {M : Type w} [LieRing M] [LieAlgebra R M] [Module.Free R M]
+
+/-- **Naturality of `reesSpecializationZero`.** For Lie algebras free as `R`-modules, zero
+specialization intertwines `reesMap R f` with `SymmetricAlgebra.map R f.toLinearMap`. -/
+theorem reesSpecializationZero_comp_reesMap (f : L →ₗ⁅R⁆ M) :
+    (reesSpecializationZero R M).comp ((reesMap R f).restrictScalars R) =
+      (SymmetricAlgebra.map R f.toLinearMap).comp (reesSpecializationZero R L) :=
+  reesAlgebra_algHom_ext (by simp) (fun x ↦ by simp)
+
+@[simp]
+theorem reesSpecializationZero_reesMap (f : L →ₗ⁅R⁆ M) (p : reesAlgebra R L) :
+    reesSpecializationZero R M (reesMap R f p) =
+      SymmetricAlgebra.map R f.toLinearMap (reesSpecializationZero R L p) :=
+  AlgHom.congr_fun (reesSpecializationZero_comp_reesMap R f) p
+
+/-- **Naturality of `reesZeroFiberEquiv`.** -/
+@[simp]
+theorem reesZeroFiberEquiv_map (f : L →ₗ⁅R⁆ M)
+    (q : reesAlgebra R L ⧸ Ideal.span {reesParameter R L}) :
+    reesZeroFiberEquiv R M (reesZeroFiberMap R f q) =
+      SymmetricAlgebra.map R f.toLinearMap (reesZeroFiberEquiv R L q) := by
+  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective q
+  simp
+
+end Functoriality
 
 end TauCeti.UniversalEnvelopingAlgebra

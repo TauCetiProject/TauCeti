@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Sl2.Basic
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.PoissonBracket
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.PoissonBracket.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Gradient
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -134,32 +135,28 @@ theorem commute_reesSl2Casimir_reesGenerator_e {R : Type u} {L : Type v} [CommRi
     [LieRing L] [LieAlgebra R L] {h e f : L}
     (hef : ⁅e, f⁆ = h) (hhe : ⁅h, e⁆ = (2 : R) • e) :
     Commute (reesSl2Casimir R L h e f) (reesGenerator R L e) := by
-  have hd : reesDividedCommutator R L (reesSl2Casimir R L h e f) (reesGenerator R L e) = 0 := by
-    have hfe : ⁅f, e⁆ = -h := by rw [← hef, lie_skew]
-    have h2e : ((2 : R) • reesGenerator R L e : reesAlgebra R L) =
-        2 * reesGenerator R L e := by
-      rw [Algebra.smul_def, map_ofNat]
-    have hcomm_he : reesGenerator R L e * reesGenerator R L h =
-        reesGenerator R L h * reesGenerator R L e -
-          reesParameter R L * (2 * reesGenerator R L e) := by
-      have hsub := reesGenerator_mul_sub_mul R L h e
-      rw [hhe, map_smul, h2e] at hsub
-      exact eq_sub_of_add_eq' (sub_eq_iff_eq_add.mp hsub).symm
-    have h2 : reesDividedCommutator R L (2 : reesAlgebra R L) (reesGenerator R L e) = 0 :=
-      reesDividedCommutator_of_commute R L (Commute.ofNat_left 2 _)
-    have h4 : reesDividedCommutator R L (4 : reesAlgebra R L) (reesGenerator R L e) = 0 :=
-      reesDividedCommutator_of_commute R L (Commute.ofNat_left 4 _)
-    rw [reesSl2Casimir, sq, map_add, LinearMap.add_apply, map_add, LinearMap.add_apply]
-    repeat rw [reesDividedCommutator_mul_left]
-    simp only [reesDividedCommutator_reesGenerator, reesDividedCommutator_reesParameter_left,
-      h2, h4, hhe, hfe, lie_self, map_zero, map_smul, map_neg, h2e, mul_zero, zero_mul,
-      add_zero, zero_add]
-    rw [mul_assoc 2 (reesGenerator R L e) (reesGenerator R L h), hcomm_he]
-    noncomm_ring [neg_neg]
-  have hsub := reesParameter_mul_reesDividedCommutator R L (reesSl2Casimir R L h e f)
-    (reesGenerator R L e)
-  rw [hd, mul_zero] at hsub
-  exact sub_eq_zero.mp hsub.symm
+  refine (reesDividedCommutator_eq_zero_iff R L).mp ?_
+  have hfe : ⁅f, e⁆ = -h := by rw [← hef, lie_skew]
+  have h2e : ((2 : R) • reesGenerator R L e : reesAlgebra R L) =
+      2 * reesGenerator R L e := by
+    rw [Algebra.smul_def, map_ofNat]
+  have hcomm_he : reesGenerator R L e * reesGenerator R L h =
+      reesGenerator R L h * reesGenerator R L e -
+        reesParameter R L * (2 * reesGenerator R L e) := by
+    have hsub := reesGenerator_mul_sub_mul R L h e
+    rw [hhe, map_smul, h2e] at hsub
+    exact eq_sub_of_add_eq' (sub_eq_iff_eq_add.mp hsub).symm
+  have h2 : reesDividedCommutator R L (2 : reesAlgebra R L) (reesGenerator R L e) = 0 :=
+    reesDividedCommutator_of_commute R L (Commute.ofNat_left 2 _)
+  have h4 : reesDividedCommutator R L (4 : reesAlgebra R L) (reesGenerator R L e) = 0 :=
+    reesDividedCommutator_of_commute R L (Commute.ofNat_left 4 _)
+  rw [reesSl2Casimir, sq, map_add, LinearMap.add_apply, map_add, LinearMap.add_apply]
+  repeat rw [reesDividedCommutator_mul_left]
+  simp only [reesDividedCommutator_reesGenerator, reesDividedCommutator_reesParameter_left,
+    h2, h4, hhe, hfe, lie_self, map_zero, map_smul, map_neg, h2e, mul_zero, zero_mul,
+    add_zero, zero_add]
+  rw [mul_assoc 2 (reesGenerator R L e) (reesGenerator R L h), hcomm_he]
+  noncomm_ring [neg_neg]
 
 /-- `reesSl2Casimir R L h e f` commutes with `reesGenerator R L f` for any elements obeying
 `⁅e, f⁆ = h` and `⁅h, f⁆ = -((2 : R) • f)`. -/
@@ -211,13 +208,12 @@ theorem symmetricGradient_sl2CasimirSymbol {R L ι : Type*}
     (b : Module.Basis ι R L) (h e f : L) (ξ : Module.Dual R L) :
     b.symmetricGradient (TauCeti.UniversalEnvelopingAlgebra.sl2CasimirSymbol R L h e f) ξ =
       (2 * ξ h) • h + (4 * ξ f) • e + (4 * ξ e) • f := by
-  rw [TauCeti.UniversalEnvelopingAlgebra.sl2CasimirSymbol, sq, mul_assoc,
-    b.symmetricGradient_add, b.symmetricGradient_mul, b.symmetricGradient_mul,
+  rw [TauCeti.UniversalEnvelopingAlgebra.sl2CasimirSymbol, mul_assoc,
+    b.symmetricGradient_add, b.symmetricGradient_pow, b.symmetricGradient_mul,
     b.symmetricGradient_mul, b.symmetricGradient_ι, b.symmetricGradient_ι,
     b.symmetricGradient_ι, b.symmetricGradient_ofNat]
-  simp only [map_mul, SymmetricAlgebra.lift_ι_apply, map_ofNat, smul_zero, add_zero,
-    smul_add, smul_smul]
-  rw [← add_smul, ← two_mul]
+  simp only [Nat.reduceSub, pow_one, nsmul_eq_mul, Nat.cast_ofNat, map_mul,
+    SymmetricAlgebra.lift_ι_apply, map_ofNat, smul_zero, add_zero, smul_add, smul_smul]
   abel
 
 end Module.Basis

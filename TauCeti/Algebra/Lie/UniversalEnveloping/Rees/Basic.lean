@@ -205,22 +205,14 @@ generator `reesGenerator R L x`. -/
 theorem mem_center_reesAlgebra_iff {z : reesAlgebra R L} :
     z ∈ Subalgebra.center R (reesAlgebra R L) ↔ ∀ x : L, Commute z (reesGenerator R L x) := by
   refine ⟨fun hz x ↦ (Subalgebra.mem_center_iff.mp hz (reesGenerator R L x)).symm, fun h ↦ ?_⟩
-  let S : Subalgebra R (reesAlgebra R L) :=
-    { carrier := {b | Commute z b}
-      mul_mem' := fun ha hb ↦ ha.mul_right hb
-      add_mem' := fun ha hb ↦ ha.add_right hb
-      algebraMap_mem' := fun r ↦ (Algebra.commutes r z).symm }
-  have htop : S = ⊤ := by
-    apply top_unique
-    rw [← adjoin_reesParameter_union_range_reesGenerator R L]
-    refine Algebra.adjoin_le ?_
-    rintro p (hp | ⟨x, rfl⟩)
-    · obtain rfl := Set.mem_singleton_iff.mp hp
-      exact (coeffSubalgebra.commute_X _ _ z).symm
-    · exact h x
   refine Subalgebra.mem_center_iff.mpr fun b ↦ ?_
-  have hb : b ∈ S := htop ▸ Algebra.mem_top
-  exact hb.symm.eq
+  have hb : b ∈ Algebra.adjoin R ({reesParameter R L} ∪ Set.range (reesGenerator R L)) :=
+    (adjoin_reesParameter_union_range_reesGenerator R L).symm ▸ Algebra.mem_top
+  refine (Algebra.commute_of_mem_adjoin_of_forall_mem_commute hb ?_).symm.eq
+  rintro p (hp | ⟨x, rfl⟩)
+  · obtain rfl := Set.mem_singleton_iff.mp hp
+    exact (coeffSubalgebra.commute_X _ _ z).symm
+  · exact h x
 
 end Extensionality
 

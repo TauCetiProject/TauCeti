@@ -182,18 +182,9 @@ theorem symmetricGradient_mul (b : Module.Basis ι R M) (p q : SymmetricAlgebra 
 theorem symmetricGradient_pow (b : Module.Basis ι R M) (p : SymmetricAlgebra R M) (n : ℕ)
     (ξ : Module.Dual R M) :
     b.symmetricGradient (p ^ n) ξ =
-      (n • SymmetricAlgebra.lift ξ p ^ (n - 1)) • b.symmetricGradient p ξ := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    cases n with
-    | zero => simp
-    | succ m =>
-      rw [pow_succ, b.symmetricGradient_mul, ih, map_pow, smul_smul, ← add_smul]
-      congr 1
-      rw [Nat.add_sub_cancel, nsmul_eq_mul, Nat.add_sub_cancel, nsmul_eq_mul]
-      push_cast
-      ring
+      (n • SymmetricAlgebra.lift ξ p ^ (n - 1)) • b.symmetricGradient p ξ :=
+  b.ext_elem fun i ↦ by
+    simp [(SymmetricAlgebra.pderiv (b.coord i)).leibniz_pow p n, mul_assoc]
 
 /-- **Naturality (chain rule) of `symmetricGradient` along a linear map.** -/
 theorem symmetricGradient_map {N ι' : Type*} [AddCommMonoid N] [Module R N] [Fintype ι']

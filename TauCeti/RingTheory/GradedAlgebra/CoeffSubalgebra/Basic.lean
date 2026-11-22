@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.Algebra.Polynomial.Inductions
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.Ideal.Span
 
@@ -118,6 +119,19 @@ theorem coe_monomial (n : ℕ) (b : B) (hb : b ∈ M n) :
     (monomial M n b hb : B[X]) = Polynomial.monomial n b :=
   (rfl)
 
+variable (M) in
+/-- Divide an element of `coeffSubalgebra M` whose shifted coefficients `(p : B[X]).coeff (n + 1)`
+lie in `M n` by `Polynomial.X`. -/
+noncomputable def divX (p : coeffSubalgebra M)
+    (hshift : ∀ n, (p : B[X]).coeff (n + 1) ∈ M n) : coeffSubalgebra M :=
+  ⟨(p : B[X]).divX, mem_coeffSubalgebra_iff.mpr fun n ↦ by
+    simpa only [Polynomial.coeff_divX] using hshift n⟩
+
+@[simp]
+theorem coe_divX (p : coeffSubalgebra M) (hshift : ∀ n, (p : B[X]).coeff (n + 1) ∈ M n) :
+    (divX M p hshift : B[X]) = (p : B[X]).divX :=
+  (rfl)
+
 section parameter
 
 variable (M) (h1 : (1 : B) ∈ M 1)
@@ -148,6 +162,14 @@ theorem X_mul_injective : Function.Injective (fun a : coeffSubalgebra M ↦ X M 
   ext n
   have hc := congrArg (fun p : coeffSubalgebra M ↦ (p : B[X]).coeff (n + 1)) h
   simpa using hc
+
+/-- Dividing an element of `coeffSubalgebra M` with zero constant term and shifted coefficients in
+`M` by `X M h1` gives a right factor multiplying with `X M h1` to the original element. -/
+theorem X_mul_divX (p : coeffSubalgebra M) (h0 : (p : B[X]).coeff 0 = 0)
+    (hshift : ∀ n, (p : B[X]).coeff (n + 1) ∈ M n) :
+    X M h1 * divX M p hshift = p := by
+  apply Subtype.ext
+  simpa [h0] using Polynomial.X_mul_divX_add (p : B[X])
 
 /-- The parameter-ring algebra structure, available when the polynomial parameter belongs to
 the coefficient subalgebra. Install it with `letI := coeffSubalgebra.algebra M h1`. -/
