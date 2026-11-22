@@ -145,8 +145,10 @@ theorem _root_.IsCompact.exists_tendsto_of_tendsto_comp {Y : Type*} [Topological
     (hg : ContinuousOn g Ω) (hlim : ∀ t ∈ Ω, Tendsto (fun i ↦ f (x i t)) l (𝓝 (g t))) :
     ∃ y : T → X, ContinuousOn y Ω ∧ MapsTo y Ω K ∧ EqOn (f ∘ y) g Ω ∧
       ∀ t ∈ Ω, Tendsto (fun i ↦ x i t) l (𝓝 (y t)) :=
-  (hK.isClosedEmbedding_domRestrict hf hinj).isInducing.exists_tendsto_of_tendsto_comp
-    (hK.image_of_continuousOn hf).isClosed hxK hg hlim
+  -- The limit takes values in the closed set `f(K)`.
+  (hK.isClosedEmbedding_domRestrict hf hinj).isInducing.exists_tendsto_of_tendsto_comp hxK hg
+    (fun t ht ↦ (hK.image_of_continuousOn hf).isClosed.mem_of_tendsto (hlim t ht)
+      ((hxK t ht).mono fun _ ↦ mem_image_of_mem f)) hlim
 
 /-- A family that eventually lies in a compact set `s` along an ultrafilter converges along it to
 a point of `s`. -/

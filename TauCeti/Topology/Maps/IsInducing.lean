@@ -13,11 +13,12 @@ public import Mathlib.Topology.ContinuousOn
 If the restriction of a map `f` to a set `K` is inducing, then neighbourhoods of a point of `K`
 within `K` (`Topology.IsInducing.exists_mem_nhds_inter_preimage_subset`) and convergence to a point
 of `K` of a family eventually in `K` (`Topology.IsInducing.tendsto_nhds_of_tendsto_comp`) can be
-read through `f`. If moreover `f '' K` is closed, then so can limits of maps: let the values at each
-point of a set `Ω` of maps `x i` eventually lie in `K` along a nontrivial filter. A limit `g`,
-continuous on `Ω`, of the maps `f ∘ x i` pointwise on `Ω` is `f ∘ y` on `Ω` for a map `y`
-continuous on `Ω`, and the `x i` converge to `y` pointwise on `Ω`
-(`Topology.IsInducing.exists_tendsto_of_tendsto_comp`). This is how a limit in a manifold without
+read through `f`. So can limits of maps: let the values at each point of a set `Ω` of maps `x i`
+eventually lie in `K` along a nontrivial filter. A limit `g`, continuous on `Ω` and with values in
+`f '' K` on `Ω`, of the maps `f ∘ x i` pointwise on `Ω` is `f ∘ y` on `Ω` for a map `y` continuous
+on `Ω`, and the `x i` converge to `y` pointwise on `Ω`
+(`Topology.IsInducing.exists_tendsto_of_tendsto_comp`). If `f '' K` is closed, the limit `g` takes
+values in it automatically. This is how a limit in a manifold without
 a metric is constructed from a limit measured through an embedding into a normed space.
 
 A continuous injection on a compact set with values in a Hausdorff space restricts to a closed
@@ -57,29 +58,25 @@ theorem tendsto_nhds_of_tendsto_comp {Y ι : Type*} [TopologicalSpace Y] {K : Se
   exact (hg.and (h.eventually_mem ht)).mono fun i hi ↦ hts hi
 
 /-- **Limits read back through a map inducing the topology of a set.** Let the restriction of `f`
-to a set `K` be inducing, with `f '' K` closed, and let `x i` be maps from a space `T` whose values
-at each point of a set `Ω ⊆ T` eventually lie in `K` along a nontrivial filter `l`. If the maps
-`f ∘ x i` converge along `l` pointwise on `Ω` to a map `g` continuous on `Ω`, then `g = f ∘ y` on
-`Ω` for a map `y` that is continuous on `Ω` and maps `Ω` into `K`, and the `x i` converge along `l`
-pointwise on `Ω` to `y`. -/
+to a set `K` be inducing, and let `x i` be maps from a space `T` whose values at each point of a set
+`Ω ⊆ T` eventually lie in `K` along a nontrivial filter `l`. If the maps `f ∘ x i` converge along
+`l` pointwise on `Ω` to a map `g` continuous on `Ω` with values in `f '' K` on `Ω`, then `g = f ∘ y`
+on `Ω` for a map `y` that is continuous on `Ω` and maps `Ω` into `K`, and the `x i` converge along
+`l` pointwise on `Ω` to `y`. -/
 theorem exists_tendsto_of_tendsto_comp {Y : Type*} [TopologicalSpace Y] {K : Set X}
-    {f : X → Y} (hf : IsInducing (K.domRestrict f)) (hfK : IsClosed (f '' K)) {T : Type*}
-    [TopologicalSpace T] {Ω : Set T} {ι : Type*} {l : Filter ι} [l.NeBot] {x : ι → T → X}
-    (hxK : ∀ t ∈ Ω, ∀ᶠ i in l, x i t ∈ K) {g : T → Y} (hg : ContinuousOn g Ω)
+    {f : X → Y} (hf : IsInducing (K.domRestrict f)) {T : Type*} [TopologicalSpace T] {Ω : Set T}
+    {ι : Type*} {l : Filter ι} [l.NeBot] {x : ι → T → X} (hxK : ∀ t ∈ Ω, ∀ᶠ i in l, x i t ∈ K)
+    {g : T → Y} (hg : ContinuousOn g Ω) (hgK : MapsTo g Ω (f '' K))
     (hlim : ∀ t ∈ Ω, Tendsto (fun i ↦ f (x i t)) l (𝓝 (g t))) :
     ∃ y : T → X, ContinuousOn y Ω ∧ MapsTo y Ω K ∧ EqOn (f ∘ y) g Ω ∧
       ∀ t ∈ Ω, Tendsto (fun i ↦ x i t) l (𝓝 (y t)) := by
+  -- Lift `g` to `K` on `Ω`, and extend the lift to `T` by one of the maps `x i`.
+  choose z hzK hfz using fun t : Ω ↦ hgK t.property
   obtain ⟨i⟩ := l.nonempty_of_neBot
-  rcases isEmpty_or_nonempty X with hX | hX
-  · -- Then `T` is empty too, as the map `x i : T → X` shows.
-    have := Function.isEmpty (x i)
-    exact ⟨x i, fun t ↦ isEmptyElim t, fun t ↦ isEmptyElim t, fun t ↦ isEmptyElim t,
-      fun t ↦ isEmptyElim t⟩
-  -- The limit takes values in the closed set `f(K)`, so it lifts to `K`.
-  have hgK : MapsTo g Ω (f '' K) := fun t ht ↦
-    hfK.mem_of_tendsto (hlim t ht) ((hxK t ht).mono fun i ↦ mem_image_of_mem f)
-  set y := Function.invFunOn f K ∘ g
-  have hy (t : T) (ht : t ∈ Ω) : y t ∈ K ∧ f (y t) = g t := Function.invFunOn_pos (hgK ht)
+  set y := Function.extend ((↑) : Ω → T) z (x i)
+  have hy (t : T) (ht : t ∈ Ω) : y t ∈ K ∧ f (y t) = g t := by
+    rw [show y t = z ⟨t, ht⟩ from Subtype.val_injective.extend_apply z (x i) ⟨t, ht⟩]
+    exact ⟨hzK _, hfz _⟩
   -- Both the continuity of `y` and the convergence to it are read in `K` through `f`.
   refine ⟨y, fun t ht ↦ hf.tendsto_nhds_of_tendsto_comp
       (eventually_nhdsWithin_of_forall fun t' ht' ↦ (hy t' ht').1) (hy t ht).1 ?_,

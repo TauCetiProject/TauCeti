@@ -137,7 +137,8 @@ theorem ContinuousOn.exists_continuousOn_injOn_mapsTo_of_mapsTo_image [T2Space �
       fun x ↦ isEmptyElim x, fun x ↦ isEmptyElim x⟩
   set P := K \ f ⁻¹' {y}
   have hUP : (K ∩ U) \ f ⁻¹' {y} ⊆ P := Set.sdiff_subset_sdiff_left inter_subset_left
-  -- Off the fibre, `k ∘ f` avoids `y`, since `k` fixes `y` and is injective on `f '' K`.
+  -- Off the fibre, `k ∘ f` avoids `y`: if `k (f x) = y`, then `y` lies in `f '' K`, so `k` fixes
+  -- it, and the injectivity of `k` on `f '' K` gives `f x = y`.
   have hkP (x : α) (hx : x ∈ K) (hxy : f x ≠ y) : k (f x) ∈ f '' ((K ∩ U) \ f ⁻¹' {y}) := by
     rw [image_sdiff_preimage, Set.mem_sdiff, mem_singleton_iff]
     refine ⟨hkN (mem_image_of_mem f hx), fun h ↦ hxy ?_⟩
