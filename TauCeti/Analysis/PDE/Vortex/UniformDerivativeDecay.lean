@@ -131,24 +131,32 @@ private theorem normSq_le_one_of_framed {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (((contDiff_piLp 2).1 hx 3).of_le (by simp)) hsol
     (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) w
 
-/-- `log |α|²` is smooth on the open set where the section of a smooth vortex does not vanish, and
-there its Laplacian is `exp (log |α|²) / 4 - 1 / 4`. -/
-private theorem contDiffOn_log_normSq_and_laplacian_eventuallyEq
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0) :
-    IsOpen {w | x w 2 ^ 2 + x w 3 ^ 2 ≠ 0} ∧
-      ContDiffOn ℝ ∞ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))
-        {w | x w 2 ^ 2 + x w 3 ^ 2 ≠ 0} ∧
-      ∀ y, x y 2 ^ 2 + x y 3 ^ 2 ≠ 0 →
-        Δ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =ᶠ[𝓝 y]
-          fun w ↦ (4 : ℝ)⁻¹ • Real.exp (Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) + -4⁻¹ := by
-  have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
-  have hp : ContDiff ℝ 2 fun w ↦ x w 2 := (hxi 2).of_le (by simp)
-  have hq : ContDiff ℝ 2 fun w ↦ x w 3 := (hxi 3).of_le (by simp)
-  have hU : IsOpen {w | x w 2 ^ 2 + x w 3 ^ 2 ≠ 0} :=
-    isOpen_ne_fun ((hp.continuous.pow 2).add (hq.continuous.pow 2)) continuous_const
-  refine ⟨hU, fun w hw ↦ (contDiffAt_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt
-    hw (Eventually.of_forall hsol)).contDiffWithinAt, fun y hy ↦ ?_⟩
-  filter_upwards [hU.mem_nhds hy] with w hw
+/-- The set where the section of a smooth vortex does not vanish is open. -/
+private theorem isOpen_normSq_ne_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) :
+    IsOpen {w | x w 2 ^ 2 + x w 3 ^ 2 ≠ 0} :=
+  isOpen_ne_fun ((((contDiff_piLp 2).1 hx 2).continuous.pow 2).add
+    (((contDiff_piLp 2).1 hx 3).continuous.pow 2)) continuous_const
+
+/-- `log |α|²` is smooth where the section of a smooth vortex does not vanish. -/
+private theorem contDiffOn_log_normSq {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
+    (hsol : ∀ z, equation x z = 0) :
+    ContDiffOn ℝ ∞ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))
+      {w | x w 2 ^ 2 + x w 3 ^ 2 ≠ 0} := fun w hw ↦
+  (contDiffAt_log_normSq_of_equation_eq_zero
+    (((contDiff_piLp 2).1 hx 2).of_le (by simp)).contDiffAt
+    (((contDiff_piLp 2).1 hx 3).of_le (by simp)).contDiffAt hw
+    (Eventually.of_forall hsol)).contDiffWithinAt
+
+/-- Near a point where the section of a smooth vortex does not vanish, the Laplacian of `log |α|²`
+is `exp (log |α|²) / 4 - 1 / 4`. -/
+private theorem laplacian_log_normSq_eventuallyEq_exp {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0) {y : ℂ}
+    (hy : x y 2 ^ 2 + x y 3 ^ 2 ≠ 0) :
+    Δ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =ᶠ[𝓝 y]
+      fun w ↦ (4 : ℝ)⁻¹ • Real.exp (Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) + -4⁻¹ := by
+  have hp : ContDiff ℝ 2 fun w ↦ x w 2 := ((contDiff_piLp 2).1 hx 2).of_le (by simp)
+  have hq : ContDiff ℝ 2 fun w ↦ x w 3 := ((contDiff_piLp 2).1 hx 3).of_le (by simp)
+  filter_upwards [(isOpen_normSq_ne_zero hx).mem_nhds hy] with w hw
   rw [laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt hw
     (Eventually.of_forall hsol), Real.exp_log (normSq_pos_of_ne_zero hw), smul_eq_mul]
   ring
@@ -167,7 +175,8 @@ private theorem norm_iteratedFDeriv_le_of_eventuallyEq_smul_exp_log_normSq_add
     (hD : ∀ i, 1 ≤ i → i ≤ n →
       ‖iteratedFDeriv ℝ i (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) y‖ ≤ K * E) :
     ‖iteratedFDeriv ℝ n f y‖ ≤ |a| * n ! * max 1 K ^ n * E := by
-  obtain ⟨hU, hℓ, -⟩ := contDiffOn_log_normSq_and_laplacian_eventuallyEq hx hsol
+  have hU := isOpen_normSq_ne_zero hx
+  have hℓ := contDiffOn_log_normSq hx hsol
   have hexp : ContDiffAt ℝ n (fun w ↦ Real.exp (Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))) y :=
     (Real.contDiff_exp.contDiffAt.comp y (hℓ.contDiffAt (hU.mem_nhds hy))).of_le (by simp)
   have hB := (hℓ.of_le (by simp)).norm_iteratedFDeriv_exp_comp_le hU hy (mul_nonneg hK hE₀) hD
@@ -210,7 +219,7 @@ private theorem norm_iteratedFDeriv_laplacian_log_normSq_le {x : ℂ → Euclide
     simp only [pow_zero, Nat.factorial_zero, Nat.cast_one, one_mul]
     nlinarith
   · have hB := norm_iteratedFDeriv_le_of_eventuallyEq_smul_exp_log_normSq_add hx hsol hy hs₁ hn
-      ((contDiffOn_log_normSq_and_laplacian_eventuallyEq hx hsol).2.2 y hy) hK hE₀ hE₁
+      (laplacian_log_normSq_eventuallyEq_exp hx hsol hy) hK hE₀ hE₁
       fun i _ hi ↦ hD i hi
     rw [abs_of_pos (by norm_num : (0 : ℝ) < 4⁻¹)] at hB
     nlinarith
@@ -237,7 +246,8 @@ private theorem norm_iteratedFDeriv_succ_log_normSq_le {x : ℂ → EuclideanSpa
     ‖iteratedFDeriv ℝ (n + 1) (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z‖ ≤
       Real.exp (c * 3) * (8 * K + 340 * ((K₀ + n ! * max 1 K ^ n) / 4)) *
         Real.exp (-(c * ρ)) := by
-  obtain ⟨hU, hℓ, -⟩ := contDiffOn_log_normSq_and_laplacian_eventuallyEq hx hsol
+  have hU := isOpen_normSq_ne_zero hx
+  have hℓ := contDiffOn_log_normSq hx hsol
   set E : ℝ := Real.exp (-(c * (ρ - 3)))
   have hE₀ : 0 ≤ E := (Real.exp_pos _).le
   have hρ₃ : 0 ≤ ρ - 3 := by linarith [(Real.sqrt_nonneg _).trans hLR]
@@ -346,7 +356,7 @@ theorem exists_norm_iteratedFDeriv_one_sub_normSq_le_mul_exp_of_forall_le_norm_s
   -- Positive orders: near `z`, `1 - |α|² = (-1) exp (log |α|²) + 1`.
   obtain ⟨K, R, hK, hLR, h⟩ := exists_forall_le_norm_iteratedFDeriv_log_normSq_le_mul_exp m n hc₀ hc
   refine ⟨n ! * max 1 K ^ n, R, by positivity, fun x D hx hsol hframe hD z ρ hR hρ ↦ ?_⟩
-  obtain ⟨hU, -, -⟩ := contDiffOn_log_normSq_and_laplacian_eventuallyEq hx hsol
+  have hU := isOpen_normSq_ne_zero hx
   have hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0 :=
     normSq_ne_zero_of_forall_le_norm_sub hx hsol hframe hD fun a ha ↦
       hLR.trans (hR.trans (hρ a ha))

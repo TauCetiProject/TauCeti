@@ -221,7 +221,10 @@ theorem norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le {u : ℂ
     (ε := ε * P) (K := K * P) (fun y _ ↦ hg.contDiffAt) hρ (fun y hy ↦ ?_) (fun y hy ↦ ?_)
   · rw [iteratedFDeriv_succ_apply_left, ← fderiv_continuousMultilinear_apply_const_apply
       ((hDv.differentiable (by norm_num)) x), Fin.prod_univ_succ]
-    calc ‖fderiv ℝ (fun y ↦ iteratedFDeriv ℝ n v y (Fin.tail m)) x (m 0)‖
+    have hl : (fun y ↦ iteratedFDeriv ℝ n v y (Fin.tail m)) = l ∘ iteratedFDeriv ℝ n v :=
+      funext fun y ↦ (ContinuousMultilinearMap.apply_apply ..).symm
+    rw [hl]
+    calc ‖fderiv ℝ (l ∘ iteratedFDeriv ℝ n v) x (m 0)‖
         ≤ ‖fderiv ℝ (l ∘ iteratedFDeriv ℝ n v) x‖ * ‖m 0‖ := ContinuousLinearMap.le_opNorm _ _
       _ ≤ (8 * (ε * P) / ρ + 340 * (K * P) * ρ) * ‖m 0‖ :=
         mul_le_mul_of_nonneg_right hgx (norm_nonneg _)

@@ -33,6 +33,8 @@ at `exp y`, so the chain rule `(f ∘ exp)'(y) = e^y f'(e^y)` holds with no hypo
 * `TauCeti.deriv_comp_exp`: `(f ∘ exp)'(y) = e^y • f'(e^y)`, unconditionally.
 * `TauCeti.norm_iteratedFDeriv_real_cexp`: every real iterated derivative of `Complex.exp` at `z`
   has norm `‖exp z‖`.
+* `TauCeti.norm_iteratedFDeriv_real_exp`: every iterated derivative of `Real.exp` at `y` has norm
+  `exp y`.
 * `TauCeti.iteratedDeriv_cexp_const_mul_ofReal`: the `n`-th real derivative of
   `s ↦ Complex.exp (z * s)` is `s ↦ z ^ n * Complex.exp (z * s)`.
 * `ContinuousLinearMap.norm_iteratedFDeriv_cexp_comp_le`: for a real-linear map `ℓ` to `ℂ`, the
@@ -87,6 +89,12 @@ theorem norm_iteratedFDeriv_real_cexp (n : ℕ) (z : ℂ) :
       (𝕜 := ℝ),
     Function.comp_apply, ContinuousMultilinearMap.norm_restrictScalars,
     norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, Complex.iter_deriv_exp]
+
+/-- Every iterated derivative of the real exponential at `y` has norm `exp y`. -/
+theorem norm_iteratedFDeriv_real_exp (n : ℕ) (y : ℝ) :
+    ‖iteratedFDeriv ℝ n Real.exp y‖ = Real.exp y := by
+  rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, Real.iter_deriv_exp,
+    Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
 
 /-- The `n`-th real derivative of `s ↦ Complex.exp (z * s)` is
 `s ↦ z ^ n * Complex.exp (z * s)`. -/
@@ -253,9 +261,7 @@ theorem ContDiffOn.norm_iteratedFDeriv_exp_comp_le {E : Type*} [NormedAddCommGro
   have h := norm_iteratedFDerivWithin_comp_le (g := Real.exp) (t := univ) (C := Real.exp (f x))
     (D := D) Real.contDiff_exp.contDiffOn hf le_rfl uniqueDiffOn_univ hs.uniqueDiffOn
     (mapsTo_univ _ _) hx (fun i _ ↦ by
-      rw [iteratedFDerivWithin_univ, norm_iteratedFDeriv_eq_norm_iteratedDeriv,
-        iteratedDeriv_eq_iterate, Real.iter_deriv_exp, Real.norm_eq_abs,
-        abs_of_pos (Real.exp_pos _)])
+      rw [iteratedFDerivWithin_univ, TauCeti.norm_iteratedFDeriv_real_exp])
     (fun i hi hin ↦ by
       rw [iteratedFDerivWithin_of_isOpen i hs hx]
       exact (hD i hi hin).trans (hεD i hi hin))
