@@ -49,7 +49,8 @@ algebraically with the projection `Prod.fst '' independentRows`
 (`TauCeti.directOA_sum_eq_fst_image_independentRows`), and for a nonempty finite anchor set
 `TauCeti.sharedOA` coincides with `TauCeti.sharedRows` (`TauCeti.sharedOA_sum_eq_sharedRows`). For
 any nonempty anchor family (finite or infinite), the projection of `TauCeti.sharedOA` is
-characterized by all mixed-choice sums (`TauCeti.mem_fst_image_sharedOA_sum_iff_forall_choice`). A
+characterized by membership in `D` together with all mixed-choice sums
+(`TauCeti.mem_fst_image_sharedOA_sum_iff_forall_choice`). A
 concrete two-anchor squared-component witness (`TauCeti.exists_strict_sharedOA_ssubset_directOA`)
 shows that both inclusions `{x ∈ D | h (g x) ≤ b} ⊂ Prod.fst '' sharedOA ⊂ directOA` can be
 strict.
@@ -233,7 +234,8 @@ theorem sharedOA_sum_eq_sharedRows [Fintype κ] [Nonempty κ] (D : Set X) (g : X
 
 /-- For the sum outer function (with outer linear map `∑ j, ContinuousLinearMap.proj j` at every
 anchor), free heights `E = Set.univ`, and a nonempty finite anchor set, the projection of `sharedOA`
-is given by the sum of componentwise maxima of component rows. -/
+is characterized by membership in `D` together with the sum of componentwise maxima of component
+rows being at most `b`. -/
 theorem mem_fst_image_sharedOA_sum_iff_sum_sup'_le [Fintype κ] [Nonempty κ] {D : Set X}
     {g : X → ι → ℝ} {a : κ → X} {Dg : κ → X →L[ℝ] (ι → ℝ)} {b : ℝ} {x : X} :
     x ∈ Prod.fst '' sharedOA D Set.univ g (fun v => ∑ j, v j) a Dg
@@ -249,7 +251,8 @@ theorem mem_fst_image_sharedOA_sum_iff_sum_sup'_le [Fintype κ] [Nonempty κ] {D
 
 /-- For the sum outer function (with outer linear map `∑ j, ContinuousLinearMap.proj j` at every
 anchor), free heights `E = Set.univ`, and any nonempty anchor family (finite or infinite), the
-projection of `sharedOA` is given by all mixed-choice sums of component rows across anchors. -/
+projection of `sharedOA` is characterized by membership in `D` together with every mixed-choice sum
+of component rows across anchors being at most `b`. -/
 theorem mem_fst_image_sharedOA_sum_iff_forall_choice [Nonempty κ] {D : Set X}
     {g : X → ι → ℝ} {a : κ → X} {Dg : κ → X →L[ℝ] (ι → ℝ)} {b : ℝ} {x : X} :
     x ∈ Prod.fst '' sharedOA D Set.univ g (fun v => ∑ j, v j) a Dg
@@ -321,29 +324,25 @@ theorem exists_strict_sharedOA_ssubset_directOA :
       pj).subset (subset_univ _) (convex_pi fun _ _ => convex_Icc (-1) 1)
   have hcmp := fullspace_analytic_comparison (1 / 2)
     (fun _ _ hxy => sum_le_sum fun j _ => hxy j) hc hhc ha hg hh
-  have hrow0 (x : Fin 2 → ℝ) (j : Fin 2) : componentRow g (a 0) (Dg 0) x j = 2 * x j - 1 := by
-    simp [componentRow_apply, g, a, Dg]; ring
-  have hrow1 (x : Fin 2 → ℝ) (j : Fin 2) : componentRow g (a 1) (Dg 1) x j = -2 * x j - 1 := by
-    simp [componentRow_apply, g, a, Dg]; ring
+  have hrow (i : Fin 2) (x : Fin 2 → ℝ) (j : Fin 2) :
+      componentRow g (a i) (Dg i) x j = 2 * a i j * x j - 1 := by
+    by_cases hi : i = 0 <;> simp [componentRow_apply, g, a, Dg, hi] <;> ring
   have hstrict1 : ¬ Prod.fst '' sharedOA D Set.univ g h a Dg Dh (1 / 2) ⊆
       {x ∈ D | h (g x) ≤ 1 / 2} := fun hsub => by
     have horig := (hsub ⟨(![1, 1 / 4], ![1, -1 / 2]), mem_sharedOA.2
         ⟨Set.mem_pi.mpr fun j _ => by fin_cases j <;> norm_num, Set.mem_univ _, fun i =>
-          ⟨fun j => by
-            rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
-              [rw [hrow0]; rw [hrow1]] <;> fin_cases j <;> norm_num,
+          ⟨fun j => by rw [hrow]; fin_cases i <;> fin_cases j <;> norm_num [a],
           by simp only [h, Dh]; rw [outerRow_sum]; norm_num [Fin.sum_univ_two]⟩⟩, rfl⟩).2
     norm_num [h, g, Fin.sum_univ_two] at horig
   have hstrict2 : ¬ directOA D g h a Dg Dh (1 / 2) ⊆
       Prod.fst '' sharedOA D Set.univ g h a Dg Dh (1 / 2) := fun hsub => by
     have hmem : (![1, -1] : Fin 2 → ℝ) ∈ directOA D g h a Dg Dh (1 / 2) :=
       mem_directOA.2 ⟨Set.mem_pi.mpr fun j _ => by fin_cases j <;> norm_num, fun i => by
-        simp only [h, Dh]; rw [directRow_sum, Fin.sum_univ_two]
-        rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
-          [rw [hrow0, hrow0]; rw [hrow1, hrow1]] <;> norm_num⟩
+        simp only [h, Dh]; rw [directRow_sum, Fin.sum_univ_two, hrow, hrow]
+        fin_cases i <;> norm_num [a]⟩
     have hsh := (mem_fst_image_sharedOA_sum_iff_forall_choice.1 (hsub hmem)).2 ![0, 1]
     simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one] at hsh
-    rw [hrow0, hrow1] at hsh; norm_num at hsh
+    rw [hrow, hrow] at hsh; norm_num [a] at hsh
   exact ⟨D, g, h, a, Dg, Dh, 1 / 2, ha, hg, hh,
     ssubset_iff_subset_ne.2 ⟨hcmp.1, fun heq => hstrict1 heq.symm.subset⟩,
     ssubset_iff_subset_ne.2 ⟨hcmp.2, fun heq => hstrict2 heq.symm.subset⟩⟩

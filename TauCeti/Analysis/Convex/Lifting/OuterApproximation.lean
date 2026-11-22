@@ -278,8 +278,9 @@ theorem sharedOA_of_isEmpty_coord [IsEmpty ι] [Nonempty κ] (D : Set X) (E : Se
     simp [outerRow_apply, Subsingleton.elim (g (a i)) 0, Subsingleton.elim z.2 0]
   simp [hrow]
 
-/-- Graph witness for `sharedOAOn`: given component support off `J`, exact component rows on `J`,
-and outer support at `g x`, the canonical graph point `(x, g x)` belongs to `sharedOAOn J`. -/
+/-- Graph witness for `sharedOAOn`: given `x ∈ D`, `g x ∈ E`, component support off `J`, exact
+component rows on `J`, and that each outer row at `g x` is at most `b`, the canonical graph point
+`(x, g x)` belongs to `sharedOAOn J`. -/
 theorem graph_mem_sharedOAOn {J : Set ι} {D : Set X} {E : Set (ι → ℝ)} {g : X → ι → ℝ}
     {h : (ι → ℝ) → ℝ} {a : κ → X} {Dg : κ → X →L[ℝ] (ι → ℝ)} {Dh : κ → (ι → ℝ) →L[ℝ] ℝ}
     {b : ℝ} {x : X} (hxD : x ∈ D) (hxE : g x ∈ E)
@@ -293,8 +294,9 @@ theorem graph_mem_sharedOAOn {J : Set ι} {D : Set X} {E : Set (ι → ℝ)} {g 
   · exact (haff i j hj).le
   · exact hcomp i j hj
 
-/-- Graph witness for `sharedOA`: given component and outer row bounds at `(x, g x)`, the graph
-point `(x, g x)` belongs to `sharedOA`. -/
+/-- Graph witness for `sharedOA`: given `x ∈ D`, `g x ∈ E`, component row bounds at `(x, g x)`,
+and that each outer row at `g x` is at most `b`, the graph point `(x, g x)` belongs to
+`sharedOA`. -/
 theorem graph_mem_sharedOA {D : Set X} {E : Set (ι → ℝ)} {g : X → ι → ℝ} {h : (ι → ℝ) → ℝ}
     {a : κ → X} {Dg : κ → X →L[ℝ] (ι → ℝ)} {Dh : κ → (ι → ℝ) →L[ℝ] ℝ} {b : ℝ} {x : X}
     (hxD : x ∈ D) (hxE : g x ∈ E)
@@ -519,8 +521,10 @@ theorem exists_affine_coordinate_comparison_not_monotone :
   have hcomp (i : Fin 1) (x : ℝ) : componentRow g (a i) Dg0 x = ![x, -2 * x - 1] := by
     ext j; fin_cases j <;> simp [componentRow_apply, g, a, Dg0]; ring
   have houter (i : Fin 1) (y : Fin 2 → ℝ) : outerRow g h (a i) Dh0 y = -2 * y 0 + y 1 - 1 := by
-    norm_num [outerRow_apply, g, h, a, Dh0]
-    dsimp only [Matrix.vecHead, Matrix.vecTail, Function.comp_apply, Fin.succ_zero_eq_one]; ring
+    simp only [outerRow_apply, g, h, a, Dh0, add_apply, smul_apply,
+      ContinuousLinearMap.proj_apply, Pi.sub_apply, Matrix.cons_val_zero,
+      Matrix.cons_val_one, smul_eq_mul]
+    ring
   have hnotSub : ¬ Prod.fst '' sharedOA Set.univ Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 ⊆
       directOA Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 := fun hsub => by
     have hmem : ((-2 : ℝ), ![0, 3]) ∈
@@ -532,7 +536,8 @@ theorem exists_affine_coordinate_comparison_not_monotone :
     rw [← outerRow_componentRow, houter 0, hcomp 0] at hdir; norm_num at hdir
   have haff : ∀ i : Fin 1, ∀ x : ℝ, ∀ j ∈ ({0} : Set (Fin 2)),
       componentRow g (a i) Dg0 x j = g x j := fun i x j hj => by
-    rw [mem_singleton_iff.1 hj, hcomp i]; rfl
+    rw [mem_singleton_iff.1 hj, hcomp i, Matrix.cons_val_zero]
+    simp only [g, Matrix.cons_val_zero]
   have hc : ∀ j ∉ ({0} : Set (Fin 2)), ConvexOn ℝ Set.univ (fun x => g x j) := fun j hj => by
     rw [Fin.eq_one_of_ne_zero j (by simpa only [mem_singleton_iff] using hj)]
     simpa [g] using even_two.convexOn_pow (𝕜 := ℝ)
