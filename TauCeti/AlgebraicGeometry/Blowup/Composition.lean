@@ -16,10 +16,11 @@ import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 Let `b₁ : Bl_I X ⟶ X` be the blowup of a scheme `X` along an ideal sheaf `I`, and let
 `b₂ : Bl_J (Bl_I X) ⟶ Bl_I X` be a second blowup along an ideal sheaf `J` on `Bl_I X`. This file
 shows that the composite `b₂ ≫ b₁` is isomorphic over `X` to a single blowup `Bl_K X ⟶ X`
-whenever there is an ideal sheaf `K₁` on `X` and an exponent `d : ℕ` such that
+whenever there is an ideal sheaf `K₁` on `X` such that
 
-`K₁.comap b₁ = I.comap b₁ ^ d * J`,
+`K₁.comap b₁ = E * J`
 
+for an effective Cartier divisor `E` on `Bl_I X` (for example `E = I.comap b₁ ^ d` for `d : ℕ`),
 namely for the product centre `K = I * K₁`.
 
 ## Mathematical overview
@@ -28,17 +29,18 @@ namely for the product centre `K = I * K₁`.
    `Bl_{I * K₁} X` both `I` and `K₁` pull back to effective Cartier divisors
    (`isEffectiveCartier_comap_blowupToBase_mul_left`,
    `isEffectiveCartier_comap_blowupToBase_mul_right`), giving the canonical projection
-   `π₁ = I.blowupMulFst K₁ : Bl_{I * K₁} X ⟶ Bl_I X` over `X`. Pulling `K₁.comap b₁ = E₁ ^ d * J`
+   `π₁ = I.blowupMulFst K₁ : Bl_{I * K₁} X ⟶ Bl_I X` over `X`. Pulling `K₁.comap b₁ = E * J`
    back along `π₁` expresses the effective Cartier divisor `K₁.comap (I * K₁).blowupToBase` as
-   `E₁.comap π₁ ^ d * J.comap π₁`; factor descent (`IsEffectiveCartier.of_mul_right`) then makes
+   `E.comap π₁ * J.comap π₁`; factor descent (`IsEffectiveCartier.of_mul_right`) then makes
    `J.comap π₁` effective Cartier, so `π₁` lifts to `Bl_J (Bl_I X)`. Conversely, on `Bl_J (Bl_I X)`
-   both `E₁.comap b₂` (`IsEffectiveCartier.comap_blowupToBase`) and `J.comap b₂` are effective
+   both `E.comap b₂` (`IsEffectiveCartier.comap_blowupToBase`) and `J.comap b₂` are effective
    Cartier, so `(I * K₁).comap (b₂ ≫ b₁)` is effective Cartier and `b₂ ≫ b₁` lifts to
    `Bl_{I * K₁} X`. By uniqueness of lifts to blowups, the two morphisms are mutually inverse
-   (`blowupCompIso`). Moreover, away from `V(I)` the first blowup `b₁` is an isomorphism, so the
-   support `V(I * K₁)` equals `V(I) ∪ b₁(V(J))` (`coe_support_mul_of_comap_blowupToBase_eq`); in
-   particular `V(I * K₁)` avoids a subset `s ⊆ X` if and only if `V(I)` avoids `s` and `V(J)`
-   avoids `b₁⁻¹(s)` (`disjoint_support_mul_of_comap_blowupToBase_eq_iff`).
+   (`blowupCompIso`). Moreover, when `E = I.comap b₁ ^ d`, away from `V(I)` the first blowup `b₁`
+   is an isomorphism, so the support `V(I * K₁)` equals `V(I) ∪ b₁(V(J))`
+   (`coe_support_mul_of_comap_blowupToBase_eq`); in particular `V(I * K₁)` avoids a subset `s ⊆ X`
+   if and only if `V(I)` avoids `s` and `V(J)` avoids `b₁⁻¹(s)`
+   (`disjoint_support_mul_of_comap_blowupToBase_eq_iff`).
 
 2. *Clearing denominators on an affine blowup.* For a finitely generated ideal `I ≤ R` and an
    ideal sheaf `J` of finite type on `Proj R[It]`, finitely many charts `Spec R[I/aᵢ]` cover
@@ -67,8 +69,8 @@ namely for the product centre `K = I * K₁`.
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.IdealSheafData.blowupCompHom`: the comparison morphism
-  `J.blowup ⟶ (I * K₁).blowup` over `X` when
-  `K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J`.
+  `J.blowup ⟶ (I * K₁).blowup` over `X` when `K₁.comap I.blowupToBase = E * J` for an effective
+  Cartier divisor `E`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.blowupCompInv`: the inverse morphism
   `(I * K₁).blowup ⟶ J.blowup` lifting `I.blowupMulFst K₁`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.blowupCompIso`: the resulting isomorphism
@@ -122,25 +124,24 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
-variable {X : Scheme.{u}} {I K₁ : X.IdealSheafData} {J : I.blowup.IdealSheafData} {d : ℕ}
+variable {X : Scheme.{u}} {I K₁ : X.IdealSheafData} {E J : I.blowup.IdealSheafData}
 
-/-- When `K₁` pulls back on `Bl_I X` to `I.comap b₁ ^ d * J`, the product centre `I * K₁` pulls
-back along `b₂ ≫ b₁ : Bl_J (Bl_I X) ⟶ X` to an effective Cartier divisor. -/
+/-- When `K₁` pulls back on `Bl_I X` to `E * J` for an effective Cartier divisor `E`, the product
+centre `I * K₁` pulls back along `b₂ ≫ b₁ : Bl_J (Bl_I X) ⟶ X` to an effective Cartier divisor. -/
 theorem isEffectiveCartier_comap_mul_blowupToBase_comp_of_comap_eq
-    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
+    (hE : E.IsEffectiveCartier) (hK₁ : K₁.comap I.blowupToBase = E * J) :
     ((I * K₁).comap (J.blowupToBase ≫ I.blowupToBase)).IsEffectiveCartier := by
-  have hI : ((I.comap I.blowupToBase).comap J.blowupToBase).IsEffectiveCartier :=
-    I.isEffectiveCartier_comap_blowupToBase.comap_blowupToBase J
-  rw [comap_mul, comap_comp, comap_comp, hK₁, comap_mul, comap_pow]
-  exact TauCeti.isEffectiveCartier_mul hI
-    (TauCeti.isEffectiveCartier_mul (TauCeti.isEffectiveCartier_pow hI d)
+  rw [comap_mul, comap_comp, comap_comp, hK₁, comap_mul]
+  exact TauCeti.isEffectiveCartier_mul
+    (I.isEffectiveCartier_comap_blowupToBase.comap_blowupToBase J)
+    (TauCeti.isEffectiveCartier_mul (hE.comap_blowupToBase J)
       J.isEffectiveCartier_comap_blowupToBase)
 
-/-- When `K₁` pulls back on `Bl_I X` to `I.comap b₁ ^ d * J`, the second centre `J` pulls back
-along `I.blowupMulFst K₁ : Bl_{I * K₁} X ⟶ Bl_I X` to an effective Cartier divisor, by factor
-descent from `K₁.comap (I * K₁).blowupToBase`. -/
+/-- When `K₁` pulls back on `Bl_I X` to `E * J`, the second centre `J` pulls back along
+`I.blowupMulFst K₁ : Bl_{I * K₁} X ⟶ Bl_I X` to an effective Cartier divisor, by factor descent
+from `K₁.comap (I * K₁).blowupToBase`. -/
 theorem isEffectiveCartier_comap_blowupMulFst_of_comap_eq
-    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
+    (hK₁ : K₁.comap I.blowupToBase = E * J) :
     (J.comap (I.blowupMulFst K₁)).IsEffectiveCartier := by
   have hK : (K₁.comap (I.blowupMulFst K₁ ≫ I.blowupToBase)).IsEffectiveCartier := by
     rw [blowupMulFst_blowupToBase]
@@ -148,40 +149,39 @@ theorem isEffectiveCartier_comap_blowupMulFst_of_comap_eq
   rw [comap_comp, hK₁, comap_mul] at hK
   exact hK.of_mul_right
 
-/-- **The forward comparison for a composite blowup.** When
-`K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J`, the composite blowup
-`J.blowupToBase ≫ I.blowupToBase` lifts to `(I * K₁).blowup`. -/
-def blowupCompHom (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
+/-- **The forward comparison for a composite blowup.** When `K₁.comap I.blowupToBase = E * J` for
+an effective Cartier divisor `E`, the composite blowup `J.blowupToBase ≫ I.blowupToBase` lifts to
+`(I * K₁).blowup`. -/
+def blowupCompHom (hE : E.IsEffectiveCartier) (hK₁ : K₁.comap I.blowupToBase = E * J) :
     J.blowup ⟶ (I * K₁).blowup :=
   (I * K₁).blowupLift (J.blowupToBase ≫ I.blowupToBase)
-    (isEffectiveCartier_comap_mul_blowupToBase_comp_of_comap_eq hK₁)
+    (isEffectiveCartier_comap_mul_blowupToBase_comp_of_comap_eq hE hK₁)
 
-/-- **The inverse comparison for a composite blowup.** When
-`K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J`, the first-factor projection
-`I.blowupMulFst K₁ : (I * K₁).blowup ⟶ I.blowup` lifts to `J.blowup`. -/
-def blowupCompInv (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
+/-- **The inverse comparison for a composite blowup.** When `K₁.comap I.blowupToBase = E * J`, the
+first-factor projection `I.blowupMulFst K₁ : (I * K₁).blowup ⟶ I.blowup` lifts to `J.blowup`. -/
+def blowupCompInv (hK₁ : K₁.comap I.blowupToBase = E * J) :
     (I * K₁).blowup ⟶ J.blowup :=
   J.blowupLift (I.blowupMulFst K₁) (isEffectiveCartier_comap_blowupMulFst_of_comap_eq hK₁)
 
 /-- `blowupCompHom` is a morphism over `X`. -/
 @[reassoc (attr := simp)]
 theorem blowupCompHom_blowupToBase
-    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
-    blowupCompHom hK₁ ≫ (I * K₁).blowupToBase = J.blowupToBase ≫ I.blowupToBase :=
+    (hE : E.IsEffectiveCartier) (hK₁ : K₁.comap I.blowupToBase = E * J) :
+    blowupCompHom hE hK₁ ≫ (I * K₁).blowupToBase = J.blowupToBase ≫ I.blowupToBase :=
   (I * K₁).blowupLift_blowupToBase _ _
 
 /-- `blowupCompInv` lifts `I.blowupMulFst K₁` through `J.blowupToBase`. -/
 @[reassoc (attr := simp)]
 theorem blowupCompInv_blowupToBase
-    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
+    (hK₁ : K₁.comap I.blowupToBase = E * J) :
     blowupCompInv hK₁ ≫ J.blowupToBase = I.blowupMulFst K₁ :=
   J.blowupLift_blowupToBase _ _
 
 /-- Followed by `I.blowupMulFst K₁`, the forward comparison recovers `J.blowupToBase`. -/
 @[reassoc (attr := simp)]
 theorem blowupCompHom_blowupMulFst
-    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
-    blowupCompHom hK₁ ≫ I.blowupMulFst K₁ = J.blowupToBase := by
+    (hE : E.IsEffectiveCartier) (hK₁ : K₁.comap I.blowupToBase = E * J) :
+    blowupCompHom hE hK₁ ≫ I.blowupMulFst K₁ = J.blowupToBase := by
   apply I.blowup_hom_ext
   · rw [Category.assoc, blowupMulFst_blowupToBase, blowupCompHom_blowupToBase]
   · rw [Category.assoc, blowupMulFst_blowupToBase, blowupCompHom_blowupToBase, comap_comp]
@@ -190,8 +190,8 @@ theorem blowupCompHom_blowupMulFst
 /-- `blowupCompHom` and `blowupCompInv` compose to the identity on `J.blowup`. -/
 @[reassoc (attr := simp)]
 theorem blowupCompHom_blowupCompInv
-    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
-    blowupCompHom hK₁ ≫ blowupCompInv hK₁ = 𝟙 J.blowup := by
+    (hE : E.IsEffectiveCartier) (hK₁ : K₁.comap I.blowupToBase = E * J) :
+    blowupCompHom hE hK₁ ≫ blowupCompInv hK₁ = 𝟙 J.blowup := by
   apply J.blowup_hom_ext
   · rw [Category.assoc, blowupCompInv_blowupToBase, blowupCompHom_blowupMulFst, Category.id_comp]
   · rw [Category.assoc, blowupCompInv_blowupToBase, blowupCompHom_blowupMulFst]
@@ -200,8 +200,8 @@ theorem blowupCompHom_blowupCompInv
 /-- `blowupCompInv` and `blowupCompHom` compose to the identity on `(I * K₁).blowup`. -/
 @[reassoc (attr := simp)]
 theorem blowupCompInv_blowupCompHom
-    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
-    blowupCompInv hK₁ ≫ blowupCompHom hK₁ = 𝟙 (I * K₁).blowup := by
+    (hE : E.IsEffectiveCartier) (hK₁ : K₁.comap I.blowupToBase = E * J) :
+    blowupCompInv hK₁ ≫ blowupCompHom hE hK₁ = 𝟙 (I * K₁).blowup := by
   apply (I * K₁).blowup_hom_ext
   · rw [Category.assoc, blowupCompHom_blowupToBase, blowupCompInv_blowupToBase_assoc,
       blowupMulFst_blowupToBase, Category.id_comp]
@@ -210,57 +210,60 @@ theorem blowupCompInv_blowupCompHom
     exact (I * K₁).isEffectiveCartier_comap_blowupToBase
 
 /-- **Isomorphism of a composite blowup with a single blowup.** On any scheme `X`, if
-`K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J`, then the iterated blowup `J.blowup` is
-canonically isomorphic over `X` to `(I * K₁).blowup`. -/
-def blowupCompIso (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
+`K₁.comap I.blowupToBase = E * J` for an effective Cartier divisor `E`, then the iterated blowup
+`J.blowup` is canonically isomorphic over `X` to `(I * K₁).blowup`. -/
+def blowupCompIso (hE : E.IsEffectiveCartier) (hK₁ : K₁.comap I.blowupToBase = E * J) :
     J.blowup ≅ (I * K₁).blowup where
-  hom := blowupCompHom hK₁
+  hom := blowupCompHom hE hK₁
   inv := blowupCompInv hK₁
-  hom_inv_id := blowupCompHom_blowupCompInv hK₁
-  inv_hom_id := blowupCompInv_blowupCompHom hK₁
+  hom_inv_id := blowupCompHom_blowupCompInv hE hK₁
+  inv_hom_id := blowupCompInv_blowupCompHom hE hK₁
 
 /-- The forward direction of `blowupCompIso` is `blowupCompHom`. -/
 @[simp]
-theorem blowupCompIso_hom (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
-    (blowupCompIso hK₁).hom = blowupCompHom hK₁ :=
+theorem blowupCompIso_hom
+    (hE : E.IsEffectiveCartier) (hK₁ : K₁.comap I.blowupToBase = E * J) :
+    (blowupCompIso hE hK₁).hom = blowupCompHom hE hK₁ :=
   (rfl)
 
 /-- The inverse direction of `blowupCompIso` is `blowupCompInv`. -/
 @[simp]
-theorem blowupCompIso_inv (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
-    (blowupCompIso hK₁).inv = blowupCompInv hK₁ :=
+theorem blowupCompIso_inv
+    (hE : E.IsEffectiveCartier) (hK₁ : K₁.comap I.blowupToBase = E * J) :
+    (blowupCompIso hE hK₁).inv = blowupCompInv hK₁ :=
   (rfl)
 
 /-- The forward composite-blowup comparison is an isomorphism. -/
 instance isIso_blowupCompHom
-    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
-    IsIso (blowupCompHom hK₁) :=
-  ⟨blowupCompInv hK₁, blowupCompHom_blowupCompInv hK₁, blowupCompInv_blowupCompHom hK₁⟩
+    (hE : E.IsEffectiveCartier) (hK₁ : K₁.comap I.blowupToBase = E * J) :
+    IsIso (blowupCompHom hE hK₁) :=
+  ⟨blowupCompInv hK₁, blowupCompHom_blowupCompInv hE hK₁, blowupCompInv_blowupCompHom hE hK₁⟩
 
-/-- The inverse composite-blowup comparison is an isomorphism. -/
-instance isIso_blowupCompInv
-    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
+/-- The inverse composite-blowup comparison is an isomorphism when `E` is effective Cartier. -/
+theorem isIso_blowupCompInv
+    (hE : E.IsEffectiveCartier) (hK₁ : K₁.comap I.blowupToBase = E * J) :
     IsIso (blowupCompInv hK₁) :=
-  ⟨blowupCompHom hK₁, blowupCompInv_blowupCompHom hK₁, blowupCompHom_blowupCompInv hK₁⟩
+  ⟨blowupCompHom hE hK₁, blowupCompInv_blowupCompHom hE hK₁, blowupCompHom_blowupCompInv hE hK₁⟩
 
 /-- The categorical inverse of `blowupCompHom` is `blowupCompInv`. -/
 @[simp]
 theorem inv_blowupCompHom
-    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
-    inv (blowupCompHom hK₁) = blowupCompInv hK₁ :=
-  (IsIso.eq_inv_of_hom_inv_id (blowupCompHom_blowupCompInv hK₁)).symm
+    (hE : E.IsEffectiveCartier) (hK₁ : K₁.comap I.blowupToBase = E * J) :
+    inv (blowupCompHom hE hK₁) = blowupCompInv hK₁ :=
+  (IsIso.eq_inv_of_hom_inv_id (blowupCompHom_blowupCompInv hE hK₁)).symm
 
 /-- The categorical inverse of `blowupCompInv` is `blowupCompHom`. -/
 @[simp]
 theorem inv_blowupCompInv
-    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
-    inv (blowupCompInv hK₁) = blowupCompHom hK₁ :=
-  (IsIso.eq_inv_of_hom_inv_id (blowupCompInv_blowupCompHom hK₁)).symm
+    (hE : E.IsEffectiveCartier) (hK₁ : K₁.comap I.blowupToBase = E * J)
+    [IsIso (blowupCompInv hK₁)] :
+    inv (blowupCompInv hK₁) = blowupCompHom hE hK₁ :=
+  (IsIso.eq_inv_of_hom_inv_id (blowupCompInv_blowupCompHom hE hK₁)).symm
 
 /-- When `K₁.comap b₁ = I.comap b₁ ^ d * J`, the support of the product centre `I * K₁` is the
 union of `V(I)` and the image under `b₁` of `V(J)`: away from `V(I)`, the first blowup `b₁` is an
 isomorphism, so every point of `V(K₁) \ V(I)` lifts to a point of `V(J)`. -/
-theorem coe_support_mul_of_comap_blowupToBase_eq
+theorem coe_support_mul_of_comap_blowupToBase_eq {d : ℕ}
     (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
     ((I * K₁).support : Set X) =
       (I.support : Set X) ∪ I.blowupToBase '' (J.support : Set I.blowup) := by
@@ -300,7 +303,7 @@ theorem coe_support_mul_of_comap_blowupToBase_eq
 /-- For any `s : Set X` and `K₁` satisfying `K₁.comap b₁ = I.comap b₁ ^ d * J`, the product centre
 `V(I * K₁)` is disjoint from `s` if and only if `V(I)` is disjoint from `s` and `V(J)` is disjoint
 from `b₁⁻¹(s)`. -/
-theorem disjoint_support_mul_of_comap_blowupToBase_eq_iff {s : Set X}
+theorem disjoint_support_mul_of_comap_blowupToBase_eq_iff {s : Set X} {d : ℕ}
     (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
     Disjoint s ((I * K₁).support : Set X) ↔
       Disjoint s (I.support : Set X) ∧
@@ -518,15 +521,6 @@ theorem exists_fg_ideal_comap_toSpecCoeff_eq (hI : I.FG)
     rintro _ ⟨l, rfl⟩
     exact ⟨gen ⟨j, l⟩, ⟨⟨j, l⟩, rfl⟩, rfl⟩
 
-/-- If `K.comap f = M`, then `(M.map f).comap f = M` by the `comap`/`map` adjunction. -/
-private theorem comap_map_eq_of_eq_comap {A B : Scheme.{u}} {f : A ⟶ B}
-    {K : B.IdealSheafData} {M : A.IdealSheafData} (h : K.comap f = M) :
-    (M.map f).comap f = M := by
-  refine le_antisymm (comap_map_le _ _) ?_
-  have hle := comap_mono f (le_map_iff_comap_le.mpr h.le)
-  dsimp only at hle
-  rwa [h] at hle
-
 /-- **Schematic image recovery on `Proj R[It]`.** For finitely generated `I ≤ R` and finite-type
 `J` on `Proj R[It]`, every sufficiently large `d : ℕ` satisfies
 `((I.comap π ^ d * J).map π).comap π = I.comap π ^ d * J`. -/
@@ -542,7 +536,8 @@ theorem exists_comap_map_toSpecCoeff_eq (hI : I.FG)
   obtain ⟨N, hN⟩ := exists_fg_ideal_comap_toSpecCoeff_eq hI J hJ
   refine ⟨N, fun d hd ↦ ?_⟩
   obtain ⟨K₀, -, hK₀⟩ := hN d hd
-  exact comap_map_eq_of_eq_comap hK₀
+  rw [← hK₀]
+  exact (map_gc _).l_u_l_eq_l _
 
 end AffineBlowupCharts
 
@@ -594,8 +589,8 @@ private theorem exists_comap_map_blowupToBase_comap_blowupChart_eq (I : X.IdealS
   obtain ⟨K₀, -, hK₀⟩ := hN d hd
   set M := I.comap I.blowupToBase ^ d * J
   rw [← comap_comp, blowupChart_blowupToBase, comap_comp,
-    M.comap_map_of_isPullback_of_flat hV.fromSpec (I.isPullback_blowupChart_fromSpec hV)]
-  exact comap_map_eq_of_eq_comap hK₀
+    M.comap_map_of_isPullback_of_flat hV.fromSpec (I.isPullback_blowupChart_fromSpec hV), ← hK₀]
+  exact (map_gc _).l_u_l_eq_l _
 
 /-- **Global schematic image identity for blowups.** On a quasi-compact scheme `X`, let `I` be an
 ideal sheaf of finite type on `X` and `J` an ideal sheaf of finite type on `Bl_I X`. Then for
@@ -644,11 +639,13 @@ theorem exists_blowup_comp_of_compactSpace [CompactSpace X] (I : X.IdealSheafDat
   obtain ⟨N, hN⟩ := I.exists_comap_map_blowupToBase_eq hI J hJ
   set K₁ := (I.comap I.blowupToBase ^ N * J).map I.blowupToBase
   have hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ N * J := hN N le_rfl
+  have hE : (I.comap I.blowupToBase ^ N).IsEffectiveCartier :=
+    TauCeti.isEffectiveCartier_pow I.isEffectiveCartier_comap_blowupToBase N
   have hproper : IsProper (I * K₁).blowupToBase := by
-    rw [(blowupCompIso hK₁).eq_inv_comp.mpr (blowupCompHom_blowupToBase hK₁)]
+    rw [(blowupCompIso hE hK₁).eq_inv_comp.mpr (blowupCompHom_blowupToBase hE hK₁)]
     infer_instance
-  exact ⟨I * K₁, blowupCompIso hK₁, hproper, coe_support_mul_of_comap_blowupToBase_eq hK₁,
-    blowupCompHom_blowupToBase hK₁⟩
+  exact ⟨I * K₁, blowupCompIso hE hK₁, hproper, coe_support_mul_of_comap_blowupToBase_eq hK₁,
+    blowupCompHom_blowupToBase hE hK₁⟩
 
 /-- If `V(K) = V(I) ∪ b₁(V(J))` while `V(I)` avoids `U` and `V(J)` avoids `b₁⁻¹(U)`, then `V(K)`
 also avoids `U`, so `K.blowupToBase` restricts to an isomorphism over `U`. -/
@@ -710,12 +707,14 @@ theorem exists_blowup_comp_of_isAffine [IsAffine X] (I : X.IdealSheafData)
     rw [htop]
   have hK₁_eq : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ N * J :=
     eq_of_comap_eq_of_isIso (I.blowupChart (isAffineOpen_top X)) (hLHS.trans hK₀)
+  have hE : (I.comap I.blowupToBase ^ N).IsEffectiveCartier :=
+    TauCeti.isEffectiveCartier_pow I.isEffectiveCartier_comap_blowupToBase N
   have hKfg (V : X.affineOpens) : ((I * K₁).ideal V).FG := by
     rw [ideal_mul, Pi.mul_apply, ofIdealTop_ideal,
       ← I.map_ideal (U := V) (V := ⟨⊤, isAffineOpen_top X⟩) (le_top : V.val ≤ ⊤)]
     exact (Ideal.FG.map hI _).mul (Ideal.FG.map hK₀fg _)
-  exact ⟨I * K₁, blowupCompIso hK₁_eq, hKfg, (I * K₁).isProper_blowupToBase hKfg,
-    coe_support_mul_of_comap_blowupToBase_eq hK₁_eq, blowupCompHom_blowupToBase hK₁_eq⟩
+  exact ⟨I * K₁, blowupCompIso hE hK₁_eq, hKfg, (I * K₁).isProper_blowupToBase hKfg,
+    coe_support_mul_of_comap_blowupToBase_eq hK₁_eq, blowupCompHom_blowupToBase hE hK₁_eq⟩
 
 /-- **Composition of admissible finite-type blowups over an affine scheme.** Corollary of
 `exists_blowup_comp_of_isAffine` when `V(I)` avoids an open `U ⊆ X` and `V(J)` avoids
