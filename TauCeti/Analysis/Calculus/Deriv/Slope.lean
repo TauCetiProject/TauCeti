@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
 public import Mathlib.Analysis.Calculus.Deriv.Slope
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Topology.UniformSpace.UniformConvergence
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -43,7 +44,9 @@ that they do not separate linearly: their distance is `o(s - t)` at parameter `s
 A negative right derivative at `x` forces nearby values to the right to lie strictly below `f x`.
 
 By the mean value inequality, if the derivative of `f` on a convex set stays within `C` of a
-vector `v`, then so does every slope of `f` between two distinct points of the set.
+vector `v`, then so does every slope of `f` between two distinct points of the set. Applied
+uniformly in a parameter, this shows that the difference quotients of a family `f t r` in `t`
+converge uniformly in `r` when its derivatives in `t` do.
 
 A function vanishing at `0` has derivative `a` at `0` within `s` exactly when `f(t) / t → a` as
 `t → 0` within `s \ {0}`; in particular a right derivative `a` gives `f(t) / t → a` as `t → 0⁺`.
@@ -73,6 +76,9 @@ at `x`.
   `q' (x) = κ` and `d → a ≠ 0` at `x`, then `f' (x) = -κ / a`.
 * `Convex.norm_slope_sub_le_of_norm_hasDerivWithin_sub_le`: a slope of `f` on a convex set is
   within `C` of `v` when the derivative of `f` there is.
+* `TauCeti.tendstoUniformlyOn_slope_of_tendstoUniformlyOn`: if the derivatives `f' t r` of a family
+  `f t r` in `t` converge to `f' x r` uniformly in `r ∈ U` as `t → x`, then so do the slopes of
+  `t ↦ f t r` at `x`.
 -/
 
 public section
@@ -222,3 +228,31 @@ theorem Convex.norm_slope_sub_le_of_norm_hasDerivWithin_sub_le {𝕜 E : Type*} 
   convert h using 2
   simp only [Pi.sub_apply, id, sub_smul]
   abel
+
+namespace TauCeti
+
+open Metric
+
+/-- Let `f t r` depend on a variable `t` with derivative `f' t r` near `x`, and let `f' t`
+converge to `f' x` uniformly on `U` as `t → x`. Then the difference quotients
+`(t - x)⁻¹ • (f t r - f x r)` converge to `f' x r` uniformly in `r ∈ U` as `t → x`. -/
+theorem tendstoUniformlyOn_slope_of_tendstoUniformlyOn {𝕜 α E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f f' : 𝕜 → α → E} {U : Set α} {x : 𝕜} {δ : ℝ}
+    (hδ : 0 < δ) (hf : ∀ r ∈ U, ∀ t ∈ ball x δ, HasDerivAt (f · r) (f' t r) t)
+    (hf' : TendstoUniformlyOn f' (f' x) (𝓝 x) U) :
+    TendstoUniformlyOn (fun t r ↦ slope (f · r) x t) (f' x) (𝓝[≠] x) U := by
+  rw [Metric.tendstoUniformlyOn_iff] at hf' ⊢
+  intro ε hε
+  obtain ⟨η, hη, hηε⟩ := Metric.eventually_nhds_iff_ball.1 (hf' (ε / 2) (half_pos hε))
+  have hball : ball x (min δ η) ∈ 𝓝[≠] x :=
+    nhdsWithin_le_nhds (ball_mem_nhds x (by positivity))
+  filter_upwards [hball, self_mem_nhdsWithin] with t ht htx r hr
+  rw [dist_comm, dist_eq_norm]
+  -- mean value inequality on `ball x (min δ η)`, where `f' s r` is within `ε / 2` of `f' x r`
+  refine ((convex_ball x (min δ η)).norm_slope_sub_le_of_norm_hasDerivWithin_sub_le
+    (fun s hs ↦ (hf r hr s (ball_subset_ball (min_le_left δ η) hs)).hasDerivWithinAt)
+    (fun s hs ↦ ?_) (mem_ball_self (by positivity)) ht (Ne.symm htx)).trans_lt (half_lt_self hε)
+  rw [← dist_eq_norm, dist_comm]
+  exact (hηε s (ball_subset_ball (min_le_right δ η) hs) r hr).le
+
+end TauCeti

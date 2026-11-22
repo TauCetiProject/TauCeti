@@ -136,28 +136,6 @@ open Filter Metric Topology
 variable {f f' : ℝ → ℂ → E} {U : Set ℂ} {δ : ℝ}
 
 omit [CompleteSpace E] in
-/-- Let `f t r` depend on a real variable `t` with derivative `f' t r`, and let `f' t` converge to
-`f' 0` uniformly on `U` as `t → 0`. Then the difference quotients `t⁻¹ (f t r - f 0 r)` converge to
-`f' 0 r` uniformly in `r ∈ U` as `t → 0`. -/
-theorem tendstoUniformlyOn_slope_of_tendstoUniformlyOn (hδ : 0 < δ)
-    (hf : ∀ r ∈ U, ∀ t ∈ ball (0 : ℝ) δ, HasDerivAt (f · r) (f' t r) t)
-    (hf' : TendstoUniformlyOn f' (f' 0) (𝓝 0) U) :
-    TendstoUniformlyOn (fun t r ↦ slope (f · r) 0 t) (f' 0) (𝓝[≠] 0) U := by
-  rw [Metric.tendstoUniformlyOn_iff] at hf' ⊢
-  intro ε hε
-  obtain ⟨η, hη, hηε⟩ := Metric.eventually_nhds_iff_ball.1 (hf' (ε / 2) (half_pos hε))
-  have hball : ball (0 : ℝ) (min δ η) ∈ 𝓝[≠] 0 :=
-    nhdsWithin_le_nhds (ball_mem_nhds 0 (by positivity))
-  filter_upwards [hball, self_mem_nhdsWithin] with t ht ht0 r hr
-  rw [dist_comm, dist_eq_norm]
-  -- mean value inequality on `ball 0 (min δ η)`, where `f' s r` is within `ε / 2` of `f' 0 r`
-  refine ((convex_ball 0 (min δ η)).norm_slope_sub_le_of_norm_hasDerivWithin_sub_le
-    (fun s hs ↦ (hf r hr s (ball_subset_ball (min_le_left δ η) hs)).hasDerivWithinAt)
-    (fun s hs ↦ ?_) (mem_ball_self (by positivity)) ht (Ne.symm ht0)).trans_lt (half_lt_self hε)
-  rw [← dist_eq_norm, dist_comm]
-  exact (hηε s (ball_subset_ball (min_le_right δ η) hs) r hr).le
-
-omit [CompleteSpace E] in
 /-- If `f t` is holomorphic on `U` for every real `t` near `0`, then so are the difference
 quotients `r ↦ t⁻¹ (f t r - f 0 r)` for every nonzero `t` near `0`. -/
 theorem eventually_differentiableOn_slope (hδ : 0 < δ)
