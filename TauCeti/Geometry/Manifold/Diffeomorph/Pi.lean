@@ -16,8 +16,6 @@ spaces, modelled on `ModelWithCorners.pi I`:
 
 * `Diffeomorph.piUnique` identifies a finite product indexed by a `Unique` type with its single
   factor `M default`, the smooth counterpart of `Equiv.piUnique` and `Homeomorph.piUnique`;
-* `Diffeomorph.funUnique` identifies a finite power `ι → M` indexed by a `Unique` type with `M`,
-  the smooth counterpart of `Equiv.funUnique` and `Homeomorph.funUnique`;
 * `Diffeomorph.piSnoc` appends a last factor via `Fin.snoc`, identifying
   `(∀ i : Fin m, M i.castSucc) × M (Fin.last m)` with `∀ i : Fin (m + 1), M i`, the smooth
   counterpart of `Fin.snocEquiv` (composed with `Equiv.prodComm`);
@@ -28,7 +26,6 @@ spaces, modelled on `ModelWithCorners.pi I`:
 
 * `Diffeomorph.piUnique`: canonical diffeomorphism `(∀ i, M i) ≃ₘ^n M default` for
   `[Unique ι]`.
-* `Diffeomorph.funUnique`: canonical diffeomorphism `(ι → M) ≃ₘ^n M` for `[Unique ι]`.
 * `Diffeomorph.piSnoc`: canonical diffeomorphism
   `((∀ i : Fin m, M i.castSucc) × M (Fin.last m)) ≃ₘ^n (∀ i : Fin (m + 1), M i)`.
 
@@ -78,34 +75,6 @@ theorem piUnique_symm_apply (x : M default) : (piUnique I M n).symm x = uniqueEl
 theorem piUnique_toEquiv : (piUnique I M n).toEquiv = Equiv.piUnique M := (rfl)
 
 end PiUnique
-
-section FunUnique
-
-variable (ι : Type*) [Fintype ι] [Unique ι] {E H : Type*} [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H) (M : Type*)
-  [TopologicalSpace M] [ChartedSpace H M]
-
-/-- A finite power `ι → M` of a charted space indexed by a `Unique` type is `C^n` diffeomorphic
-to `M`. This is the smooth counterpart of `Equiv.funUnique` and `Homeomorph.funUnique`. -/
-def funUnique (n : ℕ∞ω) : (ι → M) ≃ₘ^n⟮ModelWithCorners.pi fun _ : ι ↦ I, I⟯ M where
-  toEquiv := Equiv.funUnique ι M
-  contMDiff_toFun := contMDiff_apply
-  contMDiff_invFun := contMDiff_pi_iff.2 fun _ ↦ contMDiff_id
-
-/-- `Diffeomorph.funUnique` evaluates a function at `default`. -/
-@[simp]
-theorem funUnique_apply (n : ℕ∞ω) (f : ι → M) : funUnique ι I M n f = f default := (rfl)
-
-/-- The inverse of `Diffeomorph.funUnique` builds the constant function. -/
-@[simp]
-theorem funUnique_symm_apply (n : ℕ∞ω) (x : M) (i : ι) :
-    (funUnique ι I M n).symm x i = x := (rfl)
-
-/-- The underlying equivalence of `Diffeomorph.funUnique` is `Equiv.funUnique`. -/
-@[simp]
-theorem funUnique_toEquiv (n : ℕ∞ω) : (funUnique ι I M n).toEquiv = Equiv.funUnique ι M := (rfl)
-
-end FunUnique
 
 section PiSnoc
 

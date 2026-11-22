@@ -212,7 +212,7 @@ section LocalDiffeomorph
 
 open Function Set
 open OpenPartialHomeomorph (transHomeomorph_source transHomeomorph_target trans_source trans_target
-  extend_target)
+  extend_target extendTrans_source extendTrans_target extendTrans_symm_apply)
 open scoped Manifold ContDiff
 
 variable {𝕜 E E' H G M N : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
@@ -232,19 +232,17 @@ theorem IsLocalDiffeomorphAt.isSubmersionAtOfComplement {f : M → N} {x : M}
     (hf.mfderivToContinuousLinearEquiv hn).trans (tangentSpaceCastModel J (f x))⟩
   obtain ⟨Θ, hxΘ, hfΘ⟩ := hf; let ψ := chartAt G (f x)
   have hψ : ψ ∈ IsManifold.maximalAtlas J n N := IsManifold.chart_mem_maximalAtlas (f x)
-  let Ψ := ψ.transHomeomorph J.toHomeomorph
-  let Ξ := (Θ.toOpenPartialHomeomorph.trans Ψ).transHomeomorph L₀.symm.toHomeomorph
+  let Ξ := Θ.toOpenPartialHomeomorph.trans (ψ.extendTrans J L₀.symm.toHomeomorph)
   let φ := Ξ.transHomeomorph I.toHomeomorph.symm
   have hΞ : ContMDiffOn I 𝓘(𝕜, E) n Ξ Ξ.source :=
-    L₀.symm.contDiff.contMDiff.comp_contMDiffOn <|
-      (ψ.contMDiffOn_transHomeomorph_toHomeomorph hψ).comp (Θ.contMDiffOn.mono inter_subset_left)
-        fun _ hz ↦ hz.2
+    (ψ.contMDiffOn_extendTrans hψ L₀.symm.contDiff).comp (Θ.contMDiffOn.mono inter_subset_left)
+      fun _ hz ↦ hz.2
   have hΞs : ContMDiffOn 𝓘(𝕜, E) I n Ξ.symm Ξ.target :=
-    (Θ.symm.contMDiffOn.comp ((ψ.contMDiffOn_transHomeomorph_toHomeomorph_symm hψ).mono
-      inter_subset_left) fun _ hz ↦ hz.2).comp L₀.contDiff.contMDiff.contMDiffOn fun _ hu ↦ hu
+    Θ.symm.contMDiffOn.comp ((ψ.contMDiffOn_extendTrans_symm hψ L₀.contDiff).mono
+      inter_subset_left) fun _ hz ↦ hz.2
   have hφ := Ξ.transHomeomorph_toHomeomorph_symm_mem_maximalAtlas hΞ hΞs
   have hxφ : x ∈ φ.source := by
-    simp only [φ, Ξ, Ψ, transHomeomorph_source, trans_source,
+    simp only [φ, Ξ, transHomeomorph_source, trans_source, extendTrans_source,
       PartialDiffeomorph.toOpenPartialHomeomorph_source,
       PartialDiffeomorph.toFun'_toOpenPartialHomeomorph, mem_inter_iff, mem_preimage]
     exact ⟨hxΘ, by rw [← hfΘ hxΘ]; exact mem_chart_source G (f x)⟩
@@ -253,13 +251,13 @@ theorem IsLocalDiffeomorphAt.isSubmersionAtOfComplement {f : M → N} {x : M}
   have hIu : I (I.symm u) = u := I.right_inv (I.range_eq_univ.symm ▸ mem_univ u)
   have huΞ : u ∈ Ξ.target := by simpa [φ, extend_target, hIu, I.range_eq_univ] using hu
   have hL₀ : L₀.symm.toHomeomorph.symm = L₀.toHomeomorph := rfl
-  simp only [Ξ, Ψ, hL₀, transHomeomorph_target, trans_target,
+  simp only [Ξ, hL₀, trans_target, extendTrans_target, extendTrans_symm_apply,
     PartialDiffeomorph.toOpenPartialHomeomorph_target, ContinuousLinearEquiv.coe_toHomeomorph,
-    J.toHomeomorph_symm_apply, mem_inter_iff, mem_preimage] at huΞ
+    mem_inter_iff, mem_preimage] at huΞ
   have huΨ : L₀ u ∈ (ψ.extend J).target := by simpa [extend_target, J.range_eq_univ] using huΞ.1
   have hyΘ : (ψ.extend J).symm (L₀ u) ∈ Θ.target := by simpa using huΞ.2
   have hsymm : (φ.extend I).symm u = Θ.toPartialEquiv.symm ((ψ.extend J).symm (L₀ u)) := by
-    simp [φ, Ξ, Ψ, hIu]
+    simp [φ, Ξ, hIu]
   dsimp only [comp_apply]
   rw [hsymm, hfΘ (Θ.toPartialEquiv.map_target hyΘ), Θ.toPartialEquiv.right_inv hyΘ]
   exact (ψ.extend J).right_inv huΨ
