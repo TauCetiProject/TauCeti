@@ -51,6 +51,8 @@ intended throughout.
   `NontriviallyNormedField`, without completeness or separation assumptions.
 * `ContinuousLinearMap.IsFredholm.isInvertible_of_injective_of_index_eq_zero`: an injective
   Fredholm operator of index zero is invertible.
+* `ContinuousLinearMap.index_comp`: the index of a composition of Fredholm operators is the sum
+  of their indices.
 * `ContinuousLinearMap.isFredholm_iff_of_comp_eq`: operators conjugate under continuous linear
   equivalences are simultaneously Fredholm.
 * `ContinuousLinearMap.IsFredholm.restrictScalars`: a Fredholm operator over `𝕜'` stays Fredholm
@@ -220,6 +222,13 @@ lemma IsFredholm.isInvertible_of_injective_of_index_eq_zero {T : E →L[𝕜] F}
   have := hT.finite_coker
   exact isInvertible_iff_isFredholm_and_bijective.2
     ⟨hT, T.bijective_of_injective_of_index_eq_zero hinj h0⟩
+
+/-- The index of a composition of Fredholm operators is the sum of their indices. This is
+Mathlib's `ContinuousLinearMap.IsFredholm.index_comp`, stated for `ContinuousLinearMap.index`
+rather than for the index of the underlying linear maps. -/
+lemma index_comp {S : F →L[𝕜] G} {T : E →L[𝕜] F} (hS : IsFredholm S) (hT : IsFredholm T) :
+    (S ∘L T).index = S.index + T.index := by
+  simpa only [index_def] using hS.index_comp hT
 
 section RestrictScalars
 

@@ -175,7 +175,7 @@ theorem isLocalizedModule_map_basicOpen_of_restrictFunctor_obj_iso {W : Y.Opens}
     rwa [Scheme.Opens.ι_appIso, Iso.refl_inv] at h
   -- Compare `W` and `D(s)` with the images of `⊤` and `D(s')` under the inclusion of `W`, then
   -- pass to `Q` along `e`.
-  refine IsLocalizedModule.of_bijective_semilinearMap (σ := W.topIso.inv.hom) (.powers s)
+  refine (IsLocalizedModule.iff_of_bijective_semilinearMap (σ := W.topIso.inv.hom) (.powers s)
     (PresheafOfModulesOfCommRing.map (R := Y.presheaf) P (homOfLE (Y.basicOpen_le s)).op).hom
     (PresheafOfModulesOfCommRing.map (R := W.toScheme.presheaf) Q
         (homOfLE (W.toScheme.basicOpen_le s')).op).hom
@@ -188,7 +188,8 @@ theorem isLocalizedModule_map_basicOpen_of_restrictFunctor_obj_iso {W : Y.Opens}
     ((ConcreteCategory.bijective_of_isIso (e.hom.app (.op ⊤))).comp
       (ConcreteCategory.bijective_of_isIso (P.presheaf.map (eqToHom W.ι_image_top).op)))
     ((ConcreteCategory.bijective_of_isIso (e.hom.app (.op (W.toScheme.basicOpen s')))).comp
-      (ConcreteCategory.bijective_of_isIso (P.presheaf.map (eqToHom hs).op))) fun x ↦ ?_
+      (ConcreteCategory.bijective_of_isIso (P.presheaf.map (eqToHom hs).op))) fun x ↦ ?_).mpr
+    inferInstance
   · refine Eq.trans (congrArg (e.hom.app (.op ⊤)) ?_)
       (hsmul ⊤ (W.topIso.inv r) _)
     -- `W.topIso.inv` is the restriction of functions from `W` to `W.ι ''ᵁ ⊤`

@@ -42,8 +42,10 @@ union with the interiors of the critical-point neighbourhoods is the returned ne
 ## Main declarations
 
 * `TauCeti.MorseChart.field`: the linear field of a Morse chart, on the manifold, with
-  `TauCeti.MorseChart.mvfderiv_field_apply_lt_zero` and `TauCeti.MorseChart.mfderiv_eq_zero_iff`.
-  The differential of `f` in a Morse chart is `TauCeti.MorseChart.mvfderiv_apply`.
+  `TauCeti.MorseChart.mvfderiv_field_apply_lt_zero` and `TauCeti.MorseChart.mfderiv_eq_zero_iff`;
+  it is the only field that reads `(-wᵢ zᵢ)ᵢ` in the chart
+  (`TauCeti.MorseChart.eq_field_of_coord_mfderiv`).
+  The differential of `f` in a Morse chart is `TauCeti.MorseBottChart.mvfderiv_apply`.
 * `TauCeti.MorseChart.hessianQuadraticForm_quadratic` and
   `TauCeti.MorseChart.hessianQuadraticForm_extChartAt`: the Hessian of the quadratic normal form,
   and the Hessian of `f` at the centre of a Morse chart, read in the preferred chart.
@@ -113,101 +115,27 @@ theorem coord_mfderiv_field {y : M} (hy : y ∈ φ.toChart.source) :
     (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) _ hy]
   simp [linearVectorField, linearField]
 
+/-- A tangent vector that reads `(-wᵢ zᵢ)ᵢ` in the coordinates of the Morse chart is the value of
+the field of the chart. -/
+theorem eq_field_of_coord_mfderiv {y : M} (hy : y ∈ φ.toChart.source)
+    {v : TangentSpace 𝓘(ℝ, E) y}
+    (hv : φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)) :
+    v = φ.field y := by
+  have hinv := isInvertible_mfderiv_chart φ.mem_maximalAtlas_one hy
+  rw [← hinv.inverse_apply_self v, ← hinv.inverse_apply_self (φ.field y),
+    φ.coord.injective (hv.trans (φ.coord_mfderiv_field hy).symm)]
+
 end Basic
-
-section FiniteDimensional
-
-variable [FiniteDimensional ℝ E] (φ : MorseChart E f x)
-
-/-- The coordinate change of a Morse chart, as a continuous linear equivalence. -/
-noncomputable def coordL : E ≃L[ℝ] (Fin (Module.finrank ℝ E) → ℝ) :=
-  φ.coord.toContinuousLinearEquiv
-
-/-- `coordL` is `coord`. -/
-@[simp]
-theorem coordL_apply (z : E) : φ.coordL z = φ.coord z := by
-  simp [coordL]
-
-/-- The inverse of `coordL` is the inverse of `coord`. -/
-@[simp]
-theorem coordL_symm_apply (z : Fin (Module.finrank ℝ E) → ℝ) :
-    φ.coordL.symm z = φ.coord.symm z := by
-  simp [coordL]
-
-/-- The derivative of the quadratic normal form. -/
-theorem hasFDerivAt_quadratic (z : E) :
-    HasFDerivAt φ.quadratic
-      ((∑ i, (φ.weight i * φ.coord z i) •
-        ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (Module.finrank ℝ E) ↦ ℝ) i).comp
-          (φ.coordL : E →L[ℝ] (Fin (Module.finrank ℝ E) → ℝ))) z := by
-  have h := ((hasFDerivAt_diagonalQuadratic φ.weight (φ.coordL z)).const_add (f x)).comp z
-    φ.coordL.hasFDerivAt
-  convert h using 1
-  · ext v
-    simp [quadratic_apply, diagonalQuadratic_apply, Finset.mul_sum, div_eq_inv_mul]
-  · simp
-
-end FiniteDimensional
 
 section NormalForm
 
 variable (φ : MorseChart E f x)
 
-/-- Coordinates of small sup norm are coordinates of points of the chart. -/
-theorem exists_pos_forall_norm_lt_mem_target :
-    ∃ r > 0, ∀ z : Fin (Module.finrank ℝ E) → ℝ, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target := by
-  have := φ.finiteDimensional
-  have h0 : (0 : Fin (Module.finrank ℝ E) → ℝ) ∈ φ.coordL.symm ⁻¹' φ.toChart.target := by
-    rw [mem_preimage, map_zero, ← φ.apply_self]
-    exact φ.toChart.map_source φ.mem_source
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1
-    (φ.toChart.open_target.preimage φ.coordL.symm.continuous) 0 h0
-  exact ⟨r, hr, fun z hz ↦ by simpa using hball (mem_ball_zero_iff.2 hz)⟩
-
-/-- The coordinate change of a Morse chart is continuous. -/
-theorem continuous_coord : Continuous φ.coord := by
-  have := φ.finiteDimensional
-  exact φ.coordL.continuous.congr φ.coordL_apply
-
-open Filter in
-/-- The point with coordinates `w` tends to the critical point as `w` tends to `0`. -/
-theorem tendsto_toChart_symm_coord_symm_nhds_zero :
-    Tendsto (fun w ↦ φ.toChart.symm (φ.coord.symm w)) (𝓝 0) (𝓝 x) := by
-  have := φ.finiteDimensional
-  obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
-  have h := (φ.toChart.continuousAt_symm (hrT 0 (by simpa using hr))).comp
-    (φ.coordL.symm.continuous.continuousAt.congr (.of_forall φ.coordL_symm_apply))
-  rwa [ContinuousAt, comp_apply, φ.toChart_symm_coord_symm_zero] at h
-
-/-- The derivative of the quadratic normal form is `v ↦ Σᵢ wᵢ (L z)ᵢ (L v)ᵢ`. -/
-theorem fderiv_quadratic_apply (z v : E) :
-    fderiv ℝ φ.quadratic z v = ∑ i, φ.weight i * φ.coord z i * φ.coord v i := by
-  have := φ.finiteDimensional
-  rw [(φ.hasFDerivAt_quadratic z).fderiv]
-  simp
-
-/-- The quadratic normal form is differentiable. -/
-theorem differentiableAt_quadratic (z : E) : DifferentiableAt ℝ φ.quadratic z := by
-  have := φ.finiteDimensional
-  exact (φ.hasFDerivAt_quadratic z).differentiableAt
-
 /-- The quadratic normal form has a single critical point, the origin. -/
 theorem fderiv_quadratic_eq_zero_iff {z : E} : fderiv ℝ φ.quadratic z = 0 ↔ z = 0 := by
-  constructor
-  · intro h0
-    have hz : φ.coord z = 0 := by
-      ext i
-      have := congrArg (fun T : E →L[ℝ] ℝ ↦ T (φ.coord.symm (Pi.single i (φ.weight i))))
-        h0
-      simp only [fderiv_quadratic_apply, LinearEquiv.apply_symm_apply,
-        zero_apply] at this
-      rw [Finset.sum_eq_single i (fun j _ hj ↦ by simp [hj]) (by simp)] at this
-      simp only [Pi.single_eq_same] at this
-      rcases φ.weight_eq_neg_one_or_eq_one i with hw | hw <;> rw [hw] at this <;> simpa using this
-    simpa using congrArg φ.coord.symm hz
-  · rintro rfl
-    ext v
-    simp [fderiv_quadratic_apply]
+  rw [φ.toMorseBottChart.fderiv_quadratic_eq_zero_iff, ← φ.coord.map_eq_zero_iff, funext_iff]
+  exact forall_congr' fun i ↦ ⟨fun h ↦ h (φ.weight_ne_zero i), fun h _ ↦ h⟩
 
 /-- The derivative of the quadratic normal form is a continuous linear function of the point,
 `z ↦ Σᵢ wᵢ (L z)ᵢ (L ·)ᵢ`. -/
@@ -220,8 +148,8 @@ private theorem exists_fderiv_quadratic_eq :
       (φ.coordL : E →L[ℝ] (Fin (Module.finrank ℝ E) → ℝ))
   refine ⟨∑ i, φ.weight i • (ℓ i).smulRight (ℓ i), ?_, fun u ↦ ?_⟩
   · ext z v
-    simp [ℓ, φ.fderiv_quadratic_apply, coordL_apply, mul_assoc]
-  · simp [ℓ, coordL_apply, sq]
+    simp [ℓ, φ.fderiv_quadratic_apply, MorseBottChart.coordL_apply, mul_assoc]
+  · simp [ℓ, MorseBottChart.coordL_apply, sq]
 
 /-- **The Hessian of the quadratic normal form** `f x + (1/2) Σᵢ wᵢ (L z)ᵢ²` is `Σᵢ wᵢ (L u)ᵢ²`, at
 every point. -/
@@ -233,7 +161,7 @@ theorem hessianQuadraticForm_quadratic (z u : E) :
 /-- The derivative of the quadratic normal form along the linear field is `-Σᵢ (L z)ᵢ²`. -/
 theorem fderiv_quadratic_linearField (z : E) :
     fderiv ℝ φ.quadratic z (φ.linearField z) = -∑ i, (φ.coord z i) ^ 2 := by
-  rw [fderiv_quadratic_apply]
+  rw [MorseBottChart.fderiv_quadratic_apply]
   simp only [linearField, LinearEquiv.apply_symm_apply, ← Finset.sum_neg_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rcases φ.weight_eq_neg_one_or_eq_one i with hw | hw <;> rw [hw] <;> ring
@@ -246,7 +174,7 @@ theorem contDiff_linearField : ContDiff ℝ ∞ φ.linearField := by
       (contDiff_const.mul ((contDiff_apply ℝ (fun _ ↦ ℝ) i).comp φ.coordL.contDiff)).neg
   have : φ.linearField = φ.coordL.symm ∘ fun z i ↦ -(φ.weight i * φ.coordL z i) := by
     ext z
-    simp [linearField, coordL]
+    simp [linearField]
   rw [this]
   exact φ.coordL.symm.contDiff.comp h1
 
@@ -267,18 +195,6 @@ theorem mvfderiv_field_apply_lt_zero {y : M} (hy : y ∈ φ.toChart.source) (hyx
   obtain ⟨i, hi⟩ := Function.ne_iff.1 hne
   exact Finset.sum_pos' (fun j _ ↦ sq_nonneg _)
     ⟨i, Finset.mem_univ _, by simpa using (sq_pos_of_ne_zero hi : (0 : ℝ) < _)⟩
-
-/-- **The differential in a Morse chart**: on the source of the chart, `df_y v` is
-`Σᵢ wᵢ (L (ψ y))ᵢ (L (dψ v))ᵢ`. -/
-theorem mvfderiv_apply {y : M} (hy : y ∈ φ.toChart.source) (v : TangentSpace 𝓘(ℝ, E) y) :
-    mvfderiv 𝓘(ℝ, E) f y v = ∑ i, φ.weight i * φ.coord (φ.toChart y) i *
-      φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) i := by
-  -- `mvfderiv` composes `mfderiv` with `NormedSpace.fromTangentSpace`, which is the identity
-  -- on the underlying type `ℝ` of `TangentSpace 𝓘(ℝ) (f y)` and has no Mathlib `simp` lemma.
-  rw [mvfderiv, ContinuousLinearMap.comp_apply,
-    mfderiv_eq_fderiv_comp_of_eqOn
-      (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic hy]
-  exact φ.fderiv_quadratic_apply _ _
 
 /-- The centre is the only critical point of `f` in the source of a Morse chart. -/
 theorem mfderiv_eq_zero_iff {y : M} (hy : y ∈ φ.toChart.source) :

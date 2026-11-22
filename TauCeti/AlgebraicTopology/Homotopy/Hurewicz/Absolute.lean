@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Sphere
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 import TauCeti.Algebra.Group.ZMultiples
 
 /-!
@@ -47,6 +48,10 @@ hence everywhere.
   `HomotopyGroup.bijective_hurewicz_ulift`, and `HomotopyGroup.hurewiczUliftAddEquiv`: **the
   Hurewicz theorem**, `πₙ₊₂(X, x) ≅ Hₙ₊₂(X; ℤ)` for an `(n + 1)`-connected space in `Type 0` and
   in an arbitrary universe `u`.
+* `HomotopyGroup.isIso_hurewiczModuleCatHom`: the same theorem for the Hurewicz morphism
+  `HomotopyGroup.hurewiczModuleCatHom` of `ModuleCat ℤ`.
+* `HomotopyGroup.bijective_hurewiczIntHom_of_simplyConnectedSpace`: its degree-two case,
+  `π₂(X, x) ≅ H₂(X; ℤ)` for a simply connected space.
 * `HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`,
   `HomotopyGroup.isIso_hurewicz_ulift_iff_bijective_zmultiplesHom`: in that range, the Hurewicz
   class of a generalized loop generates `Hₙ₊₂(X; ℤ)` freely exactly when its homotopy class
@@ -192,6 +197,26 @@ theorem hurewiczAddEquiv_apply_eq_hurewiczIntHom
     (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :
     hurewiczAddEquiv hX a = hurewiczIntHom X x (n + 1) a :=
   AddEquiv.ofBijective_apply _ _ _
+
+/-- **The Hurewicz theorem in `ModuleCat ℤ`.** If `πₖ(X, x)` is trivial for every `k < n + 2`, then
+the Hurewicz morphism `HomotopyGroup.hurewiczModuleCatHom`, `πₙ₊₂(X, x) ⟶ Hₙ₊₂(X; ℤ)`, is an
+isomorphism. -/
+theorem isIso_hurewiczModuleCatHom (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x)) :
+    IsIso (hurewiczModuleCatHom X x n) :=
+  (ConcreteCategory.isIso_iff_bijective _).2 <| by
+    convert (hurewiczAddEquiv hX).bijective using 1
+    funext a
+    exact (hurewiczModuleCatHom_apply X x n a).trans
+      (hurewiczAddEquiv_apply_eq_hurewiczIntHom hX a).symm
+
+/-- **The Hurewicz theorem in degree two for a simply connected space**: the integral Hurewicz
+homomorphism `π₂(X, x) → H₂(X; ℤ)` is bijective at every base point. -/
+theorem bijective_hurewiczIntHom_of_simplyConnectedSpace [SimplyConnectedSpace X] (x : X) :
+    Function.Bijective (hurewiczIntHom X x 1) := by
+  convert (hurewiczAddEquiv (n := 0) fun _ => subsingleton_homotopyGroup_of_lt_two x).bijective
+    using 1
+  funext a
+  exact (hurewiczAddEquiv_apply_eq_hurewiczIntHom _ a).symm
 
 /-- The Hurewicz isomorphism sends the class of a generalized loop `p` to its Hurewicz class
 `GenLoop.hurewicz`, evaluated at `1 : ℤ`. -/
