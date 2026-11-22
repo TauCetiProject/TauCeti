@@ -57,9 +57,9 @@ finite-dimensional kernel and closed range
 (`TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL`,
 `TauCeti.StripSobolev.isClosed_range_jetOperator_comp_subtypeL`), and Fredholmness and the index
 are constant along continuous families of such operators
-(`TauCeti.StripSobolev.isFredholm_and_index_eq_of_hasSemiFredholmEstimate`). These are the
-Fredholm properties of the linearized operators of Floer strips with Lagrangian boundary
-conditions.
+(`TauCeti.StripSobolev.isFredholm_and_index_eq_of_hasSemiFredholmEstimate`). This is the
+functional analysis that the Fredholm theory of linearized operators of Floer strips with
+Lagrangian boundary conditions will rest on, once their semi-Fredholm estimates are proved.
 
 ## Main results
 

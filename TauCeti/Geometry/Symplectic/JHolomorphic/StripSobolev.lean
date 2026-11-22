@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Strip.Rellich
-import TauCeti.Analysis.Sobolev.Cylinder
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Strip
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.Normed.Operator.Prod
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -150,6 +147,35 @@ section InnerProductSpace
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 variable {ω : SymplecticForm V} {J : AlmostComplexStructure V} {L₀ L₁ : Submodule ℝ V}
 
+/-- The energy estimate for `∂s + J ∂t` on the strip, for the test sections with transverse
+isotropic boundary values, in the integral form of the semi-Fredholm estimate. -/
+private theorem exists_setIntegral_energy_le_mul_setIntegral_cauchyRiemann
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁)
+    (hL : Disjoint L₀ L₁) :
+    ∃ C > 0, ∀ ξ ∈ testSection L₀ L₁,
+      ∫ z in univ ×ˢ Icc (0 : ℝ) 1,
+          (‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+        C * ∫ z in univ ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ ξ z (1, 0) + J (fderiv ℝ ξ z (0, 1))‖ ^ 2 := by
+  obtain ⟨C, hC, hest⟩ := exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul hg hL₀ hL₁ hL
+  refine ⟨C, hC, fun ξ hξS ↦ ?_⟩
+  obtain ⟨hξ, h₀, h₁, R, hR⟩ := mem_testSection_iff.1 hξS
+  -- On the strip, `ξ` agrees with a compactly supported `C²` map `η`.
+  obtain ⟨η, hη, hc, hηξ⟩ := exists_hasCompactSupport_eventuallyEq_strip hξ hR
+  have hP : MeasurableSet (univ ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) :=
+    MeasurableSet.univ.prod measurableSet_Icc
+  have hcongr (z : ℝ × ℝ) (hz : z ∈ univ ×ˢ Icc (0 : ℝ) 1) :
+      η z = ξ z ∧ fderiv ℝ η z = fderiv ℝ ξ z :=
+    ⟨(hηξ z hz).eq_of_nhds, (hηξ z hz).fderiv_eq⟩
+  have hest' := hest η hη hc (fun s ↦ (hcongr (s, 0) ⟨mem_univ _, by norm_num⟩).1 ▸ h₀ s)
+    (fun s ↦ (hcongr (s, 1) ⟨mem_univ _, by norm_num⟩).1 ▸ h₁ s)
+  rw [stdComplexLineReal_eq, stdComplexLineImag_eq] at hest'
+  refine Eq.trans_le ?_ (hest'.trans_eq ?_)
+  · exact setIntegral_congr_fun hP fun z hz ↦ by
+      simp only [(hcongr z hz).1, (hcongr z hz).2]
+      ring
+  · exact congrArg (C * ·) (setIntegral_congr_fun hP fun z hz ↦ by
+      simp only [(hcongr z hz).2])
+
 /-- The Cauchy--Riemann estimate on the jets of test sections: with transverse isotropic boundary
 conditions, `‖ξ‖_{W^{1,2}} ≤ C ‖∂s ξ + J ∂t ξ‖_{L²}` for every test section `ξ`, with `C`
 independent of `ξ`. -/
@@ -158,40 +184,14 @@ theorem exists_norm_jetLp_le_mul_norm_cauchyRiemann_jetLp (hg : ∀ v w, ω v (J
     ∃ C, ∀ ξ : testSection L₀ L₁,
       ‖jetLp (testSection L₀ L₁) ξ‖ ≤
         C * ‖cauchyRiemann J L₀ L₁ ⟨jetLp (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩‖ := by
-  obtain ⟨C, hC, hest⟩ := exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul hg hL₀ hL₁ hL
+  obtain ⟨C, hC, hest⟩ := exists_setIntegral_energy_le_mul_setIntegral_cauchyRiemann hg hL₀ hL₁ hL
   refine ⟨√C, fun ξ ↦ ?_⟩
-  obtain ⟨hξ, h₀, h₁, R, hR⟩ := mem_testSection_iff.1 ξ.property
-  -- On the strip, `ξ` agrees with a compactly supported `C²` map `η`.
-  obtain ⟨η, hη, hc, hηξ⟩ := exists_hasCompactSupport_eventuallyEq_strip hξ hR
-  have hstrip : MeasurableSet (univ ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) :=
-    MeasurableSet.univ.prod measurableSet_Icc
-  have hcongr (z : ℝ × ℝ) (hz : z ∈ univ ×ˢ Icc (0 : ℝ) 1) :
-      η z = (ξ : ℝ × ℝ → V) z ∧ fderiv ℝ η z = fderiv ℝ (ξ : ℝ × ℝ → V) z :=
-    ⟨(hηξ z hz).eq_of_nhds, (hηξ z hz).fderiv_eq⟩
-  have hdu : Continuous (fderiv ℝ η) := hη.continuous_fderiv (by norm_num)
-  have hint : Integrable (fun z ↦ ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 +
-      (‖fderiv ℝ (ξ : ℝ × ℝ → V) z stdComplexLineReal‖ ^ 2 +
-        ‖fderiv ℝ (ξ : ℝ × ℝ → V) z stdComplexLineImag‖ ^ 2)) stripMeasure := by
-    refine IntegrableOn.congr_fun (((hη.continuous.integrable_norm_sq_of_hasCompactSupport hc).add
-      (((hdu.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
-        (hc.fderiv_apply ℝ stdComplexLineReal)).add
-      ((hdu.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
-        (hc.fderiv_apply ℝ stdComplexLineImag)))).integrableOn) (fun z hz ↦ ?_) hstrip
-    simp only [Pi.add_apply, (hcongr z hz).1, (hcongr z hz).2]
-  have hest' := hest η hη hc (fun s ↦ (hcongr (s, 0) ⟨mem_univ _, by norm_num⟩).1 ▸ h₀ s)
-    (fun s ↦ (hcongr (s, 1) ⟨mem_univ _, by norm_num⟩).1 ▸ h₁ s)
   have hsq : ‖jetLp (testSection L₀ L₁) ξ‖ ^ 2 ≤
       (√C * ‖cauchyRiemann J L₀ L₁ ⟨jetLp (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩‖) ^ 2 := by
-    rw [mul_pow, Real.sq_sqrt hC.le, sq_norm_cauchyRiemann_jetLp, sq_norm_jetLp]
-    refine (integral_mono_of_nonneg (.of_forall fun z ↦ by positivity) hint
-      (.of_forall fun z ↦ (sq_norm_jet_le _ z).trans_eq ?_)).trans ?_
-    · rw [stdComplexLineReal_eq, stdComplexLineImag_eq]
-      ring
-    refine Eq.trans_le ?_ (hest'.trans_eq ?_)
-    · exact setIntegral_congr_fun hstrip fun z hz ↦ by
-        simp only [(hcongr z hz).1, (hcongr z hz).2]
-    · exact congrArg (C * ·) (setIntegral_congr_fun hstrip fun z hz ↦ by
-        simp only [(hcongr z hz).2])
+    rw [mul_pow, Real.sq_sqrt hC.le, sq_norm_cauchyRiemann_jetLp, stdComplexLineReal_eq,
+      stdComplexLineImag_eq]
+    exact (sq_norm_jetLp_le_integral ξ (IsTestSpace.contDiff _ ξ.property)).trans
+      (hest ξ ξ.property)
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hsq
 
 /-- **The Cauchy--Riemann operator of the strip with transverse isotropic boundary conditions is
@@ -238,11 +238,6 @@ theorem isClosed_range_cauchyRiemann (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
 
 /-! ### Compactly supported zeroth-order perturbations -/
 
-/-- A continuous map vanishing for `|s| > R` is integrable on the strip. -/
-private theorem integrableOn_strip_of_continuous {F : ℝ × ℝ → ℝ} (hF : Continuous F) {R : ℝ}
-    (h : ∀ z : ℝ × ℝ, R < |z.1| → F z = 0) : IntegrableOn F (univ ×ˢ Icc (0 : ℝ) 1) :=
-  memLp_one_iff_integrable.1 (CylinderSobolev.memLp_stripMeasure_of_continuous hF h 1)
-
 omit [FiniteDimensional ℝ V] in
 /-- A continuous field of operators vanishing for `|s| > T` is bounded on the strip. -/
 private theorem exists_forall_mem_strip_norm_le {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A)
@@ -277,47 +272,10 @@ theorem continuous_cauchyRiemannAddJetCoeff {A : ℝ × ℝ → V →L[ℝ] V} (
 field on the strip. -/
 theorem memLp_cauchyRiemannAddJetCoeff {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) {T : ℝ}
     (hAT : ∀ z : ℝ × ℝ, T < |z.1| → A z = 0) :
-    MemLp (cauchyRiemannAddJetCoeff J A) ∞ stripMeasure := by
-  obtain ⟨B, -, hB⟩ := exists_forall_mem_strip_norm_le hA hAT
-  refine memLp_top_of_bound (f := cauchyRiemannAddJetCoeff J A) (μ := stripMeasure) ?_
-    (‖cauchyRiemannJetCoeff J‖ + B) ?_
-  · exact (continuous_cauchyRiemannAddJetCoeff hA).aestronglyMeasurable
-  filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz
-  refine (norm_add_le (cauchyRiemannJetCoeff J)
-    ((A z).comp (ContinuousLinearMap.fst ℝ V (V × V)))).trans ?_
-  gcongr
-  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-    ((mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_fst_le ℝ V (V × V))).trans
-      (hB z hz))
-
-/-- The energy estimate for `∂s + J ∂t` on the strip, for the test sections with transverse
-isotropic boundary values, in the integral form of the semi-Fredholm estimate. -/
-private theorem exists_setIntegral_energy_le_mul_setIntegral_cauchyRiemann
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁)
-    (hL : Disjoint L₀ L₁) :
-    ∃ C > 0, ∀ ξ ∈ testSection L₀ L₁,
-      ∫ z in univ ×ˢ Icc (0 : ℝ) 1,
-          (‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
-        C * ∫ z in univ ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ ξ z (1, 0) + J (fderiv ℝ ξ z (0, 1))‖ ^ 2 := by
-  obtain ⟨C, hC, hest⟩ := exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul hg hL₀ hL₁ hL
-  refine ⟨C, hC, fun ξ hξS ↦ ?_⟩
-  obtain ⟨hξ, h₀, h₁, R, hR⟩ := mem_testSection_iff.1 hξS
-  -- On the strip, `ξ` agrees with a compactly supported `C²` map `η`.
-  obtain ⟨η, hη, hc, hηξ⟩ := exists_hasCompactSupport_eventuallyEq_strip hξ hR
-  have hP : MeasurableSet (univ ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) :=
-    MeasurableSet.univ.prod measurableSet_Icc
-  have hcongr (z : ℝ × ℝ) (hz : z ∈ univ ×ˢ Icc (0 : ℝ) 1) :
-      η z = ξ z ∧ fderiv ℝ η z = fderiv ℝ ξ z :=
-    ⟨(hηξ z hz).eq_of_nhds, (hηξ z hz).fderiv_eq⟩
-  have hest' := hest η hη hc (fun s ↦ (hcongr (s, 0) ⟨mem_univ _, by norm_num⟩).1 ▸ h₀ s)
-    (fun s ↦ (hcongr (s, 1) ⟨mem_univ _, by norm_num⟩).1 ▸ h₁ s)
-  rw [stdComplexLineReal_eq, stdComplexLineImag_eq] at hest'
-  refine Eq.trans_le ?_ (hest'.trans_eq ?_)
-  · exact setIntegral_congr_fun hP fun z hz ↦ by
-      simp only [(hcongr z hz).1, (hcongr z hz).2]
-      ring
-  · exact congrArg (C * ·) (setIntegral_congr_fun hP fun z hz ↦ by
-      simp only [(hcongr z hz).2])
+    MemLp (cauchyRiemannAddJetCoeff J A) ∞ stripMeasure :=
+  (memLp_top_const (cauchyRiemannJetCoeff J)).add (memLp_stripMeasure_of_continuous
+    (u := fun z ↦ (A z).comp (ContinuousLinearMap.fst ℝ V (V × V)))
+    (hA.clm_comp continuous_const) (R := T) (fun z hz ↦ by simp [hAT z hz]) ∞)
 
 /-- The Cauchy--Riemann defect `∂s ξ + J ∂t ξ` of a `C¹` section `ξ` vanishing for `|s| > R` is
 bounded in `L²` of the strip by `D ξ = ∂s ξ + J ∂t ξ + A ξ` and by `ξ` on the piece
@@ -334,21 +292,18 @@ private theorem setIntegral_cauchyRiemann_le {A : ℝ × ℝ → V →L[ℝ] V} 
   have hK : MeasurableSet K := measurableSet_Icc.prod measurableSet_Icc
   -- The integrands are continuous and vanish for `|s| > R`.
   have hd := hξ.continuous_fderiv one_ne_zero
-  have hjet (z : ℝ × ℝ) (hz : R < |z.1|) :
-      ξ z = 0 ∧ fderiv ℝ ξ z (1, 0) = 0 ∧ fderiv ℝ ξ z (0, 1) = 0 := by
-    simpa only [jet_apply, Prod.mk_eq_zero] using jet_eq_zero_of_lt_abs hR hz
   have hiF : IntegrableOn (fun z ↦ ‖cauchyRiemannAddJetCoeff J A z (jet ξ z)‖ ^ 2) P :=
-    integrableOn_strip_of_continuous (R := R)
+    integrable_of_jet_eq_zero hR
       (((continuous_cauchyRiemannAddJetCoeff hA).clm_apply (continuous_jet hξ)).norm.pow 2)
-      fun z hz ↦ by simp [jet_eq_zero_of_lt_abs hR hz]
+      fun z hz ↦ by simp [hz]
   have hiG : IntegrableOn (fun z ↦ ‖ξ z‖ ^ 2) P :=
-    integrableOn_strip_of_continuous (R := R) (hξ.continuous.norm.pow 2) fun z hz ↦ by
-      simp [hjet z hz]
+    integrable_of_jet_eq_zero hR (hξ.continuous.norm.pow 2) fun z hz ↦ by
+      simp_all [jet_apply]
   have hiD : IntegrableOn (fun z ↦ ‖fderiv ℝ ξ z (1, 0) + J (fderiv ℝ ξ z (0, 1))‖ ^ 2) P :=
-    integrableOn_strip_of_continuous (R := R)
+    integrable_of_jet_eq_zero hR
       (((hd.clm_apply continuous_const).add ((LinearMap.toContinuousLinearMap
         J.toLinearMap).continuous.comp (hd.clm_apply continuous_const))).norm.pow 2)
-      fun z hz ↦ by simp [hjet z hz]
+      fun z hz ↦ by simp_all [jet_apply]
   -- Pointwise, `∂s ξ + J ∂t ξ = D ξ - A ξ`, and `A ξ` lives on `[-T, T] × [0, 1]`.
   have hpt : ∀ z ∈ P, ‖fderiv ℝ ξ z (1, 0) + J (fderiv ℝ ξ z (0, 1))‖ ^ 2 ≤
       2 * ‖cauchyRiemannAddJetCoeff J A z (jet ξ z)‖ ^ 2 +
@@ -379,24 +334,6 @@ private theorem setIntegral_cauchyRiemann_le {A : ℝ × ℝ → V →L[ℝ] V} 
   rw [integral_add (hiF.const_mul 2) hiK, integral_const_mul, integral_const_mul,
     setIntegral_indicator hK, inter_eq_right.2 (prod_mono (subset_univ _) subset_rfl)]
 
-omit [FiniteDimensional ℝ V] in
-/-- A function of the jet of a section vanishing for `s ∉ (a, b)`, which vanishes where the jet
-does, has the same integral over the strip and over `[a, b] × [0, 1]`. -/
-private theorem setIntegral_strip_eq_setIntegral_Icc {ξ : ℝ × ℝ → V} {a b : ℝ}
-    (hvan : ∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) {F : ℝ × ℝ → ℝ}
-    (hF : ∀ z, jet ξ z = 0 → F z = 0) :
-    ∫ z in univ ×ˢ Icc (0 : ℝ) 1, F z = ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, F z := by
-  refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
-    (MeasurableSet.univ.prod measurableSet_Icc) (prod_mono (subset_univ _) subset_rfl)
-    fun z hz ↦ hF z ?_
-  -- Outside `[a, b] × [0, 1]` the section vanishes near every point.
-  have hz1 : z.1 ∉ Icc a b := fun h ↦ hz.2 ⟨h, hz.1.2⟩
-  have h0 : ξ =ᶠ[𝓝 z] 0 := by
-    filter_upwards [(isClosed_Icc.isOpen_compl.preimage continuous_fst).mem_nhds hz1] with w hw
-    exact hvan w.1 w.2 fun h ↦ hw (Ioo_subset_Icc_self h)
-  rw [jet_apply, h0.fderiv_eq, h0.eq_of_nhds]
-  simp
-
 /-- **The semi-Fredholm estimate for `∂s + J ∂t + A` on the strip.** Let `J` be compatible with
 `ω` in the inner product of `V`, let `L₀`, `L₁` be isotropic subspaces with `L₀ ∩ L₁ = 0`, for
 instance a transverse pair of Lagrangian subspaces, and let `A` be a continuous zeroth-order term
@@ -415,21 +352,18 @@ theorem exists_hasSemiFredholmEstimate_cauchyRiemannAddJetCoeff
   obtain ⟨R, hR⟩ := IsTestSpace.exists_forall_le_abs_eq_zero _ hξS
   have hξ := IsTestSpace.contDiff _ hξS
   have hD := setIntegral_cauchyRiemann_le (J := J) hA hB hAT hξ hR
-  rw [setIntegral_strip_eq_setIntegral_Icc
+  rw [integral_strip_eq_setIntegral_Icc_of_jet_eq_zero
     (F := fun z ↦ ‖cauchyRiemannAddJetCoeff J A z (jet ξ z)‖ ^ 2) hvan
     fun z hz ↦ by simp [hz]] at hD
   -- The energy over `[a, b] × [0, 1]` is at most the energy over the strip.
-  have hjet (z : ℝ × ℝ) (hz : R < |z.1|) :
-      ξ z = 0 ∧ fderiv ℝ ξ z (1, 0) = 0 ∧ fderiv ℝ ξ z (0, 1) = 0 := by
-    simpa only [jet_apply, Prod.mk_eq_zero] using jet_eq_zero_of_lt_abs hR hz
   have hd := hξ.continuous_fderiv one_ne_zero
   have hQ := setIntegral_mono_set (μ := volume) (s := Icc a b ×ˢ Icc (0 : ℝ) 1)
     (t := univ ×ˢ Icc (0 : ℝ) 1)
     (f := fun z ↦ ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2)
-    (integrableOn_strip_of_continuous (R := R)
+    (integrable_of_jet_eq_zero hR
       ((((hd.clm_apply continuous_const).norm.pow 2).add
         ((hd.clm_apply continuous_const).norm.pow 2)).add (hξ.continuous.norm.pow 2))
-      fun z hz ↦ by simp [hjet z hz])
+      fun z hz ↦ by simp_all [jet_apply])
     (Eventually.of_forall fun z ↦ by positivity)
     (Eventually.of_forall (prod_mono (subset_univ _) subset_rfl))
   have hFnn : 0 ≤ ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖cauchyRiemannAddJetCoeff J A z (jet ξ z)‖ ^ 2 :=

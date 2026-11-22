@@ -200,7 +200,7 @@ theorem jetOperator_jetLp_ae_eq {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM
   rw [h₁, h₂]
 
 /-- The squared `L²` norm of the jet of a `C¹` element of `S` is at most its `W^{1,2}` energy. -/
-private theorem sq_norm_jetLp_le_integral (ξ : S) (hξ : ContDiff ℝ 1 (ξ : ℝ × ℝ → V)) :
+theorem sq_norm_jetLp_le_integral (ξ : S) (hξ : ContDiff ℝ 1 (ξ : ℝ × ℝ → V)) :
     ‖jetLp S ξ‖ ^ 2 ≤ ∫ z, (‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 +
       ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)‖ ^ 2 + ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) ∂stripMeasure := by
   have hjm := HasL2Jets.memLp_jet _ ξ.property
