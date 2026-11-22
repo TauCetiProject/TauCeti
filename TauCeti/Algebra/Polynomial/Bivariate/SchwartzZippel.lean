@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.Algebra.MvPolynomial.SchwartzZippel
 import TauCeti.Algebra.Polynomial.Bivariate.Basic
 import TauCeti.RingTheory.MvPolynomial.LinearSubst
@@ -21,49 +22,38 @@ Pulling `F` back along a `2 × 2` matrix `M` with nonzero determinant over an in
 `MvPolynomial (Fin 2) K` (`MvPolynomial.linearSubst` composed with
 `Polynomial.Bivariate.equivMvPolynomial`) transports
 `MvPolynomial.card_filter_piFinset_eval_eq_zero_le` to a zero-count bound on the image of a
-Cartesian grid `S × S` under `Polynomial.linearGridMap M`
-(`Polynomial.card_filter_eval_eq_zero_linearGrid_le`).
-
-## Main definitions
-
-* `Polynomial.linearGridMap`: the linear action of a `2 × 2` matrix on pairs `K × K`.
+Cartesian grid `S × S` under `Matrix.linearGridMap M`
+(`Polynomial.card_filter_eval_eq_zero_linearGrid_le`), and via
+`Polynomial.Bivariate.totalDegree_equivMvPolynomial_le` to the separate-degree bound
+`Polynomial.card_filter_eval_eq_zero_linearGrid_le_of_natDegree_le`.
 
 ## Main results
 
-* `Polynomial.card_filter_eval_eq_zero_linearGrid_le`: Schwartz–Zippel zero bound for a nonzero
-  bivariate polynomial on the image of a Cartesian grid `S × S` under `Polynomial.linearGridMap M`
-  for a `2 × 2` matrix `M` with nonzero determinant over an integral domain.
+* `Polynomial.card_filter_eval_eq_zero_linearGrid_le`: total-degree Schwartz–Zippel zero bound
+  for a nonzero bivariate polynomial on `(S ×ˢ S).image (Matrix.linearGridMap M)` for a `2 × 2`
+  matrix `M` with nonzero determinant over an integral domain.
+* `Polynomial.card_filter_eval_eq_zero_linearGrid_le_of_natDegree_le`: separate-degree corollary
+  bounded by `S.card * (a + b)` when `F.natDegree ≤ a` and `∀ i, (F.coeff i).natDegree ≤ b`.
 -/
 
 public section
 
 open Finset
+open scoped Matrix
 
 namespace Polynomial
 
-/-- The linear action of a `2 × 2` matrix `M` on `K × K`, defined via `finTwoArrowEquiv K`. -/
-def linearGridMap {K : Type*} [NonUnitalNonAssocSemiring K] (M : Matrix (Fin 2) (Fin 2) K) :
-    K × K → K × K :=
-  finTwoArrowEquiv K ∘ M.mulVec ∘ (finTwoArrowEquiv K).symm
-
-@[simp]
-theorem linearGridMap_apply {K : Type*} [NonUnitalNonAssocSemiring K]
-    (M : Matrix (Fin 2) (Fin 2) K) (q : K × K) :
-    linearGridMap M q = (M 0 0 * q.1 + M 0 1 * q.2, M 1 0 * q.1 + M 1 1 * q.2) := by
-  simp [linearGridMap, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-
-/-- **Bivariate Schwartz–Zippel bound on a linear grid.** Over an integral domain `K`, evaluate
-`F : K[X][X]` at `(x, y)` via `F.evalEval y x = (F.map (evalRingHom y)).eval x`, so `a` bounds the
-first-coordinate (outer) natural degree `F.natDegree` and `b` bounds the second-coordinate (inner)
-coefficient natural degrees `(F.coeff i).natDegree`. If `F ≠ 0` and `M` is a `2 × 2` matrix with
-nonzero determinant, then the number of zeros of `F` on `(S ×ˢ S).image (linearGridMap M)` is at
-most `S.card * (a + b)`. -/
+/-- **Bivariate Schwartz–Zippel bound on a linear grid (total-degree form).** Over an integral
+domain `K`, evaluate `F : K[X][X]` at `(x, y)` via
+`F.evalEval y x = (F.map (evalRingHom y)).eval x`. If `F ≠ 0` and `M` is a `2 × 2` matrix with
+nonzero determinant, then the number of zeros of `F` on `(S ×ˢ S).image (Matrix.linearGridMap M)`
+is at most `S.card * (Bivariate.equivMvPolynomial K F).totalDegree`. -/
 theorem card_filter_eval_eq_zero_linearGrid_le {K : Type*} [CommRing K] [IsDomain K]
     [DecidableEq K] {S : Finset K} {M : Matrix (Fin 2) (Fin 2) K}
-    (hdet : M.det ≠ 0) {F : K[X][X]} (hF : F ≠ 0) {a b : ℕ}
-    (ha : F.natDegree ≤ a) (hb : ∀ i, (F.coeff i).natDegree ≤ b) :
-    (((S ×ˢ S).image (linearGridMap M)).filter
-      fun p : K × K ↦ F.evalEval p.2 p.1 = 0).card ≤ S.card * (a + b) := by
+    (hdet : M.det ≠ 0) {F : K[X][X]} (hF : F ≠ 0) :
+    (((S ×ˢ S).image (Matrix.linearGridMap M)).filter
+      fun p : K × K ↦ F.evalEval p.2 p.1 = 0).card ≤
+      S.card * (Bivariate.equivMvPolynomial K F).totalDegree := by
   let M' : Matrix (Fin 2) (Fin 2) K := M.submatrix (Equiv.swap 0 1) id
   let P' : MvPolynomial (Fin 2) K := MvPolynomial.linearSubst M' (Bivariate.equivMvPolynomial K F)
   have hdet' : M'.det ≠ 0 := by
@@ -75,13 +65,17 @@ theorem card_filter_eval_eq_zero_linearGrid_le {K : Type*} [CommRing K] [IsDomai
       (MvPolynomial.linearSubst_injective hdet' (by simpa [P'] using h0)))
   let e := finTwoArrowEquiv K
   have heval : ∀ v : Fin 2 → K,
-      MvPolynomial.eval v P' = F.evalEval (linearGridMap M (e v)).2 (linearGridMap M (e v)).1 := by
+      MvPolynomial.eval v P' =
+        F.evalEval (Matrix.linearGridMap M (e v)).2 (Matrix.linearGridMap M (e v)).1 := by
     intro v
     dsimp only [P']
     rw [MvPolynomial.eval_linearSubst, Bivariate.eval_equivMvPolynomial]
-    simp [M', linearGridMap, e, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+    have hmul : M' *ᵥ v = (M *ᵥ v) ∘ Equiv.swap 0 1 := by
+      simpa [M'] using Matrix.submatrix_mulVec_equiv M v (Equiv.swap 0 1) (Equiv.refl _)
+    rw [Matrix.linearGridMap_finTwoArrowEquiv]
+    simp [hmul]
   have hcard_le :
-      (((S ×ˢ S).image (linearGridMap M)).filter
+      (((S ×ˢ S).image (Matrix.linearGridMap M)).filter
         fun p : K × K ↦ F.evalEval p.2 p.1 = 0).card ≤
       ((Fintype.piFinset fun _ : Fin 2 ↦ S).filter fun v ↦
         MvPolynomial.eval v P' = 0).card := by
@@ -94,9 +88,21 @@ theorem card_filter_eval_eq_zero_linearGrid_le {K : Type*} [CommRing K] [IsDomai
       ((Fintype.piFinset fun _ : Fin 2 ↦ S).filter fun v ↦
         MvPolynomial.eval v P' = 0).card ≤ S.card * P'.totalDegree := by
     simpa using MvPolynomial.card_filter_piFinset_eval_eq_zero_le hP'_ne S
-  have hdeg_le : P'.totalDegree ≤ a + b :=
-    (MvPolynomial.totalDegree_linearSubst_le M' _).trans
-      (Bivariate.totalDegree_equivMvPolynomial_le F ha hb)
+  have hdeg_le : P'.totalDegree ≤ (Bivariate.equivMvPolynomial K F).totalDegree :=
+    MvPolynomial.totalDegree_linearSubst_le M' _
   exact hcard_le.trans (hnat_le.trans (Nat.mul_le_mul_left S.card hdeg_le))
+
+/-- **Bivariate Schwartz–Zippel bound on a linear grid (separate-degree form).** Over an integral
+domain `K`, if `F : K[X][X]` is nonzero with `F.natDegree ≤ a` and `∀ i, (F.coeff i).natDegree ≤ b`,
+and `M` is a `2 × 2` matrix with nonzero determinant, then the number of zeros of `F` on
+`(S ×ˢ S).image (Matrix.linearGridMap M)` is at most `S.card * (a + b)`. -/
+theorem card_filter_eval_eq_zero_linearGrid_le_of_natDegree_le {K : Type*} [CommRing K]
+    [IsDomain K] [DecidableEq K] {S : Finset K} {M : Matrix (Fin 2) (Fin 2) K}
+    (hdet : M.det ≠ 0) {F : K[X][X]} (hF : F ≠ 0) {a b : ℕ}
+    (ha : F.natDegree ≤ a) (hb : ∀ i, (F.coeff i).natDegree ≤ b) :
+    (((S ×ˢ S).image (Matrix.linearGridMap M)).filter
+      fun p : K × K ↦ F.evalEval p.2 p.1 = 0).card ≤ S.card * (a + b) :=
+  (card_filter_eval_eq_zero_linearGrid_le hdet hF).trans
+    (Nat.mul_le_mul_left S.card (Bivariate.totalDegree_equivMvPolynomial_le F ha hb))
 
 end Polynomial

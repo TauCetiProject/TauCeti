@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Laurent
-public import TauCeti.LinearAlgebra.Matrix.Determinant.Degree
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Tactic.ComputeDegree
 import TauCeti.Algebra.Polynomial.BigOperators

@@ -14,11 +14,12 @@ import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 For a bivariate polynomial `f : R[X][X]` of outer natural degree `n = f.natDegree`, write
 `Res_{n, n - 1}(f, f.derivative) := f.resultant f.derivative n (n - 1)` for its fixed-degree
-resultant with its derivative. When `(X - C a) ^ k` divides the specialization `f(X, b)` (with
-`k - 1 ≤ n + (n - 1)`), `(X - C b) ^ (k - 1)` divides `Res_{n, n - 1}(f, f.derivative)`
-(`Polynomial.X_sub_C_pow_dvd_resultant_deriv`). Note that this fixed-degree resultant can differ
-from the ordinary resultant `f.resultant f.derivative` in positive characteristic when
-`f.derivative.natDegree < n - 1`.
+resultant with its derivative. When `(X - C a) ^ k` divides the specialization
+`f.map (evalRingHom b)` (setting the inner coefficient variable to `b`, leaving the outer variable
+for the root at `a`, with `k - 1 ≤ n + (n - 1)`), `(X - C b) ^ (k - 1)` divides
+`Res_{n, n - 1}(f, f.derivative)` (`Polynomial.X_sub_C_pow_dvd_resultant_deriv`). Note that this
+fixed-degree resultant can differ from the ordinary resultant `f.resultant f.derivative` in positive
+characteristic when `f.derivative.natDegree < n - 1`.
 
 Whenever `Res_{n, n - 1}(f, f.derivative)` is nonzero, this divisibility bounds the fiberwise
 root multiplicity `(f.map (evalRingHom b)).rootMultiplicity a` by `1` plus the root multiplicity
@@ -100,8 +101,9 @@ theorem X_sub_C_pow_dvd_resultant_deriv (f : R[X][X]) {a b : R} {k : ℕ}
   have hf₂_deg : f₂.natDegree = f.natDegree := by rw [natDegree_taylor, hf₁_deg]
   have heval0 : (evalRingHom (0 : R)).comp φ = evalRingHom b :=
     RingHom.ext fun p ↦ by
-      change (taylor b p).eval 0 = p.eval b
-      rw [taylor_eval, zero_add]
+      simp only [RingHom.comp_apply, coe_evalRingHom, φ, RingEquiv.toRingHom_eq_coe,
+        AlgEquiv.toRingEquiv_toRingHom, RingHom.coe_coe, e, ← AlgEquiv.coe_toAlgHom,
+        toAlgHom_taylorEquiv, taylorAlgHom_apply, taylor_eval, zero_add]
   have hf₂_eval0 : f₂.map (evalRingHom 0) = taylor a (f.map (evalRingHom b)) := by
     rw [map_taylor, Polynomial.map_map, heval0]
     simp
@@ -125,11 +127,11 @@ theorem X_sub_C_pow_dvd_resultant_deriv (f : R[X][X]) {a b : R} {k : ℕ}
       hf₁_deg]
     dsimp only [f₁]
     rw [derivative_map, resultant_map_map]
-    rfl
+    simp only [φ, RingEquiv.toRingHom_eq_coe, AlgEquiv.toRingEquiv_toRingHom, RingHom.coe_coe]
   rw [hres_eq] at hdvd_res₂
   have hX : e (X - C b) = X := by
-    change taylor b (X - C b) = X
-    rw [taylor_X_sub_C]
+    simp only [e, ← AlgEquiv.coe_toAlgHom, toAlgHom_taylorEquiv, taylorAlgHom_apply,
+      taylor_X_sub_C]
   rw [← hX, ← map_pow, map_dvd_iff] at hdvd_res₂
   exact hdvd_res₂
 

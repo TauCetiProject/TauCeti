@@ -27,9 +27,12 @@ distinct roots gives the number of roots counted with multiplicity
 (`Polynomial.mul_card_le_natDegree_of_le_rootMultiplicity`).
 
 Finally, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a`
-occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`), and the
-root multiplicity of a multiset product of nonzero polynomials is the sum of the root multiplicities
-of its factors (`Polynomial.rootMultiplicity_multiset_prod`).
+occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`), the root
+multiplicity of a multiset product of nonzero polynomials is the sum of the root multiplicities of
+its factors (`Polynomial.rootMultiplicity_multiset_prod`), and pushing a factorization
+`P = C c * s.prod` forward along `φ : A →+* K` gives the nonvanishing criterion
+`Polynomial.map_ne_zero_iff_of_eq_C_mul_multiset_prod` and root-multiplicity sum formula
+`Polynomial.rootMultiplicity_map_eq_sum`.
 -/
 
 public section
@@ -143,5 +146,44 @@ theorem X_sub_C_pow_dvd_smul_multiset_prod_iff [DecidableEq R] {E : Multiset R} 
     (X - C a) ^ k ∣ c • (E.map fun b ↦ X - C b).prod ↔ k ≤ E.count a := by
   rw [← le_rootMultiplicity_iff (smul_ne_zero hc (monic_multisetProd_X_sub_C E).ne_zero),
     ← count_roots, roots_smul_of_ne_zero _ hc, roots_multiset_prod_X_sub_C]
+
+end Polynomial
+
+namespace Polynomial
+
+/-- Given `P = C c * s.prod`, the mapped factorization
+`P.map φ = C (φ c) * (s.map (mapRingHom φ)).prod` is unconditional; if the target `K` has no zero
+divisors, then `P.map φ ≠ 0` if and only if `φ c ≠ 0` and `F.map φ ≠ 0` for every factor
+`F ∈ s`. -/
+theorem map_ne_zero_iff_of_eq_C_mul_multiset_prod {A K : Type*} [CommSemiring A] [CommSemiring K]
+    [NoZeroDivisors K] {φ : A →+* K} {P : A[X]} {c : A} {s : Multiset A[X]}
+    (hPeq : P = C c * s.prod) :
+    P.map φ ≠ 0 ↔ φ c ≠ 0 ∧ ∀ F ∈ s, F.map φ ≠ 0 := by
+  rw [hPeq, Polynomial.map_mul, map_C, ← coe_mapRingHom, map_multiset_prod,
+    mul_ne_zero_iff, C_ne_zero]
+  refine and_congr_right fun hcp ↦ ⟨fun h F hF h0 ↦ ?_, fun h ↦ ?_⟩
+  · exact h (Multiset.prod_eq_zero (Multiset.mem_map.mpr ⟨F, hF, h0⟩))
+  · have : Nontrivial K := ⟨⟨φ c, 0, hcp⟩⟩
+    exact Multiset.prod_ne_zero fun h0 ↦
+      let ⟨F, hF, hFeq⟩ := Multiset.mem_map.mp h0
+      h F hF hFeq
+
+/-- Over an integral domain `K`, if `P = C c * s.prod` in `A[X]` and `P.map φ ≠ 0` for a ring
+homomorphism `φ : A →+* K`, then the root multiplicity of `P.map φ` at `a` equals the sum of the
+root multiplicities of `F.map φ` at `a` over `F ∈ s`. -/
+theorem rootMultiplicity_map_eq_sum {A K : Type*} [CommSemiring A] [CommRing K] [IsDomain K]
+    {φ : A →+* K} {P : A[X]} {c : A} {s : Multiset A[X]}
+    (hPeq : P = C c * s.prod) (hPmap : P.map φ ≠ 0) (a : K) :
+    (P.map φ).rootMultiplicity a =
+      (s.map fun F ↦ (F.map φ).rootMultiplicity a).sum := by
+  rw [hPeq, Polynomial.map_mul, map_C, ← coe_mapRingHom, map_multiset_prod] at hPmap ⊢
+  have hc0 : C (φ c) ≠ 0 := left_ne_zero_of_mul hPmap
+  have hprod_ne : (s.map (mapRingHom φ)).prod ≠ 0 := right_ne_zero_of_mul hPmap
+  have hmap_ne : ∀ p ∈ s.map (mapRingHom φ), p ≠ 0 := fun p hp h0 ↦
+    hprod_ne (Multiset.prod_eq_zero (h0 ▸ hp))
+  rw [rootMultiplicity_mul (mul_ne_zero hc0 hprod_ne),
+    rootMultiplicity_eq_zero (by simpa using C_ne_zero.mp hc0), zero_add,
+    rootMultiplicity_multiset_prod a _ hmap_ne, Multiset.map_map]
+  simp only [Function.comp_apply, coe_mapRingHom]
 
 end Polynomial
