@@ -1005,10 +1005,8 @@ theorem hamiltonianVectorField_comp_subtype_val (σ : SmoothTwoForm I M)
       ContinuousLinearEquiv.coe_coe, Manifold.tangentSpaceOpenEquiv_apply,
       Manifold.tangentSpaceOpenEquiv_apply]
     exact (flat_apply σ x v w).symm
-  have hd : mvfderiv I (f ∘ Subtype.val) x = mvfderiv I f (x : M) := by
-    ext v
-    exact Manifold.mfderiv_comp_subtype_val_apply v
-  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hflat, hd,
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hflat,
+    Manifold.mvfderiv_comp_subtype_val,
     Manifold.tangentSpaceOpenEquiv_symm_apply]
   -- The tangent spaces at `x` in `U` and at `(x : M)` in `M` are both the model space `E`.
   exact (rfl)
