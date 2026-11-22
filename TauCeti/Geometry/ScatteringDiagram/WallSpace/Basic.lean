@@ -63,6 +63,10 @@ variable {Γ Λ R L : Type*} [AddCommMonoid Γ] [AddCommMonoid Λ]
 def wallBracketNormal (ρ : Γ →+ Λ) (n n' : Γ) (m m' : Λ →+ ℤ) : Λ →+ ℤ :=
   m (ρ n') • m' - m' (ρ n) • m
 
+/-- The bracket normal is the difference of the two scaled input characters. -/
+theorem wallBracketNormal_def (ρ : Γ →+ Λ) (n n' : Γ) (m m' : Λ →+ ℤ) :
+    wallBracketNormal ρ n n' m m' = m (ρ n') • m' - m' (ρ n) • m := (rfl)
+
 /-- Evaluate the bracket normal on a tangent vector. -/
 @[simp]
 theorem wallBracketNormal_apply (ρ : Γ →+ Λ) (n n' : Γ) (m m' : Λ →+ ℤ) (v : Λ) :
@@ -136,7 +140,8 @@ theorem wall_le_wall_wallBracketNormal_of_inf_ker_le (f g m : Λ →+ ℤ) {n : 
     H.wall n m ≤ H.wall n (wallBracketNormal ρ n n f g) := by
   by_cases hmn : m (ρ n) = 0
   · apply H.wall_le_wall_of_ker_ge n
-    simpa only [wallBracketNormal] using f.ker_zsmul_sub_zsmul_le_of_inf_ker_le g m (ρ n) hn hm hmn
+    rw [wallBracketNormal_def]
+    exact f.ker_zsmul_sub_zsmul_le_of_inf_ker_le g m (ρ n) hn hm hmn
   · simp [hmn]
 
 /-- At a degree transverse to the common kernel of two normals, the sum of the wall spaces
@@ -148,7 +153,9 @@ theorem iSup_wall_eq_wall_wallBracketNormal_of_notMem_inf_ker (f g : Λ →+ ℤ
   refine le_antisymm
     (iSup₂_le fun m hm => H.wall_le_wall_wallBracketNormal_of_inf_ker_le f g m hn hm) ?_
   have hμ : f.ker ⊓ g.ker ≤ (wallBracketNormal ρ n n f g).ker := by
-    simpa only [wallBracketNormal] using f.inf_ker_le_ker_zsmul_sub_zsmul g (ρ n)
+    intro x hx
+    obtain ⟨hf, hg⟩ := AddSubgroup.mem_inf.mp hx
+    simp [AddMonoidHom.mem_ker, AddMonoidHom.mem_ker.mp hf, AddMonoidHom.mem_ker.mp hg]
   exact le_iSup₂_of_le (wallBracketNormal ρ n n f g) hμ le_rfl
 
 end KernelComparison

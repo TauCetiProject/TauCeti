@@ -37,10 +37,11 @@ namespace AddMonoidHom
 
 variable {A : Type*} [AddGroup A]
 
-private theorem zsmul_sub_zsmul_mem_ker_iff (f g : A →+ ℤ) (v x : A) :
-    f v • x - f x • v ∈ g.ker ↔ f v * g x = g v * f x := by
-  rw [AddMonoidHom.sub_mem_ker_iff, map_zsmul, map_zsmul,
-    Int.zsmul_eq_mul, Int.zsmul_eq_mul, mul_comm (f x)]
+/-- A difference of integer multiples belongs to the kernel of an integer character exactly
+when the two scaled evaluations agree. -/
+theorem zsmul_sub_zsmul_mem_ker_iff (g : A →+ ℤ) (a b : ℤ) (x v : A) :
+    a • x - b • v ∈ g.ker ↔ a * g x = b * g v := by
+  simp only [AddMonoidHom.sub_mem_ker_iff, map_zsmul, Int.zsmul_eq_mul]
 
 /-- If the kernel of an integer character is contained in that of another,
 then a nonzero integer multiple of the latter is a multiple of the former.
@@ -55,9 +56,9 @@ theorem exists_ne_zero_zsmul_eq_of_ker_le (f g : A →+ ℤ)
   obtain ⟨a, ha⟩ := DFunLike.ne_iff.mp hf
   refine ⟨f a, g a, ha, ?_⟩
   ext x
-  have hx := (zsmul_sub_zsmul_mem_ker_iff f f a x).mpr rfl
+  have hx := (f.zsmul_sub_zsmul_mem_ker_iff (f a) (f x) x a).mpr (mul_comm _ _)
   simpa only [zsmul_apply, Int.zsmul_eq_mul] using
-    (zsmul_sub_zsmul_mem_ker_iff f g a x).mp (hker hx)
+    ((g.zsmul_sub_zsmul_mem_ker_iff (f a) (f x) x a).mp (hker hx)).trans (mul_comm _ _)
 
 /-- Integer characters with the same kernel have equal nonzero integer multiples. -/
 theorem exists_ne_zero_zsmul_eq_of_ker_eq (f g : A →+ ℤ)
@@ -78,13 +79,6 @@ theorem exists_ne_zero_zsmul_eq_of_ker_eq (f g : A →+ ℤ)
     exact hga ((Int.mul_eq_zero.mp hv).resolve_left hc)
   exact ⟨d, c, hd, hc, hcd.symm⟩
 
-/-- The contraction of two integer characters vanishes on their common kernel. -/
-theorem inf_ker_le_ker_zsmul_sub_zsmul (f g : A →+ ℤ) (v : A) :
-    f.ker ⊓ g.ker ≤ (f v • g - g v • f).ker := by
-  intro x hx
-  obtain ⟨hf, hg⟩ := AddSubgroup.mem_inf.mp hx
-  simp [mem_ker, mem_ker.mp hf, mem_ker.mp hg]
-
 /-- A character vanishing on the common kernel of two characters and at a vector
 outside it also vanishes on the kernel of their contraction at that vector. -/
 theorem ker_zsmul_sub_zsmul_le_of_inf_ker_le (f g m : A →+ ℤ) (v : A)
@@ -96,8 +90,9 @@ theorem ker_zsmul_sub_zsmul_le_of_inf_ker_le (f g m : A →+ ℤ) (v : A)
     have hx' : f v * g x = g v * f x := by
       simpa only [mem_ker, sub_apply, zsmul_apply, Int.zsmul_eq_mul, sub_eq_zero] using hx
     have hz : f v • x - f x • v ∈ f.ker ⊓ g.ker :=
-      AddSubgroup.mem_inf.mpr ⟨(zsmul_sub_zsmul_mem_ker_iff f f v x).mpr rfl,
-        (zsmul_sub_zsmul_mem_ker_iff f g v x).mpr hx'⟩
+      AddSubgroup.mem_inf.mpr
+        ⟨(f.zsmul_sub_zsmul_mem_ker_iff (f v) (f x) x v).mpr (mul_comm _ _),
+          (g.zsmul_sub_zsmul_mem_ker_iff (f v) (f x) x v).mpr (hx'.trans (mul_comm _ _))⟩
     have hprod : f v * m x = 0 := by
       simpa [hmv] using AddMonoidHom.mem_ker.mp (hm hz)
     exact AddMonoidHom.mem_ker.mpr ((Int.mul_eq_zero.mp hprod).resolve_left hf)
