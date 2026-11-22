@@ -281,25 +281,10 @@ unchanged polynomial `X` of the output head. -/
     map φ ((polynomial d q).polynomialPrefix q i o) =
       (polynomial d (fun j => (q j).map φ)).polynomialPrefix
         (fun j => (q j).map φ) i o := by
-  have hL : (polynomial d q).polynomialPrefix q i o =
-      polynomialChainPrefix (I := fun j => Fin (d j))
-        (fun k a => Polynomial.aeval (polynomialDense a) (layerPolynomial q k)) i o :=
-    congrFun ((polynomial d q).polynomialPrefix_eq_polynomialChainPrefix q i) o
-  have hR : (polynomial d (fun j => (q j).map φ)).polynomialPrefix
-        (fun j => (q j).map φ) i o =
-      polynomialChainPrefix (I := fun j => Fin (d j))
-        (fun k a => Polynomial.aeval (polynomialDense a)
-          (layerPolynomial (fun j => (q j).map φ) k)) i o :=
-    congrFun ((polynomial d (fun j => (q j).map φ)).polynomialPrefix_eq_polynomialChainPrefix
-      (fun j => (q j).map φ) i) o
-  rw [hL, hR]
-  refine (map_polynomialChainPrefix φ (I := fun j => Fin (d j)) _ i o).trans ?_
-  refine congrArg (fun R => polynomialChainPrefix (I := fun j => Fin (d j)) R i o)
-    (funext fun k => funext fun a => ?_)
   -- Normalize the common widths in the dependent coordinate types and their instances.
-  dsimp +instances only [polynomial, ParameterIndex]
-  rw [Function.comp_apply, Polynomial.map_aeval_eq_aeval_map (map_comp_C φ).symm,
-    map_layerPolynomial, map_polynomialDense]
+  dsimp +instances only [polynomial, ParameterIndex, polynomialPrefix_eq_polynomialChainPrefix]
+  exact map_polynomialChainPrefix_aeval φ (I := fun j => Fin (d j))
+    (fun _ a => map_polynomialDense φ a) (fun k _ => map_layerPolynomial φ q k) i o
 
 /-- The joint polynomial tuple of the transported affine MLP is the coefficientwise image
 of the original tuple. -/

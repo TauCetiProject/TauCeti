@@ -145,14 +145,6 @@ theorem polynomialRealize_eq_polynomialChain (A : ConvolutionSpec K L)
   rw [polynomialRealize_def, polynomialChain_def]
   exact A.polynomialPrefix_eq_polynomialChainPrefix q (Fin.last L)
 
-/-- With identity hidden activation polynomials `X`, the affine convolutional polynomial tuple is
-`polynomialChain` of `polynomialAffineConvolution`. -/
-theorem polynomialRealize_X_eq_polynomialChain (A : ConvolutionSpec K L) :
-    A.polynomialRealize (fun _ => Polynomial.X) =
-      polynomialChain (I := fun j => Fin (A.width j))
-        (fun i => polynomialAffineConvolution (A.length_eq i)) := by
-  simpa using A.polynomialRealize_eq_polynomialChain fun _ => Polynomial.X
-
 /-- Polynomial hidden activations make the convolutional network jointly polynomial in its
 actual parameters and inputs. -/
 theorem polynomialRealization_polynomialRealize (A : ConvolutionSpec K L)
@@ -212,14 +204,6 @@ theorem polynomialRealizeWeights_eq_polynomialChain (A : ConvolutionSpec K L)
           (MLPSpec.layerPolynomial q i)) := by
   rw [polynomialRealizeWeights_def, polynomialRealize_def, polynomialChain_def]
   exact A.polynomialPrefix_zeroBias_eq_polynomialChainPrefix q (Fin.last L)
-
-/-- With identity hidden activation polynomials `X`, the bias-free convolutional polynomial tuple
-is `polynomialChain` of `polynomialConvolution`. -/
-theorem polynomialRealizeWeights_X_eq_polynomialChain (A : ConvolutionSpec K L) :
-    A.polynomialRealizeWeights (fun _ => Polynomial.X) =
-      polynomialChain (I := fun j => Fin (A.width j))
-        (fun i => polynomialConvolution (A.length_eq i)) := by
-  simpa using A.polynomialRealizeWeights_eq_polynomialChain fun _ => Polynomial.X
 
 /-- The bias-free polynomial tuple realizes the network on precisely its filter product. -/
 theorem polynomialRealization_polynomialRealizeWeights (A : ConvolutionSpec K L)

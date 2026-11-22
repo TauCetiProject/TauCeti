@@ -184,13 +184,6 @@ theorem polynomialRealize_eq_polynomialChain (A : MLPSpec K L) (q : Fin (L - 1) 
   rw [polynomialRealize_def, polynomialChain_def]
   exact A.polynomialPrefix_eq_polynomialChainPrefix q (Fin.last L)
 
-/-- With identity hidden activation polynomials `X`, the jointly polynomial tuple of `A` is
-`polynomialChain` of the affine dense layers `polynomialDense`. -/
-theorem polynomialRealize_X_eq_polynomialChain (A : MLPSpec K L) :
-    A.polynomialRealize (fun _ => Polynomial.X) =
-      polynomialChain (I := fun j => Fin (A.width j)) (fun _ => polynomialDense) := by
-  simpa using A.polynomialRealize_eq_polynomialChain fun _ => Polynomial.X
-
 /-- An MLP whose hidden activations evaluate the polynomials `q` is a jointly polynomial model:
 its polynomial tuple realizes `A.realize` on the parameters assembled from their coordinates. -/
 theorem polynomialRealization_polynomialRealize (A : MLPSpec K L)
@@ -270,13 +263,6 @@ theorem polynomialRealizeWeights_eq_polynomialChain (A : MLPSpec K L)
         (fun i o => Polynomial.aeval (polynomialLinear o) (layerPolynomial q i)) := by
   rw [polynomialRealizeWeights_def, polynomialRealize_def, polynomialChain_def]
   exact A.polynomialPrefix_zeroBias_eq_polynomialChainPrefix q (Fin.last L)
-
-/-- With identity hidden activation polynomials `X`, the bias-free jointly polynomial tuple of `A`
-is `polynomialChain` of the linear layers `polynomialLinear`. -/
-theorem polynomialRealizeWeights_X_eq_polynomialChain (A : MLPSpec K L) :
-    A.polynomialRealizeWeights (fun _ => Polynomial.X) =
-      polynomialChain (I := fun j => Fin (A.width j)) (fun _ => polynomialLinear) := by
-  simpa using A.polynomialRealizeWeights_eq_polynomialChain fun _ => Polynomial.X
 
 /-- A bias-free MLP whose hidden activations evaluate the polynomials `q` is a jointly
 polynomial model: its bias-free polynomial tuple realizes `A.realizeWeights` on the weights

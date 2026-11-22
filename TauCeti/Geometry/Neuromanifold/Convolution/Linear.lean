@@ -124,7 +124,7 @@ is homogeneous of degree one, over any commutative semiring. -/
 theorem isHomogeneous_inputPolynomial_polynomialRealizeWeights_X [CommSemiring K]
     (A : ConvolutionSpec K L) (j : Fin (A.width (Fin.last L))) :
     (inputPolynomial (A.polynomialRealizeWeights fun _ => Polynomial.X) j).IsHomogeneous 1 := by
-  rw [A.polynomialRealizeWeights_X_eq_polynomialChain]
+  rw [A.polynomialRealizeWeights_eq_polynomialChain]
   simpa using isHomogeneous_inputPolynomial_polynomialChain
     (I := fun k => Fin (A.width k))
     (fun i => isHomogeneous_inputPolynomial_polynomialConvolution (A.length_eq i)) j
