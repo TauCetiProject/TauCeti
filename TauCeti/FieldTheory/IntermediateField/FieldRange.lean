@@ -27,8 +27,6 @@ different embeddings `f` induce different structures, so none can be registered 
 
 ## Main results
 
-* `AlgHom.equivFieldRange_smul`: scalar multiplication through `f.equivFieldRange` agrees with
-  the given `K`-action on `L`.
 * `AlgHom.finrank_fieldRange`: `[L : f.fieldRange] = [L : K]`.
 * `AlgHom.finiteDimensional_of_fieldRange`, `AlgHom.isSeparable_of_fieldRange`, and
   `AlgHom.linearIndependent_fieldRange`: finiteness and separability over the range transfer to
@@ -44,13 +42,6 @@ public section
 namespace AlgHom
 
 variable {F K L : Type*} [Field F] [Field K] [Field L] [Algebra F K] [Algebra F L]
-
-/-- Scalar multiplication on `L` through `f.equivFieldRange` agrees with the given `K`-action
-when the structure map is `f`. -/
-theorem equivFieldRange_smul (f : K →ₐ[F] L) [Algebra K L] (h : ∀ z, algebraMap K L z = f z)
-    (a : K) (x : L) : f.equivFieldRange a • x = a • x := by
-  rw [Algebra.smul_def, Algebra.smul_def, IntermediateField.algebraMap_apply,
-    AlgHom.equivFieldRange_apply_coe, h]
 
 /-- **The degree above the range of a field embedding equals the degree above its source.**
 Stated for an arbitrary `K`-algebra structure on `L` whose structure map is `f`, rather than for

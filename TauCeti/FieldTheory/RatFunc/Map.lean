@@ -19,19 +19,13 @@ absolute Galois group, acts on the rational function field.
 
 ## Main definitions
 
-* `TauCeti.RatFunc.mapCoeffRingHom`: the coefficient map `K(X) →+* L(X)` of `f : K →+* L`.
 * `TauCeti.RatFunc.mapRingEquiv`: the coefficient map `K(X) ≃+* L(X)` of `σ : K ≃+* L`.
 * `TauCeti.ratFuncMapRingHom`: the coefficient map `K(X) →+* L(X)` along `[Algebra K L]`.
 
 ## Main results
 
-* `TauCeti.RatFunc.mapCoeffRingHom_algebraMap`, `TauCeti.RatFunc.mapCoeffRingHom_X` and
-  `TauCeti.RatFunc.mapCoeffRingHom_C`: `mapCoeffRingHom f` applies `Polynomial.map f` to
-  polynomials, fixes `X` and acts on the constants by `f`.
-* `TauCeti.RatFunc.mapCoeffRingHom_id` and `TauCeti.RatFunc.mapCoeffRingHom_comp`: it is
-  functorial in `f`.
-* `TauCeti.RatFunc.mapRingEquiv_X` and `TauCeti.RatFunc.mapRingEquiv_C`: `mapRingEquiv σ` fixes
-  `X` and acts on the constants by `σ`.
+* `TauCeti.RatFunc.mapRingEquiv_X` and `TauCeti.RatFunc.mapRingEquiv_C`: it fixes `X` and acts
+  on the constants by `σ`.
 * `TauCeti.RatFunc.coe_mapRingEquiv`: as a function it is `RatFunc.mapRingHom` of
   `Polynomial.mapRingHom σ`.
 * `TauCeti.RatFunc.mapRingEquiv_refl`, `TauCeti.RatFunc.mapRingEquiv_symm` and
@@ -39,9 +33,6 @@ absolute Galois group, acts on the rational function field.
 * `TauCeti.apply_algebraMap_eq_of_mapRingEquiv` and `TauCeti.finrank_eq_of_mapRingEquiv`: an
   isomorphism `F ≃+* F'` of extensions carrying `K(X)` onto `L(X)` by the coefficient map of `σ`
   carries `K` onto `L` along `σ`, and the two extensions have the same degree.
-* `TauCeti.map_algebraMap_ratFunc_eq_mapCoeffRingHom`: a homomorphism between extensions of
-  `K(X)` and `L(X)` carrying constants along `f` and `X` to `X` intertwines the embeddings of
-  `K(X)` and `L(X)` through `mapCoeffRingHom f`.
 * `TauCeti.algebraMap_ratFunc_algebraMap_polynomial` and `TauCeti.algebraMap_algebraMap_polynomial`:
   polynomial compatibility across compatible `RatFunc` towers.
 * `TauCeti.ratFuncMapRingHom_algebraMap`, `TauCeti.ratFuncMapRingHom_X`,
@@ -63,50 +54,6 @@ open _root_.RatFunc
 open scoped Polynomial
 
 variable {K L M : Type*} [Field K] [Field L] [Field M]
-
-/-- The homomorphism `K(X) →+* L(X)` induced by a field homomorphism `f : K →+* L`, applying `f`
-to the coefficients and fixing `X`. -/
-noncomputable def mapCoeffRingHom (f : K →+* L) : RatFunc K →+* RatFunc L :=
-  _root_.RatFunc.mapRingHom (Polynomial.mapRingHom f)
-    (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-      (Polynomial.map_injective _ f.injective))
-
-/-- On polynomials, the coefficient map `mapCoeffRingHom f` is `Polynomial.map f`. -/
-@[simp]
-theorem mapCoeffRingHom_algebraMap (f : K →+* L) (p : K[X]) :
-    mapCoeffRingHom f (algebraMap K[X] (RatFunc K) p) = algebraMap L[X] (RatFunc L) (p.map f) := by
-  simpa [mapCoeffRingHom, coe_mapRingHom_eq_coe_map] using
-    map_apply_div (Polynomial.mapRingHom f)
-      (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-        (Polynomial.map_injective _ f.injective)) p 1
-
-/-- The coefficient map `mapCoeffRingHom f` fixes the variable `X`. -/
-@[simp]
-theorem mapCoeffRingHom_X (f : K →+* L) : mapCoeffRingHom f X = X := by
-  rw [← algebraMap_X, mapCoeffRingHom_algebraMap, Polynomial.map_X, algebraMap_X]
-
-/-- The coefficient map `mapCoeffRingHom f` acts on the constants by `f`. -/
-@[simp]
-theorem mapCoeffRingHom_C (f : K →+* L) (c : K) : mapCoeffRingHom f (C c) = C (f c) := by
-  rw [← algebraMap_C, mapCoeffRingHom_algebraMap, Polynomial.map_C, algebraMap_C]
-
-/-- The coefficient map `mapCoeffRingHom f` carries the image of `K` in `K(X)` onto the image of
-`L` along `f`. -/
-theorem mapCoeffRingHom_algebraMap_const (f : K →+* L) (c : K) :
-    mapCoeffRingHom f (algebraMap K (RatFunc K) c) = algebraMap L (RatFunc L) (f c) := by
-  rw [algebraMap_eq_C, algebraMap_eq_C, mapCoeffRingHom_C]
-
-/-- The coefficient map of the identity homomorphism is the identity. -/
-@[simp]
-theorem mapCoeffRingHom_id : mapCoeffRingHom (RingHom.id K) = RingHom.id (RatFunc K) := by
-  refine IsFractionRing.ringHom_ext (A := K[X]) fun p ↦ ?_
-  simp
-
-/-- The coefficient map of a composite is the composite of the coefficient maps. -/
-theorem mapCoeffRingHom_comp (g : L →+* M) (f : K →+* L) :
-    mapCoeffRingHom (g.comp f) = (mapCoeffRingHom g).comp (mapCoeffRingHom f) := by
-  refine IsFractionRing.ringHom_ext (A := K[X]) fun p ↦ ?_
-  simp [Polynomial.map_map]
 
 /-- The isomorphism `K(X) ≃+* L(X)` induced by a field isomorphism `σ : K ≃+* L`, applying `σ` to
 the coefficients and fixing `X`. -/
@@ -130,11 +77,6 @@ theorem coe_mapRingEquiv : ⇑(mapRingEquiv σ) = mapRingHom (Polynomial.mapRing
   | f p q _ =>
     rw [coe_mapRingHom_eq_coe_map, map_apply_div, map_div₀, mapRingEquiv_algebraMap,
       mapRingEquiv_algebraMap, Polynomial.coe_mapRingHom]
-
-/-- As a ring homomorphism, `mapRingEquiv σ` is `mapCoeffRingHom σ`. -/
-theorem mapRingEquiv_toRingHom :
-    (mapRingEquiv σ : RatFunc K →+* RatFunc L) = mapCoeffRingHom (σ : K →+* L) :=
-  DFunLike.coe_injective (coe_mapRingEquiv σ)
 
 /-- The coefficient map fixes the variable. -/
 @[simp]
@@ -228,41 +170,6 @@ theorem finrank_eq_of_mapRingEquiv :
     (RingHom.ext fun x ↦ (hτ x).symm)).symm
 
 end Extension
-
-section HomExtension
-
-open scoped Polynomial
-
-/-- A homomorphism `φ : F →+* F'` between extensions of `K(X)` and `L(X)` carrying constants along
-`f : K →+* L` and sending `X` to `X` intertwines the embeddings of `K(X)` and `L(X)` through
-`TauCeti.RatFunc.mapCoeffRingHom f`. -/
-theorem map_algebraMap_ratFunc_eq_mapCoeffRingHom {K L F F' : Type*}
-    [Field K] [Field L] [Field F] [Field F']
-    [Algebra K F] [Algebra L F']
-    [Algebra (RatFunc K) F] [IsScalarTower K (RatFunc K) F]
-    [Algebra (RatFunc L) F'] [IsScalarTower L (RatFunc L) F']
-    (f : K →+* L) (φ : F →+* F')
-    (hf : ∀ c : K, φ (algebraMap K F c) = algebraMap L F' (f c))
-    (hX : φ (algebraMap (RatFunc K) F RatFunc.X) = algebraMap (RatFunc L) F' RatFunc.X)
-    (r : RatFunc K) :
-    φ (algebraMap (RatFunc K) F r) =
-      algebraMap (RatFunc L) F' (RatFunc.mapCoeffRingHom f r) := by
-  have hext : φ.comp (algebraMap (RatFunc K) F) =
-      (algebraMap (RatFunc L) F').comp (RatFunc.mapCoeffRingHom f) := by
-    refine IsFractionRing.ringHom_ext (A := K[X]) fun p ↦ ?_
-    rw [RingHom.comp_apply, RingHom.comp_apply, RatFunc.mapCoeffRingHom_algebraMap,
-      ← RatFunc.aeval_X_left_eq_algebraMap, ← RatFunc.aeval_X_left_eq_algebraMap,
-      Polynomial.aeval_def, Polynomial.aeval_def, Polynomial.eval₂_map,
-      Polynomial.hom_eval₂, Polynomial.hom_eval₂, Polynomial.hom_eval₂]
-    have hcomp : φ.comp ((algebraMap (RatFunc K) F).comp (algebraMap K (RatFunc K))) =
-        (algebraMap (RatFunc L) F').comp ((algebraMap L (RatFunc L)).comp f) := by
-      ext c
-      simp only [RingHom.comp_apply, ← IsScalarTower.algebraMap_apply K (RatFunc K) F,
-        ← IsScalarTower.algebraMap_apply L (RatFunc L) F', hf]
-    rw [hcomp, hX]
-  exact RingHom.congr_fun hext r
-
-end HomExtension
 
 section Polynomial
 

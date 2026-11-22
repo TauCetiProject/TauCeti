@@ -388,8 +388,7 @@ section Galois
 variable (X) [IsGalois (RatFunc k) X]
 
 /-- **For a Galois Belyi pair, the pointed stabilizer at any place over a rational point equals the
-full stabilizer of the isomorphism class.** Any semilinear automorphism moves `P` to another place
-in the same rational fibre, and Galois transitivity over `k(t)` restores `P`. -/
+full stabilizer of the isomorphism class.** -/
 theorem pointedStabilizer_eq_stabilizer_of_isGalois {P : Place k X} {q : ℚ}
     (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
     X.pointedStabilizer P = MulAction.stabilizer (k ≃ₐ[ℚ] k) (IsoClass.mk X) := by

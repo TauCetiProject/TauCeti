@@ -58,8 +58,7 @@ becomes the bijection `TauCeti.Place.ratFuncEquiv`.
   the associate class of its polynomial.
 * `TauCeti.Place.exists_algebraMap_notMem_integers_iff_eq_infty`: the place at infinity is the
   only place of `k(x)` at which a polynomial has a pole;
-  `TauCeti.Place.X_notMem_integers_iff_eq_infty` and `TauCeti.Place.ord_X_neg_iff`: it is the only
-  pole of `x`.
+  `TauCeti.Place.X_notMem_integers_iff_eq_infty`: it is the only pole of `x`.
 * `TauCeti.Place.eq_infty_or_exists_eq_adicOfIrreducible_X_sub_C` and
   `TauCeti.Place.ratFuncDegreeOneEquiv`: the degree-one places are `ℙ¹(k) = k ∪ {∞}`
   (Stichtenoth, Corollary 1.2.3).
@@ -371,11 +370,6 @@ theorem X_notMem_integers_iff_eq_infty {P : Place k (RatFunc k)} :
   rintro rfl
   rw [mem_integers_iff_ord_nonneg, ord_infty, RatFunc.intDegree_X]
   omega
-
-/-- **A place of `k(x)` is the place at infinity exactly when `x` has negative order there.** -/
-theorem ord_X_neg_iff {P : Place k (RatFunc k)} :
-    P.ord (RatFunc.X : RatFunc k) < 0 ↔ P = infty k := by
-  rw [← not_le, ← mem_integers_iff_ord_nonneg, X_notMem_integers_iff_eq_infty]
 
 /-- A place of `k(x)` has valuation greater than one on `x` exactly when it is the place at
 infinity. This is the simp-normal form of `X_notMem_integers_iff_eq_infty`. -/

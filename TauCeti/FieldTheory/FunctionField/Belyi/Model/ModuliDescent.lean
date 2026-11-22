@@ -30,9 +30,9 @@ and deduces **Köck's Theorem 2.2**:
    disjoint from `K(t)(z)` over `K` (`TauCeti.linearDisjoint_of_finrank_ratFunc_eq`),
    with no algebraicity assumption on `k / K`.
 2. Degree-preserving base-change descent (`TauCeti.IsAlgebraicBelyiPair.of_finrank_eq`, via
-   `TauCeti.isAlgebraicBelyiPair_iff_of_linearDisjoint`) therefore descends both exactness of the
-   constant field and unramifiedness outside `{0, 1, ∞}` from `F / k(t)` to `K(t)(z) / K(t)`,
-   making `K(t)(z)` a model of `X` over `K` of degree `d`.
+   `TauCeti.isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top`) therefore descends both
+   exactness of the constant field and unramifiedness outside `{0, 1, ∞}` from `F / k(t)` to
+   `K(t)(z) / K(t)`, making `K(t)(z)` a model of `X` over `K` of degree `d`.
 3. When `k` is algebraically closed (such as `ℂ` or `AlgebraicClosure ℚ`), choosing any place `P`
    above `t = 2` yields a place of degree one whose pointed field of moduli has degree at most `d`
    over the field of moduli of `X`. Every isomorphism class `c` of Belyi pairs over `k` is thus
@@ -125,9 +125,8 @@ private noncomputable def pointedModelAux {P : Place k X} {q : ℚ}
     finrank_modelOfAdjoinSimple_pair X _ _ _ _ _⟩
 
 /-- **Pointed model descent**: at a place `P` of `X` of degree one over an unbranched rational
-point `t = q` (`q ∈ ℚ \ {0, 1}`), the subfield `K(t)⟮z⟯` generated over
-`K = X.pointedFieldOfModuli P` by a Laurent-normalized primitive element `z` is an algebraic Belyi
-pair over `K` and a model of `X` over `K`. No algebraicity of `k / K` is required. -/
+point `t = q` (`q ∈ ℚ \ {0, 1}`), `X` admits a model over `X.pointedFieldOfModuli P`. No
+algebraicity of `k / X.pointedFieldOfModuli P` is required. -/
 noncomputable def pointedModel {P : Place k X} {q : ℚ}
     (hq₀ : (q : k) ≠ 0) (hq₁ : (q : k) ≠ 1)
     (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k)))
@@ -210,12 +209,12 @@ theorem exists_finrank_le_degree_and_isDefinedOver [IsAlgClosed k] (c : IsoClass
       Module.finrank c.fieldOfModuli K ≤ c.degree ∧
       c.IsDefinedOver K := by
   obtain ⟨K₀, hle, hpos, hdeg, hc⟩ := c.exists_relfinrank_le_degree_and_isDefinedOver
-  let K : IntermediateField c.fieldOfModuli k :=
-    { K₀.toSubfield with algebraMap_mem' := fun m ↦ hle m.property }
+  let K : IntermediateField c.fieldOfModuli k := IntermediateField.extendScalars hle
   have hfinrank : Module.finrank c.fieldOfModuli K = c.fieldOfModuli.relfinrank K₀ :=
     (IntermediateField.relfinrank_eq_finrank_of_le hle).symm
   have : FiniteDimensional c.fieldOfModuli K :=
     FiniteDimensional.of_finrank_pos (hfinrank ▸ hpos)
+  -- `extendScalars hle` shares the exact `Subfield` carrier and `k`-algebra map of `K₀`.
   exact ⟨K, inferInstance, hfinrank ▸ hdeg, hc⟩
 
 end IsoClass
