@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Nilpotent
-public import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
+import Mathlib.RingTheory.MvPolynomial.MonomialOrder.DegLex
 
 /-!
 # Units of multivariate polynomial rings
@@ -83,7 +83,8 @@ namespace TauCeti.MvPolynomial
 open _root_.MvPolynomial
 
 /-- Over any reduced commutative semiring, a multivariate polynomial is a unit if and only if it is
-`C r` for a unit `r` of the coefficient semiring. -/
+`C r` for a unit `r` of the coefficient semiring. This generalizes Mathlib's ring result
+`MvPolynomial.isUnit_iff_eq_C_of_isReduced` via a separate leading-monomial proof using `degLex`. -/
 theorem isUnit_iff_eq_C {σ R : Type*} [CommSemiring R] [IsReduced R]
     {p : _root_.MvPolynomial σ R} : IsUnit p ↔ ∃ r, IsUnit r ∧ p = C r := by
   refine ⟨fun hp ↦ ?_, ?_⟩

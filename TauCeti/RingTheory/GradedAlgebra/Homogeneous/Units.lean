@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Units.Opposite
-public import Mathlib.Algebra.GroupWithZero.Associated
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Algebra.DirectSum.Internal
@@ -38,8 +37,8 @@ grading graded-isomorphic to a shift has such a generator.
 
 ## Main results
 
-* `Units.val_inv_mem_graded`: the inverse of a homogeneous unit of degree `d` is homogeneous of
-  degree `-d`.
+* `Units.val_inv_mem_graded` and `Units.val_zpow_mem_graded`: the inverse and integer powers of
+  a homogeneous unit of degree `d` are homogeneous of degrees `-d` and `m • d`.
 * `TauCeti.mem_homogeneousUnitDegrees_iff`: a degree lies in `homogeneousUnitDegrees 𝒜` if and
   only if it is the degree of a homogeneous unit.
 * `TauCeti.mul_mem_iff_of_isUnit_mem` and `TauCeti.eq_map_mulLeft_of_isUnit_mem`: a compatible
@@ -77,6 +76,19 @@ theorem Units.val_inv_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) :
     ((u⁻¹ : Aˣ) : A) ∈ 𝒜 (-d) :=
   TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular 𝒜 hu u.isRegular.left
     (by rw [Units.mul_inv, add_neg_cancel]; exact SetLike.one_mem_graded 𝒜)
+
+/-- In a ring graded by an additive group, an integer power of a homogeneous unit of degree `d`
+is homogeneous of degree `m • d`. -/
+theorem Units.val_zpow_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) (m : ℤ) :
+    ((u ^ m : Aˣ) : A) ∈ 𝒜 (m • d) := by
+  cases m with
+  | ofNat n =>
+    simpa [Int.ofNat_eq_natCast] using SetLike.pow_mem_graded n hu
+  | negSucc n =>
+    rw [zpow_negSucc, ← inv_pow, Units.val_pow_eq_pow_val]
+    convert SetLike.pow_mem_graded (n + 1) (u.val_inv_mem_graded hu) using 2
+    rw [Int.negSucc_eq, neg_zsmul, ← zsmul_neg, ← natCast_zsmul]
+    norm_cast
 
 end Inverse
 

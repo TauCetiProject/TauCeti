@@ -17,15 +17,12 @@ divisors of `p ^ n` for a prime element `p` without assuming unique factorizatio
 extends that characterization to divisors of `p ^ n * a`.
 
 This file extends that characterization to finite products of prime elements and their powers:
-every divisor of a multiset product of primes is associated to the product of a submultiset, every
-divisor of `∏ i ∈ s, p i ^ n i` is associated to `∏ i ∈ s, p i ^ m i` with `m i ≤ n i`, and when
-the primes `p i` are pairwise non-associated the exponents `m i` on `s` are uniquely determined up
-to association of the product.
+every divisor of `∏ i ∈ s, p i ^ n i` is associated to `∏ i ∈ s, p i ^ m i` with `m i ≤ n i`,
+and when the primes `p i` are pairwise non-associated the exponents `m i` on `s` are uniquely
+determined up to association of the product.
 
 ## Main results
 
-* `Multiset.dvd_prod_primes_iff`: `x ∣ s.prod` for a multiset `s` of primes if and only if `x` is
-  associated to `t.prod` for some `t ≤ s`.
 * `Finset.dvd_prod_pow_primes_iff` and `Finset.dvd_prod_primes_pow_iff`: `x` divides
   `∏ i ∈ s, p i ^ n i` (or `(∏ i ∈ s, p i) ^ k`) if and only if `x` is associated to
   `∏ i ∈ s, p i ^ m i` with bounded exponents.
@@ -36,37 +33,6 @@ to association of the product.
 public section
 
 assert_not_exists Field
-
-namespace Multiset
-
-variable {M₀ : Type*} [CommMonoidWithZero M₀] [IsCancelMulZero M₀]
-
-/-- In a cancellative commutative monoid with zero, an element divides the product of a multiset of
-primes if and only if it is associated to the product of a submultiset. -/
-theorem dvd_prod_primes_iff (s : Multiset M₀) (hs : ∀ p ∈ s, Prime p) {x : M₀} :
-    x ∣ s.prod ↔ ∃ t ≤ s, Associated x t.prod := by
-  induction s using Multiset.induction_on generalizing x with
-  | empty =>
-    rw [prod_zero, ← isUnit_iff_dvd_one, ← associated_one_iff_isUnit]
-    exact ⟨fun hx ↦ ⟨0, le_rfl, by simpa using hx⟩,
-      fun ⟨t, ht, hxt⟩ ↦ by rwa [Multiset.le_zero.mp ht, prod_zero] at hxt⟩
-  | cons p s ih =>
-    have hp : Prime p := hs p (mem_cons_self p s)
-    have hs' : ∀ q ∈ s, Prime q := fun q hq ↦ hs q (mem_cons_of_mem hq)
-    refine ⟨fun hx ↦ ?_, fun ⟨t, ht, hxt⟩ ↦ ?_⟩
-    · rw [prod_cons] at hx
-      rcases hp.left_dvd_or_dvd_right_of_dvd_mul hx with ⟨y, rfl⟩ | hx'
-      · rw [mul_dvd_mul_iff_left hp.ne_zero] at hx
-        obtain ⟨t, hts, hy⟩ := (ih hs').mp hx
-        refine ⟨p ::ₘ t, cons_le_cons p hts, ?_⟩
-        rw [prod_cons]
-        exact hy.mul_left p
-      · obtain ⟨t, hts, hxt⟩ := (ih hs').mp hx'
-        exact ⟨t, hts.trans (le_cons_self s p), hxt⟩
-    · obtain ⟨r, hr⟩ := Multiset.le_iff_exists_add.mp ht
-      exact hxt.dvd.trans ⟨r.prod, by rw [hr, prod_add]⟩
-
-end Multiset
 
 namespace Finset
 
@@ -126,8 +92,9 @@ theorem eq_of_associated_prod_pow_primes (s : Finset ι) {p : ι → M₀} (hp :
     by_contra! hlt
     obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_lt hlt
     have hpj : Prime (p j) := hp j hj
-    rw [← insert_erase hj, prod_insert (notMem_erase j s), prod_insert (notMem_erase j s),
-      hk, add_assoc, pow_add, mul_assoc] at hab
+    have hpow : p j ^ a j = p j ^ b j * p j ^ (k + 1) := by rw [hk, add_assoc, pow_add]
+    rw [← Finset.mul_prod_erase s (fun l ↦ p l ^ a l) hj,
+      ← Finset.mul_prod_erase s (fun l ↦ p l ^ b l) hj, hpow, mul_assoc] at hab
     have hab' : Associated (p j ^ (k + 1) * ∏ l ∈ s.erase j, p l ^ a l)
         (∏ l ∈ s.erase j, p l ^ b l) :=
       Associated.of_mul_left hab Associated.rfl (pow_ne_zero (b j) hpj.ne_zero)
