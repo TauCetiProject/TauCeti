@@ -139,12 +139,8 @@ theorem nonempty_unitSphere_inter_orthogonal_pair
     (Metric.sphere (0 : E) 1 ∩ {x : E | ⟪x, a⟫ = 0} ∩
       {x : E | ⟪x, b⟫ = 0}).Nonempty := by
   classical
-  have hcard : ({a, b} : Finset E).card ≤ 2 := by
-    calc
-      ({a, b} : Finset E).card ≤ ({b} : Finset E).card + 1 := Finset.card_insert_le _ _
-      _ = 2 := by simp
   obtain ⟨x, hx, horth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
-    (𝕜 := ℝ) {a, b} (hcard.trans_lt hdim)
+    (𝕜 := ℝ) {a, b} (Finset.card_le_two.trans_lt hdim)
   refine ⟨x, ⟨⟨by simpa [Metric.mem_sphere] using hx, ?_⟩, ?_⟩⟩
   · simpa only [Set.mem_ofPred_eq, real_inner_comm] using horth a (by simp)
   · simpa only [Set.mem_ofPred_eq, real_inner_comm] using horth b (by simp)
