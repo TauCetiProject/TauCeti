@@ -17,18 +17,18 @@ facts that do not depend on a choice of constant field. The convention is
 The definition, characteristic lemmas, multiplication and addition laws apply to valuations on
 rings, using nonzero valuation values to exclude the support where necessary. Finite products
 require commutativity. Equivalence comparisons and the characterization of uniformizers also
-apply to rings: a uniformizer is an element whose order is that of the generator below `1` of the
-value group. On a ring the valuation need not attain that generator (the `t`-adic valuation on
-`k[t², t³]`), so a uniformizer need not exist. Inverse and quotient laws are stated on division
-rings; valuation-subring results are stated on fields. Facts about surjective valuations that
-do not involve the order are in `TauCeti.RingTheory.Valuation.Surjective`, under the conditions
-on the value group each needs: the value group is full with no condition (and for a valuation
-from a division ring into an ordered group with zero, full value group means surjectivity), the
-valuation is nontrivial exactly when its target has an element other than `0` and `1`,
-equivalent surjective valuations into a linearly ordered commutative group with zero are equal
-when its units form a cyclic group, and for a surjective valuation from a field into a linearly
-ordered commutative group with zero whose units form a nontrivial cyclic group, the valuation
-ring is a discrete valuation ring.
+apply to rings: for a rank-one discrete valuation, a uniformizer is an element of order `-log γ`,
+where `γ` is the generator below `1` of the value group. On a ring the valuation need not attain
+`γ` (the `t`-adic valuation on `k[t², t³]`), so a uniformizer need not exist. Inverse and
+quotient laws are stated on division rings; valuation-subring results are stated on fields. Facts
+about surjective valuations that do not involve the order are in
+`TauCeti.RingTheory.Valuation.Surjective`, under the conditions on the value group each needs: the
+value group is full with no condition (and for a valuation from a division ring into an ordered
+group with zero, full value group means surjectivity), the valuation is nontrivial exactly when
+its target has an element other than `0` and `1`, equivalent surjective valuations into a linearly
+ordered commutative group with zero are equal when its units form a cyclic group, and for a
+surjective valuation from a field into a linearly ordered commutative group with zero whose units
+form a nontrivial cyclic group, the valuation ring is a discrete valuation ring.
 As `WithZero.log 0 = 0`, the order has the junk value `ord_v f = 0` whenever `v f = 0`.
 On a division ring, `v f = 0` is equivalent to `f = 0`; hypotheses excluding zero are
 included where necessary.
@@ -113,22 +113,26 @@ private theorem zpowers_mk0_exp_neg_one :
   exact WithZero.unitsWithZeroEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one
     (WithZero.coe_injective <| by simp [← WithZero.exp_eq_coe_ofAdd])
 
+/-- **Every integer is an order** when the valuation is surjective onto `ℤᵐ⁰`: an element of
+valuation `exp (-n)` has order `n`. -/
 theorem ord_surjective (v : _root_.Valuation F ℤᵐ⁰) (hv : Function.Surjective v) :
     Function.Surjective (ord v) := fun n => by
   obtain ⟨f, hf⟩ := hv (WithZero.exp (-n))
   exact ⟨f, by simp [ord_def, hf]⟩
 
-/-- **Uniformizers are the elements whose order is that of the generator below `1`** of the value
-group of a discrete `ℤᵐ⁰`-valuation. Elements of the valuation support do not qualify, as the
-generator is not `1`. -/
+/-- **Uniformizers are the elements of order `-log γ`** for a rank-one discrete
+`ℤᵐ⁰`-valuation, where `γ` is the generator below `1` of its value group. As `γ < 1`, this order
+is positive, so elements of the valuation support, of junk order zero, do not qualify. -/
 theorem isUniformizer_iff_ord_eq_neg_log_generator (v : _root_.Valuation F ℤᵐ⁰)
     [v.IsRankOneDiscrete] {t : F} :
     v.IsUniformizer t ↔ ord v t = -WithZero.log (IsRankOneDiscrete.generator v : ℤᵐ⁰) := by
+  rw [IsUniformizer.iff]
   refine ⟨fun ht ↦ by rw [ord_def, ht], fun ht ↦ ?_⟩
   have hg := IsRankOneDiscrete.generator_ne_zero v
-  have ht0 : v t ≠ 0 := fun h0 ↦ IsRankOneDiscrete.generator_ne_one v <| Units.val_eq_one.mp <| by
-    rw [ord_eq_zero_of_map_eq_zero v h0, eq_comm, neg_eq_zero] at ht
-    rw [← WithZero.exp_log hg, ht, WithZero.exp_zero]
+  have hpos : 0 < -WithZero.log (IsRankOneDiscrete.generator v : ℤᵐ⁰) := by
+    rw [neg_pos, ← WithZero.log_one, WithZero.log_lt_log hg one_ne_zero]
+    exact Units.val_lt_val.mpr (IsRankOneDiscrete.generator_lt_one v)
+  have ht0 : v t ≠ 0 := valuation_ne_zero_of_ord_ne_zero v (ht ▸ hpos.ne')
   rwa [ord_eq_iff_valuation_eq_exp_neg v ht0, neg_neg, WithZero.exp_log hg] at ht
 
 /-- **Uniformizers are the elements of order one** for a discrete `ℤᵐ⁰`-valuation with full value

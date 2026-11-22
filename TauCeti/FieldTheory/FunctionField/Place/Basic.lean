@@ -424,6 +424,9 @@ elements for `P`. -/
 theorem isUniformizer_iff_ord_eq_one {t : F} : P.valuation.IsUniformizer t ↔ P.ord t = 1 :=
   Valuation.isUniformizer_iff_ord_eq_one_of_valueGroup_eq_top P.valuation P.valueGroup_eq_top
 
+/-- **Every place has a uniformizer**, hence, by `isUniformizer_iff_ord_eq_one`, an element of
+order one. On a field the valuation attains the generator of its value group; for a valuation on
+a ring it need not. -/
 theorem exists_isUniformizer : ∃ t : F, P.valuation.IsUniformizer t :=
   let ⟨π, hπ⟩ := P.valuation.exists_isUniformizer_of_isCyclic_of_nontrivial
   ⟨π, hπ⟩
