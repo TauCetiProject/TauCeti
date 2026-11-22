@@ -108,8 +108,6 @@ theorem gradedPiece_induction {c : ι →₀ ℤ} {x : QuantizedEnvelopingAlgebr
     (smul : ∀ (a : K) x hx, P x hx → P (a • x) (Submodule.smul_mem _ a hx)) : P x hx :=
   TauCeti.GradedAlgebra.wordSpan_induction hx word zero add smul
 
-theorem one_mem_gradedPiece_zero : (1 : QuantizedEnvelopingAlgebra D q) ∈ gradedPiece D q 0 :=
-  word_mem_gradedPiece (l := []) rfl
 theorem generator_mem_gradedPiece (g : Generator ι Y) :
     generator D q g ∈ gradedPiece D q (generatorDegree g) :=
   TauCeti.GradedAlgebra.mem_wordSpan_self (generator D q) generatorDegree g
@@ -130,45 +128,33 @@ instance instGradedMonoid (D : CartanDatum ι X Y) (q : K) :
   inferInstanceAs (SetLike.GradedMonoid
     (TauCeti.GradedAlgebra.wordSpan K (generator D q) generatorDegree))
 
-theorem mul_mem_gradedPiece {c d : ι →₀ ℤ} {x y : QuantizedEnvelopingAlgebra D q}
-    (hx : x ∈ gradedPiece D q c) (hy : y ∈ gradedPiece D q d) :
-    x * y ∈ gradedPiece D q (c + d) :=
-  SetLike.mul_mem_graded hx hy
-
 /-- The normalized raising generator `eᵢ = Kᵢ⁻¹ Eᵢ` lies in
 `gradedPiece D q (Finsupp.single i 1)`. -/
 theorem normalizedE_mem_gradedPiece (i : ι) :
     normalizedE D q i ∈ gradedPiece D q (Finsupp.single i 1) := by
   rw [normalizedE_def, ← zero_add (Finsupp.single i 1)]
-  exact mul_mem_gradedPiece (simpleKInv_mem_gradedPiece i) (e_mem_gradedPiece i)
+  exact SetLike.mul_mem_graded (simpleKInv_mem_gradedPiece i) (e_mem_gradedPiece i)
 
 /-- The normalized lowering generator `fᵢ = Fᵢ Kᵢ` lies in
 `gradedPiece D q (-Finsupp.single i 1)`. -/
 theorem normalizedF_mem_gradedPiece (i : ι) :
     normalizedF D q i ∈ gradedPiece D q (-Finsupp.single i 1) := by
   rw [normalizedF_def, ← add_zero (-Finsupp.single i 1)]
-  exact mul_mem_gradedPiece (f_mem_gradedPiece i) (simpleK_mem_gradedPiece i)
-
-/-- The `n`-th quantum divided power `x^(n)` of `x ∈ gradedPiece D q c` lies in degree `n • c`
-for any parameter `u : K`, even when `[n]_u! = 0` (where the divided power vanishes). -/
-theorem quantumDividedPower_mem_gradedPiece (u : K) {c : ι →₀ ℤ}
-    {x : QuantizedEnvelopingAlgebra D q} (hx : x ∈ gradedPiece D q c) (n : ℕ) :
-    quantumDividedPower u x n ∈ gradedPiece D q (n • c) :=
-  quantumDividedPower_mem_graded u hx n
+  exact SetLike.mul_mem_graded (f_mem_gradedPiece i) (simpleK_mem_gradedPiece i)
 
 /-- The `n`-th divided power of the raising generator `Eᵢ` lies in degree `n • eᵢ` for any `q : K`,
 even when `[n]_(qᵢ)! = 0`. -/
 theorem quantumDividedPower_e_mem_gradedPiece (i : ι) (n : ℕ) :
     quantumDividedPower (q ^ D.symmetrizer i) (e D q i) n ∈
       gradedPiece D q (n • Finsupp.single i 1) :=
-  quantumDividedPower_mem_gradedPiece _ (e_mem_gradedPiece i) n
+  quantumDividedPower_mem_graded _ (e_mem_gradedPiece i) n
 
 /-- The `n`-th divided power of the lowering generator `Fᵢ` lies in degree `-(n • eᵢ)` for any
 `q : K`, even when `[n]_(qᵢ)! = 0`. -/
 theorem quantumDividedPower_f_mem_gradedPiece (i : ι) (n : ℕ) :
     quantumDividedPower (q ^ D.symmetrizer i) (f D q i) n ∈
       gradedPiece D q (-(n • Finsupp.single i 1)) := by
-  rw [← smul_neg]; exact quantumDividedPower_mem_gradedPiece _ (f_mem_gradedPiece i) n
+  rw [← smul_neg]; exact quantumDividedPower_mem_graded _ (f_mem_gradedPiece i) n
 
 /-- A Cartan-datum morphism `φ : CartanDatum.Hom D D'` carries `gradedPiece D q c` into
 `gradedPiece D' q c`. -/
@@ -293,7 +279,7 @@ private theorem serreSum_of (D : CartanDatum ι X Y) (q : K) (i j : ι)
   have hdp (n : ℕ) : quantumDividedPower u (of (fun c' => gradedPiece D q c') (c i) (x i)) n =
       of (fun c' => gradedPiece D q c') (n • c i)
         ⟨quantumDividedPower u (x i).val n,
-          quantumDividedPower_mem_gradedPiece u (x i).property n⟩ := by
+          quantumDividedPower_mem_graded u (x i).property n⟩ := by
     simp only [quantumDividedPower_def, ofPow, ← of_smul]; rfl
   have hterm (r : {r // r ∈ Finset.range (m + 1)}) :
       (-1 : K) ^ r.val •
@@ -360,7 +346,7 @@ private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
             of (fun c => gradedPiece D q c) 0
               ⟨e D q i * f D q i,
                 (add_neg_cancel (Finsupp.single i (1 : ℤ))) ▸
-                  mul_mem_gradedPiece (e_mem_gradedPiece i) (f_mem_gradedPiece i)⟩ := by
+                  SetLike.mul_mem_graded (e_mem_gradedPiece i) (f_mem_gradedPiece i)⟩ := by
           refine of_eq_of_gradedMonoid_eq (Sigma.subtype_ext (add_neg_cancel _) ?_)
           dsimp only [GradedMonoid.mk, Subtype.coe_mk]
           simp only [SetLike.coe_gMul]
@@ -371,7 +357,7 @@ private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
             of (fun c => gradedPiece D q c) 0
               ⟨f D q i * e D q i,
                 (neg_add_cancel (Finsupp.single i (1 : ℤ))) ▸
-                  mul_mem_gradedPiece (f_mem_gradedPiece i) (e_mem_gradedPiece i)⟩ := by
+                  SetLike.mul_mem_graded (f_mem_gradedPiece i) (e_mem_gradedPiece i)⟩ := by
           refine of_eq_of_gradedMonoid_eq (Sigma.subtype_ext (neg_add_cancel _) ?_)
           dsimp only [GradedMonoid.mk, Subtype.coe_mk]
           simp only [SetLike.coe_gMul]
