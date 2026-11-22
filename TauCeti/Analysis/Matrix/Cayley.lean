@@ -236,7 +236,8 @@ theorem IsSymm.inv_one_add_I_smul_map_ofReal {A : Matrix n n ℝ} (hA : A.IsSymm
     rw [Matrix.map_add _ Complex.ofReal_add, map_ofReal_mul, map_ofReal_one]
     simp [add_mul, mul_sub, smul_smul]
     abel
-  have hpos : (1 + A * A).PosDef := by simpa [hA.eq] using posDef_one_add_mul_transpose A
+  have hpos : (1 + A * A).PosDef := by
+    simpa [conjTranspose_eq_transpose_of_trivial, hA.eq] using posDef_one_add_mul_conjTranspose A
   refine inv_eq_right_inv ?_
   rw [← Matrix.mul_assoc, h1, ← map_ofReal_mul,
     mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).1 hpos.isUnit),
@@ -247,7 +248,8 @@ the rank-one matrices `ξ ξᵀ`: `tr ((1 + A²)⁻¹ ξ ξᵀ) > 0` for every n
 theorem IsSymm.trace_inv_one_add_mul_self_mul_vecMulVec_pos {A : Matrix n n ℝ}
     (hA : A.IsSymm) {ξ : n → ℝ} (hξ : ξ ≠ 0) :
     0 < trace ((1 + A * A)⁻¹ * vecMulVec ξ ξ) := by
-  have hpos : (1 + A * A).PosDef := by simpa [hA.eq] using posDef_one_add_mul_transpose A
+  have hpos : (1 + A * A).PosDef := by
+    simpa [conjTranspose_eq_transpose_of_trivial, hA.eq] using posDef_one_add_mul_conjTranspose A
   rw [mul_vecMulVec, trace_vecMulVec, dotProduct_comm]
   simpa using hpos.inv.dotProduct_mulVec_pos hξ
 

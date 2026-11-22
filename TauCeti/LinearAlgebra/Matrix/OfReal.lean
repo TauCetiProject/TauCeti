@@ -70,6 +70,7 @@ theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
   hA.map _ fun _ ↦ by simp
 
 /-- The entrywise coercion of real matrices to complex matrices is multiplicative. -/
+@[simp]
 theorem map_ofReal_mul [Fintype m] (X : Matrix l m ℝ) (Y : Matrix m n ℝ) :
     (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
   Matrix.map_mul (f := Complex.ofRealHom)
@@ -79,6 +80,7 @@ theorem map_ofReal_one [DecidableEq n] : (1 : Matrix n n ℝ).map ((↑) : ℝ �
   Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one
 
 /-- The trace of a real matrix, viewed as a complex matrix, is the coercion of its trace. -/
+@[simp]
 theorem trace_map_ofReal [Fintype n] (X : Matrix n n ℝ) :
     trace (X.map ((↑) : ℝ → ℂ)) = ((trace X : ℝ) : ℂ) :=
   (AddMonoidHom.map_trace Complex.ofRealHom X).symm

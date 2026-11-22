@@ -12,7 +12,6 @@ public import TauCeti.Geometry.Calibrated.SpecialLagrangian
 import Mathlib.Algebra.Order.Star.Real
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Matrix.Cayley
-import TauCeti.Analysis.SpecialFunctions.Complex.Arctan
 import TauCeti.LinearAlgebra.Matrix.OfReal
 
 /-!
