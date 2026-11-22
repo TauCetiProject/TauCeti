@@ -23,7 +23,6 @@ import Mathlib.Probability.IdentDistrib
 import Mathlib.Topology.Instances.EReal.Lemmas
 import TauCeti.Dynamics.BirkhoffSum.Limsup
 import TauCeti.Dynamics.BirkhoffSum.Maximal
-import TauCeti.Dynamics.BirkhoffSum.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Probability.Ergodic.CondExpProjection
@@ -52,12 +51,11 @@ convergence holds on simple functions by linearity and transfers to all `Integra
 averages (`ProbabilityTheory.MemLp.uniformIntegrable_of_identDistrib`, `uniformIntegrable_average`,
 `MemLp.condExp`, and `tendsto_Lp_finite_of_tendsto_ae`) combined with the pointwise theorem.
 
-Supporting general-purpose lemmas live in their canonical homes: pointwise norm bounds in
-`TauCeti.Dynamics.BirkhoffSum.Norm`, orbit invariance of `limsup`/`liminf` in
-`TauCeti.Dynamics.BirkhoffSum.Limsup`, maximal ergodic operator bounds and a.e. finiteness in
-`TauCeti.Dynamics.BirkhoffSum.Maximal`, integral invariance and `Lᵖ`/`L¹` contractivity of
-Birkhoff averages in `TauCeti.Probability.Ergodic.BirkhoffLp`, and the pre-ergodic conditional
-expectation collapse in `TauCeti.Probability.Ergodic.InvariantSigma`.
+Supporting general-purpose lemmas live in their canonical homes: orbit invariance of
+`limsup`/`liminf` in `TauCeti.Dynamics.BirkhoffSum.Limsup`, maximal ergodic operator bounds and
+a.e. finiteness in `TauCeti.Dynamics.BirkhoffSum.Maximal`, integral invariance and `Lᵖ`/`L¹`
+contractivity of Birkhoff averages in `TauCeti.Probability.Ergodic.BirkhoffLp`, and the
+pre-ergodic conditional expectation collapse in `TauCeti.Probability.Ergodic.InvariantSigma`.
 
 For ergodic transformations, the invariant σ-algebra is `μ`-trivial, so the conditional expectation
 collapses to the space average `⨍ y, f y ∂μ`, yielding the ergodic pointwise, `Lᵖ`, `L¹`, and
@@ -184,12 +182,9 @@ private lemma ae_liminf_eq_limsup_birkhoffAverage {Ω : Type*} [MeasurableSpace 
   filter_upwards [hall] with x hx
   refine le_antisymm (liminf_le_limsup (by isBoundedDefault) (by isBoundedDefault)) ?_
   by_contra! hlt
-  obtain ⟨r₁, hr₁, hr₂⟩ := EReal.exists_between_coe_real hlt
-  obtain ⟨r₂, hr₂1, hr₂2⟩ := EReal.exists_between_coe_real hr₂
-  obtain ⟨a, ha1, ha2⟩ := exists_rat_btwn (EReal.coe_lt_coe_iff.mp hr₂1)
-  obtain ⟨b, hb1, hb2⟩ := exists_rat_btwn ha2
-  exact hx a b (Rat.cast_lt.mp hb1)
-    ⟨hr₁.trans (EReal.coe_lt_coe_iff.mpr ha1), (EReal.coe_lt_coe_iff.mpr hb2).trans hr₂2⟩
+  obtain ⟨a, ha1, ha2⟩ := EReal.exists_rat_btwn_of_lt hlt
+  obtain ⟨b, hb1, hb2⟩ := EReal.exists_rat_btwn_of_lt ha2
+  exact hx a b (Rat.cast_lt.mp (EReal.coe_lt_coe_iff.mp hb1)) ⟨ha1, hb2⟩
 
 private lemma ae_tendsto_birkhoffAverage_real_limit {Ω : Type*} [MeasurableSpace Ω]
     {μ : Measure Ω} [IsFiniteMeasure μ] {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
@@ -201,7 +196,9 @@ private lemma ae_tendsto_birkhoffAverage_real_limit {Ω : Type*} [MeasurableSpac
   set L : EReal := limsup (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) atTop
   have hbound (n : ℕ) :
       |(birkhoffAverage ℝ T g n x : ℝ)| ≤ birkhoffAverage ℝ T (fun y ↦ ‖g y‖) n x := by
-    simpa [Real.norm_eq_abs] using TauCeti.norm_birkhoffAverage_le_birkhoffAverage_norm T g n x
+    simp only [birkhoffAverage, birkhoffSum, smul_eq_mul, Real.norm_eq_abs, abs_mul, abs_inv,
+      Nat.abs_cast]
+    exact mul_le_mul_of_nonneg_left (Finset.abs_sum_le_sum_abs _ _) (by positivity)
   have htop : L < ⊤ := by
     refine lt_of_le_of_lt ?_ hfin
     exact (limsup_le_limsup (Eventually.of_forall fun n ↦
@@ -327,8 +324,10 @@ private lemma ae_mem_union_of_lt_limsup_norm_birkhoffAverage_sub_condExp {Ω E :
         ‖μ[f - ⇑s | MeasurableSpace.invariants T] x‖ := by
     rw [hdecomp n]
     refine (norm_sub_le _ _).trans (add_le_add ?_ le_rfl)
-    exact (norm_add_le _ _).trans
-      (add_le_add (TauCeti.norm_birkhoffAverage_le_birkhoffAverage_norm T (f - ⇑s) n x) le_rfl)
+    refine (norm_add_le _ _).trans (add_le_add ?_ le_rfl)
+    simp only [birkhoffAverage, birkhoffSum, norm_smul, Real.norm_eq_abs, abs_inv,
+      Nat.abs_cast, smul_eq_mul]
+    exact mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)
   by_cases hB : δ / 3 ≤ ‖μ[f - ⇑s | MeasurableSpace.invariants T] x‖
   · exact Or.inr hB
   · left
