@@ -19,10 +19,10 @@ by a nonzero left integral `Λ`, that endomorphism is a scalar, and the **modula
 multiplication by `h` on the space of left integrals, so that no choice of `Λ` enters the
 definition; in particular `α` does not change when `Λ` is rescaled.
 
-Over a field the space of left integrals is a line whenever `H` has a Frobenius functional
-(`LinearMap.IsFrobeniusFunctional.finrank_leftIntegral`), for instance a nonzero right
-invariant functional on a finite-dimensional Hopf algebra. The results on `α` below take the
-one-dimensionality of the left integrals as their hypothesis.
+Over a field the space of left integrals is a line whenever `H` is finite-dimensional and has a
+Frobenius functional (`LinearMap.IsFrobeniusFunctional.finrank_leftIntegral`), for instance a
+nonzero right invariant functional on a finite-dimensional Hopf algebra. The results on `α` below
+take the one-dimensionality of the left integrals as their hypothesis.
 
 For a nonzero right invariant functional `φ` (a right cointegral, `∑ φ(x₁) x₂ = φ(x) 1`) on a
 finite-dimensional Hopf algebra, Tau Ceti's Nakayama automorphism `ν` of the Frobenius functional
@@ -38,6 +38,7 @@ sum into `∑ φ(Λ y₁) S(y₂) = ∑ α(y₁) S(y₂)`.
 
 ## Main definitions
 
+* `TauCeti.mulRightLeftIntegral`: right multiplication on the space of left integrals.
 * `TauCeti.modularCharacter`: the modular character `α`, as a linear functional on `H`.
 * `TauCeti.modularCharacterAlgHom`: the modular character as an algebra map `H →ₐ[k] k`, when
   the left integrals form a line.
@@ -57,9 +58,10 @@ sum into `∑ φ(Λ y₁) S(y₂) = ∑ α(y₁) S(y₂)`.
 ## References
 
 * D. Fischman, S. Montgomery and H.-J. Schneider, *Frobenius extensions of subalgebras of Hopf
-  algebras*, Trans. Amer. Math. Soc. 349 (1997), Lemma 1.5.
-* K. Erdmann, Ø. Solberg and X. Wang, *On the structure of finite-dimensional Hopf algebras*,
-  Theorem 2.2.
+  algebras*, Trans. Amer. Math. Soc. 349 (1997), Lemma 1.5, p. 4862. The formula there is
+  stated through the modular character `α' = α⁻¹ = α ∘ S` of the right integrals.
+* K. Erdmann, Ø. Solberg and X. Wang, *On the structure and cohomology ring of connected Hopf
+  algebras*, J. Algebra 527 (2019), 366–398, arXiv:1710.11558, Theorem 2.2.
 * D. E. Radford, *The trace function and Hopf algebras*, J. Algebra 163 (1994).
 -/
 
@@ -73,21 +75,30 @@ section Bialgebra
 
 variable (k H : Type*) [Field k] [Ring H] [Bialgebra k H]
 
+/-- Right multiplication on the space of left integrals, which is a right ideal:
+`mulRightLeftIntegral k H h` sends a left integral `t` to `t * h`. -/
+def mulRightLeftIntegral : H →ₗ[k] Module.End k (leftIntegral k H) where
+  toFun h := (LinearMap.mulRight k h).restrict fun t ht ↦ by
+    rw [LinearMap.mulRight_apply]; exact mul_mem_leftIntegral ht h
+  map_add' a b := by ext x; simp [mul_add]
+  map_smul' c a := by ext x; simp
+
+@[simp]
+theorem coe_mulRightLeftIntegral_apply (h : H) (t : leftIntegral k H) :
+    (mulRightLeftIntegral k H h t : H) = t * h :=
+  (rfl)
+
 /-- The **modular character** of a bialgebra `H` over a field: `modularCharacter k H h` is the
 trace of right multiplication by `h` on the space of left integrals. When the left integrals form
 a line spanned by `Λ`, it is the scalar `α h` with `Λ * h = α h • Λ`
 (`TauCeti.mul_eq_modularCharacter_smul`). -/
 noncomputable def modularCharacter : H →ₗ[k] k :=
-  LinearMap.trace k (leftIntegral k H) ∘ₗ
-    { toFun h := (LinearMap.mulRight k h).restrict fun _ ht ↦ mul_mem_leftIntegral ht h
-      map_add' a b := by ext x; exact mul_add (x : H) a b
-      map_smul' c a := by ext x; exact mul_smul_comm c (x : H) a }
+  LinearMap.trace k (leftIntegral k H) ∘ₗ mulRightLeftIntegral k H
 
 /-- The modular character at `h` is the trace of right multiplication by `h` on the left
 integrals. -/
 theorem modularCharacter_apply (h : H) :
-    modularCharacter k H h = LinearMap.trace k (leftIntegral k H)
-      ((LinearMap.mulRight k h).restrict fun _ ht ↦ mul_mem_leftIntegral ht h) :=
+    modularCharacter k H h = LinearMap.trace k (leftIntegral k H) (mulRightLeftIntegral k H h) :=
   (rfl)
 
 variable {k H}
@@ -97,13 +108,13 @@ right multiplication by `h` acts on every left integral `t` as the scalar `α h`
 theorem mul_eq_modularCharacter_smul (hH : finrank k (leftIntegral k H) = 1) {t : H}
     (ht : t ∈ leftIntegral k H) (h : H) : t * h = modularCharacter k H h • t := by
   have : Module.Finite k (leftIntegral k H) := Module.finite_of_finrank_eq_succ hH
-  obtain ⟨c, hc, -⟩ := LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one hH
-    ((LinearMap.mulRight k h).restrict fun _ ht ↦ mul_mem_leftIntegral ht h)
+  obtain ⟨c, hc, -⟩ :=
+    LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one hH (mulRightLeftIntegral k H h)
   have hα : modularCharacter k H h = c := by
     rw [modularCharacter_apply, hc, map_smul, LinearMap.trace_id, hH]
     simp
   rw [hα]
-  exact congrArg Subtype.val (LinearMap.congr_fun hc ⟨t, ht⟩)
+  simpa using congrArg Subtype.val (LinearMap.congr_fun hc ⟨t, ht⟩)
 
 /-- **Uniqueness of the modular character.** If the left integrals form a line and `Λ` is a
 nonzero left integral with `Λ * h = c • Λ`, then `c` is the modular character at `h`. In
