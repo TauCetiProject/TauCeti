@@ -495,19 +495,16 @@ theorem two_mul_pi_div_sqrt_le_sphericalPendulumPeriod (hj : j ≠ 0) (hz₀ : z
     2 * π / √(2 * (h + 3)) ≤ sphericalPendulumPeriod h j := by
   have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
   have ha := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz₀ hV
-  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
-  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
-    hj hz₀ hV
+  -- The substituted height satisfies `-1 < z` and `z < z₃ = h - z₋ - z₊`.
+  have hu := add_mul_sin_mem_Ioo_and_lt_sub_sphericalPendulumTurningPoints hj hz₀ hV
   rw [sphericalPendulumPeriod_eq_integral_sin hj hz₀ hV]
   set a := sphericalPendulumLowerTurningPoint h j
   set b := sphericalPendulumUpperTurningPoint h j
-  -- The substituted height lies in `[z₋, z₊]`, so `-1 < z` and `z < z₃ = h - z₋ - z₊`.
-  have hu := fun θ ↦ mem_Icc_add_mul_sin hab.le θ
   have hpos : ∀ θ, 0 < √(2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * sin θ))) := fun θ ↦
     Real.sqrt_pos.2 (by linarith [(hu θ).2])
   have hle : ∀ θ ∈ Icc (-(π / 2)) (π / 2), (√(2 * (h + 3)))⁻¹ ≤
       (√(2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * sin θ))))⁻¹ := fun θ _ ↦
-    inv_anti₀ (hpos θ) (Real.sqrt_le_sqrt (by linarith [(hu θ).1]))
+    inv_anti₀ (hpos θ) (Real.sqrt_le_sqrt (by linarith [(hu θ).1.1]))
   have hint := intervalIntegral.integral_mono_on (by linarith [pi_pos] : -(π / 2) ≤ π / 2)
     (intervalIntegrable_const (μ := volume))
     ((Continuous.inv₀ (by fun_prop) fun θ ↦ (hpos θ).ne').intervalIntegrable _ _) hle

@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.TurningP
 public import TauCeti.Analysis.SpecialFunctions.Integrals.ArctanSqrt
 import TauCeti.Topology.Circle.Degree
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
-import Mathlib.MeasureTheory.Function.JacobianOneDim
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Topology.Algebra.Group.Order
 
 /-!
@@ -670,18 +670,6 @@ section Continuity
 
 variable {h j z₀ : ℝ}
 
-/-- The regular integrand of the spherical pendulum rotation angle after the sine substitution
-between turning points `a` and `b`, with third root `h - a - b`. -/
-noncomputable def sphericalPendulumRotationAngleSinIntegrand (a b h j θ : ℝ) : ℝ :=
-  j / ((1 - ((a + b) / 2 + (b - a) / 2 * sin θ) ^ 2) *
-    √(2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * sin θ))))
-
-/-- The formula for the regular sine-substitution integrand. -/
-theorem sphericalPendulumRotationAngleSinIntegrand_def (a b h j θ : ℝ) :
-    sphericalPendulumRotationAngleSinIntegrand a b h j θ =
-      j / ((1 - ((a + b) / 2 + (b - a) / 2 * sin θ) ^ 2) *
-        √(2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * sin θ)))) := (rfl)
-
 /-- **The rotation angle as a regular integral.** For `j ≠ 0` and `(h, j)` strictly above the
 curve of relative equilibria, the substitution `z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ` between
 the turning points `z₋ < z₊` turns the rotation angle into the integral
@@ -691,13 +679,19 @@ theorem sphericalPendulumRotationAngle_eq_integral_sin (hj : j ≠ 0) (hz₀ : z
     (hV : sphericalPendulumEffectivePotential j z₀ < h) :
     sphericalPendulumRotationAngle h j =
       2 * ∫ θ in (-(π / 2))..(π / 2),
-        sphericalPendulumRotationAngleSinIntegrand (sphericalPendulumLowerTurningPoint h j)
-          (sphericalPendulumUpperTurningPoint h j) h j θ := by
+        j / ((1 - ((sphericalPendulumLowerTurningPoint h j +
+              sphericalPendulumUpperTurningPoint h j) / 2 +
+            (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) / 2 *
+              sin θ) ^ 2) *
+          √(2 * (h - sphericalPendulumLowerTurningPoint h j -
+            sphericalPendulumUpperTurningPoint h j -
+            ((sphericalPendulumLowerTurningPoint h j + sphericalPendulumUpperTurningPoint h j) / 2 +
+              (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) /
+                2 * sin θ)))) := by
   have := integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq_integral_sin hj hz₀ hV
     fun z ↦ j / (1 - z ^ 2)
   simp only [div_div] at this
   rw [sphericalPendulumRotationAngle_def, this]
-  simp only [sphericalPendulumRotationAngleSinIntegrand_def]
 
 /-- **Continuity of the rotation angle.** The rotation angle `Θ(h, j)` is continuous on the
 values `(h, j)` with `j ≠ 0` lying strictly above the curve of relative equilibria, that is, with

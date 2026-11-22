@@ -274,9 +274,8 @@ theorem exists_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod (hr : 0 < r)
       hγ (-m)
       (L := fun t ↦ v t 1) ((continuous_apply 1).comp_continuousOn hv) fun t ht hs ↦ by
         obtain ⟨m', n, h₀, h₁⟩ := hcoord t ht hs
-        have hmm : (m' : ℝ) = m := mul_right_cancel₀
-          (by linarith [two_mul_pi_div_sqrt_le_sphericalPendulumPeriod_circle hr (hγ t hs),
-            (by positivity : (0 : ℝ) < 2 * π / √(2 * (4 + r)))])
+        obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 (hγ t hs)
+        have hmm : (m' : ℝ) = m := mul_right_cancel₀ (sphericalPendulumPeriod_pos hj hz hV).ne'
           (h₀.symm.trans (hm t ht hs))
         rw [h₁, hmm, Real.Angle.angle_eq_iff_two_pi_dvd_sub]
         exact ⟨n, by push_cast; ring⟩

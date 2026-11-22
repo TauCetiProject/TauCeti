@@ -58,6 +58,8 @@ the pendulum, such as its rotation angle, as integrals with continuous integrand
   against the inverse square root of the radicand run between the turning points.
 * `TauCeti.integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq_integral_sin`: the sine
   substitution turns such integrals into integrals over `[-π/2, π/2]` without the singular factor.
+* `TauCeti.add_mul_sin_mem_Ioo_and_lt_sub_sphericalPendulumTurningPoints`: the substituted height
+  lies in `(-1, 1)` and below the third root of the radicand.
 * `TauCeti.continuousOn_sphericalPendulumLowerTurningPoint`,
   `TauCeti.continuousOn_sphericalPendulumUpperTurningPoint`: continuity of the turning points.
 * `TauCeti.continuousOn_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq`: integrals over
@@ -310,6 +312,27 @@ theorem one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpper
   have : 0 ≤ (1 - a) * (1 - b) * (1 - (h - a - b)) :=
     mul_nonneg (mul_nonneg (by linarith) (by linarith)) (by linarith)
   nlinarith
+
+/-- Above the curve of relative equilibria, the height
+`z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ` of the sine substitution between the turning points lies
+in `(-1, 1)` and strictly below the third root `z₃ = h - z₋ - z₊` of the radicand, since
+`-1 < z₋ ≤ z ≤ z₊ < 1 < z₃`. -/
+theorem add_mul_sin_mem_Ioo_and_lt_sub_sphericalPendulumTurningPoints (hj : j ≠ 0)
+    (hz₀ : z₀ ∈ Ioo (-1) 1) (hV : sphericalPendulumEffectivePotential j z₀ < h) (θ : ℝ) :
+    (sphericalPendulumLowerTurningPoint h j + sphericalPendulumUpperTurningPoint h j) / 2 +
+        (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) / 2 *
+          Real.sin θ ∈ Ioo (-1) 1 ∧
+      (sphericalPendulumLowerTurningPoint h j + sphericalPendulumUpperTurningPoint h j) / 2 +
+          (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) / 2 *
+            Real.sin θ <
+        h - sphericalPendulumLowerTurningPoint h j - sphericalPendulumUpperTurningPoint h j := by
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
+  have ha := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz₀ hV
+  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
+  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
+    hj hz₀ hV
+  have hu := mem_Icc_add_mul_sin hab.le θ
+  exact ⟨⟨by linarith [hu.1], by linarith [hu.2]⟩, by linarith [hu.2]⟩
 
 /-- Above the curve of relative equilibria, the radicand `2 (h - z) (1 - z²) - j²` is positive
 strictly between the turning points. -/
@@ -664,14 +687,9 @@ theorem continuousOn_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq {g : �
       sphericalPendulumLowerTurningPoint (p.1 : ℝ × ℝ).1 (p.1 : ℝ × ℝ).2 -
       sphericalPendulumUpperTurningPoint (p.1 : ℝ × ℝ).1 (p.1 : ℝ × ℝ).2 - u p := fun p ↦ by
     obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 p.1.property
-    have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz hV
-    have ha₁ := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz hV
-    have hb₁ := sphericalPendulumUpperTurningPoint_lt_one hj hz hV
-    have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
-      hj hz hV
-    have hu' := mem_Icc_add_mul_sin hab.le p.2
+    have hu' := add_mul_sin_mem_Ioo_and_lt_sub_sphericalPendulumTurningPoints hj hz hV p.2
     simp only [hu]
-    exact ⟨⟨by linarith [hu'.1], by linarith [hu'.2]⟩, by linarith [hu'.2]⟩
+    exact ⟨hu'.1, sub_pos.2 hu'.2⟩
   have hG : Continuous fun p : R × ℝ ↦ g p.1 (u p) / √(2 * ((p.1 : ℝ × ℝ).1 -
       sphericalPendulumLowerTurningPoint (p.1 : ℝ × ℝ).1 (p.1 : ℝ × ℝ).2 -
       sphericalPendulumUpperTurningPoint (p.1 : ℝ × ℝ).1 (p.1 : ℝ × ℝ).2 - u p)) :=
