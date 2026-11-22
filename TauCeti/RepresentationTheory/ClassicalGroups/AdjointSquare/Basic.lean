@@ -7,24 +7,23 @@ module
 
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.Tactic.Abel
-import Mathlib.Tactic.Ring
 import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
 /-!
 # The traceless symmetric product on the adjoint representation of SL₃
 
-The bilinear product on trace-zero matrices is the anticommutator with its
-scalar part removed. Its coefficient is `2 / 3`, since the identity matrix
-has trace three. Together with the native Lie bracket, it supplies the two
-products whose trace transposes give the octet embeddings.
-
-This advances the explicit adjoint-square maps in the worked examples of
-the TensorProductCombinatorics roadmap, intention 2823.
+The bilinear product on trace-zero three-by-three matrices is the anticommutator with its
+scalar part removed. Its coefficient is `2 / 3`, since the identity matrix has trace three.
+Together with the Lie bracket, it supplies the two products whose trace transposes give the
+two octet copies in the tensor square of `sl₃`.
 
 ## References
 
-* W. Fulton and J. Harris, *Representation Theory: A First Course*, Lecture 15.
+* W. Fulton and J. Harris, *Representation Theory: A First Course*, Lectures 12 and 13.
 * Jeromie Beasley, `yang-mills-lean`, `AdjointWitnessSU3.lean`, the commutator
   and anticommutator trace forms.
 -/
@@ -38,8 +37,14 @@ open Matrix
 variable {K : Type*} [Field K]
 
 /-- The traceless part of the anticommutator of two three-by-three matrices. -/
-@[expose] def symmetricProductMatrix (X Y : Matrix (Fin 3) (Fin 3) K) : Matrix (Fin 3) (Fin 3) K :=
+def symmetricProductMatrix (X Y : Matrix (Fin 3) (Fin 3) K) : Matrix (Fin 3) (Fin 3) K :=
   X * Y + Y * X - ((2 / 3 : K) * trace (X * Y)) • 1
+
+/-- The traceless anticommutator has the displayed formula. -/
+theorem symmetricProductMatrix_apply (X Y : Matrix (Fin 3) (Fin 3) K) :
+    symmetricProductMatrix X Y =
+      X * Y + Y * X - ((2 / 3 : K) * trace (X * Y)) • 1 :=
+  (rfl)
 
 /-- The scalar correction removes the full trace of the anticommutator. -/
 @[simp]
@@ -84,7 +89,7 @@ theorem symmetricProductMatrix_smul_right (a : K) (X Y : Matrix (Fin 3) (Fin 3) 
     symmetricProductMatrix_comm Y]
 
 /-- The symmetric product as a bilinear map on Mathlib's actual trace-zero Lie algebra. -/
-@[expose] def symmetricProduct [NeZero (3 : K)] :
+def symmetricProduct [NeZero (3 : K)] :
     LieAlgebra.SpecialLinear.sl (Fin 3) K →ₗ[K]
       LieAlgebra.SpecialLinear.sl (Fin 3) K →ₗ[K]
         LieAlgebra.SpecialLinear.sl (Fin 3) K where
@@ -100,14 +105,15 @@ theorem symmetricProductMatrix_smul_right (a : K) (X Y : Matrix (Fin 3) (Fin 3) 
 /-- The bilinear map has the advertised matrix formula. -/
 @[simp]
 theorem coe_symmetricProduct [NeZero (3 : K)] (X Y : LieAlgebra.SpecialLinear.sl (Fin 3) K) :
-    (symmetricProduct X Y).val = symmetricProductMatrix X.val Y.val := rfl
+    (symmetricProduct X Y).val = symmetricProductMatrix X.val Y.val :=
+  (rfl)
 
 /-- Symmetry holds on the native adjoint carrier. -/
 theorem symmetricProduct_comm [NeZero (3 : K)] (X Y : LieAlgebra.SpecialLinear.sl (Fin 3) K) :
     symmetricProduct X Y = symmetricProduct Y X :=
   Subtype.ext (symmetricProductMatrix_comm _ _)
 
-/-- The product commutes with invertible conjugation, hence with the SL₃ action. -/
+/-- The product commutes with invertible conjugation, hence with the `SL₃` action. -/
 theorem symmetricProductMatrix_conj (g : (Matrix (Fin 3) (Fin 3) K)ˣ)
     (X Y : Matrix (Fin 3) (Fin 3) K) :
     symmetricProductMatrix ((g : Matrix (Fin 3) (Fin 3) K) * X *
@@ -115,14 +121,20 @@ theorem symmetricProductMatrix_conj (g : (Matrix (Fin 3) (Fin 3) K)ˣ)
       ((g : Matrix (Fin 3) (Fin 3) K) * Y * ((g⁻¹ : _) : Matrix (Fin 3) (Fin 3) K)) =
       (g : Matrix (Fin 3) (Fin 3) K) * symmetricProductMatrix X Y *
         ((g⁻¹ : _) : Matrix (Fin 3) (Fin 3) K) := by
-  have hmul (A B : Matrix (Fin 3) (Fin 3) K) :
-      ((g : Matrix (Fin 3) (Fin 3) K) * A * ((g⁻¹ : _) : Matrix (Fin 3) (Fin 3) K)) *
-        ((g : Matrix (Fin 3) (Fin 3) K) * B * ((g⁻¹ : _) : Matrix (Fin 3) (Fin 3) K)) =
-        (g : Matrix (Fin 3) (Fin 3) K) * (A * B) * ((g⁻¹ : _) : Matrix (Fin 3) (Fin 3) K) := by
-    simp [Matrix.mul_assoc]
-  simp only [symmetricProductMatrix, hmul, trace_units_conj, mul_sub, mul_add,
-    sub_mul, add_mul, Matrix.mul_smul]
-  simp [Matrix.mul_assoc]
+  have hsmul (A : Matrix (Fin 3) (Fin 3) K) :
+      (g : Matrix (Fin 3) (Fin 3) K) * A * ((g⁻¹ : _) : Matrix (Fin 3) (Fin 3) K) =
+        ConjAct.toConjAct g • A := by
+    simp [ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct]
+  have htrace : trace (ConjAct.toConjAct g • (X * Y)) = trace (X * Y) := by
+    rw [ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct]
+    exact trace_units_conj g (X * Y)
+  have hscalar (c : K) :
+      ConjAct.toConjAct g • (c • (1 : Matrix (Fin 3) (Fin 3) K)) =
+        c • (1 : Matrix (Fin 3) (Fin 3) K) := by
+    -- The conjugation action fixes scalars, since it fixes `1`.
+    rw [smul_comm, MulDistribMulAction.smul_one]
+  rw [hsmul X, hsmul Y, hsmul (symmetricProductMatrix X Y)]
+  simp only [symmetricProductMatrix, ← smul_mul', smul_add, smul_sub, htrace, hscalar]
 
 /-- Restriction of the symmetric product identity to determinant-one matrices. -/
 theorem symmetricProductMatrix_sl_conj (g : SpecialLinearGroup (Fin 3) K)
@@ -132,45 +144,14 @@ theorem symmetricProductMatrix_sl_conj (g : SpecialLinearGroup (Fin 3) K)
       ((g : Matrix (Fin 3) (Fin 3) K) * Y * ((g⁻¹ : _) : Matrix (Fin 3) (Fin 3) K)) =
       (g : Matrix (Fin 3) (Fin 3) K) * symmetricProductMatrix X Y *
         ((g⁻¹ : _) : Matrix (Fin 3) (Fin 3) K) := by
-  simpa only [← map_inv, SpecialLinearGroup.coe_GL_coe_matrix] using
-    symmetricProductMatrix_conj (SpecialLinearGroup.toGL g) X Y
-
-/-- The commutator commutes with the conjugation action of SL₃. -/
-theorem commutator_sl_conj {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
-    (g : SpecialLinearGroup ι R)
-    (X Y : Matrix ι ι R) :
-    ((g : Matrix ι ι R) * X * (g⁻¹ : SpecialLinearGroup ι R)) *
-        ((g : Matrix ι ι R) * Y * (g⁻¹ : SpecialLinearGroup ι R)) -
-      ((g : Matrix ι ι R) * Y * (g⁻¹ : SpecialLinearGroup ι R)) *
-        ((g : Matrix ι ι R) * X * (g⁻¹ : SpecialLinearGroup ι R)) =
-      (g : Matrix ι ι R) * (X * Y - Y * X) *
-        (g⁻¹ : SpecialLinearGroup ι R) := by
-  have hu (u : (Matrix ι ι R)ˣ) :
-      ((u : Matrix ι ι R) * X * ((u⁻¹ : _) : Matrix ι ι R)) *
-          ((u : Matrix ι ι R) * Y * ((u⁻¹ : _) : Matrix ι ι R)) -
-        ((u : Matrix ι ι R) * Y * ((u⁻¹ : _) : Matrix ι ι R)) *
-          ((u : Matrix ι ι R) * X * ((u⁻¹ : _) : Matrix ι ι R)) =
-        (u : Matrix ι ι R) * (X * Y - Y * X) *
-          ((u⁻¹ : _) : Matrix ι ι R) := by
-    simp [Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_assoc]
-  simpa only [← map_inv, SpecialLinearGroup.coe_GL_coe_matrix] using
-    hu (SpecialLinearGroup.toGL g)
-
-/-- The trace pairing has zero left radical on the actual trace-zero carrier. -/
-theorem trace_pairing_nondegenerate [NeZero (3 : K)]
-    (X : LieAlgebra.SpecialLinear.sl (Fin 3) K)
-    (h : ∀ Y : LieAlgebra.SpecialLinear.sl (Fin 3) K, trace (X.val * Y.val) = 0) : X = 0 := by
-  apply Subtype.ext
-  apply Matrix.ext_iff_trace_mul_right.mpr
-  intro Z
-  change trace (X.val * Z) = trace ((0 : Matrix (Fin 3) (Fin 3) K) * Z)
-  have hX : trace X.val = 0 := X.property
-  have hZ : trace (Z - (trace Z / 3) • (1 : Matrix (Fin 3) (Fin 3) K)) = 0 := by
-    simp only [trace_sub, trace_smul, trace_one, Fintype.card_fin, smul_eq_mul]
-    field_simp [NeZero.ne (3 : K)]
-    ring
-  have htest := h ⟨Z - (trace Z / 3) • (1 : Matrix (Fin 3) (Fin 3) K), hZ⟩
-  simpa only [Matrix.mul_sub, Matrix.mul_smul, Matrix.mul_one, trace_sub,
-    trace_smul, hX, smul_zero, sub_zero, zero_mul, trace_zero] using htest
+  -- Conjugation by `g` is conjugation by its image in `GL`.
+  have h (A : Matrix (Fin 3) (Fin 3) K) :
+      ((SpecialLinearGroup.toGL g : (Matrix (Fin 3) (Fin 3) K)ˣ) : Matrix (Fin 3) (Fin 3) K) * A *
+          (((SpecialLinearGroup.toGL g)⁻¹ : _) : Matrix (Fin 3) (Fin 3) K) =
+        (g : Matrix (Fin 3) (Fin 3) K) * A *
+          ((g⁻¹ : SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) := by
+    simp [← map_inv, SpecialLinearGroup.coe_GL_coe_matrix]
+  simp only [← h]
+  exact symmetricProductMatrix_conj (SpecialLinearGroup.toGL g) X Y
 
 end TauCeti.AdjointSquare
