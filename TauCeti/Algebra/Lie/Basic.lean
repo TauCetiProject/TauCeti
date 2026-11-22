@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Lie.IdealOperations
 public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.LinearAlgebra.Basis.Basic
 import TauCeti.Algebra.Module.Equiv.Basic
+import TauCeti.Algebra.Lie.Subalgebra.Automorphism
 
 /-!
 # Basic infrastructure for Lie modules
@@ -691,26 +692,26 @@ theorem apply_mem_center_iff (e : L ≃ₗ⁅R⁆ L') {x : L} :
 
 /-- The Lie equivalence between centres induced by a Lie equivalence. -/
 def centerCongr (e : L ≃ₗ⁅R⁆ L') : center R L ≃ₗ⁅R⁆ center R L' :=
-  e.ofSubalgebras (center R L).toLieSubalgebra (center R L').toLieSubalgebra <| by
-    ext y
-    constructor
-    · rintro ⟨x, hx, rfl⟩
-      exact e.apply_mem_center_iff.mpr hx
-    · intro hy
-      exact ⟨e.symm y, e.apply_mem_center_iff.mp (by simpa using hy), e.apply_symm_apply y⟩
+  e.ofSubalgebras (center R L).toLieSubalgebra (center R L').toLieSubalgebra <|
+    LieSubalgebra.map_eq_of_mem e
+      (fun _ hx ↦ e.apply_mem_center_iff.mpr hx)
+      (fun y hy ↦ e.apply_mem_center_iff.mp (by simpa using hy))
 
 /-- `centerCongr` agrees with `e` on underlying elements. -/
 @[simp]
 theorem coe_centerCongr (e : L ≃ₗ⁅R⁆ L') (x : center R L) :
-    (e.centerCongr x : L') = e x := by
-  rfl
+    (e.centerCongr x : L') = e x :=
+  e.ofSubalgebras_apply (center R L).toLieSubalgebra (center R L').toLieSubalgebra _ x
 
 /-- `centerCongr` commutes with `.symm`. -/
 @[simp]
 theorem centerCongr_symm (e : L ≃ₗ⁅R⁆ L') :
-    e.centerCongr.symm = e.symm.centerCongr := by
-  ext x
-  rfl
+    e.centerCongr.symm = e.symm.centerCongr :=
+  LieEquiv.ext fun x ↦ Subtype.ext <|
+    (e.ofSubalgebras_symm_apply
+      (center R L).toLieSubalgebra (center R L').toLieSubalgebra _ x).trans
+      (e.symm.ofSubalgebras_apply
+        (center R L').toLieSubalgebra (center R L).toLieSubalgebra _ x).symm
 
 /-- `centerCongr` preserves involutivity. -/
 theorem involutive_centerCongr {θ : L ≃ₗ⁅R⁆ L} (hθ : Function.Involutive θ) :

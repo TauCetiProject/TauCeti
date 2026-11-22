@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.CartanInvolution.Reductive
+public import TauCeti.Algebra.Lie.CartanInvolution.Reductive.Basic
 public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
@@ -53,12 +53,14 @@ theorem isReductiveCartanInvolution_negTransposeLieEquiv
   refine (LieEquiv.isCartanInvolution_iff_of_intertwine e
     (θ' := LieAlgebra.SpecialLinear.cartanInvolution n K) fun x ↦ ?_).mp ?_
   · apply Subtype.ext
-    have he (y : derivedSeries K (Matrix n n K) 1) : (e y : Matrix n n K) = y :=
-      LieEquiv.ofEq_apply (derivedSeries K (Matrix n n K) 1).toLieSubalgebra
-        (LieAlgebra.SpecialLinear.sl n K)
-        (by rw [derivedSeries_one_toLieSubalgebra_eq_sl]) y
-    rw [LieAlgebra.SpecialLinear.coe_cartanInvolution, he, he,
-      LieEquiv.coe_derivedSeriesCongr, negTransposeLieEquiv_apply]
+    rw [LieAlgebra.SpecialLinear.coe_cartanInvolution]
+    refine (congrArg (fun M : Matrix n n K ↦ -M.transpose) (LieEquiv.ofEq_apply
+      (derivedSeries K (Matrix n n K) 1).toLieSubalgebra
+      (LieAlgebra.SpecialLinear.sl n K) _ x)).trans ?_
+    refine Eq.trans ?_ (LieEquiv.ofEq_apply
+      (derivedSeries K (Matrix n n K) 1).toLieSubalgebra
+      (LieAlgebra.SpecialLinear.sl n K) _ _).symm
+    rw [LieEquiv.coe_derivedSeriesCongr, negTransposeLieEquiv_apply]
   · exact LieAlgebra.SpecialLinear.isCartanInvolution_cartanInvolution
 
 end TauCeti

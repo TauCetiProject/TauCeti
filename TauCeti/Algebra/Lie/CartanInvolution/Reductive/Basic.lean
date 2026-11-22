@@ -152,22 +152,6 @@ theorem eq_ofIsCompl (hθ : θ.IsReductiveCartanInvolution) :
 
 end IsReductiveCartanInvolution
 
-omit [LinearOrder K] in
-/-- Equivalence between `derivedSeries K L 1` and `L` when `derivedSeries K L 1 = ⊤`. -/
-private def derivedSeriesTopEquiv (htop : derivedSeries K L 1 = ⊤) :
-    derivedSeries K L 1 ≃ₗ⁅K⁆ L :=
-  (LieEquiv.ofEq (derivedSeries K L 1).toLieSubalgebra (⊤ : LieSubalgebra K L)
-    (by rw [htop]; rfl)).trans LieSubalgebra.topEquiv
-
-omit [LinearOrder K] in
-private theorem coe_derivedSeriesTopEquiv (htop : derivedSeries K L 1 = ⊤)
-    (x : derivedSeries K L 1) :
-    derivedSeriesTopEquiv htop x = (x : L) := by
-  let x' : (derivedSeries K L 1).toLieSubalgebra := x
-  change ((LieEquiv.ofEq (derivedSeries K L 1).toLieSubalgebra (⊤ : LieSubalgebra K L)
-    (by rw [htop]; rfl)).trans LieSubalgebra.topEquiv) x' = (x' : L)
-  rw [LieEquiv.trans_apply, LieSubalgebra.topEquiv_apply, LieEquiv.ofEq_apply]
-
 /-- Every semisimple Cartan involution is in particular a reductive Cartan involution, since a
 Killing Lie algebra over a field is perfect. -/
 theorem IsCartanInvolution.isReductiveCartanInvolution {θ : L ≃ₗ⁅K⁆ L}

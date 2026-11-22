@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.Basic
-public import TauCeti.Algebra.Lie.SpecialLinear.Cartan
+public import TauCeti.Algebra.Lie.SpecialLinear.Cartan.Basic
 
 import TauCeti.Algebra.Lie.SpecialLinear.Killing
 import TauCeti.LinearAlgebra.Matrix.Trace.Positive

@@ -60,8 +60,8 @@ theorem trace_diagonal_mul_conjTranspose_mul_self_eq_zero_iff
 end
 
 /-- The trace of `X * Xᵀ` is strictly positive for any nonzero matrix `X` over a strictly ordered
-commutative ring. -/
-theorem trace_mul_transpose_pos {K m n : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K]
+ring. -/
+theorem trace_mul_transpose_pos {K m n : Type*} [Ring K] [LinearOrder K] [IsStrictOrderedRing K]
     [Fintype m] [Fintype n] {X : Matrix m n K} (hX : X ≠ 0) :
     0 < (X * Xᵀ).trace := by
   have htr : (X * Xᵀ).trace = Xᵀ.vec ⬝ᵥ Xᵀ.vec := by

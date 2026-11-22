@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Real.Basic
-public import TauCeti.Algebra.Lie.CartanInvolution.Reductive
+public import TauCeti.Algebra.Lie.CartanInvolution.Reductive.Basic
 import TauCeti.Algebra.Lie.Killing.Basic
 
 /-!

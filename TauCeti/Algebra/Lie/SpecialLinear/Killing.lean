@@ -8,8 +8,6 @@ module
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.TraceForm
 
-import Mathlib.Algebra.Lie.Killing
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 import TauCeti.Algebra.Lie.GeneralLinear.Killing
 import TauCeti.LinearAlgebra.Trace.Exact
@@ -72,7 +70,10 @@ theorem killingForm_apply (X Y : sl n R) :
       (f := ad R (Matrix n n R) X ∘ₗ ad R (Matrix n n R) Y)
       (fN := ad R (sl n R) X ∘ₗ ad R (sl n R) Y)
       (fQ := 0)
-      (LinearMap.ext fun _ ↦ rfl)
+      (by
+        dsimp only [i]
+        rw [LinearMap.comp_assoc, (sl n R).ad_comp_incl_eq Y, ← LinearMap.comp_assoc,
+          (sl n R).ad_comp_incl_eq X, LinearMap.comp_assoc])
       (by
         ext M
         simp [π, LieAlgebra.matrix_trace_commutator_zero])

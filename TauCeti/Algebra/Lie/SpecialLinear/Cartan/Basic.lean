@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.CartanInvolution.Decomposition
 public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.Algebra.Lie.Subalgebra.Automorphism
 import TauCeti.LinearAlgebra.Matrix.Alternating
 
 /-!
@@ -59,18 +60,11 @@ variable (n R)
 
 /-- The involutive Lie automorphism `X ↦ -Xᵀ` of the special linear Lie algebra `sl n R`. -/
 def cartanInvolution : sl n R ≃ₗ⁅R⁆ sl n R :=
-  (TauCeti.negTransposeLieEquiv n R).ofSubalgebras (sl n R) (sl n R) <| by
-    ext X
-    constructor
-    · rintro ⟨Y, hY, rfl⟩
-      -- Expose the underlying function of `negTransposeLieEquiv` to apply its evaluation lemma.
-      change TauCeti.negTransposeLieEquiv n R Y ∈ sl n R
-      rw [TauCeti.negTransposeLieEquiv_apply, mem_sl_iff, trace_neg, trace_transpose,
-        mem_sl_iff.mp hY, neg_zero]
-    · intro hX
-      refine ⟨-Xᵀ, ?_, by simp⟩
-      rw [SetLike.mem_coe, LieSubalgebra.mem_toSubmodule, mem_sl_iff, trace_neg, trace_transpose,
-        mem_sl_iff.mp hX, neg_zero]
+  (TauCeti.negTransposeLieEquiv n R).ofSubalgebras (sl n R) (sl n R) <|
+    (sl n R).map_eq_self_of_involutive (TauCeti.negTransposeLieEquiv n R) (fun _ ↦ by simp)
+      fun X hX ↦ by
+        rw [TauCeti.negTransposeLieEquiv_apply, mem_sl_iff, trace_neg, trace_transpose,
+          mem_sl_iff.mp hX, neg_zero]
 
 variable {n R}
 
@@ -78,7 +72,7 @@ variable {n R}
 @[simp]
 theorem coe_cartanInvolution (X : sl n R) :
     (cartanInvolution n R X : Matrix n n R) = -(X : Matrix n n R)ᵀ := by
-  simp [cartanInvolution]
+  rw [cartanInvolution, LieEquiv.ofSubalgebras_apply, TauCeti.negTransposeLieEquiv_apply]
 
 /-- Applying `SpecialLinear.cartanInvolution` twice returns the original matrix. -/
 @[simp]

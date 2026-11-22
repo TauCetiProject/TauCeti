@@ -427,8 +427,9 @@ noncomputable def LieIdeal.prodEquivOfIsCompl (I J : LieIdeal R L) (h : IsCompl 
 /-- `LieIdeal.prodEquivOfIsCompl` acts by addition in `L`. -/
 @[simp]
 theorem LieIdeal.prodEquivOfIsCompl_apply (I J : LieIdeal R L) (h : IsCompl I J) (p : I × J) :
-    LieIdeal.prodEquivOfIsCompl I J h p = (p.1 : L) + (p.2 : L) := by
-  rfl
+    LieIdeal.prodEquivOfIsCompl I J h p = (p.1 : L) + (p.2 : L) :=
+  Submodule.coe_prodEquivOfIsCompl' I.toSubmodule J.toSubmodule
+    (LieSubmodule.isCompl_toSubmodule.mpr h) p
 
 /-- On an element of `I`, the inverse of `LieIdeal.prodEquivOfIsCompl` yields `(x, 0)`. -/
 @[simp]
@@ -458,14 +459,14 @@ def prodCongr (e₁ : L₁ ≃ₗ⁅R⁆ L₂) (e₂ : L₃ ≃ₗ⁅R⁆ L₄) 
 /-- `prodCongr` acts componentwise. -/
 @[simp]
 theorem prodCongr_apply (e₁ : L₁ ≃ₗ⁅R⁆ L₂) (e₂ : L₃ ≃ₗ⁅R⁆ L₄) (p : L₁ × L₃) :
-    e₁.prodCongr e₂ p = (e₁ p.1, e₂ p.2) := by
-  rfl
+    e₁.prodCongr e₂ p = (e₁ p.1, e₂ p.2) :=
+  LinearEquiv.prodCongr_apply e₁.toLinearEquiv e₂.toLinearEquiv p
 
 /-- The inverse of `prodCongr` is the product of the inverses. -/
 @[simp]
 theorem prodCongr_symm (e₁ : L₁ ≃ₗ⁅R⁆ L₂) (e₂ : L₃ ≃ₗ⁅R⁆ L₄) :
-    (e₁.prodCongr e₂).symm = e₁.symm.prodCongr e₂.symm := by
-  rfl
+    (e₁.prodCongr e₂).symm = e₁.symm.prodCongr e₂.symm :=
+  LieEquiv.toLinearEquiv_injective (LinearEquiv.prodCongr_symm e₁.toLinearEquiv e₂.toLinearEquiv)
 
 /-- Combine automorphisms of two complementary ideals `I` and `J` into an automorphism of `L`. -/
 noncomputable def ofIsCompl {I J : LieIdeal R L} (h : IsCompl I J)

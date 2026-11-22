@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
-import TauCeti.Algebra.Lie.Hom
 import TauCeti.Algebra.Lie.InvariantForm.Basic
 import TauCeti.LinearAlgebra.Eigenspace.Separation
 import TauCeti.LinearAlgebra.Eigenspace.Transport
@@ -18,9 +17,9 @@ import TauCeti.LinearAlgebra.FixedSubmodule
 
 Let `θ` be an automorphism of a Lie algebra `L`. Its fixed vectors form the Lie subalgebra
 `𝔨 = θ.toLieHom.fixedSubalgebra`, and its `-1`-eigenspace is the submodule `𝔭 = θ.cartanP`.
-These satisfy `[𝔨, 𝔭] ⊆ 𝔭`, `[𝔭, 𝔨] ⊆ 𝔭`, and `[𝔭, 𝔭] ⊆ 𝔨`, and they are orthogonal for the
-Killing form as soon as the base ring has no additive torsion. When `θ` is involutive and `2` is a
-unit, `L = 𝔨 ⊕ 𝔭`: this is the Cartan decomposition when `θ` is a Cartan involution.
+These satisfy `[𝔨, 𝔭] ⊆ 𝔭` and `[𝔭, 𝔭] ⊆ 𝔨`, and they are orthogonal for the Killing form
+whenever scaling by `2` is regular on the base ring. When `θ` is involutive and `2` is a unit,
+`L = 𝔨 ⊕ 𝔭`: this is the Cartan decomposition when `θ` is a Cartan involution.
 
 The *twisted Killing form* `B_θ(x, y) = -B(x, θ y)` is invariant under every intertwining
 automorphism (in particular every automorphism commuting with `θ` and `θ` itself), and it is
@@ -38,14 +37,9 @@ self-adjoint.
 * `LieEquiv.cartanP_refl`, `LieEquiv.map_cartanP`: the `-1`-eigenspace of the identity and
   transport along intertwining Lie equivalences.
 * `LieEquiv.isCompl_fixedSubalgebra_cartanP`: `L = 𝔨 ⊕ 𝔭` for an involution when `2` is a unit.
-* `LieEquiv.lie_mem_cartanP`, `LieEquiv.lie_mem_cartanP_of_mem_cartanP_of_mem_fixedSubalgebra`,
-  `LieEquiv.lie_mem_fixedSubalgebra_of_mem_cartanP`: the bracket relations `[𝔨, 𝔭] ⊆ 𝔭`,
-  `[𝔭, 𝔨] ⊆ 𝔭`, and `[𝔭, 𝔭] ⊆ 𝔨`.
-* `LieEquiv.killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP`,
-  `LieEquiv.killingForm_eq_zero_of_mem_cartanP_of_mem_fixedSubalgebra`: `B(𝔨, 𝔭) = 0` and
-  `B(𝔭, 𝔨) = 0`.
-* `LieEquiv.killingForm_eq_zero_of_mem_center_of_mem_derivedSeries_fixedSubalgebra`: the centre and
-  derived ideal of `𝔨` are orthogonal for the ambient Killing form.
+* `LieEquiv.lie_mem_cartanP`, `LieEquiv.lie_mem_fixedSubalgebra_of_mem_cartanP`: the bracket
+  relations `[𝔨, 𝔭] ⊆ 𝔭` and `[𝔭, 𝔭] ⊆ 𝔨`.
+* `LieEquiv.killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP`: `B(𝔨, 𝔭) = 0`.
 * `LieEquiv.twistedKillingForm_map_map_of_intertwine`,
   `LieEquiv.twistedKillingForm_map_map_of_commute`: `B_θ` is preserved by intertwining equivalences
   and automorphisms commuting with `θ`.
@@ -131,44 +125,24 @@ theorem lie_mem_cartanP {x y : L} (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy :
   rw [mem_cartanP] at hy ⊢
   rw [map_lie, hx, hy, lie_neg]
 
-/-- `[𝔭, 𝔨] ⊆ 𝔭`: bracketing a `-1`-eigenvector with a fixed vector lands in `cartanP`. -/
-theorem lie_mem_cartanP_of_mem_cartanP_of_mem_fixedSubalgebra {θ : L ≃ₗ⁅R⁆ L} {x y : L}
-    (hx : x ∈ θ.cartanP) (hy : y ∈ θ.toLieHom.fixedSubalgebra) :
-    ⁅x, y⁆ ∈ θ.cartanP := by
-  rw [← lie_skew]
-  exact neg_mem (lie_mem_cartanP hy hx)
-
 /-- `[𝔭, 𝔭] ⊆ 𝔨`. -/
 theorem lie_mem_fixedSubalgebra_of_mem_cartanP {x y : L} (hx : x ∈ θ.cartanP)
     (hy : y ∈ θ.cartanP) : ⁅x, y⁆ ∈ θ.toLieHom.fixedSubalgebra := by
   rw [mem_cartanP] at hx hy
   rw [LieHom.mem_fixedSubalgebra, coe_toLieHom, map_lie, hx, hy, neg_lie, lie_neg, neg_neg]
 
-/-- `𝔨` and `𝔭` are orthogonal for the Killing form, over a base ring without additive
-torsion. -/
-theorem killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP [IsAddTorsionFree R]
+/-- `𝔨` and `𝔭` are orthogonal for the Killing form whenever scaling by `2` is regular on `R`. -/
+theorem killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP (h2 : IsSMulRegular R (2 : R))
     {x y : L} (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy : y ∈ θ.cartanP) :
     killingForm R L x y = 0 := by
   rw [LieHom.mem_fixedSubalgebra, coe_toLieHom] at hx
   rw [mem_cartanP] at hy
-  refine self_eq_neg.mp ?_
-  conv_lhs => rw [← killingForm_of_equiv_apply θ, hx, hy, map_neg]
-
-/-- Symmetric form of `B(𝔨, 𝔭) = 0`: `B(𝔭, 𝔨) = 0`. -/
-theorem killingForm_eq_zero_of_mem_cartanP_of_mem_fixedSubalgebra [IsAddTorsionFree R]
-    {θ : L ≃ₗ⁅R⁆ L} {x y : L} (hx : x ∈ θ.cartanP) (hy : y ∈ θ.toLieHom.fixedSubalgebra) :
-    killingForm R L x y = 0 := by
-  rw [LieModule.traceForm_comm]
-  exact killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP hy hx
-
-/-- The centre and derived ideal of the fixed subalgebra `𝔨` are orthogonal for the ambient
-Killing form `B|_𝔨`, over any commutative ring. -/
-theorem killingForm_eq_zero_of_mem_center_of_mem_derivedSeries_fixedSubalgebra
-    (θ : L ≃ₗ⁅R⁆ L) {z d : θ.toLieHom.fixedSubalgebra}
-    (hz : z ∈ center R θ.toLieHom.fixedSubalgebra)
-    (hd : d ∈ derivedSeries R θ.toLieHom.fixedSubalgebra 1) :
-    killingForm R L (z : L) (d : L) = 0 :=
-  θ.toLieHom.fixedSubalgebra.killingForm_eq_zero_of_mem_center_of_mem_derivedSeries hz hd
+  have h : killingForm R L x y = -killingForm R L x y := by
+    conv_lhs => rw [← killingForm_of_equiv_apply θ, hx, hy, map_neg]
+  refine h2 ?_
+  dsimp only
+  rw [two_smul, smul_zero]
+  exact eq_neg_iff_add_eq_zero.mp h
 
 /-! ### The twisted Killing form -/
 
@@ -221,20 +195,6 @@ theorem twistedKillingForm_apply_of_mem_cartanP_right (θ : L ≃ₗ⁅R⁆ L) {
     θ.twistedKillingForm x y = killingForm R L x y := by
   rw [mem_cartanP] at hy
   simp [hy]
-
-/-- `𝔨` and `𝔭` are orthogonal for `B_θ` over a base ring without additive torsion. -/
-theorem twistedKillingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP [IsAddTorsionFree R]
-    {θ : L ≃ₗ⁅R⁆ L} {x y : L} (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy : y ∈ θ.cartanP) :
-    θ.twistedKillingForm x y = 0 := by
-  rw [θ.twistedKillingForm_apply_of_mem_cartanP_right hy]
-  exact killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP hx hy
-
-/-- Symmetric form of `B_θ(𝔨, 𝔭) = 0`: `B_θ(𝔭, 𝔨) = 0`. -/
-theorem twistedKillingForm_eq_zero_of_mem_cartanP_of_mem_fixedSubalgebra [IsAddTorsionFree R]
-    {θ : L ≃ₗ⁅R⁆ L} {x y : L} (hx : x ∈ θ.cartanP) (hy : y ∈ θ.toLieHom.fixedSubalgebra) :
-    θ.twistedKillingForm x y = 0 := by
-  rw [θ.twistedKillingForm_apply_of_mem_fixedSubalgebra_right hy,
-    killingForm_eq_zero_of_mem_cartanP_of_mem_fixedSubalgebra hx hy, neg_zero]
 
 /-- The twisted Killing form of an involution is symmetric. -/
 theorem isSymm_twistedKillingForm (hθ : Function.Involutive θ) : θ.twistedKillingForm.IsSymm := by
