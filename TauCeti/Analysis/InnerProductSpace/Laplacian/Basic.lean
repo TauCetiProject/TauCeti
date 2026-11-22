@@ -108,7 +108,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
   `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`.
 * `ContDiff.laplacian`: the Laplacian loses two derivatives at every regularity order.
-* `ContDiffAt.laplacian_fun_mul_complex`: the planar product rule in directions `1` and `I`.
+* `ContDiffAt.laplacian_fun_mul_complex`: the planar product rule in directions `1` and `I`,
+  for functions with values in a normed field over `ℝ` such as `ℝ` or `ℂ`.
 * `ContDiffAt.laplacian_fun_mul`: the Leibniz rule `Δ (f g) = f Δg + 2 ⟪∇f, ∇g⟫ + g Δf`.
 * `ContDiffAt.laplacian_comp`: the chain rule `Δ (F ∘ q) = F''(q) ‖∇q‖² + F'(q) Δq` for a real
   function `F` of a scalar function `q`.
@@ -632,21 +633,41 @@ theorem _root_.ContDiffAt.laplacian_fun_mul {f g : E → ℝ} {x : E} (hf : Cont
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis g b) x, hgrad]
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
 
-open Complex Gradient in
+open Complex Filter Topology in
 /-- The product rule on the complex plane, with the mixed gradient term expressed in the
-orthonormal directions `1` and `I`. Only twice differentiability at the point is needed. -/
-theorem _root_.ContDiffAt.laplacian_fun_mul_complex {f g : ℂ → ℝ} {x : ℂ}
-    (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt ℝ 2 g x) :
+orthonormal directions `1` and `I`, for functions with values in a normed field over `ℝ` (such as
+`ℝ` or `ℂ`). Only twice differentiability at the point is needed. -/
+theorem _root_.ContDiffAt.laplacian_fun_mul_complex {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAlgebra ℝ 𝕜] {f g : ℂ → 𝕜} {x : ℂ} (hf : ContDiffAt ℝ 2 f x)
+    (hg : ContDiffAt ℝ 2 g x) :
     Δ (fun y ↦ f y * g y) x = f x * Δ g x + g x * Δ f x +
       2 * (fderiv ℝ f x 1 * fderiv ℝ g x 1 + fderiv ℝ f x I * fderiv ℝ g x I) := by
-  rw [hf.laplacian_fun_mul hg]
-  have hgrad : ⟪∇ f x, ∇ g x⟫_ℝ =
-      fderiv ℝ f x 1 * fderiv ℝ g x 1 + fderiv ℝ f x I * fderiv ℝ g x I := by
-    rw [← orthonormalBasisOneI.sum_inner_mul_inner (∇ f x) (∇ g x)]
-    simp only [Fin.sum_univ_two]
-    simp_rw [inner_gradient_left, real_inner_comm (∇ g x), inner_gradient_left]
-    simp [orthonormalBasisOneI]
-  rw [hgrad]
+  have hfd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y :=
+    (hf.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
+  have hgd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ g y :=
+    (hg.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
+  have hfg : fderiv ℝ (fun y ↦ f y * g y) =ᶠ[𝓝 x]
+      fun y ↦ f y • fderiv ℝ g y + g y • fderiv ℝ f y := by
+    filter_upwards [hfd, hgd] with y hfy hgy
+    exact fderiv_fun_mul hfy hgy
+  have hf' : DifferentiableAt ℝ (fderiv ℝ f) x :=
+    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hg' : DifferentiableAt ℝ (fderiv ℝ g) x :=
+    (hg.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  -- Each diagonal Hessian entry of the product, by differentiating the product rule once more.
+  have hterm : ∀ v, iteratedFDeriv ℝ 2 (fun y ↦ f y * g y) x ![v, v] =
+      f x * iteratedFDeriv ℝ 2 g x ![v, v] + g x * iteratedFDeriv ℝ 2 f x ![v, v] +
+        2 * (fderiv ℝ f x v * fderiv ℝ g x v) := by
+    intro v
+    have h1 : DifferentiableAt ℝ (fun y ↦ f y • fderiv ℝ g y) x := hfd.self_of_nhds.smul hg'
+    have h2 : DifferentiableAt ℝ (fun y ↦ g y • fderiv ℝ f y) x := hgd.self_of_nhds.smul hf'
+    rw [iteratedFDeriv_two_apply, hfg.fderiv_eq, fderiv_fun_add h1 h2,
+      fderiv_fun_smul hfd.self_of_nhds hg', fderiv_fun_smul hgd.self_of_nhds hf',
+      iteratedFDeriv_two_apply, iteratedFDeriv_two_apply]
+    simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
+      add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul]
+    ring
+  simp only [laplacian_eq_iteratedFDeriv_complexPlane, hterm]
   ring
 
 open Filter Gradient Topology in
