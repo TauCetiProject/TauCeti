@@ -55,32 +55,31 @@ open TauCeti TauCeti.Contour TauCeti.HolomorphicFunctions
 
 section Algebraic
 
-/-- Any unital complex-algebra homomorphism on `holomorphicGerms (spectrum ℂ a)` sending the
-coordinate germ to `a` maps the germ of `cauchyKernel V w hw` (on `spectrum ℂ a ⊆ V`) to
-`resolvent a w`. -/
-theorem toGerm_cauchyKernel {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
-    (Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A)
+/-- Any unital complex-algebra homomorphism on `holomorphicGerms s` sending the coordinate germ
+to `a` maps the germ of `cauchyKernel V w hw` (on `s ⊆ V`) to `resolvent a w`. -/
+theorem toGerm_cauchyKernel {s : Set ℂ} {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
+    (Φ : holomorphicGerms s →ₐ[ℂ] A)
     (hid : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
-    {V : Opens ℂ} (haV : spectrum ℂ a ⊆ V) {w : ℂ} (hw : w ∉ (V : Set ℂ)) :
-    Φ (toGerm haV (cauchyKernel V w hw)) = resolvent a w := by
+    {V : Opens ℂ} (hsV : s ⊆ V) {w : ℂ} (hw : w ∉ (V : Set ℂ)) :
+    Φ (toGerm hsV (cauchyKernel V w hw)) = resolvent a w := by
   rw [HolomorphicFunctions.toGerm_cauchyKernel,
     Φ.map_holomorphicGermsOfFun_sub_inv_eq_resolvent hid]
 
-/-- Image of `cauchyRiemannSum` under `Φ ∘ toGerm haV` for any unital complex-algebra homomorphism
-`Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A` sending the coordinate germ to `a`: every Cauchy
-kernel term evaluates to the corresponding resolvent of `a`. -/
-theorem toGerm_cauchyRiemannSum {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
-    (Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A)
+/-- Image of `cauchyRiemannSum` under `Φ ∘ toGerm hsV` for any unital complex-algebra homomorphism
+`Φ : holomorphicGerms s →ₐ[ℂ] A` sending the coordinate germ to `a`: every Cauchy kernel term
+evaluates to the corresponding resolvent of `a`. -/
+theorem toGerm_cauchyRiemannSum {s : Set ℂ} {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
+    (Φ : holomorphicGerms s →ₐ[ℂ] A)
     (hid : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
-    {V : Opens ℂ} (haV : spectrum ℂ a ⊆ V) (g : ℂ → ℂ) (E : Finset (ℂ × ℂ))
+    {V : Opens ℂ} (hsV : s ⊆ V) (g : ℂ → ℂ) (E : Finset (ℂ × ℂ))
     (hEV : Disjoint (⋃ e ∈ E, segment ℝ e.1 e.2) (V : Set ℂ)) (N : ℕ) :
-    Φ (toGerm haV (cauchyRiemannSum V g E hEV N)) =
+    Φ (toGerm hsV (cauchyRiemannSum V g E hEV N)) =
       (2 * π * I)⁻¹ • ∑ e ∈ E, ((e.2 - e.1) / (N + 1 : ℂ)) •
         ∑ k ∈ Finset.range (N + 1),
           g (AffineMap.lineMap (k := ℝ) e.1 e.2 ((k : ℝ) / (N + 1 : ℝ))) •
             resolvent a (AffineMap.lineMap (k := ℝ) e.1 e.2 ((k : ℝ) / (N + 1 : ℝ))) :=
-  map_cauchyRiemannSum (Φ.comp (toGerm haV)) g E hEV (resolvent a)
-    (fun _ hw ↦ Φ.toGerm_cauchyKernel hid haV (hEV.notMem_of_mem_left hw)) N
+  map_cauchyRiemannSum (Φ.comp (toGerm hsV)) g E hEV (resolvent a)
+    (fun _ hw ↦ Φ.toGerm_cauchyKernel hid hsV (hEV.notMem_of_mem_left hw)) N
 
 end Algebraic
 

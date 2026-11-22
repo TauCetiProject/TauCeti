@@ -36,8 +36,8 @@ definition:
   `holomorphicCalculusOn` and `holomorphicCalculus`.
 * **Resolvent kernels and rational functions**: `holomorphicCalculus a` evaluates `(w - ·)⁻¹` to
   `resolvent a w` for `w ∉ spectrum ℂ a` (and `holomorphicCalculusOn a U ha` does so for `w ∉ U`),
-  and sends rational functions `p(z) / q(z)` (with `q` nonvanishing on `spectrum ℂ a`) to
-  `p(a) q(a)⁻¹`.
+  and sends reciprocals, quotients `f(z) / g(z)`, and rational functions `p(z) / q(z)` (with
+  denominator nonvanishing on `spectrum ℂ a`) to `f(a)⁻¹`, `f(a) g(a)⁻¹`, and `p(a) q(a)⁻¹`.
 * **Scalar specialization**: on `ℂ`, the calculus is point evaluation.
 
 ## References
@@ -462,6 +462,26 @@ theorem holomorphicCalculusOn_sub_inv (a : A) (U : Opens ℂ) (ha : spectrum ℂ
     (w : ℂ) (hf : DifferentiableOn ℂ (fun z ↦ (w - z)⁻¹) U) :
     holomorphicCalculusOn a U ha (of U (fun z ↦ (w - z)⁻¹) hf) = resolvent a w := by
   rw [← holomorphicCalculus_toGerm, toGerm_of, holomorphicCalculus_sub_inv]
+
+/-- The calculus sends the reciprocal of a function without zeros on the spectrum to the inverse
+of its value. -/
+theorem holomorphicCalculus_ofFun_inv (a : A) (f : ℂ → ℂ)
+    (hf : AnalyticOnNhd ℂ f (spectrum ℂ a)) (hne : ∀ x ∈ spectrum ℂ a, f x ≠ 0) :
+    holomorphicCalculus a (holomorphicGerms.ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne)) =
+      Ring.inverse (holomorphicCalculus a (holomorphicGerms.ofFun f hf)) := by
+  have hu : IsUnit (holomorphicGerms.ofFun f hf) :=
+    (holomorphicGerms.isUnit_iff _).mpr fun x hx ↦ by simpa using hne x hx
+  rw [holomorphicGerms.ofFun_inv hf hne, hu.map_ringInverse (holomorphicCalculus a)]
+
+/-- The calculus sends a quotient by a function with no zero on the spectrum to the product with
+the inverse of the denominator's value. -/
+theorem holomorphicCalculus_ofFun_div (a : A) {f g : ℂ → ℂ}
+    (hf : AnalyticOnNhd ℂ f (spectrum ℂ a)) (hg : AnalyticOnNhd ℂ g (spectrum ℂ a))
+    (hne : ∀ z ∈ spectrum ℂ a, g z ≠ 0) :
+    holomorphicCalculus a (holomorphicGerms.ofFun (fun z ↦ f z / g z) (hf.div hg hne)) =
+      holomorphicCalculus a (holomorphicGerms.ofFun f hf) *
+        Ring.inverse (holomorphicCalculus a (holomorphicGerms.ofFun g hg)) :=
+  (holomorphicCalculus a).map_holomorphicGermsOfFun_div hf hg hne
 
 /-- **Rational functions in the holomorphic calculus.** If `p, q : Polynomial ℂ` and `q` has no
 zeros on `spectrum ℂ a`, then the holomorphic calculus sends `z ↦ p(z) / q(z)` to

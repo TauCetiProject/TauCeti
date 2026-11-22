@@ -14,8 +14,9 @@ public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Unit
 For an element `a` of a nonunital complex Banach algebra `A`, embedding `a` into its external `ℓ¹`
 unitization `WithLp 1 (Unitization ℂ A)` via `WithLp.unitizationInrL ℂ A` identifies
 `spectrum ℂ (WithLp.unitizationInrL ℂ A a)` with `quasispectrum ℂ a` (which always contains `0`).
-By `TauCeti.unitizationFstA_holomorphicCalculus_unitizationInrL`, the scalar part of `g(a)` is
-`g(0)`, so `g(a)` lies in the embedded copy of `A` if and only if `g(0) = 0`.
+By `WithLp.unitizationFstA_holomorphicCalculus` (applied to `WithLp.unitizationInrL ℂ A a`), the
+scalar part of `g(a)` is `g(0)`, so `g(a)` lies in the embedded copy of `A` if and only if
+`g(0) = 0`.
 
 On the nonunital subalgebra `holomorphicGerms.vanishingAt (quasispectrum ℂ a) 0 _` of holomorphic
 germs near `quasispectrum ℂ a` that vanish at `0`, projecting onto `A` yields the nonunital
@@ -59,7 +60,7 @@ def nonUnitalHolomorphicCalculus (a : A) :
         (WithLp.ofLp (holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
           (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g.val))).fst = 0 := by
       simpa only [WithLp.unitizationFstA_apply] using
-        (unitizationFstA_holomorphicCalculus_unitizationInrL a _).trans (by simp)
+        ((WithLp.unitizationInrL ℂ A a).unitizationFstA_holomorphicCalculus _).trans (by simp)
     simp only [MulMemClass.coe_mul, map_mul, WithLp.unitizationSndL_apply,
       WithLp.unitization_mul, Unitization.snd_mul, hfst g₁, hfst g₂, zero_smul, zero_add]
 
@@ -80,7 +81,8 @@ theorem toLp_inr_nonUnitalHolomorphicCalculus (a : A)
         (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g.val) := by
   rw [nonUnitalHolomorphicCalculus_apply]
   simpa only [WithLp.unitizationInrL_apply] using
-    unitizationInrL_unitizationSndL_holomorphicCalculus_of_eval_zero a (by simp)
+    WithLp.unitizationInrL_unitizationSndL_holomorphicCalculus_of_eval_eq_zero
+      (WithLp.unitizationInrL ℂ A a) (by simp)
 
 /-- The nonunital holomorphic functional calculus sends the coordinate germ `z ↦ z` to `a`. -/
 @[simp]
@@ -108,7 +110,7 @@ theorem quasispectrum_nonUnitalHolomorphicCalculus (a : A)
 /-- **Nonunital spectral mapping theorem** for an analytic representative `f` with `f 0 = 0`:
 `quasispectrum ℂ (f(a)) = f '' quasispectrum ℂ a`. -/
 @[simp]
-theorem quasispectrum_nonUnitalHolomorphicCalculus_ofFun (a : A) (f : ℂ → ℂ)
+theorem quasispectrum_nonUnitalHolomorphicCalculus_ofFunVanishingAt (a : A) (f : ℂ → ℂ)
     (hf : AnalyticOnNhd ℂ f (quasispectrum ℂ a)) (hf0 : f 0 = 0) :
     quasispectrum ℂ (nonUnitalHolomorphicCalculus a
         (holomorphicGerms.ofFunVanishingAt (quasispectrum.zero_mem ℂ a) f hf hf0)) =

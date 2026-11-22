@@ -24,11 +24,11 @@ We construct evaluation, restriction, and composition homomorphisms, the nonunit
 nonvanishing on `s`; the inverse of a unit is represented by the pointwise reciprocal. A germ
 vanishes at a point `x ∈ s` exactly when it is divisible by `z - x`. The spectrum of a
 represented germ is exactly the image of `s`, and the coordinate germ has spectrum `s`. We also
-record how unital complex-algebra homomorphisms out of `holomorphicGerms s` act on nonvanishing
-quotient germs, and—when sending the coordinate germ to `a`—on polynomial germs and the Cauchy
-kernel `(w - ·)⁻¹` (sending it to `resolvent a w` when `(w - ·)⁻¹` is analytic near `s`, so
-`w ∉ s`). When `s = spectrum ℂ a`, any such coordinate-preserving homomorphism reflects units and
-obeys the algebraic spectral mapping theorem. No compactness or nonemptiness is needed; at the
+record how unital complex-algebra homomorphisms out of `holomorphicGerms s` act on quotients
+whose denominators are nonvanishing on `s`, and—when sending the coordinate germ to `a`—on
+polynomial germs and the Cauchy kernel `(w - ·)⁻¹` (sending it to `resolvent a w` when `(w - ·)⁻¹`
+is analytic near `s`, so `w ∉ s`). When `s = spectrum ℂ a`, any such coordinate-preserving
+homomorphism reflects units and obeys the algebraic spectral mapping theorem. No compactness or
 empty set the germ algebra is the zero algebra.
 
 The construction uses Mathlib's `AnalyticOnNhd.congr'` for independence of representatives
@@ -307,6 +307,47 @@ theorem coe_ofFunVanishingAt {s : Set ℂ} {x : ℂ} (hx : x ∈ s) (f : ℂ →
     (hf : AnalyticOnNhd ℂ f s) (hf0 : f x = 0) :
     (ofFunVanishingAt hx f hf hf0 : holomorphicGerms s) = ofFun f hf := (rfl)
 
+/-- Two analytic representatives vanishing at `x` define the same germ in `vanishingAt`
+precisely when they agree near `s`. -/
+theorem ofFunVanishingAt_eq_iff {s : Set ℂ} {x : ℂ} (hx : x ∈ s) {f g : ℂ → ℂ}
+    (hf : AnalyticOnNhd ℂ f s) (hf0 : f x = 0)
+    (hg : AnalyticOnNhd ℂ g s) (hg0 : g x = 0) :
+    ofFunVanishingAt hx f hf hf0 = ofFunVanishingAt hx g hg hg0 ↔ f =ᶠ[𝓝ˢ s] g := by
+  rw [Subtype.ext_iff, coe_ofFunVanishingAt, coe_ofFunVanishingAt, ofFun_eq_iff]
+
+/-- The zero function represents `0` in `vanishingAt`. -/
+@[simp]
+theorem ofFunVanishingAt_zero {s : Set ℂ} {x : ℂ} (hx : x ∈ s) :
+    ofFunVanishingAt hx (0 : ℂ → ℂ) analyticOnNhd_const rfl = 0 := (rfl)
+
+/-- Pointwise addition of analytic representatives corresponds to addition in `vanishingAt`. -/
+@[simp]
+theorem ofFunVanishingAt_add {s : Set ℂ} {x : ℂ} (hx : x ∈ s) (f g : ℂ → ℂ)
+    (hf : AnalyticOnNhd ℂ f s) (hf0 : f x = 0)
+    (hg : AnalyticOnNhd ℂ g s) (hg0 : g x = 0) :
+    ofFunVanishingAt hx (f + g) (hf.add hg) (by simp [hf0, hg0]) =
+      ofFunVanishingAt hx f hf hf0 + ofFunVanishingAt hx g hg hg0 :=
+  Subtype.ext (ofFun_add f g hf hg)
+
+/-- Pointwise multiplication of analytic representatives corresponds to multiplication in
+`vanishingAt`. -/
+@[simp]
+theorem ofFunVanishingAt_mul {s : Set ℂ} {x : ℂ} (hx : x ∈ s) (f g : ℂ → ℂ)
+    (hf : AnalyticOnNhd ℂ f s) (hf0 : f x = 0)
+    (hg : AnalyticOnNhd ℂ g s) (hg0 : g x = 0) :
+    ofFunVanishingAt hx (f * g) (hf.mul hg) (by simp [hf0]) =
+      ofFunVanishingAt hx f hf hf0 * ofFunVanishingAt hx g hg hg0 :=
+  Subtype.ext (ofFun_mul f g hf hg)
+
+/-- Pointwise scalar multiplication of an analytic representative corresponds to scalar
+multiplication in `vanishingAt`. -/
+@[simp]
+theorem ofFunVanishingAt_smul {s : Set ℂ} {x : ℂ} (hx : x ∈ s) (c : ℂ) (f : ℂ → ℂ)
+    (hf : AnalyticOnNhd ℂ f s) (hf0 : f x = 0) :
+    ofFunVanishingAt hx (c • f) hf.const_smul (by simp [hf0]) =
+      c • ofFunVanishingAt hx f hf hf0 :=
+  Subtype.ext (Subtype.ext (Germ.coe_smul c f))
+
 /-- Every holomorphic germ vanishing at `x ∈ s` is represented by a function analytic near `s`
 that vanishes at `x`. -/
 theorem exists_ofFunVanishingAt_eq {s : Set ℂ} {x : ℂ} {hx : x ∈ s} (g : vanishingAt s x hx) :
@@ -321,20 +362,13 @@ coordinate germ. -/
 theorem ofFun_eval_polynomial (p : Polynomial ℂ) :
     ofFun (fun z ↦ p.eval z) ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _)) =
       Polynomial.aeval (ofFun id (analyticOnNhd_id : AnalyticOnNhd ℂ id s)) p := by
-  have hfun : (fun z : ℂ ↦ p.eval z) = Polynomial.aeval id p := by
-    ext z
-    simp [Polynomial.coe_aeval_eq_eval]
   apply Subtype.ext
-  calc ((ofFun (fun z ↦ p.eval z) _ : holomorphicGerms s) : Germ (𝓝ˢ s) ℂ)
-      = Germ.coeAlgHom (R := ℂ) (𝓝ˢ s) (Polynomial.aeval id p) := by
-        rw [coe_ofFun, hfun, Germ.coeAlgHom_apply]
-    _ = Polynomial.aeval (Germ.coeAlgHom (R := ℂ) (𝓝ˢ s) id) p :=
-        (Polynomial.aeval_algHom_apply (Germ.coeAlgHom (R := ℂ) (𝓝ˢ s)) id p).symm
-    _ = Polynomial.aeval ((holomorphicGerms s).val (ofFun id analyticOnNhd_id)) p := by
-        rw [Germ.coeAlgHom_apply, Subalgebra.coe_val, coe_ofFun]
-    _ = (Polynomial.aeval (ofFun id (analyticOnNhd_id : AnalyticOnNhd ℂ id s)) p :
-          Germ (𝓝ˢ s) ℂ) := by
-        rw [← Subalgebra.coe_val, Polynomial.aeval_algHom_apply]
+  rw [Polynomial.aeval_subalgebra_coe, coe_ofFun, coe_ofFun]
+  simp_rw [← Germ.coeAlgHom_apply (R := ℂ) (l := 𝓝ˢ s)]
+  rw [Polynomial.aeval_algHom_apply]
+  congr 1
+  ext z
+  simp [Polynomial.coe_aeval_eq_eval]
 
 /-- A holomorphic germ near `s` whose spectrum lies in `t` tends to `𝓝ˢ t` along `𝓝ˢ s`. -/
 theorem tendsto_nhdsSet (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t) :

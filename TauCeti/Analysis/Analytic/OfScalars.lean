@@ -312,10 +312,9 @@ on its open ball of convergence around `z₀`. -/
 theorem analyticOnNhd_ofScalarsSum_sub {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
     [NormedRing E] [NormedAlgebra 𝕜 E] [CompleteSpace E] (c : ℕ → 𝕜) (z₀ : E) :
     AnalyticOnNhd 𝕜 (fun z : E ↦ FormalMultilinearSeries.ofScalarsSum c (z - z₀))
-      (Metric.eball z₀ (FormalMultilinearSeries.ofScalars E c).radius) := by
-  intro z hz
-  have hr : 0 < (FormalMultilinearSeries.ofScalars E c).radius :=
-    bot_le.trans_lt (Metric.mem_eball.mp hz)
-  exact (hasFPowerSeriesOnBall_ofScalarsSum_sub c z₀ hr).analyticAt_of_mem hz
+      (Metric.eball z₀ (FormalMultilinearSeries.ofScalars E c).radius) :=
+  (FormalMultilinearSeries.ofScalars E c).analyticOnNhd.comp
+    (analyticOnNhd_id.sub analyticOnNhd_const) fun z hz ↦ by
+      simpa [Metric.mem_eball, edist_zero_right, eDist_eq_eNorm_sub] using hz
 
 end TauCeti

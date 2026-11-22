@@ -5,9 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Analytic.ChangeOrigin
-public import Mathlib.Analysis.Calculus.FDeriv.Analytic
-public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import TauCeti.Analysis.Analytic.OfScalars
 public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Basic
 import TauCeti.Analysis.Normed.Algebra.GelfandRadius
