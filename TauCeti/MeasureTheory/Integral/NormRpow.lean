@@ -57,6 +57,8 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
+* `TauCeti.lintegral_setLIntegral_enorm_sub_rpow_le`: the integral over a set of centres `p` of
+  the potential `∫ x in A, ‖x - p‖ ^ s dν` of an s-finite measure `ν`.
 * `TauCeti.ae_enorm_le_ofReal_mul_enorm_sub_rpow_of_norm_le`: off-diagonal real-norm domination
   `‖f y‖ ≤ C * ‖x - y‖ ^ s` on a measurable set implies `∀ᵐ y, ‖f y‖ₑ ≤ ofReal C * ‖x - y‖ₑ ^ s`
   under any null-singleton measure.
@@ -479,6 +481,25 @@ theorem lintegral_enorm_sub_rpow_le_of_mem {Ω : Set E} {x : E}
   simpa only [add_sub_cancel, Real.rpow_one, div_one] using
     setLIntegral_enorm_sub_rpow_le_of_mem_closure
       (s := 1 - (Module.finrank ℝ E : ℝ)) (by linarith) hb (subset_closure hx)
+
+/-- **Averaging the potential of a measure.** Let `ν` be an s-finite measure and suppose that
+every point of `A` lies within distance `D` of every point of `P`. For `s > -dim E`, the potential
+`p ↦ ∫ x in A, ‖x - p‖ ^ s dν` of `ν` restricted to `A` has integral over `P` at most
+`n μ(B(0, 1)) D ^ (n + s) / (n + s)` times `ν A`. For `s = -k` with `k < n`, the kernel
+`‖x - p‖ ^ (-k)` is, up to a constant, the `k`-th power of the local Lipschitz constant at `x` of a
+radial projection from `p` (`TauCeti.lipschitzOnWith_radialProjection_ball`), so this averages
+that power over the centre. -/
+theorem lintegral_setLIntegral_enorm_sub_rpow_le {s : ℝ}
+    (hs : -(Module.finrank ℝ E : ℝ) < s) (ν : Measure E) [SFinite ν] {A P : Set E} {D : ℝ}
+    (hAP : ∀ x ∈ A, P ⊆ closedBall x D) :
+    ∫⁻ p in P, ∫⁻ x in A, ‖x - p‖ₑ ^ s ∂ν ∂mu ≤
+      ENNReal.ofReal ((Module.finrank ℝ E : ℝ) * mu.real (ball 0 1) *
+        (D ^ ((Module.finrank ℝ E : ℝ) + s) / ((Module.finrank ℝ E : ℝ) + s))) * ν A := by
+  rw [lintegral_lintegral_swap (by fun_prop), ← setLIntegral_const]
+  refine setLIntegral_mono measurable_const fun x hx ↦ ?_
+  rcases lt_or_ge D 0 with hD | hD
+  · simp [subset_empty_iff.1 ((hAP x hx).trans (closedBall_eq_empty.2 hD).subset)]
+  · exact (lintegral_mono_set (hAP x hx)).trans_eq (setLIntegral_closedBall_enorm_sub_rpow hs hD x)
 
 section Inverse
 
