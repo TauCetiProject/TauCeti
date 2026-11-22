@@ -29,8 +29,10 @@ deduce that the factorization is an isomorphism via `NatIso.isIso_of_isIso_app`.
 * `CategoryTheory.SimplicialNerve.fullSubcategoryIso`: an object-injective simplicial functor
   inducing isomorphisms on mapping spaces identifies `SimplicialNerve C` with the corresponding
   full enhanced subcategory of `SimplicialNerve D`.
-* `CategoryTheory.SimplicialNerve.fullSubcategoryIso_hom_ι`: the isomorphism intertwines the full
-  enhanced subcategory inclusion with `simplicialNerveMap F`.
+* `CategoryTheory.SimplicialNerve.fullSubcategoryIso_hom_ι`,
+  `CategoryTheory.SimplicialNerve.fullSubcategoryIso_hom_app_val`: the isomorphism intertwines
+  the full enhanced subcategory inclusion with `simplicialNerveMap F` and acts on simplices by
+  postcomposition with `F`.
 * `CategoryTheory.SimplicialNerve.range_simplicialNerveMap`: the range of `simplicialNerveMap F`
   for a simplicial functor inducing isomorphisms on mapping spaces equals that full enhanced
   subcategory.
@@ -137,6 +139,17 @@ lemma fullSubcategoryIso_hom_ι (F : EnrichedFunctor SSet.{v} C D)
     (fullSubcategoryIso F hobj P hP).hom ≫ SSet.Subcomplex.ι _ = simplicialNerveMap F :=
   SSet.Subcomplex.lift_ι (simplicialNerveMap F)
     (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩)
+
+/-- On arbitrary simplices, the underlying simplex of `(fullSubcategoryIso F hobj P hP).hom` is
+postcomposition with `F`. -/
+@[simp]
+lemma fullSubcategoryIso_hom_app_val (F : EnrichedFunctor SSet.{v} C D)
+    (hobj : Function.Injective F.obj) [∀ a b : C, IsIso (F.map a b)]
+    (P : D → Prop) (hP : ∀ d, P d ↔ d ∈ Set.range F.obj)
+    (n : SimplexCategoryᵒᵖ) (H : (SimplicialNerve C).obj n) :
+    dsimp% ((fullSubcategoryIso F hobj P hP).hom.app n H).val = EnrichedFunctor.comp SSet H F :=
+  subcomplex_lift_simplicialNerveMap_app_val F
+    (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩) n H
 
 /-- The range of `simplicialNerveMap F` is the full enhanced subcategory spanned by the object
 image of `F`. -/

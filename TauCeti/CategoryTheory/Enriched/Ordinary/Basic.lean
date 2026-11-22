@@ -13,8 +13,9 @@ public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 
 Let `C` be an ordinary category enriched over a monoidal category `V`.
 
-* For a full subcategory `ObjectProperty.FullSubcategory P` of `C`, enriched identities and
-  composition agree with those of `C` (`ObjectProperty.FullSubcategory.eId_eq`,
+* For a full subcategory `ObjectProperty.FullSubcategory P` of `C`, enriched hom objects,
+  identities, and composition agree with those of `C`
+  (`ObjectProperty.FullSubcategory.eHom_eq`, `ObjectProperty.FullSubcategory.eId_eq`,
   `ObjectProperty.FullSubcategory.eComp_eq`).
 * When `V` is Cartesian monoidal, a morphism `f : a ⟶ b` of `C` gives, for every object `X` of `V`,
   the map `X ⟶ (a ⟶[V] b)` which is constant at `f`, namely `toUnit X ≫ eHomEquiv V f`. Enriched
@@ -23,9 +24,10 @@ Let `C` be an ordinary category enriched over a monoidal category `V`.
 
 ## Main declarations
 
-* `CategoryTheory.ObjectProperty.FullSubcategory.eId_eq`,
-  `CategoryTheory.ObjectProperty.FullSubcategory.eComp_eq`: enriched identities and composition in a
-  full subcategory are those of the underlying objects.
+* `CategoryTheory.ObjectProperty.FullSubcategory.eHom_eq`,
+  `CategoryTheory.ObjectProperty.FullSubcategory.eId_eq`,
+  `CategoryTheory.ObjectProperty.FullSubcategory.eComp_eq`: enriched hom objects, identities, and
+  composition in a full subcategory are those of the underlying objects.
 * `CategoryTheory.toUnit_eHomEquiv_tensorHom_comp_eComp`: enriched composition of the constant
   maps at `f` and `g` is the constant map at `f ≫ g`.
 -/
@@ -44,6 +46,12 @@ section
 
 variable (V : Type u') [Category.{v'} V] [MonoidalCategory V]
   {C : Type u} [Category.{v} C] [EnrichedOrdinaryCategory V C] {P : ObjectProperty C}
+
+/-- Enriched hom objects in a full subcategory are the enriched hom objects of the underlying
+objects. -/
+lemma eHom_eq (X Y : P.FullSubcategory) :
+    (X ⟶[V] Y) = (X.obj ⟶[V] Y.obj) :=
+  rfl
 
 /-- Enriched identities in a full subcategory are the enriched identities of the underlying
 objects. -/

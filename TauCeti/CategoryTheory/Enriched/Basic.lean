@@ -125,8 +125,8 @@ lemma lift_comp (F : EnrichedFunctor V C D) [∀ a b : C, IsIso (F.map a b)]
   refine EnrichedFunctor.ext V hobj fun i j ↦ ?_
   dsimp only [lift, EnrichedFunctor.comp]
   simp only [Category.assoc, IsIso.inv_hom_id, Category.comp_id]
-  exact (congrArg (G.map i j ≫ ·) ((eqToHom_trans _ _).trans (eqToHom_refl _ _))).trans
-    (Category.comp_id _)
+  change G.map i j ≫ eqToHom (by rw [hobj i, hobj j]) ≫ eqToHom (by rw [hobj i, hobj j]) = _
+  simp
 
 /-- Uniqueness of the lift of `G` along `F` for a prescribed object map `obj`. -/
 lemma lift_unique {F : EnrichedFunctor V C D} [∀ a b : C, IsIso (F.map a b)]

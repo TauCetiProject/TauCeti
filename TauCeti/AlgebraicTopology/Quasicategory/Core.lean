@@ -398,6 +398,11 @@ lemma core_eq_top_iff : X.core = ⊤ ↔ ∀ s : X _⦋1⦌, (mk' s).IsEquivalen
 lemma core_eq_top [KanComplex X] : X.core = ⊤ :=
   core_eq_top_iff.2 fun _ ↦ isEquivalence_of_kanComplex _
 
+/-- The core inclusion of a Kan complex is an isomorphism. -/
+instance isIso_core_ι [KanComplex X] : IsIso X.core.ι := by
+  rw [core_eq_top, ← Subcomplex.topIso_hom]
+  infer_instance
+
 /-- Every map from a Kan complex into `X` factors through `X.core`. -/
 lemma range_le_core_of_kanComplex [KanComplex Y] (f : Y ⟶ X) :
     Subcomplex.range f ≤ X.core :=
