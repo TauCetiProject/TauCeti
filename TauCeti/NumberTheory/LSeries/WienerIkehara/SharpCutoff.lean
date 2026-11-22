@@ -67,10 +67,14 @@ theorem wienerIkehara (ha : 0 ≤ a)
     (hG : ContinuousOn G {s : ℂ | 1 ≤ s.re})
     (hGF : ∀ s : ℂ, 1 < s.re → G s = F s - κ / (s - 1)) :
     Tendsto (fun x : ℝ ↦ x⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n) atTop (𝓝 κ) := by
+  have hG' : Set.EqOn G (fun s ↦ _root_.LSeries (fun n ↦ (a n : ℂ)) s - (κ : ℂ) / (s - 1))
+      {s : ℂ | 1 < s.re} := fun s hs ↦ by
+    dsimp only
+    rw [hGF s hs, (hF s hs).LSeries_eq]
   -- The Chebyshev bound `∑_{1 ≤ n ≤ N} a n ≤ C N`.
   obtain ⟨C₀, hC₀⟩ := exists_sum_Icc_le_mul_of_isBigO
     (isBigO_sum_Icc_norm_id_of_boundary (a := fun n ↦ (a n : ℂ)) (A := κ)
-      (fun n ↦ by simpa using ha n) hG (fun z hz ↦ by rw [hGF z hz, (hF z hz).LSeries_eq])
+      (fun n ↦ by simpa using ha n) hG (fun _ hz ↦ hG' hz)
       (fun σ hσ ↦ (hF σ (by simpa using hσ)).LSeriesSummable))
   set C := max C₀ 0
   have hC0 : 0 ≤ C := le_max_right _ _
@@ -88,8 +92,7 @@ theorem wienerIkehara (ha : 0 ≤ a)
     have ha0 : 0 ≤ a 0 := ha 0
     push_cast
     nlinarith
-  have hmain := WienerIkehara.tendsto_sum_div (A := κ) hbound hG
-    (fun s hs ↦ by dsimp only; rw [hGF s hs, (hF s hs).LSeries_eq]) ha
+  have hmain := WienerIkehara.tendsto_sum_div (A := κ) hbound hG hG' ha
   have ha0 : Tendsto (fun x : ℝ ↦ a 0 / x) atTop (𝓝 0) :=
     tendsto_const_nhds.div_atTop tendsto_id
   refine (by simpa using hmain.sub ha0 : Tendsto _ atTop (𝓝 κ)).congr fun x ↦ ?_
