@@ -413,6 +413,8 @@ theorem rightTranslation_zero :
   ext
   simp
 
+/-- Right translation satisfies `R_(a + b) = R_a ∘ R_b`, with `R_b` applied to the function
+first. -/
 theorem rightTranslation_add (a b : A) :
     rightTranslation (a + b) = rightTranslation a * rightTranslation b := by
   ext
