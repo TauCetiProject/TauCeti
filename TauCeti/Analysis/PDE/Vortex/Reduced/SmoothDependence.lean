@@ -10,7 +10,6 @@ public import TauCeti.Analysis.PDE.Vortex.Reduced.EquationMap
 import Mathlib.Analysis.Calculus.ImplicitContDiff
 import TauCeti.Analysis.PDE.Schrodinger.Realization
 import TauCeti.Analysis.PDE.Vortex.Reduced.Continuity
-import TauCeti.Analysis.PDE.Vortex.Reduced.Sobolev
 import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
@@ -30,7 +29,8 @@ smoothly on `c` (`TauCeti.Vortex.contDiff_sobolevReducedSolution`).
 The proof is the implicit function theorem for the reduced equation map
 `Φ : ℂ^m × H²(ℂ) → L²(ℂ)`, `Φ(c, u) = Δu - h_c (exp (2u) - 1) / 8 - k_c`
 (`TauCeti.Vortex.reducedEquationMapOfCoeff`), which is smooth with partial derivative
-`D_u Φ(c, u) v = Δv - h_c exp (2u) v / 4` in `u`. Its zero `u_c` satisfies:
+`D_u Φ(c, u) v = Δv - h_c exp (2u) v / 4` in `u`. Its zero `u_c`
+(`TauCeti.Vortex.reducedEquationMapOfCoeff_sobolevReducedSolution`) satisfies:
 
 * **The linearization is invertible.** At `u = u_c`, `-D_u Φ(c, u_c)` realizes the Schrödinger
   operator `-Δ + h_c exp (2 w_c) / 4`
@@ -64,14 +64,11 @@ space, and of their kernel projections and right inverses, are built from.
 
 ## Main definitions
 
-* `TauCeti.Vortex.sobolevReducedSolution c`: the reduced solution `w_c` of `P_c` as an element
-  of `H²(ℂ)`.
 * `TauCeti.Vortex.reducedLinearizationEquivOfCoeff c`: the linearization `D_u Φ(c, u_c)` as a
   continuous linear isomorphism `H²(ℂ) ≃ L²(ℂ)`.
 
 ## Main results
 
-* `TauCeti.Vortex.reducedEquationMapOfCoeff_sobolevReducedSolution`: `Φ(c, u_c) = 0`.
 * `TauCeti.Vortex.bijective_reducedLinearizationOfCoeff`: `D_u Φ(c, u_c)` is a bijection
   `H²(ℂ) → L²(ℂ)`.
 * `TauCeti.Vortex.continuous_sobolevReducedSolution`: `c ↦ u_c` is continuous into `H²(ℂ)`.
@@ -97,49 +94,7 @@ open scoped BesselPotentialSpace Laplacian ContDiff Topology
 
 namespace TauCeti.Vortex
 
-/-! ### The reduced solution in `H²(ℂ)` -/
-
-/-- The reduced solution of a polynomial lies in every Sobolev space `H^s(ℂ)`. -/
-theorem reducedSolution_mem_realSobolevFunctions (P : _root_.Polynomial ℂ) (s : ℝ) :
-    reducedSolution P ∈ realSobolevFunctions ℂ s 2 := by
-  rcases Nat.eq_zero_or_pos P.natDegree with hm | hm
-  · rw [reducedSolution_eq_zero_of_natDegree_eq_zero hm]
-    exact zero_mem _
-  · exact mem_realSobolevFunctions_of_laplacian_eq_reduced hm
-      ((contDiff_reducedSolution P).of_le (by simp)) (memLp_reducedSolution P)
-      (laplacian_reducedSolution hm) s
-
 variable {m : ℕ}
-
-/-- **The reduced solution in `H²(ℂ)`.** For coefficients `c ∈ ℂ^m`, the element of the complex
-Sobolev space `H²(ℂ)` whose `L²` function is the reduced solution `w_c` of the monic polynomial
-`P_c = TauCeti.Polynomial.monicOfCoeff c`
-(`TauCeti.Vortex.coeFn_inclusionLp_sobolevReducedSolution`). -/
-def sobolevReducedSolution (c : Fin m → ℂ) : H^{2}(ℂ) :=
-  ofRealSobolevFunction zero_le_two (reducedSolution_mem_realSobolevFunctions (monicOfCoeff c) 2)
-
-/-- The `L²` function of `sobolevReducedSolution c` is the reduced solution of `P_c`. -/
-theorem coeFn_inclusionLp_sobolevReducedSolution (c : Fin m → ℂ) :
-    ⇑(inclusionLp zero_le_two (sobolevReducedSolution c)) =ᵐ[volume]
-      fun z ↦ (reducedSolution (monicOfCoeff c) z : ℂ) :=
-  coeFn_inclusionLp_ofRealSobolevFunction _ _
-
-/-- An element of `H²(ℂ)` whose `L²` function is the reduced solution of `P_c` is
-`sobolevReducedSolution c`. -/
-theorem eq_sobolevReducedSolution_of_ae {c : Fin m → ℂ} {u : H^{2}(ℂ)}
-    (hu : ⇑(inclusionLp zero_le_two u) =ᵐ[volume]
-      fun z ↦ (reducedSolution (monicOfCoeff c) z : ℂ)) :
-    u = sobolevReducedSolution c :=
-  eq_ofRealSobolevFunction_of_ae _ _ hu
-
-/-- **The reduced solution is a zero of the reduced equation map**: `Φ(c, u_c) = 0`. -/
-theorem reducedEquationMapOfCoeff_sobolevReducedSolution (hm : 0 < m) (c : Fin m → ℂ) :
-    reducedEquationMapOfCoeff hm c (sobolevReducedSolution c) = 0 := by
-  have hP : 0 < (monicOfCoeff c).natDegree := by rwa [natDegree_monicOfCoeff]
-  refine (reducedEquationMapOfCoeff_eq_zero_iff hm c ((contDiff_reducedSolution _).of_le (by simp))
-    (coeFn_inclusionLp_sobolevReducedSolution c)).2 fun z ↦ ?_
-  rw [laplacian_reducedSolution hP z, reducedSource_def, backgroundSource_def]
-  ring
 
 /-! ### The linearization is invertible -/
 
