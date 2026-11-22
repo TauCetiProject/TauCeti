@@ -27,6 +27,8 @@ every summand is. For the ampliation `lp.ampliation ι 2 T` of a single operator
 
 ## Main results
 
+* `lp.orthonormal_single`: coordinate embeddings of orthonormal families form an orthonormal
+  family in `lp E 2`.
 * `lp.adjoint_mapCLM`: `(⊕ T i)† = ⊕ (T i)†`.
 * `lp.star_mapCLM`: the same identity for families of endomorphisms, stated with `star`.
 * `lp.isSelfAdjoint_mapCLM_iff`: `⊕ T i` is self-adjoint iff every `T i` is.
@@ -46,6 +48,22 @@ public section
 open scoped ENNReal InnerProduct InnerProductSpace lp
 
 namespace lp
+
+/-- Coordinate embeddings of orthonormal families in the summands form an orthonormal family in
+the Hilbert direct sum `lp E 2`. -/
+theorem orthonormal_single {ι 𝕜 : Type*} {E : ι → Type*} {κ : ι → Type*} [RCLike 𝕜]
+    [DecidableEq ι] [∀ i, NormedAddCommGroup (E i)] [∀ i, InnerProductSpace 𝕜 (E i)]
+    {v : ∀ i, κ i → E i} (hv : ∀ i, Orthonormal 𝕜 (v i)) :
+    Orthonormal 𝕜 (fun p : Σ i, κ i => lp.single (E := E) 2 p.1 (v p.1 p.2)) := by
+  classical
+  refine orthonormal_iff_ite.2 fun p q => ?_
+  rw [lp.inner_single_left]
+  rcases p with ⟨i, k⟩
+  rcases q with ⟨j, l⟩
+  by_cases hij : i = j
+  · subst hij
+    simpa [Sigma.mk.inj_iff] using (orthonormal_iff_ite.1 (hv i) k l)
+  · simp [hij]
 
 variable {ι 𝕜 : Type*} [RCLike 𝕜] {E F : ι → Type*}
   [∀ i, NormedAddCommGroup (E i)] [∀ i, InnerProductSpace 𝕜 (E i)] [∀ i, CompleteSpace (E i)]

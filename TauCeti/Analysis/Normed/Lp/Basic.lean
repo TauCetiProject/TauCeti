@@ -63,17 +63,19 @@ nontrivial, separability of `lp E p` forces `ι` to be countable because the ope
 `‖v i‖ / 2` around `lp.single p i (v i)` (`v i ≠ 0`) are pairwise disjoint
 (`lp.countable_of_separableSpace`, `lp.separableSpace_iff_countable`).
 
+The single-coordinate embedding `lp.single p i` is injective at every exponent
+(`lp.single_injective`), so `lp E p` is nontrivial whenever at least one summand is
+(`lp.nontrivial_at`, `lp.nontrivial_iff`, `lp.instNontrivial`, `lp.instNontrivialOfNonempty`).
+
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
-(`lp.tendsto_apply_of_tendsto_apply_single`). The single-coordinate embedding `lp.single p i` is
-injective at every exponent (`lp.single_injective`), so `lp E p` is nontrivial whenever at least
-one summand is (`lp.nontrivial_at`, `lp.nontrivial_iff`, `lp.instNontrivial`). In the scalar case
-such an operator `T` is given by its coordinate series `T x = ∑ i, xᵢ • T eᵢ`
-(`ContinuousLinearMap.hasSum_smul_lp_single`), so for `q ≠ ∞` an operator out of `ℓ^q` into a
-Hausdorff space is determined by its values on the unit coordinate vectors
-(`ContinuousLinearMap.ext_lp_of_ne_top`). On ℓ¹, a uniform bound `C` on the norms `‖T eᵢ‖` bounds
-`‖T‖` (`ContinuousLinearMap.opNorm_lpOne_le`), so the norm of `T` is the supremum of the norms
-`‖T eᵢ‖` (`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`,
+(`lp.tendsto_apply_of_tendsto_apply_single`). For `q ≠ ∞`, a continuous linear map `T` out of
+scalar `ℓ^q` is given by its coordinate series `T x = ∑ i, xᵢ • T eᵢ`
+(`ContinuousLinearMap.hasSum_smul_lp_single`), so an operator out of `ℓ^q` into a Hausdorff space is
+determined by its values on the unit coordinate vectors (`ContinuousLinearMap.ext_lp_of_ne_top`).
+On ℓ¹, a uniform bound `C` on the norms `‖T eᵢ‖` bounds `‖T‖`
+(`ContinuousLinearMap.opNorm_lpOne_le`), so the norm of `T` is the supremum of the norms `‖T eᵢ‖`
+(`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`,
 `ContinuousLinearMap.nnnorm_eq_ciSup_nnnorm_lp_single`).
 -/
 

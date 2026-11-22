@@ -183,13 +183,17 @@ def idealizerToMultiplier (ι : A →⋆ₙₐ[ℂ] D) (hι : Function.Injective
     codRestrictIdealizer_injective hι (by simp [ψ])
 
 @[simp] theorem map_idealizerToMultiplier_fst {ι : A →⋆ₙₐ[ℂ] D} (hι : Function.Injective ι)
-    (d : ι.range.idealizer) (a : A) : ι ((ι.idealizerToMultiplier hι d).fst a) = (d : D) * ι a :=
-  congrArg Subtype.val <| (codRestrictIdealizer ι).map_idealToMultiplier_fst
+    (d : ι.range.idealizer) (a : A) : ι ((ι.idealizerToMultiplier hι d).fst a) = (d : D) * ι a := by
+  dsimp only [idealizerToMultiplier]
+  rw [NonUnitalStarAlgHom.toStarAlgHom_apply]
+  exact congrArg Subtype.val <| (codRestrictIdealizer ι).map_idealToMultiplier_fst
     (codRestrictIdealizer_injective hι) (mul_codRestrictIdealizer_mem_range ι) d a
 
 @[simp] theorem map_idealizerToMultiplier_snd {ι : A →⋆ₙₐ[ℂ] D} (hι : Function.Injective ι)
-    (d : ι.range.idealizer) (a : A) : ι ((ι.idealizerToMultiplier hι d).snd a) = ι a * (d : D) :=
-  congrArg Subtype.val <| (codRestrictIdealizer ι).map_idealToMultiplier_snd
+    (d : ι.range.idealizer) (a : A) : ι ((ι.idealizerToMultiplier hι d).snd a) = ι a * (d : D) := by
+  dsimp only [idealizerToMultiplier]
+  rw [NonUnitalStarAlgHom.toStarAlgHom_apply]
+  exact congrArg Subtype.val <| (codRestrictIdealizer ι).map_idealToMultiplier_snd
     (codRestrictIdealizer_injective hι) (mul_codRestrictIdealizer_mem_range ι) d a
 
 @[simp] theorem idealizerToMultiplier_apply_map {ι : A →⋆ₙₐ[ℂ] D} (hι : Function.Injective ι)

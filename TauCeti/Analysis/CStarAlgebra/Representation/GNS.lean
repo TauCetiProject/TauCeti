@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
+import TauCeti.Algebra.Star.StarAlgHom
 import TauCeti.Analysis.CStarAlgebra.Representation.HilbertSum
 import TauCeti.Analysis.CStarAlgebra.State.Spectrum
 
@@ -114,11 +115,8 @@ theorem exists_faithful_representation :
     ∃ (H : Type w) (_ : NormedAddCommGroup H) (_ : InnerProductSpace ℂ H) (_ : CompleteSpace H)
       (π : B →⋆ₐ[ℂ] (H →L[ℂ] H)), Function.Injective π := by
   obtain ⟨H, _, _, _, π, hπ, hπn⟩ := exists_faithful_nondegenerate_representation B
-  have h1 : π 1 = 1 := hπn.map_one
-  exact ⟨H, _, _, _,
-    { π with
-      map_one' := h1
-      commutes' r := by simp [Algebra.algebraMap_eq_smul_one, h1] }, hπ⟩
+  exact ⟨H, _, _, _, π.toStarAlgHom hπn.map_one,
+    (NonUnitalStarAlgHom.coe_toStarAlgHom π hπn.map_one).symm ▸ hπ⟩
 
 end TauCeti.CStarAlgebra
 

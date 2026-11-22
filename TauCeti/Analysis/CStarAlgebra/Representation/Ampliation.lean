@@ -74,10 +74,19 @@ theorem ampliation_apply (π : A →⋆ₙₐ[𝕜] (H →L[𝕜] H)) (ι : Type
 
 /-- Over a nonempty index type, the amplified representation is injective if and only if the
 original representation is injective. -/
+@[simp]
 theorem ampliation_injective_iff (π : A →⋆ₙₐ[𝕜] (H →L[𝕜] H)) (ι : Type*) [Nonempty ι] :
     Function.Injective (π.ampliation ι) ↔ Function.Injective π :=
   ⟨fun h a b hab => h (by simp [hab]),
     fun h a b hab => h (lp.ampliation_injective (ι := ι) (p := 2) (by simpa using hab))⟩
+
+/-- Amplifying a restricted representation commutes with restriction. -/
+@[simp]
+theorem ampliation_comp {B : Type*} [NonUnitalNonAssocSemiring B] [DistribMulAction 𝕜 B] [Star B]
+    (π : A →⋆ₙₐ[𝕜] (H →L[𝕜] H)) (f : B →⋆ₙₐ[𝕜] A) (ι : Type*) :
+    (π.comp f).ampliation ι = (π.ampliation ι).comp f := by
+  ext a
+  simp
 
 end General
 
@@ -102,6 +111,7 @@ theorem IsNondegenerate.ampliation {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (h
 
 /-- Over a nonempty index type, the amplified representation is nondegenerate if and only if the
 original representation is nondegenerate. -/
+@[simp]
 theorem isNondegenerate_ampliation_iff (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (ι : Type*) [Nonempty ι] :
     (π.ampliation ι).IsNondegenerate ↔ π.IsNondegenerate := by
   rw [ampliation_eq_hilbertSum, isNondegenerate_hilbertSum_iff, forall_const]
@@ -135,8 +145,17 @@ theorem toNonUnitalStarAlgHom_ampliation (π : B →⋆ₐ[𝕜] (H →L[𝕜] H
 
 /-- Over a nonempty index type, the amplified unital representation is injective if and only if
 the original representation is injective. -/
+@[simp]
 theorem ampliation_injective_iff (π : B →⋆ₐ[𝕜] (H →L[𝕜] H)) (ι : Type*) [Nonempty ι] :
     Function.Injective (π.ampliation ι) ↔ Function.Injective π :=
   π.toNonUnitalStarAlgHom.ampliation_injective_iff ι
+
+/-- Amplifying a restricted unital representation commutes with restriction. -/
+@[simp]
+theorem ampliation_comp {A : Type*} [Semiring A] [Algebra 𝕜 A] [Star A]
+    (π : B →⋆ₐ[𝕜] (H →L[𝕜] H)) (f : A →⋆ₐ[𝕜] B) (ι : Type*) :
+    (π.comp f).ampliation ι = (π.ampliation ι).comp f := by
+  ext a
+  simp
 
 end StarAlgHom

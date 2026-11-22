@@ -57,9 +57,7 @@ private theorem tsum_monotone (f : ι → E₁ →P[𝕜] E₂) :
     Monotone ⇑(∑' i, (f i : E₁ →L[𝕜] E₂)) := by
   intro x y hxy
   by_cases hf : Summable fun i => (f i : E₁ →L[𝕜] E₂)
-  · refine le_of_tendsto_of_tendsto (hasSum_apply hf.hasSum x)
-      (hasSum_apply hf.hasSum y) ?_
-    exact Eventually.of_forall fun s => Finset.sum_le_sum fun i _ => (f i).mono hxy
+  · exact hasSum_le (fun i => (f i).mono hxy) (hasSum_apply hf.hasSum x) (hasSum_apply hf.hasSum y)
   · rw [tsum_eq_zero_of_not_summable hf, _root_.zero_apply, _root_.zero_apply]
 
 /-- The sum of an indexed family of positive continuous linear maps, formed as the operator-norm
@@ -117,10 +115,8 @@ theorem tsum_apply {f : ι → E₁ →P[𝕜] E₂} (hf : Summable fun i => (f 
 sum. -/
 theorem le_tsum_apply {f : ι → E₁ →P[𝕜] E₂} (hf : Summable fun i => (f i : E₁ →L[𝕜] E₂))
     {a : E₁} (ha : 0 ≤ a) (i : ι) :
-    f i a ≤ tsum f a := by
-  refine ge_of_tendsto (hasSum_tsum_apply hf a) ?_
-  filter_upwards [eventually_ge_atTop {i}] with s hs
-  exact Finset.single_le_sum (fun j _ => (f j).map_nonneg ha) (hs (Finset.mem_singleton_self i))
+    f i a ≤ tsum f a :=
+  le_hasSum (hasSum_tsum_apply hf a) i fun j _ => (f j).map_nonneg ha
 
 /-- A summable series of positive continuous linear maps vanishes on a nonnegative element if and
 only if every summand vanishes on it. -/

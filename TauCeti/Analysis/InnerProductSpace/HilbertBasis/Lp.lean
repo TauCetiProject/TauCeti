@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 import Mathlib.Basic.Denumerable
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Dimension
+import TauCeti.Analysis.InnerProductSpace.HilbertSum
 
 /-!
 # Hilbert bases of Hilbert direct sums
@@ -15,8 +17,8 @@ import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 Given a Hilbert basis `b i` of each summand `E i` of an `ℓ²` Hilbert direct sum `lp E 2`, the
 coordinate embeddings `⟨i, k⟩ ↦ lp.single 2 i (b i k)` form a Hilbert basis `lp.hilbertBasis b`
 indexed by `Σ i, κ i`. Its coordinate representation reads the `b i`-coordinates in the `i`-th
-summand (`lp.hilbertBasis_repr_apply`). Completeness of each summand is inferred from its Hilbert
-basis.
+summand (`lp.hilbertBasis_repr_apply_apply`). Completeness of each summand is inferred from its
+Hilbert basis.
 
 For a countably infinite family of nontrivial separable Hilbert spaces `E i` (in particular, the
 countable Hilbert sum `lp (fun _ : ℕ => H) 2` of a nontrivial separable Hilbert space, whether `H`
@@ -27,7 +29,7 @@ equivalence with `ℓ²(ℕ, 𝕜)`.
 ## Main declarations
 
 * `lp.hilbertBasis`: Hilbert basis of `lp E 2` assembled from Hilbert bases of the summands.
-* `lp.hilbertBasis_apply`, `lp.hilbertBasis_repr_apply`: basis vectors and coordinate formula.
+* `lp.hilbertBasis_apply`, `lp.hilbertBasis_repr_apply_apply`: basis vectors and coordinate formula.
 * `lp.exists_hilbertBasis_nat`: a countably infinite Hilbert sum of nontrivial separable Hilbert
   spaces admits a Hilbert basis indexed by `ℕ`.
 
@@ -48,19 +50,6 @@ section DirectSum
 
 variable {ι 𝕜 : Type*} {E : ι → Type*} {κ : ι → Type*} [RCLike 𝕜]
   [∀ i, NormedAddCommGroup (E i)] [∀ i, InnerProductSpace 𝕜 (E i)]
-
-private theorem orthonormal_single_hilbertBasis [DecidableEq ι]
-    (b : ∀ i, HilbertBasis (κ i) 𝕜 (E i)) :
-    Orthonormal 𝕜 (fun p : Σ i, κ i => lp.single (E := E) 2 p.1 (b p.1 p.2)) := by
-  classical
-  refine orthonormal_iff_ite.2 fun p q => ?_
-  rw [lp.inner_single_left]
-  rcases p with ⟨i, k⟩
-  rcases q with ⟨j, l⟩
-  by_cases hij : i = j
-  · subst hij
-    simpa [Sigma.mk.inj_iff] using (orthonormal_iff_ite.1 (b i).orthonormal k l)
-  · simp [hij]
 
 private theorem orthogonal_span_range_single_hilbertBasis [DecidableEq ι]
     (b : ∀ i, HilbertBasis (κ i) 𝕜 (E i)) :
@@ -84,7 +73,7 @@ def hilbertBasis (b : ∀ i, HilbertBasis (κ i) 𝕜 (E i)) :
     HilbertBasis (Σ i, κ i) 𝕜 (lp E 2) := by
   classical
   haveI : ∀ i, CompleteSpace (E i) := fun i => (b i).completeSpace
-  exact HilbertBasis.mkOfOrthogonalEqBot (orthonormal_single_hilbertBasis b)
+  exact HilbertBasis.mkOfOrthogonalEqBot (lp.orthonormal_single fun i => (b i).orthonormal)
     (orthogonal_span_range_single_hilbertBasis b)
 
 /-- The `⟨i, k⟩`-th vector of `lp.hilbertBasis b` is `lp.single 2 i (b i k)`. -/
@@ -101,7 +90,7 @@ theorem hilbertBasis_apply [DecidableEq ι] (b : ∀ i, HilbertBasis (κ i) 𝕜
 /-- The `⟨i, k⟩`-th coordinate of `x : lp E 2` in `lp.hilbertBasis b` is the `k`-th coordinate of
 `x i` in `b i`. -/
 @[simp]
-theorem hilbertBasis_repr_apply (b : ∀ i, HilbertBasis (κ i) 𝕜 (E i)) (x : lp E 2)
+theorem hilbertBasis_repr_apply_apply (b : ∀ i, HilbertBasis (κ i) 𝕜 (E i)) (x : lp E 2)
     (p : Σ i, κ i) :
     (lp.hilbertBasis b).repr x p = (b p.1).repr (x p.1) p.2 := by
   classical
@@ -124,36 +113,13 @@ theorem exists_hilbertBasis_nat [Countable ι] [Infinite ι]
     Nonempty (HilbertBasis ℕ 𝕜 (lp E 2)) := by
   classical
   choose w b _ using fun i : ι => exists_hilbertBasis 𝕜 (E i)
-  have hw_nonempty : ∀ i, Nonempty (w i) := fun i => by
-    by_contra h
-    rw [not_nonempty_iff] at h
-    have : Subsingleton (E i) := (b i).repr.injective.subsingleton
-    exact false_of_nontrivial_of_subsingleton (E i)
-  have : ∀ i, Countable (w i) := fun i => by
-    refine Pairwise.countable_of_isOpen_disjoint
-      (s := fun k : w i => Metric.ball (b i k) (1 / 2)) ?_ (fun _ => Metric.isOpen_ball)
-      (fun k => Metric.nonempty_ball.2 (by norm_num))
-    intro k l hkl
-    rw [Function.onFun, Set.disjoint_left]
-    intro x hxk hxl
-    have hsq : ‖b i k - b i l‖ ^ 2 = 2 := by
-      rw [norm_sub_sq (𝕜 := 𝕜), (b i).orthonormal.1 k, (b i).orthonormal.1 l,
-        (b i).orthonormal.2 hkl]
-      norm_num
-    have hdist : dist (b i k) (b i l) < 1 := by
-      have htri := dist_triangle_left (b i k) (b i l) x
-      rw [Metric.mem_ball] at hxk hxl
-      linarith
-    rw [dist_eq_norm] at hdist
-    nlinarith [norm_nonneg (b i k - b i l)]
+  have hw_nonempty : ∀ i, Nonempty (w i) := fun i => (b i).nontrivial_iff_nonempty.mp inferInstance
+  have : ∀ i, Countable (w i) := fun i => (b i).separableSpace_iff_countable.mp inferInstance
   have : Infinite (Σ i, w i) :=
     Infinite.of_injective (fun i => ⟨i, (hw_nonempty i).some⟩) fun _ _ h =>
       congrArg Sigma.fst h
   obtain ⟨e⟩ := nonempty_equiv_of_countable (α := ℕ) (β := Σ i, w i)
-  let B := lp.hilbertBasis b
-  refine ⟨HilbertBasis.mk (B.orthonormal.comp e e.injective) ?_⟩
-  rw [Set.range_comp, e.surjective.range_eq, Set.image_univ]
-  exact B.dense_span.ge
+  exact ⟨(lp.hilbertBasis b).reindex e.symm⟩
 
 end CountableInfinite
 

@@ -13,14 +13,18 @@ public import Mathlib.Algebra.Star.StarAlgHom
 A nonunital `⋆`-algebra homomorphism `f : A →⋆ₙₐ[R] B` between unital `R`-algebras that sends
 `1` to `1` automatically commutes with `algebraMap R`, since `algebraMap R A r = r • 1`. This file
 packages that promotion as `NonUnitalStarAlgHom.toStarAlgHom`, together with its coercion and
-forgetful-unit `simp` lemmas.
+round-trip `simp` lemmas, and records that no unital `⋆`-algebra homomorphism exists from a
+subsingleton algebra to a nontrivial one.
 
 ## Main declarations
 
 * `NonUnitalStarAlgHom.toStarAlgHom`: promote `f : A →⋆ₙₐ[R] B` with `f 1 = 1` to `A →⋆ₐ[R] B`.
 * `NonUnitalStarAlgHom.coe_toStarAlgHom`,
-  `NonUnitalStarAlgHom.toNonUnitalStarAlgHom_toStarAlgHom`: `simp` lemmas for function coercion
-  and forgetting the unit.
+  `NonUnitalStarAlgHom.toNonUnitalStarAlgHom_toStarAlgHom`,
+  `StarAlgHom.toStarAlgHom_toNonUnitalStarAlgHom`: `simp` lemmas for function coercion and both
+  round trips.
+* `StarAlgHom.instIsEmptyOfSubsingletonOfNontrivial`: no unital `⋆`-algebra homomorphism exists
+  from a subsingleton algebra to a nontrivial one.
 -/
 
 public section
@@ -32,7 +36,7 @@ variable {R A B : Type*} [CommSemiring R]
   [Semiring B] [Algebra R B] [Star B]
 
 /-- Promote a nonunital `⋆`-algebra homomorphism preserving `1` to a unital `StarAlgHom`. -/
-@[expose] def toStarAlgHom (f : A →⋆ₙₐ[R] B) (hf : f 1 = 1) : A →⋆ₐ[R] B where
+def toStarAlgHom (f : A →⋆ₙₐ[R] B) (hf : f 1 = 1) : A →⋆ₐ[R] B where
   toFun := f
   map_one' := hf
   map_mul' := map_mul f
@@ -60,3 +64,26 @@ theorem toNonUnitalStarAlgHom_toStarAlgHom (f : A →⋆ₙₐ[R] B) (hf : f 1 =
   (rfl)
 
 end NonUnitalStarAlgHom
+
+namespace StarAlgHom
+
+variable {R A B : Type*} [CommSemiring R]
+  [Semiring A] [Algebra R A] [Star A]
+  [Semiring B] [Algebra R B] [Star B]
+
+/-- Promoting `f.toNonUnitalStarAlgHom` back to a unital `StarAlgHom` recovers `f`. -/
+@[simp]
+theorem toStarAlgHom_toNonUnitalStarAlgHom (f : A →⋆ₐ[R] B)
+    (hf : f.toNonUnitalStarAlgHom 1 = 1) :
+    f.toNonUnitalStarAlgHom.toStarAlgHom hf = f := by
+  ext a
+  exact NonUnitalStarAlgHom.toStarAlgHom_apply _ _ _
+
+/-- There is no unital `⋆`-algebra homomorphism from a zero algebra to a nontrivial algebra. -/
+instance instIsEmptyOfSubsingletonOfNontrivial [Subsingleton A] [Nontrivial B] :
+    IsEmpty (A →⋆ₐ[R] B) :=
+  ⟨fun f => by
+    have : Subsingleton B := f.toRingHom.codomain_trivial
+    exact false_of_nontrivial_of_subsingleton B⟩
+
+end StarAlgHom

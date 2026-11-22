@@ -762,17 +762,17 @@ def ofStarAlgHom (i : ι) : A i →⋆ₐ[ℂ] CStarInductiveLimit A f :=
 /-- The unital canonical map agrees with the canonical ⋆-homomorphism. -/
 @[simp]
 theorem coe_ofStarAlgHom (i : ι) : ⇑(ofStarAlgHom A f i) = of A f i :=
-  (rfl)
+  NonUnitalStarAlgHom.coe_toStarAlgHom _ _
 
 /-- The unital canonical map agrees with the canonical ⋆-homomorphism. -/
 theorem ofStarAlgHom_apply (i : ι) (a : A i) : ofStarAlgHom A f i a = of A f i a :=
-  (rfl)
+  NonUnitalStarAlgHom.toStarAlgHom_apply _ _ _
 
 /-- The unital canonical map is the canonical ⋆-homomorphism as a nonunital ⋆-homomorphism. -/
 @[simp]
 theorem toNonUnitalStarAlgHom_ofStarAlgHom (i : ι) :
     (ofStarAlgHom A f i).toNonUnitalStarAlgHom = of A f i :=
-  (rfl)
+  NonUnitalStarAlgHom.toNonUnitalStarAlgHom_toStarAlgHom _ _
 
 /-- Unital ⋆-homomorphisms out of the C⋆-inductive limit are determined by their compositions
 with the canonical maps. -/
@@ -780,7 +780,7 @@ with the canonical maps. -/
 theorem starAlgHom_ext {B : Type*} [CStarAlgebra B] {φ ψ : CStarInductiveLimit A f →⋆ₐ[ℂ] B}
     (h : ∀ i, φ.comp (ofStarAlgHom A f i) = ψ.comp (ofStarAlgHom A f i)) : φ = ψ :=
   StarAlgHom.ext fun x => induction_on x (isClosed_eq (map_continuous φ) (map_continuous ψ))
-    fun i a => congr($(h i) a)
+    fun i a => by simpa only [StarAlgHom.comp_apply, ofStarAlgHom_apply] using congr($(h i) a)
 
 variable {B : Type*} [CStarAlgebra B] (g : ∀ i, A i →⋆ₐ[ℂ] B)
   (hg : ∀ i j h a, g j (f i j h a) = g i a)
@@ -796,24 +796,25 @@ def liftStarAlgHom : CStarInductiveLimit A f →⋆ₐ[ℂ] B :=
 theorem toNonUnitalStarAlgHom_liftStarAlgHom :
     (liftStarAlgHom g hg).toNonUnitalStarAlgHom =
       lift (fun i => (g i).toNonUnitalStarAlgHom) hg :=
-  (rfl)
+  NonUnitalStarAlgHom.toNonUnitalStarAlgHom_toStarAlgHom _ _
 
 /-- As a function, the unital ⋆-homomorphism induced by `g` is the ⋆-homomorphism induced by
 `g`. -/
 theorem coe_liftStarAlgHom :
     ⇑(liftStarAlgHom g hg) = lift (fun i => (g i).toNonUnitalStarAlgHom) hg :=
-  (rfl)
+  NonUnitalStarAlgHom.coe_toStarAlgHom _ _
 
 /-- The induced unital ⋆-homomorphism extends each `g i`. -/
 @[simp]
 theorem liftStarAlgHom_of (i : ι) (a : A i) : liftStarAlgHom g hg (of A f i a) = g i a :=
-  lift_of _ hg i a
+  (NonUnitalStarAlgHom.toStarAlgHom_apply _ _ _).trans
+    (lift_of (fun i => (g i).toNonUnitalStarAlgHom) hg i a)
 
 /-- The induced unital ⋆-homomorphism composed with a unital canonical map is `g i`. -/
 @[simp]
 theorem liftStarAlgHom_comp_ofStarAlgHom (i : ι) :
     (liftStarAlgHom g hg).comp (ofStarAlgHom A f i) = g i :=
-  StarAlgHom.ext (liftStarAlgHom_of g hg i)
+  StarAlgHom.ext fun a => by rw [StarAlgHom.comp_apply, ofStarAlgHom_apply, liftStarAlgHom_of]
 
 /-- A unital ⋆-homomorphism out of the C⋆-inductive limit is induced by its compositions with the
 unital canonical maps. -/
@@ -840,14 +841,16 @@ theorem comp_liftStarAlgHom {D : Type*} [CStarAlgebra D] (ψ : B →⋆ₐ[ℂ] 
 /-- The range of the induced unital ⋆-homomorphism is the closure of the union of the ranges of
 the `g i`. -/
 theorem range_liftStarAlgHom :
-    Set.range (liftStarAlgHom g hg) = closure (⋃ i, Set.range (g i)) :=
-  range_lift (fun i => (g i).toNonUnitalStarAlgHom) hg
+    Set.range (liftStarAlgHom g hg) = closure (⋃ i, Set.range (g i)) := by
+  rw [coe_liftStarAlgHom]
+  exact range_lift (fun i => (g i).toNonUnitalStarAlgHom) hg
 
 /-- The induced unital ⋆-homomorphism is injective exactly when each `g i` kills only elements of
 `A i` that die in the C⋆-inductive limit. -/
 theorem liftStarAlgHom_injective_iff :
-    Function.Injective (liftStarAlgHom g hg) ↔ ∀ i a, g i a = 0 → of A f i a = 0 :=
-  lift_injective_iff (fun i => (g i).toNonUnitalStarAlgHom) hg
+    Function.Injective (liftStarAlgHom g hg) ↔ ∀ i a, g i a = 0 → of A f i a = 0 := by
+  rw [coe_liftStarAlgHom]
+  exact lift_injective_iff (fun i => (g i).toNonUnitalStarAlgHom) hg
 
 section map
 
@@ -868,21 +871,24 @@ def mapStarAlgHom : CStarInductiveLimit A f →⋆ₐ[ℂ] CStarInductiveLimit A
 
 /-- The induced unital ⋆-homomorphism between C⋆-inductive limits extends each `φ i`. -/
 @[simp]
-theorem mapStarAlgHom_of (i : ι) (a : A i) : mapStarAlgHom φ hφ (of A f i a) = of A' f' i (φ i a) :=
-  liftStarAlgHom_of _ _ i a
+theorem mapStarAlgHom_of (i : ι) (a : A i) :
+    mapStarAlgHom φ hφ (of A f i a) = of A' f' i (φ i a) := by
+  rw [mapStarAlgHom, liftStarAlgHom_of, StarAlgHom.comp_apply, ofStarAlgHom_apply]
 
 /-- The unital ⋆-homomorphism between C⋆-inductive limits induced by `φ` is the ⋆-homomorphism
 induced by `φ`. -/
 @[simp]
 theorem toNonUnitalStarAlgHom_mapStarAlgHom :
     (mapStarAlgHom φ hφ).toNonUnitalStarAlgHom = map (fun i => (φ i).toNonUnitalStarAlgHom) hφ :=
-  (rfl)
+  hom_ext fun i => NonUnitalStarAlgHom.ext fun a =>
+    (mapStarAlgHom_of φ hφ i a).trans (map_of (fun i => (φ i).toNonUnitalStarAlgHom) hφ i a).symm
 
 /-- As a function, the unital ⋆-homomorphism between C⋆-inductive limits induced by `φ` is the
 ⋆-homomorphism induced by `φ`. -/
 theorem coe_mapStarAlgHom :
-    ⇑(mapStarAlgHom φ hφ) = map (fun i => (φ i).toNonUnitalStarAlgHom) hφ :=
-  (rfl)
+    ⇑(mapStarAlgHom φ hφ) = map (fun i => (φ i).toNonUnitalStarAlgHom) hφ := by
+  rw [← StarAlgHom.coe_toNonUnitalStarAlgHom (mapStarAlgHom φ hφ),
+    toNonUnitalStarAlgHom_mapStarAlgHom]
 
 /-- The induced unital ⋆-homomorphism between C⋆-inductive limits composed with a unital
 canonical map is the unital canonical map composed with `φ i`. -/
@@ -900,8 +906,11 @@ theorem range_mapStarAlgHom :
 /-- The induced unital ⋆-homomorphism between C⋆-inductive limits is injective exactly when each
 `φ i` sends to an element dying in the limit only elements of `A i` dying in the limit. -/
 theorem mapStarAlgHom_injective_iff :
-    Function.Injective (mapStarAlgHom φ hφ) ↔ ∀ i a, of A' f' i (φ i a) = 0 → of A f i a = 0 :=
-  liftStarAlgHom_injective_iff _ _
+    Function.Injective (mapStarAlgHom φ hφ) ↔ ∀ i a, of A' f' i (φ i a) = 0 → of A f i a = 0 := by
+  dsimp only [mapStarAlgHom]
+  simpa only [StarAlgHom.comp_apply, ofStarAlgHom_apply] using
+    liftStarAlgHom_injective_iff (fun i => (ofStarAlgHom A' f' i).comp (φ i))
+      fun i j h a => by simp [← hφ]
 
 /-- The unital ⋆-homomorphism induced by a compatible family `g` out of the target system,
 composed with the induced unital ⋆-homomorphism between C⋆-inductive limits, is induced by the
@@ -918,8 +927,10 @@ variable (A f) in
 theorem mapStarAlgHom_id :
     mapStarAlgHom (f' := f) (fun i => StarAlgHom.id ℂ (A i)) (fun _ _ _ _ => rfl) =
       StarAlgHom.id ℂ _ :=
-  starAlgHom_ext fun i => StarAlgHom.ext fun a =>
-    mapStarAlgHom_of (A' := A) (f' := f) _ (fun _ _ _ _ => rfl) i a
+  starAlgHom_ext fun i =>
+    (mapStarAlgHom_comp_ofStarAlgHom (A' := A) (f' := f)
+      (fun i => StarAlgHom.id ℂ (A i)) (fun _ _ _ _ => rfl) i).trans
+      ((StarAlgHom.comp_id _).trans (StarAlgHom.id_comp _).symm)
 
 /-- The unital ⋆-homomorphism between C⋆-inductive limits induced by a composite family is the
 composite of the induced unital ⋆-homomorphisms. -/

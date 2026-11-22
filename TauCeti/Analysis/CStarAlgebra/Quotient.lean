@@ -371,7 +371,8 @@ noncomputable def liftUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (hf : ∀ a ∈ 
 @[simp]
 theorem liftUnitalStarAlgHom_mk (f : A →⋆ₐ[ℂ] B) (hf : ∀ a ∈ I, f a = 0) (a : A) :
     liftUnitalStarAlgHom I f hf (mk I a) = f a :=
-  liftStarAlgHom_mk I f.toNonUnitalStarAlgHom hf a
+  (NonUnitalStarAlgHom.toStarAlgHom_apply _ _ _).trans
+    (liftStarAlgHom_mk I f.toNonUnitalStarAlgHom hf a)
 
 @[simp]
 theorem liftUnitalStarAlgHom_comp_mkUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (hf : ∀ a ∈ I, f a = 0) :
@@ -382,7 +383,7 @@ theorem liftUnitalStarAlgHom_comp_mkUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (h
 theorem toNonUnitalStarAlgHom_liftUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (hf : ∀ a ∈ I, f a = 0) :
     (liftUnitalStarAlgHom I f hf).toNonUnitalStarAlgHom =
       liftStarAlgHom I f.toNonUnitalStarAlgHom hf :=
-  (rfl)
+  NonUnitalStarAlgHom.toNonUnitalStarAlgHom_toStarAlgHom _ _
 
 end Unital
 

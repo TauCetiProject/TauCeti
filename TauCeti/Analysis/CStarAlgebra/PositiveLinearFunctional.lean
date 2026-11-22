@@ -39,13 +39,6 @@ These are Mathlib's `ContinuousLinearMap.monotone_iff_tendsto_nhds_opNorm` and
 
 Finally, `WeakDual.ext_nonneg`: a functional on a C⋆-algebra is determined by its values on
 nonnegative elements, since these span the algebra.
-
-## Faithfulness kernel
-
-A faithful positive map on a proper star-ordered ring (in particular, a faithful positive
-functional on a C⋆-algebra) vanishes on `star a * a` only when `a = 0`
-(`PositiveLinearMap.eq_zero_of_faithful_apply_star_mul_self`,
-`PositiveContinuousLinearMap.eq_zero_of_faithful_apply_star_mul_self`).
 -/
 
 public section
@@ -53,30 +46,7 @@ public section
 open Filter
 open scoped ComplexOrder Topology
 
-namespace PositiveLinearMap
-
-/-- A faithful positive linear map on a proper star-ordered ring vanishes on `star a * a` only
-when `a = 0`. -/
-theorem eq_zero_of_faithful_apply_star_mul_self {A 𝕜 E : Type*} [NonUnitalSemiring A]
-    [PartialOrder A] [StarRing A] [StarOrderedRing A] [IsProperStar A]
-    [Semiring 𝕜] [AddCommMonoid E] [PartialOrder E] [Module 𝕜 A] [Module 𝕜 E]
-    (f : A →ₚ[𝕜] E) (hf : ∀ a : A, 0 ≤ a → a ≠ 0 → 0 < f a) {a : A}
-    (ha : f (star a * a) = 0) : a = 0 := by
-  by_contra ha0
-  exact (hf _ (star_mul_self_nonneg a) (star_mul_self_eq_zero.not.2 ha0)).ne' ha
-
-end PositiveLinearMap
-
 namespace PositiveContinuousLinearMap
-
-/-- A faithful positive continuous linear map on a proper star-ordered ring vanishes on
-`star a * a` only when `a = 0`. -/
-theorem eq_zero_of_faithful_apply_star_mul_self {A 𝕜 E : Type*} [NonUnitalSemiring A]
-    [PartialOrder A] [StarRing A] [StarOrderedRing A] [IsProperStar A]
-    [Semiring 𝕜] [AddCommMonoid E] [PartialOrder E] [TopologicalSpace A] [TopologicalSpace E]
-    [Module 𝕜 A] [Module 𝕜 E] (ψ : A →P[𝕜] E)
-    (hψ : ∀ a : A, 0 ≤ a → a ≠ 0 → 0 < ψ a) {a : A} (ha : ψ (star a * a) = 0) : a = 0 :=
-  ψ.toPositiveLinearMap.eq_zero_of_faithful_apply_star_mul_self hψ ha
 
 variable {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
