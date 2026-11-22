@@ -31,8 +31,10 @@ ideal containing `p`, such as the `(p, [ϖ])`-adic topology of `A_inf`
 ## Main results
 
 * `TauCeti.WittVector.padicIntHom_zmod`: for `R = ZMod p` it is `WittVector.fromPadicInt`.
-* `TauCeti.WittVector.map_comp_padicIntHom`: it is natural in `R`.
-* `TauCeti.WittVector.frobenius_comp_padicIntHom`: Frobenius fixes it.
+* `TauCeti.WittVector.map_comp_padicIntHom`, `TauCeti.WittVector.map_padicIntHom`: it is natural
+  in `R`.
+* `TauCeti.WittVector.frobenius_comp_padicIntHom`, `TauCeti.WittVector.frobenius_padicIntHom`:
+  Frobenius fixes it.
 -/
 
 public section
@@ -72,10 +74,22 @@ theorem map_comp_padicIntHom {S : Type*} [CommRing S] [CharP S p] (f : R →+* S
   rw [RingHom.comp_apply, map_coeff, coeff_padicIntHom, coeff_padicIntHom, ← RingHom.comp_apply,
     RingHom.ext_zmod (f.comp _) (ZMod.castHom (dvd_refl p) S)]
 
+variable {R} in
+/-- Naturality of the structure map, applied to a `p`-adic integer. -/
+@[simp]
+theorem map_padicIntHom {S : Type*} [CommRing S] [CharP S p] (f : R →+* S) (x : ℤ_[p]) :
+    map f (padicIntHom p R x) = padicIntHom p S x :=
+  congr($(map_comp_padicIntHom p f) x)
+
 /-- **Frobenius is a map over `ℤ_p`**: the Witt-vector Frobenius of `𝕎 R`, which is induced by the
 Frobenius of `R`, fixes the structure map `ℤ_[p] → 𝕎 R`. -/
 @[simp]
 theorem frobenius_comp_padicIntHom : frobenius.comp (padicIntHom p R) = padicIntHom p R := by
   rw [frobenius_eq_map_frobenius, map_comp_padicIntHom]
+
+/-- Frobenius fixes the image of every `p`-adic integer under the structure map. -/
+@[simp]
+theorem frobenius_padicIntHom (x : ℤ_[p]) : frobenius (padicIntHom p R x) = padicIntHom p R x :=
+  congr($(frobenius_comp_padicIntHom p R) x)
 
 end TauCeti.WittVector
