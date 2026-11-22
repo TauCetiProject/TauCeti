@@ -92,11 +92,7 @@ theorem hasLaw_renewalArrivalMeasure_poissonLaw_of_expMeasure
       (iIndepFun_infinitePi (X := fun _ : ℕ ↦ (id : ℝ≥0 → ℝ≥0)) fun _ ↦ measurable_id)
       fun n ↦ hasLaw_nnrealExpMeasure_iff.mp
         (measurePreserving_eval_infinitePi (fun _ : ℕ ↦ nnrealExpMeasure r) n).hasLaw
-  have hcomp : renewalArrivalMeasure T =
-      renewalArrivalMeasure (fun n (w : ℕ → ℝ≥0) ↦ w n) ∘ (fun ω n ↦ T n ω) := by
-    funext ω
-    exact renewalArrivalMeasure_comp (fun n (w : ℕ → ℝ≥0) ↦ w n) (fun ω n ↦ T n ω) ω
-  rw [hcomp]
+  rw [renewalArrivalMeasure_eq_comp_eval]
   exact hP₀.hasLaw_poissonLaw.comp hpath
 
 /-- **Equality in distribution of arrival measures.** The exponential renewal arrival measure has

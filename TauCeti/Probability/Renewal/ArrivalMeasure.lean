@@ -121,7 +121,7 @@ theorem coe_arrival_succ_toNNReal_occurrenceGap {N : Ω → Measure ℝ≥0} {ω
 /-- A locally finite counting measure with all interarrival gaps finite is the renewal arrival
 measure of its nonnegative-real gaps. Zero gaps and repeated occurrences are retained. -/
 theorem renewalArrivalMeasure_toNNReal_occurrenceGap_eq {N : Ω → Measure ℝ≥0} {ω : Ω}
-    [IsLocallyFiniteMeasure (N ω)] (hN : (N ω).IsIntegerValued)
+    (hloc : IsLocallyFiniteMeasure (N ω)) (hN : (N ω).IsIntegerValued)
     (hfin : ∀ n, (N ω).occurrenceGap n ≠ ∞) :
     renewalArrivalMeasure (fun n ω => ((N ω).occurrenceGap n).toNNReal) ω = N ω := by
   rw [renewalArrivalMeasure_eq_occurrenceTimeMeasure]
@@ -129,6 +129,7 @@ theorem renewalArrivalMeasure_toNNReal_occurrenceGap_eq {N : Ω → Measure ℝ�
       ℝ≥0∞)) = (N ω).occurrenceTime :=
     funext fun n => coe_arrival_succ_toNNReal_occurrenceGap (hfin n)
   rw [harr]
+  have := hloc
   exact hN.eq_occurrenceTimeMeasure.symm
 
 /-- Integration against the arrival measure sums the test function over all arrivals. -/
@@ -142,6 +143,13 @@ theorem lintegral_renewalArrivalMeasure (ω : Ω) (f : ℝ≥0 → ℝ≥0∞) :
 theorem renewalArrivalMeasure_comp {Ω' : Type*} (g : Ω' → Ω) (ω : Ω') :
     renewalArrivalMeasure (fun n ω => T n (g ω)) ω = renewalArrivalMeasure T (g ω) := by
   simp only [renewalArrivalMeasure_def, arrival_def]
+
+/-- Any renewal arrival measure factors through the coordinate evaluation arrival measure on
+`ℕ → ℝ≥0`. -/
+theorem renewalArrivalMeasure_eq_comp_eval :
+    renewalArrivalMeasure T =
+      renewalArrivalMeasure (fun n (w : ℕ → ℝ≥0) => w n) ∘ (fun ω n => T n ω) :=
+  funext fun ω => renewalArrivalMeasure_comp (fun n (w : ℕ → ℝ≥0) => w n) (fun ω n => T n ω) ω
 
 /-- A renewal arrival measure is locally finite exactly when its arrival times diverge. -/
 theorem isLocallyFiniteMeasure_renewalArrivalMeasure_iff (ω : Ω) :
@@ -229,11 +237,7 @@ theorem aemeasurable_renewalArrivalMeasure_iff :
   · simpa only [Function.comp_def, occurrenceGap_renewalArrivalMeasure, ENNReal.toNNReal_coe] using
       ENNReal.measurable_toNNReal.comp_aemeasurable
         ((Measure.measurable_occurrenceGap n).comp_aemeasurable h)
-  · have hcomp : renewalArrivalMeasure T =
-        renewalArrivalMeasure (fun n (w : ℕ → ℝ≥0) => w n) ∘ (fun ω n => T n ω) := by
-      funext ω
-      exact renewalArrivalMeasure_comp (fun n (w : ℕ → ℝ≥0) => w n) (fun ω n => T n ω) ω
-    rw [hcomp]
+  · rw [renewalArrivalMeasure_eq_comp_eval]
     exact (measurable_renewalArrivalMeasure fun n => measurable_pi_apply n).comp_aemeasurable
       (aemeasurable_pi_iff.2 hT)
 
@@ -259,12 +263,7 @@ theorem map_renewalArrivalMeasure_eq_infinitePi_map (hT : ∀ n, Measurable (T n
     P.map (renewalArrivalMeasure T) =
       (Measure.infinitePi fun _ : ℕ => P.map (T 0)).map
         (renewalArrivalMeasure (fun n (w : ℕ → ℝ≥0) => w n)) := by
-  have hcomp : renewalArrivalMeasure T =
-      renewalArrivalMeasure (fun n (w : ℕ → ℝ≥0) => w n) ∘ (fun ω n => T n ω) := by
-    funext ω
-    exact (renewalArrivalMeasure_comp (fun n (w : ℕ → ℝ≥0) => w n)
-      (fun ω n => T n ω) ω)
-  rw [hcomp, ← Measure.map_map
+  rw [renewalArrivalMeasure_eq_comp_eval, ← Measure.map_map
     (measurable_renewalArrivalMeasure (fun n => measurable_pi_apply n))
     (measurable_pi_iff.2 hT), hindep.map_fun_eq_infinitePi_map hT]
   simp_rw [fun n => (hid n).map_eq]
