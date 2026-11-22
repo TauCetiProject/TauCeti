@@ -60,6 +60,7 @@ program uniformly in the oracle.
 * `TauCeti.Oracle.Single.Code.eval_toSingleOracleCode`: a query-free program computes the same
   function as the ordinary code it comes from, relative to every oracle.
 * `TauCeti.Oracle.Single.Code.eval_toPartrecCode`,
+  `TauCeti.Oracle.Single.Code.eval_toPartrecCode_zero`,
   `TauCeti.Oracle.Single.Code.primrec_toPartrecCode`: specializing an oracle program to an
   always-zero oracle is primitive recursive and preserves evaluation.
 * `TauCeti.Oracle.Single.Code.eval_curry`, `TauCeti.Oracle.Single.Code.eval_fixInput`:
@@ -71,8 +72,9 @@ program uniformly in the oracle.
   is computed by one program relative to every oracle.
 * `TauCeti.Oracle.Single.Code.exists_code_of_computable`: in particular, every computable function
   is computed by one program relative to every oracle.
-* `TauCeti.Oracle.Single.Code.exists_code`, `RecursiveIn.exists_code`: adequacy for
-  `Nat.RecursiveIn {O}` and `RecursiveIn {O}`.
+* `TauCeti.Oracle.Single.Code.exists_code`,
+  `TauCeti.Oracle.Single.Code.recursiveIn_decode_restrict`: adequacy for `Nat.RecursiveIn {O}`
+  and restricting partial decoding to a program's domain.
 * `TauCeti.Oracle.Single.Code.turingReducible_iff_exists_code`: the same for Turing
   reducibility.
 
@@ -405,14 +407,6 @@ theorem dom_eval_comp (O : ℕ →. ℕ) (cf cg : Code) :
     (eval O (comp cf cg)).Dom = (eval O cg).preimage (eval O cf).Dom := by
   rw [eval_comp_eq, PFun.dom_comp]
 
-/-- When the inner program computes a total function `f`, the domain of `comp cf cg` is the usual
-set-theoretic preimage of the domain of `cf` under `f`. -/
-theorem dom_eval_comp_total {O : ℕ →. ℕ} {cf cg : Code} {f : ℕ → ℕ}
-    (hf : ∀ x, eval O cg x = Part.some (f x)) :
-    (eval O (comp cf cg)).Dom = f ⁻¹' (eval O cf).Dom := by
-  have hcg : eval O cg = (f : ℕ →. ℕ) := funext fun x => (hf x).trans (PFun.coe_val f x).symm
-  rw [dom_eval_comp, hcg, PFun.coe_preimage]
-
 /-- Uniform finite-intersection compiler for a list of oracle programs. -/
 def interList (cs : List Code) : Code :=
   cs.foldr pair zero
@@ -452,6 +446,11 @@ theorem dom_eval_interList (O : ℕ →. ℕ) (cs : List Code) :
 def restrictId (c : Code) : Code :=
   comp left (pair (pair left right) c)
 
+/-- Unfolding equation for `restrictId`. -/
+theorem restrictId_def (c : Code) :
+    restrictId c = comp left (pair (pair left right) c) :=
+  (rfl)
+
 /-- Domain restriction of the identity is primitive recursive on programs. -/
 theorem primrec_restrictId : Primrec restrictId :=
   primrec₂_comp.comp (Primrec.const left)
@@ -459,29 +458,19 @@ theorem primrec_restrictId : Primrec restrictId :=
 
 /-- `restrictId c` outputs its input `x` whenever `c` halts on `x`, and diverges otherwise,
 relative to every partial oracle. -/
+@[simp]
 theorem eval_restrictId (O : ℕ →. ℕ) (c : Code) (x : ℕ) :
     eval O (restrictId c) x = (eval O c x).map fun _ => x := by
-  refine Part.ext fun y => ?_
-  rw [restrictId, eval_comp, Part.mem_map_iff]
-  constructor
-  · intro h
-    obtain ⟨p, hp, hy⟩ := Part.mem_bind_iff.1 h
-    obtain ⟨a, ha, b, hb, rfl⟩ := mem_eval_pair.1 hp
-    rw [eval_pair_left_right, Part.mem_some_iff] at ha
-    subst ha
-    rw [eval_left, Nat.unpair_pair, Part.mem_some_iff] at hy
-    exact ⟨b, hb, hy.symm⟩
-  · rintro ⟨b, hb, rfl⟩
-    exact Part.mem_bind (a := Nat.pair x b)
-      (mem_eval_pair.2 ⟨x, by rw [eval_pair_left_right]; exact Part.mem_some _, b, hb, rfl⟩)
-      (by rw [eval_left, Nat.unpair_pair]; exact Part.mem_some _)
+  have hleft : eval O left = fun p => Part.some p.unpair.1 := funext eval_left
+  rw [restrictId, eval_comp, eval_pair_of_left_eq_some (eval_pair_left_right x), hleft]
+  simp [Part.bind_some_eq_map, Part.map_map, Function.comp_def]
 
 /-- `restrictId c` has the same domain as `c`, relative to every partial oracle. -/
 @[simp]
 theorem dom_eval_restrictId (O : ℕ →. ℕ) (c : Code) :
     (eval O (restrictId c)).Dom = (eval O c).Dom := by
   ext x
-  simp [PFun.Dom, eval_restrictId]
+  simp [PFun.Dom]
 
 /-- The range of `restrictId c` is the domain of `c`, relative to every partial oracle. -/
 @[simp]
@@ -604,27 +593,32 @@ program computes it relative to `O`. -/
 theorem exists_code {f : ℕ →. ℕ} : Nat.RecursiveIn {O} f ↔ ∃ c, eval O c = f :=
   ⟨exists_code_of_recursiveIn, fun ⟨c, hc⟩ => hc ▸ recursiveIn_eval O c⟩
 
-/-- **Adequacy on arbitrary primitive-codable types.** A partial function between
-primitive-codable types is recursive in `O` exactly when some oracle program computes its encoded
-action on decoded inputs relative to `O`. -/
-theorem _root_.RecursiveIn.exists_code {α β : Type*} [Primcodable α] [Primcodable β]
-    {f : α →. β} :
-    RecursiveIn {O} f ↔
-      ∃ c, eval O c = fun n => Part.bind (decode (α := α) n) fun a => (f a).map encode :=
-  Code.exists_code
-
-/-- A partial function out of `ℕ` is recursive in `O` iff its encoded composition is
-`Nat.RecursiveIn` in `O`. -/
-theorem _root_.RecursiveIn.iff_nat_map_encode {β : Type*} [Primcodable β]
-    {O : Set (ℕ →. ℕ)} {f : ℕ →. β} :
-    RecursiveIn O f ↔ Nat.RecursiveIn O fun n => (f n).map encode := by
-  simp [RecursiveIn]
-
 /-- **Adequacy for Turing reducibility.** `f` is Turing reducible to `g` exactly when some program
 computes `f` relative to the oracle `g`. -/
 theorem turingReducible_iff_exists_code {f g : ℕ →. ℕ} :
     TuringReducible f g ↔ ∃ c, eval g c = f := by
   rw [TuringReducible, RecursiveIn.iff_nat, exists_code]
+
+/-- Restricting partial decoding `ℕ →. α` to the domain of an oracle program `c` on encoded
+inputs is recursive in the oracle. -/
+theorem recursiveIn_decode_restrict {α : Type*} [Primcodable α] (O : ℕ →. ℕ) (c : Code) :
+    RecursiveIn {O} fun n =>
+      (Part.ofOption (decode (α := α) n)).bind fun x =>
+        (eval O c (encode x)).map fun _ => x := by
+  have hdec : Nat.RecursiveIn {O} fun n => Part.ofOption ((decode (α := α) n).map encode) :=
+    (Partrec.nat_iff.1 (Computable.ofOption
+      (Computable.decode.option_map (Computable.encode.comp Computable.snd).to₂))).recursiveIn
+  have heq : ∀ n : ℕ,
+      ((Part.ofOption ((decode (α := α) n).map encode)).bind fun k =>
+        eval O (restrictId c) k) =
+      ((Part.ofOption (decode (α := α) n)).bind fun x =>
+        (eval O c (encode x)).map fun _ => x).map encode := by
+    intro n
+    cases decode (α := α) n with
+    | none => simp [Part.bind_none]
+    | some x => simp [Part.bind_some, Part.map_map, Function.comp_def]
+  exact RecursiveIn.iff_nat_map_encode.2
+    (((recursiveIn_eval O (restrictId c)).comp hdec).of_eq heq)
 
 end Code
 
@@ -907,6 +901,13 @@ theorem eval_toPartrecCode {O : ℕ →. ℕ} (hO : ∀ n, O n = Part.some 0) (c
   | comp cf cg ihf ihg => rw [toPartrecCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
   | prec cf cg ihf ihg => rw [toPartrecCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
   | rfind' cf ihf => rw [toPartrecCode, eval, Nat.Partrec.Code.eval, ihf]
+
+/-- An ordinary specialization `c.toPartrecCode` computes the same partial function as `c`
+relative to the constant-zero oracle. -/
+@[simp]
+theorem eval_toPartrecCode_zero (c : Code) :
+    c.toPartrecCode.eval = eval (((fun _ : ℕ => 0) : ℕ → ℕ) : ℕ →. ℕ) c :=
+  (eval_toPartrecCode (fun _ => rfl) c).symm
 
 /-- One strong-recursion step for `toPartrecCode`, building the ordinary code of
 `ofNat Code L.length` from the table `L` of already-translated smaller codes. -/

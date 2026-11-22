@@ -73,7 +73,8 @@ theorem isSigma_one_dom_eval (c : Code) :
 /-- The domain of a partial function recursive in `Z` is Σ⁰₁ relative to `Z`. -/
 theorem _root_.RecursiveIn.isSigma_one_mem_dom {β : Type*} [Primcodable β] {f : α →. β}
     (hf : RecursiveIn {Z.oracle} f) : IsSigma Z 1 (· ∈ f.Dom) := by
-  obtain ⟨c, hc⟩ := RecursiveIn.exists_code.1 hf
+  unfold RecursiveIn at hf
+  obtain ⟨c, hc⟩ := Code.exists_code.1 hf
   exact ((isSigma_one_dom_eval c).preimage Primrec.encode.computableIn).of_eq fun x => by
     simp [PFun.Dom, hc, encodek]
 
@@ -90,7 +91,8 @@ theorem isSigma_one_iff_exists_code : IsSigma Z 1 p ↔
   constructor
   · intro h
     obtain ⟨f, hf, heq⟩ := h.exists_recursiveIn_domain
-    obtain ⟨c, hc⟩ := RecursiveIn.exists_code.1 hf
+    unfold RecursiveIn at hf
+    obtain ⟨c, hc⟩ := Code.exists_code.1 hf
     exact ⟨c, fun x => by simpa [hc, encodek] using heq x⟩
   · rintro ⟨c, heq⟩
     exact ((isSigma_one_dom_eval c).preimage Primrec.encode.computableIn).of_eq
@@ -101,7 +103,8 @@ to `Z`. -/
 theorem _root_.RecursiveIn.isSigma_one_mem_preimage {β : Type*} [Primcodable β] {f : α →. β}
     {S : Set β} (hf : RecursiveIn {Z.oracle} f) (hS : IsSigma Z 1 (· ∈ S)) :
     IsSigma Z 1 (· ∈ f.preimage S) := by
-  obtain ⟨cf, hcf⟩ := RecursiveIn.exists_code.1 hf
+  unfold RecursiveIn at hf
+  obtain ⟨cf, hcf⟩ := Code.exists_code.1 hf
   obtain ⟨cS, hcS⟩ := isSigma_one_iff_exists_code.1 hS
   have heq : ∀ x : α, encode x ∈ (Code.eval Z.oracle (Code.comp cS cf)).Dom ↔
       x ∈ f.preimage S := by

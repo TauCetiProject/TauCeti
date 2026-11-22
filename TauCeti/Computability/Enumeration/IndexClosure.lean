@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Recursion
-public import TauCeti.Computability.TuringDegree
 import TauCeti.Data.PFun.Basic
 
 /-!
@@ -257,12 +256,6 @@ end TauCeti.Oracle.Single.Code
 /-! ### Empty-oracle specializations for ordinary Mathlib codes -/
 
 namespace Nat.Partrec.Code
-
-@[local simp]
-private theorem eval_toPartrecCode_zero (c : TauCeti.Oracle.Single.Code) :
-    c.toPartrecCode.eval =
-      TauCeti.Oracle.Single.Code.eval (((fun _ : ℕ => 0) : ℕ → ℕ) : ℕ →. ℕ) c :=
-  (TauCeti.Oracle.Single.Code.eval_toPartrecCode (fun _ => rfl) c).symm
 
 /-- Finite-union compiler on lists of ordinary codes, specialized from the uniform oracle-program
 compiler at the constant-zero oracle. -/

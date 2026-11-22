@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.Enumeration.IndexClosure
 public import TauCeti.Computability.Hierarchy.One
+import TauCeti.Computability.Enumeration.IndexClosure
 
 /-!
 # Semantic closure properties for relative Σ⁰₁ sets
@@ -47,7 +47,8 @@ namespace RecursiveIn
 /-- The range of a partial function recursive in `Z` is Σ⁰₁ relative to `Z`. -/
 theorem isSigma_one_mem_ran {f : α →. β} (hf : RecursiveIn {Z.oracle} f) :
     IsSigma Z 1 (· ∈ f.ran) := by
-  obtain ⟨c, hc⟩ := RecursiveIn.exists_code.1 hf
+  unfold RecursiveIn at hf
+  obtain ⟨c, hc⟩ := Code.exists_code.1 hf
   have heq : ∀ y : β, encode y ∈ (Code.eval Z.oracle (Code.rangeDom c)).Dom ↔ y ∈ f.ran := by
     intro y
     rw [Code.dom_eval_rangeDom_oracle, hc]
@@ -64,9 +65,11 @@ theorem isSigma_one_mem_ran {f : α →. β} (hf : RecursiveIn {Z.oracle} f) :
 `Z`. -/
 theorem isSigma_one_mem_image {f : α →. β} {S : Set α} (hf : RecursiveIn {Z.oracle} f)
     (hS : IsSigma Z 1 (· ∈ S)) : IsSigma Z 1 (· ∈ f.image S) := by
-  obtain ⟨cf, hcf⟩ := RecursiveIn.exists_code.1 hf
+  unfold RecursiveIn at hf
+  obtain ⟨cf, hcf⟩ := Code.exists_code.1 hf
   obtain ⟨g, hg, hSdom⟩ := hS.exists_recursiveIn_domain
-  obtain ⟨cg, hcg⟩ := RecursiveIn.exists_code.1 hg
+  unfold RecursiveIn at hg
+  obtain ⟨cg, hcg⟩ := Code.exists_code.1 hg
   have heq : ∀ y : β, encode y ∈ (Code.eval Z.oracle (Code.imageDom cf cg)).Dom ↔
       y ∈ f.image S := by
     intro y
@@ -107,22 +110,6 @@ end ComputableIn
 
 namespace TauCeti.ArithmeticalHierarchy
 
-/-- Restricting partial decoding `ℕ →. α` to the domain of an oracle program `c` on encoded
-inputs is recursive in the oracle. -/
-theorem recursiveIn_decode_restrict (O : ℕ →. ℕ) (c : Code) :
-    RecursiveIn {O} fun n =>
-      (Part.ofOption (decode (α := α) n)).bind fun x =>
-        (Code.eval O c (encode x)).map fun _ => x := by
-  have hdec : Nat.RecursiveIn {O} fun n => Part.ofOption ((decode (α := α) n).map encode) :=
-    (Partrec.nat_iff.1 (Computable.ofOption
-      (Computable.decode.option_map (Computable.encode.comp Computable.snd).to₂))).recursiveIn
-  refine RecursiveIn.iff_nat_map_encode.2
-    (((Code.recursiveIn_eval O (Code.restrictId c)).comp hdec).of_eq fun n => ?_)
-  change Part.bind _ (fun k => Code.eval O (Code.restrictId c) k) = _
-  cases decode (α := α) n with
-  | none => simp [Part.bind_none]
-  | some x => simp [Part.bind_some, Code.eval_restrictId, Part.map_map, Function.comp_def]
-
 /-- A set in any primitive-codable type is Σ⁰₁ relative to `Z` if and only if it is the range of a
 partial function `ℕ →. α` recursive in `Z`. Unlike total range presentations, this holds for the
 empty set as well. -/
@@ -130,7 +117,7 @@ theorem isSigma_one_iff_exists_recursiveIn_ran {S : Set α} :
     IsSigma Z 1 (· ∈ S) ↔ ∃ f : ℕ →. α, RecursiveIn {Z.oracle} f ∧ f.ran = S := by
   refine ⟨fun hS => ?_, fun ⟨f, hf, hran⟩ => hran ▸ hf.isSigma_one_mem_ran⟩
   obtain ⟨c, hc⟩ := isSigma_one_iff_exists_code.1 hS
-  refine ⟨_, recursiveIn_decode_restrict (α := α) Z.oracle c, Set.ext fun y => ?_⟩
+  refine ⟨_, Code.recursiveIn_decode_restrict (α := α) Z.oracle c, Set.ext fun y => ?_⟩
   simp only [PFun.ran, Set.mem_ofPred_eq, Part.mem_bind_iff, Part.mem_ofOption, Part.mem_map_iff]
   constructor
   · rintro ⟨n, x, _, w, hw, rfl⟩

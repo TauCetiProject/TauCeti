@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Enumeration.Code
-public import TauCeti.Computability.RecursiveIn
 import TauCeti.Computability.Primrec.FiniteSet
 
 /-!

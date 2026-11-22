@@ -147,8 +147,8 @@ theorem evalStage_eq_of_eqOn (hστ : Set.EqOn σ τ (Set.Iio s)) :
 /-- Stage evaluation at stage `s` against a total oracle depends only on its first `s` answers. -/
 theorem evalStage_range_map (O : ℕ → ℕ) (s : ℕ) (c : Code) (n : ℕ) :
     evalStage (fun z => ((List.range s).map O)[z]?) s c n =
-      evalStage (fun z => some (O z)) s c n :=
-  evalStage_eq_of_eqOn fun z hz => by simp [Set.mem_Iio.1 hz]
+      evalStage (fun z => some (O z)) s c n := by
+  simp only [evalStage_def, evaln_range_map]
 
 /-- Every successful raw run is eventually retained at all normalized stages. The output and
 recorded use are those of the original run, not merely some run with the same output. -/

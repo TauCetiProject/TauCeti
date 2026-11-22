@@ -19,6 +19,8 @@ domain-restricted identity maps.
 ## Main results
 
 * `PFun.some_bind`: `Part.some a >>= f = f a` for a partial function `f`.
+* `PFun.ran_res`: the range of `PFun.res h S` is `h '' S`.
+* `PFun.ran_comp`: the range of `g.comp f` is `g.image f.ran`.
 * `PFun.ran_map_const`: the range of `fun x => (f x).map fun _ => x` is `f.Dom`.
 * `PFun.ran_comp_map_const`: the range of `g.comp fun x => (f x).map fun _ => x` is
   `g.image f.Dom`.
@@ -35,30 +37,35 @@ namespace PFun
 theorem some_bind {α β : Type u} (f : α →. β) (a : α) : Part.some a >>= f = f a :=
   Part.bind_some a f
 
+/-- The range of a total function restricted to a set `S` is `h '' S`. -/
+theorem ran_res {α : Type u} {β : Type v} (h : α → β) (S : Set α) :
+    (PFun.res h S).ran = h '' S := by
+  ext y
+  simp [ran, mem_res]
+
+/-- The range of a partial-function composition `g.comp f` is the image of `f.ran` under `g`. -/
+theorem ran_comp {α : Type u} {β : Type v} {γ : Type w} (g : β →. γ) (f : α →. β) :
+    (g.comp f).ran = g.image f.ran := by
+  ext z
+  simp only [ran, Set.mem_ofPred_eq, comp_apply, mem_image]
+  constructor
+  · rintro ⟨x, hx⟩
+    obtain ⟨y, hy, hz⟩ := Part.mem_bind_iff.1 hx
+    exact ⟨y, ⟨x, hy⟩, hz⟩
+  · rintro ⟨y, ⟨x, hy⟩, hz⟩
+    exact ⟨x, Part.mem_bind_iff.2 ⟨y, hy, hz⟩⟩
+
 /-- Restricting the identity to the domain of `f` has range equal to `f.Dom`. -/
 theorem ran_map_const {α : Type u} {β : Type v} (f : α →. β) :
     PFun.ran (fun x => (f x).map fun _ => x) = f.Dom := by
-  ext y
-  simp only [ran, Set.mem_ofPred_eq, Part.mem_map_iff, mem_dom]
-  exact ⟨fun ⟨_, b, hb, rfl⟩ => ⟨b, hb⟩, fun ⟨b, hb⟩ => ⟨y, b, hb, rfl⟩⟩
+  have hres : (fun x => (f x).map fun _ => x) = PFun.res id f.Dom := by
+    ext x y
+    simp [mem_res, Part.mem_map_iff, mem_dom]
+  rw [hres, ran_res, Set.image_id]
 
 /-- Composing `g` with the identity restricted to the domain of `f` has range `g.image f.Dom`. -/
 theorem ran_comp_map_const {α : Type u} {β : Type v} {γ : Type w} (g : α →. γ) (f : α →. β) :
-    PFun.ran (PFun.comp g fun x => (f x).map fun _ => x) = g.image f.Dom := by
-  ext y
-  have hcomp (x : α) :
-      PFun.comp g (fun x => (f x).map fun _ => x) x = ((f x).map fun _ => x).bind g :=
-    PFun.comp_apply g (fun x => (f x).map fun _ => x) x
-  simp only [ran, Set.mem_ofPred_eq, mem_image, mem_dom]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨x, hx⟩
-    rw [hcomp] at hx
-    obtain ⟨x', hx', hy⟩ := Part.mem_bind_iff.1 hx
-    obtain ⟨b, hb, rfl⟩ := (Part.mem_map_iff _).1 hx'
-    exact ⟨x, ⟨b, hb⟩, hy⟩
-  · rintro ⟨x, ⟨b, hb⟩, hy⟩
-    refine ⟨x, ?_⟩
-    rw [hcomp]
-    exact Part.mem_bind_iff.2 ⟨x, (Part.mem_map_iff _).2 ⟨b, hb, rfl⟩, hy⟩
+    PFun.ran (PFun.comp g fun x => (f x).map fun _ => x) = g.image f.Dom :=
+  (ran_comp g (fun x => (f x).map fun _ => x)).trans <| by rw [ran_map_const]
 
 end PFun

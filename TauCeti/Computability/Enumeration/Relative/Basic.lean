@@ -20,6 +20,8 @@ as limits of `Z`-computable monotone finite stages, with or without single-entry
 
 ## Main results
 
+* `TauCeti.Oracle.Single.Code.stageLimit_domStage_toSingleOracleCode`: query-free relative domain
+  stages agree in the limit with ordinary `Nat.Partrec.Code.domStage`.
 * `TauCeti.Enumeration.computableIn_serializedStage_domStage_setAnswers`: relative serialization
   produces uniformly `Z`-computable domain stages.
 * `TauCeti.Enumeration.isSigma_one_mem_stageLimit`,
@@ -38,6 +40,20 @@ as limits of `Z`-computable monotone finite stages, with or without single-entry
 public section
 
 open TauCeti.ArithmeticalHierarchy TauCeti.Oracle.Single
+
+namespace TauCeti.Oracle.Single.Code
+
+/-- For a query-free program, the relative domain stages have the same limit as Mathlib's ordinary
+code domain stages, for every oracle answer table `σ`. -/
+theorem stageLimit_domStage_toSingleOracleCode (σ : ℕ → Option ℕ) (c : Nat.Partrec.Code) :
+    TauCeti.Enumeration.stageLimit (c.toSingleOracleCode.domStage σ) =
+      TauCeti.Enumeration.stageLimit c.domStage := by
+  let O : ℕ →. ℕ := fun z => Part.ofOption (σ z)
+  rw [stageLimit_domStage (O := O) (by simp [O, Part.mem_ofOption]),
+    eval_toSingleOracleCode, Nat.Partrec.Code.stageLimit_domStage]
+  rfl
+
+end TauCeti.Oracle.Single.Code
 
 namespace TauCeti.Enumeration
 

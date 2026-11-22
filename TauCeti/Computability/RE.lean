@@ -25,7 +25,7 @@ computable pieces:
 * `REPred.and`, `REPred.or`, `REPred.forall_mem_finset`, `REPred.exists_mem_finset`,
   `REPred.exists`: closure of c.e. predicates under binary and finite conjunction/disjunction and
   existential quantification over any primitive-codable type;
-* `Partrec.rePred_mem_eval`, `Partrec.rePred_mem_ran`, `Partrec.rePred_mem_image`,
+* `Partrec.rePred_mem_graph`, `Partrec.rePred_mem_ran`, `Partrec.rePred_mem_image`,
   `Partrec.rePred_mem_preimage`, `Computable.rePred_mem_range`, `Computable.rePred_mem_image`:
   graphs, ranges, partial images, and partial preimages of c.e. sets are c.e.;
 * `Set.Finite.computablePred`, `Set.Infinite.of_not_computablePred`: membership in a finite set is
@@ -171,28 +171,31 @@ end REPred
 
 namespace Partrec
 
-/-- The graph relation `y ∈ f x` of a partial computable function is c.e. -/
-theorem rePred_mem_eval {β : Type*} [Primcodable β] {f : α →. β} (hf : Partrec f) :
-    REPred fun p : β × α => p.1 ∈ f p.2 := by
+/-- Membership in the graph `f.graph` of a partial computable function is c.e. -/
+theorem rePred_mem_graph {β : Type*} [Primcodable β] {f : α →. β} (hf : Partrec f) :
+    REPred (· ∈ f.graph) := by
   let : DecidableEq β := Encodable.decidableEqOfEncodable β
   have heq : REPred fun p : β × β => p.1 = p.2 :=
     (Primrec.eq.decide.to_comp.comp Computable.fst Computable.snd).computablePred.to_re.of_eq
       fun _ => by simp
-  exact ((hf.comp Computable.snd).bind
-    (heq.comp (Computable.snd.pair (Computable.fst.comp Computable.fst))).to₂).dom_re.of_eq
-    fun p => by simp [Part.dom_iff_mem]
+  exact ((hf.comp Computable.fst).bind
+    (heq.comp (Computable.snd.pair (Computable.snd.comp Computable.fst))).to₂).dom_re.of_eq
+    fun p => by simp [PFun.graph, Part.dom_iff_mem]
 
 /-- The range of a partial computable function is c.e. -/
 theorem rePred_mem_ran {β : Type*} [Primcodable β] {f : α →. β} (hf : Partrec f) :
     REPred (· ∈ f.ran) :=
-  (REPred.exists (rePred_mem_eval hf)).of_eq fun _ => Iff.rfl
+  (REPred.exists (hf.rePred_mem_graph.comp (Computable.snd.pair Computable.fst))).of_eq fun y => by
+    simp [PFun.ran, PFun.graph]
 
 /-- The image of a c.e. set under a partial computable function is c.e. -/
 theorem rePred_mem_image {β : Type*} [Primcodable β] {f : α →. β} {S : Set α}
     (hf : Partrec f) (hS : REPred (· ∈ S)) : REPred (· ∈ f.image S) := by
   have hS' : REPred fun p : β × α => p.2 ∈ S := hS.comp Computable.snd
-  exact (REPred.exists (hS'.and (rePred_mem_eval hf))).of_eq fun y => by
-    simp [PFun.mem_image]
+  have hgr : REPred fun p : β × α => (p.2, p.1) ∈ f.graph :=
+    hf.rePred_mem_graph.comp (Computable.snd.pair Computable.fst)
+  exact (REPred.exists (hS'.and hgr)).of_eq fun y => by
+    simp [PFun.mem_image, PFun.graph]
 
 /-- The preimage of a c.e. set under a partial computable function is c.e. -/
 theorem rePred_mem_preimage {β : Type*} [Primcodable β] {f : α →. β} {S : Set β}

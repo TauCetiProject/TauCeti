@@ -7,9 +7,8 @@ module
 
 import TauCeti.Computability.Enumeration.Relative.Basic
 import TauCeti.Computability.Enumeration.Comparison
-import TauCeti.Computability.Enumeration.Closure
+import TauCeti.Computability.Enumeration.IndexClosure
 import TauCeti.Computability.Enumeration.Range
-import TauCeti.Computability.Primrec.FiniteSet
 import TauCeti.Computability.RE
 
 /-!
@@ -17,8 +16,8 @@ import TauCeti.Computability.RE
 
 These examples exercise `TauCeti.Computability.Enumeration.Relative.Basic`,
 `TauCeti.Computability.Enumeration.Comparison`, `TauCeti.Computability.Enumeration.IndexClosure`,
-`TauCeti.Computability.Enumeration.Closure`, `TauCeti.Computability.Enumeration.Range`, and
-`TauCeti.Computability.RE` from a downstream module, using public APIs only:
+`TauCeti.Computability.Enumeration.Range`, and `TauCeti.Computability.RE` from a downstream
+module, using public APIs only:
 
 * the empty set is c.e. and admits a partial computable range presentation without any
   nonemptiness hypothesis;
@@ -107,9 +106,9 @@ example :
   have : 2 * s ≤ t := Finset.range_subset_range.1 hsub
   omega
 
--- Monotonicity of the target enumeration is necessary for `stageCompare_dom_of_stageLimit_subset`:
--- two enumerations with the same limit `{0, 1}` can have an everywhere-undefined `stageCompare`
--- when `B` alternates between `{0}` and `{1}`.
+-- Directedness of the target enumeration cannot be dropped in general in
+-- `stageCompare_dom_of_stageLimit_subset`: two enumerations with the same limit `{0, 1}` can have
+-- an everywhere-undefined `stageCompare` when `B` alternates between `{0}` and `{1}`.
 example :
     stageLimit (fun _ => ({0, 1} : Finset ℕ)) =
         stageLimit (fun s => if s % 2 = 0 then {0} else {1}) ∧

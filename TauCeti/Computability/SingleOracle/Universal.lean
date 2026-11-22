@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Primrec
+import TauCeti.Computability.Partrec.Search
 import TauCeti.Computability.SingleOracle.Staged.Search
 import TauCeti.Data.PFun.Basic
 
@@ -108,20 +109,16 @@ theorem exists_code_rfind_answers {p : ℕ × ℕ × List ℕ → Bool} (hp : Pr
     ∃ c : Code, ∀ (O : ℕ → ℕ) n,
       eval (O : ℕ →. ℕ) c n =
         Nat.rfind fun k => Part.some (p (n, k, (List.range k).map O)) := by
-  obtain ⟨t, ht⟩ := exists_code_answers_apply (g := fun q => bif p q then 0 else 1)
-    (Primrec.cond hp (const 0) (const 1))
-  refine ⟨comp (rfind' t) (pair (pair left right) zero), fun O n => ?_⟩
-  have hid : eval (O : ℕ →. ℕ) (pair (pair left right) zero) n = Part.some (Nat.pair n 0) := by
-    rw [eval_pair, eval_pair_left_right, eval_zero]
-    simp [Seq.seq]
-  rw [eval_comp, hid, PFun.some_bind, eval_rfind']
-  have hstep : (fun m => (fun m => decide (m = 0)) <$> eval (O : ℕ →. ℕ) t (Nat.pair n (m + 0))) =
-      fun k => Part.some (p (n, k, (List.range k).map O)) := by
-    funext k
-    rw [add_zero, ht]
-    cases p (n, k, (List.range k).map O) <;> simp
-  rw [hstep]
-  exact Part.ext fun _ => by simp
+  obtain ⟨t, ht⟩ := exists_code_answers_apply
+    (g := fun q => encode (bif p q then some q.2.1 else (none : Option ℕ))) <|
+    Primrec.encode.comp <| Primrec.cond hp (option_some.comp (fst.comp snd)) (const none)
+  refine ⟨t.searchStages, fun O n => ?_⟩
+  let A (k : ℕ) : Option ℕ := bif p (n, k, (List.range k).map O) then some k else none
+  rw [eval_searchStages (A := A) (ht O n)]
+  ext k
+  rw [Nat.mem_rfindOpt_iff,
+    Nat.mem_rfind (p := fun k => (Part.some (p (n, k, (List.range k).map O)) : Part Bool))]
+  simp [A]
 
 /-- A single program whose domain on `n`, relative to every total oracle `O`, is the set of inputs
 admitting a witness `k` at which a primitive recursive predicate holds of `(n, k)` and the finite

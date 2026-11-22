@@ -198,6 +198,12 @@ theorem rfind {α : Type*} [Primcodable α] {O : Set (ℕ →. ℕ)} {p : α →
     · simp [hm]
     · cases b <;> simp [hm]
 
+/-- A partial function out of `ℕ` is recursive in `O` iff its encoded composition is
+`Nat.RecursiveIn` in `O`. -/
+theorem iff_nat_map_encode {β : Type*} [Primcodable β] {O : Set (ℕ →. ℕ)} {f : ℕ →. β} :
+    RecursiveIn O f ↔ Nat.RecursiveIn O fun n => (f n).map encode := by
+  simp [RecursiveIn]
+
 end RecursiveIn
 
 namespace ComputableIn

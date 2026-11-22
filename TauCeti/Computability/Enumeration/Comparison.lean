@@ -35,6 +35,7 @@ premises, and when `B` is directed under inclusion its totality characterizes
   characterizes limiting-set inclusion and equality for directed enumerations.
 * `TauCeti.Enumeration.recursiveIn_stageCompare`, `TauCeti.Enumeration.partrec_stageCompare`,
   `TauCeti.Enumeration.computableIn_stageCompare_get`,
+  `TauCeti.Enumeration.computable_stageCompare_get`,
   `TauCeti.Enumeration.exists_computableIn_stage_comparison`,
   `TauCeti.Enumeration.exists_computable_stage_comparison`: uniform effectivity and total
   stage-transfer maps.
@@ -143,6 +144,16 @@ theorem computableIn_stageCompare_get {α : Type*} [Primcodable α] {G : Set (�
     (hdom : ∀ a s, (stageCompare (A a) (B a) s).Dom) :
     ComputableIn G fun p : α × ℕ => (stageCompare (A p.1) (B p.1) p.2).get (hdom p.1 p.2) :=
   (recursiveIn_stageCompare hA hB).of_eq_tot fun p => Part.get_mem (hdom p.1 p.2)
+
+/-- Totality corollary: whenever `stageCompare` is total across a uniformly computable family of
+pairs of enumerations, the resulting stage-transfer map is total and computable. -/
+theorem computable_stageCompare_get {α : Type*} [Primcodable α] {A B : α → ℕ → Finset ℕ}
+    (hA : Computable fun p : α × ℕ => Finset.equivBitIndices.symm (A p.1 p.2))
+    (hB : Computable fun p : α × ℕ => Finset.equivBitIndices.symm (B p.1 p.2))
+    (hdom : ∀ a s, (stageCompare (A a) (B a) s).Dom) :
+    Computable fun p : α × ℕ => (stageCompare (A p.1) (B p.1) p.2).get (hdom p.1 p.2) :=
+  TauCeti.computableIn_empty_iff.1
+    (computableIn_stageCompare_get hA.computableIn hB.computableIn hdom)
 
 /-- Uniformly oracle-computable families of directed enumerations with equal limiting sets admit
 jointly oracle-computable stage-comparison maps witnessing both inclusions
