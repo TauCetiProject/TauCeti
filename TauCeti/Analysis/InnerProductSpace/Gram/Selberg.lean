@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
 
 /-!
 # Selberg's weighted Gram inequality and Gram-row bounds
@@ -25,15 +22,15 @@ This file proves:
   inner-product space).
 * `Finset.norm_sum_smul_sq_le_sum_mul_sum_norm_inner`: for any scalars `c : ι → 𝕜`,
   `‖∑ i ∈ s, c i • y i‖ ^ 2 ≤ ∑ i ∈ s, ‖c i‖ ^ 2 * r i`.
-* `Finset.norm_sub_sum_inner_div_sq_le`: Selberg's normalized projection defect bound,
+* `Finset.norm_sub_sum_smul_sq_le`: Selberg's normalized projection defect bound,
   `‖x - ∑ i ∈ s, (⟪y i, x⟫_𝕜 / r i) • y i‖ ^ 2 ≤ ‖x‖ ^ 2 - ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 / r i`.
 * `Finset.sum_norm_inner_sq_div_le`: **Selberg's weighted Gram inequality**,
   `∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 / r i ≤ ‖x‖ ^ 2`, with zero rows contributing zero under totalized
   real division.
 * `Finset.sum_norm_inner_sq_le_of_sum_norm_inner_le`: the uniform Gram-row inequality,
   `∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 ≤ C * ‖x‖ ^ 2` whenever `0 ≤ C` and `r i ≤ C` for all `i ∈ s`.
-* `TauCeti.sum_norm_inner_sq_le_sup'_sum_norm_inner`: the maximum-row Gram inequality for nonempty
-  `s`.
+* `TauCeti.sum_norm_inner_sq_le_sup'_sum_norm_inner_mul_norm_sq`: the maximum-row Gram inequality
+  for nonempty `s`.
 * `Finset.sum_norm_inner_sq_le_of_diag_offDiag`: the diagonal/off-diagonal Gram inequality when
   `‖y i‖ ^ 2 ≤ D` and `∑ j ∈ s.erase i, ‖⟪y i, y j⟫_𝕜‖ ≤ O` with `0 ≤ D + O`.
 
@@ -124,7 +121,7 @@ theorem norm_sum_smul_sq_le_sum_mul_sum_norm_inner (s : Finset ι) (y : ι → E
 /-- **Selberg's normalized projection defect bound** (Bombieri, eqs. (3)–(4)):
 setting `c i = ⟪y i, x⟫_𝕜 / r i` where `r i = ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖`, we have
 `‖x - ∑ i ∈ s, c i • y i‖ ^ 2 ≤ ‖x‖ ^ 2 - ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 / r i`. -/
-theorem norm_sub_sum_inner_div_sq_le (s : Finset ι) (y : ι → E) (x : E) :
+theorem norm_sub_sum_smul_sq_le (s : Finset ι) (y : ι → E) (x : E) :
     ‖x - ∑ i ∈ s, (⟪y i, x⟫_𝕜 / ((∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖ : ℝ) : 𝕜)) • y i‖ ^ 2 ≤
       ‖x‖ ^ 2 - ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 / ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖ := by
   let r : ι → ℝ := fun i ↦ ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖
@@ -162,7 +159,7 @@ Zero rows contribute zero under totalized real division; no completeness, indepe
 nonvanishing assumption is needed. -/
 theorem sum_norm_inner_sq_div_le (s : Finset ι) (y : ι → E) (x : E) :
     ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 / (∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖) ≤ ‖x‖ ^ 2 := by
-  have hdef := s.norm_sub_sum_inner_div_sq_le (𝕜 := 𝕜) y x
+  have hdef := s.norm_sub_sum_smul_sq_le (𝕜 := 𝕜) y x
   linarith [sq_nonneg ‖x - ∑ i ∈ s,
     (⟪y i, x⟫_𝕜 / ((∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖ : ℝ) : 𝕜)) • y i‖]
 
@@ -201,7 +198,7 @@ namespace TauCeti
 /-- **Maximum-row Gram inequality** (Bennett–Siksek 2020, Theorem 7): for a nonempty finite family
 `y : ι → E` on `s : Finset ι`, the sum of squared inner products with `x` is at most `‖x‖ ^ 2`
 times the maximum Gram row sum. -/
-theorem sum_norm_inner_sq_le_sup'_sum_norm_inner {s : Finset ι} (hs : s.Nonempty)
+theorem sum_norm_inner_sq_le_sup'_sum_norm_inner_mul_norm_sq {s : Finset ι} (hs : s.Nonempty)
     (y : ι → E) (x : E) :
     ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 ≤
       s.sup' hs (fun i ↦ ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖) * ‖x‖ ^ 2 := by

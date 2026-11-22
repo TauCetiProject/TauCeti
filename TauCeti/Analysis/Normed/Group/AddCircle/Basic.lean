@@ -8,9 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Group.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Ring
 
 /-!
 # Metric bounds and circular packing on `UnitAddCircle`
@@ -18,8 +15,8 @@ import Mathlib.Tactic.Ring
 This file records elementary metric and geometric estimates on the unit additive circle
 `UnitAddCircle = ℝ / ℤ`:
 
-* `TauCeti.two_mul_norm_unitAddCircle_le_abs_sin` and
-  `TauCeti.four_mul_norm_unitAddCircle_sq_le_sin_sq`: Jordan's sine lower bound
+* `Real.two_mul_norm_unitAddCircle_le_abs_sin` and
+  `Real.four_mul_norm_unitAddCircle_sq_le_sin_sq`: Jordan's sine lower bound
   `2 * ‖(t : UnitAddCircle)‖ ≤ |sin (π * t)|` and its squared form.
 * `TauCeti.card_filter_floor_norm_unitAddCircle_div_le_two`: circular radial bin-packing bound
   showing that at most two points of a `δ`-separated finite family lie in each shell
@@ -30,7 +27,7 @@ This file records elementary metric and geometric estimates on the unit additive
 
 public section
 
-namespace TauCeti
+namespace Real
 
 /-- Jordan's sine lower bound on `UnitAddCircle = ℝ / ℤ`:
 `2 * ‖(t : UnitAddCircle)‖ ≤ |sin (π * t)|`. -/
@@ -60,8 +57,12 @@ theorem two_mul_norm_unitAddCircle_le_abs_sin (t : ℝ) :
 `4 * ‖(t : UnitAddCircle)‖ ^ 2 ≤ sin (π * t) ^ 2`. -/
 theorem four_mul_norm_unitAddCircle_sq_le_sin_sq (t : ℝ) :
     4 * ‖(t : UnitAddCircle)‖ ^ 2 ≤ Real.sin (Real.pi * t) ^ 2 := by
-  nlinarith [two_mul_norm_unitAddCircle_le_abs_sin t, sq_abs (Real.sin (Real.pi * t)),
+  nlinarith [t.two_mul_norm_unitAddCircle_le_abs_sin, sq_abs (Real.sin (Real.pi * t)),
     norm_nonneg (t : UnitAddCircle)]
+
+end Real
+
+namespace TauCeti
 
 /-- Circular radial bin-packing bound: around any center `c : ℝ`, each radial bin
 `⌊‖c - x j‖ / δ⌋₊ = m` of a `δ`-separated finite family in `UnitAddCircle` contains at most two
