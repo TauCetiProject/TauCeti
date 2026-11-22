@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupExtension.Quotient.Basic
-public import TauCeti.GroupTheory.GroupExtension.FactorSetOfSection
 
 /-!
 # The quotient action on an abelian normal subgroup
