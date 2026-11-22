@@ -15,12 +15,14 @@ import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 A rough density of degree `m` on a manifold assigns to each point a density of degree `m` on
 its tangent space, with no regularity in the base point; in top degree these are sections of
-the density line bundle `TauCeti.DensityBundle`. On an oriented manifold, a top form `φ`
-determines the rough density `φ.toDensity o`. At each point it agrees with `φ` on positively
-oriented bases of the tangent space and with `-φ` on negatively oriented ones. It is additive
-and homogeneous in `φ`, negated by reversing the orientation, and determines `φ` once the
-orientation is fixed. This is the comparison through which oriented integration of top forms
-becomes a special case of the orientation-free integration of densities.
+the density line bundle `TauCeti.DensityBundle`. The support of a sum of rough densities lies in
+the union of their supports, and a nonzero scalar multiple has the same support
+(`TauCeti.RoughDensity.tsupport_add_subset`, `TauCeti.RoughDensity.tsupport_smul`). On an
+oriented manifold, a top form `φ` determines the rough density `φ.toDensity o`. At each point
+it agrees with `φ` on positively oriented bases of the tangent space and with `-φ` on negatively
+oriented ones. It is additive and homogeneous in `φ`, negated by reversing the orientation, and
+determines `φ` once the orientation is fixed. This is the comparison through which oriented
+integration of top forms becomes a special case of the orientation-free integration of densities.
 
 ## References
 
@@ -43,6 +45,41 @@ regularity in the base point. -/
 abbrev RoughDensity (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] (m : ℕ) : Type _ :=
   (x : M) → Density (TangentSpace I x) m
+
+namespace RoughDensity
+
+variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {m : ℕ}
+
+/-- The support of a sum of densities lies in the union of their supports. -/
+theorem tsupport_add_subset (μ ν : RoughDensity I M m) :
+    _root_.tsupport (α := Density E m) (μ + ν) ⊆
+      _root_.tsupport (α := Density E m) μ ∪ _root_.tsupport (α := Density E m) ν := by
+  refine closure_minimal (fun x hx ↦ ?_)
+    ((isClosed_tsupport (α := Density E m) μ).union (isClosed_tsupport (α := Density E m) ν))
+  by_contra h
+  rw [Set.mem_union, not_or] at h
+  have hμ : μ x = 0 := image_eq_zero_of_notMem_tsupport (α := Density E m) h.1
+  have hν : ν x = 0 := image_eq_zero_of_notMem_tsupport (α := Density E m) h.2
+  -- The final `rfl` identifies the zero of `Density (TangentSpace I x) m` with that of
+  -- `Density E m`, the codomain used for the support.
+  exact Function.mem_support.mp hx (by rw [Pi.add_apply, hμ, hν, add_zero]; rfl)
+
+/-- Scalar multiplication does not enlarge the support of a density. -/
+theorem tsupport_smul_subset (c : ℝ) (μ : RoughDensity I M m) :
+    _root_.tsupport (α := Density E m) (c • μ) ⊆ _root_.tsupport (α := Density E m) μ := by
+  refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport (α := Density E m) μ)
+  by_contra h
+  have hμ : μ x = 0 := image_eq_zero_of_notMem_tsupport (α := Density E m) h
+  -- As in `tsupport_add_subset`, `rfl` identifies the zeros of the two density codomains.
+  exact Function.mem_support.mp hx (by rw [Pi.smul_apply, hμ, smul_zero]; rfl)
+
+/-- Multiplication by a nonzero scalar preserves the support of a density. -/
+theorem tsupport_smul {c : ℝ} (hc : c ≠ 0) (μ : RoughDensity I M m) :
+    _root_.tsupport (α := Density E m) (c • μ) = _root_.tsupport (α := Density E m) μ := by
+  refine (tsupport_smul_subset c μ).antisymm ?_
+  simpa only [smul_smul, inv_mul_cancel₀ hc, one_smul] using tsupport_smul_subset c⁻¹ (c • μ)
+
+end RoughDensity
 
 variable [FiniteDimensional ℝ E] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I 1 M] {m : ℕ}

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Set integrals over coordinate images of chart pieces
@@ -16,12 +18,16 @@ image of a chart-measurable subset of a chart source splits along these pieces
 (`TauCeti.setIntegral_image_extChartAt_eq_sum_disjointed`), and two finite chart-measurable covers
 of a set give the same sum of chart integrals for chart coefficients that agree on chart overlaps
 (`TauCeti.sum_setIntegral_image_extChartAt_disjointed_eq`). This is the cover-independence step
-in the integration of top forms and of densities. Only the model carries a measurable structure.
+in the integration of top forms and of densities. Chart coefficients related by the absolute
+Jacobian of the transition map have equal integrals over the two coordinate images of a subset
+of a chart overlap (`TauCeti.setIntegral_image_extChartAt_changeChart`). Only the model carries a
+measurable structure.
 -/
 
 public section
 
 open MeasureTheory Set
+open scoped Manifold
 
 namespace TauCeti
 
@@ -103,5 +109,36 @@ theorem sum_setIntegral_image_extChartAt_disjointed_eq [MeasurableSpace E]
     _ = ∑ j, ∫ y in (extChartAt I (β j)) '' disjointed v j, f (β j) y ∂ν :=
       (Finset.sum_congr rfl fun j _ ↦
         hsplit (β j) (IsChartMeasurable.disjointed hv j) (hpv j) (hfv j) hu hc).symm
+
+/-- Chart coefficients that satisfy the absolute Jacobian law on a chart overlap have equal
+integrals over the coordinate images of a subset of the overlap, and are integrable there
+together. This is the change of variables shared by top forms and densities; the derivatives are
+taken within `range I`, so boundary and corner models are included. -/
+theorem setIntegral_image_extChartAt_changeChart [MeasurableSpace E] [BorelSpace E]
+    [IsManifold I 1 M] [FiniteDimensional ℝ E] {f g : E → ℝ} (α β : M) {s : Set M}
+    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source)
+    (hs : MeasurableSet ((extChartAt I α) '' s))
+    (hfg : ∀ x ∈ s, |(fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm) (range I)
+        (extChartAt I α x)).toLinearMap.det| * g (extChartAt I β x) = f (extChartAt I α x))
+    (μ : Measure E) [μ.IsAddHaarMeasure] :
+    (∫ y in (extChartAt I α) '' s, f y ∂μ) = (∫ y in (extChartAt I β) '' s, g y ∂μ) ∧
+      (IntegrableOn f ((extChartAt I α) '' s) μ ↔ IntegrableOn g ((extChartAt I β) '' s) μ) := by
+  let A := (extChartAt I α) '' s
+  let e := (extChartAt I α).symm ≫ extChartAt I β
+  let D := fun y ↦ fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm) (range I) y
+  have himage := TauCeti.extChartAt_coordChange_image α β hsub
+  have hinj := TauCeti.injOn_extChartAt_coordChange α β hsub
+  have hderiv := TauCeti.hasFDerivWithinAt_extChartAt_coordChange α β hsub
+  have hcoef : ∀ y ∈ A, |(D y).toLinearMap.det| • g (e y) = f y := by
+    rintro _ ⟨x, hx, rfl⟩
+    have he : e (extChartAt I α x) = extChartAt I β x :=
+      congrArg (extChartAt I β) ((extChartAt I α).left_inv (hsub hx).1)
+    rw [he, smul_eq_mul]
+    exact hfg x hx
+  constructor
+  · rw [← himage, integral_image_eq_integral_abs_det_fderiv_smul μ hs hderiv hinj]
+    exact setIntegral_congr_fun hs fun y hy ↦ (hcoef y hy).symm
+  · rw [← himage, integrableOn_image_iff_integrableOn_abs_det_fderiv_smul μ hs hderiv hinj]
+    exact (integrableOn_congr_fun (fun y hy ↦ hcoef y hy) hs).symm
 
 end TauCeti

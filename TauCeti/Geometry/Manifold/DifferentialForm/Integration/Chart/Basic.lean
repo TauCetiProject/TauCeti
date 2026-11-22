@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Function.L1Space.Integrable
 public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
+public import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 public import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
@@ -96,37 +97,6 @@ theorem eqOn_signedInChartAt_image {φ ψ : RoughForm I M ℝ k} {s : Set M} (h 
     signedInChartAt_apply_of_mem_source _ _ _ _ (hs hx), hc]
 
 variable [MeasurableSpace E] [BorelSpace E]
-
-/-- Chart coefficients that satisfy the absolute Jacobian law on a chart overlap have equal
-integrals over the coordinate images of a subset of the overlap, and are integrable there
-together. This is the change of variables shared by top forms and densities; the derivatives are
-taken within `range I`, so boundary and corner models are included. -/
-theorem _root_.TauCeti.setIntegral_image_extChartAt_changeChart [IsManifold I 1 M]
-    [FiniteDimensional ℝ E] {f g : E → ℝ} (α β : M) {s : Set M}
-    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source)
-    (hs : MeasurableSet ((extChartAt I α) '' s))
-    (hfg : ∀ x ∈ s, |(fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm) (range I)
-        (extChartAt I α x)).toLinearMap.det| * g (extChartAt I β x) = f (extChartAt I α x))
-    (μ : Measure E) [μ.IsAddHaarMeasure] :
-    (∫ y in (extChartAt I α) '' s, f y ∂μ) = (∫ y in (extChartAt I β) '' s, g y ∂μ) ∧
-      (IntegrableOn f ((extChartAt I α) '' s) μ ↔ IntegrableOn g ((extChartAt I β) '' s) μ) := by
-  let A := (extChartAt I α) '' s
-  let e := (extChartAt I α).symm ≫ extChartAt I β
-  let D := fun y ↦ fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm) (range I) y
-  have himage := TauCeti.extChartAt_coordChange_image α β hsub
-  have hinj := TauCeti.injOn_extChartAt_coordChange α β hsub
-  have hderiv := TauCeti.hasFDerivWithinAt_extChartAt_coordChange α β hsub
-  have hcoef : ∀ y ∈ A, |(D y).toLinearMap.det| • g (e y) = f y := by
-    rintro _ ⟨x, hx, rfl⟩
-    have he : e (extChartAt I α x) = extChartAt I β x :=
-      congrArg (extChartAt I β) ((extChartAt I α).left_inv (hsub hx).1)
-    rw [he, smul_eq_mul]
-    exact hfg x hx
-  constructor
-  · rw [← himage, integral_image_eq_integral_abs_det_fderiv_smul μ hs hderiv hinj]
-    exact setIntegral_congr_fun hs fun y hy ↦ (hcoef y hy).symm
-  · rw [← himage, integrableOn_image_iff_integrableOn_abs_det_fderiv_smul μ hs hderiv hinj]
-    exact (integrableOn_congr_fun (fun y hy ↦ hcoef y hy) hs).symm
 
 /-- Signed preferred-chart integrals and integrability agree on an actual overlap. The
 compatibility condition is the signed transition Jacobian, not an assumed integral identity.
