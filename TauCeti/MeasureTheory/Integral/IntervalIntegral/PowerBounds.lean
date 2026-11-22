@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 
 /-!
 # Integrating complementary power bounds
@@ -232,10 +231,10 @@ theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
 open scoped Interval in
 /-- **Difference of two integrals over nearby intervals.** Let `s₀ = 2 t' - t`, so that
 `t - s₀ = 2 (t - t')`, and suppose `0 ≤ s₀ ≤ t' ≤ t`. If `‖∫₀^{s₀} (g₁ - g₂)‖ ≤ D`,
-`‖∫_{s₀}^t g₁‖ ≤ c (2 (t - t')) ^ β` and `‖∫_{s₀}^{t'} g₂‖ ≤ c (t - t') ^ β` for `0 ≤ β ≤ 1`,
+`‖∫_{s₀}^t g₁‖ ≤ c (2 (t - t')) ^ β` and `‖∫_{s₀}^{t'} g₂‖ ≤ c (t - t') ^ β` for `β ≤ 1`,
 then `‖∫₀^t g₁ - ∫₀^{t'} g₂‖ ≤ D + 3 c (t - t') ^ β`. -/
 theorem norm_intervalIntegral_sub_le_of_sub_le {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] {g₁ g₂ : ℝ → V} {c β t t' D : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1)
+    [NormedSpace ℝ V] {g₁ g₂ : ℝ → V} {c β t t' D : ℝ} (hc : 0 ≤ c) (hβ₁ : β ≤ 1)
     (hs₀ : 0 ≤ 2 * t' - t) (htt' : t' ≤ t) (hg₁ : IntervalIntegrable g₁ volume 0 t)
     (hg₂ : IntervalIntegrable g₂ volume 0 t')
     (hfar : ‖∫ s in 0..2 * t' - t, (g₁ s - g₂ s)‖ ≤ D)
@@ -255,10 +254,10 @@ theorem norm_intervalIntegral_sub_le_of_sub_le {V : Type*} [NormedAddCommGroup V
   rw [hsplit hg₁ (by linarith), hsplit hg₂ (by linarith),
     show ∀ a b c d : V, a + b - (c + d) = (a - c) + b - d from fun a b c d => by abel,
     ← intervalIntegral.integral_sub hg₁' hg₂']
-  have h₃ : (2 * (t - t')) ^ β ≤ 2 * (t - t') ^ β :=
-    (rpow_le_rpow_mul_rpow_of_le_mul (by linarith) (by linarith) le_rfl hβ₀).trans
-      (mul_le_mul_of_nonneg_right (rpow_le_self_of_one_le one_le_two hβ₁)
-        (rpow_nonneg (by linarith) _))
+  have h₃ : (2 * (t - t')) ^ β ≤ 2 * (t - t') ^ β := by
+    rw [Real.mul_rpow zero_le_two (sub_nonneg.mpr htt')]
+    exact mul_le_mul_of_nonneg_right (rpow_le_self_of_one_le one_le_two hβ₁)
+      (rpow_nonneg (sub_nonneg.mpr htt') _)
   calc ‖(∫ s in 0..2 * t' - t, (g₁ s - g₂ s)) + (∫ s in (2 * t' - t)..t, g₁ s) -
         ∫ s in (2 * t' - t)..t', g₂ s‖
       ≤ ‖∫ s in 0..2 * t' - t, (g₁ s - g₂ s)‖ + ‖∫ s in (2 * t' - t)..t, g₁ s‖ +

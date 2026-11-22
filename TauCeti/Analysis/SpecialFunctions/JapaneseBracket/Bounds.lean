@@ -129,7 +129,7 @@ theorem one_add_mul_abs_rpow_le (t : ℝ) {c p : ℝ} (hc : 0 ≤ c) (hp : 0 ≤
 
 /-- For `0 ≤ F`, bounds `F ≤ C₀ w` and `t ^ (2N) F ≤ C₁ w` combine to the weighted bound
 `F ≤ 2 ^ (N - 1) (C₀ + C₁) w ((1 + t²) ^ N)⁻¹`. -/
-theorem le_mul_one_add_sq_pow_inv {t : ℝ} {N : ℕ} {F C₀ C₁ w : ℝ} (hF : 0 ≤ F)
+theorem le_mul_one_add_sq_pow_inv (t : ℝ) {N : ℕ} {F C₀ C₁ w : ℝ} (hF : 0 ≤ F)
     (h₀ : F ≤ C₀ * w) (h₁ : t ^ (2 * N) * F ≤ C₁ * w) :
     F ≤ 2 ^ (N - 1) * (C₀ + C₁) * w * ((1 + t ^ 2) ^ N)⁻¹ := by
   rw [← div_eq_mul_inv, le_div_iff₀ (by positivity), mul_comm F]

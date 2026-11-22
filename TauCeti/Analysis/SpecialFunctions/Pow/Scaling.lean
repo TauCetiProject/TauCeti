@@ -35,6 +35,9 @@ comparisons of powers of two comparable quantities, such as a time and a time st
   is bounded by a multiple of `h ^ p`. Consequently, if two points `x` and `y` of a pseudometric
   space lie within `c t ^ p` and `c t' ^ p` of a common point, with `0 ≤ c`, `0 ≤ p`,
   `0 ≤ t ≤ A h` and `0 ≤ t' ≤ h`, then `dist x y ≤ (A ^ p + 1) c h ^ p`.
+* For every real exponent `s`, a quantity `x` with `a y ≤ x ≤ b y`, `0 < a` and `0 ≤ y` has
+  `x ^ s ≤ max (a ^ s) (b ^ s) y ^ s`: the factor is `b ^ s` for `s ≥ 0` and `a ^ s` for `s ≤ 0`.
+  At `y = 1` this bounds a power on an interval `[a, b]` by its larger endpoint value.
 -/
 
 public section
@@ -128,7 +131,7 @@ theorem rpow_mul_mul_rpow_le_rpow_div_two_add_mul_sq_mul_rpow {r R c Q a b d : �
     (sq_mul_rpow_add_two_mul_le hR (mul_nonneg (rpow_nonneg hR.le _) hc) hcQ) (by positivity))
 
 /-- For `0 < a ≤ u` and `s ≤ t`, `u ^ s ≤ a ^ (s - t) * u ^ t`. -/
-theorem rpow_le_rpow_sub_mul_rpow_of_exponent_le {a u s t : ℝ} (ha : 0 < a) (hau : a ≤ u)
+theorem rpow_le_rpow_sub_mul_rpow_of_exponent_le (u : ℝ) {a s t : ℝ} (ha : 0 < a) (hau : a ≤ u)
     (hst : s ≤ t) : u ^ s ≤ a ^ (s - t) * u ^ t :=
   calc u ^ s = u ^ (s - t) * u ^ t := by rw [← rpow_add (ha.trans_le hau), sub_add_cancel]
     _ ≤ a ^ (s - t) * u ^ t :=
@@ -137,8 +140,8 @@ theorem rpow_le_rpow_sub_mul_rpow_of_exponent_le {a u s t : ℝ} (ha : 0 < a) (h
 
 /-- For `0 ≤ p` and `0 ≤ h`, a nonnegative quantity at most `A h` has `p`-th power at most
 `A ^ p h ^ p`. -/
-theorem rpow_le_rpow_mul_rpow_of_le_mul {r A h p : ℝ} (hr : 0 ≤ r) (hh : 0 ≤ h) (hrh : r ≤ A * h)
-    (hp : 0 ≤ p) : r ^ p ≤ A ^ p * h ^ p := by
+theorem rpow_le_rpow_mul_rpow_of_le_mul (r : ℝ) {A h p : ℝ} (hr : 0 ≤ r) (hh : 0 ≤ h)
+    (hrh : r ≤ A * h) (hp : 0 ≤ p) : r ^ p ≤ A ^ p * h ^ p := by
   rcases le_or_gt 0 A with hA | hA
   · exact (rpow_le_rpow hr hrh hp).trans_eq (mul_rpow hA hh)
   -- For `A < 0` the hypotheses force `r = h = 0`.
@@ -147,6 +150,32 @@ theorem rpow_le_rpow_mul_rpow_of_le_mul {r A h p : ℝ} (hr : 0 ≤ r) (hh : 0 �
   rcases hp.eq_or_lt with rfl | hp
   · simp
   · simp [zero_rpow hp.ne']
+
+/-- Powers of comparable quantities are comparable: if `a y ≤ x ≤ b y` with `0 < a` and
+`0 ≤ y`, then `x ^ s ≤ max (a ^ s) (b ^ s) * y ^ s` for every real exponent `s`. The maximum is
+`b ^ s` for `s ≥ 0` and `a ^ s` for `s ≤ 0`. -/
+theorem rpow_le_max_mul_rpow {a b x y : ℝ} (ha : 0 < a) (hy : 0 ≤ y) (hax : a * y ≤ x)
+    (hxb : x ≤ b * y) (s : ℝ) : x ^ s ≤ max (a ^ s) (b ^ s) * y ^ s := by
+  rcases hy.eq_or_lt with rfl | hy
+  · -- For `y = 0` the hypotheses force `x = 0`.
+    obtain rfl : x = 0 := le_antisymm (by simpa using hxb) (by simpa using hax)
+    rcases eq_or_ne s 0 with rfl | hs
+    · simp
+    · simp [zero_rpow hs]
+  have hb : 0 ≤ b := by
+    by_contra hb
+    nlinarith [mul_pos ha hy]
+  rcases le_total 0 s with hs | hs
+  · calc x ^ s ≤ (b * y) ^ s := rpow_le_rpow (by nlinarith [mul_pos ha hy]) hxb hs
+      _ = b ^ s * y ^ s := mul_rpow hb hy.le
+      _ ≤ max (a ^ s) (b ^ s) * y ^ s := by
+          gcongr
+          exact le_max_right _ _
+  · calc x ^ s ≤ (a * y) ^ s := rpow_le_rpow_of_nonpos (mul_pos ha hy) hax hs
+      _ = a ^ s * y ^ s := mul_rpow ha.le hy.le
+      _ ≤ max (a ^ s) (b ^ s) * y ^ s := by
+          gcongr
+          exact le_max_left _ _
 
 end Real
 
@@ -159,7 +188,7 @@ theorem dist_le_rpow_add_one_mul_mul_rpow_of_le_mul {X : Type*} [PseudoMetricSpa
     (ht' : 0 ≤ t') (ht'h : t' ≤ h) (hx : dist x z ≤ c * t ^ β) (hy : dist y z ≤ c * t' ^ β) :
     dist x y ≤ (A ^ β + 1) * c * h ^ β := by
   have h₁ : t ^ β ≤ A ^ β * h ^ β :=
-    Real.rpow_le_rpow_mul_rpow_of_le_mul ht (ht'.trans ht'h) hth hβ
+    Real.rpow_le_rpow_mul_rpow_of_le_mul t ht (ht'.trans ht'h) hth hβ
   have h₂ : t' ^ β ≤ h ^ β := Real.rpow_le_rpow ht' ht'h hβ
   calc dist x y ≤ dist x z + dist y z := dist_triangle_right x y z
     _ ≤ c * (A ^ β * h ^ β) + c * h ^ β :=

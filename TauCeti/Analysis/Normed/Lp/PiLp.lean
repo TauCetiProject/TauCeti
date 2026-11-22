@@ -104,7 +104,7 @@ theorem norm_rpow_eq_sum [∀ i, SeminormedAddGroup (E i)] (hp : 0 < p.toReal) (
 
 /-- For `0 < p < ∞`, bounds `‖x i‖ ^ p * F ≤ G i` on the coordinate shares of `‖x‖ ^ p * F` add
 up to `‖x‖ ^ p * F ≤ ∑ i, G i`. -/
-theorem norm_rpow_mul_le_sum [∀ i, SeminormedAddGroup (E i)] (hp : 0 < p.toReal) {x : PiLp p E}
+theorem norm_rpow_mul_le_sum [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) (hp : 0 < p.toReal)
     {F : ℝ} {G : ι → ℝ} (h : ∀ i, ‖x i‖ ^ p.toReal * F ≤ G i) :
     ‖x‖ ^ p.toReal * F ≤ ∑ i, G i := by
   rw [norm_rpow_eq_sum hp, Finset.sum_mul]

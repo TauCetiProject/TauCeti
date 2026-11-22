@@ -454,7 +454,7 @@ private theorem IsBallFamily.exists_norm_pow_mul_norm_fourier_le (N : ℕ) :
           rw [ENNReal.toReal_ofNat, Real.rpow_two]
           ring
       _ ≤ ∑ j, ((2 * π) ^ 2)⁻¹ * (D j * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :=
-          PiLp.norm_rpow_mul_le_sum (by simp) fun j ↦ by
+          PiLp.norm_rpow_mul_le_sum η (by simp) fun j ↦ by
             rw [ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs, sq_abs]
             refine (mul_left_comm _ _ _).trans_le ?_
             rw [hj, mul_left_comm]
@@ -475,7 +475,7 @@ theorem IsBallFamily.exists_norm_fourier_le_rpow {c : ι → Symbol n V W m}
   set F := ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖
   set w := (1 + ‖ξ‖ ^ 2) ^ (m / 2)
   have hη : 1 ≤ 1 + ‖η‖ ^ 2 := le_add_of_nonneg_right (by positivity)
-  have hF := Real.le_mul_one_add_sq_pow_inv (norm_nonneg _) (hD₀ i η ξ) (hD i η ξ)
+  have hF := Real.le_mul_one_add_sq_pow_inv ‖η‖ (norm_nonneg _) (hD₀ i η ξ) (hD i η ξ)
   have hinv : 0 < ((1 + ‖η‖ ^ 2) ^ N)⁻¹ := by positivity
   -- `((1 + ‖η‖²) ^ N)⁻¹ = (1 + ‖η‖²) ^ (-N) ≤ (1 + ‖η‖²) ^ (-s / 2)` since `N ≥ s / 2`.
   have hN : ((1 + ‖η‖ ^ 2) ^ N)⁻¹ ≤ (1 + ‖η‖ ^ 2) ^ (-s / 2) := by

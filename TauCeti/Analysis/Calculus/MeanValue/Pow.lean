@@ -69,18 +69,15 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt {F : Type*} [Normed
     (hderiv : ∀ r ∈ uIcc a b, HasDerivWithinAt u (f' r) (uIcc a b) r)
     (hbound : ∀ r ∈ uIcc a b, ‖f' r‖ ≤ D * r ^ (β - 1)) :
     ‖u b - u a‖ ≤ D * (|b - a| * max (a ^ (β - 1)) (b ^ (β - 1))) := by
-  have hm : 0 < min a b := lt_min ha hb
   have hD : 0 ≤ D := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hbound a left_mem_uIcc))
     (rpow_pos_of_pos ha _)
-  -- On `[[a, b]]`, the power `r ^ (β - 1)` is largest at `min a b` or at `max a b`.
+  -- On `[[a, b]]`, the power `r ^ (β - 1)` is at most its larger endpoint value.
   have hle : ∀ r ∈ uIcc a b, r ^ (β - 1) ≤ max (a ^ (β - 1)) (b ^ (β - 1)) := fun r hr ↦ by
-    rcases le_total (β - 1) 0 with hβ | hβ
-    · refine (rpow_le_rpow_of_nonpos hm hr.1 hβ).trans ?_
-      rcases min_choice a b with h | h <;> rw [h]
-      exacts [le_max_left _ _, le_max_right _ _]
-    · refine (rpow_le_rpow (hm.le.trans hr.1) hr.2 hβ).trans ?_
-      rcases max_choice a b with h | h <;> rw [h]
-      exacts [le_max_left _ _, le_max_right _ _]
+    rcases mem_uIcc.mp hr with ⟨har, hrb⟩ | ⟨hbr, hra⟩
+    · simpa only [one_rpow, mul_one] using
+        rpow_le_max_mul_rpow ha zero_le_one (by rwa [mul_one]) (by rwa [mul_one]) (β - 1)
+    · simpa only [one_rpow, mul_one, max_comm (a ^ (β - 1))] using
+        rpow_le_max_mul_rpow hb zero_le_one (by rwa [mul_one]) (by rwa [mul_one]) (β - 1)
   have hmv := (convex_uIcc a b).norm_image_sub_le_of_norm_hasDerivWithin_le (f := u)
     (f' := f') (C := D * max (a ^ (β - 1)) (b ^ (β - 1))) hderiv
     (fun r hr => (hbound r hr).trans (mul_le_mul_of_nonneg_left (hle r hr) hD))
@@ -103,7 +100,7 @@ theorem dist_le_mul_abs_sub_mul_rpow_of_neg_right {X : Type*} [PseudoMetricSpace
   have key : b ^ β ≤ |b - a| * (-a) ^ (β - 1) :=
     calc b ^ β ≤ (b - a) ^ β := rpow_le_rpow hb.le (by linarith) hβ₀
       _ ≤ (-a) ^ (β - 1) * (b - a) ^ (1 : ℝ) :=
-          rpow_le_rpow_sub_mul_rpow_of_exponent_le hd (by linarith) (by linarith)
+          rpow_le_rpow_sub_mul_rpow_of_exponent_le (b - a) hd (by linarith) (by linarith)
       _ = |b - a| * (-a) ^ (β - 1) := by
           rw [rpow_one, abs_of_pos (by linarith), mul_comm]
   exact (hpos hb).trans (by gcongr)

@@ -115,7 +115,7 @@ theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_pos {a b : ℝ} (ha 
   calc u ^ s * rexp (-b * u ^ 2 - c * u)
       ≤ (a ^ (s - m) * u ^ m) * rexp (-b * u ^ 2 - c * u) :=
         mul_le_mul_of_nonneg_right
-          (Real.rpow_le_rpow_sub_mul_rpow_of_exponent_le ha hu.le (le_max_left s 0))
+          (Real.rpow_le_rpow_sub_mul_rpow_of_exponent_le u ha hu.le (le_max_left s 0))
           (Real.exp_pos _).le
     _ = a ^ (s - m) * (u ^ m * rexp (-b * u ^ 2 - c * u)) := by ring
 
