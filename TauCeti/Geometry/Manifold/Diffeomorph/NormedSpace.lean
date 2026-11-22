@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Elementary diffeomorphisms of a normed space
@@ -25,8 +26,11 @@ the affine changes of time `t ↦ a * t + b`.
 A diffeomorphism between normed spaces of nonzero smoothness is differentiable
 (`Diffeomorph.differentiable`), and its Fréchet derivative composed with that of its inverse,
 in either order, is the identity (`Diffeomorph.fderiv_apply_fderiv_symm_apply`,
-`Diffeomorph.fderiv_comp_fderiv_symm`, `Diffeomorph.fderiv_symm_comp_fderiv`). The derivative of
-a composition of diffeomorphisms is given by the chain rule (`Diffeomorph.fderiv_trans`). For a
+`Diffeomorph.fderiv_comp_fderiv_symm`, `Diffeomorph.fderiv_symm_comp_fderiv`), so it is bijective
+at every point (`Diffeomorph.bijective_fderiv`). The derivative of a composition of
+diffeomorphisms is given by the chain rule (`Diffeomorph.fderiv_trans`), and so is the derivative
+of a vector-valued map on a manifold followed by a diffeomorphism, with no differentiability
+hypothesis on the map (`Diffeomorph.mvfderiv_diffeomorph_comp`). For a
 `C^n` diffeomorphism `h` and `m + 1 ≤ n`, the derivative `y ↦ Dh(h⁻¹ y)` is `C^m` in the image
 point (`Diffeomorph.contDiff_fderiv_comp_symm`).
 -/
@@ -67,6 +71,32 @@ derivative. -/
 theorem fderiv_symm_comp_fderiv (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (hn : n ≠ 0) (x : E) :
     (fderiv 𝕜 h.symm (h x)).comp (fderiv 𝕜 h x) = ContinuousLinearMap.id 𝕜 E :=
   h.symm.fderiv_comp_fderiv_symm hn x
+
+/-- The derivative of a normed-space diffeomorphism is bijective at every point. -/
+theorem bijective_fderiv (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (hn : n ≠ 0) (x : E) :
+    Function.Bijective (fderiv 𝕜 h x) := by
+  refine ⟨Function.LeftInverse.injective (g := fderiv 𝕜 h.symm (h x)) fun v ↦ ?_,
+    Function.RightInverse.surjective (g := fderiv 𝕜 h.symm (h x)) fun v ↦ ?_⟩
+  · simpa using congr($(h.fderiv_symm_comp_fderiv hn x) v)
+  · simpa using h.fderiv_apply_fderiv_symm_apply hn (h x) v
+
+/-- **Chain rule for postcomposition with a normed-space diffeomorphism.** For a map `f` from a
+manifold to `E`, the derivative of `h ∘ f` at `x`, read in `F`, is `Dh(f x) ∘ df`. No
+differentiability of `f` is assumed: when `f` is not differentiable at `x`, neither is `h ∘ f`,
+and both sides vanish. -/
+theorem mvfderiv_diffeomorph_comp {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E' H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (hn : n ≠ 0) (f : M → E) (x : M) :
+    mvfderiv I (h ∘ f) x = (fderiv 𝕜 h (f x)).comp (mvfderiv I f x) := by
+  by_cases hf : MDifferentiableAt I 𝓘(𝕜, E) f x
+  · ext v
+    exact TauCeti.mvfderiv_comp_apply_of_differentiableAt (h.differentiable hn (f x)) hf v
+  · have hhf : ¬MDifferentiableAt I 𝓘(𝕜, F) (h ∘ f) x :=
+      (h.mdifferentiableAt_comp_iff hn).not.mpr hf
+    rw [TauCeti.mvfderiv_eq_zero_iff.mpr (mfderiv_zero_of_not_mdifferentiableAt hf),
+      TauCeti.mvfderiv_eq_zero_iff.mpr (mfderiv_zero_of_not_mdifferentiableAt hhf),
+      ContinuousLinearMap.comp_zero]
 
 /-- The chain rule for the composition of two normed-space diffeomorphisms. -/
 theorem fderiv_trans {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]

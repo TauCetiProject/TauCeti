@@ -273,6 +273,15 @@ theorem range_mfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 
     LinearMap.range_comp_of_range_eq_top]
   exact LinearMap.range_eq_top.mpr (h.isInvertible_mfderiv hn).surjective
 
+/-- Precomposition with a diffeomorphism does not change the range of the differential of a
+vector-valued map: the range of `mvfderiv I (f ∘ h) x` is the range of `mvfderiv J f (h x)`. No
+differentiability of `f` is assumed. -/
+theorem range_mvfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f : N → E') (x : M) :
+    (mvfderiv I (f ∘ h) x).range = (mvfderiv J f (h x)).range := by
+  rw [h.mvfderiv_comp_diffeomorph hn, ContinuousLinearMap.toLinearMap_comp,
+    LinearMap.range_comp_of_range_eq_top]
+  exact LinearMap.range_eq_top.2 (h.isInvertible_mfderiv hn).surjective
+
 /-- Postcomposition with a diffeomorphism preserves injectivity of the differential at the point.
 No differentiability of `f` is assumed. -/
 theorem mfderiv_diffeomorph_comp_injective_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {f : P → M}
