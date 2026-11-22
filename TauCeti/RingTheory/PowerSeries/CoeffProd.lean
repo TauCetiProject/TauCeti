@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # Coefficients of finite products of power series
@@ -36,8 +37,9 @@ Factors congruent to `1` modulo `X ^ (n + 1)` do not change the coefficient of d
 This also gives a finite-cutoff formula for products with many such factors.
 
 Substituting `t = 1 - X` into `(1 - t ^ d) / (1 - t) = ∑_{j < d} t ^ j` gives a series with constant
-coefficient `d` and linear coefficient `-d (d - 1) / 2`, which computes the linear coefficient of a
-product of such factors.
+coefficient `d` and twice its linear coefficient `-d (d - 1)`, which computes twice the linear
+coefficient of a product of such factors. Doubling avoids dividing by `2`, so this holds over any
+commutative ring.
 
 ## Main results
 
@@ -60,6 +62,8 @@ public section
 
 namespace PowerSeries
 
+open Finset
+
 variable {R : Type*} [CommSemiring R] {ι : Type*}
 
 /-- **The lowest coefficient of a product of power series without constant term.** If each
@@ -69,21 +73,14 @@ linear coefficients of the `f i`. -/
 theorem coeff_card_mul_prod_of_constantCoeff_eq_zero (s : Finset ι) {f : ι → R⟦X⟧}
     (hf : ∀ i ∈ s, constantCoeff (f i) = 0) (g : R⟦X⟧) :
     coeff s.card (g * ∏ i ∈ s, f i) = constantCoeff g * ∏ i ∈ s, coeff 1 (f i) := by
-  classical
-  induction s using Finset.induction_on generalizing g with
-  | empty => simp
-  | insert a s ha ih =>
-    -- The new factor is `f a = X * q`, so its linear coefficient is the constant coefficient of
-    -- `q`, and the whole product has one factor of `X` in front, which lowers the degree by one.
-    obtain ⟨q, hq⟩ := X_dvd_iff.mpr (hf a (Finset.mem_insert_self a s))
-    have h1 : coeff 1 (f a) = constantCoeff q := by
-      rw [hq, coeff_succ_X_mul, coeff_zero_eq_constantCoeff_apply]
-    have hX : g * ∏ i ∈ insert a s, f i = X * (g * q * ∏ i ∈ s, f i) := by
-      rw [Finset.prod_insert ha, hq]; ring
-    rw [hX, Finset.card_insert_of_notMem ha, coeff_succ_X_mul,
-      ih (fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)) (g * q), Finset.prod_insert ha, h1,
-      map_mul]
-    ring
+  -- Each factor is `f i = X * q i`, so the product is `X ^ |s| * (g * ∏ q i)`.
+  choose! q hq using fun i hi ↦ X_dvd_iff.mpr (hf i hi)
+  rw [prod_congr rfl hq, prod_mul_distrib, prod_const, mul_left_comm, coeff_X_pow_mul']
+  simp only [le_rfl, ↓reduceIte, Nat.sub_self, coeff_zero_eq_constantCoeff_apply, map_mul,
+    map_prod]
+  -- The linear coefficient of `f i = X * q i` is the constant coefficient of `q i`.
+  exact congrArg _ <| prod_congr rfl fun i hi ↦ by
+    rw [hq i hi, coeff_succ_X_mul, coeff_zero_eq_constantCoeff_apply]
 
 /-- **The linear coefficient of a finite product.** The coefficient of `X` in `∏_{i ∈ s} f i` is
 the sum over `i ∈ s` of the linear coefficient of `f i` times the constant coefficients of the
@@ -93,12 +90,11 @@ theorem coeff_one_prod [DecidableEq ι] (s : Finset ι) (f : ι → R⟦X⟧) :
   induction s using Finset.induction_on with
   | empty => simp [coeff_one]
   | insert a s ha ih =>
-    rw [Finset.prod_insert ha, coeff_one_mul, ih, Finset.sum_insert ha, Finset.erase_insert ha,
-      map_prod, Finset.sum_mul]
+    rw [prod_insert ha, coeff_one_mul, ih, sum_insert ha, erase_insert ha, map_prod, sum_mul]
     congr 1
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [Finset.erase_insert_of_ne (ne_of_mem_of_not_mem hi ha).symm,
-      Finset.prod_insert fun h ↦ ha (Finset.mem_of_mem_erase h)]
+    refine sum_congr rfl fun i hi ↦ ?_
+    rw [erase_insert_of_ne (ne_of_mem_of_not_mem hi ha).symm,
+      prod_insert fun h ↦ ha (mem_of_mem_erase h)]
     ring
 
 /-- **The coefficients of a product over a disjoint union.** If the factors of a product over
@@ -109,7 +105,7 @@ theorem coeff_prod_sum_type {A B : Type*} [CommSemiring A] [CommSemiring B] {σ 
     [Fintype σ] [Fintype τ] (φ : A →+* R) (ψ : B →+* R) (f : σ → A⟦X⟧) (g : τ → B⟦X⟧)
     (h : σ ⊕ τ → R⟦X⟧) (hf : ∀ i, h (.inl i) = map φ (f i)) (hg : ∀ j, h (.inr j) = map ψ (g j))
     (n : ℕ) :
-    coeff n (∏ k, h k) = ∑ p ∈ Finset.antidiagonal n,
+    coeff n (∏ k, h k) = ∑ p ∈ antidiagonal n,
       φ (coeff p.1 (∏ i, f i)) * ψ (coeff p.2 (∏ j, g j)) := by
   simp only [Fintype.prod_sum_type, hf, hg, ← map_prod, coeff_mul, coeff_map]
 
@@ -136,8 +132,6 @@ section CommRing
 
 variable {R : Type*} [CommRing R] {ι : Type*}
 
-open Finset
-
 /-- **Finite cutoff.** Factors congruent to `1` modulo `X ^ (n + 1)` do not change the `n`-th
 coefficient of a finite product. -/
 theorem coeff_prod_eq_coeff_prod_of_X_pow_dvd_sub_one [DecidableEq ι] {s t : Finset ι}
@@ -153,25 +147,21 @@ theorem coeff_prod_eq_coeff_prod_of_X_pow_dvd_sub_one [DecidableEq ι] {s t : Fi
   simp
 
 /-- After the substitution `t = 1 - X`, the factor `(1 - t ^ d) / (1 - t) = ∑_{j < d} t ^ j` has
-linear coefficient `-d (d - 1) / 2`, so the product of these factors has linear coefficient
-`-(∏ dᵢ) ∑ (dᵢ - 1) / 2`. -/
+constant coefficient `d` and twice its linear coefficient is `-d (d - 1)`, so twice the linear
+coefficient of the product of these factors is `-(∏ dᵢ) ∑ (dᵢ - 1)`. Doubling avoids dividing by
+`2`, so this holds over any commutative ring. -/
 theorem coeff_one_prod_sum_one_sub_X_pow_mul_two (s : Finset ι) (d : ι → ℕ) :
     coeff 1 (∏ i ∈ s, ∑ j ∈ range (d i), (1 - X : R⟦X⟧) ^ j) * 2 =
       -((∏ i ∈ s, (d i : R)) * ∑ i ∈ s, ((d i : R) - 1)) := by
   classical
-  have hc (k : ℕ) : constantCoeff (∑ j ∈ range k, (1 - X : R⟦X⟧) ^ j) = k := by
-    simp
-  have hgauss (k : ℕ) : (∑ j ∈ range k, (j : R)) * 2 = k * (k - 1) := by
-    induction k with
-    | zero => simp
-    | succ k ih => rw [sum_range_succ, add_mul, ih]; push_cast; ring
+  have hc (k : ℕ) : constantCoeff (∑ j ∈ range k, (1 - X : R⟦X⟧) ^ j) = k := by simp
   rw [coeff_one_prod, sum_mul, mul_sum, ← sum_neg_distrib]
   refine sum_congr rfl fun i hi ↦ ?_
   simp only [hc, map_sum, coeff_one_pow, map_sub, coeff_one, coeff_one_X, map_one,
     constantCoeff_X, sub_zero, one_pow, one_ne_zero, ite_false, zero_sub, mul_neg, mul_one,
     sum_neg_distrib]
   rw [← mul_prod_erase s (fun j ↦ (d j : R)) hi]
-  linear_combination (-(∏ j ∈ s.erase i, (d j : R))) * hgauss (d i)
+  linear_combination (-(∏ j ∈ s.erase i, (d j : R))) * sum_range_natCast_mul_two (R := R) (d i)
 
 end CommRing
 

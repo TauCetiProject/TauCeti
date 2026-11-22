@@ -226,6 +226,25 @@ theorem IsTopologicallyFiniteType.continuous {φ : A →+* B} (h : IsTopological
   rw [← hcomm]
   exact hπ.continuous.comp (continuous_algebraMap_completion_weightedRestrictedSubring k A hT)
 
+/-- **Topological generators.** If `A → B` is topologically of finite type, then a finite subset
+of `B` generates a dense `A`-subalgebra: the images of the variables of a presentation. -/
+theorem IsTopologicallyFiniteType.exists_finite_dense_adjoin [Algebra A B]
+    (h : IsTopologicallyFiniteType (algebraMap A B)) :
+    ∃ s : Set B, s.Finite ∧ Dense (Algebra.adjoin A s : Set B) := by
+  obtain ⟨k, T, -, hT, π, hπ, hcomm⟩ := isTopologicallyFiniteType_iff.mp h
+  let s : Set B := Set.range fun i ↦
+    π ((weightedX T hT i : weightedRestrictedSubring T hT) : Completion _)
+  refine ⟨s, Set.finite_range _, ?_⟩
+  -- the elements of the presenting algebra mapping into the subalgebra form a dense subring
+  have hR := dense_of_forall_weightedX_mem hT (R := (Algebra.adjoin A s).toSubring.comap π)
+    (fun a ↦ by
+      rw [Subring.mem_comap, ← RingHom.comp_apply, hcomm]
+      exact Subalgebra.algebraMap_mem _ a)
+    fun i ↦ Algebra.subset_adjoin ⟨i, rfl⟩
+  refine (hπ.surjective.denseRange.dense_image hπ.continuous hR).mono ?_
+  rw [Subring.coe_comap, Subalgebra.coe_toSubring]
+  exact Set.image_preimage_subset _ _
+
 /-! ### Stability under a further open quotient
 
 Wedhorn presents an algebra topologically of finite type as an open quotient of a restricted

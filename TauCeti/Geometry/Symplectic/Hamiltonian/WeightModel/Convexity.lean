@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
 import Mathlib.Analysis.Convex.PathConnected
 import TauCeti.Analysis.Convex.Cone.Caratheodory
+import TauCeti.Analysis.Convex.Halfspace
 
 /-!
 # Local convexity of the weight model
@@ -30,7 +31,10 @@ Both reduce to the map `Φ(q, p) = ((q_i² + p_i²) / 2)_i` of half squared radi
   convex, so every preimage `μ⁻¹(S)` of a convex set is preconnected
   (`TauCeti.isPreconnected_preimage_weightMomentMap`); in particular every fibre of `μ` is. The
   same holds inside each invariant ball `‖q‖² + ‖p‖² < r`, which is the preimage under `Φ` of a
-  half-space (`TauCeti.isPreconnected_preimage_weightMomentMap_inter`).
+  half-space (`TauCeti.preimage_halfSqRadii_setOf_sum_lt`,
+  `TauCeti.isPreconnected_preimage_weightMomentMap_inter`). As `Φ` maps the ball onto the part of
+  the orthant below that half-space, `μ` maps it onto a convex set
+  (`TauCeti.convex_image_weightMomentMap_setOf_lt`).
 * Rescaling each coordinate `z_i` by `√(s_i / Φ_i(z))`, or replacing a vanishing one by `√(2 s_i)`,
   gives a continuous local section of `Φ` through any point, so `Φ` is open onto the orthant
   (`TauCeti.image_halfSqRadii_mem_nhdsWithin`). A linear map is relatively open from the
@@ -53,6 +57,7 @@ preconnected.
   `TauCeti.isPreconnected_preimage_singleton_weightMomentMap`: preimages of convex sets, and in
   particular fibres, of `μ` are preconnected.
 * `TauCeti.isPreconnected_preimage_weightMomentMap_inter`: the same inside every invariant ball.
+* `TauCeti.convex_image_weightMomentMap_setOf_lt`: the image of every invariant ball is convex.
 * `TauCeti.image_mem_nhdsWithin_range_weightMomentMap`: `μ` is open onto its image.
 
 ## References
@@ -111,6 +116,17 @@ theorem isPreconnected_preimage_halfSqRadii {S : Set (ι → ℝ)} (hS : Convex 
   rw [← himage]
   exact (isPreconnected_univ.prod (hS.inter (convex_Ici 0)).isPreconnected).image _
     hP.continuousOn
+
+/-- The invariant ball `‖q‖² + ‖p‖² < r` of `ℂ^ι` is the preimage under the half squared radii of
+the half-space `Σ_i s_i < r / 2`. -/
+theorem preimage_halfSqRadii_setOf_sum_lt [Fintype ι] (r : ℝ) :
+    halfSqRadii ⁻¹' {s | ∑ i, s i < r / 2} =
+      {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι | ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 < r} := by
+  ext x
+  simp only [mem_ofPred_eq, mem_preimage, halfSqRadii_apply]
+  rw [EuclideanSpace.real_norm_sq_eq, EuclideanSpace.real_norm_sq_eq, ← Finset.sum_div,
+    Finset.sum_add_distrib]
+  constructor <;> intro h <;> linarith
 
 /-- **The half squared radii are open onto the orthant.** The map
 `(q, p) ↦ ((q_i² + p_i²) / 2)_i` sends every neighbourhood of a point of `ℂ^ι` onto a
@@ -184,19 +200,19 @@ of a fibre, form a preconnected set. -/
 theorem isPreconnected_preimage_weightMomentMap_inter (α : ι → StrongDual ℝ 𝔱)
     {S : Set (StrongDual ℝ 𝔱)} (hS : Convex ℝ S) (r : ℝ) :
     IsPreconnected (weightMomentMap α ⁻¹' S ∩ {x | ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 < r}) := by
-  -- The ball is the preimage of a half-space under the half squared radii.
-  have hball : {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι | ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 < r} =
-      halfSqRadii ⁻¹' {s | ∑ i, s i < r / 2} := by
-    ext x
-    simp only [mem_ofPred_eq, mem_preimage, halfSqRadii_apply]
-    rw [EuclideanSpace.real_norm_sq_eq, EuclideanSpace.real_norm_sq_eq, ← Finset.sum_div,
-      Finset.sum_add_distrib]
-    constructor <;> intro h <;> linarith
-  have hhalf : Convex ℝ {s : ι → ℝ | ∑ i, s i < r / 2} :=
-    convex_halfSpace_lt ⟨fun a b ↦ by simp [Finset.sum_add_distrib],
-      fun c a ↦ by simp [Finset.mul_sum]⟩ _
-  rw [hball, weightMomentMap_eq_linearCombination_comp_halfSqRadii, preimage_comp, ← preimage_inter]
-  exact isPreconnected_preimage_halfSqRadii ((hS.linear_preimage _).inter hhalf)
+  rw [← preimage_halfSqRadii_setOf_sum_lt, weightMomentMap_eq_linearCombination_comp_halfSqRadii,
+    preimage_comp, ← preimage_inter]
+  exact isPreconnected_preimage_halfSqRadii ((hS.linear_preimage _).inter (convex_setOf_sum_lt _))
+
+/-- **The image of an invariant ball is convex.** The moment map
+`μ(q, p) = -½ Σ_i (q_i² + p_i²) α_i` of the weight model sends every invariant ball
+`‖q‖² + ‖p‖² < r` of `ℂ^ι` onto a convex set, for arbitrary weights `α`. -/
+theorem convex_image_weightMomentMap_setOf_lt (α : ι → StrongDual ℝ 𝔱) (r : ℝ) :
+    Convex ℝ (weightMomentMap α '' {x | ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 < r}) := by
+  -- The half squared radii send the ball onto the part of the orthant below a half-space.
+  rw [← preimage_halfSqRadii_setOf_sum_lt, weightMomentMap_eq_linearCombination_comp_halfSqRadii,
+    image_comp, image_preimage_eq_inter_range, range_halfSqRadii]
+  exact ((convex_setOf_sum_lt _).inter (convex_Ici 0)).linear_image _
 
 /-- **The weight model moment map is open onto its image.** The moment map
 `μ(q, p) = -½ Σ_i (q_i² + p_i²) α_i` sends every neighbourhood of a point `z` of `ℂ^ι` onto a

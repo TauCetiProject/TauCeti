@@ -43,8 +43,10 @@ necessarily a diffeomorphism, intertwines a diffeotopy `φ'_t` of `M'` with `φ_
 vector field `X_f` of a smooth function `f`, run for duration `a`, is Hamiltonian with Hamiltonian
 `(x, t) ↦ a f(x)` (`TauCeti.Diffeotopy.hasHamiltonian_globalFlowDiffeotopy`).
 
-The flux form of a diffeotopy with a Hamiltonian is exact
-(`TauCeti.Diffeotopy.HasHamiltonian.fluxForm_mem_exactForms`), so Hamiltonian isotopies have zero
+The flux form of a diffeotopy with a Hamiltonian `F` is the exterior derivative of a smooth
+function vanishing wherever `F (x, ·) = 0`, constructed as `x ↦ ∫₀¹ F (x, t) dt`
+(`TauCeti.Diffeotopy.HasHamiltonian.exists_fluxForm_eq_mextDerivₗ`), so it is exact
+(`TauCeti.Diffeotopy.HasHamiltonian.fluxForm_mem_exactForms`) and Hamiltonian isotopies have zero
 flux (`TauCeti.Diffeotopy.IsHamiltonian.flux_eq_zero`).
 
 The **Hamiltonian group** `Ham(M, σ)` (`TauCeti.SmoothForm.hamiltonianGroup`) is the group of
@@ -75,6 +77,9 @@ vanishes on both ends of the cylinder, so the cochain-homotopy identity of the h
 
 ## Main results
 
+* `TauCeti.Diffeotopy.HasHamiltonian.exists_fluxForm_eq_mextDerivₗ`: the flux form of a
+  diffeotopy with Hamiltonian `F` is `d g` for a smooth function `g` vanishing wherever
+  `F (x, ·) = 0`.
 * `TauCeti.Diffeotopy.HasHamiltonian.fluxForm_mem_exactForms`,
   `TauCeti.Diffeotopy.IsHamiltonian.flux_eq_zero`: Hamiltonian diffeotopies have exact flux form
   and zero flux.
@@ -222,19 +227,24 @@ private theorem mextDeriv_smulTimeForm_apply (hF : ContMDiff (J.prod (𝓡∂ 1)
     Matrix.cons_val_zero, mvfderiv_timeCoord, Pi.zero_apply, ContinuousAlternatingMap.coe_zero,
     mul_zero, add_zero]
 
-/-- **The flux form of a Hamiltonian diffeotopy is exact.** If `φ_t` has a Hamiltonian `F` for
-`σ`, read along the motion, then the flux form of `φ_t` is exact. Neither closedness nor
-nondegeneracy of `σ` is needed. -/
-theorem HasHamiltonian.fluxForm_mem_exactForms (h : Φ.HasHamiltonian σ F) :
-    Φ.fluxForm σ ∈ exactForms J M 1 := by
+/-- **The flux form of a Hamiltonian diffeotopy.** If `φ_t` has a Hamiltonian `F` for `σ`, read
+along the motion, then the flux form of `φ_t` is `d g` for some smooth function `g` vanishing
+at every point `x` with `F (x, t) = 0` for all `t`. The proof takes `g x = ∫₀¹ F (x, t) dt`.
+Neither closedness nor nondegeneracy of `σ` is needed. -/
+theorem HasHamiltonian.exists_fluxForm_eq_mextDerivₗ (h : Φ.HasHamiltonian σ F) :
+    ∃ g : SmoothForm J M ℝ 0, (∀ x, (∀ t, F (x, t) = 0) → g.val x = 0) ∧
+      Φ.fluxForm σ = mextDerivₗ J 0 g := by
   have : IsManifold J ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
   have hβ := isSmoothForm_smulTimeForm h.1
   -- `h (d (F dt)) = -d (h (F dt))`, because `F dt` vanishes on both ends of the cylinder.
   have key := homotopyOperator_mextDeriv_of_mpullback_eq_zero (hβ.of_le (by simp))
     (mpullback_smulTimeForm_eq_zero F 0) (mpullback_smulTimeForm_eq_zero F 1)
-  rw [exactForms_succ]
   refine ⟨⟨homotopyOperator (smulTimeForm J F),
-    (IsSmoothForm.homotopyOperator hβ).mem_smoothBundleForms⟩, Subtype.ext ?_⟩
+    (IsSmoothForm.homotopyOperator hβ).mem_smoothBundleForms⟩, fun x hx ↦ ?_,
+    (Subtype.ext ?_).symm⟩
+  · -- Over such a point the one-form `F dt` vanishes at every time.
+    refine homotopyOperator_apply_eq_zero fun t v ↦ ?_
+    rw [smulTimeForm, hx t, zero_smul, ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
   rw [mextDerivₗ_apply, coe_fluxForm, ← neg_eq_iff_eq_neg.mpr key,
     ← neg_one_smul ℝ (homotopyOperator (mextDeriv (smulTimeForm J F))), ← homotopyOperator_smul]
   -- The integrands of the two homotopy operators agree: both are `dF` on spatial vectors.
@@ -263,6 +273,15 @@ theorem HasHamiltonian.fluxForm_mem_exactForms (h : Φ.HasHamiltonian σ F) :
   -- Both sides evaluate the forms on `vecCons ∂ₜ (inl ∘ v)`; currying unfolds definitionally.
   exact (congrArg Neg.neg ((congrArg (mextDeriv (smulTimeForm J F) p) hv).trans h1)).trans
     ((neg_neg _).trans (h2.symm.trans (congrArg _ hv.symm)))
+
+/-- **The flux form of a Hamiltonian diffeotopy is exact.** If `φ_t` has a Hamiltonian `F` for
+`σ`, read along the motion, then the flux form of `φ_t` is exact. Neither closedness nor
+nondegeneracy of `σ` is needed. -/
+theorem HasHamiltonian.fluxForm_mem_exactForms (h : Φ.HasHamiltonian σ F) :
+    Φ.fluxForm σ ∈ exactForms J M 1 := by
+  obtain ⟨g, -, hg⟩ := h.exists_fluxForm_eq_mextDerivₗ
+  rw [exactForms_succ]
+  exact ⟨g, hg.symm⟩
 
 /-- **The flux of a Hamiltonian diffeotopy vanishes.** -/
 theorem HasHamiltonian.flux_eq_zero {σ : closedForms J M 2} (h : Φ.HasHamiltonian σ.val F)
