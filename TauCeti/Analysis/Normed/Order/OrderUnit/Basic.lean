@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Module.Defs
 public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Analysis.Convex.Cone.Basic
 public import Mathlib.Analysis.CStarAlgebra.Classes
 public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Topology.ContinuousMap.Algebra
@@ -14,6 +15,7 @@ public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.Ordered
 public import Mathlib.Topology.Order.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+import Mathlib.Analysis.Normed.Order.Lattice
 import TauCeti.Analysis.CStarAlgebra.SelfAdjointSpectrumInterval
 
 /-!
@@ -52,7 +54,8 @@ norm characterization of positivity `0 ≤ a ↔ ‖‖a‖ • e - a‖ ≤ ‖
   products (`prod`, `pi`), automatic isometry of unital order embeddings
   (`IsOrderUnitNorm.norm_map_eq_of_map_nonneg_iff`,
   `IsOrderUnitNorm.linearIsometryEquivOfOrderIso`), and the norm completion
-  (`completionPartialOrder`, `completion_le_iff`, `isOrderUnitNorm_completion`).
+  (`completionPosCone`, `completionPartialOrder`, `completion_le_iff`,
+  `isOrderUnitNorm_completion`).
 * Standard examples: `ℝ`, `ι → ℝ` for finite nonempty `ι`, `C(K, ℝ)` for nonempty compact `K`, and
   `selfAdjoint A` for a nontrivial unital C⋆-algebra `A`.
 
@@ -440,13 +443,8 @@ theorem IsOrderUnitNorm.isClosed_nonneg : IsClosed {a : E | 0 ≤ a} := by
     continuous_norm
 
 /-- The order of an order-unit space is closed in the norm topology. -/
-theorem IsOrderUnitNorm.orderClosedTopology : OrderClosedTopology E := by
-  refine ⟨?_⟩
-  have hset : {p : E × E | p.1 ≤ p.2} = (fun p : E × E => p.2 - p.1) ⁻¹' {a : E | 0 ≤ a} := by
-    ext ⟨a, b⟩
-    exact sub_nonneg.symm
-  rw [hset]
-  exact he.isClosed_nonneg.preimage (continuous_snd.sub continuous_fst)
+theorem IsOrderUnitNorm.orderClosedTopology : OrderClosedTopology E :=
+  ⟨isClosed_le_of_isClosed_nonneg he.isClosed_nonneg⟩
 
 /-- The closed unit ball around the order unit `e` lies inside the positive cone. -/
 theorem IsOrderUnitNorm.closedBall_subset_nonneg : closedBall e 1 ⊆ {a : E | 0 ≤ a} := by
@@ -572,51 +570,54 @@ end Constructions
 
 section Completion
 
-/-- The closed positive cone in the norm completion `UniformSpace.Completion E`: the closure of
-the image of `{a : E | 0 ≤ a}`. -/
-def completionPosCone (E : Type*) [NormedAddCommGroup E] [PartialOrder E] :
-    Set (UniformSpace.Completion E) :=
-  closure (((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E))
-
-/-- Zero lies in the completion positive cone. -/
-theorem zero_mem_completionPosCone {E : Type*} [NormedAddCommGroup E] [PartialOrder E] :
-    (0 : UniformSpace.Completion E) ∈ completionPosCone E :=
-  subset_closure ⟨0, le_rfl, UniformSpace.Completion.coe_zero⟩
-
-/-- The completion positive cone is closed under addition. -/
-theorem add_mem_completionPosCone {E : Type*} [NormedAddCommGroup E] [PartialOrder E]
-    [IsOrderedAddMonoid E] {x y : UniformSpace.Completion E}
-    (hx : x ∈ completionPosCone E) (hy : y ∈ completionPosCone E) :
-    x + y ∈ completionPosCone E :=
-  map_mem_closure₂ continuous_add hx hy fun _ ⟨a, ha, ha'⟩ _ ⟨b, hb, hb'⟩ =>
-    ⟨a + b, add_nonneg ha hb, ha' ▸ hb' ▸ UniformSpace.Completion.coe_add a b⟩
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
   [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
 
 include he
 
-/-- The completion positive cone is closed under multiplication by nonnegative real scalars. -/
-theorem IsOrderUnitNorm.smul_mem_completionPosCone {c : ℝ} (hc : 0 ≤ c)
-    {x : UniformSpace.Completion E} (hx : x ∈ completionPosCone E) :
-    c • x ∈ completionPosCone E := by
-  have : PosSMulMono ℝ E := he.posSMulMono
-  exact map_mem_closure (continuous_const_smul c) hx fun _ ⟨a, ha, ha'⟩ =>
-    ⟨c • a, smul_nonneg hc ha, ha' ▸ UniformSpace.Completion.coe_smul c a⟩
+/-- The closed positive cone in the norm completion `UniformSpace.Completion E`, obtained by
+mapping `ProperCone.positive ℝ E` along `E →L[ℝ] UniformSpace.Completion E`. -/
+noncomputable def IsOrderUnitNorm.completionPosCone : ProperCone ℝ (UniformSpace.Completion E) :=
+  let : PosSMulMono ℝ E := he.posSMulMono
+  have : OrderClosedTopology E := he.orderClosedTopology
+  (ProperCone.positive ℝ E).map (UniformSpace.Completion.toComplL (S := ℝ) (α := E))
 
-/-- An element of `E` lies in `completionPosCone E` iff it is nonnegative in `E`. -/
+private theorem IsOrderUnitNorm.coe_completionPosCone :
+    (he.completionPosCone : Set (UniformSpace.Completion E)) =
+      closure (((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E)) := by
+  let : PosSMulMono ℝ E := he.posSMulMono
+  have : OrderClosedTopology E := he.orderClosedTopology
+  ext x
+  simp only [IsOrderUnitNorm.completionPosCone, SetLike.mem_coe, ProperCone.mem_map]
+  change x ∈ ((PointedCone.map (UniformSpace.Completion.toComplL (S := ℝ) (α := E) :
+    E →ₗ[ℝ] UniformSpace.Completion E) (ProperCone.positive ℝ E).toPointedCone).topologicalClosure :
+    Set (UniformSpace.Completion E)) ↔ _
+  rw [Submodule.topologicalClosure_coe, PointedCone.coe_map, ProperCone.toPointedCone_positive]
+  have himg : ((UniformSpace.Completion.toComplL (S := ℝ) (α := E) :
+      E →ₗ[ℝ] UniformSpace.Completion E) '' (PointedCone.positive ℝ E : Set E)) =
+      (((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E)) := by
+    ext y
+    simp [UniformSpace.Completion.toComplL]
+  rw [himg]
+
+/-- An element of `E` lies in `he.completionPosCone` iff it is nonnegative in `E`. -/
 theorem IsOrderUnitNorm.coe_mem_completionPosCone_iff {a : E} :
-    (a : UniformSpace.Completion E) ∈ completionPosCone E ↔ 0 ≤ a := by
+    (a : UniformSpace.Completion E) ∈ he.completionPosCone ↔ 0 ≤ a := by
   have h := (UniformSpace.Completion.isUniformInducing_coe E).isInducing
     |>.closure_eq_preimage_closure_image (Set.Ici (0 : E))
   have hcl : closure (Set.Ici (0 : E)) = Set.Ici (0 : E) := he.isClosed_nonneg.closure_eq
   rw [hcl] at h
+  change (a : UniformSpace.Completion E) ∈ (he.completionPosCone : Set _) ↔ 0 ≤ a
+  rw [he.coe_completionPosCone]
   exact Set.ext_iff.mp h.symm a
 
 /-- The completion positive cone is pointed (`x ∈ C` and `-x ∈ C` imply `x = 0`). -/
 theorem IsOrderUnitNorm.eq_zero_of_mem_completionPosCone_of_neg_mem
-    {x : UniformSpace.Completion E} (hx : x ∈ completionPosCone E)
-    (hneg : -x ∈ completionPosCone E) : x = 0 := by
+    {x : UniformSpace.Completion E} (hx : x ∈ he.completionPosCone)
+    (hneg : -x ∈ he.completionPosCone) : x = 0 := by
+  change x ∈ (he.completionPosCone : Set _) at hx
+  change -x ∈ (he.completionPosCone : Set _) at hneg
+  rw [he.coe_completionPosCone] at hx hneg
   rw [← norm_eq_zero]
   refine le_antisymm ?_ (norm_nonneg x)
   refine le_of_forall_pos_le_add fun ε hε => ?_
@@ -643,37 +644,33 @@ theorem IsOrderUnitNorm.eq_zero_of_mem_completionPosCone_of_neg_mem
     _ ≤ ε / 3 + 2 * (ε / 3) := by linarith
     _ = ε := by ring
 
-/-- The partial order on `UniformSpace.Completion E` defined by the closed positive cone
-`completionPosCone E`. -/
-@[instance_reducible]
-def IsOrderUnitNorm.completionPartialOrder : PartialOrder (UniformSpace.Completion E) where
-  le x y := y - x ∈ completionPosCone E
-  le_refl x := by simpa using zero_mem_completionPosCone (E := E)
-  le_trans x y z hxy hyz := by
-    have h := add_mem_completionPosCone hyz hxy
-    simpa [sub_eq_add_neg, add_assoc] using h
-  le_antisymm x y hxy hyx := by
-    have hneg : -(y - x) ∈ completionPosCone E := by simpa [neg_sub] using hyx
-    exact (sub_eq_zero.mp (he.eq_zero_of_mem_completionPosCone_of_neg_mem hxy hneg)).symm
+private theorem IsOrderUnitNorm.salient_completionPosCone :
+    (he.completionPosCone : ConvexCone ℝ (UniformSpace.Completion E)).Salient :=
+  fun _ hx hx0 hneg => hx0 (he.eq_zero_of_mem_completionPosCone_of_neg_mem hx hneg)
 
-/-- Characterization of the completion partial order in terms of `completionPosCone E`. -/
+/-- The partial order on `UniformSpace.Completion E` defined by the closed positive cone
+`he.completionPosCone`. -/
+@[instance_reducible]
+noncomputable def IsOrderUnitNorm.completionPartialOrder :
+    PartialOrder (UniformSpace.Completion E) :=
+  (he.completionPosCone : ConvexCone ℝ (UniformSpace.Completion E)).toPartialOrder
+    he.completionPosCone.pointed_toConvexCone he.salient_completionPosCone
+
+/-- Characterization of the completion partial order in terms of `he.completionPosCone`. -/
 theorem IsOrderUnitNorm.completion_le_iff {x y : UniformSpace.Completion E} :
-    @LE.le _ he.completionPartialOrder.toLE x y ↔ y - x ∈ completionPosCone E :=
+    @LE.le _ he.completionPartialOrder.toLE x y ↔ y - x ∈ he.completionPosCone :=
   (Iff.rfl)
 
-/-- Nonnegativity in the completion partial order is membership in `completionPosCone E`. -/
+/-- Nonnegativity in the completion partial order is membership in `he.completionPosCone`. -/
 theorem IsOrderUnitNorm.completion_nonneg_iff {x : UniformSpace.Completion E} :
-    @LE.le _ he.completionPartialOrder.toLE 0 x ↔ x ∈ completionPosCone E := by
+    @LE.le _ he.completionPartialOrder.toLE 0 x ↔ x ∈ he.completionPosCone := by
   rw [he.completion_le_iff, sub_zero]
 
 /-- Addition is compatible with the completion partial order. -/
 theorem IsOrderUnitNorm.completionIsOrderedAddMonoid :
-    @IsOrderedAddMonoid (UniformSpace.Completion E) _ he.completionPartialOrder.toPreorder := by
-  let : PartialOrder (UniformSpace.Completion E) := he.completionPartialOrder
-  exact
-    { add_le_add_left := fun a b hab c => by
-        rw [he.completion_le_iff] at hab ⊢
-        simpa [add_sub_add_right_eq_sub] using hab }
+    @IsOrderedAddMonoid (UniformSpace.Completion E) _ he.completionPartialOrder.toPreorder :=
+  (he.completionPosCone : ConvexCone ℝ (UniformSpace.Completion E)).to_isOrderedAddMonoid
+    he.completionPosCone.pointed_toConvexCone he.salient_completionPosCone
 
 /-- The canonical embedding `E → UniformSpace.Completion E` preserves and reflects the order. -/
 theorem IsOrderUnitNorm.completion_coe_le_coe_iff {a b : E} :
@@ -684,8 +681,9 @@ theorem IsOrderUnitNorm.completion_coe_le_coe_iff {a b : E} :
 
 private theorem IsOrderUnitNorm.add_norm_smul_mem_completionPosCone
     (x : UniformSpace.Completion E) :
-    x + ‖x‖ • (e : UniformSpace.Completion E) ∈ completionPosCone E := by
-  rw [completionPosCone, Metric.mem_closure_iff]
+    x + ‖x‖ • (e : UniformSpace.Completion E) ∈ he.completionPosCone := by
+  change x + ‖x‖ • (e : UniformSpace.Completion E) ∈ (he.completionPosCone : Set _)
+  rw [he.coe_completionPosCone, Metric.mem_closure_iff]
   intro ε hε
   obtain ⟨_, ⟨a, rfl⟩, ha⟩ := Metric.mem_closure_iff.mp
     (UniformSpace.Completion.denseRange_coe x) (ε / 2) (by positivity)
@@ -715,8 +713,11 @@ private theorem IsOrderUnitNorm.add_norm_smul_mem_completionPosCone
 
 private theorem IsOrderUnitNorm.norm_sub_le_norm_add_of_mem_completionPosCone
     {u v : UniformSpace.Completion E}
-    (hu : u ∈ completionPosCone E) (hv : v ∈ completionPosCone E) :
+    (hu : u ∈ he.completionPosCone) (hv : v ∈ he.completionPosCone) :
     ‖u - v‖ ≤ ‖u + v‖ := by
+  change u ∈ (he.completionPosCone : Set _) at hu
+  change v ∈ (he.completionPosCone : Set _) at hv
+  rw [he.coe_completionPosCone] at hu hv
   refine le_of_forall_pos_le_add fun ε hε => ?_
   have hε4 : 0 < ε / 4 := by positivity
   obtain ⟨_, ⟨p, hp, rfl⟩, hup⟩ := Metric.mem_closure_iff.mp hu (ε / 4) hε4
@@ -758,7 +759,7 @@ theorem IsOrderUnitNorm.isOrderUnitNorm_completion :
   let : PartialOrder (UniformSpace.Completion E) := he.completionPartialOrder
   refine ⟨by rw [UniformSpace.Completion.norm_coe, he.norm_e], fun x r hr => ⟨?_, ?_⟩⟩
   · intro hxr
-    have hrsub : (r - ‖x‖) • (e : UniformSpace.Completion E) ∈ completionPosCone E := by
+    have hrsub : (r - ‖x‖) • (e : UniformSpace.Completion E) ∈ he.completionPosCone := by
       rw [← UniformSpace.Completion.coe_smul]
       exact he.coe_mem_completionPosCone_iff.mpr (he.smul_nonneg_unit (sub_nonneg.mpr hxr))
     rw [he.completion_le_iff, he.completion_le_iff]
@@ -768,16 +769,16 @@ theorem IsOrderUnitNorm.isOrderUnitNorm_completion :
             (r - ‖x‖) • (e : UniformSpace.Completion E) := by
         rw [neg_smul, sub_neg_eq_add, sub_smul]; abel
       rw [heq]
-      exact add_mem_completionPosCone (he.add_norm_smul_mem_completionPosCone x) hrsub
+      exact he.completionPosCone.add_mem (he.add_norm_smul_mem_completionPosCone x) hrsub
     · have heq : r • (e : UniformSpace.Completion E) - x =
           (-x + ‖-x‖ • (e : UniformSpace.Completion E)) +
             (r - ‖x‖) • (e : UniformSpace.Completion E) := by
         rw [norm_neg, sub_smul]; abel
       rw [heq]
-      exact add_mem_completionPosCone (he.add_norm_smul_mem_completionPosCone (-x)) hrsub
+      exact he.completionPosCone.add_mem (he.add_norm_smul_mem_completionPosCone (-x)) hrsub
   · rw [he.completion_le_iff, he.completion_le_iff]
     rintro ⟨hlo, hhi⟩
-    have hlo' : x + r • (e : UniformSpace.Completion E) ∈ completionPosCone E := by
+    have hlo' : x + r • (e : UniformSpace.Completion E) ∈ he.completionPosCone := by
       simpa [neg_smul, sub_neg_eq_add] using hlo
     have hbound := he.norm_sub_le_norm_add_of_mem_completionPosCone hlo' hhi
     have hsub : (x + r • (e : UniformSpace.Completion E)) -

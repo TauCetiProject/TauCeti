@@ -16,8 +16,9 @@ import TauCeti.Analysis.Normed.Module.HahnBanach
 Every state of a unital C⋆-subalgebra extends to a state of the ambient C⋆-algebra.
 
 * `TauCeti.surjOn_pullbackFunctional_stateSpace`: along an injective unital star homomorphism
-  `f : A → B`, restriction of states `pullbackFunctional A f` maps the state space of `B` onto the
-  state space of `A`.
+  `f : A → B`, restriction of states
+  `(PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional` maps the state space
+  of `B` onto the state space of `A`.
 * `StarSubalgebra.exists_mem_stateSpace_forall_apply_coe_eq`: every state of a closed star
   subalgebra `S` of `A` (containing the unit of `A`) is the restriction of a state of `A`.
 
@@ -45,7 +46,8 @@ variable {A B F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 /-- **Extension of states.** Along an injective unital star homomorphism `f : A → B` of C⋆-algebras,
 every state of `A` is the restriction `φ ∘ f` of a state `φ` of `B`. -/
 theorem surjOn_pullbackFunctional_stateSpace (f : F) (hf : Function.Injective f) :
-    SurjOn (pullbackFunctional A f) (stateSpace B) (stateSpace A) := by
+    SurjOn (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (stateSpace B) (stateSpace A) := by
   intro φ hφ
   let i : A →ₗᵢ[ℂ] B := ⟨(f : A →ₗ[ℂ] B), NonUnitalStarAlgHom.norm_map f hf⟩
   obtain ⟨ψ, hψ, hnorm⟩ := i.exists_extension_norm_eq (toStrongDual φ)
@@ -70,6 +72,6 @@ theorem exists_mem_stateSpace_forall_apply_coe_eq (S : StarSubalgebra ℂ A)
     [IsClosed (S : Set A)] {φ : WeakDual ℂ S} (hφ : φ ∈ stateSpace S) :
     ∃ ψ ∈ stateSpace A, ∀ s : S, ψ s = φ s := by
   obtain ⟨ψ, hψ, rfl⟩ := surjOn_pullbackFunctional_stateSpace S.subtype Subtype.val_injective hφ
-  exact ⟨ψ, hψ, fun s => (pullbackFunctional_apply S.subtype ψ s).symm⟩
+  exact ⟨ψ, hψ, fun s => by simp⟩
 
 end StarSubalgebra

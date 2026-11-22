@@ -11,6 +11,7 @@ public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import TauCeti.Analysis.LocallyConvex.WeakDual.SelfAdjoint
 public import TauCeti.Analysis.Normed.Order.OrderUnit.Basic
 public import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
+import Mathlib.Analysis.Convex.Cone.Dual
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import Mathlib.Analysis.Normed.Module.HahnBanach
@@ -48,7 +49,7 @@ weak-star dual `WeakDual ℝ E`, carrying the weak-star subspace topology.
   `isClosed_stateSpace`, `isCompact_stateSpace`: nonemptiness (by Hahn–Banach), convexity,
   weak-star closedness, and weak-star compactness (by Banach–Alaoglu).
 * `ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace`,
-  `TauCeti.OrderUnit.IsOrderUnitNorm.exists_state_extension_submodule`,
+  `TauCeti.OrderUnit.IsOrderUnitNorm.surjOn_pullbackFunctional_subtypeL`,
   `TauCeti.OrderUnit.IsOrderUnitNorm.existsUnique_state_extension_completion`,
   `TauCeti.OrderUnit.IsOrderUnitNorm.completionStateSpaceHomeomorph`: pullback along unital positive
   maps (via `ContinuousLinearMap.pullbackFunctional`), extension from unital subspaces, and unique
@@ -372,13 +373,13 @@ theorem _root_.ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace {E F : T
   · simpa [ContinuousLinearMap.pullbackFunctional_apply] using hφ.1 (hT hab)
   · simpa [hTe] using hφ.2
 
-/-- **Extension of states from a unital subspace.** Every state on a unital real subspace `S` of
-an order-unit space `(E, e)` extends to a state on `E`, by Hahn–Banach. -/
-theorem IsOrderUnitNorm.exists_state_extension_submodule {E : Type*} [SeminormedAddCommGroup E]
+/-- **Extension of states from a unital subspace.** Restriction of states from `E` to a unital
+subspace `S` is surjective, by Hahn–Banach. -/
+theorem IsOrderUnitNorm.surjOn_pullbackFunctional_subtypeL {E : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] [PartialOrder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
-    (S : Submodule ℝ E) (heS : e ∈ S) {φ : WeakDual ℝ S}
-    (hφ : φ ∈ stateSpace (⟨e, heS⟩ : S)) :
-    ∃ ψ ∈ stateSpace e, S.subtypeL.pullbackFunctional ψ = φ := by
+    (S : Submodule ℝ E) (heS : e ∈ S) :
+    SurjOn S.subtypeL.pullbackFunctional (stateSpace e) (stateSpace (⟨e, heS⟩ : S)) := by
+  intro φ hφ
   have hS := he.submodule S heS
   have hφnorm : ‖toStrongDual φ‖ = 1 := hS.norm_toStrongDual_of_mem_stateSpace hφ
   obtain ⟨g, hg, hgnorm⟩ := _root_.exists_extension_norm_eq S (toStrongDual φ)
@@ -387,13 +388,6 @@ theorem IsOrderUnitNorm.exists_state_extension_submodule {E : Type*} [Seminormed
   refine ⟨StrongDual.toWeakDual g,
     he.mem_stateSpace_iff_norm_eq_one.mpr ⟨hgnorm.trans hφnorm, hge⟩, ?_⟩
   exact DFunLike.ext _ _ fun x => by simpa using hg x
-
-/-- Restriction of states from `E` to a unital subspace `S` is surjective. -/
-theorem IsOrderUnitNorm.surjOn_pullbackFunctional_subtypeL {E : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℝ E] [PartialOrder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
-    (S : Submodule ℝ E) (heS : e ∈ S) :
-    SurjOn S.subtypeL.pullbackFunctional (stateSpace e) (stateSpace (⟨e, heS⟩ : S)) :=
-  fun _ hφ => he.exists_state_extension_submodule S heS hφ
 
 section CompletionStates
 
@@ -412,26 +406,31 @@ theorem IsOrderUnitNorm.existsUnique_state_extension_completion {φ : WeakDual �
   let : PartialOrder (UniformSpace.Completion E) := he.completionPartialOrder
   have : IsOrderedAddMonoid (UniformSpace.Completion E) := he.completionIsOrderedAddMonoid
   have hcompl := he.isOrderUnitNorm_completion
-  obtain ⟨g, hg, hgnorm⟩ := LinearIsometry.exists_extension_norm_eq
-    (UniformSpace.Completion.toComplₗᵢ (𝕜 := ℝ) (E := E)) (toStrongDual φ)
-  have hφnorm : ‖toStrongDual φ‖ = 1 := he.norm_toStrongDual_of_mem_stateSpace hφ
-  have hge : g (e : UniformSpace.Completion E) = 1 := by
-    have h1 := DFunLike.congr_fun hg e
-    simpa [hφ.2] using h1
+  let g : UniformSpace.Completion E →L[ℝ] ℝ := (toStrongDual φ).fromCompletion
+  have hg_coe (a : E) : g a = φ a := (toStrongDual φ).fromCompletion_apply_coe a
+  have hge : g (e : UniformSpace.Completion E) = 1 := (hg_coe e).trans hφ.2
+  have hbound : ∀ x : UniformSpace.Completion E, ‖g x‖ ≤ 1 * ‖x‖ := by
+    intro x
+    induction x using UniformSpace.Completion.induction_on with
+    | hp =>
+      exact isClosed_le (continuous_norm.comp g.continuous) (continuous_const.mul continuous_norm)
+    | ih a =>
+      rw [hg_coe, UniformSpace.Completion.norm_coe, one_mul, Real.norm_eq_abs]
+      exact he.abs_apply_le_norm_of_mem_stateSpace hφ a
+  have hgnorm : ‖g‖ = 1 := by
+    refine le_antisymm (g.opNorm_le_bound zero_le_one hbound) ?_
+    have hle := g.le_opNorm (e : UniformSpace.Completion E)
+    rwa [hge, norm_one, UniformSpace.Completion.norm_coe, he.norm_e, mul_one] at hle
   have hψmem : StrongDual.toWeakDual g ∈ stateSpace (e : UniformSpace.Completion E) :=
-    hcompl.mem_stateSpace_iff_norm_eq_one.mpr ⟨hgnorm.trans hφnorm, hge⟩
+    hcompl.mem_stateSpace_iff_norm_eq_one.mpr ⟨hgnorm, hge⟩
   have hψeq : (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional
       (StrongDual.toWeakDual g) = φ :=
-    DFunLike.ext _ _ fun a => by simpa using DFunLike.congr_fun hg a
+    DFunLike.ext _ _ fun a => by simpa using hg_coe a
   refine ⟨StrongDual.toWeakDual g, ⟨hψmem, hψeq⟩, fun ψ' ⟨_, hψ'eq⟩ => ?_⟩
-  have hdense := UniformSpace.Completion.denseRange_coe (α := E)
-  have heq :
-      (toStrongDual ψ' : UniformSpace.Completion E → ℝ) = (g : UniformSpace.Completion E → ℝ) :=
-    hdense.equalizer (toStrongDual ψ').continuous g.continuous (funext fun a => by
-      have h1 := DFunLike.congr_fun hψ'eq a
-      have h2 := DFunLike.congr_fun hψeq a
-      simpa using h1.trans h2.symm)
-  exact DFunLike.ext _ _ fun x => congrFun heq x
+  have huniq := (toStrongDual φ).fromCompletion_unique (toStrongDual ψ') fun a => by
+    have h := DFunLike.congr_fun hψ'eq a
+    simpa [UniformSpace.Completion.toComplL] using h.symm
+  exact DFunLike.ext _ _ fun x => (DFunLike.congr_fun huniq x).symm
 
 /-- Restriction along `E → UniformSpace.Completion E` induces a weak-star homeomorphism between the
 state space of the completion and `stateSpace e`. -/
@@ -498,39 +497,26 @@ theorem IsOrderUnitNorm.nonneg_iff_forall_stateSpace {a : E} :
     0 ≤ a ↔ ∀ φ ∈ stateSpace e, 0 ≤ φ a := by
   refine ⟨fun ha φ hφ => map_nonneg_of_mem_stateSpace hφ ha, fun h => ?_⟩
   by_contra ha
-  have : PosSMulMono ℝ E := he.posSMulMono
-  obtain ⟨f, u, hfu, hua⟩ := geometric_hahn_banach_closed_point he.convex_nonneg
-    he.isClosed_nonneg ha
-  have hu_pos : 0 < u := by simpa using hfu 0 le_rfl
-  have hf_nonpos : ∀ x : E, 0 ≤ x → f x ≤ 0 := by
-    intro x hx
-    by_contra hfx
-    push Not at hfx
-    have ht : 0 < u / f x := div_pos hu_pos hfx
-    have htx : 0 ≤ (u / f x) • x := smul_nonneg ht.le hx
-    have hlt := hfu ((u / f x) • x) htx
-    rw [map_smul, smul_eq_mul, div_mul_cancel₀ _ hfx.ne'] at hlt
-    exact lt_irrefl u hlt
-  let g : E →L[ℝ] ℝ := -f
-  have hg_mono : Monotone g := (monotone_iff_map_nonneg g).mpr fun x hx =>
-    by simpa [g] using hf_nonpos x hx
-  have hga : g a < 0 := by
-    simp only [g, neg_apply]
-    linarith
-  have hgnorm : 0 < ‖g‖ := lt_of_le_of_ne (norm_nonneg g) fun h0 => by
-    have hle := g.le_opNorm a
+  let : PosSMulMono ℝ E := he.posSMulMono
+  have : OrderClosedTopology E := he.orderClosedTopology
+  obtain ⟨f, hf_pos, hfa⟩ :=
+    (ProperCone.positive ℝ E).hyperplane_separation_point (x₀ := a) ha
+  have hf_mono : Monotone f := (monotone_iff_map_nonneg f).mpr fun x hx =>
+    hf_pos x (ProperCone.mem_positive.mpr hx)
+  have hfnorm : 0 < ‖f‖ := lt_of_le_of_ne (norm_nonneg f) fun h0 => by
+    have hle := f.le_opNorm a
     rw [← h0, zero_mul, Real.norm_eq_abs] at hle
-    linarith [neg_le_abs (g a)]
-  have hge : 0 < g e := by
-    rwa [← he.opNorm_eq_apply_unit_of_monotone g hg_mono]
-  let φ : WeakDual ℝ E := StrongDual.toWeakDual ((g e)⁻¹ • g)
+    linarith [neg_le_abs (f a)]
+  have hfe : 0 < f e := by
+    rwa [← he.opNorm_eq_apply_unit_of_monotone f hf_mono]
+  let φ : WeakDual ℝ E := StrongDual.toWeakDual ((f e)⁻¹ • f)
   have hφmem : φ ∈ stateSpace e := by
     refine ⟨fun x y hxy => ?_, ?_⟩
     · simp only [φ, StrongDual.toWeakDual_apply, smul_apply, smul_eq_mul]
-      exact mul_le_mul_of_nonneg_left (hg_mono hxy) (inv_nonneg.mpr hge.le)
+      exact mul_le_mul_of_nonneg_left (hf_mono hxy) (inv_nonneg.mpr hfe.le)
     · simp only [φ, StrongDual.toWeakDual_apply, smul_apply, smul_eq_mul]
-      exact inv_mul_cancel₀ hge.ne'
-  have hφa : φ a < 0 := mul_neg_of_pos_of_neg (inv_pos.mpr hge) hga
+      exact inv_mul_cancel₀ hfe.ne'
+  have hφa : φ a < 0 := mul_neg_of_pos_of_neg (inv_pos.mpr hfe) hfa
   exact not_lt_of_ge (h φ hφmem) hφa
 
 /-- States detect the partial order: `a ≤ b` iff `φ a ≤ φ b` for every state `φ`. -/
@@ -575,21 +561,6 @@ theorem IsOrderUnitNorm.norm_eq_iSup_states (a : E) :
   refine le_antisymm ?_ (ciSup_le fun φ => he.abs_apply_le_norm_of_mem_stateSpace φ.2 a)
   exact hval ▸ le_ciSup hbdd ⟨φ₀, hφ₀⟩
 
-/-- **Norm detection by states** (in `ℝ≥0`): `‖a‖₊ = ⨆ φ : stateSpace e, ‖φ.1 a‖₊`. -/
-theorem IsOrderUnitNorm.nnNorm_eq_iSup_states (a : E) :
-    ‖a‖₊ = ⨆ φ : stateSpace e, ‖φ.1 a‖₊ := by
-  have : Nonempty (stateSpace e) := he.stateSpace_nonempty.to_subtype
-  have hbdd : BddAbove (Set.range fun φ : stateSpace e => ‖φ.1 a‖₊) :=
-    ⟨‖a‖₊, by
-      rintro _ ⟨φ, rfl⟩
-      exact NNReal.coe_le_coe.mp (by simpa [Real.norm_eq_abs] using
-        he.abs_apply_le_norm_of_mem_stateSpace φ.2 a)⟩
-  obtain ⟨φ₀, hφ₀, hval⟩ := he.exists_mem_stateSpace_abs_apply_eq_norm a
-  refine le_antisymm ?_ (ciSup_le fun φ => NNReal.coe_le_coe.mp (by
-    simpa [Real.norm_eq_abs] using he.abs_apply_le_norm_of_mem_stateSpace φ.2 a))
-  have hval' : ‖φ₀ a‖₊ = ‖a‖₊ := NNReal.eq (by simpa [Real.norm_eq_abs] using hval)
-  exact hval' ▸ le_ciSup hbdd ⟨φ₀, hφ₀⟩
-
 end Separation
 
 section EvalEmbedding
@@ -629,12 +600,16 @@ theorem IsOrderUnitNorm.evalContinuousMap_le_iff {a b : E} :
 /-- The evaluation map into `C(stateSpace e, ℝ)` is isometric. -/
 theorem IsOrderUnitNorm.norm_evalContinuousMap [CompactSpace (stateSpace e)] (a : E) :
     ‖evalContinuousMap e a‖ = ‖a‖ := by
-  refine le_antisymm ?_ ?_
-  · exact (ContinuousMap.norm_le _ (norm_nonneg a)).mpr fun φ => by
-      simpa [Real.norm_eq_abs] using he.abs_apply_le_norm_of_mem_stateSpace φ.2 a
-  · obtain ⟨φ₀, hφ₀, hval⟩ := he.exists_mem_stateSpace_abs_apply_eq_norm a
-    have h := ContinuousMap.norm_coe_le_norm (evalContinuousMap e a) ⟨φ₀, hφ₀⟩
-    simpa [Real.norm_eq_abs, hval] using h
+  rw [ContinuousMap.norm_eq_iSup_norm, he.norm_eq_iSup_states a]
+  simp [Real.norm_eq_abs]
+
+/-- **Norm detection by states** (in `ℝ≥0`): `‖a‖₊ = ⨆ φ : stateSpace e, ‖φ.1 a‖₊`. -/
+theorem IsOrderUnitNorm.nnNorm_eq_iSup_states (a : E) :
+    ‖a‖₊ = ⨆ φ : stateSpace e, ‖φ.1 a‖₊ := by
+  have : CompactSpace (stateSpace e) := he.compactSpace_stateSpace
+  have h : ‖a‖₊ = ‖evalContinuousMap e a‖₊ := NNReal.eq (he.norm_evalContinuousMap a).symm
+  rw [h, ContinuousMap.nnNorm_eq_iSup_nnNorm]
+  rfl
 
 /-- The canonical unital isometric order embedding `E →ₗᵢ[ℝ] C(stateSpace e, ℝ)`. -/
 noncomputable def IsOrderUnitNorm.evalLinearIsometry [CompactSpace (stateSpace e)] :
