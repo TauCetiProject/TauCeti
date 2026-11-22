@@ -33,6 +33,7 @@ are also those of the DG right modules of chains of a space with a right action 
 
 * `TauCeti.cubicalChainSumMap_id`, `TauCeti.cubicalChainSumMap_comp`,
   `TauCeti.cubicalChainDifferential_cubicalChainSumMap`: the push-forward is a functorial chain map.
+* `TauCeti.cubicalChainSumMap_injective`: the push-forward along an injective map is injective.
 * `TauCeti.cubicalChain_isDGAlgebra`: `normalizedCubicalChainAlgebra G R` with this grading and
   differential is a differential graded algebra.
 
@@ -272,6 +273,12 @@ theorem cubicalChainSumMap_lof (f : C(X, Y)) {n : ℕ} (c : NormalizedCubicalCha
 theorem cubicalChainSumMap_apply (f : C(X, Y)) (x : normalizedCubicalChainAlgebra X R) (n : ℕ) :
     cubicalChainSumMap R f x n = map R f n (x n) :=
   DirectSum.lmap_apply _ x n
+
+/-- The push-forward along an injective map is injective. -/
+theorem cubicalChainSumMap_injective {f : C(X, Y)} (hf : Function.Injective f) :
+    Function.Injective (cubicalChainSumMap R f) := fun a b h ↦
+  DirectSum.ext fun n ↦ NormalizedCubicalChain.map_injective R f hf n <| by
+    rw [← cubicalChainSumMap_apply, ← cubicalChainSumMap_apply, h]
 
 /-- The push-forward along the identity is the identity. -/
 @[simp]

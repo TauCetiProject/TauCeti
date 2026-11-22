@@ -89,7 +89,8 @@ relative homotopy invariance of cubical homology is transported from the simplic
 * `TopPair.exists_isCubicalRepresentative_of_dim_zero`: every chain of dimension `0` represents a
   relative class.
 * `TopPair.IsCubicalRepresentative.sum`, `TopPair.IsCubicalRepresentative.neg`,
-  `TopPair.IsCubicalRepresentative.unique`: representatives are additive and determine their class.
+  `TopPair.IsCubicalRepresentative.zsmul`, `TopPair.IsCubicalRepresentative.unique`:
+  representatives are additive and determine their class.
 * `TopPair.quasiIsoAt_cubicalChainComplexMap_iff`: a map of pairs induces a quasi-isomorphism of
   relative chains in a degree exactly when, on chains of the ambient spaces, every relative cycle
   of the target is the image of a relative cycle up to a boundary and the chains of the subspace,
@@ -526,6 +527,13 @@ theorem IsCubicalRepresentative.neg {c : ((normalizedCubicalChainComplex k).obj 
     P.IsCubicalRepresentative k (-c) (-μ) := by
   obtain ⟨r, hr, rfl⟩ := h
   exact ⟨-r, by rw [map_neg, map_neg, hr], map_neg _ _⟩
+
+/-- Representatives of relative classes are compatible with integer multiples. -/
+theorem IsCubicalRepresentative.zsmul {c : ((normalizedCubicalChainComplex k).obj P.fst).X n}
+    {μ : (P.cubicalChainComplex k).homology n} (h : P.IsCubicalRepresentative k c μ) (m : ℤ) :
+    P.IsCubicalRepresentative k (m • c) (m • μ) := by
+  obtain ⟨r, hr, rfl⟩ := h
+  exact ⟨m • r, by rw [map_zsmul, map_zsmul, hr], map_zsmul _ _ _⟩
 
 /-- A chain represents at most one relative class. -/
 theorem IsCubicalRepresentative.unique {c : ((normalizedCubicalChainComplex k).obj P.fst).X n}

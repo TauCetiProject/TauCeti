@@ -55,8 +55,9 @@ with coefficients in a DG local system.
 * `TauCeti.twistingChainSum_eq_zero_of_le`: the twisting sum of a graded family vanishes when
   `ind x ≤ ind y`, and so does the chain of `(x, y)` in a twisting chain system
   (`TauCeti.TwistingChainSystem.chain_eq_zero_of_le`).
-* `TauCeti.twistingChainSum_congr`: the twisting sum of `(x, y)` only depends on the chains of
-  the pairs `(x, z)` and `(z, y)` with `z` strictly between `y` and `x` in index.
+* `TauCeti.twistingChainSum_eq_sum_subtype`, `TauCeti.twistingChainSum_congr`: only the `z`
+  strictly between `y` and `x` in index contribute to the twisting sum of `(x, y)`, which therefore
+  only depends on the chains of the pairs `(x, z)` and `(z, y)` for those `z`.
 * `TauCeti.cubicalChainDifferential_twistingChainSum`: the twisting sum is a cycle.
 * `TauCeti.cubicalChainSumMap_twistingChainSum`: push-forward along multiplicative evaluation maps.
 
@@ -123,6 +124,25 @@ theorem twistingChainSum_eq_zero_of_le
   · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs x z), map_zero,
       LinearMap.zero_apply, smul_zero]
   · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs z y), map_zero, smul_zero]
+
+/-- Only the `z` whose index lies strictly between those of `y` and `x` contribute to the twisting
+sum of a family of chains of cohomological degrees `ind y - ind x + 1`. -/
+theorem twistingChainSum_eq_sum_subtype
+    (hs : ∀ x y, s x y ∈ cubicalChainGrading (M x y) R (ind y - ind x + 1)) (x y : P) :
+    twistingChainSum ind ι R s x y = ∑ z : {z // ind y < ind z ∧ ind z < ind x},
+      (ind x - ind z.val).negOnePow •
+        cubicalChainSumPairing R (ι x z.val y) (s x z.val) (s z.val y) := by
+  rw [twistingChainSum_def, ← Finset.sum_filter_of_ne (p := fun z ↦ ind y < ind z ∧ ind z < ind x)
+    fun z _ hz ↦ ?_, Finset.sum_subtype (p := fun z ↦ ind y < ind z ∧ ind z < ind x) _ (by simp)]
+  -- Outside that range one of the two factors has positive cohomological degree, so vanishes.
+  by_contra hz'
+  rcases le_or_gt (ind x) (ind z) with hxz | hxz
+  · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs x z), map_zero,
+      LinearMap.zero_apply, smul_zero] at hz
+    exact hz rfl
+  · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs z y), map_zero,
+      smul_zero] at hz
+    exact hz rfl
 
 /-- The twisting sum of `(x, y)` only depends on the chains of the pairs `(x, z)` and `(z, y)`
 for the `z` whose index lies strictly between those of `y` and `x`: two families of chains of
