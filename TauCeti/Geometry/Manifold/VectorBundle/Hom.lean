@@ -286,8 +286,8 @@ namespace TauCeti
 section ConstantCoordinates
 
 variable {𝕜 M F₁ F₂ : Type*} [NontriviallyNormedField 𝕜]
-  [TopologicalSpace M] {E H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [TopologicalSpace H] [ChartedSpace H M] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] {E H : Type*} [NormedAddCommGroup E]
+  [TopologicalSpace H] [ChartedSpace H M]
   [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
   [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
   {V : M → Type*} {W : M → Type*}
@@ -300,22 +300,27 @@ variable {𝕜 M F₁ F₂ : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A hom-bundle section is smooth if its expression in the preferred frames at each point
 is constant on their common base set. The constant may depend on the centre of the frames;
-no smoothness assumption on either vector bundle is needed. -/
+no smoothness assumption on either vector bundle is needed. The manifold's scalar field may
+be different from the bundle's scalar field. -/
 theorem contMDiff_hom_bundle_of_inCoordinates_eq_const
+    {𝕜₀ : Type*} [NontriviallyNormedField 𝕜₀] [NormedSpace 𝕜₀ E]
+    {I : ModelWithCorners 𝕜₀ E H} [NormedSpace 𝕜₀ (F₁ →L[𝕜] F₂)]
     {ϕ : ∀ x, V x →L[𝕜] W x} {c : M → F₁ →L[𝕜] F₂}
     (hϕ : ∀ a x, x ∈ (trivializationAt F₁ V a).baseSet →
       x ∈ (trivializationAt F₂ W a).baseSet →
       ContinuousLinearMap.inCoordinates F₁ V F₂ W a x a x (ϕ x) = c a) :
-    ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+    ContMDiff I (I.prod 𝓘(𝕜₀, F₁ →L[𝕜] F₂)) n
       (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) x (ϕ x)) := by
   intro a
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨contMDiffAt_id, (contMDiffAt_const (c := c a)).congr_of_eventuallyEq ?_⟩
+  rw [contMDiffAt_section_iff]
+  refine (contMDiffAt_const (c := c a)).congr_of_eventuallyEq ?_
   filter_upwards [(trivializationAt F₁ V a).open_baseSet.mem_nhds
     (mem_baseSet_trivializationAt F₁ V a), (trivializationAt F₂ W a).open_baseSet.mem_nhds
     (mem_baseSet_trivializationAt F₂ W a)] with x hx₁ hx₂
+  rw [hom_trivializationAt_apply]
   exact hϕ a x hx₁ hx₂
 
+variable [NormedSpace 𝕜 E] {I : ModelWithCorners 𝕜 E H} in
 /-- The fibrewise identity is a `C^n` endomorphism section of any vector bundle.
 No regularity assumption on the bundle's transition functions is needed. -/
 theorem contMDiff_id_endomorphism

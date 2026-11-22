@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.Associated.Basic
 public import TauCeti.Topology.FiberBundle.Associated.Map
-public import Mathlib.Topology.VectorBundle.Hom
+public import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # Linear intertwiners on associated vector bundles
@@ -20,9 +20,9 @@ section of the native Hom bundle. Equivariant continuous linear equivalences ind
 continuous linear equivalences.
 
 This interface lets representation comparisons be used as vector-bundle maps, for example when
-identifying different models of a spinor representation. No fibre norm, invariant metric, or
-finite-dimensionality is required for the fibre maps. The Hom-bundle assertions assume native
-vector-bundle structures on the source and target.
+identifying different models of a spinor representation. The fibre maps require normed model
+fibres, but neither finite-dimensionality nor an invariant bundle metric. The Hom-bundle
+assertions assume native vector-bundle structures on the source and target.
 
 ## References
 
@@ -107,6 +107,7 @@ theorem associatedBundleMap_id (b : B) :
   exact associatedBundleMap_mk _ _ p v
 
 /-- Association preserves composition of continuous linear intertwiners. -/
+@[simp]
 theorem associatedBundleMap_comp (f : F →L[𝕜] F') (f' : F' →L[𝕜] F'')
     (hf : ∀ (g : G) v, f (g • v) = g • f v)
     (hf' : ∀ (g : G) v, f' (g • v) = g • f' v) (b : B) :
@@ -149,8 +150,9 @@ def associatedBundleMap (f : F ≃L[𝕜] F')
 theorem toContinuousLinearMap_associatedBundleMap (f : F ≃L[𝕜] F')
     (hf : ∀ (g : G) v, f (g • v) = g • f v) (b : B) :
     (f.associatedBundleMap (P := P) hf b).toContinuousLinearMap =
-      f.toContinuousLinearMap.associatedBundleMap hf b :=
-  (rfl)
+      f.toContinuousLinearMap.associatedBundleMap hf b := by
+  unfold associatedBundleMap
+  exact toContinuousLinearMap_equivOfInverse _ _ _ _
 
 /-- The induced equivalence applies the model equivalence in any principal frame. -/
 @[simp]
@@ -167,6 +169,30 @@ theorem associatedBundleMap_symm_mk (f : F ≃L[𝕜] F')
       AssociatedBundle.mk G p (f.symm v) := by
   apply (f.associatedBundleMap hf b).injective
   simp
+
+/-- Association sends the identity equivalence to the identity on each associated fibre. -/
+@[simp]
+theorem associatedBundleMap_refl (b : B) :
+    (ContinuousLinearEquiv.refl 𝕜 F).associatedBundleMap (P := P)
+      (fun _ _ ↦ by simp only [refl_apply]) b =
+      ContinuousLinearEquiv.refl 𝕜 (AssociatedBundle G P F b) := by
+  ext v
+  simp only [refl_apply, ← coe_coe, toContinuousLinearMap_associatedBundleMap]
+  exact DFunLike.congr_fun
+    (ContinuousLinearMap.associatedBundleMap_id (𝕜 := 𝕜) (F := F) (P := P) b) v
+
+/-- Association preserves composition of equivariant continuous linear equivalences. -/
+@[simp]
+theorem associatedBundleMap_trans (f : F ≃L[𝕜] F') (f' : F' ≃L[𝕜] F'')
+    (hf : ∀ (g : G) v, f (g • v) = g • f v)
+    (hf' : ∀ (g : G) v, f' (g • v) = g • f' v) (b : B) :
+    (f.trans f').associatedBundleMap (P := P) (fun g v ↦ by simp [hf, hf']) b =
+      (f.associatedBundleMap hf b).trans (f'.associatedBundleMap hf' b) := by
+  have h := ContinuousLinearMap.associatedBundleMap_comp f.toContinuousLinearMap
+    f'.toContinuousLinearMap hf hf' (P := P) b
+  ext v
+  simp only [trans_apply, ← coe_coe, toContinuousLinearMap_associatedBundleMap]
+  exact DFunLike.congr_fun h v
 
 end ContinuousLinearEquiv
 
@@ -201,13 +227,8 @@ theorem continuous_associatedBundleMap (f : F →L[𝕜] F')
     (hf : ∀ (g : G) v, f (g • v) = g • f v) :
     Continuous (fun b ↦ TotalSpace.mk' (F →L[𝕜] F') b
       (f.associatedBundleMap (P := P) hf b)) := by
-  apply continuous_iff_continuousAt.mpr
-  intro b₀
-  rw [FiberBundle.continuousAt_totalSpace]
-  refine ⟨continuousAt_id, ?_⟩
-  refine (continuousAt_const (y := f)).congr_of_eventuallyEq ?_
-  filter_upwards [(trivializationAt G P b₀).open_baseSet.mem_nhds
-    (mem_baseSet_trivializationAt G P b₀)] with b hb
-  rw [hom_trivializationAt_apply, inCoordinates_associatedBundleMap f hf hb]
+  refine continuous_hom_bundle_of_inCoordinates_eq_const (c := fun _ ↦ f) ?_
+  intro a b hb _
+  exact inCoordinates_associatedBundleMap f hf (by simpa only [baseSet_trivializationAt] using hb)
 
 end ContinuousLinearMap

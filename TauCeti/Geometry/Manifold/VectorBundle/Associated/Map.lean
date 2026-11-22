@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.Associated.Map
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
 # Smooth linear intertwiners on associated bundles
@@ -57,11 +58,8 @@ theorem contMDiff_associatedBundleMap {n : ℕ∞ω} (f : F →L[𝕜] F')
     ContMDiff IB (IB.prod 𝓘(𝕜₀, F →L[𝕜] F')) n
       (fun b ↦ TotalSpace.mk' (F →L[𝕜] F') b
         (f.associatedBundleMap (P := P) hf b)) := by
-  intro b₀
-  rw [contMDiffAt_section_iff]
-  refine (contMDiffAt_const (c := f)).congr_of_eventuallyEq ?_
-  filter_upwards [(trivializationAt G P b₀).open_baseSet.mem_nhds
-    (mem_baseSet_trivializationAt G P b₀)] with b hb
-  rw [hom_trivializationAt_apply, inCoordinates_associatedBundleMap f hf hb]
+  refine contMDiff_hom_bundle_of_inCoordinates_eq_const (c := fun _ ↦ f) ?_
+  intro a b hb _
+  exact inCoordinates_associatedBundleMap f hf (by simpa only [baseSet_trivializationAt] using hb)
 
 end ContinuousLinearMap
