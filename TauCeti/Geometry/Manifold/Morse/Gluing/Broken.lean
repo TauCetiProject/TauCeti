@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Gluing.BoxCrossing
 public import TauCeti.Geometry.Manifold.Morse.Gluing.TransverseDisc
 public import TauCeti.Geometry.Manifold.Morse.Stable.Gluing
 public import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
+import TauCeti.Analysis.Calculus.Morse.Gluing.Centre
 import Mathlib.Geometry.Manifold.Metrizable
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.PullbackGroupoid
@@ -59,6 +60,12 @@ transverse there, and the same gluing produces points of `W^u(p) ∩ Z` convergi
 which follow the trajectory from `p` to `q`. With `Z` the stable manifold of a second
 pseudo-gradient, this glues the broken configurations of a Morse–Smale pair.
 
+**Through the critical point.** The point `y` may also be `q` itself, for a set `Z` through `q`
+transverse to `W^u(q)` there. Its orbit is then constant and never reaches the exit face; instead,
+`Z` is read in the Morse box as a Lipschitz graph through the centre, and the orbits from a disc
+of `W^u(p)` at the entrance face that meet it at a late time are the fixed points of a contraction
+(`TauCeti.eventually_exists_splitQuadraticFlow_snd_eq`). They converge to `q` as that time grows.
+
 ## Main results
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
@@ -67,8 +74,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   a broken trajectory has a neighbourhood homeomorphic to `[0, δ)` among the unbroken trajectories
   recorded on two levels.
 * `IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart`: points of `W^u(p) ∩ Z`
-  accumulate at each point `y ≠ q` of `W^u(q)` where a flattened set `Z` meets `W^u(q)`
-  transversally, along orbits following a given trajectory from `p` to `q`.
+  accumulate at each point `y` of `W^u(q)`, `q` included, where a flattened set `Z` meets
+  `W^u(q)` transversally, along orbits following a given trajectory from `p` to `q`.
 * `IsMorseSmale.exists_mem_unstableSet_inter_stableSet_flow_mem`: for any indices, a trajectory
   from `p` to `r` passes through any given neighbourhoods of a point of a trajectory from `p` to
   `q` and of a point of a trajectory from `q` to `r`.
@@ -95,6 +102,97 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 namespace IsAdaptedPseudoGradient
 
+/-- **A Morse chart with a box at a critical point.** At the critical point `q` there are a Morse
+chart `φ` in which `X` is linear and a radius `ρ > 0` such that the coordinates of sup norm less
+than `ρ` are coordinates of points of the chart, and on the cube of radius `ρ` the stable and
+unstable sets of `q` are the coordinate planes. -/
+private theorem exists_morseChart_box (hX : IsAdaptedPseudoGradient f X)
+    (hf : IsMorse 𝓘(ℝ, E) f) {q : M} (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0) :
+    ∃ (φ : MorseChart E f q) (ρ : ℝ),
+      (∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+        fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)) ∧
+      0 < ρ ∧ (∀ z, ‖z‖ < ρ → φ.coord.symm z ∈ φ.toChart.target) ∧
+      (∀ w ∈ φ.toChart.source, ‖φ.coord (φ.toChart w)‖ < ρ →
+        (w ∈ hX.flow.stableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).snd = 0) ∧
+        (w ∈ hX.flow.unstableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).fst = 0)) := by
+  have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hq
+  obtain ⟨φ, hφ⟩ := hX.exists_morseChart q hq
+  have hφ' := φ.coord_mfderiv_neg hφ hnd
+  -- The local descriptions of the stable and unstable sets.
+  obtain ⟨ρs, hρs, hs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
+  obtain ⟨ρu, hρu, hu⟩ := (hX.neg hf).exists_forall_mem_stableSet_iff (φ.neg hnd) hφ'
+  simp only [MorseChart.neg_toChart, MorseChart.neg_coord, MorseChart.neg_weight, Pi.neg_apply,
+    Left.neg_neg_iff, ← hX.unstableSet_eq_stableSet_neg hf] at hu
+  obtain ⟨rT, hrT, hT⟩ := φ.exists_pos_forall_norm_lt_mem_target
+  refine ⟨φ, min (min ρs ρu) rT, hφ, by positivity,
+    fun z hz ↦ hT z (hz.trans_le (min_le_right _ _)), fun w hw hwρ ↦ ⟨?_, ?_⟩⟩
+  · exact (hs w hw (hwρ.trans_le ((min_le_left _ _).trans (min_le_left _ _)))).trans
+      (by simp [funext_iff, φ.weight_ne_one_iff])
+  · exact (hu w hw (hwρ.trans_le ((min_le_left _ _).trans (min_le_right _ _)))).trans
+      (by simp [funext_iff, φ.weight_eq_one_iff])
+
+/-- **A trajectory enters every small box.** Let `φ` be a Morse chart at `q` in which `X` is linear,
+and `a₁` a point of a trajectory from `p ≠ q` to `q`. For every small `ε > 0`, the trajectory
+crosses the sphere of radius `ε` of the coordinates of `φ`. -/
+private theorem eventually_exists_flow_norm_coord_eq (hX : IsAdaptedPseudoGradient f X)
+    {p q a₁ : M} (φ : MorseChart E f q)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    (hpq : p ≠ q) (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
+    ∀ᶠ ε in 𝓝[>] 0, ∃ T, hX.flow T a₁ ∈ φ.toChart.source ∧
+      ‖φ.coord (φ.toChart (hX.flow T a₁))‖ = ε := by
+  obtain ⟨ρ, hρ, hc⟩ := hX.exists_forall_coord_flow_eq_exp_smul φ hφ
+  -- A point `b` of the trajectory in the cube of radius `ρ`, where the flow contracts linearly.
+  have hN : {w | w ∈ φ.toChart.source ∧ ‖φ.coord (φ.toChart w)‖ < ρ} ∈ 𝓝 q := by
+    have hcont : ContinuousAt (fun w ↦ ‖φ.coord (φ.toChart w)‖) q :=
+      (φ.continuous_coord.norm.continuousAt).comp (φ.toChart.continuousAt φ.mem_source)
+    filter_upwards [φ.toChart.open_source.mem_nhds φ.mem_source,
+      hcont.eventually (gt_mem_nhds (by simpa using hρ))] with w hw hwρ using ⟨hw, hwρ⟩
+  obtain ⟨t, hb, hbρ⟩ := ((Flow.mem_stableSet.1 ha₁.2).eventually hN).exists
+  set b := hX.flow t a₁
+  have hbm : b ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
+    hX.flow.isInvariant_unstableSet_inter_stableSet p q t ha₁
+  -- Its coordinates are nonzero, since it is not the critical point.
+  have hz : 0 < ‖φ.coord (φ.toChart b)‖ := by
+    refine norm_pos_iff.2 fun h ↦ ?_
+    have hbq := (φ.toChart_eq_zero_iff hb).1 (by simpa using h)
+    have := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq hbm
+    rw [hbq] at this
+    exact this.1.ne rfl
+  -- Flow `b` to the sphere of radius `ε ≤ ‖b‖`.
+  filter_upwards [Ioc_mem_nhdsGT hz] with ε hε
+  have hs : 0 ≤ Real.log (‖φ.coord (φ.toChart b)‖ / ε) :=
+    Real.log_nonneg ((one_le_div hε.1).2 hε.2)
+  obtain ⟨hy, hyc⟩ := hc b hbm.2 hb hbρ _ hs
+  refine ⟨Real.log (‖φ.coord (φ.toChart b)‖ / ε) + t, by rwa [Flow.map_add], ?_⟩
+  rw [Flow.map_add, hyc, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le, Real.exp_neg,
+    Real.exp_log (div_pos hz hε.1)]
+  field_simp
+
+/-- **A trajectory enters every small Morse box through its entrance face.** Let `φ` be a Morse
+chart at `q` in which `X` is linear and on whose cube of radius `ρ` the stable set of `q` is the
+plane where the expanding split coordinate `v` vanishes, and let `a₁` be a point of a trajectory
+from `p ≠ q` to `q`. For every small `ε > 0`, the trajectory crosses the entrance face
+`‖u‖ = ε, v = 0` of the box of radius `ε`. -/
+private theorem eventually_exists_flow_mem_entranceFace (hX : IsAdaptedPseudoGradient f X)
+    {p q a₁ : M} (φ : MorseChart E f q)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {ρ : ℝ} (hρ : 0 < ρ) (hloc : ∀ w ∈ φ.toChart.source, ‖φ.coord (φ.toChart w)‖ < ρ →
+      (w ∈ hX.flow.stableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).snd = 0))
+    (hpq : p ≠ q) (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
+    ∀ᶠ ε in 𝓝[>] 0, ∃ T, hX.flow T a₁ ∈ φ.toChart.source ∧
+      (φ.splitCoord (φ.coord (φ.toChart (hX.flow T a₁)))).snd = 0 ∧
+      ‖(φ.splitCoord (φ.coord (φ.toChart (hX.flow T a₁)))).fst‖ = ε := by
+  filter_upwards [hX.eventually_exists_flow_norm_coord_eq φ hφ hpq ha₁,
+    nhdsWithin_le_nhds (gt_mem_nhds hρ)] with ε ⟨T, hT, hTε⟩ hερ
+  -- The crossing point lies on the stable plane, so its contracting coordinate has norm `ε`.
+  have hs := (hloc _ hT (hTε ▸ hερ)).1
+    (hX.flow.isInvariant_unstableSet_inter_stableSet p q T ha₁).2
+  have hn := φ.max_norm_fst_norm_snd_splitCoord (φ.coord (φ.toChart (hX.flow T a₁)))
+  rw [hs, norm_zero, max_eq_left (norm_nonneg _), hTε] at hn
+  exact ⟨T, hT, hs, hn⟩
+
 /-- **A Morse box at the middle of a broken trajectory.** For a trajectory from `p` to `q` through
 `a₁` and one from `q` to `r` through `a₂`, there are a Morse chart `φ` at `q` in which `X` is
 linear and a radius `ε` such that the cube of radius `2 ε` lies in the chart, the stable and
@@ -119,85 +217,29 @@ private theorem exists_morseBox_of_broken (hX : IsAdaptedPseudoGradient f X)
       ‖(φ.splitCoord (φ.coord (φ.toChart y₂))).snd‖ = ε := by
   have hq := hX.mfderiv_eq_zero_of_mem_stableSet ha₁.2
   have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hq
-  obtain ⟨φ, hφ⟩ := hX.exists_morseChart q hq
-  have hφ' := φ.coord_mfderiv_neg hφ hnd
-  -- The local descriptions of the stable and unstable sets, and of the flow on them.
-  obtain ⟨ρs, hρs, hs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
-  obtain ⟨ρu, hρu, hu⟩ := (hX.neg hf).exists_forall_mem_stableSet_iff (φ.neg hnd) hφ'
-  simp only [MorseChart.neg_toChart, MorseChart.neg_coord, MorseChart.neg_weight, Pi.neg_apply,
-    Left.neg_neg_iff, ← hX.unstableSet_eq_stableSet_neg hf] at hu
-  obtain ⟨ρc, hρc, hc⟩ := hX.exists_forall_coord_flow_eq_exp_smul φ hφ
-  obtain ⟨ρc', hρc', hc'⟩ := (hX.neg hf).exists_forall_coord_flow_eq_exp_smul (φ.neg hnd) hφ'
-  simp only [MorseChart.neg_toChart, MorseChart.neg_coord, hX.neg_flow hf, Flow.stableSet_reverse,
-    Flow.reverse_apply] at hc'
-  obtain ⟨rT, hrT, hT⟩ := φ.exists_pos_forall_norm_lt_mem_target
-  have hsplit : ∀ w ∈ φ.toChart.source, ‖φ.coord (φ.toChart w)‖ < min ρs ρu →
-      (w ∈ hX.flow.stableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).snd = 0) ∧
-      (w ∈ hX.flow.unstableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).fst = 0) :=
-    fun w hw hwρ ↦ ⟨(hs w hw (hwρ.trans_le (min_le_left _ _))).trans
-      (by simp [funext_iff, φ.weight_ne_one_iff]),
-      (hu w hw (hwρ.trans_le (min_le_right _ _))).trans (by simp [funext_iff, φ.weight_eq_one_iff])⟩
-  set δ := min (min (min ρs ρu / 2) ρc) (min ρc' (rT / 4)) with hδdef
-  have hδ : 0 < δ := by positivity
-  -- Points of the two trajectories in the cube of radius `δ`.
-  have hN : {w | w ∈ φ.toChart.source ∧ ‖φ.coord (φ.toChart w)‖ < δ} ∈ 𝓝 q := by
-    have hcont : ContinuousAt (fun w ↦ ‖φ.coord (φ.toChart w)‖) q :=
-      (φ.continuous_coord.norm.continuousAt).comp (φ.toChart.continuousAt φ.mem_source)
-    filter_upwards [φ.toChart.open_source.mem_nhds φ.mem_source,
-      hcont.eventually (gt_mem_nhds (by simpa using hδ))] with w hw hwδ using ⟨hw, hwδ⟩
-  obtain ⟨t₁, hb₁, hb₁δ⟩ := ((Flow.mem_stableSet.1 ha₁.2).eventually hN).exists
-  obtain ⟨t₂, hb₂, hb₂δ⟩ := ((Flow.mem_unstableSet.1 ha₂.1).eventually hN).exists
-  set b₁ := hX.flow t₁ a₁
-  set b₂ := hX.flow t₂ a₂
-  have hb₁m : b₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
-    hX.flow.isInvariant_unstableSet_inter_stableSet p q t₁ ha₁
-  have hb₂m : b₂ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r :=
-    hX.flow.isInvariant_unstableSet_inter_stableSet q r t₂ ha₂
-  -- Their coordinates are nonzero, since they are not the critical point.
-  have hz₁ : 0 < ‖φ.coord (φ.toChart b₁)‖ := by
-    refine norm_pos_iff.2 fun h ↦ ?_
-    have hb := (φ.toChart_eq_zero_iff hb₁).1 (by simpa using h)
-    have := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq hb₁m
-    rw [hb] at this
-    exact this.1.ne rfl
-  have hz₂ : 0 < ‖φ.coord (φ.toChart b₂)‖ := by
-    refine norm_pos_iff.2 fun h ↦ ?_
-    have hb := (φ.toChart_eq_zero_iff hb₂).1 (by simpa using h)
-    have := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hqr hb₂m
-    rw [hb] at this
-    exact this.2.ne rfl
-  set ε := min ‖φ.coord (φ.toChart b₁)‖ ‖φ.coord (φ.toChart b₂)‖
-  have hε : 0 < ε := lt_min hz₁ hz₂
-  have hεδ : ε < δ := (min_le_left _ _).trans_lt hb₁δ
-  -- Flow the two points to the faces of the box of radius `ε`.
-  set s₁ := Real.log (‖φ.coord (φ.toChart b₁)‖ / ε)
-  set s₂ := Real.log (‖φ.coord (φ.toChart b₂)‖ / ε)
-  have hs₁ : 0 ≤ s₁ := Real.log_nonneg ((one_le_div hε).2 (min_le_left _ _))
-  have hs₂ : 0 ≤ s₂ := Real.log_nonneg ((one_le_div hε).2 (min_le_right _ _))
-  obtain ⟨hy₁, hy₁c⟩ := hc b₁ hb₁m.2 hb₁ (hb₁δ.trans_le (by simp [hδdef])) s₁ hs₁
-  obtain ⟨hy₂, hy₂c⟩ := hc' b₂ hb₂m.1 hb₂ (hb₂δ.trans_le (by simp [hδdef])) s₂ hs₂
-  have he₁ : Real.exp (-s₁) * ‖φ.coord (φ.toChart b₁)‖ = ε := by
-    rw [Real.exp_neg, Real.exp_log (div_pos hz₁ hε)]; field_simp
-  have he₂ : Real.exp (-s₂) * ‖φ.coord (φ.toChart b₂)‖ = ε := by
-    rw [Real.exp_neg, Real.exp_log (div_pos hz₂ hε)]; field_simp
-  have hδρ : δ ≤ min ρs ρu / 2 := (min_le_left _ _).trans (min_le_left _ _)
-  have hδT : δ ≤ rT / 4 := (min_le_right _ _).trans (min_le_right _ _)
-  have hb₁s := ((hsplit b₁ hb₁ (by linarith [hb₁δ])).1.1 hb₁m.2)
-  have hb₂u := ((hsplit b₂ hb₂ (by linarith [hb₂δ])).2.1 hb₂m.1)
-  refine ⟨φ, ε, min ρs ρu, s₁ + t₁, -s₂ + t₂, hX.flow s₁ b₁, hX.flow (-s₂) b₂, hφ, hε,
-    by linarith, fun z hz ↦ hT z (by linarith), hsplit, Flow.map_add _ _ _ _,
-    Flow.map_add _ _ _ _, hy₁, hy₂, ?_, ?_, ?_, ?_⟩
-  · rw [hy₁c, map_smul, WithLp.smul_snd, hb₁s, smul_zero]
-  · have h := φ.max_norm_fst_norm_snd_splitCoord (φ.coord (φ.toChart (hX.flow s₁ b₁)))
-    rw [hy₁c, map_smul, WithLp.smul_snd, hb₁s, smul_zero, norm_zero, ← map_smul, norm_smul,
-      Real.norm_of_nonneg (Real.exp_pos _).le, he₁] at h
-    rwa [max_eq_left (norm_nonneg _), ← hy₁c] at h
-  · rw [hy₂c, map_smul, WithLp.smul_fst, hb₂u, smul_zero]
-  · have h := φ.max_norm_fst_norm_snd_splitCoord (φ.coord (φ.toChart (hX.flow (-s₂) b₂)))
-    rw [hy₂c, map_smul, WithLp.smul_fst, hb₂u, smul_zero, norm_zero, ← map_smul, norm_smul,
-      Real.norm_of_nonneg (Real.exp_pos _).le, he₂] at h
-    rwa [max_eq_right (norm_nonneg _), ← hy₂c] at h
-
+  obtain ⟨φ, ρ, hφ, hρ, hT, hloc⟩ := hX.exists_morseChart_box hf hq
+  -- Both trajectories cross every small sphere around `q`; the second one backwards, as a
+  -- trajectory of `-X` from `r` to `q`.
+  have h₁ := hX.eventually_exists_flow_mem_entranceFace φ hφ hρ (fun w hw hwρ ↦ (hloc w hw hwρ).1)
+    hpq ha₁
+  have h₂ := (hX.neg hf).eventually_exists_flow_norm_coord_eq (φ.neg hnd)
+    (φ.coord_mfderiv_neg hφ hnd) hqr.symm (a₁ := a₂)
+    ⟨by rw [← hX.stableSet_eq_unstableSet_neg hf]; exact ha₂.2,
+      by rw [← hX.unstableSet_eq_stableSet_neg hf]; exact ha₂.1⟩
+  simp only [MorseChart.neg_toChart, MorseChart.neg_coord, hX.neg_flow hf,
+    Flow.reverse_apply] at h₂
+  have hsmall : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 < ε ∧ 2 * ε < ρ := by
+    filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (gt_mem_nhds (half_pos hρ))]
+      with ε hε hερ
+    exact ⟨hε, by linarith⟩
+  obtain ⟨ε, ⟨T₁, hy₁, hy₁s, hn₁⟩, ⟨T₂, hy₂, hy₂ε⟩, hε, hερ⟩ := (h₁.and (h₂.and hsmall)).exists
+  -- The exit point lies on the unstable plane, so its expanding coordinate has norm `ε`.
+  have hy₂u := ((hloc _ hy₂ (by linarith)).2.1
+    (hX.flow.isInvariant_unstableSet_inter_stableSet q r (-T₂) ha₂).1)
+  have hn₂ := φ.max_norm_fst_norm_snd_splitCoord (φ.coord (φ.toChart (hX.flow (-T₂) a₂)))
+  rw [hy₂u, norm_zero, max_eq_right (norm_nonneg _), hy₂ε] at hn₂
+  exact ⟨φ, ε, ρ, T₁, -T₂, _, _, hφ, hε, hερ, fun z hz ↦ hT z (by linarith), hloc, rfl, rfl, hy₁,
+    hy₂, hy₁s, hn₁, hy₂u, hn₂⟩
 
 /-- **A Morse box near its entrance and exit points.** Let `φ` be a Morse chart at `q` in which,
 on the cube of radius `ρ > 2 ε`, the stable and unstable sets of `q` are the coordinate planes, and
@@ -813,26 +855,201 @@ private theorem exists_isSliceChart_preimage_flow (hX : IsAdaptedPseudoGradient 
   · rintro _ ⟨z, hz, rfl⟩
     simpa [G] using (Flow.apply_mem_unstableSet_iff _ _).2 hz
 
+/-- **A transverse disc crosses the entrance face of a Morse box in a Lipschitz graph.** Let `φ`
+be a Morse chart at `q` in which `X` is linear and whose cube of radius `2 ε` lies in the chart,
+and `y₁` a point of the chart on the entrance face `‖u‖ = ε, v = 0`. Let `ψ` be a disc through the
+split coordinates of `y₁`, strictly differentiable at `0` with derivative a section of the
+expanding coordinate `v`, whose points near `0` lie in a set `S`. For every neighbourhood `N₁` of
+`y₁` there is a Lipschitz graph `v ↦ (g v, v)` in the entrance face over a closed ball, each of
+whose points is reached by the flow from a point of `S ∩ N₁`. -/
+private theorem exists_lipschitzOnWith_entranceFace_graph (hX : IsAdaptedPseudoGradient f X)
+    {q y₁ : M} (φ : MorseChart E f q)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {ε : ℝ} (hε : 0 < ε) (hε₂ : ∀ z, ‖z‖ ≤ 2 * ε → φ.coord.symm z ∈ φ.toChart.target)
+    (hy₁φ : y₁ ∈ φ.toChart.source) (hy₁s : (φ.splitCoord (φ.coord (φ.toChart y₁))).snd = 0)
+    (hy₁f : ‖(φ.splitCoord (φ.coord (φ.toChart y₁))).fst‖ = ε) {S : Set M}
+    {ψ : ({i // ¬φ.weight i = 1} → ℝ) →
+      WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    {ψ' : ({i // ¬φ.weight i = 1} → ℝ) →L[ℝ]
+      WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hψ : HasStrictFDerivAt ψ ψ' 0)
+    (hψ' : WithLp.sndL 2 ℝ ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ) ∘L ψ' =
+      ContinuousLinearMap.id ℝ _)
+    (hψ₀ : ψ 0 = φ.splitCoord (φ.coord (φ.toChart y₁)))
+    (hψs : ∀ᶠ z in 𝓝 0, φ.coord.symm (φ.splitCoord.symm (ψ z)) ∈ φ.toChart.target ∧
+      φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (ψ z))) ∈ S)
+    {N₁ : Set M} (hN₁ : N₁ ∈ 𝓝 y₁) :
+    ∃ δ > 0, ∃ (K : NNReal) (g : ({i // ¬φ.weight i = 1} → ℝ) → {i // φ.weight i = 1} → ℝ),
+      LipschitzOnWith K g (Metric.closedBall 0 δ) ∧ ∀ v ∈ Metric.closedBall 0 δ, ‖g v‖ = ε ∧
+        ∃ u ∈ S ∩ N₁, ∃ τ : ℝ,
+          hX.flow τ u =
+            φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (WithLp.toLp 2 (g v, v)))) := by
+  set Ψ : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) → M :=
+    fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) with hΨdef
+  -- Near `0`, the points of the disc lie near `y₁`, inside the box near its entrance face.
+  have hΨψ : Tendsto (fun z ↦ Ψ (ψ z)) (𝓝 0) (𝓝 y₁) := by
+    have hc := continuousAt_toChart_symm_coord_symm_splitCoord_symm φ
+      (z := φ.splitCoord (φ.coord (φ.toChart y₁))) (by simpa using φ.toChart.map_source hy₁φ)
+    have h' := hc.tendsto.comp (hψ₀ ▸ hψ.continuousAt.tendsto)
+    rwa [show φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm
+      (φ.splitCoord (φ.coord (φ.toChart y₁))))) = y₁ by simp [φ.toChart.left_inv hy₁φ]] at h'
+  have hψf : ∀ᶠ z in 𝓝 0, ‖(ψ z).fst‖ < 2 * ε ∧ ‖(ψ z).snd‖ < ε := by
+    have h₁ : ContinuousAt (fun z ↦ ‖(ψ z).fst‖) 0 :=
+      ((WithLp.continuous_fst 2 _ _).norm.continuousAt).comp hψ.continuousAt
+    have h₂ : ContinuousAt (fun z ↦ ‖(ψ z).snd‖) 0 :=
+      ((WithLp.continuous_snd 2 _ _).norm.continuousAt).comp hψ.continuousAt
+    filter_upwards [h₁.eventually (gt_mem_nhds
+        (by rw [hψ₀, hy₁f]; linarith : ‖(ψ 0).fst‖ < 2 * ε)),
+      h₂.eventually (gt_mem_nhds (by rw [hψ₀, hy₁s, norm_zero]; exact hε : ‖(ψ 0).snd‖ < ε))]
+      with z hz₁ hz₂
+    exact ⟨hz₁, hz₂⟩
+  set U' : Set ({i // ¬φ.weight i = 1} → ℝ) := {z | ‖(ψ z).fst‖ < 2 * ε ∧ ‖(ψ z).snd‖ < ε ∧
+    φ.coord.symm (φ.splitCoord.symm (ψ z)) ∈ φ.toChart.target ∧ Ψ (ψ z) ∈ S ∧ Ψ (ψ z) ∈ N₁}
+  have hU' : U' ∈ 𝓝 0 := (hψf.and (hψs.and (hΨψ.eventually hN₁))).mono
+    fun z ⟨⟨h₁, h₂⟩, ⟨h₃, h₄⟩, h₅⟩ ↦ ⟨h₁, h₂, h₃, h₄, h₅⟩
+  have hΦy₁ : WithLp.toLp 2 ((φ.splitCoord (φ.coord (φ.toChart y₁))).fst, 0) =
+      φ.splitCoord (φ.coord (φ.toChart y₁)) :=
+    WithLp.ofLp_injective 2 (Prod.ext (by simp) (by simpa using hy₁s.symm))
+  obtain ⟨δ, hδ, K, g, hg, -, hpts, -⟩ := exists_splitQuadraticFlow_splitEntryTime_eq_graph hψ
+    (by rw [hψ']; exact ⟨.refl ℝ _, rfl⟩) (hψ₀.trans hΦy₁.symm) hy₁f hε hU'
+  refine ⟨δ, hδ, K, g, hg, fun v hv ↦ ⟨(hpts v hv).1, ?_⟩⟩
+  -- The point of the disc over `v` flows to the entrance point `(g v, v)` at its entry time.
+  obtain ⟨-, z, ⟨hzf, hzs, hzT, hzS, hzN₁⟩, hzflow⟩ := hpts v hv
+  have hΦΨ : φ.splitCoord (φ.coord (φ.toChart (Ψ (ψ z)))) = ψ z := by
+    simp [hΨdef, φ.toChart.right_inv hzT]
+  have hentry := hX.flow_splitEntryTime_of_norm_lt φ hφ hε hε₂ (φ.toChart.map_target hzT)
+    (by rw [hΦΨ]; exact hzf) (by rw [hΦΨ]; exact hzs)
+  rw [hΦΨ, hzflow] at hentry
+  exact ⟨_, ⟨hzS, hzN₁⟩, _, hentry⟩
+
+/-- **A set transverse to the unstable manifold at the critical point is a graph near the
+centre.** Let `φ` be a Morse chart at `q` on whose cube of radius `ρ` the unstable set of `q` is
+the plane where the contracting split coordinate `u` vanishes, and let `Z` be a set through `q`,
+flattened near `q` by a chart of the maximal atlas and transverse to `W^u(q)` at `q`. Near the
+centre, `Z` contains a Lipschitz graph `u ↦ (u, k u)` over a closed ball of the contracting
+factor, with `k 0 = 0`. -/
+private theorem exists_lipschitzOnWith_graph_mem_of_isSliceChart (hX : IsAdaptedPseudoGradient f X)
+    {q : M} (φ : MorseChart E f q) {ρ : ℝ} (hρ : 0 < ρ)
+    (hloc : ∀ w ∈ φ.toChart.source, ‖φ.coord (φ.toChart w)‖ < ρ →
+      (w ∈ hX.flow.unstableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).fst = 0))
+    (hq : q ∈ hX.flow.unstableSet q) {Z : Set M} {L : Submodule ℝ E}
+    {φZ : OpenPartialHomeomorph M E} (hφZ : φZ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    (hZ : IsSliceChart φZ (L : Set E) Z) (hqφZ : q ∈ φZ.source) (hqZ : q ∈ Z)
+    (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) Z q) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet q) q) = ⊤) :
+    ∃ η > 0, ∃ (K : NNReal) (k : ({i // φ.weight i = 1} → ℝ) → {i // ¬φ.weight i = 1} → ℝ),
+      LipschitzOnWith K k (Metric.closedBall 0 η) ∧ k 0 = 0 ∧ ∀ u ∈ Metric.closedBall 0 η,
+        φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (WithLp.toLp 2 (u, k u)))) ∈ Z := by
+  -- Near `q`, the unstable set of `q` is the kernel of `u`; `Z` contains a disc transverse to it.
+  have hlocq : ∀ᶠ w in 𝓝 q,
+      w ∈ hX.flow.unstableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).fst = 0 := by
+    have hcont : ContinuousAt (fun w ↦ ‖φ.coord (φ.toChart w)‖) q :=
+      (φ.continuous_coord.norm.continuousAt).comp (φ.toChart.continuousAt φ.mem_source)
+    filter_upwards [φ.toChart.open_source.mem_nhds φ.mem_source,
+      hcont.eventually (gt_mem_nhds (by simpa [φ.apply_self] using hρ))] with w hw hwρ
+    exact hloc w hw hwρ
+  obtain ⟨χ, χ', hχ, hχ', hχ₀, hχs⟩ :=
+    exists_hasStrictFDerivAt_splitCoord φ (pr := WithLp.fstL 2 ℝ _ _)
+      (fun u ↦ ⟨WithLp.toLp 2 (u, 0), rfl⟩) hlocq hφZ hZ φ.mem_source hqφZ hqZ hq htr
+  obtain ⟨η, hη, K, k, hk, hk₀, hkpts⟩ := exists_lipschitzOnWith_graph_of_hasStrictFDerivAt hχ
+    (by rw [hχ']; exact ⟨.refl ℝ _, rfl⟩) (by simp [hχ₀, φ.apply_self])
+    (hχs.mono fun _ hz ↦ hz.2)
+  refine ⟨η, hη, K, k, hk, hk₀, fun u hu ↦ ?_⟩
+  obtain ⟨z, hz, hzk⟩ := hkpts u hu
+  rw [← hzk]
+  exact hz
+
+/-- **Gluing a broken trajectory into a transverse set through the critical point.** Let `X` be a
+Morse–Smale adapted pseudo-gradient for a Morse function `f` on a compact manifold, and `a₁` a
+point of a trajectory from `p` to a critical point `q ≠ p`. Let `Z` be a set through `q`, flattened
+near `q` by a chart of the maximal atlas, which meets `W^u(q)` transversally at `q`. Then, for all
+neighbourhoods `N₁` of `a₁` and `N` of `q`, some point of `W^u(p) ∩ Z` lies in `N` and its orbit
+passes through `N₁`. -/
+private theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart_self
+    {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+    {p q a₁ : M} {Z : Set M} (hpq : p ≠ q)
+    (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) {L : Submodule ℝ E}
+    {φZ : OpenPartialHomeomorph M E} (hφZ : φZ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    (hZ : IsSliceChart φZ (L : Set E) Z) (hqφZ : q ∈ φZ.source) (hqZ : q ∈ Z)
+    (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) Z q) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet q) q) = ⊤)
+    {N₁ N : Set M} (hN₁ : N₁ ∈ 𝓝 a₁) (hN : N ∈ 𝓝 q) :
+    ∃ w ∈ hX.flow.unstableSet p ∩ Z, w ∈ N ∧ ∃ s : ℝ, hX.flow s w ∈ N₁ := by
+  -- Plan: choose a Morse box at `q` with entrance point `y₁` on the trajectory through `a₁`; glue
+  -- the trace of `W^u(p)` on the entrance face to the graph of `Z` through the centre of the box,
+  -- where the flow is the split hyperbolic flow (`eventually_exists_splitQuadraticFlow_snd_eq`).
+  have hq := hX.mfderiv_eq_zero_of_mem_stableSet ha₁.2
+  obtain ⟨φ, ρ, hφ, hρ, hT, hloc⟩ := hX.exists_morseChart_box hf hq
+  obtain ⟨ρd, hρd, hdisc⟩ := h.exists_hasStrictFDerivAt_mem_unstableSet hf φ hφ
+  have hsmall : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 < ε ∧ 2 * ε < ρ ∧ ε < ρd := by
+    filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (gt_mem_nhds (half_pos hρ)),
+      nhdsWithin_le_nhds (gt_mem_nhds hρd)] with ε hε hερ hερd
+    exact ⟨hε, by linarith, hερd⟩
+  obtain ⟨ε, ⟨T₁, hy₁φ, hy₁s, hy₁f⟩, hε, hερ, hερd⟩ :=
+    ((hX.eventually_exists_flow_mem_entranceFace φ hφ hρ (fun w hw hwρ ↦ (hloc w hw hwρ).1) hpq
+      ha₁).and hsmall).exists
+  have hy₁ρ : ‖φ.coord (φ.toChart (hX.flow T₁ a₁))‖ < ρd := by
+    rw [← φ.max_norm_fst_norm_snd_splitCoord, hy₁s, hy₁f, norm_zero, max_eq_left hε.le]
+    exact hερd
+  have hε₁ : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target := fun z hz ↦ hT z (by linarith)
+  -- The trace of `W^u(p)` on the entrance face, from points whose orbits reach `N₁`.
+  obtain ⟨ψ, ψ', hψ, hψ', hψ₀, hψs⟩ := hdisc
+    (hX.flow.isInvariant_unstableSet_inter_stableSet p q T₁ ha₁) hy₁φ hy₁ρ
+  have hN₁' : hX.flow (-T₁) ⁻¹' N₁ ∈ 𝓝 (hX.flow T₁ a₁) :=
+    (hX.flow.continuous_toFun (-T₁)).continuousAt.preimage_mem_nhds
+      (by rwa [Flow.map_neg_apply_map])
+  obtain ⟨δ, hδ, Kg, g, hg, hpts⟩ := hX.exists_lipschitzOnWith_entranceFace_graph φ hφ hε
+    (fun z hz ↦ hT z (by linarith)) hy₁φ hy₁s hy₁f hψ hψ' hψ₀ hψs hN₁'
+  -- `Z` as a graph through the centre, and the glued orbit, which meets it near `q`.
+  obtain ⟨η, hη, Kk, k, hk, hk₀, hkZ⟩ := hX.exists_lipschitzOnWith_graph_mem_of_isSliceChart φ hρ
+    (fun w hw hwρ ↦ (hloc w hw hwρ).2) (hX.mem_unstableSet_inter_stableSet_self hq).1 hφZ hZ
+    hqφZ hqZ htr
+  have hN' : (fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) ⁻¹' N ∈ 𝓝 0 :=
+    (continuousAt_toChart_symm_coord_symm_splitCoord_symm φ
+      (by simpa using hε₁ 0 (by simp [hε.le]))).preimage_mem_nhds (by simpa using hN)
+  obtain ⟨T, ⟨y, hy, hbox, hW, hxη, hgraph⟩, hT0⟩ :=
+    ((eventually_exists_splitQuadraticFlow_snd_eq hδ hη hg (fun y hy ↦ (hpts y hy).1) hk hk₀
+      hN').and (eventually_ge_atTop 0)).exists
+  obtain ⟨-, u, ⟨hu, huN₁⟩, τ, hτ⟩ := hpts y hy
+  have hcross := hX.flow_toChart_symm_splitCoord_symm φ hφ hε₁
+    (w := WithLp.toLp 2 (g y, y)) (t := T) (by rwa [uIcc_of_le hT0])
+  have hw : splitQuadraticFlow T (WithLp.toLp 2 (g y, y)) = WithLp.toLp 2
+      ((splitQuadraticFlow T (WithLp.toLp 2 (g y, y))).fst,
+        k (splitQuadraticFlow T (WithLp.toLp 2 (g y, y))).fst) :=
+    WithLp.ofLp_injective 2 (Prod.ext rfl hgraph)
+  refine ⟨φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm
+    (splitQuadraticFlow T (WithLp.toLp 2 (g y, y))))), ⟨?_, by rw [hw]; exact hkZ _ hxη⟩, hW,
+    -T₁ + (-(T + τ)), ?_⟩
+  · rw [← hcross, ← hτ, ← Flow.map_add]
+    exact (Flow.apply_mem_unstableSet_iff _ _).2 hu
+  · rw [← hcross, ← hτ, ← Flow.map_add, ← Flow.map_add]
+    convert mem_preimage.1 huN₁ using 2
+    ring
+
 /-- **Gluing a broken trajectory into a transverse set.** Let `X` be a Morse–Smale adapted
 pseudo-gradient for a Morse function `f` on a compact manifold, `a₁` a point of a trajectory from
-`p` to a critical point `q ≠ p`, and `y ≠ q` a point of the unstable manifold `W^u(q)`. Let `Z` be
-a set through `y`, flattened near `y` by a chart of the maximal atlas, which meets `W^u(q)`
-transversally at `y`. Then, for all neighbourhoods `N₁` of `a₁` and `N` of `y`, some point of
-`W^u(p) ∩ Z` lies in `N` and its orbit passes through `N₁`. So `W^u(p) ∩ Z` accumulates at `y`,
-along orbits which follow the trajectory through `a₁`. For `Z` the stable manifold of a critical
-point this is the gluing of a broken trajectory
+`p` to a critical point `q ≠ p`, and `y` a point of the unstable manifold `W^u(q)`, possibly `q`
+itself. Let `Z` be a set through `y`, flattened near `y` by a chart of the maximal atlas, which
+meets `W^u(q)` transversally at `y`. Then, for all neighbourhoods `N₁` of `a₁` and `N` of `y`, some
+point of `W^u(p) ∩ Z` lies in `N` and its orbit passes through `N₁`. So `W^u(p) ∩ Z` accumulates at
+`y`, along orbits which follow the trajectory through `a₁`. For `Z` the stable manifold of a
+critical point this is the gluing of a broken trajectory
 (`IsMorseSmale.exists_mem_unstableSet_inter_stableSet_flow_mem`). -/
 theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     {p q a₁ y : M} {Z : Set M} (hpq : p ≠ q)
     (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) (hy : y ∈ hX.flow.unstableSet q)
-    (hyq : y ≠ q) {L : Submodule ℝ E} {φZ : OpenPartialHomeomorph M E}
+    {L : Submodule ℝ E} {φZ : OpenPartialHomeomorph M E}
     (hφZ : φZ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) (hZ : IsSliceChart φZ (L : Set E) Z)
     (hyφZ : y ∈ φZ.source) (hyZ : y ∈ Z)
     (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) Z y) ⊔
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet q) y) = ⊤)
     {N₁ N : Set M} (hN₁ : N₁ ∈ 𝓝 a₁) (hN : N ∈ 𝓝 y) :
     ∃ w ∈ hX.flow.unstableSet p ∩ Z, w ∈ N ∧ ∃ s : ℝ, hX.flow s w ∈ N₁ := by
+  rcases eq_or_ne y q with rfl | hyq
+  · exact h.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart_self hf hpq ha₁ hφZ hZ hyφZ hyZ
+      htr hN₁ hN
   -- Plan: choose a Morse box at `q` with entrance point `y₁` on the trajectory through `a₁` and
   -- exit point `y₂` on the orbit of `y`; glue a disc in `W^u(p)` through `y₁` to a disc through
   -- `y₂` in the image of `Z` under the flow, and flow a glued point back to `Z`.
@@ -941,27 +1158,24 @@ theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
 
 /-- **Broken trajectories of any index are limits of unbroken ones.** Let `X` be a Morse–Smale
 adapted pseudo-gradient for a Morse function `f` on a compact manifold, and `p`, `q`, `r` critical
-points with `p ≠ q` and `q ≠ r`, with no condition on their Morse indices. For a point `a₁` of a
+points with `p ≠ q`, with no condition on their Morse indices. For a point `a₁` of a
 trajectory from `p` to `q`, a point `a₂` of a trajectory from `q` to `r`, and neighbourhoods `N₁`
 of `a₁` and `N₂` of `a₂`, there is a trajectory from `p` to `r` which passes through `N₁` and,
 later or earlier, through `N₂`: the broken trajectory through `a₁` and `a₂` is a limit of unbroken
 trajectories in the sense of Morse theory. -/
 theorem IsMorseSmale.exists_mem_unstableSet_inter_stableSet_flow_mem
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-    {p q r a₁ a₂ : M} (hpq : p ≠ q) (hqr : q ≠ r)
+    {p q r a₁ a₂ : M} (hpq : p ≠ q)
     (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
     (ha₂ : a₂ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r) {N₁ N₂ : Set M} (hN₁ : N₁ ∈ 𝓝 a₁)
     (hN₂ : N₂ ∈ 𝓝 a₂) :
     ∃ u ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r, ∃ s₁ s₂ : ℝ,
       hX.flow s₁ u ∈ N₁ ∧ hX.flow s₂ u ∈ N₂ := by
   -- Glue into the stable manifold of `r`, which is flattened near `a₂` and transverse to `W^u(q)`.
-  have ha₂q : a₂ ≠ q := by
-    rintro rfl
-    exact (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hqr ha₂).2.false
   obtain ⟨L, φZ, -, ha₂φZ, hφZ, hZ⟩ :=
     hX.exists_isSliceChart_stableSet (hX.mfderiv_eq_zero_of_mem_stableSet ha₂.2) ha₂.2
   obtain ⟨u, hu, hu₂, s, hs⟩ := h.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart hf hpq ha₁
-    ha₂.1 ha₂q hφZ hZ ha₂φZ ha₂.2 (by rw [sup_comm]; exact h.span_mtangentConeAt_sup_eq_top ha₂)
+    ha₂.1 hφZ hZ ha₂φZ ha₂.2 (by rw [sup_comm]; exact h.span_mtangentConeAt_sup_eq_top ha₂)
     hN₁ hN₂
   exact ⟨u, hu, s, 0, hs, by rwa [Flow.map_zero_apply]⟩
 
@@ -985,7 +1199,7 @@ theorem IsMorseSmale.mem_closure_of_mem_unstableSet_inter_stableSet
   obtain ⟨B₁, hB₁⟩ := (𝓝 a₁).exists_antitone_basis
   obtain ⟨B₂, hB₂⟩ := (𝓝 a₂).exists_antitone_basis
   choose u hu s₁ s₂ hs₁ hs₂ using fun n ↦
-    h.exists_mem_unstableSet_inter_stableSet_flow_mem hf hpq hqr ha₁ ha₂ (hB₁.mem n) (hB₂.mem n)
+    h.exists_mem_unstableSet_inter_stableSet_flow_mem hf hpq ha₁ ha₂ (hB₁.mem n) (hB₂.mem n)
   choose τ₁ hτ₁ using fun n ↦ (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr
     (hu n) (by linarith [hfa₁.1, hfa₂.1, hfa₂.2]) hfa₁.2).exists
   choose τ₂ hτ₂ using fun n ↦ (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr
