@@ -79,8 +79,15 @@ lemma isZero_resolutionComplex_X_add_two (S : ShortComplex C) (n : ℕ) :
     IsZero (S.resolutionComplex.X (n + 2)) :=
   isZero_zero C
 
+/-- The differentials of `S.resolutionComplex` out of degrees at least `2` vanish. -/
+@[simp]
+lemma resolutionComplex_d_add_two (S : ShortComplex C) (n j : ℕ) :
+    S.resolutionComplex.d (n + 2) j = 0 :=
+  (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _
+
 /-- Two chain maps out of `S.resolutionComplex` agree as soon as they agree in degrees `0` and `1`,
-since the complex vanishes in higher degrees. -/
+since the complex vanishes in higher degrees. This is the analogue for this model of Mathlib's
+`HomologicalComplex.from_double_hom_ext` for the two-term complex `HomologicalComplex.double`. -/
 @[ext]
 lemma from_resolutionComplex_hom_ext {K : ChainComplex C ℕ} {f g : S.resolutionComplex ⟶ K}
     (h₀ : f.f 0 = g.f 0) (h₁ : f.f 1 = g.f 1) : f = g := by
