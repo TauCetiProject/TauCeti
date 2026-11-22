@@ -76,13 +76,6 @@ section General
 variable {P X : Type*} [TopologicalSpace P] [TopologicalSpace X] {u : P → ℂ → X} {s : Set P}
   {p₀ : P} {D : Set X}
 
-/-- Joint continuity of the family at `(p₀, w)`, read along `𝓝[s] p₀ ×ˢ 𝓝 w`. -/
-private theorem tendsto_uncurry_of_continuousOn (hp₀ : p₀ ∈ s)
-    (hu : ContinuousOn (Function.uncurry u) (s ×ˢ univ)) (w : ℂ) :
-    Tendsto (fun q : P × ℂ ↦ u q.1 q.2) (𝓝[s] p₀ ×ˢ 𝓝 w) (𝓝 (u p₀ w)) := by
-  have h := hu (p₀, w) ⟨hp₀, trivial⟩
-  rwa [ContinuousWithinAt, nhdsWithin_prod_eq, nhdsWithin_univ] at h
-
 /-- The data used to follow a cut point `z` of `u p₀` along the family `u` over the parameters `s`:
 near `u p₀ z` the set `D` is the zero set of a continuous function `g : X → ℂ` on an open set `W`,
 the compositions `g ∘ u p`, `p ∈ s`, are differentiable at the points that `u p` maps into `W`,
@@ -130,7 +123,10 @@ private theorem eventually_exists_inter_closedBall_eq_singleton (hp₀ : p₀ �
   -- For `p ∈ s` near `p₀`, the map `u p` sends the ball into `W`.
   have hsW : ∀ᶠ p in 𝓝[s] p₀, ∀ w ∈ closedBall z r, u p w ∈ W :=
     hK.eventually_forall_mem_of_tendsto_prod_nhds hW
-      (fun w _ ↦ tendsto_uncurry_of_continuousOn hp₀ hu w) hrW
+      (fun w _ ↦ by
+        simpa [ContinuousWithinAt, nhdsWithin_prod_eq, Function.uncurry_def] using
+          hu (p₀, w) ⟨hp₀, trivial⟩)
+      hrW
   set s' := {p ∈ s | ∀ w ∈ closedBall z r, u p w ∈ W}
   have hs' : s' ∈ 𝓝[s] p₀ := inter_mem self_mem_nhdsWithin hsW
   have hle : 𝓝[s] p₀ ≤ 𝓝[s'] p₀ := le_inf nhdsWithin_le_nhds (le_principal_iff.2 hs')
@@ -227,7 +223,10 @@ theorem eventually_isTransverseCutAt_and_exists_equiv_preimage (hD : IsClosed D)
   obtain ⟨C, hC, hCc⟩ := mem_cocompact.1 hc
   have haway : ∀ᶠ p in 𝓝[s] p₀, ∀ w ∈ C \ ⋃ z ∈ Z, ball z r, u p w ∈ Dᶜ :=
     (hC.diff (isOpen_biUnion fun _ _ ↦ isOpen_ball)).eventually_forall_mem_of_tendsto_prod_nhds
-      hD.isOpen_compl (fun w _ ↦ tendsto_uncurry_of_continuousOn hp₀ hu w)
+      hD.isOpen_compl
+      (fun w _ ↦ by
+        simpa [ContinuousWithinAt, nhdsWithin_prod_eq, Function.uncurry_def] using
+          hu (p₀, w) ⟨hp₀, trivial⟩)
       fun w hw hwD ↦ hw.2 (mem_biUnion hwD (mem_ball_self hr.1))
   filter_upwards [hloc, haway, ht] with p hp hpaway hpt
   refine (isTransverseCutAt_and_exists_equiv hdisj (fun w hw ↦ ?_) hp).imp_right
