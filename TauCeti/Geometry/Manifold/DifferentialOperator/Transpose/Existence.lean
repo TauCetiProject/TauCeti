@@ -73,6 +73,18 @@ section Partition
 
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
 
+/-- A product of smooth functions is supported in the support of its left factor. -/
+private theorem _root_.ContMDiffMap.tsupport_mul_subset_left {f g : C^∞⟮I, M; ℝ⟯} :
+    tsupport (f * g : C^∞⟮I, M; ℝ⟯) ⊆ tsupport f := by
+  rw [ContMDiffMap.coe_mul]
+  exact _root_.tsupport_mul_subset_left
+
+/-- A product of smooth functions is supported in the support of its right factor. -/
+private theorem _root_.ContMDiffMap.tsupport_mul_subset_right {f g : C^∞⟮I, M; ℝ⟯} :
+    tsupport (f * g : C^∞⟮I, M; ℝ⟯) ⊆ tsupport g := by
+  rw [ContMDiffMap.coe_mul]
+  exact _root_.tsupport_mul_subset_right
+
 variable {ι : Type*} (ρ : SmoothPartitionOfUnity ι I M univ)
   (T : ι → C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) (hT : ∀ i g, tsupport (T i g) ⊆ tsupport g)
 
@@ -81,8 +93,8 @@ include hT in
 of the partition of unity, so they form a locally finite family. -/
 private theorem locallyFinite_support_glue (g : C^∞⟮I, M; ℝ⟯) :
     LocallyFinite fun i ↦ Function.support (T i (ρ i * g)) :=
-  ρ.locallyFinite.closure.subset fun i ↦ (subset_tsupport _).trans <| (hT i _).trans <|
-    (by rw [ContMDiffMap.coe_mul]; exact tsupport_mul_subset_left)
+  ρ.locallyFinite.closure.subset fun i ↦ (subset_tsupport _).trans <| (hT i _).trans
+    ContMDiffMap.tsupport_mul_subset_left
 
 /-- The operator `g ↦ ∑ᶠ i, T i (ρ i * g)` glued from the operators `T i` along a smooth partition
 of unity `ρ`. -/
@@ -141,8 +153,7 @@ private theorem isFormalTranspose_glue [OpensMeasurableSpace M] [IsFiniteMeasure
     rw [Set.Finite.mem_toFinset]
     exact ⟨y, hρy, hfgK.elim (· hy.1) (· hy.2)⟩
   have hgcs (i : ι) : HasCompactSupport (ρ i * g) :=
-    (hρ i).mono' ((subset_tsupport _).trans (by
-      rw [ContMDiffMap.coe_mul]; exact tsupport_mul_subset_left))
+    (hρ i).mono' ((subset_tsupport _).trans ContMDiffMap.tsupport_mul_subset_left)
   have hleft (y : M) : D f y * g y = ∑ i ∈ F, D f y * (ρ i * g) y := by
     have h1 : g y = ∑ᶠ i, ρ i y * g y := by
       rw [← finsum_mul, ρ.sum_eq_one (mem_univ y), one_mul]
@@ -157,14 +168,14 @@ private theorem isFormalTranspose_glue [OpensMeasurableSpace M] [IsFiniteMeasure
     refine finsum_eq_sum_of_support_subset _ fun i hi ↦ ?_
     have hi' := Function.mem_support.1 hi
     have hy := hT i _ (subset_tsupport _ (right_ne_zero_of_mul hi'))
-    exact hF (tsupport_mul_subset_left hy)
-      ⟨subset_tsupport _ (left_ne_zero_of_mul hi'), tsupport_mul_subset_right hy⟩
+    exact hF (ContMDiffMap.tsupport_mul_subset_left hy)
+      ⟨subset_tsupport _ (left_ne_zero_of_mul hi'), ContMDiffMap.tsupport_mul_subset_right hy⟩
   simp_rw [hleft, hright]
   rw [integral_finsetSum _ fun i _ ↦ ContMDiffMap.integrable_apply_mul_of_tsupport_subset hD
       (.inr (hgcs i)),
     integral_finsetSum _ fun i _ ↦ ContMDiffMap.integrable_mul_apply_of_tsupport_subset (hT i)
       (.inr (hgcs i))]
-  exact Finset.sum_congr rfl fun i _ ↦ hDT i f _ (tsupport_mul_subset_left (f := (ρ i : M → ℝ)))
+  exact Finset.sum_congr rfl fun i _ ↦ hDT i f _ ContMDiffMap.tsupport_mul_subset_left
 
 end Partition
 
@@ -251,7 +262,7 @@ private theorem smoothPrincipalSymbol_vectorFieldProd {ι : Type*}
       (vectorFieldDerivation (X (i 0)))⟩ ⟨_, vectorFieldProd_mem X (Fin.tail i)⟩,
       smoothPrincipalSymbol_vectorFieldDerivation, smoothPrincipalSymbol_vectorFieldProd X hy ξ,
       Fin.prod_univ_succ]
-    rfl
+    simp [Fin.tail]
 
 /-! ### Matching the principal symbol near a point -/
 
@@ -325,7 +336,7 @@ private theorem smoothPrincipalSymbol_eq_symbolOperator {ι : Type*} [Fintype ι
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [MultilinearMap.map_smul_univ, smul_eq_mul, mul_comm,
     smoothCommutatorSymbol_mvfderiv hy D fun l ↦ u (i l)]
-  rfl
+  simp only [RingHom.id_apply, Function.comp_def]
 
 /-! ### Transposes by induction on the order -/
 
@@ -461,11 +472,9 @@ private theorem exists_nhds_integral_apply_mul_eq
         BoundarylessManifold.isInteriorPoint (hχu hy) ξ
       have hsub : (⟨D - P, sub_mem hD hP⟩ :
           differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ (m + 1)) =
-          ⟨D, hD⟩ + (-1 : ℝ) • ⟨P, hP⟩ :=
-        Subtype.ext (by
-          rw [Submodule.coe_add, Submodule.coe_smul, neg_one_smul]; exact sub_eq_add_neg D P)
-      rw [hsub, smoothPrincipalSymbol_add, smoothPrincipalSymbol_smul, h]
-      ring
+          ⟨D, hD⟩ - ⟨P, hP⟩ :=
+        Subtype.ext (Submodule.coe_sub _ ⟨D, hD⟩ ⟨P, hP⟩).symm
+      rw [hsub, smoothPrincipalSymbol_sub, h, sub_self, zero_mul]
     · refine mul_eq_zero_of_right _ ?_
       rw [mulLeft_apply, mul_one]
       exact image_eq_zero_of_notMem_tsupport hy
