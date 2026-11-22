@@ -36,7 +36,8 @@ suffices to compare them on that loop. On `πₘ(Sᵐ)` the cubical Hurewicz map
 loop generates `Hₘ(Sᵐ; ℤ) ≅ ℤ` (`TauCeti.isIso_hurewicz_sphereGenLoop`,
 `TauCeti.isIso_hurewicz_diskBoundaryGenLoop`). An additive map `ℤ → ℤ` whose image contains a
 generator is multiplication by a unit, so the two maps differ by a unit of `ℤ` on `πₘ(Sᵐ)`, and
-hence everywhere.
+hence everywhere. The unit is `(-1)^(n(n+1)/2)` in degree `n + 1`
+(`HomotopyGroup.hurewicz_hom_one_eq_neg_one_pow_smul`).
 
 ## Main results
 
