@@ -39,6 +39,11 @@ transpose, so the resulting map is continuous for the induced topology.
   compact.
 * `TauCeti.QuadraticMap.instCompactSpaceSpecialOrthogonalGroupRealCliffordForm`: the associated
   special orthogonal group is compact.
+* `TauCeti.QuadraticMap.instPathConnectedSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne`:
+  the special orthogonal group of the standard sum-of-squares form on any finite coordinate type is
+  path-connected.
+* `TauCeti.QuadraticMap.instPathConnectedSpaceSpecialOrthogonalGroupRealCliffordForm`: the
+  special orthogonal group of `realCliffordForm n 0` is path-connected.
 * `TauCeti.QuadraticMap.isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm`: the
   positive-definite real special-orthogonal carrier is closed in its general-linear ambient group.
 -/
@@ -98,6 +103,20 @@ instance instCompactSpaceSpecialOrthogonalGroupRealCliffordForm (n : ℕ) :
   CompactSpace (specialOrthogonalGroup (realCliffordForm n 0)) := by
   rw [realCliffordForm_zero_eq_weightedSumSquares_one]
   exact instCompactSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne (Fin n)
+
+/-- The special orthogonal group of the standard real sum-of-squares form is path-connected. -/
+instance instPathConnectedSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne
+    (ι : Type u) [Fintype ι] :
+    PathConnectedSpace (specialOrthogonalGroup
+      (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))) :=
+  (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).surjective.pathConnectedSpace
+    (continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι)
+
+/-- The special orthogonal group of the positive-definite real Clifford form is path-connected. -/
+instance instPathConnectedSpaceSpecialOrthogonalGroupRealCliffordForm (n : ℕ) :
+    PathConnectedSpace (specialOrthogonalGroup (realCliffordForm n 0)) := by
+  rw [realCliffordForm_zero_eq_weightedSumSquares_one]
+  exact instPathConnectedSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne (Fin n)
 
 end ClassicalDecEq
 

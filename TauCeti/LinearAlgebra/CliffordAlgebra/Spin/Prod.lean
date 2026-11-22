@@ -46,9 +46,10 @@ this gives the block subgroup `(Spin(p) × Spin(q)) / ⟨(-1, -1)⟩` of `Spin(p
   to products of quadratic isometries and isometric equivalences.
 * `CliffordAlgebra.spinGroupEquiv_uniqueProd_spinGroupProd`,
   `CliffordAlgebra.spinGroupEquiv_prodUnique_spinGroupProd`,
-  `CliffordAlgebra.spinGroupEquiv_prodAssoc_spinGroupProd`, and
-  `CliffordAlgebra.spinGroupEquiv_prodComm_spinGroupProd`: left- and right-unit, associativity,
-  and symmetry coherences of `spinGroupProd`.
+  `CliffordAlgebra.spinGroupEquiv_prodAssoc_spinGroupProd`,
+  `CliffordAlgebra.spinGroupEquiv_prodComm_spinGroupProd`, and
+  `CliffordAlgebra.spinGroupEquiv_prodProdProdComm_spinGroupProd`: left- and right-unit,
+  associativity, symmetry, and middle-block exchange coherences of `spinGroupProd`.
 * `CliffordAlgebra.spinVectorAction_spinGroupProd`: it acts on the orthogonal sum componentwise.
 * `CliffordAlgebra.spinToOrthogonal_spinGroupProd` and
   `CliffordAlgebra.spinToSpecialOrthogonal_spinGroupProd`: its projections to the orthogonal and
@@ -234,6 +235,47 @@ theorem spinGroupEquiv_prodComm_spinGroupProd (x : spinGroup Q₁ × spinGroup Q
   simp only [IsometryEquiv.spinGroupEquiv_apply, spinGroupProd_apply, map_mul,
     Isometry.spinGroupMap_spinGroupMap, h₁, h₂, Prod.snd_swap, Prod.fst_swap,
     (commute_spinGroupMap_inl_spinGroupMap_inr Q₂ Q₁ x.2 x.1).symm.eq]
+
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
+/-- **Middle-block exchange coherence for `spinGroupProd`**: transporting the product of two
+`spinGroupProd` elements along `IsometryEquiv.prodProdProdComm` swaps the middle two Spin factors,
+with no sign because Spin elements have even Clifford parity. -/
+theorem spinGroupEquiv_prodProdProdComm_spinGroupProd {M₃ M₄ : Type*}
+    [AddCommGroup M₃] [Module R M₃] [AddCommGroup M₄] [Module R M₄]
+    (Q₃ : QuadraticForm R M₃) (Q₄ : QuadraticForm R M₄)
+    (x₁ : spinGroup Q₁) (x₂ : spinGroup Q₂) (x₃ : spinGroup Q₃) (x₄ : spinGroup Q₄) :
+    (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).spinGroupEquiv
+        (spinGroupProd (Q₁.prod Q₂) (Q₃.prod Q₄)
+          (spinGroupProd Q₁ Q₂ (x₁, x₂), spinGroupProd Q₃ Q₄ (x₃, x₄))) =
+      spinGroupProd (Q₁.prod Q₃) (Q₂.prod Q₄)
+        (spinGroupProd Q₁ Q₃ (x₁, x₃), spinGroupProd Q₂ Q₄ (x₂, x₄)) := by
+  have h₁ : (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
+      ((Isometry.inl (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inl Q₁ Q₂)) =
+      (Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inl Q₁ Q₃) :=
+    Isometry.ext fun _ ↦ rfl
+  have h₂ : (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
+      ((Isometry.inl (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inr Q₁ Q₂)) =
+      (Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inl Q₂ Q₄) :=
+    Isometry.ext fun _ ↦ rfl
+  have h₃ : (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
+      ((Isometry.inr (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inl Q₃ Q₄)) =
+      (Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inr Q₁ Q₃) :=
+    Isometry.ext fun _ ↦ rfl
+  have h₄ : (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
+      ((Isometry.inr (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inr Q₃ Q₄)) =
+      (Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inr Q₂ Q₄) :=
+    Isometry.ext fun _ ↦ rfl
+  have hcomm : Commute
+      (((Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inl Q₂ Q₄)).spinGroupMap x₂)
+      (((Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inr Q₁ Q₃)).spinGroupMap x₃) := by
+    simpa only [← Isometry.spinGroupMap_spinGroupMap] using
+      (commute_spinGroupMap_inl_spinGroupMap_inr (Q₁.prod Q₃) (Q₂.prod Q₄)
+        ((Isometry.inr Q₁ Q₃).spinGroupMap x₃)
+        ((Isometry.inl Q₂ Q₄).spinGroupMap x₂)).symm
+  simp only [IsometryEquiv.spinGroupEquiv_apply, spinGroupProd_apply, map_mul,
+    Isometry.spinGroupMap_spinGroupMap, h₁, h₂, h₃, h₄, mul_assoc]
+  congr 1
+  rw [← mul_assoc, hcomm.eq, mul_assoc]
 
 variable [Invertible (2 : R)]
 

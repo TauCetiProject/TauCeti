@@ -44,10 +44,6 @@ summands of `Q ⊕ Q`. At the half-turn `z = -1` (angle `t = π` in `Spin`, corr
 
 ## Main results
 
-* `QuadraticMap.Isometry.spinGroupMap_spinRotation`: quadratic isometries carry `spinRotation` to
-  `spinRotation`.
-* `CliffordAlgebra.spinGroupEquiv_prodProdProdComm_spinGroupProd`: coherence of `spinGroupProd`
-  under `QuadraticMap.IsometryEquiv.prodProdProdComm`.
 * `CliffordAlgebra.spinDiagonalLift_spinToSpecialOrthogonal`: evaluating `spinDiagonalLift` on the
   projection of `x ∈ Spin(Q)` gives `spinGroupProd Q Q (x, x)`.
 * `CliffordAlgebra.spinToSpecialOrthogonal_spinDiagonalLift`,
@@ -74,74 +70,7 @@ public section
 
 open QuadraticMap
 
-namespace QuadraticMap.Isometry
-
-variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
-  {Q : QuadraticForm ℝ V} {P : QuadraticForm ℝ W} {x y : V}
-
-/-- **Quadratic isometries carry Spin rotations to Spin rotations**: the Spin-group map induced by
-`f` sends `spinRotation Q x y` to `spinRotation P (f x) (f y)`. -/
-theorem spinGroupMap_spinRotation (f : Q →qᵢ P) (hx : Q x = 1) (hy : Q y = 1)
-    (hxy : Q.IsOrtho x y) (hx' : P (f x) = 1) (hy' : P (f y) = 1)
-    (hxy' : P.IsOrtho (f x) (f y)) (t : ℝ) :
-    f.spinGroupMap (CliffordAlgebra.spinRotation Q x y hx hy hxy t) =
-      CliffordAlgebra.spinRotation P (f x) (f y) hx' hy' hxy' t := by
-  apply Subtype.ext
-  simp
-
-end QuadraticMap.Isometry
-
 namespace CliffordAlgebra
-
-section ProdProdProdComm
-
-variable {R M₁ M₂ M₃ M₄ : Type*} [CommRing R]
-  [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
-  [AddCommGroup M₃] [Module R M₃] [AddCommGroup M₄] [Module R M₄]
-  (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂)
-  (Q₃ : QuadraticForm R M₃) (Q₄ : QuadraticForm R M₄)
-
--- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
-/-- **Middle-block exchange coherence for `spinGroupProd`**: transporting the product of two
-`spinGroupProd` elements along `IsometryEquiv.prodProdProdComm` swaps the middle two Spin factors,
-with no sign because Spin elements have even Clifford parity. -/
-theorem spinGroupEquiv_prodProdProdComm_spinGroupProd
-    (x₁ : spinGroup Q₁) (x₂ : spinGroup Q₂) (x₃ : spinGroup Q₃) (x₄ : spinGroup Q₄) :
-    (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).spinGroupEquiv
-        (spinGroupProd (Q₁.prod Q₂) (Q₃.prod Q₄)
-          (spinGroupProd Q₁ Q₂ (x₁, x₂), spinGroupProd Q₃ Q₄ (x₃, x₄))) =
-      spinGroupProd (Q₁.prod Q₃) (Q₂.prod Q₄)
-        (spinGroupProd Q₁ Q₃ (x₁, x₃), spinGroupProd Q₂ Q₄ (x₂, x₄)) := by
-  let e := (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry
-  let i₁ := (QuadraticMap.Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp
-    (QuadraticMap.Isometry.inl Q₁ Q₃)
-  let i₂ := (QuadraticMap.Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp
-    (QuadraticMap.Isometry.inl Q₂ Q₄)
-  let i₃ := (QuadraticMap.Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp
-    (QuadraticMap.Isometry.inr Q₁ Q₃)
-  let i₄ := (QuadraticMap.Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp
-    (QuadraticMap.Isometry.inr Q₂ Q₄)
-  have h₁ : e.comp ((QuadraticMap.Isometry.inl (Q₁.prod Q₂) (Q₃.prod Q₄)).comp
-      (QuadraticMap.Isometry.inl Q₁ Q₂)) = i₁ := QuadraticMap.Isometry.ext fun _ ↦ rfl
-  have h₂ : e.comp ((QuadraticMap.Isometry.inl (Q₁.prod Q₂) (Q₃.prod Q₄)).comp
-      (QuadraticMap.Isometry.inr Q₁ Q₂)) = i₂ := QuadraticMap.Isometry.ext fun _ ↦ rfl
-  have h₃ : e.comp ((QuadraticMap.Isometry.inr (Q₁.prod Q₂) (Q₃.prod Q₄)).comp
-      (QuadraticMap.Isometry.inl Q₃ Q₄)) = i₃ := QuadraticMap.Isometry.ext fun _ ↦ rfl
-  have h₄ : e.comp ((QuadraticMap.Isometry.inr (Q₁.prod Q₂) (Q₃.prod Q₄)).comp
-      (QuadraticMap.Isometry.inr Q₃ Q₄)) = i₄ := QuadraticMap.Isometry.ext fun _ ↦ rfl
-  have hcomm : Commute (i₂.spinGroupMap x₂) (i₃.spinGroupMap x₃) := by
-    simpa only [i₂, i₃, ← QuadraticMap.Isometry.spinGroupMap_spinGroupMap] using
-      (commute_spinGroupMap_inl_spinGroupMap_inr (Q₁.prod Q₃) (Q₂.prod Q₄)
-        ((QuadraticMap.Isometry.inr Q₁ Q₃).spinGroupMap x₃)
-        ((QuadraticMap.Isometry.inl Q₂ Q₄).spinGroupMap x₂)).symm
-  simp only [IsometryEquiv.spinGroupEquiv_apply, spinGroupProd_apply, map_mul,
-    QuadraticMap.Isometry.spinGroupMap_spinGroupMap, show (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃
-      Q₄).toIsometry = e from rfl, h₁, h₂, h₃, h₄]
-  change i₁.spinGroupMap x₁ * i₂.spinGroupMap x₂ * (i₃.spinGroupMap x₃ * i₄.spinGroupMap x₄) =
-    i₁.spinGroupMap x₁ * i₃.spinGroupMap x₃ * (i₂.spinGroupMap x₂ * i₄.spinGroupMap x₄)
-  rw [← mul_assoc, mul_assoc (i₁.spinGroupMap x₁), hcomm.eq, ← mul_assoc, mul_assoc]
-
-end ProdProdProdComm
 
 section DiagonalLift
 

@@ -67,6 +67,9 @@ coherences of both block-sum homomorphisms, as well as the kernel and quotient d
 * `TauCeti.spinToSpecialOrthogonal_realCliffordSpinFirstInclusion` and
   `TauCeti.spinToSpecialOrthogonal_realCliffordSpinBlockSum`: compatibility of Spin
   stabilization and Spin block sum with the projections to `SO`.
+* `TauCeti.realCliffordSpinBlockInlIsometry_single` and
+  `TauCeti.realCliffordSpinBlockInrIsometry_single`: action of the block-inclusion isometries
+  on standard basis vectors.
 * `TauCeti.realCliffordSpinBlockSum_zero_left` and
   `TauCeti.realCliffordSpinBlockSum_zero_right`: left- and right-unit coherences.
 * `TauCeti.realCliffordSpinBlockSum_one_mk_eq_realCliffordSpinFirstInclusion`,
@@ -76,6 +79,9 @@ coherences of both block-sum homomorphisms, as well as the kernel and quotient d
 * `TauCeti.realCliffordSpinBlockSum_assoc`: associativity coherence of the Spin block sum.
 * `TauCeti.spinGroupEquiv_realCliffordBlockSwapIsometry_realCliffordSpinBlockSum`: permutation
   coherence of the Spin block sum under swapping the two coordinate blocks.
+* `TauCeti.spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinBlockSum` and
+  `TauCeti.specialOrthogonalGroupCongr_realCliffordMiddleSwapIsometry_blockSum`: middle-block
+  exchange coherences of the Spin and special-orthogonal block sums.
 
 ## References
 
@@ -277,6 +283,23 @@ theorem realCliffordSpinBlockInlIsometry_apply (p q : ℕ) (u : Fin p → ℝ) :
   rw [realCliffordSpinBlockInlIsometry, Isometry.comp_apply, IsometryEquiv.toIsometry_apply,
     Isometry.inl_apply, realCliffordSplitIsometry_zero_symm_apply]
 
+-- Not @[simp]: `realCliffordSpinBlockInlIsometry_apply` already simplifies the LHS head.
+/-- `realCliffordSpinBlockInlIsometry` sends the `i`-th standard basis vector of `ℝ^p` to the
+`Fin.castAdd q i`-th standard basis vector of `ℝ^(p + q)`. -/
+theorem realCliffordSpinBlockInlIsometry_single (p q : ℕ) (i : Fin p) :
+    realCliffordSpinBlockInlIsometry p q (Pi.single i (1 : ℝ)) =
+      Pi.single (Fin.castAdd q i) (1 : ℝ) := by
+  rw [realCliffordSpinBlockInlIsometry_apply]
+  funext a
+  refine Fin.addCases (fun j ↦ ?_) (fun j ↦ ?_) a
+  · simp [Fin.append_left, Pi.single_apply]
+  · rw [Fin.append_right, Pi.zero_apply, Pi.single_apply]
+    have hne : Fin.natAdd p j ≠ Fin.castAdd q i := fun h ↦ by
+      have hv := congrArg Fin.val h
+      simp at hv
+      omega
+    simp [hne]
+
 /-- The quadratic isometry `v ↦ Fin.append 0 v` embedding `realCliffordForm q 0` as the last `q`
 coordinates of `realCliffordForm (p + q) 0`. -/
 def realCliffordSpinBlockInrIsometry (p q : ℕ) :
@@ -290,6 +313,23 @@ theorem realCliffordSpinBlockInrIsometry_apply (p q : ℕ) (v : Fin q → ℝ) :
     realCliffordSpinBlockInrIsometry p q v = (Fin.append 0 v : Fin (p + q) → ℝ) := by
   rw [realCliffordSpinBlockInrIsometry, Isometry.comp_apply, IsometryEquiv.toIsometry_apply,
     Isometry.inr_apply, realCliffordSplitIsometry_zero_symm_apply]
+
+-- Not @[simp]: `realCliffordSpinBlockInrIsometry_apply` already simplifies the LHS head.
+/-- `realCliffordSpinBlockInrIsometry` sends the `i`-th standard basis vector of `ℝ^q` to the
+`Fin.natAdd p i`-th standard basis vector of `ℝ^(p + q)`. -/
+theorem realCliffordSpinBlockInrIsometry_single (p q : ℕ) (i : Fin q) :
+    realCliffordSpinBlockInrIsometry p q (Pi.single i (1 : ℝ)) =
+      Pi.single (Fin.natAdd p i) (1 : ℝ) := by
+  rw [realCliffordSpinBlockInrIsometry_apply]
+  funext a
+  refine Fin.addCases (fun j ↦ ?_) (fun j ↦ ?_) a
+  · rw [Fin.append_left, Pi.zero_apply, Pi.single_apply]
+    have hne : Fin.castAdd q j ≠ Fin.natAdd p i := fun h ↦ by
+      have hv := congrArg Fin.val h
+      simp at hv
+      omega
+    simp [hne]
+  · simp [Fin.append_right, Pi.single_apply]
 
 /-- Spin elements coming from the first `p` and last `q` coordinate blocks commute in
 `Spin(p + q)`. -/
@@ -736,6 +776,94 @@ theorem
     spinGroupEquiv_realCliffordBlockSwapIsometry_realCliffordSpinBlockSum,
     spinToSpecialOrthogonal_realCliffordSpinBlockSum]
   simp only [Prod.swap_prod_mk]
+
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
+/-- **Middle-block exchange coherence of `realCliffordSpinBlockSum`**: transporting a four-block
+Spin sum along `realCliffordMiddleSwapIsometry p q` swaps the middle two blocks with no sign. -/
+theorem spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinBlockSum (p q : ℕ)
+    (x₁ x₃ : realCliffordSpinGroupZero p) (x₂ x₄ : realCliffordSpinGroupZero q) :
+    (realCliffordMiddleSwapIsometry p q).spinGroupEquiv
+        (realCliffordSpinBlockSum (p + q) (p + q)
+          (realCliffordSpinBlockSum p q (x₁, x₂), realCliffordSpinBlockSum p q (x₃, x₄))) =
+      realCliffordSpinBlockSum (p + p) (q + q)
+        (realCliffordSpinBlockSum p p (x₁, x₃), realCliffordSpinBlockSum q q (x₂, x₄)) := by
+  let eL : (((realCliffordForm p 0).prod (realCliffordForm q 0)).prod
+      ((realCliffordForm p 0).prod (realCliffordForm q 0))).IsometryEquiv
+      (realCliffordForm ((p + p) + (q + q)) 0) :=
+    (((realCliffordSplitIsometry p q 0 0).symm.prod
+        (realCliffordSplitIsometry p q 0 0).symm).trans
+      (realCliffordSplitIsometry (p + q) (p + q) 0 0).symm).trans
+        (realCliffordMiddleSwapIsometry p q)
+  let eR : (((realCliffordForm p 0).prod (realCliffordForm p 0)).prod
+      ((realCliffordForm q 0).prod (realCliffordForm q 0))).IsometryEquiv
+      (realCliffordForm ((p + p) + (q + q)) 0) :=
+    ((realCliffordSplitIsometry p p 0 0).symm.prod
+        (realCliffordSplitIsometry q q 0 0).symm).trans
+      (realCliffordSplitIsometry (p + p) (q + q) 0 0).symm
+  have he : eL = (IsometryEquiv.prodProdProdComm _ _ _ _).trans eR :=
+    DFunLike.ext _ _ fun ⟨⟨u₁, v₁⟩, ⟨u₂, v₂⟩⟩ ↦ by
+      dsimp only [eL, eR]
+      rw [QuadraticMap.IsometryEquiv.trans_apply, QuadraticMap.IsometryEquiv.trans_apply,
+        realCliffordSplitIsometry_zero_symm_apply, IsometryEquiv.prod_apply]
+      dsimp only
+      rw [realCliffordSplitIsometry_zero_symm_apply, realCliffordSplitIsometry_zero_symm_apply,
+        realCliffordMiddleSwapIsometry_append, QuadraticMap.IsometryEquiv.trans_apply,
+        IsometryEquiv.prodProdProdComm_toFun, QuadraticMap.IsometryEquiv.trans_apply,
+        realCliffordSplitIsometry_zero_symm_apply, IsometryEquiv.prod_apply]
+      dsimp only
+      rw [realCliffordSplitIsometry_zero_symm_apply, realCliffordSplitIsometry_zero_symm_apply]
+  have hL : eL.spinGroupEquiv (spinGroupProd _ _ (spinGroupProd _ _ (x₁, x₂),
+        spinGroupProd _ _ (x₃, x₄))) =
+      (realCliffordMiddleSwapIsometry p q).spinGroupEquiv
+        (realCliffordSpinBlockSum (p + q) (p + q)
+          (realCliffordSpinBlockSum p q (x₁, x₂), realCliffordSpinBlockSum p q (x₃, x₄))) := by
+    dsimp only [eL]
+    rw [IsometryEquiv.spinGroupEquiv_trans, IsometryEquiv.spinGroupEquiv_trans,
+      MulEquiv.trans_apply, MulEquiv.trans_apply, spinGroupEquiv_prod_spinGroupProd,
+      ← realCliffordSpinBlockSum_apply, ← realCliffordSpinBlockSum_apply,
+      ← realCliffordSpinBlockSum_apply]
+  have hR : eR.spinGroupEquiv (spinGroupProd _ _ (spinGroupProd _ _ (x₁, x₃),
+        spinGroupProd _ _ (x₂, x₄))) =
+      realCliffordSpinBlockSum (p + p) (q + q)
+        (realCliffordSpinBlockSum p p (x₁, x₃), realCliffordSpinBlockSum q q (x₂, x₄)) := by
+    dsimp only [eR]
+    rw [IsometryEquiv.spinGroupEquiv_trans, MulEquiv.trans_apply,
+      spinGroupEquiv_prod_spinGroupProd, ← realCliffordSpinBlockSum_apply,
+      ← realCliffordSpinBlockSum_apply, ← realCliffordSpinBlockSum_apply]
+  rw [← hL, ← hR, he, IsometryEquiv.spinGroupEquiv_trans, MulEquiv.trans_apply,
+    spinGroupEquiv_prodProdProdComm_spinGroupProd]
+
+/-- **Middle-block exchange coherence of `realCliffordSpecialOrthogonalBlockSum`**: transporting a
+four-block special-orthogonal sum along `realCliffordMiddleSwapIsometry p q` swaps the middle two
+blocks. -/
+@[simp]
+theorem specialOrthogonalGroupCongr_realCliffordMiddleSwapIsometry_blockSum (p q : ℕ)
+    (g₁ g₃ : specialOrthogonalGroup (realCliffordForm p 0))
+    (g₂ g₄ : specialOrthogonalGroup (realCliffordForm q 0)) :
+    (realCliffordMiddleSwapIsometry p q).specialOrthogonalGroupCongr
+        (realCliffordSpecialOrthogonalBlockSum (p + q) (p + q)
+          (realCliffordSpecialOrthogonalBlockSum p q (g₁, g₂),
+            realCliffordSpecialOrthogonalBlockSum p q (g₃, g₄))) =
+      realCliffordSpecialOrthogonalBlockSum (p + p) (q + q)
+        (realCliffordSpecialOrthogonalBlockSum p p (g₁, g₃),
+          realCliffordSpecialOrthogonalBlockSum q q (g₂, g₄)) := by
+  obtain ⟨x₁, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
+    (realCliffordForm p 0) (posDef_realCliffordForm_zero p) g₁
+  obtain ⟨x₂, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
+    (realCliffordForm q 0) (posDef_realCliffordForm_zero q) g₂
+  obtain ⟨x₃, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
+    (realCliffordForm p 0) (posDef_realCliffordForm_zero p) g₃
+  obtain ⟨x₄, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
+    (realCliffordForm q 0) (posDef_realCliffordForm_zero q) g₄
+  rw [← spinToSpecialOrthogonal_realCliffordSpinBlockSum p q (x₁, x₂),
+    ← spinToSpecialOrthogonal_realCliffordSpinBlockSum p q (x₃, x₄),
+    ← spinToSpecialOrthogonal_realCliffordSpinBlockSum (p + q) (p + q)
+      (realCliffordSpinBlockSum p q (x₁, x₂), realCliffordSpinBlockSum p q (x₃, x₄)),
+    IsometryEquiv.specialOrthogonalGroupCongr_spinToSpecialOrthogonal,
+    spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinBlockSum,
+    spinToSpecialOrthogonal_realCliffordSpinBlockSum,
+    spinToSpecialOrthogonal_realCliffordSpinBlockSum,
+    spinToSpecialOrthogonal_realCliffordSpinBlockSum]
 
 end
 

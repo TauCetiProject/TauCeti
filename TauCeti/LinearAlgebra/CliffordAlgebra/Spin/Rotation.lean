@@ -42,6 +42,8 @@ towards `w` when `Q u < 0` (by `z⁻²` when `Q u > 0`), and fixes the orthogona
   scalar `-1`.
 * `QuadraticMap.Isometry.spinGroupMap_spinCircle`: quadratic isometries carry circle subgroups to
   circle subgroups.
+* `QuadraticMap.Isometry.spinGroupMap_spinRotation`: quadratic isometries carry Spin rotations to
+  Spin rotations.
 * `CliffordAlgebra.spinVectorAction_spinCircle_left`,
   `CliffordAlgebra.spinVectorAction_spinCircle_right`,
   `CliffordAlgebra.spinVectorAction_spinCircle_of_isOrtho`: `z` rotates the plane of `u` and `w`
@@ -255,6 +257,16 @@ theorem spinGroupMap_spinCircle (f : Q →qᵢ P) (huw : Q.IsOrtho u w) (h : Q u
     (huw' : P.IsOrtho (f u) (f w)) (h' : P (f u) * P (f w) = 1) (z : Circle) :
     f.spinGroupMap (CliffordAlgebra.spinCircle Q u w huw h z) =
       CliffordAlgebra.spinCircle P (f u) (f w) huw' h' z := by
+  apply Subtype.ext
+  simp
+
+/-- **Quadratic isometries carry Spin rotations to Spin rotations**: the Spin-group map induced by
+`f` sends `spinRotation Q x y` to `spinRotation P (f x) (f y)`. -/
+theorem spinGroupMap_spinRotation (f : Q →qᵢ P) {x y : V} (hx : Q x = 1) (hy : Q y = 1)
+    (hxy : Q.IsOrtho x y) (hx' : P (f x) = 1) (hy' : P (f y) = 1)
+    (hxy' : P.IsOrtho (f x) (f y)) (t : ℝ) :
+    f.spinGroupMap (CliffordAlgebra.spinRotation Q x y hx hy hxy t) =
+      CliffordAlgebra.spinRotation P (f x) (f y) hx' hy' hxy' t := by
   apply Subtype.ext
   simp
 

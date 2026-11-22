@@ -226,13 +226,6 @@ theorem spinVectorAction_matrixSpecialOrthogonalSpinDiagonalLift_append (k : ℕ
 
 /-! ### Uniqueness of continuous lifts -/
 
-private theorem preconnectedSpace_realCliffordSpecialOrthogonal (k : ℕ) :
-    PreconnectedSpace (QuadraticMap.specialOrthogonalGroup (realCliffordForm k 0)) := by
-  have : PathConnectedSpace (QuadraticMap.specialOrthogonalGroup (realCliffordForm k 0)) :=
-    (matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm k).surjective.pathConnectedSpace
-      (matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm k).continuous
-  infer_instance
-
 /-- **Uniqueness of continuous normalized diagonal lifts**: any continuous map
 `SO(k) → Spin(k + k)` lifting `g ↦ diag(g, g)` and sending `1` to `1` equals
 `realCliffordSpinDiagonalLift k`. -/
@@ -249,8 +242,6 @@ theorem eq_realCliffordSpinDiagonalLift_of_continuous_lift (k : ℕ)
     have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
     exact funext fun _ ↦ Subsingleton.elim _ _
   have : NeZero (k + k) := ⟨by omega⟩
-  have : PreconnectedSpace (QuadraticMap.specialOrthogonalGroup (realCliffordForm k 0)) :=
-    preconnectedSpace_realCliffordSpecialOrthogonal k
   refine (isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom (k + k)).eq_of_comp_eq
     hf (continuous_realCliffordSpinDiagonalLift k) ?_ 1 (by rw [h1, map_one])
   funext g
@@ -410,7 +401,9 @@ theorem not_exists_continuous_lift_realCliffordSpecialOrthogonalFirstInclusion (
   exact spinGroup.negOne_ne_one _ _
 
 /-- **Closed loop lift of a full `2π` coordinate-plane rotation under the diagonal Spin lift**:
-the path in `Spin(k + k)` lifting `t ↦ diag(R(2π t), R(2π t))` starts and ends at `1`. -/
+in the ordered `(e_i, e_j)` coordinate plane (where `Q(e_i) = Q(e_j) = 1`, so `spinRotation` at
+Spin angle `π t` projects to `R(−2π t)`), the path in `Spin(k + k)` lifting
+`t ↦ diag(R(−2π t), R(−2π t))` starts and ends at `1`. -/
 def realCliffordSpinDiagonalLiftRotationLoop {k : ℕ} {i j : Fin k} (hij : i ≠ j) :
     Path (1 : realCliffordSpinGroupZero (k + k)) 1 :=
   ((spinRotationPath (realCliffordForm k 0) (Pi.single i 1) (Pi.single j 1)
@@ -481,7 +474,9 @@ theorem realCliffordSpinBlockSumRotationPath_apply {k : ℕ} (m : ℕ) {i j : Fi
   simp [realCliffordSpinBlockSumRotationPath]
 
 /-- The open path `realCliffordSpinBlockSumRotationPath` projects to the one-block embedding
-`t ↦ diag(R(2π t), I_m)` of the full-turn rotation loop. -/
+`t ↦ diag(R(−2π t), I_m)` of the full-turn rotation loop in the ordered `(e_i, e_j)` coordinate
+plane (where `Q(e_i) = Q(e_j) = 1`, so `spinRotation` at Spin angle `π t` projects to
+`R(−2π t)`). -/
 theorem spinToSpecialOrthogonal_realCliffordSpinBlockSumRotationPath {k : ℕ} (m : ℕ)
     {i j : Fin k} (hij : i ≠ j) (t : unitInterval) :
     spinToSpecialOrthogonal (realCliffordForm (k + m) 0)
