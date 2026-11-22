@@ -240,12 +240,12 @@ theorem aeval_additivePolynomial_eq_zero_iff [NoZeroDivisors A] {x : A} :
   · exact ⟨0, V.zero_mem, Subsingleton.elim _ _⟩
   -- `aeval x` maps the product of the factors `X - c` to the list product of their values,
   -- so one value vanishes.
-  rw [additivePolynomial_eq_prod, ← Finset.prod_map_toList, map_list_prod, List.map_map,
-    List.prod_eq_zero_iff, List.mem_map] at hx
-  obtain ⟨c, -, hc : aeval x (X - C (c : R)) = 0⟩ := hx
+  rw [additivePolynomial_eq_prod, ← Finset.prod_map_toList] at hx
+  obtain ⟨c, hc⟩ : ∃ c : V, aeval x (X - C (c : R)) = 0 := by
+    simpa [map_list_prod, List.mem_map] using hx
   -- Evaluating `X = (X - c) + c` at `x` gives `x = 0 + c`.
-  have hcx := congrArg (aeval x) (sub_add_cancel X (C (c : R)))
-  rw [map_add, hc, zero_add, aeval_C, aeval_X] at hcx
+  have hcx := (map_add (aeval x) (X - C (c : R)) (C (c : R))).symm
+  simp only [hc, zero_add, aeval_C, sub_add_cancel, aeval_X] at hcx
   exact ⟨c, c.property, hcx⟩
 
 end Semiring
