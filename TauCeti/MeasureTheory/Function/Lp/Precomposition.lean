@@ -36,9 +36,12 @@ precompositions are mutually inverse, giving a continuous linear equivalence
   `g ↦ g ∘ f` almost everywhere, with norm at most `C ^ (1/p)`.
 * `MeasureTheory.Lp.norm_compOfMapLeSmul`: when `μ.map f = C • ν`, the norm is multiplied by
   exactly `C ^ (1/p)`.
+* `MeasureTheory.Lp.mem_range_compOfMapLeSmul_iff`: in that case the range consists of the
+  classes of the functions `u ∘ f` with `u` strongly measurable.
 * `MeasureTheory.Lp.normalizedCompOfMapEqSmul`: when `μ.map f = C • ν` with `0 < C < ∞`, the
   normalized precomposition `g ↦ C ^ (-1/p) • g ∘ f`, as a linear isometry
-  `Lp E p ν →ₗᵢ[𝕜] Lp E p μ`.
+  `Lp E p ν →ₗᵢ[𝕜] Lp E p μ`, with the same range
+  (`MeasureTheory.Lp.mem_range_normalizedCompOfMapEqSmul_iff`).
 * `MeasureTheory.Lp.compOfMapLeSmul_comp`: precomposition is contravariant in `f`.
 * `MeasureTheory.Lp.compEquivOfMapLeSmul`: the continuous linear equivalence attached to a pair of
   mutually inverse maps with dominated pushforwards.
@@ -150,6 +153,33 @@ theorem norm_compOfMapLeSmul (hf : AEMeasurable f μ) (hC₀ : C ≠ 0) (hC : C 
     ← eLpNorm_map_measure (by rw [hmap]; exact (Lp.aestronglyMeasurable g).smul_measure _)
       hf, hmap, eLpNorm_smul_measure_of_ne_zero hC₀, smul_eq_mul, ENNReal.toReal_mul]
 
+/-- If `μ.map f = C • ν`, then `h ∈ Lᵖ(μ)` is the precomposition with `f` of an element of `Lᵖ(ν)`
+exactly when it agrees almost everywhere with `u ∘ f` for a strongly measurable `u`; such a `u`
+then automatically lies in `Lᵖ(ν)` when `C ≠ 0`. -/
+theorem mem_range_compOfMapLeSmul_iff (hf : AEMeasurable f μ) (hC : C ≠ ∞)
+    (hmap : μ.map f = C • ν) (h : Lp E p μ) :
+    h ∈ Set.range (compOfMapLeSmul 𝕜 hf hC hmap.le) ↔
+      ∃ u : β → E, StronglyMeasurable u ∧ h =ᵐ[μ] u ∘ f := by
+  refine ⟨?_, fun ⟨u, hu, hh⟩ ↦ ?_⟩
+  · rintro ⟨g, rfl⟩
+    exact ⟨g, Lp.stronglyMeasurable g, coeFn_compOfMapLeSmul hf hC hmap.le g⟩
+  -- If `C = 0`, then `μ = 0` and every element of `Lᵖ(μ)` is zero.
+  rcases eq_or_ne C 0 with rfl | hC₀
+  · rw [zero_smul, Measure.map_eq_zero_iff hf] at hmap
+    subst hmap
+    exact ⟨0, Lp.ext (by simp [Filter.EventuallyEq])⟩
+  -- `‖u ∘ f‖_{Lᵖ(μ)} = C ^ (1/p) ‖u‖_{Lᵖ(ν)}`, and the left side is the finite norm of `h`.
+  have hnorm : eLpNorm (u ∘ f) p μ = C ^ (1 / p).toReal * eLpNorm u p ν := by
+    rw [← eLpNorm_map_measure (by rw [hmap]; exact hu.aestronglyMeasurable) hf, hmap,
+      eLpNorm_smul_measure_of_ne_zero hC₀, smul_eq_mul]
+  have hu' : MemLp u p ν := by
+    refine ENNReal.lt_top_of_mul_ne_top_right (a := C ^ (1 / p).toReal) ?_
+      (ENNReal.rpow_pos (pos_iff_ne_zero.2 hC₀) hC).ne'
+    rw [← hnorm, ← eLpNorm_congr_ae hh]
+    exact Lp.eLpNorm_ne_top h
+  refine ⟨hu'.toLp u, Lp.ext ((coeFn_compOfMapLeSmul hf hC hmap.le _).trans ?_)⟩
+  exact ((QuasiMeasurePreserving.of_map_le_smul hf hmap.le).ae_eq_comp hu'.coeFn_toLp).trans hh.symm
+
 section Normalized
 
 variable [NormedAlgebra ℝ 𝕜]
@@ -179,6 +209,35 @@ theorem coeFn_normalizedCompOfMapEqSmul (hf : AEMeasurable f μ) (hC₀ : C ≠ 
     coeFn_compOfMapLeSmul (𝕜 := 𝕜) hf hC hmap.le g] with x hx hx'
   rw [normalizedCompOfMapEqSmul, LinearIsometry.coe_mk, LinearMap.smul_apply,
     ContinuousLinearMap.coe_coe, hx, Pi.smul_apply, hx', Function.comp_apply]
+
+/-- Normalized precomposition with `f` is precomposition with `f` multiplied by `C ^ (-1/p)`. -/
+theorem normalizedCompOfMapEqSmul_apply (hf : AEMeasurable f μ) (hC₀ : C ≠ 0) (hC : C ≠ ∞)
+    (hmap : μ.map f = C • ν) (g : Lp E p ν) :
+    normalizedCompOfMapEqSmul 𝕜 hf hC₀ hC hmap g =
+      algebraMap ℝ 𝕜 (C.toReal ^ (-(1 / p).toReal)) • compOfMapLeSmul 𝕜 hf hC hmap.le g :=
+  (rfl)
+
+/-- Normalized precomposition with `f` has the same range as precomposition with `f`. -/
+theorem range_normalizedCompOfMapEqSmul (hf : AEMeasurable f μ) (hC₀ : C ≠ 0) (hC : C ≠ ∞)
+    (hmap : μ.map f = C • ν) :
+    Set.range (normalizedCompOfMapEqSmul (E := E) (p := p) 𝕜 hf hC₀ hC hmap) =
+      Set.range (compOfMapLeSmul (E := E) (p := p) 𝕜 hf hC hmap.le) := by
+  have hc : algebraMap ℝ 𝕜 (C.toReal ^ (-(1 / p).toReal)) ≠ 0 :=
+    (map_ne_zero _).2 (Real.rpow_pos_of_pos (ENNReal.toReal_pos hC₀ hC) _).ne'
+  rw [congrArg Set.range (funext (normalizedCompOfMapEqSmul_apply hf hC₀ hC hmap))]
+  have := congrArg SetLike.coe <|
+    LinearMap.range_smul (compOfMapLeSmul (E := E) (p := p) 𝕜 hf hC hmap.le).toLinearMap _ hc
+  simpa only [LinearMap.coe_range, LinearMap.coe_smul, ContinuousLinearMap.coe_coe, Pi.smul_def]
+    using this
+
+/-- If `μ.map f = C • ν` with `0 < C < ∞`, then `h ∈ Lᵖ(μ)` lies in the range of the normalized
+precomposition with `f` exactly when it agrees almost everywhere with `u ∘ f` for a strongly
+measurable `u`. -/
+theorem mem_range_normalizedCompOfMapEqSmul_iff (hf : AEMeasurable f μ) (hC₀ : C ≠ 0) (hC : C ≠ ∞)
+    (hmap : μ.map f = C • ν) (h : Lp E p μ) :
+    h ∈ Set.range (normalizedCompOfMapEqSmul 𝕜 hf hC₀ hC hmap) ↔
+      ∃ u : β → E, StronglyMeasurable u ∧ h =ᵐ[μ] u ∘ f := by
+  rw [range_normalizedCompOfMapEqSmul, mem_range_compOfMapLeSmul_iff hf hC hmap]
 
 end Normalized
 

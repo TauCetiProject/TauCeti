@@ -87,10 +87,17 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `TauCeti.continuousOn_ofReal_add_cpow`, `TauCeti.continuousOn_ofReal_add_cpow_Ici`,
   `TauCeti.continuous_ofReal_add_cpow_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
-* `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half` -- multiplying
-  `w ^ (-1/2)` by itself or by `w` gives `w⁻¹` or `w ^ (1/2)`, including at `w = 0`.
+* `TauCeti.ofReal_cpow_mul_inv_mul_inv_cpow` -- for `a > 0` and `w` off the negative real axis,
+  `a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`.
+* `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
+  `Complex.neg_cpow_half_eq_or_eq_neg` -- algebraic identities for principal `±1/2` powers,
+  including at `w = 0`, and the sign dichotomy `(-w) ^ (1/2) = ±(I * w ^ (1/2))`.
+* `HasDerivAt.cpow_half` -- derivative of `w ↦ f w ^ (1/2)` in the slit plane over any
+  nontrivially normed field `𝕜` with `[NormedAlgebra 𝕜 ℂ]`.
 * `Complex.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
   `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
+* `Complex.tendsto_natCast_cpow_neg_atTop` -- for `0 < re y`, `N ^ (-y)` tends to `0` along the
+  natural numbers.
 * `Complex.continuousAt_neg_two_cpow_half_mul_inv`,
   `Complex.hasDerivAt_neg_two_cpow_half_mul_inv`,
   `Complex.tendsto_neg_two_cpow_half_mul_inv_atTop` -- continuity at `0`, derivative on `(0, ∞)` and
@@ -568,6 +575,16 @@ theorem one_div_cpow_mul_ofReal_rpow {w : ℂ} (hw : w.arg ≠ Real.pi) {p : ℝ
   rw [div_eq_mul_inv (p : ℂ) w, ofReal_mul_cpow hp, Complex.inv_cpow w (r : ℂ) hw,
     ← Complex.ofReal_cpow hp, one_div, mul_comm]
 
+/-- For `a > 0` and `w` off the negative real axis, the principal powers combine:
+`a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`. -/
+theorem ofReal_cpow_mul_inv_mul_inv_cpow {a : ℝ} (ha : 0 < a) {w : ℂ} (hw : w.arg ≠ Real.pi)
+    (s : ℂ) : (a : ℂ) ^ s * ((a : ℂ)⁻¹ * w⁻¹) ^ s = w ^ (-s) := by
+  have has : (a : ℂ) ^ s ≠ 0 := by simp [ha.ne']
+  rw [mul_cpow (by simpa [← ofReal_inv, arg_ofReal_of_nonneg (inv_nonneg.2 ha.le)]
+      using arg_mem_Ioc w⁻¹),
+    inv_cpow_ofReal_nonneg ha.le, inv_cpow _ _ hw, cpow_neg]
+  field_simp
+
 end TauCeti
 
 namespace Complex
@@ -600,6 +617,14 @@ theorem tendsto_ofReal_add_cpow_neg (x : ℂ) {s : ℝ} (hs : 0 < s) :
   refine tendsto_zero_iff_norm_tendsto_zero.mpr ?_
   simp only [← Complex.ofReal_neg, Complex.norm_cpow_real]
   exact (tendsto_rpow_neg_atTop hs).comp hnorm
+
+/-- For `0 < re y`, `N ^ (-y)` tends to `0` along the natural numbers. -/
+theorem tendsto_natCast_cpow_neg_atTop {y : ℂ} (hy : 0 < y.re) :
+    Tendsto (fun N : ℕ => (N : ℂ) ^ (-y)) atTop (𝓝 0) := by
+  rw [tendsto_zero_iff_norm_tendsto_zero]
+  refine ((tendsto_rpow_neg_atTop hy).comp tendsto_natCast_atTop_atTop).congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with N hN
+  rw [norm_natCast_cpow_of_pos hN, neg_re, Function.comp_apply]
 
 /-- The function `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` is continuous at `0`, even when
 `x = 0` (as `re (1/2) > 0`). -/
@@ -802,6 +827,26 @@ theorem norm_one_add_ofReal_mul_exp_mul_I_cpow_le {θ r : ℝ} (hθ : |θ| < Rea
   exact (norm_cpow_le_mul_exp w d).trans <|
     (mul_le_mul_of_nonneg_right hrpow (Real.exp_pos _).le).trans_eq (by ring)
 
+/-- For every complex number `w`, the principal square root `(-w) ^ (1 / 2 : ℂ)` equals either
+`I * w ^ (1 / 2 : ℂ)` or `-(I * w ^ (1 / 2 : ℂ))`, since both sides square to `-w`. -/
+theorem neg_cpow_half_eq_or_eq_neg (w : ℂ) :
+    (-w) ^ (1 / 2 : ℂ) = I * w ^ (1 / 2 : ℂ) ∨
+      (-w) ^ (1 / 2 : ℂ) = -(I * w ^ (1 / 2 : ℂ)) :=
+  sq_eq_sq_iff_eq_or_eq_neg.mp <| by rw [mul_pow, I_sq]; simp [one_div]
+
 end Complex
+
+/-- Derivative of the principal square root `w ↦ f w ^ (1 / 2 : ℂ)` at a point where `f x` lies
+in `Complex.slitPlane`: the derivative is `f' / (2 * f x ^ (1 / 2 : ℂ))`. The variable ranges over
+any nontrivially normed field `𝕜` over which `ℂ` is a normed algebra, such as `ℝ` or `ℂ`. -/
+theorem HasDerivAt.cpow_half {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra 𝕜 ℂ]
+    {f : 𝕜 → ℂ} {f' : ℂ} {x : 𝕜} (hf : HasDerivAt f f' x) (hx : f x ∈ Complex.slitPlane) :
+    HasDerivAt (fun w : 𝕜 ↦ f w ^ (1 / 2 : ℂ)) (f' / (2 * f x ^ (1 / 2 : ℂ))) x := by
+  have h := (Complex.hasStrictDerivAt_cpow_const (c := (1 / 2 : ℂ)) hx).hasDerivAt.comp x hf
+  have hm : f x ^ ((1 / 2 : ℂ) - 1) * f x ^ (1 / 2 : ℂ) = 1 := by
+    rw [← cpow_add _ _ (slitPlane_ne_zero hx)]
+    norm_num
+  have h0 : f x ^ (1 / 2 : ℂ) ≠ 0 := by simp [cpow_eq_zero_iff, slitPlane_ne_zero hx]
+  exact h.congr_deriv (by rw [eq_inv_of_mul_eq_one_left hm]; field_simp [h0])
 
 end
