@@ -73,6 +73,7 @@ private theorem zmod_sub_natCast_add_one {n : ℕ} (j : ℤ) (k : ℕ) :
 
 /-- Unfolding a positive-period `ZMod n`-indexed complex of modules from any starting index `j : ℤ`
 gives a minimal chain complex if and only if the periodic complex is minimal. -/
+@[simp]
 theorem resolutionComplex_isMinimal_iff {R : Type u} [CommRing R] {n : ℕ} [NeZero n]
     (Q : HomologicalComplex (ModuleCat.{v} R) (ComplexShape.up (ZMod n))) (j : ℤ) :
     (resolutionComplex Q j).IsMinimal ↔ Q.IsMinimal := by

@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Homology.Curved.Duplex
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.RingTheory.Flat.TorsionFree
-public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import TauCeti.CategoryTheory.Linear.FullSubcategory
 import Mathlib.RingTheory.LocalRing.Module
 

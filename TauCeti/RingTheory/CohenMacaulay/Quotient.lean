@@ -40,8 +40,7 @@ local ring `R` with local quotient `R ⧸ (w)`, `R ⧸ (w)` is Cohen–Macaulay 
 theorem isCohenMacaulay_quotient_span_singleton_iff (hw : IsSMulRegular R w) :
     IsCohenMacaulay (R ⧸ Ideal.span {w}) (R ⧸ Ideal.span {w}) ↔ IsCohenMacaulay R R := by
   have hwm : w ∈ maximalIdeal R :=
-    (Ideal.span_singleton_le_iff_mem _).1
-      (le_maximalIdeal (TauCeti.IsLocalRing.isLocalRing_quotient_iff.1 inferInstance))
+    (Ideal.span {w}).le_maximalIdeal_of_isLocalRing_quotient (Ideal.mem_span_singleton_self w)
   have hspan : w • (⊤ : Ideal R) = Ideal.span {w} := by
     rw [← Submodule.ideal_span_singleton_smul, Ideal.smul_eq_mul, Ideal.mul_top]
   rw [← isCohenMacaulay_iff_isCohenMacaulay_of_surjective Ideal.Quotient.mk_surjective,

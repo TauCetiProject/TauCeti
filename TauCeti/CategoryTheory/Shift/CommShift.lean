@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Shift.Adjunction
 public import Mathlib.CategoryTheory.Triangulated.Functor
 
 /-!
@@ -14,6 +15,11 @@ For integral shifts, a natural transformation between functors commuting with sh
 compatible with every shift as soon as it is compatible with the shift by one. Compatibility
 is closed under addition by Mathlib's `NatTrans.CommShiftCore.add`; cancellation of a shift
 gives compatibility with negative integers.
+
+For an equivalence commuting with shifts, shift compatibility of a natural transformation is
+reflected by left whiskering (`TauCeti.natTrans_commShift_of_whiskerLeft`), and shift
+compatibility of `Iso.inverseCompIso i` transfers back to `i`
+(`TauCeti.natTrans_commShift_of_inverseCompIso`).
 
 In a preadditive category with an additive shift by `ℤ`, each shift functor `⟦n⟧` commutes with
 the shifts through the isomorphisms `X⟦a⟧⟦n⟧ ≅ X⟦n⟧⟦a⟧` of `shiftFunctorComm` multiplied by the
@@ -64,6 +70,63 @@ lemma natTrans_commShift_iff_one {F G : C ⥤ D} [HasShift C ℤ] [HasShift D �
   | zero => exact CommShiftCore.zero ℤ
   | succ n ih => exact ih.add h
   | pred n ih => simpa only [sub_eq_add_neg] using ih.add hneg
+
+section Equivalence
+
+variable {K : Type*} [Category* K] {B : Type*} [AddGroup B]
+  [HasShift C B] [HasShift D B] [HasShift K B]
+
+/-- If `Iso.inverseCompIso i : e.inverse ⋙ F ≅ H` commutes with shifts for a shift-compatible
+equivalence `e : C ≌ D`, then `i : F ≅ e.functor ⋙ H` already commutes with shifts. -/
+lemma natTrans_commShift_of_inverseCompIso (e : C ≌ D) [e.functor.CommShift B]
+    {F : C ⥤ K} {H : D ⥤ K} [F.CommShift B] [H.CommShift B]
+    (i : F ≅ e.functor ⋙ H)
+    (hi : letI := e.commShiftInverse B; NatTrans.CommShift (Iso.inverseCompIso i).hom B) :
+    NatTrans.CommShift i.hom B := by
+  let := e.commShiftInverse B
+  have := e.commShift_of_functor B
+  have := hi
+  have h :
+      i.hom =
+        F.leftUnitor.inv ≫ Functor.whiskerRight e.unitIso.hom F ≫
+          (Functor.associator _ _ _).hom ≫
+          Functor.whiskerLeft e.functor (Iso.inverseCompIso i).hom := by
+    ext X
+    simp only [NatTrans.comp_app, Functor.leftUnitor_inv_app, Functor.whiskerRight_app,
+      Functor.associator_hom_app, Functor.whiskerLeft_app, Category.id_comp,
+      Iso.inverseCompIso_hom_app, Functor.comp_obj]
+    have hnat := i.hom.naturality (e.unitIso.hom.app X)
+    dsimp only [Functor.id_obj, Functor.comp_obj] at hnat
+    rw [reassoc_of% hnat, ← CategoryTheory.Functor.map_comp, e.functor_unitIso_comp,
+      CategoryTheory.Functor.map_id, Category.comp_id]
+  rw [h]
+  infer_instance
+
+/-- Left whiskering by a shift-compatible equivalence reflects `NatTrans.CommShift`. -/
+lemma natTrans_commShift_of_whiskerLeft (e : C ≌ D) [e.functor.CommShift B]
+    {F G : D ⥤ K} [F.CommShift B] [G.CommShift B] {α : F ⟶ G}
+    (h : NatTrans.CommShift (Functor.whiskerLeft e.functor α) B) :
+    NatTrans.CommShift α B := by
+  let := e.commShiftInverse B
+  have := e.commShift_of_functor B
+  have := h
+  have hα :
+      α =
+        F.leftUnitor.inv ≫ Functor.whiskerRight e.counitIso.inv F ≫
+          (Functor.associator _ _ _).hom ≫
+          Functor.whiskerLeft e.inverse (Functor.whiskerLeft e.functor α) ≫
+          (Functor.associator _ _ _).inv ≫ Functor.whiskerRight e.counitIso.hom G ≫
+          G.leftUnitor.hom := by
+    ext Y
+    simp only [NatTrans.comp_app, Functor.leftUnitor_inv_app, Functor.whiskerRight_app,
+      Functor.associator_hom_app, Functor.whiskerLeft_app, Functor.associator_inv_app,
+      Functor.leftUnitor_hom_app, Category.id_comp, Functor.id_obj, Functor.comp_obj]
+    rw [← α.naturality_assoc, ← Functor.map_comp_assoc, Iso.inv_hom_id_app]
+    simp
+  rw [hα]
+  infer_instance
+
+end Equivalence
 
 section ShiftFunctor
 

@@ -6,18 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Periodic.Minimal
-public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Buchweitz
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Minimal
-import Mathlib.RingTheory.Ideal.Quotient.Noetherian
-import Mathlib.RingTheory.KrullDimension.Regular
+public import TauCeti.RingTheory.CohenMacaulay.Maximal.Basic
+public import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.Algebra.Category.ModuleCat.Projective.FiniteResolution
 import TauCeti.Algebra.Category.ModuleCat.Projective.MinimalResolution.ChainComplex
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
+import TauCeti.Algebra.Homology.GorensteinProjective.MaximalCohenMacaulay
 import TauCeti.CategoryTheory.Abelian.Projective.Resolution
-import TauCeti.RingTheory.KrullDimension.Module
+import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Buchweitz
+import TauCeti.RingTheory.CohenMacaulay.Maximal.Exact
+import TauCeti.RingTheory.CohenMacaulay.Maximal.Hypersurface
 import TauCeti.RingTheory.LocalRing.Module
 import TauCeti.RingTheory.LocalRing.Quotient
-import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 /-!
@@ -77,25 +78,26 @@ private theorem exists_isMinimal_quotientCokernel_iso_of_isMaximalCohenMacaulay
   have hpd :=
     (TauCeti.IsRegularLocalRing.isMaximalCohenMacaulay_quotient_iff_hasProjectiveDimensionLE
       hw M).1 hMCM
-  obtain ⟨π, hπ, hker_le⟩ := TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul S M'
-  have : Module.Finite S (LinearMap.ker π) := Module.Finite.iff_fg.2 (IsNoetherian.noetherian _)
-  have : Module.Projective S (LinearMap.ker π) := by
-    rw [IsProjective.iff_projective, projective_iff_hasProjectiveDimensionLE_zero]
-    exact (π.hasProjectiveDimensionLE_succ_iff_ker hπ 0).1 hpd
-  let μ := Module.finrank (ResidueField S) (TensorProduct S (ResidueField S) M')
-  let P_fg : FGModuleCat.{u} S := FGModuleCat.of S (LinearMap.ker π)
-  let Q_fg : FGModuleCat.{u} S := FGModuleCat.of S (Fin μ → S)
+  obtain ⟨F, K, i, p, _, _, _, hi, hip, hp, hi_min⟩ := ModuleCat.exists_minimal_syzygy M'
+  have : Module.Projective S F := Module.Projective.of_free
+  have : Projective F := ModuleCat.projective_of_categoryTheory_projective F
+  let sc : ShortComplex (ModuleCat.{u} S) :=
+    ShortComplex.mk i p (ModuleCat.hom_ext (LinearMap.ext hip.apply_apply_eq_zero))
+  have hsc : sc.ShortExact :=
+    { exact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 hip
+      mono_f := (ModuleCat.mono_iff_injective i).2 hi
+      epi_g := (ModuleCat.epi_iff_surjective p).2 hp }
+  have : Projective K := (projective_iff_hasProjectiveDimensionLE_zero K).2
+    ((hsc.hasProjectiveDimensionLT_X₃_iff 0 inferInstance).1 hpd)
+  have : Module.Projective S K := ModuleCat.projective_of_module_projective K
+  let P_fg : FGModuleCat.{u} S := ⟨K, (ModuleCat.isFG_iff K).2 inferInstance⟩
+  let Q_fg : FGModuleCat.{u} S := ⟨F, (ModuleCat.isFG_iff F).2 inferInstance⟩
   have : Module.Projective S P_fg := ‹_›
-  have : Module.Projective S Q_fg := inferInstanceAs (Module.Projective S (Fin μ → S))
-  let f : P_fg ⟶ Q_fg := ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.ker π).subtype)
-  let g : Q_fg.obj ⟶ M' := ModuleCat.ofHom (X := Fin μ → S) (Y := M') π
-  have hf : Function.Injective f.hom.hom := Subtype.val_injective
-  have hfg : Function.Exact f.hom.hom g.hom := LinearMap.exact_subtype_ker_map π
-  have hf_min : LinearMap.range f.hom.hom ≤ maximalIdeal S • ⊤ :=
-    (Submodule.range_subtype (LinearMap.ker π)).le.trans hker_le
-  exact ⟨ofInjective f hf (hfg.smul_mem_range (Ideal.Quotient.mk_singleton_self w)),
-    (isMinimal_ofInjective_iff hmem hf hfg hπ hf_min).2 hproj,
-    ⟨quotientCokernelIsoOfExact hf hfg hπ⟩⟩
+  have : Module.Projective S Q_fg := ‹_›
+  let f : P_fg ⟶ Q_fg := ObjectProperty.homMk i
+  exact ⟨ofInjective f hi (hip.smul_mem_range (Ideal.Quotient.mk_singleton_self w)),
+    (isMinimal_ofInjective_iff hmem hi hip hp hi_min).2 hproj,
+    ⟨quotientCokernelIsoOfExact hi hip hp⟩⟩
 
 /-- **Minimal matrix factorization representation.** Over `R = S ⧸ (w)` (`w ≠ 0`), a finite
 `R`-module `M` is isomorphic to the reduced cokernel of a minimal matrix factorization of `w` iff
@@ -139,70 +141,26 @@ theorem exists_isMinimal_projectiveResolution_with_matrixFactorizationTail_of_is
   obtain ⟨X, hX, ⟨e⟩⟩ :=
     exists_isMinimal_quotientCokernel_iso_of_isMaximalCohenMacaulay hw M hMCM hproj
   let P := (quotientCokernelProjectiveResolution hmem X).ofIso e
-  refine ⟨P, X, fun i ↦ ?_,
-    (quotientCokernelProjectiveResolution_complex_isMinimal_iff hmem X).2 hX, hX, rfl⟩
-  let Q := quotientPeriodicComplex.obj X
-  have hfinQ (z : ZMod 2) : Module.Finite (S ⧸ Ideal.span {w}) (Q.X z) := by
-    rcases (by decide : ∀ z : ZMod 2, z = 0 ∨ z = 1) z with rfl | rfl
-    · exact ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.X₀.property
-    · exact ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.X₁.property
-  have : Module.Finite (S ⧸ Ideal.span {w}) (P.complex.X i) := hfinQ ((1 - i : ℤ) : ZMod 2)
-  have : Module.Projective (S ⧸ Ideal.span {w}) (P.complex.X i) :=
-    (IsProjective.iff_projective (P.complex.X i)).2 (P.projective i)
-  exact ⟨‹_›, Module.free_of_projective_of_isLocalRing⟩
-
-private theorem isZero_projective_retract_minimal_syzygy_of_isMaximalCohenMacaulay
-    (hw : w ≠ 0) {M F K : ModuleCat.{u} (S ⧸ Ideal.span {w})}
-    [Module.Finite (S ⧸ Ideal.span {w}) M]
-    [Module.Finite (S ⧸ Ideal.span {w}) F] [Module.Free (S ⧸ Ideal.span {w}) F]
-    [Module.Finite (S ⧸ Ideal.span {w}) K] {i : K ⟶ F} {p : F ⟶ M}
-    (hi : Function.Injective i.hom) (hip : Function.Exact i.hom p.hom)
-    (hp : Function.Surjective p.hom)
-    (hi_min : LinearMap.range i.hom ≤ maximalIdeal (S ⧸ Ideal.span {w}) • ⊤)
-    (hM : Module.IsMaximalCohenMacaulay (S ⧸ Ideal.span {w}) M)
-    (hK : Module.IsMaximalCohenMacaulay (S ⧸ Ideal.span {w}) K)
-    (P : ModuleCat.{u} (S ⧸ Ideal.span {w})) [Projective P] (ret : Retract P K) :
-    IsZero P := by
-  let R := S ⧸ Ideal.span {w}
-  have hF := (TauCeti.IsRegularLocalRing.isCohenMacaulay_quotient_span_singleton
-    hw).isMaximalCohenMacaulay_of_free F
-  have hK_fin : IsFiniteMaximalCohenMacaulay.{u} R K := (isFiniteMaximalCohenMacaulay_iff R K).2
-    ⟨‹_›, hK⟩
-  have hP_mcm := IsFiniteMaximalCohenMacaulay.of_retract ret hK_fin
-  have : Module.Finite R P := ((isFiniteMaximalCohenMacaulay_iff R P).1 hP_mcm).1
-  let K' : MaximalCohenMacaulayModuleCat.{u} R := ⟨K, hK_fin⟩
-  let F' : MaximalCohenMacaulayModuleCat.{u} R :=
-    ⟨F, (isFiniteMaximalCohenMacaulay_iff R F).2 ⟨‹_›, hF⟩⟩
-  let M' : MaximalCohenMacaulayModuleCat.{u} R :=
-    ⟨M, (isFiniteMaximalCohenMacaulay_iff R M).2 ⟨‹_›, hM⟩⟩
-  let P' : MaximalCohenMacaulayModuleCat.{u} R := ⟨P, hP_mcm⟩
-  let T : ShortComplex (MaximalCohenMacaulayModuleCat.{u} R) :=
-    ShortComplex.mk (X₁ := K') (X₂ := F') (X₃ := M') (ObjectProperty.homMk i)
-      (ObjectProperty.homMk p)
-      (ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext hip.apply_apply_eq_zero)))
-  have hT : (MaximalCohenMacaulayModuleCat.exactStructure.{u} R).Conflation T :=
-    (MaximalCohenMacaulayModuleCat.exactStructure_conflation_iff R T).2
-      { exact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 hip
-        mono_f := (ModuleCat.mono_iff_injective i).2 hi
-        epi_g := (ModuleCat.epi_iff_surjective p).2 hp }
-  have hInj : (MaximalCohenMacaulayModuleCat.exactStructure.{u} R).isInjective P' :=
-    (MaximalCohenMacaulayModuleCat.exactStructure_isInjective_iff hw P').2 inferInstance
-  have hinfl := (MaximalCohenMacaulayModuleCat.exactStructure.{u} R).isInflation_f hT
-  let r' : K' ⟶ P' := ObjectProperty.homMk ret.r
-  let g := hInj.factorThru hinfl r'
-  have hg : i ≫ g.hom = ret.r := congrArg InducedCategory.Hom.hom (hInj.comp_factorThru hinfl r')
-  have htop : (⊤ : Submodule R P) ≤ maximalIdeal R • ⊤ := fun x _ ↦ by
-    have hx : g.hom.hom (i.hom (ret.i.hom x)) = x := by
-      have hcomp : ret.i ≫ i ≫ g.hom = 𝟙 P := by rw [hg, ret.retract]
-      simpa only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_id,
-        LinearMap.id_apply] using congrArg (fun f : P ⟶ P ↦ f.hom x) hcomp
-    exact hx ▸ Submodule.smul_top_le_comap_smul_top (maximalIdeal R) g.hom.hom
-      (hi_min ⟨ret.i.hom x, rfl⟩)
-  have hbot := Submodule.eq_bot_of_le_smul_of_le_jacobson _ _ (IsNoetherian.noetherian ⊤) htop
-    (ringJacobson_eq_maximalIdeal (R := R)).ge
-  have : Subsingleton P :=
-    subsingleton_of_forall_eq 0 fun x ↦ (Submodule.mem_bot R).1 (hbot ▸ Submodule.mem_top)
-  exact ModuleCat.isZero_of_subsingleton P
+  have hw_jac : Ideal.span {w} ≤ Ring.jacobson S :=
+    (Ideal.le_maximalIdeal_of_isLocalRing_quotient (Ideal.span {w})).trans
+      (ringJacobson_eq_maximalIdeal (R := S)).ge
+  have hP_eq : P.complex =
+      PeriodicComplex.resolutionComplex (quotientPeriodicComplex.obj X) 1 := by
+    rw [ProjectiveResolution.ofIso_complex, quotientCokernelProjectiveResolution_complex]
+  refine ⟨P, X, fun i ↦ ?_, ?_, hX, hP_eq⟩
+  · let Q := quotientPeriodicComplex.obj X
+    have hfinQ (z : ZMod 2) : Module.Finite (S ⧸ Ideal.span {w}) (Q.X z) := by
+      rcases (by decide : ∀ z : ZMod 2, z = 0 ∨ z = 1) z with rfl | rfl
+      · exact ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.X₀.property
+      · exact ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.X₁.property
+    have : Module.Finite (S ⧸ Ideal.span {w}) (P.complex.X i) := by
+      rw [hP_eq, PeriodicComplex.resolutionComplex_X]
+      exact hfinQ ((1 - i : ℤ) : ZMod 2)
+    have : Module.Projective (S ⧸ Ideal.span {w}) (P.complex.X i) :=
+      (IsProjective.iff_projective (P.complex.X i)).2 (P.projective i)
+    exact ⟨‹_›, Module.free_of_projective_of_isLocalRing⟩
+  · rw [ProjectiveResolution.ofIso_complex]
+    exact (quotientCokernelProjectiveResolution_complex_isMinimal_iff hmem hw_jac X).2 hX
 
 /-- **Eisenbud's Theorem 6.1(i), constructive depth-bound form.** If a finite `S ⧸ (w)`-module `M`
 satisfies `ringKrullDim (S ⧸ (w)) ≤ depth M + n`, then `M` has a minimal finite-free projective
@@ -233,10 +191,10 @@ theorem
     obtain ⟨Q, X, hQ_ff, hQ_min, hX_min, hQ_eq⟩ :=
       exists_isMinimal_projectiveResolution_with_matrixFactorizationTail_of_isMaximalCohenMacaulay
         hw K hK fun P₀ _ ⟨r⟩ ↦
-          isZero_projective_retract_minimal_syzygy_of_isMaximalCohenMacaulay hw hi hip hp
-            hi_min hM hK P₀ r
-    obtain ⟨P, hP_ff, hP_min, ⟨e_tr⟩⟩ :=
-      ModuleCat.exists_consProjectiveResolution Q hi hip hp hi_min hQ_ff hQ_min
+          TauCeti.isZero_projective_retract_minimal_syzygy_of_isMaximalCohenMacaulay hw hi hip hp
+            hi_min hM P₀ r
+    obtain ⟨P, hP_ff, hP_min, ⟨e_tr⟩⟩ := Q.exists_minimal_cons hi hip hp
+      ((ringJacobson_eq_maximalIdeal (R := R)).symm ▸ hi_min) hQ_ff hQ_min
     exact ⟨P, X, hP_ff, hP_min, hX_min,
       ⟨eqToIso (congrFun (Function.iterate_one _) _) ≪≫ e_tr ≪≫ eqToIso hQ_eq⟩⟩
   | succ n ih =>
@@ -257,24 +215,11 @@ theorem
           simpa only [Nat.cast_add, Nat.cast_one, add_assoc, add_comm (1 : WithBot ℕ∞)] using hn
         exact hMn.trans (by gcongr)
     obtain ⟨Q, X, hQ_ff, hQ_min, hX_min, ⟨eQ⟩⟩ := ih K hdepK
-    obtain ⟨P, hP_ff, hP_min, ⟨e_tr⟩⟩ :=
-      ModuleCat.exists_consProjectiveResolution Q hi hip hp hi_min hQ_ff hQ_min
+    obtain ⟨P, hP_ff, hP_min, ⟨e_tr⟩⟩ := Q.exists_minimal_cons hi hip hp
+      ((ringJacobson_eq_maximalIdeal (R := R)).symm ▸ hi_min) hQ_ff hQ_min
     exact ⟨P, X, hP_ff, hP_min, hX_min,
       ⟨eqToIso (Function.iterate_succ_apply _ (n + 1) _) ≪≫
         ChainComplex.truncateIterateMapIso e_tr (n + 1) ≪≫ eQ⟩⟩
-
-private theorem exists_ringKrullDim_quotient_add_one_eq_spanFinrank (hw : w ≠ 0) :
-    ∃ r : ℕ, ringKrullDim (S ⧸ Ideal.span {w}) = r ∧ r + 1 = (maximalIdeal S).spanFinrank := by
-  obtain ⟨r, hr⟩ := Module.exists_supportDim_eq_natCast
-    (R := S ⧸ Ideal.span {w}) (M := S ⧸ Ideal.span {w})
-  have hdimR : ringKrullDim (S ⧸ Ideal.span {w}) = r :=
-    (Module.supportDim_self_eq_ringKrullDim (R := S ⧸ Ideal.span {w})).symm.trans hr
-  have hmem : w ∈ maximalIdeal S := (Ideal.span_singleton_le_iff_mem _).1
-    (le_maximalIdeal (TauCeti.IsLocalRing.isLocalRing_quotient_iff.1 inferInstance))
-  have hsucc : ringKrullDim (S ⧸ Ideal.span {w}) + 1 = ringKrullDim S :=
-    ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim (.of_ne_zero hw) hmem
-  rw [hdimR, ← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)] at hsucc
-  exact ⟨r, hdimR, by exact_mod_cast hsucc⟩
 
 /-- **Eisenbud's Theorem 6.1(i), uniform constructive form.** Every finitely generated module over
 `R = S ⧸ (w)` (`w ≠ 0`) has a minimal finite-free projective resolution whose truncation after
@@ -288,12 +233,22 @@ theorem exists_isMinimal_projectiveResolution_with_matrixFactorizationTail_spanF
       P.complex.IsMinimal ∧ X.IsMinimal ∧
       Nonempty (ChainComplex.truncate.obj^[(maximalIdeal S).spanFinrank] P.complex ≅
         PeriodicComplex.resolutionComplex (quotientPeriodicComplex.obj X) 1) := by
-  obtain ⟨r, hdimR, hr1⟩ := exists_ringKrullDim_quotient_add_one_eq_spanFinrank hw
-  rw [← hr1]
+  have hdim :=
+    TauCeti.IsRegularLocalRing.ringKrullDim_quotient_span_singleton_add_one_eq_spanFinrank hw
+  have hpos : 0 < (maximalIdeal S).spanFinrank := by
+    exact_mod_cast (by
+      simpa only [← hdim, zero_add] using
+        add_le_add (ringKrullDim_nonneg_of_nontrivial (R := S ⧸ Ideal.span {w}))
+          (le_refl (1 : WithBot ℕ∞)) :
+      (1 : WithBot ℕ∞) ≤ (maximalIdeal S).spanFinrank)
+  have hr1 : ((maximalIdeal S).spanFinrank - 1) + 1 = (maximalIdeal S).spanFinrank :=
+    Nat.sub_add_cancel hpos
+  rw [← hr1] at hdim ⊢
+  rw [Nat.cast_add, Nat.cast_one, ENat.WithBot.add_one_cancel] at hdim
   refine
     exists_isMinimal_projectiveResolution_with_matrixFactorizationTail_of_ringKrullDim_le_depth_add
-      hw r M ?_
-  rw [hdimR]
+      hw _ M ?_
+  rw [hdim]
   exact le_add_of_nonneg_left (WithBot.coe_le_coe.2 (zero_le : (0 : ℕ∞) ≤ IsLocalRing.depth M))
 
 omit [_root_.IsRegularLocalRing S] [IsLocalRing (S ⧸ Ideal.span {w})] in
@@ -347,16 +302,14 @@ private theorem exists_isMinimal_quotientCokernel_iso_of_iso_resolutionComplex
     have hY₁ : Q.X 0 =
         ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y).obj.X₁.obj := by
       rw [quotientPeriodicComplex_obj_X_zero, baseChangeFunctor_obj_X₁, parityShift_obj_X₁]
-    have hYd₀ :
-        ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y).obj.d₀.hom =
-          -Q.d 1 0 := by
+    have hYd₀' :
+        eqToHom hY₀ ≫ ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y).obj.d₀.hom =
+          -Q.d 1 0 ≫ eqToHom hY₁ := by
+      refine eq_of_heq ((eqToHom_comp_heq _ hY₀).trans (HEq.trans ?_
+        (comp_eqToHom_heq (-Q.d 1 0) hY₁).symm))
       rw [baseChangeFunctor_obj_d₀, parityShift_obj_d₀, Functor.map_neg, Functor.map_neg,
         quotientPeriodicComplex_obj_d_one_zero]
       rfl
-    have hYd₀' :
-        eqToHom hY₀ ≫ ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y).obj.d₀.hom =
-          -Q.d 1 0 ≫ eqToHom hY₁ :=
-      ((conj_eqToHom_iff_heq (-Q.d 1 0) _ hY₀ hY₁).2 (heq_of_eq hYd₀.symm)).symm
     let negIso : Q.X 1 ≅ Q.X 1 :=
       { hom := -𝟙 _, inv := -𝟙 _, hom_inv_id := by simp, inv_hom_id := by simp }
     exact mkIso (Y := Y) ((isMinimal_parityShift_iff X).2 hX)
@@ -389,7 +342,7 @@ theorem hasPeriodicTail_two_of_isMinimal_of_ringKrullDim_le_depth_add
     (hw : w ≠ 0) {n : ℕ}
     (hn : ringKrullDim (S ⧸ Ideal.span {w}) ≤ (IsLocalRing.depth M : WithBot ℕ∞) + n) :
     P.complex.HasPeriodicTail 2 (n + 1) := by
-  have : Module.Finite (S ⧸ Ideal.span {w}) M := ModuleCat.finite_of_projectiveResolution P
+  have : Module.Finite (S ⧸ Ideal.span {w}) M := P.finite
   obtain ⟨Q, _, hQ_ff, hQ_min, -, ⟨eQ⟩⟩ :=
     exists_isMinimal_projectiveResolution_with_matrixFactorizationTail_of_ringKrullDim_le_depth_add
       hw n M hn
@@ -405,12 +358,12 @@ theorem hasPeriodicTail_two_spanFinrank_of_isMinimal
     [∀ i, Module.Finite (S ⧸ Ideal.span {w}) (P.complex.X i)] (hP : P.complex.IsMinimal)
     (hw : w ≠ 0) :
     P.complex.HasPeriodicTail 2 (maximalIdeal S).spanFinrank := by
-  have : Module.Finite (S ⧸ Ideal.span {w}) M := ModuleCat.finite_of_projectiveResolution P
-  obtain ⟨r, hdimR, hr1⟩ := exists_ringKrullDim_quotient_add_one_eq_spanFinrank hw
-  rw [← hr1]
-  refine P.hasPeriodicTail_two_of_isMinimal_of_ringKrullDim_le_depth_add hP hw ?_
-  rw [hdimR]
-  exact le_add_of_nonneg_left (WithBot.coe_le_coe.2 (zero_le : (0 : ℕ∞) ≤ IsLocalRing.depth M))
+  have : Module.Finite (S ⧸ Ideal.span {w}) M := P.finite
+  obtain ⟨Q, _, hQ_ff, hQ_min, -, ⟨eQ⟩⟩ :=
+    exists_isMinimal_projectiveResolution_with_matrixFactorizationTail_spanFinrank hw M
+  have (i : ℕ) : Module.Finite (S ⧸ Ideal.span {w}) (Q.complex.X i) := (hQ_ff i).1
+  exact (P.hasPeriodicTail_iff_of_isMinimal Q hP hQ_min 2 (maximalIdeal S).spanFinrank).2
+    (.of_iso_resolutionComplex (by decide) eQ)
 
 /-- **Eisenbud's Theorem 6.1(ii).** For a minimal finite-term projective resolution `P` of an
 `S ⧸ (w)`-module `M` (`w ≠ 0`), `P.complex.HasPeriodicTail 2 0` iff `M` is maximal Cohen–Macaulay
@@ -423,7 +376,7 @@ theorem hasPeriodicTail_two_zero_iff
       Module.IsMaximalCohenMacaulay (S ⧸ Ideal.span {w}) M ∧
         ∀ R_proj : ModuleCat.{u} (S ⧸ Ideal.span {w}), Projective R_proj →
           Nonempty (Retract R_proj M) → IsZero R_proj := by
-  have : Module.Finite (S ⧸ Ideal.span {w}) M := ModuleCat.finite_of_projectiveResolution P
+  have : Module.Finite (S ⧸ Ideal.span {w}) M := P.finite
   refine ⟨fun h0 ↦ ?_, fun ⟨hMCM, hproj⟩ ↦ ?_⟩
   · let p := (maximalIdeal S).spanFinrank
     obtain ⟨Q_M, X, hQ_ff, hQ_min, hX_min, ⟨e_tail⟩⟩ :=

@@ -33,7 +33,7 @@ finite free surjections and dimension shifting, made into a projective resolutio
 * `ModuleCat.exists_projectiveResolution_finite`: over a left Noetherian ring, a finite module of
   projective dimension at most `n` has a projective resolution by finite projective modules
   vanishing above degree `n`.
-* `ModuleCat.finite_of_projectiveResolution`: a module admitting a projective resolution with
+* `CategoryTheory.ProjectiveResolution.finite`: a module admitting a projective resolution with
   finitely generated degree-zero term is finitely generated.
 
 ## References
@@ -68,14 +68,14 @@ theorem finite_toProjectiveResolution_X {R : Type u} [Ring R] {M : ModuleCat.{u}
 
 end TauCeti.ExactStructure.FiniteResolution
 
-namespace ModuleCat
-
 /-- A module admitting a projective resolution whose degree-zero term is finitely generated is
 itself finitely generated. -/
-theorem finite_of_projectiveResolution {R : Type u} [Ring R] {M : ModuleCat.{v} R}
+theorem CategoryTheory.ProjectiveResolution.finite {R : Type u} [Ring R] {M : ModuleCat.{v} R}
     (P : ProjectiveResolution M) [Module.Finite R (P.complex.X 0)] : Module.Finite R M :=
   Module.Finite.of_surjective P.augZero.hom
     ((ModuleCat.epi_iff_surjective P.augZero).1 inferInstance)
+
+namespace ModuleCat
 
 /-- **Finite projective resolutions.** Over a left Noetherian ring, a finitely generated module
 of projective dimension at most `n` has a projective resolution whose terms are finitely

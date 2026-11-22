@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Category.ModuleCat.Projective.MinimalResolution.Ba
 public import TauCeti.Algebra.Category.ModuleCat.Projective.FiniteResolution
 public import TauCeti.Algebra.Homology.ModuleCat.Minimal
 import TauCeti.CategoryTheory.Abelian.Projective.Resolution
-import TauCeti.RingTheory.LocalRing.Module
 
 /-!
 # Bounded minimal free chain resolutions
@@ -23,8 +22,8 @@ resolution differentials.
 This file identifies the recursive minimality condition on a finite resolution with the
 condition on the differentials of its spliced chain complex. It then converts the minimal
 finite projective resolution into Mathlib's `CategoryTheory.ProjectiveResolution`, retaining
-both minimality and the length bound, and provides inductive step constructors
-`ModuleCat.exists_consProjectiveResolution` and `ModuleCat.exists_minimal_syzygy`.
+both minimality and the length bound, and provides the inductive step constructor
+`CategoryTheory.ProjectiveResolution.exists_minimal_cons` over any commutative ring.
 
 ## References
 
@@ -113,14 +112,18 @@ theorem exists_projectiveResolution_finite_free_minimal {R : Type u} [CommRing R
     exact ⟨inferInstance, Module.free_of_flat_of_isLocalRing⟩
   · exact hmin.isMinimal_toProjectiveResolution_complex hP
 
+end ModuleCat
+
+namespace CategoryTheory.ProjectiveResolution
+
 /-- Prepending a minimal finite-free presentation `0 → K --i--> F --p--> M → 0` to a minimal
 finite-free projective resolution `Q` of `K` yields a minimal finite-free projective resolution `P`
 of `M` whose truncation is isomorphic to `Q`. -/
-theorem exists_consProjectiveResolution {R : Type u} [CommRing R] [IsLocalRing R]
-    {K F M : ModuleCat.{u} R} [Module.Finite R F] [Module.Free R F]
+theorem exists_minimal_cons {R : Type u} [CommRing R]
+    {K F M : ModuleCat.{v} R} [Module.Finite R F] [Module.Free R F]
     (Q : ProjectiveResolution K) {i : K ⟶ F} {p : F ⟶ M}
     (hi : Function.Injective i.hom) (hip : Function.Exact i.hom p.hom)
-    (hp : Function.Surjective p.hom) (hi_min : LinearMap.range i.hom ≤ maximalIdeal R • ⊤)
+    (hp : Function.Surjective p.hom) (hi_min : LinearMap.range i.hom ≤ Ring.jacobson R • ⊤)
     (hQ_ff : ∀ k, Module.Finite R (Q.complex.X k) ∧ Module.Free R (Q.complex.X k))
     (hQ_min : Q.complex.IsMinimal) :
     ∃ P : ProjectiveResolution M,
@@ -136,27 +139,45 @@ theorem exists_consProjectiveResolution {R : Type u} [CommRing R] [IsLocalRing R
   let P := Q.cons hS
   refine ⟨P, fun k ↦ ?_, ?_, ⟨Q.consTruncateIso hS⟩⟩
   · rcases k with _ | k
-    · exact ⟨‹_›, ‹_›⟩
-    · exact hQ_ff k
-  · rw [ChainComplex.isMinimal_iff_range_d_succ_le_maximalIdeal_smul]
-    rw [ChainComplex.isMinimal_iff_range_d_succ_le_maximalIdeal_smul] at hQ_min
+    · have e := (eqToIso (Q.cons_complex_X_zero hS)).symm.toLinearEquiv
+      exact ⟨Module.Finite.equiv e, Module.Free.of_equiv e⟩
+    · have := (hQ_ff k).1
+      have := (hQ_ff k).2
+      have e := (eqToIso (Q.cons_complex_X_succ hS k)).symm.toLinearEquiv
+      exact ⟨Module.Finite.equiv e, Module.Free.of_equiv e⟩
+  · rw [ChainComplex.isMinimal_iff_range_d_succ_le]
+    rw [ChainComplex.isMinimal_iff_range_d_succ_le] at hQ_min
     rintro (_ | k)
-    · exact (LinearMap.range_comp_le_range Q.augZero.hom i.hom).trans hi_min
-    · exact hQ_min k
+    · rw [show (Q.cons hS).complex.d 1 0 =
+          ((eqToHom (Q.cons_complex_X_succ hS 0) ≫ Q.augZero) ≫ i) ≫
+            eqToHom (Q.cons_complex_X_zero hS).symm by simp,
+        ModuleCat.hom_comp, LinearMap.range_comp]
+      calc
+        Submodule.map (eqToHom (Q.cons_complex_X_zero hS).symm).hom
+            (LinearMap.range ((eqToHom (Q.cons_complex_X_succ hS 0) ≫ Q.augZero) ≫ i).hom)
+          ≤ Submodule.map (eqToHom (Q.cons_complex_X_zero hS).symm).hom
+              (Ring.jacobson R • (⊤ : Submodule R F)) :=
+            Submodule.map_mono <| by
+              rw [ModuleCat.hom_comp]
+              exact (LinearMap.range_comp_le_range _ i.hom).trans hi_min
+        _ ≤ Ring.jacobson R • ⊤ := by
+            rw [Submodule.map_smul'']
+            exact Submodule.smul_mono le_rfl le_top
+    · rw [show (Q.cons hS).complex.d (k + 2) (k + 1) =
+          (eqToHom (Q.cons_complex_X_succ hS (k + 1)) ≫ Q.complex.d (k + 1) k) ≫
+            eqToHom (Q.cons_complex_X_succ hS k).symm by simp,
+        ModuleCat.hom_comp, LinearMap.range_comp]
+      calc
+        Submodule.map (eqToHom (Q.cons_complex_X_succ hS k).symm).hom
+            (LinearMap.range
+              (eqToHom (Q.cons_complex_X_succ hS (k + 1)) ≫ Q.complex.d (k + 1) k).hom)
+          ≤ Submodule.map (eqToHom (Q.cons_complex_X_succ hS k).symm).hom
+              (Ring.jacobson R • (⊤ : Submodule R (Q.complex.X k))) :=
+            Submodule.map_mono <| by
+              rw [ModuleCat.hom_comp]
+              exact (LinearMap.range_comp_le_range _ (Q.complex.d (k + 1) k).hom).trans (hQ_min k)
+        _ ≤ Ring.jacobson R • ⊤ := by
+            rw [Submodule.map_smul'']
+            exact Submodule.smul_mono le_rfl le_top
 
-/-- Every finite module `M` over a Noetherian local ring admits a minimal finite-free presentation
-`0 → K --i--> F --p--> M → 0` with `K` finite and `range i ≤ 𝔪 • F`. -/
-theorem exists_minimal_syzygy {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
-    (M : ModuleCat.{u} R) [Module.Finite R M] :
-    ∃ (F K : ModuleCat.{u} R) (i : K ⟶ F) (p : F ⟶ M),
-      Module.Finite R F ∧ Module.Free R F ∧ Module.Finite R K ∧
-      Function.Injective i.hom ∧ Function.Exact i.hom p.hom ∧ Function.Surjective p.hom ∧
-      LinearMap.range i.hom ≤ maximalIdeal R • ⊤ := by
-  obtain ⟨p₀, hp₀, hker⟩ := TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul R M
-  have : Module.Finite R (LinearMap.ker p₀) := Module.Finite.iff_fg.2 (IsNoetherian.noetherian _)
-  exact ⟨.of R _, .of R (LinearMap.ker p₀),
-    ModuleCat.ofHom (LinearMap.ker p₀).subtype, ModuleCat.ofHom p₀,
-    inferInstance, inferInstance, inferInstance, Subtype.val_injective,
-    LinearMap.exact_subtype_ker_map p₀, hp₀, (Submodule.range_subtype _).le.trans hker⟩
-
-end ModuleCat
+end CategoryTheory.ProjectiveResolution

@@ -17,17 +17,17 @@ import TauCeti.RingTheory.LocalRing.Module
 /-!
 # Minimality of cokernel resolutions of matrix factorizations
 
-Over a local ring `(S, 𝔪)` with local quotient `R = S ⧸ (w)`, reducing a finite-projective
+Whenever `(w)` lies in the Jacobson radical of a commutative ring `S`, reducing a finite-projective
 matrix factorization `X` modulo `w` preserves and reflects minimality
-(`TauCeti.MatrixFactorization.quotientPeriodicComplex_obj_isMinimal_iff`), as does unfolding the
-reduced two-periodic complex (`resolutionComplex_quotientPeriodicComplex_isMinimal_iff`) and forming
+(`TauCeti.MatrixFactorization.quotientPeriodicComplex_obj_isMinimal_iff`), as does forming
 Eisenbud's periodic resolution (`quotientCokernelProjectiveResolution_complex_isMinimal_iff`).
 
-When `w ∈ nonZeroDivisors S`, the odd differential `d₁` maps into `𝔪 • X₀` if and only if the
-reduced cokernel has no nonzero projective `R`-retract
-(`range_d₁_le_maximalIdeal_smul_iff_forall_projective_retract_isZero`), and Eisenbud's factorization
-`ofInjective f` of a minimal length-one presentation `0 → P --f--> Q --g--> M → 0` is minimal if
-and only if `M` has no nonzero projective `R`-retract (`isMinimal_ofInjective_iff`).
+When `(S, 𝔪)` is a local ring with local quotient `R = S ⧸ (w)` and `w ∈ nonZeroDivisors S`, the
+odd differential `d₁` maps into `𝔪 • X₀` if and only if the reduced cokernel has no nonzero
+projective `R`-retract (`range_d₁_le_maximalIdeal_smul_iff_forall_projective_retract_isZero`), and
+Eisenbud's factorization `ofInjective f` of a minimal length-one presentation
+`0 → P --f--> Q --g--> M → 0` is minimal if and only if `M` has no nonzero projective `R`-retract
+(`isMinimal_ofInjective_iff`).
 
 ## References
 
@@ -45,56 +45,57 @@ open CategoryTheory Limits IsLocalRing
 namespace TauCeti.MatrixFactorization
 
 variable {S : Type u} [CommRing S] {w : S}
-variable [IsLocalRing S] [IsLocalRing (S ⧸ Ideal.span {w})]
 
 section LocalReduction
 
-/-- Over a local ring `S` with local quotient `S ⧸ (w)`, the reduced two-periodic complex of `X`
+/-- Whenever `(w)` lies in the Jacobson radical of `S`, the reduced two-periodic complex of `X`
 is minimal if and only if `X` is minimal. -/
-@[simp]
-theorem quotientPeriodicComplex_obj_isMinimal_iff (X : MatrixFactorization S w) :
+theorem quotientPeriodicComplex_obj_isMinimal_iff
+    (hw_jac : Ideal.span {w} ≤ Ring.jacobson S) (X : MatrixFactorization S w) :
     (quotientPeriodicComplex.obj X).IsMinimal ↔ X.IsMinimal := by
   let q := Ideal.Quotient.mk (Ideal.span {w})
-  have hle : Ideal.span {w} ≤ maximalIdeal S :=
-    le_maximalIdeal (TauCeti.IsLocalRing.isLocalRing_quotient_iff.1 inferInstance)
-  have hmax : (maximalIdeal S).map q = maximalIdeal (S ⧸ Ideal.span {w}) := by
-    have : IsLocalHom q := .of_surjective _ Ideal.Quotient.mk_surjective
-    exact map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective
+  have hjac : (Ring.jacobson S).map q = Ring.jacobson (S ⧸ Ideal.span {w}) := by
+    rw [Ring.jacobson_quotient_of_le hw_jac]
+    ext x
+    exact (Ideal.mem_map_iff_of_surjective q Ideal.Quotient.mk_surjective).trans
+      (by simp only [Submodule.mem_map, RingHom.toSemilinearMap_apply]; rfl)
   have hrange {P Q : ModuleCat.{u} S} (g : P ⟶ Q) :
       LinearMap.range ((ModuleCat.extendScalars q).map g).hom ≤
-          maximalIdeal (S ⧸ Ideal.span {w}) • ⊤ ↔
-        LinearMap.range g.hom ≤ maximalIdeal S • ⊤ :=
-    hmax ▸ ModuleCat.ExtendScalars.range_map_quotient_le_map_smul_iff hle g
-  rw [HomologicalComplex.isMinimal_iff_forall_rel, isMinimal_iff_range_le_maximalIdeal_smul,
-    ringJacobson_eq_maximalIdeal]
-  refine ⟨fun h ↦ ⟨(hrange X.obj.d₀.hom).1 (h 0 1 (zero_add 1)),
-      (hrange X.obj.d₁.hom).1 (h 1 0 (by decide))⟩, fun ⟨hd₀, hd₁⟩ i j hij ↦ ?_⟩
-  rcases (by decide : ∀ a : ZMod 2, a = 0 ∨ a = 1) i with rfl | rfl
-  · obtain rfl : j = 1 := hij.symm.trans (zero_add 1)
-    exact (hrange X.obj.d₀.hom).2 hd₀
-  · obtain rfl : j = 0 := hij.symm.trans (by decide)
-    exact (hrange X.obj.d₁.hom).2 hd₁
+          Ring.jacobson (S ⧸ Ideal.span {w}) • ⊤ ↔
+        LinearMap.range g.hom ≤ Ring.jacobson S • ⊤ :=
+    hjac ▸ ModuleCat.ExtendScalars.range_map_quotient_le_map_smul_iff hw_jac g
+  rw [HomologicalComplex.isMinimal_iff_forall_rel, isMinimal_iff]
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨hd₀, hd₁⟩ i j hij ↦ ?_⟩
+  · have h01 := h 0 1 (zero_add 1)
+    rw [quotientPeriodicComplex_obj_d_zero_one] at h01
+    simpa only [FGModuleCat.forget₂_map] using (hrange ((forget₂ _ _).map X.obj.d₀)).1 h01
+  · have h10 := h 1 0 (by decide)
+    rw [quotientPeriodicComplex_obj_d_one_zero] at h10
+    simpa only [FGModuleCat.forget₂_map] using (hrange ((forget₂ _ _).map X.obj.d₁)).1 h10
+  · rcases (by decide : ∀ a : ZMod 2, a = 0 ∨ a = 1) i with rfl | rfl
+    · obtain rfl : j = 1 := hij.symm.trans (zero_add 1)
+      rw [quotientPeriodicComplex_obj_d_zero_one]
+      exact (hrange ((forget₂ _ _).map X.obj.d₀)).2
+        (by simpa only [FGModuleCat.forget₂_map] using hd₀)
+    · obtain rfl : j = 0 := hij.symm.trans (by decide)
+      rw [quotientPeriodicComplex_obj_d_one_zero]
+      exact (hrange ((forget₂ _ _).map X.obj.d₁)).2
+        (by simpa only [FGModuleCat.forget₂_map] using hd₁)
 
-/-- Unfolding the reduced two-periodic complex of `X` from any starting parity `j : ℤ` gives a
-minimal chain complex over `S ⧸ (w)` if and only if `X` is minimal. -/
-@[simp]
-theorem resolutionComplex_quotientPeriodicComplex_isMinimal_iff (X : MatrixFactorization S w)
-    (j : ℤ) :
-    (PeriodicComplex.resolutionComplex (quotientPeriodicComplex.obj X) j).IsMinimal ↔
-      X.IsMinimal :=
-  (PeriodicComplex.resolutionComplex_isMinimal_iff _ j).trans
-    (quotientPeriodicComplex_obj_isMinimal_iff X)
-
-/-- For a non-zero-divisor `w`, the periodic projective resolution of the reduced cokernel of `X`
-is minimal if and only if `X` is minimal. -/
-theorem quotientCokernelProjectiveResolution_complex_isMinimal_iff (hw : w ∈ nonZeroDivisors S)
+/-- For a non-zero-divisor `w` lying in the Jacobson radical of `S`, the periodic projective
+resolution of the reduced cokernel of `X` is minimal if and only if `X` is minimal. -/
+theorem quotientCokernelProjectiveResolution_complex_isMinimal_iff
+    (hw : w ∈ nonZeroDivisors S) (hw_jac : Ideal.span {w} ≤ Ring.jacobson S)
     (X : MatrixFactorization S w) :
-    (quotientCokernelProjectiveResolution hw X).complex.IsMinimal ↔ X.IsMinimal :=
-  resolutionComplex_quotientPeriodicComplex_isMinimal_iff X 1
+    (quotientCokernelProjectiveResolution hw X).complex.IsMinimal ↔ X.IsMinimal := by
+  rw [quotientCokernelProjectiveResolution_complex, PeriodicComplex.resolutionComplex_isMinimal_iff,
+    quotientPeriodicComplex_obj_isMinimal_iff hw_jac]
 
 end LocalReduction
 
 section ProjectiveRetract
+
+variable [IsLocalRing S] [IsLocalRing (S ⧸ Ideal.span {w})]
 
 private theorem not_nonempty_retract_self_of_range_d₁_le (hw : w ∈ nonZeroDivisors S)
     {X : MatrixFactorization S w} (hd₁ : LinearMap.range X.obj.d₁.hom.hom ≤ maximalIdeal S • ⊤)
@@ -144,7 +145,7 @@ private theorem isZero_projective_retract_of_range_d₁_le (hw : w ∈ nonZeroDi
       ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X)).obj) : IsZero P := by
   cases subsingleton_or_nontrivial P
   · exact ModuleCat.isZero_of_subsingleton P
-  · obtain ⟨retR⟩ := TauCeti.IsLocalRing.nonempty_retract_self_of_nontrivial_projective_retract ret
+  · obtain ⟨retR⟩ := ret.nonempty_retract_ring_of_projective
     exact False.elim (not_nonempty_retract_self_of_range_d₁_le hw hd₁ retR)
 
 omit [IsLocalRing (S ⧸ Ideal.span {w})] in
@@ -217,7 +218,9 @@ theorem isMinimal_ofInjective_iff (hw : w ∈ nonZeroDivisors S)
         Nonempty (Retract R_proj M) → IsZero R_proj := by
   have hf₀ : LinearMap.range (ofInjective f hf
       (hfg.smul_mem_range (Ideal.Quotient.mk_singleton_self w))).obj.d₀.hom.hom ≤
-      maximalIdeal S • ⊤ := hf_min
+      maximalIdeal S • ⊤ := by
+    rw [ofInjective_obj_d₀]
+    exact hf_min
   rw [isMinimal_iff_range_le_maximalIdeal_smul,
     range_d₁_le_maximalIdeal_smul_iff_forall_projective_retract_isZero hw, and_iff_right hf₀]
   let e := quotientCokernelIsoOfExact hf hfg hg

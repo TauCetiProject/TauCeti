@@ -12,6 +12,7 @@ import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.KrullDimension.Regular
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.RingTheory.Depth.AuslanderBuchsbaum
+import TauCeti.RingTheory.LocalRing.Quotient
 
 /-!
 # Maximal Cohen–Macaulay modules over a hypersurface
@@ -80,11 +81,8 @@ private theorem projectiveDimension_add_depth_eq (hS : Module.IsCohenMacaulay S 
       Ideal.Quotient.mk_surjective M).2 ‹_›
   have : Nontrivial ((restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) :=
     inferInstanceAs (Nontrivial M)
-  -- Since `S/(w)` is nonzero, `w` is not a unit.
-  have hwm : w ∈ maximalIdeal S := by
-    by_contra h
-    exact Ideal.Quotient.nontrivial_iff.mp inferInstance
-      (Ideal.span_singleton_eq_top.2 ((IsLocalRing.notMem_maximalIdeal).1 h))
+  have hwm : w ∈ maximalIdeal S :=
+    (Ideal.span {w}).le_maximalIdeal_of_isLocalRing_quotient (Ideal.mem_span_singleton_self w)
   rw [ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors hw hwm,
     ← Module.supportDim_self_eq_ringKrullDim, ← hS.depth_eq,
     ← ModuleCat.depth_restrictScalars_of_surjective _ Ideal.Quotient.mk_surjective]

@@ -33,6 +33,8 @@ the source stable category.
 * `TauCeti.StableConflationExact.stableSuspensionCompStableFunctorIso_hom_app_eq_connectingMap`:
   on the class of an object, the comparison is the connecting map of the image of its suspension
   presentation.
+* `TauCeti.StableConflationExact.stableSuspensionCompStableFunctorIso_comp`: compatibility of the
+  suspension comparison with composition of stable conflation-exact functors.
 
 ## References
 
@@ -42,7 +44,7 @@ the source stable category.
 
 public section
 
-universe v₁ v₂ u₁ u₂
+universe v₁ v₂ v₃ u₁ u₂ u₃
 
 namespace TauCeti
 
@@ -332,6 +334,227 @@ theorem stableSuspensionCompStableFunctorIso_hom_app_eq_connectingMap
   rw [hc, Category.id_comp] at h
   rw [stableSuspensionCompStableFunctorIso_hom_app,
     ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_hom, reassoc_of% h]
+
+section Composition
+
+variable {K : Type u₃} [Category.{v₃} K] [Preadditive K] [HasZeroObject K] [HasBinaryBiproducts K]
+  {E'' : ExactStructure K} {G : Functor D K} [G.Additive]
+
+/-- Comparing mapped suspension presentations along a composition `F ⋙ G`: the comparison from
+the composite mapped presentation `(hF.comp hG).mapSuspensionPresentation hE X` to the target
+suspension presentation factors through `G` applied to `hF`'s comparison and `hG`'s comparison. -/
+private theorem projectiveStableIsoSuspensionObj_hom_mapSuspensionPresentation_comp
+    (hF : StableConflationExact E E' F) (hG : StableConflationExact E' E'' G)
+    (hE : E.IsFrobenius) (hE' : E'.IsFrobenius) (hE'' : E''.IsFrobenius) (X : C) :
+    eqToHom (congrArg E''.projectiveStableFunctor.obj
+      ((hF.comp hG).mapSuspensionPresentation_K hE X).symm) ≫
+      (hE''.projectiveStableIsoSuspensionObj
+        ((hF.comp hG).mapSuspensionPresentation hE X)).hom =
+      eqToHom (congrArg E''.projectiveStableFunctor.obj
+        (congrArg G.obj (hF.mapSuspensionPresentation_K hE X).symm)) ≫
+      E''.projectiveStableFunctor.map (G.map
+        ((hF.mapSuspensionPresentation hE X).cokernelMap
+          (hE'.suspensionPresentation (F.obj X)) (𝟙 _))) ≫
+      eqToHom (congrArg E''.projectiveStableFunctor.obj
+        (hG.mapSuspensionPresentation_K hE' (F.obj X)).symm) ≫
+      (hE''.projectiveStableIsoSuspensionObj
+        (hG.mapSuspensionPresentation hE' (F.obj X))).hom := by
+  let P₁ := hF.mapSuspensionPresentation hE X
+  let Q₁ := hE'.suspensionPresentation (F.obj X)
+  let P₂ := hG.mapSuspensionPresentation hE' (F.obj X)
+  let Q₂ := hE''.suspensionPresentation (G.obj (F.obj X))
+  let P₁₂ := (hF.comp hG).mapSuspensionPresentation hE X
+  have hp1K : P₁₂.K = G.obj P₁.K :=
+    ((hF.comp hG).mapSuspensionPresentation_K hE X).trans
+      (congrArg G.obj (hF.mapSuspensionPresentation_K hE X).symm)
+  have hp1I : P₁₂.I = G.obj P₁.I :=
+    ((hF.comp hG).mapSuspensionPresentation_I hE X).trans
+      (congrArg G.obj (hF.mapSuspensionPresentation_I hE X).symm)
+  have hp2K : P₂.K = G.obj Q₁.K := hG.mapSuspensionPresentation_K hE' (F.obj X)
+  have hp2I : P₂.I = G.obj Q₁.I := hG.mapSuspensionPresentation_I hE' (F.obj X)
+  let a : P₁₂.I ⟶ Q₂.I :=
+    eqToHom hp1I ≫ G.map (P₁.middleMap Q₁ (𝟙 _)) ≫ eqToHom hp2I.symm ≫ P₂.middleMap Q₂ (𝟙 _)
+  let g : P₁₂.K ⟶ Q₂.K :=
+    eqToHom hp1K ≫ G.map (P₁.cokernelMap Q₁ (𝟙 _)) ≫ eqToHom hp2K.symm ≫ P₂.cokernelMap Q₂ (𝟙 _)
+  have ha : P₁₂.i ≫ a = 𝟙 _ ≫ Q₂.i := by
+    have h₁ : G.map P₁.i ≫ G.map (P₁.middleMap Q₁ (𝟙 _)) = G.map Q₁.i := by
+      rw [← G.map_comp, P₁.i_comp_middleMap, Category.id_comp]
+    have hP1i := (conj_eqToHom_iff_heq _ _ rfl
+      ((hF.comp hG).mapSuspensionPresentation_I hE X)).2
+      ((hF.comp hG).mapSuspensionPresentation_i hE X)
+    have hP1i' := (conj_eqToHom_iff_heq _ _ rfl
+      (hF.mapSuspensionPresentation_I hE X)).2
+      (hF.mapSuspensionPresentation_i hE X)
+    have hP2i := (conj_eqToHom_iff_heq _ _ rfl hp2I).2
+      (hG.mapSuspensionPresentation_i hE' (F.obj X))
+    dsimp only [a, P₁₂, P₁, P₂]
+    rw [Category.id_comp]
+    calc
+      ((hF.comp hG).mapSuspensionPresentation hE X).i ≫
+          eqToHom hp1I ≫ G.map (P₁.middleMap Q₁ (𝟙 _)) ≫ eqToHom hp2I.symm ≫
+            P₂.middleMap Q₂ (𝟙 _)
+        = G.map (hF.mapSuspensionPresentation hE X).i ≫ G.map (P₁.middleMap Q₁ (𝟙 _)) ≫
+            eqToHom hp2I.symm ≫ P₂.middleMap Q₂ (𝟙 _) := by
+          simp only [hP1i, hP1i', Functor.comp_map, G.map_comp, eqToHom_map, Category.assoc,
+            eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+      _ = G.map Q₁.i ≫ eqToHom hp2I.symm ≫ P₂.middleMap Q₂ (𝟙 _) := by
+          rw [← Category.assoc, h₁]
+      _ = P₂.i ≫ P₂.middleMap Q₂ (𝟙 _) := by
+          rw [hP2i]
+          simp only [Category.assoc, eqToHom_refl, Category.id_comp]
+          rfl
+      _ = Q₂.i := by rw [P₂.i_comp_middleMap, Category.id_comp]
+  have hg : P₁₂.p ≫ g = a ≫ Q₂.p := by
+    have h₁ : G.map P₁.p ≫ G.map (P₁.cokernelMap Q₁ (𝟙 _)) =
+        G.map (P₁.middleMap Q₁ (𝟙 _)) ≫ G.map Q₁.p := by
+      rw [← G.map_comp, P₁.p_comp_cokernelMap, G.map_comp]
+    have hP12p := (conj_eqToHom_iff_heq _ _
+      ((hF.comp hG).mapSuspensionPresentation_I hE X)
+      ((hF.comp hG).mapSuspensionPresentation_K hE X)).2
+      ((hF.comp hG).mapSuspensionPresentation_p hE X)
+    have hP1p := (conj_eqToHom_iff_heq _ _
+      (hF.mapSuspensionPresentation_I hE X)
+      (hF.mapSuspensionPresentation_K hE X)).2
+      (hF.mapSuspensionPresentation_p hE X)
+    have hP2p := (conj_eqToHom_iff_heq _ _ hp2I hp2K).2
+      (hG.mapSuspensionPresentation_p hE' (F.obj X))
+    dsimp only [a, g]
+    calc
+      P₁₂.p ≫
+          eqToHom hp1K ≫ G.map (P₁.cokernelMap Q₁ (𝟙 _)) ≫ eqToHom hp2K.symm ≫
+            P₂.cokernelMap Q₂ (𝟙 _)
+        = eqToHom hp1I ≫ G.map P₁.p ≫ G.map (P₁.cokernelMap Q₁ (𝟙 _)) ≫
+            eqToHom hp2K.symm ≫ P₂.cokernelMap Q₂ (𝟙 _) := by
+          rw [hP12p, hP1p]
+          simp only [Functor.comp_map, G.map_comp, eqToHom_map, Category.assoc,
+            eqToHom_trans_assoc]
+      _ = eqToHom hp1I ≫ G.map (P₁.middleMap Q₁ (𝟙 _)) ≫ G.map Q₁.p ≫
+            eqToHom hp2K.symm ≫ P₂.cokernelMap Q₂ (𝟙 _) := by
+          rw [reassoc_of% h₁]
+      _ = eqToHom hp1I ≫ G.map (P₁.middleMap Q₁ (𝟙 _)) ≫ eqToHom hp2I.symm ≫
+            P₂.p ≫ P₂.cokernelMap Q₂ (𝟙 _) := by
+          rw [hP2p]
+          simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+          rfl
+      _ = a ≫ Q₂.p := by
+          simp only [a, Category.assoc, P₂.p_comp_cokernelMap]
+  have hcmp := E''.projectiveStableFunctor_map_cokernelMap_eq P₁₂ Q₂
+    (hE''.isProjective_I Q₂) (𝟙 _) a g ha hg
+  dsimp only [Q₂] at hcmp
+  change E''.projectiveStableFunctor.map (P₁₂.cokernelMap
+      (hE''.suspensionPresentation ((F ⋙ G).obj X)) (𝟙 ((F ⋙ G).obj X))) =
+    E''.projectiveStableFunctor.map g at hcmp
+  rw [← hE''.projectiveStableIsoSuspensionObj_hom P₁₂] at hcmp
+  dsimp only [g, Q₂] at hcmp
+  simp only [Functor.map_comp, eqToHom_map] at hcmp
+  rw [← hE''.projectiveStableIsoSuspensionObj_hom P₂] at hcmp
+  simpa only [eqToHom_trans_assoc, Category.assoc, eqToHom_map] using
+    congrArg (eqToHom (congrArg E''.projectiveStableFunctor.obj
+      ((hF.comp hG).mapSuspensionPresentation_K hE X).symm) ≫ ·) hcmp
+
+/-- The suspension comparison of a composite stable conflation-exact functor factors through the
+suspension comparisons of its two factors and the composition equality `stableFunctor_comp`. -/
+theorem stableSuspensionCompStableFunctorIso_comp
+    (hF : StableConflationExact E E' F) (hG : StableConflationExact E' E'' G)
+    (hE : E.IsFrobenius) (hE' : E'.IsFrobenius) (hE'' : E''.IsFrobenius) :
+    (Functor.isoWhiskerLeft hE.stableSuspension
+        (eqToIso (hF.stableFunctor_comp hG hE hE'))).hom ≫
+      (Functor.associator _ _ _).inv ≫
+      Functor.whiskerRight (hF.stableSuspensionCompStableFunctorIso hE hE').hom
+        (hG.stableFunctor hE') ≫
+      (Functor.associator _ _ _).hom ≫
+      Functor.whiskerLeft (hF.stableFunctor hE)
+        (hG.stableSuspensionCompStableFunctorIso hE' hE'').hom ≫
+      (Functor.associator _ _ _).inv =
+    ((hF.comp hG).stableSuspensionCompStableFunctorIso hE hE'').hom ≫
+      Functor.whiskerRight (eqToIso (hF.stableFunctor_comp hG hE hE')).hom
+        hE''.stableSuspension := by
+  apply CategoryTheory.Quotient.natTrans_ext
+  ext X
+  simp only [NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
+    Functor.whiskerRight_app, Functor.associator_inv_app, Functor.associator_hom_app,
+    eqToIso.hom, eqToHom_app, Functor.comp_obj, Category.id_comp, Category.comp_id]
+  have hIsoG :
+      (hG.stableSuspensionCompStableFunctorIso hE' hE'').hom.app
+          ((hF.stableFunctor hE).obj (E.projectiveStableFunctor.obj X)) =
+        eqToHom (congrArg (hG.stableFunctor hE').obj (congrArg hE'.stableSuspension.obj
+          (hF.stableFunctor_obj_projectiveStableFunctor_obj hE X))) ≫
+          (hG.stableSuspensionCompStableFunctorIso hE' hE'').hom.app
+            (E'.projectiveStableFunctor.obj (F.obj X)) ≫
+          eqToHom (congrArg hE''.stableSuspension.obj (congrArg (hG.stableFunctor hE').obj
+            (hF.stableFunctor_obj_projectiveStableFunctor_obj hE X).symm)) := by
+    have hn := (hG.stableSuspensionCompStableFunctorIso hE' hE'').hom.naturality
+      (eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE X))
+    dsimp only [Functor.comp_obj, Functor.comp_map] at hn
+    simp only [eqToHom_map] at hn
+    rw [← cancel_mono (eqToHom (congrArg hE''.stableSuspension.obj
+      (congrArg (hG.stableFunctor hE').obj
+        (hF.stableFunctor_obj_projectiveStableFunctor_obj hE X)))),
+      Category.assoc, Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
+    exact hn.symm
+  rw [(hF.comp hG).stableSuspensionCompStableFunctorIso_hom_app hE hE'' X,
+    hF.stableSuspensionCompStableFunctorIso_hom_app hE hE' X,
+    hIsoG, hG.stableSuspensionCompStableFunctorIso_hom_app hE' hE'' (F.obj X)]
+  let P₁ := hF.mapSuspensionPresentation hE X
+  let Q₁ := hE'.suspensionPresentation (F.obj X)
+  have hmap :
+      (hG.stableFunctor hE').map ((hE'.projectiveStableIsoSuspensionObj P₁).hom) =
+        eqToHom (hG.stableFunctor_obj_projectiveStableFunctor_obj hE' P₁.K) ≫
+          E''.projectiveStableFunctor.map (G.map (P₁.cokernelMap Q₁ (𝟙 _))) ≫
+          eqToHom (hG.stableFunctor_obj_projectiveStableFunctor_obj hE'
+            (hE'.suspensionObj (F.obj X))).symm := by
+    rw [hE'.projectiveStableIsoSuspensionObj_hom P₁]
+    exact hG.stableFunctor_map_projectiveStableFunctor_map_eq hE' (P₁.cokernelMap Q₁ (𝟙 _))
+  simp only [Functor.map_comp, eqToHom_map, Category.assoc]
+  rw [show (hG.stableFunctor hE').map
+      (hE'.projectiveStableIsoSuspensionObj (hF.mapSuspensionPresentation hE X)).hom = _ from hmap]
+  simp only [Category.assoc]
+  have hpre :
+      eqToHom (congrArg (hG.stableFunctor hE').obj
+        (congrArg E'.projectiveStableFunctor.obj (hF.mapSuspensionPresentation_K hE X).symm)) ≫
+      eqToHom (hG.stableFunctor_obj_projectiveStableFunctor_obj hE' P₁.K) =
+        eqToHom (hG.stableFunctor_obj_projectiveStableFunctor_obj hE'
+          (F.obj (hE.suspensionObj X))) ≫
+        eqToHom (congrArg E''.projectiveStableFunctor.obj
+          (congrArg G.obj (hF.mapSuspensionPresentation_K hE X).symm)) := by
+    simp only [eqToHom_trans]
+  have hpost :
+      eqToHom (hG.stableFunctor_obj_projectiveStableFunctor_obj hE'
+        (hE'.suspensionObj (F.obj X))).symm ≫
+      eqToHom (congrArg (hG.stableFunctor hE').obj
+        (hE'.stableSuspension_obj_projectiveStableFunctor_obj (F.obj X)).symm) ≫
+      eqToHom (congrArg (hG.stableFunctor hE').obj (congrArg hE'.stableSuspension.obj
+        (hF.stableFunctor_obj_projectiveStableFunctor_obj hE X)).symm) ≫
+      eqToHom (congrArg (hG.stableFunctor hE').obj (congrArg hE'.stableSuspension.obj
+        (hF.stableFunctor_obj_projectiveStableFunctor_obj hE X))) ≫
+      eqToHom (congrArg (hG.stableFunctor hE').obj
+        (hE'.stableSuspension_obj_projectiveStableFunctor_obj (F.obj X))) ≫
+      eqToHom (hG.stableFunctor_obj_projectiveStableFunctor_obj hE'
+        (hE'.suspensionObj (F.obj X))) = 𝟙 _ := by
+    simp only [eqToHom_trans, eqToHom_refl]
+  rw [reassoc_of% hpost]
+  rw [← Category.assoc (eqToHom (congrArg (hG.stableFunctor hE').obj
+      (congrArg E'.projectiveStableFunctor.obj (hF.mapSuspensionPresentation_K hE X).symm)))]
+  rw [hpre]
+  simp only [Category.assoc]
+  have hcmp := projectiveStableIsoSuspensionObj_hom_mapSuspensionPresentation_comp
+    hF hG hE hE' hE'' X
+  have hcmp' :
+      eqToHom (congrArg E''.projectiveStableFunctor.obj
+        (congrArg G.obj (hF.mapSuspensionPresentation_K hE X).symm)) ≫
+      E''.projectiveStableFunctor.map (G.map (P₁.cokernelMap Q₁ (𝟙 _))) ≫
+      eqToHom (congrArg E''.projectiveStableFunctor.obj
+        (hG.mapSuspensionPresentation_K hE' (F.obj X)).symm) ≫
+      (hE''.projectiveStableIsoSuspensionObj (hG.mapSuspensionPresentation hE' (F.obj X))).hom =
+      eqToHom (congrArg E''.projectiveStableFunctor.obj
+        ((hF.comp hG).mapSuspensionPresentation_K hE X).symm) ≫
+      (hE''.projectiveStableIsoSuspensionObj
+        ((hF.comp hG).mapSuspensionPresentation hE X)).hom :=
+    hcmp.symm
+  rw [reassoc_of% hcmp']
+  simp only [eqToHom_trans_assoc, eqToHom_trans]
+
+end Composition
 
 end StableConflationExact
 

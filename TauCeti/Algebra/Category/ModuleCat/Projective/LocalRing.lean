@@ -13,13 +13,13 @@ public import TauCeti.RingTheory.LocalRing.Module
 # Projective retracts over a local ring
 
 A finite module over a local ring that admits a nonzero projective retract also admits `R` itself
-as a retract (`TauCeti.IsLocalRing.nonempty_retract_self_of_nontrivial_projective_retract`), since
-a finitely generated projective module over a local ring is free.
+as a retract (`CategoryTheory.Retract.nonempty_retract_ring_of_projective`), since a finitely
+generated projective module over a local ring is free.
 
 ## Main results
 
-* `TauCeti.IsLocalRing.nonempty_retract_self_of_nontrivial_projective_retract`: a nonzero
-  projective retract of a finite module over a local ring produces a retract from `R`.
+* `CategoryTheory.Retract.nonempty_retract_ring_of_projective`: a nonzero projective retract of a
+  finite module over a local ring produces a retract from `R`.
 -/
 
 public section
@@ -28,13 +28,13 @@ universe u
 
 open CategoryTheory
 
-namespace TauCeti.IsLocalRing
+namespace CategoryTheory.Retract
 
 /-- A nonzero projective retract of a finite module over a local ring `R` yields a retract of `R`
 itself into the module. -/
-theorem nonempty_retract_self_of_nontrivial_projective_retract {R : Type u} [CommRing R]
-    [_root_.IsLocalRing R] {M P : ModuleCat.{u} R} [Module.Finite R M] [Projective P]
-    [Nontrivial P] (ret : Retract P M) :
+theorem nonempty_retract_ring_of_projective {R : Type u} [CommRing R] [_root_.IsLocalRing R]
+    {M P : ModuleCat.{u} R} [Module.Finite R M] [Projective P] [Nontrivial P]
+    (ret : Retract P M) :
     Nonempty (Retract (ModuleCat.of R R) M) := by
   have : Module.Finite R P := .of_surjective ret.r.hom
     (Function.LeftInverse.surjective fun p ↦ ConcreteCategory.congr_hom ret.retract p)
@@ -52,4 +52,4 @@ theorem nonempty_retract_self_of_nontrivial_projective_retract {R : Type u} [Com
         simp [b.coord_apply] }
     ret⟩
 
-end TauCeti.IsLocalRing
+end CategoryTheory.Retract

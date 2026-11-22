@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CommutativeAlgebra.MatrixFactorization.Basic
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Biproduct
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 import Mathlib.RingTheory.Nakayama
 
@@ -18,8 +18,9 @@ a local ring `(S, 𝔪)`, this means both differentials have image in `𝔪 • 
 (`isMinimal_iff_range_le_maximalIdeal_smul`).
 
 Minimality is invariant under isomorphism (`IsMinimal.of_iso`, `isMinimal_iff_of_iso`) and
-parity shift (`isMinimal_parityShift_iff`). Results relating minimality to reduction modulo `w`
-and projective retracts of the cokernel live in
+parity shift (`isMinimal_parityShift_iff`), holds for the zero factorization (`isMinimal_zero`),
+and splits across direct sums (`isMinimal_biprod_iff`). Results relating minimality to reduction
+modulo `w` and projective retracts of the cokernel live in
 `TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Minimal`.
 
 ## References
@@ -34,7 +35,7 @@ universe u
 
 namespace TauCeti.MatrixFactorization
 
-open CategoryTheory IsLocalRing
+open CategoryTheory CategoryTheory.Limits IsLocalRing
 
 variable {S : Type u} [CommRing S] {w : S}
 
@@ -86,5 +87,65 @@ theorem isMinimal_parityShift_iff (X : MatrixFactorization S w) :
   have hd₁ : (-X.obj.d₀).hom.hom = -X.obj.d₀.hom.hom := rfl
   rw [isMinimal_iff, isMinimal_iff, parityShift_obj_d₀, parityShift_obj_d₁, hd₀, hd₁,
     LinearMap.range_neg, LinearMap.range_neg, and_comm]
+
+/-- The zero matrix factorization is minimal. -/
+@[simp]
+theorem isMinimal_zero : (zero (S := S) (w := w)).IsMinimal := by
+  simp [isMinimal_iff]
+
+private theorem range_biprod_map_le_smul_iff {P₁ Q₁ P₂ Q₂ : FGModuleCat.{u} S}
+    (f₁ : P₁ ⟶ Q₁) (f₂ : P₂ ⟶ Q₂) :
+    LinearMap.range (CategoryTheory.Limits.biprod.map f₁ f₂).hom.hom ≤ Ring.jacobson S • ⊤ ↔
+      LinearMap.range f₁.hom.hom ≤ Ring.jacobson S • ⊤ ∧
+        LinearMap.range f₂.hom.hom ≤ Ring.jacobson S • ⊤ := by
+  let inlP : P₁ ⟶ P₁ ⊞ P₂ := CategoryTheory.Limits.biprod.inl
+  let inrP : P₂ ⟶ P₁ ⊞ P₂ := CategoryTheory.Limits.biprod.inr
+  let fstP : P₁ ⊞ P₂ ⟶ P₁ := CategoryTheory.Limits.biprod.fst
+  let sndP : P₁ ⊞ P₂ ⟶ P₂ := CategoryTheory.Limits.biprod.snd
+  let inlQ : Q₁ ⟶ Q₁ ⊞ Q₂ := CategoryTheory.Limits.biprod.inl
+  let inrQ : Q₂ ⟶ Q₁ ⊞ Q₂ := CategoryTheory.Limits.biprod.inr
+  let fstQ : Q₁ ⊞ Q₂ ⟶ Q₁ := CategoryTheory.Limits.biprod.fst
+  let sndQ : Q₁ ⊞ Q₂ ⟶ Q₂ := CategoryTheory.Limits.biprod.snd
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨h₁, h₂⟩ ↦ ?_⟩
+  · rintro _ ⟨x, rfl⟩
+    have hf₁ : f₁ = inlP ≫ CategoryTheory.Limits.biprod.map f₁ f₂ ≫ fstQ := by
+      simp [inlP, fstQ]
+    rw [hf₁]
+    exact Submodule.smul_top_le_comap_smul_top _ fstQ.hom.hom (h ⟨inlP.hom.hom x, rfl⟩)
+  · rintro _ ⟨x, rfl⟩
+    have hf₂ : f₂ = inrP ≫ CategoryTheory.Limits.biprod.map f₁ f₂ ≫ sndQ := by
+      simp [inrP, sndQ]
+    rw [hf₂]
+    exact Submodule.smul_top_le_comap_smul_top _ sndQ.hom.hom (h ⟨inrP.hom.hom x, rfl⟩)
+  · rintro _ ⟨z, rfl⟩
+    have hmap : CategoryTheory.Limits.biprod.map f₁ f₂ =
+        fstP ≫ f₁ ≫ inlQ + sndP ≫ f₂ ≫ inrQ := by
+      calc
+        CategoryTheory.Limits.biprod.map f₁ f₂
+          = (fstP ≫ inlP + sndP ≫ inrP) ≫ CategoryTheory.Limits.biprod.map f₁ f₂ := by
+            rw [CategoryTheory.Limits.biprod.total, Category.id_comp]
+        _ = fstP ≫ (inlP ≫ CategoryTheory.Limits.biprod.map f₁ f₂) +
+              sndP ≫ (inrP ≫ CategoryTheory.Limits.biprod.map f₁ f₂) := by
+            rw [Preadditive.add_comp, Category.assoc, Category.assoc]
+        _ = fstP ≫ f₁ ≫ inlQ + sndP ≫ f₂ ≫ inrQ := by
+            simp [inlP, inrP, inlQ, inrQ]
+    rw [hmap]
+    exact Submodule.add_mem _
+      (Submodule.smul_top_le_comap_smul_top _ inlQ.hom.hom (h₁ ⟨fstP.hom.hom z, rfl⟩))
+      (Submodule.smul_top_le_comap_smul_top _ inrQ.hom.hom (h₂ ⟨sndP.hom.hom z, rfl⟩))
+
+/-- A direct sum of matrix factorizations is minimal if and only if both summands are minimal. -/
+@[simp]
+theorem isMinimal_biprod_iff (X Y : MatrixFactorization S w) :
+    (biprod X Y).IsMinimal ↔ X.IsMinimal ∧ Y.IsMinimal := by
+  rw [isMinimal_iff, isMinimal_iff, isMinimal_iff]
+  have hd₀ : (LinearMap.range (biprod X Y).obj.d₀.hom.hom ≤ Ring.jacobson S • ⊤) =
+      (LinearMap.range (CategoryTheory.Limits.biprod.map X.obj.d₀ Y.obj.d₀).hom.hom ≤
+        Ring.jacobson S • ⊤) := rfl
+  have hd₁ : (LinearMap.range (biprod X Y).obj.d₁.hom.hom ≤ Ring.jacobson S • ⊤) =
+      (LinearMap.range (CategoryTheory.Limits.biprod.map X.obj.d₁ Y.obj.d₁).hom.hom ≤
+        Ring.jacobson S • ⊤) := rfl
+  rw [hd₀, hd₁, range_biprod_map_le_smul_iff, range_biprod_map_le_smul_iff]
+  tauto
 
 end TauCeti.MatrixFactorization

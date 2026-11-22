@@ -5,19 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 public import TauCeti.RingTheory.CohenMacaulay.Basic
-import Mathlib.Algebra.Category.ModuleCat.Biproducts
 import TauCeti.RingTheory.LocalRing.Module
 
 /-!
-# Maximal Cohen–Macaulay modules and their exact category
+# Maximal Cohen–Macaulay modules
 
 A module `M` over a local ring `R` is *maximal Cohen–Macaulay* (`Module.IsMaximalCohenMacaulay R M`)
 if `M = 0` or `depth M = ringKrullDim R`. For finite modules over a Noetherian local ring this is
 equivalent to `ringKrullDim R ≤ depth M` (`isMaximalCohenMacaulay_iff_ringKrullDim_le_depth`).
-Closure under extensions, binary products, retracts, and syzygies equips the full subcategory
-`TauCeti.MaximalCohenMacaulayModuleCat R` with `MaximalCohenMacaulayModuleCat.exactStructure`.
+We also establish closure under extensions (`Module.IsMaximalCohenMacaulay.of_exact_middle`), binary
+products (`prod`), and syzygies (`of_exact_left`). The induced exact structure on finite maximal
+Cohen–Macaulay modules is constructed in `TauCeti.RingTheory.CohenMacaulay.Maximal.Exact`.
 
 ## References
 
@@ -30,7 +29,7 @@ public section
 
 universe v u w
 
-open CategoryTheory CategoryTheory.Limits IsLocalRing
+open CategoryTheory IsLocalRing
 
 namespace Module
 
@@ -213,102 +212,3 @@ theorem of_exact_left [IsNoetherianRing R] {M N Q : Type v} [AddCommGroup M] [Mo
   exact WithBot.coe_le_coe.2 (depth_min_snd_trd_add_one_le_fst_of_exact f g hfg hf hg)
 
 end Module.IsMaximalCohenMacaulay
-
-namespace TauCeti
-section Category
-
-variable (R : Type u) [CommRing R] [IsLocalRing R] [Small.{v} R]
-
-/-- The object property on `ModuleCat R` selecting the finite maximal Cohen–Macaulay modules. -/
-def IsFiniteMaximalCohenMacaulay : ObjectProperty (ModuleCat.{v} R) :=
-  fun M ↦ Module.Finite R M ∧ Module.IsMaximalCohenMacaulay R M
-
-/-- Unfolds `TauCeti.IsFiniteMaximalCohenMacaulay`. -/
-@[simp]
-theorem isFiniteMaximalCohenMacaulay_iff (M : ModuleCat.{v} R) :
-    IsFiniteMaximalCohenMacaulay.{v} R M ↔
-      Module.Finite R M ∧ Module.IsMaximalCohenMacaulay R M := Iff.rfl
-
-variable {R}
-
-/-- Every zero `R`-module is a finite maximal Cohen–Macaulay module. -/
-theorem isFiniteMaximalCohenMacaulay_of_isZero {M : ModuleCat.{v} R} (hM : IsZero M) :
-    IsFiniteMaximalCohenMacaulay.{v} R M :=
-  have := ModuleCat.subsingleton_of_isZero hM
-  ⟨inferInstance, Module.isMaximalCohenMacaulay_of_subsingleton⟩
-
-instance : (IsFiniteMaximalCohenMacaulay.{v} R).ContainsZero where
-  exists_zero := ⟨ModuleCat.of R PUnit, ModuleCat.isZero_of_subsingleton _,
-    isFiniteMaximalCohenMacaulay_of_isZero (ModuleCat.isZero_of_subsingleton _)⟩
-
-instance : (IsFiniteMaximalCohenMacaulay.{v} R).IsClosedUnderIsomorphisms where
-  of_iso e hX :=
-    have := hX.1
-    ⟨Module.Finite.equiv e.toLinearEquiv, e.toLinearEquiv.isMaximalCohenMacaulay_iff.1 hX.2⟩
-
-/-- Over a Cohen–Macaulay local ring, every finite projective `R`-module is maximal
-Cohen–Macaulay. -/
-theorem isFiniteMaximalCohenMacaulay_of_projective (hR : Module.IsCohenMacaulay R R)
-    (M : ModuleCat.{v} R) [Module.Finite R M] [Projective M] :
-    IsFiniteMaximalCohenMacaulay.{v} R M :=
-  have : Module.Projective R M := (IsProjective.iff_projective M).2 inferInstance
-  ⟨inferInstance, hR.isMaximalCohenMacaulay_of_projective M⟩
-
-/-- Finite maximal Cohen–Macaulay modules over a local ring are closed under extensions. -/
-theorem IsFiniteMaximalCohenMacaulay.isExtensionClosed :
-    (ExactStructure.abelian (ModuleCat.{v} R)).IsExtensionClosed
-      (IsFiniteMaximalCohenMacaulay.{v} R) where
-  prop_X₂ {S} hS h₁ h₃ := by
-    have hSE := (ExactStructure.abelian_conflation S).1 hS
-    have := h₁.1; have := h₃.1
-    have hex := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact S).1 hSE.exact
-    have hsurj := (ModuleCat.epi_iff_surjective S.g).1 hSE.epi_g
-    exact ⟨Module.Finite.of_exact hex hsurj,
-      h₁.2.of_exact_middle hex ((ModuleCat.mono_iff_injective S.f).1 hSE.mono_f) hsurj h₃.2⟩
-
-instance : (IsFiniteMaximalCohenMacaulay.{v} R).IsClosedUnderBinaryProducts :=
-  IsFiniteMaximalCohenMacaulay.isExtensionClosed.isClosedUnderBinaryProducts
-
-/-- Any retract of a finite maximal Cohen–Macaulay module over a Noetherian local ring is again
-finite and maximal Cohen–Macaulay. -/
-theorem IsFiniteMaximalCohenMacaulay.of_retract [IsNoetherianRing R] {M N : ModuleCat.{v} R}
-    (r : Retract M N) (hN : IsFiniteMaximalCohenMacaulay.{v} R N) :
-    IsFiniteMaximalCohenMacaulay.{v} R M := by
-  have := hN.1
-  have hr : Function.Surjective r.r.hom :=
-    Function.LeftInverse.surjective fun x ↦ ConcreteCategory.congr_hom r.retract x
-  let s : (ShortComplex.mk (Limits.kernel.ι r.r) r.r (Limits.kernel.condition r.r)).Splitting :=
-    .ofExactOfSection _ (ShortComplex.exact_kernel r.r) r.i r.retract inferInstance
-  have hprod := (s.isoBinaryBiproduct ≪≫ ModuleCat.biprodIsoProd _ _).toLinearEquiv
-  have : Module.Finite R M := .of_surjective r.r.hom hr
-  rw [isFiniteMaximalCohenMacaulay_iff, Module.isMaximalCohenMacaulay_iff_ringKrullDim_le_depth]
-  refine ⟨‹_›, hN.2.ringKrullDim_le_depth.trans ?_⟩
-  rw [depth_eq_of_linearEquiv hprod, depth_prod, WithBot.coe_inf]
-  exact inf_le_right
-
-/-- The additive full subcategory of finitely generated maximal Cohen–Macaulay `R`-modules. -/
-abbrev MaximalCohenMacaulayModuleCat (R : Type u) [CommRing R] [IsLocalRing R] [Small.{v} R] :=
-  (IsFiniteMaximalCohenMacaulay.{v} R).FullSubcategory
-
-namespace MaximalCohenMacaulayModuleCat
-
-variable (R : Type u) [CommRing R] [IsLocalRing R] [Small.{v} R]
-
-/-- The exact structure on finite maximal Cohen–Macaulay `R`-modules inherited from
-`ModuleCat R`. -/
-noncomputable def exactStructure : ExactStructure (MaximalCohenMacaulayModuleCat.{v} R) :=
-  (ExactStructure.abelian (ModuleCat.{v} R)).fullSubcategory
-    (IsFiniteMaximalCohenMacaulay.{v} R) IsFiniteMaximalCohenMacaulay.isExtensionClosed
-
-/-- Conflations in `MaximalCohenMacaulayModuleCat R` are the short exact sequences in
-`ModuleCat R`. -/
-@[simp]
-theorem exactStructure_conflation_iff (S : ShortComplex (MaximalCohenMacaulayModuleCat.{v} R)) :
-    (exactStructure.{v} R).Conflation S ↔
-      (S.map (IsFiniteMaximalCohenMacaulay.{v} R).ι).ShortExact := by
-  rw [exactStructure, ExactStructure.fullSubcategory_conflation_iff,
-    ExactStructure.abelian_conflation]
-
-end MaximalCohenMacaulayModuleCat
-end Category
-end TauCeti

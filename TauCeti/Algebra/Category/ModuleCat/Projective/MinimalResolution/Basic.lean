@@ -47,6 +47,9 @@ finite free covers.
 * `TauCeti.exists_minimal_finiteProjectiveResolution_of_hasProjectiveDimensionLE`: over a Noetherian
   local ring, a finite module of projective dimension at most `n` has a minimal resolution of
   length at most `n` by finite projective modules.
+* `ModuleCat.exists_minimal_syzygy`: every finite module in `ModuleCat.{v} R` over a Noetherian
+  local ring with `[Small.{v} R]` admits a minimal finite-free presentation `0 → K → F → M → 0`
+  with `K` finite and `range i ≤ 𝔪 • F`.
 
 ## References
 
@@ -127,3 +130,30 @@ theorem exists_minimal_finiteProjectiveResolution_of_hasProjectiveDimensionLE
       .step _ _ _ _ _ (by simpa [S] using hker) hmin⟩
 
 end TauCeti
+
+namespace ModuleCat
+
+universe u v
+
+/-- Every finite module `M` over a Noetherian local ring with `[Small.{v} R]` admits a minimal
+finite-free presentation `0 → K --i--> F --p--> M → 0` in `ModuleCat.{v} R` with `K` finite
+and `range i ≤ 𝔪 • F`. -/
+theorem exists_minimal_syzygy {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
+    [Small.{v} R] (M : ModuleCat.{v} R) [Module.Finite R M] :
+    ∃ (F K : ModuleCat.{v} R) (i : K ⟶ F) (p : F ⟶ M),
+      Module.Finite R F ∧ Module.Free R F ∧ Module.Finite R K ∧
+      Function.Injective i.hom ∧ Function.Exact i.hom p.hom ∧ Function.Surjective p.hom ∧
+      LinearMap.range i.hom ≤ IsLocalRing.maximalIdeal R • ⊤ := by
+  obtain ⟨n, p₀, hp₀, hker⟩ :=
+    TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul_shrink (R := R) M
+  let e : (Fin n → Shrink.{v} R) ≃ₗ[R] (Fin n → R) :=
+    LinearEquiv.piCongrRight fun _ ↦ Shrink.linearEquiv.{v} R R
+  have : Module.Finite R (Fin n → Shrink.{v} R) := Module.Finite.equiv e.symm
+  have : Module.Free R (Fin n → Shrink.{v} R) := Module.Free.of_equiv e.symm
+  have : Module.Finite R (LinearMap.ker p₀) := Module.Finite.iff_fg.2 (IsNoetherian.noetherian _)
+  exact ⟨.of R (Fin n → Shrink.{v} R), .of R (LinearMap.ker p₀),
+    ModuleCat.ofHom (LinearMap.ker p₀).subtype, ModuleCat.ofHom p₀,
+    inferInstance, inferInstance, inferInstance, Subtype.val_injective,
+    LinearMap.exact_subtype_ker_map p₀, hp₀, (Submodule.range_subtype _).le.trans hker⟩
+
+end ModuleCat
