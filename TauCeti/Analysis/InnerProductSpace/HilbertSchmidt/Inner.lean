@@ -117,9 +117,7 @@ theorem hilbertSchmidtInner_self_eq_sq_frobenius (A : W →L[ℝ] V) :
 `⟪A, A⟫_HS = ‖A‖_HS²`. -/
 theorem hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm (A : W →L[ℝ] V) :
     A.hilbertSchmidtInner A = A.hilbertSchmidtNorm ^ 2 := by
-  let b := (stdOrthonormalBasis ℝ W).toHilbertBasis
-  rw [A.sq_hilbertSchmidtNorm b, A.hilbertSchmidtEnergy_eq_ofReal_sq_frobenius b,
-    ENNReal.toReal_ofReal (sq_nonneg _), hilbertSchmidtInner_self_eq_sq_frobenius]
+  rw [sq_hilbertSchmidtNorm_eq_sq_frobenius, hilbertSchmidtInner_self_eq_sq_frobenius]
 
 /-- The Hilbert–Schmidt inner product is nonnegative on the diagonal. -/
 theorem hilbertSchmidtInner_self_nonneg (A : W →L[ℝ] V) : 0 ≤ A.hilbertSchmidtInner A := by

@@ -264,6 +264,22 @@ theorem sq_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) 
     T.hilbertSchmidtNorm ^ 2 = (T.hilbertSchmidtEnergy b).toReal := by
   rw [T.hilbertSchmidtNorm_eq_sqrt b, Real.sq_sqrt ENNReal.toReal_nonneg]
 
+/-- In a finite orthonormal basis, the squared Hilbert–Schmidt norm is the sum of squared
+output norms. -/
+theorem sq_hilbertSchmidtNorm_eq_sum [Fintype ι] (T : E →L[𝕜] F)
+    (b : OrthonormalBasis ι 𝕜 E) :
+    T.hilbertSchmidtNorm ^ 2 = ∑ i, ‖T (b i)‖ ^ 2 := by
+  rw [T.sq_hilbertSchmidtNorm b.toHilbertBasis, hilbertSchmidtEnergy_def, tsum_fintype]
+  simp [ENNReal.toReal_sum, ENNReal.toReal_pow]
+
+/-- On a finite-dimensional source, the squared Hilbert–Schmidt norm equals the squared
+Frobenius seminorm. -/
+theorem sq_hilbertSchmidtNorm_eq_sq_frobenius [FiniteDimensional 𝕜 E] (T : E →L[𝕜] F) :
+    T.hilbertSchmidtNorm ^ 2 =
+      TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F T.toLinearMap ^ 2 := by
+  rw [T.sq_hilbertSchmidtNorm (stdOrthonormalBasis 𝕜 E).toHilbertBasis,
+    hilbertSchmidtEnergy_eq_ofReal_sq_frobenius, ENNReal.toReal_ofReal (sq_nonneg _)]
+
 /-- For an operator of finite energy, the square of the Hilbert–Schmidt norm recovers the energy
 without loss. -/
 theorem ofReal_sq_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
