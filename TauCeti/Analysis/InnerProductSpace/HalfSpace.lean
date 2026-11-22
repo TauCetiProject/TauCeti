@@ -16,7 +16,10 @@ A translation orthogonal to the normal vector preserves a strict half-space. The
 `r` about a unit vector `x` lies in the half-space `{z | 1 - r ≤ ⟪x, z⟫}`, and more generally a
 closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever `⟪w, ν⟫ + r * ‖ν‖ < c`
 (`TauCeti.closedBall_subset_setOf_inner_lt`) and in `{y | c < ⟪y, ν⟫}` whenever
-`c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`). The projection
+`c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`); for `ν ≠ 0` the open ball
+`ball w r` lies in it already when `c + r * ‖ν‖ ≤ ⟪w, ν⟫` (`TauCeti.ball_subset_setOf_lt_inner`).
+The foot of the perpendicular from `w` to the hyperplane `{y | ⟪y, ν⟫ = c}` lies at distance
+`|⟪w, ν⟫ - c| / ‖ν‖` from `w` (`TauCeti.exists_inner_eq_and_dist_eq`). The projection
 `z - (⟪z, ν⟫ / ‖ν‖²) ν` lands in the boundary hyperplane `{z | ⟪z, ν⟫ = 0}` and does not increase
 norms. Relative to an
 orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part along the
@@ -79,6 +82,33 @@ theorem closedBall_subset_setOf_lt_inner {E : Type*} [SeminormedAddCommGroup E]
   have hy' := closedBall_subset_setOf_inner_lt h' hy
   rw [Set.mem_ofPred_eq, inner_neg_right, neg_lt_neg_iff] at hy'
   exact hy'
+
+/-- For `ν ≠ 0`, the ball `Metric.ball w r` lies in the open half-space `{y | c < ⟪y, ν⟫}`
+whenever `c + r * ‖ν‖ ≤ ⟪w, ν⟫`. -/
+theorem ball_subset_setOf_lt_inner {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {w ν : E} {r c : ℝ} (hν : ν ≠ 0) (h : c + r * ‖ν‖ ≤ ⟪w, ν⟫_ℝ) :
+    Metric.ball w r ⊆ {y | c < ⟪y, ν⟫_ℝ} := by
+  intro y hy
+  have hyw : ‖y - w‖ < r := by rwa [Metric.mem_ball, dist_eq_norm] at hy
+  have hcs : -(‖y - w‖ * ‖ν‖) ≤ ⟪y - w, ν⟫_ℝ := neg_le_of_abs_le (abs_real_inner_le_norm _ _)
+  have hlt : ‖y - w‖ * ‖ν‖ < r * ‖ν‖ := mul_lt_mul_of_pos_right hyw (norm_pos_iff.2 hν)
+  have hsplit : ⟪y, ν⟫_ℝ = ⟪w, ν⟫_ℝ + ⟪y - w, ν⟫_ℝ := by
+    rw [← inner_add_left, add_sub_cancel]
+  exact Set.mem_ofPred.2 (by linarith)
+
+/-- **The foot of the perpendicular.** For `ν ≠ 0`, the point
+`w - ((⟪w, ν⟫ - c) / ‖ν‖²) ν` lies on the hyperplane `{y | ⟪y, ν⟫ = c}`, at distance
+`|⟪w, ν⟫ - c| / ‖ν‖` from `w`. -/
+theorem exists_inner_eq_and_dist_eq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {ν : E} (hν : ν ≠ 0) (w : E) (c : ℝ) :
+    ∃ z, ⟪z, ν⟫_ℝ = c ∧ dist w z = |⟪w, ν⟫_ℝ - c| / ‖ν‖ := by
+  refine ⟨w - ((⟪w, ν⟫_ℝ - c) / ‖ν‖ ^ 2) • ν, ?_, ?_⟩
+  · rw [inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
+    field_simp
+    ring
+  · rw [dist_eq_norm, sub_sub_cancel, norm_smul, Real.norm_eq_abs, abs_div,
+      abs_of_pos (pow_pos (norm_pos_iff.2 hν) 2)]
+    field_simp
 
 /-- The projection `z - (⟪z, ν⟫ / ‖ν‖²) ν` onto the hyperplane orthogonal to `ν` is orthogonal
 to `ν`. It is the explicit form of `z - (ℝ ∙ ν).starProjection z`, by
