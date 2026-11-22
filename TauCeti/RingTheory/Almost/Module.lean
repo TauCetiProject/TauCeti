@@ -42,6 +42,9 @@ All almost vanishing statements about almost modules, such as the almost acyclic
 * `TauCeti.Almost.Module.lift`: the factorisation through `toAlmost S` of an exact functor killing
   almost zero modules.
 * `TauCeti.Almost.Module.classicalEquiv`: for the classical setup, `ModuleCat V ≌ Module S`.
+* `TauCeti.Almost.Module.toAlmostBaseChangeEquiv` and
+  `TauCeti.Almost.Module.toAlmostBaseChangeAwayEquiv`: when `mW = W` (in particular after
+  inverting an element `ϖ ∈ m`), almostification identifies `W`-modules with almost `W`-modules.
 * `TauCeti.Almost.Module.firmEquiv`: the equivalence `Module S ≌ S.Firm`, with comparison
   `TauCeti.Almost.Module.toAlmostCompFirmIso` on almostifications.
 
@@ -291,6 +294,55 @@ noncomputable def classicalEquiv : ModuleCat.{u} V ≌ Module (BasicSetup.classi
 @[simp]
 theorem classicalEquiv_functor :
     (classicalEquiv (V := V)).functor = toAlmost (BasicSetup.classical V) :=
+  (rfl)
+
+/-- If `S.ideal` generates the unit ideal in a `V`-algebra `W`, then `S.baseChange W` is
+classical, so almostification `ModuleCat W ⥤ Module (S.baseChange W)` is an equivalence of
+categories. -/
+theorem isEquivalence_toAlmost_baseChange (W : Type u) [CommRing W] [_root_.Algebra V W]
+    (hW : S.ideal.map (algebraMap V W) = ⊤) :
+    (toAlmost (S.baseChange W)).IsEquivalence := by
+  have hcl : S.baseChange W = BasicSetup.classical W := by ext1; simpa using hW
+  rw [hcl]
+  infer_instance
+
+/-- If `S.ideal` generates the unit ideal in a `V`-algebra `W`, almostification identifies honest
+`W`-modules with almost `W`-modules over `S.baseChange W`. -/
+noncomputable def toAlmostBaseChangeEquiv (W : Type u) [CommRing W] [_root_.Algebra V W]
+    (hW : S.ideal.map (algebraMap V W) = ⊤) :
+    ModuleCat.{u} W ≌ Module (S.baseChange W) :=
+  have := isEquivalence_toAlmost_baseChange S W hW
+  (toAlmost (S.baseChange W)).asEquivalence
+
+/-- The forward functor of `toAlmostBaseChangeEquiv` is almostification over `S.baseChange W`. -/
+@[simp]
+theorem toAlmostBaseChangeEquiv_functor (W : Type u) [CommRing W] [_root_.Algebra V W]
+    (hW : S.ideal.map (algebraMap V W) = ⊤) :
+    (toAlmostBaseChangeEquiv S W hW).functor = toAlmost (S.baseChange W) :=
+  (rfl)
+
+/-- After base-changing `S` to a localization `W` away from `ϖ ∈ m`, the setup becomes classical,
+so almostification `ModuleCat W ⥤ Module (S.baseChange W)` is an equivalence of categories. -/
+theorem isEquivalence_toAlmost_baseChange_away (W : Type u) [CommRing W] [_root_.Algebra V W]
+    {ϖ : V} [IsLocalization.Away ϖ W] (hϖ : ϖ ∈ S.ideal) :
+    (toAlmost (S.baseChange W)).IsEquivalence :=
+  isEquivalence_toAlmost_baseChange S W
+    (by simpa using congrArg BasicSetup.ideal (S.baseChange_away_eq_classical W hϖ))
+
+/-- Base-changing `S` to a localization `W` away from `ϖ ∈ m` identifies honest `W`-modules with
+almost `W`-modules via `Module.toAlmost (S.baseChange W)`. -/
+noncomputable def toAlmostBaseChangeAwayEquiv (W : Type u) [CommRing W] [_root_.Algebra V W]
+    {ϖ : V} [IsLocalization.Away ϖ W] (hϖ : ϖ ∈ S.ideal) :
+    ModuleCat.{u} W ≌ Module (S.baseChange W) :=
+  toAlmostBaseChangeEquiv S W
+    (by simpa using congrArg BasicSetup.ideal (S.baseChange_away_eq_classical W hϖ))
+
+/-- The forward functor of `toAlmostBaseChangeAwayEquiv` is almostification over
+`S.baseChange W`. -/
+@[simp]
+theorem toAlmostBaseChangeAwayEquiv_functor (W : Type u) [CommRing W] [_root_.Algebra V W]
+    {ϖ : V} [IsLocalization.Away ϖ W] (hϖ : ϖ ∈ S.ideal) :
+    (toAlmostBaseChangeAwayEquiv S W hϖ).functor = toAlmost (S.baseChange W) :=
   (rfl)
 
 end Module

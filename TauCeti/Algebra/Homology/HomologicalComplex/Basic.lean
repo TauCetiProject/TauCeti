@@ -479,6 +479,23 @@ lemma quasiIso_of_acyclic {K L : HomologicalComplex C c} (f : K ⟶ L) [∀ i, K
     [∀ i, L.HasHomology i] (hK : K.Acyclic) (hL : L.Acyclic) : QuasiIso f :=
   (quasiIso_iff f).2 fun i ↦ (quasiIsoAt_iff_exactAt f i (hK i)).2 (hL i)
 
+/-- A functor preserving zero morphisms and homology preserves exactness of a homological complex
+at each degree. -/
+theorem ExactAt.map {D : Type*} [Category* D] [HasZeroMorphisms D]
+    {K : HomologicalComplex C c} {i : ι} (hK : K.ExactAt i)
+    (F : C ⥤ D) [F.PreservesZeroMorphisms] [F.PreservesHomology] :
+    ((F.mapHomologicalComplex c).obj K).ExactAt i := by
+  rw [exactAt_iff] at hK ⊢
+  exact hK.map F
+
+/-- A functor preserving zero morphisms and homology preserves acyclicity of a homological
+complex. -/
+theorem Acyclic.map {D : Type*} [Category* D] [HasZeroMorphisms D]
+    {K : HomologicalComplex C c} (hK : K.Acyclic)
+    (F : C ⥤ D) [F.PreservesZeroMorphisms] [F.PreservesHomology] :
+    ((F.mapHomologicalComplex c).obj K).Acyclic :=
+  fun i ↦ (hK i).map F
+
 end HomologicalComplex
 
 namespace CategoryTheory.Functor

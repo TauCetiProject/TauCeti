@@ -15,8 +15,8 @@ For a commutative ring `R` and a submonoid `T` of `R`, Mathlib's
 `ModuleCat.localizedModuleFunctor T` sends an `R`-module `M` to the shrunk localized module
 `Shrink (LocalizedModule T M)`. When `M` lives in a universe `max u v` at least that of `R`,
 unshrinking identifies `M.localizedModule T` with `LocalizedModule T M`
-(`ModuleCat.localizedModuleIso`), and composing with `ModuleCat.extendScalarsLocalizationIso` gives
-a natural isomorphism
+(`ModuleCat.localizedModuleIso`), naturally in `M` (`ModuleCat.localizedModuleIso_naturality`),
+and composing with `ModuleCat.extendScalarsLocalizationIso` gives a natural isomorphism
 `ModuleCat.localizedModuleFunctor T ≅ ModuleCat.extendScalars (algebraMap R (Localization T))`
 (`ModuleCat.localizedModuleFunctorIsoExtendScalars`). In particular, extension of scalars to a
 localization preserves finite limits.
@@ -59,6 +59,34 @@ theorem localizedModuleIso_inv_mk (M : ModuleCat.{max u v} R) (T : Submonoid R) 
     simpa using LocalizedModule.mk_smul_mk (R := R) (S := T) 1 m t 1
   rw [← ModuleCat.comp_apply, Iso.inv_hom_id, ModuleCat.id_apply, map_smul,
     localizedModuleIso_hom_mkLinearMap, h]
+
+/-- Naturality of `ModuleCat.localizedModuleIso`: `(localizedModuleFunctor T).map f` corresponds
+to `LocalizedModule.map T f.hom`. -/
+@[reassoc]
+theorem localizedModuleIso_naturality {T : Submonoid R} {M₁ M₂ : ModuleCat.{max u v} R}
+    (f : M₁ ⟶ M₂) :
+    (localizedModuleFunctor.{max u v} T).map f ≫ (M₂.localizedModuleIso T).hom =
+      (M₁.localizedModuleIso T).hom ≫ ofHom (LocalizedModule.map T f.hom) := by
+  have h :
+      localizedModuleMap T f ≫ (M₂.localizedModuleIso T).hom =
+        (M₁.localizedModuleIso T).hom ≫ ofHom (LocalizedModule.map T f.hom) := by
+    apply hom_ext
+    apply LinearMap.restrictScalars_injective R
+    apply IsLocalizedModule.linearMap_ext T (M₁.localizedModuleMkLinearMap T)
+      (LocalizedModule.mkLinearMap T M₂)
+    ext x
+    calc
+      ((M₂.localizedModuleIso T).hom ((localizedModuleMap T f) (M₁.localizedModuleMkLinearMap T x)))
+        = (M₂.localizedModuleIso T).hom (M₂.localizedModuleMkLinearMap T (f x)) := by
+            rw [localizedModuleMap_hom_apply, IsLocalizedModule.map_apply]
+      _ = LocalizedModule.mk (f x) 1 := M₂.localizedModuleIso_hom_mkLinearMap T (f x)
+      _ = LocalizedModule.map T f.hom (LocalizedModule.mk x 1) :=
+            (LocalizedModule.map_mk T f.hom x 1).symm
+      _ = LocalizedModule.map T f.hom
+            ((M₁.localizedModuleIso T).hom (M₁.localizedModuleMkLinearMap T x)) := by
+            rw [M₁.localizedModuleIso_hom_mkLinearMap]
+  rw [localizedModuleFunctor_map]
+  exact h
 
 /-- Naturality of `M.localizedModuleIso T ≪≫ (M.extendScalarsLocalizationIso T).symm`. -/
 private theorem localizedModuleMap_comp_extendScalarsLocalizationIso

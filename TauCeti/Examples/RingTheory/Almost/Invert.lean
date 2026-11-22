@@ -7,7 +7,6 @@ module
 
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import Mathlib.Algebra.Homology.SingleHomology
-import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.NumberTheory.Padics.Complex.Basic
 import TauCeti.NumberTheory.Padics.Complex.MaximalIdeal
 import TauCeti.RingTheory.Almost.Invert
@@ -26,8 +25,9 @@ results after inverting `ϖ ∈ m`:
   on `(ℤ × ℤ)^a`;
 * inverting a unit `ϖ ∈ m` (forcing `S = classical V`) makes `Almost.invert` an equivalence of
   categories compatible with `Almost.Module.elements`, and preserves `A_*` on almost algebras;
-* `Almost.Algebra.invert S ϖ` agrees with `(Almost.invert S hϖ).mapCommMon` and identifies
-  `(R^a)_*[1/ϖ]` with `R[1/ϖ]`;
+* for `ϖ ∈ m`, `Almost.Algebra.invert S ϖ` is naturally isomorphic to
+  `(Almost.invert S hϖ).mapCommMon ⋙ ModuleCat.CommMonModuleEquivalenceCommAlgebra.functor` and
+  identifies `(R^a)_*[1/ϖ]` with `R[1/ϖ]`;
 * for `S = ofValuationRing h` on a valuation domain with non-finitely-generated maximal ideal `m`
   and `ϖ ∈ m`, `(V ⧸ (ϖ))^a` is nonzero while `Almost.invert` kills it, so `Almost.invert` is not
   faithful; moreover, the non-exact short complex `m ⟶ V ⟶ 0` has almost zero homology and becomes
@@ -187,20 +187,15 @@ example : ∃ hp : (p : 𝓞_ℂ_[p]) ∈
   rw [ofValuationRing_isAlmostZero_quotient_span_singleton_iff]
   exact (mem_maximalIdeal _).mp hp_max
 
--- Inverting `p` in the open subring `𝓞_ℂ_[p]` recovers `ℂ_[p]`.
-example : IsLocalization.Away (p : 𝓞_ℂ_[p]) ℂ_[p] :=
-  Subring.isLocalizationAway_of_isOpen (𝓞_ℂ_[p]).toSubring
-    (Valued.isOpen_valuationSubring ℂ_[p]) (p : 𝓞_ℂ_[p])
-    (tendsto_pow_atTop_nhds_zero_of_norm_lt_one (by simpa using PadicComplex.norm_p_lt_one p))
-    (IsUnit.mk0 _ (by simpa using (Fact.out : p.Prime).ne_zero))
-
--- Consequently `Localization.Away (p : 𝓞_ℂ_[p])` is `𝓞_ℂ_[p]`-isomorphic to `ℂ_[p]`, and
--- base-changing the setup of `𝓞_ℂ_[p]` to `ℂ_[p]` yields equivalences for modules and algebras.
+-- Inverting `p` in the open subring `𝓞_ℂ_[p]` recovers `ℂ_[p]`, so
+-- `Localization.Away (p : 𝓞_ℂ_[p])` is `𝓞_ℂ_[p]`-isomorphic to `ℂ_[p]` and base-changing the
+-- setup of `𝓞_ℂ_[p]` to `ℂ_[p]` yields equivalences for modules and algebras.
 noncomputable example :
     let S := ofValuationRing (TauCeti.PadicComplexInt.not_fg_maximalIdeal p)
-    (Localization.Away (p : 𝓞_ℂ_[p]) ≃ₐ[𝓞_ℂ_[p]] ℂ_[p]) ×
-      (ModuleCat.{0} ℂ_[p] ≌ TauCeti.Almost.Module (S.baseChange ℂ_[p])) ×
-      (CommAlgCat.{0} ℂ_[p] ≌ TauCeti.Almost.Algebra (S.baseChange ℂ_[p])) := by
+    PProd (IsLocalization.Away (p : 𝓞_ℂ_[p]) ℂ_[p])
+      ((Localization.Away (p : 𝓞_ℂ_[p]) ≃ₐ[𝓞_ℂ_[p]] ℂ_[p]) ×
+        (ModuleCat.{0} ℂ_[p] ≌ TauCeti.Almost.Module (S.baseChange ℂ_[p])) ×
+        (CommAlgCat.{0} ℂ_[p] ≌ TauCeti.Almost.Algebra (S.baseChange ℂ_[p]))) := by
   let hfg := TauCeti.PadicComplexInt.not_fg_maximalIdeal p
   let S := ofValuationRing hfg
   have hp : (p : 𝓞_ℂ_[p]) ∈ S.ideal :=
@@ -210,10 +205,11 @@ noncomputable example :
       (Valued.isOpen_valuationSubring ℂ_[p]) (p : 𝓞_ℂ_[p])
       (tendsto_pow_atTop_nhds_zero_of_norm_lt_one (by simpa using PadicComplex.norm_p_lt_one p))
       (IsUnit.mk0 _ (by simpa using (Fact.out : p.Prime).ne_zero))
-  exact ⟨IsLocalization.algEquiv (Submonoid.powers (p : 𝓞_ℂ_[p]))
+  exact ⟨‹_›,
+    IsLocalization.algEquiv (Submonoid.powers (p : 𝓞_ℂ_[p]))
       (Localization.Away (p : 𝓞_ℂ_[p])) ℂ_[p],
-    Module.baseChangeAwayEquiv S ℂ_[p] hp,
-    Algebra.baseChangeAwayEquiv S ℂ_[p] hp⟩
+    Module.toAlmostBaseChangeAwayEquiv S ℂ_[p] hp,
+    Algebra.toAlmostBaseChangeAwayEquiv S ℂ_[p] hp⟩
 
 -- A single-term complex concentrated in degree `0` with `ResidueField 𝓞_ℂ_[p]` is not exact at
 -- `0` in `ModuleCat 𝓞_ℂ_[p]`, has almost zero homology in every degree, and becomes acyclic
@@ -302,7 +298,8 @@ example (ϖ : V) (n : ℕ) :
 
 -- For `ϖ ∈ m`, `Algebra.subsingleton_invert_toAlmost_obj_iff` characterizes vanishing directly,
 -- `Algebra.invertToAlmostObjEquiv` identifies canonical numerators of `(R^a)_*[1/ϖ]` and `R[1/ϖ]`,
--- and `Algebra.invert S ϖ` agrees with `(Almost.invert S hϖ).mapCommMon`.
+-- and `Algebra.invert S ϖ` is naturally isomorphic to
+-- `(Almost.invert S hϖ).mapCommMon ⋙ ModuleCat.CommMonModuleEquivalenceCommAlgebra.functor`.
 example {ϖ : V} (hϖ : ϖ ∈ S.ideal) (n : ℕ) :
     Subsingleton ((Algebra.invert S ϖ).obj ((Algebra.toAlmost S).obj
       (CommAlgCat.of V (V ⧸ Ideal.span {ϖ ^ (n + 1)})))) :=
