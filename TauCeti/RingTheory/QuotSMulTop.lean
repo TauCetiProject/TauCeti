@@ -43,6 +43,7 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 * `Ideal.quotSMulTopSelfEquiv`: the `R ⧸ I`-linear equivalence `(R ⧸ I • ⊤) ≃ₗ[R ⧸ I] R ⧸ I`.
 * `QuotSMulTop.quotSpanSingletonSMulTopEquiv`: the `R ⧸ (x)`-linear equivalence
   `(M ⧸ (x) • ⊤) ≃ₗ[R ⧸ (x)] QuotSMulTop x M`.
+* `Module.IsTorsionBy.quotSMulTopEquiv`: `M ⧸ x M ≃ M` when `x` kills `M`.
 * `QuotSMulTop.quotSpanSingletonComm`: `(R ⧸ (s)) ⧸ r (R ⧸ (s)) ≃ (R ⧸ (r)) ⧸ s (R ⧸ (r))`.
 * `QuotSMulTop.restrictScalarsEquiv`: `N ⧸ (algebraMap R A r) N ≃ N ⧸ r N` as `R`-modules.
 
@@ -201,6 +202,31 @@ theorem map_comp_quotEquivOfEq (x : R) (f : M →ₗ[R] N) :
   Submodule.linearMap_qext _ rfl
 
 end QuotSMulTop
+
+namespace Module.IsTorsionBy
+
+variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
+
+/-- Modulo an element killing `M`, the module is unchanged: `M ⧸ x M ≃ M` when `x • M = 0`. -/
+noncomputable def quotSMulTopEquiv {x : R} (hx : Module.IsTorsionBy R M x) :
+    QuotSMulTop x M ≃ₗ[R] M :=
+  Submodule.quotEquivOfEqBot _ <| eq_bot_iff.2 fun _ hy ↦ by
+    obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hy
+    exact (Submodule.mem_bot R).2 (@hx y)
+
+/-- The identification `M ⧸ x M ≃ M` sends the residue class of `m` to `m`. -/
+@[simp]
+theorem quotSMulTopEquiv_mk {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
+    hx.quotSMulTopEquiv (Submodule.Quotient.mk m) = m := by
+  rw [quotSMulTopEquiv, Submodule.quotEquivOfEqBot_apply_mk]
+
+/-- The inverse of the identification `M ⧸ x M ≃ M` sends `m` to its residue class. -/
+@[simp]
+theorem quotSMulTopEquiv_symm_apply {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
+    hx.quotSMulTopEquiv.symm m = Submodule.Quotient.mk m :=
+  (LinearEquiv.symm_apply_eq _).2 (quotSMulTopEquiv_mk hx m).symm
+
+end Module.IsTorsionBy
 
 namespace Ideal
 
