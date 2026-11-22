@@ -30,7 +30,8 @@ noetherianness nor strong sheafiness of the base is assumed. Because `B` is fini
 
 ## Main definitions and results
 
-* `TauCeti.AdicSpace.IsFiniteEtale`, `IsFiniteEtale.exists_complete_tate_chart`,
+* `TauCeti.AdicSpace.IsFiniteEtale`, `IsFiniteEtale.Chart`, `IsFiniteEtale.CompleteTateChart`,
+  `IsFiniteEtale.OfPairChart`, `IsFiniteEtale.exists_complete_tate_chart`,
   `IsFiniteEtale.exists_ofPair_chart`, `IsFiniteEtale.isAnalytic_target`,
   `IsFiniteEtale.isAnalytic_source`.
 * `IsFiniteEtale.respectsIso`, `IsFiniteEtale.comapOfPresentation`, `IsFiniteEtale.comapOfPair`,
@@ -70,30 +71,52 @@ variable {X Y Z : AdicSpace.{u}}
 
 /-! ### Definition and chart upgrades -/
 
-private def hasFiniteEtaleModel : MorphismProperty PreAdicSpace.{u} := fun U' V' g ↦
-  ∃ (A : Type u) (_ : CommRing A) (_ : UniformSpace A) (_ : IsUniformAddGroup A)
-    (_ : IsTopologicalRing A) (_ : CompleteSpace A) (_ : T2Space A) (_ : IsTateRing A)
-    (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) (B : Type u)
-    (_ : CommRing B) (_ : TopologicalSpace B) (_ : IsTopologicalRing B) (_ : IsHuberRing B)
-    (T : Pair B) (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
-    (hs : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-      (presentationLimitPresheaf P' T.plus)) (φ : Pair.Hom S T) (_ : φ.IsFiniteEtale)
-    (eV : V' ≅ presentationLimitPreAdicSpace P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP)
-    (eU : U' ≅ presentationLimitPreAdicSpace P' T.plus
-      T.isRingOfIntegralElements.isPowerBounded_of_mem hP'),
-    g = eU.hom ≫ presentationLimitPreAdicSpacePairComap P P' hP hP' hs φ ≫ eV.inv
+private structure FiniteEtaleModel {U' V' : PreAdicSpace.{u}} (g : U' ⟶ V') : Type (u + 1) where
+  Target : Type u
+  [commRingTarget : CommRing Target]
+  [uniformSpaceTarget : UniformSpace Target]
+  [isUniformAddGroupTarget : IsUniformAddGroup Target]
+  [isTopologicalRingTarget : IsTopologicalRing Target]
+  [completeSpaceTarget : CompleteSpace Target]
+  [t2SpaceTarget : T2Space Target]
+  [isTateRingTarget : IsTateRing Target]
+  targetPair : Pair Target
+  targetPresentation : PairOfDefinition Target
+  targetLe : targetPresentation.ringOfDefinition ≤ targetPair.plus
+  Source : Type u
+  [commRingSource : CommRing Source]
+  [topologicalSpaceSource : TopologicalSpace Source]
+  [isTopologicalRingSource : IsTopologicalRing Source]
+  [isHuberRingSource : IsHuberRing Source]
+  sourcePair : Pair Source
+  sourcePresentation : PairOfDefinition Source
+  sourceLe : sourcePresentation.ringOfDefinition ≤ sourcePair.plus
+  isSheafSource : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa sourcePair.plus))
+    (presentationLimitPresheaf sourcePresentation sourcePair.plus)
+  pairHom : Pair.Hom targetPair sourcePair
+  isFiniteEtale : pairHom.IsFiniteEtale
+  targetIso : V' ≅ presentationLimitPreAdicSpace targetPresentation targetPair.plus
+    targetPair.isRingOfIntegralElements.isPowerBounded_of_mem targetLe
+  sourceIso : U' ≅ presentationLimitPreAdicSpace sourcePresentation sourcePair.plus
+    sourcePair.isRingOfIntegralElements.isPowerBounded_of_mem sourceLe
+  fac : g = sourceIso.hom ≫
+    presentationLimitPreAdicSpacePairComap targetPresentation sourcePresentation
+      targetLe sourceLe isSheafSource pairHom ≫ targetIso.inv
+
+attribute [instance] FiniteEtaleModel.commRingTarget FiniteEtaleModel.uniformSpaceTarget
+  FiniteEtaleModel.isUniformAddGroupTarget FiniteEtaleModel.isTopologicalRingTarget
+  FiniteEtaleModel.completeSpaceTarget FiniteEtaleModel.t2SpaceTarget
+  FiniteEtaleModel.isTateRingTarget FiniteEtaleModel.commRingSource
+  FiniteEtaleModel.topologicalSpaceSource FiniteEtaleModel.isTopologicalRingSource
+  FiniteEtaleModel.isHuberRingSource
+
+private def hasFiniteEtaleModel : MorphismProperty PreAdicSpace.{u} := fun _ _ g ↦
+  Nonempty (FiniteEtaleModel g)
 
 private instance : MorphismProperty.RespectsIso (@hasFiniteEtaleModel.{u}) :=
   MorphismProperty.RespectsIso.mk _
-    (fun e _ ⟨A, _, _, _, _, _, _, _, S, P, hP, B, _, _, _, _, T, P', hP', hs, φ, hφ, eV, eU, hg⟩ ↦
-      ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-        inferInstance, S, P, hP, B, inferInstance, inferInstance, inferInstance, inferInstance, T,
-        P', hP', hs, φ, hφ, eV, e ≪≫ eU, by simp [hg]⟩)
-    (fun e _ ⟨A, _, _, _, _, _, _, _, S, P, hP, B, _, _, _, _, T, P', hP', hs, φ, hφ, eV, eU, hg⟩ ↦
-      ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-        inferInstance, S, P, hP, B, inferInstance, inferInstance, inferInstance, inferInstance, T,
-        P', hP', hs, φ, hφ, e.symm ≪≫ eV, eU, by simp [hg]⟩)
+    (fun e _ ⟨m⟩ ↦ ⟨{ m with sourceIso := e ≪≫ m.sourceIso, fac := by simp [m.fac] }⟩)
+    (fun e _ ⟨m⟩ ↦ ⟨{ m with targetIso := e.symm ≪≫ m.targetIso, fac := by simp [m.fac] }⟩)
 
 /-- **Finite étale morphisms of analytic adic spaces** (Kedlaya–Liu I, Definition 8.2.16; Scholze,
 Definition 7.1; modelled formally on `TauCeti.PreAdicSpace.IsClosedImmersion`): a morphism
@@ -104,60 +127,280 @@ the morphism `f` is induced by a finite étale morphism of Huber pairs `φ : (A,
 def IsFiniteEtale : MorphismProperty AdicSpace.{u} := fun _ X f ↦
   ∀ x : X.obj, ∃ V : Opens X.obj, x ∈ V ∧ hasFiniteEtaleModel (f.hom.restrictPreimage V)
 
+namespace IsFiniteEtale
+
+/-- A local presentation-based chart witnessing `IsFiniteEtale f` around `x : X.obj`. -/
+structure Chart {Y X : AdicSpace.{u}} (f : Y ⟶ X) (x : X.obj) : Type (u + 1) where
+  /-- Open neighbourhood of `x` in the target. -/
+  V : Opens X.obj
+  /-- Membership of `x` in `V`. -/
+  mem : x ∈ V
+  /-- Target coefficient ring. -/
+  Target : Type u
+  [commRingTarget : CommRing Target]
+  [uniformSpaceTarget : UniformSpace Target]
+  [isUniformAddGroupTarget : IsUniformAddGroup Target]
+  [isTopologicalRingTarget : IsTopologicalRing Target]
+  [completeSpaceTarget : CompleteSpace Target]
+  [t2SpaceTarget : T2Space Target]
+  [isTateRingTarget : IsTateRing Target]
+  /-- Target Huber pair. -/
+  targetPair : Pair Target
+  /-- Compatible pair of definition for `Target`. -/
+  targetPresentation : PairOfDefinition Target
+  /-- Compatibility of `targetPresentation` with `targetPair.plus`. -/
+  targetLe : targetPresentation.ringOfDefinition ≤ targetPair.plus
+  /-- Source coefficient ring. -/
+  Source : Type u
+  [commRingSource : CommRing Source]
+  [topologicalSpaceSource : TopologicalSpace Source]
+  [isTopologicalRingSource : IsTopologicalRing Source]
+  [isHuberRingSource : IsHuberRing Source]
+  /-- Source Huber pair. -/
+  sourcePair : Pair Source
+  /-- Compatible pair of definition for `Source`. -/
+  sourcePresentation : PairOfDefinition Source
+  /-- Compatibility of `sourcePresentation` with `sourcePair.plus`. -/
+  sourceLe : sourcePresentation.ringOfDefinition ≤ sourcePair.plus
+  /-- Sheafiness of the source presentation. -/
+  isSheafSource : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa sourcePair.plus))
+    (presentationLimitPresheaf sourcePresentation sourcePair.plus)
+  /-- Underlying finite étale morphism of Huber pairs. -/
+  pairHom : Pair.Hom targetPair sourcePair
+  /-- Proof that `pairHom` is finite étale. -/
+  isFiniteEtale : pairHom.IsFiniteEtale
+  /-- Identification of `X|_V` with `Spa(Target, targetPair⁺)`. -/
+  targetIso : X.obj.restrict V.isOpenEmbedding ≅
+    presentationLimitPreAdicSpace targetPresentation targetPair.plus
+      targetPair.isRingOfIntegralElements.isPowerBounded_of_mem targetLe
+  /-- Identification of `Y|_{f⁻¹(V)}` with `Spa(Source, sourcePair⁺)`. -/
+  sourceIso : Y.obj.restrict ((Opens.map f.hom.base).obj V).isOpenEmbedding ≅
+    presentationLimitPreAdicSpace sourcePresentation sourcePair.plus
+      sourcePair.isRingOfIntegralElements.isPowerBounded_of_mem sourceLe
+  /-- Compatibility of `f` over `V` with `pairHom`. -/
+  fac : Y.obj.ofRestrict _ ≫ f.hom =
+    sourceIso.hom ≫
+      presentationLimitPreAdicSpacePairComap targetPresentation sourcePresentation
+        targetLe sourceLe isSheafSource pairHom ≫
+      targetIso.inv ≫ X.obj.ofRestrict _
+
+attribute [instance] Chart.commRingTarget Chart.uniformSpaceTarget Chart.isUniformAddGroupTarget
+  Chart.isTopologicalRingTarget Chart.completeSpaceTarget Chart.t2SpaceTarget
+  Chart.isTateRingTarget Chart.commRingSource Chart.topologicalSpaceSource
+  Chart.isTopologicalRingSource Chart.isHuberRingSource
+
+private def Chart.toModel {f : Y ⟶ X} {x : X.obj} (c : Chart f x) :
+    FiniteEtaleModel (f.hom.restrictPreimage c.V) where
+  Target := c.Target
+  targetPair := c.targetPair
+  targetPresentation := c.targetPresentation
+  targetLe := c.targetLe
+  Source := c.Source
+  sourcePair := c.sourcePair
+  sourcePresentation := c.sourcePresentation
+  sourceLe := c.sourceLe
+  isSheafSource := c.isSheafSource
+  pairHom := c.pairHom
+  isFiniteEtale := c.isFiniteEtale
+  targetIso := c.targetIso
+  sourceIso := c.sourceIso
+  fac := by
+    rw [← cancel_mono (X.obj.ofRestrict c.V.isOpenEmbedding), Hom.restrictPreimage_ofRestrict,
+      c.fac, Category.assoc, Category.assoc]
+
+private def _root_.TauCeti.AdicSpace.FiniteEtaleModel.toChart {f : Y ⟶ X} {V : Opens X.obj}
+    {x : X.obj} (hx : x ∈ V) (m : FiniteEtaleModel (f.hom.restrictPreimage V)) : Chart f x where
+  V := V
+  mem := hx
+  Target := m.Target
+  targetPair := m.targetPair
+  targetPresentation := m.targetPresentation
+  targetLe := m.targetLe
+  Source := m.Source
+  sourcePair := m.sourcePair
+  sourcePresentation := m.sourcePresentation
+  sourceLe := m.sourceLe
+  isSheafSource := m.isSheafSource
+  pairHom := m.pairHom
+  isFiniteEtale := m.isFiniteEtale
+  targetIso := m.targetIso
+  sourceIso := m.sourceIso
+  fac := by
+    rw [← Hom.restrictPreimage_ofRestrict]
+    exact (congrArg (· ≫ X.obj.ofRestrict V.isOpenEmbedding) m.fac).trans
+      (by simp only [Category.assoc])
+
+/-- A local presentation-based chart for `IsFiniteEtale f` around `x : X.obj` in which the source
+coefficient ring is also complete, Hausdorff, and Tate. -/
+structure CompleteTateChart {Y X : AdicSpace.{u}} (f : Y ⟶ X) (x : X.obj) : Type (u + 1) where
+  /-- Open neighbourhood of `x` in the target. -/
+  V : Opens X.obj
+  /-- Membership of `x` in `V`. -/
+  mem : x ∈ V
+  /-- Target coefficient ring. -/
+  Target : Type u
+  [commRingTarget : CommRing Target]
+  [uniformSpaceTarget : UniformSpace Target]
+  [isUniformAddGroupTarget : IsUniformAddGroup Target]
+  [isTopologicalRingTarget : IsTopologicalRing Target]
+  [completeSpaceTarget : CompleteSpace Target]
+  [t2SpaceTarget : T2Space Target]
+  [isTateRingTarget : IsTateRing Target]
+  /-- Target Huber pair. -/
+  targetPair : Pair Target
+  /-- Compatible pair of definition for `Target`. -/
+  targetPresentation : PairOfDefinition Target
+  /-- Compatibility of `targetPresentation` with `targetPair.plus`. -/
+  targetLe : targetPresentation.ringOfDefinition ≤ targetPair.plus
+  /-- Source coefficient ring. -/
+  Source : Type u
+  [commRingSource : CommRing Source]
+  [uniformSpaceSource : UniformSpace Source]
+  [isUniformAddGroupSource : IsUniformAddGroup Source]
+  [isTopologicalRingSource : IsTopologicalRing Source]
+  [completeSpaceSource : CompleteSpace Source]
+  [t2SpaceSource : T2Space Source]
+  [isTateRingSource : IsTateRing Source]
+  /-- Source Huber pair. -/
+  sourcePair : Pair Source
+  /-- Compatible pair of definition for `Source`. -/
+  sourcePresentation : PairOfDefinition Source
+  /-- Compatibility of `sourcePresentation` with `sourcePair.plus`. -/
+  sourceLe : sourcePresentation.ringOfDefinition ≤ sourcePair.plus
+  /-- Sheafiness of the source presentation. -/
+  isSheafSource : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa sourcePair.plus))
+    (presentationLimitPresheaf sourcePresentation sourcePair.plus)
+  /-- Underlying finite étale morphism of Huber pairs. -/
+  pairHom : Pair.Hom targetPair sourcePair
+  /-- Proof that `pairHom` is finite étale. -/
+  isFiniteEtale : pairHom.IsFiniteEtale
+  /-- Identification of `X|_V` with `Spa(Target, targetPair⁺)`. -/
+  targetIso : X.obj.restrict V.isOpenEmbedding ≅
+    presentationLimitPreAdicSpace targetPresentation targetPair.plus
+      targetPair.isRingOfIntegralElements.isPowerBounded_of_mem targetLe
+  /-- Identification of `Y|_{f⁻¹(V)}` with `Spa(Source, sourcePair⁺)`. -/
+  sourceIso : Y.obj.restrict ((Opens.map f.hom.base).obj V).isOpenEmbedding ≅
+    presentationLimitPreAdicSpace sourcePresentation sourcePair.plus
+      sourcePair.isRingOfIntegralElements.isPowerBounded_of_mem sourceLe
+  /-- Compatibility of `f` over `V` with `pairHom`. -/
+  fac : Y.obj.ofRestrict _ ≫ f.hom =
+    sourceIso.hom ≫
+      presentationLimitPreAdicSpacePairComap targetPresentation sourcePresentation
+        targetLe sourceLe isSheafSource pairHom ≫
+      targetIso.inv ≫ X.obj.ofRestrict _
+
+attribute [instance] CompleteTateChart.commRingTarget CompleteTateChart.uniformSpaceTarget
+  CompleteTateChart.isUniformAddGroupTarget CompleteTateChart.isTopologicalRingTarget
+  CompleteTateChart.completeSpaceTarget CompleteTateChart.t2SpaceTarget
+  CompleteTateChart.isTateRingTarget CompleteTateChart.commRingSource
+  CompleteTateChart.uniformSpaceSource CompleteTateChart.isUniformAddGroupSource
+  CompleteTateChart.isTopologicalRingSource CompleteTateChart.completeSpaceSource
+  CompleteTateChart.t2SpaceSource CompleteTateChart.isTateRingSource
+
+/-- A local `AdicSpace.ofPair`-based chart for `IsFiniteEtale f` around `x : X.obj`. -/
+structure OfPairChart {Y X : AdicSpace.{u}} (f : Y ⟶ X) (x : X.obj) : Type (u + 1) where
+  /-- Open neighbourhood of `x` in the target. -/
+  V : Opens X.obj
+  /-- Membership of `x` in `V`. -/
+  mem : x ∈ V
+  /-- Target coefficient ring. -/
+  Target : Type u
+  [commRingTarget : CommRing Target]
+  [uniformSpaceTarget : UniformSpace Target]
+  [isUniformAddGroupTarget : IsUniformAddGroup Target]
+  [isTopologicalRingTarget : IsTopologicalRing Target]
+  [completeSpaceTarget : CompleteSpace Target]
+  [t2SpaceTarget : T2Space Target]
+  [isTateRingTarget : IsTateRing Target]
+  /-- Target Huber pair. -/
+  targetPair : Pair Target
+  /-- Sheafiness of `targetPair`. -/
+  isSheafyTarget : IsSheafyForEveryPresentation targetPair.plus
+  /-- Source coefficient ring. -/
+  Source : Type u
+  [commRingSource : CommRing Source]
+  [uniformSpaceSource : UniformSpace Source]
+  [isUniformAddGroupSource : IsUniformAddGroup Source]
+  [isTopologicalRingSource : IsTopologicalRing Source]
+  [completeSpaceSource : CompleteSpace Source]
+  [t2SpaceSource : T2Space Source]
+  [isTateRingSource : IsTateRing Source]
+  /-- Source Huber pair. -/
+  sourcePair : Pair Source
+  /-- Sheafiness of `sourcePair`. -/
+  isSheafySource : IsSheafyForEveryPresentation sourcePair.plus
+  /-- Underlying finite étale morphism of Huber pairs. -/
+  pairHom : Pair.Hom targetPair sourcePair
+  /-- Proof that `pairHom` is finite étale. -/
+  isFiniteEtale : pairHom.IsFiniteEtale
+  /-- Identification of `X|_V` with `(ofPair targetPair isSheafyTarget).obj`. -/
+  targetIso : X.obj.restrict V.isOpenEmbedding ≅ (ofPair targetPair isSheafyTarget).obj
+  /-- Identification of `Y|_{f⁻¹(V)}` with `(ofPair sourcePair isSheafySource).obj`. -/
+  sourceIso : Y.obj.restrict ((Opens.map f.hom.base).obj V).isOpenEmbedding ≅
+    (ofPair sourcePair isSheafySource).obj
+  /-- Compatibility of `f` over `V` with `comapOfPair isSheafyTarget isSheafySource pairHom`. -/
+  fac : Y.obj.ofRestrict _ ≫ f.hom =
+    sourceIso.hom ≫ (comapOfPair isSheafyTarget isSheafySource pairHom).hom ≫
+      targetIso.inv ≫ X.obj.ofRestrict _
+
+attribute [instance] OfPairChart.commRingTarget OfPairChart.uniformSpaceTarget
+  OfPairChart.isUniformAddGroupTarget OfPairChart.isTopologicalRingTarget
+  OfPairChart.completeSpaceTarget OfPairChart.t2SpaceTarget OfPairChart.isTateRingTarget
+  OfPairChart.commRingSource OfPairChart.uniformSpaceSource OfPairChart.isUniformAddGroupSource
+  OfPairChart.isTopologicalRingSource OfPairChart.completeSpaceSource OfPairChart.t2SpaceSource
+  OfPairChart.isTateRingSource
+
+end IsFiniteEtale
+
 /-- Unfolding lemma for `TauCeti.AdicSpace.IsFiniteEtale`. -/
-theorem isFiniteEtale_iff (f : Y ⟶ X) : IsFiniteEtale f ↔
-  ∀ x : X.obj, ∃ (V : Opens X.obj) (_ : x ∈ V) (A : Type u) (_ : CommRing A) (_ : UniformSpace A)
-    (_ : IsUniformAddGroup A) (_ : IsTopologicalRing A) (_ : CompleteSpace A) (_ : T2Space A)
-    (_ : IsTateRing A) (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
-    (B : Type u) (_ : CommRing B) (_ : TopologicalSpace B) (_ : IsTopologicalRing B)
-    (_ : IsHuberRing B) (T : Pair B) (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
-    (hs : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-      (presentationLimitPresheaf P' T.plus)) (φ : Pair.Hom S T) (_ : φ.IsFiniteEtale)
-    (eV : X.obj.restrict V.isOpenEmbedding ≅
-      presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP)
-    (eU : Y.obj.restrict ((Opens.map f.hom.base).obj V).isOpenEmbedding ≅
-      presentationLimitPreAdicSpace P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem hP'),
-    Y.obj.ofRestrict _ ≫ f.hom =
-      eU.hom ≫ presentationLimitPreAdicSpacePairComap P P' hP hP' hs φ ≫
-        eV.inv ≫ X.obj.ofRestrict _ := by
-  simp only [IsFiniteEtale, hasFiniteEtaleModel, ← Hom.restrictPreimage_ofRestrict,
-    ← Category.assoc, cancel_mono, exists_prop]
+theorem isFiniteEtale_iff (f : Y ⟶ X) :
+    IsFiniteEtale f ↔ ∀ x : X.obj, Nonempty (IsFiniteEtale.Chart f x) :=
+  ⟨fun hf x ↦ let ⟨_, hx, ⟨m⟩⟩ := hf x; ⟨m.toChart hx⟩,
+    fun hf x ↦ let ⟨c⟩ := hf x; ⟨c.V, c.mem, ⟨c.toModel⟩⟩⟩
+
+private theorem isNaturallyComplete_of_isFiniteEtale {A B : Type u} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T2Space A] [IsHuberRing A]
+    [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
+    {S : Pair A} {T : Pair B} {φ : Pair.Hom S T} (hφ : φ.IsFiniteEtale) :
+    letI : Algebra A B := φ.toRingHom.toAlgebra
+    IsNaturallyComplete A B := by
+  let _ : Algebra A B := φ.toRingHom.toAlgebra
+  have _ : Module.Finite A B := hφ.finite
+  have _ : Algebra.Etale A B := hφ.etale
+  have _ : Module.FinitePresentation A B := .of_finite_of_finitePresentation A B
+  have _ : Module.Projective A B := Module.Flat.projective_of_finitePresentation
+  exact IsNaturallyComplete.of_projective (A := A) (M := B)
 
 /-- Around every point `x : X.obj`, a finite étale morphism `f : Y ⟶ X` admits an open
 neighbourhood `V` of `x` over which `f` is modelled by a finite étale morphism `φ : (A, S) → (B, T)`
 where both `A` and `B` are complete Hausdorff Tate rings. -/
 theorem IsFiniteEtale.exists_complete_tate_chart {f : Y ⟶ X} (hf : IsFiniteEtale f) (x : X.obj) :
-    ∃ (V : Opens X.obj) (_ : x ∈ V) (A : Type u) (_ : CommRing A) (_ : UniformSpace A)
-      (_ : IsUniformAddGroup A) (_ : IsTopologicalRing A) (_ : CompleteSpace A) (_ : T2Space A)
-      (_ : IsTateRing A) (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
-      (B : Type u) (_ : CommRing B) (_ : UniformSpace B) (_ : IsUniformAddGroup B)
-      (_ : IsTopologicalRing B) (_ : CompleteSpace B) (_ : T2Space B) (_ : IsTateRing B)
-      (T : Pair B) (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
-      (hs : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-        (presentationLimitPresheaf P' T.plus)) (φ : Pair.Hom S T) (_ : φ.IsFiniteEtale)
-      (eV : X.obj.restrict V.isOpenEmbedding ≅
-        presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP)
-      (eU : Y.obj.restrict ((Opens.map f.hom.base).obj V).isOpenEmbedding ≅
-        presentationLimitPreAdicSpace P' T.plus
-          T.isRingOfIntegralElements.isPowerBounded_of_mem hP'),
-      Y.obj.ofRestrict _ ≫ f.hom =
-        eU.hom ≫ presentationLimitPreAdicSpacePairComap P P' hP hP' hs φ ≫
-          eV.inv ≫ X.obj.ofRestrict _ := by
-  obtain ⟨V, hx, A, _, _, _, _, _, _, _, S, P, hP, B, _, _, _, _, T, P', hP', hs, φ, hφ,
-    eV, eU, hfac⟩ := (isFiniteEtale_iff f).mp hf x
-  let _ : Algebra A B := φ.toRingHom.toAlgebra
-  have _ : Module.Finite A B := hφ.finite
-  have _ : Algebra.Etale A B := hφ.etale
-  have _ : IsModuleTopology A B := hφ.isModuleTopology
-  have _ : Module.FinitePresentation A B := .of_finite_of_finitePresentation A B
-  have _ : Module.Projective A B := Module.Flat.projective_of_finitePresentation
-  let _ : UniformSpace B := IsTopologicalAddGroup.rightUniformSpace B
-  have _ : IsUniformAddGroup B := isUniformAddGroup_of_addCommGroup
-  obtain ⟨_, _⟩ := isNaturallyComplete_iff.mp (IsNaturallyComplete.of_projective (A := A) (M := B))
-  have _ : IsTateRing B := IsTateRing.of_isModuleTopology (A := A) (B := B)
-  exact ⟨V, hx, A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, S, P, hP, B, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP', hs, φ, hφ, eV, eU, hfac⟩
+    Nonempty (IsFiniteEtale.CompleteTateChart f x) := by
+  obtain ⟨c⟩ := (isFiniteEtale_iff f).mp hf x
+  let _ : Algebra c.Target c.Source := c.pairHom.toRingHom.toAlgebra
+  have _ : Module.Finite c.Target c.Source := c.isFiniteEtale.finite
+  have _ : IsModuleTopology c.Target c.Source := c.isFiniteEtale.isModuleTopology
+  let _ : UniformSpace c.Source := IsTopologicalAddGroup.rightUniformSpace c.Source
+  have _ : IsUniformAddGroup c.Source := isUniformAddGroup_of_addCommGroup
+  obtain ⟨_, _⟩ := isNaturallyComplete_iff.mp (isNaturallyComplete_of_isFiniteEtale c.isFiniteEtale)
+  have _ : IsTateRing c.Source := IsTateRing.of_isModuleTopology (A := c.Target) (B := c.Source)
+  exact ⟨{
+    V := c.V
+    mem := c.mem
+    Target := c.Target
+    targetPair := c.targetPair
+    targetPresentation := c.targetPresentation
+    targetLe := c.targetLe
+    Source := c.Source
+    sourcePair := c.sourcePair
+    sourcePresentation := c.sourcePresentation
+    sourceLe := c.sourceLe
+    isSheafSource := c.isSheafSource
+    pairHom := c.pairHom
+    isFiniteEtale := c.isFiniteEtale
+    targetIso := c.targetIso
+    sourceIso := c.sourceIso
+    fac := c.fac }⟩
 
 private theorem isSheaf_of_restrict_iso {A : Type u} [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsHuberRing A] {S : Pair A} {P : PairOfDefinition A}
@@ -173,53 +416,64 @@ private theorem isSheaf_of_restrict_iso {A : Type u} [CommRing A] [TopologicalSp
 neighbourhood `V` of `x` over which `f` is modelled by `AdicSpace.comapOfPair` for a finite étale
 morphism `φ : (A, S) → (B, T)` between complete Hausdorff Tate sheafy Huber pairs. -/
 theorem IsFiniteEtale.exists_ofPair_chart {f : Y ⟶ X} (hf : IsFiniteEtale f) (x : X.obj) :
-    ∃ (V : Opens X.obj) (_ : x ∈ V) (A : Type u) (_ : CommRing A) (_ : UniformSpace A)
-      (_ : IsUniformAddGroup A) (_ : IsTopologicalRing A) (_ : CompleteSpace A) (_ : T2Space A)
-      (_ : IsTateRing A) (S : Pair A) (hS : IsSheafyForEveryPresentation S.plus) (B : Type u)
-      (_ : CommRing B) (_ : UniformSpace B) (_ : IsUniformAddGroup B) (_ : IsTopologicalRing B)
-      (_ : CompleteSpace B) (_ : T2Space B) (_ : IsTateRing B) (T : Pair B)
-      (hT : IsSheafyForEveryPresentation T.plus) (φ : Pair.Hom S T) (_ : φ.IsFiniteEtale)
-      (eV : X.obj.restrict V.isOpenEmbedding ≅ (ofPair S hS).obj)
-      (eU : Y.obj.restrict ((Opens.map f.hom.base).obj V).isOpenEmbedding ≅ (ofPair T hT).obj),
-      Y.obj.ofRestrict _ ≫ f.hom =
-        eU.hom ≫ (comapOfPair hS hT φ).hom ≫ eV.inv ≫ X.obj.ofRestrict _ := by
-  obtain ⟨V, hx, A, _, _, _, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP',
-    hsheafT, φ, hφ, eV, eU, hfac⟩ := hf.exists_complete_tate_chart x
-  have hS := (isSheafyForEveryPresentation_iff_isRingOfIntegralElements_and_isSheaf P).mpr
-    ⟨S.isRingOfIntegralElements, isSheaf_of_restrict_iso hP eV⟩
-  have hT := (isSheafyForEveryPresentation_iff_isRingOfIntegralElements_and_isSheaf P').mpr
-    ⟨T.isRingOfIntegralElements, hsheafT⟩
-  let iS := (ObjectProperty.ι isAdic).mapIso (ofPairIsoOfPresentation S hS P hP)
-  let iT := (ObjectProperty.ι isAdic).mapIso (ofPairIsoOfPresentation T hT P' hP')
-  have hcomp_pre : iT.inv ≫ (comapOfPair hS hT φ).hom ≫ iS.hom =
-      presentationLimitPreAdicSpacePairComap P P' hP hP' hsheafT φ := by
+    Nonempty (IsFiniteEtale.OfPairChart f x) := by
+  obtain ⟨c⟩ := hf.exists_complete_tate_chart x
+  have hS := (isSheafyForEveryPresentation_iff_isRingOfIntegralElements_and_isSheaf
+    c.targetPresentation).mpr ⟨c.targetPair.isRingOfIntegralElements,
+      isSheaf_of_restrict_iso c.targetLe c.targetIso⟩
+  have hT := (isSheafyForEveryPresentation_iff_isRingOfIntegralElements_and_isSheaf
+    c.sourcePresentation).mpr ⟨c.sourcePair.isRingOfIntegralElements, c.isSheafSource⟩
+  let iS : (ofPair c.targetPair hS).obj ≅
+      presentationLimitPreAdicSpace c.targetPresentation c.targetPair.plus
+        c.targetPair.isRingOfIntegralElements.isPowerBounded_of_mem c.targetLe :=
+    (ObjectProperty.ι isAdic).mapIso
+      (ofPairIsoOfPresentation c.targetPair hS c.targetPresentation c.targetLe)
+  let iT : (ofPair c.sourcePair hT).obj ≅
+      presentationLimitPreAdicSpace c.sourcePresentation c.sourcePair.plus
+        c.sourcePair.isRingOfIntegralElements.isPowerBounded_of_mem c.sourceLe :=
+    (ObjectProperty.ι isAdic).mapIso
+      (ofPairIsoOfPresentation c.sourcePair hT c.sourcePresentation c.sourceLe)
+  have hcomp_pre : iT.inv ≫ (comapOfPair hS hT c.pairHom).hom ≫ iS.hom =
+      presentationLimitPreAdicSpacePairComap c.targetPresentation c.sourcePresentation
+        c.targetLe c.sourceLe c.isSheafSource c.pairHom := by
     have hconj := congrArg InducedCategory.Hom.hom
-      (comapOfPresentation_eq_ofPairIsoOfPresentation hS hT P hP P' hP' φ).symm
+      (comapOfPresentation_eq_ofPairIsoOfPresentation hS hT c.targetPresentation c.targetLe
+        c.sourcePresentation c.sourceLe c.pairHom).symm
     simpa only [iS, iT, Functor.mapIso_hom, Functor.mapIso_inv, ObjectProperty.ι_map,
       ObjectProperty.FullSubcategory.comp_hom, comapOfPresentation_hom] using hconj
-  refine ⟨V, hx, A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, S, hS, B, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, T, hT, φ, hφ,
-    eV ≪≫ iS.symm, eU ≪≫ iT.symm, ?_⟩
-  rw [hfac, Iso.trans_hom, Iso.symm_hom, Iso.trans_inv, Iso.symm_inv]
+  refine ⟨{
+    V := c.V
+    mem := c.mem
+    Target := c.Target
+    targetPair := c.targetPair
+    isSheafyTarget := hS
+    Source := c.Source
+    sourcePair := c.sourcePair
+    isSheafySource := hT
+    pairHom := c.pairHom
+    isFiniteEtale := c.isFiniteEtale
+    targetIso := c.targetIso ≪≫ iS.symm
+    sourceIso := c.sourceIso ≪≫ iT.symm
+    fac := ?_ }⟩
+  rw [c.fac, Iso.trans_hom, Iso.symm_hom, Iso.trans_inv, Iso.symm_inv]
   simp only [Category.assoc, ← reassoc_of% hcomp_pre]
 
 /-- **The target of a finite étale morphism is analytic.** -/
 theorem IsFiniteEtale.isAnalytic_target {f : Y ⟶ X} (hf : IsFiniteEtale f) : X.IsAnalytic := by
   refine isAnalytic_iff.mpr fun x ↦ ?_
-  obtain ⟨V, hx, A, _, _, _, _, _, _, _, S, P, hP, _, _, _, _, _, _, _, _, _, _, _, eV, _, _⟩ :=
-    hf x
-  exact ⟨V, (mem_propOpens_iff _).mpr ((isTateAffinoid_iff _).mpr ⟨A, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, S, P, hP, ⟨eV⟩⟩), hx⟩
+  obtain ⟨V, hx, ⟨m⟩⟩ := hf x
+  exact ⟨V, (mem_propOpens_iff _).mpr ((isTateAffinoid_iff _).mpr ⟨m.Target, inferInstance,
+    inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+    m.targetPair, m.targetPresentation, m.targetLe, ⟨m.targetIso⟩⟩), hx⟩
 
 /-- **The source of a finite étale morphism is analytic.** -/
 theorem IsFiniteEtale.isAnalytic_source {f : Y ⟶ X} (hf : IsFiniteEtale f) : Y.IsAnalytic := by
   refine isAnalytic_iff.mpr fun y ↦ ?_
-  obtain ⟨V, hx, _, _, _, _, _, _, _, _, _, _, _, B, _, _, _, _, _, _, _, T, P', hP', _, _, _,
-    _, eU, _⟩ := hf.exists_complete_tate_chart (f.hom.base y)
-  exact ⟨(Opens.map f.hom.base).obj V, (mem_propOpens_iff _).mpr ((isTateAffinoid_iff _).mpr
-    ⟨B, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-      inferInstance, T, P', hP', ⟨eU⟩⟩), hx⟩
+  obtain ⟨c⟩ := hf.exists_complete_tate_chart (f.hom.base y)
+  exact ⟨(Opens.map f.hom.base).obj c.V, (mem_propOpens_iff _).mpr ((isTateAffinoid_iff _).mpr
+    ⟨c.Source, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+      inferInstance, inferInstance, c.sourcePair, c.sourcePresentation, c.sourceLe,
+      ⟨c.sourceIso⟩⟩), c.mem⟩
 
 /-! ### Invariance under isomorphism and affinoid constructors -/
 
@@ -277,15 +531,27 @@ theorem IsFiniteEtale.comapOfPresentation {A : Type u} [CommRing A] [UniformSpac
     (hsheafT : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
       (presentationLimitPresheaf P' T.plus)) (φ : Pair.Hom S T) (hφ : φ.IsFiniteEtale) :
     IsFiniteEtale (AdicSpace.comapOfPresentation S P hS hsheafS T P' hT hsheafT φ) := by
-  refine (isFiniteEtale_iff _).mpr fun _ ↦ ⟨⊤, trivial, A, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, S, P, hS, B,
-    inferInstance, inferInstance, inferInstance, inferInstance, T, P', hT, hsheafT, φ, hφ,
-    restrictTopIso _,
-    restrictIsoOfRangeEq _ _ (Opens.isOpenEmbedding ⊤) (by rw [Opens.map_top]) ≪≫ restrictTopIso _,
-    ?_⟩
-  rw [← restrictTopIso_hom, Iso.inv_hom_id, Category.comp_id, Iso.trans_hom, restrictTopIso_hom,
-    Category.assoc, ← comapOfPresentation_hom S P hS hsheafS T P' hT hsheafT φ,
-    restrictIsoOfRangeEq_hom_ofRestrict_assoc]
+  refine (isFiniteEtale_iff _).mpr fun _ ↦ ⟨{
+    V := ⊤
+    mem := trivial
+    Target := A
+    targetPair := S
+    targetPresentation := P
+    targetLe := hS
+    Source := B
+    sourcePair := T
+    sourcePresentation := P'
+    sourceLe := hT
+    isSheafSource := hsheafT
+    pairHom := φ
+    isFiniteEtale := hφ
+    targetIso := restrictTopIso _
+    sourceIso :=
+      restrictIsoOfRangeEq _ _ (Opens.isOpenEmbedding ⊤) (by rw [Opens.map_top]) ≪≫ restrictTopIso _
+    fac := by
+      rw [← restrictTopIso_hom, Iso.inv_hom_id, Category.comp_id, Iso.trans_hom, restrictTopIso_hom,
+        Category.assoc, ← comapOfPresentation_hom S P hS hsheafS T P' hT hsheafT φ,
+        restrictIsoOfRangeEq_hom_ofRestrict_assoc] }⟩
 
 /-- **`Spa(φ)` is finite étale for a finite étale morphism of sheafy Huber pairs** over a complete
 Hausdorff Tate ring (`AdicSpace.comapOfPair`). -/
@@ -325,12 +591,24 @@ theorem IsFiniteEtale.id {X : AdicSpace.{u}} (hX : X.IsAnalytic) : IsFiniteEtale
   obtain ⟨V, hV, hx⟩ := isAnalytic_iff.mp hX x
   obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨eV⟩⟩ :=
     (isTateAffinoid_iff _).mp ((mem_propOpens_iff _).mp hV)
-  refine ⟨V, hx, A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, S, P, hP, A, inferInstance, inferInstance, inferInstance,
-    inferInstance, S, P, hP, isSheaf_of_restrict_iso hP eV, Pair.Hom.id S,
-    Pair.Hom.isFiniteEtale_id S, eV,
-    restrictIsoOfRangeEq X.obj _ V.isOpenEmbedding
-      (by rw [Opens.set_range_inclusion', Opens.set_range_inclusion']; rfl) ≪≫ eV, ?_⟩
+  refine ⟨{
+    V := V
+    mem := hx
+    Target := A
+    targetPair := S
+    targetPresentation := P
+    targetLe := hP
+    Source := A
+    sourcePair := S
+    sourcePresentation := P
+    sourceLe := hP
+    isSheafSource := isSheaf_of_restrict_iso hP eV
+    pairHom := Pair.Hom.id S
+    isFiniteEtale := Pair.Hom.isFiniteEtale_id S
+    targetIso := eV
+    sourceIso := restrictIsoOfRangeEq X.obj _ V.isOpenEmbedding
+      (by rw [Opens.set_range_inclusion', Opens.set_range_inclusion']; rfl) ≪≫ eV
+    fac := ?_ }⟩
   rw [presentationLimitPreAdicSpacePairComap_id, Category.id_comp, Iso.trans_hom, Category.assoc,
     Iso.hom_inv_id_assoc, restrictIsoOfRangeEq_hom_ofRestrict]; exact Category.comp_id _
 
@@ -362,17 +640,30 @@ theorem IsFiniteEtale.of_isEmpty (f : Y ⟶ X) [IsEmpty Y.obj] (hX : X.IsAnalyti
   have _ : IsEmpty Z.obj := Set.isEmpty_coe_sort.mpr
     ((spa_eq_empty_iff_subsingleton _ T.isRingOfIntegralElements).mpr inferInstance)
   let U := (Opens.map f.hom.base).obj V
-  let YV : AdicSpace.{u} := ⟨Y.obj.restrict U.isOpenEmbedding, isAdic_restrict _ Y.property⟩
-  have _ : IsEmpty YV.obj := ⟨fun z ↦ IsEmpty.false ((Y.obj.ofRestrict U.isOpenEmbedding).base z)⟩
-  let g₁ : YV ⟶ X := ObjectProperty.homMk (Y.obj.ofRestrict U.isOpenEmbedding ≫ f.hom)
+  have _ : IsEmpty (Y.restrict U).obj := ⟨fun z ↦ IsEmpty.false ((Y.ofRestrict U).hom.base z)⟩
+  let g₁ : Y.restrict U ⟶ X := Y.ofRestrict U ≫ f
   let g₂ : Z ⟶ X := ObjectProperty.homMk (presentationLimitPreAdicSpacePairComap P P' hP hP' hsheaf
     (Pair.finiteAlgebra.algebraHom S PUnit.{u + 1}) ≫ eV.inv ≫ X.obj.ofRestrict V.isOpenEmbedding)
   have hr : Set.range g₁.hom.base = Set.range g₂.hom.base := by simp [Set.range_eq_empty]
-  exact ⟨V, hx, A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, S, P, hP, PUnit.{u + 1}, inferInstance, inferInstance,
-    inferInstance, inferInstance, T, P', hP', hsheaf, _, .of_subsingleton, eV,
-    IsOpenImmersion.isoOfRangeEq g₁.hom g₂.hom hr,
-    (IsOpenImmersion.isoOfRangeEq_hom_comp g₁.hom g₂.hom hr).symm⟩
+  refine ⟨{
+    V := V
+    mem := hx
+    Target := A
+    targetPair := S
+    targetPresentation := P
+    targetLe := hP
+    Source := PUnit.{u + 1}
+    sourcePair := T
+    sourcePresentation := P'
+    sourceLe := hP'
+    isSheafSource := hsheaf
+    pairHom := Pair.finiteAlgebra.algebraHom S PUnit.{u + 1}
+    isFiniteEtale := .of_subsingleton
+    targetIso := eV
+    sourceIso := IsOpenImmersion.isoOfRangeEq g₁.hom g₂.hom hr
+    fac := ?_ }⟩
+  rw [← AdicSpace.ofRestrict_hom, ← ObjectProperty.FullSubcategory.comp_hom]
+  exact (IsOpenImmersion.isoOfRangeEq_hom_comp g₁.hom g₂.hom hr).symm
 
 /-- **A morphism from an empty adic space into `X` is finite étale if and only if `X` is
 analytic.** -/
@@ -384,22 +675,18 @@ theorem isFiniteEtale_iff_of_isEmpty (f : Y ⟶ X) [IsEmpty Y.obj] :
 
 private theorem hasFiniteEtaleModel.locallyOfFiniteType {U' V' : PreAdicSpace.{u}} {g : U' ⟶ V'}
     (hg : hasFiniteEtaleModel g) : PreAdicSpace.LocallyOfFiniteType g := by
-  obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, B, _, _, _, _, T, P', hP', hsheaf, φ, hφ, eV, eU,
-    rfl⟩ := hg
-  let _ : Algebra A B := φ.toRingHom.toAlgebra
-  have _ : Module.Finite A B := hφ.finite
-  have _ : Algebra.Etale A B := hφ.etale
-  have _ : IsModuleTopology A B := hφ.isModuleTopology
-  have _ : Module.FinitePresentation A B := .of_finite_of_finitePresentation A B
-  have _ : Module.Projective A B := Module.Flat.projective_of_finitePresentation
-  let _ : UniformSpace B := IsTopologicalAddGroup.rightUniformSpace B
-  have _ : IsUniformAddGroup B := isUniformAddGroup_of_addCommGroup
-  obtain ⟨_, _⟩ := isNaturallyComplete_iff.mp (IsNaturallyComplete.of_projective (A := A) (M := B))
-  rw [MorphismProperty.cancel_left_of_respectsIso @PreAdicSpace.LocallyOfFiniteType.{u},
+  obtain ⟨m⟩ := hg
+  let _ : Algebra m.Target m.Source := m.pairHom.toRingHom.toAlgebra
+  have _ : IsModuleTopology m.Target m.Source := m.isFiniteEtale.isModuleTopology
+  let _ : UniformSpace m.Source := IsTopologicalAddGroup.rightUniformSpace m.Source
+  have _ : IsUniformAddGroup m.Source := isUniformAddGroup_of_addCommGroup
+  obtain ⟨_, _⟩ := isNaturallyComplete_iff.mp (isNaturallyComplete_of_isFiniteEtale m.isFiniteEtale)
+  rw [m.fac, MorphismProperty.cancel_left_of_respectsIso @PreAdicSpace.LocallyOfFiniteType.{u},
     MorphismProperty.cancel_right_of_respectsIso @PreAdicSpace.LocallyOfFiniteType.{u},
     presentationLimitPreAdicSpacePairComap_def]
-  exact locallyOfFiniteType_presentationLimitPreAdicSpaceComap P P' hP hP' hsheaf φ
-    hφ.isFinite.isTopologicallyFiniteType
+  exact locallyOfFiniteType_presentationLimitPreAdicSpaceComap m.targetPresentation
+    m.sourcePresentation m.targetLe m.sourceLe m.isSheafSource m.pairHom
+    m.isFiniteEtale.isFinite.isTopologicallyFiniteType
 
 /-- **A finite étale morphism is locally of finite type.** -/
 theorem IsFiniteEtale.locallyOfFiniteType {f : Y ⟶ X} (hf : IsFiniteEtale f) :
@@ -421,29 +708,33 @@ private theorem restrictPreimage_base_eq_of_iso {f : Y ⟶ X} {V : Opens X.obj}
 
 /-- **A finite étale morphism is quasi-compact.** -/
 theorem IsFiniteEtale.quasiCompact {f : Y ⟶ X} (hf : IsFiniteEtale f) : QuasiCompact f := by
-  choose V hx A iCA uA _ tA _ _ tateA S P hP B iCB tB rB hB T P' hP' hs φ _ eV eU hfac using
-    (isFiniteEtale_iff f).mp hf
-  have hspec (x : X.obj) : IsSpectralMap ((V x : Set X.obj).restrictPreimage f.hom.base) := by
-    have hg : IsSpectralMap (presentationLimitPreAdicSpacePairComap (P x) (P' x) (hP x) (hP' x)
-        (hs x) (φ x)).base := by
+  let c (x : X.obj) : IsFiniteEtale.Chart f x := Classical.choice ((isFiniteEtale_iff f).mp hf x)
+  have hspec (x : X.obj) :
+      IsSpectralMap (((c x).V : Set X.obj).restrictPreimage f.hom.base) := by
+    have hg : IsSpectralMap (presentationLimitPreAdicSpacePairComap (c x).targetPresentation
+        (c x).sourcePresentation (c x).targetLe (c x).sourceLe (c x).isSheafSource
+        (c x).pairHom).base := by
       rw [presentationLimitPreAdicSpacePairComap_def]
       exact (quasiCompact_iff_isSpectralMap _).mp
-        (quasiCompact_presentationLimitPreAdicSpaceComap (P x) (P' x) (hP x) (hP' x) (hs x)
-          ((ObjectProperty.prop_iff_of_iso isAdic (eV x)).mp (isAdic_restrict _ X.property))
-          (φ x) fun J hJ ↦ IsTateRing.isOpen_map_of_isOpen (φ x).toRingHom hJ)
-    rw [restrictPreimage_base_eq_of_iso (hfac x)]
-    exact (TopCat.homeoOfIso (forgetToTop.mapIso (eV x))).symm.isProperMap.isSpectralMap.comp
-      (hg.comp (TopCat.homeoOfIso (forgetToTop.mapIso (eU x))).isProperMap.isSpectralMap)
-  have hB : Opens.IsBasis {W : Opens X.obj | W ∈ X.obj.affinoidOpens ∧ ∃ x : X.obj, W ≤ V x} :=
+        (quasiCompact_presentationLimitPreAdicSpaceComap (c x).targetPresentation
+          (c x).sourcePresentation (c x).targetLe (c x).sourceLe (c x).isSheafSource
+          ((ObjectProperty.prop_iff_of_iso isAdic (c x).targetIso).mp
+            (isAdic_restrict _ X.property))
+          (c x).pairHom fun J hJ ↦ IsTateRing.isOpen_map_of_isOpen (c x).pairHom.toRingHom hJ)
+    rw [restrictPreimage_base_eq_of_iso (c x).fac]
+    exact (TopCat.homeoOfIso
+        (forgetToTop.mapIso (c x).targetIso)).symm.isProperMap.isSpectralMap.comp
+      (hg.comp (TopCat.homeoOfIso (forgetToTop.mapIso (c x).sourceIso)).isProperMap.isSpectralMap)
+  have hB : Opens.IsBasis {W : Opens X.obj | W ∈ X.obj.affinoidOpens ∧ ∃ x : X.obj, W ≤ (c x).V} :=
     Opens.isBasis_iff_nbhd.mpr fun {U z} hzU ↦ by
       obtain ⟨W, hW, hzW, hWle⟩ := (Opens.isBasis_iff_nbhd.mp
-        (isBasis_affinoidOpens X.property.isLocallyAffinoid)) (Opens.mem_inf.mpr ⟨hzU, hx z⟩)
+        (isBasis_affinoidOpens X.property.isLocallyAffinoid)) (Opens.mem_inf.mpr ⟨hzU, (c z).mem⟩)
       exact ⟨W, ⟨hW, z, hWle.trans inf_le_right⟩, hzW, hWle.trans inf_le_left⟩
   refine (quasiCompact_iff_isSpectralMap f).mpr
     (isSpectralMap_of_isTopologicalBasis hB f.hom.base.hom.continuous ?_)
   rintro _ ⟨W, ⟨hW, x, hWV⟩, rfl⟩
-  have hcomp := ((Set.mapsTo_preimage f.hom.base (V x : Set X.obj)).isSpectralMap_restrict_iff
-    f.hom.base.hom.continuous.continuousOn (V x).isOpen).mp (hspec x)
+  have hcomp := ((Set.mapsTo_preimage f.hom.base ((c x).V : Set X.obj)).isSpectralMap_restrict_iff
+    f.hom.base.hom.continuous.continuousOn (c x).V.isOpen).mp (hspec x)
     (W : Set X.obj) hWV W.isOpen (isCompact_of_mem_affinoidOpens hW)
   rwa [Set.inter_eq_right.mpr (Set.preimage_mono hWV)] at hcomp
 
@@ -461,23 +752,25 @@ theorem IsFiniteEtale.isLocallyNoetherianAnalytic_source {f : Y ⟶ X} (hf : IsF
 /-- **The image of a finite étale morphism of adic spaces is clopen.** -/
 theorem IsFiniteEtale.isClopen_range {f : Y ⟶ X} (hf : IsFiniteEtale f) :
     IsClopen (Set.range f.hom.base) := by
-  choose V hx A iCA uA _ tA _ _ tateA S P hP B iCB tB rB hB T P' hP' hs φ hφ eV eU hfac using
-    (isFiniteEtale_iff f).mp hf
-  have hcov : IsOpenCover V := eq_top_iff.mpr fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hx x⟩
-  have hlocal (x) : IsClopen (Set.range ((V x : Set X.obj).restrictPreimage f.hom.base)) := by
-    let hU := TopCat.homeoOfIso (forgetToTop.mapIso (eU x))
-    let hV := TopCat.homeoOfIso (forgetToTop.mapIso (eV x))
-    have hrange : Set.range (presentationLimitPreAdicSpacePairComap (P x) (P' x) (hP x) (hP' x)
-        (hs x) (φ x)).base = Set.range (φ x).spaComap :=
+  let c (x : X.obj) : IsFiniteEtale.Chart f x := Classical.choice ((isFiniteEtale_iff f).mp hf x)
+  have hcov : IsOpenCover (fun x ↦ (c x).V) :=
+    eq_top_iff.mpr fun x _ ↦ Opens.mem_iSup.mpr ⟨x, (c x).mem⟩
+  have hlocal (x) : IsClopen (Set.range (((c x).V : Set X.obj).restrictPreimage f.hom.base)) := by
+    let hU := TopCat.homeoOfIso (forgetToTop.mapIso (c x).sourceIso)
+    let hV := TopCat.homeoOfIso (forgetToTop.mapIso (c x).targetIso)
+    have hrange : Set.range (presentationLimitPreAdicSpacePairComap (c x).targetPresentation
+        (c x).sourcePresentation (c x).targetLe (c x).sourceLe (c x).isSheafSource
+        (c x).pairHom).base = Set.range (c x).pairHom.spaComap :=
       congrArg Set.range (funext (presentationLimitPreAdicSpacePairComap_base_apply
-        (P x) (P' x) (hP x) (hP' x) (hs x) (φ x)))
-    have hr : Set.range ((V x : Set X.obj).restrictPreimage f.hom.base) =
-        hV ⁻¹' Set.range (φ x).spaComap := by
-      rw [restrictPreimage_base_eq_of_iso (hfac x)]
+        (c x).targetPresentation (c x).sourcePresentation (c x).targetLe (c x).sourceLe
+        (c x).isSheafSource (c x).pairHom))
+    have hr : Set.range (((c x).V : Set X.obj).restrictPreimage f.hom.base) =
+        hV ⁻¹' Set.range (c x).pairHom.spaComap := by
+      rw [restrictPreimage_base_eq_of_iso (c x).fac]
       exact (Set.range_comp _ _).trans
         ((congrArg (hV.symm '' ·) (hU.surjective.range_comp _)).trans
           ((hV.toEquiv.image_symm_eq_preimage _).trans (congrArg (hV ⁻¹' ·) hrange)))
-    exact hr ▸ (hφ x).isClopen_range_spaComap.preimage hV.continuous
+    exact hr ▸ (c x).isFiniteEtale.isClopen_range_spaComap.preimage hV.continuous
   simp_rw [Set.range_restrictPreimage] at hlocal
   exact ⟨hcov.isClosed_iff_coe_preimage.mpr fun x ↦ (hlocal x).1,
     hcov.isOpen_iff_coe_preimage.mpr fun x ↦ (hlocal x).2⟩
