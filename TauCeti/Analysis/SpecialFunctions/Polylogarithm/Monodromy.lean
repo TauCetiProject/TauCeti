@@ -16,8 +16,8 @@ import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.Complex.Conformal.Continuation.Log
 import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.GroupTheory.GroupAction.Closure
 
 /-!
@@ -36,10 +36,11 @@ counterclockwise continuation shifts are assigned to `periph0⁻¹` and `periph1
 * `TauCeti.Polylog.IsPolylogTowerGerm`: germ-level `γ0`/`γ1` monodromy and universal-cover
   equivariance at `1 / 2` normalized by `F (1 / 2) 0 = Complex.log (1 / 2)`.
 * `TauCeti.Polylog.continuesInside_polylogTower`, `TauCeti.Polylog.polylogBranch`,
+  `TauCeti.Polylog.polylogBranch_trans`, `TauCeti.Polylog.eqOn_polylogBranch_comp_polylogTower`,
   `TauCeti.Polylog.polylogBranch_eq_polylog_of_one_sub_mem_slitPlane`,
   `TauCeti.Polylog.polylogBranch_smul`, `TauCeti.Polylog.exists_polylogBranch_monodromy`: all-height
-  continuation, universal-cover branch, principal-domain comparison, and polynomial
-  `π₁`-equivariance of `polylogTower N`.
+  continuation, universal-cover branch, concatenation, principal-section agreement, principal-domain
+  comparison, and polynomial `π₁`-equivariance of `polylogTower N`.
 
 ## References
 
@@ -283,69 +284,25 @@ theorem eventuallyEq_log_half {N : ℕ} {F : ℂ → Fin (N + 1) → ℂ}
 
 end IsPolylogTowerGerm
 
-private noncomputable def logCont0 (t : I) (z : ℂ) : ℂ :=
-  Complex.log (z * Complex.exp (-(2 * Real.pi * Complex.I * (t : ℂ)))) +
-    2 * Real.pi * Complex.I * (t : ℂ)
+private theorem exists_isAnalyticContinuationAlong_log_γ0 :
+    ∃ f : I → ℂ → ℂ, IsAnalyticContinuationAlong f (fun t => (γ0 t : ℂ)) univ ∧
+      f 0 = Complex.log ∧ ∀ z, f 1 z = Complex.log z + 2 * Real.pi * Complex.I := by
+  simpa [coe_γ0] using
+    exists_isAnalyticContinuationAlong_log_circleMap (by norm_num : (0 : ℝ) < 1 / 2)
 
-private theorem logCont0_zero : logCont0 0 = Complex.log := by ext z; simp [logCont0]
-
-private theorem logCont0_one (z : ℂ) : logCont0 1 z = Complex.log z + 2 * Real.pi * Complex.I := by
-  have h1 : (((1 : I) : ℝ) : ℂ) = 1 := by simp
-  rw [logCont0, h1, mul_one, Complex.exp_neg, Complex.exp_two_pi_mul_I, inv_one, mul_one]
-
-private theorem exp_logCont0 (t : I) {z : ℂ} (hz : z ≠ 0) : Complex.exp (logCont0 t z) = z := by
-  rw [logCont0, Complex.exp_add, Complex.exp_log (mul_ne_zero hz (Complex.exp_ne_zero _)),
-    mul_assoc, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero, mul_one]
-
-private theorem isAnalyticContinuationAlong_logCont0 :
-    IsAnalyticContinuationAlong logCont0 (fun t => (γ0 t : ℂ)) univ where
-  continuousOn := (continuous_subtypeVal.comp γ0.continuous).continuousOn
-  analyticAt t _ := by
-    have hval : (γ0 t : ℂ) * Complex.exp (-(2 * Real.pi * Complex.I * (t : ℂ))) ∈
-        Complex.slitPlane := (coe_γ0_mul_exp_neg t).symm ▸ half_mem_slitPlane
-    exact ((analyticAt_id.mul analyticAt_const).clog hval).add analyticAt_const
-  locallyEq t _ := by
-    let rot : I × ℂ → ℂ := fun p => p.2 * Complex.exp (-(2 * Real.pi * Complex.I * ((p.1 : ℝ) : ℂ)))
-    have hrot_val : rot (t, (γ0 t : ℂ)) ∈ Complex.slitPlane := by
-      dsimp only [rot]; exact (coe_γ0_mul_exp_neg t).symm ▸ half_mem_slitPlane
-    have hcont1 : ContinuousAt (fun p : I × ℂ => logCont0 p.1 p.2) (t, (γ0 t : ℂ)) :=
-      ((by fun_prop : Continuous rot).continuousAt.clog hrot_val).add (by fun_prop)
-    have hcont2 : ContinuousAt (fun p : I × ℂ => logCont0 t p.2) (t, (γ0 t : ℂ)) :=
-      ((continuous_snd.mul continuous_const).continuousAt.clog hrot_val).add continuousAt_const
-    have hlt : ∀ᶠ p : I × ℂ in 𝓝 (t, (γ0 t : ℂ)), ‖logCont0 p.1 p.2 - logCont0 t p.2‖ < 1 := by
-      simpa using Metric.tendsto_nhds.mp (hcont1.sub hcont2) 1 zero_lt_one
-    have hmem : {p : I × ℂ | ‖logCont0 p.1 p.2 - logCont0 t p.2‖ < 1 ∧ p.2 ≠ 0} ∈
-        𝓝 t ×ˢ 𝓝 (γ0 t : ℂ) := by
-      rw [← nhds_prod_eq]; exact hlt.and (continuous_snd.continuousAt.eventually
-        (eventually_ne_nhds (ThricePuncturedSphere.ne_zero _)))
-    obtain ⟨V, hV, W', hW', hVW'⟩ := Filter.mem_prod_iff.mp hmem
-    obtain ⟨ε, hε, hεW⟩ := Metric.mem_nhds_iff.mp hW'
-    filter_upwards [nhdsWithin_le_nhds (Filter.inter_mem hV
-      ((continuous_subtypeVal.comp γ0.continuous).continuousAt.preimage_mem_nhds
-        (isOpen_ball.mem_nhds (mem_ball_self hε))))] with u ⟨huV, huW⟩
-    filter_upwards [isOpen_ball.mem_nhds huW] with z hzW
-    obtain ⟨hnorm, hz0⟩ := hVW' (mk_mem_prod huV (hεW hzW))
-    exact Complex.eq_of_exp_eq_of_norm_sub_lt
-      ((exp_logCont0 u hz0).trans (exp_logCont0 t hz0).symm)
-      (hnorm.trans (by linarith [Real.two_le_pi]))
-
-private noncomputable def li1Cont1 (t : I) (z : ℂ) : ℂ := -logCont0 t (1 - z)
-
-private theorem li1Cont1_zero : li1Cont1 0 = polylog 1 := by ext z; simp [li1Cont1, logCont0_zero]
-
-private theorem li1Cont1_one (z : ℂ) : li1Cont1 1 z = polylog 1 z - 2 * Real.pi * Complex.I := by
-  simp [li1Cont1, logCont0_one]; ring
-
-private theorem isAnalyticContinuationAlong_li1Cont1 :
-    IsAnalyticContinuationAlong li1Cont1 (fun t => (γ1 t : ℂ)) univ where
-  continuousOn := (continuous_subtypeVal.comp γ1.continuous).continuousOn
-  analyticAt t _ := (((one_sub_coe_γ1 t).symm ▸ isAnalyticContinuationAlong_logCont0.analyticAt t
-    (mem_univ t)).comp (analyticAt_const.sub analyticAt_id)).neg
-  locallyEq t _ := by
-    filter_upwards [isAnalyticContinuationAlong_logCont0.locallyEq t (mem_univ t)] with u hu
+private theorem exists_isAnalyticContinuationAlong_li1_γ1 :
+    ∃ f : I → ℂ → ℂ, IsAnalyticContinuationAlong f (fun t => (γ1 t : ℂ)) univ ∧
+      f 0 = polylog 1 ∧ ∀ z, f 1 z = polylog 1 z - 2 * Real.pi * Complex.I := by
+  obtain ⟨l, hl, hl0, hl1⟩ := exists_isAnalyticContinuationAlong_log_γ0
+  refine ⟨fun t z => -l t (1 - z), ⟨(continuous_subtypeVal.comp γ1.continuous).continuousOn,
+    fun t _ => (((one_sub_coe_γ1 t).symm ▸ hl.analyticAt t (mem_univ t)).comp
+      (analyticAt_const.sub analyticAt_id)).neg, fun t _ => ?_⟩, ?_, fun z => ?_⟩
+  · filter_upwards [hl.locallyEq t (mem_univ t)] with u hu
     have hcont : ContinuousAt (fun z : ℂ => 1 - z) (γ1 u : ℂ) :=
       continuousAt_const.sub continuousAt_id
-    filter_upwards [hcont.eventually ((one_sub_coe_γ1 u).symm ▸ hu)] with z hz; simp [li1Cont1, hz]
+    filter_upwards [hcont.eventually ((one_sub_coe_γ1 u).symm ▸ hu)] with z hz; simp [hz]
+  · ext z; simp [hl0]
+  · simp [hl1]; ring
 
 private noncomputable def logSing1 (N : ℕ) (w z : ℂ) : Fin (N + 1) → ℂ :=
   fun i => if (i : ℕ) = 0 then 0 else
@@ -480,21 +437,22 @@ theorem eventuallyEq_periph0_inv_comp_of_γ0 {N : ℕ} {F : ℂ → Fin (N + 1) 
     (hFG : ∀ i : Fin N, (fun z => F z i.succ) =ᶠ[𝓝 (1 / 2 : ℂ)] fun z => G z i)
     {f : I → ℂ → Fin (N + 1) → ℂ} (hf : IsAnalyticContinuationAlong f (fun t => (γ0 t : ℂ)) univ)
     (hf0 : f 0 =ᶠ[𝓝 (1 / 2 : ℂ)] F) : f 1 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogMonodromy N periph0⁻¹ ∘ F := by
+  obtain ⟨l, hl, hl0, hl1⟩ := exists_isAnalyticContinuationAlong_log_γ0
   have hF0_eq := hF.eventuallyEq_log_half hF0
-  let g : I → ℂ → Fin (N + 1) → ℂ := fun t z => Fin.cases (logCont0 t z) (fun i => G z i)
+  let g : I → ℂ → Fin (N + 1) → ℂ := fun t z => Fin.cases (l t z) (fun i => G z i)
   have hγ0_ball : ∀ t : I, (γ0 t : ℂ) ∈ ball 0 1 := fun t => by
     rw [mem_ball, dist_zero_right, norm_coe_γ0]; norm_num
   have hg : IsAnalyticContinuationAlong g (fun t => (γ0 t : ℂ)) univ :=
     ⟨(continuous_subtypeVal.comp γ0.continuous).continuousOn, fun t _ => AnalyticAt.pi <| Fin.cases
-      (isAnalyticContinuationAlong_logCont0.analyticAt t (mem_univ t))
+      (hl.analyticAt t (mem_univ t))
       (fun i => analyticAt_pi_iff.1 (hGan _ (hγ0_ball t)) i), fun t _ =>
-      (isAnalyticContinuationAlong_logCont0.locallyEq t (mem_univ t)).mono fun _ hu =>
+      (hl.locallyEq t (mem_univ t)).mono fun _ hu =>
         hu.mono fun _ hz => funext (Fin.cases hz fun _ => rfl)⟩
   have hg0 : g 0 =ᶠ[𝓝 (1 / 2 : ℂ)] F := (eventually_all.mpr <| Fin.cases
-    (hF0_eq.symm.mono fun z hz => by simp [g, logCont0_zero, hz])
+    (hF0_eq.symm.mono fun z hz => by simp [g, hl0, hz])
     (fun i => (hFG i).symm.mono fun z hz => by simp [g, hz])).mono fun _ => funext
   have hg1 : g 1 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogMonodromy N periph0⁻¹ ∘ F :=
-    (eventually_all.mpr <| Fin.cases (hF0_eq.mono fun z hz => by simp [g, logCont0_one, hz])
+    (eventually_all.mpr <| Fin.cases (hF0_eq.mono fun z hz => by simp [g, hl1, hz])
       (fun i => (hFG i).mono fun z hz => by simp [g, ← hz])).mono fun _ => funext
   exact ((by rw [Path.target, coe_basePt] : (γ0 1 : ℂ) = 1 / 2) ▸
     hf.eventuallyEq hg isPreconnected_univ (mem_univ 0) (mem_univ 1)
@@ -510,23 +468,21 @@ theorem eventuallyEq_periph1_inv_comp_of_γ1 {N : ℕ} {F : ℂ → Fin (N + 1) 
   have hGF : (fun z => A z + logSing1 N (polylog 1 z) z) =ᶠ[𝓝 (1 / 2 : ℂ)] F :=
     (hG.eventuallyEq_iff_eq hF).mpr hAval
   have hF0_eq := hF.eventuallyEq_log_half hF0
-  let g : I → ℂ → Fin (N + 1) → ℂ := fun t z => A z + logSing1 N (li1Cont1 t z) z
+  obtain ⟨l, hl, hl0, hl1⟩ := exists_isAnalyticContinuationAlong_li1_γ1
+  let g : I → ℂ → Fin (N + 1) → ℂ := fun t z => A z + logSing1 N (l t z) z
   have hγ1_ball : ∀ t : I, (γ1 t : ℂ) ∈ ball (1 : ℂ) (3 / 4) := fun t => by
     rw [mem_ball, dist_eq_norm, norm_coe_γ1_sub_one]; norm_num
-  have hγ1_slit : ∀ t : I, (γ1 t : ℂ) ∈ Complex.slitPlane := fun t =>
-    Complex.mem_slitPlane_iff.mpr (Or.inl (mem_rightOpen.1 (γ1_mem_rightOpen t)))
   have hg : IsAnalyticContinuationAlong g (fun t => (γ1 t : ℂ)) univ :=
     ⟨(continuous_subtypeVal.comp γ1.continuous).continuousOn, fun t _ => (hAan _ (hγ1_ball t)).add
-      (analyticAt_logSing1 N (isAnalyticContinuationAlong_li1Cont1.analyticAt t (mem_univ t))
-        (hγ1_slit t)), fun t _ =>
-      (isAnalyticContinuationAlong_li1Cont1.locallyEq t (mem_univ t)).mono fun _ hu =>
+      (analyticAt_logSing1 N (hl.analyticAt t (mem_univ t)) (γ1_mem_slitPlane t)), fun t _ =>
+      (hl.locallyEq t (mem_univ t)).mono fun _ hu =>
         hu.mono fun z hz => by ext i; simp [g, logSing1, hz]⟩
-  have hg0 : g 0 =ᶠ[𝓝 (1 / 2 : ℂ)] F := by simpa [g, li1Cont1_zero] using hGF
+  have hg0 : g 0 =ᶠ[𝓝 (1 / 2 : ℂ)] F := by simpa [g, hl0] using hGF
   have hg1 : g 1 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogMonodromy N periph1⁻¹ ∘ F := by
     filter_upwards [hGF, hF0_eq] with z hz hz0; ext i
     if hi : (i : ℕ) = 0 then simp [g, logSing1, hi, ← hz]
     else rw [Function.comp_apply, polylogMonodromy_periph1_inv, hz0, ← hz]
-         simp only [g, Pi.add_apply, logSing1, hi, ↓reduceIte, li1Cont1_one]; ring
+         simp only [g, Pi.add_apply, logSing1, hi, ↓reduceIte, hl1]; ring
   exact ((by rw [Path.target, coe_basePt] : (γ1 1 : ℂ) = 1 / 2) ▸
     hf.eventuallyEq hg isPreconnected_univ (mem_univ 0) (mem_univ 1)
       ((by rw [Path.source, coe_basePt] : (γ1 0 : ℂ) = 1 / 2).symm ▸ hf0.trans hg0.symm)).trans hg1
@@ -637,6 +593,34 @@ theorem isPolylogTowerGerm_polylogBranch_comp_of_continuousAt (N : ℕ)
   rw [polylogBranch_def]
   exact (isPolylogTowerGerm_polylogTower_basePt N).universalCoverBranch_comp_of_continuousAt
     (continuesInside_polylogTower N) hsec hproj
+
+/-- **Concatenation rule for `polylogBranch N`.** Continuing `polylogTower N` along `γ` and then
+continuing from `f 1` along `δ` gives `polylogBranch N ⟨z₂, ⟦γ.trans δ⟧⟩ = g 1 (z₂ : ℂ)`. -/
+theorem polylogBranch_trans (N : ℕ) {z₁ z₂ : ThricePuncturedSphere}
+    {γ : Path basePt z₁} {δ : Path z₁ z₂} {f g : I → ℂ → Fin (N + 1) → ℂ}
+    (hf : IsAnalyticContinuationAlong f (fun t => (γ t : ℂ)) univ)
+    (hf0 : f 0 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogTower N)
+    (hg : IsAnalyticContinuationAlong g (fun t => (δ t : ℂ)) univ)
+    (hg0 : g 0 =ᶠ[𝓝 (z₁ : ℂ)] f 1) :
+    polylogBranch N ⟨z₂, Path.Homotopic.Quotient.mk (γ.trans δ)⟩ = g 1 (z₂ : ℂ) := by
+  simpa [coe_basePt, polylogBranch_def] using
+    (continuesInside_polylogTower N).universalCoverBranch_trans hf (coe_basePt.symm ▸ hf0) hg hg0
+
+/-- **Principal-section agreement for `polylogBranch N`.** On any preconnected open subset `V` of
+the principal tower domain containing `1 / 2`, composing `polylogBranch N` with a continuous
+section `sec : ℂ → UniversalCover basePt` normalized at `basepointLift basePt` recovers
+`polylogTower N` identically on `V`. -/
+theorem eqOn_polylogBranch_comp_polylogTower (N : ℕ) {V : Set ℂ} (hVo : IsOpen V)
+    (hVc : IsPreconnected V)
+    (hV : V ⊆ {z : ℂ | z ∈ Complex.slitPlane ∧ (N ≠ 0 → 1 - z ∈ Complex.slitPlane)})
+    (h12 : (1 / 2 : ℂ) ∈ V) {sec : ℂ → UniversalCover basePt} (hsec : ContinuousOn sec V)
+    (hproj : ∀ z ∈ V, ((sec z).proj : ℂ) = z)
+    (hsec0 : sec (1 / 2 : ℂ) = UniversalCover.basepointLift basePt) :
+    EqOn (polylogBranch N ∘ sec) (polylogTower N) V := by
+  rw [polylogBranch_def]
+  exact (continuesInside_polylogTower N).eqOn_universalCoverBranch_comp_of_analyticOnNhd hVo hVc
+    (coe_basePt.symm ▸ h12) hsec hproj (coe_basePt.symm ▸ hsec0)
+    ((analyticOnNhd_polylogTower N).mono hV) EventuallyEq.rfl
 
 /-- Along a path `γ` from `basePt = 1 / 2` in `ThricePuncturedSphere` staying in the principal
 polylogarithm domain `{z | 1 - z ∈ Complex.slitPlane}` (without needing `γ t ∈ Complex.slitPlane`

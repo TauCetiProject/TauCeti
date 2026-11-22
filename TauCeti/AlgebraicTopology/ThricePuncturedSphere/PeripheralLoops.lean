@@ -40,7 +40,8 @@ monodromy of a three-point cover along these elements is the permutation triple 
 * `TauCeti.ThricePuncturedSphere.γ0`, `TauCeti.ThricePuncturedSphere.γ1`: the two loops at `b`.
 * `norm_coe_γ0`, `norm_coe_γ1_sub_one`: `γ0` runs on the circle `|z| = 1/2` and `γ1` on the
   circle `|z − 1| = 1/2`.
-* `γ0_mem_leftOpen`, `γ1_mem_rightOpen`: `γ0` stays in `A` and `γ1` stays in `B`.
+* `γ0_mem_leftOpen`, `γ1_mem_rightOpen`, `γ1_mem_slitPlane`: `γ0` stays in `A` and `γ1` stays in
+  `B` (and hence in `Complex.slitPlane`).
 * `range_γ0_inter_range_γ1`: the two loops meet only at the basepoint.
 * `mob01_basePt`, `mob01_γ0`, `mob01_γ1`: `z ↦ 1 − z` fixes the basepoint and exchanges the two
   loops.
@@ -137,6 +138,10 @@ theorem γ1_mem_rightOpen (t : unitInterval) : γ1 t ∈ rightOpen := by
   have h := re_le_norm (1 - (γ1 t : ℂ))
   rw [norm_sub_rev, norm_coe_γ1_sub_one, sub_re, one_re] at h
   linarith
+
+/-- Along `γ1`, the point `γ1 t` stays in the right half-plane, hence in `Complex.slitPlane`. -/
+theorem γ1_mem_slitPlane (t : unitInterval) : (γ1 t : ℂ) ∈ Complex.slitPlane :=
+  Or.inl (mem_rightOpen.1 (γ1_mem_rightOpen t))
 
 /-- The two peripheral loops meet only at the basepoint: the circles `|z| = 1/2` and
 `|z − 1| = 1/2` are externally tangent at `1/2`. -/
