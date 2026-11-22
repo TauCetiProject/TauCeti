@@ -12,8 +12,9 @@ public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 # The parametrization of the standard `1`-simplex by the unit interval
 
 Values of Mathlib's homeomorphism `Convexity.StdSimplex.homeomorphI` between the standard
-`1`-simplex and the unit interval: it is the last weight (`homeomorphI_apply_eq_mk`), and it sends
-the two faces of the standard `1`-simplex, its vertices, to `1` and `0`
+`1`-simplex and the unit interval: it is the last weight (`homeomorphI_apply_eq_mk`), its inverse
+has weights `1 - t` and `t` (`homeomorphI_symm_weights_zero`, `homeomorphI_symm_weights_one`), and
+it sends the two faces of the standard `1`-simplex, its vertices, to `1` and `0`
 (`homeomorphI_map_succAbove_zero`, `homeomorphI_map_succAbove_one`).
 
 More generally, the weight of a vertex of any real standard simplex is a continuous map to the
@@ -29,6 +30,16 @@ namespace Convexity.StdSimplex
 lemma homeomorphI_apply_eq_mk (w : StdSimplex ℝ (Fin 2)) :
     homeomorphI w = ⟨w.weights 1, w.weights_nonneg 1, w.weights_apply_le_one 1⟩ :=
   Subtype.ext (homeomorphI_apply_coe w)
+
+/-- The last weight of the point of the standard `1`-simplex of parameter `t` is `t`. -/
+lemma homeomorphI_symm_weights_one (t : unitInterval) : (homeomorphI.symm t).weights 1 = t := by
+  rw [← homeomorphI_apply_coe, Homeomorph.apply_symm_apply]
+
+/-- The first weight of the point of the standard `1`-simplex of parameter `t` is `1 - t`. -/
+lemma homeomorphI_symm_weights_zero (t : unitInterval) :
+    (homeomorphI.symm t).weights 0 = 1 - t := by
+  rw [← homeomorphI_symm_weights_one t, ← total_fin_two (homeomorphI.symm t)]
+  ring
 
 /-- The `0`-th face of the standard `1`-simplex is its last vertex, of parameter `1`. -/
 -- Not a simp lemma: `Fin.succAbove_zero` rewrites the face map first.

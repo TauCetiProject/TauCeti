@@ -110,7 +110,7 @@ theorem squareUpperTriangle_apply_one (w : StdSimplex ℝ (Fin 3)) :
   StdSimplex.coe_weightsOneAddTwoI_apply w
 
 /-- The diagonal faces of the two triangles of the square agree: both are `z ↦ (z₁, z₁)`. -/
-private theorem squareLowerTriangle_map_succAbove_one (z : StdSimplex ℝ (Fin 2)) :
+theorem squareLowerTriangle_map_succAbove_one (z : StdSimplex ℝ (Fin 2)) :
     squareLowerTriangle (StdSimplex.map (Fin.succAbove 1) z) =
       squareUpperTriangle (StdSimplex.map (Fin.succAbove 2) z) := by
   have h₁ : (StdSimplex.map (Fin.succAbove 1) z).weights 2 = z.weights 1 :=

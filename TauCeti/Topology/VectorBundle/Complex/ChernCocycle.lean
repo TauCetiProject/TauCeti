@@ -72,6 +72,7 @@ public section
 noncomputable section
 
 open AlgebraicTopology Bundle CategoryTheory Convexity Real Set Topology
+open Convexity.StdSimplex (faceInclusion)
 open scoped unitInterval Topology.Homotopy
 
 namespace TauCeti
@@ -95,51 +96,34 @@ private theorem exp_sweptAngle {w : I → Circle} (hw : Continuous w) :
     Circle.exp (sweptAngle w) = w 1 / w 0 := by
   rw [sweptAngle, dite_eq_left hw, Circle.exp_angleChange]
 
+/-- The angle swept by a continuous map is the change of one of its continuous lifts. -/
+private theorem exists_sweptAngle_eq_sub {w : I → Circle} (hw : Continuous w) :
+    ∃ θ : I → ℝ, Continuous θ ∧ (∀ t, Circle.exp (θ t) = w t) ∧ sweptAngle w = θ 1 - θ 0 := by
+  obtain ⟨θ, hθ⟩ := Circle.exists_lift (⟨⟨w, hw⟩, rfl, rfl⟩ : Path (w 0) (w 1))
+  exact ⟨θ, θ.continuous, hθ, sweptAngle_eq_sub hw θ.continuous hθ⟩
+
 private theorem sweptAngle_mul {w w' : I → Circle} (hw : Continuous w) (hw' : Continuous w') :
     sweptAngle (w * w') = sweptAngle w + sweptAngle w' := by
-  obtain ⟨θ, hθ⟩ := Circle.exists_lift (⟨⟨w, hw⟩, rfl, rfl⟩ : Path (w 0) (w 1))
-  obtain ⟨θ', hθ'⟩ := Circle.exists_lift (⟨⟨w', hw'⟩, rfl, rfl⟩ : Path (w' 0) (w' 1))
-  rw [sweptAngle_eq_sub hw θ.continuous hθ, sweptAngle_eq_sub hw' θ'.continuous hθ',
-    sweptAngle_eq_sub (hw.mul hw') (θ.continuous.add θ'.continuous) fun t ↦ by
-      rw [Pi.add_apply, Circle.exp_add]
-      exact congrArg₂ (· * ·) (hθ t) (hθ' t)]
-  simp only [Pi.add_apply]
-  ring
-
-/-- The inclusion of the facet of the standard simplex opposite the vertex `i`. -/
-private def faceMap {n : ℕ} (i : Fin (n + 2)) :
-    C(StdSimplex ℝ (Fin (n + 1)), StdSimplex ℝ (Fin (n + 2))) :=
-  ⟨StdSimplex.map i.succAbove, StdSimplex.continuous_map ℝ _⟩
-
-private theorem faceMap_apply {n : ℕ} (i : Fin (n + 2)) (z : StdSimplex ℝ (Fin (n + 1))) :
-    faceMap i z = StdSimplex.map i.succAbove z :=
-  (rfl)
-
-private theorem faceMap_single {n : ℕ} (i : Fin (n + 2)) (k : Fin (n + 1)) :
-    faceMap i (StdSimplex.single k) = StdSimplex.single (i.succAbove k) :=
-  StdSimplex.map_single _ _
-
-/-- Two composites of facet inclusions agree when the composites of the vertex maps do. -/
-private theorem faceMap_comp_faceMap {i : Fin 3} {j i' : Fin 4} {j' : Fin 3}
-    (h : j.succAbove ∘ i.succAbove = i'.succAbove ∘ j'.succAbove) :
-    (faceMap j).comp (faceMap i) = (faceMap i').comp (faceMap j') := by
-  ext1 z
-  simp only [ContinuousMap.comp_apply, faceMap_apply, ← StdSimplex.map_comp, h]
+  rw [sweptAngle, sweptAngle, sweptAngle, dite_eq_left hw, dite_eq_left hw',
+    dite_eq_left (hw.mul hw')]
+  exact Circle.angleChange_mul (⟨⟨w, hw⟩, rfl, rfl⟩ : Path (w 0) (w 1))
+    (⟨⟨w', hw'⟩, rfl, rfl⟩ : Path (w' 0) (w' 1))
 
 /-- A continuous map from the standard `2`-simplex to the circle sweeps no total angle around
 the boundary of the simplex: it lifts to `ℝ`, and the swept angles of the edges telescope. -/
 private theorem sum_sweptAngle_faces (g : C(StdSimplex ℝ (Fin 3), Circle)) :
     ∑ i : Fin 3, (-1 : ℝ) ^ (i : ℕ) *
-      sweptAngle (fun t ↦ g (faceMap i (StdSimplex.homeomorphI.symm t))) = 0 := by
+      sweptAngle (fun t ↦ g (faceInclusion i (StdSimplex.homeomorphI.symm t))) = 0 := by
   obtain ⟨G, ⟨-, hG⟩, -⟩ := Circle.isCoveringMap_exp.existsUnique_continuousMap_lifts g
     (StdSimplex.single 0) (Complex.arg (g (StdSimplex.single 0))) (Circle.exp_arg _)
-  have hface (i : Fin 3) : sweptAngle (fun t ↦ g (faceMap i (StdSimplex.homeomorphI.symm t))) =
+  have hface (i : Fin 3) :
+      sweptAngle (fun t ↦ g (faceInclusion i (StdSimplex.homeomorphI.symm t))) =
       G (StdSimplex.single (i.succAbove 1)) - G (StdSimplex.single (i.succAbove 0)) := by
-    have hc : Continuous fun t ↦ faceMap i (StdSimplex.homeomorphI.symm t) :=
-      (faceMap i).continuous.comp StdSimplex.homeomorphI.symm.continuous
+    have hc : Continuous fun t ↦ faceInclusion i (StdSimplex.homeomorphI.symm t) :=
+      (faceInclusion i).continuous.comp StdSimplex.homeomorphI.symm.continuous
     rw [sweptAngle_eq_sub (w := fun t ↦ g _) (g.continuous.comp hc) (θ := fun t ↦ G _)
       (G.continuous.comp hc) fun t ↦ congr_fun hG _]
-    simp [StdSimplex.homeomorphI_symm_one, StdSimplex.homeomorphI_symm_zero, faceMap_single]
+    simp [StdSimplex.homeomorphI_symm_one, StdSimplex.homeomorphI_symm_zero]
   simp only [Fin.sum_univ_three, hface]
   simp [Fin.succAbove]
 
@@ -259,18 +243,21 @@ private theorem continuous_frame_comp {B B' : Type*} [TopologicalSpace B] [Topol
 angles of its three edges, with the restrictions of `Φ`. It is an integer multiple of `2π`
 (`exp_triangleAngle`) and does not depend on `Φ` (`triangleAngle_eq`). -/
 private def triangleAngle (s : C(StdSimplex ℝ (Fin 3), X)) (Φ : ∀ y, F ≃L[ℂ] E (s y)) : ℝ :=
-  ∑ i : Fin 3, (-1 : ℝ) ^ (i : ℕ) * edgeAngle (s.comp (faceMap i)) fun z ↦ Φ (faceMap i z)
+  ∑ i : Fin 3, (-1 : ℝ) ^ (i : ℕ) *
+    edgeAngle (s.comp (faceInclusion i)) fun z ↦ Φ (faceInclusion i z)
 
 private theorem exp_triangleAngle (s : C(StdSimplex ℝ (Fin 3), X)) {Φ : ∀ y, F ≃L[ℂ] E (s y)}
     (hΦ : Continuous fun q : StdSimplex ℝ (Fin 3) × F ↦ TotalSpace.mk' F (s q.1) (Φ q.1 q.2)) :
     Circle.exp (triangleAngle s Φ) = 1 := by
-  have he (i : Fin 3) := exp_edgeAngle (s.comp (faceMap i)) (Φ := fun z ↦ Φ (faceMap i z))
-    (continuous_frame_comp hΦ (faceMap i).continuous)
+  have he (i : Fin 3) := exp_edgeAngle (s.comp (faceInclusion i))
+    (Φ := fun z ↦ Φ (faceInclusion i z)) (continuous_frame_comp hΦ (faceInclusion i).continuous)
   -- The ends of the edges are the vertices of `s`.
-  have hv (i : Fin 3) (k : Fin 2) : vertexValue (s.comp (faceMap i)) (fun z ↦ Φ (faceMap i z))
-      (StdSimplex.single k) = vertexValue s Φ (StdSimplex.single (i.succAbove k)) := by
-    rw [← faceMap_single]
-    -- `s.comp (faceMap i)` evaluates to `s ∘ faceMap i` by definition of `ContinuousMap.comp`.
+  have hv (i : Fin 3) (k : Fin 2) :
+      vertexValue (s.comp (faceInclusion i)) (fun z ↦ Φ (faceInclusion i z)) (StdSimplex.single k) =
+        vertexValue s Φ (StdSimplex.single (i.succAbove k)) := by
+    rw [← StdSimplex.faceInclusion_single]
+    -- `s.comp (faceInclusion i)` evaluates to `s ∘ faceInclusion i` by definition of
+    -- `ContinuousMap.comp`.
     rfl
   simp only [hv] at he
   simp only [triangleAngle, Fin.sum_univ_three, Fin.val_zero, Fin.val_one, Fin.val_two, pow_zero,
@@ -286,10 +273,10 @@ private theorem triangleAngle_eq (s : C(StdSimplex ℝ (Fin 3), X)) {Φ Φ' : �
   have h0 := sum_sweptAngle_faces
     ⟨fun y ↦ ((Φ y).trans (Φ' y).symm).normalizedDet, continuous_normalizedDet_trans_symm hΦ' hΦ⟩
   simp only [ContinuousMap.coe_mk] at h0
-  have he (i : Fin 3) := edgeAngle_eq_add (s.comp (faceMap i))
-    (Φ := fun z ↦ Φ (faceMap i z)) (Φ' := fun z ↦ Φ' (faceMap i z))
-    (continuous_frame_comp hΦ (faceMap i).continuous)
-    (continuous_frame_comp hΦ' (faceMap i).continuous)
+  have he (i : Fin 3) := edgeAngle_eq_add (s.comp (faceInclusion i))
+    (Φ := fun z ↦ Φ (faceInclusion i z)) (Φ' := fun z ↦ Φ' (faceInclusion i z))
+    (continuous_frame_comp hΦ (faceInclusion i).continuous)
+    (continuous_frame_comp hΦ' (faceInclusion i).continuous)
   simp only [triangleAngle, he, mul_add, Finset.sum_add_distrib]
   rw [h0, add_zero]
 
@@ -298,29 +285,30 @@ alternating sum of the angles around its four faces, each with its own chosen fr
 computed with the frame of `τ`, every edge of `τ` occurs in two faces with opposite signs. -/
 private theorem sum_triangleAngle_faces (τ : C(StdSimplex ℝ (Fin 4), X)) :
     ∑ j : Fin 4, (-1 : ℝ) ^ (j : ℕ) *
-      triangleAngle (τ.comp (faceMap j)) (simplexFrame F E (τ.comp (faceMap j))) = 0 := by
+      triangleAngle (τ.comp (faceInclusion j)) (simplexFrame F E (τ.comp (faceInclusion j))) =
+        0 := by
   have hΦ := continuous_simplexFrame F E τ
-  have hface (j : Fin 4) : triangleAngle (τ.comp (faceMap j))
-      (simplexFrame F E (τ.comp (faceMap j))) =
-      triangleAngle (τ.comp (faceMap j)) fun z ↦ simplexFrame F E τ (faceMap j z) :=
-    triangleAngle_eq _ (continuous_frame_comp hΦ (faceMap j).continuous)
+  have hface (j : Fin 4) : triangleAngle (τ.comp (faceInclusion j))
+      (simplexFrame F E (τ.comp (faceInclusion j))) =
+      triangleAngle (τ.comp (faceInclusion j)) fun z ↦ simplexFrame F E τ (faceInclusion j z) :=
+    triangleAngle_eq _ (continuous_frame_comp hΦ (faceInclusion j).continuous)
       (continuous_simplexFrame F E _)
   -- With the frame of `τ`, the angle of an edge only depends on its inclusion into `Δ³`.
   let T : C(StdSimplex ℝ (Fin 2), StdSimplex ℝ (Fin 4)) → ℝ := fun e ↦
     edgeAngle (τ.comp e) fun z ↦ simplexFrame F E τ (e z)
-  have hT (j : Fin 4) (i : Fin 3) : edgeAngle ((τ.comp (faceMap j)).comp (faceMap i))
-      (fun z ↦ simplexFrame F E τ (faceMap j (faceMap i z))) =
-      T ((faceMap j).comp (faceMap i)) :=
+  have hT (j : Fin 4) (i : Fin 3) : edgeAngle ((τ.comp (faceInclusion j)).comp (faceInclusion i))
+      (fun z ↦ simplexFrame F E τ (faceInclusion j (faceInclusion i z))) =
+      T ((faceInclusion j).comp (faceInclusion i)) :=
     -- Composition of continuous maps is associative by definition of `ContinuousMap.comp`.
     rfl
   simp only [hface]
   simp only [triangleAngle, hT, Fin.sum_univ_four, Fin.sum_univ_three]
-  rw [faceMap_comp_faceMap (i := 0) (j := 1) (i' := 0) (j' := 0) (by decide),
-    faceMap_comp_faceMap (i := 0) (j := 2) (i' := 0) (j' := 1) (by decide),
-    faceMap_comp_faceMap (i := 1) (j := 2) (i' := 1) (j' := 1) (by decide),
-    faceMap_comp_faceMap (i := 0) (j := 3) (i' := 0) (j' := 2) (by decide),
-    faceMap_comp_faceMap (i := 1) (j := 3) (i' := 1) (j' := 2) (by decide),
-    faceMap_comp_faceMap (i := 2) (j := 3) (i' := 2) (j' := 2) (by decide)]
+  rw [StdSimplex.faceInclusion_comp_faceInclusion (i := 0) (j := 1) (i' := 0) (j' := 0) (by decide),
+    StdSimplex.faceInclusion_comp_faceInclusion (i := 0) (j := 2) (i' := 0) (j' := 1) (by decide),
+    StdSimplex.faceInclusion_comp_faceInclusion (i := 1) (j := 2) (i' := 1) (j' := 1) (by decide),
+    StdSimplex.faceInclusion_comp_faceInclusion (i := 0) (j := 3) (i' := 0) (j' := 2) (by decide),
+    StdSimplex.faceInclusion_comp_faceInclusion (i := 1) (j := 3) (i' := 1) (j' := 2) (by decide),
+    StdSimplex.faceInclusion_comp_faceInclusion (i := 2) (j := 3) (i' := 2) (j' := 2) (by decide)]
   norm_num
   ring
 
@@ -358,12 +346,12 @@ private theorem clutchingCochain_d (c : ((singularChains ℤ).obj (TopCat.of X))
   set τ' := (TopCat.of X).toSSetObjEquiv _ τ
   -- The faces of a singular simplex are its restrictions to the facets.
   have hδ (j : Fin 4) : (TopCat.of X).toSSetObjEquiv _ ((TopCat.toSSet.obj (TopCat.of X)).δ j τ) =
-      τ'.comp (faceMap j) :=
+      τ'.comp (faceInclusion j) :=
     ContinuousMap.ext fun z ↦ TopCat.toSSetObjEquiv_δ_apply τ j z
   rw [LinearMap.comp_apply, singularChains_d_simplexChain (n := 2), map_sum, LinearMap.zero_apply]
   simp only [map_zsmul, clutchingCochain, chainsDesc_simplexChain_one, hδ, smul_eq_mul]
-  have h : ((∑ j : Fin 4, (-1 : ℤ) ^ (j : ℕ) * triangleNumber F E (τ'.comp (faceMap j)) : ℤ) : ℝ) *
-      (2 * π) = 0 := by
+  have h : ((∑ j : Fin 4, (-1 : ℤ) ^ (j : ℕ) * triangleNumber F E (τ'.comp (faceInclusion j)) :
+      ℤ) : ℝ) * (2 * π) = 0 := by
     push_cast
     rw [Finset.sum_mul]
     simp only [mul_assoc, triangleNumber_mul]
@@ -433,88 +421,54 @@ private theorem vertexValue_eq_clutchingFunction {B : Type*} {s : B → X} (Φ :
 /-- The angle swept along a reversed path is the negative of the angle along the path. -/
 private theorem sweptAngle_comp_symm {w : I → Circle} (hw : Continuous w) :
     sweptAngle (fun t ↦ w (σ t)) = -sweptAngle w := by
-  obtain ⟨θ, hθ⟩ := Circle.exists_lift (⟨⟨w, hw⟩, rfl, rfl⟩ : Path (w 0) (w 1))
-  rw [sweptAngle_eq_sub hw θ.continuous hθ, sweptAngle_eq_sub (w := fun t ↦ w (σ t))
-    (hw.comp unitInterval.continuous_symm)
-    (θ.continuous.comp unitInterval.continuous_symm) fun t ↦ hθ (σ t)]
+  obtain ⟨θ, hθ, hθw, hsw⟩ := exists_sweptAngle_eq_sub hw
+  rw [hsw, sweptAngle_eq_sub (w := fun t ↦ w (σ t)) (hw.comp unitInterval.continuous_symm)
+    (hθ.comp unitInterval.continuous_symm) fun t ↦ hθw (σ t)]
   simp
 
 /-! ### The triangulated cycle of a sphere -/
 
-/-- Two points of the square agree when their coordinates agree as real numbers. -/
-private theorem square_ext {y z : Fin 2 → I} (h₀ : (y 0 : ℝ) = z 0) (h₁ : (y 1 : ℝ) = z 1) :
-    y = z := by
-  ext i
-  fin_cases i
-  exacts [h₀, h₁]
-
-private theorem weights_one_homeomorphI_symm (t : I) :
-    (StdSimplex.homeomorphI.symm t).weights 1 = t := by
-  rw [← StdSimplex.homeomorphI_apply_coe, Homeomorph.apply_symm_apply]
-
-private theorem weights_zero_homeomorphI_symm (t : I) :
-    (StdSimplex.homeomorphI.symm t).weights 0 = 1 - t := by
-  rw [← weights_one_homeomorphI_symm t, ← StdSimplex.total_fin_two (StdSimplex.homeomorphI.symm t)]
-  ring
-
 /-- The weight of the vertex `j` vanishes on the facet opposite `j`. -/
 private theorem weights_faceMap_self {n : ℕ} (j : Fin (n + 2)) (z : StdSimplex ℝ (Fin (n + 1))) :
-    (faceMap j z).weights j = 0 :=
+    (faceInclusion j z).weights j = 0 :=
   StdSimplex.weights_map_succAbove_self j z
 
 /-- The weights of a point of the facet of `Δ²` opposite `j`, at the parameter `t` of the facet. -/
 private theorem weights_faceMap_homeomorphI_symm {j k : Fin 3} {i : Fin 2}
     (h : j.succAbove i = k) (t : I) :
-    (faceMap j (StdSimplex.homeomorphI.symm t)).weights k =
+    (faceInclusion j (StdSimplex.homeomorphI.symm t)).weights k =
       (StdSimplex.homeomorphI.symm t).weights i :=
   StdSimplex.weights_map_succAbove_of_eq h _
 
 private theorem squareLowerTriangle_faceMap_two (t : I) :
-    squareLowerTriangle (faceMap 2 (StdSimplex.homeomorphI.symm t)) = ![t, 0] := by
+    squareLowerTriangle (faceInclusion 2 (StdSimplex.homeomorphI.symm t)) = ![t, 0] := by
   refine square_ext ?_ ?_ <;> simp only [squareLowerTriangle_apply_zero,
     squareLowerTriangle_apply_one, weights_faceMap_self,
     weights_faceMap_homeomorphI_symm (j := 2) (i := 1) (k := 1) rfl,
-    weights_one_homeomorphI_symm] <;> simp
+    StdSimplex.homeomorphI_symm_weights_one] <;> simp
 
 private theorem squareLowerTriangle_faceMap_zero (t : I) :
-    squareLowerTriangle (faceMap 0 (StdSimplex.homeomorphI.symm t)) = ![1, t] := by
+    squareLowerTriangle (faceInclusion 0 (StdSimplex.homeomorphI.symm t)) = ![1, t] := by
   refine square_ext ?_ ?_ <;> simp only [squareLowerTriangle_apply_zero,
     squareLowerTriangle_apply_one, weights_faceMap_homeomorphI_symm (j := 0) (i := 0) (k := 1) rfl,
     weights_faceMap_homeomorphI_symm (j := 0) (i := 1) (k := 2) rfl,
-    weights_zero_homeomorphI_symm, weights_one_homeomorphI_symm] <;> simp
+    StdSimplex.homeomorphI_symm_weights_zero, StdSimplex.homeomorphI_symm_weights_one] <;> simp
 
 private theorem squareUpperTriangle_faceMap_zero (t : I) :
-    squareUpperTriangle (faceMap 0 (StdSimplex.homeomorphI.symm t)) = ![σ t, 1] := by
+    squareUpperTriangle (faceInclusion 0 (StdSimplex.homeomorphI.symm t)) = ![σ t, 1] := by
   refine square_ext ?_ ?_ <;> simp only [squareUpperTriangle_apply_zero,
     squareUpperTriangle_apply_one, weights_faceMap_homeomorphI_symm (j := 0) (i := 0) (k := 1) rfl,
     weights_faceMap_homeomorphI_symm (j := 0) (i := 1) (k := 2) rfl,
-    weights_zero_homeomorphI_symm, weights_one_homeomorphI_symm] <;> simp
+    StdSimplex.homeomorphI_symm_weights_zero, StdSimplex.homeomorphI_symm_weights_one] <;> simp
 
 private theorem squareUpperTriangle_faceMap_one (t : I) :
-    squareUpperTriangle (faceMap 1 (StdSimplex.homeomorphI.symm t)) = ![0, t] := by
+    squareUpperTriangle (faceInclusion 1 (StdSimplex.homeomorphI.symm t)) = ![0, t] := by
   refine square_ext ?_ ?_ <;> simp only [squareUpperTriangle_apply_zero,
     squareUpperTriangle_apply_one, weights_faceMap_self,
     weights_faceMap_homeomorphI_symm (j := 1) (i := 1) (k := 2) rfl,
-    weights_one_homeomorphI_symm] <;> simp
-
-/-- The diagonal faces of the two triangles of the square agree. -/
-private theorem squareLowerTriangle_comp_faceMap_one :
-    squareLowerTriangle.comp (faceMap 1) = squareUpperTriangle.comp (faceMap 2) := by
-  ext1 z
-  refine square_ext ?_ ?_ <;> simp only [ContinuousMap.comp_apply, squareLowerTriangle_apply_zero,
-    squareLowerTriangle_apply_one, squareUpperTriangle_apply_zero, squareUpperTriangle_apply_one,
-    faceMap_apply, StdSimplex.weights_map_succAbove_self,
-    StdSimplex.weights_map_succAbove_of_eq (R := ℝ) (n := 2) (j := 1) (i := 1) (k := 2) rfl,
-    StdSimplex.weights_map_succAbove_of_eq (R := ℝ) (n := 2) (j := 2) (i := 1) (k := 1) rfl,
-    add_zero, zero_add]
+    StdSimplex.homeomorphI_symm_weights_one] <;> simp
 
 /-! ### The value on the triangulated cycle of a sphere -/
-
-/-- The angle swept by a continuous map is the change of one of its continuous lifts. -/
-private theorem exists_sweptAngle_eq_sub {w : I → Circle} (hw : Continuous w) :
-    ∃ θ : I → ℝ, Continuous θ ∧ (∀ t, Circle.exp (θ t) = w t) ∧ sweptAngle w = θ 1 - θ 0 := by
-  obtain ⟨θ, hθ⟩ := Circle.exists_lift (⟨⟨w, hw⟩, rfl, rfl⟩ : Path (w 0) (w 1))
-  exact ⟨θ, θ.continuous, hθ, sweptAngle_eq_sub hw θ.continuous hθ⟩
 
 /-- **The clutching number from the edges of the square.** For a continuous frame `φ` along a
 sphere `p`, `2π` times the clutching number of `p` is the sum of the angles swept by the clutching
@@ -576,13 +530,13 @@ private theorem triangleAngle_comp {Y : Type*} [TopologicalSpace Y] (P : C(Y, X)
     (hφ : Continuous fun q : Y × F ↦ TotalSpace.mk' F (P q.1) (φ q.1 q.2))
     (S : C(StdSimplex ℝ (Fin 3), Y)) :
     triangleAngle (P.comp S) (simplexFrame F E _) =
-      edgeAngle (P.comp (S.comp (faceMap 0))) (fun z ↦ φ ((S.comp (faceMap 0)) z)) -
-        edgeAngle (P.comp (S.comp (faceMap 1))) (fun z ↦ φ ((S.comp (faceMap 1)) z)) +
-        edgeAngle (P.comp (S.comp (faceMap 2))) (fun z ↦ φ ((S.comp (faceMap 2)) z)) := by
+      edgeAngle (P.comp (S.comp (faceInclusion 0))) (fun z ↦ φ (S.comp (faceInclusion 0) z)) -
+        edgeAngle (P.comp (S.comp (faceInclusion 1))) (fun z ↦ φ (S.comp (faceInclusion 1) z)) +
+        edgeAngle (P.comp (S.comp (faceInclusion 2))) (fun z ↦ φ (S.comp (faceInclusion 2) z)) := by
   rw [triangleAngle_eq _ (Φ := fun y ↦ φ (S y)) (continuous_frame_comp hφ S.continuous)
     (continuous_simplexFrame F E _)]
-  simp only [triangleAngle, Fin.sum_univ_three]
-  norm_num
+  simp only [triangleAngle, Fin.sum_univ_three, Fin.val_zero, Fin.val_one, Fin.val_two, pow_zero,
+    pow_one, one_mul, neg_one_mul, neg_one_sq, ← sub_eq_add_neg]
   -- Composition of continuous maps is associative by definition of `ContinuousMap.comp`.
   rfl
 
@@ -592,15 +546,18 @@ private theorem triangleAngle_const (x : X) :
       edgeAngle (ContinuousMap.const _ x) (fun _ ↦ pointFrame F (E := E) x) := by
   rw [triangleAngle_eq _ (Φ := fun _ ↦ pointFrame F (E := E) x) (continuous_pointFrame_const F E x)
     (continuous_simplexFrame F E _)]
-  have h (i : Fin 3) : edgeAngle ((ContinuousMap.const (StdSimplex ℝ (Fin 3)) x).comp (faceMap i))
-      (fun _ ↦ pointFrame F (E := E) x) =
+  have h (i : Fin 3) :
+      edgeAngle ((ContinuousMap.const (StdSimplex ℝ (Fin 3)) x).comp (faceInclusion i))
+        (fun _ ↦ pointFrame F (E := E) x) =
       edgeAngle (ContinuousMap.const _ x) (fun _ ↦ pointFrame F (E := E) x) := by
-    rw [edgeAngle_eq_of_forall_eq ((ContinuousMap.const (StdSimplex ℝ (Fin 3)) x).comp (faceMap i))
-      (fun _ ↦ rfl) (Φ := fun _ ↦ pointFrame F (E := E) x) (continuous_pointFrame_const F E x),
+    rw [edgeAngle_eq_of_forall_eq
+      ((ContinuousMap.const (StdSimplex ℝ (Fin 3)) x).comp (faceInclusion i)) (fun _ ↦ rfl)
+      (Φ := fun _ ↦ pointFrame F (E := E) x) (continuous_pointFrame_const F E x),
       add_eq_left]
     -- The frame of `x` against itself has determinant `1`, which sweeps no angle.
-    have h1 (t : I) : vertexValue ((ContinuousMap.const (StdSimplex ℝ (Fin 3)) x).comp (faceMap i))
-        (fun _ ↦ pointFrame F (E := E) x) (StdSimplex.homeomorphI.symm t) = 1 :=
+    have h1 (t : I) :
+        vertexValue ((ContinuousMap.const (StdSimplex ℝ (Fin 3)) x).comp (faceInclusion i))
+          (fun _ ↦ pointFrame F (E := E) x) (StdSimplex.homeomorphI.symm t) = 1 :=
       -- The constant map takes the value `x`, so `vertexValue` is the determinant of
       -- `(pointFrame F x)⁻¹ ∘ pointFrame F x`.
       (congrArg ContinuousLinearEquiv.normalizedDet
@@ -625,14 +582,18 @@ private theorem clutchingCochain_squareChain {x : X} (p : Ω^ (Fin 2) X x) :
   have hm₀ := triangleNumber_mul (F := F) (E := E) (ContinuousMap.const (StdSimplex ℝ (Fin 3)) x)
   rw [triangleAngle_comp _ hφ] at hm₁ hm₂
   rw [triangleAngle_const] at hm₀
-  rw [← squareLowerTriangle_comp_faceMap_one,
-    edgeAngle_comp_of_mem_boundary p hφ (squareUpperTriangle.comp (faceMap 0))
+  -- The diagonal faces of the two triangles of the square agree.
+  have hdiag : squareLowerTriangle.comp (faceInclusion 1) =
+      squareUpperTriangle.comp (faceInclusion 2) :=
+    ContinuousMap.ext squareLowerTriangle_map_succAbove_one
+  rw [← hdiag,
+    edgeAngle_comp_of_mem_boundary p hφ (squareUpperTriangle.comp (faceInclusion 0))
       (g := fun t ↦ ![σ t, 1]) squareUpperTriangle_faceMap_zero fun t ↦ ⟨1, Or.inr rfl⟩,
-    edgeAngle_comp_of_mem_boundary p hφ (squareUpperTriangle.comp (faceMap 1))
+    edgeAngle_comp_of_mem_boundary p hφ (squareUpperTriangle.comp (faceInclusion 1))
       (g := fun t ↦ ![0, t]) squareUpperTriangle_faceMap_one fun t ↦ ⟨0, Or.inl rfl⟩] at hm₂
-  rw [edgeAngle_comp_of_mem_boundary p hφ (squareLowerTriangle.comp (faceMap 0))
+  rw [edgeAngle_comp_of_mem_boundary p hφ (squareLowerTriangle.comp (faceInclusion 0))
       (g := fun t ↦ ![1, t]) squareLowerTriangle_faceMap_zero fun t ↦ ⟨0, Or.inr rfl⟩,
-    edgeAngle_comp_of_mem_boundary p hφ (squareLowerTriangle.comp (faceMap 2))
+    edgeAngle_comp_of_mem_boundary p hφ (squareLowerTriangle.comp (faceInclusion 2))
       (g := fun t ↦ ![t, 0]) squareLowerTriangle_faceMap_two fun t ↦ ⟨1, Or.inl rfl⟩] at hm₁
   have hdeg := clutchingNumber_mul_two_pi_eq p hφ
   rw [GenLoop.squareChain_def, map_sub, map_add, map_nsmul, clutchingCochain_simplexMapChain,
@@ -677,6 +638,8 @@ theorem exists_addMonoidHom_hurewiczIntHom_eq_clutchingNumberHom :
       k • clutchingHomologyHom F E ((GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1) :=
     (congrArg (clutchingHomologyHom F E) (hk X x p)).trans (map_zsmul _ _ _)
   rw [HomotopyGroup.hurewiczIntHom_mk, clutchingNumberHom_apply_mk, ← h₁, h₂]
-  rfl
+  -- The domain of `P`, the value of `singularHomologyFunctor`, is by definition the homology of
+  -- the singular chains on which `clutchingHomologyHom` is defined.
+  exact AddMonoidHom.zsmul_apply _ _ _
 
 end TauCeti
