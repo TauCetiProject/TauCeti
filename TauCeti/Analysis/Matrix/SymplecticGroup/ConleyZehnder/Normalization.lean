@@ -23,7 +23,9 @@ paths that never meet the eigenvalue `-1`, and deduces the normalization axiom: 
 sufficiently small nondegenerate symmetric matrix `S`, the path `t ↦ exp (t J S)`, `t ∈ [0, 1]`,
 has index `-signature(S) / 2`. The bound is explicit, `2 ‖J S‖ < log 2` for the operator norm
 (`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_signature_div_two`), and its filter form is
-`TauCeti.GLSymplectic.eventually_conleyZehnderIndex_eq_neg_signature_div_two`. For small
+`TauCeti.GLSymplectic.eventually_conleyZehnderIndex_eq_neg_signature_div_two`; for a fixed
+nondegenerate `S`, the paths `t ↦ exp (t J (ε S))` have this index for small `ε > 0`
+(`TauCeti.GLSymplectic.eventually_conleyZehnderIndex_exp_smul_eq_neg_signature_div_two`). For small
 nondegenerate `S = diag (α, α)` this agrees with the computation on rotations
 `TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`, which covers
 all `|αⱼ| < 2π` but only diagonal `S`; here `S` is an arbitrary small nondegenerate symmetric
@@ -327,6 +329,24 @@ theorem eventually_conleyZehnderIndex_eq_neg_signature_div_two :
         conleyZehnderIndex γ = -(signature S : ℝ) / 2 := by
   filter_upwards [eventually_two_mul_norm_J_mul_lt] with S hK hS hSdet A B γ hγ
   exact conleyZehnderIndex_eq_neg_signature_div_two hS hSdet hK γ hγ
+
+/-- **Normalization of the Conley–Zehnder index for small multiples.** For a nondegenerate
+symmetric matrix `S` and every small `ε > 0`, the path `t ↦ exp (t J (ε S))`, `t ∈ [0, 1]`, of
+symplectic matrices has Conley–Zehnder index `-signature(S) / 2`. -/
+theorem eventually_conleyZehnderIndex_exp_smul_eq_neg_signature_div_two
+    {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hS : S.IsHermitian) (hSdet : IsUnit S.det) :
+    ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ {A B : GLSymplectic n ℝ} (γ : Path A B),
+      (∀ t : I, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
+        NormedSpace.exp ((t : ℝ) • (J n ℝ * (ε • S)))) →
+      conleyZehnderIndex γ = -(signature S : ℝ) / 2 := by
+  have ht : Tendsto (fun ε : ℝ ↦ ε • S) (𝓝[>] 0) (𝓝 0) := by
+    simpa using ((tendsto_id.smul_const S).mono_left nhdsWithin_le_nhds :
+      Tendsto (fun ε : ℝ ↦ ε • S) (𝓝[>] 0) (𝓝 ((0 : ℝ) • S)))
+  filter_upwards [ht.eventually eventually_conleyZehnderIndex_eq_neg_signature_div_two,
+    self_mem_nhdsWithin] with ε hε hε0 A B γ hγ
+  rw [hε (hS.smul (IsSelfAdjoint.all ε))
+      (by rw [det_smul]; exact ((IsUnit.mk0 ε (ne_of_gt hε0)).pow _).mul hSdet) γ hγ,
+    signature_smul_of_pos hε0]
 
 end GLSymplectic
 

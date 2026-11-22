@@ -55,8 +55,8 @@ The computation has three steps.
 
 Combined with the description of the one-periodic orbits of `ε F` for a Morse function `F` on a
 compact manifold, this grades all the generators of the Floer complex of a small Morse
-Hamiltonian: for small `ε > 0`, every one-periodic orbit of `ε F` is the constant orbit at a
-critical point `q`, nondegenerate, of index `ind_q(F) - n`
+Hamiltonian: for small `ε > 0`, every one-periodic orbit `γ` of `ε F` starts at a critical point
+`q = γ 0`, is nondegenerate, and has index `ind_q(F) - n`
 (`exists_pos_forall_conleyZehnderIndex_eq_manifoldMorseIndex_sub` in the namespace
 `TauCeti.SmoothTwoForm.IsNondegenerate`).
 
@@ -66,6 +66,8 @@ In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
 
 * `mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul`: at a critical point, the linearized
   flow of `ε F` is the exponential `exp (t ε L)` of the linearization of `X_F`.
+* `symplecticFormAt_fderiv_mpullbackWithin_hamiltonianVectorField_apply`: at a critical point,
+  `σ_p(L w, u)` is the critical Hessian `Hess F (p) (w, u)`.
 * `isSkewAdjoint_fderiv_mpullbackWithin_hamiltonianVectorField`: at a critical point, the
   linearization of `X_F` is skew-adjoint for `σ_p`.
 * `symplecticFormAt_mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul`: the linearized flow
@@ -75,8 +77,8 @@ In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
 * `eventually_conleyZehnderIndex_eq_manifoldMorseIndex_sub`: for small `ε > 0`, its
   Conley–Zehnder index is `ind_p(F) - n`.
 * `exists_pos_forall_conleyZehnderIndex_eq_manifoldMorseIndex_sub`: for a Morse function on a
-  compact manifold and small `ε > 0`, every one-periodic orbit of `ε F` is a nondegenerate constant
-  orbit at a critical point `q`, of index `ind_q(F) - n`.
+  compact manifold and small `ε > 0`, every one-periodic orbit `γ` of `ε F` starts at a critical
+  point `q = γ 0`, is nondegenerate, and has index `ind_q(F) - n`.
 
 ## References
 
@@ -158,6 +160,18 @@ theorem mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul (h : σ.IsNondeg
   exact hsol
 
 omit [T2Space M] in
+/-- **The linearization at a critical point contracts with `σ_p` to the Hessian.** For a
+nondegenerate two-form `σ`, a `C²` function `F` and a critical point `p` of `F`, let `L` be the
+derivative at the chart image of `p` of the coordinate expression of `X_F` in the preferred chart
+at `p`. Then `σ_p(L w, u) = Hess F (p) (w, u)`. -/
+theorem symplecticFormAt_fderiv_mpullbackWithin_hamiltonianVectorField_apply
+    (h : σ.IsNondegenerate) (hF : ContMDiff I 𝓘(ℝ) 2 F) (hcrit : mvfderiv I F p = 0) (w u : E) :
+    h.symplecticFormAt p (fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I p).symm
+        (σ.hamiltonianVectorField F) (range I)) (extChartAt I p p) w) u =
+      criticalHessian I F p w u :=
+  (h.symplecticFormAt_apply p _ u).trans (criticalHessian_apply_eq_eval₂_fderiv h hF hcrit w u).symm
+
+omit [T2Space M] in
 /-- **The linearization at a critical point is infinitesimally symplectic.** For a nondegenerate
 two-form `σ`, a `C²` function `F` and a critical point `p` of `F`, the derivative at the chart
 image of `p` of the coordinate expression of `X_F` in the preferred chart at `p` is skew-adjoint
@@ -171,12 +185,8 @@ theorem isSkewAdjoint_fderiv_mpullbackWithin_hamiltonianVectorField (h : σ.IsNo
     (σ.hamiltonianVectorField F) (range I)) (extChartAt I p p)
   intro w u
   -- `σ_p (L w, u)` is the Hessian, which is symmetric, while `σ_p` is antisymmetric.
-  have h1 : (h.symplecticFormAt p).toBilinForm (L w) u = criticalHessian I F p w u :=
-    (h.symplecticFormAt_apply p (L w) u).trans
-      (criticalHessian_apply_eq_eval₂_fderiv h hF hcrit w u).symm
-  have h2 : (h.symplecticFormAt p).toBilinForm (L u) w = criticalHessian I F p u w :=
-    (h.symplecticFormAt_apply p (L u) w).trans
-      (criticalHessian_apply_eq_eval₂_fderiv h hF hcrit u w).symm
+  have h1 := symplecticFormAt_fderiv_mpullbackWithin_hamiltonianVectorField_apply h hF hcrit w u
+  have h2 := symplecticFormAt_fderiv_mpullbackWithin_hamiltonianVectorField_apply h hF hcrit u w
   have h3 : (h.symplecticFormAt p).toBilinForm w (-(L u)) =
       -(h.symplecticFormAt p).toBilinForm w (L u) :=
     map_neg _ _
@@ -246,19 +256,15 @@ theorem eventually_conleyZehnderIndex_eq_manifoldMorseIndex_sub (h : σ.IsNondeg
         manifoldMorseIndex I F p - (Module.finrank ℝ E : ℝ) / 2 := by
   have hF2 : ContMDiff I 𝓘(ℝ) 2 F := hF.of_le (by norm_num)
   have hcrit := (isManifoldNondegenerateCriticalPoint_iff_criticalHessian.1 hp).2.1
-  set L := fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I p).symm
-    (σ.hamiltonianVectorField F) (range I)) (extChartAt I p p)
   -- `σ_p (L w, u)` is the critical Hessian, which is symmetric and nondegenerate.
-  have hLQ (w u : E) :
-      h.symplecticFormAt p (L w) u = (criticalHessian I F p).toBilinForm w u :=
-    (h.symplecticFormAt_apply p (L w) u).trans
-      (criticalHessian_apply_eq_eval₂_fderiv h hF2 hcrit w u).symm
   have hQnd : (criticalHessian I F p).toBilinForm.Nondegenerate :=
     ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm.1
       hp.isInvertible_criticalHessian
   -- The linearized flow is `exp (t ε L)`, so the coordinate-free normalization applies.
   filter_upwards [SymplecticForm.eventually_conleyZehnderIndex_eq_sigNeg_sub (V := E)
-    (h.symplecticFormAt p) hLQ (isSymm_toBilinForm_criticalHessian (hF2 p)) hQnd]
+    (h.symplecticFormAt p)
+    (symplecticFormAt_fderiv_mpullbackWithin_hamiltonianVectorField_apply h hF2 hcrit)
+    (isSymm_toBilinForm_criticalHessian (hF2 p)) hQnd]
     with ε hε A B Ψ hΨ hΨt
   rw [hε Ψ hΨ fun t ↦ (hΨt t).trans
       (mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul h hF hcrit ε t),

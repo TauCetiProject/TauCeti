@@ -165,6 +165,27 @@ theorem toGLSymplectic_symm {b : Basis (ι ⊕ ι) ℝ V}
     ω.toGLSymplectic_congr hb (A' := LinearMap.id) (by ext; simp) _ fun u v ↦ rfl,
     toGLSymplectic_id]
 
+/-- **Matrices of infinitesimally symplectic maps.** In a symplectic basis `b` of `(V, ω)`, the
+matrix of a linear map `L` with `ω(L w, u) = Q(w, u)` for a symmetric bilinear form `Q` is `J S`,
+for the matrix `S` of `Q`. -/
+theorem toMatrix_eq_J_mul_toMatrix_of_apply_eq {L : V →ₗ[ℝ] V} {Q : LinearMap.BilinForm ℝ V}
+    (hLQ : ∀ w u, ω (L w) u = Q w u) (hQ : Q.IsSymm) {b : Basis (ι ⊕ ι) ℝ V}
+    (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ) :
+    LinearMap.toMatrix b b L = J ι ℝ * LinearMap.BilinForm.toMatrix b Q := by
+  -- In matrices, `ω(L w, u) = Q(w, u)` reads `Mᵀ J = S`; transposing gives `-J M = S`.
+  have hMS : (LinearMap.toMatrix b b L)ᵀ * J ι ℝ = LinearMap.BilinForm.toMatrix b Q := by
+    rw [← hb, ← LinearMap.BilinForm.toMatrix_compLeft]
+    congr 1
+    ext w u
+    exact hLQ w u
+  have hS := congrArg transpose hMS
+  rw [transpose_mul, transpose_transpose, J_transpose,
+    ((LinearMap.BilinForm.isSymm_toMatrix_iff_isSymm b).2 hQ).eq] at hS
+  -- So `M = J (-J M) = J S`.
+  calc LinearMap.toMatrix b b L = J ι ℝ * (-J ι ℝ * LinearMap.toMatrix b b L) := by
+        rw [← Matrix.mul_assoc, J_mul_neg_J, Matrix.one_mul]
+    _ = _ := by rw [hS]
+
 end Matrix
 
 /-! ### Paths of symplectic matrices -/
@@ -405,29 +426,6 @@ theorem conleyZehnderIndex_map_conj (e : V ≃L[ℝ] W)
 
 /-! ### Normalization -/
 
-omit [FiniteDimensional ℝ V] in
-/-- In a symplectic basis, the matrix of an endomorphism `L` with `ω(L w, u) = Q(w, u)` for a
-symmetric bilinear form `Q` is `J S`, for the matrix `S` of `Q`. -/
-private theorem toMatrix_eq_J_mul_of_apply_eq {L : V →L[ℝ] V} {Q : LinearMap.BilinForm ℝ V}
-    (hLQ : ∀ w u, ω (L w) u = Q w u) (hQ : Q.IsSymm) {b : Basis (ι ⊕ ι) ℝ V}
-    (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ) :
-    LinearMap.toMatrix b b (L : V →ₗ[ℝ] V) = J ι ℝ * LinearMap.BilinForm.toMatrix b Q := by
-  -- In matrices, `ω(L w, u) = Q(w, u)` reads `Mᵀ J = S`; transposing gives `-J M = S`.
-  have hMS : (LinearMap.toMatrix b b (L : V →ₗ[ℝ] V))ᵀ * J ι ℝ =
-      LinearMap.BilinForm.toMatrix b Q := by
-    rw [← hb, ← LinearMap.BilinForm.toMatrix_compLeft]
-    congr 1
-    ext w u
-    exact hLQ w u
-  have hS := congrArg transpose hMS
-  rw [transpose_mul, transpose_transpose, J_transpose,
-    ((LinearMap.BilinForm.isSymm_toMatrix_iff_isSymm b).2 hQ).eq] at hS
-  -- So `M = J (-J M) = J S`.
-  calc LinearMap.toMatrix b b (L : V →ₗ[ℝ] V)
-      = J ι ℝ * (-J ι ℝ * LinearMap.toMatrix b b (L : V →ₗ[ℝ] V)) := by
-        rw [← Matrix.mul_assoc, J_mul_neg_J, Matrix.one_mul]
-    _ = _ := by rw [hS]
-
 /-- **The normalization of the Conley–Zehnder index without coordinates.** Let `L` be an
 endomorphism of a symplectic vector space `(V, ω)` of dimension `2n` with `ω(L w, u) = Q(w, u)` for
 a nondegenerate symmetric bilinear form `Q`. For every small `ε > 0`, a path of linear symplectic
@@ -455,21 +453,15 @@ theorem eventually_conleyZehnderIndex_eq_sigNeg_sub {L : V →L[ℝ] V}
     rw [← hsum]
     push_cast
     ring
-  have ht : Filter.Tendsto (fun ε : ℝ ↦ ε • S) (nhdsWithin 0 (Set.Ioi 0)) (nhds 0) := by
-    simpa using ((Filter.tendsto_id.smul_const S).mono_left nhdsWithin_le_nhds :
-      Filter.Tendsto (fun ε : ℝ ↦ ε • S) (nhdsWithin 0 (Set.Ioi 0)) (nhds ((0 : ℝ) • S)))
-  filter_upwards [ht.eventually (GLSymplectic.eventually_conleyZehnderIndex_eq_neg_signature_div_two
-    (n := Fin m)), self_mem_nhdsWithin] with ε hε hε0 A B Ψ hΨ hΨt
+  filter_upwards [GLSymplectic.eventually_conleyZehnderIndex_exp_smul_eq_neg_signature_div_two hS
+    hSdet] with ε hε A B Ψ hΨ hΨt
   -- In `b`, the matrix of `Ψ t` is `exp (t J (ε S))`.
   have hmat (t : I) : ((ω.matrixPath hb Ψ hΨ t : GL (Fin m ⊕ Fin m) ℝ) : Matrix _ _ ℝ) =
       NormedSpace.exp ((t : ℝ) • (J (Fin m) ℝ * (ε • S))) := by
     rw [matrixPath_apply, coe_toGLSymplectic, hΨt t, ContinuousLinearMap.toMatrix_exp,
       ContinuousLinearMap.toLinearMap_smul, LinearEquiv.map_smul,
-      ω.toMatrix_eq_J_mul_of_apply_eq hLQ hQ hb, Matrix.mul_smul, smul_smul]
-  rw [ω.conleyZehnderIndex_eq hb,
-    hε (hS.smul (IsSelfAdjoint.all ε))
-      (by rw [det_smul]; exact ((IsUnit.mk0 ε (ne_of_gt hε0)).pow _).mul hSdet) _ hmat,
-    signature_smul_of_pos hε0, hsig]
+      ω.toMatrix_eq_J_mul_toMatrix_of_apply_eq (L := L) hLQ hQ hb, Matrix.mul_smul, smul_smul]
+  rw [ω.conleyZehnderIndex_eq hb, hε _ hmat, hsig]
   ring
 
 end TauCeti.SymplecticForm
