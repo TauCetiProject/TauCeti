@@ -21,6 +21,8 @@ both defined through Tricomi's entire function `γ*` of
 
 * `Complex.lowerIncompleteGamma_eq_integral`: DLMF 8.2.1, `γ(a, z) = z^a ∫₀¹ s^{a−1} e^{−zs} ds`
   for `0 < Re a`;
+* `TauCeti.intervalIntegral_cpow_mul_exp_neg_mul`: DLMF 8.2.1 rescaled,
+  `∫₀ˣ t^{a−1} e^{−rt} dt = r^{−a} γ(a, rx)` for `0 < Re a`, `r ≠ 0`, `0 ≤ x`;
 * `Complex.tendsto_mul_lowerIncompleteGamma`: for `z ≠ 0`, `γ(·, z)` has simple poles at
   `a = −n` with residue `(−1)ⁿ/n!`, from the residue of `Γ`
   (`Complex.tendsto_add_natCast_mul_Gamma`);
@@ -45,8 +47,8 @@ At the poles `a ∈ −ℕ`, `γ(a, z)` takes the value given by Mathlib's junk 
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
 file `DLMF/IncompleteGamma/ContinuedProperties.lean`, and restated on Tricomi's `γ*`.
-The slit-plane holomorphy in `z` and the identification with `Complex.partialGamma` are new
-proofs.
+The slit-plane holomorphy in `z`, the identification with `Complex.partialGamma` and the
+rescaled integral `TauCeti.intervalIntegral_cpow_mul_exp_neg_mul` are new proofs.
 -/
 
 public section
@@ -189,3 +191,34 @@ theorem tendsto_mul_lowerIncompleteGamma (n : ℕ) {z : ℂ} (hz : z ≠ 0) :
   simpa [lowerIncompleteGamma_def, mul_assoc] using (tendsto_add_natCast_mul_Gamma n).mul hP
 
 end Complex
+
+namespace TauCeti
+
+open Complex Set
+
+/-- DLMF 8.2.1 rescaled: `∫₀ˣ t^{a−1} e^{−rt} dt = r^{−a} γ(a, rx)` for `0 < Re a`, `r ≠ 0` and
+`0 ≤ x`. -/
+theorem intervalIntegral_cpow_mul_exp_neg_mul {a r : ℂ} (ha : 0 < a.re) (hr : r ≠ 0) {x : ℝ}
+    (hx : 0 ≤ x) :
+    ∫ t in (0 : ℝ)..x, (t : ℂ) ^ (a - 1) * cexp (-(r * t)) =
+      r ^ (-a) * lowerIncompleteGamma a (r * x) := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp
+  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx.ne'
+  have hra : r ^ a ≠ 0 := (cpow_ne_zero_iff_of_exponent_ne_zero
+    (fun h => by simp [h] at ha)).mpr hr
+  have hrx : (r * x) ^ a = r ^ a * (x : ℂ) ^ a := by
+    rw [mul_comm, TauCeti.ofReal_mul_cpow hx.le, mul_comm]
+  rw [lowerIncompleteGamma_eq_integral ha, hrx, ← mul_assoc, ← mul_assoc, cpow_neg,
+    inv_mul_cancel₀ hra, one_mul]
+  have h := intervalIntegral.smul_integral_comp_mul_left (a := 0) (b := 1)
+    (f := fun t : ℝ => (t : ℂ) ^ (a - 1) * cexp (-(r * t))) x
+  rw [mul_zero, mul_one] at h
+  rw [← h, real_smul, ← intervalIntegral.integral_const_mul,
+    ← intervalIntegral.integral_const_mul]
+  refine intervalIntegral.integral_congr fun u hu => ?_
+  rw [uIcc_of_le zero_le_one] at hu
+  rw [ofReal_mul, ofReal_mul_cpow hx.le, cpow_sub _ _ hx0, cpow_one]
+  field_simp
+
+end TauCeti

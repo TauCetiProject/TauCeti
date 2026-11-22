@@ -86,6 +86,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `TauCeti.continuousOn_ofReal_add_cpow`, `TauCeti.continuousOn_ofReal_add_cpow_Ici`,
   `TauCeti.continuous_ofReal_add_cpow_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
+* `TauCeti.ofReal_cpow_mul_inv_mul_inv_cpow` -- for `a > 0` and `w` off the negative real axis,
+  `a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
   `Complex.neg_cpow_half_eq_or_eq_neg` -- algebraic identities for principal `±1/2` powers,
   including at `w = 0`, and the sign dichotomy `(-w) ^ (1/2) = ±(I * w ^ (1/2))`.
@@ -611,6 +613,16 @@ theorem norm_cpow_mul_log_le_of_mem_ball {w a₀ b : ℂ} {r : ℝ} (hb : b ∈ 
     (Differentiable.diffContOnCl fun c => (hd c).differentiableAt) fun c hc => ?_
   refine norm_cpow_le_of_mem_closedBall hw (Metric.mem_closedBall.mpr ?_)
   linarith [dist_triangle c b a₀, Metric.mem_sphere.mp hc, Metric.mem_ball.mp hb]
+
+/-- For `a > 0` and `w` off the negative real axis, the principal powers combine:
+`a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`. -/
+theorem ofReal_cpow_mul_inv_mul_inv_cpow {a : ℝ} (ha : 0 < a) {w : ℂ} (hw : w.arg ≠ Real.pi)
+    (s : ℂ) : (a : ℂ) ^ s * ((a : ℂ)⁻¹ * w⁻¹) ^ s = w ^ (-s) := by
+  have has : (a : ℂ) ^ s ≠ 0 := by simp [ha.ne']
+  rw [mul_cpow (by simpa [← ofReal_inv, arg_ofReal_of_nonneg (inv_nonneg.2 ha.le)]
+      using arg_mem_Ioc w⁻¹),
+    inv_cpow_ofReal_nonneg ha.le, inv_cpow _ _ hw, cpow_neg]
+  field_simp
 
 end TauCeti
 
