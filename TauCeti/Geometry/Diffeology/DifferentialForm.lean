@@ -519,6 +519,7 @@ theorem toFun_ofForm (σ : E → E [⋀^Fin k]→L[ℝ] F) (hσ : ContDiff ℝ �
 
 /-- The exterior derivative of the plotwise form given by a smooth flat form `σ` is the plotwise
 form given by the flat exterior derivative of `σ`. -/
+@[simp]
 theorem extDeriv_ofForm (σ : E → E [⋀^Fin k]→L[ℝ] F) (hσ : ContDiff ℝ ∞ σ) :
     (ofForm σ hσ).extDeriv = ofForm (_root_.extDeriv σ) (contDiff_extDeriv hσ (by simp)) :=
   ext fun p hp ↦ funext fun x ↦ extDeriv_pullback ((hσ.differentiable (by simp)) _)
