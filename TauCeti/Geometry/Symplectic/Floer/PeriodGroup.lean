@@ -211,16 +211,24 @@ variable {ω c}
 /-- The first Chern number embeds the period group into `ℤ` exactly when every spherical class
 with vanishing first Chern number has vanishing area. -/
 theorem chern_injective_iff : Function.Injective (chern ω c) ↔ c.ker ≤ ω.ker := by
-  -- Test injectivity on classes of `s : S`; such a class vanishes iff `ω s = 0 ∧ c s = 0`.
-  simp [injective_iff_map_eq_zero, QuotientAddGroup.mk_surjective.forall,
-    QuotientAddGroup.eq_zero_iff, IsConcreteLE.le_iff, imp_and]
+  -- `chern` is the lift of `c` to the quotient by `(ω.prod c).ker = ω.ker ⊓ c.ker`, and a lift is
+  -- injective exactly when the subgroup is the whole kernel of `c`.
+  have hle : (ω.prod c).ker ≤ c.ker := AddMonoidHom.ker_prod ω c ▸ inf_le_right
+  have h : chern ω c = QuotientAddGroup.lift _ c hle := by
+    ext s
+    simp
+  rw [h, QuotientAddGroup.injective_lift_iff, AddMonoidHom.ker_prod, inf_eq_right]
 
 /-- The area embeds the period group into `ℝ` exactly when every spherical class with vanishing
 area has vanishing first Chern number. -/
 theorem area_injective_iff : Function.Injective (area ω c) ↔ ω.ker ≤ c.ker := by
-  -- Test injectivity on classes of `s : S`; such a class vanishes iff `ω s = 0 ∧ c s = 0`.
-  simp [injective_iff_map_eq_zero, QuotientAddGroup.mk_surjective.forall,
-    QuotientAddGroup.eq_zero_iff, IsConcreteLE.le_iff, imp_and]
+  -- `area` is the lift of `ω` to the quotient by `(ω.prod c).ker = ω.ker ⊓ c.ker`, and a lift is
+  -- injective exactly when the subgroup is the whole kernel of `ω`.
+  have hle : (ω.prod c).ker ≤ ω.ker := AddMonoidHom.ker_prod ω c ▸ inf_le_left
+  have h : area ω c = QuotientAddGroup.lift _ ω hle := by
+    ext s
+    simp
+  rw [h, QuotientAddGroup.injective_lift_iff, AddMonoidHom.ker_prod, inf_eq_left]
 
 /-- The degree is injective exactly when the first Chern number is. -/
 theorem degree_injective_iff :
@@ -328,8 +336,9 @@ theorem chern_chernEquivInt_symm_pos (hker : c.ker ≤ ω.ker) (hc : c ≠ 0) :
 theorem chern_chernEquivInt_symm (hker : c.ker ≤ ω.ker) (hc : c ≠ 0) (k : ℤ) :
     chern ω c ((chernEquivInt hker hc).symm k) =
       k * chern ω c ((chernEquivInt hker hc).symm 1) := by
-  -- Write the right side as `chern (e.symm (k • 1))` and use `k • 1 = k`.
-  rw [← smul_eq_mul, ← map_zsmul, ← map_zsmul, smul_eq_mul, mul_one]
+  -- An additive map out of `ℤ` is determined by its value at `1`.
+  simpa only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, smul_eq_mul] using
+    AddMonoidHom.apply_int _ ((chern ω c).comp (chernEquivInt hker hc).symm.toAddMonoidHom) k
 
 /-- The Chern number of a period class determines its integer exponent by multiplication by
 the minimal Chern number. -/
