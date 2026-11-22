@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 import TauCeti.Analysis.Calculus.FDeriv.Add
 import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import TauCeti.Geometry.Symplectic.Floer.Continuation
 import TauCeti.Geometry.Symplectic.Floer.Continuation.AlmostComplex
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
@@ -98,6 +99,27 @@ namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
 open StripSobolev (stripMeasure)
+
+/-- **Continuity in `L^∞` from uniform closeness on the strip.** A family of continuous fields
+`M μ` on the cylinder that are uniformly close to `M lam` on the strip `ℝ × [0, 1]` for `μ` close
+to `lam` depends continuously on `μ` at `lam` in `L^∞` of the strip. -/
+private theorem tendsto_eLpNorm_sub_of_forall_dist_lt {E : Type*} [NormedAddCommGroup E]
+    {M : ℝ → ℝ × ℝ → E} (hM : ∀ μ, Continuous (M μ)) {lam : ℝ}
+    (h : ∀ r > 0, ∃ η > 0, ∀ μ, |μ - lam| < η → ∀ z : ℝ × ℝ, z.2 ∈ Icc (0 : ℝ) 1 →
+      dist (M μ z) (M lam z) < r) :
+    Tendsto (fun μ ↦ eLpNorm (M μ - M lam) ∞ stripMeasure) (𝓝 lam) (𝓝 0) := by
+  rw [ENNReal.tendsto_nhds_zero]
+  intro ε hε
+  obtain ⟨r, -, hr, hrε⟩ := ENNReal.lt_iff_exists_real_btwn.1 hε
+  obtain ⟨η, hη, h⟩ := h r (ENNReal.ofReal_pos.1 hr)
+  filter_upwards [Metric.ball_mem_nhds lam hη] with μ hμ
+  rw [mem_ball, Real.dist_eq] at hμ
+  refine le_trans ?_ hrε.le
+  rw [eLpNorm_exponent_top ((hM μ).sub (hM lam)).aestronglyMeasurable]
+  refine eLpNormEssSup_le_of_ae_bound ?_
+  filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz
+  rw [Pi.sub_apply, ← dist_eq_norm]
+  exact (h μ hμ z hz.2).le
 
 section Coefficient
 
@@ -259,26 +281,14 @@ private theorem tendsto_eLpNorm_floerJetCoeff_add_smul_sub (ω : SymplecticForm 
       (ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
           (u + μ • (u' - u)) -
         ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
-          (u + lam • (u' - u))) ∞ stripMeasure) (𝓝 lam) (𝓝 0) := by
-  -- The coefficient fields along the segment are continuous, hence measurable.
-  have hcont (μ : ℝ) := ω.continuous_floerJetCoeff
-    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (u := u + μ • (u' - u))
-    (fun _ ↦ hJ.contDiffAt) (fun _ ↦ hKs.contDiffAt) (fun _ ↦ hKt.contDiffAt)
-    (hu.add ((hu'.sub hu).const_smul μ))
-  rw [ENNReal.tendsto_nhds_zero]
-  intro ε hε
-  obtain ⟨r, -, hr, hrε⟩ := ENNReal.lt_iff_exists_real_btwn.1 hε
-  obtain ⟨η, hη, h⟩ := exists_pos_forall_dist_floerJetCoeff_add_smul_sub_lt ω hcyl hJ hKs hKt
-    (hu.differentiable one_ne_zero) (hu'.differentiable one_ne_zero) hB lam
-    (ENNReal.ofReal_pos.1 hr)
-  filter_upwards [Metric.ball_mem_nhds lam hη] with μ hμ
-  rw [mem_ball, Real.dist_eq] at hμ
-  refine le_trans ?_ hrε.le
-  rw [eLpNorm_exponent_top ((hcont μ).sub (hcont lam)).aestronglyMeasurable]
-  refine eLpNormEssSup_le_of_ae_bound ?_
-  filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz
-  rw [Pi.sub_apply, ← dist_eq_norm]
-  exact (h μ hμ z hz.2).le
+          (u + lam • (u' - u))) ∞ stripMeasure) (𝓝 lam) (𝓝 0) :=
+  tendsto_eLpNorm_sub_of_forall_dist_lt
+    (fun μ ↦ ω.continuous_floerJetCoeff
+      (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (u := u + μ • (u' - u))
+      (fun _ ↦ hJ.contDiffAt) (fun _ ↦ hKs.contDiffAt) (fun _ ↦ hKt.contDiffAt)
+      (hu.add ((hu'.sub hu).const_smul μ)))
+    fun _ ↦ exists_pos_forall_dist_floerJetCoeff_add_smul_sub_lt ω hcyl hJ hKs hKt
+      (hu.differentiable one_ne_zero) (hu'.differentiable one_ne_zero) hB lam
 
 /-- The coefficient field at `z` of the data at parameter `μ` of a family of data is `jetCoeffAt`
 of the family at `((μ, z), y, d)`. -/
@@ -358,25 +368,13 @@ private theorem tendsto_eLpNorm_floerJetCoeff_family (ω : SymplecticForm V)
       (ω.floerJetCoeff (fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap)
           (fun w ↦ Ks (μ, w)) (fun w ↦ Kt (μ, w)) u -
         ω.floerJetCoeff (fun w y ↦ (J (lam, w) y).toLinearMap.toContinuousLinearMap)
-          (fun w ↦ Ks (lam, w)) (fun w ↦ Kt (lam, w)) u) ∞ stripMeasure) (𝓝 lam) (𝓝 0) := by
-  -- The coefficient fields of the family are continuous, hence measurable.
-  have hcont (μ : ℝ) := ω.continuous_floerJetCoeff
-    (J := fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap) (u := u)
-    (hcyl μ).contDiffAt_almostComplex (hcyl μ).contDiffAt_hamiltonianS
-    (hcyl μ).contDiffAt_hamiltonianT hu
-  rw [ENNReal.tendsto_nhds_zero]
-  intro ε hε
-  obtain ⟨r, -, hr, hrε⟩ := ENNReal.lt_iff_exists_real_btwn.1 hε
-  obtain ⟨η, hη, h⟩ := exists_pos_forall_dist_floerJetCoeff_family_lt ω hcyl hJ hKs hKt hB lam
-    (ENNReal.ofReal_pos.1 hr)
-  filter_upwards [Metric.ball_mem_nhds lam hη] with μ hμ
-  rw [mem_ball, Real.dist_eq] at hμ
-  refine le_trans ?_ hrε.le
-  rw [eLpNorm_exponent_top ((hcont μ).sub (hcont lam)).aestronglyMeasurable]
-  refine eLpNormEssSup_le_of_ae_bound ?_
-  filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz
-  rw [Pi.sub_apply, ← dist_eq_norm]
-  exact (h μ hμ z hz.2).le
+          (fun w ↦ Ks (lam, w)) (fun w ↦ Kt (lam, w)) u) ∞ stripMeasure) (𝓝 lam) (𝓝 0) :=
+  tendsto_eLpNorm_sub_of_forall_dist_lt
+    (fun μ ↦ ω.continuous_floerJetCoeff
+      (J := fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap) (u := u)
+      (hcyl μ).contDiffAt_almostComplex (hcyl μ).contDiffAt_hamiltonianS
+      (hcyl μ).contDiffAt_hamiltonianT hu)
+    fun _ ↦ exists_pos_forall_dist_floerJetCoeff_family_lt ω hcyl hJ hKs hKt hB lam
 
 /-- The path of almost complex structures from `J` to `J'`: at `(μ, z)` and `y` it is the
 continuation homotopy, relative to `J₀`, from `J z y` to `J' z y` at time `μ`. It is `J` for
@@ -388,9 +386,10 @@ private def pathAlmostComplex {ω : SymplecticForm V} {J₀ : AlmostComplexStruc
   Floer.continuationAlmostComplex h₀ (fun _ q ↦ J q.1 q.2) (fun _ q ↦ J' q.1 q.2)
     (fun _ q ↦ hJ q.1 q.2) (fun _ q ↦ hJ' q.1 q.2) (p.1, 0) (p.2, y)
 
-/-- The segment of Hamiltonians from `K` to `K'`, with parameter `μ`. -/
+/-- The segment of Hamiltonians from `K` to `K'`, with parameter `μ`: the linear homotopy with
+profile `id` from `K` to `K'`, viewed as time-independent Hamiltonians on `(ℝ × ℝ) × V`. -/
 private def pathHamiltonian (K K' : ℝ × ℝ → V → ℝ) (p : ℝ × (ℝ × ℝ)) (y : V) : ℝ :=
-  K p.2 y + p.1 * (K' p.2 y - K p.2 y)
+  Floer.linearHomotopy id (fun _ q ↦ K q.1 q.2) (fun _ q ↦ K' q.1 q.2) (p.1, 0) (p.2, y)
 
 /-- The path of almost complex structures is `J` at `μ = 0`. -/
 private theorem pathAlmostComplex_zero {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
@@ -435,25 +434,12 @@ private theorem contDiff_pathAlmostComplex {ω : SymplecticForm V} {J₀ : Almos
 omit [FiniteDimensional ℝ V] in
 /-- The segment of Hamiltonians is `C²` when its endpoints are. -/
 private theorem contDiff_pathHamiltonian {K K' : ℝ × ℝ → V → ℝ} (hK : ContDiff ℝ 2 (uncurry K))
-    (hK' : ContDiff ℝ 2 (uncurry K')) : ContDiff ℝ 2 (uncurry (pathHamiltonian K K')) := by
-  have hπ : ContDiff ℝ 2 fun p : (ℝ × (ℝ × ℝ)) × V ↦ (p.1.2, p.2) :=
-    contDiff_fst.snd.prodMk contDiff_snd
-  have h := hK.comp hπ
-  exact h.add (contDiff_fst.fst.mul ((hK'.comp hπ).sub h))
-
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The segment of Hamiltonians is `K` at `μ = 0`. -/
-private theorem pathHamiltonian_zero (K K' : ℝ × ℝ → V → ℝ) (z : ℝ × ℝ) :
-    pathHamiltonian K K' (0, z) = K z := by
-  funext y
-  simp [pathHamiltonian]
-
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The segment of Hamiltonians is `K'` at `μ = 1`. -/
-private theorem pathHamiltonian_one (K K' : ℝ × ℝ → V → ℝ) (z : ℝ × ℝ) :
-    pathHamiltonian K K' (1, z) = K' z := by
-  funext y
-  simp [pathHamiltonian]
+    (hK' : ContDiff ℝ 2 (uncurry K')) : ContDiff ℝ 2 (uncurry (pathHamiltonian K K')) :=
+  (Floer.contDiff_uncurry_linearHomotopy (n := 2)
+    (H₀ := fun (_ : ℝ) (q : (ℝ × ℝ) × V) ↦ K q.1 q.2)
+    (H₁ := fun (_ : ℝ) (q : (ℝ × ℝ) × V) ↦ K' q.1 q.2) contDiff_id (hK.comp contDiff_snd)
+    (hK'.comp contDiff_snd)).comp
+      ((contDiff_fst.fst.prodMk contDiff_const).prodMk (contDiff_fst.snd.prodMk contDiff_snd))
 
 /-- Two sets of Floer data cylindrical near the ends with the same end data, with radii `R` and
 `R'`, are joined by a path of data all cylindrical near the ends with the radius `max R R'`. -/
@@ -482,7 +468,7 @@ private theorem isCylindricalNearEnds_path {ω : SymplecticForm V}
   have hKeq {K K' : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ} (e : V → ℝ) (he : K z = e) (he' : K' z = e) :
       pathHamiltonian K K' (μ, z) = e := by
     funext y
-    simp [pathHamiltonian, he, he']
+    simp [pathHamiltonian, Floer.linearHomotopy_def, he, he']
   exact
     { almostComplex_eq_of_le_neg := fun z hz ↦ hJeq _
         (h₁.almostComplex_eq_of_le_neg z hz) (h₂.almostComplex_eq_of_le_neg z hz)
@@ -762,10 +748,10 @@ private theorem isFredholm_and_index_eq_of_cylindrical_data (ω : SymplecticForm
   -- The path starts at the first data and ends at the second.
   have hM₀ : M 0 = ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
       := by
-    simp only [M, pathAlmostComplex_zero, pathHamiltonian_zero]
+    simp [M, pathAlmostComplex_zero, pathHamiltonian.eq_unfold]
   have hM₁ : M 1 =
       ω.floerJetCoeff (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt' u := by
-    simp only [M, pathAlmostComplex_one, pathHamiltonian_one]
+    simp [M, pathAlmostComplex_one, pathHamiltonian.eq_unfold]
   have key := isFredholm_and_index_eq_of_hasSemiFredholmEstimate isPreconnected_univ
     (fun μ _ ↦ hM μ) hcont (fun μ _ ↦ hest μ) (mem_univ 0) (mem_univ 1)
     (by simpa only [hM₀, ← floerSobolevOperator_def] using h)
@@ -959,6 +945,28 @@ variable {J : ℝ × ℝ → F → AlmostComplexStructure F} {Ks Kt : ℝ × ℝ
   (hJc : ∀ z y, ω.Compatible (J z y))
 
 include hH hHp hx hxp hu hum hδm hup hδp hcyl hJ hKs hKt hJc in
+/-- The Fredholm property and index zero of the linearized Floer operator for data with equal ends,
+compared with the `s`-independent data `(i, 0, H_t)`. -/
+private theorem isFredholm_floerSobolevOperator_and_index_eq_zero_of_cylindrical
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u).IsFredholm ∧
+      (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u).index = 0 := by
+  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  have hH₂ : ContDiff ℝ 2 (uncurry H) := hH.of_le (by norm_num)
+  obtain ⟨h₀, hi₀⟩ :=
+    isFredholm_floerSobolevOperator_and_index_eq_zero ω hX hH hHp hx hxp hu hum hδm hup hδp hω hnd
+  obtain ⟨h, hi⟩ := isFredholm_and_index_eq_of_cylindrical_data ω
+    (Floer.isCylindricalNearEnds_comp_snd (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
+      (R := 0) contDiff_const hH₂ u) hcyl contDiff_const contDiff_const
+    (hH₂.comp (contDiff_fst.snd.prodMk contDiff_snd)) hJ hKs hKt
+    (fun _ _ ↦ ω.compatible_ofComplexModule_of_forall_eq_im_inner hω) hJc hu hX hx hnd hum hδm hX
+    hx hnd hup hδp h₀
+  exact ⟨h, hi.trans hi₀⟩
+
+include hH hHp hx hxp hu hum hδm hup hδp hcyl hJ hKs hKt hJc in
 /-- **The linearized Floer operator for data with equal ends is Fredholm.** Let `F` be a
 finite-dimensional complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, and let
 `x` be a one-periodic orbit of a one-periodic, jointly `C³` time-dependent Hamiltonian `H` whose
@@ -973,18 +981,9 @@ theorem isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt_of_cylindrical
     (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
     (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
-      u).IsFredholm := by
-  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hH₂ : ContDiff ℝ 2 (uncurry H) := hH.of_le (by norm_num)
-  -- Compare with the `s`-independent data `(i, 0, H_t)`, which have the same ends.
-  refine (isFredholm_floerSobolevOperator_iff_of_cylindrical_data ω
-    (Floer.isCylindricalNearEnds_comp_snd (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
-      (R := 0) contDiff_const hH₂ u) hcyl contDiff_const contDiff_const
-    (hH₂.comp (contDiff_fst.snd.prodMk contDiff_snd)) hJ hKs hKt
-    (fun _ _ ↦ ω.compatible_ofComplexModule_of_forall_eq_im_inner hω) hJc hu hX hx hnd hum hδm hX
-    hx hnd hup hδp).1 ?_
-  exact isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt ω hX hH hHp hx hxp hu hum hδm hup
-    hδp hω hnd
+      u).IsFredholm :=
+  (isFredholm_floerSobolevOperator_and_index_eq_zero_of_cylindrical ω hX hH hHp hx hxp hu hum hδm
+    hup hδp hcyl hJ hKs hKt hJc hω hnd).1
 
 include hH hHp hx hxp hu hum hδm hup hδp hcyl hJ hKs hKt hJc in
 /-- **The linearized Floer operator for data with equal ends has index zero.** Under the
@@ -996,20 +995,9 @@ theorem index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt_of_cylindri
     (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
     (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
-      u).index = 0 := by
-  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hH₂ : ContDiff ℝ 2 (uncurry H) := hH.of_le (by norm_num)
-  -- Compare with the `s`-independent data `(i, 0, H_t)`, which have the same ends.
-  rw [index_floerSobolevOperator_eq_of_cylindrical_data ω
-    (Floer.isCylindricalNearEnds_comp_snd (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
-      (R := 0) contDiff_const hH₂ u) hcyl contDiff_const contDiff_const
-    (hH₂.comp (contDiff_fst.snd.prodMk contDiff_snd)) hJ hKs hKt
-    (fun _ _ ↦ ω.compatible_ofComplexModule_of_forall_eq_im_inner hω) hJc hu hX hx hnd hum hδm hX
-    hx hnd hup hδp
-    (isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt ω hX hH hHp hx hxp hu hum hδm hup
-      hδp hω hnd)]
-  exact index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt ω hX hH hHp hx hxp hu hum hδm
-    hup hδp hω hnd
+      u).index = 0 :=
+  (isFredholm_floerSobolevOperator_and_index_eq_zero_of_cylindrical ω hX hH hHp hx hxp hu hum hδm
+    hup hδp hcyl hJ hKs hKt hJc hω hnd).2
 
 end EqualEnds
 
