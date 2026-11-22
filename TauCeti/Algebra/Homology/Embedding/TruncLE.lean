@@ -92,8 +92,7 @@ lemma truncLE'ToRestriction_f_eq_iso_hom_iCycles_iso_inv {i : ι} {i' : ι'} (hi
   rw [← Category.assoc, h₂]
   subst hi'
   refine h₃.trans ?_
-  simp only [restrictionXIso, eqToIso.hom, eqToIso.inv, unop_comp, Category.assoc]
-  exact (Category.assoc _ _ _).symm
+  simp only [restrictionXIso, eqToIso.hom, eqToIso.inv, unop_comp, Category.assoc, eqToHom_unop]
 
 /-- At the boundary, the comparison `K.truncLE' e ⟶ K.restriction e` lands in the cycles of `K`:
 it is killed by the differential of `K`. -/

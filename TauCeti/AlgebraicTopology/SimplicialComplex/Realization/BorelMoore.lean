@@ -25,7 +25,7 @@ variable {R : Type u} [Ring R] {ι : Type v}
   (K : AbstractSimplicialComplex ι) (P : PreAbstractSimplicialComplex ι)
 
 private lemma exists_retraction_iteratedOpenSimplicialNeighborhood (n : ℕ) :
-    ∃ r : C(K.iteratedOpenSimplicialNeighborhood P n, {y : Realization K | y.1.support ∈ P}),
+    ∃ r : C(K.iteratedOpenSimplicialNeighborhood P n, {y : Realization K | y.val.support ∈ P}),
       (∀ a, r (ContinuousMap.inclusion
         (K.setOf_support_mem_subset_iteratedOpenSimplicialNeighborhood P n) a) = a) ∧
       ((ContinuousMap.inclusion
@@ -37,11 +37,12 @@ private lemma exists_retraction_iteratedOpenSimplicialNeighborhood (n : ℕ) :
 variable (L : LocalCoefficientSystem.{u, v, max v w} R (TopCat.of (Realization K)))
 /-- Borel–Moore comparison isomorphism for `|K| \ |P|` with respect to an exhaustion `E`. -/
 def realizationTwistedHomologyIsoBorelMooreHomologyComplOfExhaustion (hfin : K.faces.Finite)
-    (E : CompactExhaustion ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K))) (j : ℕ) :
+    (E : CompactExhaustion ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)))
+    (j : ℕ) :
     (TopPair.ofSubset (X := TopCat.of (Realization K))
-        {y : Realization K | y.1.support ∈ P}).twistedHomology L j ≅
+        {y : Realization K | y.val.support ∈ P}).twistedHomology L j ≅
       borelMooreHomology ((pullback
-        (X := TopCat.of ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)))
+        (X := TopCat.of ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)))
         (ContinuousMap.subtypeVal _)).obj L) j :=
   have := K.compactSpace_realization_of_finite_faces hfin
   twistedHomologyIsoBorelMooreHomologyComplOfExhaustionOfDeformationRetraction
@@ -52,7 +53,8 @@ def realizationTwistedHomologyIsoBorelMooreHomologyComplOfExhaustion (hfin : K.f
     (K.exists_retraction_iteratedOpenSimplicialNeighborhood P) L E j
 @[simp] theorem realizationTwistedHomologyIsoBorelMooreHomologyComplOfExhaustion_hom
     (hfin : K.faces.Finite)
-    (E : CompactExhaustion ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K))) (j : ℕ) :
+    (E : CompactExhaustion ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)))
+    (j : ℕ) :
     (K.realizationTwistedHomologyIsoBorelMooreHomologyComplOfExhaustion P L hfin E j).hom =
       twistedHomologyToBorelMooreHomologyComplOfExhaustion (X := TopCat.of (Realization K))
         (K.subcomplexNDRPair P).isClosed L E j := by
@@ -60,9 +62,9 @@ def realizationTwistedHomologyIsoBorelMooreHomologyComplOfExhaustion (hfin : K.f
 /-- Borel–Moore comparison isomorphism `H_j(|K|, |P|; L) ≅ H_j^{BM}(|K| \ |P|; L|_{|K| \ |P|})`. -/
 def realizationTwistedHomologyIsoBorelMooreHomologyCompl [Finite (Face K)] (j : ℕ) :
     (TopPair.ofSubset (X := TopCat.of (Realization K))
-        {y : Realization K | y.1.support ∈ P}).twistedHomology L j ≅
+        {y : Realization K | y.val.support ∈ P}).twistedHomology L j ≅
       borelMooreHomology ((pullback
-        (X := TopCat.of ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)))
+        (X := TopCat.of ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)))
         (ContinuousMap.subtypeVal _)).obj L) j :=
   twistedHomologyIsoBorelMooreHomologyComplOfDeformationRetraction
     (X := TopCat.of (Realization K)) (K.subcomplexNDRPair P).isClosed

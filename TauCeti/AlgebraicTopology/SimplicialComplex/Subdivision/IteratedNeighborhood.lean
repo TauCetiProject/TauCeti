@@ -116,7 +116,7 @@ theorem isOpen_iteratedOpenSimplicialNeighborhood (n : ℕ) :
 
 /-- The polyhedron of `P` lies in each iterated open simplicial neighbourhood. -/
 theorem setOf_support_mem_subset_iteratedOpenSimplicialNeighborhood (n : ℕ) :
-    {y : Realization K | y.1.support ∈ P} ⊆ K.iteratedOpenSimplicialNeighborhood P n := by
+    {y : Realization K | y.val.support ∈ P} ⊆ K.iteratedOpenSimplicialNeighborhood P n := by
   induction n generalizing ι with
   | zero => exact K.setOf_support_mem_subset_openSimplicialNeighborhood P
   | succ n ih =>
@@ -128,12 +128,12 @@ theorem setOf_support_mem_subset_iteratedOpenSimplicialNeighborhood (n : ℕ) :
 polyhedron of `P`.** The deformation is the straight-line open star deformation of the
 `(n + 1)`-st barycentric subdivision, transported to the realization of `K`. -/
 theorem exists_deformation_iteratedOpenSimplicialNeighborhood (n : ℕ) :
-    ∃ r : C(K.iteratedOpenSimplicialNeighborhood P n, {y : Realization K | y.1.support ∈ P}),
+    ∃ r : C(K.iteratedOpenSimplicialNeighborhood P n, {y : Realization K | y.val.support ∈ P}),
       (∀ y, r (ContinuousMap.inclusion
         (K.setOf_support_mem_subset_iteratedOpenSimplicialNeighborhood P n) y) = y) ∧
       Nonempty (((ContinuousMap.inclusion
         (K.setOf_support_mem_subset_iteratedOpenSimplicialNeighborhood P n)).comp r).HomotopyRel
-          (.id _) {y | (y : Realization K).1.support ∈ P}) := by
+          (.id _) {y | (y : Realization K).val.support ∈ P}) := by
   induction n generalizing ι with
   | zero =>
     exact ⟨K.openSimplicialNeighborhoodRetraction P,
@@ -158,18 +158,18 @@ private theorem one_sub_coe_openSimplicialNeighborhoodControl
         K.toPreAbstractSimplicialComplex).toPreAbstractSimplicialComplex)) :
     1 - (K.openSimplicialNeighborhoodControl P (barycentricSubdivisionRealizationHomeomorph K
         (barycentricSubdivisionRealizationHomeomorph _ z)) : ℝ) =
-      ∑ ρ ∈ z.1.support,
-        z.1 ρ * (((ρ.1.filter fun σ : Face K => σ.1 ∈ P).card : ℝ) * (ρ.1.card : ℝ)⁻¹) := by
-  have hcoord (σ : Face K) : (barycentricSubdivisionRealizationHomeomorph _ z).1 σ =
-      ∑ ρ ∈ z.1.support, z.1 ρ * if σ ∈ ρ.1 then (ρ.1.card : ℝ)⁻¹ else 0 := by
+      ∑ ρ ∈ z.val.support,
+        z.val ρ * (((ρ.val.filter fun σ : Face K => σ.val ∈ P).card : ℝ) * (ρ.val.card : ℝ)⁻¹) := by
+  have hcoord (σ : Face K) : (barycentricSubdivisionRealizationHomeomorph _ z).val σ =
+      ∑ ρ ∈ z.val.support, z.val ρ * if σ ∈ ρ.val then (ρ.val.card : ℝ)⁻¹ else 0 := by
     rw [barycentricSubdivisionRealizationHomeomorph_apply, barycentricSubdivisionRealizationMap_val,
       barycentricSubdivisionLinearMap_apply]
     -- The two sides differ only in the decidability instance of the membership test.
     refine Finset.sum_congr rfl fun ρ _ => ?_
     congr
   -- Every face with a nonzero coordinate lies in some chain of the support.
-  have hsupp : Function.support (fun σ => (barycentricSubdivisionRealizationHomeomorph _ z).1 σ) ⊆
-      ↑(z.1.support.biUnion Subtype.val) := by
+  have hsupp : Function.support (fun σ => (barycentricSubdivisionRealizationHomeomorph _ z).val σ) ⊆
+      ↑(z.val.support.biUnion Subtype.val) := by
     intro σ hσ
     by_contra hU
     refine hσ ((hcoord σ).trans (Finset.sum_eq_zero fun ρ hρ => ?_))
@@ -185,7 +185,7 @@ private theorem one_sub_coe_openSimplicialNeighborhoodControl
     nsmul_eq_mul]
   -- The faces of `P` in the chain `ρ` are the faces of `P` in the union of the chains of the
   -- support that lie in `ρ`.
-  refine congrArg (fun s : Finset (Face K) => z.1 ρ * ((s.card : ℝ) * (ρ.1.card : ℝ)⁻¹)) ?_
+  refine congrArg (fun s : Finset (Face K) => z.val ρ * ((s.card : ℝ) * (ρ.val.card : ℝ)⁻¹)) ?_
   ext σ
   simp only [Finset.mem_filter, Finset.mem_biUnion]
   exact ⟨fun h => ⟨h.2, h.1.2⟩, fun h => ⟨⟨⟨ρ, hρ, h.1⟩, h.2⟩, h.1⟩⟩
@@ -199,7 +199,7 @@ private theorem coe_openSimplicialNeighborhoodControl_subdivisionSubcomplex
     ((TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
         K.toPreAbstractSimplicialComplex).openSimplicialNeighborhoodControl
           (K.subdivisionSubcomplex P) (barycentricSubdivisionRealizationHomeomorph _ z) : ℝ) =
-      ∑ ρ ∈ z.1.support, z.1 ρ * if ρ.1 ∈ K.subdivisionSubcomplex P then 0 else 1 := by
+      ∑ ρ ∈ z.val.support, z.val ρ * if ρ.val ∈ K.subdivisionSubcomplex P then 0 else 1 := by
   have hsum := Realization.sum_eq_one _ z
   rw [Finsupp.sum] at hsum
   rw [openSimplicialNeighborhoodControl_apply, Homeomorph.symm_apply_apply,
@@ -223,9 +223,9 @@ private theorem coe_openSimplicialNeighborhoodControl_le_mul_of_forall
     (z : Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
       (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
         K.toPreAbstractSimplicialComplex).toPreAbstractSimplicialComplex)) (θ : ℝ)
-    (h : ∀ ρ ∈ z.1.support,
-      1 - ((ρ.1.filter fun σ : Face K => σ.1 ∈ P).card : ℝ) * (ρ.1.card : ℝ)⁻¹ ≤
-        θ * if ρ.1 ∈ K.subdivisionSubcomplex P then 0 else 1) :
+    (h : ∀ ρ ∈ z.val.support,
+      1 - ((ρ.val.filter fun σ : Face K => σ.val ∈ P).card : ℝ) * (ρ.val.card : ℝ)⁻¹ ≤
+        θ * if ρ.val ∈ K.subdivisionSubcomplex P then 0 else 1) :
     (K.openSimplicialNeighborhoodControl P (barycentricSubdivisionRealizationHomeomorph K
         (barycentricSubdivisionRealizationHomeomorph _ z)) : ℝ) ≤
       θ * ((TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
@@ -237,19 +237,20 @@ private theorem coe_openSimplicialNeighborhoodControl_le_mul_of_forall
   rw [coe_openSimplicialNeighborhoodControl_subdivisionSubcomplex, Finset.mul_sum]
   calc (K.openSimplicialNeighborhoodControl P (barycentricSubdivisionRealizationHomeomorph K
         (barycentricSubdivisionRealizationHomeomorph _ z)) : ℝ)
-      = ∑ ρ ∈ z.1.support,
-          z.1 ρ * (1 - ((ρ.1.filter fun σ : Face K => σ.1 ∈ P).card : ℝ) * (ρ.1.card : ℝ)⁻¹) := by
+      = ∑ ρ ∈ z.val.support,
+          z.val ρ * (1 - ((ρ.val.filter fun σ : Face K => σ.val ∈ P).card : ℝ) * (ρ.val.card : ℝ)⁻¹)
+              := by
         simp only [mul_sub, mul_one, Finset.sum_sub_distrib, hsum]
         linarith
-    _ ≤ ∑ ρ ∈ z.1.support, θ * (z.1 ρ * if ρ.1 ∈ K.subdivisionSubcomplex P then 0 else 1) :=
+    _ ≤ ∑ ρ ∈ z.val.support, θ * (z.val ρ * if ρ.val ∈ K.subdivisionSubcomplex P then 0 else 1) :=
         Finset.sum_le_sum fun ρ hρ => by
           rw [mul_left_comm]
           exact mul_le_mul_of_nonneg_left (h ρ hρ) (Realization.nonneg _ z ρ)
 
 /-- One minus the proportion of faces of `P` in a chain is zero on chains of faces of `P`. -/
 private theorem one_sub_card_filter_mul_inv_eq_zero {ρ : Finset (Face K)} (hρ : ρ.Nonempty)
-    (hP : ∀ σ ∈ ρ, σ.1 ∈ P) :
-    1 - ((ρ.filter fun σ : Face K => σ.1 ∈ P).card : ℝ) * (ρ.card : ℝ)⁻¹ = 0 := by
+    (hP : ∀ σ ∈ ρ, σ.val ∈ P) :
+    1 - ((ρ.filter fun σ : Face K => σ.val ∈ P).card : ℝ) * (ρ.card : ℝ)⁻¹ = 0 := by
   rw [Finset.filter_true_of_mem hP,
     mul_inv_cancel₀ (Nat.cast_ne_zero.2 (Finset.card_pos.2 hρ).ne'), sub_self]
 
@@ -266,7 +267,7 @@ theorem openSimplicialNeighborhoodControl_barycentricSubdivisionRealizationHomeo
   obtain ⟨z, rfl⟩ := (barycentricSubdivisionRealizationHomeomorph _).surjective y
   have h := coe_openSimplicialNeighborhoodControl_le_mul_of_forall K P z 1 fun ρ _ => by
     have hne := (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-      K.toPreAbstractSimplicialComplex).isRelLowerSet_faces.prop_of_mem ρ.2
+      K.toPreAbstractSimplicialComplex).isRelLowerSet_faces.prop_of_mem ρ.property
     split_ifs with hρP <;> rw [mem_subdivisionSubcomplex_iff] at hρP
     · rw [mul_zero]
       exact (one_sub_card_filter_mul_inv_eq_zero K P hne hρP.2).le
@@ -297,10 +298,10 @@ theorem coe_openSimplicialNeighborhoodControl_barycentricSubdivisionRealizationH
     mem_openStarRealizationSet] at hy
   obtain ⟨ρ₀, hρ₀P, hρ₀⟩ := hy
   replace hρ₀P := (K.mem_subdivisionSubcomplex_iff P).1 hρ₀P
-  have hρ₀T : ρ₀ ∈ z.1.support := Finsupp.mem_support_iff.2 hρ₀.ne'
+  have hρ₀T : ρ₀ ∈ z.val.support := Finsupp.mem_support_iff.2 hρ₀.ne'
   refine coe_openSimplicialNeighborhoodControl_le_mul_of_forall K P z _ fun ρ hρ => ?_
   have hne := (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-    K.toPreAbstractSimplicialComplex).isRelLowerSet_faces.prop_of_mem ρ.2
+    K.toPreAbstractSimplicialComplex).isRelLowerSet_faces.prop_of_mem ρ.property
   split_ifs with hρP <;> rw [mem_subdivisionSubcomplex_iff] at hρP
   · rw [mul_zero]
     exact (one_sub_card_filter_mul_inv_eq_zero K P hne hρP.2).le
@@ -308,16 +309,16 @@ theorem coe_openSimplicialNeighborhoodControl_barycentricSubdivisionRealizationH
   -- The support of `z` is a chain of chains, so `ρ` contains `ρ₀` or consists of faces of `P`.
   rcases TauCeti.PreAbstractSimplicialComplex.subset_or_subset_of_mem_barycentricSubdivision
     (support_mem _ z) hρ hρ₀T with hle | hle
-  · exact absurd ⟨ρ.2, fun σ hσ => hρ₀P.2 σ (hle hσ)⟩ hρP
+  · exact absurd ⟨ρ.property, fun σ hσ => hρ₀P.2 σ (hle hσ)⟩ hρP
   -- So some member of `ρ` is a face of `P`, and `ρ` has at most `D` members.
   obtain ⟨σ₀, hσ₀⟩ := (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-    K.toPreAbstractSimplicialComplex).isRelLowerSet_faces.prop_of_mem ρ₀.2
-  have hpos : (0 : ℝ) < ρ.1.card := Nat.cast_pos.2 (Finset.card_pos.2 hne)
-  have hcard : (1 : ℝ) ≤ (ρ.1.filter fun σ : Face K => σ.1 ∈ P).card :=
+    K.toPreAbstractSimplicialComplex).isRelLowerSet_faces.prop_of_mem ρ₀.property
+  have hpos : (0 : ℝ) < ρ.val.card := Nat.cast_pos.2 (Finset.card_pos.2 hne)
+  have hcard : (1 : ℝ) ≤ (ρ.val.filter fun σ : Face K => σ.val ∈ P).card :=
     Nat.one_le_cast.2 (Finset.card_pos.2 ⟨σ₀, Finset.mem_filter.2 ⟨hle hσ₀, hρ₀P.2 σ₀ hσ₀⟩⟩)
-  have hρD : (ρ.1.card : ℝ) ≤ D := Nat.cast_le.2
-    (TauCeti.PreAbstractSimplicialComplex.card_le_of_mem_barycentricSubdivision hD ρ.2)
-  have hinv : (D : ℝ)⁻¹ ≤ (ρ.1.card : ℝ)⁻¹ := inv_anti₀ hpos hρD
+  have hρD : (ρ.val.card : ℝ) ≤ D := Nat.cast_le.2
+    (TauCeti.PreAbstractSimplicialComplex.card_le_of_mem_barycentricSubdivision hD ρ.property)
+  have hinv : (D : ℝ)⁻¹ ≤ (ρ.val.card : ℝ)⁻¹ := inv_anti₀ hpos hρD
   have := mul_le_mul_of_nonneg_right hcard (inv_nonneg.2 hpos.le)
   linarith
 
@@ -352,7 +353,7 @@ theorem coe_openSimplicialNeighborhoodControl_le_pow {D : ℕ} (hD : ∀ σ ∈ 
     {n : ℕ} {y : Realization K} (hy : y ∈ K.iteratedOpenSimplicialNeighborhood P n) :
     (K.openSimplicialNeighborhoodControl P y : ℝ) ≤ (1 - (D : ℝ)⁻¹) ^ n := by
   induction n generalizing ι with
-  | zero => simpa using (K.openSimplicialNeighborhoodControl P y).2.2
+  | zero => simpa using (K.openSimplicialNeighborhoodControl P y).property.2
   | succ n ih =>
     obtain ⟨x, hx, rfl⟩ := hy
     have hθ : 0 ≤ 1 - (D : ℝ)⁻¹ := sub_nonneg.2 (Nat.cast_inv_le_one D)
@@ -376,7 +377,7 @@ disjoint from the polyhedron of `P`, then some iterated open simplicial neighbou
 disjoint from `C`. -/
 theorem exists_disjoint_iteratedOpenSimplicialNeighborhood {D : ℕ}
     (hD : ∀ σ ∈ K, σ.card ≤ D) {C : Set (Realization K)} (hC : IsCompact C)
-    (hCP : Disjoint C {y | y.1.support ∈ P}) :
+    (hCP : Disjoint C {y | y.val.support ∈ P}) :
     ∃ n, Disjoint (K.iteratedOpenSimplicialNeighborhood P n) C := by
   rcases C.eq_empty_or_nonempty with rfl | hne
   · exact ⟨0, disjoint_empty _⟩
@@ -384,7 +385,7 @@ theorem exists_disjoint_iteratedOpenSimplicialNeighborhood {D : ℕ}
   obtain ⟨x, hxC, hmin⟩ :=
     hC.exists_isMinOn hne (K.openSimplicialNeighborhoodControl P).continuous.continuousOn
   have hμ : (0 : ℝ) < K.openSimplicialNeighborhoodControl P x := by
-    refine lt_of_le_of_ne (K.openSimplicialNeighborhoodControl P x).2.1 fun h => ?_
+    refine lt_of_le_of_ne (K.openSimplicialNeighborhoodControl P x).property.1 fun h => ?_
     exact hCP.notMem_of_mem_left hxC
       ((K.openSimplicialNeighborhoodControl_eq_zero_iff P).1 (Subtype.ext h.symm))
   -- With the bound `D + 1 ≥ 1`, the decay factor is less than one.
@@ -402,7 +403,7 @@ theorem exists_disjoint_iteratedOpenSimplicialNeighborhood {D : ℕ}
 every open subset of its realization containing the polyhedron of `P` contains the open
 simplicial neighbourhood of `P` after some number of further barycentric subdivisions. -/
 theorem exists_iteratedOpenSimplicialNeighborhood_subset (hfin : K.faces.Finite)
-    {W : Set (Realization K)} (hW : IsOpen W) (hPW : {y : Realization K | y.1.support ∈ P} ⊆ W) :
+    {W : Set (Realization K)} (hW : IsOpen W) (hPW : {y : Realization K | y.val.support ∈ P} ⊆ W) :
     ∃ n, K.iteratedOpenSimplicialNeighborhood P n ⊆ W := by
   have := compactSpace_realization_of_finite_faces K hfin
   obtain ⟨D, hD⟩ := (hfin.image Finset.card).bddAbove
@@ -413,7 +414,7 @@ theorem exists_iteratedOpenSimplicialNeighborhood_subset (hfin : K.faces.Finite)
 
 /-- Compact exhaustion of `|K| \ |P|` extracted from iterated open simplicial neighbourhoods. -/
 def compactExhaustionComplSetOfSupportMem (hfin : K.faces.Finite) :
-    CompactExhaustion ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
+    CompactExhaustion ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)) :=
   have := K.compactSpace_realization_of_finite_faces hfin
   CompactExhaustion.complOfCofinalNhds (K.subcomplexNDRPair P).isClosed
     (K.isOpen_iteratedOpenSimplicialNeighborhood P)
@@ -438,19 +439,19 @@ theorem compactExhaustionComplSetOfSupportMem_def (hfin : K.faces.Finite) :
   CompactExhaustion.complOfCofinalNhds_apply ..
 /-- For a complex with finitely many faces, `|K| \ |P|` is `σ`-compact. -/
 theorem sigmaCompactSpace_compl_setOf_support_mem (hfin : K.faces.Finite) :
-    SigmaCompactSpace ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
+    SigmaCompactSpace ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)) :=
   (K.compactExhaustionComplSetOfSupportMem P hfin).sigmaCompactSpace
 /-- For a finite simplicial complex, `|K| \ |P|` is `σ`-compact. -/
 instance instSigmaCompactSpaceComplSetOfSupportMem [Finite (Face K)] :
-    SigmaCompactSpace ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
+    SigmaCompactSpace ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)) :=
   K.sigmaCompactSpace_compl_setOf_support_mem P (Set.toFinite K.faces)
 /-- Whenever `|K|` is weakly locally compact, `|K| \ |P|` is locally compact. -/
 instance instLocallyCompactSpaceComplSetOfSupportMem [WeaklyLocallyCompactSpace (Realization K)] :
-    LocallyCompactSpace ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
+    LocallyCompactSpace ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)) :=
   (K.subcomplexNDRPair P).isClosed.isOpen_compl.locallyCompactSpace
 /-- For a complex with finitely many faces, `|K| \ |P|` is locally compact. -/
 theorem locallyCompactSpace_compl_setOf_support_mem (hfin : K.faces.Finite) :
-    LocallyCompactSpace ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
+    LocallyCompactSpace ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)) :=
   have := K.compactSpace_realization_of_finite_faces hfin; inferInstance
 
 end AbstractSimplicialComplex

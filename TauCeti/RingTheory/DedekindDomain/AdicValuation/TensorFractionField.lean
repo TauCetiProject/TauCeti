@@ -120,6 +120,6 @@ theorem adicCompletionIntegersTensorEquiv_mem_iff {y : v.adicCompletionIntegers 
     rw [AlgEquiv.commutes, ValuationSubring.algebraMap_apply]
   · rintro ⟨c, rfl⟩
     rw [AlgEquiv.commutes, ValuationSubring.algebraMap_apply]
-    exact c.2
+    exact c.property
 
 end IsDedekindDomain.HeightOneSpectrum

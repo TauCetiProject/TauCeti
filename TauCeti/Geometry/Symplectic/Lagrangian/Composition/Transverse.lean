@@ -39,8 +39,8 @@ immersion (`IsIsotropicMap.isImmersion_relComp_transverseFiberProduct`). A tange
 by the differential gives `v ∈ T M₂` with `(0, v)` tangent to `f` and `(v, 0)` tangent to `g`.
 Isotropy makes `v` orthogonal to the projections of both tangent images, which span `T M₂` by
 transversality, so `v = 0`
-(`TauCeti.SymplecticForm.IsIsotropic.eq_zero_of_map_snd_sup_map_fst_eq_top`). This
-instantiates the pointwise statement `IsIsotropicMap.injective_mfderiv_relComp`. Hence the
+(`TauCeti.SymplecticForm.IsIsotropic.relCompExcess_eq_bot_of_map_snd_sup_map_fst_eq_top`).
+This instantiates the pointwise statement `IsIsotropicMap.injective_mfderiv_relComp`. Hence the
 transverse composite of Lagrangian immersions is a Lagrangian immersion
 (`IsLagrangianImmersion.relComp_transverseFiberProduct`). Conversely, for linear canonical
 relations the absence of excess directions already forces transversality
@@ -129,15 +129,15 @@ theorem IsLagrangianMap.relComp_transverseFiberProduct
     (hgL : (hσ₂.twistedProd hσ₃).IsLagrangianMap K₂ g) :
     letI := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
     (hσ₁.twistedProd hσ₃).IsLagrangianMap KF
-      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) := by
+      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.val.1).1, (g p.val.2).2)) := by
   let := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
   have hval := (isSmoothEmbedding_coe_transverseFiberProduct (by simp) hf.snd hg.fst
     htrans).contMDiff.mdifferentiable (by simp)
   exact hfL.relComp (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₃) hgL (hf.mdifferentiable (by simp))
-    (hg.mdifferentiable (by simp)) hval.fst hval.snd (fun p ↦ p.2) fun p u w h ↦
+    (hg.mdifferentiable (by simp)) hval.fst hval.snd (fun p ↦ p.property) fun p u w h ↦
       exists_mfderiv_eq_of_transverseFiberProduct (by simp) hf.snd hg.fst htrans p u w (by
-        rwa [(hf.mdifferentiable (by simp) p.1.1).mfderiv_snd_apply,
-          (hg.mdifferentiable (by simp) p.1.2).mfderiv_fst_apply])
+        rwa [(hf.mdifferentiable (by simp) p.val.1).mfderiv_snd_apply,
+          (hg.mdifferentiable (by simp) p.val.2).mfderiv_fst_apply])
 
 end Smooth
 
@@ -152,7 +152,7 @@ theorem IsIsotropicMap.isImmersion_relComp_transverseFiberProduct
     (hgi : Manifold.IsImmersion K₂ (I₂.prod I₃) ∞ g) [I₁.Boundaryless] [I₃.Boundaryless] :
     letI := transverseFiberProductChartedSpace (by simp) hfi.contMDiff.snd hgi.contMDiff.fst htrans
     Manifold.IsImmersion KF (I₁.prod I₃) ∞
-      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) := by
+      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.val.1).1, (g p.val.2).2)) := by
   have hf := hfi.contMDiff
   have hg := hgi.contMDiff
   let := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
@@ -163,9 +163,11 @@ theorem IsIsotropicMap.isImmersion_relComp_transverseFiberProduct
   have hvd := hi.contMDiff.mdifferentiable (by simp) p
   -- The inclusion of the fibre product is an immersion, so `(da, db)` is injective.
   exact hfL.injective_mfderiv_relComp (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₃) hgL
-    (hf.mdifferentiable (by simp) _) (hg.mdifferentiable (by simp) _) hvd.fst hvd.snd (fun q ↦ q.2)
-    (hfi.mfderiv_injective (by simp) p.1.1) (hgi.mfderiv_injective (by simp) p.1.2)
-    (eq_zero_of_mfderiv_transverseFiberProduct (by simp) hf.snd hg.fst htrans p) (htrans p.1 p.2)
+    (hf.mdifferentiable (by simp) _) (hg.mdifferentiable (by simp) _) hvd.fst hvd.snd
+        (fun q ↦ q.property)
+    (hfi.mfderiv_injective (by simp) p.val.1) (hgi.mfderiv_injective (by simp) p.val.2)
+    (eq_zero_of_mfderiv_transverseFiberProduct (by simp) hf.snd hg.fst htrans p)
+        (htrans p.val p.property)
 
 /-- **Transverse composition of Lagrangian immersions.** If `f : L₁ → M₁ × M₂` and
 `g : L₂ → M₂ × M₃` are Lagrangian immersions for the twisted products and `x ↦ (f x).2`,
@@ -177,7 +179,7 @@ theorem IsLagrangianImmersion.relComp_transverseFiberProduct [I₁.Boundaryless]
     letI := transverseFiberProductChartedSpace (by simp)
       hfL.isImmersion.contMDiff.snd hgL.isImmersion.contMDiff.fst htrans
     (hσ₁.twistedProd hσ₃).IsLagrangianImmersion KF
-      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) := by
+      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.val.1).1, (g p.val.2).2)) := by
   let := transverseFiberProductChartedSpace (by simp)
     hfL.isImmersion.contMDiff.snd hgL.isImmersion.contMDiff.fst htrans
   refine ⟨IsIsotropicMap.isImmersion_relComp_transverseFiberProduct (hσ₁ := hσ₁) (hσ₂ := hσ₂)

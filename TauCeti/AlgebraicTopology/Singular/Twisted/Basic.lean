@@ -816,45 +816,36 @@ lemma twistedChainComplexCoefficientMap_f_ι_apply (η : L ⟶ K) (k : ℕ)
       (ιTwistedChainComplex K k σ).hom ((η.app (initialVertex σ)).hom v) :=
   congrArg (fun f ↦ f.hom v) (ιTwistedChainComplex_twistedChainComplexCoefficientMap_f η k σ)
 
-/-- A coefficient morphism acts on a simplex coefficient through its initial-vertex component. -/
-@[reassoc (attr := simp)]
-lemma twistedChainComplexCoefficientMap_f_comp_twistedChainComplexCoeff (η : L ⟶ K) {k : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋k⦌) : (twistedChainComplexCoefficientMap η).f k ≫
-      twistedChainComplexCoeff K σ = twistedChainComplexCoeff L σ ≫ η.app (initialVertex σ) :=
-  twistedChainComplex_hom_ext L fun τ ↦ by rcases eq_or_ne τ σ with rfl | h <;> simp [*]
-
-@[simp]
-lemma twistedChainComplexCoeff_twistedChainComplexCoefficientMap_f_apply (η : L ⟶ K) {k : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋k⦌) (a : (twistedChainComplex L).X k) :
-    (twistedChainComplexCoeff K σ).hom (((twistedChainComplexCoefficientMap η).f k).hom a) =
-      (η.app (initialVertex σ)).hom ((twistedChainComplexCoeff L σ).hom a) :=
-  congrArg (·.hom a) (twistedChainComplexCoefficientMap_f_comp_twistedChainComplexCoeff η σ)
-
-/-- The identity coefficient morphism induces the identity on twisted chain complexes. -/
+/-- The identity morphism of a coefficient system induces the identity of twisted chain
+complexes. -/
 @[simp]
 lemma twistedChainComplexCoefficientMap_id (L : LocalCoefficientSystem.{u, v, max v w} R X) :
     twistedChainComplexCoefficientMap (𝟙 L) = 𝟙 (twistedChainComplex L) :=
   (twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).map_id L
 
-/-- Composition of coefficient morphisms induces composition on twisted chain complexes. -/
+/-- A composite of morphisms of coefficient systems induces the composite of the two induced
+morphisms of twisted chain complexes. -/
 @[simp, reassoc]
 lemma twistedChainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
     twistedChainComplexCoefficientMap (η ≫ θ) =
       twistedChainComplexCoefficientMap η ≫ twistedChainComplexCoefficientMap θ :=
   (twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).map_comp η θ
 
-/-- An isomorphism of coefficient systems induces an isomorphism of twisted chain complexes. -/
+/-- An isomorphism of local coefficient systems induces an isomorphism of twisted chain
+complexes. -/
 def twistedChainComplexCoefficientIso (e : L ≅ K) :
     twistedChainComplex L ≅ twistedChainComplex K :=
   (twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).mapIso e
 
-/-- The forward map of `twistedChainComplexCoefficientIso e` is induced by `e.hom`. -/
+/-- The forward map of the induced isomorphism of twisted chain complexes is the map induced by
+`e.hom`. -/
 @[simp]
 lemma twistedChainComplexCoefficientIso_hom (e : L ≅ K) :
     (twistedChainComplexCoefficientIso e).hom = twistedChainComplexCoefficientMap e.hom :=
   (rfl)
 
-/-- The inverse of `twistedChainComplexCoefficientIso e` is induced by `e.inv`. -/
+/-- The inverse of the induced isomorphism of twisted chain complexes is the map induced by
+`e.inv`. -/
 @[simp]
 lemma twistedChainComplexCoefficientIso_inv (e : L ≅ K) :
     (twistedChainComplexCoefficientIso e).inv = twistedChainComplexCoefficientMap e.inv :=
@@ -1161,6 +1152,7 @@ contravariant `Hom(-, M)`. -/
 instance isSplitMono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
     IsSplitMono ((twistedChainsMap f L).app k) :=
   TauCeti.isSplitMono_sigmaMap' (fun σ ↦ L.obj (initialVertex σ)) ((TopCat.toSSet.map f).app k)
+    ((mono_iff_injective _).1 inferInstance)
 
 /-- A monomorphism of spaces induces a degreewise split monomorphism of twisted chain
 complexes. -/
@@ -1339,6 +1331,15 @@ def subsetTwistedChainComplexMap (h : A ⊆ B) :
         (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
     twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
       ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L)
+
+/-- The map induced by `A ⊆ B` is the change of coefficients identifying the two restrictions of
+`L` to `A`, followed by the map induced by the inclusion of `A` into `B`. -/
+lemma subsetTwistedChainComplexMap_def (h : A ⊆ B) :
+    subsetTwistedChainComplexMap L h = twistedChainComplexCoefficientMap
+        ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
+          (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
+      twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
+        ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L) := (rfl)
 
 /-- The map induced by `A ⊆ B` followed by the map induced by `B ⊆ X` is the map induced by
 `A ⊆ X`. -/

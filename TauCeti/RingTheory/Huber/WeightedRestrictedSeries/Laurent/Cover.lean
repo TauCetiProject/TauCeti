@@ -13,26 +13,50 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # The two-piece Laurent cover
 
-Let `A` be a complete separated nonarchimedean ring and let `f : A`.  The two Laurent pieces and
-their overlap have the presentations
+Let `A` be a complete separated nonarchimedean ring and let `f : A`.  Following Wedhorn (8.2.1),
+we use the presentations
 
 ```text
-A⟨X⟩/(f-X),   A⟨Y⟩/(1-fY),   A⟨X,Y⟩/(1-XY, f-X).
+A⟨X⟩/(f-X),   A⟨Y⟩/(1-fY),   A⟨X,Y⟩/(1-XY, f-X)
 ```
+
+for the two Laurent pieces and their overlap.  These are the algebraic quotients by the relation
+ideals; they are the coordinate rings of the pieces when `A` is a strongly noetherian Tate ring
+(Wedhorn, Examples 6.38 and 6.39), where the relation ideals are closed.
 
 This file descends the exact Laurent row from
 `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Laurent.Basic` to these presentations.  The
 difference of the two restriction maps is surjective, and its kernel consists exactly of pairs of
-equal constants.  This is the algebraic exactness assertion for the two-piece Laurent cover in
-Wedhorn's Lemma 8.33.
+equal constants.  This is exactness in the middle and at the right end of the algebraic sequence
+for the two-piece Laurent cover in Wedhorn's Lemma 8.33; injectivity of the first map (Wedhorn,
+Corollary 8.32) is not proved in this file.
 
 The proof uses the decomposition of every restricted Laurent series as a series in `X` plus `Y`
 times a series in `Y`.  Multiplying that decomposition by `f-X` expresses an arbitrary element of
 the overlap relation ideal as the image of the two piece relation ideals.
 
+## Main definitions
+
+* `TauCeti.Huber.laurentCoverLeIdeal`, `TauCeti.Huber.laurentCoverGeIdeal` and
+  `TauCeti.Huber.laurentCoverOverlapIdeal`: the relation ideals `(f-X)` and `(1-fY)` of the two
+  pieces, and `(f-X)` in the overlap ring `A⟨X, X⁻¹⟩`.
+* `TauCeti.Huber.laurentCoverLe`, `TauCeti.Huber.laurentCoverGe` and
+  `TauCeti.Huber.laurentCoverOverlap`: the three quotient rings, the presentations above.
+* `TauCeti.Huber.laurentCoverLeToOverlap` and `TauCeti.Huber.laurentCoverGeToOverlap`: the
+  restrictions of the two pieces to the overlap.
+* `TauCeti.Huber.laurentCoverDiff`: the Čech differential, the difference of the two
+  restrictions.
+
+## Main results
+
+* `TauCeti.Huber.laurentCoverDiff_surjective`: the difference of the two restriction maps is
+  surjective.
+* `TauCeti.Huber.exact_algebraMap_laurentCoverDiff`: exactness in the middle, a pair has equal
+  restrictions to the overlap exactly when it is a pair of equal constants.
+
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.33, p. 84.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.33, pp. 83-84.
 
 ## Provenance
 
@@ -49,10 +73,6 @@ namespace TauCeti.Huber
 
 variable (A : Type*) [CommRing A]
 
-section Topological
-
-variable [TopologicalSpace A] [NonarchimedeanRing A]
-
 local notation "R₁" =>
   weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight
 
@@ -60,6 +80,10 @@ local notation "R₂" =>
   weightedRestrictedSubring (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight
 
 local notation "R±" => R₂ ⧸ laurentIdeal A
+
+section Topological
+
+variable [TopologicalSpace A] [NonarchimedeanRing A]
 
 /-- The relation ideal `(f-X)` defining the Laurent piece `{|f| ≤ 1}`. -/
 noncomputable def laurentCoverLeIdeal (f : A) : Ideal R₁ :=
@@ -70,8 +94,7 @@ theorem laurentCoverLeIdeal_def (f : A) :
     laurentCoverLeIdeal A f =
       Ideal.span
         {weightedC _ isWeightFamily_one_weight f -
-          weightedX _ isWeightFamily_one_weight 0} :=
-  by rfl
+          weightedX _ isWeightFamily_one_weight 0} := by rfl
 
 /-- Membership in the principal relation ideal defining the piece `{|f| ≤ 1}`. -/
 theorem mem_laurentCoverLeIdeal_iff (f : A) {a : R₁} :
@@ -89,8 +112,7 @@ theorem laurentCoverGeIdeal_def (f : A) :
     laurentCoverGeIdeal A f =
       Ideal.span
         {1 - weightedC _ isWeightFamily_one_weight f *
-          weightedX _ isWeightFamily_one_weight 0} :=
-  by rfl
+          weightedX _ isWeightFamily_one_weight 0} := by rfl
 
 /-- Membership in the principal relation ideal defining the piece `{|f| ≥ 1}`. -/
 theorem mem_laurentCoverGeIdeal_iff (f : A) {a : R₁} :
@@ -109,8 +131,7 @@ noncomputable def laurentCoverOverlapIdeal (f : A) : Ideal R± :=
 theorem laurentCoverOverlapIdeal_def (f : A) :
     laurentCoverOverlapIdeal A f =
       Ideal.span {algebraMap A R± f -
-        Ideal.Quotient.mk (laurentIdeal A) (weightedX _ isWeightFamily_one_weight 0)} :=
-  by rfl
+        Ideal.Quotient.mk (laurentIdeal A) (weightedX _ isWeightFamily_one_weight 0)} := by rfl
 
 /-- Membership in the principal relation ideal defining the overlap. -/
 theorem mem_laurentCoverOverlapIdeal_iff (f : A) {a : R±} :
@@ -120,13 +141,17 @@ theorem mem_laurentCoverOverlapIdeal_iff (f : A) {a : R±} :
           (weightedX _ isWeightFamily_one_weight 0)) = a := by
   rw [laurentCoverOverlapIdeal_def, Ideal.mem_span_singleton']
 
-/-- The coordinate ring of the Laurent piece `{|f| ≤ 1}`. -/
+/-- The algebraic quotient presentation `A⟨X⟩/(f-X)` of the Laurent piece `{|f| ≤ 1}`. It is the
+coordinate ring of the piece when `A` is a complete separated strongly noetherian Tate ring. -/
 noncomputable abbrev laurentCoverLe (f : A) := R₁ ⧸ laurentCoverLeIdeal A f
 
-/-- The coordinate ring of the Laurent piece `{|f| ≥ 1}`. -/
+/-- The algebraic quotient presentation `A⟨Y⟩/(1-fY)` of the Laurent piece `{|f| ≥ 1}`. It is the
+coordinate ring of the piece when `A` is a complete separated strongly noetherian Tate ring. -/
 noncomputable abbrev laurentCoverGe (f : A) := R₁ ⧸ laurentCoverGeIdeal A f
 
-/-- The coordinate ring of the overlap `{|f| = 1}` of the two Laurent pieces. -/
+/-- The algebraic quotient presentation `A⟨X,Y⟩/(1-XY, f-X)` of the overlap `{|f| = 1}` of the two
+Laurent pieces. It is the coordinate ring of the overlap when `A` is a complete separated
+strongly noetherian Tate ring. -/
 noncomputable abbrev laurentCoverOverlap (f : A) :=
   R± ⧸ laurentCoverOverlapIdeal A f
 
@@ -164,7 +189,7 @@ private theorem laurentCoverLeIdeal_le_ker (f : A) :
   apply (RingHom.mem_ker).2
   simp only [laurentCoverLeMap, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
     weightedRenameAlgHom_apply, map_sub, weightedRename_weightedC, weightedRename_weightedX]
-  rw [Fin.castSuccEmb_apply, Fin.castSucc_zero',
+  rw [Fin.castSuccEmb_apply, Fin.castSucc_zero,
     mk_weightedC_eq_mk_weightedX_in_laurentCoverOverlap, sub_self]
 
 private theorem laurentCoverGeIdeal_le_ker (f : A) :
@@ -198,8 +223,7 @@ theorem laurentCoverLeToOverlap_mk (f : A) (a : R₁) :
       Ideal.Quotient.mk (laurentCoverOverlapIdeal A f)
         (Ideal.Quotient.mk (laurentIdeal A)
           (weightedRename Fin.castSuccEmb isWeightFamily_one_weight
-            isWeightFamily_one_weight (fun _ ↦ subset_rfl) a)) :=
-  by
+            isWeightFamily_one_weight (fun _ ↦ subset_rfl) a)) := by
     have h := DFunLike.congr_fun
       (Ideal.Quotient.liftₐ_comp (laurentCoverLeIdeal A f) (laurentCoverLeMap A f)
         (fun _ ha ↦ (RingHom.mem_ker).1 (laurentCoverLeIdeal_le_ker A f ha))) a
@@ -218,8 +242,7 @@ theorem laurentCoverGeToOverlap_mk (f : A) (a : R₁) :
       Ideal.Quotient.mk (laurentCoverOverlapIdeal A f)
         (Ideal.Quotient.mk (laurentIdeal A)
           (weightedRename (Fin.succEmb 1) isWeightFamily_one_weight
-            isWeightFamily_one_weight (fun _ ↦ subset_rfl) a)) :=
-  by
+            isWeightFamily_one_weight (fun _ ↦ subset_rfl) a)) := by
     have h := DFunLike.congr_fun
       (Ideal.Quotient.liftₐ_comp (laurentCoverGeIdeal A f) (laurentCoverGeMap A f)
         (fun _ ha ↦ (RingHom.mem_ker).1 (laurentCoverGeIdeal_le_ker A f ha))) a
@@ -262,15 +285,8 @@ section Complete
 variable [UniformSpace A] [IsUniformAddGroup A] [NonarchimedeanRing A] [CompleteSpace A]
   [T0Space A]
 
-local notation "R₁" =>
-  weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight
-
-local notation "R₂" =>
-  weightedRestrictedSubring (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight
-
-local notation "R±" => R₂ ⧸ laurentIdeal A
-
-/-- The Čech differential of the two-piece Laurent cover is surjective. -/
+/-- The difference of the two restriction maps from the quotient presentations `laurentCoverLe`
+and `laurentCoverGe` to `laurentCoverOverlap` is surjective. -/
 theorem laurentCoverDiff_surjective (f : A) : Function.Surjective (laurentCoverDiff A f) := by
   intro z
   obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective z
@@ -292,7 +308,7 @@ private theorem laurentDiff_pieceRelations (f : A) (u : R₂) :
   refine ⟨c, d, ?_⟩
   rw [laurentDiff_apply]
   simp only [map_mul, map_sub, map_one, weightedRename_weightedC, weightedRename_weightedX]
-  rw [Fin.castSuccEmb_apply, Fin.castSucc_zero', Fin.coe_succEmb, Fin.succ_zero_eq_one']
+  rw [Fin.castSuccEmb_apply, Fin.castSucc_zero, Fin.coe_succEmb, Fin.succ_zero_eq_one']
   have hu' : Ideal.Quotient.mk (laurentIdeal A) u =
       Ideal.Quotient.mk (laurentIdeal A)
         (weightedRename Fin.castSuccEmb isWeightFamily_one_weight isWeightFamily_one_weight
@@ -307,21 +323,23 @@ private theorem laurentDiff_pieceRelations (f : A) (u : R₂) :
   rw [hu']
   simp only [map_add, map_mul]
   have hXY := mk_weightedX_zero_mul_mk_weightedX_one A
-  ring_nf at hXY ⊢
   linear_combination hXY *
     Ideal.Quotient.mk (laurentIdeal A)
       (weightedRename (Fin.succEmb 1) isWeightFamily_one_weight
         isWeightFamily_one_weight (fun _ ↦ subset_rfl) d)
 
-/-- The forward direction of `exact_algebraMap_laurentCoverDiff`: a pair of quotient classes with
-equal restrictions to the overlap is the image of a constant. -/
-private theorem exists_algebraMap_eq_of_laurentCoverDiff_mk_eq_zero (f : A) (a b : R₁)
+/-- If the images of `a` and `b` agree in the overlap, they differ from a common constant `z` by
+multiples of the generators `f - X₀` and `1 - f X₀` of the two Laurent ideals. -/
+private theorem exists_weightedC_eq_sub_of_laurentCoverDiff_mk_eq_zero (f : A) (a b : R₁)
     (h : laurentCoverDiff A f
       (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a,
         Ideal.Quotient.mk (laurentCoverGeIdeal A f) b) = 0) :
-    ∃ z : A, algebraMap A (laurentCoverLe A f × laurentCoverGe A f) z =
-      (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a,
-        Ideal.Quotient.mk (laurentCoverGeIdeal A f) b) := by
+    ∃ (z : A) (c d : R₁), weightedC _ isWeightFamily_one_weight z =
+        a - (weightedC _ isWeightFamily_one_weight f -
+          weightedX _ isWeightFamily_one_weight 0) * c ∧
+      weightedC _ isWeightFamily_one_weight z =
+        b - (1 - weightedC _ isWeightFamily_one_weight f *
+          weightedX _ isWeightFamily_one_weight 0) * d := by
   rw [laurentCoverDiff_mk, Ideal.Quotient.eq_zero_iff_mem,
     laurentCoverOverlapIdeal, Ideal.mem_span_singleton'] at h
   obtain ⟨q, hq⟩ := h
@@ -339,35 +357,39 @@ private theorem exists_algebraMap_eq_of_laurentCoverDiff_mk_eq_zero (f : A) (a b
           weightedX _ isWeightFamily_one_weight 0) * d) = 0 := by
     rw [← Prod.mk_sub_mk, map_sub, hab, sub_self]
   obtain ⟨z, hz⟩ := (exact_algebraMap_laurentDiff A _).mp hz
-  refine ⟨z, Prod.ext ?_ ?_⟩
-  · have hz₁ : weightedC _ isWeightFamily_one_weight z =
-        a - (weightedC _ isWeightFamily_one_weight f -
-          weightedX _ isWeightFamily_one_weight 0) * c := by
-      simpa only [Prod.algebraMap_apply, algebraMap_weightedRestrictedSubring] using
-        congrArg Prod.fst hz
-    -- Expose the product algebra map to compare its first component in the quotient.
-    change Ideal.Quotient.mk (laurentCoverLeIdeal A f)
-      (weightedC _ isWeightFamily_one_weight z) =
-        Ideal.Quotient.mk (laurentCoverLeIdeal A f) a
-    rw [hz₁, map_sub, sub_eq_self, Ideal.Quotient.eq_zero_iff_mem]
+  refine ⟨z, c, d, ?_, ?_⟩
+  · simpa only [Prod.algebraMap_apply, algebraMap_weightedRestrictedSubring] using
+      congrArg Prod.fst hz
+  · simpa only [Prod.algebraMap_apply, algebraMap_weightedRestrictedSubring] using
+      congrArg Prod.snd hz
+
+/-- The forward direction of `exact_algebraMap_laurentCoverDiff`: a pair of quotient classes with
+equal restrictions to the overlap is the image of a constant. -/
+private theorem exists_algebraMap_eq_of_laurentCoverDiff_mk_eq_zero (f : A) (a b : R₁)
+    (h : laurentCoverDiff A f
+      (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a,
+        Ideal.Quotient.mk (laurentCoverGeIdeal A f) b) = 0) :
+    ∃ z : A, algebraMap A (laurentCoverLe A f × laurentCoverGe A f) z =
+      (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a,
+        Ideal.Quotient.mk (laurentCoverGeIdeal A f) b) := by
+  obtain ⟨z, c, d, hz₁, hz₂⟩ := exists_weightedC_eq_sub_of_laurentCoverDiff_mk_eq_zero A f a b h
+  refine ⟨z, ?_⟩
+  rw [Prod.algebraMap_apply, ← Ideal.Quotient.mk_algebraMap, ← Ideal.Quotient.mk_algebraMap,
+    algebraMap_weightedRestrictedSubring, Prod.mk.injEq]
+  refine ⟨?_, ?_⟩
+  · rw [hz₁, map_sub, sub_eq_self, Ideal.Quotient.eq_zero_iff_mem]
     rw [laurentCoverLeIdeal]
     exact Ideal.mul_mem_right c _ (Ideal.mem_span_singleton_self _)
-  · have hz₂ : weightedC _ isWeightFamily_one_weight z =
-        b - (1 - weightedC _ isWeightFamily_one_weight f *
-          weightedX _ isWeightFamily_one_weight 0) * d := by
-      simpa only [Prod.algebraMap_apply, algebraMap_weightedRestrictedSubring] using
-        congrArg Prod.snd hz
-    -- Expose the product algebra map to compare its second component in the quotient.
-    change Ideal.Quotient.mk (laurentCoverGeIdeal A f)
-      (weightedC _ isWeightFamily_one_weight z) =
-        Ideal.Quotient.mk (laurentCoverGeIdeal A f) b
-    rw [hz₂, map_sub, sub_eq_self, Ideal.Quotient.eq_zero_iff_mem]
+  · rw [hz₂, map_sub, sub_eq_self, Ideal.Quotient.eq_zero_iff_mem]
     rw [laurentCoverGeIdeal]
     exact Ideal.mul_mem_right d _ (Ideal.mem_span_singleton_self _)
 
-/-- **Wedhorn's Lemma 8.33, exactness in the middle.** For the two Laurent pieces
-`{|f| ≤ 1}` and `{|f| ≥ 1}`, a pair of sections has equal restrictions to the overlap exactly
-when it is a pair of equal constants. -/
+/-- **Wedhorn's Lemma 8.33, exactness in the middle, for the algebraic presentations.** For the
+quotients `laurentCoverLe` and `laurentCoverGe`, a pair of elements has equal restrictions to
+`laurentCoverOverlap` exactly when it is a pair of equal constants. The corresponding
+statement for the completed rational localisations is
+`TauCeti.ValuationSpectrum.laurentCover_exact`, and the one for the presentation-limit presheaf is
+`TauCeti.ValuationSpectrum.exists_presentationLimitMap_eq_of_laurentCoverOpen`. -/
 theorem exact_algebraMap_laurentCoverDiff (f : A) :
     Function.Exact
       (algebraMap A (laurentCoverLe A f × laurentCoverGe A f))

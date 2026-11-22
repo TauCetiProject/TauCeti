@@ -306,10 +306,10 @@ theorem twistedHomologyTotalToOuter_comp_twistedHomologyToBorelMooreHomologyComp
   have hfCompl_maps (n : ℕ) : Set.MapsTo fCompl (K'' n)ᶜ (K n)ᶜ :=
     fun _ hx hfx ↦ hx (K'.preimage_subset_supPreimage hfCompl K n hfx)
   have hf_maps (n : ℕ) : Set.MapsTo f (iA' '' K'' n)ᶜ (iA '' K n)ᶜ := by
-    rintro x hx ⟨y, hyK, hyx⟩; have hyx' : y.1 = f x := hyx
-    have hxA' : x ∉ A' := fun hx' ↦ y.2 <| by
+    rintro x hx ⟨y, hyK, hyx⟩; have hyx' : y.val = f x := hyx
+    have hxA' : x ∉ A' := fun hx' ↦ y.property <| by
       have h := congrArg (fun k : TopCat.of (A' : Set X') ⟶ X ↦ k ⟨x, hx'⟩) (TopPair.Hom.w φ)
-      exact hyx'.symm ▸ h ▸ (TopPair.Hom.snd φ ⟨x, hx'⟩).2
+      exact hyx'.symm ▸ h ▸ (TopPair.Hom.snd φ ⟨x, hx'⟩).property
     have hfy : fCompl ⟨x, hxA'⟩ = y := Subtype.ext <|
       (congrArg (fun k : TopCat.of (A'ᶜ : Set X') ⟶ X ↦ k ⟨x, hxA'⟩) hw).trans hyx'.symm
     exact hx ⟨⟨x, hxA'⟩, K'.preimage_subset_supPreimage hfCompl K n (by simpa [hfy] using hyK), rfl⟩

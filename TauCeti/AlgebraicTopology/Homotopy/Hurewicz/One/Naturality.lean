@@ -57,11 +57,11 @@ lemma homologyMap_H₁AddEquivHomology_mk (c : cycles₁ X) :
     (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
         (H₁AddEquivHomology X (H₁.mk c)) =
       H₁AddEquivHomology Y
-        (H₁.mk ⟨((singularChains ℤ).map f).f 1 c, map_mem_cycles₁ f c.2⟩) := by
+        (H₁.mk ⟨((singularChains ℤ).map f).f 1 c, map_mem_cycles₁ f c.property⟩) := by
   let z := ((singularChains ℤ).obj X).moduleCatCyclesMk (c : ((singularChains ℤ).obj X).X 1) 0
-    (by simp) c.2
+    (by simp) c.property
   have hz : (((singularChains ℤ).obj X).iCycles 1).hom z = c :=
-    ((singularChains ℤ).obj X).iCycles_moduleCatCyclesMk 1 _ 0 (by simp) c.2
+    ((singularChains ℤ).obj X).iCycles_moduleCatCyclesMk 1 _ 0 (by simp) c.property
   have h₁ := congr($(HomologicalComplex.homologyπ_naturality ((singularChains ℤ).map f) 1).hom z)
   have h₂ := congr($(HomologicalComplex.cyclesMap_i ((singularChains ℤ).map f) 1).hom z)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁ h₂

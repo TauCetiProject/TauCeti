@@ -14,8 +14,9 @@ public import Mathlib.Topology.Separation.Regular
 # Operations on compact exhaustions and compact exhaustions of open sets
 
 Supplements `Mathlib.Topology.Compactness.SigmaCompact` with `CompactExhaustion.sigmaCompactSpace`,
-`weaklyLocallyCompactSpace`, `instMax` (`⊔`), `supImage`, `supPreimage`, and
-`CompactExhaustion.complOfCofinalNhds` (via `TauCeti.cofinalNhdsIndex`).
+`weaklyLocallyCompactSpace`, `instMax` (`⊔`), `supImage`, `supPreimage`,
+`CompactExhaustion.complOfCofinalNhds` (via `TauCeti.cofinalNhdsIndex`),
+`CompactExhaustion.subtype`, and `TauCeti.isOpen_of_subset_interior_succ`.
 -/
 
 public section
@@ -31,10 +32,10 @@ theorem IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_s
       ∀ K, IsCompact K → K ⊆ Ω → ∃ m, K ⊆ L m := by
   have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
   let Kx : CompactExhaustion Ω := CompactExhaustion.choice Ω
-  refine ⟨fun m => (↑) '' Kx m, fun m => (Kx.isCompact m).image continuous_subtype_val,
+  refine ⟨fun m => (↑) '' Kx m, fun m => (Kx.isCompact m).image continuous_subtypeVal,
     fun m => ?_, fun m m' h => image_mono (Kx.subset h), fun K hK hKΩ => ?_⟩
   · rintro _ ⟨x, -, rfl⟩
-    exact x.2
+    exact x.property
   · have hK' : IsCompact (((↑) : Ω → X) ⁻¹' K) :=
       Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
     obtain ⟨m, hm⟩ := Kx.exists_superset_of_isCompact hK'
@@ -106,6 +107,15 @@ end CompactExhaustion
 
 namespace TauCeti
 
+/-- A subset `U` covered by subsets `Kₙ ⊆ U` with `Kₙ ⊆ interior Kₙ₊₁` is open: it is the union of
+the interiors of the `Kₙ`. -/
+theorem isOpen_of_subset_interior_succ {X : Type*} [TopologicalSpace X] {U : Set X}
+    {K : ℕ → Set X} (hKU : ∀ n, K n ⊆ U) (hsub : ∀ n, K n ⊆ interior (K (n + 1)))
+    (hcover : U ⊆ ⋃ n, K n) : IsOpen U := by
+  refine isOpen_iff_mem_nhds.2 fun x hx ↦ ?_
+  obtain ⟨n, hn⟩ := mem_iUnion.1 (hcover hx)
+  exact Filter.mem_of_superset (mem_interior_iff_mem_nhds.1 (hsub n hn)) (hKU (n + 1))
+
 section CofinalNeighborhoods
 
 variable {X : Type*} [TopologicalSpace X] [hNorm : NormalSpace X] {A : Set X} (hA : IsClosed A)
@@ -162,11 +172,11 @@ noncomputable def complOfCofinalNhds : CompactExhaustion (Aᶜ : Set X) where
     (preimage_mono (compl_subset_compl.2 <|
       (TauCeti.closure_apply_cofinalNhdsIndex_succ_subset_inter hA hU_open hAU hU_cofinal n).trans
         inter_subset_left)).trans <|
-      (isClosed_closure.isOpen_compl.preimage continuous_subtype_val).subset_interior_iff.2
+      (isClosed_closure.isOpen_compl.preimage continuous_subtypeVal).subset_interior_iff.2
         (preimage_mono (compl_subset_compl.2 subset_closure))
   iUnion_eq' := eq_univ_iff_forall.2 fun y ↦ mem_iUnion.2 <|
     let ⟨n, hn⟩ := hU_cofinal isClosed_singleton.isOpen_compl
-      fun _ ha (hy : _ = y.1) ↦ y.2 (hy ▸ ha)
+      fun _ ha (hy : _ = y.val) ↦ y.property (hy ▸ ha)
     ⟨n, fun hyU ↦ hn (TauCeti.apply_cofinalNhdsIndex_subset hA hU_open hAU hU_cofinal n hyU) rfl⟩
 @[simp] lemma complOfCofinalNhds_apply (n : ℕ) :
     complOfCofinalNhds hA hU_open hAU hU_cofinal n =
@@ -181,5 +191,29 @@ lemma compl_image_subtypeVal_complOfCofinalNhds (n : ℕ) :
   rw [image_subtypeVal_complOfCofinalNhds, compl_compl]
 
 end CofinalNeighborhoods
+
+variable {X : Type*} [TopologicalSpace X] (U : Set X) (K : ℕ → Set X)
+  (hK : ∀ n, IsCompact (K n)) (hKU : ∀ n, K n ⊆ U) (hsub : ∀ n, K n ⊆ interior (K (n + 1)))
+  (hcover : U ⊆ ⋃ n, K n)
+
+/-- Compact subsets `Kₙ ⊆ U` of the ambient space with `Kₙ ⊆ interior Kₙ₊₁` that cover `U` trace
+the compact exhaustion `n ↦ U ∩ Kₙ` of the subspace `U`. -/
+-- The body is exposed so that its sets unfold to the preimages `Subtype.val ⁻¹' Kₙ`: pairs and
+-- chain complexes built from the exhaustion must agree with those built from these preimages up to
+-- definitional equality, as in the twisted relative chains of `U` and of `X`.
+@[expose]
+def subtype : CompactExhaustion U where
+  toFun n := Subtype.val ⁻¹' K n
+  isCompact' n := Subtype.isCompact_iff.2 <| by
+    rw [Subtype.image_preimage_coe, inter_eq_right.2 (hKU n)]
+    exact hK n
+  subset_interior_succ' n := (preimage_mono (hsub n)).trans
+    (preimage_interior_subset_interior_preimage continuous_subtypeVal)
+  iUnion_eq' := eq_univ_of_forall fun x ↦ by simpa using hcover x.property
+
+@[simp]
+theorem subtype_apply (n : ℕ) :
+    CompactExhaustion.subtype U K hK hKU hsub hcover n = Subtype.val ⁻¹' K n :=
+  (rfl)
 
 end CompactExhaustion
