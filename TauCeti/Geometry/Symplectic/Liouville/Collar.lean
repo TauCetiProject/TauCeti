@@ -54,12 +54,13 @@ Packaging the collar map with its smooth inverse gives the collar neighbourhood 
 embedded hypersurface `ι` with `ι^* α` contact, `Φ` is a diffeomorphism
 (`PartialDiffeomorph`) from a collar `{(t, s) | |t| < ε s}` onto an open neighbourhood of the image
 of `ι`, pulling `α` back to `eᵗ ι^* α` and `dα` back to `d(eᵗ ι^* α)`
-(`TauCeti.exists_partialDiffeomorph_flowOf_comp`; with constant width for compact `S`,
-`TauCeti.exists_pos_partialDiffeomorph_flowOf_comp`). For a hypersurface of restricted contact
+(`TauCeti.exists_continuous_pos_partialDiffeomorph_flowOf_comp`; with constant width for compact
+`S`, `TauCeti.exists_pos_partialDiffeomorph_flowOf_comp`). For a hypersurface of restricted contact
 type in a symplectic manifold `(M, σ = dα)` this identifies a neighbourhood of the hypersurface
 with a collar of `{0} × S` in the symplectization `(ℝ × S, d(eᵗ ι^* α))` of its contact form
-(`TauCeti.IsRestrictedContactType.exists_partialDiffeomorph_mpullback_eq_symplectization`). The
-inverse needs a nonempty `S`, since `M` maps back into `ℝ × S`.
+(`IsRestrictedContactType.exists_continuous_pos_partialDiffeomorph_mpullback_eq_symplectization`
+in the `TauCeti` namespace).
+The inverse needs a nonempty `S`, since `M` maps back into `ℝ × S`.
 
 ## Main results
 
@@ -72,13 +73,13 @@ inverse needs a nonempty `S`, since `M` maps back into `ℝ × S`.
 * `TauCeti.exists_continuous_pos_injOn_flowOf_comp`: the collar of variable width of an embedded
   hypersurface.
 * `TauCeti.exists_pos_injOn_flowOf_comp`: the collar of uniform width of a compact hypersurface.
-* `TauCeti.exists_partialDiffeomorph_flowOf_comp`,
+* `TauCeti.exists_continuous_pos_partialDiffeomorph_flowOf_comp`,
   `TauCeti.exists_pos_partialDiffeomorph_flowOf_comp`: the collar map as a diffeomorphism onto an
   open neighbourhood of the hypersurface, pulling `α` back to `eᵗ ι^* α`.
-* `TauCeti.IsRestrictedContactType.exists_partialDiffeomorph_mpullback_eq_symplectization`,
-  `TauCeti.IsRestrictedContactType.exists_pos_partialDiffeomorph_mpullback_eq_symplectization`:
-  a neighbourhood of a hypersurface of restricted contact type is symplectomorphic to a collar in
-  the symplectization of its contact form.
+* `IsRestrictedContactType.exists_continuous_pos_partialDiffeomorph_mpullback_eq_symplectization`,
+  `IsRestrictedContactType.exists_pos_partialDiffeomorph_mpullback_eq_symplectization`
+  (in the `TauCeti` namespace): a neighbourhood of a hypersurface of restricted contact type is
+  symplectomorphic to a collar in the symplectization of its contact form.
 
 ## References
 
@@ -323,7 +324,7 @@ the symplectization form `eᵗ ι^* α`, and `dα` back to `d(eᵗ ι^* α)`.
 
 No compactness of `S` is needed; `S` and `M` only need to be pseudometrizable, as second countable
 Hausdorff manifolds are. -/
-theorem exists_partialDiffeomorph_flowOf_comp [Nonempty S] [FiniteDimensional ℝ E']
+theorem exists_continuous_pos_partialDiffeomorph_flowOf_comp [Nonempty S] [FiniteDimensional ℝ E']
     [J.Boundaryless]
     [TopologicalSpace.PseudoMetrizableSpace M] [TopologicalSpace.PseudoMetrizableSpace S]
     (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hZα : (mextDeriv α.val).interior Z = α.val)
@@ -373,11 +374,13 @@ field `Z` of `σ`, `ι_Z σ = α`, is transverse along `ι`. Then `ι^* α` is a
 collar in its symplectization: for some positive continuous width `ε : S → ℝ` there is a
 diffeomorphism `Φ` from `{(t, s) | |t| < ε s}` onto an open subset of `M` with `Φ(0, s) = ι s`,
 which pulls `α` back to `eᵗ ι^* α` and `σ` back to the symplectic form `d(eᵗ ι^* α)`. It is the
-local flow map `(t, s) ↦ φₜ(ι s)` of `Z` (`TauCeti.exists_partialDiffeomorph_flowOf_comp`).
+local flow map `(t, s) ↦ φₜ(ι s)` of `Z`
+(`TauCeti.exists_continuous_pos_partialDiffeomorph_flowOf_comp`).
 
 In the convention `ω = -dλ` of an exact symplectic manifold, with `α = -λ`, this says that `Φ`
 pulls `-λ` back to `eᵗ (-λ)|_S` and `ω` back to `d(eᵗ (-λ)|_S)`. -/
-theorem IsRestrictedContactType.exists_partialDiffeomorph_mpullback_eq_symplectization
+theorem
+    IsRestrictedContactType.exists_continuous_pos_partialDiffeomorph_mpullback_eq_symplectization
     [IsManifold J ∞ S] [Nonempty S] [FiniteDimensional ℝ E'] [J.Boundaryless]
     [TopologicalSpace.PseudoMetrizableSpace M] [TopologicalSpace.PseudoMetrizableSpace S]
     {σ : SmoothTwoForm I M} (hσ : σ.IsNondegenerate) {α : SmoothForm I M ℝ 1}
@@ -391,8 +394,9 @@ theorem IsRestrictedContactType.exists_partialDiffeomorph_mpullback_eq_symplecti
       ∀ p ∈ Φ.source, mpullback (𝓘(ℝ).prod J) I Φ σ.val p =
         mextDeriv (SmoothForm.mpullback ι hι α).symplectization.val p := by
   obtain ⟨hdα, Z, hZ, hZα, -⟩ := isRestrictedContactType_iff.1 h
-  obtain ⟨ε, hε, Φ, hs, hΦ, hΦα, hΦdα⟩ := exists_partialDiffeomorph_flowOf_comp hZ hι hdim
-    (by rw [hdα, hZα]) (h.isContactType.isContactForm_mpullback hσ hι hιs hdim) hιe
+  obtain ⟨ε, hε, Φ, hs, hΦ, hΦα, hΦdα⟩ :=
+    exists_continuous_pos_partialDiffeomorph_flowOf_comp hZ hι hdim (by rw [hdα, hZα])
+      (h.isContactType.isContactForm_mpullback hσ hι hιs hdim) hιe
   refine ⟨ε, hε, Φ, hs, fun s ↦ by simp [hΦ], hΦα, ?_⟩
   rw [← hdα]
   exact hΦdα
