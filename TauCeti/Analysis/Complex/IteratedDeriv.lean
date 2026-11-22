@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.Complex.TaylorSeries
+import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 
@@ -37,10 +38,10 @@ derivatives (`TendstoLocallyUniformlyOn.iteratedDeriv`), and hence of all real i
 For a family `f t` of maps holomorphic on `U`, depending on a real variable `t` with derivative
 `f' t` in `t`, Weierstrass's theorem applied to the difference quotients `t⁻¹ (f t - f 0)` shows
 that `f' 0` is again holomorphic on `U` and that the complex derivatives of `f t` are
-differentiable in `t` at `0`, with derivatives those of `f' 0`, provided `f' t` is within `C |t|`
-of `f' 0` uniformly on `U` (`TauCeti.differentiableOn_of_hasDerivAt_of_norm_sub_le`,
-`TauCeti.hasDerivAt_iteratedDeriv_of_norm_sub_le`). No joint regularity in `t` and the complex
-variable is assumed.
+differentiable in `t` at `0`, with derivatives those of `f' 0`, provided `f' t` converges to
+`f' 0` uniformly on `U` (`TauCeti.differentiableOn_of_hasDerivAt_of_tendstoUniformlyOn`,
+`TauCeti.hasDerivAt_iteratedDeriv_of_tendstoUniformlyOn`). No joint regularity in `t` and the
+complex variable is assumed.
 -/
 
 public section
@@ -131,56 +132,29 @@ section RealVariable
 
 open Filter Metric Topology
 
-variable {f f' : ℝ → ℂ → E} {U : Set ℂ} {δ C : ℝ}
+variable {f f' : ℝ → ℂ → E} {U : Set ℂ} {δ : ℝ}
 
 omit [CompleteSpace E] in
-/-- The difference quotient of `t ↦ f t r` at `0` is within `C |t|` of `f' 0 r` when the
-derivative `f' s r` of `s ↦ f s r` is within `C |s|` of `f' 0 r` on a ball containing `t`. -/
-private theorem norm_slope_sub_le {r : ℂ}
-    (hf : ∀ t ∈ ball (0 : ℝ) δ, HasDerivAt (f · r) (f' t r) t)
-    (hC : ∀ t ∈ ball (0 : ℝ) δ, ‖f' t r - f' 0 r‖ ≤ C * |t|) {t : ℝ} (ht : t ∈ ball (0 : ℝ) δ)
-    (ht0 : t ≠ 0) : ‖slope (f · r) 0 t - f' 0 r‖ ≤ C * |t| := by
-  have hseg : Set.uIcc 0 t ⊆ ball (0 : ℝ) δ := by
-    rw [← segment_eq_uIcc]
-    exact (convex_ball 0 δ).segment_subset (mem_ball_self (pos_of_mem_ball ht)) ht
-  -- `s ↦ f s r - s f' 0 r` has derivative `f' s r - f' 0 r`, of norm at most `C |t|` on `[0, t]`
-  have key := (convex_uIcc (0 : ℝ) t).norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f := fun s ↦ f s r - s • f' 0 r) (f' := fun s ↦ f' s r - f' 0 r) (C := C * |t|)
-    (fun s hs ↦ (((hf s (hseg hs)).sub ((hasDerivAt_id s).smul_const (f' 0 r))).congr_deriv
-      (by simp)).hasDerivWithinAt)
-    (fun s hs ↦ (hC s (hseg hs)).trans (mul_le_mul_of_nonneg_left
-      (by simpa using Set.abs_sub_left_of_mem_uIcc hs)
-      (nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hC t ht)) (abs_pos.2 ht0))))
-    Set.left_mem_uIcc Set.right_mem_uIcc
-  have hslope : slope (f · r) 0 t - f' 0 r =
-      t⁻¹ • ((f t r - t • f' 0 r) - (f 0 r - (0 : ℝ) • f' 0 r)) := by
-    rw [slope_def_module, sub_zero, zero_smul, sub_zero, sub_right_comm,
-      smul_sub _ (f t r - f 0 r), smul_smul, inv_mul_cancel₀ ht0, one_smul]
-  rw [hslope, norm_smul, Real.norm_eq_abs, abs_inv]
-  calc |t|⁻¹ * ‖(f t r - t • f' 0 r) - (f 0 r - (0 : ℝ) • f' 0 r)‖
-      ≤ |t|⁻¹ * (C * |t| * ‖t - 0‖) := by gcongr
-    _ = C * |t| := by
-      rw [sub_zero, Real.norm_eq_abs]
-      field_simp [abs_pos.2 ht0]
-
-omit [CompleteSpace E] in
-/-- Let `f t r` depend on a real variable `t` with derivative `f' t r`, and let `f' t r` be within
-`C |t|` of `f' 0 r` near `t = 0`, uniformly in `r ∈ U`. Then the difference quotients
-`t⁻¹ (f t r - f 0 r)` converge to `f' 0 r` uniformly in `r ∈ U` as `t → 0`. -/
-theorem tendstoUniformlyOn_slope_of_norm_sub_le (hδ : 0 < δ)
+/-- Let `f t r` depend on a real variable `t` with derivative `f' t r`, and let `f' t` converge to
+`f' 0` uniformly on `U` as `t → 0`. Then the difference quotients `t⁻¹ (f t r - f 0 r)` converge to
+`f' 0 r` uniformly in `r ∈ U` as `t → 0`. -/
+theorem tendstoUniformlyOn_slope_of_tendstoUniformlyOn (hδ : 0 < δ)
     (hf : ∀ r ∈ U, ∀ t ∈ ball (0 : ℝ) δ, HasDerivAt (f · r) (f' t r) t)
-    (hC : ∀ r ∈ U, ∀ t ∈ ball (0 : ℝ) δ, ‖f' t r - f' 0 r‖ ≤ C * |t|) :
+    (hf' : TendstoUniformlyOn f' (f' 0) (𝓝 0) U) :
     TendstoUniformlyOn (fun t r ↦ slope (f · r) 0 t) (f' 0) (𝓝[≠] 0) U := by
-  rw [Metric.tendstoUniformlyOn_iff]
+  rw [Metric.tendstoUniformlyOn_iff] at hf' ⊢
   intro ε hε
-  have hsmall : ∀ᶠ t in 𝓝 (0 : ℝ), |C| * |t| < ε :=
-    ((continuous_const.mul continuous_abs).tendsto' (0 : ℝ) 0 (by simp)).eventually
-      (gt_mem_nhds hε)
-  filter_upwards [nhdsWithin_le_nhds (ball_mem_nhds 0 hδ), nhdsWithin_le_nhds hsmall,
-    self_mem_nhdsWithin] with t ht htε ht0 r hr
+  obtain ⟨η, hη, hηε⟩ := Metric.eventually_nhds_iff_ball.1 (hf' (ε / 2) (half_pos hε))
+  have hball : ball (0 : ℝ) (min δ η) ∈ 𝓝[≠] 0 :=
+    nhdsWithin_le_nhds (ball_mem_nhds 0 (by positivity))
+  filter_upwards [hball, self_mem_nhdsWithin] with t ht ht0 r hr
   rw [dist_comm, dist_eq_norm]
-  exact (norm_slope_sub_le (hf r hr) (hC r hr) ht ht0).trans_lt
-    ((mul_le_mul_of_nonneg_right (le_abs_self C) (abs_nonneg t)).trans_lt htε)
+  -- mean value inequality on `ball 0 (min δ η)`, where `f' s r` is within `ε / 2` of `f' 0 r`
+  refine ((convex_ball 0 (min δ η)).norm_slope_sub_le_of_norm_hasDerivWithin_sub_le
+    (fun s hs ↦ (hf r hr s (ball_subset_ball (min_le_left δ η) hs)).hasDerivWithinAt)
+    (fun s hs ↦ ?_) (mem_ball_self (by positivity)) ht (Ne.symm ht0)).trans_lt (half_lt_self hε)
+  rw [← dist_eq_norm, dist_comm]
+  exact (hηε s (ball_subset_ball (min_le_right δ η) hs) r hr).le
 
 omit [CompleteSpace E] in
 /-- The difference quotients `r ↦ t⁻¹ (f t r - f 0 r)` of a family of maps holomorphic on `U` are
@@ -194,28 +168,28 @@ private theorem eventually_differentiableOn_slope (hδ : 0 < δ)
 
 /-- **Differentiating a holomorphic family in a real variable.** Let `f t` be holomorphic on an
 open set `U ⊆ ℂ` for every real `t` near `0`, and let `t ↦ f t r` have derivative `f' t r`, with
-`‖f' t r - f' 0 r‖ ≤ C |t|` near `t = 0`, uniformly in `r ∈ U`. Then the derivative `f' 0` at
-`t = 0` is holomorphic on `U`. -/
-theorem differentiableOn_of_hasDerivAt_of_norm_sub_le (hU : IsOpen U) (hδ : 0 < δ)
+`f' t → f' 0` uniformly on `U` as `t → 0`. Then the derivative `f' 0` at `t = 0` is holomorphic
+on `U`. -/
+theorem differentiableOn_of_hasDerivAt_of_tendstoUniformlyOn (hU : IsOpen U) (hδ : 0 < δ)
     (hF : ∀ t ∈ ball (0 : ℝ) δ, DifferentiableOn ℂ (f t) U)
     (hf : ∀ r ∈ U, ∀ t ∈ ball (0 : ℝ) δ, HasDerivAt (f · r) (f' t r) t)
-    (hC : ∀ r ∈ U, ∀ t ∈ ball (0 : ℝ) δ, ‖f' t r - f' 0 r‖ ≤ C * |t|) :
+    (hf' : TendstoUniformlyOn f' (f' 0) (𝓝 0) U) :
     DifferentiableOn ℂ (f' 0) U :=
-  (tendstoUniformlyOn_slope_of_norm_sub_le hδ hf hC).tendstoLocallyUniformlyOn.differentiableOn
-    (eventually_differentiableOn_slope hδ hF) hU
+  (tendstoUniformlyOn_slope_of_tendstoUniformlyOn hδ hf hf').tendstoLocallyUniformlyOn
+    |>.differentiableOn (eventually_differentiableOn_slope hδ hF) hU
 
 /-- **The real and the complex derivatives of a holomorphic family commute.** Under the
-hypotheses of `TauCeti.differentiableOn_of_hasDerivAt_of_norm_sub_le`, for every `k` and `r ∈ U`
-the `k`-th complex derivative `∂_r^k f t r` has derivative `∂_r^k f' 0 r` in `t` at `t = 0`. -/
-theorem hasDerivAt_iteratedDeriv_of_norm_sub_le (hU : IsOpen U) (hδ : 0 < δ)
+hypotheses of `TauCeti.differentiableOn_of_hasDerivAt_of_tendstoUniformlyOn`, for every `k` and
+`r ∈ U` the `k`-th complex derivative `∂_r^k f t r` has derivative `∂_r^k f' 0 r` in `t` at
+`t = 0`. -/
+theorem hasDerivAt_iteratedDeriv_of_tendstoUniformlyOn (hU : IsOpen U) (hδ : 0 < δ)
     (hF : ∀ t ∈ ball (0 : ℝ) δ, DifferentiableOn ℂ (f t) U)
     (hf : ∀ r ∈ U, ∀ t ∈ ball (0 : ℝ) δ, HasDerivAt (f · r) (f' t r) t)
-    (hC : ∀ r ∈ U, ∀ t ∈ ball (0 : ℝ) δ, ‖f' t r - f' 0 r‖ ≤ C * |t|) (k : ℕ) {r : ℂ}
-    (hr : r ∈ U) :
+    (hf' : TendstoUniformlyOn f' (f' 0) (𝓝 0) U) (k : ℕ) {r : ℂ} (hr : r ∈ U) :
     HasDerivAt (fun t ↦ iteratedDeriv k (f t) r) (iteratedDeriv k (f' 0) r) 0 := by
   rw [hasDerivAt_iff_tendsto_slope]
   -- by Weierstrass's theorem, the derivatives of the difference quotients converge
-  have hT := (tendstoUniformlyOn_slope_of_norm_sub_le hδ hf hC).tendstoLocallyUniformlyOn
+  have hT := (tendstoUniformlyOn_slope_of_tendstoUniformlyOn hδ hf hf').tendstoLocallyUniformlyOn
   refine ((hT.iteratedDeriv (eventually_differentiableOn_slope hδ hF) hU k).tendsto_at hr).congr' ?_
   filter_upwards [nhdsWithin_le_nhds (ball_mem_nhds 0 hδ)] with t ht
   have hc (s : ℝ) (hs : s ∈ ball (0 : ℝ) δ) : ContDiffAt ℂ k (f s) r :=

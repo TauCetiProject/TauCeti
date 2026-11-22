@@ -45,9 +45,9 @@ quotients `t⁻¹ (a(p + t v, r) - a(p, r))`, which are holomorphic in `r`. The 
 `a(·, r)` are bounded on the segment `p + [-1, 1] v` uniformly in `r ∈ R`, by the symbol estimates
 of order `m`, so the difference quotients converge uniformly in `r ∈ R`. By Weierstrass's theorem
 the limit is holomorphic in `r`, and its parameter derivatives are the limits of those of the
-difference quotients (`TauCeti.differentiableOn_of_hasDerivAt_of_norm_sub_le`,
-`TauCeti.hasDerivAt_iteratedDeriv_of_norm_sub_le`). This needs the coefficient space `W` to be
-complete.
+difference quotients (`TauCeti.differentiableOn_of_hasDerivAt_of_tendstoUniformlyOn`,
+`TauCeti.hasDerivAt_iteratedDeriv_of_tendstoUniformlyOn`). This needs the coefficient space `W` to
+be complete.
 
 ## References
 
@@ -59,7 +59,7 @@ public section
 
 noncomputable section
 
-open Set Metric
+open Set Metric Filter Topology
 open scoped ContDiff
 
 namespace TauCeti
@@ -109,7 +109,7 @@ private theorem exists_norm_fderiv_apply_sub_le (a : WeakParameterSymbol n R V W
   refine ⟨B * ‖v‖ ^ 2, fun r hr t ht ↦ ?_⟩
   set G := fun q ↦ a.coefficient q r
   have hG₂ : ContDiff ℝ 1 (fderiv ℝ G) :=
-    (by simpa using a.contDiff_iteratedDeriv 0 r hr : ContDiff ℝ ∞ G).fderiv_right (by simp)
+    (a.contDiff_coefficient_apply hr).fderiv_right (by simp)
   -- `s ↦ D G(p + s v) v` has derivative `D² G(p + s v)(v, v)`, bounded by `B ‖v‖²` on `[0, t]`
   have hφ (s : ℝ) : HasDerivAt (fun s : ℝ ↦ fderiv ℝ G (p + s • v) v)
       (fderiv ℝ (fderiv ℝ G) (p + s • v) v v) s := by
@@ -153,6 +153,19 @@ private theorem differentiableOn_fderiv_apply_and_iteratedDeriv_eq
     ((a.contDiff_iteratedDeriv j r hr).differentiable (by simp) _).hasFDerivAt.comp_hasDerivAt t
       (by simpa using ((hasDerivAt_id t).smul_const v).const_add p)
   obtain ⟨C, hC⟩ := a.exists_norm_fderiv_apply_sub_le p v
+  -- the Lipschitz bound makes `D a(p + t v, ·) v` converge uniformly on `R` as `t → 0`
+  have hf' : TendstoUniformlyOn
+      (fun (t : ℝ) r ↦ fderiv ℝ (fun q ↦ a.coefficient q r) (p + t • v) v)
+      (fun r ↦ fderiv ℝ (fun q ↦ a.coefficient q r) (p + (0 : ℝ) • v) v) (𝓝 0) R := by
+    rw [Metric.tendstoUniformlyOn_iff]
+    intro ε hε
+    have hsmall : ∀ᶠ t in 𝓝 (0 : ℝ), |C| * |t| < ε :=
+      ((continuous_const.mul continuous_abs).tendsto' (0 : ℝ) 0 (by simp)).eventually
+        (gt_mem_nhds hε)
+    filter_upwards [ball_mem_nhds (0 : ℝ) one_pos, hsmall] with t ht htε r hr
+    rw [dist_comm, dist_eq_norm]
+    exact (hC r hr t ht).trans_lt
+      ((mul_le_mul_of_nonneg_right (le_abs_self C) (abs_nonneg t)).trans_lt htε)
   have hF (t : ℝ) (_ : t ∈ ball (0 : ℝ) 1) : DifferentiableOn ℂ (a.coefficient (p + t • v)) R :=
     a.differentiableOn_coefficient _
   have hf (r : ℂ) (hr : r ∈ R) (t : ℝ) (_ : t ∈ ball (0 : ℝ) 1) :
@@ -160,8 +173,8 @@ private theorem differentiableOn_fderiv_apply_and_iteratedDeriv_eq
         (fderiv ℝ (fun q ↦ a.coefficient q r) (p + t • v) v) t := by
     simpa using hderiv 0 hr t
   refine ⟨?_, fun j r hr ↦ ?_⟩
-  · simpa using differentiableOn_of_hasDerivAt_of_norm_sub_le R.isOpen one_pos hF hf hC
-  · have h := hasDerivAt_iteratedDeriv_of_norm_sub_le R.isOpen one_pos hF hf hC j hr
+  · simpa using differentiableOn_of_hasDerivAt_of_tendstoUniformlyOn R.isOpen one_pos hF hf hf'
+  · have h := hasDerivAt_iteratedDeriv_of_tendstoUniformlyOn R.isOpen one_pos hF hf hf' j hr
     simpa using h.unique (hderiv j hr 0)
 
 /-! ### Frequency derivatives -/
@@ -174,8 +187,7 @@ private theorem coordinateDeriv_snd_coefficient (a : WeakParameterSymbol n R V W
       fderiv ℝ (fun q ↦ a.coefficient q r) p (0, EuclideanSpace.single l 1) := by
   by_cases hr : r ∈ R
   · refine coordinateDeriv_snd_eq_fderiv (f := fun q ↦ a.coefficient q r) ?_ l
-    exact ((by simpa using a.contDiff_iteratedDeriv 0 r hr : ContDiff ℝ ∞ fun q ↦
-      a.coefficient q r).differentiable (by simp)) p
+    exact (a.contDiff_coefficient_apply hr).differentiable (by simp) p
   · simp [a.coefficient_of_notMem _ r hr, ← Pi.zero_def]
 
 /-- The frequency derivative `∂_{ξ_l} a` of a weakly parameter-dependent symbol of frequency order
@@ -253,8 +265,7 @@ private theorem coordinateDeriv_fst_coefficient (a : WeakParameterSymbol n R V W
       fderiv ℝ (fun q ↦ a.coefficient q r) p (EuclideanSpace.single l 1, 0) := by
   by_cases hr : r ∈ R
   · refine coordinateDeriv_fst_eq_fderiv (f := fun q ↦ a.coefficient q r) ?_ l
-    exact ((by simpa using a.contDiff_iteratedDeriv 0 r hr : ContDiff ℝ ∞ fun q ↦
-      a.coefficient q r).differentiable (by simp)) p
+    exact (a.contDiff_coefficient_apply hr).differentiable (by simp) p
   · simp [a.coefficient_of_notMem _ r hr, ← Pi.zero_def]
 
 /-- The position derivative `∂_{x_l} a` of a weakly parameter-dependent symbol of frequency order

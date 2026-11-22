@@ -159,6 +159,11 @@ theorem differentiableOn_coefficient (a : WeakParameterSymbol n R V W d m) (p) :
     DifferentiableOn ℂ (a.coefficient p) R :=
   (a.contDiffOn_coefficient p).differentiableOn (by simp)
 
+/-- At every parameter `r ∈ R`, the coefficient is smooth in the point `(x, ξ)`. -/
+theorem contDiff_coefficient_apply (a : WeakParameterSymbol n R V W d m) {r : ℂ} (hr : r ∈ R) :
+    ContDiff ℝ ∞ fun p ↦ a.coefficient p r := by
+  simpa using a.contDiff_iteratedDeriv 0 r hr
+
 section Module
 
 instance : Zero (WeakParameterSymbol n R V W d m) where
@@ -321,7 +326,7 @@ theorem iteratedDerivSymbol_sub (a b : WeakParameterSymbol n R V W d m) (j : ℕ
 /-- The value at `r ∈ R`, a symbol of order `m`. -/
 def toSymbol (a : WeakParameterSymbol n R V W d m) {r : ℂ} (hr : r ∈ R) : Symbol n V W m where
   coefficient p := a.coefficient p r
-  contDiff_coefficient := by simpa using a.contDiff_iteratedDeriv 0 r hr
+  contDiff_coefficient := a.contDiff_coefficient_apply hr
   exists_bound K hK α β := (a.exists_bound K hK 0 α β).imp fun _ hC =>
     ⟨hC.1, fun x hx ξ => by simpa using hC.2 x hx ξ r hr⟩
 

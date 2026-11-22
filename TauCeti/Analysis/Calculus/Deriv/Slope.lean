@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
 public import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.LinearAlgebra.AffineSpace.Ordered
@@ -40,6 +41,9 @@ that they do not separate linearly: their distance is `o(s - t)` at parameter `s
 
 A negative right derivative at `x` forces nearby values to the right to lie strictly below `f x`.
 
+By the mean value inequality, if the derivative of `f` on a convex set stays within `C` of a
+vector `v`, then so does every slope of `f` between two distinct points of the set.
+
 A function vanishing at `0` has derivative `a` at `0` within `s` exactly when `f(t) / t → a` as
 `t → 0` within `s \ {0}`; in particular a right derivative `a` gives `f(t) / t → a` as `t → 0⁺`.
 
@@ -60,6 +64,8 @@ A function vanishing at `0` has derivative `a` at `0` within `s` exactly when `f
   `b (t - a) < 0` there.
 * `HasDerivWithinAt.tendsto_div_nhdsGT_zero`: `f(t) / t → a` at `0⁺` when `f 0 = 0` and
   `a` is the right derivative at `0`.
+* `Convex.norm_slope_sub_le_of_norm_hasDerivWithin_sub_le`: a slope of `f` on a convex set is
+  within `C` of `v` when the derivative of `f` there is.
 -/
 
 public section
@@ -175,3 +181,20 @@ theorem HasDerivWithinAt.eventually_lt_of_neg {f : ℝ → ℝ} {a x : ℝ}
     with t ht hxt
   rw [slope_def_field, div_lt_iff₀ (sub_pos.mpr hxt), zero_mul] at ht
   exact sub_neg.mp ht
+
+/-- **Mean value estimate for slopes.** If `f` has derivative `f' s` within a convex set `D` at
+every `s ∈ D`, and `f' s` is within `C` of `v` on `D`, then every slope of `f` between two distinct
+points of `D` is within `C` of `v`. -/
+theorem Convex.norm_slope_sub_le_of_norm_hasDerivWithin_sub_le {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {D : Set ℝ} (hD : Convex ℝ D) {f f' : ℝ → E} {v : E}
+    {C : ℝ} (hf : ∀ s ∈ D, HasDerivWithinAt f (f' s) D s) (hC : ∀ s ∈ D, ‖f' s - v‖ ≤ C)
+    {a b : ℝ} (ha : a ∈ D) (hb : b ∈ D) (hab : a ≠ b) : ‖slope f a b - v‖ ≤ C := by
+  -- `s ↦ f s - s • v` has derivative `f' s - v`, of norm at most `C` on `D`
+  have h := hD.norm_image_sub_le_of_norm_hasDerivWithin_le
+    (fun s hs ↦ ((hf s hs).sub ((hasDerivWithinAt_id s D).smul_const v)).congr_deriv (by simp))
+    hC ha hb
+  refine le_of_mul_le_mul_right ?_ (norm_pos_iff.2 (sub_ne_zero.2 hab.symm))
+  rw [mul_comm, ← norm_smul, smul_sub, sub_smul_slope, vsub_eq_sub]
+  convert h using 2
+  simp only [Pi.sub_apply, id, sub_smul]
+  abel

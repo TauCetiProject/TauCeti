@@ -144,6 +144,7 @@ theorem coefficient_sharpTerm (b : WeakParameterSymbol n R W U d m')
 parameter derivative of `sharpTerm b a k` is the sum of the terms
 `(j choose i) sharpTerm (∂_r^i b) (∂_r^(j - i) a) k` of the composition expansions of the parameter
 derivatives, each of order `m' + d i + m + d (j - i) - k = m' + m - k + d j`. -/
+@[simp]
 theorem iteratedDerivSymbol_sharpTerm (b : WeakParameterSymbol n R W U d m')
     (a : WeakParameterSymbol n R V W d m) (k j : ℕ) {r : ℂ} (hr : r ∈ R) :
     (b.sharpTerm a k).iteratedDerivSymbol j hr = ∑ i : Fin (j + 1), (j.choose i : ℂ) •
