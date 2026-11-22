@@ -94,6 +94,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` when `ind p = ind q`.
 * `pairSign_eq_one_or_eq_neg_one`, `intCast_signedPairCount`: the signs are `±1`, and the signed
   count reduces modulo two to the number of points.
+* `exists_pairSign_eq_and_map_eq`, `pairSign_eq_of_map_eq`: where the comparison map is an
+  isomorphism, the sign is the unit by which it scales the target orientation; the second reads it
+  off any linear equivalence agreeing with the comparison map.
 * `pairSign_neg_left`, `pairSign_neg_right`: reversing an orientation reverses the signs.
 * `pairSign_map_negativeChange`, `signedPairCount_map_negativeChange`: the signs and the signed
   count do not depend on the Morse charts.
@@ -215,6 +218,17 @@ theorem pairSign_eq_one_or_eq_neg_one_of_bijective {y : M}
     (h : Bijective (hX₀.pairComparison hX₁ φp φq y)) :
     hX₀.pairSign hX₁ φp φq op oq hpq y = 1 ∨ hX₀.pairSign hX₁ φp φq op oq hpq y = -1 :=
   Orientation.linearMapSign_eq_one_or_eq_neg_one_of_bijective h
+
+/-- **The sign as a unit.** Where the comparison map is an isomorphism, it carries `op` to `oq`,
+reindexed, scaled by a unit sign `u`, and the sign of the point is `u`. -/
+theorem exists_pairSign_eq_and_map_eq {y : M} (h : Bijective (hX₀.pairComparison hX₁ φp φq y)) :
+    ∃ u : ℤˣ, hX₀.pairSign hX₁ φp φq op oq hpq y = u ∧
+      Orientation.map _ (LinearEquiv.ofBijective (hX₀.pairComparison hX₁ φp φq y).toLinearMap h)
+          op =
+        Units.map (Int.castRingHom ℝ).toMonoidHom u •
+          Orientation.reindex ℝ _ (finCongr hpq.symm) oq :=
+  Orientation.exists_linearMapSign_eq_and_map_eq
+    (by rw [Fintype.card_fin, φq.finrank_negativeWeight_fun, hpq]) h
 
 /-- **Reading off the sign.** If a linear equivalence `L` agrees with the comparison map and
 carries `op` to `oq`, reindexed, scaled by a unit sign `u`, the sign of the point is `u`. -/

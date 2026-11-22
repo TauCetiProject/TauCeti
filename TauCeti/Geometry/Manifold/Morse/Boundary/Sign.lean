@@ -297,15 +297,10 @@ theorem exists_trajectorySign_eq_and_map_eq {y : M}
     ∃ u : ℤˣ, hX.trajectorySign φp φq op oq hpq y = u ∧
       Orientation.map _ (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y).toLinearMap h)
           op =
-        Units.map (Int.castRingHom ℝ).toMonoidHom u • φq.trajectoryTargetOrientation oq hpq := by
-  classical
-  refine ⟨if Orientation.map _ (LinearEquiv.ofBijective _ h) op =
-      φq.trajectoryTargetOrientation oq hpq then 1 else -1, ?_,
-    (Orientation.intCast_units_smul_ite_eq _ _ ?_).symm⟩
-  · rw [trajectorySign_of_bijective h]
-    split_ifs <;> simp
-  · rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]
-    omega
+        Units.map (Int.castRingHom ℝ).toMonoidHom u • φq.trajectoryTargetOrientation oq hpq :=
+  Orientation.exists_linearMapSign_eq_and_map_eq (by
+    rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]
+    omega) h
 
 /-- **Reading off the sign.** If a linear equivalence `L` agrees with the comparison map and
 carries `op` to the target orientation scaled by a unit sign `u`, the sign of the trajectory is

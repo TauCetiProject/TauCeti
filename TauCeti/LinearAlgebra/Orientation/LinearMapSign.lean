@@ -18,7 +18,9 @@ carrying `o` to `o'`, `-1` when it is an isomorphism not carrying `o` to `o'` (t
 ## Main results
 
 * `Orientation.linearMapSign_eq_one_or_eq_neg_one_of_bijective`: an isomorphism has sign `±1`.
-* `Orientation.linearMapSign_eq_of_map_eq`: reading off the sign from the transported orientation.
+* `Orientation.exists_linearMapSign_eq_and_map_eq`, `Orientation.linearMapSign_eq_of_map_eq`: an
+  isomorphism carries `o` to `o'` scaled by its sign, and the sign can be read off from the
+  transported orientation.
 * `Orientation.linearMapSign_neg_left`, `Orientation.linearMapSign_neg_right`: reversing either
   orientation reverses the sign.
 * `Orientation.linearMapSign_map_map`: the sign is unchanged when the map is conjugated by linear
@@ -110,6 +112,19 @@ section Field
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
   {V W : Type*} [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W] {ι : Type*}
   [Fintype ι] {o : Orientation R V ι} {o' : Orientation R W ι} {L : V →ₗ[R] W}
+
+/-- **The sign as a unit.** When the index type has the dimension of the target, an isomorphism
+carries `o` to `o'` scaled by a unit sign `u`, and its sign is `u`. -/
+theorem exists_linearMapSign_eq_and_map_eq (hι : Fintype.card ι = finrank R W)
+    (h : Bijective L) :
+    ∃ u : ℤˣ, linearMapSign o o' L = u ∧
+      Orientation.map ι (LinearEquiv.ofBijective L h) o =
+        Units.map (Int.castRingHom R).toMonoidHom u • o' := by
+  classical
+  refine ⟨if Orientation.map ι (LinearEquiv.ofBijective L h) o = o' then 1 else -1, ?_,
+    (intCast_units_smul_ite_eq _ _ hι).symm⟩
+  rw [linearMapSign_of_bijective h]
+  split_ifs <;> simp
 
 /-- **Reversing the orientation at the source reverses the sign**, when the index type has the
 dimension of the target. -/
