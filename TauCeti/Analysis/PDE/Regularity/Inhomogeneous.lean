@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.DirichletProblem
-public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
+public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 public import TauCeti.Analysis.PDE.Regularity.NearSolution
+import TauCeti.Algebra.Order.Ring.MaxOneMul
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
@@ -123,12 +124,6 @@ namespace PDE
 
 /-! ### Splitting off a datum on balls -/
 
-/-- Absorbing the constant `K` of the datum: `Q + K P ≤ max 1 K (Q + P)` for `Q, P ≥ 0`. -/
-private theorem add_mul_le_max_mul_add {Q P K : ℝ} (hQ : 0 ≤ Q) (hP : 0 ≤ P) :
-    Q + K * P ≤ max 1 K * (Q + P) := by
-  nlinarith [le_max_left 1 K, le_max_right 1 K]
-
-
 /-- The common last step of splitting off a right-hand side on a ball `B = B(x₀, ρ) ⊆ Ω`: if
 `w ∈ H¹₀(B)` has the same energy form as `u|_B` against `H¹₀(B)` and `|w| ≤ T`, then
 `h = u|_B - w` solves the homogeneous equation `-∂ᵢ(aⁱʲ ∂ⱼh) + bⁱ ∂ᵢh = 0` on `B` and
@@ -195,7 +190,7 @@ private theorem exists_ae_abs_value_le_mul_add_of_exists_ae_abs_sub_le [Nonempty
   filter_upwards [hbound h ha hg hug hR hball] with x hx
   set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
   set P := R ^ γ * N / lam
-  have hmax := add_mul_le_max_mul_add (K := K) (by positivity : 0 ≤ Q)
+  have hmax := add_mul_le_max_one_mul_add (c := K) (by positivity : 0 ≤ Q)
     (div_nonneg (mul_nonneg (Real.rpow_nonneg hR.le γ) hN) hlam.le : 0 ≤ P)
   calc |W1p.value u x| ≤ D * (Q + K * P) := hx.trans_eq (by simp only [P]; ring)
     _ ≤ D * (max 1 K * (Q + P)) := by gcongr
@@ -246,7 +241,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_forall_exists_ae_abs_sub_le
     refine Real.toNNReal_le_toNNReal ?_
     set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu)
     set P := R ^ γ * N Omega / lam
-    have hmax := add_mul_le_max_mul_add (K := K₀) (by positivity : 0 ≤ Q)
+    have hmax := add_mul_le_max_one_mul_add (c := K₀) (by positivity : 0 ≤ Q)
       (div_nonneg (mul_nonneg (Real.rpow_nonneg hR.le γ) hN) hlam.le : 0 ≤ P)
     calc C * R ^ (-(α : ℝ)) * (Q + R ^ γ * (K₀ * N Omega / lam)) =
           C * R ^ (-(α : ℝ)) * (Q + K₀ * P) := by simp only [P]; ring
@@ -504,21 +499,12 @@ theorem exists_forall_energyFormH1_eq_ae_abs_le_divergence [Nonempty ι] {q : �
   refine ⟨C, hC, fun {D a lam Lam F} hD h ha hF => ?_⟩
   have : IsFiniteMeasure (mu.restrict (D : Set (EuclideanSpace ℝ ι))) :=
     isFiniteMeasure_restrict.2 hD
-  -- The datum `v ↦ -∫_D ⟪F, ∇v⟫` is the functional `divergenceForcing F`, since `F ∈ L²(D)`.
+  -- The weak solution exists since `F ∈ L²(D)`.
   have hF2 : MemLp F 2 (mu.restrict D) :=
     hF.mono_exponent (by exact_mod_cast (show ((2 : ℝ≥0) : ℝ) ≤ q by exact_mod_cast hq.le))
-  have hℓ : ∀ v : W1p0 mu D 2, divergenceForcing (hF2.toLp F) v =
-      -∫ x in D, ⟪F x, W1p.gradient (v : W1p mu D 2) x⟫ ∂mu := fun v => by
-    rw [divergenceForcing_apply_eq_neg_setIntegral, neg_inj]
-    refine integral_congr_ae ?_
-    filter_upwards [hF2.coeFn_toLp] with x hx
-    rw [hx]
-  obtain ⟨w, hw, -⟩ := h.existsUnique_forall_energyFormH1_eq_of_measure_ne_top (c := 0)
-    (gamma := 0) ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hD
-    (divergenceForcing (hF2.toLp F))
-  exact ⟨w, fun v => (hw v).trans (hℓ v), hstamp (c := 0) (gamma := 0) hD h ha
-    aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hF
-    (fun v => (hw v).trans (hℓ v))⟩
+  obtain ⟨w, hw⟩ := h.exists_forall_energyFormH1_eq_divergence_of_measure_ne_top ha hD hF2
+  exact ⟨w, hw, hstamp (c := 0) (gamma := 0) hD h ha
+    aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hF hw⟩
 
 /-- **Splitting off a right-hand side in divergence form on a ball.** Let `n ≥ 1` be the
 dimension and let `q > 2` with `q > n`. There is `K > 0`, depending only on `n`, `q` and the
@@ -565,20 +551,12 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence [Nonempty ι
   have hBell : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) a lam Lam := h.mono_set hball
   have hBmeas : AEStronglyMeasurable a (mu.restrict B) :=
     ha.mono_measure (Measure.restrict_mono hball le_rfl)
-  -- The datum `v ↦ -∫_B ⟪F, ∇v⟫` is the functional `divergenceForcing F`, since `F ∈ L²(B)`.
   have hF2 : MemLp F 2 (mu.restrict B) :=
     hF.mono_exponent (by exact_mod_cast (show ((2 : ℝ≥0) : ℝ) ≤ q by exact_mod_cast hq.le))
-  have hℓ : ∀ v : W1p0 mu B 2, divergenceForcing (hF2.toLp F) v =
-      -∫ x in B, ⟪F x, W1p.gradient (v : W1p mu B 2) x⟫ ∂mu := fun v => by
-    rw [divergenceForcing_apply_eq_neg_setIntegral, neg_inj]
-    refine integral_congr_ae ?_
-    filter_upwards [hF2.coeFn_toLp] with x hx
-    rw [hx]
   -- The weak solution `w ∈ H¹₀(B)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = ∂ᵢFⁱ` on `B`, and its bound; `u|_B - w` is
   -- the homogeneous part.
-  obtain ⟨w, hw, -⟩ := hBell.existsUnique_forall_energyFormH1_eq_of_measure_ne_top (c := 0)
-    (gamma := 0) hBmeas aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hBfin
-    (divergenceForcing (hF2.toLp F))
+  obtain ⟨w, hw⟩ :=
+    hBell.exists_forall_energyFormH1_eq_divergence_of_measure_ne_top hBmeas hBfin hF2
   -- `|B|^e = ρ^(n e) |B(0, 1)|^e`, with `n e = 1 - n/q`.
   have hmeas : mu.real (ball x₀ ρ) ^ e =
       ρ ^ (1 - n / q) * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e := by
@@ -588,10 +566,9 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence [Nonempty ι
     field_simp
   exact exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_of_ae_abs_le (beta := 0) h ha
     aestronglyMeasurable_const (fun _ _ => by simp) hB w
-    (fun v => (energyFormH1_restrictL_eq_neg_setIntegral_inner hB hu v).trans
-      ((hw v).trans (hℓ v)).symm)
+    (fun v => (energyFormH1_restrictL_eq_neg_setIntegral_inner hB hu v).trans (hw v).symm)
     ((hstamp (Omega := B) (c := 0) (gamma := 0) hBfin hBell hBmeas aestronglyMeasurable_const
-      (fun _ _ => by simp) (fun _ _ => le_rfl) hF (fun v => (hw v).trans (hℓ v))).mono
+      (fun _ _ => by simp) (fun _ _ => le_rfl) hF hw).mono
       fun x hx => hx.trans_eq (by simp only [B, Opens.coe_mk]; rw [hmeas]; ring))
 
 /-- **Local boundedness of weak solutions with a right-hand side in divergence form.** Let
@@ -931,7 +908,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp_add_divergence [No
   set P := (R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ R))).toReal +
     R ^ (1 - (Fintype.card ι : ℝ) / q) * (eLpNorm F q (mu.restrict (ball x₀ R))).toReal) / lam
   have hlen : C * (s / R) ^ α * (Q + K * P) ≤ C * max 1 K * (s / R) ^ α * (Q + P) :=
-    (mul_le_mul_of_nonneg_left (add_mul_le_max_mul_add (by positivity)
+    (mul_le_mul_of_nonneg_left (add_mul_le_max_one_mul_add (by positivity)
       (by have := h.pos; positivity)) (by positivity)).trans_eq (by ring)
   filter_upwards [hm'] with x hx
   rw [rpow_min_mul_eq hR] at hx
@@ -983,7 +960,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp_add_divergence [Nonem
     ((ball_subset_thickening hx R).trans ((thickening_subset_cthickening R K).trans hRK))
     subset_rfl) hR hRK).mono_const (Real.toNNReal_le_toNNReal ?_)
   rw [rpow_min_mul_eq hR]
-  exact (mul_le_mul_of_nonneg_left (add_mul_le_max_mul_add (by positivity)
+  exact (mul_le_mul_of_nonneg_left (add_mul_le_max_one_mul_add (by positivity)
     (by have := h.pos; positivity)) (by positivity)).trans_eq (by ring)
 
 /-! ### Continuity for a locally integrable right-hand side -/

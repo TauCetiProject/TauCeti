@@ -225,7 +225,7 @@ theorem re_iteratedDeriv_pos_of_eq_mul_pow_tprod_one_add_div_sq
       (iteratedDeriv k f (x : ℂ)).re := by
     refine (Complex.reCLM.hasSum hts).congr_fun fun n ↦ ?_
     dsimp only [Complex.reCLM_apply]
-    rw [sub_zero, iteratedDeriv_iteratedDeriv f n k, smul_eq_mul, smul_eq_mul]
+    rw [sub_zero, iteratedDeriv_iteratedDeriv n k f, smul_eq_mul, smul_eq_mul]
     have hcast : ((n.factorial : ℂ)⁻¹ * ((x : ℂ) ^ n * iteratedDeriv (n + k) f 0)) =
         ((((n.factorial : ℝ)⁻¹ * x ^ n : ℝ) : ℂ)) * iteratedDeriv (n + k) f 0 := by
       push_cast; ring

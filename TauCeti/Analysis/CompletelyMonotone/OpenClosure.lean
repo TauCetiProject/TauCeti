@@ -110,7 +110,7 @@ theorem neg_one_pow_mul_iteratedDeriv (hf : IsCompletelyMonotoneOnIoi f) (k : �
   have hiter :
       iteratedDeriv n (fun t => (-1 : ℝ) ^ k * iteratedDeriv k f t) t =
         (-1 : ℝ) ^ k * iteratedDeriv (n + k) f t := by
-    rw [iteratedDeriv_const_mul_field, iteratedDeriv_iteratedDeriv f n k]
+    rw [iteratedDeriv_const_mul_field, iteratedDeriv_iteratedDeriv n k f]
   rw [hiter]
   have key :
       (-1 : ℝ) ^ n * ((-1 : ℝ) ^ k * iteratedDeriv (n + k) f t) =
