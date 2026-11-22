@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.AffineSpace.AffineMap
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
-import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
 
@@ -22,8 +21,6 @@ Affine-map uniqueness, computations and affine-subspace avoidance for `AffineMap
   equal.
 * `AffineMap.apply_eq_linear_add_apply_zero`: an affine map is its linear part plus its value at
   `0`.
-* `AffineMap.apply_sum_smul_of_sum_eq_one`: an affine map on a module commutes with finite linear
-  combinations of unit weight sum.
 * `AffineMap.apply_eq_add_mul_sub`: an affine function on the line is
   `s ↦ f 0 + s * (f 1 - f 0)`.
 * `AffineMap.lineMap_vsub_lineMap_eq_vsub_add_smul_sub_smul`: the difference of points on two
@@ -35,8 +32,6 @@ Source: https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8
 -/
 
 public section
-
-open scoped BigOperators
 
 namespace AffineMap
 
@@ -54,16 +49,6 @@ theorem ext_of_ne {k V P : Type*} [DivisionRing k] [AddCommGroup V] [Module k V]
 theorem apply_eq_linear_add_apply_zero {k V W : Type*} [Ring k] [AddCommGroup V] [Module k V]
     [AddCommGroup W] [Module k W] (f : V →ᵃ[k] W) (x : V) : f x = f.linear x + f 0 := by
   simpa using congrFun f.decomp x
-
-/-- Applying an affine map on a module to a finite linear combination with unit weight sum yields
-the corresponding linear combination of the images. -/
-theorem apply_sum_smul_of_sum_eq_one {k V W ι : Type*} [Ring k] [AddCommGroup V] [Module k V]
-    [AddCommGroup W] [Module k W] (f : V →ᵃ[k] W) (s : Finset ι) {w : ι → k}
-    (hw : ∑ i ∈ s, w i = 1) (v : ι → V) :
-    f (∑ i ∈ s, w i • v i) = ∑ i ∈ s, w i • f (v i) := by
-  conv_lhs => rw [apply_eq_linear_add_apply_zero]
-  conv_rhs => arg 2; ext i; rw [apply_eq_linear_add_apply_zero]
-  simp [smul_add, Finset.sum_add_distrib, ← Finset.sum_smul, hw]
 
 /-- An affine function on the line is determined by its values at `0` and `1`. -/
 theorem apply_eq_add_mul_sub {k : Type*} [CommRing k] (f : k →ᵃ[k] k) (s : k) :

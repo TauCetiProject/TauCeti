@@ -11,7 +11,6 @@ public import TauCeti.Topology.PL.Map
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Ring
-import TauCeti.LinearAlgebra.AffineSpace.AffineMap
 
 /-!
 # Simplicial hive interpolation and zero-sum triangle gradients
@@ -275,9 +274,13 @@ hyperplane `{x | ∑ i, x i = n}`. -/
 theorem eq_triangleAffine_of_vertex {f : Vertex n → ℝ} {T : UnitTriangle n}
     {A : (Fin 3 → ℝ) →ᵃ[ℝ] ℝ} (hA : ∀ i, A (T.vertex i).barycentric = f (T.vertex i))
     {x : Fin 3 → ℝ} (hx : ∑ i, x i = (n : ℝ)) : A x = triangleAffine f T x := by
-  have h := A.apply_sum_smul_of_sum_eq_one Finset.univ (T.sum_weight hx)
-    fun i => (T.vertex i).barycentric
-  rw [T.sum_weight_smul_vertex hx] at h; simp [h, triangleAffine_apply, hA, mul_comm]
+  have hw := T.sum_weight hx
+  have h := (Finset.univ.map_affineCombination (fun i => (T.vertex i).barycentric)
+    (fun i => T.weight i x) hw A).symm
+  simp only [Finset.affineCombination_eq_linear_combination _ _ _ hw,
+    T.sum_weight_smul_vertex hx] at h
+  rw [← h]
+  simp [triangleAffine_apply, hA, mul_comm]
 /-- Any affine map agreeing with `f` on the vertices of `T` agrees with `triangleAffine f T` on
 `T.cell`. -/
 theorem eqOn_triangleAffine_of_vertex {f : Vertex n → ℝ} {T : UnitTriangle n}
@@ -315,11 +318,13 @@ combinatorial edge slope `triangleGradient f T s`. -/
 theorem triangleAffine_eq_of_mem_cell (f : Vertex n → ℝ) {T₁ T₂ : UnitTriangle n} {x : Fin 3 → ℝ}
     (hx₁ : x ∈ T₁.cell) (hx₂ : x ∈ T₂.cell) : triangleAffine f T₁ x = triangleAffine f T₂ x := by
   have hx_sum := (mem_barycentricSimplex_iff.mp (T₁.cell_subset_barycentricSimplex hx₁)).2
-  conv_rhs =>
-    rw [← T₁.sum_weight_smul_vertex hx_sum]
-    exact (triangleAffine f T₂).toAffineMap.apply_sum_smul_of_sum_eq_one Finset.univ
-      (T₁.sum_weight hx_sum) fun i => (T₁.vertex i).barycentric
-  rw [triangleAffine_apply]; refine Finset.sum_congr rfl fun i _ => ?_
+  have hw := T₁.sum_weight hx_sum
+  have haff := (Finset.univ.map_affineCombination (fun i => (T₁.vertex i).barycentric)
+    (fun i => T₁.weight i x) hw (triangleAffine f T₂).toAffineMap).symm
+  simp only [Finset.affineCombination_eq_linear_combination _ _ _ hw,
+    T₁.sum_weight_smul_vertex hx_sum, ContinuousAffineMap.coe_toAffineMap] at haff
+  rw [← haff, triangleAffine_apply]
+  refine Finset.sum_congr rfl fun i _ => ?_
   rcases eq_or_lt_of_le (T₁.weight_nonneg hx₁ i) with h0 | hpos
   · simp [← h0]
   · obtain ⟨j, hj⟩ := T₁.mem_range_vertex_of_weight_pos hx₁ hx₂ hpos; simp [← hj, mul_comm]

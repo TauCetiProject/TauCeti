@@ -523,7 +523,7 @@ theorem exists_cell_of_isUnitEdge {a c : Vertex n} (h : IsUnitEdge a c) :
     ⟨barycentric_mem_barycentricSimplex a, fun i => by fin_cases i <;> simp [sub_nonneg]⟩,
     ⟨barycentric_mem_barycentricSimplex c, fun i => by fin_cases i <;> simp [sub_nonneg]⟩⟩
 
-/-! ### Adjacent unit triangles, union rhombus cells, and open-convex neighbourhood covers -/
+/-! ### Adjacent unit triangles and union rhombus cells -/
 
 /-- The upward unit triangle sharing the edge of `down s` opposite `(down s).vertex i`
 (joining `(down s).vertex (i + 1)` and `(down s).vertex (i + 2)` along `x i = s.coord i + 1`). -/
@@ -675,74 +675,5 @@ theorem isConvexPolyhedron_adjacentCell (s : Vertex m) (i : Fin 3) :
   ext x; simp [adjacentCell_eq, p, c, one, Fin.forall_fin_succ, and_assoc]
 theorem convex_adjacentCell (s : Vertex m) (i : Fin 3) : Convex ℝ (adjacentCell s i) :=
   (isConvexPolyhedron_adjacentCell s i).convex
-/-- A non-vertex point `x ∈ barycentricSimplex (m + 2)` whose `i`-th coordinate is a positive
-integer admits an open convex neighbourhood whose slice in `barycentricSimplex (m + 2)` lies in
-`adjacentCell s i` for some `s : Vertex m`. -/
-theorem exists_open_convex_subset_adjacentCell_of_eq_floor {x : Fin 3 → ℝ} {i : Fin 3}
-    (hx : x ∈ barycentricSimplex (m + 2)) (hxi : 0 < x i)
-    (hnot : x ∉ Set.range (Vertex.barycentric (n := m + 2))) (hi_eq : x i = (⌊x i⌋₊ : ℝ)) :
-    ∃ (s : Vertex m) (U : Set (Fin 3 → ℝ)),
-      IsOpen U ∧ Convex ℝ U ∧ x ∈ U ∧ barycentricSimplex (m + 2) ∩ U ⊆ adjacentCell s i := by
-  let b : Fin 3 → ℕ := fun k => ⌊x k⌋₊
-  have hb_le (k : Fin 3) : (b k : ℝ) ≤ x k := Nat.floor_le (hx.1 k)
-  have hx_lt (k : Fin 3) : x k < (b k : ℝ) + 1 := Nat.lt_floor_add_one (x k)
-  have hsum_x : x 0 + x 1 + x 2 = m + 2 := by simpa [Fin.sum_univ_three, add_assoc] using hx.2
-  have hsum_p : x i + x (i + 1) + x (i + 2) = m + 2 := by fin_cases i <;> simp <;> linarith
-  have hne {j k : Fin 3} (hp : x i + x j + x k = m + 2)
-      (hcov : ∀ l : Fin 3, l = i ∨ l = j ∨ l = k) : (b j : ℝ) < x j := by
-    refine lt_of_le_of_ne (hb_le j) fun hj => hnot ?_
-    have hj := hj.symm; have hle : b i + b j ≤ m + 2 := Nat.cast_le.mp
-      (by push_cast; linarith [hx.1 k] : ((b i + b j : ℕ) : ℝ) ≤ ((m + 2 : ℕ) : ℝ))
-    have hk : x k = b k := by
-      have : x k = ((m + 2 - (b i + b j) : ℕ) : ℝ) := by rw [Nat.cast_sub hle]; push_cast; linarith
-      simp [b, this]
-    have hall (l : Fin 3) : x l = b l := by rcases hcov l with rfl | rfl | rfl <;> assumption
-    exact ⟨⟨b 0, b 1, b 2, Nat.cast_injective
-      (by push_cast; linarith [hall 0, hall 1, hall 2] : ((_ : ℕ) : ℝ) = ((m + 2 : ℕ) : ℝ))⟩,
-      by ext l; fin_cases l <;> simp [hall _]⟩
-  have hcov (l : Fin 3) : l = i ∨ l = i + 1 ∨ l = i + 2 := by fin_cases i <;> fin_cases l <;> decide
-  have hlt1 := hne hsum_p hcov
-  have hlt2 := hne (k := i + 1) (by linarith) fun l => (hcov l).imp_right Or.symm
-  have hbi_pos : 0 < b i := by exact_mod_cast (hi_eq ▸ hxi : (0 : ℝ) < b i)
-  have hb_sum : b 0 + b 1 + b 2 = m + 1 := by
-    have h1 := Nat.cast_lt.mp (by push_cast; linarith :
-      ((b i + b (i + 1) + b (i + 2) : ℕ) : ℝ) < ((m + 2 : ℕ) : ℝ))
-    have h2 := Nat.cast_lt.mp (by push_cast; linarith [hx_lt (i + 1), hx_lt (i + 2)] :
-      ((m + 2 : ℕ) : ℝ) < ((b i + b (i + 1) + b (i + 2) + 2 : ℕ) : ℝ))
-    fin_cases i <;> simp at h1 h2 <;> omega
-  let s : Vertex m := ⟨b 0 - if i = 0 then 1 else 0, b 1 - if i = 1 then 1 else 0,
-    b 2 - if i = 2 then 1 else 0, by fin_cases i <;> simp at hbi_pos ⊢ <;> omega⟩
-  have hs1 : s.coord (i + 1) = b (i + 1) := by fin_cases i <;> simp [s]
-  have hs2 : s.coord (i + 2) = b (i + 2) := by fin_cases i <;> simp [s]
-  refine ⟨s, (fun y => y (i + 1)) ⁻¹' Ioo (s.coord (i + 1) : ℝ) (s.coord (i + 1) + 1) ∩
-      (fun y => y (i + 2)) ⁻¹' Ioo (s.coord (i + 2) : ℝ) (s.coord (i + 2) + 1),
-    (isOpen_Ioo.preimage (continuous_apply _)).inter (isOpen_Ioo.preimage (continuous_apply _)),
-    ((convex_Ioo _ _).linear_preimage (.proj _)).inter ((convex_Ioo _ _).linear_preimage (.proj _)),
-    ⟨⟨hs1.symm ▸ hlt1, hs1.symm ▸ hx_lt _⟩, ⟨hs2.symm ▸ hlt2, hs2.symm ▸ hx_lt _⟩⟩,
-    adjacentCell_eq s i ▸ fun _ ⟨h, ⟨a, b⟩, ⟨c, d⟩⟩ => ⟨h, a.le, b.le, c.le, d.le⟩⟩
-/-- A point `x ∈ barycentricSimplex n` with no integer coordinate admits an open convex
-neighbourhood whose intersection with `barycentricSimplex n` is contained in a single
-unit-triangle cell. -/
-theorem exists_open_convex_subset_cell_of_ne_floor {x : Fin 3 → ℝ} (hx : x ∈ barycentricSimplex n)
-    (hne : ∀ k, x k ≠ (⌊x k⌋₊ : ℝ)) :
-    ∃ (T : UnitTriangle n) (U : Set (Fin 3 → ℝ)),
-      IsOpen U ∧ Convex ℝ U ∧ x ∈ U ∧ barycentricSimplex n ∩ U ⊆ T.cell := by
-  let b : Fin 3 → ℕ := fun k => ⌊x k⌋₊
-  have hlt (k : Fin 3) : (b k : ℝ) < x k := lt_of_le_of_ne (Nat.floor_le (hx.1 k)) (hne k).symm
-  have hx_lt (k : Fin 3) : x k < (b k : ℝ) + 1 := Nat.lt_floor_add_one (x k)
-  have hsum_x : x 0 + x 1 + x 2 = n := by simpa [Fin.sum_univ_three, add_assoc] using hx.2
-  let U : Set (Fin 3 → ℝ) := ⋂ k : Fin 3, (fun y : Fin 3 → ℝ => y k) ⁻¹' Ioo (b k : ℝ) (b k + 1)
-  have hUo : IsOpen U := isOpen_iInter_of_finite fun k => isOpen_Ioo.preimage (continuous_apply k)
-  have hUc : Convex ℝ U := convex_iInter fun k => (convex_Ioo _ _).linear_preimage (.proj k)
-  have hxU : x ∈ U := mem_iInter.mpr fun k => ⟨hlt k, hx_lt k⟩
-  have h1 := Nat.cast_lt.mp (by push_cast; linarith [hlt 0, hlt 1, hlt 2] :
-    ((b 0 + b 1 + b 2 : ℕ) : ℝ) < (n : ℝ))
-  have h2 := Nat.cast_lt.mp (by push_cast; linarith [hx_lt 0, hx_lt 1, hx_lt 2] :
-    (n : ℝ) < ((b 0 + b 1 + b 2 + 3 : ℕ) : ℝ))
-  rcases (by omega : n = (b 0 + b 1 + b 2) + 1 ∨ n = (b 0 + b 1 + b 2) + 2) with rfl | rfl
-  · exact ⟨UnitTriangle.up ⟨b 0, b 1, b 2, rfl⟩, U, hUo, hUc, hxU, fun y ⟨hyS, hyU⟩ =>
-      ⟨hyS, fun k => by fin_cases k <;> simpa [sub_nonneg] using (mem_iInter.mp hyU _).1.le⟩⟩
-  · exact ⟨UnitTriangle.down ⟨b 0, b 1, b 2, rfl⟩, U, hUo, hUc, hxU, fun y ⟨hyS, hyU⟩ =>
-      ⟨hyS, fun k => by fin_cases k <;> simpa [sub_nonneg] using (mem_iInter.mp hyU _).2.le⟩⟩
 
 end TauCeti.Hive
