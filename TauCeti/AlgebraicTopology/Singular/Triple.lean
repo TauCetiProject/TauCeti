@@ -31,9 +31,10 @@ functorial as well, and the connecting morphism is natural for morphisms of trip
 The short exact sequence and its connecting morphism use an abelian coefficient category.  The
 zero composite and the degree-zero epimorphism also hold for preadditive coefficients with
 coproducts and homology.  Exactness at `Hₙ(X, B)` propagates vanishing from `(A, B)` and `(X, A)`
-to `(X, B)` (`TopTriple.isZero_singularHomology_totalPair`), and when `H_{d+1}(X, A) = 0` it
-propagates projectivity, provided the cokernel of `H_d(X, B) ⟶ H_d(X, A)` has projective dimension
-at most one, for instance over hereditary coefficient categories
+to `(X, B)` (`TopTriple.isZero_singularHomology_totalPair`), and when the connecting morphism
+`H_{d+1}(X, A) ⟶ H_d(A, B)` vanishes (for instance when `H_{d+1}(X, A) = 0`) it propagates
+projectivity, provided the cokernel of `H_d(X, B) ⟶ H_d(X, A)` has projective dimension at most
+one, for instance over hereditary coefficient categories
 (`TopTriple.projective_singularHomology_totalPair`). When morphisms into `Hₙ(X, B)` and
 `Hₙ₊₁(X, B)` split `H_*(X, B) ⟶ H_*(X, A)` up to isomorphism, the triple sequence splits as a
 binary biproduct (`TopTriple.isIso_biprod_desc_singularHomology`).
@@ -326,19 +327,20 @@ lemma singularHomologyδ_naturality {T T' : TopTriple.{w}} (φ : T ⟶ T') (R : 
     (T.shortExact_singularChainComplexShortComplex R)
     (T'.shortExact_singularChainComplexShortComplex R) n m (by simpa)
 
-/-- **Projectivity of top relative homology glues across a triple**: if `H_{d+1}(X, A)` vanishes,
-both `H_d(A, B)` and `H_d(X, A)` are projective, and the cokernel of `H_d(X, B) ⟶ H_d(X, A)` has
-projective dimension at most one (for instance in a hereditary abelian category), then
+/-- **Projectivity of top relative homology glues across a triple**: if the connecting morphism
+`H_{d+1}(X, A) ⟶ H_d(A, B)` vanishes (for instance when `H_{d+1}(X, A) = 0`), both `H_d(A, B)` and
+`H_d(X, A)` are projective, and the cokernel of `H_d(X, B) ⟶ H_d(X, A)` has projective dimension
+at most one (for instance in a hereditary abelian category), then
 `0 ⟶ H_d(A, B) ⟶ H_d(X, B) ⟶ H_d(X, A)` is exact with projective image, so `H_d(X, B)` splits as
 a direct sum of two projectives and is projective. -/
 theorem projective_singularHomology_totalPair (d : ℕ)
     [HasProjectiveDimensionLE (cokernel (TopPair.singularHomologyMap (totalToOuter.app T) R d)) 1]
-    (h : IsZero ((outerPair.obj T).singularHomology R (d + 1)))
+    (hδ : T.singularHomologyδ R (d + 1) d rfl = 0)
     [Projective ((innerPair.obj T).singularHomology R d)]
     [Projective ((outerPair.obj T).singularHomology R d)] :
     Projective ((totalPair.obj T).singularHomology R d) := by
   have : Mono (TopPair.singularHomologyMap (innerToTotal.app T) R d) :=
-    (T.singularHomology_exact_inner R (d + 1) d rfl).mono_g (h.eq_of_src _ 0)
+    (T.singularHomology_exact_inner R (d + 1) d rfl).mono_g hδ
   -- `H_d(A, B)` is the kernel of `H_d(X, B) ⟶ H_d(X, A)`.
   have : Projective (kernel (TopPair.singularHomologyMap (totalToOuter.app T) R d)) :=
     Projective.of_iso ((T.singularHomology_exact_total R d).fIsKernel.conePointUniqueUpToIso
