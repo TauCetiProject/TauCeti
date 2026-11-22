@@ -125,6 +125,12 @@ theorem noOppositeCovectorsOn_iff : NoOppositeCovectorsOn S T K ↔
     ∀ x ∈ K, ∀ y ∈ K, ∀ ξ : E, (x, ξ) ∈ S.waveFrontSet → (y, -ξ) ∉ T.waveFrontSet :=
   Iff.rfl
 
+/-- Over a single point `x`, `S` and `T` have no opposite covectors if and only if no covector
+`(x, ξ)` of the wave front set of `S` has its opposite `(x, -ξ)` in the wave front set of `T`. -/
+theorem noOppositeCovectorsOn_singleton_iff {x : E} : NoOppositeCovectorsOn S T {x} ↔
+    ∀ ξ : E, (x, ξ) ∈ S.waveFrontSet → (x, -ξ) ∉ T.waveFrontSet := by
+  simp [noOppositeCovectorsOn_iff]
+
 theorem NoOppositeCovectorsOn.mono (h : NoOppositeCovectorsOn S T K) (hK : K' ⊆ K) :
     NoOppositeCovectorsOn S T K' :=
   fun x hx y hy ξ hξ ↦ h x (hK hx) y (hK hy) ξ hξ
@@ -594,8 +600,11 @@ private theorem exists_forall_norm_iteratedFDeriv_bilinLeftCLM_fourierAtom_le (g
     simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
       ContDiffMapSupportedIn.modulate_apply, gK, ContDiffMapSupportedIn.coe_of_support_subset,
       TauCeti.fourierAtom_apply, inner_neg_right, smul_eq_mul]
+    -- Both sides are `g x` times the exponential of the same phase, up to sign placement.
+    rw [mul_comm]
+    congr 2
     push_cast
-    ring_nf
+    ring
   have hsup : ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K i gK ≤
       ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K r gK :=
     Seminorm.le_def.1 (Finset.sup_mono (Finset.Iic_subset_Iic.2 hi)) gK
@@ -765,7 +774,8 @@ private theorem exists_eqOn_one_noOppositeCovectorsOn {x : E} (hx : x ∈ Ω)
     (h : NoOppositeCovectorsOn S T {x}) :
     ∃ (U : Opens E) (φ : 𝓓(Ω, ℂ)), x ∈ U ∧ U ≤ Ω ∧ EqOn φ 1 U ∧
       NoOppositeCovectorsOn S T (tsupport φ) := by
-  obtain ⟨W, hW, hWc⟩ := exists_mem_nhds_noOppositeCovectorsOn hx fun ξ ↦ h x rfl x rfl ξ
+  obtain ⟨W, hW, hWc⟩ := exists_mem_nhds_noOppositeCovectorsOn hx
+    (noOppositeCovectorsOn_singleton_iff.1 h)
   obtain ⟨φ, V, hV, hxV, hφV, hφW⟩ := exists_eqOn_one_tsupport_subset (𝕜 := ℂ) hW hx
   exact ⟨⟨V ∩ Ω, hV.inter Ω.isOpen⟩, φ, ⟨hxV, hx⟩, fun y hy ↦ hy.2, hφV.mono inter_subset_left,
     hWc.mono hφW⟩
@@ -873,8 +883,10 @@ private theorem eq_product_of_forall_cutoffProduct {S₁ T₁ S₂ T₂ : 𝓓'(
         ∀ ⦃ψ : 𝓓(Ω, ℝ)⦄, (φ : E → ℂ) =ᶠ[𝓝ˢ (tsupport ψ)] 1 → P ψ = S.cutoffProduct T φ hφ ψ) :
     P = S.product T h := by
   refine (eq_product_iff h).2 fun x hx ↦ ?_
-  obtain ⟨W₁, hW₁, hWc₁⟩ := exists_mem_nhds_noOppositeCovectorsOn hx fun ξ ↦ h₁ x x rfl x rfl ξ
-  obtain ⟨W₂, hW₂, hWc₂⟩ := exists_mem_nhds_noOppositeCovectorsOn hx fun ξ ↦ h₂ x x rfl x rfl ξ
+  obtain ⟨W₁, hW₁, hWc₁⟩ := exists_mem_nhds_noOppositeCovectorsOn hx
+    (noOppositeCovectorsOn_singleton_iff.1 (h₁ x))
+  obtain ⟨W₂, hW₂, hWc₂⟩ := exists_mem_nhds_noOppositeCovectorsOn hx
+    (noOppositeCovectorsOn_singleton_iff.1 (h₂ x))
   obtain ⟨φ, U, hU, hxU, hφU, hφW⟩ := exists_eqOn_one_tsupport_subset (𝕜 := ℂ)
     (inter_mem hW₁ hW₂) hx
   obtain ⟨hφ, hPφ⟩ := hP (hWc₁.mono (hφW.trans inter_subset_left))
