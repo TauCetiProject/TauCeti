@@ -17,12 +17,15 @@ For `T₀` complete first-countable uniform modules over a topological ring with
 units (`TauCeti.HasZeroSequenceOfUnits`), the Banach–Schauder open mapping theorem yields:
 
 * `ContinuousLinearMap.equivProdOfSurjectiveOfIsComplOfComplete`: two surjective continuous linear
-  maps with complementary kernels give an isomorphism `E ≃L[R] F × G`.
+  maps with complementary kernels give an isomorphism `E ≃L[R] F × G`, assuming joint scalar
+  continuity (`ContinuousSMul R E`) on the source `E` and continuity of each fixed scalar action
+  (`ContinuousConstSMul`) on both targets `F` and `G`.
 * `Submodule.IsCompl.isTopCompl_of_isClosed_of_complete`,
   `Submodule.isTopCompl_iff_isCompl_isClosed_of_complete`,
   `Submodule.ClosedComplemented.of_isCompl_isClosed_of_complete`, and
   `Submodule.closedComplemented_iff_isClosed_exists_isClosed_isCompl_of_complete`: two closed
-  algebraic complements are topological complements.
+  algebraic complements in an ambient module with jointly continuous scalar multiplication
+  (`ContinuousSMul R E`) are topological complements.
 
 These results generalize the normed-space complement criteria in
 `Mathlib/Analysis/Normed/Module/Complemented.lean`. Companion closed-range criteria live in
@@ -44,8 +47,10 @@ variable {R E F : Type*} [Ring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceO
 
 /-- If `f : E →L[R] F` and `g : E →L[R] G` are surjective continuous linear maps between complete
 first-countable uniform modules (with `T₀` targets) over a topological ring with a zero sequence of
-units whose kernels are algebraic complements, then `x ↦ (f x, g x)` defines a continuous linear
-equivalence `E ≃L[R] F × G`. -/
+units whose kernels are algebraic complements, assuming joint scalar continuity on `E`
+(`ContinuousSMul R E`) and continuity of each fixed scalar action on `F` and `G`
+(`ContinuousConstSMul`), then `x ↦ (f x, g x)` defines a continuous linear equivalence
+`E ≃L[R] F × G`. -/
 noncomputable def equivProdOfSurjectiveOfIsComplOfComplete {G : Type*}
     [AddCommGroup G] [UniformSpace G] [IsUniformAddGroup G] [CompleteSpace G]
     [(𝓝 (0 : G)).IsCountablyGenerated] [T0Space G] [Module R G] [ContinuousConstSMul R G]
@@ -128,8 +133,9 @@ variable {R E : Type*} [Ring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceOfU
   [(𝓝 (0 : E)).IsCountablyGenerated] [T0Space E] [Module R E] [ContinuousSMul R E]
   {p q : Submodule R E}
 
-/-- In a `T₀` complete first-countable uniform module over a topological ring with a zero sequence
-of units, two closed algebraic complements are topological complements (`Submodule.IsTopCompl`). -/
+/-- In a `T₀` complete first-countable uniform module with jointly continuous scalar
+multiplication (`ContinuousSMul R E`) over a topological ring with a zero sequence of units, two
+closed algebraic complements are topological complements (`Submodule.IsTopCompl`). -/
 theorem IsCompl.isTopCompl_of_isClosed_of_complete (h : IsCompl p q)
     (hp : IsClosed (p : Set E)) (hq : IsClosed (q : Set E)) : IsTopCompl p q := by
   have : CompleteSpace p := hp.completeSpace_coe
@@ -138,24 +144,26 @@ theorem IsCompl.isTopCompl_of_isClosed_of_complete (h : IsCompl p q)
   rw [IsCompl.isTopCompl_iff_continuous_symm_prodEquivOfIsCompl h]
   exact (p.prodEquivOfIsCompl q h).continuous_symm_of_complete (continuous_prodEquivOfIsCompl h)
 
-/-- In a `T₀` complete first-countable uniform module over a topological ring with a zero sequence
-of units, two submodules are topological complements if and only if they are closed algebraic
-complements. -/
+/-- In a `T₀` complete first-countable uniform module with jointly continuous scalar
+multiplication (`ContinuousSMul R E`) over a topological ring with a zero sequence of units, two
+submodules are topological complements if and only if they are closed algebraic complements. -/
 theorem isTopCompl_iff_isCompl_isClosed_of_complete :
     IsTopCompl p q ↔ IsCompl p q ∧ IsClosed (p : Set E) ∧ IsClosed (q : Set E) :=
   ⟨fun h ↦ ⟨h.isCompl, h.isClosed, h.isClosed'⟩,
     fun h ↦ IsCompl.isTopCompl_of_isClosed_of_complete h.1 h.2.1 h.2.2⟩
 
 /-- A closed submodule admitting a closed algebraic complement in a `T₀` complete first-countable
-uniform module over a topological ring with a zero sequence of units is topologically complemented
+uniform module with jointly continuous scalar multiplication (`ContinuousSMul R E`) over a
+topological ring with a zero sequence of units is topologically complemented
 (`Submodule.ClosedComplemented`). -/
 theorem ClosedComplemented.of_isCompl_isClosed_of_complete (h : IsCompl p q)
     (hp : IsClosed (p : Set E)) (hq : IsClosed (q : Set E)) : p.ClosedComplemented :=
   (IsCompl.isTopCompl_of_isClosed_of_complete h hp hq).closedComplemented
 
-/-- In a `T₀` complete first-countable uniform module over a topological ring with a zero sequence
-of units, a submodule is topologically complemented if and only if it is closed and admits a closed
-algebraic complement. -/
+/-- In a `T₀` complete first-countable uniform module with jointly continuous scalar
+multiplication (`ContinuousSMul R E`) over a topological ring with a zero sequence of units, a
+submodule is topologically complemented if and only if it is closed and admits a closed algebraic
+complement. -/
 theorem closedComplemented_iff_isClosed_exists_isClosed_isCompl_of_complete :
     p.ClosedComplemented ↔
       IsClosed (p : Set E) ∧ ∃ q : Submodule R E, IsClosed (q : Set E) ∧ IsCompl p q :=

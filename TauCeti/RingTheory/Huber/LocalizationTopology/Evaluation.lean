@@ -15,8 +15,9 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.Surjective
 public import TauCeti.Topology.Algebra.IsUniformGroup.Subring
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 
-import TauCeti.RingTheory.Huber.OpenMapping
+import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 import TauCeti.Topology.Algebra.GroupCompletion
+import TauCeti.Topology.Algebra.OpenMapping.Henkel
 import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!

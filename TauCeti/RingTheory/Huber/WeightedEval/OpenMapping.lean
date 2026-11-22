@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.OpenMapping
+public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
+import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 import TauCeti.Topology.Algebra.GroupCompletion
+import TauCeti.Topology.Algebra.OpenMapping.Henkel
 import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!

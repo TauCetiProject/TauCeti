@@ -28,14 +28,13 @@ variable {R E F : Type*} [Semiring R]
 range. -/
 noncomputable def equivRangeOfIsStrictMap (f : E →L[R] F)
     (hinj : Function.Injective f) (hstrict : Topology.IsStrictMap f) :
-    E ≃L[R] f.range where
-  toLinearEquiv := LinearEquiv.ofInjective f.toLinearMap hinj
-  continuous_toFun := f.rangeRestrict.continuous.congr fun x ↦
-    (congrFun (coe_ofInjective_eq_rangeRestrict f hinj) x).symm
-  continuous_invFun :=
-    (Topology.isEmbedding_iff_isStrictMap_injective.mpr ⟨hstrict, hinj⟩).continuous_iff.mpr <|
-      continuous_subtypeVal.congr fun y ↦
-        (LinearEquiv.ofInjective_symm_apply f.toLinearMap (h := hinj) y).symm
+    E ≃L[R] f.range :=
+  .ofIsHomeomorph (LinearEquiv.ofInjective f.toLinearMap hinj) <|
+    isHomeomorph_iff_isQuotientMap_injective.mpr
+      ⟨by
+        rw [coe_linearEquiv_ofInjective_eq_rangeRestrict]
+        exact Topology.isStrictMap_iff_isQuotientMap_rangeFactorization.mp hstrict,
+      (LinearEquiv.ofInjective f.toLinearMap hinj).injective⟩
 
 @[simp]
 theorem toLinearEquiv_equivRangeOfIsStrictMap (f : E →L[R] F)
@@ -48,7 +47,7 @@ theorem toLinearEquiv_equivRangeOfIsStrictMap (f : E →L[R] F)
 theorem coeFn_equivRangeOfIsStrictMap (f : E →L[R] F)
     (hinj : Function.Injective f) (hstrict : Topology.IsStrictMap f) :
     ⇑(f.equivRangeOfIsStrictMap hinj hstrict) = f.rangeRestrict :=
-  coe_ofInjective_eq_rangeRestrict f hinj
+  coe_linearEquiv_ofInjective_eq_rangeRestrict f hinj
 
 @[simp]
 theorem equivRangeOfIsStrictMap_apply (f : E →L[R] F)
@@ -69,22 +68,12 @@ theorem equivRangeOfIsStrictMap_symm_apply_rangeFactorization (f : E →L[R] F)
   rw [← coe_rangeRestrict, ← equivRangeOfIsStrictMap_apply f hinj hstrict x,
     ContinuousLinearEquiv.symm_apply_apply]
 
-theorem equivRangeOfIsStrictMap_symm_apply_rangeRestrict (f : E →L[R] F)
-    (hinj : Function.Injective f) (hstrict : Topology.IsStrictMap f) (x : E) :
-    (f.equivRangeOfIsStrictMap hinj hstrict).symm (f.rangeRestrict x) = x :=
-  equivRangeOfIsStrictMap_symm_apply_rangeFactorization f hinj hstrict x
-
 @[simp]
 theorem rangeFactorization_equivRangeOfIsStrictMap_symm_apply (f : E →L[R] F)
     (hinj : Function.Injective f) (hstrict : Topology.IsStrictMap f) (y : f.range) :
     Set.rangeFactorization f ((f.equivRangeOfIsStrictMap hinj hstrict).symm y) = y := by
   rw [← coe_rangeRestrict, ← equivRangeOfIsStrictMap_apply f hinj hstrict,
     ContinuousLinearEquiv.apply_symm_apply]
-
-theorem rangeRestrict_equivRangeOfIsStrictMap_symm_apply (f : E →L[R] F)
-    (hinj : Function.Injective f) (hstrict : Topology.IsStrictMap f) (y : f.range) :
-    f.rangeRestrict ((f.equivRangeOfIsStrictMap hinj hstrict).symm y) = y :=
-  rangeFactorization_equivRangeOfIsStrictMap_symm_apply f hinj hstrict y
 
 end ContinuousLinearMap
 

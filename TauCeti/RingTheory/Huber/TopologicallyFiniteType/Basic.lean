@@ -11,12 +11,13 @@ public import TauCeti.RingTheory.Huber.WeightedEval.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 
 import TauCeti.Data.Set.Finite
-import TauCeti.RingTheory.Huber.OpenMapping
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
+import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 import TauCeti.Topology.Algebra.GroupCompletion
 import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
+import TauCeti.Topology.Algebra.OpenMapping.Henkel
 import TauCeti.Topology.Algebra.Ring.Ideal
 import Mathlib.Topology.Baire.CompleteMetrizable
 

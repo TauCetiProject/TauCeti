@@ -48,8 +48,9 @@ spaces, F-spaces, Banach spaces, and complete first-countable modules over Tate 
 
 The range equivalence `ContinuousLinearMap.equivRangeOfIsStrictMap` for injective strict maps
 lives in `TauCeti.Topology.Maps.Strict.Module`. The other two implications of Wedhorn's
-Theorem 6.16, that an open linear map is surjective and that a continuous one has a complete
-target, are in `TauCeti.Topology.Algebra.OpenMapping.Converse`.
+Theorem 6.16, that an open linear map is surjective and that a continuous open linear map from a
+complete first-countable source has a complete target under the stated module hypotheses, are in
+`TauCeti.Topology.Algebra.OpenMapping.Converse`.
 
 Mathlib's `MonoidHom.isOpenMap_of_sigmaCompact` proves openness for a continuous surjection from
 a σ-compact source onto a T2 Baire target group (locally compact groups being the standard
@@ -134,35 +135,15 @@ theorem isStrictMap_of_baireSpace_range_of_hasZeroSequenceOfUnits (f : E →ₗ[
     [BaireSpace f.range] [T0Space f.range]
     (hfc : ContinuousAt (f : E → F) 0)
     (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0) : Topology.IsStrictMap (f : E → F) := by
-  let : Neg f.range := ⟨fun y ↦ ⟨-y.val, by
-    obtain ⟨x, hx⟩ := y.property
-    exact ⟨-x, by simp [hx]⟩⟩⟩
-  let : Sub f.range := ⟨fun y₁ y₂ ↦ ⟨y₁.val - y₂.val, by
-    obtain ⟨x₁, hx₁⟩ := y₁.property
-    obtain ⟨x₂, hx₂⟩ := y₂.property
-    exact ⟨x₁ - x₂, by simp [hx₁, hx₂]⟩⟩⟩
-  let : AddGroup f.range :=
-    { (inferInstance : AddMonoid f.range) with
-      neg := Neg.neg
-      sub := Sub.sub
-      sub_eq_add_neg := fun a b ↦ Subtype.ext (sub_eq_add_neg a.val b.val)
-      neg_add_cancel := fun a ↦ Subtype.ext (neg_add_cancel a.val)
-      zsmul := zsmulRec }
+  let : AddGroup f.range := inferInstanceAs (AddGroup f.toAddMonoidHom.range)
   have : IsTopologicalAddGroup f.range :=
-    { continuous_add :=
-        continuous_induced_rng.mpr (continuous_subtypeVal.fst'.add continuous_subtypeVal.snd')
-      continuous_neg := continuous_induced_rng.mpr continuous_subtypeVal.neg }
+    inferInstanceAs (IsTopologicalAddGroup f.toAddMonoidHom.range)
   have hcont : Continuous (f.rangeRestrict : E → f.range) :=
     (continuous_of_continuousAt_zero f hfc).subtype_mk _
-  have hopen : IsOpenMap (f.rangeRestrict : E → f.range) :=
-    TauCeti.HasZeroSequenceOfUnits.isOpenMap f.rangeRestrict f.surjective_rangeRestrict
+  have hq : IsQuotientMap (f.rangeRestrict : E → f.range) :=
+    TauCeti.HasZeroSequenceOfUnits.isQuotientMap f.rangeRestrict f.surjective_rangeRestrict
       hcont.continuousAt hc
-  let Φ : f.range ≃ₜ f.toAddMonoidHom.range := Homeomorph.setCongr rfl
-  have hcomp : (f.toAddMonoidHom.rangeRestrict : E → f.toAddMonoidHom.range) =
-      Φ ∘ f.rangeRestrict := rfl
-  refine f.toAddMonoidHom.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mpr ?_
-  rw [hcomp]
-  exact Φ.isOpenQuotientMap.comp ⟨f.surjective_rangeRestrict, hcont, hopen⟩
+  exact Topology.isStrictMap_iff_isQuotientMap_rangeFactorization.mpr hq
 
 /-- A linear map with closed range over a semiring with a zero sequence of units is strict when
 the source is complete and first countable and the target is completely metrisable. On the source,

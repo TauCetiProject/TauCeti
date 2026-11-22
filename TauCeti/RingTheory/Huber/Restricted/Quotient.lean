@@ -9,8 +9,9 @@ public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Kernel
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenQuotient
 public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
-import TauCeti.RingTheory.Huber.OpenMapping
+import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 import TauCeti.Topology.Algebra.Nonarchimedean.Pi
+import TauCeti.Topology.Algebra.OpenMapping.Henkel
 import TauCeti.Topology.LiftTendstoCofinite
 import Mathlib.Data.Finsupp.Encodable
 

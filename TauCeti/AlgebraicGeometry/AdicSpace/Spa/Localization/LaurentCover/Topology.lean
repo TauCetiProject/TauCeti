@@ -7,7 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover.Basic
 
-import TauCeti.RingTheory.Huber.OpenMapping
+import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
+import TauCeti.Topology.Algebra.OpenMapping.Henkel
 import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!

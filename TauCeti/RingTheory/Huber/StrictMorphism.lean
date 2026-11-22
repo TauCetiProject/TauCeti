@@ -59,9 +59,6 @@ No continuity hypothesis is imposed on `f`; continuity is part of the conclusion
 it by `Topology.IsStrictMap.continuous`. -/
 theorem isStrictMap_of_module_finite (f : M →ₗ[A] N) : Topology.IsStrictMap f := by
   let _ : IsModuleTopology A M := TauCeti.Huber.IsTateRing.isModuleTopology
-  let _ : NonarchimedeanAddGroup M := by
-    rw [_root_.eq_moduleTopology A M]
-    exact TauCeti.nonarchimedeanAddGroup_moduleTopology
   have hcont : Continuous f := IsModuleTopology.continuous_of_linearMap f
   exact f.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits hcont.continuousAt
     (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)

@@ -8,13 +8,13 @@ module
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Analysis.LocallyConvex.HahnBanach
 public import TauCeti.Analysis.Fredholm.Basic
-public import TauCeti.Topology.Algebra.OpenMapping.ClosedRange
+public import TauCeti.Topology.Algebra.OpenMapping.FiniteCokernel
 
 /-!
 # Closed range from a finite-dimensional cokernel
 
 This file applies `ContinuousLinearMap.isClosed_range_of_finite_coker` (proved in
-`TauCeti.Topology.Algebra.OpenMapping.ClosedRange`) to show that the closed-range hypothesis in
+`TauCeti.Topology.Algebra.OpenMapping.FiniteCokernel`) to show that the closed-range hypothesis in
 the definition of a Fredholm operator is *automatic* between Banach spaces once the cokernel is
 finite dimensional.
 
