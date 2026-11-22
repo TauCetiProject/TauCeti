@@ -22,7 +22,9 @@ and `𝔥 ≤ 𝔨` (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isotropy_le_l
 `𝔥` and `𝔨` are subrepresentations of the adjoint representation of `H`
 (`TauCeti.isotropySubrepresentation`, `TauCeti.Lie.lieAnnihilatorSubrepresentation`), with
 `𝔥 ≤ 𝔨` as subrepresentations (`isotropySubrepresentation_le_lieAnnihilatorSubrepresentation` in
-the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`).
+the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`). That inclusion only uses that `μ`
+is a moment map whose cocycle vanishes at `p`, and holds for any subgroup of `G_p ⊓ G_ν`, without
+finite-dimensionality of `G` (the same name in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`).
 
 When `H` is compact, as it is for a proper action, `𝔤` therefore splits as
 
@@ -44,7 +46,11 @@ forms by zero on `𝔥 ⊕ 𝔮`
 
 ## Main results
 
-Both in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`:
+* `TauCeti.SmoothTwoForm.IsMomentMap.isotropySubrepresentation_le_lieAnnihilatorSubrepresentation`:
+  for a moment map whose cocycle vanishes at `p`, `𝔤_p ≤ 𝔤_{μ(p)}` as subrepresentations of the
+  adjoint representation of a subgroup of `G_p ⊓ G_{μ(p)}`.
+
+The following are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`:
 
 * `isotropySubrepresentation_le_lieAnnihilatorSubrepresentation`: `𝔤_p ≤ 𝔤_{μ(p)}` as
   subrepresentations of the adjoint representation of a subgroup of `G_p`.
@@ -66,7 +72,7 @@ public section
 
 open scoped ContDiff Manifold
 
-namespace TauCeti.SmoothTwoForm.IsEquivariantMomentMap
+namespace TauCeti.SmoothTwoForm
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -79,6 +85,28 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 attribute [local instance] lieGroupOne
 
+namespace IsMomentMap
+
+variable [CompleteSpace E]
+
+/-- **The isotropy algebra lies in the coadjoint stabilizer, as subrepresentations.** For a moment
+map `μ` of the action by fundamental vector fields whose cocycle vanishes at `p`, and a subgroup
+`K` of both the stabilizer `G_p` and the coadjoint stabilizer `G_{μ(p)}`, the isotropy algebra
+`𝔤_p` lies in the infinitesimal coadjoint stabilizer `𝔤_{μ(p)}` as subrepresentations of the
+adjoint representation of `K`. -/
+theorem isotropySubrepresentation_le_lieAnnihilatorSubrepresentation
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) {p : M}
+    (hc : σ.momentCocycle (InfinitesimalAction.fundamental I G I' M) μ p = 0) {K : Subgroup G}
+    (hK : K ≤ MulAction.stabilizer G p)
+    (hK' : K ≤ (Lie.coadjointRepresentation ℝ I G).stabilizer (μ p)) :
+    isotropySubrepresentation I I' p hK ≤ Lie.lieAnnihilatorSubrepresentation (μ p) hK' :=
+  fun _ hξ ↦ Lie.mem_lieAnnihilatorSubrepresentation_iff.mpr
+    (h.isotropy_le_lieAnnihilator hc (mem_isotropySubrepresentation_iff.mp hξ))
+
+end IsMomentMap
+
+namespace IsEquivariantMomentMap
+
 variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
 /-- **The isotropy algebra lies in the coadjoint stabilizer, as subrepresentations.** For a
@@ -89,9 +117,9 @@ theorem isotropySubrepresentation_le_lieAnnihilatorSubrepresentation
     (h : σ.IsEquivariantMomentMap μ) {p : M} {K : Subgroup G} (hK : K ≤ MulAction.stabilizer G p) :
     isotropySubrepresentation I I' p hK ≤
       Lie.lieAnnihilatorSubrepresentation (μ p)
-        (hK.trans (h.stabilizer_le_stabilizer_coadjointRepresentation p)) := fun _ hξ ↦
-  Lie.mem_lieAnnihilatorSubrepresentation_iff.mpr
-    (h.isotropy_le_lieAnnihilator p (mem_isotropySubrepresentation_iff.mp hξ))
+        (hK.trans (h.stabilizer_le_stabilizer_coadjointRepresentation p)) :=
+  h.toIsMomentMap.isotropySubrepresentation_le_lieAnnihilatorSubrepresentation
+    (h.momentCocycle_eq_zero p) hK _
 
 /-- **The invariant splitting of the Lie algebra at a point with compact stabilizer.** For a
 coadjoint-equivariant moment map `μ` and a point `p` whose stabilizer `H = G_p` is compact, there
@@ -114,4 +142,6 @@ theorem
   Lie.exists_sup_eq_and_isCompl_of_isCompact hp
     (h.isotropySubrepresentation_le_lieAnnihilatorSubrepresentation le_rfl)
 
-end TauCeti.SmoothTwoForm.IsEquivariantMomentMap
+end IsEquivariantMomentMap
+
+end TauCeti.SmoothTwoForm

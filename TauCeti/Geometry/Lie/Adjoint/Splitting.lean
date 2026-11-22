@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.RepresentationTheory.Subrepresentation
+import TauCeti.Order.ModularLattice
 import TauCeti.RepresentationTheory.Dual
 
 /-!
@@ -17,7 +18,8 @@ Let `H` be a compact subgroup of a Lie group `G`, acting on the Lie algebra
 `𝔤`. The adjoint representation of `H` is semisimple
 (`TauCeti.Lie.isSemisimpleRepresentation_adjointRepresentation_comp_subtype`, by averaging over
 `H`), so its subrepresentations form a complemented modular lattice. Taking a relative complement
-of `𝔥` in `𝔨` and a complement of `𝔨` gives `Ad(H)`-invariant subspaces `𝔪` and `𝔮` with
+of `𝔥` in `𝔨` and a complement of `𝔨`, as for any flag in such a lattice
+(`TauCeti.exists_sup_eq_and_isCompl_of_le`), gives `Ad(H)`-invariant subspaces `𝔪` and `𝔮` with
 
 `𝔤 = 𝔥 ⊕ 𝔪 ⊕ 𝔮`,  `𝔥 ⊕ 𝔪 = 𝔨`,
 
@@ -79,12 +81,8 @@ theorem isIntertwiningMap_dualMap_projectionOnto_coadjointRepresentation {H : Su
       ((coadjointRepresentation 𝕜 I G).comp H.subtype)
       (𝔰.toSubmodule.projectionOnto 𝔱.toSubmodule
         (Subrepresentation.isCompl_toSubmodule.mpr h)).dualMap := by
-  refine ⟨fun g η ↦ LinearMap.ext fun X ↦ ?_⟩
-  rw [(Subrepresentation.isIntertwiningMap_dualMap_projectionOnto h).isIntertwining g η,
-    Representation.dual_comp]
-  simp only [MonoidHom.coe_comp, Function.comp_apply, Representation.dual_apply,
-    Module.Dual.transpose_apply, LinearMap.comp_apply, coadjointRepresentation_apply,
-    adjointRepresentation_apply, Subgroup.coe_subtype, LinearMap.dualMap_apply]
+  simpa only [coadjointRepresentation_def, Representation.dual_comp] using
+    Subrepresentation.isIntertwiningMap_dualMap_projectionOnto h
 
 end Dual
 
@@ -103,10 +101,7 @@ theorem exists_sup_eq_and_isCompl_of_isCompact {H : Subgroup G} (hH : IsCompact 
     ∃ 𝔪 𝔮 : Subrepresentation ((adjointRepresentation ℝ I G).comp H.subtype),
       𝔥 ⊔ 𝔪 = 𝔨 ∧ IsCompl 𝔨 𝔮 ∧ IsCompl 𝔥 (𝔪 ⊔ 𝔮) ∧ IsCompl 𝔪 (𝔥 ⊔ 𝔮) := by
   have := isSemisimpleRepresentation_adjointRepresentation_comp_subtype (I := I) hH
-  obtain ⟨𝔪, h𝔪, h𝔪'⟩ := IsModularLattice.exists_disjoint_and_sup_eq h𝔥𝔨
-  obtain ⟨𝔮, h𝔮⟩ := exists_isCompl 𝔨
-  refine ⟨𝔪, 𝔮, h𝔪', h𝔮, h𝔪.isCompl_sup_right_of_isCompl_sup_left (h𝔪' ▸ h𝔮),
-    h𝔪.symm.isCompl_sup_right_of_isCompl_sup_left ((sup_comm 𝔪 𝔥 ▸ h𝔪') ▸ h𝔮)⟩
+  exact exists_sup_eq_and_isCompl_of_le h𝔥𝔨
 
 end Splitting
 
