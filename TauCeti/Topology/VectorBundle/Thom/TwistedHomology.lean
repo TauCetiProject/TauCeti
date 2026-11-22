@@ -271,4 +271,23 @@ theorem signHomologyToCover_thomPairSingularHomologyEquivTwistedHomology
 
 end Field
 
+variable (F E) in
+/-- **The dimensions of the homology of the Thom pair with orientation-twisted coefficients.** Let
+`E → B` be a real vector bundle of rank `r`, `o(E)` its orientation local system, and `K` a field in
+which `2` is invertible. Then `dim Hₘ(E, E₀; K) = dim Hₚ(B; o(E) ⊗ K)` for `m = r + p`, with no
+orientation of `E` and over any base: these are the dimensions on the two sides of the twisted Thom
+isomorphism `thomPairSingularHomologyEquivTwistedHomology`. -/
+theorem finrank_singularHomology_thomPair_eq_finrank_twistedHomology (K : Type w) [Field K]
+    [Invertible (2 : K)] {p m : ℕ} (h : finrank ℝ F + p = m) :
+    finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat.{w} K) =
+      finrank K (LocalCoefficientSystem.twistedHomology (signLocalSystem F E K hι) p) := by
+  -- A generator of `Hʳ(F, F ∖ {0}; K) ≅ K` and an orientation of the model fibre normalize the
+  -- twisted Thom isomorphism; its dimensions do not depend on them.
+  obtain ⟨u, hu⟩ := exists_span_singularCohomology_complSingleton_eq_top (k := K)
+    (OpenPartialHomeomorph.refl F) (Set.mem_univ 0)
+  classical
+  let ω : Orientation ℝ F ι :=
+    ((Module.finBasisOfFinrankEq ℝ F hι.symm).reindex (Fintype.equivFin ι).symm).orientation
+  exact (thomPairSingularHomologyEquivTwistedHomology hι ω hu h).finrank_eq
+
 end TauCeti.VectorBundleOrientationCover
