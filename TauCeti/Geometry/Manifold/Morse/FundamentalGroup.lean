@@ -103,7 +103,8 @@ theorem IsMorse.subsingleton_fundamentalGroup_sublevel_of_subsingleton (hf : IsM
         constructor <;> linarith⟩ q.property⟩
     have hCsub := subsingleton_fundamentalGroup_of_isEmpty_cell_one this hs
     -- The complex is a strong deformation retract of the upper sublevel.
-    let e := ContinuousMap.HomotopyEquiv.ofRetraction hC r hr G.toHomotopy
+    let e := ContinuousMap.HomotopyEquiv.ofDeformationRetraction (.inclusion hC) r hr
+      (ContinuousMap.HomotopicRel.homotopic ⟨G⟩)
     have := hCsub (e.symm y)
     exact e.symm.subsingleton_fundamentalGroup y
 

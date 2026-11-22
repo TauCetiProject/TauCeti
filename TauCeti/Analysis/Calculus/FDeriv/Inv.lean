@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.Analysis.Normed.Operator.Basic
@@ -15,6 +16,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Calculus.FDeriv.Adjugate
 import TauCeti.Analysis.Matrix.Normed
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Derivatives of inversion and maps precomposed with inversion
@@ -30,6 +32,10 @@ differentiability of `u` is assumed: where `u` is not differentiable at `w⁻¹`
 
 For an invertible finite matrix, inversion has differential `H ↦ -(A⁻¹ * H * A⁻¹)`.
 Matrices carry the operator norm, and the scalar field need not be complete.
+
+Over `ℂ` as a real plane, multiplication by `-(w ^ 2)⁻¹` commutes with `I`, so inversion preserves
+the Cauchy--Riemann equation `∂ₜu = A ∂ₛu` for an operator `A` with `A² = -1`
+(`TauCeti.fderiv_comp_inv_apply_I_eq`).
 -/
 
 public section
@@ -132,5 +138,15 @@ theorem norm_fderiv_comp_inv {u : 𝕜' → F} {w : 𝕜'} (hw : w ≠ 0) :
     calc ‖fderiv 𝕜 u w⁻¹‖ * ‖-(w ^ 2)⁻¹‖
         ≤ ‖fderiv 𝕜 (fun w ↦ u w⁻¹) w‖ * ‖-(w ^ 2)⁻¹‖⁻¹ * ‖-(w ^ 2)⁻¹‖ := by gcongr
       _ = ‖fderiv 𝕜 (fun w ↦ u w⁻¹) w‖ := by field_simp
+
+/-- **Inversion preserves the Cauchy--Riemann equation.** If `u` solves `∂ₜu = A ∂ₛu` at `w⁻¹`,
+where `A` squares to `-1`, then the inverted map `w ↦ u w⁻¹` solves it at `w ≠ 0`: the
+differential of the inversion is multiplication by `-w⁻²`, which commutes with `I`. -/
+theorem fderiv_comp_inv_apply_I_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {u : ℂ → E} {A : E →L[ℝ] E} {w : ℂ} (hw : w ≠ 0)
+    (hCR : fderiv ℝ u w⁻¹ Complex.I = A (fderiv ℝ u w⁻¹ 1)) (hA : ∀ v, A (A v) = -v) :
+    fderiv ℝ (fun w ↦ u w⁻¹) w Complex.I = A (fderiv ℝ (fun w ↦ u w⁻¹) w 1) := by
+  rw [fderiv_comp_inv_apply hw, fderiv_comp_inv_apply hw, mul_one]
+  exact (fderiv ℝ u w⁻¹ : ℂ →ₗ[ℝ] E).apply_mul_I_eq_of_apply_I_eq (A := A) hCR hA _
 
 end TauCeti

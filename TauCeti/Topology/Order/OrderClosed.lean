@@ -34,6 +34,11 @@ unchanged, since the escaping branch is eventually dominated by the convergent o
 * `Filter.Tendsto.atBot_max` and `Filter.Tendsto.max_atBot`: if one branch tends to `atBot` and the
   other tends to `𝓝 a`, their pointwise `max` tends to `𝓝 a` (with dual versions
   `Filter.Tendsto.atTop_min` and `Filter.Tendsto.min_atTop`).
+* `TauCeti.eq_of_tendsto_section`, `TauCeti.monotone_of_tendsto_section`: uniqueness and
+  monotonicity of an index map matching boundary limits of sections on `C` along a set `B`
+  meeting `closure C` to pointwise distinct or strictly monotone boundary sections on `B`.
+* `TauCeti.exists_mem_Ioo_of_Ioo_subset_closure_range`: a family whose values are dense in a
+  nonempty open interval of a densely ordered space takes a value in it.
 -/
 
 public section
@@ -100,3 +105,52 @@ theorem Filter.Tendsto.max_atBot {ι β : Type*} [LinearOrder β] [TopologicalSp
     (hg : Tendsto g l atBot) : Tendsto (fun i ↦ max (f i) (g i)) l (𝓝 a) := by
   simp_rw [max_comm (f _) (g _)]
   exact hg.atBot_max hf
+
+namespace TauCeti
+
+section BoundarySection
+
+variable {X α ι κ : Type*} [TopologicalSpace X] [TopologicalSpace α]
+  {C B : Set X} {θ : ι → C → α} {η : κ → B → α} {σ σ' : ι → κ}
+
+/-- Over a boundary set `B` meeting `closure C` on which the sections `η` are pointwise distinct,
+at most one index map `σ` can match the limits of `θ` along `C` to `η`. -/
+theorem eq_of_tendsto_section [T2Space α] (hBC : (B ∩ closure C).Nonempty)
+    (hη : ∀ x : B, Function.Injective fun l ↦ η l x)
+    (hσ : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.val)) (𝓝 (η (σ i) x)))
+    (hσ' : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.val)) (𝓝 (η (σ' i) x))) :
+    σ = σ' := by
+  obtain ⟨x₀, hx₀B, hx₀C⟩ := hBC
+  have : (comap (Subtype.val : C → X) (𝓝 x₀)).NeBot :=
+    mem_closure_iff_comap_neBot.mp hx₀C
+  funext i
+  exact hη ⟨x₀, hx₀B⟩ (tendsto_nhds_unique (hσ i ⟨x₀, hx₀B⟩) (hσ' i ⟨x₀, hx₀B⟩))
+
+/-- If pointwise monotone sections `θ` on `C` converge along `C` at a set `B` meeting
+`closure C` to pointwise strictly monotone sections `η` on `B`, the matching index map `σ` is
+monotone. -/
+theorem monotone_of_tendsto_section [Preorder ι] [LinearOrder κ] [Preorder α]
+    [OrderClosedTopology α] (hBC : (B ∩ closure C).Nonempty)
+    (hθ : ∀ y : C, Monotone fun i ↦ θ i y) (hη : ∀ x : B, StrictMono fun l ↦ η l x)
+    (hlim : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.val)) (𝓝 (η (σ i) x))) :
+    Monotone σ := by
+  obtain ⟨x₀, hx₀B, hx₀C⟩ := hBC
+  have : (comap (Subtype.val : C → X) (𝓝 x₀)).NeBot :=
+    mem_closure_iff_comap_neBot.mp hx₀C
+  intro i j hij
+  exact (hη ⟨x₀, hx₀B⟩).le_iff_le.mp <|
+    le_of_tendsto_of_tendsto (hlim i ⟨x₀, hx₀B⟩) (hlim j ⟨x₀, hx₀B⟩)
+      (Eventually.of_forall fun y ↦ hθ y hij)
+
+end BoundarySection
+
+/-- A family whose values are dense in a nonempty open interval of a densely ordered space takes a
+value in that interval. -/
+theorem exists_mem_Ioo_of_Ioo_subset_closure_range {α ι : Type*} [LinearOrder α] [DenselyOrdered α]
+    [TopologicalSpace α] [OrderClosedTopology α] {c : ι → α} {a b : α} (hab : a < b)
+    (h : Set.Ioo a b ⊆ closure (Set.range c)) : ∃ i, c i ∈ Set.Ioo a b := by
+  obtain ⟨y, hy⟩ := Set.nonempty_Ioo.2 hab
+  obtain ⟨_, hy', i, rfl⟩ := mem_closure_iff.1 (h hy) _ isOpen_Ioo hy
+  exact ⟨i, hy'⟩
+
+end TauCeti

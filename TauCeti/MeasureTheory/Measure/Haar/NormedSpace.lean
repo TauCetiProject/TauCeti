@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Haar.Unique
+import TauCeti.MeasureTheory.Measure.InterBall
 import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
@@ -36,10 +37,10 @@ ball of the same radius likewise agrees with it up to a null set. In a nontrivia
 balls are ordered by measure as by radius, so the points `x` whose centered ball of radius `‖x‖` has
 measure below `m` form a set of measure `m`. The ratio of the measures of two closed balls is
 controlled by the ratio of their radii raised to the dimension, also for the restriction of the
-measure to a set of positive density in the balls, the shell between concentric balls
-has measure the difference of the powers of the radii, and the part of a ball outside a translate of
-itself is controlled by the distance between the centres. The measure of an affine image
-`y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
+measure to a set of positive density in the balls, the closed and open shells between concentric
+balls have measure the difference of the powers of the radii, and the part of a ball outside a
+translate of itself is controlled by the distance between the centres. The measure of an affine
+image `y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
 homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`, and an
 invertible affine map `x ↦ c + A x` pushes it to its multiple by `|det A|⁻¹`. Comparing the
 measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
@@ -60,6 +61,8 @@ gives a set of measure one.
   of two balls is the ratio of their radii raised to the dimension.
 * `MeasureTheory.Measure.addHaar_real_ball_rpow`: `μ (ball x r) ^ e = r ^ (n e) μ (ball 0 1) ^ e` in
   dimension `n`.
+* `MeasureTheory.Measure.addHaar_real_ball_half_rpow_le`:
+  `μ (ball x (R / 2)) ^ e ≤ 2ⁿ μ (ball x R) ^ e` for `e ≥ -1` in dimension `n`.
 * `MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball`:
   `(n / r) μ (ball x r) = n rⁿ⁻¹ μ (ball 0 1)` in dimension `n`.
 * `MeasureTheory.Measure.hasDerivAt_measureReal_ball`: `ρ ↦ μ (ball x ρ)` has derivative
@@ -76,8 +79,14 @@ gives a set of measure one.
 * `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball`,
   `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_zero`: restricting to a closed
   ball or to the open ball of the same radius gives the same measure.
+* `MeasureTheory.Measure.restrict_restrict_closedBall_eq_restrict_ball_inter`: for the
+  restriction to a set `Ω`, restricting further to a closed ball is restricting to the
+  intersection of `Ω` with the open ball.
+* `MeasureTheory.Measure.mul_measureReal_ball_le_measureReal_ball_inter`: a lower density bound
+  for a set in a closed ball passes to the open ball of the same radius.
 * `MeasureTheory.Measure.ae_eq_closedBall_of_subset_of_measure_eq`: a set inside a closed ball,
-  with the measure of a closed ball of the same radius, agrees with it up to a null set.
+  with the measure of a closed ball of the same radius, agrees with the containing closed ball up
+  to a null set.
 * `MeasureTheory.Measure.addHaar_ball_lt_addHaar_ball_iff`: concentric balls are ordered by
   measure as by radius.
 * `MeasureTheory.Measure.exists_nonneg_addHaar_ball_eq`: every finite nonnegative value is the
@@ -98,6 +107,9 @@ gives a set of measure one.
 * `MeasureTheory.Measure.addHaar_real_closedBall_sdiff_ball`: the shell between the open ball of
   radius `r > 0` and the concentric closed ball of radius `s ≥ r` has measure `(sⁿ - rⁿ)` times
   that of the unit ball.
+* `MeasureTheory.Measure.addHaar_real_ball_sdiff_closedBall`: the open annulus between the closed
+  ball of radius `r ≥ 0` and the concentric open ball of radius `s ≥ r` has measure `(sⁿ - rⁿ)`
+  times that of the unit ball.
 * `MeasureTheory.Measure.addHaar_real_ball_sdiff_ball_le`: the part of a ball outside a ball of the
   same radius `s` whose centre is at distance `d` is no larger than a spherical shell of radii `s`
   and `s + d`.
@@ -184,6 +196,23 @@ theorem addHaar_real_ball_rpow
     mu.real (ball x r) ^ e = r ^ ((finrank ℝ E : ℝ) * e) * mu.real (ball 0 1) ^ e := by
   rw [addHaar_real_ball_of_pos _ _ hr, Real.mul_rpow (by positivity) measureReal_nonneg,
     ← Real.rpow_natCast, ← Real.rpow_mul hr.le]
+
+/-- Halving the radius of a ball divides its real measure by `2ⁿ`, where `n` is the dimension, so
+`μ (ball x (R / 2)) ^ e ≤ 2ⁿ μ (ball x R) ^ e` for every exponent `e ≥ -1`. -/
+theorem addHaar_real_ball_half_rpow_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {R : ℝ} (hR : 0 < R) {e : ℝ} (he : -1 ≤ e) :
+    mu.real (ball x (R / 2)) ^ e ≤ 2 ^ finrank ℝ E * mu.real (ball x R) ^ e := by
+  have hμR : 0 < mu.real (ball x R) := Metric.measureReal_ball_pos mu x hR
+  have h := mu.addHaar_real_ball_div_addHaar_real_ball x x hR (half_pos hR)
+  rw [show R / 2 / R = 2⁻¹ by field_simp, inv_pow, div_eq_iff hμR.ne'] at h
+  rw [h, Real.mul_rpow (by positivity) hμR.le, Real.inv_rpow (by positivity),
+    ← Real.rpow_neg (by positivity)]
+  gcongr
+  calc ((2 : ℝ) ^ finrank ℝ E) ^ (-e) ≤ ((2 : ℝ) ^ finrank ℝ E) ^ (1 : ℝ) :=
+        Real.rpow_le_rpow_of_exponent_le (one_le_pow₀ one_le_two) (by linarith)
+    _ = 2 ^ finrank ℝ E := Real.rpow_one _
 
 /-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
 `L^p` norm times `(Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`, where `n` is the dimension. For `R > 0` this
@@ -416,8 +445,36 @@ theorem _root_.MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_
     mu.restrict (closedBall x r) = mu.restrict (ball x r) :=
   Measure.restrict_congr_set (mu.addHaar_closedBall_ae_eq_ball_of_ne_zero x r hr)
 
+/-- In a nontrivial finite-dimensional space, restricting the restriction of an additive Haar
+measure to a set `Ω` further to a closed ball is restricting it to the intersection of `Ω` with
+the open ball of the same radius, since spheres are null. So the averages over closed balls for
+`mu.restrict Ω` are the averages over `ball x r ∩ Ω`. -/
+theorem _root_.MeasureTheory.Measure.restrict_restrict_closedBall_eq_restrict_ball_inter
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+    (mu : Measure E) [mu.IsAddHaarMeasure] (Ω : Set E) (x : E) (r : ℝ) :
+    (mu.restrict Ω).restrict (closedBall x r) = mu.restrict (ball x r ∩ Ω) := by
+  rw [Measure.restrict_restrict measurableSet_closedBall]
+  exact Measure.restrict_congr_set
+    ((mu.addHaar_closedBall_ae_eq_ball x r).inter Filter.EventuallyEqSet.rfl)
+
+/-- If a set `Ω` has density at least `c` in a closed ball for an additive Haar measure, that is
+`c μ(closedBall x r) ≤ μ(closedBall x r ∩ Ω)`, then it has density at least `c` in the open ball
+of the same radius, since closed and open balls differ by a null set. -/
+theorem mul_measureReal_ball_le_measureReal_ball_inter
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+    (mu : Measure E) [mu.IsAddHaarMeasure] {Ω : Set E} {x : E} {r : ℝ} {c : NNReal}
+    (hd : (c : ENNReal) * mu (closedBall x r) ≤ mu (closedBall x r ∩ Ω)) :
+    (c : ℝ) * mu.real (ball x r) ≤ mu.real (ball x r ∩ Ω) := by
+  rw [mu.addHaar_closedBall_eq_addHaar_ball, measure_congr
+    ((mu.addHaar_closedBall_ae_eq_ball x r).inter Filter.EventuallyEqSet.rfl)] at hd
+  simpa only [measureReal_def, ENNReal.toReal_mul, ENNReal.coe_toReal] using
+    ENNReal.toReal_mono measure_ball_inter_ne_top hd
+
 /-- A null-measurable set inside a closed ball of radius `r`, with the measure of some closed ball
-of radius `r`, agrees up to a null set with the ball containing it. -/
+of radius `r`, agrees up to a null set with the closed ball of radius `r` about `c` containing
+it. -/
 theorem ae_eq_closedBall_of_subset_of_measure_eq
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure] {s : Set E}
@@ -565,6 +622,21 @@ theorem addHaar_real_closedBall_sdiff_ball
   rw [measureReal_sdiff (ball_subset_closedBall.trans (closedBall_subset_closedBall hrs))
     measurableSet_ball measure_closedBall_lt_top.ne, mu.addHaar_real_closedBall x (hr.le.trans hrs),
     mu.addHaar_real_ball_of_pos x hr, sub_mul]
+
+/-- The open annulus between the closed ball of radius `r ≥ 0` and the concentric open ball of
+radius `s ≥ r` has real measure `(sⁿ - rⁿ)` times the real measure of the unit ball, where `n` is
+the dimension. -/
+theorem addHaar_real_ball_sdiff_closedBall
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r s : ℝ} (hr : 0 ≤ r) (hrs : r ≤ s) :
+    mu.real (ball x s \ closedBall x r) =
+      (s ^ finrank ℝ E - r ^ finrank ℝ E) * mu.real (ball 0 1) := by
+  rcases hrs.eq_or_lt with rfl | hrs
+  · rw [Set.sdiff_eq_empty.2 ball_subset_closedBall, measureReal_empty, sub_self, zero_mul]
+  rw [measureReal_sdiff (closedBall_subset_ball hrs) measurableSet_closedBall
+    measure_ball_lt_top.ne, mu.addHaar_real_ball_of_pos x (hr.trans_lt hrs),
+    mu.addHaar_real_closedBall x hr, sub_mul]
 
 /-- The part of the ball `ball y s` outside the ball `ball z s` of the same radius `s > 0` has
 measure at most `((s + dist y z)ⁿ - sⁿ)` times the measure of the unit ball, the measure of the

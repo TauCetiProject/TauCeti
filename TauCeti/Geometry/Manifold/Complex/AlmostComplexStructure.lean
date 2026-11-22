@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Complex.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.Nijenhuis
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
+import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Tangent.CoordChange
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -51,6 +52,8 @@ apply to complex manifolds. Two properties tie it to the complex structure:
 * `TauCeti.isPseudoholomorphic_ofComplexManifold_subtype_val`,
   `TauCeti.isPseudoholomorphic_ofComplexManifold_inclusion`: inclusions of open subsets are
   pseudoholomorphic.
+* `MDifferentiableAt.mfderiv_ofComplexManifold_apply`: the real differential of a holomorphic map
+  commutes with the almost complex structures.
 * `TauCeti.mdifferentiableAt_iff_mvfderiv_ofComplexManifold_apply`: a real differentiable complex
   valued function is holomorphic at a point exactly when its real differential is complex linear.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_ofComplexManifold`: the almost complex structure
@@ -78,19 +81,53 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 namespace SmoothAlmostComplexStructure
 
+/-- The real tangent coordinate changes of a complex manifold commute with multiplication by `i`:
+they are complex linear (`ModelWithCorners.tangentCoordChange_smul`). -/
+private theorem tangentCoordChange_I_smul {x y z : M}
+    (h : z ∈ (chartAt E x).source ∩ (chartAt E y).source) (v : E) :
+    tangentCoordChange 𝓘(ℝ, E) x y z (Complex.I • v) =
+      Complex.I • tangentCoordChange 𝓘(ℝ, E) x y z v := by
+  simpa only [modelWithCornersSelf_restrictScalars] using
+    𝓘(ℂ, E).tangentCoordChange_smul ℝ h Complex.I v
+
 variable (E M) in
 /-- The almost complex structure of a complex manifold `M` modelled on `𝓘(ℂ, E)`, as a smooth
 almost complex structure of the underlying real manifold modelled on `𝓘(ℝ, E)`: on every tangent
 space, which is `E`, it is multiplication by `i` (`ofComplexManifold_apply`). -/
 def ofComplexManifold : SmoothAlmostComplexStructure 𝓘(ℝ, E) M :=
   -- The real tangent coordinate changes are complex linear.
-  ofTangentCoordChangeISMul 𝓘(ℝ, E) M fun h v ↦ tangentCoordChange_smul ℝ (𝕜' := ℂ) h _ v
+  ofTangentCoordChangeISMul 𝓘(ℝ, E) M tangentCoordChange_I_smul
 
 /-- The almost complex structure of a complex manifold is multiplication by `i` on every tangent
 space. -/
 @[simp]
 theorem ofComplexManifold_apply (x : M) (v : E) : ofComplexManifold E M x v = Complex.I • v :=
-  ofTangentCoordChangeISMul_apply (fun h v ↦ tangentCoordChange_smul ℝ (𝕜' := ℂ) h _ v) x v
+  ofTangentCoordChangeISMul_apply tangentCoordChange_I_smul x v
+
+/-- The real differential of an inverse complex chart intertwines multiplication by `i` with
+its induced almost complex structure. -/
+theorem ofComplexManifold_apply_mfderivWithin_extChartAt_symm {x₀ : M} {z v : E}
+    (hz : z ∈ (extChartAt 𝓘(ℝ, E) x₀).target) :
+    ofComplexManifold E M ((extChartAt 𝓘(ℝ, E) x₀).symm z)
+        (mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, E) (extChartAt 𝓘(ℝ, E) x₀).symm
+          (range 𝓘(ℝ, E)) z v) =
+      mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, E) (extChartAt 𝓘(ℝ, E) x₀).symm
+        (range 𝓘(ℝ, E)) z (Complex.I • v) := by
+  exact (ofComplexManifold_apply (E := E) _ _).trans
+    (mfderivWithin_extChartAt_symm_smul ℝ (𝕜' := ℂ) hz Complex.I v).symm
+
+/-- On a complex curve, the inverse-chart image of `1` is sent by the induced complex structure
+to the inverse-chart image of `i`. -/
+theorem ofComplexManifold_apply_mfderivWithin_extChartAt_symm_one
+    {N : Type*} [TopologicalSpace N] [ChartedSpace ℂ N] [IsManifold 𝓘(ℂ) ∞ N]
+    {x₀ : N} {z : ℂ} (hz : z ∈ (extChartAt 𝓘(ℝ, ℂ) x₀).target) :
+    ofComplexManifold ℂ N ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z)
+        (mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm
+          (range 𝓘(ℝ, ℂ)) z (1 : ℂ)) =
+      mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm
+        (range 𝓘(ℝ, ℂ)) z Complex.I := by
+  simpa only [smul_eq_mul, mul_one] using
+    ofComplexManifold_apply_mfderivWithin_extChartAt_symm (v := (1 : ℂ)) hz
 
 /-- The almost complex structure of a complex manifold is multiplication by `i` on every tangent
 space, as an endomorphism. -/
@@ -106,8 +143,7 @@ theorem inTangentCoordinates_ofComplexManifold {x₀ x : M} (hx : x ∈ (chartAt
     inTangentCoordinates 𝓘(ℝ, E) 𝓘(ℝ, E) id id
         (fun x ↦ (ofComplexManifold E M).toEndomorphism x) x₀ x =
       Complex.I • ContinuousLinearMap.id ℝ E :=
-  inTangentCoordinates_ofTangentCoordChangeISMul
-    (fun h v ↦ tangentCoordChange_smul ℝ (𝕜' := ℂ) h _ v) hx
+  inTangentCoordinates_ofTangentCoordChangeISMul tangentCoordChange_I_smul hx
 
 /-- On a complex normed space `E` viewed as a manifold over itself, `ofComplexManifold E E` is the
 constant smooth almost complex structure given by multiplication by `i`. -/
@@ -159,14 +195,21 @@ theorem isPseudoholomorphicWithinAt_ofComplexManifold_iff :
       rwa [ofComplexManifold_apply (E := E) x w,
         ofComplexManifold_apply (E := E') (f x) (u w)] at h
     -- Read in the model spaces, `complexOfMapISmul` with scalars restricted to `ℝ` is `u₀`.
-    exact (hu.of_restrictScalars ℝ (f' := u₀.complexOfMapISmul hI)
-      (by ext w; exact congrFun (u₀.coe_complexOfMapISmul hI) w)).mdifferentiableWithinAt
+    rw [← modelWithCornersSelf_restrictScalars ℝ (𝕜' := ℂ) (E := E),
+      ← modelWithCornersSelf_restrictScalars ℝ (𝕜' := ℂ) (E := E')] at hu
+    refine (HasMFDerivWithinAt.of_restrictScalars ℝ (f' := u₀.complexOfMapISmul hI)
+      ?_).mdifferentiableWithinAt
+    rwa [ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf,
+      ContinuousLinearMap.restrictScalars_complexOfMapISmul]
   · intro h
     -- The complex derivative, regarded as a real linear map between the real tangent spaces.
     let u : TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E') (f x) :=
       (mfderivWithin 𝓘(ℂ, E) 𝓘(ℂ, E') f s x).restrictScalars ℝ
-    refine ⟨u, h.hasMFDerivWithinAt.restrictScalars ℝ rfl,
-      (isComplexLinearMap_iff_apply _ _ _).mpr fun w ↦ ?_⟩
+    have hu := h.hasMFDerivWithinAt.restrictScalars ℝ
+    rw [ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf ℝ (E := E) (E' := E')
+      (mfderivWithin 𝓘(ℂ, E) 𝓘(ℂ, E') f s x), modelWithCornersSelf_restrictScalars,
+      modelWithCornersSelf_restrictScalars] at hu
+    refine ⟨u, hu, (isComplexLinearMap_iff_apply _ _ _).mpr fun w ↦ ?_⟩
     rw [almostComplexStructureAt_apply, almostComplexStructureAt_apply]
     exact (congrArg u (ofComplexManifold_apply (E := E) x w)).trans
       (((mfderivWithin 𝓘(ℂ, E) 𝓘(ℂ, E') f s x).map_smul Complex.I w).trans
@@ -213,6 +256,14 @@ theorem isPseudoholomorphic_ofComplexManifold_inclusion {U V : TopologicalSpace.
   isPseudoholomorphic_ofComplexManifold_iff.2
     ((contMDiff_inclusion h (n := 1)).mdifferentiable one_ne_zero)
 
+/-- The real differential of a map between complex manifolds that is holomorphic at a point
+commutes there with their almost complex structures, multiplication by `i`. -/
+theorem _root_.MDifferentiableAt.mfderiv_ofComplexManifold_apply
+    (hf : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, E') f x) (v : TangentSpace 𝓘(ℝ, E) x) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E') f x (ofComplexManifold E M x v) =
+      ofComplexManifold E' N (f x) (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E') f x v) :=
+  (isPseudoholomorphicAt_ofComplexManifold_iff.2 hf).mfderiv_apply_commute v
+
 end Pseudoholomorphic
 
 /-- A real differentiable complex valued function on a complex manifold is holomorphic at a point
@@ -246,13 +297,13 @@ private lemma mpullbackWithin_ofComplexManifold_eventuallyEq
   obtain ⟨y, hy, rfl⟩ : ∃ y ∈ (extChartAt 𝓘(ℝ, E) x).source, extChartAt 𝓘(ℝ, E) x y = z :=
     ⟨_, (extChartAt _ x).map_target hz, (extChartAt _ x).right_inv hz⟩
   rw [mpullbackWithin_extChartAt_symm_apply _ hy, mpullbackWithin_extChartAt_symm_apply _ hy,
-    TangentBundle.trivializationAt_apply_tangentCoordChange,
-    TangentBundle.trivializationAt_apply_tangentCoordChange]
+    TangentBundle.trivializationAt_snd_eq_tangentCoordChange,
+    TangentBundle.trivializationAt_snd_eq_tangentCoordChange]
   have h : y ∈ (chartAt E y).source ∩ (chartAt E x).source := by
     simpa using hy
   rw [smul_apply, ContinuousLinearMap.id_apply]
   exact (congrArg (tangentCoordChange 𝓘(ℝ, E) y x y)
-    (ofComplexManifold_apply (E := E) y (V y))).trans (tangentCoordChange_smul ℝ (𝕜' := ℂ) h _ _)
+    (ofComplexManifold_apply (E := E) y (V y))).trans (tangentCoordChange_I_smul h (V y))
 
 variable [FiniteDimensional ℂ E]
 

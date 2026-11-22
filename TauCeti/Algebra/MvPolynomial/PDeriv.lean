@@ -46,6 +46,9 @@ difference of their constant coefficients.
 * `MvPolynomial.pderiv_aeval`: the chain rule, summed over all variables of a finite type.
 * `MvPolynomial.pderiv_aeval_of_vars_subset`: the chain rule, summed over a finite set containing
   the variables of `p`.
+* `MvPolynomial.vars_pderiv_subset`: partial differentiation introduces no new variables.
+* `MvPolynomial.hasFiniteSupport_pderiv`: only finitely many partial derivatives of a polynomial
+  are nonzero.
 * `MvPolynomial.totalDegree_iterate_pderiv_le`: the `k`-th iterated partial derivative has total
   degree at most `totalDegree p - k`.
 * `MvPolynomial.degreeOf_iterate_pderiv_le`: the `k`-th iterated partial derivative along `Xᵢ` has
@@ -108,6 +111,27 @@ theorem pderiv_aeval_of_vars_subset (f : σ → MvPolynomial τ R) (j : τ) {p :
   rw [aeval_rename, pderiv_aeval, ← Finset.sum_coe_sort s]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [pderiv_rename Subtype.val_injective, aeval_rename, Function.comp_apply]
+
+/-- Partial differentiation introduces no new variables. -/
+theorem vars_pderiv_subset (i : σ) (p : MvPolynomial σ R) : (pderiv i p).vars ⊆ p.vars := by
+  classical
+  intro j hj
+  obtain ⟨m, hm, hjm⟩ := (mem_vars_iff_mem_support j).1 hj
+  rw [mem_support_iff, coeff_pderiv] at hm
+  refine (mem_vars_iff_mem_support j).2
+    ⟨m + Finsupp.single i 1, mem_support_iff.2 (left_ne_zero_of_mul hm), ?_⟩
+  simp only [Finsupp.mem_support_iff, Finsupp.add_apply] at hjm ⊢
+  omega
+
+/-- Partial derivatives vanish outside the finitely many variables of a polynomial, so any family
+built from the partial derivatives along an injective family of variables by zero-preserving maps
+has finite support. -/
+theorem hasFiniteSupport_pderiv {κ M : Type*} [Zero M] {e : κ → σ} (he : Function.Injective e)
+    (p : MvPolynomial σ R) (φ : κ → MvPolynomial σ R → M) (hφ : ∀ k, φ k 0 = 0) :
+    Function.HasFiniteSupport fun k ↦ φ k (pderiv (e k) p) := by
+  refine (p.vars.finite_toSet.preimage he.injOn).subset fun k hk ↦ ?_
+  by_contra h
+  exact hk (by simp only [pderiv_eq_zero_of_notMem_vars h, hφ])
 
 /-- Partial differentiation lowers the total degree by at least one. -/
 theorem totalDegree_pderiv_le (i : σ) (p : MvPolynomial σ R) :
