@@ -473,7 +473,7 @@ theorem quasiSeparatedSpace_quotient_of_isOpenMap (hX : IsLocallySpectralSpace X
   rw [heq]
   exact hPc.image (continuous_quot_mk.comp (continuous_fst.comp continuous_subtypeVal))
 
-/-! ### Global spectral dot-notation wrappers -/
+/-! ### Global spectral dot-notation wrapper -/
 
 section GlobalSpectral
 
@@ -487,23 +487,6 @@ theorem IsProConstructible.preimage_image_quotientMk {s : Set X} (hs : IsProCons
   isLocallyProConstructible_iff_isProConstructible.mp <|
     hs.isLocallyProConstructible.preimage_image_quotientMk SpectralSpace.isLocallySpectralSpace
       hR.isLocallyProConstructible hR.isSpectralMap_fst
-
-/-- Global spectral form of `TauCeti.exists_isOpen_preimage_image_quotientMk_subset_sInter`: on a
-spectral space `X`, if `{q : X × X | r q.1 q.2}` is pro-constructible and its first projection
-lifts generalizations, then every quasi-compact open `W ⊆ X` is contained in an `r`-invariant open
-subset `U` inside a quasi-compact open `W'` whose `r`-saturation is the intersection of all
-quasi-compact opens containing it. -/
-theorem IsProConstructible.exists_isOpen_preimage_image_quotientMk_subset_sInter
-    (hR : IsProConstructible {q : X × X | r q.1 q.2})
-    (hs : GeneralizingMap fun q : {q : X × X // r q.1 q.2} ↦ q.val.1)
-    {W : Set X} (hWo : IsOpen W) (hWc : IsCompact W) :
-    ∃ U W' : Set X, IsOpen U ∧ Quotient.mk r ⁻¹' (Quotient.mk r '' U) = U ∧
-      IsOpen W' ∧ IsCompact W' ∧ W ⊆ U ∧ U ⊆ W' ∧
-      Quotient.mk r ⁻¹' (Quotient.mk r '' W') =
-        ⋂₀ {V : Set X | IsOpen V ∧ IsCompact V ∧ Quotient.mk r ⁻¹' (Quotient.mk r '' W') ⊆ V} :=
-  TauCeti.exists_isOpen_preimage_image_quotientMk_subset_sInter
-    SpectralSpace.isLocallySpectralSpace hR.isLocallyProConstructible hs hR.isSpectralMap_fst
-    hWo hWc
 
 end GlobalSpectral
 

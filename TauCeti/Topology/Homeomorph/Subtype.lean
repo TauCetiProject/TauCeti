@@ -25,6 +25,8 @@ to `t` and then to the preimage of `s`, yields canonically homeomorphic nested s
   `subtypePreimageComm t s`.
 * `Homeomorph.Set.subtypePreimageComm_trans_subtypePreimageComm`: composing
   `subtypePreimageComm s t` with `subtypePreimageComm t s` is the identity homeomorphism.
+* `Homeomorph.Set.subtypePreimageComm_self`: `subtypePreimageComm s s` is the identity
+  homeomorphism.
 -/
 
 public section
@@ -60,6 +62,13 @@ theorem subtypePreimageComm_symm (s t : Set X) :
 @[simp]
 theorem subtypePreimageComm_trans_subtypePreimageComm (s t : Set X) :
     (subtypePreimageComm s t).trans (subtypePreimageComm t s) = Homeomorph.refl _ := by
+  rfl
+
+/-- Commuting a subset `s` with itself is the identity homeomorphism on
+`(Subtype.val : s → X) ⁻¹' s`. -/
+@[simp]
+theorem subtypePreimageComm_self (s : Set X) :
+    subtypePreimageComm s s = Homeomorph.refl _ := by
   rfl
 
 end Homeomorph.Set
