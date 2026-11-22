@@ -13,8 +13,9 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Algebra.Category.ModuleCat.AB
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Sequence
+import TauCeti.CategoryTheory.Abelian.HaradaSai
 import TauCeti.CategoryTheory.Generator.Biproduct
-import TauCeti.Algebra.Category.ModuleCat.HaradaSai
+import TauCeti.Algebra.Category.ModuleCat.Length
 import TauCeti.Algebra.Category.FGModuleCat.RepresentationFinite
 import TauCeti.Algebra.Category.ModuleCat.Injective.LeftAlmostSplit
 import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
@@ -113,9 +114,9 @@ theorem isRepresentationFinite_of_length_le_of_isLeftAlmostSplit [IsArtinianRing
   obtain ⟨m, P, ⟨e⟩, hP⟩ := hsum G
   obtain ⟨S, hS, -, hSmem⟩ := exists_finite_forall_iso_of_hom_ne_zero T hlocal hsrc' (2 ^ b - 1)
     (fun X f hX hf ↦ ofSequence_map_eq_zero_of_length_le f (fun n ↦ (hX n).2)
-      (fun n ↦ hlen _ (hX n).1 (hX n).2) hf le_rfl)
+      (fun n ↦ (ModuleCat.length_eq _).trans_le (hlen _ (hX n).1 (hX n).2)) hf le_rfl)
     (Set.finite_range P) (by rintro _ ⟨j, rfl⟩; exact hP j)
-  refine isRepresentationFinite_of_forall_exists_iso hS fun M hf hi ↦ ?_
+  refine isRepresentationFinite_iff_exists_finite_forall_exists_iso.mpr ⟨S, hS, fun M hf hi ↦ ?_⟩
   -- A nonzero module receives a nonzero morphism from the ring, hence from a summand.
   obtain ⟨j, f, hj⟩ := (ModuleCat.isSeparator A).exists_hom_ne_zero_of_iso_biproduct e hi.1
   exact hSmem M ⟨hf, hi⟩ (P j) ⟨j, rfl⟩ f hj

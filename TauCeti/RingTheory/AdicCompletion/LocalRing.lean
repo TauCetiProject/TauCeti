@@ -7,12 +7,15 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
 public import Mathlib.RingTheory.AdicCompletion.LocalRing
+public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.CohenMacaulay.Flat
 public import TauCeti.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.LocalRing.Quotient
 public import TauCeti.RingTheory.RegularLocalRing.Flat
+
+import TauCeti.RingTheory.AdicCompletion.Localization
 
 /-!
 # Completions of local rings and their invariants
@@ -38,6 +41,8 @@ isomorphism between the maximal-ideal-adic completions of `S` and `S'`.
 * `TauCeti.AdicCompletion.ringKrullDim_eq`: `R̂` and `R` have the same Krull dimension.
 * `TauCeti.AdicCompletion.isRegularLocalRing_iff`: `R̂` is regular if and only if `R` is.
 * `TauCeti.AdicCompletion.isCohenMacaulay_self_iff`: `R̂` is Cohen–Macaulay if and only if `R` is.
+* `TauCeti.AdicCompletion.isRegularLocalRing_iff_of_isMaximal`: completing a Noetherian ring `R` at
+  a maximal ideal `p` is regular if and only if any localization `Rₚ` of `R` at `p` is regular.
 * `TauCeti.AdicCompletion.evalOneₐ_isLocalHom_of_le_maximalIdeal`,
   `TauCeti.AdicCompletion.isLocalRing_of_le_maximalIdeal`,
   `TauCeti.AdicCompletion.algebraMap_isLocalHom_of_le_maximalIdeal`,
@@ -270,5 +275,16 @@ theorem maximalIdealEquivOfQuotientMap_trans {S'' : Type*} [CommRing S''] [Algeb
   simp only [AlgEquiv.trans_apply, maximalIdealEquivOfQuotientMap_apply, mapₐ_mapₐ]
 
 end MaximalIdealComparison
+
+/-- Completing a Noetherian ring `R` at a maximal ideal `p` yields a regular local ring if and only
+if any localization `Rₚ` of `R` at `p` is a regular local ring. -/
+theorem isRegularLocalRing_iff_of_isMaximal {R : Type*} [CommRing R] [IsNoetherianRing R]
+    (p : Ideal R) [p.IsMaximal] (Rₚ : Type*) [CommRing Rₚ] [Algebra R Rₚ]
+    [IsLocalization.AtPrime Rₚ p] [IsLocalRing Rₚ] :
+    IsRegularLocalRing (AdicCompletion p R) ↔ IsRegularLocalRing Rₚ := by
+  have : IsNoetherianRing Rₚ := IsLocalization.isNoetherianRing p.primeCompl Rₚ ‹_›
+  let e := (_root_.AdicCompletion.equivMaximalIdealOfAtPrime p Rₚ).toRingEquiv
+  exact ⟨fun _ ↦ isRegularLocalRing_iff.mp (.of_ringEquiv e),
+    fun _ ↦ .of_ringEquiv (R := AdicCompletion (maximalIdeal Rₚ) Rₚ) e.symm⟩
 
 end TauCeti.AdicCompletion
