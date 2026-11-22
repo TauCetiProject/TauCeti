@@ -115,13 +115,15 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
 
 include hV
 
+omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι] [∀ j, (J j).Boundaryless]
+  [Invertible (2 : K)] in
 /-- **The twisted Betti numbers of a piece of a Morse–Bott function.** Let the family
 `i j : S j → M` exhibit `f` as a Morse–Bott function, let `g j` be smooth fibre metrics on the
 normal bundles of the pieces, and let the negative normal spaces relative to `g j` have local frames
 of size `r j`, so that they form the negative normal bundle `ν⁻ j` of rank `r j`. This is
 `dim Hₖ(S j; o(ν⁻ j) ⊗ K)`, the dimension of the homology of `S j` with coefficients in the
 orientation local system `o(ν⁻ j)` of `ν⁻ j`. -/
-@[expose] def twistedBettiNumber (j : ι) (k : ℕ) : ℕ :=
+def twistedBettiNumber (j : ι) (k : ℕ) : ℕ :=
   letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
   letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
@@ -140,6 +142,34 @@ orientation local system `o(ν⁻ j)` of `ν⁻ j`. -/
   finrank K (twistedHomology (signLocalSystem (Fin (r j) → ℝ)
     (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
       (g j).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) k)
+
+omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι] [∀ j, (J j).Boundaryless]
+  [Invertible (2 : K)] in
+/-- The twisted Betti number `dim Hₖ(S j; o(ν⁻ j) ⊗ K)` is the dimension of the twisted homology
+of `S j` with coefficients in the orientation local system of `ν⁻ j`. -/
+theorem twistedBettiNumber_def (j : ι) (k : ℕ) :
+    h.twistedBettiNumber hn hdim g hV K j k =
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+    letI : TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
+        fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s) :=
+      subbundleTopology (P j)
+        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
+    letI : FiberBundle (Fin (r j) → ℝ) fun s ↦
+        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s :=
+      (hV j).fiberBundle
+    haveI : VectorBundle ℝ (Fin (r j) → ℝ) fun s ↦
+        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s :=
+      (hV j).vectorBundle
+    finrank K (twistedHomology (signLocalSystem (Fin (r j) → ℝ)
+      (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+        (g j).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) k) :=
+  (rfl)
 
 open scoped Classical in
 /-- **The homology of a critical band of a Morse–Bott function, with twisted coefficients.** Let
@@ -187,7 +217,7 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber {a b c :
   have hW (j : {j // ∀ s, f (i j s) = c}) : finrank K (W j) =
       if r j ≤ n then h.twistedBettiNumber hn hdim g hV K j (n - r j) else 0 := by
     split_ifs with hrn
-    · unfold twistedBettiNumber
+    · rw [twistedBettiNumber_def]
       exact finrank_singularHomology_thomPair_eq_finrank_twistedHomology _ _ _ _
         (by rw [finrank_fin_fun]; omega)
     · have hz := isZero_singularHomology_thomPair (F := Fin (r j) → ℝ) (E := V j)
