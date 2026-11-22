@@ -24,7 +24,8 @@ element, and its annihilator to the annihilator of that ideal. The principal-ide
 to ideals extended from a common commutative semiring, without assuming the algebras commutative.
 
 If `t ∈ I` and `r • I ≤ (t)`, then `I` extends to the principal ideal `(f t)` along every ring
-homomorphism `f` for which `f r` is a unit.
+homomorphism `f` for which `f r` is a unit. Extending an ideal spanned by an indexed family along
+a ring homomorphism gives the ideal spanned by its pointwise image (`Ideal.map_span_range_eq`).
 -/
 
 public section
@@ -105,6 +106,13 @@ theorem map_eq_span_singleton_of_isUnit {B B' F : Type*} [CommSemiring B] [Semir
     ((span_singleton_le_iff_mem _).mpr (mem_map_of_mem f ht))
   have := mem_map_of_mem f (h (Submodule.smul_mem_pointwise_smul i r I hi))
   rwa [map_span, Set.image_singleton, smul_eq_mul, map_mul, unit_mul_mem_iff_mem _ hr] at this
+
+/-- Extending an ideal spanned by an indexed family along a ring homomorphism gives the ideal
+spanned by its pointwise image. -/
+theorem map_span_range_eq {R S ι : Type*} [Semiring R] [Semiring S] (f : R →+* S)
+    {g : ι → R} {g' : ι → S} (h : ∀ i, f (g i) = g' i) :
+    (span (Set.range g)).map f = span (Set.range g') := by
+  rw [map_span, ← Set.range_comp, show ⇑f ∘ g = g' from funext h]
 
 end Ideal
 

@@ -23,8 +23,9 @@ Consequently the image of `weightReesAeval c d` is precisely the embedded Rees a
 `Subalgebra.weightReesAlgebra` of the induced weight filtration
 (`Subalgebra.map_weightReesAlgebra_eq_range_weightReesAeval`), and when `c` generates `A`, the
 lifted presentation `weightReesAevalLift` surjects onto `A.weightReesAlgebra w`
-(`TauCeti.MvPolynomial.weightReesAevalLift_surjective`). The weight-initial algebra
-`(Algebra.adjoin R (Set.range c)).weightInitialAlgebra w` is `R[g]`
+(`TauCeti.MvPolynomial.weightReesAevalLift_surjective`); when the generator index `ι` is finite,
+`A.weightReesAlgebra w` is of finite type over `R[t]` (`Subalgebra.finiteType_weightReesAlgebra`).
+The weight-initial algebra `(Algebra.adjoin R (Set.range c)).weightInitialAlgebra w` is `R[g]`
 (`TauCeti.MvPolynomial.weightInitialAlgebra_adjoin_eq`). These results use the same relation
 certificates as `ker_weightReesAeval_eq_span`, so the presentation describes the actual induced
 filtration, as well as its kernel. Zero weights, scalar generators, empty families, and arbitrary
@@ -234,3 +235,31 @@ theorem weightReesAevalLift_surjective {σ ι J R : Type*} [CommRing R]
   rwa [coe_weightReesInclusion_weightReesAevalLift]
 
 end TauCeti.MvPolynomial
+
+namespace Subalgebra
+
+open _root_.MvPolynomial TauCeti.MvPolynomial
+open scoped Polynomial
+
+attribute [local instance] Polynomial.algebra in
+/-- Under bounded relation certificates with a finite generator index, the induced weight Rees
+algebra `A.weightReesAlgebra w` is of finite type over `R[t]`. -/
+theorem finiteType_weightReesAlgebra {σ ι J R : Type*} [CommRing R] [Finite ι]
+    (A : Subalgebra R (MvPolynomial σ R)) (w : σ → ℕ)
+    {c g : ι → MvPolynomial σ R} {d : ι → ℕ}
+    {r Q : J → MvPolynomial ι R} {e : J → ℕ}
+    (hA : A = Algebra.adjoin R (Set.range c))
+    (hc : ∀ i, c i ∈ TauCeti.MvPolynomial.weightFiltration R w (d i))
+    (hg : ∀ i, weightedHomogeneousComponent w (d i) (c i) = g i)
+    (hJ : RingHom.ker (aeval g) = Ideal.span (Set.range r))
+    (hr : ∀ j, (r j).IsWeightedHomogeneous d (e j))
+    (hQ : ∀ j, Q j ∈ TauCeti.MvPolynomial.weightFiltrationLT R d (e j))
+    (hQc : ∀ j, aeval c (Q j) = aeval c (r j)) :
+    Algebra.FiniteType R[X] (A.weightReesAlgebra w) := by
+  have : Algebra.FiniteType R[X] (MvPolynomial ι R)[X] :=
+    Algebra.FiniteType.of_restrictScalars_finiteType R R[X] (MvPolynomial ι R)[X]
+  exact Algebra.FiniteType.of_surjective _
+    (weightReesAevalLift_surjective (fun i ↦ hA ▸ Algebra.subset_adjoin (Set.mem_range_self i))
+      hA.le hc hg hJ hr hQ hQc)
+
+end Subalgebra

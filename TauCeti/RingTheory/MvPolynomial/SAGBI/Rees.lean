@@ -10,6 +10,7 @@ public import TauCeti.Data.Finsupp.MonomialOrder.Weight
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.WeightFiltration
 import TauCeti.Data.Finsupp.Weight
+import TauCeti.RingTheory.MvPolynomial.ToricIdeal.WeightedHomogeneous
 
 /-!
 # The Rees presentation of a weight degeneration of a subalgebra

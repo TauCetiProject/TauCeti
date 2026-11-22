@@ -290,27 +290,6 @@ private noncomputable def weightReesAevalLiftAux :
 noncomputable def weightReesAevalLift : (MvPolynomial ι R)[X] →ₐ[R[X]] A.weightReesAlgebra w :=
   (weightReesAevalLiftAux hcA hc).toPolynomialAlgHom (by simp [weightReesAevalLiftAux])
 
-/-- The lift `weightReesAevalLift hcA hc` composed with `A.weightReesInclusion w` and the ambient
-subalgebra inclusion recovers `weightReesAeval c d` as an `R`-algebra homomorphism. -/
-theorem val_comp_weightReesInclusion_comp_weightReesAevalLift :
-    ((TauCeti.MvPolynomial.weightReesAlgebra R w).val.comp
-        ((A.weightReesInclusion w).restrictScalars R)).comp
-      ((weightReesAevalLift hcA hc).restrictScalars R) = weightReesAeval c d := by
-  refine Polynomial.algHom_ext' (MvPolynomial.algHom_ext fun i ↦ ?_) ?_
-  · simp [weightReesAevalLift, weightReesAevalLiftAux, Polynomial.C_mul_X_pow_eq_monomial]
-  · simp [weightReesAevalLift, weightReesAevalLiftAux]
-
-theorem coe_weightReesInclusion_weightReesAevalLift (f : (MvPolynomial ι R)[X]) :
-    (A.weightReesInclusion w (weightReesAevalLift hcA hc f) : (MvPolynomial σ R)[X]) =
-      weightReesAeval c d f :=
-  congr($(val_comp_weightReesInclusion_comp_weightReesAevalLift hcA hc) f)
-
-@[simp]
-theorem map_val_coe_weightReesAevalLift (f : (MvPolynomial ι R)[X]) :
-    ((weightReesAevalLift hcA hc f : A.weightReesAlgebra w) : A[X]).map A.val =
-      weightReesAeval c d f := by
-  rw [← A.coe_weightReesInclusion w, coe_weightReesInclusion_weightReesAevalLift]
-
 @[simp]
 theorem weightReesAevalLift_C {p : MvPolynomial ι R} :
     weightReesAevalLift hcA hc (Polynomial.C p) =
@@ -323,6 +302,27 @@ theorem weightReesAevalLift_X :
     weightReesAevalLift hcA hc Polynomial.X =
       coeffSubalgebra.X (A.weightFiltration w) (A.one_mem_weightFiltration_one w) := by
   simp [weightReesAevalLift, weightReesAevalLiftAux]
+
+/-- The lift `weightReesAevalLift hcA hc` composed with `A.weightReesInclusion w` and the ambient
+subalgebra inclusion recovers `weightReesAeval c d` as an `R`-algebra homomorphism. -/
+theorem val_comp_weightReesInclusion_comp_weightReesAevalLift :
+    ((TauCeti.MvPolynomial.weightReesAlgebra R w).val.comp
+        ((A.weightReesInclusion w).restrictScalars R)).comp
+      ((weightReesAevalLift hcA hc).restrictScalars R) = weightReesAeval c d := by
+  refine Polynomial.algHom_ext' (MvPolynomial.algHom_ext fun i ↦ ?_) ?_
+  · simp [Polynomial.C_mul_X_pow_eq_monomial]
+  · simp
+
+theorem coe_weightReesInclusion_weightReesAevalLift (f : (MvPolynomial ι R)[X]) :
+    (A.weightReesInclusion w (weightReesAevalLift hcA hc f) : (MvPolynomial σ R)[X]) =
+      weightReesAeval c d f :=
+  congr($(val_comp_weightReesInclusion_comp_weightReesAevalLift hcA hc) f)
+
+@[simp]
+theorem map_val_coe_weightReesAevalLift (f : (MvPolynomial ι R)[X]) :
+    ((weightReesAevalLift hcA hc f : A.weightReesAlgebra w) : A[X]).map A.val =
+      weightReesAeval c d f := by
+  rw [← A.coe_weightReesInclusion w, coe_weightReesInclusion_weightReesAevalLift]
 
 /-- On a polynomial `P` of weight at most `n`, `weightReesAevalLift` sends the homogenization of
 `P` in degree `n` to `aeval c P * tⁿ` in `A.weightReesAlgebra w`. -/
@@ -349,12 +349,8 @@ theorem coe_eval_weightReesAevalLift (r : R) (f : (MvPolynomial ι R)[X]) :
 theorem coe_evalOne_weightReesAevalLift (f : (MvPolynomial ι R)[X]) :
     (coeffSubalgebra.evalOne (A.weightFiltration w) (weightReesAevalLift hcA hc f) :
       MvPolynomial σ R) = aeval c (f.eval 1) := by
-  have h : A.val.comp ((coeffSubalgebra.evalOne (A.weightFiltration w)).comp
-        (weightReesAevalLiftAux hcA hc)) =
-      (aeval c).comp ((Polynomial.aeval (1 : MvPolynomial ι R)).restrictScalars R) := by
-    refine Polynomial.algHom_ext' (MvPolynomial.algHom_ext fun i ↦ ?_) ?_ <;>
-      simp [weightReesAevalLiftAux]
-  simpa [weightReesAevalLift] using congr($h f)
+  rw [coeffSubalgebra.evalOne_eq_eval, coe_eval_weightReesAevalLift, map_one,
+    eval_one_weightReesAeval]
 
 /-- The kernel of `weightReesAevalLift hcA hc` equals the kernel of `weightReesAeval c d`. -/
 theorem ker_weightReesAevalLift :
