@@ -319,18 +319,18 @@ theorem val_linearCoeff_infinitesimal {e : S} (he : e ^ 2 = 0) {a : S⟦X⟧}
     ((infinitesimal e he a ha).linearCoeff : S) = 1 + e * coeff 1 a := by
   simp
 
+end FormalCoordinate
+
 /-- Base change along a ring homomorphism preserves `TauCeti.FormalCoordinate.infinitesimal`. -/
 @[simp]
-theorem map_infinitesimal {T : Type*} [CommRing T] (φ : S →+* T) {e : S} (he : e ^ 2 = 0)
-    {a : S⟦X⟧} (ha : e * constantCoeff a = 0) :
-    map φ (infinitesimal e he a ha) =
-      infinitesimal (φ e) (by rw [← map_pow, he, map_zero])
+theorem _root_.RingHom.map_infinitesimal {S T : Type*} [CommRing S] [CommRing T]
+    (φ : S →+* T) {e : S} (he : e ^ 2 = 0) {a : S⟦X⟧} (ha : e * constantCoeff a = 0) :
+    FormalCoordinate.map φ (FormalCoordinate.infinitesimal e he a ha) =
+      FormalCoordinate.infinitesimal (φ e) (by rw [← map_pow, he, map_zero])
         (PowerSeries.map φ a)
         (by rw [← coeff_zero_eq_constantCoeff_apply, coeff_map,
               coeff_zero_eq_constantCoeff_apply, ← map_mul, ha, map_zero]) :=
-  FormalCoordinate.ext (by simp [toPowerSeries_map, smul_eq_C_mul])
-
-end FormalCoordinate
+  FormalCoordinate.ext (by simp [FormalCoordinate.toPowerSeries_map, smul_eq_C_mul])
 
 section DualNumber
 

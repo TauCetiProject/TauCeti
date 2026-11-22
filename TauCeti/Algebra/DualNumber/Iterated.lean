@@ -382,13 +382,6 @@ theorem snd_snd_aeval_inl_eps_eps (p : MvPolynomial (Fin 2) R) :
       p.coeff (Finsupp.single 0 1 + Finsupp.single 1 1) := by
   simp [aeval_inl_eps_eps, algebraMap_eq_inl']
 
-/-- Evaluating bivariate polynomials over `R` at `![inl ε, ε]` is surjective onto `R[ε][ε]`. -/
-theorem aeval_inl_eps_eps_surjective :
-    Function.Surjective
-      (aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] : MvPolynomial (Fin 2) R →ₐ[R] R[ε][ε]) :=
-  fun z ↦ ⟨C z.fst.fst + C z.fst.snd * X 0 + C z.snd.fst * X 1 + C z.snd.snd * X 0 * X 1, by
-    ext <;> simp [algebraMap_eq_inl']⟩
-
 end DualNumber
 
 end MvPolynomial
@@ -398,6 +391,16 @@ namespace TauCeti
 section MvPolynomial
 
 variable {R : Type*} [CommSemiring R]
+
+/-- Evaluating bivariate polynomials over `R` at `![inl ε, ε]` is surjective onto `R[ε][ε]`. -/
+theorem aeval_inl_eps_eps_surjective :
+    Function.Surjective
+      (MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] :
+        MvPolynomial (Fin 2) R →ₐ[R] R[ε][ε]) :=
+  fun z ↦ ⟨MvPolynomial.C z.fst.fst + MvPolynomial.C z.fst.snd * MvPolynomial.X 0 +
+    MvPolynomial.C z.snd.fst * MvPolynomial.X 1 +
+    MvPolynomial.C z.snd.snd * MvPolynomial.X 0 * MvPolynomial.X 1, by
+    ext <;> simp [algebraMap_eq_inl']⟩
 
 /-- Evaluating bivariate polynomials over `R` at `![inl ε, ε]` in `R[ε][ε]` has kernel
 `(X 0 ^ 2, X 1 ^ 2)`. -/
@@ -452,7 +455,7 @@ noncomputable def iteratedDualNumberMvPolynomialQuotientAlgEquiv :
         Ideal.span {(MvPolynomial.X 0 : MvPolynomial (Fin 2) R) ^ 2, MvPolynomial.X 1 ^ 2}) ≃ₐ[R]
       R[ε][ε] :=
   (Ideal.quotientEquivAlgOfEq R (ker_aeval_inl_eps_eps (R := R)).symm).trans
-    (Ideal.quotientKerAlgEquivOfSurjective MvPolynomial.aeval_inl_eps_eps_surjective)
+    (Ideal.quotientKerAlgEquivOfSurjective aeval_inl_eps_eps_surjective)
 
 variable {R}
 
