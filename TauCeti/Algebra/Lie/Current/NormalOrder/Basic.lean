@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Current.CompletedDerivation
+public import TauCeti.Algebra.Lie.Current.Completion
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Summation
 
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.Lie.Derivation.Basic
 
 /-!
 # Normally ordered modes in the completed enveloping algebra
@@ -56,11 +57,6 @@ The modes `:x y:_n` are bilinear in `x` and `y`, and the completed level compari
 the modes of `Û(ĝ_Ψ)` at central value `1` to those of `Û(ĝ_Φ)` at central value `k` when
 `Ψ = k • Φ` (`TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_normalOrderedMode`).
 
-Over any commutative ring `R`, the completed degree derivation `t d/dt`
-(`TauCeti.CurrentAlgebra.vectorFieldCompletedEnvelopingDerivation`) multiplies every normally
-ordered summand of `:x y:_n` by `n`, so by continuity it sends `:x y:_n` to `n • :x y:_n`
-(`TauCeti.CurrentAlgebra.vectorFieldCompletedEnvelopingDerivation_single_one_normalOrderedMode`).
-
 ## Main definitions
 
 * `TauCeti.CurrentAlgebra.normalOrderedSummand`: the summands `xₘ y_{n-m}` or `y_{n-m} xₘ`,
@@ -79,12 +75,10 @@ ordered summand of `:x y:_n` by `n`, so by continuity it sends `:x y:_n` to `n �
   sum.
 * `TauCeti.CurrentAlgebra.normalOrderedSummand_eq_add_sub`,
   `TauCeti.CurrentAlgebra.tsum_normalOrderedSummand`: moving the cut of the normal ordering.
-* `TauCeti.CurrentAlgebra.hasSum_toCompletedEnveloping_ite_mem`: summation in `Û` of finitely
-  supported families from `U`.
+* `TauCeti.CurrentAlgebra.sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul`: signed linear-weighted
+  sums of mode commutators `[x_j, y_{n-j}]` between `0` and `k`.
 * `TauCeti.CurrentAlgebra.toCompletedEnveloping_mul_normalOrderedMode_sub_mul`: the commutator of
   a current with a normally ordered mode.
-* `TauCeti.CurrentAlgebra.vectorFieldCompletedEnvelopingDerivation_single_one_normalOrderedMode`:
-  the completed degree derivation `t d/dt` acts by `n` on `:x y:_n`.
 
 ## References
 
@@ -260,17 +254,6 @@ theorem normalOrderedSummand_eq_add_sub (p n m : ℤ) (x y : L) :
   simp only [normalOrderedSummand_apply, Finset.mem_Ico]
   split_ifs <;> first | omega | abel
 
-/-- A family supported in a finite set `s` and given there by `toCompletedEnveloping (f m)`
-sums in `Û` to `toCompletedEnveloping (∑ m ∈ s, f m)`. -/
-theorem hasSum_toCompletedEnveloping_ite_mem {ι : Type*} [DecidableEq ι] (s : Finset ι)
-    (f : ι → UK) :
-    HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
-      (toCompletedEnveloping Φ hΦ hΦs a (∑ m ∈ s, f m)) := by
-  have h : HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
-      (∑ m ∈ s, toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0)) :=
-    hasSum_sum_of_ne_finset_zero fun m hm ↦ by simp [hm]
-  rwa [← map_sum, Finset.sum_ite_mem, Finset.inter_self] at h
-
 /-- **Moving the cut of the normal ordering.** If the summands of `:x y:_n` are ordered at the cut
 `p` instead of `0`, putting `xₘ` on the left exactly when `m < p`, the series still converges in
 `Û` (`TauCeti.CurrentAlgebra.summable_normalOrderedSummand`), and its sum differs from `:x y:_n`
@@ -291,6 +274,8 @@ end NormalOrder
 /-! ### Commutators with currents -/
 
 section Commutator
+
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {Φ : LinearMap.BilinForm R L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm} {a : R}
 
@@ -313,19 +298,65 @@ private theorem envelopingι_mul_normalOrderedSummand_sub_mul (z x y : L) (k n m
         normalOrderedSummand Φ hΦ hΦs a 0 (n + k) m x ⁅z, y⁆ +
         algebraMap R UK (if k + m = 0 then a * m * Φ z x else 0) * ι[y, n - m] +
         algebraMap R UK (if k + (n - m) = 0 then a * (n - m : ℤ) * Φ z y else 0) * ι[x, m] := by
-  -- The Leibniz rule for commutators with a product.
-  have hL (u v w : UK) : u * (v * w) - v * w * u = (u * v - v * u) * w + v * (u * w - w * u) := by
-    simp only [mul_sub, sub_mul, mul_assoc]
-    abel
   have hy : n + k - (m + k) = n - m := by ring
   have hx : k + m = m + k := add_comm k m
   have hz : k + (n - m) = n + k - m := by ring
   have hm : m + k < k ↔ m < 0 := by omega
   simp only [normalOrderedSummand_apply, hy, hm]
   by_cases h : m < 0 <;> simp only [h, ↓reduceIte] <;>
-  · rw [hL, envelopingι_single_tmul_mul_sub_mul, envelopingι_single_tmul_mul_sub_mul, hx, hz]
+  · rw [← Ring.lie_def, ← LieAlgebra.ad_apply R UK ι[z, k], ← coe_innerDerivation R,
+      derivationLieAlgebra.leibniz, coe_innerDerivation, LieAlgebra.ad_apply, LieAlgebra.ad_apply,
+      Ring.lie_def, Ring.lie_def, envelopingι_single_tmul_mul_sub_mul,
+      envelopingι_single_tmul_mul_sub_mul, hx, hz]
     simp only [mul_add, add_mul, Algebra.commutes]
     abel
+
+/-- The signed sum of `(b + c * j) • [x_j, y_{n-j}]` between `0` and `k` evaluates to
+`(b * k + c * (k * (k - 1) / 2)) • ⁅x, y⁆_n` minus
+`(b * (k * (k - 1) / 2) + c * (k * (k - 1) * (2 * k - 1) / 6)) • (δ_{n, 0} a Φ(x, y))`. -/
+theorem sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul (x y : L) (b c k n : ℤ) :
+    ∑ j ∈ Finset.Ico 0 k, (b + c * j) • (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) -
+        ∑ j ∈ Finset.Ico k 0, (b + c * j) • (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
+      (b * k + c * (k * (k - 1) / 2)) • ι[⁅x, y⁆, n] -
+        (b * (k * (k - 1) / 2) + c * (k * (k - 1) * (2 * k - 1) / 6)) •
+          algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
+  have hj (j : ℤ) :
+      (b + c * j) • (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
+        (b + c * j) • ι[⁅x, y⁆, n] -
+          (b * j + c * j ^ 2) • algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
+    rw [envelopingι_single_tmul_mul_sub_mul, add_sub_cancel, smul_add]
+    split_ifs with hn
+    · rw [hn, zero_sub, ← map_zsmul, ← map_zsmul, sub_eq_add_neg, ← neg_smul, ← map_zsmul]
+      congr 2
+      simp only [zsmul_eq_mul]
+      push_cast
+      ring
+    · simp
+  simp only [hj, Finset.sum_sub_distrib, ← Finset.sum_smul]
+  rw [sub_sub_sub_comm, ← sub_smul, ← sub_smul]
+  have hmul (d : ℤ) (s : Finset ℤ) : ∑ j ∈ s, d * j = d * ∑ j ∈ s, j :=
+    (Finset.mul_sum s (fun j => j) d).symm
+  have hmul_sq (d : ℤ) (s : Finset ℤ) : ∑ j ∈ s, d * j ^ 2 = d * ∑ j ∈ s, j ^ 2 :=
+    (Finset.mul_sum s (fun j => j ^ 2) d).symm
+  have hcard : ∑ j ∈ Finset.Ico 0 k, (b + c * j) - ∑ j ∈ Finset.Ico k 0, (b + c * j) =
+      b * k + c * (k * (k - 1) / 2) := by
+    have hc : ((Finset.Ico 0 k).card : ℤ) - (Finset.Ico k 0).card = k := by
+      simp only [Int.card_Ico]
+      omega
+    have hlin := Int.eq_ediv_of_mul_eq_right two_ne_zero
+      (Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero k)
+    simp only [Finset.sum_add_distrib, Finset.sum_const, nsmul_eq_mul, hmul]
+    linear_combination b * hc + c * hlin
+  have hquad : ∑ j ∈ Finset.Ico 0 k, (b * j + c * j ^ 2) -
+      ∑ j ∈ Finset.Ico k 0, (b * j + c * j ^ 2) =
+      b * (k * (k - 1) / 2) + c * (k * (k - 1) * (2 * k - 1) / 6) := by
+    have hlin := Int.eq_ediv_of_mul_eq_right two_ne_zero
+      (Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero k)
+    have hsq := Int.eq_ediv_of_mul_eq_right (by decide : (6 : ℤ) ≠ 0)
+      (Finset.six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq k)
+    simp only [Finset.sum_add_distrib, hmul, hmul_sq]
+    linear_combination b * hlin + c * hsq
+  rw [hcard, hquad]
 
 /-- The commutators `[x_j, y_{n-j}]` for `0 ≤ j < k`, minus those for `k ≤ j < 0`, sum to
 `k ⁅x, y⁆_n` minus the central term `(k (k - 1) / 2) a Φ(x, y)` at `n = 0`. -/
@@ -334,32 +365,12 @@ private theorem sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul (x y : L) (k n : �
         ∑ j ∈ Finset.Ico k 0, (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
       (k : R) • ι[⁅x, y⁆, n] -
         algebraMap R UK (if n = 0 then (k * (k - 1) / 2 : ℤ) * a * Φ x y else 0) := by
-  -- Each commutator is `⁅x, y⁆_n` plus `-j` times the central term `a Φ(x, y)` at `n = 0`.
-  have hj (j : ℤ) : ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j] =
-      ι[⁅x, y⁆, n] + (-j) • algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
-    rw [envelopingι_single_tmul_mul_sub_mul, add_sub_cancel]
-    split_ifs with hn
-    · rw [hn, zero_sub, ← map_zsmul, zsmul_eq_mul, Int.cast_neg]
-      ring_nf
-    · simp
-  simp only [hj, Finset.sum_add_distrib, Finset.sum_const, ← Finset.sum_smul]
-  have hc : ((Finset.Ico 0 k).card : ℤ) - (Finset.Ico k 0).card = k := by
-    simp only [Int.card_Ico]
-    omega
-  have hs : ∑ j ∈ Finset.Ico 0 k, -j - ∑ j ∈ Finset.Ico k 0, -j = -(k * (k - 1) / 2) := by
-    rw [Finset.sum_neg_distrib, Finset.sum_neg_distrib,
-      ← Int.eq_ediv_of_mul_eq_right two_ne_zero (Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero k)]
-    ring
-  have hw : algebraMap R UK (if n = 0 then ((k * (k - 1) / 2 : ℤ) : R) * a * Φ x y else 0) =
-      (k * (k - 1) / 2) • algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
-    split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
-  have key (c₀ c₁ s₀ s₁ M : ℤ) (v w : UK) (hc : c₀ - c₁ = k) (hs : s₀ - s₁ = -M) :
-      c₀ • v + s₀ • w - (c₁ • v + s₁ • w) = k • v - M • w := by
-    rw [← hc, show M = -(s₀ - s₁) by omega]
-    simp only [sub_smul, neg_smul]
-    abel
-  rw [hw, Int.cast_smul_eq_zsmul, ← natCast_zsmul, ← natCast_zsmul]
-  exact key _ _ _ _ _ _ _ hc hs
+  have h := sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs)
+    (a := a) x y 1 0 k n
+  simp only [one_mul, zero_mul, add_zero, one_smul] at h
+  rw [h, Int.cast_smul_eq_zsmul]
+  congr 1
+  split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
 
 /-- **The commutator of a current with a normally ordered mode.** In `Û`, for the current
 generator `z_k` of the mode `z ⊗ tᵏ`,
@@ -439,55 +450,5 @@ theorem levelCompletedEnvelopingEquiv_normalOrderedMode (h : Ψ = k • Φ) (n :
   simp [levelEnvelopingEquiv_normalOrderedSummand]
 
 end Level
-
-/-! ### Degree of normally ordered modes -/
-
-section Degree
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-variable {Φ : LinearMap.BilinForm R L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm} {a : R}
-
-local notation "UK" => CentralQuotient R (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a
-local notation "Û" => CompletedEnveloping Φ hΦ hΦs a
-
-/-- On the uncompleted level algebra, the degree derivation `t d/dt` multiplies every summand of
-`:x y:_n` at any cut `p` by `n`. -/
-private theorem vectorFieldEnvelopingDerivation_single_one_normalOrderedSummand
-    (p n m : ℤ) (x y : L) :
-    (vectorFieldEnvelopingDerivation Φ hΦ hΦs a (HahnSeries.single 1 1) : Module.End R UK)
-        (normalOrderedSummand Φ hΦ hΦs a p n m x y) =
-      n • normalOrderedSummand Φ hΦ hΦs a p n m x y := by
-  simp only [normalOrderedSummand_apply]
-  split_ifs <;>
-  · rw [derivationLieAlgebra.leibniz,
-      vectorFieldEnvelopingDerivation_single_one_envelopingι_single_tmul,
-      vectorFieldEnvelopingDerivation_single_one_envelopingι_single_tmul,
-      smul_mul_assoc, mul_smul_comm, ← add_smul]
-    congr 1
-    ring
-
-/-- **The completed degree derivation multiplies `:x y:_n` by `n`**, over any commutative ring and
-at every central value `a`. -/
-theorem vectorFieldCompletedEnvelopingDerivation_single_one_normalOrderedMode
-    (n : ℤ) (x y : L) :
-    (vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (HahnSeries.single 1 1) : Module.End R Û)
-        (normalOrderedMode Φ hΦ hΦs a n x y) =
-      n • normalOrderedMode Φ hΦ hΦs a n x y := by
-  let D := (vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (HahnSeries.single 1 1) :
-    Module.End R Û)
-  have hterm (m : ℤ) :
-      D (toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a 0 n m x y)) =
-        n • toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a 0 n m x y) := by
-    simp only [D, coe_toCompletedEnveloping,
-      vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
-      vectorFieldEnvelopingDerivation_single_one_normalOrderedSummand, map_zsmul]
-  have h₁ := (hasSum_normalOrderedMode (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) n x y).map
-    D.toAddMonoidHom
-    (continuous_vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (HahnSeries.single 1 1))
-  simp only [Function.comp_def, LinearMap.toAddMonoidHom_coe, hterm] at h₁
-  exact h₁.unique ((hasSum_normalOrderedMode n x y).const_smul n)
-
-end Degree
 
 end TauCeti.CurrentAlgebra

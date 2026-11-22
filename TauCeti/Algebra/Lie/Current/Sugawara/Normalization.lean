@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Current.Sugawara.Virasoro
+public import TauCeti.Algebra.Lie.Current.Sugawara.Basic
 public import TauCeti.Algebra.Lie.Weights.IsSimple
 public import TauCeti.LinearAlgebra.RootSystem.DualCoxeterNumber
 
@@ -55,6 +55,13 @@ variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
   {Φ : LinearMap.BilinForm K L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm}
 
 omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
+private theorem one_sub_two_mul_neg_div_two_mul [NeZero (2 : K)] {d : K} (hd : d ≠ 0) (k : K) :
+    1 - 2 * (1 : K) * (-k / (2 * d)) = (k + d) / d := by
+  have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
+  field_simp
+  ring
+
+omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
 /-- **For a form `κ₀` with `κ_L = (2 d) • κ₀`, the affine level `Φ = -(k • κ₀)` at `a = 1` is
 `(-k / (2 d)) • κ_L`.** -/
 theorem eq_neg_div_two_mul_smul_killingForm [NeZero (2 : K)] {κ₀ : LinearMap.BilinForm K L}
@@ -71,11 +78,7 @@ theorem eq_neg_div_two_mul_smul_killingForm [NeZero (2 : K)] {κ₀ : LinearMap.
 theorem one_sub_two_mul_neg_div_two_mul_ne_zero_iff [NeZero (2 : K)] {d : K} (hd : d ≠ 0)
     (k : K) :
     1 - 2 * (1 : K) * (-k / (2 * d)) ≠ 0 ↔ k + d ≠ 0 := by
-  have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
-  have heq : 1 - 2 * (1 : K) * (-k / (2 * d)) = (k + d) / d := by
-    field_simp
-    ring
-  rw [heq, div_ne_zero_iff]
+  rw [one_sub_two_mul_neg_div_two_mul hd, div_ne_zero_iff]
   exact and_iff_left hd
 
 /-- **The `κ₀`-dual-basis formula for the Segal--Sugawara Virasoro modes.** If
@@ -90,11 +93,10 @@ theorem sugawaraVirasoro_eq_sum_dualBasis [NeZero (2 : K)] {κ₀ : LinearMap.Bi
     sugawaraVirasoro Φ hΦ hΦs 1 (-k / (2 * d)) m =
       (2 * (k + d))⁻¹ • ∑ i, normalOrderedMode Φ hΦ hΦs 1 m (b i) (κ₀.dualBasis hκ₀nd b i) := by
   have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
-  rw [sugawaraVirasoro_def,
+  rw [sugawaraVirasoro_def, one_sub_two_mul_neg_div_two_mul hd,
     sugawaraMode_eq_inv_smul_sum_dualBasis hκ₀nd (mul_ne_zero h2 hd) hκ₀ b m, smul_smul]
   congr 1
   field_simp
-  ring
 
 omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
 /-- **The Sugawara central charge in the `κ₀`-normalisation** is `k · dim L / (k + d)`. -/
@@ -103,10 +105,8 @@ theorem sugawaraCentralCharge_neg_div_two_mul [NeZero (2 : K)] {d : K} (hd : d �
   have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
   have hnum : -(2 * (1 : K) * (-k / (2 * d))) = k / d := by
     field_simp
-  have hden : 1 - 2 * (1 : K) * (-k / (2 * d)) = (k + d) / d := by
-    field_simp
-    ring
-  rw [sugawaraCentralCharge_def, hnum, hden, div_div_div_cancel_right₀ hd, div_mul_eq_mul_div]
+  rw [sugawaraCentralCharge_def, hnum, one_sub_two_mul_neg_div_two_mul hd,
+    div_div_div_cancel_right₀ hd, div_mul_eq_mul_div]
 
 section Simple
 

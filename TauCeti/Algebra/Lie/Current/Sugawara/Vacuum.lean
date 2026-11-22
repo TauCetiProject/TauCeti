@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Lie.Killing.SymmetricAlgebra
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Homogeneous
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 
-import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Injective
+import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Embedding
 
 /-!
 # The Segal--Sugawara operators and quadratic state on the vacuum module
@@ -341,12 +341,9 @@ theorem not_forall_envelopingι_smul_sugawaraVacuum_eq_zero [Nontrivial L] {c : 
   have hv0 : ι[z, -1] • vacuum Φ hΦ hΦs a = 0 := h1.resolve_left hc
   rw [← negativeEnvelopingHom_ι_negativeSingle neg_one_lt_zero, ← vacuumPBWEquiv_apply,
     EmbeddingLike.map_eq_zero_iff] at hv0
-  have hi := congrArg (negativeEnvelopingHom Φ hΦ hΦs a) hv0
-  rw [map_zero, negativeEnvelopingHom_ι_negativeSingle] at hi
-  have ht := (map_eq_zero_iff _ (envelopingι_injective Φ hΦ hΦs a)).1 hi
-  have hc0 := congrArg (coeff K L (-1)) ht
-  rw [map_zero, coeff_tmul, HahnSeries.coeff_single_same, one_smul] at hc0
-  exact hz hc0
+  exact hz ((map_eq_zero_iff _ (negativeSingle_injective neg_one_lt_zero)).1
+    ((map_eq_zero_iff _ (TauCeti.UniversalEnvelopingAlgebra.ι_injective K
+      (negativeLieSubalgebra Φ hΦ hΦs))).1 hv0))
 
 /-! ### PBW preimage, quadratic Casimir symbol, and nonscalarity -/
 

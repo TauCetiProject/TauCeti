@@ -124,9 +124,17 @@ theorem eq_vectorFieldCompletedEnvelopingDerivation (h : R⸨X⸩) {f : Û → �
   apply derivationLieAlgebra.eq_extend _ _ _ _ _ hf
   simpa only [coe_toCompletedEnveloping_toNonUnitalAlgHom] using he
 
-section WittMode
-
-attribute [local instance 1100] HahnSeries.instAlgebra
+/-- Monomial vector fields `tᵐ d/dt` on completed current generators send `x_k` to
+`k x_{m + k - 1}`. -/
+theorem vectorFieldCompletedEnvelopingDerivation_single_envelopingι_single_tmul
+    (m k : ℤ) (r : R) (x : L) :
+    (vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (HahnSeries.single m 1) :
+        Module.End R Û)
+        (i (envelopingι c a (HahnSeries.single k r ⊗ₜ[R] x))) =
+      k • i (envelopingι c a (HahnSeries.single (m + k - 1) r ⊗ₜ[R] x)) := by
+  simp only [coe_toCompletedEnveloping, vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
+    vectorFieldEnvelopingDerivation_envelopingι, vectorFieldDerivation_single_single_tmul,
+    map_zsmul]
 
 /-- The Witt vector field `t^{m+1} d/dt` on completed current generators sends `x_k` to
 `k x_{m+k}`. -/
@@ -136,17 +144,8 @@ theorem vectorFieldCompletedEnvelopingDerivation_single_add_one_envelopingι_sin
         Module.End R Û)
         (i (envelopingι c a (HahnSeries.single k r ⊗ₜ[R] x))) =
       k • i (envelopingι c a (HahnSeries.single (m + k) r ⊗ₜ[R] x)) := by
-  have hcur : vectorFieldDerivation R L (HahnSeries.single (m + 1) 1)
-      (HahnSeries.single k r ⊗ₜ[R] x) = k • (HahnSeries.single (m + k) r ⊗ₜ[R] x) := by
-    rw [vectorFieldDerivation_tmul, LaurentSeries.derivative_apply,
-      LaurentSeries.hasseDeriv_single, Ring.choose_one_right, Nat.cast_one,
-      HahnSeries.single_mul_single, one_mul, add_assoc m 1 (k - 1), ← add_sub_assoc,
-      add_sub_cancel_left, TensorProduct.smul_tmul']
-    exact congrArg (· ⊗ₜ[R] x) (map_zsmul (HahnSeries.single.addMonoidHom (m + k)) k r)
-  simp only [coe_toCompletedEnveloping, vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
-    vectorFieldEnvelopingDerivation_envelopingι, hcur, map_zsmul]
-
-end WittMode
+  rw [vectorFieldCompletedEnvelopingDerivation_single_envelopingι_single_tmul, add_right_comm,
+    add_sub_cancel_right]
 
 /-- The degree derivation on completed current generators is `x_n ↦ n x_n`. -/
 theorem vectorFieldCompletedEnvelopingDerivation_single_one_envelopingι_single_tmul

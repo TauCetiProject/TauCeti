@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Current.NormalOrder.Degree
 public import TauCeti.Algebra.Lie.Current.Sugawara.Basic
 
 import TauCeti.Algebra.Lie.Derivation.Continuous

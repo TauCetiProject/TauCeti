@@ -9,9 +9,10 @@ public import TauCeti.Algebra.Lie.Current.Sugawara.Basic
 
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.Lie.Derivation.Basic
 
 /-!
-# The Segal--Sugawara Virasoro relations and central charge
+# The Segal--Sugawara Virasoro relations
 
 Let `L` be a finite-dimensional Lie algebra over a field `K` whose Killing form `κ_L` is
 nondegenerate, let `Φ` be an invariant symmetric bilinear form on `L`, and let
@@ -36,19 +37,13 @@ which is `(m ^ 3 - m) / 6`. Summing over Killing-dual bases kills the bracket te
 over every field `K`, at every level including the critical level `1 - 2 a c = 0` and `a = 0`.
 
 Away from the critical level, the **Segal--Sugawara Virasoro modes**
-`Lₘ = (1 - 2 a c)⁻¹ Sₘ` (`TauCeti.CurrentAlgebra.sugawaraVirasoro`) satisfy
-`[Lₘ, z_k] = -k z_{m+k}` over any field and, when `2` and `3` are invertible in `K`, the Virasoro
-commutation relations
+`Lₘ = (1 - 2 a c)⁻¹ Sₘ` (`TauCeti.CurrentAlgebra.sugawaraVirasoro`) satisfy, when `2` and `3` are
+invertible in `K`, the Virasoro commutation relations
 
 `[Lₘ, Lₙ] = (m - n) L_{m+n} + δ_{m+n, 0} ((m ^ 3 - m) / 12) c_{Vir}`
 
 with central charge `c_{Vir} = -(2 a c) / (1 - 2 a c) · dim L`
 (`TauCeti.CurrentAlgebra.sugawaraCentralCharge`).
-
-## Main definitions
-
-* `TauCeti.CurrentAlgebra.sugawaraCentralCharge`: the Sugawara central charge
-  `-(2 a c) / (1 - 2 a c) · dim L`.
 
 ## Main results
 
@@ -81,6 +76,8 @@ namespace TauCeti.CurrentAlgebra
 
 section Commutator
 
+attribute [local instance 100] LieRing.ofAssociativeRing
+
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
   {Φ : LinearMap.BilinForm K L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm} {a : K}
@@ -102,19 +99,20 @@ private theorem sugawaraMode_mul_normalOrderedSummand_sub_mul {c : K}
       ((1 - 2 * a * c) * -(j : K)) • toC (normalOrderedSummand Φ hΦ hΦs a m (m + n) (j + m) x y) +
         ((1 - 2 * a * c) * (j - n : K)) •
           toC (normalOrderedSummand Φ hΦ hΦs a 0 (m + n) j x y) := by
-  have hL (u v w : CompletedEnveloping Φ hΦ hΦs a) :
-      u * (v * w) - v * w * u = -((v * u - u * v) * w + v * (w * u - u * w)) := by
-    simp only [mul_sub, sub_mul, mul_assoc]
-    abel
   have hsub₁ : m + n - (j + m) = n - j := by ring
   have hsub₂ : m + (n - j) = m + n - j := by ring
   have hadd : m + j = j + m := add_comm m j
   have hlt : j + m < m ↔ j < 0 := by omega
   simp only [normalOrderedSummand_apply, hsub₁, hlt]
   by_cases hj : j < 0 <;> simp only [hj, ↓reduceIte, map_mul] <;>
-  · rw [hL, toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h,
+  · rw [← Ring.lie_def,
+      ← LieAlgebra.ad_apply K (CompletedEnveloping Φ hΦ hΦs a) (sugawaraMode Φ hΦ hΦs a m),
+      ← coe_innerDerivation K, derivationLieAlgebra.leibniz, coe_innerDerivation,
+      LieAlgebra.ad_apply, LieAlgebra.ad_apply, Ring.lie_def, Ring.lie_def,
+      ← neg_sub (toC ι[_, _] * _), ← neg_sub (toC ι[_, _] * _),
+      toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h,
       toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h, hadd, hsub₂]
-    simp only [Int.cast_sub, smul_mul_assoc, mul_smul_comm]
+    simp only [Int.cast_sub, neg_mul, mul_neg, smul_mul_assoc, mul_smul_comm]
     module
 
 omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
@@ -130,25 +128,24 @@ private theorem sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul (x y : L) 
         algebraMap K UK (if m + n = 0 then ((m ^ 3 - m) / 6 : ℤ) * a * Φ x y else 0) := by
   have hl (l : ℤ) : ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] -
       ι[y, m + n - l] * ι[x, l]) =
-      (m - l) • ι[⁅x, y⁆, m + n] - (l * (m - l)) •
-        algebraMap K UK (if m + n = 0 then a * Φ x y else 0) := by
-    rw [envelopingι_single_tmul_mul_sub_mul, add_sub_cancel, smul_add, Int.cast_smul_eq_zsmul,
-      sub_eq_add_neg ((m - l) • _), ← neg_smul]
+      (m + (-1 : ℤ) * l) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l]) := by
+    rw [Int.cast_smul_eq_zsmul]
     congr 1
-    split_ifs with hmn
-    · rw [hmn, zero_sub, ← map_zsmul, Algebra.smul_def, ← map_mul]
-      congr 1
-      simp only [zsmul_eq_mul]
-      push_cast
-      ring
-    · simp
-  simp only [hl, Finset.sum_sub_distrib, ← Finset.sum_smul]
-  rw [sub_sub_sub_comm, ← sub_smul, ← sub_smul,
-    Int.eq_ediv_of_mul_eq_right two_ne_zero
-      (Finset.two_mul_sum_Ico_zero_sub_sub_sum_Ico_zero_sub m),
-    Int.eq_ediv_of_mul_eq_right (by decide : (6 : ℤ) ≠ 0)
-      (Finset.six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub m),
-    Int.cast_smul_eq_zsmul]
+    ring
+  simp only [hl]
+  rw [sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul x y m (-1) m (m + n)]
+  have h2 : (m * (m - 1) / 2) * 2 = m * (m - 1) :=
+    Int.ediv_mul_cancel (Int.even_mul_pred_self m).two_dvd
+  have hc₁ : m * m + -1 * (m * (m - 1) / 2) = m * (m + 1) / 2 := by
+    refine Int.eq_ediv_of_mul_eq_right two_ne_zero ?_
+    linear_combination -h2
+  have hc₂ : m * (m * (m - 1) / 2) + -1 * (m * (m - 1) * (2 * m - 1) / 6) =
+      (m ^ 3 - m) / 6 := by
+    refine Int.eq_ediv_of_mul_eq_right (by decide : (6 : ℤ) ≠ 0) ?_
+    have h6 : (m * (m - 1) * (2 * m - 1) / 6) * 6 = m * (m - 1) * (2 * m - 1) :=
+      Int.ediv_mul_cancel ⟨_, (Finset.six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq m).symm⟩
+    linear_combination 3 * m * h2 - h6
+  rw [hc₁, hc₂, Int.cast_smul_eq_zsmul]
   congr 1
   split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
 
@@ -178,12 +175,6 @@ private theorem combined_normalOrderedSummand_eq (c : K) (x y : L) (m n l : ℤ)
     ring
   rw [hite (Finset.Ico 0 m), hite (Finset.Ico m 0), Int.cast_sub]
   module
-
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-private theorem summable_smul_completedEnveloping {f : ℤ → CompletedEnveloping Φ hΦ hΦs a}
-    (hf : Summable f) (r : ℤ → K) : Summable fun l ↦ r l • f l := by
-  simpa only [algebraMap_smul] using
-    (orderQuotientTower Φ hΦ hΦs a).summable_smul hf fun l ↦ algebraMap K UK (r l)
 
 /-- **The commutator of a Segal--Sugawara mode with a normally ordered mode**, for `Φ = c • κ_L`
 over any field `K`. -/
@@ -275,44 +266,13 @@ theorem sugawaraMode_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm {c : K}
 
 end Commutator
 
-/-! ### Normalised Segal--Sugawara Virasoro operators and central charge -/
+/-! ### Virasoro commutation relations -/
 
 section Virasoro
 
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
-
-variable (K L) in
-/-- **The Sugawara central charge** `c_{Vir} = -(2 a c) / (1 - 2 a c) · dim L` of the Virasoro
-algebra generated by `sugawaraVirasoro` for `Φ = c • κ_L` at central value `a`. For the affine
-level form `κ = -Φ` with `κ = k κ₀` and `κ_L = 2 h^∨ κ₀` at `a = 1`, this is
-`k · dim L / (k + h^∨)`. -/
-def sugawaraCentralCharge (a c : K) : K :=
-  -(2 * a * c) / (1 - 2 * a * c) * (Module.finrank K L : K)
-
-variable (K L) in
-/-- The Sugawara central charge is `-(2 a c) / (1 - 2 a c) · dim L`. -/
-theorem sugawaraCentralCharge_def (a c : K) :
-    sugawaraCentralCharge K L a c = -(2 * a * c) / (1 - 2 * a * c) * (Module.finrank K L : K) :=
-  (rfl)
-
-variable [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
+  [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
   {Φ : LinearMap.BilinForm K L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm} {a : K}
-
-local notation "ιK[" x ", " m "]" =>
-  toCompletedEnveloping Φ hΦ hΦs a
-    (envelopingι (twoCocycleOfBilinear K L Φ hΦ hΦs) a (HahnSeries.single m (1 : K) ⊗ₜ[K] x))
-
-/-- **The commutator of a normalised Segal--Sugawara Virasoro mode with a current mode**:
-`[Lₘ, z_k] = -k z_{m+k}` whenever `Φ = c • κ_L` and `1 - 2 a c ≠ 0`. -/
-theorem sugawaraVirasoro_mul_toCompletedEnveloping_sub_mul {c : K}
-    (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (z : L) (m k : ℤ) :
-    sugawaraVirasoro Φ hΦ hΦs a c m * ιK[z, k] - ιK[z, k] * sugawaraVirasoro Φ hΦ hΦs a c m =
-      (-(k : K)) • ιK[z, m + k] := by
-  rw [sugawaraVirasoro_def, smul_mul_assoc, mul_smul_comm, ← smul_sub, ← neg_sub (ιK[z, k] * _),
-    toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h,
-    smul_neg, smul_smul, ← neg_smul]
-  congr 1
-  field_simp
 
 /-- **The Virasoro commutation relations of the Segal--Sugawara modes** over any field `K` in which
 `2` and `3` are invertible: if `Φ = c • κ_L` and `1 - 2 a c ≠ 0`, then
@@ -355,7 +315,7 @@ theorem sugawaraVirasoro_mul_sugawaraVirasoro_sub_mul [NeZero (2 : K)] [NeZero (
     rw [Algebra.smul_def, ← map_mul]
     congr 1
     split_ifs
-    · rw [hdiv6, sugawaraCentralCharge]
+    · rw [hdiv6, sugawaraCentralCharge_def]
       have h12 : (12 : K) ≠ 0 := by
         have h26 : (2 : K) * 6 ≠ 0 := mul_ne_zero h2 h6
         norm_num at h26

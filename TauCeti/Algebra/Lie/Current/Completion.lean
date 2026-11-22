@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Tower.Ring
+public import TauCeti.Algebra.Category.ModuleCat.Tower.Summation
 public import TauCeti.Algebra.Lie.Current.LeftIdeal
 
 /-!
@@ -103,6 +103,9 @@ completion of `U(ĝ_κ₀) / (K - k)`.
   containing the images of all current modes contains the images of all currents.
 * `TauCeti.CurrentAlgebra.topologicalClosure_adjoin_range_envelopingι`: the images of the currents
   topologically generate `Û`.
+* `TauCeti.CurrentAlgebra.hasSum_toCompletedEnveloping_ite_mem`,
+  `TauCeti.CurrentAlgebra.summable_smul_completedEnveloping`: finite-support sums and
+  scalar-weighted summability in `Û`.
 * `TauCeti.CurrentAlgebra.eq_completedEnvelopingMap`: uniqueness of continuous extensions.
 * `TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_mem_completedOrderLeftIdeal_iff`: the
   completed level comparison matches the kernels of the projections to `U / I_n`.
@@ -279,6 +282,24 @@ theorem one_limSmul {M : ModuleCat UK}
     (hM : smoothModules (fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n) M) (m : M) :
     ModuleTower.limSmul hM (1 : CompletedEnveloping Φ hΦ hΦs a) m = m := by
   rw [← map_one (toCompletedEnveloping Φ hΦ hΦs a), limSmul_toCompletedEnveloping, one_smul]
+
+/-- A family supported in a finite set `s` and given there by `toCompletedEnveloping (f m)`
+sums in `Û` to `toCompletedEnveloping (∑ m ∈ s, f m)`. -/
+theorem hasSum_toCompletedEnveloping_ite_mem {ι : Type*} [DecidableEq ι] (s : Finset ι)
+    (f : ι → UK) :
+    HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
+      (toCompletedEnveloping Φ hΦ hΦs a (∑ m ∈ s, f m)) := by
+  have h : HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
+      (∑ m ∈ s, toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0)) :=
+    hasSum_sum_of_ne_finset_zero fun m hm ↦ by simp [hm]
+  rwa [← map_sum, Finset.sum_ite_mem, Finset.inter_self] at h
+
+/-- Multiplying the terms of a summable family in `Û` by arbitrary scalars in `R` preserves
+summability. -/
+theorem summable_smul_completedEnveloping {ι : Type*} {f : ι → CompletedEnveloping Φ hΦ hΦs a}
+    (hf : Summable f) (r : ι → R) : Summable fun i ↦ r i • f i := by
+  simpa only [algebraMap_smul] using
+    (orderQuotientTower Φ hΦ hΦs a).summable_smul hf fun i ↦ algebraMap R UK (r i)
 
 variable (Φ hΦ hΦs a)
 

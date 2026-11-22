@@ -208,31 +208,21 @@ theorem six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq (k : ℤ) :
     6 * (∑ j ∈ Ico 0 k, j ^ 2 - ∑ j ∈ Ico k 0, j ^ 2) = k * (k - 1) * (2 * k - 1) := by
   rcases le_or_gt 0 k with hk | hk
   · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hk
-    rw [Ico_eq_empty_of_le hk, sum_empty, sub_zero]
-    have hsum : ∑ j ∈ Ico (0 : ℤ) (n : ℤ), j ^ 2 = ∑ r ∈ range n, (r : ℤ) ^ 2 :=
-      sum_nbij' (fun j ↦ j.toNat) (fun r ↦ (r : ℤ))
-        (fun j hj ↦ by simp only [mem_Ico] at hj; simp only [mem_range]; omega)
-        (fun r hr ↦ by simp only [mem_range] at hr; simp only [mem_Ico]; omega)
-        (fun j hj ↦ by simp only [mem_Ico] at hj; omega)
-        (fun r _ ↦ Int.toNat_natCast r)
-        (fun j hj ↦ by simp only [mem_Ico] at hj; rw [Int.toNat_of_nonneg hj.1])
-    rw [hsum, mul_comm (6 : ℤ), sum_range_natCast_sq_mul_six n]
+    rw [Ico_eq_empty_of_le hk, sum_empty, sub_zero, Int.Ico_eq_finset_map, sum_map]
+    simp [mul_comm (6 : ℤ), sum_range_natCast_sq_mul_six]
   · obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le (by omega : 0 ≤ -k)
     have hkn : k = -(n : ℤ) := by omega
-    rw [hkn, Ico_eq_empty_of_le (by omega : -(n : ℤ) ≤ 0), sum_empty, zero_sub, mul_neg]
-    have hsum : ∑ j ∈ Ico (-(n : ℤ)) 0, j ^ 2 =
-        ∑ r ∈ range n, ((r : ℤ) ^ 2 + 2 * (r : ℤ) + 1) := by
-      refine sum_nbij' (fun j ↦ (-j - 1).toNat) (fun r ↦ -(r : ℤ) - 1)
-        (fun j hj ↦ by simp only [mem_Ico] at hj; simp only [mem_range]; omega)
-        (fun r hr ↦ by simp only [mem_range] at hr; simp only [mem_Ico]; omega)
-        (fun j hj ↦ by simp only [mem_Ico] at hj; omega)
-        (fun r _ ↦ by simp only [neg_sub, sub_neg_eq_add]; omega)
-        fun j hj ↦ by simp only [mem_Ico] at hj; rw [Int.toNat_of_nonneg (by omega)]; ring
-    rw [hsum, sum_add_distrib, sum_add_distrib, sum_const, card_range, nsmul_eq_mul, mul_one,
-      ← mul_sum]
+    rw [hkn, Ico_eq_empty_of_le (by omega : -(n : ℤ) ≤ 0), sum_empty, zero_sub, mul_neg,
+      Int.Ico_eq_finset_map, sum_map]
+    simp only [sub_neg_eq_add, zero_add, Int.toNat_natCast, Function.Embedding.trans_apply,
+      Nat.castEmbedding_apply, addLeftEmbedding_apply]
+    have hsq_term (r : ℕ) : (-(n : ℤ) + (r : ℤ)) ^ 2 =
+        (r : ℤ) ^ 2 - 2 * (n : ℤ) * (r : ℤ) + (n : ℤ) ^ 2 := by ring
+    simp only [hsq_term, sum_add_distrib, sum_sub_distrib, ← mul_sum, sum_const, card_range,
+      nsmul_eq_mul]
     have hsq := sum_range_natCast_sq_mul_six (R := ℤ) n
     have hlin := sum_range_natCast_mul_two (R := ℤ) n
-    linear_combination -hsq - 6 * hlin
+    linear_combination -hsq + 6 * (n : ℤ) * hlin
 
 /-- Counted with sign, the products `j (k - j)` for integers between `0` and `k` sum to
 `(k ^ 3 - k) / 6`: six times `∑_{0 ≤ j < k} j * (k - j) - ∑_{k ≤ j < 0} j * (k - j)` is
