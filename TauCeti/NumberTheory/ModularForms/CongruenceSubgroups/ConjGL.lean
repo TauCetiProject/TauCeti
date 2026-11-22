@@ -144,19 +144,10 @@ theorem strictLevel_conjGL_scaleGL_dvd (Γ : Subgroup SL(2, ℤ)) (d : ℕ) [NeZ
   refine strictLevel_dvd_iff.mpr fun σ ↦ mem_conjGL.mpr ?_
   -- write `diag(d, 1) σ = δ β` with `β` upper triangular with diagonal `(e, d / e)`
   obtain ⟨δ, ha, hc⟩ := σ.exists_scaled_cusp_reduction (t := d)
-  obtain ⟨h10, h11⟩ := σ.scaled_cusp_upperTriangular δ ha hc
+  obtain ⟨h00, h10, h11⟩ := σ.scaled_cusp_upperTriangular δ ha hc
   set e := Int.gcd (σ 1 0) d
   set β := (mapGL ℝ δ)⁻¹ * (scaleGL d * mapGL ℝ σ) with hβ
   have hd : (d : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne d)
-  have he : (e : ℝ) ≠ 0 := by
-    exact_mod_cast (Int.gcd_pos_of_ne_zero_right (σ 1 0)
-      (Nat.cast_ne_zero.mpr (NeZero.ne d))).ne'
-  have h00 : β 0 0 = e := by
-    have hdet : (β.det : ℝ) = d := by simp [β]
-    rw [GeneralLinearGroup.val_det_apply, Matrix.det_fin_two, h10, h11, mul_zero, sub_zero]
-      at hdet
-    calc β 0 0 = β 0 0 * (d / e) * (e / d) := by field_simp
-      _ = e := by rw [hdet]; field_simp
   -- then `diag(d, 1) σ T^(d N) σ⁻¹ diag(d, 1)⁻¹ = δ T^(N e²) δ⁻¹`, and `N ∣ N e²`
   refine ⟨δ * ModularGroup.T ^ (Γ.strictLevel * e ^ 2) * δ⁻¹,
     strictLevel_dvd_iff.mp (dvd_mul_right _ _) δ, ?_⟩
