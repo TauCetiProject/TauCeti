@@ -281,13 +281,14 @@ theorem hasFDerivAt_fst_of_floerOperator_eq_zero {ω : SymplecticForm V} [Finite
   -- `(l - 1) a + m J a = 0`. As `a ≠ 0` and `J² = -1`, `a` and `J a` are independent.
   let Jc : AlmostComplexStructure V :=
     ⟨(J z.2 (u z) : V →ₗ[ℝ] V), LinearMap.ext fun v ↦ by simpa using congr($hJJ v)⟩
+  -- `Jc` applies `J z.2 (u z)`, through the coercions to linear maps.
+  have hJc (v : V) : Jc v = J z.2 (u z) v := rfl
   have hkey : (l - 1) • a + m • Jc a = 0 := by
     rw [SymplecticForm.floerOperator_def] at hFz hFφ
     simp only [heq.self_of_nhds] at hFφ
     have h := congr($hFz - $hFφ)
     rw [hb, hc, sub_zero] at h
-    change (l - 1) • a + m • J z.2 (u z) a = 0
-    rw [← map_smul (J z.2 (u z)) m a]
+    rw [hJc, ← map_smul (J z.2 (u z)) m a]
     calc (l - 1) • a + J z.2 (u z) (m • a)
         = l • a - ω.hamiltonianVectorField (Ks z.2) (u z) +
             J z.2 (u z) (m • a + L stdComplexLineImag -
@@ -303,8 +304,11 @@ theorem hasFDerivAt_fst_of_floerOperator_eq_zero {ω : SymplecticForm V} [Finite
   refine ContinuousLinearMap.ext fun v ↦ ?_
   have hv : v = v.1 • stdComplexLineReal + v.2 • stdComplexLineImag := by
     ext <;> simp [stdComplexLineReal_eq, stdComplexLineImag_eq]
-  rw [hv, map_add, map_smul, map_smul]
-  simp [l, m, sub_eq_zero.1 hl, hm] at *
+  have hl' : φ' stdComplexLineReal = 1 := sub_eq_zero.1 hl
+  have hm' : φ' stdComplexLineImag = 0 := hm
+  rw [hv]
+  simp only [map_add, map_smul, hl', hm']
+  simp [stdComplexLineReal_eq, stdComplexLineImag_eq]
 
 /-- **A continuous competitor on the slices of a Floer trajectory is a translate.** Let `u` be a
 differentiable solution of the Floer equation `∂ₛu - X_{K_s}(u) + J_t(u)(∂ₜu - X_{K_t}(u)) = 0` on
@@ -332,29 +336,28 @@ theorem exists_eventually_eq_add_of_floerOperator_eq_zero {ω : SymplecticForm V
     (fun w hw ↦ (hd w (hball hw)).fderiv) hz (mem_ball_self hε)
   linarith
 
-/-- **The critical points of a nonstationary Floer trajectory are countable.** For a `C²`
-nonstationary solution `u` of the Floer equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0`, with a `C¹`
-family `J_t` such that `J_t(u)² = -1` along `u` and a `C²` Hamiltonian `H`, the points where
-`∂ₛu = 0` form a countable set. -/
+/-- **The critical points of a nonstationary Floer trajectory are countable.** Let `u` be a `C²`
+solution of the Floer equation `∂ₛu - X_{K_s}(u) + J(u)(∂ₜu - X_{K_t}(u)) = 0` on `ℝ × ℝ` whose data
+`J`, `K_s`, `K_t` are invariant under small translations in `s`, with `J` of class `C¹`, the
+Hamiltonians of class `C²` near the graph of `u` and `J(z, u z)² = -1`. If `u` is not stationary,
+that is `∂ₛu` does not vanish identically, then the points where `∂ₛu = 0` form a countable set. -/
 theorem countable_setOf_fderiv_apply_eq_zero_of_floerOperator_eq_zero {ω : SymplecticForm V}
-    [FiniteDimensional ℝ V] {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ}
-    (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2))
-    (hJJ : ∀ z, J z.2 (u z) ∘L J z.2 (u z) = -ContinuousLinearMap.id ℝ V)
-    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiff ℝ 2 u)
-    (hF : ∀ z, ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
-    (hne : ∃ z, fderiv ℝ u z stdComplexLineReal ≠ 0) :
+    [FiniteDimensional ℝ V] {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    (hJs : ∀ z, ∀ᶠ c : ℝ in 𝓝 0, J (z + c • stdComplexLineReal) = J z)
+    (hKss : ∀ z, ∀ᶠ c : ℝ in 𝓝 0, Ks (z + c • stdComplexLineReal) = Ks z)
+    (hKts : ∀ z, ∀ᶠ c : ℝ in 𝓝 0, Kt (z + c • stdComplexLineReal) = Kt z)
+    (hJ : ∀ z, ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z, u z))
+    (hJJ : ∀ z, J z (u z) ∘L J z (u z) = -ContinuousLinearMap.id ℝ V)
+    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 2 u)
+    (hF : ∀ z, ω.floerOperator J Ks Kt u z = 0) (hne : ∃ z, fderiv ℝ u z stdComplexLineReal ≠ 0) :
     {z | fderiv ℝ u z stdComplexLineReal = 0}.Countable := by
   -- The zeros of `∂ₛu` are isolated, so they form a discrete, hence countable, set.
   have hcod :=
     SymplecticForm.setOf_fderiv_apply_ne_zero_mem_codiscreteWithin_of_floerOperator_eq_zero
-      (J := fun p ↦ J p.2) (Ks := fun _ _ ↦ 0) (Kt := fun p ↦ H p.2) (v := stdComplexLineReal)
-      isOpen_univ isPreconnected_univ (fun _ _ ↦ Eventually.of_forall fun c ↦ by
-        simp [stdComplexLineReal_eq]) (fun _ _ ↦ Eventually.of_forall fun _ ↦ rfl)
-      (fun _ _ ↦ Eventually.of_forall fun c ↦ by simp [stdComplexLineReal_eq])
-      (fun _ _ ↦ (hJ.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)).contDiffAt)
-      (fun z _ ↦ hJJ z) (fun _ _ ↦ contDiff_const.contDiffAt)
-      (fun _ _ ↦ (hH.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)).contDiffAt)
-      hu.contDiffOn (fun z _ ↦ hF z) (by simpa using hne)
+      isOpen_univ isPreconnected_univ (fun z _ ↦ hJs z) (fun z _ ↦ hKss z) (fun z _ ↦ hKts z)
+      (fun z _ ↦ hJ z) (fun z _ ↦ hJJ z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) hu.contDiffOn
+      (fun z _ ↦ hF z) (by simpa using hne)
   have hdisc : IsDiscrete ({z | fderiv ℝ u z stdComplexLineReal = 0} ∩ univ) :=
     isDiscrete_of_codiscreteWithin (by simpa only [compl_ofPred] using hcod)
   exact (HereditarilyLindelofSpace.isLindelof _).countable_of_isDiscrete (by simpa using hdisc)
@@ -378,15 +381,18 @@ theorem dense_regularPoints_of_floerOperator_eq_zero {ω : SymplecticForm V} [Fi
   have hG : IsOpen {z | fderiv ℝ u z stdComplexLineReal ≠ 0} :=
     isOpen_ne_fun ((hu.continuous_fderiv (by norm_num)).clm_apply continuous_const)
       continuous_const
-  have hD := dense_setOf_fderiv_apply_ne_zero_and_ne_and_ne_of_floerOperator_eq_zero
-    (J := fun p ↦ J p.2) (Ks := fun _ _ ↦ 0) (Kt := fun p ↦ H p.2)
-    (fun _ ↦ Eventually.of_forall fun c ↦ by simp [stdComplexLineReal_eq])
-    (fun _ ↦ Eventually.of_forall fun _ ↦ rfl)
-    (fun _ ↦ Eventually.of_forall fun c ↦ by simp [stdComplexLineReal_eq])
-    (fun _ ↦ (hJ.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)).contDiffAt) hJJ
-    (fun _ ↦ contDiff_const.contDiffAt)
-    (fun _ ↦ (hH.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)).contDiffAt) hu hF
-    hne hxm hxp
+  -- The data `J_t`, `0` and `H_t`, seen on `ℝ × ℝ`, are invariant in `s` and regular along `u`.
+  have hinv {α : Type _} (f : ℝ → α) (z : ℝ × ℝ) : ∀ᶠ c : ℝ in 𝓝 0,
+      (fun p : ℝ × ℝ ↦ f p.2) (z + c • stdComplexLineReal) = (fun p ↦ f p.2) z :=
+    Eventually.of_forall fun c ↦ by simp [stdComplexLineReal_eq]
+  have hJ' (z : ℝ × ℝ) : ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1.2 p.2) (z, u z) :=
+    (hJ.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)).contDiffAt
+  have hH' (z : ℝ × ℝ) : ContDiffAt ℝ 2 (uncurry fun p : ℝ × ℝ ↦ H p.2) (z, u z) :=
+    (hH.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)).contDiffAt
+  have hK₀ (z : ℝ × ℝ) : ContDiffAt ℝ 2 (uncurry fun (_ : ℝ × ℝ) (_ : V) ↦ (0 : ℝ)) (z, u z) :=
+    contDiff_const.contDiffAt
+  have hD := dense_setOf_fderiv_apply_ne_zero_and_ne_and_ne_of_floerOperator_eq_zero (hinv J)
+    (hinv fun _ _ ↦ (0 : ℝ)) (hinv H) hJ' hJJ hK₀ hH' hu hF hne hxm hxp
   have hDo : IsOpen {z | fderiv ℝ u z stdComplexLineReal ≠ 0 ∧ u z ≠ xm z.2 ∧ u z ≠ xp z.2} :=
     hG.inter ((isOpen_ne_fun hu.continuous (hxm.comp continuous_snd)).inter
       (isOpen_ne_fun hu.continuous (hxp.comp continuous_snd)))
@@ -398,7 +404,8 @@ theorem dense_regularPoints_of_floerOperator_eq_zero {ω : SymplecticForm V} [Fi
     hu.continuous hG (fun p hp ↦
       exists_mem_nhds_injOn_of_fderiv_apply_ne_zero (hu.of_le (by norm_num)).contDiffAt hp)
     (by simpa only [compl_ofPred, not_not] using
-      countable_setOf_fderiv_apply_eq_zero_of_floerOperator_eq_zero hJ hJJ hH hu hF hne)
+      countable_setOf_fderiv_apply_eq_zero_of_floerOperator_eq_zero (hinv J)
+          (hinv fun _ _ ↦ (0 : ℝ)) (hinv H) hJ' hJJ hK₀ hH' hu hF hne)
     (hU.inter hDo) (hD.inter_open_nonempty U hU hUne) fun z hz ↦ by
       have hzR : z ∉ regularPoints u xm xp := fun h ↦ hR ⟨z, hz.1, h⟩
       simp only [mem_regularPoints, not_and, not_forall] at hzR
