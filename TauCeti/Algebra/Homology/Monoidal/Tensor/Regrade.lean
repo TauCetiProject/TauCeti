@@ -61,10 +61,11 @@ further sign (`ChainComplex.regradeTensorHom_leftUnitality`). The right unitor
 comparison composed with it is `(-1)^(n₁ m)` times the right unitor of cochain complexes
 (`ChainComplex.regradeTensorHom_rightUnitality`). For `m = 0` both are the regradings of the
 unitors of chain complexes (`ChainComplex.regradeSingleLeftUnitor_zero`,
-`ChainComplex.regradeSingleRightUnitor_zero`), and the two statements are the unitality axioms of a
-lax monoidal functor. For a Floer complex `C^k = CF_(n-k)`, whose unit lies in chain degree `n`,
-this is the passage between unit identities of the raw product and the unit laws of the regraded
-product in cochain degree `0`; on the right it introduces the sign `(-1)^n`.
+`ChainComplex.regradeSingleRightUnitor_zero`), and when the other shift is also `0` the two
+statements are the unitality axioms of a lax monoidal functor for the regrading by `0`, up to the
+identification of the shifts. For a Floer complex `C^k = CF_(n-k)`, whose unit lies in chain
+degree `n`, this is the passage between unit identities of the raw product and the unit laws of
+the regraded product in cochain degree `0`; on the right it introduces the sign `(-1)^n`.
 
 ## Main definitions
 
@@ -848,9 +849,10 @@ regradings of `𝟙[n₁]` by `n₁` and of `L` by `n₂` with the regrading of 
 and applying `ChainComplex.regradeSingleLeftUnitor`, is the left unitor of cochain complexes.
 
 On the summand `𝟙 ⊗ L_q` the comparison carries the sign `(-1)^(n₁ q)`, which is exactly the sign
-of `ChainComplex.regradeSingleLeftUnitor`, so no further sign appears. For `n₁ = 0` this is the
-left unitality axiom of a lax monoidal functor (`CategoryTheory.Functor.LaxMonoidal.left_unitality`)
-for the regrading, using `ChainComplex.regradeSingleLeftUnitor_zero`. For a Floer complex
+of `ChainComplex.regradeSingleLeftUnitor`, so no further sign appears. For `n₁ = n₂ = 0` this is
+the left unitality axiom of a lax monoidal functor
+(`CategoryTheory.Functor.LaxMonoidal.left_unitality`) for the regrading by `0`, up to the
+identification of the shifts, using `ChainComplex.regradeSingleLeftUnitor_zero`. For a Floer complex
 `C^k = CF_(n-k)`, whose unit lies in chain degree `n`, the relevant case is `n₁ = n₂ = n`. -/
 theorem regradeTensorHom_leftUnitality :
     (λ_ (L.restriction (embeddingUpIntDownIntSub n₂))).hom =
@@ -875,9 +877,10 @@ regrading of `K ⊗ 𝟙[n₂]` by `n₁ + n₂`, and applying `ChainComplex.reg
 `(-1)^(n₁ n₂)` times the right unitor of cochain complexes.
 
 The sign is that of the comparison on the summands `K_p ⊗ 𝟙`, where the second factor sits in chain
-degree `n₂`. For `n₁ = 0` or `n₂ = 0` there is no sign, and for `n₂ = 0` this is the right
+degree `n₂`. For `n₁ = 0` or `n₂ = 0` there is no sign, and for `n₁ = n₂ = 0` this is the right
 unitality axiom of a lax monoidal functor (`CategoryTheory.Functor.LaxMonoidal.right_unitality`)
-for the regrading, using `ChainComplex.regradeSingleRightUnitor_zero`. For a Floer complex
+for the regrading by `0`, up to the identification of the shifts, using
+`ChainComplex.regradeSingleRightUnitor_zero`. For a Floer complex
 `C^k = CF_(n-k)`, whose unit lies in chain degree `n`, the relevant case is `n₁ = n₂ = n`, with
 the sign `(-1)^n`. -/
 theorem regradeTensorHom_rightUnitality :
