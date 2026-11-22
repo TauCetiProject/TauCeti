@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
-public import Mathlib.Analysis.SpecialFunctions.OrdinaryHypergeometric
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import Mathlib.Topology.Order.ProjIcc
 public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc

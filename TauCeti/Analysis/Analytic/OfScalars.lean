@@ -29,8 +29,13 @@ In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily
 higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1`
 (`TauCeti.one_le_ofScalars_choose_radius`) and represents `(1 - x)⁻¹ʳ ^ (k + 1)` on the open unit
 ball (`TauCeti.hasFPowerSeriesOnBall_inverse_one_sub_pow`), extending Mathlib's
-`hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`). Every one-variable scalar-valued formal
-multilinear series is `ofScalars` of its `coeff` sequence
+`hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`). Eventual summable majorants on smaller radii
+give convergence radius lower bounds
+(`FormalMultilinearSeries.le_radius_ofScalars_of_eventually_le`) and analyticity of the sum on
+the corresponding open ball
+(`FormalMultilinearSeries.analyticOnNhd_ofScalarsSum_of_eventually_le`,
+`FormalMultilinearSeries.analyticOnNhd_tsum_mul_pow_of_eventually_le`). Every one-variable
+scalar-valued formal multilinear series is `ofScalars` of its `coeff` sequence
 (`FormalMultilinearSeries.ofScalars_coeff`). Over a topological field `𝕜`, the scalar series
 `FormalMultilinearSeries.ofScalars 𝕜 c` agrees with `TauCeti.mkPiRingSeries 𝕜 c`
 (`TauCeti.mkPiRingSeries_eq_ofScalars`).
@@ -269,6 +274,45 @@ theorem le_radius_ofScalars_of_eventually_le {𝕜 E : Type*} [NontriviallyNorme
   rw [Real.norm_of_nonneg (mul_nonneg (norm_nonneg _) (pow_nonneg r.coe_nonneg k))]
   exact (mul_le_mul_of_nonneg_right (ofScalars_norm_le E c k hk) (pow_nonneg r.coe_nonneg k)).trans
     hck
+
+/-- Analyticity of the sum of a scalar power series on any open ball within its radius of
+convergence. -/
+theorem analyticOnNhd_ofScalarsSum_of_le_radius {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedRing E] [NormedAlgebra 𝕜 E] [CompleteSpace E] {c : ℕ → 𝕜} {R : ℝ≥0∞}
+    (hR : 0 < R) (h : R ≤ (ofScalars E c).radius) :
+    AnalyticOnNhd 𝕜 (ofScalarsSum (E := E) c) (Metric.eball 0 R) := fun _ hz ↦
+  ((ofScalars E c).hasFPowerSeriesOnBall (hR.trans_le h)).analyticAt_of_mem
+    (Metric.eball_subset_eball h hz)
+
+/-- **Summable-majorant analyticity criterion.** If for every `r < R` the terms `‖c k‖ * r ^ k`
+are eventually bounded by a summable sequence, then `ofScalarsSum (E := E) c` is analytic on
+`Metric.eball 0 R`. -/
+theorem analyticOnNhd_ofScalarsSum_of_eventually_le {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedRing E] [NormedAlgebra 𝕜 E] [CompleteSpace E] {c : ℕ → 𝕜} {R : ℝ≥0∞}
+    (hR : 0 < R)
+    (hc : ∀ r : NNReal, (r : ℝ≥0∞) < R →
+      ∃ u : ℕ → ℝ, Summable u ∧ ∀ᶠ k in Filter.atTop, ‖c k‖ * (r : ℝ) ^ k ≤ u k) :
+    AnalyticOnNhd 𝕜 (ofScalarsSum (E := E) c) (Metric.eball 0 R) :=
+  analyticOnNhd_ofScalarsSum_of_le_radius hR <| ENNReal.le_of_forall_nnreal_lt fun r hr ↦ by
+    obtain ⟨u, hu, hcu⟩ := hc r hr
+    exact le_radius_ofScalars_of_eventually_le hu hcu
+
+/-- **Summable-majorant analyticity criterion on a metric ball.** If for every `r < R` the terms
+`‖c k‖ * r ^ k` are eventually bounded by a summable sequence, then `z ↦ ∑' k, c k * z ^ k` is
+analytic on `Metric.ball 0 R`. -/
+theorem analyticOnNhd_tsum_mul_pow_of_eventually_le {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] {c : ℕ → 𝕜} {R : ℝ} (hR : 0 < R)
+    (hc : ∀ r : NNReal, (r : ℝ) < R →
+      ∃ u : ℕ → ℝ, Summable u ∧ ∀ᶠ k in Filter.atTop, ‖c k‖ * (r : ℝ) ^ k ≤ u k) :
+    AnalyticOnNhd 𝕜 (fun z : 𝕜 ↦ ∑' k : ℕ, c k * z ^ k) (Metric.ball 0 R) := by
+  have han := analyticOnNhd_ofScalarsSum_of_eventually_le (𝕜 := 𝕜) (E := 𝕜)
+    (ENNReal.ofReal_pos.mpr hR) fun r hr ↦
+      hc r (by simpa only [ENNReal.ofReal_eq_coe_nnreal hR.le, ENNReal.coe_lt_coe,
+        ← NNReal.coe_lt_coe, NNReal.coe_mk] using hr)
+  simp_rw [← smul_eq_mul, ← ofScalarsSum_eq_tsum (E := 𝕜) (c := c)]
+  exact han.mono fun z hz ↦ by
+    simpa only [Metric.mem_eball, edist_dist, ENNReal.ofReal_lt_ofReal_iff hR, Metric.mem_ball]
+      using hz
 
 /-- **Polynomial-growth radius criterion.** If the coefficients `c : ℕ → 𝕜` satisfy an eventual
 polynomial bound `‖c k‖ ≤ C * (k + 1) ^ m`, then the scalar series `ofScalars E c` has

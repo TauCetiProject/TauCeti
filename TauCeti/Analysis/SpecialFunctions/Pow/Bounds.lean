@@ -174,6 +174,9 @@ dyadic intervals.
   `TauCeti.le_rpow_mul_rpow_mul_of_forall_pos`: `a ^ (1 - x) * b ^ x ≤ max a b` on `[0, 1]`, its
   product-seminorm corollary `‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖`, and right-continuity at `ε = 0`
   of `(M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C` for `θ ∈ [0, 1]`.
+* `Real.abs_rpow_sub_one_div_one_sub_le_of_le_one`, `Real.rpow_sub_one_div_one_sub_le`, and
+  `Real.abs_rpow_sub_one_div_one_sub_le`: difference-quotient bounds on
+  `(w ^ (a - 1) - 1) / (1 - w)` for `w ∈ (0, 1)`.
 -/
 
 public section
@@ -628,6 +631,41 @@ theorem add_rpow_le_max_two_rpow_mul (β : ℝ) {x t : ℝ} (ht₀ : 0 ≤ t) (h
         _ = 1 * x ^ β := (one_mul _).symm
         _ ≤ max 1 (2 ^ β) * x ^ β :=
           mul_le_mul_of_nonneg_right (le_max_left _ _) (rpow_nonneg hx.le β)
+
+/-- For `0 < a ≤ 1` and `0 < w < 1`, `|(w ^ (a - 1) - 1) / (1 - w)| ≤ w ^ (a - 1)`. -/
+theorem abs_rpow_sub_one_div_one_sub_le_of_le_one {a w : ℝ} (ha₀ : 0 < a) (ha₁ : a ≤ 1)
+    (hw₀ : 0 < w) (hw₁ : w < 1) :
+    |(w ^ (a - 1) - 1) / (1 - w)| ≤ w ^ (a - 1) := by
+  have h1w : 0 < 1 - w := sub_pos.mpr hw₁
+  have hge : 1 ≤ w ^ (a - 1) := by
+    simpa using rpow_le_rpow_of_exponent_ge hw₀ hw₁.le (by linarith : a - 1 ≤ 0)
+  have hwa : w ^ (a - 1) * w = w ^ a := by rw [← rpow_add_one hw₀.ne', sub_add_cancel]
+  have hle1 : w ^ a ≤ 1 := rpow_le_one hw₀.le hw₁.le ha₀.le
+  rw [abs_div, abs_of_pos h1w, abs_of_nonneg (sub_nonneg.mpr hge), div_le_iff₀ h1w]
+  nlinarith
+
+/-- For `0 < a ≤ 1` and `0 < w < 1`, `(w ^ (a - 1) - 1) / (1 - w) ≤ w ^ (a - 1)`. -/
+theorem rpow_sub_one_div_one_sub_le {a w : ℝ} (ha₀ : 0 < a) (ha₁ : a ≤ 1)
+    (hw₀ : 0 < w) (hw₁ : w < 1) :
+    (w ^ (a - 1) - 1) / (1 - w) ≤ w ^ (a - 1) :=
+  (le_abs_self _).trans (abs_rpow_sub_one_div_one_sub_le_of_le_one ha₀ ha₁ hw₀ hw₁)
+
+/-- For `0 < a` and `0 < w < 1`, `|(w ^ (a - 1) - 1) / (1 - w)| ≤ w ^ (a - 1) + ⌈a⌉₊`. -/
+theorem abs_rpow_sub_one_div_one_sub_le {a w : ℝ} (ha : 0 < a) (hw₀ : 0 < w) (hw₁ : w < 1) :
+    |(w ^ (a - 1) - 1) / (1 - w)| ≤ w ^ (a - 1) + (⌈a⌉₊ : ℝ) := by
+  rcases le_or_gt a 1 with ha₁ | ha₁
+  · exact (abs_rpow_sub_one_div_one_sub_le_of_le_one ha ha₁ hw₀ hw₁).trans
+      (le_add_of_nonneg_right (Nat.cast_nonneg _))
+  · have h1w : 0 < 1 - w := sub_pos.mpr hw₁
+    have hle : w ^ (a - 1) ≤ 1 := rpow_le_one hw₀.le hw₁.le (by linarith)
+    have hpow : w ^ ⌈a⌉₊ ≤ w ^ (a - 1) := by
+      rw [← rpow_natCast]
+      exact rpow_le_rpow_of_exponent_ge hw₀ hw₁.le (by linarith [Nat.le_ceil a])
+    have hgeom := geom_sum_mul w ⌈a⌉₊
+    have hsum_le : ∑ i ∈ Finset.range ⌈a⌉₊, w ^ i ≤ (⌈a⌉₊ : ℝ) :=
+      (Finset.sum_le_card_nsmul _ _ 1 fun i _ ↦ pow_le_one₀ hw₀.le hw₁.le).trans_eq (by simp)
+    rw [abs_div, abs_of_pos h1w, abs_of_nonpos (sub_nonpos.mpr hle), neg_sub, div_le_iff₀ h1w]
+    nlinarith [rpow_nonneg hw₀.le (a - 1)]
 
 end Real
 

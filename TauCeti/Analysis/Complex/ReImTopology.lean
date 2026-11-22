@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Complex.ReImTopology
 public import Mathlib.Topology.Sets.Opens
 
 /-!
-# Upper halves of open planar sets
+# Upper halves and real accumulation points in the complex plane
 
 The open upper half `W ∩ {0 < im}` of an open set `W ⊆ ℂ` is packaged as an open set,
 `TopologicalSpace.Opens.upperHalf`. A closed half-plane `{a ≤ im}` is closed
@@ -23,6 +23,10 @@ open half-plane `{a < im}` (`TauCeti.setOfPred_le_im_mem_nhds`). A relatively op
 (`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`). A local property holds on
 `Ω ∩ {0 ≤ im}` once it holds on the upper half of `Ω` and on the half-discs centred on the real
 axis (`TauCeti.inter_setOf_im_nonneg_induction`).
+
+Every point of a real neighborhood (and in particular every point of an open interval `(a, b)`)
+embeds into `ℂ` as an accumulation point of the real image (`Complex.accPt_ofReal_of_mem_nhds`,
+`Complex.accPt_ofReal_Ioo`).
 -/
 
 public noncomputable section
@@ -113,3 +117,20 @@ end TauCeti
 theorem TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf (Ω : Opens ℂ) :
     Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) = Ω.upperHalf :=
   Opens.ext ((TauCeti.interior_inter_setOf_im_nonneg Ω.isOpen).trans (Opens.coe_upperHalf Ω).symm)
+
+/-- Every point of a real set whose interior contains `t₀` (more generally, any neighborhood of `t₀`
+in `ℝ`) has `(t₀ : ℂ)` as an accumulation point of its image under `Complex.ofReal`. -/
+theorem Complex.accPt_ofReal_of_mem_nhds {s : Set ℝ} {t₀ : ℝ} (hs : s ∈ 𝓝 t₀) :
+    AccPt (t₀ : ℂ) (Filter.principal ((↑) '' s)) := by
+  rw [accPt_iff_frequently_nhdsNE]
+  have hreal : Filter.Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] t₀) (𝓝[≠] (t₀ : ℂ)) :=
+    Complex.continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun _ ht =>
+      Complex.ofReal_inj.not.mpr ht
+  exact hreal.frequently
+    ((eventually_nhdsWithin_of_eventually_nhds hs).frequently.mono fun x hx => ⟨x, hx, rfl⟩)
+
+/-- Every point of a real open interval `(a, b)` is an accumulation point in `ℂ` of the interval's
+image under `Complex.ofReal`. -/
+theorem Complex.accPt_ofReal_Ioo {a b t₀ : ℝ} (ht₀ : t₀ ∈ Set.Ioo a b) :
+    AccPt (t₀ : ℂ) (Filter.principal ((↑) '' Set.Ioo a b)) :=
+  Complex.accPt_ofReal_of_mem_nhds (isOpen_Ioo.mem_nhds ht₀)

@@ -11,8 +11,8 @@ public import Mathlib.Analysis.Complex.HalfPlane
 public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
-import Mathlib.NumberTheory.ZetaValues
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Gauss' series for digamma
@@ -30,10 +30,10 @@ the Euler–Gauss limit representation `log (s + N) - ∑_{k ≤ N} (s + k)⁻¹
 
 Subtracting Gauss' series at two regular arguments cancels Euler's constant and expresses
 `digamma s - digamma w` as the absolutely convergent series
-`∑' n, (s - w) / ((w + n) * (s + n))`. This yields the sharp Lipschitz bound `π² / 6` on
-`{s : ℂ | 1 ≤ s.re}`, strict monotonicity of `Real.digamma`, strict antitonicity and antitonicity of
-`t ↦ ψ(t + b) - ψ(t + a)` when `a < b` (resp. `a ≤ b`), uniform upper bounds on shifted
-differences, and Euler's integral representation
+`∑' n, (s - w) / ((w + n) * (s + n))`. This yields strict monotonicity of `Real.digamma`,
+strict antitonicity and antitonicity of shifted differences in both the shift parameter
+`t ↦ ψ(t + b) - ψ(t + a)` and the subtracted argument `a ↦ d - ψ(t + a)`, uniform two-sided
+bounds on shifted differences, and Euler's integral representation
 `∫ w in (0 : ℝ)..1, (w ^ (a - 1) - 1) / (1 - w) = ψ(1) - ψ(a)` for `0 < a`.
 
 ## References
@@ -317,28 +317,6 @@ theorem digamma_sub_digamma_eq_tsum {s w : ℂ}
   rw [sub_sub_sub_cancel_left, div_sub_div _ _ hw0 hs0]
   ring
 
-/-- Sharp Lipschitz bound for complex digamma on the closed half-plane `{s : ℂ | 1 ≤ s.re}`:
-`‖digamma s - digamma w‖ ≤ ‖s - w‖ * (π² / 6)`. -/
-theorem norm_digamma_sub_digamma_le_of_one_le_re {s w : ℂ}
-    (hs : 1 ≤ s.re) (hw : 1 ≤ w.re) :
-    ‖digamma s - digamma w‖ ≤ ‖s - w‖ * (Real.pi ^ 2 / 6) := by
-  have hp2 : HasSum (fun n : ℕ ↦ 1 / ((n : ℝ) + 1) ^ 2) (Real.pi ^ 2 / 6) := by
-    simpa [Nat.cast_add, Nat.cast_one] using (hasSum_nat_add_iff' 1).mpr hasSum_zeta_two
-  have hsum := hp2.mul_left ‖s - w‖
-  have hbd (n : ℕ) : ‖(s - w) / ((w + n) * (s + n))‖ ≤ ‖s - w‖ * (1 / ((n : ℝ) + 1) ^ 2) := by
-    have hsn : (n : ℝ) + 1 ≤ ‖s + n‖ := by
-      have := Complex.re_le_norm (s + n); simp at this; linarith
-    have hwn : (n : ℝ) + 1 ≤ ‖w + n‖ := by
-      have := Complex.re_le_norm (w + n); simp at this; linarith
-    rw [norm_div, norm_mul, mul_one_div]
-    exact div_le_div_of_nonneg_left (norm_nonneg _) (by positivity)
-      (by nlinarith [n.cast_nonneg (α := ℝ)])
-  rw [digamma_sub_digamma_eq_tsum (ne_neg_natCast_of_re_pos (by linarith))
-    (ne_neg_natCast_of_re_pos (by linarith)), ← hsum.tsum_eq]
-  exact (norm_tsum_le_tsum_norm (summable_sub_div_add_mul_add s w).norm).trans
-    ((Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hbd hsum.summable).tsum_le_tsum
-      hbd hsum.summable)
-
 private theorem tendsto_log_add_natCast_sub_log (s : ℂ) :
     Tendsto (fun N : ℕ ↦ Complex.log (s + N) - Complex.log (((N : ℝ) + 2 : ℝ) : ℂ))
       atTop (𝓝 0) := by
@@ -493,30 +471,40 @@ theorem digamma_add_sub_digamma_add_le {t₀ t c a b : ℝ}
     antitoneOn_digamma_add_sub_digamma_add hcb
       (mem_Ioi.mpr (by linarith)) (mem_Ioi.mpr (by linarith)) ht
 
+/-- For fixed `d` and `t`, `a ↦ d - ψ(t + a)` is strictly antitone on `(-t, ∞)`. -/
+theorem strictAntiOn_const_sub_digamma_add (d t : ℝ) :
+    StrictAntiOn (fun a : ℝ ↦ d - digamma (t + a)) (Ioi (-t)) := fun _ ha₁ _ ha₂ ha ↦
+  sub_lt_sub_left (strictMonoOn_digamma (mem_Ioi.mpr (by linarith [mem_Ioi.mp ha₁]))
+    (mem_Ioi.mpr (by linarith [mem_Ioi.mp ha₂])) (by linarith)) d
+
+/-- For fixed `d` and `t`, `a ↦ d - ψ(t + a)` is antitone on `(-t, ∞)`. -/
+theorem antitoneOn_const_sub_digamma_add (d t : ℝ) :
+    AntitoneOn (fun a : ℝ ↦ d - digamma (t + a)) (Ioi (-t)) :=
+  (strictAntiOn_const_sub_digamma_add d t).antitoneOn
+
+/-- Two-sided uniform estimate on shifted digamma differences: for `t₀ ≤ t` and `-t₀ < c ≤ a ≤ b`,
+`0 ≤ ψ(t + b) - ψ(t + a) ≤ ψ(t₀ + b) - ψ(t₀ + c)`. -/
+theorem digamma_add_sub_digamma_add_bounds {t₀ t c a b : ℝ}
+    (ht : t₀ ≤ t) (hc : -t₀ < c) (hca : c ≤ a) (hab : a ≤ b) :
+    0 ≤ digamma (t + b) - digamma (t + a) ∧
+      digamma (t + b) - digamma (t + a) ≤ digamma (t₀ + b) - digamma (t₀ + c) :=
+  ⟨sub_nonneg.mpr (monotoneOn_digamma (mem_Ioi.mpr (by linarith))
+    (mem_Ioi.mpr (by linarith)) (by linarith)),
+    digamma_add_sub_digamma_add_le ht hc hca (hca.trans hab)⟩
+
+/-- Two-sided estimate on `ψ(k + 1) - ψ(k + a)` for `k ≥ 1` and `-1 < c ≤ a ≤ 1`:
+`0 ≤ ψ(k + 1) - ψ(k + a) ≤ ψ(2) - ψ(1 + c)`. -/
+theorem digamma_nat_add_one_sub_digamma_add_bounds {k : ℕ} (hk : 1 ≤ k) {c a : ℝ}
+    (hc : -1 < c) (hca : c ≤ a) (ha : a ≤ 1) :
+    0 ≤ digamma ((k : ℝ) + 1) - digamma ((k : ℝ) + a) ∧
+      digamma ((k : ℝ) + 1) - digamma ((k : ℝ) + a) ≤ digamma 2 - digamma (1 + c) := by
+  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
+  simpa only [show (1 : ℝ) + 1 = 2 by norm_num] using
+    digamma_add_sub_digamma_add_bounds hk' hc hca ha
+
 section EulerIntegral
 
 open MeasureTheory
-
-private theorem abs_rpow_sub_one_div_one_sub_le {a w : ℝ} (ha : 0 < a) (hw : w ∈ Ioo (0 : ℝ) 1) :
-    |(w ^ (a - 1) - 1) / (1 - w)| ≤ w ^ (a - 1) + (⌈a⌉₊ : ℝ) := by
-  have h1w : 0 < 1 - w := sub_pos.mpr hw.2
-  rw [abs_div, abs_of_pos h1w, div_le_iff₀ h1w]
-  rcases le_or_gt a 1 with ha1 | ha1
-  · have hge : 1 ≤ w ^ (a - 1) := by
-      simpa using rpow_le_rpow_of_exponent_ge hw.1 hw.2.le (by linarith : a - 1 ≤ 0)
-    have hwa : w ^ (a - 1) * w = w ^ a := by rw [← rpow_add_one hw.1.ne', sub_add_cancel]
-    have hle1 : w ^ a ≤ 1 := rpow_le_one hw.1.le hw.2.le ha.le
-    rw [abs_of_nonneg (sub_nonneg.mpr hge)]
-    nlinarith [Nat.cast_nonneg (α := ℝ) ⌈a⌉₊]
-  · have hle : w ^ (a - 1) ≤ 1 := rpow_le_one hw.1.le hw.2.le (by linarith)
-    have hpow : w ^ ⌈a⌉₊ ≤ w ^ (a - 1) := by
-      rw [← rpow_natCast]
-      exact rpow_le_rpow_of_exponent_ge hw.1 hw.2.le (by linarith [Nat.le_ceil a])
-    have hgeom := geom_sum_mul w ⌈a⌉₊
-    have hsum_le : ∑ i ∈ Finset.range ⌈a⌉₊, w ^ i ≤ (⌈a⌉₊ : ℝ) :=
-      (Finset.sum_le_card_nsmul _ _ 1 fun i _ ↦ pow_le_one₀ hw.1.le hw.2.le).trans_eq (by simp)
-    rw [abs_of_nonpos (sub_nonpos.mpr hle), neg_sub]
-    nlinarith [rpow_nonneg hw.1.le (a - 1)]
 
 /-- For every `0 < a`, the Euler digamma kernel `(w ^ (a - 1) - 1) / (1 - w)` is interval
 integrable on `[0, 1]`. -/
@@ -530,7 +518,7 @@ theorem intervalIntegrable_rpow_sub_one_div_one_sub {a : ℝ} (ha : 0 < a) :
     fun w hw ↦ Or.inl hw.1.ne').sub continuousOn_const).div (continuousOn_const.sub continuousOn_id)
       fun w hw ↦ sub_ne_zero.mpr hw.2.ne').aestronglyMeasurable measurableSet_Ioo) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioo] with w hw
-  simpa only [Real.norm_eq_abs] using abs_rpow_sub_one_div_one_sub_le ha hw
+  simpa only [Real.norm_eq_abs] using Real.abs_rpow_sub_one_div_one_sub_le ha hw.1 hw.2
 
 private theorem integral_finset_rpow_sub_pow {a : ℝ} (ha : 0 < a) (N : ℕ) :
     ∫ w in (0 : ℝ)..1, (∑ k ∈ Finset.range N, (w ^ ((k : ℝ) + a - 1) - w ^ k)) =
@@ -575,7 +563,7 @@ theorem integral_rpow_sub_one_div_one_sub {a : ℝ} (ha : 0 < a) :
       refine (mul_le_mul_of_nonneg_left (sum_le_hasSum _ (fun _ _ ↦ pow_nonneg hwoo.1.le _)
         (hasSum_geometric_of_lt_one hwoo.1.le hwoo.2)) (abs_nonneg _)).trans ?_
       rw [← abs_of_pos (inv_pos.mpr (sub_pos.mpr hwoo.2)), ← abs_mul, ← div_eq_mul_inv]
-      exact abs_rpow_sub_one_div_one_sub_le ha hwoo
+      exact Real.abs_rpow_sub_one_div_one_sub_le ha hwoo.1 hwoo.2
     · filter_upwards [Measure.ae_ne volume (1 : ℝ)] with w hw1 hw
       rw [uIoc_of_le zero_le_one] at hw
       exact (div_eq_mul_inv (w ^ (a - 1) - 1) (1 - w) ▸

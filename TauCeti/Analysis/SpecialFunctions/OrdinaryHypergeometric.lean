@@ -11,9 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.OrdinaryHypergeometric
 public import TauCeti.Analysis.Analytic.OfScalars
 public import TauCeti.RingTheory.Binomial
 import Mathlib.Analysis.Analytic.ChangeOrigin
-import TauCeti.Analysis.Complex.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.Order
-import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
+import TauCeti.Analysis.Analytic.Binomial
 
 /-!
 # The ordinary hypergeometric function on the unit ball
@@ -21,10 +19,11 @@ import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 Mathlib computes the radius of convergence of the series of `₂F₁(a, b; c; ·)`: it is `1`, unless
 one of the parameters is a nonpositive integer, in which case the series is finite or its
 coefficients take the junk value `0`, and the radius is `⊤`. This file records the uniform
-consequence that the radius is always at least `1`, so `₂F₁(a, b; c; ·)` is analytic on the open
-unit ball for all parameters. It also proves joint complex analyticity in all four arguments
-`(a, b, c, z)` away from the poles `c ∈ -ℕ` and inside the open unit disc `‖z‖ < 1`, together with
-the composition lemma along four complex-analytic maps.
+consequence that the radius is always at least `1`, so `₂F₁(a, b; c; ·)` has a convergent power
+series representation (`TauCeti.hasFPowerSeriesOnBall_ordinaryHypergeometric`) and is analytic on
+the open unit ball (`TauCeti.analyticOnNhd_ordinaryHypergeometric`) for all parameters. Joint
+complex analyticity in all four arguments `(a, b, c, z)` is proved in
+`TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Analytic`.
 
 Over a complete nontrivially normed field of characteristic zero, the series can be
 differentiated termwise inside its disc of convergence. This shows that, when `c` is not a
@@ -39,16 +38,17 @@ is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) c�
 
 * `TauCeti.one_le_radius_ordinaryHypergeometricSeries`: the radius of convergence of
   `ordinaryHypergeometricSeries 𝔸 a b c` is at least `1`.
+* `TauCeti.hasFPowerSeriesOnBall_ordinaryHypergeometric`: `₂F₁ a b c` has the scalar formal power
+  series of hypergeometric coefficients on the open unit ball of radius `1`.
 * `TauCeti.analyticOnNhd_ordinaryHypergeometric`: `₂F₁ a b c` is analytic on the open unit ball.
 * `TauCeti.ofReal_ordinaryHypergeometric`: coercing `₂F₁ a b c z` from `ℝ` to `ℂ` yields
   `₂F₁ (a : ℂ) (b : ℂ) (c : ℂ) (z : ℂ)`.
-* `TauCeti.analyticAt_uncurry_ordinaryHypergeometric` and
-  `TauCeti.analyticOnNhd_uncurry_ordinaryHypergeometric`: joint complex analyticity of `₂F₁` in
-  `(a, b, c, z)` away from `c ∈ -ℕ` and inside `‖z‖ < 1`.
-* `AnalyticAt.ordinaryHypergeometric`: composition of `₂F₁` with four complex-analytic maps is
-  analytic wherever `c ∉ -ℕ` and `‖z‖ < 1`.
 * `TauCeti.hasSum_ordinaryHypergeometric`: on the open unit ball, `₂F₁ a b c` is the sum of its
   series.
+* `TauCeti.ordinaryHypergeometricCoefficient_one_nonneg`,
+  `TauCeti.ordinaryHypergeometricCoefficient_self_one_nonneg`, and
+  `TauCeti.norm_ordinaryHypergeometricCoefficient_one_le_one`: nonnegativity and norm-`1` bounds
+  on the denominator-one hypergeometric coefficients `(a)ₙ (b)ₙ / (n!)²`.
 * `TauCeti.hasSum_multichoose_mul_multichoose_mul_pow`: with lower parameter `1`, the coefficients
   are products of generalized multichoose numbers, so `∑ (a)ₙ (b)ₙ / (n!)² xⁿ = ₂F₁(a, b; 1; x)`.
   For `a = b` over `𝕂` this is `TauCeti.hasSum_multichoose_sq_mul_pow`.
@@ -112,13 +112,47 @@ theorem ordinaryHypergeometricCoefficient_one_eq_multichoose_mul {K : Type*} [Fi
     Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, ascPochhammer_eval_one]
   ring
 
+/-- For nonnegative parameters `a, b` in an ordered field, the denominator-one hypergeometric
+coefficient `(a)ₙ (b)ₙ / (n!)²` is nonnegative. -/
+theorem ordinaryHypergeometricCoefficient_one_nonneg {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a b : K} (ha : 0 ≤ a) (hb : 0 ≤ b) (n : ℕ) :
+    0 ≤ ordinaryHypergeometricCoefficient a b 1 n := by
+  have eval_nonneg {x : K} (hx : 0 ≤ x) : 0 ≤ (ascPochhammer K n).eval x := by
+    rcases hx.eq_or_lt with rfl | hx
+    · cases n with
+      | zero => simp
+      | succ m => rw [ascPochhammer_succ_left]; simp
+    · exact (ascPochhammer_pos n x hx).le
+  rw [ordinaryHypergeometricCoefficient, ascPochhammer_eval_one]
+  have h1 : (0 : K) ≤ ((n.factorial : ℕ) : K) := Nat.cast_nonneg _
+  exact mul_nonneg (mul_nonneg (mul_nonneg (inv_nonneg.mpr h1) (eval_nonneg ha))
+    (eval_nonneg hb)) (inv_nonneg.mpr h1)
+
+/-- For any parameter `a` in an ordered field, the diagonal denominator-one hypergeometric
+coefficient `(a)ₙ² / (n!)²` is nonnegative. -/
+theorem ordinaryHypergeometricCoefficient_self_one_nonneg {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] (a : K) (n : ℕ) :
+    0 ≤ ordinaryHypergeometricCoefficient a a 1 n := by
+  rw [ordinaryHypergeometricCoefficient_one_eq_multichoose_mul, ← sq]
+  exact sq_nonneg _
+
+/-- Over `ℝ` or `ℂ`, if `‖a‖ ≤ 1` and `‖b‖ ≤ 1`, then the denominator-one hypergeometric
+coefficient `(a)ₙ (b)ₙ / (n!)²` has norm at most `1`. -/
+theorem norm_ordinaryHypergeometricCoefficient_one_le_one {𝕂 : Type*} [RCLike 𝕂]
+    {a b : 𝕂} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1) (n : ℕ) :
+    ‖ordinaryHypergeometricCoefficient a b 1 n‖ ≤ 1 := by
+  rw [ordinaryHypergeometricCoefficient_one_eq_multichoose_mul, norm_mul]
+  have h1 := (norm_multichoose_le_of_norm_le ha n).trans_eq (Ring.multichoose_one n)
+  have h2 := (norm_multichoose_le_of_norm_le hb n).trans_eq (Ring.multichoose_one n)
+  exact (mul_le_mul h1 h2 (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)
+
 variable {𝕂 : Type*} (𝔸 : Type*) [RCLike 𝕂] [NormedDivisionRing 𝔸] [NormedAlgebra 𝕂 𝔸]
 
 /-- The radius of convergence of the hypergeometric series `₂F₁(a, b; c; ·)` is at least `1`, for
 all parameters. -/
 theorem one_le_radius_ordinaryHypergeometricSeries (a b c : 𝕂) :
     1 ≤ (ordinaryHypergeometricSeries 𝔸 a b c).radius := by
-  by_cases h : ∀ k : ℕ, (k : 𝕂) ≠ -a ∧ (k : 𝕂) ≠ -b ∧ (k : 𝕂) ≠ -c
+  by_cases h : ∀ k : ℕ, (k : 𝕂) ≠ -a ∧ (k : ℕ) ≠ -b ∧ (k : ℕ) ≠ -c
   · exact (ordinaryHypergeometricSeries_radius_eq_one 𝔸 a b c h).ge
   · push Not at h
     obtain ⟨k, hk⟩ := h
@@ -134,18 +168,24 @@ theorem one_le_radius_ordinaryHypergeometricSeries (a b c : 𝕂) :
       rw [hc, ordinaryHypergeometric_radius_top_of_neg_nat₃]
       exact le_top
 
+/-- On the open unit ball of radius `1`, `₂F₁(a, b; c; ·)` has the scalar formal power series of
+hypergeometric coefficients `ordinaryHypergeometricCoefficient a b c`. -/
+theorem hasFPowerSeriesOnBall_ordinaryHypergeometric [CompleteSpace 𝔸] (a b c : 𝕂) :
+    HasFPowerSeriesOnBall (₂F₁ a b c : 𝔸 → 𝔸)
+      (FormalMultilinearSeries.ofScalars 𝔸 (ordinaryHypergeometricCoefficient a b c)) 0 1 :=
+  ((ordinaryHypergeometricSeries 𝔸 a b c).hasFPowerSeriesOnBall
+    (zero_lt_one.trans_le (one_le_radius_ordinaryHypergeometricSeries 𝔸 a b c))).mono
+      zero_lt_one (one_le_radius_ordinaryHypergeometricSeries 𝔸 a b c)
+
 /-- The ordinary hypergeometric function `₂F₁(a, b; c; ·)` is analytic on the open unit ball, for
 all parameters. -/
 theorem analyticOnNhd_ordinaryHypergeometric [CompleteSpace 𝔸] (a b c : 𝕂) :
-    AnalyticOnNhd 𝕂 (₂F₁ a b c : 𝔸 → 𝔸) (Metric.ball 0 1) := by
-  intro x hx
-  have h1 := one_le_radius_ordinaryHypergeometricSeries 𝔸 a b c
-  exact ((ordinaryHypergeometricSeries 𝔸 a b c).hasFPowerSeriesOnBall
-    (zero_lt_one.trans_le h1)).analyticAt_of_mem
-      (Metric.eball_subset_eball h1 (by
-        simpa only [Metric.mem_eball, edist_dist, ENNReal.ofReal_lt_one, Metric.mem_ball] using hx))
+    AnalyticOnNhd 𝕂 (₂F₁ a b c : 𝔸 → 𝔸) (Metric.ball 0 1) := fun _ hx ↦
+  (hasFPowerSeriesOnBall_ordinaryHypergeometric 𝔸 a b c).analyticAt_of_mem (by
+    simpa only [Metric.mem_eball, edist_dist, ENNReal.ofReal_lt_one, Metric.mem_ball] using hx)
 
 /-- Coercing the real hypergeometric function `₂F₁ a b c z` to `ℂ` agrees with complex `₂F₁`. -/
+@[simp, norm_cast]
 theorem ofReal_ordinaryHypergeometric (a b c z : ℝ) :
     ((₂F₁ a b c z : ℝ) : ℂ) = ₂F₁ (a : ℂ) (b : ℂ) (c : ℂ) (z : ℂ) := by
   simp only [ordinaryHypergeometric, ordinaryHypergeometric_sum_eq, smul_eq_mul,
@@ -348,50 +388,4 @@ theorem ordinaryHypergeometric_gaussEquation_of_neg_nat (a b c : 𝕂) {k : ℕ}
 
 end Scalar
 
-section ComplexAnalytic
-
-open scoped Topology
-
-/-- Joint complex analyticity of `₂F₁(a, b; c; z)` in `(a, b, c, z)` wherever `c` is not a
-nonpositive integer and `‖z‖ < 1`. -/
-theorem analyticAt_uncurry_ordinaryHypergeometric {p : ℂ × ℂ × ℂ × ℂ}
-    (hc : ∀ k : ℕ, p.2.2.1 ≠ -(k : ℂ)) (hz : ‖p.2.2.2‖ < 1) :
-    AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ × ℂ ↦ ₂F₁ q.1 q.2.1 q.2.2.1 q.2.2.2) p := by
-  have heq : ∀ᶠ q : ℂ × ℂ × ℂ × ℂ in 𝓝 p,
-      Complex.regularizedGaussHGFun q.1 q.2.1 q.2.2.1 q.2.2.2 * Complex.Gamma q.2.2.1 =
-        ₂F₁ q.1 q.2.1 q.2.2.1 q.2.2.2 := by
-    have hop : IsOpen {q : ℂ × ℂ × ℂ × ℂ | ∀ k : ℕ, q.2.2.1 ≠ -(k : ℂ)} :=
-      Complex.isOpen_ne_neg_natCast.preimage
-        (continuous_fst.comp (continuous_snd.comp continuous_snd))
-    filter_upwards [hop.mem_nhds hc] with q hqc
-    rw [← Complex.ordinaryHypergeometric_div_Gamma_eq hqc,
-      div_mul_cancel₀ _ (Complex.Gamma_ne_zero hqc)]
-  let pr3 : ℂ × ℂ × ℂ × ℂ →L[ℂ] ℂ :=
-    (ContinuousLinearMap.fst ℂ ℂ ℂ).comp
-      ((ContinuousLinearMap.snd ℂ ℂ (ℂ × ℂ)).comp
-        (ContinuousLinearMap.snd ℂ ℂ (ℂ × ℂ × ℂ)))
-  have hG : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ × ℂ ↦ Complex.Gamma q.2.2.1) p :=
-    AnalyticAt.comp (g := Complex.Gamma) (Complex.analyticAt_Gamma hc) (pr3.analyticAt p)
-  exact ((Complex.analyticAt_uncurry_regularizedGaussHGFun hz).mul hG).congr heq
-
-/-- Joint complex analyticity of `₂F₁(a, b; c; z)` on the nonpole unit-disc domain
-`{q : ℂ × ℂ × ℂ × ℂ | (∀ k : ℕ, q.2.2.1 ≠ -(k : ℂ)) ∧ ‖q.2.2.2‖ < 1}`. -/
-theorem analyticOnNhd_uncurry_ordinaryHypergeometric :
-    AnalyticOnNhd ℂ (fun q : ℂ × ℂ × ℂ × ℂ ↦ ₂F₁ q.1 q.2.1 q.2.2.1 q.2.2.2)
-      {q : ℂ × ℂ × ℂ × ℂ | (∀ k : ℕ, q.2.2.1 ≠ -(k : ℂ)) ∧ ‖q.2.2.2‖ < 1} :=
-  fun _ hp ↦ analyticAt_uncurry_ordinaryHypergeometric hp.1 hp.2
-
-end ComplexAnalytic
-
 end TauCeti
-
-/-- Composition of the ordinary hypergeometric function `₂F₁` with four complex-analytic maps is
-complex analytic wherever the denominator parameter avoids the nonpositive integers and the
-argument lies in the open unit disc. -/
-theorem AnalyticAt.ordinaryHypergeometric {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {f g h w : E → ℂ} {t₀ : E} (hf : AnalyticAt ℂ f t₀) (hg : AnalyticAt ℂ g t₀)
-    (hh : AnalyticAt ℂ h t₀) (hw : AnalyticAt ℂ w t₀)
-    (hh₀ : ∀ n : ℕ, h t₀ ≠ -(n : ℂ)) (hw₀ : ‖w t₀‖ < 1) :
-    AnalyticAt ℂ (fun t : E ↦ ₂F₁ (f t) (g t) (h t) (w t)) t₀ :=
-  (TauCeti.analyticAt_uncurry_ordinaryHypergeometric hh₀ hw₀).comp
-    (hf.prod (hg.prod (hh.prod hw)))
