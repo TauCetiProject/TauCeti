@@ -60,35 +60,21 @@ theorem sq_eq_one_iff [NoZeroDivisors R] [NeZero (2 : R)] (g : SL(2, R)) :
   have hdet : A.trace ^ 2 = (2 : R) ^ 2 := by
     have hd := congrArg Matrix.det htrA
     simpa [Matrix.det_smul, g.det_coe, A] using hd
-  have h2ne : (2 : R) ≠ 0 := NeZero.ne 2
+  have hreg : IsSMulRegular (Matrix (Fin 2) (Fin 2) R) (2 : R) :=
+    (IsLeftCancelMulZero.mul_left_cancel_of_ne_zero (NeZero.ne (2 : R))).matrix
   rcases sq_eq_sq_iff_eq_or_eq_neg.mp hdet with htr | htr
-  · left
-    apply Subtype.ext
-    ext i j
-    have hij := congrArg (fun M : Matrix (Fin 2) (Fin 2) R ↦ M i j) htrA
-    simp only [htr, Matrix.smul_apply, smul_eq_mul] at hij
-    exact mul_left_cancel₀ h2ne hij
-  · right
-    apply Subtype.ext
-    ext i j
-    have hij := congrArg (fun M : Matrix (Fin 2) (Fin 2) R ↦ M i j) htrA
-    simp only [htr, Matrix.smul_apply, smul_eq_mul, neg_mul] at hij
-    have hneg : (2 : R) * A i j = (2 : R) * (-(1 : Matrix (Fin 2) (Fin 2) R)) i j := by
-      simpa [Matrix.neg_apply] using congrArg Neg.neg hij
-    simpa [coe_neg, coe_one] using mul_left_cancel₀ h2ne hneg
+  · exact Or.inl (Subtype.ext (hreg (by simpa [htr] using htrA)))
+  · exact Or.inr (Subtype.ext (hreg
+      (by simpa [htr, neg_smul, ← smul_neg, coe_neg, coe_one] using congrArg Neg.neg htrA)))
 
 /-- **`-1` is the unique element of order `2` in `SL(2, R)`** over a commutative ring without zero
 divisors and `(2 : R) ≠ 0`. -/
 @[simp]
 theorem orderOf_eq_two_iff [NoZeroDivisors R] [NeZero (2 : R)] (g : SL(2, R)) :
     orderOf g = 2 ↔ g = -1 := by
-  constructor
-  · intro hg
-    have hsq : g ^ 2 = 1 := (congrArg (g ^ ·) hg.symm).trans (pow_orderOf_eq_one g)
-    have hne : g ≠ 1 := fun h1 ↦ by simp [h1] at hg
-    exact (sq_eq_one_iff g).mp hsq |>.resolve_left hne
-  · rintro rfl
-    exact orderOf_eq_prime (by simp) neg_one_ne_one
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  rw [orderOf_eq_prime_iff, sq_eq_one_iff]
+  simp +contextual [or_and_right, NeZero.ne]
 
 /-- **Every finite subgroup of `SL(2, R)` of even order contains `-1`** over any commutative ring
 without zero divisors: if `(2 : R) = 0` then `-1 = 1 ∈ H`, and otherwise Cauchy's theorem produces

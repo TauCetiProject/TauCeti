@@ -9,11 +9,13 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Trace.Defs
+import Mathlib.LinearAlgebra.Matrix.CharP
+import TauCeti.Algebra.CharP.Unipotent
 import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.LinearAlgebra.Trace.RestrictScalars
 
 /-!
-# Matrices of invertible finite order over a ring with a local retraction
+# Matrices of finite order
 
 Let `R` be a commutative `A`-algebra with an `A`-algebra retraction `ε : R → A` that is a local
 homomorphism, i.e. `x` is a unit as soon as `ε x` is. A typical example is a group algebra
@@ -29,6 +31,9 @@ so `T` is invertible because `ε` is local. In particular the trace of `M` lies 
 In other words, a representation over `R` of a cyclic group whose order is invertible in `A` is
 isomorphic to the base change along `algebraMap A R` of its image under `ε`.
 
+Over a reduced commutative ring of exponential characteristic `p`, a square matrix `A` satisfying
+`A ^ (p ^ k) = 1` is unipotent (`A - 1` is nilpotent), hence has trace `Fintype.card n`.
+
 ## Main results
 
 * `Matrix.exists_isUnit_mul_eq_mul_map_of_pow_eq_one`: `M` is conjugate to its constant part.
@@ -36,6 +41,8 @@ isomorphic to the base change along `algebraMap A R` of its image under `ε`.
 * `LinearMap.trace_eq_algebraMap_of_pow_eq_one`: the same for an endomorphism of a free module.
 * `LinearMap.trace_restrictScalars_smul_of_pow_eq_one`: if moreover `R` is free over `A`, the
   `A`-trace of `c • f` is `ε (trace f) * Tr_{R/A}(c)`.
+* `Matrix.trace_eq_card_of_pow_expChar_pow_eq_one`: over a reduced commutative ring of exponential
+  characteristic `p`, a matrix with `A ^ (p ^ k) = 1` has trace `Fintype.card n`.
 -/
 
 public section
@@ -133,3 +140,22 @@ theorem trace_restrictScalars_smul_of_pow_eq_one [Module.Free A R]
   simp [mul_comm c, ← Algebra.smul_def]
 
 end LinearMap
+
+namespace Matrix
+
+/-- Over a reduced commutative ring of exponential characteristic `p`, every square matrix
+`A : Matrix n n R` satisfying `A ^ (p ^ k) = 1` has `A.trace = (Fintype.card n : R)`.
+
+Reducedness is needed: over `(ZMod 3)[ε]/(ε³)`, the diagonal matrix `diag(1 + ε, 1 - ε + ε²)`
+has cube `1`, but its trace is `2 + ε² ≠ 2`. -/
+theorem trace_eq_card_of_pow_expChar_pow_eq_one {R n : Type*} [CommRing R] [IsReduced R]
+    [Fintype n] [DecidableEq n] {p : ℕ} [ExpChar R p] {k : ℕ} {A : Matrix n n R}
+    (hA : A ^ p ^ k = 1) : A.trace = (Fintype.card n : R) := by
+  cases isEmpty_or_nonempty n
+  · simp [Matrix.trace]
+  · have hnil : IsNilpotent (A - 1) := TauCeti.isNilpotent_sub_one_of_pow_expChar_pow_eq_one hA
+    have htr : (A - 1).trace = 0 := (Matrix.isNilpotent_trace_of_isNilpotent hnil).eq_zero
+    rw [Matrix.trace_sub, Matrix.trace_one] at htr
+    exact sub_eq_zero.mp htr
+
+end Matrix

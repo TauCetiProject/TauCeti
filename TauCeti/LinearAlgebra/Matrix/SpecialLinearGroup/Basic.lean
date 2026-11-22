@@ -395,17 +395,10 @@ theorem card_center_le_two [NoZeroDivisors R] :
 theorem neg_one_eq_one_iff {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
     [Fact (Even (Fintype.card n))] :
     (-1 : SpecialLinearGroup n R) = 1 ↔ (2 : R) = 0 := by
-  constructor
-  · intro h
-    obtain ⟨i⟩ := ‹Nonempty n›
-    have hi := congrArg (fun g : SpecialLinearGroup n R ↦ (g : Matrix n n R) i i) h
-    simp only [coe_neg, coe_one, Matrix.neg_apply, Matrix.one_apply_eq] at hi
-    linear_combination -hi
-  · intro h2
-    apply Subtype.ext
-    ext i j
-    simp only [coe_neg, coe_one, Matrix.neg_apply]
-    linear_combination -((1 : Matrix n n R) i j) * h2
+  refine Iff.trans ⟨fun h ↦ by simpa [coe_neg, coe_one] using congrArg Subtype.val h,
+    fun h ↦ Subtype.ext (by simpa [coe_neg, coe_one] using h)⟩ ?_
+  rw [← map_one (Matrix.scalar n), ← map_neg, Matrix.scalar_inj,
+    neg_eq_iff_add_eq_zero, one_add_one_eq_two]
 
 /-- In `SL(n, R)` for nonempty even `n`, `-1 ≠ 1` whenever `(2 : R) ≠ 0`. -/
 theorem neg_one_ne_one {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
