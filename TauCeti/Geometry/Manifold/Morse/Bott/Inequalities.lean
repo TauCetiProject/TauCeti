@@ -41,8 +41,10 @@ coefficients. Over `𝔽₂` they hold for every Morse–Bott function, the inde
 given as its Morse index. Over every field `K`, for instance `ℚ`, they hold when the negative normal
 bundles of the pieces relative to given smooth fibre metrics are oriented (the `_of_orientation`
 versions), as for a Morse–Bott function whose negative normal bundles carry complex structures.
-For a Morse function every piece is a point of index the Morse index, so
-`cⱼ` is the number of critical points of index `j`, and these are the Morse inequalities.
+Over `𝔽₂`, when no two consecutive `cⱼ` are both nonzero the inequalities force `bⱼ = cⱼ`, the
+lacunary principle: the function is perfect over `𝔽₂`. For a Morse function every piece is a point
+of index the Morse index, so `cⱼ` is the number of critical points of index `j`, and these are the
+Morse inequalities.
 
 Without a Thom class the untwisted statement can fail: over a field of characteristic other than
 `2`, the contribution of a piece whose negative normal bundle is not orientable is its homology
@@ -118,6 +120,8 @@ In the namespace `TauCeti.IsMorseBottFamily`:
 * `finrank_singularHomology_sublevelPair_eq_sum`, `bettiNumber_le_sum`,
   `sum_range_neg_one_pow_mul_bettiNumber_le_sum`, `sum_range_neg_one_pow_mul_bettiNumber_eq_sum` and
   `exists_sum_range_monomial_sum_eq_add_mul`: the same over `𝔽₂`, for every Morse–Bott function.
+* `bettiNumber_eq_sum_of_forall_eq_zero_or_eq_zero`: the lacunary principle over `𝔽₂`,
+  `bₙ = cₙ` when no two consecutive `cₙ` are both nonzero.
 * `finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`: the dimension of the homology
   of a band with a single critical value, over a field in which `2` is invertible.
 * `bettiNumber_le_sum_twistedBettiNumber`,
@@ -737,6 +741,18 @@ theorem exists_sum_range_monomial_sum_eq_add_mul {n : ℕ} (hdimn : finrank ℝ 
       ∑ k ∈ Finset.range (n + 1), monomial k (bettiNumber K M k) + (1 + Polynomial.X) * Q :=
   h.exists_sum_range_monomial_sum_eq_add_mul_of_isThomClass (by simp) K
     (fun _ ↦ finrank_euclideanSpace_fin) (h.exists_isThomClass_of_subsingleton_units _ K hr) hdimn
+
+/-- **The lacunary principle for a Morse–Bott function over `𝔽₂`.** Under the hypotheses of
+`TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_le_sum`, write
+`cₖ = ∑ b_{k - r j}(S j; K)` over the pieces of index at most `k`. If of any two consecutive counts
+`cₖ` and `cₖ₊₁` one vanishes, then `bₙ(M; K) = cₙ` for every `n`: the Morse–Bott function is
+perfect over `K`. -/
+theorem bettiNumber_eq_sum_of_forall_eq_zero_or_eq_zero
+    (hlac : ∀ k, ∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) = 0 ∨
+      ∑ p with r p ≤ k + 1, bettiNumber K (S p) (k + 1 - r p) = 0) (n : ℕ) :
+    bettiNumber K M n = ∑ p with r p ≤ n, bettiNumber K (S p) (n - r p) :=
+  congrFun (eq_of_forall_sum_range_neg_one_pow_mul_le
+    (h.sum_range_neg_one_pow_mul_bettiNumber_le_sum K hr) hlac) n
 
 end SubsingletonUnits
 
