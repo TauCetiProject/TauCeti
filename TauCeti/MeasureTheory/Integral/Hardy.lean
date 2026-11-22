@@ -31,11 +31,13 @@ Both pairs follow uniformly across `1 ≤ q ≤ ∞` from Schur's test
 (`TauCeti.eLpNorm_lintegral_mul_le`) applied to `k(t, s) = 1_{0 < s ≤ t} (s / t) ^ θ` and its
 transpose on `multHaar`, whose row and column integrals against `dt / t` both equal `θ⁻¹`.
 For Hölder conjugate exponents `p` and `q` (so `q = p / (p - 1)` for `1 < p < ∞`, `q = 1` for
-`p = ∞`, and `q = ∞` for `p = 1`), setting `θ = q⁻¹` (i.e. `1 - 1 / p` for `1 < p < ∞`)
-recovers Hardy's classical `Lᵖ(0, ∞)` inequality
-`‖t ↦ t⁻¹ ∫₀ᵗ g‖_{Lᵖ(0, ∞)} ≤ q ‖g‖_{Lᵖ(0, ∞)}` (`TauCeti.eLpNorm_inv_mul_lintegral_Ioc_le`),
-with constant `p / (p - 1)` for `1 < p < ∞`. For antitone functions on `(0, ∞)` there is an
-immediate pointwise lower bound giving the reverse inequality with constant `1`
+`p = ∞`, and `q = ∞` for `p = 1`), Hardy's classical `Lᵖ(0, ∞)` inequality
+`‖t ↦ t⁻¹ ∫₀ᵗ g‖_{Lᵖ(0, ∞)} ≤ q ‖g‖_{Lᵖ(0, ∞)}` (`TauCeti.eLpNorm_inv_mul_lintegral_Ioc_le`)
+follows for `1 < p ≤ ∞` by setting `θ = q⁻¹` (i.e. `1 - 1 / p` for `1 < p < ∞`, and `1` for
+`p = ∞`, so `0 < θ ≤ 1`) in the weighted inequality, giving constant `p / (p - 1)` for `1 < p < ∞`
+and `1` for `p = ∞`; the `p = 1` endpoint (`q = ∞`) is proved separately as an extended-valued
+bound (`0 ≤ ∞ * 0` when `‖g‖₁ = 0`, and `≤ ∞` otherwise). For antitone functions on `(0, ∞)`
+there is an immediate pointwise lower bound giving the reverse inequality with constant `1`
 (`TauCeti.eLpNorm_rpow_one_sub_le_eLpNorm_rpow_neg_mul_lintegral_Ioc`).
 
 ## Main declarations
@@ -240,13 +242,9 @@ theorem eLpNorm_inv_mul_lintegral_Ioc_le {p q : ℝ≥0∞} [hpq : ENNReal.Holde
   have hqtop : q ≠ ∞ := mt hqp.eq_top_iff_eq_one.1 hp1
   have hθ : 0 < q.toReal⁻¹ := inv_pos.2 (ENNReal.toReal_pos hq0 hqtop)
   have h1θ : 1 - q.toReal⁻¹ = p.toReal⁻¹ := by
-    have hsum : p.toReal⁻¹ + q.toReal⁻¹ = 1 := by
-      have hp_inv : p⁻¹ ≠ ∞ := by simpa using hp0
-      have hq_inv : q⁻¹ ≠ ∞ := by simpa using hq0
-      have htoReal := congrArg ENNReal.toReal hpq.inv_add_inv_eq_one
-      rwa [ENNReal.toReal_add hp_inv hq_inv, ENNReal.toReal_inv, ENNReal.toReal_inv,
-        ENNReal.toReal_one] at htoReal
-    linarith
+    have hsub := congrArg ENNReal.toReal (ENNReal.HolderConjugate.one_sub_inv q p)
+    rwa [ENNReal.toReal_sub_of_le (ENNReal.inv_le_one.2 hqp.one_le) ENNReal.one_ne_top,
+      ENNReal.toReal_one, ENNReal.toReal_inv, ENNReal.toReal_inv] at hsub
   have hq_eq : ENNReal.ofReal (q.toReal⁻¹)⁻¹ = q := by
     rw [inv_inv, ENNReal.ofReal_toReal hqtop]
   rw [eLpNorm_volume_Ioi_eq_eLpNorm_multHaar hp0, eLpNorm_volume_Ioi_eq_eLpNorm_multHaar hp0,
