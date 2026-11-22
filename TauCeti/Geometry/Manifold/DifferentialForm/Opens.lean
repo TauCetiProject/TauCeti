@@ -41,9 +41,11 @@ the extension step of its compactly supported variant.
 
 A partial diffeomorphism `Ψ` between open subsets `U` and `V`, read in the ambient manifolds
 (`PartialDiffeomorph.liftOpens`), pulls a form back as `Ψ` pulls back its restriction to `V`
-(`TauCeti.mpullback_liftOpens_apply_coe`). So a construction carried out on an open submanifold,
-such as a flow defined only where some condition on the forms holds, transfers to the ambient
-manifold, together with the points it fixes and pointwise identities between pulled back forms
+(`TauCeti.mpullback_liftOpens_apply_coe`), and a partial diffeomorphism, viewed as a
+diffeomorphism between its source and target, pulls back the restriction of a form to its target as
+it pulls back the form itself (`TauCeti.mpullback_toDiffeomorphSourceTarget_apply`). So a
+construction carried out on an open submanifold, such as a flow defined only where some condition
+on the forms holds, transfers to the ambient manifold, together with the points it fixes and pointwise identities between pulled back forms
 (`TauCeti.exists_partialDiffeomorph_forall_mpullback_of_opens`).
 
 On a product `U × M` with an open subset `U` of a normed space, the differential of the first
@@ -445,5 +447,23 @@ theorem exists_partialDiffeomorph_forall_mpullback_of_opens {n : WithTop ℕ∞}
   obtain ⟨y, hy, rfl⟩ := hx
   rw [mpullback_liftOpens_apply_coe Ψ hn hU hU ω hy]
   exact hP y hy
+
+omit [IsManifold I 1 M] in
+/-- **Pullback along a partial diffeomorphism, as a diffeomorphism of open subsets.** Pulling the
+restriction of a form on `M'` to the target of `Ψ` back along `Ψ.toDiffeomorphSourceTarget` is, at
+each point of the source, pulling the form back along `Ψ`. -/
+theorem mpullback_toDiffeomorphSourceTarget_apply {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {n : WithTop ℕ∞} (Ψ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
+    (ω : RoughForm I' M' F k) (x : (⟨Ψ.source, Ψ.open_source⟩ : Opens M)) :
+    mpullback I I' Ψ.toDiffeomorphSourceTarget (mpullback I' I' Subtype.val ω) x =
+      mpullback I I' Ψ ω x := by
+  -- Through the inclusions, `Ψ.toDiffeomorphSourceTarget` is `Ψ`.
+  have hcomp : Subtype.val ∘ Ψ.toDiffeomorphSourceTarget = Ψ ∘ Subtype.val :=
+    funext Ψ.toDiffeomorphSourceTarget_apply_coe
+  rw [← mpullback_comp_at (Ψ.toDiffeomorphSourceTarget.mdifferentiable hn _)
+    (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero), hcomp,
+    mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
+      (Ψ.mdifferentiableAt hn x.property), mpullback_subtype_val_apply]
 
 end TauCeti
