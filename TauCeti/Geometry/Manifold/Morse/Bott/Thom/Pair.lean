@@ -86,8 +86,18 @@ norm is continuous because the quadratic form of the normal Hessian is
 pair of a normed vector bundle with its Thom pair
 (`TauCeti.isIso_singularHomologyMap_gaugeDiscSpherePairMap`, for the fibre gauge
 `TauCeti.isFiberGauge_norm`) and the attachment theorem for disc bundles
-(`TauCeti.isIso_singularHomologyMap_of_attach_gaugeDiscBundle`) then apply. The norms are
-auxiliary: no statement below involves them.
+(`TauCeti.isIso_singularHomologyMap_of_attach_gaugeDiscBundle`) then apply. The metric and its
+norm and inner product structures (`IsCriticalSubmanifold.negativeNormalMetric`,
+`IsCriticalSubmanifold.negativeNormalNorm`, `IsCriticalSubmanifold.negativeNormalInnerProductSpace`)
+are not instances, and no homology statement below involves them. Their inner product is
+`-(2ε)⁻¹ Hessₛ` (`IsCriticalSubmanifold.inner_negativeNormalInnerProductSpace`), and they make `D_ε`
+and `S_ε` the unit disc and sphere bundles of `ν⁻`
+(`IsCriticalSubmanifold.mem_discBundle_iff_mem_negativeDiscBundle` and
+`IsCriticalSubmanifold.mem_sphereBundle_iff_mem_negativeSphereBundle`), with continuous fibre
+norm (`IsCriticalSubmanifold.continuous_norm_negativeNormalNorm`), so that constructions on the unit
+disc bundle of a normed vector bundle, such as its cells over a CW complex, apply to `D_ε`. A set
+of vectors of `ν⁻` is homeomorphic to the set of normal vectors it consists of
+(`TauCeti.subbundleTotalSpaceHomeomorph`).
 
 ## References
 
@@ -180,8 +190,9 @@ section Comparison
 variable [FiniteDimensional ℝ E]
 
 /-- The inner product `-(2ε)⁻¹ Hessₛ` on the negative normal spaces, for `ε > 0`. Its unit disc
-bundle is the negative disc bundle `D_ε`. -/
-private def negativeNormalMetric (hε : 0 < ε) :
+bundle is the negative disc bundle `D_ε`
+(`IsCriticalSubmanifold.mem_discBundle_iff_mem_negativeDiscBundle`). -/
+def negativeNormalMetric (hε : 0 < ε) :
     RiemannianMetric fun s ↦ h.negativeNormalSpace hn g s :=
   .ofFiniteDimensional
     (fun s ↦ -(2 * ε)⁻¹ • (h.normalHessian hn s).compl₁₂ (h.negativeNormalSpace hn g s).subtype
@@ -195,8 +206,8 @@ private def negativeNormalMetric (hε : 0 < ε) :
       exact mul_pos_of_neg_of_neg (neg_neg_iff_pos.2 (inv_pos.2 (by positivity))) hneg)
 
 /-- The norm on the negative normal spaces given by `negativeNormalMetric`; it induces the
-existing topology. -/
-private abbrev negativeNormalNorm (hε : 0 < ε) (s : S) :
+existing topology. It is not an instance; install it with `letI`. -/
+abbrev negativeNormalNorm (hε : 0 < ε) (s : S) :
     NormedAddCommGroup (h.negativeNormalSpace hn g s) :=
   ((h.negativeNormalMetric hn g hε).toCore s).toNormedAddCommGroupOfTopology
     ((h.negativeNormalMetric hn g hε).continuousAt s)
@@ -210,43 +221,83 @@ private abbrev negativeNormalNormedSpace (hε : 0 < ε) (s : S) :
     ((h.negativeNormalMetric hn g hε).continuousAt s)
     ((h.negativeNormalMetric hn g hε).isVonNBounded s)
 
+/-- The inner product space structure on the negative normal spaces given by
+`negativeNormalMetric`, whose norm is `negativeNormalNorm`. It is not an instance; install it with
+`letI`. -/
+abbrev negativeNormalInnerProductSpace (hε : 0 < ε) (s : S) :
+    letI := h.negativeNormalNorm hn g hε s
+    InnerProductSpace ℝ (h.negativeNormalSpace hn g s) :=
+  .ofCoreOfTopology ((h.negativeNormalMetric hn g hε).toCore s)
+    ((h.negativeNormalMetric hn g hε).continuousAt s)
+    ((h.negativeNormalMetric hn g hε).isVonNBounded s)
+
+/-- The inner product of `negativeNormalInnerProductSpace` is `-(2ε)⁻¹ Hessₛ`. -/
+theorem inner_negativeNormalInnerProductSpace (hε : 0 < ε) {s : S}
+    (v w : h.negativeNormalSpace hn g s) :
+    letI := h.negativeNormalNorm hn g hε s
+    letI := h.negativeNormalInnerProductSpace hn g hε s
+    inner ℝ v w = -(2 * ε)⁻¹ * h.normalHessian hn s v w := by
+  -- The inner product of `InnerProductSpace.ofCoreOfTopology` is that of the metric.
+  change (h.negativeNormalMetric hn g hε).inner s v w = _
+  simp only [negativeNormalMetric, RiemannianMetric.ofFiniteDimensional_inner, LinearMap.smul_apply,
+    LinearMap.compl₁₂_apply, Submodule.subtype_apply, smul_eq_mul]
+
 /-- The square of the norm `negativeNormalNorm` is `-½ Hessₛ (v, v) / ε`. -/
-private theorem norm_sq_negativeNormalNorm (hε : 0 < ε) {s : S}
+theorem norm_sq_negativeNormalNorm (hε : 0 < ε) {s : S}
     (v : h.negativeNormalSpace hn g s) :
     letI := h.negativeNormalNorm hn g hε s
     ‖v‖ ^ 2 = -(2⁻¹ * h.normalHessian hn s v v) / ε := by
   let := h.negativeNormalNorm hn g hε s
-  -- The norm of `toNormedAddCommGroupOfTopology` is the square root of the inner product.
-  have hv : ‖v‖ = √((h.negativeNormalMetric hn g hε).inner s v v) := rfl
-  have hpos : 0 ≤ (h.negativeNormalMetric hn g hε).inner s v v := by
-    rcases eq_or_ne v 0 with rfl | hv0
-    · simp
-    · exact ((h.negativeNormalMetric hn g hε).pos s v hv0).le
-  rw [hv, Real.sq_sqrt hpos]
-  simp only [negativeNormalMetric, RiemannianMetric.ofFiniteDimensional_inner, LinearMap.smul_apply,
-    LinearMap.compl₁₂_apply, Submodule.subtype_apply, smul_eq_mul]
-  field_simp
+  let := h.negativeNormalInnerProductSpace hn g hε s
+  rw [← real_inner_self_eq_norm_sq, h.inner_negativeNormalInnerProductSpace hn g hε]
+  ring
 
-private theorem norm_le_one_iff (hε : 0 < ε) {s : S} (v : h.negativeNormalSpace hn g s) :
+/-- For the norm `negativeNormalNorm`, a negative normal vector has norm at most one exactly when
+it lies in the negative disc bundle `D_ε`: `-½ Hessₛ (v, v) ≤ ε`. -/
+theorem norm_negativeNormalNorm_le_one_iff (hε : 0 < ε) {s : S} (v : h.negativeNormalSpace hn g s) :
     letI := h.negativeNormalNorm hn g hε s
     ‖v‖ ≤ 1 ↔ -(2⁻¹ * h.normalHessian hn s v v) ≤ ε := by
   let := h.negativeNormalNorm hn g hε s
   rw [← sq_le_one_iff₀ (norm_nonneg v), h.norm_sq_negativeNormalNorm hn g hε, div_le_one hε]
 
-private theorem norm_eq_one_iff (hε : 0 < ε) {s : S} (v : h.negativeNormalSpace hn g s) :
+/-- For the norm `negativeNormalNorm`, a negative normal vector has norm one exactly when it lies
+in the negative sphere bundle `S_ε`: `-½ Hessₛ (v, v) = ε`. -/
+theorem norm_negativeNormalNorm_eq_one_iff (hε : 0 < ε) {s : S} (v : h.negativeNormalSpace hn g s) :
     letI := h.negativeNormalNorm hn g hε s
     ‖v‖ = 1 ↔ -(2⁻¹ * h.normalHessian hn s v v) = ε := by
   let := h.negativeNormalNorm hn g hε s
   rw [← pow_eq_one_iff_of_nonneg (norm_nonneg v) two_ne_zero, h.norm_sq_negativeNormalNorm hn g hε,
     div_eq_one_iff_eq hε.ne']
 
-/-- A vector of the negative normal bundle of norm at most one, for `negativeNormalNorm`, lies in
-the negative disc bundle `D_ε`. -/
-private theorem mem_negativeDiscBundle_of_norm_le_one (hε : 0 < ε)
-    {v : TotalSpace (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g s}
-    (hv : letI := h.negativeNormalNorm hn g hε; ‖v.snd‖ ≤ 1) :
-    (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn) ∈ h.negativeDiscBundle hn P g ε :=
-  (mem_negativeDiscBundle hn).2 ⟨v.snd.property, (h.norm_le_one_iff hn g hε v.snd).1 hv⟩
+/-- For the norm `negativeNormalNorm`, the unit disc bundle of the negative normal bundle `ν⁻` is
+the negative disc bundle `D_ε`, read through the inclusion of `ν⁻` in the normal bundle. -/
+theorem mem_discBundle_iff_mem_negativeDiscBundle (hε : 0 < ε)
+    (v : TotalSpace (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g s) :
+    letI := h.negativeNormalNorm hn g hε
+    v ∈ discBundle (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s) ↔
+      (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn) ∈
+        h.negativeDiscBundle hn P g ε := by
+  let := h.negativeNormalNorm hn g hε
+  exact ⟨fun hv ↦ (mem_negativeDiscBundle hn).2
+      ⟨v.snd.property,
+        (h.norm_negativeNormalNorm_le_one_iff hn g hε v.snd).1 (mem_discBundle.1 hv)⟩,
+    fun hv ↦ mem_discBundle.2 <|
+      (h.norm_negativeNormalNorm_le_one_iff hn g hε v.snd).2 ((mem_negativeDiscBundle hn).1 hv).2⟩
+
+/-- For the norm `negativeNormalNorm`, the unit sphere bundle of the negative normal bundle `ν⁻` is
+the negative sphere bundle `S_ε`, read through the inclusion of `ν⁻` in the normal bundle. -/
+theorem mem_sphereBundle_iff_mem_negativeSphereBundle (hε : 0 < ε)
+    (v : TotalSpace (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g s) :
+    letI := h.negativeNormalNorm hn g hε
+    v ∈ sphereBundle (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s) ↔
+      (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn) ∈
+        h.negativeSphereBundle hn P g ε := by
+  let := h.negativeNormalNorm hn g hε
+  exact ⟨fun hv ↦ (mem_negativeSphereBundle hn).2
+      ⟨v.snd.property,
+        (h.norm_negativeNormalNorm_eq_one_iff hn g hε v.snd).1 (mem_sphereBundle.1 hv)⟩,
+    fun hv ↦ mem_sphereBundle.2 <|
+      (h.norm_negativeNormalNorm_eq_one_iff hn g hε v.snd).2 ((mem_negativeSphereBundle hn).1 hv).2⟩
 
 /-- With the norms `negativeNormalNorm`, the inclusion of the total space of the negative normal
 bundle `ν⁻` into the normal bundle carries its unit disc-sphere pair onto the negative disc-sphere
@@ -259,30 +310,68 @@ private def discSpherePairIso (hε : 0 < ε) :
       h.negativeDiscSpherePair hn P g ε :=
   letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g)
   letI := h.negativeNormalNorm hn g hε
-  have hι := isEmbedding_totalSpace_subbundle P (Fin r → ℝ) (h.negativeNormalSpace hn g)
-  let ι := h.negativeDiscBundleInclusion hn P g r (ε := ε)
-  have hD (x : h.negativeDiscBundle hn P g ε) :
-      ι x ∈ gaugeDiscBundle
-        (fun v : TotalSpace (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s) ↦ ‖v.snd‖) :=
-    mem_gaugeDiscBundle.2
-      ((h.norm_le_one_iff hn g hε _).2 ((mem_negativeDiscBundle hn).1 x.property).2)
-  { hom := TopPair.ofHom
-      (TopCat.ofHom ⟨fun v ↦ ⟨⟨v.val.proj, v.val.snd⟩,
-        h.mem_negativeDiscBundle_of_norm_le_one hn P g r hε (mem_gaugeDiscBundle.1 v.property)⟩,
-        (hι.continuous.comp continuous_subtypeVal).subtype_mk _⟩)
-      (TopCat.ofHom ⟨fun v ↦ ⟨⟨v.val.proj, v.val.snd⟩,
-        h.mem_negativeDiscBundle_of_norm_le_one hn P g r hε
-          (mem_gaugeDiscBundle.1 (gaugeSphereBundle_subset_gaugeDiscBundle _ v.property)),
-          (h.norm_eq_one_iff hn g hε v.val.snd).1 (mem_gaugeSphereBundle.1 v.property)⟩,
-        (hι.continuous.comp continuous_subtypeVal).subtype_mk _⟩)
-      (by ext; rfl)
-    inv := TopPair.ofHom (TopCat.ofHom ⟨fun x ↦ ⟨ι x, hD x⟩, ι.continuous.subtype_mk _⟩)
-      (TopCat.ofHom ⟨fun x ↦ ⟨ι (inclusion inter_subset_left x),
-          mem_gaugeSphereBundle.2 ((h.norm_eq_one_iff hn g hε _).2 x.property.2)⟩,
-        (ι.continuous.comp (continuous_inclusion inter_subset_left)).subtype_mk _⟩)
-      (by ext; rfl)
-    hom_inv_id := by ext : 2 <;> rfl
-    inv_hom_id := by ext : 2 <;> rfl }
+  let eD := subbundleTotalSpaceHomeomorph P (h.negativeNormalSpace hn g)
+    (gaugeDiscBundle
+      fun v : TotalSpace (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s) ↦ ‖v.snd‖)
+    (h.negativeDiscBundle hn P g ε)
+    (fun v ↦ (mem_gaugeDiscBundle.trans mem_discBundle.symm).trans
+      (h.mem_discBundle_iff_mem_negativeDiscBundle hn P g r hε v))
+    fun _ hx ↦ mem_negativeNormalSpace_of_mem_negativeDiscBundle hn hx
+  let eS := subbundleTotalSpaceHomeomorph P (h.negativeNormalSpace hn g)
+    (gaugeSphereBundle
+      fun v : TotalSpace (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s) ↦ ‖v.snd‖)
+    (h.negativeDiscBundle hn P g ε ∩ {x | -(2⁻¹ * h.normalHessian hn x.proj x.snd x.snd) = ε})
+    (fun v ↦ ⟨fun hv ↦ ⟨(h.mem_discBundle_iff_mem_negativeDiscBundle hn P g r hε v).1
+          (mem_discBundle.2
+            (mem_gaugeDiscBundle.1 (gaugeSphereBundle_subset_gaugeDiscBundle _ hv))),
+        (h.norm_negativeNormalNorm_eq_one_iff hn g hε v.snd).1 (mem_gaugeSphereBundle.1 hv)⟩,
+      fun hv ↦ mem_gaugeSphereBundle.2
+        ((h.norm_negativeNormalNorm_eq_one_iff hn g hε v.snd).2 hv.2)⟩)
+    fun _ hx ↦ mem_negativeNormalSpace_of_mem_negativeDiscBundle hn hx.1
+  have hD (v : _) : (eD v : TotalSpace P fun s ↦ i.NormalSpace s hn) = ⟨v.val.proj, v.val.snd⟩ :=
+    coe_subbundleTotalSpaceHomeomorph_apply ..
+  have hS (v : _) : (eS v : TotalSpace P fun s ↦ i.NormalSpace s hn) = ⟨v.val.proj, v.val.snd⟩ :=
+    coe_subbundleTotalSpaceHomeomorph_apply ..
+  have hD' (x : _) : (eD.symm x : TotalSpace (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g s) =
+      ⟨x.val.proj, ⟨x.val.snd, mem_negativeNormalSpace_of_mem_negativeDiscBundle hn x.property⟩⟩ :=
+    coe_subbundleTotalSpaceHomeomorph_symm_apply ..
+  have hS' (x : _) : (eS.symm x : TotalSpace (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g s) =
+      ⟨x.val.proj,
+        ⟨x.val.snd, mem_negativeNormalSpace_of_mem_negativeDiscBundle hn x.property.1⟩⟩ :=
+    coe_subbundleTotalSpaceHomeomorph_symm_apply ..
+  { hom := TopPair.ofHom (TopCat.ofHom ⟨eD, eD.continuous⟩) (TopCat.ofHom ⟨eS, eS.continuous⟩)
+      (by
+        ext x
+        exact Subtype.ext <| (hS x).trans
+          (hD ⟨x.val, gaugeSphereBundle_subset_gaugeDiscBundle _ x.property⟩).symm)
+    inv := TopPair.ofHom (TopCat.ofHom ⟨eD.symm, eD.symm.continuous⟩)
+      (TopCat.ofHom ⟨eS.symm, eS.symm.continuous⟩) (by
+        ext x
+        exact Subtype.ext <| (hS' x).trans (hD' ⟨x.val, x.property.1⟩).symm)
+    hom_inv_id := by
+      ext : 2
+      exacts [eS.symm_apply_apply _, eD.symm_apply_apply _]
+    inv_hom_id := by
+      ext : 2
+      exacts [eS.apply_symm_apply _, eD.apply_symm_apply _] }
+
+/-- The first component of `discSpherePairIso` keeps the underlying normal vector. -/
+private theorem coe_discSpherePairIso_hom_fst_apply (hε : 0 < ε) :
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g)
+    letI := h.negativeNormalNorm hn g hε
+    ∀ v : gaugeDiscBundle
+        (fun v : TotalSpace (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s) ↦ ‖v.snd‖),
+      (TopPair.Hom.fst (h.discSpherePairIso hn P g r hε).hom v).val = ⟨v.val.proj, v.val.snd⟩ :=
+  fun _ ↦ coe_subbundleTotalSpaceHomeomorph_apply ..
+
+/-- The second component of `discSpherePairIso` keeps the underlying normal vector. -/
+private theorem coe_discSpherePairIso_hom_snd_apply (hε : 0 < ε) :
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g)
+    letI := h.negativeNormalNorm hn g hε
+    ∀ v : gaugeSphereBundle
+        (fun v : TotalSpace (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s) ↦ ‖v.snd‖),
+      (TopPair.Hom.snd (h.discSpherePairIso hn P g r hε).hom v).val = ⟨v.val.proj, v.val.snd⟩ :=
+  fun _ ↦ coe_subbundleTotalSpaceHomeomorph_apply ..
 
 /-- The inclusion of the negative disc-sphere pair into the Thom pair of `ν⁻` is the disc-sphere
 pair of the norms `negativeNormalNorm`, read through `discSpherePairIso`. -/
@@ -296,9 +385,15 @@ private theorem discSpherePairIso_hom_comp_negativeDiscThomPairMap (hε : 0 < ε
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g)
   let := h.negativeNormalNorm hn g hε
   intro hρ
+  let ι := fun v : TotalSpace (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s) ↦
+    (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn)
+  have hι := injective_totalSpace_subbundle P (Fin r → ℝ) (h.negativeNormalSpace hn g)
+  -- On both sides, the vector `x` read in the normal bundle.
   ext x : 2
-  · exact Subtype.ext (gaugeDiscSpherePairMap_snd_apply hρ x).symm
-  · exact (gaugeDiscSpherePairMap_fst_apply hρ x).symm
+  · exact Subtype.ext (hι ((h.coe_discSpherePairIso_hom_snd_apply hn P g r hε x).trans
+      (congrArg ι (gaugeDiscSpherePairMap_snd_apply hρ x)).symm))
+  · exact hι ((h.coe_discSpherePairIso_hom_fst_apply hn P g r hε x).trans
+      (congrArg ι (gaugeDiscSpherePairMap_fst_apply hρ x)).symm)
 
 /-- The hypotheses of the attachment theorem
 `TauCeti.isIso_singularHomologyMap_of_attach_gaugeDiscBundle` for the disc-sphere pair of the norms
@@ -328,7 +423,9 @@ private theorem attach_discSpherePairIso_hom_comp (hε : 0 < ε) {Z : Type u} [T
   have he : ⇑(TopPair.Hom.fst ((h.discSpherePairIso hn P g r hε).hom ≫ φ)) =
       TopPair.Hom.fst φ ∘ e := rfl
   refine ⟨he ▸ hφ.comp e.isClosedEmbedding, fun v hv ↦ ?_, ?_⟩
-  · exact mem_gaugeSphereBundle.2 ((h.norm_eq_one_iff hn g hε _).2 (hφX _ hv))
+  · have hv' := hφX (TopPair.Hom.fst (h.discSpherePairIso hn P g r hε).hom v) hv
+    rw [h.coe_discSpherePairIso_hom_fst_apply hn P g r hε v] at hv'
+    exact mem_gaugeSphereBundle.2 ((h.norm_negativeNormalNorm_eq_one_iff hn g hε _).2 hv')
   · exact (congrArg (X ∪ ·) ((congrArg range he).trans (e.surjective.range_comp _))).trans hφcover
 
 /-- The isomorphism `discSpherePairIso` induces isomorphisms on relative singular cohomology, by
@@ -364,7 +461,7 @@ private theorem continuous_normalHessian_apply_self
 
 /-- With the norms `negativeNormalNorm`, the fibre norm is continuous on the total space of the
 negative normal bundle. -/
-private theorem continuous_norm_negativeNormalNorm
+theorem continuous_norm_negativeNormalNorm
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') (hε : 0 < ε) :
     letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g)
     letI := h.negativeNormalNorm hn g hε
