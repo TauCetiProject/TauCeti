@@ -138,15 +138,6 @@ variable {t' : Trivialization F (π F V)} [MemTrivializationAtlas t']
   {c' : OpenPartialHomeomorph M E}
   {hc' : ContMDiffOn I 𝓘(ℝ, E) ∞ c' c'.source} {hct' : c'.source ⊆ t'.baseSet}
 
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
-/-- The transition `c ∘ c'⁻¹` between two smooth charts with smooth inverses is smooth on its
-source. -/
-private theorem contDiffOn_trans (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source)
-    (hcs' : ContMDiffOn 𝓘(ℝ, E) I ∞ c'.symm c'.target) :
-    ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source := by
-  rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.coe_trans]
-  exact contMDiffOn_iff_contDiffOn.1 (hc.comp (hcs'.mono inter_subset_left) fun y hy ↦ hy.2)
-
 /-- **Change of chart and frame for test functions.** Let `φ` be a test function supported in an
 open set `B` of the source of the chart transition `κ = c ∘ c'⁻¹`, and `gⱼ` smooth functions equal
 on `B` to `|det Dκ| bⱼ*(G(c'⁻¹ ·) v)`, where `G = t ∘ t'⁻¹` is the change of frame and `(bⱼ)` the
@@ -235,23 +226,6 @@ private theorem restrictCLM_chartComponent_eq_sum (T : BundleTest I F V →L_c[�
   rw [← Complex.ofReal_sum, ← map_sum,
     chartTestCLM_eq_sum_chartTestCLM (hc := hc) (hct := hct) v he he' hB hBc hg hgB φ]
 
-/-- A finite sum of distributions microlocally smooth at `(x, ξ)`, for `x ∈ Ω`, is microlocally
-smooth there. -/
-private theorem isMicrolocallySmoothAt_sum {Ω : Opens E} {ι : Type*} (s : Finset ι)
-    {S : ι → 𝓓'(Ω, ℂ)} {x ξ : E} (hx : x ∈ Ω) (h : ∀ i ∈ s, (S i).IsMicrolocallySmoothAt x ξ) :
-    (∑ i ∈ s, S i).IsMicrolocallySmoothAt x ξ := by
-  classical
-  induction s using Finset.induction_on with
-  | empty =>
-    obtain ⟨φ, -, hφx⟩ := TestFunction.exists_tsupport_subset_apply_eq (n := ⊤) (Ω := Ω)
-      (Ω.isOpen.mem_nhds hx) subset_rfl (1 : ℂ)
-    exact isMicrolocallySmoothAt_iff.2 ⟨φ, by simp [hφx], univ, isOpen_univ, mem_univ _,
-      fun _ _ _ _ ↦ mem_univ _, fun _ ↦ ⟨0, fun η _ ↦ by simp⟩⟩
-  | insert i s hi ih =>
-    rw [Finset.sum_insert hi]
-    exact (h i (Finset.mem_insert_self i s)).add
-      (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
-
 omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
 include hct hct' in
 /-- The coefficient `z ↦ |det Dκ(z)| bⱼ*(G(c'⁻¹ z) v)` of the change of chart and frame is smooth
@@ -289,10 +263,10 @@ private theorem isMicrolocallySmoothAt_chartComponent_of_forall
     (h : ∀ w, (t.chartComponent c hc hct T w).IsMicrolocallySmoothAt (c'.symm.trans c y)
       (((fderiv ℝ (c'.symm.trans c).symm (c'.symm.trans c y))†) ξ)) (v : F) :
     (t'.chartComponent c' hc' hct' T v).IsMicrolocallySmoothAt y ξ := by
-  have he := contDiffOn_trans hc hcs'
+  have he := OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc hcs'
   have he' : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target := by
     rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
-    exact contDiffOn_trans hc' hcs
+    exact OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc' hcs
   -- A neighbourhood `B` of `y` with compact closure in the source of the transition.
   obtain ⟨W, hWo, hyW, hWs, hWc⟩ := exists_open_between_and_isCompact_closure isCompact_singleton
     (c'.symm.trans c).open_source (singleton_subset_iff.2 hy)
@@ -308,7 +282,7 @@ private theorem isMicrolocallySmoothAt_chartComponent_of_forall
   have hgB (j) (z) (hz : z ∈ B) := (hgf j z (subset_closure hz)).eq_of_nhds
   rw [← isMicrolocallySmoothAt_restrictCLM_iff hBt (singleton_subset_iff.1 hyW),
     restrictCLM_chartComponent_eq_sum (hc := hc) (hct := hct) T v he he' hB hBc hg hgB]
-  exact isMicrolocallySmoothAt_sum _ (singleton_subset_iff.1 hyW) fun j _ ↦
+  exact IsMicrolocallySmoothAt.sum _ (singleton_subset_iff.1 hyW) fun j _ ↦
     ((h _).compCLMOfOpenPartialHomeomorph (c'.symm.trans c) he he' hB hBc
       (singleton_subset_iff.1 hyW)).smulLeftCLM (hg j)
 
@@ -336,10 +310,10 @@ theorem forall_isMicrolocallySmoothAt_chartComponent_iff
     rw [hzy]
     exact h w
   · intro h v
-    have he := contDiffOn_trans hc hcs'
+    have he := OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc hcs'
     have he' : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target := by
       rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
-      exact contDiffOn_trans hc' hcs
+      exact OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc' hcs
     refine isMicrolocallySmoothAt_chartComponent_of_forall (t := t) (hc := hc) (hct := hct)
       (t' := t') (hc' := hc') (hct' := hct') hcs hcs' T hys (fun w ↦ ?_) v
     have hη := (c'.symm.trans c).adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn he
@@ -395,14 +369,6 @@ def IsMicrolocallySmoothAt (T : BundleTest I F V →L_c[ℝ] ℝ) (x : M)
     ∀ v, (t.chartComponent c hc hct T v).IsMicrolocallySmoothAt (c x)
       ((toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)))
 
-/-- The dual vector of a covector precomposed with `B` is the adjoint of `B` applied to the dual
-vector of the covector. -/
-private theorem toDual_symm_comp (ℓ : E →L[ℝ] ℝ) (B : E →L[ℝ] E) :
-    (toDual ℝ E).symm (ℓ ∘L B) = (B†) ((toDual ℝ E).symm ℓ) := by
-  apply (toDual ℝ E).injective
-  ext u
-  simp [toDual_apply_apply, adjoint_inner_left]
-
 /-- **Microlocal smoothness in any chart and frame.** For a smooth chart `c` at `x` with smooth
 inverse and a frame `t` over its source, `T` is microlocally smooth at the covector `ξ` at `x`
 exactly when every component of its local representative in `(t, c)` is microlocally smooth at
@@ -425,8 +391,8 @@ theorem isMicrolocallySmoothAt_iff (T : BundleTest I F V →L_c[ℝ] ℝ)
     ⟨c.map_source hx, by simpa [c.left_inv hx] using hx₀⟩
   have hwx : c.symm.trans c₀ (c x) = c₀ x := by simp [c.left_inv hx]
   have hΘ : DifferentiableAt ℝ (c.symm.trans c₀) (c x) :=
-    ((contDiffOn_trans hc₀ hcs).differentiableOn (by simp)).differentiableAt
-      ((c.symm.trans c₀).open_source.mem_nhds hw)
+    ((OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc₀ hcs).differentiableOn
+      (by simp)).differentiableAt ((c.symm.trans c₀).open_source.mem_nhds hw)
   have hψ : MDifferentiableAt 𝓘(ℝ, E) I c₀.symm (c.symm.trans c₀ (c x)) := by
     rw [hwx]
     exact (hcs₀.contMDiffAt (c₀.open_target.mem_nhds (c₀.map_source hx₀))).mdifferentiableAt
@@ -435,10 +401,12 @@ theorem isMicrolocallySmoothAt_iff (T : BundleTest I F V →L_c[ℝ] ℝ)
   rw [c.left_inv hx] at hiff
   intro v
   convert hiff.2 h v using 2
-  rw [← toDual_symm_comp]
-  congr 1
+  -- Through the Riesz isomorphism, precomposition with the derivative of the transition is its
+  -- adjoint.
+  apply (toDual ℝ E).injective
   ext u
-  simp only [ContinuousLinearMap.comp_apply]
+  simp only [LinearIsometryEquiv.apply_symm_apply, toDual_apply_apply, adjoint_inner_left,
+    toDual_symm_apply]
   rw [hD, hwx]
   -- The transition `c.symm.trans c₀` is `c₀ ∘ c.symm` by definition.
   rfl

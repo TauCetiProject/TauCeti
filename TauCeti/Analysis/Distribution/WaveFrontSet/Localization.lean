@@ -74,9 +74,10 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 * `Distribution.exists_forall_one_add_norm_pow_mul_norm_localFourier_le_of_disjoint`: rapid decay
   of a localized Fourier transform on a closed cone of directions avoiding the wave front set over
   the support of the cutoff.
-* `Distribution.IsMicrolocallySmoothAt.add`, `Distribution.waveFrontSet_add_subset`,
-  `Distribution.waveFrontSet_sub_subset`, `Distribution.waveFrontSet_sum_subset`: the wave front
-  set of a sum lies in the union of the wave front sets.
+* `Distribution.IsMicrolocallySmoothAt.add`, `Distribution.IsMicrolocallySmoothAt.sum`,
+  `Distribution.waveFrontSet_add_subset`, `Distribution.waveFrontSet_sub_subset`,
+  `Distribution.waveFrontSet_sum_subset`: the wave front set of a sum lies in the union of the
+  wave front sets.
 * `Distribution.IsMicrolocallySmoothAt.smulLeftCLM`,
   `Distribution.isMicrolocallySmoothAt_smulLeftCLM_iff`,
   `Distribution.waveFrontSet_smulLeftCLM_subset`, `Distribution.mem_waveFrontSet_smulLeftCLM_iff`:
@@ -639,6 +640,24 @@ theorem IsMicrolocallySmoothAt.add {S T : 𝓓'(Ω, ℂ)} {x ξ : E}
         gcongr
         exact norm_add_le _ _
     _ ≤ C + C' := add_le_add (hC η hη.1) (hC' η hη.2)
+
+/-- A finite sum of distributions microlocally smooth at `(x, ξ)`, for `x ∈ Ω`, is microlocally
+smooth there. -/
+theorem IsMicrolocallySmoothAt.sum {ι : Type*} (s : Finset ι) {T : ι → 𝓓'(Ω, ℂ)} {x ξ : E}
+    (hx : x ∈ Ω) (h : ∀ i ∈ s, (T i).IsMicrolocallySmoothAt x ξ) :
+    (∑ i ∈ s, T i).IsMicrolocallySmoothAt x ξ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    -- The zero distribution has vanishing localized Fourier transforms.
+    obtain ⟨φ, -, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤) (Ω := Ω)
+      (Ω.isOpen.mem_nhds hx) subset_rfl (1 : ℂ)
+    exact isMicrolocallySmoothAt_iff.2 ⟨φ, by simp [hφx], univ, isOpen_univ, mem_univ _,
+      fun _ _ _ _ ↦ mem_univ _, fun _ ↦ ⟨0, fun η _ ↦ by simp⟩⟩
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi]
+    exact (h i (Finset.mem_insert_self i s)).add
+      (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
 
 /-- The wave front set of a sum lies in the union of the wave front sets. -/
 theorem waveFrontSet_add_subset (S T : 𝓓'(Ω, ℂ)) :
