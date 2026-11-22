@@ -53,7 +53,7 @@ metric `g`, the negative normal spaces always have local frames of size `r`
 with no frames assumed. For this bundle the file names its orientations
 (`NegativeNormalBundleOrientation`) and the existence of a Thom class over `K`
 (`HasNegativeNormalThomClass`), which holds over every commutative ring when `ν⁻` is oriented and
-over `𝔽₂` in any case.
+in characteristic two, for instance over `𝔽₂`, in any case.
 
 The Thom isomorphism needs the model fibre `Fin r → ℝ` of `ν⁻` in the universe of its base, so in
 all statements below the base `S`, the model space `E` of `M` and the coefficient ring `K` live in
@@ -73,9 +73,9 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 * `NegativeNormalBundleOrientation` and `HasNegativeNormalThomClass`: the orientations of the
   negative normal bundle of a Morse–Bott submanifold, and the existence of a Thom class of it over
   a commutative ring `K`.
-* `hasNegativeNormalThomClass_of_orientation` and
-  `hasNegativeNormalThomClass_of_subsingleton_units`: such a Thom class exists over every
-  commutative ring when the negative normal bundle is oriented, and over `𝔽₂` in any case.
+* `hasNegativeNormalThomClass_of_orientation` and `hasNegativeNormalThomClass_of_two_eq_zero`:
+  such a Thom class exists over every commutative ring when the negative normal bundle is oriented,
+  and in characteristic two in any case.
 * `nonempty_singularHomology_sublevelPair_iso_singularHomology_of_isThomClass`: a Thom class of
   `ν⁻` identifies the relative homology `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K)` of a critical band with
   `Hₚ(S; K)`.
@@ -251,17 +251,17 @@ theorem hasNegativeNormalThomClass_of_orientation
   have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
   exact VectorBundleOrientation.exists_isThomClass (by simp) o K
 
-/-- **The negative normal bundle has a Thom class mod `2`**, with coefficients in every commutative
-ring `K` whose only unit is `1`, such as `ZMod 2`, with no orientation needed
-(`TauCeti.existsUnique_isThomClass_of_subsingleton_units`). -/
-theorem hasNegativeNormalThomClass_of_subsingleton_units (K : Type) [CommRing K]
-    [Subsingleton Kˣ] : h.HasNegativeNormalThomClass hn hfs hdim g hr K := by
+/-- **The negative normal bundle has a Thom class in characteristic two**, with coefficients in
+every commutative ring `K` in which `2 = 0`, such as `ZMod 2`, with no orientation needed
+(`TauCeti.exists_isThomClass_of_two_eq_zero`). -/
+theorem hasNegativeNormalThomClass_of_two_eq_zero (K : Type) [CommRing K] (h2 : (2 : K) = 0) :
+    h.HasNegativeNormalThomClass hn hfs hdim g hr K := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
   let := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
   have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
-  exact (existsUnique_isThomClass_of_subsingleton_units K).exists
+  exact exists_isThomClass_of_two_eq_zero K h2
 
 end IsNondegenerateCriticalSubmanifold
 
