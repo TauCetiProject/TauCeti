@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.Basic
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Dynamics.Flow.Variational
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -44,9 +44,9 @@ to be `C¹` (`ContMDiffOn.contDiffOn_mpullback_extChartAt_symm`).
 The flow law `Φₜ = Φₜ₋ₜ₀ ∘ Φₜ₀` reduces the equation to time `0`, for the family
 `G τ z = e (Φ_τ (e⁻¹ z))` read in the chart near `z₀ = e (Φₜ₀ x)`. The coordinate field `V` is
 `C¹` near `z₀`, so it agrees near `z₀` with a globally Lipschitz `C¹` field `w` on `E`, its product
-with a smooth cutoff (`ContDiffAt.exists_contDiff_lipschitzWith_eventuallyEq`). For small times
-and initial points near `z₀` the curves of `G` stay where `w = V`, so by uniqueness of solutions
-they are the orbits of the global flow of `w`. The variational equation of that flow
+with a smooth cutoff (`ContDiffOn.exists_lipschitzWith_contDiff_eventuallyEq_of_finiteDimensional`).
+For small times and initial points near `z₀` the curves of `G` stay where `w = V`, so by uniqueness
+of solutions they are the orbits of the global flow of `w`. The variational equation of that flow
 (`TauCeti.hasDerivAt_fderiv_flowOfLipschitz`) at time `0` is the claim, since `Dw(z₀) = DV(z₀)`.
 
 ## Main results
@@ -155,8 +155,10 @@ private theorem hasDerivAt_fderiv_extChartAt_flowOf_zero [IsManifold I 2 M]
       (by norm_num) |>.contDiffAt (Filter.inter_mem ?_ (by simp))
     rw [(isOpen_extChartAt_target y).interior_eq]
     exact extChartAt_target_mem_nhds' ((extChartAt I y).map_source hp)
-  obtain ⟨w, hwC, ⟨K, hwK⟩, hwv⟩ := hvc.exists_contDiff_lipschitzWith_eventuallyEq one_ne_zero
-  have hwC' : ContDiff ℝ 1 w := by exact_mod_cast hwC
+  obtain ⟨u, hu, hvu⟩ := hvc.contDiffOn le_rfl (by simp)
+  have hvu' : ContDiffOn ℝ ((0 : ℕ∞) + 1) _ u := hvu
+  obtain ⟨w, K, hwC', hwK, hwv⟩ :=
+    hvu'.exists_lipschitzWith_contDiff_eventuallyEq_of_finiteDimensional hu
   have hev := eventually_extChartAt_flowOf_eq_flowOfLipschitz hv hp hwK hwv
   refine ⟨hev.mono fun τ hτ ↦ ?_, ?_⟩
   · exact ((differentiable_flowOfLipschitz_apply hwK hwC' τ) _).congr_of_eventuallyEq hτ
