@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Topology
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import TauCeti.Topology.ContinuousMap.Polynormable
 
 /-!

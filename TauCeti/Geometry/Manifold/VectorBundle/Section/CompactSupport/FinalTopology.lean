@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Topology
 import TauCeti.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
+import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 
 /-!
 # The chart-extension final topology on compactly supported bundle sections
@@ -284,11 +284,9 @@ private theorem compactlySupportedTopology_le_finalLocallyConvexTopology_chartTe
   rw [compactlySupportedTopology_def]
   refine (TauCeti.FinalLocallyConvexTopology.le_iff
     (ofSupportedIn (I := I) (F := F) (V := V) (n := n)) _).2 fun K ↦ ?_
-  obtain ⟨α, hfin, r, χ, hχc, hχs, -, -, hχsum⟩ :=
-    K.isCompact.exists_contMDiffMap_partitionOfUnity I (n := n)
-      (U := fun j ↦ (c j).source) fun x _ ↦
-        let ⟨j, hj⟩ := hchart_cover x
-        ⟨j, (c j).open_source.mem_nhds hj⟩
+  obtain ⟨α, _, r, χ, hχc, hχs, hdecomp⟩ :=
+    exists_ofSupportedIn_eq_sum_chartCutoffTestFunction (I := I) (F := F) (V := V) (n := n)
+      t c hc hc_symm hct K fun x _ ↦ hchart_cover x
   have hterm (a : α) :
       Continuous (fun s : supportedIn I F n V K ↦
         (t (r a)).chartTestSection (c (r a)) (hc (r a)) (hct (r a))
@@ -298,26 +296,7 @@ private theorem compactlySupportedTopology_le_finalLocallyConvexTopology_chartTe
       (fun j ↦ (t j).chartTestSection (c j) (hc j) (hct j)) (r a)).comp
       (((t (r a)).continuous_chartCutoffTestFunction (c (r a)) (hc_symm (r a)) (hct (r a))
         e U hU (χ a) (hχc a) (hχs a) fun x _ ↦ hcover x).comp continuous_subtypeVal)
-  refine (continuous_finsetSum Finset.univ fun a _ ↦ hterm a).congr fun s ↦ ?_
-  apply Subtype.ext
-  ext x
-  have hcoe : ((∑ a : α, (t (r a)).chartTestSection (c (r a)) (hc (r a)) (hct (r a))
-        ((t (r a)).chartCutoffTestFunction (c (r a)) (hc_symm (r a)) (hct (r a))
-          (χ a) (hχc a) (hχs a) s.val) : compactlySupported I F n V) : Cₛ^n⟮I; F, V⟯) =
-      ∑ a : α, χ a • s.val := by
-    rw [Submodule.coe_sum]
-    exact Finset.sum_congr rfl fun a _ ↦ congrArg Subtype.val
-      ((t (r a)).chartTestSection_chartCutoffTestFunction (c (r a)) (hc_symm (r a))
-        (hct (r a)) (hc (r a)) (χ a) (hχc a) (hχs a) s.val)
-  have heval : (∑ a : α, χ a • s.val : Cₛ^n⟮I; F, V⟯) x = ∑ a : α, (χ a • s.val) x := by
-    have h := congrFun (map_sum (coeAddHom I F n V) (fun a : α ↦ χ a • s.val) Finset.univ) x
-    simp only [coeAddHom_apply, Finset.sum_apply] at h
-    exact h
-  rw [hcoe, heval, ofSupportedIn_apply]
-  simp only [ContMDiffSection.smul_apply, ← Finset.sum_smul]
-  by_cases hx : x ∈ (K : Set M)
-  · rw [hχsum x hx, one_smul]
-  · rw [s.val.eq_zero_of_notMem_tsupport fun h ↦ hx (mem_supportedIn.1 s.property h), smul_zero]
+  exact (continuous_finsetSum Finset.univ fun a _ ↦ hterm a).congr fun s ↦ (hdecomp s).symm
 
 omit [FiniteDimensional ℝ E] [IsManifold I n M] in
 private theorem finalLocallyConvexTopology_chartTestSection_le_chartTestTopology :

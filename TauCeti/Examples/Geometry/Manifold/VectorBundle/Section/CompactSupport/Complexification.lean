@@ -145,7 +145,7 @@ def infiniteModelChartTest (φ : 𝓓((⟨(OpenPartialHomeomorph.refl ℝ).targe
   CompactlySupported.ITmul (n := (⊤ : ℕ∞)) (chartSection φ)
 
 variable (M : Type*) [TopologicalSpace M] [ChartedSpace ℝ M]
-  [T2Space M] [IsManifold 𝓘(ℝ, ℝ) ∞ M]
+  [IsManifold 𝓘(ℝ, ℝ) ∞ M]
 
 /-- The native final-topology pair equivalence for the trivial bundle on a real-line manifold. -/
 def trivialPairCLE :=
@@ -153,14 +153,12 @@ def trivialPairCLE :=
     F)
     (fun x : M ↦ trivializationAt F (Bundle.Trivial M F) x) (fun _ ↦ (⊤ : Opens M))
     (by intro i; simp [Bundle.Trivial.fiberBundle_trivializationAt'])
-    (by intro x; exact ⟨x, Set.mem_univ x⟩)
 
 /-- The native fixed-subspace equivalence for the trivial bundle on a real-line manifold. -/
 def trivialFixedCLE :=
   CompactlySupported.realPointsConjCLE (n := (⊤ : ℕ∞)) (I := 𝓘(ℝ, ℝ)) (V := Bundle.Trivial M F)
     (fun x : M ↦ trivializationAt F (Bundle.Trivial M F) x) (fun _ ↦ (⊤ : Opens M))
     (by intro i; simp [Bundle.Trivial.fiberBundle_trivializationAt'])
-    (by intro x; exact ⟨x, Set.mem_univ x⟩)
 
 /-- The continuous inverse reconstructs a nonzero test with original-fibre value 2+3i. -/
 theorem continuous_inverse_nonzero
@@ -266,14 +264,12 @@ def finiteZeroPair :=
   CompactlySupported.complexificationCLEProd (n := 0) (I := 𝓘(ℝ, ℝ)) (V := Bundle.Trivial ℝ ℝ)
     (fun x : ℝ ↦ trivializationAt ℝ (Bundle.Trivial ℝ ℝ) x) (fun _ ↦ (⊤ : Opens ℝ))
     (by intro i; simp [Bundle.Trivial.fiberBundle_trivializationAt'])
-    (by intro x; exact ⟨x, Set.mem_univ x⟩)
 
 /-- The actual native final-topology equivalence includes finite regularity three. -/
 def finiteThreePair :=
   CompactlySupported.complexificationCLEProd (n := 3) (I := 𝓘(ℝ, ℝ)) (V := Bundle.Trivial ℝ ℝ)
     (fun x : ℝ ↦ trivializationAt ℝ (Bundle.Trivial ℝ ℝ) x) (fun _ ↦ (⊤ : Opens ℝ))
     (by intro i; simp [Bundle.Trivial.fiberBundle_trivializationAt'])
-    (by intro x; exact ⟨x, Set.mem_univ x⟩)
 
 /-- The actual pair equivalence includes rank-zero fibres. -/
 def rankZeroPair := trivialPairCLE (F := (Fin 0 → ℝ)) ℝ
@@ -288,15 +284,13 @@ def infinitePair := trivialPairCLE (F := C(↥(Icc (0 : ℝ) 1), ℝ)) ℝ
 def emptyCompactPair :=
   SupportedIn.complexificationCLEProd (n := (⊤ : ℕ∞)) (I := 𝓘(ℝ, ℝ)) (V := Bundle.Trivial ℝ ℝ)
     (fun x : ℝ ↦ trivializationAt ℝ (Bundle.Trivial ℝ ℝ) x) (fun _ ↦ (⊤ : Opens ℝ))
-    (by intro i; simp [Bundle.Trivial.fiberBundle_trivializationAt'])
-    (by intro x; exact ⟨x, Set.mem_univ x⟩) ⊥
+    (by intro i; simp [Bundle.Trivial.fiberBundle_trivializationAt']) ⊥
 
 /-- The native fixed-subspace endpoint includes empty compact support on a nonempty base. -/
 def emptyCompactFixed :=
   SupportedIn.realPointsConjCLE (n := (⊤ : ℕ∞)) (I := 𝓘(ℝ, ℝ)) (V := Bundle.Trivial ℝ ℝ)
     (fun x : ℝ ↦ trivializationAt ℝ (Bundle.Trivial ℝ ℝ) x) (fun _ ↦ (⊤ : Opens ℝ))
-    (by intro i; simp [Bundle.Trivial.fiberBundle_trivializationAt'])
-    (by intro x; exact ⟨x, Set.mem_univ x⟩) ⊥
+    (by intro i; simp [Bundle.Trivial.fiberBundle_trivializationAt']) ⊥
 
 /-! ## Analytic-order algebra, without a chosen test topology -/
 
@@ -406,8 +400,6 @@ def densityHomPair :=
         (trivializationAt (F →L[ℝ] ℝ)
           (fun x ↦ V x →L[ℝ] DensityBundle I M x) x).open_baseSet⟩)
     (fun _ ↦ subset_rfl)
-    (fun x ↦ ⟨x, mem_baseSet_trivializationAt (F →L[ℝ] ℝ)
-      (fun x ↦ V x →L[ℝ] DensityBundle I M x) x⟩)
 
 
 end DensityHom

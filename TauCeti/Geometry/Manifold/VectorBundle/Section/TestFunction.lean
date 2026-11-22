@@ -25,15 +25,16 @@ normed `ℝ`-algebra `𝕜'`, chart extension commutes with `𝕜'`-scalars
 In the reverse direction, a chart `c` with `C^n` inverse subordinate to a smooth bundle frame `t`
 reads sections supported in a compact subset `K ⊆ c.source` back into `𝓓^{n}_{c '' K}(E, F)` and
 `𝓓^{n}(⟨c.target, c.open_target⟩, F)` (`Bundle.Trivialization.chartReadSupportedIn`,
-`Bundle.Trivialization.chartReadTestFunction`), and reads arbitrary sections localized by a
-compactly supported `C^n` cutoff `ρ` with `tsupport ρ ⊆ c.source` into
-`𝓓^{n}(⟨c.target, c.open_target⟩, F)` (`Bundle.Trivialization.chartCutoffTestFunction`).
+`Bundle.Trivialization.chartReadTestFunction`), localizes arbitrary sections by a compactly
+supported `C^n` cutoff `ρ` with `tsupport ρ ⊆ c.source` into
+`𝓓^{n}(⟨c.target, c.open_target⟩, F)` (`Bundle.Trivialization.chartCutoffTestFunction`), and
+localizes arbitrary sections by a smooth function `ψ` mapping `tsupport ψ` into a compact set
+`L ⊆ c.target` into `𝓓^{n}_{L}(E, F)` (`Bundle.Trivialization.chartLocalization`).
 On a Hausdorff base when `c` is also forward `C^n`, extending these readings by zero recovers the
 original or localized section (`Bundle.Trivialization.chartTestSection_chartReadTestFunction`,
-`Bundle.Trivialization.chartTestSection_chartCutoffTestFunction`). This chart-reading, cutoff, and
-extension-back API is adapted from `Bundle.Trivialization.chartLocalization` and
-`Bundle.Trivialization.chartTestSection_chartLocalization` in
-`TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization`.
+`Bundle.Trivialization.chartTestSection_chartCutoffTestFunction`,
+`Bundle.Trivialization.chartTestSection_chartLocalization`). Their continuity under frame covers
+lives in `TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization`.
 
 These are algebraic chart extension and chart-reading maps for constructing locally convex
 test-section spaces. No topology on compactly supported sections is installed here. Extension only
@@ -492,5 +493,124 @@ theorem chartTestSection_chartCutoffTestFunction [T2Space M]
   rw [ofSupportedIn_apply, LinearMap.codRestrict_apply, smulLinearMap_eq_smul]
 
 end ChartRead
+
+section ChartLocalization
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  {n : ℕ∞}
+  (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
+  (c : OpenPartialHomeomorph M E)
+
+/-- The values of the chart localization: on the chart target, the frame coefficients of `s` at
+`c⁻¹ y`, multiplied by `ψ (c⁻¹ y)`; zero elsewhere. -/
+private def localizationFun (ψ : C^n⟮I, M; ℝ⟯) (s : Cₛ^n⟮I; F, V⟯) (y : E) : F :=
+  open scoped Classical in
+  if y ∈ c.target then ψ (c.symm y) • t.continuousLinearMapAt ℝ (c.symm y) (s (c.symm y)) else 0
+
+private theorem localizationFun_of_mem (ψ : C^n⟮I, M; ℝ⟯) (s : Cₛ^n⟮I; F, V⟯) {y : E}
+    (hy : y ∈ c.target) :
+    localizationFun t c ψ s y =
+      ψ (c.symm y) • t.continuousLinearMapAt ℝ (c.symm y) (s (c.symm y)) := by
+  simp [localizationFun, hy]
+
+private theorem localizationFun_of_notMem (ψ : C^n⟮I, M; ℝ⟯) (s : Cₛ^n⟮I; F, V⟯) {y : E}
+    (hy : y ∉ c.target) :
+    localizationFun t c ψ s y = 0 := by
+  simp [localizationFun, hy]
+
+private theorem localizationFun_eq_zero (ψ : C^n⟮I, M; ℝ⟯) (L : Compacts E)
+    (hψ : MapsTo c (_root_.tsupport ψ) L) (s : Cₛ^n⟮I; F, V⟯) {y : E} (hy : y ∉ L) :
+    localizationFun t c ψ s y = 0 := by
+  by_cases hyc : y ∈ c.target
+  · rw [localizationFun_of_mem t c ψ s hyc, image_eq_zero_of_notMem_tsupport
+      (fun h ↦ hy (c.right_inv hyc ▸ hψ h)), zero_smul]
+  · exact localizationFun_of_notMem t c ψ s hyc
+
+private theorem localizationFun_add (ψ : C^n⟮I, M; ℝ⟯) (s s' : Cₛ^n⟮I; F, V⟯) :
+    localizationFun t c ψ (s + s') = localizationFun t c ψ s + localizationFun t c ψ s' := by
+  ext y
+  by_cases hy : y ∈ c.target <;> simp [localizationFun, hy]
+
+private theorem localizationFun_smul (ψ : C^n⟮I, M; ℝ⟯) (a : ℝ) (s : Cₛ^n⟮I; F, V⟯) :
+    localizationFun t c ψ (a • s) = a • localizationFun t c ψ s := by
+  ext y
+  by_cases hy : y ∈ c.target <;> simp [localizationFun, hy, smul_comm a]
+
+variable (hc_symm : ContMDiffOn 𝓘(ℝ, E) I n c.symm c.target)
+  (hct : c.source ⊆ t.baseSet)
+  [ContMDiffVectorBundle n F V I]
+  (ψ : C^n⟮I, M; ℝ⟯) (L : Compacts E) (hL : (L : Set E) ⊆ c.target)
+  (hψ : MapsTo c (_root_.tsupport ψ) L)
+
+include hc_symm hct hL hψ in
+private theorem contDiff_localizationFun (s : Cₛ^n⟮I; F, V⟯) :
+    ContDiff ℝ n (localizationFun t c ψ s) := by
+  refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
+  by_cases hy : y ∈ c.target
+  · -- On the chart target the localization is a product of smooth coordinate expressions.
+    have hsy : ContMDiffAt I 𝓘(ℝ, F) n (fun x ↦ (t ⟨x, s x⟩).2) (c.symm y) :=
+      (t.contMDiffAt_section_iff (hct (c.map_target hy))).1 (s.contMDiff _)
+    have hcy : ContMDiffAt 𝓘(ℝ, E) I n c.symm y := hc_symm.contMDiffAt (c.open_target.mem_nhds hy)
+    have h : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, F) n
+        (fun y ↦ ψ (c.symm y) • (t ⟨c.symm y, s (c.symm y)⟩).2) y :=
+      ((ψ.contMDiff.contMDiffAt).comp y hcy).smul (hsy.comp y hcy)
+    refine (contMDiffAt_iff_contDiffAt.1 h).congr_of_eventuallyEq ?_
+    filter_upwards [c.open_target.mem_nhds hy] with z hz
+    rw [localizationFun_of_mem t c ψ s hz,
+      t.continuousLinearMapAt_apply_of_mem (R := ℝ) (hct (c.map_target hz))]
+  · -- Off the chart target the point lies outside the compact set `L`, where all values vanish.
+    have hyL : y ∉ L := fun h ↦ hy (hL h)
+    refine (contDiffAt_const (c := (0 : F))).congr_of_eventuallyEq ?_
+    filter_upwards [L.isCompact.isClosed.isOpen_compl.mem_nhds hyL] with z hz
+    exact localizationFun_eq_zero t c ψ L hψ s hz
+
+/-- The **chart localization** of sections: a section `s` goes to the native test function
+`y ↦ ψ (c⁻¹ y) • (t (s (c⁻¹ y))).2` on the chart target, extended by zero, which is supported in
+the compact set `L`. -/
+def chartLocalization : Cₛ^n⟮I; F, V⟯ →ₗ[ℝ] 𝓓^{n}_{L}(E, F) where
+  toFun s := ContDiffMapSupportedIn.of_support_subset
+    (contDiff_localizationFun t c hc_symm hct ψ L hL hψ s) fun y hy ↦ by
+      by_contra hyL
+      exact hy (localizationFun_eq_zero t c ψ L hψ s hyL)
+  map_add' s s' := ContDiffMapSupportedIn.ext fun y ↦
+    congrFun (localizationFun_add t c ψ s s') y
+  map_smul' a s := ContDiffMapSupportedIn.ext fun y ↦
+    congrFun (localizationFun_smul t c ψ a s) y
+
+/-- On the chart target the chart localization is `ψ` times the frame coefficients. -/
+theorem chartLocalization_apply_of_mem (s : Cₛ^n⟮I; F, V⟯) {y : E} (hy : y ∈ c.target) :
+    t.chartLocalization c hc_symm hct ψ L hL hψ s y =
+      ψ (c.symm y) • t.continuousLinearMapAt ℝ (c.symm y) (s (c.symm y)) :=
+  localizationFun_of_mem t c ψ s hy
+
+/-- The chart localization vanishes outside the chart target. -/
+@[simp]
+theorem chartLocalization_apply_of_notMem (s : Cₛ^n⟮I; F, V⟯) {y : E} (hy : y ∉ c.target) :
+    t.chartLocalization c hc_symm hct ψ L hL hψ s y = 0 :=
+  localizationFun_of_notMem t c ψ s hy
+
+/-- Extending the chart localization back through the chart and frame recovers `ψ • s`, as soon as
+the closed support of `ψ` lies in the chart source. -/
+theorem chartTestSection_chartLocalization [T2Space M]
+    (hc' : ContMDiffOn I 𝓘(ℝ, E) n c c.source) (hψc : _root_.tsupport ψ ⊆ c.source)
+    (s : Cₛ^n⟮I; F, V⟯) :
+    (t.chartTestSection c hc' hct
+      (TestFunction.ofSupportedIn hL (t.chartLocalization c hc_symm hct ψ L hL hψ s))).val =
+      ψ • s := by
+  ext x
+  by_cases hx : x ∈ c.source
+  · rw [chartTestSection_apply_of_mem t c hc' hct _ hx, TestFunction.coe_ofSupportedIn,
+      chartLocalization_apply_of_mem t c hc_symm hct ψ L hL hψ s (c.map_source hx), c.left_inv hx,
+      map_smul, t.symmL_continuousLinearMapAt (hct hx), ContMDiffSection.smul_apply]
+  · rw [chartTestSection_apply_of_notMem t c hc' hct _ hx, ContMDiffSection.smul_apply,
+      image_eq_zero_of_notMem_tsupport (fun h ↦ hx (hψc h)), zero_smul]
+
+end ChartLocalization
 
 end Bundle.Trivialization
