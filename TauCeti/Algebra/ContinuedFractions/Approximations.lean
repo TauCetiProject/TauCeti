@@ -8,10 +8,10 @@ module
 public import Mathlib.Algebra.ContinuedFractions.Computation.Approximations
 
 /-!
-# Integrality of continuants and bounds for the denominators and errors of convergents
+# Integrality of continuants, and bounds and signs for the errors of convergents
 
 For the continued fraction `GenContFract.of v` of an element `v` of a floor field, this file
-proves three complements to Mathlib's
+proves some complements to Mathlib's
 `Mathlib.Algebra.ContinuedFractions.Computation.Approximations`. Here `Aₙ / Bₙ` is the `n`-th
 convergent `(of v).convs n`, and `bₙ₊₁` is the partial denominator given by
 `(of v).partDens.get? n = some bₙ₊₁`.
@@ -27,6 +27,11 @@ convergent `(of v).convs n`, and `bₙ₊₁` is the partial denominator given b
   of a convergent up to a factor of two. The proof writes the error exactly as
   `1 / (Bₙ (ξₙ₊₁ Bₙ + Bₙ₋₁))` (Mathlib's `GenContFract.sub_convs_eq`), where the complete
   quotient `ξₙ₊₁` is less than `bₙ₊₁ + 1`, and uses `Bₙ₊₁ = bₙ₊₁ Bₙ + Bₙ₋₁`.
+* `GenContFract.neg_one_pow_mul_sub_convs_pos`: before termination the convergents alternate
+  around `v`, the error `v - Aₙ / Bₙ` having the sign of `(-1) ^ n`.
+* `GenContFract.exists_nat_partDens_get?_eq`: the partial denominators are natural numbers.
+* `GenContFract.two_le_of_partDen_of_terminatedAt_succ`: the last partial denominator of a
+  terminating expansion is at least `2`.
 
 ## References
 
@@ -110,5 +115,58 @@ theorem one_div_lt_abs_sub_convs (hn : ¬(of v).TerminatedAt n) :
   rw [herr, hdens, hdens']
   refine one_div_lt_one_div_of_lt (by positivity) (mul_lt_mul_of_pos_left ?_ hB)
   linarith [mul_lt_mul_of_pos_right (Int.lt_floor_add_one ifp.fr⁻¹) hB]
+
+/-- Before termination, the partial denominator `bₙ₊₁` exists and is a natural number. -/
+theorem exists_nat_partDens_get?_eq (hn : ¬(of v).TerminatedAt n) :
+    ∃ a : ℕ, (of v).partDens.get? n = some (a : K) := by
+  obtain ⟨gp, hs⟩ : ∃ gp, (of v).s.get? n = some gp := Option.ne_none_iff_exists'.1 hn
+  have hb := partDen_eq_s_b hs
+  obtain ⟨z, hz⟩ := exists_int_eq_of_partDen hb
+  have hz0 : 0 ≤ z := by exact_mod_cast hz ▸ zero_le_one.trans (of_one_le_get?_partDen hb)
+  lift z to ℕ using hz0
+  exact ⟨z, by rw [hb, hz, Int.cast_natCast]⟩
+
+/-- The last partial denominator of a terminating continued fraction is at least `2`: if
+`bₙ₊₁` exists but the expansion terminates at `n + 1`, then the complete quotient `ξₙ₊₁ > 1` is
+an integer, namely `bₙ₊₁`. -/
+theorem two_le_of_partDen_of_terminatedAt_succ {b : K} (hb : (of v).partDens.get? n = some b)
+    (ht : (of v).TerminatedAt (n + 1)) : 2 ≤ b := by
+  obtain ⟨gp, hs, rfl⟩ := exists_s_b_of_partDen hb
+  obtain ⟨ifp, hstream, hb⟩ := IntFractPair.exists_succ_get?_stream_of_gcf_of_get?_eq_some hs
+  obtain ⟨ifp', hstream', hfr', rfl⟩ := IntFractPair.succ_nth_stream_eq_some_iff.1 hstream
+  -- Termination at `n + 1` says that the fractional part of `ξₙ₊₁ = ifp'.fr⁻¹` vanishes.
+  have hfract : Int.fract ifp'.fr⁻¹ = 0 := by
+    obtain h | ⟨ifp'', h, h0⟩ := IntFractPair.succ_nth_stream_eq_none_iff.1
+      (of_terminatedAt_n_iff_succ_nth_intFractPair_stream_eq_none.1 ht)
+    · simp [hstream] at h
+    · rw [hstream, Option.some_inj] at h
+      simpa [← h, IntFractPair.of] using h0
+  have hlt : 1 < ifp'.fr⁻¹ := (one_lt_inv₀ ((IntFractPair.nth_stream_fr_nonneg hstream').lt_of_ne'
+    hfr')).2 (IntFractPair.nth_stream_fr_lt_one hstream')
+  -- So `ξₙ₊₁ = ⌊ξₙ₊₁⌋ = bₙ₊₁` is an integer greater than `1`.
+  rw [Int.fract, sub_eq_zero] at hfract
+  rw [hfract] at hlt
+  rw [← hb]
+  simp only [IntFractPair.of]
+  have h1 : (1 : ℤ) < ⌊ifp'.fr⁻¹⌋ := by exact_mod_cast hlt
+  exact_mod_cast h1
+
+/-- Before termination, the convergents alternate around `v`: the error `v - Aₙ / Bₙ` is
+nonzero and has the sign of `(-1) ^ n`. -/
+theorem neg_one_pow_mul_sub_convs_pos (hn : ¬(of v).TerminatedAt n) :
+    0 < (-1) ^ n * (v - (of v).convs n) := by
+  obtain ⟨ifp', hstream'⟩ := Option.ne_none_iff_exists'.1
+    (mt of_terminatedAt_n_iff_succ_nth_intFractPair_stream_eq_none.2 hn)
+  obtain ⟨ifp, hstream, hfr, -⟩ := IntFractPair.succ_nth_stream_eq_some_iff.1 hstream'
+  have hB : 0 < ((of v).contsAux (n + 1)).b :=
+    (fib_le_of_contsAux_b (v := v) (n := n + 1)
+      (Or.inr (mt (terminated_stable (n.sub_le 1)) hn))).trans_lt'
+      (mod_cast Nat.fib_pos.2 n.succ_pos)
+  have hpB : 0 ≤ ((of v).contsAux n).b := zero_le_of_contsAux_b
+  have hfr' : 0 < ifp.fr⁻¹ :=
+    inv_pos.2 ((IntFractPair.nth_stream_fr_nonneg hstream).lt_of_ne' hfr)
+  have hsq : ((-1 : K) ^ n) * (-1) ^ n = 1 := by rw [← mul_pow]; simp
+  rw [sub_convs_eq hstream, ite_eq_right hfr, mul_div_assoc', hsq]
+  positivity
 
 end GenContFract
