@@ -438,8 +438,10 @@ lemma twistedPushforwardCap_naturality {n p m : ℕ} (h : n + p = m)
   simp only [Category.assoc] at h₁
   rw [← LocalCoefficientSystem.twistedHomologyCoefficientMap_comp,
     ← MonoidalCategory.whiskerLeft_comp, Iso.hom_inv_id_app] at h₁
-  -- The whiskered object is the constant system `R`, the monoidal unit only up to `defeq`, so
-  -- `whiskerLeft_id` matches only up to reducible unfolding.
+  -- `Iso.hom_inv_id_app` gives `𝟙` on `(pullback (p₀.hom.comp φ.hom)).obj N`, the domain of
+  -- `pullbackCompIso`, while the whiskering's implicit objects use `(pullback (φ ≫ p₀).hom).obj N`.
+  -- These agree by `TopCat.hom_comp`, which is `rfl` but not reducible; rewriting with it first
+  -- fails because the implicit objects of `twistedHomologyCoefficientMap` would also change.
   erw [MonoidalCategory.whiskerLeft_id] at h₁
   rw [LocalCoefficientSystem.twistedHomologyCoefficientMap_id, Category.comp_id] at h₁
   -- The projection formula for `φ`, with the pull-back of `p₀^*L ⊗ p₀^*N` unfolded.
