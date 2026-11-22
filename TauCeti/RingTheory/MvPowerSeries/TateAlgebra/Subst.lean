@@ -157,10 +157,9 @@ theorem IsRestricted.subst_of_totalDegree_le [Finite σ] {a : σ → MvPolynomia
     have hle : e.degree ≤ A * d.degree := by
       have h := MvPolynomial.totalDegree_aeval_le hA (MvPolynomial.monomial d (1 : R))
       rw [MvPolynomial.aeval_monomial, map_one, one_mul] at h
-      refine (MvPolynomial.le_totalDegree (MvPolynomial.mem_support_iff.mpr he)).trans
-        (h.trans ?_)
-      rw [mul_comm]
-      exact Nat.mul_le_mul_right _ (MvPolynomial.totalDegree_monomial_le d 1)
+      exact (MvPolynomial.le_totalDegree (MvPolynomial.mem_support_iff.mpr he)).trans <|
+        h.trans <| (Nat.mul_le_mul_right A (MvPolynomial.totalDegree_monomial_le d 1)).trans_eq
+          (mul_comm _ _)
     calc ρ' ^ e.degree ≤ ρ' ^ (A * d.degree) := pow_le_pow_right₀ hρ' hle
       _ = (ρ' ^ A) ^ d.degree := pow_mul _ _ _
       _ ≤ ρ ^ d.degree := pow_le_pow_left₀ (by positivity) hρ _
