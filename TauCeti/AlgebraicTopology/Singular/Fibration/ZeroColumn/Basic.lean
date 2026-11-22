@@ -35,9 +35,9 @@ spanned by the classes `a - τⱼ a`, for `a` over the end point `χⱼ(-1)`
 page to the second being read as the quotient map
 (`TauCeti.TopCat.homologyπ_comp_serreSpectralSequenceSecondPageXZeroIsoCokernel_hom`). This
 quotient is the zeroth homology `H₀(C, D; Hq(F))` with coefficients in the fibre homology, which
-is identified in `TauCeti.AlgebraicTopology.Singular.Fibration.ZeroColumn.LocalCoefficients`; when
-`D = ∅` and `C` is connected it is the module of coinvariants of the fibre homology under the
-fundamental group.
+is identified in `TauCeti.AlgebraicTopology.Singular.Fibration.ZeroColumn.LocalCoefficients`.
+Classically, when `D = ∅` and `C` is connected, it is the module of coinvariants of the fibre
+homology under the fundamental group; that identification is not proved here.
 
 ## The argument
 

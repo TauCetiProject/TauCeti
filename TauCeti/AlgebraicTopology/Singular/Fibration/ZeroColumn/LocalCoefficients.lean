@@ -51,7 +51,8 @@ The comparison has two steps.
 
 ## Main definitions
 
-* `TauCeti.TopCat.serreFiberLocalSystemOn`: the local system of fibre homology on `C`.
+* `TauCeti.TopCat.fiberHomologyToTwistedZeroChains`: the class in `H₀(X⁰, X⁻¹; Hq(F))` of a fibre
+  homology class over a point of the `0`-skeleton.
 * `TauCeti.TopCat.serreZeroChainsIso`: `Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R) ≅ H₀(X⁰, X⁻¹; Hq(F))`.
 * `TauCeti.TopCat.serreSpectralSequenceSecondPageXZeroIsoTwistedCellularHomology`: `E²_{0,q}` is
   the cellular homology `H₀(C, D; Hq(F))` of `C` relative to `D`.
