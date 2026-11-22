@@ -208,30 +208,57 @@ section Bijective
 
 /-! ### Unit laws -/
 
+/-- The data with which `LinearMap.detLineCompEquiv_tmul` evaluates the composition law, for the
+basis of `ker f`: families `v`, `w`, `x` and `y` along the kernel–cokernel sequence, the exterior
+products `β`, `γ`, `δ` and `ε` they span, and functionals `ψ` and `χ` normalized at `δ` and at the
+exterior product of the classes of `y` in `coker g`. -/
+private structure DetLineCompData where
+  v : Fin (finrank K (range (f.kerCompToKer g))) → ker (g ∘ₗ f)
+  w : Fin (finrank K (range (f.kerToCoker g))) → ker g
+  x : Fin (finrank K (range (f.cokerToCokerComp g))) → N ⧸ range f
+  y : Fin (finrank K (P ⧸ range g)) → P ⧸ range (g ∘ₗ f)
+  β : TauCeti.detLine K (ker (g ∘ₗ f))
+  γ : TauCeti.detLine K (ker g)
+  δ : TauCeti.detLine K (N ⧸ range f)
+  ε : TauCeti.detLine K (P ⧸ range (g ∘ₗ f))
+  ψ : Dual K (TauCeti.detLine K (N ⧸ range f))
+  χ : Dual K (TauCeti.detLine K (P ⧸ range g))
+  hβ : (β : ExteriorAlgebra K (ker (g ∘ₗ f))) = ExteriorAlgebra.ιMulti K _
+    (Fin.append (Submodule.inclusion (ker_le_ker_comp f g) ∘ Module.finBasis K (ker f)) v)
+  hγ : (γ : ExteriorAlgebra K (ker g)) =
+    ExteriorAlgebra.ιMulti K _ (Fin.append (f.kerCompToKer g ∘ v) w)
+  hδ : (δ : ExteriorAlgebra K (N ⧸ range f)) =
+    ExteriorAlgebra.ιMulti K _ (Fin.append (f.kerToCoker g ∘ w) x)
+  hε : (ε : ExteriorAlgebra K (P ⧸ range (g ∘ₗ f))) =
+    ExteriorAlgebra.ιMulti K _ (Fin.append (f.cokerToCokerComp g ∘ x) y)
+  hψ : ψ δ = 1
+  hχ : χ (exteriorPower.ιMulti K _ (Submodule.factor (range_comp_le_range f g) ∘ y)) = 1
+
+/-- Two linear maps out of `det (g ∘ f)` agree once they agree on `β ⊗ φ` for every choice of
+the data `LinearMap.DetLineCompData` evaluating the composition law: such `β` span
+`det (ker (g ∘ f))` (`TauCeti.exists_spanning_ιMulti_append_sixTerm`). -/
+private theorem detLineComp_ext {Q : Type*} [AddCommMonoid Q] [Module K Q]
+    {F G : (g ∘ₗ f).detLine →ₗ[K] Q}
+    (h : ∀ (d : DetLineCompData f g) φ, F (d.β ⊗ₜ φ) = G (d.β ⊗ₜ φ)) : F = G := by
+  have : FiniteDimensional K (P ⧸ range (g ∘ₗ f)) := Module.Finite.quotient_range_comp f g
+  obtain ⟨v, w, x, y, β, γ, δ, ε, ψ, χ, hβ, hγ, hδ, hε, hψ, hχ, hspan⟩ :=
+    TauCeti.exists_spanning_ιMulti_append_sixTerm
+      (Submodule.inclusion_injective (ker_le_ker_comp f g)) (f.exact_inclusion_kerCompToKer g)
+      (f.exact_kerCompToKer_kerToCoker g) (f.exact_kerToCoker_cokerToCokerComp g)
+      (f.exact_cokerToCokerComp_factor g) (Submodule.factor_surjective _)
+  refine TensorProduct.ext' fun z φ ↦ ?_
+  obtain ⟨r, rfl⟩ := hspan z
+  rw [← TensorProduct.smul_tmul', map_smul, map_smul,
+    h ⟨v, w, x, y, β, γ, δ, ε, ψ, χ, hβ, hγ, hδ, hε, hψ, hχ⟩ φ]
+
 /-- `LinearMap.detLineCompEquiv_apply_of_bijective_left` on `β ⊗ φ`, for the data with which
-`LinearMap.detLineCompEquiv_tmul` evaluates the composition law. -/
+`LinearMap.detLineCompEquiv_tmul` evaluates the composition law (`LinearMap.DetLineCompData`). -/
 private theorem detLineCompEquiv_tmul_of_bijective_left (hf : Function.Bijective f)
-    (v : Fin (finrank K (range (f.kerCompToKer g))) → ker (g ∘ₗ f))
-    (w : Fin (finrank K (range (f.kerToCoker g))) → ker g)
-    (x : Fin (finrank K (range (f.cokerToCokerComp g))) → N ⧸ range f)
-    (y : Fin (finrank K (P ⧸ range g)) → P ⧸ range (g ∘ₗ f))
-    {β : TauCeti.detLine K (ker (g ∘ₗ f))} (hβ : (β : ExteriorAlgebra K (ker (g ∘ₗ f))) =
-      ExteriorAlgebra.ιMulti K _
-        (Fin.append (Submodule.inclusion (ker_le_ker_comp f g) ∘ Module.finBasis K (ker f)) v))
-    {γ : TauCeti.detLine K (ker g)} (hγ : (γ : ExteriorAlgebra K (ker g)) =
-      ExteriorAlgebra.ιMulti K _ (Fin.append (f.kerCompToKer g ∘ v) w))
-    {δ : TauCeti.detLine K (N ⧸ range f)} (hδ : (δ : ExteriorAlgebra K (N ⧸ range f)) =
-      ExteriorAlgebra.ιMulti K _ (Fin.append (f.kerToCoker g ∘ w) x))
-    {ε : TauCeti.detLine K (P ⧸ range (g ∘ₗ f))}
-    (hε : (ε : ExteriorAlgebra K (P ⧸ range (g ∘ₗ f))) =
-      ExteriorAlgebra.ιMulti K _ (Fin.append (f.cokerToCokerComp g ∘ x) y))
-    (φ : Dual K (TauCeti.detLine K (P ⧸ range (g ∘ₗ f))))
-    {ψ : Dual K (TauCeti.detLine K (N ⧸ range f))} (hψ : ψ δ = 1)
-    {χ : Dual K (TauCeti.detLine K (P ⧸ range g))}
-    (hχ : χ (exteriorPower.ιMulti K _ (Submodule.factor (range_comp_le_range f g) ∘ y)) = 1) :
-    f.detLineCompEquiv g (β ⊗ₜ φ) = (f.detLineEquivOfBijective hf).symm 1 ⊗ₜ
+    (d : DetLineCompData f g) (φ : Dual K (TauCeti.detLine K (P ⧸ range (g ∘ₗ f)))) :
+    f.detLineCompEquiv g (d.β ⊗ₜ φ) = (f.detLineEquivOfBijective hf).symm 1 ⊗ₜ
       (g ∘ₗ f).detLineCongr (LinearEquiv.ofBijective f hf) (LinearEquiv.refl K P)
-        (by ext; simp) (β ⊗ₜ φ) := by
+        (by ext; simp) (d.β ⊗ₜ φ) := by
+  obtain ⟨v, w, x, y, β, γ, δ, ε, ψ, χ, hβ, hγ, hδ, hε, hψ, hχ⟩ := d
   -- The families in `ker f`, in `coker f` and in its subspace `range (kerToCoker f g)` are empty.
   have hker := finrank_ker_eq_zero_of_injective hf.1
   have hcoker := finrank_quotient_range_eq_zero_of_surjective hf.2
@@ -291,44 +318,20 @@ theorem detLineCompEquiv_apply_of_bijective_left (hf : Function.Bijective f)
     f.detLineCompEquiv g x = (f.detLineEquivOfBijective hf).symm 1 ⊗ₜ
       (g ∘ₗ f).detLineCongr (LinearEquiv.ofBijective f hf) (LinearEquiv.refl K P)
         (by ext; simp) x := by
-  have : FiniteDimensional K (P ⧸ range (g ∘ₗ f)) := Module.Finite.quotient_range_comp f g
-  obtain ⟨v, w, x₀, y, β, γ, δ, ε, ψ, χ, hβ, hγ, hδ, hε, hψ, hχ, hspan⟩ :=
-    TauCeti.exists_spanning_ιMulti_append_sixTerm
-      (Submodule.inclusion_injective (ker_le_ker_comp f g)) (f.exact_inclusion_kerCompToKer g)
-      (f.exact_kerCompToKer_kerToCoker g) (f.exact_kerToCoker_cokerToCokerComp g)
-      (f.exact_cokerToCokerComp_factor g) (Submodule.factor_surjective _)
-  -- Both sides are linear in `x`, and `det (ker (g ∘ f))` is spanned by `β`.
-  induction x using TensorProduct.inductionOn with
-  | add x x' hx hx' => rw [map_add, map_add, hx, hx', TensorProduct.tmul_add]
-  | tmul z φ =>
-    obtain ⟨r, rfl⟩ := hspan z
-    rw [← TensorProduct.smul_tmul', map_smul, map_smul, TensorProduct.tmul_smul,
-      detLineCompEquiv_tmul_of_bijective_left f g hf v w x₀ y hβ hγ hδ hε φ hψ hχ]
+  -- Both sides are linear in `x`, so it suffices to check them on the spanning `β ⊗ φ`.
+  refine LinearMap.congr_fun (detLineComp_ext f g (F := (f.detLineCompEquiv g).toLinearMap)
+    (G := TensorProduct.mk K _ _ ((f.detLineEquivOfBijective hf).symm 1) ∘ₗ
+      ((g ∘ₗ f).detLineCongr _ _ _).toLinearMap) fun d φ ↦ ?_) x
+  exact detLineCompEquiv_tmul_of_bijective_left f g hf d φ
 
 /-- `LinearMap.detLineCompEquiv_apply_of_bijective_right` on `β ⊗ φ`, for the data with which
-`LinearMap.detLineCompEquiv_tmul` evaluates the composition law. -/
+`LinearMap.detLineCompEquiv_tmul` evaluates the composition law (`LinearMap.DetLineCompData`). -/
 private theorem detLineCompEquiv_tmul_of_bijective_right (hg : Function.Bijective g)
-    (v : Fin (finrank K (range (f.kerCompToKer g))) → ker (g ∘ₗ f))
-    (w : Fin (finrank K (range (f.kerToCoker g))) → ker g)
-    (x : Fin (finrank K (range (f.cokerToCokerComp g))) → N ⧸ range f)
-    (y : Fin (finrank K (P ⧸ range g)) → P ⧸ range (g ∘ₗ f))
-    {β : TauCeti.detLine K (ker (g ∘ₗ f))} (hβ : (β : ExteriorAlgebra K (ker (g ∘ₗ f))) =
-      ExteriorAlgebra.ιMulti K _
-        (Fin.append (Submodule.inclusion (ker_le_ker_comp f g) ∘ Module.finBasis K (ker f)) v))
-    {γ : TauCeti.detLine K (ker g)} (hγ : (γ : ExteriorAlgebra K (ker g)) =
-      ExteriorAlgebra.ιMulti K _ (Fin.append (f.kerCompToKer g ∘ v) w))
-    {δ : TauCeti.detLine K (N ⧸ range f)} (hδ : (δ : ExteriorAlgebra K (N ⧸ range f)) =
-      ExteriorAlgebra.ιMulti K _ (Fin.append (f.kerToCoker g ∘ w) x))
-    {ε : TauCeti.detLine K (P ⧸ range (g ∘ₗ f))}
-    (hε : (ε : ExteriorAlgebra K (P ⧸ range (g ∘ₗ f))) =
-      ExteriorAlgebra.ιMulti K _ (Fin.append (f.cokerToCokerComp g ∘ x) y))
-    (φ : Dual K (TauCeti.detLine K (P ⧸ range (g ∘ₗ f))))
-    {ψ : Dual K (TauCeti.detLine K (N ⧸ range f))} (hψ : ψ δ = 1)
-    {χ : Dual K (TauCeti.detLine K (P ⧸ range g))}
-    (hχ : χ (exteriorPower.ιMulti K _ (Submodule.factor (range_comp_le_range f g) ∘ y)) = 1) :
-    f.detLineCompEquiv g (β ⊗ₜ φ) =
+    (d : DetLineCompData f g) (φ : Dual K (TauCeti.detLine K (P ⧸ range (g ∘ₗ f)))) :
+    f.detLineCompEquiv g (d.β ⊗ₜ φ) =
       (g ∘ₗ f).detLineCongr (LinearEquiv.refl K M) (LinearEquiv.ofBijective g hg).symm
-          (by ext; simp) (β ⊗ₜ φ) ⊗ₜ (g.detLineEquivOfBijective hg).symm 1 := by
+          (by ext; simp) (d.β ⊗ₜ φ) ⊗ₜ (g.detLineEquivOfBijective hg).symm 1 := by
+  obtain ⟨v, w, x, y, β, γ, δ, ε, ψ, χ, hβ, hγ, hδ, hε, hψ, hχ⟩ := d
   -- The families in `ker g`, in `coker g` and in the subspace `range (kerCompToKer f g)` are
   -- empty.
   have hker := finrank_ker_eq_zero_of_injective hg.1
@@ -389,19 +392,11 @@ theorem detLineCompEquiv_apply_of_bijective_right (hg : Function.Bijective g)
     f.detLineCompEquiv g x =
       (g ∘ₗ f).detLineCongr (LinearEquiv.refl K M) (LinearEquiv.ofBijective g hg).symm
           (by ext; simp) x ⊗ₜ (g.detLineEquivOfBijective hg).symm 1 := by
-  have : FiniteDimensional K (P ⧸ range (g ∘ₗ f)) := Module.Finite.quotient_range_comp f g
-  obtain ⟨v, w, x₀, y, β, γ, δ, ε, ψ, χ, hβ, hγ, hδ, hε, hψ, hχ, hspan⟩ :=
-    TauCeti.exists_spanning_ιMulti_append_sixTerm
-      (Submodule.inclusion_injective (ker_le_ker_comp f g)) (f.exact_inclusion_kerCompToKer g)
-      (f.exact_kerCompToKer_kerToCoker g) (f.exact_kerToCoker_cokerToCokerComp g)
-      (f.exact_cokerToCokerComp_factor g) (Submodule.factor_surjective _)
-  -- Both sides are linear in `x`, and `det (ker (g ∘ f))` is spanned by `β`.
-  induction x using TensorProduct.inductionOn with
-  | add x x' hx hx' => rw [map_add, map_add, hx, hx', TensorProduct.add_tmul]
-  | tmul z φ =>
-    obtain ⟨r, rfl⟩ := hspan z
-    rw [← TensorProduct.smul_tmul', map_smul, map_smul, ← TensorProduct.smul_tmul',
-      detLineCompEquiv_tmul_of_bijective_right f g hg v w x₀ y hβ hγ hδ hε φ hψ hχ]
+  -- Both sides are linear in `x`, so it suffices to check them on the spanning `β ⊗ φ`.
+  refine LinearMap.congr_fun (detLineComp_ext f g (F := (f.detLineCompEquiv g).toLinearMap)
+    (G := (TensorProduct.mk K _ _).flip ((g.detLineEquivOfBijective hg).symm 1) ∘ₗ
+      ((g ∘ₗ f).detLineCongr _ _ _).toLinearMap) fun d φ ↦ ?_) x
+  exact detLineCompEquiv_tmul_of_bijective_right f g hg d φ
 
 end Bijective
 
