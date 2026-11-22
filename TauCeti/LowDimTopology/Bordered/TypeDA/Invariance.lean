@@ -376,18 +376,17 @@ private theorem boxTensorMorphism_mul_boxTensorMorphism_add_idMorphism_of_eq [De
   have hsub : (P.boxCompHomotopy N N' N F G).submatrix Subtype.val Subtype.val +
       P.boxTensorMorphism idemA N N H =
         (P.boxCompHomotopy N N' N F G + P.boxMorphism N N H).submatrix Subtype.val Subtype.val := by
-    ext p q
-    simp only [Matrix.add_apply, Matrix.submatrix_apply, boxTensorMorphism_apply]
+    simp only [boxTensorMorphism, Matrix.submatrix_add, Pi.add_apply]
+  -- In characteristic two the shared term `P ⊠ (F * G)` cancels.
+  have hcancel (M₁ M₂ M₃ : Matrix (Y × X) (Y × X) B) : M₁ + M₂ + (M₂ + M₃) = M₁ + M₃ := by
+    rw [show M₁ + M₂ + (M₂ + M₃) = M₁ + M₃ + (M₂ + M₂) by abel, add_self_eq_zero_of_charTwo R,
+      add_zero]
   rw [hsub, ← hPu.boxTensorMorphism_idMorphism hP hιA hdB hN,
     boxTensorMorphism_mul_boxTensorMorphism hP hιA hF, boxTensorTypeD_eq_restrict,
     TypeDStructure.morphismDifferential_submatrix _
       (F := P.boxCompHomotopy N N' N F G + P.boxMorphism N N H) (hF := fun p q _ hq => hvan p q hq),
-    map_add, h₁, h₂,
-    add_assoc (P.boxMorphism N N' F * P.boxMorphism N' N G),
-    ← add_assoc (P.boxMorphism N N (F * G)),
-    add_self_eq_zero_of_charTwo R, zero_add]
-  ext p q
-  simp only [Matrix.add_apply, Matrix.submatrix_apply, boxTensorMorphism_apply]
+    map_add, h₁, h₂, hcancel]
+  simp only [boxTensorMorphism, Matrix.submatrix_add, Pi.add_apply]
 
 /-- **Homotopy invariance of the box tensor product with a bounded type `DA` bimodule, in the type
 `D` structure.** Over a ring of characteristic two, let `P` be strictly unital and compatible with
