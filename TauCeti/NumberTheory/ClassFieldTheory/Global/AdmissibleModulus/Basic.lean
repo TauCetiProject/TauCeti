@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Cyclotomic.Basic
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.ArtinNorm
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Range
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.Subgroup
 import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
@@ -287,7 +286,8 @@ theorem mem_abelianConductor_infinitePart (p : ℕ) [Fact p.Prime]
     (hpn : 2 < p ^ n) :
     w ∈ (abelianConductor K L).infinitePart := by
   by_contra hw
-  exact not_isAdmissibleModulus_of_forall_ne p w.2 (fun w' hw' heq ↦ hw (Subtype.ext heq ▸ hw'))
+  exact not_isAdmissibleModulus_of_forall_ne p w.property (fun w' hw' heq ↦ hw
+      (Subtype.ext heq ▸ hw'))
     hζ hpn (isAdmissibleModulus_abelianConductor K L)
 
 /-- **The conductor of `ℚ(i)/ℚ` contains the real place of `ℚ`.** -/

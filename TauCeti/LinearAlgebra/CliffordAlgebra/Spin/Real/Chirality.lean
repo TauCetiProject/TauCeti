@@ -127,7 +127,7 @@ private theorem quaternionProdAction_neg_one_one (hb : b.toBasis.orientation = o
   ext ψ
   simp only [quaternionProdAction, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
     coe_evenHalfSpinAction_apply, ← chirality_eq_realEvenCliffordEquiv o hQ b hb,
-    mem_eigenspace_iff.1 ψ.2]
+    mem_eigenspace_iff.1 ψ.property]
   simp [Algebra.algebraMap_eq_smul_one]
 
 /-- `(1, 0) = (1 - (-1, 1)) / 2` in `ℍ × ℍ`. -/

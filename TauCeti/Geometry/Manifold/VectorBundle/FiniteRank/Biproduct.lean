@@ -709,7 +709,7 @@ def whitneySumTotalSpaceDiffeomorph (IB : ModelWithCorners 𝕜 EB HB) (n : With
 theorem whitneySumTotalSpaceDiffeomorph_apply (IB : ModelWithCorners 𝕜 EB HB) (n : WithTop ℕ∞)
     (A D : FiniteRankBundleCore 𝕜 B) (p : (whitneySum A D).core.TotalSpace) :
     whitneySumTotalSpaceDiffeomorph IB n A D p =
-      ⟨p.proj, whitneySumFiberEquiv A D p.proj p.2⟩ :=
+      ⟨p.proj, whitneySumFiberEquiv A D p.proj p.snd⟩ :=
   whitneySumTotalSpaceHomeomorph_apply A D p
 
 @[simp]
@@ -717,7 +717,7 @@ theorem whitneySumTotalSpaceDiffeomorph_symm_apply (IB : ModelWithCorners 𝕜 E
     (A D : FiniteRankBundleCore 𝕜 B)
     (p : TotalSpace ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) (A.core.Fiber ×ᵇ D.core.Fiber)) :
     (whitneySumTotalSpaceDiffeomorph IB n A D).symm p =
-      ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.2⟩ :=
+      ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.snd⟩ :=
   whitneySumTotalSpaceHomeomorph_symm_apply A D p
 
 @[simp]
@@ -733,8 +733,8 @@ theorem whitneySumTotalSpaceDiffeomorph_naturality (IB : ModelWithCorners 𝕜 E
     {A A' D D' : FiniteRankBundleCore 𝕜 B} (f : A ⟶ A') (g : D ⟶ D')
     (p : (whitneySum A D).core.TotalSpace) :
     whitneySumTotalSpaceDiffeomorph IB n A' D' ((whitneyMap f g).totalSpaceMap p) =
-      ⟨p.proj, (f.fiberMap p.proj (whitneySumTotalSpaceDiffeomorph IB n A D p).2.1,
-        g.fiberMap p.proj (whitneySumTotalSpaceDiffeomorph IB n A D p).2.2)⟩ :=
+      ⟨p.proj, (f.fiberMap p.proj (whitneySumTotalSpaceDiffeomorph IB n A D p).snd.1,
+        g.fiberMap p.proj (whitneySumTotalSpaceDiffeomorph IB n A D p).snd.2)⟩ :=
   whitneySumTotalSpaceHomeomorph_naturality f g p
 
 end MathlibProd

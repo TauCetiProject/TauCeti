@@ -83,7 +83,7 @@ of the sheaf of hyperfunctions.
 * `CategoryTheory.Sheaf.isZero_stalk_supportedHSheaf_of_notMem`: the stalks of `𝓗_Sⁿ(F)` at
   points outside `S` vanish;
 * `CategoryTheory.Sheaf.isZero_supportedHSheaf_succ_of_isFlasque`: `𝓗_Sⁿ⁺¹(F) = 0` for a flasque
-  sheaf `F`.
+  sheaf `F`;
 * `CategoryTheory.Sheaf.supportedSectionsFunctor S`: the supported-section functor `Γ_S`, which
   is left exact (`CategoryTheory.Sheaf.exact_map_supportedSectionsFunctor`; as an instance,
   `CategoryTheory.Sheaf.preservesFiniteLimits_supportedSectionsFunctor`) and through which
@@ -91,7 +91,7 @@ of the sheaf of hyperfunctions.
   (`CategoryTheory.Sheaf.supportedHZeroEquiv_naturality_right`);
 * `CategoryTheory.Sheaf.shortExact_map_supportedSectionsFunctor`: `Γ_S` preserves a short exact
   sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` with `𝓗_S¹(F₁) = 0`;
-* `CategoryTheory.Sheaf.subsingleton_supportedH_of_isZero_supportedHSheaf`: support truncation.
+* `CategoryTheory.Sheaf.subsingleton_supportedH_of_isZero_supportedHSheaf`: support truncation;
 * `CategoryTheory.Sheaf.isSheaf_supportedHPresheaf_of_isZero_supportedHSheaf`: if `𝓗_S^q(F) = 0`
   for `q < n`, the presheaf `W ↦ H_Sⁿ(W, F)` is a sheaf;
 * `CategoryTheory.Sheaf.supportedHSectionsEquiv`: under the same hypothesis,
@@ -131,14 +131,14 @@ restriction maps of `F`. -/
 def supportedSectionsPresheaf : TopCat.Presheaf AddCommGrpCat.{u} X where
   obj W := AddCommGrpCat.of (F.supportedSections S W.unop)
   map f := AddCommGrpCat.ofHom <| AddMonoidHom.mk'
-    (fun s ↦ ⟨F.obj.map f s, F.map_mem_supportedSections_of_le (leOfHom f.unop) s.2⟩)
+    (fun s ↦ ⟨F.obj.map f s, F.map_mem_supportedSections_of_le (leOfHom f.unop) s.property⟩)
     fun s t ↦ Subtype.ext (map_add _ _ _)
   map_id W := by
     ext s
-    exact congr($(F.obj.map_id W) s.1)
+    exact congr($(F.obj.map_id W) s.val)
   map_comp f g := by
     ext s
-    exact congr($(F.obj.map_comp f g) s.1)
+    exact congr($(F.obj.map_comp f g) s.val)
 
 @[simp]
 lemma supportedSectionsPresheaf_obj (W : (Opens X)ᵒᵖ) :
@@ -157,7 +157,7 @@ supported sections is supported, since its restriction to the complement of `S` 
 locally. -/
 theorem isSheaf_supportedSectionsPresheaf : (F.supportedSectionsPresheaf S).IsSheaf := by
   refine (TopCat.Presheaf.isSheaf_iff_isSheafUniqueGluing _).2 fun ι U sf hsf ↦ ?_
-  obtain ⟨s, hs, hs'⟩ := TopCat.Sheaf.existsUnique_gluing F U (fun i ↦ (sf i).1)
+  obtain ⟨s, hs, hs'⟩ := TopCat.Sheaf.existsUnique_gluing F U (fun i ↦ (sf i).val)
     fun i j ↦ congr_arg (Subtype.val : F.supportedSections S _ → F.obj.obj _) (hsf i j)
   -- the restriction of `s` to `(⋃ U i) ∖ S` vanishes on each `U i ∖ S`
   have hmem : s ∈ F.supportedSections S (iSup U) := by
@@ -168,10 +168,10 @@ theorem isSheaf_supportedSectionsPresheaf : (F.supportedSectionsPresheaf S).IsSh
     · obtain ⟨i, hi⟩ := Opens.mem_iSup.1 hx.1
       exact ⟨i, hi, hx.2⟩
     · have h := congr(F.obj.map (S.complInclusion (U i)).op $(hs i))
-      rw [(F.mem_supportedSections_iff).1 (sf i).2] at h
+      rw [(F.mem_supportedSections_iff).1 (sf i).property] at h
       simpa [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, Opens.leSupr] using h
   refine ⟨⟨s, hmem⟩, fun i ↦ Subtype.ext (hs i), fun t ht ↦ Subtype.ext ?_⟩
-  exact hs' t.1 fun i ↦ congr_arg (Subtype.val : F.supportedSections S _ → F.obj.obj _) (ht i)
+  exact hs' t.val fun i ↦ congr_arg (Subtype.val : F.supportedSections S _ → F.obj.obj _) (ht i)
 
 /-- The sheaf `Γ_S(F)` of sections of `F` supported in the closed subset `S`. -/
 @[expose]
@@ -238,7 +238,7 @@ instance isFlasque_supportedSectionsSheaf [TopCat.Presheaf.IsFlasque F.obj] :
     -- glue `s` with zero on `V ∖ S`, then extend from `U ∪ (V ∖ S)` to `V` using flasqueness
     obtain ⟨t₀, ⟨ht₀, ht₀s⟩, -⟩ := F.existsUnique_mem_supportedSections_map_eq
       (le_sup_left : U.unop ≤ U.unop ⊔ V.unop ⊓ S.compl)
-      (sup_le le_sup_left (inf_le_right.trans le_sup_right)) s.2
+      (sup_le le_sup_left (inf_le_right.trans le_sup_right)) s.property
     have hW : U.unop ⊔ V.unop ⊓ S.compl ≤ V.unop := sup_le hUV inf_le_left
     obtain ⟨t, ht⟩ := (AddCommGrpCat.epi_iff_surjective _).1
       (TopCat.Presheaf.IsFlasque.epi (F := F.obj) (homOfLE hW).op) t₀
@@ -425,7 +425,7 @@ theorem exact_map_supportedSectionsFunctor (hT : T.Exact) [Mono T.f] :
     simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
       ConcreteCategory.comp_apply] at hk
     rw [map_zero, NatTrans.naturality_apply, hk]
-    exact (mem_supportedSections_iff _).1 (φ.hom.app W s).2
+    exact (mem_supportedSections_iff _).1 (φ.hom.app W s).property
   · rw [← cancel_mono (T.X₂.supportedSectionsι S)]
     simp
   · rw [← cancel_mono (T.X₁.supportedSectionsι S), ← cancel_mono T.f]
@@ -781,7 +781,7 @@ def supportedHEdgeEquiv (h : ∀ q < n, IsZero (F.supportedHSheaf S q)) (hZS : Z
       obtain ⟨x, rfl⟩ := (F.exact_supportedHMap_supportedHRestrict hZS W n y).1 <|
         (F.supportedHSectionsEquiv S h _).injective <| by
           rw [supportedHSectionsEquiv_supportedHRestrict, hy, map_zero]
-          exact (mem_supportedSections_iff _).1 s.2
+          exact (mem_supportedSections_iff _).1 s.property
       exact ⟨x, Subtype.ext hy⟩⟩
 
 /-- The degenerate edge comparison enlarges the support from `Z` to `S` and then applies the
@@ -822,12 +822,12 @@ private lemma bijective_supportedSectionsFunctor_map_supportedSectionsι (hZS : 
     exact injective_app_of_mono ((supportedSectionsFunctor Z).map (F.supportedSectionsι S)) _
   -- the section `t` supported in `Z` is supported in `S`
   obtain ⟨y, rfl⟩ := (F.supportedHZeroEquiv Z W).surjective t
-  have hS := (F.supportedHZeroEquiv S W (F.supportedHMap hZS W 0 y)).2
+  have hS := (F.supportedHZeroEquiv S W (F.supportedHMap hZS W 0 y)).property
   rw [coe_supportedHZeroEquiv_supportedHMap] at hS
   refine ⟨⟨⟨_, hS⟩, (mem_supportedSections_iff _).2 (Subtype.ext ?_)⟩, Subtype.ext
     ((coe_supportedSectionsFunctor_map_hom_app_apply Z _ (op W) _).trans
       (supportedSectionsι_hom_app_apply F S (op W) _))⟩
-  exact (mem_supportedSections_iff _).1 (F.supportedHZeroEquiv Z W y).2
+  exact (mem_supportedSections_iff _).1 (F.supportedHZeroEquiv Z W y).property
 
 /-- For closed `Z ≤ S`, the inclusion `Γ_S(F) ⟶ F` induces bijections
 `H_Z⁰(W, Γ_S(F)) ⟶ H_Z⁰(W, F)`. -/
@@ -950,20 +950,15 @@ private def supportedHPresheafEdgeIsoOfIsZeroSucc
 variable {n : ℕ}
 
 /-- The degenerate edge comparison in degree zero, `H_Zⁿ(-, F) ≅ H_Z⁰(-, 𝓗_Sⁿ(F))`, as an
-isomorphism of presheaves: `CategoryTheory.Sheaf.supportedHEdgeEquiv` followed by
+isomorphism of presheaves: `CategoryTheory.Sheaf.supportedHEdgeEquiv` followed by the inverse of
 `H_Z⁰(W, 𝓗_Sⁿ(F)) ≃+ Γ_Z(W, 𝓗_Sⁿ(F))`. -/
 private def supportedHPresheafEdgeIsoZero (h : ∀ q < n, IsZero (F.supportedHSheaf S q))
     (hZS : Z ≤ S) : F.supportedHPresheaf Z n ≅ (F.supportedHSheaf S n).supportedHPresheaf Z 0 :=
-  NatIso.ofComponents (fun W ↦ ((F.supportedHEdgeEquiv h hZS W.unop).trans
-    ((F.supportedHSheaf S n).supportedHZeroEquiv Z W.unop).symm).toAddCommGrpIso) fun f ↦ by
+  NatIso.ofComponents (fun W ↦ (F.supportedHEdgeEquiv h hZS W.unop).toAddCommGrpIso) (fun f ↦ by
     ext x
-    apply ((F.supportedHSheaf S n).supportedHZeroEquiv Z _).injective
-    apply Subtype.ext
-    -- both sides are the restriction of the image of `x` in `Γ_Z(W, 𝓗_Sⁿ(F))`
-    exact ((congrArg Subtype.val (AddEquiv.apply_symm_apply _ _)).trans
-      (coe_supportedHEdgeEquiv_supportedHRestrict F h hZS (leOfHom f.unop) x)).trans
-      ((coe_supportedHZeroEquiv_supportedHRestrict _ Z (leOfHom f.unop) _).trans
-        (congrArg _ (congrArg Subtype.val (AddEquiv.apply_symm_apply _ _)))).symm
+    exact Subtype.ext
+      (F.coe_supportedHEdgeEquiv_supportedHRestrict h hZS (leOfHom f.unop) x)) ≪≫
+    ((F.supportedHSheaf S n).supportedHPresheafZeroIso Z).symm
 
 /-- **Degenerate edge comparison.** If the local cohomology sheaves `𝓗_S^q(F)` vanish for all
 `q ≠ n`, then for every closed `Z ≤ S` and every `j` the cohomology `H_Z^{n+j}(W, F)` with supports
@@ -994,7 +989,13 @@ lemma supportedHZeroEquiv_supportedHPresheafEdgeIso_hom_app
         ((F.supportedHPresheafEdgeIso h hZS (add_zero n)).hom.app (op W) x) =
       F.supportedHEdgeEquiv (fun q hq ↦ h q hq.ne) hZS W x := by
   simp only [supportedHPresheafEdgeIso, supportedHPresheafEdgeIsoZero, eqToIso_refl,
-    Iso.refl_trans, NatIso.ofComponents_hom_app]
+    Iso.refl_trans, Iso.trans_hom, Iso.symm_hom, supportedHPresheafZeroIso,
+    TopCat.Presheaf.comp_app, NatIso.ofComponents_hom_app, NatIso.ofComponents_inv_app]
+  -- The goal is `e ((d.toAddCommGrpIso.hom ≫ e.toAddCommGrpIso.inv) x) = d x` for the edge
+  -- equivalence `d` and `e = supportedHZeroEquiv`. Both components are typed only through the
+  -- unfolding of `supportedHPresheaf`, so `ConcreteCategory.comp_apply` and
+  -- `AddEquiv.toAddCommGrpIso_inv` cannot rewrite them; the composite is `e.symm ∘ d` by
+  -- definition.
   exact AddEquiv.apply_symm_apply _ _
 
 end higherEdge
