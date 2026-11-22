@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Algebra.Module.LinearMap.Basic
 public import Mathlib.LinearAlgebra.BilinearMap
@@ -140,3 +141,34 @@ theorem le_characterAnnihilator_characterAnnihilator_flip (U : AddSubgroup V) (�
   le_characterAnnihilator_iff.mp le_rfl
 
 end AddSubgroup
+
+namespace Submodule
+
+variable {S : Type*} [CommRing S] [Algebra S R] [Module S V] [IsScalarTower S R V] [Module S W]
+  [IsScalarTower S R W]
+
+/-- The annihilator `{w | ψ (L u w) = 1 for all u ∈ U}` of an `S`-submodule `U` of `V` for the
+character pairing `(v, w) ↦ ψ (L v w)`, where `R` is an `S`-algebra, as an `S`-submodule of `W`.
+Its underlying additive subgroup is `AddSubgroup.characterAnnihilator`. -/
+def characterAnnihilator (U : Submodule S V) (ψ : AddChar R M) (L : V →ₗ[R] W →ₗ[R] R) :
+    Submodule S W where
+  toAddSubmonoid := (U.toAddSubgroup.characterAnnihilator ψ L).toAddSubmonoid
+  smul_mem' s w hw u hu := by
+    have h : L u (s • w) = L (s • u) w := by
+      rw [← algebraMap_smul R s w, ← algebraMap_smul R s u, map_smul, map_smul,
+        LinearMap.smul_apply]
+    exact h ▸ hw (s • u) (U.smul_mem s hu)
+
+variable {U : Submodule S V} {ψ : AddChar R M} {L : V →ₗ[R] W →ₗ[R] R} {w : W}
+
+@[simp]
+theorem mem_characterAnnihilator :
+    w ∈ U.characterAnnihilator ψ L ↔ ∀ u ∈ U, ψ (L u w) = 1 :=
+  Iff.rfl
+
+@[simp]
+theorem toAddSubgroup_characterAnnihilator :
+    (U.characterAnnihilator ψ L).toAddSubgroup = U.toAddSubgroup.characterAnnihilator ψ L :=
+  AddSubgroup.ext fun _ ↦ Iff.rfl
+
+end Submodule
