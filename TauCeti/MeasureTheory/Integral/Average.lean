@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Average
+import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.Analysis.Convex.Continuous
@@ -1000,8 +1002,9 @@ section WeightedMean
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X w : Ω → ℝ}
 
-/-- **The weighted mean minimizes the weighted squared deviation.** For an a.e. strongly
-measurable `X` and an integrable a.e. nonnegative weight `w`, the weighted squared deviation
+/-- **The weighted mean minimizes the weighted squared deviation.** For an integrable a.e.
+nonnegative weight `w` and an `X` that is a.e. strongly measurable for the weighted measure
+`μ.withDensity (ofReal ∘ w)`, the weighted squared deviation
 `∫⁻ ω, ofReal ((c - X ω)² w ω) ∂μ`, which may be infinite, is smallest at the weighted mean
 `c = (∫ X w ∂μ) / (∫ w ∂μ)`. When `w` has zero mass, it vanishes a.e. and every center `c`
 has zero deviation. No first moment is assumed: if the deviation about `c` is finite, `X` is
@@ -1011,48 +1014,51 @@ The proof applies `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_nor
 weighted measure `μ.withDensity (ofReal ∘ w)`. The statement is adapted from the lean-CKSD project
 (<https://github.com/bjbraams/lean-CKSD>), file `CKSD/Inference/Families.lean`
 (`lintegral_ofReal_sq_sub_mul_le`, for `X = id` on `ℝ`). -/
-theorem lintegral_ofReal_sub_sq_mul_le (hX : AEStronglyMeasurable X μ) (hw0 : 0 ≤ᵐ[μ] w)
-    (hwi : Integrable w μ) (c : ℝ) :
+theorem lintegral_ofReal_sub_sq_mul_le
+    (hX : AEStronglyMeasurable X (μ.withDensity fun ω ↦ ENNReal.ofReal (w ω)))
+    (hw0 : 0 ≤ᵐ[μ] w) (hwi : Integrable w μ) (c : ℝ) :
     ∫⁻ ω, ENNReal.ofReal (((∫ ω, X ω * w ω ∂μ) / (∫ ω, w ω ∂μ) - X ω) ^ 2 * w ω) ∂μ ≤
       ∫⁻ ω, ENNReal.ofReal ((c - X ω) ^ 2 * w ω) ∂μ := by
   set ν := μ.withDensity fun ω ↦ ENNReal.ofReal (w ω)
   have : IsFiniteMeasure ν := isFiniteMeasure_withDensity_ofReal hwi.2
-  have hXν : AEStronglyMeasurable X ν := hX.mono_ac (withDensity_absolutelyContinuous _ _)
+  have hXc (d : ℝ) : AEStronglyMeasurable (fun ω ↦ X ω - d) ν := hX.sub aestronglyMeasurable_const
   -- The weighted lower integrals are lower integrals against `ν`.
   have hlin (d : ℝ) : ∫⁻ ω, ENNReal.ofReal ((d - X ω) ^ 2 * w ω) ∂μ =
-      ∫⁻ ω, ENNReal.ofReal (‖X ω - d‖ ^ 2) ∂ν := by
+      ∫⁻ ω, ‖X ω - d‖ₑ ^ 2 ∂ν := by
     rw [lintegral_withDensity_eq_lintegral_mul₀' hwi.aemeasurable.ennreal_ofReal
-      ((hXν.aemeasurable.sub_const d).norm.pow_const 2).ennreal_ofReal]
+      ((hXc d).aemeasurable.eNorm.pow_const 2)]
     refine lintegral_congr_ae ?_
     filter_upwards [hw0] with ω hω
-    rw [Pi.mul_apply, ← ENNReal.ofReal_mul hω, Real.norm_eq_abs, sq_abs, ← neg_sub, neg_sq,
-      mul_comm]
+    rw [Pi.mul_apply, Real.enorm_sq_eq_ofReal_sq, ← ENNReal.ofReal_mul hω, sub_sq_comm (X ω) d,
+      mul_comm (w ω)]
   -- The weighted mean is the average of `X` under `ν`.
   have hmean : ⨍ ω, X ω ∂ν = (∫ ω, X ω * w ω ∂μ) / (∫ ω, w ω ∂μ) := by
     have hν : ν.real Set.univ = ∫ ω, w ω ∂μ := by
-      rw [measureReal_def, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
-        ← ofReal_integral_eq_lintegral_ofReal hwi hw0,
-        ENNReal.toReal_ofReal (integral_nonneg_of_ae hw0)]
+      simpa using TauCeti.MeasureTheory.measureReal_withDensity_ofReal (s := Set.univ)
+        (ae_restrict_of_ae hw0) MeasurableSet.univ.nullMeasurableSet hwi.aemeasurable.restrict
     rw [average_eq, hν,
       TauCeti.MeasureTheory.integral_withDensity_ofReal hwi.aemeasurable hw0, smul_eq_mul,
       inv_mul_eq_div]
     simp_rw [smul_eq_mul, mul_comm (w _)]
   rw [hlin, hlin, ← hmean]
-  by_cases hfin : ∫⁻ ω, ENNReal.ofReal (‖X ω - c‖ ^ 2) ∂ν = ∞
+  by_cases hfin : ∫⁻ ω, ‖X ω - c‖ₑ ^ 2 ∂ν = ∞
   · exact hfin ▸ le_top
-  have hc : Integrable (fun ω ↦ ‖X ω - c‖ ^ 2) ν :=
-    (lintegral_ofReal_ne_top_iff_integrable ((hXν.sub aestronglyMeasurable_const).norm.pow 2)
-      (ae_of_all _ fun _ ↦ sq_nonneg _)).1 hfin
+  have hc : MemLp (fun ω ↦ X ω - c) 2 ν :=
+    (hXc c).memLp_two_iff_lintegral_enorm_sq_lt_top.2 (lt_top_iff_ne_top.2 hfin)
   have h2 : MemLp X 2 ν := by
-    simpa using ((memLp_two_iff_integrable_sq_norm (hXν.sub aestronglyMeasurable_const)).2
-      hc).add (memLp_const c)
-  have hm : Integrable (fun ω ↦ ‖X ω - ⨍ ω, X ω ∂ν‖ ^ 2) ν :=
-    (h2.sub (memLp_const (⨍ ω, X ω ∂ν))).integrable_norm_pow two_ne_zero
+    convert hc.add (memLp_const c) using 1
+    ext ω
+    simp
+  have hm : MemLp (fun ω ↦ X ω - ⨍ ω, X ω ∂ν) 2 ν := h2.sub (memLp_const _)
   have key := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq
-    (measure_ne_top ν Set.univ) (h2.integrable one_le_two).integrableOn hc.integrableOn
+    (measure_ne_top ν Set.univ) (h2.integrable one_le_two).integrableOn
+    (hc.integrable_norm_pow two_ne_zero).integrableOn
   rw [Measure.restrict_univ] at key
-  rw [← ofReal_integral_eq_lintegral_ofReal hm (ae_of_all _ fun _ ↦ sq_nonneg _),
-    ← ofReal_integral_eq_lintegral_ofReal hc (ae_of_all _ fun _ ↦ sq_nonneg _)]
+  simp only [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
+  rw [← ofReal_integral_eq_lintegral_ofReal (hm.integrable_norm_pow two_ne_zero)
+      (ae_of_all _ fun _ ↦ by positivity),
+    ← ofReal_integral_eq_lintegral_ofReal (hc.integrable_norm_pow two_ne_zero)
+      (ae_of_all _ fun _ ↦ by positivity)]
   exact ENNReal.ofReal_le_ofReal key
 
 end WeightedMean

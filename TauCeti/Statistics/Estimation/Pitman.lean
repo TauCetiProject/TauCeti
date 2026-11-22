@@ -7,24 +7,27 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.Statistics.Estimation.Equivariance
 public import TauCeti.Statistics.Experiments.Density
+import TauCeti.Analysis.Normed.Group.Real
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
-import TauCeti.MeasureTheory.Measure.PiWithDensity
+import TauCeti.MeasureTheory.Measure.Lebesgue.DiagonalSlices
 import TauCeti.Statistics.Experiments.Location
 
 /-!
 # The Pitman estimator of location
 
 Let `x = (xᵢ)_{i ∈ ι}` be a sample, indexed by a finite type `ι`, from the location family with
-density `f(· - θ)`. An estimator `δ : ℝ^ι → ℝ` is *location equivariant* if
-`δ (x + a·1) = δ x + a` for every shift `a`. The
+density `f(· - θ)`. An estimator `δ : ℝ^ι → ℝ` is *location equivariant*
+(`TauCeti.IsLocationEquivariant`) if `δ (x + a·1) = δ x + a` for every shift `a`. The
 **Pitman estimator** is
 
 `pitmanEstimator f x = ∫ u ∏ f(xᵢ - u) du / ∫ ∏ f(xᵢ - u) du`.
 
-The samples at which both integrals exist and the denominator is positive form the measurable,
-translation-invariant set `pitmanGoodSet f`. For a density `f`, at a sample in the good set the
+The samples at which both integrals exist and the denominator is positive form the
+translation-invariant set `pitmanGoodSet f`, which is measurable when `f` is a.e. measurable.
+For a density `f`, at a sample in the good set the
 Pitman estimator is the posterior mean of `θ` under the improper uniform prior, and on the good
 set it is equivariant. Outside the good set the posterior mean does not exist and the definition
 still returns a real number (the junk value of a division or of a non-integrable integral).
@@ -46,20 +49,21 @@ estimator vanishes, so its contribution at `θ = 0` is zero.
 
 ## Main definitions
 
-* `TauCeti.IsLocationEquivariant δ`: `δ (x + a·1) = δ x + a` for all `x` and `a`.
 * `TauCeti.pitmanEstimator f`: the Pitman estimator for the density `f`.
 * `TauCeti.pitmanGoodSet f`: the samples at which the Pitman estimator is well defined.
 
 ## Main results
 
-* `TauCeti.measurableSet_pitmanGoodSet`, `TauCeti.add_const_mem_pitmanGoodSet_iff`: the good
-  set is measurable and invariant under diagonal translations.
-* `TauCeti.measurable_pitmanEstimator`, `TauCeti.pitmanEstimator_add_const`: the Pitman
-  estimator is measurable and equivariant on the good set.
+* `TauCeti.measurableSet_pitmanGoodSet`, `TauCeti.measurable_pitmanEstimator`: for an a.e.
+  measurable `f`, the good set is measurable and the Pitman estimator is measurable on all of
+  `ℝ^ι`.
+* `TauCeti.add_const_mem_pitmanGoodSet_iff`, `TauCeti.pitmanEstimator_add_const`: with no
+  measurability hypothesis, the good set is invariant under diagonal translations and the Pitman
+  estimator is equivariant on it.
+* `TauCeti.ae_pitmanEstimator_add_const`: when the good set has full measure, the Pitman
+  estimator is almost surely equivariant.
 * `TauCeti.pitmanEstimator_congr_ae`, `TauCeti.pitmanGoodSet_congr_ae`: both depend on the
   density only up to a Lebesgue-null set.
-* `TauCeti.IsLocationEquivariant.nonempty`: location-equivariant estimators exist only for
-  nonempty samples.
 * `TauCeti.pitmanEstimator_risk_zero_le_of_equivariant`: given a square-integrable
   location-equivariant estimator `δ`, the Pitman estimator is square integrable and its
   squared-error risk at `θ = 0` is at most that of `δ`.
@@ -71,9 +75,11 @@ another density of the same law. For each fixed sample the two likelihoods agree
 Lebesgue-almost every location, so the two estimators agree at every sample.
 
 The optimality theorem does not assume that the good set has full measure. Off the good set of an
-a.e. nonnegative density the Pitman estimator takes the value `0` of a division by the junk value
-`0` of a non-integrable or vanishing integral (`TauCeti.pitmanEstimator_eq_zero_of_notMem`). Since
-`0` is the true location, such samples add nothing to the risk at `θ = 0`.
+a.e. nonnegative density the Pitman estimator takes the value `0`
+(`TauCeti.pitmanEstimator_eq_zero_of_notMem`): either the numerator is the junk value `0` of a
+non-integrable integral, or the denominator is `0`, as the junk value of a non-integrable integral
+or as a vanishing integral. Since `0` is the true location, such samples add nothing to the risk
+at `θ = 0`.
 
 The proofs are adapted from the lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
 `CKSD/Inference/Families.lean`.
@@ -95,26 +101,6 @@ open scoped ENNReal
 namespace TauCeti
 
 variable {ι : Type*}
-
-/-- An estimator `δ` on samples indexed by `ι` is **location equivariant** if shifting every
-observation by `a` shifts the estimate by `a`. -/
-def IsLocationEquivariant (δ : (ι → ℝ) → ℝ) : Prop :=
-  ∀ x a, δ (fun i ↦ x i + a) = δ x + a
-
-/-- Unfolding `TauCeti.IsLocationEquivariant`. -/
-theorem isLocationEquivariant_iff {δ : (ι → ℝ) → ℝ} :
-    IsLocationEquivariant δ ↔ ∀ x a, δ (fun i ↦ x i + a) = δ x + a :=
-  Iff.rfl
-
-/-- A location-equivariant estimator exists only for a nonempty sample: on the empty sample the
-shift by `1` changes nothing. -/
-theorem IsLocationEquivariant.nonempty {δ : (ι → ℝ) → ℝ} (h : IsLocationEquivariant δ) :
-    Nonempty ι := by
-  by_contra hι
-  have : IsEmpty ι := not_nonempty_iff.1 hι
-  have h1 := h 0 1
-  rw [Subsingleton.elim (fun i ↦ (0 : ι → ℝ) i + 1) 0] at h1
-  linarith
 
 variable [Fintype ι]
 
@@ -212,6 +198,13 @@ theorem pitmanEstimator_add_const {x : ι → ℝ} (hx : x ∈ pitmanGoodSet f) 
       integral_sub_right_eq_self (fun u ↦ ∏ i, f (x i - u)) a]
   rw [pitmanEstimator_def, pitmanEstimator_def, hW, hM, add_div, mul_div_cancel_right₀ _ hpos.ne']
 
+/-- If almost every sample lies in the good set, the Pitman estimator is almost surely location
+equivariant: almost every sample `x` satisfies `δ (x + a·1) = δ x + a` for every shift `a`. -/
+theorem ae_pitmanEstimator_add_const {μ : Measure (ι → ℝ)}
+    (h : ∀ᵐ x ∂μ, x ∈ pitmanGoodSet f) :
+    ∀ᵐ x ∂μ, ∀ a, pitmanEstimator f (fun i ↦ x i + a) = pitmanEstimator f x + a :=
+  h.mono fun _ hx ↦ pitmanEstimator_add_const hx
+
 /-- Off the good set of an a.e. nonnegative `f` the Pitman estimator takes the junk value `0`:
 one of its two integrals is the junk value `0` of a non-integrable function, or the denominator
 is `0`. -/
@@ -225,33 +218,28 @@ theorem pitmanEstimator_eq_zero_of_notMem (hf0 : 0 ≤ᵐ[volume] f) {x : ι →
   · rw [integral_undef hl, div_zero]
   · rw [le_antisymm hpos (integral_nonneg_of_ae (prod_apply_sub_ae_nonneg hf0 x)), div_zero]
 
-/-- For a nonnegative density `f`, the law `Pⁿ` is Lebesgue measure weighted by the product
+/-- For a density `f` of `P`, the law `Pⁿ` is Lebesgue measure weighted by the product
 `∏ i, f (x i)`, so the lower integral of `g²` against it is the integral of the likelihood
 weighted `g²`, decomposed along the diagonal lines. -/
 private theorem lintegral_ofReal_sq_pi_eq {P : Measure ℝ} (i₀ : ι)
-    (hf : HasDensity P volume f) (hf0 : ∀ t, 0 ≤ f t) {g : (ι → ℝ) → ℝ}
+    (hf : HasDensity P volume f) {g : (ι → ℝ) → ℝ}
     (hg : AEMeasurable g (Measure.pi fun _ : ι ↦ P)) :
     ∫⁻ x, ENNReal.ofReal (g x ^ 2) ∂(Measure.pi fun _ : ι ↦ P) =
       ∫⁻ z : ι → ℝ, (Icc (0 : ℝ) 1).indicator 1 (z i₀) *
         ∫⁻ u : ℝ, ENNReal.ofReal (g (fun i ↦ z i - u) ^ 2 * ∏ i, f (z i - u)) := by
-  set d : (ι → ℝ) → NNReal := fun x ↦ (∏ i, f (x i)).toNNReal
-  have hd : Measurable d := (Finset.measurable_prod _ fun i _ ↦
-    hf.measurable.comp (measurable_pi_apply i)).real_toNNReal
-  -- `Pⁿ` is Lebesgue measure with the density `ofReal (∏ i, f (x i))`, the coercion of `d`.
-  have hPn : Measure.pi (fun _ : ι ↦ P) = volume.withDensity fun x ↦ d x := by
-    rw [hf.eq_withDensity, pi_withDensity (fun _ ↦ volume) fun _ ↦ hf.measurable.ennreal_ofReal,
-      volume_pi]
-    congr 1
-    funext x
-    exact (ENNReal.ofReal_prod_of_nonneg fun i _ ↦ hf0 _).symm
+  -- `Pⁿ` is Lebesgue measure with the density `ofReal (∏ i, f (x i))`.
+  have hPn : Measure.pi (fun _ : ι ↦ P) =
+      volume.withDensity fun x ↦ ENNReal.ofReal (∏ i, f (x i)) := by
+    rw [(HasDensity.pi fun _ : ι ↦ hf).eq_withDensity, volume_pi]
+  have hd : AEMeasurable (fun x : ι → ℝ ↦ ENNReal.ofReal (∏ i, f (x i))) :=
+    (Finset.measurable_prod _ fun i _ ↦
+      hf.measurable.comp (measurable_pi_apply i)).ennreal_ofReal.aemeasurable
   rw [hPn, lintegral_withDensity_eq_lintegral_indicator_mul_lintegral_sub_const i₀ hd
     (hPn ▸ (hg.pow_const 2).ennreal_ofReal)]
   refine lintegral_congr fun z ↦ ?_
   congr 1
   refine lintegral_congr fun u ↦ ?_
   rw [ENNReal.ofReal_mul (sq_nonneg _), mul_comm]
-  -- `ENNReal.ofReal r` is by definition the coercion of `r.toNNReal`.
-  rfl
 
 /-- On each diagonal line, the likelihood-weighted squared error of the Pitman estimator of a
 nonnegative `f` is at most that of any location-equivariant `δ`. -/
@@ -259,7 +247,7 @@ private theorem lintegral_ofReal_pitmanEstimator_sq_mul_le (hf0 : ∀ t, 0 ≤ f
     {δ : (ι → ℝ) → ℝ} (heq : IsLocationEquivariant δ) (z : ι → ℝ) :
     ∫⁻ u : ℝ, ENNReal.ofReal (pitmanEstimator f (fun i ↦ z i - u) ^ 2 * ∏ i, f (z i - u)) ≤
       ∫⁻ u : ℝ, ENNReal.ofReal (δ (fun i ↦ z i - u) ^ 2 * ∏ i, f (z i - u)) := by
-  simp only [sub_eq_add_neg, heq z]
+  simp only [sub_eq_add_neg, isLocationEquivariant_iff.1 heq z]
   by_cases hz : z ∈ pitmanGoodSet f
   · obtain ⟨-, hl, -⟩ := mem_pitmanGoodSet.mp hz
     simp only [pitmanEstimator_add_const hz]
@@ -276,9 +264,9 @@ private theorem lintegral_ofReal_pitmanEstimator_sq_le {P : Measure ℝ}
     ∫⁻ x, ENNReal.ofReal (pitmanEstimator f x ^ 2) ∂(Measure.pi fun _ : ι ↦ P) ≤
       ∫⁻ x, ENNReal.ofReal (δ x ^ 2) ∂(Measure.pi fun _ : ι ↦ P) := by
   obtain ⟨i₀⟩ := heq.nonempty
-  rw [lintegral_ofReal_sq_pi_eq i₀ hf hf0
+  rw [lintegral_ofReal_sq_pi_eq i₀ hf
       (measurable_pitmanEstimator hf.measurable.aemeasurable).aemeasurable,
-    lintegral_ofReal_sq_pi_eq i₀ hf hf0 hδ]
+    lintegral_ofReal_sq_pi_eq i₀ hf hδ]
   exact lintegral_mono fun z ↦
     mul_le_mul_right (lintegral_ofReal_pitmanEstimator_sq_mul_le hf0 heq z) _
 
@@ -302,17 +290,16 @@ theorem pitmanEstimator_risk_zero_le_of_equivariant (P : Measure ℝ) (f : ℝ �
     h2.aestronglyMeasurable.aemeasurable heq
   have hpm : AEStronglyMeasurable (pitmanEstimator g) (Measure.pi fun _ : ι ↦ P) :=
     (measurable_pitmanEstimator hg.measurable.aemeasurable).aestronglyMeasurable
-  have hsq (x : ι → ℝ) : 0 ≤ (pitmanEstimator g x ^ 2 : ℝ) := sq_nonneg _
-  have hfin := (lintegral_ofReal_ne_top_iff_integrable (h2.aestronglyMeasurable.pow 2)
-    (ae_of_all _ fun x ↦ sq_nonneg (δ x))).2 h2.integrable_sq
-  have hpi : Integrable (fun x ↦ pitmanEstimator g x ^ 2) (Measure.pi fun _ : ι ↦ P) :=
-    (lintegral_ofReal_ne_top_iff_integrable (hpm.pow 2) (ae_of_all _ hsq)).1
-      (ne_top_of_le_ne_top hfin hle)
-  rw [hpit]
-  refine ⟨(memLp_two_iff_integrable_sq hpm).2 hpi, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ hsq) (hpm.pow 2),
-    integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun x ↦ sq_nonneg _)
-      (h2.aestronglyMeasurable.pow 2)]
-  exact ENNReal.toReal_mono hfin hle
+  -- Squared-error risks as lower integrals of squared extended norms.
+  have hlint {h : (ι → ℝ) → ℝ} (hh : AEStronglyMeasurable h (Measure.pi fun _ : ι ↦ P)) :
+      ∫ x, h x ^ 2 ∂(Measure.pi fun _ : ι ↦ P) =
+        (∫⁻ x, ENNReal.ofReal (h x ^ 2) ∂(Measure.pi fun _ : ι ↦ P)).toReal :=
+    integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun x ↦ sq_nonneg (h x)) (hh.pow 2)
+  simp only [← Real.enorm_sq_eq_ofReal_sq] at hle hlint
+  have hfin := h2.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.1 h2
+  have hpi : MemLp (pitmanEstimator g) 2 (Measure.pi fun _ : ι ↦ P) :=
+    hpm.memLp_two_iff_lintegral_enorm_sq_lt_top.2 (hle.trans_lt hfin)
+  rw [hpit, hlint hpm, hlint h2.aestronglyMeasurable]
+  exact ⟨hpi, ENNReal.toReal_mono hfin.ne hle⟩
 
 end TauCeti

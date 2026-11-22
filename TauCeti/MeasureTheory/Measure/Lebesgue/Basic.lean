@@ -6,10 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import Mathlib.MeasureTheory.Measure.WithDensity
-import Mathlib.MeasureTheory.Group.LIntegral
-import Mathlib.MeasureTheory.Group.Prod
-import Mathlib.MeasureTheory.Measure.Prod
 
 /-!
 # Lebesgue measure of intervals and centered interval differences
@@ -39,12 +35,6 @@ their lengths (`TauCeti.volume_biUnion_uIoc_eq_ofReal_sum`).
 Cutting a closed box `Set.Icc a b` in `ι → ℝ` along coordinate `k` at `t` produces two almost-
 everywhere disjoint sub-boxes (`TauCeti.aeDisjoint_Icc_update`), as their intersection lies in a
 coordinate hyperplane of measure zero.
-
-On `ι → ℝ`, Lebesgue integrals split along the diagonal lines `u ↦ z - u·1`, weighted by the
-indicator of the slab `{z | z i₀ ∈ [0, 1]}`, which cuts out a parameter interval of Lebesgue
-measure one on each line (`TauCeti.lintegral_eq_lintegral_indicator_mul_lintegral_sub_const`, and
-for a weighted Lebesgue measure
-`TauCeti.lintegral_withDensity_eq_lintegral_indicator_mul_lintegral_sub_const`).
 -/
 
 public section
@@ -144,66 +134,6 @@ theorem aeDisjoint_Icc_update {ι : Type*} [Fintype ι] [DecidableEq ι]
     rw [Real.volume_Icc_pi]
     exact Finset.prod_eq_zero (Finset.mem_univ k) (by simp)
   exact measure_mono_null hsub hzero
-
-/-- **Decomposition of Lebesgue measure on `ι → ℝ` along the diagonal lines.** The lower
-integral of an a.e. measurable `H` over `ι → ℝ` is the integral, against the indicator of
-`z i₀ ∈ [0, 1]`, of the integrals of `H` along the lines `u ↦ z - u·1`, each taken with respect to
-Lebesgue measure in the parameter `u`. The condition `z i₀ - u ∈ [0, 1]` cuts out a parameter
-interval of Lebesgue measure one on each line (not a Euclidean segment of length one).
-
-The proof is adapted from the lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
-`CKSD/Inference/Families.lean` (`lintegral_eq_lintegral_indicator_mul_lintegral_sub_const`, for
-`ι = Fin n` and measurable `H`). -/
-theorem lintegral_eq_lintegral_indicator_mul_lintegral_sub_const {ι : Type*} [Fintype ι]
-    (i₀ : ι) {H : (ι → ℝ) → ℝ≥0∞} (hH : AEMeasurable H) :
-    ∫⁻ x, H x =
-      ∫⁻ z : ι → ℝ, (Icc (0 : ℝ) 1).indicator 1 (z i₀) * ∫⁻ u : ℝ, H fun i ↦ z i - u := by
-  set k : ℝ → ℝ≥0∞ := (Icc (0 : ℝ) 1).indicator 1 with hkdef
-  have hk : Measurable k := measurable_one.indicator measurableSet_Icc
-  have hk1 : ∀ t : ℝ, ∫⁻ u, k (t + u) = 1 := fun t ↦ by
-    rw [lintegral_add_left_eq_self k t, hkdef, lintegral_indicator_one measurableSet_Icc,
-      Real.volume_Icc, sub_zero, ENNReal.ofReal_one]
-  -- The shear `(u, z) ↦ z - u·1` is quasi-measure-preserving.
-  have hsub : QuasiMeasurePreserving (fun p : ℝ × (ι → ℝ) ↦ fun i ↦ p.2 i - p.1)
-      (volume.prod volume) volume :=
-    .prod_of_right (by fun_prop) (ae_of_all _ fun u ↦
-      (measurePreserving_sub_right volume fun _ : ι ↦ u).quasiMeasurePreserving)
-  calc ∫⁻ x, H x = ∫⁻ x, ∫⁻ u : ℝ, k (x i₀ + u) * H x := by
-        refine lintegral_congr fun x ↦ ?_
-        rw [lintegral_mul_const (f := fun u ↦ k (x i₀ + u)) _ (hk.comp (measurable_const_add _)),
-          hk1, one_mul]
-    _ = ∫⁻ u : ℝ, ∫⁻ x, k (x i₀ + u) * H x :=
-        lintegral_lintegral_swap ((hk.comp (((measurable_pi_apply i₀).comp measurable_fst).add
-          measurable_snd)).aemeasurable.mul
-          (hH.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst))
-    _ = ∫⁻ u : ℝ, ∫⁻ z : ι → ℝ, k (z i₀) * H fun i ↦ z i - u := by
-        refine lintegral_congr fun u ↦ ?_
-        rw [← lintegral_sub_right_eq_self _ fun _ ↦ u]
-        simp only [Pi.sub_apply, sub_add_cancel]
-        -- `z - fun _ ↦ u` is `fun i ↦ z i - u` by definition.
-        rfl
-    _ = ∫⁻ z : ι → ℝ, ∫⁻ u : ℝ, k (z i₀) * H fun i ↦ z i - u :=
-        lintegral_lintegral_swap ((hk.comp ((measurable_pi_apply i₀).comp
-          measurable_snd)).aemeasurable.mul (hH.comp_quasiMeasurePreserving hsub))
-    _ = ∫⁻ z : ι → ℝ, k (z i₀) * ∫⁻ u : ℝ, H fun i ↦ z i - u :=
-        lintegral_congr fun z ↦ lintegral_const_mul' _ _ (by
-          simp only [hkdef, indicator_apply]
-          split_ifs <;> simp)
-
-/-- **Decomposition of a weighted Lebesgue measure on `ι → ℝ` along the diagonal lines.** For a
-measurable density `d` and an integrand `G` that is a.e. measurable for `volume.withDensity d`,
-the lower integral of `G` against `volume.withDensity d` is the integral, against the indicator
-of `z i₀ ∈ [0, 1]`, of the integrals of `d * G` along the lines `u ↦ z - u·1` in the parameter
-`u`. -/
-theorem lintegral_withDensity_eq_lintegral_indicator_mul_lintegral_sub_const {ι : Type*}
-    [Fintype ι] (i₀ : ι) {d : (ι → ℝ) → ℝ≥0} (hd : Measurable d) {G : (ι → ℝ) → ℝ≥0∞}
-    (hG : AEMeasurable G (volume.withDensity fun x ↦ d x)) :
-    ∫⁻ x, G x ∂volume.withDensity (fun x ↦ d x) =
-      ∫⁻ z : ι → ℝ, (Icc (0 : ℝ) 1).indicator 1 (z i₀) *
-        ∫⁻ u : ℝ, d (fun i ↦ z i - u) * G fun i ↦ z i - u := by
-  rw [lintegral_withDensity_eq_lintegral_mul₀' hd.coe_nnreal_ennreal.aemeasurable hG]
-  exact lintegral_eq_lintegral_indicator_mul_lintegral_sub_const i₀
-    ((aemeasurable_withDensity_ennreal_iff hd).1 hG)
 
 end TauCeti
 
