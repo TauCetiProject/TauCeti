@@ -206,9 +206,7 @@ theorem boxtimesRep_diracQp (g : AffineGroup ℚ_[p]) (x : ℚ_[p]) :
       affineRep_dirac]
     congr 1
     refine PadicInt.ext ?_
-    rw [PadicInt.coe_lift, ← PadicInt.Coe.ringHom_apply, ← AffineGroup.map_smul,
-      PadicInt.Coe.ringHom_apply, PadicInt.coe_lift]
-    exact hsmul
+    simpa [AffineGroup.smul_def] using hsmul
   · rw [coe_diracQp_of_not_norm_le_one hl,
       coe_diracQp_of_not_norm_le_one (fun h' ↦ hl (hiff.mp h')), map_zero]
 
