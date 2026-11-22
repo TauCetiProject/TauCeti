@@ -79,7 +79,7 @@ theorem isOpen_setOf_isUnit_integer : IsOpen {x : 𝒪[E] | IsUnit x} := by
     ext x
     simp [Valuation.restrict_lt_one_iff, ← Valuation.Integer.not_isUnit_iff_valuation_lt_one]
   rw [this]
-  exact ((valuation E).isClopen_ball 1).compl.isOpen.preimage continuous_subtype_val
+  exact ((valuation E).isClopen_ball 1).compl.isOpen.preimage continuous_subtypeVal
 
 /-- The valuation ring `𝒪[E]` of a field with open units whose topology is defined by its
 valuation has open units: its units are open and inversion is continuous on them. This holds for

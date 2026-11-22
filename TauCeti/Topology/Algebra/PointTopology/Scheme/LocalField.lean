@@ -31,8 +31,9 @@ compact open subgroups live.
 
 * `TauCeti.SchemePointTopology.locallyCompactSpace_of_localField`: `X(E)` is Hausdorff and locally
   compact for `X` separated and locally of finite type over `E`.
-* `TauCeti.SchemePointTopology.locallyCompactSpace_of_integer`: `𝒳(𝒪[E])` is locally compact for
-  `𝒳` locally of finite type over `𝒪[E]`.
+
+Over `𝒪[E]`, `TauCeti.SchemePointTopology.locallyCompactSpace_of_locallyOfFiniteType` applies
+directly: `𝒳(𝒪[E])` is locally compact for `𝒳` locally of finite type over `𝒪[E]`.
 
 ## References
 
@@ -59,10 +60,10 @@ theorem locallyCompactSpace_of_localField {X : Scheme.{u}} (f : X ⟶ Spec (.of 
     T2Space (Points (R := E) f) ∧ LocallyCompactSpace (Points (R := E) f) :=
   ⟨t2Space_of_isSeparated f, locallyCompactSpace_of_locallyOfFiniteType f⟩
 
-/-- The integral points of a scheme locally of finite type over the valuation ring `𝒪[E]` of a
-nonarchimedean local field form a locally compact space for the chart topology. -/
-theorem locallyCompactSpace_of_integer {X : Scheme.{u}} (f : X ⟶ Spec (.of 𝒪[E]))
-    [LocallyOfFiniteType f] : LocallyCompactSpace (Points (R := 𝒪[E]) f) :=
+/- The integral points of a scheme locally of finite type over `𝒪[E]` are locally compact, by the
+general result applied over `𝒪[E]`, whose open units come from `TauCeti.instIsOpenUnitsInteger`. -/
+example {X : Scheme.{u}} (f : X ⟶ Spec (.of 𝒪[E])) [LocallyOfFiniteType f] :
+    LocallyCompactSpace (Points (R := 𝒪[E]) f) :=
   locallyCompactSpace_of_locallyOfFiniteType f
 
 end TauCeti.SchemePointTopology
