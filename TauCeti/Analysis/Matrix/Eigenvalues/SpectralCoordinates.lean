@@ -89,13 +89,18 @@ def spectralGapMap (d : Fin n → ℝ) :
 theorem det_spectralGapMap (d : Fin n → ℝ) :
     (spectralGapMap (𝕜 := 𝕜) d).det =
       ∏ ij : FinStrictUpper n, (d ij.val.2 - d ij.val.1) ^ Module.finrank ℝ 𝕜 := by
-  let f (ij : FinStrictUpper n) : 𝕜 →ₗ[ℝ] 𝕜 := (d ij.val.2 - d ij.val.1) • LinearMap.id
-  have heq : (spectralGapMap (𝕜 := 𝕜) d).toLinearMap =
-      LinearMap.id.prodMap (LinearMap.pi fun ij ↦ (f ij).comp (LinearMap.proj ij)) := by
-    ext v <;> rfl
-  rw [ContinuousLinearMap.det, heq, LinearMap.det_prodMap, LinearMap.det_id, one_mul,
-    LinearMap.det_pi]
-  simp [f, LinearMap.det_smul]
+  let f (ij : FinStrictUpper n) : 𝕜 →L[ℝ] 𝕜 :=
+    (d ij.val.2 - d ij.val.1) • ContinuousLinearMap.id ℝ 𝕜
+  have hf : (fun ij : FinStrictUpper n ↦
+      (d ij.val.2 - d ij.val.1) • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ ↦ 𝕜) ij) =
+      fun ij ↦ (f ij).comp (ContinuousLinearMap.proj ij) := by
+    simp only [f, ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp]
+  have hpi := ContinuousLinearMap.det_pi f
+  rw [← hf, ContinuousLinearMap.det] at hpi
+  rw [spectralGapMap, ContinuousLinearMap.det, ContinuousLinearMap.coe_prodMap,
+    ContinuousLinearMap.coe_id, LinearMap.det_prodMap, LinearMap.det_id, one_mul, hpi]
+  simp only [f, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_smul,
+    ContinuousLinearMap.coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one]
 
 section Differentiation
 
@@ -188,18 +193,14 @@ theorem abs_det_fderiv_spectralCoordinates (x : SelfAdjointCoordinates n 𝕜) :
     |(fderiv ℝ spectralCoordinates x).det| =
       |(spectralAngularFDeriv x.2).det| *
         ∏ ij : FinStrictUpper n, |x.1 ij.val.2 - x.1 ij.val.1| ^ Module.finrank ℝ 𝕜 := by
-  rw [(hasFDerivAt_spectralCoordinates x).fderiv]
-  have h : ((ContinuousLinearMap.id ℝ (Fin n → ℝ)).prodMap
-        (spectralAngularFDeriv x.2)).det = (spectralAngularFDeriv x.2).det :=
-    (LinearMap.det_prodMap LinearMap.id (spectralAngularFDeriv x.2).toLinearMap).trans
-      (by rw [LinearMap.det_id, one_mul])
-  rw [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp,
-    ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp, abs_mul, abs_mul]
-  rw [abs_det_unitaryConjCoordinates, one_mul]
-  -- Return to the continuous-linear-map determinants after applying multiplicativity.
-  change |(spectralGapMap (𝕜 := 𝕜) x.1).det| *
-    |((ContinuousLinearMap.id ℝ (Fin n → ℝ)).prodMap (spectralAngularFDeriv x.2)).det| = _
-  rw [h, det_spectralGapMap, Finset.abs_prod]
+  have hgap := det_spectralGapMap (𝕜 := 𝕜) x.1
+  have hunit := abs_det_unitaryConjCoordinates (expStrictUpper x.2)
+  rw [ContinuousLinearMap.det] at hgap hunit
+  rw [(hasFDerivAt_spectralCoordinates x).fderiv, ContinuousLinearMap.det,
+    ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp,
+    ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp, ContinuousLinearMap.coe_prodMap,
+    ContinuousLinearMap.coe_id, LinearMap.det_prodMap, LinearMap.det_id, one_mul, hgap,
+    abs_mul, abs_mul, hunit, one_mul, Finset.abs_prod]
   simp only [abs_pow, mul_comm]
 
 /-- At a diagonal with distinct entries, spectral coordinates give a local chart
@@ -215,7 +216,8 @@ theorem exists_spectralCoordinates_openPartialHomeomorph (d : Fin n → ℝ)
     rw [← abs_ne_zero]
     rw [abs_det_fderiv_spectralCoordinates]
     simp only [x, spectralAngularFDeriv_zero]
-    have hid : (ContinuousLinearMap.id ℝ (FinStrictUpper n → 𝕜)).det = 1 := LinearMap.det_id
+    have hid : (ContinuousLinearMap.id ℝ (FinStrictUpper n → 𝕜)).det = 1 := by
+      rw [ContinuousLinearMap.det, ContinuousLinearMap.coe_id, LinearMap.det_id]
     rw [hid, abs_one, one_mul]
     refine Finset.prod_ne_zero_iff.mpr fun ij _ ↦ ?_
     have hne := hd.ne ij.property.ne.symm

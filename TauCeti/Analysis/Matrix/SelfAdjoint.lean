@@ -320,15 +320,13 @@ def unitaryConjCoordinates (U : unitaryGroup (Fin n) 𝕜) :
 /-- The conjugation in self-adjoint matrix coordinates has absolute determinant one. -/
 theorem abs_det_unitaryConjCoordinates (U : unitaryGroup (Fin n) 𝕜) :
     |(unitaryConjCoordinates U).toContinuousLinearMap.det| = 1 := by
-  let e := (selfAdjointCoordinates (n := n) (𝕜 := 𝕜)).toLinearEquiv
   let T := UnitaryGroup.selfAdjointConj U
-  have h : (unitaryConjCoordinates U).toContinuousLinearMap.toLinearMap =
-      (e.symm.trans (T.toLinearEquiv.trans e)).toLinearMap := rfl
-  rw [ContinuousLinearMap.det, h]
   -- Conjugating the real linear isometry by a coordinate equivalence preserves its determinant.
-  have he : (e.symm.trans (T.toLinearEquiv.trans e)).toLinearMap =
-      e.toLinearMap ∘ₗ T.toLinearEquiv.toLinearMap ∘ₗ e.symm.toLinearMap := rfl
-  rw [he, LinearMap.det_conj]
+  rw [ContinuousLinearMap.det, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+    unitaryConjCoordinates, ContinuousLinearEquiv.trans_toLinearEquiv,
+    ContinuousLinearEquiv.trans_toLinearEquiv, ContinuousLinearEquiv.toLinearEquiv_symm,
+    LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, LinearEquiv.coe_trans,
+    LinearEquiv.coe_trans, LinearMap.comp_assoc, LinearMap.det_conj]
   -- In an orthonormal basis the isometry has an orthogonal matrix, whose determinant is a unit.
   let b := stdOrthonormalBasis ℝ (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜))
   rw [← LinearMap.det_toMatrix b.toBasis, ← Real.norm_eq_abs]
