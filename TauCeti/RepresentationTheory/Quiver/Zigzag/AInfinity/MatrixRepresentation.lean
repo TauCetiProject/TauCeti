@@ -191,19 +191,9 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
     (traceLinearMap _ k k ∘ₗ LinearMap.mulLeft k (diagonal ε ⊗ₖ 1)) (fun e Y ↦ ?_) _ _ ?_
   · -- The twisted trace is anticyclic, since a nonzero block lies on the image of an edge of `H`.
     refine trace_twist_mul_dartMatrix _ ε (fun d hd ↦ ?_) e Y
-    by_cases h₁ : d.fst ∈ Set.range f
-    swap
-    · exact absurd (f.extendByZero_eq_zero_of_notMem_range_left β h₁ _) hd
-    by_cases h₂ : d.snd ∈ Set.range f
-    swap
-    · exact absurd (f.extendByZero_eq_zero_of_notMem_range_right β _ h₂) hd
-    obtain ⟨x, hx⟩ := h₁
-    obtain ⟨y, hy⟩ := h₂
-    rw [← hx, ← hy, f.extendByZero_apply_apply] at hd
+    obtain ⟨x, y, hx, hy, hxy, -⟩ := (f.extendByZero_ne_zero_iff β).1 hd
     rw [← hx, ← hy, hεf, hεf]
-    split_ifs at hd with hxy
-    · exact hs x y hxy
-    · exact absurd rfl hd
+    exact hs x y hxy
   · -- On the walk, the twisted trace is the trace of the matrix product, times a sign.
     rw [Finset.sum_eq_single (fun t ↦ f.toHom.mapDart (w t)) (fun w' _ hw' ↦ by
       rw [Finsupp.single_eq_of_ne hw', mul_zero]) (by simp), Finsupp.single_eq_same, mul_one]

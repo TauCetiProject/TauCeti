@@ -91,20 +91,12 @@ private theorem cycleMatrix_mul_cycleMatrix {m : ℕ} [NeZero m] (hm : 3 ≤ m) 
 private theorem extendByZero_cycleMatrix_mul {V : Type u} {G : SimpleGraph V}
     {m : ℕ} [NeZero m] (hm : 3 ≤ m) (c : (cycleGraph m).Copy G) (v w : V) :
     c.extendByZero (cycleMatrix k m) w v * c.extendByZero (cycleMatrix k m) v w = 0 := by
-  by_cases hv : v ∈ Set.range c
-  swap
-  · rw [c.extendByZero_eq_zero_of_notMem_range_right (cycleMatrix k m) w hv, zero_mul]
-  by_cases hw : w ∈ Set.range c
-  swap
-  · rw [c.extendByZero_eq_zero_of_notMem_range_left (cycleMatrix k m) hw v, zero_mul]
-  obtain ⟨i, rfl⟩ := hv
-  obtain ⟨j, rfl⟩ := hw
-  rw [c.extendByZero_apply_apply, c.extendByZero_apply_apply]
-  split_ifs
-  · exact cycleMatrix_mul_cycleMatrix k hm i j
-  · exact mul_zero _
-  · exact zero_mul _
-  · exact zero_mul _
+  by_cases h : c.extendByZero (cycleMatrix k m) w v = 0
+  · rw [h, zero_mul]
+  -- A nonzero first factor lies on the image of an edge `j ∼ i` of the cycle.
+  obtain ⟨j, i, rfl, rfl, hji, -⟩ := (c.extendByZero_ne_zero_iff _).1 h
+  rw [c.extendByZero_apply_apply_of_adj _ hji, c.extendByZero_apply_apply_of_adj _ hji.symm]
+  exact cycleMatrix_mul_cycleMatrix k hm i j
 
 private theorem sum_extendByZero_cycleMatrix_mul {V : Type u} {G : SimpleGraph V} [G.LocallyFinite]
     {m : ℕ} [NeZero m] (hm : 3 ≤ m) (c : (cycleGraph m).Copy G) :
