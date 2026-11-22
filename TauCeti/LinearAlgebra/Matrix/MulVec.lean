@@ -31,8 +31,7 @@ eigenvector of each of its powers, with the eigenvalue in any monoid of scalars 
 commutes with multiplication of the entries.
 
 The `σ`-sesquilinear form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` of a matrix `Q` scales by `σ c * c` along a
-line, for any multiplicative map `σ`. Over a commutative star semiring, conjugating
-`M *ᵥ v` conjugates the entries of `M` and of `v`.
+line, for any multiplicative map `σ`.
 
 A matrix invariant under row and column reindexing sends vectors invariant under the column
 permutation to vectors invariant under the row map.
@@ -58,8 +57,6 @@ reproduce every product `A *ᵥ x`.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
-* `Matrix.star_mulVec_eq_map_star_mulVec`: `star (M *ᵥ v) = M.map star *ᵥ star v`.
-* `Matrix.map_star_mulVec_of_star_eq`: if `star v = v`, then `M.map star *ᵥ v = star (M *ᵥ v)`.
 -/
 
 public section
@@ -129,19 +126,6 @@ theorem comp_smul_dotProduct_mulVec_smul {R F : Type*} [CommSemiring R] [FunLike
     (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
   rw [TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_smul,
     smul_eq_mul]
-
-/-- Conjugating a matrix-vector product conjugates the matrix entrywise and the vector:
-`star (M *ᵥ v) = M.map star *ᵥ star v`. -/
-theorem star_mulVec_eq_map_star_mulVec {R : Type*} [NonUnitalCommSemiring R] [StarRing R]
-    (M : Matrix m n R) (v : n → R) : star (M *ᵥ v) = M.map star *ᵥ star v := by
-  ext i
-  simp [mulVec, dotProduct]
-
-/-- On a vector fixed by `star`, such as a real vector of `ℂⁿ`, the matrix `M.map star` with
-conjugated entries takes the conjugate value `star (M v)`. -/
-theorem map_star_mulVec_of_star_eq {R : Type*} [NonUnitalCommSemiring R] [StarRing R]
-    (M : Matrix m n R) {v : n → R} (hv : star v = v) : M.map star *ᵥ v = star (M *ᵥ v) := by
-  rw [star_mulVec_eq_map_star_mulVec, hv]
 
 section OrderedSemiring
 
