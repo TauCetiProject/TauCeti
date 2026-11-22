@@ -115,6 +115,14 @@ theorem thomPairFiniteTrivializingUnionDiagram_map {s t : Finset B} (f : s ⟶ t
   (conj_eqToHom_iff_heq _ _ (thomPairFiniteTrivializingUnionDiagram_obj s)
     (thomPairFiniteTrivializingUnionDiagram_obj t)).2 HEq.rfl
 
+omit [∀ b, Zero (E b)] in
+variable (F E) in
+/-- The finite unions of the trivializing open sets of the bundle atlas increase with the finite
+set of points. -/
+theorem monotone_biUnion_baseSet_trivializationAt :
+    Monotone fun s : Finset B ↦ ⋃ b ∈ s, (trivializationAt F E b).baseSet :=
+  fun _ _ h ↦ biUnion_subset_biUnion_left h
+
 /-- The inclusions from finite trivializing unions into the whole Thom pair. -/
 def thomPairFiniteTrivializingUnionCocone :
     Cocone (thomPairFiniteTrivializingUnionDiagram (F := F) (E := E)) where
@@ -183,12 +191,12 @@ def isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion
         congrFun (hfst s) _⟩⟩)
     (fun K hcomp ↦ by
       obtain ⟨s, hs⟩ := IsCompact.exists_finset_subset_preimage_biUnion_baseSet
-        (F := F) (E := E) (hcomp.image continuous_subtype_val)
-      exact ⟨s, fun p hp ↦ ⟨⟨p.1, hs (mem_image_of_mem _ hp), p.2⟩, by
+        (F := F) (E := E) (hcomp.image continuous_subtypeVal)
+      exact ⟨s, fun p hp ↦ ⟨⟨p.val, hs (mem_image_of_mem _ hp), p.property⟩, by
         apply Subtype.ext
         have h := TopPair.Hom.w_apply
           ((thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).ι.app s)
-          ⟨p.1, hs (mem_image_of_mem _ hp), p.2⟩
+          ⟨p.val, hs (mem_image_of_mem _ hp), p.property⟩
         rw [hfst s] at h
         exact h⟩⟩)
 
@@ -262,7 +270,7 @@ theorem baseFiniteTrivializingUnionDiagram_map {s t : Finset B} (f : s ⟶ t) :
 def baseFiniteTrivializingUnionCocone :
     Cocone (baseFiniteTrivializingUnionDiagram (B := B) F E) where
   pt := TopCat.of B
-  ι := { app _ := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
+  ι := { app _ := TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ }
 
 /-- The cocone point of `TauCeti.baseFiniteTrivializingUnionCocone` is `TopCat.of B`. -/
 @[simp]
@@ -274,9 +282,9 @@ theorem baseFiniteTrivializingUnionCocone_pt :
 theorem baseFiniteTrivializingUnionCocone_ι_app (s : Finset B) :
     (baseFiniteTrivializingUnionCocone (B := B) F E).ι.app s =
       eqToHom (baseFiniteTrivializingUnionDiagram_obj F E s) ≫
-        TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ ≫
+        TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ ≫
         eqToHom (baseFiniteTrivializingUnionCocone_pt F E).symm :=
-  (conj_eqToHom_iff_heq _ (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+  (conj_eqToHom_iff_heq _ (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
     (baseFiniteTrivializingUnionDiagram_obj F E s)
     (baseFiniteTrivializingUnionCocone_pt (B := B) F E)).2 HEq.rfl
 
@@ -344,17 +352,17 @@ private theorem existsUnique_thomCover
       ∃ s, K ⊆ range (TopPair.Hom.fst (c.ι.app s)) := by
     -- Compact subsets of the total space project into finitely many members of the cover.
     intro K hK
-    have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
-    obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.2)
-    refine ⟨s, fun v hv ↦ ⟨⟨v.1, hs ⟨v, hv, rfl⟩⟩, ?_⟩⟩
+    have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal)
+    obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.property)
+    refine ⟨s, fun v hv ↦ ⟨⟨v.val, hs ⟨v, hv, rfl⟩⟩, ?_⟩⟩
     exact thomPairOverMap_fst_apply F E _ _
   have hsndK : ∀ K : Set c.pt.snd, IsCompact K →
       ∃ s, K ⊆ range (TopPair.Hom.snd (c.ι.app s)) := by
     -- The same argument applies to the complement of the zero section.
     intro K hK
-    have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
-    obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.2.1)
-    refine ⟨s, fun v hv ↦ ⟨⟨v.1, hs ⟨v, hv, rfl⟩, v.2.2⟩, ?_⟩⟩
+    have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal)
+    obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.property.1)
+    refine ⟨s, fun v hv ↦ ⟨⟨v.val, hs ⟨v, hv, rfl⟩, v.property.2⟩, ?_⟩⟩
     exact thomPairOverMap_snd_apply F E _ _
   exact TopPair.existsUnique_singularCohomology_of_directedUnion R M c
     (fun s ↦ by

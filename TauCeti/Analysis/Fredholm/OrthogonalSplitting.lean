@@ -54,6 +54,13 @@ complements of the kernel, which move continuously with the solution about which
   values in its kernel, `R - π R` is a right inverse of `T` whenever `R` is, and when `π` projects
   along the `ι`-orthogonal complement of the kernel, a right inverse `Q` with values in that
   complement splits every `e` as `e = π e + Q (T e)`.
+* `ContinuousLinearMap.eq_zero_of_mem_ker_of_forall_inner_eq_zero`: an element of the kernel
+  `ι`-orthogonal to the kernel vanishes.
+* `ContinuousLinearMap.apply_eq_of_ker_projection_conj` and
+  `ContinuousLinearMap.apply_eq_of_rightInverse_conj`: an equivalence `e` carrying the kernel of
+  `T` to that of `T'` and the `ι`-pairing to the `ι'`-pairing conjugates the orthogonal kernel
+  projections and right inverses, `π' (e y) = e (π y)` and `Q' (σ f) = e (Q f)` when
+  `T' ∘ e = σ ∘ T`. With `e` the identity, this is their uniqueness.
 * `ContinuousLinearMap.IsFredholm.exists_continuousOn_orthogonal_ker_projection`: continuous
   projections onto the kernels along their `ι`-orthogonal complements, at the parameters of
   constant nullity.
@@ -92,6 +99,14 @@ theorem rightInverse_sub_comp [Ring 𝕜] [AddCommGroup E] [Module 𝕜 E]
   have h0 : T (π (R y)) = 0 := LinearMap.mem_ker.1 (hmem (R y))
   simp [hR y, h0]
 
+/-- Let `ι` be an injective operator into an inner product space. An element of the kernel of `T`
+whose image under `ι` is orthogonal to `ι` of the kernel vanishes. -/
+theorem eq_zero_of_mem_ker_of_forall_inner_eq_zero {H : Type*} [RCLike 𝕜] [AddCommGroup E]
+    [Module 𝕜 E] [AddCommGroup F] [Module 𝕜 F] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+    {ι : E →L[𝕜] H} (hι : Injective ι) {T : E →L[𝕜] F} {w : E} (hw : w ∈ T.ker)
+    (h : ∀ k ∈ T.ker, ⟪ι w, ι k⟫_𝕜 = 0) : w = 0 :=
+  hι ((inner_self_eq_zero.1 (h w hw)).trans (map_zero ι).symm)
+
 /-- Let `ι` be an injective operator into an inner product space, let `π` take values in the kernel
 of `T` with `ι (e - π e)` orthogonal to `ι` of the kernel, and let `Q` be a right inverse of `T`
 whose values are `ι`-orthogonal to the kernel. Then every `e` splits as `e = π e + Q (T e)`. -/
@@ -106,12 +121,66 @@ theorem apply_add_apply_apply_eq_self {H : Type*} [RCLike 𝕜] [AddCommGroup E]
   have h0 : T (π e) = 0 := LinearMap.mem_ker.1 (hmem e)
   have hd : d ∈ T.ker := by
     simp [d, hQ (T e), h0]
-  have hdd : ⟪ι d, ι d⟫_𝕜 = 0 := by
-    have h : ⟪ι (e - π e) - ι (Q (T e)), ι d⟫_𝕜 = 0 := by
-      rw [inner_sub_left, horth e d hd, hQorth _ d hd, sub_zero]
-    rwa [← map_sub] at h
-  have : d = 0 := hι (by simpa using hdd)
+  have : d = 0 := eq_zero_of_mem_ker_of_forall_inner_eq_zero hι hd fun k hk ↦ by
+    rw [map_sub, inner_sub_left, horth e k hk, hQorth _ k hk, sub_zero]
   exact (sub_eq_zero.1 (by simpa only [d, sub_sub] using this)).symm
+
+variable {H E' F' H' : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E] [AddCommGroup F]
+  [Module 𝕜 F] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [AddCommGroup E'] [Module 𝕜 E']
+  [TopologicalSpace E'] [AddCommGroup F'] [Module 𝕜 F'] [TopologicalSpace F']
+  [NormedAddCommGroup H'] [InnerProductSpace 𝕜 H'] {ι : E →L[𝕜] H} {ι' : E' →L[𝕜] H'}
+  {T : E →L[𝕜] F} {T' : E' →L[𝕜] F'}
+
+/-- An equivalence carrying the kernel of `T` onto the kernel of `T'` and the pairing through `ι`
+to the pairing through `ι'` carries vectors `ι`-orthogonal to the kernel of `T` to vectors
+`ι'`-orthogonal to the kernel of `T'`. -/
+private theorem inner_map_eq_zero_of_ker_conj (e : E ≃ₗ[𝕜] E')
+    (hker : ∀ y, e y ∈ T'.ker ↔ y ∈ T.ker)
+    (he : ∀ y y', ⟪ι' (e y), ι' (e y')⟫_𝕜 = ⟪ι y, ι y'⟫_𝕜) {y : E}
+    (hy : ∀ k ∈ T.ker, ⟪ι y, ι k⟫_𝕜 = 0) {k : E'} (hk : k ∈ T'.ker) :
+    ⟪ι' (e y), ι' k⟫_𝕜 = 0 := by
+  rw [← e.apply_symm_apply k, he]
+  exact hy _ ((hker _).1 (by rwa [e.apply_symm_apply]))
+
+/-- **Orthogonal kernel projections are equivariant.** Let `e : E ≃ₗ[𝕜] E'` carry the kernel of
+`T` onto the kernel of `T'` and the pairing through `ι` to the pairing through `ι'`, with `ι'`
+injective. If `π` takes values in the kernel of `T` with `ι (y - π y)` orthogonal to `ι` of the
+kernel, and `π'` is such a projection for `T'` and `ι'`, then `π' (e y) = e (π y)`. For
+`e = LinearEquiv.refl` this is the uniqueness of the projection. No linearity of `π` or `π'` is
+assumed. -/
+theorem apply_eq_of_ker_projection_conj (hι' : Injective ι') (e : E ≃ₗ[𝕜] E')
+    (hker : ∀ y, e y ∈ T'.ker ↔ y ∈ T.ker)
+    (he : ∀ y y', ⟪ι' (e y), ι' (e y')⟫_𝕜 = ⟪ι y, ι y'⟫_𝕜) {π : E → E} {π' : E' → E'}
+    (hπ : ∀ y, π y ∈ T.ker) (hπo : ∀ y, ∀ k ∈ T.ker, ⟪ι (y - π y), ι k⟫_𝕜 = 0)
+    (hπ' : ∀ y, π' y ∈ T'.ker) (hπ'o : ∀ y, ∀ k ∈ T'.ker, ⟪ι' (y - π' y), ι' k⟫_𝕜 = 0)
+    (y : E) : π' (e y) = e (π y) := by
+  -- The difference lies in the kernel of `T'` and is `ι'`-orthogonal to it.
+  refine sub_eq_zero.1 (eq_zero_of_mem_ker_of_forall_inner_eq_zero hι'
+    (sub_mem (hπ' _) ((hker _).2 (hπ y))) fun k hk ↦ ?_)
+  have h : π' (e y) - e (π y) = e (y - π y) - (e y - π' (e y)) := by
+    rw [map_sub]
+    abel
+  rw [h, map_sub, inner_sub_left, inner_map_eq_zero_of_ker_conj e hker he (hπo y) hk,
+    hπ'o _ k hk, sub_zero]
+
+/-- **Orthogonal right inverses are equivariant.** Let `e : E ≃ₗ[𝕜] E'` carry the kernel of `T`
+onto the kernel of `T'` and the pairing through `ι` to the pairing through `ι'`, with `ι'`
+injective, and let `T' (e y) = σ (T y)`. If `Q` is a right inverse of `T` with values
+`ι`-orthogonal to the kernel, and `Q'` such a right inverse of `T'` for `ι'`, then
+`Q' (σ f) = e (Q f)`. For `e = LinearEquiv.refl` this is the uniqueness of the right inverse.
+No linearity of `Q`, `Q'` or `σ` is assumed. -/
+theorem apply_eq_of_rightInverse_conj (hι' : Injective ι') (e : E ≃ₗ[𝕜] E') (σ : F → F')
+    (hTe : ∀ y, T' (e y) = σ (T y)) (hker : ∀ y, e y ∈ T'.ker ↔ y ∈ T.ker)
+    (he : ∀ y y', ⟪ι' (e y), ι' (e y')⟫_𝕜 = ⟪ι y, ι y'⟫_𝕜) {Q : F → E} {Q' : F' → E'}
+    (hQ : ∀ f, T (Q f) = f) (hQo : ∀ f, ∀ k ∈ T.ker, ⟪ι (Q f), ι k⟫_𝕜 = 0)
+    (hQ' : ∀ f, T' (Q' f) = f) (hQ'o : ∀ f, ∀ k ∈ T'.ker, ⟪ι' (Q' f), ι' k⟫_𝕜 = 0) (f : F) :
+    Q' (σ f) = e (Q f) := by
+  -- The difference solves the homogeneous equation and is `ι'`-orthogonal to the kernel.
+  refine sub_eq_zero.1 (eq_zero_of_mem_ker_of_forall_inner_eq_zero (T := T') hι' ?_
+    fun k hk ↦ ?_)
+  · rw [LinearMap.mem_ker, coe_coe, map_sub, hQ', hTe, hQ, sub_self]
+  · rw [map_sub, inner_sub_left, hQ'o _ k hk, inner_map_eq_zero_of_ker_conj e hker he (hQo f) hk,
+      sub_zero]
 
 end SingleOperator
 
@@ -191,7 +260,7 @@ private theorem surjective_of_splitting (hT₀ : IsFredholm (T x₀)) (hsurj : S
     simpa [LinearMap.range_eq_top.2 hsurj] using hS.isCompl.inf_eq_bot
   refine ⟨W, hWo, hx₀W, fun x hx ↦ ?_⟩
   have hTR : ∀ y, T x (R x y) = y := fun y ↦ by
-    have hP : (P x y : F) = 0 := by simpa [hS] using (P x y).2
+    have hP : (P x y : F) = 0 := by simpa [hS] using (P x y).property
     simpa [hP] using (hRP x hx.1).1 y
   have hsurjx : Surjective (T x) := fun y ↦ ⟨R x y, hTR y⟩
   exact ⟨hTR, (hW x hx.2).2

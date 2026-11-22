@@ -108,7 +108,7 @@ private def restrict (hab' : a' < b') (f : ParabolicCkHolderSpace k α E F hab) 
       have h' := (f.hasDerivWithinAt_mixedDerivL h x (inclusion (Icc_subset_Icc ha hb) t)).mono
         (Icc_subset_Icc ha hb)
       rw [restrictField_apply, inclusion_slabMk]
-      refine h'.congr_of_mem (fun s hs ↦ ?_) t.2
+      refine h'.congr_of_mem (fun s hs ↦ ?_) t.property
       simp [restrictField_apply, inclusion_slabMk, ParabolicC2HolderSpace.timeExtension_def,
         projIcc_of_mem hab'.le hs, projIcc_of_mem hab.le (Icc_subset_Icc ha hb hs)])
     (fun _ _ h ↦ ⟨_, holderWith_restrictField_slabMk ha hb f h⟩)

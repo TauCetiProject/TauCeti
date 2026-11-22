@@ -512,7 +512,7 @@ theorem transfersUniquely_transferBaseTransformation :
 consistent. -/
 theorem nonempty_ι_transferBaseTransformation_iff :
     Nonempty (Ω.transferBaseTransformation hΩ h).ι ↔ (Ω.transferBase hΩ h).IsFormallyConsistent :=
-  ⟨fun ⟨i⟩ => i.2, fun h' => ⟨⟨(), h'⟩⟩⟩
+  ⟨fun ⟨i⟩ => i.property, fun h' => ⟨⟨(), h'⟩⟩⟩
 
 end Consistent
 
@@ -663,7 +663,7 @@ example :
   have hnot : ¬ (inconsistentAfterTransfer.transferBase hΩ h).IsFormallyConsistent := fun hΩ' => by
     have hsign := hΩ'.sign_eq_of_left_eq (μ := 2) (by simp [ht1])
     simp at hsign
-  exact ⟨hΩ, h, hnot, ⟨fun i => hnot i.2⟩,
+  exact ⟨hΩ, h, hnot, ⟨fun i => hnot i.property⟩,
     ⟨fun U => hnot (isFormallyConsistent_transferBase_of_nonempty_solution hΩ h ⟨U⟩)⟩⟩
 
 end Examples

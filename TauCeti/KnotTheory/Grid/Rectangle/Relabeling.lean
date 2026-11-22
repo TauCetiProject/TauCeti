@@ -413,12 +413,8 @@ theorem card_source_pointSet_inter_halfTurnEquiv (R : GridRectangleBetween x y) 
     (x.halfTurn.pointSet ∩ (halfTurnEquiv x y R).toGridRectangle.coveredSquares).card =
       (x.pointSet ∩ R.toGridRectangle.coveredSquares).card := by
   classical
-  rw [pointSet_inter_coveredSquares_eq_insert, pointSet_inter_coveredSquares_eq_insert,
-    Finset.card_insert_of_notMem, Finset.card_insert_of_notMem,
+  rw [card_pointSet_inter_coveredSquares, card_pointSet_inter_coveredSquares,
     card_pointSet_inter_interior_halfTurnEquiv]
-  · exact fun h ↦ R.toGridRectangle.notMem_interior_of_fst_eq_left rfl (Finset.mem_inter.mp h).2
-  · exact fun h ↦ (halfTurnEquiv x y R).toGridRectangle.notMem_interior_of_fst_eq_left
-      rfl (Finset.mem_inter.mp h).2
 
 /-- The half-turn preserves the number of marking squares covered by a rectangle. Marking
 square coordinates use `rotate`, whereas rectangle corners use `halfTurn`. -/

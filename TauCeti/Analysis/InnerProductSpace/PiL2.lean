@@ -41,6 +41,7 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.surjective_proj`: every coordinate projection is surjective.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
 * `EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere`: the coordinates of a point of the unit sphere
@@ -52,6 +53,8 @@ Borel measurable structure on the scalar field.
   of its values at the vertices.
 * `EuclideanSpace.consEquivL`: splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with
   `𝕜 × 𝕜ⁿ`.
+* `EuclideanSpace.consPiEquivL`: the same splitting onto `𝕜 × (Fin n → 𝕜)`, linear over any ring of
+  scalars acting on `𝕜`.
 * `EuclideanSpace.finTwoEquivProd`: the two coordinates identify `𝕜²` isometrically with the `L²`
   product `WithLp 2 (𝕜 × 𝕜)`.
 * `EuclideanSpace.nonempty_linearIsometry_iff_finrank_le`: a finite-dimensional inner product
@@ -59,6 +62,8 @@ Borel measurable structure on the scalar field.
   cardinality of `ι`.
 * `EuclideanSpace.exists_norm_eq_and_inner_eq`: consequently a finite family `ι → E` of vectors has
   a copy in `EuclideanSpace 𝕜 ι` with the same norms and mutual inner products.
+* `EuclideanSpace.sumEquivProd_apply_fst` and `EuclideanSpace.sumEquivProd_apply_snd`: the
+  coordinates of the two blocks of `EuclideanSpace.sumEquivProd`.
 * `EuclideanSpace.sumComplEquivProd`: splitting the coordinates along a predicate `p` identifies
   `EuclideanSpace 𝕜 ι` with `EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}`.
 * `EuclideanSpace.take`: the first `m` coordinates of a point of `𝕜ⁿ`, a left inverse of the
@@ -241,6 +246,12 @@ end take
 
 variable [RCLike 𝕜]
 
+omit [Fintype ι] in
+/-- Every coordinate projection of Euclidean space is surjective. -/
+theorem surjective_proj (i : ι) : Function.Surjective (EuclideanSpace.proj (𝕜 := 𝕜) i) := by
+  classical
+  exact fun r ↦ ⟨EuclideanSpace.single i r, by simp⟩
+
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
 equivalence `(t, x) ↦ (t, x₀, …, xₙ₋₁)`. This is `Fin.consEquivL` read in Euclidean
@@ -279,6 +290,42 @@ theorem consEquivL_symm_apply_fst {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1
 theorem consEquivL_symm_apply_snd {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) (i : Fin n) :
     ((consEquivL 𝕜 n).symm x).2 i = x i.succ := by
   simp [consEquivL_symm_apply, Fin.tail]
+
+variable (𝕜) in
+/-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × (Fin n → 𝕜)`: the continuous
+`R`-linear equivalence `(t, x) ↦ (t, x₀, …, xₙ₋₁)`, for any ring `R` of scalars acting on `𝕜`.
+Unlike `EuclideanSpace.consEquivL`, the tail is the plain function space `Fin n → 𝕜` and the
+scalars need not be `𝕜`; for instance `ℂᵐ⁺¹` splits as a real vector space into `ℂ × (Fin m → ℂ)`.
+-/
+def consPiEquivL (R : Type*) [Semiring R] [Module R 𝕜] (n : ℕ) :
+    (𝕜 × (Fin n → 𝕜)) ≃L[R] EuclideanSpace 𝕜 (Fin (n + 1)) :=
+  (Fin.consEquivL R fun _ => 𝕜).trans (PiLp.continuousLinearEquiv 2 R fun _ => 𝕜).symm
+
+/-- `EuclideanSpace.consPiEquivL` prepends the first coordinate to the tail. -/
+theorem consPiEquivL_apply {R : Type*} [Semiring R] [Module R 𝕜] {n : ℕ} (z : 𝕜 × (Fin n → 𝕜)) :
+    consPiEquivL 𝕜 R n z = WithLp.toLp 2 (Fin.cons z.1 z.2) := by
+  ext i
+  simp [consPiEquivL, Fin.consEquivL_apply]
+
+/-- The first coordinate of `EuclideanSpace.consPiEquivL 𝕜 R n z` is `z.1`. -/
+@[simp]
+theorem consPiEquivL_apply_zero {R : Type*} [Semiring R] [Module R 𝕜] {n : ℕ}
+    (z : 𝕜 × (Fin n → 𝕜)) : consPiEquivL 𝕜 R n z 0 = z.1 := by
+  simp [consPiEquivL_apply]
+
+/-- The coordinate `i + 1` of `EuclideanSpace.consPiEquivL 𝕜 R n z` is `z.2 i`. -/
+@[simp]
+theorem consPiEquivL_apply_succ {R : Type*} [Semiring R] [Module R 𝕜] {n : ℕ}
+    (z : 𝕜 × (Fin n → 𝕜)) (i : Fin n) : consPiEquivL 𝕜 R n z i.succ = z.2 i := by
+  simp [consPiEquivL_apply]
+
+/-- The inverse of `EuclideanSpace.consPiEquivL` splits off the first coordinate,
+`x ↦ (x 0, (x (i + 1))ᵢ)`. -/
+@[simp]
+theorem consPiEquivL_symm_apply {R : Type*} [Semiring R] [Module R 𝕜] {n : ℕ}
+    (x : EuclideanSpace 𝕜 (Fin (n + 1))) :
+    (consPiEquivL 𝕜 R n).symm x = (x 0, fun i => x i.succ) := by
+  ext <;> simp [consPiEquivL, Fin.tail]
 
 variable (𝕜) in
 /-- The two coordinates identify `𝕜²` with the `L²` product `WithLp 2 (𝕜 × 𝕜)`, as a linear
@@ -340,6 +387,26 @@ theorem exists_norm_eq_and_inner_eq {E : Type*} [NormedAddCommGroup E] [InnerPro
   refine ⟨fun i ↦ L ⟨w i, hw i⟩, fun i ↦ ?_, fun i j ↦ ?_⟩
   · rw [L.norm_map, ← Submodule.norm_coe]
   · rw [L.inner_map_map, Submodule.coe_inner]
+
+section sumEquivProd
+
+/-! `EuclideanSpace.sumEquivProd` is a reducible composite, so `simp` unfolds it through
+`ContinuousLinearEquiv.trans_apply` before these lemmas could fire; they are not `@[simp]` and
+are meant for `rw` and `simp only`. -/
+
+variable {κ : Type*} [Fintype κ]
+
+/-- The first block of `EuclideanSpace.sumEquivProd x` reads the `Sum.inl` coordinates of `x`. -/
+theorem sumEquivProd_apply_fst (x : EuclideanSpace 𝕜 (ι ⊕ κ)) (i : ι) :
+    (sumEquivProd x).1 i = x (Sum.inl i) :=
+  rfl
+
+/-- The second block of `EuclideanSpace.sumEquivProd x` reads the `Sum.inr` coordinates of `x`. -/
+theorem sumEquivProd_apply_snd (x : EuclideanSpace 𝕜 (ι ⊕ κ)) (k : κ) :
+    (sumEquivProd x).2 k = x (Sum.inr k) :=
+  rfl
+
+end sumEquivProd
 
 section sumCompl
 
@@ -418,7 +485,7 @@ theorem snd_sumComplEquivProd_eq_zero_iff {x : EuclideanSpace 𝕜 ι} :
   refine ⟨fun h i hi ↦ ?_, fun h ↦ ?_⟩
   · simpa using congr($h ⟨i, hi⟩)
   · ext i
-    simpa using h i i.2
+    simpa using h i i.property
 
 /-- The cell condition `‖u‖² ≤ ε`, `v = 0` on the components `(u, v)` of the splitting along `p`
 says that `‖x‖² ≤ ε` and that the coordinates not satisfying `p` vanish. -/
@@ -444,8 +511,8 @@ theorem inner_fst_sumComplEquivProd (x : EuclideanSpace 𝕜 ι) (u : EuclideanS
     inner 𝕜 (sumComplEquivProd 𝕜 p x).1 u = inner 𝕜 x ((sumComplEquivProd 𝕜 p).symm (u, 0)) := by
   simp only [PiLp.inner_apply, sumComplEquivProd_apply_fst, sumComplEquivProd_symm_apply]
   rw [← Fintype.sum_subtype_add_sum_subtype p]
-  have hpos (i : {i // p i}) : p i := i.2
-  have hneg (i : {i // ¬p i}) : ¬p i := i.2
+  have hpos (i : {i // p i}) : p i := i.property
+  have hneg (i : {i // ¬p i}) : ¬p i := i.property
   simp [hpos, hneg]
 
 end sumCompl
@@ -464,7 +531,7 @@ def finCastLEEquiv (hm : m ≤ n) :
 
 @[simp]
 theorem finCastLEEquiv_apply (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m))
-    (j : {j : Fin n // j.val < m}) : finCastLEEquiv 𝕜 hm w j = w ⟨j.1, j.2⟩ := by
+    (j : {j : Fin n // j.val < m}) : finCastLEEquiv 𝕜 hm w j = w ⟨j.val, j.property⟩ := by
   simp only [finCastLEEquiv, LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft'_apply,
     OrderIso.coe_symm_toEquiv]
   -- `Fin.castLEOrderIso_symm_apply` is stated with `RelIso.symm`, so `simp` cannot rewrite with it.
@@ -472,7 +539,7 @@ theorem finCastLEEquiv_apply (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m))
 
 @[simp]
 theorem finCastLEEquiv_symm_apply (hm : m ≤ n) (v : EuclideanSpace 𝕜 {j : Fin n // j.val < m})
-    (i : Fin m) : (finCastLEEquiv 𝕜 hm).symm v i = v ⟨Fin.castLE hm i, i.2⟩ := by
+    (i : Fin m) : (finCastLEEquiv 𝕜 hm).symm v i = v ⟨Fin.castLE hm i, i.isLt⟩ := by
   simp [finCastLEEquiv, Equiv.piCongrLeft'_apply]
 
 /-- Inserting `w : 𝕜ᵐ` as the first factor of the splitting along `j < m`, with zero second
@@ -614,7 +681,7 @@ orthogonal projection onto each `N i`. -/
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [e.apply_coe_submodulePiLp_symm M N hMN, PiLp.toLp_apply,
     Submodule.coe_orthogonalProjectionOnto_apply, ← (N j).inner_starProjection_left_eq_right,
-    (N j).starProjection_eq_self_iff.mpr ((hMN w.1).mp w.2 j)]
+    (N j).starProjection_eq_self_iff.mpr ((hMN w.val).mp w.property j)]
 
 /-- If `e : X ≃ₗᵢ[𝕜] PiLp 2 F` characterizes `M` coordinatewise by `N`, then `M.starProjection`
 acts coordinatewise as `(N i).starProjection`. -/

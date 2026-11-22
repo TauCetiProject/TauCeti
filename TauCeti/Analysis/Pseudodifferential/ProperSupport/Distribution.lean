@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Distribution
-public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.InnerPairing
+public import TauCeti.Analysis.Distribution.TestFunction.Inner
+public import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Basic
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Basic
+public import TauCeti.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.SupportedIn
 import TauCeti.Analysis.Distribution.TestFunction.Postcomp
-import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Properly supported pseudodifferential operators on test functions and distributions
@@ -31,12 +33,36 @@ consequences that make properly supported operators act on all of `𝓓'(ℝⁿ)
   `Op(a)*`, with values `Op(a)* φ (x) = ∫ exp(2πi ⟪ζ, x⟫) 𝓕 (y ↦ a(y, 2πζ)† φ(y)) (ζ) dζ`
   (`TauCeti.Symbol.adjointTestFunctionCLM`), and `∫ ⟪Op(a) u, φ⟫ = ∫ ⟪u, Op(a)* φ⟫`
   (`TauCeti.Symbol.integral_inner_quantizeTestFunctionCLM`).
-* **Distributions.** For a scalar symbol, `Op(a)` extends by transposition to distributions,
-  `(Op(a) T) (φ) = T (Op(a)ᵗ φ)` with the transpose `Op(a)ᵗ φ = conj (Op(a)* φ)` on real test
-  functions (`TauCeti.Symbol.quantizeDistribution`). On the distribution of a test function it is
-  the distribution of its quantization (`TauCeti.Symbol.quantizeDistribution_ofFun`), and it does
-  not enlarge the support of a distribution by more than `R`
-  (`TauCeti.Symbol.dsupport_quantizeDistribution_subset`).
+* **Distributions.** For a symbol with values in `V →L[ℂ] W`, with `V` and `W` finite-dimensional
+  complex inner product spaces, `Op(a)` extends by transposition to `V`-valued distributions
+  (`TauCeti.Symbol.quantizeDistribution`): the component of `Op(a) T (φ)` along `w : W` is the
+  pairing `⟪Op(a)* (φ • w), T⟫` of `T` with a `V`-valued test function
+  (`TauCeti.Symbol.inner_quantizeDistribution_apply`, with the pairing
+  `Distribution.innerPairing`). For a scalar symbol this is `(Op(a) T) (φ) = T (Op(a)ᵗ φ)`, with the
+  transpose `Op(a)ᵗ φ = conj (Op(a)* φ)` on real test functions
+  (`TauCeti.Symbol.quantizeDistribution_apply`). On the distribution of a test function it is the
+  distribution of its quantization (`TauCeti.Symbol.quantizeDistribution_ofFun`), and it does not
+  enlarge the support of a distribution by more than `R`
+  (`TauCeti.Symbol.dsupport_quantizeDistribution_subset`). In a local frame, an operator between
+  vector bundles has a matrix-valued symbol, so this is the action of a properly supported operator
+  on distributional sections in a chart.
+* **The transpose determines the action.** For a scalar symbol, on complex test functions, the
+  transpose `Op(a)ᵗ φ = conj (Op(a)* (conj φ))` (`TauCeti.Symbol.scalarTransposeTestFunctionCLM`)
+  satisfies
+  `∫ φ · Op(a) u = ∫ Op(a)ᵗ φ · u` (`TauCeti.Symbol.integral_mul_quantizeTestFunctionCLM`), and it
+  is the only continuous function with this property
+  (`TauCeti.Symbol.coe_scalarTransposeTestFunctionCLM_eq`). Hence `Op(a)` on distributions only
+  depends on the coefficient of `a` (`TauCeti.Symbol.quantizeDistribution_congr`), it is zero if
+  `R ≤ 0` (`TauCeti.Symbol.HasNearDiagonalKernel.quantizeDistribution_eq_zero`), and if
+  `Op(c) = Op(a) ∘ Op(b)` on test functions, then also on distributions
+  (`TauCeti.Symbol.quantizeDistribution_comp`).
+
+* **Fixed supports.** `TauCeti.Symbol.quantizeSupportedInCLM` and
+  `TauCeti.Symbol.adjointSupportedInCLM` map stage `K` continuously to its closed `R`-thickening.
+  Their `ofSupportedInCLM_comp_*` laws identify these maps with the global test operators.
+* **Dual-valued tests.** `TauCeti.Symbol.transposeTestFunctionCLM` transports the formal adjoint
+  through the real Riesz equivalence twice, yielding a complex-linear transpose with the spatial
+  bilinear identity `TauCeti.Symbol.integral_apply_quantizeTestFunctionCLM`.
 
 On test functions supported in a compact set `K`, the operator `Op(a)` agrees with `Op(ψ a)` for a
 cutoff `ψ` equal to `1` near the `R`-neighbourhood of `K`. The symbol `ψ a` has compact spatial
@@ -57,7 +83,8 @@ public section
 noncomputable section
 
 open MeasureTheory Real FourierTransform Set TopologicalSpace
-open scoped SchwartzMap ContDiff Distributions RealInnerProductSpace
+open scoped SchwartzMap ContDiff ComplexConjugate Distributions RealInnerProductSpace
+  InnerProductSpace
 
 namespace TauCeti
 
@@ -72,38 +99,33 @@ section Cutoff
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W]
 
-/-- The symbol `ψ(x) a(x, ξ)` of the operator `Op(a)` followed by multiplication by `ψ`. -/
-private def spatialCutoff {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
-    (a : Symbol n V W m) : Symbol n V W (0 + m) :=
-  (cutoff W hψ).comp a
-
-private theorem coefficient_spatialCutoff {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+private theorem coefficient_cutoff_comp {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
     (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
-    (spatialCutoff hψ a).coefficient p = (ψ p.1 : ℂ) • a.coefficient p := by
-  simp [spatialCutoff, coefficient_comp, Complex.coe_smul]
+    ((cutoff W hψ).comp a).coefficient p = (ψ p.1 : ℂ) • a.coefficient p := by
+  simp [coefficient_comp, Complex.coe_smul]
 
-private theorem hasCompactSpatialSupport_spatialCutoff {ψ : CoordinateSpace n → ℝ}
+private theorem hasCompactSpatialSupport_cutoff_comp {ψ : CoordinateSpace n → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (a : Symbol n V W m) :
-    (spatialCutoff hψ a).HasCompactSpatialSupport :=
+    ((cutoff W hψ).comp a).HasCompactSpatialSupport :=
   (hasCompactSpatialSupport_cutoff hψ hψc).comp_right a
 
-private theorem quantizeSchwartzValue_spatialCutoff {ψ : CoordinateSpace n → ℝ}
+private theorem quantizeSchwartzValue_cutoff_comp_apply {ψ : CoordinateSpace n → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V))
     (x : CoordinateSpace n) :
-    quantizeSchwartzValue (spatialCutoff hψ a).coefficient u x =
+    quantizeSchwartzValue ((cutoff W hψ).comp a).coefficient u x =
       (ψ x : ℂ) • quantizeSchwartzValue a.coefficient u x := by
   rw [quantizeSchwartzValue_congr_left (b := (ψ x : ℂ) • a.coefficient)
-    (fun ξ ↦ coefficient_spatialCutoff hψ a (x, ξ)), quantizeSchwartzValue_smul_left]
+    (fun ξ ↦ coefficient_cutoff_comp hψ a (x, ξ)), quantizeSchwartzValue_smul_left]
 
 /-- If `ψ = 1` on the closed `R`-neighbourhood of the support of `u`, cutting the symbol off by `ψ`
-does not change `Op(a) u`. -/
-private theorem HasNearDiagonalKernel.quantizeSchwartzValue_spatialCutoff_eq {a : Symbol n V W m}
+does not change `Op(a) u`: `Op(ψ a) u = Op(a) u`. -/
+theorem HasNearDiagonalKernel.quantizeSchwartzValue_cutoff_comp {a : Symbol n V W m}
     (ha : a.HasNearDiagonalKernel R) {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
     {u : 𝓢(CoordinateSpace n, V)} (hψu : EqOn ψ 1 (Metric.cthickening R (tsupport u))) :
-    quantizeSchwartzValue (spatialCutoff hψ a).coefficient u =
+    quantizeSchwartzValue ((cutoff W hψ).comp a).coefficient u =
       quantizeSchwartzValue a.coefficient u := by
   funext x
-  rw [Symbol.quantizeSchwartzValue_spatialCutoff]
+  rw [Symbol.quantizeSchwartzValue_cutoff_comp_apply]
   by_cases hx : x ∈ Metric.cthickening R (tsupport u)
   · simp [hψu hx]
   · simp [ha.quantizeSchwartzValue_eq_zero_of_notMem hx]
@@ -142,7 +164,7 @@ private theorem IsUniform.exists_norm_iteratedFDeriv_quantize_le {m' : ℝ} {V' 
     ((schwartz_withSeminorms ℂ _ _).continuous_seminorm (0, i)).comp L.continuous
   obtain ⟨s, C, -, hC⟩ :=
     Seminorm.bound_of_continuous (ContDiffMapSupportedIn.withSeminorms ℂ _ _ ⊤ K) q hq
-  refine ⟨s, C, C.2, fun f x ↦ ?_⟩
+  refine ⟨s, C, C.property, fun f x ↦ ?_⟩
   rw [← coe_quantizeUniformCLM b hb]
   exact (SchwartzMap.norm_iteratedFDeriv_le_seminorm ℂ _ i x).trans (hC f)
 
@@ -191,22 +213,31 @@ private theorem HasNearDiagonalKernel.exists_norm_iteratedFDeriv_le
           (quantizeSchwartzValue a.coefficient (ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f)) x‖ ≤
         C * (s.sup fun j ↦ N[ℂ]_{K, j}) f := by
   obtain ⟨ψ, hψ, hψc, hψ1⟩ := exists_cutoff _ (K.cthickening R).isCompact
-  obtain ⟨s, C, hC0, hC⟩ := (hasCompactSpatialSupport_spatialCutoff hψ hψc a).isUniform
+  obtain ⟨s, C, hC0, hC⟩ := (hasCompactSpatialSupport_cutoff_comp hψ hψc a).isUniform
     |>.exists_norm_iteratedFDeriv_quantize_le K i
   refine ⟨s, C, hC0, fun f x ↦ ?_⟩
-  rw [← ha.quantizeSchwartzValue_spatialCutoff_eq hψ (hψ1.mono ?_)]
+  rw [← ha.quantizeSchwartzValue_cutoff_comp hψ (hψ1.mono ?_)]
   · exact hC f x
   · exact cthickening_tsupport_toSchwartzMapCLM_subset f
 
 /-- `Op(a)` on smooth functions supported in a compact set `K`, with values in the smooth functions
 supported in the closed `R`-neighbourhood of `K`. -/
-private def quantizeSupportedInCLM (ha : a.HasNearDiagonalKernel R)
+def quantizeSupportedInCLM (ha : a.HasNearDiagonalKernel R)
     (K : Compacts (CoordinateSpace n)) :
     𝓓_{K}(CoordinateSpace n, V) →L[ℂ] 𝓓_{K.cthickening R}(CoordinateSpace n, W) :=
   supportedInCLM a
     (fun f _ hx ↦ ha.quantizeSchwartzValue_eq_zero_of_notMem fun h ↦
       hx (cthickening_tsupport_toSchwartzMapCLM_subset f h))
     (ha.exists_norm_iteratedFDeriv_le K)
+
+/-- Evaluation of quantization between the native fixed-support stages. -/
+@[simp]
+theorem quantizeSupportedInCLM_apply (ha : a.HasNearDiagonalKernel R)
+    (K : Compacts (CoordinateSpace n)) (f : 𝓓_{K}(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    quantizeSupportedInCLM ha K f x =
+      quantizeSchwartzValue a.coefficient (ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f) x := by
+  rfl
 
 /-- **A properly supported operator on test functions.** For a symbol `a` whose quantization has
 kernel supported within distance `R` of the diagonal, `u ↦ Op(a) u` as a continuous linear map on
@@ -231,6 +262,21 @@ theorem quantizeTestFunctionCLM_apply (ha : a.HasNearDiagonalKernel R)
     quantizeTestFunctionCLM ha u x =
       quantizeSchwartzValue a.coefficient (u.hasCompactSupport.toSchwartzMap u.contDiff) x :=
   (rfl)
+
+/-- Fixed-support quantization commutes with the native inclusions into test functions. -/
+theorem ofSupportedInCLM_comp_quantizeSupportedInCLM (ha : a.HasNearDiagonalKernel R)
+    (K : Compacts (CoordinateSpace n)) :
+    TestFunction.ofSupportedInCLM ℂ (subset_univ (K.cthickening R : Set (CoordinateSpace n))) ∘L
+        quantizeSupportedInCLM ha K =
+      quantizeTestFunctionCLM ha ∘L TestFunction.ofSupportedInCLM ℂ
+        (subset_univ (K : Set (CoordinateSpace n))) := by
+  ext f x
+  simp only [ContinuousLinearMap.comp_apply, TestFunction.coe_ofSupportedInCLM,
+    TestFunction.coe_ofSupportedIn, quantizeSupportedInCLM_apply,
+    quantizeTestFunctionCLM_apply]
+  exact congrArg (quantizeSchwartzValue a.coefficient · x)
+    (ContDiffMapSupportedIn.toSchwartzMap_ofSupportedIn ℂ
+      (Ω := (⊤ : Opens (CoordinateSpace n))) (subset_univ _) f).symm
 
 /-- `Op(a) u` is supported in the closed `R`-neighbourhood of the support of `u`. -/
 theorem tsupport_quantizeTestFunctionCLM_subset (ha : a.HasNearDiagonalKernel R)
@@ -261,20 +307,20 @@ private theorem adjointValue_apply (a : Symbol n V W m) (φ : CoordinateSpace n 
 
 /-- On a Schwartz function `φ` supported where `ψ = 1`, the quantization of the adjoint symbol of
 the cutoff `ψ a` is the right quantization of the pointwise adjoint `a(y, ξ)†`. -/
-private theorem quantizeSchwartzValue_adjoint_spatialCutoff {ψ : CoordinateSpace n → ℝ}
+private theorem quantizeSchwartzValue_adjoint_cutoff_comp {ψ : CoordinateSpace n → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) {φ : 𝓢(CoordinateSpace n, W)}
     (hψφ : EqOn ψ 1 (tsupport φ)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue (adjoint (spatialCutoff hψ a)
-        (hasCompactSpatialSupport_spatialCutoff hψ hψc a)).coefficient φ x =
+    quantizeSchwartzValue (adjoint ((cutoff W hψ).comp a)
+        (hasCompactSpatialSupport_cutoff_comp hψ hψc a)).coefficient φ x =
       adjointValue a φ x := by
   rw [adjointValue_apply, ← quantizeUniformCLM_apply _ (isUniform_adjoint _ _),
     quantizeUniformCLM_adjoint, quantizeRightUniformCLM_apply]
   refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-  have h : (fun y ↦ ((spatialCutoff hψ a).map ContinuousLinearMap.adjointRealCLM).coefficient
+  have h : (fun y ↦ (((cutoff W hψ).comp a).map ContinuousLinearMap.adjointRealCLM).coefficient
       (y, (2 * π) • ζ) (φ y)) =
         fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (φ y) := by
     funext y
-    rw [coefficient_map, ContinuousLinearMap.adjointRealCLM_apply, coefficient_spatialCutoff,
+    rw [coefficient_map, ContinuousLinearMap.adjointRealCLM_apply, coefficient_cutoff_comp,
       map_smulₛₗ, Complex.conj_ofReal, smul_apply]
     by_cases hy : φ y = 0
     · simp [hy]
@@ -291,20 +337,20 @@ private theorem integral_inner_quantizeSchwartzValue (u : 𝓢(CoordinateSpace n
   obtain ⟨ψ, hψ, hψc, hψ1⟩ := exists_cutoff _ hφ
   -- Where `φ ≠ 0`, the cutoff `ψ` is `1`, so `Op(a) u` may be replaced by `Op(ψ a) u = ψ Op(a) u`.
   have h (x : CoordinateSpace n) : inner ℂ (quantizeSchwartzValue a.coefficient u x) (φ x) =
-      inner ℂ (quantizeSchwartzValue (spatialCutoff hψ a).coefficient u x) (φ x) := by
-    rw [quantizeSchwartzValue_spatialCutoff]
+      inner ℂ (quantizeSchwartzValue ((cutoff W hψ).comp a).coefficient u x) (φ x) := by
+    rw [quantizeSchwartzValue_cutoff_comp_apply]
     by_cases hx : φ x = 0
     · simp [hx]
     · simp [hψ1 (subset_tsupport _ hx)]
   simp_rw [h, integral_inner_quantizeSchwartzValue_adjoint _
-    (hasCompactSpatialSupport_spatialCutoff hψ hψc a),
-    quantizeSchwartzValue_adjoint_spatialCutoff hψ hψc hψ1]
+    (hasCompactSpatialSupport_cutoff_comp hψ hψc a),
+    quantizeSchwartzValue_adjoint_cutoff_comp hψ hψc hψ1]
 
 /-- The formal adjoint of `Op(a)` on a compactly supported Schwartz function `φ` is smooth. -/
 private theorem contDiff_adjointValue {φ : 𝓢(CoordinateSpace n, W)} (hφ : HasCompactSupport φ) :
     ContDiff ℝ ∞ (adjointValue a φ) := by
   obtain ⟨ψ, hψ, hψc, hψ1⟩ := exists_cutoff _ hφ
-  rw [← funext (quantizeSchwartzValue_adjoint_spatialCutoff hψ hψc hψ1)]
+  rw [← funext (quantizeSchwartzValue_adjoint_cutoff_comp hψ hψc hψ1)]
   exact contDiff_quantizeSchwartzValue _ _
 
 /-- **Proper support of the formal adjoint.** If the kernel of `Op(a)` is supported within distance
@@ -357,18 +403,32 @@ private theorem HasNearDiagonalKernel.tsupport_adjointValue_subset (ha : a.HasNe
 
 /-- `Op(a)*` on smooth functions supported in a compact set `K`, through the adjoint symbol of
 the cutoff `ψ a` for a `ψ` equal to `1` on `K`. -/
-private def adjointSupportedInCLM (ha : a.HasNearDiagonalKernel R)
+def adjointSupportedInCLM (ha : a.HasNearDiagonalKernel R)
     (K : Compacts (CoordinateSpace n)) :
     𝓓_{K}(CoordinateSpace n, W) →L[ℂ] 𝓓_{K.cthickening R}(CoordinateSpace n, V) :=
   have hψ := (exists_cutoff (n := n) K K.isCompact).choose_spec
   supportedInCLM
-    (adjoint (spatialCutoff hψ.1 a) (hasCompactSpatialSupport_spatialCutoff hψ.1 hψ.2.1 a))
+    (adjoint ((cutoff W hψ.1).comp a) (hasCompactSpatialSupport_cutoff_comp hψ.1 hψ.2.1 a))
     (fun f x hx ↦ by
       have hf := f.tsupport_toSchwartzMapCLM_subset ℂ
-      rw [quantizeSchwartzValue_adjoint_spatialCutoff hψ.1 hψ.2.1 (hψ.2.2.mono hf)]
+      rw [quantizeSchwartzValue_adjoint_cutoff_comp hψ.1 hψ.2.1 (hψ.2.2.mono hf)]
       refine ha.adjointValue_eq_zero (K.isCompact.of_isClosed_subset (isClosed_tsupport _) hf)
         fun h ↦ hx (cthickening_tsupport_toSchwartzMapCLM_subset f h))
     ((isUniform_adjoint _ _).exists_norm_iteratedFDeriv_quantize_le K)
+
+/-- Evaluation of the formal adjoint between native fixed-support stages. -/
+@[simp]
+theorem adjointSupportedInCLM_apply (ha : a.HasNearDiagonalKernel R)
+    (K : Compacts (CoordinateSpace n)) (f : 𝓓_{K}(CoordinateSpace n, W))
+    (x : CoordinateSpace n) :
+    adjointSupportedInCLM ha K f x = ∫ ζ, 𝐞 ⟪ζ, x⟫ •
+      𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (f y)) ζ := by
+  have hψ := (exists_cutoff (n := n) K K.isCompact).choose_spec
+  have hf := f.tsupport_toSchwartzMapCLM_subset ℂ
+  have h := quantizeSchwartzValue_adjoint_cutoff_comp (a := a) hψ.1 hψ.2.1
+    (hψ.2.2.mono hf) x
+  rw [ContDiffMapSupportedIn.coe_toSchwartzMapCLM] at h
+  exact h
 
 /-- **The formal adjoint of a properly supported operator on test functions.** For a symbol `a`
 whose quantization has kernel supported within distance `R` of the diagonal, the formal adjoint
@@ -393,7 +453,7 @@ def adjointTestFunctionCLM (ha : a.HasNearDiagonalKernel R) :
     (fun K _ f ↦ TestFunction.ext fun x ↦ by
       have hψ := (exists_cutoff (n := n) K K.isCompact).choose_spec
       have hf := f.tsupport_toSchwartzMapCLM_subset ℂ
-      have h := quantizeSchwartzValue_adjoint_spatialCutoff (a := a) hψ.1 hψ.2.1 (hψ.2.2.mono hf) x
+      have h := quantizeSchwartzValue_adjoint_cutoff_comp (a := a) hψ.1 hψ.2.1 (hψ.2.2.mono hf) x
       rw [ContDiffMapSupportedIn.coe_toSchwartzMapCLM] at h
       -- Both sides are `Op(a)* f (x)`: `ofSupportedIn` does not change the function.
       exact h.symm)
@@ -405,6 +465,18 @@ theorem adjointTestFunctionCLM_apply (ha : a.HasNearDiagonalKernel R)
     adjointTestFunctionCLM ha φ x = ∫ ζ, 𝐞 ⟪ζ, x⟫ •
       𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (φ y)) ζ :=
   adjointValue_apply a φ x
+
+/-- Fixed-support adjunction commutes with the native inclusions into test functions. -/
+theorem ofSupportedInCLM_comp_adjointSupportedInCLM (ha : a.HasNearDiagonalKernel R)
+    (K : Compacts (CoordinateSpace n)) :
+    TestFunction.ofSupportedInCLM ℂ (subset_univ (K.cthickening R : Set (CoordinateSpace n))) ∘L
+        adjointSupportedInCLM ha K =
+      adjointTestFunctionCLM ha ∘L TestFunction.ofSupportedInCLM ℂ
+        (subset_univ (K : Set (CoordinateSpace n))) := by
+  ext f x
+  simp only [ContinuousLinearMap.comp_apply, TestFunction.coe_ofSupportedInCLM,
+    TestFunction.coe_ofSupportedIn, adjointSupportedInCLM_apply,
+    adjointTestFunctionCLM_apply]
 
 /-- `Op(a)* φ` is supported in the closed `R`-neighbourhood of the support of `φ`. -/
 theorem tsupport_adjointTestFunctionCLM_subset (ha : a.HasNearDiagonalKernel R)
@@ -422,79 +494,232 @@ theorem integral_inner_quantizeTestFunctionCLM (ha : a.HasNearDiagonalKernel R)
   integral_inner_quantizeSchwartzValue (u.hasCompactSupport.toSchwartzMap u.contDiff)
     (φ := φ.hasCompactSupport.toSchwartzMap φ.contDiff) φ.hasCompactSupport
 
+/-- The complex-bilinear transpose on original dual-valued test functions.
+Two conjugate-linear Riesz transports give complex linearity, using the existing native
+formal adjoint and its original test-function topology. -/
+def transposeTestFunctionCLM (ha : a.HasNearDiagonalKernel R) :
+    𝓓((⊤ : Opens (CoordinateSpace n)), StrongDual ℂ W) →L[ℂ]
+      𝓓((⊤ : Opens (CoordinateSpace n)), StrongDual ℂ V) where
+  toFun φ := TestFunction.rieszEquiv (𝕜 := ℂ) (adjointTestFunctionCLM ha
+    ((TestFunction.rieszEquiv (𝕜 := ℂ) (V := W)).symm φ))
+  map_add' φ ψ := by rw [map_add, map_add, map_add]
+  map_smul' c φ := by
+    rw [TestFunction.rieszEquiv_symm_smul, map_smul, TestFunction.rieszEquiv_smul]
+    simp only [starRingEnd_self_apply, RingHom.id_apply]
+  cont := (TestFunction.rieszEquiv (𝕜 := ℂ) (V := V)).continuous.comp
+    ((adjointTestFunctionCLM ha).continuous.comp
+      (TestFunction.rieszEquiv (𝕜 := ℂ) (V := W)).symm.continuous)
+
+/-- The native transpose is Riesz transport of the actual native formal adjoint. -/
+@[simp]
+theorem transposeTestFunctionCLM_apply (ha : a.HasNearDiagonalKernel R)
+    (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), StrongDual ℂ W)) :
+    transposeTestFunctionCLM ha φ = TestFunction.rieszEquiv (𝕜 := ℂ)
+      (adjointTestFunctionCLM ha ((TestFunction.rieszEquiv (𝕜 := ℂ) (V := W)).symm φ)) := by
+  rfl
+
+/-- The dual-valued native transpose has the spatial complex-bilinear pairing identity. -/
+theorem integral_apply_quantizeTestFunctionCLM (ha : a.HasNearDiagonalKernel R)
+    (u : 𝓓((⊤ : Opens (CoordinateSpace n)), V))
+    (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), StrongDual ℂ W)) :
+    (∫ x, φ x (quantizeTestFunctionCLM ha u x)) =
+      ∫ x, transposeTestFunctionCLM ha φ x (u x) := by
+  have h := integral_inner_quantizeTestFunctionCLM ha u
+    ((TestFunction.rieszEquiv (𝕜 := ℂ) (V := W)).symm φ)
+  have hc := congrArg (starRingEnd ℂ) h
+  rw [← integral_conj, ← integral_conj] at hc
+  simp only [inner_conj_symm, TestFunction.rieszEquiv_symm_apply (V := W)] at hc
+  simpa only [transposeTestFunctionCLM_apply, TestFunction.rieszEquiv_apply] using hc
+
 end Adjoint
 
 /-! ### Distributions -/
 
 section Distribution
 
-variable {a : Symbol n ℂ ℂ m}
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [FiniteDimensional ℂ V] [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+  [FiniteDimensional ℂ W] {a : Symbol n V W m}
 
-/-- The transpose `φ ↦ conj (Op(a)* φ)` of `Op(a)` for the bilinear pairing `∫ φ u`, on real test
-functions. -/
-private def transposeCLM (ha : a.HasNearDiagonalKernel R) :
-    𝓓((⊤ : Opens (CoordinateSpace n)), ℝ) →L[ℝ] 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ) :=
-  TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap ∘L
-    (adjointTestFunctionCLM ha).restrictScalars ℝ ∘L
-      TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
+/-- **A properly supported operator on distributions.** For a symbol `a` with values in
+`V →L[ℂ] W`, for finite-dimensional complex inner product spaces `V` and `W`, whose quantization
+has kernel supported within distance `R` of the diagonal, `Op(a)` acts on all `V`-valued
+distributions on `ℝⁿ` by transposition:
 
-/-- `Op(a)` on distributions as a real linear map: `T` applied to the real and imaginary parts of
-the transpose `conj (Op(a)* φ)` of a real test function `φ`. -/
-private def quantizeDistributionReal (ha : a.HasNearDiagonalKernel R) :
-    𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ) →L[ℝ] 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ) :=
-  (TestFunction.postcompCLM (𝕜 := ℝ) Complex.reCLM ∘L transposeCLM ha).precompCompactConvergenceCLM
-      ℂ +
-    Distribution.mapCLM (ContinuousLinearMap.mul ℝ ℂ Complex.I) ∘L
-      (TestFunction.postcompCLM (𝕜 := ℝ) Complex.imCLM ∘L
-        transposeCLM ha).precompCompactConvergenceCLM ℂ
+`⟪w, (Op(a) T) (φ)⟫ = ⟪Op(a)* (φ • w), T⟫`
 
-private theorem quantizeDistributionReal_apply (ha : a.HasNearDiagonalKernel R)
-    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ)) :
-    quantizeDistributionReal ha T φ = T.complexPairing
-      (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
-        (adjointTestFunctionCLM ha (TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ))) := by
-  rw [Distribution.complexPairing_apply]
-  -- By definition, `Op(a) T` applies `T` to the real and imaginary parts of the transpose. The
-  -- evaluation is by unfolding: `precompCompactConvergenceCLM_apply` produces a sum in the type
-  -- synonym `UniformConvergenceCLM`, whose evaluation the lemma `add_apply` does not match.
-  rfl
-
-/-- **A properly supported operator on distributions.** For a scalar symbol `a` whose quantization
-has kernel supported within distance `R` of the diagonal, `Op(a)` acts on all distributions on
-`ℝⁿ` by transposition: `(Op(a) T) (φ) = T (Op(a)ᵗ φ)`, where `Op(a)ᵗ φ = conj (Op(a)* φ)` is the
-transpose of `Op(a)` for the bilinear pairing `∫ φ u` and `T` is paired with complex test functions
-by `Distribution.complexPairing` (`TauCeti.Symbol.quantizeDistribution_apply`; on complex test
-functions, `TauCeti.Symbol.complexPairing_quantizeDistribution`). It is complex linear, and it
-extends `Op(a)` on test functions (`TauCeti.Symbol.quantizeDistribution_ofFun`). -/
+for real test functions `φ` and vectors `w : W`, where `Op(a)*` is the formal adjoint
+`TauCeti.Symbol.adjointTestFunctionCLM` and the right side is the pairing
+`Distribution.innerPairing` of `T` with a `V`-valued test function
+(`TauCeti.Symbol.inner_quantizeDistribution_apply`). It is complex linear, and it extends `Op(a)`
+on test functions (`TauCeti.Symbol.quantizeDistribution_ofFun`). For a scalar symbol it is
+`(Op(a) T) (φ) = T (Op(a)ᵗ φ)`, with the transpose `Op(a)ᵗ φ = conj (Op(a)* φ)` of `Op(a)` for the
+bilinear pairing `∫ φ u` (`TauCeti.Symbol.quantizeDistribution_apply`). It is defined in an
+orthonormal basis `(wₖ)` of `W`: the `k`-th coordinate of `Op(a) T` is the distribution
+`φ ↦ ⟪Op(a)* (φ • wₖ), T⟫`. -/
 def quantizeDistribution (ha : a.HasNearDiagonalKernel R) :
-    𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ) →L[ℂ] 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ) where
-  toFun := quantizeDistributionReal ha
-  map_add' := map_add _
-  map_smul' c T := by
-    ext φ
-    rw [quantizeDistributionReal_apply, Distribution.complexPairing_smul,
-      ← quantizeDistributionReal_apply, RingHom.id_apply, smul_apply, smul_eq_mul]
-  cont := (quantizeDistributionReal ha).continuous
+    𝓓'((⊤ : Opens (CoordinateSpace n)), V) →L[ℂ] 𝓓'((⊤ : Opens (CoordinateSpace n)), W) :=
+  ∑ k, Distribution.smulRightCLM (stdOrthonormalBasis ℂ W k) ∘L
+    Distribution.innerPairingCLM ((adjointTestFunctionCLM ha).restrictScalars ℝ ∘L
+      TestFunction.postcompCLM (𝕜 := ℝ)
+        (ContinuousLinearMap.toSpanSingleton ℝ (stdOrthonormalBasis ℂ W k)))
 
-/-- `Op(a) T` pairs with a real test function `φ` as `T` with the transpose
+/-- **`Op(a)` on distributions is the transpose of the formal adjoint**: the component of
+`Op(a) T (φ)` along `w` is the pairing of `T` with `Op(a)* (φ • w)`. -/
+@[simp]
+theorem inner_quantizeDistribution_apply (ha : a.HasNearDiagonalKernel R)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ))
+    (w : W) :
+    ⟪w, quantizeDistribution ha T φ⟫_ℂ = T.innerPairing (adjointTestFunctionCLM ha
+      (TestFunction.postcompCLM (𝕜 := ℝ) (ContinuousLinearMap.toSpanSingleton ℝ w) φ)) := by
+  set b := stdOrthonormalBasis ℂ W
+  -- Expand `φ • w` in the basis: `φ • w = ∑ₖ ⟪wₖ, w⟫ (φ • wₖ)`.
+  have hw : TestFunction.postcompCLM (𝕜 := ℝ) (ContinuousLinearMap.toSpanSingleton ℝ w) φ =
+      ∑ k, ⟪b k, w⟫_ℂ • TestFunction.postcompCLM (𝕜 := ℝ)
+        (ContinuousLinearMap.toSpanSingleton ℝ (b k)) φ := by
+    ext x
+    simp only [TestFunction.postcompCLM_apply, Function.comp_apply, sum_apply, smul_apply,
+      ContinuousLinearMap.toSpanSingleton_apply]
+    conv_lhs => rw [← b.sum_repr' w, Finset.smul_sum]
+    exact Finset.sum_congr rfl fun k _ ↦ smul_comm _ _ _
+  rw [hw, map_sum, Distribution.innerPairing_sum_right]
+  simp only [quantizeDistribution, sum_apply, inner_sum]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  simp [b, inner_smul_right, inner_conj_symm, mul_comm]
+
+/-- `Op(a) T (φ)` in an orthonormal basis `(wₖ)` of `W`: its coordinates are the pairings of `T`
+with `Op(a)* (φ • wₖ)`. -/
+theorem quantizeDistribution_apply_eq_sum {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℂ W)
+    (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V))
+    (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ)) :
+    quantizeDistribution ha T φ = ∑ k, T.innerPairing (adjointTestFunctionCLM ha
+      (TestFunction.postcompCLM (𝕜 := ℝ) (ContinuousLinearMap.toSpanSingleton ℝ (b k)) φ)) •
+        b k := by
+  conv_lhs => rw [← b.sum_repr' (quantizeDistribution ha T φ)]
+  simp only [inner_quantizeDistribution_apply]
+
+/-- **`Op(a)` on distributions extends `Op(a)` on test functions**: on the distribution of a test
+function `u`, it is the distribution of `Op(a) u`. -/
+@[simp]
+theorem quantizeDistribution_ofFun (ha : a.HasNearDiagonalKernel R)
+    (u : 𝓓((⊤ : Opens (CoordinateSpace n)), V)) :
+    quantizeDistribution ha (Distribution.ofFun ⊤ u volume ⊤) =
+      Distribution.ofFun ⊤ (quantizeTestFunctionCLM ha u) volume ⊤ := by
+  ext φ
+  refine ext_inner_left ℂ fun w ↦ ?_
+  set φw := TestFunction.postcompCLM (𝕜 := ℝ) (ContinuousLinearMap.toSpanSingleton ℝ w) φ
+  have hint : Integrable fun x ↦ φ x • quantizeTestFunctionCLM ha u x :=
+    (φ.continuous.smul (quantizeTestFunctionCLM ha u).continuous).integrable_of_hasCompactSupport
+      φ.hasCompactSupport.smul_right
+  rw [inner_quantizeDistribution_apply,
+    Distribution.innerPairing_ofFun (u.continuous.locallyIntegrable.locallyIntegrableOn _),
+    Distribution.ofFun_apply
+      ((quantizeTestFunctionCLM ha u).continuous.locallyIntegrable.locallyIntegrableOn _),
+    ← integral_inner hint]
+  -- Conjugating the adjoint identity `∫ ⟪Op(a) u, φ • w⟫ = ∫ ⟪u, Op(a)* (φ • w)⟫`.
+  have h := congrArg (starRingEnd ℂ) (integral_inner_quantizeTestFunctionCLM ha u φw)
+  rw [← integral_conj, ← integral_conj] at h
+  simp only [inner_conj_symm] at h
+  refine h.symm.trans (integral_congr_ae (.of_forall fun x ↦ ?_))
+  simp [φw, ← Complex.coe_smul, inner_smul_left, inner_smul_right]
+
+/-- **Proper support on distributions.** `Op(a) T` is supported in the closed `R`-neighbourhood of
+the support of `T`. -/
+theorem dsupport_quantizeDistribution_subset (ha : a.HasNearDiagonalKernel R)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
+    Distribution.dsupport (quantizeDistribution ha T) ⊆
+      Metric.cthickening R (Distribution.dsupport T) := by
+  have hU : IsOpen (Metric.cthickening R (Distribution.dsupport T))ᶜ :=
+    Metric.isClosed_cthickening.isOpen_compl
+  -- `Op(a) T` vanishes on test functions supported away from the `R`-neighbourhood of `supp T`.
+  have h : Distribution.IsVanishingOn (quantizeDistribution ha T)
+      (Metric.cthickening R (Distribution.dsupport T))ᶜ := by
+    intro φ hφ
+    refine ext_inner_left ℂ fun w ↦ ?_
+    rw [inner_quantizeDistribution_apply, inner_zero_right]
+    refine T.innerPairing_eq_zero_of_disjoint ?_
+    have hψ : tsupport (adjointTestFunctionCLM ha
+        (TestFunction.postcompCLM (𝕜 := ℝ) (ContinuousLinearMap.toSpanSingleton ℝ w) φ)) ⊆
+          Metric.cthickening R (tsupport φ) := by
+      refine (tsupport_adjointTestFunctionCLM_subset ha _).trans
+        (Metric.cthickening_subset_of_subset R ?_)
+      rw [TestFunction.postcompCLM_apply]
+      exact tsupport_comp_subset (map_zero _) _
+    exact (φ.hasCompactSupport.isCompact.disjoint_cthickening_left
+      (subset_compl_iff_disjoint_right.1 hφ)).mono_left hψ
+  simpa using (h.disjoint_dsupport hU).subset_compl_left
+
+end Distribution
+
+/-! ### Scalar symbols -/
+
+section Scalar
+
+variable {a : Symbol n ℂ ℂ m} {m' m'' R' R'' : ℝ}
+
+/-- **The transpose of a properly supported operator** on complex test functions,
+`Op(a)ᵗ φ = conj (Op(a)* (conj φ))`. It is the transpose of `Op(a)` for the bilinear pairing
+`∫ φ u` (`TauCeti.Symbol.integral_mul_quantizeTestFunctionCLM`), and the only continuous function
+with this property (`TauCeti.Symbol.coe_scalarTransposeTestFunctionCLM_eq`). `Op(a)` acts on
+distributions by it (`TauCeti.Symbol.complexPairing_quantizeDistribution`). -/
+def scalarTransposeTestFunctionCLM (ha : a.HasNearDiagonalKernel R) :
+    𝓓((⊤ : Opens (CoordinateSpace n)), ℂ) →L[ℂ] 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ) where
+  toFun φ := TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
+    (adjointTestFunctionCLM ha
+      (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap φ))
+  map_add' φ ψ := by simp
+  map_smul' c φ := by
+    have h : TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap (c • φ) =
+        conj c • TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap φ := by
+      ext x
+      simp
+    rw [h, map_smul]
+    ext x
+    simp
+  cont := (TestFunction.postcompCLM _).continuous.comp
+    ((adjointTestFunctionCLM ha).continuous.comp (TestFunction.postcompCLM _).continuous)
+
+/-- The transpose is `Op(a)ᵗ φ = conj (Op(a)* (conj φ))`, as test functions. -/
+theorem scalarTransposeTestFunctionCLM_def (ha : a.HasNearDiagonalKernel R)
+    (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    scalarTransposeTestFunctionCLM ha φ = TestFunction.postcompCLM (𝕜 := ℝ)
+      Complex.conjCLE.toContinuousLinearMap (adjointTestFunctionCLM ha
+        (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap φ)) :=
+  (rfl)
+
+/-- The values `Op(a)ᵗ φ (x) = conj (Op(a)* (conj φ) (x))` of the transpose. -/
+@[simp]
+theorem scalarTransposeTestFunctionCLM_apply (ha : a.HasNearDiagonalKernel R)
+    (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) (x : CoordinateSpace n) :
+    scalarTransposeTestFunctionCLM ha φ x = conj (adjointTestFunctionCLM ha
+      (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap φ) x) := by
+  simp [scalarTransposeTestFunctionCLM_def]
+
+/-- For a scalar symbol, `Op(a) T` pairs with a real test function `φ` as `T` with the transpose
 `conj (Op(a)* φ)`. -/
 @[simp]
 theorem quantizeDistribution_apply (ha : a.HasNearDiagonalKernel R)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ)) :
     quantizeDistribution ha T φ = T.complexPairing
       (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
-        (adjointTestFunctionCLM ha (TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ))) :=
-  quantizeDistributionReal_apply ha T φ
+        (adjointTestFunctionCLM ha (TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ))) := by
+  have h := inner_quantizeDistribution_apply ha T φ 1
+  have hφ : TestFunction.postcompCLM (𝕜 := ℝ) (ContinuousLinearMap.toSpanSingleton ℝ (1 : ℂ)) φ =
+      TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ := by
+    ext x
+    simp
+  rw [hφ, Distribution.innerPairing_eq_complexPairing] at h
+  simpa [RCLike.inner_apply] using h
 
 /-- The complex-linear extension of `Op(a) T` pairs with a complex test function `ψ` as `T` with
-the transpose `Op(a)ᵗ ψ = conj (Op(a)* (conj ψ))`. -/
+the transpose `Op(a)ᵗ ψ = conj (Op(a)* (conj ψ))`
+(`TauCeti.Symbol.scalarTransposeTestFunctionCLM`). -/
 @[simp]
 theorem complexPairing_quantizeDistribution (ha : a.HasNearDiagonalKernel R)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) (ψ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
-    (quantizeDistribution ha T).complexPairing ψ = T.complexPairing
-      (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
-        (adjointTestFunctionCLM ha
-          (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap ψ))) := by
+    (quantizeDistribution ha T).complexPairing ψ =
+      T.complexPairing (scalarTransposeTestFunctionCLM ha ψ) := by
+  rw [scalarTransposeTestFunctionCLM_def]
   have hconj (φ φ' : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ)) :
       TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
           (TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ +
@@ -516,62 +741,92 @@ theorem complexPairing_quantizeDistribution (ha : a.HasNearDiagonalKernel R)
   simp only [map_add, map_smul, Distribution.complexPairing_postcompCLM_ofRealCLM,
     quantizeDistribution_apply, smul_eq_mul]
 
-/-- **`Op(a)` on distributions extends `Op(a)` on test functions**: on the distribution of a test
-function `u`, it is the distribution of `Op(a) u`. -/
-@[simp]
-theorem quantizeDistribution_ofFun (ha : a.HasNearDiagonalKernel R)
-    (u : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
-    quantizeDistribution ha (Distribution.ofFun ⊤ u volume ⊤) =
-      Distribution.ofFun ⊤ (quantizeTestFunctionCLM ha u) volume ⊤ := by
-  ext φ
-  set φc := TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ
+/-- `Op(a) T` pairs with a real test function `φ` as `T` with the transpose `Op(a)ᵗ φ`
+(`TauCeti.Symbol.scalarTransposeTestFunctionCLM`) of `φ` read as a complex test function. -/
+theorem quantizeDistribution_apply_eq_complexPairing (ha : a.HasNearDiagonalKernel R)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ)) :
+    quantizeDistribution ha T φ =
+      T.complexPairing (scalarTransposeTestFunctionCLM ha (TestFunction.postcompCLM (𝕜 := ℝ)
+        Complex.ofRealCLM φ)) := by
+  rw [← Distribution.complexPairing_postcompCLM_ofRealCLM, complexPairing_quantizeDistribution]
+
+/-- **The transpose identity on test functions.** `∫ φ · Op(a) u = ∫ Op(a)ᵗ φ · u`. -/
+theorem integral_mul_quantizeTestFunctionCLM (ha : a.HasNearDiagonalKernel R)
+    (u φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    ∫ x, φ x * quantizeTestFunctionCLM ha u x =
+      ∫ x, scalarTransposeTestFunctionCLM ha φ x * u x := by
+  -- Pair `Op(a)` on the distribution of `u`, which is the distribution of `Op(a) u`, with `φ`.
   have hloc (f : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
       LocallyIntegrableOn f (⊤ : Opens (CoordinateSpace n)) volume :=
     f.continuous.locallyIntegrable.locallyIntegrableOn _
-  rw [quantizeDistribution_apply, Distribution.complexPairing_ofFun (hloc u),
-    Distribution.ofFun_apply (hloc _)]
-  -- Conjugating the adjoint identity `∫ conj (Op(a) u) φ = ∫ conj u (Op(a)* φ)`.
-  have h := congrArg (starRingEnd ℂ) (integral_inner_quantizeTestFunctionCLM ha u φc)
-  rw [← integral_conj, ← integral_conj] at h
-  simp only [inner_conj_symm] at h
-  refine Eq.trans ?_ (h.symm.trans ?_)
-  · refine integral_congr_ae (.of_forall fun x ↦ ?_)
-    simp [φc, mul_comm]
-  · refine integral_congr_ae (.of_forall fun x ↦ ?_)
-    simp [φc, Complex.real_smul, mul_comm]
+  have h := congrArg (Distribution.complexPairing · φ) (quantizeDistribution_ofFun ha u)
+  simp only [complexPairing_quantizeDistribution, Distribution.complexPairing_ofFun (hloc _)] at h
+  exact h.symm
 
-/-- **Proper support on distributions.** `Op(a) T` is supported in the closed `R`-neighbourhood of
-the support of `T`. -/
-theorem dsupport_quantizeDistribution_subset (ha : a.HasNearDiagonalKernel R)
+/-- **Uniqueness of the transpose.** A continuous function `f` with `∫ φ · Op(a) u = ∫ f u` for
+every test function `u` is the transpose `Op(a)ᵗ φ`. -/
+theorem coe_scalarTransposeTestFunctionCLM_eq (ha : a.HasNearDiagonalKernel R)
+    (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) {f : CoordinateSpace n → ℂ} (hf : Continuous f)
+    (h : ∀ u : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ),
+      ∫ x, φ x * quantizeTestFunctionCLM ha u x = ∫ x, f x * u x) :
+    ⇑(scalarTransposeTestFunctionCLM ha φ) = f := by
+  refine (Continuous.ae_eq_iff_eq volume (scalarTransposeTestFunctionCLM ha φ).continuous hf).1
+    (ae_eq_of_integral_contDiff_smul_eq
+      (scalarTransposeTestFunctionCLM ha φ).continuous.locallyIntegrable
+      hf.locallyIntegrable fun g hg hgc ↦ ?_)
+  -- Test against the complex test function `g`.
+  let u : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ) :=
+    ⟨fun x ↦ (g x : ℂ), Complex.ofRealCLM.contDiff.comp hg, hgc.comp_left Complex.ofReal_zero,
+      subset_univ _⟩
+  have hu : ⇑u = fun x ↦ (g x : ℂ) := TestFunction.coe_mk
+  have h' := (integral_mul_quantizeTestFunctionCLM ha u φ).symm.trans (h u)
+  simpa [hu, Complex.real_smul, mul_comm] using h'
+
+/-- `Op(a)` on distributions only depends on the coefficient of `a`. -/
+theorem quantizeDistribution_congr {b : Symbol n ℂ ℂ m'} (ha : a.HasNearDiagonalKernel R)
+    (hb : b.HasNearDiagonalKernel R') (h : a.coefficient = b.coefficient) :
+    quantizeDistribution ha = quantizeDistribution hb := by
+  ext T φ
+  simp only [quantizeDistribution_apply]
+  congr 2
+  exact TestFunction.ext fun x ↦ by simp [h]
+
+/-- **A kernel supported within a nonpositive distance of the diagonal is zero**, also on
+distributions: the operator `Op(a)` then vanishes on every test function. -/
+theorem HasNearDiagonalKernel.quantizeDistribution_eq_zero (ha : a.HasNearDiagonalKernel R)
+    (hR : R ≤ 0) : quantizeDistribution ha = 0 := by
+  have h0 (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) : scalarTransposeTestFunctionCLM ha φ = 0 :=
+    DFunLike.coe_injective <| coe_scalarTransposeTestFunctionCLM_eq ha φ continuous_const fun u ↦ by
+      have hu (x : CoordinateSpace n) : quantizeTestFunctionCLM ha u x = 0 := by
+        rw [quantizeTestFunctionCLM_apply]
+        exact hasNearDiagonalKernel_iff.1 ha _ x fun y hy ↦
+          absurd hy (by simp [Metric.ball_eq_empty.2 hR])
+      simp [hu]
+  ext T φ
+  rw [quantizeDistribution_apply_eq_complexPairing, h0]
+  simp
+
+/-- **Composition on distributions.** If `Op(c) = Op(a) ∘ Op(b)` on test functions, then
+`Op(c) = Op(a) ∘ Op(b)` on distributions. -/
+theorem quantizeDistribution_comp {b : Symbol n ℂ ℂ m'} {c : Symbol n ℂ ℂ m''}
+    (ha : a.HasNearDiagonalKernel R) (hb : b.HasNearDiagonalKernel R')
+    (hc : c.HasNearDiagonalKernel R'')
+    (h : ∀ u, quantizeTestFunctionCLM hc u =
+      quantizeTestFunctionCLM ha (quantizeTestFunctionCLM hb u))
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
-    Distribution.dsupport (quantizeDistribution ha T) ⊆
-      Metric.cthickening R (Distribution.dsupport T) := by
-  have hU : IsOpen (Metric.cthickening R (Distribution.dsupport T))ᶜ :=
-    Metric.isClosed_cthickening.isOpen_compl
-  -- `Op(a) T` vanishes on test functions supported away from the `R`-neighbourhood of `supp T`.
-  have h : Distribution.IsVanishingOn (quantizeDistribution ha T)
-      (Metric.cthickening R (Distribution.dsupport T))ᶜ := by
-    intro φ hφ
-    rw [quantizeDistribution_apply]
-    set ψ := TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
-      (adjointTestFunctionCLM ha (TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ))
-    have hψ : tsupport ψ ⊆ Metric.cthickening R (tsupport φ) := by
-      rw [TestFunction.postcompCLM_apply]
-      refine (tsupport_comp_subset (map_zero _) _).trans
-        ((tsupport_adjointTestFunctionCLM_subset ha _).trans
-          (Metric.cthickening_subset_of_subset R ?_))
-      rw [TestFunction.postcompCLM_apply]
-      exact tsupport_comp_subset (map_zero _) _
-    have hdisj : Disjoint (tsupport ψ) (Distribution.dsupport T) :=
-      (φ.hasCompactSupport.isCompact.disjoint_cthickening_left
-        (subset_compl_iff_disjoint_right.1 hφ)).mono_left hψ
-    rw [T.complexPairing_eq_of_eventuallyEq (ψ := 0), map_zero]
-    filter_upwards [(isClosed_tsupport ψ).isOpen_compl.mem_nhdsSet.2
-      hdisj.symm.subset_compl_right] with x hx
-    exact image_eq_zero_of_notMem_tsupport hx
-  simpa using (h.disjoint_dsupport hU).subset_compl_left
+    quantizeDistribution hc T = quantizeDistribution ha (quantizeDistribution hb T) := by
+  -- The transposes compose in the opposite order: `Op(c)ᵗ = Op(b)ᵗ ∘ Op(a)ᵗ`.
+  have ht (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+      scalarTransposeTestFunctionCLM hc φ =
+        scalarTransposeTestFunctionCLM hb (scalarTransposeTestFunctionCLM ha φ) :=
+    DFunLike.coe_injective <| coe_scalarTransposeTestFunctionCLM_eq hc φ
+      (scalarTransposeTestFunctionCLM hb _).continuous fun u ↦ by
+        rw [h, integral_mul_quantizeTestFunctionCLM, integral_mul_quantizeTestFunctionCLM]
+  ext φ
+  rw [quantizeDistribution_apply_eq_complexPairing, quantizeDistribution_apply_eq_complexPairing,
+    complexPairing_quantizeDistribution, ht]
 
-end Distribution
+end Scalar
 
 end Symbol
 

@@ -114,7 +114,7 @@ theorem aperySet_eq_empty_iff : S.aperySet n = ∅ ↔ n = 0 := by
 /-- The Apéry set with respect to `n` is nonempty if and only if `n ≠ 0`. -/
 @[simp]
 theorem nonempty_aperySet_iff : (S.aperySet n).Nonempty ↔ n ≠ 0 := by
-  rw [Set.nonempty_iff_ne_empty, ne_eq, aperySet_eq_empty_iff]
+  rw [← Set.ne_empty_iff_nonempty, ne_eq, aperySet_eq_empty_iff]
 
 /-- The Apéry set of `ℕ` with respect to `n` is `{0, …, n - 1}`. -/
 @[simp]

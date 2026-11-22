@@ -139,7 +139,7 @@ private theorem barnesFactor_eq_exp_of_norm_div_le_half {w : ℂ} {k : ℕ}
   have hu1 : ‖u‖ < 1 := lt_of_le_of_lt hu (by norm_num)
   have hne : 1 + u ≠ 0 := slitPlane_ne_zero (Complex.mem_slitPlane_of_norm_lt_one hu1)
   have h1u : (1 + u) ^ (k + 1) = Complex.exp (((k + 1 : ℕ) : ℂ) * Complex.log (1 + u)) := by
-    rw [Complex.exp_nat_mul, Complex.exp_log hne]
+    rw [Complex.exp_natCast_mul, Complex.exp_log hne]
   have htaylor : Complex.logTaylor 3 u = u - u ^ 2 / 2 := by
     simp only [Complex.logTaylor_succ, Complex.logTaylor_zero, Pi.add_apply]
     norm_num
@@ -642,7 +642,7 @@ private theorem barnesPrefactor_one_mul_prod_barnesFactor (N : ℕ) :
   have hfac_pos : 0 < (N ! : ℝ) := Nat.cast_pos.mpr (Nat.factorial_pos N)
   have hpow_exp : (((N : ℝ) + 1) ^ N / (N ! : ℝ)) =
       Real.exp ((N : ℝ) * Real.log ((N : ℝ) + 1) - Real.log (N ! : ℝ)) := by
-    rw [Real.exp_sub, Real.exp_log hfac_pos, Real.exp_nat_mul, Real.exp_log hN1_pos]
+    rw [Real.exp_sub, Real.exp_log hfac_pos, Real.exp_natCast_mul, Real.exp_log hN1_pos]
   rw [barnesPrefactor_eq_exp, barnesPrefactorExp, hprod_split, htel, hpow_exp, hsum_exp,
     Complex.ofReal_exp, ← Complex.exp_add, ← Complex.exp_add]
   congr 1

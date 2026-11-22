@@ -232,7 +232,8 @@ lemma homologyMap_spectralSequencePageMap_comp_iso_hom (r r' : ℤ) (hrr' : r + 
           (data.deg pq) (data.deg pq + 1) rfl (by lia) rfl).hom :=
     spectralSequencePageXIso_hom_comp_EMap data φ r' hr' pq _ _ _ _ rfl rfl rfl rfl
       (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl _ _
-  exact γ.homologyMap_comp_homologyIso_trans_hom _ _ _ hg
+  simpa only [Iso.trans_hom, Category.assoc, spectralSequencePageMap_f] using
+    γ.homologyMap_comp_homologyIso_trans_hom _ _ _ hg
 
 /-- The morphism of spectral sequences induced by a morphism of spectral objects. -/
 noncomputable def spectralSequenceMap : X.spectralSequence data ⟶ Y.spectralSequence data where

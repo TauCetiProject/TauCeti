@@ -18,11 +18,12 @@ facts support induction by successively removing prime-power blocks. For a
 divisor `n ∣ m`, the `p`-free parts are related by `m / n * ordCompl[p] n =
 ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map `x ↦ x ^ (m / n)` between groups
 of roots of unity acts on their `p`-primary parts. For a prime `p`, a divisor of `p * k` with the
-same `p`-free part as `k` either divides `k` or is `p * k`. The product of any set of prime
-factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to the product of all the prime
-factors of `n` exactly when it is coprime to `n`. Monomial products of an injective family of
-primes (or fixed positive powers of their casts in characteristic zero) are injective on finitely
-supported exponent tuples.
+same `p`-free part as `k` either divides `k` or is `p * k`, and a divisor of `n` that does not
+divide `n / p` is divisible by the full `p`-part `p ^ v_p(n)` of `n`. The product of any set of
+prime factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to the product of all the
+prime factors of `n` exactly when it is coprime to `n`. Monomial products of an injective family
+of primes (or fixed positive powers of their casts in characteristic zero) are injective on
+finitely supported exponent tuples.
 
 ## Provenance
 
@@ -105,6 +106,17 @@ theorem Prime.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq {p d k : ℕ} (hp : p.
   rw [← ordProj_mul_ordCompl_eq_self d p, h, ← ordProj_mul_ordCompl_eq_self (p * k) p,
     ordCompl_mul, hpk, show d.factorization p = k.factorization p + 1 by omega]
   simp [hp.factorization_self, Nat.div_self hp.pos]
+
+/-- For a prime `p`, a divisor `d` of `n` that does not divide `n / p` is divisible by
+`p ^ v_p(n)`. -/
+theorem Prime.pow_multiplicity_dvd_of_dvd_of_not_dvd_div {p n d : ℕ} (hp : p.Prime) (hd : d ∣ n)
+    (hdp : ¬d ∣ n / p) : p ^ multiplicity p n ∣ d := by
+  obtain ⟨c, rfl⟩ := hd
+  have hc : ¬p ∣ c := by
+    rintro ⟨c', rfl⟩
+    exact hdp ⟨c', by rw [mul_left_comm, Nat.mul_div_cancel_left _ hp.pos]⟩
+  exact (Nat.Coprime.pow_left _ ((Nat.Prime.coprime_iff_not_dvd hp).2 hc)).dvd_of_dvd_mul_right
+    (pow_multiplicity_dvd p (d * c))
 
 /-- A natural number has no prime divisor distinct from a prime `p` if and only if it is a power of
 `p`. -/

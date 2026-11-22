@@ -38,6 +38,8 @@ and vanishing on boundaries.
 
 * `TauCeti.singularHomologyFunctor_obj_obj`: singular homology with coefficients in `k` is the
   homology of `singularChains k`.
+* `ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map`: the induced linear map is
+  the map of the singular homology functor.
 * `TauCeti.subsingleton_singularChains_homology_iff_of_isIso`: a homology isomorphism identifies
   the vanishing of the homology of the chains of its source and target.
 * `TauCeti.singularChains_linearMap_ext`, `TauCeti.singularChains_addMonoidHom_ext`: linear maps,
@@ -45,6 +47,8 @@ and vanishing on boundaries.
 * `TauCeti.singularChains_d_simplexChain`: the boundary of a simplex.
 * `TauCeti.singularAugment_map`, `TauCeti.singularAugment_d`: the augmentation is natural and
   vanishes on boundaries.
+* `ContinuousMap.singularHomologyMap_eq_homologyMap_toSSet_map`: singular homology maps are the
+  homology maps of the singular simplicial sets.
 * `ContinuousMap.singularHomologyMap_iterate`: the iterates of a self-map act on singular homology
   by the powers of its action.
 -/
@@ -275,6 +279,26 @@ abbrev singularHomologyMap {Y Z : Type u} [TopologicalSpace Y] [TopologicalSpace
     ((singularChains k).obj (TopCat.of Y)).homology n →ₗ[k]
       ((singularChains k).obj (TopCat.of Z)).homology n :=
   (HomologicalComplex.homologyMap ((singularChains k).map (TopCat.ofHom g)) n).hom
+
+/-- The map induced on singular homology by a continuous map `g` is the map of the singular
+homology functor on `TopCat.ofHom g`. -/
+theorem singularHomologyMap_eq_singularHomologyFunctor_map {Y Z : Type u} [TopologicalSpace Y]
+    [TopologicalSpace Z] (g : C(Y, Z)) :
+    singularHomologyMap k n g =
+      (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).map
+        (TopCat.ofHom g)).hom :=
+  rfl
+
+variable {k n} in
+/-- The map induced on singular homology by a continuous map is the map induced on the homology of
+the singular simplicial sets: `singularChains k` is by definition the simplicial chain complex of
+`TopCat.toSSet`. This identifies results stated for the homology of `TopCat.toSSet` with
+singular homology. -/
+theorem singularHomologyMap_eq_homologyMap_toSSet_map {Y Z : Type u} [TopologicalSpace Y]
+    [TopologicalSpace Z] (g : C(Y, Z)) :
+    singularHomologyMap k n g =
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) (ModuleCat.of k k) n).hom :=
+  rfl
 
 variable {k n} in
 /-- The identity map induces the identity on singular homology. -/

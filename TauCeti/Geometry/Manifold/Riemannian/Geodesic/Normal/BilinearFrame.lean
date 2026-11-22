@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Bilinear
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Basic
 
 /-!
 # Geodesic frames for covariant two-tensors

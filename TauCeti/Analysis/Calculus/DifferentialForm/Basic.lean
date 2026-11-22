@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 
+import TauCeti.Analysis.Calculus.FDeriv.Comp
+
 /-!
 # Locality and linear pullback of the exterior derivative
 
@@ -21,7 +23,9 @@ using only within-set differentiability, with no second derivative or interior-d
 Its global form `ContinuousLinearMap.extDeriv_pullback` holds at each point where the form is
 differentiable, so pullback along a continuous linear map preserves closedness
 (`ContinuousLinearMap.extDeriv_pullback_eq_zero`), and it preserves regularity on the preimage of
-the domain (`TauCeti.contDiffOn_pullback_continuousLinearMap`).
+the domain (`TauCeti.contDiffOn_pullback_continuousLinearMap`) and at a point
+(`TauCeti.contDiffAt_pullback_continuousLinearMap`,
+`TauCeti.differentiableAt_pullback_continuousLinearMap`).
 `ContinuousLinearMap.extDerivWithin_compContinuousAlternatingMap` is the corresponding naturality
 in the coefficient space, and `TauCeti.extDerivWithin_smul_field` extends `extDerivWithin_smul` to
 scalars, such as `ℂ`, that act on the coefficients but not on the domain, and
@@ -30,7 +34,9 @@ function. `DifferentiableAt.extDerivWithin` is the exterior-derivative version o
 `DifferentiableAt.fderivWithin`, and `TauCeti.tsupport_extDeriv_subset` and
 `HasCompactSupport.extDeriv` are the versions of `tsupport_fderiv_subset` and
 `HasCompactSupport.fderiv`. `TauCeti.extDerivWithin_of_isOpen` is the version of
-`fderivWithin_of_isOpen`. `TauCeti.extDeriv_apply_pair` and `TauCeti.extDeriv_apply_triple`
+`fderivWithin_of_isOpen`. `TauCeti.extDeriv_comp_add_smul` says that precomposing the
+coefficients with an affine dilation `z ↦ x₀ + c • z` multiplies the exterior derivative by `c`.
+`TauCeti.extDeriv_apply_pair` and `TauCeti.extDeriv_apply_triple`
 evaluate the exterior derivative of a one-form and of a two-form in terms of the derivative of the
 form, and `TauCeti.extDeriv_apply_pair_eq_sum` writes the exterior derivative of a
 one-form `∑ᵢ ωᵢ dxᵢ` on `ι → 𝕜` as `∑ᵢ dωᵢ ∧ dxᵢ`.
@@ -63,6 +69,14 @@ because `fderiv` takes the junk value `0` there. -/
 lemma extDeriv_zero_of_not_differentiableAt (h : ¬ DifferentiableAt 𝕜 ω x) : extDeriv ω x = 0 := by
   simp only [extDeriv, fderiv_zero_of_not_differentiableAt h]
   exact map_zero _
+
+/-- **The exterior derivative under an affine dilation of the domain.** Precomposing the
+coefficients of a form with `z ↦ x₀ + c • z` multiplies its exterior derivative by `c`. No
+differentiability is needed: both sides use the junk value `0` of `fderiv` at the same points. -/
+theorem extDeriv_comp_add_smul (x₀ : E) (c : 𝕜) (ω : E → E [⋀^Fin n]→L[𝕜] F) (y : E) :
+    extDeriv (fun z ↦ ω (x₀ + c • z)) y = c • extDeriv ω (x₀ + c • y) := by
+  rw [extDeriv, fderiv_comp_add_smul, ContinuousAlternatingMap.alternatizeUncurryFin_smul,
+    extDeriv]
 
 /-- The exterior derivative of a one-form on an ordered pair is the alternating part of its
 Fréchet derivative. This formula also respects the derivative's junk-value convention. -/
@@ -288,6 +302,24 @@ theorem _root_.TauCeti.contDiffOn_pullback_continuousLinearMap {E' : Type*}
   have h := (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin n) (F := F)
     A).contDiff.comp_contDiffOn (hω.comp A.contDiff.contDiffOn fun x (hx : x ∈ A ⁻¹' t) ↦ hx)
   exact h.congr fun x _ ↦ (ContinuousAlternatingMap.compContinuousLinearMapCLM_apply _ _).symm
+
+/-- Pulling a form that is `C^r` at `A x` back along a continuous linear map `A` gives a form that
+is `C^r` at `x`. -/
+theorem _root_.TauCeti.contDiffAt_pullback_continuousLinearMap {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {r : WithTop ℕ∞}
+    {ω : E' → E' [⋀^Fin n]→L[𝕜] F} (A : E →L[𝕜] E') {x : E} (hω : ContDiffAt 𝕜 r ω (A x)) :
+    ContDiffAt 𝕜 r (fun x ↦ (ω (A x)).compContinuousLinearMap A) x :=
+  (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin n) (F := F)
+    A).contDiff.contDiffAt.comp x (hω.comp x A.contDiff.contDiffAt)
+
+/-- Pulling a form that is differentiable at `A x` back along a continuous linear map `A` gives a
+form that is differentiable at `x`. -/
+theorem _root_.TauCeti.differentiableAt_pullback_continuousLinearMap {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {ω : E' → E' [⋀^Fin n]→L[𝕜] F} (A : E →L[𝕜] E')
+    {x : E} (hω : DifferentiableAt 𝕜 ω (A x)) :
+    DifferentiableAt 𝕜 (fun x ↦ (ω (A x)).compContinuousLinearMap A) x :=
+  (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin n) (F := F)
+    A).differentiableAt.comp x (hω.comp x A.differentiableAt)
 
 /-- Exterior differentiation commutes with a fixed continuous linear map of coefficients, for a
 form differentiable within the set. -/

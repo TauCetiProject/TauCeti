@@ -73,6 +73,27 @@ theorem contMDiffAt_toEndomorphism_comp_im_endCoord (q : Puncture) {n : ℕ∞ω
 
 end TauCeti.ThricePuncturedSphere.Puncture
 
+namespace TauCeti.SmoothAlmostComplexStructure
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I (⊤ : ℕ∞) M]
+
+/-- On the tangent fiber at `x`, the end families with the family `q` replaced by `L`, read as
+linear end families over a point, are the fiberwise end families with the family `q` replaced by
+the fiberwise `L`. -/
+theorem almostComplexStructureAt_update {ι T : Type*} [DecidableEq ι]
+    (K : ι → T → SmoothAlmostComplexStructure I M) (q : ι)
+    (L : T → SmoothAlmostComplexStructure I M) (x : M) :
+    (fun p t (_ : Unit) => (Function.update K q L p t).almostComplexStructureAt x) =
+      Function.update (fun p t (_ : Unit) => (K p t).almostComplexStructureAt x) q
+        (fun t _ => (L t).almostComplexStructureAt x) := by
+  funext p t u
+  rcases eq_or_ne p q with rfl | hp
+  · simp
+  · simp [Function.update_of_ne hp]
+
+end TauCeti.SmoothAlmostComplexStructure
+
 namespace TauCeti.SmoothTwoForm.Compatible
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]

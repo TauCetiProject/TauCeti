@@ -73,13 +73,13 @@ theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter K 𝔪)
     (J : integralIdealsPrimeTo 𝔪) :
     (χ.toHeckeCharacter.idealCharacter (NumberFieldArithmetic.integralIdealsAwayHom K _
         (integralIdealsPrimeToInclusion χ.mk_finiteConductor_dvd J)) : ℂ) =
-      χ.unitaryWeight.1 J * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (χ.idealShift : ℂ) := by
+      χ.unitaryWeight.val J * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (χ.idealShift : ℂ) := by
   have h𝔣 := χ.mk_finiteConductor_dvd
   let g : integralIdealsPrimeTo 𝔪 →* ℂ :=
-    { toFun J := χ.unitaryWeight.1 J * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (χ.idealShift : ℂ)
+    { toFun J := χ.unitaryWeight.val J * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (χ.idealShift : ℂ)
       map_one' := by simp
       map_mul' I J := by
-        rw [Submonoid.coe_mul, map_mul, map_mul, Nat.cast_mul, Complex.natCast_mul_natCast_cpow]
+        rw [Submonoid.coe_mul, map_mul, map_mul, Nat.cast_mul, Complex.natCast_mul_cpow]
         ring }
   refine DFunLike.congr_fun (NumberFieldArithmetic.integralIdealsAway_hom_ext
     (f := (Units.coeHom ℂ).comp (χ.toHeckeCharacter.idealCharacter.comp
@@ -104,7 +104,7 @@ theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter K 𝔪)
 `χ_u((a)) * N(a) ^ σ * ∏_τ τ(a) ^ (n τ) = 1`. -/
 theorem compatibility (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongrOne 𝔪 x) (a : 𝓞 K)
     (ha : algebraMap (𝓞 K) K a = x) :
-    χ.unitaryWeight.1 (Ideal.span {a}) *
+    χ.unitaryWeight.val (Ideal.span {a}) *
         ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℂ) ^ (χ.idealShift : ℂ) *
       ∏ τ : K →+* ℂ, τ (x : K) ^ χ.infinityType τ = 1 := by
   set ψ := χ.toHeckeCharacter
@@ -128,7 +128,7 @@ theorem compatibility (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongrOne 
   have hpos (w : {w : InfinitePlace K // w.IsReal})
       (hw : ψ.infinityType.realParity w ≠
         (AlgebraicInfinityType.toContinuous χ.infinityType).realParity w) :
-      0 < InfinitePlace.embedding_of_isReal w.2 (x : K) :=
+      0 < InfinitePlace.embedding_of_isReal w.property (x : K) :=
     (isCongrOne_iff.mp hx).2 w (not_imp_comm.mp (χ.realParity_eq w) hw)
   rw [hideal, ψ.idealCharacter_apply_toPrincipalIdeal_eq_embeddingCharacter_inv χ.infinityType
       χ.agreesOnIdentityComponent x hx𝔣 hpos,
@@ -141,7 +141,7 @@ theorem compatibility (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongrOne 
 `χ_u((a)) N(a) ^ σ = (∏_τ τ(a) ^ (n τ))⁻¹`. -/
 theorem compatibility_inv (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongrOne 𝔪 x) (a : 𝓞 K)
     (ha : algebraMap (𝓞 K) K a = x) :
-    χ.unitaryWeight.1 (Ideal.span {a}) *
+    χ.unitaryWeight.val (Ideal.span {a}) *
         ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℂ) ^ (χ.idealShift : ℂ) =
       (∏ τ : K →+* ℂ, τ (x : K) ^ χ.infinityType τ)⁻¹ :=
   eq_inv_of_mul_eq_one_left (χ.compatibility x hx a ha)

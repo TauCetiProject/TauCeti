@@ -207,7 +207,7 @@ private theorem continuous_planeCoord : Continuous planeCoord := by
 /-- Shrinking a generalized loop into the square `[1/4, 3/4]²`, as a map of the plane. -/
 private def shrinkPlane (p : Ω^ (Fin 2) M x) : C(ℝ × ℝ, M) :=
   ⟨fun z ↦ p fun i ↦ projIcc 0 1 zero_le_one (2 * planeCoord z i - 1 / 2), by
-    refine p.1.continuous.comp (continuous_pi fun i ↦ continuous_projIcc.comp ?_)
+    refine p.val.continuous.comp (continuous_pi fun i ↦ continuous_projIcc.comp ?_)
     exact (continuous_const.mul ((continuous_apply i).comp continuous_planeCoord)).sub
       continuous_const⟩
 
@@ -222,7 +222,7 @@ private theorem projIcc_shrink_eq {s : ℝ} (hs : s ∉ Ioo (1 / 4 : ℝ) (3 / 4
 
 private theorem shrinkPlane_of_notMem (p : Ω^ (Fin 2) M x) {z : ℝ × ℝ}
     (hz : z ∉ Ioo (1 / 4 : ℝ) (3 / 4) ×ˢ Ioo (1 / 4 : ℝ) (3 / 4)) : shrinkPlane p z = x := by
-  refine p.2 _ ?_
+  refine p.property _ ?_
   simp only [mem_prod, not_and_or] at hz
   rcases hz with hz | hz
   · exact ⟨0, projIcc_shrink_eq hz⟩
@@ -238,7 +238,7 @@ private theorem homotopic_shrinkPlane (p : Ω^ (Fin 2) M x) :
   -- Move each coordinate `s` linearly to `2 s - 1/2`, clamped to the unit interval.
   refine ⟨{
     toFun := fun q ↦ p fun i ↦ projIcc 0 1 zero_le_one (q.2 i + q.1 * (q.2 i - 1 / 2))
-    continuous_toFun := p.1.continuous.comp (continuous_pi fun i ↦ continuous_projIcc.comp
+    continuous_toFun := p.val.continuous.comp (continuous_pi fun i ↦ continuous_projIcc.comp
       (by fun_prop))
     map_zero_left := fun y ↦ by simp
     map_one_left := fun y ↦ congrArg p <| funext fun i ↦ by
@@ -246,9 +246,9 @@ private theorem homotopic_shrinkPlane (p : Ω^ (Fin 2) M x) :
     prop' := fun t y hy ↦ ?_ }⟩
   obtain ⟨i, hi⟩ := hy
   simp only [ContinuousMap.coe_mk]
-  rw [p.2 y ⟨i, hi⟩]
-  refine p.2 _ ⟨i, ?_⟩
-  have ht : (0 : ℝ) ≤ t := t.2.1
+  rw [p.property y ⟨i, hi⟩]
+  refine p.property _ ⟨i, ?_⟩
+  have ht : (0 : ℝ) ≤ t := t.property.1
   rcases hi with hi | hi
   · exact Or.inl (projIcc_of_le_left _ (by rw [hi, Icc.coe_zero]; linarith))
   · exact Or.inr (projIcc_of_right_le _ (by rw [hi, Icc.coe_one]; linarith))
@@ -389,7 +389,7 @@ private theorem exists_continuous_homotopy {v w : ℝ × ℝ → M} (hv : IsSmoo
     exact (K.apply_one _).trans (apply_planeCollapse hδ hδ'
       (hw' δ ((min_le_left _ _).trans (min_le_right _ _))) q.1)
   · have hb := planeCollapse_mem_boundary hδ hδ' (z := q.1) (by simpa using hq)
-    exact (K.eq_fst _ hb).trans (hv.genLoop.2 _ hb)
+    exact (K.eq_fst _ hb).trans (hv.genLoop.property _ hb)
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [CompactSpace M]
   [T2Space M]
@@ -532,7 +532,7 @@ private theorem IsSmoothSphere.genLoop_concat (hw : IsSmoothSphere I x w)
     (hw.concat hv).genLoop = GenLoop.transAt 0 hw.genLoop hv.genLoop := by
   ext y
   rw [GenLoop.transAt, GenLoop.coe_copy, IsSmoothSphere.genLoop_apply]
-  have h0 : (y 0 : ℝ) ∈ Icc (0 : ℝ) 1 := (y 0).2
+  have h0 : (y 0 : ℝ) ∈ Icc (0 : ℝ) 1 := (y 0).property
   unfold sphereConcat
   split_ifs with h
   · rw [IsSmoothSphere.genLoop_apply, Function.update_self, Function.update_of_ne (by decide),
@@ -618,7 +618,7 @@ private theorem genLoop_homotopic_comp_flatten {w : ℝ × ℝ → M} {p : Ω^ (
     GenLoop.Homotopic hv.genLoop p := by
   refine GenLoop.Homotopic.symm ⟨{
     toFun := fun q ↦ p fun i ↦ collaredSmoothTransitionLineMapUnit q.1 (q.2 i)
-    continuous_toFun := p.1.continuous.comp (continuous_pi fun i ↦
+    continuous_toFun := p.val.continuous.comp (continuous_pi fun i ↦
       continuous_collaredSmoothTransitionLineMapUnit.comp
         (by fun_prop : Continuous fun q : unitInterval × (Fin 2 → unitInterval) ↦ (q.1, q.2 i)))
     map_zero_left := fun y ↦ by simp
@@ -628,8 +628,8 @@ private theorem genLoop_homotopic_comp_flatten {w : ℝ × ℝ → M} {p : Ω^ (
     prop' := fun t y hy ↦ ?_ }⟩
   obtain ⟨i, hi⟩ := hy
   simp only [ContinuousMap.coe_mk]
-  rw [p.2 y ⟨i, hi⟩]
-  refine p.2 _ ⟨i, ?_⟩
+  rw [p.property y ⟨i, hi⟩]
+  refine p.property _ ⟨i, ?_⟩
   rcases hi with hi | hi
   · exact Or.inl (by simp only [hi, collaredSmoothTransitionLineMapUnit_zero_right])
   · exact Or.inr (by simp only [hi, collaredSmoothTransitionLineMapUnit_one_right])
@@ -707,7 +707,7 @@ theorem sphereIntegral_mk_of_contMDiff (hφ : IsSmoothForm I 1 φ) (hdφ : mextD
   -- `w` sends the boundary of the unit square to `x`, because `p` does.
   have hwx : ∀ a ∈ Icc (0 : ℝ) 1, ∀ b ∈ Icc (0 : ℝ) 1, a = 0 ∨ a = 1 ∨ b = 0 ∨ b = 1 →
       w (a, b) = x := fun a ha b hb hab ↦ by
-    refine (hp ![⟨a, ha⟩, ⟨b, hb⟩]).symm.trans (p.2 _ ?_)
+    refine (hp ![⟨a, ha⟩, ⟨b, hb⟩]).symm.trans (p.property _ ?_)
     rcases hab with h | h | h | h
     exacts [⟨0, Or.inl (Subtype.ext h)⟩, ⟨0, Or.inr (Subtype.ext h)⟩,
       ⟨1, Or.inl (Subtype.ext h)⟩, ⟨1, Or.inr (Subtype.ext h)⟩]

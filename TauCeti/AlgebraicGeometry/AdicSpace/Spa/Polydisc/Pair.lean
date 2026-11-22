@@ -73,7 +73,7 @@ theorem Pair.polydisc.coe_closedPolydiscHomeomorph_apply (n : ℕ)
     (Pair.polydisc.closedPolydiscHomeomorph n v :
         Spv (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K))
           isWeightFamily_one_weight)) =
-      ValuationSpectrum.comap Completion.coeRingHom v.1 := by
+      ValuationSpectrum.comap Completion.coeRingHom v.val := by
   simp [closedPolydiscHomeomorph, Homeomorph.setCongr]
 
 /-- Over a complete nontrivially normed ultrametric field `K`, the inverse of
@@ -84,7 +84,7 @@ theorem Pair.polydisc.coe_closedPolydiscHomeomorph_symm_apply [CompleteSpace K] 
     (w : closedPolydisc n K) :
     ((Pair.polydisc.closedPolydiscHomeomorph n).symm w :
         Spv (restrictedMvPowerSeriesCompletion n K)) =
-      ValuationSpectrum.comap (restrictedMvPowerSeriesCompletionEquiv n K).toRingHom w.1 := by
+      ValuationSpectrum.comap (restrictedMvPowerSeriesCompletionEquiv n K).toRingHom w.val := by
   let e := restrictedMvPowerSeriesCompletionEquiv n K
   have hid : Completion.coeRingHom.comp e.toRingHom = RingHom.id _ := by
     ext x
