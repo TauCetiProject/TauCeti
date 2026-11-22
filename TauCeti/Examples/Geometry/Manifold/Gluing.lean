@@ -124,9 +124,9 @@ example (n : ℕ) {k l : Fin n} (hkl : k ≠ l) :
     not_nonempty_iff_eq_empty, ← disjoint_iff_inter_eq_empty]
   refine Metric.ball_disjoint_ball ?_
   -- Distinct natural numbers are at distance at least `1`.
-  have h : (1 : ℝ) ≤ ‖((((k : ℕ) : ℤ) - (l : ℕ) : ℤ) : ℂ)‖ := by
-    rw [Complex.norm_intCast]
-    exact_mod_cast Int.one_le_abs (sub_ne_zero.2 (Int.ofNat_inj.not.2 (Fin.val_ne_of_ne hkl)))
-  push_cast at h
-  simp [dist_eq_norm, ← mul_sub]
-  linarith
+  have h : (1 : ℝ) ≤ |((k : ℕ) : ℝ) - (l : ℕ)| := by
+    have := Fin.val_ne_of_ne hkl
+    exact_mod_cast Int.one_le_abs (by omega : ((k : ℕ) : ℤ) - (l : ℕ) ≠ 0)
+  calc (1 : ℝ) + 1 ≤ 4 * |((k : ℕ) : ℝ) - (l : ℕ)| := by linarith
+    _ = dist (4 * ((k : ℕ) : ℂ)) (4 * ((l : ℕ) : ℂ)) := by
+      simp [dist_eq_norm, ← mul_sub, ← Complex.ofReal_natCast, ← Complex.ofReal_sub]
