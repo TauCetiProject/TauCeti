@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Abelian.SerreClass.MorphismProperty
 public import Mathlib.CategoryTheory.Filtered.Final
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
+public import Mathlib.Order.SuccPred.Basic
 
 /-!
 # Pro-zero diagrams and pro-isomorphisms
@@ -139,10 +140,11 @@ lemma isProZero_iff_forall_exists_le {ι : Type u₃} [Preorder ι] (F : ιᵒ�
     F.IsProZero ↔ ∀ i, ∃ (j : ι) (h : i ≤ j), F.map (homOfLE h).op = 0 :=
   MorphismProperty.forall_exists_iff_forall_exists_le fun _ _ f ↦ F.map f = 0
 
-/-- A tower whose successive transitions are zero is pro-zero, whatever its terms. -/
-lemma isProZero_of_map_succ_eq_zero (F : ℕᵒᵖ ⥤ C)
-    (hF : ∀ n, F.map (homOfLE (Nat.le_succ n)).op = 0) : F.IsProZero :=
-  (isProZero_iff_forall_exists_le F).2 fun n ↦ ⟨n + 1, Nat.le_succ n, hF n⟩
+/-- An inverse system over a successor order whose successive transitions `F (succ i) ⟶ F i` are
+zero is pro-zero, whatever its terms. For a tower `ℕᵒᵖ ⥤ C`, `Order.succ n` is `n + 1`. -/
+lemma isProZero_of_map_succ_eq_zero {ι : Type u₃} [Preorder ι] [SuccOrder ι] (F : ιᵒᵖ ⥤ C)
+    (hF : ∀ i, F.map (homOfLE (Order.le_succ i)).op = 0) : F.IsProZero :=
+  (isProZero_iff_forall_exists_le F).2 fun i ↦ ⟨Order.succ i, Order.le_succ i, hF i⟩
 
 /-- The limit of a pro-zero diagram is a zero object. -/
 lemma IsProZero.isZero_of_isLimit {F : J ⥤ C} (hF : F.IsProZero) {c : Cone F} (hc : IsLimit c) :
