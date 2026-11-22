@@ -22,10 +22,10 @@ import Mathlib.Tactic.Positivity
 For a graph `G` on a finite linear order `V`, the cochain `Cochain.ofLt (complete V) f` with
 `f u v = swap 0 1` on the edges of `G` and `1` elsewhere has defect `2 * #G.oddTriangleFinset`
 (`SimpleGraph.defect_ofLt_ite_adj`). When `G` is cut-minimal every gauge costs at least
-`2 * #G.edgeFinset`: the parity retraction onto `{1, swap 0 1}`
-(`Equiv.Perm.parityRetract`, which fixes the cochain and does not increase the moved-point norm,
-`Cochain.cost_map_le`) turns any gauge into a cut `S`, whose cost is twice the size of the
-symmetric difference of the edges of `G` with the cut edges of `S`. Hence:
+`2 * #G.edgeFinset` (`SimpleGraph.two_mul_card_edgeFinset_le_cost`): the parity retraction onto
+`{1, swap 0 1}` (`Equiv.Perm.parityRetract`, which fixes the cochain and does not increase the
+moved-point norm, `Cochain.cost_map_le`) turns any gauge into a cut `S`, whose cost is twice the
+size of the symmetric difference of the edges of `G` with the cut edges of `S`. Hence:
 
 * `SimpleGraph.h1_complete_movedNorm_fin_three_le_of_isCutMinimal`: for a cut-minimal `G` with an
   edge,
@@ -86,7 +86,7 @@ variable {V : Type*} [Fintype V] [LinearOrder V]
 
 /-- **Parity retraction against a cut-minimal graph.** Every gauge costs at least
 `2 * #G.edgeFinset` against the cochain equal to `swap 0 1` on the edges of a cut-minimal `G`. -/
-private theorem two_mul_card_edgeFinset_le_cost (G : SimpleGraph V) [DecidableRel G.Adj]
+theorem two_mul_card_edgeFinset_le_cost (G : SimpleGraph V) [DecidableRel G.Adj]
     (hG : G.IsCutMinimal) (β : V → Perm (Fin 3)) :
     (2 * #G.edgeFinset : ℝ) ≤
       (Cochain.ofLt (complete V) fun u v => if G.Adj u v then swap 0 1 else 1).cost
