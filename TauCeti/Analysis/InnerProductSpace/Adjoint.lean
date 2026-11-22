@@ -19,8 +19,8 @@ An endomorphism and its adjoint have the same real quadratic form
 (`ContinuousLinearMap.re_inner_star_apply_self`).
 For bounded operators between complete inner product spaces, the adjoint takes values in the
 orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`),
-and the adjoint of a surjective operator is injective
-(`ContinuousLinearMap.adjoint_injective_of_surjective`).
+and the adjoint is injective exactly when the operator has dense range
+(`ContinuousLinearMap.adjoint_injective_iff_denseRange`).
 The Gram operator of an operator with finite-dimensional source is invertible exactly when the
 operator is injective (`ContinuousLinearMap.isUnit_adjoint_comp_self_iff`).
 An operator on a Hilbert space is invertible exactly when its adjoint is
@@ -124,12 +124,14 @@ theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
   rw [orthogonal_ker]
   exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
 
-/-- The adjoint of a surjective bounded operator is injective: its kernel is the orthogonal
-complement of the range. -/
-theorem adjoint_injective_of_surjective [CompleteSpace E] [CompleteSpace F] {u : E →L[𝕜] F}
-    (hu : Function.Surjective u) : Function.Injective (u†) := by
-  rw [← coe_coe, ← LinearMap.ker_eq_bot, ← orthogonal_range, LinearMap.range_eq_top.2 hu,
-    Submodule.top_orthogonal_eq_bot]
+/-- The adjoint of a bounded operator between Hilbert spaces is injective exactly when the
+operator has dense range: its kernel is the orthogonal complement of the range. -/
+theorem adjoint_injective_iff_denseRange [CompleteSpace E] [CompleteSpace F] {u : E →L[𝕜] F} :
+    Function.Injective (u†) ↔ DenseRange u := by
+  rw [← coe_coe, ← LinearMap.ker_eq_bot, ← orthogonal_range,
+    ← Submodule.topologicalClosure_eq_top_iff, ← Submodule.dense_iff_topologicalClosure_eq_top,
+    LinearMap.coe_range, coe_coe]
+  rfl
 
 /-- The pointwise adjoint `x ↦ (f x)†` of a continuous family of operators between Hilbert spaces
 is continuous. -/

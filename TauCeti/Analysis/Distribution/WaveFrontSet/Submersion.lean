@@ -28,7 +28,7 @@ back along `f` with the transpose of its derivative (Hörmander I, Theorem 8.2.4
 
 (`Distribution.waveFrontSet_compCLMOfSubmersion`). Unlike the pullback along a general smooth map,
 no condition on `WF(T)` is needed, since `Df(x)ᵀ` is injective
-(`ContinuousLinearMap.adjoint_injective_of_surjective`) and so `Df(x)ᵀ η ≠ 0` for every
+(`ContinuousLinearMap.adjoint_injective_iff_denseRange`) and so `Df(x)ᵀ η ≠ 0` for every
 `η ≠ 0`. For a change of variables this is
 `Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`; for the projection `(x, y) ↦ x` of a
 product it is the wave front set of `T ⊗ 1`
@@ -402,7 +402,8 @@ theorem waveFrontSet_compCLMOfSubmersion (T : 𝓓'(Ω', ℂ)) :
   · rintro ⟨hx, η, ⟨-, hη0, hTη⟩, rfl⟩
     -- `Df(x)ᵀ` is injective, since `Df(x)` is surjective.
     have hinj : ((fderiv ℝ f x)†) η ≠ 0 :=
-      (map_ne_zero_iff _ (ContinuousLinearMap.adjoint_injective_of_surjective (hsurj x hx))).2 hη0
+      (map_ne_zero_iff _
+        (ContinuousLinearMap.adjoint_injective_iff_denseRange.2 (hsurj x hx).denseRange)).2 hη0
     refine ⟨hx, hinj, fun h ↦ hTη ?_⟩
     exact (isMicrolocallySmoothAt_compCLMOfSubmersion_iff μ ν hf hfΩ hsurj T hx hinj).1 h η rfl
 

@@ -69,7 +69,7 @@ and `h` is as smooth as `f` and `g`.
   (`ContinuousLinearMap.implicitCoordEquiv_symm_apply_zero_mk`).
 * `ContinuousLinearMap.linearCoord`: for a surjective linear map `A` between finite-dimensional
   real spaces, the coordinates `x ↦ (A x, P x)` with `P` a projection onto `ker A`
-  (`ContinuousLinearMap.linearCoord_apply_fst`, `ContinuousLinearMap.linearCoord_apply_snd_coe`),
+  (`ContinuousLinearMap.linearCoord_apply_fst`, `ContinuousLinearMap.linearCoord_coe`),
   and the linear section `ContinuousLinearMap.linearSection` of `A`, `y ↦ L⁻¹ (y, 0)`
   (`ContinuousLinearMap.apply_linearSection`, `ContinuousLinearMap.linearCoord_linearSection`).
   Every `x` is `s (A x) + P x` (`ContinuousLinearMap.linearSection_add_linearCoord_snd`).
@@ -272,13 +272,13 @@ theorem linearCoord_symm_apply (y : E') (k : (A : E →ₗ[ℝ] E').ker) :
   have h : ((y, k) : E' × (A : E →ₗ[ℝ] E').ker) = (y, 0) + (0, k) := by simp
   rw [h, map_add, linearSection_apply, linearCoord, A.implicitCoordEquiv_symm_apply_zero_mk]
 
-/-- The second component of `linearCoord` is the identity on `ker A`: it is a projection onto
-`ker A`. -/
+/-- In the coordinates `linearCoord`, an element `k` of `ker A` is `(0, k)`: the second component
+of `linearCoord` is a projection onto `ker A`. -/
 @[simp]
-theorem linearCoord_apply_snd_coe (k : (A : E →ₗ[ℝ] E').ker) : (A.linearCoord hA k).2 = k := by
+theorem linearCoord_coe (k : (A : E →ₗ[ℝ] E').ker) : A.linearCoord hA k = (0, k) := by
   have h := A.linearCoord_symm_apply hA 0 k
   rw [map_zero, zero_add, ContinuousLinearEquiv.symm_apply_eq] at h
-  rw [← h]
+  exact h.symm
 
 /-- In the coordinates `linearCoord`, `linearSection y` is `(y, 0)`. -/
 @[simp]
