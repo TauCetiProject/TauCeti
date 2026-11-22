@@ -42,6 +42,13 @@ diffeomorphism use `IsLocalHomeomorph.isManifold_chartedSpaceOfRightInverse` and
 and smooth descent criterion use `IsLocalDiffeomorph.lieGroup` and
 `IsLocalDiffeomorph.contMDiff_comp_iff`, respectively.
 
+## Discrete subgroups of normed spaces
+
+For a discrete subgroup `N` of a normed space `E`, the projection `E → E ⧸ N` read in any chart of
+the quotient is locally a translation by an element of `N`
+(`AddSubgroup.exists_eventuallyEq_sub_of_mem_atlas`), so its differential is the identity of `E`
+(`AddSubgroup.hasMFDerivAt_quotientMk`).
+
 ## Discrete submodules of normed spaces
 
 Let `L` be a discrete submodule of a locally compact normed space `E` over a nontrivially normed
@@ -100,7 +107,7 @@ identity component.
 
 ### Discrete subgroups
 
-The following results also have additive counterparts in the `AddSubgroup` namespace.
+Each of the following results also has an additive counterpart in the `AddSubgroup` namespace.
 
 * `Subgroup.isLocalDiffeomorph_quotientMk`: the coset projection by a discrete subgroup is a
   local diffeomorphism.
@@ -110,6 +117,13 @@ The following results also have additive counterparts in the `AddSubgroup` names
   after composition with the projection.
 * `Subgroup.contMDiff_quotientGroup_lift`: a smooth homomorphism killing a discrete normal
   subgroup descends smoothly to the quotient group.
+
+### Discrete subgroups of normed spaces
+
+* `AddSubgroup.exists_eventuallyEq_sub_of_mem_atlas`: the projection `E → E ⧸ N` read in a
+  quotient chart is locally a translation by an element of `N`.
+* `AddSubgroup.hasMFDerivAt_quotientMk`, `AddSubgroup.mfderiv_quotientMk`: the differential of
+  the projection is the identity in quotient coordinates.
 
 ### Discrete submodules
 
