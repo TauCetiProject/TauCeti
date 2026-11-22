@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CompletelyMonotone.Basic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 
 /-!
 # Half-line closure for completely monotone functions
@@ -48,10 +49,6 @@ open Set
 open scoped ContDiff
 
 namespace TauCeti
-
-private theorem iteratedDeriv_iteratedDeriv (f : ℝ → ℝ) (n k : ℕ) :
-    iteratedDeriv n (iteratedDeriv k f) = iteratedDeriv (n + k) f := by
-  simp [iteratedDeriv_eq_iterate, Function.iterate_add_apply]
 
 namespace IsCompletelyMonotoneOnIoi
 
@@ -113,7 +110,7 @@ theorem neg_one_pow_mul_iteratedDeriv (hf : IsCompletelyMonotoneOnIoi f) (k : �
   have hiter :
       iteratedDeriv n (fun t => (-1 : ℝ) ^ k * iteratedDeriv k f t) t =
         (-1 : ℝ) ^ k * iteratedDeriv (n + k) f t := by
-    rw [iteratedDeriv_const_mul_field, iteratedDeriv_iteratedDeriv f n k]
+    rw [iteratedDeriv_const_mul_field, iteratedDeriv_iteratedDeriv n k f]
   rw [hiter]
   have key :
       (-1 : ℝ) ^ n * ((-1 : ℝ) ^ k * iteratedDeriv (n + k) f t) =
