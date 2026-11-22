@@ -13,9 +13,13 @@ import TauCeti.Algebra.MonoidAlgebra.Eigenvector
 # Coefficients of Laurent polynomials
 
 Multiplying a Laurent polynomial on the left by `T n` shifts its coefficients by `n`, and
-multiplying it by a constant, in particular by a natural number, scales every coefficient. The
-constant `1` has a single coefficient, at exponent `0`, and `LaurentPolynomial.trunc` retains
-every coefficient of nonnegative exponent. These hold over an arbitrary semiring.
+multiplying it by a constant scales every coefficient. The constant `1` has a single coefficient,
+at exponent `0`, and `LaurentPolynomial.trunc` retains every coefficient of nonnegative exponent.
+For leading coefficients taken with respect to the degree map `ℤ → WithBot ℤ`, a constant has
+its value as leading coefficient, every monomial `T n` has leading coefficient `1`, the inclusion
+of ordinary polynomials preserves leading coefficients, and so does multiplication by `T n`. All of
+this holds over an arbitrary semiring; only the statement about `invert`, which Mathlib defines
+over commutative semirings, needs commutativity.
 
 ## Main results
 
@@ -24,12 +28,13 @@ every coefficient of nonnegative exponent. These hold over an arbitrary semiring
   by `T n` only for `n = 0`.
 * `LaurentPolynomial.invert_T_mul_eq_self_iff`: if a nonzero Laurent polynomial `f` is fixed by
   `invert`, then `T n * f` is fixed by `invert` only for `n = 0`.
-* `LaurentPolynomial.coeff_C_mul` and `LaurentPolynomial.coeff_natCast_mul`: constants scale
-  coefficients.
+* `LaurentPolynomial.coeff_C_mul`: constants scale coefficients; for natural-number constants
+  use Mathlib's `AddMonoidAlgebra.coeff_natCast_mul`.
 * `LaurentPolynomial.coeff_one`: the coefficients of `1`.
 * `LaurentPolynomial.coeff_trunc`: `(trunc f).coeff n = f.coeff (n : ℤ)`.
-* `LaurentPolynomial.leadingCoeff_toLaurent_mul_T`: multiplication by a Laurent monomial
-  preserves the leading coefficient of an ordinary polynomial.
+* `LaurentPolynomial.leadingCoeff_toLaurent` and `LaurentPolynomial.leadingCoeff_mul_T`: the
+  polynomial inclusion and multiplication by a Laurent monomial preserve leading coefficients;
+  `LaurentPolynomial.leadingCoeff_toLaurent_mul_T` combines them.
 -/
 
 public section
@@ -51,9 +56,9 @@ zero: otherwise its coefficients repeat with period `n`, and its support would b
 theorem T_mul_eq_self_iff {n : ℤ} {f : R[T;T⁻¹]} : T n * f = f ↔ n = 0 ∨ f = 0 := by
   refine ⟨fun h => or_iff_not_imp_left.mpr fun hn => ?_, ?_⟩
   · -- `R[T;T⁻¹]` is `AddMonoidAlgebra R ℤ`, in which `T n` is the monomial `single n 1`.
-    have h' : f * .single n 1 = f := by rwa [single_eq_C_mul_T, map_one, one_mul, ← T_mul]
+    rw [T_mul, T] at h
     exact TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinAddOrder
-      (mt (isOfFinAddOrder_iff_eq_zero n).mp hn) h'
+      (mt (isOfFinAddOrder_iff_eq_zero n).mp hn) h
   · rintro (rfl | rfl) <;> simp [T_zero]
 
 /-- Left multiplication by a constant scales every coefficient. -/
@@ -61,12 +66,6 @@ theorem T_mul_eq_self_iff {n : ℤ} {f : R[T;T⁻¹]} : T n * f = f ↔ n = 0 �
 theorem coeff_C_mul (t : R) (f : R[T;T⁻¹]) (d : ℤ) : (C t * f).coeff d = t * f.coeff d := by
   rw [← single_eq_C]
   exact AddMonoidAlgebra.coeff_single_zero_mul f t d
-
-/-- Left multiplication by a natural number scales every coefficient. -/
-@[simp]
-theorem coeff_natCast_mul (m : ℕ) (f : R[T;T⁻¹]) (d : ℤ) :
-    ((m : R[T;T⁻¹]) * f).coeff d = m * f.coeff d := by
-  rw [← map_natCast (C : R →+* R[T;T⁻¹]) m, coeff_C_mul]
 
 /-- The constant Laurent polynomial `1` has coefficient `1` at exponent `0` and `0` elsewhere. -/
 @[simp]
@@ -88,14 +87,11 @@ only when `n = 0` or it is zero: `invert (T n * f) = T (-n) * f`, so `T (n + n)`
 theorem invert_T_mul_eq_self_iff {n : ℤ} {f : R[T;T⁻¹]} (hf : invert f = f) :
     invert (T n * f) = T n * f ↔ n = 0 ∨ f = 0 := by
   rw [map_mul, invert_T, hf]
-  constructor
-  · intro h
-    have h2 : T (n + n) * f = f := by
-      rw [T_add, mul_assoc, ← h, ← mul_assoc, ← T_add, add_neg_cancel, T_zero, one_mul]
-    rcases T_mul_eq_self_iff.mp h2 with h0 | h0
-    · exact .inl (by omega)
-    · exact .inr h0
-  · rintro (rfl | rfl) <;> simp
+  refine ⟨fun h => ?_, by rintro (rfl | rfl) <;> simp⟩
+  -- Multiplying `T (-n) * f = T n * f` on the left by `T n` gives `f = T (n + n) * f`.
+  have h2 : T (n + n) * f = f := by
+    simpa [← mul_assoc, ← T_add] using congr_arg (T n * ·) h.symm
+  exact (T_mul_eq_self_iff.mp h2).imp_left (by omega)
 
 end CommSemiring
 
@@ -122,50 +118,39 @@ theorem leadingCoeff_T (n : ℤ) :
 @[simp]
 theorem leadingCoeff_toLaurent (p : Polynomial R) :
     p.toLaurent.leadingCoeff ((↑) : ℤ → WithBot ℤ) = p.leadingCoeff := by
-  classical
-  by_cases hp : p = 0
-  · simp [hp]
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp
   have hc (k : ℕ) : p.toLaurent.coeff (k : ℤ) = p.coeff k := by
     rw [← coeff_trunc, Polynomial.trunc_toLaurent]
+  -- The exponent `p.natDegree` is in the support and bounds every exponent of the support.
   have hd : p.toLaurent.supDegree ((↑) : ℤ → WithBot ℤ) = ↑(p.natDegree : ℤ) := by
-    apply supDegree_eq_of_max ⟨_, rfl⟩
-    · rw [Function.leftInverse_invFun WithBot.coe_injective (p.natDegree : ℤ),
-        Finsupp.mem_support_iff, hc]
+    refine supDegree_eq_of_isMaxOn ?_ (isMaxOn_iff.mpr fun a ha => ?_)
+    · rw [Finsupp.mem_support_iff, hc]
       exact Polynomial.leadingCoeff_ne_zero.mpr hp
-    · intro a ha
-      rw [support_coeff_toLaurent] at ha
-      obtain ⟨k, hk, he⟩ := Finset.mem_map.1 ha
-      rw [Nat.castEmbedding_apply] at he
-      have hkn := Polynomial.le_natDegree_of_mem_supp k hk
-      exact WithBot.coe_le_coe.mpr (by omega)
-  rw [leadingCoeff, hd,
-    Function.leftInverse_invFun WithBot.coe_injective (p.natDegree : ℤ), hc]
-  rfl
+    · rw [support_coeff_toLaurent] at ha
+      obtain ⟨k, hk, rfl⟩ := Finset.mem_map.1 ha
+      exact WithBot.coe_le_coe.mpr (Nat.cast_le.mpr (Polynomial.le_natDegree_of_mem_supp k hk))
+  rw [leadingCoeff, hd, Function.leftInverse_invFun WithBot.coe_injective, hc,
+    Polynomial.coeff_natDegree]
 
 /-- Shifting an arbitrary Laurent polynomial preserves its highest coefficient. -/
 @[simp]
 theorem leadingCoeff_mul_T (f : LaurentPolynomial R) (n : ℤ) :
     (f * T n).leadingCoeff ((↑) : ℤ → WithBot ℤ) =
       f.leadingCoeff ((↑) : ℤ → WithBot ℤ) := by
-  by_cases hf : f = 0
-  · simp [hf]
-  classical
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
   obtain ⟨a, ha, he⟩ := exists_supDegree_mem_support ((↑) : ℤ → WithBot ℤ) hf
-  have hc (b : ℤ) : (f * T n).coeff (b + n) = f.coeff b := by
-    rw [T, coeff_mul_single_add, mul_one]
+  have hc (b : ℤ) : (f * T n).coeff b = f.coeff (b - n) := by
+    rw [← T_mul, coeff_T_mul]
+  -- The exponent `a + n` is in the support and bounds every exponent of the support.
   have hd : (f * T n).supDegree ((↑) : ℤ → WithBot ℤ) = ↑(a + n) := by
-    apply supDegree_eq_of_max ⟨_, rfl⟩
-    · rw [Function.leftInverse_invFun WithBot.coe_injective (a + n),
-        Finsupp.mem_support_iff, hc]
-      exact Finsupp.mem_support_iff.mp ha
-    · intro b hb
-      have hcoef := Finsupp.mem_support_iff.mp hb
-      rw [← T_mul, coeff_T_mul] at hcoef
-      have hb' : b - n ∈ f.coeff.support := Finsupp.mem_support_iff.mpr hcoef
-      have hle : ((b - n : ℤ) : WithBot ℤ) ≤ ↑a := he ▸ Finset.le_sup hb'
+    refine supDegree_eq_of_isMaxOn ?_ (isMaxOn_iff.mpr fun b hb => ?_)
+    · simpa [hc] using ha
+    · have hle : ((b - n : ℤ) : WithBot ℤ) ≤ ↑a := he ▸ Finset.le_sup (by simpa [hc] using hb)
       exact WithBot.coe_le_coe.mpr (by have := WithBot.coe_le_coe.mp hle; omega)
-  rw [leadingCoeff, hd, Function.leftInverse_invFun WithBot.coe_injective (a + n),
-    hc, leadingCoeff, he, Function.leftInverse_invFun WithBot.coe_injective a]
+  simp only [leadingCoeff, hd, he, Function.leftInverse_invFun WithBot.coe_injective _, hc,
+    add_sub_cancel_right]
 
 /-- Shifting an ordinary polynomial by any Laurent monomial preserves its leading coefficient. -/
 theorem leadingCoeff_toLaurent_mul_T (p : Polynomial R) (n : ℤ) :
