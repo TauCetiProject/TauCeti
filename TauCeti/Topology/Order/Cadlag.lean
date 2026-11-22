@@ -17,7 +17,10 @@ import TauCeti.Topology.Order.LeftRight
 
 A step function taking its right-hand value at its jump time is càdlàg (`TauCeti.isCadlag_ite_le`),
 and stopping any càdlàg path at a deterministic horizon preserves the càdlàg property
-(`IsCadlag.comp_min_const`).
+(`IsCadlag.comp_min_const`). Conversely, a function into a discrete space is right-continuous
+exactly when it is constant on a right neighbourhood of each point
+(`TauCeti.isRightContinuous_iff_eventually_eq`, `IsRightContinuous.eventually_eq`), as for counting
+paths.
 
 If a function converges from the right at `x` in a regular space, its strict left limit
 `Function.leftLim` also converges from the right to the same limit
@@ -77,7 +80,21 @@ theorem isCadlag_ite_le {ι E : Type*} [LinearOrder ι] [TopologicalSpace ι]
       filter_upwards [self_mem_nhdsWithin] with s hs
       simp [not_le.mpr (hs.trans_le (le_of_not_gt hat))]
 
+/-- A function into a discrete space is right-continuous exactly when, at each point, it
+eventually takes its value there on the right. -/
+theorem isRightContinuous_iff_eventually_eq {X Y : Type*} [TopologicalSpace X] [Preorder X]
+    [TopologicalSpace Y] [DiscreteTopology Y] {f : X → Y} :
+    IsRightContinuous f ↔ ∀ a, ∀ᶠ x in 𝓝[>] a, f x = f a := by
+  simp only [IsRightContinuous, ContinuousWithinAt, nhds_discrete, tendsto_pure]
+
 end TauCeti
+
+/-- A right-continuous function into a discrete space is constant on a right neighbourhood of
+each point. -/
+theorem IsRightContinuous.eventually_eq {X Y : Type*} [TopologicalSpace X] [Preorder X]
+    [TopologicalSpace Y] [DiscreteTopology Y] {f : X → Y} (hf : IsRightContinuous f) (a : X) :
+    ∀ᶠ x in 𝓝[>] a, f x = f a :=
+  TauCeti.isRightContinuous_iff_eventually_eq.1 hf a
 
 /-- Along times approaching `x` strictly from the right, if `f` converges to `y` in a regular
 space, then its strict left limit `f.leftLim` also converges to `y`. -/
