@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
@@ -54,7 +55,8 @@ is injective on homogeneous polynomials of degree `d`
 * `Projectivization.twistCore k`: the vector-bundle core of `𝒪(k)`.
 * `Projectivization.isContMDiff_twistCore`: `𝒪(k)` is an analytic line bundle.
 * `Projectivization.contMDiff_section_twistCore_iff`: a section of `𝒪(k)` is `C^r` exactly when
-  its coordinate in every standard chart is `C^r` on that chart.
+  its coordinate in every standard chart is `C^r` on that chart;
+  `Projectivization.mdifferentiable_section_twistCore_iff` is the differentiable version.
 * `Projectivization.homogeneousSection`: the section of `𝒪(d)` defined by a homogeneous
   polynomial of degree `d`, analytic by `Projectivization.contMDiff_homogeneousSection`.
 
@@ -263,6 +265,25 @@ theorem contMDiff_section_twistCore_iff (k : ℤ) {r : ℕ∞ω} (s : ℙ 𝕜 (
       fun _ hx ↦ hx
   rw [← contMDiffOn_univ, ← iUnion_affineOpen,
     contMDiffOn_iUnion_iff_of_isOpen fun j ↦ isOpen_affineOpen j]
+  exact forall_congr' key
+
+/-- **Differentiable sections of `𝒪(k)` in the standard charts.** A section `s` of `𝒪(k)` is
+differentiable exactly when, for every `j`, its coordinate
+`x ↦ twistTransition k ((twistCore k).indexAt x) j x * s x` in the frame of the chart `j` is
+differentiable on the standard affine open `U_j`. -/
+theorem mdifferentiable_section_twistCore_iff (k : ℤ) (s : ℙ 𝕜 (Fin (n + 1) → 𝕜) → 𝕜) :
+    MDifferentiable 𝓘(𝕜, Fin n → 𝕜) (𝓘(𝕜, Fin n → 𝕜).prod 𝓘(𝕜))
+        (fun x ↦ TotalSpace.mk' 𝕜 (E := (twistCore k).Fiber) x (s x)) ↔
+      ∀ j, MDifferentiableOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜)
+        (fun x ↦ twistTransition k ((twistCore k).indexAt x) j x * s x) (affineOpen j) := by
+  let s' : ∀ x, (twistCore (𝕜 := 𝕜) (n := n) k).Fiber x := s
+  have key (j : Fin (n + 1)) := by
+    haveI : MemTrivializationAtlas ((twistCore (𝕜 := 𝕜) (n := n) k).localTriv j) := ⟨⟨j, rfl⟩⟩
+    exact ((twistCore (𝕜 := 𝕜) (n := n) k).localTriv j).mdifferentiableOn_section_iff
+      (IB := 𝓘(𝕜, Fin n → 𝕜)) (s := s') (a := affineOpen j) (isOpen_affineOpen j)
+      fun _ hx ↦ hx
+  rw [← mdifferentiableOn_univ, ← iUnion_affineOpen,
+    mdifferentiableOn_iUnion_iff_of_isOpen fun j ↦ isOpen_affineOpen j]
   exact forall_congr' key
 
 /-! ### Sections from homogeneous polynomials -/

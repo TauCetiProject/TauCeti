@@ -88,9 +88,10 @@ theorem AnalyticAt.exists_isHomogeneous_eval_eq {𝕜 : Type*} [NontriviallyNorm
   -- Compare the two expressions for the `d`-th derivative of the restriction at `0`.
   have hpow : iteratedDeriv d (fun t : 𝕜 ↦ t ^ d * f v) 0 = d ! * f v := by
     simp [iteratedDeriv_mul_const_field, Nat.descFactorial_self]
-  have hderiv := hpL.factorial_smul 1 d
-  rw [hL, ← iteratedDeriv_eq_iteratedFDeriv, hpow,
-    FormalMultilinearSeries.compContinuousLinearMap_apply, nsmul_eq_mul,
-    show L ∘ (fun _ : Fin d ↦ (1 : 𝕜)) = fun _ ↦ v by ext; simp [L]] at hderiv
+  have hderiv : (d ! : 𝕜) * p d (fun _ ↦ v) = d ! * f v := by
+    have h := hpL.factorial_smul 1 d
+    rw [hL, ← iteratedDeriv_eq_iteratedFDeriv, hpow] at h
+    simpa only [FormalMultilinearSeries.compContinuousLinearMap_apply, Function.comp_def, L,
+      ContinuousLinearMap.toSpanSingleton_apply, one_smul, nsmul_eq_mul] using h
   rw [hPeval]
   exact mul_left_cancel₀ (Nat.cast_ne_zero.2 d.factorial_ne_zero) hderiv

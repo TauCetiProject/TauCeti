@@ -90,12 +90,18 @@ theorem homogeneousSection_mem_holomorphicTwistSections {d : ℕ}
 
 /-! ### The homogeneous function of a section -/
 
+/-- The homogeneous coordinate of the preferred chart of `𝒪(k)` at `[v]` does not vanish
+on `v`. -/
+private theorem apply_indexAt_twistCore_mk_ne_zero (k : ℤ) {v : Fin (n + 1) → ℂ} (hv : v ≠ 0) :
+    v ((twistCore (𝕜 := ℂ) k).indexAt (mk ℂ v hv)) ≠ 0 := by
+  have hx := (twistCore (𝕜 := ℂ) (n := n) k).mem_baseSet_at (mk ℂ v hv)
+  rwa [twistCore_baseSet, mk_mem_affineOpen_iff] at hx
+
 /-- The homogeneous coordinate of the preferred chart of `𝒪(k)` at `x` does not vanish on the
 chosen representative. -/
 private theorem rep_indexAt_twistCore_ne_zero (k : ℤ) (x : ℙ ℂ (Fin (n + 1) → ℂ)) :
     x.rep ((twistCore (𝕜 := ℂ) k).indexAt x) ≠ 0 := by
-  have hx := (twistCore (𝕜 := ℂ) (n := n) k).mem_baseSet_at x
-  rwa [twistCore_baseSet, mem_affineOpen_iff] at hx
+  simpa only [mk_rep] using apply_indexAt_twistCore_mk_ne_zero k x.rep_ne_zero
 
 /-- The function on `ℂⁿ⁺¹` attached to a section `s` of `𝒪(k)`: at `v ≠ 0` it is `s [v] * v a ^ k`,
 for `a` the preferred chart at `[v]`, and it is `0` at the origin. For the section of a
@@ -123,9 +129,7 @@ private theorem homogeneousLift_eq_twistTransition_mul (k : ℤ) (s : ℙ ℂ (F
     {v : Fin (n + 1) → ℂ} (hv : v ≠ 0) {j : Fin (n + 1)} (hj : v j ≠ 0) :
     homogeneousLift k s v = twistTransition k ((twistCore (𝕜 := ℂ) k).indexAt (mk ℂ v hv)) j
       (mk ℂ v hv) * s (mk ℂ v hv) * v j ^ k := by
-  have ha : v ((twistCore (𝕜 := ℂ) k).indexAt (mk ℂ v hv)) ≠ 0 := by
-    have hx := (twistCore (𝕜 := ℂ) (n := n) k).mem_baseSet_at (mk ℂ v hv)
-    rwa [twistCore_baseSet, mk_mem_affineOpen_iff] at hx
+  have ha := apply_indexAt_twistCore_mk_ne_zero k hv
   rw [homogeneousLift_of_ne_zero k s hv, twistTransition_mk, div_zpow]
   field_simp
 
@@ -149,14 +153,9 @@ private theorem differentiable_twistTransition_mul_comp_affineChart_symm {k : �
       (affineChart j).symm) := by
   intro z
   have hz : (affineChart (K := ℂ) j).symm z ∈ affineOpen j := by simp
-  let s' : ∀ x, (twistCore (𝕜 := ℂ) (n := n) k).Fiber x := s
-  have : MemTrivializationAtlas ((twistCore (𝕜 := ℂ) (n := n) k).localTriv j) := ⟨⟨j, rfl⟩⟩
-  have hcoord := (((twistCore (𝕜 := ℂ) (n := n) k).localTriv j).mdifferentiableAt_section_iff
-    𝓘(ℂ, Fin n → ℂ) s' (by rwa [twistCore_localTriv_baseSet])).1
-    (mem_holomorphicTwistSections.1 hs _)
-  rw [show (fun x ↦ (((twistCore k).localTriv j) ⟨x, s' x⟩).2) =
-    fun x ↦ twistTransition k ((twistCore (𝕜 := ℂ) k).indexAt x) j x * s x from
-    funext fun x ↦ twistCore_localTriv_apply k j s x] at hcoord
+  have hcoord := ((mdifferentiable_section_twistCore_iff k s).1
+    (mem_holomorphicTwistSections.1 hs) j _ hz).mdifferentiableAt
+    ((isOpen_affineOpen j).mem_nhds hz)
   exact mdifferentiableAt_iff_differentiableAt.1
     (hcoord.comp z ((contMDiff_affineChart_symm j 1).mdifferentiable one_ne_zero z))
 
@@ -238,7 +237,7 @@ theorem eq_zero_of_mdifferentiable_section_twistCore (hn : n ≠ 0) {k : ℤ} (h
     s = 0 := by
   obtain ⟨G, hG, hGeq⟩ :=
     exists_analyticOnNhd_eqOn_homogeneousLift hn (mem_holomorphicTwistSections.2 hs)
-  obtain ⟨m, hm⟩ : ∃ m : ℕ, k = -(m + 1 : ℕ) := ⟨(-k - 1).toNat, by omega⟩
+  obtain ⟨m, hm⟩ := Int.eq_negSucc_of_lt_zero hk
   -- `G v = t ^ (m + 1) * G (t • v)` for `t ≠ 0`; letting `t → 0` gives `G v = 0`.
   have hG0 (v : Fin (n + 1) → ℂ) (hv : v ≠ 0) : G v = 0 := by
     have hcont : Continuous fun t : ℂ ↦ t ^ (m + 1) * G (t • v) :=
@@ -246,8 +245,8 @@ theorem eq_zero_of_mdifferentiable_section_twistCore (hn : n ≠ 0) {k : ℤ} (h
     have := Continuous.ext_on (dense_compl_singleton (0 : ℂ)) (g := fun _ ↦ G v) hcont
       continuous_const
       fun t (ht : t ≠ 0) ↦ by
-        rw [hGeq (smul_ne_zero ht hv), hGeq hv, homogeneousLift_smul _ s ht, hm, zpow_neg,
-          zpow_natCast, ← mul_assoc, mul_inv_cancel₀ (pow_ne_zero _ ht), one_mul]
+        rw [hGeq (smul_ne_zero ht hv), hGeq hv, homogeneousLift_smul _ s ht, hm]
+        simp [ht]
     simpa using (congrFun this 0).symm
   funext x
   have hlift := homogeneousLift_rep k s x
