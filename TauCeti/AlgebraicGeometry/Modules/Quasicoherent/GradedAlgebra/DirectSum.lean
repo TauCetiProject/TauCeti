@@ -50,7 +50,10 @@ is quasicoherent because coproducts of quasicoherent sheaves are.
   (`mul_ιTotal` and `one_ιTotal` for the identity);
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.ιTotal_toQuasicoherentAlgebra_map`:
   the algebra morphism induced by a graded algebra morphism is its degree-`n` component on the
-  summand `Aₙ`.
+  summand `Aₙ`;
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.epi_toQuasicoherentAlgebra_map`: a
+  graded algebra morphism that is an epimorphism in positive degrees, into an algebra whose unit
+  is an epimorphism onto the degree-zero component, induces an epimorphism of direct sums.
 -/
 
 public section
@@ -302,6 +305,28 @@ theorem ιTotal_toQuasicoherentAlgebra_map {A B : GradedQuasicoherentAlgebra X} 
   exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) h).trans
     ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
       (GradedObject.ιTotal_total_map f.hom.hom.hom n)).trans (Category.assoc _ _ _))))
+
+/-- A morphism `g : A ⟶ B` of graded quasicoherent algebras that is an epimorphism in every positive
+degree induces an epimorphism `⨁ₙ Aₙ ⟶ ⨁ₙ Bₙ` of the direct sums when the unit `𝒪_X ⟶ B₀` is an
+epimorphism: in degree zero, `B₀` is then the image of the unit, which `g` preserves. -/
+theorem epi_toQuasicoherentAlgebra_map {A B : GradedQuasicoherentAlgebra X} (g : A ⟶ B)
+    [Epi B.obj.toMon.one] (hg : ∀ n, 0 < n → Epi (g.hom.hom.hom n)) :
+    Epi (toQuasicoherentAlgebra.map g).hom.hom.hom := by
+  refine ⟨fun {Z} u v h ↦ toQuasicoherentAlgebra_hom_ext fun n ↦ ?_⟩
+  -- The composites are typed partly in `SheafOfModules X.ringCatSheaf` and partly in
+  -- `X.Modules`, which `rw` does not identify, so the equations are chained as terms.
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have e (w : (toQuasicoherentAlgebra.obj B).obj.X ⟶ Z) :
+        B.obj.toMon.one ≫ ιTotal B 0 ≫ w = η[(toQuasicoherentAlgebra.obj A).obj.X] ≫
+          (toQuasicoherentAlgebra.map g).hom.hom.hom ≫ w :=
+      (one_ιTotal_assoc B w).trans
+        (IsMonHom.one_hom_assoc (self := (toQuasicoherentAlgebra.map g).hom.hom.isMonHom_hom) _
+          w).symm
+    exact (cancel_epi B.obj.toMon.one).1 ((e u).trans ((congrArg (_ ≫ ·) h).trans (e v).symm))
+  · have := hg n hn
+    exact (cancel_epi (g.hom.hom.hom n)).1
+      ((ιTotal_toQuasicoherentAlgebra_map_assoc g n u).symm.trans
+        ((congrArg (ιTotal A n ≫ ·) h).trans (ιTotal_toQuasicoherentAlgebra_map_assoc g n v)))
 
 end GradedQuasicoherentAlgebra
 
