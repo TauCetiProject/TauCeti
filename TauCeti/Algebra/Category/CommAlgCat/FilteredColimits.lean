@@ -8,26 +8,23 @@ module
 public import Mathlib.Algebra.Category.AlgCat.FilteredColimits
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
 public import Mathlib.Algebra.Category.Ring.FilteredColimits
-public import Mathlib.CategoryTheory.Limits.Preserves.Over
-public import Mathlib.RingTheory.TensorProduct.Maps
 
 /-!
 # Filtered colimits in commutative algebras
 
-The forgetful functor from commutative algebras over a base ring to types preserves small
-filtered colimits. This is deduced from the corresponding fact for commutative rings, using the
-equivalence between commutative algebras and commutative rings under the base. Since the
-forgetful functor from algebras to types reflects filtered colimits, the forgetful functor from
-commutative algebras to algebras preserves them as well.
-
-Every element of the tensor product of two such colimits comes from the tensor product
-of two stages at a common index (`isColimit_exists_tensor_rep`).
+The forgetful functor from commutative algebras over a base ring to commutative rings preserves
+filtered colimits: a colimit of the underlying diagram of rings carries the algebra structure
+induced by any one of its legs, and is then a colimit of commutative algebras. This follows the
+construction of filtered colimits of algebras in Mathlib
+(`Mathlib/Algebra/Category/AlgCat/FilteredColimits.lean`). Consequently the forgetful functor
+from commutative algebras to types preserves small filtered colimits, and, since the forgetful
+functor from algebras to types reflects filtered colimits, so does the forgetful functor from
+commutative algebras to algebras.
 -/
 
 public section
 
 open CategoryTheory Limits
-open scoped TensorProduct
 
 universe v u
 
@@ -35,64 +32,80 @@ namespace CommAlgCat
 
 variable {Base : Type u} [CommRing Base]
 
-/-- The forgetful functor from commutative algebras to types is the composite of the equivalence
-with commutative rings under the base, the forgetful functor to commutative rings, and the
-forgetful functor to types. -/
-@[expose, simps!]
-def forgetIsoUnderForget : forget (CommAlgCat.{u} Base) ≅
-    (commAlgCatEquivUnder (CommRingCat.of Base)).functor ⋙
-      Under.forget (CommRingCat.of Base) ⋙ forget CommRingCat.{u} :=
-  NatIso.ofComponents fun _ => Iso.refl _
+section
+
+variable {J : Type*} [Category* J] {F : J ⥤ CommAlgCat.{v} Base}
+  {c : Cocone (F ⋙ forget₂ _ CommRingCat.{v})}
+
+/-- (Implementation): The algebra structure on the cocone point of the underlying diagram of
+rings induced by the `j`-th leg. When `J` is filtered, every choice of `j` gives the same
+structure. -/
+private abbrev algebraOfIsFiltered (j : J) : Algebra Base c.pt :=
+  ((c.ι.app j).hom.comp (algebraMap Base (F.obj j))).toAlgebra
+
+variable [IsFilteredOrEmpty J]
+
+/-- The cocone of the underlying diagram of rings lifted to `CommAlgCat Base`, with the algebra
+structure on the cocone point induced by the `j`-th leg. -/
+private def coconeOfIsFiltered (j : J) : Cocone F where
+  pt :=
+    letI : Algebra Base c.pt := algebraOfIsFiltered j
+    of Base c.pt
+  ι.app k := by
+    letI : Algebra Base c.pt := algebraOfIsFiltered j
+    refine ofHom { __ := (c.ι.app k).hom, commutes' r := ?_ }
+    simp [RingHom.algebraMap_toAlgebra, ← c.w (IsFiltered.leftToMax j k),
+      ← c.w (IsFiltered.rightToMax j k)]
+  ι.naturality k k' f := by
+    ext
+    exact c.ι.naturality_apply _ _
+
+/-- The lifted cocone is colimiting. -/
+private def isColimitCoconeOfIsFiltered (hc : IsColimit c) (j : J) :
+    IsColimit (coconeOfIsFiltered (c := c) j) where
+  desc s := by
+    letI : Algebra Base c.pt := algebraOfIsFiltered j
+    refine ofHom { __ := (hc.desc <| Functor.mapCocone _ s).hom, commutes' r := ?_ }
+    simp [RingHom.algebraMap_toAlgebra, ← ConcreteCategory.comp_apply]
+  fac s k := by
+    ext
+    apply elementwise_of% hc.fac
+  uniq s m hm := by
+    ext
+    congrm $(hc.uniq (Functor.mapCocone _ s) ((forget₂ _ _).map m) fun j ↦ ?_) _
+    ext
+    congrm $(hm _) _
+
+end
+
+/-- The forgetful functor from commutative algebras to commutative rings preserves filtered
+colimits. -/
+noncomputable instance forget₂CommRingCat_preservesFilteredColimits :
+    PreservesFilteredColimits (forget₂ (CommAlgCat.{v} Base) CommRingCat.{v}) where
+  preserves_filtered_colimits J _ _ := ⟨fun {F} ↦
+    have hc := colimit.isColimit (F ⋙ forget₂ _ CommRingCat.{v})
+    preservesColimit_of_preserves_colimit_cocone
+      (isColimitCoconeOfIsFiltered hc (IsFiltered.nonempty (C := J)).some)
+      -- The lifted cocone is mapped back to `c` itself.
+      (hc.ofIsoColimit (Cocone.ext (Iso.refl _)))⟩
 
 /-- The forgetful functor from commutative algebras to types preserves small filtered colimits. -/
 noncomputable instance forget_preservesFilteredColimits :
-    PreservesFilteredColimits (forget (CommAlgCat.{u} Base)) :=
-  ⟨fun _ _ _ => preservesColimitsOfShape_of_natIso (forgetIsoUnderForget (Base := Base)).symm⟩
+    PreservesFilteredColimits (forget (CommAlgCat.{v} Base)) where
+  preserves_filtered_colimits _ _ _ :=
+    preservesColimitsOfShape_of_natIso
+      (eqToIso (HasForget₂.forget_comp (C := CommAlgCat.{v} Base) (D := CommRingCat.{v})))
 
 /-- The forgetful functor from commutative algebras to algebras preserves small filtered
 colimits. -/
 noncomputable instance forget₂AlgCat_preservesFilteredColimits :
-    PreservesFilteredColimits (forget₂ (CommAlgCat.{u} Base) (AlgCat.{u} Base)) where
+    PreservesFilteredColimits (forget₂ (CommAlgCat.{v} Base) (AlgCat.{v} Base)) where
   preserves_filtered_colimits J _ _ :=
     have : PreservesColimitsOfShape J
-        (forget₂ (CommAlgCat.{u} Base) (AlgCat.{u} Base) ⋙ forget (AlgCat.{u} Base)) :=
+        (forget₂ (CommAlgCat.{v} Base) (AlgCat.{v} Base) ⋙ forget (AlgCat.{v} Base)) :=
       preservesColimitsOfShape_of_natIso (eqToIso HasForget₂.forget_comp).symm
-    have : ReflectsColimitsOfShape J (forget (AlgCat.{u} Base)) :=
+    have : ReflectsColimitsOfShape J (forget (AlgCat.{v} Base)) :=
       reflectsColimitsOfShape_of_reflectsIsomorphisms
-    preservesColimitsOfShape_of_reflects_of_preserves _ (forget (AlgCat.{u} Base))
-
-/-- Tensor products of cocone legs are compatible with the maps of the two diagrams. -/
-theorem tensorProduct_map_ι_app_map {J : Type*} [Category* J]
-    {F G : J ⥤ CommAlgCat.{v} Base} (c : Cocone F) (d : Cocone G)
-    {j k : J} (f : j ⟶ k) (y : F.obj j ⊗[Base] G.obj j) :
-    Algebra.TensorProduct.map (c.ι.app k).hom (d.ι.app k).hom
-        (Algebra.TensorProduct.map (F.map f).hom (G.map f).hom y) =
-      Algebra.TensorProduct.map (c.ι.app j).hom (d.ι.app j).hom y := by
-  rw [← AlgHom.comp_apply, ← Algebra.TensorProduct.map_comp]
-  simp [← hom_comp]
-
-/-- Every element of the tensor product of two filtered colimits comes from the tensor
-product of stages at a common index. -/
-theorem isColimit_exists_tensor_rep {J : Type u} [SmallCategory J] [IsFiltered J]
-    {F G : J ⥤ CommAlgCat.{u} Base} {c : Cocone F} {d : Cocone G}
-    (hc : IsColimit c) (hd : IsColimit d) (x : c.pt ⊗[Base] d.pt) :
-    ∃ j, ∃ y : F.obj j ⊗[Base] G.obj j,
-      Algebra.TensorProduct.map (c.ι.app j).hom (d.ι.app j).hom y = x := by
-  induction x with
-  | tmul a b =>
-    obtain ⟨i, a, rfl⟩ := Concrete.isColimit_exists_rep F hc a
-    obtain ⟨j, b, rfl⟩ := Concrete.isColimit_exists_rep G hd b
-    -- `simp` applies `map_tmul` and the cocone conditions `c.w`, `d.w` elementwise.
-    exact ⟨IsFiltered.max i j,
-      F.map (IsFiltered.leftToMax i j) a ⊗ₜ[Base] G.map (IsFiltered.rightToMax i j) b, by simp⟩
-  | add a b ha hb =>
-    obtain ⟨i, a, rfl⟩ := ha
-    obtain ⟨j, b, rfl⟩ := hb
-    refine ⟨IsFiltered.max i j,
-      Algebra.TensorProduct.map (F.map (IsFiltered.leftToMax i j)).hom
-          (G.map (IsFiltered.leftToMax i j)).hom a +
-        Algebra.TensorProduct.map (F.map (IsFiltered.rightToMax i j)).hom
-          (G.map (IsFiltered.rightToMax i j)).hom b, ?_⟩
-    rw [map_add, tensorProduct_map_ι_app_map, tensorProduct_map_ι_app_map]
+    preservesColimitsOfShape_of_reflects_of_preserves _ (forget (AlgCat.{v} Base))
 
 end CommAlgCat
