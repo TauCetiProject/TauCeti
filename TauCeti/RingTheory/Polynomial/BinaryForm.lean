@@ -65,10 +65,10 @@ theorem roots_toFinset_map_radical {R S : Type*} [CommRing R] [IsDomain R]
     exact Multiset.mem_toFinset.2 (Multiset.mem_of_mem_nsmul hα')
 
 /-- The radical of a polynomial over a unique factorization domain `R` whose fraction field `K`
-is perfect is separable over every field extension of `K`. -/
+is perfect is separable over every `K`-algebra. -/
 theorem separable_map_radical {R : Type*} (K L : Type*) [CommRing R] [IsDomain R]
     [NormalizedGCDMonoid R] [UniqueFactorizationMonoid R] [Field K] [Algebra R K]
-    [IsFractionRing R K] [PerfectField K] [Field L] [Algebra R L] [Algebra K L]
+    [IsFractionRing R K] [PerfectField K] [CommSemiring L] [Algebra R L] [Algebra K L]
     [IsScalarTower R K L] (f : R[X]) :
     ((radical f).map (algebraMap R L)).Separable := by
   have hK : ((radical f).map (algebraMap R K)).Separable :=

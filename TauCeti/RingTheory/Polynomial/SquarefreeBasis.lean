@@ -30,9 +30,10 @@ single polynomial `f` into primitive, squarefree, pairwise relatively prime `s�
 squarefree basis of `{f}`. McCallum's family lifting theorem only uses
 the properties recorded here.
 
-Over the fraction field the product of a squarefree basis stays squarefree and its members stay
-pairwise coprime, by Gauss's lemma. Hence the resultants of distinct members are nonzero, and in
-characteristic zero the discriminant of the product of any subfamily is nonzero.
+Over every localization the product of a squarefree basis stays squarefree, and over the
+fraction field its members stay pairwise coprime, by Gauss's lemma. Hence the resultants of
+distinct members are nonzero, and in characteristic zero the discriminant of the product of any
+subfamily is nonzero.
 
 The factorization of each member also reconstructs its roots and their multiplicities after any
 specialization into a domain that does not nullify the member: the multiplicity of a root is a
@@ -48,7 +49,7 @@ following the convention of `Polynomial.rootMultiplicity`.
 * `Finset.IsSquarefreeBasis.exists_eq_C_content_mul_unit_mul_prod`: every member of the family
   is its content times a unit times a product of powers of the basis.
 * `Finset.IsSquarefreeBasis.squarefree_prod`, `Finset.IsSquarefreeBasis.squarefree_prod_map`:
-  the product of the basis is squarefree, also over the fraction field.
+  the product of the basis is squarefree, also over every localization of `D`.
 * `Finset.IsSquarefreeBasis.isCoprime_map`, `Finset.IsSquarefreeBasis.resultant_ne_zero`:
   distinct members of the basis are coprime over the fraction field, so their resultant is
   nonzero.
@@ -200,32 +201,37 @@ theorem squarefree_prod (hB : F.IsSquarefreeBasis B) : Squarefree (∏ b ∈ B, 
   Finset.squarefree_prod_of_pairwise_isCoprime
     (fun b hb b' hb' hne ↦ hB.isRelPrime b hb b' hb' hne) hB.squarefree
 
-/-- The product of the members of a squarefree basis is squarefree over the fraction field. -/
-theorem squarefree_prod_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
-    (hB : F.IsSquarefreeBasis B) : Squarefree (∏ b ∈ B, b.map (algebraMap D K)) := by
+/-- The product of the members of a squarefree basis is squarefree over every localization of
+`D`, in particular over the fraction field. -/
+theorem squarefree_prod_map {S : Type*} [CommSemiring S] [Algebra D S] (M : Submonoid D)
+    [IsLocalization M S] (hB : F.IsSquarefreeBasis B) :
+    Squarefree (∏ b ∈ B, b.map (algebraMap D S)) := by
   rw [← Polynomial.map_prod]
   have := IsGCDMonoid.isCancelMulZero D[X]
-  exact hB.squarefree_prod.map_localization_map (nonZeroDivisors D)
+  exact hB.squarefree_prod.map_localization_map M
 
 /-- In characteristic zero, the product of any subfamily of a squarefree basis has
 nonzero discriminant. This includes the empty subfamily, whose product is `1`. -/
 theorem discr_prod_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B)
     {A : Finset D[X]} (hA : A ⊆ B) : (∏ b ∈ A, b).discr ≠ 0 :=
-  have : IsCancelMulZero D := IsGCDMonoid.isCancelMulZero D
-  have : IsDomain D := ⟨⟩
   (hB.squarefree_prod.squarefree_of_dvd (Finset.prod_dvd_prod_of_subset A B _ hA)).discr_ne_zero
 
 /-- In characteristic zero, the discriminant of a member of a squarefree basis is nonzero. -/
 theorem discr_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) : b.discr ≠ 0 :=
-  have : IsCancelMulZero D := IsGCDMonoid.isCancelMulZero D
-  have : IsDomain D := ⟨⟩
   (hB.squarefree b hb).discr_ne_zero
 
 /-- Distinct members of a squarefree basis are coprime over the fraction field. -/
-theorem isCoprime_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
+theorem isCoprime_map (K : Type*) [CommRing K] [Algebra D K] [IsFractionRing D K]
     (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B) (hne : b ≠ b') :
-    IsCoprime (b.map (algebraMap D K)) (b'.map (algebraMap D K)) :=
-  ((hB.isRelPrime b hb b' hb' hne).map_localization_map (nonZeroDivisors D)).isCoprime
+    IsCoprime (b.map (algebraMap D K)) (b'.map (algebraMap D K)) := by
+  cases subsingleton_or_nontrivial D
+  · have := IsLocalization.subsingleton (M := nonZeroDivisors D) (S := K)
+      (Subsingleton.elim (1 : D) 0 ▸ one_mem _)
+    exact ⟨0, 0, Subsingleton.elim _ _⟩
+  have : IsCancelMulZero D := IsGCDMonoid.isCancelMulZero D
+  have : IsDomain D := ⟨⟩
+  let : Field K := IsFractionRing.toField D
+  exact ((hB.isRelPrime b hb b' hb' hne).map_localization_map (nonZeroDivisors D)).isCoprime
 
 /-- The resultant of two distinct members of a squarefree basis is nonzero. -/
 theorem resultant_ne_zero [IsDomain D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B)

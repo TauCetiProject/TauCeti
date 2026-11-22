@@ -785,8 +785,10 @@ theorem separable_map_iff_map_discr_ne_zero {K : Type*} [Field K]
     discr_map_of_natDegree_eq φ (natDegree_map_of_leadingCoeff_ne_zero φ hlc)]
 
 /-- A squarefree polynomial over a GCD domain of characteristic zero has nonzero discriminant. -/
-theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsDomain D]
-    [IsGCDMonoid D] [CharZero D] {p : D[X]} (hp : Squarefree p) : p.discr ≠ 0 := by
+theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsGCDMonoid D] [CharZero D]
+    {p : D[X]} (hp : Squarefree p) : p.discr ≠ 0 := by
+  have : IsCancelMulZero D := IsGCDMonoid.isCancelMulZero D
+  have : IsDomain D := ⟨⟩
   have hinj := IsFractionRing.injective D (FractionRing D)
   have : CharZero (FractionRing D) := charZero_of_injective_algebraMap hinj
   apply (map_ne_zero_iff (algebraMap D (FractionRing D)) hinj).mp
