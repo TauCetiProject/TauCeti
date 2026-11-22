@@ -141,7 +141,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-- **Geodesics out of a `c - c`-regular law are McCann's interpolation.** Let `E` be a
 finite-dimensional real inner product space, let `μ` and `ν` be laws of finite second moment with
-`μ` `c - c`-regular (in particular, absolutely continuous with respect to an additive Haar
+`μ` `c - c`-regular (for example, absolutely continuous with respect to an additive Haar
 measure), and let `T` be a Brenier map, an optimal transport map from `μ` to `ν` for the cost
 `‖x - y‖ ^ 2 / 2`. Then a curve `γ` is a geodesic segment of `P₂ (E)` from `μ` to `ν` exactly when
 for every `t ∈ [0, 1]` the law `γ t` is the image of `μ` under `x ↦ (1 - t) • x + t • T x`. -/

@@ -37,11 +37,15 @@ half-squared cost to a minimizer of squared ground distance, as used by `W₂`.
   `TauCeti.isOptimalCoupling_edist_rpow_two_of_norm_sub_sq_div_two` and
   `TauCeti.isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two` — convert between the
   half-squared Brenier cost and the squared-distance cost without changing optimal couplings;
-* `TauCeti.IsCoupling.lintegral_norm_sub_sq_div_two` and
+* `TauCeti.IsCoupling.lintegral_norm_sub_sq_div_two`,
+  `TauCeti.IsCoupling.transportCost_norm_sub_sq_div_two_ne_top`,
+  `TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_memLp`, and
   `TauCeti.IsCoupling.integral_inner_le` — for marginals with finite second moments, the quadratic
-  cost of a plan is a second-moment term minus its correlation, and the correlation is at most
-  that term; `ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two` is the identity for a pair
-  of random variables.
+  cost of a plan is a second-moment term minus its correlation, the optimal quadratic cost is
+  finite whenever a coupling exists (in particular for probability measures via the product
+  coupling), and the correlation is at most the second-moment term;
+  `ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two` is the identity for a pair of random
+  variables.
 
 ## References
 
@@ -226,6 +230,19 @@ theorem _root_.ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two {α : Type
     (continuous_ofReal_norm_sub_sq_div_two.comp_aestronglyMeasurable (h₁.prodMk h₂)).aemeasurable
   refine (lintegral_map' hcost hpair).symm.trans ?_
   rw [hσ.lintegral_norm_sub_sq_div_two hμ hν, integral_map hpair (h₁.inner h₂)]
+
+/-- **Coupled measures with finite second moments have finite quadratic transport cost.** -/
+theorem IsCoupling.transportCost_norm_sub_sq_div_two_ne_top (hσ : IsCoupling σ μ ν)
+    (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
+    transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ :=
+  ne_top_of_le_ne_top (hσ.lintegral_norm_sub_sq_div_two hμ hν ▸ ENNReal.ofReal_ne_top)
+    (transportCost_le_lintegral hσ _)
+
+/-- **Probability measures with finite second moments have finite quadratic transport cost.** -/
+theorem transportCost_norm_sub_sq_div_two_ne_top_of_memLp [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure ν] (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
+    transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ :=
+  (isCoupling_prod μ ν).transportCost_norm_sub_sq_div_two_ne_top hμ hν
 
 end TauCeti
 

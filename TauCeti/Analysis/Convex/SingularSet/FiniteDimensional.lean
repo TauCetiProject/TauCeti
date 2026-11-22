@@ -40,7 +40,8 @@ transferring along a continuous linear equivalence to `EuclideanSpace ℝ (Fin (
 that in any finite-dimensional real normed space `E`, `dimH (frontier C) ≤ finrank ℝ E - 1`
 (`Convex.dimH_frontier_le`) and every measure vanishing on measurable sets with
 `dimH A + 1 ≤ finrank ℝ E` or `dimH A ≤ finrank ℝ E - 1`—strengthening `Convex.addHaar_frontier`—
-sees `f` finite on a neighbourhood and differentiable almost everywhere on `{x | f x ≠ ⊤}`.
+sees `f` avoiding `⊤` on a neighbourhood and its real representative differentiable almost
+everywhere on `{x | f x ≠ ⊤}`.
 
 ## Main statements
 
@@ -257,7 +258,7 @@ theorem _root_.Convex.ae_mem_interior_of_null_lipschitz_graphs
 hypersurfaces.** Let `f : E → EReal` have convex real epigraph on a finite-dimensional real inner
 product space `E`, and let `μ` be any measure on `E` that gives mass `0` to every globally Lipschitz
 graph over the orthogonal complement of a unit vector. Then at `μ`-almost every point `x` of
-`{x | f x ≠ ⊤}`, `f` is finite on a neighbourhood of `x` and its real representative is
+`{x | f x ≠ ⊤}`, `f` avoids `⊤` on a neighbourhood of `x` and its real representative is
 differentiable at `x` (without assuming `f` never takes `⊥`). -/
 theorem ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs
     [MeasurableSpace E] {f : E → EReal} {μ : Measure E}

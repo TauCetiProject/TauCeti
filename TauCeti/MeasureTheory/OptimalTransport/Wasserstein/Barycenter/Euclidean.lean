@@ -9,8 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniqueness.Euclidean
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.PopulationBarycenter
-import TauCeti.Analysis.InnerProductSpace.OrthogonalLine.HausdorffDimension
-import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FrechetMean
 
 /-!
@@ -24,10 +22,9 @@ theorems of Agueh–Carlier and Le Gouic–Loubes
 every probability law `P` on `P₂(E)` of finite second moment. Combining existence with the Brenier
 uniqueness theorems of
 `TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniqueness.Euclidean` yields
-existence and uniqueness whenever positive mass is given to laws vanishing on Lipschitz graphs over
-hyperplanes, on Borel sets with `dimH A + 1 ≤ finrank ℝ E`, on small sets
-(`dimH A ≤ finrank ℝ E - 1`), or on laws absolutely continuous with respect to an additive Haar
-measure.
+existence and uniqueness whenever positive mass is given to `c - c`-regular laws (for example, via
+`TauCeti.isCCRegular_of_null_lipschitz_graphs`, `TauCeti.isCCRegular_of_dimH_add_one_le`,
+`TauCeti.isCCRegular_of_dimH_le`, or `TauCeti.isCCRegular_of_absolutelyContinuous`).
 
 For finitely many probability laws `μ i` on `E` of finite second moment with weights summing to
 `1`, any probability measure `ν` minimizing the weighted quadratic cost
@@ -42,21 +39,14 @@ specialization `TauCeti.existsUnique_isMinOn_sum_wassersteinEDist_sq_of_dimH_le`
 
 ## Main statements
 
-* `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_two_of_null_lipschitz_graphs`,
-  `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_two_of_dimH_add_one_le`,
-  `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_two_of_dimH_le`, and
-  `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_two` — existence and uniqueness of
-  population quadratic Wasserstein barycenters in `P₂(E)`;
-* `WassersteinSpace.existsUnique_isFrechetBarycenter_two_sum_smul_dirac_of_null_lipschitz_graphs`,
-  `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_two_sum_smul_dirac_of_dimH_add_one_le`,
-  `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_two_sum_smul_dirac_of_dimH_le`, and
-  `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_two_sum_smul_dirac` — existence and
-  uniqueness of finite quadratic barycenters in `P₂(E)`;
-* `TauCeti.existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_null_lipschitz_graphs`,
-  `TauCeti.existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_dimH_add_one_le`,
-  `TauCeti.existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_dimH_le`, and
-  `TauCeti.existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_absolutelyContinuous` — existence and
-  uniqueness of minimizers over `ProbabilityMeasure E`;
+* `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_two` — existence and uniqueness of
+  population quadratic Wasserstein barycenters in `P₂(E)` when `P` gives positive mass to
+  `c - c`-regular laws;
+* `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_two_sum_smul_dirac` — existence and
+  uniqueness of finite quadratic barycenters in `P₂(E)` when one positively weighted input law is
+  `c - c`-regular;
+* `TauCeti.existsUnique_isMinOn_sum_mul_wassersteinEDist_sq` — existence and uniqueness of
+  minimizers over `ProbabilityMeasure E` when one positively weighted input law is `c - c`-regular;
 * `TauCeti.existsUnique_isMinOn_sum_wassersteinEDist_sq_of_dimH_le` — **Agueh–Carlier existence and
   uniqueness of quadratic barycenters** on `EuclideanSpace ℝ (Fin n)`.
 
@@ -72,7 +62,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Module Set
+open MeasureTheory Set
 open scoped ENNReal NNReal
 
 namespace TauCeti
@@ -84,119 +74,40 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 namespace WassersteinSpace
 
-/-- **Existence and uniqueness of population quadratic Wasserstein barycenters** when `P` gives
-positive mass to laws vanishing on Lipschitz graphs over hyperplanes. -/
-theorem existsUnique_isFrechetBarycenter_two_of_null_lipschitz_graphs
+/-- **Existence and uniqueness of population quadratic Wasserstein barycenters** (Le Gouic–Loubes)
+when `P` gives positive mass to `c - c`-regular laws. -/
+theorem existsUnique_isFrechetBarycenter_two
     (P : Measure (WassersteinSpace 2 E)) [IsProbabilityMeasure P] (hP2 : HasFiniteMoment 2 P)
-    (hP : P {m : WassersteinSpace 2 E | ∀ (v : E), ‖v‖ = 1 → ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ),
-      LipschitzWith K g →
-        ((m : ProbabilityMeasure E) : Measure E)
-          (range fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v) = 0} ≠ 0) :
+    (hP : P {m : WassersteinSpace 2 E |
+      IsCCRegular ((m : ProbabilityMeasure E) : Measure E)} ≠ 0) :
     ∃! ν : WassersteinSpace 2 E, IsFrechetBarycenter 2 P ν := by
   have : Fact ((1 : ℝ≥0∞) ≤ 2) := ⟨one_le_two⟩
   obtain ⟨ν, hν⟩ := exists_isFrechetBarycenter ENNReal.ofNat_ne_top P hP2
   exact ⟨ν, hν, fun ν' hν' =>
-    subsingleton_frechetBarycenters_two_of_null_lipschitz_graphs hP
+    subsingleton_frechetBarycenters_two hP
       (mem_frechetBarycenters.mpr hν') (mem_frechetBarycenters.mpr hν)⟩
 
-/-- **Existence and uniqueness of population quadratic Wasserstein barycenters** when `P` gives
-positive mass to laws vanishing on Borel sets with `dimH A + 1 ≤ finrank ℝ E`. -/
-theorem existsUnique_isFrechetBarycenter_two_of_dimH_add_one_le
-    (P : Measure (WassersteinSpace 2 E)) [IsProbabilityMeasure P] (hP2 : HasFiniteMoment 2 P)
-    (hP : P {m : WassersteinSpace 2 E | ∀ A, MeasurableSet A →
-      dimH A + 1 ≤ (finrank ℝ E : ℝ≥0∞) →
-        ((m : ProbabilityMeasure E) : Measure E) A = 0} ≠ 0) :
-    ∃! ν : WassersteinSpace 2 E, IsFrechetBarycenter 2 P ν :=
-  existsUnique_isFrechetBarycenter_two_of_null_lipschitz_graphs P hP2
-    (mt (measure_mono_null fun _ hm _ hv _ _ hg =>
-      measure_range_add_smul_eq_zero_of_dimH_add_one_le hm hv hg) hP)
-
-/-- **Existence and uniqueness of population quadratic Wasserstein barycenters** when `P` gives
-positive mass to laws vanishing on small sets (`dimH A ≤ finrank ℝ E - 1`). -/
-theorem existsUnique_isFrechetBarycenter_two_of_dimH_le
-    (P : Measure (WassersteinSpace 2 E)) [IsProbabilityMeasure P] (hP2 : HasFiniteMoment 2 P)
-    (hP : P {m : WassersteinSpace 2 E | ∀ A, MeasurableSet A →
-      dimH A ≤ ((finrank ℝ E - 1 : ℕ) : ℝ≥0∞) →
-        ((m : ProbabilityMeasure E) : Measure E) A = 0} ≠ 0) :
-    ∃! ν : WassersteinSpace 2 E, IsFrechetBarycenter 2 P ν := by
-  refine existsUnique_isFrechetBarycenter_two_of_dimH_add_one_le P hP2
-    (mt (measure_mono_null ?_) hP)
-  exact fun _ hm _ hA hdim => hm _ hA (by
-    simpa only [ENNReal.natCast_sub, Nat.cast_one] using
-      ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim)
-
-/-- **Existence and uniqueness of population quadratic Wasserstein barycenters** (Le Gouic–Loubes)
-when `P` gives positive mass to laws absolutely continuous with respect to an additive Haar
-measure. -/
-theorem existsUnique_isFrechetBarycenter_two {ρ : Measure E} [ρ.IsAddHaarMeasure]
-    (P : Measure (WassersteinSpace 2 E)) [IsProbabilityMeasure P] (hP2 : HasFiniteMoment 2 P)
-    (hP : P {m : WassersteinSpace 2 E | ((m : ProbabilityMeasure E) : Measure E) ≪ ρ} ≠ 0) :
-    ∃! ν : WassersteinSpace 2 E, IsFrechetBarycenter 2 P ν := by
-  refine existsUnique_isFrechetBarycenter_two_of_dimH_add_one_le P hP2
-    (mt (measure_mono_null ?_) hP)
-  exact fun _ hm _ _ hdim => hm (ρ.addHaar_eq_zero_of_dimH_add_one_le_finrank hdim)
-
-/-- **Existence and uniqueness of finite quadratic Wasserstein barycenters in `P₂(E)`** when one
-positively weighted input law vanishes on Lipschitz graphs over hyperplanes. -/
-theorem existsUnique_isFrechetBarycenter_two_sum_smul_dirac_of_null_lipschitz_graphs
+/-- **Existence and uniqueness of finite quadratic Wasserstein barycenters in `P₂(E)`**
+(Agueh–Carlier) when one positively weighted input law is `c - c`-regular. -/
+theorem existsUnique_isFrechetBarycenter_two_sum_smul_dirac
     {ι : Type*} [Fintype ι] {w : ι → ℝ≥0} (hw : ∑ i, w i = 1) (μ : ι → WassersteinSpace 2 E)
     {j : ι} (hj : w j ≠ 0)
-    (hμj : ∀ (v : E), ‖v‖ = 1 → ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ), LipschitzWith K g →
-      ((μ j : ProbabilityMeasure E) : Measure E)
-        (range fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v) = 0) :
+    (hμj : IsCCRegular ((μ j : ProbabilityMeasure E) : Measure E)) :
     ∃! ν : WassersteinSpace 2 E, IsFrechetBarycenter 2 (∑ i, w i • Measure.dirac (μ i)) ν := by
   have : Fact ((1 : ℝ≥0∞) ≤ 2) := ⟨one_le_two⟩
   obtain ⟨ν, hν⟩ := exists_isFrechetBarycenter_sum_smul_dirac ENNReal.ofNat_ne_top hw μ
   exact ⟨ν, hν, fun ν' hν' =>
-    subsingleton_frechetBarycenters_two_sum_smul_dirac_of_null_lipschitz_graphs hj hμj
+    subsingleton_frechetBarycenters_two_sum_smul_dirac hj hμj
       (mem_frechetBarycenters.mpr hν') (mem_frechetBarycenters.mpr hν)⟩
-
-/-- **Existence and uniqueness of finite quadratic Wasserstein barycenters in `P₂(E)`** when one
-positively weighted input law vanishes on Borel sets with `dimH A + 1 ≤ finrank ℝ E`. -/
-theorem existsUnique_isFrechetBarycenter_two_sum_smul_dirac_of_dimH_add_one_le
-    {ι : Type*} [Fintype ι] {w : ι → ℝ≥0} (hw : ∑ i, w i = 1) (μ : ι → WassersteinSpace 2 E)
-    {j : ι} (hj : w j ≠ 0)
-    (hμj : ∀ A, MeasurableSet A → dimH A + 1 ≤ (finrank ℝ E : ℝ≥0∞) →
-      ((μ j : ProbabilityMeasure E) : Measure E) A = 0) :
-    ∃! ν : WassersteinSpace 2 E, IsFrechetBarycenter 2 (∑ i, w i • Measure.dirac (μ i)) ν :=
-  existsUnique_isFrechetBarycenter_two_sum_smul_dirac_of_null_lipschitz_graphs hw μ hj
-    fun _ hv _ _ hg => measure_range_add_smul_eq_zero_of_dimH_add_one_le hμj hv hg
-
-/-- **Existence and uniqueness of finite quadratic Wasserstein barycenters in `P₂(E)`**
-(Agueh–Carlier) when one positively weighted input law vanishes on small sets
-(`dimH A ≤ finrank ℝ E - 1`). -/
-theorem existsUnique_isFrechetBarycenter_two_sum_smul_dirac_of_dimH_le
-    {ι : Type*} [Fintype ι] {w : ι → ℝ≥0} (hw : ∑ i, w i = 1) (μ : ι → WassersteinSpace 2 E)
-    {j : ι} (hj : w j ≠ 0)
-    (hμj : ∀ A, MeasurableSet A → dimH A ≤ ((finrank ℝ E - 1 : ℕ) : ℝ≥0∞) →
-      ((μ j : ProbabilityMeasure E) : Measure E) A = 0) :
-    ∃! ν : WassersteinSpace 2 E, IsFrechetBarycenter 2 (∑ i, w i • Measure.dirac (μ i)) ν :=
-  existsUnique_isFrechetBarycenter_two_sum_smul_dirac_of_dimH_add_one_le hw μ hj
-    fun _ hA hdim => hμj _ hA (by
-      simpa only [ENNReal.natCast_sub, Nat.cast_one] using
-        ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim)
-
-/-- **Existence and uniqueness of finite quadratic Wasserstein barycenters in `P₂(E)`**
-(Agueh–Carlier) when one positively weighted input law is absolutely continuous with respect to an
-additive Haar measure. -/
-theorem existsUnique_isFrechetBarycenter_two_sum_smul_dirac {ρ : Measure E} [ρ.IsAddHaarMeasure]
-    {ι : Type*} [Fintype ι] {w : ι → ℝ≥0} (hw : ∑ i, w i = 1) (μ : ι → WassersteinSpace 2 E)
-    {j : ι} (hj : w j ≠ 0)
-    (hμj : ((μ j : ProbabilityMeasure E) : Measure E) ≪ ρ) :
-    ∃! ν : WassersteinSpace 2 E, IsFrechetBarycenter 2 (∑ i, w i • Measure.dirac (μ i)) ν :=
-  existsUnique_isFrechetBarycenter_two_sum_smul_dirac_of_dimH_add_one_le hw μ hj
-    fun _ _ hdim => hμj (ρ.addHaar_eq_zero_of_dimH_add_one_le_finrank hdim)
 
 end WassersteinSpace
 
-/-- **Existence and uniqueness of quadratic barycenters over `ProbabilityMeasure E`** when one
-positively weighted input law vanishes on globally Lipschitz graphs over hyperplanes. -/
-theorem existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_null_lipschitz_graphs
+/-- **Existence and uniqueness of quadratic barycenters over `ProbabilityMeasure E`**
+(Agueh–Carlier) when one positively weighted input law is `c - c`-regular. -/
+theorem existsUnique_isMinOn_sum_mul_wassersteinEDist_sq
     {ι : Type*} [Fintype ι] (w : ι → ℝ≥0) (hw : ∑ i, w i = 1) (μ : ι → Measure E)
     [∀ i, IsProbabilityMeasure (μ i)] (hμ : ∀ i, HasFiniteMoment 2 (μ i))
-    {j : ι} (hj : w j ≠ 0)
-    (hμj : ∀ (v : E), ‖v‖ = 1 → ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ), LipschitzWith K g →
-      μ j (range fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v) = 0) :
+    {j : ι} (hj : w j ≠ 0) (hμj : IsCCRegular (μ j)) :
     ∃! ν : ProbabilityMeasure E,
       IsMinOn (fun ν : ProbabilityMeasure E =>
         ∑ i, (w i : ℝ≥0∞) * wassersteinEDist 2 (ν : Measure E) (μ i) ^ 2) univ ν := by
@@ -206,53 +117,9 @@ theorem existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_null_lipschitz_graph
     congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)
   have h := WassersteinSpace.existsUnique_isMinOn_sum_mul_wassersteinEDist_rpow_of_existsUnique
     (p := 2) ENNReal.ofNat_ne_top (μ := μW) hj
-    (WassersteinSpace.existsUnique_isFrechetBarycenter_two_sum_smul_dirac_of_null_lipschitz_graphs
-      hw μW hj (by simpa only [hcoe] using hμj))
+    (WassersteinSpace.existsUnique_isFrechetBarycenter_two_sum_smul_dirac hw μW hj
+      (by simpa only [hcoe] using hμj))
   simpa only [hcoe, ENNReal.toReal_ofNat, ENNReal.rpow_ofNat] using h
-
-/-- **Existence and uniqueness of quadratic barycenters over `ProbabilityMeasure E`** when one
-positively weighted input law vanishes on Borel sets with `dimH A + 1 ≤ finrank ℝ E`. This form
-remains non-vacuous when `finrank ℝ E = 0`. -/
-theorem existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_dimH_add_one_le
-    {ι : Type*} [Fintype ι] (w : ι → ℝ≥0) (hw : ∑ i, w i = 1) (μ : ι → Measure E)
-    [∀ i, IsProbabilityMeasure (μ i)] (hμ : ∀ i, HasFiniteMoment 2 (μ i))
-    {j : ι} (hj : w j ≠ 0)
-    (hsmall : ∀ A, MeasurableSet A → dimH A + 1 ≤ (finrank ℝ E : ℝ≥0∞) → μ j A = 0) :
-    ∃! ν : ProbabilityMeasure E,
-      IsMinOn (fun ν : ProbabilityMeasure E =>
-        ∑ i, (w i : ℝ≥0∞) * wassersteinEDist 2 (ν : Measure E) (μ i) ^ 2) univ ν :=
-  existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_null_lipschitz_graphs w hw μ hμ hj
-    fun _ hv _ _ hg => measure_range_add_smul_eq_zero_of_dimH_add_one_le hsmall hv hg
-
-/-- **Existence and uniqueness of quadratic barycenters over `ProbabilityMeasure E`**
-(Agueh–Carlier) when one positively weighted input law vanishes on small sets
-(`dimH A ≤ finrank ℝ E - 1`). -/
-theorem existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_dimH_le
-    {ι : Type*} [Fintype ι] (w : ι → ℝ≥0) (hw : ∑ i, w i = 1) (μ : ι → Measure E)
-    [∀ i, IsProbabilityMeasure (μ i)] (hμ : ∀ i, HasFiniteMoment 2 (μ i))
-    {j : ι} (hj : w j ≠ 0)
-    (hsmall : ∀ A, MeasurableSet A → dimH A ≤ ((finrank ℝ E - 1 : ℕ) : ℝ≥0∞) → μ j A = 0) :
-    ∃! ν : ProbabilityMeasure E,
-      IsMinOn (fun ν : ProbabilityMeasure E =>
-        ∑ i, (w i : ℝ≥0∞) * wassersteinEDist 2 (ν : Measure E) (μ i) ^ 2) univ ν :=
-  existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_dimH_add_one_le w hw μ hμ hj
-    fun _ hA hdim => hsmall _ hA (by
-      simpa only [ENNReal.natCast_sub, Nat.cast_one] using
-        ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim)
-
-/-- **Existence and uniqueness of quadratic barycenters over `ProbabilityMeasure E`**
-(Agueh–Carlier) when one positively weighted input law is absolutely continuous with respect to an
-additive Haar measure. -/
-theorem existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_absolutelyContinuous
-    {ρ : Measure E} [ρ.IsAddHaarMeasure]
-    {ι : Type*} [Fintype ι] (w : ι → ℝ≥0) (hw : ∑ i, w i = 1) (μ : ι → Measure E)
-    [∀ i, IsProbabilityMeasure (μ i)] (hμ : ∀ i, HasFiniteMoment 2 (μ i))
-    {j : ι} (hj : w j ≠ 0) (hμj : μ j ≪ ρ) :
-    ∃! ν : ProbabilityMeasure E,
-      IsMinOn (fun ν : ProbabilityMeasure E =>
-        ∑ i, (w i : ℝ≥0∞) * wassersteinEDist 2 (ν : Measure E) (μ i) ^ 2) univ ν :=
-  existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_dimH_add_one_le w hw μ hμ hj
-    fun _ _ hdim => hμj (ρ.addHaar_eq_zero_of_dimH_add_one_le_finrank hdim)
 
 end GeneralInnerProduct
 
@@ -262,9 +129,9 @@ second moment on `ℝⁿ` and weights `w i ≥ 0` summing to one, suppose that o
 positive weight vanishes on small sets: `μ j A = 0` for every Borel `A` of Hausdorff dimension at
 most `n - 1`. Then exactly one probability measure minimizes `ν ↦ ∑ i, w i W₂(ν, μ i)²`.
 For `n = 0` the truncated `n - 1` is `0`, the hypothesis `hsmall` is unsatisfiable, and the
-statement is vacuous; see
-`TauCeti.existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_dimH_add_one_le` for the
-dimension-zero-compatible formulation `dimH A + 1 ≤ finrank ℝ E`. -/
+statement is vacuous; use `TauCeti.existsUnique_isMinOn_sum_mul_wassersteinEDist_sq` together with
+`TauCeti.isCCRegular_of_dimH_add_one_le` for the dimension-zero-compatible formulation
+`dimH A + 1 ≤ finrank ℝ E`. -/
 theorem existsUnique_isMinOn_sum_wassersteinEDist_sq_of_dimH_le {n : ℕ} {ι : Type*} [Fintype ι]
     (w : ι → ℝ≥0) (hw : ∑ i, w i = 1) (μ : ι → Measure (EuclideanSpace ℝ (Fin n)))
     [∀ i, IsProbabilityMeasure (μ i)] (hμ : ∀ i, HasFiniteMoment 2 (μ i))
@@ -273,8 +140,8 @@ theorem existsUnique_isMinOn_sum_wassersteinEDist_sq_of_dimH_le {n : ℕ} {ι : 
     ∃! ν : ProbabilityMeasure (EuclideanSpace ℝ (Fin n)),
       IsMinOn (fun ν : ProbabilityMeasure (EuclideanSpace ℝ (Fin n)) =>
         ∑ i, (w i : ℝ≥0∞) * wassersteinEDist 2 (ν : Measure _) (μ i) ^ 2) univ ν :=
-  existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_dimH_le
-    (E := EuclideanSpace ℝ (Fin n)) w hw μ hμ hj fun A hA hdim =>
-      hsmall A hA (by simpa only [finrank_euclideanSpace_fin] using hdim)
+  existsUnique_isMinOn_sum_mul_wassersteinEDist_sq w hw μ hμ hj
+    (isCCRegular_of_dimH_le fun A hA hdim =>
+      hsmall A hA (by simpa only [finrank_euclideanSpace_fin] using hdim))
 
 end TauCeti

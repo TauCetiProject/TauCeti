@@ -9,9 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Order.Interval.Set.Basic
-import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Slope
-import Mathlib.Analysis.Calculus.FDeriv.Comp
 
 /-!
 # Differentiability criteria

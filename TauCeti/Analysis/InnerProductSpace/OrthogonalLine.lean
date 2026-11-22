@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Covectors and graphs over an orthogonal hyperplane
@@ -21,7 +22,9 @@ Orthogonal line coordinates `TauCeti.orthogonalLineEquiv` also identify the grap
 `Set.range (fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v)` of a scalar function `g : (ℝ ∙ v)ᗮ → ℝ` over
 the orthogonal hyperplane of a unit vector `v` with the image of `g.graph`: when `g` is continuous
 (and in particular when `g` is Lipschitz), this graph is closed in `E`, and when `g` is
-`K`-Lipschitz the parametrization `w ↦ (w : E) + g w • v` is `(1 + K)`-Lipschitz.
+`K`-Lipschitz the parametrization `w ↦ (w : E) + g w • v` is `(1 + K)`-Lipschitz. We also record
+the transformation of a graph `{x | ⟪x, e⟫ = w (P x)}` under a continuous linear equivalence, and
+the collapse of orthogonal graphs and hyperplanes to singletons in dimension one.
 
 ## Main results
 
@@ -32,6 +35,11 @@ the orthogonal hyperplane of a unit vector `v` with the image of `g.graph`: when
 * `TauCeti.isClosed_range_add_smul_of_continuous` and
   `TauCeti.isClosed_range_add_smul_of_lipschitzWith`: a continuous or globally Lipschitz graph over
   `(ℝ ∙ v)ᗮ` (`‖v‖ = 1`) is closed.
+* `TauCeti.image_continuousLinearEquiv_setOf_inner_eq`: image of a graph over `(ℝ ∙ e)ᗮ` under a
+  continuous linear equivalence `L : E ≃L[ℝ] F`.
+* `TauCeti.range_eq_singleton_of_finrank_eq_one` and
+  `TauCeti.exists_unit_singleton_eq_setOf_inner_eq`: orthogonal graphs and singletons in
+  dimension one.
 -/
 
 public section
@@ -86,5 +94,80 @@ theorem isClosed_range_add_smul_of_lipschitzWith {v : E} (hv : ‖v‖ = 1) {K :
     {g : (ℝ ∙ v)ᗮ → ℝ} (hg : LipschitzWith K g) :
     IsClosed (Set.range fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v) :=
   isClosed_range_add_smul_of_continuous hv hg.continuous
+
+/-- The image of a graph `{x | ⟪x, e⟫ = w (P x)}` over `(ℝ ∙ e)ᗮ` under a continuous linear
+equivalence `L : E ≃L[ℝ] F` is again a graph over `(ℝ ∙ e')ᗮ` (for `e' = ‖L e‖⁻¹ • L e`) of a
+positively scaled pullback `c * w ∘ B - ℓ`, where `B` and `ℓ` are continuous linear. -/
+theorem image_continuousLinearEquiv_setOf_inner_eq {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] (L : E ≃L[ℝ] F) {e : E} (he : ‖e‖ = 1)
+    (w : ↥(ℝ ∙ e)ᗮ → ℝ) :
+    ∃ (e' : F) (_ : ‖e'‖ = 1) (c : ℝ) (_ : 0 < c)
+      (B : ↥(ℝ ∙ e')ᗮ →L[ℝ] ↥(ℝ ∙ e)ᗮ) (ℓ : ↥(ℝ ∙ e')ᗮ →L[ℝ] ℝ),
+      L '' {x : E | inner ℝ x e = w ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)} =
+        {z : F | inner ℝ z e' = c * w (B ((ℝ ∙ e')ᗮ.orthogonalProjectionOnto z)) -
+          ℓ ((ℝ ∙ e')ᗮ.orthogonalProjectionOnto z)} := by
+  let c := ‖L e‖
+  let e' : F := c⁻¹ • L e
+  have hc : 0 < c := norm_pos_iff.2 ((map_ne_zero_iff L L.injective).2 fun h => by simp [h] at he)
+  have he' : ‖e'‖ = 1 := by simp [e', c, norm_smul, inv_mul_cancel₀ hc.ne']
+  let B : ↥(ℝ ∙ e')ᗮ →L[ℝ] ↥(ℝ ∙ e)ᗮ :=
+    (ℝ ∙ e)ᗮ.orthogonalProjectionOnto.comp (L.symm.toContinuousLinearMap.comp (ℝ ∙ e')ᗮ.subtypeL)
+  let ℓ : ↥(ℝ ∙ e')ᗮ →L[ℝ] ℝ :=
+    c • ((innerSL ℝ e).comp (L.symm.toContinuousLinearMap.comp (ℝ ∙ e')ᗮ.subtypeL))
+  refine ⟨e', he', c, hc, B, ℓ, Set.ext fun z => ?_⟩
+  have hd := congrArg L.symm (real_inner_comm e' z ▸ orthogonalProjectionOnto_add_inner_smul he' z)
+  have hLe' : L.symm e' = c⁻¹ • e := by simp [e', map_smul]
+  simp only [map_add, map_smul, hLe', smul_smul] at hd
+  have hproj : (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (L.symm z) =
+      B ((ℝ ∙ e')ᗮ.orthogonalProjectionOnto z) := by
+    simpa [B, map_add, map_smul,
+      Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero]
+      using (congrArg (ℝ ∙ e)ᗮ.orthogonalProjectionOnto hd).symm
+  have hi : c * inner ℝ (L.symm z) e = ℓ ((ℝ ∙ e')ᗮ.orthogonalProjectionOnto z) + inner ℝ z e' := by
+    have h : inner ℝ (L.symm ((ℝ ∙ e')ᗮ.orthogonalProjectionOnto z)) e + inner ℝ z e' * c⁻¹ =
+        inner ℝ (L.symm z) e := by
+      simpa [inner_add_left, real_inner_smul_left, he] using congrArg (inner ℝ · e) hd
+    rw [← h, mul_add]
+    simp [ℓ, real_inner_comm e]
+    field_simp [hc.ne']
+  simp only [Set.mem_image, Set.mem_ofPred_eq]
+  refine ⟨?_, fun hz => ⟨L.symm z, mul_left_cancel₀ hc.ne' (by rw [hproj]; linarith),
+    L.apply_symm_apply z⟩⟩
+  rintro ⟨x, hx, rfl⟩
+  rw [L.symm_apply_apply] at hproj hi
+  have hmul := congrArg (c * ·) hx
+  rw [hproj] at hmul
+  linarith
+
+/-- In a one-dimensional real inner product space, every parametric graph over `(ℝ ∙ e)ᗮ` collapses
+to the singleton `{φ 0 • e}`. -/
+theorem range_eq_singleton_of_finrank_eq_one (hdim : Module.finrank ℝ E = 1) {e : E}
+    (he : ‖e‖ = 1) (φ : ↥(ℝ ∙ e)ᗮ → ℝ) :
+    (Set.range fun y : ↥(ℝ ∙ e)ᗮ => (y : E) + φ y • e) = {φ 0 • e} := by
+  have horth := Submodule.orthogonal_span_singleton_eq_bot_of_finrank_eq_one hdim (v := e)
+    (fun h => by simp [h] at he)
+  ext z
+  refine ⟨?_, by rintro rfl; exact ⟨0, by simp⟩⟩
+  rintro ⟨y, rfl⟩
+  have hy0 : y = 0 := Subtype.ext ((Submodule.mem_bot ℝ).1 (horth ▸ y.property))
+  simp [hy0]
+
+/-- In a one-dimensional real inner product space, every singleton `{x}` is an affine hyperplane
+`{z | ⟪z, e⟫ = ⟪x, e⟫}` for a unit vector `e`. -/
+theorem exists_unit_singleton_eq_setOf_inner_eq (hdim : Module.finrank ℝ E = 1) (x : E) :
+    ∃ (e : E) (_ : ‖e‖ = 1), {x} = {z : E | inner ℝ z e = inner ℝ x e} := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hdim
+  obtain ⟨e, he⟩ := exists_norm_eq E (zero_le_one (α := ℝ))
+  have horth := Submodule.orthogonal_span_singleton_eq_bot_of_finrank_eq_one hdim (v := e)
+    (fun h => by simp [h] at he)
+  have hrep (w : E) : inner ℝ w e • e = w := by
+    have h := orthogonalProjectionOnto_add_inner_smul (𝕜 := ℝ) he w
+    have hmem : ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto w : E) ∈ (⊥ : Submodule ℝ E) := by
+      rw [← horth]
+      exact Subtype.prop _
+    have h0 := (Submodule.mem_bot ℝ).1 hmem
+    simpa only [h0, zero_add, real_inner_comm] using h
+  exact ⟨e, he, Set.ext fun z => ⟨by rintro rfl; simp, fun h =>
+    Set.mem_singleton_iff.2 (by rw [← hrep z, ← hrep x, Set.mem_ofPred_eq.mp h])⟩⟩
 
 end TauCeti

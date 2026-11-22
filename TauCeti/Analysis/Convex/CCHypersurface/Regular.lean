@@ -8,8 +8,12 @@ module
 public import Mathlib.MeasureTheory.Measure.Dirac.Def
 public import Mathlib.MeasureTheory.Measure.Sum
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
+public import Mathlib.Topology.MetricSpace.HausdorffDimension
 public import TauCeti.Analysis.Convex.CCHypersurface.Basic
+import TauCeti.Analysis.Convex.CCHypersurface.Measure
+import TauCeti.Analysis.Convex.CCHypersurface.Zajicek
 import TauCeti.Analysis.Convex.EffectiveDomain
+import TauCeti.Analysis.InnerProductSpace.OrthogonalLine.HausdorffDimension
 
 /-!
 # `c - c`-regular measures
@@ -18,7 +22,8 @@ A measure `μ` on a real inner product space `E` is **`c - c`-regular** (`TauCet
 avoiding Mathlib's topological `Measure.Regular`) if it vanishes on every `c - c` hypersurface
 (`TauCeti.IsCCHypersurface`). In finite dimensions, `IsCCRegular μ` is equivalent to `μ`-a.e.
 differentiability of every convex `E → ℝ` and is the sharp source regularity hypothesis for
-Brenier's theorem (`TauCeti/MeasureTheory/OptimalTransport/Brenier.lean`, `RegularSource.lean`).
+Brenier's theorem (`TauCeti/MeasureTheory/OptimalTransport/Brenier.lean`,
+`TauCeti/MeasureTheory/OptimalTransport/Brenier/RegularSource.lean`).
 
 ## Main declarations
 
@@ -30,7 +35,9 @@ Brenier's theorem (`TauCeti/MeasureTheory/OptimalTransport/Brenier.lean`, `Regul
 * `TauCeti.IsCCRegular.measure_singleton`, `TauCeti.IsCCRegular.nullSingletonClass`,
   `TauCeti.not_isCCRegular_dirac`, `TauCeti.isCCRegular_iff_nullSingletonClass` — null singletons.
 * `TauCeti.isCCRegular_of_forall_isLipschitzHypersurface`,
-  `TauCeti.isCCRegular_of_isAddHaarMeasure`, `TauCeti.isCCRegular_of_absolutelyContinuous`,
+  `TauCeti.isCCRegular_of_null_lipschitz_graphs`, `TauCeti.isCCRegular_of_dimH_add_one_le`,
+  `TauCeti.isCCRegular_of_dimH_le`, `TauCeti.isCCRegular_of_isAddHaarMeasure`,
+  `TauCeti.isCCRegular_of_absolutelyContinuous`,
   `TauCeti.isCCRegular_iff_forall_convexOn_ae_differentiableAt`,
   `TauCeti.IsCCRegular.ae_eventually_ne_top_and_differentiableAt_toReal` — sufficient conditions,
   Zajíček characterization, and almost-everywhere differentiability on effective domains.
@@ -48,7 +55,7 @@ Brenier's theorem (`TauCeti/MeasureTheory/OptimalTransport/Brenier.lean`, `Regul
 public section
 
 open Filter MeasureTheory Set
-open scoped ENNReal Pointwise Topology
+open scoped ENNReal NNReal Pointwise Topology
 
 namespace TauCeti
 
@@ -58,9 +65,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Measurabl
   {μ ν : Measure E}
 
 /-- A measure `μ` on a real inner product space `E` is **`c - c`-regular** if it assigns measure
-zero to every `c - c` hypersurface (`TauCeti.IsCCHypersurface`). In finite dimensions, this is the
-sharp condition under which quadratic optimal transport out of `μ` is uniquely solved by convex
-gradients for all finite-second-moment targets (Ambrosio–Gigli, Def. 1.25 and Thm. 1.26). -/
+zero to every `c - c` hypersurface (`TauCeti.IsCCHypersurface`). In finite dimensions, for
+probability sources of finite second moment, this is the sharp condition under which quadratic
+optimal transport out of `μ` is uniquely solved by convex gradients for all finite-second-moment
+targets (Ambrosio–Gigli, Def. 1.25 and Thm. 1.26). -/
 def IsCCRegular (μ : Measure E) : Prop := ∀ ⦃s : Set E⦄, IsCCHypersurface s → μ s = 0
 
 /-- Unfolding lemma for `TauCeti.IsCCRegular`. -/
@@ -93,6 +101,7 @@ theorem isCCRegular_zero : IsCCRegular (0 : Measure E) := fun _ _ => by simp
 
 /-- On a `0`-dimensional inner product space there are no `c - c` hypersurfaces, so every measure is
 `c - c`-regular. -/
+@[simp]
 theorem isCCRegular_of_subsingleton [Subsingleton E] (μ : Measure E) : IsCCRegular μ :=
   fun s hs => (not_isCCHypersurface_of_subsingleton s hs).elim
 
@@ -216,6 +225,36 @@ theorem isCCRegular_of_forall_isLipschitzHypersurface {μ : Measure E}
   let ⟨_, ht, hsub⟩ := hs.exists_subset_iUnion_isLipschitzHypersurface
   measure_mono_null hsub (measure_iUnion_null fun n => h (ht n))
 
+/-- **Measures vanishing on Lipschitz graphs are `c - c`-regular.** If a measure `μ` on a
+finite-dimensional real inner product space assigns mass zero to every globally Lipschitz graph
+`range (fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v)` over the orthogonal complement of a unit
+vector, then `μ` is `c - c`-regular. -/
+theorem isCCRegular_of_null_lipschitz_graphs {μ : Measure E}
+    (h : ∀ (v : E), ‖v‖ = 1 → ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ), LipschitzWith K g →
+      μ (range fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v) = 0) : IsCCRegular μ :=
+  isCCRegular_of_forall_isLipschitzHypersurface fun _ hs => by
+    obtain ⟨v, hv, K, g, hg, rfl⟩ := isLipschitzHypersurface_iff_exists_eq_range.1 hs
+    exact h v hv K g hg
+
+/-- **Measures vanishing on sets of Hausdorff codimension at least `1` are `c - c`-regular.** If
+`μ` vanishes on every measurable set `A` with `dimH A + 1 ≤ finrank ℝ E`, then `μ` is
+`c - c`-regular. -/
+theorem isCCRegular_of_dimH_add_one_le [OpensMeasurableSpace E] {μ : Measure E}
+    (h : ∀ A : Set E, MeasurableSet A →
+      dimH A + 1 ≤ (Module.finrank ℝ E : ℝ≥0∞) → μ A = 0) : IsCCRegular μ :=
+  isCCRegular_of_null_lipschitz_graphs fun _ hv _ _ hg =>
+    measure_range_add_smul_eq_zero_of_dimH_add_one_le h hv hg
+
+/-- **Measures vanishing on small-Hausdorff-dimension sets are `c - c`-regular.** If `μ` vanishes
+on every measurable set `A` with `dimH A ≤ finrank ℝ E - 1`, then `μ` is `c - c`-regular. -/
+theorem isCCRegular_of_dimH_le [OpensMeasurableSpace E] {μ : Measure E}
+    (h : ∀ A : Set E, MeasurableSet A →
+      dimH A ≤ ((Module.finrank ℝ E - 1 : ℕ) : ℝ≥0∞) → μ A = 0) : IsCCRegular μ :=
+  isCCRegular_of_dimH_add_one_le fun _ hA hdim =>
+    h _ hA (by
+      simpa only [ENNReal.natCast_sub, Nat.cast_one] using
+        ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim)
+
 /-- **Differentiability characterization of `c - c`-regularity.** By Zajíček's theorem
 (`TauCeti.exists_convexOn_subset_not_differentiableAt_iff`), a measure `μ` on a finite-dimensional
 real inner product space `E` is `c - c`-regular iff every convex `u : E → ℝ` is differentiable
@@ -244,8 +283,9 @@ theorem IsCCRegular.ae_eventually_ne_top_and_differentiableAt_toReal {μ : Measu
     (convex_setOf_ne_top hconv).exists_countable_isCCHypersurface_cover_frontier
   obtain ⟨C₂, hC₂, hs₂, hnd⟩ :=
     exists_countable_isCCHypersurface_cover_mem_interior_not_differentiableAt_toReal hconv
+  have hdiff : D \ interior D ⊆ ⋃₀ C₁ := fun _ hx => hfr ⟨subset_closure hx.1, hx.2⟩
   filter_upwards [measure_eq_zero_iff_ae_notMem.1 (hμ.measure_eq_zero_of_subset_sUnion hC₁ hs₁
-      (show D \ interior D ⊆ ⋃₀ C₁ from fun _ hx => hfr ⟨subset_closure hx.1, hx.2⟩)),
+      hdiff),
     measure_eq_zero_iff_ae_notMem.1 (hμ.measure_eq_zero_of_subset_sUnion hC₂ hs₂ hnd)] with
     x hx₁ hx₂ hxD
   have hx_int : x ∈ interior D := by by_contra hni; exact hx₁ ⟨hxD, hni⟩
