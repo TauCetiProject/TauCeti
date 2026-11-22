@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.FinitePresentation
 public import TauCeti.Algebra.Category.ModuleCat.DominantDimension
+public import TauCeti.Algebra.Module.Generator
 public import TauCeti.Algebra.Module.Injective.Int
+
+import TauCeti.LinearAlgebra.Exact
 
 /-!
 # The dominant dimension of a ring
@@ -38,6 +42,9 @@ version is not defined here.
   coresolution with `n` terms by finitely generated projective-injective modules.
 * `TauCeti.two_le_dominantDimension_iff`: `dom.dim Γ ≥ 2` exactly when `Γ` has an injective
   copresentation by finitely generated projective-injective modules.
+* `TauCeti.two_le_dominantDimension_end_of_isGenerator`: **Müller's criterion, forward
+  direction**: the endomorphism ring of a finitely presented generator that is injective over it
+  has dominant dimension at least two.
 * `TauCeti.dominantDimension_eq_top_of_injective`: a left self-injective ring has dominant
   dimension `⊤`.
 * `TauCeti.dominantDimension_int`: `dominantDimension ℤ = 0`.
@@ -52,7 +59,7 @@ version is not defined here.
 
 public section
 
-universe u
+universe u v
 
 open CategoryTheory Limits TauCeti
 
@@ -94,6 +101,32 @@ theorem two_le_dominantDimension_iff (Γ : Type u) [Ring Γ] :
           (Module.Finite Γ I₀ ∧ Projective I₀ ∧ Injective I₀) ∧
             (Module.Finite Γ I₁ ∧ Projective I₁ ∧ Injective I₁) := by
   rw [← Nat.cast_ofNat, TauCeti.natCast_le_dominantDimension_iff, ObjectProperty.isSyzygy_two_iff]
+
+/-- **Müller's criterion, forward direction, for a generator.** Let `M` be a finitely presented
+generator of the category of `A`-modules that is injective over its endomorphism ring `Γ`. Then `Γ`
+has dominant dimension at least two. -/
+theorem two_le_dominantDimension_end_of_isGenerator {A : Type u} [Ring A] (M : Type v)
+    [AddCommGroup M] [Module A M] [Module.FinitePresentation A M] [Module.IsGenerator A M]
+    [Module.Injective (Module.End A M) M] : 2 ≤ dominantDimension (Module.End A M) := by
+  obtain ⟨n, m, q, r, hq, hqr⟩ := Module.FinitePresentation.exists_fin' A M
+  -- `Hom_A(-, M)` and `Hom_A(Aᵏ, M) ≅ Mᵏ` give the exact sequence `0 → Γ → Mⁿ → Mᵐ`.
+  let e (k : ℕ) := LinearEquiv.piRing A M (Fin k) (Module.End A M)
+  let f := (e n).toLinearMap ∘ₗ LinearMap.lcomp (Module.End A M) M q
+  let g := (e m).toLinearMap ∘ₗ LinearMap.lcomp (Module.End A M) M r ∘ₗ (e n).symm.toLinearMap
+  have hfg : Function.Exact f g :=
+    (hqr.lcomp_of_surjective (T := Module.End A M) M hq).of_ladder_linearEquiv_of_exact
+      (e₁ := LinearEquiv.refl _ _) (e₂ := e n) (e₃ := e m) (LinearMap.ext fun _ ↦ rfl)
+      (LinearMap.ext fun _ ↦ by simp [g])
+  -- Each `Mᵏ` is finitely generated, projective and injective over `Γ`, as `M` is.
+  have hM (k : ℕ) : Module.Finite (Module.End A M) (ModuleCat.of (Module.End A M) (Fin k → M)) ∧
+      Projective (ModuleCat.of (Module.End A M) (Fin k → M)) ∧
+        Injective (ModuleCat.of (Module.End A M) (Fin k → M)) :=
+    ⟨inferInstanceAs (Module.Finite _ (Fin k → M)), (IsProjective.iff_projective _).1
+      inferInstance, Module.injective_object_of_injective_module _ _⟩
+  exact (two_le_dominantDimension_iff _).2 ⟨_, _, ModuleCat.ofHom f, ModuleCat.ofHom g,
+    ModuleCat.hom_ext hfg.linearMap_comp_eq_zero,
+    (ModuleCat.mono_iff_injective _).2 ((e n).injective.comp hq.injective_linearMapComp_right),
+    (ShortComplex.moduleCat_exact_iff _).2 fun x hx ↦ (hfg x).1 hx, hM n, hM m⟩
 
 /-- **A left self-injective ring has dominant dimension `⊤`**, through the coresolution
 `0 → Γ → Γ → 0 → 0 → ⋯`. -/

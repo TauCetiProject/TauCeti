@@ -47,6 +47,8 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
 * `TauCeti.subsingleton_matlisDual_iff`: `D_R N` is zero exactly when `N` is, for every `N`.
 * `TauCeti.MatlisDual.bijective_map` and `TauCeti.MatlisDual.bijective_mapOp`: for modules of
   finite length over `R`, dualizing is a bijection on morphisms.
+* `TauCeti.moduleInjective_of_projective_op_matlisDual`: a module of finite length over `R` whose
+  dual is projective is injective.
 * `TauCeti.MatlisDual.exists_retract_of_retract`: a retract of `D_R N` dualizes to a retract of
   `N`, for `N` of finite length over `R`.
 
@@ -286,7 +288,11 @@ variable {N : Type w} [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower 
 
 /-- **The Hom-tensor adjunction for the Matlis dual**: `D_R N` is isomorphic to `Hom_A(N, D_R A)`,
 where `D_R A` is the dual of the right regular module, a left `A`-module. A functional `φ` goes to
-`x ↦ (a ↦ φ (a • x))`, and a morphism `g : N → D_R A` goes back to `x ↦ g x 1`. -/
+`x ↦ (a ↦ φ (a • x))`, and a morphism `g : N → D_R A` goes back to `x ↦ g x 1`.
+
+This is the restriction-coextension adjunction along `R → A`, stated directly: Mathlib's
+`ModuleCat.restrictCoextendScalarsAdj` needs the module in the universe `max v u₂` and gives only a
+bijection of Hom sets, while this is an `R`-linear equivalence with all universes independent. -/
 def equivLinearMapDualRegular : MatlisDual R E N ≃ₗ[R] (N →ₗ[A] MatlisDual R E A) where
   toFun φ :=
     { toFun x := (equivLinearMap R E A).symm <|
@@ -309,6 +315,15 @@ theorem equivLinearMapDualRegular_apply_apply (φ : MatlisDual R E N) (x : N) (a
 theorem equivLinearMapDualRegular_symm_apply (g : N →ₗ[A] MatlisDual R E A) (x : N) :
     equivLinearMap R E N (equivLinearMapDualRegular.symm g) x = equivLinearMap R E A (g x) 1 :=
   (rfl)
+
+/-- **Naturality of the Hom-tensor adjunction**: dualizing a morphism `g : N → N'` corresponds to
+precomposition with `g`. -/
+@[simp]
+theorem equivLinearMapDualRegular_map {N' : Type*} [AddCommGroup N'] [Module R N'] [Module A N']
+    [IsScalarTower R A N'] (g : N →ₗ[A] N') (ψ : MatlisDual R E N') :
+    equivLinearMapDualRegular (map g ψ) = equivLinearMapDualRegular ψ ∘ₗ g := by
+  ext x a
+  simp
 
 end Regular
 
@@ -498,6 +513,17 @@ theorem MatlisDual.exists_retract_of_retract [Module Aᵐᵒᵖ N] [IsScalarTowe
     (evalEquivOp hE hN).symm.toLinearMap ∘ₗ map r, LinearMap.ext fun φ ↦ ?_⟩
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
   rw [← LinearMap.comp_apply (map s), ← map_comp, hrs, map_id, LinearMap.id_apply]
+
+/-- **A module with projective dual is injective.** If `E` is injective and `Hom_R(R ⧸ 𝔪, E)` has
+length one for every maximal ideal `𝔪` of `R`, then a left `A`-module `N` of finite length over `R`
+whose dual `D_R N` is a projective right `A`-module is an injective `A`-module. -/
+theorem moduleInjective_of_projective_op_matlisDual [Module A N] [IsScalarTower R A N]
+    [Small.{max w v} A]
+    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
+    (hN : IsFiniteLength R N) [Module.Projective Aᵐᵒᵖ (MatlisDual R E N)] :
+    Module.Injective A N :=
+  -- By biduality `N` is the dual of the projective right module `D_R N`.
+  ((Module.Baer.of_injective inferInstance).of_equiv (MatlisDual.evalEquiv hE hN).symm).injective
 
 end Biduality
 

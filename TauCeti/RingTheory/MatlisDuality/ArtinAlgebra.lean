@@ -160,9 +160,9 @@ theorem IsInjectiveEnvelope.exists_injective_linearMap_pi_matlisDual [Module A N
     induction hφ using Submodule.span_induction generalizing a with
     | mem _ h =>
       obtain ⟨i, rfl⟩ := h
-      rw [← equivLinearMapDualRegular_apply_apply]
       have h := congr(equivLinearMap R E A ($hx i) a)
-      exact h.trans (by simp)
+      simpa only [g, LinearMap.pi_apply, equivLinearMapDualRegular_apply_apply, Pi.zero_apply,
+        map_zero, LinearMap.zero_apply] using h
     | zero => simp
     | add _ _ _ _ h₁ h₂ => simp [h₁, h₂]
     | smul c _ _ h => simpa [mul_smul] using h (c.unop * a)
@@ -217,9 +217,7 @@ theorem moduleProjective_op_matlisDual_iff_injective [Module.Injective R E]
     Module.Projective Aᵐᵒᵖ (MatlisDual R E N) ↔ Module.Injective A N := by
   refine ⟨fun _ => ?_, fun _ => moduleProjective_op_matlisDual_of_injective hE⟩
   have : Small.{max w v} A := small_lift A
-  have : Module.Injective A (MatlisDual R E (MatlisDual R E N)) := inferInstance
-  exact ((Module.Baer.of_injective this).of_equiv
-    (MatlisDual.evalEquiv hE (isFiniteLength_of_finite_trans R A N)).symm).injective
+  exact moduleInjective_of_projective_op_matlisDual hE (isFiniteLength_of_finite_trans R A N)
 
 /-- A finitely generated left `A`-module is injective exactly when its Matlis dual is a projective
 right module. -/
