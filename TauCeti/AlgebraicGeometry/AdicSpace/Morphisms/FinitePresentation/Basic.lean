@@ -232,16 +232,12 @@ theorem LocallyOfFinitePresentation.of_isOpenImmersion (f : X ⟶ Y)
   let U : Opens X.obj := (Opens.map f.hom.base).obj V
   have hrange : Set.range (X.obj.ofRestrict U.isOpenEmbedding ≫ f.hom).base =
       Set.range (Y.obj.ofRestrict V.isOpenEmbedding).base := by
-    ext y; refine ⟨?_, ?_⟩
-    · rintro ⟨u, rfl⟩
-      rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply,
-        PreAdicSpace.ofRestrict_base]
-      exact ⟨⟨f.hom.base u.val, u.property⟩, by rw [PreAdicSpace.ofRestrict_base]; rfl⟩
-    · rintro ⟨v, rfl⟩; let v' : ↥V := v; obtain ⟨x', hx'⟩ := hVO v'.property
-      let u' : X.obj.restrict U.isOpenEmbedding := ⟨x', Opens.mem_map.mpr (hx'.symm ▸ v'.property)⟩
-      refine ⟨u', ?_⟩
-      rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply,
-        PreAdicSpace.ofRestrict_base, PreAdicSpace.ofRestrict_base]; exact hx'
+    have hU : Set.range (X.obj.ofRestrict U.isOpenEmbedding).base = (U : Set X.obj) :=
+      Opens.set_range_inclusion' U
+    have hV : Set.range (Y.obj.ofRestrict V.isOpenEmbedding).base = (V : Set Y.obj) :=
+      Opens.set_range_inclusion' V
+    rw [PreAdicSpace.comp_base, TopCat.coe_comp, Set.range_comp, hU, hV, Opens.map_coe]
+    exact Set.image_preimage_eq_iff.mpr hVO
   let eUV := IsOpenImmersion.isoOfRangeEq
     (X.obj.ofRestrict U.isOpenEmbedding ≫ f.hom) (Y.obj.ofRestrict V.isOpenEmbedding) hrange
   have heUV := IsOpenImmersion.isoOfRangeEq_hom_comp
