@@ -62,7 +62,8 @@ fields on a product manifold.
   composing the differential of `Prod.map f g` with a slice inclusion commutes with the
   differential on the varied factor.
 * `TauCeti.mfderivWithin_extChartAt_symm_prod_apply`: the derivative of the inverse of a product
-  chart acts on each component through the derivative of the inverse chart of that factor.
+  chart acts on each component through the derivative of the inverse chart of that factor;
+  `TauCeti.mfderiv_extChartAt_symm_prod_apply` is the same for `mfderiv` without boundary.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
 * `MDifferentiableAt.injective_mfderiv_fst_prod_iff`: the differential of a
@@ -436,6 +437,19 @@ theorem mfderivWithin_extChartAt_symm_prod_apply [IsManifold I 1 M] [IsManifold 
   -- `ContinuousLinearMap.coe_prodMap'` fails, because the product of the model tangent spaces is
   -- the tangent space of the product only up to definitional unfolding.
   rfl
+
+/-- **The derivative of the inverse of a product chart, without boundary.** On the target of the
+preferred chart of `M × N` at `p`, the derivative of its inverse sends `(v, w)` to the pair of the
+derivatives of the inverse charts of `M` at `p.1` and of `N` at `p.2`, applied to `v` and to `w`. -/
+theorem mfderiv_extChartAt_symm_prod_apply [IsManifold I 1 M] [IsManifold J 1 N] [I.Boundaryless]
+    [J.Boundaryless] {p : M × N} {z : E × E'} (hz : z ∈ (extChartAt (I.prod J) p).target)
+    (v : E × E') :
+    mfderiv 𝓘(𝕜, E × E') (I.prod J) (extChartAt (I.prod J) p).symm z v =
+      (mfderiv 𝓘(𝕜, E) I (extChartAt I p.1).symm z.1 v.1,
+        mfderiv 𝓘(𝕜, E') J (extChartAt J p.2).symm z.2 v.2) := by
+  rw [← mfderivWithin_univ, ← (I.prod J).range_eq_univ,
+    mfderivWithin_extChartAt_symm_prod_apply hz, I.range_eq_univ, J.range_eq_univ,
+    mfderivWithin_univ, mfderivWithin_univ]
 
 end ExtChartAt
 
