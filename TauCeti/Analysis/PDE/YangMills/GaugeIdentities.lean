@@ -49,7 +49,8 @@ gauge action is a left action and curvature transforms by `Ad(O)`.
 * `TauCeti.fderiv_mul_mul_ringInverse_apply`: `∂ᵥ(Ad(O)B) = Ad(O)∂ᵥB + [O;v, Ad(O)B]`.
 * `TauCeti.connectionCovariantDeriv_gaugeAction`: `D(O·A)(Ad(O)B) = Ad(O)(D(A)B)`.
 * `TauCeti.connectionCurvature_gaugeAction`: `F[O·A] = Ad(O) F[A]`.
-* `TauCeti.connectionCovariantDeriv_comm`: the Ricci identity `D_vD_wB - D_wD_vB = [F_{vw}, B]`.
+* `TauCeti.connectionCovariantDeriv_sub_connectionCovariantDeriv_swap`: the Ricci identity
+  `D_vD_wB - D_wD_vB = [F_{vw}, B]`.
 * `TauCeti.connectionCurvature_bianchi`: the Bianchi identity
   `D_uF_{vw} + D_vF_{wu} + D_wF_{uv} = 0`.
 * `TauCeti.gaugeAction_eq_sub`, `TauCeti.connectionCurvature_apply_of_comm`: for commutative
@@ -266,9 +267,9 @@ omit [HasSummableGeomSeries 𝔸]
 
 /-- **The Ricci identity**: covariant derivatives commute up to curvature,
 `D_v(D_w B) - D_w(D_v B) = [F_{vw}, B]`, for `B` twice continuously differentiable at `x`. -/
-theorem connectionCovariantDeriv_comm {n : ℕ∞ω} {A : E → E →L[𝕜] 𝔸} {B : E → 𝔸}
-    (hB : ContDiffAt 𝕜 n B x) (hn : minSmoothness 𝕜 2 ≤ n) (hA : DifferentiableAt 𝕜 A x)
-    (v w : E) :
+theorem connectionCovariantDeriv_sub_connectionCovariantDeriv_swap {n : ℕ∞ω} {A : E → E →L[𝕜] 𝔸}
+    {B : E → 𝔸} (hB : ContDiffAt 𝕜 n B x) (hn : minSmoothness 𝕜 2 ≤ n)
+    (hA : DifferentiableAt 𝕜 A x) (v w : E) :
     connectionCovariantDeriv 𝕜 A (fun y ↦ connectionCovariantDeriv 𝕜 A B y w) x v -
         connectionCovariantDeriv 𝕜 A (fun y ↦ connectionCovariantDeriv 𝕜 A B y v) x w =
       ⁅connectionCurvature 𝕜 A x v w, B x⁆ := by
