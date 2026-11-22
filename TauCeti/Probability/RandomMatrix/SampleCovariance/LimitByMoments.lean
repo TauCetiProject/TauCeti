@@ -9,7 +9,7 @@ public import TauCeti.Probability.Distributions.MarchenkoPastur.Basic
 public import TauCeti.Probability.RandomMatrix.SampleCovariance.RectangularMoments
 import TauCeti.Data.Nat.Factorial.Asymptotics
 import TauCeti.Probability.Distributions.MarchenkoPastur.Moments
-import TauCeti.Probability.Moments.WeakConvergence
+import TauCeti.Probability.Moments.MethodOfMoments.CompactSupport
 import TauCeti.Probability.RandomMatrix.SampleCovariance.TraceWord
 
 /-!
