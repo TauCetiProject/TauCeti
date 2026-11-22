@@ -316,10 +316,11 @@ in the cylinder `B(x, r) × (t - r², t + r²)`. -/
 theorem ball_ofCoords_subset_preimage_ball_inter_preimage_Ioo (x : E) (t r : ℝ) :
     ball (ofCoords x t) r ⊆ space ⁻¹' ball x r ∩ time ⁻¹' Ioo (t - r ^ 2) (t + r ^ 2) := by
   intro p hp
-  rw [mem_ball, dist_eq, space_ofCoords, time_ofCoords] at hp
-  have hsqrt : √|p.time - t| < r := by linarith [dist_nonneg (x := p.space) (y := x)]
+  rw [mem_ball] at hp
+  have hsqrt : √|p.time - t| < r := by
+    simpa only [time_ofCoords] using (sqrt_abs_time_sub_le_dist p _).trans_lt hp
   have habs := (Real.sqrt_lt' ((Real.sqrt_nonneg _).trans_lt hsqrt)).1 hsqrt
-  refine ⟨mem_ball.2 (by linarith [Real.sqrt_nonneg |p.time - t|]), ?_⟩
+  refine ⟨mem_ball.2 (by simpa only [space_ofCoords] using (dist_space_le p _).trans_lt hp), ?_⟩
   rw [mem_preimage, mem_Ioo]
   constructor <;> linarith [abs_lt.1 habs]
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.One
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Holder
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -80,10 +81,8 @@ theorem exists_holderSpace_eq_sqrt_time {α : ℝ≥0} (hα : α ≤ 1) (T : ℝ
       Real.sqrt_nonneg s, Real.sqrt_nonneg t]
   have hsqrt := HolderOnWith.of_le_of_dist_le (f := Real.sqrt) (s := Icc 0 T) (K := 1)
     (β := 1 / 2) (γ := α / 2) (δ := 1) (D := ⟨√T, Real.sqrt_nonneg T⟩)
-    (fun s hs t ht _ ↦ by
-      have h := Real.abs_rpow_sub_rpow_le hs.1 ht.1 (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
-      rw [← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow] at h
-      simpa [Real.dist_eq] using h)
+    (fun s _ t _ _ ↦ by
+      simpa [Real.dist_eq, Real.sqrt_eq_rpow] using Real.abs_sqrt_sub_sqrt_le s t)
     hbound (by gcongr) one_pos
   let g : slab (E := E) 0 T →ᵇ ℝ :=
     BoundedContinuousFunction.mkOfBound
@@ -101,24 +100,10 @@ the closed slab, while `√t` is not Lipschitz in time at `t = 0`. -/
 theorem not_exists_parabolicC2HolderSpace_eq_sqrt_time {α : ℝ≥0} (hT : 0 < T) :
     ¬ ∃ f : ParabolicC2HolderSpace α E ℝ hT, ∀ p, f p = √(p : ParabolicSpaceTime E).time := by
   rintro ⟨f, hf⟩
-  -- The time slice through `x = 0` is `‖∂ₜ f‖`-Lipschitz on `[0, T]` by the mean value theorem.
-  have hlip : ∀ t ∈ Icc 0 T, ‖timeExtension hT.le f 0 t - timeExtension hT.le f 0 0‖ ≤
-      ‖timeDerivL f‖ * ‖t - 0‖ := fun t ht ↦
-    (convex_Icc 0 T).norm_image_sub_le_of_norm_hasDerivWithin_le
-      (fun s hs ↦ f.hasDerivWithinAt_timeExtension 0 hs)
-      (fun s hs ↦ le_of_eq_of_le (congrArg norm (timeExtension_of_mem hT.le _ 0 ⟨s, hs⟩))
-        (HolderSpace.norm_apply_le _ _))
-      (left_mem_Icc.2 hT.le) ht
   refine not_forall_sqrt_le_mul_rpow (γ := 1) (C := ‖timeDerivL f‖) (by norm_num) hT
     fun t ht ↦ ?_
-  have ht' : t ∈ Icc 0 T := Ioc_subset_Icc_self ht
-  have h := hlip t ht'
-  have et : timeExtension hT.le f 0 t = √t :=
-    (timeExtension_of_mem hT.le _ 0 ⟨t, ht'⟩).trans (by rw [hf, time_slabMk])
-  have e0 : timeExtension hT.le f 0 0 = 0 :=
-    (timeExtension_of_mem hT.le _ 0 ⟨0, left_mem_Icc.2 hT.le⟩).trans
-      (by rw [hf, time_slabMk, Real.sqrt_zero])
-  rw [et, e0, sub_zero, sub_zero, Real.norm_eq_abs, Real.norm_eq_abs,
+  have h := f.norm_apply_slabMk_sub_le 0 ⟨t, Ioc_subset_Icc_self ht⟩ ⟨0, left_mem_Icc.2 hT.le⟩
+  rw [hf, hf, time_slabMk, time_slabMk, Real.sqrt_zero, sub_zero, sub_zero, Real.norm_eq_abs,
     abs_of_nonneg (Real.sqrt_nonneg t), abs_of_pos ht.1] at h
   rwa [Real.rpow_one]
 
