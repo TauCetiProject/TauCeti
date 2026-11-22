@@ -9,11 +9,9 @@ public import TauCeti.Analysis.Distribution.Rectifiable.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.IntegrationCurrent
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Basic
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Local
-import Mathlib.MeasureTheory.Function.SpecialFunctions.Inner
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
-import TauCeti.Analysis.Matrix.MeasurableSpace
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.SpecialFunctions.FrameSign
 
 /-!
 # Integer-rectifiable currents
@@ -129,31 +127,6 @@ theorem IsIntegerRectifiable.neg {T : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ] ℝ) �
   funext x
   simp
 
-/-- The sign `±1` of the change of orthonormal frame from `σ` to `τ`, read off from the determinant
-of the overlap matrix; the frames span the same plane in the cases of interest. -/
-private def frameSign (σ τ : Fin k → V) : ℤ :=
-  if 0 ≤ (Matrix.of fun j i ↦ ⟪σ i, τ j⟫).det then 1 else -1
-
-omit [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
-private theorem abs_frameSign (σ τ : Fin k → V) : |(frameSign σ τ : ℝ)| = 1 := by
-  by_cases h : 0 ≤ (Matrix.of fun j i ↦ ⟪σ i, τ j⟫).det <;> simp [frameSign, h]
-
-private theorem measurable_frameSign {σ τ : V → Fin k → V} (hσ : Measurable σ)
-    (hτ : Measurable τ) : Measurable fun x ↦ frameSign (σ x) (τ x) :=
-  Measurable.ite (measurableSet_le measurable_const (by fun_prop)) measurable_const
-    measurable_const
-
-omit [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
-/-- On forms, an orthonormal frame `τ` in the plane of an orthonormal frame `σ` is `σ` times the
-sign of the change of frame. -/
-private theorem frameSign_mul_apply {σ τ : Fin k → V} (hσ : Orthonormal ℝ σ)
-    (hτ : Orthonormal ℝ τ) (h : ∀ j, τ j ∈ Submodule.span ℝ (range σ))
-    (ω : V [⋀^Fin k]→L[ℝ] ℝ) : (frameSign σ τ : ℝ) * ω σ = ω τ := by
-  have hω : ω τ = (Matrix.of fun j i ↦ ⟪σ i, τ j⟫).det * ω σ := by
-    simpa using ω.toAlternatingMap.map_eq_det_inner_smul_of_mem_span hσ h
-  rcases Orthonormal.det_inner_eq_one_or_eq_neg_one hσ hτ h with hd | hd <;>
-    simp [frameSign, hd, hω]
-
 omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
 /-- A sum `θ₁ + ε θ₂` of locally integrable multiplicities with a measurable sign `ε` is locally
 integrable. -/
@@ -207,7 +180,7 @@ theorem IsIntegerRectifiable.add {T₁ T₂ : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ
     · simpa [σ, not_not.1 h] using hτo₂ x (hx.resolve_left h)
   -- The sign `ε` of the change of frame from `σ` to `τ₂`.
   set ε : V → ℤ := fun x ↦ frameSign (σ x) (τ₂ x)
-  have hεm : Measurable ε := measurable_frameSign hσ hτ₂
+  have hεm : Measurable ε := hσ.frameSign hτ₂
   set θ : V → ℤ := fun x ↦ θ₁ x + ε x * θ₂ x
   have hsupp : {x | θ x ≠ 0} ⊆ {x | θ₁ x ≠ 0} ∪ {x | θ₂ x ≠ 0} := fun x hx ↦ by_contra fun h ↦
     hx (by simp only [mem_union, mem_ofPred_eq, not_or, not_not] at h; simp [θ, h.1, h.2])
@@ -223,15 +196,14 @@ theorem IsIntegerRectifiable.add {T₁ T₂ : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ
   have hpt : ∀ᵐ x ∂μHE[k], x ∈ Ω → θ₂ x ≠ 0 → ∀ ω : V [⋀^Fin k]→L[ℝ] ℝ,
       (ε x : ℝ) * ω (σ x) = ω (τ₂ x) := by
     filter_upwards [hU] with x hx hxΩ h2 ω
-    refine frameSign_mul_apply (hσo x (Or.inr h2)) (hτo₂ x h2) (fun j ↦ ?_) ω
-    by_cases h1 : θ₁ x ≠ 0
-    · simp only [σ, h1, ite_true, ne_eq, not_false_eq_true]
-      rw [(hx hxΩ).2.2 h1 h2]
-      exact Submodule.subset_span ⟨j, rfl⟩
-    · simp only [σ, h1, ite_false]
-      exact Submodule.subset_span ⟨j, rfl⟩
+    have hspan : Submodule.span ℝ (range (σ x)) = Submodule.span ℝ (range (τ₂ x)) := by
+      by_cases h1 : θ₁ x ≠ 0
+      · simpa [σ, h1] using (hx hxΩ).2.2 h1 h2
+      · simp [σ, not_not.1 h1]
+    simpa [ε, zsmul_eq_mul] using (ω.toAlternatingMap.map_eq_frameSign_smul_of_mem_span
+      (hσo x (Or.inr h2)) (hτo₂ x h2) fun j ↦ hspan ▸ Submodule.subset_span ⟨j, rfl⟩).symm
   have hθli : LocallyIntegrableOn (fun x ↦ (θ x : ℝ)) Ω μHE[k] :=
-    locallyIntegrableOn_add_mul hθ₁ hθ₂ hεm fun x ↦ abs_frameSign _ _
+    locallyIntegrableOn_add_mul hθ₁ hθ₂ hεm fun x ↦ by exact_mod_cast abs_frameSign _ _
   refine ⟨θ, σ, hθ₁m.add (hεm.mul hθ₂m), hσ, (hS₁.union hS₂).mono hsupp, hθli,
     fun x hx ↦ hσo x (by simpa using hsupp hx), ?_, ?_⟩
   · filter_upwards [hU] with x hx hxΩ hθx

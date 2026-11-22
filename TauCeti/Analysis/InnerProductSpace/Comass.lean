@@ -266,21 +266,18 @@ theorem norm_formDualEquiv_le (ξ : ⋀[ℝ]^k E) :
 bilinear map. For fixed `ξ` it is the functional `formDualEquiv ℝ E k ξ` whose norm is the mass of
 `ξ`. -/
 noncomputable def formVectorPairing : (E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ⋀[ℝ]^k E →L[ℝ] ℝ :=
-  haveI : FiniteDimensional ℝ (E [⋀^Fin k]→L[ℝ] ℝ) :=
-    (TauCeti.alternatingFormEquiv E k).finiteDimensional
-  LinearMap.toContinuousLinearMap (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ
-    (continuousAlternatingMapLinearEquiv ℝ E k ℝ).toLinearMap)
+  (LinearMap.toContinuousLinearMap (formDualEquiv ℝ E k).toLinearMap).flip
 
 /-- The pairing of a form with `ξ` is the evaluation of `formDualEquiv ℝ E k ξ`. -/
 theorem formVectorPairing_apply (ω : E [⋀^Fin k]→L[ℝ] ℝ) (ξ : ⋀[ℝ]^k E) :
     formVectorPairing ω ξ = formDualEquiv ℝ E k ξ ω := by
-  simp [formVectorPairing, formDualEquiv_apply]
+  simp [formVectorPairing]
 
 /-- A form pairs with the wedge `v₁ ∧ ⋯ ∧ vₖ` to its value at `(v₁, …, vₖ)`. -/
 @[simp]
 theorem formVectorPairing_ιMulti (ω : E [⋀^Fin k]→L[ℝ] ℝ) (v : Fin k → E) :
     formVectorPairing ω (ιMulti ℝ k v) = ω v := by
-  simp [formVectorPairing]
+  simp [formVectorPairing_apply]
 
 end exteriorPower
 
