@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
+public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedProjective
 
 /-!
@@ -27,8 +28,10 @@ degree one. This gives the short exact sequence of graded modules
 ```
 
 the graded form of the first-arrow resolution of a vertex simple. No acyclicity is needed for it,
-and it shows that `Sᵢ` has projective dimension at most one. It is the resolution through which
-graded Hom and Ext computations on the vertex projectives pass to the graded simples.
+and it shows that `Sᵢ` has projective dimension at most one
+(`gradedVertexSimpleProjectiveResolution` packages it as a linear, minimal
+`GradedProjectiveResolution`). It is the resolution through which graded Hom and Ext computations
+on the vertex projectives pass to the graded simples.
 
 For a finite acyclic quiver the graded vertex simples are, up to shift, all the simple finite
 graded modules, and their classes form a basis of `G₀^gr(mod kQ)` over `ℤ[q,q⁻¹]` whose
@@ -42,6 +45,8 @@ coordinates are the idempotent graded dimensions.
   `x ↦ x a`, of an arrow `a : i ⟶ j`.
 * `TauCeti.PathAlgebra.gradedArrowSum`: the graded module `⨁_{a : i ⟶ j} (kQ eⱼ){1}`.
 * `TauCeti.PathAlgebra.gradedVertexSimpleResolution`: the first-arrow short complex.
+* `TauCeti.PathAlgebra.gradedVertexSimpleProjectiveResolution`: the length-one
+  `TauCeti.GradedProjectiveResolution` of `Sᵢ`.
 * `TauCeti.PathAlgebra.gradedVertexSimpleClassBasis`: the basis `[Sᵢ]` of `G₀^gr(mod kQ)`.
 
 ## Main results
@@ -52,6 +57,9 @@ coordinates are the idempotent graded dimensions.
   sequence is short exact.**
 * `TauCeti.PathAlgebra.hasProjectiveDimensionLT_two_gradedVertexSimple`: `Sᵢ` has projective
   dimension at most one.
+* `TauCeti.PathAlgebra.isLinear_gradedVertexSimpleProjectiveResolution` and
+  `TauCeti.PathAlgebra.isMinimal_gradedVertexSimpleProjectiveResolution`: the first-arrow resolution
+  of `Sᵢ` is linear and minimal.
 * `TauCeti.PathAlgebra.simple_gradedVertexSimple` and
   `TauCeti.PathAlgebra.isExhaustiveGradedSimpleFamily_gradedVertexSimple`: the `Sᵢ` are simple,
   and for a finite acyclic quiver every simple finite graded module is a shift of one of them.
@@ -353,6 +361,191 @@ theorem hasProjectiveDimensionLT_two_gradedVertexSimple :
     (inferInstanceAs (HasProjectiveDimensionLT (gradedVertexProjective k Q i) 2))
 
 end Sum
+
+section ProjectiveResolution
+
+/-- The arrow kernel `⨁_{a : i ⟶ j} (kQ eⱼ){1}` is generated as a `kQ`-module in internal
+degree `1`. -/
+theorem isGeneratedInDegree_one_gradedArrowSum (i : Q) :
+    (gradedArrowSum k Q i).grading.IsGeneratedInDegree (pathAlgebra k Q) 1 := by
+  rw [InternalGrading.isGeneratedInDegree_directSum_iff]
+  intro a
+  dsimp only [GradedModuleCat.shiftObj]
+  rw [InternalGrading.isGeneratedInDegree_shift_iff, add_neg_cancel]
+  exact isGeneratedInDegree_zero_gradedVertexProjective k Q a.1
+
+/-- The arrow kernel `⨁_{a : i ⟶ j} (kQ eⱼ){1}` is a finite graded projective `kQ`-module. -/
+theorem gradedFiniteProjectiveModules_gradedArrowSum (i : Q) [Finite ((j : Q) × (i ⟶ j))] :
+    gradedFiniteProjectiveModules (integerGrade k Q) (gradedArrowSum k Q i) := by
+  refine gradedFiniteProjectiveModules_iff.mpr
+    ⟨gradedFiniteModules_iff.mp (gradedFiniteModules_gradedArrowSum k Q i), ?_⟩
+  let _ : ∀ a : (j : Q) × (i ⟶ j),
+      Module.Projective (pathAlgebra k Q) ((gradedVertexProjective k Q a.1).shiftObj 1) :=
+    fun a => moduleProjective_gradedVertexProjective k Q a.1
+  infer_instance
+
+/-- **The length-one graded projective resolution of a graded vertex simple `Sᵢ`**:
+`⋯ ⟶ 0 ⟶ ⨁_{a : i ⟶ j} (kQ eⱼ){1} ⟶ kQ eᵢ ⟶ Sᵢ ⟶ 0`. -/
+@[expose] def gradedVertexSimpleProjectiveResolution (i : Q) [Finite ((j : Q) × (i ⟶ j))] :
+    GradedProjectiveResolution.{w, max u v w, max u v w, max u v w}
+      (integerGrade k Q) (gradedVertexSimple k Q i).grading :=
+  let term : ℕ → GradedModuleCat.{max u v w} (integerGrade k Q)
+    | 0 => gradedVertexProjective k Q i
+    | 1 => gradedArrowSum k Q i
+    | _ + 2 => GradedModuleCat.zeroObj
+  { X n := term n
+    grading n := (term n).grading
+    projective
+      | 0 => moduleProjective_gradedVertexProjective k Q i
+      | 1 => (gradedFiniteProjectiveModules_iff.mp
+          (gradedFiniteProjectiveModules_gradedArrowSum k Q i)).2
+      | _ + 2 => inferInstance
+    d
+      | 0 => (gradedArrowSumToVertexProjective k Q i).hom
+      | 1 => 0
+      | _ + 2 => 0
+    «π» := (gradedVertexProjectiveToSimple k Q i).hom
+    isHomogeneous_d
+      | 0 => (gradedArrowSumToVertexProjective k Q i).isHomogeneous
+      | 1 => LinearMap.isHomogeneous_zero _ _ _
+      | _ + 2 => LinearMap.isHomogeneous_zero _ _ _
+    isHomogeneous_π := (gradedVertexProjectiveToSimple k Q i).isHomogeneous
+    surjective_π := (GradedModuleCat.epi_iff_surjective _).mp
+      (epi_gradedVertexProjectiveToSimple k Q i)
+    exact_d_π := by
+      have hex := GradedModuleCat.exact_iff.mp (shortExact_gradedVertexSimpleResolution k Q i).exact
+      rw [gradedVertexSimpleResolution_def] at hex
+      exact hex
+    exact_d_d
+      | 0 => (LinearMap.exact_zero_iff_injective _ _).mpr <|
+        (GradedModuleCat.mono_iff_injective _).mp (mono_gradedArrowSumToVertexProjective k Q i)
+      | 1 => by
+        have : Subsingleton (GradedModuleCat.zeroObj (𝒜 := integerGrade k Q)) :=
+          GradedModuleCat.subsingleton_of_isZero GradedModuleCat.isZero_zeroObj
+        exact (LinearMap.exact_zero_iff_injective _ _).mpr (Function.injective_of_subsingleton _)
+      | _ + 2 => by
+        have : Subsingleton (GradedModuleCat.zeroObj (𝒜 := integerGrade k Q)) :=
+          GradedModuleCat.subsingleton_of_isZero GradedModuleCat.isZero_zeroObj
+        exact (LinearMap.exact_zero_iff_injective _ _).mpr (Function.injective_of_subsingleton _) }
+
+/-- The degree-zero term of the first-arrow resolution of `Sᵢ` is `kQ eᵢ`. -/
+@[simp]
+theorem gradedVertexSimpleProjectiveResolution_termObj_zero (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] :
+    (gradedVertexSimpleProjectiveResolution k Q i).termObj 0 =
+      gradedVertexProjective k Q i :=
+  rfl
+
+/-- The degree-one term of the first-arrow resolution of `Sᵢ` is `⨁_{a : i ⟶ j} (kQ eⱼ){1}`. -/
+@[simp]
+theorem gradedVertexSimpleProjectiveResolution_termObj_one (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] :
+    (gradedVertexSimpleProjectiveResolution k Q i).termObj 1 =
+      gradedArrowSum k Q i :=
+  rfl
+
+/-- Every term of the first-arrow resolution of `Sᵢ` in homological degree `m + 2` is the zero
+object. -/
+@[simp]
+theorem gradedVertexSimpleProjectiveResolution_termObj_add_two (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] (m : ℕ) :
+    (gradedVertexSimpleProjectiveResolution k Q i).termObj (m + 2) =
+      GradedModuleCat.zeroObj :=
+  rfl
+
+/-- Every term of the first-arrow resolution of `Sᵢ` in homological degree `n ≥ 2` is the zero
+object. -/
+theorem gradedVertexSimpleProjectiveResolution_termObj_of_two_le (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] {n : ℕ} (hn : 2 ≤ n) :
+    (gradedVertexSimpleProjectiveResolution k Q i).termObj n =
+      GradedModuleCat.zeroObj := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  rfl
+
+/-- The augmentation of the first-arrow resolution of `Sᵢ` is `gradedVertexProjectiveToSimple`,
+transported along `gradedVertexSimpleProjectiveResolution_termObj_zero`. -/
+theorem gradedVertexSimpleProjectiveResolution_augmentation (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] :
+    (gradedVertexSimpleProjectiveResolution k Q i).augmentation =
+      eqToHom (gradedVertexSimpleProjectiveResolution_termObj_zero k Q i) ≫
+        gradedVertexProjectiveToSimple k Q i :=
+  GradedModuleCat.hom_ext rfl
+
+/-- The degree-zero differential of the first-arrow resolution of `Sᵢ` is
+`gradedArrowSumToVertexProjective`, transported along the degree-zero and degree-one term
+identifications. -/
+theorem gradedVertexSimpleProjectiveResolution_differential_zero (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] :
+    (gradedVertexSimpleProjectiveResolution k Q i).differential 0 =
+      eqToHom (gradedVertexSimpleProjectiveResolution_termObj_one k Q i) ≫
+        gradedArrowSumToVertexProjective k Q i ≫
+          eqToHom (gradedVertexSimpleProjectiveResolution_termObj_zero k Q i).symm :=
+  GradedModuleCat.hom_ext rfl
+
+/-- All higher differentials of the first-arrow resolution of `Sᵢ` vanish. -/
+@[simp]
+theorem gradedVertexSimpleProjectiveResolution_differential_succ (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] (n : ℕ) :
+    (gradedVertexSimpleProjectiveResolution k Q i).differential (n + 1) = 0 := by
+  cases n <;> exact GradedModuleCat.hom_ext rfl
+
+/-- All terms of the first-arrow resolution of `Sᵢ` in homological degrees `n ≥ 2` vanish. -/
+theorem subsingleton_gradedVertexSimpleProjectiveResolution_X_of_two_le (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] {n : ℕ} (hn : 2 ≤ n) :
+    Subsingleton ((gradedVertexSimpleProjectiveResolution k Q i).X n) := by
+  change Subsingleton ((gradedVertexSimpleProjectiveResolution k Q i).termObj n)
+  rw [gradedVertexSimpleProjectiveResolution_termObj_of_two_le k Q i hn]
+  exact GradedModuleCat.subsingleton_of_isZero GradedModuleCat.isZero_zeroObj
+
+/-- Every term of the first-arrow resolution of `Sᵢ` is finitely generated over `kQ`. -/
+instance moduleFinite_gradedVertexSimpleProjectiveResolution_X (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] (n : ℕ) :
+    Module.Finite (pathAlgebra k Q)
+      ((gradedVertexSimpleProjectiveResolution k Q i).X n) := by
+  unfold gradedVertexSimpleProjectiveResolution
+  match n with
+  | 0 =>
+    exact (gradedFiniteProjectiveModules_iff.mp
+      (gradedFiniteProjectiveModules_gradedVertexProjective k Q i)).1
+  | 1 =>
+    exact gradedFiniteModules_iff.mp (gradedFiniteModules_gradedArrowSum k Q i)
+  | _ + 2 =>
+    have : Subsingleton (GradedModuleCat.zeroObj (𝒜 := integerGrade k Q)) :=
+      GradedModuleCat.subsingleton_of_isZero GradedModuleCat.isZero_zeroObj
+    have : Finite (GradedModuleCat.zeroObj (𝒜 := integerGrade k Q)) := Finite.of_subsingleton
+    infer_instance
+
+/-- **The first-arrow resolution of a graded vertex simple is linear.** -/
+theorem isLinear_gradedVertexSimpleProjectiveResolution (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] :
+    (gradedVertexSimpleProjectiveResolution k Q i).IsLinear := by
+  rw [GradedProjectiveResolution.isLinear_iff]
+  intro n
+  unfold gradedVertexSimpleProjectiveResolution
+  match n with
+  | 0 =>
+    rw [Nat.cast_zero]
+    exact isGeneratedInDegree_zero_gradedVertexProjective k Q i
+  | 1 =>
+    rw [Nat.cast_one]
+    exact isGeneratedInDegree_one_gradedArrowSum k Q i
+  | _ + 2 =>
+    rw [InternalGrading.isGeneratedInDegree_iff]
+    have : Subsingleton (GradedModuleCat.zeroObj (𝒜 := integerGrade k Q)) :=
+      GradedModuleCat.subsingleton_of_isZero GradedModuleCat.isZero_zeroObj
+    intro x
+    rw [Subsingleton.elim x 0]
+    exact Submodule.zero_mem _
+
+/-- **The first-arrow resolution of a graded vertex simple is minimal.** -/
+theorem isMinimal_gradedVertexSimpleProjectiveResolution (i : Q)
+    [Finite ((j : Q) × (i ⟶ j))] :
+    (gradedVertexSimpleProjectiveResolution k Q i).IsMinimal := by
+  let _ := integerGradedAlgebra k Q
+  exact (isLinear_gradedVertexSimpleProjectiveResolution k Q i).isMinimal
+    (fun _ hp => integerGrade_eq_bot_of_neg k Q hp)
+
+end ProjectiveResolution
 
 end Resolution
 

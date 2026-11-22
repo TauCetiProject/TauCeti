@@ -112,12 +112,52 @@ noncomputable abbrev tail :
      by rintro ⟨z, rfl⟩; exact Subtype.ext ((r.exact_d_d 0).apply_apply_eq_zero z)⟩
   exact_d_d n := r.exact_d_d (n + 1)
 
-private noncomputable def complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
+/-- The `n`-th term of the tail resolution is the `(n + 1)`-st term of `r`. -/
+@[simp]
+theorem termObj_tail (n : ℕ) : r.tail.termObj n = r.termObj (n + 1) :=
+  rfl
+
+/-- The `n`-th differential of the tail resolution is the `(n + 1)`-st differential of `r`. -/
+@[simp]
+theorem differential_tail (n : ℕ) : r.tail.differential n = r.differential (n + 1) :=
+  rfl
+
+/-- Composing the augmentation of the tail resolution with the kernel inclusion recovers the
+degree-zero differential of `r`. -/
+@[reassoc (attr := simp)]
+theorem tail_augmentation_comp_kernelι :
+    r.tail.augmentation ≫ GradedModuleCat.kernelι r.augmentation = r.differential 0 :=
+  GradedModuleCat.hom_ext rfl
+
+/-- The underlying chain complex of a concrete graded projective resolution. -/
+@[expose] noncomputable def complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
   ChainComplex.of r.termObj r.differential r.differential_comp_differential
 
-private theorem complex_d (n : ℕ) :
-    r.complex.d (n + 1) n = r.differential n := by
-  simp [complex]
+/-- The `(n + 1)`-to-`n` differential of `r.complex` is `r.differential n`. -/
+@[simp]
+theorem complex_d (n : ℕ) :
+    r.complex.d (n + 1) n = r.differential n :=
+  ChainComplex.of_d r.termObj r.differential n
+
+/-- The degree-one differential of `r.complex` composed with the augmentation vanishes. -/
+@[reassoc]
+theorem complex_d_one_zero_comp_augmentation :
+    r.complex.d 1 0 ≫ r.augmentation = 0 := by
+  rw [r.complex_d 0]
+  exact r.differential_zero_comp_augmentation
+
+/-- The augmentation of `r.complex` is exact at degree zero. -/
+theorem complex_exact_d_one_zero :
+    (ShortComplex.mk (r.complex.d 1 0) r.augmentation
+      r.complex_d_one_zero_comp_augmentation).Exact :=
+  ChainComplex.of_exact_d_one_zero r.termObj r.differential r.differential_comp_differential
+    r.augmentation r.differential_zero_comp_augmentation
+    (GradedModuleCat.exact_iff.mpr r.exact_d_π)
+
+/-- Every positive homological degree of `r.complex` is exact. -/
+theorem complex_exactAt_succ (n : ℕ) : r.complex.ExactAt (n + 1) :=
+  ChainComplex.of_exactAt_succ r.termObj r.differential r.differential_comp_differential n
+    (GradedModuleCat.exact_iff.mpr (r.exact_d_d n))
 
 variable [DirectSum.Decomposition 𝒜]
 
@@ -125,16 +165,13 @@ variable [DirectSum.Decomposition 𝒜]
 category of graded modules. The quasi-isomorphism is its original augmentation. -/
 noncomputable def toProjectiveResolution : ProjectiveResolution M := by
   exact @ChainComplex.toProjectiveResolution _ _ _ M r.complex r.augmentation
-    (by rw [complex_d]; exact r.differential_zero_comp_augmentation)
+    r.complex_d_one_zero_comp_augmentation
     (fun n => by
       let := r.projective n
       exact inferInstanceAs (Projective (r.termObj n)))
     ((GradedModuleCat.epi_iff_surjective r.augmentation).mpr r.surjective_π)
-    (ChainComplex.of_exact_d_one_zero r.termObj r.differential r.differential_comp_differential
-      r.augmentation r.differential_zero_comp_augmentation
-      (GradedModuleCat.exact_iff.mpr r.exact_d_π))
-    (fun n => ChainComplex.of_exactAt_succ r.termObj r.differential
-      r.differential_comp_differential n (GradedModuleCat.exact_iff.mpr (r.exact_d_d n)))
+    r.complex_exact_d_one_zero
+    r.complex_exactAt_succ
 
 /-- The terms of the categorical resolution are the original graded modules. -/
 noncomputable def toProjectiveResolutionXIso (n : ℕ) :

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Coordinate
+public import TauCeti.Algebra.Module.GradedModule.Generated
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.PathsInto
 
@@ -31,6 +32,8 @@ Cartan and Ext-Euler matrices for an acyclic quiver.
 
 ## Main results
 
+* `TauCeti.PathAlgebra.isGeneratedInDegree_zero_gradedVertexProjective`: `kQ e_i` is generated in
+  internal degree `0`.
 * `TauCeti.PathAlgebra.coeff_gradedCartanMap_gradedVertexProjectiveClass`: the coefficient in
   degree `n` of the `(i,j)` graded Cartan column is the number of length-`n` paths `j ⟶ i`.
 * `TauCeti.PathAlgebra.coeff_gradedCartanMap_gradedVertexProjectiveClass_of_neg`: the same
@@ -168,6 +171,28 @@ theorem gradedVertexProjectiveClass_eq (i : Q) :
         ⟨gradedVertexProjective k Q i,
           gradedFiniteProjectiveModules_gradedVertexProjective k Q i⟩ :=
   (rfl)
+
+/-- The graded vertex projective `kQ eᵢ` is generated as a `kQ`-module in internal degree `0`. -/
+theorem isGeneratedInDegree_zero_gradedVertexProjective (i : Q) :
+    (gradedVertexProjective k Q i).grading.IsGeneratedInDegree (pathAlgebra k Q) 0 := by
+  let _ := integerGradedAlgebra k Q
+  rw [InternalGrading.isGeneratedInDegree_iff]
+  intro x
+  let e' : gradedVertexProjective k Q i :=
+    (gradedVertexProjectiveEquiv k Q i).symm
+      ⟨vertexIdempotent k i, Ideal.subset_span rfl⟩
+  have he' : e' ∈ (gradedVertexProjective k Q i).grading.piece 0 := by
+    rw [mem_gradedVertexProjective_piece_iff, ← coe_gradedVertexProjectiveEquiv_apply]
+    simpa [e'] using vertexIdempotent_mem_integerGrade_zero k Q i
+  have hx : gradedVertexProjectiveSubtype k Q i x • e' = x := by
+    apply gradedVertexProjectiveSubtype_injective k Q i
+    rw [map_smul, smul_eq_mul, ← coe_gradedVertexProjectiveEquiv_apply,
+      ← coe_gradedVertexProjectiveEquiv_apply]
+    simp only [e', LinearEquiv.apply_symm_apply]
+    exact (mem_span_singleton_iff_mul_eq_self (vertexIdempotent_mul_self i)).mp
+      (gradedVertexProjectiveEquiv k Q i x).2
+  rw [← hx]
+  exact Submodule.smul_mem _ _ (Submodule.subset_span he')
 
 end CommRing
 

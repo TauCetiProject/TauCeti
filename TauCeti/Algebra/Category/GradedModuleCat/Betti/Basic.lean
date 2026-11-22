@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Trunc
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Resolution
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.FiniteResolution
 public import TauCeti.Algebra.Category.GradedModuleCat.MinimalResolution
 
 /-!
-# Matrix-valued Betti Poincaré series and finite Cartan–Betti identities
+# Matrix-valued Betti Poincaré series
 
 Let `𝒜` be a `ℤ`-graded `k`-algebra and let `bP` be a `ℤ[q,q⁻¹]`-basis of the graded projective
 Grothendieck group `K₀^gr(proj A)` indexed by `I`. For any graded projective resolution `r` of a
@@ -24,7 +24,7 @@ Bᵢ(r; q, t) = ∑_{n ≥ 0} (bP.repr [Pₙ] i) tⁿ ∈ (ℤ[q,q⁻¹])⟦t⟧
 recording simultaneously the homological degree `t` and the internal shift `q` of every projective
 summand in `Pₙ`. Given a family of resolutions `r j` of modules `M j`, these entries assemble into
 the **Betti Poincaré matrix** `bettiPoincareMatrix bP r` with rows indexed by the projective basis
-`I` and columns indexed by the resolved family `J`.
+`I` and columns by the resolved family `J`.
 
 This file develops the basis-generic, Ext-free part of the theory:
 
@@ -35,16 +35,11 @@ This file develops the basis-generic, Ext-free part of the theory:
    resolutions with finitely generated terms) have the same Betti Poincaré series
    (`GradedProjectiveResolution.IsMinimal.bettiPoincareSeries_eq` and
    `IsMinimal.bettiPoincareSeries_shiftObj_eq`).
-3. **Finite-resolution Cartan–Betti identity**: using the alternating resolution class formula
-   `GradedProjectiveResolution.laurentK0_eq_gradedCartanMap_sum`, in any module basis `bM` of
-   resolved classes, evaluating the truncated Betti matrix at `t = -1` gives `C(q) · B(q, -1) = I`
-   (`gradedCartanMatrix_mul_eval_neg_one_trunc_bettiPoincareMatrix_eq_one`), and when every finite
-   graded module admits a finite projective resolution it equals the matrix of
-   `gradedCartanInverse` (`eval_neg_one_trunc_bettiPoincareMatrix_eq_toMatrix_gradedCartanInverse`).
 
-No field assumption, finite-dimensionality over `k`, or Ext theory is needed here; comparison with
-bigraded Ext, diagonal-support criteria for linearity, and unbounded formal-power-series identities
-live in `TauCeti.Algebra.Category.GradedModuleCat.Betti.Cartan`.
+Finite-resolution Cartan–Betti identities live in
+`TauCeti.Algebra.Category.GradedModuleCat.Betti.FiniteCartan`, comparison with bigraded Ext in
+`TauCeti.Algebra.Category.GradedModuleCat.Betti.Ext`, and unbounded formal-power-series identities
+in `TauCeti.Algebra.Category.GradedModuleCat.Betti.Cartan`.
 
 ## Main definitions
 
@@ -62,10 +57,6 @@ live in `TauCeti.Algebra.Category.GradedModuleCat.Betti.Cartan`.
   the choice of minimal resolution.
 * `TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincareSeries_shiftObj_eq`: any minimal
   resolution of `M{d}` has Betti series `qᵈ` times that of any minimal resolution of `M`.
-* `TauCeti.gradedCartanMatrix_mul_eval_neg_one_trunc_bettiPoincareMatrix_eq_one`: the finite
-  Laurent-polynomial Cartan–Betti identity `C(q) · B(q, -1) = I`.
-* `TauCeti.eval_neg_one_trunc_bettiPoincareMatrix_eq_toMatrix_gradedCartanInverse`: identification
-  of `B(q, -1)` with the matrix of `gradedCartanInverse`.
 
 ## References
 
@@ -119,16 +110,6 @@ theorem coeff_bettiPoincareSeries (i : I) (n : ℕ) :
       bP.repr (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
         (r.finiteProjectiveTerm n)) i := by
   simp [bettiPoincareSeries]
-
-/-- Reconstruct the class of the `n`-th resolution term from the `n`-th coefficients of the Betti
-Poincaré series. -/
-theorem of_finiteProjectiveTerm_eq_sum_coeff_bettiPoincareSeries [Fintype I] (n : ℕ) :
-    LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-        (r.finiteProjectiveTerm n) =
-      ∑ i, PowerSeries.coeff n (r.bettiPoincareSeries bP i) • bP i := by
-  conv_lhs =>
-    rw [← bP.sum_repr (LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n))]
-  simp only [coeff_bettiPoincareSeries]
 
 /-- **Shift law for the Betti Poincaré series**: shifting the resolution by `d` multiplies every
 entry by `qᵈ`. -/
@@ -271,121 +252,5 @@ theorem bettiPoincareMatrix_eq_of_isMinimal [DirectSum.Decomposition 𝒜]
   Matrix.ext fun i j => (hr₁ j).bettiPoincareSeries_eq_of_nonneg bP (hr₂ j) hneg i
 
 end Matrix
-
-/-! ### Finite-resolution Cartan–Betti identities -/
-
-section FiniteCartanBetti
-
-variable {I : Type uI} {J : Type uJ}
-  (bP : Module.Basis I (LaurentPolynomial ℤ)
-    (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
-  (bM : Module.Basis J (LaurentPolynomial ℤ)
-    (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)))
-  {M : J → (gradedFiniteModules 𝒜).FullSubcategory}
-  (hbM : ∀ j, bM j = LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) (M j))
-  (r : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M j).obj.grading)
-  [∀ j n, Module.Finite A ((r j).X n)]
-
-include hbM in
-/-- **Finite-resolution Cartan–Betti identity `C(q) · B(q, -1) = I`.** If the modules forming a
-basis `bM` of `G₀^gr(mod A)` admit finite graded projective resolutions vanishing from homological
-degree `N` onward, then multiplying the graded Cartan matrix `C(q)` on the right by the truncated
-Betti Poincaré matrix evaluated at `t = -1` yields the identity matrix over `ℤ[q,q⁻¹]`. -/
-theorem gradedCartanMatrix_mul_eval_neg_one_trunc_bettiPoincareMatrix_eq_one
-    [Fintype I] [Finite J] [DecidableEq J]
-    {N : ℕ} (hN : ∀ j, ∀ n ≥ N, Subsingleton ((r j).X n)) :
-    gradedCartanMatrix 𝒜 bP bM *
-        (bettiPoincareMatrix bP r).map (fun P => (PowerSeries.trunc N P).eval (-1)) = 1 := by
-  refine Matrix.ext fun j₁ j₂ => ?_
-  rw [Matrix.mul_apply, Matrix.one_apply]
-  let alt : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) :=
-    ∑ n ∈ Finset.range N,
-      (-1 : LaurentPolynomial ℤ) ^ n •
-        LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-          ((r j₂).finiteProjectiveTerm n)
-  have hcol : ∀ i,
-      ((bettiPoincareMatrix bP r).map (fun P => (PowerSeries.trunc N P).eval (-1))) i j₂ =
-        bP.repr alt i := fun i => by
-    rw [Matrix.map_apply, bettiPoincareMatrix_apply,
-      GradedProjectiveResolution.eval_neg_one_trunc_bettiPoincareSeries]
-    simp [alt, map_sum, map_smul, Finsupp.finsetSum_apply]
-  have hmul :
-      ∑ i, gradedCartanMatrix 𝒜 bP bM j₁ i *
-          ((bettiPoincareMatrix bP r).map (fun P => (PowerSeries.trunc N P).eval (-1))) i j₂ =
-        (Matrix.mulVec (gradedCartanMatrix 𝒜 bP bM) (bP.repr alt)) j₁ := by
-    rw [Matrix.mulVec, dotProduct]
-    exact Finset.sum_congr rfl fun i _ => by rw [hcol i]
-  rw [hmul, gradedCartanMatrix_mulVec_repr,
-    ← (r j₂).laurentK0_eq_gradedCartanMap_sum N (hN j₂) (M j₂).property,
-    ← hbM j₂, Module.Basis.repr_self, Finsupp.single_apply]
-  simp [eq_comm]
-
-include hbM in
-/-- **Matrix form of `gradedCartanInverse`.** When every finite graded module admits a finite
-graded-projective resolution, the truncated Betti Poincaré matrix evaluated at `t = -1` is the
-matrix of `gradedCartanInverse 𝒜 h` in the bases `bM` and `bP`. -/
-theorem eval_neg_one_trunc_bettiPoincareMatrix_eq_toMatrix_gradedCartanInverse
-    [DirectSum.Decomposition 𝒜] [Finite I] [Fintype J] [DecidableEq J]
-    (h : gradedFiniteModules 𝒜 ≤
-      (gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution
-        (gradedFiniteProjectiveModules 𝒜))
-    {N : ℕ} (hN : ∀ j, ∀ n ≥ N, Subsingleton ((r j).X n)) :
-    (bettiPoincareMatrix bP r).map (fun P => (PowerSeries.trunc N P).eval (-1)) =
-      LinearMap.toMatrix bM bP (gradedCartanInverse 𝒜 h) := by
-  refine Matrix.ext fun i j => ?_
-  rw [Matrix.map_apply, bettiPoincareMatrix_apply,
-    GradedProjectiveResolution.eval_neg_one_trunc_bettiPoincareSeries,
-    LinearMap.toMatrix_apply, hbM j]
-  cases N with
-  | zero =>
-    have hsub0 : Subsingleton ((r j).X 0) := hN j 0 (Nat.zero_le 0)
-    have hsubM : Subsingleton (M j).obj := (r j).surjective_π.subsingleton
-    have hzeroObj : IsZero (M j).obj := GradedModuleCat.isZero_of_subsingleton _
-    have hzero : IsZero (M j) :=
-      IsZero.of_full_of_faithful_of_isZero (gradedFiniteModules 𝒜).ι _ hzeroObj
-    rw [Finset.range_zero, Finset.sum_empty, ← LaurentK0.ofExactK0_exactK0_of.{uA},
-      ExactK0.of_eq_zero_of_isZero.{uA} hzero, map_zero, map_zero, map_zero, Finsupp.zero_apply]
-  | succ n =>
-    rw [gradedCartanInverse_of_eq_foldAlternating 𝒜 h (M j).obj (M j).property
-      ((r j).toFiniteResolution (hN j (n + 1) (Nat.le_refl _))),
-      (r j).foldAlternating_toFiniteResolution (hN j (n + 1) (Nat.le_refl _))
-        (fun Z hZ => LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) ⟨Z, hZ⟩)
-        (fun e _ _ => LaurentK0.of_congr _ (ObjectProperty.isoMk _ e)),
-      Fin.sum_univ_eq_sum_range (fun m => (-1 : ℤ) ^ m •
-        LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-          ⟨(r j).termObj m,
-            gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, (r j).projective m⟩⟩),
-      map_sum, Finsupp.finsetSum_apply]
-    refine Finset.sum_congr rfl fun m _ => ?_
-    have hterm : (r j).finiteProjectiveTerm m = ⟨(r j).termObj m,
-        gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, (r j).projective m⟩⟩ :=
-      ObjectProperty.FullSubcategory.ext ((r j).finiteProjectiveTerm_obj m)
-    rw [← Int.cast_smul_eq_zsmul (LaurentPolynomial ℤ), Int.cast_pow, Int.cast_neg, Int.cast_one,
-      map_smul, Finsupp.smul_apply, smul_eq_mul, hterm]
-
-include hbM in
-/-- When every finite graded module admits a finite graded-projective resolution, the truncated
-Betti Poincaré matrix evaluated at `t = -1` is also a left inverse of the graded Cartan matrix. -/
-theorem eval_neg_one_trunc_bettiPoincareMatrix_mul_gradedCartanMatrix_eq_one
-    [DirectSum.Decomposition 𝒜] [Fintype I] [Fintype J] [DecidableEq I]
-    (h : gradedFiniteModules 𝒜 ≤
-      (gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution
-        (gradedFiniteProjectiveModules 𝒜))
-    {N : ℕ} (hN : ∀ j, ∀ n ≥ N, Subsingleton ((r j).X n)) :
-    (bettiPoincareMatrix bP r).map (fun P => (PowerSeries.trunc N P).eval (-1)) *
-        gradedCartanMatrix 𝒜 bP bM = 1 := by
-  classical
-  rw [eval_neg_one_trunc_bettiPoincareMatrix_eq_toMatrix_gradedCartanInverse bP bM hbM r h hN]
-  have hC : gradedCartanMatrix 𝒜 bP bM = LinearMap.toMatrix bP bM (gradedCartanMap 𝒜) := by
-    refine Matrix.ext fun j i => ?_
-    rw [gradedCartanMatrix_apply, LinearMap.toMatrix_apply]
-  rw [hC, ← LinearMap.toMatrix_comp]
-  have hcomp : (gradedCartanInverse 𝒜 h).comp (gradedCartanMap 𝒜) = LinearMap.id :=
-    LinearMap.ext fun x => by
-      simpa [gradedCartanEquiv_symm_apply, gradedCartanEquiv_apply] using
-        (gradedCartanEquiv 𝒜 h).symm_apply_apply x
-  rw [hcomp, LinearMap.toMatrix_id]
-
-end FiniteCartanBetti
 
 end TauCeti

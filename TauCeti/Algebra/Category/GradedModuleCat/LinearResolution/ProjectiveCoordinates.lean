@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Duality
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Resolution
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.FiniteResolution
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Basic
 
 /-!

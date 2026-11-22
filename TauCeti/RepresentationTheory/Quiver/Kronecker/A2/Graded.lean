@@ -191,7 +191,7 @@ theorem submatrix_bettiPoincareMatrix_eq_gradedBettiMatrixA2 :
   let _ : Fintype A := Unique.fintype
   refine Matrix.ext fun i j => ?_
   rw [Matrix.submatrix_apply,
-    PathAlgebra.bettiPoincareMatrix_gradedVertexSimple k (Kronecker A) _
+    PathAlgebra.bettiPoincareMatrix_gradedVertexSimple_apply k (Kronecker A) _
       (fun l => PathAlgebra.isMinimal_gradedVertexSimpleProjectiveResolution k (Kronecker A) l)]
   fin_cases i <;> fin_cases j <;> simp [gradedBettiMatrixA2, Nat.card_eq_fintype_card]
 

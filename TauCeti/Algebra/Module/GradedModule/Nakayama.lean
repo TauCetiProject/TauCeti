@@ -21,9 +21,7 @@ The last criterion expresses concentration of `M / A₊ M` in degree `d` without
 presentation of that quotient. It detects the generating degrees of terms of minimal graded
 projective resolutions: maps to modules annihilated by `A₊` see precisely this quotient.
 Neither projectivity nor semisimplicity is needed for the generation criterion. Boundedness below
-is essential; no finite-generation hypothesis is required when a lower bound is supplied, and over
-a nonnegatively graded algebra any finitely generated graded module is bounded below
-(`exists_piece_eq_bot_of_lt`).
+is essential; no finite-generation hypothesis is required when a lower bound is supplied.
 
 The positive-degree action `A₊ M` is itself a homogeneous submodule, stable under degree-zero
 scalars and preserved by all `A`-linear maps: its degree-`p` components are sums of products
@@ -198,64 +196,6 @@ theorem _root_.LinearMap.map_mem_positive_smul_top {N : Type*} [AddCommMonoid N]
   · rw [map_smul]
     exact Submodule.smul_mem_smul ha Submodule.mem_top
   · simpa only [map_add] using Submodule.add_mem _ hx hy
-
-omit [IsScalarTower k A M] in
-/-- **Finitely generated graded modules over a nonnegatively graded algebra are bounded below.**
-The homogeneous degrees of a finite generating set have a lower bound `b`, and every homogeneous
-piece below degree `b` vanishes. -/
-theorem exists_piece_eq_bot_of_lt [DirectSum.Decomposition 𝒜] [Module.Finite A M]
-    (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) :
-    ∃ b : ℤ, ∀ p < b, G.piece p = ⊥ := by
-  classical
-  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := M)
-  obtain ⟨b, hb⟩ :=
-    (s.biUnion fun g => (decompose G.piece g).support).finite_toSet.bddBelow
-  refine ⟨b, fun p hp => (Submodule.eq_bot_iff _).2 fun x hx => ?_⟩
-  -- Since `𝒜` is nonnegatively graded, the span `L₀` of pieces in degrees `≥ b` is an
-  -- `A`-submodule containing the finite generating set `s`, hence equals `⊤`.
-  let L₀ : Submodule k M := ⨆ (q : ℤ) (_ : b ≤ q), G.piece q
-  have hsmul : ∀ (a : A) (y : M), y ∈ L₀ → a • y ∈ L₀ := by
-    intro a y hy
-    rw [← sum_support_decompose 𝒜 a, Finset.sum_smul]
-    refine L₀.sum_mem fun i _ => ?_
-    by_cases hi : i < 0
-    · have ha0 : (decompose 𝒜 a i : A) = 0 :=
-        (Submodule.eq_bot_iff _).1 (h𝒜 i hi) _ (decompose 𝒜 a i).property
-      rw [ha0, zero_smul]
-      exact L₀.zero_mem
-    · refine Submodule.iSup_induction _ (motive := fun z => (decompose 𝒜 a i : A) • z ∈ L₀)
-        hy (fun q z hz => ?_) (by simp)
-        (fun z w hz hw => by simpa [smul_add] using L₀.add_mem hz hw)
-      refine Submodule.iSup_induction _ (motive := fun z => (decompose 𝒜 a i : A) • z ∈ L₀)
-        hz (fun hq z hz => ?_) (by simp)
-        (fun z w hz hw => by simpa [smul_add] using L₀.add_mem hz hw)
-      exact Submodule.mem_iSup_of_mem (i + q)
-        (Submodule.mem_iSup_of_mem (by omega)
-          (SetLike.GradedSMul.smul_mem (decompose 𝒜 a i).property hz))
-  let L : Submodule A M :=
-    { carrier := L₀
-      add_mem' := L₀.add_mem
-      zero_mem' := L₀.zero_mem
-      smul_mem' := hsmul }
-  have hmemL : ∀ y : M, y ∈ L ↔ y ∈ L₀ := fun _ => Iff.rfl
-  have hL : L = ⊤ := by
-    rw [eq_top_iff, ← hs, Submodule.span_le]
-    intro g hg
-    rw [← sum_support_decompose G.piece g]
-    refine L.sum_mem fun q hq => ?_
-    have hbq : b ≤ q := hb (Finset.mem_biUnion.2 ⟨g, hg, hq⟩)
-    exact (hmemL _).mpr <| Submodule.mem_iSup_of_mem q
-      (Submodule.mem_iSup_of_mem hbq (decompose G.piece g q).property)
-  have hxL : x ∈ L₀ := (hmemL x).mp (hL.symm ▸ Submodule.mem_top)
-  have hdecomp : ∀ y ∈ L₀, (decompose G.piece y p : M) = 0 := by
-    intro y hy
-    refine Submodule.iSup_induction _ (motive := fun z => (decompose G.piece z p : M) = 0)
-      hy (fun q z hz => ?_) (by simp) (fun z w hz hw => by simp [hz, hw])
-    refine Submodule.iSup_induction _ (motive := fun z => (decompose G.piece z p : M) = 0)
-      hz (fun hq z hz => ?_) (by simp) (fun z w hz hw => by simp [hz, hw])
-    exact decompose_of_mem_ne G.piece hz (by omega : q ≠ p)
-  have hx0 := hdecomp x hxL
-  rwa [decompose_of_mem_same G.piece hx] at hx0
 
 variable [GradedAlgebra 𝒜]
 

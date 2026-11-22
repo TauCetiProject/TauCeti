@@ -45,6 +45,10 @@ graded algebras are formed in this category with this shift.
 * `TauCeti.GradedModuleCat.mem_shiftObj_piece_iff` and
   `TauCeti.GradedModuleCat.mem_shift_inverse_obj_piece_iff`: `(M{n})ₚ = M_{p-n}` and
   `(M{-1})ₚ = M_{p+1}`.
+* `TauCeti.GradedModuleCat.isZero_of_subsingleton`,
+  `TauCeti.GradedModuleCat.subsingleton_of_isZero`, and
+  `TauCeti.GradedModuleCat.isZero_zeroObj`: zero-object characterizations for subsingleton
+  graded modules and `zeroObj`.
 -/
 
 public section
@@ -237,6 +241,21 @@ instance : Linear k (GradedModuleCat.{v} 𝒜) where
   comp_smul _ _ _ _ _ _ := by ext; simp
 
 end Linear
+
+/-- A graded module with subsingleton carrier is a zero object in `GradedModuleCat 𝒜`. -/
+theorem isZero_of_subsingleton (M : GradedModuleCat.{v} 𝒜) [Subsingleton M] :
+    Limits.IsZero M :=
+  (Limits.IsZero.iff_id_eq_zero _).2 (hom_ext <| LinearMap.ext fun _ => Subsingleton.elim _ _)
+
+/-- A zero object in `GradedModuleCat 𝒜` has a subsingleton carrier. -/
+theorem subsingleton_of_isZero {M : GradedModuleCat.{v} 𝒜} (hM : Limits.IsZero M) :
+    Subsingleton M :=
+  subsingleton_of_forall_eq 0 fun x =>
+    congrArg (fun f : M ⟶ M => f.hom x) ((Limits.IsZero.iff_id_eq_zero M).1 hM)
+
+/-- The zero graded module `zeroObj` is a zero object in `GradedModuleCat 𝒜`. -/
+theorem isZero_zeroObj : Limits.IsZero (zeroObj (𝒜 := 𝒜)) :=
+  isZero_of_subsingleton zeroObj
 
 /-- The isomorphism of graded modules given by an `A`-linear equivalence which preserves and
 reflects degrees. -/

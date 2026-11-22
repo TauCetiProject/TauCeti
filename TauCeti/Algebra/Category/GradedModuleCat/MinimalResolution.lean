@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.Nakayama
 public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
-public import TauCeti.Algebra.Module.GradedModule.Nakayama
 
 /-!
 # Ext from minimal graded resolutions and uniqueness
@@ -34,7 +33,7 @@ equivalence between two bounded-below minimal graded projective resolutions show
 comparison map is an isomorphism of chain complexes
 (`GradedProjectiveResolution.IsMinimal.isIso_hom_of_homotopyEquiv`), so the terms of a minimal
 resolution are unique up to graded isomorphism (`IsMinimal.nonempty_iso_termObj`). In particular,
-linearity is independent of the choice of minimal resolution (`IsMinimal.isLinear_iff`).
+linearity is independent of the choice of minimal resolution (`IsMinimal.isLinear_iff_isLinear`).
 
 ## References
 
@@ -254,7 +253,7 @@ theorem IsMinimal.nonempty_iso_termObj_of_finite
 
 /-- **Linearity is independent of the minimal resolution.** If two bounded-below minimal graded
 projective resolutions resolve the same graded module, one is linear if and only if the other is. -/
-theorem IsMinimal.isLinear_iff
+theorem IsMinimal.isLinear_iff_isLinear
     {r₁ r₂ : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
     (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
     (hb₁ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₁.grading n).piece p = ⊥)
