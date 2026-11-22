@@ -33,7 +33,7 @@ This file constructs the extension in the two main cases of Stacks Project, Lemm
 2. **Flat algebras** (`DividedPowers.mapOfFlat`): when `B` is a flat `A`-algebra, `hI` extends
    uniquely to `I.map (algebraMap A B)`. The candidate value on
    `∑ i ∈ s, b i * algebraMap A B (x i)` is `DividedPowers.extensionCoeff`, identified via
-   `DividedPowers.dpow_sum'` with the `n`-th coefficient of
+   `PowerSeries.coeff_prod` with the `n`-th coefficient of
    `∏ i ∈ s, PowerSeries.rescale (b i) (PowerSeries.map f (hI.exp (x i)))`.
    Bimultiplicativity of `PowerSeries.rescale` and `DividedPowers.exp` yields invariance under
    finite scalar substitutions (`DividedPowers.extensionCoeff_subst`), and the equational criterion
@@ -369,35 +369,30 @@ private theorem constantCoeff_rescale_map_exp (hI : DividedPowers I) (f : A →+
   rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_rescale_map_exp, pow_zero, one_mul,
     hI.dpow_zero hx, map_one]
 
-/-- When every `x i ∈ I`, `extensionCoeff hI f n s b x` is the `n`-th coefficient of the finite
-product of rescaled mapped exponentials `∏ i ∈ s, rescale (b i) (map f (hI.exp (x i)))`. -/
+private theorem coeff_prod_eq_sum_sym {R ι : Type*} [CommSemiring R] [DecidableEq ι]
+    (s : Finset ι) (g : ι → PowerSeries R) (n : ℕ) :
+    PowerSeries.coeff n (∏ i ∈ s, g i) =
+      ∑ k ∈ s.sym n, ∏ i ∈ s, PowerSeries.coeff (Multiset.count i k) (g i) := by
+  calc PowerSeries.coeff n (∏ i ∈ s, g i)
+      = ∑ l ∈ s.finsuppAntidiag n, ∏ i ∈ s, PowerSeries.coeff (l i) (g i) :=
+        PowerSeries.coeff_prod g n s
+    _ = ∑ l ∈ s.piAntidiag n, ∏ i ∈ s, PowerSeries.coeff (l i) (g i) := by
+        rw [Finset.finsuppAntidiag, Finset.sum_map,
+          ← Finset.sum_attach (s.piAntidiag n)
+            (fun l ↦ ∏ i ∈ s, PowerSeries.coeff (l i) (g i))]
+        simp
+    _ = ∑ k ∈ s.sym n, ∏ i ∈ s, PowerSeries.coeff (Multiset.count i k) (g i) := by
+        rw [← Finset.map_sym_eq_piAntidiag, Finset.sum_map]
+        rfl
+
+/-- `extensionCoeff hI f n s b x` is the `n`-th coefficient of the finite product of rescaled mapped
+exponentials `∏ i ∈ s, rescale (b i) (map f (hI.exp (x i)))`. -/
 theorem extensionCoeff_eq_coeff_prod {ι : Type*} [DecidableEq ι] (hI : DividedPowers I)
-    (f : A →+* B) (n : ℕ) {s : Finset ι} (b : ι → B) {x : ι → A} (hx : ∀ i ∈ s, x i ∈ I) :
+    (f : A →+* B) (n : ℕ) {s : Finset ι} (b : ι → B) (x : ι → A) :
     extensionCoeff hI f n s b x =
       PowerSeries.coeff n
         (∏ i ∈ s, PowerSeries.rescale (b i) (PowerSeries.map f (hI.exp (x i)))) := by
-  let M : AddSubmonoid (Additive (PowerSeries B)) :=
-    { carrier := {p | PowerSeries.constantCoeff (Additive.toMul p) = 1}
-      zero_mem' := by simp
-      add_mem' := fun {p q} hp hq ↦ by
-        simp only [Set.mem_ofPred_eq] at hp hq ⊢
-        rw [toMul_add, map_mul, hp, hq, mul_one] }
-  have hM : ∀ p, p ∈ M ↔ PowerSeries.constantCoeff (Additive.toMul p) = 1 := fun _ ↦ Iff.rfl
-  have hsum := DividedPowers.dpow_sum' (I := M)
-    (dpow := fun k p ↦ PowerSeries.coeff k (Additive.toMul p))
-    (fun {p} hp ↦ by
-      rw [PowerSeries.coeff_zero_eq_constantCoeff]
-      exact (hM p).mp hp)
-    (fun {_ p q} _ _ ↦ by simpa using PowerSeries.coeff_mul _ (Additive.toMul p) (Additive.toMul q))
-    (fun {k} hk ↦ by simp [PowerSeries.coeff_one, hk])
-    (s := s)
-    (x := fun i ↦ Additive.ofMul (PowerSeries.rescale (b i) (PowerSeries.map f (hI.exp (x i)))))
-    (fun i hi ↦ (hM _).mpr <| by
-      rw [toMul_ofMul]
-      exact constantCoeff_rescale_map_exp hI f _ (hx i hi))
-    (n := n)
-  simp only [toMul_sum, toMul_ofMul] at hsum
-  rw [hsum, extensionCoeff_def]
+  rw [coeff_prod_eq_sum_sym, extensionCoeff_def]
   refine sum_congr rfl fun k _ ↦ prod_congr rfl fun i _ ↦ ?_
   rw [coeff_rescale_map_exp]
 
@@ -467,9 +462,7 @@ theorem extensionCoeff_subst {ι κ : Type*} [DecidableEq ι] [DecidableEq κ]
     (a : ι → κ → A) (c : κ → B) {x : ι → A} (hx : ∀ i ∈ s, x i ∈ I) :
     extensionCoeff hI f n s (fun i ↦ ∑ j ∈ t, f (a i j) * c j) x =
       extensionCoeff hI f n t c (fun j ↦ ∑ i ∈ s, a i j * x i) := by
-  have hy : ∀ j ∈ t, (∑ i ∈ s, a i j * x i) ∈ I := fun j _ ↦
-    Submodule.sum_mem _ fun i hi ↦ I.mul_mem_left (a i j) (hx i hi)
-  rw [extensionCoeff_eq_coeff_prod hI f n _ hx, extensionCoeff_eq_coeff_prod hI f n _ hy]
+  rw [extensionCoeff_eq_coeff_prod, extensionCoeff_eq_coeff_prod]
   congr 1
   calc ∏ i ∈ s, PowerSeries.rescale (∑ j ∈ t, f (a i j) * c j) (PowerSeries.map f (hI.exp (x i)))
       = ∏ i ∈ s, ∏ j ∈ t, PowerSeries.rescale (f (a i j) * c j)
@@ -492,6 +485,22 @@ section FlatExtension
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] {I : Ideal A}
 
+private theorem extensionCoeff_eq_univ_of_sum_smul {σ : Type*} [DecidableEq σ]
+    (hI : DividedPowers I) (n : ℕ) {u : Finset σ} {b : σ → B} {x : σ → A}
+    (hx : ∀ i ∈ u, x i ∈ I) {l : ℕ} (a : u → Fin l → A) (c : Fin l → B)
+    (hb : ∀ i : u, b i = ∑ k : Fin l, a i k • c k) :
+    extensionCoeff hI (algebraMap A B) n u b x =
+      extensionCoeff hI (algebraMap A B) n univ c (fun k ↦ ∑ i : u, x i * a i k) := by
+  let a' : σ → Fin l → A := fun i k ↦ if hi : i ∈ u then a ⟨i, hi⟩ k else 0
+  have hb' : ∀ i ∈ u, b i = ∑ k : Fin l, algebraMap A B (a' i k) * c k := fun i hi ↦ by
+    simpa only [a', dite_eq_left hi, Algebra.smul_def] using hb ⟨i, hi⟩
+  have hy : ∀ k : Fin l, ∑ i ∈ u, a' i k * x i = ∑ i : u, x i * a i k := fun k ↦ by
+    rw [← sum_coe_sort u (fun i ↦ a' i k * x i)]
+    exact sum_congr rfl fun i _ ↦ by simp only [a', dite_eq_left i.property, mul_comm]
+  rw [extensionCoeff_congr hI (algebraMap A B) n hb' (fun _ _ ↦ rfl),
+    extensionCoeff_subst hI (algebraMap A B) n u univ a' c hx]
+  simp_rw [hy]
+
 /-- **Independence of the presentation over a flat algebra** (Stacks 23.4.2, tag 07H1): if `B` is
 flat over `A` and two finite `B`-linear combinations of elements of `I` have the same sum in `B`,
 then their `extensionCoeff` values agree in every degree. -/
@@ -510,29 +519,16 @@ theorem extensionCoeff_eq_of_sum_eq [Module.Flat A B] {ι κ : Type*} [Decidable
     rw [sum_coe_sort s (fun i ↦ b i * algebraMap A B (x i)),
       sum_coe_sort t (fun j ↦ b' j * algebraMap A B (x' j)), hsum, add_neg_cancel]
   obtain ⟨l, a, c, hm, hr⟩ := Module.Flat.isTrivialRelation_of_sum_smul_eq_zero hrel
-  let a₁ : ι → Fin l → A := fun i k ↦ if hi : i ∈ s then a (.inl ⟨i, hi⟩) k else 0
-  let a₂ : κ → Fin l → A := fun j k ↦ if hj : j ∈ t then a (.inr ⟨j, hj⟩) k else 0
-  have hb₁ : ∀ i ∈ s, b i = ∑ k : Fin l, algebraMap A B (a₁ i k) * c k := fun i hi ↦ by
-    simpa only [m, a₁, Sum.elim_inl, dite_eq_left hi, Algebra.smul_def] using hm (.inl ⟨i, hi⟩)
-  have hb₂ : ∀ j ∈ t, b' j = ∑ k : Fin l, algebraMap A B (a₂ j k) * c k := fun j hj ↦ by
-    simpa only [m, a₂, Sum.elim_inr, dite_eq_left hj, Algebra.smul_def] using hm (.inr ⟨j, hj⟩)
-  have hy_eq : ∀ k : Fin l, ∑ i ∈ s, a₁ i k * x i = ∑ j ∈ t, a₂ j k * x' j := fun k ↦ by
+  have hy_eq : (fun k : Fin l ↦ ∑ i : s, x i * a (.inl i) k) =
+      (fun k : Fin l ↦ ∑ j : t, x' j * a (.inr j) k) := by
+    ext k
     have hk := hr k
     rw [Fintype.sum_sum_type] at hk
     simp only [r, Sum.elim_inl, Sum.elim_inr, neg_mul, sum_neg_distrib] at hk
-    have h1 : ∑ i : s, x i * a (.inl i) k = ∑ i ∈ s, a₁ i k * x i := by
-      rw [← sum_coe_sort s (fun i ↦ a₁ i k * x i)]
-      exact sum_congr rfl fun i _ ↦ by simp only [a₁, dite_eq_left i.property, mul_comm]
-    have h2 : ∑ j : t, x' j * a (.inr j) k = ∑ j ∈ t, a₂ j k * x' j := by
-      rw [← sum_coe_sort t (fun j ↦ a₂ j k * x' j)]
-      exact sum_congr rfl fun j _ ↦ by simp only [a₂, dite_eq_left j.property, mul_comm]
-    rw [h1, h2] at hk
     exact eq_of_sub_eq_zero (by simpa only [sub_eq_add_neg] using hk)
-  rw [extensionCoeff_congr hI (algebraMap A B) n hb₁ (fun _ _ ↦ rfl),
-    extensionCoeff_congr hI (algebraMap A B) n hb₂ (fun _ _ ↦ rfl),
-    extensionCoeff_subst hI (algebraMap A B) n s univ a₁ c hx,
-    extensionCoeff_subst hI (algebraMap A B) n t univ a₂ c hx']
-  simp_rw [hy_eq]
+  rw [extensionCoeff_eq_univ_of_sum_smul hI n hx (fun i ↦ a (.inl i)) c (fun i ↦ hm (.inl i)),
+    extensionCoeff_eq_univ_of_sum_smul hI n hx' (fun j ↦ a (.inr j)) c (fun j ↦ hm (.inr j)),
+    hy_eq]
 
 private theorem exists_sum_mul_algebraMap_of_mem_map {B : Type*} [CommRing B] [Algebra A B]
     {z : B} (hz : z ∈ I.map (algebraMap A B)) :
@@ -570,7 +566,7 @@ private theorem flatDpow_sum_eq_coeff_prod [Module.Flat A B] {ι : Type*}
       PowerSeries.coeff n
         (∏ i ∈ s, PowerSeries.rescale (b i) (PowerSeries.map (algebraMap A B) (hI.exp (x i)))) := by
   classical
-  exact (flatDpow_sum hI n b hx).trans (extensionCoeff_eq_coeff_prod hI (algebraMap A B) n b hx)
+  exact (flatDpow_sum hI n b hx).trans (extensionCoeff_eq_coeff_prod hI (algebraMap A B) n b x)
 
 private noncomputable def flatAdditivePowers (hI : DividedPowers I) (B : Type*) [CommRing B]
     [Algebra A B] [Module.Flat A B] :
