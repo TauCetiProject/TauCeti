@@ -169,7 +169,7 @@ theorem _root_.IsClosed.notMem_filledHull_inv_sub_image {K : Set ℂ} {a₀ : �
           self_mem_nhdsWithin
     exact ⟨z, hzU, hzD, hza⟩
   have hImg_unbdd : ¬ IsBounded (φ '' (D \ {a₀})) :=
-    not_isBounded_image_sub_inv_of_mem_closure ha₀_cl (fun h ↦ h.2 rfl)
+    fun hb ↦ (isBounded_image_inv_sub_iff (U := D \ {a₀}) fun h ↦ h.2 rfl).mp hb ha₀_cl
   exact ⟨mem_filledHull_iff.not.mpr fun hbd ↦ hImg_unbdd (hbd.subset hD_sub), hD_sub⟩
 
 end TauCeti

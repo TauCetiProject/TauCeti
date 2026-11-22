@@ -46,7 +46,7 @@ theorem AnalyticOnNhd.exists_hermite_quotient {𝕜 : Type*} [NontriviallyNormed
       (∀ z ∈ K, f z - P.eval z = (∏ a ∈ S, (z - a) ^ m a) * q z) ∧
       (∀ a ∈ S, ∀ k < m a, iteratedDeriv k (fun z ↦ P.eval z) a = iteratedDeriv k f a) := by
   classical
-  have hbij := (Polynomial.eval_iterate_derivative_bijective_iff_of_charZero
+  have hbij := (Polynomial.ordinaryHermiteJet_bijective_iff_of_charZero
     (K := 𝕜) (a := fun i : S ↦ (i : 𝕜)) (m := fun i : S ↦ m i)).mpr
     fun _ _ hij _ _ h ↦ hij (Subtype.ext h)
   obtain ⟨P₀, hP_eq⟩ := hbij.2 fun (i : S) (k : Fin (m i)) ↦ iteratedDeriv k f i
@@ -54,7 +54,8 @@ theorem AnalyticOnNhd.exists_hermite_quotient {𝕜 : Type*} [NontriviallyNormed
   have hP : ∀ a ∈ S, ∀ k < m a, iteratedDeriv k (fun z ↦ P.eval z) a =
       iteratedDeriv k f a := fun a ha k hk ↦ by
     rw [Polynomial.iteratedDeriv]
-    exact congrFun (congrFun hP_eq ⟨a, ha⟩) ⟨k, hk⟩
+    have h := congrFun (congrFun hP_eq ⟨a, ha⟩) ⟨k, hk⟩
+    rwa [Polynomial.ordinaryHermiteJet_apply] at h
   set Sin := S.filter (· ∈ K)
   set Sout := S.filter (· ∉ K)
   set U' := U \ (Sout : Set 𝕜)
