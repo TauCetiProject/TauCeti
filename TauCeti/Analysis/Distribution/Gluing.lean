@@ -5,12 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.Distribution
 public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Gluing distributions and currents on an open cover
 
-Let `Ω` be an open subset of a finite-dimensional real normed space `E`, covered by open sets
+Let `Ω` be an open subset of a real normed space `E`, covered by open sets
 `U i`. Suppose that for every `i` a continuous linear map `T i : 𝓓^{n}(U i, F) →L[ℝ] V` is given,
 with values in a locally convex space `V`, and that these maps are compatible: `T i` and `T j`
 agree on tests supported in `U i ∩ U j`. Then there is a unique continuous linear map
@@ -22,11 +26,19 @@ With `F = ℝ` this glues distributions; with `F = E [⋀^Fin k]→L[ℝ] ℝ` a
 `k`-currents. The cover is arbitrary: it need not be locally finite or countable.
 
 The glued map is `S φ = ∑ i ∈ s, T i (χ i • φ)` for finitely many smooth cutoffs `χ i`, supported in
-`U i`, whose sum is one on the support of `φ`. Compatibility shows that this value does not depend
-on the cutoffs: for a second family `χ'`, both sums equal `∑ i, ∑ j, T (χ i • χ' j • φ)`. Using one
-family of cutoffs for all tests supported in a fixed compact set gives continuity for the LF
-topology. Uniqueness is the localization principle
-`AddMonoidHom.eq_zero_of_locally_vanishing`.
+`U i`, whose sum is one on the support of `φ`
+(`IsCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one`). Compatibility shows that this
+value does not depend on the cutoffs: for a second family `χ'`, both sums equal
+`∑ i, ∑ j, T (χ i • χ' j • φ)`. Using one family of cutoffs for all tests supported in a fixed
+compact set gives continuity for the LF topology. Uniqueness is the localization principle
+`AddMonoidHom.eq_zero_of_locally_vanishing`. On an infinite-dimensional space every test function
+is zero (`TestFunction.eq_zero_of_not_finiteDimensional`), and the glued map is zero.
+
+The same cutoffs glue integral representations: if `T φ = ∫ φ • f` for real tests supported in
+each member of an open cover of `W`, with one locally integrable `f`, then this holds for every
+real test supported in `W` (`Distribution.apply_eq_integral_of_locally`). Local continuous
+representatives agree on overlaps, since a continuous function on an open set is determined by
+its integrals against the tests supported there (`IsOpen.eqOn_of_integral_smul_eq`).
 
 ## Main declarations
 
@@ -36,6 +48,10 @@ topology. Uniqueness is the localization principle
   cover glue to a unique continuous linear map on the union.
 * `Distribution.existsUnique_gluing_of_isScalarTower`: the glued map of compatible `𝕜`-linear
   maps is `𝕜`-linear, for instance complex linear on complex test functions.
+* `IsOpen.eqOn_of_integral_smul_eq`: two functions continuous on an open set with the same
+  integrals against the tests supported there agree on it.
+* `Distribution.apply_eq_integral_of_locally`: local integral representations by one locally
+  integrable function glue.
 
 ## References
 
@@ -46,7 +62,7 @@ topology. Uniqueness is the localization principle
 public section
 
 open Set TopologicalSpace TestFunction
-open scoped Distributions ContDiff Manifold
+open scoped Distributions ContDiff
 
 namespace Distribution
 
@@ -104,8 +120,6 @@ private theorem sum_cutoffCLM_eq
         refine Finset.sum_congr rfl fun j _ ↦ ?_
         rw [hsplit (hχ' j) (hχ'U j) (c := χ) (fun i ↦ hprod i j) (fun i ↦ hprodr i j) hs, map_sum]
 
-variable [FiniteDimensional ℝ E]
-
 /-- **Locality.** Two continuous linear maps on tests on `Ω` are equal if their restrictions to
 every member of an open cover `U` of `Ω` are equal. -/
 theorem eq_of_forall_comp_monoCLM_eq (hU : ⨆ i, U i = Ω) {S S' : 𝓓^{n}(Ω, F) →L[ℝ] V}
@@ -119,9 +133,8 @@ theorem eq_of_forall_comp_monoCLM_eq (hU : ⨆ i, U i = Ω) {S S' : 𝓓^{n}(Ω,
       simpa [← SetLike.mem_coe, ← hU, Opens.coe_iSup] using hx
     refine ⟨U i, (U i).isOpen, hi, fun φ hφ ↦ ?_⟩
     -- A test on `Ω` supported in `U i` is the extension of a test on `U i`.
-    let ψ : 𝓓^{n}(U i, F) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφ⟩
-    have hψ : monoCLM ℝ ψ = φ := TestFunction.ext fun y ↦ by simp [ψ, hU ▸ le_iSup U i]
-    simpa [hψ, sub_eq_zero] using DFunLike.congr_fun (h i) ψ
+    obtain ⟨ψ, rfl⟩ := exists_monoCLM_eq_of_tsupport_subset (hU ▸ le_iSup U i) hφ
+    simpa [sub_eq_zero] using DFunLike.congr_fun (h i) ψ
 
 variable [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [LocallyConvexSpace ℝ V]
 
@@ -132,22 +145,18 @@ theorem existsUnique_gluing (hU : ⨆ i, U i = Ω)
     (hT : ∀ i j (φ : 𝓓^{n}(U i ⊓ U j, F)), T i (monoCLM ℝ φ) = T j (monoCLM ℝ φ)) :
     ∃! S : 𝓓^{n}(Ω, F) →L[ℝ] V, ∀ i, S ∘L monoCLM ℝ = T i := by
   classical
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · refine ⟨0, fun i ↦ ?_, fun S _ ↦ ?_⟩ <;> ext φ <;>
+      simp [eq_zero_of_not_finiteDimensional φ hE]
   have hUΩ (i : ι) : U i ≤ Ω := hU ▸ le_iSup U i
-  -- Every compact subset of `Ω` carries finitely many smooth cutoffs subordinate to the cover and
-  -- summing to one on it.
-  have hcut (K : Set E) (hK : IsCompact K) (hKΩ : K ⊆ Ω) : ∃ (s : Finset ι) (χ : ι → E → ℝ)
-      (_ : ∀ i, ContDiff ℝ n (χ i)), (∀ i, tsupport (χ i) ∩ Ω ⊆ U i) ∧
-        ∀ x ∈ K, ∑ i ∈ s, χ i x = 1 := by
-    have hKU : K ⊆ ⋃ i, (U i : Set E) := by rwa [← Opens.coe_iSup, hU]
-    obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate 𝓘(ℝ, E) hK.isClosed
-      (fun i ↦ (U i : Set E)) (fun i ↦ (U i).isOpen) hKU
-    have hfin := ρ.locallyFinite.finite_nonempty_inter_compact hK
-    refine ⟨hfin.toFinset, fun i ↦ ρ i, fun i ↦ (ρ i).contMDiff.contDiff.of_le (by simp),
-      fun i ↦ inter_subset_left.trans (hρ i), fun x hx ↦ ?_⟩
-    refine ρ.toPartitionOfUnity.sum_finsupport' hx fun i hi ↦ ?_
-    rw [PartitionOfUnity.mem_finsupport] at hi
-    exact hfin.mem_toFinset.2 ⟨x, hi, hx⟩
-  choose s χ hχ hχU hsum using hcut
+  -- Finitely many smooth cutoffs subordinate to the cover summing to one on each compact `K ⊆ Ω`.
+  choose s χ hχ' _ _ hsum using fun (K : Set E) (hK : IsCompact K) (hKΩ : K ⊆ Ω) ↦
+    hK.exists_contDiff_tsupport_subset_finset_sum_eq_one (fun i ↦ (U i).isOpen)
+      (by rwa [← Opens.coe_iSup, hU])
+  have hχ K hK hKΩ i : ContDiff ℝ n (χ K hK hKΩ i) := (hχ' K hK hKΩ i).1.of_le (by simp)
+  have hχU K hK hKΩ i : tsupport (χ K hK hKΩ i) ∩ Ω ⊆ U i :=
+    inter_subset_left.trans (hχ' K hK hKΩ i).2.2
   -- The glued value on `φ`, computed with the cutoffs chosen for `tsupport φ`.
   let S₀ : 𝓓^{n}(Ω, F) → V := fun φ ↦
     ∑ i ∈ s _ φ.hasCompactSupport φ.tsupport_subset,
@@ -225,3 +234,59 @@ theorem existsUnique_gluing_of_isScalarTower (hU : ⨆ i, U i = Ω)
   exact ContinuousLinearMap.ext fun φ ↦ DFunLike.congr_fun h φ
 
 end Distribution
+
+/-! ### Gluing integral representations -/
+
+section Integral
+
+open MeasureTheory Distribution
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {μ : Measure E}
+
+/-- Two functions continuous on an open set `U ⊆ Ω` that give the same integral with respect to
+`μ` against every real test function supported in `U` agree on `U`, when `μ` is locally finite
+and charges every nonempty open set. -/
+theorem IsOpen.eqOn_of_integral_smul_eq [FiniteDimensional ℝ E] [CompleteSpace F]
+    [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] {U : Set E} (hU : IsOpen U)
+    (hUΩ : U ⊆ Ω) {f g : E → F} (hf : ContinuousOn f U) (hg : ContinuousOn g U)
+    (h : ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ U → ∫ y, φ y • f y ∂μ = ∫ y, φ y • g y ∂μ) :
+    EqOn f g U := by
+  let U' : Opens E := ⟨U, hU⟩
+  have hUΩ' : U' ≤ Ω := hUΩ
+  have hfU := hf.locallyIntegrableOn (μ := μ) hU.measurableSet
+  have hgU := hg.locallyIntegrableOn (μ := μ) hU.measurableSet
+  refine Measure.eqOn_open_of_ae_eq (ofFun_injective (Ω := U') (n := ⊤) hfU hgU ?_) hU hf hg
+  -- A test function on `U` is a test function on `Ω` supported in `U`.
+  ext ψ
+  have hψ : (TestFunction.monoCLM ℝ ψ : 𝓓(Ω, ℝ)) = (ψ : E → ℝ) := by
+    simp [TestFunction.monoCLM_apply, hUΩ']
+  rw [ofFun_apply hfU, ofFun_apply hgU, ← hψ]
+  exact h _ (hψ ▸ ψ.tsupport_subset)
+
+namespace Distribution
+
+/-- **Integral representations glue.** If `f` is locally integrable on an open set `W` and every
+point of `W` has an open neighbourhood on whose supported real test functions `T` is integration
+against `f` with respect to `μ`, then `T φ = ∫ φ • f ∂μ` for every real test function `φ`
+supported in `W`. -/
+theorem apply_eq_integral_of_locally {n : ℕ∞} {T : 𝓓'^{n}(Ω, F)} {W : Set E} (hW : IsOpen W)
+    {f : E → F} (hf : LocallyIntegrableOn f W μ)
+    (h : ∀ x ∈ W, ∃ U : Set E, IsOpen U ∧ x ∈ U ∧
+      ∀ φ : 𝓓^{n}(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y ∂μ)
+    {φ : 𝓓^{n}(Ω, ℝ)} (hφ : tsupport φ ⊆ W) : T φ = ∫ y, φ y • f y ∂μ := by
+  classical
+  choose U hU hxU hT using fun x : W ↦ h x x.property
+  obtain ⟨s, ψ, hψ, hsum, -⟩ := φ.exists_sum_subordinate (fun x : W ↦ U x ∩ W)
+    (fun x ↦ (hU x).inter hW) fun y hy ↦ mem_iUnion.2 ⟨⟨y, hφ hy⟩, hxU _, hφ hy⟩
+  have hint (i : s) : Integrable (fun y ↦ ψ i y • f y) μ :=
+    hf.integrable_smul_left_of_hasCompactSupport (ψ i).continuous (ψ i).hasCompactSupport
+      ((hψ i).trans inter_subset_right)
+  rw [← hsum, map_sum,
+    Finset.sum_congr rfl fun (i : s) _ ↦ hT i (ψ i) ((hψ i).trans inter_subset_left),
+    ← integral_finsetSum _ fun i _ ↦ hint i]
+  simp [Finset.sum_smul]
+
+end Distribution
+
+end Integral

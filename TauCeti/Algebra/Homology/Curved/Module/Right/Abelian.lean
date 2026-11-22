@@ -18,8 +18,11 @@ functor preserves these constructions and reflects isomorphisms. The coimage-to-
 comparison in the closed category is an isomorphism, as detected in the abelian graded module
 category. This characterizes the abelian structure on the closed category of curved modules.
 
-The graded forgetful functor preserves finite limits and colimits. This ambient abelian
-category and its forgetful functor support the graded-split exact structure on curved modules.
+The graded forgetful functor preserves finite limits and colimits. Short exactness of a short
+complex of closed morphisms is therefore equivalent to injectivity, surjectivity, and exactness of
+the underlying right-linear maps (`shortExact_iff`), and the kernel of an epimorphism yields a
+short exact sequence (`shortExact_kernelι`). This ambient abelian category and its forgetful
+functor support the graded-split exact structure on curved modules.
 
 ## References
 
@@ -62,5 +65,39 @@ noncomputable instance : PreservesFiniteLimits (forgetDifferential (h := h)) :=
 /-- The graded forgetful functor preserves finite colimits of closed curved-module diagrams. -/
 noncomputable instance : PreservesFiniteColimits (forgetDifferential (h := h)) :=
   Functor.preservesFiniteColimits_of_preservesCokernels _
+
+/-- A short complex of closed morphisms of curved right modules is short exact if and only if
+its underlying maps are injective, surjective, and exact. -/
+theorem shortExact_iff
+    {S : ShortComplex
+      (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h))} :
+    S.ShortExact ↔
+      Function.Injective (closedHom S.f) ∧
+        Function.Surjective (closedHom S.g) ∧
+        Function.Exact (closedHom S.f) (closedHom S.g) := by
+  let F := forgetDifferential (h := h)
+  constructor
+  · intro hS
+    have hS' := hS.map_of_exact F
+    exact ⟨(GradedModuleCat.mono_iff_injective _).1 hS'.mono_f,
+      (GradedModuleCat.epi_iff_surjective _).1 hS'.epi_g,
+      GradedModuleCat.exact_iff.1 hS'.exact⟩
+  · rintro ⟨hf, hg, hex⟩
+    have : Mono S.f := F.mono_of_mono_map ((GradedModuleCat.mono_iff_injective _).2 hf)
+    have : Epi S.g := F.epi_of_epi_map ((GradedModuleCat.epi_iff_surjective _).2 hg)
+    exact { exact := (S.exact_map_iff_of_faithful F).1 (GradedModuleCat.exact_iff.2 hex) }
+
+/-- For an epimorphism `g` in the closed category of curved right modules, the short complex
+`kernelObj g ⟶ Q ⟶ M` is short exact. -/
+theorem shortExact_kernelι {Q M : CurvedDGRightModuleCat.{u, u, u} h}
+    (g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) Q ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) [Epi g] :
+    (ShortComplex.mk (kernelι g) g (kernelι_comp g)).ShortExact := by
+  let e : KernelFork.ofι (kernelι g) (kernelι_comp g) ≅ kernelCone g :=
+    Fork.ext (eqToIso (kernelCone_pt g).symm) (by simp)
+  have hlim : IsLimit (KernelFork.ofι (kernelι g) (kernelι_comp g)) :=
+    (IsLimit.equivIsoLimit e).symm (kernelIsLimit g)
+  have : Mono (kernelι g) := mono_of_isLimit_fork hlim
+  exact { exact := ShortComplex.exact_of_f_is_kernel _ hlim }
 
 end TauCeti.CurvedDGRightModuleCat

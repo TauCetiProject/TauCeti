@@ -18,8 +18,9 @@ isomorphism of path algebras, it matches the two relation families, and it there
 isomorphism of the two `TauCeti.nonisolatedZigzagQuotient`s.
 
 That quotient is, as its own docstring records, the intended zigzag algebra only for a graph
-without an isolated vertex; the componentwise public algebra remains to be built, and its
-invariance is not established here.
+without an isolated vertex. The componentwise public algebra `TauCeti.zigzagAlgebra`, and its
+invariance `TauCeti.zigzagAlgebraEquiv` under graph isomorphism, are in
+`TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Basic`.
 
 Nothing here is specific to the *uniform* relation family beyond the fact that it is described by
 path lengths and by the endpoints of paths, both of which a relabelling preserves. That is exactly
@@ -215,8 +216,8 @@ private theorem nonisolatedZigzagQuotientHom_zigzagMk (e : G ≃g H)
 /-- **The nonisolated zigzag quotient is an invariant of the graph**: an isomorphism of simple
 graphs induces an isomorphism of the uniform relation quotients of their doubled path algebras.
 This is invariance of `TauCeti.nonisolatedZigzagQuotient`, which is the intended zigzag algebra
-only for a graph without an isolated vertex; the componentwise public algebra is not treated
-here. -/
+only for a graph without an isolated vertex; for the componentwise public algebra see
+`TauCeti.zigzagAlgebraEquiv`. -/
 noncomputable def nonisolatedZigzagQuotientEquiv (e : G ≃g H) :
     nonisolatedZigzagQuotient k G ≃ₐ[k] nonisolatedZigzagQuotient k H :=
   AlgEquiv.ofAlgHom (nonisolatedZigzagQuotientHom k e) (nonisolatedZigzagQuotientHom k e.symm)

@@ -132,7 +132,7 @@ private lemma colorWeight_le_one (S : PairColorSystem κ V) (c : κ) (x y : V) :
 of their colors. -/
 private noncomputable def routeWeight (S : PairColorSystem κ V)
     (c : {p : ι × ι // p.1 < p.2} → κ) (E : Finset {p : ι × ι // p.1 < p.2}) (g : ι → V) : ℝ :=
-  ∏ q ∈ E, colorWeight S (c q) (g q.1.1) (g q.1.2)
+  ∏ q ∈ E, colorWeight S (c q) (g q.val.1) (g q.val.2)
 
 omit [Fintype ι] in
 /-- With every coordinate except the two coordinates of `p` fixed by `h`, the weight of a set
@@ -141,12 +141,13 @@ value at `p.1.2`. -/
 private lemma routeWeight_update_update (S : PairColorSystem κ V)
     (c : {p : ι × ι // p.1 < p.2} → κ) {E : Finset {p : ι × ι // p.1 < p.2}}
     {p : {p : ι × ι // p.1 < p.2}} (hp : p ∉ E) (h : ι → V) (x y : V) :
-    routeWeight S c E (update (update h p.1.1 x) p.1.2 y) =
-      (∏ q ∈ E with q.1.1 ≠ p.1.2 ∧ q.1.2 ≠ p.1.2,
-          colorWeight S (c q) (update h p.1.1 x q.1.1) (update h p.1.1 x q.1.2)) *
-        ∏ q ∈ E with ¬(q.1.1 ≠ p.1.2 ∧ q.1.2 ≠ p.1.2),
-          colorWeight S (c q) (update h p.1.2 y q.1.1) (update h p.1.2 y q.1.2) := by
-  rw [routeWeight, ← prod_filter_mul_prod_filter_not E fun q ↦ q.1.1 ≠ p.1.2 ∧ q.1.2 ≠ p.1.2]
+    routeWeight S c E (update (update h p.val.1 x) p.val.2 y) =
+      (∏ q ∈ E with q.val.1 ≠ p.val.2 ∧ q.val.2 ≠ p.val.2,
+          colorWeight S (c q) (update h p.val.1 x q.val.1) (update h p.val.1 x q.val.2)) *
+        ∏ q ∈ E with ¬(q.val.1 ≠ p.val.2 ∧ q.val.2 ≠ p.val.2),
+          colorWeight S (c q) (update h p.val.2 y q.val.1) (update h p.val.2 y q.val.2) := by
+  rw [routeWeight, ← prod_filter_mul_prod_filter_not E fun q ↦ q.val.1 ≠ p.val.2 ∧ q.val.2 ≠
+      p.val.2]
   congr 1
   · refine prod_congr rfl fun q hq ↦ ?_
     obtain ⟨-, h₁, h₂⟩ := mem_filter.mp hq
@@ -155,16 +156,16 @@ private lemma routeWeight_update_update (S : PairColorSystem κ V)
     obtain ⟨hqE, hqj⟩ := mem_filter.mp hq
     -- Two distinct strictly ordered pairs share at most one coordinate, so `q`, which meets
     -- `p.1.2`, avoids `p.1.1`.
-    have hqi : q.1.1 ≠ p.1.1 ∧ q.1.2 ≠ p.1.1 := by
-      have hqp : q.1 ≠ p.1 := Subtype.coe_injective.ne (ne_of_mem_of_not_mem hqE hp)
-      have := q.2
-      have := p.2
+    have hqi : q.val.1 ≠ p.val.1 ∧ q.val.2 ≠ p.val.1 := by
+      have hqp : q.val ≠ p.val := Subtype.coe_injective.ne (ne_of_mem_of_not_mem hqE hp)
+      have := q.property
+      have := p.property
       rw [Ne, Prod.ext_iff] at hqp
       grind
     -- Away from `p.1.1`, overwriting `p.1.1` and then `p.1.2` agrees with overwriting `p.1.2`.
-    have key (l : ι) (hl : l ≠ p.1.1) :
-        update (update h p.1.1 x) p.1.2 y l = update h p.1.2 y l := by
-      rcases eq_or_ne l p.1.2 with rfl | hlj
+    have key (l : ι) (hl : l ≠ p.val.1) :
+        update (update h p.val.1 x) p.val.2 y l = update h p.val.2 y l := by
+      rcases eq_or_ne l p.val.2 with rfl | hlj
       · simp
       · simp [hlj, hl]
     rw [key _ hqi.1, key _ hqi.2]
@@ -173,10 +174,10 @@ private lemma routeWeight_update_update (S : PairColorSystem κ V)
 density against the weight of the remaining pairs gives at most `ε` times the box volume. -/
 private lemma abs_sum_colorWeight_sub_mul_routeWeight_le (S : PairColorSystem κ V)
     (A : ι → Finset V) (c : {p : ι × ι // p.1 < p.2} → κ) {E : Finset {p : ι × ι // p.1 < p.2}}
-    {p : {p : ι × ι // p.1 < p.2}} (hp : p ∉ E) (hdisj : Disjoint (A p.1.1) (A p.1.2))
-    (hreg : S.IsRegularPair ε (A p.1.1) (A p.1.2)) :
-    |∑ g ∈ piFinset A, (colorWeight S (c p) (g p.1.1) (g p.1.2) -
-        pairColorDensity S (c p) (A p.1.1) (A p.1.2)) * routeWeight S c E g| ≤
+    {p : {p : ι × ι // p.1 < p.2}} (hp : p ∉ E) (hdisj : Disjoint (A p.val.1) (A p.val.2))
+    (hreg : S.IsRegularPair ε (A p.val.1) (A p.val.2)) :
+    |∑ g ∈ piFinset A, (colorWeight S (c p) (g p.val.1) (g p.val.2) -
+        pairColorDensity S (c p) (A p.val.1) (A p.val.2)) * routeWeight S c E g| ≤
       ε * ∏ l, (#(A l) : ℝ) := by
   classical
   have hε : 0 ≤ ε := haveI : Nonempty κ := ⟨c p⟩; hreg.nonneg
@@ -184,34 +185,30 @@ private lemma abs_sum_colorWeight_sub_mul_routeWeight_le (S : PairColorSystem κ
   · rw [hbox, Finset.sum_empty, abs_zero]
     exact mul_nonneg hε (prod_nonneg fun _ _ ↦ Nat.cast_nonneg _)
   have hg₀' := mem_piFinset.mp hg₀
-  have hne : p.1.1 ≠ p.1.2 := p.2.ne
+  have hne : p.val.1 ≠ p.val.2 := p.property.ne
   have hsplit := sum_piFinset_eq_sum_filter_sum_sum_update (M := ℝ) hne A (hg₀' _) (hg₀' _)
   -- The volume of the box is `#B * #(A p.1.1) * #(A p.1.2)`, where `B` fixes both coordinates.
   have hvol : (∏ l, (#(A l) : ℝ)) =
-      #{h ∈ piFinset A | h p.1.1 = g₀ p.1.1 ∧ h p.1.2 = g₀ p.1.2} *
-        (#(A p.1.1) * #(A p.1.2)) := by
-    have := hsplit fun _ ↦ (1 : ℝ)
-    simp only [sum_const, nsmul_eq_mul, mul_one] at this
-    rw [← this, card_piFinset]
-    push_cast
-    ring
+      #{h ∈ piFinset A | h p.val.1 = g₀ p.val.1 ∧ h p.val.2 = g₀ p.val.2} *
+        (#(A p.val.1) * #(A p.val.2)) := by
+    exact_mod_cast prod_card_eq_card_filter_piFinset_mul_mul hne A (hg₀' _) (hg₀' _)
   rw [hsplit, hvol]
-  refine (abs_sum_le_card_nsmul (B := ε * #(A p.1.1) * #(A p.1.2)) fun h _ ↦ ?_).trans_eq
+  refine (abs_sum_le_card_nsmul (B := ε * #(A p.val.1) * #(A p.val.2)) fun h _ ↦ ?_).trans_eq
     (by rw [nsmul_eq_mul]; ring)
   -- With the other coordinates fixed by `h`, the weight of `E` splits into a function `f` of the
   -- value at `p.1.1` times a function `g` of the value at `p.1.2`, both in `[0, 1]`.
-  set f : V → ℝ := fun x ↦ ∏ q ∈ E with q.1.1 ≠ p.1.2 ∧ q.1.2 ≠ p.1.2,
-    colorWeight S (c q) (update h p.1.1 x q.1.1) (update h p.1.1 x q.1.2)
-  set g : V → ℝ := fun y ↦ ∏ q ∈ E with ¬(q.1.1 ≠ p.1.2 ∧ q.1.2 ≠ p.1.2),
-    colorWeight S (c q) (update h p.1.2 y q.1.1) (update h p.1.2 y q.1.2)
-  have hterm : ∑ x ∈ A p.1.1, ∑ y ∈ A p.1.2,
-      (colorWeight S (c p) (update (update h p.1.1 x) p.1.2 y p.1.1)
-          (update (update h p.1.1 x) p.1.2 y p.1.2) -
-        pairColorDensity S (c p) (A p.1.1) (A p.1.2)) *
-        routeWeight S c E (update (update h p.1.1 x) p.1.2 y) =
-      ∑ x ∈ A p.1.1, ∑ y ∈ A p.1.2, f x * g y *
+  set f : V → ℝ := fun x ↦ ∏ q ∈ E with q.val.1 ≠ p.val.2 ∧ q.val.2 ≠ p.val.2,
+    colorWeight S (c q) (update h p.val.1 x q.val.1) (update h p.val.1 x q.val.2)
+  set g : V → ℝ := fun y ↦ ∏ q ∈ E with ¬(q.val.1 ≠ p.val.2 ∧ q.val.2 ≠ p.val.2),
+    colorWeight S (c q) (update h p.val.2 y q.val.1) (update h p.val.2 y q.val.2)
+  have hterm : ∑ x ∈ A p.val.1, ∑ y ∈ A p.val.2,
+      (colorWeight S (c p) (update (update h p.val.1 x) p.val.2 y p.val.1)
+          (update (update h p.val.1 x) p.val.2 y p.val.2) -
+        pairColorDensity S (c p) (A p.val.1) (A p.val.2)) *
+        routeWeight S c E (update (update h p.val.1 x) p.val.2 y) =
+      ∑ x ∈ A p.val.1, ∑ y ∈ A p.val.2, f x * g y *
         ((if S.colorOfPair x y = some (c p) then 1 else 0) -
-          pairColorDensity S (c p) (A p.1.1) (A p.1.2)) := by
+          pairColorDensity S (c p) (A p.val.1) (A p.val.2)) := by
     refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ ?_
     rw [routeWeight_update_update S c hp, update_of_ne hne, update_self, update_self,
       colorWeight]
@@ -232,14 +229,14 @@ the number of maps `g` with `g i ∈ A i` realizing every prescribed color diffe
 `#E * ε * ∏ i, |A i|`. -/
 theorem abs_card_filter_colorOfPair_sub_prod_le (S : PairColorSystem κ V) (A : ι → Finset V)
     (c : {p : ι × ι // p.1 < p.2} → κ) (E : Finset {p : ι × ι // p.1 < p.2})
-    (hdisj : ∀ p ∈ E, Disjoint (A p.1.1) (A p.1.2))
-    (hreg : ∀ p ∈ E, S.IsRegularPair ε (A p.1.1) (A p.1.2)) :
-    |(#{g ∈ piFinset A | ∀ p ∈ E, S.colorOfPair (g p.1.1) (g p.1.2) = some (c p)} : ℝ) -
-        (∏ i, (#(A i) : ℝ)) * ∏ p ∈ E, (pairColorDensity S (c p) (A p.1.1) (A p.1.2) : ℝ)| ≤
+    (hdisj : ∀ p ∈ E, Disjoint (A p.val.1) (A p.val.2))
+    (hreg : ∀ p ∈ E, S.IsRegularPair ε (A p.val.1) (A p.val.2)) :
+    |(#{g ∈ piFinset A | ∀ p ∈ E, S.colorOfPair (g p.val.1) (g p.val.2) = some (c p)} : ℝ) -
+        (∏ i, (#(A i) : ℝ)) * ∏ p ∈ E, (pairColorDensity S (c p) (A p.val.1) (A p.val.2) : ℝ)| ≤
       #E * ε * ∏ i, (#(A i) : ℝ) := by
   set P : ℝ := ∏ i, (#(A i) : ℝ)
   suffices key : |∑ g ∈ piFinset A, routeWeight S c E g -
-      P * ∏ p ∈ E, (pairColorDensity S (c p) (A p.1.1) (A p.1.2) : ℝ)| ≤ #E * ε * P by
+      P * ∏ p ∈ E, (pairColorDensity S (c p) (A p.val.1) (A p.val.2) : ℝ)| ≤ #E * ε * P by
     convert key using 4
     rw [natCast_card_filter]
     refine sum_congr rfl fun g _ ↦ ?_
@@ -249,27 +246,27 @@ theorem abs_card_filter_colorOfPair_sub_prod_le (S : PairColorSystem κ V) (A : 
   | empty =>
     simp [routeWeight, P, card_piFinset]
   | insert p E hp ih =>
-    have hdisjE : ∀ q ∈ E, Disjoint (A q.1.1) (A q.1.2) :=
+    have hdisjE : ∀ q ∈ E, Disjoint (A q.val.1) (A q.val.2) :=
       fun q hq ↦ hdisj q (mem_insert_of_mem hq)
-    have hregE : ∀ q ∈ E, S.IsRegularPair ε (A q.1.1) (A q.1.2) :=
+    have hregE : ∀ q ∈ E, S.IsRegularPair ε (A q.val.1) (A q.val.2) :=
       fun q hq ↦ hreg q (mem_insert_of_mem hq)
     have hreg_p := hreg p (mem_insert_self p E)
     have _ : 0 ≤ ε := haveI : Nonempty κ := ⟨c p⟩; hreg_p.nonneg
-    have hd₀ : (0 : ℝ) ≤ pairColorDensity S (c p) (A p.1.1) (A p.1.2) :=
+    have hd₀ : (0 : ℝ) ≤ pairColorDensity S (c p) (A p.val.1) (A p.val.2) :=
       mod_cast pairColorDensity_nonneg _ _ _ _
-    have hd₁ : (pairColorDensity S (c p) (A p.1.1) (A p.1.2) : ℝ) ≤ 1 :=
+    have hd₁ : (pairColorDensity S (c p) (A p.val.1) (A p.val.2) : ℝ) ≤ 1 :=
       mod_cast pairColorDensity_le_one _ _ _ _
-    set d : ℝ := (pairColorDensity S (c p) (A p.1.1) (A p.1.2) : ℝ)
+    set d : ℝ := (pairColorDensity S (c p) (A p.val.1) (A p.val.2) : ℝ)
     have hstep := abs_sum_colorWeight_sub_mul_routeWeight_le S A c hp
       (hdisj p (mem_insert_self p E)) hreg_p
     have hih := ih hdisjE hregE
     -- Telescope: replace the indicator of `p` by its density `d`.
     have hsplit : ∑ g ∈ piFinset A, routeWeight S c (insert p E) g -
-        P * ∏ q ∈ insert p E, (pairColorDensity S (c q) (A q.1.1) (A q.1.2) : ℝ) =
-        ∑ g ∈ piFinset A, (colorWeight S (c p) (g p.1.1) (g p.1.2) - d) *
+        P * ∏ q ∈ insert p E, (pairColorDensity S (c q) (A q.val.1) (A q.val.2) : ℝ) =
+        ∑ g ∈ piFinset A, (colorWeight S (c p) (g p.val.1) (g p.val.2) - d) *
           routeWeight S c E g +
         d * (∑ g ∈ piFinset A, routeWeight S c E g -
-          P * ∏ q ∈ E, (pairColorDensity S (c q) (A q.1.1) (A q.1.2) : ℝ)) := by
+          P * ∏ q ∈ E, (pairColorDensity S (c q) (A q.val.1) (A q.val.2) : ℝ)) := by
       simp only [routeWeight, prod_insert hp, sub_mul, sum_sub_distrib, ← mul_sum]
       ring
     rw [hsplit, card_insert_of_notMem hp]
@@ -297,12 +294,12 @@ is the number of coordinates. -/
 theorem IsPairColorRegular.abs_card_filter_colorOfPair_sub_prod_le (h : S.IsPairColorRegular ε)
     (A : ι → Finset V) (hA : ∀ i, A i ∈ S.vertexPart.parts) (hA_inj : Function.Injective A)
     (c : {p : ι × ι // p.1 < p.2} → κ) :
-    |(#{g ∈ piFinset A | ∀ p, S.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (c p)} : ℝ) -
+    |(#{g ∈ piFinset A | ∀ p, S.pairColors.colorOfPair (g p.val.1) (g p.val.2) = some (c p)} : ℝ) -
         (∏ i, (#(A i) : ℝ)) *
-          ∏ p, (pairColorDensity S.pairColors (c p) (A p.1.1) (A p.1.2) : ℝ)| ≤
+          ∏ p, (pairColorDensity S.pairColors (c p) (A p.val.1) (A p.val.2) : ℝ)| ≤
       (Fintype.card ι).choose 2 * ε * ∏ i, (#(A i) : ℝ) := by
   have key := S.pairColors.abs_card_filter_colorOfPair_sub_prod_le A c univ
-    (fun p _ ↦ S.vertexPart.disjoint (hA _) (hA _) (hA_inj.ne p.2.ne))
+    (fun p _ ↦ S.vertexPart.disjoint (hA _) (hA _) (hA_inj.ne p.property.ne))
     (fun p _ ↦ h.isRegularPair (hA _) (hA _))
   simp only [mem_univ, true_imp_iff] at key
   rwa [card_univ, Fintype.card_subtype, Fintype.card_product_filter_lt] at key

@@ -91,7 +91,8 @@ theorem evalTopEsymm_apply (p : symmetricSubalgebra σ R) :
 
 /-- `evalTopEsymm` commutes with coefficient ring homomorphisms `f : R →+* S`. -/
 theorem map_evalTopEsymm {S : Type*} [CommRing S] (f : R →+* S) (p : symmetricSubalgebra σ R) :
-    Polynomial.map f (evalTopEsymm σ R p) = evalTopEsymm σ S ⟨MvPolynomial.map f p, p.2.map f⟩ := by
+    Polynomial.map f (evalTopEsymm σ R p) = evalTopEsymm σ S ⟨MvPolynomial.map f p,
+        p.property.map f⟩ := by
   rw [evalTopEsymm_apply, evalTopEsymm_apply, ← map_esymmAlgEquiv_symm rfl f p, aeval_def,
     aeval_def, eval₂_map, ← Polynomial.coe_mapRingHom,
     hom_eval₂ ((esymmAlgEquiv σ R rfl).symm p) (algebraMap R (Polynomial R))
@@ -115,7 +116,7 @@ theorem evalTopEsymm_esymm_of_pos {k : ℕ} (hk : 0 < k) :
   · have hzero : esymm σ R k = 0 := by
       rw [esymm_eq_sum_subtype]
       exact Finset.sum_eq_zero fun t _ ↦
-        absurd (t.2 ▸ Finset.card_le_univ (t : Finset σ)) hgt.not_ge
+        absurd (t.property ▸ Finset.card_le_univ (t : Finset σ)) hgt.not_ge
     have hsub : (⟨esymm σ R k, esymm_isSymmetric σ R k⟩ : symmetricSubalgebra σ R) = 0 :=
         Subtype.ext hzero
     simp [hsub, hgt.ne']
