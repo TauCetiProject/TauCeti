@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
@@ -82,7 +83,9 @@ trajectory: there `e₀ = (1, 0)`, `ζ = (0, ∂ₛu)`, and the inequality bound
   `exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball_parametric`.
 * `TauCeti.exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_setIntegral_ball`:
   the same in a finite-dimensional normed space, as for the coordinate expressions of curves in a
-  chart of a manifold, with a constant depending on the norm in place of `8`.
+  chart of a manifold, with a constant depending on the norm in place of `8`; for a compact
+  family of structures:
+  `exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_setIntegral_ball_parametric`
 * `TauCeti.neg_mul_norm_fderiv_one_sub_sq_le_laplacian`: for `J` invariant under the translations
   along a vector `e₀`, the differential inequality `Δ ‖∂ₛu - e₀‖² ≥ -A m² ‖∂ₛu - e₀‖²`.
 * `exists_nonneg_forall_pi_mul_sq_mul_norm_fderiv_one_sub_sq_le_fifteen_mul_setIntegral_ball`:
@@ -490,20 +493,29 @@ section FiniteDimensional
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
 
-/-- **The mean-value inequality for `J`-holomorphic curves in a finite-dimensional normed space.**
-This is `TauCeti.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball`
+/-- **The mean-value inequality in a finite-dimensional normed space, for a compact family of
+structures.** This is
+`exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball_parametric`
 for a target `F` without an inner product; the constant `8` becomes a constant `A` depending on the
-norm of `F`. Let `J` be `C²`
-on an open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`. There are an energy
-threshold `δ > 0` and a constant `A > 0` such that every solution `u` of `∂ₜu = J(u) ∂ₛu` that is
-`C³` on the open disk `ball z₀ r`, has `∂ₛu` continuous on its closure, maps the disk into `K` and
-has energy `∫ ‖∂ₛu‖² < δ` over it, satisfies `π r² ‖∂ₛu(z₀)‖² ≤ A ∫_{B_r(z₀)} ‖∂ₛu‖²`. -/
-theorem exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_setIntegral_ball
-    {J : F → F →L[ℝ] F} {W K : Set F} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W)
-    (hK : IsCompact K) (hKW : K ⊆ W) (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
-    ∃ δ > 0, ∃ A > 0, ∀ ⦃u : ℂ → F⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄, 0 ≤ r → ContDiffOn ℝ 3 u (ball z₀ r) →
+norm of `F`. Let `J p` be structures depending on a parameter `p` in a normed space, jointly `C²` on
+an open set `W` containing `C × K` for compact sets `C` and `K`, with `J p (x)² = -1` on `C × K`.
+There are an energy threshold `δ > 0` and a constant `A > 0`, the same for all `p ∈ C`, such that
+every solution `u` of `∂ₜu = J p (u) ∂ₛu` that is `C³` on the open disk `ball z₀ r`, has `∂ₛu`
+continuous on its closure, maps the disk into `K` and has energy `∫ ‖∂ₛu‖² < δ` over it, satisfies
+`π r² ‖∂ₛu(z₀)‖² ≤ A ∫_{B_r(z₀)} ‖∂ₛu‖²`.
+
+Such families arise as the coordinate expressions, in a chart of a manifold, of the structures
+`J(z₀, ·)` frozen at the points `z₀` of a compact window of a domain. -/
+theorem
+    exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_setIntegral_ball_parametric
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] {J : P → F → F →L[ℝ] F}
+    {W : Set (P × F)} {C : Set P} {K : Set F} (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 2 (Function.uncurry J) W) (hC : IsCompact C) (hK : IsCompact K)
+    (hCKW : C ×ˢ K ⊆ W) (hJsq : ∀ p ∈ C, ∀ x ∈ K, ∀ v, J p x (J p x v) = -v) :
+    ∃ δ > 0, ∃ A > 0, ∀ ⦃p : P⦄, p ∈ C → ∀ ⦃u : ℂ → F⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄, 0 ≤ r →
+      ContDiffOn ℝ 3 u (ball z₀ r) →
       ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r) →
-      (∀ y ∈ ball z₀ r, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1)) →
+      (∀ y ∈ ball z₀ r, fderiv ℝ u y I = J p (u y) (fderiv ℝ u y 1)) →
       (∀ y ∈ ball z₀ r, u y ∈ K) →
       ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
       π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ A * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
@@ -511,37 +523,34 @@ theorem exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_set
   let L : F ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) := toEuclidean
   set a := ‖(L : F →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F)))‖
   set b := ‖(L.symm : EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) →L[ℝ] F)‖
+  have hJL : ContDiffOn ℝ 2 (fun q : P × EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) ↦
+      (L : F →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F))) ∘L J q.1 (L.symm q.2) ∘L
+        (L.symm : EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) →L[ℝ] F))
+      (Prod.map id L.symm ⁻¹' W) :=
+    contDiffOn_const.clm_comp ((hJ.comp (contDiff_id.prodMap L.symm.contDiff).contDiffOn
+      (Set.mapsTo_preimage _ _)).clm_comp contDiffOn_const)
   obtain ⟨δ, hδ, hmean⟩ :=
-    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
-      (J := fun x ↦ (L : F →L[ℝ] _) ∘L J (L.symm x) ∘L (L.symm : _ →L[ℝ] F))
-      (hW.preimage L.symm.continuous)
-      (contDiffOn_const.clm_comp ((hJ.comp L.symm.contDiff.contDiffOn
-        (Set.mapsTo_preimage _ _)).clm_comp contDiffOn_const))
-      (hK.image L.continuous) (by rintro _ ⟨x, hx, rfl⟩; simpa using hKW hx)
-      (by rintro _ ⟨x, hx, rfl⟩ v; simp [hJsq x hx])
+    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball_parametric
+      (J := fun p x ↦ (L : F →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F))) ∘L
+        J p (L.symm x) ∘L (L.symm : EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) →L[ℝ] F))
+      (hW.preimage (continuous_id.prodMap L.symm.continuous)) hJL hC (hK.image L.continuous)
+      (by rintro ⟨p, _⟩ ⟨hp, x, hx, rfl⟩; simpa using hCKW ⟨hp, hx⟩)
+      (by rintro p hp _ ⟨x, hx, rfl⟩ v; simp [hJsq p hp x hx])
   refine ⟨δ / (a ^ 2 + 1), by positivity, 8 * (b ^ 2 * a ^ 2 + 1), by positivity,
-    fun u z₀ r hr hu hu' hCR huK hE ↦ ?_⟩
+    fun p hp u z₀ r hr hu hu' hCR huK hE ↦ ?_⟩
   have hd (y : ℂ) (w : ℂ) : fderiv ℝ (L ∘ u) y w = L (fderiv ℝ u y w) := by
     rw [L.comp_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
   have hLc : ContinuousOn (fun y ↦ L (fderiv ℝ u y 1)) (closedBall z₀ r) := by
     simpa [Function.comp_def] using
       L.toContinuousLinearMap.lipschitzWith.continuous.comp_continuousOn hu'
-  have hint : IntegrableOn (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) (ball z₀ r) :=
-    (hu'.norm.pow 2).integrableOn_compact (isCompact_closedBall z₀ r) |>.mono_set
-      ball_subset_closedBall
-  have hintL : IntegrableOn (fun y ↦ ‖fderiv ℝ (L ∘ u) y 1‖ ^ 2) (ball z₀ r) := by
-    simp only [hd]
-    exact (hLc.norm.pow 2).integrableOn_compact
-      (isCompact_closedBall z₀ r) |>.mono_set ball_subset_closedBall
   -- The Euclidean energy is at most `a²` times the energy in `F`.
   have hEL : ∫ y in ball z₀ r, ‖fderiv ℝ (L ∘ u) y 1‖ ^ 2 ≤
       a ^ 2 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
-    rw [← integral_const_mul]
-    refine setIntegral_mono_on hintL (hint.const_mul _) measurableSet_ball fun y _ ↦ ?_
-    rw [hd, ← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _)
-      (by simpa using L.toContinuousLinearMap.le_opNorm (fderiv ℝ u y 1)) 2
-  have h := hmean (u := L ∘ u) hr (L.contDiff.comp_contDiffOn hu)
+    simpa only [hd, ContinuousLinearEquiv.coe_coe] using
+      (L : F →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F))).integral_norm_apply_sq_le
+        ((hu'.norm.pow 2).integrableOn_compact (isCompact_closedBall z₀ r)
+          |>.mono_set ball_subset_closedBall)
+  have h := hmean hp (u := L ∘ u) hr (L.contDiff.comp_contDiffOn hu)
     (by simpa only [hd] using hLc)
     (fun y hy ↦ by simp [hd, hCR y hy])
     (fun y hy ↦ ⟨u y, huK y hy, rfl⟩)
@@ -559,6 +568,30 @@ theorem exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_set
   have h2 := mul_le_mul_of_nonneg_left (h.trans (mul_le_mul_of_nonneg_left hEL (by norm_num)))
     (sq_nonneg b)
   nlinarith [(by positivity : 0 ≤ ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2)]
+
+/-- **The mean-value inequality for `J`-holomorphic curves in a finite-dimensional normed space.**
+This is `TauCeti.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball`
+for a target `F` without an inner product; the constant `8` becomes a constant `A` depending on the
+norm of `F`. Let `J` be `C²`
+on an open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`. There are an energy
+threshold `δ > 0` and a constant `A > 0` such that every solution `u` of `∂ₜu = J(u) ∂ₛu` that is
+`C³` on the open disk `ball z₀ r`, has `∂ₛu` continuous on its closure, maps the disk into `K` and
+has energy `∫ ‖∂ₛu‖² < δ` over it, satisfies `π r² ‖∂ₛu(z₀)‖² ≤ A ∫_{B_r(z₀)} ‖∂ₛu‖²`. -/
+theorem exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_setIntegral_ball
+    {J : F → F →L[ℝ] F} {W K : Set F} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W)
+    (hK : IsCompact K) (hKW : K ⊆ W) (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
+    ∃ δ > 0, ∃ A > 0, ∀ ⦃u : ℂ → F⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄, 0 ≤ r → ContDiffOn ℝ 3 u (ball z₀ r) →
+      ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r) →
+      (∀ y ∈ ball z₀ r, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1)) →
+      (∀ y ∈ ball z₀ r, u y ∈ K) →
+      ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
+      π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ A * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+  obtain ⟨δ, hδ, A, hA, h⟩ :=
+    exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_setIntegral_ball_parametric
+      (J := fun (_ : Unit) ↦ J) (hW.preimage continuous_snd)
+      (hJ.comp contDiffOn_snd fun _ hq ↦ hq) isCompact_univ hK
+      (fun q hq ↦ hKW hq.2) fun _ _ ↦ hJsq
+  exact ⟨δ, hδ, A, hA, h (Set.mem_univ ())⟩
 
 end FiniteDimensional
 

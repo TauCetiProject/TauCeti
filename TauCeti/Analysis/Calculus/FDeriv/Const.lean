@@ -12,6 +12,8 @@ public import Mathlib.Analysis.Calculus.FDeriv.Const
 
 A derivative of a function constant near a point is zero. In particular, a family vanishing
 outside a fixed set for nearby parameters has zero parameter derivative outside that set.
+The derivative within any set vanishes outside the topological support, without a uniqueness
+assumption on derivatives within that set.
 -/
 
 public section
@@ -27,3 +29,14 @@ theorem HasFDerivAt.eq_zero_of_eventually_const {𝕜 H E : Type*}
     {f : H → E} {f' : H →L[𝕜] E} {t : H} {c : E} (hf : HasFDerivAt f f' t)
     (h : f =ᶠ[𝓝 t] fun _ ↦ c) : f' = 0 :=
   hf.unique (hasFDerivAt_zero_of_eventually_const c h)
+
+/-- The derivative within any set vanishes outside the topological support. No uniqueness
+hypothesis on differentiation within the set is required. -/
+theorem TauCeti.fderivWithin_of_notMem_tsupport (𝕜 : Type*) {E F : Type*}
+    [NontriviallyNormedField 𝕜]
+    [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+    [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+    {f : E → F} {s : Set E} {x : E} (h : x ∉ tsupport f) :
+    fderivWithin 𝕜 f s x = 0 := by
+  rw [(notMem_tsupport_iff_eventuallyEq.1 h).fderivWithin_eq_of_nhds]
+  exact fderivWithin_const_apply _

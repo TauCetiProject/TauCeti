@@ -26,7 +26,8 @@ and every parameter. Since `K` is invertible the coefficient at `0` always vanis
 The character is an isomorphism invariant, adds over finite products, and is multiplicative on
 weight modules for the coproduct `ΔK = K ⊗ K`: if `K` acts diagonalizably on `V` and on `W`, then
 `ch (V ⊗ W) = ch V · ch W`. The signed ladder module `L_m^ε` has character
-`∑_(j=0)^m [ε q^(m-2j)]`.
+`∑_(j=0)^m [ε q^(m-2j)]`, which is symmetric under the inversion `μ ↦ μ⁻¹` of weights, the
+quantum counterpart of the Weyl group reflection.
 
 At a generic parameter `q` (nonzero and not a root of unity), every finite-dimensional module is
 a finite direct sum of signed ladder modules, so `K` acts diagonalizably and the character is
@@ -35,7 +36,8 @@ module. The multiplicity `dim Hom_U(L_m^ε, V)` of `L_m^ε` in `V` is the differ
 coefficients of `ch V` at `ε q^m` and at `ε q^(m+2)`: a summand `L_n^δ` contributes to the
 coefficient at `ε q^m` exactly when `δ = ε`, `m ≤ n` and `n - m` is even, and the difference
 retains only `n = m`. Hence two finite-dimensional modules are isomorphic exactly when their
-characters agree.
+characters agree, and the weights `μ` and `μ⁻¹` of a finite-dimensional module have the same
+multiplicity.
 
 The definition and the weight-basis computations parallel `TauCeti.Comodule.formalCharacter`, the
 formal character of a comodule over a monoid algebra, in
@@ -56,11 +58,17 @@ formal character of a comodule over a monoid algebra, in
   `TauCeti.UqSl2.formalCharacter_tensor`: the character of a tensor product of weight modules,
   in particular of any two finite-dimensional modules at a generic parameter, is the product of
   the characters.
-* `TauCeti.UqSl2.formalCharacter_ladderModule`: `ch L_m^ε = ∑_(j=0)^m [ε q^(m-2j)]`.
+* `TauCeti.UqSl2.formalCharacter_ladderModule`: `ch L_m^ε = ∑_(j=0)^m [ε q^(m-2j)]`, and
+  `TauCeti.UqSl2.formalCharacter_ladderModule_coeff_units_mul_zpow`: at a generic parameter, its
+  coefficient at a signed power `ε q^c`.
+* `TauCeti.UqSl2.formalCharacter_ladderModule_coeff_inv`: the character of `L_m^ε` is symmetric
+  under `μ ↦ μ⁻¹`.
 * `TauCeti.UqSl2.finrank_linearMap_ladderModule_eq_formalCharacter_coeff_sub`: at a generic
   parameter, the multiplicity of `L_m^ε` is read off the character.
 * `TauCeti.UqSl2.nonempty_linearEquiv_iff_formalCharacter_eq`: at a generic parameter,
   finite-dimensional modules are isomorphic exactly when their characters agree.
+* `TauCeti.UqSl2.finrank_weightSpace_inv`: at a generic parameter, the weights `μ` and `μ⁻¹` of
+  a finite-dimensional module have the same multiplicity.
 
 ## References
 
@@ -218,7 +226,7 @@ theorem formalCharacter_ladderModule (m : ℕ) (ε : ℤˣ) :
 
 /-- At a generic parameter, the coefficient of `ch L_n^δ` at a signed power `ε q^c` counts the
 indices `j ≤ n` with `δ = ε` and `n - 2j = c`. -/
-private theorem formalCharacter_ladderModule_coeff_units_mul_zpow (hq : IsGenericQuantumParameter q)
+theorem formalCharacter_ladderModule_coeff_units_mul_zpow (hq : IsGenericQuantumParameter q)
     (n : ℕ) (δ ε : ℤˣ) (c : ℤ) :
     (formalCharacter q (LadderModule q n δ)).coeff ((ε : ℂ) * q ^ c) =
       ∑ j ∈ Finset.range (n + 1), if δ = ε ∧ (n : ℤ) - 2 * j = c then 1 else 0 := by
@@ -252,6 +260,42 @@ theorem formalCharacter_ladderModule_coeff_sub (hq : IsGenericQuantumParameter q
       have h1 : ¬(n : ℤ) - 2 * ((n + 1 : ℕ) : ℤ) = m := by push_cast; omega
       simp only [h0, h1, ite_false, sub_zero]
   · simp [hδ, Ne.symm hδ]
+
+/-- **The character of a signed ladder module is symmetric under `μ ↦ μ⁻¹`**: the weights
+`ε q^(m-2j)` and `ε q^(m-2(m-j))` of `v_j` and `v_(m-j)` are inverse to each other. -/
+theorem formalCharacter_ladderModule_coeff_inv (m : ℕ) (ε : ℤˣ) (μ : ℂ) :
+    (formalCharacter q (LadderModule q m ε)).coeff μ⁻¹ =
+      (formalCharacter q (LadderModule q m ε)).coeff μ := by
+  classical
+  simp only [formalCharacter_ladderModule, MonoidAlgebra.coeff_sum, MonoidAlgebra.coeff_single,
+    Finsupp.finsetSum_apply, Finsupp.single_apply]
+  rw [← Finset.sum_range_reflect]
+  refine Finset.sum_congr rfl fun j hj ↦ if_congr ?_ rfl rfl
+  have hj : j ≤ m := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
+  have hexp : ((m : ℤ) - 2 * ((m + 1 - 1 - j : ℕ) : ℤ)) = -((m : ℤ) - 2 * j) := by
+    rw [Nat.add_sub_cancel, Nat.cast_sub hj]
+    ring
+  rw [hexp, ← units_mul_zpow_inv, inv_inj]
+
+/-- The character of `L_m^ε` is supported on the signed powers `δ q^k` with `|k| < m + 1`. -/
+theorem formalCharacter_ladderModule_mem_supported (m : ℕ) (ε : ℤˣ) :
+    formalCharacter q (LadderModule q m ε) ∈ MonoidAlgebra.supported ℤ ℤ
+      {μ : ℂ | ∃ (δ : ℤˣ) (k : ℤ), |k| < ((m + 1 : ℕ) : ℤ) ∧ μ = δ * q ^ k} := by
+  rw [formalCharacter_ladderModule]
+  refine Submodule.sum_mem _ fun j hj => MonoidAlgebra.mem_supported.2 ?_
+  have hj : j ≤ m := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
+  rw [MonoidAlgebra.coeff_single]
+  refine (Finset.coe_subset.2 Finsupp.support_single_subset).trans ?_
+  rw [Finset.coe_singleton, Set.singleton_subset_iff]
+  exact ⟨ε, _, abs_lt.2 ⟨by omega, by omega⟩, rfl⟩
+
+/-- At a generic parameter, the coefficient of `ch L_N^ε` at the extreme weight `δ q^N` is `1`
+if `ε = δ` and `0` otherwise. -/
+theorem formalCharacter_ladderModule_coeff_units_mul_zpow_self
+    (hq : IsGenericQuantumParameter q) (N : ℕ) (ε δ : ℤˣ) :
+    (formalCharacter q (LadderModule q N ε)).coeff (δ * q ^ (N : ℤ)) = if ε = δ then 1 else 0 := by
+  rw [formalCharacter_ladderModule_coeff_units_mul_zpow hq]
+  by_cases h : ε = δ <;> simp [h]
 
 /-! ### The character determines the module -/
 
@@ -297,6 +341,19 @@ theorem nonempty_linearEquiv_iff_formalCharacter_eq (hq : IsGenericQuantumParame
   exact ⟨(ladderModuleTensorHomEquiv hq).symm.trans ((DFinsupp.mapRange.linearEquiv fun p ↦
     TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl _ _)
       (LinearEquiv.ofFinrankEq _ _ (hdim p))).trans (ladderModuleTensorHomEquiv hq))⟩
+
+/-- **Weight multiplicities are symmetric under `μ ↦ μ⁻¹`.** At a generic parameter, the weight
+spaces of a finite-dimensional module for the weights `μ` and `μ⁻¹` have the same dimension. -/
+theorem finrank_weightSpace_inv (hq : IsGenericQuantumParameter q) (μ : ℂ) :
+    finrank ℂ (weightSpace q V μ⁻¹) = finrank ℂ (weightSpace q V μ) := by
+  -- `V` is a finite product of signed ladder modules, whose characters are symmetric.
+  obtain ⟨n, m, ε, ⟨e⟩⟩ := exists_linearEquiv_pi_ladderModule hq (V := V)
+  have h : (finrank ℂ (weightSpace q V μ⁻¹) : ℤ) = finrank ℂ (weightSpace q V μ) := by
+    rw [← formalCharacter_coeff, ← formalCharacter_coeff, formalCharacter_congr e,
+      formalCharacter_pi, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply,
+      Finsupp.finsetSum_apply]
+    simp only [formalCharacter_ladderModule_coeff_inv]
+  exact_mod_cast h
 
 end LadderModule
 
