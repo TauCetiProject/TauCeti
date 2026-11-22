@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Basic
+public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Residue
 public import TauCeti.RingTheory.LaurentSeries.Level.Trace
 
 /-!
@@ -65,7 +65,7 @@ zero (`Level.ContinuousKaehlerDifferential.map_eq_zero_iff`).
 * `Level.ContinuousKaehlerDifferential.trace_map`: the trace of a pulled
   back one-form is `d` times the form.
 * `Level.ContinuousKaehlerDifferential.trace_D`: `Tr_{L/F} (d_u x) = d (Tr_{L/F} x)`.
-* `Level.ContinuousKaehlerDifferential.coeff_neg_one_equivLaurentSeries_trace`:
+* `Level.ContinuousKaehlerDifferential.residue_trace`:
   `Res_F (Tr_{L/F} ω) = Res_L ω`.
 
 ## References
@@ -423,10 +423,11 @@ theorem trace_D (x : Level K d) :
 /-- **The trace preserves residues.** When `d` is nonzero in `K`, for every one-form `ω = g du`
 on the level `L = K⸨u⸩`, the residue of `Tr_{L/F} ω` at `t` is the residue of `ω` at `u`:
 `Res_F (Tr_{L/F} ω) = Res_L ω`. -/
-theorem coeff_neg_one_equivLaurentSeries_trace (ω : Level.ContinuousKaehlerDifferential K d) :
-    (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K (trace K d ω)).coeff (-1) =
+theorem residue_trace (ω : Level.ContinuousKaehlerDifferential K d) :
+    TauCeti.ContinuousKaehlerDifferential.residue K (trace K d ω) =
       (ringEquivLaurentSeries K d (equivLevel K d ω)).coeff (-1) := by
-  rw [equivLaurentSeries_trace, coeff_neg_one_trace, map_div₀, RingEquiv.apply_symm_apply,
+  rw [TauCeti.ContinuousKaehlerDifferential.residue_apply, equivLaurentSeries_trace,
+    coeff_neg_one_trace, map_div₀, RingEquiv.apply_symm_apply,
     div_mul_cancel₀ _ derivative_single_natCast_one_ne_zero]
 
 end Separable
