@@ -89,13 +89,11 @@ the degree-`q` piece of `free 𝒜 s`. -/
 def freeHeadCoord (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
     {I : Type uI} (s : I → ℤ) (q : ℤ) :
-    (free 𝒜 s).grading.piece q →ₗ[k] ({j : I // s j = q} → k) where
-  toFun x j := connectedAugmentation hneg hzero (x.val j.val)
-  map_add' x y := funext fun j ↦ by
-    rw [Submodule.coe_add, DirectSum.add_apply, map_add, Pi.add_apply]
-  map_smul' c x := funext fun j ↦ by
-    rw [Submodule.coe_smul_of_tower, ← algebraMap_smul A c x.val, DirectSum.smul_apply, smul_eq_mul,
-      map_mul, connectedAugmentation_algebraMap, Pi.smul_apply, smul_eq_mul, RingHom.id_apply]
+    (free 𝒜 s).grading.piece q →ₗ[k] ({j : I // s j = q} → k) :=
+  (LinearMap.pi fun j : {j : I // s j = q} ↦
+    (connectedAugmentation hneg hzero).toLinearMap.comp
+      (DirectSum.component k I (fun _ ↦ A) j.val)).comp
+    ((free 𝒜 s).grading.piece q).subtype
 
 /-- `freeHeadCoord` evaluates `connectedAugmentation` on each shift-`q` coordinate. -/
 @[simp]
@@ -148,13 +146,10 @@ theorem freeHeadCoord_eq_zero_iff (hneg : ∀ i < 0, 𝒜 i = ⊥)
 omit [FaithfulSMul k A] in
 /-- Canonical `k`-linear section of `freeHeadCoord` when the shift-`q` fiber is finite. -/
 private def freeHeadLift {I : Type uI} (s : I → ℤ) (q : ℤ) [Fintype {j : I // s j = q}] :
-    ({j : I // s j = q} → k) →ₗ[k] (free 𝒜 s).grading.piece q where
-  toFun c :=
-    ⟨∑ j : {j : I // s j = q}, c j • freeGenerator (𝒜 := 𝒜) (d := s) j.val, by
-      refine Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem _ (c j) ?_
+    ({j : I // s j = q} → k) →ₗ[k] (free 𝒜 s).grading.piece q :=
+  Fintype.linearCombination k fun j : {j : I // s j = q} ↦
+    ⟨freeGenerator (𝒜 := 𝒜) (d := s) j.val, by
       simpa [j.property] using freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := s) j.val⟩
-  map_add' c₁ c₂ := Subtype.ext (by simp [add_smul, Finset.sum_add_distrib])
-  map_smul' r c := Subtype.ext (by simp [Finset.smul_sum, mul_smul])
 
 private theorem freeHeadCoord_freeHeadLift (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
@@ -165,9 +160,9 @@ private theorem freeHeadCoord_freeHeadLift (hneg : ∀ i < 0, 𝒜 i = ⊥)
   ext i
   rw [freeHeadCoord_apply]
   have hcoord : (freeHeadLift (𝒜 := 𝒜) s q c).val i.val = algebraMap k A (c i) := by
-    dsimp only [freeHeadLift, LinearMap.coe_mk, AddHom.coe_mk]
-    rw [DFinsupp.finsetSum_apply]
-    simp_rw [← algebraMap_smul A, DirectSum.smul_apply, smul_eq_mul]
+    rw [freeHeadLift, Fintype.linearCombination_apply, AddSubmonoidClass.coe_finsetSum,
+      DFinsupp.finsetSum_apply]
+    simp_rw [SetLike.val_smul, ← algebraMap_smul A, DirectSum.smul_apply, smul_eq_mul]
     rw [Finset.sum_eq_single i]
     · simp [freeGenerator_apply]
     · intro j _ hji
@@ -193,10 +188,7 @@ private def freeHeadHom (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (f : free 𝒜 s ⟶ free 𝒜 t) (q : ℤ) :
     ({i : I // s i = q} → k) →ₗ[k] ({j : J // t j = q} → k) :=
   (freeHeadCoord hneg hzero t q).comp
-    (LinearMap.codRestrict ((free 𝒜 t).grading.piece q)
-      ((f.hom.restrictScalars k).comp (((free 𝒜 s).grading.piece q).subtype.comp
-        (freeHeadLift s q)))
-      fun c ↦ map_mem f (freeHeadLift s q c).property)
+    (((f.hom.restrictScalars k).restrict fun _ hx ↦ map_mem f hx).comp (freeHeadLift s q))
 
 private theorem freeHeadHom_id (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))

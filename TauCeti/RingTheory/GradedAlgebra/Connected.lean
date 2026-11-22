@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.GradedAlgebra.Basic
+import TauCeti.Algebra.DirectSum.Supported
 
 /-!
 # Degree-zero projection and augmentation of connected nonnegatively `ℤ`-graded algebras
@@ -92,24 +93,14 @@ theorem projZeroAlgHom_eq_zero_of_mem_pos (hneg : ∀ i < 0, 𝒜 i = ⊥) {i : 
 if it lies in the positive-degree submodule `⨆ i > 0, 𝒜 i`. -/
 theorem projZeroAlgHom_eq_zero_iff (hneg : ∀ i < 0, 𝒜 i = ⊥) {a : A} :
     projZeroAlgHom hneg a = 0 ↔ a ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i := by
-  constructor
-  · intro ha0
-    classical
-    rw [← sum_support_decompose 𝒜 a]
-    refine Submodule.sum_mem _ fun i _ ↦ ?_
-    rcases lt_trichotomy i 0 with hi | rfl | hi
-    · have hz : (decompose 𝒜 a i : A) = 0 := by
-        simpa [hneg i hi] using (decompose 𝒜 a i).property
-      simp [hz]
-    · rw [← coe_projZeroAlgHom_apply hneg, ha0, ZeroMemClass.coe_zero]
-      exact Submodule.zero_mem _
-    · exact Submodule.mem_iSup_of_mem i (Submodule.mem_iSup_of_mem hi (decompose 𝒜 a i).property)
-  · intro ha
-    refine Submodule.iSup_induction _ (motive := fun x ↦ projZeroAlgHom hneg x = 0) ha
-      (fun i x hx ↦ ?_) (map_zero _) (fun _ _ hx hy ↦ by rw [map_add, hx, hy, add_zero])
-    refine Submodule.iSup_induction _ (motive := fun x ↦ projZeroAlgHom hneg x = 0) hx
-      (fun hi x hx ↦ projZeroAlgHom_eq_zero_of_mem_pos hneg hi hx)
-      (map_zero _) (fun _ _ hx hy ↦ by rw [map_add, hx, hy, add_zero])
+  classical
+  have hiSup : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) = ⨆ i : {i : ℤ | 0 < i}, 𝒜 i :=
+    (iSup_subtype'' {i : ℤ | 0 < i} 𝒜).symm
+  rw [hiSup, TauCeti.DirectSum.mem_iSup_iff_decompose_eq_zero]
+  refine ⟨fun ha0 i hi ↦ ?_, fun h ↦ Subtype.ext (h 0 (by simp))⟩
+  rcases lt_or_eq_of_le (not_lt.mp (Set.notMem_ofPred_iff.mp hi)) with hi' | rfl
+  · simpa [hneg i hi'] using (decompose 𝒜 a i).property
+  · exact congrArg Subtype.val ha0
 
 /-- In a nonnegatively graded algebra, the positive-degree part `⨆ i > 0, 𝒜 i` is closed under
 right multiplication by arbitrary elements of `A`. -/
@@ -147,12 +138,6 @@ sending positive-degree elements to zero and identifying `𝒜 0` with `R`. -/
 def connectedAugmentation [FaithfulSMul R A] (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap R A)) : A →ₐ[R] R :=
   (gradeZeroAlgEquiv hzero).symm.toAlgHom.comp (projZeroAlgHom hneg)
-
-/-- `connectedAugmentation` is a retraction of `algebraMap R A`. -/
-theorem connectedAugmentation_algebraMap [FaithfulSMul R A] (hneg : ∀ i < 0, 𝒜 i = ⊥)
-    (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap R A)) (c : R) :
-    connectedAugmentation hneg hzero (algebraMap R A c) = c :=
-  (connectedAugmentation hneg hzero).commutes c
 
 /-- Embedding `connectedAugmentation hneg hzero a` back into `A` recovers the degree-zero
 component `decompose 𝒜 a 0`. -/

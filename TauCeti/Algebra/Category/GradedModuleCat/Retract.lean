@@ -102,9 +102,7 @@ private def retractHeadMap (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (r : Retract M (free 𝒜 s)) (q : ℤ) :
     M.grading.piece q →ₗ[k] ({j : I // s j = q} → k) :=
   (freeHeadCoord hneg hzero s q).comp
-    (LinearMap.codRestrict ((free 𝒜 s).grading.piece q)
-      ((r.i.hom.restrictScalars k).comp (M.grading.piece q).subtype)
-      fun m ↦ map_mem r.i m.property)
+    ((r.i.hom.restrictScalars k).restrict fun _ hm ↦ map_mem r.i hm)
 
 private theorem retractHeadMap_eq_zero_iff (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
@@ -345,16 +343,15 @@ theorem exists_iso_free_of_retract (hneg : ∀ i < 0, 𝒜 i = ⊥)
       ((freeHeadCoord_eq_zero_iff hneg hzero d' q ⟨z.val, map_mem (kernelι Φ) hz⟩).mp
         (freeHeadCoord_eq_zero_of_mem_ker_freeLift hneg hzero r nq bq liftGen hliftGen ev q
           (map_mem (kernelι Φ) hz) z.property))
-  have htopK : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (kernelObj Φ)) = ⊤ :=
-    top_unique fun z _ ↦ by
-      rw [← sum_support_decompose (kernelObj Φ).grading.piece z]
-      exact Submodule.sum_mem _ fun q _ ↦
-        hker_pos q (decompose (kernelObj Φ).grading.piece z q).property
+  have htopK : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (kernelObj Φ)) = ⊤ := by
+    have hle := iSup_le hker_pos
+    rw [(DirectSum.Decomposition.isInternal (kernelObj Φ).grading.piece).submodule_iSup_eq_top]
+      at hle
+    exact top_unique hle
   have : Subsingleton (kernelObj Φ) :=
     InternalGrading.subsingleton_of_positive_smul_top_eq_top 𝒜 bK hbelowK htopK
   have hinjΦ : Function.Injective Φ.hom :=
-    LinearMap.ker_eq_bot.mp ((Submodule.eq_bot_iff _).mpr fun x hx ↦
-      congrArg Subtype.val (Subsingleton.elim (⟨x, hx⟩ : kernelObj Φ) 0))
+    LinearMap.ker_eq_bot.mp (Submodule.subsingleton_iff_eq_bot.mp this)
   have : IsIso Φ := (isIso_iff_bijective Φ).mpr ⟨hinjΦ, hsurjΦ⟩
   exact ⟨n, d, ⟨asIso Φ⟩⟩
 
