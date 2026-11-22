@@ -28,7 +28,8 @@ zero or symmetry assumptions.
 `finiteJetSeries` is the factorial-normalized coefficient series, and `finiteJetPolynomial`
 is its finite Taylor sum about the chosen center. As a function of its coefficients it is the
 continuous linear map `finiteJetPolynomialCLM`, which depends smoothly on the center and the
-evaluation point (`contDiff_finiteJetPolynomialCLM`). The main results are:
+evaluation point (`contDiff_finiteJetPolynomialCLM`). The tuples of symmetric multilinear maps
+form the subspace `symmetricJets`. The main results are:
 
 * `iteratedFDeriv_finiteJetPolynomial_self`: realization of each prescribed symmetric derivative;
 * `taylorMonomial`, `iteratedFDeriv_taylorMonomial_self`: the one-term case
@@ -64,6 +65,24 @@ namespace TauCeti
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+variable (𝕜 E F) in
+/-- The **symmetric `r`-jets**: the tuples `(A₀, …, Aᵣ)` of continuous multilinear maps
+`Aᵢ : E [×i]→L[𝕜] F` each of which is invariant under permutations of its arguments. Over `ℝ` or
+`ℂ` these are exactly the `r`-jets of smooth maps `E → F` at a point
+(`TauCeti.iteratedFDeriv_mem_symmetricJets`, `TauCeti.iteratedFDeriv_finiteJetPolynomial_self`). -/
+def symmetricJets (r : ℕ) : Submodule 𝕜 ((i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) where
+  carrier := {A | ∀ i (v : Fin i.val → E) (σ : Equiv.Perm (Fin i.val)), A i (v ∘ σ) = A i v}
+  add_mem' {A B} hA hB i v σ := by simp [hA i v σ, hB i v σ]
+  zero_mem' := by simp
+  smul_mem' c A hA i v σ := by simp [hA i v σ]
+
+/-- A tuple is a symmetric jet when each of its components is invariant under permutations of its
+arguments. -/
+theorem mem_symmetricJets {r : ℕ} {A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F} :
+    A ∈ symmetricJets 𝕜 E F r ↔
+      ∀ i (v : Fin i.val → E) (σ : Equiv.Perm (Fin i.val)), A i (v ∘ σ) = A i v :=
+  Iff.rfl
 
 /-- The formal multilinear series with coefficient `A i / i!` in each prescribed order
 `i ≤ r`, and zero coefficients in all higher orders. -/

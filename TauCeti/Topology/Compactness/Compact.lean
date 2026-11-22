@@ -220,6 +220,29 @@ theorem _root_.IsCompact.inter_preimage {Y : Type*} [TopologicalSpace Y] {C : Se
   rw [← Subtype.image_preimage_coe]
   exact (hK.preimage hΦ.domRestrict).isCompact.image continuous_subtypeVal
 
+/-- **Solutions on an isolating set are compact.** Let `Φ` be a continuous family of maps
+`X → Y` parametrized by a compact space `P`, and let `U` be a set with compact closure on whose
+frontier no map of the family takes the value `y`. Then the solutions in `P × U` of
+`Φ (p, x) = y` form a compact set. -/
+theorem isCompact_setOf_apply_eq_of_frontier {P Y : Type*} [TopologicalSpace P] [CompactSpace P]
+    [TopologicalSpace Y] [T1Space Y] {U : Set X} (hU : IsCompact (closure U))
+    {Φ : P × X → Y} (hΦc : Continuous Φ) {y : Y} (hΦ : ∀ p, ∀ x ∈ frontier U, Φ (p, x) ≠ y) :
+    IsCompact {z : P × U | Φ (z.1, z.2) = y} := by
+  have hK : IsCompact ((univ : Set P) ×ˢ closure U ∩ Φ ⁻¹' {y}) :=
+    (isCompact_univ.prod hU).inter_right (isClosed_singleton.preimage hΦc)
+  let j : P × U → P × X := Prod.map id Subtype.val
+  have hj : IsInducing j := IsInducing.id.prodMap IsInducing.subtypeVal
+  -- The solutions in `P × closure U` avoid `P × frontier U`, so they lie in `P × U`.
+  have hsub : (univ : Set P) ×ˢ closure U ∩ Φ ⁻¹' {y} ⊆ range j := by
+    rintro ⟨p, x⟩ ⟨⟨-, hxc⟩, hxy⟩
+    have hxU : x ∈ U := by
+      by_contra hxU
+      exact hΦ p x ⟨hxc, fun h ↦ hxU (interior_subset h)⟩ hxy
+    exact ⟨(p, ⟨x, hxU⟩), rfl⟩
+  convert (hj.isCompact_preimage_iff hsub).2 hK using 1
+  ext ⟨p, x⟩
+  simp [j, subset_closure x.property]
+
 /-- A compact set contains no infinite subset all of whose subsets are closed: such a subset would
 be closed, hence compact, and discrete. -/
 theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}
