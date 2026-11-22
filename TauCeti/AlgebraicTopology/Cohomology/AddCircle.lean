@@ -58,6 +58,11 @@ torsion labels of `H²((ℝ / pℤ) × Y; ℤ)` are those of `H²(Y; ℤ)`. If
 (`TopCat.exists_isOfFinAddOrder_sub_smul_add_smul_addCircle`), and they are independent modulo
 torsion when `v` and `a` are (`TopCat.isOfFinAddOrder_smul_add_smul_addCircle_iff`).
 
+These results are the decomposition of `Sᵈ⁺¹ × Y` in
+`TauCeti.AlgebraicTopology.Cohomology.Sphere.Product`, transported along a homeomorphism of the unit
+circle with `ℝ / pℤ` which carries the standard generator of `H₁(S¹; ℤ)` to the circuit class. The
+second component is thus taken against the orientation of increasing `s`.
+
 **Cup products and the intersection form.** Since `H²(ℝ / pℤ; ℤ) = 0`, the angular class has
 `θ_p ⌣ θ_p = 0` (`AddCircle.singularCup_angularClass_self`), so the cup product of two decomposed
 classes is
@@ -82,11 +87,6 @@ pairing `(b, c) ↦ ⟨b ⌣ c, y⟩` of `Y`. In particular `pr₂^* b · pr₂^
 square `x · x = 2 ⟨b ⌣ c, y⟩` is even. For the symplectic suspension `(ℝ / ℤ)_s × Y_φ` of a surface
 mapping torus with `b₁(Y_φ) = 1`, these are the intersection numbers `v · v = t · t = 0` and
 `v · t = t · v = ⟨v ⌣ a, y⟩` of its line-label classes `v` and `t = [ds] ⌣ a`.
-
-These results are the decomposition of `Sᵈ⁺¹ × Y` in
-`TauCeti.AlgebraicTopology.Cohomology.Sphere.Product`, transported along a homeomorphism of the unit
-circle with `ℝ / pℤ` which carries the standard generator of `H₁(S¹; ℤ)` to the circuit class. The
-second component is thus taken against the orientation of increasing `s`.
 
 The coefficients of the chains are `ℤ`, so `M = ℝ` gives real cohomology and `M = ℤ` integral
 cohomology.
@@ -604,7 +604,7 @@ theorem singularCupPairing_addCircle_singularHomologyCross
     (p := 1 + 1) (q := 1) (n := 1 + 1 + 1) rfl b' c] at h
   refine h.trans ?_
   norm_num
-  rw [add_comm]
+  abel
 
 /-- **Classes pulled back from `Y` are orthogonal** for the cup pairing on `H²((ℝ / pℤ) × Y; ℤ)`
 against `[ℝ / pℤ] × y`: `pr₂^* b · pr₂^* b' = 0`. -/
