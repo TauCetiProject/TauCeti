@@ -10,13 +10,21 @@ public import Mathlib.Algebra.Order.GroupWithZero.Basic
 /-!
 # Power comparisons in ordered monoids with zero
 
-This file shows that a comparison `x ^ m ≤ y ^ n` of nonnegative elements of a linearly ordered
-monoid with zero depends only on the ratio `m : n`.
+This file collects power-comparison lemmas for nonnegative elements of a linearly ordered monoid
+with zero:
+
+* a comparison `x ^ m ≤ y ^ n` depends only on the ratio `m : n`
+  (`TauCeti.pow_le_pow_iff_of_mul_eq`);
+* replacing the base `c ≥ 0` by `max 1 c ≥ 1` allows raising the exponent (`c ^ m ≤ max 1 c ^ n`
+  for `m ≤ n`) and re-basing shifted or rescaled geometric bounds (`c ^ m ≤ (max 1 c ^ k) ^ n`
+  for `m ≤ k * n`).
 
 ## Main results
 
 * `TauCeti.pow_le_pow_iff_of_mul_eq`: `x ^ m ≤ y ^ n ↔ x ^ m' ≤ y ^ n'` when the exponent pairs
   `(m, n)` and `(m', n')` are proportional.
+* `TauCeti.pow_le_max_one_pow`: `c ^ m ≤ max 1 c ^ n` for `0 ≤ c` and `m ≤ n`.
+* `TauCeti.pow_le_max_one_pow_pow`: `c ^ m ≤ (max 1 c ^ k) ^ n` for `0 ≤ c` and `m ≤ k * n`.
 -/
 
 public section
@@ -36,5 +44,23 @@ theorem pow_le_pow_iff_of_mul_eq {M₀ : Type*} [MonoidWithZero M₀] [LinearOrd
         (pow_le_pow_iff_left₀ (pow_nonneg hx _) (pow_nonneg hy _) hc).symm
     _ ↔ (x ^ m') ^ c' ≤ (y ^ n') ^ c' := by simp only [← pow_mul, hm, hn]
     _ ↔ x ^ m' ≤ y ^ n' := pow_le_pow_iff_left₀ (pow_nonneg hx _) (pow_nonneg hy _) hc'
+
+/-- For a nonnegative element `c` of a linearly ordered monoid with zero and exponents `m ≤ n`,
+`c ^ m ≤ max 1 c ^ n`. -/
+theorem pow_le_max_one_pow {M₀ : Type*} [MonoidWithZero M₀] [LinearOrder M₀]
+    [ZeroLEOneClass M₀] [PosMulMono M₀] [MulPosMono M₀]
+    {c : M₀} (hc : 0 ≤ c) {m n : ℕ} (hmn : m ≤ n) :
+    c ^ m ≤ max 1 c ^ n :=
+  (pow_le_pow_left₀ hc (le_max_right 1 c) m).trans (pow_le_pow_right₀ (le_max_left 1 c) hmn)
+
+/-- For a nonnegative element `c` of a linearly ordered monoid with zero and `m ≤ k * n`,
+`c ^ m ≤ (max 1 c ^ k) ^ n`. This re-bases shifted or rescaled geometric bounds such as
+`c ^ (n + 2) ≤ (max 1 c ^ 2) ^ (n + 1)` back to exponent `n`. -/
+theorem pow_le_max_one_pow_pow {M₀ : Type*} [MonoidWithZero M₀] [LinearOrder M₀]
+    [ZeroLEOneClass M₀] [PosMulMono M₀] [MulPosMono M₀]
+    {c : M₀} (hc : 0 ≤ c) {k m n : ℕ} (h : m ≤ k * n) :
+    c ^ m ≤ (max 1 c ^ k) ^ n := by
+  rw [← pow_mul]
+  exact pow_le_max_one_pow hc h
 
 end TauCeti

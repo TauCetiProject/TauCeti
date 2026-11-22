@@ -26,7 +26,9 @@ maximal atlas around `q`. Each tangent vector at `q` is then exactly one of: out
 `v⁰ > 0`), and none of these classes depends on the chart. The inward and the outward vectors
 (open half-spaces by `Boundary/Orientation.lean`) have common frontier `T_q∂M`.
 
-The velocity at `0` of a curve `c` on `ℝ` with `c 0 ∈ ∂M` is tangent to the boundary. A
+The velocity at `t` of a curve `c` on `ℝ` with `c t ∈ ∂M` is tangent to the boundary, and the
+one-sided velocity of a curve starting at a boundary point is not outward
+(`TauCeti.not_isOutwardPointing_curveVelocityWithin_Ici`, in `Boundary/Orientation.lean`). A
 diffeomorphism of class `C^k`, `k ≠ 0`, carries `T_q∂M` onto the tangent space of the boundary at
 the image point.
 
@@ -34,7 +36,8 @@ the image point.
 
 * `TauCeti.boundaryTangentSpace`: the tangent space `T_q∂M ⊆ T_qM` of the boundary.
 * `TauCeti.boundaryTangentSpace_eq_euclideanHalfSpaceBoundary`: in the preferred chart it is the
-  coordinate hyperplane; `TauCeti.finrank_boundaryTangentSpace`: it has dimension `n`.
+  coordinate hyperplane; `TauCeti.finrank_boundaryTangentSpace`: it has dimension `n`, the
+  differential of the inclusion being injective (`TauCeti.injective_mfderiv_subtypeVal_boundary`).
 * `TauCeti.boundaryTangentSpace_eq_ker_of_mem_maximalAtlas`: it is the kernel of the differential
   of the normal coordinate of any chart of the maximal atlas.
 * `TauCeti.mem_boundaryTangentSpace_iff_proj`: `v ∈ T_q∂M` exactly when its normal coordinate in
@@ -43,10 +46,11 @@ the image point.
 * `TauCeti.isOutwardPointing_or_mem_boundaryTangentSpace_or_isOutwardPointing_neg`, with
   `TauCeti.IsOutwardPointing.notMem_boundaryTangentSpace` and
   `TauCeti.IsOutwardPointing.not_isOutwardPointing_neg` (in `Boundary/Orientation.lean`): the
-  trichotomy.
+  trichotomy, restated as
+  `TauCeti.mem_boundaryTangentSpace_iff_not_isOutwardPointing_and_not_isOutwardPointing_neg`.
 * `TauCeti.frontier_setOf_isOutwardPointing`, `TauCeti.frontier_setOf_isOutwardPointing_neg`:
   the outward and inward half-spaces have frontier `T_q∂M`.
-* `TauCeti.mfderiv_apply_one_mem_boundaryTangentSpace`: velocities of curves through the boundary.
+* `TauCeti.curveVelocity_mem_boundaryTangentSpace`: velocities of curves through the boundary.
 * `TauCeti.map_mfderiv_boundaryTangentSpace`: naturality under diffeomorphisms.
 
 ## References
@@ -99,12 +103,28 @@ theorem boundaryTangentSpace_eq_euclideanHalfSpaceBoundary (q : (𝓡∂ (n + 1)
   rw [LinearMap.mem_range]
   exact Set.ext_iff.mp (range_euclideanHalfSpaceBoundaryParam n) v
 
+/-- The differential of the boundary inclusion takes values in the tangent space of the
+boundary. -/
+theorem mfderiv_subtypeVal_mem_boundaryTangentSpace (q : (𝓡∂ (n + 1)).boundary M)
+    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u ∈ boundaryTangentSpace q :=
+  LinearMap.mem_range_self _ u
+
+/-- The differential of the boundary inclusion is injective: in the preferred chart it is the
+zero-insertion map. -/
+theorem injective_mfderiv_subtypeVal_boundary (q : (𝓡∂ (n + 1)).boundary M) :
+    Injective (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q) := by
+  rw [mfderiv_subtypeVal_boundary]
+  exact euclideanHalfSpaceBoundaryParam_injective n
+
 /-- The tangent space of the boundary has dimension `n`, one less than that of `M`. -/
-theorem finrank_boundaryTangentSpace [IsManifold (𝓡∂ (n + 1)) 1 M] (q : (𝓡∂ (n + 1)).boundary M) :
+@[simp]
+theorem finrank_boundaryTangentSpace (q : (𝓡∂ (n + 1)).boundary M) :
     Module.finrank ℝ (boundaryTangentSpace q) = n := by
   rw [boundaryTangentSpace_def,
-    LinearMap.finrank_range_of_inj
-      ((isImmersion_subtypeVal_boundary (n := n) (k := 1) M).mfderiv_injective one_ne_zero q)]
+    LinearMap.finrank_range_of_inj (injective_mfderiv_subtypeVal_boundary q)]
   exact finrank_euclideanSpace_fin
 
 /-- The tangent space of the boundary at `q` is the kernel of the differential at `q` of the normal
@@ -205,6 +225,18 @@ theorem IsOutwardPointing.notMem_boundaryTangentSpace {q : (𝓡∂ (n + 1)).bou
   rw [mem_boundaryTangentSpace_iff_proj]
   exact hv.ne
 
+/-- A tangent vector at a boundary point is tangent to the boundary exactly when neither it nor
+its negative is outward. -/
+theorem mem_boundaryTangentSpace_iff_not_isOutwardPointing_and_not_isOutwardPointing_neg
+    (q : (𝓡∂ (n + 1)).boundary M) (v : TangentSpace (𝓡∂ (n + 1)) (q : M)) :
+    v ∈ boundaryTangentSpace q ↔
+      ¬IsOutwardPointing (q : M) v ∧ ¬IsOutwardPointing (q : M) (-v) := by
+  refine ⟨fun hv ↦ ⟨fun h ↦ h.notMem_boundaryTangentSpace hv,
+    fun h ↦ h.notMem_boundaryTangentSpace ((boundaryTangentSpace q).neg_mem hv)⟩, ?_⟩
+  rintro ⟨h₁, h₂⟩
+  exact ((isOutwardPointing_or_mem_boundaryTangentSpace_or_isOutwardPointing_neg q v).resolve_left
+    h₁).resolve_right h₂
+
 /-- The frontier of the open half-space of outward vectors at a boundary point is the tangent
 space of the boundary. -/
 theorem frontier_setOf_isOutwardPointing (q : (𝓡∂ (n + 1)).boundary M) :
@@ -237,18 +269,18 @@ theorem frontier_setOf_isOutwardPointing_neg (q : (𝓡∂ (n + 1)).boundary M) 
   ext v
   exact mem_boundaryTangentSpace_iff_proj.symm
 
-/-- The velocity at `0` of a curve `c` with `c 0 ∈ ∂M` is tangent to the boundary. (Without
+/-- The velocity at `t` of a curve `c` with `c t ∈ ∂M` is tangent to the boundary. (Without
 differentiability the velocity is `0` by convention.) -/
-theorem mfderiv_apply_one_mem_boundaryTangentSpace {c : ℝ → M}
-    (hc0 : c 0 ∈ (𝓡∂ (n + 1)).boundary M) :
-    mfderiv 𝓘(ℝ) (𝓡∂ (n + 1)) c 0 (1 : ℝ) ∈
-      boundaryTangentSpace (⟨c 0, hc0⟩ : (𝓡∂ (n + 1)).boundary M) := by
-  by_cases hc : MDifferentiableAt 𝓘(ℝ) (𝓡∂ (n + 1)) c 0
+theorem curveVelocity_mem_boundaryTangentSpace (c : ℝ → M) {t : ℝ}
+    (hq : c t ∈ (𝓡∂ (n + 1)).boundary M) :
+    Manifold.curveVelocity (𝓡∂ (n + 1)) c t ∈ boundaryTangentSpace ⟨c t, hq⟩ := by
+  rw [Manifold.curveVelocity_apply]
+  by_cases hc : MDifferentiableAt 𝓘(ℝ) (𝓡∂ (n + 1)) c t
   swap
   · rw [mfderiv_zero_of_not_mdifferentiableAt hc]
     exact Submodule.zero_mem _
-  have hmin : IsLocalMin (fun t ↦ extChartAt (𝓡∂ (n + 1)) (c 0) (c t) 0) 0 :=
-    ((isMinOn_extChartAt_apply_zero hc0 univ).comp_of_mapsTo (mapsTo_univ c univ) rfl).isLocalMin
+  have hmin : IsLocalMin (fun u ↦ extChartAt (𝓡∂ (n + 1)) (c t) (c u) 0) t :=
+    ((isMinOn_extChartAt_apply_zero hq univ).comp_of_mapsTo (mapsTo_univ c univ) rfl).isLocalMin
       univ_mem
   have hd := (hasFDerivWithinAt_extChartAt_comp_apply_zero (s := univ)
     hc.mdifferentiableWithinAt).hasFDerivAt univ_mem

@@ -115,16 +115,11 @@ theorem exists_sobolevEmbeddingL [T2Space M] {pstar : ℝ≥0∞} (hpstar : psta
     hpstar hexp (hQc i) (hQ i) k
   let D (i : Fin A.n) :
       SobolevSection A μ p (k + 1) →L[ℝ] (Fin (finrank ℝ F) → Wkp μ (Q i) pstar k) :=
-    ContinuousLinearMap.pi fun l ↦ (Emb i).comp ((ContinuousLinearMap.proj l).comp
-      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun i : Fin A.sectionChartData.n ↦
-          ∀ _ : Fin (finrank ℝ F), Wkp μ (A.sectionChartData.image i) p (k + 1)) i).comp
-        (A.sectionChartData.sobolevSections μ p (k + 1)).subtypeL))
-  -- The inclusion followed by the two projections evaluates `w` at `i` and `l`. This holds by
-  -- definition only, unfolding `pi`, `proj`, `comp` and `subtypeL`, as the index type
-  -- `Fin A.sectionChartData.n` of the projection unfolds to `Fin A.n`.
+    ContinuousLinearMap.pi fun l ↦ (Emb i).comp
+      ((ContinuousLinearMap.proj l).comp (A.sectionChartData.componentsL μ p (k + 1) i))
   have hD (w : SobolevSection A μ p (k + 1)) (i : Fin A.n) (l : Fin (finrank ℝ F)) :
       D i w l = Emb i ((w : A.sectionChartData.SobolevData μ p (k + 1)) i l) :=
-    (rfl)
+    congrArg (Emb i) (congrFun (A.sectionChartData.componentsL_apply μ p (k + 1) i w) l)
   -- On the piece `P i j`, the transfer of the embedded chart-`i` components.
   let f (j : Fin A.n) (m : Fin (finrank ℝ F)) (i : Fin A.n) :
       SobolevSection A μ p (k + 1) →L[ℝ] Wkp μ (P i j) pstar k :=
