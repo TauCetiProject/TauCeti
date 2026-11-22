@@ -169,15 +169,11 @@ instance [DiscreteTopology G] : IsSmooth ρ :=
 
 /-- A trivial representation is smooth: every stabilizer is the whole group. -/
 instance [ρ.IsTrivial] : IsSmooth ρ :=
-  ⟨fun v ↦ by
-    convert isOpen_univ
-    exact Set.eq_univ_of_forall fun g ↦ by simp [IsTrivial.out (ρ := ρ) g]⟩
+  ⟨fun v ↦ by rw [stabilizer_eq_top ρ v]; exact isOpen_univ⟩
 
 /-- A representation on a space with at most one vector is smooth. -/
 instance [Subsingleton V] : IsSmooth ρ :=
-  ⟨fun v ↦ by
-    convert isOpen_univ
-    exact Set.eq_univ_of_forall fun g ↦ Subsingleton.elim (ρ g v) v⟩
+  ⟨fun v ↦ by rw [stabilizer_eq_top_of_subsingleton ρ v]; exact isOpen_univ⟩
 
 end IsSmooth
 
@@ -390,12 +386,6 @@ theorem mem_smoothVectors_iff_exists_openSubgroup_mem_invariants {v : V} :
     v ∈ ρ.smoothVectors ↔ ∃ U : OpenSubgroup G, v ∈ invariants (ρ.comp U.toSubgroup.subtype) := by
   simp_rw [mem_smoothVectors_iff_exists_openSubgroup, mem_invariants_comp_subtype_iff]
 
-/-- Over a commutative ring, `ρ` is smooth if and only if every vector lies in `V^U` for some open
-subgroup `U` of `G`. -/
-theorem isSmooth_iff_forall_exists_openSubgroup_mem_invariants (ρ : Representation A G V) :
-    IsSmooth ρ ↔ ∀ v : V, ∃ U : OpenSubgroup G, v ∈ invariants (ρ.comp U.toSubgroup.subtype) := by
-  simp_rw [isSmooth_iff_exists_openSubgroup, mem_invariants_comp_subtype_iff]
-
 /-- As a set, `ρ.smoothVectors` is the union of the `U`-invariants `V^U` over all open subgroups
 `U` of `G`. -/
 theorem coe_smoothVectors_eq_iUnion_invariants (ρ : Representation A G V) :
@@ -450,14 +440,6 @@ theorem toSubmodule_smoothVectors_eq_biSup_invariants_isCompact (ρ : Representa
       mem_smoothVectors_iff_exists_isCompact_openSubgroup_mem_invariants.mp hv
     exact Submodule.mem_iSup_of_mem U (Submodule.mem_iSup_of_mem hUcpt hU)
   · exact mem_smoothVectors_iff_exists_isCompact_openSubgroup_mem_invariants.mpr ⟨U, hU, hv⟩
-
-/-- In a weakly locally compact nonarchimedean group, `ρ` is smooth if and only if every vector
-lies in `V^U` for some compact open subgroup `U` of `G`. -/
-theorem isSmooth_iff_forall_exists_isCompact_openSubgroup_mem_invariants
-    (ρ : Representation A G V) :
-    IsSmooth ρ ↔ ∀ v : V, ∃ U : OpenSubgroup G, IsCompact (U : Set G) ∧
-      v ∈ invariants (ρ.comp U.toSubgroup.subtype) := by
-  simp_rw [isSmooth_iff_exists_isCompact_openSubgroup, mem_invariants_comp_subtype_iff]
 
 /-- For a locally profinite group, a representation is smooth exactly when `V = ⋃ V^U`, the
 union of the invariants of the compact open subgroups `U`. -/

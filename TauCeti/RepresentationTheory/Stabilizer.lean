@@ -33,8 +33,8 @@ and subset stabilizers across standard constructions on representations:
   binary and arbitrary products (`Representation.stabilizer_prod`, `Representation.stabilizer_pi`),
   and quotients (`Subrepresentation.le_stabilizer_quotient_mk`);
 * permutation and left regular representations (`Representation.stabilizer_ofMulAction_single`,
-  `Representation.stabilizer_leftRegular_single`, `Representation.finite_stabilizer_leftRegular`)
-  and trivial subgroup restrictions (`Representation.isTrivial_comp_subtype_iff` and
+  `Representation.finite_stabilizer_leftRegular`) and trivial subgroup restrictions
+  (`Representation.isTrivial_comp_subtype_iff` and
   `Representation.le_stabilizer_of_isTrivial_comp_subtype`);
 * the Galois-style correspondence `v ∈ invariants (ρ.comp H.subtype) ↔ H ≤ ρ.stabilizer v`
   linking stabilizers to subgroup invariants (`Representation.mem_invariants_comp_subtype_iff`).
@@ -63,8 +63,7 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 * `Representation.Equiv.stabilizer_apply`
 * `Representation.stabilizer_prod` and `Representation.stabilizer_pi`
 * `Subrepresentation.le_stabilizer_quotient_mk`
-* `Representation.stabilizer_ofMulAction_single` and `Representation.stabilizer_leftRegular_single`
-* `Representation.finite_stabilizer_leftRegular`
+* `Representation.stabilizer_ofMulAction_single` and `Representation.finite_stabilizer_leftRegular`
 * `Representation.isTrivial_comp_subtype_iff` and
   `Representation.le_stabilizer_of_isTrivial_comp_subtype`
 * `Representation.mem_invariants_comp_subtype_iff`
@@ -188,12 +187,6 @@ theorem stabilizer_ofMulAction_single (x : X) {r : A} (hr : r ≠ 0) :
     MulAction.mem_stabilizer_iff]
 
 end MulAction
-
-/-- In the left regular representation `A[G]`, any nonzero monomial `single g a` has trivial
-stabilizer. -/
-theorem stabilizer_leftRegular_single (g : G) {a : A} (ha : a ≠ 0) :
-    (leftRegular A G).stabilizer (MonoidAlgebra.single g a) = ⊥ := by
-  simp [ha]
 
 /-- **Every nonzero vector in the left regular representation has finite stabilizer.** -/
 theorem finite_stabilizer_leftRegular {x : A[G]} (hx : x ≠ 0) :
