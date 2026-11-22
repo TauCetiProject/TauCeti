@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.Geometry.Manifold.Morse.Bott.Homology
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
+import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
 
 /-!
 # Crossing the level of a Morse–Bott submanifold of index zero
@@ -45,9 +45,9 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 ## The proof
 
 Choose a smooth fibre metric on the normal bundle
-(`TauCeti.nonempty_contMDiffRiemannianMetric`). For small `ε > 0` the inclusion of pairs
-`(M_{c-ε} ∪ Θ(D_ε), M_{c-ε}) ⟶ (M_{c+ε}, M_{c-ε})` induces isomorphisms on relative homology, where
-`D_ε` is the negative disc bundle and `Θ` a Morse–Bott normal form
+(`TauCeti.SmoothEmbedding.nonempty_contMDiffRiemannianMetric_normalSpace`). For small `ε > 0` the
+inclusion of pairs `(M_{c-ε} ∪ Θ(D_ε), M_{c-ε}) ⟶ (M_{c+ε}, M_{c-ε})` induces isomorphisms on
+relative homology, where `D_ε` is the negative disc bundle and `Θ` a Morse–Bott normal form
 (`IsNondegenerateCriticalSubmanifold.exists_isIso_singularHomologyMap_negativeDiscBundle`). The
 negative normal spaces have dimension the Morse index
 (`IsNondegenerateCriticalSubmanifold.finrank_negativeNormalSpace`), so in index zero `D_ε` is the
@@ -137,12 +137,7 @@ private theorem exists_isIso_singularHomologyMap_union_range [T2Space M]
   have hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E' := finrank_euclideanSpace_fin
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : IsManifold J (∞ + 1) S := by simpa using (inferInstance : IsManifold J ∞ S)
-  let := i.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
-  have : T2Space S := i.isEmbedding.t2Space
-  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := J) (n := ⊤) (F := P)
-    (E := fun s ↦ i.NormalSpace s hn)
+  obtain ⟨g⟩ := i.nonempty_contMDiffRiemannianMetric_normalSpace hn hdim
   obtain ⟨Θ, -, hΘi, -, ε₀, hε₀, hmain⟩ :=
     h.exists_isIso_singularHomologyMap_negativeDiscBundle hn hfs hc hdim g
   refine ⟨ε₀, hε₀, fun ε hε hεε₀ hcompact hcrit ↦ ?_⟩
