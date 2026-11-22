@@ -45,14 +45,17 @@ rates in a small scale `h` become inequalities for all small `h`. Power laws mul
 A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a → -∞`,
 tends to zero. This is how valuation bounds on coefficients give convergence of series.
 
-## Roots of a fixed number
+## Powers of a fixed base tending to one
 
+For `q > 1` and a nonzero real base `b`, the powers `b ^ (a / q ^ n)` tend to one.
 For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the real number `q` tends to `∞`.
 
 ## Comparing exponents
 
 If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`: a power with a
-larger exponent outgrows every constant multiple of a smaller one.
+larger exponent outgrows every constant multiple of a smaller one. Symmetrically, if
+`t ^ a ≤ C t ^ b` for every `t ∈ (0, T]`, `T > 0`, then `b ≤ a`: near zero a power with a smaller
+exponent dominates every constant multiple of a larger one.
 -/
 
 public section
@@ -194,6 +197,13 @@ theorem tendsto_zero_of_norm_le_zpow {α F : Type*} [SeminormedAddGroup F] {l : 
     ((tendsto_intCast_atBot_iff (R := ℝ)).2 hg)
   simpa [Function.comp_def, Real.rpow_intCast] using h
 
+/-- For `q > 1`, the powers `b ^ (a / q ^ n)` of a fixed nonzero base `b` tend to one. -/
+theorem tendsto_const_rpow_div_pow_atTop {b q : ℝ} (hb : b ≠ 0) (hq : 1 < q) (a : ℝ) :
+    Tendsto (fun n : ℕ ↦ b ^ (a / q ^ n)) atTop (𝓝 1) := by
+  have h := (tendsto_pow_atTop_atTop_of_one_lt hq).const_div_atTop a
+  simpa only [Function.comp_def, Real.rpow_zero] using
+    (Real.continuousAt_const_rpow hb (b := 0)).tendsto.comp h
+
 /-- If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`. -/
 theorem le_of_forall_rpow_le_mul_rpow {a b C : ℝ}
     (h : ∀ n : ℕ, ((n : ℝ) + 1) ^ a ≤ C * ((n : ℝ) + 1) ^ b) : a ≤ b := by
@@ -207,6 +217,19 @@ theorem le_of_forall_rpow_le_mul_rpow {a b C : ℝ}
   have := h n
   rw [Real.rpow_sub hpos, lt_div_iff₀ (Real.rpow_pos_of_pos hpos _)] at hn
   linarith
+
+/-- If `t ^ a ≤ C t ^ b` for every `t ∈ (0, T]`, with `T > 0`, then `b ≤ a`. -/
+theorem le_of_forall_mem_Ioc_rpow_le_mul_rpow {a b C T : ℝ} (hT : 0 < T)
+    (h : ∀ t ∈ Set.Ioc 0 T, t ^ a ≤ C * t ^ b) : b ≤ a := by
+  by_contra hab
+  push Not at hab
+  obtain ⟨t, hCt, ht⟩ := ((eventually_mul_rpow_lt_nhdsGT_zero (sub_pos.2 hab) C one_pos).and
+    (Ioo_mem_nhdsGT hT)).exists
+  have hsplit : C * t ^ b = C * t ^ (b - a) * t ^ a := by
+    rw [mul_assoc, ← Real.rpow_add ht.1, sub_add_cancel]
+  have hle := h t ⟨ht.1, ht.2.le⟩
+  rw [hsplit] at hle
+  nlinarith [Real.rpow_pos_of_pos ht.1 a]
 
 end TauCeti
 
