@@ -42,7 +42,7 @@ example (p : ℕ) [Fact p.Prime] (A : Type*) [Semiring A] :
   hasUnitProOrder_multiplicative_padicInt_iff p A
 
 example (p : ℕ) [Fact p.Prime] : HasUnitProOrder ℚ (Multiplicative ℤ_[p]) :=
-  hasUnitProOrder_of_algebra_rat
+  hasUnitProOrder_of_algebra ℚ
 
 example (p ℓ : ℕ) [Fact p.Prime] [Fact ℓ.Prime] (hpℓ : p ≠ ℓ) :
     HasUnitProOrder (ZMod ℓ) (Multiplicative ℤ_[p]) := by

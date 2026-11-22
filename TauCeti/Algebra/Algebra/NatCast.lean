@@ -34,15 +34,17 @@ explicit base argument `K`, follow Mathlib's `IsUnit.natCast_factorial_of_algebr
   `TauCeti.isUnit_natCast_add_one`: every nonzero natural number (in particular `(m : A) + k` for
   `k ≠ 0` and `(m : A) + 1`) is a unit in an algebra `A` over a characteristic-zero semifield `K`.
 
-The remaining results hold over any semifield `K`; in each, the inverse is taken in `K` and then
-mapped into the algebra or used as a scalar.
+The remaining results hold over any semifield `K` (the first `k + 1` cancellation even over any
+division semiring); in each, the inverse is taken in `K` and then mapped into the algebra or used
+as a scalar.
 
-* `TauCeti.natCast_mul_algebraMap_inv`: `m · (1 / m) = 1` in a `K`-algebra, when `(m : K) ≠ 0`.
+* `TauCeti.natCast_mul_algebraMap_inv`, `TauCeti.ofNat_mul_algebraMap_inv`: `m · (1 / m) = 1` in a
+  `K`-algebra, for a natural number or a numeral `m` with `(m : K) ≠ 0`.
 * `TauCeti.nsmul_algebraMap_inv_natCast_smul`, `TauCeti.algebraMap_inv_natCast_smul_nsmul`:
   `m • (1 / m) • a = a` and `(1 / m) • m • a = a` in a module over a `K`-algebra, when
   `(m : K) ≠ 0`.
 * `TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one`: `(k + 1)⁻¹ • (a * (k + 1)) = a` in a
-  semiring that is a `K`-module, when `(k : K) + 1 ≠ 0`.
+  semiring that is a module over a division semiring `K`, when `(k : K) + 1 ≠ 0`.
 * `TauCeti.algebraMap_inv_natCast_add_one_smul_natCast_add_one_mul`:
   `(1 / (k + 1)) • ((k + 1) * a) = a` in a semiring that is a module over a `K`-algebra, when
   `(k : K) + 1 ≠ 0`.
@@ -88,6 +90,14 @@ theorem natCast_mul_algebraMap_inv {K A : Type*} [Semifield K] [Semiring A] [Alg
     (hm : (m : K) ≠ 0) : (m : A) * algebraMap K A (m : K)⁻¹ = 1 := by
   simpa using congrArg (algebraMap K A) (mul_inv_cancel₀ hm)
 
+/-- Multiplying by a numeral `n` and by the image of `n⁻¹ : K` cancel in an algebra over a
+semifield `K`, provided `n` is nonzero in `K`; for instance `2 · (1 / 2) = 1` in a `ℚ`-algebra. -/
+@[simp]
+theorem ofNat_mul_algebraMap_inv {K A : Type*} [Semifield K] [Semiring A] [Algebra K A] {n : ℕ}
+    [n.AtLeastTwo] (hn : (ofNat(n) : K) ≠ 0) :
+    (ofNat(n) : A) * algebraMap K A (ofNat(n) : K)⁻¹ = 1 :=
+  natCast_mul_algebraMap_inv (A := A) hn
+
 /-- In a module over a `K`-algebra `R`, the natural multiple `m • ·` cancels the scalar
 `algebraMap K R m⁻¹` applied first, provided `m` is nonzero in the semifield `K`. -/
 @[simp]
@@ -102,14 +112,15 @@ multiple `m • ·` applied first, provided `m` is nonzero in the semifield `K`.
 theorem algebraMap_inv_natCast_smul_nsmul {K R M : Type*} [Semifield K] [Semiring R] [Algebra K R]
     [AddCommMonoid M] [Module R M] {m : ℕ} (hm : (m : K) ≠ 0) (a : M) :
     algebraMap K R (m : K)⁻¹ • m • a = a := by
-  rw [← Nat.cast_smul_eq_nsmul R, smul_smul, ← Nat.cast_comm, natCast_mul_algebraMap_inv hm,
-    one_smul]
+  rw [smul_comm (algebraMap K R (m : K)⁻¹) m]
+  exact nsmul_algebraMap_inv_natCast_smul hm a
 
 /-- Multiplying on the right by `k + 1` and then dividing by `k + 1` cancel in a semiring that is
-a module over a semifield `K`, for instance a `K`-algebra, provided `k + 1` is nonzero in `K`. In a
-`K`-algebra this is the simp-normal form of `(k + 1)⁻¹ • a * (k + 1)`. -/
+a module over a division semiring `K`, for instance an algebra over a semifield `K`, provided
+`k + 1` is nonzero in `K`. In a `K`-algebra this is the simp-normal form of
+`(k + 1)⁻¹ • a * (k + 1)`. -/
 @[simp]
-theorem inv_natCast_add_one_smul_mul_natCast_add_one {K R : Type*} [Semifield K] [Semiring R]
+theorem inv_natCast_add_one_smul_mul_natCast_add_one {K R : Type*} [DivisionSemiring K] [Semiring R]
     [Module K R] (a : R) (k : ℕ) (hk : (k : K) + 1 ≠ 0) :
     ((k : K) + 1)⁻¹ • (a * ((k : R) + 1)) = a := by
   have h : a * ((k : R) + 1) = ((k : K) + 1) • a := by

@@ -42,14 +42,15 @@ namespace TauCeti.ClassFieldTheory
 
 section BrInvLift
 
-variable {F : Type*} [Field F] [CharZero F] (n : ℕ) [NeZero n]
+variable {F : Type*} [Field F] (n : ℕ) [NeZero n]
 
 private theorem exists_toRatAddCircle_eq_brInv (inv : Br F →+ AddCircle (1 : ℚ))
     (x : continuousCohomology 2 (muNRep n F)) :
     inv (h2MuToBr n F x) ∈ Set.range (ZMod.toRatAddCircle n) :=
+  -- `H²(F, μₙ)` is a `ZMod n`-module, so it is killed by `n`.
   ZMod.exists_toRatAddCircle_eq_of_nsmul_eq_zero n <| by
-    rw [← map_nsmul,
-      (h2MuToBr_range n F (isUnit_natCast_of_ne_zero ℚ (NeZero.ne n)) _).mp ⟨x, rfl⟩, map_zero]
+    rw [← map_nsmul, ← map_nsmul, ← Nat.cast_smul_eq_nsmul (ZMod n), ZMod.natCast_self, zero_smul,
+      map_zero, map_zero]
 
 private def h2MuToZModOfBrInv (inv : Br F →+ AddCircle (1 : ℚ)) :
     continuousCohomology 2 (muNRep n F) →+ ZMod n :=
@@ -65,9 +66,10 @@ private theorem toRatAddCircle_h2MuToZModOfBrInv (inv : Br F →+ AddCircle (1 :
       (ZMod.toRatAddCircle n) (ZMod.toRatAddCircle_injective n)).mpr
       (exists_toRatAddCircle_eq_brInv n inv)).exists.choose_spec x
 
-private theorem h2MuToZModOfBrInv_injective {inv : Br F →+ AddCircle (1 : ℚ)}
-    (hinv : Function.Injective inv) : Function.Injective (h2MuToZModOfBrInv n inv) := fun x y hxy =>
-  h2MuToBr_injective n F (isUnit_natCast_of_ne_zero ℚ (NeZero.ne n)) <| hinv <| by
+private theorem h2MuToZModOfBrInv_injective (hn : IsUnit (n : F))
+    {inv : Br F →+ AddCircle (1 : ℚ)} (hinv : Function.Injective inv) :
+    Function.Injective (h2MuToZModOfBrInv n inv) := fun x y hxy =>
+  h2MuToBr_injective n F hn <| hinv <| by
     rw [← toRatAddCircle_h2MuToZModOfBrInv n inv x, ← toRatAddCircle_h2MuToZModOfBrInv n inv y, hxy]
 
 private theorem two_nsmul_h2MuToZModOfBrInv {inv : Br F →+ AddCircle (1 : ℚ)}
@@ -100,7 +102,7 @@ theorem realH2MuToZMod_eq_iff (x : continuousCohomology 2 (muNRep n ℝ)) (z : Z
 
 /-- **The real roots-of-unity invariant into `ZMod n` is injective** for every nonzero `n`. -/
 theorem realH2MuToZMod_injective : Function.Injective (realH2MuToZMod n) :=
-  h2MuToZModOfBrInv_injective n realInv_injective
+  h2MuToZModOfBrInv_injective n (isUnit_natCast_of_ne_zero ℚ (NeZero.ne n)) realInv_injective
 
 /-- `realH2MuToZMod` vanishes exactly when its cohomology class vanishes. -/
 @[simp]
@@ -139,7 +141,8 @@ theorem infiniteH2MuToZMod_eq_iff (x : continuousCohomology 2 (muNRep n w.Comple
 
 /-- **The archimedean roots-of-unity invariant into `ZMod n` is injective** at every `w`. -/
 theorem infiniteH2MuToZMod_injective : Function.Injective (infiniteH2MuToZMod w n) :=
-  h2MuToZModOfBrInv_injective n (infiniteInvMap_injective w)
+  h2MuToZModOfBrInv_injective n (isUnit_natCast_of_ne_zero ℚ (NeZero.ne n))
+    (infiniteInvMap_injective w)
 
 /-- `infiniteH2MuToZMod` vanishes exactly when its cohomology class vanishes. -/
 @[simp]

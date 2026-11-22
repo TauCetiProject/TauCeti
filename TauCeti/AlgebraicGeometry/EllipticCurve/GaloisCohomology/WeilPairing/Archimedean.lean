@@ -109,12 +109,18 @@ private theorem tateWeilPairingOfH2MuHom_eq_zero_of_mem_ker {m : ℕ}
   rw [← W.range_kummerMap m hm] at ha hb
   exact W.tateWeilPairingOfH2MuHom_eq_zero_of_mem_range_kummerMap hm h ha hb
 
-private theorem natCard_torsionBy_zero_eq_zero [DecidableEq F] [CharZero F]
+private theorem natCard_torsionBy_zero_eq_zero [DecidableEq F]
     (hcase : Nonempty (F ≃+* ℝ) ∨ Subsingleton (Gal F)) :
     Nat.card (AddSubgroup.torsionBy W.toAffine.Point (0 : ℤ)) = 0 := by
   have : Infinite W.toAffine.Point := not_finite_iff_infinite.mp fun _ => by
-    let k : ℕ := Nat.card W.toAffine.Point + 1
-    have hk0 : k ≠ 0 := by omega
+    -- A prime `k` above both `#E(F)` and the characteristic is invertible in `F`.
+    obtain ⟨k, hkge, hk⟩ :=
+      Nat.exists_infinite_primes (Nat.card W.toAffine.Point + ringChar F + 1)
+    have hk0 : k ≠ 0 := hk.ne_zero
+    have hkF : IsUnit (k : F) := isUnit_iff_ne_zero.mpr fun h => by
+      rcases (Nat.dvd_prime hk).mp ((CharP.cast_eq_zero_iff F (ringChar F) k).mp h) with h1 | h1
+      · exact CharP.ringChar_ne_one h1
+      · omega
     have hkle : Nat.card (AddSubgroup.torsionBy W.toAffine.Point k) ≤
         Nat.card W.toAffine.Point := by
       rw [AddSubgroup.card_eq_card_quotient_mul_card_addSubgroup
@@ -129,7 +135,7 @@ private theorem natCard_torsionBy_zero_eq_zero [DecidableEq F] [CharZero F]
         H0_eq_top_of_smul_eq_self fun σ Q => by rw [Subsingleton.elim σ 1, one_smul]
       rw [Nat.card_congr (W.baseTorsionEquivInvariants k).toEquiv, hH0,
         Nat.card_congr (AddSubgroup.topEquiv (G := W.TorsionCoeff k)).toEquiv,
-        W.natCard_torsionCoeff (isUnit_natCast_of_ne_zero ℚ hk0), sq] at hkle
+        W.natCard_torsionCoeff hkF, sq] at hkle
       have : k ≤ k * k := Nat.le_mul_of_pos_left k (by omega)
       omega
   have htop : AddSubgroup.torsionBy W.toAffine.Point (0 : ℤ) = ⊤ := by ext; simp
