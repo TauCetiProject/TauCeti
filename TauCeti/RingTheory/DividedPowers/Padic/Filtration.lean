@@ -14,9 +14,11 @@ import TauCeti.NumberTheory.Padics.PadicIntegers
 /-!
 # Divided power filtrations and PD-nilpotence on `ℤ_[p]` and `ZMod (p ^ e)`
 
-This file computes the divided power filtrations and PD-nilpotence behavior of the canonical
-divided power structure `PadicInt.dividedPowers p` on `(p) ⊂ ℤ_[p]` and of its quotient
-`ZMod.dividedPowers p e` on `(p) ⊂ ZMod (p ^ e)`.
+This file establishes the divided power filtration behavior and complete PD-nilpotence
+classification of the canonical divided power structure `PadicInt.dividedPowers p` on
+`(p) ⊂ ℤ_[p]` and of its quotient `ZMod.dividedPowers p e` on `(p) ⊂ ZMod (p ^ e)`: exact
+filtration steps for `p = 2`, sufficient containment and vanishing bounds for odd primes `p`, and
+a complete classification of PD-nilpotence.
 
 * Over `ℤ_[p]`, `(p)` is never PD-nilpotent (`PadicInt.not_isPDNilpotent_dividedPowers`), since
   `ℤ_[p]` is an integral domain.
@@ -185,9 +187,7 @@ theorem isPDNilpotent_dividedPowers_iff (p : ℕ) [hp : Fact p.Prime] (e : ℕ) 
     obtain ⟨n, hn, hbot⟩ := (ZMod.dividedPowers 2 e).isPDNilpotent_iff.mp h
     rw [pdFiltration_dividedPowers_two hn.ne', Ideal.span_singleton_eq_bot] at hbot
     have hdvd : 2 ^ e ∣ 2 := (ZMod.natCast_eq_zero_iff 2 (2 ^ e)).mp (by simpa using hbot)
-    have hle : 2 ^ e ≤ 2 := Nat.le_of_dvd (by decide) hdvd
-    have h4 : 2 ^ 2 ≤ 2 ^ e := Nat.pow_le_pow_right (by decide) he
-    omega
+    exact Nat.not_pos_pow_dvd (by decide : 1 < 2) he hdvd
   · rintro (hp2 | he)
     · exact (ZMod.dividedPowers p e).isPDNilpotent_iff_exists_eq_bot.mpr
         ⟨2 * e, (pdFiltration_dividedPowers_eq_bot_iff p e (2 * e)).mpr

@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.DividedPowers.Padic
 public import Mathlib.RingTheory.DividedPowers.SubDPIdeal
+public import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Canonical divided powers on `ZMod (p ^ e)` and `p`-adic valuations
@@ -44,10 +45,8 @@ PD-nilpotence classification of `PadicInt.dividedPowers p` and `ZMod.dividedPowe
   `RingHom.ker (toZModPow e) ⊓ Ideal.span {(p : ℤ_[p])}` is a sub-dp-ideal.
 * `PadicInt.valuation_dpow_two`: for `p = 2`, the `2`-adic valuation of `γₙ(2)` is the binary
   digit sum `(Nat.digits 2 n).sum`.
-* `ZMod.map_toZModPow_span_p`: `(Ideal.span {(p : ℤ_[p])}).map (PadicInt.toZModPow e) = (p)`.
-* `ZMod.toZModPow_isDPMorphism`, `ZMod.dividedPowers_dpow_toZModPow`,
-  `ZMod.dividedPowers_dpow_p`, and `ZMod.dividedPowers_unique`: compatibility and uniqueness of
-  `ZMod.dividedPowers p e`.
+* `ZMod.toZModPow_isDPMorphism`, `ZMod.dividedPowers_dpow_p`, and `ZMod.dividedPowers_unique`:
+  compatibility, evaluation on `(p)`, and uniqueness of `ZMod.dividedPowers p e`.
 
 ## References
 
@@ -76,6 +75,7 @@ theorem coe_dpow_p (n : ℕ) :
   simp [hp_mem, Ring.inverse_eq_inv']
 
 /-- The divided power `(PadicInt.dividedPowers p).dpow n p` is nonzero for every `n : ℕ`. -/
+@[simp]
 theorem dpow_p_ne_zero (n : ℕ) : (dividedPowers p).dpow n (p : ℤ_[p]) ≠ 0 := by
   intro h
   have hcoe : (((dividedPowers p).dpow n (p : ℤ_[p])) : ℚ_[p]) = 0 := by
@@ -190,12 +190,6 @@ section Canonical
 
 variable (p : ℕ) [hp : Fact p.Prime] (e : ℕ)
 
-/-- The image of the ideal `(p) ⊂ ℤ_[p]` under `PadicInt.toZModPow e` is `(p) ⊂ ZMod (p ^ e)`. -/
-theorem map_toZModPow_span_p :
-    (Ideal.span {(p : ℤ_[p])}).map (PadicInt.toZModPow e) =
-      Ideal.span {(p : ZMod (p ^ e))} := by
-  rw [Ideal.map_span, Set.image_singleton, map_natCast]
-
 /-- The canonical divided power structure on `Ideal.span {(p : ZMod (p ^ e))}` induced from
 `PadicInt.dividedPowers p` along the quotient map `PadicInt.toZModPow e`. -/
 noncomputable def dividedPowers : DividedPowers (Ideal.span {(p : ZMod (p ^ e))}) :=
@@ -213,18 +207,12 @@ theorem toZModPow_isDPMorphism :
     (map_toZModPow_span_p p e).symm
     (PadicInt.isSubDPIdeal_ker_toZModPow_inf p e)
 
-/-- Compatibility of `ZMod.dividedPowers p e` with `PadicInt.toZModPow e`. -/
-theorem dividedPowers_dpow_toZModPow {n : ℕ} {x : ℤ_[p]} (hx : x ∈ Ideal.span {(p : ℤ_[p])}) :
-    (ZMod.dividedPowers p e).dpow n (PadicInt.toZModPow e x) =
-      PadicInt.toZModPow e ((PadicInt.dividedPowers p).dpow n x) :=
-  (toZModPow_isDPMorphism p e).dpow_comp x hx
-
 /-- Evaluation of `ZMod.dividedPowers p e` on the generator `(p : ZMod (p ^ e))`. -/
 theorem dividedPowers_dpow_p (n : ℕ) :
     (ZMod.dividedPowers p e).dpow n (p : ZMod (p ^ e)) =
       PadicInt.toZModPow e ((PadicInt.dividedPowers p).dpow n (p : ℤ_[p])) := by
-  simpa only [map_natCast] using
-    dividedPowers_dpow_toZModPow p e (Ideal.subset_span (Set.mem_singleton _))
+  have hx : (p : ℤ_[p]) ∈ Ideal.span {(p : ℤ_[p])} := Ideal.subset_span (Set.mem_singleton _)
+  simpa only [map_natCast] using (toZModPow_isDPMorphism p e).dpow_comp _ hx
 
 /-- `ZMod.dividedPowers p e` is the unique divided power structure on `(p) ⊂ ZMod (p ^ e)` making
 `PadicInt.toZModPow e` a divided power morphism. -/
