@@ -13,6 +13,7 @@ public import Mathlib.Combinatorics.Enumerative.Stirling
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.RingTheory.Binomial
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Pochhammer polynomials
@@ -63,12 +64,18 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
   the sum of the falling factorials of degree `j` at `x` weighted by the Stirling numbers of the
   second kind `S(m, j)`.
 * `TauCeti.ascPochhammer_add_eval`: `(x)ₖ₊ₘ = (x)ₖ (x + k)ₘ`.
+* `TauCeti.ascPochhammer_eval_eq_prod_range`: `(x)ₙ = x (x + 1) ⋯ (x + n - 1)` as a product over
+  `Finset.range n`.
 * `TauCeti.ascPochhammer_eval_neg_natCast`: `(−n)ₖ = (−1)ᵏ k! C(n, k)`.
 * `TauCeti.ascPochhammer_eval_neg_sub_add_one`: `(−b − k + 1)ₖ = (−1)ᵏ (b)ₖ`.
 * `TauCeti.sum_neg_one_pow_mul_choose_ascPochhammer`: the Chu–Vandermonde identity
   `∑ₖ (−1)ᵏ C(n, k) (b)ₖ (c + k)ₙ₋ₖ = (c − b)ₙ`, from Mathlib's `Ring.descPochhammer_smeval_add`.
 * `TauCeti.ascPochhammer_eval_ne_zero`: over a domain, the rising factorial `(c)ₖ` does not
   vanish when `c` is not a nonpositive integer.
+* `TauCeti.ascPochhammer_eval_neg_mul_ascPochhammer_eval`,
+  `TauCeti.ascPochhammer_eval_neg_mul_ascPochhammer_eval_add_two`: the products
+  `(−a)ₖ (a)ₖ = (−1)ᵏ ∏_{l<k} (a² − l²)` and `(−a)ₖ (a + 2)ₖ = (−1)ᵏ ∏_{l<k} ((a + 1)² − (l + 1)²)`.
+* `TauCeti.two_pow_mul_ascPochhammer_eval_div_two`: `2ᵏ (b/2)ₖ = ∏_{l<k} (2l + b)`.
 -/
 
 public section
@@ -343,6 +350,14 @@ theorem ascPochhammer_add_eval [Semiring R] (x : R) (k m : ℕ) :
     rw [← add_assoc, ascPochhammer_succ_eval, ih, ascPochhammer_succ_eval, mul_assoc,
       Nat.cast_add, add_assoc]
 
+/-- The rising factorial `(x)ₙ` is the product `x (x + 1) ⋯ (x + n - 1)` over
+`Finset.range n`, the ascending counterpart of `descPochhammer_eval_eq_prod_range`. -/
+theorem ascPochhammer_eval_eq_prod_range [CommSemiring R] (n : ℕ) (x : R) :
+    (ascPochhammer R n).eval x = ∏ j ∈ Finset.range n, (x + j) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [ascPochhammer_succ_eval, ih, Finset.prod_range_succ]
+
 /-- `(−n)ₖ = (−1)ᵏ k! C(n, k)`. -/
 theorem ascPochhammer_eval_neg_natCast [Ring R] (n k : ℕ) :
     (ascPochhammer R k).eval (-(n : R)) = (-1) ^ k * k.factorial * n.choose k := by
@@ -379,6 +394,38 @@ theorem sum_neg_one_pow_mul_choose_ascPochhammer [CommRing R] (n : ℕ) (b c : R
   have hck : c + (n : R) - 1 - ((n : R) - k) + 1 = c + k := by ring
   rw [ascPochhammer_eval_neg_sub_add_one, Nat.cast_sub hk', hck]
   ring
+
+/-- `(−a)ₖ (a)ₖ = (−1)ᵏ ∏_{l<k} (a² − l²)`. -/
+theorem ascPochhammer_eval_neg_mul_ascPochhammer_eval [CommRing R] (a : R) (k : ℕ) :
+    (ascPochhammer R k).eval (-a) * (ascPochhammer R k).eval a =
+      (-1) ^ k * ∏ l ∈ Finset.range k, (a ^ 2 - (l : R) ^ 2) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [ascPochhammer_succ_eval, ascPochhammer_succ_eval, Finset.prod_range_succ, pow_succ]
+    linear_combination ((-a + k) * (a + k)) * ih
+
+/-- `(−a)ₖ (a + 2)ₖ = (−1)ᵏ ∏_{l<k} ((a + 1)² − (l + 1)²)`. -/
+theorem ascPochhammer_eval_neg_mul_ascPochhammer_eval_add_two [CommRing R] (a : R) (k : ℕ) :
+    (ascPochhammer R k).eval (-a) * (ascPochhammer R k).eval (a + 2) =
+      (-1) ^ k * ∏ l ∈ Finset.range k, ((a + 1) ^ 2 - ((l : R) + 1) ^ 2) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [ascPochhammer_succ_eval, ascPochhammer_succ_eval, Finset.prod_range_succ, pow_succ]
+    linear_combination ((-a + k) * (a + 2 + k)) * ih
+
+/-- `2ᵏ (b/2)ₖ = ∏_{l<k} (2l + b)`. -/
+theorem two_pow_mul_ascPochhammer_eval_div_two {K : Type*} [Field K] [NeZero (2 : K)] (b : K)
+    (k : ℕ) :
+    2 ^ k * (ascPochhammer K k).eval (b / 2) = ∏ l ∈ Finset.range k, (2 * (l : K) + b) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [ascPochhammer_succ_eval, Finset.prod_range_succ, pow_succ, ← ih]
+    -- Only `b / 2 * 2 = b` is needed, which uses `2 ≠ 0`.
+    have h2 : b / 2 * 2 = b := div_mul_cancel₀ b two_ne_zero
+    linear_combination (2 ^ k * (ascPochhammer K k).eval (b / 2)) * h2
 
 end Ascending
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 
 /-!
@@ -37,10 +38,13 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
   of `φ`.
 * `TestFunction.coe_iterate_lineDerivOp_one`: repeated derivatives on the real line agree with
   the iterates of the ordinary derivative.
+* `TestFunction.im_lineDerivOp_ofReal_apply_ofReal`: in the plane, a derivative along a real
+  direction of a complex test function real on the real axis is real there.
 * `TestFunction.lineDeriv_eq_fderiv`: the classical directional derivative of a test function is
   its Fréchet derivative in that direction.
 * `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
   by a continuous linear map.
+* `TestFunction.iteratedLineDerivOp_postcompCLM`: so do iterated directional derivatives.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
   derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
@@ -123,6 +127,22 @@ theorem coe_iterate_lineDerivOp_one {Ω : Opens ℝ} (φ : 𝓓(Ω, F)) (n : ℕ
     rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
     exact (funext (lineDerivOp_one_apply_eq_deriv _)).trans (congrArg deriv ih)
 
+/-- In the plane, the derivative along a real direction of a complex test function real on the
+real axis is real on the real axis. -/
+theorem im_lineDerivOp_ofReal_apply_ofReal {Ω : Opens ℂ} (φ : 𝓓(Ω, ℂ))
+    (hφ : ∀ x : ℝ, (φ (x : ℂ)).im = 0) (v x : ℝ) :
+    ((∂_{(v : ℂ)} φ : 𝓓(Ω, ℂ)) (x : ℂ)).im = 0 := by
+  rw [lineDerivOp_apply_eq_fderiv]
+  have hd : HasFDerivAt (φ : ℂ → ℂ) (fderiv ℝ (φ : ℂ → ℂ) x) x :=
+    (φ.contDiff.differentiable (by simp) x).hasFDerivAt
+  have hγ : HasDerivAt (fun t : ℝ ↦ ((x + t * v : ℝ) : ℂ)) v 0 := by
+    simpa using (((hasDerivAt_id (0 : ℝ)).mul_const v).const_add x).ofReal_comp
+  have him := Complex.imCLM.hasFDerivAt.comp_hasDerivAt (0 : ℝ)
+    (hd.comp_hasDerivAt_of_eq (0 : ℝ) hγ (by simp))
+  have h0 := him.unique ((hasDerivAt_const (0 : ℝ) (0 : ℝ)).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun t ↦ by simpa using hφ (x + t * v)))
+  simpa using h0
+
 /-- The underlying function of a directional derivative of a test function is its classical
 directional derivative. -/
 @[simp]
@@ -154,6 +174,19 @@ theorem lineDerivCLM_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 𝕜] [
     rw [ContinuousLinearMap.coe_restrictScalars'] at hL
     rw [hL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars']
   · simp
+
+/-- Iterated directional derivatives of test functions commute with postcomposition by a
+continuous linear map. -/
+theorem iteratedLineDerivOp_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Algebra ℝ 𝕜]
+    [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace ℝ F'] [NormedSpace 𝕜 F'] [IsScalarTower ℝ 𝕜 F'] (L : F →L[𝕜] F') {k : ℕ}
+    (m : Fin k → E) (φ : 𝓓(Ω, F)) :
+    ∂^{m} (postcompCLM L φ) = postcompCLM L (∂^{m} φ) := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [iteratedLineDerivOp_succ_left, iteratedLineDerivOp_succ_left, ih,
+      lineDerivOp_eq_lineDerivCLM 𝕜, lineDerivOp_eq_lineDerivCLM 𝕜, lineDerivCLM_postcompCLM]
 
 /-- Iterated directional derivatives of a test function agree with its iterated Fréchet
 derivatives evaluated in those directions. -/

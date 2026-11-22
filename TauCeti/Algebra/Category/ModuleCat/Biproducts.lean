@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.RingTheory.Finiteness.Defs
 import Mathlib.RingTheory.Finiteness.Basic
 
@@ -53,6 +54,11 @@ modules over an arbitrary ring is finitely generated (`ModuleCat.finite_biproduc
   `ModuleCat.biprod_inl_snd_apply`, `ModuleCat.biprod_inr_snd_apply` and
   `ModuleCat.biprod_inl_fst_add_inr_snd_apply`: the binary biproduct projections and inclusions on
   elements.
+
+* `CategoryTheory.Functor.sum_map_ι_map_π_apply`: for an additive functor `F` to modules, an
+  element of `F.obj (⨁ f)` is the sum of the images of its components.
+* `CategoryTheory.Functor.finite_obj_biproduct`: such a functor has finitely generated value on a
+  finite biproduct of objects with finitely generated values.
 -/
 
 public section
@@ -189,3 +195,33 @@ theorem finite_biproduct {ι : Type*} [Finite ι] (V : ι → ModuleCat.{v} R)
     biproductIsoPi (fun j : Fin m ↦ V (e.symm j)))).symm.toLinearEquiv
 
 end ModuleCat
+
+namespace CategoryTheory.Functor
+
+open CategoryTheory.Limits
+
+variable {C : Type*} [Category* C] [Preadditive C] {R : Type*} [Ring R] (F : C ⥤ ModuleCat R)
+  [F.Additive]
+
+/-- For an additive functor to modules, an element of the value on a finite biproduct is the sum
+of the images of its components. -/
+theorem sum_map_ι_map_π_apply {ι : Type*} [Fintype ι] (f : ι → C) [HasBiproduct f]
+    (v : F.obj (⨁ f)) :
+    ∑ j, (F.map (biproduct.ι f j)).hom ((F.map (biproduct.π f j)).hom v) = v := by
+  have := congrArg (fun φ ↦ (F.map φ).hom v) (biproduct.total (f := f))
+  simp only [F.map_sum, F.map_comp, F.map_id, ModuleCat.hom_sum, ModuleCat.hom_comp,
+    ModuleCat.hom_id, LinearMap.sum_apply, LinearMap.comp_apply,
+    LinearMap.id_apply] at this
+  exact this
+
+/-- An additive functor to modules has finitely generated value on a finite biproduct of objects
+with finitely generated values. -/
+instance finite_obj_biproduct {ι : Type*} [Finite ι] (f : ι → C) [HasBiproduct f]
+    [∀ j, Module.Finite R (F.obj (f j))] : Module.Finite R (F.obj (⨁ f)) := by
+  have := Fintype.ofFinite ι
+  refine Module.Finite.of_surjective
+    (∑ j, (F.map (biproduct.ι f j)).hom ∘ₗ LinearMap.proj (R := R) j) fun v ↦ ?_
+  refine ⟨fun j ↦ (F.map (biproduct.π f j)).hom v, ?_⟩
+  simpa using F.sum_map_ι_map_π_apply f v
+
+end CategoryTheory.Functor

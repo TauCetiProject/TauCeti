@@ -13,6 +13,7 @@ public import TauCeti.GroupTheory.ProperPower
 public import Mathlib.LinearAlgebra.Matrix.Notation
 -- Private: `fin_cases` is used only inside proofs.
 import Mathlib.Tactic.FinCases
+import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
 # The Heisenberg group over a ring
@@ -56,6 +57,9 @@ group.
 * `TauCeti.HeisenbergGroup.pLowerCentralSeries_top_two_eq_bot`: over a ring of characteristic
   `p`, the second term of the lower `p`-central series is trivial.
 * `TauCeti.HeisenbergGroup.isPGroup_zmod`: over `ZMod p` the Heisenberg group is a `p`-group.
+* `TauCeti.HeisenbergGroup.pairwise_commute_map_of_commutatorElement_eq_pow`: over a ring of
+  characteristic `n ≠ 0`, a homomorphism from a group with torsion-free abelianization sends a
+  solution of `⁅x, y⁆ = z ^ n` to pairwise commuting elements.
 -/
 
 public section
@@ -344,6 +348,28 @@ theorem pLowerCentralSeries_top_two_eq_bot :
     exact commutatorElement_eq_one_of_mem_zAxis (pLowerCentralSeries_top_one_le_zAxis p ha) b
 
 end CharP
+
+/-- In a group with torsion-free abelianization, every homomorphism to the Heisenberg group over a
+ring of characteristic `n ≠ 0` sends a solution of `⁅x, y⁆ = z ^ n` to pairwise commuting
+elements. -/
+theorem pairwise_commute_map_of_commutatorElement_eq_pow {n : ℕ} [CharP R n] (hn : n ≠ 0)
+    {G : Type*} [Group G] [IsMulTorsionFree (Group.Abelianization G)] {x y z : G}
+    (h : ⁅x, y⁆ = z ^ n) (π : G →* HeisenbergGroup R) :
+    ({π x, π y, π z} : Set (HeisenbergGroup R)).Pairwise Commute := by
+  -- `z` lies in the commutator subgroup: its class in the abelianization has trivial `n`-th power
+  have hz : z ∈ commutator G := by
+    rw [← Group.Abelianization.of_eq_one_iff, ← pow_eq_one_iff_left hn, ← map_pow, ← h,
+      map_commutatorElement, commutatorElement_eq_one_iff_commute]
+    exact Commute.all _ _
+  have hπz : π z ∈ zAxis := by
+    rw [← commutator_eq_zAxis, ← Group.Abelianization.of_eq_one_iff]
+    exact Group.Abelianization.commutator_le_ker (Group.Abelianization.of.comp π) hz
+  have hc := mem_center_iff.1 (zAxis_le_center hπz)
+  have hxz : Commute (π x) (π z) := hc _
+  have hyz : Commute (π y) (π z) := hc _
+  have hxy : Commute (π x) (π y) := commutatorElement_eq_one_iff_commute.1 <| by
+    rw [← map_commutatorElement, h, map_pow, pow_char_eq_one_of_mem_zAxis n hπz]
+  simp [Set.pairwise_insert, hxy, hxz, hyz, hxy.symm, hxz.symm, hyz.symm]
 
 /-- The Heisenberg group over `ZMod p` is a `p`-group; for `p > 0` it has order `p ^ 3`. -/
 theorem isPGroup_zmod (p : ℕ) : IsPGroup p (HeisenbergGroup (ZMod p)) :=
