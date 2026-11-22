@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Embedding.Regrade
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Symmetry
-import TauCeti.Algebra.Homology.Bifunctor.Unitor
+import TauCeti.Algebra.Homology.Bifunctor.Single
 import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
