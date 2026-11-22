@@ -60,13 +60,11 @@ followed by the coface map skipping `k`. -/
 lemma δ_comp_subinterval {n j q : ℕ} (i : Fin (q + 2)) (k : Fin (n + 2))
     (hik : j + (i : ℕ) = k) (h : j + (q + 1) ≤ n + 1) :
     δ i ≫ subinterval j (q + 1) h = subinterval j q (by omega) ≫ δ k := by
-  ext l : 3
-  rw [Fin.ext_iff]
-  -- A coface map acts on vertices by `Fin.succAbove`, by definition (`SimplexCategory.δ_apply`).
-  change ((subinterval j (q + 1) h).toOrderHom (i.succAbove l) : ℕ) =
-    k.succAbove ((subinterval j q _).toOrderHom l)
-  simp only [val_subinterval_toOrderHom_apply, Fin.val_succAbove, ← hik, add_comm j,
-    Nat.add_lt_add_iff_right]
+  refine ConcreteCategory.hom_ext _ _ fun l => ?_
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, δ_apply, δ_apply, Fin.ext_iff]
+  -- `ConcreteCategory.hom` is `Hom.toOrderHom`, as in `val_subinterval_toOrderHom_apply`.
+  simp only [ConcreteCategory.hom, val_subinterval_toOrderHom_apply, Fin.val_succAbove, ← hik,
+    add_comm j, Nat.add_lt_add_iff_right]
   split_ifs <;> omega
 
 /-- Deleting a vertex before a subinterval shifts the subinterval. -/
@@ -74,12 +72,11 @@ lemma δ_comp_subinterval {n j q : ℕ} (i : Fin (q + 2)) (k : Fin (n + 2))
 lemma subinterval_comp_δ_of_le {n j q : ℕ} (k : Fin (n + 2)) (hk : (k : ℕ) ≤ j)
     (h : j + q ≤ n) :
     subinterval j q h ≫ δ k = subinterval (j + 1) q (by omega) := by
-  ext l : 3
-  rw [Fin.ext_iff]
-  -- `δ k` acts on vertices by `Fin.succAbove k`, by definition (`SimplexCategory.δ_apply`).
-  change (k.succAbove ((subinterval j q h).toOrderHom l) : ℕ) = _
+  refine ConcreteCategory.hom_ext _ _ fun l => ?_
+  rw [ConcreteCategory.comp_apply, δ_apply, Fin.ext_iff]
   have hnot : ¬(l : ℕ) + j < k := by omega
-  simp [Fin.val_succAbove, hnot]
+  -- `ConcreteCategory.hom` is `Hom.toOrderHom`, as in `val_subinterval_toOrderHom_apply`.
+  simp [ConcreteCategory.hom, Fin.val_succAbove, hnot]
   omega
 
 /-- Deleting a vertex after a subinterval does not change it. -/
@@ -87,11 +84,10 @@ lemma subinterval_comp_δ_of_le {n j q : ℕ} (k : Fin (n + 2)) (hk : (k : ℕ) 
 lemma subinterval_comp_δ_of_lt {n j q : ℕ} (k : Fin (n + 2)) (hk : j + q < k)
     (h : j + q ≤ n) :
     subinterval j q h ≫ δ k = subinterval j q (by omega) := by
-  ext l : 3
-  rw [Fin.ext_iff]
-  -- `δ k` acts on vertices by `Fin.succAbove k`, by definition (`SimplexCategory.δ_apply`).
-  change (k.succAbove ((subinterval j q h).toOrderHom l) : ℕ) = _
-  simp [Fin.val_succAbove]
+  refine ConcreteCategory.hom_ext _ _ fun l => ?_
+  rw [ConcreteCategory.comp_apply, δ_apply, Fin.ext_iff]
+  -- `ConcreteCategory.hom` is `Hom.toOrderHom`, as in `val_subinterval_toOrderHom_apply`.
+  simp [ConcreteCategory.hom, Fin.val_succAbove]
   omega
 
 /-- The last face of the subinterval `j, …, j + q + 1` is the subinterval `j, …, j + q`. -/
