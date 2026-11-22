@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Lie.Killing.Duality
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 
+import TauCeti.LinearAlgebra.BilinearForm.Basic
+
 /-!
 # The Killing identification of `S(L)` with the polynomial functions on `L`
 
@@ -126,20 +128,11 @@ theorem map_killingSymmetricEquiv_lieInvariants :
 
 /-! ### The quadratic symmetric Casimir -/
 
-/-- Multiplying two canonical generators of `S(L)`, as a `K`-bilinear map. -/
-private noncomputable def symGenMul :
-    L →ₗ[K] L →ₗ[K] SymmetricAlgebra K L :=
-  (LinearMap.mul K (SymmetricAlgebra K L)).compl₁₂ (ι K L) (ι K L)
-
-omit [FiniteDimensional K L] [IsKilling K L] in
-private theorem symGenMul_apply (x y : L) : symGenMul K L x y = ι K L x * ι K L y := by
-  simp only [symGenMul, LinearMap.compl₁₂_apply, LinearMap.mul_apply']
-
 /-- **The quadratic symmetric Casimir** `∑ᵢ xᵢ yᵢ ∈ S(L)`, obtained by applying generator
 multiplication to `TauCeti.killingCasimirTensor K L`. It is the degree-two PBW symbol of the
 Casimir element of `U(L)`. -/
 noncomputable def symmetricCasimir : SymmetricAlgebra K L :=
-  TensorProduct.lift (symGenMul K L) (killingCasimirTensor K L)
+  TensorProduct.lift (genMul K L) (killingCasimirTensor K L)
 
 variable {K L} in
 /-- **The quadratic symmetric Casimir may be computed in any basis.** -/
@@ -147,7 +140,7 @@ theorem symmetricCasimir_eq_sum {ι' : Type*} [DecidableEq ι'] [Fintype ι']
     (b : Module.Basis ι' K L) :
     symmetricCasimir K L = ∑ i, ι K L (b i) * ι K L (killingDualBasis b i) := by
   rw [symmetricCasimir, killingCasimirTensor_eq_sum b, map_sum]
-  simp only [TensorProduct.lift.tmul, symGenMul_apply]
+  simp only [TensorProduct.lift.tmul, genMul_apply]
 
 /-- **The quadratic symmetric Casimir is homogeneous of degree two.** -/
 theorem symmetricCasimir_mem_homogeneousSubmodule :
@@ -177,11 +170,9 @@ theorem symmetricCasimir_ne_zero [NeZero (2 : K)] [Nontrivial L] :
   intro h0
   have hdiag (v : L) : killingForm K L v v = 0 := by
     rw [← lift_killingForm_symmetricCasimir K L v, h0, map_zero]
-  have hsym : (killingForm K L).IsSymm := ⟨LieModule.traceForm_comm K L L⟩
-  have hbil (u w : L) : killingForm K L u w = 0 := by
-    rw [hsym.polarization u w, hdiag, hdiag, hdiag]
-    simp only [sub_self, zero_div]
-  obtain ⟨u, hu⟩ := exists_ne (0 : L)
-  exact hu ((IsKilling.killingForm_nondegenerate K L).1 u (hbil u))
+  exact (IsKilling.killingForm_nondegenerate K L).ne_zero <|
+    TauCeti.BilinForm.eq_zero_of_isSymm_of_isAlt
+      (IsRegular.of_ne_zero (NeZero.ne (2 : K))).left
+      ⟨LieModule.traceForm_comm K L L⟩ hdiag
 
 end TauCeti

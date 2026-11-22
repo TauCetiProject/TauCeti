@@ -22,9 +22,7 @@ conditions on `P_N` or `A_N`. The reason is left-ideal membership, not a norm es
 
 ## Main results
 
-* `TauCeti.CurrentAlgebra.hasSum_toCompletedEnveloping_ite_mem`,
-  `TauCeti.CurrentAlgebra.summable_smul_completedEnveloping`: finite-support sums and
-  scalar-weighted summability in `Û`.
+* `TauCeti.CurrentAlgebra.summable_smul_completedEnveloping`: scalar-weighted summability in `Û`.
 * `TauCeti.CurrentAlgebra.summable_mul_envelopingι`,
   `TauCeti.CurrentAlgebra.limπ_tsum_mul_envelopingι`,
   `TauCeti.CurrentAlgebra.limSmul_add_tsum_mul_envelopingι`: convergence, coordinates, and smooth
@@ -51,17 +49,6 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
 local notation "UK" => CentralQuotient R (centralElement c) a
-
-/-- A family supported in a finite set `s` and given there by `toCompletedEnveloping (f m)`
-sums in `Û` to `toCompletedEnveloping (∑ m ∈ s, f m)`. -/
-theorem hasSum_toCompletedEnveloping_ite_mem {ι : Type*} [DecidableEq ι] (s : Finset ι)
-    (f : ι → UK) :
-    HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
-      (toCompletedEnveloping Φ hΦ hΦs a (∑ m ∈ s, f m)) := by
-  have h : HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
-      (∑ m ∈ s, toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0)) :=
-    hasSum_sum_of_ne_finset_zero fun m hm ↦ by simp [hm]
-  rwa [← map_sum, Finset.sum_ite_mem, Finset.inter_self] at h
 
 /-- Multiplying the terms of a summable family in `Û` by arbitrary scalars in `R` preserves
 summability. -/

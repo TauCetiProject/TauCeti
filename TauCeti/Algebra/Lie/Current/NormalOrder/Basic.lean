@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.Current.CompletedCoordinateAction
 public import TauCeti.Algebra.Lie.Current.Series
 
 import Mathlib.Topology.Algebra.InfiniteSum.Module
+import TauCeti.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # Normally ordered modes in the completed enveloping algebra
@@ -275,7 +276,8 @@ theorem tsum_normalOrderedSummand (p n : ℤ) (x y : L) :
   refine HasSum.tsum_eq ?_
   simp only [normalOrderedSummand_eq_add_sub p n, map_add, map_sub, ← add_sub_assoc]
   exact ((hasSum_normalOrderedMode n x y).add
-    (hasSum_toCompletedEnveloping_ite_mem _ _)).sub (hasSum_toCompletedEnveloping_ite_mem _ _)
+    (hasSum_map_ite_mem (toCompletedEnveloping Φ hΦ hΦs a) _ _)).sub
+    (hasSum_map_ite_mem (toCompletedEnveloping Φ hΦ hΦs a) _ _)
 
 end NormalOrder
 

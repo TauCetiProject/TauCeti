@@ -117,16 +117,12 @@ theorem sugawaraVacuum_def :
       ModuleTower.limSmul hV (sugawaraMode Φ hΦ hΦs a (-2)) (vacuum Φ hΦ hΦs a) :=
   (rfl)
 
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-private theorem orderLeftIdeal_zero_smul_vacuum :
-    ∀ u ∈ orderLeftIdeal Φ hΦ hΦs a (0 : ℕ), u • vacuum Φ hΦ hΦs a = 0 :=
-  fun _ hu ↦ smul_vacuum_eq_zero_iff.2 (by simpa using hu)
-
 /-- **Segal--Sugawara modes of index `n ≥ -1` kill the vacuum vector**, at every level and central
 value. -/
 theorem limSmul_sugawaraMode_vacuum_eq_zero {n : ℤ} (hn : -1 ≤ n) :
     ModuleTower.limSmul hV (sugawaraMode Φ hΦ hΦs a n) (vacuum Φ hΦ hΦs a) = 0 := by
-  rw [limSmul_sugawaraMode hV (Module.finBasis K L) n orderLeftIdeal_zero_smul_vacuum]
+  rw [limSmul_sugawaraMode hV (Module.finBasis K L) n fun _ hu ↦
+    smul_vacuum_eq_zero_of_mem_orderLeftIdeal (Nat.cast_nonneg 0) hu]
   have hIco : Finset.Ico (min (n + 1) 0) 0 = ∅ := Finset.Ico_eq_empty (by omega)
   simp [hIco]
 
@@ -224,7 +220,8 @@ theorem limSmul_sugawaraVirasoro_neg_two_vacuum (c : K) :
 theorem sugawaraVacuum_eq_sum {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Module.Basis ι K L) :
     sugawaraVacuum Φ hΦ hΦs a =
       ∑ i, (ι[b i, -1] * ι[killingDualBasis b i, -1]) • vacuum Φ hΦ hΦs a := by
-  rw [sugawaraVacuum_def, limSmul_sugawaraMode hV b (-2) orderLeftIdeal_zero_smul_vacuum]
+  rw [sugawaraVacuum_def, limSmul_sugawaraMode hV b (-2) fun _ hu ↦
+    smul_vacuum_eq_zero_of_mem_orderLeftIdeal (Nat.cast_nonneg 0) hu]
   have hIco : Finset.Ico (min (-2 + 1 - ((0 : ℕ) : ℤ)) 0) ((0 : ℕ) : ℤ) = {-1} := by
     ext m
     simp only [Finset.mem_Ico, Finset.mem_singleton, Nat.cast_zero]

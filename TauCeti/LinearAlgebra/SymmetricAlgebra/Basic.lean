@@ -32,6 +32,8 @@ and generators for ring homomorphisms and on generators alone for algebra homomo
 map into a possibly noncommutative algebra lifts to an algebra homomorphism out of
 `SymmetricAlgebra R M` exactly when its values pairwise commute (`SymmetricAlgebra.liftOfCommute`),
 generalizing `SymmetricAlgebra.lift` and its inverse (`SymmetricAlgebra.lift_symm_apply`).
+Multiplication of two canonical generators defines an `R`-bilinear map
+`SymmetricAlgebra.genMul`.
 -/
 
 public section
@@ -152,6 +154,17 @@ theorem coe_liftOfCommute_symm_apply {A : Type*} [Semiring A] [Algebra R A]
     (F : SymmetricAlgebra R M →ₐ[R] A) :
     (liftOfCommute.symm F : M →ₗ[R] A) = F.toLinearMap.comp (ι R M) :=
   (rfl)
+
+variable (R M) in
+/-- Multiplication of two canonical generators of `SymmetricAlgebra R M`, as an `R`-bilinear
+map. -/
+noncomputable def genMul : M →ₗ[R] M →ₗ[R] SymmetricAlgebra R M :=
+  (LinearMap.mul R (SymmetricAlgebra R M)).compl₁₂ (ι R M) (ι R M)
+
+/-- Evaluating `SymmetricAlgebra.genMul` on `x` and `y` gives `ι R M x * ι R M y`. -/
+@[simp]
+theorem genMul_apply (x y : M) : genMul R M x y = ι R M x * ι R M y := by
+  simp only [genMul, LinearMap.compl₁₂_apply, LinearMap.mul_apply']
 
 end SymmetricAlgebra
 

@@ -90,14 +90,11 @@ theorem killingCasimirTensor_eq_sum {ι : Type*} [DecidableEq ι] [Fintype ι]
       ((killingDuality K L).symm.toLinearEquiv : Dual K L ≃ₗ[K] L)
           ((Basis.ofVectorSpace K L).coord i) =
         killingDualBasis (Basis.ofVectorSpace K L) i := by
-    refine sub_eq_zero.1 ((IsKilling.killingForm_nondegenerate K L).1 _ fun y ↦ ?_)
-    rw [map_sub, LinearMap.sub_apply]
-    change killingForm K L
-        ((killingDuality K L).symm ((Basis.ofVectorSpace K L).coord i)) y -
-      killingForm K L (killingDualBasis (Basis.ofVectorSpace K L) i) y = 0
-    rw [killingForm_killingDuality_symm_apply, Basis.coord_apply,
-      LinearMap.BilinForm.repr_apply_eq_apply_dualBasis (IsKilling.killingForm_nondegenerate K L)
-        _ y i, sub_self]
+    rw [killingDualBasis, LinearMap.BilinForm.dualBasis, Basis.map_apply, Basis.coe_dualBasis,
+      eq_comm, LinearEquiv.symm_apply_eq, ← LinearMap.BilinForm.toLinearEquiv_lieModuleEquivDual
+        (killingForm K L) (IsKilling.killingForm_nondegenerate K L)
+        (LieModule.traceForm_lieInvariant K L L)]
+    exact ((killingDuality K L).apply_symm_apply _).symm
   rw [killingCasimirTensor, _root_.coevaluation_apply_one, map_sum]
   simp only [LinearMap.lTensor_tmul]
   trans ∑ i, (Basis.ofVectorSpace K L) i ⊗ₜ[K] killingDualBasis (Basis.ofVectorSpace K L) i

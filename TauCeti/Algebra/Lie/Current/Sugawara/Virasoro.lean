@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.Current.Sugawara.Basic
 
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # The Segal--Sugawara Virasoro relations
@@ -172,8 +173,8 @@ theorem sugawaraMode_mul_normalOrderedMode_sub_mul_of_eq_smul_killingForm {c : K
   let g (l : ℤ) : UK := ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l])
   have h₂ := (((hasSum_normalOrderedMode (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a)
       (m + n) x y).const_smul ((1 - 2 * a * c) * (m - n : K))).add
-    ((hasSum_toCompletedEnveloping_ite_mem (Finset.Ico 0 m) g).const_smul (1 - 2 * a * c))).sub
-    ((hasSum_toCompletedEnveloping_ite_mem (Finset.Ico m 0) g).const_smul (1 - 2 * a * c))
+    ((hasSum_map_ite_mem toC (Finset.Ico 0 m) g).const_smul (1 - 2 * a * c))).sub
+    ((hasSum_map_ite_mem toC (Finset.Ico m 0) g).const_smul (1 - 2 * a * c))
   rw [h₁.unique (hA.add hB), hcomb.unique h₂, add_sub_assoc, ← smul_sub, ← map_sub,
     sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul x y m (m + n), map_sub, map_smul,
     smul_sub, smul_smul, AlgHom.commutes]

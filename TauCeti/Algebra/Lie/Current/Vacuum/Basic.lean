@@ -137,6 +137,11 @@ theorem smul_vacuum_eq_zero_iff {u : UK} :
     u • vacuum Φ hΦ hΦs a = 0 ↔ u ∈ orderLeftIdeal Φ hΦ hΦs a 0 := by
   rw [← mk_eq_smul_vacuum, Submodule.Quotient.mk_eq_zero]
 
+/-- Elements of a left ideal `I_N` of nonnegative order `0 ≤ N` kill the vacuum. -/
+theorem smul_vacuum_eq_zero_of_mem_orderLeftIdeal {N : ℤ} (hN : 0 ≤ N) {u : UK}
+    (hu : u ∈ orderLeftIdeal Φ hΦ hΦs a N) : u • vacuum Φ hΦ hΦs a = 0 :=
+  smul_vacuum_eq_zero_iff.2 (orderLeftIdeal_antitone Φ hΦ hΦs a hN hu)
+
 /-- The currents of nonnegative order kill the vacuum. -/
 @[simp]
 theorem envelopingι_smul_vacuum {u : currentAlgebra R L} (hu : u ∈ orderSubmodule R L 0) :
