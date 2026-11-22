@@ -74,6 +74,8 @@ transfers the bound from the finite sums of atoms to `F`.
 * `TauCeti.tsum_enorm_setIntegral_timeShell_dyadicLayer_le`: the pairings of two atoms summed over
   the dyadic time shells.
 * `TauCeti.exists_enorm_integral_adjoint_le_of_endpoint`: the endpoint dual estimate.
+* `TauCeti.exists_enorm_integral_adjoint_le_of_endpoint_of_four_thirds`: the same estimate from
+  a non-endpoint dual estimate in `L^{4/3}_t`.
 
 ## References
 
@@ -554,6 +556,32 @@ theorem exists_enorm_integral_adjoint_le_of_endpoint {σ : ℝ} (hσ : 1 < σ)
       inv_mul_cancel₀ two_ne_zero, ENNReal.rpow_one]
   rw [← ENNReal.rpow_le_rpow_iff (z := 2) two_pos, hrhs]
   exact enorm_integral_adjoint_rpow_two_le hσ hp2 hr'0 hr'2 hδ hexp hM hD hK hUm hF
+
+/-- **The endpoint dual Strichartz estimate from an `L^{4/3}_t` estimate.** The case of
+`exists_enorm_integral_adjoint_le_of_endpoint` where the non-endpoint dual estimate is taken in
+`L^{4/3}_t L^b_x` with `1/b = 1/2 + 1/(4σ)`, the dual of the pair `(4, r₄)` on the boundary line
+`1/r₄ = 1/2 - 1/(4σ)`. The exponent conditions of the general theorem then hold automatically. -/
+theorem exists_enorm_integral_adjoint_le_of_endpoint_of_four_thirds {σ : ℝ} (hσ : 1 < σ)
+    {b r' : ℝ≥0∞} (hb : b.toReal⁻¹ = 2⁻¹ + (4 * σ)⁻¹) (hr' : r'.toReal⁻¹ = (σ + 1) / (2 * σ))
+    (A M K : ℝ≥0) :
+    ∃ C : ℝ≥0, ∀ U : ℝ → H →L[𝕜] Lp E 2 μ, (∀ t, ‖U t‖ₑ ≤ M) →
+      (∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
+        eLpNorm (U s (((U t)†) g)) ∞ μ ≤ A * ‖s - t‖ₑ ^ (-σ) * eLpNorm g 1 μ) →
+      (∀ G : ℝ → Lp E 2 μ, AEStronglyMeasurable G → Integrable (fun t ↦ ((U t)†) (G t)) →
+        ‖∫ t, ((U t)†) (G t)‖ₑ ≤
+          K * eLpNorm (fun t ↦ eLpNorm (G t) b μ) ((4 / 3 : ℝ≥0) : ℝ≥0∞)) →
+      (∀ G : ℝ → Lp E 2 μ, AEStronglyMeasurable G →
+        AEStronglyMeasurable fun t ↦ ((U t)†) (G t)) →
+      ∀ F : ℝ → Lp E 2 μ, Integrable F →
+        ‖∫ t, ((U t)†) (F t)‖ₑ ≤ C * eLpNorm (fun t ↦ eLpNorm (F t) r' μ) 2 := by
+  have hσ0 : 0 < σ := by linarith
+  refine exists_enorm_integral_adjoint_le_of_endpoint hσ ?_ ?_ ?_ hr' A M K <;> rw [hb]
+  · linarith [inv_pos.2 (by positivity : 0 < 4 * σ)]
+  · field_simp
+    linarith
+  · norm_num
+    field_simp
+    ring
 
 end Shell
 

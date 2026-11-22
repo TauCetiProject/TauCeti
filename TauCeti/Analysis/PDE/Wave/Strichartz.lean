@@ -226,22 +226,24 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_appl
         ENNReal.ofReal (A * ((2 : ℝ) ^ j) ^ (2 * ((Module.finrank ℝ E : ℝ) / 2 -
           Module.finrank ℝ E * (r⁻¹).toReal - 1 / q))) *
           ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * eLpNorm g r' volume := by
+  obtain ⟨C, hC0, hC⟩ :=
+    exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint_le_top hψ hψc hψ0
   -- The symbol of `Pⱼ Pⱼ*` is the dilate of the cutoff `|ψ|² = ψ * star ψ`.
   set ψ' : E → ℂ := fun ξ ↦ ψ ξ * star (ψ ξ)
   have hψ' : ContDiff ℝ ∞ ψ' := hψ.mul (Complex.conjCLE.contDiff.comp hψ)
   have hψ'0 : (0 : E) ∉ tsupport ψ' := fun h ↦ hψ0 (tsupport_mul_subset_left h)
-  obtain ⟨C, hC0, hC⟩ :=
-    exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le hψ' hψc.mul_right hψ'0 (F := ℂ)
   obtain ⟨B, hB⟩ := hψ'.continuous.bounded_above_of_compact_support hψc.mul_right
   have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
-  refine ⟨(C + 1) ^ (1 - 2 * (r⁻¹).toReal) * (B + 1) ^ (2 * (r⁻¹).toReal), by positivity,
+  refine ⟨C ^ (1 - 2 * (r⁻¹).toReal) * (B + 1) ^ (2 * (r⁻¹).toReal), by positivity,
     fun j m hm s t hst g ↦ ?_⟩
+  have hCj := hC j m hm s t
   set m' : Lp ℂ ∞ (volume : Measure E) := m • star m
   have hm' : m' =ᵐ[volume] fun ξ ↦ ψ' (((2 : ℝ) ^ j)⁻¹ • ξ) := by
     filter_upwards [Lp.coeFn_lpSMul (r := ∞) m (star m), Lp.coeFn_star m, hm] with ξ h₁ h₂ h₃
     rw [h₁, Pi.smul_apply', h₂, Pi.star_apply, h₃, smul_eq_mul]
-  rw [halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint,
-    Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply, ← ContinuousLinearMap.comp_apply]
+  simp only [halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint,
+    Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply] at hCj ⊢
+  rw [← ContinuousLinearMap.comp_apply]
   rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hE | hE
   · -- In dimension `0` the symbol of `Pⱼ Pⱼ*` vanishes, and with it the time pairing.
     have : Subsingleton E := Module.finrank_zero_iff.1 hE
@@ -255,23 +257,10 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_appl
     exact zero_le
   refine eLpNorm_apply_le_of_eLpNorm_top_le hq
     (two_le_finrank_of_waveAdmissible hq (ENNReal.HolderConjugate.ne_zero r r') hqr hE).2.2 hqr _
-    (by positivity) (by positivity) (zpow_pos two_pos j) (sub_ne_zero.2 hst) (fun f hf ↦ ?_) ?_ g
-  · -- The `L¹ → L^∞` bound, from the dispersive estimate for dilated cutoffs.
-    refine (hC j m' hm' (s - t) f hf).trans ?_
-    gcongr ?_ * _
-    exact ENNReal.ofReal_le_ofReal (by gcongr; linarith)
-  · -- The `L²` bound, uniform in `j`.
-    calc _ ≤ ‖halfWavePropagator (E := E) ℂ (s - t)‖ * ‖Lp.fourierMultiplierCLM ℂ m'‖ :=
-          ContinuousLinearMap.opNorm_comp_le _ _
-      _ ≤ 1 * B := by
-          gcongr
-          · exact norm_phasePropagator_le _ _
-          · refine (Lp.norm_fourierMultiplierCLM_le m').trans ?_
-            rw [Lp.norm_def, eLpNorm_exponent_top]
-            · exact ENNReal.toReal_le_of_le_ofReal hB0
-                (eLpNormEssSup_le_of_ae_bound (hm'.mono fun ξ h ↦ h ▸ hB _))
-            · exact Lp.aestronglyMeasurable _
-      _ ≤ B + 1 := by linarith
+    (by positivity) (by positivity) (zpow_pos two_pos j) (sub_ne_zero.2 hst) (fun f _ ↦ hCj f) ?_ g
+  -- The `L²` bound, uniform in `j`.
+  exact (norm_halfWavePropagator_comp_fourierMultiplierCLM_le hB0
+    (hm'.mono fun ξ h ↦ h ▸ hB _) (s - t)).trans (by linarith)
 
 /-! ### The Strichartz estimates -/
 
@@ -489,7 +478,7 @@ section Admissible
 variable {φ} {p q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
 /-- The Littlewood–Paley symbol `ψⱼ` is the dilate `ψ₀ (2^{-j} ·)`. -/
-private theorem ae_eq_littlewoodPaley_zero_comp_smul {j : ℤ} {m : Lp ℂ ∞ (volume : Measure E)}
+theorem ae_eq_littlewoodPaley_zero_comp_smul {j : ℤ} {m : Lp ℂ ∞ (volume : Measure E)}
     (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
     m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley 0 (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) := by
   filter_upwards [hm] with ξ hξ

@@ -113,11 +113,9 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_endpoint {r' : ℝ
     have hn0 : n ≠ 0 := by positivity
     field_simp
     nlinarith
-  obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le_of_endpoint (𝕜 := ℂ)
+  obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le_of_endpoint_of_four_thirds (𝕜 := ℂ)
     (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (μ := (volume : Measure E)) (σ := n / 2)
-    (p := ((4 / 3 : ℝ≥0) : ℝ≥0∞)) (b := b) (r' := r') (by linarith)
-    (by rw [hbinv]; linarith [inv_pos.2 (by positivity : (0 : ℝ) < 2 * n)])
-    (by rw [hbinv]; field_simp; linarith) (by rw [hbinv]; norm_num; field_simp; ring) hr'inv
+    (b := b) (r' := r') (by linarith) (by rw [hbinv]; ring) hr'inv
     ((4 * Real.pi) ^ (-((Module.finrank ℝ E : ℝ) / 2))).toNNReal 1 K
   refine ⟨C, fun F hF ↦ ?_⟩
   have h := hC (schrodingerPropagator ℂ)

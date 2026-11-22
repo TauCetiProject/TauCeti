@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Strichartz.Endpoint
 public import TauCeti.Analysis.PDE.Wave.Strichartz
 import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Function.Lp.Star
-import TauCeti.MeasureTheory.Function.LpSeminorm.Dilation
 
 /-!
 # The endpoint Strichartz estimate for the frequency-localized wave equation
@@ -50,7 +50,7 @@ independent of `j`:
   substitution `s = μ t` the same estimate for `V` with constant `K 2^{jγ/2} μ^{-1/4} = K`.
 
 Undoing the rescaling costs `μ^{1/2} = 2^{jγ}`: the substitution multiplies the dual integral by
-`μ` and the `L²_t` norm by at most `μ^{-1/2}` (`MeasureTheory.eLpNorm_comp_mul_left`).
+`μ` and the `L²_t` norm by at most `μ^{-1/2}` (`MeasureTheory.Measure.eLpNorm_comp_inv_smul`).
 
 ## References
 
@@ -70,68 +70,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {ψ : E → ℂ}
 
-/-! ### Time pairings -/
-
-/-- **The dispersive estimate for the time pairings of the frequency-localized half-wave
-propagators.** Let `E` have dimension `n`, let `ψ` be smooth, compactly supported and vanish near
-the origin, and let `U(t) = W₊(t) Pⱼ`, where `Pⱼ` is an `L²` Fourier multiplier with symbol
-`ψ (2^{-j} ·)`. There is `C > 0` such that for every `j ∈ ℤ`, all times `s, t` and every
-`g ∈ L²`,
-
-`‖U(s) U(t)* g‖_∞ ≤ C 2^{jn} (1 + 2^j |s - t|)^(-(n - 1)/2) ‖g‖₁`. -/
-theorem exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint_le_top
-    (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) :
-    ∃ C, 0 < C ∧ ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
-      m =ᵐ[volume] (fun ξ ↦ ψ (((2 : ℝ) ^ j)⁻¹ • ξ)) →
-      ∀ (s t : ℝ) (g : Lp ℂ 2 (volume : Measure E)),
-        eLpNorm ((halfWavePropagator ℂ s ∘L Lp.fourierMultiplierCLM ℂ m)
-          (((halfWavePropagator ℂ t ∘L Lp.fourierMultiplierCLM ℂ m)†) g)) ∞ volume ≤
-        ENNReal.ofReal (C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
-          (1 + 2 ^ j * |s - t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)) *
-          eLpNorm g 1 volume := by
-  -- The symbol of `Pⱼ Pⱼ*` is the dilate of the cutoff `|ψ|² = ψ * star ψ`.
-  set ψ' : E → ℂ := fun ξ ↦ ψ ξ * star (ψ ξ)
-  have hψ' : ContDiff ℝ ∞ ψ' := hψ.mul (Complex.conjCLE.contDiff.comp hψ)
-  have hψ'0 : (0 : E) ∉ tsupport ψ' := fun h ↦ hψ0 (tsupport_mul_subset_left h)
-  obtain ⟨C, hC0, hC⟩ :=
-    exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le hψ' hψc.mul_right hψ'0 (F := ℂ)
-  refine ⟨C + 1, by positivity, fun j m hm s t g ↦ ?_⟩
-  have hm' : (m • star m : Lp ℂ ∞ (volume : Measure E)) =ᵐ[volume]
-      fun ξ ↦ ψ' (((2 : ℝ) ^ j)⁻¹ • ξ) := by
-    filter_upwards [Lp.coeFn_lpSMul (r := ∞) m (star m), Lp.coeFn_star m, hm] with ξ h₁ h₂ h₃
-    rw [h₁, Pi.smul_apply', h₂, Pi.star_apply, h₃, smul_eq_mul]
-  rw [halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint,
-    Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
-  by_cases hg : MemLp g 1 volume
-  · refine (hC j _ hm' (s - t) g (memLp_one_iff_integrable.1 hg)).trans ?_
-    gcongr ?_ * _
-    exact ENNReal.ofReal_le_ofReal (by gcongr; linarith)
-  · -- Outside `L¹` the right-hand side is infinite.
-    have hpos : ENNReal.ofReal ((C + 1) * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
-        (1 + 2 ^ j * |s - t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)) ≠ 0 :=
-      (ENNReal.ofReal_pos.2 (by positivity)).ne'
-    rw [top_unique (not_lt.1 (memLp_iff.not.1 hg)), ENNReal.mul_top hpos]
-    exact le_top
-
 /-! ### The time-rescaled family -/
-
-/-- A multiplier whose symbol is a dilate of `ψ`, with `|ψ| ≤ B`, composed with the unitary
-`W₊(t)` has operator norm at most `B`. -/
-private theorem norm_halfWavePropagator_comp_fourierMultiplierCLM_le {B : ℝ} (hB0 : 0 ≤ B)
-    (hB : ∀ x, ‖ψ x‖ ≤ B) {j : ℤ} {m : Lp ℂ ∞ (volume : Measure E)}
-    (hm : m =ᵐ[volume] (fun ξ ↦ ψ (((2 : ℝ) ^ j)⁻¹ • ξ))) (t : ℝ) :
-    ‖halfWavePropagator ℂ t ∘L Lp.fourierMultiplierCLM ℂ m‖ ≤ B := by
-  calc _ ≤ ‖halfWavePropagator (E := E) ℂ t‖ * ‖Lp.fourierMultiplierCLM ℂ m‖ :=
-        ContinuousLinearMap.opNorm_comp_le _ _
-    _ ≤ 1 * B := by
-        gcongr
-        · exact norm_halfWavePropagator_le _
-        · refine (Lp.norm_fourierMultiplierCLM_le m).trans ?_
-          rw [Lp.norm_def, eLpNorm_exponent_top]
-          · exact ENNReal.toReal_le_of_le_ofReal hB0
-              (eLpNormEssSup_le_of_ae_bound (hm.mono fun ξ h ↦ h ▸ hB _))
-          · exact Lp.aestronglyMeasurable _
-    _ = B := one_mul B
 
 /-- The decay of the dispersive bound after the time rescaling `τ ↦ c^κ τ`, `κ = (n + 1) / (n - 1)`:
 
@@ -210,7 +149,7 @@ private theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_ne
     hψ0 (p := 4 / 3) (q := 4) (r := r₄) (r' := (ENNReal.ofReal (2⁻¹ + (2 * (n - 1))⁻¹))⁻¹)
     (by norm_num)
     (by rw [← NNReal.holderConjugate_coe_iff, Real.holderConjugate_iff]; norm_num)
-    (by rw [← hn_def, hr₄inv]; push_cast; field_simp; ring_nf; rfl)
+    (le_of_eq (by rw [← hn_def, hr₄inv]; push_cast; field_simp; ring))
   refine ⟨K, fun j m hm F hF hPF ↦ (hK j m hm F hF hPF).trans_eq ?_⟩
   rw [← hn_def, hr₄inv, show n / 2 - n * (2⁻¹ - (2 * (n - 1))⁻¹) - 1 / ((4 : ℝ≥0) : ℝ) =
     (n + 1) / (n - 1) / 4 by push_cast; field_simp; ring]
@@ -241,11 +180,14 @@ private theorem enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_mul_l
         (halfWavePropagator ℂ (-s) (G ((c ^ κ)⁻¹ * s))) by
     rw [← Measure.integral_comp_mul_left]
     simp only [← mul_assoc, inv_mul_cancel₀ hμ.ne', one_mul], eNorm_smul]
-  refine (mul_le_mul_of_nonneg_left (hK _ (hG.comp_mul_left hμ') hint) zero_le).trans_eq ?_
-  rw [eLpNorm_comp_mul_left hμ' (fun s ↦ eLpNorm (G s) b volume), inv_inv, abs_inv,
-    abs_of_pos hμ, Real.eNorm_eq_ofReal (inv_nonneg.2 hμ.le),
-    show (1 / ((4 / 3 : ℝ≥0) : ℝ≥0∞)).toReal = 3 / 4 by norm_num,
-    ENNReal.ofReal_rpow_of_nonneg hμ.le (by norm_num)]
+  have hdil := Measure.eLpNorm_comp_inv_smul volume (fun s ↦ eLpNorm (G s) b volume) hμ.ne'
+    ((4 / 3 : ℝ≥0) : ℝ≥0∞)
+  simp only [smul_eq_mul, Module.finrank_self, Nat.cast_one, abs_of_pos hμ] at hdil
+  refine (mul_le_mul_of_nonneg_left (hK (fun s ↦ G ((c ^ κ)⁻¹ * s))
+    (hG.comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_smul volume hμ')) hint)
+      zero_le).trans_eq ?_
+  rw [hdil, abs_inv, abs_of_pos hμ, Real.eNorm_eq_ofReal (inv_nonneg.2 hμ.le),
+    show (1 : ℝ) / ((4 / 3 : ℝ≥0) : ℝ≥0∞).toReal = 3 / 4 by norm_num]
   have hconst : (c ^ κ)⁻¹ * c ^ (κ / 4) * (c ^ κ) ^ ((3 : ℝ) / 4) = 1 := by
     rw [← Real.rpow_neg hc.le, ← Real.rpow_mul hc.le, ← Real.rpow_add hc, ← Real.rpow_add hc,
       show -κ + κ / 4 + κ * (3 / 4) = 0 by ring, Real.rpow_zero]
@@ -265,10 +207,10 @@ private theorem enorm_rpow_mul_eLpNorm_comp_mul_left {c κ : ℝ} (hc : 0 < c) (
   have hsqrt : c ^ κ * ((c ^ κ)⁻¹) ^ (2⁻¹ : ℝ) = c ^ (κ / 2) := by
     rw [Real.inv_rpow hμ.le, ← Real.rpow_mul hc.le, ← Real.rpow_neg hc.le, ← Real.rpow_add hc]
     ring_nf
-  rw [eLpNorm_comp_mul_left hμ.ne' h, abs_inv, abs_of_pos hμ, Real.eNorm_eq_ofReal hμ.le,
-    show (1 / (2 : ℝ≥0∞)).toReal = 2⁻¹ by norm_num,
-    ENNReal.ofReal_rpow_of_nonneg (inv_nonneg.2 hμ.le) (by norm_num), ← hsqrt,
-    ENNReal.ofReal_mul hμ.le]
+  have hdil := Measure.eLpNorm_comp_inv_smul volume h (inv_ne_zero hμ.ne') 2
+  simp only [inv_inv, smul_eq_mul, Module.finrank_self, Nat.cast_one, ENNReal.toReal_ofNat,
+    one_div, abs_inv, abs_of_pos hμ] at hdil
+  rw [hdil, Real.eNorm_eq_ofReal hμ.le, ← hsqrt, ENNReal.ofReal_mul hμ.le]
   ring
 
 variable {r r' : ℝ≥0∞} [r'.HolderConjugate r]
@@ -313,12 +255,10 @@ private theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_ne
     exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le_four hψ hψc hψ0 (by omega)
   obtain ⟨B, hB⟩ := hψ.continuous.bounded_above_of_compact_support hψc
   have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
-  obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le_of_endpoint (𝕜 := ℂ)
+  obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le_of_endpoint_of_four_thirds (𝕜 := ℂ)
     (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (μ := (volume : Measure E)) (σ := (n - 1) / 2)
-    (p := ((4 / 3 : ℝ≥0) : ℝ≥0∞)) (r' := r') (by linarith)
-    (by rw [hbinv]; linarith [inv_pos.2 (by positivity : (0 : ℝ) < 2 * (n - 1))])
-    (by rw [hbinv]; field_simp; linarith) (by rw [hbinv]; norm_num; field_simp; ring) hr'inv
-    A B.toNNReal K
+    (b := (ENNReal.ofReal (2⁻¹ + (2 * (n - 1))⁻¹))⁻¹) (r' := r') (by linarith)
+    (by rw [hbinv]; ring) hr'inv A B.toNNReal K
   refine ⟨C, fun j m hm F hF ↦ ?_⟩
   have hV (t : ℝ) (g : Lp ℂ 2 (volume : Measure E)) :
       ((halfWavePropagator ℂ (((2 : ℝ) ^ j) ^ ((n + 1) / (n - 1)) * t) ∘L
@@ -330,7 +270,7 @@ private theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_ne
     (fun t ↦ by
       rw [← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal
-        (norm_halfWavePropagator_comp_fourierMultiplierCLM_le hB0 hB hm _))
+        (norm_halfWavePropagator_comp_fourierMultiplierCLM_le hB0 (hm.mono fun ξ h ↦ h ▸ hB _) _))
     (hA j m hm)
     (fun G hG hVG ↦ by
       simp_rw [hV] at hVG ⊢
@@ -468,11 +408,8 @@ theorem exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le_of_endpo
     (r' := r') (φ.contDiff_ofReal_littlewoodPaley 0) (φ.hasCompactSupport_ofReal_littlewoodPaley 0)
     (φ.zero_notMem_tsupport_ofReal_littlewoodPaley 0) hn hr
   refine ⟨C, fun j m hm F hF ↦ ?_⟩
-  have hm₀ : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley 0 (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) := by
-    filter_upwards [hm] with ξ hξ
-    rw [hξ, φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply j]
   simpa only [Lp.star_eq_self_of_ae_eq_ofReal hm, fourierMultiplierCLM_halfWavePropagator_apply,
-    one_div] using hC j m hm₀ F hF
+    one_div] using hC j m (ae_eq_littlewoodPaley_zero_comp_smul hm) F hF
 
 /-- **The endpoint Strichartz estimate for the frequency-localized wave equation**, in weak form,
 for the Littlewood–Paley blocks. Let `E` have dimension `n ≥ 4`, let `Pⱼ` be the `L²` Fourier
@@ -500,9 +437,6 @@ theorem exists_enorm_integral_inner_halfWavePropagator_littlewoodPaley_le_of_end
       (φ.contDiff_ofReal_littlewoodPaley 0) (φ.hasCompactSupport_ofReal_littlewoodPaley 0)
       (φ.zero_notMem_tsupport_ofReal_littlewoodPaley 0) hn hr
   refine ⟨C, fun j m hm f G hG ↦ ?_⟩
-  have hm₀ : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley 0 (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) := by
-    filter_upwards [hm] with ξ hξ
-    rw [hξ, φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply j]
-  simpa only [one_div] using hC j m hm₀ f G hG
+  simpa only [one_div] using hC j m (ae_eq_littlewoodPaley_zero_comp_smul hm) f G hG
 
 end ContDiffBump
