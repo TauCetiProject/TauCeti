@@ -43,9 +43,8 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
   terms of those of `γ`.
 * `Matrix.SpecialLinearGroup.coe_mul_T_zpow`, `Matrix.SpecialLinearGroup.coe_mul_S`: explicit
   `2 × 2` matrices of `γ * T ^ n` and `γ * S` for `γ ∈ SL₂(ℤ)`.
-* `Matrix.SpecialLinearGroup.mul_S_apply`, `Matrix.SpecialLinearGroup.mul_T_apply`,
-  `Matrix.SpecialLinearGroup.mul_T_zpow_apply`: row entries of `γ * S`, `γ * T`, and `γ * T ^ n` for
-  `γ ∈ SL(2, ℤ)`.
+* `TauCeti.ModularGroup.apply_mul_T_zpow_of_apply_mul_T`: iterating a right-`T` eigenfunction law
+  `f (γ * T) = q * f γ` on `{c > 0}` to `f (γ * T ^ n) = q ^ n * f γ`.
 -/
 
 public section
@@ -207,26 +206,32 @@ theorem neg_mul_S_apply_apply_zero (γ : SL(2, ℤ)) (i : Fin 2) : (-(γ * S)) i
 theorem neg_mul_S_apply_apply_one (γ : SL(2, ℤ)) (i : Fin 2) : (-(γ * S)) i 1 = γ i 0 := by
   rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_one, neg_neg]
 
+/-- Iterating a single right-`T` step `f (γ * T) = q * f γ` on `{c > 0}` gives the `T ^ n`-step
+`f (γ * T ^ n) = q ^ n * f γ` for every integer `n`, since right multiplication by `T ^ n`
+preserves the lower-left entry. -/
+theorem apply_mul_T_zpow_of_apply_mul_T {α : Type*} [GroupWithZero α] {f : SL(2, ℤ) → α}
+    {q : α} (hq : q ≠ 0) (hT : ∀ γ : SL(2, ℤ), 0 < γ 1 0 → f (γ * T) = q * f γ)
+    {γ : SL(2, ℤ)} (hc : 0 < γ 1 0) (n : ℤ) :
+    f (γ * T ^ n) = q ^ n * f γ := by
+  have hnat : ∀ (δ : SL(2, ℤ)), 0 < δ 1 0 → ∀ k : ℕ,
+      f (δ * T ^ (k : ℤ)) = q ^ (k : ℤ) * f δ := by
+    intro δ hδ k
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      have hc' : 0 < (δ * T ^ (k : ℤ)) 1 0 := by
+        rwa [mul_T_zpow_apply_apply_zero]
+      rw [Nat.cast_succ, zpow_add_one, ← mul_assoc, hT _ hc', ih, ← mul_assoc,
+        ← zpow_one_add₀ hq, add_comm]
+  rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
+  · exact hnat γ hc k
+  · have hc' : 0 < (γ * T ^ (-(k : ℤ))) 1 0 := by
+      rwa [mul_T_zpow_apply_apply_zero]
+    have hk := hnat (γ * T ^ (-(k : ℤ))) hc' k
+    have hcancel : γ * T ^ (-(k : ℤ)) * T ^ (k : ℤ) = γ := by
+      rw [mul_assoc, ← zpow_add, neg_add_cancel, zpow_zero, mul_one]
+    rw [hcancel] at hk
+    apply mul_left_cancel₀ (zpow_ne_zero k hq)
+    rw [← hk, ← mul_assoc, ← zpow_add₀ hq, add_neg_cancel, zpow_zero, one_mul]
+
 end TauCeti.ModularGroup
-
-namespace Matrix.SpecialLinearGroup
-
-open _root_.ModularGroup
-
-/-- Right multiplication by `S` sends row `i` of `γ ∈ SL(2, ℤ)` to `(γ i 1, -γ i 0)`. -/
-theorem mul_S_apply (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i = ![γ i 1, -γ i 0] := by
-  ext j
-  fin_cases j <;> simp [coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
-
-/-- Right multiplication by `T ^ n` sends row `i` of `γ ∈ SL(2, ℤ)` to
-`(γ i 0, γ i 0 * n + γ i 1)`. -/
-theorem mul_T_zpow_apply (γ : SL(2, ℤ)) (n : ℤ) (i : Fin 2) :
-    (γ * T ^ n) i = ![γ i 0, γ i 0 * n + γ i 1] := by
-  ext j
-  fin_cases j <;> simp [coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
-
-/-- Right multiplication by `T` sends row `i` of `γ ∈ SL(2, ℤ)` to `(γ i 0, γ i 0 + γ i 1)`. -/
-theorem mul_T_apply (γ : SL(2, ℤ)) (i : Fin 2) : (γ * T) i = ![γ i 0, γ i 0 + γ i 1] := by
-  simpa using mul_T_zpow_apply γ 1 i
-
-end Matrix.SpecialLinearGroup

@@ -332,39 +332,6 @@ theorem etaMultiplier_of_c_eq_one (γ : SL(2, ℤ)) (hc : γ 1 0 = 1) :
 
 /-! ### Euclidean uniqueness on `{c > 0}` -/
 
-/-- Iterating a single `T`-step `f (γ * T) = e^{π i / 12} f γ` on `{c > 0}` gives the `Tⁿ`-step for
-all integers `n`, since right multiplication by `Tⁿ` preserves the lower-left entry. -/
-private theorem mul_T_zpow_of_mul_T {f : SL(2, ℤ) → ℂ}
-    (hT : ∀ γ : SL(2, ℤ), 0 < γ 1 0 → f (γ * T) = cexp (π * I / 12) * f γ)
-    {γ : SL(2, ℤ)} (hc : 0 < γ 1 0) (n : ℤ) :
-    f (γ * T ^ n) = cexp (π * I * n / 12) * f γ := by
-  have hnat : ∀ (δ : SL(2, ℤ)), 0 < δ 1 0 → ∀ k : ℕ,
-      f (δ * T ^ (k : ℤ)) = cexp (π * I * (k : ℤ) / 12) * f δ := by
-    intro δ hδ k
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      have hc' : 0 < (δ * T ^ (k : ℤ)) 1 0 := by
-        rwa [Matrix.SpecialLinearGroup.mul_T_zpow_apply, Matrix.cons_val_zero]
-      rw [Nat.cast_succ, zpow_add_one, ← mul_assoc, hT _ hc', ih, ← mul_assoc, ← Complex.exp_add]
-      congr 2
-      push_cast
-      ring
-  rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
-  · exact hnat γ hc k
-  · have hc' : 0 < (γ * T ^ (-(k : ℤ))) 1 0 := by
-      rwa [Matrix.SpecialLinearGroup.mul_T_zpow_apply, Matrix.cons_val_zero]
-    have hk := hnat (γ * T ^ (-(k : ℤ))) hc' k
-    have hcancel : γ * T ^ (-(k : ℤ)) * T ^ (k : ℤ) = γ := by
-      rw [mul_assoc, ← zpow_add, neg_add_cancel, zpow_zero, mul_one]
-    rw [hcancel] at hk
-    apply mul_left_cancel₀ (Complex.exp_ne_zero (π * I * (k : ℤ) / 12))
-    rw [← hk, ← mul_assoc, ← Complex.exp_add]
-    have hexp : π * I * (k : ℤ) / 12 + π * I * (-(k : ℤ) : ℤ) / 12 = 0 := by
-      push_cast
-      ring
-    rw [hexp, Complex.exp_zero, one_mul]
-
 /-- **Euclidean uniqueness of the eta multiplier on `c > 0`.** Any function `f : SL(2, ℤ) → ℂ`
 that agrees with `etaMultiplier` when `γ 1 0 = 1` and transforms by `e^{π i / 12}` under right
 multiplication by `T` (for `γ 1 0 > 0`) and by `e^{-π i / 4}` under right multiplication by `S`
@@ -387,14 +354,12 @@ theorem eq_etaMultiplier_of_c_pos {f : SL(2, ℤ) → ℂ}
     have hr_lt : d % c < c := Int.emod_lt_of_pos d hc
     let γ₁ : SL(2, ℤ) := γ * T ^ (-(d / c))
     let γ₂ : SL(2, ℤ) := γ₁ * S
-    have hγ₁0 : γ₁ 1 0 = c := by
-      simp only [γ₁, Matrix.SpecialLinearGroup.mul_T_zpow_apply, Matrix.cons_val_zero, c]
+    have hγ₁0 : γ₁ 1 0 = c := mul_T_zpow_apply_apply_zero γ (-(d / c)) 1
     have hγ₁1 : γ₁ 1 1 = d % c := by
-      simp only [γ₁, Matrix.SpecialLinearGroup.mul_T_zpow_apply, Matrix.cons_val_zero,
-        Matrix.cons_val_one, c, d, Int.emod_def]
+      rw [mul_T_zpow_apply_apply_one, Int.emod_def]
       ring
     have hγ₂0 : γ₂ 1 0 = d % c := by
-      simp [γ₂, Matrix.SpecialLinearGroup.mul_S_apply, hγ₁1]
+      rw [mul_S_apply_apply_zero, hγ₁1]
     have hlt : (γ₂ 1 0).natAbs < n := by
       rw [← hn, hγ₂0]
       omega
@@ -402,8 +367,12 @@ theorem eq_etaMultiplier_of_c_pos {f : SL(2, ℤ) → ℂ}
     have h₁ : f γ₁ = etaMultiplier γ₁ := by
       apply mul_left_cancel₀ (Complex.exp_ne_zero (-(π * I / 4)))
       rw [← hS γ₁ (hγ₁0 ▸ hc) (hγ₁1 ▸ hr_pos), ← etaMultiplier_mul_S γ₁ (hγ₁1 ▸ hr_pos), h₂]
+    have hpow := TauCeti.ModularGroup.apply_mul_T_zpow_of_apply_mul_T
+      (Complex.exp_ne_zero (π * I / 12)) hT hc (-(d / c))
+    rw [← Complex.exp_intCast_mul, show ((-(d / c) : ℤ) : ℂ) * (π * I / 12) =
+      π * I * (-(d / c) : ℤ) / 12 by ring] at hpow
     apply mul_left_cancel₀ (Complex.exp_ne_zero (π * I * (-(d / c) : ℤ) / 12))
-    rw [← mul_T_zpow_of_mul_T hT hc (-(d / c)), ← etaMultiplier_mul_T_zpow γ (-(d / c)), h₁]
+    rw [← hpow, ← etaMultiplier_mul_T_zpow γ (-(d / c)), h₁]
 
 /-! ### The Dedekind-sum value of the eta multiplier -/
 
@@ -652,10 +621,9 @@ theorem etaMultiplier_of_a_eq_one_of_b_eq_zero {γ : SL(2, ℤ)} (ha : γ 0 0 = 
     rw [ha, hb, one_mul, zero_mul, sub_zero] at hdet
     exact hdet
   have hS := etaMultiplier_mul_S γ (by omega : 0 < γ 1 1)
-  have hc1 : (γ * S) 1 0 = 1 := by simp [Matrix.SpecialLinearGroup.mul_S_apply, hd]
-  rw [etaMultiplier_of_c_eq_one (γ * S) hc1] at hS
-  simp only [Matrix.SpecialLinearGroup.mul_S_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    hb, Int.cast_zero, Int.cast_neg, zero_add] at hS
+  have hc1 : (γ * S) 1 0 = 1 := by rw [mul_S_apply_apply_zero, hd]
+  rw [etaMultiplier_of_c_eq_one (γ * S) hc1, mul_S_apply_apply_zero, mul_S_apply_apply_one] at hS
+  simp only [hb, Int.cast_zero, Int.cast_neg, zero_add] at hS
   apply mul_left_cancel₀ (Complex.exp_ne_zero (-(π * I / 4)))
   rw [← hS, ← Complex.exp_add]
   congr 1

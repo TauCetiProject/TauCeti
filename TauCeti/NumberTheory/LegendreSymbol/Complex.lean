@@ -31,6 +31,7 @@ simultaneously changing the sign and adding `4`.
 ## Main results
 
 * `ZMod.χ₈_eq_and_eq_or_of_mul_stdAddChar_eq`: cancellation of sign times `stdAddChar` on `ZMod 8`.
+* `ZMod.cexp_pi_mul_I_mul_div_two_of_odd`: `exp (π i m / 2) = χ₄ m * i` for every odd integer `m`.
 
 * `TauCeti.exists_primitive_addChar_integralClosure`: `F` has a primitive additive character with
   values in the algebraic integers of `ℂ`.
@@ -89,5 +90,27 @@ theorem χ₈_eq_and_eq_or_of_mul_stdAddChar_eq {x y s t : ZMod (2 ^ 3)} (hx : I
   rcases hχ x hx with hx' | hx' <;> rcases hχ y hy with hy' | hy' <;>
     simp only [hx', hy', ite_true, ite_false, show (-1 : ℤ) ≠ 1 by decide] at h' ⊢ <;>
     revert s t <;> decide
+
+/-- Quarter-period evaluation of `χ₄` on odd integers: `exp (π i m / 2) = χ₄ m * i`. -/
+theorem cexp_pi_mul_I_mul_div_two_of_odd {m : ℤ} (hm : Odd m) :
+    Complex.exp (Real.pi * Complex.I * m / 2) = (χ₄ (m : ZMod 4) : ℂ) * Complex.I := by
+  rcases (by obtain ⟨t, rfl⟩ := hm; omega : m % 4 = 1 ∨ m % 4 = 3) with hm4 | hm4
+  · rw [χ₄_int_one_mod_four hm4, Int.cast_one, one_mul,
+      show Real.pi * Complex.I * (m : ℂ) / 2 =
+        Real.pi / 2 * Complex.I + ((m / 4 : ℤ) : ℂ) * (2 * Real.pi * Complex.I) by
+        rw [show (m : ℂ) = ((4 * (m / 4) + 1 : ℤ) : ℂ) by
+          exact_mod_cast (by omega : m = 4 * (m / 4) + 1)]
+        push_cast
+        ring,
+      Complex.exp_add, Complex.exp_int_mul_two_pi_mul_I, mul_one, Complex.exp_pi_div_two_mul_I]
+  · rw [χ₄_int_three_mod_four hm4, Int.cast_neg, Int.cast_one, neg_one_mul,
+      show Real.pi * Complex.I * (m : ℂ) / 2 =
+        -Real.pi / 2 * Complex.I + ((m / 4 + 1 : ℤ) : ℂ) * (2 * Real.pi * Complex.I) by
+        rw [show (m : ℂ) = ((4 * (m / 4) + 3 : ℤ) : ℂ) by
+          exact_mod_cast (by omega : m = 4 * (m / 4) + 3)]
+        push_cast
+        ring,
+      Complex.exp_add, Complex.exp_int_mul_two_pi_mul_I, mul_one,
+      Complex.exp_neg_pi_div_two_mul_I]
 
 end ZMod

@@ -13,6 +13,7 @@ import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Data.Int.MulPred
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
+import TauCeti.NumberTheory.LegendreSymbol.Complex
 import TauCeti.NumberTheory.LegendreSymbol.ZModChar
 
 /-!
@@ -46,11 +47,12 @@ the Kronecker form changes by the same factor, since `(c n + d / c) = (d / c)` a
 `e(∓1/8)`. On the Kronecker side the two symbols are related by quadratic reciprocity and its first
 supplement. At `c = 1` both sides are `e((a + d) / 24 - 1 / 8)`. For even `c > 0` a single
 inversion reaches the odd case; `c < 0` reduces to `-γ`, where `ε(γ) = i ε(-γ)`, and `c = 0` is
-`γ = ± Tᵇ`. Each step leaves a congruence modulo `24` between polynomials in the entries, subject
-to `a d - b c = 1`; these are checked modulo `8` and modulo `3` by evaluation. For odd `c < 0`,
-reducing to `-γ` via `etaMultiplier_neg_of_c_neg` introduces a sign factor `χ₄` from negating the
-Kronecker symbol that cancels the `-6 c` numerator shift, giving the `(d / |c|)` formula on all odd
-`c`.
+`γ = Tᵇ` for `d = 1` and `γ = -T⁻ᵇ` for `d = -1`. Each step leaves a congruence modulo `24`
+between polynomials in the entries, subject to `a d - b c = 1`; these are checked modulo `8` and
+modulo `3` by evaluation. For odd `c < 0`, passing from `γ` to `-γ` via `etaMultiplier_neg_of_c_neg`
+shifts the numerator to `N(-γ) = N(γ) + 6 c` (equivalently `N(γ) - 6 |c|`), and negating the
+Kronecker symbol introduces the cancelling character factor `χ₄(-c)`, giving the `(d / |c|)`
+formula on all odd `c`.
 
 ## Main results
 
@@ -467,7 +469,7 @@ private theorem etaMultiplier_eq_kroneckerEven (γ : SL(2, ℤ)) (heven : Even (
       simpa only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, even_neg] using heven)]
     simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
     exact kroneckerEven_neg hneg (γ.odd_apply_one_of_even_apply_zero heven)
-  · -- `c = 0`: `γ = ± T ^ b`, with `d = ± 1`.
+  · -- `c = 0`: `γ = T ^ b` for `d = 1` and `γ = -T ^ (-b)` for `d = -1`.
     have hdet := γ.fin_two_mul_sub_mul_eq_one
     rw [hzero, mul_zero, sub_zero] at hdet
     rcases Int.eq_one_or_neg_one_of_mul_eq_one' hdet with ⟨-, hd⟩ | ⟨-, hd⟩
@@ -504,42 +506,12 @@ theorem etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c (γ : SL(2, ℤ)) (h
 `ε(γ) = (c / d) · e(((a + d) c - b d (c² - 1) + 3 d - 3 - 3 c d) / 24)`, where
 `e(x) = exp(2 π i x)` and `(c / d)` is the Kronecker symbol at the odd, possibly negative,
 denominator `d`. Strömberg states it for `c > 0`; it holds for every even `c`, including `c = 0`,
-where `γ = ± Tᵇ`. -/
+where `γ = Tᵇ` for `d = 1` and `γ = -T⁻ᵇ` for `d = -1`. -/
 theorem etaMultiplier_eq_kroneckerSym_mul_of_even_c (γ : SL(2, ℤ)) (heven : Even (γ 1 0)) :
     etaMultiplier γ = kroneckerSym (γ 1 0) (γ 1 1) *
       cexp (2 * π * I * (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) +
         3 * γ 1 1 - 3 - 3 * γ 1 0 * γ 1 1 : ℤ) : ℂ) / 24) := by
   rw [etaMultiplier_eq_kroneckerEven γ heven, e24, evenExp]
-
-/-- For odd `m`, the sign factor `χ₄ m * i` cancels the `-6 m` numerator shift in
-`exp(2π i (N - 6 m) / 24)`: for `m ≡ 1 (mod 4)` it is `1 * i * (-i) = 1`, and for `m ≡ 3 (mod 4)`
-it is `(-1) * i * i = 1`. -/
-private theorem chi4_mul_I_mul_cexp_sub_six_mul (N : ℤ) {m : ℤ} (hm : Odd m) :
-    (χ₄ (m : ZMod 4) : ℂ) * I * cexp (2 * π * I * ((N - 6 * m : ℤ) : ℂ) / 24) =
-      cexp (2 * π * I * (N : ℂ) / 24) := by
-  rcases (by obtain ⟨t, rfl⟩ := hm; omega : m % 4 = 1 ∨ m % 4 = 3) with hm4 | hm4
-  · have hχ : χ₄ (m : ZMod 4) = 1 := χ₄_int_one_mod_four hm4
-    have hI : (I : ℂ) * -I = 1 := by simp
-    have hdvd : (24 : ℤ) ∣ (N - 6 * m) - (N - 6) := ⟨-(m / 4), by omega⟩
-    have hexp := Complex.exp_two_pi_mul_I_mul_intCast_div_eq_of_dvd_sub hdvd
-    have hsplit : 2 * π * I * ((N - 6 : ℤ) : ℂ) / 24 =
-        -π / 2 * I + 2 * π * I * (N : ℂ) / 24 := by
-      push_cast
-      ring
-    rw [Int.cast_ofNat] at hexp
-    rw [hχ, Int.cast_one, one_mul, hexp, hsplit, Complex.exp_add,
-      Complex.exp_neg_pi_div_two_mul_I, ← mul_assoc, hI, one_mul]
-  · have hχ : χ₄ (m : ZMod 4) = -1 := χ₄_int_three_mod_four hm4
-    have hI : (-1 : ℂ) * I * I = 1 := by simp
-    have hdvd : (24 : ℤ) ∣ (N - 6 * m) - (N + 6) := ⟨-(m / 4 + 1), by omega⟩
-    have hexp := Complex.exp_two_pi_mul_I_mul_intCast_div_eq_of_dvd_sub hdvd
-    have hsplit : 2 * π * I * ((N + 6 : ℤ) : ℂ) / 24 =
-        π / 2 * I + 2 * π * I * (N : ℂ) / 24 := by
-      push_cast
-      ring
-    rw [Int.cast_ofNat] at hexp
-    rw [hχ, Int.cast_neg, Int.cast_one, hexp, hsplit, Complex.exp_add,
-      Complex.exp_pi_div_two_mul_I, ← mul_assoc, hI, one_mul]
 
 private theorem etaMultiplier_eq_kronecker_odd_of_c_neg {γ : SL(2, ℤ)} (hc : γ 1 0 < 0)
     (hodd : Odd (γ 1 0)) :
@@ -563,9 +535,16 @@ private theorem etaMultiplier_eq_kronecker_odd_of_c_neg {γ : SL(2, ℤ)} (hc : 
       3 * -γ 1 0 : ℤ)) = N - 6 * (-γ 1 0) := by
     simp only [N]
     ring
+  have hshift : (χ₄ ((-γ 1 0 : ℤ) : ZMod 4) : ℂ) * I *
+      cexp (2 * π * I * ((N - 6 * (-γ 1 0) : ℤ) : ℂ) / 24) =
+        cexp (2 * π * I * (N : ℂ) / 24) := by
+    rw [← ZMod.cexp_pi_mul_I_mul_div_two_of_odd hodd.neg, ← Complex.exp_add]
+    congr 1
+    push_cast
+    ring
   rw [hmul, etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c (-γ) hneg_pos hodd_neg]
   simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
-  rw [hsym, hnum, Int.cast_mul, ← chi4_mul_I_mul_cexp_sub_six_mul N hodd.neg]
+  rw [hsym, hnum, Int.cast_mul, ← hshift]
   ring
 
 /-- **Kronecker-symbol formula for odd `c`** on all of `SL(2, ℤ)`:
