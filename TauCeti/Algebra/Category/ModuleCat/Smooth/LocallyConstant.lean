@@ -187,9 +187,16 @@ def completePart : Submodule (LocallyConstant T Λ) (CompactOpens T → M) where
 
 variable {T Λ M}
 
+@[simp]
 theorem mem_completePart_iff {x : CompactOpens T → M} :
     x ∈ completePart T Λ M ↔ ∀ U V, V.charFn Λ • x U = x (U ⊓ V) :=
   Iff.rfl
+
+/-- Two points of `M^c` are equal when all their coordinates are. -/
+@[ext]
+theorem completePart.ext {x y : completePart T Λ M}
+    (h : ∀ U, (x : CompactOpens T → M) U = (y : CompactOpens T → M) U) : x = y :=
+  Subtype.ext (funext h)
 
 /-- The `U`-th coordinate of a point of `M^c` lies in `1_U·M`. -/
 theorem charFn_smul_apply_self_of_mem_completePart {x : CompactOpens T → M}
@@ -201,6 +208,13 @@ theorem charFn_smul_apply_of_le_of_mem_completePart {x : CompactOpens T → M}
     (hx : x ∈ completePart T Λ M) {U V : CompactOpens T} (h : V ≤ U) :
     V.charFn Λ • x U = x V := by
   rw [hx U V, inf_eq_right.2 h]
+
+/-- The coordinates of a point of `M^c` lie in the smooth part `M^s`. -/
+theorem apply_mem_smoothPart_of_mem_completePart {x : CompactOpens T → M}
+    (hx : x ∈ completePart T Λ M) (U : CompactOpens T) :
+    x U ∈ smoothPart (compactOpenIdeal T Λ) M := by
+  rw [← charFn_smul_apply_self_of_mem_completePart hx U]
+  exact charFn_smul_mem_smoothPart U _
 
 variable (T Λ M)
 
@@ -245,9 +259,18 @@ theorem injective_toCompletePart_comp_subtype :
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   rintro ⟨m, hm⟩ h
   obtain ⟨U, hU⟩ := mem_smoothPart_compactOpenIdeal_iff.1 hm
-  have := congr_fun (congrArg Subtype.val h) U
+  have := completePart.ext_iff.1 h U
   simp only [LinearMap.comp_apply, Submodule.subtype_apply, toCompletePart_apply_coe, hU] at this
   exact Subtype.ext this
+
+/-- For a smooth module `M`, the map `M → M^c` is injective. -/
+theorem injective_toCompletePart_of_smoothModules
+    (hM : smoothModules (compactOpenIdeal T Λ) (ModuleCat.of (LocallyConstant T Λ) M)) :
+    Function.Injective (toCompletePart T Λ M) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro m h
+  obtain ⟨U, hU⟩ := smoothModules_compactOpenIdeal_iff.1 hM m
+  simpa [hU] using completePart.ext_iff.1 h U
 
 /-- The smooth part of `M^c` is the image of the smooth part of `M`: `(M^c)^s = M^s`. -/
 theorem smoothPart_completePart :
@@ -255,9 +278,8 @@ theorem smoothPart_completePart :
       (smoothPart (compactOpenIdeal T Λ) M).map (toCompletePart T Λ M) := by
   refine le_antisymm (fun x hx => ?_) (map_smoothPart_le _)
   obtain ⟨U, hU⟩ := mem_smoothPart_compactOpenIdeal_iff.1 hx
-  refine ⟨(x : CompactOpens T → M) U, ?_, (eq_toCompletePart_of_charFn_smul_eq hU).symm⟩
-  rw [← charFn_smul_apply_self_of_mem_completePart x.property U]
-  exact charFn_smul_mem_smoothPart U _
+  exact ⟨(x : CompactOpens T → M) U, apply_mem_smoothPart_of_mem_completePart x.property U,
+    (eq_toCompletePart_of_charFn_smul_eq hU).symm⟩
 
 /-- For a smooth module `M`, the map `M → M^c` identifies `M` with the smooth part of `M^c`. -/
 noncomputable def smoothPartCompletePartEquiv
@@ -268,12 +290,7 @@ noncomputable def smoothPartCompletePartEquiv
       rw [smoothPart_completePart]
       exact Submodule.mem_map_of_mem
         (((smoothPart_eq_top_iff directed_compactOpenIdeal).2 hM).symm ▸ Submodule.mem_top))
-    ⟨fun m n h => by
-      have htop := (smoothPart_eq_top_iff directed_compactOpenIdeal).2 hM
-      have hm : m ∈ smoothPart (compactOpenIdeal T Λ) M := htop ▸ Submodule.mem_top
-      have hn : n ∈ smoothPart (compactOpenIdeal T Λ) M := htop ▸ Submodule.mem_top
-      exact congrArg Subtype.val (injective_toCompletePart_comp_subtype (M := M)
-        (a₁ := ⟨m, hm⟩) (a₂ := ⟨n, hn⟩) (congrArg Subtype.val h)),
+    ⟨fun _ _ h => injective_toCompletePart_of_smoothModules hM (congrArg Subtype.val h),
     fun x => by
       obtain ⟨m, -, hm⟩ := (smoothPart_completePart (T := T) (Λ := Λ) (M := M)).le x.property
       exact ⟨m, Subtype.ext hm⟩⟩
@@ -318,12 +335,10 @@ point of `M^c` already lies in `M^s`. -/
 theorem bijective_completePartMap_subtype_smoothPart :
     Function.Bijective
       (completePartMap T Λ (smoothPart (compactOpenIdeal T Λ) M).subtype) := by
-  refine ⟨fun x y h => Subtype.ext (funext fun U => Subtype.ext ?_), fun x => ?_⟩
-  · exact congr_fun (congrArg Subtype.val h) U
-  · refine ⟨⟨fun U => ⟨(x : CompactOpens T → M) U, ?_⟩, fun U V => Subtype.ext (x.property U V)⟩,
-      rfl⟩
-    rw [← charFn_smul_apply_self_of_mem_completePart x.property U]
-    exact charFn_smul_mem_smoothPart U _
+  refine ⟨fun x y h => completePart.ext fun U => Subtype.ext (completePart.ext_iff.1 h U),
+    fun x => ⟨⟨fun U => ⟨(x : CompactOpens T → M) U, ?_⟩, fun U V => Subtype.ext (x.property U V)⟩,
+      rfl⟩⟩
+  exact apply_mem_smoothPart_of_mem_completePart x.property U
 
 variable (T Λ M) in
 /-- The complete part of the smooth part is the complete part: `(M^s)^c ≅ M^c`. -/
@@ -349,6 +364,7 @@ variable (T Λ)
 
 /-- The *complete* `C(T, Λ)`-modules: those `M` for which the canonical map `M → M^c` to the limit
 `M^c = lim_U 1_U·M` is bijective. -/
+@[expose]
 def completeModules : ObjectProperty (ModuleCat.{v} (LocallyConstant T Λ)) :=
   fun M => Function.Bijective (toCompletePart T Λ M)
 
@@ -363,29 +379,33 @@ variable {M : Type v} [AddCommGroup M] [Module (LocallyConstant T Λ) M]
 /-- The map `M^c → (M^c)^c` is bijective. -/
 theorem bijective_toCompletePart_completePart :
     Function.Bijective (toCompletePart T Λ (completePart T Λ M)) := by
-  refine ⟨(injective_iff_map_eq_zero _).2 fun x h => Subtype.ext (funext fun U => ?_), fun y => ?_⟩
-  · have := congr_fun (congrArg Subtype.val (congr_fun (congrArg Subtype.val h) U)) U
+  refine ⟨(injective_iff_map_eq_zero _).2 fun x h => completePart.ext fun U => ?_, fun y => ?_⟩
+  · have := completePart.ext_iff.1 (completePart.ext_iff.1 h U) U
     simpa [charFn_smul_apply_self_of_mem_completePart x.property] using this
   -- The preimage `x` of `y` has as `U`-th coordinate the `U`-th coordinate of `y U`, and each
   -- `y U` is the image of that coordinate in `M^c`.
-  have hy (U : CompactOpens T) := eq_toCompletePart_of_charFn_smul_eq
-    (charFn_smul_apply_self_of_mem_completePart y.property U)
   let x : CompactOpens T → M := fun U =>
     (((y : CompactOpens T → completePart T Λ M) U : completePart T Λ M) : CompactOpens T → M) U
-  have hxU (U : CompactOpens T) : U.charFn Λ • x U = x U :=
-    charFn_smul_apply_self_of_mem_completePart
+  have hx_def (U : CompactOpens T) : x U =
+      (((y : CompactOpens T → completePart T Λ M) U : completePart T Λ M) : CompactOpens T → M) U :=
+    rfl
+  have hy (U : CompactOpens T) :
+      (y : CompactOpens T → completePart T Λ M) U = toCompletePart T Λ M (x U) := by
+    rw [hx_def]
+    exact eq_toCompletePart_of_charFn_smul_eq
+      (charFn_smul_apply_self_of_mem_completePart y.property U)
+  have hxU (U : CompactOpens T) : U.charFn Λ • x U = x U := by
+    rw [hx_def]
+    exact charFn_smul_apply_self_of_mem_completePart
       ((y : CompactOpens T → completePart T Λ M) U).property U
   have hx : x ∈ completePart T Λ M := fun U V => by
-    have h := congrArg (fun z : completePart T Λ M => (z : CompactOpens T → M) U)
-      (y.property U V)
+    have h := completePart.ext_iff.1 (y.property U V) U
     simp only [Submodule.coe_smul, Pi.smul_apply] at h
-    change V.charFn Λ • (((y : CompactOpens T → completePart T Λ M) U : completePart T Λ M) :
-      CompactOpens T → M) U = x (U ⊓ V)
-    rw [h, hy (U ⊓ V), toCompletePart_apply_coe]
+    rw [hx_def U, h, hy (U ⊓ V), toCompletePart_apply_coe]
     calc U.charFn Λ • x (U ⊓ V) = U.charFn Λ • (U ⊓ V).charFn Λ • x (U ⊓ V) := by rw [hxU]
       _ = x (U ⊓ V) := by
         rw [← mul_smul, CompactOpens.charFn_mul_charFn_of_ge Λ inf_le_left, hxU]
-  refine ⟨⟨x, hx⟩, Subtype.ext (funext fun U => ?_)⟩
+  refine ⟨⟨x, hx⟩, completePart.ext fun U => ?_⟩
   rw [toCompletePart_apply_coe, charFn_smul_eq_toCompletePart, hy U]
 
 /-- The complete part `M^c` is complete: `(M^c)^c ≅ M^c`. -/
@@ -398,7 +418,7 @@ theorem completeModules_completePart :
 theorem completeModules_of_compactSpace [CompactSpace T]
     (M : ModuleCat.{v} (LocallyConstant T Λ)) : completeModules T Λ M := by
   refine ⟨fun m n h => ?_, fun x => ⟨(x : CompactOpens T → M) ⊤, ?_⟩⟩
-  · simpa using congr_fun (congrArg Subtype.val h) ⊤
+  · simpa using completePart.ext_iff.1 h ⊤
   · rw [← charFn_smul_eq_toCompletePart, CompactOpens.charFn_top, one_smul]
 
 end Complete
@@ -427,6 +447,7 @@ theorem completePartFunctor_map_hom {M N : ModuleCat.{max u v} (LocallyConstant 
   rfl
 
 /-- The complete part as a functor from smooth to complete `C(T, Λ)`-modules. -/
+@[expose]
 noncomputable def smoothToComplete :
     (smoothModules (compactOpenIdeal T Λ) :
       ObjectProperty (ModuleCat.{max u v} (LocallyConstant T Λ))).FullSubcategory ⥤
@@ -442,7 +463,15 @@ theorem smoothToComplete_obj_obj
     ((smoothToComplete T Λ).obj M).obj = ModuleCat.of _ (completePart T Λ M.obj) :=
   (rfl)
 
+@[simp]
+theorem smoothToComplete_map_hom_hom
+    {M M' : (smoothModules (compactOpenIdeal T Λ) :
+      ObjectProperty (ModuleCat.{max u v} (LocallyConstant T Λ))).FullSubcategory} (f : M ⟶ M') :
+    ((smoothToComplete T Λ).map f).hom.hom = completePartMap T Λ f.hom.hom :=
+  (rfl)
+
 /-- The smooth part as a functor from complete to smooth `C(T, Λ)`-modules. -/
+@[expose]
 noncomputable def completeToSmooth :
     (completeModules T Λ :
       ObjectProperty (ModuleCat.{max u v} (LocallyConstant T Λ))).FullSubcategory ⥤
@@ -458,15 +487,24 @@ theorem completeToSmooth_obj_obj
       ModuleCat.of _ (smoothPart (compactOpenIdeal T Λ) N.obj) :=
   (rfl)
 
+@[simp]
+theorem completeToSmooth_map_hom_hom
+    {N N' : (completeModules T Λ :
+      ObjectProperty (ModuleCat.{max u v} (LocallyConstant T Λ))).FullSubcategory} (f : N ⟶ N') :
+    ((completeToSmooth T Λ).map f).hom.hom = f.hom.hom.restrict fun _ hm =>
+      map_smoothPart_le f.hom.hom (Submodule.mem_map_of_mem hm) :=
+  (rfl)
+
 /-- The complete part `M ↦ M^c` and the smooth part `N ↦ N^s` are mutually inverse equivalences
 between the categories of smooth and of complete `C(T, Λ)`-modules. The unit is the map
 `M → (M^c)^s` induced by `M → M^c`, and the counit is `(N^s)^c ≅ N^c ≅ N`. -/
+@[expose]
 noncomputable def smoothCompleteEquivalence :
     (smoothModules (compactOpenIdeal T Λ) :
       ObjectProperty (ModuleCat.{max u v} (LocallyConstant T Λ))).FullSubcategory ≌
     (completeModules T Λ :
       ObjectProperty (ModuleCat.{max u v} (LocallyConstant T Λ))).FullSubcategory :=
-  CategoryTheory.Equivalence.mk (smoothToComplete T Λ) (completeToSmooth T Λ)
+  CategoryTheory.Equivalence.mk' (smoothToComplete T Λ) (completeToSmooth T Λ)
     (NatIso.ofComponents (fun M => ObjectProperty.isoMk _
       (smoothPartCompletePartEquiv M.property).toModuleIso) fun {M M'} f => by
         ext m : 3
@@ -486,6 +524,12 @@ noncomputable def smoothCompleteEquivalence :
         refine (LinearEquiv.apply_symm_apply _ _).trans (Subtype.ext (funext fun U => ?_))
         exact (congrArg f.hom.hom (congr_fun (congrArg Subtype.val h) U)).symm.trans
           (map_smul f.hom.hom _ _))
+    fun M => by
+      ext x : 3
+      -- The unit sends `x ∈ M^c` to the point with coordinates `toCompletePart (x U) = 1_U • x`,
+      -- which is the image of `x` under `M^c → (M^c)^c`; the counit inverts that map.
+      exact (LinearEquiv.ofBijective _ bijective_toCompletePart_completePart).symm_apply_eq.2
+        (completePart.ext fun U => (charFn_smul_eq_toCompletePart x U).symm)
 
 @[simp]
 theorem smoothCompleteEquivalence_functor :
@@ -496,6 +540,43 @@ theorem smoothCompleteEquivalence_functor :
 theorem smoothCompleteEquivalence_inverse :
     (smoothCompleteEquivalence.{u, v} T Λ).inverse = completeToSmooth T Λ :=
   (rfl)
+
+/-- The unit `M → (M^c)^s` of the equivalence is induced by `M → M^c`. -/
+@[simp]
+theorem smoothCompleteEquivalence_unitIso_hom_app_hom_hom
+    (M : (smoothModules (compactOpenIdeal T Λ) :
+      ObjectProperty (ModuleCat.{max u v} (LocallyConstant T Λ))).FullSubcategory) :
+    ((smoothCompleteEquivalence.{u, v} T Λ).unitIso.hom.app M).hom.hom =
+      (smoothPartCompletePartEquiv M.property).toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem smoothCompleteEquivalence_unitIso_inv_app_hom_hom
+    (M : (smoothModules (compactOpenIdeal T Λ) :
+      ObjectProperty (ModuleCat.{max u v} (LocallyConstant T Λ))).FullSubcategory) :
+    ((smoothCompleteEquivalence.{u, v} T Λ).unitIso.inv.app M).hom.hom =
+      (smoothPartCompletePartEquiv M.property).symm.toLinearMap :=
+  (rfl)
+
+/-- The counit `(N^s)^c → N` sends `x` to the vector whose image in `N^c` has the same coordinates
+as `x`. -/
+theorem toCompletePart_smoothCompleteEquivalence_counitIso_hom_app
+    (N : (completeModules T Λ :
+      ObjectProperty (ModuleCat.{max u v} (LocallyConstant T Λ))).FullSubcategory)
+    (x : completePart T Λ (smoothPart (compactOpenIdeal T Λ) N.obj)) :
+    toCompletePart T Λ N.obj
+        (((smoothCompleteEquivalence.{u, v} T Λ).counitIso.hom.app N).hom.hom x) =
+      completePartSmoothPartEquiv T Λ N.obj x :=
+  (LinearEquiv.ofBijective _ N.property).apply_symm_apply _
+
+/-- The inverse of the counit sends `y : N` to the point of `(N^s)^c` with coordinates `1_U • y`. -/
+theorem completePartSmoothPartEquiv_smoothCompleteEquivalence_counitIso_inv_app
+    (N : (completeModules T Λ :
+      ObjectProperty (ModuleCat.{max u v} (LocallyConstant T Λ))).FullSubcategory) (y : N.obj) :
+    completePartSmoothPartEquiv T Λ N.obj
+        (((smoothCompleteEquivalence.{u, v} T Λ).counitIso.inv.app N).hom.hom y) =
+      toCompletePart T Λ N.obj y :=
+  (completePartSmoothPartEquiv T Λ N.obj).apply_symm_apply _
 
 end Equivalence
 

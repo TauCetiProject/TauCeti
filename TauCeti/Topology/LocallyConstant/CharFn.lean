@@ -10,17 +10,50 @@ public import Mathlib.Topology.LocallyConstant.Algebra
 public import Mathlib.Topology.Sets.Compacts
 
 /-!
-# Characteristic functions of compact open sets
+# Characteristic functions of clopen and compact open sets
 
-In a Hausdorff space `X` a compact open set `U` is clopen, so its characteristic function `1_U` is
-a locally constant function (`TopologicalSpace.CompactOpens.charFn`). With values in a ring `R`,
-these functions are idempotents of the ring `LocallyConstant X R` which multiply like the sets
-intersect: `1_U * 1_V = 1_(U ∩ V)`. For a locally profinite set `X`, the idempotents `1_U` are the
-basic tool for studying modules over `LocallyConstant X R`: for example, multiplication by `1_U`
-projects such a module onto its part supported on `U`.
+The characteristic function `1_U` of a clopen set `U` is a locally constant function (Mathlib's
+`LocallyConstant.charFn`). With values in a ring `R`, these functions are idempotents of the ring
+`LocallyConstant X R` which multiply like the sets intersect: `1_U * 1_V = 1_(U ∩ V)`
+(`LocallyConstant.charFn_mul_charFn`).
+
+In a Hausdorff space `X` a compact open set `U` is clopen, so it has a characteristic function
+`TopologicalSpace.CompactOpens.charFn`, with the same multiplicative API. For a locally profinite
+set `X`, the idempotents `1_U` are the basic tool for studying modules over `LocallyConstant X R`:
+for example, multiplication by `1_U` projects such a module onto its part supported on `U`.
 -/
 
 public section
+
+namespace LocallyConstant
+
+variable {X : Type*} [TopologicalSpace X] (R : Type*) [MulZeroOneClass R] {U V : Set X}
+
+/-- Characteristic functions of clopen sets multiply like the sets intersect. -/
+theorem charFn_mul_charFn (hU : IsClopen U) (hV : IsClopen V) :
+    charFn R hU * charFn R hV = charFn R (hU.inter hV) :=
+  coe_injective (by simp [coe_charFn, Set.inter_indicator_one])
+
+/-- The characteristic function of a clopen set is an idempotent. -/
+theorem isIdempotentElem_charFn (hU : IsClopen U) : IsIdempotentElem (charFn R hU) :=
+  coe_injective (by rw [coe_mul, coe_charFn, ← Set.inter_indicator_one, Set.inter_self])
+
+@[simp]
+theorem charFn_empty : charFn R (isClopen_empty : IsClopen (∅ : Set X)) = 0 :=
+  ext fun x => by simp [coe_charFn]
+
+@[simp]
+theorem charFn_univ : charFn R (isClopen_univ : IsClopen (Set.univ : Set X)) = 1 :=
+  ext fun x => by simp [coe_charFn]
+
+/-- Over a nontrivial ring, `1_U = 1` exactly when `U` is the whole space. -/
+theorem charFn_eq_one_iff [Nontrivial R] (hU : IsClopen U) : charFn R hU = 1 ↔ U = Set.univ := by
+  refine ⟨fun h => Set.eq_univ_of_forall fun x => (charFn_eq_one R x hU).1 ?_, fun h => ?_⟩
+  · rw [h, one_apply]
+  · subst h
+    exact charFn_univ R
+
+end LocallyConstant
 
 namespace TopologicalSpace.CompactOpens
 
@@ -48,7 +81,7 @@ variable (R)
 
 /-- Characteristic functions multiply like the sets intersect. -/
 theorem charFn_inf (U V : CompactOpens X) : (U ⊓ V).charFn R = U.charFn R * V.charFn R :=
-  LocallyConstant.coe_injective (by simp [coe_charFn, Set.inter_indicator_one])
+  (LocallyConstant.charFn_mul_charFn R U.toClopens.isClopen V.toClopens.isClopen).symm
 
 /-- If `U ⊆ V` then `1_U * 1_V = 1_U`. -/
 theorem charFn_mul_charFn_of_le {U V : CompactOpens X} (h : U ≤ V) :
@@ -62,23 +95,19 @@ theorem charFn_mul_charFn_of_ge {U V : CompactOpens X} (h : U ≤ V) :
 
 /-- A characteristic function is an idempotent. -/
 theorem isIdempotentElem_charFn (U : CompactOpens X) : IsIdempotentElem (U.charFn R) :=
-  charFn_mul_charFn_of_le R le_rfl
+  LocallyConstant.isIdempotentElem_charFn R U.toClopens.isClopen
 
 @[simp]
 theorem charFn_bot : (⊥ : CompactOpens X).charFn R = 0 :=
-  LocallyConstant.ext fun x => charFn_apply_of_notMem (Set.notMem_empty x)
+  LocallyConstant.charFn_empty R
 
 @[simp]
 theorem charFn_top [CompactSpace X] : (⊤ : CompactOpens X).charFn R = 1 :=
-  LocallyConstant.coe_injective (by simp [coe_charFn])
+  LocallyConstant.charFn_univ R
 
 /-- Over a nontrivial ring, `1_U = 1` exactly when `U` is the whole space. -/
 theorem charFn_eq_one_iff [Nontrivial R] {U : CompactOpens X} :
-    U.charFn R = 1 ↔ (U : Set X) = Set.univ := by
-  refine ⟨fun h => Set.eq_univ_of_forall fun x => ?_, fun h => LocallyConstant.ext fun x => ?_⟩
-  · by_contra hx
-    simpa [charFn_apply_of_notMem hx] using DFunLike.congr_fun h x
-  · have hx : x ∈ (U : Set X) := h ▸ Set.mem_univ x
-    simp [charFn_apply_of_mem hx]
+    U.charFn R = 1 ↔ (U : Set X) = Set.univ :=
+  LocallyConstant.charFn_eq_one_iff R U.toClopens.isClopen
 
 end TopologicalSpace.CompactOpens
