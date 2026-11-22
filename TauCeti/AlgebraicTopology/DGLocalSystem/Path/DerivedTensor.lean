@@ -98,15 +98,15 @@ def pathFromChainAugmentationHom :
   map_add' m m' := by rw [map_add, map_add]
   map_smul' a m := by
     rw [pathFromChainAugmentation_smul, RingHom.id_apply, Algebra.TensorProduct.smul_moduleLeft,
-      Bimodule.smul_of, MulOpposite.unop_one, mul_one]
-    -- The augmentation is applied once as a DG algebra map and once as an algebra map.
-    rfl
+      Bimodule.smul_of, MulOpposite.unop_one, mul_one, GradedAlgHom.coe_toAlgHom,
+      DGAlgHom.coe_toGradedAlgHom]
 
 variable {B b H R}
 
 /-- The augmentation of the based path chains, read in `R`. -/
 @[simp]
-theorem pathFromChainAugmentationHom_apply (m : cubicalChainModule (MoorePathFrom B b) H R) :
+theorem bimoduleOf_symm_pathFromChainAugmentationHom
+    (m : cubicalChainModule (MoorePathFrom B b) H R) :
     (Bimodule.of _).symm (pathFromChainAugmentationHom B b H R m) =
       cubicalChainModuleAugmentation (MoorePathFrom B b) H R m :=
   (Bimodule.of _).symm_apply_apply _
@@ -116,7 +116,7 @@ theorem pathFromChainAugmentationHom_mem {i : ℤ}
     {m : cubicalChainModule (MoorePathFrom B b) H R}
     (hm : m ∈ cubicalChainModuleGrading (MoorePathFrom B b) H R i) :
     pathFromChainAugmentationHom B b H R m ∈ (loopChainAugmentation B b R).bimoduleGrading i := by
-  rw [DGAlgHom.mem_bimoduleGrading_iff, pathFromChainAugmentationHom_apply]
+  rw [DGAlgHom.mem_bimoduleGrading_iff, bimoduleOf_symm_pathFromChainAugmentationHom]
   exact cubicalChainModuleAugmentation_mem hm
 
 /-- The augmentation of the based path chains vanishes on boundaries, so it commutes with the
@@ -141,19 +141,16 @@ theorem exists_differential_eq_and_pathFromChainAugmentationHom_add_eq
       (loopChainAugmentation B b R).bimoduleDifferential w) :
     ∃ u' w', cubicalChainModuleDifferential _ H R u' = u ∧
       pathFromChainAugmentationHom B b H R u' +
-        (loopChainAugmentation B b R).bimoduleDifferential w' = w := by
-  rw [(loopChainAugmentation B b R).bimoduleDifferential_eq_zero rfl, LinearMap.zero_apply] at hw
-  obtain ⟨v, rfl⟩ := exists_pathFromChainDifferential_eq_of_augmentation_eq_zero hu
-    (by simpa using congrArg (Bimodule.of _).symm hw)
-  set r := (Bimodule.of (loopChainAugmentation B b R).toGradedAlgHom.toAlgHom).symm w -
-    cubicalChainModuleAugmentation (MoorePathFrom B b) H R v
-  refine ⟨v + r • cubicalChainModulePoint _ H R (MoorePathFrom.refl B b), 0, ?_, ?_⟩
-  · rw [map_add, map_smul, cubicalChainModuleDifferential_cubicalChainModulePoint, smul_zero,
-      add_zero]
-  · rw [(loopChainAugmentation B b R).bimoduleDifferential_eq_zero rfl, LinearMap.zero_apply,
-      add_zero]
-    apply (Bimodule.of _).symm.injective
-    simp [r]
+        (loopChainAugmentation B b R).bimoduleDifferential w' = w :=
+  have hd := (loopChainAugmentation B b R).bimoduleDifferential_eq_zero rfl
+  exists_differential_eq_and_add_eq_of_augmentation
+    (f := (pathFromChainAugmentationHom B b H R).restrictScalars R)
+    (εN := (Bimodule.of (loopChainAugmentation B b R).toGradedAlgHom.toAlgHom).symm.toLinearMap)
+    pathFromChainAugmentationHom_differential bimoduleOf_symm_pathFromChainAugmentationHom
+    (by simp [hd]) (cubicalChainModuleDifferential_cubicalChainModulePoint (MoorePathFrom.refl B b))
+    (cubicalChainModuleAugmentation_cubicalChainModulePoint _)
+    exists_pathFromChainDifferential_eq_of_augmentation_eq_zero
+    (fun _ hw ↦ ⟨0, by rw [hd, LinearMap.zero_apply, eq_comm]; simpa using hw⟩) hu hw
 
 end Augmentation
 
