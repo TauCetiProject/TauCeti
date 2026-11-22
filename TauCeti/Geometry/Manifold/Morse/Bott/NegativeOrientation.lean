@@ -46,7 +46,7 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
 In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
-* `negativeNormalSpaceSignLocalSystemIso_eq`: the isomorphism of orientation local systems is the
+* `negativeNormalSpaceSignLocalSystemIso_def`: the isomorphism of orientation local systems is the
   one induced by projecting along the positive normal spaces of `g`.
 * `nonempty_vectorBundleOrientation_negativeNormalSpace_iff`: the negative normal bundles of two
   fibre metrics are orientable together.
@@ -137,7 +137,7 @@ def negativeNormalSpaceSignLocalSystemIso
 fibre metrics is the one induced by projecting along the positive normal spaces of `g`
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`). -/
 @[simp]
-theorem negativeNormalSpaceSignLocalSystemIso_eq
+theorem negativeNormalSpaceSignLocalSystemIso_def
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
     (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
