@@ -59,7 +59,7 @@ theorem LocallyBrownianIntegrable.mul_of_locally_bounded
   have hXm : StronglyMeasurable (fun t ↦ X t ω) := hm.comp_measurable measurable_prodMk_right
   refine (hω T).of_le_mul (c := C)
     ((hω T).aestronglyMeasurable.mul hXm.aestronglyMeasurable) ?_
-  rw [NNReal.comap_volume_restrict_Ioc]
+  rw [Probability.timeMeasure_def]
   filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
   calc
     ‖H t ω * X t ω‖ = ‖H t ω‖ * ‖X t ω‖ := norm_mul _ _

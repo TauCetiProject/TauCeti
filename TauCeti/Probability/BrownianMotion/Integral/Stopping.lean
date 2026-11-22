@@ -92,7 +92,7 @@ theorem BrownianIntegrable.tendsto_eLpNorm_ite_le_sub
     Tendsto (fun n ↦ eLpNorm
       (fun p : ℝ≥0 × Ω ↦ (if (p.1 : WithTop ℝ≥0) ≤ τ n p.2 then H p.1 p.2 else 0) -
         H p.1 p.2) 2
-      (((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)).prod P))
+      ((Probability.timeMeasure T).prod P))
       atTop (𝓝 0) := by
   apply tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (by norm_num)
     (Eventually.of_forall fun n ↦ ((hH.ite_le (hτ n)).memLp T).aestronglyMeasurable)
@@ -101,8 +101,7 @@ theorem BrownianIntegrable.tendsto_eLpNorm_ite_le_sub
       dsimp only [Function.uncurry]
       split_ifs <;> simp
   · have hprod := (Measure.quasiMeasurePreserving_snd
-        (μ := (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ))
-        (ν := P)).ae hlim
+        (μ := Probability.timeMeasure T) (ν := P)).ae hlim
     filter_upwards [hprod] with p hp
     apply tendsto_const_nhds.congr'
     filter_upwards [hp.eventually (eventually_gt_nhds (WithTop.coe_lt_top p.1))] with n hn
@@ -126,7 +125,7 @@ theorem LocallyBrownianIntegrable.tendsto_measure_lintegral_ite_le_of_tendsto_of
     (fun d ↦ ((((hH.isStronglyPredictable.ite_le (hσ d)).sub
       (hH.isStronglyPredictable.ite_le hτ)).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const
         2).lintegral_prod_left' measurableSet_Ici) ?_
-  filter_upwards [hH.ae_memLp_timeMeasure, hlim, hle] with ω hω hlimω hleω
+  filter_upwards [hH.ae_memLp, hlim, hle] with ω hω hlimω hleω
   filter_upwards [(tendsto_lintegral_ite_le_pow_of_tendsto_of_le two_ne_zero hlimω hleω
     ((hω T).aestronglyMeasurable.eNorm.pow_const 2)
     ((hω T).aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.1 (hω T)).ne).eventually

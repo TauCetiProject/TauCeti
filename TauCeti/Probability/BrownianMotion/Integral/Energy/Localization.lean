@@ -55,7 +55,7 @@ theorem MeasureTheory.IsStronglyPredictable.brownianIntegrable_ite_le_energyLoca
   have hp := (hH.finiteEnergyCutoff TauCeti.nnvolume).ite_le
     (hH.isStoppingTime_energyLocalizer TauCeti.nnvolume C)
   refine ⟨hp, fun T ↦ ?_⟩
-  rw [NNReal.comap_volume_restrict_Ioc, ← TauCeti.nnvolume_def]
+  rw [TauCeti.Probability.timeMeasure_def, ← TauCeti.nnvolume_def]
   have hm := (hp.mono ℱ.predictable_le_prod).aestronglyMeasurable
     (μ := (TauCeti.nnvolume.restrict (Ioc 0 T)).prod P)
   rw [hm.memLp_two_iff_lintegral_enorm_sq_lt_top]
@@ -76,7 +76,7 @@ theorem ae_accumulatedEnergy_lt_top (hH : LocallyBrownianIntegrable ℱ P H) :
     ∀ᵐ ω ∂P, ∀ T : ℝ≥0, nnvolume.accumulatedEnergy H T ω < ∞ := by
   filter_upwards [hH.ae_memLp] with ω hω T
   have hfinite := (hω T).aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.mp (hω T)
-  rw [NNReal.comap_volume_restrict_Ioc, ← nnvolume_def] at hfinite
+  rw [Probability.timeMeasure_def, ← nnvolume_def] at hfinite
   simpa only [nnvolume.accumulatedEnergy_eq_setLIntegral_Ioc] using hfinite
 
 /-- Positive integer closed energy levels yield a native localizing sequence on the raw
@@ -117,7 +117,7 @@ theorem brownianIntegrable_ite_le_energyLocalizer [IsFiniteMeasure P]
   refine brownianIntegrable_iff_timeMeasure.2
     ⟨hH.isStronglyPredictable.ite_le
       (hH.isStronglyPredictable.isStoppingTime_energyLocalizer nnvolume C), fun T ↦
-      (hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer C).memLp_timeMeasure T
+      (hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer C).memLp T
         |>.ae_eq ?_⟩
   filter_upwards
     [Measure.quasiMeasurePreserving_fst.tendsto_ae (Probability.ae_mem_Ioc_timeMeasure T),

@@ -75,7 +75,7 @@ theorem brownianIntegrable_geometricBrownianMotion (hW : IsPreBrownianReal W P)
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
   refine ⟨hpred, fun T ↦ ?_⟩
   have hm : AEStronglyMeasurable (Function.uncurry (geometricBrownianMotion s μ σ W))
-      (((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)).prod P) :=
+      ((Probability.timeMeasure T).prod P) :=
     (hpred.mono ℱ.predictable_le_prod).aestronglyMeasurable
   refine (memLp_two_iff_integrable_sq hm).2 ((integrable_prod_iff (hm.pow 2)).2 ⟨?_, ?_⟩)
   · exact Eventually.of_forall fun t ↦
@@ -87,13 +87,12 @@ theorem brownianIntegrable_geometricBrownianMotion (hW : IsPreBrownianReal W P)
       convert hW.integral_rpow_geometricBrownianMotion s μ σ 2 t using 1 <;>
         norm_num
     simp only [Pi.pow_apply, Function.uncurry_apply_pair, hmoment]
-    rw [NNReal.comap_volume_restrict_Ioc]
+    rw [Probability.timeMeasure_def]
     have hcont : Continuous (fun t : ℝ≥0 ↦ s ^ 2 * exp ((2 * μ + σ ^ 2) * t)) := by
       fun_prop
     refine hcont.continuousOn.integrableOn_of_subset_isCompact isCompact_Icc
       measurableSet_Ioc Ioc_subset_Icc_self ?_
-    rw [← Measure.restrict_apply_univ, ← NNReal.comap_volume_restrict_Ioc,
-      NNReal.comap_volume_restrict_Ioc_univ]
+    rw [← Measure.restrict_apply_univ, ← Probability.timeMeasure_def, Probability.timeMeasure_univ]
     exact ENNReal.coe_ne_top
 
 end ProbabilityTheory.IsPreBrownianReal

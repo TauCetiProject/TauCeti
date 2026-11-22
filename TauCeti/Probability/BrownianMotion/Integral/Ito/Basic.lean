@@ -188,7 +188,7 @@ namespace IsItoIntegral
 /-- Any integrand admitting an Itô integral has locally finite pathwise square energy. -/
 theorem locallyBrownianIntegrable (hI : IsItoIntegral ℱ P W H I) :
     LocallyBrownianIntegrable ℱ P H := by
-  refine locallyBrownianIntegrable_iff_nat_timeMeasure.2 ⟨hI.isStronglyPredictable, fun k ↦ ?_⟩
+  refine locallyBrownianIntegrable_iff_nat.2 ⟨hI.isStronglyPredictable, fun k ↦ ?_⟩
   obtain ⟨n, τ, a, -, -, hE, -⟩ := hI.exists_approx k
   let E (m : ℕ) (ω : Ω) :=
     ∫⁻ s, ‖Finance.simpleHolding (τ m) (n m) (a m) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure k
