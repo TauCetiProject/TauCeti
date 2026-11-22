@@ -11,8 +11,8 @@ public import Mathlib.Analysis.Complex.Harmonic.MeanValue
 /-!
 # Radial means and harmonic majorants of Hardy functions
 
-By the mean value property, a real harmonic majorant of `‖F‖ ^ 2` on the open unit disk bounds
-every interior squared circle mean of `F` by its value at the origin. Using the convergence of
+By the mean value property, a real harmonic majorant of a continuous function `g` on the open unit
+disk bounds every interior circle mean of `g` by its value at the origin. Using the convergence of
 squared radial means to the squared boundary norm from `DiskFunction`, every real harmonic
 majorant of the squared disk modulus therefore has value at the origin at least this boundary
 norm squared. This is the lower bound needed to identify the boundary norm with the norm
@@ -36,20 +36,20 @@ open scoped InnerProductSpace
 
 namespace TauCeti
 
-/-- A real harmonic majorant `u` of `‖F‖ ^ 2` on the open unit disk bounds each interior squared
-circle mean of a continuous `F` by its value at the origin. No boundary regularity of the majorant
+/-- A real harmonic majorant `u` of a continuous real function `g` on the open unit disk bounds
+each interior circle mean of `g` by its value at the origin. No boundary regularity of the majorant
 is required. -/
-theorem circleAverage_norm_sq_le_of_harmonic_majorant {F : ℂ → ℂ}
-    (hF : ContinuousOn F (Metric.ball 0 1)) {u : ℂ → ℝ}
+theorem circleAverage_le_of_harmonic_majorant {g : ℂ → ℝ}
+    (hg : ContinuousOn g (Metric.ball 0 1)) {u : ℂ → ℝ}
     (hu : InnerProductSpace.HarmonicOnNhd u (Metric.ball 0 1))
-    (hmajor : ∀ w ∈ Metric.ball (0 : ℂ) 1, ‖F w‖ ^ 2 ≤ u w) {r : ℝ} (hr : |r| < 1) :
-    Real.circleAverage (fun w ↦ ‖F w‖ ^ 2) 0 r ≤ u 0 := by
+    (hmajor : ∀ w ∈ Metric.ball (0 : ℂ) 1, g w ≤ u w) {r : ℝ} (hr : |r| < 1) :
+    Real.circleAverage g 0 r ≤ u 0 := by
   have hsub : Metric.closedBall (0 : ℂ) |r| ⊆ Metric.ball 0 1 :=
     Metric.closedBall_subset_ball hr
   have hus := hu.mono hsub
   rw [← hus.circleAverage_eq (R := r)]
   apply Real.circleAverage_mono
-  · exact ((hF.mono (Metric.sphere_subset_closedBall.trans hsub)).norm.pow 2).circleIntegrable'
+  · exact (hg.mono (Metric.sphere_subset_closedBall.trans hsub)).circleIntegrable'
   · exact (hus.continuousOn.mono Metric.sphere_subset_closedBall).circleIntegrable'
   · intro w hw
     exact hmajor w (hsub (Metric.sphere_subset_closedBall hw))
@@ -66,8 +66,8 @@ theorem norm_sq_le_harmonic_majorant_zero
     ‖x‖ ^ 2 ≤ u 0 := by
   apply le_of_tendsto x.tendsto_circleAverage_norm_sq_diskFunction
   filter_upwards [Ioo_mem_nhdsLT (by norm_num : (-1 : ℝ) < 1)] with r hr
-  exact circleAverage_norm_sq_le_of_harmonic_majorant x.analyticOnNhd_diskFunction.continuousOn hu
-    hmajor (abs_lt.mpr hr)
+  exact circleAverage_le_of_harmonic_majorant (g := fun w ↦ ‖x.diskFunction w‖ ^ 2)
+    (x.analyticOnNhd_diskFunction.continuousOn.norm.pow 2) hu hmajor (abs_lt.mpr hr)
 
 end HardySpace
 

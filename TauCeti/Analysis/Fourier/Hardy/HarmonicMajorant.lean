@@ -11,6 +11,8 @@ import Mathlib.Analysis.Complex.TaylorSeries
 import TauCeti.Analysis.Complex.Herglotz
 import TauCeti.Analysis.Complex.Poisson.Integral
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Analysis.InnerProductSpace.Parseval
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The harmonic-majorant description of the Hardy space
@@ -55,7 +57,7 @@ probability measure `P_w(t) dt` shows that the Poisson integral of `‖x‖ ^ 2`
 Conversely, if `F` is holomorphic with a harmonic majorant `u`, then for `0 < r < 1` the dilation
 `w ↦ F (r * w)` is the disk function of the Hardy function with coefficients `aₙ * r ^ n`, where
 `aₙ` are the Taylor coefficients of `F` at the origin. The circle means of this dilation are
-circle means of `F`, which `TauCeti.circleAverage_norm_sq_le_of_harmonic_majorant` bounds by
+circle means of `F`, which `TauCeti.circleAverage_le_of_harmonic_majorant` bounds by
 `u 0`; their limit gives `∑ n, ‖aₙ‖ ^ 2 * r ^ (2 * n) ≤ u 0`, and letting `r → 1⁻` shows that
 `(aₙ)` is square summable with `∑ n, ‖aₙ‖ ^ 2 ≤ u 0`.
 
@@ -82,50 +84,6 @@ private theorem integrable_coe :
     Integrable (x : Lp ℂ 2 (haarAddCircle (T := 1))) haarAddCircle :=
   (Lp.memLp _).integrable one_le_two
 
-/-- Integrating an `L¹` function against the geometric kernel `(1 - c * e_m)⁻¹` for `‖c‖ < 1`
-gives the series `∑ n, c ^ n * f̂ (-(n * m))`. -/
-private theorem hasSum_integral_inv_one_sub_mul_fourier {f : UnitAddCircle → ℂ}
-    (hf : Integrable f haarAddCircle) {c : ℂ} (hc : ‖c‖ < 1) (m : ℤ) :
-    HasSum (fun n : ℕ ↦ c ^ n * fourierCoeff f (-(n * m)))
-      (∫ t, (1 - c * fourier m t)⁻¹ * f t ∂haarAddCircle) := by
-  have hpow (n : ℕ) (t : UnitAddCircle) : (fourier m t : ℂ) ^ n = fourier (n * m) t := by
-    rw [← fourier_pow, ContinuousMap.pow_apply]
-  set F : ℕ → UnitAddCircle → ℂ := fun n t ↦ c ^ n * (fourier (n * m) t * f t) with hF
-  have hF_int (n : ℕ) : Integrable (F n) haarAddCircle :=
-    (hf.bdd_mul (c := 1) (fourier _).continuous.aestronglyMeasurable
-      (ae_of_all _ fun t ↦ (norm_fourier_apply _ t).le)).const_mul _
-  have hF_norm (n : ℕ) : ∫ t, ‖F n t‖ ∂haarAddCircle = ‖c‖ ^ n * ∫ t, ‖f t‖ ∂haarAddCircle := by
-    simp only [hF, norm_mul, norm_pow, norm_fourier_apply, one_mul]
-    exact integral_const_mul _ _
-  have hsum := hasSum_integral_of_summable_integral_norm hF_int (by
-    simp_rw [hF_norm]
-    exact (summable_geometric_of_lt_one (norm_nonneg _) hc).mul_right _)
-  have hcoeff (n : ℕ) : ∫ t, F n t ∂haarAddCircle = c ^ n * fourierCoeff f (-(n * m)) := by
-    rw [integral_const_mul, fourierCoeff, neg_neg]
-    rfl
-  have hker (t : UnitAddCircle) : ∑' n, F n t = (1 - c * fourier m t)⁻¹ * f t := by
-    have hg : HasSum (fun n : ℕ ↦ (c * fourier m t) ^ n) (1 - c * fourier m t)⁻¹ :=
-      hasSum_geometric_of_norm_lt_one (by rwa [norm_mul, norm_fourier_apply, mul_one])
-    refine ((hg.mul_right (f t)).congr_fun fun n ↦ ?_).tsum_eq
-    simp only [hF, mul_pow, hpow, mul_assoc]
-  simp_rw [hcoeff, hker] at hsum
-  exact hsum
-
-/-- An integrable function on the circle stays integrable after multiplication by a continuous
-function, which is bounded. -/
-private theorem integrable_continuous_mul {R : Type*} [NormedRing R]
-    {g f : UnitAddCircle → R} (hg : Continuous g)
-    (hf : Integrable f haarAddCircle) : Integrable (fun t ↦ g t * f t) haarAddCircle :=
-  hf.mul_of_top_right (BoundedContinuousFunction.memLp_top (.mkOfCompact ⟨g, hg⟩))
-
-private theorem continuous_inv_one_sub_mul_fourier {c : ℂ} (hc : ‖c‖ < 1) (m : ℤ) :
-    Continuous fun t : UnitAddCircle ↦ (1 - c * fourier m t)⁻¹ :=
-  (continuous_const.sub (continuous_const.mul (fourier m).continuous)).inv₀ fun t h ↦ by
-    have h' : c * fourier m t = 1 := (sub_eq_zero.1 h).symm
-    have := congrArg norm h'
-    rw [norm_mul, norm_fourier_apply, mul_one, norm_one] at this
-    exact hc.ne this
-
 /-- **Cauchy formula for `H²`.** On the open unit disk the disk function is the integral of the
 boundary function against the Cauchy–Szegő kernel `(1 - w * conj (e t))⁻¹`. -/
 theorem diskFunction_eq_integral (hw : ‖w‖ < 1) :
@@ -150,47 +108,13 @@ private theorem integral_inv_one_sub_conj_mul (hw : ‖w‖ < 1) :
   · simp
   · rw [x.fourierCoeff_eq_zero (by omega), mul_zero]
 
-/-- On the unit circle the Poisson kernel is twice the real part of the Cauchy–Szegő kernel,
-minus one. -/
-private theorem ofReal_poissonKernel_eq {z : ℂ} (hz : ‖z‖ = 1) (hw : ‖w‖ < 1) :
-    (poissonKernel 0 w z : ℂ) = (1 - w * conj z)⁻¹ + (1 - conj w * z)⁻¹ - 1 := by
-  have hzz : z * conj z = 1 := by rw [mul_conj, normSq_eq_norm_sq, hz]; simp
-  have hzw : z - w ≠ 0 := fun h ↦ by
-    rw [sub_eq_zero] at h; rw [h] at hz; exact hw.ne hz
-  have h1 : 1 - w * conj z = conj z * (z - w) := by linear_combination (-1 : ℂ) * hzz
-  have h2 : 1 - conj w * z = z * conj (z - w) := by rw [map_sub]; linear_combination (-1 : ℂ) * hzz
-  have hz0 : z ≠ 0 := by rintro rfl; simp at hz
-  have hzc : conj z ≠ 0 := by simpa using hz0
-  have hzwc : conj (z - w) ≠ 0 := (map_ne_zero _).2 hzw
-  rw [poissonKernel_def, h1, h2]
-  simp only [sub_zero, hz]
-  have hn : ((‖z - w‖ ^ 2 : ℝ) : ℂ) = (z - w) * conj (z - w) := by
-    rw [mul_conj, normSq_eq_norm_sq]
-  have hww : ((‖w‖ ^ 2 : ℝ) : ℂ) = w * conj w := by rw [mul_conj, normSq_eq_norm_sq]
-  push_cast at hn hww ⊢
-  rw [hn, hww]
-  field_simp
-  rw [map_sub]
-  linear_combination (z * conj z - w * conj z - conj w * z) * hzz
-
-private theorem continuous_poissonKernel_toCircle (hw : ‖w‖ < 1) :
-    Continuous fun t : UnitAddCircle ↦ poissonKernel 0 w (toCircle t) :=
-  (continuousOn_poissonKernel (s := sphere 0 1) (by simpa using hw.ne)).comp_continuous
-    (continuous_subtype_val.comp continuous_toCircle) fun t ↦ by simp
-
-private theorem integral_poissonKernel_toCircle (hw : ‖w‖ < 1) :
-    ∫ t : UnitAddCircle, poissonKernel 0 w (toCircle t) ∂haarAddCircle = 1 := by
-  have h := integral_haarAddCircle_comp_toCircle (T := 1) (poissonKernel 0 w) 0 1
-  simp only [ofReal_one, one_mul, add_zero] at h
-  rw [h, circleAverage_poissonKernel (by simpa using hw)]
-
 /-- **Poisson formula for `H²`.** On the open unit disk the disk function is the Poisson integral
 of the boundary function. -/
 theorem diskFunction_eq_integral_poissonKernel (hw : ‖w‖ < 1) :
     x.diskFunction w = ∫ t, (poissonKernel 0 w (toCircle t) : ℂ) *
       (x : Lp ℂ 2 (haarAddCircle (T := 1))) t ∂haarAddCircle := by
-  have hA := continuous_inv_one_sub_mul_fourier hw (-1)
-  have hB := continuous_inv_one_sub_mul_fourier (by rwa [norm_conj] : ‖conj w‖ < 1) 1
+  have hA := continuous_inv_one_sub_mul_fourier (T := 1) hw (-1)
+  have hB := continuous_inv_one_sub_mul_fourier (T := 1) (by rwa [norm_conj] : ‖conj w‖ < 1) 1
   simp only [fourier_neg, fourier_one] at hA hB
   have hint := x.integrable_coe
   calc
@@ -202,8 +126,8 @@ theorem diskFunction_eq_integral_poissonKernel (hw : ‖w‖ < 1) :
       rw [x.diskFunction_eq_integral hw, x.integral_inv_one_sub_conj_mul hw]
       simp [fourierCoeff]
     _ = _ := by
-      have hA' := integrable_continuous_mul hA hint
-      have hB' := integrable_continuous_mul hB hint
+      have hA' := hint.continuous_mul_of_compactSpace hA
+      have hB' := hint.continuous_mul_of_compactSpace hB
       have hAB : Integrable (fun t ↦ (1 - w * conj (toCircle t : ℂ))⁻¹ *
           (x : Lp ℂ 2 (haarAddCircle (T := 1))) t + (1 - conj w * (toCircle t : ℂ))⁻¹ *
           (x : Lp ℂ 2 (haarAddCircle (T := 1))) t) haarAddCircle := hA'.add hB'
@@ -237,10 +161,10 @@ theorem norm_sq_diskFunction_le_poissonMajorant (hw : ‖w‖ < 1) :
   set f : UnitAddCircle → ℂ := ⇑(x : Lp ℂ 2 (haarAddCircle (T := 1)))
   set P : UnitAddCircle → ℝ := fun t ↦ poissonKernel 0 w (toCircle t)
   set c := x.diskFunction w
-  have hP := continuous_poissonKernel_toCircle hw
+  have hP := continuous_poissonKernel_toCircle (T := 1) hw
   have hP0 (t : UnitAddCircle) : 0 ≤ P t := poissonKernel_nonneg (by simpa using hw.le)
   have hPf : Integrable (fun t ↦ (P t : ℂ) * f t) haarAddCircle :=
-    integrable_continuous_mul (continuous_ofReal.comp hP) x.integrable_coe
+    x.integrable_coe.continuous_mul_of_compactSpace (continuous_ofReal.comp hP)
   have hcross : ∫ t, P t * (conj c * f t).re ∂haarAddCircle = ‖c‖ ^ 2 := by
     have h : ∫ t, P t * (conj c * f t).re ∂haarAddCircle =
         (∫ t, conj c * ((P t : ℂ) * f t) ∂haarAddCircle).re := by
@@ -258,10 +182,10 @@ theorem norm_sq_diskFunction_le_poissonMajorant (hw : ‖w‖ < 1) :
       x.poissonMajorant w - 2 * ∫ t, P t * (conj c * f t).re ∂haarAddCircle +
         ‖c‖ ^ 2 * ∫ t, P t ∂haarAddCircle := by
     have h1 : Integrable (fun t ↦ P t * ‖f t‖ ^ 2) haarAddCircle :=
-      integrable_continuous_mul hP x.integrable_norm_sq
+      x.integrable_norm_sq.continuous_mul_of_compactSpace hP
     have h2 : Integrable (fun t ↦ P t * (conj c * f t).re) haarAddCircle := by
-      refine (integrable_continuous_mul hP ((x.integrable_coe.const_mul (conj c)).re)).congr ?_
-      exact ae_of_all _ fun t ↦ rfl
+      simpa only [RCLike.re_to_complex] using
+        (x.integrable_coe.const_mul (conj c)).re.continuous_mul_of_compactSpace hP
     have h3 : Integrable P haarAddCircle :=
       hP.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
     have h12 : Integrable (fun t ↦ P t * ‖f t‖ ^ 2 - 2 * (P t * (conj c * f t).re))
@@ -299,14 +223,14 @@ private theorem exists_poissonMajorant_eq_re_herglotzTransform :
   refine ⟨(haarAddCircle.withDensity fun t ↦ (ρ t : ENNReal)).map toCircle, inferInstance,
     fun w hw ↦ ?_⟩
   have hw' : ‖w‖ < 1 := mem_ball_zero_iff.1 hw
-  have hne (z : ℂ) (hz : ‖z‖ = 1) : z - w ≠ 0 := fun h ↦ by
-    rw [sub_eq_zero] at h; rw [h] at hz; exact hw'.ne hz
+  have hne (z : ℂ) (hz : ‖z‖ = 1) : z - w ≠ 0 :=
+    sub_ne_zero.2 (ne_of_apply_ne norm (hz.trans_ne hw'.ne'))
   have hH : Continuous fun z : Circle ↦ ((z : ℂ) + w) / ((z : ℂ) - w) :=
     (continuous_subtype_val.add continuous_const).div
       (continuous_subtype_val.sub continuous_const) fun z ↦ hne z (Circle.norm_coe z)
   have hint : Integrable (fun t : UnitAddCircle ↦ ((toCircle t : ℂ) + w) / ((toCircle t : ℂ) - w) *
       ((‖(x : Lp ℂ 2 (haarAddCircle (T := 1))) t‖ ^ 2 : ℝ) : ℂ)) haarAddCircle :=
-    integrable_continuous_mul (hH.comp continuous_toCircle) x.integrable_norm_sq.ofReal
+    x.integrable_norm_sq.ofReal.continuous_mul_of_compactSpace (hH.comp continuous_toCircle)
   rw [Measure.herglotzTransform_def, integral_map continuous_toCircle.aemeasurable
     hH.aestronglyMeasurable, integral_withDensity_eq_integral_smul hρ]
   have h := integral_re hint
@@ -354,12 +278,6 @@ theorem diskFunction_hardyBasis_repr_symm (a : lp (fun _ : ℕ ↦ ℂ) 2) (w : 
     (hardyBasis.repr.symm a).diskFunction w = ∑' n, a n * w ^ n := by
   rw [diskFunction_def]
   exact tsum_congr fun n ↦ by rw [← hardyBasis_repr, LinearIsometryEquiv.apply_symm_apply]
-
-private theorem norm_sq_eq_tsum_norm_sq_hardyBasis_repr (y : HardySpace) :
-    ‖y‖ ^ 2 = ∑' n, ‖hardyBasis.repr y n‖ ^ 2 := by
-  have h := lp.norm_rpow_eq_tsum (p := 2) (by norm_num) (hardyBasis.repr y)
-  simp only [ENNReal.toReal_ofNat, Real.rpow_two] at h
-  rw [← h, LinearIsometryEquiv.norm_map]
 
 variable {F : ℂ → ℂ}
 
@@ -428,7 +346,8 @@ private theorem sum_range_norm_sq_taylorCoeff_mul_le (hF : DifferentiableOn ℂ 
     have hrs : |r * s| < 1 := by
       rw [abs_mul, abs_of_pos hr₀]; nlinarith [abs_nonneg s]
     refine le_of_eq_of_le ?_
-      (circleAverage_norm_sq_le_of_harmonic_majorant hF.continuousOn hu hmajor hrs)
+      (circleAverage_le_of_harmonic_majorant (g := fun w ↦ ‖F w‖ ^ 2)
+        (hF.continuousOn.norm.pow 2) hu hmajor hrs)
     rw [Real.circleAverage_eq_circleAverage_zero_one,
       Real.circleAverage_eq_circleAverage_zero_one (c := 0) (R := r * s)]
     refine Real.circleAverage_congr_sphere fun z hz ↦ ?_
@@ -440,10 +359,10 @@ private theorem sum_range_norm_sq_taylorCoeff_mul_le (hF : DifferentiableOn ℂ 
     push_cast
     ring_nf
   have hy_le := le_of_tendsto y.tendsto_circleAverage_norm_sq_diskFunction hmean
-  rw [norm_sq_eq_tsum_norm_sq_hardyBasis_repr] at hy_le
+  rw [← hardyBasis.tsum_norm_sq_inner y] at hy_le
+  simp only [← HilbertBasis.repr_apply_apply] at hy_le
   have hsum : Summable fun n ↦ ‖hardyBasis.repr y n‖ ^ 2 := by
-    simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
-      (lp.memℓp (hardyBasis.repr y)).summable (by norm_num)
+    simpa only [← HilbertBasis.repr_apply_apply] using hardyBasis.summable_norm_sq_inner y
   refine le_trans (le_of_eq (Finset.sum_congr rfl fun n _ ↦ ?_))
     ((hsum.sum_le_tsum _ fun n _ ↦ by positivity).trans hy_le)
   rw [hrepr]
@@ -473,7 +392,8 @@ theorem exists_eqOn_diskFunction_of_harmonic_majorant (hF : DifferentiableOn ℂ
   refine ⟨hardyBasis.repr.symm ⟨a, memℓp_gen (by simpa using hsum)⟩, fun w hw ↦ ?_, ?_⟩
   · rw [diskFunction_hardyBasis_repr_symm]
     exact (hasSum_taylorCoeff_mul_pow hF hw).tsum_eq.symm
-  · rw [norm_sq_eq_tsum_norm_sq_hardyBasis_repr, LinearIsometryEquiv.apply_symm_apply]
+  · rw [← hardyBasis.tsum_norm_sq_inner]
+    simp only [← HilbertBasis.repr_apply_apply, LinearIsometryEquiv.apply_symm_apply]
     exact Real.tsum_le_of_sum_range_le (fun _ ↦ by positivity) hpartial
 
 /-- **The harmonic-majorant description of `H²`.** A function on the open unit disk is the disk
