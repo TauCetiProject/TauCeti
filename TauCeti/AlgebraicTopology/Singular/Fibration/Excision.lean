@@ -140,12 +140,12 @@ private theorem isWeakHomotopyEquivalence_inclusion_preimage_val_radialNeighborh
     (ContinuousMap.inclusion (Set.preimage_mono hST :
       (Subtype.val ⁻¹' S : Set C) ⊆ Subtype.val ⁻¹' T)).IsWeakHomotopyEquivalence := by
   subst hS hT
-  let e := ContinuousMap.HomotopyEquiv.ofRetraction A.subset_radialNeighborhood
-    A.radialNeighborhoodRetraction (Subcomplex.radialNeighborhoodRetraction_inclusion A)
-    A.radialNeighborhoodDeformation.symm.toHomotopy
+  let e := ContinuousMap.HomotopyEquiv.ofDeformationRetraction
+    (ContinuousMap.inclusion A.subset_radialNeighborhood) A.radialNeighborhoodRetraction
+    (Subcomplex.radialNeighborhoodRetraction_inclusion A)
+    (ContinuousMap.HomotopicRel.homotopic ⟨A.radialNeighborhoodDeformation.symm⟩)
   have he : e.toFun = ContinuousMap.inclusion A.subset_radialNeighborhood :=
-    ContinuousMap.ext fun a ↦
-      Subtype.ext (ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ _ _ _ a)
+    ContinuousMap.HomotopyEquiv.ofDeformationRetraction_toFun ..
   rw [ContinuousMap.isWeakHomotopyEquivalence_inclusion_preimage_val_iff
     (A.radialNeighborhood_subset_complex)]
   exact he ▸ e.isWeakHomotopyEquivalence

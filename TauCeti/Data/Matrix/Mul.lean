@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Matrix.Mul
 
 /-!
-# Matrix products: powers, nonvanishing, outer products, and opposite transposes
+# Matrix products: positivity of powers, nonvanishing of factors and opposite rings
 
 Over a strictly ordered semiring, once some power `A ^ k` with `k > 0` of an entrywise nonnegative
 square matrix `A` is strictly positive, every later power is strictly positive too: each row of `A`
@@ -17,16 +17,19 @@ strictly positive. This is the form in which positivity propagates along the pow
 matrix.
 
 If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
-zero.
+zero. A submatrix of a product can be computed through part of the inner index, provided the
+relevant rows of the left factor vanish off that part. Products of matrices respect gradings of
+their indices: the identity matrix and a product of degree-preserving matrices are
+degree-preserving, and a product of matrices intertwining square matrices intertwines them.
 
 Submatrices of an outer product `vecMulVec u v` are outer products of the reindexed vectors.
 
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
 
-Over noncommutative rings, transpose followed by entrywise `MulOpposite.op` or `MulOpposite.unop`
-reverses matrix multiplication and intertwines column-vector multiplication with row-vector
-multiplication.
+Transposing a product of rectangular matrices and passing to the opposite ring reverses the
+factors, intertwines `mulVec` with `vecMul`, and commutes with entrywise ring homomorphisms;
+transposition with `MulOpposite.op` and with `MulOpposite.unop` are mutually inverse.
 
 ## Main results
 
@@ -35,14 +38,20 @@ multiplication.
 * `Matrix.nonempty_of_mul_ne_zero`, `Matrix.left_ne_zero_of_mul_ne_zero`,
   `Matrix.right_ne_zero_of_mul_ne_zero`: if a matrix product is nonzero, then the inner index type
   is nonempty and neither factor is zero.
+* `Matrix.submatrix_mul_of_injective`: a submatrix of a product is the product of submatrices
+  through an injective inner reindexing whose range carries the relevant rows of the left factor.
+* `Matrix.eq_of_mul_apply_ne_zero`: a product of degree-preserving matrices is degree-preserving.
+* `Matrix.eq_of_one_apply_ne_zero`: the identity matrix is degree-preserving.
+* `Matrix.mul_mul_eq_mul_mul_of_mul_eq_mul`: if `D₁ * X = X * D₂` and `D₂ * Y = Y * D₃`, then
+  `D₁ * (X * Y) = X * Y * D₃`.
 * `Matrix.vecMulVec_single_one_smul`: `vecMulVec (Pi.single i 1) (r • v) = r • vecMulVec
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 * `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
   reindexed vectors.
-* `Matrix.transpose_map_op_mul`, `Matrix.transpose_map_unop_mul`, `Matrix.op_comp_mulVec`,
-  `Matrix.transpose_map_op_map_ringHom_op`: opposite-entry transpose reverses matrix
-  multiplication, intertwines `mulVec` with `vecMul`, and commutes with entrywise ring
-  homomorphisms.
+* `Matrix.transpose_mul_map_op`, `Matrix.transpose_mul_map_unop`, `Matrix.op_comp_mulVec`,
+  `Matrix.transpose_map_op_map_ringHom_op`: transposing a product and passing to or from the
+  opposite ring reverses the factors, intertwines `mulVec` with `vecMul`, and commutes with
+  entrywise ring homomorphisms.
 -/
 
 public section
@@ -97,7 +106,54 @@ theorem left_ne_zero_of_mul_ne_zero {A : Matrix m n K} {B : Matrix n p K} (h : A
 theorem right_ne_zero_of_mul_ne_zero {A : Matrix m n K} {B : Matrix n p K} (h : A * B ≠ 0) :
     B ≠ 0 := fun hB ↦ h (by simp [hB])
 
+/-- The rows `e₁` and columns `e₃` of a matrix product can be computed through the inner indices
+`e₂` alone, when `e₂` is injective and the rows `e₁` of the left factor vanish outside its range.
+For a bijective `e₂` this is `Matrix.submatrix_mul`. -/
+theorem submatrix_mul_of_injective {l o q : Type*} [Fintype o] (A : Matrix m n K)
+    (B : Matrix n p K) (e₁ : l → m) (e₂ : o → n) (e₃ : q → p) (he₂ : Function.Injective e₂)
+    (hA : ∀ i j, A (e₁ i) j ≠ 0 → j ∈ Set.range e₂) :
+    (A * B).submatrix e₁ e₃ = A.submatrix e₁ e₂ * B.submatrix e₂ e₃ :=
+  ext fun i k ↦ (Fintype.sum_of_injective e₂ he₂ _ _
+    (fun j hj ↦ by simp [not_ne_iff.mp (mt (hA i j) hj)]) fun _ ↦ rfl).symm
+
+/-- **Products preserve degrees.** If the nonzero entries `A i j` and `B j k` of two matrices
+only join indices of the same degree, so do the nonzero entries of `A * B`. -/
+theorem eq_of_mul_apply_ne_zero {G : Type*} {g₁ : m → G} {g₂ : n → G} {g₃ : p → G}
+    {A : Matrix m n K} {B : Matrix n p K} (hA : ∀ i j, A i j ≠ 0 → g₂ j = g₁ i)
+    (hB : ∀ j k, B j k ≠ 0 → g₃ k = g₂ j) (i : m) (k : p) (h : (A * B) i k ≠ 0) :
+    g₃ k = g₁ i := by
+  obtain ⟨j, -, hj⟩ := Finset.exists_ne_zero_of_sum_ne_zero h
+  rw [hB j k (right_ne_zero_of_mul hj), hA i j (left_ne_zero_of_mul hj)]
+
 end NonUnitalNonAssocSemiring
+
+section ZeroOne
+
+variable {R m : Type*} [Zero R] [One R] [DecidableEq m]
+
+/-- **The identity matrix preserves degrees.** The nonzero entries of `1` only join indices of the
+same degree. -/
+theorem eq_of_one_apply_ne_zero {G : Type*} {g : m → G} (i k : m)
+    (h : (1 : Matrix m m R) i k ≠ 0) : g k = g i := by
+  obtain rfl : i = k := by_contra fun hik ↦ h (one_apply_ne hik)
+  rfl
+
+end ZeroOne
+
+section NonUnitalSemiring
+
+variable {R ν₁ ν₂ ν₃ : Type*} [NonUnitalSemiring R]
+
+/-- A product of matrices intertwining square matrices intertwines them: if `D₁ * X = X * D₂` and
+`D₂ * Y = Y * D₃`, then `D₁ * (X * Y) = X * Y * D₃`. This is the analogue of `SemiconjBy.mul_left`
+for rectangular matrices. -/
+theorem mul_mul_eq_mul_mul_of_mul_eq_mul [Fintype ν₁] [Fintype ν₂] [Fintype ν₃]
+    {D₁ : Matrix ν₁ ν₁ R} {D₂ : Matrix ν₂ ν₂ R} {D₃ : Matrix ν₃ ν₃ R} {X : Matrix ν₁ ν₂ R}
+    {Y : Matrix ν₂ ν₃ R} (hX : D₁ * X = X * D₂) (hY : D₂ * Y = Y * D₃) :
+    D₁ * (X * Y) = X * Y * D₃ := by
+  rw [← Matrix.mul_assoc, hX, Matrix.mul_assoc, hY, Matrix.mul_assoc]
+
+end NonUnitalSemiring
 
 section MulZeroOneClass
 
@@ -124,46 +180,53 @@ theorem submatrix_vecMulVec {α l m n o : Type*} [Mul α] (u : m → α) (v : n 
   ext
   simp [vecMulVec_apply]
 
-end Matrix
-
 section MulOpposite
 
-open MulOpposite
+variable {α m n p : Type*}
 
-namespace Matrix
+/-- Transposing a matrix and passing to the opposite ring, then transposing back and returning to
+the ring, gives the original matrix. -/
+@[simp]
+theorem transpose_map_op_transpose_map_unop (M : Matrix m n α) :
+    (Mᵀ.map MulOpposite.op)ᵀ.map MulOpposite.unop = M :=
+  rfl
 
-variable {l m n R : Type*}
+/-- Transposing a matrix over the opposite ring and returning to the ring, then transposing back
+and passing to the opposite ring, gives the original matrix. -/
+@[simp]
+theorem transpose_map_unop_transpose_map_op (M : Matrix m n αᵐᵒᵖ) :
+    (Mᵀ.map MulOpposite.unop)ᵀ.map MulOpposite.op = M :=
+  rfl
 
-/-- Over any type with multiplication and commutative addition, transpose followed by entrywise
-`MulOpposite.op` reverses matrix multiplication. -/
-theorem transpose_map_op_mul [Fintype n] [Mul R] [AddCommMonoid R]
-    (x : Matrix m n R) (y : Matrix n l R) :
-    y.transpose.map op * x.transpose.map op = (x * y).transpose.map op := by
+/-- Transposing a product of matrices and passing to the opposite ring reverses the factors. -/
+theorem transpose_mul_map_op [Mul α] [AddCommMonoid α] [Fintype n] (M : Matrix m n α)
+    (N : Matrix n p α) :
+    (M * N)ᵀ.map MulOpposite.op = Nᵀ.map MulOpposite.op * Mᵀ.map MulOpposite.op := by
   ext i j
   simp [Matrix.mul_apply]
 
-/-- Over any type with multiplication and commutative addition, transpose followed by entrywise
-`MulOpposite.unop` reverses matrix multiplication. -/
-theorem transpose_map_unop_mul [Fintype n] [Mul R] [AddCommMonoid R]
-    (x : Matrix m n Rᵐᵒᵖ) (y : Matrix n l Rᵐᵒᵖ) :
-    y.transpose.map unop * x.transpose.map unop = (x * y).transpose.map unop := by
+/-- Transposing a product of matrices over the opposite ring and returning to the ring reverses the
+factors. -/
+theorem transpose_mul_map_unop [Mul α] [AddCommMonoid α] [Fintype n] (M : Matrix m n αᵐᵒᵖ)
+    (N : Matrix n p αᵐᵒᵖ) :
+    (M * N)ᵀ.map MulOpposite.unop = Nᵀ.map MulOpposite.unop * Mᵀ.map MulOpposite.unop := by
   ext i j
   simp [Matrix.mul_apply]
 
 /-- Applying `MulOpposite.op` to each coordinate intertwines matrix-vector multiplication by `M`
 with vector-matrix multiplication by `Mᵀ.map op`. -/
-theorem op_comp_mulVec [NonUnitalNonAssocSemiring R] [Fintype n]
-    (M : Matrix m n R) (v : n → R) :
-    op ∘ (M *ᵥ v) = (op ∘ v) ᵥ* M.transpose.map op := by
+theorem op_comp_mulVec [NonUnitalNonAssocSemiring α] [Fintype n]
+    (M : Matrix m n α) (v : n → α) :
+    MulOpposite.op ∘ (M *ᵥ v) = (MulOpposite.op ∘ v) ᵥ* Mᵀ.map MulOpposite.op := by
   ext i
   simp [mulVec, vecMul, dotProduct]
 
 /-- Applying `RingHom.op f` entrywise to `Mᵀ.map op` commutes with `(·)ᵀ.map op`. -/
-theorem transpose_map_op_map_ringHom_op {S : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
-    (M : Matrix m n R) (f : R →+* S) :
-    (M.transpose.map op).map (RingHom.op f) = (M.map f).transpose.map op :=
+theorem transpose_map_op_map_ringHom_op {β : Type*} [NonAssocSemiring α] [NonAssocSemiring β]
+    (M : Matrix m n α) (f : α →+* β) :
+    (Mᵀ.map MulOpposite.op).map (RingHom.op f) = (M.map f)ᵀ.map MulOpposite.op :=
   rfl
 
-end Matrix
-
 end MulOpposite
+
+end Matrix

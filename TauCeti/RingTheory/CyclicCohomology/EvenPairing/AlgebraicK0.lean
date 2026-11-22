@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
-public import TauCeti.LinearAlgebra.Matrix.Idempotent.Basic
+public import TauCeti.LinearAlgebra.Matrix.Idempotent
 public import TauCeti.RingTheory.CyclicCohomology.EvenPairing.Invariance
 
 /-!

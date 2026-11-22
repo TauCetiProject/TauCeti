@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.FreeGroup.Conjugacy.Computability
 public import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic
 public import TauCeti.GroupTheory.FreeGroup.Reduce
+import Mathlib.Tactic.Linarith
 
 /-!
 # Primitive-recursive maximal roots in free groups

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
-public import TauCeti.LinearAlgebra.Matrix.Idempotent.Basic
+public import TauCeti.LinearAlgebra.Matrix.Idempotent
 
 import TauCeti.Algebra.Module.Projective.Semilinear
 
