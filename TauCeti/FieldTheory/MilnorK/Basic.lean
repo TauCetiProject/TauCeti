@@ -98,27 +98,36 @@ theorem ofUnit_def (a : Rˣ) :
     ofUnit a = RingQuot.mkRingHom (milnorRel R) (TensorAlgebra.ι ℤ (Additive.ofMul a)) := by
   rfl
 
+/-- The degree-one unit map bundled as a `ℤ`-linear map `Additive Rˣ →ₗ[ℤ] MilnorK R`. -/
+def ofUnitHom (R : Type u) [CommSemiring R] : Additive Rˣ →ₗ[ℤ] MilnorK R :=
+  (RingQuot.mkRingHom (milnorRel R)).toIntAlgHom.toLinearMap.comp (TensorAlgebra.ι ℤ)
+
+/-- Evaluating `ofUnitHom` on `Additive.ofMul a` gives `ofUnit a`. -/
+@[simp]
+theorem ofUnitHom_ofMul (a : Rˣ) : ofUnitHom R (Additive.ofMul a) = ofUnit a := by
+  rfl
+
 /-- The degree-one generator sends `1 : Rˣ` to `0`. -/
 @[simp]
 theorem ofUnit_one : ofUnit (1 : Rˣ) = 0 := by
-  rw [ofUnit_def, ofMul_one, map_zero, map_zero]
+  rw [← ofUnitHom_ofMul, ofMul_one, map_zero]
 
 /-- The degree-one generator is additive in the multiplicative group of units. -/
 theorem ofUnit_mul (a b : Rˣ) : ofUnit (a * b) = ofUnit a + ofUnit b := by
-  rw [ofUnit_def, ofMul_mul, map_add, map_add, ofUnit_def, ofUnit_def]
+  rw [← ofUnitHom_ofMul, ofMul_mul, map_add, ofUnitHom_ofMul, ofUnitHom_ofMul]
 
 /-- The degree-one generator sends inverses to negatives. -/
 @[simp]
 theorem ofUnit_inv (a : Rˣ) : ofUnit a⁻¹ = -ofUnit a := by
-  rw [ofUnit_def, ofMul_inv, map_neg, map_neg, ofUnit_def]
+  rw [← ofUnitHom_ofMul, ofMul_inv, map_neg, ofUnitHom_ofMul]
 
 /-- The degree-one generator sends natural powers to scalar multiples. -/
 theorem ofUnit_pow (a : Rˣ) (n : ℕ) : ofUnit (a ^ n) = n • ofUnit a := by
-  rw [ofUnit_def, ofMul_pow, map_nsmul, map_nsmul, ofUnit_def]
+  rw [← ofUnitHom_ofMul, ofMul_pow, map_nsmul, ofUnitHom_ofMul]
 
 /-- The degree-one generator sends integer powers to integer scalar multiples. -/
 theorem ofUnit_zpow (a : Rˣ) (n : ℤ) : ofUnit (a ^ n) = n • ofUnit a := by
-  rw [ofUnit_def, ofMul_zpow, map_zsmul, map_zsmul, ofUnit_def]
+  rw [← ofUnitHom_ofMul, ofMul_zpow, map_zsmul, ofUnitHom_ofMul]
 
 /-- The Steinberg relation in `MilnorK R`: complementary units have zero product. -/
 theorem ofUnit_mul_ofUnit_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
@@ -135,15 +144,6 @@ theorem isSteinbergPairing_mul_ofUnit :
   map_one_left b := by simp
   map_one_right a := by simp
   map_add_eq_one _ _ hab := ofUnit_mul_ofUnit_of_add_eq_one hab
-
-/-- The degree-one unit map bundled as a `ℤ`-linear map `Additive Rˣ →ₗ[ℤ] MilnorK R`. -/
-def ofUnitHom (R : Type u) [CommSemiring R] : Additive Rˣ →ₗ[ℤ] MilnorK R :=
-  (RingQuot.mkRingHom (milnorRel R)).toIntAlgHom.toLinearMap.comp (TensorAlgebra.ι ℤ)
-
-/-- Evaluating `ofUnitHom` on `Additive.ofMul a` gives `ofUnit a`. -/
-@[simp]
-theorem ofUnitHom_ofMul (a : Rˣ) : ofUnitHom R (Additive.ofMul a) = ofUnit a := by
-  rfl
 
 /-- The Milnor symbol `{a₁, …, aₙ}`, defined as the ordered product of degree-one classes. -/
 def symbol (l : List Rˣ) : MilnorK R :=
@@ -270,23 +270,10 @@ theorem ringHom_ext {A : Type v} [Semiring A] {f g : MilnorK R →+* A}
   refine RingQuot.ringQuot_ext f g (RingHom.ext fun x ↦ ?_)
   induction x using TensorAlgebra.induction with
   | algebraMap r =>
-    cases r with
-    | ofNat n => simp only [Int.ofNat_eq_natCast, map_natCast]
-    | negSucc n =>
-      set y : TensorAlgebra ℤ (Additive Rˣ) := Nat.cast (n + 1)
-      have hf : f (RingQuot.mkRingHom (milnorRel R) (-y)) + (n + 1 : ℕ) = 0 := by
-        rw [← map_natCast (f.comp (RingQuot.mkRingHom (milnorRel R))), RingHom.comp_apply,
-          ← map_add, ← map_add, neg_add_cancel, map_zero, map_zero]
-      have hg : (n + 1 : ℕ) + g (RingQuot.mkRingHom (milnorRel R) (-y)) = 0 := by
-        rw [← map_natCast (g.comp (RingQuot.mkRingHom (milnorRel R))), RingHom.comp_apply,
-          ← map_add, ← map_add, add_neg_cancel, map_zero, map_zero]
-      have hneg : f (RingQuot.mkRingHom (milnorRel R) (-y)) =
-          g (RingQuot.mkRingHom (milnorRel R) (-y)) := by
-        calc f (RingQuot.mkRingHom (milnorRel R) (-y))
-            = f (RingQuot.mkRingHom (milnorRel R) (-y)) +
-                ((n + 1 : ℕ) + g (RingQuot.mkRingHom (milnorRel R) (-y))) := by rw [hg, add_zero]
-          _ = g (RingQuot.mkRingHom (milnorRel R) (-y)) := by rw [← add_assoc, hf, zero_add]
-      simpa only [RingHom.comp_apply, eq_intCast, Int.cast_negSucc, y] using hneg
+    exact RingHom.congr_fun
+      (RingHom.ext_int
+        ((f.comp (RingQuot.mkRingHom (milnorRel R))).comp (algebraMap ℤ _))
+        ((g.comp (RingQuot.mkRingHom (milnorRel R))).comp (algebraMap ℤ _))) r
   | ι x => exact h (Additive.toMul x)
   | mul x y hx hy => simp only [RingHom.comp_apply, map_mul] at hx hy ⊢; rw [hx, hy]
   | add x y hx hy => simp only [RingHom.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
@@ -346,16 +333,27 @@ theorem map_symbol {S : Type w} [CommSemiring S] (f : R →+* S) (l : List Rˣ) 
     map f (symbol l) = symbol (l.map (Units.map f.toMonoidHom)) := by
   simp [symbol, map_list_prod, List.map_map, Function.comp_def]
 
+/-- If an additive homomorphism out of `MilnorK R` sends every length-`n` symbol into an additive
+subgroup `S`, then it maps all of `MilnorK.degree R n` into `S`. -/
+theorem map_mem_of_symbol_mem {A : Type*} {σ : Type*} [AddGroup A] [SetLike σ A]
+    [AddSubgroupClass σ A] (g : MilnorK R →+ A) {S : σ} {n : ℕ}
+    (hg : ∀ l : List Rˣ, l.length = n → g (symbol l) ∈ S) {x : MilnorK R}
+    (hx : x ∈ degree R n) : g x ∈ S := by
+  rw [degree_eq_span_symbol] at hx
+  refine Submodule.span_induction (p := fun y _ ↦ g y ∈ S) ?_ (by simp)
+    (fun _ _ _ _ hx hy ↦ by rw [map_add]; exact add_mem hx hy)
+    (fun r _ _ hx ↦ by rw [map_zsmul]; exact zsmul_mem hx r) hx
+  rintro _ ⟨l, hl, rfl⟩
+  exact hg l hl
+
 /-- `MilnorK.map f` preserves every homogeneous degree piece. -/
 theorem map_mem_degree {S : Type w} [CommSemiring S] (f : R →+* S) {n : ℕ} {x : MilnorK R}
-    (hx : x ∈ degree R n) : map f x ∈ degree S n := by
-  rw [degree_eq_span_symbol] at hx
-  refine Submodule.span_induction (p := fun y _ ↦ map f y ∈ degree S n) ?_ (by simp)
-    (fun _ _ _ _ hx hy ↦ by simpa using add_mem hx hy)
-    (fun r _ _ hx ↦ by simpa using Submodule.smul_mem _ r hx) hx
-  rintro _ ⟨l, rfl, rfl⟩
-  rw [map_symbol]
-  simpa only [List.length_map] using symbol_mem_degree (l.map (Units.map f.toMonoidHom))
+    (hx : x ∈ degree R n) : map f x ∈ degree S n :=
+  map_mem_of_symbol_mem (map f).toAddMonoidHom (fun l hl ↦ by
+    change map f (symbol l) ∈ degree S n
+    rw [map_symbol]
+    simpa only [hl, List.length_map] using symbol_mem_degree (l.map (Units.map f.toMonoidHom)))
+    hx
 
 /-- The identity ring homomorphism induces the identity on `MilnorK`. -/
 @[simp]
