@@ -20,6 +20,8 @@ reproving the conversion pointwise:
   `(L.comp g).toLinearMap₁₂ = L.toLinearMap₁₂.comp g`;
 * `ContinuousLinearMap.toLinearMap₁₂_flip`: transposition, `L.flip.toLinearMap₁₂ =
   L.toLinearMap₁₂.flip`;
+* `ContinuousLinearMap.toLinearMap₁₂_bilinearComp`: precomposition in both arguments,
+  `(L.bilinearComp f g).toLinearMap₁₂ = L.toLinearMap₁₂.compl₁₂ f g`;
 * `ContinuousLinearMap.toLinearMap₁₂_smulRight`: rank-one maps, `(f.smulRight A).toLinearMap₁₂ =
   (f : E →ₗ 𝕜).smulRight (A : F →ₗ G)`.
 -/
@@ -43,7 +45,9 @@ variable {R₀ R₁ 𝕜₂ 𝕜₃ : Type*} [Semiring R₀] [Semiring R₁] [No
 @[simp]
 theorem toLinearMap₁₂_comp (L : E →SL[σ₁₃] F →SL[σ₂₃] G) (g : D →SL[σ₀₁] E) :
     toLinearMap₁₂ (L.comp g) = (toLinearMap₁₂ L).comp (g : D →ₛₗ[σ₀₁] E) :=
-  (rfl)
+  LinearMap.ext₂ fun _ _ ↦ by
+    simp only [toLinearMap₁₂_apply_apply_apply, LinearMap.comp_apply, coe_comp, Function.comp_apply,
+      coe_coe]
 
 end Comp
 
@@ -61,7 +65,8 @@ variable {𝕜 𝕜₂ 𝕜₃ : Type*} [NontriviallyNormedField 𝕜] [Nontrivi
 @[simp]
 theorem toLinearMap₁₂_flip (L : E →SL[σ₁₃] F →SL[σ₂₃] G) :
     toLinearMap₁₂ L.flip = (toLinearMap₁₂ L).flip :=
-  (rfl)
+  LinearMap.ext₂ fun _ _ ↦ by
+    simp only [toLinearMap₁₂_apply_apply_apply, LinearMap.flip_apply, flip_apply]
 
 end Flip
 
@@ -76,8 +81,32 @@ of the underlying linear maps. -/
 @[simp]
 theorem toLinearMap₁₂_smulRight (f : E →L[𝕜] 𝕜) (A : F →L[𝕜] G) :
     toLinearMap₁₂ (f.smulRight A) = (f : E →ₗ[𝕜] 𝕜).smulRight (A : F →ₗ[𝕜] G) :=
-  (rfl)
+  LinearMap.ext₂ fun _ _ ↦ by
+    simp only [toLinearMap₁₂_apply_apply_apply, LinearMap.smulRight_apply, smulRight_apply,
+      LinearMap.smul_apply, smul_apply, coe_coe]
 
 end SMulRight
+
+section BilinearComp
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E F G E' F' : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsNormableSpace 𝕜 F]
+  [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G] [IsNormableSpace 𝕜 G]
+  [IsTopologicalAddGroup G]
+  [AddCommGroup E'] [Module 𝕜 E'] [TopologicalSpace E'] [IsNormableSpace 𝕜 E']
+  [AddCommGroup F'] [Module 𝕜 F'] [TopologicalSpace F'] [IsNormableSpace 𝕜 F']
+
+/-- Forgetting continuity commutes with precomposition in both arguments: the continuous pullback
+`L.bilinearComp f g` becomes the algebraic pullback `L.compl₁₂ f g`. -/
+@[simp]
+theorem toLinearMap₁₂_bilinearComp (L : E →L[𝕜] F →L[𝕜] G) (f : E' →L[𝕜] E) (g : F' →L[𝕜] F) :
+    toLinearMap₁₂ (L.bilinearComp f g) =
+      (toLinearMap₁₂ L).compl₁₂ (f : E' →ₗ[𝕜] E) (g : F' →ₗ[𝕜] F) :=
+  LinearMap.ext₂ fun _ _ ↦ by
+    simp only [toLinearMap₁₂_apply_apply_apply, LinearMap.compl₁₂_apply, bilinearComp_apply,
+      coe_coe]
+
+end BilinearComp
 
 end ContinuousLinearMap

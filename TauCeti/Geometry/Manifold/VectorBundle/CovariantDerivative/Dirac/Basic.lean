@@ -58,8 +58,8 @@ equations. None of these hypotheses is used by the first-order calculus of this 
   such as the chirality of an even-dimensional Clifford module, this gives `D γ = -γ D`.
 * **Change of connection.** Adding to `∇` a one-form `A` with values in the endomorphisms of `V`
   adds the term of order zero `∑ᵢ c(eᵢ) A(eᵢ)`, the metric trace of `(u, w) ↦ c(u) A(w)`, to `D`
-  (`diracOperator_addOneForm`). When
-  `A(w) = θ(w) L` for a real one-form `θ` and an endomorphism `L`, this term is `c(θ♯) L`
+  (`diracOperator_addOneForm`). When `A(w) σ = θ(w) L σ` at `x` for a real one-form `θ` and an
+  endomorphism `L`, this term is `c(θ♯) L σ`
   (`diracOperator_addOneForm_of_forall_apply_eq`). For the spin connection of `A + a`, with `a`
   an imaginary one-form on the determinant line, `∇_{A + a} = ∇_A + a / 2`, so this is the law
   `D_{A + a} = D_A + c(a) / 2`. More generally, if `A_x(σ_x) = ⟪u, ·⟫ v`, the change is `c(u) v`
@@ -204,12 +204,20 @@ multiplication by `f` is Clifford multiplication by the gradient of `f`. -/
 theorem diracOperator_smul {x : M} (hf : MDiffAt f x) (hσ : MDiffAt (T% σ) x) :
     cov.diracOperator c (f • σ) x =
       f x • cov.diracOperator c σ x + c x (TauCeti.Manifold.mgradient I f x) (σ x) := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [TauCeti.Manifold.mgradient_def, Riemannian.Tensor.rieszDual_eq_sum _ b,
-    diracOperator_eq_sum cov c _ x b, diracOperator_eq_sum cov c _ x b,
-    cov.isCovariantDerivativeOnUniv.leibniz hσ hf]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, map_add, map_smul,
-    map_sum, FunLike.coe_sum, Finset.sum_apply, Finset.sum_add_distrib, Finset.smul_sum]
+  -- The Leibniz correction contracts `c x` against the rank-one map `w ↦ ⟪grad f, w⟫ • σ x`.
+  have h : (ContinuousLinearMap.toLinearMap₁₂ (c x)).compl₂ (cov (f • σ) x).toLinearMap =
+      f x • (ContinuousLinearMap.toLinearMap₁₂ (c x)).compl₂ (cov σ x).toLinearMap +
+        (ContinuousLinearMap.toLinearMap₁₂ (c x)).compl₂
+          ((innerₗ (TangentSpace I x) (TauCeti.Manifold.mgradient I f x)).smulRight (σ x)) :=
+    LinearMap.ext₂ fun u w ↦ by
+      simp only [LinearMap.compl₂_apply, ContinuousLinearMap.coe_coe,
+        cov.isCovariantDerivativeOnUniv.leibniz hσ hf, add_apply, smul_apply,
+        ContinuousLinearMap.smulRight_apply, LinearMap.add_apply, LinearMap.smul_apply,
+        LinearMap.smulRight_apply, innerₗ_apply_apply, TauCeti.Manifold.inner_mgradient, map_add,
+        map_smul]
+  rw [diracOperator_def, diracOperator_def, h, map_add, map_smul,
+    LinearMap.BilinMap.metricTrace_compl₂_innerₗ_smulRight,
+    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
 
 /-- **The principal symbol of the Dirac operator.** The commutator of `D` with multiplication by a
 function `f` is Clifford multiplication by its gradient: `D (f σ) - f D σ = c(grad f) σ`. -/
@@ -260,24 +268,6 @@ theorem diracOperator_addOneForm (A : Π y : M, V y →L[ℝ] TangentSpace I y �
   simp only [LinearMap.compl₂_apply, ContinuousLinearMap.toLinearMap_add, LinearMap.add_apply,
     map_add]
 
-/-- **Change of connection by a scalar one-form.** If the endomorphism-valued one-form `A` is
-`A(w) = θ(w) L` at `x`, for a real covector `θ` and an endomorphism `L` of the fibre, then adding
-`A` to `∇` adds `c(θ♯) L σ` to the Dirac operator at `x`, where `θ♯` is the metric dual of `θ`.
-For the spin connection of a unitary connection on the determinant line, changing the connection
-by an imaginary one-form `a = i θ` changes the spin connection by `a / 2`, that is `L = i / 2`,
-and this is the law `D_{A + a} = D_A + c(a) / 2`. -/
-theorem diracOperator_addOneForm_of_forall_apply_eq [IsManifold I 1 M]
-    (A : Π y : M, V y →L[ℝ] TangentSpace I y →L[ℝ] V y) (σ : Π y : M, V y) {x : M}
-    (θ : TangentSpace I x →L[ℝ] ℝ) (L : V x →L[ℝ] V x) (hA : ∀ s w, A x s w = θ w • L s) :
-    (cov.addOneForm A).diracOperator c σ x =
-      cov.diracOperator c σ x + c x (Riemannian.Tensor.rieszDual x θ) (L (σ x)) := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [cov.diracOperator_addOneForm c A σ x, LinearMap.BilinMap.metricTrace_eq_sum _ b,
-    Riemannian.Tensor.rieszDual_eq_sum θ b]
-  simp only [LinearMap.compl₂_apply, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
-    ContinuousLinearMap.coe_coe, hA, map_smul, map_sum, FunLike.coe_sum, Finset.sum_apply,
-    smul_apply]
-
 /-- **Change of connection by an inner-product one-form.** If the one-form `A` acts on `σ` at `x`
 by `A_x(σ_x)(w) = ⟪u, w⟫ v`, then adding it to `∇` adds `c(u) v` to the Dirac operator at `x`.
 For `v = σ_x` this is the change `D_{∇ + u♭} = D_∇ + c(u)` under the addition of a real one-form;
@@ -287,13 +277,27 @@ theorem diracOperator_addOneForm_of_apply_eq_inner_smul
     (A : Π y : M, V y →L[ℝ] TangentSpace I y →L[ℝ] V y) {x : M} {u : TangentSpace I x}
     {v : V x} (hA : ∀ w, A x (σ x) w = ⟪u, w⟫ • v) :
     (cov.addOneForm A).diracOperator c σ x = cov.diracOperator c σ x + c x u v := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [cov.diracOperator_addOneForm c A σ x, LinearMap.BilinMap.metricTrace_eq_sum _ b]
-  congr 1
-  conv_rhs => rw [← b.sum_repr' u]
-  simp only [LinearMap.compl₂_apply, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
-    ContinuousLinearMap.coe_coe, hA, map_smul, map_sum, FunLike.coe_sum, Finset.sum_apply,
-    smul_apply, real_inner_comm u]
+  -- The correction contracts `c x` against the rank-one map `w ↦ ⟪u, w⟫ • v`.
+  have hA' : (A x (σ x)).toLinearMap = (innerₗ (TangentSpace I x) u).smulRight v :=
+    LinearMap.ext fun w ↦ by
+      rw [ContinuousLinearMap.coe_coe, hA, LinearMap.smulRight_apply, innerₗ_apply_apply]
+  rw [cov.diracOperator_addOneForm c A σ x, hA',
+    LinearMap.BilinMap.metricTrace_compl₂_innerₗ_smulRight,
+    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
+
+/-- **Change of connection by a scalar one-form.** If the endomorphism-valued one-form `A` acts on
+`σ` at `x` as `A(w)(σ_x) = θ(w) L(σ_x)`, for a real covector `θ` and an endomorphism `L` of the
+fibre, then adding `A` to `∇` adds `c(θ♯) L σ` to the Dirac operator at `x`, where `θ♯` is the
+metric dual of `θ`. For the spin connection of a unitary connection on the determinant line,
+changing the connection by an imaginary one-form `a = i θ` changes the spin connection by
+`a / 2`, that is `L = i / 2`, and this is the law `D_{A + a} = D_A + c(a) / 2`. -/
+theorem diracOperator_addOneForm_of_forall_apply_eq [IsManifold I 1 M]
+    (A : Π y : M, V y →L[ℝ] TangentSpace I y →L[ℝ] V y) (σ : Π y : M, V y) {x : M}
+    (θ : TangentSpace I x →L[ℝ] ℝ) (L : V x →L[ℝ] V x) (hA : ∀ w, A x (σ x) w = θ w • L (σ x)) :
+    (cov.addOneForm A).diracOperator c σ x =
+      cov.diracOperator c σ x + c x (Riemannian.Tensor.rieszDual x θ) (L (σ x)) :=
+  cov.diracOperator_addOneForm_of_apply_eq_inner_smul c A fun w ↦ by
+    rw [hA, Riemannian.Tensor.inner_rieszDual]
 
 /-! ### Gradings -/
 

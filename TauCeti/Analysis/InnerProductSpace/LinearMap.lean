@@ -25,4 +25,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 @[simp]
 theorem toLinearMap₁₂_innerSL :
     ContinuousLinearMap.toLinearMap₁₂ (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = innerₗ E :=
-  (rfl)
+  LinearMap.ext₂ fun _ _ ↦ by
+    rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, innerSL_apply_apply,
+      innerₗ_apply_apply]

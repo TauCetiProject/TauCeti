@@ -105,16 +105,19 @@ theorem hasDerivWithinAt_chartVolumeDensity (α : M) (hx : x ∈ (chartAt H α).
   have hdet : 0 < (G t).det := hGt ▸ chartGramMatrix_det_pos α hx'
   have hsqrt := HasDerivWithinAt.sqrt (Matrix.hasDerivWithinAt_det_of_entries (A := G)
     (A' := G') (fun i j ↦ hg _ _) hdet.ne'.isUnit) hdet.ne'
-  -- The trace of `G⁻¹ G'` is the metric trace of `h`, since `G⁻¹` is symmetric.
+  -- The chart frame `e` is the basis `b` of the tangent space given by the trivialization, in
+  -- which `G t` is the Gram matrix and `G'` the matrix of `h`, so `tr (G⁻¹ G')` is `tr_g h`.
   have htr : ((G t)⁻¹ * G').trace = LinearMap.BilinMap.metricTrace h := by
-    have hsymm := (posDef_chartGramMatrix (I := I) α hx').inv.isHermitian
-    rw [← hGt] at hsymm
-    rw [metricTrace_eq_sum_chartInvGramMatrix α hx, chartInvGramMatrix_def, ← hGt,
-      Matrix.trace_mul_comm]
-    simp only [Matrix.trace, Matrix.diag, Matrix.mul_apply, G', Matrix.of_apply, smul_eq_mul]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [hsymm.isSymm.apply i j]
-    ring
+    let b := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx'
+    have hb (i) : b i = e i := (chartLocalFrame_apply_of_mem_chart_source α hx i).symm
+    have hgram : Matrix.gram ℝ b = G t := by
+      rw [hGt]
+      ext i j
+      rw [Matrix.gram_apply, chartGramMatrix_apply, hb, hb]
+    have hmat : LinearMap.BilinForm.toMatrix b h = G' := by
+      ext i j
+      simp only [LinearMap.BilinForm.toMatrix_apply, hb, G', Matrix.of_apply]
+    rw [LinearMap.BilinMap.metricTrace_eq_trace_inv_gram_mul_toMatrix h b, hgram, hmat]
   convert hsqrt using 1
   · exact funext hρ
   rw [htr, hρ t]

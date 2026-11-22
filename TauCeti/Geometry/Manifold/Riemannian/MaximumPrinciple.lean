@@ -10,6 +10,7 @@ import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 
 /-!
 # The maximum principle for the Laplace–Beltrami operator
@@ -162,10 +163,7 @@ theorem hessian_self_le_of_eventuallyLE_of_eq {g : M → ℝ}
   have hh : 0 ≤ hessian I (g - f) x v v :=
     hessian_self_nonneg_of_isLocalMin (hg.sub hf) hmin v
   rw [hessian_sub_of_mdifferentiableAt_mgradient I (f := g) (g := f)
-    (((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hg).mono fun _ hy ↦
-      hy.mdifferentiableAt two_ne_zero)
-    (((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf).mono fun _ hy ↦
-      hy.mdifferentiableAt two_ne_zero)
+    (hg.eventually_mdifferentiableAt two_ne_zero) (hf.eventually_mdifferentiableAt two_ne_zero)
     (mdifferentiableAt_mgradient hg) (mdifferentiableAt_mgradient hf)] at hh
   exact sub_nonneg.mp hh
 

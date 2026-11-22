@@ -130,17 +130,8 @@ private theorem mvfderiv_ricciTensor_eq_sum_localFrameCoeff
   have hcoeff (k : Fin (Module.finrank ℝ E)) :
       MDiffAt (fun y ↦ e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y)) x :=
     mdifferentiableAt_localFrameCoeff b hx ((hs k).mdifferentiableAt (by simp)) k
-  have hfun : (fun y ↦ ∑ k, e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y)) =
-      ∑ k, fun y ↦ e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y) := by
-    ext y; simp
-  have hH : HasMFDerivAt I 𝓘(ℝ)
-      (∑ k, fun y ↦ e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y)) x
-      (∑ k, mvfderiv I (fun y ↦ e.localFrameCoeff I b k y
-        (curvatureOperator cov (F k) B C y)) x) :=
-    HasMFDerivAt.sum fun k _ ↦ (hcoeff k).hasMFDerivAt
-  rw [hRic.mvfderiv_eq, hfun, mvfderiv_apply_eq_mfderiv_apply, hH.mfderiv]
-  -- The tangent spaces of `ℝ` in which `mfderiv` takes values are `ℝ` itself.
-  exact _root_.sum_apply ..
+  rw [hRic.mvfderiv_eq, TauCeti.mvfderiv_fun_sum fun k _ ↦ hcoeff k,
+    _root_.sum_apply]
 
 /-- The local frame formula for `∇_v (R(Fₖ, B) C)`, read in the `k`-th coordinate of a frame `F`
 of globally smooth fields agreeing with the local frame of `e` near `x`. -/

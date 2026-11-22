@@ -22,6 +22,7 @@ import TauCeti.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -41,14 +42,15 @@ and the Laplace–Beltrami operator with the convention `Δ = div ∘ grad`.  Th
 trace formula makes the relationship between the Laplacian and the Hessian explicit, and
 `ModelWithCorners.laplaceBeltrami_eq_metricTrace_hessianForm` identifies the Laplacian with the
 metric trace of the Hessian as a continuous bilinear form `ModelWithCorners.hessianForm`, which is
-symmetric and linear in the function at points of `C²` regularity. The operator
-laws include the Leibniz rule and the chain rule `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a
-real function `h`, with its special case `Δ (log f) = Δ f / f - |grad f|² / f²`. On a
-finite-dimensional normed space whose metric is a field of bilinear forms `g`, the Hessian in
-linear coordinates is `D²f(u, v) - Df(Γ(u, v))` with `Γ` the Christoffel symbols of `g`. On a
-finite-dimensional inner-product space, the operator agrees with Mathlib's
-flat Laplacian. The Hessian conventions follow Lee, *Introduction to Riemannian Manifolds*,
-Chapter 3.
+symmetric at points of `C²` regularity and linear in the function where the gradients are
+differentiable. The linearity laws of the Laplacian are the metric traces of those of the Hessian
+form, under the same hypotheses. The operator laws include the Leibniz rule and the chain rule
+`Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a real function `h`, with its special case
+`Δ (log f) = Δ f / f - |grad f|² / f²`. On a finite-dimensional normed space whose metric is a
+field of bilinear forms `g`, the Hessian in linear coordinates is `D²f(u, v) - Df(Γ(u, v))` with
+`Γ` the Christoffel symbols of `g`. On a finite-dimensional inner-product space, the operator
+agrees with Mathlib's flat Laplacian. The Hessian conventions follow Lee, *Introduction to
+Riemannian Manifolds*, Chapter 3.
 
 The Laplace–Beltrami locality lemmas are adapted from Giada Franz's locality helper.
 The operator depends only on the germ of the function: locally equal functions have equal
@@ -372,6 +374,19 @@ theorem laplaceBeltrami_def (I : ModelWithCorners ℝ E H) {M : Type*} [Topologi
     (f : M → ℝ) (x : M) :
     laplaceBeltrami I f x = divergence I (mgradient I f) x := by
   rw [laplaceBeltrami]
+
+/-- The Laplace–Beltrami operator is the metric trace of the Hessian form. -/
+theorem _root_.ModelWithCorners.laplaceBeltrami_eq_metricTrace_hessianForm
+    (I : ModelWithCorners ℝ E H) {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] (f : M → ℝ) (x : M) :
+    laplaceBeltrami I f x =
+      LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (I.hessianForm f x)) := by
+  -- The Hessian form is the metric lowering of the covariant derivative of the gradient.
+  rw [laplaceBeltrami_def, divergence_def, I.hessianForm_def,
+    ContinuousLinearMap.toLinearMap₁₂_comp, toLinearMap₁₂_innerSL,
+    ← LinearMap.BilinForm.trace_bilinFormToEnd, LinearMap.bilinFormToEnd_innerₗ_comp]
 
 /-- For a Laplace–Beltrami eigenfunction, the derivative of its Laplacian along its
 gradient is minus the eigenvalue times the squared gradient norm. -/
@@ -718,26 +733,24 @@ theorem laplaceBeltrami_eq_zero_of_notMem_tsupport {f : M → ℝ} {x : M}
   rw [← laplaceBeltrami_congr_of_eventuallyEq I contMDiffAt_zero
     (notMem_tsupport_iff_eventuallyEq.1 hx).symm, laplaceBeltrami_zero]
 
+/-- The Laplace–Beltrami operator is additive at `x` when both functions are differentiable near
+`x` and their gradients are differentiable at `x`. -/
+theorem laplaceBeltrami_add_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
+    (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
+    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x) :
+    laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x := by
+  simp only [I.laplaceBeltrami_eq_metricTrace_hessianForm,
+    I.hessianForm_add_of_mdifferentiableAt_mgradient hf hg hf' hg', map_add]
+
 /-- The Laplace–Beltrami operator is additive at a point where both functions are `C²`. -/
 theorem laplaceBeltrami_add_of_contMDiffAt {f g : M → ℝ} {x : M}
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) :
-    laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x := by
-  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  have hgradf := mdifferentiableAt_mgradient hf
-  have hgradg := mdifferentiableAt_mgradient hg
-  -- Both functions are `C¹`, hence differentiable, near `x`.
-  have hdiff {h : M → ℝ} (hh : ContMDiffAt I 𝓘(ℝ) 2 h x) :
-      ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) h y :=
-    ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hh).mono fun _ hy ↦
-      hy.mdifferentiableAt (by norm_num)
-  have hev := mgradient_add_eventuallyEq (hdiff hf) (hdiff hg)
-  have hcov := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv
-  rw [laplaceBeltrami_def, divergence_def,
-    hcov.congr_of_eventuallyEq (mdifferentiableAt_mgradient (hf.add hg))
-    (mdifferentiableAt_add_section hgradf hgradg) Filter.univ_mem hev,
-    ← divergence_def, divergence_add I _ _ x hgradf hgradg, laplaceBeltrami_def,
-    laplaceBeltrami_def]
+    laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x :=
+  laplaceBeltrami_add_of_mdifferentiableAt_mgradient I (hf.eventually_mdifferentiableAt two_ne_zero)
+    (hg.eventually_mdifferentiableAt two_ne_zero) (mdifferentiableAt_mgradient hf)
+    (mdifferentiableAt_mgradient hg)
 
 /-- The Laplace–Beltrami operator is additive on `C²` functions. -/
 theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
@@ -785,29 +798,61 @@ theorem laplaceBeltrami_mul {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
   ring
 
 /-- The Laplace–Beltrami operator commutes with real scalar multiplication at a point where the
+gradient is differentiable. -/
+theorem laplaceBeltrami_smul_of_mdifferentiableAt_mgradient (c : ℝ) {f : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x) :
+    laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
+  simp only [I.laplaceBeltrami_eq_metricTrace_hessianForm,
+    I.hessianForm_smul_of_mdifferentiableAt_mgradient c hf, map_smul, smul_eq_mul]
+
+/-- The Laplace–Beltrami operator commutes with real scalar multiplication at a point where the
 function is `C²`. -/
 theorem laplaceBeltrami_smul_of_contMDiffAt (c : ℝ) {f : M → ℝ} {x : M}
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
-    laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
-  simp only [laplaceBeltrami, mgradient_smul]
-  exact divergence_smul I c _ x (mdifferentiableAt_mgradient hf)
+    laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x :=
+  laplaceBeltrami_smul_of_mdifferentiableAt_mgradient I c (mdifferentiableAt_mgradient hf)
 
 /-- The Laplace–Beltrami operator commutes with real scalar multiplication on `C²` functions. -/
 theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
     laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x :=
   laplaceBeltrami_smul_of_contMDiffAt I c (hf x)
 
+/-- Negating a function negates its Laplace–Beltrami operator at a point where its gradient is
+differentiable. -/
+theorem laplaceBeltrami_neg_of_mdifferentiableAt_mgradient {f : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x) :
+    laplaceBeltrami I (-f) x = -laplaceBeltrami I f x := by
+  rw [← neg_one_smul ℝ f, laplaceBeltrami_smul_of_mdifferentiableAt_mgradient I (-1) hf,
+    neg_one_mul]
+
 /-- The Laplace–Beltrami operator commutes with negation on `C²` functions. -/
 theorem laplaceBeltrami_neg {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
-    laplaceBeltrami I (-f) x = -laplaceBeltrami I f x := by
-  rw [← neg_one_smul ℝ f, laplaceBeltrami_smul I _ hf, neg_one_mul]
+    laplaceBeltrami I (-f) x = -laplaceBeltrami I f x :=
+  laplaceBeltrami_neg_of_mdifferentiableAt_mgradient I (mdifferentiableAt_mgradient (hf x))
+
+/-- The Laplace–Beltrami operator respects subtraction at `x` when both functions are
+differentiable near `x` and their gradients are differentiable at `x`. -/
+theorem laplaceBeltrami_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
+    (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
+    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x) :
+    laplaceBeltrami I (f - g) x = laplaceBeltrami I f x - laplaceBeltrami I g x := by
+  have hg'' : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, mgradient I (-g) y⟩ : TangentBundle I M)) x := by
+    simpa only [mgradient_neg, Pi.neg_apply] using mdifferentiableAt_neg_section hg'
+  rw [sub_eq_add_neg, laplaceBeltrami_add_of_mdifferentiableAt_mgradient I hf
+    (hg.mono fun _ hy ↦ hy.neg) hf' hg'', laplaceBeltrami_neg_of_mdifferentiableAt_mgradient I hg',
+    sub_eq_add_neg]
 
 /-- The Laplace–Beltrami operator is additive with respect to subtraction of `C²` functions. -/
 theorem laplaceBeltrami_sub {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
-    laplaceBeltrami I (f - g) x = laplaceBeltrami I f x - laplaceBeltrami I g x := by
-  rw [sub_eq_add_neg, laplaceBeltrami_add I hf (g := -g) hg.neg, laplaceBeltrami_neg I hg,
-    sub_eq_add_neg]
+    laplaceBeltrami I (f - g) x = laplaceBeltrami I f x - laplaceBeltrami I g x :=
+  laplaceBeltrami_sub_of_mdifferentiableAt_mgradient I
+    ((hf x).eventually_mdifferentiableAt two_ne_zero)
+    ((hg x).eventually_mdifferentiableAt two_ne_zero) (mdifferentiableAt_mgradient (hf x))
+    (mdifferentiableAt_mgradient (hg x))
 
 /-- **Chain rule for the Laplace--Beltrami operator.** If `h` is `C²` on an open set of real
 numbers containing all values of a `C²` function `f`, then
@@ -907,19 +952,6 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     (f : M → ℝ) (x : M) (v : TangentSpace I x) :
     hessian I f x v 0 = 0 := by
   simp only [hessian_def, inner_zero_right]
-
-/-- The Laplace–Beltrami operator is the metric trace of the Hessian form. -/
-theorem _root_.ModelWithCorners.laplaceBeltrami_eq_metricTrace_hessianForm
-    (I : ModelWithCorners ℝ E H) {M : Type*}
-    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] (f : M → ℝ) (x : M) :
-    laplaceBeltrami I f x =
-      LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (I.hessianForm f x)) := by
-  -- The Hessian form is the metric lowering of the covariant derivative of the gradient.
-  rw [laplaceBeltrami_def, divergence_def, I.hessianForm_def,
-    ContinuousLinearMap.toLinearMap₁₂_comp, toLinearMap₁₂_innerSL,
-    ← LinearMap.BilinForm.trace_bilinFormToEnd, LinearMap.bilinFormToEnd_innerₗ_comp]
 
 /-- The Laplace–Beltrami operator is the trace of the scalar Hessian in every orthonormal basis. -/
 theorem laplaceBeltrami_eq_sum_hessian (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]

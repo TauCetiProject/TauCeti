@@ -104,9 +104,9 @@ variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
 /-- The **formal adjoint** `∇*α = -tr_g ∇α` of the connection `∇`, applied to a `V`-valued
 one-form `α` at `x`: the negative metric trace (`LinearMap.BilinMap.metricTrace`) of the
-covariant derivative of `α` for the connection induced by `∇ᵀ` and `∇` on `Hom(TM, V)`. In an orthonormal basis it is
-`-∑ᵢ (∇_{eᵢ} α)(eᵢ)` (`formalAdjoint_eq_sum`). For a metric connection and the Levi-Civita
-connection it is the formal adjoint of `∇` for the Riemannian volume
+covariant derivative of `α` for the connection induced by `∇ᵀ` and `∇` on `Hom(TM, V)`. In an
+orthonormal basis it is `-∑ᵢ (∇_{eᵢ} α)(eᵢ)` (`formalAdjoint_eq_sum`). For a metric connection
+and the Levi-Civita connection it is the formal adjoint of `∇` for the Riemannian volume
 (`IsMetricCompatible.integral_inner_formalAdjoint`), and `∇*(∇σ)` is the rough Laplacian
 (`roughLaplacian_eq_formalAdjoint`). It is zero at points where `α` is not differentiable. -/
 def formalAdjoint (α : Π x : M, TangentSpace I x →L[ℝ] V x) (x : M) : V x :=

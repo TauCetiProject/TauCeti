@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.CanonicalTensor
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.LinearAlgebra.BilinearForm.Dual.Basis
@@ -35,6 +36,9 @@ covariant tensor, making it independent of any choice of basis.
   the basis with its metric dual basis.
 * `LinearMap.BilinMap.metricTrace_eq_sum_inv_gram`: in an arbitrary basis, the metric trace
   contracts the form against the inverse Gram matrix of the basis.
+* `LinearMap.BilinMap.metricTrace_eq_trace_inv_gram_mul_toMatrix`: in an arbitrary basis, the
+  metric trace of a bilinear form is the matrix trace of the inverse Gram matrix times the matrix
+  of the form.
 * `LinearMap.BilinMap.metricTrace_flip`: the metric trace is invariant under transposing the
   arguments.
 * `LinearMap.BilinMap.metricTrace_compr₂`: the metric trace commutes with a linear map applied to
@@ -42,7 +46,8 @@ covariant tensor, making it independent of any choice of basis.
 * `LinearMap.BilinMap.metricTrace_compl₁₂_linearIsometryEquiv`: the metric trace is invariant
   under pulling the form back along a linear isometric equivalence.
 * `LinearMap.BilinMap.metricTrace_innerₗ_smulRight`: the metric trace of the rank-one map
-  `(v, w) ↦ ⟪u, v⟫ • A w` is `A u`.
+  `(v, w) ↦ ⟪u, v⟫ • A w` is `A u`, and `LinearMap.BilinMap.metricTrace_compl₂_innerₗ_smulRight`
+  that of `(v, w) ↦ C v (⟪u, w⟫ • p)` is `C u p`.
 * `LinearMap.BilinMap.metricTrace_inner`: the metric trace of the inner product is the real
   dimension.
 -/
@@ -111,6 +116,17 @@ theorem metricTrace_eq_sum_inv_gram {ι : Type*} [Fintype ι] [DecidableEq ι]
     metricTrace B = ∑ i, ∑ j, (Matrix.gram ℝ b)⁻¹ i j • B (b i) (b j) := by
   simp only [metricTrace_eq_sum_dualBasis B b, b.dualBasis_innerₗ_eq_sum, map_sum, map_smul]
 
+/-- In an arbitrary basis `b`, the metric trace of a real bilinear form is the matrix trace
+`tr (G⁻¹ [B]_b)` of the inverse Gram matrix `G⁻¹` of `b` times the matrix `[B]_b` of `B` in `b`.
+The basis need not be orthogonal. -/
+theorem metricTrace_eq_trace_inv_gram_mul_toMatrix {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (B : LinearMap.BilinForm ℝ W) (b : Module.Basis ι ℝ W) :
+    metricTrace B = ((Matrix.gram ℝ b)⁻¹ * LinearMap.BilinForm.toMatrix b B).trace := by
+  have hsymm := (Matrix.isHermitian_gram ℝ b).isSymm.inv
+  rw [metricTrace_eq_sum_inv_gram B b, Finset.sum_comm]
+  simp only [Matrix.trace, Matrix.diag, Matrix.mul_apply, LinearMap.BilinForm.toMatrix_apply,
+    smul_eq_mul, hsymm.apply]
+
 /-- Transposing the arguments of a bilinear map preserves its metric trace. -/
 @[simp]
 theorem metricTrace_flip (B : BilinMap ℝ W N) : metricTrace B.flip = metricTrace B := by
@@ -143,6 +159,17 @@ theorem metricTrace_innerₗ_smulRight (u : W) (A : W →ₗ[ℝ] N) :
   conv_rhs => rw [← b.sum_repr' u]
   simp only [metricTrace_eq_sum _ b, LinearMap.smulRight_apply, innerₗ_apply_apply,
     LinearMap.smul_apply, map_sum, map_smul, real_inner_comm]
+
+/-- The metric trace of the bilinear map `(v, w) ↦ C v (⟪u, w⟫ • p)` is `C u p`: contracting a
+bilinear map `C` against the rank-one map `w ↦ ⟪u, w⟫ • p` evaluates `C` at `u`. -/
+theorem metricTrace_compl₂_innerₗ_smulRight {P : Type*} [AddCommMonoid P] [Module ℝ P]
+    (C : W →ₗ[ℝ] P →ₗ[ℝ] N) (u : W) (p : P) :
+    metricTrace (C.compl₂ ((innerₗ W u).smulRight p)) = C u p := by
+  have h : (C.compl₂ ((innerₗ W u).smulRight p)).flip = (innerₗ W u).smulRight (C.flip p) :=
+    LinearMap.ext₂ fun w v ↦ by
+      simp only [LinearMap.flip_apply, LinearMap.compl₂_apply, LinearMap.smulRight_apply,
+        map_smul, LinearMap.smul_apply]
+  rw [← metricTrace_flip, h, metricTrace_innerₗ_smulRight, LinearMap.flip_apply]
 
 /-- The metric trace of the inner product is the real dimension. -/
 @[simp]

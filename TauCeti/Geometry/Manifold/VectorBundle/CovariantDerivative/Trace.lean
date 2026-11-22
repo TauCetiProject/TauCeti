@@ -131,22 +131,13 @@ theorem IsMetricCompatible.mvfderiv_metricTrace
       (by simpa only [TangentBundle.trivializationAt_baseSet] using hy)]
     simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, ← hFdef, ← hDdef]
   ext v
-  have hsum : mvfderiv I (fun y ↦ ∑ i, b y (F i y) (D i y)) x v =
-      ∑ i, mvfderiv I (fun y ↦ b y (F i y) (D i y)) x v := by
-    have hfun : (fun y ↦ ∑ i, b y (F i y) (D i y)) = ∑ i, fun y ↦ b y (F i y) (D i y) := by
-      ext y; simp
-    have hH : HasMFDerivAt I 𝓘(ℝ) (∑ i, fun y ↦ b y (F i y) (D i y)) x
-        (∑ i, mvfderiv I (fun y ↦ b y (F i y) (D i y)) x) :=
-      HasMFDerivAt.sum fun i _ ↦ (hb (hF i) (hD i)).hasMFDerivAt
-    rw [hfun, mvfderiv_apply_eq_mfderiv_apply, hH.mfderiv]
-    -- The tangent spaces of `ℝ` in which `mfderiv` takes values are `ℝ` itself.
-    exact _root_.sum_apply ..
   -- The terms involving `∇Fᵢ` and `∇Dᵢ` cancel.
   have hcancel := sum_apply_chartDualFrame_cancel hcov x (b x) v hU hF hD
   simp only [← hFdef, ← hDdef] at hcancel
   have hterm (i : Fin (Module.finrank ℝ E)) := cov.derivBilinearTensor_apply hb (hF i) (hD i) v
   -- At `x`, the metric trace of `∇b` is `∑ᵢ (∇b)(Fᵢ, Dᵢ)`.
-  rw [htr.mvfderiv_eq, hsum, metricTrace_eq_sum_chartDualFrame x hxc, sum_apply]
+  rw [htr.mvfderiv_eq, TauCeti.mvfderiv_fun_sum fun i _ ↦ hb (hF i) (hD i), sum_apply,
+    metricTrace_eq_sum_chartDualFrame x hxc, sum_apply]
   simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, ← hFdef, ← hDdef, hterm,
     Finset.sum_sub_distrib, hcancel]
   ring
