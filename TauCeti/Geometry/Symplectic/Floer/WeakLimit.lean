@@ -133,7 +133,7 @@ private theorem integral_smul_fderiv_I_sub_sub_eq_zero [l.NeBot] (hΩ : IsOpen �
     (hasWeakFDerivOn_iff.1 (hv.hasWeakFDerivOn_fderiv (μ := volume) (Ω := ⟨Ω, hΩ⟩)) w)
       |>.locallyIntegrableOn_deriv
   have hint : ∀ {h : ℂ → V}, LocallyIntegrableOn h Ω → Integrable (fun y ↦ φ y • h y) :=
-    fun hh ↦ hh.integrable_smul_left_of_hasCompactSupport hφ hφc hφΩ
+    fun hh ↦ hh.integrable_smul_left_of_hasCompactSupport hφ.continuousOn hφc hφΩ
   have hint' : ∀ {h : ℂ → V}, ContinuousOn h Ω → Integrable (fun y ↦ φ y • h y) :=
     fun hh ↦ hint (hh.locallyIntegrableOn hΩ.measurableSet)
   obtain ⟨M, hM⟩ := hbd _ hφc hφΩ

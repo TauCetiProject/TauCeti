@@ -142,8 +142,10 @@ theorem singularSupport_add_subset (S T : 𝓓'(Ω, F)) :
   have hfU := hf.continuousOn.locallyIntegrableOn (μ := volume) hU.measurableSet
   have hgV := hg.continuousOn.locallyIntegrableOn (μ := volume) hV.measurableSet
   rw [add_apply, hS φ hφU, hT φ hφV, ← integral_add
-    (hfU.integrable_smul_left_of_hasCompactSupport φ.continuous φ.hasCompactSupport hφU)
-    (hgV.integrable_smul_left_of_hasCompactSupport φ.continuous φ.hasCompactSupport hφV)]
+    (hfU.integrable_smul_left_of_hasCompactSupport φ.continuous.continuousOn φ.hasCompactSupport
+      hφU)
+    (hgV.integrable_smul_left_of_hasCompactSupport φ.continuous.continuousOn φ.hasCompactSupport
+      hφV)]
   simp [smul_add]
 
 /-- The singular support of a finite sum lies in the union of the singular supports. -/
@@ -172,7 +174,8 @@ theorem singularSupport_smul_subset (c : M) (T : 𝓓'(Ω, F)) :
   · have hfU := hf.continuousOn.locallyIntegrableOn (μ := volume) hU.measurableSet
     simp_rw [← hcv, ← map_smul]
     exact (ContinuousLinearMap.integral_comp_comm _
-      (hfU.integrable_smul_left_of_hasCompactSupport φ.continuous φ.hasCompactSupport hφ)).symm
+      (hfU.integrable_smul_left_of_hasCompactSupport φ.continuous.continuousOn
+        φ.hasCompactSupport hφ)).symm
   · simp [integral_of_not_completeSpace hF]
 
 /-- Multiplication by a unit does not change the singular support. -/
@@ -211,8 +214,8 @@ theorem singularSupport_mapCLM_subset [CompleteSpace F] {F' : Type*} [NormedAddC
   refine ⟨U, hU, hxU, A ∘ f, A.contDiff.comp_contDiffOn hf, fun φ hφ ↦ ?_⟩
   have hfU := hf.continuousOn.locallyIntegrableOn (μ := volume) hU.measurableSet
   rw [mapCLM_apply, hT φ hφ]
-  exact (A.integral_comp_comm (hfU.integrable_smul_left_of_hasCompactSupport φ.continuous
-    φ.hasCompactSupport hφ)).symm.trans (by simp)
+  exact (A.integral_comp_comm (hfU.integrable_smul_left_of_hasCompactSupport
+    φ.continuous.continuousOn φ.hasCompactSupport hφ)).symm.trans (by simp)
 
 /-! ### The distribution is a smooth function off its singular support -/
 

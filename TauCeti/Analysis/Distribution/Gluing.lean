@@ -280,8 +280,8 @@ theorem apply_eq_integral_of_locally {n : ℕ∞} {T : 𝓓'^{n}(Ω, F)} {W : Se
   obtain ⟨s, ψ, hψ, hsum, -⟩ := φ.exists_sum_subordinate (fun x : W ↦ U x ∩ W)
     (fun x ↦ (hU x).inter hW) fun y hy ↦ mem_iUnion.2 ⟨⟨y, hφ hy⟩, hxU _, hφ hy⟩
   have hint (i : s) : Integrable (fun y ↦ ψ i y • f y) μ :=
-    hf.integrable_smul_left_of_hasCompactSupport (ψ i).continuous (ψ i).hasCompactSupport
-      ((hψ i).trans inter_subset_right)
+    hf.integrable_smul_left_of_hasCompactSupport (ψ i).continuous.continuousOn
+      (ψ i).hasCompactSupport ((hψ i).trans inter_subset_right)
   rw [← hsum, map_sum,
     Finset.sum_congr rfl fun (i : s) _ ↦ hT i (ψ i) ((hψ i).trans inter_subset_left),
     ← integral_finsetSum _ fun i _ ↦ hint i]

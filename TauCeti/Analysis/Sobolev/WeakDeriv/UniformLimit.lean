@@ -145,13 +145,13 @@ theorem tendsto_integral_smul_fderiv_apply_of_tendstoLocallyUniformlyOn [FiniteD
       hv hlim φ w) (ε / 2) (half_pos hε)
   filter_upwards [hC, hmid] with i hCi hi
   have h1 := MeasureTheory.norm_integral_smul_sub_integral_smul_le hK.measure_lt_top
-    ((hlocu i).integrable_smul_left_of_hasCompactSupport ha hac haΩ)
+    ((hlocu i).integrable_smul_left_of_hasCompactSupport ha.continuousOn hac haΩ)
     (φ.integrable_smul (hlocu i)) (ae_of_all _ fun x hx ↦ (haK x hx).trans (hφK' x hx).symm)
     (ae_of_all _ fun x _ ↦ hφa x) (B := max C 0 * ‖w‖) (ae_of_all _ fun x hx ↦
       ((fderiv ℝ (u i) x).le_opNorm w).trans
         (by gcongr; exact (hCi x hx).trans (le_max_left _ _)))
   have h2 := MeasureTheory.norm_integral_smul_sub_integral_smul_le hK.measure_lt_top
-    (hlocv.integrable_smul_left_of_hasCompactSupport ha hac haΩ)
+    (hlocv.integrable_smul_left_of_hasCompactSupport ha.continuousOn hac haΩ)
     (φ.integrable_smul hlocv) (ae_of_all _ fun x hx ↦ (haK x hx).trans (hφK' x hx).symm)
     (ae_of_all _ fun x _ ↦ hφa x) (B := max D 0 * ‖w‖) (ae_of_all _ fun x hx ↦
       ((fderiv ℝ v x).le_opNorm w).trans
@@ -198,7 +198,7 @@ theorem tendsto_integral_apply_fderiv_apply_of_tendstoLocallyUniformlyOn [Finite
   have hsum : ∀ {h : E → F}, LocallyIntegrableOn h Ω μ →
       ∫ x, A x (h x) ∂μ = ∑ j, b j (∫ x, c j x • h x ∂μ) := fun {h} hh ↦ by
     have hint : ∀ j, Integrable (fun x ↦ c j x • h x) μ := fun j ↦
-      hh.integrable_smul_left_of_hasCompactSupport (hc j) (hcc j) (hcΩ j)
+      hh.integrable_smul_left_of_hasCompactSupport (hc j).continuousOn (hcc j) (hcΩ j)
     have hexp : ∀ x, A x (h x) = ∑ j, b j (c j x • h x) := fun x ↦ by
       calc A x (h x) = (∑ j, b.repr (A x) j • b j) (h x) := by rw [b.sum_repr]
         _ = ∑ j, b j (c j x • h x) := by simp [c, -Module.Basis.sum_repr]
