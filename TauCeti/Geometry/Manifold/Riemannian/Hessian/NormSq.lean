@@ -44,7 +44,7 @@ theorem hessian_norm_sq_comp_of_eq_zero
   have hcrit := mvfderiv_norm_sq_comp_eq_zero_of_eq_zero (hf.mdifferentiableAt (by norm_num)) hzero
   have hs : ContMDiffAt I 𝓘(ℝ) 2 (fun q ↦ ‖f q‖ ^ 2) p :=
     (contDiff_norm_sq ℝ).contDiffAt.contMDiffAt.comp p hf
-  rw [hessian_eq_criticalHessian hs hcrit]
+  rw [hessian_eq_criticalHessian hs BoundarylessManifold.isInteriorPoint hcrit]
   have hchart := contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.1 hf
   have h := fderiv_fderiv_norm_sq_sub_comp_apply (a := (0 : F)) hchart v w
   simp only [sub_zero, Function.comp_apply, extChartAt_to_inv, hzero, inner_zero_left,

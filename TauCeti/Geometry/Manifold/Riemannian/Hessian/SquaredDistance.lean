@@ -63,8 +63,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
     (contDiff_norm_sq ℝ).contDiffAt.contMDiffAt.comp p hlog
   have hcrit := mvfderiv_norm_sq_comp_eq_zero_of_eq_zero (hlog.mdifferentiableAt (by simp))
     h.riemannianLog_self
-  rw [hessian_eq_criticalHessian hdist (mvfderiv_dist_sq_self p),
-    criticalHessian_congr_of_eventuallyEq heq, ← hessian_eq_criticalHessian hnorm hcrit,
+  rw [hessian_eq_criticalHessian hdist BoundarylessManifold.isInteriorPoint
+      (mvfderiv_dist_sq_self p),
+    criticalHessian_congr_of_eventuallyEq heq,
+    ← hessian_eq_criticalHessian hnorm BoundarylessManifold.isInteriorPoint hcrit,
     hessian_norm_sq_comp_of_eq_zero hlog h.riemannianLog_self]
   simp only [h.mvfderiv_riemannianLog_self, ContinuousLinearMap.id_apply]
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Geometry.Manifold.Morse.Basic
 import TauCeti.Analysis.Calculus.DerivativeTest
@@ -37,6 +38,8 @@ manifold, the index vanishes without a nondegeneracy assumption.
   function.
 * `TauCeti.manifoldMorseIndex_modelSpace`: comparison with `TauCeti.morseIndex` on a normed
   vector space.
+* `ContMDiffAt.hessianQuadraticForm_comp_extChartAt_symm_nonneg`: the preferred-chart Hessian
+  quadratic form is nonnegative at an interior local minimum of a `C¹` function.
 * `TauCeti.manifoldMorseIndex_const` and `TauCeti.manifoldMorseIndex_eq_zero_of_isLocalMin`: the
   index vanishes for a constant function and at a local minimum of a `C²` function on a boundaryless
   manifold.
@@ -127,23 +130,31 @@ theorem manifoldMorseIndex_eq_zero_of_subsingleton [Subsingleton E] :
     manifoldMorseIndex I f x = 0 :=
   Nat.le_zero.1 (manifoldMorseIndex_le_finrank.trans_eq Module.finrank_zero_of_subsingleton)
 
+/-- At an interior local minimum of a `C¹` function, the Hessian quadratic form of its
+preferred coordinate expression is nonnegative. No finite-dimensionality assumption is needed. -/
+theorem _root_.ContMDiffAt.hessianQuadraticForm_comp_extChartAt_symm_nonneg
+    (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) (hx : I.IsInteriorPoint x) (hmin : IsLocalMin f x)
+    (v : E) : 0 ≤ hessianQuadraticForm (f ∘ (extChartAt I x).symm) (extChartAt I x x) v := by
+  have hm : IsLocalMin f ((extChartAt I x).symm (extChartAt I x x)) := by
+    rwa [extChartAt_to_inv]
+  rw [hessianQuadraticForm_apply]
+  exact fderiv_fderiv_self_nonneg_of_isLocalMin
+    ((hf.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint hx).eventually_differentiableAt le_rfl)
+    (hm.comp_continuous (continuousAt_extChartAt_symm x)) v
+
 /-- At a local minimum of a `C²` function on a boundaryless manifold, the preferred-chart Morse
 index is zero. No nondegeneracy assumption is needed. -/
 theorem manifoldMorseIndex_eq_zero_of_isLocalMin [I.Boundaryless]
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hmin : IsLocalMin f x) :
     manifoldMorseIndex I f x = 0 := by
-  have hmin' : IsLocalMin (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
-    have hm : IsLocalMin f ((extChartAt I x).symm (extChartAt I x x)) := by simpa using hmin
-    exact hm.comp_continuous (continuousAt_extChartAt_symm x)
   rw [manifoldMorseIndex_def]
   by_cases hE : FiniteDimensional ℝ E
   swap
   · exact morseIndex_eq_zero_of_not_finiteDimensional hE
   rw [morseIndex_def]
-  exact (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).mp fun v ↦ by
-    rw [hessianQuadraticForm_apply]
-    exact fderiv_fderiv_self_nonneg_of_isLocalMin
-      (hf.contDiffAt_comp_extChartAt_symm.eventually_differentiableAt (by norm_num)) hmin' v
+  exact (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).mp
+    ((hf.of_le one_le_two).hessianQuadraticForm_comp_extChartAt_symm_nonneg
+      BoundarylessManifold.isInteriorPoint hmin)
 
 /-- The manifold Morse index is unchanged when the manifold model is transported through a
 continuous linear equivalence. -/

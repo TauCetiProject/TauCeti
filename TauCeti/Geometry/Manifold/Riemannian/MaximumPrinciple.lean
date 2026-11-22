@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors, Otis Chodosh
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Hessian.SecondDerivativeTest
+public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
+import TauCeti.Geometry.Manifold.Riemannian.Hessian.SecondDerivativeTest
 
 /-!
 # The maximum principle for the Laplace–Beltrami operator
@@ -99,7 +100,8 @@ Laplace–Beltrami operator `Δ = div ∘ grad` is nonpositive. -/
 theorem laplaceBeltrami_nonpos_of_isLocalMax (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (hmax : IsLocalMax f x) : laplaceBeltrami I f x ≤ 0 := by
   rw [laplaceBeltrami_eq_sum_hessian I f x (stdOrthonormalBasis ℝ (TangentSpace I x))]
-  exact Finset.sum_nonpos fun i _ ↦ hessian_self_nonpos_of_isLocalMax hf hmax _
+  exact Finset.sum_nonpos fun i _ ↦
+    hessian_self_nonpos_of_isLocalMax hf BoundarylessManifold.isInteriorPoint hmax _
 
 /-- At a local maximum of `f + k g`, with `f` and `g` both `C²`, on a boundaryless Riemannian
 manifold, `Δ f + k Δ g ≤ 0`. -/
@@ -120,7 +122,8 @@ Laplace–Beltrami operator `Δ = div ∘ grad` is nonnegative. -/
 theorem laplaceBeltrami_nonneg_of_isLocalMin (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (hmin : IsLocalMin f x) : 0 ≤ laplaceBeltrami I f x := by
   rw [laplaceBeltrami_eq_sum_hessian I f x (stdOrthonormalBasis ℝ (TangentSpace I x))]
-  exact Finset.sum_nonneg fun i _ ↦ hessian_self_nonneg_of_isLocalMin hf hmin _
+  exact Finset.sum_nonneg fun i _ ↦
+    hessian_self_nonneg_of_isLocalMin hf BoundarylessManifold.isInteriorPoint hmin _
 
 /-- If `g` touches `f` from above, its diagonal Hessian at the contact point is larger. -/
 theorem hessian_self_le_of_eventuallyLE_of_eq {g : M → ℝ}
@@ -130,7 +133,7 @@ theorem hessian_self_le_of_eventuallyLE_of_eq {g : M → ℝ}
     filter_upwards [hle] with y hy
     simpa only [Pi.sub_apply, ← heq, sub_self] using sub_nonneg.mpr hy
   have hh : 0 ≤ hessian I (g - f) x v v :=
-    hessian_self_nonneg_of_isLocalMin (hg.sub hf) hmin v
+    hessian_self_nonneg_of_isLocalMin (hg.sub hf) BoundarylessManifold.isInteriorPoint hmin v
   rw [hessian_sub_of_contMDiffAt I (f := g) (g := f) hg hf] at hh
   exact sub_nonneg.mp hh
 
