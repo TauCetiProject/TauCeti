@@ -52,15 +52,19 @@ of times, and the pointwise limit is `i ω 𝓕 f`.
 * `TauCeti.fourier_phasePropagator`, `TauCeti.coeFn_fourier_phasePropagator`: its action on the
   Fourier side.
 * `TauCeti.phasePropagator_zero`, `TauCeti.phasePropagator_add`: the group law.
-* `TauCeti.norm_phasePropagator_apply`, `TauCeti.inner_phasePropagator_apply`,
-  `TauCeti.adjoint_phasePropagator`: unitarity.
+* `TauCeti.norm_phasePropagator_apply`, `TauCeti.enorm_phasePropagator_apply`,
+  `TauCeti.inner_phasePropagator_apply`, `TauCeti.adjoint_phasePropagator`: unitarity.
 * `TauCeti.inner_phasePropagator_sub_apply`: the Duhamel pairing `⟪exp(i(t - s)ω(D)) f, g⟫` as a
   pairing of data pulled back to time zero.
+* `TauCeti.enorm_integral_phasePropagator_neg_le`: the dual energy estimate
+  `‖∫ exp(-isω(D)) G(s) ds‖₂ ≤ ‖G‖_{L¹_t L²_x}`.
 * `TauCeti.continuous_phasePropagator_apply`, `TauCeti.continuous_phasePropagator_uncurry`: strong
   continuity and joint continuity.
 * `TauCeti.aestronglyMeasurable_phasePropagator_apply`, `TauCeti.integrable_phasePropagator_apply`,
   `TauCeti.aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub`: measurability and
   integrability of `a ↦ exp(iτ(a)ω(D)) G(a)` and of retarded integrals.
+* `TauCeti.inner_setIntegral_Iio_phasePropagator_sub`,
+  `TauCeti.integrable_inner_setIntegral_Iio_phasePropagator_sub`: pairings of retarded integrals.
 * `TauCeti.phaseGroup`, `TauCeti.isUnitary_phaseGroup`: the unitary C₀-group.
 * `TauCeti.mem_domain_phaseGroup_iff`: the domain of its generator is `{f | ω 𝓕 f ∈ L²}`.
 * `TauCeti.coeFn_fourier_complexGenerator_phaseGroup`,
@@ -143,11 +147,9 @@ theorem memLp_phaseSymbol (t : ℝ) : MemLp (phaseSymbol ω t) ∞ volume :=
     (Eventually.of_forall fun ξ ↦ (norm_phaseSymbol ω t ξ).le)
 
 /-- The `L^∞` class of the phase symbol has norm at most `1`. -/
-theorem norm_toLp_phaseSymbol_le (t : ℝ) : ‖(memLp_phaseSymbol ω t).toLp _‖ ≤ 1 := by
-  rw [Lp.norm_toLp, eLpNorm_exponent_top]
-  · exact ENNReal.toReal_le_of_le_ofReal zero_le_one
-      (eLpNormEssSup_le_of_ae_bound (Eventually.of_forall fun ξ ↦ (norm_phaseSymbol ω t ξ).le))
-  · exact (memLp_phaseSymbol ω t).aestronglyMeasurable
+theorem norm_toLp_phaseSymbol_le (t : ℝ) : ‖(memLp_phaseSymbol ω t).toLp _‖ ≤ 1 :=
+  Lp.norm_le_of_ae_bound_top zero_le_one <|
+    (memLp_phaseSymbol ω t).coeFn_toLp.mono fun ξ hξ ↦ by rw [hξ, norm_phaseSymbol]
 
 variable (F) in
 /-- The unitary operator `exp(itω(D))` on `L²(E, F)`: the Fourier multiplier with symbol
@@ -233,6 +235,12 @@ theorem norm_phasePropagator_apply (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
     exact ((phasePropagator F ω (-t)).le_opNorm _).trans
       (mul_le_of_le_one_left (norm_nonneg _) (norm_phasePropagator_le ω (-t)))
 
+/-- **Conservation of the `L²` norm**, extended-norm form: `‖exp(itω(D)) f‖ₑ = ‖f‖ₑ`. -/
+@[simp]
+theorem enorm_phasePropagator_apply (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
+    ‖phasePropagator F ω t f‖ₑ = ‖f‖ₑ := by
+  rw [← ofReal_norm, ← ofReal_norm, norm_phasePropagator_apply]
+
 /-- The adjoint of `exp(itω(D))` is `exp(i(-t)ω(D))`. -/
 theorem adjoint_phasePropagator (t : ℝ) :
     ContinuousLinearMap.adjoint (phasePropagator (E := E) F ω t) = phasePropagator F ω (-t) := by
@@ -259,6 +267,23 @@ theorem inner_phasePropagator_sub_apply (s t : ℝ) (f g : Lp F 2 (volume : Meas
   rw [adjoint_phasePropagator, adjoint_phasePropagator,
     ← inner_phasePropagator_apply ω (-t) (phasePropagator F ω (t - s) f) g,
     ← phasePropagator_add_apply, neg_add_eq_sub, sub_sub_cancel_left]
+
+/-- **The dual energy estimate**: pulling `G(s)` back from time `s` to time zero and integrating
+costs at most the mixed norm of `G` in `L¹_t L²_x`,
+
+`‖∫ exp(-isω(D)) G(s) ds‖₂ ≤ ‖G‖_{L¹_t L²_x}`.
+
+This is the dual estimate of the energy pair `(∞, 2)` in the Strichartz estimates. No
+integrability of `G` is needed: otherwise the left side is zero. -/
+theorem enorm_integral_phasePropagator_neg_le (G : ℝ → Lp F 2 (volume : Measure E)) :
+    ‖∫ s, phasePropagator F ω (-s) (G s)‖ₑ ≤
+      eLpNorm (fun s ↦ eLpNorm (G s) 2 volume) 1 volume := by
+  by_cases hG : AEStronglyMeasurable (fun s ↦ eLpNorm (G s) 2 volume) volume
+  · rw [eLpNorm_one_eq_lintegral_eNorm hG]
+    refine (eNorm_integral_le_lintegral_eNorm _).trans_eq (lintegral_congr fun s ↦ ?_)
+    rw [eNorm_eq_self, ← Lp.eNorm_def, enorm_phasePropagator_apply]
+  · rw [eLpNorm_of_not_aestronglyMeasurable hG]
+    exact le_top
 
 /-- `exp(itω(D))` commutes with every `L²` Fourier multiplier. -/
 theorem phasePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :
@@ -365,6 +390,29 @@ theorem aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub
   refine integral_congr_ae (ae_of_all _ fun s ↦ ?_)
   -- `(t, s)` lies in the half-plane `s < t` exactly when `s ∈ Iio t`.
   by_cases hs : s < t <;> simp [K, hs]
+
+/-- The pairing of a retarded integral `∫_{s < t} exp(i(t - s)ω(D)) G(s) ds` of an integrable
+`G : ℝ → L²` with `g` is the integral of the pairings. -/
+theorem inner_setIntegral_Iio_phasePropagator_sub {G : ℝ → Lp F 2 (volume : Measure E)}
+    (hG : Integrable G) (t : ℝ) (g : Lp F 2 (volume : Measure E)) :
+    ⟪∫ s in Set.Iio t, phasePropagator F ω (t - s) (G s), g⟫ =
+      ∫ s in Set.Iio t, ⟪phasePropagator F ω (t - s) (G s), g⟫ := by
+  rw [← inner_conj_symm, ← integral_inner (integrable_phasePropagator_apply ω
+    (continuous_sub_left t).aestronglyMeasurable hG).integrableOn, ← integral_conj]
+  simp_rw [inner_conj_symm]
+
+/-- For integrable `G, H : ℝ → L²`, the pairing `t ↦ ⟪∫_{s < t} exp(i(t - s)ω(D)) G(s) ds, H(t)⟫`
+is integrable, being at most `‖G‖_{L¹} ‖H(t)‖`. -/
+theorem integrable_inner_setIntegral_Iio_phasePropagator_sub
+    {G H : ℝ → Lp F 2 (volume : Measure E)} (hG : Integrable G) (hH : Integrable H) :
+    Integrable fun t ↦ ⟪∫ s in Set.Iio t, phasePropagator F ω (t - s) (G s), H t⟫ := by
+  refine (hH.norm.const_mul (∫ s, ‖G s‖)).mono'
+    ((aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub ω
+      hG.aestronglyMeasurable).inner hH.aestronglyMeasurable) (ae_of_all _ fun t ↦ ?_)
+  refine (norm_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
+  refine (norm_integral_le_integral_norm _).trans ?_
+  simp_rw [norm_phasePropagator_apply]
+  exact setIntegral_le_integral hG.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
 
 /-! ### The generator -/
 

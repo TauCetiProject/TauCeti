@@ -67,9 +67,9 @@ noncomputable def cofreeInvariantsIso :
 @[simp↓]
 theorem cofreeInvariantsIso_hom_app_apply (M : ModuleCat.{max v w} R)
     (z : (cofreeFunctor.{u, v, w} R H ⋙ invariantsFunctor R H).obj M) :
-    (cofreeInvariantsIso.{u, v, w} R H).hom.app M z =
-      TensorProduct.rid R M (Coalgebra.counit.lTensor M z.val) :=
-  Comodule.cofreeFixedEquiv_symm_apply (R := R) (H := H) (N := M) z
+    (cofreeInvariantsIso.{u, v, w} R H).hom.app M z = Comodule.cofreeCounit R H M z.val := by
+  exact (Comodule.cofreeFixedEquiv_symm_apply (R := R) (H := H) (N := M) z).trans
+    (LinearMap.congr_fun Comodule.cofreeCounit_def z.val).symm
 
 /-- The inverse comparison is inclusion via tensoring with `1`. -/
 @[simp↓]

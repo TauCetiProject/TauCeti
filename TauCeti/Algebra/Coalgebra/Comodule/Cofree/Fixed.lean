@@ -55,15 +55,12 @@ variable {R H N : Type*} [CommSemiring R] [AddCommMonoid H] [Module R H] [Coalge
 with `1`. The recovery only uses the coalgebra and the chosen element `1`. -/
 theorem eq_counit_tmul_one_of_mem_fixedSubcomodule {z : N ⊗[R] H}
     (hz : z ∈ fixedSubcomodule R H (N ⊗[R] H)) :
-    z = TensorProduct.rid R N (Coalgebra.counit.lTensor N z) ⊗ₜ[R] (1 : H) := by
-  let e := (TensorProduct.rid R N).toLinearMap ∘ₗ
-    (Coalgebra.counit (R := R) (A := H)).lTensor N
-  have h := congrArg (e.rTensor H) (mem_fixedSubcomodule.mp hz)
-  have he : e.rTensor H (cofreeCoact R H N z) = z :=
-    LinearMap.congr_fun (rTensor_rid_comp_lTensor_counit_comp_cofreeCoact
-      (R := R) (C := H) (M := N)) z
-  rw [cofree_coact, ← cofreeCoact_def, he] at h
-  simpa [e] using h
+    z = cofreeCounit R H N z ⊗ₜ[R] (1 : H) := by
+  have h := congrArg ((cofreeCounit R H N).rTensor H) (mem_fixedSubcomodule.mp hz)
+  have hid := LinearMap.congr_fun
+    (rTensor_cofreeCounit_comp_cofreeCoact (R := R) (C := H) (M := N)) z
+  simpa only [cofree_coact, ← cofreeCoact_def, LinearMap.comp_apply,
+    LinearMap.rTensor_tmul, LinearMap.id_apply] using hid.symm.trans h
 
 end Coalgebra
 
@@ -82,10 +79,13 @@ theorem mem_fixedSubcomodule_cofree_iff (z : N ⊗[R] H) :
     z ∈ fixedSubcomodule R H (N ⊗[R] H) ↔
       (TensorProduct.rid R N (LinearMap.lTensor N (Coalgebra.counit (R := R)) z)) ⊗ₜ[R] (1 : H) =
         z := by
-  refine ⟨fun hz ↦ (eq_counit_tmul_one_of_mem_fixedSubcomodule hz).symm, ?_⟩
-  intro hz
-  rw [← hz]
-  exact tmul_one_mem_fixedSubcomodule _
+  constructor
+  · intro hz
+    simpa only [cofreeCounit_def, LinearMap.comp_apply, LinearEquiv.coe_coe] using
+      (eq_counit_tmul_one_of_mem_fixedSubcomodule hz).symm
+  · intro hz
+    rw [← hz]
+    exact tmul_one_mem_fixedSubcomodule _
 
 /-- The fixed subcomodule of the cofree right `H`-comodule `N ⊗[R] H` is canonically `N`, via
 `n ↦ n ⊗ 1`. -/

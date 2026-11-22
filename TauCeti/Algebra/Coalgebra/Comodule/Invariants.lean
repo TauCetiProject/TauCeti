@@ -77,13 +77,7 @@ instance : (invariantsFunctor.{u, v, w} R H).Additive where
   map_add := by
     intro M N f g
     apply ModuleCat.hom_ext
-    apply LinearMap.ext
-    intro m
-    apply Subtype.ext
-    rw [ModuleCat.hom_add, LinearMap.add_apply]
-    rw [Submodule.coe_add (p := (Comodule.fixedSubcomodule R H N).carrier)
-      ((invariantsFunctor R H).map f m) ((invariantsFunctor R H).map g m)]
-    simp only [coe_invariantsFunctor_map_apply, ComoduleCat.add_apply]
+    simpa only [ModuleCat.hom_add, invariantsFunctor_map_hom] using Comodule.Hom.fixedMap_add f g
 
 end Coalgebra
 

@@ -27,7 +27,10 @@ a compact oriented manifold `M` with boundary, with `c = [M, ∂M]` and `z` a fu
 `∂M` (so that the connecting morphism sends `c` to the class of `z`), this gives a fundamental
 chain of `M` relative to its boundary whose boundary is exactly `z`.
 
-The simplest relative cycles are single cubes. A singular cube `c` of `X` sending the boundary of
+On a chain `s` of `X` representing a relative class, with boundary the image of an `n`-cycle `w`
+of `A`, the connecting morphism takes the value `[w]`
+(`TopPair.IsCubicalRepresentative.cubicalHomologyδ_eq`). The simplest relative cycles are single
+cubes. A singular cube `c` of `X` sending the boundary of
 the cube into `A` has its faces in `A`, and the signed sum of these faces is a cycle of `A`
 (`TopPair.cubicalBoundaryCycleOfCube`) whose image in `X` is the boundary of `c`. The connecting
 morphism sends the relative class of `c` to the class of this cycle
@@ -54,12 +57,20 @@ of `TauCeti.AlgebraicTopology.Singular.Excision`.
   prescribed boundary.
 * `TopPair.exists_sub_eq_boundary_add_map`: such chains are unique up to boundaries and cycles of
   the subspace.
+* `TopPair.IsCubicalRepresentative.cubicalHomologyδ_eq`: the connecting morphism sends the class
+  of a relative cycle to the class of its boundary, read in the subspace.
 * `TopPair.cubicalHomologyδ_homologyπ_cubicalCycleOfCube`: the connecting morphism sends the class
   of a relative cube to the class of its boundary.
-* `TopPair.isIso_cubicalHomologyδ_of_contractibleSpace`: with contractible ambient space, the
-  connecting morphism `Hₘ₊₂(X, A) ⟶ Hₘ₊₁(A)` is an isomorphism.
+* `TopPair.isIso_cubicalHomologyδ_of_contractibleSpace_of_ne_zero`,
+  `TopPair.isIso_cubicalHomologyδ_of_contractibleSpace`: with contractible ambient space, the
+  connecting morphism `Hₘ₊₁(X, A) ⟶ Hₘ(A)` is an isomorphism for `m ≥ 1`.
 * `TopPair.isIso_homologyMap_cubicalChainComplexMap_excisionMap`,
   `TopPair.isIso_homologyMap_cubicalChainComplexMap_excisionMap_compl`: excision.
+
+* `TopPair.singularCubicalHomologyIso_inv_singularHomologyδ`: compatibility of connecting
+  morphisms in the inverse comparison direction.
+* `TauCeti.chainComplexMap_ι_toSmallSingularSubcomplex_cubicalToSingular`: the comparison respects
+  the inclusion of chains supported in one member of a family into all singular chains.
 
 ## References
 
@@ -143,6 +154,22 @@ theorem singularCubicalHomologyIso_hom_cubicalHomologyδ (n m : ℕ) (h : m + 1 
   exact (HomologicalComplex.HomologySequence.δ_naturality (singularToCubicalShortComplex k P)
     (P.shortExact_singularChainComplexShortComplex _)
     (shortExact_cubicalChainComplexShortComplex k P) n m h).symm
+
+/-- The inverse cubical comparison intertwines the singular and cubical connecting maps. -/
+@[reassoc]
+theorem singularCubicalHomologyIso_inv_singularHomologyδ (n m : ℕ)
+    (h : m + 1 = n := by lia) :
+    (singularCubicalHomologyIso k P n).inv ≫
+        P.singularHomologyδ (ModuleCat.of k k) n m h =
+      P.cubicalHomologyδ k n m h ≫ (TauCeti.singularCubicalHomologyIso k P.snd m).inv := by
+  have key : (singularCubicalHomologyIso k P n).hom ≫ P.cubicalHomologyδ k n m h =
+      P.singularHomologyδ (ModuleCat.of k k) n m h ≫
+        (TauCeti.singularCubicalHomologyIso k P.snd m).hom :=
+    singularCubicalHomologyIso_hom_cubicalHomologyδ k P n m h
+  apply (Iso.eq_comp_inv (TauCeti.singularCubicalHomologyIso k P.snd m)).2
+  exact (Category.assoc _ _ _).trans
+    ((congrArg ((singularCubicalHomologyIso k P n).inv ≫ ·) key.symm).trans
+      (Iso.inv_hom_id_assoc _ _))
 
 /-! ### Chains with a prescribed boundary -/
 
@@ -251,6 +278,25 @@ theorem exists_boundary_eq_of_singularHomologyδ_eq (m : ℕ)
 
 /-! ### The connecting morphism of a relative cube -/
 
+variable {k P} in
+/-- **The connecting morphism on a representative.** If a chain `s` of `X` represents a relative
+class `μ` of `Hₙ₊₁(X, A)`, and `w` is an `n`-cycle of `A` whose image in `X` is the boundary of
+`s`, then the connecting morphism sends `μ` to the class of `w`. -/
+theorem IsCubicalRepresentative.cubicalHomologyδ_eq {n : ℕ}
+    {s : NormalizedCubicalChain P.fst k (n + 1)} {μ : (P.cubicalChainComplex k).homology (n + 1)}
+    (hs : P.IsCubicalRepresentative k s μ)
+    (w : ((normalizedCubicalChainComplex k).obj P.snd).cycles n)
+    (hw : NormalizedCubicalChain.map k P.map.hom n
+        ((((normalizedCubicalChainComplex k).obj P.snd).iCycles n).hom w) =
+      NormalizedCubicalChain.boundary P.fst k n s) :
+    (P.cubicalHomologyδ k (n + 1) n).hom μ =
+      (((normalizedCubicalChainComplex k).obj P.snd).homologyπ n).hom w := by
+  obtain ⟨r, hr, rfl⟩ := (isCubicalRepresentative_iff _ _).1 hs
+  exact (shortExact_cubicalChainComplexShortComplex k P).moduleCat_δ_homologyπ (n + 1) n rfl r
+    ((normalizedCubicalChainComplexXEquiv P.fst (n + 1)).symm s) hr w
+    ((normalizedCubicalChainComplex_map_f_apply P.map n _).trans
+      (hw.trans (normalizedCubicalChainComplex_obj_d_apply P.fst n s).symm))
+
 variable {P} in
 /-- **The connecting morphism of a relative cube is its boundary.** For a singular cube `c` of `X`
 sending the boundary of the cube into `A`, the connecting morphism `Hₘ₊₁(X, A) ⟶ Hₘ(A)` sends the
@@ -260,27 +306,29 @@ theorem cubicalHomologyδ_homologyπ_cubicalCycleOfCube {m : ℕ} (c : SingularC
     (P.cubicalHomologyδ k (m + 1) m).hom
         (((P.cubicalChainComplex k).homologyπ (m + 1)).hom (cubicalCycleOfCube k c hc)) =
       (((normalizedCubicalChainComplex k).obj P.snd).homologyπ m).hom
-        (cubicalBoundaryCycleOfCube k c hc) := by
-  refine (shortExact_cubicalChainComplexShortComplex k P).moduleCat_δ_homologyπ (m + 1) m rfl _
-    ((normalizedCubicalChainComplexXEquiv P.fst (m + 1)).symm
-      (NormalizedCubicalChain.ofCube P.fst k c)) ?_ _ ?_
-  · rw [iCycles_cubicalCycleOfCube, cubicalChainOfCube_def]
-  · rw [iCycles_cubicalBoundaryCycleOfCube, normalizedCubicalChainComplexXEquiv_symm_apply]
-    exact (normalizedCubicalChainComplex_map_f_apply P.map m _).trans
-      ((map_cubicalBoundaryChainOfCube k c hc).trans
-        (normalizedCubicalChainComplex_obj_d_apply P.fst m _).symm)
+        (cubicalBoundaryCycleOfCube k c hc) :=
+  IsCubicalRepresentative.cubicalHomologyδ_eq (s := NormalizedCubicalChain.ofCube P.fst k c)
+    ((isCubicalRepresentative_iff _ _).2 ⟨cubicalCycleOfCube k c hc, by
+      rw [iCycles_cubicalCycleOfCube, cubicalChainOfCube_def,
+        normalizedCubicalChainComplexXEquiv_symm_apply], rfl⟩) _
+    (by rw [iCycles_cubicalBoundaryCycleOfCube, map_cubicalBoundaryChainOfCube])
 
-/-- If the ambient space of a pair is contractible, the connecting morphism
-`Hₘ₊₂(X, A) ⟶ Hₘ₊₁(A)` of cubical homology is an isomorphism: its neighbours `Hₘ₊₂(X)` and
-`Hₘ₊₁(X)` in the long exact sequence vanish. -/
-instance isIso_cubicalHomologyδ_of_contractibleSpace [ContractibleSpace P.fst] (m : ℕ) :
-    IsIso (P.cubicalHomologyδ k (m + 2) (m + 1)) := by
+/-- If the ambient space of a pair is contractible, the connecting morphism `Hₙ(X, A) ⟶ Hₘ(A)` of
+cubical homology, `m + 1 = n`, is an isomorphism for `m ≠ 0`: its neighbours `Hₙ(X)` and `Hₘ(X)` in
+the long exact sequence vanish. -/
+theorem isIso_cubicalHomologyδ_of_contractibleSpace_of_ne_zero [ContractibleSpace P.fst]
+    {n m : ℕ} (h : m + 1 = n) (hm : m ≠ 0) : IsIso (P.cubicalHomologyδ k n m h) := by
   have hX (n : ℕ) (hn : n ≠ 0) :
       IsZero (((normalizedCubicalChainComplex k).obj P.fst).homology n) :=
     (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of k k) P.fst hn).of_iso
       (TauCeti.singularCubicalHomologyIso k P.fst n).symm
-  exact (shortExact_cubicalChainComplexShortComplex k P).isIso_δ (m + 2) (m + 1) rfl
-    (hX _ (by lia)) (hX _ (by lia))
+  exact (shortExact_cubicalChainComplexShortComplex k P).isIso_δ n m h (hX n (by lia)) (hX m hm)
+
+/-- If the ambient space of a pair is contractible, the connecting morphism
+`Hₘ₊₂(X, A) ⟶ Hₘ₊₁(A)` of cubical homology is an isomorphism. -/
+instance isIso_cubicalHomologyδ_of_contractibleSpace [ContractibleSpace P.fst] (m : ℕ) :
+    IsIso (P.cubicalHomologyδ k (m + 2) (m + 1)) :=
+  isIso_cubicalHomologyδ_of_contractibleSpace_of_ne_zero k P rfl m.succ_ne_zero
 
 /-! ### Excision -/
 
@@ -310,3 +358,32 @@ theorem isIso_homologyMap_cubicalChainComplexMap_excisionMap_compl {X : TopCat.{
   isIso_homologyMap_cubicalChainComplexMap_of_isIso _ n
 
 end TopPair
+
+namespace TauCeti
+
+variable {k : Type u} [Ring k]
+
+/-- The comparison of chains in a subset, followed by its inclusion into small singular chains
+and then all singular chains, is the comparison of their pushforward to the ambient space.
+No openness or covering hypothesis is needed for this support factorization. -/
+theorem chainComplexMap_ι_toSmallSingularSubcomplex_cubicalToSingular {X : TopCat.{u}} {ι :
+  Type*} (F : ι → Set X)
+    {S : Set X} {i : ι} (hS : S ⊆ F i) (n : ℕ)
+    (c : NormalizedCubicalChain (TopCat.of S) k n) :
+    (SSet.chainComplexMap (X.smallSingularSubcomplex F).ι (ModuleCat.of k k)).f n
+      ((SSet.chainComplexMap (TopCat.toSmallSingularSubcomplex F hS) (ModuleCat.of k k)).f n
+        (((cubicalToSingular k).app (TopCat.of S)).f n c)) =
+    ((cubicalToSingular k).app X).f n
+      (NormalizedCubicalChain.map k (ContinuousMap.subtypeVal S) n c) := by
+  let v := ((cubicalToSingular k).app (TopCat.of S)).f n c
+  have hm : (SSet.chainComplexMap (TopCat.toSmallSingularSubcomplex F hS) (ModuleCat.of k k)).f n ≫
+      (SSet.chainComplexMap (X.smallSingularSubcomplex F).ι (ModuleCat.of k k)).f n =
+      (SSet.chainComplexMap
+        (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal S))) (ModuleCat.of k k)).f n
+          := by
+    rw [← HomologicalComplex.comp_f, ← Functor.map_comp,
+      TopCat.toSmallSingularSubcomplex_ι]
+  exact (ConcreteCategory.congr_hom hm v).trans
+    (cubicalToSingular_app_f_map (TopCat.ofHom (ContinuousMap.subtypeVal S)) n c).symm
+
+end TauCeti

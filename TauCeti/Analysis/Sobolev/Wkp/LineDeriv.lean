@@ -8,8 +8,11 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
+import TauCeti.Analysis.Sobolev.WeakDeriv.NormalTangential
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -53,9 +56,16 @@ No boundedness or boundary regularity of `Ω` is assumed.
 * `TauCeti.W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn`: the same on an open
   subdomain `V ≤ Ω`, for any `u ∈ W^{1,p}(V)` whose weak gradient agrees on `V` with that of a
   function on `Ω` whose gradient components are weakly differentiable.
+* `TauCeti.Wkp.norm_iteratedGradient_one_le_sum`: the `Lᵖ` norm of the weak Hessian is at most
+  the sum of the `Lᵖ` norms of the derivatives `∂ᵢ ⟪∇u, eⱼ⟫`.
 * `TauCeti.Wkp.inner_iteratedGradient_one_apply_ae_eq`: the weak Hessian is symmetric.
 * `TauCeti.Wkp.adjoint_iteratedGradient_one_ae_eq`: the weak Hessian is self-adjoint almost
   everywhere.
+* `TauCeti.Wkp.hasWeakLineDerivOn_inner_iteratedGradient_one_comm`: weak derivatives of the
+  entries of the weak Hessian commute with its slots.
+* `TauCeti.Wkp.exists_hasWeakLineDerivOn_inner_iteratedGradient_one_of_normal_of_tangential`: the
+  third weak derivatives of an element of `W^{2,p}(Ω)` lie in `Lᵖ(Ω)` once those with a direction
+  orthogonal to `ν` and the purely normal one `∂_ν ∂_ν ∂_ν u` do.
 * `TauCeti.Wkp.hasWeakLineDerivOn_iteratedGradient`: weak directional differentiation commutes
   with `Wkp.iteratedGradient`.
 * `TauCeti.Wkp.iteratedGradient_lineDerivL`: the top weak derivative of `Wkp.lineDerivL v (j + 1) u`
@@ -171,7 +181,7 @@ private theorem Wkp.exists_wkp_lineDeriv (v : E) :
 
 /-- The first-order case of `TauCeti.Wkp.exists_hasWeakLineDerivOn_value`: the derivative of an
 element of `W^{1,p}(Ω)` in the direction `v` is the component `⟪v, ∇u⟫` of its weak gradient. -/
-private theorem Wkp.hasWeakLineDerivOn_value_innerSL_compLp (v : E) (w : Wkp mu Omega p 1) :
+theorem Wkp.hasWeakLineDerivOn_value_innerSL_compLp (v : E) (w : Wkp mu Omega p 1) :
     HasWeakLineDerivOn mu Omega (Wkp.value 1 w)
       (Wkp.value 0 ((innerSL ℝ v).compLp (Wkp.iteratedGradient 0 w))) v := by
   rw [Wkp.value_zero]
@@ -485,6 +495,53 @@ theorem W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn {ι : Type
   filter_upwards [hgrad] with x hx
   rw [hx]
 
+/-- **The weak Hessian is controlled by its entries.** Let `U ∈ W^{2,p}(Ω)` and fix an orthonormal
+basis `e` of `E`. If `gᵢⱼ ∈ Lᵖ(Ω)` is a weak derivative in the direction `eᵢ` of the component
+`⟪∇U, eⱼ⟫` of the weak gradient, then the `Lᵖ` norm of the weak Hessian of `U` is at most
+`∑ᵢ ∑ⱼ ‖gᵢⱼ‖`. Together with `TauCeti.Wkp.norm_le_norm_lowerOrder_add_norm_iteratedGradient`, this
+bounds the norm of `U` in `W^{2,p}(Ω)` by the `W^{1,p}(Ω)` norm of its first-order part plus
+`∑ᵢ ∑ⱼ ‖gᵢⱼ‖`; `TauCeti.W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn` supplies such a `U`
+from these componentwise second weak derivatives. -/
+theorem Wkp.norm_iteratedGradient_one_le_sum {ι : Type*} [Fintype ι] (U : Wkp mu Omega p 2)
+    (b : OrthonormalBasis ι ℝ E) {g : ι → ι → Lp ℝ p (mu.restrict Omega)}
+    (hg : ∀ i j, HasWeakLineDerivOn mu Omega
+      (fun x => ⟪W1p.gradient (Wkp.lowerOrder 1 U) x, b j⟫_ℝ) (g i j) (b i)) :
+    ‖Wkp.iteratedGradient 1 U‖ ≤ ∑ i, ∑ j, ‖g i j‖ := by
+  -- The entries `⟪D²U eᵢ, eⱼ⟫` of the weak Hessian are the given derivatives `gᵢⱼ`.
+  have hH := Wkp.hasWeakFDerivOn_iteratedGradient 0 U
+  rw [Wkp.iteratedGradient_zero] at hH
+  have hent : ∀ i j, (fun x => ⟪Wkp.iteratedGradient 1 U x (b i), b j⟫_ℝ) =ᵐ[mu.restrict Omega]
+      g i j := fun i j =>
+    HasWeakLineDerivOn.ae_eq (by simpa only [innerSL_apply_apply, real_inner_comm] using
+      (hH.hasWeakLineDerivOn (b i)).clm_comp (innerSL ℝ (b j))) (hg i j)
+  -- Pointwise, the operator norm is at most the sum of the absolute values of the entries.
+  have hpt : ∀ᵐ x ∂mu.restrict Omega,
+      ‖Wkp.iteratedGradient 1 U x‖ ≤ ‖∑ i, ∑ j, ‖g i j x‖‖ := by
+    filter_upwards [ae_all_iff.2 fun i => ae_all_iff.2 fun j => hent i j] with x hx
+    rw [Real.norm_of_nonneg (by positivity)]
+    refine ((Wkp.iteratedGradient 1 U x).opNorm_le_sum_norm_apply_orthonormalBasis b).trans
+      (Finset.sum_le_sum fun i _ => ?_)
+    rw [← innerSL_apply_norm ℝ]
+    refine ((innerSL ℝ (Wkp.iteratedGradient 1 U x (b i))).opNorm_le_sum_norm_apply_orthonormalBasis
+      b).trans_eq (Finset.sum_congr rfl fun j _ => ?_)
+    rw [innerSL_apply_apply, hx i j]
+  -- Integrate, using the triangle inequality in `Lᵖ` for the finite sums.
+  have hsum : eLpNorm (fun x => ∑ i, ∑ j, ‖g i j x‖) p (mu.restrict Omega) ≤
+      ∑ i, ∑ j, eLpNorm (g i j) p (mu.restrict Omega) := by
+    have h₁ := eLpNorm_sum_le (μ := mu.restrict Omega) (s := Finset.univ)
+      (f := fun i x => ∑ j, ‖g i j x‖) (Fact.out : 1 ≤ p)
+    rw [Finset.sum_fn] at h₁
+    refine h₁.trans (Finset.sum_le_sum fun i _ => ?_)
+    have h₂ := eLpNorm_sum_le (μ := mu.restrict Omega) (s := Finset.univ)
+      (f := fun j x => ‖g i j x‖) (Fact.out : 1 ≤ p)
+    rw [Finset.sum_fn] at h₂
+    exact h₂.trans_eq (Finset.sum_congr rfl fun j _ => eLpNorm_norm _ (Lp.aestronglyMeasurable _))
+  rw [Lp.norm_def]
+  refine (ENNReal.toReal_mono (by simp [ENNReal.sum_eq_top, Lp.eLpNorm_ne_top])
+    ((eLpNorm_mono_ae (Lp.aestronglyMeasurable _) hpt).trans hsum)).trans_eq ?_
+  simp only [ENNReal.toReal_sum fun _ _ => ENNReal.sum_ne_top.2 fun _ _ => Lp.eLpNorm_ne_top _,
+    ENNReal.toReal_sum fun _ _ => Lp.eLpNorm_ne_top _, Lp.norm_def]
+
 /-! ### Symmetry of the weak Hessian -/
 
 /-- **The weak Hessian is symmetric.** For `u ∈ W^{2,p}(Ω)` and directions `v` and `w`, the mixed
@@ -520,6 +577,50 @@ theorem Wkp.adjoint_iteratedGradient_one_ae_eq (u : Wkp mu Omega p 2) :
   refine (LinearMap.eq_adjoint_iff_basis b.toBasis b.toBasis _ _).2 fun i j => ?_
   simpa only [ContinuousLinearMap.coe_coe, OrthonormalBasis.coe_toBasis] using
     (hx i j).trans (real_inner_comm _ _).symm
+
+/-- **Symmetry of the third weak derivatives.** For `u ∈ W^{2,p}(Ω)`, if the entry
+`⟪D²u w, v⟫ = ∂_w ∂_v u` of the weak Hessian has the weak derivative `G` in the direction `z`,
+then the entry `⟪D²u z, v⟫ = ∂_z ∂_v u` has the same weak derivative `G` in the direction `w`.
+Together with `TauCeti.Wkp.inner_iteratedGradient_one_apply_ae_eq` this makes the third weak
+derivatives `∂_z ∂_w ∂_v u` symmetric in all three directions. -/
+theorem Wkp.hasWeakLineDerivOn_inner_iteratedGradient_one_comm (u : Wkp mu Omega p 2)
+    {v w z : E} {G : E → ℝ}
+    (hG : HasWeakLineDerivOn mu Omega (fun x => ⟪Wkp.iteratedGradient 1 u x w, v⟫_ℝ) G z) :
+    HasWeakLineDerivOn mu Omega (fun x => ⟪Wkp.iteratedGradient 1 u x z, v⟫_ℝ) G w := by
+  -- `∂_v u ∈ W^{1,p}(Ω)`, whose gradient components are the entries `⟪D²u ·, v⟫`
+  obtain ⟨d, -, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq u v
+  exact (W1p.hasWeakLineDerivOn_inner_gradient_comm (hG.congr_ae (hd w).symm)).congr_ae (hd z)
+
+/-- **Third derivatives from the tangential ones and the purely normal one.** Let
+`u ∈ W^{2,p}(Ω)` with weak Hessian `D²u`. Suppose that `⟪D²u ν, ν⟫` has an `Lᵖ(Ω)` weak
+derivative in the direction `ν`, and that every entry `⟪D²u v, τ⟫` with `τ` orthogonal to `ν` has
+an `Lᵖ(Ω)` weak derivative in every direction. Then every entry `⟪D²u w, v⟫` has an `Lᵖ(Ω)` weak
+derivative in every direction. -/
+theorem Wkp.exists_hasWeakLineDerivOn_inner_iteratedGradient_one_of_normal_of_tangential
+    (u : Wkp mu Omega p 2) {ν : E}
+    (hnor : ∃ G : Lp ℝ p (mu.restrict Omega),
+      HasWeakLineDerivOn mu Omega (fun x => ⟪Wkp.iteratedGradient 1 u x ν, ν⟫_ℝ) G ν)
+    (htan : ∀ τ v w, ⟪τ, ν⟫_ℝ = 0 → ∃ G : Lp ℝ p (mu.restrict Omega),
+      HasWeakLineDerivOn mu Omega (fun x => ⟪Wkp.iteratedGradient 1 u x v, τ⟫_ℝ) G w)
+    (v w z : E) : ∃ G : Lp ℝ p (mu.restrict Omega),
+      HasWeakLineDerivOn mu Omega (fun x => ⟪Wkp.iteratedGradient 1 u x w, v⟫_ℝ) G z := by
+  -- `T v w z`: the entry `⟪D²u w, v⟫` has an `Lᵖ(Ω)` weak derivative in the direction `z`.
+  let T : E → E → E → Prop := fun v w z => ∃ G : Lp ℝ p (mu.restrict Omega),
+    HasWeakLineDerivOn mu Omega (fun x => ⟪Wkp.iteratedGradient 1 u x w, v⟫_ℝ) G z
+  -- `T` is symmetric in `v, w`, since the weak Hessian is, and in `w, z`, since weak derivatives
+  -- commute.
+  have hvw : ∀ {v w z}, T v w z → T w v z := by
+    rintro v w z ⟨G, h⟩
+    exact ⟨G, h.congr_ae (Wkp.inner_iteratedGradient_one_apply_ae_eq u w v)⟩
+  have hwz : ∀ {v w z}, T v w z → T v z w := by
+    rintro v w z ⟨G, h⟩
+    exact ⟨G, Wkp.hasWeakLineDerivOn_inner_iteratedGradient_one_comm u h⟩
+  have htan' : ∀ v w τ, ⟪τ, ν⟫_ℝ = 0 → T v w τ := fun v w τ hτ => hwz (hvw (htan τ v w hτ))
+  -- Split the directions along `ν` and its orthogonal complement, one slot at a time.
+  have hνν : ∀ z, T ν ν z := exists_hasWeakLineDerivOn_of_normal_of_tangential hnor (htan' ν ν)
+  have hν : ∀ w z, T ν w z := fun w =>
+    exists_hasWeakLineDerivOn_of_normal_of_tangential (hwz (hνν w)) (htan' ν w)
+  exact exists_hasWeakLineDerivOn_of_normal_of_tangential (hvw (hwz (hvw (hν w v)))) (htan' v w) z
 
 /-! ### Commutativity of directional derivatives with `iteratedGradient` -/
 

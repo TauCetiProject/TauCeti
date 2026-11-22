@@ -9,6 +9,8 @@ public import Mathlib.Algebra.GroupWithZero.Action.Regular
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import Mathlib.Algebra.Polynomial.Degree.Support
 public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
+import Mathlib.RingTheory.Adjoin.Polynomial.Basic
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # Graded modules over a polynomial ring
@@ -96,19 +98,9 @@ theorem bddAbove_setOf_piece_ne_bot [Module.Finite k[X] M]
     refine Submodule.iSup_induction _ (motive := fun y ↦ (X : k[X]) • y ∈ L) hy
       (fun q y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simpa only [smul_add] using L.add_mem hy hz
     exact Submodule.mem_iSup_of_mem ⟨(q : ℤ) - d, by grind⟩ (hX hy)
-  have hXnL : ∀ n : ℕ, ∀ y ∈ L, (X ^ n : k[X]) • y ∈ L := by
-    intro n
-    induction n with
-    | zero => simp
-    | succ n ih => exact fun y hy ↦ by simpa only [pow_succ, mul_smul] using ih _ (hXL y hy)
-  have hAL : ∀ (a : k[X]), ∀ y ∈ L, a • y ∈ L := by
-    intro a
-    induction a using Polynomial.induction_on' with
-    | add a b ha hb => exact fun y hy ↦ by simpa only [add_smul] using L.add_mem (ha y hy) (hb y hy)
-    | monomial n c =>
-      intro y hy
-      rw [← C_mul_X_pow_eq_monomial, mul_smul, ← algebraMap_eq, algebraMap_smul]
-      exact L.smul_mem c (hXnL n y hy)
+  have hAL : ∀ (a : k[X]), ∀ y ∈ L, a • y ∈ L := fun a _ hy ↦
+    L.smul_mem_of_mem_adjoin (s := {X}) (by simpa using hXL)
+      (adjoin_X (R := k) ▸ Algebra.mem_top) hy
   let L' : Submodule k[X] M := { L.toAddSubmonoid with smul_mem' := hAL }
   have hL : ∀ y : M, y ∈ L := by
     have hsL : Submodule.span k[X] (s : Set M) ≤ L' := by
@@ -247,9 +239,9 @@ theorem homogeneousPartPolynomial_apply_of_mem (f : M →ₗ[k[X]] N) (r : ℤ)
 /-- The polynomial-linear homogeneous part has the selected degree. -/
 @[simp]
 theorem isHomogeneous_homogeneousPartPolynomial (f : M →ₗ[k[X]] N) (r : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (G.homogeneousPartPolynomial H hX hY f r)
+    LinearMap.IsHomogeneous (G.homogeneousPartPolynomial H hX hY f r)
       G.piece H.piece r := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   rw [G.homogeneousPartPolynomial_apply_of_mem H hX hY f r hx]
   exact (DirectSum.decompose H.piece (f x) (p + r)).property
@@ -257,12 +249,12 @@ theorem isHomogeneous_homogeneousPartPolynomial (f : M →ₗ[k[X]] N) (r : ℤ)
 /-- Taking the component at the degree of a homogeneous polynomial-linear map recovers the map. -/
 @[simp]
 theorem homogeneousPartPolynomial_eq_self (f : M →ₗ[k[X]] N) (r : ℤ)
-    (hf : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r) :
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
     G.homogeneousPartPolynomial H hX hY f r = f := by
   apply _root_.LinearMap.restrictScalars_injective k
   rw [G.homogeneousPartPolynomial_restrictScalars H hX hY f r]
   apply G.homogeneousPart_eq_self H (f.restrictScalars k) r
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   simpa only [_root_.LinearMap.restrictScalars_apply] using hf.map_mem hx
 
@@ -270,7 +262,7 @@ theorem homogeneousPartPolynomial_eq_self (f : M →ₗ[k[X]] N) (r : ℤ)
 @[simp]
 theorem homogeneousPartPolynomial_eq_self_iff (f : M →ₗ[k[X]] N) (r : ℤ) :
     G.homogeneousPartPolynomial H hX hY f r = f ↔
-      TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r := by
+      LinearMap.IsHomogeneous f G.piece H.piece r := by
   constructor
   · intro hf
     rw [← hf]

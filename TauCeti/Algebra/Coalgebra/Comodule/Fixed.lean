@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Submodule.EqLocus
 public import Mathlib.LinearAlgebra.TensorProduct.Decomposition
 public import Mathlib.RingTheory.Flat.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.Hom
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 
 /-!
@@ -122,6 +123,13 @@ theorem fixedMap_comp {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P
     (g.comp f).fixedMap = g.fixedMap.comp f.fixedMap := by
   ext m
   rfl
+
+/-- Restriction to invariants preserves addition of comodule morphisms. -/
+@[simp]
+theorem fixedMap_add (f g : Hom R C M N) :
+    (f + g).fixedMap = f.fixedMap + g.fixedMap := by
+  ext m
+  simp only [fixedMap_apply, Hom.add_apply, LinearMap.add_apply, AddMemClass.coe_add]
 
 /-- An injective comodule morphism induces an injective map on invariants. -/
 theorem fixedMap_injective (f : Hom R C M N) (hf : Function.Injective f) :
