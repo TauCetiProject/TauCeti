@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
+public import Mathlib.Algebra.DirectSum.Decomposition
+public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.Data.ZMod.IntUnitsPower
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.Algebra.CharP.Invertible
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 import TauCeti.Algebra.Group.Action.SemiconjBy
 import TauCeti.RingTheory.GradedAlgebra.Generators
@@ -27,9 +30,13 @@ consequences of Koszul graded commutativity:
 * In a (possibly nonunital, nonassociative) ring `A` equipped with a family of homogeneous pieces
   `ℬ : ι → σ` indexed by a Koszul-signed degree semiring `ι` (`[CommSemiring ι]
   [Module ι (Additive ℤˣ)]`, in particular `ℤ`, `ℕ`, and `ZMod 2`), Koszul graded commutativity
-  `a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a)` implies that homogeneous elements whose degree has
-  Koszul sign `1` (in particular, degree `0`) commute with every element of `A`, and homogeneous
-  elements whose degree has Koszul sign `-1` (in particular, degree `1`) satisfy `a * a = -(a * a)`.
+  `a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a)` implies that:
+  - When `ℬ` gives a `DirectSum.Decomposition` of `A`, every homogeneous element whose degree `p`
+    has Koszul sign `(-1 : ℤˣ) ^ p = 1` (in particular, degree `0`) commutes with every element of
+    `A`.
+  - Without requiring a decomposition, every homogeneous element whose degree `p` has Koszul sign
+    `(-1 : ℤˣ) ^ p = -1` (in particular, degree `1`) satisfies `a * a = -(a * a)`. When `2` is
+    invertible in the scalars, such an element squares to zero.
 
 ## Main results
 
@@ -52,6 +59,8 @@ consequences of Koszul graded commutativity:
   `(-1 : ℤˣ) ^ p = -1` satisfies `a * a = -(a * a)`.
 * `TauCeti.mul_self_eq_neg_of_mul_eq_uzpow_smul_mul_of_mem_one`: every element of degree `1`
   satisfies `a * a = -(a * a)`.
+* `TauCeti.mul_self_eq_zero_of_negOnePow_odd`: when `2` is invertible, an element whose square is
+  fixed by the Koszul sign of an odd degree squares to zero.
 
 ## References
 
@@ -261,5 +270,14 @@ theorem mul_self_eq_neg_of_mul_eq_uzpow_smul_mul_of_mem_one {ℬ : ι → σ}
   mul_self_eq_neg_of_mul_eq_uzpow_smul_mul hcomm ha (uzpow_one (-1))
 
 end SignedComm
+
+/-- If `2` is invertible in the scalars, an element `a` with `a * a = (-1) ^ (n * n) • (a * a)`
+for an odd `n` squares to zero: in a graded-commutative algebra, every element of odd degree
+squares to zero. -/
+theorem mul_self_eq_zero_of_negOnePow_odd {K B : Type*} [Semiring K] [Invertible (2 : K)]
+    [NonUnitalNonAssocRing B] [Module K B] {a : B} {n : ℤ} (hn : Odd n)
+    (ha : a * a = (n * n).negOnePow • (a * a)) : a * a = 0 :=
+  eq_zero_of_eq_neg_of_invertible_two (R := K) <| by
+    rwa [Int.negOnePow_mul_self, Int.negOnePow_odd _ hn, Units.neg_smul, one_smul] at ha
 
 end TauCeti
