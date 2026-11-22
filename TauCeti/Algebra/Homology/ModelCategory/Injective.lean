@@ -67,7 +67,7 @@ to `K` is a coboundary, then `p` has the right lifting property with respect to 
 theorem hasLiftingProperty_of_forall_eq_δ {A B X Y K : CochainComplex C ℤ} (i : A ⟶ B)
     (p : X ⟶ Y) [Mono i] (hp : degreewiseEpiWithInjectiveKernel p) {ι : K ⟶ X} {hι : ι ≫ p = 0}
     (hK : IsLimit (KernelFork.ofι ι hι))
-    (h : ∀ z : Cocycle (cokernel i) K 1, ∃ α : Cochain (cokernel i) K 0, δ 0 1 α = z.1) :
+    (h : ∀ z : Cocycle (cokernel i) K 1, ∃ α : Cochain (cokernel i) K 0, δ 0 1 α = z.val) :
     HasLiftingProperty i p where
   sq_hasLift {t b} sq := by
     have sq' (n : ℤ) : CommSq (t.f n) (i.f n) (p.f n) (b.f n) :=

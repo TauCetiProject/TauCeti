@@ -21,6 +21,9 @@ This transports the covariance of division by the coordinate on unit-supported m
 formal power series. Unit dilation also preserves the kernel of psi; dilation by a nonunit
 need not do so, since it can move a unit atom off the units. All primes, including two, are allowed.
 
+Applied to a Dirac measure, the dilation formula gives the Mahler expansion
+`PadicInt.mahler_mul` of `x ↦ (a x choose n)`.
+
 ## References
 
 J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*, §3.5.5 and
@@ -59,6 +62,21 @@ theorem amiceTransform_map_mulLeft {R : Type*} [CommRing R] [TopologicalSpace R]
       amiceTransform_map_mulLeft_natCast m μ)) a
 
 end AbstractMeasure
+
+namespace PadicInt
+
+/-- **Mahler functions of a dilation.** For `a ∈ ℤ_p`, the function `x ↦ (a x choose n)` is the
+integral combination `∑_{k ≤ n} c_{n,k} (x choose k)`, where `c_{n,k}` is the coefficient of `Tⁿ`
+in `((1 + T) ^ a - 1) ^ k`. This is the coefficientwise form of
+`(1 + T) ^ (a x) = ((1 + T) ^ a) ^ x = ∑ₖ (x choose k) ((1 + T) ^ a - 1) ^ k`. -/
+theorem mahler_mul (a x : ℤ_[p]) (n : ℕ) :
+    mahler n (a * x) = ∑ k ∈ Finset.range (n + 1),
+      coeff n ((binomialSeries ℤ_[p] a - 1) ^ k) * mahler k x := by
+  have h := congrArg (coeff n) (amiceTransform_map_mulLeft (dirac ℤ_[p] x) a)
+  rw [coeff_subst_eq_sum_range _ (by simp) n] at h
+  simpa [coeff_amiceTransform, mahler_apply, mul_comm] using h
+
+end PadicInt
 
 namespace TauCeti
 

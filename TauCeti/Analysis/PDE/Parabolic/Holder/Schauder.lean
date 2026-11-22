@@ -475,7 +475,7 @@ theorem norm_valueL_le_euclideanParabolicOperatorL_add_of_abs_le (hα : α ≤ 1
     K.coe_nonneg u (fun q ↦ by
       simpa only [Real.norm_eq_abs] using HolderSpace.norm_apply_le
         (euclideanParabolicOperatorL hα a b c u) q) hM p
-  obtain ⟨ht₀, htT⟩ := (slabTime p).2
+  obtain ⟨ht₀, htT⟩ := (slabTime p).property
   have htT₀ : (slabTime p : ℝ) ≤ T₀ := htT.trans (by exact_mod_cast hTT₀)
   rw [valueL_apply, Real.norm_eq_abs]
   refine hmax.trans ?_

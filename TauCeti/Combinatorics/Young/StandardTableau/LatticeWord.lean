@@ -65,8 +65,8 @@ private theorem rowIndex_extend_of_lt (hc : YoungDiagram.IsCorner μ c)
     rowIndex (extend hc T).toTableau ⟨k.val, by have := hc.card_erase; omega⟩ =
       rowIndex T.toTableau k := by
   let d := T.toTableau.symm k
-  have hd : d.1 ≠ c := (hc.mem_erase_iff.mp d.2).2
-  have he : (extend hc T).toTableau ⟨d.1, (hc.mem_erase_iff.mp d.2).1⟩ =
+  have hd : d.val ≠ c := (hc.mem_erase_iff.mp d.property).2
+  have he : (extend hc T).toTableau ⟨d.val, (hc.mem_erase_iff.mp d.property).1⟩ =
       ⟨k.val, by have := hc.card_erase; omega⟩ := by
     apply Fin.ext
     rw [toTableau_apply, extend_apply_val_of_ne hc T _ hd]
