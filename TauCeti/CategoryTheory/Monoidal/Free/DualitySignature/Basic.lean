@@ -378,8 +378,8 @@ variable (S : TensorSignature.{u, v})
   | of _ | unit => simp [FreeMonoidalCategory.projectObj]; rfl
   | tensor _ _ ihX ihY => simp [FreeMonoidalCategory.projectObj, ihX, ihY]; rfl
 
-/-- The canonical strong monoidal functor embedding the free monoidal category on a tensor signature
-`S` into the free rigid category on `S.toDualitySignature`, obtained by the universal lift of
+/-- The canonical strong monoidal functor from the free monoidal category on a tensor signature
+`S` to the free rigid category on `S.toDualitySignature`, obtained by the universal lift of
 `FreeMonoidal`. -/
 @[expose] def toFreeRigid : S.FreeMonoidal ⥤ S.toDualitySignature.FreeRigid :=
   FreeMonoidal.lift (fun a : S.Obj ↦ DualitySignature.FreeRigid.of (S := S.toDualitySignature) a)

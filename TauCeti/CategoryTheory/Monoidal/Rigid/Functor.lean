@@ -569,8 +569,8 @@ theorem Iso.hom_app_comp_mapLeftDualIso_hom (α : F ≅ G) [α.hom.IsMonoidal] (
     Category.assoc, ← comp_leftAdjointMate, Iso.inv_hom_id_app, leftAdjointMate_id,
     Category.comp_id]
 
-/-- The right mate of `τ.app X` with respect to the image pairings of `(X, Y)` is a right inverse
-to `τ.app Y`. -/
+/-- Composing `τ.app Y` with the right mate `m` of `τ.app X` (with respect to the image pairings
+of `(X, Y)`) gives the identity on `F.obj Y`: `τ.app Y ≫ m = 𝟙 (F.obj Y)`. -/
 @[reassoc]
 theorem NatTrans.app_comp_rightMate_mapExactPairing (τ : F ⟶ G) [τ.IsMonoidal] (X Y : C)
     [ExactPairing X Y] :
@@ -583,8 +583,8 @@ theorem NatTrans.app_comp_rightMate_mapExactPairing (τ : F ⟶ G) [τ.IsMonoida
     Functor.mapExactPairing_evaluation, ← tensorHom_def_assoc, ← IsMonoidal.tensor_assoc,
     ← τ.naturality_assoc, τ.app_unit_comp_η]
 
-/-- The right mate of `τ.app X` with respect to the image pairings of `(X, Y)` is a left inverse
-to `τ.app Y`. -/
+/-- Composing the right mate `m` of `τ.app X` (with respect to the image pairings of `(X, Y)`)
+with `τ.app Y` gives the identity on `G.obj Y`: `m ≫ τ.app Y = 𝟙 (G.obj Y)`. -/
 @[reassoc]
 theorem NatTrans.rightMate_mapExactPairing_comp_app (τ : F ⟶ G) [τ.IsMonoidal] (X Y : C)
     [ExactPairing X Y] :
@@ -597,8 +597,8 @@ theorem NatTrans.rightMate_mapExactPairing_comp_app (τ : F ⟶ G) [τ.IsMonoida
     Functor.mapExactPairing_coevaluation, Functor.mapExactPairing_coevaluation, Category.assoc,
     Category.assoc, τ.δ_comp_tensorHom, τ.naturality_assoc, IsMonoidal.unit_assoc]
 
-/-- The left mate of `τ.app Y` with respect to the image pairings of `(X, Y)` is a right inverse
-to `τ.app X`. -/
+/-- Composing `τ.app X` with the left mate `m` of `τ.app Y` (with respect to the image pairings of
+`(X, Y)`) gives the identity on `F.obj X`: `τ.app X ≫ m = 𝟙 (F.obj X)`. -/
 @[reassoc]
 theorem NatTrans.app_comp_leftMate_mapExactPairing (τ : F ⟶ G) [τ.IsMonoidal] (X Y : C)
     [ExactPairing X Y] :
@@ -611,8 +611,8 @@ theorem NatTrans.app_comp_leftMate_mapExactPairing (τ : F ⟶ G) [τ.IsMonoidal
     Functor.mapExactPairing_evaluation, ← tensorHom_def'_assoc, ← IsMonoidal.tensor_assoc,
     ← τ.naturality_assoc, τ.app_unit_comp_η]
 
-/-- The left mate of `τ.app Y` with respect to the image pairings of `(X, Y)` is a left inverse
-to `τ.app X`. -/
+/-- Composing the left mate `m` of `τ.app Y` (with respect to the image pairings of `(X, Y)`) with
+`τ.app X` gives the identity on `G.obj X`: `m ≫ τ.app X = 𝟙 (G.obj X)`. -/
 @[reassoc]
 theorem NatTrans.leftMate_mapExactPairing_comp_app (τ : F ⟶ G) [τ.IsMonoidal] (X Y : C)
     [ExactPairing X Y] :
