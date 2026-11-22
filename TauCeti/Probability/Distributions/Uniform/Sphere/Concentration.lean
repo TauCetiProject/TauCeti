@@ -170,10 +170,7 @@ private lemma hasSubgaussianMGF_uniformSphereMeasure_of_stdGaussian {g : sphere 
     linarith
   -- The function `g` is bounded, so all its exponential moments are finite.
   have hint (s : ℝ) : Integrable (fun u ↦ exp (s * g u)) (uniformSphereMeasure E) :=
-    .of_bound (hg.const_mul s).exp.aestronglyMeasurable (exp (|s| * M)) (.of_forall fun u ↦ by
-      rw [Real.norm_of_nonneg (exp_pos _).le, exp_le_exp]
-      calc s * g u ≤ |s| * |g u| := (le_abs_self _).trans (abs_mul _ _).le
-        _ ≤ |s| * M := mul_le_mul_of_nonneg_left (hM u) (abs_nonneg _))
+    integrable_exp_mul_of_mem_Icc hg.aemeasurable (.of_forall fun u ↦ abs_le.1 (hM u))
   refine ⟨hint, fun s ↦ ?_⟩
   -- Jensen's inequality in the radius at the rescaled parameter `s / m`.
   have hkey := lintegral_exp_mul_integral_chiMeasure_le hg e (s / m)
