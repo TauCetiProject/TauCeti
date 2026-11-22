@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Category.TopCat.Limits.Pullbacks
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import TauCeti.Topology.Category.TopCat.Fiber
+public import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
 # Pullbacks in `TopCat`
@@ -15,7 +16,8 @@ public import TauCeti.Topology.Category.TopCat.Fiber
 A commutative square of topological spaces whose top horizontal map is an embedding and whose
 bottom horizontal map is injective is a pullback when the range of the top map is the preimage of
 the range of the bottom one. This range criterion is useful for geometric constructions presented
-as embedded open subspaces.
+as embedded open subspaces. Similarly, in a Cartesian square whose vertical maps are embeddings and
+bottom map is proper, the top map is proper (`IsProperMap.of_cartesian_isEmbeddings`).
 
 The base change `TopCat.pullbackFst g p` of a morphism `p : E ⟶ B` along `g : B' ⟶ B` has the
 same fibres as `p`: its fibre over `b'` is the fibre of `p` over `g b'`
@@ -71,6 +73,17 @@ theorem isPullback_of_isEmbedding_of_range_eq_preimage
   ext x
   apply hfst.injective
   exact CategoryTheory.congr_fun (hm.trans (lift_fst s).symm) x
+
+/-- In a Cartesian square whose vertical maps are embeddings and bottom map is proper, the top map
+is proper. -/
+theorem _root_.IsProperMap.of_cartesian_isEmbeddings {V' V U' U : TopCat.{u}} {i : V ⟶ U}
+    {i' : V' ⟶ U'} {f : U' ⟶ U} {f' : V' ⟶ V} (hf : IsProperMap f.hom)
+    (hi : IsEmbedding i.hom) (hi' : IsEmbedding i'.hom) (hw : f' ≫ i = i' ≫ f)
+    (hcart : f ⁻¹' Set.range i ⊆ Set.range i') : IsProperMap f'.hom :=
+  hf.of_isEmbedding_of_range_eq hi' hi
+    (funext fun v' ↦ (congrArg (fun g : V' ⟶ U ↦ g v') hw).symm)
+    (Set.Subset.antisymm (fun _ ⟨v', hv'⟩ ↦ ⟨f' v', hv' ▸ congrArg (fun g : V' ⟶ U ↦ g v') hw⟩)
+      hcart)
 
 end TauCeti.TopCat
 

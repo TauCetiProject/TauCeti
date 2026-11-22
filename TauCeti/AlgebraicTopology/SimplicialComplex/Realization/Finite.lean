@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Subcomplex
 public import Mathlib.Analysis.Normed.Group.Constructions
 public import Mathlib.Analysis.Normed.Group.Real
+public import Mathlib.Topology.Compactness.SigmaCompact
 import Mathlib.Data.Fintype.Powerset
 
 /-!
@@ -70,12 +71,41 @@ theorem compactSpace_realization_of_finite_faces (hfin : K.faces.Finite) :
   rw [heq] at hc
   exact ⟨hc⟩
 
+/-- For a complex with finitely many faces, the weak realization is second-countable. -/
+theorem secondCountableTopology_realization_of_finite_faces (hfin : K.faces.Finite) :
+    SecondCountableTopology (Realization K) := by
+  have := K.compactSpace_realization_of_finite_faces hfin
+  let V : Finset ι := hfin.toFinset.biUnion id
+  let coord : Realization K → V → ℝ := fun x v => x.val v.val
+  have hcont : Continuous coord :=
+    continuous_pi fun v => (continuous_apply v.val).comp (continuous_realization_coe K)
+  have hinj : Function.Injective coord := by
+    intro x y hxy
+    apply injective_realization_coe K
+    funext i
+    by_cases hi : i ∈ V
+    · exact congrFun hxy ⟨i, hi⟩
+    · have hx : i ∉ x.val.support := fun h =>
+        hi (Finset.mem_biUnion.mpr ⟨x.val.support, hfin.mem_toFinset.mpr (support_mem K x), h⟩)
+      have hy : i ∉ y.val.support := fun h =>
+        hi (Finset.mem_biUnion.mpr ⟨y.val.support, hfin.mem_toFinset.mpr (support_mem K y), h⟩)
+      exact (Finsupp.notMem_support_iff.mp hx).trans (Finsupp.notMem_support_iff.mp hy).symm
+  exact (hcont.isClosedEmbedding hinj).isEmbedding.secondCountableTopology
+
 /-- For a complex with finitely many faces, the complement `|K| \ |P|` of any precomplex
 polyhedron is locally compact. -/
 theorem locallyCompactSpace_compl_setOf_support_mem
     (P : PreAbstractSimplicialComplex ι) (hfin : K.faces.Finite) :
     LocallyCompactSpace ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)) :=
   have := K.compactSpace_realization_of_finite_faces hfin
+  inferInstance
+
+/-- For a complex with finitely many faces, `|K| \ |P|` is `σ`-compact. -/
+theorem sigmaCompactSpace_compl_setOf_support_mem
+    (P : PreAbstractSimplicialComplex ι) (hfin : K.faces.Finite) :
+    SigmaCompactSpace ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)) :=
+  have := K.locallyCompactSpace_compl_setOf_support_mem P hfin
+  have := K.secondCountableTopology_realization_of_finite_faces hfin
   inferInstance
 
 /-- The weak realization of a complex on a finite vertex type is compact. -/
@@ -88,6 +118,17 @@ instance instCompactSpaceRealization [Finite ι] (K : AbstractSimplicialComplex 
 instance instCompactSpaceRealizationOfFiniteFace (K : AbstractSimplicialComplex ι)
     [Finite (Face K)] : CompactSpace (Realization K) :=
   K.compactSpace_realization_of_finite_faces (Set.toFinite K.faces)
+
+/-- The weak realization of a complex with finitely many faces is second-countable. -/
+instance instSecondCountableTopologyRealizationOfFiniteFace (K : AbstractSimplicialComplex ι)
+    [Finite (Face K)] : SecondCountableTopology (Realization K) :=
+  K.secondCountableTopology_realization_of_finite_faces (Set.toFinite K.faces)
+
+/-- For a finite simplicial complex, `|K| \ |P|` is `σ`-compact. -/
+instance instSigmaCompactSpaceComplSetOfSupportMem (P : PreAbstractSimplicialComplex ι)
+    [Finite (Face K)] :
+    SigmaCompactSpace ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)) :=
+  K.sigmaCompactSpace_compl_setOf_support_mem P (Set.toFinite K.faces)
 
 /-- Barycentric coordinates restrict to a closed embedding on every compact subset of
 the weak realization. This applies in particular to compact local chart domains. -/

@@ -7,8 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Excision
 public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.ExhaustionComparison
+public import TauCeti.Topology.Category.TopCat.Pullback
 public import TauCeti.Topology.Compactness.SigmaCompact
-import TauCeti.Topology.Maps.Proper.Basic
+import TauCeti.Data.Set.Function
 
 /-!
 # Open restriction of Borel–Moore homology with local coefficients
@@ -23,8 +24,18 @@ public section
 noncomputable section
 open CategoryTheory Limits Opposite SimplexCategory Topology
 open scoped Simplicial
-universe u v w
 namespace TauCeti.LocalCoefficientSystem
+section
+universe u' v'
+private lemma homologyMap_commSq {R : Type u'} [Ring R]
+    {C₁ C₂ C₃ C₄ : ChainComplex (ModuleCat.{v'} R) ℕ}
+    {f : C₁ ⟶ C₂} {g : C₁ ⟶ C₃} {h : C₂ ⟶ C₄} {i : C₃ ⟶ C₄} (hsq : CommSq f g h i) (j : ℕ) :
+    HomologicalComplex.homologyMap f j ≫ HomologicalComplex.homologyMap h j =
+      HomologicalComplex.homologyMap g j ≫ HomologicalComplex.homologyMap i j := by
+  simpa only [HomologicalComplex.homologyFunctor_map] using
+    ((HomologicalComplex.homologyFunctor _ _ j).map_commSq hsq).w
+end
+universe u v w
 variable {R : Type u} [Ring R]
 
 section ExcisionTower
@@ -121,7 +132,10 @@ variable {K} in
     ← complChainComplexTowerMap_comp_complChainComplexTowerPairMap i L K.subset_succ K'.subset_succ
       _ _ _ _ h (fun n ↦ Set.image_mono (h n)),
     ComplexTower.limComplexMap_comp,
-    locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexMap_assoc]
+    locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim _ K',
+    locallyFiniteChainComplexToComplLim_comp_limComplexMap_assoc _ K.subset_succ K'.subset_succ
+      K.isCompact K'.isCompact h,
+    ← locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim _ K]
 variable {L} in
 @[reassoc] lemma locallyFiniteChainComplexCoefficientMap_comp_openRestrictionExcision
     (hinj : Function.Injective i) {L₁ L₂ : LocalCoefficientSystem.{u, v, max v w} R U}
@@ -198,6 +212,7 @@ theorem eq_comp_borelMooreHomologyOpenRestrictionOfExhaustion {M : ModuleCat.{ma
     Category.assoc,
     borelMooreHomologyOpenRestrictionOfExhaustion_comp_homologyMap_openRestrictionExcision, hf]
 /-- At each stage `n`, open restriction intertwines relative classes via excision. -/
+@[reassoc (attr := simp)]
 theorem borelMooreHomologyOpenRestrictionOfExhaustion_comp_toRelative_comp_excision (j n : ℕ) :
     borelMooreHomologyOpenRestrictionOfExhaustion i hi L K j ≫
         HomologicalComplex.homologyMap
@@ -208,9 +223,16 @@ theorem borelMooreHomologyOpenRestrictionOfExhaustion_comp_toRelative_comp_excis
       HomologicalComplex.homologyMap
         ((TopPair.ofSubset (i '' K n)ᶜ).locallyFiniteChainComplexToRelative L
           ((K.isCompact n).image i.hom.continuous).compl_range_ofSubset_compl_map) j := by
-  erw [← HomologicalComplex.homologyMap_comp,
-    ← locallyFiniteChainComplexOpenRestrictionExcision_comp_π, HomologicalComplex.homologyMap_comp,
-    borelMooreHomologyOpenRestrictionOfExhaustion_comp_homologyMap_openRestrictionExcision_assoc,
+  have hsq1 : CommSq
+      ((TopPair.ofSubset (K n)ᶜ).locallyFiniteChainComplexToRelative ((pullback i.hom).obj L)
+        (K.isCompact n).compl_range_ofSubset_compl_map)
+      (locallyFiniteChainComplexOpenRestrictionExcision i L K hi.injective)
+      ((openRestrictionExcisionTowerMap i L K hi.injective).app (op n))
+      ((openRestrictionTower i L K).limComplexπ n) :=
+    ⟨(locallyFiniteChainComplexOpenRestrictionExcision_comp_π i L K hi.injective n).symm⟩
+  refine (congrArg (borelMooreHomologyOpenRestrictionOfExhaustion i hi L K j ≫ ·)
+    (homologyMap_commSq hsq1 j)).trans ?_
+  erw [borelMooreHomologyOpenRestrictionOfExhaustion_comp_homologyMap_openRestrictionExcision_assoc,
     ← HomologicalComplex.homologyMap_comp, locallyFiniteChainComplexToComplLim_comp_π]; rfl
 
 private lemma borelMooreHomologyOpenRestrictionOfExhaustion_eq_of_subset
@@ -219,10 +241,27 @@ private lemma borelMooreHomologyOpenRestrictionOfExhaustion_eq_of_subset
       borelMooreHomologyOpenRestrictionOfExhaustion i hi L K j := by
   refine (eq_comp_borelMooreHomologyOpenRestrictionOfExhaustion i hi L K (g := 𝟙 _) ?_).trans
     (Category.id_comp _)
-  rw [Category.id_comp, ← locallyFiniteChainComplexOpenRestrictionExcision_comp_limComplexMap
-      i L hi.injective h, HomologicalComplex.homologyMap_comp,
+  have hsq1 : CommSq (𝟙 _)
+      (locallyFiniteChainComplexOpenRestrictionExcision i L K' hi.injective)
+      (locallyFiniteChainComplexOpenRestrictionExcision i L K hi.injective)
+      (ComplexTower.limComplexMap (openRestrictionTowerMap i L h)) :=
+    ⟨(Category.id_comp _).trans
+      (locallyFiniteChainComplexOpenRestrictionExcision_comp_limComplexMap i L hi.injective h).symm⟩
+  have hsq2 : CommSq (𝟙 _)
+      (locallyFiniteChainComplexToOpenRestrictionLim i L K')
+      (locallyFiniteChainComplexToOpenRestrictionLim i L K)
+      (ComplexTower.limComplexMap (openRestrictionTowerMap i L h)) :=
+    ⟨(Category.id_comp _).trans (locallyFiniteChainComplexToComplLim_comp_limComplexMap L
+      (fun n ↦ Set.image_mono (K.subset_succ n)) (fun n ↦ Set.image_mono (K'.subset_succ n))
+      (fun n ↦ (K.isCompact n).image i.hom.continuous)
+      (fun n ↦ (K'.isCompact n).image i.hom.continuous)
+      (fun n ↦ Set.image_mono (h n))).symm⟩
+  have h1 := homologyMap_commSq hsq1 j
+  have h2 := homologyMap_commSq hsq2 j
+  rw [HomologicalComplex.homologyMap_id, Category.id_comp] at h1 h2
+  rw [Category.id_comp, h1,
     borelMooreHomologyOpenRestrictionOfExhaustion_comp_homologyMap_openRestrictionExcision_assoc,
-    ← HomologicalComplex.homologyMap_comp, locallyFiniteChainComplexToComplLim_comp_limComplexMap]
+    ← h2]
 /-- **Exhaustion independence of open restriction.** -/
 theorem borelMooreHomologyOpenRestrictionOfExhaustion_eq (K' : CompactExhaustion V) (j : ℕ) :
     borelMooreHomologyOpenRestrictionOfExhaustion i hi L K j =
@@ -239,30 +278,46 @@ theorem borelMooreHomologyOpenRestrictionOfExhaustion_eq (K' : CompactExhaustion
       borelMooreHomologyOpenRestrictionOfExhaustion i hi L K j ≫
         borelMooreHomologyCoefficientMap ((pullback i.hom).map η) j := by
   symm; refine eq_comp_borelMooreHomologyOpenRestrictionOfExhaustion i hi L' K ?_
-  rw [Category.assoc, ← HomologicalComplex.homologyMap_comp,
-    locallyFiniteChainComplexCoefficientMap_comp_openRestrictionExcision,
-    HomologicalComplex.homologyMap_comp,
+  have hsq1 : CommSq (locallyFiniteChainComplexCoefficientMap ((pullback i.hom).map η))
+      (locallyFiniteChainComplexOpenRestrictionExcision i L K hi.injective)
+      (locallyFiniteChainComplexOpenRestrictionExcision i L' K hi.injective)
+      (ComplexTower.limComplexMap (openRestrictionTowerCoefficientMap i K η)) :=
+    ⟨locallyFiniteChainComplexCoefficientMap_comp_openRestrictionExcision i K hi.injective η⟩
+  have hsq2 : CommSq (locallyFiniteChainComplexCoefficientMap η)
+      (locallyFiniteChainComplexToOpenRestrictionLim i L K)
+      (locallyFiniteChainComplexToOpenRestrictionLim i L' K)
+      (ComplexTower.limComplexMap (openRestrictionTowerCoefficientMap i K η)) :=
+    ⟨locallyFiniteChainComplexCoefficientMap_comp_toComplLim _ _ η _⟩
+  rw [Category.assoc, homologyMap_commSq hsq1 j,
     borelMooreHomologyOpenRestrictionOfExhaustion_comp_homologyMap_openRestrictionExcision_assoc,
-    ← HomologicalComplex.homologyMap_comp,
-    ← locallyFiniteChainComplexCoefficientMap_comp_toComplLim, HomologicalComplex.homologyMap_comp]
+    ← homologyMap_commSq hsq2 j]
 /-- **Compatibility of open restriction with finite chains pushed forward from `V`.** -/
 @[reassoc (attr := simp)]
-theorem twistedHomologyMap_comp_borelMooreHomologyOpenRestrictionOfExhaustion (j : ℕ) :
+theorem
+  twistedHomologyMap_comp_twistedHomologyToBorelMooreHomology_comp_openRestrictionOfExhaustion
+    (j : ℕ) :
     twistedHomologyMap i L j ≫ twistedHomologyToBorelMooreHomology L j ≫
         borelMooreHomologyOpenRestrictionOfExhaustion i hi L K j =
       twistedHomologyToBorelMooreHomology ((pullback i.hom).obj L) j := by
   symm; refine (eq_comp_borelMooreHomologyOpenRestrictionOfExhaustion i hi L K
     (g := twistedHomologyMap i L j ≫ twistedHomologyToBorelMooreHomology L j) ?_).trans
       (Category.assoc _ _ _).symm
-  rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
-    ← HomologicalComplex.homologyMap_comp]
-  refine congrArg (HomologicalComplex.homologyMap · j) <|
-    (openRestrictionTower i L K).limComplex_hom_ext fun n ↦ ?_
-  erw [Category.assoc, locallyFiniteChainComplexOpenRestrictionExcision_comp_π,
-    TopPair.toLocallyFiniteChainComplex_comp_locallyFiniteChainComplexToRelative_assoc,
-    twistedChainComplexπ_comp_complChainComplexTowerPairMap_app, Category.assoc, Category.assoc,
-    locallyFiniteChainComplexToComplLim_comp_π,
-    TopPair.toLocallyFiniteChainComplex_comp_locallyFiniteChainComplexToRelative]; rfl
+  have hchain : toLocallyFiniteChainComplex ((pullback i.hom).obj L) ≫
+        locallyFiniteChainComplexOpenRestrictionExcision i L K hi.injective =
+      (twistedChainComplexMap i L ≫ toLocallyFiniteChainComplex L) ≫
+        locallyFiniteChainComplexToOpenRestrictionLim i L K :=
+    (openRestrictionTower i L K).limComplex_hom_ext fun n ↦ by
+      erw [Category.assoc, locallyFiniteChainComplexOpenRestrictionExcision_comp_π,
+        TopPair.toLocallyFiniteChainComplex_comp_locallyFiniteChainComplexToRelative_assoc,
+        twistedChainComplexπ_comp_complChainComplexTowerPairMap_app, Category.assoc, Category.assoc,
+        locallyFiniteChainComplexToComplLim_comp_π,
+        TopPair.toLocallyFiniteChainComplex_comp_locallyFiniteChainComplexToRelative]; rfl
+  have hsq : CommSq (toLocallyFiniteChainComplex ((pullback i.hom).obj L))
+      (twistedChainComplexMap i L ≫ toLocallyFiniteChainComplex L)
+      (locallyFiniteChainComplexOpenRestrictionExcision i L K hi.injective)
+      (locallyFiniteChainComplexToOpenRestrictionLim i L K) := ⟨hchain⟩
+  have h := homologyMap_commSq hsq j
+  rwa [HomologicalComplex.homologyMap_comp] at h
 
 section Choice
 variable [WeaklyLocallyCompactSpace V] [SigmaCompactSpace V]
@@ -275,6 +330,22 @@ def borelMooreHomologyOpenRestriction (j : ℕ) :
     borelMooreHomologyOpenRestrictionOfExhaustion i hi L K j =
       borelMooreHomologyOpenRestriction i hi L j :=
   borelMooreHomologyOpenRestrictionOfExhaustion_eq i hi L K (CompactExhaustion.choice V) j
+/-- At each stage `n` of any exhaustion `K`, `borelMooreHomologyOpenRestriction` intertwines
+relative classes via excision. -/
+@[reassoc (attr := simp)]
+theorem borelMooreHomologyOpenRestriction_comp_toRelative_comp_excision (j n : ℕ) :
+    borelMooreHomologyOpenRestriction i hi L j ≫
+        HomologicalComplex.homologyMap
+          ((TopPair.ofSubset (K n)ᶜ).locallyFiniteChainComplexToRelative ((pullback i.hom).obj L)
+            (K.isCompact n).compl_range_ofSubset_compl_map) j ≫
+          HomologicalComplex.homologyMap
+            ((openRestrictionExcisionTowerMap i L K hi.injective).app (op n)) j =
+      HomologicalComplex.homologyMap
+        ((TopPair.ofSubset (i '' K n)ᶜ).locallyFiniteChainComplexToRelative L
+          ((K.isCompact n).image i.hom.continuous).compl_range_ofSubset_compl_map) j := by
+  rw [← borelMooreHomologyOpenRestrictionOfExhaustion_eq_borelMooreHomologyOpenRestriction
+    i hi L K j]
+  exact borelMooreHomologyOpenRestrictionOfExhaustion_comp_toRelative_comp_excision i hi L K j n
 /-- `borelMooreHomologyOpenRestriction` is natural in the local coefficient system. -/
 @[reassoc] theorem borelMooreHomologyOpenRestriction_naturality
     {L' : LocalCoefficientSystem.{u, v, max v w} R U} (η : L ⟶ L') (j : ℕ) :
@@ -283,48 +354,63 @@ def borelMooreHomologyOpenRestriction (j : ℕ) :
         borelMooreHomologyCoefficientMap ((pullback i.hom).map η) j :=
   borelMooreHomologyOpenRestrictionOfExhaustion_naturality i hi L (CompactExhaustion.choice V) η j
 /-- Open restriction of a finite chain pushed forward from `V` recovers its locally finite class. -/
-@[reassoc (attr := simp)] theorem twistedHomologyMap_comp_borelMooreHomologyOpenRestriction
+@[reassoc (attr := simp)]
+theorem
+  twistedHomologyMap_comp_twistedHomologyToBorelMooreHomology_comp_borelMooreHomologyOpenRestriction
     (j : ℕ) :
     twistedHomologyMap i L j ≫ twistedHomologyToBorelMooreHomology L j ≫
         borelMooreHomologyOpenRestriction i hi L j =
-      twistedHomologyToBorelMooreHomology ((pullback i.hom).obj L) j :=
-  twistedHomologyMap_comp_borelMooreHomologyOpenRestrictionOfExhaustion i hi L _ j
+      twistedHomologyToBorelMooreHomology ((pullback i.hom).obj L) j := by
+  rw [← borelMooreHomologyOpenRestrictionOfExhaustion_eq_borelMooreHomologyOpenRestriction
+    i hi L (CompactExhaustion.choice V) j]
+  exact
+    twistedHomologyMap_comp_twistedHomologyToBorelMooreHomology_comp_openRestrictionOfExhaustion
+      i hi L _ j
 end Choice
 end OpenRestriction
 
 section Functoriality
 /-- **Identity law for open restriction of Borel–Moore homology.** -/
 @[simp] theorem borelMooreHomologyOpenRestrictionOfExhaustion_id {U : TopCat.{v}} [T2Space U]
-    (hi : IsOpenEmbedding (𝟙 U : U ⟶ U).hom)
     (L : LocalCoefficientSystem.{u, v, max v w} R U) (K : CompactExhaustion U) (j : ℕ) :
-    borelMooreHomologyOpenRestrictionOfExhaustion (𝟙 U) hi L K j =
+    borelMooreHomologyOpenRestrictionOfExhaustion (𝟙 U) IsOpenEmbedding.id L K j =
       borelMooreHomologyCoefficientMap ((pullbackIdIso U).inv.app L) j := by
-  symm; refine (eq_comp_borelMooreHomologyOpenRestrictionOfExhaustion (𝟙 U) hi L K
+  symm; refine (eq_comp_borelMooreHomologyOpenRestrictionOfExhaustion (𝟙 U) IsOpenEmbedding.id L K
     (g := 𝟙 _) ?_).trans (Category.id_comp _)
-  rw [Category.id_comp, ← HomologicalComplex.homologyMap_comp]
-  refine congrArg (HomologicalComplex.homologyMap · j) <|
-    (openRestrictionTower (𝟙 U) L K).limComplex_hom_ext fun n ↦ ?_
-  have hsub : (K n)ᶜ ⊆ ((𝟙 U : U ⟶ U) '' K n)ᶜ := by simp
-  have hrel : (TopPair.ofSubset (K n)ᶜ).twistedChainComplexCoefficientMap
-        ((pullbackIdIso U).inv.app L) ≫ (openRestrictionExcisionTowerMap (𝟙 U) L K
-        hi.injective).app (op n) = (TopTriple.ofSubset hsub).twistedChainComplexTotalToOuter L :=
-    (TopPair.ofSubset (K n)ᶜ).twistedChainComplex_hom_ext L <| by
-      erw [TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
-        twistedChainComplexπ_comp_complChainComplexTowerPairMap_app, ← Category.assoc,
-        twistedChainComplexMap_id, ← twistedChainComplexCoefficientMap_comp,
-        (pullbackIdIso U).inv_hom_id_app, twistedChainComplexCoefficientMap_id, Category.id_comp,
-        TopTriple.twistedChainComplexπ_comp_totalToOuter]; rfl
-  erw [Category.assoc, locallyFiniteChainComplexOpenRestrictionExcision_comp_π, ← Category.assoc,
-    ← (TopPair.ofSubset (K n)ᶜ).locallyFiniteChainComplexToRelative_naturality, Category.assoc,
-    hrel, TopTriple.locallyFiniteChainComplexToRelative_comp_twistedChainComplexTotalToOuter,
-    locallyFiniteChainComplexToComplLim_comp_π]; rfl
+  have hchain : locallyFiniteChainComplexCoefficientMap ((pullbackIdIso U).inv.app L) ≫
+        locallyFiniteChainComplexOpenRestrictionExcision (𝟙 U) L K IsOpenEmbedding.id.injective =
+      𝟙 (locallyFiniteChainComplex L) ≫ locallyFiniteChainComplexToOpenRestrictionLim (𝟙 U) L K :=
+    (openRestrictionTower (𝟙 U) L K).limComplex_hom_ext fun n ↦ by
+      have hsub : (K n)ᶜ ⊆ ((𝟙 U : U ⟶ U) '' K n)ᶜ := by simp
+      have hrel : (TopPair.ofSubset (K n)ᶜ).twistedChainComplexCoefficientMap
+            ((pullbackIdIso U).inv.app L) ≫ (openRestrictionExcisionTowerMap (𝟙 U) L K
+            IsOpenEmbedding.id.injective).app (op n) =
+          (TopTriple.ofSubset hsub).twistedChainComplexTotalToOuter L :=
+        (TopPair.ofSubset (K n)ᶜ).twistedChainComplex_hom_ext L <| by
+          erw [TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
+            twistedChainComplexπ_comp_complChainComplexTowerPairMap_app, ← Category.assoc,
+            twistedChainComplexMap_id, ← twistedChainComplexCoefficientMap_comp,
+            (pullbackIdIso U).inv_hom_id_app, twistedChainComplexCoefficientMap_id,
+            Category.id_comp, TopTriple.twistedChainComplexπ_comp_totalToOuter]; rfl
+      erw [Category.assoc, locallyFiniteChainComplexOpenRestrictionExcision_comp_π,
+        ← Category.assoc,
+        ← (TopPair.ofSubset (K n)ᶜ).locallyFiniteChainComplexToRelative_naturality, Category.assoc,
+        hrel, TopTriple.locallyFiniteChainComplexToRelative_comp_twistedChainComplexTotalToOuter,
+        Category.id_comp, locallyFiniteChainComplexToComplLim_comp_π]; rfl
+  have hsq : CommSq (locallyFiniteChainComplexCoefficientMap ((pullbackIdIso U).inv.app L))
+      (𝟙 (locallyFiniteChainComplex L))
+      (locallyFiniteChainComplexOpenRestrictionExcision (𝟙 U) L K IsOpenEmbedding.id.injective)
+      (locallyFiniteChainComplexToOpenRestrictionLim (𝟙 U) L K) := ⟨hchain⟩
+  have h := homologyMap_commSq hsq j
+  erw [HomologicalComplex.homologyMap_id, Category.id_comp] at h
+  exact h
 /-- Identity law for `borelMooreHomologyOpenRestriction`. -/
 @[simp] theorem borelMooreHomologyOpenRestriction_id {U : TopCat.{v}} [T2Space U]
-    [WeaklyLocallyCompactSpace U] [SigmaCompactSpace U] (hi : IsOpenEmbedding (𝟙 U : U ⟶ U).hom)
+    [WeaklyLocallyCompactSpace U] [SigmaCompactSpace U]
     (L : LocalCoefficientSystem.{u, v, max v w} R U) (j : ℕ) :
-    borelMooreHomologyOpenRestriction (𝟙 U) hi L j =
+    borelMooreHomologyOpenRestriction (𝟙 U) IsOpenEmbedding.id L j =
       borelMooreHomologyCoefficientMap ((pullbackIdIso U).inv.app L) j :=
-  borelMooreHomologyOpenRestrictionOfExhaustion_id hi L _ j
+  borelMooreHomologyOpenRestrictionOfExhaustion_id L _ j
 
 section Comp
 variable {W V U : TopCat.{v}} [T2Space U]
@@ -332,10 +418,10 @@ variable {W V U : TopCat.{v}} [T2Space U]
   (L : LocalCoefficientSystem.{u, v, max v w} R U)
 
 /-- Excision compatibility for nested open embeddings `W ↪ V ↪ U` with `i₁ '' K_W n ⊆ K_V n`. -/
-theorem borelMooreHomologyOpenRestrictionOfExhaustion_comp_excision_of_subset
+theorem
+  borelMooreHomologyOpenRestrictionOfExhaustion_comp_coefficientMap_comp_excision_of_subset
     (K_W : CompactExhaustion W) (K_V : CompactExhaustion V) (hWV : ∀ n, i₁ '' K_W n ⊆ K_V n)
-    (hUW : ∀ n, (i₁ ≫ i₂) '' K_W n ⊆ i₂ '' K_V n :=
-      fun n ↦ by rw [TopCat.coe_comp, Set.image_comp]; exact Set.image_mono (hWV n)) (j : ℕ) :
+    (j : ℕ) :
     letI := hi₂.isEmbedding.t2Space
     borelMooreHomologyOpenRestrictionOfExhaustion i₁ hi₁ ((pullback i₂.hom).obj L) K_W j ≫
         borelMooreHomologyCoefficientMap ((pullbackCompIso i₁.hom i₂.hom).inv.app L) j ≫
@@ -345,8 +431,11 @@ theorem borelMooreHomologyOpenRestrictionOfExhaustion_comp_excision_of_subset
           (locallyFiniteChainComplexOpenRestrictionExcision i₂ L K_V hi₂.injective) j ≫
         HomologicalComplex.homologyMap (ComplexTower.limComplexMap
           (complChainComplexTowerMap L (fun n ↦ Set.image_mono (K_W.subset_succ n))
-            (fun n ↦ Set.image_mono (K_V.subset_succ n)) hUW)) j := by
+            (fun n ↦ Set.image_mono (K_V.subset_succ n))
+            (fun n ↦ (Set.image_comp i₂ i₁ (K_W n)).symm ▸ Set.image_mono (hWV n)))) j := by
   have : T2Space V := hi₂.isEmbedding.t2Space
+  have hUW (n : ℕ) : (i₁ ≫ i₂) '' K_W n ⊆ i₂ '' K_V n := by
+    rw [TopCat.coe_comp, Set.image_comp]; exact Set.image_mono (hWV n)
   have hMaps (n : ℕ) : Set.MapsTo i₂ (i₁ '' K_W n)ᶜ ((i₁ ≫ i₂) '' K_W n)ᶜ := by
     rw [TopCat.coe_comp, Set.image_comp]
     exact (Set.surjOn_image i₂ (i₁ '' K_W n)).mapsTo_compl hi₂.injective
@@ -359,7 +448,7 @@ theorem borelMooreHomologyOpenRestrictionOfExhaustion_comp_excision_of_subset
       complChainComplexTowerCoefficientMap K_W K_W.subset_succ
           ((pullbackCompIso i₁.hom i₂.hom).hom.app L) ≫
         openRestrictionExcisionTowerMap i₁ ((pullback i₂.hom).obj L) K_W hi₁.injective ≫ eUW :=
-    complChainComplexTowerPairMap_comp i₁ i₂ L K_W.subset_succ _ _ _ hMaps _
+    complChainComplexTowerPairMap_comp i₁ i₂ L K_W.subset_succ _ _ _ hMaps
   have hlim2 : locallyFiniteChainComplexOpenRestrictionExcision (i₁ ≫ i₂) L K_W
         (hi₂.comp hi₁).injective =
       locallyFiniteChainComplexCoefficientMap ((pullbackCompIso i₁.hom i₂.hom).hom.app L) ≫
@@ -379,14 +468,22 @@ theorem borelMooreHomologyOpenRestrictionOfExhaustion_comp_excision_of_subset
         (fun n ↦ Set.image_mono (K_V.subset_succ n)) hUW :=
     complChainComplexTowerMap_comp_complChainComplexTowerPairMap i₂ L _ K_V.subset_succ _ _
       hMaps _ hWV hUW
+  have hsqLim : CommSq
+      (locallyFiniteChainComplexToOpenRestrictionLim i₁ ((pullback i₂.hom).obj L) K_W)
+      (locallyFiniteChainComplexOpenRestrictionExcision i₂ L K_V hi₂.injective)
+      (ComplexTower.limComplexMap eUW)
+      (ComplexTower.limComplexMap (complChainComplexTowerMap L
+        (fun n ↦ Set.image_mono (K_W.subset_succ n))
+        (fun n ↦ Set.image_mono (K_V.subset_succ n)) hUW)) :=
+    ⟨by rw [hpushV, Category.assoc, ← ComplexTower.limComplexMap_comp, hsq,
+      ComplexTower.limComplexMap_comp, locallyFiniteChainComplexOpenRestrictionExcision,
+      Category.assoc]⟩
   rw [hlim2, HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp,
     ← Category.assoc (borelMooreHomologyCoefficientMap _ j),
     ← borelMooreHomologyCoefficientMap_comp, (pullbackCompIso i₁.hom i₂.hom).inv_hom_id_app,
     borelMooreHomologyCoefficientMap_id, Category.id_comp,
-    borelMooreHomologyOpenRestrictionOfExhaustion_comp_homologyMap_openRestrictionExcision_assoc,
-    ← HomologicalComplex.homologyMap_comp, hpushV, Category.assoc,
-    ← ComplexTower.limComplexMap_comp, hsq, ComplexTower.limComplexMap_comp, ← Category.assoc,
-    HomologicalComplex.homologyMap_comp, ← locallyFiniteChainComplexOpenRestrictionExcision]
+    borelMooreHomologyOpenRestrictionOfExhaustion_comp_homologyMap_openRestrictionExcision_assoc]
+  exact homologyMap_commSq hsqLim j
 /-- **Contravariant composition law for open restriction**, for explicit compact exhaustions. -/
 @[reassoc] theorem borelMooreHomologyOpenRestrictionOfExhaustion_comp
     (K_W : CompactExhaustion W) (K_V : CompactExhaustion V) (j : ℕ) :
@@ -407,11 +504,26 @@ theorem borelMooreHomologyOpenRestrictionOfExhaustion_comp_excision_of_subset
     erw [Category.comp_id]
   refine (eq_comp_borelMooreHomologyOpenRestrictionOfExhaustion (i₁ ≫ i₂) (hi₂.comp hi₁) L K_W
     (g := 𝟙 _) ?_).trans (Category.id_comp _)
+  have hsqLim : CommSq (𝟙 (locallyFiniteChainComplex L))
+      (locallyFiniteChainComplexToOpenRestrictionLim i₂ L K_V')
+      (locallyFiniteChainComplexToOpenRestrictionLim (i₁ ≫ i₂) L K_W)
+      (ComplexTower.limComplexMap (complChainComplexTowerMap L
+        (fun n ↦ Set.image_mono (K_W.subset_succ n))
+        (fun n ↦ Set.image_mono (K_V'.subset_succ n))
+        (fun n ↦ (Set.image_comp i₂ i₁ (K_W n)).symm ▸
+          Set.image_mono (K_V.image_subset_supImage i₁.hom.continuous hi₁.isOpenMap K_W n)))) :=
+    ⟨(Category.id_comp _).trans (locallyFiniteChainComplexToComplLim_comp_limComplexMap L
+      (fun n ↦ Set.image_mono (K_W.subset_succ n)) (fun n ↦ Set.image_mono (K_V'.subset_succ n))
+      (fun n ↦ (K_W.isCompact n).image (i₁ ≫ i₂).hom.continuous)
+      (fun n ↦ (K_V'.isCompact n).image i₂.hom.continuous) _).symm⟩
+  have hLim := homologyMap_commSq hsqLim j
+  rw [HomologicalComplex.homologyMap_id, Category.id_comp] at hLim
   rw [Category.id_comp, Category.assoc, Category.assoc,
-    borelMooreHomologyOpenRestrictionOfExhaustion_comp_excision_of_subset i₁ i₂ hi₁ hi₂ L K_W K_V'
+    borelMooreHomologyOpenRestrictionOfExhaustion_comp_coefficientMap_comp_excision_of_subset
+      i₁ i₂ hi₁ hi₂ L K_W K_V'
       (K_V.image_subset_supImage i₁.hom.continuous hi₁.isOpenMap K_W),
     borelMooreHomologyOpenRestrictionOfExhaustion_comp_homologyMap_openRestrictionExcision_assoc,
-    ← HomologicalComplex.homologyMap_comp, locallyFiniteChainComplexToComplLim_comp_limComplexMap]
+    ← hLim]
 /-- **Contravariant composition law for open restriction of Borel–Moore homology.** -/
 @[reassoc] theorem borelMooreHomologyOpenRestriction_comp
     [WeaklyLocallyCompactSpace W] [SigmaCompactSpace W]
@@ -431,7 +543,6 @@ theorem locallyFiniteChainComplexOpenRestrictionExcision_naturality_square
     (hi' : Function.Injective i') (f : U' ⟶ U) (f' : V' ⟶ V) (hf' : IsProperMap f'.hom)
     (hw : f' ≫ i = i' ≫ f) (L : LocalCoefficientSystem.{u, v, max v w} R U)
     (K_V : CompactExhaustion V) (K_V' : CompactExhaustion V')
-    (hf'_maps : ∀ n, Set.MapsTo f' (K_V' n)ᶜ (K_V n)ᶜ)
     (hf_maps : ∀ n, Set.MapsTo f (i' '' K_V' n)ᶜ (i '' K_V n)ᶜ) :
     locallyFiniteChainComplexCoefficientMap
           (((pullbackCompIso i'.hom f.hom).app L).symm ≪≫
@@ -443,6 +554,8 @@ theorem locallyFiniteChainComplexOpenRestrictionExcision_naturality_square
         ComplexTower.limComplexMap (complChainComplexTowerPairMap f L
           (fun n ↦ Set.image_mono (K_V'.subset_succ n))
           (fun n ↦ Set.image_mono (K_V.subset_succ n)) hf_maps) := by
+  have hf'_maps (n : ℕ) : Set.MapsTo f' (K_V' n)ᶜ (K_V n)ᶜ :=
+    (hf_maps n).of_compl_image hi' (funext fun v' ↦ congrArg (fun g : V' ⟶ U ↦ g v') hw)
   set α : (pullback i'.hom).obj ((pullback f.hom).obj L) ⟶
       (pullback f'.hom).obj ((pullback i.hom).obj L) :=
     (((pullbackCompIso i'.hom f.hom).app L).symm ≪≫
@@ -469,7 +582,6 @@ commutative square with proper map `f' : V' ⟶ V`. -/
     (hi' : Function.Injective i') (f : U' ⟶ U) (f' : V' ⟶ V) (hf' : IsProperMap f'.hom)
     (hw : f' ≫ i = i' ≫ f) (L : LocalCoefficientSystem.{u, v, max v w} R U)
     (K_V : CompactExhaustion V) (K_V' : CompactExhaustion V')
-    (hf'_maps : ∀ n, Set.MapsTo f' (K_V' n)ᶜ (K_V n)ᶜ)
     (hf_maps : ∀ n, Set.MapsTo f (i' '' K_V' n)ᶜ (i '' K_V n)ᶜ) (j : ℕ) :
     borelMooreHomologyCoefficientMap
           (((pullbackCompIso i'.hom f.hom).app L).symm ≪≫
@@ -484,46 +596,24 @@ commutative square with proper map `f' : V' ⟶ V`. -/
         HomologicalComplex.homologyMap (ComplexTower.limComplexMap
           (complChainComplexTowerPairMap f L (fun n ↦ Set.image_mono (K_V'.subset_succ n))
             (fun n ↦ Set.image_mono (K_V.subset_succ n)) hf_maps)) j := by
-  rw [borelMooreHomologyCoefficientMap, borelMooreHomologyMap,
-    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
-    ← HomologicalComplex.homologyMap_comp]
-  exact congrArg (HomologicalComplex.homologyMap · j)
-    (locallyFiniteChainComplexOpenRestrictionExcision_naturality_square
-      i hi i' hi' f f' hf' hw L K_V K_V' hf'_maps hf_maps)
-
-/-- A proper map `f' : V' ⟶ V` carries the complement of each stage of `K_V'.supPreimage hf' K_V`
-into the complement of the corresponding stage of `K_V`. -/
-lemma mapsTo_compl_supPreimage {V' V : TopCat.{v}} {f' : V' ⟶ V} (hf' : IsProperMap f'.hom)
-    (K_V : CompactExhaustion V) (K_V' : CompactExhaustion V') (n : ℕ) :
-    Set.MapsTo f' (K_V'.supPreimage hf' K_V n)ᶜ (K_V n)ᶜ :=
-  fun _ hx hfx ↦ hx (K_V'.preimage_subset_supPreimage hf' K_V n hfx)
-
-/-- Given a commutative square `f' ≫ i = i' ≫ f` with `i` injective, `f'` proper, and
-`f ⁻¹' range i ⊆ range i'`, `f` carries `(i' '' (K_V'.supPreimage hf' K_V n))ᶜ` into
-`(i '' K_V n)ᶜ`. -/
-lemma mapsTo_compl_image_supPreimage {V' V U' U : TopCat.{v}} {i : V ⟶ U}
-    (hi : Function.Injective i) {i' : V' ⟶ U'} {f : U' ⟶ U} {f' : V' ⟶ V}
-    (hf' : IsProperMap f'.hom) (hw : f' ≫ i = i' ≫ f)
-    (hcart : f ⁻¹' Set.range i ⊆ Set.range i')
-    (K_V : CompactExhaustion V) (K_V' : CompactExhaustion V') (n : ℕ) :
-    Set.MapsTo f (i' '' K_V'.supPreimage hf' K_V n)ᶜ (i '' K_V n)ᶜ := by
-  rintro u' hu' ⟨v, hv, hfu'⟩
-  obtain ⟨v', rfl⟩ : u' ∈ Set.range i' := hcart ⟨v, hfu'⟩
-  have hfv' : f' v' = v := hi <| (congrArg (fun g : V' ⟶ U ↦ g v') hw).trans hfu'.symm
-  exact hu' ⟨v', K_V'.preimage_subset_supPreimage hf' K_V n (by simpa [hfv'] using hv), rfl⟩
+  have hsq : CommSq
+      (locallyFiniteChainComplexCoefficientMap
+        (((pullbackCompIso i'.hom f.hom).app L).symm ≪≫
+          eqToIso (congrArg (fun k : V' ⟶ U ↦ (pullback k.hom).obj L) hw.symm) ≪≫
+          (pullbackCompIso f'.hom i.hom).app L).hom ≫
+        locallyFiniteChainComplexMap f' hf' ((pullback i.hom).obj L))
+      (locallyFiniteChainComplexOpenRestrictionExcision i' ((pullback f.hom).obj L) K_V' hi')
+      (locallyFiniteChainComplexOpenRestrictionExcision i L K_V hi)
+      (ComplexTower.limComplexMap (complChainComplexTowerPairMap f L
+        (fun n ↦ Set.image_mono (K_V'.subset_succ n))
+        (fun n ↦ Set.image_mono (K_V.subset_succ n)) hf_maps)) :=
+    ⟨(Category.assoc _ _ _).trans
+      (locallyFiniteChainComplexOpenRestrictionExcision_naturality_square
+        i hi i' hi' f f' hf' hw L K_V K_V' hf_maps)⟩
+  have h := homologyMap_commSq hsq j
+  rwa [HomologicalComplex.homologyMap_comp, Category.assoc] at h
 
 section BaseChange
-/-- In a Cartesian square whose vertical maps are open embeddings and bottom map is proper, the
-top map is proper. -/
-lemma isProperMap_of_cartesian {V' V U' U : TopCat.{v}} {i : V ⟶ U}
-    (hi : IsOpenEmbedding i.hom) {i' : V' ⟶ U'} (hi' : IsOpenEmbedding i'.hom)
-    {f : U' ⟶ U} (hf : IsProperMap f.hom) {f' : V' ⟶ V} (hw : f' ≫ i = i' ≫ f)
-    (hcart : f ⁻¹' Set.range i ⊆ Set.range i') : IsProperMap f'.hom :=
-  hf.of_isEmbedding_of_range_eq hi'.isEmbedding hi.isEmbedding
-    (funext fun v' ↦ (congrArg (fun g : V' ⟶ U ↦ g v') hw).symm)
-    (Set.Subset.antisymm (fun _ ⟨v', hv'⟩ ↦ ⟨f' v', hv' ▸ congrArg (fun g : V' ⟶ U ↦ g v') hw⟩)
-      hcart)
-
 variable {V' V U' U : TopCat.{v}} [T2Space U'] [T2Space U] (i : V ⟶ U) (hi : IsOpenEmbedding i.hom)
   (i' : V' ⟶ U') (hi' : IsOpenEmbedding i'.hom) (f : U' ⟶ U) (hf : IsProperMap f.hom) (f' : V' ⟶ V)
   (hw : f' ≫ i = i' ≫ f) (hcart : f ⁻¹' Set.range i ⊆ Set.range i')
@@ -538,21 +628,28 @@ include hcart
           (((pullbackCompIso i'.hom f.hom).app L).symm ≪≫
             eqToIso (congrArg (fun k : V' ⟶ U ↦ (pullback k.hom).obj L) hw.symm) ≪≫
             (pullbackCompIso f'.hom i.hom).app L).hom j ≫
-        borelMooreHomologyMap f' (isProperMap_of_cartesian hi hi' hf hw hcart)
+        borelMooreHomologyMap f'
+          (hf.of_cartesian_isEmbeddings hi.isEmbedding hi'.isEmbedding hw hcart)
           ((pullback i.hom).obj L) j := by
-  have hf' := isProperMap_of_cartesian hi hi' hf hw hcart
+  have hf' := hf.of_cartesian_isEmbeddings hi.isEmbedding hi'.isEmbedding hw hcart
   let K_V'' := K_V'.supPreimage hf' K_V
   rw [borelMooreHomologyOpenRestrictionOfExhaustion_eq i' hi' ((pullback f.hom).obj L) K_V' K_V'' j]
-  have hf'_maps := mapsTo_compl_supPreimage hf' K_V K_V'
-  have hf_maps := mapsTo_compl_image_supPreimage hi.injective hf' hw hcart K_V K_V'
+  have hf_maps (n : ℕ) : Set.MapsTo f (i' '' K_V'' n)ᶜ (i '' K_V n)ᶜ :=
+    (K_V'.mapsTo_compl_supPreimage hf' K_V n).compl_image hi.injective
+      (funext fun v' ↦ congrArg (fun g : V' ⟶ U ↦ g v') hw) hcart
+  have hsqLim : CommSq (locallyFiniteChainComplexMap f hf L)
+      (locallyFiniteChainComplexToOpenRestrictionLim i' ((pullback f.hom).obj L) K_V'')
+      (locallyFiniteChainComplexToOpenRestrictionLim i L K_V)
+      (ComplexTower.limComplexMap (complChainComplexTowerPairMap f L
+        (fun n ↦ Set.image_mono (K_V''.subset_succ n))
+        (fun n ↦ Set.image_mono (K_V.subset_succ n)) hf_maps)) :=
+    ⟨locallyFiniteChainComplexMap_comp_toComplLim f hf L _ _ _ _ hf_maps⟩
   symm; refine eq_comp_borelMooreHomologyOpenRestrictionOfExhaustion i hi L K_V ?_
   rw [Category.assoc, Category.assoc,
     homologyMap_locallyFiniteChainComplexOpenRestrictionExcision_naturality_square
-      i hi.injective i' hi'.injective f f' hf' hw L K_V K_V'' hf'_maps hf_maps,
+      i hi.injective i' hi'.injective f f' hf' hw L K_V K_V'' hf_maps,
     borelMooreHomologyOpenRestrictionOfExhaustion_comp_homologyMap_openRestrictionExcision_assoc,
-    ← HomologicalComplex.homologyMap_comp,
-    ← locallyFiniteChainComplexMap_comp_toComplLim f hf L _ _ _ _ hf_maps,
-    HomologicalComplex.homologyMap_comp]
+    homologyMap_commSq hsqLim j]
 /-- **Base change between proper pushforward and open restriction.** -/
 @[reassoc] theorem borelMooreHomologyMap_comp_borelMooreHomologyOpenRestriction
     [WeaklyLocallyCompactSpace V] [SigmaCompactSpace V]
@@ -563,7 +660,8 @@ include hcart
           (((pullbackCompIso i'.hom f.hom).app L).symm ≪≫
             eqToIso (congrArg (fun k : V' ⟶ U ↦ (pullback k.hom).obj L) hw.symm) ≪≫
             (pullbackCompIso f'.hom i.hom).app L).hom j ≫
-        borelMooreHomologyMap f' (isProperMap_of_cartesian hi hi' hf hw hcart)
+        borelMooreHomologyMap f'
+          (hf.of_cartesian_isEmbeddings hi.isEmbedding hi'.isEmbedding hw hcart)
           ((pullback i.hom).obj L) j :=
   borelMooreHomologyMap_comp_borelMooreHomologyOpenRestrictionOfExhaustion
     i hi i' hi' f hf f' hw hcart L _ _ j

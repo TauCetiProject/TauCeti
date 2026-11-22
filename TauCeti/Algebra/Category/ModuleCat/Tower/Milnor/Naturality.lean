@@ -220,41 +220,17 @@ private theorem productComplexMap_eq (f : C ⟶ D) :
 /-- A levelwise degree-`i` quasi-isomorphism of towers induces one on product complexes. -/
 instance quasiIsoAt_productComplexMap (f : C ⟶ D) (i : ι) [∀ n, QuasiIsoAt (f.app (op n)) i] :
     QuasiIsoAt (productComplexMap f) i := by
-  rw [quasiIsoAt_iff_isIso_homologyMap]
-  let H := HomologicalComplex.homologyFunctor (ModuleCat.{v} R) c i
-  let hC := isLimitFanMkObjOfIsLimit H _ _ C.isLimitProductComplexFan
-  let hD := isLimitFanMkObjOfIsLimit H _ _ D.isLimitProductComplexFan
-  let eC := hC.conePointUniqueUpToIso (limit.isLimit _)
-  let eD := hD.conePointUniqueUpToIso (limit.isLimit _)
-  have hmap : H.map (productComplexMap f) =
-      eC.hom ≫ Limits.Pi.map (fun n ↦ H.map (f.app (op n))) ≫ eD.inv := by
-    apply hD.hom_ext
-    rintro ⟨n⟩
-    have hDπ : eD.inv ≫ H.map (D.productComplexπ n) = Pi.π _ n :=
-      hD.conePointUniqueUpToIso_inv_comp (limit.isLimit _) ⟨n⟩
-    have hCπ : eC.hom ≫ Pi.π _ n = H.map (C.productComplexπ n) :=
-      hC.conePointUniqueUpToIso_hom_comp (limit.isLimit _) ⟨n⟩
-    calc H.map (productComplexMap f) ≫ H.map (D.productComplexπ n)
-        = H.map (productComplexMap f ≫ D.productComplexπ n) := (H.map_comp _ _).symm
-      _ = H.map (C.productComplexπ n ≫ f.app (op n)) := by rw [productComplexMap_comp_π]
-      _ = H.map (C.productComplexπ n) ≫ H.map (f.app (op n)) := H.map_comp _ _
-      _ = (eC.hom ≫ Pi.π _ n) ≫ H.map (f.app (op n)) := by rw [hCπ]
-      _ = eC.hom ≫ Limits.Pi.map (fun n ↦ H.map (f.app (op n))) ≫ Pi.π _ n := by simp
-      _ = (eC.hom ≫ Limits.Pi.map (fun n ↦ H.map (f.app (op n))) ≫ eD.inv) ≫
-            H.map (D.productComplexπ n) := by simp only [Category.assoc, hDπ]
-  have (n : ℕ) : IsIso (H.map (f.app (op n))) :=
-    (quasiIsoAt_iff_isIso_homologyMap (f.app (op n)) i).1 inferInstance
-  rw [show HomologicalComplex.homologyMap (productComplexMap f) i = H.map (productComplexMap f)
-    from rfl, hmap]
+  rw [productComplexMap_eq f]
+  have : QuasiIsoAt (Limits.Pi.map fun n ↦ f.app (op n)) i :=
+    TauCeti.quasiIsoAt_pi_map (fun n ↦ f.app (op n)) i fun n ↦ inferInstance
   infer_instance
 
 /-- A levelwise quasi-isomorphism of towers induces a quasi-isomorphism of product complexes. -/
 instance quasiIso_productComplexMap (f : C ⟶ D) [∀ n, QuasiIso (f.app (op n))] :
-    QuasiIso (productComplexMap f) := by
-  rw [productComplexMap_eq f]
-  have : QuasiIso (Limits.Pi.map fun n ↦ f.app (op n)) :=
-    TauCeti.quasiIso_pi_map (fun n ↦ f.app (op n)) fun n ↦ inferInstance
-  infer_instance
+    QuasiIso (productComplexMap f) :=
+  (quasiIso_iff _).2 fun i ↦
+    have := fun n ↦ (inferInstance : QuasiIso (f.app (op n))).quasiIsoAt i
+    inferInstance
 
 /-- For towers with surjective shifts, a levelwise quasi-isomorphism in degree `j` and all
 preceding degrees `i` with `c.Rel i j` induces an isomorphism on `H_j(lim)`. -/

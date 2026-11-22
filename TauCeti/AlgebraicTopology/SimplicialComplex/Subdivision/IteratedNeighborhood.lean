@@ -437,13 +437,5 @@ theorem compactExhaustionComplSetOfSupportMem_def (hfin : K.faces.Finite) :
           (K.exists_iteratedOpenSimplicialNeighborhood_subset P hfin) n))ᶜ :=
   have := K.compactSpace_realization_of_finite_faces hfin
   CompactExhaustion.complOfCofinalNhdsSet_apply ..
-/-- For a complex with finitely many faces, `|K| \ |P|` is `σ`-compact. -/
-theorem sigmaCompactSpace_compl_setOf_support_mem (hfin : K.faces.Finite) :
-    SigmaCompactSpace ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)) :=
-  (K.compactExhaustionComplSetOfSupportMem P hfin).sigmaCompactSpace
-/-- For a finite simplicial complex, `|K| \ |P|` is `σ`-compact. -/
-instance instSigmaCompactSpaceComplSetOfSupportMem [Finite (Face K)] :
-    SigmaCompactSpace ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)) :=
-  K.sigmaCompactSpace_compl_setOf_support_mem P (Set.toFinite K.faces)
 
 end AbstractSimplicialComplex

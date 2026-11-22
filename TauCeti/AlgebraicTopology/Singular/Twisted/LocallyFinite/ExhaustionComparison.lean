@@ -42,18 +42,6 @@ variable {R : Type u} [Ring R] {X : TopCat.{v}}
   (L : LocalCoefficientSystem.{u, v, max v w} R X)
   {K K' : CompactExhaustion X}
 
-/-- The map of limit complexes is the identity on locally finite chains, through the canonical
-identifications with the limits of the two relative towers. -/
-@[reassoc (attr := simp)]
-theorem locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexMap
-    (h : ∀ n, K n ⊆ K' n) :
-    (locallyFiniteChainComplexIsoLimComplex L K').hom ≫
-        ComplexTower.limComplexMap
-          (complChainComplexTowerMap L K.subset_succ K'.subset_succ h) =
-      (locallyFiniteChainComplexIsoLimComplex L K).hom :=
-  (locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexMap_compl L K' K.subset_succ
-    K.isCompact h).trans (locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim L K).symm
-
 /-- The comparison on limit complexes preserves the inverse identification with locally finite
 chains. -/
 @[reassoc (attr := simp)]
@@ -63,7 +51,12 @@ theorem limComplexMap_complChainComplexTowerMap_comp_locallyFiniteChainComplexIs
         (locallyFiniteChainComplexIsoLimComplex L K).inv =
       (locallyFiniteChainComplexIsoLimComplex L K').inv := by
   apply (cancel_epi (locallyFiniteChainComplexIsoLimComplex L K').hom).1
-  simp
+  rw [locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim L K',
+    locallyFiniteChainComplexToComplLim_comp_limComplexMap_assoc L K.subset_succ K'.subset_succ
+      K.isCompact K'.isCompact h,
+    ← locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim L K,
+    ← locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim L K']
+  simp only [Iso.hom_inv_id]
 
 /-- Although the relative quotient maps need not be quasi-isomorphisms individually, their
 map on limit complexes is an isomorphism. -/
@@ -74,8 +67,10 @@ instance isIso_limComplexMap_complChainComplexTowerMap (h : ∀ n, K n ⊆ K' n)
         (complChainComplexTowerMap L K.subset_succ K'.subset_succ h) =
       (locallyFiniteChainComplexIsoLimComplex L K').inv ≫
         (locallyFiniteChainComplexIsoLimComplex L K).hom := by
-    rw [← locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexMap L h,
-      Iso.inv_hom_id_assoc]
+    rw [locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim L K,
+      ← locallyFiniteChainComplexToComplLim_comp_limComplexMap L K.subset_succ K'.subset_succ
+        K.isCompact K'.isCompact h,
+      ← locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim L K', Iso.inv_hom_id_assoc]
   rw [heq]
   infer_instance
 
@@ -91,7 +86,10 @@ theorem borelMooreHomologyToLim_naturality_exhaustion (h : ∀ n, K n ⊆ K' n) 
     ← ComplexTower.homologyToLim_naturality, LinearMap.comp_assoc]
   congr 1
   rw [← ModuleCat.hom_comp, ← HomologicalComplex.homologyMap_comp,
-    locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexMap]
+    locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim L K',
+    locallyFiniteChainComplexToComplLim_comp_limComplexMap L K.subset_succ K'.subset_succ
+      K.isCompact K'.isCompact h,
+    ← locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim L K]
 
 /-- The connecting map from `lim¹` to Borel–Moore homology commutes with the map induced by
 enlargement of an exhaustion. Thus comparison retains the actual Milnor connecting morphism. -/

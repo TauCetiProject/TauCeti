@@ -18,6 +18,8 @@ public import Mathlib.Data.Set.Function
   `s ∩ f ⁻¹' t`.
 * `Set.mapsTo_preimage_of_apply_eq`: a map compatible with maps `q` and `q'` to a common type
   carries preimages under `q` into preimages under `q'`.
+* `Set.MapsTo.compl_image` and `Set.MapsTo.of_compl_image`: compatibility of `MapsTo` between
+  complements and complements of images along a commutative square.
 * `Function.Injective.mapsTo_of_eq_self`: an injective self-map fixing every point outside a
   set `K` maps `K` into itself.
 * `Function.Injective.apply_mem_iff_of_eq_self`: such a map preserves membership in every set
@@ -54,6 +56,25 @@ carries preimages under `q` into preimages under `q'`. -/
 theorem mapsTo_preimage_of_apply_eq {γ : Type*} (f : α → β) {q : α → γ} {q' : β → γ}
     (hf : ∀ x, q' (f x) = q x) (S : Set γ) : MapsTo f (q ⁻¹' S) (q' ⁻¹' S) :=
   fun x hx ↦ by rw [mem_preimage, hf]; exact hx
+
+/-- Given a commutative square `i ∘ f' = f ∘ i'` with `i` injective and
+`f ⁻¹' range i ⊆ range i'`, if `f'` maps `s'ᶜ` into `sᶜ`, then `f` maps `(i' '' s')ᶜ` into
+`(i '' s)ᶜ`. -/
+theorem MapsTo.compl_image {γ δ : Type*} {i : β → δ} {i' : α → γ} {f : γ → δ} {f' : α → β}
+    {s : Set β} {s' : Set α} (hf' : MapsTo f' s'ᶜ sᶜ) (hi : Function.Injective i)
+    (hw : i ∘ f' = f ∘ i') (hcart : f ⁻¹' range i ⊆ range i') :
+    MapsTo f (i' '' s')ᶜ (i '' s)ᶜ := by
+  rintro u' hu' ⟨v, hv, hfu'⟩
+  obtain ⟨v', rfl⟩ : u' ∈ range i' := hcart ⟨v, hfu'⟩
+  have hfv' : f' v' = v := hi <| (congrFun hw v').trans hfu'.symm
+  exact hu' ⟨v', Classical.byContradiction fun hv' ↦ hf' hv' (hfv'.symm ▸ hv), rfl⟩
+
+/-- Given a commutative square `i ∘ f' = f ∘ i'` with `i'` injective, if `f` maps `(i' '' s')ᶜ` into
+`(i '' s)ᶜ`, then `f'` maps `s'ᶜ` into `sᶜ`. -/
+theorem MapsTo.of_compl_image {γ δ : Type*} {i : β → δ} {i' : α → γ} {f : γ → δ} {f' : α → β}
+    {s : Set β} {s' : Set α} (hf : MapsTo f (i' '' s')ᶜ (i '' s)ᶜ) (hi' : Function.Injective i')
+    (hw : i ∘ f' = f ∘ i') : MapsTo f' s'ᶜ sᶜ :=
+  fun v' hv' hfv' ↦ hf (fun ⟨_, hw', h⟩ ↦ hv' (hi' h ▸ hw')) ⟨f' v', hfv', congrFun hw v'⟩
 
 end Set
 
