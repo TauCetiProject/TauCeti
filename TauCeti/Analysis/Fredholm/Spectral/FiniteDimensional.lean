@@ -31,7 +31,8 @@ eigenvalues (`TauCeti.spectralCount_eq_finrank_pointSpectralSubspace`).
 Every operator on a finite-dimensional space is Fredholm, so the regular-crossing formula of
 `TauCeti.Analysis.Fredholm.Spectral.RegularCrossings`
 (`TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm`) applies to every continuous path
-of self-adjoint operators on a finite-dimensional real space.
+of self-adjoint operators on a finite-dimensional real space with invertible endpoints and regular
+crossings.
 
 This is the finite-dimensional form of the statement that the spectral flow of `A` is the index
 of the trajectory operator `d/ds + A`; see

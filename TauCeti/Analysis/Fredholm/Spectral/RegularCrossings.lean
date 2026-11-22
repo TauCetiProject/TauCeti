@@ -72,12 +72,6 @@ namespace TauCeti
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
   {A A' : ℝ → H →L[ℝ] H} {a b : ℝ}
 
-/-- An injective self-adjoint Fredholm operator does not have `0` in its spectrum. -/
-private theorem zero_notMem_spectrum_of_ker_eq_bot {T : H →L[ℝ] H} (hsa : IsSelfAdjoint T)
-    (hF : T.IsFredholm) (hT : T.ker = ⊥) : (0 : ℝ) ∉ spectrum ℝ T :=
-  (spectrum.zero_notMem_iff ℝ).2 <| isInvertible_iff_isUnit.1 <|
-    hF.isInvertible_of_injective_of_isSelfAdjoint hsa (LinearMap.ker_eq_bot.1 hT)
-
 /-- At an interior time of `[a, b]`, a path continuous and self-adjoint on `[a, b]` is continuous
 and self-adjoint at all nearby times. -/
 private theorem eventually_continuousAt_and_isSelfAdjoint (hA : ContinuousOn A (Icc a b))
@@ -86,6 +80,12 @@ private theorem eventually_continuousAt_and_isSelfAdjoint (hA : ContinuousOn A (
   ⟨eventually_of_mem (Ioo_mem_nhds ht₀.1 ht₀.2) fun _ ht ↦
       hA.continuousAt (Icc_mem_nhds ht.1 ht.2),
     eventually_of_mem (Icc_mem_nhds ht₀.1 ht₀.2) hsa⟩
+
+omit [CompleteSpace H] in
+/-- A crossing in `[a, b]` of a path injective at both endpoints lies in `(a, b)`. -/
+private theorem mem_Ioo_of_ker_ne_bot (ha : (A a).ker = ⊥) (hb : (A b).ker = ⊥) {t : ℝ}
+    (ht : t ∈ Icc a b) (hnt : (A t).ker ≠ ⊥) : t ∈ Ioo a b :=
+  ⟨lt_of_le_of_ne ht.1 fun h ↦ hnt (h ▸ ha), lt_of_le_of_ne ht.2 fun h ↦ hnt (h ▸ hb)⟩
 
 /-- **A path with regular crossings has finitely many crossings.** Let `A` be a continuous path of
 self-adjoint Fredholm operators on a real Hilbert space over `[a, b]`, injective at both endpoints.
@@ -104,14 +104,13 @@ theorem finite_setOf_ker_ne_bot (hA : ContinuousOn A (Icc a b))
   refine (accPt_iff_frequently_nhdsNE.1 hacc) ?_
   by_cases hnz : (A z).ker = ⊥
   · -- `A z` is invertible, and so is `A t` for every `t ∈ [a, b]` near `z`.
-    have hunit : IsUnit (A z) := isInvertible_iff_isUnit.1 <|
-      (hF z hz).isInvertible_of_injective_of_isSelfAdjoint (hsa z hz) (LinearMap.ker_eq_bot.1 hnz)
+    have hunit : IsUnit (A z) :=
+      (hF z hz).isUnit_of_injective_of_isSelfAdjoint (hsa z hz) (LinearMap.ker_eq_bot.1 hnz)
     have hopen := eventually_nhdsWithin_iff.1 <| (hA z hz).eventually (Units.isOpen.mem_nhds hunit)
     filter_upwards [nhdsWithin_le_nhds hopen] with t ht htD
     exact htD.2 (LinearMap.ker_eq_bot.2 (isInvertible_iff_isUnit.2 (ht htD.1)).injective)
   · -- A crossing lies in `(a, b)`, and regular crossings are isolated.
-    have hz' : z ∈ Ioo a b := ⟨lt_of_le_of_ne hz.1 fun h ↦ hnz (h ▸ ha),
-      lt_of_le_of_ne hz.2 fun h ↦ hnz (h ▸ hb)⟩
+    have hz' : z ∈ Ioo a b := mem_Ioo_of_ker_ne_bot ha hb hz hnz
     obtain ⟨hcont, hsa'⟩ := eventually_continuousAt_and_isSelfAdjoint hA hsa hz'
     filter_upwards [eventually_ker_eq_bot_of_crossingForm_nondegenerate hcont hsa' (hF z hz)
       (hderiv z hz' hnz) (hreg z hz' hnz)] with t ht htD
@@ -133,7 +132,8 @@ private theorem spectralFlow_eq_sum_crossingForm_of_finset (S : Finset ℝ) :
     intro b hab hA hsa hF hker _
     rw [Finset.sum_empty]
     exact spectralFlow_eq_zero_of_forall_zero_notMem_spectrum hab hA hsa fun t ht ↦
-      zero_notMem_spectrum_of_ker_eq_bot (hsa t ht) (hF t ht) (hker t ht (Finset.notMem_empty t))
+      (hF t ht).zero_notMem_spectrum_of_injective_of_isSelfAdjoint (hsa t ht)
+        (LinearMap.ker_eq_bot.1 (hker t ht (Finset.notMem_empty t)))
   | insert s S hlt ih =>
     intro b _ hA hsa hF hker hS
     obtain ⟨⟨has, hsb⟩, hd, hΓ⟩ := hS s (Finset.mem_insert_self s S)
@@ -152,8 +152,9 @@ private theorem spectralFlow_eq_sum_crossingForm_of_finset (S : Finset ℝ) :
     have hright : spectralFlow A t₂ b = 0 := by
       have hsub : Icc t₂ b ⊆ Icc a b := Icc_subset_Icc (has.trans hst₂).le le_rfl
       refine spectralFlow_eq_zero_of_forall_zero_notMem_spectrum ht₂b.le (hA.mono hsub)
-        (fun t ht ↦ hsa t (hsub ht)) fun t ht ↦ zero_notMem_spectrum_of_ker_eq_bot
-          (hsa t (hsub ht)) (hF t (hsub ht)) (hker t (hsub ht) ?_)
+        (fun t ht ↦ hsa t (hsub ht)) fun t ht ↦
+          (hF t (hsub ht)).zero_notMem_spectrum_of_injective_of_isSelfAdjoint (hsa t (hsub ht))
+            (LinearMap.ker_eq_bot.1 (hker t (hsub ht) ?_))
       rw [Finset.mem_insert, not_or]
       exact ⟨(hst₂.trans_le ht.1).ne', fun htS ↦ (hlt t htS).not_gt (hst₂.trans_le ht.1)⟩
     -- On `[a, t₁]` the crossings are those of `S`, and the induction hypothesis applies.
@@ -193,14 +194,12 @@ theorem spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm (hab : a ≤ b)
         sigNeg (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t)))) := by
   have hfin := finite_setOf_ker_ne_bot hA hsa hF ha hb hderiv hreg
   have hS : ∀ t, t ∈ hfin.toFinset ↔ t ∈ Icc a b ∧ (A t).ker ≠ ⊥ := by simp
-  -- The crossings lie in `(a, b)`, since the endpoints are injective.
-  have hIoo : ∀ t, t ∈ Icc a b → (A t).ker ≠ ⊥ → t ∈ Ioo a b := fun t ht hnt ↦
-    ⟨lt_of_le_of_ne ht.1 fun h ↦ hnt (h ▸ ha), lt_of_le_of_ne ht.2 fun h ↦ hnt (h ▸ hb)⟩
   rw [spectralFlow_eq_sum_crossingForm_of_finset hfin.toFinset b hab hA hsa hF
     (fun t ht htS ↦ not_not.1 fun hnt ↦ htS ((hS t).2 ⟨ht, hnt⟩))
     (fun t htS ↦ by
       obtain ⟨ht, hnt⟩ := (hS t).1 htS
-      exact ⟨hIoo t ht hnt, hderiv t (hIoo t ht hnt) hnt, hreg t (hIoo t ht hnt) hnt⟩)]
+      have hIoo := mem_Ioo_of_ker_ne_bot ha hb ht hnt
+      exact ⟨hIoo, hderiv t hIoo hnt, hreg t hIoo hnt⟩)]
   refine (finsum_mem_eq_sum_of_inter_support_eq _ ?_).symm
   ext t
   simp only [mem_inter_iff, Finset.mem_coe, hS, Function.mem_support]
@@ -208,6 +207,6 @@ theorem spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm (hab : a ≤ b)
   -- Only crossings contribute: at an injective time the crossing form lives on the zero space.
   have hnt : (A t).ker ≠ ⊥ := fun hnt ↦ hft <|
     sigPos_sub_sigNeg_crossingForm_eq_zero_of_ker_eq_bot (by rwa [ker_innerSL_comp]) _
-  exact ⟨fun ht ↦ ⟨Ioo_subset_Icc_self ht, hnt⟩, fun ⟨ht, _⟩ ↦ hIoo t ht hnt⟩
+  exact ⟨fun ht ↦ ⟨Ioo_subset_Icc_self ht, hnt⟩, fun ⟨ht, _⟩ ↦ mem_Ioo_of_ker_ne_bot ha hb ht hnt⟩
 
 end TauCeti

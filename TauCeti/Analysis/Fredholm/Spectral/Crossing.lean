@@ -12,6 +12,7 @@ import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 public import Mathlib.Analysis.Calculus.Deriv.Slope
 import TauCeti.Topology.Algebra.Indicator
+import TauCeti.Topology.Order.Interval
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Eigenvector
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 import TauCeti.Analysis.Normed.Operator.Restrict
@@ -302,31 +303,13 @@ private theorem ker_eq_bot_of_nondegenerate_compressedForm {t : ℝ} (hst : IsSe
       E →ₗ[ℝ] H).range = (cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (A t)).range)
     (hnd : (compressedForm A c ι t).toBilinForm.Nondegenerate) : (A t).ker = ⊥ := by
   set P := cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (A t) with hP
-  have h0 : (0 : ℝ) ∈ Icc (-c) c := ⟨by linarith, hc⟩
   refine (Submodule.eq_bot_iff _).2 fun x hx ↦ ?_
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hx
-  -- The difference quotient of the indicator at `0` is continuous on the spectrum, so `P t` acts
-  -- on the eigenvector `x` for the eigenvalue `0` by the value `1` of the indicator at `0`.
-  have hfun : (fun u : ℝ ↦ ((Icc (-c) c).indicator (1 : ℝ → ℝ) u -
-      (Icc (-c) c).indicator (1 : ℝ → ℝ) 0) / (u - 0)) = (Icc (-c) c)ᶜ.indicator fun u ↦ -u⁻¹ := by
-    funext u
-    by_cases hu : u ∈ Icc (-c) c
-    · simp [hu, h0]
-    · simp [hu, h0, div_eq_mul_inv]
-  have hg : ContinuousOn (fun u : ℝ ↦ ((Icc (-c) c).indicator (1 : ℝ → ℝ) u -
-      (Icc (-c) c).indicator (1 : ℝ → ℝ) 0) / (u - 0)) (spectrum ℝ (A t)) := by
-    rw [hfun]
-    refine ContinuousOn.continuousOn_indicator_of_disjoint_frontier ?_ ?_
-    · rw [interior_compl, closure_Icc]
-      exact (continuousOn_inv₀.mono (compl_subset_compl.2 (singleton_subset_iff.2 h0))).neg
-    · rw [frontier_compl, frontier_Icc (by linarith), disjoint_left]
-      rintro u (rfl | rfl)
-      exacts [h₁, h₂]
-  have hPx : P x = x := by
-    have h := TauCeti.cfc_smul_of_smul_eq_algebraMap_smul (A := H →L[ℝ] H) (m := x)
-      ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (μ := 0)
-      (by simp [ContinuousLinearMap.smul_def, hx]) hg hst
-    simpa [hP, ContinuousLinearMap.smul_def, h0] using h
+  -- `x` is an eigenvector for the eigenvalue `0 ∈ [-c, c]`, so it is fixed by `P t`.
+  have hPx : P x = x := (ContinuousLinearMap.smul_def P x).symm.trans <|
+    cfc_indicator_smul_of_smul_eq_algebraMap_smul
+      (by rw [map_zero, zero_smul, ContinuousLinearMap.smul_def, hx]) ⟨by linarith, hc⟩
+      (disjoint_frontier_Icc h₁ h₂) hst
   obtain ⟨v, hv⟩ : x ∈ ((P ∘L ι : E →L[ℝ] H) : E →ₗ[ℝ] H).range := hrange ▸ ⟨x, hPx⟩
   have hv0 : v = 0 := hnd.1 v fun w ↦ by
     have hv' : P (ι v) = x := hv
@@ -386,13 +369,12 @@ private theorem exists_spectralFlow_eq_sigNeg_sub_sigNeg {s : Set ℝ} (ht₀ : 
       hst.sigNeg_add_spectralCount_eq_finrank hc.le h₁ h₂ hfd hinj hrange,
       ker_eq_bot_of_nondegenerate_compressedForm hst hc.le h₁ h₂ hrange⟩
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhdsWithin_iff.1 hloc
-  refine ⟨c, hc, hPK, hPc, hloc.mono fun _ h ↦ h.2.2.2.2.2.2, ε, hε, fun a b ha hab hb hs ↦ ?_⟩
+  refine ⟨c, hc, hPK, hPc, hloc.mono fun _ ⟨_, _, _, _, _, _, h⟩ ↦ h, ε, hε,
+    fun a b ha hab hb hs ↦ ?_⟩
   have hsub : Icc a b ⊆ Metric.ball t₀ ε ∩ s := fun u hu ↦ by
     rw [Real.ball_eq_Ioo]
     exact ⟨⟨by linarith [hu.1], by linarith [hu.2]⟩, hs hu⟩
-  have hcont : ContinuousOn A (Icc a b) := fun u hu ↦ by
-    obtain ⟨hAu, -⟩ := hball (hsub hu)
-    exact hAu.mono hs
+  have hcont : ContinuousOn A (Icc a b) := fun u hu ↦ (hball (hsub hu)).1.mono hs
   have hsab : ∀ u ∈ Icc a b, IsSelfAdjoint (A u) := fun u hu ↦ by
     obtain ⟨-, hsu, -⟩ := hball (hsub hu)
     exact hsu

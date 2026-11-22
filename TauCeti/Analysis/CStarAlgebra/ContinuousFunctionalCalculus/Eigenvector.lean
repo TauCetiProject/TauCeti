@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
+import TauCeti.Topology.Algebra.Indicator
 
 /-!
 # The continuous functional calculus on eigenvectors
@@ -34,6 +35,9 @@ functional calculus with any spectral construction acting by `f μ` on the eigen
   quotient `g` of `f` at `μ`, whenever `g` is continuous on the spectrum of `a`.
 * `TauCeti.cfc_smul_of_smul_eq_algebraMap_smul`: if `a • m = μ • m` and the difference quotient
   of `f` at `μ` is continuous on the spectrum of `a`, then `cfc f a • m = f(μ) • m`.
+* `TauCeti.cfc_indicator_smul_of_smul_eq_algebraMap_smul`: the spectral projection
+  `cfc (s.indicator 1) a` fixes every eigenvector of `a` for an eigenvalue `μ ∈ s`, when the
+  frontier of `s` misses the spectrum of `a`.
 -/
 
 public section
@@ -74,5 +78,34 @@ theorem cfc_smul_of_smul_eq_algebraMap_smul {M : Type*} [AddCommGroup M] [Module
     cfc f a • m = algebraMap R A (f μ) • m := by
   rw [← sub_eq_zero, ← sub_smul, cfc_sub_algebraMap_eq_mul f a μ hg, mul_smul, sub_smul,
     hm, sub_self, smul_zero]
+
+/-- **Spectral projections fix eigenvectors.** If `a • m = μ • m` in a module over the algebra for
+some `μ ∈ s`, and the frontier of `s` misses the spectrum of `a`, then the spectral projection
+`cfc (s.indicator 1) a` fixes `m`. -/
+theorem cfc_indicator_smul_of_smul_eq_algebraMap_smul [ContinuousInv₀ R] {M : Type*}
+    [AddCommGroup M] [Module A M] {s : Set R} {a : A} {μ : R} {m : M}
+    (hm : a • m = algebraMap R A μ • m) (hμ : μ ∈ s) (hs : Disjoint (frontier s) (spectrum R a))
+    (ha : p a := by cfc_tac) :
+    cfc (s.indicator (1 : R → R)) a • m = m := by
+  -- The difference quotient of the indicator at `μ` vanishes on `s` and is `-(x - μ)⁻¹` off `s`.
+  have hg : (fun x ↦ (s.indicator (1 : R → R) x - s.indicator 1 μ) / (x - μ)) =
+      sᶜ.indicator fun x ↦ -(x - μ)⁻¹ := by
+    funext x
+    by_cases hx : x ∈ s
+    · rw [Set.indicator_of_mem hx, Set.indicator_of_mem hμ, Pi.one_apply, Pi.one_apply, sub_self,
+        zero_div, Set.indicator_of_notMem (Set.notMem_compl_iff.2 hx)]
+    · rw [Set.indicator_of_notMem hx, Set.indicator_of_mem hμ, Set.indicator_of_mem hx,
+        Pi.one_apply, zero_sub, neg_div, one_div]
+  have hcont : ContinuousOn (fun x ↦ (s.indicator (1 : R → R) x - s.indicator 1 μ) / (x - μ))
+      (spectrum R a) := by
+    rw [hg]
+    refine ContinuousOn.continuousOn_indicator_of_disjoint_frontier ?_ (by rwa [frontier_compl])
+    rw [interior_compl]
+    refine ((continuousOn_inv₀.comp (continuousOn_id.sub continuousOn_const) ?_).neg)
+    intro x hx h
+    obtain rfl : x = μ := sub_eq_zero.1 h
+    exact hx (subset_closure hμ)
+  rw [cfc_smul_of_smul_eq_algebraMap_smul _ hm hcont ha, Set.indicator_of_mem hμ, Pi.one_apply,
+    map_one, one_smul]
 
 end TauCeti

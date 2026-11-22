@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Adjoint
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Self-adjoint Fredholm operators
@@ -28,6 +29,10 @@ kernel-equality hypothesis, it identifies the cokernel with the original kernel.
   symmetry of the underlying linear map.
 * `ContinuousLinearMap.IsFredholm.isInvertible_of_injective_of_isSelfAdjoint`: an injective
   self-adjoint Fredholm operator is invertible.
+* `ContinuousLinearMap.IsFredholm.isUnit_of_injective_of_isSelfAdjoint`: the same result in terms
+  of units of the ring of continuous endomorphisms.
+* `ContinuousLinearMap.IsFredholm.zero_notMem_spectrum_of_injective_of_isSelfAdjoint`: an
+  injective self-adjoint Fredholm operator does not have `0` in its spectrum.
 
 This is the elementary self-adjoint index computation for Fredholm operators. The convention and
 argument follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix A.1.
@@ -89,5 +94,18 @@ theorem IsFredholm.isInvertible_of_injective_of_isSelfAdjoint {T : E →L[𝕜] 
     (hT : IsFredholm T) (hself : IsSelfAdjoint T) (hinj : Function.Injective T) :
     T.IsInvertible :=
   hT.isInvertible_of_injective_of_index_eq_zero hinj (index_eq_zero_of_isSelfAdjoint hT hself)
+
+/-- An injective self-adjoint Fredholm operator on a Hilbert space is a unit of the ring of
+continuous endomorphisms. -/
+theorem IsFredholm.isUnit_of_injective_of_isSelfAdjoint {T : E →L[𝕜] E}
+    (hT : IsFredholm T) (hself : IsSelfAdjoint T) (hinj : Function.Injective T) : IsUnit T :=
+  isInvertible_iff_isUnit.1 (hT.isInvertible_of_injective_of_isSelfAdjoint hself hinj)
+
+/-- An injective self-adjoint Fredholm operator on a Hilbert space does not have `0` in its
+spectrum. -/
+theorem IsFredholm.zero_notMem_spectrum_of_injective_of_isSelfAdjoint {T : E →L[𝕜] E}
+    (hT : IsFredholm T) (hself : IsSelfAdjoint T) (hinj : Function.Injective T) :
+    (0 : 𝕜) ∉ spectrum 𝕜 T :=
+  (spectrum.zero_notMem_iff 𝕜).2 (hT.isUnit_of_injective_of_isSelfAdjoint hself hinj)
 
 end ContinuousLinearMap
