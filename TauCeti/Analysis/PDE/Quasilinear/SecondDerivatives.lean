@@ -35,10 +35,11 @@ each weak derivative `∂ₑu` lies in `H¹(V)`, and the precise representative 
 conclusion as for the linear equation with `C^{1,α}` coefficients
 (`exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_gradient_of_contDiffOn`).
 
-No bound on `A` or on its derivatives that is uniform in `s` is assumed, and no integrability of
-`f` on `Ω`: only the values of `A` on compact subsets of `Ω × ℝ` and of `f` on compact subsets of
-`Ω` enter. The weak formulation only needs `f` to be locally integrable; the theorem assumes `f`
-locally `α`-Hölder.
+Apart from the ellipticity constants `λ, Λ`, which bound `A(x, s)` for every `s`, no bound
+on the derivatives or on the Hölder constants of `A` that is uniform in `s` is assumed, and no
+integrability of `f` on `Ω`: only the values of `A` on compact subsets of `Ω × ℝ` and of `f`
+on compact subsets of `Ω` enter. The weak formulation only needs `f` to be locally integrable;
+the theorem assumes `f` locally `α`-Hölder.
 
 ## The bootstrap
 
@@ -346,9 +347,10 @@ compact closure contained in `Ω`. Then for every direction `e`, the weak deriva
 `H¹(V)`, and the precise representative of its gradient is `α`-Hölder on every compact subset of
 `V`.
 
-So the second weak derivatives of `u` have locally `α`-Hölder representatives. No bound on `A`
-uniform in `s`, no integrability of `f` on `Ω`, no boundary condition on `u` and nothing about
-`∂Ω` is assumed. The precise representative agrees with `∇∂ₑu` almost everywhere on `V`
+So the second weak derivatives of `u` have locally `α`-Hölder representatives. Beyond the
+ellipticity constants `λ, Λ`, no regularity bound on `A` uniform in `s` is assumed, and
+neither is any integrability of `f` on `Ω`, any boundary condition on `u` or anything about
+`∂Ω`. The precise representative agrees with `∇∂ₑu` almost everywhere on `V`
 (`TauCeti.MeasureTheory.ae_eq_restrict_preciseRepresentative`). -/
 theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_gradient_of_quasilinear_eq
     (hα : 0 < α) (hα1 : α < 1)
