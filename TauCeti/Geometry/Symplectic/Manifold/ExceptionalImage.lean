@@ -22,11 +22,10 @@ is `⟨e, [S]⟩ ≥ -1`. Both notions refer to the same `J` as the count.
 
 This file defines them on the embedded pseudoholomorphic images of
 `TauCeti.Geometry.Symplectic.Manifold.EmbeddedCurve`, for an intersection form
-`B : TauCeti.IntersectionForm X`.
+`B : TauCeti.IntersectionForm X`, a `ℤ`-bilinear form on `H₂(X; ℤ)` for the `ℤ`-module structure
+`AddCommGroup.toIntModule`, as in the abstract counts and cycles over an additive group which
+this file specializes.
 
-* `TauCeti.IntersectionForm X`, the `ℤ`-bilinear forms on `H₂(X; ℤ)` for the `ℤ`-module structure
-  `AddCommGroup.toIntModule`, as in the abstract counts and cycles over an additive group which
-  this file specializes.
 * `TauCeti.exceptionalImages J B`, the set `Exc_J`: the images `S` of embedded `J`-holomorphic
   spheres, that is of embedded pseudoholomorphic curves whose parametrizing surface is
   homeomorphic to the `2`-sphere, with `[S] · [S] = -1`. Whether the image of a curve `C` is
@@ -67,8 +66,6 @@ positivity of intersections are inputs here; the geometric theorems supplying th
 
 ## Main definitions
 
-* `TauCeti.IntersectionForm`: the type of intersection forms on `H₂(X; ℤ)`.
-* `TauCeti.IntersectionForm.IsSymm`: symmetry of an intersection form.
 * `TauCeti.exceptionalImages`: the embedded spheres of square `-1`.
 * `TauCeti.IsGoodClass`: the classes at least `-1` on every exceptional image.
 
@@ -83,23 +80,10 @@ positivity of intersections are inputs here; the geometric theorems supplying th
 
 public section
 
-open LinearMap (BilinForm)
 open Set
 open scoped Manifold ContDiff
 
 namespace TauCeti
-
-/-- The `ℤ`-bilinear forms on `H₂(X; ℤ)`, such as the intersection form of a closed oriented
-four-manifold `X`. They are bilinear for the `ℤ`-module structure `AddCommGroup.toIntModule`, the
-one the abstract counts and cycles over an additive group use, rather than for the `ModuleCat ℤ`
-structure of `secondHomology X`, which agrees with it only propositionally. -/
-abbrev IntersectionForm (X : Type) [TopologicalSpace X] : Type :=
-  @BilinForm ℤ _ (secondHomology X) _ (AddCommGroup.toIntModule _)
-
-/-- An intersection form `B : TauCeti.IntersectionForm X` is **symmetric**,
-`LinearMap.BilinForm.IsSymm` for the `ℤ`-module structure `AddCommGroup.toIntModule`. -/
-abbrev IntersectionForm.IsSymm {X : Type} [TopologicalSpace X] (B : IntersectionForm X) : Prop :=
-  @LinearMap.BilinForm.IsSymm ℤ (secondHomology X) _ _ (AddCommGroup.toIntModule _) B
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {X : Type} [TopologicalSpace X] [ChartedSpace H X]
