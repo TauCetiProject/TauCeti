@@ -1099,13 +1099,12 @@ theorem quantizeSobolev_map {V' W' : Type*} [NormedAddCommGroup V'] [InnerProduc
   ext φ
   have hi : Integrable fun x ↦ φ x • quantizeSchwartzValue a.coefficient (u.postcompCLM K) x :=
     (ha.integrable_quantizeSchwartzValue _).smul_of_top_right (φ.memLp ⊤)
-  have hq : (a.map Φ).coefficient = fun p ↦ L ∘L a.coefficient p ∘L K :=
-    funext fun p ↦ by rw [coefficient_map, hΦ]
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
     BesselPotentialSpace.toDistr_postcomp_apply,
     toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
-    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, ← L.integral_comp_comm hi, hq]
+    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, ← L.integral_comp_comm hi,
+    coefficient_map_eq_comp_comp L K hΦ]
   simp only [quantizeSchwartzValue_comp_comp, map_smul]
 
 /-- **Components of a matrix-valued quantization.** For a functional `ℓ` on `W` and a basis

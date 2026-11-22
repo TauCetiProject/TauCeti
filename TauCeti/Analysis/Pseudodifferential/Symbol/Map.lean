@@ -72,6 +72,13 @@ theorem coefficient_map_arrowCongr (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[ℂ] W
       fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
   funext fun p ↦ by simp
 
+/-- If `Φ` acts on the coefficients by `T ↦ L ∘ T ∘ K`, the coefficient of the image symbol is
+`L ∘ a(x, ξ) ∘ K`. -/
+theorem coefficient_map_eq_comp_comp {Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')} (L : W →L[ℂ] W')
+    (K : V' →L[ℂ] V) (hΦ : ∀ T, Φ T = L ∘L T ∘L K) (a : Symbol n V W m) :
+    (a.map Φ).coefficient = fun p ↦ L ∘L a.coefficient p ∘L K :=
+  funext fun p ↦ by rw [coefficient_map, hΦ]
+
 /-- The map `T ↦ ℓ ∘ T ∘ e` of coefficients, sending an operator `V →L[ℂ] W` to the scalar entry
 determined by a vector `e ∈ V` and a functional `ℓ` on `W`. The image `a.map (entryMap ℓ e)` of a
 symbol is its scalar entry `ℓ ∘ a(x, ξ) ∘ e`, through which a matrix-valued quantization is
@@ -81,6 +88,7 @@ def entryMap (ℓ : W →L[ℂ] ℂ) (e : V) : (V →L[ℂ] W) →L[ℝ] (ℂ �
     ((ContinuousLinearMap.compL ℂ ℂ V W).flip (ContinuousLinearMap.toSpanSingleton ℂ e))
     ).restrictScalars ℝ
 
+@[simp]
 theorem entryMap_apply (ℓ : W →L[ℂ] ℂ) (e : V) (T : V →L[ℂ] W) :
     entryMap ℓ e T = ℓ ∘L T ∘L ContinuousLinearMap.toSpanSingleton ℂ e :=
   (rfl)

@@ -477,9 +477,8 @@ theorem HasNearDiagonalKernel.map [CompleteSpace V] [CompleteSpace W] {V' W' : T
     (ha : a.HasNearDiagonalKernel R) {Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')} (L : W →L[ℂ] W')
     (K : V' →L[ℂ] V) (hΦ : ∀ T, Φ T = L ∘L T ∘L K) : (a.map Φ).HasNearDiagonalKernel R :=
   fun u x hu ↦ by
-    have hq : (a.map Φ).coefficient = fun p ↦ L ∘L a.coefficient p ∘L K :=
-      funext fun p ↦ by rw [coefficient_map, hΦ]
-    rw [hq, quantizeSchwartzValue_comp_comp, ha _ x fun y hy ↦ by simp [hu y hy], map_zero]
+    rw [coefficient_map_eq_comp_comp L K hΦ, quantizeSchwartzValue_comp_comp,
+      ha _ x fun y hy ↦ by simp [hu y hy], map_zero]
 
 /-- An operator with kernel supported within distance `R` of the diagonal vanishes outside the
 closed `R`-neighbourhood of the support of its input. -/

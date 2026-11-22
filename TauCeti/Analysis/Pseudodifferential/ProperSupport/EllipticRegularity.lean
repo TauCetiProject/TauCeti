@@ -48,9 +48,12 @@ with `V` and `W` finite-dimensional complex inner product spaces, and a matrix-v
 parametrix, every `V`-valued distribution `T` is `H^(s + m)` wherever `Op(a) T` is `H^s`, in the
 sense of the `H^s` singular supports of vector-valued distributions
 (`vectorSobolevSingularSupport_subset_vectorSobolevSingularSupport_quantizeDistribution`).
-In a local frame, an operator between vector bundles has such a symbol and acts on such
-distributions, so this is `Pu ∈ H^s_loc ⟹ u ∈ H^(s + m)_loc` for bundle-valued `u` in a chart. The
-scalar statement above is its case `V = W = ℂ`.
+Likewise the singular support of a `V`-valued `T` lies in that of `Op(a) T`
+(`Distribution.singularSupport_subset_singularSupport_quantizeDistribution`), so every solution of
+an elliptic system `Op(a) T = f` is smooth wherever `f` is. In a local frame, an operator between
+vector bundles has such a symbol and acts on such distributions, so this is
+`Pu ∈ H^s_loc ⟹ u ∈ H^(s + m)_loc` for bundle-valued `u` in a chart. The scalar statements above
+are its case `V = W = ℂ`.
 
 ## The argument
 
@@ -94,7 +97,8 @@ matrix-valued interior regularity on `H^r` then gives `φ u ∈ H^(s + m)`, whos
 * `Distribution.IsLocallySobolevAt.of_quantizeDistribution`: **local elliptic regularity**.
 * `Distribution.sobolevSingularSupport_subset_sobolevSingularSupport_quantizeDistribution` and
   `Distribution.singularSupport_subset_singularSupport_quantizeDistribution`: elliptic operators
-  do not shrink singular supports.
+  do not shrink singular supports, the latter also for matrix-valued symbols acting on vector-valued
+  distributions.
 
 ## References
 
@@ -234,7 +238,7 @@ private theorem toDistr_postcomp_quantizeSobolev_smulLeft (b : Module.Basis ι �
   have hpa (j : ι) (x ξ : CoordinateSpace n) :
       ((smulLeft ψ.contDiff a).map (entryMap ℓ (b j))).coefficient (x, ξ) =
         ψ x • (a.map (entryMap ℓ (b j))).coefficient (x, ξ) := by
-    simp [entryMap_apply, coefficient_smulLeft]
+    simp [coefficient_smulLeft]
   have h := congrArg (fun L ↦ (L u).toDistr) (postcomp_comp_quantizeSobolev hp b ℓ r)
   simp only [ContinuousLinearMap.comp_apply, _root_.sum_apply] at h
   rw [h, mapCLM_quantizeDistribution_eq_sum ha b ℓ, Distribution.cutoffTempered_sum,

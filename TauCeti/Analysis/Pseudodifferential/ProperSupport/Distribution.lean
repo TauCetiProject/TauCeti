@@ -550,11 +550,11 @@ theorem adjointTestFunctionCLM_map {V' W' : Type*} [NormedAddCommGroup V']
   -- `Op(a.map Φ) u = L ∘ Op(a) (K ∘ u)` on test functions.
   have hq (x : CoordinateSpace n) : quantizeTestFunctionCLM (ha.map L K hΦ) u x =
       L (quantizeTestFunctionCLM ha (TestFunction.postcompCLM (K.restrictScalars ℝ) u) x) := by
-    have hc : (a.map Φ).coefficient = fun p ↦ L ∘L a.coefficient p ∘L K :=
-      funext fun p ↦ by rw [coefficient_map, hΦ]
-    rw [quantizeTestFunctionCLM_apply, quantizeTestFunctionCLM_apply, hc,
-      quantizeSchwartzValue_comp_comp]
-    congr 2
+    rw [quantizeTestFunctionCLM_apply, quantizeTestFunctionCLM_apply,
+      coefficient_map_eq_comp_comp L K hΦ, quantizeSchwartzValue_comp_comp]
+    refine congrArg (fun f ↦ L (quantizeSchwartzValue a.coefficient f x))
+      (SchwartzMap.ext fun y ↦ ?_)
+    simp [HasCompactSupport.toSchwartzMap_toFun]
   rw [← integral_inner_quantizeTestFunctionCLM]
   simp only [TestFunction.postcompCLM_apply, Function.comp_apply,
     ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.adjoint_inner_right]
