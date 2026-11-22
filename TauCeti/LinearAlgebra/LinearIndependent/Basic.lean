@@ -25,8 +25,6 @@ form in which Carathéodory-type reductions of finite linear combinations use it
 * `TauCeti.linearIndepOn_image_iff`: linear independence on `f '' s` versus of `v ∘ f` on `s`.
 * `Fintype.linearIndepOn_iff`: linear independence of a subfamily of a finite family, in terms of
   coefficient functions vanishing off the subfamily.
-* `LinearIndepOn.restrict_scalars'`: linear independence on a set restricts along a faithful
-  scalar action.
 -/
 
 public section
@@ -67,11 +65,3 @@ theorem Fintype.linearIndepOn_iff {R M ι : Type*} [Ring R] [AddCommGroup M] [Mo
     congr 1
     ext j
     simp
-
-/-- A family linearly independent on `s` over `K` remains linearly independent on `s` over a
-subring `R` acting faithfully on `K`. -/
-theorem LinearIndepOn.restrict_scalars' (R : Type*) {ι K M : Type*} [Semiring R] [Semiring K]
-    [AddCommMonoid M] [SMulWithZero R K] [Module R M] [Module K M]
-    [IsScalarTower R K M] [FaithfulSMul R K] [IsScalarTower R K K]
-    {v : ι → M} {s : Set ι} (hv : LinearIndepOn K v s) : LinearIndepOn R v s :=
-  hv.linearIndependent.restrict_scalars' R

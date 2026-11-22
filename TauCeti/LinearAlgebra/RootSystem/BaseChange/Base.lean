@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.RootSystem.BaseChange
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
 import TauCeti.Algebra.Group.Submonoid.Closure
-import TauCeti.LinearAlgebra.LinearIndependent.Basic
 
 /-!
 # Pullback, scalar restriction, and scalar extension of root-pairing bases

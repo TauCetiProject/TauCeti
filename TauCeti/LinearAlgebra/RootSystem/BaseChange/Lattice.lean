@@ -30,7 +30,7 @@ and `X₀`, `Y₀` satisfy `IsBaseChange S`, extension and restriction are mutua
 * `RootPairing.latticeAut`, `IsDualLatticePair`, and `IsDualLatticePair.restrict`:
   lattice-preserving automorphisms, dual `R`-lattice pairs, and the restricted `R`-root pairing.
 * `RootPairing.IsDualLatticePair.restrictAutHom`, `baseChangeEquiv`, `extendAutHom`,
-  `autMulEquiv`, and `autMulEquivOfIsLattice`: restriction/extension of automorphisms and
+  `autMulEquiv`, and `autMulEquivOfIsFullLattice`: restriction/extension of automorphisms and
   `hXY.restrict.Aut ≃* P.latticeAut X₀ Y₀`.
 * `RootPairing.unitTmulRootPairingEquiv` and `RootPairing.autMulEquivLatticeAutBaseChange`:
   comparison of `D` with the unit-tensor lattices `1 ⊗ X` and `1 ⊗ Y` in `D.baseChange S`.
@@ -493,49 +493,52 @@ variable {ι R K M N : Type*} [CommRing R] [Field K] [Algebra R K] [IsFractionRi
 /-- **For full lattices over an integral domain in its fraction field with free coweight lattice,
 the integral automorphisms are isomorphic to the lattice-preserving automorphisms of the ambient
 pairing.** -/
-noncomputable def IsDualLatticePair.autMulEquivOfIsLattice (hXY : P.IsDualLatticePair X₀ Y₀) :
+noncomputable def IsDualLatticePair.autMulEquivOfIsFullLattice (hXY : P.IsDualLatticePair X₀ Y₀) :
     hXY.restrict.Aut ≃* P.latticeAut X₀ Y₀ := by
   have : Module.Finite R Y₀ := Submodule.IsLattice.finite K Y₀
   have : Module.Free R X₀ := .of_equiv hXY.restrict.toLinearMap.toPerfPair.symm
   exact hXY.autMulEquiv (Submodule.isBaseChange_subtype X₀) (Submodule.isBaseChange_subtype Y₀)
 
-/-- On `(X₀, Y₀)`, `autMulEquivOfIsLattice.symm` is lattice restriction `restrictAutHom`. -/
-@[simp] theorem IsDualLatticePair.autMulEquivOfIsLattice_symm_apply
+/-- On `(X₀, Y₀)`, `autMulEquivOfIsFullLattice.symm` is lattice restriction `restrictAutHom`. -/
+@[simp] theorem IsDualLatticePair.autMulEquivOfIsFullLattice_symm_apply
     (hXY : P.IsDualLatticePair X₀ Y₀) (g : P.latticeAut X₀ Y₀) :
-    hXY.autMulEquivOfIsLattice.symm g = hXY.restrictAutHom g := by simp [autMulEquivOfIsLattice]
+    hXY.autMulEquivOfIsFullLattice.symm g = hXY.restrictAutHom g := by
+  simp [autMulEquivOfIsFullLattice]
 
-/-- `autMulEquivOfIsLattice` extends the weight action of `u` on `X₀`. -/
-@[simp] theorem IsDualLatticePair.autMulEquivOfIsLattice_smul_coe
+/-- `autMulEquivOfIsFullLattice` extends the weight action of `u` on `X₀`. -/
+@[simp] theorem IsDualLatticePair.autMulEquivOfIsFullLattice_smul_coe
     (hXY : P.IsDualLatticePair X₀ Y₀) (u : hXY.restrict.Aut) (x : X₀) :
-    (hXY.autMulEquivOfIsLattice u : P.Aut) • (x : M) = ((u • x : X₀) : M) := by
-  rw [← hXY.coe_restrictAutHom_smul, ← autMulEquivOfIsLattice_symm_apply, MulEquiv.symm_apply_apply]
-
-/-- `autMulEquivOfIsLattice` extends the forward coweight action of `u` on `Y₀`. -/
-@[simp] theorem IsDualLatticePair.autMulEquivOfIsLattice_coweightEquiv_symm_coe
-    (hXY : P.IsDualLatticePair X₀ Y₀) (u : hXY.restrict.Aut) (y : Y₀) :
-    ((hXY.autMulEquivOfIsLattice u : P.Aut).coweightEquiv.symm (y : N)) =
-      (u.coweightEquiv.symm y : N) := by
-  rw [← hXY.coe_restrictAutHom_coweightEquiv_symm, ← hXY.autMulEquivOfIsLattice_symm_apply,
+    (hXY.autMulEquivOfIsFullLattice u : P.Aut) • (x : M) = ((u • x : X₀) : M) := by
+  rw [← hXY.coe_restrictAutHom_smul, ← autMulEquivOfIsFullLattice_symm_apply,
     MulEquiv.symm_apply_apply]
 
-/-- `autMulEquivOfIsLattice` preserves the root-index permutation. -/
-@[simp] theorem IsDualLatticePair.autMulEquivOfIsLattice_indexEquiv
+/-- `autMulEquivOfIsFullLattice` extends the forward coweight action of `u` on `Y₀`. -/
+@[simp] theorem IsDualLatticePair.autMulEquivOfIsFullLattice_coweightEquiv_symm_coe
+    (hXY : P.IsDualLatticePair X₀ Y₀) (u : hXY.restrict.Aut) (y : Y₀) :
+    ((hXY.autMulEquivOfIsFullLattice u : P.Aut).coweightEquiv.symm (y : N)) =
+      (u.coweightEquiv.symm y : N) := by
+  rw [← hXY.coe_restrictAutHom_coweightEquiv_symm, ← hXY.autMulEquivOfIsFullLattice_symm_apply,
+    MulEquiv.symm_apply_apply]
+
+/-- `autMulEquivOfIsFullLattice` preserves the root-index permutation. -/
+@[simp] theorem IsDualLatticePair.autMulEquivOfIsFullLattice_indexEquiv
     (hXY : P.IsDualLatticePair X₀ Y₀) (u : hXY.restrict.Aut) :
-    (hXY.autMulEquivOfIsLattice u : P.Aut).indexEquiv = u.indexEquiv := by
-  rw [← hXY.restrictAutHom_indexEquiv, ← autMulEquivOfIsLattice_symm_apply,
+    (hXY.autMulEquivOfIsFullLattice u : P.Aut).indexEquiv = u.indexEquiv := by
+  rw [← hXY.restrictAutHom_indexEquiv, ← autMulEquivOfIsFullLattice_symm_apply,
     MulEquiv.symm_apply_apply]
 
 /-- When `Module.Free R X₀` and `Module.Finite R Y₀` are available as instances,
-`autMulEquivOfIsLattice` agrees with `extendAutHom` along the lattice base-change maps.
+`autMulEquivOfIsFullLattice` agrees with `extendAutHom` along the lattice base-change maps.
 
 Not a `simp` lemma: the right-hand side requires `[Module.Free R X₀]` and `[Module.Finite R Y₀]`;
-use `autMulEquivOfIsLattice_smul_coe`, `autMulEquivOfIsLattice_coweightEquiv_symm_coe`, and
-`autMulEquivOfIsLattice_indexEquiv` for hypothesis-free `simp` evaluation. -/
-theorem IsDualLatticePair.autMulEquivOfIsLattice_apply (hXY : P.IsDualLatticePair X₀ Y₀)
+use `autMulEquivOfIsFullLattice_smul_coe`,
+`autMulEquivOfIsFullLattice_coweightEquiv_symm_coe`, and `autMulEquivOfIsFullLattice_indexEquiv`
+for hypothesis-free `simp` evaluation. -/
+theorem IsDualLatticePair.autMulEquivOfIsFullLattice_apply (hXY : P.IsDualLatticePair X₀ Y₀)
     [Module.Free R X₀] [Module.Finite R Y₀] (u : hXY.restrict.Aut) :
-    hXY.autMulEquivOfIsLattice u = hXY.extendAutHom (Submodule.isBaseChange_subtype X₀)
+    hXY.autMulEquivOfIsFullLattice u = hXY.extendAutHom (Submodule.isBaseChange_subtype X₀)
       (Submodule.isBaseChange_subtype Y₀) u := by
-  apply hXY.autMulEquivOfIsLattice.symm.injective; simp [autMulEquivOfIsLattice]
+  apply hXY.autMulEquivOfIsFullLattice.symm.injective; simp [autMulEquivOfIsFullLattice]
 
 end FractionField
 
