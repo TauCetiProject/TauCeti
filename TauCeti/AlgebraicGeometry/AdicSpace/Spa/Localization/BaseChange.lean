@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.PlusComparison
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.UniversalProperty
 public import TauCeti.RingTheory.Huber.AdicHom.Localization
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Integral
 
 /-!
 # Geometric base change of rational-localisation Huber pairs

@@ -45,9 +45,6 @@ because `locTopology` is deliberately not an instance; this is the same preamble
   a unit in `A⟨T/s⟩`.
 * `TauCeti.Huber.PairOfDefinition.toCompletionLoc_unit_inv_eq` : its inverse is the cofactor
   fraction, so it can be computed with.
-* `TauCeti.Huber.PairOfDefinition.map_divBy_mul_toCompletionLoc` and `map_divBy_eq_iff` : clearing
-  and characterising the image of a distinguished fraction `t/s` under a multiplicative or monoid
-  homomorphism out of `A⟨T/s⟩`.
 * `TauCeti.Huber.PairOfDefinition.isPowerBounded_toCompletionLoc_mul_unit_inv` : the fractions
   `t/s` are power-bounded in a refining presentation.
 * `TauCeti.Huber.PairOfDefinition.existsUnique_continuous_ringHom_of_refines` : exactly one
@@ -183,40 +180,6 @@ theorem toCompletionLoc_mul_unit_inv_eq_divBy (t : A)
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   rw [toCompletionLoc_unit_inv_eq P T s S hden (mul_one s).symm hu, toCompletionLoc_apply,
     ← UniformSpace.Completion.coe_mul, divBy_one, algebraMap_mul_invSelf]
-
-/-- Any multiplicative homomorphism out of `A⟨T/s⟩` sends the cleared fraction `(t/s) · s` to the
-image of `t`. -/
-theorem map_divBy_mul_toCompletionLoc (t : A) {B F : Type*} [Mul B] :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    ∀ [FunLike F (UniformSpace.Completion S) B] [MulHomClass F (UniformSpace.Completion S) B]
-      (φ : F),
-      φ ((divBy t s : S) : UniformSpace.Completion S) * φ (toCompletionLoc P T s S hden s) =
-        φ (toCompletionLoc P T s S hden t) := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  intro _ _ φ
-  rw [← map_mul, toCompletionLoc_apply, toCompletionLoc_apply, ← UniformSpace.Completion.coe_mul,
-    divBy_mul_algebraMap]
-
-/-- Characterisation of the image of the distinguished fraction `t/s` under a monoid homomorphism
-out of `A⟨T/s⟩`: since `s` maps to a unit, `φ(t/s) = y` iff `y · φ(s) = φ(t)`. -/
-theorem map_divBy_eq_iff (t : A) {B F : Type*} [Monoid B] :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    ∀ [FunLike F (UniformSpace.Completion S) B] [MonoidHomClass F (UniformSpace.Completion S) B]
-      (φ : F) (y : B),
-      φ ((divBy t s : S) : UniformSpace.Completion S) = y ↔
-        y * φ (toCompletionLoc P T s S hden s) = φ (toCompletionLoc P T s S hden t) := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  intro _ _ φ y
-  have hu := (isUnit_toCompletionLoc_of_dvd P T s S hden dvd_rfl).map φ
-  rw [← hu.mul_left_inj, map_divBy_mul_toCompletionLoc P T s S hden t φ, eq_comm]
 
 /-- **`t/a` is power-bounded when `t * r` is a numerator.** If the denominator factors as
 `s = a * r` and `t * r` lies in `T`, then `t/a` is the distinguished fraction `(t * r)/s`, which is
