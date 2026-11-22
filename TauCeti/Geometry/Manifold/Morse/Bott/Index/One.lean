@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
 public import TauCeti.Topology.VectorBundle.Thom.LineBundle
+import TauCeti.Geometry.Manifold.Morse.Bott.Thom.DiscSpherePair
 
 /-!
 # Crossing the level of a Morse–Bott submanifold of index one

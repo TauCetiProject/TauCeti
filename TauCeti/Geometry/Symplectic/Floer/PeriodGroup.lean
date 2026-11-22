@@ -54,6 +54,8 @@ This file develops `Γ` for an arbitrary additive group `S` with two such homomo
 * `PeriodGroup.chern_injective_of_area_eq_mul_chern`,
   `PeriodGroup.isAddCyclic_of_area_eq_mul_chern`: if the area is a fixed multiple of the Chern
   number (spherical monotonicity), then the Chern number embeds `Γ` into `ℤ`, so `Γ` is cyclic.
+* `PeriodGroup.area_injective_of_area_eq_mul_chern`: if moreover the multiple is nonzero, the
+  area embeds `Γ` into `ℝ` too.
 * `PeriodGroup.area_injective_of_chern_eq_zero`: if the Chern number vanishes, then the area
   embeds `Γ` into `ℝ`.
 * `PeriodGroup.negOnePow_eq_negOnePow_of_quotientMk_eq`: degrees are even, so the residue of an
@@ -299,6 +301,14 @@ the first Chern number embeds the period group into `ℤ`. -/
 theorem chern_injective_of_area_eq_mul_chern (h : ∀ s, ω s = τ * c s) :
     Function.Injective (chern ω c) :=
   chern_injective_iff.2 (ker_le_ker_of_area_eq_mul_chern h)
+
+/-- For a spherically monotone pair with nonzero monotonicity constant, where the area is a fixed
+nonzero multiple of the first Chern number, the area embeds the period group into `ℝ`. -/
+theorem area_injective_of_area_eq_mul_chern (h : ∀ s, ω s = τ * c s) (hτ : τ ≠ 0) :
+    Function.Injective (area ω c) := fun γ γ' hγ =>
+  chern_injective_of_area_eq_mul_chern h <| by
+    rw [area_eq_mul_chern h, area_eq_mul_chern h] at hγ
+    exact_mod_cast mul_left_cancel₀ hτ hγ
 
 /-- For a spherically monotone pair, the degree embeds the period group into `ℤ`. -/
 theorem degree_injective_of_area_eq_mul_chern (h : ∀ s, ω s = τ * c s) :
