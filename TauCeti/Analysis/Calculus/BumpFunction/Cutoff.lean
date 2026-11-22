@@ -50,7 +50,9 @@ functions are smooth (`contDiffAt_tsum_of_eventually_eq_zero`); in particular th
 `Σₙ f (x, t + n)` of a `C^k` map compactly supported in `E × (0, 1)` is a `C^k` map of period one
 in `t` (`TauCeti.exists_contDiff_periodic_eventuallyEq`). A compactly supported `C¹`
 function is bounded and Hölder continuous with every exponent at most one
-(`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`).
+(`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`); for a `C³` function one constant
+bounds it, its first two derivatives and their Hölder constants uniformly over all translates
+(`ContDiff.exists_forall_holderWith_translate_and_norm_le_of_hasCompactSupport`).
 
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose gradient
 is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a universal
@@ -336,6 +338,43 @@ theorem _root_.ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport [Norm
     linarith [dist_le_norm_add_norm (φ x) (φ y), hB x, hB y, Real.le_coe_toNNReal B]
   exact ⟨_, h₀.of_le_of_le (holderWith_one.2 hK) zero_le hα,
     fun x => (hB' x).trans (by exact_mod_cast le_max_left _ _)⟩
+
+/-- A compactly supported `C³` function has one constant `Z` which bounds it and its first and
+second derivatives, together with their `α`-Hölder constants for an exponent `α ≤ 1`, for all of
+its translates `x ↦ φ (x - x₀)` at once. -/
+theorem _root_.ContDiff.exists_forall_holderWith_translate_and_norm_le_of_hasCompactSupport
+    [NormedSpace ℝ E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {φ : E → F}
+    (hφ : ContDiff ℝ 3 φ) (hc : HasCompactSupport φ) {α : ℝ≥0} (hα : α ≤ 1) :
+    ∃ Z : ℝ≥0, ∀ x₀ : E,
+      (HolderWith Z α (fun x => φ (x - x₀)) ∧
+        HolderWith Z α (fderiv ℝ fun x => φ (x - x₀)) ∧
+        HolderWith Z α (fderiv ℝ (fderiv ℝ fun x => φ (x - x₀)))) ∧
+      ∀ x, ‖φ (x - x₀)‖ ≤ Z ∧ ‖fderiv ℝ (fun x => φ (x - x₀)) x‖ ≤ Z ∧
+        ‖fderiv ℝ (fderiv ℝ fun x => φ (x - x₀)) x‖ ≤ Z := by
+  obtain ⟨C₀, h₀, b₀⟩ :=
+    (hφ.of_le (by norm_num)).exists_holderWith_and_norm_le_of_hasCompactSupport hc hα
+  obtain ⟨C₁, h₁, b₁⟩ := ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport
+    (hφ.fderiv_right (m := 1) (by norm_num)) (hc.fderiv (𝕜 := ℝ)) hα
+  obtain ⟨C₂, h₂, b₂⟩ := ((hφ.fderiv_right (m := 2) (by norm_num)).fderiv_right (m := 1)
+    le_rfl).exists_holderWith_and_norm_le_of_hasCompactSupport
+      ((hc.fderiv (𝕜 := ℝ)).fderiv (𝕜 := ℝ)) hα
+  refine ⟨C₀ + C₁ + C₂, fun x₀ => ?_⟩
+  have hD1 : fderiv ℝ (fun x => φ (x - x₀)) = fun x => fderiv ℝ φ (x - x₀) :=
+    funext fun _ => fderiv_comp_sub x₀
+  have hD2 : fderiv ℝ (fderiv ℝ fun x => φ (x - x₀)) =
+      fun x => fderiv ℝ (fderiv ℝ φ) (x - x₀) := by
+    rw [hD1]
+    exact funext fun _ => fderiv_comp_sub x₀
+  have hle₀ : C₀ ≤ C₀ + C₁ + C₂ := le_add_right (le_add_right le_rfl)
+  have hle₁ : C₁ ≤ C₀ + C₁ + C₂ := le_add_right le_add_self
+  have hle₂ : C₂ ≤ C₀ + C₁ + C₂ := le_add_self
+  rw [hD2, hD1]
+  -- Translation preserves extended distances.
+  exact ⟨⟨fun x y => by simpa only [edist_sub_right] using (h₀.mono hle₀) (x - x₀) (y - x₀),
+    fun x y => by simpa only [edist_sub_right] using (h₁.mono hle₁) (x - x₀) (y - x₀),
+    fun x y => by simpa only [edist_sub_right] using (h₂.mono hle₂) (x - x₀) (y - x₀)⟩, fun x =>
+    ⟨(b₀ _).trans (by exact_mod_cast hle₀), (b₁ _).trans (by exact_mod_cast hle₁),
+      (b₂ _).trans (by exact_mod_cast hle₂)⟩⟩
 
 /-- A compact-exhaustion term in an open set admits a smooth cutoff supported in the interior of
 the next term. In infinite dimension compact sets have empty interior (Riesz), so every term of

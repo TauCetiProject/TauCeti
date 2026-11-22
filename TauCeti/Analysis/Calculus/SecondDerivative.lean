@@ -124,7 +124,8 @@ Morse-theoretic definitions that use them.
   `TauCeti.sum_mul_fderiv_fderiv_apply_add_fderiv_apply_mul_eq_zero_of_sum_sq_eventuallyEq_const`:
   the first and second derivatives of a partition of unity by squares, `∑ₐ Jₐ²` constant.
 * `TauCeti.fderiv_fderiv_mul_apply_of_tsupport_subset`: the second-order product rule with a
-  cutoff, at every point.
+  cutoff, at every point; `TauCeti.fderiv_fderiv_mul_apply_of_mem_or_notMem_tsupport` is its
+  pointwise form, at points where both factors are `C²` or outside the support of the cutoff.
 * `TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv`: in one variable the second derivative is
   the second iterated derivative.
 * `TauCeti.isInvertible_fderiv_fderiv_iff_iteratedDeriv_two_ne_zero`: in one variable the second
@@ -688,6 +689,26 @@ theorem sum_mul_fderiv_fderiv_apply_add_fderiv_apply_mul_eq_zero_of_sum_sq_event
   rw [← h]
   exact Finset.sum_congr rfl fun a _ ↦ by ring
 
+/-- **The second-order product rule at a point of a cutoff.** If `f` and `g` are `C²` on an open
+set `s`, then the second-order product rule
+`D²(f g)(v, w) = f D²g(v, w) + g D²f(v, w) + Df(v) Dg(w) + Dg(v) Df(w)` holds at every point
+`x` which lies in `s` or outside the topological support of `f`: there both sides vanish, whatever
+`f` and `g` are. -/
+theorem fderiv_fderiv_mul_apply_of_mem_or_notMem_tsupport {f g : E → 𝕜} {s : Set E}
+    (hs : IsOpen s) (hf : ContDiffOn 𝕜 2 f s) (hg : ContDiffOn 𝕜 2 g s) {x : E}
+    (hx : x ∈ s ∨ x ∉ tsupport f) (v w : E) :
+    fderiv 𝕜 (fderiv 𝕜 (f * g)) x v w =
+      f x * fderiv 𝕜 (fderiv 𝕜 g) x v w + g x * fderiv 𝕜 (fderiv 𝕜 f) x v w +
+        fderiv 𝕜 f x v * fderiv 𝕜 g x w + fderiv 𝕜 g x v * fderiv 𝕜 f x w := by
+  rcases hx with hx | hfx
+  · exact fderiv_fderiv_mul_apply (hf.contDiffAt (hs.mem_nhds hx)) (hg.contDiffAt (hs.mem_nhds hx))
+      v w
+  · have hfgx : x ∉ tsupport (fderiv 𝕜 (f * g)) := fun h =>
+      hfx ((tsupport_fderiv_subset 𝕜).trans tsupport_mul_subset_left h)
+    have hf'x : x ∉ tsupport (fderiv 𝕜 f) := fun h => hfx (tsupport_fderiv_subset 𝕜 h)
+    simp [image_eq_zero_of_notMem_tsupport hfx, fderiv_of_notMem_tsupport 𝕜 hfx,
+      fderiv_of_notMem_tsupport 𝕜 hfgx, fderiv_of_notMem_tsupport 𝕜 hf'x]
+
 /-- **The second-order product rule for a cutoff.** If `f` and `g` are `C²` on an open set `s`
 containing the topological support of `f`, then the second-order product rule
 `D²(f g)(v, w) = f D²g(v, w) + g D²f(v, w) + Df(v) Dg(w) + Dg(v) Df(w)` holds at every point:
@@ -696,16 +717,9 @@ theorem fderiv_fderiv_mul_apply_of_tsupport_subset {f g : E → 𝕜} {s : Set E
     (hf : ContDiffOn 𝕜 2 f s) (hfs : tsupport f ⊆ s) (hg : ContDiffOn 𝕜 2 g s) (x v w : E) :
     fderiv 𝕜 (fderiv 𝕜 (f * g)) x v w =
       f x * fderiv 𝕜 (fderiv 𝕜 g) x v w + g x * fderiv 𝕜 (fderiv 𝕜 f) x v w +
-        fderiv 𝕜 f x v * fderiv 𝕜 g x w + fderiv 𝕜 g x v * fderiv 𝕜 f x w := by
-  by_cases hx : x ∈ s
-  · exact fderiv_fderiv_mul_apply (hf.contDiffAt (hs.mem_nhds hx)) (hg.contDiffAt (hs.mem_nhds hx))
-      v w
-  · have hfx : x ∉ tsupport f := fun h => hx (hfs h)
-    have hfgx : x ∉ tsupport (fderiv 𝕜 (f * g)) := fun h =>
-      hfx ((tsupport_fderiv_subset 𝕜).trans tsupport_mul_subset_left h)
-    have hf'x : x ∉ tsupport (fderiv 𝕜 f) := fun h => hfx (tsupport_fderiv_subset 𝕜 h)
-    simp [image_eq_zero_of_notMem_tsupport hfx, fderiv_of_notMem_tsupport 𝕜 hfx,
-      fderiv_of_notMem_tsupport 𝕜 hfgx, fderiv_of_notMem_tsupport 𝕜 hf'x]
+        fderiv 𝕜 f x v * fderiv 𝕜 g x w + fderiv 𝕜 g x v * fderiv 𝕜 f x w :=
+  fderiv_fderiv_mul_apply_of_mem_or_notMem_tsupport hs hf hg
+    ((em (x ∈ s)).imp_right fun hx h => hx (hfs h)) v w
 
 /-- The second derivative of a function of one variable is its second iterated derivative:
 `D²φ(t)(a, b) = (a b) • φ''(t)`. -/
