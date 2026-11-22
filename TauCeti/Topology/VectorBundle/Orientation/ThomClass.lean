@@ -74,7 +74,10 @@ stated in degree `finrank ℝ F`, so `isThomClass_thomClass` transports it along
   `singularHomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq` and
   `singularHomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg` are their homology
   counterparts: equal readings induce the same map `Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})`, and
-  opposite readings opposite maps.
+  opposite readings opposite maps;
+  `singularHomologyMap_complZeroPairIso_inv_eq_of_mapOrientation_eq` and
+  `singularHomologyMap_complZeroPairIso_inv_eq_neg_of_mapOrientation_eq_neg` state the same
+  for the inverse maps `Hₙ(F, F ∖ {0}) ⟶ Hₙ(E_b, E_b ∖ {0})`.
 * `TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_fiber`: there is a
   unique class of `Hʳ(E, E₀)` restricting on every fibre to the class read off from `g` along
   trivializations carrying the orientation of the fibre to `ω`, and to its negative along those
@@ -234,6 +237,33 @@ theorem singularHomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg
   rw [e.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb',
     e.sign_det_coordChangeL_eq_neg_one_of_mapOrientation_eq_neg e' hb hb' hι h,
     SignType.coe_neg_one, neg_one_zsmul]
+
+include hι in
+/-- Two linear trivializations reading an orientation of the fibre over `b` as the same
+orientation of the model fibre induce the same map `Hₙ(F, F ∖ {0}) ⟶ Hₙ(E_b, E_b ∖ {0})`. -/
+theorem singularHomologyMap_complZeroPairIso_inv_eq_of_mapOrientation_eq
+    (h : e'.mapOrientation ι hb' o = e.mapOrientation ι hb o) (n : ℕ) :
+    TopPair.singularHomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.inv R n =
+      TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv R n :=
+  Iso.inv_ext (f := TopPair.singularHomologyMapIso R
+    (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso n) (by
+      dsimp only [TopPair.singularHomologyMapIso]
+      rw [e.singularHomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq e' hb hb' hι R h,
+        ← TopPair.singularHomologyMap_comp, Iso.hom_inv_id, TopPair.singularHomologyMap_id])
+
+include hι in
+/-- Two linear trivializations reading an orientation of the fibre over `b` as opposite
+orientations of the model fibre induce opposite maps `Hₙ(F, F ∖ {0}) ⟶ Hₙ(E_b, E_b ∖ {0})`. -/
+theorem singularHomologyMap_complZeroPairIso_inv_eq_neg_of_mapOrientation_eq_neg
+    (h : e'.mapOrientation ι hb' o = -e.mapOrientation ι hb o) (n : ℕ) :
+    TopPair.singularHomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.inv R n =
+      -TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv R n :=
+  Iso.inv_ext (f := TopPair.singularHomologyMapIso R
+    (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso n) (by
+      dsimp only [TopPair.singularHomologyMapIso]
+      rw [e.singularHomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg e' hb hb' hι R
+        h, Preadditive.neg_comp_neg, ← TopPair.singularHomologyMap_comp, Iso.hom_inv_id,
+        TopPair.singularHomologyMap_id])
 
 end Bundle.Trivialization
 
