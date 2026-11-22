@@ -51,6 +51,7 @@ compactness of `D → H` enters.
 
 ## Main declarations
 
+* `TauCeti.inner_apply_eq_of_tendsto`: a limit of `ι`-symmetric operators is `ι`-symmetric.
 * `TauCeti.WeakDerivStep.mul_norm_le_mul_norm_familyDomainTrajectoryOperator`: the estimate for
   paths supported where the coefficient is close to `A₀`.
 * `TauCeti.WeakDerivStep.isInvertible_familyDomainTrajectoryOperator_of_mul_norm_sub_lt`:
@@ -72,6 +73,28 @@ compactness of `D → H` enters.
 public section
 
 noncomputable section
+
+namespace TauCeti
+
+open Filter
+open scoped InnerProductSpace Topology
+
+/-- **Limits preserve `ι`-symmetry.** If operators `A s : D →L[ℝ] H` are `ι`-symmetric,
+`⟪A s x, ι y⟫ = ⟪ι x, A s y⟫`, and converge to `B` along a nontrivial filter, then `B` is
+`ι`-symmetric. -/
+theorem inner_apply_eq_of_tendsto {α D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    [NormedAddCommGroup H] [InnerProductSpace ℝ H] {ι : D →L[ℝ] H} {A : α → D →L[ℝ] H}
+    {B : D →L[ℝ] H} {l : Filter α} [l.NeBot] (hA : Tendsto A l (𝓝 B))
+    (hSymm : ∀ s x y, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ) (x y : D) :
+    ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ := by
+  have hx : Tendsto (fun s ↦ A s x) l (𝓝 (B x)) :=
+    ((ContinuousLinearMap.apply ℝ H x).continuous.tendsto B).comp hA
+  have hy : Tendsto (fun s ↦ A s y) l (𝓝 (B y)) :=
+    ((ContinuousLinearMap.apply ℝ H y).continuous.tendsto B).comp hA
+  exact tendsto_nhds_unique (hx.inner tendsto_const_nhds)
+    ((tendsto_const_nhds.inner hy).congr fun s ↦ (hSymm s x y).symm)
+
+end TauCeti
 
 namespace TauCeti.WeakDerivStep
 

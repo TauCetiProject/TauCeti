@@ -28,7 +28,7 @@ paths `t ↦ ξ(t)`, with `D = H¹` and `H = L²`, of the linearized Floer opera
 `‖u‖ ≤ C (‖(ι ∘ u)' + A u‖ + ‖ι ∘ u‖_{L²((-T, T), H)})`
 
 for some `C` and `T`
-(`exists_forall_norm_le_familyDomainTrajectoryOperator_add_restrictBaseL_of_continuous`).
+(`exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_restrictBaseL`).
 When `ι` is compact, the restriction of `ι ∘ u` to `(-T, T)` is a compact operator on the graph
 space (`TauCeti.WeakDerivStep.isCompactOperator_restrictBaseL_compLpL`, an Aubin–Lions lemma), so
 Peetre's lemma gives the operator a **finite-dimensional kernel and closed range**
@@ -66,7 +66,7 @@ cokernel and the identification of the index with the spectral flow of `A` are n
 
 * `TauCeti.WeakDerivStep.familyDomainTrajectoryOperator_smulLeftCompLpLCLM_ae`: the Leibniz rule
   for multiplication by a smooth function.
-* `exists_forall_norm_le_familyDomainTrajectoryOperator_add_restrictBaseL_of_continuous`: the
+* `exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_restrictBaseL`: the
   semi-Fredholm estimate.
 * `finiteDimensional_ker_familyDomainTrajectoryOperator_of_continuous`,
   `isClosed_range_familyDomainTrajectoryOperator_of_continuous`: for a compact embedding `ι`,
@@ -368,18 +368,6 @@ private theorem exists_forall_norm_smulLeftCompLpLCLM_le (AL : Lp (D →L[ℝ] H
   nlinarith [norm_nonneg K, mul_nonneg (mul_nonneg he (abs_nonneg c))
     (norm_nonneg (familyDomainTrajectoryOperator ι AL w))]
 
-omit [CompleteSpace D] [CompleteSpace H] in
-/-- The limit of a family of `ι`-symmetric operators is `ι`-symmetric. -/
-private theorem inner_apply_eq_of_tendsto {A : ℝ → D →L[ℝ] H} {B : D →L[ℝ] H} {l : Filter ℝ}
-    [l.NeBot] (hA : Tendsto A l (𝓝 B)) (hSymm : ∀ s x y, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ)
-    (x y : D) : ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ := by
-  have hx : Tendsto (fun s ↦ A s x) l (𝓝 (B x)) :=
-    ((ContinuousLinearMap.apply ℝ H x).continuous.tendsto B).comp hA
-  have hy : Tendsto (fun s ↦ A s y) l (𝓝 (B y)) :=
-    ((ContinuousLinearMap.apply ℝ H y).continuous.tendsto B).comp hA
-  exact tendsto_nhds_unique (hx.inner tendsto_const_nhds)
-    ((tendsto_const_nhds.inner hy).congr fun s ↦ (hSymm s x y).symm)
-
 /-- **A partition of unity adapted to local estimates.** Given a neighbourhood `S s` of every time
 `s` and `1 ≤ T₀`, there is a finite smooth partition of unity `∑ᵢ ψᵢ = 1` on `ℝ`, by functions with
 bounded values and derivatives, whose derivatives vanish off `(-(T₀ + 1), T₀ + 1)`, made of one
@@ -438,7 +426,7 @@ multiple of `ι`, and with invertible limits `Abot` at `-∞` and `Atop` at `+�
 and `T` with
 `‖u‖ ≤ C (‖(ι ∘ u)' + A u‖ + ‖ι ∘ u‖_{L²((-T, T), H)})`
 for every `u ∈ L²(ℝ, D) ∩ W^{1,2}(ℝ, H)`. -/
-theorem exists_forall_norm_le_familyDomainTrajectoryOperator_add_restrictBaseL_of_continuous
+theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_restrictBaseL
     (hAL : AL =ᵐ[μ₀] A) (hA : Continuous A) (hSymm : ∀ s x y, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ)
     (hres : ∀ s, ∃ c : ℝ, (A s - c • ι).IsInvertible) (hAbot : Tendsto A atBot (𝓝 Abot))
     (hAtop : Tendsto A atTop (𝓝 Atop)) (hAbot' : Abot.IsInvertible) (hAtop' : Atop.IsInvertible) :
@@ -495,7 +483,7 @@ private theorem exists_isCompactOperator_and_norm_le (hι : IsCompactOperator ι
       Lp H 2 (volume.restrict (Ioo (-T) T))), IsCompactOperator K ∧
         ∀ u, ‖u‖ ≤ C * ‖familyDomainTrajectoryOperator ι AL u‖ + ‖K u‖ := by
   obtain ⟨C, T, hC⟩ :=
-    exists_forall_norm_le_familyDomainTrajectoryOperator_add_restrictBaseL_of_continuous hAL hA
+    exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_restrictBaseL hAL hA
       hSymm hres hAbot hAtop hAbot' hAtop'
   refine ⟨|C|, T, |C| • restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-T) T, isOpen_Ioo⟩) le_top,
     ?_, fun u ↦ ?_⟩
