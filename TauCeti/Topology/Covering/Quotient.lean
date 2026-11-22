@@ -7,6 +7,7 @@ module
 
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Topology.Covering.Quotient
+public import TauCeti.Topology.Homeomorph.Quotient
 import TauCeti.Topology.Covering.Proper
 
 /-!
@@ -71,6 +72,8 @@ Neither normality nor a separation axiom is needed.
   map is invariant under the action.
 * `IsQuotientCoveringMap.of_smul_eq`: a quotient covering map for `G` is one for any group
   isomorphic to `G` acting compatibly.
+* `IsQuotientCoveringMap.orbitRelQuotientHomeomorph`: the orbit quotient of a quotient covering
+  map is homeomorphic to its base.
 * `AddSubgroup.isAddQuotientCoveringMap_quotientMk`: the orbit projection for translation by a
   discrete additive subgroup is a quotient covering map.
 
@@ -342,3 +345,35 @@ theorem AddSubgroup.isAddQuotientCoveringMap_quotientMk {E : Type*} [AddGroup E]
   isQuotientMap_quotient_mk'.isAddQuotientCoveringMap_of_addSubgroup L
     (isDiscrete_iff_discreteTopology.2 ‹_›) fun {_ _} ↦
       Quotient.eq.trans QuotientAddGroup.rightRel_apply
+
+open Topology
+
+namespace IsQuotientCoveringMap
+
+variable {E X G : Type*} [TopologicalSpace E] [TopologicalSpace X]
+  [Group G] [MulAction G E] {q : E → X}
+
+/-- The orbit quotient of the domain of a quotient covering map is homeomorphic to its base. -/
+noncomputable def orbitRelQuotientHomeomorph (hq : IsQuotientCoveringMap q G) :
+    MulAction.orbitRel.Quotient G E ≃ₜ X :=
+  (Homeomorph.Quotient.congrRight
+    (r' := Setoid.ker q)
+    (fun _ _ ↦ MulAction.orbitRel_apply.trans hq.apply_eq_iff_mem_orbit.symm)).trans
+    (IsQuotientMap.homeomorph
+      (f := ⟨q, hq.toIsQuotientMap.continuous⟩) hq.toIsQuotientMap)
+
+/-- The orbit quotient homeomorphism sends a representative to its image in the base. -/
+@[simp]
+theorem orbitRelQuotientHomeomorph_mk (hq : IsQuotientCoveringMap q G) (e : E) :
+    hq.orbitRelQuotientHomeomorph (Quotient.mk _ e) = q e := by
+  unfold orbitRelQuotientHomeomorph
+  rfl
+
+/-- The inverse homeomorphism sends the image of a representative to its orbit. -/
+@[simp]
+theorem orbitRelQuotientHomeomorph_symm_apply (hq : IsQuotientCoveringMap q G) (e : E) :
+    hq.orbitRelQuotientHomeomorph.symm (q e) = Quotient.mk _ e :=
+  hq.orbitRelQuotientHomeomorph.symm_apply_eq.2
+    (hq.orbitRelQuotientHomeomorph_mk e).symm
+
+end IsQuotientCoveringMap

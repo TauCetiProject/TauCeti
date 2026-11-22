@@ -15,6 +15,9 @@ The orientation cover of the tautological bundle modulo reversal is the finite r
 Grassmannian in every rank. This includes rank zero: the cover has two orientation rays
 over each zero-dimensional plane by
 `TauCeti.VectorBundleOrientationCover.encard_preimage_proj_singleton`.
+
+Adapted from Riccardo Brasca's `ForTauCeti` formalization in
+[`ColdingMinicozziTheory`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/da0b24e3e36d7cea357e89c727969582ebee8353/ForTauCeti/Topology/Grassmannian/Unoriented.lean).
 -/
 
 public section
