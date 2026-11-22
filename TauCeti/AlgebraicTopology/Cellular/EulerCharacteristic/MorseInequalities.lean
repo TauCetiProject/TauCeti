@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Homology.EulerCharacteristic.MorseInequalities
 public import TauCeti.Algebra.Homology.ModuleCat.Finrank
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
-public import TauCeti.AlgebraicTopology.Singular.BettiNumber.Basic
+public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 
 /-!
 # The Morse inequalities for CW complexes
