@@ -9,10 +9,10 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Ba
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
 public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.NSmul
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.LocalField
 
 /-!
-# Unramified Kummer classes at good reduction
+# Unramified Kummer classes at integral elliptic models
 
 For a Weierstrass curve over a nonarchimedean local field `K`, the unramified subgroup of
 `H¹(K, E[m])` is the kernel of restriction to inertia (`TauCeti.unramifiedH1`). The
@@ -23,10 +23,12 @@ unramified subgroup is finite of order `#E(K)[m]`.
 When the chosen equation `W` is integral over `𝒪[K]` with an elliptic integral model (unit
 discriminant), if `m` is prime to the residue characteristic, every Kummer class is unramified.
 Indeed inertia fixes every `m`-division point of a rational point, so the cocycle `σ ↦ σ Q - Q`
-vanishes on inertia. Over the completion `F_u` of the fraction field of a Dedekind domain at a
-prime `u` with finite residue field not dividing `m`, if the chosen equation `V` is integral over
-`𝒪[F_u]` with an elliptic integral model, comparing orders with `[E(F_u) : m E(F_u)] = #E(F_u)[m]`
-upgrades this inclusion to equality: `(V.kummerMap m hm).range = V.unramifiedTorsionCohomology m`.
+vanishes on inertia. Over any nonarchimedean local field `K` where `(m : 𝓀[K]) ≠ 0` and the
+chosen equation `W` is integral over `𝒪[K]` with unit discriminant, comparing orders with
+`[E(K) : m E(K)] = #E(K)[m]` upgrades this inclusion to equality: the kernel of
+`H¹(G_K, E[m]) → H¹(G_K, E)` equals `W.unramifiedTorsionCohomology m`, and hence
+`(W.kummerMap m hm).range = W.unramifiedTorsionCohomology m` (in particular over Dedekind-domain
+completions `F_u` at finite-residue-field primes `u` not dividing `m`).
 
 Consequently a Selmer class restricts to an unramified class at each nonarchimedean local
 field in its defining family where the base-changed equation is integral with unit discriminant and
@@ -107,15 +109,16 @@ local instance : W.IsElliptic := by
   rw [← baseChange_integralModel_eq 𝒪[K] W]
   infer_instance
 
-open scoped Classical in
 variable {W m} in
-/-- At good reduction, inertia fixes an `m`-division point of a `K`-rational point when `m`
-is prime to the residue characteristic. The action here is on the discrete coefficient module
-over the separable closure. -/
-theorem smul_pointCoeff_eq_self_of_mem_inertiaSubgroup
+/-- When `W` is integral over `𝒪[K]` with unit discriminant (an elliptic integral model), inertia
+fixes an `m`-division point of a `K`-rational point when `m` is prime to the residue
+characteristic. The action here is on the discrete coefficient module over the separable
+closure. -/
+theorem smul_pointCoeff_eq_self_of_mem_inertiaSubgroup [DecidableEq K]
     (hm : (m : 𝓀[K]) ≠ 0) {P : W.toAffine.Point} {Q : W.PointCoeff}
     (hQ : m • Q = W.basePointCoeff P) {σ : Gal(AlgebraicClosure K/K)}
     (hσ : σ ∈ inertiaSubgroup K) : absoluteGaloisGroupRestrictEquiv K σ • Q = Q := by
+  cases Subsingleton.elim ‹DecidableEq K› (fun a b ↦ Classical.propDecidable (a = b))
   classical
   let i : SeparableClosure K →ₐ[K] AlgebraicClosure K :=
     (separableClosure K (AlgebraicClosure K)).val
@@ -132,35 +135,26 @@ theorem smul_pointCoeff_eq_self_of_mem_inertiaSubgroup
   rw [← Affine.Point.map_map_separableClosure_val]
   exact h
 
-open scoped Classical in
 variable {W m} in
-/-- The Kummer cocycle of a division point of a rational point vanishes on inertia at good
-reduction, when its multiplier is prime to the residue characteristic. -/
-theorem kummerCocycle_eq_zero_of_mem_inertiaSubgroup
+/-- When `W` is integral over `𝒪[K]` with unit discriminant (an elliptic integral model), the
+Kummer cocycle of a division point of a rational point vanishes on inertia when its multiplier is
+prime to the residue characteristic. -/
+theorem kummerCocycle_eq_zero_of_mem_inertiaSubgroup [DecidableEq K]
     (hm : (m : 𝓀[K]) ≠ 0) {P : W.toAffine.Point} {Q : W.PointCoeff}
     (hQ : m • Q = W.basePointCoeff P) {σ : Gal(AlgebraicClosure K/K)}
     (hσ : σ ∈ inertiaSubgroup K) :
     kummerCocycle hQ (absoluteGaloisGroupRestrictEquiv K σ) = 0 := by
-  classical
   apply Subtype.ext
   rw [coe_kummerCocycle, smul_pointCoeff_eq_self_of_mem_inertiaSubgroup hm hQ hσ, sub_self]
   rfl
 
-private theorem residueField_natCast_ne_zero_of_not_mem {A : Type*} [CommRing A]
-    [IsDedekindDomain A] {F : Type*} [Field F] [Algebra A F] [IsFractionRing A F]
-    (u : IsDedekindDomain.HeightOneSpectrum A) {m : ℕ} (hm : (m : A) ∉ u.asIdeal) :
-    (m : 𝓀[u.adicCompletion F]) ≠ 0 := by
-  rw [Ne, ringChar.spec, u.ringChar_residueField_adicCompletion_dvd_iff]
-  exact hm
-
-open scoped Classical in
-/-- At good reduction, the Kummer class of a rational point is unramified when the multiplier is
-prime to the residue characteristic. -/
-theorem kummerMap_mem_unramifiedTorsionCohomology
+/-- When `W` is integral over `𝒪[K]` with unit discriminant (an elliptic integral model), the
+Kummer class of a rational point is unramified when the multiplier is prime to the residue
+characteristic. -/
+theorem kummerMap_mem_unramifiedTorsionCohomology [DecidableEq K]
     (hmres : (m : 𝓀[K]) ≠ 0) (P : W.toAffine.Point) :
     W.kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit P ∈
       W.unramifiedTorsionCohomology m := by
-  classical
   generalize_proofs
   rename_i hm
   obtain ⟨Q, hQ⟩ := (W.kummerShortExact m hm).proj_surjective (W.basePointCoeff P)
@@ -171,16 +165,60 @@ theorem kummerMap_mem_unramifiedTorsionCohomology
     (f := ⟨kummerCocycle hQ, kummerCocycle_mem_Z1 hQ⟩)
     fun _ hσ ↦ kummerCocycle_eq_zero_of_mem_inertiaSubgroup hmres hQ hσ
 
-open scoped Classical in
-/-- At good reduction away from the multiplier, the local Kummer condition is contained in
-the unramified local condition. -/
-theorem range_kummerMap_le_unramifiedTorsionCohomology
+/-- When `W` is integral over `𝒪[K]` with unit discriminant (an elliptic integral model) and `m` is
+prime to the residue characteristic, the local Kummer condition is contained in the unramified
+local condition. -/
+theorem range_kummerMap_le_unramifiedTorsionCohomology [DecidableEq K]
     (hmres : (m : 𝓀[K]) ≠ 0) :
     (W.kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit).range ≤
       W.unramifiedTorsionCohomology m := by
-  classical
   rintro c ⟨P, rfl⟩
   exact W.kummerMap_mem_unramifiedTorsionCohomology m hmres P
+
+/-- When `W` is integral over `𝒪[K]` with unit discriminant (an elliptic integral model) and `m` is
+prime to the residue characteristic, the kernel of `H¹(G_K, E[m]) → H¹(G_K, E)` is contained in
+`W.unramifiedTorsionCohomology m`. Unlike `range_kummerMap_le_unramifiedTorsionCohomology`, this
+form needs no `DecidableEq K`. -/
+theorem ker_explicitCoeff1_torsionCoeffIncl_le_unramifiedTorsionCohomology
+    (hmres : (m : 𝓀[K]) ≠ 0) :
+    (explicitCoeff1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) (W.torsionCoeffIncl m)
+      continuous_of_discreteTopology).ker ≤ W.unramifiedTorsionCohomology m := by
+  classical
+  rw [← W.range_kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit]
+  exact W.range_kummerMap_le_unramifiedTorsionCohomology m hmres
+
+/-- **When `W` is integral over `𝒪[K]` with unit discriminant away from `m`, the local Selmer
+condition equals unramified cohomology** (Milne, *ADT* I, Proposition 3.8): over a nonarchimedean
+local field `K`, if `W` is integral over `𝒪[K]` with unit discriminant (an elliptic integral model)
+and `(m : 𝓀[K]) ≠ 0`, then `ker(H¹(G_K, E[m]) → H¹(G_K, E)) = W.unramifiedTorsionCohomology m`.
+Needs no `DecidableEq K`. -/
+theorem ker_explicitCoeff1_torsionCoeffIncl_eq_unramifiedTorsionCohomology
+    (hmres : (m : 𝓀[K]) ≠ 0) :
+    (explicitCoeff1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) (W.torsionCoeffIncl m)
+      continuous_of_discreteTopology).ker = W.unramifiedTorsionCohomology m := by
+  classical
+  have hmU : IsUnit (m : K) := (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit
+  have hmO : IsUnit (m : 𝒪[K]) :=
+    (IsLocalRing.residue_ne_zero_iff_isUnit (m : 𝒪[K])).mp (by simpa using hmres)
+  have hspan : Ideal.span {(m : 𝒪[K])} = ⊤ := Ideal.span_singleton_eq_top.mpr hmO
+  have : NeZero m := NeZero.of_neZero_natCast K (h := ⟨hmU.ne_zero⟩)
+  apply AddSubgroup.eq_of_le_of_card_ge
+    (W.ker_explicitCoeff1_torsionCoeffIncl_le_unramifiedTorsionCohomology m hmres)
+  rw [W.natCard_unramifiedTorsionCohomology m, ← W.range_kummerMap m hmU,
+    ← AddSubgroup.index_ker, W.ker_kummerMap m hmU,
+    W.index_range_nsmul_eq_natCard_torsionBy_mul_of_localField hmU.ne_zero, hspan,
+    Nat.card_eq_one_iff_unique.mpr ⟨Ideal.Quotient.subsingleton_iff.mpr rfl, ⟨0⟩⟩, mul_one]
+  exact (Nat.card_congr (Equiv.subtypeEquivRight fun P ↦ by
+    rw [Submodule.mem_torsionBy_iff, natCast_zsmul, AddSubgroup.torsionBy.nsmul_iff])).le
+
+/-- **When `W` is integral over `𝒪[K]` with unit discriminant away from `m`, the local Kummer image
+equals unramified cohomology** over any nonarchimedean local field `K`. -/
+theorem range_kummerMap_eq_unramifiedTorsionCohomology_of_localField [DecidableEq K]
+    (hmres : (m : 𝓀[K]) ≠ 0) :
+    (W.kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit).range =
+      W.unramifiedTorsionCohomology m := by
+  rw [W.range_kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit]
+  exact W.ker_explicitCoeff1_torsionCoeffIncl_eq_unramifiedTorsionCohomology m hmres
 
 section AdicCompletion
 
@@ -199,26 +237,11 @@ chosen equation `V` is integral over `𝒪[F_u]` with an elliptic integral model
 and `m ∉ u`, then `im(δ_m : E(F_u) → H¹(G_{F_u}, E[m])) = H¹_ur(G_{F_u}, E[m])`. -/
 theorem range_kummerMap_eq_unramifiedTorsionCohomology
     (hm : (m : A) ∉ u.asIdeal) :
-    (V.kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero (K := u.adicCompletion F)
-      (by rw [Ne, ringChar.spec, u.ringChar_residueField_adicCompletion_dvd_iff]
-          exact hm)).isUnit).range =
-      V.unramifiedTorsionCohomology m := by
-  cases Subsingleton.elim ‹DecidableEq (u.adicCompletion F)›
-    (fun a b ↦ Classical.propDecidable (a = b))
-  classical
-  have : V.IsElliptic := by
-    rw [← baseChange_integralModel_eq 𝒪[u.adicCompletion F] V]
-    infer_instance
-  have hmres : (m : 𝓀[u.adicCompletion F]) ≠ 0 :=
-    residueField_natCast_ne_zero_of_not_mem u hm
-  have hmU : IsUnit (m : u.adicCompletion F) :=
-    (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit
-  have : NeZero m := NeZero.of_neZero_natCast (u.adicCompletion F) (h := ⟨hmU.ne_zero⟩)
-  apply AddSubgroup.eq_of_le_of_card_ge (V.range_kummerMap_le_unramifiedTorsionCohomology m hmres)
-  rw [V.natCard_unramifiedTorsionCohomology m, ← AddSubgroup.index_ker, V.ker_kummerMap m hmU,
-    V.index_range_nsmul_eq_natCard_torsionBy u hm]
-  exact (Nat.card_congr (Equiv.subtypeEquivRight fun P ↦ by
-    rw [Submodule.mem_torsionBy_iff, natCast_zsmul, AddSubgroup.torsionBy.nsmul_iff])).le
+    (V.kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero
+      (u.residueField_natCast_ne_zero_of_not_mem (K := F) hm)).isUnit).range =
+      V.unramifiedTorsionCohomology m :=
+  V.range_kummerMap_eq_unramifiedTorsionCohomology_of_localField m
+    (u.residueField_natCast_ne_zero_of_not_mem hm)
 
 end AdicCompletion
 
@@ -308,7 +331,7 @@ theorem selmerGroup_le_unramifiedOutsideTorsionCohomology
   intro v hv
   obtain ⟨_, _⟩ := hgood v hv
   exact W.torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup τ v
-    (residueField_natCast_ne_zero_of_not_mem v (hS v hv)) hc
+    (v.residueField_natCast_ne_zero_of_not_mem (hS v hv)) hc
 
 end Dedekind
 

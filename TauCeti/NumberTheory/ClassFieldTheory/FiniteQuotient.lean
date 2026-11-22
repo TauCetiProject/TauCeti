@@ -291,12 +291,14 @@ theorem exists_openNormalSubgroup_le_muNRep_ρ_eq_self (hn : IsUnit (n : F))
       (IsMulCommutative (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) →
         IsMulCommutative (Field.absoluteGaloisGroup F ⧸ W.toSubgroup)) := by
   have hcard : Nat.card (muNRep n F).V = n :=
-    (Nat.card_congr (kummerCoeffEquivMuNRep n F).toEquiv).symm.trans (natCard_kummerCoeff hn)
+    (Nat.card_congr (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toEquiv).symm.trans
+      (natCard_kummerCoeff hn)
   have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
   have : Finite (muNRep n F).V := Nat.finite_of_card_ne_zero (hcard.trans_ne (NeZero.ne n))
   have : IsAddCyclic (muNRep n F).V :=
     isAddCyclic_of_surjective _
-      ((kummerCoeffAddEquivZMod hn).symm.trans (kummerCoeffEquivMuNRep n F)).surjective
+      ((kummerCoeffAddEquivZMod hn).symm.trans
+        (galRepOfZModModuleEquiv n F (KummerCoeff F n))).surjective
   set K := openActionKernel (Field.absoluteGaloisGroup F) (muNRep n F).V
   refine ⟨V ⊓ K, inf_le_left, fun g hg x => ?_, ?_, fun hV => ?_⟩
   · exact (TopRep.distribMulAction_smul _ g x).symm.trans
@@ -335,7 +337,7 @@ theorem exists_openNormalSubgroup_le_muNRep_ρ_eq_self_of_coprime [Fact n.Prime]
     have : CharP F n := (CharP.charP_iff_prime_eq_zero Fact.out).2 hn0
     have := subsingleton_kummerCoeff_of_charP (n := n) (K := F)
     have hsub : Subsingleton (muNRep n F).V :=
-      (kummerCoeffEquivMuNRep n F).toEquiv.symm.subsingleton
+      (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toEquiv.symm.subsingleton
     exact ⟨V, le_rfl, fun g _ x ↦ Subsingleton.elim _ _, hV, id⟩
 
 /-- **`μₙ` is inflated from the quotient** by an open normal subgroup `V` acting trivially on it:
@@ -349,7 +351,7 @@ theorem exists_fdGalRepOfQuotient_iso_muNRep {n : ℕ} {F : Type} [Field F]
   have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
   obtain ⟨M, ⟨e⟩⟩ := exists_galRepOfQuotient_iso_of_trivial n F V (muNRep n F) hV
   have : Finite (muNRep n F).V :=
-    Finite.of_equiv (KummerCoeff F n) (kummerCoeffEquivMuNRep n F).toEquiv
+    Finite.of_equiv (KummerCoeff F n) (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toEquiv
   have : Finite M.V := Finite.of_equiv _ ((forget (GalRep n F)).mapIso e).toEquiv.symm
   have : Module.Finite (ZMod n) M.V := Module.Finite.of_finite
   exact ⟨FDRep.of M.ρ, ⟨eqToIso (fdGalRepOfQuotient_obj_of n F V M) ≪≫ e⟩⟩

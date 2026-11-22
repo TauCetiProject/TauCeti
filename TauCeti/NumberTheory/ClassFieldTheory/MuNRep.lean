@@ -25,20 +25,22 @@ module `TauCeti.KummerCoeff F n` on which `TauCeti.AbsoluteGaloisGroup F = Gal(F
 which the Kummer isomorphism `TauCeti.kummerIso` is proved. `Field.absoluteGaloisGroup F` acts on
 it through the restriction isomorphism `TauCeti.absoluteGaloisGroupRestrictEquiv`, an isomorphism
 because the algebraic closure is purely inseparable over `Fˢ`, and `μₙ` is a `ZMod n`-module
-because it is killed by `n`. The result is `muNRep n F`. Its underlying module is related to
-`TauCeti.KummerCoeff F n` only through the additive equivalence `kummerCoeffEquivMuNRep`, whose
-defining property is that it intertwines the action of `σ` on `muNRep n F` with the action of its
-restriction to `Fˢ` (`kummerCoeffEquivMuNRep_smul`); both modules are discrete.
+because it is killed by `n`. The result is `muNRep n F := galRepOfZModModule n F (KummerCoeff F n)`.
+Its underlying module is identified with `TauCeti.KummerCoeff F n` via `galRepOfZModModuleEquiv`,
+which intertwines the action of `σ` on `muNRep n F` with the action of its restriction to `Fˢ`
+(`galRepOfZModModuleEquiv_smul`); both modules are discrete.
 
 Pullback along the restriction isomorphism, the degree-one comparison of explicit and canonical
 continuous cohomology, and the fact that continuous cohomology does not see the scalars assemble
-into `muNRepH1Equiv : H¹(Gal(Fˢ/F), μₙ) ≃+ H¹(G_F, muNRep n F)`. Composing it with the Kummer
-isomorphism gives `kummerEquiv : Fˣ ⧸ (Fˣ)ⁿ ≃+ H¹(G_F, muNRep n F)` for `n` invertible in `F`, and
-`kummerClass` is the Kummer class of a unit in this carrier. It is the transport of the Kummer map
-`TauCeti.kummerMap`, not a second Kummer cocycle, and is represented by `g ↦ g α / α` for any
-`n`th root `α` of the unit (`kummerClass_eq_muNRepH1Equiv_kummerCocycleClass`).
-The degree-two comparison gives `muNRepH2Equiv : H²(Gal(Fˢ/F), μₙ) ≃+ H²(G_F, muNRep n F)` in the
-same way.
+into `galRepOfZModModuleH1Equiv n F (KummerCoeff F n) : H¹(Gal(Fˢ/F), μₙ) ≃+ H¹(G_F, muNRep n F)`.
+Composing it with the Kummer isomorphism gives `kummerEquiv : Fˣ ⧸ (Fˣ)ⁿ ≃+ H¹(G_F, muNRep n F)`
+for `n` invertible in `F`, and `kummerClass` is the Kummer class of a unit in this carrier. It is
+the transport of the Kummer map `TauCeti.kummerMap`, not a second Kummer cocycle, and is
+represented by `g ↦ g α / α` for any `n`th root `α` of the unit
+(`kummerClass_eq_muNRepH1Equiv_kummerCocycleClass`).
+The degree-two comparison gives
+`galRepOfZModModuleH2Equiv n F (KummerCoeff F n) : H²(Gal(Fˢ/F), μₙ) ≃+ H²(G_F, muNRep n F)` in
+the same way.
 
 In characteristic zero every `n ≠ 0` is invertible, so the Kummer equivalence
 `kummerEquivOfCharZero` holds for every `n ≠ 0`. This covers every finite extension of `ℚ_p`,
@@ -63,11 +65,8 @@ corresponding cardinality equality.
 
 * `TauCeti.GalRep n F`: coefficient objects `TopRep (ZMod n) G_F`
   (`TauCeti/FieldTheory/GaloisCohomology/DiscreteGalRep.lean`).
-* `TauCeti.ClassFieldTheory.muNRep n F`: the roots of unity `μₙ(Fˢ)` as a coefficient object.
-* `TauCeti.ClassFieldTheory.kummerCoeffEquivMuNRep`: the identification of its underlying module
-  with `TauCeti.KummerCoeff F n`.
-* `TauCeti.ClassFieldTheory.muNRepH1Equiv`: `H¹(Gal(Fˢ/F), μₙ) ≃+ H¹(G_F, muNRep n F)`.
-* `TauCeti.ClassFieldTheory.muNRepH2Equiv`: `H²(Gal(Fˢ/F), μₙ) ≃+ H²(G_F, muNRep n F)`.
+* `TauCeti.ClassFieldTheory.muNRep n F`: the roots of unity `μₙ(Fˢ)` as a coefficient object
+  (`galRepOfZModModule n F (KummerCoeff F n)`).
 * `TauCeti.ClassFieldTheory.kummerEquiv`, `TauCeti.ClassFieldTheory.kummerEquivOfCharZero`: the
   Kummer isomorphism `Fˣ ⧸ (Fˣ)ⁿ ≃+ H¹(G_F, muNRep n F)`, for `n` invertible in `F` and for
   `n ≠ 0` in characteristic zero.
@@ -85,13 +84,6 @@ corresponding cardinality equality.
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.kummerCoeffEquivMuNRep_smul`: the dictionary is equivariant along the
-  restriction isomorphism.
-* `TauCeti.ClassFieldTheory.continuous_kummerCoeffEquivMuNRep`,
-  `TauCeti.ClassFieldTheory.continuous_kummerCoeffEquivMuNRep_symm`: the dictionary and its
-  inverse are continuous.
-* `TauCeti.ClassFieldTheory.isSmoothDiscrete_muNRep`: `muNRep n F` is a smooth discrete
-  coefficient object.
 * `TauCeti.ClassFieldTheory.muNRep_ρ_apply_eq_self`: `G_F` acts trivially on `muNRep n F` when `F`
   contains a primitive `n`th root of unity.
 * `TauCeti.ClassFieldTheory.baer_muNRep`: `muNRep n F` is an injective `ZMod n`-module when `n` is
@@ -127,56 +119,20 @@ variable (n : ℕ) (F : Type u) [Field F]
 
 /-- **The `n`th roots of unity `μₙ(Fˢ)` of a separable closure, written additively, as a
 coefficient object.** An automorphism of the algebraic closure acts through its restriction to
-the separable closure, `TauCeti.absoluteGaloisGroupRestrictEquiv`; `kummerCoeffEquivMuNRep`
+the separable closure, `TauCeti.absoluteGaloisGroupRestrictEquiv`; `galRepOfZModModuleEquiv`
 identifies the underlying module with `TauCeti.KummerCoeff F n`. -/
-def muNRep : GalRep n F :=
+abbrev muNRep : GalRep n F :=
   galRepOfZModModule n F (KummerCoeff F n)
-
-/-- `μₙ` carries the discrete topology. -/
-instance : DiscreteTopology (muNRep n F).V :=
-  inferInstanceAs (DiscreteTopology (galRepOfZModModule n F (KummerCoeff F n)).V)
-
-/-- **The coefficient dictionary** between the Kummer coefficient module `TauCeti.KummerCoeff F n`
-of `Gal(Fˢ/F)` and the underlying module of `muNRep n F`. It and its inverse are continuous
-(`continuous_kummerCoeffEquivMuNRep`, `continuous_kummerCoeffEquivMuNRep_symm`), and it is
-equivariant along the restriction isomorphism by `kummerCoeffEquivMuNRep_smul`. -/
-def kummerCoeffEquivMuNRep : KummerCoeff F n ≃+ (muNRep n F).V :=
-  galRepOfZModModuleEquiv n F (KummerCoeff F n)
-
-/-- The coefficient dictionary is continuous, `TauCeti.KummerCoeff F n` being discrete. -/
-theorem continuous_kummerCoeffEquivMuNRep : Continuous (kummerCoeffEquivMuNRep n F) :=
-  continuous_of_discreteTopology
-
-/-- The inverse of the coefficient dictionary is continuous, `muNRep n F` being discrete. -/
-theorem continuous_kummerCoeffEquivMuNRep_symm :
-    Continuous (kummerCoeffEquivMuNRep n F).symm :=
-  continuous_of_discreteTopology
-
-/-- **The coefficient dictionary is equivariant**: `σ ∈ G_F` acts on `muNRep n F` as its
-restriction to the separable closure acts on `TauCeti.KummerCoeff F n`. -/
-@[simp]
-theorem kummerCoeffEquivMuNRep_smul (g : Field.absoluteGaloisGroup F) (x : KummerCoeff F n) :
-    kummerCoeffEquivMuNRep n F (absoluteGaloisGroupRestrictEquiv F g • x) =
-      (muNRep n F).ρ g (kummerCoeffEquivMuNRep n F x) :=
-  galRepOfZModModuleEquiv_smul n F (KummerCoeff F n) g x
-
-/-- **`μₙ` is a smooth discrete coefficient object**: the stabilizer of a root of unity is the
-preimage, under the restriction isomorphism, of its open stabilizer in `Gal(Fˢ/F)`. -/
-theorem isSmoothDiscrete_muNRep : IsSmoothDiscrete (ZMod n) (muNRep n F) :=
-  isSmoothDiscrete_galRepOfZModModule n F (KummerCoeff F n)
 
 attribute [local instance] TopRep.distribMulAction
 
-/-- The action of `G_F` on `μₙ` is continuous, `μₙ` being smooth discrete. -/
-instance : ContinuousSMul (Field.absoluteGaloisGroup F) (muNRep n F).V :=
-  (isSmoothDiscrete_muNRep n F).continuousSMul
-
 variable {n F} in
 /-- **`G_F` acts trivially on `μₙ` when `F` contains a primitive `n`th root of unity**, by
-`TauCeti.smul_kummerCoeff_eq_self` read through the coefficient dictionary. -/
+`TauCeti.smul_kummerCoeff_eq_self` read through `galRepOfZModModuleEquiv`. -/
 theorem muNRep_ρ_apply_eq_self [NeZero n] {ζ : F} (hζ : IsPrimitiveRoot ζ n)
     (g : Field.absoluteGaloisGroup F) (x : (muNRep n F).V) : (muNRep n F).ρ g x = x := by
-  have h := kummerCoeffEquivMuNRep_smul n F g ((kummerCoeffEquivMuNRep n F).symm x)
+  have h := galRepOfZModModuleEquiv_smul n F (KummerCoeff F n) g
+    ((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm x)
   rwa [smul_kummerCoeff_eq_self hζ, AddEquiv.apply_symm_apply, eq_comm] at h
 
 variable {n F} in
@@ -188,71 +144,24 @@ theorem baer_muNRep (hn : IsUnit (n : F)) : Module.Baer (ZMod n) (muNRep n F).V 
   have : NeZero (n : F) := ⟨hn.ne_zero⟩
   have : NeZero n := .of_neZero_natCast F
   Module.Baer.of_addEquiv_zmod
-    ((kummerCoeffEquivMuNRep n F).symm.trans (kummerCoeffAddEquivZMod hn))
+    ((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm.trans (kummerCoeffAddEquivZMod hn))
 
 /-- An element of `μₙ` is determined by the root of unity of `Fˢ` that it represents. -/
 theorem coe_kummerCoeffEquivMuNRep_symm_injective :
     Function.Injective fun x : (muNRep n F).V ↦
-      ((((kummerCoeffEquivMuNRep n F).symm x).toMul : (SeparableClosure F)ˣ) :
+      ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm x).toMul : (SeparableClosure F)ˣ) :
         SeparableClosure F) :=
-  fun _ _ h ↦ (kummerCoeffEquivMuNRep n F).symm.injective <| Additive.toMul.injective <|
-    Subtype.ext <| Units.ext h
+  fun _ _ h ↦ (galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm.injective <|
+    Additive.toMul.injective <| Subtype.ext <| Units.ext h
 
 variable {n F} in
 /-- The root of unity represented by `i • x` is the `i`th power of the root represented by `x`. -/
 theorem coe_kummerCoeffEquivMuNRep_symm_zsmul (x : (muNRep n F).V) (i : ℤ) :
-    ((((kummerCoeffEquivMuNRep n F).symm (i • x)).toMul : (SeparableClosure F)ˣ) :
-        SeparableClosure F) =
-      ((((kummerCoeffEquivMuNRep n F).symm x).toMul : (SeparableClosure F)ˣ) :
-        SeparableClosure F) ^ i := by
+    ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm (i • x)).toMul :
+        (SeparableClosure F)ˣ) : SeparableClosure F) =
+      ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm x).toMul :
+        (SeparableClosure F)ˣ) : SeparableClosure F) ^ i := by
   rw [map_zsmul, toMul_zsmul, Subgroup.coe_zpow, Units.val_zpow_eq_zpow_val]
-
-/-! ### Transport of `H¹` -/
-
-/-- **`H¹` of `μₙ` transported to the coefficient object `muNRep n F`**: pullback along the
-restriction isomorphism `G_F ≃ Gal(Fˢ/F)` and the coefficient dictionary, followed by the
-comparison of explicit and canonical continuous cohomology, and by forgetting the `ZMod n`
-scalars, which continuous cohomology does not see. -/
-def muNRepH1Equiv :
-    H1 (AbsoluteGaloisGroup F) (KummerCoeff F n) ≃+ continuousCohomology 1 (muNRep n F) :=
-  galRepOfZModModuleH1Equiv n F (KummerCoeff F n)
-
-/-- `muNRepH1Equiv` is the pullback along the restriction isomorphism and the coefficient
-dictionary, followed by the degree-one comparison for the discrete object `muNRep n F`. -/
-theorem muNRepH1Equiv_apply (x : H1 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
-    muNRepH1Equiv n F x =
-      (muNRep n F).explicitH1AddEquivContinuousCohomologyOfDiscrete
-        (explicitMap1 (AbsoluteGaloisGroup F) (KummerCoeff F n) (Field.absoluteGaloisGroup F)
-          (muNRep n F).V (absoluteGaloisGroupRestrictEquiv F)
-          (kummerCoeffEquivMuNRep n F).toAddMonoidHom (continuous_kummerCoeffEquivMuNRep n F)
-          (fun g x => (kummerCoeffEquivMuNRep_smul n F g x).trans
-            (TopRep.distribMulAction_smul _ g _).symm) x) :=
-  galRepOfZModModuleH1Equiv_apply n F (KummerCoeff F n) x
-
-/-! ### Transport of `H²` -/
-
-/-- **`H²` of `μₙ` transported to `muNRep n F`.** This is pullback along
-`absoluteGaloisGroupRestrictEquiv`, the coefficient dictionary
-`kummerCoeffEquivMuNRep`, and the comparison between explicit and canonical continuous
-cohomology. -/
-def muNRepH2Equiv :
-    H2 (AbsoluteGaloisGroup F) (KummerCoeff F n) ≃+
-      continuousCohomology 2 (muNRep n F) :=
-  galRepOfZModModuleH2Equiv n F (KummerCoeff F n)
-
-/-- `muNRepH2Equiv` is the degree-two explicit transport followed by the comparison with
-Mathlib's canonical continuous cohomology. -/
-theorem muNRepH2Equiv_apply (x : H2 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
-    muNRepH2Equiv n F x =
-      (muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete
-        (explicitMap2 (AbsoluteGaloisGroup F) (KummerCoeff F n)
-          (Field.absoluteGaloisGroup F) (muNRep n F).V
-          (absoluteGaloisGroupRestrictEquiv F)
-          (kummerCoeffEquivMuNRep n F).toAddMonoidHom
-          (continuous_kummerCoeffEquivMuNRep n F)
-          (fun g x => (kummerCoeffEquivMuNRep_smul n F g x).trans
-            (TopRep.distribMulAction_smul _ g _).symm) x) :=
-  galRepOfZModModuleH2Equiv_apply n F (KummerCoeff F n) x
 
 /-! ### The Kummer isomorphism on `muNRep n F` -/
 
@@ -260,15 +169,18 @@ variable {n}
 
 /-- **The Kummer isomorphism** `Fˣ ⧸ (Fˣ)ⁿ ≃+ H¹(G_F, μₙ)` on the coefficient object
 `muNRep n F`, for `n` invertible in `F`: the Kummer isomorphism `TauCeti.kummerIso` followed by
-`muNRepH1Equiv`. -/
+`galRepOfZModModuleH1Equiv n F (KummerCoeff F n)`. -/
 def kummerEquiv (hn : IsUnit (n : F)) :
     Additive (powerClassQuotient Fˣ n) ≃+ continuousCohomology 1 (muNRep n F) :=
-  (MulEquiv.toAdditiveLeft (kummerIso F n hn)).trans (muNRepH1Equiv n F)
+  (MulEquiv.toAdditiveLeft (kummerIso F n hn)).trans
+    (galRepOfZModModuleH1Equiv n F (KummerCoeff F n))
 
 /-- `kummerEquiv` is the Kummer isomorphism `TauCeti.kummerIso` transported by
-`muNRepH1Equiv`. -/
+`galRepOfZModModuleH1Equiv n F (KummerCoeff F n)`. -/
 theorem kummerEquiv_apply (hn : IsUnit (n : F)) (x : Additive (powerClassQuotient Fˣ n)) :
-    kummerEquiv F hn x = muNRepH1Equiv n F (Multiplicative.toAdd (kummerIso F n hn x.toMul)) :=
+    kummerEquiv F hn x =
+      galRepOfZModModuleH1Equiv n F (KummerCoeff F n)
+        (Multiplicative.toAdd (kummerIso F n hn x.toMul)) :=
   (rfl)
 
 /-- **The Kummer class** of a unit `a` of `F` in `H¹(G_F, μₙ)`, on the coefficient object
@@ -284,9 +196,11 @@ theorem kummerEquiv_ofMul_mk (hn : IsUnit (n : F)) (a : Fˣ) :
   rw [kummerClass, powerClassHom_apply]
 
 /-- **The Kummer class is the transported Kummer map**: it is `TauCeti.kummerMap` read through
-`muNRepH1Equiv`. -/
+`galRepOfZModModuleH1Equiv n F (KummerCoeff F n)`. -/
 theorem kummerClass_eq_muNRepH1Equiv_kummerMap (hn : IsUnit (n : F)) (a : Fˣ) :
-    kummerClass F hn a = muNRepH1Equiv n F (Multiplicative.toAdd (kummerMap F n hn a)) := by
+    kummerClass F hn a =
+      galRepOfZModModuleH1Equiv n F (KummerCoeff F n)
+        (Multiplicative.toAdd (kummerMap F n hn a)) := by
   rw [← kummerEquiv_ofMul_mk, kummerEquiv_apply, toMul_ofMul, kummerIso_mk]
 
 /-- **The Kummer class of `a` is represented by `g ↦ g α / α`**, transported to `muNRep n F`, for
@@ -294,7 +208,8 @@ any `n`th root `α` of `a` in `Fˢ`. -/
 theorem kummerClass_eq_muNRepH1Equiv_kummerCocycleClass (hn : IsUnit (n : F)) {a : Fˣ}
     {α : (SeparableClosure F)ˣ}
     (hα : α ^ n = Units.map (algebraMap F (SeparableClosure F)).toMonoidHom a) :
-    kummerClass F hn a = muNRepH1Equiv n F (kummerCocycleClass hα) := by
+    kummerClass F hn a =
+      galRepOfZModModuleH1Equiv n F (KummerCoeff F n) (kummerCocycleClass hα) := by
   rw [kummerClass_eq_muNRepH1Equiv_kummerMap, kummerMap_eq_kummerCocycleClass hn hα]
 
 /-- The Kummer class of `1` is zero. -/
@@ -386,14 +301,14 @@ def muNRepEquivTrivialFp {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
         (Units.mk0 ζ (hζ.ne_zero (NeZero.ne n)))) n :=
     (IsPrimitiveRoot.coe_units_iff.mp hζ).map_of_injective
       (Units.map_injective (algebraMap F (SeparableClosure F)).injective)
-  (kummerCoeffEquivMuNRep n F).symm.trans <|
+  (galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm.trans <|
     hζu.zmodEquivRootsOfUnity.symm.trans (trivialFpEquiv n _).symm.toAddEquiv
 
 /-- The coefficient identification of a primitive root `ζ` sends `ζ ^ i` to the class of `i`:
 read back in `μₙ(Fˢ)`, the class of `i` is the image of `ζ ^ i`. -/
 theorem coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast {ζ : F}
     (hζ : IsPrimitiveRoot ζ n) (i : ℕ) :
-    ((((kummerCoeffEquivMuNRep n F).symm ((muNRepEquivTrivialFp n F hζ).symm
+    ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm ((muNRepEquivTrivialFp n F hζ).symm
         ((trivialFpEquiv n _).symm (i : ZMod n)))).toMul : (SeparableClosure F)ˣ) :
         SeparableClosure F) = algebraMap F (SeparableClosure F) ζ ^ i := by
   simp [muNRepEquivTrivialFp]
@@ -432,7 +347,7 @@ variable {n F} in
 /-- The chosen generator `muNRepGenerator ζ hζ` of `μₙ` represents the root `ζ` of `Fˢ`. -/
 @[simp]
 theorem coe_kummerCoeffEquivMuNRep_symm_muNRepGenerator {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
-    ((((kummerCoeffEquivMuNRep n F).symm (muNRepGenerator ζ hζ)).toMul :
+    ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm (muNRepGenerator ζ hζ)).toMul :
         (SeparableClosure F)ˣ) : SeparableClosure F) = algebraMap F (SeparableClosure F) ζ := by
   rw [muNRepGenerator, muNRepEquivZMod_symm_apply]
   simpa only [Nat.cast_one, pow_one] using

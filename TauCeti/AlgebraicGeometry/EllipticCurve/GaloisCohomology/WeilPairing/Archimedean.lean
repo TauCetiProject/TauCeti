@@ -54,7 +54,8 @@ variable {F : Type*} [Field F] (W : WeierstrassCurve F) [W.IsElliptic]
 private def tateWeilPairingOfH2MuHom {m : ℕ} (hm : IsUnit (m : F))
     (h : continuousCohomology 2 (muNRep m F) →+ ZMod m) :
     H1 (Gal F) (W.TorsionCoeff m) →+ H1 (Gal F) (W.TorsionCoeff m) →+ ZMod m :=
-  (AddMonoidHom.compHom (h.comp (muNRepH2Equiv m F).toAddMonoidHom)).comp
+  (AddMonoidHom.compHom
+    (h.comp (galRepOfZModModuleH2Equiv m F (KummerCoeff F m)).toAddMonoidHom)).comp
     (W.torsionH1WeilPairing m hm)
 
 private theorem toRatAddCircle_tateWeilPairingOfH2MuHom {m : ℕ} (hm hm' : IsUnit (m : F))
@@ -71,7 +72,7 @@ private theorem tateWeilPairingOfH2MuHom_bijective {m : ℕ} [NeZero m] (hm : Is
     (h : continuousCohomology 2 (muNRep m F) →+ ZMod m)
     (pair : H1 (Gal F) (W.TorsionCoeff m) →+
       H1 (Gal F) (InternalHom (Gal F) (W.TorsionCoeff m) (KummerCoeff F m)) →+ ZMod m)
-    (hpair_apply : ∀ x y, pair x y = h (muNRepH2Equiv m F
+    (hpair_apply : ∀ x y, pair x y = h (galRepOfZModModuleH2Equiv m F (KummerCoeff F m)
       (dualityMap1 (Gal F) (W.TorsionCoeff m) (KummerCoeff F m) x y)))
     (hpair : Function.Bijective pair) : Function.Bijective (W.tateWeilPairingOfH2MuHom hm h) := by
   apply AddMonoidHom.bijective_of_bijective_pairing pair (W.tateWeilPairingOfH2MuHom hm h)
@@ -197,7 +198,7 @@ def realTateWeilPairing :
 /-- `realTateWeilPairing` applies `realH2MuToZMod m` to the Weil cup product. -/
 @[simp]
 theorem realTateWeilPairing_apply (a b : H1 (Gal ℝ) (W.TorsionCoeff m)) :
-    W.realTateWeilPairing m a b = realH2MuToZMod m (muNRepH2Equiv m ℝ
+    W.realTateWeilPairing m a b = realH2MuToZMod m (galRepOfZModModuleH2Equiv m ℝ (KummerCoeff ℝ m)
       (W.torsionH1WeilPairing m (isUnit_natCast_of_ne_zero (NeZero.ne m)) a b)) :=
   (rfl)
 
@@ -310,8 +311,9 @@ def infiniteTateWeilPairing :
 /-- `infiniteTateWeilPairing` applies `infiniteH2MuToZMod w m` to the Weil cup product. -/
 @[simp]
 theorem infiniteTateWeilPairing_apply (a b : H1 (Gal w.Completion) (W.TorsionCoeff m)) :
-    W.infiniteTateWeilPairing m a b = infiniteH2MuToZMod w m (muNRepH2Equiv m w.Completion
-      (W.torsionH1WeilPairing m (isUnit_natCast_of_ne_zero (NeZero.ne m)) a b)) :=
+    W.infiniteTateWeilPairing m a b = infiniteH2MuToZMod w m
+      (galRepOfZModModuleH2Equiv m w.Completion (KummerCoeff w.Completion m)
+        (W.torsionH1WeilPairing m (isUnit_natCast_of_ne_zero (NeZero.ne m)) a b)) :=
   (rfl)
 
 /-- In `ℚ/ℤ`, `infiniteTateWeilPairing` is the archimedean Brauer invariant of the Weil cup. -/
@@ -430,7 +432,8 @@ variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve F} [W₁.IsElliptic
 private def tateKerWeilPairingOfH2MuHom (hn : IsUnit (φ.degree : F))
     (h : continuousCohomology 2 (muNRep φ.degree F) →+ ZMod φ.degree) :
     H1 (Gal F) (ofIsogeny φ).KerCoeff →+ H1 (Gal F) (ofIsogeny φ.dual).KerCoeff →+ ZMod φ.degree :=
-  (AddMonoidHom.compHom (h.comp (muNRepH2Equiv φ.degree F).toAddMonoidHom)).comp
+  (AddMonoidHom.compHom
+    (h.comp (galRepOfZModModuleH2Equiv φ.degree F (KummerCoeff F φ.degree)).toAddMonoidHom)).comp
     (φ.kerH1WeilPairing hn)
 
 private theorem tateKerWeilPairingOfH2MuHom_explicitCoeff1_torsionCoeffToDualKerCoeff
@@ -448,8 +451,9 @@ private theorem tateKerWeilPairingOfH2MuHom_bijective (hn : IsUnit (φ.degree : 
     (pair : H1 (Gal F) (ofIsogeny φ).KerCoeff →+
       H1 (Gal F) (InternalHom (Gal F) (ofIsogeny φ).KerCoeff (KummerCoeff F φ.degree)) →+
         ZMod φ.degree)
-    (hpair_apply : ∀ x y, pair x y = h (muNRepH2Equiv φ.degree F
-      (dualityMap1 (Gal F) (ofIsogeny φ).KerCoeff (KummerCoeff F φ.degree) x y)))
+    (hpair_apply : ∀ x y, pair x y = h
+      (galRepOfZModModuleH2Equiv φ.degree F (KummerCoeff F φ.degree)
+        (dualityMap1 (Gal F) (ofIsogeny φ).KerCoeff (KummerCoeff F φ.degree) x y)))
     (hpair : Function.Bijective pair) :
     Function.Bijective (φ.tateKerWeilPairingOfH2MuHom hn h) := by
   apply AddMonoidHom.bijective_of_bijective_pairing pair (φ.tateKerWeilPairingOfH2MuHom hn h)
@@ -587,8 +591,9 @@ def realTateKerWeilPairing :
 @[simp]
 theorem realTateKerWeilPairing_apply (a : H1 (Gal ℝ) (ofIsogeny φ).KerCoeff)
     (b : H1 (Gal ℝ) (ofIsogeny φ.dual).KerCoeff) :
-    φ.realTateKerWeilPairing a b = realH2MuToZMod φ.degree (muNRepH2Equiv φ.degree ℝ
-      (φ.kerH1WeilPairing (isUnit_natCast_of_ne_zero φ.degree_ne_zero) a b)) :=
+    φ.realTateKerWeilPairing a b = realH2MuToZMod φ.degree
+      (galRepOfZModModuleH2Equiv φ.degree ℝ (KummerCoeff ℝ φ.degree)
+        (φ.kerH1WeilPairing (isUnit_natCast_of_ne_zero φ.degree_ne_zero) a b)) :=
   (rfl)
 
 /-- Compatibility of `realTateKerWeilPairing` with torsion inclusion and dual-kernel projection. -/
@@ -711,7 +716,7 @@ def infiniteTateKerWeilPairing :
 theorem infiniteTateKerWeilPairing_apply (a : H1 (Gal w.Completion) (ofIsogeny φ).KerCoeff)
     (b : H1 (Gal w.Completion) (ofIsogeny φ.dual).KerCoeff) :
     φ.infiniteTateKerWeilPairing a b = infiniteH2MuToZMod w φ.degree
-      (muNRepH2Equiv φ.degree w.Completion
+      (galRepOfZModModuleH2Equiv φ.degree w.Completion (KummerCoeff w.Completion φ.degree)
         (φ.kerH1WeilPairing (isUnit_natCast_of_ne_zero φ.degree_ne_zero) a b)) :=
   (rfl)
 

@@ -65,12 +65,12 @@ theorem kummerCoeffEquiv_kummerCoeffPairing {ζ : K} (hζ : IsPrimitiveRoot ζ 2
   · simp
   · have hp : ClassFieldTheory.kummerCoeffPairing
         (ClassFieldTheory.kummerCupPairing ζ hζ) mu2NegOne y = y := by
-      apply (ClassFieldTheory.kummerCoeffEquivMuNRep 2 K).injective
+      apply (galRepOfZModModuleEquiv 2 K (KummerCoeff K 2)).injective
       rw [ClassFieldTheory.kummerCoeffEquivMuNRep_kummerCoeffPairing]
       simpa using ClassFieldTheory.kummerCupPairing_bil_apply ζ hζ
-        (x := ClassFieldTheory.kummerCoeffEquivMuNRep 2 K mu2NegOne) (i := 1)
+        (x := galRepOfZModModuleEquiv 2 K (KummerCoeff K 2) mu2NegOne) (i := 1)
         (by simp [hζ.eq_neg_one_of_two_right])
-        (ClassFieldTheory.kummerCoeffEquivMuNRep 2 K y)
+        (galRepOfZModModuleEquiv 2 K (KummerCoeff K 2) y)
     simp [hp, trivialF2Pairing_apply]
 
 private theorem explicitCup11_kummerCoeffPairing_eq_zero_iff {ζ : K}
@@ -114,7 +114,8 @@ trivial-`𝔽₂` cup does. -/
 theorem cup_muNRepH1Equiv_eq_zero_iff {ζ : K} (hζ : IsPrimitiveRoot ζ 2)
     (x y : H1 (AbsoluteGaloisGroup K) (KummerCoeff K 2)) :
     (ClassFieldTheory.kummerCupPairing ζ hζ).cup 1 1
-        (ClassFieldTheory.muNRepH1Equiv 2 K x) (ClassFieldTheory.muNRepH1Equiv 2 K y) = 0 ↔
+        (galRepOfZModModuleH1Equiv 2 K (KummerCoeff K 2) x)
+        (galRepOfZModModuleH1Equiv 2 K (KummerCoeff K 2) y) = 0 ↔
       (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
         ((kummerCohomMap K).hom
           (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (KummerCoeff K 2) x))

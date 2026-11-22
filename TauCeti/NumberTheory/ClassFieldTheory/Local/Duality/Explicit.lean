@@ -89,19 +89,20 @@ variable (A : GalRep n F)
 
 /-- **The Tate dual read over the separable closure**: the internal hom from `A` to
 `μₙ = KummerCoeff F n` for the restricted action of `AbsoluteGaloisGroup F` is the Tate dual
-`tateDual A`, a homomorphism `φ` going to `kummerCoeffEquivMuNRep ∘ φ`. -/
+`tateDual A`, a homomorphism `φ` going to `galRepOfZModModuleEquiv ∘ φ`. -/
 def internalHomEquivTateDual :
     InternalHom (AbsoluteGaloisGroup F) A.V (KummerCoeff F n) ≃+ (tateDual A).V :=
   ((AddEquiv.mk ⟨InternalHom.toAddMonoidHom, InternalHom.of _, fun _ => rfl, fun _ => rfl⟩
-    fun _ _ => rfl).trans (AddEquiv.addMonoidHomCongrRight (kummerCoeffEquivMuNRep n F))).trans
+    fun _ _ => rfl).trans
+    (AddEquiv.addMonoidHomCongrRight (galRepOfZModModuleEquiv n F (KummerCoeff F n)))).trans
     (tateDualEquiv A).symm
 
-/-- `internalHomEquivTateDual` sends `φ` to the character `kummerCoeffEquivMuNRep ∘ φ`. -/
+/-- `internalHomEquivTateDual` sends `φ` to the character `galRepOfZModModuleEquiv ∘ φ`. -/
 @[simp]
 theorem tateDualEquiv_internalHomEquivTateDual_apply
     (φ : InternalHom (AbsoluteGaloisGroup F) A.V (KummerCoeff F n)) (a : A.V) :
     tateDualEquiv A (internalHomEquivTateDual A φ) a =
-      kummerCoeffEquivMuNRep n F (InternalHom.evalPairing _ φ a) := by
+      galRepOfZModModuleEquiv n F (KummerCoeff F n) (InternalHom.evalPairing _ φ a) := by
   simp [internalHomEquivTateDual, InternalHom.evalPairing_apply]
 
 /-- `internalHomEquivTateDual` intertwines the restricted action with the action on the Tate
@@ -113,7 +114,7 @@ theorem internalHomEquivTateDual_smul (h : Field.absoluteGaloisGroup F)
   refine (tateDualEquiv A).injective (AddMonoidHom.ext fun a => ?_)
   rw [tateDualEquiv_ρ_apply, tateDualEquiv_internalHomEquivTateDual_apply,
     tateDualEquiv_internalHomEquivTateDual_apply, InternalHom.evalPairing_apply,
-    InternalHom.toAddMonoidHom_smul, homAction_apply, ← kummerCoeffEquivMuNRep_smul,
+    InternalHom.toAddMonoidHom_smul, homAction_apply, ← galRepOfZModModuleEquiv_smul,
     ← map_inv, absoluteGaloisGroupRestrictEquiv_smul, InternalHom.evalPairing_apply]
 
 end TateDual
@@ -148,8 +149,8 @@ theorem tateDualityPairing_eq_explicitDualityPairing02 (hij : 0 + 2 = 2)
             continuous_of_discreteTopology (absoluteGaloisGroupRestrictEquiv_smul A) y)) =
       tr ((muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete
         (explicitMap2 _ _ _ _ (absoluteGaloisGroupRestrictEquiv F)
-          (kummerCoeffEquivMuNRep n F).toAddMonoidHom continuous_of_discreteTopology
-          (kummerCoeffEquivMuNRep_smul n F)
+          (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toAddMonoidHom
+          continuous_of_discreteTopology (galRepOfZModModuleEquiv_smul n F (KummerCoeff F n))
           (explicitDualityPairing02 (AbsoluteGaloisGroup F) A.V (KummerCoeff F n) x y))) := by
   have hμ : ∀ (φ : (tateDual A).V) (a : A.V),
       (tateDualEquiv A).toAddMonoidHom φ a = (tateEvaluationPairing A).bil φ a := fun φ a =>
@@ -167,10 +168,10 @@ theorem tateDualityPairing_eq_explicitDualityPairing02 (hij : 0 + 2 = 2)
       (hequiv' := TopPairing.equivariant_of_eq (tateEvaluationPairing A) _ hμ)
       (φ := absoluteGaloisGroupRestrictEquiv F)
       (fM := (internalHomEquivTateDual A).toAddMonoidHom) (fN := AddMonoidHom.id A.V)
-      (fP := (kummerCoeffEquivMuNRep n F).toAddMonoidHom)
+      (fP := (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toAddMonoidHom)
       (hcN := continuous_of_discreteTopology) (hcP := continuous_of_discreteTopology)
       (hfM := internalHomEquivTateDual_smul A) (hfN := absoluteGaloisGroupRestrictEquiv_smul A)
-      (hfP := kummerCoeffEquivMuNRep_smul n F)
+      (hfP := galRepOfZModModuleEquiv_smul n F (KummerCoeff F n))
       (hpair := fun φ a => (tateDualEquiv_internalHomEquivTateDual_apply A φ a).symm) (m := x)
       (b := y)).symm
 
@@ -192,8 +193,8 @@ theorem tateDualityPairing_eq_explicitDualityPairing11 [Finite A.V] (hij : 1 + 1
             continuous_of_discreteTopology (absoluteGaloisGroupRestrictEquiv_smul A) y)) =
       tr ((muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete
         (explicitMap2 _ _ _ _ (absoluteGaloisGroupRestrictEquiv F)
-          (kummerCoeffEquivMuNRep n F).toAddMonoidHom continuous_of_discreteTopology
-          (kummerCoeffEquivMuNRep_smul n F)
+          (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toAddMonoidHom
+          continuous_of_discreteTopology (galRepOfZModModuleEquiv_smul n F (KummerCoeff F n))
           (explicitDualityPairing11 (AbsoluteGaloisGroup F) A.V (KummerCoeff F n) x y))) := by
   have hμ : ∀ (φ : (tateDual A).V) (a : A.V),
       (tateDualEquiv A).toAddMonoidHom φ a = (tateEvaluationPairing A).bil φ a := fun φ a =>
@@ -209,11 +210,11 @@ theorem tateDualityPairing_eq_explicitDualityPairing11 [Finite A.V] (hij : 1 + 1
       (hequiv' := TopPairing.equivariant_of_eq (tateEvaluationPairing A) _ hμ)
       (φ := absoluteGaloisGroupRestrictEquiv F)
       (fM := (internalHomEquivTateDual A).toAddMonoidHom) (fN := AddMonoidHom.id A.V)
-      (fP := (kummerCoeffEquivMuNRep n F).toAddMonoidHom)
+      (fP := (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toAddMonoidHom)
       (hcM := continuous_of_discreteTopology) (hcN := continuous_of_discreteTopology)
       (hcP := continuous_of_discreteTopology)
       (hfM := internalHomEquivTateDual_smul A) (hfN := absoluteGaloisGroupRestrictEquiv_smul A)
-      (hfP := kummerCoeffEquivMuNRep_smul n F)
+      (hfP := galRepOfZModModuleEquiv_smul n F (KummerCoeff F n))
       (hpair := fun φ a => (tateDualEquiv_internalHomEquivTateDual_apply A φ a).symm) (a := x)
       (b := y)).symm
 
@@ -237,8 +238,8 @@ theorem tateDualityPairing_eq_explicitDualityPairing20 [Finite A.V] (hij : 2 + 0
               (AddMonoidHom.id A.V) (absoluteGaloisGroupRestrictEquiv_smul A) y))) =
       tr ((muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete
         (explicitMap2 _ _ _ _ (absoluteGaloisGroupRestrictEquiv F)
-          (kummerCoeffEquivMuNRep n F).toAddMonoidHom continuous_of_discreteTopology
-          (kummerCoeffEquivMuNRep_smul n F)
+          (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toAddMonoidHom
+          continuous_of_discreteTopology (galRepOfZModModuleEquiv_smul n F (KummerCoeff F n))
           (explicitDualityPairing20 (AbsoluteGaloisGroup F) A.V (KummerCoeff F n) x y))) := by
   have hμ : ∀ (φ : (tateDual A).V) (a : A.V),
       (tateDualEquiv A).toAddMonoidHom φ a = (tateEvaluationPairing A).bil φ a := fun φ a =>
@@ -259,10 +260,10 @@ theorem tateDualityPairing_eq_explicitDualityPairing20 [Finite A.V] (hij : 2 + 0
       (hequiv' := TopPairing.equivariant_of_eq (tateEvaluationPairing A) _ hμ)
       (φ := absoluteGaloisGroupRestrictEquiv F)
       (fM := (internalHomEquivTateDual A).toAddMonoidHom) (fN := AddMonoidHom.id A.V)
-      (fP := (kummerCoeffEquivMuNRep n F).toAddMonoidHom)
+      (fP := (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toAddMonoidHom)
       (hcM := continuous_of_discreteTopology) (hcP := continuous_of_discreteTopology)
       (hfM := internalHomEquivTateDual_smul A) (hfN := absoluteGaloisGroupRestrictEquiv_smul A)
-      (hfP := kummerCoeffEquivMuNRep_smul n F)
+      (hfP := galRepOfZModModuleEquiv_smul n F (KummerCoeff F n))
       (hpair := fun φ a => (tateDualEquiv_internalHomEquivTateDual_apply A φ a).symm) (a := x)
       (n := y)).symm
 

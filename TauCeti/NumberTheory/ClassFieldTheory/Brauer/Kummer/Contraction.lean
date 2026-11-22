@@ -132,12 +132,12 @@ theorem kummerContraction_generator_tmul_generator :
 /-- **The root contraction on roots of unity**: if `x` and `y` represent the roots `ζ ^ i` and
 `ζ ^ j` of `Fˢ`, then their contraction represents `ζ ^ (i j)`. -/
 theorem coe_kummerCoeffEquivMuNRep_symm_kummerContraction_tmul {x y : (muNRep n F).V} {i j : ℤ}
-    (hx : ((((kummerCoeffEquivMuNRep n F).symm x).toMul : (SeparableClosure F)ˣ) :
-      SeparableClosure F) = algebraMap F (SeparableClosure F) ζ ^ i)
-    (hy : ((((kummerCoeffEquivMuNRep n F).symm y).toMul : (SeparableClosure F)ˣ) :
-      SeparableClosure F) = algebraMap F (SeparableClosure F) ζ ^ j) :
-    ((((kummerCoeffEquivMuNRep n F).symm (kummerContraction ζ hζ (x ⊗ₜ y))).toMul :
-        (SeparableClosure F)ˣ) : SeparableClosure F) =
+    (hx : ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm x).toMul :
+      (SeparableClosure F)ˣ) : SeparableClosure F) = algebraMap F (SeparableClosure F) ζ ^ i)
+    (hy : ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm y).toMul :
+      (SeparableClosure F)ˣ) : SeparableClosure F) = algebraMap F (SeparableClosure F) ζ ^ j) :
+    ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm
+      (kummerContraction ζ hζ (x ⊗ₜ y))).toMul : (SeparableClosure F)ˣ) : SeparableClosure F) =
       algebraMap F (SeparableClosure F) ζ ^ (i * j) := by
   rw [kummerContraction_tmul, kummerCupPairing_bil_apply ζ hζ hx,
     coe_kummerCoeffEquivMuNRep_symm_zsmul, hy, ← zpow_mul,

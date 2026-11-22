@@ -144,7 +144,7 @@ theorem tateDualEquiv_ρ_apply (A : GalRep n F) (g : Field.absoluteGaloisGroup F
 /-- `Hom(A, μₙ)` is finite when `A` is finite and `n` is nonzero. -/
 instance instFiniteTateDual [NeZero n] (A : GalRep n F) [Finite A.V] : Finite (tateDual A).V :=
   letI : Finite (muNRep n F).V :=
-    Finite.of_equiv (KummerCoeff F n) (kummerCoeffEquivMuNRep n F).toEquiv
+    Finite.of_equiv (KummerCoeff F n) (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toEquiv
   inferInstanceAs (Finite (InternalHom (Field.absoluteGaloisGroup F) A.V (muNRep n F).V))
 
 /-- The Tate dual of a finite smooth discrete module is smooth discrete. -/

@@ -121,7 +121,7 @@ theorem tateDualityPairing_muNRepToTateDual
     (tr : _root_.continuousCohomology 2 (muNRep n F) ≃+ ZMod n)
     (x y : _root_.continuousCohomology 1 (muNRep n F)) :
     tateDualityPairing (muNRep n F) tr 1 1 rfl
-        ((ContinuousCohomology.coeffMap (muNRepToTateDual ζ hζ) 1).hom x) y =
+        ((ContinuousCohomology.coeffMap.{0, u, u} (muNRepToTateDual ζ hζ) 1).hom x) y =
       localSymbol (kummerCupPairing ζ hζ) tr x y := by
   rw [muNRepToTateDual, tateDualityPairing_pairingToTateDual, localSymbol_apply]
 

@@ -224,7 +224,8 @@ variable {F : Type*} [Field F] (A : Type*) [AddCommGroup A] [TopologicalSpace A]
 
 private def tatePairingOfH2MuHom {n : ℕ} (ι : continuousCohomology 2 (muNRep n F) →+ ZMod n) :
     H1 (Gal F) A →+ H1 (Gal F) (InternalHom (Gal F) A (KummerCoeff F n)) →+ ZMod n :=
-  (AddMonoidHom.compHom (ι.comp (muNRepH2Equiv n F).toAddMonoidHom)).comp
+  (AddMonoidHom.compHom
+    (ι.comp (galRepOfZModModuleH2Equiv n F (KummerCoeff F n)).toAddMonoidHom)).comp
     (dualityMap1 (Gal F) A (KummerCoeff F n))
 
 variable {A}
@@ -245,7 +246,8 @@ private theorem tatePairingOfH2MuHom_bijective_of_natCard_eq_two_or_subsingleton
   hG.elim
     (fun h2 =>
       compHom_comp_dualityMap1_bijective_of_natCard_eq_two h2 (kummerCoeffAddEquivZMod hn) hA hneg
-        (ι := ι.comp (muNRepH2Equiv n F).toAddMonoidHom) (hι.comp (muNRepH2Equiv n F).injective))
+        (ι := ι.comp (galRepOfZModModuleH2Equiv n F (KummerCoeff F n)).toAddMonoidHom)
+        (hι.comp (galRepOfZModModuleH2Equiv n F (KummerCoeff F n)).injective))
     (fun hsub => by have := hsub; exact compHom_comp_dualityMap1_bijective_of_subsingleton _)
 
 end AbstractFieldDuality
@@ -281,14 +283,17 @@ def realTatePairing (n : ℕ) [NeZero n] :
 theorem realTatePairing_apply (n : ℕ) [NeZero n] (x : H1 (Gal ℝ) A)
     (y : H1 (Gal ℝ) (InternalHom (Gal ℝ) A (KummerCoeff ℝ n))) :
     realTatePairing A n x y =
-      realH2MuToZMod n (muNRepH2Equiv n ℝ (dualityMap1 (Gal ℝ) A (KummerCoeff ℝ n) x y)) :=
+      realH2MuToZMod n
+        (galRepOfZModModuleH2Equiv n ℝ (KummerCoeff ℝ n)
+          (dualityMap1 (Gal ℝ) A (KummerCoeff ℝ n) x y)) :=
   (rfl)
 
 /-- Embedded into `ℚ/ℤ`, `realTatePairing` is the real Brauer invariant of the cup product. -/
 theorem toRatAddCircle_realTatePairing (n : ℕ) [NeZero n] (x : H1 (Gal ℝ) A)
     (y : H1 (Gal ℝ) (InternalHom (Gal ℝ) A (KummerCoeff ℝ n))) :
     ZMod.toRatAddCircle n (realTatePairing A n x y) = realInv (h2MuToBr n ℝ
-      (muNRepH2Equiv n ℝ (dualityMap1 (Gal ℝ) A (KummerCoeff ℝ n) x y))) :=
+      (galRepOfZModModuleH2Equiv n ℝ (KummerCoeff ℝ n)
+        (dualityMap1 (Gal ℝ) A (KummerCoeff ℝ n) x y))) :=
   toRatAddCircle_realH2MuToZMod n _
 
 variable {A} {n : ℕ} [NeZero n]
@@ -364,15 +369,16 @@ def infiniteTatePairing (n : ℕ) [NeZero n] : H1 (Gal w.Completion) A →+
 @[simp]
 theorem infiniteTatePairing_apply (n : ℕ) [NeZero n] (x : H1 (Gal w.Completion) A)
     (y : H1 (Gal w.Completion) (InternalHom (Gal w.Completion) A (KummerCoeff w.Completion n))) :
-    infiniteTatePairing w A n x y = infiniteH2MuToZMod w n (muNRepH2Equiv n w.Completion
-      (dualityMap1 (Gal w.Completion) A (KummerCoeff w.Completion n) x y)) :=
+    infiniteTatePairing w A n x y = infiniteH2MuToZMod w n
+      (galRepOfZModModuleH2Equiv n w.Completion (KummerCoeff w.Completion n)
+        (dualityMap1 (Gal w.Completion) A (KummerCoeff w.Completion n) x y)) :=
   (rfl)
 
 /-- In `ℚ/ℤ`, `infiniteTatePairing` is the archimedean Brauer invariant of the cup product. -/
 theorem toRatAddCircle_infiniteTatePairing (n : ℕ) [NeZero n] (x : H1 (Gal w.Completion) A)
     (y : H1 (Gal w.Completion) (InternalHom (Gal w.Completion) A (KummerCoeff w.Completion n))) :
     ZMod.toRatAddCircle n (infiniteTatePairing w A n x y) = infiniteInvMap w (h2MuToBr n
-      w.Completion (muNRepH2Equiv n w.Completion
+      w.Completion (galRepOfZModModuleH2Equiv n w.Completion (KummerCoeff w.Completion n)
         (dualityMap1 (Gal w.Completion) A (KummerCoeff w.Completion n) x y))) :=
   toRatAddCircle_infiniteH2MuToZMod w n _
 

@@ -117,13 +117,14 @@ private def kummerCoeffFiniteRepresentationEquiv (hn : IsUnit (n : F))
         left_inv := e'.hom_inv_id_apply
         right_inv := e'.inv_hom_id_apply
         map_add' := map_add e'.hom.hom } : M ≃+ (muNRep n F).V).trans
-        (kummerCoeffEquivMuNRep n F).symm).toLinearEquiv (ZMod.map_smul _)) fun q ↦ by
+        (galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm).toLinearEquiv (ZMod.map_smul _))
+      fun q ↦ by
     induction q using QuotientGroup.induction_on with | H g => ?_
-    refine LinearMap.ext fun m ↦ (kummerCoeffEquivMuNRep n F).injective ?_
+    refine LinearMap.ext fun m ↦ (galRepOfZModModuleEquiv n F (KummerCoeff F n)).injective ?_
     simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
       AddEquiv.coe_toLinearEquiv, AddEquiv.trans_apply, MonoidHom.comp_apply,
       MulEquiv.coe_toMonoidHom, absoluteGaloisGroupExtendQuotientEquiv_mk,
-      kummerCoeffFiniteRepresentation_restrictNormalHom, kummerCoeffEquivMuNRep_smul,
+      kummerCoeffFiniteRepresentation_restrictNormalHom, galRepOfZModModuleEquiv_smul,
       AddEquiv.apply_symm_apply]
     -- The inflated action of `g` is that of its class on the underlying representation of `M`.
     exact (congrArg e'.hom.hom ((galRepOfQuotient_ρ_apply n F W _ g m).trans

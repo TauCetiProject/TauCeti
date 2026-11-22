@@ -44,8 +44,8 @@ variable (n : ℕ) (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
 read on the explicit roots-of-unity model. -/
 theorem brBaseChange_h2MuToBr_muNRepH2Equiv
     (x : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :
-    brBaseChange K L (h2MuToBr n K (muNRepH2Equiv n K x)) =
-      h2MuToBr n L (muNRepH2Equiv n L
+    brBaseChange K L (h2MuToBr n K (galRepOfZModModuleH2Equiv n K (KummerCoeff K n) x)) =
+      h2MuToBr n L (galRepOfZModModuleH2Equiv n L (KummerCoeff L n)
         (explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L)
           (KummerCoeff L n) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange n τ)
           continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ) x)) := by

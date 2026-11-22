@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZMod.Dual
 public import Mathlib.GroupTheory.Index
-import TauCeti.Algebra.Group.Hom.Instances
+import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
 # Annihilators in biadditive pairings into `ℤ/n`
@@ -120,9 +120,9 @@ theorem eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_of_addEqui
     (hd : Function.Bijective d) (hN : ∀ y : N, n • y = 0) (U : AddSubgroup M) (H : AddSubgroup N) :
     U = (d.compl₂ H.subtype).ker ↔
       (∀ x ∈ U, ∀ y ∈ H, d x y = 0) ∧ Nat.card U * Nat.card H = Nat.card M := by
-  let e : M →+ N →+ ZMod n := eC.addMonoidHomCongrRight.toAddMonoidHom.comp d
+  let e : M →+ N →+ ZMod n := d.compr₂ eC.toAddMonoidHom
   have he : Function.Bijective e := eC.addMonoidHomCongrRight.bijective.comp hd
-  rw [← ker_compl₂_addEquiv_comp eC d H,
+  rw [← ker_compl₂_compr₂_of_injective d H.subtype eC.toAddMonoidHom eC.injective,
     e.eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod he hN]
   simp [e]
 
@@ -133,11 +133,12 @@ theorem ker_flip_compl₂_subtype_ker_compl₂_subtype_of_addEquiv_zmod
     {C : Type*} [AddCommGroup C] [Finite N] (d : M →+ N →+ C) (eC : C ≃+ ZMod n)
     (hd : Function.Bijective d) (hN : ∀ y : N, n • y = 0) (H : AddSubgroup N) :
     (d.flip.compl₂ (d.compl₂ H.subtype).ker.subtype).ker = H := by
-  let e : M →+ N →+ ZMod n := eC.addMonoidHomCongrRight.toAddMonoidHom.comp d
+  let e : M →+ N →+ ZMod n := d.compr₂ eC.toAddMonoidHom
   have he : Function.Bijective e := eC.addMonoidHomCongrRight.bijective.comp hd
-  have hflip : e.flip = eC.addMonoidHomCongrRight.toAddMonoidHom.comp d.flip := by ext; rfl
-  rw [← ker_compl₂_addEquiv_comp eC d.flip (d.compl₂ H.subtype).ker, ← hflip,
-    ← ker_compl₂_addEquiv_comp eC d H,
+  have hflip : e.flip = d.flip.compr₂ eC.toAddMonoidHom := by ext; rfl
+  rw [← ker_compl₂_compr₂_of_injective d.flip (d.compl₂ H.subtype).ker.subtype
+      eC.toAddMonoidHom eC.injective, ← hflip,
+    ← ker_compl₂_compr₂_of_injective d H.subtype eC.toAddMonoidHom eC.injective,
     e.ker_flip_compl₂_subtype_ker_compl₂_subtype_zmod he hN]
 
 end AddMonoidHom

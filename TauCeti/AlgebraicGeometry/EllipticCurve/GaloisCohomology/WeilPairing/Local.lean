@@ -58,14 +58,16 @@ variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
 def localTateWeilPairing : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) →+
     H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) →+ ZMod m :=
   (AddMonoidHom.compHom
-    ((muNRepH2Equiv m K).trans (h2MuEquivZMod K hm)).toAddMonoidHom).comp
+    ((galRepOfZModModuleH2Equiv m K (KummerCoeff K m)).trans
+      (h2MuEquivZMod K hm)).toAddMonoidHom).comp
     (W.torsionH1WeilPairing m hm)
 
 /-- The local pairing is the local invariant of the Weil cup product. -/
 @[simp]
 theorem localTateWeilPairing_apply (a b : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
     W.localTateWeilPairing m hm a b =
-      h2MuEquivZMod K hm (muNRepH2Equiv m K (W.torsionH1WeilPairing m hm a b)) :=
+      h2MuEquivZMod K hm
+        (galRepOfZModModuleH2Equiv m K (KummerCoeff K m) (W.torsionH1WeilPairing m hm a b)) :=
   (rfl)
 
 /-- The local Tate pairing, embedded in `ℚ/ℤ` by `k ↦ k/m`, is the Brauer invariant of the
@@ -85,9 +87,9 @@ theorem localTateWeilPairing_bijective : Function.Bijective (W.localTateWeilPair
     (dualityMap1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) (KummerCoeff K m))
     (W.localTateWeilPairing m hm) (AddMonoidHom.id _)
     (explicitCoeff1 _ _ (W.torsionCoeffWeilDual m hm) continuous_of_discreteTopology)
-    ((muNRepH2Equiv m K).trans (h2MuEquivZMod K hm)).toAddMonoidHom Function.bijective_id
-    (explicitCoeff1_bijective _ _ (W.torsionCoeffWeilDual_bijective m hm))
-    ((muNRepH2Equiv m K).trans (h2MuEquivZMod K hm)).bijective
+    ((galRepOfZModModuleH2Equiv m K (KummerCoeff K m)).trans (h2MuEquivZMod K hm)).toAddMonoidHom
+    Function.bijective_id (explicitCoeff1_bijective _ _ (W.torsionCoeffWeilDual_bijective m hm))
+    ((galRepOfZModModuleH2Equiv m K (KummerCoeff K m)).trans (h2MuEquivZMod K hm)).bijective
     (dualityMap1_kummerCoeff_bijective hm (W.TorsionCoeff m)
       fun P ↦ AddSubgroup.torsionBy.nsmul P)
   intro a b
@@ -117,7 +119,8 @@ variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
 def localTateKerWeilPairing : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff →+
     H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff →+ ZMod φ.degree :=
   (AddMonoidHom.compHom
-    ((muNRepH2Equiv φ.degree K).trans (h2MuEquivZMod K hn)).toAddMonoidHom).comp
+    ((galRepOfZModModuleH2Equiv φ.degree K (KummerCoeff K φ.degree)).trans
+      (h2MuEquivZMod K hn)).toAddMonoidHom).comp
     (φ.kerH1WeilPairing hn)
 
 /-- The local pairing is the local invariant of the isogeny Weil cup product. -/
@@ -125,7 +128,8 @@ def localTateKerWeilPairing : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
 theorem localTateKerWeilPairing_apply (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
     (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
     φ.localTateKerWeilPairing hn a b =
-      h2MuEquivZMod K hn (muNRepH2Equiv φ.degree K (φ.kerH1WeilPairing hn a b)) :=
+      h2MuEquivZMod K hn (galRepOfZModModuleH2Equiv φ.degree K (KummerCoeff K φ.degree)
+        (φ.kerH1WeilPairing hn a b)) :=
   (rfl)
 
 /-- The local isogeny Tate pairing, embedded in `ℚ/ℤ` by `k ↦ k/n`, is the local invariant
@@ -160,9 +164,11 @@ theorem localTateKerWeilPairing_bijective :
     (dualityMap1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff (KummerCoeff K φ.degree))
     (φ.localTateKerWeilPairing hn) (AddMonoidHom.id _)
     (explicitCoeff1 _ _ (φ.kerCoeffWeilDual hn) continuous_of_discreteTopology)
-    ((muNRepH2Equiv φ.degree K).trans (h2MuEquivZMod K hn)).toAddMonoidHom Function.bijective_id
+    ((galRepOfZModModuleH2Equiv φ.degree K (KummerCoeff K φ.degree)).trans
+      (h2MuEquivZMod K hn)).toAddMonoidHom Function.bijective_id
     (explicitCoeff1_bijective _ _ (φ.kerCoeffWeilDual_bijective hn))
-    ((muNRepH2Equiv φ.degree K).trans (h2MuEquivZMod K hn)).bijective
+    ((galRepOfZModModuleH2Equiv φ.degree K (KummerCoeff K φ.degree)).trans
+      (h2MuEquivZMod K hn)).bijective
     (dualityMap1_kummerCoeff_bijective hn (ofIsogeny φ).KerCoeff φ.degree_nsmul_kerCoeff_eq_zero)
   intro a b
   simp only [localTateKerWeilPairing_apply, kerH1WeilPairing_eq_dualityMap1,

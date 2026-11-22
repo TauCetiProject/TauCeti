@@ -52,8 +52,7 @@ theorem exists_finset_torsionRes_mem_unramifiedTorsionCohomology
     exists_finset_isElliptic_integralModel_adicCompletion R W hm S
   refine ⟨T, hST, fun c hc v hv => ?_⟩
   obtain ⟨_, _⟩ := hgood v hv
-  apply W.torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup τ v _ hc
-  rw [Ne, ringChar.spec, v.ringChar_residueField_adicCompletion_dvd_iff]
-  exact hprime v hv
+  exact W.torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup τ v
+    (v.residueField_natCast_ne_zero_of_not_mem (hprime v hv)) hc
 
 end TauCeti

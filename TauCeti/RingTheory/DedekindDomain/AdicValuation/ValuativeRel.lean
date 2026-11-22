@@ -42,7 +42,9 @@ nonarchimedean local field, the steps of its unit filtration are read off from `
   valuative relation is `R ⧸ v`; `residueFieldEquivAdicCompletion_apply_mk` describes it on a
   quotient representative.
 * `IsDedekindDomain.HeightOneSpectrum.ringChar_residueField_adicCompletion_dvd_iff`: the residue
-  characteristic of `K_v` divides `n` exactly when `n ∈ v`.
+  characteristic of `K_v` divides `n` exactly when `n ∈ v`;
+  `residueField_natCast_ne_zero_of_not_mem` states the contrapositive `(n : 𝓀[K_v]) ≠ 0` for
+  `n ∉ v`.
 * `IsDedekindDomain.HeightOneSpectrum.natCard_residueField_adicCompletion_eq_absNorm`: the
   `Nat.card` of that residue field is `Ideal.absNorm v.asIdeal`, both being `0` when the residue
   field is infinite.
@@ -235,6 +237,12 @@ theorem ringChar_residueField_adicCompletion_dvd_iff {n : ℕ} :
     ← map_natCast (v.residueFieldEquivAdicCompletion (K := K)),
     map_eq_zero_iff _ (RingEquiv.injective _), ← map_natCast (Ideal.Quotient.mk v.asIdeal),
     Ideal.Quotient.eq_zero_iff_mem]
+
+/-- A natural number lying outside `v` is nonzero in the residue field of `K_v`. -/
+theorem residueField_natCast_ne_zero_of_not_mem {n : ℕ} (hn : (n : R) ∉ v.asIdeal) :
+    (n : 𝓀[v.adicCompletion K]) ≠ 0 := by
+  rw [Ne, ringChar.spec, v.ringChar_residueField_adicCompletion_dvd_iff]
+  exact hn
 
 /-- The residue field of `K_v` has `Nat.card` the absolute norm of `v`; both sides are `0` when
 the residue field is infinite. -/

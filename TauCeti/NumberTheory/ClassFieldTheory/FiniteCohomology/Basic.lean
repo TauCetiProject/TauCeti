@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
+public import TauCeti.FieldTheory.GaloisCohomology.DiscreteGalRep
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassField
-public import TauCeti.NumberTheory.ClassFieldTheory.MuNRep
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.Kummer
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Finiteness

@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.TrivialZMod
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.DimensionShifting
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.OpenSubgroup
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
+import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.Basic
 
 /-!
 # Local Tate duality for finite Galois modules
@@ -189,25 +190,6 @@ variable (hn : IsUnit (n : K)) (V : Subgroup (AbsoluteGaloisGroup K))
 
 include hn hV hVN hA hAV
 
-/-- `H¹(G_K, Hom(A, μₙ))` is finite: `V` acts trivially on `Hom(A, μₙ)`, which reduces the claim
-to the finiteness of `H¹(V, ℤ/ℓ)` for the primes `ℓ ∣ n`, a group of power classes of the fixed
-field of `V`. -/
-private theorem finite_H1_internalHom_kummerCoeff [V.Normal] :
-    Finite (H1 (AbsoluteGaloisGroup K)
-      (InternalHom (AbsoluteGaloisGroup K) A (KummerCoeff K n))) := by
-  have : NeZero n := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
-  refine of_isOpen_of_smul_kummerCoeff_eq_self hn V hV hVN fun E _ _ _ _ ζ hζ φ ↦ ?_
-  have := TauCeti.ContinuousCohomology.finite_continuousCohomology_of_isOpen_of_normal_of_prime
-    hV 1 (N := n) (fun j hj₀ hj M _ _ _ _ _ _ hM hMn hMtriv ↦ by
-      obtain rfl : j = 1 := by omega
-      have := isAddCyclic_of_prime_card rfl (hp := ⟨hM⟩)
-      have := finite_H1_of_isPrimitiveRoot_of_natCard_dvd E hζ φ M hMn hMtriv
-      exact Finite.of_equiv _ (explicitH1AddEquivContinuousCohomology _ M).toEquiv)
-    (InternalHom (AbsoluteGaloisGroup K) A (KummerCoeff K n))
-    (InternalHom.nsmul_eq_zero_of_domain hA)
-    fun v hv φ ↦ InternalHom.smul_eq_self_iff.2 fun a ↦ by rw [hAV v hv, hVN v hv]
-  exact Finite.of_equiv _ (explicitH1AddEquivContinuousCohomology _ _).symm.toEquiv
-
 /-- The three duality maps of `G_K` with coefficients in `μₙ` are bijective on `A` once an open
 normal subgroup `V` acts trivially on `A` and on `μₙ`: dimension shifting along
 `0 → A → Coind_V^{G_K} A → C → 0`, from Tate's duality on the coinduced modules. -/
@@ -217,8 +199,10 @@ private theorem dualityMap_kummerCoeff_bijective_of_smul_eq_self [V.Normal] [V.F
         Function.Bijective (dualityMap2 (AbsoluteGaloisGroup K) A (KummerCoeff K n)) :=
   have : NeZero n := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
   have e₂ : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n) ≃+ ZMod n :=
-    (muNRepH2Equiv n K).trans (h2MuEquivZMod K hn)
-  have := finite_H1_internalHom_kummerCoeff hn V hV hVN A hA hAV
+    (galRepOfZModModuleH2Equiv n K (KummerCoeff K n)).trans (h2MuEquivZMod K hn)
+  have : Finite (H1 (AbsoluteGaloisGroup K)
+      (InternalHom (AbsoluteGaloisGroup K) A (KummerCoeff K n))) :=
+    finite_H1_of_nsmul_eq_zero hn.ne_zero _ (InternalHom.nsmul_eq_zero_of_domain hA)
   have hcoind := fun (B : Type) [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
       [DistribMulAction (AbsoluteGaloisGroup K) B] [ContinuousSMul (AbsoluteGaloisGroup K) B]
       [Finite B] (hB : ∀ b : B, n • b = 0) (hBV : ∀ v ∈ V, ∀ b : B, v • b = b) ↦

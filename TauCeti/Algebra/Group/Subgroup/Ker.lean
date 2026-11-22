@@ -25,6 +25,9 @@ pointwise inverse of a homomorphism into a commutative group.
   carried into the kernel of the opposite side.
 * `MonoidHom.range_inv`, `MonoidHom.ker_inv`: the pointwise inverse `f⁻¹` has the same range and
   kernel as `f`.
+* `MonoidHom.ker_compl₂_compr₂_of_injective`, `AddMonoidHom.ker_compl₂_compr₂_of_injective`:
+  postcomposing a bimultiplicative or biadditive pairing with an injective homomorphism on its
+  target preserves the kernel of precomposition in the second slot.
 * `Subgroup.sup_hom_ext`: homomorphisms out of a join are determined by their restrictions.
 -/
 
@@ -84,6 +87,18 @@ additive group has the same kernel. -/]
 theorem ker_inv {H : Type*} [CommGroup H] (f : G →* H) : f⁻¹.ker = f.ker := by
   ext x
   simp
+
+/-- Postcomposing a bimultiplicative pairing with an injective monoid homomorphism on its target
+preserves the kernel of precomposition in the second slot. -/
+@[to_additive /-- Postcomposing a biadditive pairing with an injective additive homomorphism on
+its target preserves the kernel of precomposition in the second slot. -/]
+theorem ker_compl₂_compr₂_of_injective {A B C D Q : Type*} [Group A] [MulOneClass B]
+    [CommMonoid C] [CommMonoid D] [MulOneClass Q]
+    (f : A →* B →* C) (g : Q →* B) (i : C →* D) (hi : Function.Injective i) :
+    ((f.compr₂ i).compl₂ g).ker = (f.compl₂ g).ker := by
+  ext a
+  simp only [mem_ker, DFunLike.ext_iff, compl₂_apply, compr₂_apply, one_apply]
+  exact forall_congr' fun q ↦ map_eq_one_iff i hi
 
 end MonoidHom
 

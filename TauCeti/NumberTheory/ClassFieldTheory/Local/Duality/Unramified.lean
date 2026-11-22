@@ -10,9 +10,8 @@ public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
 
 import TauCeti.Algebra.Module.ZMod.Annihilator
+import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Theorem
-import TauCeti.NumberTheory.LocalField.Generation.AbsoluteGaloisGroup
-import TauCeti.RepresentationTheory.Homological.ContCohomology.TopologicallyFinitelyGenerated
 
 /-!
 # Unramified local Tate duality
@@ -23,9 +22,10 @@ Let `K` be a nonarchimedean local field, `M` a finite discrete `G_K`-module kill
 field and for any `n ≠ 0`, the unramified subgroups `unramifiedH1 K M` and `unramifiedH1 K M'` are
 orthogonal under the degree-one cup-product map `TauCeti.ContCohomology.dualityMap1`: their cup
 product inflates from `H²(G_K ⧸ I_K, μₙ^{I_K}) = 0`
-(`TauCeti.ClassFieldTheory.dualityMap1_kummerCoeff_eq_zero_of_mem_unramifiedH1`). Note that when
-`char K ∣ n` or the residue characteristic divides `n`, this pairing need not be nondegenerate;
-only in the prime-to-`p` case below does it give a duality.
+(`TauCeti.ClassFieldTheory.dualityMap1_kummerCoeff_eq_zero_of_mem_unramifiedH1`). Full local Tate
+duality (perfection of `dualityMap1`) holds whenever `n` is invertible in `K`, even if the residue
+characteristic divides `n`; the prime-to-`p` hypothesis below is needed only for exact annihilation
+of the unramified subgroups (when `char K ∣ n`, `dualityMap1` itself need not be nondegenerate).
 
 When `K` is a finite extension of `ℚ_p` (`TauCeti.FinitePadicExtension K p`) and `p ∤ n`, Tate's
 local Euler characteristic formula
@@ -57,7 +57,7 @@ which upgrades orthogonality to **Milne's unramified local duality theorem**: `u
 * `TauCeti.ClassFieldTheory.mem_unramifiedH1_iff_forall_pairing_eq_zero` and
   `TauCeti.ClassFieldTheory.mem_unramifiedH1_right_iff_forall_pairing_eq_zero`: transport of the
   left and right pointwise unramified duality criteria along an equivariant duality isomorphism
-  `N ≃+[G_K] Hom(M, μₙ)` and a target equivalence `H²(G_K, μₙ) ≃+ C`.
+  `N ≃+[G_K] Hom(M, μₙ)` and an injective target homomorphism `H²(G_K, μₙ) →+ C`.
 
 ## References
 
@@ -80,9 +80,10 @@ variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchim
 
 /-- **Cup-product orthogonality of unramified cohomology.** Over any nonarchimedean local field
 `K` and for any `n ≠ 0`, unramified classes in `H¹(G_K, M)` and `H¹(G_K, Hom(M, μₙ))` pair to
-zero under the cup-product map `dualityMap1`. No assumption that `n` is invertible in `K` or its
-residue field is needed (though when `char K ∣ n` or the residue characteristic divides `n`, this
-map need not be a nondegenerate duality). -/
+zero under the cup-product map `dualityMap1`. No assumption that `n` is invertible in `K` or prime
+to the residue characteristic is needed (full local Tate duality holds whenever `n` is invertible in
+`K`, whereas exact annihilation of the unramified subgroups below additionally requires `p ∤ n`;
+when `char K ∣ n`, `dualityMap1` itself need not be nondegenerate). -/
 theorem dualityMap1_kummerCoeff_eq_zero_of_mem_unramifiedH1 [NeZero n]
     {M : Type} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
     [DistribMulAction (AbsoluteGaloisGroup K) M] [ContinuousSMul (AbsoluteGaloisGroup K) M]
@@ -145,10 +146,10 @@ theorem unramifiedH1_eq_ker_compl₂_dualityMap1 (hpn : ¬ p ∣ n)
     InternalHom.nsmul_eq_zero_of_domain hM
   have : Finite (H1 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=
-    (isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K).finite_H1
+    finite_H1_of_nsmul_eq_zero hn.ne_zero _ hM'
   rw [(dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)
     ).eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_of_addEquiv_zmod
-      ((muNRepH2Equiv n K).trans (h2MuEquivZMod K hn))
+      ((galRepOfZModModuleH2Equiv n K (KummerCoeff K n)).trans (h2MuEquivZMod K hn))
       (dualityMap1_kummerCoeff_bijective hn M hM)
       (nsmul_H1_eq_zero (G := AbsoluteGaloisGroup K) hM')]
   exact ⟨fun _ hx _ hy ↦ dualityMap1_kummerCoeff_eq_zero_of_mem_unramifiedH1 hx hy,
@@ -172,11 +173,11 @@ theorem unramifiedH1_internalHom_eq_ker_flip_compl₂_dualityMap1 (hpn : ¬ p �
     InternalHom.nsmul_eq_zero_of_domain hM
   have : Finite (H1 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=
-    (isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K).finite_H1
+    finite_H1_of_nsmul_eq_zero hn.ne_zero _ hM'
   rw [unramifiedH1_eq_ker_compl₂_dualityMap1 p hpn M hM,
     (dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)
       ).ker_flip_compl₂_subtype_ker_compl₂_subtype_of_addEquiv_zmod
-      ((muNRepH2Equiv n K).trans (h2MuEquivZMod K hn))
+      ((galRepOfZModModuleH2Equiv n K (KummerCoeff K n)).trans (h2MuEquivZMod K hn))
       (dualityMap1_kummerCoeff_bijective hn M hM)
       (nsmul_H1_eq_zero (G := AbsoluteGaloisGroup K) hM')]
 
@@ -212,9 +213,9 @@ theorem mem_unramifiedH1_internalHom_iff_forall_dualityMap1_eq_zero (hpn : ¬ p 
 
 /-- **Transported left-hand pointwise criterion for unramified cohomology.** Given a bijective
 `G_K`-equivariant duality map `d : N →+[G_K] Hom(M, μₙ)` and a pairing
-`P : H¹(G_K, M) →+ H¹(G_K, N) →+ C` factoring through `dualityMap1` via an additive equivalence
-`eC : H²(G_K, μₙ) ≃+ C`, a class in `H¹(G_K, M)` is unramified if and only if it pairs to zero
-with every unramified class in `H¹(G_K, N)`. -/
+`P : H¹(G_K, M) →+ H¹(G_K, N) →+ C` factoring through `dualityMap1` via an injective additive
+homomorphism `iC : H²(G_K, μₙ) →+ C`, a class in `H¹(G_K, M)` is unramified if and only if it
+pairs to zero with every unramified class in `H¹(G_K, N)`. -/
 theorem mem_unramifiedH1_iff_forall_pairing_eq_zero (hpn : ¬ p ∣ n)
     {M N C : Type} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
     [DistribMulAction (AbsoluteGaloisGroup K) M] [ContinuousSMul (AbsoluteGaloisGroup K) M]
@@ -224,10 +225,10 @@ theorem mem_unramifiedH1_iff_forall_pairing_eq_zero (hpn : ¬ p ∣ n)
     [AddCommGroup C]
     (d : N →+[AbsoluteGaloisGroup K] InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))
     (hd : Function.Bijective d)
-    (eC : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n) ≃+ C)
+    (iC : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n) →+ C) (hiC : Function.Injective iC)
     (P : H1 (AbsoluteGaloisGroup K) M →+ H1 (AbsoluteGaloisGroup K) N →+ C)
     (hP : ∀ a b, P a b =
-      eC (dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n) a
+      iC (dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n) a
         (explicitCoeff1 (AbsoluteGaloisGroup K) N d continuous_of_discreteTopology b)))
     (a : H1 (AbsoluteGaloisGroup K) M) :
     a ∈ unramifiedH1 K M ↔ ∀ b ∈ unramifiedH1 K N, P a b = 0 := by
@@ -245,11 +246,11 @@ theorem mem_unramifiedH1_iff_forall_pairing_eq_zero (hpn : ¬ p ∣ n)
     explicitCoeff1Equiv_mem_unramifiedH1_iff e _ _ hequiv
   rw [mem_unramifiedH1_iff_forall_dualityMap1_eq_zero p hpn hM a, e1.surjective.forall]
   refine forall_congr' fun b ↦ ?_
-  rw [hmem b, he1 b, hP a b, eC.map_eq_zero_iff]
+  rw [hmem b, he1 b, hP a b, map_eq_zero_iff iC hiC]
 
 /-- **Transported right-hand pointwise criterion for unramified cohomology.** Under the same
-duality dictionary `d` and target equivalence `eC`, a class in `H¹(G_K, N)` is unramified if and
-only if every unramified class in `H¹(G_K, M)` pairs to zero with it. -/
+duality dictionary `d` and injective target homomorphism `iC`, a class in `H¹(G_K, N)` is
+unramified if and only if every unramified class in `H¹(G_K, M)` pairs to zero with it. -/
 theorem mem_unramifiedH1_right_iff_forall_pairing_eq_zero (hpn : ¬ p ∣ n)
     {M N C : Type} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
     [DistribMulAction (AbsoluteGaloisGroup K) M] [ContinuousSMul (AbsoluteGaloisGroup K) M]
@@ -259,10 +260,10 @@ theorem mem_unramifiedH1_right_iff_forall_pairing_eq_zero (hpn : ¬ p ∣ n)
     [AddCommGroup C]
     (d : N →+[AbsoluteGaloisGroup K] InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))
     (hd : Function.Bijective d)
-    (eC : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n) ≃+ C)
+    (iC : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n) →+ C) (hiC : Function.Injective iC)
     (P : H1 (AbsoluteGaloisGroup K) M →+ H1 (AbsoluteGaloisGroup K) N →+ C)
     (hP : ∀ a b, P a b =
-      eC (dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n) a
+      iC (dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n) a
         (explicitCoeff1 (AbsoluteGaloisGroup K) N d continuous_of_discreteTopology b)))
     (b : H1 (AbsoluteGaloisGroup K) N) :
     b ∈ unramifiedH1 K N ↔ ∀ a ∈ unramifiedH1 K M, P a b = 0 := by
@@ -277,7 +278,7 @@ theorem mem_unramifiedH1_right_iff_forall_pairing_eq_zero (hpn : ¬ p ∣ n)
       continuous_of_discreteTopology hequiv (c := b),
     mem_unramifiedH1_internalHom_iff_forall_dualityMap1_eq_zero p hpn hM (e1 b)]
   refine forall₂_congr fun a _ ↦ ?_
-  rw [he1, hP a b, eC.map_eq_zero_iff]
+  rw [he1, hP a b, map_eq_zero_iff iC hiC]
 
 end Padic
 

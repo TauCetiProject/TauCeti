@@ -47,14 +47,16 @@ It is bilinear on the first cohomology of elliptic torsion. -/
 def torsionWeilBrauerPairing : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) →+
     H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) →+ Br K :=
   (AddMonoidHom.compHom ((h2MuToBr m K).comp
-    (muNRepH2Equiv m K).toAddMonoidHom)).comp (W.torsionH1WeilPairing m hm)
+    (galRepOfZModModuleH2Equiv m K (KummerCoeff K m)).toAddMonoidHom)).comp
+    (W.torsionH1WeilPairing m hm)
 
 /-- The Brauer-valued pairing is the image of the Weil cup product. -/
 @[simp]
 theorem torsionWeilBrauerPairing_apply
     (a b : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
     W.torsionWeilBrauerPairing m hm a b =
-      h2MuToBr m K (muNRepH2Equiv m K (W.torsionH1WeilPairing m hm a b)) :=
+      h2MuToBr m K (galRepOfZModModuleH2Equiv m K (KummerCoeff K m)
+        (W.torsionH1WeilPairing m hm a b)) :=
   (rfl)
 
 /-- Passage to the Brauer group preserves and reflects vanishing of the Weil cup product. -/
@@ -88,7 +90,8 @@ Brauer group. Its arguments have coefficients in the kernels of `φ` and its dua
 def kerWeilBrauerPairing : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff →+
     H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff →+ Br K :=
   (AddMonoidHom.compHom ((h2MuToBr φ.degree K).comp
-    (muNRepH2Equiv φ.degree K).toAddMonoidHom)).comp (φ.kerH1WeilPairing hn)
+    (galRepOfZModModuleH2Equiv φ.degree K (KummerCoeff K φ.degree)).toAddMonoidHom)).comp
+    (φ.kerH1WeilPairing hn)
 
 /-- The Brauer-valued isogeny pairing is the image of the isogeny Weil cup product. -/
 @[simp]
@@ -96,7 +99,8 @@ theorem kerWeilBrauerPairing_apply
     (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
     (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
     φ.kerWeilBrauerPairing hn a b =
-      h2MuToBr φ.degree K (muNRepH2Equiv φ.degree K (φ.kerH1WeilPairing hn a b)) :=
+      h2MuToBr φ.degree K (galRepOfZModModuleH2Equiv φ.degree K (KummerCoeff K φ.degree)
+        (φ.kerH1WeilPairing hn a b)) :=
   (rfl)
 
 /-- Passage to the Brauer group preserves and reflects vanishing of the isogeny Weil cup. -/

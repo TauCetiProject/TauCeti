@@ -22,14 +22,18 @@ unramified kernel cohomology `unramifiedKerCohomology` and `unramifiedOutsideKer
 
 Downstream, these results supply two essential global inputs for Selmer-group arithmetic:
 
-* **Finite-support ramification control**: every `φ`-Selmer class is unramified outside a finite
-  set of places (those of bad reduction for `W₁` or dividing `deg φ`), reducing finiteness and
-  Poitou–Tate exact sequences for `Sel_φ` to a finite set `S` of places.
-* **Almost-everywhere coincidence with the unramified condition**: for all but finitely many primes
-  `v` of a Dedekind domain with finite residue fields, the local condition of `φ.selmerStructure τ`
-  equals `(φ.baseChange K_v).unramifiedKerCohomology`, which is needed for local Tate duality
-  comparisons between `Sel_φ` and `Sel_φ̂` (such as Cassels' isogeny-invariance formula for the
-  Birch–Swinnerton-Dyer quotient).
+* **Finite-support ramification control**: over a Dedekind domain `R` with finite residue fields
+  and an isogeny with `(φ.degree : K) ≠ 0`, every `φ`-Selmer class is unramified outside a finite
+  set of primes containing those where the displayed base-changed source equation `W₁⁄K_v` fails
+  to be integral over `𝒪[K_v]` with unit discriminant or where `v ∣ deg φ`, reducing finiteness
+  and Poitou–Tate exact sequences for `Sel_φ` to a finite set `S` of places.
+* **Almost-everywhere coincidence with the unramified condition**: over a Dedekind domain `R` with
+  finite residue fields and an isogeny with `(φ.degree : K) ≠ 0`, for all but finitely many
+  height-one primes `v`, both displayed base-changed equations `W₁⁄K_v` and `W₂⁄K_v` are integral
+  over `𝒪[K_v]` with unit discriminant and `deg φ ∉ v`, so the local condition of
+  `φ.selmerStructure τ` equals `(φ.baseChange K_v).unramifiedKerCohomology`, which is needed for
+  local Tate duality comparisons between `Sel_φ` and `Sel_φ̂` (such as Cassels' isogeny-invariance
+  formula for the Birch–Swinnerton-Dyer quotient).
 
 The statements and organization adapt the `[m]`-torsion and local-Selmer analogues:
 
@@ -46,21 +50,26 @@ The statements and organization adapt the `[m]`-torsion and local-Selmer analogu
 
 * `TauCeti.Isogeny.localCondition_selmerStructure_le_unramifiedKerCohomology`,
   `TauCeti.Isogeny.kerRes_mem_unramifiedKerCohomology_of_mem_selmerGroup`: for an arbitrary
-  localization family `τ`, at any nonarchimedean local field `L i` where `W₁⁄(L i)` has good
-  reduction and `deg φ ≠ 0` in `𝓀[L i]`, the local condition of `φ.selmerStructure τ` lies in
+  localization family `τ`, at any nonarchimedean local field `L i` where the displayed base-changed
+  source equation `W₁⁄(L i)` is integral over `𝒪[L i]` with unit discriminant (an elliptic integral
+  model) and `deg φ ≠ 0` in `𝓀[L i]`, the local condition of `φ.selmerStructure τ` lies in
   `(φ.baseChange (L i)).unramifiedKerCohomology` and every `φ`-Selmer class restricts into it.
 * `TauCeti.Isogeny.localCondition_selmerStructure_eq_unramifiedKerCohomology`: at a height-one
-  prime `v` of a Dedekind domain with finite residue field where both `W₁⁄K_v` and `W₂⁄K_v` have
-  elliptic integral models over `𝒪[K_v]` and `deg φ ∉ v`, the local condition of
-  `φ.selmerStructure τ` equals `(φ.baseChange K_v).unramifiedKerCohomology`.
+  prime `v` of a Dedekind domain `R` with finite residue field `R ⧸ v` where both displayed
+  base-changed equations `W₁⁄K_v` and `W₂⁄K_v` are integral over `𝒪[K_v]` with unit discriminant
+  (elliptic integral models) and `deg φ ∉ v`, the local condition of `φ.selmerStructure τ` equals
+  `(φ.baseChange K_v).unramifiedKerCohomology`.
 * `TauCeti.Isogeny.selmerGroup_le_unramifiedOutsideKerCohomology`,
   `TauCeti.Isogeny.exists_finset_selmerGroup_le_unramifiedOutsideKerCohomology`: over a Dedekind
-  domain with finite residue fields, every `φ`-Selmer class is unramified outside the bad primes of
-  `W₁` and the divisors of `deg φ` (a finite set whenever `deg φ ≠ 0` in `K`).
+  domain `R` whose height-one primes outside `S` have finite residue fields, every `φ`-Selmer
+  class is unramified outside `S` whenever the displayed base-changed source equation `W₁⁄K_v` is
+  integral over `𝒪[K_v]` with unit discriminant and `deg φ ∉ v` for all `v ∉ S`; when all residue
+  fields are finite and `(φ.degree : K) ≠ 0`, a finite set `T ⊇ S` exists satisfying these
+  hypotheses outside `T`.
 * `TauCeti.Isogeny.eventually_localCondition_selmerStructure_eq_unramifiedKerCohomology`: over a
-  Dedekind domain with finite residue fields, whenever `deg φ ≠ 0` in `K`, the local condition of
-  `φ.selmerStructure τ` equals `(φ.baseChange K_v).unramifiedKerCohomology` for all but finitely
-  many height-one primes `v`.
+  Dedekind domain with finite residue fields, whenever `(φ.degree : K) ≠ 0`, the local condition
+  of `φ.selmerStructure τ` equals `(φ.baseChange K_v).unramifiedKerCohomology` for all but
+  finitely many height-one primes `v`.
 
 ## References
 
@@ -91,10 +100,11 @@ variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic
   [ValuativeRel (L i)] [TopologicalSpace (L i)] [IsNonarchimedeanLocalField (L i)]
   [IsIntegral 𝒪[L i] (W₁⁄(L i))] [(integralModel 𝒪[L i] (W₁⁄(L i))).IsElliptic]
 
-/-- For an arbitrary localization family `τ`, at any nonarchimedean local field `L i` where
-`W₁⁄(L i)` has good reduction and `deg φ` is nonzero in `𝓀[L i]`, the local condition of
+/-- For an arbitrary localization family `τ`, at any nonarchimedean local field `L i` where the
+displayed base-changed source equation `W₁⁄(L i)` is integral over `𝒪[L i]` with unit discriminant
+(an elliptic integral model) and `deg φ` is nonzero in `𝓀[L i]`, the local condition of
 `φ.selmerStructure τ` at `i` is contained in `(φ.baseChange (L i)).unramifiedKerCohomology`.
-No valuation or good-reduction assumption is made at indices `j ≠ i`. -/
+No valuation or integral-model assumption is made at indices `j ≠ i`. -/
 theorem localCondition_selmerStructure_le_unramifiedKerCohomology
     (hdeg : (φ.degree : 𝓀[L i]) ≠ 0) :
     (φ.selmerStructure τ).localCondition i ≤ (φ.baseChange (L i)).unramifiedKerCohomology := by
@@ -104,8 +114,9 @@ theorem localCondition_selmerStructure_le_unramifiedKerCohomology
     (by rwa [hd])
 
 /-- For an arbitrary localization family `τ`, every `φ`-Selmer class restricts into the unramified
-kernel cohomology at any nonarchimedean local field `L i` where `W₁⁄(L i)` has good reduction and
-`deg φ` is nonzero in `𝓀[L i]`. No valuation or good-reduction assumption is made at indices
+kernel cohomology at any nonarchimedean local field `L i` where the displayed base-changed source
+equation `W₁⁄(L i)` is integral over `𝒪[L i]` with unit discriminant (an elliptic integral model)
+and `deg φ` is nonzero in `𝓀[L i]`. No valuation or integral-model assumption is made at indices
 `j ≠ i`. -/
 theorem kerRes_mem_unramifiedKerCohomology_of_mem_selmerGroup
     (hdeg : (φ.degree : 𝓀[L i]) ≠ 0)
@@ -130,8 +141,9 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
     SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
 
 /-- Over the fraction field `K` of a Dedekind domain `R`, at a height-one prime `v` with finite
-residue field `R ⧸ v.asIdeal`, if both `W₁⁄K_v` and `W₂⁄K_v` have elliptic integral models over
-`𝒪[K_v]` and `deg φ ∉ v`, then the local condition of `φ.selmerStructure τ` at `v` equals
+residue field `R ⧸ v.asIdeal`, if both displayed base-changed equations `W₁⁄K_v` and `W₂⁄K_v` are
+integral over `𝒪[K_v]` with unit discriminant (elliptic integral models) and `deg φ ∉ v`, then the
+local condition of `φ.selmerStructure τ` at `v` equals
 `(φ.baseChange K_v).unramifiedKerCohomology`. No finiteness assumption is made on residue fields at
 primes `w ≠ v`. -/
 theorem localCondition_selmerStructure_eq_unramifiedKerCohomology (v : HeightOneSpectrum R)
@@ -162,8 +174,9 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   (τ : ∀ v : HeightOneSpectrum R,
     SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
 
-/-- **`φ`-Selmer classes are unramified outside the bad primes of `W₁` and the divisors of
-`deg φ`.** Only residue fields at height-one primes outside `S` are assumed finite. -/
+/-- **`φ`-Selmer classes are unramified outside `S`** when at every height-one prime `v ∉ S`,
+the residue field `R ⧸ v.asIdeal` is finite, the displayed base-changed source equation `W₁⁄K_v` is
+integral over `𝒪[K_v]` with unit discriminant (an elliptic integral model), and `deg φ ∉ v`. -/
 theorem selmerGroup_le_unramifiedOutsideKerCohomology {S : Set (HeightOneSpectrum R)}
     (hfinite : ∀ v ∉ S, Finite (R ⧸ v.asIdeal))
     (hgood : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K)),
@@ -175,9 +188,8 @@ theorem selmerGroup_le_unramifiedOutsideKerCohomology {S : Set (HeightOneSpectru
   intro v hv
   have : Finite (R ⧸ v.asIdeal) := hfinite v hv
   obtain ⟨_, _⟩ := hgood v hv
-  refine φ.kerRes_mem_unramifiedKerCohomology_of_mem_selmerGroup τ v ?_ hc
-  rw [Ne, ringChar.spec, v.ringChar_residueField_adicCompletion_dvd_iff]
-  exact hS v hv
+  exact φ.kerRes_mem_unramifiedKerCohomology_of_mem_selmerGroup τ v
+    (v.residueField_natCast_ne_zero_of_not_mem (hS v hv)) hc
 
 /-- **Presentation of `Sel_φ` relative to an exceptional set `S` over a Dedekind domain whose
 height-one primes outside `S` have finite residue fields.** If both displayed base-changed
