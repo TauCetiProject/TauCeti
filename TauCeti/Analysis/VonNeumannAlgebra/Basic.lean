@@ -21,7 +21,9 @@ be applied directly to concrete algebras, including those acting on the zero Hil
 The instances use Mathlib's generic subobject constructions, in particular
 `StarSubalgebra.cstarAlgebra` and, for the order inherited from the Loewner order on operators,
 `Subtype.starOrderedRing`. The underlying star subalgebra has the same instances;
-no new norm, completion, or algebra carrier is introduced.
+no new norm, completion, or algebra carrier is introduced. Because `M` is a closed complex
+subspace, it also contains the linear span and norm-closed linear span of any subset
+(`VonNeumannAlgebra.span_subset`, `VonNeumannAlgebra.closure_span_subset`).
 -/
 
 public section
@@ -52,5 +54,16 @@ fails. -/
 instance instStarOrderedRingToStarSubalgebra (M : VonNeumannAlgebra H) :
     StarOrderedRing M.toStarSubalgebra :=
   Subtype.starOrderedRing _
+
+/-- The complex linear span of a subset of a von Neumann algebra `M` is contained in `M`. -/
+theorem span_subset {M : VonNeumannAlgebra H} {s : Set (H →L[ℂ] H)} (hs : s ⊆ M) :
+    (Submodule.span ℂ s : Set (H →L[ℂ] H)) ⊆ M :=
+  (Submodule.span_le (p := M.toStarSubalgebra.toSubmodule)).2 hs
+
+/-- The norm-closed complex linear span of a subset of a von Neumann algebra `M` is contained in
+`M`. -/
+theorem closure_span_subset {M : VonNeumannAlgebra H} {s : Set (H →L[ℂ] H)} (hs : s ⊆ M) :
+    closure (Submodule.span ℂ s : Set (H →L[ℂ] H)) ⊆ M :=
+  closure_minimal (span_subset hs) M.isClosed
 
 end VonNeumannAlgebra

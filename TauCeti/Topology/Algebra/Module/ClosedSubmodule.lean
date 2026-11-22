@@ -19,6 +19,8 @@ submodules directly, without passing through the underlying `Submodule`.
 
 * `ClosedSubmodule.instAddSubgroupClass`: a closed submodule over a ring is closed under
   negation, hence an additive subgroup class.
+* `Submodule.toSubmodule_closure`: the underlying submodule of `s.closure` is
+  `s.topologicalClosure`.
 -/
 
 public section
@@ -33,3 +35,16 @@ instance instAddSubgroupClass : AddSubgroupClass (ClosedSubmodule R M) M where
   neg_mem {s} _ hx := s.toSubmodule.neg_mem hx
 
 end ClosedSubmodule
+
+namespace Submodule
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [TopologicalSpace M] [Module R M]
+  [ContinuousAdd M] [ContinuousConstSMul R M]
+
+/-- The underlying submodule of `s.closure : ClosedSubmodule R M` is `s.topologicalClosure`. -/
+@[simp]
+theorem toSubmodule_closure (s : Submodule R M) :
+    s.closure.toSubmodule = s.topologicalClosure :=
+  (rfl)
+
+end Submodule

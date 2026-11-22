@@ -559,19 +559,8 @@ theorem starProjection_orthogonal_ker_one_sub_mul [CompleteSpace E]
   have hcomp' : (U ⊓ V).starProjection * V.starProjection = (U ⊓ V).starProjection := by
     rw [ContinuousLinearMap.mul_def]
     exact Submodule.starProjection_comp_starProjection_of_le inf_le_right
-  have hcomp : V.starProjection * (U ⊓ V).starProjection = (U ⊓ V).starProjection := by
-    rw [ContinuousLinearMap.mul_def]
-    have h := congrArg adjoint
-      (Submodule.starProjection_comp_starProjection_of_le (inf_le_right : U ⊓ V ≤ V))
-    rwa [adjoint_comp, (isSelfAdjoint_starProjection V).adjoint_eq,
-      (isSelfAdjoint_starProjection (U ⊓ V)).adjoint_eq] at h
-  have hr : IsStarProjection r := by
-    refine ⟨?_, (isSelfAdjoint_starProjection V).sub (isSelfAdjoint_starProjection (U ⊓ V))⟩
-    dsimp only [r]
-    rw [IsIdempotentElem, sub_mul, mul_sub, mul_sub,
-      V.isIdempotentElem_starProjection.eq, (U ⊓ V).isIdempotentElem_starProjection.eq,
-      hcomp, hcomp']
-    abel
+  have hr : IsStarProjection r :=
+    isStarProjection_starProjection.sub_of_mul_eq_left isStarProjection_starProjection hcomp'
   have hker : x.ker = r.ker := by
     ext ξ
     rw [LinearMap.mem_ker, LinearMap.mem_ker, coe_coe, coe_coe]
