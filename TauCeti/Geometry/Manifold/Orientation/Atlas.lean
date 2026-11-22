@@ -280,6 +280,26 @@ theorem orientationPreservingOn_of_isOrientationPreservingAt (μ : Orientation �
   have hdet := (Orientation.map_eq_iff_det_pos μ D.toLinearEquiv hι).1 hmap
   rwa [← hg.mfderiv_eq_fderivWithin_self, ← hD]
 
+/-- If a chart `e` of the maximal `C¹` atlas and a chart `e'` both carry the orientation `o` of
+`M` to one constant orientation of the model at every point of their sources, then the coordinate
+change from `e` to `e'` has positive Jacobian determinant on its source. -/
+theorem orientationPreservingOn_symm_trans_of_isOrientationPreservingAt
+    {o : Manifold.Orientation I M ι} {μ : Orientation ℝ E ι} {e e' : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M)
+    (ho : ∀ x ∈ e.source, IsOrientationPreservingAt o (model (I := I) μ o.card_eq) e x)
+    (ho' : ∀ x ∈ e'.source, IsOrientationPreservingAt o (model (I := I) μ o.card_eq) e' x) :
+    OrientationPreservingOn I (e.symm ≫ₕ e') (e.symm ≫ₕ e').source := by
+  refine orientationPreservingOn_of_isOrientationPreservingAt μ o.card_eq fun z hz ↦ ?_
+  rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hz
+  rw [OpenPartialHomeomorph.coe_trans]
+  -- The chart `e`, as a partial diffeomorphism onto its image in the model.
+  set Φ := e.toPartialDiffeomorph he
+  have hΦ : IsOrientationPreservingAt o (model (I := I) μ o.card_eq) Φ (Φ.symm z) := by
+    simpa [Φ] using ho _ (e.map_target hz.1)
+  have hsymm := hΦ.partialDiffeomorph_symm (by simpa [Φ] using hz.1) one_ne_zero
+  simp only [Φ, OpenPartialHomeomorph.coe_toPartialDiffeomorph_symm] at hsymm
+  exact (ho' _ hz.2).comp hsymm
+
 /-- Charts of the maximal `C¹` atlas which carry the orientation `o` of `M` to one constant
 orientation of the model at every point of their sources change coordinates with positive
 Jacobian determinant. -/
@@ -289,26 +309,11 @@ theorem symm_trans_mem_orientationPreservingGroupoid {o : Manifold.Orientation I
     (ho : ∀ x ∈ e.source, IsOrientationPreservingAt o (model (I := I) μ o.card_eq) e x)
     (ho' : ∀ x ∈ e'.source, IsOrientationPreservingAt o (model (I := I) μ o.card_eq) e' x) :
     e.symm ≫ₕ e' ∈ orientationPreservingGroupoid I := by
-  have key : ∀ {e e' : OpenPartialHomeomorph M H}, e ∈ IsManifold.maximalAtlas I 1 M →
-      (∀ x ∈ e.source, IsOrientationPreservingAt o (model (I := I) μ o.card_eq) e x) →
-      (∀ x ∈ e'.source, IsOrientationPreservingAt o (model (I := I) μ o.card_eq) e' x) →
-      OrientationPreservingOn I (e.symm ≫ₕ e') (e.symm ≫ₕ e').source := by
-    intro e e' he ho ho'
-    refine orientationPreservingOn_of_isOrientationPreservingAt μ o.card_eq fun z hz ↦ ?_
-    rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hz
-    rw [OpenPartialHomeomorph.coe_trans]
-    -- The chart `e`, as a partial diffeomorphism onto its image in the model.
-    set Φ := e.toPartialDiffeomorph he
-    have hΦ : IsOrientationPreservingAt o (model (I := I) μ o.card_eq) Φ (Φ.symm z) := by
-      simpa [Φ] using ho _ (e.map_target hz.1)
-    have hsymm := hΦ.partialDiffeomorph_symm (by simpa [Φ] using hz.1) one_ne_zero
-    simp only [Φ, OpenPartialHomeomorph.coe_toPartialDiffeomorph_symm] at hsymm
-    exact (ho' _ hz.2).comp hsymm
   rw [mem_orientationPreservingGroupoid_iff]
-  refine ⟨key he ho ho', ?_⟩
+  refine ⟨orientationPreservingOn_symm_trans_of_isOrientationPreservingAt he ho ho', ?_⟩
   rw [← OpenPartialHomeomorph.symm_source, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
     OpenPartialHomeomorph.symm_symm]
-  exact key he' ho' ho
+  exact orientationPreservingOn_symm_trans_of_isOrientationPreservingAt he' ho' ho
 
 /-- Let `c` be a chart of the maximal `C¹` atlas which reverses the orientation `o` against a
 constant orientation `μ` of the model at every point of its source, and let `x` be a point of its
@@ -342,8 +347,8 @@ theorem exists_mem_maximalAtlas_isOrientationPreservingAt_of_isOrientationRevers
   have hchart : ⇑(((c.trans I.interiorChart).trans A.toOpenPartialHomeomorph).trans
       I.interiorChart.symm) = (I.symm ∘ A ∘ I) ∘ c := by
     simp only [OpenPartialHomeomorph.coe_trans, ModelWithCorners.interiorChart_coe,
-      ModelWithCorners.interiorChart_coe_symm]
-    rfl
+      ModelWithCorners.interiorChart_coe_symm, Homeomorph.toOpenPartialHomeomorph_apply,
+      Function.comp_assoc]
   refine ⟨((c.trans I.interiorChart).trans A.toOpenPartialHomeomorph).trans I.interiorChart.symm,
     OpenPartialHomeomorph.trans_interiorChart_trans_trans_interiorChart_symm_mem_maximalAtlas hc
       hA, ?_, fun y hy ↦ ?_⟩
