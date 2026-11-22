@@ -11,6 +11,7 @@ public import Mathlib.Topology.MetricSpace.Thickening
 
 import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
+import Mathlib.Topology.ExtendFrom
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.UniformSpace.UniformEmbedding
 import TauCeti.Analysis.SpecificLimits.DyadicSum
@@ -547,27 +548,20 @@ theorem HolderOnWith.of_subset_closure {X Y : Type*} [PseudoEMetricSpace X]
 /-- **Hölder functions extend to the closure.** A function which is Hölder continuous on `s`, with
 a positive exponent and values in a complete space, agrees on `s` with a function which is Hölder
 continuous on the closure of `s`, with the same constant and exponent. The extension at a point of
-the closure is the limit of `f` along `s`. Compare `HolderOnWith.extend_of_dense`, which extends
-from a dense set to the whole space. -/
+the closure is the limit of `f` along `s`, which is Mathlib's `extendFrom s f`. Compare
+`HolderOnWith.extend_of_dense`, which extends from a dense set to the whole space. -/
 theorem HolderOnWith.exists_eqOn_holderOnWith_closure {X Y : Type*} [PseudoEMetricSpace X]
     [EMetricSpace Y] [CompleteSpace Y] {C r : ℝ≥0} {f : X → Y} {s : Set X}
     (hf : HolderOnWith C r f s) (hr : 0 < r) :
     ∃ g : X → Y, EqOn g f s ∧ HolderOnWith C r g (closure s) := by
-  rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, -⟩
-  · exact ⟨f, eqOn_empty _ _, by simp⟩
-  have : Nonempty Y := ⟨f x₀⟩
   have hlim (x : X) (hx : x ∈ closure s) : ∃ y, Tendsto f (𝓝[s] x) (𝓝 y) := by
     have := mem_closure_iff_nhdsWithin_neBot.1 hx
     exact CompleteSpace.complete
       ((cauchy_nhds.mono nhdsWithin_le_nhds).map_of_le (hf.uniformContinuousOn hr) inf_le_right)
-  set g : X → Y := fun x ↦ limUnder (𝓝[s] x) f
-  have hg (x : X) (hx : x ∈ closure s) : Tendsto f (𝓝[s] x) (𝓝 (g x)) :=
-    tendsto_nhds_limUnder (hlim x hx)
-  have heq : EqOn g f s := fun x hx ↦ by
-    have := mem_closure_iff_nhdsWithin_neBot.1 (subset_closure hx)
-    exact tendsto_nhds_unique (hg x (subset_closure hx)) (hf.continuousOn hr x hx)
-  refine ⟨g, heq, (hf.congr heq.symm).of_subset_closure subset_rfl fun x hx ↦ ?_⟩
-  exact (hg x hx).congr' (eventually_nhdsWithin_of_forall fun y hy ↦ (heq hy).symm)
+  have heq : EqOn (extendFrom s f) f s := extendFrom_extends (hf.continuousOn hr)
+  refine ⟨extendFrom s f, heq, (hf.congr heq.symm).of_subset_closure subset_rfl fun x hx ↦ ?_⟩
+  exact (tendsto_extendFrom (hlim x hx)).congr'
+    (eventually_nhdsWithin_of_forall fun y hy ↦ (heq hy).symm)
 
 /-- A pointwise limit of maps that are `r`-Hölder with a common constant `C` is `r`-Hölder with
 constant `C`. -/

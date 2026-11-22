@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.Analysis.Complex.CircleRotation
 import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.Holder.MeanValue
@@ -45,8 +46,9 @@ Taylor coefficients as nonnegative Fourier coefficients of its boundary values.
 
 **Derivatives.** Suppose that at every point `w` of the circle `t ↦ φ (e^{it} w)` has a derivative
 `v w` at `t = 0`, with `v` continuous on the circle. Then `φ` is Lipschitz on the circle
-(`TauCeti.lipschitzOnWith_sphere_of_hasDerivAt_exp_mul`), and integrating by parts along the
-circle shows that the tangential derivative `(i z) F'(z)` is the Cauchy integral of `v`
+(`TauCeti.lipschitzOnWith_sphere_of_hasDerivAt_exp_mul` in
+`TauCeti.Analysis.Complex.CircleRotation`), and integrating by parts along the circle shows that
+the tangential derivative `(i z) F'(z)` is the Cauchy integral of `v`
 (`TauCeti.I_mul_smul_deriv_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`). Passing to the limit
 from the circles of radius `r < 1`, the boundary values of the extension `G` of `F` have the
 derivative along the rotations given by the extension of the Cauchy integral of `v`
@@ -90,8 +92,6 @@ The proof estimates the derivative and then integrates it.
 * `TauCeti.fourierCoeffOn_circleMap_eq_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`: the
   boundary values of a continuous extension of the Cauchy integral are the part of `φ` of
   nonnegative frequency.
-* `TauCeti.lipschitzOnWith_sphere_of_hasDerivAt_exp_mul`: a bounded derivative along the rotations
-  makes a function Lipschitz on the circle.
 * `TauCeti.I_mul_smul_deriv_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`: the tangential
   derivative of the Cauchy integral of `φ` is the Cauchy integral of the derivative of `φ` along
   the rotations.
@@ -362,7 +362,8 @@ let `G` be continuous on the closed unit disc and equal on the open disc to the 
 `θ ↦ G(e^{iθ})` on `[0, 2π]` are those of `θ ↦ φ(e^{iθ})` at the indices `n ≥ 0`, and vanish at
 the indices `n < 0`: on the circle, `G` is the part of `φ` of nonnegative frequency. -/
 theorem fourierCoeffOn_circleMap_eq_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul
-    {φ G : ℂ → ℂ} (hφ : CircleIntegrable φ 0 1) (hG : ContinuousOn G (closedBall 0 1))
+    [CompleteSpace E] {φ G : ℂ → E} (hφ : CircleIntegrable φ 0 1)
+    (hG : ContinuousOn G (closedBall 0 1))
     (hGF : EqOn G (fun z ↦ (2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • φ w) (ball 0 1))
     (n : ℤ) :
     fourierCoeffOn Real.two_pi_pos (fun θ ↦ G (circleMap 0 1 θ)) n =
@@ -376,39 +377,12 @@ theorem fourierCoeffOn_circleMap_eq_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub
       (a := fun n : ℕ ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n)
       (fun z hz ↦ ?_) n
     rw [hGF hz]
-    exact hasSum_fourierCoeffOn_mul_pow_two_pi_I_inv_smul_circleIntegral_sub_inv_smul hφ hz
+    exact hasSum_pow_smul_fourierCoeffOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul hφ hz
   · rw [← fourierCoeff_comp_toCircle]
     exact hGd.fourierCoeff_comp_toCircle_eq_zero (not_le.1 hn)
 
 
 /-! ### The derivative of the Cauchy integral -/
-
-/-- Rotations preserve the norm: `‖e^{it} z‖ = ‖z‖`. -/
-private theorem norm_exp_I_mul_mul (t : ℝ) (z : ℂ) : ‖exp (I * t) * z‖ = ‖z‖ := by
-  rw [norm_mul, norm_exp_I_mul_ofReal, one_mul]
-
-/-- The rotation `t ↦ e^{it} z` has velocity `i e^{it} z`. -/
-private theorem hasDerivAt_exp_I_mul_mul (z : ℂ) (t : ℝ) :
-    HasDerivAt (fun t : ℝ ↦ exp (I * t) * z) (I * (exp (I * t) * z)) t := by
-  convert (((ofRealCLM.hasDerivAt (x := t)).const_mul I).cexp).mul_const z using 1
-  · simp only [ofRealCLM_apply]
-  · simp only [ofRealCLM_apply, ofReal_one, mul_one]
-    ring
-
-/-- A derivative along the rotations at every point of the unit circle gives the derivative of
-`t ↦ φ (e^{it} w)` at every `t`, not only at `t = 0`. -/
-private theorem hasDerivAt_comp_exp_I_mul_mul {φ v : ℂ → E}
-    (hv : ∀ w ∈ sphere (0 : ℂ) 1, HasDerivAt (fun t : ℝ ↦ φ (exp (I * t) * w)) (v w) 0)
-    {w : ℂ} (hw : w ∈ sphere (0 : ℂ) 1) (t : ℝ) :
-    HasDerivAt (fun t : ℝ ↦ φ (exp (I * t) * w)) (v (exp (I * t) * w)) t := by
-  have h := HasDerivAt.comp_sub_const t t (by
-    rw [sub_self]
-    exact hv (exp (I * t) * w)
-      (by rw [mem_sphere_zero_iff_norm, norm_exp_I_mul_mul, mem_sphere_zero_iff_norm.1 hw]))
-  convert h using 2 with x
-  rw [← mul_assoc, ← exp_add]
-  push_cast
-  rw [show I * (x - t) + I * t = I * x by ring]
 
 /-- A derivative of the boundary values along the rotations, read in the angle: `θ ↦ φ (e^{iθ})`
 has derivative `v (e^{iθ})` at every `θ`. -/
@@ -419,53 +393,12 @@ private theorem hasDerivAt_comp_circleMap {φ v : ℂ → E}
     simp only [circleMap, zero_add, ofReal_one, one_mul, mul_one, mul_comm I]
   simpa only [← hc] using hasDerivAt_comp_exp_I_mul_mul hv (w := 1) (by simp) θ
 
-/-- An angle in `[-π, π]` is at most twice the chord: `|s| ≤ 2 |e^{is} - 1|`. -/
-private theorem abs_le_two_mul_norm_exp_I_mul_sub_one {s : ℝ} (hs : |s| ≤ π) :
-    |s| ≤ 2 * ‖exp (I * s) - 1‖ := by
-  have hs2 : |s / 2| ≤ π / 2 := by
-    rw [abs_div, abs_two]
-    linarith
-  have hsin := Real.mul_le_sin (abs_nonneg (s / 2)) hs2
-  rw [norm_exp_I_mul_ofReal_sub_one, norm_mul, Real.norm_two, Real.norm_eq_abs,
-    Real.abs_sin_eq_sin_abs_of_abs_le_pi (by linarith [Real.pi_pos])]
-  rw [abs_div, abs_two] at hsin ⊢
-  have hpos := Real.pi_pos
-  have key : |s| / π ≤ Real.sin (|s| / 2) := by
-    convert hsin using 1
-    field_simp
-  have hsin0 : 0 ≤ Real.sin (|s| / 2) := (div_nonneg (abs_nonneg s) hpos.le).trans key
-  rw [div_le_iff₀ hpos] at key
-  nlinarith [abs_nonneg s, Real.pi_le_four]
-
-/-- **A derivative along the rotations bounds the oscillation on the circle.** If at every point
-`w` of the unit circle `t ↦ φ (e^{it} w)` has derivative `v w` at `t = 0`, and `‖v‖ ≤ M` on the
-circle, then `φ` is `2 M`-Lipschitz on the circle: the arc between two points is at most twice
-their distance. -/
-theorem lipschitzOnWith_sphere_of_hasDerivAt_exp_mul {φ v : ℂ → E} {M : ℝ≥0}
-    (hv : ∀ w ∈ sphere (0 : ℂ) 1, HasDerivAt (fun t : ℝ ↦ φ (exp (I * t) * w)) (v w) 0)
-    (hM : ∀ w ∈ sphere (0 : ℂ) 1, ‖v w‖ ≤ M) : LipschitzOnWith (2 * M) φ (sphere 0 1) := by
-  refine LipschitzOnWith.of_dist_le_mul fun w hw w' hw' ↦ ?_
-  have hw1 := mem_sphere_zero_iff_norm.1 hw
-  have hw1' := mem_sphere_zero_iff_norm.1 hw'
-  -- Write `w = e^{is} w'` with `|s| ≤ π`.
-  set s := arg (w / w')
-  have hws : exp (I * s) * w' = w := by
-    have h := norm_mul_exp_arg_mul_I (w / w')
-    rw [norm_div, hw1, hw1', div_one, ofReal_one, one_mul] at h
-    rw [mul_comm I, h, div_mul_cancel₀ _ (norm_ne_zero_iff.1 (by rw [hw1']; exact one_ne_zero))]
-  have hmv := convex_univ.norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f := fun t : ℝ ↦ φ (exp (I * t) * w'))
-    (fun t _ ↦ (hasDerivAt_comp_exp_I_mul_mul hv hw' t).hasDerivWithinAt)
-    (fun t _ ↦ hM _ (by rw [mem_sphere_zero_iff_norm, norm_exp_I_mul_mul, hw1']))
-    (mem_univ 0) (mem_univ s)
-  simp only [ofReal_zero, mul_zero, exp_zero, one_mul, hws, sub_zero, Real.norm_eq_abs] at hmv
-  have hchord : |s| ≤ 2 * dist w w' := by
-    rw [dist_eq_norm, ← hws, ← sub_one_mul, norm_mul, hw1', mul_one]
-    exact abs_le_two_mul_norm_exp_I_mul_sub_one (abs_arg_le_pi _)
-  rw [dist_eq_norm]
-  calc ‖φ w - φ w'‖ ≤ M * |s| := hmv
-    _ ≤ M * (2 * dist w w') := by gcongr
-    _ = ((2 * M : ℝ≥0) : ℝ) * dist w w' := by push_cast; ring
+/-- A derivative along the rotations at every point of the unit circle makes the boundary values
+`θ ↦ φ (e^{iθ})` continuous. -/
+private theorem continuous_comp_circleMap_of_hasDerivAt {φ v : ℂ → E}
+    (hv : ∀ w ∈ sphere (0 : ℂ) 1, HasDerivAt (fun t : ℝ ↦ φ (exp (I * t) * w)) (v w) 0) :
+    Continuous fun θ ↦ φ (circleMap 0 1 θ) :=
+  continuous_iff_continuousAt.2 fun θ ↦ (hasDerivAt_comp_circleMap hv θ).continuousAt
 
 /-- The kernel `θ ↦ i e^{iθ} / (e^{iθ} - z)` of the Cauchy integral, written in the angle, has
 derivative `z e^{iθ} / (e^{iθ} - z)²`. -/
@@ -475,9 +408,7 @@ private theorem hasDerivAt_circleMap_mul_I_div_sub {z : ℂ} {θ : ℝ} (hne : c
   have he := hasDerivAt_circleMap 0 1 θ
   convert (he.mul_const I).div (he.sub_const z) hne using 1
   field_simp
-  ring_nf
-  simp only [I_sq]
-  ring
+  linear_combination z * I_sq
 
 /-- **The tangential derivative of the Cauchy integral.** Let `φ` have at every point `w` of the
 unit circle a derivative `v w` along the rotations, that is of `t ↦ φ (e^{it} w)` at `t = 0`, with
@@ -490,8 +421,7 @@ theorem I_mul_smul_deriv_two_pi_I_inv_smul_circleIntegral_sub_inv_smul [Complete
     (hvc : ContinuousOn v (sphere 0 1)) {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) :
     (I * z) • deriv (fun z ↦ (2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • φ w) z =
       (2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • v w := by
-  have hφe : Continuous fun θ ↦ φ (circleMap 0 1 θ) :=
-    continuous_iff_continuousAt.2 fun θ ↦ (hasDerivAt_comp_circleMap hv θ).continuousAt
+  have hφe := continuous_comp_circleMap_of_hasDerivAt hv
   have hve : Continuous fun θ ↦ v (circleMap 0 1 θ) :=
     hvc.comp_continuous (continuous_circleMap 0 1) fun θ ↦ by simp
   have hd : HasDerivAt (fun z ↦ (2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • φ w)
@@ -527,9 +457,7 @@ theorem I_mul_smul_deriv_two_pi_I_inv_smul_circleIntegral_sub_inv_smul [Complete
         simp only [smul_smul, ← neg_smul, u', zpow_neg, zpow_ofNat]
         congr 1
         field_simp
-        ring_nf
-        simp only [I_sq]
-        ring
+        linear_combination z / (circleMap 0 1 θ - z) ^ 2 * I_sq
     _ = ∫ θ in 0..2 * π, (circleMap 0 1 θ * I / (circleMap 0 1 θ - z)) • v (circleMap 0 1 θ) :=
         hibp.symm
     _ = ∫ θ in 0..2 * π, (circleMap 0 1 θ * I) • (circleMap 0 1 θ - z)⁻¹ • v (circleMap 0 1 θ) := by
@@ -546,8 +474,7 @@ private theorem hasDerivAt_comp_exp_I_mul_mul_of_mem_ball [CompleteSpace E] {φ 
     {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) (t : ℝ) :
     HasDerivAt (fun t : ℝ ↦ G (exp (I * t) * z)) (G' (exp (I * t) * z)) t := by
   have hφi : CircleIntegrable φ 0 1 :=
-    (continuous_iff_continuousAt.2 fun θ ↦
-      (hasDerivAt_comp_circleMap hv θ).continuousAt).intervalIntegrable _ _
+    (continuous_comp_circleMap_of_hasDerivAt hv).intervalIntegrable _ _
   have hξ : exp (I * t) * z ∈ ball (0 : ℂ) 1 := by
     rw [mem_ball_zero_iff, norm_exp_I_mul_mul]
     exact mem_ball_zero_iff.1 hz

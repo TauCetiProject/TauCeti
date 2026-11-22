@@ -12,12 +12,14 @@ public import TauCeti.Analysis.Complex.UnitDisc.RotatingLineBoundary
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import TauCeti.Analysis.Complex.BoundaryHolder
 import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.CircleRotation
 import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
 import TauCeti.Analysis.Complex.UnitDisc.CauchyIntegralHolder
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.FourierCoeffOn
+import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.MeasureTheory.Integral.Circle.Haar
 import TauCeti.Topology.MetricSpace.Holder
@@ -258,6 +260,25 @@ theorem unitDiscRiemannHilbertSolution_sub_zpow_mul_conj
 
 /-! ### Solvability -/
 
+/-- A function `h` holomorphic on the open unit disc and continuous on the closed disc has
+continuous boundary values `x ↦ h (toCircle x)` on `AddCircle (2 * π)`, and so does their product
+`x ↦ fourier k x * conj (h (toCircle x))` with a Fourier monomial. -/
+private theorem continuous_comp_toCircle_and_fourier_mul_conj {h : ℂ → ℂ}
+    (hh : DiffContOnCl ℂ h (ball 0 1)) :
+    Continuous (fun x : AddCircle (2 * π) ↦ h (toCircle x)) ∧
+      Continuous fun x : AddCircle (2 * π) ↦ fourier k x * conj (h (toCircle x)) := by
+  have hc : Continuous fun x : AddCircle (2 * π) ↦ h (toCircle x) := by
+    refine hh.continuousOn.comp_continuous (continuous_subtypeVal.comp continuous_toCircle)
+      fun x ↦ ?_
+    rw [closure_ball 0 one_ne_zero]
+    exact sphere_subset_closedBall (coe_toCircle_mem_sphere x)
+  exact ⟨hc, (map_continuous (fourier k)).mul (continuous_conj.comp hc)⟩
+
+/-- A continuous function on the circle `AddCircle (2 * π)` is integrable for its Haar measure. -/
+private theorem integrable_haarAddCircle_of_continuous {g : AddCircle (2 * π) → ℂ}
+    (hg : Continuous g) : Integrable g haarAddCircle :=
+  hg.integrable_of_hasCompactSupport (.of_compactSpace _)
+
 /-- **Solvability of the Riemann–Hilbert problem on the disc.** Let `θ ↦ φ(e^{iθ})` be continuous
 with summable Fourier coefficients `c n`, and let `φ w = -(w ^ k * conj (φ w))` on the unit
 circle. There is a function `h`, holomorphic on the open disc and continuous on the closed disc,
@@ -274,19 +295,12 @@ theorem exists_diffContOnCl_sub_zpow_mul_conj_eq_iff
   refine ⟨fun ⟨h, hh, hhb⟩ n hkn hn ↦ ?_, fun hvan ↦
     ⟨_, diffContOnCl_unitDiscRiemannHilbertSolution (hs.comp_injective Nat.cast_injective),
       fun w hw ↦ unitDiscRiemannHilbertSolution_sub_zpow_mul_conj hφ hs hb hvan hw⟩⟩
-  have hc : Continuous fun x : AddCircle (2 * π) ↦ h (toCircle x) := by
-    refine hh.continuousOn.comp_continuous (continuous_subtypeVal.comp continuous_toCircle)
-      fun x ↦ ?_
-    rw [closure_ball 0 one_ne_zero]
-    exact sphere_subset_closedBall (coe_toCircle_mem_sphere x)
-  have hc' : Continuous fun x : AddCircle (2 * π) ↦ fourier k x * conj (h (toCircle x)) :=
-    (map_continuous (fourier k)).mul (continuous_conj.comp hc)
-  have hi {g : AddCircle (2 * π) → ℂ} (hg : Continuous g) : Integrable g haarAddCircle :=
-    hg.integrable_of_hasCompactSupport (.of_compactSpace _)
+  obtain ⟨hc, hc'⟩ := continuous_comp_toCircle_and_fourier_mul_conj (k := k) hh
   have hφh : (fun x : AddCircle (2 * π) ↦ φ (toCircle x)) =
       fun x ↦ h (toCircle x) - fourier k x * conj (h (toCircle x)) := funext fun x ↦ by
     rw [fourier_apply_eq_coe_toCircle_zpow, hhb _ (coe_toCircle_mem_sphere x)]
-  rw [← fourierCoeff_comp_toCircle, hφh, fourierCoeff_sub (hi hc) (hi hc'),
+  rw [← fourierCoeff_comp_toCircle, hφh, fourierCoeff_sub
+    (integrable_haarAddCircle_of_continuous hc) (integrable_haarAddCircle_of_continuous hc'),
     fourierCoeff_fourier_mul_conj, hh.fourierCoeff_comp_toCircle_eq_zero hn,
     hh.fourierCoeff_comp_toCircle_eq_zero (by omega)]
   simp
@@ -308,8 +322,8 @@ theorem exists_diffContOnCl_sub_zpow_mul_conj_eq (hk : -1 ≤ k)
 /-- The power series of the Hölder solution: on the open disc, the Cauchy integral `G` of `φ`
 minus the polynomial `∑_{0 ≤ n ≤ k} (c n / 2) zⁿ` has the coefficients of the explicit solution. -/
 private theorem hasSum_sub_sum_range_toNat {c : ℤ → ℂ} {G : ℂ → ℂ} {z : ℂ}
-    (hG : HasSum (fun n : ℕ ↦ c n * z ^ n) (G z)) :
-    HasSum (fun n : ℕ ↦ ((if (n : ℤ) ≤ k then 2⁻¹ else 1) * c n) * z ^ n)
+    (hG : HasSum (fun n : ℕ ↦ z ^ n * c n) (G z)) :
+    HasSum (fun n : ℕ ↦ z ^ n * ((if (n : ℤ) ≤ k then 2⁻¹ else 1) * c n))
       (G z - ∑ n ∈ Finset.range (k + 1).toNat, 2⁻¹ * c n * z ^ n) := by
   have hp : HasSum (fun n : ℕ ↦ if (n : ℤ) ≤ k then 2⁻¹ * c n * z ^ n else 0)
       (∑ n ∈ Finset.range (k + 1).toNat, 2⁻¹ * c n * z ^ n) := by
@@ -354,31 +368,28 @@ private theorem sub_sum_range_toNat_sub_zpow_mul_conj_eq {G : ℂ → ℂ}
       simp only [solutionCoeff, Nat.cast_nonneg, ↓reduceIte]
       refine hhd.fourierCoeffOn_circleMap_eq_of_hasSum
         (a := fun n : ℕ ↦ (if (n : ℤ) ≤ k then 2⁻¹ else 1) * c n) (fun z hz ↦ ?_) n
+      simp only [smul_eq_mul]
       refine hasSum_sub_sum_range_toNat ?_
       rw [hGF hz]
-      exact hasSum_fourierCoeffOn_mul_pow_two_pi_I_inv_smul_circleIntegral_sub_inv_smul
-        (hφc.circleIntegrable zero_le_one) hz
+      simpa only [smul_eq_mul] using
+        hasSum_pow_smul_fourierCoeffOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul
+          (hφc.circleIntegrable zero_le_one) hz
     · simp only [solutionCoeff, not_le.2 hn, ↓reduceIte]
       rw [← fourierCoeff_comp_toCircle]
       exact hhd.fourierCoeff_comp_toCircle_eq_zero hn
   -- The boundary defect is continuous on the circle with vanishing Fourier coefficients.
-  have hc : Continuous fun x : AddCircle (2 * π) ↦ h (toCircle x) := by
-    refine hhd.continuousOn.comp_continuous (continuous_subtypeVal.comp continuous_toCircle)
-      fun x ↦ ?_
-    rw [closure_ball 0 one_ne_zero]
-    exact sphere_subset_closedBall (coe_toCircle_mem_sphere x)
-  have hc' : Continuous fun x : AddCircle (2 * π) ↦ fourier k x * conj (h (toCircle x)) :=
-    (map_continuous (fourier k)).mul (continuous_conj.comp hc)
+  obtain ⟨hc, hc'⟩ := continuous_comp_toCircle_and_fourier_mul_conj (k := k) hhd
   have hcφ : Continuous fun x : AddCircle (2 * π) ↦ φ (toCircle x) :=
     hφc.comp_continuous (continuous_subtypeVal.comp continuous_toCircle) coe_toCircle_mem_sphere
-  have hi {g : AddCircle (2 * π) → ℂ} (hg : Continuous g) : Integrable g haarAddCircle :=
-    hg.integrable_of_hasCompactSupport (.of_compactSpace _)
   have hD := ContinuousMap.eq_zero_of_forall_fourierCoeff_eq_zero
     ⟨fun x ↦ h (toCircle x) - fourier k x * conj (h (toCircle x)) - φ (toCircle x),
       (hc.sub hc').sub hcφ⟩ fun n ↦ by
     simp only [ContinuousMap.coe_mk]
     rw [fourierCoeff_sub (f := fun x ↦ h (toCircle x) - fourier k x * conj (h (toCircle x)))
-      (hi (hc.sub hc')) (hi hcφ), fourierCoeff_sub (hi hc) (hi hc'),
+      (integrable_haarAddCircle_of_continuous (hc.sub hc'))
+      (integrable_haarAddCircle_of_continuous hcφ),
+      fourierCoeff_sub (integrable_haarAddCircle_of_continuous hc)
+        (integrable_haarAddCircle_of_continuous hc'),
       fourierCoeff_fourier_mul_conj, fourierCoeff_comp_toCircle, fourierCoeff_comp_toCircle,
       fourierCoeff_comp_toCircle, hcoeff, hcoeff,
       solutionCoeff_sub_conj (fun n ↦ fourierCoeffOn_eq_neg_conj hb n) hvan n, sub_self]
@@ -407,9 +418,8 @@ theorem exists_holderOnWith_closedBall_sub_zpow_mul_conj_eq_of_fourierCoeffOn_eq
     exists_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_holderOnWith_closedBall hα0 hα1 hφ
   set p : ℂ → ℂ := fun z ↦ ∑ n ∈ Finset.range (k + 1).toNat, 2⁻¹ * c n * z ^ n
   have hp : ContDiff ℂ 1 p := by fun_prop
-  obtain ⟨Cp, hpC⟩ := LocallyLipschitzOn.exists_holderOnWith_of_isCompact
-    (s := univ) hp.locallyLipschitz.locallyLipschitzOn hα1.le (isCompact_closedBall 0 1)
-    (subset_univ _)
+  obtain ⟨Cp, hpC⟩ := ContDiffOn.exists_holderOnWith (hp.restrict_scalars ℝ).contDiffOn
+    (convex_closedBall 0 1) (isCompact_closedBall 0 1) hα1.le
   exact ⟨fun z ↦ G z - p z, hGd.sub (hp.differentiable one_ne_zero).diffContOnCl,
     ⟨_, hG.sub hpC⟩, fun w hw ↦ sub_sum_range_toNat_sub_zpow_mul_conj_eq (hφ.continuousOn hα0)
       hb hvan hGd hGF hw⟩
@@ -450,21 +460,18 @@ theorem exists_holderOnWith_closedBall_deriv_sub_zpow_mul_conj_eq_of_fourierCoef
   have hp : ContDiff ℂ 2 p := by fun_prop
   have hp' : ContDiff ℂ 1 fun z ↦ I * z * deriv p z :=
     contDiff_const.mul contDiff_id |>.mul (contDiff_succ_iff_deriv.1 hp).2.2
-  obtain ⟨Cp, hpC⟩ := LocallyLipschitzOn.exists_holderOnWith_of_isCompact
-    (s := univ) (hp.of_le one_le_two).locallyLipschitz.locallyLipschitzOn hα1.le
-    (isCompact_closedBall 0 1) (subset_univ _)
-  obtain ⟨Cp', hpC'⟩ := LocallyLipschitzOn.exists_holderOnWith_of_isCompact
-    (s := univ) hp'.locallyLipschitz.locallyLipschitzOn hα1.le (isCompact_closedBall 0 1)
-    (subset_univ _)
+  obtain ⟨Cp, hpC⟩ := ContDiffOn.exists_holderOnWith
+    ((hp.of_le one_le_two).restrict_scalars ℝ).contDiffOn (convex_closedBall 0 1)
+    (isCompact_closedBall 0 1) hα1.le
+  obtain ⟨Cp', hpC'⟩ := ContDiffOn.exists_holderOnWith (hp'.restrict_scalars ℝ).contDiffOn
+    (convex_closedBall 0 1) (isCompact_closedBall 0 1) hα1.le
   set h : ℂ → ℂ := fun z ↦ G z - p z
   have hhd : DiffContOnCl ℂ h (ball 0 1) := hGd.sub (hp.differentiable two_ne_zero).diffContOnCl
   -- The boundary values of `h` have the Hölder derivative `G' w - i w p'(w)` along the rotations.
   have hV (w : ℂ) (hw : w ∈ sphere (0 : ℂ) 1) :
       HasDerivAt (fun t : ℝ ↦ h (exp (I * t) * w)) (G' w - I * w * deriv p w) 0 := by
     have hpath : HasDerivAt (fun t : ℝ ↦ exp (I * t) * w) (I * w) 0 := by
-      convert (((ofRealCLM.hasDerivAt (x := 0)).const_mul I).cexp).mul_const w using 1
-      · simp only [ofRealCLM_apply]
-      · simp
+      simpa using hasDerivAt_exp_I_mul_mul w 0
     have hpd : HasDerivAt p (deriv p w) (exp (I * ((0 : ℝ) : ℂ)) * w) := by
       rw [ofReal_zero, mul_zero, exp_zero, one_mul]
       exact ((hp.differentiable two_ne_zero).differentiableAt (x := w)).hasDerivAt

@@ -35,11 +35,11 @@ For a function `f : ℂ → E` and a circle `C(c, R)` with `R ≠ 0`, write
   (`TauCeti.fourierCoeffOn_circleMap_zpow_mul_conj_sub`);
 * on the unit circle, the coefficients of `cauchyPowerSeries F 0 1` are the Fourier coefficients
   of `θ ↦ F(e^{iθ})` (`TauCeti.coeff_cauchyPowerSeries_zero_one`), so the Cauchy integral
-  `(2 π i)⁻¹ ∮_{|w| = 1} φ(w) / (w - z) dw` is the power series `∑ cₙ zⁿ` on the open disc, with
+  `(2 π i)⁻¹ ∮_{|w| = 1} φ(w) / (w - z) dw` is the power series `∑ zⁿ cₙ` on the open disc, with
   `cₙ` the Fourier coefficients of `θ ↦ φ(e^{iθ})`
-  (`TauCeti.hasSum_fourierCoeffOn_mul_pow_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`);
+  (`TauCeti.hasSum_pow_smul_fourierCoeffOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`);
 * conversely, a function holomorphic on the open unit disc, continuous on the closed disc and
-  equal on the open disc to a power series `∑ aₙ zⁿ` has `aₙ` as the `n`-th Fourier coefficient of
+  equal on the open disc to a power series `∑ zⁿ aₙ` has `aₙ` as the `n`-th Fourier coefficient of
   its boundary values for every `n ≥ 0`, whether or not the series converges on the circle
   (`DiffContOnCl.fourierCoeffOn_circleMap_eq_of_hasSum`): both are its Taylor coefficients.
 -/
@@ -134,38 +134,42 @@ theorem circleIntegral_pow_mul (F : ℂ → ℂ) (j : ℕ) :
 
 /-- The coefficients of the Cauchy power series of `F` on the unit circle are the Fourier
 coefficients of `θ ↦ F(e^{iθ})` on `[0, 2π]`. -/
-theorem coeff_cauchyPowerSeries_zero_one (F : ℂ → ℂ) (n : ℕ) :
+theorem coeff_cauchyPowerSeries_zero_one (F : ℂ → E) (n : ℕ) :
     (cauchyPowerSeries F 0 1).coeff n =
       fourierCoeffOn Real.two_pi_pos (fun θ ↦ F (circleMap 0 1 θ)) n := by
-  rw [coeff_cauchyPowerSeries F 0 one_ne_zero, smul_eq_mul]
-  simp only [smul_eq_mul]
-  rw [intervalIntegral_circleMap_zpow_mul, neg_neg]
-  field_simp
+  rw [coeff_cauchyPowerSeries F 0 one_ne_zero, ← fourierCoeff_comp_toCircle,
+    fourierCoeff_eq_intervalIntegral (T := 2 * π) _ n 0, zero_add]
+  simp only [fourier_apply_eq_coe_toCircle_zpow, coe_toCircle_coe_eq_circleMap, one_div,
+    ← ofReal_ofNat, ← ofReal_mul, ← ofReal_inv]
+  exact Complex.coe_smul _ _
 
 /-- **The Taylor series of the Cauchy integral.** For a function `φ` integrable on the unit circle,
-the Cauchy integral `(2 π i)⁻¹ ∮_{|w| = 1} φ(w) / (w - z) dw` is the power series `∑ cₙ zⁿ` on the
+the Cauchy integral `(2 π i)⁻¹ ∮_{|w| = 1} φ(w) / (w - z) dw` is the power series `∑ zⁿ cₙ` on the
 open unit disc, where `cₙ` is the `n`-th Fourier coefficient of `θ ↦ φ(e^{iθ})` on `[0, 2π]`. -/
-theorem hasSum_fourierCoeffOn_mul_pow_two_pi_I_inv_smul_circleIntegral_sub_inv_smul {φ : ℂ → ℂ}
-    (hφ : CircleIntegrable φ 0 1) {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) :
-    HasSum (fun n : ℕ ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n * z ^ n)
+theorem hasSum_pow_smul_fourierCoeffOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul
+    {φ : ℂ → E} (hφ : CircleIntegrable φ 0 1) {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) :
+    HasSum (fun n : ℕ ↦ z ^ n • fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n)
       ((2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • φ w) := by
   have h := (hasFPowerSeriesOn_cauchy_integral (R := 1) (by simpa using hφ) one_pos).hasSum
     (y := z) (by rw [Metric.eball_coe, NNReal.coe_one]; exact hz)
-  simp only [zero_add, NNReal.coe_one, FormalMultilinearSeries.apply_eq_pow_smul_coeff,
-    coeff_cauchyPowerSeries_zero_one] at h
-  simpa only [smul_eq_mul, mul_comm] using h
+  simpa only [zero_add, NNReal.coe_one, FormalMultilinearSeries.apply_eq_pow_smul_coeff,
+    coeff_cauchyPowerSeries_zero_one] using h
 
 end TauCeti
 
 /-- **The boundary Fourier coefficients of a power series.** If `H` is holomorphic on the open unit
-disc, continuous on the closed disc, and equal on the open disc to a power series `∑ aₙ zⁿ`, then
+disc, continuous on the closed disc, and equal on the open disc to a power series `∑ zⁿ aₙ`, then
 for every `n ≥ 0` the `n`-th Fourier coefficient of `θ ↦ H(e^{iθ})` on `[0, 2π]` is `aₙ`. The
 negative coefficients vanish (`DiffContOnCl.fourierCoeff_comp_toCircle_eq_zero`). -/
-theorem DiffContOnCl.fourierCoeffOn_circleMap_eq_of_hasSum {H : ℂ → ℂ} {a : ℕ → ℂ}
+theorem DiffContOnCl.fourierCoeffOn_circleMap_eq_of_hasSum [CompleteSpace E] {H : ℂ → E}
+    {a : ℕ → E}
     (hH : DiffContOnCl ℂ H (ball 0 1))
-    (ha : ∀ z ∈ ball (0 : ℂ) 1, HasSum (fun n ↦ a n * z ^ n) (H z)) (n : ℕ) :
+    (ha : ∀ z ∈ ball (0 : ℂ) 1, HasSum (fun n ↦ z ^ n • a n) (H z)) (n : ℕ) :
     fourierCoeffOn Real.two_pi_pos (fun θ ↦ H (circleMap 0 1 θ)) n = a n := by
-  set p := FormalMultilinearSeries.ofScalars ℂ a
+  let p : FormalMultilinearSeries ℂ ℂ E := fun n ↦ ContinuousMultilinearMap.mkPiRing ℂ (Fin n) (a n)
+  have hp (n : ℕ) (y : ℂ) : p n (fun _ ↦ y) = y ^ n • a n := by
+    simp only [p, ContinuousMultilinearMap.mkPiRing_apply, Finset.prod_const, Finset.card_univ,
+      Fintype.card_fin]
   have hhalf : ((2⁻¹ : ℝ≥0) : ℂ) ∈ ball (0 : ℂ) 1 := by
     rw [mem_ball_zero_iff, Complex.norm_real, Real.norm_eq_abs, NNReal.abs_eq]
     norm_num
@@ -173,7 +177,7 @@ theorem DiffContOnCl.fourierCoeffOn_circleMap_eq_of_hasSum {H : ℂ → ℂ} {a 
   have hr : ((2⁻¹ : ℝ≥0) : ℝ≥0∞) ≤ p.radius := by
     refine p.le_radius_of_tendsto (l := 0) ?_
     have := (ha _ hhalf).summable.tendsto_atTop_zero.norm
-    simpa [p, norm_mul, norm_pow] using this
+    simpa [p, ContinuousMultilinearMap.norm_mkPiRing, norm_smul, norm_pow, mul_comm] using this
   have h₂ : HasFPowerSeriesOnBall H p 0 ((2⁻¹ : ℝ≥0) : ℝ≥0∞) :=
     { r_le := hr
       r_pos := by simp
@@ -181,13 +185,15 @@ theorem DiffContOnCl.fourierCoeffOn_circleMap_eq_of_hasSum {H : ℂ → ℂ} {a 
         have hy' : y ∈ ball (0 : ℂ) 1 := by
           rw [Metric.eball_coe] at hy
           exact ball_subset_ball (by norm_num) hy
-        simpa [p, FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using ha y hy' }
+        simpa [hp] using ha y hy' }
   have hH' : DiffContOnCl ℂ H (ball 0 ((1 : ℝ≥0) : ℝ)) := by simpa using hH
   have h₁ := hH'.hasFPowerSeriesOnBall one_pos
   have hc := congrArg (fun q ↦ q.coeff n)
     (h₁.hasFPowerSeriesAt.eq_formalMultilinearSeries h₂.hasFPowerSeriesAt)
-  simp only [p, FormalMultilinearSeries.coeff_ofScalars, NNReal.coe_one,
-    TauCeti.coeff_cauchyPowerSeries_zero_one] at hc
+  have hpc : p.coeff n = a n := by
+    simp only [p, FormalMultilinearSeries.coeff, ContinuousMultilinearMap.mkPiRing_apply,
+      Pi.one_apply, Finset.prod_const_one, one_smul]
+  simp only [NNReal.coe_one, TauCeti.coeff_cauchyPowerSeries_zero_one, hpc] at hc
   exact hc
 
 namespace TauCeti

@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Complex.AbsMax
 public import TauCeti.Analysis.Complex.Basic
 public import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 public import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Analysis.Complex.CircleRotation
 
 /-!
 # Hölder boundary values of holomorphic functions on a disc
@@ -311,18 +312,9 @@ private theorem norm_sub_sub_smul_le
   -- `u ↦ f (e^{iu} w) - u v(w)` has derivative `v (e^{is} w) - v w` at `s`.
   have hψ (s : ℝ) : HasDerivAt (fun u : ℝ ↦ f (exp (I * u) * w) - u • v w)
       (v (exp (I * s) * w) - v w) s := by
-    have h0 : HasDerivAt (fun u : ℝ ↦ f (exp (I * u) * (exp (I * s) * w)))
-        (v (exp (I * s) * w)) (s - s) := by
-      rw [sub_self]; exact hv _ (hrot s)
     have hlin : HasDerivAt (fun u : ℝ ↦ u • v w) (v w) s := by
       simpa using (hasDerivAt_id s).smul_const (v w)
-    refine ((h0.comp_sub_const s s).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun u ↦ ?_)).sub hlin
-    simp only
-    rw [← mul_assoc, ← Complex.exp_add]
-    congr 3
-    push_cast
-    ring
+    exact (TauCeti.hasDerivAt_comp_exp_I_mul_mul hv hw s).sub hlin
   have hbound : ∀ s ∈ uIcc 0 t, ‖v (exp (I * s) * w) - v w‖ ≤ C * |t| ^ (α : ℝ) := by
     intro s hs
     have hst : |s| ≤ |t| := by simpa using abs_sub_left_of_mem_uIcc hs

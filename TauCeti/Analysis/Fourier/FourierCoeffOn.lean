@@ -184,12 +184,9 @@ variable {T : ℝ} [hT : Fact (0 < T)]
 
 /-- The Fourier coefficients of a function on `AddCircle T` are those of its lift to `ℝ` on any
 period interval `(a, a + T]`. -/
-theorem fourierCoeff_eq_fourierCoeffOn (a : ℝ) (f : AddCircle T → ℂ) (n : ℤ) :
+theorem fourierCoeff_eq_fourierCoeffOn (a : ℝ) (f : AddCircle T → E) (n : ℤ) :
     fourierCoeff f n = fourierCoeffOn (lt_add_of_pos_right a hT.out) (fun x : ℝ ↦ f x) n := by
-  rw [← fourierCoeff_liftIoc_eq]
-  congr 1
-  funext x
-  simp [AddCircle.liftIoc, AddCircle.coe_equivIoc]
+  rw [fourierCoeffOn_eq_integral, fourierCoeff_eq_intervalIntegral _ _ a, add_sub_cancel_left a T]
 
 /-- A square-integrable function on `(a, b]` is the restriction of an `L²` class on the circle of
 length `b - a` with the same Fourier coefficients. -/
@@ -266,7 +263,7 @@ local instance fourierCoeffOnTwoPiPos : Fact (0 < 2 * π) := ⟨Real.two_pi_pos�
 
 /-- The Fourier coefficients of `φ` restricted to the unit circle, as a function on
 `AddCircle (2 * π)`, are those of `θ ↦ φ(e^{iθ})` on `[0, 2π]`. -/
-theorem fourierCoeff_comp_toCircle (φ : ℂ → ℂ) (n : ℤ) :
+theorem fourierCoeff_comp_toCircle (φ : ℂ → E) (n : ℤ) :
     fourierCoeff (fun x : AddCircle (2 * π) ↦ φ (toCircle x)) n =
       fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n := by
   rw [fourierCoeff_eq_fourierCoeffOn 0]

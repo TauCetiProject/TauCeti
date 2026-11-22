@@ -58,7 +58,9 @@ circle.
   `TauCeti.diam_range_circlePath_le` — the same bound for Mathlib's arc `Circle.path x y`, whose
   angle is `Circle.angleDiff x y`.
 * `TauCeti.min_angleDiff_le_pi_div_two_mul_dist` — the shorter of the two arcs joining two points of
-  the circle has length at most `π / 2` times their distance.
+  the circle has length at most `π / 2` times their distance, and
+  `TauCeti.abs_le_two_mul_norm_exp_I_mul_ofReal_sub_one` — an angle in `[-π, π]` is at most twice
+  the chord `‖e^{is} - 1‖`.
 
 ## The argument
 
@@ -500,5 +502,26 @@ theorem min_angleDiff_le_pi_div_two_mul_dist (x y : Circle) :
   · refine (min_le_right _ _).trans (key _ (by linarith) (by linarith) ?_)
     have hrefl : Circle.angleDiff y x / 2 = π - Circle.angleDiff x y / 2 := by linarith
     rw [hrefl, Real.sin_pi_sub]
+
+
+/-- **The angle is controlled by the chord**: an angle `s ∈ [-π, π]` is at most twice the chord
+`‖e^{is} - 1‖` it subtends. This reverses Mathlib's `Real.norm_exp_I_mul_ofReal_sub_one_le`, by
+Jordan's inequality `Real.mul_le_sin`. -/
+theorem abs_le_two_mul_norm_exp_I_mul_ofReal_sub_one {s : ℝ} (hs : |s| ≤ π) :
+    |s| ≤ 2 * ‖Complex.exp (Complex.I * s) - 1‖ := by
+  have hs2 : |s / 2| ≤ π / 2 := by
+    rw [abs_div, abs_two]
+    linarith
+  have hsin := Real.mul_le_sin (abs_nonneg (s / 2)) hs2
+  rw [Complex.norm_exp_I_mul_ofReal_sub_one, norm_mul, Real.norm_two, Real.norm_eq_abs,
+    Real.abs_sin_eq_sin_abs_of_abs_le_pi (by linarith [Real.pi_pos])]
+  rw [abs_div, abs_two] at hsin ⊢
+  have hpos := Real.pi_pos
+  have key : |s| / π ≤ Real.sin (|s| / 2) := by
+    convert hsin using 1
+    field_simp
+  have hsin0 : 0 ≤ Real.sin (|s| / 2) := (div_nonneg (abs_nonneg s) hpos.le).trans key
+  rw [div_le_iff₀ hpos] at key
+  nlinarith [abs_nonneg s, Real.pi_le_four]
 
 end TauCeti
