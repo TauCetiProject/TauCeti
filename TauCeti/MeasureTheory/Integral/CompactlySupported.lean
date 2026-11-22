@@ -8,9 +8,10 @@ module
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.Topology.PartitionOfUnity.Approximation
+import Mathlib.Topology.UrysohnsLemma
 
 /-!
-# Finite-rank approximation of compactly supported functions
+# Integrals of compactly supported functions: cutoffs and finite-rank approximation
 
 A compactly supported continuous function with values in a real normed space can be
 approximated in integral norm by finite sums of real compactly supported scalar functions
@@ -19,6 +20,17 @@ sets is needed. In particular, no global finiteness or countability assumption i
 
 This is the partition-of-unity approximation used to lift convolution coefficients through
 dense coefficient maps. We use Mathlib's compactly supported partitions of unity.
+
+On a locally compact `R1Space` with measurable open sets, a compact set `K` inside an open set
+`U` has a compactly supported Urysohn cutoff whose integral against every measure is at most the
+mass of `U`, and at least the mass of `K` for measures finite on compact sets.
+
+## Main declarations
+
+* `CompactlySupportedContinuousMap.exists_integral_norm_sub_sum_smul_lt`: finite-rank
+  approximation in integral norm.
+* `IsCompact.exists_compactlySupported_measure_le_integral_le`: a compactly supported cutoff
+  whose integral lies between the masses of a compact set and of an open neighbourhood of it.
 -/
 
 public section
@@ -72,3 +84,25 @@ theorem exists_integral_norm_sub_sum_smul_lt (f : C_c(X, E)) (μ : Measure X)
       nlinarith [measureReal_nonneg (μ := μ) (s := K)]
 
 end CompactlySupportedContinuousMap
+
+section Cutoff
+
+variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] [R1Space X] [LocallyCompactSpace X]
+  [OpensMeasurableSpace X]
+
+/-- A compactly supported continuous function whose integral against every measure lies between
+the mass of a compact set `K` and the mass of an open neighbourhood `U` of `K`; the lower bound
+needs the measure to be finite on compact sets. -/
+theorem IsCompact.exists_compactlySupported_measure_le_integral_le {K U : Set X}
+    (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
+    ∃ f : C_c(X, ℝ), (∀ (ρ : Measure X) [IsFiniteMeasureOnCompacts ρ],
+      ρ K ≤ ENNReal.ofReal (∫ x, f x ∂ρ)) ∧
+      ∀ ρ : Measure X, ENNReal.ofReal (∫ x, f x ∂ρ) ≤ ρ U := by
+  obtain ⟨f, hf1, hfc, hfU, hfr⟩ := exists_continuousMap_one_of_isCompact_subset_isOpen hK hU hKU
+  refine ⟨⟨f, hfc⟩, fun ρ _ ↦ ?_, fun ρ ↦ ?_⟩
+  · exact (CompactlySupportedContinuousMap.integrable ⟨f, hfc⟩).measure_le_integral
+      (ae_of_all _ fun x ↦ (hfr x).1) fun _ hx ↦ (hf1 hx).ge
+  · exact integral_le_measure (fun x _ ↦ (hfr x).2) fun x hx ↦
+      (image_eq_zero_of_notMem_tsupport fun h ↦ hx (hfU h)).le
+
+end Cutoff

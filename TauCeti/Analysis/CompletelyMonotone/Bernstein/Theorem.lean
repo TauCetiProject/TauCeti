@@ -127,7 +127,7 @@ theorem exists_representsLaplace_of_isCompletelyMonotone
     ∃ μ : Measure ℝ≥0, RepresentsLaplace μ f := by
   obtain ⟨L, C, hL, hL_nn, -, hmass⟩ := chafaiRescaled_prokhorov_mass_bound f hcm
   have hmass' : ∀ n, (chafaiRescaled f n) univ ≤ (C : ℝ≥0∞) := fun n => (hmass n).2
-  obtain ⟨μ₀, U, hU, hμ₀fin, -, hweak⟩ :=
+  obtain ⟨μ₀, U, hU, -, hμ₀fin, -, hweak⟩ :=
     exists_ultrafilter_tendsto_integral_of_isTightMeasureSet (chafaiRescaled f) atTop C
       (forall_mem_range.2 hmass') (isTightMeasureSet_range_chafaiRescaled hcm)
       (.of_forall mem_range_self)

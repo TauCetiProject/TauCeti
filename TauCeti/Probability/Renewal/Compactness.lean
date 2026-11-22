@@ -54,7 +54,7 @@ theorem exists_subseq_tendsto_integral_translatedRenewalMeasure
   have hpos : ∀ x, 0 < w x := fun x => Real.toNNReal_pos.mpr (Real.exp_pos _)
   have hcast (x : ℝ) : (w x : ℝ≥0∞) = ENNReal.ofReal (Real.exp (-|x|)) := by
     exact ENNReal.ofNNReal_toNNReal _
-  obtain ⟨η, φ, hη, hφ, hlim⟩ :=
+  obtain ⟨η, φ, hη, hφ, -, hlim⟩ :=
     TauCeti.exists_subseq_tendsto_integral_of_withDensity
       (fun n => F.translatedRenewalMeasure (t n)) w hw hpos C
       (forall_mem_range.2 (by simpa only [hcast] using hmass)) (by simpa only [hcast] using htight)
