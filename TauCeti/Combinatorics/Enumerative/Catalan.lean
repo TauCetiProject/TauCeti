@@ -35,6 +35,7 @@ the Möbius function `μ(0̂, 1̂)` of the lattice of noncrossing partitions.
 * `Nat.catalan_pos`, `Nat.catalan_lt_catalan_succ`, `Nat.catalan_succ_lt_four_mul`,
   `Nat.monotone_catalan`, `Nat.self_le_catalan` — growth of the Catalan numbers read off from
   the first-order recurrence: `0 < Cₙ`, `Cₙ < Cₙ₊₁ < 4 Cₙ` for `0 < n`, and `n ≤ Cₙ`.
+* `Nat.catalan_four` — the value `C₄ = 14`.
 * `Nat.mul_add_one_le_centralBinom_iff` — `n (r + 1) ≤ (2r choose r) ↔ n ≤ Cᵣ`.
 * `TauCeti.sum_range_neg_one_pow_mul_catalan` — the convolution of the signed Catalan numbers.
 -/
@@ -62,6 +63,11 @@ theorem add_two_mul_catalan_succ (n : ℕ) :
     _ = (n + 1) * (2 * (2 * n + 1) * catalan n) := by
       rw [← succ_mul_catalan_eq_centralBinom]
       ring
+
+/-- The fourth Catalan number: `C₄ = 14`. -/
+theorem catalan_four : catalan 4 = 14 := by
+  have h : 5 * catalan 4 = 70 := by simpa [catalan_three] using add_two_mul_catalan_succ 3
+  omega
 
 /-- The Catalan numbers are positive. -/
 theorem catalan_pos (n : ℕ) : 0 < catalan n :=

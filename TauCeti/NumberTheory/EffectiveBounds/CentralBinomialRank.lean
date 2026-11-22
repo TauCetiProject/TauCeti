@@ -128,10 +128,7 @@ theorem centralBinom_centralBinomialRank_lt {n : ℕ} (hn : 0 < n) :
 
 /-- The least central-binomial rank is at least `5` exactly when `14 < n`, as `C₄ = 14`. -/
 theorem five_le_centralBinomialRank_iff {n : ℕ} : 5 ≤ centralBinomialRank n ↔ 14 < n := by
-  have h4 : catalan 4 = 14 := by
-    have h : 5 * catalan 4 = 70 := by simpa [catalan_three] using add_two_mul_catalan_succ 3
-    omega
-  rw [← h4]
+  rw [← catalan_four]
   exact lt_centralBinomialRank_iff (by norm_num)
 
 /-- A positive `s` with `n (s + 1) (2s + 1) ≤ 4ˢ` bounds the least central-binomial rank of
