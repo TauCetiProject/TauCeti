@@ -34,7 +34,7 @@ the `i`-th variable the separated product with the `i`-th factor replaced by its
 * `TauCeti.fderiv_sum_comp_eval_eventuallyEq`: the same formula for the derivative near a point at
   which the summands are continuously differentiable.
 * `TauCeti.fderiv_sum_comp_eval_eq_zero_iff`: the critical points of a separated sum.
-* `TauCeti.hasFDerivAt_sum_coord`: the sum of coordinates is its own derivative.
+* `TauCeti.hasFDerivAt_sum_coord`: the sum of coordinates on `ι → E` is its own derivative.
 * `TauCeti.squareDeriv`, `TauCeti.hasFDerivAt_coordwise_sq`: the derivative of the coordinatewise
   square `z ↦ (z_i ^ 2)_i`.
 * `TauCeti.hasFDerivAt_prod_comp_eval`, `TauCeti.fderiv_prod_comp_eval_apply_single`: the derivative
@@ -116,12 +116,20 @@ theorem fderiv_sum_comp_eval_eventuallyEq (hφ : ∀ i, ContDiffAt 𝕜 1 (φ i)
   filter_upwards [eventually_all.2 hdiff] with z hz
   exact fderiv_sum_comp_eval hz
 
-/-- The sum of coordinates is its own derivative: the separated sum with identity summands. -/
-theorem hasFDerivAt_sum_coord :
-    HasFDerivAt (fun z : ι → 𝕜 ↦ ∑ i, z i) (∑ i, proj i : (ι → 𝕜) →L[𝕜] 𝕜) y := by
-  simpa using hasFDerivAt_sum_comp_eval (φ := fun _ ↦ id) fun i ↦ hasDerivAt_id (y i)
-
 end SumCompEval
+
+section SumCoord
+
+variable {𝕜 ι E : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E]
+
+/-- The sum of coordinates `z ↦ ∑ i, z i` on `ι → E` is its own derivative: at every point its
+derivative is the continuous linear map `∑ i, proj i`. -/
+theorem hasFDerivAt_sum_coord (y : ι → E) :
+    HasFDerivAt (fun z : ι → E ↦ ∑ i, z i) (∑ i, proj i : (ι → E) →L[𝕜] E) y :=
+  HasFDerivAt.fun_sum fun i _ ↦ hasFDerivAt_apply i y
+
+end SumCoord
 
 section CoordwiseSq
 

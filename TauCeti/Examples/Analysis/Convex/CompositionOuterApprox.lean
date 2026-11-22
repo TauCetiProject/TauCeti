@@ -25,14 +25,17 @@ approximations `TauCeti.CompositionLift.directOuterApprox`,
 `TauCeti.CompositionLift.sharedOuterApprox` and `TauCeti.CompositionLift.sharedOuterApproxOn`.
 In the explicitly computed rows, all derivatives are the actual Fréchet derivatives of the inner
 and outer functions at the anchors; the empty-height result holds for arbitrary continuous linear
-row maps.
+row maps. The shared approximations below use unrestricted heights (every height is admissible),
+except where a bullet names another height domain: the empty one of the third bullet and the
+half-line `y ≥ 0` of the `exp` bullet. In particular the projected shared sets of the one-anchor,
+identity-map and two-anchor bullets are computed with unrestricted heights.
 
 * Squared coordinates `g x = (x_j ^ 2)_j` with outer sum `h y = ∑ j, y j`. At the anchor `(1, 1)`
   the rows are `G x = (2 x₀ - 1, 2 x₁ - 1)`, `H y = y₀ + y₁` and `C x = 2 x₀ + 2 x₁ - 2`, with
   `C (1, 1) = 2` and `C (0, 0) = -2`. On the box `[-1, 1]²` with budget one, any nonempty family of
   copies of this anchor gives `x₀ + x₁ ≤ 3/2` for both the direct set and the projected shared set.
-* For the identity inner map and outer sum, both sets are cut out by `∑ j, x j ≤ b` for every
-  nonempty family of anchors.
+* For the identity inner map and outer sum on an input domain `D`, both sets are the points of `D`
+  satisfying `∑ j, x j ≤ b`, for every nonempty family of anchors.
 * Without anchors both approximations are the box when every height is admissible. With no
   admissible heights the shared approximation is empty, whatever the anchors, while the direct set
   of the box with budget one and copies of the anchor `(1, 1)` contains `0`: the height domain
@@ -205,17 +208,18 @@ section Affine
 
 variable {ι κ : Type*} [Fintype ι] [Nonempty κ] {D : Set (ι → ℝ)} {b : ℝ}
 
-/-- For the identity inner map with outer sum, every nonempty family of anchors gives the direct
-set `∑ j, x j ≤ b`; on the box `[-1, 1]²` with budget one this is `x₀ + x₁ ≤ 1` for the anchors
-`(1, 1)` and `(-1, -1)`. -/
+/-- For the identity inner map with outer sum on the input domain `D`, every nonempty family of
+anchors gives as direct set the points of `D` satisfying `∑ j, x j ≤ b`; on the box `[-1, 1]²`
+with budget one this is `x₀ + x₁ ≤ 1` for the anchors `(1, 1)` and `(-1, -1)`. -/
 theorem directOuterApprox_id_sum (a : κ → ι → ℝ) :
     directOuterApprox D id (fun y ↦ ∑ j, y j) a (fun _ ↦ ContinuousLinearMap.id ℝ _)
       (fun _ ↦ ∑ j, proj j) b = D ∩ {x | ∑ j, x j ≤ b} := by
   ext x
   simp [← outerRow_componentRow, outerRow_sum_coord]
 
-/-- For the identity inner map with outer sum and all heights admissible, every nonempty family of
-anchors gives the projected shared set `∑ j, x j ≤ b`, the same as the direct set. -/
+/-- For the identity inner map with outer sum on the input domain `D` and all heights admissible,
+every nonempty family of anchors gives as projected shared set the points of `D` satisfying
+`∑ j, x j ≤ b`, the same as the direct set. -/
 theorem fst_image_sharedOuterApprox_id_sum (a : κ → ι → ℝ) :
     Prod.fst '' sharedOuterApprox D univ id (fun y ↦ ∑ j, y j) a
       (fun _ ↦ ContinuousLinearMap.id ℝ _) (fun _ ↦ ∑ j, proj j) b = D ∩ {x | ∑ j, x j ≤ b} := by
