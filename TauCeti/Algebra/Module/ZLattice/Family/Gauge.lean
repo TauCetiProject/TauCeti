@@ -141,6 +141,20 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {EY : Type*} [NormedAddCo
   (hinj : ∀ y, Function.Injective (P y)) {n : ℕ∞ω} [IsManifold I n Y]
   (hP : ∀ l, ContMDiff I 𝓘(𝕜, E) n fun y ↦ P y l)
 
+/-- A translation gauge is `C^n` at a point `x` whenever its section `c` is `C^n` at the base
+point `torusFamilyProjection P x`. -/
+theorem contMDiffAt_torusFamilyGauge {c : Y → E}
+    {x : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E)}
+    (hc : ContMDiffAt I 𝓘(𝕜, E) n c (torusFamilyProjection P x)) :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
+    ContMDiffAt (I.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, E)) n (torusFamilyGauge P c) x := by
+  let _ := periodAddAction P
+  let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
+  let _ := torusFamilyTranslationAddAction P
+  have := contMDiffVAdd_torusFamilyTranslationAddAction P hinj hP
+  exact (hc.comp x (contMDiff_torusFamilyProjection P hinj hP).contMDiffAt).vadd contMDiffAt_id
+
 /-- A `C^n` vector-valued section gives a `C^n` change of coordinates on the torus family.
 For holomorphic periods and section this is a biholomorphism. -/
 noncomputable def torusFamilyGaugeDiffeomorph (c : Y → E)
@@ -151,12 +165,9 @@ noncomputable def torusFamilyGaugeDiffeomorph (c : Y → E)
       (AddAction.orbitRel.Quotient Λ (Y × E)) (AddAction.orbitRel.Quotient Λ (Y × E)) n :=
   letI := periodAddAction P
   letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  letI := torusFamilyTranslationAddAction P
-  haveI := contMDiffVAdd_torusFamilyTranslationAddAction P hinj hP
   { toEquiv := torusFamilyGauge P c
-    contMDiff_toFun := (hc.comp (contMDiff_torusFamilyProjection P hinj hP)).vadd contMDiff_id
-    contMDiff_invFun := (hc.neg.comp (contMDiff_torusFamilyProjection P hinj hP)).vadd
-      contMDiff_id }
+    contMDiff_toFun := fun _ ↦ contMDiffAt_torusFamilyGauge P hinj hP hc.contMDiffAt
+    contMDiff_invFun := fun _ ↦ contMDiffAt_torusFamilyGauge P hinj hP hc.neg.contMDiffAt }
 
 /-- The differentiable gauge has the underlying equivalence `torusFamilyGauge`. -/
 @[simp] theorem torusFamilyGaugeDiffeomorph_toEquiv (c : Y → E)

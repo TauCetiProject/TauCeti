@@ -69,8 +69,6 @@ trivialization of the family built from it is in
   covering map, the quotient map of the period translation action.
 * `TauCeti.mem_orbit_periodAddAction_iff`: two points lie in one orbit exactly when they have the
   same parameter `y` and differ by a period at `y`.
-* `TauCeti.torusFamily_mk_add_period`: adding a period at `y` to the fibre coordinate does not
-  change the quotient class.
 * `TauCeti.exists_eq_period_of_mem_range`: a continuous family of periods over a preconnected
   space is a single period, by uniqueness of lifts through the orbit map.
 * `TauCeti.continuous_torusFamilyProjection`, `TauCeti.isOpenMap_torusFamilyProjection`: the
@@ -278,14 +276,6 @@ theorem mem_orbit_periodAddAction_iff {p q : Y × E} :
     exact ⟨h.symm, l, by rw [← hl, add_sub_cancel_left]⟩
   · rintro ⟨h, l, hl⟩
     exact ⟨l, h.symm, by rw [hl, add_sub_cancel]⟩
-
-/-- Adding a period at `y` to the fibre coordinate does not change the quotient class. -/
-@[simp] theorem torusFamily_mk_add_period (y : Y) (v : E) (l : Λ) :
-    letI := periodAddAction P
-    (Quotient.mk _ (y, v + P y l) : AddAction.orbitRel.Quotient Λ (Y × E)) =
-      Quotient.mk _ (y, v) := by
-  let _ := periodAddAction P
-  exact Quotient.sound (AddAction.orbitRel_apply.2 ⟨l, rfl⟩)
 
 /-- The period translation action is free when each period map is injective. -/
 theorem isCancelVAdd_periodAddAction (hinj : ∀ y, Injective (P y)) :

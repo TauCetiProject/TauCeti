@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 
 /-!
 # Regularity and right-inverse law of the centered complex logarithm branch
@@ -33,7 +32,7 @@ namespace Complex
 for all nonzero `z₀` and `z`. -/
 theorem exp_log_add_log_div {z₀ z : ℂ} (hz₀ : z₀ ≠ 0) (hz : z ≠ 0) :
     exp (log z₀ + log (z / z₀)) = z := by
-  simpa using exp_log_add_inv_mul_log_div_pow (m := 1) hz₀ hz
+  rw [exp_add, exp_log hz₀, exp_log (div_ne_zero hz hz₀), mul_div_cancel₀ _ hz₀]
 
 /-- The branch `v ↦ a + log (v / exp a)` of the logarithm centred at `a` is `C^n` (over `ℂ`, hence
 holomorphic) wherever `v / exp a` lies in the slit plane. -/

@@ -118,12 +118,6 @@ open Complex Set
 takes the value `a` at the point `Complex.exp a`, its branch cut rotated away from there. -/
 private noncomputable def logBranch (a v : ℂ) : ℂ := a + Complex.log (v / Complex.exp a)
 
-/-- The branch based at `a` is complex differentiable wherever the translated point misses the
-branch cut. -/
-private theorem differentiableAt_logBranch {a v : ℂ} (h : v / Complex.exp a ∈ Complex.slitPlane) :
-    DifferentiableAt ℂ (logBranch a) v :=
-  ((differentiableAt_id.div_const _).clog h).const_add _
-
 /-- **The branch based at `a` inverts `Complex.exp`** on the strip of height `2 π` centred at `a`,
 because `Complex.log_exp` inverts it on `-π < im ≤ π`. -/
 private theorem logBranch_exp {a w : ℂ} (h₁ : -Real.pi < (w - a).im) (h₂ : (w - a).im ≤ Real.pi) :
@@ -168,7 +162,8 @@ private theorem differentiableAt_of_continuousOn_exp_comp {U : Set ℂ} (hU : Is
     {L g : ℂ → ℂ} (hL : ContinuousOn L U) (hEq : EqOn (Complex.exp ∘ L) g U)
     (hg : DifferentiableOn ℂ g U) {z₀ : ℂ} (hz₀ : z₀ ∈ U) :
     DifferentiableAt ℂ L z₀ :=
-  ((differentiableAt_logBranch (div_exp_mem_slitPlane hEq hz₀)).comp z₀
+  (((Complex.contDiffAt_logBranch (n := 1)
+      (div_exp_mem_slitPlane hEq hz₀)).differentiableAt_one).comp z₀
     ((hg z₀ hz₀).differentiableAt (hU.mem_nhds hz₀))).congr_of_eventuallyEq
     (eventuallyEq_logBranch_comp hU hL hEq hz₀)
 

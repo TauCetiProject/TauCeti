@@ -38,7 +38,10 @@ theorem torusFamily_mk_add_div_two_pi_I_smul_eq_of_exp_eq {Y Λ E : Type*} [AddC
     (Quotient.mk _ (y, e + (a / (2 * π * I)) • P y l) :
         AddAction.orbitRel.Quotient Λ (Y × E)) =
       Quotient.mk _ (y, e + (b / (2 * π * I)) • P y l) := by
+  let _ := periodAddAction P
   obtain ⟨k, hk⟩ := Complex.exists_div_two_pi_I_smul_eq_add_zsmul h (P y l)
-  rw [hk, ← map_zsmul, ← add_assoc, torusFamily_mk_add_period]
+  rw [hk, ← map_zsmul, ← add_assoc, ← periodAddAction_vadd P (k • l) (y, _)]
+  exact AddAction.orbitRel.Quotient.quotient_vadd_eq (g := k • l)
+    (a := (y, e + (b / (2 * π * I)) • P y l))
 
 end TauCeti
