@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Prod
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+
 /-!
 # Diffeomorphisms isotopic to the identity through form-preserving diffeomorphisms
 
@@ -53,8 +55,9 @@ through the product diffeotopy `TauCeti.Diffeotopy.prodCongr`.
   stabilizer preserves the subgroup.
 * `TauCeti.SmoothForm.normal_isotopyStabilizer_subgroupOf`: the subgroup is normal in the
   stabilizer of `σ` (an instance).
-* `TauCeti.SmoothForm.eval₂_mfderiv_of_mem_diffeomorphStabilizer`: a diffeomorphism preserving a
-  two-form preserves its values on pushed-forward tangent vectors.
+* `TauCeti.SmoothForm.eval₂_mfderiv_of_mem_diffeomorphStabilizer`,
+  `TauCeti.SmoothForm.eval₂_mfderiv_left_of_mem_diffeomorphStabilizer`: a diffeomorphism
+  preserving a two-form preserves its values on pushed-forward tangent vectors.
 * `TauCeti.SmoothForm.mem_diffeomorphStabilizer_mpullback_of_semiconj`: naturality of
   stabilizers under intertwining maps.
 * `TauCeti.SmoothForm.prodCongr_mem_diffeomorphStabilizer`,
@@ -181,6 +184,16 @@ theorem eval₂_mfderiv_of_mem_diffeomorphStabilizer {τ : SmoothForm J M F 2}
     SmoothBundleForm.eval₂ τ (φ x) (mfderiv J J φ x a) (mfderiv J J φ x b) =
       SmoothBundleForm.eval₂ τ x a b := by
   rw [← eval₂_mpullback φ φ.contMDiff, mem_diffeomorphStabilizer.1 hφ]
+
+/-- A diffeomorphism preserving a two-form `τ` moves a pushed-forward first argument back across
+`dφ`: `τ(dφ a, v) = τ(a, d(φ⁻¹) v)`. -/
+theorem eval₂_mfderiv_left_of_mem_diffeomorphStabilizer {τ : SmoothForm J M F 2}
+    {φ : M ≃ₘ⟮J, J⟯ M} (hφ : φ ∈ diffeomorphStabilizer τ) (x : M) (a : TangentSpace J x)
+    (v : TangentSpace J (φ x)) :
+    SmoothBundleForm.eval₂ τ (φ x) (mfderiv J J φ x a) v =
+      SmoothBundleForm.eval₂ τ x a (mfderiv J J φ.symm (φ x) v) := by
+  conv_lhs => rw [← φ.mfderiv_apply_mfderiv_symm_apply (by simp) x v]
+  exact eval₂_mfderiv_of_mem_diffeomorphStabilizer hφ x a _
 
 /-! ### Naturality and products -/
 

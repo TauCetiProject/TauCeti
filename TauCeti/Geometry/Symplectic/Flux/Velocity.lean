@@ -71,12 +71,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {σ : SmoothTwoForm I M}
 
-/-- The value of a two-form at a point, on vectors of the model space, depends only on the point. -/
-private theorem eval₂_congr_point {p q : M} (h : p = q) (a b : E) :
-    SmoothBundleForm.eval₂ σ p a b = SmoothBundleForm.eval₂ σ q a b := by
-  subst h
-  rfl
-
 /-- **Pushforward by a symplectomorphism isotopic to the identity.** If the final diffeomorphism
 `φ₁` of a smooth diffeotopy preserves `σ` and `Y` is a smooth symplectic vector field, then the
 pushforward `(φ₁)_* Y` differs from `Y` by the Hamiltonian vector field of a smooth function `f`:
@@ -114,15 +108,9 @@ theorem exists_eval₂_mfderiv_final_eq_add (Φ : Diffeotopy I ∞ M)
       ![Y (Φ.final.symm (Φ.final z)), v'] = SmoothBundleForm.eval₂ σ z (Y z) v' :=
     (congrArg (fun w : M ↦ (σ : RoughForm I M ℝ 2) w ![(Y w : E), (v' : E)])
       (Φ.final.symm_apply_apply z)).trans (SmoothBundleForm.eval₂_apply σ z (Y z) v').symm
-  calc SmoothBundleForm.eval₂ σ (Φ.final z) (mfderiv I I Φ.final z (Y z)) v
-      = SmoothBundleForm.eval₂ σ (Φ.final z) (mfderiv I I Φ.final z (Y z))
-          (mfderiv I I Φ.final z v') :=
-        congrArg _ (Φ.final.mfderiv_apply_mfderiv_symm_apply (by simp) z v).symm
-    _ = SmoothBundleForm.eval₂ σ z (Y z) v' :=
-        SmoothForm.eval₂_mfderiv_of_mem_diffeomorphStabilizer hΦ z (Y z) v'
-    _ = _ := by
-      rw [← hpt, SmoothBundleForm.eval₂_apply, h]
-      ring
+  rw [SmoothForm.eval₂_mfderiv_left_of_mem_diffeomorphStabilizer hΦ z (Y z) v, ← hpt,
+    SmoothBundleForm.eval₂_apply, h]
+  ring
 
 /-- **Velocity fields of composites modulo Hamiltonian vector fields.** Let `ψ_t` preserve `σ` at
 time `t`, and let `Z` be a vector field whose pushforward `(ψ_t)_* Z` differs from `Z` by the
@@ -139,35 +127,36 @@ theorem isHamiltonianVectorField_velocity_trans_sub_sub (Φ Ψ : Diffeotopy I �
           mvfderiv I g (Ψ.timeSlice t z) v) :
     σ.IsHamiltonianVectorField (fun x ↦ f ((Ψ.timeSlice t).symm x) + g x)
       fun x ↦ (Φ.trans Ψ).velocity t x - Ψ.velocity t x - Z x := by
-  refine SmoothTwoForm.isHamiltonianVectorField_iff.2 fun x v ↦ ?_
-  obtain ⟨z, rfl⟩ : ∃ z, Ψ.timeSlice t z = x :=
-    ⟨(Ψ.timeSlice t).symm x, (Ψ.timeSlice t).apply_symm_apply x⟩
-  -- By the product velocity identity, the field at `ψ_t z` is `dψ_t (X_φ z) - Z (ψ_t z)`.
-  have hvel : (Φ.trans Ψ).velocity t (Ψ.timeSlice t z) - Ψ.velocity t (Ψ.timeSlice t z) -
-      Z (Ψ.timeSlice t z) =
-        mfderiv I I (Ψ.timeSlice t) z (Φ.velocity t z) - Z (Ψ.timeSlice t z) := by
-    rw [Φ.velocity_trans (by simp) Ψ t z, add_sub_cancel_left]
-  -- Write `v = dψ_t v'`, so that both vectors at `ψ_t z` are pushed forward from `z`.
-  set v' := mfderiv I I (Ψ.timeSlice t).symm (Ψ.timeSlice t z) v
-  have hv : mfderiv I I (Ψ.timeSlice t) z v' = v :=
-    (Ψ.timeSlice t).mfderiv_apply_mfderiv_symm_apply (by simp) z v
-  -- The derivative of `f ∘ ψ_t⁻¹` at `ψ_t z` is `df_z ∘ d(ψ_t⁻¹)`.
-  have hcomp : mvfderiv I (f ∘ (Ψ.timeSlice t).symm) (Ψ.timeSlice t z) v = mvfderiv I f z v' :=
-    mvfderiv_comp_apply_of_eq (Ψ.timeSlice t z) (hf z)
-      ((Ψ.timeSlice t).symm.mdifferentiable (by simp) _) ((Ψ.timeSlice t).symm_apply_apply z) v
-  have hsum : mvfderiv I (fun x ↦ f ((Ψ.timeSlice t).symm x) + g x) (Ψ.timeSlice t z) v =
-      mvfderiv I f z v' + mvfderiv I g (Ψ.timeSlice t z) v := by
-    rw [← hcomp]
-    exact congrArg (· v) (mvfderiv_add (g := f ∘ (Ψ.timeSlice t).symm) (g' := g)
-      ((hf _).comp _ ((Ψ.timeSlice t).symm.mdifferentiable (by simp) _)) (hg _))
-  -- `σ(X_φ z - Z z, v') = df(v')` at `z`, and `ψ_t` carries the values at `z` to `ψ_t z`.
-  have hX := (SmoothBundleForm.eval₂_sub_left σ z _ _ _).symm.trans
-    (SmoothTwoForm.isHamiltonianVectorField_iff.1 hΦ z v')
-  have h₁ := SmoothForm.eval₂_mfderiv_of_mem_diffeomorphStabilizer hΨ z (Φ.velocity t z) v'
-  have h₂ := SmoothForm.eval₂_mfderiv_of_mem_diffeomorphStabilizer hΨ z (Z z) v'
-  rw [hv] at h₁ h₂
-  rw [hvel, hsum, SmoothBundleForm.eval₂_sub_left, h₁]
-  linarith [hZ z v]
+  have hΨ' : (Ψ.timeSlice t).symm ∈ SmoothForm.diffeomorphStabilizer σ := by
+    rw [← Diffeomorph.inv_def]
+    exact (SmoothForm.diffeomorphStabilizer σ).inv_mem hΨ
+  -- The pushforward `P = (ψ_t)_* (X_φ - Z)` of the Hamiltonian vector field of `f` is Hamiltonian
+  -- for `f ∘ ψ_t⁻¹`.
+  obtain ⟨P, hP⟩ : ∃ P : (x : M) → TangentSpace I x, P = fun x ↦
+      mfderiv I I (Ψ.timeSlice t) ((Ψ.timeSlice t).symm x)
+        (Φ.velocity t ((Ψ.timeSlice t).symm x) - Z ((Ψ.timeSlice t).symm x)) := ⟨_, rfl⟩
+  have h₁ := hΦ.mpullback (X := P) (Ψ.timeSlice t).symm.contMDiff (fun _ ↦ hf _) fun x ↦ by
+    rw [hP]
+    exact (Ψ.timeSlice t).symm.mfderiv_apply_mfderiv_symm_apply (by simp) x _
+  rw [SmoothForm.mem_diffeomorphStabilizer.1 hΨ'] at h₁
+  have hPz : ∀ z, P (Ψ.timeSlice t z) =
+      mfderiv I I (Ψ.timeSlice t) z (Φ.velocity t z - Z z) := fun z ↦ by
+    subst hP
+    exact congrArg (fun y ↦ (mfderiv I I (Ψ.timeSlice t) y (Φ.velocity t y - Z y) : E))
+      ((Ψ.timeSlice t).symm_apply_apply z)
+  -- By the product velocity identity, the remainder is `(ψ_t)_* Z - Z`, Hamiltonian for `g`.
+  have hrest : ∀ z, ((fun x ↦ (Φ.trans Ψ).velocity t x - Ψ.velocity t x - Z x) - P)
+      (Ψ.timeSlice t z) = mfderiv I I (Ψ.timeSlice t) z (Z z) - Z (Ψ.timeSlice t z) := fun z ↦ by
+    rw [Pi.sub_apply, hPz, Φ.velocity_trans (by simp) Ψ t z, map_sub]
+    abel
+  have h₂ : σ.IsHamiltonianVectorField g
+      ((fun x ↦ (Φ.trans Ψ).velocity t x - Ψ.velocity t x - Z x) - P) :=
+    SmoothTwoForm.isHamiltonianVectorField_iff.2 fun x v ↦ by
+      obtain ⟨z, rfl⟩ : ∃ z, Ψ.timeSlice t z = x :=
+        ⟨(Ψ.timeSlice t).symm x, (Ψ.timeSlice t).apply_symm_apply x⟩
+      rw [hrest, SmoothBundleForm.eval₂_sub_left, hZ z v, add_sub_cancel_left]
+  have hsum := h₁.add h₂ (hf.comp ((Ψ.timeSlice t).symm.mdifferentiable (by simp))) hg
+  rwa [add_sub_cancel] at hsum
 
 /-- **The velocity field of a corrected isotopy.** If `ψ_t` preserves `σ` and the difference
 `X_φ - X_ψ` of the velocity fields of two diffeotopies at time `t` is the Hamiltonian vector field
@@ -179,41 +168,31 @@ theorem isHamiltonianVectorField_velocity_trans_symm (Φ Ψ : Diffeotopy I ∞ M
     (hf : MDifferentiable I 𝓘(ℝ) f)
     (h : σ.IsHamiltonianVectorField f fun x ↦ Φ.velocity t x - Ψ.velocity t x) :
     σ.IsHamiltonianVectorField (f ∘ Ψ.timeSlice t) ((Φ.trans Ψ.symm).velocity t) := by
-  refine SmoothTwoForm.isHamiltonianVectorField_iff.2 fun x v ↦ ?_
-  obtain ⟨w, rfl⟩ : ∃ w, Ψ.symm (t, w) = x := ⟨Ψ (t, x), Ψ.symm_apply_apply_mk t x⟩
-  -- By the product velocity identity, the field at `ψ_t⁻¹ w` is `X_(ψ⁻¹) + (ψ_t⁻¹)_* X_φ`.
-  have hvt := Φ.velocity_trans (by simp) Ψ.symm t w
-  rw [timeSlice_apply] at hvt
-  -- `dψ_t` sends `X_(ψ⁻¹)` to `-X_ψ w` and undoes `d(ψ_t⁻¹)`.
-  have ha := Ψ.mfderiv_timeSlice_mfderiv_cylinderMap_symm (by simp) t w
-  rw [← Ψ.symm.velocity_apply] at ha
-  have hb : mfderiv I I (Ψ.timeSlice t) (Ψ.symm (t, w))
-      (mfderiv I I (Ψ.symm.timeSlice t) w (Φ.velocity t w)) = Φ.velocity t w :=
-    (congrArg (mfderiv I I (Ψ.timeSlice t) (Ψ.symm (t, w)))
-      (Ψ.symm.mfderiv_cylinderMap_inl (by simp) (w, t) (Φ.velocity t w)).symm).trans
-      (Ψ.mfderiv_timeSlice_mfderiv_cylinderMap_symm_inl (by simp) t w (Φ.velocity t w))
-  have hpush : mfderiv I I (Ψ.timeSlice t) (Ψ.symm (t, w))
-      ((Φ.trans Ψ.symm).velocity t (Ψ.symm (t, w))) = (Φ.velocity t w - Ψ.velocity t w : E) := by
-    rw [hvt, map_add]
-    exact (congrArg₂ (· + ·) ha hb).trans (neg_add_eq_sub _ _)
-  have hy : Ψ.timeSlice t (Ψ.symm (t, w)) = w := by
-    rw [timeSlice_apply]
-    exact Ψ.apply_mk_symm_apply t w
-  calc SmoothBundleForm.eval₂ σ (Ψ.symm (t, w)) ((Φ.trans Ψ.symm).velocity t (Ψ.symm (t, w))) v
-      = SmoothBundleForm.eval₂ σ (Ψ.timeSlice t (Ψ.symm (t, w)))
-          (mfderiv I I (Ψ.timeSlice t) (Ψ.symm (t, w))
-            ((Φ.trans Ψ.symm).velocity t (Ψ.symm (t, w))))
-          (mfderiv I I (Ψ.timeSlice t) (Ψ.symm (t, w)) v) :=
-        (SmoothForm.eval₂_mfderiv_of_mem_diffeomorphStabilizer hΨ _ _ v).symm
-    _ = SmoothBundleForm.eval₂ σ w (Φ.velocity t w - Ψ.velocity t w)
-          (mfderiv I I (Ψ.timeSlice t) (Ψ.symm (t, w)) v) := by
-        rw [hpush]
-        exact eval₂_congr_point hy _ _
-    _ = mvfderiv I f w (mfderiv I I (Ψ.timeSlice t) (Ψ.symm (t, w)) v) :=
-        SmoothTwoForm.isHamiltonianVectorField_iff.1 h w _
-    _ = mvfderiv I (f ∘ Ψ.timeSlice t) (Ψ.symm (t, w)) v :=
-        (mvfderiv_comp_apply_of_eq _ (hf w) ((Ψ.timeSlice t).mdifferentiable (by simp) _) hy
-          v).symm
+  -- `dψ_t` carries the velocity field of `ψ_t⁻¹ ∘ φ_t` to `X_φ - X_ψ`.
+  have hXY : ∀ x, mfderiv I I (Ψ.timeSlice t) x ((Φ.trans Ψ.symm).velocity t x) =
+      Φ.velocity t (Ψ.timeSlice t x) - Ψ.velocity t (Ψ.timeSlice t x) := fun x ↦ by
+    obtain ⟨w, rfl⟩ : ∃ w, Ψ.symm (t, w) = x := ⟨Ψ (t, x), Ψ.symm_apply_apply_mk t x⟩
+    -- By the product velocity identity, the field at `ψ_t⁻¹ w` is `X_(ψ⁻¹) + (ψ_t⁻¹)_* X_φ`.
+    have hvt := Φ.velocity_trans (by simp) Ψ.symm t w
+    rw [timeSlice_apply] at hvt
+    -- `dψ_t` sends `X_(ψ⁻¹)` to `-X_ψ w` and undoes `d(ψ_t⁻¹)`.
+    have ha := Ψ.mfderiv_timeSlice_mfderiv_cylinderMap_symm (by simp) t w
+    rw [← Ψ.symm.velocity_apply] at ha
+    have hb : mfderiv I I (Ψ.timeSlice t) (Ψ.symm (t, w))
+        (mfderiv I I (Ψ.symm.timeSlice t) w (Φ.velocity t w)) = Φ.velocity t w :=
+      (congrArg (mfderiv I I (Ψ.timeSlice t) (Ψ.symm (t, w)))
+        (Ψ.symm.mfderiv_cylinderMap_inl (by simp) (w, t) (Φ.velocity t w)).symm).trans
+        (Ψ.mfderiv_timeSlice_mfderiv_cylinderMap_symm_inl (by simp) t w (Φ.velocity t w))
+    have hpush : mfderiv I I (Ψ.timeSlice t) (Ψ.symm (t, w))
+        ((Φ.trans Ψ.symm).velocity t (Ψ.symm (t, w))) = (Φ.velocity t w - Ψ.velocity t w : E) := by
+      rw [hvt, map_add]
+      exact (congrArg₂ (· + ·) ha hb).trans (neg_add_eq_sub _ _)
+    have hy : Ψ.timeSlice t (Ψ.symm (t, w)) = w := by
+      rw [timeSlice_apply]
+      exact Ψ.apply_mk_symm_apply t w
+    exact hpush.trans (congrArg (fun y : M ↦ (Φ.velocity t y - Ψ.velocity t y : E)) hy.symm)
+  have h' := h.mpullback (Ψ.timeSlice t).contMDiff (fun _ ↦ hf _) hXY
+  rwa [SmoothForm.mem_diffeomorphStabilizer.1 hΨ] at h'
 
 end Diffeotopy
 

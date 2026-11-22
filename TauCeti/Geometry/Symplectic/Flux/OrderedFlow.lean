@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Symplectic.Flux.Flow
 public import TauCeti.Geometry.Symplectic.Flux.Trans
 public import TauCeti.Geometry.Symplectic.Flux.Velocity
 
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
+
 /-!
 # The flux of ordered symplectic flows
 
@@ -213,9 +215,7 @@ theorem exists_isHamiltonianVectorField_velocity_orderedGlobalFlowDiffeotopy_sub
     set Z : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯ := ∑ i : Fin k, deriv (A i.succ) t • Y i.succ
     have hZ : Z ∈ σ.symplecticVectorFields :=
       Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (hY i.succ)
-    have hZx : ∀ x, Z x = ∑ i : Fin k, deriv (A i.succ) t • Y i.succ x := fun x ↦ by
-      simp only [Z, ← ContMDiffSection.coeAddHom_apply, map_sum, Finset.sum_apply]
-      simp only [ContMDiffSection.coeAddHom_apply, ContMDiffSection.coe_smul, Pi.smul_apply]
+    have hZx : ∀ x, Z x = ∑ i : Fin k, deriv (A i.succ) t • Y i.succ x := fun x ↦ by simp [Z]
     -- The time-`t` map `ψ^(Y 0)_(A 0 t)` is the final map of the flow of `Y 0` for that duration,
     -- so it changes `Z` by a Hamiltonian vector field.
     have hGF : (globalFlowDiffeotopy le_top (Y 0).contMDiff (hc 0) (A 0 t)).final =
