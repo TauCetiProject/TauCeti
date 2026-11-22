@@ -268,4 +268,11 @@ theorem isNondegenerate_conjStarAlgEquiv_comp_iff {K : Type*}
   · simpa only [map_zero] using h (U ξ) fun a => by simpa only [U.symm_apply_apply] using hξ a
   · simpa only [map_zero] using h (U.symm η) hη
 
+/-- Precomposing a representation with a star homomorphism of dense range preserves and reflects
+nondegeneracy. -/
+theorem isNondegenerate_comp_iff {B : Type*} [NonUnitalCStarAlgebra B] {φ : B →⋆ₙₐ[ℂ] A}
+    (hφ : DenseRange φ) : (π.comp φ).IsNondegenerate ↔ π.IsNondegenerate := by
+  rw [isNondegenerate_iff_dense_span_comp hφ, isNondegenerate_iff_dense]
+  simp only [comp_apply]
+
 end NonUnitalStarAlgHom
