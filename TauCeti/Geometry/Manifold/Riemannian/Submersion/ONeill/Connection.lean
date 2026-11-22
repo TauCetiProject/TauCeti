@@ -36,9 +36,7 @@ derivatives `∇A` and `∇T` via `contMDiff_oneillA` and `contMDiff_oneillT`.
 ## Main results
 
 * `IsRiemannianSubmersion.starProjection_ker_leviCivitaConnection_of_eventually_mem_orthogonal_ker`
-  (`starProjection_orthogonal_ker_leviCivitaConnection_of_eventually_mem_ker`) and
-  `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_of_eventually_mem_orthogonal_ker`
-  (`leviCivitaConnection_of_eventually_mem_ker`), plus
+  and `starProjection_orthogonal_ker_leviCivitaConnection_of_eventually_mem_ker`, plus
   `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_of_eventually_mem_ker_of_mem_ker` with its
   horizontal/vertical companions: O'Neill's Lemma 1 decomposing `∇` via `A` and `T` for arbitrary,
   horizontal, and vertical direction vectors.
@@ -111,20 +109,6 @@ theorem starProjection_ker_leviCivitaConnection_of_eventually_mem_orthogonal_ker
     ← h.oneillA_apply_of_eventually_mem_orthogonal_ker hY hYh u,
     ← h.oneillT_apply_of_eventually_mem_orthogonal_ker hY hYh u]
 
-/-- **O'Neill's Lemma 1 (horizontal field, arbitrary direction).** If `Y` is horizontal near `x`,
-then `∇_u Y = h (∇_u Y) + A_u (Y x) + T_u (Y x)` for every tangent vector `u` at `x`. -/
-theorem leviCivitaConnection_of_eventually_mem_orthogonal_ker
-    {Y : Π y : M, TangentSpace I y} (hY : MDiffAt (T% Y) x)
-    (hYh : ∀ᶠ y in 𝓝 x, Y y ∈ (mfderiv I J f y).kerᗮ) (u : TangentSpace I x) :
-    leviCivitaConnection I M Y x u =
-      (mfderiv I J f x).kerᗮ.starProjection (leviCivitaConnection I M Y x u) +
-        h.oneillA x u (Y x) + h.oneillT x u (Y x) := by
-  conv_lhs =>
-    rw [← (mfderiv I J f x).ker.starProjection_add_starProjection_orthogonal
-      (leviCivitaConnection I M Y x u)]
-  rw [h.starProjection_ker_leviCivitaConnection_of_eventually_mem_orthogonal_ker hY hYh u]
-  abel
-
 /-- For a vector field `V` which is vertical near `x`, the horizontal part of `∇_u V` in any
 direction `u` is the sum `A_u (V x) + T_u (V x)`. -/
 theorem starProjection_orthogonal_ker_leviCivitaConnection_of_eventually_mem_ker
@@ -136,20 +120,6 @@ theorem starProjection_orthogonal_ker_leviCivitaConnection_of_eventually_mem_ker
   rw [map_add, map_add, add_comm,
     ← h.oneillA_apply_of_eventually_mem_ker hV hVv u,
     ← h.oneillT_apply_of_eventually_mem_ker hV hVv u]
-
-/-- **O'Neill's Lemma 1 (vertical field, arbitrary direction).** If `V` is vertical near `x`,
-then `∇_u V = A_u (V x) + T_u (V x) + v (∇_u V)` for every tangent vector `u` at `x`. -/
-theorem leviCivitaConnection_of_eventually_mem_ker
-    {V : Π y : M, TangentSpace I y} (hV : MDiffAt (T% V) x)
-    (hVv : ∀ᶠ y in 𝓝 x, V y ∈ (mfderiv I J f y).ker) (u : TangentSpace I x) :
-    leviCivitaConnection I M V x u =
-      h.oneillA x u (V x) + h.oneillT x u (V x) +
-        (mfderiv I J f x).ker.starProjection (leviCivitaConnection I M V x u) := by
-  conv_lhs =>
-    rw [← (mfderiv I J f x).ker.starProjection_add_starProjection_orthogonal
-      (leviCivitaConnection I M V x u)]
-  rw [h.starProjection_orthogonal_ker_leviCivitaConnection_of_eventually_mem_ker hV hVv u]
-  abel
 
 /-- **O'Neill's Lemma 1 (horizontal field, horizontal direction).** On a field `Y` horizontal near
 `x`, the Levi-Civita derivative along a horizontal vector splits into its horizontal projection and
