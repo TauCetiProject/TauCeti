@@ -34,6 +34,8 @@ that does not vanish at the root.
 * `Polynomial.modByMonic_X_sub_C_eq_zero`: division by a central linear factor has zero
   remainder at a root.
 * `Polynomial.natDegree_C_sub_X`: the reversed linear factor `C x - X` has degree `1`.
+* `Polynomial.one_sub_C_mul_X_ne_zero`: the linear factor `1 - C c * X`, with constant
+  coefficient `1`, is nonzero.
 * `Polynomial.exists_eq_C_mul_X_sub_C_of_natDegree_le_one`: a polynomial of `natDegree ≤ 1` with
   root `x` is `C γ * (X - C x)` for some `γ`.
 * `Polynomial.eval_mul_pos_of_natDegree_le_one_of_no_roots`: constant nonzero sign on a root-free
@@ -81,6 +83,10 @@ theorem modByMonic_X_sub_C_eq_zero {B : Type*} [Ring B] {p : B[X]} {c : B}
 theorem natDegree_C_sub_X {R : Type*} [Ring R] [Nontrivial R] (x : R) :
     (C x - X).natDegree = 1 := by
   rw [natDegree_sub, natDegree_X_sub_C]
+
+/-- The linear polynomial `1 - C c * X` is nonzero, its constant coefficient being `1`. -/
+theorem one_sub_C_mul_X_ne_zero [Nontrivial R] (c : R) : (1 - C c * X : R[X]) ≠ 0 :=
+  fun h => by simpa using congrArg (·.coeff 0) h
 
 /-- A polynomial of degree at most one with prescribed root `x` is a left scalar multiple of
 `X - C x`, over any ring. -/

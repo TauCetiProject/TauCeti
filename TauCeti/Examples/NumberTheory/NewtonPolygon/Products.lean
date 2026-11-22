@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.WellKnown
 public import TauCeti.NumberTheory.NewtonPolygon.Mul
 public import TauCeti.NumberTheory.Padics.LogGauge
+import TauCeti.Algebra.Polynomial.LinearFactor
 
 /-!
 # Newton polygons of products, sums and polynomials vanishing at zero
@@ -67,17 +68,13 @@ private theorem p_ne_zero : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.ou
 /-- Over `ℚ_[p]`, `1 - p X` is a nonzero multiple of `X - p⁻¹`. -/
 private theorem one_sub_p_X_eq :
     (1 - C (p : ℚ_[p]) * X : ℚ_[p][X]) = C (-(p : ℚ_[p])) * (X - C (p : ℚ_[p])⁻¹) := by
-  rw [mul_sub, ← C_mul, neg_mul, mul_inv_cancel₀ p_ne_zero, C_neg, C_neg, C_1, neg_mul]
+  simp only [mul_sub, ← C_mul, neg_mul, mul_inv_cancel₀ p_ne_zero, map_neg, map_one]
   ring
 
 /-- Over `ℚ_[p]`, `1 - p X` has the single finite slope `1`. -/
 private theorem newtonSlopes_one_sub_p_X :
     (1 - C (p : ℚ_[p]) * X : ℚ_[p][X]).newtonSlopes (padicRealValuation p) = {1} := by
   rw [newtonSlopes_one_sub_C_mul_X _ (by simp), padicRealValuation_p, WithTop.untop₀_one]
-
-/-- `1 - c X` is nonzero, its constant coefficient being `1`. -/
-private theorem one_sub_C_mul_X_ne_zero (c : ℚ_[p]) : (1 - C c * X : ℚ_[p][X]) ≠ 0 :=
-  fun h => by simpa using congrArg (·.coeff 0) h
 
 /-- Over `ℚ_[p]`, `(1 - X) (1 - p X)` has the finite slopes `0` and `1`. -/
 theorem newtonSlopes_one_sub_X_mul_one_sub_p_X :
@@ -87,9 +84,8 @@ theorem newtonSlopes_one_sub_X_mul_one_sub_p_X :
   have h₁ : (1 - X : ℚ_[p][X]) = 1 - C 1 * X := by rw [C_1, one_mul]
   rw [h₁, newtonSlopes_mul _ _ _ (newtonPolygon_ne_top_of_ne_zero hv (one_sub_C_mul_X_ne_zero 1))
       (newtonPolygon_ne_top_of_ne_zero hv (one_sub_C_mul_X_ne_zero _)),
-    newtonSlopes_one_sub_C_mul_X _ (by simp), newtonSlopes_one_sub_p_X, AddValuation.map_one,
-    WithTop.untop₀_zero]
-  rfl
+    newtonSlopes_one_sub_C_mul_X _ (by simp), newtonSlopes_one_sub_p_X]
+  simp [Multiset.singleton_add]
 
 end LinearFactors
 
@@ -116,14 +112,6 @@ theorem newtonPolygon_one_sub_X :
     funext n
     rcases n with _ | _ | n <;> simp [coeff_one, coeff_X]
   rw [newtonPolygon_def, h, (isConvexSeq_ite_le 1).lowerConvexEnvelope_eq]
-
-/-- The Newton polygon of `1` is the single point `(0, 0)`. -/
-private theorem newtonPolygon_one :
-    (1 : R⟦X⟧).newtonPolygon v = fun n => if n ≤ 0 then 0 else ⊤ := by
-  have h : (fun n => v (coeff n (1 : R⟦X⟧))) = fun n => if n ≤ 0 then 0 else ⊤ := by
-    funext n
-    rcases n with _ | n <;> simp [coeff_one]
-  rw [newtonPolygon_def, h, (isConvexSeq_ite_le 0).lowerConvexEnvelope_eq]
 
 /-- The Minkowski sum of the Newton polygons of `∑ Xⁿ` and `1 - X` is the horizontal half-line of
 height `0`. -/
@@ -307,7 +295,7 @@ theorem roots_X_sq_mul_one_sub_p_X :
   rw [one_sub_p_X_eq, roots_mul (mul_ne_zero (pow_ne_zero 2 X_ne_zero)
       (mul_ne_zero (C_ne_zero.mpr (neg_ne_zero.mpr p_ne_zero)) (X_sub_C_ne_zero _))), roots_X_pow,
     roots_C_mul _ (neg_ne_zero.mpr p_ne_zero), roots_X_sub_C]
-  rfl
+  simp [two_nsmul, Multiset.singleton_add]
 
 open scoped Classical in
 /-- **The root zero has no slope.** Over `ℚ_[p]`, the finite slopes of `X ^ 2 (1 - p X)` are the
@@ -317,10 +305,8 @@ theorem newtonSlopes_X_sq_mul_one_sub_p_X_eq_map_roots :
     (X ^ 2 * (1 - C (p : ℚ_[p]) * X) : ℚ_[p][X]).newtonSlopes (padicRealValuation p) =
       ((X ^ 2 * (1 - C (p : ℚ_[p]) * X) : ℚ_[p][X]).roots.filter (· ≠ 0)).map
         fun α => -(padicRealValuation p α).untop₀ := by
-  rw [newtonSlopes_X_sq_mul_one_sub_p_X, roots_X_sq_mul_one_sub_p_X, Multiset.insert_eq_cons,
-    Multiset.insert_eq_cons, Multiset.filter_cons_of_neg _ (by simp),
-    Multiset.filter_cons_of_neg _ (by simp), Multiset.filter_singleton]
-  simp [inv_ne_zero p_ne_zero, AddValuation.map_inv]
+  rw [newtonSlopes_X_sq_mul_one_sub_p_X, roots_X_sq_mul_one_sub_p_X]
+  simp [Multiset.filter_singleton, (Fact.out : p.Prime).ne_zero, AddValuation.map_inv]
 
 end RootsAtZero
 
