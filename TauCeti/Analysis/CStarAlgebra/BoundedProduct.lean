@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.lpSpace
-public import Mathlib.Analysis.CStarAlgebra.Spectrum
+import Mathlib.Analysis.CStarAlgebra.Spectrum
 
 /-!
 # The bounded product of C⋆-algebras
@@ -37,12 +37,14 @@ namespace lp
 
 section Product
 
-variable {ι : Type*} {A : ι → Type*} [∀ i, NonUnitalCStarAlgebra (A i)]
+section Eval
+
+variable {ι : Type*} {A : ι → Type*} [∀ i, NonUnitalNormedRing (A i)] [∀ i, StarRing (A i)]
+  [∀ i, NormedStarGroup (A i)] [∀ i, Module ℂ (A i)] [∀ i, IsBoundedSMul ℂ (A i)]
 
 variable (A) in
 /-- The coordinate projection of the bounded product `lp A ∞` onto its factor `A i`, as a star
 homomorphism. -/
-@[expose, simps]
 def evalNonUnitalStarAlgHom (i : ι) : lp A ∞ →⋆ₙₐ[ℂ] A i where
   toFun a := a i
   map_smul' c a := by simp [lp.coeFn_smul]
@@ -51,21 +53,30 @@ def evalNonUnitalStarAlgHom (i : ι) : lp A ∞ →⋆ₙₐ[ℂ] A i where
   map_mul' a b := by simp [infty_coeFn_mul]
   map_star' a := lp.star_apply a i
 
+/-- The coordinate projection evaluates a bounded family at an index. -/
+@[simp]
+theorem evalNonUnitalStarAlgHom_apply (i : ι) (a : lp A ∞) :
+    evalNonUnitalStarAlgHom A i a = a i :=
+  (rfl)
+
 /-- Two star homomorphisms into a bounded product agree when all their coordinates agree. -/
 @[ext]
-theorem nonUnitalStarAlgHom_ext {B : Type*} [NonUnitalNonAssocSemiring B] [Module ℂ B] [Star B]
-    {φ ψ : B →⋆ₙₐ[ℂ] lp A ∞}
+theorem nonUnitalStarAlgHom_ext {B : Type*} [NonUnitalNonAssocSemiring B] [DistribMulAction ℂ B]
+    [Star B] {φ ψ : B →⋆ₙₐ[ℂ] lp A ∞}
     (h : ∀ i, (evalNonUnitalStarAlgHom A i).comp φ = (evalNonUnitalStarAlgHom A i).comp ψ) :
     φ = ψ :=
-  NonUnitalStarAlgHom.ext fun b ↦ lp.ext <| funext fun i ↦ congr($(h i) b)
+  NonUnitalStarAlgHom.ext fun b ↦ lp.ext <| funext fun i ↦ by
+    simpa using congr($(h i) b)
 
+end Eval
+
+variable {ι : Type*} {A : ι → Type*} [∀ i, NonUnitalCStarAlgebra (A i)]
 variable {B : Type*} [NonUnitalCStarAlgebra B]
 
 /-- **The universal property of the bounded product**: star homomorphisms from a C⋆-algebra `B`
 into `lp A ∞` are the families of star homomorphisms `B → A i`. The family `φ` is sent to
 `b ↦ (φ i b)ᵢ`, which is bounded by `‖b‖` since star homomorphisms between C⋆-algebras are
 contractive. -/
-@[expose]
 noncomputable def liftNonUnitalStarAlgHom : (∀ i, B →⋆ₙₐ[ℂ] A i) ≃ (B →⋆ₙₐ[ℂ] lp A ∞) where
   toFun φ :=
     { toFun b := ⟨fun i ↦ φ i b, memℓp_infty ⟨‖b‖, by
@@ -84,19 +95,20 @@ noncomputable def liftNonUnitalStarAlgHom : (∀ i, B →⋆ₙₐ[ℂ] A i) ≃
 @[simp]
 theorem liftNonUnitalStarAlgHom_apply_apply (φ : ∀ i, B →⋆ₙₐ[ℂ] A i) (b : B) (i : ι) :
     liftNonUnitalStarAlgHom φ b i = φ i b :=
-  rfl
+  (rfl)
 
 /-- The coordinates of `lp.liftNonUnitalStarAlgHom φ` are the members of the family `φ`. -/
 @[simp]
 theorem evalNonUnitalStarAlgHom_comp_liftNonUnitalStarAlgHom (φ : ∀ i, B →⋆ₙₐ[ℂ] A i)
-    (i : ι) : (evalNonUnitalStarAlgHom A i).comp (liftNonUnitalStarAlgHom φ) = φ i :=
-  rfl
+    (i : ι) : (evalNonUnitalStarAlgHom A i).comp (liftNonUnitalStarAlgHom φ) = φ i := by
+  ext b
+  simp
 
 /-- The inverse of `lp.liftNonUnitalStarAlgHom` takes the coordinates of a star homomorphism. -/
 @[simp]
 theorem liftNonUnitalStarAlgHom_symm_apply (ψ : B →⋆ₙₐ[ℂ] lp A ∞) (i : ι) :
     liftNonUnitalStarAlgHom.symm ψ i = (evalNonUnitalStarAlgHom A i).comp ψ :=
-  rfl
+  (rfl)
 
 end Product
 
