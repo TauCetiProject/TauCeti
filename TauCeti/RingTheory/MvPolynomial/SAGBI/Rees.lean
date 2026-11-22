@@ -262,9 +262,7 @@ theorem ker_weightReesAeval_eq_span_of_toricIdeal_eq_span
   rcases subsingleton_or_nontrivial R with hR | hR
   · rw [Subsingleton.elim (monomial (u j) (1 : R) - monomial (v j) 1) 0]
     exact isWeightedHomogeneous_zero R _ _
-  have huv : Finsupp.linearCombination ℕ a (u j) = Finsupp.linearCombination ℕ a (v j) :=
-    TauCeti.monomial_sub_monomial_mem_toricIdeal_iff.1
-      (by rw [hJ]; exact Ideal.subset_span ⟨j, rfl⟩)
+  have huv := TauCeti.linearCombination_eq_of_toricIdeal_eq_span hJ j
   have hw (x : ι →₀ ℕ) : Finsupp.weight (fun i ↦ Finsupp.weight w (a i)) x =
       Finsupp.weight w (Finsupp.linearCombination ℕ a x) :=
     Finsupp.weight_comp_eq_apply_linearCombination (Finsupp.weight w) a x

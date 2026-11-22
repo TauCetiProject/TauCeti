@@ -61,10 +61,7 @@ private theorem eval_probe_loop (O : ℕ →. ℕ) (n : ℕ) :
 theorem eval_diagonalProbe (O : ℕ →. ℕ) (b e x : ℕ) :
     eval O (diagonalProbe b e) x =
       if x = 0 then (eval O (ofNat Code e) e).map (fun _ => b) else Part.none := by
-  have hinput (n : ℕ) :
-      eval O (pair zero (pair left right)) n = Part.some (Nat.pair 0 n) := by
-    simp [Seq.seq]
-  rw [diagonalProbe, eval_comp, hinput, PFun.some_bind]
+  rw [diagonalProbe, eval_comp, eval_pair_zero_left_right, PFun.some_bind]
   cases x with
   | zero =>
     rw [eval_prec_zero]

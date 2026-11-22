@@ -17,8 +17,11 @@ algebraic multiplication maps and allow power-series calculations on multiplicat
 It also records the norm of a difference of scalar-to-vector maps, notes that every subsingleton
 seminormed algebra is regular, and shows that left multiplication in a regular normed algebra is
 faithful (`RegularNormedAlgebra.faithfulSMul`).
-For unital algebras we also bundle the left regular representation as a unital algebra
-homomorphism and give its inverse norm bound without assuming that the identity has norm one.
+For unital algebras we also specialize bounded two-sided multiplication `mulLeftRight` when one
+factor is `1`, bundle the left regular representation as a unital algebra homomorphism, and give its
+inverse norm bound without assuming that the identity has norm one.
+A scalar map `T : 𝕜 →L[𝕜] 𝕜` acts on any normed space as multiplication by `T 1`
+(`ContinuousLinearMap.scalarSMulL`), with the same operator norm.
 Finally, exponentiating bounded left or right multiplication by `x` gives multiplication by
 `exp x`, over any nontrivially normed field of characteristic zero and without completeness.
 -/
@@ -79,6 +82,25 @@ section Unital
 variable [SeminormedRing R] [NormedSpace 𝕜 R]
   [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R]
 
+/-- Specializing the left factor of bounded two-sided multiplication `mulLeftRight 𝕜 R` to `1`
+gives the flipped (right-multiplication) operator `(mul 𝕜 R).flip`. -/
+@[simp]
+theorem mulLeftRight_one : mulLeftRight 𝕜 R (1 : R) = (mul 𝕜 R).flip := by
+  ext y x
+  simp
+
+/-- Specializing the left factor of `mulLeftRight 𝕜 R` to `1` gives bounded right multiplication
+by `y`. -/
+theorem mulLeftRight_one_left (y : R) : mulLeftRight 𝕜 R 1 y = (mul 𝕜 R).flip y := by
+  simp
+
+/-- Specializing the right factor of `mulLeftRight 𝕜 R` to `1` gives bounded left multiplication
+by `x`. -/
+@[simp]
+theorem mulLeftRight_one_right (x : R) : mulLeftRight 𝕜 R x 1 = mul 𝕜 R x := by
+  ext z
+  simp
+
 /-- A power of bounded left multiplication acts by the corresponding algebra power. -/
 -- Simplify before the generic operator-power rule rewrites the application as an iterate.
 @[simp↓]
@@ -103,6 +125,34 @@ theorem norm_le_opNorm_mul_apply_mul_norm_one (x : R) :
   simpa only [mul_apply', mul_one] using (mul 𝕜 R x).le_opNorm (1 : R)
 
 end Unital
+
+section ScalarSMul
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+variable (𝕜 E) in
+/-- A scalar map `T : 𝕜 →L[𝕜] 𝕜` acting on `E` as multiplication by `T 1`. -/
+noncomputable def scalarSMulL : (𝕜 →L[𝕜] 𝕜) →L[𝕜] E →L[𝕜] E :=
+  (lsmul 𝕜 𝕜).comp (apply 𝕜 𝕜 (1 : 𝕜))
+
+/-- Unfolding `ContinuousLinearMap.scalarSMulL`. -/
+@[simp]
+theorem scalarSMulL_apply_apply (T : 𝕜 →L[𝕜] 𝕜) (v : E) : scalarSMulL 𝕜 E T v = T 1 • v :=
+  (rfl)
+
+/-- The scalar map `T` and its action on a nontrivial space have the same operator norm. -/
+@[simp]
+theorem norm_scalarSMulL_apply [NontrivialTopology E] (T : 𝕜 →L[𝕜] 𝕜) :
+    ‖scalarSMulL 𝕜 E T‖ = ‖T‖ := by
+  have h : scalarSMulL 𝕜 E T = T 1 • ContinuousLinearMap.id 𝕜 E := by
+    ext v
+    simp
+  rw [h, norm_smul, norm_id, mul_one, ← norm_toSpanSingleton (𝕜 := 𝕜) (T 1)]
+  congr 1
+  ext
+  simp
+
+end ScalarSMul
 
 end ContinuousLinearMap
 

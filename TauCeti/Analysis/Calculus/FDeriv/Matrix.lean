@@ -14,6 +14,13 @@ public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Instances.Int
 public import TauCeti.Topology.Algebra.Module.Matrix
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
+public import Mathlib.Analysis.Matrix.Normed
+public import Mathlib.Topology.Algebra.Module.Star
+public import TauCeti.LinearAlgebra.Matrix.Hermitian
+import Mathlib.Analysis.Calculus.ContDiff.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
@@ -30,7 +37,11 @@ normed field. Neither completeness nor independence of the directions is require
 differentiability of a rectangular matrix field `M : E → Matrix κ ι 𝕜` also implies
 differentiability of the induced continuous-linear-map family `x ↦ (M x).mulVecCLM`
 (`Matrix.differentiableWithinAt_mulVecCLM`, `Matrix.differentiableAt_mulVecCLM`,
-`Matrix.differentiableOn_mulVecCLM`, `Matrix.differentiable_mulVecCLM`).
+`Matrix.differentiableOn_mulVecCLM`, `Matrix.differentiable_mulVecCLM`). Over `RCLike 𝕜`, the
+real entrywise derivative of a family of Hermitian matrices is Hermitian in every direction
+(`Matrix.isHermitian_fderiv_apply`). For the elementwise norm, the entries of the self-adjoint
+part `(X + Xᴴ) / 2` of a matrix are smooth real-linear functions of `X`
+(`Matrix.contDiff_selfAdjointPart_apply`, `Matrix.fderiv_selfAdjointPart_apply`).
 
 Over a complete nontrivially normed field, a family of finite matrices `y ↦ M y` induces a
 differentiable family of continuous linear maps `y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap`
@@ -131,6 +142,54 @@ theorem differentiable_mulVecCLM {κ : Type*} [Finite κ]
     (hM : ∀ i j, Differentiable 𝕜 (fun y ↦ M y i j)) :
     Differentiable 𝕜 (fun y ↦ (M y).mulVecCLM) :=
   fun x ↦ differentiableAt_mulVecCLM fun i j ↦ hM i j x
+
+end Matrix
+
+namespace Matrix
+
+variable {n E 𝕜 : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The entrywise derivative of a family of Hermitian matrices is Hermitian in every direction. -/
+theorem isHermitian_fderiv_apply {M : E → Matrix n n 𝕜} (hM : ∀ x, (M x).IsHermitian)
+    (x₀ v : E) :
+    (of fun a b ↦ fderiv ℝ (fun x ↦ M x a b) x₀ v).IsHermitian := by
+  refine IsHermitian.ext fun a b ↦ ?_
+  have h : (fun x ↦ M x a b) = (RCLike.conjCLE (K := 𝕜)) ∘ fun x ↦ M x b a :=
+    funext fun x ↦ by
+      rw [Function.comp_apply, RCLike.conjCLE_apply, ← RCLike.star_def, (hM x).apply]
+  rw [of_apply, of_apply, h, ContinuousLinearEquiv.comp_fderiv]
+  simp [RCLike.star_def]
+
+section SelfAdjointPart
+
+open scoped Matrix.Norms.Elementwise ContDiff
+
+/-- The `(a, b)` entry of the self-adjoint part `(X + Xᴴ) / 2` of a matrix `X`, as a continuous
+real-linear functional. -/
+private noncomputable def selfAdjointPartEntry (a b : n) : Matrix n n 𝕜 →L[ℝ] 𝕜 :=
+  ContinuousLinearMap.proj b ∘L ContinuousLinearMap.proj a ∘L
+    (selfAdjoint.submodule ℝ (Matrix n n 𝕜)).subtypeL ∘L selfAdjointPartL ℝ (Matrix n n 𝕜)
+
+private theorem coe_selfAdjointPartEntry (a b : n) :
+    ⇑(selfAdjointPartEntry (𝕜 := 𝕜) a b) =
+      fun X : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ X : Matrix n n 𝕜) a b :=
+  rfl
+
+/-- Each entry of the self-adjoint part `(X + Xᴴ) / 2` is a smooth function of `X`, for the
+elementwise norm on matrices. -/
+theorem contDiff_selfAdjointPart_apply [Fintype n] {k : ℕ∞ω} (a b : n) :
+    ContDiff ℝ k (fun X : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ X : Matrix n n 𝕜) a b) := by
+  rw [← coe_selfAdjointPartEntry]
+  exact (selfAdjointPartEntry (𝕜 := 𝕜) a b).contDiff
+
+/-- Each entry of the self-adjoint part `(X + Xᴴ) / 2` is real-linear in `X`, so it is its own
+derivative, for the elementwise norm on matrices. -/
+theorem fderiv_selfAdjointPart_apply (a b : n) (X V : Matrix n n 𝕜) :
+    fderiv ℝ (fun Y : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ Y : Matrix n n 𝕜) a b) X V =
+      (selfAdjointPart ℝ V : Matrix n n 𝕜) a b := by
+  rw [← coe_selfAdjointPartEntry, ContinuousLinearMap.fderiv, coe_selfAdjointPartEntry]
+
+end SelfAdjointPart
 
 end Matrix
 
