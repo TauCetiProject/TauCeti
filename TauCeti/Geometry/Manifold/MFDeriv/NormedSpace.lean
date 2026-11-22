@@ -35,6 +35,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `MDifferentiableAt.mvfderiv_prod_eq_apply_of_snd_eq_zero`,
   `MDifferentiableAt.mvfderiv_prod_eq_apply_of_fst_eq_zero`: along a tangent vector of one factor,
   the derivative on a product is the derivative of the slice through the point.
+* `MDifferentiableAt.mvfderiv_prod_eq_zero_iff`: the derivative on a product vanishes exactly when
+  the derivatives of both slices through the point do.
 * `MDifferentiableAt.mfderiv_prodMk_id_apply`: the derivative of the graph map `y ↦ (y, u y)`
   sends a tangent vector `v` to `(v, d u v)`.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
@@ -58,7 +60,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `TauCeti.mvfderiv_smul_algebra`: the Leibniz rule for multiplication by a function with values in
   a normed algebra acting on the target.
 * `TauCeti.mvfderiv_add_const`: adding a constant does not change `mvfderiv`, without a
-  differentiability hypothesis.
+  differentiability hypothesis, and neither does adding one on the left
+  (`TauCeti.mvfderiv_const_add`).
 * `TauCeti.mvfderiv_fun_sum`: `mvfderiv` of a finite sum of differentiable functions is the sum of
   their `mvfderiv`s.
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
@@ -232,6 +235,25 @@ theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_apply_of_fst_eq_zero
     mvfderiv (I.prod I') f p v = mvfderiv I' (fun y ↦ f (p.1, y)) p.2 v.2 := by
   rw [hf.mvfderiv_prod_eq_add_apply, hv, map_zero, zero_add]
 
+/-- A differentiable function on a product has vanishing vector-valued derivative at a point
+exactly when both of its slices through the point do. -/
+theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_zero_iff
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {f : M × M' → F'} {p : M × M'}
+    (hf : MDifferentiableAt (I.prod I') 𝓘(𝕜, F') f p) :
+    mvfderiv (I.prod I') f p = 0 ↔
+      mvfderiv I (fun y ↦ f (y, p.2)) p.1 = 0 ∧ mvfderiv I' (fun y ↦ f (p.1, y)) p.2 = 0 := by
+  refine ⟨fun h ↦ ⟨ContinuousLinearMap.ext fun v ↦ ?_, ContinuousLinearMap.ext fun w ↦ ?_⟩,
+    fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_⟩
+  · rw [← hf.mvfderiv_prod_eq_apply_of_snd_eq_zero (v := (v, 0)) rfl, h]
+    rfl
+  · rw [← hf.mvfderiv_prod_eq_apply_of_fst_eq_zero (v := (0, w)) rfl, h]
+    rfl
+  · rw [hf.mvfderiv_prod_eq_add_apply, h.1, h.2]
+    -- The zero maps evaluate to zero; the components of `v` are vectors of the model spaces.
+    exact add_zero (0 : F')
+
 /-- The derivative of a graph map, evaluated in the product tangent space. -/
 theorem _root_.MDifferentiableAt.mfderiv_prodMk_id_apply {u : F → M} {x : F}
     (hu : MDifferentiableAt 𝓘(𝕜, F) I u x) (v : TangentSpace 𝓘(𝕜, F) x) :
@@ -368,6 +390,14 @@ theorem mvfderiv_add_const (g : M → F) (c : F) (x : M) :
     exact hg (hfun ▸ hgc.add mdifferentiableAt_const)
   simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg,
     mfderiv_zero_of_not_mdifferentiableAt hgc]
+
+/-- Adding a constant on the left does not change the derivative of a vector-valued function,
+read in the target space. This is the manifold version of `fderiv_const_add`. -/
+@[simp]
+theorem mvfderiv_const_add (c : F) (g : M → F) (x : M) :
+    mvfderiv I (fun y ↦ c + g y) x = mvfderiv I g x := by
+  simp_rw [add_comm c]
+  exact mvfderiv_add_const g c x
 
 /-- The derivative of a finite sum of vector-valued functions, read in the target space, is the
 sum of their derivatives at a point where each summand is differentiable. This is the manifold
