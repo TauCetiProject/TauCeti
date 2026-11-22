@@ -100,8 +100,7 @@ theorem archimedeanValue_inverse (χ : Grossencharacter K 𝔪) :
   rw [MonoidHom.inv_apply, archimedeanValue_apply, archimedeanValue_apply,
     ← Finset.prod_inv_distrib]
   refine Finset.prod_congr rfl fun w _ ↦ ?_
-  rw [toHeckeCharacter_inverse, HeckeCharacter.infiniteComponent_inv]
-  rfl
+  rw [toHeckeCharacter_inverse, HeckeCharacter.infiniteComponent_inv_apply]
 
 /-- The archimedean value depends only on the underlying Hecke character. -/
 theorem archimedeanValue_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪}

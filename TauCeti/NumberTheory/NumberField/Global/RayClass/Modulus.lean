@@ -217,6 +217,11 @@ theorem exponent_pos_of_mem_support {𝔪 : Modulus K} {v : HeightOneSpectrum (�
     (hv : v ∈ 𝔪.support) : 0 < 𝔪.exponent v :=
   Nat.pos_of_ne_zero ((mem_support_iff_exponent_ne_zero 𝔪 v).mp hv)
 
+/-- A prime outside the support of a modulus has exponent `0` in its finite part. -/
+theorem exponent_eq_zero_of_not_mem_support {𝔪 : Modulus K} {v : HeightOneSpectrum (𝓞 K)}
+    (hv : v ∉ 𝔪.support) : 𝔪.exponent v = 0 :=
+  not_not.mp ((mem_support_iff_exponent_ne_zero 𝔪 v).not.mp hv)
+
 /-- **The exponent is the exact multiplicity of the prime in the finite part**: `v ^ n` divides the
 finite part exactly when `n` is at most the exponent of `v`. -/
 theorem pow_dvd_finitePart_iff_le_exponent (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K))

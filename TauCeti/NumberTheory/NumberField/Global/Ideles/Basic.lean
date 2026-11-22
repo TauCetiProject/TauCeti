@@ -211,8 +211,11 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_unitEm
     v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K (FiniteAdeleRing.unitEmbedding R K x)) =
       Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x :=
   Units.ext <| by
-    rw [HeightOneSpectrum.coe_ideleFiniteCoord]
-    rfl
+    rw [HeightOneSpectrum.coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele,
+      FiniteAdeleRing.unitEmbedding_apply, FiniteAdeleRing.algebraMap_apply,
+      Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+      HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
+      Algebra.algebraMap_self_apply]
 
 @[simp]
 theorem NumberField.InfinitePlace.coe_ideleInfiniteCoord

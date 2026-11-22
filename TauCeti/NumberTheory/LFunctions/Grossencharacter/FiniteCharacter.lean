@@ -193,24 +193,7 @@ theorem finiteCharacterK_eq_prod_finiteComponent_inv (χ : Grossencharacter K �
   have hprod_eq := χ.prod_finiteComponent_eq_finiteConductor_support x
   rw [finiteCharacterK_apply, ← hyideal, ψ.idealCharacter_apply_toIdealsAway y]
   simp only [y, HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_unitEmbedding]
-  rw [← hprod_eq]
-  calc
-    ψ (QuotientGroup.mk (IdeleGroup.ofFiniteIdele (𝓞 K) K (unitEmbedding (𝓞 K) K (x : Kˣ)))) *
-        (∏ v ∈ 𝔪.support,
-          ψ.finiteComponent v
-            (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ)))⁻¹ *
-        χ.archimedeanValue (x : Kˣ)
-      = (χ.archimedeanValue (x : Kˣ) *
-          ψ (QuotientGroup.mk
-            (IdeleGroup.ofFiniteIdele (𝓞 K) K (unitEmbedding (𝓞 K) K (x : Kˣ))))) *
-          (∏ v ∈ 𝔪.support,
-            ψ.finiteComponent v
-              (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ)))⁻¹ := by
-        ac_rfl
-    _ = (∏ v ∈ 𝔪.support,
-          ψ.finiteComponent v
-            (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ)))⁻¹ := by
-        rw [hsplit, one_mul]
+  rw [← hprod_eq, mul_right_comm, mul_comm (ψ _), hsplit, one_mul]
 
 /-- **The finite character is trivial on the fractions congruent to `1` modulo `𝔪₀`**, with no
 condition at the real places. Such an `x` is congruent to `1` modulo the finite conductor, where
@@ -250,8 +233,7 @@ theorem finiteCharacterK_inverse (χ : Grossencharacter K 𝔪) :
   rw [MonoidHom.inv_apply, finiteCharacterK_eq_prod_finiteComponent_inv,
     finiteCharacterK_eq_prod_finiteComponent_inv, inv_inj, ← Finset.prod_inv_distrib]
   refine Finset.prod_congr rfl fun v _ ↦ ?_
-  rw [toHeckeCharacter_inverse, HeckeCharacter.finiteComponent_inv]
-  rfl
+  rw [toHeckeCharacter_inverse, HeckeCharacter.finiteComponent_inv_apply]
 
 /-- **The finite character at an algebraic integer** `a` prime to `𝔪` is
 `χ_u((a)) N(a) ^ σ χ_∞(a)`: the ideal character of the presented Hecke character at an integral
@@ -372,9 +354,7 @@ theorem residueCharacter_comp_finiteUnitsMap {𝔫 : Modulus K} {χ : Grossencha
     (𝔫.mem_support_iff v).mpr (((𝔪.mem_support_iff v).mp hv).trans hdvd)
   refine χ.toHeckeCharacter.prod_finiteComponent_eq_of_subset hsub (fun v _ hv𝔪 ↦ ?_)
     (fun v hv𝔫 ↦ mem_primeToSubgroup.mp x.property v ((𝔫.mem_support_iff v).mp hv𝔫))
-  have h0 : 𝔪.exponent v = 0 :=
-    not_not.mp ((Modulus.mem_support_iff_exponent_ne_zero 𝔪 v).not.mp hv𝔪)
-  exact Nat.le_zero.mp (h0 ▸ χ.conductorExponent_le_exponent v)
+  exact χ.conductorExponent_eq_zero_of_not_mem_support hv𝔪
 
 /-! ### Finite-conductor characterization and primitivity -/
 
@@ -409,10 +389,7 @@ private theorem residueCharacter_eq_one_of_finiteConductor_dvd (χ : Grossenchar
     by_cases hvI : v.asIdeal ∣ 𝔫.finitePart
     · exact (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔫.exponent v) (x : Kˣ)).mpr
         ⟨mem_primeToSubgroup.mp x.property v ((𝔪.mem_support_iff v).mp hv), hval v hvI⟩
-    · have h0 : 𝔫.exponent v = 0 :=
-        not_not.mp ((Modulus.mem_support_iff_exponent_ne_zero 𝔫 v).not.mp
-          ((𝔫.mem_support_iff v).not.mpr hvI))
-      rw [h0]
+    · rw [Modulus.exponent_eq_zero_of_not_mem_support ((𝔫.mem_support_iff v).not.mpr hvI)]
       exact (v.unitsMap_algebraMap_mem_unitFiltration_zero_iff (x : Kˣ)).mpr
         (mem_primeToSubgroup.mp x.property v ((𝔪.mem_support_iff v).mp hv))
   rw [hprod, inv_one, Units.val_one]
@@ -472,9 +449,7 @@ private theorem conductorExponent_le_exponent_of_residueCharacter_eq_one
         (TauCeti.unitFiltration_antitone (χ.conductorExponent_le_exponent v) hxz)
     rw [map_mul, map_inv, h1', one_mul, inv_eq_one] at hdiff
     exact hdiff
-  · have h0 : 𝔪.exponent v = 0 :=
-      not_not.mp ((Modulus.mem_support_iff_exponent_ne_zero 𝔪 v).not.mp hv)
-    exact (Nat.le_zero.mp (h0 ▸ χ.conductorExponent_le_exponent v)).le.trans (Nat.zero_le _)
+  · exact (χ.conductorExponent_eq_zero_of_not_mem_support hv).trans_le (Nat.zero_le _)
 
 /-- Converse direction of `finiteConductor_dvd_iff_residueCharacter_eq_one`. -/
 private theorem finiteConductor_dvd_of_residueCharacter_eq_one (χ : Grossencharacter K 𝔪)
@@ -641,8 +616,7 @@ theorem finiteCharacter_inverse (χ : Grossencharacter K 𝔪) (a : 𝓞 K) :
   by_cases ha : a = 0
   · simp [ha]
   · rw [χ.inverse.finiteCharacter_eq_residueCharacter ha, χ.residueCharacter_inverse,
-      MulChar.star_apply, ← χ.finiteCharacter_eq_residueCharacter ha]
-    rfl
+      MulChar.star_apply, ← χ.finiteCharacter_eq_residueCharacter ha, starRingEnd_apply]
 
 /-- Every value of Hecke's finite character on an integer coprime to `𝔪` has absolute value
 `1`. -/

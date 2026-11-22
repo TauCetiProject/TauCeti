@@ -119,6 +119,12 @@ theorem infiniteComponent_inv (χ : HeckeCharacter K) (w : InfinitePlace K) :
     χ⁻¹.infiniteComponent w = (χ.infiniteComponent w)⁻¹ :=
   (rfl)
 
+/-- Evaluating the component of `χ⁻¹` at `w` gives the inverse of the component of `χ`. -/
+theorem infiniteComponent_inv_apply (χ : HeckeCharacter K) (w : InfinitePlace K)
+    (u : w.Completionˣ) :
+    χ⁻¹.infiniteComponent w u = (χ.infiniteComponent w u)⁻¹ :=
+  (rfl)
+
 /-- Components of a power of a Hecke character are the powers of the components. -/
 @[simp]
 theorem infiniteComponent_pow (χ : HeckeCharacter K) (n : ℕ) (w : InfinitePlace K) :

@@ -206,10 +206,9 @@ theorem coe_prod_infiniteComponent_eq_embeddingCharacter_of_realParity (χ : Hec
       (n.embeddingCharacter x : ℂ) := by
   classical
   rw [coe_prod_infiniteComponent_eq_embeddingCharacter_mul_sign χ n hn
-    (Set.finite_univ (α := {w : InfinitePlace K // w.IsReal})).toFinset
-    (fun w _ ↦ Set.Finite.mem_toFinset _ |>.mpr trivial) x]
+    Finset.univ (fun w _ ↦ Finset.mem_univ w) x]
   have h1 :
-      (∏ w ∈ (Set.finite_univ (α := {w : InfinitePlace K // w.IsReal})).toFinset,
+      (∏ w : {w : InfinitePlace K // w.IsReal},
         (SignType.sign (InfinitePlace.embedding_of_isReal w.property (x : K)) : ℂ) ^
           (χ.infinityType.realParity w -
             (AlgebraicInfinityType.toContinuous n).realParity w).val) = 1 :=
