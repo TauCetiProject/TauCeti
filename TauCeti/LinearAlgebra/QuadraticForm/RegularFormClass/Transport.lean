@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.BaseChange
+import TauCeti.LinearAlgebra.QuadraticForm.Transport
 
 /-!
 # Transport of regular-form isometry classes along field isomorphisms
@@ -33,6 +34,8 @@ isomorphisms such as `adicCompletionCongr`. When an `Algebra K L` structure is p
 
 * `TauCeti.presentedForm_equivOfRingEquiv`: evaluation of a transported presented form on
   coordinatewise images under `e`.
+* `TauCeti.equivalent_presentedForm_equivOfRingEquiv_iff`: presentation transport preserves and
+  reflects isometry of the presented forms, without assuming `2` is invertible.
 * `TauCeti.RegularFormPresentation.equivOfRingEquiv_refl`,
   `TauCeti.RegularFormPresentation.equivOfRingEquiv_symm`,
   `TauCeti.RegularFormPresentation.equivOfRingEquiv_trans`: identity, inverse, and composition
@@ -127,6 +130,37 @@ theorem presentedForm_equivOfRingEquiv (p : RegularFormPresentation K) (e : K �
   refine Fintype.sum_equiv (finCongr (RegularFormPresentation.fst_equivOfRingEquiv e p)) _ _
     fun i ↦ ?_
   simp [RegularFormPresentation.equivOfRingEquiv_apply]
+
+/-- Presentation transport along a ring isomorphism preserves and reflects isometry of the
+presented forms, without assuming `2` is invertible. -/
+@[simp]
+theorem equivalent_presentedForm_equivOfRingEquiv_iff (p q : RegularFormPresentation K)
+    (e : K ≃+* L) :
+    (presentedForm (RegularFormPresentation.equivOfRingEquiv e p)).Equivalent
+        (presentedForm (RegularFormPresentation.equivOfRingEquiv e q)) ↔
+      (presentedForm p).Equivalent (presentedForm q) := by
+  have := RingHomInvPair.of_ringEquiv e
+  have := RingHomInvPair.of_ringEquiv_symm e
+  let coord (r : RegularFormPresentation K) :
+      (Fin r.1 → K) ≃ₛₗ[(e : K →+* L)]
+        (Fin (RegularFormPresentation.equivOfRingEquiv e r).1 → L) :=
+    { toFun := fun x i ↦
+        e (x (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e r) i))
+      invFun := fun y i ↦
+        e.symm (y (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e r).symm i))
+      left_inv := fun x ↦ by ext i; simp
+      right_inv := fun y ↦ by ext i; simp
+      map_add' := fun x y ↦ by ext i; simp
+      map_smul' := fun c x ↦ by ext i; simp }
+  have htransport (r : RegularFormPresentation K) :
+      presentedForm (RegularFormPresentation.equivOfRingEquiv e r) =
+        (presentedForm r).transport (coord r) := by
+    ext y
+    obtain ⟨x, rfl⟩ := (coord r).surjective y
+    rw [QuadraticMap.transport_apply_apply]
+    exact presentedForm_equivOfRingEquiv r e x
+  rw [htransport p, htransport q]
+  exact QuadraticMap.equivalent_transport_iff (coord p) (coord q)
 
 /-- When an `Algebra K L` structure agrees with `e`, presentation transport agrees with
 `RegularFormPresentation.baseChange`. -/
