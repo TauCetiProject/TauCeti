@@ -40,7 +40,8 @@ norms have closure `[0, ∞)` (`NormedField.closure_image_norm_ne_zero`,
 
 Finally, `NormedField.iSup_eNorm_eq_top` records that the extended norms of a nontrivially normed
 field have supremum `⊤`, and `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio
-`F / w` near `c⁻¹` into a relative error bound for `F - w / c`.
+`F / w` near `c⁻¹` into a relative error bound for `F - w / c`, while
+`TauCeti.norm_pow_div_le_norm_inv` bounds `‖z ^ m / a‖` by `‖a⁻¹‖` when `‖z‖ ≤ 1`.
 -/
 
 public section
@@ -49,6 +50,12 @@ public section
 theorem TauCeti.norm_inv_lt_one_of_one_lt_norm {K : Type*} [NormedDivisionRing K]
     {j : K} (hj : 1 < ‖j‖) : ‖j⁻¹‖ < 1 := by
   simpa only [norm_inv] using inv_lt_one_of_one_lt₀ hj
+
+/-- A power of an element of norm at most one, divided by `a`, has norm at most `‖a⁻¹‖`. -/
+theorem TauCeti.norm_pow_div_le_norm_inv {K : Type*} [NormedDivisionRing K] {z : K}
+    (hz : ‖z‖ ≤ 1) (m : ℕ) (a : K) : ‖z ^ m / a‖ ≤ ‖a⁻¹‖ := by
+  rw [div_eq_mul_inv, norm_mul, norm_pow]
+  exact mul_le_of_le_one_left (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) hz)
 
 namespace NormedField
 

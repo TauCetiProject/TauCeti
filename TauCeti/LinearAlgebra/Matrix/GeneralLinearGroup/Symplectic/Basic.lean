@@ -15,7 +15,6 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
-import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
 # The symplectic group as a subgroup of the general linear group
@@ -355,10 +354,11 @@ theorem dotProduct_JFin_mulVec_eq_neg (u w : Fin (m + m) → R) :
   rw [Matrix.dotProduct_mulVec, dotProduct_comm, ← Matrix.vecMul_transpose, JFin_transpose,
     Matrix.vecMul_neg, dotProduct_neg, neg_neg]
 
-/-- The transported alternating form is a unit, since `JFin_mul_self` gives
-`JFin m R * JFin m R = -1`. -/
-theorem isUnit_JFin : IsUnit (JFin m R) :=
-  Matrix.isUnit_of_mul_self_eq_neg_one (JFin_mul_self m R)
+/-- The transported alternating form is invertible. -/
+theorem isUnit_JFin : IsUnit (JFin m R) := by
+  -- Mathlib's `Matrix.isUnit_J` read through `JFin_eq_submatrix`.
+  rw [JFin_eq_submatrix, Matrix.isUnit_submatrix_equiv]
+  exact Matrix.isUnit_J (Fin m) R
 
 variable {m R} in
 /-- A matrix preserving the transported alternating form is a symplectic matrix in Mathlib's

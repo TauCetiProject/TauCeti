@@ -316,6 +316,16 @@ theorem coordinates_apply_eq_mul_single (r r' : ∀ i, P i) (a : NovikovModule R
   simp only [NovikovSeries.coeff_mul_single, mul_one, coordinates_coeff, sub_eq_add_neg,
     neg_vsub_eq_vsub_rev, add_vadd, vsub_vadd]
 
+/-- **Change of reference lifts.** Moving the reference lifts to `g i +ᵥ r i` and multiplying each
+coordinate on the right by the monomial `e^(-g i)` gives the same completed combination. -/
+theorem coordinates_symm_vadd_mul_single (r : ∀ i, P i) (b : ι → NovikovSeries R H N)
+    (g : ι → H) :
+    (coordinates hF fun i => g i +ᵥ r i).symm (fun i => b i * NovikovSeries.single (-g i) 1) =
+      (coordinates hF r).symm b := by
+  refine Subtype.ext (funext fun ⟨i, p⟩ => ?_)
+  rw [coordinates_symm_apply, coordinates_symm_apply, NovikovSeries.coeff_mul_single, mul_one,
+    sub_neg_eq_add, ← vsub_add_vsub_cancel p (g i +ᵥ r i) (r i), vadd_vsub]
+
 /-- The Novikov module structure, transported using arbitrary orbit lifts. Install it with
 `letI := NovikovModule.module (R := R) hF`. Every choice of lifts is linear for this one
 structure by `coordinates_smul`. -/
