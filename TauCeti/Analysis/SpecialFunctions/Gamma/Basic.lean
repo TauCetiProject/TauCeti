@@ -42,8 +42,9 @@ formula is also recorded in the reciprocal form `Γ(s) sin (π s) = π / Γ(1 - 
 valid including at positive integers where both sides vanish. Over `ℂ`, Euler's
 limit formula is also written with the rising factorial `(s)ₙ = s (s + 1) ⋯ (s + n - 1)`:
 `n^(s - 1) n! / (s)ₙ → Γ(s)` and `(s)ₙ / (n^(s - 1) n!) → 1 / Γ(s)` for every complex `s`, both
-sides of either limit being `0` at the poles `s = -k`. The second limit is the asymptotic
-`(s)ₙ ∼ n^(s - 1) n! / Γ(s)` from which the growth of hypergeometric coefficients is read off.
+sides of either limit being `0` at the poles `s = -k`. For `s` off the poles, where `Γ(s) ≠ 0`,
+the second limit is the asymptotic equivalence `(s)ₙ ∼ n^(s - 1) n! / Γ(s)`; the normalized limit,
+valid for every `s`, is the form from which the growth of hypergeometric coefficients is read off.
 
 ## Main results
 
@@ -482,17 +483,13 @@ theorem tendsto_natCast_cpow_mul_factorial_div_ascPochhammer_eval (s : ℂ) :
   rw [mul_one] at h
   refine h.congr' ?_
   filter_upwards [eventually_ne_atTop 0,
-    (tendsto_natCast_atTop_atTop (R := ℝ)).eventually_gt_atTop ‖s‖] with n hn hs
+    tendsto_natCast_atTop_cobounded.eventually_ne_cobounded (-s)] with n hn hs
   have hn' : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have hsn : s + n ≠ 0 := by
-    intro h
-    rw [eq_neg_of_add_eq_zero_left h, norm_neg, norm_natCast] at hs
-    exact lt_irrefl _ hs
-  rw [GammaSeq, Finset.prod_range_succ, ← TauCeti.ascPochhammer_eval_eq_prod_range,
-    cpow_sub _ _ hn', cpow_one]
-  rcases eq_or_ne ((ascPochhammer ℂ n).eval s) 0 with hp | hp
-  · simp [hp]
-  · field_simp
+  have hsn : s + n ≠ 0 := fun h => hs (by linear_combination h)
+  -- Only the last factor `s + n` of the product cancels against the correction `(s + n) / n`.
+  rw [GammaSeq, Finset.prod_range_succ, ← TauCeti.ascPochhammer_eval_eq_prod_range, ← div_div,
+    div_add_one hn', div_mul_div_cancel₀ hsn, cpow_sub _ _ hn', cpow_one]
+  ring
 
 /-- **Euler's limit formula for `1 / Γ` in Pochhammer form.** For every complex `s`,
 `(s)ₙ / (n^(s - 1) n!) → (Γ(s))⁻¹` as `n → ∞`; at the poles `s = -k` both sides are eventually

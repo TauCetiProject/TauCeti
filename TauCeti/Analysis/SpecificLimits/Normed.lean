@@ -211,9 +211,10 @@ theorem _root_.Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub {R E : 
   rw [← cauchySeq_shift 1]
   simp_rw [Finset.sum_range_by_parts _ _ (_ + 1), add_tsub_cancel_right, sub_eq_add_neg]
   refine CauchySeq.add (Filter.Tendsto.cauchySeq (x := 0) ?_) (CauchySeq.neg ?_)
-  · refine squeeze_zero_norm (fun n ↦ (norm_smul_le _ _).trans
-      (mul_le_mul_of_nonneg_left (hzb (n + 1)) (norm_nonneg _))) ?_
-    simpa using (tendsto_norm_zero.comp hf0).mul_const b
+  · have hzb' : Filter.IsBoundedUnder (· ≤ ·) Filter.atTop
+        (norm ∘ fun n ↦ ∑ i ∈ Finset.range (n + 1), z i) :=
+      Filter.isBoundedUnder_of ⟨b, fun n ↦ hzb (n + 1)⟩
+    exact hf0.op_zero_isBoundedUnder_le hzb' (· • ·) norm_smul_le
   · refine cauchySeq_range_of_norm_bounded (g := fun i ↦ b * ‖f (i + 1) + -f i‖)
       (by simpa only [← sub_eq_add_neg] using (hvar.mul_left b).hasSum.tendsto_sum_nat.cauchySeq)
       fun i ↦ ?_
