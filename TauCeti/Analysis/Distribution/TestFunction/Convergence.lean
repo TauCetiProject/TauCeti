@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Convergence of test functions with a common compact support
@@ -126,17 +127,15 @@ private theorem norm_iteratedFDeriv_smulOfContDiffOn_sub_le (χ : 𝓓^{n}(Ω, �
       ext z
       simp [ψ₁, ψ₂, smul_sub]
     have hyU : y ∈ U := hχU hy
-    have hle := norm_iteratedFDerivWithin_smul_le χ.contDiff.contDiffOn (hg₁.sub hg₂)
-      hU.uniqueDiffOn hyU (n := k) hk'
-    rw [iteratedFDerivWithin_of_isOpen k hU hyU] at hle
+    have hle := TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen hU χ.contDiff.contDiffOn
+      (hg₁.sub hg₂) hyU hk'
     rw [hsub_eq]
     refine hle.trans ?_
     rw [Finset.sum_mul]
     refine Finset.sum_le_sum fun j hj ↦ ?_
     have hkj : ((k - j : ℕ) : WithTop ℕ∞) ≤ n :=
       le_trans (by exact_mod_cast Nat.sub_le k j) hk'
-    rw [iteratedFDerivWithin_of_isOpen j hU hyU, iteratedFDerivWithin_of_isOpen (k - j) hU hyU,
-      ← Pi.sub_def,
+    rw [← Pi.sub_def,
       iteratedFDeriv_sub_apply ((hg₁.contDiffAt (hU.mem_nhds hyU)).of_le hkj)
         ((hg₂.contDiffAt (hU.mem_nhds hyU)).of_le hkj), mul_assoc, mul_assoc]
     exact mul_le_mul_of_nonneg_left

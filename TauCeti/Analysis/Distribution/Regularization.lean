@@ -21,6 +21,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
+import TauCeti.Analysis.Distribution.LineDeriv
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Topology.Algebra.Module.FiniteDimension
@@ -201,7 +202,7 @@ private theorem exists_cthickening_tsupport_translateOfMapsTo_subset (ρ : 𝓓(
     |>.exists_cthickening_subset_open Ω.isOpen (ρ.translateOfMapsTo hx).tsupport_subset
   refine ⟨δ, hδ, hδΩ, fun h hh z hz => hδΩ ?_⟩
   refine mem_cthickening_of_dist_le _ (z + x) δ _ ?_ ?_
-  · rw [TestFunction.tsupport_translateOfMapsTo]
+  · rw [funext (ρ.translateOfMapsTo_apply hx), TauCeti.tsupport_comp_sub_right]
     simpa using hz
   · simpa [dist_eq_norm, ← add_assoc] using hh
 
@@ -298,17 +299,12 @@ moves the derivatives onto `ρ` with sign `(-1)^k`. -/
 theorem translatePairing_iteratedLineDerivOp (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x : E}
     (hx : MapsTo (· + x) (tsupport ρ) Ω) {k : ℕ} (m : Fin k → E) :
     (∂^{m} T).translatePairing ρ x = (-1 : ℝ) ^ k • T.translatePairing (∂^{m} ρ) x := by
-  induction k generalizing T ρ with
-  | zero => simp
-  | succ k ih =>
-    have hx' : MapsTo (· + x) (tsupport ⇑(-∂_{m 0} ρ)) Ω := by
-      refine hx.mono_left ?_
-      rw [FunLike.coe_neg, tsupport_neg]
-      exact ρ.tsupport_lineDerivOp_subset (m 0)
-    rw [iteratedLineDerivOp_succ_left, translatePairing_lineDerivOp _ ρ hx (m 0),
-      ih _ _ hx', iteratedLineDerivOp_neg, translatePairing_neg_kernel, Pi.neg_apply, smul_neg,
-      TestFunction.iteratedLineDerivOp_lineDerivOp, ← iteratedLineDerivOp_succ_left,
-      pow_succ, mul_comm, mul_smul, neg_one_smul]
+  have hφ : ∀ y, (∂^{m} (ρ.translateOfMapsTo hx)) y = (∂^{m} ρ) (y - x) := fun y ↦ by
+    rw [TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDeriv,
+      TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDeriv,
+      funext (ρ.translateOfMapsTo_apply hx), iteratedFDeriv_comp_sub]
+  rw [translatePairing_eq _ (ρ.translateOfMapsTo_apply hx), translatePairing_eq T hφ,
+    iteratedLineDerivOp_apply_apply, TestFunction.iteratedLineDerivOp_comp_rev]
 
 /-- **Iterated directional derivatives of a regularization.** At an admissible translation `x`, the
 iterated directional derivative of `T.translatePairing ρ` along `vs` is the regularization of the

@@ -53,10 +53,12 @@ near the support.
   `Distribution.dsupport_comp_monoCLM_subset`,
   `Distribution.isCompact_dsupport_and_subset_of_eventually_eq_one`,
   `Distribution.exists_eventually_eq_one_nhdsSet_dsupport_iff`,
+  `Distribution.exists_cutoff_notMem_tsupport_of_notMem_dsupport`,
   `Distribution.isCompact_dsupport_apply_apply`,
   `Distribution.isCompact_dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM`: support under
   smooth multiples and cutoffs, open/regularity restriction, existence of a test cutoff equal to
-  one near the support, and compactness of point-evaluation support.
+  one near the support (and avoiding a given point off the support), and compactness of
+  point-evaluation support.
 * `Distribution.augmentation`: the pairing `T (χ • c)` with a cutoff `χ` equal to one near the
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
 * `Distribution.augmentation_eq_zero_of_not_finiteDimensional`: on an infinite-dimensional `E`
@@ -361,6 +363,17 @@ theorem exists_eventually_eq_one_nhdsSet_dsupport_iff [FiniteDimensional ℝ E]
   ⟨fun ⟨_, hχ⟩ ↦ isCompact_dsupport_and_subset_of_eventually_eq_one hχ,
     fun ⟨hc, hΩ⟩ ↦
       let ⟨χ, hχ, _⟩ := TestFunction.exists_eventually_eq_one hc hΩ; ⟨χ, hχ⟩⟩
+
+/-- If `dsupport T` is a compact subset of `Ω`, every `x ∉ dsupport T` admits a cutoff equal to
+`1` near `dsupport T` whose support misses `x`. -/
+theorem exists_cutoff_notMem_tsupport_of_notMem_dsupport [FiniteDimensional ℝ E]
+    [FunLike 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕) (hc : IsCompact (dsupport T)) (hΩ : dsupport T ⊆ Ω)
+    {x : E} (hx : x ∉ dsupport T) :
+    ∃ χ : 𝓓^{n}(Ω, ℝ), (∀ᶠ y in 𝓝ˢ (dsupport T), χ y = 1) ∧ x ∉ tsupport (χ : E → ℝ) := by
+  obtain ⟨χ, -, hχ1, hχs⟩ := TestFunction.exists_cutoff_tsupport_subset (Ω := Ω) (n := n) hc
+    (Ω.isOpen.inter isOpen_compl_singleton)
+    (subset_inter hΩ (subset_compl_singleton_iff.2 hx)) inter_subset_left
+  exact ⟨χ, hχ1, fun hxχ ↦ (hχs hxχ).2 rfl⟩
 
 /-- Precomposing a map on test functions with `TestFunction.monoCLM` shrinks its distributional
 support. -/

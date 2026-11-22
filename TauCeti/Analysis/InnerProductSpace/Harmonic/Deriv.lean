@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
@@ -39,6 +40,8 @@ elliptic equations are reduced to the harmonic case.
 * `InnerProductSpace.HarmonicAt.iteratedFDerivAlong_sub_right` and
   `InnerProductSpace.HarmonicOnNhd.iteratedFDerivAlong_sub_right`: reflected translates
   `y ↦ (∂_{vs} f)(x - y)` of iterated directional derivatives are harmonic.
+* `InnerProductSpace.HarmonicOnNhd.contDiffOn_sub_right`: for `f` harmonic on `{0}ᶜ`,
+  `y ↦ f (x - y)` is smooth on `{x}ᶜ`.
 * `InnerProductSpace.HarmonicAt.gradient` and `InnerProductSpace.HarmonicOnNhd.gradient`: the
   gradient of a real-valued harmonic function is harmonic.
 
@@ -58,7 +61,7 @@ it is harmonic by Weyl's lemma (`TauCeti.harmonicOnNhd_iff_weaklyHarmonicOn`).
 public section
 
 open MeasureTheory TopologicalSpace
-open scoped Gradient
+open scoped ContDiff Gradient
 
 namespace InnerProductSpace
 
@@ -115,15 +118,8 @@ theorem HarmonicOnNhd.iteratedFDerivAlong {s : Set E} (hf : HarmonicOnNhd f s) (
 theorem HarmonicAt.iteratedFDerivAlong_sub_right {x y : E} (hf : HarmonicAt f (x - y))
     (vs : List E) :
     HarmonicAt (fun z ↦ TauCeti.iteratedFDerivAlong ℝ vs f (x - z)) y := by
-  have h₀ : HarmonicAt (TauCeti.iteratedFDerivAlong ℝ vs f) (-(y + -x)) := by
-    simpa [sub_eq_add_neg, add_comm] using hf.iteratedFDerivAlong vs
-  have h₁ : HarmonicAt
-      ((TauCeti.iteratedFDerivAlong ℝ vs f) ∘ LinearIsometryEquiv.neg ℝ) (y + -x) :=
-    (TauCeti.harmonicAt_comp_linearIsometryEquiv_right_iff (LinearIsometryEquiv.neg ℝ)).2 h₀
-  have h₂ : HarmonicAt
-      (fun z ↦ ((TauCeti.iteratedFDerivAlong ℝ vs f) ∘ LinearIsometryEquiv.neg ℝ) (z + -x)) y :=
-    (TauCeti.harmonicAt_comp_add_right_iff (x := y) (a := -x)).2 h₁
-  simpa [sub_eq_add_neg, add_comm] using h₂
+  simpa [Function.comp_def] using (TauCeti.harmonicAt_comp_affineIsometryEquiv_right_iff
+    (AffineIsometryEquiv.constVSub ℝ x)).2 (hf.iteratedFDerivAlong vs)
 
 /-- If `f` is harmonic away from `0`, then for any `x` and list of directions `vs`,
 `y ↦ (∂_{vs} f)(x - y)` is harmonic away from `x`. -/
@@ -133,6 +129,12 @@ theorem HarmonicOnNhd.iteratedFDerivAlong_sub_right (hf : HarmonicOnNhd f {0}ᶜ
   fun _ hy ↦
     (hf _ (sub_ne_zero.2 (Ne.symm (Set.mem_compl_singleton_iff.1 hy)))
       ).iteratedFDerivAlong_sub_right vs
+
+/-- If `f` is harmonic away from `0`, then for any `x`, `y ↦ f (x - y)` is smooth away from `x`. -/
+theorem HarmonicOnNhd.contDiffOn_sub_right (hf : HarmonicOnNhd f {0}ᶜ) (x : E) :
+    ContDiffOn ℝ ∞ (fun y ↦ f (x - y)) {x}ᶜ := by
+  simpa using (hf.iteratedFDerivAlong_sub_right [] x).analyticOnNhd.contDiffOn
+    isOpen_compl_singleton.uniqueDiffOn
 
 end VectorValued
 

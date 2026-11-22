@@ -13,7 +13,7 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.Normed.Module.Annihilator
-import TauCeti.Analysis.PDE.FundamentalSolution.CutoffPotential
+import TauCeti.Analysis.PDE.FundamentalSolution.HarmonicOrthogonality
 
 /-!
 # Harmonic Runge approximation on filled-in compact sets
@@ -91,22 +91,21 @@ end Submodule
 
 section Approximation
 
+private theorem harmonicOnNhd_subset_harmonicAt
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    {K : Set E} {f : E → ℝ} (hf : HarmonicOnNhd f K) :
+    K ⊆ {y | HarmonicAt f y} :=
+  hf
+
 /-- The `m`-jet on a compact set `K` of a scalar function harmonic on a neighbourhood of `K`. -/
 private def harmonicJetOn
     {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
     {K : Set E} (hK : IsCompact K) {f : E → ℝ} (hf : HarmonicOnNhd f K) (m : ℕ) :
     JetSpace E ℝ K m :=
-  JetSpace.ofContDiffOn hK (isOpen_setOfPred_harmonicAt (f := f)) (fun _ hy ↦ hf _ hy) m
+  JetSpace.ofContDiffOn hK (isOpen_setOfPred_harmonicAt (f := f))
+    (harmonicOnNhd_subset_harmonicAt hf) m
     (((HarmonicOnNhd.analyticOnNhd (f := f) fun _ hy ↦ hy).contDiffOn
       (isOpen_setOfPred_harmonicAt (f := f)).uniqueDiffOn).of_le (mod_cast le_top))
-
-@[simp]
-private theorem eval_harmonicJetOn
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-    {K : Set E} (hK : IsCompact K) {f : E → ℝ} (hf : HarmonicOnNhd f K) (m : ℕ)
-    (k : Fin (m + 1)) (x : K) :
-    (harmonicJetOn hK hf m).eval k x = iteratedFDeriv ℝ (k : ℕ) f x.val :=
-  JetSpace.eval_ofContDiffOn ..
 
 /-- A continuous linear functional on `TauCeti.JetSpace E ℝ K m` vanishing on all harmonic `m`-jets
 from `Ω` also vanishes on the `m`-jet of any function harmonic on a neighbourhood of `K`, provided
@@ -157,8 +156,10 @@ private theorem exists_harmonicOnNhd_norm_iteratedFDeriv_sub_lt_real
   set JH := JetSpace.ofContDiffOn hK hΩ hKΩ m
     ((hH.analyticOnNhd.contDiffOn hΩ.uniqueDiffOn).of_le (mod_cast le_top))
   have hsub : iteratedFDeriv ℝ k (H - f) x = (JH - Jf).eval j ⟨x, hx⟩ := by
-    simp only [JH, Jf, JetSpace.eval_sub, FunLike.coe_sub, Pi.sub_apply,
-      JetSpace.eval_ofContDiffOn, eval_harmonicJetOn]
+    dsimp only [JH, Jf, harmonicJetOn]
+    rw [JetSpace.eval_sub, FunLike.coe_sub, Pi.sub_apply, JetSpace.eval_ofContDiffOn,
+      JetSpace.eval_ofContDiffOn]
+    dsimp only [j]
     exact iteratedFDeriv_sub_apply
       ((hH x (hKΩ hx)).analyticAt.contDiffAt.of_le (mod_cast le_top))
       ((hf x hx).analyticAt.contDiffAt.of_le (mod_cast le_top))

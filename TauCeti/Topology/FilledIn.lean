@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import TauCeti.Topology.FilledHull
 import Mathlib.Topology.MetricSpace.Bounded
+import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -37,6 +38,8 @@ Filled compact exhaustions of open sets in proper real normed spaces are constru
 * `TauCeti.IsFilledIn`: no connected component of `Ω \ K` is relatively compact in `Ω`.
 * `Homeomorph.isFilledIn_image`, `Homeomorph.isFilledIn_preimage`: invariance of
   `TauCeti.IsFilledIn` under homeomorphisms.
+* `TauCeti.IsFilledIn.isPreconnected_inter_connectedComponentIn`: a filled subset of `ℝ` meets
+  every connected component of `Ω` in a preconnected set.
 * `TauCeti.isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset`: the same
   condition through the bounded components of `Kᶜ`.
 * `TauCeti.isFilledIn_univ_iff`: a closed set is filled in the whole space exactly when it equals
@@ -204,6 +207,36 @@ theorem _root_.Homeomorph.isFilledIn_preimage (e : X ≃ₜ Y) {K Ω : Set Y} :
     IsFilledIn (e ⁻¹' K) (e ⁻¹' Ω) ↔ IsFilledIn K Ω := by
   rw [← e.image_symm]
   exact e.symm.isFilledIn_image
+
+/-- If `K` is filled in `Ω ⊆ ℝ`, then `K` intersects every connected component of `Ω` in a
+preconnected set (an interval). -/
+theorem IsFilledIn.isPreconnected_inter_connectedComponentIn {K Ω : Set ℝ}
+    (hfill : IsFilledIn K Ω) (x : ℝ) : IsPreconnected (K ∩ connectedComponentIn Ω x) := by
+  rw [isPreconnected_iff_ordConnected]
+  refine ⟨fun a ha b hb z hz ↦ ?_⟩
+  have hC_ord : (connectedComponentIn Ω x).OrdConnected :=
+    isPreconnected_iff_ordConnected.1 isPreconnected_connectedComponentIn
+  have hzC : z ∈ connectedComponentIn Ω x := hC_ord.out ha.2 hb.2 hz
+  refine ⟨?_, hzC⟩
+  by_contra hzK
+  have hzΩK : z ∈ Ω \ K := ⟨connectedComponentIn_subset Ω x hzC, hzK⟩
+  have hD_sub : connectedComponentIn (Ω \ K) z ⊆ Icc a b := by
+    intro w hw
+    have hD_ord : (connectedComponentIn (Ω \ K) z).OrdConnected :=
+      isPreconnected_iff_ordConnected.1 isPreconnected_connectedComponentIn
+    refine ⟨?_, ?_⟩
+    · by_contra hwa
+      have haD : a ∈ connectedComponentIn (Ω \ K) z :=
+        hD_ord.out hw (mem_connectedComponentIn hzΩK) ⟨(not_le.1 hwa).le, hz.1⟩
+      exact (connectedComponentIn_subset (Ω \ K) z haD).2 ha.1
+    · by_contra hbw
+      have hbD : b ∈ connectedComponentIn (Ω \ K) z :=
+        hD_ord.out (mem_connectedComponentIn hzΩK) hw ⟨hz.2, (not_le.1 hbw).le⟩
+      exact (connectedComponentIn_subset (Ω \ K) z hbD).2 hb.1
+  have hcl_sub : closure (connectedComponentIn (Ω \ K) z) ⊆ Icc a b :=
+    closure_minimal hD_sub isClosed_Icc
+  exact isFilledIn_iff.1 hfill z hzΩK ⟨isCompact_Icc.of_isClosed_subset isClosed_closure hcl_sub,
+    hcl_sub.trans ((hC_ord.out ha.2 hb.2).trans (connectedComponentIn_subset Ω x))⟩
 
 end Topology
 

@@ -43,6 +43,35 @@ public section
 
 noncomputable section
 
+namespace TestFunction
+
+open Set TopologicalSpace
+open scoped ContDiff Distributions
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω V : Opens E}
+
+/-- Translate a `Cⁿ` test function `ρ` in the opposite direction by `x`, as a test function on `Ω`
+whenever `tsupport ρ + x ⊆ Ω`. -/
+def translateOfMapsTo {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
+    (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) : 𝓓^{n}(Ω, F) where
+  toFun y := ρ (y - x)
+  contDiff' := ρ.contDiff.comp (contDiff_id.sub contDiff_const)
+  hasCompactSupport' := by
+    simpa [sub_eq_add_neg, Function.comp_def, Homeomorph.addRight] using
+      ρ.hasCompactSupport.comp_homeomorph (Homeomorph.addRight (-x))
+  tsupport_subset' y hy := by
+    rw [TauCeti.tsupport_comp_sub_right] at hy
+    simpa using h hy
+
+@[simp]
+theorem translateOfMapsTo_apply {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
+    (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (y : E) :
+    ρ.translateOfMapsTo h y = ρ (y - x) := by
+  rfl
+
+end TestFunction
+
 namespace TauCeti
 
 open Function MeasureTheory Set TestFunction TopologicalSpace
@@ -57,15 +86,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 open set containing the translated support. -/
 def translateTestFunction (hVO : MapsTo (· + h) V Omega) (phi : 𝓓(V, F)) :
     𝓓(Omega, F) :=
-  ⟨fun y => phi (y - h),
-    phi.contDiff.comp (contDiff_id.sub contDiff_const),
-    by
-      simpa [sub_eq_add_neg, Function.comp_def, Homeomorph.addRight] using
-        phi.hasCompactSupport.comp_homeomorph (Homeomorph.addRight (-h)),
-    by
-      intro y hy
-      rw [tsupport_comp_sub_right] at hy
-      simpa using hVO (phi.tsupport_subset hy)⟩
+  phi.translateOfMapsTo (hVO.mono_left phi.tsupport_subset)
 
 /-- Translating a test function evaluates it at the oppositely translated point. -/
 @[simp]
@@ -182,31 +203,6 @@ open scoped ContDiff Distributions
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω V : Opens E}
 
-/-- Translate a `Cⁿ` test function `ρ` in the opposite direction by `x`, as a test function on `Ω`
-whenever `tsupport ρ + x ⊆ Ω`. -/
-def translateOfMapsTo {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
-    (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) : 𝓓^{n}(Ω, F) where
-  toFun y := ρ (y - x)
-  contDiff' := ρ.contDiff.comp (contDiff_id.sub contDiff_const)
-  hasCompactSupport' := by
-    simpa [sub_eq_add_neg, Function.comp_def, Homeomorph.addRight] using
-      ρ.hasCompactSupport.comp_homeomorph (Homeomorph.addRight (-x))
-  tsupport_subset' y hy := by
-    rw [TauCeti.tsupport_comp_sub_right] at hy
-    simpa using h hy
-
-@[simp]
-theorem translateOfMapsTo_apply {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
-    (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (y : E) :
-    ρ.translateOfMapsTo h y = ρ (y - x) := by
-  rfl
-
-/-- The translate `ρ (· - x)` has the translated topological support. -/
-theorem tsupport_translateOfMapsTo {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
-    (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) :
-    tsupport (ρ.translateOfMapsTo h : E → F) = (· - x) ⁻¹' tsupport (ρ : E → F) :=
-  TauCeti.tsupport_comp_sub_right (f := (ρ : E → F)) x
-
 /-- Package `y ↦ TauCeti.iteratedFDerivAlong ℝ vs (fun z ↦ ρ (y - z)) x` as a test function on `Ω`,
 for any admissible translation `x` of `ρ`. -/
 def translateIteratedFDerivAlong (ρ : 𝓓(V, F)) {x : E}
@@ -227,7 +223,9 @@ theorem translateIteratedFDerivAlong_apply (ρ : 𝓓(V, F)) {x : E}
 theorem tsupport_translateIteratedFDerivAlong_subset (ρ : 𝓓(V, F)) {x : E}
     (hx : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (vs : List E) :
     tsupport (ρ.translateIteratedFDerivAlong hx vs : E → F) ⊆ (· - x) ⁻¹' tsupport (ρ : E → F) := by
-  rw [translateIteratedFDerivAlong, tsupport_translateOfMapsTo]
+  rw [translateIteratedFDerivAlong,
+    funext (TestFunction.translateOfMapsTo_apply ((-1 : ℝ) ^ vs.length • ∂^{vs.get} ρ) _),
+    TauCeti.tsupport_comp_sub_right]
   exact preimage_mono ((tsupport_smul_subset_right _ _).trans
     (ρ.tsupport_iteratedLineDerivOp_subset vs.get))
 

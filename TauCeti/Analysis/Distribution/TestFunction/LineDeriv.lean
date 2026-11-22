@@ -13,6 +13,7 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 
 /-!
 # Directional derivatives of test functions
@@ -246,24 +247,16 @@ theorem lineDeriv_lineDerivOp_comm (φ : 𝓓(Ω, F)) (v w x : E) :
 function. -/
 theorem tsupport_iteratedLineDerivOp_subset (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E) :
     tsupport (∂^{m} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [iteratedLineDerivOp_succ_left]
-    exact (tsupport_lineDerivOp_subset _ (m 0)).trans (ih (Fin.tail m))
+  have h := SchwartzMap.tsupport_iteratedLineDerivOp_subset m (toSchwartzMapCLM ℝ φ)
+  rwa [← toSchwartzMapCLM_iteratedLineDerivOp, coe_toSchwartzMapCLM, coe_toSchwartzMapCLM] at h
 
 /-- An iterated directional derivative of a test function agrees pointwise with its iterated
 Fréchet derivative evaluated on those directions. -/
 theorem iteratedLineDerivOp_apply_eq_iteratedFDeriv (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E)
     (x : E) :
     ∂^{m} φ x = iteratedFDeriv ℝ k (φ : E → F) x m := by
-  induction k generalizing x with
-  | zero => simp
-  | succ k ih =>
-    rw [iteratedLineDerivOp_succ_left, iteratedFDeriv_succ_apply_left,
-      ← fderiv_continuousMultilinear_apply_const_apply]
-    · simp only [lineDerivOp_apply_eq_fderiv, ← ih]
-    · exact φ.contDiff.differentiable_iteratedFDeriv (mod_cast ENat.natCast_lt_top k) x
+  rw [← toSchwartzMapCLM_apply (𝕜 := ℝ), toSchwartzMapCLM_iteratedLineDerivOp,
+    SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv, coe_toSchwartzMapCLM]
 
 /-- An iterated directional derivative of a test function agrees pointwise with
 `TauCeti.iteratedFDerivAlong` along the list of directions. -/
@@ -287,15 +280,10 @@ theorem iteratedLineDerivOp_lineDerivOp (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k 
 function. -/
 theorem iteratedLineDerivOp_comp_rev (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E) :
     ∂^{m ∘ Fin.rev} φ = ∂^{m} φ := by
-  induction k generalizing φ with
-  | zero => simp
-  | succ k ih =>
-    have hinit : Fin.init (m ∘ Fin.rev) = Fin.tail m ∘ Fin.rev := by
-      ext i
-      simp [Fin.init_def, Fin.tail_def, Fin.rev_castSucc]
-    rw [iteratedLineDerivOp_succ_right, iteratedLineDerivOp_succ_left,
-      iteratedLineDerivOp_lineDerivOp]
-    simp only [Function.comp_apply, Fin.rev_last, hinit, ih]
+  ext x
+  rw [iteratedLineDerivOp_apply_eq_iteratedFDeriv, iteratedLineDerivOp_apply_eq_iteratedFDeriv]
+  exact φ.contDiff.contDiffAt.iteratedFDeriv_comp_perm_of_minSmoothness
+    (by simp) m Fin.revPerm
 
 /-- Differentiating `w ↦ φ (y - w)` along the directions `m` at `z` agrees with evaluating
 `(-1)^k • ∂^{m} φ` at `y - z`. -/
