@@ -73,22 +73,14 @@ section Permanence
 variable {m n R A : Type*}
 
 /-- Placing a star projection `p : A` in any two diagonal corners `(i, i)` and `(j, j)` of
-`CStarMatrix n n A` yields Murray–von Neumann equivalent projections, witnessed by `single j i p`
-without requiring `A` to be unital. -/
-theorem _root_.IsStarProjection.murrayVonNeumannEquiv_single [Fintype n] [DecidableEq n]
-    [NonUnitalSemiring A] [StarRing A] {p : A} (hp : IsStarProjection p) (i j : n) :
+matrix C⋆-algebras `CStarMatrix m m A` and `CStarMatrix n n A` yields Murray–von Neumann
+equivalent projections, witnessed by `single j i p` without requiring `A` to be unital. -/
+theorem _root_.IsStarProjection.murrayVonNeumannEquiv_single [Fintype m] [Fintype n]
+    [DecidableEq m] [DecidableEq n] [NonUnitalSemiring A] [StarRing A] {p : A}
+    (hp : IsStarProjection p) (i : m) (j : n) :
     MurrayVonNeumannEquiv (single i i p) (single j j p) := by
-  have hi : IsStarProjection (single i i p) :=
-    ⟨by rw [IsIdempotentElem, single_mul_single_same, hp.isIdempotentElem.eq],
-      by rw [IsSelfAdjoint, star_eq_conjTranspose, conjTranspose_single, hp.isSelfAdjoint.star_eq]⟩
-  have hj : IsStarProjection (single j j p) :=
-    ⟨by rw [IsIdempotentElem, single_mul_single_same, hp.isIdempotentElem.eq],
-      by rw [IsSelfAdjoint, star_eq_conjTranspose, conjTranspose_single, hp.isSelfAdjoint.star_eq]⟩
-  exact (murrayVonNeumannEquiv_iff hi hj).mpr ⟨single j i p,
-    by rw [conjTranspose_single, single_mul_single_same, hp.isSelfAdjoint.star_eq,
-      hp.isIdempotentElem.eq],
-    by rw [conjTranspose_single, single_mul_single_same, hp.isSelfAdjoint.star_eq,
-      hp.isIdempotentElem.eq]⟩
+  simpa only [← ofMatrix_symm_single, Equiv.apply_symm_apply] using
+    murrayVonNeumannEquiv_ofMatrix (hp.isMurrayVonNeumannEquivalent_single i j)
 
 /-- Padding a star projection `q` with zero blocks in the upper-left corner yields an equivalent
 projection, without requiring `A` to have a unit. -/
@@ -113,6 +105,10 @@ theorem _root_.IsStarProjection.murrayVonNeumannEquiv_reindexₐ [Fintype m] [Fi
     rw [← reindexₗ_eq_reindexₐ (R := R), ← ofMatrix_symm_reindexₗ (R := R), Equiv.apply_symm_apply]
   simpa only [hre, Equiv.apply_symm_apply] using h
 
+private theorem inr_snd_eq_of_fst_eq_zero {R A : Type*} [AddZeroClass R] [AddZeroClass A]
+    {z : Unitization R A} (hz : z.fst = 0) : (z.snd : Unitization R A) = z := by
+  simpa [hz] using Unitization.inl_fst_add_inr_snd_eq z
+
 /-- If two matrix projections `p, q : CStarMatrix n n A` over a possibly non-unital `⋆`-algebra `A`
 become unitarily conjugate inside the unitization `Unitization R (CStarMatrix n n A)`, then `p` and
 `q` are Murray–von Neumann equivalent inside `CStarMatrix n n A`. -/
@@ -128,7 +124,7 @@ theorem murrayVonNeumannEquiv_of_unitization_unitary_conj [Fintype n]
   let M := CStarMatrix n n A
   let v : M := (u * (p : Unitization R M)).snd
   have hv_coe : (v : Unitization R M) = u * (p : Unitization R M) :=
-    Unitization.ext (by simp [Unitization.fst_mul, Unitization.fst_inr]) rfl
+    inr_snd_eq_of_fst_eq_zero (by simp [Unitization.fst_mul, Unitization.fst_inr])
   have hp_coe : IsStarProjection (p : Unitization R M) := hp.inr
   have hq_coe : IsStarProjection (q : Unitization R M) := by
     have h := hp_coe.map (Unitary.conjStarAlgAut R (Unitization R M) ⟨u, hu⟩)
@@ -412,14 +408,8 @@ private theorem unitization_one_sub_two_mul_rotationProjection_conj
   rw [h2r, hexpand]
   congr 1
   apply ofMatrix.symm.injective
-  have h0₁ : ofMatrix.symm (0 : CStarMatrix m n A) = 0 := ofMatrix.symm_apply_eq.mpr of_zero.symm
-  have h0₂ : ofMatrix.symm (0 : CStarMatrix n m A) = 0 := ofMatrix.symm_apply_eq.mpr of_zero.symm
-  have hneg₁ : ofMatrix.symm (-v.conjTranspose) = -ofMatrix.symm v.conjTranspose :=
-    ofMatrix.symm_apply_eq.mpr (by rw [← neg_of, Equiv.apply_symm_apply])
-  have hneg₂ : ofMatrix.symm (-v) = -ofMatrix.symm v :=
-    ofMatrix.symm_apply_eq.mpr (by rw [← neg_of, Equiv.apply_symm_apply])
   simpa only [b, x, ofMatrix_symm_sub, ofMatrix_symm_mul, ofMatrix_symm_fromBlocks,
-    ofMatrix_symm_zero, h0₁, h0₂, hneg₁, hneg₂] using
+    ofMatrix_symm_zero, ofMatrix_symm_neg] using
     Matrix.fromBlocks_sub_mul_sub_of_mul_eq (a := ofMatrix.symm v.conjTranspose)
       (b := ofMatrix.symm v) (e := ofMatrix.symm p) (f := ofMatrix.symm q)
       (by simpa [ofMatrix_symm_mul] using congrArg ofMatrix.symm hvp)
@@ -504,8 +494,8 @@ private theorem rotationUnitary_conj_inl_snd_eq_and_isStarProjection
   have hxU : IsStarProjection x :=
     (hp.map (inl (n := n) (R := ℂ))).map (Unitization.inrNonUnitalStarAlgHom ℂ _)
   have hcoe : ((u * x * star u).snd : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) =
-      u * x * star u := by
-    ext <;> simp [x, Unitization.fst_mul, Unitization.fst_inr]
+      u * x * star u :=
+    inr_snd_eq_of_fst_eq_zero (by simp [x, Unitization.fst_mul, Unitization.fst_inr])
   have hprojU : IsStarProjection (u * x * star u) := by
     have h := hxU.map (Unitary.conjStarAlgAut ℂ
       (Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A))

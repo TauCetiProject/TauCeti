@@ -48,7 +48,7 @@ spanned by `e₀`.
 
 ## Main results
 
-* `Matrix.fromBlocks_zero_zero_mem_unitaryGroup_iff`,
+* `Matrix.fromBlocks_zero_zero_mem_unitary`,
   `Matrix.reindex_fromBlocks_zero_zero_mem_unitaryGroup_iff`: `diag(A, B)`, possibly reindexed,
   is unitary exactly when both `A` and `B` are.
 * `Matrix.UnitaryGroup.mem_range_fromBlocksOne_iff`,
@@ -85,13 +85,6 @@ section Unitary
 
 variable {α : Type*} [CommRing α] [StarRing α]
 
-/-- The block-diagonal matrix `diag(A, B)` is unitary exactly when both blocks are unitary. -/
-theorem fromBlocks_zero_zero_mem_unitaryGroup_iff {l n : Type*} [Fintype l] [DecidableEq l]
-    [Fintype n] [DecidableEq n] {A : Matrix l l α} {B : Matrix n n α} :
-    fromBlocks A 0 0 B ∈ unitaryGroup (l ⊕ n) α ↔
-      A ∈ unitaryGroup l α ∧ B ∈ unitaryGroup n α :=
-  fromBlocks_zero_zero_mem_unitary
-
 /-- A reindexed block-diagonal matrix `diag(A, B)` is unitary exactly when both blocks are
 unitary. -/
 theorem reindex_fromBlocks_zero_zero_mem_unitaryGroup_iff {l n p : Type*} [Fintype l]
@@ -99,7 +92,7 @@ theorem reindex_fromBlocks_zero_zero_mem_unitaryGroup_iff {l n p : Type*} [Finty
     {A : Matrix l l α} {B : Matrix n n α} :
     reindex e e (fromBlocks A 0 0 B) ∈ unitaryGroup p α ↔
       A ∈ unitaryGroup l α ∧ B ∈ unitaryGroup n α := by
-  rw [reindex_apply, submatrix_equiv_mem_unitary, fromBlocks_zero_zero_mem_unitaryGroup_iff]
+  rw [reindex_apply, submatrix_equiv_mem_unitary, fromBlocks_zero_zero_mem_unitary]
 
 namespace UnitaryGroup
 
@@ -110,7 +103,7 @@ variable (m) in
 `U(r + m)`: the identity block occupies the first `r` coordinates of `Fin (r + m)`. -/
 def fromBlocksOne : unitaryGroup (Fin m) α →* unitaryGroup (Fin (r + m)) α where
   toFun B := ⟨reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ α)),
-    submatrix_equiv_mem_unitary.2 (fromBlocks_zero_zero_mem_unitaryGroup_iff.2 ⟨one_mem _,
+    submatrix_equiv_mem_unitary.2 (fromBlocks_zero_zero_mem_unitary.2 ⟨one_mem _,
         B.property⟩)⟩
   map_one' := Subtype.ext <| by simp [fromBlocks_one]
   map_mul' A B := Subtype.ext <| by
@@ -233,7 +226,7 @@ def prodBlockSucc : unitary α × unitaryGroup (Fin m) α →* unitaryGroup (Fin
   toFun cB := ⟨reindex (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
       (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
       (fromBlocks (diagonal fun _ ↦ (cB.1 : α)) 0 0 (cB.2 : Matrix _ _ α)),
-    submatrix_equiv_mem_unitary.2 (fromBlocks_zero_zero_mem_unitaryGroup_iff.2
+    submatrix_equiv_mem_unitary.2 (fromBlocks_zero_zero_mem_unitary.2
       ⟨diagonal_mem_unitary.2 (Pi.const_mem_unitary_iff.2 cB.1.property), cB.2.property⟩)⟩
   map_one' := Subtype.ext <| by
     simp only [Prod.fst_one, Prod.snd_one, OneMemClass.coe_one, diagonal_one, fromBlocks_one,
@@ -364,7 +357,7 @@ variable (m) in
 def fromBlocksOne : specialUnitaryGroup (Fin m) α →* specialUnitaryGroup (Fin (r + m)) α where
   toFun B := ⟨reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ α)),
     submatrix_equiv_mem_unitary.2
-      (fromBlocks_zero_zero_mem_unitaryGroup_iff.2 ⟨one_mem _, B.property.1⟩),
+      (fromBlocks_zero_zero_mem_unitary.2 ⟨one_mem _, B.property.1⟩),
     by simpa [det_fromBlocks_zero₂₁] using B.property.2⟩
   map_one' := Subtype.ext <| by simp [fromBlocks_one]
   map_mul' A B := Subtype.ext <| by

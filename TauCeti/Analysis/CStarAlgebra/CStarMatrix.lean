@@ -254,7 +254,8 @@ lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
 
 /-- Reading a C⋆-matrix as an ordinary matrix sends `0` to `0`. -/
 @[simp]
-lemma ofMatrix_symm_zero [Zero A] : ofMatrix.symm (0 : CStarMatrix n n A) = 0 := (rfl)
+lemma ofMatrix_symm_zero {m : Type*} [Zero A] :
+    ofMatrix.symm (0 : CStarMatrix m n A) = 0 := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix sends `1` to `1`. -/
 @[simp]
@@ -268,7 +269,7 @@ lemma ofMatrix_symm_add [Add A] (M N : CStarMatrix n n A) :
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects negation. -/
 @[simp]
-lemma ofMatrix_symm_neg [Neg A] (M : CStarMatrix n n A) :
+lemma ofMatrix_symm_neg {m : Type*} [Neg A] (M : CStarMatrix m n A) :
     ofMatrix.symm (-M) = -ofMatrix.symm M := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects subtraction. -/

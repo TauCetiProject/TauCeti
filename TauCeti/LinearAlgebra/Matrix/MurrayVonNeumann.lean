@@ -61,10 +61,10 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
   are equivalent exactly when `p ⊕ 0` and `0 ⊕ q` are unitarily conjugate, and
   `Matrix.IsMurrayVonNeumannEquivalent.exists_isSelfAdjoint_mem_unitary_mul_fromBlocks_mul_star`
   supplies the conjugating self-adjoint unitary `!![1 - p, vᴴ; v, 1 - q]`.
-* `Matrix.isMurrayVonNeumannEquivalent_single_one` and
-  `Matrix.IsMurrayVonNeumannEquivalent.rank_eq`: diagonal matrix units of any sizes are
-  equivalent, and over a commutative star ring with the strong rank condition equivalent
-  projections have equal rank.
+* `IsStarProjection.isMurrayVonNeumannEquivalent_single` and
+  `Matrix.IsMurrayVonNeumannEquivalent.rank_eq`: diagonal matrix units of any sizes at a star
+  projection are equivalent, and over a commutative star ring with the strong rank condition
+  equivalent projections have equal rank.
 
 ## References
 
@@ -310,6 +310,15 @@ theorem isMurrayVonNeumannEquivalent_iff_exists_isPartialIsometry {p q : Matrix 
   · rintro ⟨v, hv, rfl, rfl⟩
     exact hv.isMurrayVonNeumannEquivalent
 
+/-- Diagonal matrix units of any sizes at a star projection `p` are equivalent: `single j i p`
+implements `single i i p ∼ single j j p`. -/
+theorem _root_.IsStarProjection.isMurrayVonNeumannEquivalent_single [DecidableEq m] [DecidableEq n]
+    {p : R} (hp : IsStarProjection p) (i : m) (j : n) :
+    IsMurrayVonNeumannEquivalent (single i i p) (single j j p) := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, single j i p, ?_, ?_⟩ <;>
+    simp [IsIdempotentElem, IsSelfAdjoint, star_eq_conjTranspose, hp.isIdempotentElem.eq,
+      hp.isSelfAdjoint.star_eq]
+
 end NonUnitalSemiring
 
 section Semiring
@@ -337,13 +346,6 @@ theorem isMurrayVonNeumannEquivalent_of_mem_unitary_mul_fromBlocks_mul_star [Dec
   have hq := (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.mp h.isStarProjection_right).2
   exact h.trans (hq.isMurrayVonNeumannEquivalent_zero_fromBlocks (n := m)).symm
 
-/-- Diagonal matrix units of any sizes are equivalent: `single j i 1` implements
-`single i i 1 ∼ single j j 1`. -/
-theorem isMurrayVonNeumannEquivalent_single_one [DecidableEq m] [DecidableEq n] (i : m) (j : n) :
-    IsMurrayVonNeumannEquivalent (single i i (1 : R)) (single j j 1) := by
-  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, single j i 1, by simp, by simp⟩ <;>
-  simp [IsIdempotentElem, IsSelfAdjoint, star_eq_conjTranspose]
-
 /-- A diagonal matrix unit of any size is equivalent to the identity matrix of size one. Over `ℂ`
 this is the equivalence of `diag(1, 0)` with `1`, through the row `(1 0)`. -/
 theorem isMurrayVonNeumannEquivalent_single_one_one [DecidableEq m] [Unique n] (i : m) :
@@ -352,7 +354,7 @@ theorem isMurrayVonNeumannEquivalent_single_one_one [DecidableEq m] [Unique n] (
     ext a b
     rw [Unique.eq_default a, Unique.eq_default b, one_apply_eq, single_apply_same]
   rw [h]
-  exact isMurrayVonNeumannEquivalent_single_one i default
+  exact (IsStarProjection.one (R := R)).isMurrayVonNeumannEquivalent_single i default
 
 end Semiring
 
