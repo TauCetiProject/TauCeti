@@ -14,28 +14,30 @@ import TauCeti.KnotTheory.Grid.TorusLink.Homology
 /-!
 # The bigraded `GH⁻` piece-`finrank` invariant of grid knots
 
-For a grid link with one component, `GridLink.IsKnot.unblockedHomologyPieceFinrank` is the
+For a grid link with one component, `GridLink.IsKnot.bigradedUnblockedHomologyPieceFinrank` is the
 ground-ring `finrank` of the Maslov--Alexander bidegree-`g` piece of `GH⁻` on any presenting knot
 grid diagram. Independence of the chosen diagram follows from bigraded grid-move invariance
 (`GridDiagram.IsKnot.finrank_bigradedUnblockedHomologyGrading_piece_eq_of_movesTo`). The computation
-rules `unblockedHomologyPieceFinrank_eq_of_toGridLink_eq` and
-`unblockedHomologyPieceFinrank_toGridLink` evaluate it on any chosen diagram.
+rules `bigradedUnblockedHomologyPieceFinrank_eq_of_toGridLink_eq` and
+`bigradedUnblockedHomologyPieceFinrank_toGridLink` evaluate it on any chosen diagram.
 
 On `GridLink.unknot`, evaluating on the standard `2 × 2` unknot diagram over any commutative ring
 `K` of characteristic two shows that every bidegree outside the monomial cone of the two states
-`(0, 0)` and `(-1, -1)` has piece `finrank` zero (`unblockedHomologyPieceFinrank_unknot_eq_zero`),
-that the `(0, 0)` piece has `finrank` `1` (`unblockedHomologyPieceFinrank_unknot_zero`), and that
-the `U`-tower `U^k • λ⁻` gives positive `finrank` in every bidegree `(-2k, -k)`
-(`unblockedHomologyPieceFinrank_unknot_neg_two_mul_neg_pos`).
+`(0, 0)` and `(-1, -1)` has piece `finrank` zero
+(`bigradedUnblockedHomologyPieceFinrank_unknot_eq_zero`),
+that the `(0, 0)` piece has `finrank` `1` (`bigradedUnblockedHomologyPieceFinrank_unknot_zero`), and
+that the `U`-tower `U^k • λ⁻` gives positive `finrank` in every bidegree `(-2k, -k)`
+(`bigradedUnblockedHomologyPieceFinrank_unknot_neg_two_mul_neg_pos`).
 
 ## References
 
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Sections 4.3, 4.6, Theorem 5.3.1
 (Chapter 5), and Chapter 6. The lift to `GridLink.IsKnot` parallels
 `TauCeti.KnotTheory.Grid.Move.Tau` (`GridLink.IsKnot.tau`), and the `U`-tower positivity uses
-`TauCeti.KnotTheory.Grid.Homology.NonTorsion`
-(`GridDiagram.eq_zero_of_monomial_smul_XMarkingClass_eq_zero` and
-`GridDiagram.IsKnot.X_pow_smul_XMarkingClass_ne_zero`).
+`OddComponentGridDiagram.finrank_bigradedUnblockedHomologyPiece_pos` (together with
+`GridDiagram.injective_toSpanSingleton_monomial_smul_XMarkingClass` and
+`GridDiagram.eq_zero_of_monomial_smul_XMarkingClass_eq_zero` in
+`TauCeti.KnotTheory.Grid.Homology.NonTorsion`).
 -/
 
 public section
@@ -53,30 +55,31 @@ evaluated on a presenting knot diagram.
 
 It is independent of the representative diagram by
 `GridDiagram.IsKnot.finrank_bigradedUnblockedHomologyGrading_piece_eq_of_movesTo`. -/
-noncomputable def unblockedHomologyPieceFinrank (g : ℤ × ℤ) : ℕ :=
+noncomputable def bigradedUnblockedHomologyPieceFinrank (g : ℤ × ℤ) : ℕ :=
   let G := Classical.choose L.exists_gridDiagram
   let hG := (isKnot_toGridLink G.snd).mp ((Classical.choose_spec L.exists_gridDiagram).symm ▸ hL)
   Module.finrank K ((hG.bigradedUnblockedHomologyGrading K).piece g)
 
-/-- Evaluate `unblockedHomologyPieceFinrank` on any knot grid diagram presenting the grid knot. -/
-theorem unblockedHomologyPieceFinrank_eq_of_toGridLink_eq {n : ℕ} {G : GridDiagram n}
+/-- Evaluate `bigradedUnblockedHomologyPieceFinrank` on any knot grid diagram presenting the grid
+knot. -/
+theorem bigradedUnblockedHomologyPieceFinrank_eq_of_toGridLink_eq {n : ℕ} {G : GridDiagram n}
     (hG : G.IsKnot) (h : G.toGridLink = L) (g : ℤ × ℤ) :
-    hL.unblockedHomologyPieceFinrank K g =
+    hL.bigradedUnblockedHomologyPieceFinrank K g =
       Module.finrank K ((hG.bigradedUnblockedHomologyGrading K).piece g) := by
-  unfold unblockedHomologyPieceFinrank
+  unfold bigradedUnblockedHomologyPieceFinrank
   apply GridDiagram.IsKnot.finrank_bigradedUnblockedHomologyGrading_piece_eq_of_movesTo
   exact ((Classical.choose L.exists_gridDiagram).snd.toGridLink_eq_iff_movesTo).mp
     ((Classical.choose_spec L.exists_gridDiagram).trans h.symm)
 
-/-- On the grid knot presented by a diagram, `unblockedHomologyPieceFinrank` is the `finrank` of
-that diagram's homogeneous piece. -/
+/-- On the grid knot presented by a diagram, `bigradedUnblockedHomologyPieceFinrank` is the
+`finrank` of that diagram's homogeneous piece. -/
 @[simp]
-theorem unblockedHomologyPieceFinrank_toGridLink {n : ℕ} {G : GridDiagram n}
+theorem bigradedUnblockedHomologyPieceFinrank_toGridLink {n : ℕ} {G : GridDiagram n}
     (hG : G.toGridLink.IsKnot) (g : ℤ × ℤ) :
-    hG.unblockedHomologyPieceFinrank K g =
+    hG.bigradedUnblockedHomologyPieceFinrank K g =
       Module.finrank K
         ((((isKnot_toGridLink G).mp hG).bigradedUnblockedHomologyGrading K).piece g) :=
-  unblockedHomologyPieceFinrank_eq_of_toGridLink_eq hG K ((isKnot_toGridLink G).mp hG) rfl g
+  bigradedUnblockedHomologyPieceFinrank_eq_of_toGridLink_eq hG K ((isKnot_toGridLink G).mp hG) rfl g
 
 end GridLink.IsKnot
 
@@ -102,11 +105,11 @@ private theorem even_card_unblockedRectangles_twoByTwo_X :
   rw [heq]
   exact GridDiagram.even_card_unblockedRectangles_torusLink_X (p := 0) (q := 0)
 
-private theorem unblockedHomologyPieceFinrank_unknot_eq_twoByTwo
+private theorem bigradedUnblockedHomologyPieceFinrank_unknot_eq_twoByTwo
     (K : Type*) [CommRing K] [CharP K 2] (g : ℤ × ℤ) :
-    isKnot_unknot.unblockedHomologyPieceFinrank K g =
+    isKnot_unknot.bigradedUnblockedHomologyPieceFinrank K g =
       Module.finrank K (OddComponentGridDiagram.twoByTwo.bigradedUnblockedHomologyPiece K g) := by
-  rw [isKnot_unknot.unblockedHomologyPieceFinrank_eq_of_toGridLink_eq K
+  rw [isKnot_unknot.bigradedUnblockedHomologyPieceFinrank_eq_of_toGridLink_eq K
     isKnot_twoByTwo toGridLink_twoByTwo g,
     isKnot_twoByTwo.bigradedUnblockedHomologyGrading_piece_eq_mk K _ g]
 
@@ -116,11 +119,11 @@ variable (K : Type*) [CommRing K] [CharP K 2]
 
 /-- Over any commutative ring of characteristic two, `GH⁻` of the unknot has piece `finrank` zero
 outside the bidegree cone `{(2a, a) | a ≤ 0} ∪ {(2a + 1, a) | a < 0}`. -/
-theorem unblockedHomologyPieceFinrank_unknot_eq_zero {g : ℤ × ℤ}
+theorem bigradedUnblockedHomologyPieceFinrank_unknot_eq_zero {g : ℤ × ℤ}
     (hg : ¬ ((g.snd ≤ 0 ∧ g.fst = 2 * g.snd) ∨ (g.snd < 0 ∧ g.fst = 2 * g.snd + 1))) :
-    isKnot_unknot.unblockedHomologyPieceFinrank K g = 0 := by
+    isKnot_unknot.bigradedUnblockedHomologyPieceFinrank K g = 0 := by
   have : Nontrivial K := CharP.nontrivial_of_char_ne_one (v := 2) (by decide)
-  rw [unblockedHomologyPieceFinrank_unknot_eq_twoByTwo]
+  rw [bigradedUnblockedHomologyPieceFinrank_unknot_eq_twoByTwo]
   have hbot : OddComponentGridDiagram.twoByTwo.bigradedUnblockedHomologyPiece K g = ⊥ := by
     rw [Submodule.eq_bot_iff]
     intro y hy
@@ -135,10 +138,10 @@ theorem unblockedHomologyPieceFinrank_unknot_eq_zero {g : ℤ × ℤ}
 /-- Over any commutative ring of characteristic two, the `(0, 0)` piece of `GH⁻` of the unknot has
 `finrank` `1`. -/
 @[simp]
-theorem unblockedHomologyPieceFinrank_unknot_zero :
-    isKnot_unknot.unblockedHomologyPieceFinrank K (0, 0) = 1 := by
+theorem bigradedUnblockedHomologyPieceFinrank_unknot_zero :
+    isKnot_unknot.bigradedUnblockedHomologyPieceFinrank K (0, 0) = 1 := by
   have : Nontrivial K := CharP.nontrivial_of_char_ne_one (v := 2) (by decide)
-  rw [unblockedHomologyPieceFinrank_unknot_eq_twoByTwo]
+  rw [bigradedUnblockedHomologyPieceFinrank_unknot_eq_twoByTwo]
   have hvmem : GridDiagram.twoByTwo.XMarkingClass K ∈
       OddComponentGridDiagram.twoByTwo.bigradedUnblockedHomologyPiece K (0, 0) := by
     have hm :=
@@ -146,17 +149,9 @@ theorem unblockedHomologyPieceFinrank_unknot_zero :
     rwa [bidegree_twoByTwo_X] at hm
   refine Module.finrank_of_bijective_toSpanSingleton
     (x := ⟨GridDiagram.twoByTwo.XMarkingClass K, hvmem⟩)
-    ⟨fun r₁ r₂ hr ↦ ?_, fun w ↦ ?_⟩
-  · have hval : (r₁ - r₂) • GridDiagram.twoByTwo.XMarkingClass K = 0 := by
-      have hcoe := congrArg Subtype.val hr
-      simp only [LinearMap.toSpanSingleton_apply, Submodule.coe_smul] at hcoe
-      rwa [sub_smul, sub_eq_zero]
-    have hmon : (monomial (0 : Fin 2 →₀ ℕ) (r₁ - r₂) : MvPolynomial (Fin 2) K) •
-        GridDiagram.twoByTwo.XMarkingClass K = 0 := by
-      rwa [monomial_zero', ← algebraMap_eq, algebraMap_smul]
-    exact sub_eq_zero.mp
-      (GridDiagram.twoByTwo.eq_zero_of_monomial_smul_XMarkingClass_eq_zero K
-        even_card_unblockedRectangles_twoByTwo_X hmon)
+    ⟨?_, fun w ↦ ?_⟩
+  · simpa using GridDiagram.twoByTwo.injective_toSpanSingleton_monomial_smul_XMarkingClass K
+      even_card_unblockedRectangles_twoByTwo_X 0 (by simpa using hvmem)
   · obtain ⟨z, hz, hzw⟩ :=
       (OddComponentGridDiagram.twoByTwo.mem_bigradedUnblockedHomologyPiece_iff K).mp w.property
     have hzc :=
@@ -174,9 +169,9 @@ theorem unblockedHomologyPieceFinrank_unknot_zero :
 
 /-- Over any commutative ring of characteristic two, `GH⁻` of the unknot has positive `finrank`
 in every bidegree `(-2k, -k)` along the `U`-tower (`k : ℕ`). -/
-theorem unblockedHomologyPieceFinrank_unknot_neg_two_mul_neg_pos (k : ℕ) :
-    0 < isKnot_unknot.unblockedHomologyPieceFinrank K (-2 * (k : ℤ), -(k : ℤ)) := by
-  rw [unblockedHomologyPieceFinrank_unknot_eq_twoByTwo]
+theorem bigradedUnblockedHomologyPieceFinrank_unknot_neg_two_mul_neg_pos (k : ℕ) :
+    0 < isKnot_unknot.bigradedUnblockedHomologyPieceFinrank K (-2 * (k : ℤ), -(k : ℤ)) := by
+  rw [bigradedUnblockedHomologyPieceFinrank_unknot_eq_twoByTwo]
   have h := OddComponentGridDiagram.twoByTwo.finrank_bigradedUnblockedHomologyPiece_pos K
     even_card_unblockedRectangles_twoByTwo_X (Finsupp.single 0 k)
   have hb : OddComponentGridDiagram.twoByTwo.bidegree GridDiagram.twoByTwo.X -

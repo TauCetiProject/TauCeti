@@ -47,6 +47,8 @@ restricts to an `R`-linear map or equivalence.
   of arrows, over a semiring and with any compatible hom-space scalars and target.
 * `LinearEquiv.map_ker_of_intertwine` and `LinearEquiv.map_range_of_intertwine`: transport of
   kernels and ranges across an intertwining semilinear equivalence.
+* `LinearEquiv.map_ker_of_comm`: transport of kernels across a commuting square with linear
+  equivalences on the vertical sides.
 * `LinearEquiv.conj_pow` and `LinearEquiv.ker_conj`: conjugation by a semilinear equivalence
   commutes with powers and transports kernels.
 * `LinearEquiv.eq_conjRingEquiv_apply_iff`: the conjugate `f ∘ d ∘ f⁻¹` of an endomorphism
@@ -277,6 +279,26 @@ theorem map_range_of_intertwine
     exact ⟨f (e.symm b), ⟨e.symm b, rfl⟩, by rw [← h, e.apply_symm_apply]⟩
 
 end Intertwining
+
+section CommSquare
+
+/-- If a commuting square of linear maps has linear equivalences on its vertical sides
+(`e₂ ∘ f₁ = f₂ ∘ e₁`), then `e₁` maps the kernel of `f₁` onto the kernel of `f₂`. -/
+theorem map_ker_of_comm {R M₁ M₂ N₁ N₂ : Type*} [Semiring R]
+    [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+    [AddCommMonoid N₁] [Module R N₁] [AddCommMonoid N₂] [Module R N₂]
+    (e₁ : M₁ ≃ₗ[R] M₂) (e₂ : N₁ ≃ₗ[R] N₂) (f₁ : M₁ →ₗ[R] N₁) (f₂ : M₂ →ₗ[R] N₂)
+    (hcomm : e₂.toLinearMap.comp f₁ = f₂.comp e₁.toLinearMap) :
+    (LinearMap.ker f₁).map e₁.toLinearMap = LinearMap.ker f₂ := by
+  have hpre : LinearMap.ker f₁ = (LinearMap.ker f₂).comap e₁.toLinearMap := by
+    ext x
+    have hx := LinearMap.congr_fun hcomm x
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap] at hx
+    simp only [LinearMap.mem_ker, Submodule.mem_comap, LinearEquiv.coe_toLinearMap]
+    rw [← e₂.map_eq_zero_iff, hx]
+  rw [hpre, Submodule.map_comap_eq_of_surjective e₁.surjective]
+
+end CommSquare
 
 section ConjRingEquiv
 

@@ -80,9 +80,9 @@ degree-`p` piece consists of the classes of the cycles of degree `p`. -/
 noncomputable def homology : InternalGrading R (d.homology hd) ι :=
   (G.ker hhom).quotient d.boundariesInKer (G.isHomogeneous_boundariesInKer hhom)
 
-/-- When the ambient piece `G.piece p` is Noetherian over `R`, so is the degree-`p` cycle piece,
-making the degree-`p` homology piece finitely generated over `R`. -/
-instance finite_homology_piece (p : ι) [IsNoetherian R (G.piece p)] :
+/-- When the degree-`p` cycle piece is finitely generated over `R`, so is the degree-`p`
+homology piece. -/
+instance finite_homology_piece (p : ι) [Module.Finite R ((G.ker hhom).piece p)] :
     Module.Finite R ((G.homology hhom hd).piece p) := by
   rw [homology]
   infer_instance

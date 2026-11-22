@@ -182,6 +182,25 @@ theorem eq_zero_of_monomial_smul_XMarkingClass_eq_zero
   simpa [eval_monomial] using hev
 
 /-- If every grid state has an even number of counted rectangles into the `X`-marking state, then
+the `R`-linear span map from `R` onto `monomial e 1 • G.XMarkingClass R` inside any
+`R`-submodule of `GH⁻` is injective. -/
+theorem injective_toSpanSingleton_monomial_smul_XMarkingClass
+    (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (e : Fin n →₀ ℕ)
+    {P : Submodule R (G.unblockedHomology R)}
+    (hmem : (monomial e (1 : R)) • G.XMarkingClass R ∈ P) :
+    Function.Injective
+      (LinearMap.toSpanSingleton R P ⟨(monomial e (1 : R)) • G.XMarkingClass R, hmem⟩) := by
+  intro r₁ r₂ hr
+  have hval : (r₁ - r₂) • ((monomial e (1 : R)) • G.XMarkingClass R) = 0 := by
+    have hcoe := congrArg Subtype.val hr
+    simp only [LinearMap.toSpanSingleton_apply, Submodule.coe_smul] at hcoe
+    rwa [sub_smul, sub_eq_zero]
+  have hmon : (monomial e (r₁ - r₂) : MvPolynomial (Fin n) R) • G.XMarkingClass R = 0 := by
+    rwa [← algebraMap_smul (MvPolynomial (Fin n) R), smul_smul, algebraMap_eq,
+      C_mul_monomial, mul_one] at hval
+  exact sub_eq_zero.mp (G.eq_zero_of_monomial_smul_XMarkingClass_eq_zero R hX hmon)
+
+/-- If every grid state has an even number of counted rectangles into the `X`-marking state, then
 no monomial in the grid variables kills its class in `GH⁻`. -/
 theorem monomial_smul_XMarkingClass_ne_zero
     (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (e : Fin n →₀ ℕ) :

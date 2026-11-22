@@ -18,7 +18,7 @@ has degree `(-2, -1)`. Homogeneous projection preserves both cycles and boundari
 has a homogeneous representative precisely when it belongs to the corresponding piece.
 
 The cycle pieces are defined over commutative semirings, and their internal direct sum
-decomposition is recorded over commutative rings via `isInternal_bigradedChainMinusPiece`.
+decomposition is recorded over commutative rings via `isInternal_bigradedUnblockedCyclesPiece`.
 The homology grading and its consequences require a commutative ring of characteristic two
 (`[CommRing R] [CharP R 2]`).
 
@@ -61,18 +61,22 @@ end Cycles
 
 variable [CommRing R]
 
+/-- The degree-`g` piece of the kernel grading of `GC⁻` is `bigradedUnblockedCyclesPiece`. -/
+@[simp]
+theorem ker_bigradedChainMinusGrading_piece (g : ℤ × ℤ) :
+    ((G.bigradedChainMinusGrading R).ker
+      (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)).piece g =
+      G.bigradedUnblockedCyclesPiece R g := by
+  ext z
+  simp [bigradedChainMinusGrading_piece]
+
 /-- The homogeneous cycle modules form an internal direct sum. -/
 theorem isInternal_bigradedUnblockedCyclesPiece :
     DirectSum.IsInternal (G.bigradedUnblockedCyclesPiece R) := by
   have hpieces : ((G.bigradedChainMinusGrading R).ker
     (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)).piece =
-      G.bigradedUnblockedCyclesPiece R := by
-    funext g
-    ext z
-    simpa only [bigradedChainMinusGrading_piece, mem_bigradedUnblockedCyclesPiece] using
-      (G.bigradedChainMinusGrading R).mem_ker_piece
-        (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
-        (p := g) (z := z)
+      G.bigradedUnblockedCyclesPiece R :=
+    funext (G.ker_bigradedChainMinusGrading_piece R)
   rw [← hpieces]
   exact ((G.bigradedChainMinusGrading R).ker
     (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)).isInternal
@@ -86,6 +90,16 @@ noncomputable def bigradedUnblockedHomologyGrading :
     (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
     (G.val.unblockedDifferential_comp_self_eq_zero R)).map
       ((G.val.unblockedHomologyIso R).symm.toLinearEquiv.restrictScalars R)
+
+/-- `bigradedUnblockedHomologyGrading` is the homology grading of `bigradedChainMinusGrading`
+transported along `unblockedHomologyIso`. -/
+theorem bigradedUnblockedHomologyGrading_eq :
+    G.bigradedUnblockedHomologyGrading R =
+      ((G.bigradedChainMinusGrading R).homology
+        (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
+        (G.val.unblockedDifferential_comp_self_eq_zero R)).map
+          ((G.val.unblockedHomologyIso R).symm.toLinearEquiv.restrictScalars R) := by
+  rw [bigradedUnblockedHomologyGrading]
 
 /-- The bidegree-`g` piece of `GH⁻`: classes of cycles homogeneous of bidegree `g`. -/
 noncomputable def bigradedUnblockedHomologyPiece (g : ℤ × ℤ) :

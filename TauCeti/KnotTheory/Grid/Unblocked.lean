@@ -93,6 +93,8 @@ assignment, which `SignAssignment/Differential.lean` does.
   state is counted, and each grid state has an even number, zero or two, of them.
 * `TauCeti.GridDiagram.unblockedDifferentialOnGenerator_support_subset`: the differential of a
   generator is supported on the column transpositions of that generator.
+* `TauCeti.GridDiagram.mapRange_map_unblockedDifferential`: mapping coefficients along a ring
+  homomorphism intertwines the unblocked differentials.
 * `TauCeti.GridDiagram.unblockedDifferential_sq_single_apply`: the matrix of `∂⁻ ∘ ∂⁻` is a
   sum over intermediate states of products of matrix coefficients.
 * `TauCeti.GridDiagram.maslovO_sub_two_mul_card_OColumns_eq_maslovO_sub_one`,
@@ -946,6 +948,25 @@ theorem unblockedDifferential_apply_apply (c : GridChainMinus R n) (y : GridStat
     G.unblockedDifferential R c y = c.sum fun x a => a * G.unblockedCoefficient R x y := by
   rw [unblockedDifferential_apply]
   simp [Finsupp.sum_apply]
+
+/-- Mapping coefficients along a ring homomorphism intertwines the unblocked differentials. -/
+theorem mapRange_map_unblockedDifferential {F R : Type*} [CommSemiring F] [CommSemiring R]
+    (φ : F →+* R) (c : GridChainMinus F n) :
+    (G.unblockedDifferential F c).mapRange (MvPolynomial.map φ) (map_zero _) =
+      G.unblockedDifferential R (c.mapRange (MvPolynomial.map φ) (map_zero _)) := by
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c d hc hd =>
+    rw [map_add, Finsupp.mapRange_add (hf' := fun _ _ ↦ map_add _ _ _), hc, hd,
+      Finsupp.mapRange_add (hf' := fun _ _ ↦ map_add _ _ _), map_add]
+  | single x p =>
+    refine Finsupp.ext fun y ↦ ?_
+    rw [Finsupp.mapRange_apply, Finsupp.mapRange_single,
+      unblockedDifferential_apply_apply, unblockedDifferential_apply_apply,
+      Finsupp.sum_single_index (by simp), Finsupp.sum_single_index (by simp), map_mul]
+    congr 1
+    simp only [unblockedCoefficient_def, map_sum,
+      OMonomial_eq_prod_OColumns, map_prod, MvPolynomial.map_X]
 
 /-- The matrix of the square of the unblocked differential: its `(x, z)` entry is the sum over
 intermediate grid states of the products of the two matrix coefficients. -/

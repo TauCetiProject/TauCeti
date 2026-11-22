@@ -92,32 +92,23 @@ theorem mem_alexanderHomologyGrading_piece_iff {a : ℤ}
 
 variable (G R)
 
+/-- Over any commutative ring of characteristic two, each Alexander piece of the cycles of `GC⁻`
+is finitely generated over the ground ring. -/
+instance finite_ker_alexanderChainMinusGrading_piece (a : ℤ) :
+    Module.Finite R (((G.alexanderChainMinusGrading R).ker
+      (G.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading R)).piece a) := by
+  have h := G.finite_ker_unblockedDifferential_alexanderChainMinusPiece R a
+  rw [← G.alexanderChainMinusGrading_piece R a] at h
+  exact Module.Finite.equiv
+    ((G.alexanderChainMinusGrading R).kerPieceEquivKerRestrict
+      (G.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading R) a).symm
+
 /-- Over any commutative ring of characteristic two, each Alexander piece of `ker ∂⁻ ⧸ im ∂⁻` is
 finitely generated over the ground ring. -/
 instance finite_alexanderHomologyGrading_piece (a : ℤ) :
     Module.Finite R ((G.alexanderHomologyGrading R).piece a) := by
-  have _ := G.finite_ker_unblockedDifferential_alexanderChainMinusPiece R a
-  let πR := ((G.val.unblockedDifferential R).homologyπ
-    (G.val.unblockedDifferential_comp_self_eq_zero R)).restrictScalars R
-  let f : LinearMap.ker (((G.val.unblockedDifferential R).restrictScalars R).comp
-      (G.alexanderChainMinusPiece R a).subtype) →ₗ[R]
-      (G.alexanderHomologyGrading R).piece a :=
-    { toFun := fun w ↦
-        ⟨πR ⟨w.val.val, LinearMap.mem_ker.mpr (LinearMap.mem_ker.mp w.property)⟩,
-          (G.mem_alexanderHomologyGrading_piece_iff (a := a)).mpr
-            ⟨⟨w.val.val, LinearMap.mem_ker.mpr (LinearMap.mem_ker.mp w.property)⟩,
-              w.val.property, rfl⟩⟩
-      map_add' := fun w₁ w₂ ↦ Subtype.ext <| by
-        change πR ⟨(w₁ + w₂).val.val, _⟩ = πR ⟨w₁.val.val, _⟩ + πR ⟨w₂.val.val, _⟩
-        rw [← map_add πR]
-        congr 1
-      map_smul' := fun r w ↦ Subtype.ext <| by
-        change πR ⟨(r • w).val.val, _⟩ = r • πR ⟨w.val.val, _⟩
-        rw [← map_smul πR r]
-        congr 1 }
-  refine Module.Finite.of_surjective f fun ⟨y, hy⟩ ↦ ?_
-  obtain ⟨z, hz, rfl⟩ := (G.mem_alexanderHomologyGrading_piece_iff (a := a)).mp hy
-  exact ⟨⟨⟨z.val, hz⟩, LinearMap.mem_ker.mpr (LinearMap.mem_ker.mp z.property)⟩, rfl⟩
+  rw [alexanderHomologyGrading]
+  infer_instance
 
 variable {G R}
 

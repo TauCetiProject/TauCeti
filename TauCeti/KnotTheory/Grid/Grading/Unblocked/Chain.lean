@@ -12,6 +12,7 @@ import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.Module.Equiv.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Kernel
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Data.Finsupp.Weight
@@ -350,21 +351,27 @@ private theorem bigradedChainMinusSupported_mono {R : Type*} [CommSemiring R] {S
     (h : S ⊆ T) : G.bigradedChainMinusSupported R S ≤ G.bigradedChainMinusSupported R T :=
   fun _ hc x e he => h (hc x e he)
 
+private noncomputable def monomialChainBasis (K : Type*) [CommSemiring K] :
+    Module.Basis (Σ _ : GridState n, Fin n →₀ ℕ) K (GridChainMinus K n) :=
+  Finsupp.basis fun _ : GridState n ↦ MvPolynomial.basisMonomials (Fin n) K
+
 private theorem bigradedChainMinusSupported_eq_span (R : Type*) [CommSemiring R]
     (S : Set (ℤ × ℤ)) :
     G.bigradedChainMinusSupported R S =
       Submodule.span R
-        ((Finsupp.basis fun _ : GridState n ↦ MvPolynomial.basisMonomials (Fin n) R) ''
+        (monomialChainBasis (n := n) R ''
           {ix : Σ _ : GridState n, Fin n →₀ ℕ | G.monomialBidegree ix.fst ix.snd ∈ S}) := by
-  let b := Finsupp.basis fun _ : GridState n ↦ MvPolynomial.basisMonomials (Fin n) R
+  let b := monomialChainBasis (n := n) R
   ext c
   rw [b.mem_span_image]
   constructor
   · intro hc ix hix
+    dsimp only [b, monomialChainBasis] at hix
     rw [Finset.mem_coe, Finsupp.mem_support_iff, Finsupp.basis_repr] at hix
     exact hc ix.fst ix.snd (MvPolynomial.mem_support_iff.mpr hix)
   · intro hc x e he
     have hmem : (⟨x, e⟩ : Σ _ : GridState n, Fin n →₀ ℕ) ∈ (b.repr c).support := by
+      dsimp only [b, monomialChainBasis]
       rw [Finsupp.mem_support_iff, Finsupp.basis_repr]
       exact MvPolynomial.mem_support_iff.mp he
     exact hc hmem
@@ -577,7 +584,7 @@ theorem iSupIndep_bigradedChainMinusPiece (R : Type*) [CommSemiring R] :
 homogeneous pieces, over any commutative semiring. -/
 theorem isInternal_bigradedChainMinusPiece (R : Type*) [CommSemiring R] :
     DirectSum.IsInternal (G.bigradedChainMinusPiece R) := by
-  let b := Finsupp.basis fun _ : GridState n ↦ MvPolynomial.basisMonomials (Fin n) R
+  let b := monomialChainBasis (n := n) R
   have h : (fun g : ℤ × ℤ ↦ Submodule.span R
       (b '' {ix : Σ _ : GridState n, Fin n →₀ ℕ | G.monomialBidegree ix.fst ix.snd = g})) =
       G.bigradedChainMinusPiece R := by
@@ -690,7 +697,7 @@ def alexanderChainMinusGrading (R : Type*) [CommSemiring R] :
     InternalGrading R (GridChainMinus R n) ℤ where
   piece := G.alexanderChainMinusPiece R
   isInternal := by
-    let b := Finsupp.basis fun _ : GridState n ↦ MvPolynomial.basisMonomials (Fin n) R
+    let b := monomialChainBasis (n := n) R
     have h : (fun a : ℤ ↦ Submodule.span R
         (b '' {ix : Σ _ : GridState n, Fin n →₀ ℕ |
           (G.monomialBidegree ix.fst ix.snd).snd = a})) =
@@ -724,7 +731,7 @@ theorem coarsenGrading_bigradedChainMinusPiece_snd (R : Type*) [CommSemiring R] 
     exact G.bigradedChainMinusPiece_le_alexanderChainMinusPiece R m b
   · rw [alexanderChainMinusPiece, G.bigradedChainMinusSupported_eq_span R, Submodule.span_le]
     rintro _ ⟨⟨x, e⟩, (hxe : (G.monomialBidegree x e).snd = a), rfl⟩
-    simp only [Finsupp.coe_basis, coe_basisMonomials, SetLike.mem_coe]
+    simp only [monomialChainBasis, Finsupp.coe_basis, coe_basisMonomials, SetLike.mem_coe]
     exact hxe ▸ mem_coarsenGrading_of_mem Prod.snd
       (G.single_monomial_mem_bigradedChainMinusPiece R x e 1)
 
@@ -792,10 +799,6 @@ section CharacteristicTwoCycles
 
 open scoped TensorProduct
 
-private noncomputable def monomialChainBasis (K : Type*) [CommSemiring K] :
-    Module.Basis (Σ _ : GridState n, Fin n →₀ ℕ) K (GridChainMinus K n) :=
-  Finsupp.basis fun _ : GridState n ↦ MvPolynomial.basisMonomials (Fin n) K
-
 private noncomputable def bigradedChainMinusSupportedBasis (K : Type*) [CommSemiring K]
     (S : Set (ℤ × ℤ)) :
     Module.Basis
@@ -808,23 +811,73 @@ private noncomputable def bigradedChainMinusSupportedBasis (K : Type*) [CommSemi
       rw [G.bigradedChainMinusSupported_eq_span K S, Set.image_eq_range]
       rfl)
 
-private theorem mapRange_map_unblockedDifferential {F R : Type*} [CommSemiring F]
-    [CommSemiring R] (φ : F →+* R) (c : GridChainMinus F n) :
-    (G.val.unblockedDifferential F c).mapRange (MvPolynomial.map φ) (map_zero _) =
-      G.val.unblockedDifferential R (c.mapRange (MvPolynomial.map φ) (map_zero _)) := by
+private theorem baseChange_equiv_monomialChainBasis_tmul {F R : Type*} [CommRing F] [CommRing R]
+    [Algebra F R] (c : GridChainMinus F n) :
+    ((monomialChainBasis (n := n) F).baseChange R).equiv
+        (monomialChainBasis (n := n) R) (Equiv.refl _) (1 ⊗ₜ[F] c) =
+      c.mapRange (MvPolynomial.map (algebraMap F R)) (map_zero _) := by
   induction c using Finsupp.induction_linear with
   | zero => simp
   | add c d hc hd =>
-    rw [map_add, Finsupp.mapRange_add (hf' := fun _ _ ↦ map_add _ _ _), hc, hd,
-      Finsupp.mapRange_add (hf' := fun _ _ ↦ map_add _ _ _), map_add]
+    rw [TensorProduct.tmul_add, map_add, hc, hd,
+      Finsupp.mapRange_add (hf' := fun _ _ ↦ map_add _ _ _)]
   | single x p =>
-    refine Finsupp.ext fun y ↦ ?_
-    rw [Finsupp.mapRange_apply, Finsupp.mapRange_single,
-      GridDiagram.unblockedDifferential_apply_apply, GridDiagram.unblockedDifferential_apply_apply,
-      Finsupp.sum_single_index (by simp), Finsupp.sum_single_index (by simp), map_mul]
-    congr 1
-    simp only [GridDiagram.unblockedCoefficient_def, map_sum,
-      GridDiagram.OMonomial_eq_prod_OColumns, map_prod, MvPolynomial.map_X]
+    induction p using MvPolynomial.induction_on' with
+    | add p q hp hq =>
+      rw [Finsupp.single_add, TensorProduct.tmul_add, map_add, hp, hq,
+        Finsupp.mapRange_add (hf' := fun _ _ ↦ map_add _ _ _)]
+    | monomial d a =>
+      have hsingle : (Finsupp.single x (monomial d a) : GridChainMinus F n) =
+          a • monomialChainBasis (n := n) F ⟨x, d⟩ := by
+        refine Finsupp.ext fun z ↦ ?_
+        by_cases hz : z = x
+        · subst hz; simp [monomialChainBasis, smul_monomial]
+        · simp [hz, monomialChainBasis]
+      rw [hsingle, TensorProduct.tmul_smul, ← algebraMap_smul R a, map_smul,
+        ← Module.Basis.baseChange_apply, Module.Basis.equiv_apply, Equiv.refl_apply]
+      refine Finsupp.ext fun z ↦ ?_
+      by_cases hz : z = x
+      · subst hz
+        simp only [Finsupp.smul_apply, Finsupp.mapRange_apply, monomialChainBasis,
+          Finsupp.coe_basis, coe_basisMonomials, Finsupp.single_eq_same, smul_monomial,
+          smul_eq_mul, mul_one, map_monomial]
+      · simp [hz, monomialChainBasis]
+
+private theorem baseChange_unblockedDifferential_comm_supported
+    (R : Type*) [CommRing R] [CharP R 2] (S : Set (ℤ × ℤ)) :
+    letI : Algebra (ZMod 2) R := ZMod.algebra R 2
+    let T := {ix : Σ _ : GridState n, Fin n →₀ ℕ // G.monomialBidegree ix.fst ix.snd ∈ S}
+    let e₁ : R ⊗[ZMod 2] (T →₀ ZMod 2) ≃ₗ[R] G.bigradedChainMinusSupported R S :=
+      (Finsupp.basisSingleOne.baseChange R).equiv
+        (G.bigradedChainMinusSupportedBasis R S) (Equiv.refl _)
+    let e₂ : R ⊗[ZMod 2] GridChainMinus (ZMod 2) n ≃ₗ[R] GridChainMinus R n :=
+      ((monomialChainBasis (n := n) (ZMod 2)).baseChange R).equiv
+        (monomialChainBasis (n := n) R) (Equiv.refl _)
+    let dF : (T →₀ ZMod 2) →ₗ[ZMod 2] GridChainMinus (ZMod 2) n :=
+      Finsupp.linearCombination (ZMod 2) fun i : T ↦
+        (G.val.unblockedDifferential (ZMod 2)) (monomialChainBasis (n := n) (ZMod 2) i.val)
+    let dR : G.bigradedChainMinusSupported R S →ₗ[R] GridChainMinus R n :=
+      ((G.val.unblockedDifferential R).restrictScalars R).comp
+        (G.bigradedChainMinusSupported R S).subtype
+    e₂.toLinearMap.comp (dF.baseChange R) = dR.comp e₁.toLinearMap := by
+  let _ : Algebra (ZMod 2) R := ZMod.algebra R 2
+  let bR := monomialChainBasis (n := n) R
+  refine (Finsupp.basisSingleOne.baseChange R).ext fun i ↦ ?_
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    LinearEquiv.coe_toLinearMap, Module.Basis.equiv_apply, Equiv.refl_apply,
+    Module.Basis.baseChange_apply, LinearMap.baseChange_tmul,
+    baseChange_equiv_monomialChainBasis_tmul, Finsupp.coe_basisSingleOne,
+    Finsupp.linearCombination_single, one_smul, LinearMap.comp_apply,
+    Submodule.coe_subtype, LinearMap.restrictScalars_apply]
+  have hbSR_coe : ((G.bigradedChainMinusSupportedBasis R S i :
+      G.bigradedChainMinusSupported R S) : GridChainMinus R n) = bR i.val := by
+    simp [bR, bigradedChainMinusSupportedBasis]
+  rw [hbSR_coe, G.val.mapRange_map_unblockedDifferential]
+  congr 1
+  refine Finsupp.ext fun z ↦ ?_
+  by_cases hz : z = i.val.fst
+  · subst hz; simp [bR, monomialChainBasis]
+  · simp [hz, bR, monomialChainBasis]
 
 private theorem finite_ker_unblockedDifferential_bigradedChainMinusSupported
     (R : Type*) [CommRing R] [CharP R 2] {S : Set (ℤ × ℤ)}
@@ -835,80 +888,24 @@ private theorem finite_ker_unblockedDifferential_bigradedChainMinusSupported
   let _ : Algebra (ZMod 2) R := ZMod.algebra R 2
   let T := {ix : Σ _ : GridState n, Fin n →₀ ℕ // G.monomialBidegree ix.fst ix.snd ∈ S}
   have _ : Finite T := hfin
-  let bF := monomialChainBasis (n := n) (ZMod 2)
-  let bR := monomialChainBasis (n := n) R
-  let bTF : Module.Basis T (ZMod 2) (T →₀ ZMod 2) := Finsupp.basisSingleOne
-  let bSR := G.bigradedChainMinusSupportedBasis R S
   let e₁ : R ⊗[ZMod 2] (T →₀ ZMod 2) ≃ₗ[R] G.bigradedChainMinusSupported R S :=
-    (bTF.baseChange R).equiv bSR (Equiv.refl _)
+    (Finsupp.basisSingleOne.baseChange R).equiv
+      (G.bigradedChainMinusSupportedBasis R S) (Equiv.refl _)
   let e₂ : R ⊗[ZMod 2] GridChainMinus (ZMod 2) n ≃ₗ[R] GridChainMinus R n :=
-    (bF.baseChange R).equiv bR (Equiv.refl _)
-  have he₂ : ∀ c : GridChainMinus (ZMod 2) n,
-      e₂ (1 ⊗ₜ[ZMod 2] c) =
-        c.mapRange (MvPolynomial.map (algebraMap (ZMod 2) R)) (map_zero _) := by
-    intro c
-    induction c using Finsupp.induction_linear with
-    | zero => simp
-    | add c d hc hd =>
-      rw [TensorProduct.tmul_add, map_add, hc, hd,
-        Finsupp.mapRange_add (hf' := fun _ _ ↦ map_add _ _ _)]
-    | single x p =>
-      induction p using MvPolynomial.induction_on' with
-      | add p q hp hq =>
-        rw [Finsupp.single_add, TensorProduct.tmul_add, map_add, hp, hq,
-          Finsupp.mapRange_add (hf' := fun _ _ ↦ map_add _ _ _)]
-      | monomial d a =>
-        have hsingle : (Finsupp.single x (monomial d a) : GridChainMinus (ZMod 2) n) =
-            a • bF ⟨x, d⟩ := by
-          refine Finsupp.ext fun z ↦ ?_
-          by_cases hz : z = x
-          · subst hz; simp [bF, monomialChainBasis, smul_monomial]
-          · simp [hz, bF, monomialChainBasis]
-        rw [hsingle, TensorProduct.tmul_smul, ← algebraMap_smul R a, map_smul,
-          ← Module.Basis.baseChange_apply, Module.Basis.equiv_apply, Equiv.refl_apply]
-        refine Finsupp.ext fun z ↦ ?_
-        by_cases hz : z = x
-        · subst hz
-          simp only [Finsupp.smul_apply, Finsupp.mapRange_apply, bF, bR, monomialChainBasis,
-            Finsupp.coe_basis, coe_basisMonomials, Finsupp.single_eq_same, smul_monomial,
-            smul_eq_mul, mul_one, map_monomial]
-        · simp [hz, bF, bR, monomialChainBasis]
+    ((monomialChainBasis (n := n) (ZMod 2)).baseChange R).equiv
+      (monomialChainBasis (n := n) R) (Equiv.refl _)
   let dF : (T →₀ ZMod 2) →ₗ[ZMod 2] GridChainMinus (ZMod 2) n :=
     Finsupp.linearCombination (ZMod 2) fun i : T ↦
-      (G.val.unblockedDifferential (ZMod 2)) (bF i.val)
+      (G.val.unblockedDifferential (ZMod 2)) (monomialChainBasis (n := n) (ZMod 2) i.val)
   let dR : G.bigradedChainMinusSupported R S →ₗ[R] GridChainMinus R n :=
     ((G.val.unblockedDifferential R).restrictScalars R).comp
       (G.bigradedChainMinusSupported R S).subtype
-  have hbSR_coe : ∀ i, ((bSR i : G.bigradedChainMinusSupported R S) :
-      GridChainMinus R n) = bR i.val := fun i ↦ by
-    simp [bSR, bR, bigradedChainMinusSupportedBasis]
-  have hcomm : e₂.toLinearMap.comp (dF.baseChange R) = dR.comp e₁.toLinearMap := by
-    refine (bTF.baseChange R).ext fun i ↦ ?_
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Module.Basis.baseChange_apply,
-      LinearMap.baseChange_tmul, he₂]
-    have hdFi : dF (bTF i) = (G.val.unblockedDifferential (ZMod 2)) (bF i.val) := by
-      simp [dF, bTF]
-    have he₁i : e₁ (1 ⊗ₜ[ZMod 2] bTF i) = bSR i := by
-      rw [← Module.Basis.baseChange_apply, Module.Basis.equiv_apply, Equiv.refl_apply]
-    rw [hdFi, he₁i]
-    simp only [dR, LinearMap.comp_apply, Submodule.coe_subtype, LinearMap.restrictScalars_apply,
-      hbSR_coe]
-    rw [G.mapRange_map_unblockedDifferential]
-    congr 1
-    refine Finsupp.ext fun z ↦ ?_
-    by_cases hz : z = i.val.fst
-    · subst hz; simp [bF, bR, monomialChainBasis]
-    · simp [hz, bF, bR, monomialChainBasis]
+  -- Transport finite generation of `ker (dF.baseChange R)` over `ZMod 2` across the base-change
+  -- commuting square `e₂ ∘ dF.baseChange R = dR ∘ e₁`.
   have _ : Module.Finite R (LinearMap.ker (dF.baseChange R)) :=
     LinearMap.finite_ker_baseChange dF
-  have hker : (LinearMap.ker (dF.baseChange R)).map e₁.toLinearMap = LinearMap.ker dR := by
-    have hpre : LinearMap.ker (dF.baseChange R) = (LinearMap.ker dR).comap e₁.toLinearMap := by
-      ext x
-      have hx := LinearMap.congr_fun hcomm x
-      simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap] at hx
-      simp only [LinearMap.mem_ker, Submodule.mem_comap, LinearEquiv.coe_toLinearMap]
-      rw [← e₂.map_eq_zero_iff, hx]
-    rw [hpre, Submodule.map_comap_eq_of_surjective e₁.surjective]
+  have hker := LinearEquiv.map_ker_of_comm e₁ e₂ (dF.baseChange R) dR
+    (G.baseChange_unblockedDifferential_comm_supported R S)
   exact Module.Finite.equiv ((e₁.submoduleMap _).trans (LinearEquiv.ofEq _ _ hker))
 
 /-- Over any commutative ring of characteristic two, the kernel of the unblocked differential

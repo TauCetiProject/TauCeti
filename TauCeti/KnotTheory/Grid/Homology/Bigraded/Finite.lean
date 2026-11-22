@@ -44,20 +44,34 @@ variable [CommRing R] [IsNoetherianRing R]
 generated over the ground ring. -/
 instance finite_bigradedUnblockedCyclesPiece (g : ℤ × ℤ) :
     Module.Finite R (G.bigradedUnblockedCyclesPiece R g) := by
-  -- Pin the additive group on `GC⁻` so Noetherian submodule synthesis does not unfold
-  -- `GridChainMinus` with an uninstantiated coefficient-ring metavariable.
-  let _ : AddCommGroup (GridChainMinus R n) := inferInstance
-  exact Module.Finite.of_injective
-    (((LinearMap.ker (G.val.unblockedDifferential R)).subtype.restrictScalars R).restrict
-      fun _ hz ↦ (G.mem_bigradedUnblockedCyclesPiece R).mp hz)
-    fun _ _ h ↦
-      Subtype.ext (Subtype.ext (congrArg (Subtype.val : G.bigradedChainMinusPiece R g → _) h))
+  have : IsNoetherian R ((G.bigradedChainMinusGrading R).piece g) :=
+    isNoetherian_of_isNoetherianRing_of_finite R ↥((G.bigradedChainMinusGrading R).piece g)
+  rw [← G.ker_bigradedChainMinusGrading_piece R g]
+  infer_instance
 
 end Cycles
 
 section Homology
 
 variable [CommRing R] [CharP R 2]
+
+/-- Over any commutative ring of characteristic two, each Maslov--Alexander piece of the cycles
+of `GC⁻` is finitely generated over the ground ring. -/
+instance finite_ker_bigradedChainMinusGrading_piece (g : ℤ × ℤ) :
+    Module.Finite R (((G.bigradedChainMinusGrading R).ker
+      (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)).piece g) := by
+  have h := G.finite_ker_unblockedDifferential_bigradedChainMinusPiece R g
+  rw [← G.bigradedChainMinusGrading_piece R g] at h
+  exact Module.Finite.equiv
+    ((G.bigradedChainMinusGrading R).kerPieceEquivKerRestrict
+      (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R) g).symm
+
+/-- Over any commutative ring of characteristic two, each Maslov--Alexander cycle piece of `GC⁻`
+is finitely generated over the ground ring. -/
+instance finite_bigradedUnblockedCyclesPiece_of_charP_two (g : ℤ × ℤ) :
+    Module.Finite R (G.bigradedUnblockedCyclesPiece R g) := by
+  rw [← G.ker_bigradedChainMinusGrading_piece R g]
+  infer_instance
 
 /-- Each Maslov--Alexander piece of `GH⁻` is the image of the corresponding cycle piece under
 `unblockedHomologyClass`. -/
@@ -69,30 +83,18 @@ theorem bigradedUnblockedHomologyPiece_eq_map (g : ℤ × ℤ) :
   simpa only [Submodule.mem_map, mem_bigradedUnblockedCyclesPiece,
     LinearMap.restrictScalars_apply] using G.mem_bigradedUnblockedHomologyPiece_iff R
 
-/-- Over any commutative ring of characteristic two, each Maslov--Alexander piece of `GH⁻` is
-finitely generated over the ground ring. -/
-instance finite_bigradedUnblockedHomologyPiece (g : ℤ × ℤ) :
-    Module.Finite R (G.bigradedUnblockedHomologyPiece R g) := by
-  let e : LinearMap.ker (((G.val.unblockedDifferential R).restrictScalars R).comp
-      (G.bigradedChainMinusPiece R g).subtype) ≃ₗ[R] G.bigradedUnblockedCyclesPiece R g :=
-    { toFun := fun w ↦ ⟨⟨w.val.val, LinearMap.mem_ker.mpr (LinearMap.mem_ker.mp w.property)⟩,
-        (G.mem_bigradedUnblockedCyclesPiece R).mpr w.val.property⟩
-      invFun := fun z ↦ ⟨⟨z.val.val, (G.mem_bigradedUnblockedCyclesPiece R).mp z.property⟩,
-        LinearMap.mem_ker.mpr (LinearMap.mem_ker.mp z.val.property)⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-  have _ := G.finite_ker_unblockedDifferential_bigradedChainMinusPiece R g
-  have _ : Module.Finite R (G.bigradedUnblockedCyclesPiece R g) := Module.Finite.equiv e
-  rw [G.bigradedUnblockedHomologyPiece_eq_map R g]
-  infer_instance
-
 /-- Over any commutative ring of characteristic two, each bundled piece of
 `bigradedUnblockedHomologyGrading` is finitely generated over the ground ring. -/
 instance finite_bigradedUnblockedHomologyGrading_piece (g : ℤ × ℤ) :
     Module.Finite R ((G.bigradedUnblockedHomologyGrading R).piece g) := by
-  rw [G.bigradedUnblockedHomologyGrading_piece R g]
+  rw [G.bigradedUnblockedHomologyGrading_eq R]
+  infer_instance
+
+/-- Over any commutative ring of characteristic two, each Maslov--Alexander piece of `GH⁻` is
+finitely generated over the ground ring. -/
+instance finite_bigradedUnblockedHomologyPiece (g : ℤ × ℤ) :
+    Module.Finite R (G.bigradedUnblockedHomologyPiece R g) := by
+  rw [← G.bigradedUnblockedHomologyGrading_piece R g]
   infer_instance
 
 end Homology

@@ -86,41 +86,8 @@ theorem finrank_bigradedUnblockedHomologyPiece_pos {n : ℕ} (G : OddComponentGr
         (G.bidegree G.val.X - (2 * (e.degree : ℤ), (e.degree : ℤ))) :=
     G.monomial_smul_mem_bigradedUnblockedHomologyPiece K e 1
       (G.XMarkingClass_mem_bigradedUnblockedHomologyPiece K)
-  have hinj : Function.Injective (LinearMap.toSpanSingleton K
-      (G.bigradedUnblockedHomologyPiece K
-        (G.bidegree G.val.X - (2 * (e.degree : ℤ), (e.degree : ℤ))))
-      ⟨(monomial e (1 : K)) • G.val.XMarkingClass K, hmem⟩) := by
-    intro r₁ r₂ hr
-    have hr' : (monomial e (r₁ - r₂) : MvPolynomial (Fin n) K) • G.val.XMarkingClass K = 0 := by
-      have hval : (r₁ - r₂) • ((monomial e (1 : K)) • G.val.XMarkingClass K) = 0 := by
-        have hcoe := congrArg Subtype.val hr
-        simp only [LinearMap.toSpanSingleton_apply, Submodule.coe_smul] at hcoe
-        rwa [sub_smul, sub_eq_zero]
-      rwa [← algebraMap_smul (MvPolynomial (Fin n) K), smul_smul, algebraMap_eq,
-        C_mul_monomial, mul_one] at hval
-    exact sub_eq_zero.mp (G.val.eq_zero_of_monomial_smul_XMarkingClass_eq_zero K hX hr')
-  have hrank :
-      Module.rank K
-          (G.bigradedUnblockedHomologyPiece K
-            (G.bidegree G.val.X - (2 * (e.degree : ℤ), (e.degree : ℤ)))) <
-        Cardinal.aleph0 := by
-    let g := G.bidegree G.val.X - (2 * (e.degree : ℤ), (e.degree : ℤ))
-    have h1 : Module.rank K (G.bigradedUnblockedHomologyPiece K g) ≤
-        Module.rank K (G.bigradedUnblockedCyclesPiece K g) := by
-      rw [G.bigradedUnblockedHomologyPiece_eq_map K g]
-      exact rank_map_le _ _
-    have h2 : Module.rank K (G.bigradedUnblockedCyclesPiece K g) ≤
-        Module.rank K (G.bigradedChainMinusPiece K g) := by
-      let _ : AddCommGroup (GridChainMinus K n) := inferInstance
-      exact LinearMap.rank_le_of_injective
-        (((LinearMap.ker (G.val.unblockedDifferential K)).subtype.restrictScalars K).restrict
-          fun _ hz ↦ (G.mem_bigradedUnblockedCyclesPiece K).mp hz)
-        fun _ _ h ↦
-          Subtype.ext (Subtype.ext (congrArg (Subtype.val : G.bigradedChainMinusPiece K g → _) h))
-    exact lt_of_le_of_lt (h1.trans h2)
-      (Module.rank_lt_aleph0 K (G.bigradedChainMinusPiece K g))
-  have hle := Module.finrank_le_finrank_of_rank_le_rank
-    (LinearMap.lift_rank_le_of_injective _ hinj) hrank
+  have hinj := G.val.injective_toSpanSingleton_monomial_smul_XMarkingClass K hX e hmem
+  have hle := LinearMap.finrank_le_finrank_of_injective hinj
   rw [Module.finrank_self] at hle
   exact Nat.lt_of_lt_of_le Nat.zero_lt_one hle
 

@@ -41,6 +41,8 @@ differential over a polynomial ring whose variables move the degree; the kernel 
 
 * `TauCeti.InternalGrading.submodule`: the grading of a homogeneous submodule.
 * `TauCeti.InternalGrading.ker`: the grading of the kernel of a homogeneous linear map.
+* `TauCeti.InternalGrading.kerPieceEquivKerRestrict`: equivalence between a kernel piece and
+  the kernel of the restricted map.
 * `TauCeti.InternalGrading.quotient`: the grading of the quotient by a homogeneous submodule.
 
 ## Main results
@@ -185,6 +187,20 @@ theorem coe_decompose_ker (p : ι) (z : _root_.LinearMap.ker f) :
     ((decompose (G.ker hf).piece z p : _root_.LinearMap.ker f) : M) =
       decompose G.piece (z : M) p :=
   G.coe_decompose_submodule (_root_.LinearMap.ker f) hf.isHomogeneous_ker p z
+
+/-- The degree-`p` piece of the kernel of a homogeneous map is linearly equivalent to the kernel
+of the map restricted to the degree-`p` piece of the source. -/
+noncomputable def kerPieceEquivKerRestrict [IsScalarTower R S N] (p : ι) :
+    (G.ker hf).piece p ≃ₗ[R]
+      _root_.LinearMap.ker ((f.restrictScalars R).comp (G.piece p).subtype) where
+  toFun z := ⟨⟨z.val.val, (G.mem_ker_piece hf).mp z.property⟩,
+    _root_.LinearMap.mem_ker.mpr (_root_.LinearMap.mem_ker.mp z.val.property)⟩
+  invFun w := ⟨⟨w.val.val, _root_.LinearMap.mem_ker.mpr (_root_.LinearMap.mem_ker.mp w.property)⟩,
+    (G.mem_ker_piece hf).mpr w.val.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
 
 end Ker
 
