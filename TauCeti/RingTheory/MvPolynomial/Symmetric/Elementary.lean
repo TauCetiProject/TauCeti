@@ -28,6 +28,7 @@ product in elementary symmetric polynomials.
 * `Multiset.esymm_cons_zero`: adjoining a zero gives `e_{n+1}(0, s) = e_{n+1}(s)`, and
   `Multiset.esymm_cons_zero_eq_snoc` lists `e₁, …, e_{n+1}` of `0 ::ₘ s` for `card s ≤ n`.
 * `Multiset.esymm_one`: `e₁(s)` is the sum of `s`.
+* `MvPolynomial.esymm_card`: `e_n(X₁, …, X_n)` is the product of the variables.
 * `Multiset.esymm_erase`: removing an element `a ∈ s` gives
   `eₙ(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`, and `Multiset.sum_map_mul_esymm_erase` sums it
   over `a ∈ s` against weights `w(a)`.
@@ -118,6 +119,12 @@ theorem Multiset.sum_map_mul_esymm_erase {R : Type*} [CommRing R] [DecidableEq R
   refine congrArg Multiset.sum (Multiset.map_congr rfl fun k _ ↦ ?_)
   rw [← Multiset.sum_map_mul_left]
   exact congrArg Multiset.sum (Multiset.map_congr rfl fun a _ ↦ by ring)
+
+/-- The elementary symmetric polynomial whose degree is the number of variables is the product of
+all the variables: `e_n(X₁, …, X_n) = X₁ ⋯ X_n`. -/
+theorem MvPolynomial.esymm_card (σ : Type*) [Fintype σ] (R : Type*) [CommSemiring R] :
+    MvPolynomial.esymm σ R (Fintype.card σ) = ∏ i, MvPolynomial.X i := by
+  rw [MvPolynomial.esymm, ← Finset.card_univ, Finset.powersetCard_self, Finset.sum_singleton]
 
 namespace TauCeti
 

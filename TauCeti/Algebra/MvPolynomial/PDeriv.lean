@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.RingTheory.Ideal.Operations
 
 import Mathlib.RingTheory.MvPowerSeries.Derivative
@@ -19,7 +20,9 @@ with respect to `Y_j` obeys the chain rule
 
 `∂/∂Y_j (p(f)) = ∑ᵢ (∂p/∂Xᵢ)(f) · ∂fᵢ/∂Y_j`,
 
-where the sum runs over any finite set of indices containing the variables of `p`.
+where the sum runs over any finite set of indices containing the variables of `p`. The same rule
+holds for a substitution of univariate polynomials, with the derivative `d/dY` in place of
+`∂/∂Y_j`.
 
 Partial differentiation lowers the total degree, and the degree in the differentiated variable,
 by at least one, so the `k`-th iterated partial derivative along `Xᵢ` of a polynomial of degree
@@ -44,6 +47,7 @@ difference of their constant coefficients.
 ## Main results
 
 * `MvPolynomial.pderiv_aeval`: the chain rule, summed over all variables of a finite type.
+* `MvPolynomial.derivative_aeval`: the chain rule for a substitution of univariate polynomials.
 * `MvPolynomial.pderiv_aeval_of_vars_subset`: the chain rule, summed over a finite set containing
   the variables of `p`.
 * `MvPolynomial.vars_pderiv_subset`: partial differentiation introduces no new variables.
@@ -96,6 +100,20 @@ theorem pderiv_aeval [Fintype σ] (f : σ → MvPolynomial τ R) (j : τ) (p : M
   | mul_X p i hp =>
     simp [Derivation.leibniz, hp, add_mul, Finset.sum_add_distrib, Finset.mul_sum, Pi.single_apply,
       apply_ite, mul_assoc]
+
+/-- **The chain rule** for a substitution `Xᵢ ↦ fᵢ` of univariate polynomials:
+`(p(f))' = ∑ᵢ (∂p/∂Xᵢ)(f) · fᵢ'`. -/
+theorem derivative_aeval [Fintype σ] (f : σ → Polynomial R) (p : MvPolynomial σ R) :
+    Polynomial.derivative (aeval f p) =
+      ∑ i, aeval f (pderiv i p) * Polynomial.derivative (f i) := by
+  classical
+  induction p using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq => simp [hp, hq, add_mul, Finset.sum_add_distrib]
+  | mul_X p i hp =>
+    simp only [map_mul, aeval_X, Polynomial.derivative_mul, hp, Derivation.leibniz, pderiv_X,
+      smul_eq_mul, map_add, Pi.single_apply, add_mul, Finset.sum_add_distrib, Finset.sum_mul]
+    simp [mul_comm, mul_left_comm, add_comm]
 
 /-- **The chain rule** over an arbitrary type of variables:
 `∂/∂Y_j (p(f)) = ∑ᵢ (∂p/∂Xᵢ)(f) · ∂fᵢ/∂Y_j`, the sum running over any finite set `s` containing the
