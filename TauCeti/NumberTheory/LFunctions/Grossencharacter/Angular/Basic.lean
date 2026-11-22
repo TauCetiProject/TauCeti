@@ -101,13 +101,6 @@ private theorem raySubgroup_one_eq_top : raySubgroup (Modulus.one F) = ⊤ := by
     (GaussianRationals.classNumber_eq_one hζ.minpoly_toInteger_eq_X_sq_add_one
       (IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ))
 
-private theorem embedding_eq_or_eq_conjugate_four (σ : F →+* ℂ) :
-    σ = (complexPlaceFour F).val.embedding ∨
-      σ = ComplexEmbedding.conjugate (complexPlaceFour F).val.embedding :=
-  (InfinitePlace.mk_eq_iff.mp
-    ((InfinitePlace.mk_embedding (complexPlaceFour F).val).trans
-      (Subsingleton.elim _ _))).imp Eq.symm Eq.symm
-
 private theorem embedding_unit_pow_four_eq_one (u : (𝓞 F)ˣ) :
     ((complexPlaceFour F).val.embedding ((u : 𝓞 F) : F)) ^ 4 = 1 := by
   have h := congrArg
@@ -400,7 +393,7 @@ theorem unitaryWeight_angularGrossencharacter_span_singleton {F : Type*} [Field 
   have huniv : (Finset.univ : Finset (F →+* ℂ)) =
       {w4.val.embedding, ComplexEmbedding.conjugate w4.val.embedding} := by
     ext τ
-    simpa using embedding_eq_or_eq_conjugate_four F τ
+    simpa using w4.val.embedding_eq_or_eq_conjugate τ
   rw [hcompat, huniv, Finset.prod_pair hne, infinityType_angularGrossencharacter_embedding,
     infinityType_angularGrossencharacter_conjugate]
   have hxval : (x : F) = (α : F) := rfl
@@ -522,7 +515,7 @@ theorem angularGrossencharacter_zero (F : Type*) [Field F] [NumberField F]
     angularGrossencharacter F 0 = Grossencharacter.ofRayClassCharacter 1 := by
   apply Grossencharacter.ext_of_infinityType_eq (raySubgroup_one_eq_top F)
   ext σ
-  rcases embedding_eq_or_eq_conjugate_four F σ with rfl | rfl
+  rcases (complexPlaceFour F).val.embedding_eq_or_eq_conjugate σ with rfl | rfl
   · simp [infinityType_angularGrossencharacter_embedding 0 (complexPlaceFour F)]
   · simp [infinityType_angularGrossencharacter_conjugate 0 (complexPlaceFour F)]
 
@@ -544,7 +537,7 @@ theorem angularGrossencharacter_neg (F : Type*) [Field F] [NumberField F]
     angularGrossencharacter F (-k) = (angularGrossencharacter F k).inverse := by
   apply Grossencharacter.ext_of_infinityType_eq (raySubgroup_one_eq_top F)
   ext σ
-  rcases embedding_eq_or_eq_conjugate_four F σ with rfl | rfl
+  rcases (complexPlaceFour F).val.embedding_eq_or_eq_conjugate σ with rfl | rfl
   · simp [infinityType_angularGrossencharacter_embedding _ (complexPlaceFour F)]
   · simp [infinityType_angularGrossencharacter_conjugate _ (complexPlaceFour F)]
 
@@ -555,7 +548,7 @@ theorem infinityType_angularGrossencharacter_add (F : Type*) [Field F] [NumberFi
       (angularGrossencharacter F j).infinityType +
         (angularGrossencharacter F k).infinityType := by
   ext σ
-  rcases embedding_eq_or_eq_conjugate_four F σ with rfl | rfl
+  rcases (complexPlaceFour F).val.embedding_eq_or_eq_conjugate σ with rfl | rfl
   · simp only [Pi.add_apply, infinityType_angularGrossencharacter_embedding _ (complexPlaceFour F)]
     ring
   · simp only [Pi.add_apply, infinityType_angularGrossencharacter_conjugate _ (complexPlaceFour F)]

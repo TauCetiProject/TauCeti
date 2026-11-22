@@ -81,6 +81,8 @@ equivalent to a nonarchimedean absolute value.
   places.
 * `NumberField.InfinitePlace.subsingleton_of_finrank_eq_two`: a totally complex field of degree
   `2` has a unique infinite place.
+* `NumberField.InfinitePlace.embedding_eq_or_eq_conjugate`: in a field with a unique infinite
+  place, every complex embedding is `w.embedding` or its conjugate.
 -/
 
 public section
@@ -257,6 +259,13 @@ theorem IsTotallyReal.of_zero_lt_discr (hd : 0 < discr K) (hK : Module.finrank �
   nrComplexPlaces_eq_zero_iff.mp (InfinitePlace.nrComplexPlaces_eq_zero_of_zero_lt_discr hd hK)
 
 end NumberField
+
+/-- In a field with a unique infinite place, every complex embedding equals `w.embedding` or its
+complex conjugate. -/
+theorem InfinitePlace.embedding_eq_or_eq_conjugate [Subsingleton (InfinitePlace K)]
+    (w : InfinitePlace K) (σ : K →+* ℂ) :
+    σ = w.embedding ∨ σ = ComplexEmbedding.conjugate w.embedding :=
+  (mk_eq_iff.mp ((mk_embedding w).trans (Subsingleton.elim _ _))).imp Eq.symm Eq.symm
 
 /-- The real embedding of the restriction of a real place `w` along `f` is the real embedding of
 `w` composed with `f`. -/
