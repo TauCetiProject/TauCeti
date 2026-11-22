@@ -90,49 +90,27 @@ variable {E E' V F H H' G G' Q Q' M N : Type*}
   {n n' : ℕ∞ω} {θ : SmoothTwoForm J M} {hθ : θ.IsNondegenerate}
   {σ : SmoothTwoForm K N} {hσ : σ.IsNondegenerate}
 
-/-- The pairings `v ↦ θ(v, di_q ·)` of an ambient tangent vector with the tangent space of the
-embedded submanifold, as covectors on `T_q Q`. -/
-private def tangentPairing (θ : SmoothTwoForm J M) (i : SmoothEmbedding I J n Q M) (q : Q) :
-    TangentSpace J (i q) →L[ℝ] TangentSpace I q →L[ℝ] ℝ :=
-  ((ContinuousLinearMap.compL ℝ E V ℝ).flip
-    (mfderiv I J i q)).comp (flat θ (i q))
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
-private theorem tangentPairing_apply (θ : SmoothTwoForm J M) (i : SmoothEmbedding I J n Q M)
-    (q : Q) (v : TangentSpace J (i q)) :
-    tangentPairing θ i q v = (flat θ (i q) v).comp (mfderiv I J i q) :=
-  rfl
-
 /-- The tangential part of an ambient tangent vector `v` along a symplectic submanifold: the
 tangent vector `u` of `Q` with `di_q u = v - r`, where `r` is the symplectic representative of
 the normal class of `v`. -/
 private def tangentialPart (θ : SmoothTwoForm J M) (i : SmoothEmbedding I J n Q M) (q : Q) :
     TangentSpace J (i q) →L[ℝ] TangentSpace I q :=
-  ((tangentPairing θ i q).comp (mfderiv I J i q)).inverse.comp (tangentPairing θ i q)
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
-/-- The two-form induced by `θ` on `Q`, as the composite of `tangentPairing` with `di_q`. -/
-private theorem tangentPairing_comp_apply (θ : SmoothTwoForm J M) (i : SmoothEmbedding I J n Q M)
-    (q : Q) (u w : TangentSpace I q) :
-    (tangentPairing θ i q).comp (mfderiv I J i q) u w =
-      SmoothBundleForm.eval₂ θ (i q) (mfderiv I J i q u) (mfderiv I J i q w) := by
-  rw [ContinuousLinearMap.comp_apply, tangentPairing_apply, ContinuousLinearMap.comp_apply,
-    flat_apply]
+  ((i.tangentPairing θ q).comp (mfderiv I J i q)).inverse.comp (i.tangentPairing θ q)
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
 /-- The tangential part of `v` inverts the induced form on the pairings `θ(v, di_q ·)`. -/
 private theorem tangentialPart_apply (θ : SmoothTwoForm J M) (i : SmoothEmbedding I J n Q M)
     (q : Q) (v : TangentSpace J (i q)) :
-    tangentialPart θ i q v = ((tangentPairing θ i q).comp (mfderiv I J i q)).inverse
-      ((flat θ (i q) v).comp (mfderiv I J i q)) :=
-  rfl
+    tangentialPart θ i q v = ((i.tangentPairing θ q).comp (mfderiv I J i q)).inverse
+      ((flat θ (i q) v).comp (mfderiv I J i q)) := by
+  rw [tangentialPart, ContinuousLinearMap.comp_apply, tangentPairing_apply]
 
 private theorem mfderiv_tangentialPart (i : SmoothEmbedding I J n Q M)
     (hi : hθ.HasSymplecticTangentImages I i) (q : Q) (hn : n ≠ 0) (v : TangentSpace J (i q)) :
     mfderiv I J i q (tangentialPart θ i q v) =
       v - i.symplecticNormalRepresentative hi q hn (i.normalClass q hn v) := by
   rw [i.symplecticNormalRepresentative_normalClass_eq_sub_mfderiv_inverse hi q hn _
-    (tangentPairing_comp_apply θ i q) v, sub_sub_cancel, tangentialPart_apply]
+    (i.tangentPairing_comp_apply θ q) v, sub_sub_cancel, tangentialPart_apply]
 
 private theorem tangentialPart_mfderiv (i : SmoothEmbedding I J n Q M)
     (hi : hθ.HasSymplecticTangentImages I i) (q : Q) (hn : n ≠ 0) (u : TangentSpace I q) :
@@ -309,10 +287,14 @@ theorem contMDiff_symplecticNormalExtension (i : SmoothEmbedding I J ∞ Q M)
         (⟨j (f p.proj), symplecticNormalExtension θ i j hj f hn hn C p.proj p.snd⟩ :
           TangentBundle K N)) := by
   -- The tangential part is smooth into `T Q`; push it forward by `df` and then `dj`.
-  have hu := i.contMDiff_inverse_comp_mfderiv (m := ∞) (by simp)
-    (i.contMDiff_of_eval₂_mfderiv (by simp) (by simp) (tangentPairing_comp_apply θ i))
-    (fun q ↦ i.isInvertible_of_eval₂_mfderiv hi q hn _ (tangentPairing_comp_apply θ i q))
-    (contMDiff_flat θ)
+  have hu : ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, E)) ∞
+      (fun p : TotalSpace V ((i : Q → M) *ᵖ (TangentSpace J)) ↦
+        (⟨p.proj, tangentialPart θ i p.proj p.snd⟩ : TangentBundle I Q)) :=
+    (i.contMDiff_inverse_comp_mfderiv (m := ∞) (by simp)
+      (i.contMDiff_of_eval₂_mfderiv (by simp) (by simp) (i.tangentPairing_comp_apply θ))
+      (fun q ↦ i.isInvertible_of_eval₂_mfderiv hi q hn _ (i.tangentPairing_comp_apply θ q))
+      (contMDiff_flat θ)).congr fun p ↦
+      congrArg (TotalSpace.mk p.proj) (tangentialPart_apply θ i p.proj p.snd)
   -- `tangentMap` is `⟨x, v⟩ ↦ ⟨f x, df_x v⟩` by definition.
   have ht : ContMDiff (I.prod 𝓘(ℝ, V)) (K.prod 𝓘(ℝ, F)) ∞
       (fun p : TotalSpace V ((i : Q → M) *ᵖ (TangentSpace J)) ↦

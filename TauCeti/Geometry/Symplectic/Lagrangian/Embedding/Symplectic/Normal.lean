@@ -228,15 +228,41 @@ theorem eval₂_mfderiv_symplecticNormalRepresentative (f : SmoothEmbedding I J 
   exact SymplecticForm.mem_orthogonal_iff.1
     (f.symplecticNormalRepresentative_mem_orthogonal h x hn v) _ ⟨w, rfl⟩
 
+/-- The pairings `v ↦ σ(v, df_x ·)` of an ambient tangent vector with the tangent space of the
+embedded manifold, as covectors on `T_x M`. -/
+def tangentPairing (f : SmoothEmbedding I J n M N) (σ : SmoothTwoForm J N) (x : M) :
+    TangentSpace J (f x) →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
+  ((ContinuousLinearMap.compL ℝ E V ℝ).flip (mfderiv I J f x)).comp (flat σ (f x))
+
 omit [FiniteDimensional ℝ V] in
-/-- The flat map of the pulled-back form `f^* σ` at a point is invertible: a tangent vector `u`
-with `σ(df_x u, df_x ·) = 0` has `df_x u` in the tangent space and in its symplectic complement,
-so `df_x u = 0`, and `df_x` is injective. -/
+/-- The pairing of `v` with the tangent space is the covector `σ(v, ·)` composed with `df_x`. -/
+theorem tangentPairing_apply (f : SmoothEmbedding I J n M N) (σ : SmoothTwoForm J N) (x : M)
+    (v : TangentSpace J (f x)) :
+    f.tangentPairing σ x v = (flat σ (f x) v).comp (mfderiv I J f x) := by
+  rw [tangentPairing]
+  rfl
+
+omit [FiniteDimensional ℝ V] in
+/-- The composite of `tangentPairing` with `df_x` is the flat map of the pulled-back form
+`f^* σ` at `x`. -/
+theorem tangentPairing_comp_apply (f : SmoothEmbedding I J n M N) (σ : SmoothTwoForm J N)
+    (x : M) (u w : TangentSpace I x) :
+    (f.tangentPairing σ x).comp (mfderiv I J f x) u w =
+      SmoothBundleForm.eval₂ σ (f x) (mfderiv I J f x u) (mfderiv I J f x w) := by
+  rw [ContinuousLinearMap.comp_apply, tangentPairing_apply, ContinuousLinearMap.comp_apply,
+    flat_apply]
+
+omit [FiniteDimensional ℝ V] in
+/-- For an embedding whose tangent images are symplectic subspaces, a bilinear form `a` on `T_x M`
+with `a u w = σ(df_x u, df_x w)`, the flat map of the pulled-back form `f^* σ` at `x`, is
+invertible. -/
 theorem isInvertible_of_eval₂_mfderiv [FiniteDimensional ℝ E]
     (f : SmoothEmbedding I J n M N) (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0)
     (a : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
     (ha : ∀ u w, a u w = SmoothBundleForm.eval₂ σ (f x) (mfderiv I J f x u) (mfderiv I J f x w)) :
     a.IsInvertible := by
+  -- A tangent vector `u` with `σ(df_x u, df_x ·) = 0` has `df_x u` in the tangent space and in
+  -- its symplectic complement, so `df_x u = 0`, and `df_x` is injective.
   let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   refine ContinuousLinearMap.isInvertible_of_separatingLeft fun u hu ↦ ?_
   have hdu := IsNondegenerate.hasSymplecticTangentImages_iff.1 h x u
@@ -382,13 +408,8 @@ theorem contMDiff_symplecticNormalRepresentative_normalClass (f : SmoothEmbeddin
   have : IsManifold I (m + 1) M := .of_le hm'
   have : IsManifold J (m + 1) N := .of_le hm'
   -- The flat map of the pulled-back form `f^* σ` is a `C^m` section, invertible at every point.
-  let a : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
-    fun x ↦ ((ContinuousLinearMap.compL ℝ E V ℝ).flip (mfderiv I J f x)).comp
-      ((flat σ (f x)).comp (mfderiv I J f x))
-  have ha (x : M) (u w : TangentSpace I x) :
-      a x u w = SmoothBundleForm.eval₂ σ (f x) (mfderiv I J f x u) (mfderiv I J f x w) :=
-    -- `a x u w` unfolds to `flat σ (f x) (df_x u) (df_x w)`.
-    flat_apply σ (f x) _ _
+  let a (x : M) := (f.tangentPairing σ x).comp (mfderiv I J f x)
+  have ha := f.tangentPairing_comp_apply σ
   have hacont := f.contMDiff_of_eval₂_mfderiv hm hm' ha
   exact f.contMDiff_of_eq_sub_mfderiv_inverse hm hacont
     (fun x ↦ isInvertible_of_eval₂_mfderiv f h x hn (a x) (ha x)) ((contMDiff_flat σ).of_le hmtop)
