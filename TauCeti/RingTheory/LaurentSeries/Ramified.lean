@@ -36,7 +36,9 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 
 ## Main definitions
 
-* `LaurentSeries.expand R d`: the `R`-algebra map `R⸨X⸩ → R⸨X⸩` substituting `X ↦ X ^ d`.
+* `LaurentSeries.mulOrderEmbedding d`: multiplication by `d` as an order embedding of `ℤ`.
+* `LaurentSeries.expand R d`: the `R`-algebra map `R⸨X⸩ → R⸨X⸩` substituting `X ↦ X ^ d`, the
+  exponent embedding along `mulOrderEmbedding d` (`LaurentSeries.expand_apply`).
 * `LaurentSeries.contract`: the exponent-congruence component of a Laurent series.
 * `LaurentSeries.ramifiedEmbedding R n`: the `R`-algebra map `R⸨X⸩ → HahnSeries ℚ R` substituting
   `X ↦ t ^ (1 / n)`.
@@ -91,12 +93,12 @@ variable (R : Type*) [CommSemiring R]
 /-! ### Expansion `X ↦ X ^ d` -/
 
 /-- Multiplication by a positive integer as an order embedding of `ℤ`. -/
-private def mulOrderEmbedding (d : ℕ+) : ℤ ↪o ℤ :=
+def mulOrderEmbedding (d : ℕ+) : ℤ ↪o ℤ :=
   OrderEmbedding.ofStrictMono (fun k ↦ (d : ℤ) * k)
     (strictMono_mul_left_of_pos (by exact_mod_cast d.pos))
 
-private theorem mulOrderEmbedding_apply (d : ℕ+) (k : ℤ) : mulOrderEmbedding d k = d * k :=
-  rfl
+theorem mulOrderEmbedding_apply (d : ℕ+) (k : ℤ) : mulOrderEmbedding d k = d * k :=
+  (rfl)
 
 /-- The substitution `X ↦ X ^ d` in Laurent series, sending the coefficient of `X ^ k` to the
 coefficient of `X ^ (d * k)`. -/
@@ -110,9 +112,10 @@ noncomputable def expand (d : ℕ+) : R⸨X⸩ →ₐ[R] R⸨X⸩ where
 
 variable {R}
 
-private theorem expand_apply (d : ℕ+) (f : R⸨X⸩) :
+/-- The substitution `X ↦ X ^ d` is the exponent embedding along multiplication by `d`. -/
+theorem expand_apply (d : ℕ+) (f : R⸨X⸩) :
     expand R d f = embDomain (mulOrderEmbedding d) f :=
-  rfl
+  (rfl)
 
 /-- The coefficient of `X ^ (d * k)` in `expand R d f` is the coefficient of `X ^ k` in `f`. -/
 @[simp]

@@ -8,8 +8,6 @@ module
 public import Mathlib.RingTheory.Localization.Integer
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Defs
 public import TauCeti.RingTheory.HahnSeries.Map
-public import TauCeti.RingTheory.LaurentSeries.Ramified
-import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Bounded denominators of Hahn and Laurent series
@@ -28,10 +26,12 @@ This is the arithmetic condition of the unbounded denominators theorem of Calega
 Tang: a modular form on a finite-index subgroup of `SL₂(ℤ)` whose `q`-expansion has rational
 coefficients has bounded denominators exactly when it is modular for a congruence subgroup.
 
-The series with bounded denominators are closed under the ring operations, and substituting `Xᵈ`
-for `X` preserves and reflects the condition (`HahnSeries.hasBoundedDenominators_embDomain_iff`,
-`LaurentSeries.hasBoundedDenominators_expand_iff`), so the condition does not depend on the choice
-of a root of the expansion variable.
+The series with bounded denominators are closed under the ring operations, and an order embedding
+of the exponents, such as substituting `Xᵈ` for `X`, preserves and reflects the condition
+(`HahnSeries.hasBoundedDenominators_embDomain_iff`; see
+`LaurentSeries.hasBoundedDenominators_expand_iff` in
+`TauCeti.RingTheory.LaurentSeries.BoundedDenominators`), so the condition does not depend on the
+choice of a root of the expansion variable.
 
 The main result is the *root property*: over a unique factorization domain `R`, a series `x`
 with bounded denominators some power `xⁿ`, `n ≠ 0`, of which has integral coefficients has
@@ -52,13 +52,10 @@ elements (`HahnSeries.coeff_mem_of_coeff_pow_mem`).
 
 * `HahnSeries.HasBoundedDenominators.add`, `.neg`, `.sub`, `.smul`, `.mul`, `.pow`: closure under
   the ring operations.
-* `HahnSeries.hasBoundedDenominators_embDomain_iff`,
-  `LaurentSeries.hasBoundedDenominators_expand_iff`: invariance under an order embedding of the
-  exponents, in particular under `X ↦ Xᵈ`.
+* `HahnSeries.hasBoundedDenominators_embDomain_iff`: invariance under an order embedding of the
+  exponents.
 * `HahnSeries.hasBoundedDenominators_int_iff`: over `ℤ`, one positive integer clears every
   denominator.
-* `HahnSeries.coeff_mem_of_coeff_pow_mem`: if a prime ideal contains every coefficient of `yⁿ`,
-  then it contains every coefficient of `y`.
 * `HahnSeries.HasBoundedDenominators.isInteger_coeff_of_isInteger_coeff_pow`: the root property.
 
 ## References
@@ -70,7 +67,6 @@ elements (`HahnSeries.coeff_mem_of_coeff_pow_mem`).
 public section
 
 open IsLocalization
-open scoped LaurentSeries
 
 namespace HahnSeries
 
@@ -160,8 +156,9 @@ theorem hasBoundedDenominators_int_iff {x : A⟦Γ⟧} :
     fun ⟨D, hD, h⟩ ↦ ⟨D, by exact_mod_cast hD.ne', fun g ↦ ?_⟩⟩
   · obtain ⟨z, hz⟩ := h g
     refine ⟨d.sign * z, ?_⟩
-    rw [← Int.cast_natCast, ← Int.sign_mul_self_eq_natAbs, Int.cast_mul, Int.cast_mul, hz,
-      mul_assoc]
+    rw [← Int.cast_natCast, ← Int.sign_mul_self_eq_natAbs]
+    push_cast [hz]
+    ring
   · obtain ⟨z, hz⟩ := h g
     exact ⟨z, by rw [Int.cast_natCast, hz]⟩
 
@@ -200,25 +197,8 @@ end OrderedCancel
 
 section Domain
 
-variable [LinearOrder Γ] [AddCommMonoid Γ] [IsOrderedCancelAddMonoid Γ] [CommRing R]
-
-/-- If a prime ideal `P` contains every coefficient of `y ^ n`, then it contains every coefficient
-of `y`: the Hahn series over the domain `R ⧸ P` have no nonzero nilpotent elements. (For `n = 0`
-the hypothesis fails, since `P` does not contain the constant coefficient `1` of `y ^ 0`.) -/
-theorem coeff_mem_of_coeff_pow_mem {P : Ideal R} [hP : P.IsPrime] {y : R⟦Γ⟧} {n : ℕ}
-    (h : ∀ g, (y ^ n).coeff g ∈ P) (g : Γ) : y.coeff g ∈ P := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · exact absurd (by simpa using h 0) hP.one_notMem
-  have hy : mapRingHom (Ideal.Quotient.mk P) y = 0 := by
-    refine (pow_eq_zero_iff hn).mp ?_
-    rw [← map_pow (mapRingHom (Ideal.Quotient.mk P)) y n]
-    ext g
-    rw [coeff_mapRingHom, coeff_zero, Ideal.Quotient.eq_zero_iff_mem]
-    exact h g
-  simpa [Ideal.Quotient.eq_zero_iff_mem] using congr(($hy).coeff g)
-
-variable [IsDomain R] [UniqueFactorizationMonoid R] [CommRing A] [IsDomain A] [Algebra R A]
-  [FaithfulSMul R A]
+variable [LinearOrder Γ] [AddCommMonoid Γ] [IsOrderedCancelAddMonoid Γ] [CommRing R] [IsDomain R]
+  [UniqueFactorizationMonoid R] [CommRing A] [IsDomain A] [Algebra R A] [FaithfulSMul R A]
 
 /-- **The root property of bounded denominators.** Over a unique factorization domain `R`, if
 `x` has bounded denominators and `x ^ n` has integral coefficients for some `n ≠ 0`, then `x` has
@@ -260,23 +240,3 @@ theorem HasBoundedDenominators.isInteger_coeff_of_isInteger_coeff_pow {x : A⟦�
 end Domain
 
 end HahnSeries
-
-namespace LaurentSeries
-
-variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
-
-/-- The substitution `X ↦ X ^ d` preserves and reflects bounded denominators: it moves the
-coefficient of `X ^ k` to `X ^ (d * k)` and fills in zeros. -/
-@[simp]
-theorem hasBoundedDenominators_expand_iff (d : ℕ+) {f : A⸨X⸩} :
-    (expand A d f).HasBoundedDenominators R ↔ f.HasBoundedDenominators R := by
-  simp only [HahnSeries.hasBoundedDenominators_iff]
-  refine exists_congr fun e ↦ and_congr_right fun _ ↦ ⟨fun h k ↦ ?_, fun h k ↦ ?_⟩
-  · simpa using h ((d : ℤ) * k)
-  · by_cases hk : (d : ℤ) ∣ k
-    · obtain ⟨j, rfl⟩ := hk
-      simpa using h j
-    · rw [coeff_expand_of_not_dvd d f hk, smul_zero]
-      exact isInteger_zero
-
-end LaurentSeries

@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Meromorphic.NormalForm
 public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Laurent
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
-public import TauCeti.RingTheory.HahnSeries.BoundedDenominators
+public import TauCeti.RingTheory.LaurentSeries.BoundedDenominators
 public import TauCeti.RingTheory.LaurentSeries.Ramified
 import Mathlib.Analysis.Complex.TaylorSeries
 import TauCeti.Analysis.Complex.UpperHalfPlane.QExpansion.Order

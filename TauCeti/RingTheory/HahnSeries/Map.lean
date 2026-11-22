@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.HahnSeries.PowerSeries
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Coefficientwise maps of Hahn series
@@ -36,6 +37,8 @@ constructions on Laurent series are natural.
   series, `PowerSeries.map` on the source side.
 * `HahnSeries.mem_map_rangeS`: the range of a coefficientwise map consists of the series
   with all coefficients in the range of the coefficient map.
+* `HahnSeries.coeff_mem_of_coeff_pow_mem`: if a prime ideal contains every coefficient of `yⁿ`,
+  then it contains every coefficient of `y`, by reduction modulo the prime ideal.
 * `HahnSeries.support_map_of_injective`, `HahnSeries.orderTop_map_of_injective`,
   `HahnSeries.order_map_of_injective`: an injective coefficient map preserves the support and
   the order.
@@ -166,6 +169,27 @@ theorem mem_map_rangeS {f : R →+* S} {x : S⟦Γ⟧} :
     by_cases hx : x.coeff g = 0 <;> simp [hx, hc]
 
 end Semiring
+
+section PrimeIdeal
+
+variable [LinearOrder Γ] [AddCommMonoid Γ] [IsOrderedCancelAddMonoid Γ] [CommRing R]
+
+/-- If a prime ideal `P` contains every coefficient of `y ^ n`, then it contains every coefficient
+of `y`: the Hahn series over the domain `R ⧸ P` have no nonzero nilpotent elements. (For `n = 0`
+the hypothesis fails, since `P` does not contain the constant coefficient `1` of `y ^ 0`.) -/
+theorem coeff_mem_of_coeff_pow_mem {P : Ideal R} [hP : P.IsPrime] {y : R⟦Γ⟧} {n : ℕ}
+    (h : ∀ g, (y ^ n).coeff g ∈ P) (g : Γ) : y.coeff g ∈ P := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact absurd (by simpa using h 0) hP.one_notMem
+  have hy : mapRingHom (Ideal.Quotient.mk P) y = 0 := by
+    refine (pow_eq_zero_iff hn).mp ?_
+    rw [← map_pow (mapRingHom (Ideal.Quotient.mk P)) y n]
+    ext g
+    rw [coeff_mapRingHom, coeff_zero, Ideal.Quotient.eq_zero_iff_mem]
+    exact h g
+  simpa [Ideal.Quotient.eq_zero_iff_mem] using congr(($hy).coeff g)
+
+end PrimeIdeal
 
 section Algebra
 
