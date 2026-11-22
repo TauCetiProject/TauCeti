@@ -102,10 +102,11 @@ horizon have elementary martingales which are Cauchy in `L²(P)` at every time, 
 norms equal to the `L²` norms of their holdings. -/
 private theorem _root_.TauCeti.BrownianIntegrable.exists_simpleGains_cauchySeq
     (hH : BrownianIntegrable ℱ P H) (hW : IsFilteredPreBrownianReal ℱ W P) :
-    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ)
+    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ)
       (hmem : ∀ k t, MemLp (Finance.simpleGains (τ k) (n k) (a k) W t) 2 P),
       (∀ k, MonotoneOn (τ k) (Iic (n k))) ∧
       (∀ k j, j < n k → StronglyMeasurable[ℱ (τ k j)] (a k j)) ∧
+      (∀ k j, j < n k → ∀ ω, ‖a k j ω‖ ≤ C k) ∧
       (∀ k, Martingale (Finance.simpleGains (τ k) (n k) (a k) W) ℱ P) ∧
       (∀ t, CauchySeq fun k ↦ (hmem k t).toLp (Finance.simpleGains (τ k) (n k) (a k) W t)) ∧
       (∀ t, Tendsto (fun k ↦ eLpNorm (Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k))
@@ -115,9 +116,7 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_simpleGains_cauchySeq
           ((timeMeasure t).prod P) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨n, τ, a, C, -, hτ, ha, haC, hKH⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
-  have ha₂ (k j : ℕ) (hj : j < n k) : MemLp (a k j) 2 P :=
-    MemLp.of_bound ((ha k j hj).mono (ℱ.le _)).aestronglyMeasurable (C k)
-      (ae_of_all _ (haC k j hj))
+  have ha₂ (k : ℕ) := Finance.memLp_of_bound_stronglyMeasurable (P := P) (p := 2) (ha k) (haC k)
   have hmem (k : ℕ) (t : ℝ≥0) : MemLp (Finance.simpleGains (τ k) (n k) (a k) W t) 2 P :=
     hW.memLp_simpleGains (hτ k).monotoneOn (ha k) (ha₂ k) t
   have hK (k : ℕ) (t : ℝ≥0) : MemLp (Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k)))
@@ -126,7 +125,7 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_simpleGains_cauchySeq
         ℱ.predictable_le_prod).aestronglyMeasurable) (max (C k) 0)
       (ae_of_all _ fun p ↦
         Finance.norm_simpleHolding_le (hτ k).monotoneOn p.1 p.2 fun j hj ↦ haC k j hj p.2)
-  refine ⟨n, τ, a, hmem, fun k ↦ (hτ k).monotoneOn, ha, fun k ↦ ?_, fun t ↦ ?_, hKH,
+  refine ⟨n, τ, a, C, hmem, fun k ↦ (hτ k).monotoneOn, ha, haC, fun k ↦ ?_, fun t ↦ ?_, hKH,
     fun k t ↦ hW.eLpNorm_simpleGains (hτ k).monotoneOn (ha k) (ha₂ k) t⟩
   · exact hW.martingale.simpleGains_of_bdd (hτ k).monotoneOn (ha k)
       fun j hj ↦ ⟨C k, ae_of_all _ fun ω ↦ by simpa using haC k j hj ω⟩
@@ -160,6 +159,35 @@ private theorem tendsto_measure_le_lintegral_simpleHolding_sub [SFinite P]
     (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (ha k)).sub hH).mono
       ℱ.predictable_le_prod).aestronglyMeasurable) hKH hε
 
+/-- Shared continuous-martingale completion returning both the constructed Itô integral and a
+bounded simple-holding sequence whose elementary integrals converge almost surely uniformly on
+every finite horizon. -/
+private theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral_approx
+    (hH : BrownianIntegrable ℱ P H) (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) :
+    ∃ (I : ℝ≥0 → Ω → ℝ) (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ),
+      (∀ k, MonotoneOn (τ k) (Iic (n k))) ∧
+      (∀ k j, j < n k → StronglyMeasurable[ℱ (τ k j)] (a k j)) ∧
+      (∀ k j, j < n k → ∀ ω, ‖a k j ω‖ ≤ C k) ∧
+      IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧ Martingale I ℱ P ∧
+      (∀ T : ℝ≥0, Tendsto (fun k ↦ eLpNorm
+        (fun p : ℝ≥0 × Ω ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - H p.1 p.2) 2
+          ((timeMeasure T).prod P)) atTop (𝓝 0)) ∧
+      ∀ᵐ ω ∂P, ∀ T : ℝ≥0,
+        TendstoUniformlyOn (fun k t ↦ Finance.simpleGains (τ k) (n k) (a k) W t ω)
+          (I · ω) atTop (Iic T) := by
+  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
+  obtain ⟨n, τ, a, C, hmem, hτ, ha, haC, hmart, hcau, hKH, -⟩ :=
+    hH.exists_simpleGains_cauchySeq hW
+  obtain ⟨I, hI, hIp, hIlim, -, φ, hφ, hIc⟩ := exists_continuous_martingale_of_cauchySeq_Lp hmart
+    (fun k ↦ hWc.mono fun ω hω ↦ Finance.continuous_simpleGains hω) hmem hcau
+  refine ⟨I, fun k ↦ n (φ k), fun k ↦ τ (φ k), fun k ↦ a (φ k), fun k ↦ C (φ k),
+    fun k ↦ hτ (φ k), fun k ↦ ha (φ k), fun k ↦ haC (φ k),
+    ⟨hH.isStronglyPredictable, hIc.mono fun ω hω ↦ hω.1, fun t ↦ ⟨n, τ, a, hτ, ha,
+      tendsto_measure_le_lintegral_simpleHolding_sub hH.isStronglyPredictable ha (hKH t),
+      tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩,
+    hIp, hI, fun T ↦ (hKH T).comp hφ.tendsto_atTop, hIc.mono fun _ hω ↦ hω.2⟩
+
 /-- **Existence of the Itô integral for square-integrable integrands.** Against a pre-Brownian
 motion relative to the filtration with almost surely continuous paths, every predictable
 integrand with finite expected square energy on every finite horizon has an Itô integral which
@@ -167,14 +195,32 @@ is a predictable martingale. No usual conditions on the filtration are assumed. 
 theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral (hH : BrownianIntegrable ℱ P H)
     (hW : IsFilteredPreBrownianReal ℱ W P) (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) :
     ∃ I, IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧ Martingale I ℱ P := by
-  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, hmem, hτ, ha, hmart, hcau, hKH, -⟩ := hH.exists_simpleGains_cauchySeq hW
-  obtain ⟨I, hI, hIp, hIlim, -, _, -, hIc⟩ := exists_continuous_martingale_of_cauchySeq_Lp hmart
-    (fun k ↦ hWc.mono fun ω hω ↦ Finance.continuous_simpleGains hω) hmem hcau
-  refine ⟨I, ⟨hH.isStronglyPredictable, hIc.mono fun ω hω ↦ hω.1, fun t ↦ ⟨n, τ, a, hτ, ha,
-    tendsto_measure_le_lintegral_simpleHolding_sub hH.isStronglyPredictable ha (hKH t), ?_⟩⟩,
-    hIp, hI⟩
-  exact tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2
+  obtain ⟨I, -, -, -, -, -, -, -, hIito, hIp, hI, -, -⟩ := hH.exists_isItoIntegral_approx hW hWc
+  exact ⟨I, hIito, hIp, hI⟩
+
+/-- Every Itô integral of a `BrownianIntegrable` integrand against an almost surely continuous
+filtered pre-Brownian motion is approximated almost surely uniformly on every finite horizon by a
+single sequence of bounded simple holdings whose holdings converge in `L²` on every horizon. -/
+theorem IsFilteredPreBrownianReal.exists_seq_simpleHolding_tendstoUniformlyOn
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hcont : ∀ᵐ ω ∂P, Continuous (W · ω))
+    {H I : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) :
+    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ),
+      (∀ k, MonotoneOn (τ k) (Set.Iic (n k))) ∧
+      (∀ k j, j < n k → StronglyMeasurable[ℱ (τ k j)] (a k j)) ∧
+      (∀ k j, j < n k → ∀ ω, ‖a k j ω‖ ≤ C k) ∧
+      (∀ T : ℝ≥0, Tendsto (fun k ↦ eLpNorm
+        (fun p : ℝ≥0 × Ω ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - H p.1 p.2) 2
+          ((timeMeasure T).prod P)) atTop (𝓝 0)) ∧
+      ∀ᵐ ω ∂P, ∀ T : ℝ≥0,
+        TendstoUniformlyOn (fun k t ↦ Finance.simpleGains (τ k) (n k) (a k) W t ω)
+          (I · ω) atTop (Set.Iic T) := by
+  obtain ⟨I₀, n, τ, a, C, hτ, ha, hb, hI₀ito, -, -, hKlim, hpath⟩ :=
+    hH.exists_isItoIntegral_approx hW hcont
+  refine ⟨n, τ, a, C, hτ, ha, hb, hKlim, hpath.mp ((isItoIntegral_unique hW hI hI₀ito).mono
+    fun ω heq hω T ↦ ?_)⟩
+  -- Pointwise path indistinguishability rewrites the target path `I · ω` to `I₀ · ω`.
+  have hfun : (fun t ↦ I t ω) = fun t ↦ I₀ t ω := funext heq
+  simpa only [hfun] using hω T
 
 /-- Every Itô integral of a Brownian-integrable integrand agrees almost surely at each time with
 a martingale whose `L²(P)` norm at time `t` is the `L²` norm of the integrand for Lebesgue time
@@ -184,7 +230,8 @@ private theorem IsItoIntegral.exists_martingale_ae_eq (hI : IsItoIntegral ℱ P 
     ∃ Z : ℝ≥0 → Ω → ℝ, Martingale Z ℱ P ∧ ∀ t, I t =ᵐ[P] Z t ∧ MemLp (Z t) 2 P ∧
       eLpNorm (Z t) 2 P = eLpNorm (Function.uncurry H) 2 ((timeMeasure t).prod P) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, hmem, hτ, ha, hmart, hcau, hKH, hiso⟩ := hH.exists_simpleGains_cauchySeq hW
+  obtain ⟨n, τ, a, -, hmem, hτ, ha, -, hmart, hcau, hKH, hiso⟩ :=
+    hH.exists_simpleGains_cauchySeq hW
   obtain ⟨Z, hZ, hZlim⟩ := exists_martingale_of_cauchySeq_Lp hmart hmem hcau
   refine ⟨Z, hZ, fun t ↦ ⟨?_, (hZlim t).1, ?_⟩⟩
   · exact hI.ae_eq_of_tendstoInMeasure hW hτ ha

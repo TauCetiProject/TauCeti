@@ -287,27 +287,25 @@ theorem const_mul (hI : IsItoIntegral ℱ P W H I) (c : ℝ) :
         fun ε hε ↦ by simpa only [zero_mul, Pi.zero_apply] using hE ε hε,
         by simpa only [zero_mul, Pi.zero_def] using hM⟩
     · obtain ⟨n, τ, a, hτ, ha, hE, hM⟩ := hI.exists_approx t
-      refine ⟨n, τ, fun m j ω ↦ c * a m j ω, hτ, fun m j hj ↦ (ha m j hj).const_mul c,
+      refine ⟨n, τ, fun m ↦ c • a m, hτ, fun m j hj ↦ (ha m j hj).const_smul c,
         fun ε hε ↦ ?_, tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_⟩
       · have hc₂_pos : 0 < ‖c‖ₑ ^ 2 := pos_iff_ne_zero.mpr (pow_ne_zero 2 (eNorm_pos.mpr hc).ne')
         have hc₂_ne_top : ‖c‖ₑ ^ 2 ≠ ∞ := by finiteness
         refine (hE (ε / ‖c‖ₑ ^ 2) (ENNReal.div_pos hε.ne' hc₂_ne_top)).congr fun m ↦ congrArg P ?_
         ext ω
-        have hlint : (∫⁻ s, ‖Finance.simpleHolding (τ m) (n m) (fun j ω ↦ c * a m j ω) s ω -
+        have hlint : (∫⁻ s, ‖Finance.simpleHolding (τ m) (n m) (c • a m) s ω -
             c * H s ω‖ₑ ^ 2 ∂timeMeasure t) =
             ‖c‖ₑ ^ 2 * ∫⁻ s, ‖Finance.simpleHolding (τ m) (n m) (a m) s ω -
               H s ω‖ₑ ^ 2 ∂timeMeasure t := by
           rw [← lintegral_const_mul' _ _ hc₂_ne_top]
           exact lintegral_congr fun s ↦ by
-            rw [show (fun j ω ↦ c * a m j ω) = c • a m from rfl, Finance.simpleHolding_smul,
-              ← mul_sub, eNorm_mul, mul_pow]
+            rw [Finance.simpleHolding_smul, ← mul_sub, eNorm_mul, mul_pow]
         simp only [mem_ofPred_eq, hlint, ENNReal.div_le_iff_le_mul (.inl hc₂_pos.ne')
           (.inl hc₂_ne_top), mul_comm]
       · refine (tendstoInMeasure_iff_norm.1 hM (ε / |c|) (div_pos hε (abs_pos.mpr hc))).congr
           fun m ↦ congrArg P ?_
         ext ω
-        simp only [mem_ofPred_eq, show (fun j ω ↦ c * a m j ω) = c • a m from rfl,
-          Finance.simpleGains_smul, ← mul_sub, norm_mul, Real.norm_eq_abs,
+        simp only [mem_ofPred_eq, Finance.simpleGains_smul, ← mul_sub, norm_mul, Real.norm_eq_abs,
           div_le_iff₀ (abs_pos.mpr hc), mul_comm]
 
 /-- Negating both the integrand and the integral preserves `IsItoIntegral`. -/

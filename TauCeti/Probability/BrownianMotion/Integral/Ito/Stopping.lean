@@ -89,16 +89,6 @@ private theorem clippedDyadicGrid_le_dyadicCeilTime {s b : ℝ≥0} {k j : ℕ} 
       (le_dyadicCeilTime_of_div_lt k j
         (lt_of_le_of_lt (WithTop.coe_le_coe.mpr (le_max_right _ _)) hmax))
 
-/-- Clipping a stopped horizon `(min T u).untopA` to `r ≤ T` equals `(min r u).untopA`. -/
-private theorem min_untopA_min_eq {r T : ℝ≥0} (hrT : r ≤ T) (u : WithTop ℝ≥0) :
-    min r (min (T : WithTop ℝ≥0) u).untopA = (min (r : WithTop ℝ≥0) u).untopA := by
-  have hcoe (x : ℝ≥0) :
-      ((min (x : WithTop ℝ≥0) u).untopA : WithTop ℝ≥0) = min (x : WithTop ℝ≥0) u := by
-    rw [WithTop.untopA_eq_untop (ne_of_lt (lt_of_le_of_lt (min_le_left _ _)
-      (WithTop.coe_lt_top x))), WithTop.coe_untop]
-  apply WithTop.coe_injective
-  rw [WithTop.coe_min, hcoe T, hcoe r, ← min_assoc, min_eq_left (WithTop.coe_le_coe.mpr hrT)]
-
 /-- Telescoping identity for stopping a single elementary interval `(s, t]` at `dyadicCeilTime k u`
 on horizon `T` (when `s ≤ T`): summing the indicator-weighted increments over the clipped dyadic
 grid telescopes to `c * (f (min t (min T σ).untopA) - f (min s (min T σ).untopA))`. -/
@@ -131,10 +121,18 @@ private theorem sum_clippedDyadicGrid_telescope {s t T : ℝ≥0} (hst : s ≤ t
   simp_rw [hterm, ← Finset.mul_sum,
     Finset.sum_range_sub (fun j ↦ f (min (p j : WithTop ℝ≥0) σ).untopA) (⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1),
     hp0, hp_end]
+  have hmin_le {r : ℝ≥0} (hrT : r ≤ T) :
+      min r (min (T : WithTop ℝ≥0) σ).untopA = (min (r : WithTop ℝ≥0) σ).untopA := by
+    have hcoe (x : ℝ≥0) :
+        ((min (x : WithTop ℝ≥0) σ).untopA : WithTop ℝ≥0) = min (x : WithTop ℝ≥0) σ := by
+      rw [WithTop.untopA_eq_untop (ne_of_lt (lt_of_le_of_lt (min_le_left _ _)
+        (WithTop.coe_lt_top x))), WithTop.coe_untop]
+    apply WithTop.coe_injective
+    rw [WithTop.coe_min, hcoe T, hcoe r, ← min_assoc, min_eq_left (WithTop.coe_le_coe.mpr hrT)]
   have hmin_t : min t (min (T : WithTop ℝ≥0) σ).untopA = (min (b : WithTop ℝ≥0) σ).untopA := by
-    rw [← min_untopA_min_eq hbT σ]; dsimp only [b]
+    rw [← hmin_le hbT]; dsimp only [b]
     rw [min_assoc, min_eq_right (WithTop.untopA_le (min_le_left (T : WithTop ℝ≥0) σ))]
-  rw [hmin_t, min_untopA_min_eq hsT σ]
+  rw [hmin_t, hmin_le hsT]
 
 /-- Helper: on a single interval `(s, t]` with bounded `ℱ s`-measurable height `ξ`, stopping the
 elementary integral at the dyadic stopping time `dyadicCeilTime k ∘ τ` at horizon `T` is realized
@@ -304,10 +302,8 @@ theorem stoppedProcess_ae_eq_l2Integral
         2 P) atTop (𝓝 0) :=
       tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hKlim T) (fun _ ↦ zero_le)
         fun m ↦ by
-          have ha₂ (j : ℕ) (hj : j < N' m) : MemLp (ζ' m j) 2 P :=
-            MemLp.of_bound ((hζ' m j hj).mono (ℱ.le _)).aestronglyMeasurable (C' m)
-              (.of_forall (hC' m j hj))
-          rw [hW.eLpNorm_simpleGains_sub_l2Integral (hp' m) (hζ' m) ha₂ (hH.ite_le hσ) T]
+          rw [hW.eLpNorm_simpleGains_sub_l2Integral (hp' m) (hζ' m)
+            (Finance.memLp_of_bound_stronglyMeasurable (hζ' m) (hC' m)) (hH.ite_le hσ) T]
           refine eLpNorm_mono_ae ((((Finance.isStronglyPredictable_simpleHolding (hζ' m)).sub
             (hH.ite_le hσ).isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
             ?_

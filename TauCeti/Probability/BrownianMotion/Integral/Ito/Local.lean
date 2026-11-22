@@ -69,37 +69,16 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
 
 /-- The `n`-th closed-level raw energy localizer `nnvolume.energyLocalizer H (n + 1)`. -/
-private def energyLevelLocalizer (H : ℝ≥0 → Ω → ℝ) (n : ℕ) : Ω → WithTop ℝ≥0 :=
+private abbrev energyLevelLocalizer (H : ℝ≥0 → Ω → ℝ) (n : ℕ) : Ω → WithTop ℝ≥0 :=
   nnvolume.energyLocalizer H ((n : ℝ≥0) + 1)
 
 /-- The `n`-th localized cutoff integrand `1_{[0, τ n]} · finiteEnergyCutoff H`. -/
-private def energyLevelCutoff (H : ℝ≥0 → Ω → ℝ) (n : ℕ) (t : ℝ≥0) (ω : Ω) : ℝ :=
+private abbrev energyLevelCutoff (H : ℝ≥0 → Ω → ℝ) (n : ℕ) (t : ℝ≥0) (ω : Ω) : ℝ :=
   if (t : WithTop ℝ≥0) ≤ energyLevelLocalizer H n ω then nnvolume.finiteEnergyCutoff H t ω else 0
 
 private theorem energyLevelLocalizer_mono (H : ℝ≥0 → Ω → ℝ) {n m : ℕ} (hnm : n ≤ m) (ω : Ω) :
     energyLevelLocalizer H n ω ≤ energyLevelLocalizer H m ω :=
   nnvolume.monotone_energyLocalizer H ω (add_le_add (Nat.cast_le.mpr hnm) le_rfl)
-
-private theorem isLocalizingSequence_energyLevelLocalizer {H : ℝ≥0 → Ω → ℝ}
-    (hH : LocallyBrownianIntegrable ℱ P H) : IsLocalizingSequence ℱ (energyLevelLocalizer H) P :=
-  hH.isLocalizingSequence_energyLocalizer
-
-private theorem isStoppingTime_energyLevelLocalizer {H : ℝ≥0 → Ω → ℝ}
-    (hH : LocallyBrownianIntegrable ℱ P H) (n : ℕ) : IsStoppingTime ℱ (energyLevelLocalizer H n) :=
-  (isLocalizingSequence_energyLevelLocalizer hH).isStoppingTime n
-
-private theorem brownianIntegrable_energyLevelCutoff [IsFiniteMeasure P] {H : ℝ≥0 → Ω → ℝ}
-    (hH : IsStronglyPredictable ℱ H) (n : ℕ) : BrownianIntegrable ℱ P (energyLevelCutoff H n) :=
-  hH.brownianIntegrable_ite_le_energyLocalizer ((n : ℝ≥0) + 1)
-
-/-- If `A i ≤ᵐ[μ] B i ∪ C i` along `l` and `μ (B i), μ (C i) → 0`, then `μ (A i) → 0`. -/
-private theorem tendsto_measure_of_ae_subset_union {ι : Type*} {l : Filter ι} {μ : Measure Ω}
-    {A B C : ι → Set Ω} (hB : Tendsto (fun i ↦ μ (B i)) l (𝓝 0))
-    (hC : Tendsto (fun i ↦ μ (C i)) l (𝓝 0)) (hsub : ∀ i, A i ≤ᵐ[μ] (B i ∪ C i : Set Ω)) :
-    Tendsto (fun i ↦ μ (A i)) l (𝓝 0) :=
-  tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa only [add_zero] using hB.add hC) (fun _ ↦ zero_le) fun i ↦
-      (measure_mono_ae (hsub i)).trans (measure_union_le (B i) (C i))
 
 /-- If `I` has almost surely continuous paths and agrees with a sequence of localized Itô
 integrals `U n` of `energyLevelCutoff H n` when stopped at `energyLevelLocalizer H n`, then `I`
@@ -112,8 +91,9 @@ private theorem isItoIntegral_of_localized_stages
     (hIstop : ∀ n, stoppedProcess I (energyLevelLocalizer H n) ≡ᵐ[P] U n) :
     IsItoIntegral ℱ P W H I := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have hloc := isLocalizingSequence_energyLevelLocalizer hH
-  have hHloc (n : ℕ) := brownianIntegrable_energyLevelCutoff (P := P) hH.isStronglyPredictable n
+  have hloc := hH.isLocalizingSequence_energyLocalizer
+  have hHloc (n : ℕ) :=
+    hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer (P := P) ((n : ℝ≥0) + 1)
   refine ⟨hH.isStronglyPredictable, hIcont, fun t ↦ ?_⟩
   -- Step 1: approximate each localized stage `energyLevelCutoff H n` in `L²` by a bounded simple
   -- holding within `(n + 1)⁻¹`, and transfer convergence to the integrals via isometry.
@@ -129,9 +109,8 @@ private theorem isItoIntegral_of_localized_stages
   have hK_brown (n : ℕ) : BrownianIntegrable ℱ P (Finance.simpleHolding (s n) (m n) (a n)) :=
     brownianIntegrable_iff_memLp_predictableMeasure.mpr
       ⟨Finance.isStronglyPredictable_simpleHolding (ha n),
-        fun T ↦ Finance.memLp_simpleHolding_predictableMeasure (ha n) (fun j hj ↦
-          MemLp.of_bound (((ha n j hj).mono (ℱ.le _)).aestronglyMeasurable) (C n)
-            (.of_forall (hb n j hj))) T⟩
+        fun T ↦ Finance.memLp_simpleHolding_predictableMeasure (ha n)
+          (Finance.memLp_of_bound_stronglyMeasurable (ha n) (hb n)) T⟩
   have hK_I_L2 : Tendsto
       (fun n ↦ eLpNorm (Finance.simpleGains (s n) (m n) (a n) W t - U n t) 2 P) atTop (𝓝 0) :=
     hK_L2.congr fun n ↦
@@ -146,7 +125,7 @@ private theorem isItoIntegral_of_localized_stages
         exact not_lt_of_ge (Set.mem_iInter.mp hω n) hn) hloc.tendsto_top
   have hB_lim : Tendsto (fun n ↦ P (B n)) atTop (𝓝 0) := by
     simpa only [Function.comp_def, hB_inter] using tendsto_measure_iInter_atTop (s := B)
-      (fun n ↦ (ℱ.le t _ (isStoppingTime_energyLevelLocalizer hH n t)).nullMeasurableSet)
+      (fun n ↦ (ℱ.le t _ (hloc.isStoppingTime n t)).nullMeasurableSet)
       (fun _ _ hnm ω hω ↦ (energyLevelLocalizer_mono H hnm ω).trans hω) ⟨0, measure_ne_top P _⟩
   -- Step 3: off `B n` and a fixed null set, `I t = U n t` and the pathwise energies agree.
   have hgood : ∀ᵐ ω ∂P, ∀ n, ω ∉ B n → I t ω = U n t ω ∧
@@ -160,15 +139,23 @@ private theorem isItoIntegral_of_localized_stages
     simp only [energyLevelCutoff, (WithTop.coe_le_coe.mpr hs'.2).trans ht_lt.le, ite_true,
       nnvolume.finiteEnergyCutoff_eqOn (hfin t) hs'.2]
   -- Step 4: transfer energy and integral convergence in probability via the vanishing bad sets.
+  have hunion {A C : ℕ → Set Ω} (hC : Tendsto (fun n ↦ P (C n)) atTop (𝓝 0))
+      (hsub : ∀ n, A n ≤ᵐ[P] (B n ∪ C n : Set Ω)) :
+      Tendsto (fun n ↦ P (A n)) atTop (𝓝 0) :=
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (by simpa only [add_zero] using hB_lim.add hC) (fun _ ↦ zero_le) fun n ↦
+        (measure_mono_ae (hsub n)).trans (measure_union_le (B n) (C n))
   refine ⟨m, s, a, fun n ↦ (hs n).monotoneOn, ha,
-    fun ε hε ↦ tendsto_measure_of_ae_subset_union hB_lim
-      (TauCeti.tendsto_measure_lintegral_eNorm_pow_of_tendsto_eLpNorm
-        (F := fun n (p : ℝ≥0 × Ω) ↦
+    fun ε hε ↦ hunion
+      (TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
+        (f := fun n (p : ℝ≥0 × Ω) ↦
           Finance.simpleHolding (s n) (m n) (a n) p.1 p.2 - energyLevelCutoff H n p.1 p.2)
-        (n := 2) (by norm_num) hK_L2 hε)
+        (fun n ↦ (((Finance.isStronglyPredictable_simpleHolding (ha n)).sub
+          (hHloc n).isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
+        hK_L2 hε)
       fun n ↦ hgood.mono fun ω hω hA ↦ (Classical.em (ω ∈ B n)).imp id fun hB ↦ by
         simpa only [Set.mem_ofPred_eq, ← (hω n hB).2] using hA,
-    fun ε hε ↦ tendsto_measure_of_ae_subset_union hB_lim
+    fun ε hε ↦ hunion
       ((tendstoInMeasure_of_tendsto_eLpNorm (p := 2)
         (f := fun n ↦ Finance.simpleGains (s n) (m n) (a n) W t - U n t)
         (g := 0) (by norm_num) (by simpa only [sub_zero] using hK_I_L2)) ε hε)
@@ -188,8 +175,9 @@ private theorem exists_isItoIntegral_aux
       ∀ n, IsItoIntegral ℱ P W (energyLevelCutoff H n)
         (stoppedProcess I (energyLevelLocalizer H n)) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have hloc := isLocalizingSequence_energyLevelLocalizer hH
-  have hHloc (n : ℕ) := brownianIntegrable_energyLevelCutoff (P := P) hH.isStronglyPredictable n
+  have hloc := hH.isLocalizingSequence_energyLocalizer
+  have hHloc (n : ℕ) :=
+    hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer (P := P) ((n : ℝ≥0) + 1)
   -- Step 1: build the localized `L²` martingale Itô integrals `U n` for each cutoff stage.
   choose U hUito hUpred hUmart using fun n ↦
     (hHloc n).exists_isItoIntegral hW hcont
@@ -197,23 +185,29 @@ private theorem exists_isItoIntegral_aux
   have hcompat (n m : ℕ) (hnm : n ≤ m) :
       stoppedProcess (U m) (energyLevelLocalizer H n) ≡ᵐ[P] U n := by
     have hstop := hW.isItoIntegral_stoppedProcess_of_brownianIntegrable hcont (hHloc m) (hUito m)
-      (isStoppingTime_energyLevelLocalizer hH n)
+      (hloc.isStoppingTime n)
     have hEq : (fun (t : ℝ≥0) ω ↦ if (t : WithTop ℝ≥0) ≤ energyLevelLocalizer H n ω then
-        energyLevelCutoff H m t ω else 0) = energyLevelCutoff H n := by
+        energyLevelCutoff H m t ω else 0) =
+        fun (t : ℝ≥0) ω ↦ if (t : WithTop ℝ≥0) ≤ nnvolume.energyLocalizer H ((n : ℝ≥0) + 1) ω then
+          nnvolume.finiteEnergyCutoff H t ω else 0 := by
       ext t ω; dsimp only [energyLevelCutoff]
       by_cases ht : (t : WithTop ℝ≥0) ≤ energyLevelLocalizer H n ω
       · simp only [ht, ht.trans (energyLevelLocalizer_mono H hnm ω), ite_true]
       · simp only [ht, ite_false]
-    exact isItoIntegral_unique hW (hEq ▸ hstop) (hUito n)
+    exact isItoIntegral_unique hW (by rw [← hEq]; exact hstop) (hUito n)
   -- Step 3: patch the stages into a single strongly progressive continuous process `I`.
   obtain ⟨I, hIprog, hIcont, hIstop⟩ :=
     exists_isStronglyProgressive_patch_stoppedProcess hloc.tendsto_top
       (fun n ↦ (hUpred n).isStronglyProgressive) (fun n ↦ (hUito n).ae_continuous) hcompat
   have hIloc : Locally (fun Y ↦ Martingale Y ℱ P) ℱ I P :=
     hIprog.locally_martingale_of_ae_stopped_eq hloc hUmart fun n t ↦ by
-      rw [show (fun s ↦ {ω | (⊥ : WithTop ℝ≥0) < energyLevelLocalizer H n ω}.indicator (I s)) =
-          I from funext fun s ↦ funext fun ω ↦
-            Set.indicator_of_mem (nnvolume.energyLocalizer_pos H (by positivity) ω) _]
+      -- Every closed-level energy localizer is strictly positive, so the `{⊥ < τ n}` indicator is
+      -- `I`.
+      have hind :
+          (fun s ↦ {ω | (⊥ : WithTop ℝ≥0) < energyLevelLocalizer H n ω}.indicator (I s)) = I :=
+        funext fun s ↦ funext fun ω ↦
+          Set.indicator_of_mem (nnvolume.energyLocalizer_pos H (by positivity) ω) _
+      rw [hind]
       exact (hIstop n).mono fun ω hω ↦ (hω t).symm
   exact ⟨I, hW.isItoIntegral_of_localized_stages hcont hH hIcont hUito hIstop,
     hIprog, hIloc, fun n ↦ (hUito n).congr (hIstop n).symm⟩
@@ -261,33 +255,38 @@ theorem isItoIntegral_stoppedProcess (hW : IsFilteredPreBrownianReal ℱ W P)
   obtain ⟨J, hJito, -, -, hJstop⟩ := hW.exists_isItoIntegral_aux hcont hHσ
   -- Step 2: compare `stoppedProcess I σ` and `J` along the joint localizers
   -- `η n = min (τ_H n) (τ_{Hσ} n)`.
-  let η (n : ℕ) (ω : Ω) : WithTop ℝ≥0 :=
-    min (energyLevelLocalizer H n ω) (energyLevelLocalizer Hσ n ω)
-  have hη_top : ∀ᵐ ω ∂P, Tendsto (η · ω) atTop (𝓝 ⊤) := by
-    filter_upwards [(isLocalizingSequence_energyLevelLocalizer hH).tendsto_top,
-      (isLocalizingSequence_energyLevelLocalizer hHσ).tendsto_top] with ω h1 h2
-    simpa only [min_self] using h1.min h2
+  let η := min (energyLevelLocalizer H) (energyLevelLocalizer Hσ)
+  have hη_top : ∀ᵐ ω ∂P, Tendsto (η · ω) atTop (𝓝 ⊤) :=
+    (hH.isLocalizingSequence_energyLocalizer.min
+      hHσ.isLocalizingSequence_energyLocalizer).tendsto_top
   have hcompat (n : ℕ) :
       stoppedProcess (stoppedProcess I σ) (η n) ≡ᵐ[P] stoppedProcess J (η n) := by
     have hLHS_ito : IsItoIntegral ℱ P W
         (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ min (σ ω) (energyLevelLocalizer Hσ n ω) then
           energyLevelCutoff H n t ω else 0) (stoppedProcess (stoppedProcess I σ) (η n)) := by
-      rw [show stoppedProcess (stoppedProcess I σ) (η n) =
+      -- Reassociate `stoppedProcess (stoppedProcess I σ) (min τ_H τ_{Hσ})` by `min` commutativity.
+      have hLHS_eq : stoppedProcess (stoppedProcess I σ) (η n) =
           stoppedProcess (stoppedProcess I (energyLevelLocalizer H n))
-            (fun ω ↦ min (σ ω) (energyLevelLocalizer Hσ n ω)) by
-        rw [stoppedProcess_stoppedProcess', stoppedProcess_stoppedProcess']; congr 1; ext ω; ac_rfl]
+            (fun ω ↦ min (σ ω) (energyLevelLocalizer Hσ n ω)) := by
+        rw [stoppedProcess_stoppedProcess', stoppedProcess_stoppedProcess']
+        congr 1; ext ω; ac_rfl
+      rw [hLHS_eq]
       exact hW.isItoIntegral_stoppedProcess_of_brownianIntegrable hcont
-        (brownianIntegrable_energyLevelCutoff hH.isStronglyPredictable n) (hIstop n)
-        (hσ.min (isStoppingTime_energyLevelLocalizer hHσ n))
+        (hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer ((n : ℝ≥0) + 1))
+        (hIstop n) (hσ.min (hHσ.isLocalizingSequence_energyLocalizer.isStoppingTime n))
     have hRHS_ito : IsItoIntegral ℱ P W
         (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ energyLevelLocalizer H n ω then
           energyLevelCutoff Hσ n t ω else 0) (stoppedProcess J (η n)) := by
-      rw [show stoppedProcess J (η n) = stoppedProcess
-          (stoppedProcess J (energyLevelLocalizer Hσ n)) (energyLevelLocalizer H n) from
-        stoppedProcess_stoppedProcess'.symm]
+      -- Reassociate `stoppedProcess J (min τ_H τ_{Hσ})` as `J` stopped at `τ_{Hσ}` then
+      -- `τ_H`.
+      have hRHS_eq : stoppedProcess J (η n) =
+          stoppedProcess (stoppedProcess J (energyLevelLocalizer Hσ n))
+            (energyLevelLocalizer H n) :=
+        stoppedProcess_stoppedProcess'.symm
+      rw [hRHS_eq]
       exact hW.isItoIntegral_stoppedProcess_of_brownianIntegrable hcont
-        (brownianIntegrable_energyLevelCutoff hHσ.isStronglyPredictable n) (hJstop n)
-        (isStoppingTime_energyLevelLocalizer hH n)
+        (hHσ.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer ((n : ℝ≥0) + 1))
+        (hJstop n) (hH.isLocalizingSequence_energyLocalizer.isStoppingTime n)
     refine hW.itoIntegral_local_congr hLHS_ito hRHS_ito fun T ↦ ?_
     filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure T) (ν := P)).ae
         ((ae_mem_Ioc_timeMeasure T).mono fun _ h ↦ h.2),

@@ -35,9 +35,6 @@ Only the second measure needs to be s-finite.
   of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`.
 * `MeasureTheory.MemLp.ae_memLp_prod_right` — for `f ∈ Lᵖ(μ ⊗ ν)`, almost every section is in
   `Lᵖ(ν)`.
-* `TauCeti.tendsto_measure_lintegral_eNorm_rpow_of_tendsto_eLpNorm` and
-  `TauCeti.tendsto_measure_lintegral_eNorm_pow_of_tendsto_eLpNorm` — `Lᵖ(μ ⊗ ν)` convergence to
-  zero along a filter implies convergence to zero in `ν`-measure of the `μ`-section energies.
 -/
 
 public section
@@ -232,55 +229,6 @@ theorem eLpNorm_prod_smul [SFinite ν] {𝕜 : Type*} [TopologicalSpace 𝕜] [C
     rw [eLpNorm_const_mul_ennreal hg.eNorm.aestronglyMeasurable, eLpNorm_eNorm _ hg]
   simp_rw [hsec, mul_comm _ (eLpNorm g p ν)]
   rw [eLpNorm_const_mul_ennreal hf.eNorm.aestronglyMeasurable, eLpNorm_eNorm _ hf, mul_comm]
-
-/-- Convergence to zero in `Lᵖ(μ ⊗ ν)` along an arbitrary filter implies convergence to zero in
-`ν`-measure of the `μ`-section energies `y ↦ ∫⁻ x, ‖F i (x, y)‖ₑ ^ p.toReal ∂μ`, for any
-finite positive exponent `p` and s-finite `μ`, `ν`. No separate measurability hypothesis on `F`
-is needed because finiteness of `eLpNorm` already enforces `AEStronglyMeasurable`. -/
-theorem tendsto_measure_lintegral_eNorm_rpow_of_tendsto_eLpNorm
-    [SFinite μ] [SFinite ν] {ι : Type*} {l : Filter ι}
-    {F : ι → α × β → ε} (hp0 : p ≠ 0) (hp : p ≠ ∞)
-    (hlim : Tendsto (fun i ↦ eLpNorm (F i) p (μ.prod ν)) l (𝓝 0))
-    {δ : ℝ≥0∞} (hδ : 0 < δ) :
-    Tendsto (fun i ↦ ν {y | δ ≤ ∫⁻ x, ‖F i (x, y)‖ₑ ^ p.toReal ∂μ}) l (𝓝 0) := by
-  have hrpos : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  let c : ℝ≥0∞ := min δ 1; have hcpos : 0 < c := lt_min hδ zero_lt_one
-  have hctop : c ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (min_le_right δ 1)
-  have hpow_lim : Tendsto (fun i ↦ eLpNorm (F i) p (μ.prod ν) ^ p.toReal) l (𝓝 0) := by
-    simpa only [Function.comp_def, ENNReal.zero_rpow_of_pos hrpos] using
-      (ENNReal.continuous_rpow_const (y := p.toReal)).continuousAt.tendsto.comp hlim
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (by simpa only [mul_zero] using
-      ENNReal.Tendsto.const_mul hpow_lim (Or.inr (ENNReal.inv_ne_top.mpr hcpos.ne')))
-    (Eventually.of_forall fun _ ↦ zero_le) ?_
-  filter_upwards [hlim.eventually (gt_mem_nhds (by simp : (0 : ℝ≥0∞) < ∞))] with i hi
-  have hFi : AEStronglyMeasurable (F i) (μ.prod ν) := by
-    by_contra hnot; rw [eLpNorm_of_not_aestronglyMeasurable hnot] at hi; exact hi.ne rfl
-  have hpow : eLpNorm (F i) p (μ.prod ν) ^ p.toReal = ∫⁻ z, ‖F i z‖ₑ ^ p.toReal ∂μ.prod ν := by
-    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hFi, one_div, ENNReal.rpow_inv_rpow hrpos.ne']
-  have hg : AEMeasurable (fun z ↦ ‖F i z‖ₑ ^ p.toReal) (μ.prod ν) := hFi.eNorm.pow_const p.toReal
-  have hsec_ae : AEMeasurable (fun y ↦ ∫⁻ x, ‖F i (x, y)‖ₑ ^ p.toReal ∂μ) ν :=
-    (hg.measurable_mk.lintegral_prod_left' (μ := μ)).aemeasurable.congr <|
-      (Measure.ae_ae_of_ae_prod
-        ((Measure.measurePreserving_swap (μ := ν) (ν := μ)).quasiMeasurePreserving.ae
-          hg.ae_eq_mk)).mono fun _ hy ↦ lintegral_congr_ae (hy.mono fun _ hx ↦ hx.symm)
-  have hmarkov : ν {y | c ≤ ∫⁻ x, ‖F i (x, y)‖ₑ ^ p.toReal ∂μ} * c ≤
-      eLpNorm (F i) p (μ.prod ν) ^ p.toReal := by
-    rw [mul_comm, hpow, lintegral_prod_symm _ hg]; exact mul_meas_ge_le_lintegral₀ hsec_ae c
-  rw [← ENNReal.div_eq_inv_mul]
-  exact (measure_mono fun _ hy ↦ (min_le_left δ 1).trans hy).trans
-    ((ENNReal.le_div_iff_mul_le (.inl hcpos.ne') (.inl hctop)).2 hmarkov)
-
-/-- Natural-exponent form of `tendsto_measure_lintegral_eNorm_rpow_of_tendsto_eLpNorm`. -/
-theorem tendsto_measure_lintegral_eNorm_pow_of_tendsto_eLpNorm
-    [SFinite μ] [SFinite ν] {ι : Type*} {l : Filter ι}
-    {F : ι → α × β → ε} {n : ℕ} (hn : n ≠ 0)
-    (hlim : Tendsto (fun i ↦ eLpNorm (F i) n (μ.prod ν)) l (𝓝 0))
-    {δ : ℝ≥0∞} (hδ : 0 < δ) :
-    Tendsto (fun i ↦ ν {y | δ ≤ ∫⁻ x, ‖F i (x, y)‖ₑ ^ n ∂μ}) l (𝓝 0) := by
-  simpa only [ENNReal.toReal_natCast, ENNReal.rpow_natCast] using
-    tendsto_measure_lintegral_eNorm_rpow_of_tendsto_eLpNorm
-      (p := (n : ℝ≥0∞)) (Nat.cast_ne_zero.mpr hn) (ENNReal.natCast_ne_top n) hlim hδ
 
 end TauCeti
 

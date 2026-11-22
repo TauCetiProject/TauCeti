@@ -20,7 +20,9 @@ These identities connect finite-grid stochastic-integral estimates to the actual
 lower-integral energy used in predictable approximation and localization. In particular,
 no divergent Bochner integral is interpreted as zero energy. Left-measurable heights
 in `Lᵖ` also give an elementary holding in the predictable `Lᵖ` space on each finite
-horizon; this membership result does not require the grid to be monotone.
+horizon; this membership result does not require the grid to be monotone. Bounded
+left-measurable heights likewise lie in `Lᵖ` of any finite sample measure
+(`TauCeti.Finance.memLp_of_bound_stronglyMeasurable`).
 
 ## References
 
@@ -88,5 +90,15 @@ theorem memLp_simpleHolding_predictableMeasure {τ : ℕ → ℝ≥0} {mΩ : Mea
     memLp_finsetSum (range n) fun i hi ↦
       ℱ.memLp_indicator_Ioc_predictableMeasure T (τ i) (τ (i + 1))
         (ha i (mem_range.mp hi)) (haLp i (mem_range.mp hi))
+
+/-- Bounded `ℱ (τ j)`-measurable heights lie in `Lᵖ(P)` for every exponent when `P` is finite.
+No order condition on the grid is needed. -/
+theorem memLp_of_bound_stronglyMeasurable {mΩ : MeasurableSpace Ω}
+    {ι' E : Type*} [Preorder ι'] [NormedAddCommGroup E] {ℱ : Filtration ι' mΩ} {P : Measure Ω}
+    [IsFiniteMeasure P] {p : ℝ≥0∞} {τ : ℕ → ι'} {n : ℕ} {a : ℕ → Ω → E}
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    {C : ℝ} (hb : ∀ j < n, ∀ ω, ‖a j ω‖ ≤ C) (j : ℕ) (hj : j < n) :
+    MemLp (a j) p P :=
+  MemLp.of_bound ((ha j hj).mono (ℱ.le _)).aestronglyMeasurable C (.of_forall (hb j hj))
 
 end TauCeti.Finance
