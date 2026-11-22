@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.InvariantForm
 public import TauCeti.Geometry.Lie.Adjoint.Derivation
 public import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.Compact.BilinearForm
 import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
@@ -50,6 +51,8 @@ It uses `TauCeti.Lie.hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero` for `
   algebra of a compact Lie group, some adjoint translate of `X` brackets to zero with `Y`.
 * `TauCeti.Lie.lieInvariant_iff_adjoint_invariant`: on a connected group, tangent bilinear forms
   are infinitesimally invariant exactly when they are Ad-invariant.
+* `TauCeti.Lie.lieInvariant_of_isInvariantForm_adjointRepresentation`: a bilinear form invariant
+  under `TauCeti.Lie.adjointRepresentation` is invariant under the tangent Lie algebra.
 
 * `TauCeti.Lie.exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant`:
   a continuous symmetric positive adjoint-invariant form on the tangent Lie algebra of a compact
@@ -365,6 +368,17 @@ theorem lieInvariant_of_adjoint_invariant
   rw [heq] at h
   simp only [ContinuousLinearMap.toBilinForm_apply]
   linarith [h.unique (hasDerivAt_const 0 (b Y Z))]
+
+/-- **A form invariant under `adjointRepresentation` is invariant under the tangent Lie algebra.**
+This is `TauCeti.Lie.lieInvariant_of_adjoint_invariant` for a bilinear form, read as a continuous
+bilinear map; the group may be disconnected. -/
+theorem lieInvariant_of_isInvariantForm_adjointRepresentation
+    {B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)}
+    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B) :
+    B.lieInvariant (GroupLieAlgebra I G) :=
+  lieInvariant_of_adjoint_invariant (b := LinearMap.toContinuousBilinearMap B) fun g X Y ↦ by
+    simpa only [LinearMap.toContinuousBilinearMap_apply, adjointRepresentation_apply] using
+      hB.apply g X Y
 
 /-- On a connected Lie group, an infinitesimally invariant bilinear form is Ad-invariant. -/
 theorem adjoint_invariant_of_lieInvariant [PreconnectedSpace G]
