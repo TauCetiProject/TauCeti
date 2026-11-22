@@ -19,8 +19,8 @@ are
 These relations present `so(3)`: for any three elements `a₀, a₁, a₂` of a Lie algebra `L`
 satisfying the same cyclic relations, the linear map `û ↦ u₀ a₀ + u₁ a₁ + u₂ a₂` is a Lie algebra
 homomorphism (`TauCeti.soThreeLieHom`), and it is the only one sending `êᵢ` to `aᵢ`
-(`TauCeti.soThree_lieHom_ext`). It is injective exactly when `a₀, a₁, a₂` are linearly
-independent (`TauCeti.injective_soThreeLieHom_iff`).
+(`TauCeti.lieHom_ext_soThree`). It is injective exactly when `a₀, a₁, a₂` are linearly
+independent (`TauCeti.soThreeLieHom_injective_iff`).
 
 Over `ℝ`, `so(3)` is isomorphic to the Lie algebra `𝔰𝔲(2)` of `SU(2)`, so a triple satisfying the
 cyclic relations is what a real Lie algebra needs in order to receive `𝔰𝔲(2)`.
@@ -32,9 +32,9 @@ cyclic relations is what a real Lie algebra needs in order to receive `𝔰𝔲(
 ## Main results
 
 * `TauCeti.soThreeLieHom_soThreeEquiv`: it sends `û` to `∑ᵢ uᵢ • aᵢ`.
-* `TauCeti.soThree_lieHom_ext`: Lie algebra homomorphisms out of `so(3)` agreeing on the `êᵢ` are
+* `TauCeti.lieHom_ext_soThree`: Lie algebra homomorphisms out of `so(3)` agreeing on the `êᵢ` are
   equal.
-* `TauCeti.injective_soThreeLieHom_iff`: it is injective exactly when the `aᵢ` are linearly
+* `TauCeti.soThreeLieHom_injective_iff`: it is injective exactly when the `aᵢ` are linearly
   independent.
 -/
 
@@ -91,7 +91,7 @@ theorem soThreeLieHom_soThreeEquiv_single (i : Fin 3) :
     one_smul]
 
 /-- **Lie algebra homomorphisms out of `so(3)` are determined by the images of `ê₀, ê₁, ê₂`.** -/
-theorem soThree_lieHom_ext {f g : so (Fin 3) R →ₗ⁅R⁆ L}
+theorem lieHom_ext_soThree {f g : so (Fin 3) R →ₗ⁅R⁆ L}
     (h : ∀ i, f (soThreeEquiv R (Pi.single i 1)) = g (soThreeEquiv R (Pi.single i 1))) :
     f = g :=
   -- The `êᵢ` are the image of the standard basis under the hat map.
@@ -100,7 +100,7 @@ theorem soThree_lieHom_ext {f g : so (Fin 3) R →ₗ⁅R⁆ L}
       (f₂ := g) fun i ↦ by simpa using h i
 
 /-- **`soThreeLieHom` is injective exactly when `a₀, a₁, a₂` are linearly independent.** -/
-theorem injective_soThreeLieHom_iff :
+theorem soThreeLieHom_injective_iff :
     Function.Injective (soThreeLieHom a h₀ h₁ h₂ : so (Fin 3) R → L) ↔ LinearIndependent R a := by
   rw [linearIndependent_iff_injective_fintypeLinearCombination]
   -- `soThreeLieHom` is the linear combination of the `aᵢ` after the linear equivalence

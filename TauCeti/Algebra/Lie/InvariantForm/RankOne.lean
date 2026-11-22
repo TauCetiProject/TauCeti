@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Algebra.Lie.Coadjoint.RootPlane
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct.LieHom
-import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+import Mathlib.Analysis.Real.Sqrt
 import TauCeti.Algebra.Lie.MaximalCommuting
 import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.NormalForm
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
@@ -33,10 +33,12 @@ the Lie algebra of `SO(3)` and of `SU(2)`:
   (`TauCeti.lie_mem_of_lie_eq_smul`);
 * `B(H, Z) = α(H) B(y, y)` for `H ∈ t`
   (`LinearMap.BilinForm.lieInvariant.apply_lie_eq_mul_of_lie_eq_smul`), so `Z ≠ 0` and
-  `μ = α(Z) = B(Z, Z) / B(y, y) > 0`;
+  `μ = α(Z) = B(Z, Z) / B(y, y) > 0`
+  (`LinearMap.BilinForm.lieInvariant.pos_apply_lie_of_lie_eq_smul`);
 * hence `⁅Z, x⁆ = μ y` and `⁅Z, y⁆ = -μ x`, and `x / √μ, y / √μ, Z / μ` satisfy the cyclic
-  relations of the basis `ê₀, ê₁, ê₂` of `so(3)`. They are `B`-orthogonal and nonzero, so the
-  resulting homomorphism `so(3) → L` is injective
+  relations of the basis `ê₀, ê₁, ê₂` of `so(3)`. They are `B`-orthogonal
+  (`LinearMap.BilinForm.lieInvariant.iIsOrtho_of_lie_eq_smul`) and nonzero, so the resulting
+  homomorphism `so(3) → L` is injective
   (`LinearMap.BilinForm.exists_injective_lieHom_soThree_of_lie_eq_smul`).
 
 The image of `ê₂` is the element `Z / μ` of `t` on which `α` takes the value `1`, so `2ê₂` goes to
@@ -81,48 +83,6 @@ variable {L : Type*} [LieRing L] [LieAlgebra ℝ L]
 
 open TauCeti
 
-/-- The rescaled triple `c x, d y, e ⁅x, y⁆` of a root pair with `α(H₀) ≠ 0` is orthogonal for a
-symmetric invariant form. -/
-private theorem iIsOrtho_lie_eq_smul {B : LinearMap.BilinForm ℝ L} (hBs : B.IsSymm)
-    (hB : B.lieInvariant L) {t : Submodule ℝ L} {α : Dual ℝ t} {H₀ : t} (hH₀ : α H₀ ≠ 0)
-    {x y : L} (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y) (c d e : ℝ) :
-    B.iIsOrtho ![c • x, d • y, e • ⁅x, y⁆] := by
-  -- `B(x, y) = -B(y, x)` by invariance under `H₀`, and `B` is symmetric.
-  have hxy : B x y = 0 := by
-    have h : α H₀ * B x y = -(α H₀ * B x y) := by simpa [hx, hBs.eq y x] using hB H₀ x x
-    exact (mul_eq_zero.mp (by linear_combination h / 2 : α H₀ * B x y = 0)).resolve_left hH₀
-  -- `B(⁅x, y⁆, x) = -B(y, ⁅x, x⁆)` and `B(⁅y, x⁆, y) = -B(x, ⁅y, y⁆)` vanish.
-  have hZx : B ⁅x, y⁆ x = 0 := by simpa using hB x y x
-  have hZy : B ⁅x, y⁆ y = 0 := by
-    rw [← lie_skew, map_neg, LinearMap.neg_apply, neg_eq_zero]
-    simpa using hB y x y
-  rw [iIsOrtho_def]
-  intro i j hij
-  fin_cases i <;> fin_cases j <;>
-    simp [hxy, hZx, hZy, hBs.eq y x, hBs.eq x ⁅x, y⁆, hBs.eq y ⁅x, y⁆] at hij ⊢
-
-/-- For a root pair `x ≠ 0, y` with `α(H₀) ≠ 0` and a positive definite invariant form, `y` and
-`⁅x, y⁆` are nonzero and `α(⁅x, y⁆) > 0`, since `B(⁅x, y⁆, ⁅x, y⁆) = α(⁅x, y⁆) B(y, y)`. -/
-private theorem pos_apply_lie_of_lie_eq_smul {B : LinearMap.BilinForm ℝ L}
-    (hBp : B.toQuadraticMap.PosDef) (hB : B.lieInvariant L) {t : Submodule ℝ L}
-    (ht : ∀ z : L, (∀ H : t, ⁅(H : L), z⁆ = 0) → z ∈ t) {α : Dual ℝ t} {H₀ : t} (hH₀ : α H₀ ≠ 0)
-    {x y : L} (hx0 : x ≠ 0) (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y)
-    (hy : ∀ H : t, ⁅(H : L), y⁆ = -(α H • x)) :
-    y ≠ 0 ∧ ⁅x, y⁆ ≠ 0 ∧ 0 < α ⟨⁅x, y⁆, lie_mem_of_lie_eq_smul ht hx hy⟩ := by
-  have hpos (v : L) (hv : v ≠ 0) : 0 < B v v := by simpa using hBp v hv
-  have hy0 : y ≠ 0 := by
-    rintro rfl
-    have h := hy H₀
-    rw [lie_zero, eq_comm, neg_eq_zero, smul_eq_zero] at h
-    exact h.elim hH₀ hx0
-  have hBZ := hB.apply_lie_eq_mul_of_lie_eq_smul hx
-  have hZ0 : ⁅x, y⁆ ≠ 0 := by
-    intro h
-    have h₀ := hBZ H₀
-    rw [h, map_zero, eq_comm] at h₀
-    exact (mul_ne_zero hH₀ (hpos y hy0).ne') h₀
-  exact ⟨hy0, hZ0, (pos_iff_pos_of_mul_pos (hBZ _ ▸ hpos _ hZ0)).mpr (hpos y hy0)⟩
-
 /-- **The rank-one subalgebra of a root pair.** Let `B` be a symmetric positive definite invariant
 form on a real Lie algebra `L`, let `t` be a subspace containing every element that commutes with
 it, and let `x ≠ 0, y` be a root pair of `t` with nonzero root `α`: `⁅H, x⁆ = α(H) y` and
@@ -139,10 +99,12 @@ theorem exists_injective_lieHom_soThree_of_lie_eq_smul (B : LinearMap.BilinForm 
       (∃ c : ℝ, 0 < c ∧ f (soThreeEquiv ℝ (Pi.single 0 1)) = c • x ∧
         f (soThreeEquiv ℝ (Pi.single 1 1)) = c • y) ∧
       ∃ h : f (soThreeEquiv ℝ (Pi.single 2 1)) ∈ t, α ⟨_, h⟩ = 1 := by
-  obtain ⟨H₀, hH₀⟩ : ∃ H₀, α H₀ ≠ 0 := by simpa using DFunLike.ne_iff.mp hα
-  obtain ⟨hy0, hZ0, hμpos⟩ := pos_apply_lie_of_lie_eq_smul hBp hB ht hH₀ hx0 hx hy
+  have hZt : ⁅x, y⁆ ∈ t := lie_mem_of_lie_eq_smul ht hx hy
+  have hμpos := hB.pos_apply_lie_of_lie_eq_smul hBp hα hx0 hx hy hZt
+  have hZ0 : ⁅x, y⁆ ≠ 0 := fun h ↦ hμpos.ne' <| by
+    rw [show (⟨⁅x, y⁆, hZt⟩ : t) = 0 from Subtype.ext h, map_zero]
+  have hy0 : y ≠ 0 := fun h ↦ hZ0 <| by rw [h, lie_zero]
   set Z := ⁅x, y⁆ with hZ
-  have hZt : Z ∈ t := lie_mem_of_lie_eq_smul ht hx hy
   set μ := α ⟨Z, hZt⟩ with hμ
   obtain ⟨s, hs0, hs⟩ : ∃ s : ℝ, 0 < s ∧ s * s = μ :=
     ⟨√μ, Real.sqrt_pos.mpr hμpos, Real.mul_self_sqrt hμpos.le⟩
@@ -161,10 +123,16 @@ theorem exists_injective_lieHom_soThree_of_lie_eq_smul (B : LinearMap.BilinForm 
     simp only [ha₀, ha₁, ha₂, smul_lie, lie_smul, smul_smul, hZx]
     congr 1
     field_simp
-  refine ⟨soThreeLieHom a h₀ h₁ h₂, injective_soThreeLieHom_iff.mpr ?_,
+  refine ⟨soThreeLieHom a h₀ h₁ h₂, soThreeLieHom_injective_iff.mpr ?_,
     ⟨s⁻¹, inv_pos.mpr hs0, soThreeLieHom_soThreeEquiv_single 0,
       soThreeLieHom_soThreeEquiv_single 1⟩, ?_⟩
-  · refine linearIndependent_of_iIsOrtho (iIsOrtho_lie_eq_smul hBs hB hH₀ hx _ _ _) fun i ↦ ?_
+  · -- Rescaling the orthogonal triple `x, y, Z` keeps it orthogonal.
+    have hO := hB.iIsOrtho_of_lie_eq_smul hBs hα hx
+    refine linearIndependent_of_iIsOrtho (B := B) (fun i j hij ↦ ?_) fun i ↦ ?_
+    · have h : B (![x, y, Z] i) (![x, y, Z] j) = 0 := hO hij
+      have hc (k : Fin 3) : a k = ![s⁻¹, s⁻¹, μ⁻¹] k • ![x, y, Z] k := by fin_cases k <;> rfl
+      change B (a i) (a j) = 0
+      simp only [hc, map_smul, LinearMap.smul_apply, h, smul_zero]
     have hi : a i ≠ 0 := by fin_cases i <;> simp [ha, hx0, hy0, hZ0, hs0.ne', hμpos.ne']
     simpa using (hBp _ hi).ne'
   · rw [soThreeLieHom_soThreeEquiv_single, ha₂]
