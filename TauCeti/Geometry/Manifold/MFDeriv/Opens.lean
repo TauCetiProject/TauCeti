@@ -17,8 +17,10 @@ the inclusion of an open subset is the identity of the model space, restricting 
 source, or following a map into an open target by the inclusion, does not change its differential
 applied to a tangent vector. Differentiability itself is local, so a map and its restriction to
 an open source have vanishing differentials at the same points, with no differentiability
-assumption. Likewise the restriction `f⁻¹(U) → U` of a map to the preimage of an open subset has
-the differential of the map (`TauCeti.Manifold.mfderiv_restrictPreimage_apply`).
+assumption. The same holds for the differential `mvfderiv` of a vector-valued function
+(`TauCeti.Manifold.mvfderiv_comp_subtype_val`). Likewise the restriction `f⁻¹(U) → U` of a map to
+the preimage of an open subset has the differential of the map
+(`TauCeti.Manifold.mfderiv_restrictPreimage_apply`).
 
 A map read in the coordinate of a chart of the maximal atlas, `x ↦ g (e x)`, is differentiable on
 every open subset of the chart's source where `g` is differentiable at the chart image
@@ -74,6 +76,18 @@ theorem mfderiv_comp_subtype_val_eq_zero_iff {U : Opens N} {f : N → M} {x : U}
   simp only [ContinuousLinearMap.ext_iff, zero_apply, mfderiv_comp_subtype_val_apply]
   -- The tangent spaces at `x` in `U` and at `(x : N)` in `N` are both the model space `E'`.
   exact Iff.rfl
+
+/-- Restricting a vector-valued function to an open source does not change its differential. No
+differentiability is assumed: where the function is not differentiable, neither is its
+restriction. -/
+theorem mvfderiv_comp_subtype_val {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {U : Opens N} (f : N → F) (x : U) :
+    mvfderiv J (f ∘ (Subtype.val : U → N)) x = mvfderiv J f (x : N) := by
+  ext v
+  simp only [mvfderiv, ContinuousLinearMap.comp_apply, mfderiv_comp_subtype_val_apply]
+  -- The tangent spaces at `x` in `U` and at `(x : N)` in `N` are both the model space `E'`, and
+  -- `fromTangentSpace` is the identity of it at either base point.
+  rfl
 
 /-- Restricting a map `f : N → M` to the preimage `f⁻¹(U) → U` of an open subset `U` does not
 change its differential. No differentiability is assumed. -/
