@@ -165,10 +165,10 @@ lemma inr_relativeMayerVietorisFromBiprod (n : ℕ) :
 private abbrev smallSubcomplex : (toSSet.obj X).Subcomplex :=
   X.smallSingularSubcomplex ![U, V]
 
-/-- The map of singular pairs `(X, A) ⟶ (X, smallSubcomplex U V)` for `A` contained in `U` or in
-`V`, with the identity on the singular simplicial set of `X`. -/
-private abbrev toSmallPair {A : Set X} {i : Fin 2} (h : A ⊆ ![U, V] i) :
-    TopPair.toSSetPair.obj (TopPair.ofSubset A) ⟶ (smallSubcomplex U V).pair :=
+/-- The map of singular pairs `(X, A) ⟶ (X, X.smallSingularSubcomplex ![U, V])` for `A`
+contained in `U` or in `V`, with the identity on the singular simplicial set of `X`. -/
+abbrev toSmallPair {A : Set X} {i : Fin 2} (h : A ⊆ ![U, V] i) :
+    TopPair.toSSetPair.obj (TopPair.ofSubset A) ⟶ (X.smallSingularSubcomplex ![U, V]).pair :=
   SSetPair.homMk (toSmallSingularSubcomplex ![U, V] h) (𝟙 _)
     ((toSmallSingularSubcomplex_ι _ _).trans (Category.comp_id _).symm)
 

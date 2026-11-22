@@ -171,38 +171,21 @@ theorem singularCohomologyMap_fiberThomPairMap_thomPairCup (u : T ⟶ R ⊗ S) (
         (TopCat.ofHom (ContinuousMap.fst : C(E₁ b × E₂ b, E₁ b)))
         (TopCat.ofHom (ContinuousMap.snd : C(E₁ b × E₂ b, E₂ b)))
         (isOpen_compl_zero_fiber F₁ b) (isOpen_compl_zero_fiber F₂ b)
-        (compl_singleton_prod_subset (0 : E₁ b) (0 : E₂ b)) p q n h
+        (Set.compl_singleton_prod (0 : E₁ b) (0 : E₂ b)).subset p q n h
         (TopPair.singularCohomologyMap (fiberThomPairMap F₁ E₁ b) p a)
         (TopPair.singularCohomologyMap (fiberThomPairMap F₂ E₂ b) q a') := by
-  -- A nonzero vector of `E₁_b × E₂_b` has a nonzero component, a nonzero vector of `E₁` or `E₂`.
-  have hZ (x : E₁ b × E₂ b) (hx : x ≠ 0) :
-      (⟨b, x.1⟩ : TotalSpace F₁ E₁) ∈ zeroSectionCompl F₁ E₁ ∨
-        (⟨b, x.2⟩ : TotalSpace F₂ E₂) ∈ zeroSectionCompl F₂ E₂ :=
-    (compl_singleton_prod_subset (0 : E₁ b) (0 : E₂ b) hx).imp
-      mem_zeroSectionCompl.2 mem_zeroSectionCompl.2
-  rw [thomPairCup_def, fiberThomPairMap_eq_ofSubsetMap (F := F₁ × F₂) (E := E₁ ×ᵇ E₂)]
-  refine (TopCat.singularCohomologyMap_singularRelativeCupPullback k u μ _ _ _ _ _ _ _
-    ?hZ₁ p q n h a a').trans ?_
-  case hZ₁ => exact fun x hx ↦ hZ x hx
-  rw [fiberThomPairMap_eq_ofSubsetMap (F := F₁) (E := E₁),
+  rw [thomPairCup_def, fiberThomPairMap_eq_ofSubsetMap (F := F₁ × F₂) (E := E₁ ×ᵇ E₂),
+    fiberThomPairMap_eq_ofSubsetMap (F := F₁) (E := E₁),
     fiberThomPairMap_eq_ofSubsetMap (F := F₂) (E := E₂)]
-  refine Eq.trans ?_ (TopCat.singularRelativeCupPullback_singularCohomologyMap k u μ _ _ _ _
-    (isOpen_zeroSectionCompl F₁ E₁) (isOpen_zeroSectionCompl F₂ E₂) _ _ _ _ _
-    ?hZ₂ p q n h a a').symm
-  case hZ₂ => exact fun x hx ↦ hZ x hx
-  have h₁ : (TopCat.ofHom ⟨@TotalSpace.mk B (F₁ × F₂) (E₁ ×ᵇ E₂) b,
-      FiberBundle.continuous_totalSpaceMk (F₁ × F₂) (E₁ ×ᵇ E₂) b⟩ ≫
-        totalSpaceProdFst F₁ E₁ F₂ E₂ : TopCat.of (E₁ b × E₂ b) ⟶ _) =
-      TopCat.ofHom ContinuousMap.fst ≫
-        TopCat.ofHom ⟨TotalSpace.mk b, FiberBundle.continuous_totalSpaceMk F₁ E₁ b⟩ :=
-    TopCat.ext fun _ ↦ rfl
-  have h₂ : (TopCat.ofHom ⟨@TotalSpace.mk B (F₁ × F₂) (E₁ ×ᵇ E₂) b,
-      FiberBundle.continuous_totalSpaceMk (F₁ × F₂) (E₁ ×ᵇ E₂) b⟩ ≫
-        totalSpaceProdSnd F₁ E₁ F₂ E₂ : TopCat.of (E₁ b × E₂ b) ⟶ _) =
-      TopCat.ofHom ContinuousMap.snd ≫
-        TopCat.ofHom ⟨TotalSpace.mk b, FiberBundle.continuous_totalSpaceMk F₂ E₂ b⟩ :=
-    TopCat.ext fun _ ↦ rfl
-  simp only [h₁, h₂]
+  exact (TopCat.singularRelativeCupPullback_naturality k u μ
+    (f₁ := TopCat.ofHom (ContinuousMap.fst : C(E₁ b × E₂ b, E₁ b)))
+    (f₂ := TopCat.ofHom (ContinuousMap.snd : C(E₁ b × E₂ b, E₂ b)))
+    (f₁' := totalSpaceProdFst F₁ E₁ F₂ E₂)
+    (f₂' := totalSpaceProdSnd F₁ E₁ F₂ E₂) _ _ _
+    (TopCat.ext fun _ ↦ rfl) (TopCat.ext fun _ ↦ rfl) (isOpen_compl_zero_fiber F₁ b)
+    (isOpen_compl_zero_fiber F₂ b) (isOpen_zeroSectionCompl F₁ E₁)
+    (isOpen_zeroSectionCompl F₂ E₂) _ (Set.compl_singleton_prod (0 : E₁ b) (0 : E₂ b)).subset
+    (zeroSectionCompl_prod_subset F₁ E₁ F₂ E₂) p q n h a a').symm
 
 /-- **The product of Thom pair classes on a fibre with closed points.** When the fibres over `b`
 are T1 spaces, the restriction of the product of `a` and `a'` to the fibre pair over `b` is the
@@ -309,6 +292,7 @@ span_singleton_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_openPartialH
 
 /-- **The product of Thom pair classes is a Thom class iff both factors are Thom classes**, for
 standard unitor pairings of `ModuleCat K`. -/
+@[simp]
 theorem isThomClass_thomPairCup_iff
     (a₁ : (thomPair F₁ E₁).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
       (Module.finrank ℝ F₁))

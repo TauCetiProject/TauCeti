@@ -180,7 +180,7 @@ theorem eulerClass_thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E�
           (o₂.thomClassOfModel (by rw [Fintype.card_fin, hn]) ω₂ g₂)) := by
   rw [thomClassOfModel_prod, eulerClass_thomPairCup]
 
-omit [Module.Projective K R₁] [Module.Projective K R₂] in
+omit [Module.Projective K R₁] [Module.Projective K R₂] [Module.Projective K R₃] in
 /-- **The normalized product class of an oriented direct sum is a Thom class**, for
 `R₁, R₂, M₁, M₂ ≃ₗ[K] K`, isomorphism pairings `u` and `μ`, and generators `g₁` and `g₂` over
 `K`. -/
@@ -195,11 +195,18 @@ theorem isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso
     {g₂ : (TopPair.ofSubset (X := TopCat.of F₂) ({0}ᶜ : Set F₂)).singularCohomology
       R₂ K M₂ (finrank ℝ F₂)}
     (hg₁ : Submodule.span K {g₁} = ⊤) (hg₂ : Submodule.span K {g₂} = ⊤) :
+    haveI : Module.Projective K R₃ :=
+      .of_equiv ((asIso u).toLinearEquiv ≪≫ₗ TensorProduct.congr eR₁ eR₂ ≪≫ₗ
+        TensorProduct.lid K K).symm
     IsThomClass (F₁ × F₂) (E₁ ×ᵇ E₂)
       ((o₁.prod o₂ hm hn).thomClassOfModel
         (by rw [Fintype.card_fin, Module.finrank_prod, hm, hn]) (ω₁.prod ω₂ hm hn)
-        (complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm g₁ g₂)) :=
-  (o₁.prod o₂ hm hn).isThomClass_thomClassOfModel _ (ω₁.prod ω₂ hm hn)
+        (complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm
+          g₁ g₂)) := by
+  let : Module.Projective K R₃ :=
+    .of_equiv ((asIso u).toLinearEquiv ≪≫ₗ TensorProduct.congr eR₁ eR₂ ≪≫ₗ
+      TensorProduct.lid K K).symm
+  exact (o₁.prod o₂ hm hn).isThomClass_thomClassOfModel _ (ω₁.prod ω₂ hm hn)
     ((span_singleton_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_isIso eR₁ eR₂ eM₁ eM₂
       Module.finrank_prod.symm g₁ g₂).2 ⟨hg₁, hg₂⟩)
 

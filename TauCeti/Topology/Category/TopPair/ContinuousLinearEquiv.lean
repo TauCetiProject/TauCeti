@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+public import Mathlib.Topology.Algebra.Module.Equiv.Prod
+public import TauCeti.Topology.Category.TopCat.Monoidal
 public import TauCeti.Topology.Category.TopPair
 
 /-!
@@ -24,7 +26,7 @@ the origin, and they are the fibres of the Thom pair of a vector bundle.
 
 public section
 
-open CategoryTheory
+open CategoryTheory MonoidalCategory
 
 universe w
 
@@ -70,6 +72,23 @@ theorem complZeroPairIso_hom (f : E ≃L[R] F) :
     ext x
     exact (f.complZeroPairIso_hom_fst_apply x).trans (TopPair.ofSubsetMap_fst_apply
       (TopCat.ofHom ((f : E →L[R] F) : C(E, F))) f.mapsTo_compl_zero x).symm)
+
+/-- The product pair isomorphism `(f₁.prodCongr f₂).complZeroPairIso.hom` is the map of pairs
+induced by the tensor product of `f₁` and `f₂` in `TopCat`. -/
+theorem prodCongr_complZeroPairIso_hom {E₁ E₂ F₁ F₂ : Type w}
+    [TopologicalSpace E₁] [AddCommMonoid E₁] [Module R E₁]
+    [TopologicalSpace E₂] [AddCommMonoid E₂] [Module R E₂]
+    [TopologicalSpace F₁] [AddCommMonoid F₁] [Module R F₁]
+    [TopologicalSpace F₂] [AddCommMonoid F₂] [Module R F₂]
+    (f₁ : E₁ ≃L[R] F₁) (f₂ : E₂ ≃L[R] F₂) :
+    (f₁.prodCongr f₂).complZeroPairIso.hom =
+      TopPair.ofSubsetMap
+        (TopCat.ofHom ((f₁ : E₁ →L[R] F₁) : C(E₁, F₁)) ⊗ₘ
+          TopCat.ofHom ((f₂ : E₂ →L[R] F₂) : C(E₂, F₂)))
+        (TopCat.mapsTo_tensorHom_compl_singleton _ _
+          f₁.mapsTo_compl_zero f₂.mapsTo_compl_zero) := by
+  rw [(f₁.prodCongr f₂).complZeroPairIso_hom]
+  exact TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
 
 /-- The inverse map of pairs underlying `ContinuousLinearEquiv.complZeroPairIso f` is the map
 induced by `f.symm` as a continuous linear map. -/

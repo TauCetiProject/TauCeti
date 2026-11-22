@@ -67,8 +67,9 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
   `TauCeti.singularRelativeCross_naturality`.
 * `TopCat.singularRelativeCupPullback`, the relative cup product of classes pulled back along two
   maps `f₁ : X ⟶ Y₁` and `f₂ : X ⟶ Y₂`, restricted to a subset of the union of the preimages, with
-  its naturality in the source (`TopCat.singularCohomologyMap_singularRelativeCupPullback`) and
-  the targets (`TopCat.singularRelativeCupPullback_singularCohomologyMap`) and its image in
+  its naturality in the source (`TopCat.singularCohomologyMap_singularRelativeCupPullback`),
+  the targets (`TopCat.singularRelativeCupPullback_singularCohomologyMap`), combined naturality
+  (`TopCat.singularRelativeCupPullback_naturality`), and its image in
   absolute cohomology (`TopCat.singularCohomologyπ_singularRelativeCupPullback`).  The relative
   cross product is its case of the two projections of a product
   (`TauCeti.singularRelativeCross_eq_singularRelativeCupPullback`).
@@ -617,6 +618,35 @@ lemma singularRelativeCupPullback_singularCohomologyMap (u : T ⟶ R ⊗ S) (μ 
   congr 3
   exact TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.comp_id _)
 
+/-- **Naturality of `singularRelativeCupPullback`** in a source map `φ : (X, Z) ⟶ (X', Z')` and
+two target maps `g₁ : (Y₁, A₁) ⟶ (Y₁', A₁')` and `g₂ : (Y₂, A₂) ⟶ (Y₂', A₂')` forming commuting
+squares `f₁ ≫ g₁ = φ ≫ f₁'` and `f₂ ≫ g₂ = φ ≫ f₂'`. -/
+lemma singularRelativeCupPullback_naturality (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L)
+    {f₁ : X ⟶ Y₁} {f₂ : X ⟶ Y₂} {f₁' : X' ⟶ Y₁'} {f₂' : X' ⟶ Y₂'}
+    (φ : X ⟶ X') (g₁ : Y₁ ⟶ Y₁') (g₂ : Y₂ ⟶ Y₂')
+    (h₁ : f₁ ≫ g₁ = φ ≫ f₁') (h₂ : f₂ ≫ g₂ = φ ≫ f₂')
+    {A₁ : Set Y₁} {A₂ : Set Y₂} {A₁' : Set Y₁'} {A₂' : Set Y₂'}
+    (hA₁ : IsOpen A₁) (hA₂ : IsOpen A₂) (hA₁' : IsOpen A₁') (hA₂' : IsOpen A₂')
+    {hg₁ : Set.MapsTo g₁ A₁ A₁'} {hg₂ : Set.MapsTo g₂ A₂ A₂'}
+    {Z : Set X} {Z' : Set X'} (hφ : Set.MapsTo φ Z Z')
+    (hZ : Z ⊆ f₁ ⁻¹' A₁ ∪ f₂ ⁻¹' A₂) (hZ' : Z' ⊆ f₁' ⁻¹' A₁' ∪ f₂' ⁻¹' A₂')
+    (p q n : ℕ) (h : p + q = n)
+    (a : (TopPair.ofSubset A₁').singularCohomology R k M p)
+    (b : (TopPair.ofSubset A₂').singularCohomology S k N q) :
+    singularRelativeCupPullback k u μ f₁ f₂ hA₁ hA₂ hZ p q n h
+        (TopPair.singularCohomologyMap (TopPair.ofSubsetMap g₁ hg₁) p a)
+        (TopPair.singularCohomologyMap (TopPair.ofSubsetMap g₂ hg₂) q b) =
+      TopPair.singularCohomologyMap (TopPair.ofSubsetMap φ hφ) n
+        (singularRelativeCupPullback k u μ f₁' f₂' hA₁' hA₂' hZ' p q n h a b) := by
+  have hZ₁ : Z ⊆ (f₁ ≫ g₁) ⁻¹' A₁' ∪ (f₂ ≫ g₂) ⁻¹' A₂' :=
+    hZ.trans (Set.union_subset_union (fun _ hx ↦ hg₁ hx) fun _ hx ↦ hg₂ hx)
+  refine (singularRelativeCupPullback_singularCohomologyMap k u μ f₁ f₂ g₁ g₂ hA₁' hA₂' hA₁ hA₂
+    hg₁ hg₂ hZ hZ₁ p q n h a b).trans ?_
+  refine Eq.trans ?_ (singularCohomologyMap_singularRelativeCupPullback k u μ f₁' f₂' hA₁' hA₂'
+    hZ' φ hφ (h₁ ▸ h₂ ▸ hZ₁) p q n h a b).symm
+  exact DFunLike.congr_fun (DFunLike.congr_fun
+    (singularRelativeCupPullback_congr k u μ h₁ h₂ hA₁' hA₂' hZ₁ _ p q n h) a) b
+
 /-- **Compatibility with the absolute cup product**: the image in `Hⁿ(X)` of the relative cup
 product of pulled-back classes of `a` and `b` is the cup product of the pull-backs along `f₁` and
 `f₂` of the images of `a` and `b` in absolute cohomology. -/
@@ -727,13 +757,10 @@ lemma singularRelativeCross_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B :
           (TopCat.mapsTo_tensorHom_preimage_union f g hf hg)) n
         (singularRelativeCross k X' Y' hA' hB' μ p q n h a b) := by
   rw [singularRelativeCross_eq_singularRelativeCupPullback,
-    singularRelativeCross_eq_singularRelativeCupPullback,
-    TopCat.singularRelativeCupPullback_singularCohomologyMap k _ μ (fst X Y) (snd X Y) f g hA' hB'
-      hA hB hf hg _ (Set.union_subset_union (fun _ hx ↦ hf hx) fun _ hx ↦ hg hx),
-    TopCat.singularCohomologyMap_singularRelativeCupPullback k _ μ (fst X' Y') (snd X' Y') hA' hB'
-      _ (f ⊗ₘ g) _ (TopCat.mapsTo_tensorHom_preimage_union f g hf hg)]
-  exact DFunLike.congr_fun (DFunLike.congr_fun (TopCat.singularRelativeCupPullback_congr k _ μ
-    (tensorHom_fst f g).symm (tensorHom_snd f g).symm hA' hB' _ _ p q n h) a) b
+    singularRelativeCross_eq_singularRelativeCupPullback]
+  exact TopCat.singularRelativeCupPullback_naturality k (𝟙 (R ⊗ S)) μ (f ⊗ₘ g) f g
+    (tensorHom_fst f g).symm (tensorHom_snd f g).symm hA hB hA' hB'
+    (TopCat.mapsTo_tensorHom_preimage_union f g hf hg) subset_rfl subset_rfl p q n h a b
 
 section Cross
 

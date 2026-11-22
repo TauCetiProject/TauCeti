@@ -115,19 +115,9 @@ instance (R : C) (P : SSetPair.{w}) (n : ℕ) : IsSplitMono ((SSet.chainComplexM
 /-- In each degree, the quotient map from the chains of the ambient simplicial set of a pair to
 its relative chains is a split epimorphism. -/
 instance isSplitEpi_chainComplexπ_f (R : C) (P : SSetPair.{w}) (n : ℕ) :
-    IsSplitEpi ((P.chainComplexπ R).f n) := by
-  let i : (P.left.chainComplex R).X n ⟶ (P.right.chainComplex R).X n :=
-    (SSet.chainComplexMap P.hom R).f n
-  have hdesc := CokernelCofork.IsColimit.desc' (P.isColimitCokernelCoforkChainComplexX R n)
-    (𝟙 ((P.right.chainComplex R).X n) - retraction i ≫ i)
-    (by simp [Preadditive.comp_sub, IsSplitMono.id_assoc, i])
-  let s : (P.chainComplex R).X n ⟶ (P.right.chainComplex R).X n := hdesc.val
-  have hs : (P.chainComplexπ R).f n ≫ s = 𝟙 _ - retraction i ≫ i := hdesc.property
-  have hsg : s ≫ (P.chainComplexπ R).f n = 𝟙 ((P.chainComplex R).X n) := by
-    rw [← cancel_epi ((P.chainComplexπ R).f n), ← Category.assoc, hs, Preadditive.sub_comp,
-      Category.id_comp, Category.assoc, P.chainComplex_condition_f R n, comp_zero, sub_zero,
-      Category.comp_id]
-  exact ⟨⟨s, hsg⟩⟩
+    IsSplitEpi ((P.chainComplexπ R).f n) :=
+  let b := binaryBiconeOfIsSplitMonoOfCokernel (P.isColimitCokernelCoforkChainComplexX R n)
+  ⟨⟨b.inr, b.inr_snd⟩⟩
 
 variable {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A]
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Category.TopCat.Monoidal
+import TauCeti.Data.Set.Prod
 
 /-!
 # Fibre inclusions, projections, and discrete-factor products in `TopCat`
@@ -17,9 +18,11 @@ and the identity, so it is a split monomorphism, and it is natural in `X` and in
 
 We also record `TopCat.ofHom_fst` and `TopCat.ofHom_snd`, identifying
 `TopCat.ofHom ContinuousMap.fst` and `TopCat.ofHom ContinuousMap.snd` with the cartesian
-projections `fst` and `snd`. When `X` has the discrete topology, `TopCat.sigmaConstIsoProd X Y`
-identifies the disjoint union `TopCat.of (Σ _ : X, Y)` with the product `X ⊗ Y`, matching each
-summand inclusion `TopCat.sigmaι` with `TopCat.prodFiberInclusion`.
+projections `fst` and `snd`, and `TopCat.mapsTo_tensorHom_compl_singleton` showing that a product of
+maps preserving singleton complements preserves the complement of the pair. When `X` has the
+discrete topology, `TopCat.sigmaConstIsoProd X Y` identifies the disjoint union
+`TopCat.of (Σ _ : X, Y)` with the product `X ⊗ Y`, matching each summand inclusion `TopCat.sigmaι`
+with `TopCat.prodFiberInclusion`.
 -/
 
 public section
@@ -31,14 +34,27 @@ universe u
 namespace TopCat
 
 /-- `TopCat.ofHom ContinuousMap.fst` is the cartesian first projection `fst (of X) (of Y)`. -/
+@[simp]
 lemma ofHom_fst {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] :
     TopCat.ofHom (ContinuousMap.fst : C(X × Y, X)) = fst (of X) (of Y) :=
   TopCat.ext fun _ ↦ rfl
 
 /-- `TopCat.ofHom ContinuousMap.snd` is the cartesian second projection `snd (of X) (of Y)`. -/
+@[simp]
 lemma ofHom_snd {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] :
     TopCat.ofHom (ContinuousMap.snd : C(X × Y, Y)) = snd (of X) (of Y) :=
   TopCat.ext fun _ ↦ rfl
+
+/-- The product of two continuous maps carrying `{x₁}ᶜ` into `{y₁}ᶜ` and `{x₂}ᶜ` into `{y₂}ᶜ`
+carries `{(x₁, x₂)}ᶜ` into `{(y₁, y₂)}ᶜ`. -/
+lemma mapsTo_tensorHom_compl_singleton {V₁ V₂ W₁ W₂ : Type u} [TopologicalSpace V₁]
+    [TopologicalSpace V₂] [TopologicalSpace W₁] [TopologicalSpace W₂] {x₁ : V₁} {x₂ : V₂}
+    {y₁ : W₁} {y₂ : W₂} (g₁ : TopCat.of V₁ ⟶ TopCat.of W₁) (g₂ : TopCat.of V₂ ⟶ TopCat.of W₂)
+    (hg₁ : Set.MapsTo g₁ ({x₁}ᶜ : Set V₁) ({y₁}ᶜ : Set W₁))
+    (hg₂ : Set.MapsTo g₂ ({x₂}ᶜ : Set V₂) ({y₂}ᶜ : Set W₂)) :
+    Set.MapsTo (g₁ ⊗ₘ g₂) ({(x₁, x₂)}ᶜ : Set (V₁ × V₂)) ({(y₁, y₂)}ᶜ : Set (W₁ × W₂)) := by
+  rw [Set.compl_singleton_prod, Set.compl_singleton_prod]
+  exact fun _ h ↦ h.imp (fun hx ↦ hg₁ hx) (fun hx ↦ hg₂ hx)
 
 variable (X F : TopCat.{u})
 

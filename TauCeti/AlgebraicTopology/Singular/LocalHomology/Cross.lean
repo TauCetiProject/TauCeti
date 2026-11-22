@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct.Relative
+public import TauCeti.Data.Set.Prod
 public import TauCeti.Topology.Category.TopPair.ContinuousLinearEquiv
 
 /-!
 # The local homology cross product
 
 For `x₁ : V₁` and `x₂ : V₂`, pushing `TopCat.singularRelativeHomologyCross` forward along
-`v : R ⊗ S ⟶ T` and `TauCeti.subset_compl_singleton_prod` defines
+`v : R ⊗ S ⟶ T` and `(Set.compl_singleton_prod x₁ x₂).superset` defines
 `TauCeti.complSingletonPairHomologyCross`:
 `Hₚ(V₁, V₁ ∖ {x₁}; R) ⊗ H_q(V₂, V₂ ∖ {x₂}; S) ⟶ Hₙ(V₁ × V₂, (V₁ × V₂) ∖ {(x₁, x₂)}; T)`
 (`p + q = n`), paired via `TopPair.singularKronecker` with `TauCeti.complSingletonPairCross` in
@@ -76,7 +76,7 @@ variable {V₁ V₂ : Type w} [TopologicalSpace V₁] [TopologicalSpace V₂]
 
 /-- **The relative homology cross product on complements of singletons**
 `Hₚ(V₁, V₁ ∖ {x₁}; R) ⊗ H_q(V₂, V₂ ∖ {x₂}; S) ⟶ Hₙ(V₁ × V₂, (V₁ × V₂) ∖ {(x₁, x₂)}; T)`
-(`p + q = n`), along `v : R ⊗ S ⟶ T` and `TauCeti.subset_compl_singleton_prod`. -/
+(`p + q = n`), along `v : R ⊗ S ⟶ T` and `Set.compl_singleton_prod`. -/
 def complSingletonPairHomologyCross :
     (TopPair.ofSubset (X := TopCat.of V₁) ({x₁}ᶜ : Set V₁)).singularHomology R p ⊗
       (TopPair.ofSubset (X := TopCat.of V₂) ({x₂}ᶜ : Set V₂)).singularHomology S q ⟶
@@ -90,7 +90,7 @@ def complSingletonPairHomologyCross :
     TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of V₁ ⊗ TopCat.of V₂))
       (B := fst (TopCat.of V₁) (TopCat.of V₂) ⁻¹' ({x₁}ᶜ : Set V₁) ∪
         snd (TopCat.of V₁) (TopCat.of V₂) ⁻¹' ({x₂}ᶜ : Set V₂)) (B' := ({(x₁, x₂)}ᶜ : Set _))
-      fun _ hx ↦ subset_compl_singleton_prod x₁ x₂ hx) T n
+      (Set.compl_singleton_prod x₁ x₂).superset) T n
 
 /-- Definitional unfolding of `TauCeti.complSingletonPairHomologyCross`. -/
 theorem complSingletonPairHomologyCross_def :
@@ -103,7 +103,7 @@ theorem complSingletonPairHomologyCross_def :
         TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of V₁ ⊗ TopCat.of V₂))
           (B := fst (TopCat.of V₁) (TopCat.of V₂) ⁻¹' ({x₁}ᶜ : Set V₁) ∪
             snd (TopCat.of V₁) (TopCat.of V₂) ⁻¹' ({x₂}ᶜ : Set V₂)) (B' := ({(x₁, x₂)}ᶜ : Set _))
-          fun _ hx ↦ subset_compl_singleton_prod x₁ x₂ hx) T n :=
+          (Set.compl_singleton_prod x₁ x₂).superset) T n :=
   (rfl)
 
 end Basic
@@ -142,10 +142,10 @@ theorem complSingletonPairHomologyCross_naturality
     hg₁).union_union (TopCat.mapsTo_tensorHom_preimage_snd g₁ g₂ hg₂))
   let idV := TopPair.ofSubsetMap (B := fst (TopCat.of V₁) (TopCat.of V₂) ⁻¹' ({x₁}ᶜ : Set V₁) ∪
       snd (TopCat.of V₁) (TopCat.of V₂) ⁻¹' ({x₂}ᶜ : Set V₂)) (B' := ({(x₁, x₂)}ᶜ : Set _))
-    (𝟙 (TopCat.of V₁ ⊗ TopCat.of V₂)) (fun _ hx ↦ subset_compl_singleton_prod x₁ x₂ hx)
+    (𝟙 (TopCat.of V₁ ⊗ TopCat.of V₂)) (Set.compl_singleton_prod x₁ x₂).superset
   let idW := TopPair.ofSubsetMap (B := fst (TopCat.of W₁) (TopCat.of W₂) ⁻¹' ({y₁}ᶜ : Set W₁) ∪
       snd (TopCat.of W₁) (TopCat.of W₂) ⁻¹' ({y₂}ᶜ : Set W₂)) (B' := ({(y₁, y₂)}ᶜ : Set _))
-    (𝟙 (TopCat.of W₁ ⊗ TopCat.of W₂)) (fun _ hx ↦ subset_compl_singleton_prod y₁ y₂ hx)
+    (𝟙 (TopCat.of W₁ ⊗ TopCat.of W₂)) (Set.compl_singleton_prod y₁ y₂).superset
   have hcoeff : TopPair.singularHomologyMap uPair (R ⊗ S) n ≫
       HomologicalComplex.homologyMap (((SSetPair.chainComplexFunctor C).map v).app _) n =
       HomologicalComplex.homologyMap (((SSetPair.chainComplexFunctor C).map v).app _) n ≫
@@ -202,17 +202,8 @@ theorem singularHomologyMap_complZeroPairIso_hom_tensorHom_complSingletonPairHom
       complSingletonPairHomologyCross (0 : W₁) (0 : W₂) v p q n h =
     complSingletonPairHomologyCross (0 : V₁) (0 : V₂) v p q n h ≫
       TopPair.singularHomologyMap (f₁.prodCongr f₂).complZeroPairIso.hom T n := by
-  let g₁ : TopCat.of V₁ ⟶ TopCat.of W₁ := TopCat.ofHom ((f₁ : V₁ →L[𝕜] W₁) : C(V₁, W₁))
-  let g₂ : TopCat.of V₂ ⟶ TopCat.of W₂ := TopCat.ofHom ((f₂ : V₂ →L[𝕜] W₂) : C(V₂, W₂))
-  have hprod : (TopPair.ofSubsetMap (g₁ ⊗ₘ g₂)
-      (TopCat.mapsTo_tensorHom_compl_singleton g₁ g₂ f₁.mapsTo_compl_zero f₂.mapsTo_compl_zero) :
-      TopPair.ofSubset ({(0 : V₁ × V₂)}ᶜ : Set (TopCat.of (V₁ × V₂))) ⟶
-        TopPair.ofSubset ({(0 : W₁ × W₂)}ᶜ : Set (TopCat.of (W₁ × W₂)))) =
-      (f₁.prodCongr f₂).complZeroPairIso.hom :=
-    (TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)).trans
-      (f₁.prodCongr f₂).complZeroPairIso_hom.symm
-  rw [f₁.complZeroPairIso_hom, f₂.complZeroPairIso_hom, ← hprod]
-  exact complSingletonPairHomologyCross_naturality g₁ g₂ f₁.mapsTo_compl_zero f₂.mapsTo_compl_zero
+  rw [f₁.complZeroPairIso_hom, f₂.complZeroPairIso_hom, f₁.prodCongr_complZeroPairIso_hom f₂]
+  exact complSingletonPairHomologyCross_naturality _ _ f₁.mapsTo_compl_zero f₂.mapsTo_compl_zero
     v p q n h
 
 end ContinuousLinearEquiv
