@@ -102,6 +102,7 @@ to `3 r / 2` has `N ≲ 1 / r` and `L ≲ 1 / r²`
 * `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_ball`: **the
   interior `H²` estimate on balls**, with lower-order terms and explicit dependence on the radius.
 * `TauCeti.PDE.divMatrixGradient_eq_sum_fderiv_fderiv_apply`: the classical Hessian contraction.
+* `TauCeti.PDE.contDiff_divMatrixGradient`: `div(a ∇ψ)` is smooth when `a` and `ψ` are.
 * `ContDiffOn.integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient`:
   integration by parts against the conormal gradient of a `C²` function.
 
@@ -176,6 +177,22 @@ theorem exists_lipschitzWith_matrixBilinearForm_gradient
     (fun x hx => (hB x hx).trans (Real.le_coe_toNNReal B)) (fun x _ => hN x)
     (fun _ hx => image_eq_zero_of_notMem_tsupport hx)
   exact ⟨_, holderWith_one.1 hmain⟩
+
+/-- **`div(a ∇ψ)` is smooth for smooth coefficients.** If the entries of `a` are smooth and `ψ` is
+smooth, then `div(a ∇ψ)` is smooth. -/
+theorem contDiff_divMatrixGradient (ha : ∀ i j, ContDiff ℝ ∞ fun x => a x i j)
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) : ContDiff ℝ ∞ (divMatrixGradient a ψ) := by
+  set b := EuclideanSpace.basisFun ι ℝ
+  have hφ : ∀ i, ContDiff ℝ ∞ fun y => matrixBilinearForm (a y) (b i) (∇ ψ y) := fun i =>
+    contDiff_matrixBilinearForm_apply ha contDiff_const (hψ.gradient_right (m := ∞) (by simp))
+  have h : divMatrixGradient a ψ =
+      fun x => ∑ i, fderiv ℝ (fun y => matrixBilinearForm (a y) (b i) (∇ ψ y)) x (b i) := by
+    funext x
+    rw [divMatrixGradient_def]
+    exact Finset.sum_congr rfl fun i _ =>
+      ((hφ i).differentiable (by simp)).differentiableAt.lineDeriv_eq_fderiv
+  rw [h]
+  exact ContDiff.sum fun i _ => ((hφ i).fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const
 
 section ClassicalOperator
 
