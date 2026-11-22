@@ -47,8 +47,8 @@ Barraud–Damian–Humilière–Oancea, and the isomorphism compares it with the
 
 ## Main results
 
-* `TauCeti.DGRightModuleCat.rightShiftIsoShift_hom_apply_of_mem`: on an element of degree `p` of
-  `M`, the isomorphism is multiplication by `(-1)^(n p)`.
+* `TauCeti.DGRightModuleCat.shiftEquiv_rightShiftIsoShift_hom_apply_of_mem`: on an element of
+  degree `p` of `M`, the isomorphism is multiplication by `(-1)^(n p)`.
 
 ## References
 
@@ -168,15 +168,6 @@ theorem shiftEquiv_shiftFunctor_map (n : ℤ) {M N : DGRightModuleCat.{uR, uA, u
 
 /-! ### The right shift `M ⊗ R[n]` -/
 
-/-- The Koszul automorphism of a DG algebra commutes with the differential up to the sign
-`(-1)^n` of its parameter. -/
-private theorem koszulTwistAlgEquiv_map (h : IsDGAlgebra 𝒜 d) (n : ℤ) (a : A) :
-    InternalGrading.koszulTwistAlgEquiv 𝒜 n (d a) =
-      n.negOnePow • d (InternalGrading.koszulTwistAlgEquiv 𝒜 n a) := by
-  rw [negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
-  simpa only [InternalGrading.koszulTwistAlgEquiv_apply, mul_one] using
-    h.toIsNonUnitalDGAlgebra.isHomogeneous.koszulTwist_apply n a
-
 /-- A homogeneous scalar acting through the Koszul automorphism adds its degree. -/
 private theorem op_koszulTwistAlgEquiv_smul_mem (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ)
     {p q : ℤ} {a : A} (ha : a ∈ 𝒜 p) {x : M} (hx : x ∈ M.grading q) :
@@ -196,8 +187,9 @@ private theorem differential_op_koszulTwistAlgEquiv_smul (M : DGRightModuleCat.{
     M.differential (op (InternalGrading.koszulTwistAlgEquiv 𝒜 n a) • x) =
       op (InternalGrading.koszulTwistAlgEquiv 𝒜 n a) • M.differential x +
         q.negOnePow • (op (InternalGrading.koszulTwistAlgEquiv 𝒜 n (d a)) • x) := by
-  rw [M.isDGRightModule.leibniz hx, koszulTwistAlgEquiv_map h, op_smul, smul_assoc, smul_smul,
-    ← Int.negOnePow_add]
+  rw [M.isDGRightModule.leibniz hx, InternalGrading.koszulTwistAlgEquiv_apply 𝒜 n (d a),
+    h.toIsNonUnitalDGAlgebra.koszulTwist_map, ← InternalGrading.koszulTwistAlgEquiv_apply,
+    op_smul, smul_assoc, smul_smul, ← Int.negOnePow_add]
 
 /-- **The right shift** `M ⊗ R[n]` of a DG right module: `(M ⊗ R[n])ᵖ = Mᵖ⁺ⁿ`, with the unsigned
 differential `dM`, on which a homogeneous `a ∈ Aᵉ` acts by `(-1)^(n e) a`, through the Koszul
@@ -368,13 +360,16 @@ private theorem koszulTwist_op_koszulTwistAlgEquiv_smul (M : DGRightModuleCat.{u
       have hy : (y : M) ∈ (InternalGrading.ofDecomposition M.grading).piece p := by
         rw [InternalGrading.ofDecomposition_piece]
         exact y.property
+      -- Passing `b` costs `(-1)^(n e)`, and the twist of `b • y` costs `(-1)^(n (e + p))`.
+      have hsign : negOnePowCast R (n * e) * negOnePowCast R (n * (e + p)) =
+          negOnePowCast R (n * p) := by
+        rw [← negOnePowCast_add]
+        exact negOnePowCast_eq_of_even_sub ⟨n * e, by ring⟩
       rw [InternalGrading.koszulTwistAlgEquiv_apply_of_mem 𝒜 n b.property, op_smul, smul_assoc,
         negOnePow_smul_eq_negOnePowCast_smul (R := R), map_smul,
         InternalGrading.koszulTwist_apply_of_mem _ hby,
-        InternalGrading.koszulTwist_apply_of_mem _ hy, smul_comm (op (b : A)), smul_smul,
-        ← negOnePowCast_eq_intCast, ← negOnePowCast_eq_intCast, ← negOnePowCast_add,
-        show n * e + n * (e + p) = 2 * (n * e) + n * p by ring, negOnePowCast_add,
-        negOnePowCast_two_mul, one_mul]
+        InternalGrading.koszulTwist_apply_of_mem _ hy, ← negOnePowCast_eq_intCast,
+        ← negOnePowCast_eq_intCast, smul_comm (op (b : A)), smul_smul, hsign]
 
 /-- The Koszul twist of `M` turns the unsigned differential into `(-1)^n dM`. -/
 private theorem koszulTwist_differential (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ) (y : M) :

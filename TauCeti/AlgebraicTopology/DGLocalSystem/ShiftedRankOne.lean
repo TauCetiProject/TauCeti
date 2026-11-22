@@ -44,7 +44,9 @@ twisted coefficients written with the graded twist and the shifted ones written 
 * `TauCeti.RankOneLocalSystem.shiftedTensorEquiv_op_smul_lof_ofCube`: a cube of dimension `k`
   acts on `𝓕 ⊗ L[n]` by `(-1)^(n k) ρ(σ 0) σ`.
 * `TauCeti.RankOneLocalSystem.shiftEquiv_shiftedTensorIsoShift_hom_app_of_mem`: on an element of
-  homological degree `p` of `𝓕`, the comparison is multiplication by `(-1)^(n p)`.
+  homological degree `p` of `𝓕`, the comparison is multiplication by `(-1)^(n p)`, and
+  `TauCeti.RankOneLocalSystem.shiftedTensorEquiv_shiftedTensorIsoShift_inv_app_of_mem`, the same
+  for its inverse.
 
 ## References
 
@@ -72,23 +74,28 @@ abbrev shiftedTensor (n : ℤ) : DGLocalSystem.{uM} B b R ⥤ DGLocalSystem.{uM}
 
 /-- The underlying module of `𝓕 ⊗ L[n]` over the ground ring is that of `𝓕`, through
 `α ⊗ ℓ ↦ α`. -/
+-- The source is `(L.shiftedTensor n).obj 𝓕` in simp-normal form, so that the characteristic
+-- lemmas below can be simp lemmas.
 def shiftedTensorEquiv (n : ℤ) (𝓕 : DGLocalSystem.{uM} B b R) :
-    (L.shiftedTensor n).obj 𝓕 ≃ₗ[R] 𝓕 :=
+    (L.tensor.obj 𝓕).rightShift (-n) ≃ₗ[R] 𝓕 :=
   ((L.tensor.obj 𝓕).rightShiftEquiv (-n)).trans (DGRightModuleCat.restrictScalarsEquiv L.twist 𝓕)
 
 /-- An element of `𝓕 ⊗ L[n]` has cohomological degree `q` exactly when the corresponding element
 of `𝓕` has degree `q - n`. -/
+@[simp]
 theorem shiftedTensorEquiv_mem_grading_iff (n q : ℤ) (𝓕 : DGLocalSystem.{uM} B b R)
-    (x : (L.shiftedTensor n).obj 𝓕) :
-    L.shiftedTensorEquiv n 𝓕 x ∈ 𝓕.grading (q - n) ↔ x ∈ ((L.shiftedTensor n).obj 𝓕).grading q := by
+    (x : (L.tensor.obj 𝓕).rightShift (-n)) :
+    L.shiftedTensorEquiv n 𝓕 x ∈ 𝓕.grading (q - n) ↔
+      x ∈ ((L.tensor.obj 𝓕).rightShift (-n)).grading q := by
   have hx := (L.tensor.obj 𝓕).rightShiftEquiv_mem_grading_iff (-n) q x
   rw [DGRightModuleCat.mem_restrictScalars_obj_grading, ← sub_eq_add_neg] at hx
   exact hx
 
 /-- The differential of `𝓕 ⊗ L[n]` is that of `𝓕`, with no sign. -/
+@[simp]
 theorem shiftedTensorEquiv_differential (n : ℤ) (𝓕 : DGLocalSystem.{uM} B b R)
-    (x : (L.shiftedTensor n).obj 𝓕) :
-    L.shiftedTensorEquiv n 𝓕 (((L.shiftedTensor n).obj 𝓕).differential x) =
+    (x : (L.tensor.obj 𝓕).rightShift (-n)) :
+    L.shiftedTensorEquiv n 𝓕 (((L.tensor.obj 𝓕).rightShift (-n)).differential x) =
       𝓕.differential (L.shiftedTensorEquiv n 𝓕 x) := by
   rw [shiftedTensorEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply]
   exact (congrArg _ ((L.tensor.obj 𝓕).rightShiftEquiv_differential (-n) x)).trans
@@ -141,5 +148,21 @@ theorem shiftEquiv_shiftedTensorIsoShift_hom_app_of_mem (n : ℤ) (𝓕 : DGLoca
   rw [shiftedTensorIsoShift_hom_app,
     DGRightModuleCat.shiftEquiv_rightShiftIsoShift_hom_apply_of_mem _ _ hx', map_zsmul_unit,
     neg_mul_neg, shiftedTensorEquiv, LinearEquiv.trans_apply]
+
+/-- The Koszul factor of the inverse `(𝓕 ⊗ L)[n] ≅ 𝓕 ⊗ L[n]`: on `α ⊗ ℓ` with `α` of homological
+degree `p`, it is again multiplication by `(-1)^(n p)`. -/
+theorem shiftedTensorEquiv_shiftedTensorIsoShift_inv_app_of_mem (n : ℤ)
+    (𝓕 : DGLocalSystem.{uM} B b R) {p : ℤ}
+    {x : (L.tensor ⋙ DGRightModuleCat.shiftFunctor (-n)).obj 𝓕}
+    (hx : DGRightModuleCat.restrictScalarsEquiv L.twist 𝓕 ((L.tensor.obj 𝓕).shiftEquiv (-n) x) ∈
+      𝓕.grading (-p)) :
+    L.shiftedTensorEquiv n 𝓕 ((L.shiftedTensorIsoShift n).inv.app 𝓕 x) =
+      (n * p).negOnePow •
+        DGRightModuleCat.restrictScalarsEquiv L.twist 𝓕 ((L.tensor.obj 𝓕).shiftEquiv (-n) x) := by
+  have hx' : (L.tensor.obj 𝓕).shiftEquiv (-n) x ∈ (L.tensor.obj 𝓕).grading (-p) :=
+    (DGRightModuleCat.mem_restrictScalars_obj_grading _ _ _ _).2 hx
+  rw [shiftedTensorIsoShift_inv_app, shiftedTensorEquiv, LinearEquiv.trans_apply,
+    DGRightModuleCat.rightShiftEquiv_rightShiftIsoShift_inv_apply_of_mem _ _ hx', map_zsmul_unit,
+    neg_mul_neg]
 
 end TauCeti.RankOneLocalSystem
