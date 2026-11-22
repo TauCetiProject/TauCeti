@@ -38,6 +38,8 @@ trace. This is the whole-space comparison principle applied to the Hölder class
 * `TauCeti.ParabolicC2HolderSpace.norm_parabolicOperatorL_le` and
   `TauCeti.ParabolicC2HolderSpace.norm_parabolicOperatorL_sub_le`: the operator bound and the
   Lipschitz dependence on the coefficients.
+* `TauCeti.ParabolicC2HolderSpace.parabolicOperatorL_restrictL`: the operator commutes with
+  restriction to a smaller slab.
 * `TauCeti.ParabolicC2HolderSpace.euclideanSecondOrderCoeff`,
   `TauCeti.ParabolicC2HolderSpace.euclideanFirstOrderCoeff` and
   `TauCeti.ParabolicC2HolderSpace.euclideanZerothOrderCoeff`: the coefficient fields assembled
@@ -200,6 +202,19 @@ theorem norm_parabolicOperatorL_sub_le :
     norm_sub_rev C]
   exact norm_spatialOperatorL_le hα
 
+/-- The parabolic operator commutes with restriction to a smaller slab: restricting `u` and the
+coefficients `A`, `B`, `C` to `E × [t₀', t₁']` restricts `P u`. -/
+theorem parabolicOperatorL_restrictL {t₀' t₁' : ℝ} (h₀ : t₀ ≤ t₀') (h₁ : t₁' ≤ t₁)
+    (ht' : t₀' < t₁') (u : ParabolicC2HolderSpace α E F ht) :
+    parabolicOperatorL hα
+        (HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) A)
+        (HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) B)
+        (HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) C)
+        (restrictL h₀ h₁ ht' u) =
+      HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁))
+        (parabolicOperatorL hα A B C u) :=
+  HolderSpace.ext fun p ↦ by simp [HolderSpace.compLipschitzL_apply]
+
 end General
 
 /-! ### Coordinate coefficients on Euclidean space -/
@@ -281,7 +296,7 @@ theorem norm_euclideanSecondOrderCoeff_le
       (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ)
         (EuclideanSpace.single i (1 : ℝ)))‖ ≤ 1 :=
     ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun H ↦ by
-      simpa using H.le_opNorm₂ (EuclideanSpace.single i (1 : ℝ)) (EuclideanSpace.single j 1)
+      simpa using H.abs_apply_single_single_le i j
   exact (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le _ _).trans
     (mul_le_of_le_one_right (norm_nonneg _) he)
 
@@ -294,7 +309,7 @@ theorem norm_euclideanFirstOrderCoeff_le
   -- Evaluation of a covector at a basis vector has norm at most one.
   have he : ‖ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i (1 : ℝ))‖ ≤ 1 :=
     ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ by
-      simpa using v.le_opNorm (EuclideanSpace.single i (1 : ℝ))
+      simpa using v.abs_apply_single_le i
   exact (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le _ _).trans
     (mul_le_of_le_one_right (norm_nonneg _) he)
 
