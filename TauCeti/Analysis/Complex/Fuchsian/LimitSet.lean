@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Compactification
+public import TauCeti.Analysis.Complex.UpperHalfPlane.IdealBoundary
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Endpoint
@@ -33,8 +33,8 @@ the hyperbolic convex hull of its limit set.
 * `Subgroup.coe_mem_limitSet_iff`, `Subgroup.infty_mem_limitSet_iff`: a real point is a limit
   point when an orbit comes arbitrarily close to it, and `∞` is when an orbit is unbounded.
 * `Subgroup.isClosed_limitSet`: the limit set is closed.
-* `Subgroup.limitSet_conjAct_smul`: `Λ(g Γ g⁻¹) = g • Λ(Γ)`; in particular `Γ` preserves its
-  limit set (`Subgroup.smul_limitSet`).
+* `Subgroup.limitSet_conjAct_smul`: `Λ(g Γ g⁻¹) = g • Λ(Γ)`; in particular the normalizer of `Γ`
+  preserves its limit set (`Subgroup.smul_limitSet`).
 * `Subgroup.limitSet_eq_empty_of_finite`: a finite group has empty limit set.
 * `Subgroup.limitSet_zpowers_upperRightHom`: a group of translations `z ↦ z + k t` has limit set
   `{∞}`.
@@ -107,9 +107,10 @@ theorem limitSet_conjAct_smul (g : PSL(2, ℝ)) :
   rw [limitSet_eq_idealBoundary_orbit _ (g • UpperHalfPlane.I),
     TauCeti.MulAction.orbit_smul_of_conjAct_smul_eq rfl, idealBoundary_smul, limitSet]
 
-/-- The limit set of `Γ` is invariant under `Γ`. -/
-theorem smul_limitSet {γ : PSL(2, ℝ)} (hγ : γ ∈ Γ) : γ • Γ.limitSet = Γ.limitSet := by
-  rw [← limitSet_conjAct_smul, conjAct_pointwise_smul_eq_self (le_normalizer hγ)]
+/-- The limit set of `Γ` is invariant under the normalizer of `Γ`, in particular under `Γ`
+itself (`Subgroup.le_normalizer`). -/
+theorem smul_limitSet {γ : PSL(2, ℝ)} (hγ : γ ∈ normalizer Γ) : γ • Γ.limitSet = Γ.limitSet := by
+  rw [← limitSet_conjAct_smul, conjAct_pointwise_smul_eq_self hγ]
 
 /-- A finite subgroup has empty limit set. -/
 theorem limitSet_eq_empty_of_finite [Finite Γ] : Γ.limitSet = ∅ :=
@@ -117,8 +118,7 @@ theorem limitSet_eq_empty_of_finite [Finite Γ] : Γ.limitSet = ∅ :=
 
 open Matrix.ProjectiveSpecialLinearGroup in
 /-- **The limit set of a translation group is `{∞}`**: the orbit of `i` under the translations
-by the multiples of `t ≠ 0` runs off to `∞` along the horizontal line at height `1`. In
-particular a cyclic parabolic group is elementary. -/
+by the multiples of `t ≠ 0` runs off to `∞` along the horizontal line at height `1`. -/
 theorem limitSet_zpowers_upperRightHom {t : ℝ} (ht : t ≠ 0) :
     (zpowers (upperRightHom t)).limitSet = {∞} := by
   have hpow (k : ℤ) : upperRightHom t ^ k • UpperHalfPlane.I = (k * t) +ᵥ UpperHalfPlane.I := by
@@ -158,8 +158,7 @@ theorem limitSet_zpowers_dilation {s : ℝ} (hs : s ≠ 0) :
     rw [← QuotientGroup.mk_zpow, dilation_zpow, UpperHalfPlane.pslMk_smul, coe_dilation_smul,
       UpperHalfPlane.coe_I]
   have hnorm (k : ℤ) : ‖(Real.exp (k * s) : ℂ) * Complex.I‖ = Real.exp (k * s) := by
-    rw [norm_mul, Complex.norm_I, mul_one, Complex.norm_real,
-      Real.norm_of_nonneg (Real.exp_pos _).le]
+    simp [Complex.norm_exp]
   ext ξ
   induction ξ using OnePoint.rec with
   | infty =>
@@ -188,56 +187,24 @@ theorem limitSet_zpowers_dilation {s : ℝ} (hs : s ≠ 0) :
     · simp only [hx, iff_false, not_forall, not_exists, not_lt]
       refine ⟨|x|, abs_pos.2 hx, fun k ↦ ?_⟩
       calc |x| = |((Real.exp (k * s) : ℂ) * Complex.I - x).re| := by
-            rw [Complex.sub_re, Complex.re_ofReal_mul, Complex.I_re, mul_zero, zero_sub,
-              Complex.ofReal_re, abs_neg]
+            simp [-Complex.ofReal_exp]
         _ ≤ dist ((Real.exp (k * s) : ℂ) * Complex.I) x := by
           rw [Complex.dist_eq]; exact Complex.abs_re_le_norm _
 
 open Matrix.SpecialLinearGroup (dilation) in
 /-- **The limit set of a cyclic hyperbolic group is the fixed-point set of its generator**, a
 pair of ideal points
-(`Matrix.ProjectiveSpecialLinearGroup.exists_ne_smul_eq_self_of_two_lt_abs_trace`). In particular
-a cyclic hyperbolic group is elementary. -/
+(`Matrix.ProjectiveSpecialLinearGroup.exists_ne_smul_eq_self_of_two_lt_abs_trace`). -/
 theorem limitSet_zpowers_of_two_lt_abs_trace {A : SL(2, ℝ)}
     (htr : 2 < |(A : Matrix (Fin 2) (Fin 2) ℝ).trace|) :
     (zpowers (A : PSL(2, ℝ))).limitSet = {ξ | (A : PSL(2, ℝ)) • ξ = ξ} := by
   -- `A` is conjugate to a nontrivial dilation, whose fixed points are `0` and `∞`
   obtain ⟨g, s, hs, hA⟩ := exists_eq_conj_dilation_of_two_lt_abs_trace htr
-  have hz : zpowers (A : PSL(2, ℝ)) =
-      ConjAct.toConjAct g • zpowers ((dilation s : SL(2, ℝ)) : PSL(2, ℝ)) := by
-    ext x
-    rw [Subgroup.mem_conjAct_smul_iff, mem_zpowers_iff, mem_zpowers_iff, hA]
-    refine exists_congr fun k ↦ ?_
-    rw [conj_zpow]
-    constructor
-    · rintro rfl
-      group
-    · intro h
-      rw [h]
-      group
-  have hfix (ξ : OnePoint ℝ) :
-      (A : PSL(2, ℝ)) • ξ = ξ ↔ g⁻¹ • ξ ∈ ({((0 : ℝ) : OnePoint ℝ), ∞} : Set (OnePoint ℝ)) := by
-    rw [hA, mul_smul, mul_smul, ← eq_inv_smul_iff]
-    generalize g⁻¹ • ξ = η
-    induction η using OnePoint.rec with
-    | infty =>
-      rw [dilation_smul_infty]
-      simp
-    | coe x =>
-      rw [dilation_smul_coe, OnePoint.coe_eq_coe, eq_comm]
-      simp only [mem_insert_iff, mem_singleton_iff, OnePoint.coe_ne_infty, or_false,
-        OnePoint.coe_eq_coe]
-      constructor
-      · intro h
-        have : (Real.exp s - 1) * x = 0 := by linarith
-        exact (mul_eq_zero.1 this).resolve_left
-          (sub_ne_zero.2 fun h1 ↦ hs (Real.exp_eq_one_iff s |>.1 h1))
-      · rintro rfl
-        simp
-  rw [hz, limitSet_conjAct_smul, limitSet_zpowers_dilation hs]
+  rw [hA, ← conjAct_smul_zpowers, limitSet_conjAct_smul, limitSet_zpowers_dilation hs]
   ext ξ
-  rw [mem_smul_set_iff_inv_smul_mem]
-  exact (hfix ξ).symm
+  rw [mem_smul_set_iff_inv_smul_mem, mem_insert_iff, mem_singleton_iff,
+    ← dilation_smul_eq_self_iff hs, eq_inv_smul_iff, ← mul_smul, ← mul_smul]
+  exact Iff.rfl
 
 /-- **The fixed points of a hyperbolic element of `Γ` are limit points.** An element of `Γ`
 represented by a matrix whose trace has absolute value greater than `2` fixes two ideal points,
