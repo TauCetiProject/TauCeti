@@ -23,6 +23,7 @@ This file provides operations on an existing group extension.
 * `GroupExtension.relabelEquivOfMulEquiv`: packages compatible multiplicative equivalences on all
   three terms of two extensions into a `GroupExtension.Equiv` after relabelling.
 * `GroupExtension.Section.relabel`: transports a section along `GroupExtension.relabel`.
+* `GroupExtension.sectionRelabelEquiv`: bijection on sections induced by `GroupExtension.relabel`.
 * `GroupExtension.pow_orderOf_mem_range_inl`: the `(orderOf g)`-th power of a lift of `g` lies
   in the kernel `S.inl.range`.
 * `GroupExtension.Section.monoidHomComp`: transports a section along a homomorphism of extensions
@@ -226,6 +227,44 @@ theorem Section.relabel_one_eq_one_iff {N' G' : Type*} [Group N'] [Group G']
     {S : GroupExtension N E G} (σ : S.Section) (eN : N' ≃* N) (eG : G ≃* G') :
     σ.relabel eN eG 1 = 1 ↔ σ 1 = 1 := by
   simp [Section.relabel_apply]
+
+/-- Relabelling a group extension induces a bijection on sections, sending `σ` to
+`σ.relabel eN eG`. -/
+@[to_additive
+  /-- Relabelling an additive group extension induces a bijection on sections, sending `σ` to
+  `σ.relabel eN eG`. -/]
+def sectionRelabelEquiv (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') : S.Section ≃ (S.relabel eN eG).Section where
+  toFun σ := σ.relabel eN eG
+  invFun σ' :=
+    { toFun g := σ' (eG g)
+      rightInverse_rightHom g := by
+        have h := σ'.rightHom_section (eG g)
+        rw [GroupExtension.relabel_rightHom, MonoidHom.comp_apply,
+          MulEquiv.coe_toMonoidHom] at h
+        exact eG.injective h }
+  left_inv σ := DFunLike.ext _ _ fun g ↦ by simp [Section.relabel_apply]
+  right_inv σ' := DFunLike.ext _ _ fun g' ↦ by simp [Section.relabel_apply]
+
+/-- Evaluating the forward relabelling equivalence on a section at `g'` evaluates the original
+section at `eG.symm g'`. -/
+@[to_additive (attr := simp)
+  /-- Evaluating the forward relabelling equivalence on an additive section at `g'` evaluates the
+  original section at `eG.symm g'`. -/]
+theorem sectionRelabelEquiv_apply (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') (σ : S.Section) (g' : G') :
+    S.sectionRelabelEquiv eN eG σ g' = σ (eG.symm g') :=
+  (rfl)
+
+/-- Evaluating the inverse relabelling equivalence on a section at `g` evaluates the relabelled
+section at `eG g`. -/
+@[to_additive (attr := simp)
+  /-- Evaluating the inverse relabelling equivalence on an additive section at `g` evaluates the
+  relabelled section at `eG g`. -/]
+theorem sectionRelabelEquiv_symm_apply (S : GroupExtension N E G) {N' G' : Type*} [Group N']
+    [Group G'] (eN : N' ≃* N) (eG : G ≃* G') (σ' : (S.relabel eN eG).Section) (g : G) :
+    (S.sectionRelabelEquiv eN eG).symm σ' g = σ' (eG g) :=
+  (rfl)
 
 /-- The `(orderOf g)`-th power of any lift of `g` lies in the kernel `S.inl.range`. -/
 theorem pow_orderOf_mem_range_inl (S : GroupExtension N E G) (g : G) {e : E}

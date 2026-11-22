@@ -15,8 +15,9 @@ public import TauCeti.GroupTheory.GroupExtension.Basic
 The range of a splitting complements the included kernel of an extension, and the range
 determines the splitting uniquely. Equivalences of extensions and compatible multiplicative
 equivalences on the middle and quotient groups transport splittings in both directions, as does
-relabelling the kernel and quotient (`GroupExtension.Splitting.relabel`,
-`GroupExtension.nonempty_splitting_relabel_iff`). These results allow splitting criteria to be
+relabelling the kernel and quotient (`GroupExtension.splittingRelabelEquiv`,
+`GroupExtension.Splitting.relabel`, `GroupExtension.nonempty_splitting_relabel_iff`). These results
+allow splitting criteria to be
 interpreted as existence criteria for actual subgroup complements. This file also supplies the
 evaluation and inverse formulas for Mathlib's `GroupExtension.Splitting.semidirectProductMulEquiv`,
 expressing the semidirect-product components of an extension element `e` in terms of
@@ -229,17 +230,46 @@ section Relabel
 
 variable {N' G' : Type*} [Group N'] [Group G']
 
+/-- Relabelling a group extension induces a bijection on splittings, sending `s` to
+`s.relabel eN eG`. -/
+@[to_additive
+  /-- Relabelling an additive group extension induces a bijection on splittings, sending `s` to
+  `s.relabel eN eG`. -/]
+def splittingRelabelEquiv (S : GroupExtension N E G) (eN : N' ≃* N) (eG : G ≃* G') :
+    S.Splitting ≃ (S.relabel eN eG).Splitting :=
+  S.splittingEquivOfMulEquiv (S.relabel eN eG) (MulEquiv.refl E) eG
+    (DFunLike.ext _ _ fun _ ↦ by
+      simp only [GroupExtension.relabel_rightHom, MonoidHom.comp_apply,
+        MulEquiv.coe_toMonoidHom, MulEquiv.refl_apply])
+
+/-- Evaluating the forward relabelling equivalence on a splitting at `g'` evaluates the original
+splitting at `eG.symm g'`. -/
+@[to_additive (attr := simp)
+  /-- Evaluating the forward relabelling equivalence on an additive splitting at `g'` evaluates the
+  original splitting at `eG.symm g'`. -/]
+theorem splittingRelabelEquiv_apply (S : GroupExtension N E G) (eN : N' ≃* N) (eG : G ≃* G')
+    (s : S.Splitting) (g' : G') :
+    S.splittingRelabelEquiv eN eG s g' = s (eG.symm g') :=
+  (rfl)
+
+/-- Evaluating the inverse relabelling equivalence on a splitting at `g` evaluates the relabelled
+splitting at `eG g`. -/
+@[to_additive (attr := simp)
+  /-- Evaluating the inverse relabelling equivalence on an additive splitting at `g` evaluates the
+  relabelled splitting at `eG g`. -/]
+theorem splittingRelabelEquiv_symm_apply (S : GroupExtension N E G) (eN : N' ≃* N)
+    (eG : G ≃* G') (s' : (S.relabel eN eG).Splitting) (g : G) :
+    (S.splittingRelabelEquiv eN eG).symm s' g = s' (eG g) :=
+  (rfl)
+
 /-- Transport a splitting of `S` to a splitting of `S.relabel eN eG` by precomposing with
 `eG.symm`. -/
 @[to_additive
   /-- Transport a splitting of an additive extension `S` to a splitting of `S.relabel eN eG` by
   precomposing with `eG.symm`. -/]
 def Splitting.relabel (s : S.Splitting) (eN : N' ≃* N) (eG : G ≃* G') :
-    (S.relabel eN eG).Splitting where
-  toMonoidHom := s.toMonoidHom.comp eG.symm.toMonoidHom
-  rightInverse_rightHom g' := by
-    rw [GroupExtension.relabel_rightHom]
-    exact (congrArg eG (s.rightInverse_rightHom (eG.symm g'))).trans (eG.apply_symm_apply g')
+    (S.relabel eN eG).Splitting :=
+  S.splittingRelabelEquiv eN eG s
 
 /-- Evaluating a relabelled splitting at `g'` evaluates the original splitting at `eG.symm g'`. -/
 @[to_additive (attr := simp)
@@ -263,13 +293,8 @@ theorem Splitting.relabel_toSection (s : S.Splitting) (eN : N' ≃* N) (eG : G �
   /-- A relabelled additive extension splits if and only if the original additive extension
   splits. -/]
 theorem nonempty_splitting_relabel_iff (S : GroupExtension N E G) (eN : N' ≃* N) (eG : G ≃* G') :
-    Nonempty (S.relabel eN eG).Splitting ↔ Nonempty S.Splitting := by
-  refine ⟨fun ⟨s⟩ ↦ ⟨⟨s.toMonoidHom.comp eG.toMonoidHom, fun g ↦ ?_⟩⟩,
-    fun ⟨s⟩ ↦ ⟨s.relabel eN eG⟩⟩
-  have h := s.rightInverse_rightHom (eG g)
-  rw [GroupExtension.relabel_rightHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom] at h
-  exact eG.injective (by
-    simpa only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MonoidHom.toFun_eq_coe] using h)
+    Nonempty (S.relabel eN eG).Splitting ↔ Nonempty S.Splitting :=
+  (S.splittingRelabelEquiv eN eG).nonempty_congr.symm
 
 end Relabel
 

@@ -12,32 +12,30 @@ public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 /-!
 # Quotient extension of the dihedral rotation subgroup
 
-Identifying the rotation subgroup `TauCeti.dihedralRotations (2 * n)` with
-`Multiplicative (ZMod (2 * n))` and the quotient `DihedralGroup (2 * n) ⧸ dihedralRotations (2 * n)`
-with `Multiplicative (ZMod 2)` intertwines the quotient conjugation action with the inversion
-action `TauCeti.invMulDistribMulAction` (`TauCeti.dihedralRotationsMulEquiv_symm_smul`).
+Identifying the rotation subgroup `TauCeti.dihedralRotations n` with
+`Multiplicative (ZMod n)` and the quotient `DihedralGroup n ⧸ dihedralRotations n` with
+`Multiplicative (ZMod 2)` intertwines the quotient conjugation action with the inversion action
+`TauCeti.invMulDistribMulAction` (`TauCeti.dihedralRotationsMulEquiv_symm_smul`).
 
-Relabelling the canonical quotient extension `(dihedralRotations (2 * n)).quotientExtension` along
-these two equivalences gives `TauCeti.dihedralEvenExtension n`, an extension of
-`Multiplicative (ZMod 2)` by `Multiplicative (ZMod (2 * n))` inducing
-`TauCeti.invMulDistribMulAction` (`TauCeti.dihedralEvenExtension_inducesAction`).
+Relabelling the canonical quotient extension `(dihedralRotations n).quotientExtension` along
+these two equivalences gives `TauCeti.dihedralExtension n`, an extension of
+`Multiplicative (ZMod 2)` by `Multiplicative (ZMod n)` inducing
+`TauCeti.invMulDistribMulAction` (`TauCeti.dihedralExtension_inducesAction`).
 
 ## Main definitions
 
-* `TauCeti.dihedralEvenExtension`: the quotient extension of `DihedralGroup (2 * n)` by its
-  rotation subgroup, relabelled to kernel `Multiplicative (ZMod (2 * n))` and quotient
-  `Multiplicative (ZMod 2)`.
+* `TauCeti.dihedralExtension`: the quotient extension of `DihedralGroup n` by its rotation
+  subgroup, relabelled to kernel `Multiplicative (ZMod n)` and quotient `Multiplicative (ZMod 2)`.
 
 ## Main results
 
 * `TauCeti.dihedralRotationsMulEquiv_symm_smul`: the dihedral coordinate equivalences intertwine
   the quotient conjugation action with `TauCeti.invMulDistribMulAction`.
-* `TauCeti.dihedralEvenExtension_def`: `dihedralEvenExtension n` as a relabelling of the quotient
+* `TauCeti.dihedralExtension_def`: `dihedralExtension n` as a relabelling of the quotient
   extension.
-* `TauCeti.dihedralEvenExtension_inl`, `TauCeti.dihedralEvenExtension_rightHom`: inclusion and
-  projection of `dihedralEvenExtension`.
-* `TauCeti.dihedralEvenExtension_inducesAction`: `dihedralEvenExtension n` induces the inversion
-  action.
+* `TauCeti.dihedralExtension_inl`, `TauCeti.dihedralExtension_rightHom`: inclusion and
+  projection of `dihedralExtension`.
+* `TauCeti.dihedralExtension_inducesAction`: `dihedralExtension n` induces the inversion action.
 -/
 
 public section
@@ -63,41 +61,40 @@ theorem dihedralRotationsMulEquiv_symm_smul (n : ℕ)
       invMulDistribMulAction_ofAdd_one_smul, map_inv, Subgroup.quotientConjugationAction_mk_smul,
       conjNormal_eq_inv_of_notMem_dihedralRotations (sr_notMem_dihedralRotations i)]
 
-/-- The quotient extension of `DihedralGroup (2 * n)` by its rotation subgroup, relabelled to
-kernel `Multiplicative (ZMod (2 * n))` and quotient `Multiplicative (ZMod 2)`. -/
-noncomputable def dihedralEvenExtension (n : ℕ) :
-    GroupExtension (Multiplicative (ZMod (2 * n))) (DihedralGroup (2 * n))
-      (Multiplicative (ZMod 2)) :=
-  (dihedralRotations (2 * n)).quotientExtension.relabel
-    (dihedralRotationsMulEquiv (2 * n)).symm (dihedralQuotientEquiv (2 * n))
+/-- The quotient extension of `DihedralGroup n` by its rotation subgroup, relabelled to kernel
+`Multiplicative (ZMod n)` and quotient `Multiplicative (ZMod 2)`. -/
+noncomputable def dihedralExtension (n : ℕ) :
+    GroupExtension (Multiplicative (ZMod n)) (DihedralGroup n) (Multiplicative (ZMod 2)) :=
+  (dihedralRotations n).quotientExtension.relabel
+    (dihedralRotationsMulEquiv n).symm (dihedralQuotientEquiv n)
 
-/-- `dihedralEvenExtension n` is the quotient extension of `dihedralRotations (2 * n)` relabelled
-along `dihedralRotationsMulEquiv (2 * n)` and `dihedralQuotientEquiv (2 * n)`. -/
-theorem dihedralEvenExtension_def (n : ℕ) :
-    dihedralEvenExtension n =
-      (dihedralRotations (2 * n)).quotientExtension.relabel
-        (dihedralRotationsMulEquiv (2 * n)).symm (dihedralQuotientEquiv (2 * n)) :=
+/-- `dihedralExtension n` is the quotient extension of `dihedralRotations n` relabelled along
+`dihedralRotationsMulEquiv n` and `dihedralQuotientEquiv n`. -/
+theorem dihedralExtension_def (n : ℕ) :
+    dihedralExtension n =
+      (dihedralRotations n).quotientExtension.relabel
+        (dihedralRotationsMulEquiv n).symm (dihedralQuotientEquiv n) :=
   (rfl)
 
-/-- The inclusion of `dihedralEvenExtension n` sends `ofAdd i` to the rotation `r i`. -/
+/-- The inclusion of `dihedralExtension n` sends `ofAdd i` to the rotation `r i`. -/
 @[simp]
-theorem dihedralEvenExtension_inl (n : ℕ) (m : Multiplicative (ZMod (2 * n))) :
-    (dihedralEvenExtension n).inl m = DihedralGroup.r (Multiplicative.toAdd m) := by
-  rw [dihedralEvenExtension_def]
+theorem dihedralExtension_inl (n : ℕ) (m : Multiplicative (ZMod n)) :
+    (dihedralExtension n).inl m = DihedralGroup.r (Multiplicative.toAdd m) := by
+  rw [dihedralExtension_def]
   simp
 
-/-- The projection of `dihedralEvenExtension n` is the reflection parity. -/
+/-- The projection of `dihedralExtension n` is the reflection parity. -/
 @[simp]
-theorem dihedralEvenExtension_rightHom (n : ℕ) (g : DihedralGroup (2 * n)) :
-    (dihedralEvenExtension n).rightHom g = dihedralReflectionParity (2 * n) g := by
-  rw [dihedralEvenExtension_def]
+theorem dihedralExtension_rightHom (n : ℕ) (g : DihedralGroup n) :
+    (dihedralExtension n).rightHom g = dihedralReflectionParity n g := by
+  rw [dihedralExtension_def]
   simp
 
-/-- The relabelled dihedral extension induces the inversion action of `C₂` on `C_{2n}`. -/
-theorem dihedralEvenExtension_inducesAction (n : ℕ) :
-    TauCeti.GroupExtension.InducesAction (dihedralEvenExtension n) :=
-  (dihedralRotations (2 * n)).quotientExtension_inducesAction.relabel
-    (dihedralRotationsMulEquiv (2 * n)).symm (dihedralQuotientEquiv (2 * n))
-    (dihedralRotationsMulEquiv_symm_smul (2 * n))
+/-- The relabelled dihedral extension induces the inversion action of `C₂` on `Cₙ`. -/
+theorem dihedralExtension_inducesAction (n : ℕ) :
+    TauCeti.GroupExtension.InducesAction (dihedralExtension n) :=
+  (dihedralRotations n).quotientExtension_inducesAction.relabel
+    (dihedralRotationsMulEquiv n).symm (dihedralQuotientEquiv n)
+    (dihedralRotationsMulEquiv_symm_smul n)
 
 end TauCeti

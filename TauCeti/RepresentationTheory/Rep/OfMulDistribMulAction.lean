@@ -175,9 +175,9 @@ def ofMulDistribMulActionResHom {G G' : Type*} {M M' : Type _}
     { toLinearMap := (ofMulDistribMulActionLinearEquiv G G' eM :
         (Rep.ofMulDistribMulAction G M).V →ₗ[ℤ] (Rep.ofMulDistribMulAction G' M').V)
       isIntertwining' := fun g' ↦ by
+        rw [Rep.coe_res_obj_ρ', MulEquiv.coe_toMonoidHom]
         have h := ofMulDistribMulActionLinearEquiv_isIntertwining eM eG hsmul (eG.symm g')
-        rw [MulEquiv.apply_symm_apply] at h
-        exact h }
+        rwa [MulEquiv.apply_symm_apply] at h }
 
 /-- The underlying linear map of `Rep.ofMulDistribMulActionResHom` is
 `Rep.ofMulDistribMulActionLinearEquiv`. -/

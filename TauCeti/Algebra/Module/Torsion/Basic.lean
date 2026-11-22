@@ -42,6 +42,8 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
 * `TauCeti.AddSubgroup.torsionByPiEquiv`: torsion of a product is the product of torsions.
 * `TauCeti.AddSubgroup.torsionByTorsionByEquiv`: nested torsion for `a ∣ b`.
 * `AddEquiv.torsionByCongr`: transport torsion along an additive equivalence.
+* `TauCeti.submoduleTorsionByEquivAddSubgroup`: identify the integer torsion submodule
+  `Submodule.torsionBy ℤ A n` with `AddSubgroup.torsionBy A n`.
 * `TauCeti.Submodule.torsionProdEquiv`: the torsion submodule of `M × N` is the product of the
   torsion submodules.
 
@@ -220,6 +222,38 @@ end AddEquiv
 open scoped nonZeroDivisors
 
 namespace TauCeti
+
+/-- Package the definitional identification between `Submodule.torsionBy ℤ A n` and
+`AddSubgroup.torsionBy A n` as an additive equivalence. -/
+def submoduleTorsionByEquivAddSubgroup (A : Type*) [AddCommGroup A]
+    [instM : Module ℤ A] (n : ℤ) :
+    Submodule.torsionBy ℤ A n ≃+ AddSubgroup.torsionBy A n where
+  toFun x := ⟨x.val, (Submodule.mem_toAddSubgroup _).2 <|
+    (@Submodule.mem_torsionBy_iff ℤ A _ _ (AddCommGroup.toIntModule A) n x.val).2 <| by
+      rw [Subsingleton.elim (AddCommGroup.toIntModule A) instM]
+      exact (Submodule.mem_torsionBy_iff n x.val).1 x.property⟩
+  invFun x := ⟨x.val, (Submodule.mem_torsionBy_iff n x.val).2 <| by
+    rw [Subsingleton.elim instM (AddCommGroup.toIntModule A)]
+    exact (@Submodule.mem_torsionBy_iff ℤ A _ _ (AddCommGroup.toIntModule A) n x.val).1
+      ((Submodule.mem_toAddSubgroup _).1 x.property)⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+
+/-- `submoduleTorsionByEquivAddSubgroup` preserves the underlying ambient element. -/
+@[simp]
+theorem submoduleTorsionByEquivAddSubgroup_apply_coe {A : Type*} [AddCommGroup A]
+    [Module ℤ A] (n : ℤ) (x : Submodule.torsionBy ℤ A n) :
+    ((submoduleTorsionByEquivAddSubgroup A n x : AddSubgroup.torsionBy A n) : A) = x.val := by
+  simp [submoduleTorsionByEquivAddSubgroup]
+
+/-- The inverse of `submoduleTorsionByEquivAddSubgroup` preserves the underlying ambient element. -/
+@[simp]
+theorem submoduleTorsionByEquivAddSubgroup_symm_apply_coe {A : Type*} [AddCommGroup A]
+    [Module ℤ A] (n : ℤ) (x : AddSubgroup.torsionBy A n) :
+    (((submoduleTorsionByEquivAddSubgroup A n).symm x : Submodule.torsionBy ℤ A n) : A) =
+      x.val := by
+  simp [submoduleTorsionByEquivAddSubgroup]
 
 namespace Submodule
 

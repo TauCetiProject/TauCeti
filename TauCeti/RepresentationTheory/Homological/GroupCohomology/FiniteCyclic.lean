@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
@@ -913,12 +912,15 @@ noncomputable def groupCohomologyOddEquivQuotSMulTop (hord : Even (orderOf g))
   let φ := (groupCohomologyπOdd A g hg i hi).hom ∘ₗ ι
   have hφ : Function.Surjective φ := fun c ↦ by
     obtain ⟨x, rfl⟩ := groupCohomologyπOdd_surjective A g hg i hi c
-    exact ⟨x.val, rfl⟩
+    refine ⟨x.val, ?_⟩
+    rw [LinearMap.comp_apply]
+    exact congrArg (groupCohomologyπOdd A g hg i hi)
+      (Subtype.ext (by rw [LinearMap.codRestrict_apply, LinearMap.id_apply]))
   have hker : LinearMap.ker φ = (2 : k) • (⊤ : Submodule k A) := by
     ext x
     rw [LinearMap.mem_ker, LinearMap.comp_apply, groupCohomologyπOdd_eq_zero_iff,
-      Rep.mem_range_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg]
-    rfl
+      Rep.mem_range_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg, LinearMap.codRestrict_apply,
+      LinearMap.id_apply]
   ((Submodule.quotEquivOfEq _ _ hker.symm).trans (φ.quotKerEquivOfSurjective hφ)).symm
 
 /-- The odd-degree class corresponding to the coset of `x` in `A ⧸ 2 A` under
