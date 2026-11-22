@@ -199,9 +199,8 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber {a b c :
   let _ : ∀ j, FiberBundle (Fin (r j) → ℝ) (V j) := fun j ↦ (hV j).fiberBundle
   have (j : ι) : VectorBundle ℝ (Fin (r j) → ℝ) (V j) := (hV j).vectorBundle
   -- The frames have size the dimension of the negative normal spaces, which is the index.
-  have hr (j : ι) (s : S j) : manifoldMorseIndex I f (i j s) = r j := by
-    rw [← (h.isNondegenerateCriticalSubmanifold j).finrank_negativeNormalSpace hn
-      (g j).toRiemannianMetric, (hV j).finrank_eq, Fintype.card_fin]
+  have hr (j : ι) := (h.isNondegenerateCriticalSubmanifold j)
+    |>.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ (hV j)
   -- The band has the homology of the direct sum of the Thom pairs of the pieces on the level `c`.
   obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair hn hac hcb hcrit hdim
     g hr (ModuleCat.of K K) n
