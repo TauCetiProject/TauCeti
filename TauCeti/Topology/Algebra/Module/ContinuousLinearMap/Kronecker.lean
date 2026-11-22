@@ -37,9 +37,11 @@ The coordinate isomorphisms `ContinuousLinearEquiv.kroneckerAssoc`, `kroneckerCo
 isomorphisms are reindexings along `finCongr` (`kroneckerLid_eq_piCongrLeft_finCongr`,
 `kroneckerRid_eq_piCongrLeft_finCongr`). They
 intertwine Kronecker products (`ContinuousLinearMap.kroneckerAssoc_comp_kronecker`,
-`kroneckerComm_comp_kronecker`, `kroneckerLid_comp_kronecker`, `kroneckerRid_comp_kronecker`)
-and satisfy the pentagon, triangle and hexagon identities. These are the structure maps of the
-symmetric monoidal structure on bundles presented by finite coordinate charts.
+`kroneckerComm_comp_kronecker`, `kroneckerLid_comp_kronecker`, `kroneckerRid_comp_kronecker`),
+so a Kronecker product with the identity of `Fin 1 → R` is conjugate to its other factor
+(`ContinuousLinearMap.id_kronecker_eq_kroneckerLid_symm_comp`), and they satisfy the pentagon,
+triangle and hexagon identities. These are the structure maps of the symmetric monoidal structure
+on bundles presented by finite coordinate charts.
 
 The matrix comparison uses Mathlib's `Matrix.kronecker` and `LinearMap.toMatrix'`; through it
 the mixed-product law is Mathlib's `Matrix.mul_kronecker_mul`.
@@ -306,6 +308,15 @@ theorem kroneckerLid_comp_kronecker (g : (Fin n → R) →L[R] (Fin n' → R)) :
   have hv : kroneckerLid R n v = fun j' ↦ v (finProdFinEquiv (0, j')) :=
     funext (kroneckerLid_apply v)
   simp [hv]
+
+/-- The Kronecker product with the identity of the one-dimensional space on the left is the
+conjugate of the original operator by `kroneckerLid`. -/
+theorem id_kronecker_eq_kroneckerLid_symm_comp (g : (Fin n → R) →L[R] (Fin n' → R)) :
+    (ContinuousLinearMap.id R (Fin 1 → R)).kronecker g =
+      ((kroneckerLid R n').symm : (Fin n' → R) →L[R] _).comp
+        (g.comp (kroneckerLid R n : (Fin (1 * n) → R) →L[R] _)) := by
+  rw [← kroneckerLid_comp_kronecker, ← ContinuousLinearMap.comp_assoc,
+    ContinuousLinearEquiv.coe_symm_comp_coe, ContinuousLinearMap.id_comp]
 
 /-- The Kronecker product with the identity of the one-dimensional space on the right is the
 original operator, up to `kroneckerRid`. -/

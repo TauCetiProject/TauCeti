@@ -288,31 +288,6 @@ section LineTensor
 
 open MonoidalCategory ContinuousLinearMap ContinuousLinearEquiv
 
-/-- The coordinate identity behind `⋀^j (L ⊗ E) ≅ L^⊗j ⊗ ⋀^j E`: for one-dimensional factors, the
-`j`th compound matrix of `(c • id) ⊗ g` is `(c ^ j • id) ⊗ ⋀^j g`, once the two coordinate spaces
-of equal dimension are identified by reindexing. -/
-private theorem piCongrLeft_comp_exteriorPowerCoords_kronecker {n N r r' : ℕ} (j : ℕ)
-    (hn : n = 1) (hN : N = 1) (c : 𝕜) (g : (Fin r → 𝕜) →L[𝕜] (Fin r' → 𝕜))
-    (hr : (n * r).choose j = N * r.choose j) (hr' : (n * r').choose j = N * r'.choose j) :
-    (piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr hr') : _ →L[𝕜] _).comp
-        (((c • ContinuousLinearMap.id 𝕜 (Fin n → 𝕜)).kronecker g).exteriorPowerCoords j) =
-      ((c ^ j • ContinuousLinearMap.id 𝕜 (Fin N → 𝕜)).kronecker (g.exteriorPowerCoords j)).comp
-        (piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr hr) : _ →L[𝕜] _) := by
-  subst hn hN
-  rw [smul_kronecker, exteriorPowerCoords_smul, smul_kronecker, comp_smul, smul_comp]
-  congr 1
-  -- A Kronecker product with the identity of `Fin 1 → 𝕜` is conjugate to its second factor.
-  have hLid {m m' : ℕ} (f : (Fin m → 𝕜) →L[𝕜] (Fin m' → 𝕜)) :
-      (ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜)).kronecker f =
-        ((kroneckerLid 𝕜 m').symm : _ →L[𝕜] _).comp (f.comp (kroneckerLid 𝕜 m : _ →L[𝕜] _)) := by
-    rw [← kroneckerLid_comp_kronecker, ← ContinuousLinearMap.comp_assoc,
-      ContinuousLinearEquiv.coe_symm_comp_coe, ContinuousLinearMap.id_comp]
-  rw [hLid, hLid, exteriorPowerCoords_comp, exteriorPowerCoords_comp]
-  simp only [kroneckerLid_eq_piCongrLeft_finCongr, piCongrLeft_finCongr_symm,
-    exteriorPowerCoords_piCongrLeft_finCongr]
-  ext v i
-  simp
-
 /-- For a line bundle `L`, the fibres of `⋀^j (L ⊗ E)` and `L^⊗j ⊗ ⋀^j E` have the same
 dimension. -/
 theorem choose_rank_mul_rank_of_rank_eq_one {L : FiniteRankBundleCore 𝕜 B} (hL : L.rank = 1)
@@ -351,8 +326,8 @@ noncomputable def exteriorPowerLineTensorIso (hL : L.rank = 1) (E : FiniteRankBu
     (E : FiniteRankBundleCore 𝕜 B) (x : B) :
     (exteriorPowerLineTensorIso j L hL E).inv.fiberMap x =
       ContinuousLinearEquiv.toContinuousLinearMap (piCongrLeft 𝕜 (fun _ ↦ 𝕜)
-        (finCongr (choose_rank_mul_rank_of_rank_eq_one hL E j))).symm :=
-  fiberMap_constIso_inv _ _ _ x
+        (finCongr (choose_rank_mul_rank_of_rank_eq_one hL E j).symm)) :=
+  (fiberMap_constIso_inv _ _ _ x).trans (congrArg _ (piCongrLeft_finCongr_symm _))
 
 /-- The identification `⋀^j (L ⊗ E) ≅ L^⊗j ⊗ ⋀^j E` is natural in `E`. -/
 @[reassoc]
@@ -364,10 +339,9 @@ theorem exteriorPowerLineTensorIso_hom_naturality (hL : L.rank = 1)
     have h := piCongrLeft_comp_exteriorPowerCoords_kronecker j hL
       (rank_tensorPow_of_rank_eq_one hL j) 1 (f.fiberMap x)
       (choose_rank_mul_rank_of_rank_eq_one hL E j) (choose_rank_mul_rank_of_rank_eq_one hL E' j)
-    rw [one_smul, one_pow, one_smul] at h
-    rw [fiberMap_comp, fiberMap_comp, fiberMap_exteriorPower_map, fiberMap_whiskerLeft,
-      fiberMap_whiskerLeft, fiberMap_exteriorPowerLineTensorIso_hom,
-      fiberMap_exteriorPowerLineTensorIso_hom, fiberMap_exteriorPower_map]
+    simp only [one_smul, one_pow] at h
+    simp only [fiberMap_comp, fiberMap_exteriorPower_map, fiberMap_whiskerLeft,
+      fiberMap_exteriorPowerLineTensorIso_hom]
     exact h
 
 /-- For a line bundle `L`, the functors `E ↦ ⋀^j (L ⊗ E)` and `E ↦ L^⊗j ⊗ ⋀^j E` are naturally
