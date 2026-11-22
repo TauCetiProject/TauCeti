@@ -42,18 +42,27 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 * `LinearMap.vecMul_toMatrixRight'` and `LinearMap.isIdempotentElem_toMatrixRight'_iff`: over a
   possibly noncommutative semiring, linear maps of coordinate vectors are matrices acting on row
   vectors, and idempotent endomorphisms correspond to idempotent matrices.
+* `LinearMap.of_apply_single_mulVec`: over a possibly noncommutative semiring, right-linear maps of
+  coordinate vectors are matrices acting on column vectors.
 * `LinearMap.isIdempotentElem_toMatrixRight'_comp` and
   `LinearMap.exists_toMatrixRight'_comp_eq_fromBlocks`: a direct summand of `m → R` is presented
   by an idempotent matrix, and a split short exact sequence of such summands presents its middle
   term by the block-diagonal sum of the idempotent matrices of its outer terms.
+* `LinearMap.apply_eq_sum_apply_single_one_mul`: over a possibly noncommutative semiring, maps of
+  free right modules of coordinate vectors are matrices acting on column vectors.
 * `LinearMap.toMatrix_mulVec_eq_repr`: the coordinate vector of `φ (∑ j, x j • v j)` is the
   matrix of `φ` applied to `x`.
+* `LinearMap.toLin'_toMatrix_comp_equivFun` and `LinearMap.equivFun_symm_comp_toLin'_toMatrix`:
+  the coordinate equivalences of two bases intertwine a linear map with its matrix.
 * `LinearMap.isUnit_toMatrix_iff_bijective`, `LinearMap.isUnit_det_toMatrix_iff_bijective`,
   `Matrix.toLin_bijective_iff`, and `Matrix.toLin_bijective_iff_isUnit_det`: for bases of two
   modules indexed by the same finite type, the representing matrix (and, over a commutative ring,
   its determinant) is a unit if and only if the linear map is bijective.
 * `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
   linearly independent.
+* `Matrix.mulVecBilin_mul` and `IsIdempotentElem.mulVecBilin`: over a possibly noncommutative
+  semiring, the action of matrices on column vectors is multiplicative, so idempotent matrices act
+  by idempotent endomorphisms.
 * `Algebra.toLin_leftMulMatrix`: the linear map of the left multiplication matrix of `x` is left
   multiplication by `x`.
 * `Algebra.leftMulMatrix_algebraMap`: the left multiplication matrix of an element of the base ring
@@ -146,6 +155,20 @@ theorem vecMul_toMatrixRight' (f : (m → R) →ₗ[R] n → R) (v : m → R) :
     Matrix.vecMul v f.toMatrixRight' = f v := by
   rw [← Matrix.toLinearMapRight'_apply, LinearEquiv.symm_apply_apply]
 
+/-- **A right-linear map of coordinate vectors is a matrix acting on column vectors.** Over a
+possibly noncommutative semiring, an `Rᵐᵒᵖ`-linear map `f : (m → R) → (n → R)` (one commuting with
+right scalar multiplication) is `Matrix.mulVec` by the matrix whose `j`-th column is the image
+`f eⱼ` of the `j`-th standard basis vector. -/
+@[simp]
+theorem of_apply_single_mulVec (f : (m → R) →ₗ[Rᵐᵒᵖ] n → R) (v : m → R) :
+    Matrix.mulVec (Matrix.of fun i j ↦ f (Pi.single j 1) i) v = f v := by
+  -- Both sides are `Rᵐᵒᵖ`-linear in `v`, and they agree on the `eⱼ`.
+  have h : Matrix.mulVecBilin R Rᵐᵒᵖ (Matrix.of fun i j ↦ f (Pi.single j 1) i) = f :=
+    LinearMap.pi_ext' fun j ↦ LinearMap.ext_ring_op <| by
+      ext i
+      simp
+  exact LinearMap.congr_fun h v
+
 /-- The matrix of an endomorphism of `m → R`, acting on row vectors, is idempotent exactly when
 the endomorphism is. -/
 theorem isIdempotentElem_toMatrixRight'_iff (f : Module.End R (m → R)) :
@@ -199,6 +222,16 @@ theorem exists_toMatrixRight'_comp_eq_fromBlocks [Fintype n] [DecidableEq n]
     rcases q with b | d <;>
       simp [e, Matrix.vecMul_fromBlocks, hl', hr', hrf, hgσ, hgf, hrσ]
 
+/-- A linear map of coordinate vectors over `Rᵐᵒᵖ`, that is, a map of free right `R`-modules,
+is left multiplication of column vectors by the matrix with entries `f (Pi.single j 1) i`. -/
+theorem apply_eq_sum_apply_single_one_mul (f : (m → R) →ₗ[Rᵐᵒᵖ] n → R) (x : m → R) (i : n) :
+    f x i = ∑ j, f (Pi.single j 1) i * x j := by
+  have hx : x = ∑ j, MulOpposite.op (x j) • (Pi.single j 1 : m → R) := by
+    ext l
+    simp [Finset.sum_apply, Pi.single_apply]
+  conv_lhs => rw [hx]
+  simp [map_sum, Finset.sum_apply]
+
 end LinearMap
 
 namespace LinearMap
@@ -214,6 +247,28 @@ theorem toMatrix_mulVec_eq_repr {R V M ι κ : Type*} [CommSemiring R] [AddCommM
     toMatrix v b φ *ᵥ x = b.repr (φ (∑ j, x j • v j)) := by
   rw [← v.equivFun_symm_apply, ← toMatrix_mulVec_repr v b, ← v.equivFun_apply,
     LinearEquiv.apply_symm_apply]
+
+/-- In the coordinates of bases `v` and `b`, a linear map `φ` acts by its matrix
+`LinearMap.toMatrix v b φ`. -/
+theorem toLin'_toMatrix_comp_equivFun {R V M ι κ : Type*} [CommSemiring R] [AddCommMonoid V]
+    [Module R V] [AddCommMonoid M] [Module R M] [Fintype κ] [DecidableEq κ] [Finite ι]
+    (v : Module.Basis κ R V) (b : Module.Basis ι R M) (φ : V →ₗ[R] M) :
+    toLin' (toMatrix v b φ) ∘ₗ v.equivFun.toLinearMap = b.equivFun.toLinearMap ∘ₗ φ := by
+  refine LinearMap.ext fun x ↦ ?_
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+    toLin'_apply, v.equivFun_apply, b.equivFun_apply, toMatrix_mulVec_repr]
+
+/-- The inverse coordinate equivalences of bases `v` and `b` turn the matrix
+`LinearMap.toMatrix v b φ` back into the linear map `φ`. -/
+theorem equivFun_symm_comp_toLin'_toMatrix {R V M ι κ : Type*} [CommSemiring R]
+    [AddCommMonoid V] [Module R V] [AddCommMonoid M] [Module R M] [Fintype κ] [DecidableEq κ]
+    [Finite ι] (v : Module.Basis κ R V) (b : Module.Basis ι R M) (φ : V →ₗ[R] M) :
+    b.equivFun.symm.toLinearMap ∘ₗ toLin' (toMatrix v b φ) =
+      φ ∘ₗ v.equivFun.symm.toLinearMap := by
+  refine LinearMap.ext fun x ↦ b.equivFun.injective ?_
+  have h := LinearMap.congr_fun (toLin'_toMatrix_comp_equivFun v b φ) (v.equivFun.symm x)
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] at h ⊢
+  exact h
 
 /-- **Invertibility of a representing matrix.** For bases `v` and `b` indexed by the same finite
 type, `LinearMap.toMatrix v b φ` is a unit matrix if and only if `φ` is bijective. This extends
@@ -268,7 +323,28 @@ theorem toLin_bijective_iff_isUnit_det {R V M ι : Type*} [CommRing R] [AddCommM
     Function.Bijective (Matrix.toLin v b A) ↔ IsUnit A.det := by
   rw [toLin_bijective_iff, isUnit_iff_isUnit_det]
 
+section Bilinear
+
+variable {R S A l m n : Type*} [Semiring R] [Semiring S] [NonUnitalSemiring A] [Module R A]
+  [Module S A] [SMulCommClass S R A] [SMulCommClass S A A] [IsScalarTower R A A]
+
+/-- `Matrix.mulVecBilin` is multiplicative: over a possibly noncommutative semiring, the action
+on column vectors of a product of matrices is the composite of their actions. -/
+@[simp]
+theorem mulVecBilin_mul [Fintype m] [Fintype n] (M : Matrix l m A) (N : Matrix m n A) :
+    mulVecBilin R S (M * N) = mulVecBilin R S M ∘ₗ mulVecBilin R S N :=
+  LinearMap.ext fun _ ↦ (mulVec_mulVec _ _ _).symm
+
+end Bilinear
+
 end Matrix
+
+/-- Left multiplication of column vectors by an idempotent matrix is an idempotent endomorphism. -/
+theorem IsIdempotentElem.mulVecBilin {A n : Type*} (R S : Type*) [Semiring R] [Semiring S]
+    [NonUnitalSemiring A] [Module R A] [Module S A] [SMulCommClass S R A] [SMulCommClass S A A]
+    [IsScalarTower R A A] [Fintype n] {e : Matrix n n A} (he : IsIdempotentElem e) :
+    IsIdempotentElem (Matrix.mulVecBilin R S e) := by
+  rw [IsIdempotentElem, Module.End.mul_eq_comp, ← Matrix.mulVecBilin_mul, he.eq]
 
 namespace Algebra
 
