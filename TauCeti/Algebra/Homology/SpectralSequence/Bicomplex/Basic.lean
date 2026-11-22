@@ -172,6 +172,13 @@ variable (K : HomologicalComplex₂ C (down ℕ) (down ℕ))
 @[simp]
 lemma toTotalRowsGE_zero : K.toTotalRowsGE 0 = 𝟙 _ := (rfl)
 
+/-- The projection onto the total complex of the rows `≥ s + 1` drops row `0` and then projects
+the rows `≥ 1` onto their rows `≥ s`. -/
+lemma toTotalRowsGE_succ (s : ℕ) :
+    K.toTotalRowsGE (s + 1) = K.dropRowZero ≫
+      HomologicalComplex.extendMap (K.rowsSucc.toTotalRowsGE s) (embeddingDownNatAdd 1) :=
+  (rfl)
+
 /-- The projection onto the total complex of the rows `≥ s` is the identity on the summands of the
 rows `≥ s`. -/
 @[reassoc (attr := simp)]
