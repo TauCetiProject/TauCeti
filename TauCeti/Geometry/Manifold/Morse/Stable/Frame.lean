@@ -91,12 +91,20 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `zero_mem_linearForwardTimes_self`, `zero_mem_linearBackwardTimes_self`,
   `stableNormal_unstableFrame_self`: at the centre of the chart the time `0` is admissible, and the
   normal coordinates invert the unstable frame.
+* `mfderiv_unstableFrame_eq_exp_smul_self`: read at an admissible time, the unstable frame is a
+  positive multiple of the frame at the critical point, read in the chart.
 * `eventually_span_mtangentConeAt_stableSet_eq_comap`: for all large times `T`, the tangent space
   of the stable manifold is read off the derivative of `φ ∘ Φ_T`.
 * `stableNormal_eq_zero_iff`, `surjective_stableNormal`: the normal coordinates vanish exactly on
   the tangent space of the stable manifold, and are onto.
 * `range_unstableFrame`, `injective_unstableFrame`: the frame is an isomorphism onto the tangent
   space of the unstable manifold.
+* `mem_linearForwardTimes_self`, `mem_linearBackwardTimes_self`: every time is a time of linear
+  flow of the centre of the chart.
+* `neg_linearForwardTimes`, `neg_linearBackwardTimes`: the times of linear flow of `-X` in the
+  negated Morse chart are those of `X`, in the opposite direction.
+* `neg_toChart_comp_neg_flow`: the flow of `-X` read in the negated Morse chart is the flow of `X`
+  read in the chart, in the opposite direction.
 * `bijective_unstableFrame`: at a critical point of top index, the frame is an isomorphism onto the
   whole tangent space.
 * `stableNormal_mfderiv_flow`, `unstableFrame_flow`: along the flow, the derivative of the time-`t`
@@ -263,6 +271,16 @@ theorem mem_linearForwardTimes_flow {y : M} {t T : ℝ} :
 theorem mem_linearBackwardTimes_flow {y : M} {t T : ℝ} :
     T ∈ hX.linearBackwardTimes φ (hX.flow t y) ↔ T - t ∈ hX.linearBackwardTimes φ y := by
   simp only [mem_linearBackwardTimes, ← Flow.map_add, show -(T - t) = -T + t by ring]
+
+/-- At its critical point, the centre of the Morse chart has linear forward flow at every
+time. -/
+theorem mem_linearForwardTimes_self (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (T : ℝ) :
+    T ∈ hX.linearForwardTimes φ x := by
+  refine (mem_linearForwardTimes hX φ).2
+    ⟨by rw [hX.flow_apply_of_mfderiv_eq_zero hx]; exact φ.mem_source, fun t _ ↦ ?_⟩
+  rw [hX.flow_apply_of_mfderiv_eq_zero hx, φ.apply_self, map_zero, φ.linearFlow_zero_right,
+    map_zero, ← φ.apply_self]
+  exact φ.toChart.map_source φ.mem_source
 
 /-- At its critical point, the centre of the Morse chart has linear backward flow at every
 time. -/
@@ -572,6 +590,27 @@ theorem neg_linearForwardTimes (hf : IsMorse 𝓘(ℝ, E) f)
   refine and_congr_right fun _ ↦ ⟨fun h t ht ↦ ?_, fun h t ht ↦ h _ (by linarith)⟩
   simpa using h (-t) (by linarith)
 
+omit hφ in
+/-- The times of linear backward flow of `-X` in the negated Morse chart are the times of linear
+forward flow of `X`. -/
+theorem neg_linearBackwardTimes (hf : IsMorse 𝓘(ℝ, E) f)
+    (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) (y : M) :
+    (hX.neg hf).linearBackwardTimes (φ.neg h) y = hX.linearForwardTimes φ y := by
+  ext T
+  simp only [linearForwardTimes, linearBackwardTimes, mem_ofPred_eq, hX.neg_flow hf,
+    Flow.reverse_apply, neg_neg, MorseChart.neg_toChart, MorseChart.neg_coord, φ.neg_linearFlow h]
+  refine and_congr_right fun _ ↦ ⟨fun h t ht ↦ ?_, fun h t ht ↦ h _ (by linarith)⟩
+  simpa using h (-t) (by linarith)
+
+omit hφ in
+/-- Read in the negated Morse chart, the time-`t` map of `-X` is the time-`-t` map of `X` read in
+the Morse chart. -/
+theorem neg_toChart_comp_neg_flow (hf : IsMorse 𝓘(ℝ, E) f)
+    (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) (t : ℝ) :
+    ((φ.neg h).toChart ∘ (hX.neg hf).flow t : M → E) = φ.toChart ∘ hX.flow (-t) := by
+  funext z
+  simp [hX.neg_flow hf]
+
 /-- The orbit of a point of `W^u(x)` eventually enters, backwards in time, the part of the Morse
 chart where the backward flow stays linear: all large times are times of linear backward flow. -/
 theorem eventually_mem_linearBackwardTimes (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
@@ -641,6 +680,17 @@ theorem mfderiv_unstableFrame {y : M} {T : ℝ} (hT : T ∈ hX.linearBackwardTim
   rw [add_sub_cancel] at hinv₁
   rw [hinv₁.injective (h₁.trans h₂.symm), hw]
 
+/-- **The unstable frame compared with the frame at the critical point.** For every time `T` of
+linear backward flow of `y`, the derivative of `φ ∘ Φ_{-T}` at `y` sends the unstable frame at `y`
+to `e^{-T}` times the image of the unstable frame at `x` under the derivative of `φ`. -/
+theorem mfderiv_unstableFrame_eq_exp_smul_self (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) {y : M}
+    {T : ℝ} (hT : T ∈ hX.linearBackwardTimes φ y) (c : {i // φ.weight i < 0} → ℝ) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow (-T)) y (hX.unstableFrame φ y c) =
+      Real.exp (-T) • mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x (hX.unstableFrame φ x c) := by
+  have h0 := mfderiv_unstableFrame hφ (mem_linearBackwardTimes_self (hX := hX) hx 0) c
+  rw [neg_zero, Flow.map_zero, Function.comp_id, Real.exp_zero, one_smul] at h0
+  exact (mfderiv_unstableFrame hφ hT c).trans (congrArg (Real.exp (-T) • ·) h0).symm
+
 /-- **The unstable frame is injective.** -/
 theorem injective_unstableFrame {y : M} {T : ℝ} (hT : T ∈ hX.linearBackwardTimes φ y) :
     Injective (hX.unstableFrame φ y) := by
@@ -698,10 +748,7 @@ theorem range_unstableFrame (hf : IsMorse 𝓘(ℝ, E) f) {y : M} (hy : y ∈ hX
     ((hX.unstableSet_eq_stableSet_neg hf x).symm ▸ hy)
   obtain ⟨T, hT, hspan⟩ := (hev.and
     (eventually_span_mtangentConeAt_stableSet_eq_comap (hX := hX.neg hf) hφ' hy)).exists
-  have hqf : ((φ.neg h).toChart ∘ (hX.neg hf).flow T : M → E) = φ.toChart ∘ hX.flow (-T) := by
-    funext z
-    simp [hX.neg_flow hf]
-  rw [hspan, hqf]
+  rw [hspan, neg_toChart_comp_neg_flow (hX := hX) hf h]
   have hinv := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ) hT.1
   ext v
   rw [mem_range]

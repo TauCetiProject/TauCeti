@@ -635,8 +635,7 @@ private theorem mem_unstableSet_of_unique_index_finrank {p q : M}
       manifoldMorseIndex 𝓘(ℝ, E) f y = Module.finrank ℝ E → y = p)
     {y : M} (hys : y ∈ hX.flow.stableSet q) (hyq : y ≠ q) :
     y ∈ hX.flow.unstableSet p := by
-  obtain ⟨p', hp', hyp'⟩ := mem_iUnion₂.1 ((hX.iUnion_unstableSet hf).symm ▸ mem_univ y :
-    y ∈ ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.unstableSet x)
+  obtain ⟨p', hp', hyp'⟩ := hX.exists_mem_unstableSet hf y
   have hp'q : p' ≠ q := by
     rintro rfl
     exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hyp', hys⟩)
@@ -652,8 +651,7 @@ theorem mem_stableSet_of_unique_index_zero {q m : M}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f q = 1)
     (huniq : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → manifoldMorseIndex 𝓘(ℝ, E) f y = 0 → y = m)
     {y : M} (hyu : y ∈ hX.flow.unstableSet q) (hyq : y ≠ q) : y ∈ hX.flow.stableSet m := by
-  obtain ⟨m', hm', hym'⟩ := mem_iUnion₂.1 ((hX.iUnion_stableSet hf).symm ▸ mem_univ y :
-    y ∈ ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.stableSet x)
+  obtain ⟨m', hm', hym'⟩ := hX.exists_mem_stableSet hf y
   have hqm' : q ≠ m' := by
     rintro rfl
     exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hyu, hym'⟩)

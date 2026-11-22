@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.JetOperator
 public import TauCeti.Analysis.Sobolev.Strip.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Strip
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
@@ -47,16 +48,14 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 variable {J : AlmostComplexStructure V} {L₀ L₁ : Submodule ℝ V}
 
 /-- The coefficient `(v, v_s, v_t) ↦ v_s + J v_t` of the Cauchy--Riemann operator `∂s + J ∂t`
-on jets. -/
+on jets: the coefficient field `TauCeti.firstOrderJetCoeff` of `∂s + J ∂t + 0`. -/
 noncomputable def cauchyRiemannJetCoeff (J : AlmostComplexStructure V) : V × V × V →L[ℝ] V :=
-  (ContinuousLinearMap.fst ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V)) +
-    (LinearMap.toContinuousLinearMap J.toLinearMap).comp
-      ((ContinuousLinearMap.snd ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V)))
+  firstOrderJetCoeff (LinearMap.toContinuousLinearMap J.toLinearMap) 0
 
 @[simp]
 theorem cauchyRiemannJetCoeff_apply (J : AlmostComplexStructure V) (v : V × V × V) :
-    cauchyRiemannJetCoeff J v = v.2.1 + J v.2.2 :=
-  (rfl)
+    cauchyRiemannJetCoeff J v = v.2.1 + J v.2.2 := by
+  simp [cauchyRiemannJetCoeff]
 
 /-- On the jet `(ξ, ∂s ξ, ∂t ξ)` of a map, the coefficient gives `∂s ξ + J ∂t ξ`. -/
 theorem cauchyRiemannJetCoeff_jet (J : AlmostComplexStructure V) (ξ : ℝ × ℝ → V)
@@ -82,8 +81,10 @@ theorem cauchyRiemann_apply (x : H1 L₀ L₁) :
 theorem coeFn_cauchyRiemann (x : H1 L₀ L₁) :
     cauchyRiemann J L₀ L₁ x =ᵐ[stripMeasure]
       fun z ↦ ((x : Lp (V × V × V) 2 stripMeasure) z).2.1 +
-        J ((x : Lp (V × V × V) 2 stripMeasure) z).2.2 :=
-  (cauchyRiemannJetCoeff J).coeFn_compLpL _
+        J ((x : Lp (V × V × V) 2 stripMeasure) z).2.2 := by
+  filter_upwards [(cauchyRiemannJetCoeff J).coeFn_compLpL (p := 2) (μ := stripMeasure)
+    (x : Lp (V × V × V) 2 stripMeasure)] with z hz
+  rw [cauchyRiemann_apply, hz, cauchyRiemannJetCoeff_apply]
 
 /-- On the jet of a test section `ξ`, the Cauchy--Riemann operator is `∂s ξ + J ∂t ξ`. -/
 theorem cauchyRiemann_jetLp_ae_eq (ξ : testSection L₀ L₁) :

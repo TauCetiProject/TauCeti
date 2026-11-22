@@ -67,6 +67,8 @@ measure, and letting `q → ∞` (`TauCeti.tendsto_eLpNorm_atTop`).
   for a ball contained in `Ω` and any `u ∈ W^{1,p}(Ω)`.
 * `TauCeti.W1p.exists_value_ae_eq_const_of_gradient_eq_zero`: on a preconnected `Ω`, a Sobolev
   function with vanishing weak gradient is almost everywhere constant.
+* `TauCeti.W1p.eq_zero_of_gradient_eq_zero`: for `p < ∞`, a Sobolev function on the whole of a
+  nontrivial space with vanishing weak gradient is zero.
 * `TauCeti.W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq`: on a preconnected `Ω`, a Sobolev
   function whose weak gradient agrees almost everywhere with `∇ q` for a `C¹` function `q` equals
   `q + c` almost everywhere.
@@ -547,6 +549,26 @@ theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
   obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
   obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
   exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
+
+/-- **A Sobolev function on the whole space with vanishing gradient is zero.** For `p < ∞` and a
+nontrivial space `E`, if the weak gradient of `u ∈ W^{1,p}(E)` vanishes, then `u = 0`: it is
+almost everywhere constant, and the only constant in `Lᵖ(E)` is zero, since `E` has infinite
+measure. -/
+theorem W1p.eq_zero_of_gradient_eq_zero [Nontrivial E] (hp : p ≠ ∞) {u : W1p mu ⊤ p}
+    (hu : W1p.gradient u = 0) : u = 0 := by
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero
+    (by simpa using isPreconnected_univ) hu
+  simp only [Opens.coe_top, Measure.restrict_univ] at hc
+  have hc0 : c = 0 := by
+    refine ((memLp_const_iff (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hp).1
+      ((W1p.memLp_value u).ae_eq hc)).resolve_right ?_
+    rw [measure_univ_of_isAddLeftInvariant]
+    exact lt_irrefl _
+  subst hc0
+  refine W1p.ext_value (Lp.ext ?_)
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  filter_upwards [hc] with x hx
+  simp [hx]
 
 /-- **Integration up to a constant on a preconnected domain.** If `Ω` is preconnected and the weak
 gradient of `u ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with the classical gradient `∇ q` of
