@@ -43,7 +43,7 @@ theorem norm_exp_smul_I_sub_exp_smul_I_apply_le {Sm Sn : H →L[ℂ] H}
     (hm : IsSelfAdjoint Sm) (hn : IsSelfAdjoint Sn) (hcomm : Commute Sm Sn)
     (t : ℝ) (ψ : H) :
     ‖exp (t • (I • Sm)) ψ - exp (t • (I • Sn)) ψ‖
-      ≤ |t| * ‖(I • Sm - I • Sn) ψ‖ := by
+      ≤ |t| * ‖(Sm - Sn) ψ‖ := by
   have hexp (S : H →L[ℂ] H) (s : ℝ) :
       exp (s • (t • (I • S)).restrictScalars ℝ) =
         (exp ((s * t) • (I • S))).restrictScalars ℝ := by
@@ -61,7 +61,7 @@ theorem norm_exp_smul_I_sub_exp_smul_I_apply_le {Sm Sn : H →L[ℂ] H}
     ((t • (I • Sm)).restrictScalars ℝ) ((t • (I • Sn)).restrictScalars ℝ) hc
     (hbound Sm hm) (hbound Sn hn) (by norm_num : (0 : ℝ) ≤ 1) ψ
   simpa only [one_mul, hexp, ← smul_sub, sub_apply, coe_restrictScalars', smul_apply,
-    norm_smul, Real.norm_eq_abs] using h
+    norm_smul, Real.norm_eq_abs, norm_I] using h
 
 
 

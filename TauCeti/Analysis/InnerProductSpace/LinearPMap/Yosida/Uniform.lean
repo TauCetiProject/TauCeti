@@ -56,7 +56,7 @@ in the Kitware DKPS formalization at `b9a02d00c`
      group law and unitarity, all of which Mathlib already has.
   2. Norm preservation comes directly from the native bounded Stone group.
      The Duhamel estimate specializes the native bounded-semigroup comparison
-     with bounds equal to one, using scalar restriction and time reversal.
+     at time one with bounds equal to one, using real restrictions of scaled generators.
 -/
 
 public section
@@ -72,16 +72,6 @@ variable {A : H →ₗ.[ℂ] H} (hA : IsSelfAdjoint A)
 
 private noncomputable def yosidaFlow (A : H →ₗ.[ℂ] H) (n : ℕ+) (t : ℝ) : H →L[ℂ] H :=
   NormedSpace.exp (t • (I • A.symmetricYosidaApproximation (n : ℝ)))
-
-private theorem yosidaFlow_difference (hA : IsSelfAdjoint A) (m n : ℕ+) (t : ℝ) (x : H) :
-    ‖yosidaFlow A m t x - yosidaFlow A n t x‖ ≤
-      |t| * ‖A.symmetricYosidaApproximation (m : ℝ) x -
-        A.symmetricYosidaApproximation (n : ℝ) x‖ := by
-  have h := ContinuousLinearMap.norm_exp_smul_I_sub_exp_smul_I_apply_le
-    (hA.isSelfAdjoint_symmetricYosidaApproximation (m : ℝ))
-    (hA.isSelfAdjoint_symmetricYosidaApproximation (n : ℝ))
-    (hA.commute_symmetricYosidaApproximation (m : ℝ) (n : ℝ)) t x
-  simpa only [yosidaFlow, sub_apply, smul_apply, ← smul_sub, norm_smul, norm_I, one_mul] using h
 
 /-- Symmetric Yosida exponential orbits are uniformly Cauchy on bounded time intervals. -/
 theorem _root_.IsSelfAdjoint.yosida_exponential_uniform_cauchy
@@ -107,7 +97,11 @@ theorem _root_.IsSelfAdjoint.yosida_exponential_uniform_cauchy
         dist (yosidaFlow A p.1 t y) (yosidaFlow A p.2 t y) ≤
             |t| * dist (A.symmetricYosidaApproximation (p.1 : ℝ) y)
               (A.symmetricYosidaApproximation (p.2 : ℝ) y) := by
-          simpa only [dist_eq_norm] using yosidaFlow_difference hA p.1 p.2 t y
+          simpa only [yosidaFlow, dist_eq_norm, sub_apply] using
+            ContinuousLinearMap.norm_exp_smul_I_sub_exp_smul_I_apply_le
+              (hA.isSelfAdjoint_symmetricYosidaApproximation (p.1 : ℝ))
+              (hA.isSelfAdjoint_symmetricYosidaApproximation (p.2 : ℝ))
+              (hA.commute_symmetricYosidaApproximation (p.1 : ℝ) (p.2 : ℝ)) t y
         _ ≤ K * dist (A.symmetricYosidaApproximation (p.1 : ℝ) y)
             (A.symmetricYosidaApproximation (p.2 : ℝ) y) :=
           mul_le_mul_of_nonneg_right htK dist_nonneg
