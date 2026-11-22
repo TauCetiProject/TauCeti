@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 
 /-!
@@ -23,8 +24,9 @@ the value of each factor at `n` to its leading coefficient at `1 - n`. For every
 * `Gammaℝ (2k + 1) / meromorphicTrailingCoeffAt Gammaℝ (-2k) = (-1) ^ k (π / 2) Gammaℂ (2k + 1)`;
 * `Gammaℂ (k + 1) / meromorphicTrailingCoeffAt Gammaℂ (-k) = (-1) ^ k (π / 2) Gammaℂ (k + 1) ^ 2`.
 
-Since `Gammaℂ (k + 1) = 2 k! / (2π) ^ (k + 1)`, all three are nonzero rational multiples of
-powers of `π`. For the reciprocal factor `s ↦ (Gammaℝ s)⁻¹ ^ r₁ * (Gammaℂ s)⁻¹ ^ r₂` and
+Since `Gammaℂ (k + 1) = 2 k! / (2π) ^ (k + 1)`, the last two are nonzero rational multiples of
+powers of `π` for every `k`, and so is the first for `k ≥ 1` (it vanishes at `k = 0`).
+For the reciprocal factor `s ↦ (Gammaℝ s)⁻¹ ^ r₁ * (Gammaℂ s)⁻¹ ^ r₂` and
 `n ≥ 1` this gives:
 * `TauCeti.analyticOrderAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow_one_sub`: the order of vanishing at
   `1 - n` is `d = r₂`, plus `r₁` when `n` is odd;
@@ -49,31 +51,13 @@ open scoped Nat
 
 namespace Complex
 
-/-- The complex archimedean factor at a positive integer: `Γ_ℂ(k + 1) = 2 k! / (2π) ^ (k + 1)`. -/
-theorem Gammaℂ_natCast_add_one (k : ℕ) :
-    Gammaℂ (k + 1) = 2 * k ! / (2 * π) ^ (k + 1) := by
-  rw [Gammaℂ_def, Gamma_nat_eq_factorial,
-    show -((k : ℂ) + 1) = -((k + 1 : ℕ) : ℂ) by push_cast; ring, cpow_neg, cpow_natCast]
-  ring
-
-/-- The real archimedean factor at a positive even integer: `Γ_ℝ(2k + 2) = k! / π ^ (k + 1)`. -/
-theorem Gammaℝ_two_mul_natCast_add_two (k : ℕ) :
-    Gammaℝ (2 * k + 2) = k ! / π ^ (k + 1) := by
-  rw [Gammaℝ_def, show (2 * (k : ℂ) + 2) / 2 = k + 1 by ring, Gamma_nat_eq_factorial,
-    show -(2 * (k : ℂ) + 2) / 2 = -((k + 1 : ℕ) : ℂ) by push_cast; ring, cpow_neg, cpow_natCast]
-  ring
-
 /-- The leading Laurent coefficient of `Gammaℂ` at its simple pole `-m` is
 `2 (2π) ^ m (-1) ^ m / m!`. -/
 @[simp]
 theorem meromorphicTrailingCoeffAt_Gammaℂ_neg_nat (m : ℕ) :
     meromorphicTrailingCoeffAt Gammaℂ (-(m : ℂ)) = 2 * (2 * π) ^ m * (-1) ^ m / m ! := by
-  have he : Gammaℂ = (fun z : ℂ ↦ 2 * (2 * π : ℂ) ^ (-z)) * Gamma := funext Gammaℂ_def
-  have ha : AnalyticAt ℂ (fun z : ℂ ↦ 2 * (2 * π : ℂ) ^ (-z)) (-(m : ℂ)) := by
-    have hp : (2 * π : ℂ) ∈ slitPlane :=
-      Or.inl (by simpa using mul_pos (by norm_num : (0 : ℝ) < 2) pi_pos)
-    exact analyticAt_const.mul (analyticAt_const.cpow (by fun_prop) hp)
-  rw [he, ha.meromorphicAt.meromorphicTrailingCoeffAt_mul (Meromorphic.Gamma _),
+  have ha := analyticAt_two_mul_two_pi_cpow_neg (-(m : ℂ))
+  rw [Gammaℂ_eq_mul_Gamma, ha.meromorphicAt.meromorphicTrailingCoeffAt_mul (Meromorphic.Gamma _),
     ha.meromorphicTrailingCoeffAt_of_ne_zero (by simp [pi_ne_zero]),
     meromorphicTrailingCoeffAt_Gamma_neg_nat, neg_neg, cpow_natCast]
   ring
@@ -84,9 +68,7 @@ theorem meromorphicTrailingCoeffAt_Gammaℂ_neg_nat (m : ℕ) :
 theorem meromorphicTrailingCoeffAt_Gammaℝ_neg_two_mul_nat (m : ℕ) :
     meromorphicTrailingCoeffAt Gammaℝ (-(2 * m : ℂ)) = 2 * π ^ m * (-1) ^ m / m ! := by
   set g : ℂ → ℂ := fun z ↦ z / 2
-  have he : Gammaℝ = (fun z : ℂ ↦ (π : ℂ) ^ (-z / 2)) * (Gamma ∘ g) := funext Gammaℝ_def
-  have ha : AnalyticAt ℂ (fun z : ℂ ↦ (π : ℂ) ^ (-z / 2)) (-(2 * m : ℂ)) := by
-    fun_prop (disch := exact Or.inl (by simpa using pi_pos))
+  have ha := analyticAt_pi_cpow_neg_div_two (-(2 * m : ℂ))
   have hg : AnalyticAt ℂ g (-(2 * m : ℂ)) := by fun_prop
   have hgx : g (-(2 * m : ℂ)) = -(m : ℂ) := by simp only [g]; ring
   have hg' : deriv g (-(2 * m : ℂ)) ≠ 0 := by
@@ -110,7 +92,7 @@ theorem meromorphicTrailingCoeffAt_Gammaℝ_neg_two_mul_nat (m : ℕ) :
   have hcomp := (Meromorphic.Gamma (g (-(2 * m : ℂ)))).meromorphicTrailingCoeffAt_comp hg hnc
   rw [hlin, hgx, meromorphicOrderAt_Gamma_neg_nat, meromorphicTrailingCoeffAt_Gamma_neg_nat]
     at hcomp
-  rw [he, ha.meromorphicAt.meromorphicTrailingCoeffAt_mul
+  rw [Gammaℝ_eq_cpow_mul_Gamma_comp, ha.meromorphicAt.meromorphicTrailingCoeffAt_mul
       ((Meromorphic.Gamma _).comp_analyticAt hg),
     ha.meromorphicTrailingCoeffAt_of_ne_zero (by simp [pi_ne_zero]), hcomp]
   rw [show -(-(2 * m : ℂ)) / 2 = (m : ℂ) by ring, cpow_natCast]
@@ -128,20 +110,9 @@ theorem Gammaℝ_two_mul_natCast_add_one_div_meromorphicTrailingCoeffAt (m : ℕ
   rw [meromorphicTrailingCoeffAt_Gammaℝ_neg_two_mul_nat, ← hdup]
   have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr pi_ne_zero
   have hf : (m ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero m)
+  have h1 : ((-1 : ℂ) ^ m) ^ 2 = 1 := by rw [← pow_mul, pow_mul', neg_one_sq, one_pow]
   field_simp
-  ring_nf
-  rw [pow_mul', neg_one_sq, one_pow, mul_one]
-
-/-- `Gammaℝ` does not vanish at the odd integers `1 - 2k`, which are not among its poles. -/
-theorem Gammaℝ_one_sub_two_mul_natCast_ne_zero (k : ℕ) : Gammaℝ (1 - 2 * k) ≠ 0 := by
-  rw [Ne, Gammaℝ_eq_zero_iff]
-  rintro ⟨j, hj⟩
-  have h := congrArg re hj
-  simp only [sub_re, one_re, mul_re, re_ofNat, natCast_re, im_ofNat, natCast_im, mul_zero,
-    sub_zero, neg_re] at h
-  have hreal : (1 : ℝ) = 2 * (k - j) := by linarith
-  have hint : (1 : ℤ) = 2 * ((k : ℤ) - j) := by exact_mod_cast hreal
-  omega
+  linear_combination -(Gammaℝ (2 * m + 1) * (π : ℂ) ^ (m + 1)) * h1
 
 /-- At a negative odd integer `1 - 2k`, where `Gammaℝ` is analytic and nonzero, the value of
 `Gammaℝ` at `2k` divided by its leading coefficient (its value) at `1 - 2k` is
@@ -172,10 +143,9 @@ theorem Gammaℂ_natCast_add_one_div_meromorphicTrailingCoeffAt (k : ℕ) :
       (-1) ^ k * (π / 2) * Gammaℂ (k + 1) ^ 2 := by
   rw [meromorphicTrailingCoeffAt_Gammaℂ_neg_nat, Gammaℂ_natCast_add_one]
   have hf : (k ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero k)
+  have h1 : ((-1 : ℂ) ^ k) ^ 2 = 1 := by rw [← pow_mul, pow_mul', neg_one_sq, one_pow]
   field_simp
-  ring_nf
-  rw [pow_mul', neg_one_sq, one_pow]
-  ring
+  linear_combination -((2 * π : ℂ) ^ (k + 1)) * h1
 
 end Complex
 
@@ -210,13 +180,7 @@ theorem analyticOrderAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow_one_sub (r₁ r₂
     ((differentiable_Gammaℝ_inv.analyticAt _).pow r₁).mul
       ((differentiable_Gammaℂ_inv.analyticAt _).pow r₂)
   rw [ha.meromorphicOrderAt_eq] at hm
-  cases ho : analyticOrderAt (fun s : ℂ ↦ (Gammaℝ s)⁻¹ ^ r₁ * (Gammaℂ s)⁻¹ ^ r₂) (1 - n) with
-  | top =>
-    simp only [ho, ENat.map_top] at hm
-    exact (WithTop.top_ne_coe hm).elim
-  | coe k =>
-    simp only [ho, ENat.map_natCast] at hm
-    exact_mod_cast hm
+  exact ENat.map_natCast_injective (hm.trans (ENat.map_natCast _ _).symm)
 
 /-- `Γ_ℂ(k + 1)` as a rational multiple of `π ^ (-(k + 1))`. -/
 private theorem Gammaℂ_natCast_add_one_eq_rat_mul_zpow (k : ℕ) :
