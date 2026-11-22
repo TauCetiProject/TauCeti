@@ -204,6 +204,7 @@ theorem squarefree_prod (hB : F.IsSquarefreeBasis B) : Squarefree (∏ b ∈ B, 
 theorem squarefree_prod_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
     (hB : F.IsSquarefreeBasis B) : Squarefree (∏ b ∈ B, b.map (algebraMap D K)) := by
   rw [← Polynomial.map_prod]
+  have := IsGCDMonoid.isCancelMulZero D[X]
   exact hB.squarefree_prod.map_localization_map (nonZeroDivisors D)
 
 /-- In characteristic zero, the product of any subfamily of a squarefree basis has
