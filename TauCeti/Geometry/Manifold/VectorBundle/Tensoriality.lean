@@ -94,27 +94,18 @@ theorem eq_zero_of_contMDiff_tensorial_of_const
     (hconst : ∀ c : F, Φ (fun _ ↦ c) = 0) {u : M → F} (hu : ContMDiff I 𝓘(𝕜, F) n u) :
     Φ u = 0 := by
   classical
-  let b := Module.finBasis 𝕜 F
-  -- The coefficients of `u` in the basis `b` are smooth.
-  let c (i) : M → 𝕜 := fun x ↦ b.coord i (u x)
+  let b := Module.finBasis 𝕜 F; let c (i) : M → 𝕜 := fun x ↦ b.coord i (u x)
   have hc (i) : ContMDiff I 𝓘(𝕜) n (c i) :=
     (LinearMap.toContinuousLinearMap (b.coord i)).contDiff.comp_contMDiff hu
-  have hterm (i) : ContMDiff I 𝓘(𝕜, F) n (c i • fun _ ↦ b i) :=
-    (hc i).smul contMDiff_const
-  have hsum (s : Finset (Fin (Module.finrank 𝕜 F))) :
-      Φ (∑ i ∈ s, c i • fun _ ↦ b i) = 0 := by
+  have hterm (i) : ContMDiff I 𝓘(𝕜, F) n (c i • fun _ ↦ b i) := (hc i).smul contMDiff_const
+  have hsum (s : Finset (Fin (Module.finrank 𝕜 F))) : Φ (∑ i ∈ s, c i • fun _ ↦ b i) = 0 := by
     induction s using Finset.induction_on with
-    | empty =>
-      rw [Finset.sum_empty]
-      exact hconst 0
+    | empty => rw [Finset.sum_empty]; exact hconst 0
     | insert i s hi ih =>
       rw [Finset.sum_insert hi, hadd _ _ (hterm i) (contMDiff_finsetSum' fun j _ ↦ hterm j),
         hsmul _ _ (hc i) contMDiff_const, hconst, smul_zero, ih, add_zero]
-  have hu_eq : u = ∑ i, c i • fun _ ↦ b i := by
-    ext x
-    simp [c, Finset.sum_apply, b.sum_repr]
-  rw [hu_eq]
-  exact hsum _
+  have hu_eq : u = ∑ i, c i • fun _ ↦ b i := by ext x; simp [c, Finset.sum_apply, b.sum_repr]
+  rw [hu_eq]; exact hsum _
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -199,11 +190,10 @@ theorem eq_of_contMDiff_tensorial
 end TauCeti.Manifold
 
 section EvalCongr
-variable {E H M FW FV ι : Type*} [Finite ι]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
-  [IsManifold I ∞ M] [NormedAddCommGroup FW] [NormedSpace ℝ FW] [FiniteDimensional ℝ FW]
-  [NormedAddCommGroup FV] [NormedSpace ℝ FV] {W V : M → Type*}
+variable {E H M FW FV ι : Type*} [Finite ι] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+  [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M] [NormedAddCommGroup FW] [NormedSpace ℝ FW]
+  [FiniteDimensional ℝ FW] [NormedAddCommGroup FV] [NormedSpace ℝ FV] {W V : M → Type*}
   [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
   [TopologicalSpace (TotalSpace FW W)] [FiberBundle FW W] [VectorBundle ℝ FW W]
@@ -213,8 +203,8 @@ variable {E H M FW FV ι : Type*} [Finite ι]
 /-- A `C^∞(M, ℝ)`-multilinear map on `Γ(W)` depends at `x` only on the values of its input
 sections at `x`. -/
 theorem MultilinearMap.contMDiffSection_eval_congr
-    (Φ : (ι → Cₛ^∞⟮I; FW, W⟯) →ₘₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯)
-    (x : M) {s s' : ι → Cₛ^∞⟮I; FW, W⟯} (h : ∀ i, s i x = s' i x) : Φ s x = Φ s' x := by
+    (Φ : (ι → Cₛ^∞⟮I; FW, W⟯) →ₘₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯) (x : M)
+    {s s' : ι → Cₛ^∞⟮I; FW, W⟯} (h : ∀ i, s i x = s' i x) : Φ s x = Φ s' x := by
   classical
   cases nonempty_fintype ι
   suffices ∀ q : Finset ι, Φ (fun i ↦ if i ∈ q then s' i else s i) x = Φ s x by
@@ -227,18 +217,16 @@ theorem MultilinearMap.contMDiffSection_eval_congr
       Function.update_eq_self_iff.mpr (by simp [u, hj])
     have hins : (fun i ↦ if i ∈ insert j q then s' i else s i) = Function.update u j (s' j) := by
       ext i; by_cases hij : i = j <;> simp [u, hij]
-    change Φ u x = Φ s x at ih
-    rw [hins, ← ih]; conv_rhs => rw [← hu_self]
+    change Φ u x = Φ s x at ih; rw [hins, ← ih]; conv_rhs => rw [← hu_self]
     let Ψ : (Π y : M, W y) → V x := fun t ↦
       if ht : CMDiff ∞ (T% t) then Φ (Function.update u j ⟨t, ht⟩) x else 0
     have hΨ (t : Cₛ^∞⟮I; FW, W⟯) : Φ (Function.update u j t) x = Ψ ⇑t := by cases t; simp [Ψ, *]
     rw [hΨ (s' j), hΨ (s j)]
-    refine TauCeti.Manifold.eq_of_contMDiff_tensorial Ψ x
-      (fun {t₁ t₂} ht₁ ht₂ ↦ ?_) (fun {f t} hf ht ↦ ?_) (s' j).contMDiff (s j).contMDiff (h j).symm
+    refine TauCeti.Manifold.eq_of_contMDiff_tensorial Ψ x (fun {t₁ t₂} ht₁ ht₂ ↦ ?_)
+      (fun {f t} hf ht ↦ ?_) (s' j).contMDiff (s j).contMDiff (h j).symm
     · simp only [Ψ, ht₁, ht₂, ht₁.add_section ht₂, ↓reduceDIte]
       exact congr($(Φ.map_update_add u j ⟨t₁, ht₁⟩ ⟨t₂, ht₂⟩) x)
-    · simp only [Ψ, ht, hf.smul_section ht, ↓reduceDIte]
-      let F : C^∞⟮I, M; ℝ⟯ := ⟨f, hf⟩
+    · simp only [Ψ, ht, hf.smul_section ht, ↓reduceDIte]; let F : C^∞⟮I, M; ℝ⟯ := ⟨f, hf⟩
       have hft : (⟨f • t, hf.smul_section ht⟩ : Cₛ^∞⟮I; FW, W⟯) = F • ⟨t, ht⟩ :=
         ContMDiffSection.ext fun y ↦ (ContMDiffSection.smul_apply F ⟨t, ht⟩ y).symm
       rw [hft, Φ.map_update_smul, RingHom.id_apply, ContMDiffSection.smul_apply]; rfl
@@ -246,7 +234,7 @@ theorem MultilinearMap.contMDiffSection_eval_congr
 /-- A `C^∞(M, ℝ)`-multilinear alternating map on `Γ(W)` depends at `x` only on the values of its
 input sections at `x`. -/
 theorem AlternatingMap.contMDiffSection_eval_congr
-    (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯)
-    (x : M) {s s' : ι → Cₛ^∞⟮I; FW, W⟯} (h : ∀ i, s i x = s' i x) : Φ s x = Φ s' x :=
+    (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯) (x : M)
+    {s s' : ι → Cₛ^∞⟮I; FW, W⟯} (h : ∀ i, s i x = s' i x) : Φ s x = Φ s' x :=
   Φ.toMultilinearMap.contMDiffSection_eval_congr x h
 end EvalCongr

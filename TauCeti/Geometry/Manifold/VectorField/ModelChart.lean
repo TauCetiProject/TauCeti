@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
@@ -33,6 +34,8 @@ of regular points.
   `TauCeti.contMDiffOn_mpullback`: the pullback of a vector field by a chart.
 * `TauCeti.mlieBracket_constVectorField`: two constant vector fields on the model space have zero
   bracket.
+* `TauCeti.realFieldCoord`, `TauCeti.eq_realFieldCoord_smul`,
+  `TauCeti.mlieBracket_realField_apply`: scalar coordinates and Lie bracket formula on `ℝ`.
 * `TauCeti.chartConstField`: a constant field in the preferred chart at a point, on the manifold.
 * `TauCeti.mvfderiv_chartConstField_apply`: the derivative of a function along a constant chart
   field, read in the chart.
@@ -155,6 +158,51 @@ every point. -/
 @[simp] theorem constVectorFieldSection_apply {n : ℕ∞ω} (v z : E) :
     constVectorFieldSection n v z = (NormedSpace.fromTangentSpace z).symm v := (rfl)
 
+end ConstField
+
+section RealField
+
+/-- Scalar coordinate function of a `C^n` vector field on `ℝ`, identifying `T_x ℝ` with `ℝ`. -/
+noncomputable def realFieldCoord {n : ℕ∞ω}
+    (u : Cₛ^n⟮𝓘(ℝ, ℝ); ℝ, (TangentSpace 𝓘(ℝ, ℝ) : ℝ → Type _)⟯) : C^n⟮𝓘(ℝ, ℝ), ℝ; ℝ⟯ :=
+  ⟨fun x ↦ NormedSpace.fromTangentSpace x (u x),
+    (contMDiff_vectorSpace_iff_contDiff.mp u.contMDiff).contMDiff⟩
+
+/-- Under `NormedSpace.fromTangentSpace`, `realFieldCoord u` evaluates to `u x` at `x`. -/
+@[simp] theorem realFieldCoord_apply {n : ℕ∞ω}
+    (u : Cₛ^n⟮𝓘(ℝ, ℝ); ℝ, (TangentSpace 𝓘(ℝ, ℝ) : ℝ → Type _)⟯) (x : ℝ) :
+    realFieldCoord u x = NormedSpace.fromTangentSpace x (u x) := (rfl)
+
+/-- Every `C^n` vector field on `ℝ` is its scalar coordinate times `constVectorFieldSection n 1`. -/
+theorem eq_realFieldCoord_smul {n : ℕ∞ω}
+    (u : Cₛ^n⟮𝓘(ℝ, ℝ); ℝ, (TangentSpace 𝓘(ℝ, ℝ) : ℝ → Type _)⟯) :
+    u = realFieldCoord u • constVectorFieldSection n (1 : ℝ) := by
+  ext x; apply (NormedSpace.fromTangentSpace x).injective; simp [ContMDiffSection.smul_apply]
+
+/-- Taking the scalar coordinate of `f • constVectorFieldSection n 1` recovers `f`. -/
+@[simp] theorem realFieldCoord_smul_constVectorFieldSection {n : ℕ∞ω} (f : C^n⟮𝓘(ℝ, ℝ), ℝ; ℝ⟯) :
+    realFieldCoord (f • constVectorFieldSection n (1 : ℝ)) = f := by
+  ext x; simp [ContMDiffSection.smul_apply]
+
+/-- Pointwise Lie bracket formula for `C^n` vector fields on `ℝ`:
+`[f ∂_x, g ∂_x]_x = (f(x) g'(x) - g(x) f'(x)) ∂_x`. -/
+theorem mlieBracket_realField_apply {n : ℕ∞ω}
+    (u v : Cₛ^n⟮𝓘(ℝ, ℝ); ℝ, (TangentSpace 𝓘(ℝ, ℝ) : ℝ → Type _)⟯) (x : ℝ) :
+    VectorField.mlieBracket 𝓘(ℝ, ℝ) u v x = (realFieldCoord u x * fderiv ℝ (realFieldCoord v) x 1 -
+      realFieldCoord v x * fderiv ℝ (realFieldCoord u) x 1) •
+        constVectorFieldSection n (1 : ℝ) x := by
+  rw [VectorField.mlieBracket_eq_lieBracket]; apply (NormedSpace.fromTangentSpace x).injective
+  simp only [map_smul, constVectorFieldSection_apply, ContinuousLinearEquiv.apply_symm_apply,
+    smul_eq_mul, mul_one]; change fderiv ℝ (realFieldCoord v) x (realFieldCoord u x) -
+    fderiv ℝ (realFieldCoord u) x (realFieldCoord v x) = _
+  rw [← mul_one (realFieldCoord u x), ← mul_one (realFieldCoord v x), ← smul_eq_mul _ 1,
+    ← smul_eq_mul _ 1, map_smul, map_smul]; simp only [smul_eq_mul, mul_one]
+
+end RealField
+
+section ChartConstField
+variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
+
 variable (E) in
 /-- The constant vector field with value `v` in the preferred chart at `p`, pulled back to the
 manifold. -/
@@ -245,7 +293,7 @@ theorem exists_mem_nhds_contMDiffOn_mvfderiv_eq_neg_one (hf : ContMDiff 𝓘(ℝ
     fun y hy ↦ ?_⟩
   rw [map_smul, hdf y (hUc hy), smul_eq_mul, neg_mul, inv_mul_cancel₀ (hne y hy)]
 
-end ConstField
+end ChartConstField
 
 section Glue
 

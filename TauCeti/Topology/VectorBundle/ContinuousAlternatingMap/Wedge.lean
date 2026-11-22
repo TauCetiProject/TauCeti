@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.VectorBundle.ContinuousAlternatingMap
+public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
-public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 
 /-!
 # Paired wedges in alternating-bundle trivializations
@@ -51,8 +52,7 @@ theorem inCoordinates_pairedWedge {k l : ℕ} {x₀ y : M}
     ContinuousAlternatingMap.inCoordinates, ContinuousAlternatingMap.compContinuousLinearMap_apply,
     ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_apply,
     ContinuousAlternatingMap.pairedWedge_apply, map_smul, map_sum]
-  congr 2; funext σ
-  rw [ContinuousLinearMap.map_smul_of_tower, inCoordinates_apply_eq₂ h₁ h₂ h₃]
+  congr 2; funext σ; rw [ContinuousLinearMap.map_smul_of_tower, inCoordinates_apply_eq₂ h₁ h₂ h₃]
   simp only [Trivialization.continuousLinearMapAt_apply, Trivialization.symm_linearMapAt _ h₁,
     Trivialization.symm_linearMapAt _ h₂, Function.comp_def]
 

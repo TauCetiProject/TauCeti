@@ -26,11 +26,9 @@ namespace AlternatingMap
 /-- Alternating maps inherit scalar towers from their codomain. -/
 instance instIsScalarTower {R S T M N ι : Type*}
     [Semiring R] [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
-    [Monoid S] [Monoid T] [SMul S T]
-    [DistribMulAction S N] [DistribMulAction T N]
+    [Monoid S] [Monoid T] [SMul S T] [DistribMulAction S N] [DistribMulAction T N]
     [SMulCommClass R S N] [SMulCommClass R T N] [IsScalarTower S T N] :
-    IsScalarTower S T (M [⋀^ι]→ₗ[R] N) :=
-  FunLike.isScalarTower
+    IsScalarTower S T (M [⋀^ι]→ₗ[R] N) := FunLike.isScalarTower
 
 section RestrictScalars
 
@@ -90,5 +88,4 @@ variable {R A M N : Type*} [CommSemiring R] [Semiring A] [SMul R A]
     (hf : ∀ (a : A) (m : M) (w : Fin n → M), f.curryLeft (a • m) w = a • f.curryLeft m w) :
     (ofCurryLeftSMul f hf).restrictScalars R = f := by ext v; simp
 end OfCurryLeftSMul
-
 end AlternatingMap

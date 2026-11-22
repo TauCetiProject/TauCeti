@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Wedge
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Wedge.Regularity
 import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.Wedge
 
 /-!

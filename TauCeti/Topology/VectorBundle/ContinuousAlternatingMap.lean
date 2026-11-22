@@ -91,8 +91,7 @@ variable {𝕜 ι B F₁ F : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] 
 /-- In the trivialization at `x₀` of the bundle of alternating maps from `V` to a fixed space `F`,
 a fibre map `ω` at `x` is precomposed with the inverse, at `x`, of the trivialization of `V` at
 `x₀`. -/
-@[simp]
-theorem trivializationAt_continuousAlternatingMap_apply_snd (x₀ : B) {x : B}
+@[simp] theorem trivializationAt_continuousAlternatingMap_apply_snd (x₀ : B) {x : B}
     (ω : V x [⋀^ι]→L[𝕜] F) :
     (trivializationAt (F₁ [⋀^ι]→L[𝕜] F) (fun x ↦ V x [⋀^ι]→L[𝕜] F) x₀ ⟨x, ω⟩).2 =
       ω.compContinuousLinearMap ((trivializationAt F₁ V x₀).symmL 𝕜 x) := by
@@ -102,7 +101,6 @@ theorem trivializationAt_continuousAlternatingMap_apply_snd (x₀ : B) {x : B}
 end FiberBundle
 
 namespace TauCeti
-
 section Coordinates
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {FW FV : Type*}
   [NormedAddCommGroup FW] [NormedSpace 𝕜 FW] [NormedAddCommGroup FV] [NormedSpace 𝕜 FV]
@@ -129,5 +127,4 @@ theorem inCoordinates_curryLeftTopological {k : ℕ} {x₀ y : M}
   simp only [Function.comp_apply, Matrix.cons_val_zero, Trivialization.symmL_apply _ hy,
     (trivializationAt FW W x₀).symm_apply_apply_mk hy]
 end Coordinates
-
 end TauCeti
