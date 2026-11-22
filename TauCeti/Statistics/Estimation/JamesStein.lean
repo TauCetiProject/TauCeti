@@ -262,31 +262,37 @@ private theorem tendsto_integrals_inv_norm_sq_add (hp : 3 ≤ p) (θ : Euclidean
       (multivariateGaussian θ 1) := by
     simpa using integrable_inv_norm_sq_multivariateGaussian (by simpa using hp) 1 θ
   have hne := ae_ne_zero_multivariateGaussian_one θ
-  refine ⟨tendsto_integral_of_dominated_convergence _
-    (fun n ↦ Measurable.aestronglyMeasurable (by fun_prop)) hJi (fun n ↦ ?_) ?_, ?_⟩
-  · filter_upwards [hne] with x hx
+  -- The quadratic weight `‖x‖² / (‖x‖² + ε)²` and the inverse weight `(‖x‖² + ε)⁻¹` are both
+  -- dominated by `(‖x‖²)⁻¹`, and converge to it pointwise off the origin.
+  have hB_le (n : ℕ) : ∀ᵐ x ∂multivariateGaussian θ 1,
+      ‖‖x‖ ^ 2 / (‖x‖ ^ 2 + ε n) ^ 2‖ ≤ (‖x‖ ^ 2)⁻¹ := by
+    filter_upwards [hne] with x hx
     rw [Real.norm_of_nonneg (by positivity)]
     exact norm_sq_div_norm_sq_add_sq_le hx (hε0 n).le
-  · filter_upwards [hne] with x hx using tendsto_norm_sq_div_norm_sq_add_sq hεlim hx
-  rw [← integral_const_mul]
-  refine tendsto_integral_of_dominated_convergence (fun x ↦ ((p : ℝ) + 2) * (‖x‖ ^ 2)⁻¹)
-    (fun n ↦ Measurable.aestronglyMeasurable (by fun_prop)) (hJi.const_mul _)
-    (fun n ↦ ?_) ?_
-  · filter_upwards [hne] with x hx
-    have h1 : (‖x‖ ^ 2 + ε n)⁻¹ ≤ (‖x‖ ^ 2)⁻¹ :=
-      inv_anti₀ (by positivity) (by linarith [hε0 n])
-    have h2 := norm_sq_div_norm_sq_add_sq_le hx (hε0 n).le
-    have h3 : 0 ≤ (‖x‖ ^ 2 + ε n)⁻¹ := (inv_pos.2 (by linarith [hε0 n, sq_nonneg ‖x‖])).le
-    have h4 : 0 ≤ ‖x‖ ^ 2 / (‖x‖ ^ 2 + ε n) ^ 2 := by positivity
-    have hp0 : (0 : ℝ) ≤ p := Nat.cast_nonneg p
-    rw [Real.norm_eq_abs, abs_le, mul_div_assoc]
-    constructor <;> nlinarith [mul_le_mul_of_nonneg_left h1 hp0, mul_nonneg hp0 h3]
-  · filter_upwards [hne] with x hx
-    convert ((tendsto_inv_norm_sq_add hεlim hx).const_mul (p : ℝ)).sub
-      ((tendsto_norm_sq_div_norm_sq_add_sq hεlim hx).const_mul 2) using 1
-    · funext n
-      ring
-    · rw [sub_mul]
+  have hA_le (n : ℕ) : ∀ᵐ x ∂multivariateGaussian θ 1, ‖(‖x‖ ^ 2 + ε n)⁻¹‖ ≤ (‖x‖ ^ 2)⁻¹ := by
+    filter_upwards [hne] with x hx
+    rw [Real.norm_of_nonneg (inv_nonneg.2 (by linarith [hε0 n, sq_nonneg ‖x‖]))]
+    exact inv_anti₀ (pow_pos (norm_pos_iff.2 hx) 2) (by linarith [hε0 n])
+  have hBm (n : ℕ) : AEStronglyMeasurable (fun x : EuclideanSpace ℝ (Fin p) ↦
+      ‖x‖ ^ 2 / (‖x‖ ^ 2 + ε n) ^ 2) (multivariateGaussian θ 1) :=
+    Measurable.aestronglyMeasurable (by fun_prop)
+  have hAm (n : ℕ) : AEStronglyMeasurable (fun x : EuclideanSpace ℝ (Fin p) ↦
+      (‖x‖ ^ 2 + ε n)⁻¹) (multivariateGaussian θ 1) :=
+    Measurable.aestronglyMeasurable (by fun_prop)
+  have hB := tendsto_integral_of_dominated_convergence _ hBm hJi hB_le
+    (by filter_upwards [hne] with x hx using tendsto_norm_sq_div_norm_sq_add_sq hεlim hx)
+  have hA := tendsto_integral_of_dominated_convergence _ hAm hJi hA_le
+    (by filter_upwards [hne] with x hx using tendsto_inv_norm_sq_add hεlim hx)
+  refine ⟨hB, ?_⟩
+  have heq (n : ℕ) : ∫ x, ((p : ℝ) * (‖x‖ ^ 2 + ε n)⁻¹ - 2 * ‖x‖ ^ 2 / (‖x‖ ^ 2 + ε n) ^ 2)
+        ∂multivariateGaussian θ 1 =
+      (p : ℝ) * ∫ x, (‖x‖ ^ 2 + ε n)⁻¹ ∂multivariateGaussian θ 1 -
+        2 * ∫ x, ‖x‖ ^ 2 / (‖x‖ ^ 2 + ε n) ^ 2 ∂multivariateGaussian θ 1 := by
+    simp_rw [mul_div_assoc]
+    rw [integral_sub (((hJi.mono' (hAm n) (hA_le n))).const_mul _)
+        ((hJi.mono' (hBm n) (hB_le n)).const_mul _), integral_const_mul, integral_const_mul]
+  simp_rw [heq, sub_mul]
+  exact (hA.const_mul _).sub (hB.const_mul 2)
 
 /-- **The James–Stein estimator.** For `X ~ N(θ, I)` on `ℝ^p` with `p ≥ 3`, the estimator
 `(1 - (p - 2) / ‖X‖²) X` has risk `p - (p - 2)² E‖X‖⁻²`, which is strictly less than the risk

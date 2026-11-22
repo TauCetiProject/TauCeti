@@ -40,6 +40,8 @@ form into the one of `S⁻¹`.
 
 ## Main results
 
+* `TauCeti.Probability.multivariateGaussianPDFReal_smul` — the density at a scaled covariance
+  `c • S`;
 * `TauCeti.Probability.stdGaussian_eq_withDensity` — the standard Gaussian on `EuclideanSpace ℝ ι`
   is Lebesgue
   measure weighted by `(2π)^(-d/2) * exp (-‖x‖² / 2)`;
@@ -104,6 +106,19 @@ theorem multivariateGaussianPDFReal_def (m : EuclideanSpace ℝ ι) (S : Matrix 
 theorem multivariateGaussianPDF_def (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
     multivariateGaussianPDF m S =
       fun x => ENNReal.ofReal (multivariateGaussianPDFReal m S x) := (rfl)
+
+/-- **The density at a scaled covariance.** For a nonzero scalar `c` and an invertible `S`,
+the density at the covariance parameter `c • S` is
+`(2π)^(-d/2) * (c^d * det S)^(-1/2) * exp (-(c⁻¹ * ⟪x - m, S⁻¹ (x - m)⟫) / 2)`. -/
+theorem multivariateGaussianPDFReal_smul {c : ℝ} (hc : c ≠ 0) (hS : IsUnit S.det)
+    (m x : EuclideanSpace ℝ ι) :
+    multivariateGaussianPDFReal m (c • S) x =
+      (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) * (c ^ Fintype.card ι * S.det) ^ (-(1 : ℝ) / 2) *
+        exp (-(c⁻¹ * ⟪x - m, S⁻¹.toEuclideanLin (x - m)⟫) / 2) := by
+  have hinv : (c • S)⁻¹ = c⁻¹ • S⁻¹ := by
+    simpa [Units.smul_def] using Matrix.inv_smul' S (Units.mk0 c hc) hS
+  rw [multivariateGaussianPDFReal_def, Matrix.det_smul, hinv]
+  simp [inner_smul_right]
 
 /-- The density is positive wherever the determinant is, in particular at a positive-definite
 covariance, where `Matrix.PosDef.det_pos` supplies the hypothesis. -/

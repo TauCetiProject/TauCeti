@@ -82,21 +82,18 @@ expression is `1`, a density of the point mass. -/
 theorem multivariateGaussianPDFReal_smul_one {v : ℝ} (hv : 0 ≤ v) (θ x : EuclideanSpace ℝ ι) :
     multivariateGaussianPDFReal θ (v • (1 : Matrix ι ι ℝ)) x =
       (2 * π * v) ^ (-(Fintype.card ι : ℝ) / 2) * exp (-‖x - θ‖ ^ 2 / (2 * v)) := by
-  have hinv : (v • (1 : Matrix ι ι ℝ))⁻¹ = v⁻¹ • 1 := by
-    rcases eq_or_ne v 0 with rfl | hv0
-    · simp
-    simpa [Units.smul_def] using
-      Matrix.inv_smul' (Units.mk0 v hv0) (A := (1 : Matrix ι ι ℝ)) (by simp)
-  have hdet : (v • (1 : Matrix ι ι ℝ)).det ^ (-(1 : ℝ) / 2) =
-      v ^ (-(Fintype.card ι : ℝ) / 2) := by
-    rw [Matrix.det_smul, Matrix.det_one, mul_one, ← Real.rpow_natCast_mul hv]
-    ring_nf
-  rw [multivariateGaussianPDFReal_def, hdet, hinv, map_smul, Matrix.toLpLin_one, mul_rpow
-    (by positivity) hv]
-  simp only [LinearMap.smul_apply, LinearMap.id_apply, inner_smul_right,
-    real_inner_self_eq_norm_sq]
+  rcases hv.eq_or_lt with rfl | hv
+  · rcases isEmpty_or_nonempty ι with hι | hι
+    · simp [multivariateGaussianPDFReal_def]
+    · simp [multivariateGaussianPDFReal_def, Real.zero_rpow (by
+        have : (0 : ℝ) < Fintype.card ι := by exact_mod_cast Fintype.card_pos
+        linarith : -(Fintype.card ι : ℝ) / 2 ≠ 0)]
+  rw [multivariateGaussianPDFReal_smul hv.ne' (by simp), Matrix.det_one, mul_one,
+    ← Real.rpow_natCast_mul hv.le, mul_rpow (by positivity) hv.le, inv_one, Matrix.toLpLin_one]
+  simp only [LinearMap.id_apply, real_inner_self_eq_norm_sq]
   congr 2
-  field_simp
+  · ring_nf
+  · field_simp
 
 /-- The mean squared distance of a multivariate Gaussian law from its mean is the trace of its
 covariance: `E‖X - m‖² = tr S`. -/
@@ -117,19 +114,6 @@ theorem multivariateGaussian_smul_one_eq_withDensity {v : ℝ} (hv : 0 < v)
   rw [multivariateGaussian_eq_withDensity (Matrix.PosDef.one.smul hv),
     multivariateGaussianPDF_def]
   simp_rw [multivariateGaussianPDFReal_smul_one hv.le]
-
-/-- For `v ≤ 0`, `multivariateGaussian θ (v I)` is the point mass at `θ`. At `v = 0` this is the
-degenerate Gaussian law; for `v < 0` the matrix `v I` is not a covariance matrix (in positive
-dimension) and this is the fallback value of `multivariateGaussian`. -/
-theorem multivariateGaussian_smul_one_of_nonpos {v : ℝ} (hv : v ≤ 0) (θ : EuclideanSpace ℝ ι) :
-    multivariateGaussian θ (v • (1 : Matrix ι ι ℝ)) = Measure.dirac θ := by
-  by_cases hS : (v • (1 : Matrix ι ι ℝ)).PosSemidef
-  · rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
-    · rw [Subsingleton.elim (v • (1 : Matrix ι ι ℝ)) 0, multivariateGaussian_zero_right]
-    · have h := hS.diag_nonneg (i := i)
-      simp only [Matrix.smul_apply, Matrix.one_apply_eq, smul_eq_mul, mul_one] at h
-      rw [le_antisymm hv h, zero_smul, multivariateGaussian_zero_right]
-  · exact multivariateGaussian_of_not_posSemidef θ hS
 
 /-- **Stein's identity** for a real function under `N(θ, v I)`, `v ≥ 0`: for a differentiable `f`
 such that `f`, `(xᵢ - θᵢ) f` and the partial derivative `∂ᵢ f` are integrable,
@@ -216,7 +200,8 @@ theorem integrable_inv_norm_sq_multivariateGaussian (hι : 3 ≤ Fintype.card ι
     Integrable (fun x : EuclideanSpace ℝ ι ↦ (‖x‖ ^ 2)⁻¹)
       (multivariateGaussian θ (v • (1 : Matrix ι ι ℝ))) := by
   rcases le_or_gt v 0 with hv | hv
-  · rw [multivariateGaussian_smul_one_of_nonpos hv]
+  · rw [← neg_neg v, neg_smul,
+      multivariateGaussian_neg_right θ (Matrix.PosSemidef.one.smul (neg_nonneg.mpr hv))]
     exact integrable_dirac (by simp)
   set c : ℝ := (2 * π * v) ^ (-(Fintype.card ι : ℝ) / 2)
   set φ : EuclideanSpace ℝ ι → ℝ := fun x ↦ c * exp (-‖x - θ‖ ^ 2 / (2 * v))
