@@ -67,8 +67,10 @@ independent of `s`) are the case `R = 0`, and continuation cylinders are treated
 The semi-Fredholm estimate for the formal adjoint `D_u^*` on `C²` covector fields is
 `TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_add`
 along a Floer trajectory, with a version for data cylindrical near the ends (suffix
-`_of_cylindrical`). The finiteness of the cokernel, hence the Fredholm property and the index,
-still needs the Sobolev realization of `D_u^*` and the regularity of weak `L²` cokernel elements.
+`_of_cylindrical`). In a unitary trivialization the Fredholm property itself follows from a
+parametrix built from the invertible end models, without the adjoint
+(`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical` in
+`TauCeti.Geometry.Symplectic.Floer.Sobolev.Asymptotic`).
 
 ## References
 
