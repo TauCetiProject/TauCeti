@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Cylinder.Parametrix
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
+import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -158,37 +159,23 @@ private theorem memLp_floerJetCoeff_const (ω : SymplecticForm V) (J₀ : V →L
     rw [show M = _ from funext (floerJetCoeff_const ω J₀ Ks Kt u)]
     exact continuousAt_firstOrderJetCoeff continuousAt_const
       (hdXs.neg.sub (continuousAt_const.clm_comp hdXt))
-  -- The coefficient fields of the models depend only on `t`, so they are bounded on the strip.
-  have hbound {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V} (hx : Continuous x) :
-      ∃ B, ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, ‖ω.floerJetCoeff (fun _ _ ↦ J₀) (fun _ _ ↦ 0)
-        (fun w ↦ H w.2) (fun w ↦ x w.2) (s, t)‖ ≤ B := by
-    have hc : Continuous fun t ↦
-        firstOrderJetCoeff J₀ (-J₀.comp (fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t))) :=
-      continuous_iff_continuousAt.2 fun t ↦ continuousAt_firstOrderJetCoeff continuousAt_const
-        (continuous_const.clm_comp
-          (ω.continuous_fderiv_hamiltonianVectorField_comp hH hx)).neg.continuousAt
-    obtain ⟨B, hB⟩ := isCompact_Icc.exists_bound_of_continuousOn hc.continuousOn
-    exact ⟨B, fun s t ht ↦ by rw [floerJetCoeff_const_of_eq ω J₀ _ (H := H) rfl rfl]; exact hB t ht⟩
-  obtain ⟨Bm, hBm⟩ := hbound hHm hxm
-  obtain ⟨Bp, hBp⟩ := hbound hHp hxp
-  -- Far out on each end, `M` is within `1` of the model; in between, `M` is bounded on a compact
-  -- set.
-  obtain ⟨Sm, hSm⟩ :=
-    eventually_atBot.1 (eventually_norm_floerJetCoeff_sub_lt ω J₀ hHm hxm huxm hm one_pos)
-  obtain ⟨Sp, hSp⟩ :=
-    eventually_atTop.1 (eventually_norm_floerJetCoeff_sub_lt ω J₀ hHp hxp huxp hp one_pos)
-  obtain ⟨B₀, hB₀⟩ := ((isCompact_Icc (a := Sm) (b := Sp)).prod
-    (isCompact_Icc (a := (0 : ℝ)) (b := 1))).exists_bound_of_continuousOn hM.continuousOn
-  refine memLp_top_of_bound hM.aestronglyMeasurable (max B₀ (max (Bm + 1) (Bp + 1))) ?_
+  -- Far out on each end, `M` converges uniformly to the coefficient field of the model, which
+  -- depends only on `t`; so `M` is bounded on the strip.
+  have hlim {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V} (hx : Continuous x)
+      {l : Filter ℝ} (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+      (hl : ∀ᶠ s in l, ∀ t, Ks (s, t) = 0 ∧ Kt (s, t) = H t) :
+      TendstoUniformlyOn (fun s t ↦ M (s, t)) (fun t ↦ firstOrderJetCoeff J₀
+        (-J₀.comp (fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)))) l (Icc 0 1) :=
+    Metric.tendstoUniformlyOn_iff.2 fun ε hε ↦
+      (eventually_norm_floerJetCoeff_sub_lt ω J₀ hH hx hux hl hε).mono fun s hs t ht ↦ by
+        have h := hs t ht
+        rwa [floerJetCoeff_const_of_eq ω J₀ (fun w ↦ x w.2) (Ks := fun _ _ ↦ 0)
+          (Kt := fun w ↦ H w.2) (H := H) rfl rfl, ← dist_eq_norm, dist_comm] at h
+  obtain ⟨C, hC⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc hM.continuousOn
+    (hlim hHm hxm huxm hm) (hlim hHp hxp huxp hp)
+  refine memLp_top_of_bound hM.aestronglyMeasurable C ?_
   filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with ⟨s, t⟩ hz
-  have ht : t ∈ Icc (0 : ℝ) 1 := hz.2
-  rcases le_or_gt s Sm with hs | hs
-  · exact ((norm_le_norm_add_norm_sub' _ _).trans (add_le_add (hBm s t ht)
-      (hSm s hs t ht).le)).trans (le_max_of_le_right (le_max_left _ _))
-  rcases le_or_gt Sp s with hs' | hs'
-  · exact ((norm_le_norm_add_norm_sub' _ _).trans (add_le_add (hBp s t ht)
-      (hSp s hs' t ht).le)).trans (le_max_of_le_right (le_max_right _ _))
-  exact (hB₀ (s, t) ⟨⟨hs.le, hs'.le⟩, ht⟩).trans (le_max_left _ _)
+  exact hC s t hz.2
 
 end Constant
 
