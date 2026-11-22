@@ -14,8 +14,11 @@ public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import Mathlib.Topology.Sets.Opens
 
+import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Topology.Algebra.Module.Determinant
 
+import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Congr
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -58,6 +61,9 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `OpenPartialHomeomorph.det_fderiv_symm_apply_of_contDiffOn`: for an open partial homeomorphism
   that is `C^n`, `n ≠ 0`, in both directions, a nonzero Jacobian determinant on the source, and
   reciprocity of the Jacobian determinants of `e` and `e.symm`.
+* `OpenPartialHomeomorph.contDiffOn_abs_det_fderiv_of_contDiffOn`: for a real open partial
+  homeomorphism that is `C^n` in both directions, the absolute Jacobian determinant is `C^m` on
+  the source when `m + 1 ≤ n`.
 * `OpenPartialHomeomorph.adjoint_fderiv_apply_adjoint_fderiv_symm_apply`,
   `OpenPartialHomeomorph.adjoint_fderiv_symm_apply_adjoint_fderiv_apply` and their
   `_of_contDiffOn` forms: between inner product spaces over `ℝ` or `ℂ`, the transposes of the
@@ -253,6 +259,24 @@ theorem hasFDerivAt_transHomeomorph_iff {M N G₁ G₂ : Type*} [TopologicalSpac
     simp
   rw [hcomp, L_F.comp_hasFDerivAt_iff, L_E.symm.comp_right_hasFDerivAt_iff]
   simp
+
+end OpenPartialHomeomorph
+
+namespace OpenPartialHomeomorph
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- For a real open partial homeomorphism of a space to itself that is `C^n` on its source, with
+inverse `C^n` on its target, the absolute Jacobian determinant `x ↦ |det De(x)|` is `C^m` on the
+source when `m + 1 ≤ n`. -/
+theorem contDiffOn_abs_det_fderiv_of_contDiffOn (e : OpenPartialHomeomorph E E)
+    {m : ℕ∞} {n : WithTop ℕ∞} (hmn : m + 1 ≤ n) (he : ContDiffOn ℝ n e e.source)
+    (hes : ContDiffOn ℝ n e.symm e.target) :
+    ContDiffOn ℝ m (fun x ↦ |(fderiv ℝ e x).det|) e.source := fun x hx ↦
+  have hn : n ≠ 0 := fun h ↦ by simp [h] at hmn
+  ((ContinuousLinearMap.contDiff_det.contDiffAt.comp x
+    ((he.fderiv_of_isOpen e.open_source hmn).contDiffAt (e.open_source.mem_nhds hx))).abs
+    (e.det_fderiv_ne_zero_of_contDiffOn he hes hn hx)).contDiffWithinAt
 
 end OpenPartialHomeomorph
 
