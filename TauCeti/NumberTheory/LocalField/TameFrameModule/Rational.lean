@@ -81,12 +81,14 @@ theorem tameFrameRelationMap_injective_of_card_ne_zero [Monoid G] {R : Type u} [
   intro x hx
   rw [LinearMap.mem_ker] at hx
   by_contra hx0
-  have hσx : x * (single σ (1 : R) - single 1 (a : R)) = 0 := by
+  have hσx : x * single σ (1 : R) = x * single 1 (a : R) := by
+    rw [← sub_eq_zero, ← mul_sub]
     simpa using congrArg (fun y : Fin 2 →₀ MonoidAlgebra R G ↦ y 0) hx
-  have hτx : x * (single τ (1 : R) - single 1 (b : R)) = 0 := by
+  have hτx : x * single τ (1 : R) = x * single 1 (b : R) := by
+    rw [← sub_eq_zero, ← mul_sub]
     simpa using congrArg (fun y : Fin 2 →₀ MonoidAlgebra R G ↦ y 1) hx
-  have ha := nat_eq_one_of_mul_single_sub_eq_zero hx0 hσ hσx
-  have hb := nat_eq_one_of_mul_single_sub_eq_zero hx0 hτ hτx
+  have ha := nat_eq_one_of_mul_single_eq_mul_single hx0 hσ hσx
+  have hb := nat_eq_one_of_mul_single_eq_mul_single hx0 hτ hτx
   subst a
   subst b
   rw [Nat.cast_one] at hcard
