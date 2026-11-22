@@ -131,7 +131,7 @@ private theorem trace_twist_mul_dartMatrix (β : V → V → Matrix m m k) (ε :
   rw [trace_mul_cycle', ← Matrix.mul_assoc, ← Matrix.mul_assoc, hr, hl, hε d h]
   simp
 
-omit [Fintype W] [Fintype m] [Fintype V] [DecidableEq m] in
+omit [Fintype W] [DecidableRel H.Adj] [Fintype m] [Fintype V] [DecidableEq m] in
 /-- Along a copy, the block matrix of the image of a dart of `H` is the block of the dart. -/
 private theorem dartMatrix_extendByZero_mapDart (f : H.Copy G) (β : W → W → Matrix m m k)
     (d : H.Dart) :
