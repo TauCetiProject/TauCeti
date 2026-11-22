@@ -20,8 +20,9 @@ summing the Möbius transform `x ↦ ∑_{z ≤ x} μ(z, x) g z` over the lower 
 
 It also proves Weisner's theorem: in a locally finite join-semilattice, the values `μ(c, x)`
 summed over the elements `x ∈ [c, d]` whose join with a fixed `a` is `d` cancel, provided
-`¬a ≤ c`. The coefficients only need an additive group with a `1`, the level at which `μ` is
-defined: the statement is proved over `ℤ` and transported along `n ↦ n • 1`. In a finite
+`¬a ≤ c`. The coefficients only need an additive commutative group with a distinguished `1`, the
+level at which `μ` is defined: the statement is proved over `ℤ` and transported along
+`n ↦ n • 1`. In a finite
 lattice, taking `c = ⊥`, `d = ⊤` and `a` an atom turns this into a recurrence for `μ(⊥, ⊤)` in
 terms of the Möbius function on smaller intervals; this is how the Möbius function of the lattice
 of noncrossing partitions is computed.
@@ -45,6 +46,13 @@ public section
 
 open Finset IncidenceAlgebra
 
+/-- The strong-induction decrease used for the Möbius recursion: `[a, x]` is strictly smaller than
+`[a, b]` for every `x ∈ [a, b)`. -/
+private theorem card_Icc_lt_card_Icc_of_mem_Ico {α : Type*} [Preorder α] [LocallyFiniteOrder α]
+    {a b x : α} (hx : x ∈ Ico a b) : #(Icc a x) < #(Icc a b) := by
+  obtain ⟨hax, hxb⟩ := mem_Ico.1 hx
+  exact card_lt_card (Icc_ssubset_Icc_right (hax.trans hxb.le) le_rfl hxb)
+
 namespace OrderIso
 
 variable {𝕜 α β : Type*} [AddCommGroup 𝕜] [One 𝕜]
@@ -61,9 +69,7 @@ theorem mu_map (e : α ≃o β) (a b : α) : mu 𝕜 (e a) (e b) = mu 𝕜 a b :
       simp
     rw [mu_eq_neg_sum_Ico_of_ne (e.injective.ne hab), mu_eq_neg_sum_Ico_of_ne hab, neg_inj]
     refine (sum_equiv e.toEquiv (fun x => by simp) fun x hx => ?_).symm
-    obtain ⟨hax, hxb⟩ := mem_Ico.1 hx
-    have hlt := card_lt_card (Icc_ssubset_Icc_right (hax.trans hxb.le) le_rfl hxb)
-    exact (ih _ (hn ▸ hlt) x rfl).symm
+    exact (ih _ (hn ▸ card_Icc_lt_card_Icc_of_mem_Ico hx) x rfl).symm
 
 end OrderIso
 
@@ -76,6 +82,7 @@ variable {𝕜 𝕝 α F : Type*} [AddCommGroup 𝕜] [One 𝕜] [AddCommGroup �
 
 /-- An additive map preserving `1` carries the Möbius function with coefficients in `𝕜` to the
 Möbius function with coefficients in `𝕝`. -/
+@[simp]
 theorem map_mu (f : F) (hf : f 1 = 1) (a b : α) : f (mu 𝕜 a b) = mu 𝕝 a b := by
   induction hn : #(Icc a b) using Nat.strong_induction_on generalizing b with
   | _ n ih =>
@@ -83,9 +90,8 @@ theorem map_mu (f : F) (hf : f 1 = 1) (a b : α) : f (mu 𝕜 a b) = mu 𝕝 a b
     split_ifs
     · exact hf
     rw [map_neg, map_sum]
-    refine congrArg _ (sum_congr rfl fun x hx => ?_)
-    obtain ⟨hax, hxb⟩ := mem_Ico.1 hx
-    exact ih _ (hn ▸ card_lt_card (Icc_ssubset_Icc_right (hax.trans hxb.le) le_rfl hxb)) x rfl
+    exact congrArg _ <| sum_congr rfl fun x hx =>
+      ih _ (hn ▸ card_Icc_lt_card_Icc_of_mem_Ico hx) x rfl
 
 end MapMu
 
@@ -117,20 +123,19 @@ theorem sum_filter_sup_eq_mu_eq_zero {a c d : α} (ha : ¬a ≤ c) :
     ∑ x ∈ Icc c d with x ⊔ a = d, mu 𝕜 c x = 0 := by
   -- It suffices to work over `ℤ`, since `n ↦ n • 1` carries `μ` over `ℤ` to `μ` over `𝕜`.
   suffices h : ∑ x ∈ Icc c d with x ⊔ a = d, mu ℤ c x = 0 by
-    simp_rw [← map_mu (zmultiplesHom 𝕜 1) (one_zsmul 1), ← map_sum, h, map_zero]
+    simpa using congrArg (zmultiplesHom 𝕜 1) h
   -- Detect `x ⊔ a = d` by `∑_{x ⊔ a ≤ y ≤ d} μ(y, d)`, then exchange the two sums: the inner sum
   -- `∑_{c ≤ x ≤ y} μ(c, x)` vanishes for every `y ≥ c ⊔ a`, since such `y` is not `c`.
   calc ∑ x ∈ Icc c d with x ⊔ a = d, mu ℤ c x
       = ∑ x ∈ Icc c d, ∑ y ∈ Icc (x ⊔ a) d, mu ℤ c x * mu ℤ y d := by
-        refine (sum_filter _ _).trans (sum_congr rfl fun x _ => ?_)
-        rw [← mul_sum, sum_Icc_mu_left, mul_ite, mul_one, mul_zero]
+        simp [sum_filter, ← mul_sum, sum_Icc_mu_left]
     _ = ∑ y ∈ Icc (c ⊔ a) d, ∑ x ∈ Icc c y, mu ℤ c x * mu ℤ y d := sum_comm' fun x y => by
         simp only [mem_Icc, sup_le_iff]
         exact ⟨fun ⟨⟨hcx, _⟩, ⟨hxy, hay⟩, hyd⟩ => ⟨⟨hcx, hxy⟩, ⟨hcx.trans hxy, hay⟩, hyd⟩,
           fun ⟨⟨hcx, hxy⟩, ⟨_, hay⟩, hyd⟩ => ⟨⟨hcx, hxy.trans hyd⟩, ⟨hxy, hay⟩, hyd⟩⟩
     _ = 0 := sum_eq_zero fun y hy => by
         have hcy : c ≠ y := fun h => ha ((le_sup_right.trans (mem_Icc.1 hy).1).trans_eq h.symm)
-        rw [← sum_mul, sum_Icc_mu_right, ite_eq_right hcy, zero_mul]
+        simp [← sum_mul, sum_Icc_mu_right, hcy]
 
 end Weisner
 
