@@ -6,29 +6,51 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.AsSubring
+public import TauCeti.RingTheory.Localization.DenIdeal
 public import Mathlib.RingTheory.DedekindDomain.Dvr
 
 /-!
-# Membership in a localization realized inside the fraction field
+# Membership in embedded localizations
 
-Mathlib's `Localization.subalgebra.ofField K S hS` is the localization of a ring `A` at a
-submonoid `S` of non-zero-divisors, realized as the `A`-subalgebra of the fraction field `K` of
-`A` consisting of the quotients `a / s` with `a ∈ A` and `s ∈ S`. This file adds the membership
-tests that make it usable as a subring of `K`: an element `z : K` lies in it exactly when some
-`s ∈ S` clears its denominator, `s * z ∈ A`, and for `S = powers x` exactly when some power of
-`x` does so. It also records that the localization of a Dedekind domain, so realized, is again a
-Dedekind domain.
+A subalgebra that localizes a commutative semiring consists of the ambient elements whose
+denominator ideal meets the denominator monoid. This characterizes membership for arbitrary
+ambient commutative semirings, without a field or total-quotient-ring hypothesis.
+It applies to `Localization.subalgebra` and its fraction-field model `ofField`.
 
-## Main results
-
-* `Localization.subalgebra.mem_ofField_iff_exists_mul_mem_range` and
-  `Localization.subalgebra.mem_ofField_powers_iff`: membership in `A[S⁻¹] ⊆ K`, respectively in
-  `A[1/x] ⊆ K`, by clearing denominators.
-* `Localization.subalgebra.isDedekindDomain_ofField`: `A[S⁻¹] ⊆ K` is a Dedekind domain when `A`
-  is.
+The localization of a Dedekind domain inside its fraction field is again Dedekind.
 -/
 
 public section
+
+namespace TauCeti.Localization.subalgebra
+
+variable {R K : Type*} [CommSemiring R] [CommSemiring K] [Algebra R K]
+
+/-- An element belongs to an embedded localization precisely when its denominator ideal
+`Algebra.denIdeal K x` meets the denominator monoid. -/
+theorem mem_iff_exists_mem_denIdeal (S : Submonoid R) (A : Subalgebra R K)
+    [IsLocalization S A] (x : K) :
+    x ∈ A ↔ ∃ s ∈ S, s ∈ Algebra.denIdeal K x := by
+  constructor
+  · intro hx
+    obtain ⟨⟨r, s⟩, he⟩ := IsLocalization.surj S (⟨x, hx⟩ : A)
+    have h := congrArg (fun y : A ↦ (y : K)) he
+    simp only [Subalgebra.coe_mul, Subalgebra.coe_algebraMap] at h
+    exact ⟨s, s.property, (Algebra.mem_denIdeal_iff K).mpr
+      ⟨r, by simpa only [mul_comm] using h⟩⟩
+  · rintro ⟨s, hs, hx⟩
+    obtain ⟨r, hr⟩ := (Algebra.mem_denIdeal_iff K).mp hx
+    obtain ⟨v, hv⟩ := IsLocalization.map_units A (⟨s, hs⟩ : S)
+    have hvK : ((v : A) : K) = algebraMap R K s := by
+      simpa only [Subalgebra.coe_algebraMap] using
+        congrArg (fun y : A ↦ (y : K)) hv
+    have he : x = (((v⁻¹ : Aˣ) : A) : K) * algebraMap R K r := by
+      rw [← hr, ← hvK, ← mul_assoc, ← Subalgebra.coe_mul, Units.inv_mul, Subalgebra.coe_one,
+        one_mul]
+    rw [he]
+    exact A.mul_mem (v⁻¹).val.property (A.algebraMap_mem r)
+
+end TauCeti.Localization.subalgebra
 
 namespace Localization.subalgebra
 
@@ -36,23 +58,6 @@ open scoped nonZeroDivisors
 
 variable {A K : Type*} [CommRing A] [Field K] [Algebra A K] [IsFractionRing A K]
   (S : Submonoid A) (hS : S ≤ A⁰)
-
-/-- **Membership in `A[S⁻¹] ⊆ K` by clearing denominators**: `z` lies in the localization exactly
-when some `s ∈ S` has `s * z ∈ A`. -/
-theorem mem_ofField_iff_exists_mul_mem_range {z : K} :
-    z ∈ ofField K S hS ↔ ∃ s ∈ S, algebraMap A K s * z ∈ (algebraMap A K).range := by
-  rw [ofField, Subalgebra.copy_eq, mem_range_mapToFractionRing_iff_ofField, exists_comm]
-  refine exists_congr fun s ↦ ?_
-  simp only [exists_prop, RingHom.mem_range, exists_and_left]
-  refine and_congr_right fun hs ↦ exists_congr fun a ↦ ?_
-  rw [eq_mul_inv_iff_mul_eq₀ (map_isUnit_of_le K S hS ⟨s, hs⟩).ne_zero, mul_comm, eq_comm]
-
-/-- **Membership in `A[1/x] ⊆ K`**: `z` lies in the localization of `A` away from `x` exactly when
-some power of `x` clears its denominator, `x ^ n * z ∈ A`. -/
-theorem mem_ofField_powers_iff (x : A) (hx : Submonoid.powers x ≤ A⁰) {z : K} :
-    z ∈ ofField K (Submonoid.powers x) hx ↔
-      ∃ n : ℕ, algebraMap A K x ^ n * z ∈ (algebraMap A K).range := by
-  simp [mem_ofField_iff_exists_mul_mem_range, Submonoid.mem_powers_iff]
 
 /-- The localization of a Dedekind domain at a submonoid of nonzero elements, realized inside its
 fraction field, is a Dedekind domain. -/
