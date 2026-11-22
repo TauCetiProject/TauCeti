@@ -252,13 +252,10 @@ of `T`. -/
 theorem isPositive_cfc_iff (hT : T.IsSymmetric) {f : ℝ → ℝ} :
     (hT.cfc f).IsPositive ↔ ∀ μ : ℝ, HasEigenvalue T (μ : 𝕜) → 0 ≤ f μ := by
   refine ⟨fun hf μ hμ ↦ ?_, fun hf ↦ ?_⟩
-  · -- Test positivity of `f(T)` on a nonzero eigenvector `x` for `μ`.
+  · -- A nonzero eigenvector `x` of `T` for `μ` witnesses `f μ` as an eigenvalue of `f(T)`.
     obtain ⟨x, hx, hx0⟩ := hμ.exists_hasEigenvector
-    -- `re ⟪f(T)x, x⟫ = f(μ)‖x‖²`, which is nonnegative since `f(T)` is positive.
-    have h : 0 ≤ f μ * ‖x‖ ^ 2 := by
-      simpa [hT.cfc_apply_of_apply_eq_smul f (mem_eigenspace_iff.mp hx), inner_smul_left,
-        inner_self_eq_norm_sq_to_K] using hf.re_inner_nonneg_left x
-    exact nonneg_of_mul_nonneg_left h (by positivity)
+    exact eigenvalue_nonneg_of_nonneg (hasEigenvalue_of_hasEigenvector ⟨mem_eigenspace_iff.mpr
+      (hT.cfc_apply_of_apply_eq_smul f (mem_eigenspace_iff.mp hx)), hx0⟩) hf.re_inner_nonneg_right
   -- `f(T) = R * R` for the symmetric operator `R = (√f)(T)`.
   have hR : hT.cfc f = hT.cfc (fun μ ↦ √(f μ)) * hT.cfc (fun μ ↦ √(f μ)) := by
     rw [← cfc_mul]
