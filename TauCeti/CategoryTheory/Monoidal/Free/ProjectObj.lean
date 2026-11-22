@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Free.Basic
+public import TauCeti.CategoryTheory.Monoidal.Free.Basic
+import TauCeti.CategoryTheory.Monoidal.EqToHom
 
 /-!
 # Transporting interpretations of tensor words along isomorphisms
@@ -16,7 +17,8 @@ by `f : C → D`. This file transports such interpretations along isomorphisms: 
 isomorphisms `e a : f a ≅ g a` extends to isomorphisms
 `FreeMonoidalCategory.projectObjIso e X : projectObj f X ≅ projectObj g X` for every word `X`,
 the unit word going to the identity and a tensor word to the tensor product of isomorphisms.
-The extension is compatible with identities, composites and inverses of the families.
+The extension is compatible with identities, composites, inverses, and object-equality
+transports of the families.
 
 These isomorphisms are the objectwise data of morphisms between interpretations of a tensor
 signature, which are families of isomorphisms of generators compatible with the generating
@@ -91,5 +93,18 @@ theorem projectObjIso_symm (e : ∀ a, f a ≅ g a) (X : FreeMonoidalCategory C)
     rw [hX, hY]
     ext
     simp
+
+/-- Extending equality transports on generators to a tensor word gives the equality transport
+induced by `projectObj_congr`. -/
+@[simp]
+theorem projectObjIso_eqToIso (h : ∀ a, f a = g a) (X : FreeMonoidalCategory C) :
+    projectObjIso (fun a ↦ eqToIso (h a)) X = eqToIso (projectObj_congr h X) := by
+  induction X with
+  | of a => rfl
+  | unit => ext; rfl
+  | tensor X Y hX hY =>
+    dsimp only [projectObjIso, projectObj]
+    rw [hX, hY]
+    exact TauCeti.eqToIso_tensorIso_eqToIso (projectObj_congr h X) (projectObj_congr h Y)
 
 end CategoryTheory.FreeMonoidalCategory
