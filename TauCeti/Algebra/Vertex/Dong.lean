@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Vertex.NthProduct
 import TauCeti.Algebra.BigOperators.Finprod
-import TauCeti.Algebra.Ring.Commute
+import TauCeti.Algebra.Module.NilpotentAction
 
 /-!
 # Dong's lemma for vertex operators
