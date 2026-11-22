@@ -7,11 +7,13 @@ module
 
 public import TauCeti.RingTheory.GradedAlgebra.MvPolynomial
 public import TauCeti.RingTheory.MvPolynomial.Discriminant.Generic
-import Mathlib.Data.Int.GCD
+import Mathlib.Algebra.MvPolynomial.Division
+import Mathlib.Algebra.MvPolynomial.Nilpotent
 import Mathlib.RingTheory.Localization.Away.Basic
 import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.RingTheory.Localization.Integer
 import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.Algebra.Prime.Finset
 import TauCeti.RingTheory.MvPolynomial.Prime
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import TauCeti.RingTheory.Polynomial.Resultant.RootCoordinates
@@ -27,11 +29,15 @@ Whenever `m ≥ 2` is invertible in `R`, the Tschirnhaus shift `X ↦ X + a₁ /
 `R`-algebra automorphism `TauCeti.tschirnhausEquiv` of `MvPolynomial (Fin m) R` carrying
 `(Polynomial.freeMonic R m).discr` to the variable-embedded `depressedDiscr R m`. Consequently,
 `depressedDiscr R m` is prime whenever `m ≥ 2`, `2 ≠ 0`, and `IsUnit (m : R)` over an integral
-domain (in particular over a field of characteristic zero), so localizing
-`MvPolynomial (Fin (m - 1)) R` away from `depressedDiscr R m` has homogeneous unit degrees
-`m * (m - 1) ℤ` and shift class group `ZMod (m * (m - 1))`.
+domain (in particular over a field of characteristic zero). For `m ≥ 3`, localizing at `m` and
+descending via the fact that `depressedDiscr R m` is monic up to sign in the coefficient of `X`
+modulo `m` removes the unit assumption, yielding primality whenever `2 ≠ 0` and `(m : R) ≠ 0`
+(for example over `ℤ`).
 
 In degrees `2` and `3` the depressed discriminant is `-4 * X 0` and `-4 * X 0 ^ 3 - 27 * X 1 ^ 2`.
+Localizing `MvPolynomial (Fin (m - 1)) R` away from `depressedDiscr R m` has homogeneous unit
+degrees `m * (m - 1) ℤ` and shift class group `ZMod (m * (m - 1))` whenever `m ≥ 2`, `(2 : R) ≠ 0`,
+and `(m : R) ≠ 0` (including `m = 2`, since inverting `-4 * X 0` inverts both `2` and `X 0`).
 In particular, when `2 ≠ 0` and `3 ≠ 0` in an integral domain `R` (such as `ℤ`),
 `4 * X 0 ^ 3 + 27 * X 1 ^ 2` is prime of weight `12` for the weights `![4, 6]`, giving shift class
 group `ZMod 12`.
@@ -53,11 +59,13 @@ group `ZMod 12`.
 ## Main results
 
 * `TauCeti.depressedDiscr_mem`: `depressedDiscr R m` has weight `m * (m - 1)` for `depressedWeight`.
-* `TauCeti.depressedDiscr_prime` and `TauCeti.depressedDiscr_prime_of_charZero`: primality of
-  `depressedDiscr R m` for `m ≥ 2` when `(2 : R) ≠ 0` and `IsUnit (m : R)` (in particular over a
-  field of characteristic zero).
+* `TauCeti.depressedDiscr_prime_of_isUnit`, `TauCeti.depressedDiscr_prime`, and
+  `TauCeti.depressedDiscr_prime_of_charZero`: primality of `depressedDiscr R m` for `m ≥ 2` when
+  `IsUnit (m : R)`, and for `m ≥ 3` under the weaker assumption `(m : R) ≠ 0` (assuming
+  `(2 : R) ≠ 0`).
 * `TauCeti.homogeneousUnitDegrees_away_depressedDiscr`: the homogeneous unit degrees after
-  inverting `depressedDiscr R m` are `AddSubgroup.zmultiples (m * (m - 1))`.
+  inverting `depressedDiscr R m` are `AddSubgroup.zmultiples (m * (m - 1))` for all `m ≥ 2` with
+  `(2 : R) ≠ 0` and `(m : R) ≠ 0`.
 * `TauCeti.depressedDiscr_two` and `TauCeti.depressedDiscr_three`: explicit formulas in degrees
   `2` and `3`.
 * `TauCeti.prime_four_mul_pow_three_add_twentyseven_mul_sq`: primality of
@@ -447,9 +455,10 @@ theorem tschirnhausEquiv_discr_freeMonic (R : Type*) [CommRing R] {m : ℕ} (hm 
   rw [map_freeMonic_tschirnhausEquiv, Polynomial.discr_comp_X_add_C] at h1
   exact h1.symm.trans h2
 
-/-- **Primality of the generic depressed discriminant.** Over any integral domain in which
-`2 ≠ 0` and `m` is invertible, `depressedDiscr R m` is prime for every `m ≥ 2`. -/
-theorem depressedDiscr_prime {R : Type*} [CommRing R] [IsDomain R]
+/-- **Primality of the generic depressed discriminant when the degree is invertible.** Over any
+integral domain in which `2 ≠ 0` and `m` is invertible, `depressedDiscr R m` is prime for every
+`m ≥ 2`. -/
+theorem depressedDiscr_prime_of_isUnit {R : Type*} [CommRing R] [IsDomain R]
     (h2 : (2 : R) ≠ 0) {m : ℕ} (hmR : IsUnit (m : R)) (hm : 2 ≤ m) :
     Prime (depressedDiscr R m) := by
   rw [← prime_rename_iff_of_injective (depressedEmb_injective m hm),
@@ -457,44 +466,349 @@ theorem depressedDiscr_prime {R : Type*} [CommRing R] [IsDomain R]
   exact (MulEquiv.prime_iff (tschirnhausEquiv R hm hmR).toMulEquiv).mpr
     (prime_discr_freeMonic h2 hm)
 
+private theorem exists_C_mul_eq_map_of_isLocalization {σ R : Type*} [CommRing R] (M : Submonoid R)
+    (S : Type*) [CommRing S] [Algebra R S] [IsLocalization M S] (q : MvPolynomial σ S) :
+    ∃ (b : M) (q₀ : MvPolynomial σ R),
+      C (algebraMap R S (b : R)) * q = MvPolynomial.map (algebraMap R S) q₀ := by
+  classical
+  obtain ⟨b, hb⟩ := IsLocalization.exist_integer_multiples M q.support q.coeff
+  choose c hc using fun m (hm : m ∈ q.support) ↦ hb m hm
+  refine ⟨b, ∑ m ∈ q.support.attach, monomial m.1 (c m.1 m.2), ?_⟩
+  rw [map_sum]
+  have hq : q = ∑ m ∈ q.support.attach, monomial m.1 (q.coeff m.1) := by
+    conv_lhs => rw [q.as_sum]
+    exact (Finset.sum_attach q.support (fun m ↦ monomial m (q.coeff m))).symm
+  conv_lhs => rw [hq, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun m _ ↦ ?_
+  rw [map_monomial, C_mul_monomial, ← Algebra.smul_def, ← hc m.1 m.2]
+
+private theorem discr_X_pow_add_X (R : Type*) [CommRing R] {m : ℕ} (hm : 3 ≤ m) :
+    (Polynomial.X ^ m + Polynomial.X : Polynomial R).discr =
+      (-1 : R) ^ ((m - 1) * (m - 2) / 2) * ((m - 1 : ℕ) : R) ^ (m - 1) := by
+  nontriviality R
+  have hm1 : m - 1 ≠ 0 := by omega
+  have hfac : (Polynomial.X ^ m + Polynomial.X : Polynomial R) =
+      Polynomial.X * (Polynomial.X ^ (m - 1) - Polynomial.C (-1)) := by
+    rw [map_neg, map_one, sub_neg_eq_add, mul_add, mul_one, ← pow_succ',
+      Nat.sub_add_cancel (by omega)]
+  have hmonX : (Polynomial.X : Polynomial R).Monic := Polynomial.monic_X
+  have hmonQ : (Polynomial.X ^ (m - 1) - Polynomial.C (-1 : R)).Monic :=
+    Polynomial.monic_X_pow_sub_C (-1) hm1
+  have hdiscrX : (Polynomial.X : Polynomial R).discr = 1 := by
+    simpa using Polynomial.discr_X_pow_sub_C (0 : R) 1
+  have hres : (Polynomial.X : Polynomial R).resultant
+      (Polynomial.X ^ (m - 1) - Polynomial.C (-1)) = 1 := by
+    rw [Polynomial.natDegree_X, ← sub_zero (Polynomial.X : Polynomial R), ← Polynomial.C_0,
+      Polynomial.resultant_X_sub_C_left _ _ 0 le_rfl]
+    simp [zero_pow hm1]
+  rw [hfac, hmonX.discr_mul hmonQ, hdiscrX, hres, one_pow, one_mul, mul_one,
+    Polynomial.discr_X_pow_sub_C, show m - 1 - 1 = m - 2 by omega]
+  simp only [neg_neg, one_pow, mul_one]
+
+private theorem depressedDiscr_coeff_single_eq (R : Type*) [CommRing R] {m : ℕ} (hm : 3 ≤ m) :
+    (depressedDiscr R m).coeff (Finsupp.single ⟨m - 3, by omega⟩ m) =
+      (-1 : R) ^ ((m - 1) * (m - 2) / 2) * ((m - 1 : ℕ) : R) ^ (m - 1) := by
+  classical
+  let i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
+  let v : Fin (m - 1) → R := Pi.single i₀ 1
+  have heval_sum : eval v (depressedDiscr R m) =
+      (depressedDiscr R m).coeff (Finsupp.single i₀ m) := by
+    rw [eval_eq]
+    rw [Finset.sum_eq_single (Finsupp.single i₀ m)]
+    · rw [Finset.prod_eq_single i₀]
+      · simp [v]
+      · intro j _ hj
+        simp [Finsupp.single_eq_of_ne hj]
+      · intro hi0
+        exact (hi0 (Finsupp.mem_support_iff.mpr (by simp; omega))).elim
+    · intro d hd hne
+      have hex : ∃ j : Fin (m - 1), j ≠ i₀ ∧ d j ≠ 0 := by
+        by_contra hno
+        push Not at hno
+        have hmem := depressedDiscr_mem R m
+        rw [mem_weightedHomogeneousSubmodule] at hmem
+        have hwt : Finsupp.weight (depressedWeight m) d = (m : ℤ) * (m - 1) :=
+          hmem (mem_support_iff.mp hd)
+        have hsum : Finsupp.weight (depressedWeight m) d = (d i₀ : ℤ) * ((m : ℤ) - 1) := by
+          rw [Finsupp.weight_apply, Finsupp.sum]
+          rw [Finset.sum_eq_single i₀]
+          · simp only [depressedWeight_apply, i₀, nsmul_eq_mul]
+            have : ((m - 3 : ℕ) : ℤ) + 2 = (m : ℤ) - 1 := by omega
+            rw [this]
+          · intro j _ hj
+            rw [hno j hj, zero_smul]
+          · intro hi0
+            rw [Finsupp.notMem_support_iff.mp hi0, zero_smul]
+        rw [hsum] at hwt
+        have hm1_ne : ((m : ℤ) - 1) ≠ 0 := by omega
+        have hdi0 : d i₀ = m := by
+          have : (d i₀ : ℤ) = (m : ℤ) := mul_right_cancel₀ hm1_ne hwt
+          omega
+        apply hne
+        ext j
+        by_cases hj : j = i₀
+        · subst hj; simp [hdi0]
+        · simp [hno j hj, hj]
+      obtain ⟨j, hj, hdj⟩ := hex
+      have hprod : ∏ i ∈ d.support, v i ^ d i = 0 :=
+        Finset.prod_eq_zero (Finsupp.mem_support_iff.mpr hdj)
+          (by simp [v, Pi.single_eq_of_ne hj, hdj])
+      rw [hprod, mul_zero]
+    · intro hnot
+      rw [notMem_support_iff.mp hnot, zero_mul]
+  have heval_discr : eval v (depressedDiscr R m) =
+      (Polynomial.X ^ m + Polynomial.X : Polynomial R).discr := by
+    rw [depressedDiscr, ← (monic_genericDepressed R m).discr_map (eval v)]
+    congr 1
+    rw [genericDepressed, Polynomial.map_add, Polynomial.map_pow, Polynomial.map_X,
+      Polynomial.map_sum, Finset.sum_eq_single i₀]
+    · simp only [Polynomial.map_mul, Polynomial.map_C, Polynomial.map_pow, Polynomial.map_X,
+        eval_X, v, Pi.single_eq_same, map_one, one_mul, i₀]
+      rw [show m - (m - 3 + 2) = 1 by omega, pow_one]
+    · intro j _ hj
+      simp [v, Pi.single_eq_of_ne hj]
+    · intro hi0
+      exact (hi0 (mem_univ i₀)).elim
+  rw [← heval_sum, heval_discr, discr_X_pow_add_X R hm]
+
+private theorem eq_zero_of_mul_eq_zero_of_coeff_gt_zero_of_isUnit {B : Type*} [CommRing B]
+    {P Q : Polynomial B} {m : ℕ} (hgt : ∀ k > m, P.coeff k = 0) (hu : IsUnit (P.coeff m))
+    (hPQ : P * Q = 0) : Q = 0 := by
+  by_contra hQ
+  have hlc : Q.coeff Q.natDegree ≠ 0 := Polynomial.leadingCoeff_ne_zero.mpr hQ
+  have hcoeff : (P * Q).coeff (m + Q.natDegree) = P.coeff m * Q.coeff Q.natDegree := by
+    rw [Polynomial.coeff_mul, Finset.sum_eq_single (m, Q.natDegree)]
+    · intro ⟨i₁, i₂⟩ hi hne
+      rw [Finset.mem_antidiagonal] at hi
+      rcases lt_trichotomy i₁ m with hlt | rfl | hgt1
+      · have hgt2 : Q.natDegree < i₂ := by omega
+        rw [Polynomial.coeff_eq_zero_of_natDegree_lt hgt2, mul_zero]
+      · exact (hne (Prod.ext rfl (by omega))).elim
+      · rw [hgt i₁ hgt1, zero_mul]
+    · intro hnot
+      exact (hnot (Finset.mem_antidiagonal.mpr rfl)).elim
+  rw [hPQ, Polynomial.coeff_zero] at hcoeff
+  exact hlc (hu.mul_right_eq_zero.mp hcoeff.symm)
+
+private theorem depressedDiscr_dvd_of_C_pow_mul_dvd {R : Type*} [CommRing R] [IsDomain R]
+    {m : ℕ} (hm : 3 ≤ m) (hmR : (m : R) ≠ 0) {f : MvPolynomial (Fin (m - 1)) R}
+    {k : ℕ} {q : MvPolynomial (Fin (m - 1)) R}
+    (h : C ((m : R) ^ k) * f = depressedDiscr R m * q) : depressedDiscr R m ∣ f := by
+  induction k generalizing q with
+  | zero =>
+    rw [pow_zero, map_one, one_mul] at h
+    exact ⟨q, h⟩
+  | succ k ih =>
+    let I : Ideal R := Ideal.span {(m : R)}
+    let A := R ⧸ I
+    let π : R →+* A := Ideal.Quotient.mk I
+    have hπm : π (m : R) = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span rfl)
+    have hq0 : depressedDiscr A m * MvPolynomial.map π q = 0 := by
+      have hmap := congrArg (MvPolynomial.map π) h
+      have hpow : π ((m : R) ^ (k + 1)) = 0 := by
+        rw [map_pow, hπm, zero_pow (Nat.succ_ne_zero k)]
+      rw [map_mul, map_C, hpow, map_zero, zero_mul, map_mul, map_depressedDiscr] at hmap
+      exact hmap.symm
+    let i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
+    let σ := (Equiv.optionSubtypeNe i₀).symm
+    let e : MvPolynomial (Fin (m - 1)) A ≃ₐ[A]
+        Polynomial (MvPolynomial {b : Fin (m - 1) // b ≠ i₀} A) :=
+      (renameEquiv A σ).trans (optionEquivLeft A {b : Fin (m - 1) // b ≠ i₀})
+    have hcoeff_eq : ∀ (p : MvPolynomial (Fin (m - 1)) A) (n : ℕ)
+        (d : {b : Fin (m - 1) // b ≠ i₀} →₀ ℕ),
+        ((e p).coeff n).coeff d =
+          p.coeff ((Finsupp.optionElim n d).mapDomain (Equiv.optionSubtypeNe i₀)) := by
+      intro p n d
+      dsimp only [e, AlgEquiv.trans_apply]
+      rw [optionEquivLeft_coeff_coeff]
+      let u := (Finsupp.optionElim n d).mapDomain (Equiv.optionSubtypeNe i₀)
+      have hu : u.mapDomain σ = Finsupp.optionElim n d := by
+        ext x
+        dsimp only [u]
+        rw [Finsupp.mapDomain_equiv_apply, Finsupp.mapDomain_equiv_apply]
+        exact congrArg (Finsupp.optionElim n d)
+          (Equiv.symm_apply_apply (Equiv.optionSubtypeNe i₀) x)
+      have hren := coeff_rename_mapDomain σ σ.injective p u
+      rw [hu, ← renameEquiv_apply (R := A)] at hren
+      exact hren
+    have hσ_none : σ i₀ = none := (Equiv.symm_apply_eq (Equiv.optionSubtypeNe i₀)).mpr rfl
+    have hσ_some : ∀ j : {b : Fin (m - 1) // b ≠ i₀}, σ j.1 = some j := fun j ↦
+      (Equiv.symm_apply_eq (Equiv.optionSubtypeNe i₀)).mpr rfl
+    have hgt : ∀ n > m, (e (depressedDiscr A m)).coeff n = 0 := by
+      intro n hn
+      refine MvPolynomial.ext _ _ fun d ↦ ?_
+      rw [AddMonoidAlgebra.coeff_zero, hcoeff_eq]
+      by_contra hne
+      have hmem := depressedDiscr_mem A m
+      rw [mem_weightedHomogeneousSubmodule] at hmem
+      let u := (Finsupp.optionElim n d).mapDomain (Equiv.optionSubtypeNe i₀)
+      have hwt : Finsupp.weight (depressedWeight m) u = (m : ℤ) * (m - 1) := hmem hne
+      have hui₀ : u i₀ = n := by
+        dsimp only [u]
+        rw [Finsupp.mapDomain_equiv_apply, hσ_none, Finsupp.optionElim_apply_none]
+      have hle : (u i₀ : ℤ) * depressedWeight m i₀ ≤
+          Finsupp.weight (depressedWeight m) u := by
+        rw [Finsupp.weight_apply, Finsupp.sum]
+        by_cases hiu : i₀ ∈ u.support
+        · exact Finset.single_le_sum
+            (fun j _ ↦ mul_nonneg (Nat.cast_nonneg _) (by simp [depressedWeight]; omega)) hiu
+        · rw [Finsupp.notMem_support_iff.mp hiu, Nat.cast_zero, zero_mul]
+          exact Finset.sum_nonneg fun j _ ↦
+            mul_nonneg (Nat.cast_nonneg _) (by simp [depressedWeight]; omega)
+      rw [hwt, hui₀] at hle
+      have hwti₀ : depressedWeight m i₀ = (m : ℤ) - 1 := by
+        simp only [depressedWeight, i₀]
+        omega
+      rw [hwti₀] at hle
+      have : (n : ℤ) ≤ m := by nlinarith
+      omega
+    have hcm : (e (depressedDiscr A m)).coeff m =
+        C ((depressedDiscr A m).coeff (Finsupp.single i₀ m)) := by
+      refine MvPolynomial.ext _ _ fun d ↦ ?_
+      rw [hcoeff_eq]
+      by_cases hd : d = 0
+      · subst hd
+        rw [coeff_C, ite_eq_left rfl]
+        congr 1
+        ext j
+        by_cases hj : j = i₀
+        · subst hj
+          rw [Finsupp.mapDomain_equiv_apply, hσ_none, Finsupp.optionElim_apply_none,
+            Finsupp.single_eq_same]
+        · rw [Finsupp.mapDomain_equiv_apply, hσ_some ⟨j, hj⟩, Finsupp.optionElim_apply_some,
+            Finsupp.coe_zero, Pi.zero_apply, Finsupp.single_apply, ite_eq_right (Ne.symm hj)]
+      · rw [coeff_C, ite_eq_right (Ne.symm hd)]
+        by_contra hne
+        have hmem := depressedDiscr_mem A m
+        rw [mem_weightedHomogeneousSubmodule] at hmem
+        let u := (Finsupp.optionElim m d).mapDomain (Equiv.optionSubtypeNe i₀)
+        have hwt : Finsupp.weight (depressedWeight m) u = (m : ℤ) * (m - 1) := hmem hne
+        obtain ⟨j, hj⟩ := Finsupp.ne_iff.mp hd
+        have huj : u j.1 ≠ 0 := by
+          dsimp only [u]
+          rw [Finsupp.mapDomain_equiv_apply, hσ_some j, Finsupp.optionElim_apply_some]
+          exact hj
+        have hui₀ : u i₀ = m := by
+          dsimp only [u]
+          rw [Finsupp.mapDomain_equiv_apply, hσ_none, Finsupp.optionElim_apply_none]
+        have hi0_mem : i₀ ∈ u.support := Finsupp.mem_support_iff.mpr (by rw [hui₀]; omega)
+        have hj_mem : j.1 ∈ u.support := Finsupp.mem_support_iff.mpr huj
+        have hsub : ({i₀, j.1} : Finset _) ⊆ u.support := by
+          intro x hx
+          rcases Finset.mem_insert.mp hx with rfl | hx
+          · exact hi0_mem
+          · rw [Finset.mem_singleton.mp hx]; exact hj_mem
+        have hsum_le : ∑ x ∈ ({i₀, j.1} : Finset _), (u x : ℤ) * depressedWeight m x ≤
+            Finsupp.weight (depressedWeight m) u := by
+          rw [Finsupp.weight_apply, Finsupp.sum]
+          exact Finset.sum_le_sum_of_subset_of_nonneg hsub fun x _ _ ↦
+            mul_nonneg (Nat.cast_nonneg _) (by simp [depressedWeight]; omega)
+        rw [Finset.sum_pair j.2.symm, hui₀] at hsum_le
+        have hwti₀ : depressedWeight m i₀ = (m : ℤ) - 1 := by
+          simp only [depressedWeight, i₀]
+          omega
+        have hwtj : 2 ≤ depressedWeight m j.1 := by
+          simp only [depressedWeight]
+          omega
+        have huj_pos : (1 : ℤ) ≤ u j.1 := by exact_mod_cast Nat.pos_of_ne_zero huj
+        rw [hwt, hwti₀] at hsum_le
+        nlinarith
+    have hunit : IsUnit ((e (depressedDiscr A m)).coeff m) := by
+      rw [hcm, depressedDiscr_coeff_single_eq A hm]
+      have hmA : (m : A) = 0 := by
+        simpa [π] using hπm
+      have hm1A : ((m - 1 : ℕ) : A) = -1 := by
+        have h1 : ((m - 1 : ℕ) : A) + ((1 : ℕ) : A) = (m : A) := by
+          rw [← Nat.cast_add, Nat.sub_add_cancel (by omega)]
+        rw [Nat.cast_one, hmA] at h1
+        exact eq_neg_of_add_eq_zero_left h1
+      rw [hm1A, ← pow_add]
+      exact (isUnit_one.neg.pow _).map C
+    have heq0 : e (depressedDiscr A m) * e (MvPolynomial.map π q) = 0 := by
+      rw [← map_mul, hq0, map_zero]
+    have hmapq : MvPolynomial.map π q = 0 :=
+      e.injective (by simpa using eq_zero_of_mul_eq_zero_of_coeff_gt_zero_of_isUnit hgt hunit heq0)
+    have hdvd_coeff : ∀ d : Fin (m - 1) →₀ ℕ, (m : R) ∣ q.coeff d := by
+      intro d
+      have h0 : π (q.coeff d) = 0 := by
+        have h1 := congrArg (fun p : MvPolynomial (Fin (m - 1)) A ↦ p.coeff d) hmapq
+        simpa [coeff_map] using h1
+      exact Ideal.mem_span_singleton.mp (Ideal.Quotient.eq_zero_iff_mem.mp h0)
+    choose c hc using hdvd_coeff
+    let q' : MvPolynomial (Fin (m - 1)) R := ∑ d ∈ q.support, monomial d (c d)
+    have hq_eq : q = C (m : R) * q' := by
+      ext d
+      rw [coeff_C_mul]
+      by_cases hd : d ∈ q.support
+      · rw [coeff_sum, Finset.sum_eq_single d]
+        · rw [coeff_monomial, ite_eq_left rfl, hc d]
+        · intro d' _ hne
+          rw [coeff_monomial, ite_eq_right hne]
+        · intro hnot
+          exact (hnot hd).elim
+      · have h0 : q.coeff d = 0 := notMem_support_iff.mp hd
+        rw [coeff_sum, Finset.sum_eq_zero]
+        · rw [mul_zero, h0]
+        · intro d' hd'
+          have hne : d' ≠ d := fun heq ↦ hd (heq ▸ hd')
+          rw [coeff_monomial, ite_eq_right hne]
+    have hnext : C ((m : R) ^ k) * f = depressedDiscr R m * q' := by
+      have hC_ne : (C (m : R) : MvPolynomial (Fin (m - 1)) R) ≠ 0 :=
+        fun h0 ↦ hmR (C_eq_zero.mp h0)
+      apply mul_left_cancel₀ hC_ne
+      calc C (m : R) * (C ((m : R) ^ k) * f)
+          = C ((m : R) ^ (k + 1)) * f := by rw [pow_succ', map_mul, mul_assoc]
+        _ = depressedDiscr R m * q := h
+        _ = C (m : R) * (depressedDiscr R m * q') := by rw [hq_eq]; ring
+    exact ih hnext
+
+/-- **Primality of the generic depressed discriminant.** Over any integral domain in which
+`2 ≠ 0` and `(m : R) ≠ 0`, `depressedDiscr R m` is prime for every `m ≥ 3`. -/
+theorem depressedDiscr_prime {R : Type*} [CommRing R] [IsDomain R]
+    (h2 : (2 : R) ≠ 0) {m : ℕ} (hmR : (m : R) ≠ 0) (hm : 3 ≤ m) :
+    Prime (depressedDiscr R m) := by
+  let Rm := Localization.Away (m : R)
+  have : IsDomain Rm := IsLocalization.Away.isDomain (S := Rm) hmR
+  have hinj : Function.Injective (algebraMap R Rm) :=
+    IsLocalization.injective Rm (Submonoid.powers_le.mpr (mem_nonZeroDivisors_of_ne_zero hmR))
+  have h2m : (2 : Rm) ≠ 0 := by
+    simpa only [map_ofNat] using (map_ne_zero_iff (algebraMap R Rm) hinj).mpr h2
+  have hum : IsUnit (m : Rm) := by
+    simpa only [map_natCast] using IsLocalization.Away.algebraMap_isUnit (m : R)
+  have hprime_Rm : Prime (depressedDiscr Rm m) :=
+    depressedDiscr_prime_of_isUnit h2m hum (by omega)
+  have hmap_eq : MvPolynomial.map (algebraMap R Rm) (depressedDiscr R m) = depressedDiscr Rm m :=
+    map_depressedDiscr (algebraMap R Rm) m
+  refine ⟨fun h0 ↦ hprime_Rm.ne_zero (by rw [← hmap_eq, h0, map_zero]),
+    fun hu ↦ hprime_Rm.not_isUnit (hmap_eq ▸ hu.map _), ?_⟩
+  intro f g hfg
+  have hfg_Rm : depressedDiscr Rm m ∣
+      MvPolynomial.map (algebraMap R Rm) f * MvPolynomial.map (algebraMap R Rm) g := by
+    have h1 := map_dvd (MvPolynomial.map (σ := Fin (m - 1)) (algebraMap R Rm)) hfg
+    rwa [map_mul, hmap_eq] at h1
+  have descend : ∀ x : MvPolynomial (Fin (m - 1)) R,
+      depressedDiscr Rm m ∣ MvPolynomial.map (algebraMap R Rm) x → depressedDiscr R m ∣ x := by
+    rintro x ⟨qRm, hqRm⟩
+    obtain ⟨⟨b, kb, hkb⟩, q₀, hq₀⟩ :=
+      exists_C_mul_eq_map_of_isLocalization (Submonoid.powers (m : R)) Rm qRm
+    have hcx : C ((m : R) ^ kb) * x = depressedDiscr R m * q₀ := by
+      apply MvPolynomial.map_injective _ hinj
+      have hbk : b = (m : R) ^ kb := hkb.symm
+      rw [map_mul, map_C, ← hbk, map_mul, hmap_eq, hqRm, ← mul_assoc,
+        mul_comm (C (algebraMap R Rm b)), mul_assoc, hq₀]
+    exact depressedDiscr_dvd_of_C_pow_mul_dvd hm hmR hcx
+  rcases hprime_Rm.dvd_or_dvd hfg_Rm with hf | hg
+  · exact Or.inl (descend f hf)
+  · exact Or.inr (descend g hg)
+
 /-- Over a field of characteristic zero, the generic depressed discriminant is prime for every
 `m ≥ 2`. -/
 theorem depressedDiscr_prime_of_charZero (K : Type*) [Field K] [CharZero K] (m : ℕ) (hm : 2 ≤ m) :
     Prime (depressedDiscr K m) :=
-  depressedDiscr_prime (two_ne_zero) (isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr (by omega))) hm
+  depressedDiscr_prime_of_isUnit two_ne_zero
+    (isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr (by omega))) hm
 
 /-! ### Graded localization consequences and low-degree formulas -/
-
-/-- Inverting `depressedDiscr R m` in `MvPolynomial (Fin (m - 1)) R` with `depressedWeight m`
-yields homogeneous unit degrees `m * (m - 1) ℤ`. -/
-theorem homogeneousUnitDegrees_away_depressedDiscr {R : Type*} [CommRing R] [IsDomain R]
-    (h2 : (2 : R) ≠ 0) {m : ℕ} (hmR : IsUnit (m : R)) (hm : 2 ≤ m) :
-    homogeneousUnitDegrees
-        (awayGrading (weightedHomogeneousSubmodule R (depressedWeight m)) (depressedDiscr_mem R m))
-      = AddSubgroup.zmultiples ((m : ℤ) * (m - 1)) :=
-  homogeneousUnitDegrees_away_prime (depressedWeight m) (depressedDiscr_mem R m)
-    (depressedDiscr_prime h2 hmR hm)
-
-/-- Inverting `depressedDiscr R m` in `MvPolynomial (Fin (m - 1)) R` with `depressedWeight m`
-yields shift class group `ZMod (m * (m - 1))`. -/
-noncomputable def shiftClassGroupAwayDepressedDiscrEquiv {R : Type*} [CommRing R] [IsDomain R]
-    (h2 : (2 : R) ≠ 0) {m : ℕ} (hmR : IsUnit (m : R)) (hm : 2 ≤ m) :
-    ShiftClassGroup
-        (awayGrading (weightedHomogeneousSubmodule R (depressedWeight m)) (depressedDiscr_mem R m))
-      ≃+ ZMod (m * (m - 1)) :=
-  (shiftClassGroupAwayPrimeEquiv (depressedWeight m) (depressedDiscr_mem R m)
-    (depressedDiscr_prime h2 hmR hm)).trans (ZMod.ringEquivCongr (by
-      have h : ((m : ℤ) * (m - 1)) = ((m * (m - 1) : ℕ) : ℤ) := by
-        rw [Nat.cast_mul, Nat.cast_sub (by omega), Nat.cast_one]
-      rw [h, Int.natAbs_natCast])).toAddEquiv
-
-/-- The identification of the shift class group after inverting `depressedDiscr R m` with
-`ZMod (m * (m - 1))` sends the class of `d` to `d mod m * (m - 1)`. -/
-@[simp]
-theorem shiftClassGroupAwayDepressedDiscrEquiv_mk {R : Type*} [CommRing R] [IsDomain R]
-    (h2 : (2 : R) ≠ 0) {m : ℕ} (hmR : IsUnit (m : R)) (hm : 2 ≤ m) (d : ℤ) :
-    shiftClassGroupAwayDepressedDiscrEquiv h2 hmR hm d = d := by
-  simp [shiftClassGroupAwayDepressedDiscrEquiv]
 
 /-- In degree `2`, `depressedDiscr R 2 = -4 * X 0`. -/
 theorem depressedDiscr_two (R : Type*) [CommRing R] : depressedDiscr R 2 = -4 * X 0 := by
@@ -510,6 +824,120 @@ theorem depressedDiscr_three (R : Type*) [CommRing R] :
   rw [depressedDiscr, Polynomial.discr_of_degree_eq_three (degree_genericDepressed R 3)]
   simp only [coeff_genericDepressed]
   norm_num
+
+private theorem homogeneousUnitDegrees_away_depressedDiscr_two {R : Type*} [CommRing R]
+    [IsDomain R] (h2 : (2 : R) ≠ 0) :
+    homogeneousUnitDegrees
+        (awayGrading (weightedHomogeneousSubmodule R (depressedWeight 2)) (depressedDiscr_mem R 2))
+      = AddSubgroup.zmultiples ((2 : ℤ) * (2 - 1)) := by
+  refine le_antisymm ?_ ?_
+  · rw [homogeneousUnitDegrees_le_iff]
+    intro u deg hu
+    obtain ⟨n, a, ha, hua⟩ := mem_awayGrading_iff.mp hu
+    have ha_eq : algebraMap (MvPolynomial (Fin 1) R) (Localization.Away (depressedDiscr R 2)) a =
+        (u : Localization.Away (depressedDiscr R 2)) * algebraMap _ _ (depressedDiscr R 2 ^ n) := by
+      have hspec := IsLocalization.mk'_spec (Localization.Away (depressedDiscr R 2)) a
+        (Submonoid.pow (depressedDiscr R 2) n)
+      rw [← Localization.mk_eq_mk'_apply, ← hua] at hspec
+      exact hspec.symm
+    have ha_unit : IsUnit
+        (algebraMap (MvPolynomial (Fin 1) R) (Localization.Away (depressedDiscr R 2)) a) := by
+      rw [ha_eq, map_pow]
+      exact u.isUnit.mul ((IsLocalization.Away.algebraMap_isUnit _).pow n)
+    obtain ⟨k, hk⟩ := (IsLocalization.Away.algebraMap_isUnit_iff
+      (S := Localization.Away (depressedDiscr R 2)) (depressedDiscr R 2)).mp ha_unit
+    let K := FractionRing R
+    have hinj : Function.Injective (algebraMap R K) := IsFractionRing.injective R K
+    have h4K : (-4 : K) ≠ 0 := by
+      have h2K : (2 : K) ≠ 0 := by
+        simpa only [map_ofNat] using (map_ne_zero_iff (algebraMap R K) hinj).mpr h2
+      intro h0
+      have h4' : (2 : K) * 2 = 0 := by
+        have : -(-4 : K) = (2 : K) * 2 := by ring
+        rw [h0, neg_zero] at this
+        exact this.symm
+      exact mul_ne_zero h2K h2K h4'
+    have hmap_dvd : MvPolynomial.map (algebraMap R K) a ∣ (X 0 : MvPolynomial (Fin 1) K) ^ k := by
+      have h1 := map_dvd (MvPolynomial.map (σ := Fin 1) (algebraMap R K)) hk
+      rw [depressedDiscr_two, mul_pow, map_mul] at h1
+      have hC4 : (-4 : MvPolynomial (Fin 1) R) = C (-4 : R) := by
+        rw [map_neg, map_ofNat]
+      have hunit :
+          IsUnit (MvPolynomial.map (algebraMap R K) ((-4 : MvPolynomial (Fin 1) R) ^ k)) := by
+        rw [hC4, map_pow, map_C]
+        have h4K' : algebraMap R K (-4 : R) ≠ 0 := by
+          rw [map_neg, map_ofNat]
+          exact h4K
+        exact (h4K'.isUnit.map C).pow k
+      exact (IsUnit.dvd_mul_left hunit).mp (by simpa [map_pow] using h1)
+    obtain ⟨j, -, v, hv_dvd, hv⟩ :=
+      Prime.exists_eq_pow_mul_of_dvd_pow_mul (MvPolynomial.prime_X (σ := Fin 1) (R := K) (i := 0))
+        (b := 1) (by simpa using hmap_dvd)
+    have hv_unit : IsUnit v := isUnit_of_dvd_one hv_dvd
+    obtain ⟨r, hr, rfl⟩ := (isUnit_iff_eq_C_of_isReduced (P := v)).mp hv_unit
+    have hmap_a_ne : MvPolynomial.map (algebraMap R K) a ≠ 0 := by
+      rw [hv]
+      have hx0 : (X 0 : MvPolynomial (Fin 1) K) ≠ 0 :=
+        (MvPolynomial.prime_X (σ := Fin 1) (R := K) (i := 0)).ne_zero
+      exact mul_ne_zero (pow_ne_zero j hx0) (fun h0 ↦ hr.ne_zero (C_eq_zero.mp h0))
+    have hwt1 : (MvPolynomial.map (algebraMap R K) a).IsWeightedHomogeneous
+        (depressedWeight 2) (deg + n • ((2 : ℤ) * (2 - 1))) := by
+      rw [mem_weightedHomogeneousSubmodule] at ha
+      intro d hd
+      rw [coeff_map] at hd
+      exact ha fun h0 ↦ hd (by rw [h0, map_zero])
+    have hwt2 : (MvPolynomial.map (algebraMap R K) a).IsWeightedHomogeneous
+        (depressedWeight 2) ((j : ℤ) * ((2 : ℤ) * (2 - 1))) := by
+      rw [hv, mul_comm _ (C r)]
+      have hx : (X 0 : MvPolynomial (Fin 1) K).IsWeightedHomogeneous (depressedWeight 2)
+          ((2 : ℤ) * (2 - 1)) := by
+        convert isWeightedHomogeneous_X K (depressedWeight 2) 0
+        norm_num [depressedWeight]
+      simpa [nsmul_eq_mul] using (hx.pow j).C_mul r
+    have hdeg_eq := hwt1.inj_right hmap_a_ne hwt2
+    have hdeg_sol : deg = ((j : ℤ) - n) * ((2 : ℤ) * (2 - 1)) := by
+      have hns : (n • ((2 : ℤ) * (2 - 1))) = (n : ℤ) * ((2 : ℤ) * (2 - 1)) := nsmul_eq_mul _ _
+      linarith
+    rw [hdeg_sol]
+    exact ⟨(j : ℤ) - n, by dsimp only; rw [zsmul_eq_mul, Int.cast_id]⟩
+  · rw [AddSubgroup.zmultiples_le]
+    exact mem_homogeneousUnitDegrees_awayGrading_self (depressedDiscr_mem R 2)
+
+/-- Inverting `depressedDiscr R m` in `MvPolynomial (Fin (m - 1)) R` with `depressedWeight m`
+yields homogeneous unit degrees `m * (m - 1) ℤ`. -/
+theorem homogeneousUnitDegrees_away_depressedDiscr {R : Type*} [CommRing R] [IsDomain R]
+    (h2 : (2 : R) ≠ 0) {m : ℕ} (hmR : (m : R) ≠ 0) (hm : 2 ≤ m) :
+    homogeneousUnitDegrees
+        (awayGrading (weightedHomogeneousSubmodule R (depressedWeight m)) (depressedDiscr_mem R m))
+      = AddSubgroup.zmultiples ((m : ℤ) * (m - 1)) := by
+  rcases eq_or_lt_of_le hm with rfl | hm3
+  · exact homogeneousUnitDegrees_away_depressedDiscr_two h2
+  · exact homogeneousUnitDegrees_away_prime (depressedWeight m) (depressedDiscr_mem R m)
+      (depressedDiscr_prime h2 hmR hm3)
+
+/-- Inverting `depressedDiscr R m` in `MvPolynomial (Fin (m - 1)) R` with `depressedWeight m`
+yields shift class group `ZMod (m * (m - 1))`. -/
+noncomputable def shiftClassGroupAwayDepressedDiscrEquiv {R : Type*} [CommRing R] [IsDomain R]
+    (h2 : (2 : R) ≠ 0) {m : ℕ} (hmR : (m : R) ≠ 0) (hm : 2 ≤ m) :
+    ShiftClassGroup
+        (awayGrading (weightedHomogeneousSubmodule R (depressedWeight m)) (depressedDiscr_mem R m))
+      ≃+ ZMod (m * (m - 1)) :=
+  (QuotientAddGroup.quotientAddEquivOfEq
+    (homogeneousUnitDegrees_away_depressedDiscr h2 hmR hm)).trans
+    ((Int.quotientZMultiplesEquivZMod ((m : ℤ) * (m - 1))).trans
+      (ZMod.ringEquivCongr (by
+        have h : ((m : ℤ) * (m - 1)) = ((m * (m - 1) : ℕ) : ℤ) := by
+          rw [Nat.cast_mul, Nat.cast_sub (by omega), Nat.cast_one]
+        rw [h, Int.natAbs_natCast])).toAddEquiv)
+
+/-- The identification of the shift class group after inverting `depressedDiscr R m` with
+`ZMod (m * (m - 1))` sends the class of `d` to `d mod m * (m - 1)`. -/
+@[simp]
+theorem shiftClassGroupAwayDepressedDiscrEquiv_mk {R : Type*} [CommRing R] [IsDomain R]
+    (h2 : (2 : R) ≠ 0) {m : ℕ} (hmR : (m : R) ≠ 0) (hm : 2 ≤ m) (d : ℤ) :
+    shiftClassGroupAwayDepressedDiscrEquiv h2 hmR hm d = d := by
+  dsimp [shiftClassGroupAwayDepressedDiscrEquiv]
+  exact map_intCast _ d
 
 /-- The Weierstrass cubic discriminant `4 * X 0 ^ 3 + 27 * X 1 ^ 2` has weight `12` when the
 variables have weights `4` and `6`. -/
@@ -528,254 +956,16 @@ theorem mem_weightedHomogeneousSubmodule_weierstrass (R : Type*) [CommRing R] :
     simpa [← map_ofNat (C (σ := Fin 2) (R := R))] using (hx.pow 2).C_mul (27 : R)
   exact add_mem h0 h1
 
-private theorem exists_C_mul_eq_map_of_isLocalization {σ R : Type*} [CommRing R] (M : Submonoid R)
-    (S : Type*) [CommRing S] [Algebra R S] [IsLocalization M S] (q : MvPolynomial σ S) :
-    ∃ (b : M) (q₀ : MvPolynomial σ R),
-      C (algebraMap R S (b : R)) * q = MvPolynomial.map (algebraMap R S) q₀ := by
-  classical
-  obtain ⟨b, hb⟩ := IsLocalization.exist_integer_multiples M q.support q.coeff
-  choose c hc using fun m (hm : m ∈ q.support) ↦ hb m hm
-  refine ⟨b, ∑ m ∈ q.support.attach, monomial m.1 (c m.1 m.2), ?_⟩
-  rw [map_sum]
-  have hq : q = ∑ m ∈ q.support.attach, monomial m.1 (q.coeff m.1) := by
-    conv_lhs => rw [q.as_sum]
-    exact (Finset.sum_attach q.support (fun m ↦ monomial m (q.coeff m))).symm
-  conv_lhs => rw [hq, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun m _ ↦ ?_
-  rw [map_monomial, C_mul_monomial, ← Algebra.smul_def, ← hc m.1 m.2]
-
-private theorem pow_mul_dvd_of_C_mul_dvd_away {R S : Type*} [CommRing R] [IsDomain R]
-    [CommRing S] [IsDomain S] [Algebra R S] {d : R} (hd : d ≠ 0) [IsLocalization.Away d S]
-    {W' f q : MvPolynomial (Fin 2) R} {c u : R} (hc : c ≠ 0)
-    (hu : IsUnit (algebraMap R S u))
-    {P : Polynomial (MvPolynomial (Fin 1) S)} (hP_mon : P.Monic) (hP_deg : 0 < P.natDegree)
-    (hW' : finSuccEquiv S 1 (MvPolynomial.map (algebraMap R _) W') =
-      Polynomial.C (C (algebraMap R S u)) * P)
-    (hcf : C c * f = W' * q) :
-    ∃ (k : ℕ) (q' : MvPolynomial (Fin 2) R), C (d ^ k) * f = W' * q' := by
-  have hinj : Function.Injective (algebraMap R S) :=
-    IsLocalization.injective S (Submonoid.powers_le.mpr (mem_nonZeroDivisors_of_ne_zero hd))
-  have hinj_mv : Function.Injective (MvPolynomial.map (σ := Fin 2) (algebraMap R S)) :=
-    MvPolynomial.map_injective _ hinj
-  let F : Polynomial (MvPolynomial (Fin 1) S) :=
-    finSuccEquiv S 1 (MvPolynomial.map (algebraMap R S) f)
-  let Q : Polynomial (MvPolynomial (Fin 1) S) :=
-    finSuccEquiv S 1 (MvPolynomial.map (algebraMap R S) q)
-  have hfinC : ∀ a : S, finSuccEquiv S 1 (C a) = Polynomial.C (C a) := fun a ↦ by
-    simpa [Polynomial.algebraMap_apply, algebraMap_eq] using
-      (finSuccEquiv S 1).commutes a
-  have hCF : Polynomial.C (C (algebraMap R S c)) * F =
-      Polynomial.C (C (algebraMap R S u)) * P * Q := by
-    have h1 := congrArg (fun p ↦ finSuccEquiv S 1 (MvPolynomial.map (algebraMap R S) p)) hcf
-    rw [map_mul, map_mul, map_C, map_mul, map_mul, hfinC, hW'] at h1
-    exact h1
-  have hP_dvd_cF : P ∣ Polynomial.C (C (algebraMap R S c)) * F :=
-    ⟨Polynomial.C (C (algebraMap R S u)) * Q, by rw [hCF]; ring⟩
-  have hF_split : F = F %ₘ P + P * (F /ₘ P) := (Polynomial.modByMonic_add_div F P).symm
-  have hP_dvd_rem : P ∣ Polynomial.C (C (algebraMap R S c)) * (F %ₘ P) := by
-    have h1 : P * (Polynomial.C (C (algebraMap R S c)) * (F /ₘ P)) +
-        Polynomial.C (C (algebraMap R S c)) * (F %ₘ P) =
-        Polynomial.C (C (algebraMap R S c)) * F := by
-      rw [← mul_assoc, mul_comm P, mul_assoc, ← mul_add, add_comm, ← hF_split]
-    rw [← h1] at hP_dvd_cF
-    exact (dvd_add_right (dvd_mul_right P _)).mp hP_dvd_cF
-  have hrem_zero : F %ₘ P = 0 := by
-    by_contra hne
-    have hc_ne : Polynomial.C (C (algebraMap R S c)) ≠
-        (0 : Polynomial (MvPolynomial (Fin 1) S)) := by
-      intro h0
-      exact hc (hinj (by simpa using C_eq_zero.mp (Polynomial.C_eq_zero.mp h0)))
-    have hprod_ne : Polynomial.C (C (algebraMap R S c)) * (F %ₘ P) ≠ 0 :=
-      mul_ne_zero hc_ne hne
-    have hdeg_le1 : P.natDegree ≤ (Polynomial.C (C (algebraMap R S c)) * (F %ₘ P)).natDegree :=
-      Polynomial.natDegree_le_of_dvd hP_dvd_rem hprod_ne
-    have hdeg_le2 : (Polynomial.C (C (algebraMap R S c)) * (F %ₘ P)).natDegree ≤
-        (F %ₘ P).natDegree :=
-      Polynomial.natDegree_C_mul_le _ _
-    have hP_ne_one : P ≠ 1 := fun h1 ↦ by
-      rw [h1, Polynomial.natDegree_one] at hP_deg
-      exact lt_irrefl 0 hP_deg
-    have hdeg_lt : (F %ₘ P).natDegree < P.natDegree :=
-      Polynomial.natDegree_modByMonic_lt F hP_mon hP_ne_one
-    omega
-  have hP_dvd_F : P ∣ F := by
-    rw [hrem_zero, zero_add] at hF_split
-    exact ⟨F /ₘ P, hF_split⟩
-  obtain ⟨H₀, hH₀⟩ := hP_dvd_F
-  have hF_eq : F = finSuccEquiv S 1 (MvPolynomial.map (algebraMap R S) W') *
-      (Polynomial.C (C ((hu.unit⁻¹ : Sˣ) : S)) * H₀) := by
-    rw [hH₀, hW']
-    calc P * H₀ = Polynomial.C (C (1 : S)) * (P * H₀) := by simp
-    _ = Polynomial.C (C (algebraMap R S u * ((hu.unit⁻¹ : Sˣ) : S))) * (P * H₀) := by
-          rw [hu.mul_val_inv]
-    _ = Polynomial.C (C (algebraMap R S u)) * P *
-          (Polynomial.C (C ((hu.unit⁻¹ : Sˣ) : S)) * H₀) := by
-          simp only [map_mul]
-          ring
-  let h₂ : MvPolynomial (Fin 2) S :=
-    (finSuccEquiv S 1).symm (Polynomial.C (C ((hu.unit⁻¹ : Sˣ) : S)) * H₀)
-  have hf₂ : MvPolynomial.map (algebraMap R S) f =
-      MvPolynomial.map (algebraMap R S) W' * h₂ := by
-    apply (finSuccEquiv S 1).injective
-    simpa [F, h₂] using hF_eq
-  obtain ⟨⟨b, kb, hkb⟩, q', hq'⟩ :=
-    exists_C_mul_eq_map_of_isLocalization (Submonoid.powers d) S h₂
-  refine ⟨kb, q', hinj_mv ?_⟩
-  have hbk : b = d ^ kb := hkb.symm
-  rw [map_mul, map_C, map_mul, ← hbk, hf₂, ← mul_assoc, mul_comm (C (algebraMap R S b)),
-    mul_assoc, hq', ← map_mul]
-
-private theorem weierstrass_dvd_of_C_mul_dvd {R : Type*} [CommRing R] [IsDomain R]
-    (h2 : (2 : R) ≠ 0) (h3 : (3 : R) ≠ 0) {c : R} (hc : c ≠ 0)
-    {f q : MvPolynomial (Fin 2) R}
-    (hcf : C c * f = (4 * X 0 ^ 3 + 27 * X 1 ^ 2 : MvPolynomial (Fin 2) R) * q) :
-    (4 * X 0 ^ 3 + 27 * X 1 ^ 2 : MvPolynomial (Fin 2) R) ∣ f := by
-  let W : MvPolynomial (Fin 2) R := 4 * X 0 ^ 3 + 27 * X 1 ^ 2
-  -- First descend divisibility after inverting 2, using monicity in `X 0`.
-  have hdvd₂ : ∃ (k₂ : ℕ) (q₂ : MvPolynomial (Fin 2) R), C ((2 : R) ^ k₂) * f = W * q₂ := by
-    let R₂ := Localization.Away (2 : R)
-    have : IsDomain R₂ := IsLocalization.Away.isDomain (S := R₂) h2
-    have hu₂ : IsUnit (algebraMap R R₂ 2) := IsLocalization.Away.algebraMap_isUnit (2 : R)
-    have hu₄ : IsUnit (algebraMap R R₂ 4) := by
-      have h4 : algebraMap R R₂ 4 = algebraMap R R₂ 2 ^ 2 := by
-        rw [← map_pow]
-        norm_num
-      exact h4 ▸ hu₂.pow 2
-    let P₂ : Polynomial (MvPolynomial (Fin 1) R₂) :=
-      Polynomial.X ^ 3 + Polynomial.C (C ((hu₄.unit⁻¹ : R₂ˣ) : R₂) * (27 * X 0 ^ 2))
-    have hP₂_mon : P₂.Monic := Polynomial.monic_X_pow_add_C _ (by norm_num)
-    have hP₂_deg : 0 < P₂.natDegree := by
-      dsimp [P₂]
-      rw [Polynomial.natDegree_X_pow_add_C]
-      decide
-    have hW₂ : finSuccEquiv R₂ 1 (MvPolynomial.map (algebraMap R R₂) W) =
-        Polynomial.C (C (algebraMap R R₂ 4)) * P₂ := by
-      have h0 : finSuccEquiv R₂ 1 (X 0) = Polynomial.X := finSuccEquiv_X_zero
-      have h1 : finSuccEquiv R₂ 1 (X 1) = Polynomial.C (X 0) := finSuccEquiv_X_succ (j := 0)
-      calc finSuccEquiv R₂ 1 (MvPolynomial.map (algebraMap R R₂) W)
-          = Polynomial.C (C (algebraMap R R₂ 4)) * Polynomial.X ^ 3 +
-              Polynomial.C (27 * X 0 ^ 2) := by
-            simp [W, map_add, map_mul, map_pow, map_ofNat, h0, h1]
-        _ = Polynomial.C (C (algebraMap R R₂ 4)) * P₂ := by
-            dsimp [P₂]
-            rw [mul_add, ← Polynomial.C_mul, ← mul_assoc, ← C_mul, hu₄.mul_val_inv, map_one,
-              one_mul]
-    exact pow_mul_dvd_of_C_mul_dvd_away h2 hc hu₄ hP₂_mon hP₂_deg hW₂ hcf
-  -- Next descend divisibility after inverting 3, using monicity in `X 1`.
-  have hdvd₃ : ∃ (k₃ : ℕ) (q₃ : MvPolynomial (Fin 2) R), C ((3 : R) ^ k₃) * f = W * q₃ := by
-    let σswap : Equiv.Perm (Fin 2) := Equiv.swap 0 1
-    let W' : MvPolynomial (Fin 2) R := rename σswap W
-    let f' : MvPolynomial (Fin 2) R := rename σswap f
-    let q' : MvPolynomial (Fin 2) R := rename σswap q
-    have hcf' : C c * f' = W' * q' := by
-      have h1 := congrArg (rename (R := R) σswap) hcf
-      rw [map_mul, rename_C, map_mul] at h1
-      exact h1
-    let R₃ := Localization.Away (3 : R)
-    have : IsDomain R₃ := IsLocalization.Away.isDomain (S := R₃) h3
-    have hu₃ : IsUnit (algebraMap R R₃ 3) := IsLocalization.Away.algebraMap_isUnit (3 : R)
-    have hu₂₇ : IsUnit (algebraMap R R₃ 27) := by
-      have h27 : algebraMap R R₃ 27 = algebraMap R R₃ 3 ^ 3 := by
-        rw [← map_pow]
-        norm_num
-      exact h27 ▸ hu₃.pow 3
-    let P₃ : Polynomial (MvPolynomial (Fin 1) R₃) :=
-      Polynomial.X ^ 2 + Polynomial.C (C ((hu₂₇.unit⁻¹ : R₃ˣ) : R₃) * (4 * X 0 ^ 3))
-    have hP₃_mon : P₃.Monic := Polynomial.monic_X_pow_add_C _ (by norm_num)
-    have hP₃_deg : 0 < P₃.natDegree := by
-      dsimp [P₃]
-      rw [Polynomial.natDegree_X_pow_add_C]
-      decide
-    have hW'₃ : finSuccEquiv R₃ 1 (MvPolynomial.map (algebraMap R R₃) W') =
-        Polynomial.C (C (algebraMap R R₃ 27)) * P₃ := by
-      have h0 : finSuccEquiv R₃ 1 (X 0) = Polynomial.X := finSuccEquiv_X_zero
-      have h1 : finSuccEquiv R₃ 1 (X 1) = Polynomial.C (X 0) := finSuccEquiv_X_succ (j := 0)
-      have hW'_eq : W' = 4 * X 1 ^ 3 + 27 * X 0 ^ 2 := by
-        simp [W', W, σswap, map_add, map_mul, map_pow, map_ofNat]
-      calc finSuccEquiv R₃ 1 (MvPolynomial.map (algebraMap R R₃) W')
-          = Polynomial.C (C (algebraMap R R₃ 27)) * Polynomial.X ^ 2 +
-              Polynomial.C (4 * X 0 ^ 3) := by
-            rw [hW'_eq]
-            simp [map_add, map_mul, map_pow, map_ofNat, h0, h1]
-            ring
-        _ = Polynomial.C (C (algebraMap R R₃ 27)) * P₃ := by
-            dsimp [P₃]
-            rw [mul_add, ← Polynomial.C_mul, ← mul_assoc, ← C_mul, hu₂₇.mul_val_inv, map_one,
-              one_mul]
-    obtain ⟨k₃, q₃', hq₃'⟩ := pow_mul_dvd_of_C_mul_dvd_away h3 hc hu₂₇ hP₃_mon hP₃_deg hW'₃ hcf'
-    refine ⟨k₃, rename σswap q₃', ?_⟩
-    have hback := congrArg (rename (R := R) σswap) hq₃'
-    have hinv : (σswap : Fin 2 → Fin 2) ∘ σswap = id := by
-      funext i
-      fin_cases i <;> rfl
-    dsimp only [W', f'] at hback
-    rw [map_mul, rename_C, map_mul, rename_rename, rename_rename, hinv, rename_id] at hback
-    exact hback
-  obtain ⟨k₂, q₂, hq₂⟩ := hdvd₂
-  obtain ⟨k₃, q₃, hq₃⟩ := hdvd₃
-  have hcop : Nat.Coprime (2 ^ k₂) (3 ^ k₃) := (by decide : Nat.Coprime 2 3).pow k₂ k₃
-  have hbez := Nat.gcd_eq_gcd_ab (2 ^ k₂) (3 ^ k₃)
-  rw [hcop.gcd_eq_one, Nat.cast_one] at hbez
-  let a : ℤ := Nat.gcdA (2 ^ k₂) (3 ^ k₃)
-  let b : ℤ := Nat.gcdB (2 ^ k₂) (3 ^ k₃)
-  have hbezR : ((2 : R) ^ k₂) * (a : R) + ((3 : R) ^ k₃) * (b : R) = 1 := by
-    have h1 := congrArg (Int.cast : ℤ → R) hbez
-    simpa [a, b, Int.cast_add, Int.cast_mul, Int.cast_pow, Int.cast_ofNat] using h1.symm
-  refine ⟨C (a : R) * q₂ + C (b : R) * q₃, ?_⟩
-  change f = W * (C (a : R) * q₂ + C (b : R) * q₃)
-  calc f = C ((2 : R) ^ k₂ * (a : R) + (3 : R) ^ k₃ * (b : R)) * f := by
-        rw [hbezR, map_one, one_mul]
-  _ = C (a : R) * (C ((2 : R) ^ k₂) * f) + C (b : R) * (C ((3 : R) ^ k₃) * f) := by
-        rw [map_add, map_mul, map_mul]
-        ring
-  _ = C (a : R) * (W * q₂) + C (b : R) * (W * q₃) := by rw [hq₂, hq₃]
-  _ = W * (C (a : R) * q₂ + C (b : R) * q₃) := by ring
-
 /-- Over any integral domain in which `2 ≠ 0` and `3 ≠ 0`, the Weierstrass discriminant
 `4 * X 0 ^ 3 + 27 * X 1 ^ 2` is prime. -/
 theorem prime_four_mul_pow_three_add_twentyseven_mul_sq {R : Type*} [CommRing R] [IsDomain R]
     (h2 : (2 : R) ≠ 0) (h3 : (3 : R) ≠ 0) :
     Prime (4 * X 0 ^ 3 + 27 * X 1 ^ 2 : MvPolynomial (Fin 2) R) := by
-  let W : MvPolynomial (Fin 2) R := 4 * X 0 ^ 3 + 27 * X 1 ^ 2
-  let K := FractionRing R
-  have hinj : Function.Injective (algebraMap R K) := IsFractionRing.injective R K
-  have hinj_mv : Function.Injective (MvPolynomial.map (σ := Fin 2) (algebraMap R K)) :=
-    MvPolynomial.map_injective _ hinj
-  have h2K : (2 : K) ≠ 0 := by
-    simpa only [map_ofNat] using (map_ne_zero_iff (algebraMap R K) hinj).mpr h2
-  have h3K : (3 : K) ≠ 0 := by
-    simpa only [map_ofNat] using (map_ne_zero_iff (algebraMap R K) hinj).mpr h3
-  have hassocK : Associated (depressedDiscr K 3)
-      (4 * X 0 ^ 3 + 27 * X 1 ^ 2 : MvPolynomial (Fin 2) K) :=
+  have hassoc : Associated (depressedDiscr R 3)
+      (4 * X 0 ^ 3 + 27 * X 1 ^ 2 : MvPolynomial (Fin 2) R) :=
     ⟨-1, by simp [depressedDiscr_three]; ring⟩
-  have hWK : Prime (4 * X 0 ^ 3 + 27 * X 1 ^ 2 : MvPolynomial (Fin 2) K) :=
-    hassocK.prime_iff.mp
-      (depressedDiscr_prime h2K (m := 3) (by norm_num; exact h3K) (by norm_num))
-  have hWK_eq : MvPolynomial.map (algebraMap R K) W =
-      (4 * X 0 ^ 3 + 27 * X 1 ^ 2 : MvPolynomial (Fin 2) K) := by
-    dsimp [W]
-    simp [map_add, map_mul, map_pow, map_ofNat]
-  rw [← hWK_eq] at hWK
-  refine ⟨fun h0 ↦ hWK.ne_zero (by rw [show W = 4 * X 0 ^ 3 + 27 * X 1 ^ 2 from rfl, h0, map_zero]),
-    fun hu ↦ hWK.not_isUnit (hu.map _), ?_⟩
-  intro f g hfg
-  have hfgK : MvPolynomial.map (algebraMap R K) W ∣
-      MvPolynomial.map (algebraMap R K) f * MvPolynomial.map (algebraMap R K) g := by
-    have h1 := map_dvd (MvPolynomial.map (σ := Fin 2) (algebraMap R K)) hfg
-    rwa [map_mul] at h1
-  have descend : ∀ x : MvPolynomial (Fin 2) R,
-      MvPolynomial.map (algebraMap R K) W ∣ MvPolynomial.map (algebraMap R K) x → W ∣ x := by
-    rintro x ⟨qK, hqK⟩
-    obtain ⟨⟨c, hc⟩, q₀, hq₀⟩ :=
-      exists_C_mul_eq_map_of_isLocalization (nonZeroDivisors R) K qK
-    have hcx : C c * x = W * q₀ := by
-      apply hinj_mv
-      rw [map_mul, map_C, map_mul, hqK, ← hq₀]
-      ring
-    exact weierstrass_dvd_of_C_mul_dvd h2 h3 (nonZeroDivisors.ne_zero hc) hcx
-  rcases hWK.dvd_or_dvd hfgK with hfK | hgK
-  · exact Or.inl (descend f hfK)
-  · exact Or.inr (descend g hgK)
+  exact hassoc.prime_iff.mp
+    (depressedDiscr_prime h2 (m := 3) (by norm_num; exact h3) (by norm_num))
 
 /-- Inverting `4 * X 0 ^ 3 + 27 * X 1 ^ 2` in `R[a, b]` with weights `4, 6` (when `2 ≠ 0` and
 `3 ≠ 0` in an integral domain `R`) yields shift class group `ZMod 12`. -/
