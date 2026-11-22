@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Lie.ContinuousFunctor
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Complex.Basic
 public import TauCeti.Geometry.Lie.Subgroup.SpecialOrthogonal
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.UnitsRange
+import TauCeti.Algebra.Lie.Subalgebra.RestrictScalars
 
 /-!
 # Smooth complex Spin-to-SO projection and its coordinate differentials
@@ -114,33 +115,20 @@ instance complexSpecialOrthogonalUnitsRangeLieGroup :
     LieGroup 𝓘(ℝ, SpecialOrthogonalLieModel) ∞ SpecialOrthogonalUnitsRange :=
   (complexSpecialOrthogonalEmbeddedLieSubgroupData Q).lieGroup
 
-private theorem map_complexSpecialOrthogonal_lieSubalgebra (hQ : Q.Nondegenerate) :
-    Submodule.map
-        ((TauCeti.Lie.unitsLieAlgebraLieEquiv
-          (R := Matrix (Fin n) (Fin n) ℂ)).toLinearEquiv : _ →ₗ[ℝ] _)
-        (TauCeti.Lie.lieSubalgebraOfSubgroup
-          (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℂ)) SpecialOrthogonalUnitsRange).toSubmodule =
-      (skewAdjointMatricesLieSubalgebra
-        (LinearMap.BilinForm.toMatrix' Q.polarBilin)).toSubmodule.restrictScalars ℝ := by
-  open TauCeti.Lie in
-  ext A
-  simp only [Submodule.mem_map_equiv, Submodule.restrictScalars_mem]
-  exact unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_range_specialOrthogonal_iff
-    Q hQ A
-
 private def complexSpecialOrthogonalAmbientCoordinateLieEquiv (hQ : Q.Nondegenerate) :
     TauCeti.Lie.lieSubalgebraOfSubgroup
         (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℂ)) SpecialOrthogonalUnitsRange ≃ₗ⁅ℝ⁆
       RestrictScalars ℝ ℂ
         (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin)) :=
-  { LinearEquiv.ofSubmodules
-      (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := Matrix (Fin n) (Fin n) ℂ)).toLinearEquiv
-      _
-      ((skewAdjointMatricesLieSubalgebra
-        (LinearMap.BilinForm.toMatrix' Q.polarBilin)).toSubmodule.restrictScalars ℝ)
-      (map_complexSpecialOrthogonal_lieSubalgebra hQ) with
-    map_lie' := fun {x y} ↦ Subtype.ext
-      ((TauCeti.Lie.unitsLieAlgebraLieEquiv (R := Matrix (Fin n) (Fin n) ℂ)).map_lie x y) }
+  (TauCeti.Lie.unitsLieAlgebraLieEquiv
+    (R := Matrix (Fin n) (Fin n) ℂ)).ofSubalgebrasRestrictScalars _
+      (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin)) <| by
+        ext A
+        simp only [Submodule.mem_map_equiv, LieSubalgebra.mem_map_submodule,
+          LieSubalgebra.mem_range_restrictScalarsIncl]
+        exact
+TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_range_specialOrthogonal_iff
+          Q hQ A
 
 private theorem coe_complexSpecialOrthogonalAmbientCoordinateLieEquiv_apply
     (hQ : Q.Nondegenerate)
@@ -149,16 +137,8 @@ private theorem coe_complexSpecialOrthogonalAmbientCoordinateLieEquiv_apply
     (RestrictScalars.addEquiv ℝ ℂ
       (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin))
       (complexSpecialOrthogonalAmbientCoordinateLieEquiv hQ x) : Matrix (Fin n) (Fin n) ℂ) =
-      TauCeti.Lie.unitsLieAlgebraLieEquiv x := by
-  -- The `LieEquiv` extends `LinearEquiv.ofSubmodules` on the same forward map, and
-  -- `RestrictScalars.addEquiv` is the identity on the underlying submodule carrier.
-  exact LinearEquiv.ofSubmodules_apply
-    (e := (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := Matrix (Fin n) (Fin n) ℂ)).toLinearEquiv)
-    (p := (TauCeti.Lie.lieSubalgebraOfSubgroup
-      (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℂ)) SpecialOrthogonalUnitsRange).toSubmodule)
-    (q := (skewAdjointMatricesLieSubalgebra
-      (LinearMap.BilinForm.toMatrix' Q.polarBilin)).toSubmodule.restrictScalars ℝ)
-    (map_complexSpecialOrthogonal_lieSubalgebra hQ) x
+      TauCeti.Lie.unitsLieAlgebraLieEquiv x :=
+  LieEquiv.coe_ofSubalgebrasRestrictScalars_apply _ _ _ _ x
 
 /-- The real Lie algebra of the complex `SO(Q)` range carrier in polar skew-adjoint matrix
 coordinates. -/

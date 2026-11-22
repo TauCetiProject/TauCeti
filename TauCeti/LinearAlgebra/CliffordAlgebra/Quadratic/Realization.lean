@@ -207,6 +207,15 @@ noncomputable def skewAdjointMatricesEquivQuadratic {n : Type w} [Fintype n] [De
     skewAdjointMatricesLieSubalgebra J ≃ₗ⁅K⁆ quadraticLieSubalgebra Q :=
   (TauCeti.skewAdjointLieEquivOfBasis b Q.polarBilin hJ).trans (soEquivQuadratic Q hQ)
 
+/-- `skewAdjointMatricesEquivQuadratic` factors through `TauCeti.skewAdjointLieEquivOfBasis` and
+`soEquivQuadratic`. -/
+theorem skewAdjointMatricesEquivQuadratic_def {n : Type w} [Fintype n] [DecidableEq n]
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (b : Module.Basis n K V)
+    {J : Matrix n n K} (hJ : LinearMap.BilinForm.toMatrix b Q.polarBilin = J) :
+    skewAdjointMatricesEquivQuadratic Q hQ b hJ =
+      (TauCeti.skewAdjointLieEquivOfBasis b Q.polarBilin hJ).trans (soEquivQuadratic Q hQ) := by
+  rw [skewAdjointMatricesEquivQuadratic]
+
 /-- The matrix-to-quadratic equivalence acts on Clifford generators through the matrix
 endomorphism in the chosen basis. -/
 @[simp]

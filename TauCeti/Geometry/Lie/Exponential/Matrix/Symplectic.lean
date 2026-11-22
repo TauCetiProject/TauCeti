@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import TauCeti.Algebra.Lie.Symplectic.Basic
 public import TauCeti.Analysis.Matrix.Exponential.Log
 public import TauCeti.Geometry.Lie.Exponential.OneParameter
+import TauCeti.Geometry.Lie.Exponential.Matrix.SkewAdjoint
 
 /-!
 # Matrix exponential lines in the symplectic group
@@ -59,13 +60,7 @@ theorem exp_mem_symplecticGroup_of_mem_sp (A : Matrix (l ⊕ l) (l ⊕ l) 𝕜)
     (hA : A ∈ LieAlgebra.Symplectic.sp l 𝕜) :
     exp A ∈ symplecticGroup l 𝕜 := by
   rw [SymplecticGroup.mem_iff']
-  have hT : (exp A)ᵀ * J l 𝕜 = J l 𝕜 * exp (-A) := by
-    rw [← eq_J_conj_iff_mul_J_eq, ← exp_transpose,
-      (LieAlgebra.Symplectic.mem_sp_iff_transpose_eq_J_conj_neg A).mp hA,
-      exp_conj _ _ (isUnit_J l 𝕜)]
-  have hinv : exp (-A) * exp A = 1 := by
-    rw [← exp_add_of_commute _ _ ((Commute.refl A).neg_left), neg_add_cancel, NormedSpace.exp_zero]
-  rw [hT, mul_assoc, hinv, mul_one]
+  exact exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra (J l 𝕜) A hA
 
 /-- The exponential of an element of the symplectic Lie algebra has determinant one. -/
 theorem det_exp_eq_one_of_mem_sp (A : Matrix (l ⊕ l) (l ⊕ l) 𝕜)
@@ -79,22 +74,8 @@ when `𝕜 = ℂ`. -/
 @[simp]
 theorem forall_exp_smul_mem_symplecticGroup_iff_mem_sp (A : Matrix (l ⊕ l) (l ⊕ l) 𝕜) :
     (∀ t : ℝ, exp (t • A) ∈ symplecticGroup l 𝕜) ↔ A ∈ LieAlgebra.Symplectic.sp l 𝕜 := by
-  constructor
-  · intro h
-    rw [LieAlgebra.Symplectic.mem_sp_iff_transpose_eq_J_conj_neg]
-    refine TauCeti.eq_of_forall_exp_smul_eq fun s => ?_
-    calc exp (s • Aᵀ)
-        = (exp (s • A))ᵀ := by rw [← Matrix.transpose_smul, exp_transpose]
-      _ = J l 𝕜 * (exp (s • A))⁻¹ * (J l 𝕜)⁻¹ :=
-          SymplecticGroup.transpose_eq_J_conj_inv (h s)
-      _ = J l 𝕜 * exp (s • (-A)) * (J l 𝕜)⁻¹ := by rw [smul_neg, exp_neg]
-      _ = exp (s • (J l 𝕜 * (-A) * (J l 𝕜)⁻¹)) := by
-          rw [← exp_conj _ _ (isUnit_J l 𝕜)]
-          congr 1
-          simp only [smul_mul_assoc, mul_smul_comm]
-  · intro hA t
-    exact exp_mem_symplecticGroup_of_mem_sp (t • A)
-      (((LieAlgebra.Symplectic.sp l 𝕜).toSubmodule.restrictScalars ℝ).smul_mem t hA)
+  simp_rw [SymplecticGroup.mem_iff']
+  exact forall_exp_smul_transpose_mul_mul_eq_iff_mem_skewAdjointMatricesLieSubalgebra (J l 𝕜) A
 
 /-- **A Hermitian matrix has symplectic exponential exactly when it lies in the symplectic Lie
 algebra**: by injectivity of the exponential on Hermitian matrices, the symplectic condition

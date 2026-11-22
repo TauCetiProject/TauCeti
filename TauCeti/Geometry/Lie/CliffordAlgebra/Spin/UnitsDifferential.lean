@@ -20,8 +20,8 @@ Both the compact real Spin projection and the nondegenerate complex Spin project
 differential `d(spinToSpecialOrthogonal)` by comparing a one-parameter exponential curve
 `exp (t • A)` in `SO(Q)` with the corresponding curve `exp (t • x)` in `Spin(Q)`.
 
-This module extracts the field-independent core of that calculation over any complete finite-
-dimensional normed extension `𝕜` of `ℝ` with `2` invertible:
+This module extracts the field-independent core of that calculation over any finite-dimensional
+normed field extension `𝕜` of `ℝ` with `2` invertible:
 
 * `TauCeti.CliffordAlgebra.hasDerivAt_linearMap_exp_mulVec`: differentiates
   `t ↦ f (exp (t • A) *ᵥ v)` at `t = 0` for any `ℝ`-linear map `f` into a normed space.
@@ -51,7 +51,7 @@ attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 section ChainRule
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
   [FiniteDimensional ℝ 𝕜]
   {m : Type*} [Fintype m] [DecidableEq m]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -61,6 +61,7 @@ yields `f (A *ᵥ v)`. -/
 theorem hasDerivAt_linearMap_exp_mulVec
     (f : (m → 𝕜) →ₗ[ℝ] E) (A : Matrix m m 𝕜) (v : m → 𝕜) :
     HasDerivAt (fun t : ℝ ↦ f (NormedSpace.exp (t • A) *ᵥ v)) (f (A *ᵥ v)) 0 := by
+  let _ : CompleteSpace 𝕜 := FiniteDimensional.completeSpace ℝ 𝕜
   let fLin : Matrix m m 𝕜 →ₗ[ℝ] E :=
     f.comp (((Matrix.mulVecBilin 𝕜 𝕜).flip v).restrictScalars ℝ)
   let fCLM : Matrix m m 𝕜 →L[ℝ] E :=
@@ -77,7 +78,7 @@ section Commutator
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
   [FiniteDimensional ℝ 𝕜] [Invertible (2 : 𝕜)]
   {m : Type*} [Fintype m] [DecidableEq m]
   {Q : QuadraticForm 𝕜 (m → 𝕜)}

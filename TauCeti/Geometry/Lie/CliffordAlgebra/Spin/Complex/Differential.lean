@@ -158,14 +158,10 @@ theorem complexSpinToSpecialOrthogonalCoordinateLieHom_eq_skewAdjointMatricesEqu
   apply eB.injective
   dsimp only [LieEquiv.coe_toLieHom]
   rw [← coe_complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q) x,
-    complexSpinToSpecialOrthogonalPolarCoordinateLieHom_eq_soEquivQuadratic_symm]
-  apply (soEquivQuadratic Q hQ).injective
-  dsimp only [LieEquiv.coe_toLieHom]
-  rw [LieEquiv.apply_symm_apply]
-  refine quadraticLieSubalgebra_ext Q hQ fun v ↦ ?_
-  rw [soEquivQuadratic_lie_ι, TauCeti.coe_skewAdjointLieEquivOfBasis_apply,
-    ← skewAdjointMatricesEquivQuadratic_lie_ι Q hQ (Pi.basisFun ℂ (Fin n)) hJ,
-    LieEquiv.apply_symm_apply]
+    complexSpinToSpecialOrthogonalPolarCoordinateLieHom_eq_soEquivQuadratic_symm,
+    skewAdjointMatricesEquivQuadratic_def]
+  exact (eB.apply_symm_apply ((soEquivQuadratic Q hQ).symm
+    (RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q) x))).symm
 
 /-- The complex `Spin(Q) → SO(Q)` differential in polar skew-adjoint endomorphism coordinates,
 packaged as a `ℂ`-linear Lie algebra equivalence. Its forward map is the manifold differential

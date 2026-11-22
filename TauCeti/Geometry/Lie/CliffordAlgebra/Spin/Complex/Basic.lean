@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.BaseChange
 public import TauCeti.Geometry.Lie.Subgroup.Differential
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.LieAlgebra
+import TauCeti.Algebra.Lie.Subalgebra.RestrictScalars
 
 /-!
 # The smooth complex Spin carrier and its quadratic Lie coordinates
@@ -76,26 +77,21 @@ instance complexSpinUnitsRangeLieGroup [Fact Q.Nondegenerate] :
 private def complexSpinAmbientCoordinateLieEquiv (hQ : Q.Nondegenerate) :
     TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, CliffordAlgebra Q)) SpinUnitsRange ≃ₗ⁅ℝ⁆
       RestrictScalars ℝ ℂ (quadraticLieSubalgebra Q) :=
-  { LinearEquiv.ofSubmodules
-    (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := CliffordAlgebra Q)).toLinearEquiv
-    _ ((quadraticLieSubalgebra Q).toSubmodule.restrictScalars ℝ) (by
+  (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := CliffordAlgebra Q)).ofSubalgebrasRestrictScalars
+    _ (quadraticLieSubalgebra Q) <| by
       ext x
-      simp only [Submodule.mem_map_equiv, Submodule.restrictScalars_mem]
+      simp only [Submodule.mem_map_equiv, LieSubalgebra.mem_map_submodule,
+        LieSubalgebra.mem_range_restrictScalarsIncl]
       exact
 unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_quadraticLieSubalgebra_complex
-          Q hQ x) with
-    map_lie' := fun {x y} ↦ Subtype.ext
-      ((TauCeti.Lie.unitsLieAlgebraLieEquiv (R := CliffordAlgebra Q)).map_lie x y) }
+          Q hQ x
 
 private theorem coe_complexSpinAmbientCoordinateLieEquiv_apply (hQ : Q.Nondegenerate)
     (x : TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, CliffordAlgebra Q)) SpinUnitsRange) :
     (RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)
       (complexSpinAmbientCoordinateLieEquiv hQ x) : CliffordAlgebra Q) =
-      TauCeti.Lie.unitsLieAlgebraLieEquiv x := by
-  -- Both the restriction of the equivalence and the scalar-restriction accessor retain
-  -- the ambient units-coordinate function.
-  unfold complexSpinAmbientCoordinateLieEquiv
-  rfl
+      TauCeti.Lie.unitsLieAlgebraLieEquiv x :=
+  LieEquiv.coe_ofSubalgebrasRestrictScalars_apply _ _ _ _ x
 
 /-- The real Lie algebra of complex Spin in the complex quadratic Clifford coordinates.
 `RestrictScalars` keeps the complex quadratic carrier and regards it as a real Lie algebra. -/

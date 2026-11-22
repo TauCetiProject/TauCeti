@@ -72,12 +72,6 @@ private theorem mem_skewAdjointMatricesLieSubalgebra_iff_add (J A : Matrix n n �
   simp only [mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
     Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, mul_neg, eq_neg_iff_add_eq_zero]
 
-omit [CompleteSpace 𝕜] in
-private theorem smul_mem_skewAdjointMatricesLieSubalgebra
-    {J A : Matrix n n 𝕜} (hA : A ∈ skewAdjointMatricesLieSubalgebra J) (t : ℝ) :
-    t • A ∈ skewAdjointMatricesLieSubalgebra J := by
-  rw [← IsScalarTower.algebraMap_smul 𝕜 t A]
-  exact (skewAdjointMatricesLieSubalgebra J).smul_mem (algebraMap ℝ 𝕜 t) hA
 
 /-- The matrix exponential of an element of `skewAdjointMatricesLieSubalgebra J` preserves `J`,
 without any invertibility or symmetry assumption on `J`. -/
@@ -116,7 +110,7 @@ theorem forall_exp_smul_transpose_mul_mul_eq_iff_mem_skewAdjointMatricesLieSubal
     exact h0
   · intro hA t
     exact exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra J (t • A)
-      (smul_mem_skewAdjointMatricesLieSubalgebra hA t)
+      (((skewAdjointMatricesLieSubalgebra J).toSubmodule.restrictScalars ℝ).smul_mem t hA)
 
 /-- When `J.det` is a non-zerodivisor in `𝕜`, the exponential of every
 `A ∈ skewAdjointMatricesLieSubalgebra J` has determinant `1`. -/
@@ -149,7 +143,8 @@ theorem forall_exp_smul_transpose_mul_mul_eq_and_det_eq_one_iff
     exact (forall_exp_smul_transpose_mul_mul_eq_iff_mem_skewAdjointMatricesLieSubalgebra J A).mp
       fun t ↦ (h t).1
   · intro hA t
-    have htA := smul_mem_skewAdjointMatricesLieSubalgebra hA t
+    have htA :=
+      ((skewAdjointMatricesLieSubalgebra J).toSubmodule.restrictScalars ℝ).smul_mem t hA
     exact ⟨exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra J (t • A) htA,
       det_exp_eq_one_of_mem_skewAdjointMatricesLieSubalgebra hJ (t • A) htA⟩
 
@@ -173,10 +168,8 @@ theorem forall_expUnit_smul_mem_range_specialOrthogonalToGeneralLinear_iff
     (Q : QuadraticForm 𝕜 (n → 𝕜)) (hQ : Q.Nondegenerate) (A : Matrix n n 𝕜) :
     (∀ t : ℝ, TauCeti.expUnit (t • A) ∈ MonoidHom.range Q.specialOrthogonalToGeneralLinear) ↔
       A ∈ skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin) := by
-  let _ : Invertible (2 : 𝕜) :=
-    ⟨algebraMap ℝ 𝕜 2⁻¹,
-      by rw [← map_ofNat (algebraMap ℝ 𝕜) 2, ← map_mul, inv_mul_cancel₀ two_ne_zero, map_one],
-      by rw [← map_ofNat (algebraMap ℝ 𝕜) 2, ← map_mul, mul_inv_cancel₀ two_ne_zero, map_one]⟩
+  let _ : Invertible (2 : 𝕜) := by
+    simpa only [map_ofNat] using Invertible.map (algebraMap ℝ 𝕜) (2 : ℝ)
   have h2 : IsSMulRegular 𝕜 (2 : 𝕜) := (isUnit_of_invertible (2 : 𝕜)).isRegular.left
   have hJ : (LinearMap.BilinForm.toMatrix' Q.polarBilin).det ∈ 𝕜⁰ :=
     Q.det_toMatrix'_polarBilin_mem_nonZeroDivisors hQ
