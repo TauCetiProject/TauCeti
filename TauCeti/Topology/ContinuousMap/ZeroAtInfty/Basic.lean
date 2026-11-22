@@ -143,39 +143,26 @@ section NormedExtra
 
 variable [SeminormedAddCommGroup β]
 
-/-- Pointwise scalar multiplication of a function vanishing at infinity by a bounded continuous
-scalar function `c : α → R`. -/
-def smulBounded {R : Type*} [SeminormedRing R] [Module R β] [IsBoundedSMul R β]
-    (c : α → R) (hc : Continuous c) (hK : ∃ K, ∀ x, ‖c x‖ ≤ K) (f : C₀(α, β)) : C₀(α, β) where
-  toFun x := c x • f x
-  continuous_toFun := hc.smul (map_continuous f)
-  zero_at_infty' := by
-    obtain ⟨K, hK⟩ := hK
-    refine squeeze_zero_norm (fun x ↦ (norm_smul_le (c x) (f x)).trans
-      (mul_le_mul_of_nonneg_right (hK x) (norm_nonneg _))) ?_
-    simpa using (zero_at_infty f).norm.const_mul K
-
-/-- `smulBounded c hc hK f` multiplies `f` pointwise by `c`. -/
-@[simp]
-theorem smulBounded_apply {R : Type*} [SeminormedRing R] [Module R β] [IsBoundedSMul R β]
-    (c : α → R) (hc : Continuous c) (hK : ∃ K, ∀ x, ‖c x‖ ≤ K) (f : C₀(α, β)) (x : α) :
-    smulBounded c hc hK f x = c x • f x :=
-  (rfl)
+/-- A function vanishing at infinity has norm strictly less than `δ > 0` outside some compact
+set. -/
+theorem exists_isCompact_norm_lt (f : C₀(α, β)) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ K : Set α, IsCompact K ∧ ∀ x ∉ K, ‖f x‖ < δ := by
+  obtain ⟨K, hK, hKsub⟩ := Filter.mem_cocompact.1
+    ((tendsto_zero_iff_norm_tendsto_zero.1 (zero_at_infty f)).eventually
+      (Metric.ball_mem_nhds 0 hδ))
+  exact ⟨K, hK, fun x hx ↦ by
+    simpa [Real.dist_eq, abs_of_nonneg (norm_nonneg _)] using hKsub hx⟩
 
 /-- A function in `C₀(ℝ, β)` has norm at most `δ > 0` outside some bounded interval `[-T, T]`. -/
 theorem exists_abs_ge_norm_le (f : C₀(ℝ, β)) {δ : ℝ} (hδ : 0 < δ) :
     ∃ T > 0, ∀ s : ℝ, T ≤ |s| → ‖f s‖ ≤ δ := by
-  obtain ⟨K, hK, hKsub⟩ := Filter.mem_cocompact.1
-    ((tendsto_zero_iff_norm_tendsto_zero.1 (zero_at_infty f)).eventually
-      (Metric.ball_mem_nhds 0 hδ))
+  obtain ⟨K, hK, hKlt⟩ := f.exists_isCompact_norm_lt hδ
   obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall 0
   refine ⟨max R 0 + 1, by positivity, fun s hs ↦ ?_⟩
   by_contra! hgt
   have hsK : s ∈ K := by
     by_contra hs_not
-    have hball : ‖f s‖ < δ := by
-      simpa [Real.dist_eq, abs_of_nonneg (norm_nonneg _)] using hKsub hs_not
-    exact hgt.not_gt hball
+    exact hgt.not_gt (hKlt s hs_not)
   have hle : |s| ≤ R := by simpa [Real.dist_eq] using Metric.mem_closedBall.1 (hR hsK)
   exact absurd ((hs.trans hle).trans (le_max_left R 0)) (not_le_of_gt (lt_add_one _))
 

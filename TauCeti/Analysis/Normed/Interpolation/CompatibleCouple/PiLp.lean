@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple.Basic
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 /-!
 # Finite `PiLp` compatible couples
@@ -83,7 +83,8 @@ theorem piLpProj_inter (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)
       (C i).sndToSum (PiLp.proj (𝕜 := 𝕜) q₁ X₁ i ((piLp C q₀ q₁).interSnd x)) := by
   apply (C i).sumSpace_ext
   rw [sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum]
-  exact congrFun ((piLp C q₀ q₁).embed₀_interFst x) i
+  simpa only [piLp_embed₀_apply, piLp_embed₁_apply, PiLp.proj_apply] using
+    congrFun ((piLp C q₀ q₁).embed₀_interFst x) i
 
 /-- Embedding an element of the `i`th coordinate intersection into the `i`th slot via
 `PiLp.singleCLM` commutes with the inclusions into the product sum space. -/
@@ -175,6 +176,16 @@ private theorem piLpSumEquiv_apply (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X
     (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (u : (piLp C q₀ q₁).SumSpace) :
     piLpSumEquiv C q₀ q₁ u = piLpSumFwd C q₀ q₁ u := by
   dsimp [piLpSumEquiv]
+
+/-- Coordinatewise application formula for `piLpSumEquiv` in terms of `sumLift`. -/
+theorem piLpSumEquiv_apply_eq_sumLift (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i))
+    (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (u : (piLp C q₀ q₁).SumSpace) (i : ι) :
+    piLpSumEquiv C q₀ q₁ u i =
+      (piLp C q₀ q₁).sumLift ((C i).fstToSum.comp (PiLp.proj q₀ X₀ i))
+        ((C i).sndToSum.comp (PiLp.proj q₁ X₁ i))
+        (fun x => by simpa only [ContinuousLinearMap.comp_apply] using piLpProj_inter C q₀ q₁ i x)
+        u := by
+  rw [piLpSumEquiv_apply, piLpSumFwd, ContinuousLinearMap.pi_apply]
 
 @[simp]
 theorem piLpSumEquiv_fstToSum (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)

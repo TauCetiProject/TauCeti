@@ -12,12 +12,9 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.Basic.Real.ConjExponents
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
-import Mathlib.Analysis.Convex.Integral
-import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Log
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
-import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 
@@ -55,10 +52,14 @@ For a product of `k` functions, the norm of its integral is at most the average 
 absolute moments. This form of the arithmetic-geometric mean inequality gives uniform bounds on
 expected products without any independence assumption.
 
-Finally, for a nonnegative integrable weight `w` of total mass `α > 0`, Jensen's inequality for the
-logarithm on `[δ, ∞)` gives `exp (∫ log φ w) ≤ (α⁻¹ ∫ φ w) ^ α`
-(`TauCeti.exp_integral_log_mul_le_rpow`), along with its specializations to functions vanishing at
-infinity (`TauCeti.exp_integral_log_max_le_rpow`, `TauCeti.weighted_integral_rpow_le`).
+Finally, for a nonnegative integrable weight `w` of total mass `α > 0` and a function `φ` that is
+positive almost everywhere for `μ.withDensity (fun s ↦ ENNReal.ofReal (w s))` with both `φ * w`
+and `(log ∘ φ) * w` integrable, Jensen's inequality for the logarithm gives
+`exp (∫ log (φ s) * w s ∂μ) ≤ (α⁻¹ * ∫ φ s * w s ∂μ) ^ α`
+(`TauCeti.exp_integral_log_mul_le_rpow`), along with its specializations and splitting identity for
+functions vanishing at infinity (`ZeroAtInftyContinuousMap.exp_integral_log_max_le_rpow`,
+`ZeroAtInftyContinuousMap.weighted_integral_rpow_le`, and
+`ZeroAtInftyContinuousMap.integral_log_max_eq`).
 
 ## Main declarations
 
@@ -69,8 +70,9 @@ infinity (`TauCeti.exp_integral_log_max_le_rpow`, `TauCeti.weighted_integral_rpo
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
 * `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
 * `TauCeti.exp_integral_log_mul_le_rpow`: weighted logarithmic Jensen inequality.
-* `TauCeti.exp_integral_log_max_le_rpow` and `TauCeti.weighted_integral_rpow_le`: weighted bounds
-  for `C₀(Ω, E)`.
+* `ZeroAtInftyContinuousMap.integral_log_max_eq`: weighted splitting identity for `logMaxDiv`.
+* `ZeroAtInftyContinuousMap.exp_integral_log_max_le_rpow` and
+  `ZeroAtInftyContinuousMap.weighted_integral_rpow_le`: weighted bounds for `C₀(Ω, E)`.
 * `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
   the absolute-moment bound for an integral of a finite product.
 
@@ -252,62 +254,106 @@ theorem integral_sq_mul_norm_sq_le_of_ae_le {E : Type*} [NormedAddCommGroup E]
 
 section WeightedJensen
 
-open scoped ZeroAtInfty
-
-/-- Weighted logarithmic Jensen inequality: for an integrable weight `w ≥ 0` with total mass
-`∫ w ∂μ = α > 0` and a function `φ ≥ δ > 0`,
-`exp (∫ log (φ s) * w s ∂μ) ≤ (α⁻¹ * ∫ φ s * w s ∂μ) ^ α`. -/
+/-- Weighted logarithmic Jensen inequality: for an integrable nonnegative weight `w` of total mass
+`∫ w ∂μ = α > 0`, a function `φ` positive almost everywhere for
+`μ.withDensity (fun s ↦ ENNReal.ofReal (w s))`, and integrable weighted functions `φ * w` and
+`(Real.log ∘ φ) * w`, `exp (∫ Real.log (φ s) * w s ∂μ) ≤ (α⁻¹ * ∫ φ s * w s ∂μ) ^ α`. -/
 theorem exp_integral_log_mul_le_rpow {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    {φ w : Ω → ℝ} {α δ : ℝ} (hα : 0 < α) (hδ : 0 < δ) (hw_int : Integrable w μ)
+    {φ w : Ω → ℝ} {α : ℝ} (hα : 0 < α) (hw_int : Integrable w μ)
     (hw_nonneg : ∀ s, 0 ≤ w s) (hw_sum : ∫ s, w s ∂μ = α)
-    (hφ_ge : ∀ s, δ ≤ φ s) (hφ_int : Integrable (fun s ↦ φ s * w s) μ)
+    (hφ_pos : ∀ᵐ s ∂(μ.withDensity fun s ↦ ENNReal.ofReal (w s)), 0 < φ s)
+    (hφ_int : Integrable (fun s ↦ φ s * w s) μ)
     (hlog_int : Integrable (fun s ↦ Real.log (φ s) * w s) μ) :
     Real.exp (∫ s, Real.log (φ s) * w s ∂μ) ≤ (α⁻¹ * ∫ s, φ s * w s ∂μ) ^ α := by
-  let ρ : Ω → NNReal := fun s ↦ (α⁻¹ * w s).toNNReal
-  have hρ_meas : AEMeasurable ρ μ := (hw_int.aemeasurable.const_mul α⁻¹).real_toNNReal
-  have hρ_coe (s : Ω) : (ρ s : ℝ) = α⁻¹ * w s :=
-    Real.coe_toNNReal _ (mul_nonneg (inv_pos.2 hα).le (hw_nonneg s))
-  let ν : Measure Ω := μ.withDensity (fun s ↦ (ρ s : ℝ≥0∞))
-  have hν_univ : ν Set.univ = 1 := by
-    rw [withDensity_apply _ .univ, Measure.restrict_univ]
-    have hcoe : (fun s ↦ (ρ s : ℝ≥0∞)) = fun s ↦ ENNReal.ofReal (α⁻¹ * w s) := rfl
-    rw [hcoe, ← ofReal_integral_eq_lintegral_ofReal (hw_int.const_mul α⁻¹)
-      (ae_of_all _ fun s ↦ mul_nonneg (inv_pos.2 hα).le (hw_nonneg s)),
-      integral_const_mul, hw_sum, inv_mul_cancel₀ hα.ne', ENNReal.ofReal_one]
-  have _ : IsProbabilityMeasure ν := ⟨hν_univ⟩
-  have hφ_ν : Integrable φ ν := by
-    rw [integrable_withDensity_iff_integrable_smul₀ hρ_meas]
-    simpa only [NNReal.smul_def, smul_eq_mul, hρ_coe, mul_comm (α⁻¹ * w _), mul_left_comm] using
-      hφ_int.const_mul α⁻¹
-  have hlog_ν : Integrable (Real.log ∘ φ) ν := by
-    rw [integrable_withDensity_iff_integrable_smul₀ hρ_meas]
-    simpa only [Function.comp_apply, NNReal.smul_def, smul_eq_mul, hρ_coe,
-      mul_comm (α⁻¹ * w _), mul_left_comm] using hlog_int.const_mul α⁻¹
-  have hjensen := (strictConcaveOn_log_Ioi.concaveOn.subset (Set.Ici_subset_Ioi.2 hδ)
-    (convex_Ici δ)).le_map_integral
-    (Real.continuousOn_log.mono fun x hx hx0 ↦ (hδ.trans_le hx).ne' hx0)
-    isClosed_Ici (ae_of_all _ hφ_ge) hφ_ν hlog_ν
-  have havg_φ : ∫ s, φ s ∂ν = α⁻¹ * ∫ s, φ s * w s ∂μ := by
-    rw [integral_withDensity_eq_integral_smul₀ hρ_meas, ← integral_const_mul]
-    refine integral_congr_ae (ae_of_all _ fun s ↦ ?_)
-    simp only [NNReal.smul_def, smul_eq_mul, hρ_coe]
+  have hw_pos_φ : ∀ᵐ s ∂μ, w s ≠ 0 → 0 < φ s := by
+    obtain ⟨N, hN_sub, hNm, hN0⟩ := exists_measurable_superset_of_null (ae_iff.1 hφ_pos)
+    rw [withDensity_apply _ hNm] at hN0
+    have hN_ae : ∀ᵐ s ∂μ, s ∈ N → ENNReal.ofReal (w s) = 0 := (ae_restrict_iff' hNm).1
+      ((lintegral_eq_zero_iff'
+        ((ENNReal.measurable_ofReal.comp_aemeasurable hw_int.aemeasurable).restrict)).1 hN0)
+    refine hN_ae.mono fun s hs hw0 ↦ ?_
+    by_contra! hφ0
+    have hofReal : ENNReal.ofReal (w s) = 0 := hs (hN_sub hφ0.not_gt)
+    exact hw0 (le_antisymm (ENNReal.ofReal_eq_zero.1 hofReal) (hw_nonneg s))
+  have hnonneg : ∀ᵐ s ∂μ, 0 ≤ φ s * w s := hw_pos_φ.mono fun s hs ↦ by
+    by_cases hw0 : w s = 0
+    · simp [hw0]
+    · exact mul_nonneg (hs hw0).le (hw_nonneg s)
+  have hI_nonneg : 0 ≤ ∫ s, φ s * w s ∂μ := integral_nonneg_of_ae hnonneg
+  have hI_pos : 0 < ∫ s, φ s * w s ∂μ := lt_of_le_of_ne hI_nonneg fun hI0 ↦ by
+    have hzero : (fun s ↦ φ s * w s) =ᵐ[μ] 0 :=
+      (integral_eq_zero_iff_of_nonneg_ae hnonneg hφ_int).1 hI0.symm
+    have hw0_ae : w =ᵐ[μ] 0 := (hw_pos_φ.and hzero).mono fun s ⟨hs, hmul⟩ ↦ by
+      by_contra hw0
+      exact (mul_ne_zero (hs hw0).ne' hw0) hmul
+    have hw_zero : ∫ s, w s ∂μ = 0 := by
+      rw [integral_congr_ae hw0_ae]
+      simp
+    exact hα.ne' (hw_sum ▸ hw_zero)
+  let m : ℝ := α⁻¹ * ∫ s, φ s * w s ∂μ
+  have hm_pos : 0 < m := mul_pos (inv_pos.2 hα) hI_pos
+  have hrhs_int : Integrable (fun s ↦ Real.log m * w s + m⁻¹ * (φ s * w s) - w s) μ :=
+    ((hw_int.const_mul (Real.log m)).add (hφ_int.const_mul m⁻¹)).sub hw_int
+  have hmono : ∫ s, Real.log (φ s) * w s ∂μ ≤
+      ∫ s, (Real.log m * w s + m⁻¹ * (φ s * w s) - w s) ∂μ := by
+    refine integral_mono_ae hlog_int hrhs_int (hw_pos_φ.mono fun s hs ↦ ?_)
+    by_cases hw0 : w s = 0
+    · simp [hw0]
+    · have htan := Real.log_le_sub_one_of_pos (div_pos (hs hw0) hm_pos)
+      rw [Real.log_div (hs hw0).ne' hm_pos.ne', div_eq_inv_mul] at htan
+      have hmul := mul_le_mul_of_nonneg_right (show Real.log (φ s) ≤ Real.log m + m⁻¹ * φ s - 1
+        by linarith) (hw_nonneg s)
+      linarith
+  have hrhs_eq : ∫ s, (Real.log m * w s + m⁻¹ * (φ s * w s) - w s) ∂μ = α * Real.log m := by
+    rw [integral_sub (f := fun s ↦ Real.log m * w s + m⁻¹ * (φ s * w s)) (g := w)
+        ((hw_int.const_mul _).add (hφ_int.const_mul _)) hw_int,
+      integral_add (f := fun s ↦ Real.log m * w s) (g := fun s ↦ m⁻¹ * (φ s * w s))
+        (hw_int.const_mul _) (hφ_int.const_mul _),
+      integral_const_mul, integral_const_mul, hw_sum]
+    have hm_mul : m⁻¹ * ∫ s, φ s * w s ∂μ = α := by
+      dsimp only [m]
+      field_simp [hα.ne', hI_pos.ne']
+    rw [hm_mul]
     ring
-  have havg_log : ∫ s, Real.log (φ s) ∂ν = α⁻¹ * ∫ s, Real.log (φ s) * w s ∂μ := by
-    rw [integral_withDensity_eq_integral_smul₀ hρ_meas, ← integral_const_mul]
-    refine integral_congr_ae (ae_of_all _ fun s ↦ ?_)
-    simp only [NNReal.smul_def, smul_eq_mul, hρ_coe]
-    ring
-  rw [havg_log, havg_φ] at hjensen
-  have hI_pos : 0 < α⁻¹ * ∫ s, φ s * w s ∂μ := by
-    rw [← havg_φ]
-    have hle : δ ≤ ∫ s, φ s ∂ν := by
-      simpa using integral_mono (integrable_const δ) hφ_ν hφ_ge
-    exact hδ.trans_le hle
-  rw [Real.rpow_def_of_pos hI_pos, mul_comm (Real.log _) α]
-  exact Real.exp_le_exp.2 ((inv_mul_le_iff₀ hα).1 hjensen)
+  have hle := hmono.trans_eq hrhs_eq
+  rw [Real.rpow_def_of_pos hm_pos]
+  exact Real.exp_le_exp.2 (hle.trans_eq (mul_comm α (Real.log m)))
 
-/-- Weighted logarithmic mean bound for a clipped `C₀` function:
-`exp (∫ log (max ‖f s‖ δ) * w s ∂μ) ≤ (α⁻¹ * ∫ ‖f s‖ * w s ∂μ + δ) ^ α`. -/
+end WeightedJensen
+
+end TauCeti
+
+namespace ZeroAtInftyContinuousMap
+
+open MeasureTheory
+open scoped ZeroAtInfty
+
+private theorem integrable_logMaxDiv_mul {Ω E : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω]
+    [OpensMeasurableSpace Ω] {μ : Measure Ω} [NormedAddCommGroup E] (f : C₀(Ω, E)) {δ : ℝ}
+    (hδ : 0 < δ) {w : Ω → ℝ} (hw_int : Integrable w μ) :
+    Integrable (fun s ↦ logMaxDiv f δ s * w s) μ := by
+  refine hw_int.bdd_mul (c := Real.log (max ‖f‖ δ / δ))
+    (continuous_logMaxDiv f hδ).aestronglyMeasurable (ae_of_all _ fun s ↦ ?_)
+  rw [Real.norm_of_nonneg (logMaxDiv_nonneg f hδ s), logMaxDiv_def]
+  exact Real.log_le_log (div_pos (hδ.trans_le (le_max_right _ _)) hδ) (div_le_div_of_nonneg_right
+    (max_le_max (norm_coe_le_norm f s) le_rfl) hδ.le)
+
+/-- Splitting identity for a clipped weighted logarithmic integral of `f : C₀(Ω, E)` with
+threshold `δ > 0` and integrable weight `w`:
+`(∫ Real.log δ * w s ∂μ) + (∫ f.logMaxDiv δ s * w s ∂μ) = ∫ Real.log (max ‖f s‖ δ) * w s ∂μ`. -/
+theorem integral_log_max_eq {Ω E : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω]
+    [OpensMeasurableSpace Ω] {μ : Measure Ω} [NormedAddCommGroup E] (f : C₀(Ω, E)) {δ : ℝ}
+    (hδ : 0 < δ) {w : Ω → ℝ} (hw_int : Integrable w μ) :
+    (∫ s, Real.log δ * w s ∂μ) + (∫ s, logMaxDiv f δ s * w s ∂μ) =
+      ∫ s, Real.log (max ‖f s‖ δ) * w s ∂μ := by
+  rw [← integral_add (hw_int.const_mul _) (integrable_logMaxDiv_mul f hδ hw_int)]
+  refine integral_congr_ae (ae_of_all _ fun s ↦ ?_)
+  dsimp only
+  rw [← add_mul, log_add_logMaxDiv f hδ]
+
+/-- Weighted logarithmic mean bound for a clipped `C₀(Ω, E)` function: for a threshold `δ > 0`
+and an integrable nonnegative weight `w` of total mass `∫ w ∂μ = α > 0`,
+`exp (∫ Real.log (max ‖f s‖ δ) * w s ∂μ) ≤ (α⁻¹ * ∫ ‖f s‖ * w s ∂μ + δ) ^ α`. -/
 theorem exp_integral_log_max_le_rpow {Ω E : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω]
     [OpensMeasurableSpace Ω] {μ : Measure Ω} [NormedAddCommGroup E] (f : C₀(Ω, E))
     {w : Ω → ℝ} {α δ : ℝ} (hα : 0 < α) (hδ : 0 < δ) (hw_int : Integrable w μ)
@@ -316,25 +362,22 @@ theorem exp_integral_log_max_le_rpow {Ω E : Type*} [TopologicalSpace Ω] [Measu
       (α⁻¹ * (∫ s, ‖f s‖ * w s ∂μ) + δ) ^ α := by
   have hf_int : Integrable (fun s ↦ ‖f s‖ * w s) μ :=
     hw_int.bdd_mul (map_continuous f).norm.aestronglyMeasurable (ae_of_all _ fun s ↦ by
-      simpa [Real.norm_of_nonneg (norm_nonneg _)] using
-        ZeroAtInftyContinuousMap.norm_coe_le_norm f s)
+      simpa [Real.norm_of_nonneg (norm_nonneg _)] using norm_coe_le_norm f s)
   have hmax_int : Integrable (fun s ↦ max ‖f s‖ δ * w s) μ :=
     hw_int.bdd_mul ((map_continuous f).norm.max continuous_const).aestronglyMeasurable
       (ae_of_all _ fun s ↦ by
         rw [Real.norm_of_nonneg (hδ.le.trans (le_max_right _ _))]
-        exact max_le_max (ZeroAtInftyContinuousMap.norm_coe_le_norm f s) le_rfl)
-  have hlog_int : Integrable (fun s ↦ Real.log (max ‖f s‖ δ) * w s) μ :=
-    hw_int.bdd_mul (Continuous.log ((map_continuous f).norm.max continuous_const) fun _ ↦
-        (hδ.trans_le (le_max_right _ _)).ne').aestronglyMeasurable
-      (ae_of_all _ fun s ↦ abs_le.2 ⟨by
-        linarith [Real.log_le_log hδ (le_max_right ‖f s‖ δ), neg_abs_le (Real.log δ),
-          le_max_left |Real.log δ| |Real.log (max ‖f‖ δ)|],
-        (Real.log_le_log (hδ.trans_le (le_max_right _ _))
-          (max_le_max (ZeroAtInftyContinuousMap.norm_coe_le_norm f s) le_rfl)).trans
-          ((le_abs_self _).trans (le_max_right _ _))⟩)
-  refine (exp_integral_log_mul_le_rpow hα hδ hw_int hw_nonneg hw_sum
-    (fun _ ↦ le_max_right _ _) hmax_int hlog_int).trans (Real.rpow_le_rpow
-    (mul_nonneg (inv_pos.2 hα).le (integral_nonneg fun s ↦
+        exact max_le_max (norm_coe_le_norm f s) le_rfl)
+  have hlog_int : Integrable (fun s ↦ Real.log (max ‖f s‖ δ) * w s) μ := by
+    have heq : (fun s ↦ Real.log (max ‖f s‖ δ) * w s) =
+        fun s ↦ Real.log δ * w s + logMaxDiv f δ s * w s := by
+      ext s
+      rw [← add_mul, log_add_logMaxDiv f hδ]
+    rw [heq]
+    exact (hw_int.const_mul _).add (integrable_logMaxDiv_mul f hδ hw_int)
+  refine (TauCeti.exp_integral_log_mul_le_rpow hα hw_int hw_nonneg hw_sum
+    (ae_of_all _ fun s ↦ hδ.trans_le (le_max_right _ _)) hmax_int hlog_int).trans
+    (Real.rpow_le_rpow (mul_nonneg (inv_pos.2 hα).le (integral_nonneg fun s ↦
       mul_nonneg (hδ.le.trans (le_max_right _ _)) (hw_nonneg s))) ?_ hα.le)
   have hle : ∫ s, max ‖f s‖ δ * w s ∂μ ≤ (∫ s, ‖f s‖ * w s ∂μ) + δ * α := by
     rw [← hw_sum, ← integral_const_mul, ← integral_add hf_int (hw_int.const_mul δ)]
@@ -344,7 +387,8 @@ theorem exp_integral_log_max_le_rpow {Ω E : Type*} [TopologicalSpace Ω] [Measu
         (hw_nonneg s)).trans_eq (add_mul _ _ _)
   exact (mul_le_mul_of_nonneg_left hle (inv_pos.2 hα).le).trans_eq (by field_simp [hα.ne'])
 
-/-- Weighted integral bound against a supremum norm for `f : C₀(Ω, E)`:
+/-- Weighted integral bound against a supremum norm for `f : C₀(Ω, E)` and a nonnegative
+integrable weight `w` of total mass `∫ w ∂μ = α > 0`:
 `(α⁻¹ * ∫ ‖f t‖ * w t ∂μ) ^ α ≤ ‖f‖ ^ α`. -/
 theorem weighted_integral_rpow_le {Ω E : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω]
     {μ : Measure Ω} [NormedAddCommGroup E] (f : C₀(Ω, E)) {w : Ω → ℝ} {α : ℝ} (hα : 0 < α)
@@ -353,15 +397,13 @@ theorem weighted_integral_rpow_le {Ω E : Type*} [TopologicalSpace Ω] [Measurab
   have hle : ∫ t, ‖f t‖ * w t ∂μ ≤ ∫ t, ‖f‖ * w t ∂μ :=
     integral_mono_of_nonneg (ae_of_all _ fun t ↦ mul_nonneg (norm_nonneg _) (hw_nonneg t))
       (hw_int.const_mul ‖f‖) (ae_of_all _ fun t ↦ mul_le_mul_of_nonneg_right
-        (ZeroAtInftyContinuousMap.norm_coe_le_norm f t) (hw_nonneg t))
+        (norm_coe_le_norm f t) (hw_nonneg t))
   rw [integral_const_mul, hw_sum] at hle
   exact Real.rpow_le_rpow (mul_nonneg (inv_pos.2 hα).le
       (integral_nonneg fun t ↦ mul_nonneg (norm_nonneg _) (hw_nonneg t)))
     ((mul_le_mul_of_nonneg_left hle (inv_pos.2 hα).le).trans_eq (by field_simp [hα.ne'])) hα.le
 
-end WeightedJensen
-
-end TauCeti
+end ZeroAtInftyContinuousMap
 
 namespace MeasureTheory
 

@@ -592,6 +592,21 @@ theorem refl_embed₁ : (refl 𝕜 X).embed₁ = ContinuousLinearMap.id 𝕜 X :
 
 variable {𝕜 X}
 
+variable (𝕜) in
+/-- The diagonal element `(x, x)` in the intersection of `refl 𝕜 X`. -/
+def reflInter (x : X) : (refl 𝕜 X).inter :=
+  ⟨(x, x), (refl 𝕜 X).mem_inter_iff.2 rfl⟩
+
+@[simp]
+theorem coe_reflInter (x : X) : (reflInter 𝕜 x : X × X) = (x, x) :=
+  (rfl)
+
+theorem interFst_reflInter (x : X) : (refl 𝕜 X).interFst (reflInter 𝕜 x) = x :=
+  (rfl)
+
+theorem interSnd_reflInter (x : X) : (refl 𝕜 X).interSnd (reflInter 𝕜 x) = x :=
+  (rfl)
+
 /-- For the couple `(X, X)`, the inclusion of the first space into the sum inverts
 `sumSpaceEmbed`. -/
 @[simp]

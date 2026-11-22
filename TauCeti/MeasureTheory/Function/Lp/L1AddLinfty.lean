@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
-public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
+public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple.Basic
 import TauCeti.MeasureTheory.Function.AEEqFun
 public import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 

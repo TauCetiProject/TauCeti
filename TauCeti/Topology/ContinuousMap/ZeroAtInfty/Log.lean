@@ -13,7 +13,8 @@ public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 
 For a continuous function `f : C₀(α, E)` vanishing at infinity and a threshold `δ > 0`, the clipped
 logarithmic envelope `ZeroAtInftyContinuousMap.logMaxDiv f δ x = Real.log (max ‖f x‖ δ / δ)` is
-continuous, nonnegative, and compactly supported, and satisfies
+continuous and nonnegative, and when `[R1Space α]` holds it has compact support
+(`ZeroAtInftyContinuousMap.hasCompactSupport_logMaxDiv`), and satisfies
 `Real.log δ + logMaxDiv f δ x = Real.log (max ‖f x‖ δ)`.
 -/
 
@@ -27,9 +28,23 @@ namespace ZeroAtInftyContinuousMap
 variable {α E : Type*} [TopologicalSpace α] [SeminormedAddCommGroup E]
 
 /-- The clipped logarithmic envelope `x ↦ Real.log (max ‖f x‖ δ / δ)` of `f : C₀(α, E)` above
-threshold `δ > 0`. It is continuous, nonnegative, and compactly supported. -/
+threshold `δ > 0`. It is continuous and nonnegative, and compactly supported when `[R1Space α]`
+holds (`ZeroAtInftyContinuousMap.hasCompactSupport_logMaxDiv`). -/
 noncomputable def logMaxDiv (f : C₀(α, E)) (δ : ℝ) (x : α) : ℝ :=
   Real.log (max ‖f x‖ δ / δ)
+
+/-- Defining formula for `logMaxDiv`. -/
+theorem logMaxDiv_def (f : C₀(α, E)) (δ : ℝ) (x : α) :
+    logMaxDiv f δ x = Real.log (max ‖f x‖ δ / δ) :=
+  (rfl)
+
+/-- For `δ > 0`, `logMaxDiv f δ x = 0` exactly when `‖f x‖ ≤ δ`. -/
+@[simp]
+theorem logMaxDiv_eq_zero_iff (f : C₀(α, E)) {δ : ℝ} (hδ : 0 < δ) (x : α) :
+    logMaxDiv f δ x = 0 ↔ ‖f x‖ ≤ δ := by
+  have hpos : 0 < max ‖f x‖ δ / δ := div_pos (hδ.trans_le (le_max_right _ _)) hδ
+  rw [logMaxDiv_def, Real.log_eq_zero]
+  simp [hpos.ne', (by linarith : max ‖f x‖ δ / δ ≠ -1), div_eq_one_iff_eq hδ.ne']
 
 /-- For `δ > 0`, `logMaxDiv f δ` is continuous. -/
 @[fun_prop]
@@ -38,17 +53,14 @@ theorem continuous_logMaxDiv (f : C₀(α, E)) {δ : ℝ} (hδ : 0 < δ) :
   Continuous.log (((map_continuous f).norm.max continuous_const).div_const δ) fun _ ↦
     (div_pos (hδ.trans_le (le_max_right _ _)) hδ).ne'
 
-/-- For `δ > 0`, `logMaxDiv f δ` has compact support because `‖f x‖ < δ` outside a compact set. -/
+/-- For `δ > 0` and `[R1Space α]`, `logMaxDiv f δ` has compact support because `‖f x‖ < δ` outside
+a compact set. -/
 theorem hasCompactSupport_logMaxDiv [R1Space α] (f : C₀(α, E)) {δ : ℝ} (hδ : 0 < δ) :
     HasCompactSupport (logMaxDiv f δ) := by
-  obtain ⟨K, hK, hKsub⟩ := Filter.mem_cocompact.1
-    ((tendsto_zero_iff_norm_tendsto_zero.1 (zero_at_infty f)).eventually
-      (Metric.ball_mem_nhds 0 hδ))
+  obtain ⟨K, hK, hKlt⟩ := f.exists_isCompact_norm_lt hδ
   refine HasCompactSupport.of_support_subset_isCompact hK fun x hx ↦ ?_
   by_contra hxK
-  have hlt : ‖f x‖ < δ := by
-    simpa [Real.dist_eq, abs_of_nonneg (norm_nonneg _)] using hKsub hxK
-  exact hx (by simp [logMaxDiv, max_eq_right hlt.le, div_self hδ.ne'])
+  exact hx ((logMaxDiv_eq_zero_iff f hδ x).2 (hKlt x hxK).le)
 
 /-- For `δ > 0`, `logMaxDiv f δ` is everywhere nonnegative. -/
 theorem logMaxDiv_nonneg (f : C₀(α, E)) {δ : ℝ} (hδ : 0 < δ) (x : α) :
@@ -58,7 +70,7 @@ theorem logMaxDiv_nonneg (f : C₀(α, E)) {δ : ℝ} (hδ : 0 < δ) (x : α) :
 /-- Splitting `Real.log (max ‖f x‖ δ)` into `Real.log δ + logMaxDiv f δ x`. -/
 theorem log_add_logMaxDiv (f : C₀(α, E)) {δ : ℝ} (hδ : 0 < δ) (x : α) :
     Real.log δ + logMaxDiv f δ x = Real.log (max ‖f x‖ δ) := by
-  rw [logMaxDiv, Real.log_div (hδ.trans_le (le_max_right _ _)).ne' hδ.ne']
+  rw [logMaxDiv_def, Real.log_div (hδ.trans_le (le_max_right _ _)).ne' hδ.ne']
   ring
 
 end ZeroAtInftyContinuousMap

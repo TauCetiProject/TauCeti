@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
+public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple.Basic
 public import TauCeti.Analysis.Normed.Interpolation.KFunctional
 public import TauCeti.MeasureTheory.Function.Lp.L1AddLinfty
 import TauCeti.MeasureTheory.Function.Lp.Norm

@@ -60,25 +60,6 @@ theorem inv_eq_ofReal_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ :
     (mul_nonneg hθ.1 ENNReal.toReal_nonneg), ENNReal.ofReal_mul hθ1, ENNReal.ofReal_mul hθ.1,
     ENNReal.ofReal_toReal h₀, ENNReal.ofReal_toReal h₁, hs]
 
-/-- For an interpolated exponent `1 / s = (1 - θ) / s₀ + θ / s₁` with `0 ≤ θ ≤ 1`, `s₀, s₁ ≠ 0`,
-and `s ≠ ∞`, the normalized real weights `(1 - θ) * (s / s₀)` and `θ * (s / s₁)` sum to `1`. -/
-theorem one_sub_mul_toReal_inv_add (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hs_top : s ≠ ∞)
-    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
-    (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
-    (1 - θ) * (s.toReal * (s₀⁻¹).toReal) + θ * (s.toReal * (s₁⁻¹).toReal) = 1 := by
-  have hinv : s⁻¹ = ENNReal.ofReal ((1 - θ) * (s₀⁻¹).toReal + θ * (s₁⁻¹).toReal) :=
-    inv_eq_ofReal_of_inv_eq hs₀ hs₁ hθ hs
-  have hs0 : s ≠ 0 := ENNReal.inv_ne_top.1 (hinv ▸ ENNReal.ofReal_ne_top)
-  have hs_pos : 0 < s.toReal := ENNReal.toReal_pos hs0 hs_top
-  have htr : s⁻¹.toReal = (1 - θ) * (s₀⁻¹).toReal + θ * (s₁⁻¹).toReal := by
-    rw [hinv, ENNReal.toReal_ofReal (add_nonneg
-      (mul_nonneg (sub_nonneg.2 hθ.2) ENNReal.toReal_nonneg)
-      (mul_nonneg hθ.1 ENNReal.toReal_nonneg))]
-  calc (1 - θ) * (s.toReal * (s₀⁻¹).toReal) + θ * (s.toReal * (s₁⁻¹).toReal)
-      = s.toReal * ((1 - θ) * (s₀⁻¹).toReal + θ * (s₁⁻¹).toReal) := by ring
-    _ = s.toReal * s.toReal⁻¹ := by rw [← ENNReal.toReal_inv, htr]
-    _ = 1 := mul_inv_cancel₀ hs_pos.ne'
-
 /-- An interpolated exponent `1 / s = (1 - θ) / s₀ + θ / s₁` satisfies the same relation between
 the real exponents `s.toReal`, `s₀.toReal` and `s₁.toReal`, with `∞` read as `0`. -/
 theorem inv_toReal_eq_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
@@ -89,6 +70,21 @@ theorem inv_toReal_eq_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ :
   have h2 : 0 ≤ θ := hθ.1
   rwa [ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_inv, ENNReal.toReal_inv,
     ENNReal.toReal_inv] at h
+
+/-- For an interpolated exponent `1 / s = (1 - θ) / s₀ + θ / s₁` with `0 ≤ θ ≤ 1`, `s₀, s₁ ≠ 0`,
+and `s ≠ ∞`, the normalized real weights `(1 - θ) * (s / s₀)` and `θ * (s / s₁)` sum to `1`. -/
+theorem one_sub_mul_toReal_inv_add (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hs_top : s ≠ ∞)
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
+    (1 - θ) * (s.toReal * (s₀⁻¹).toReal) + θ * (s.toReal * (s₁⁻¹).toReal) = 1 := by
+  have hs0 : s ≠ 0 :=
+    ENNReal.inv_ne_top.1 (inv_eq_ofReal_of_inv_eq hs₀ hs₁ hθ hs ▸ ENNReal.ofReal_ne_top)
+  have hs_pos : 0 < s.toReal := ENNReal.toReal_pos hs0 hs_top
+  calc (1 - θ) * (s.toReal * (s₀⁻¹).toReal) + θ * (s.toReal * (s₁⁻¹).toReal)
+      = s.toReal * ((1 - θ) * s₀.toReal⁻¹ + θ * s₁.toReal⁻¹) := by
+          simp only [ENNReal.toReal_inv]; ring
+    _ = s.toReal * s.toReal⁻¹ := by rw [inv_toReal_eq_of_inv_eq hs₀ hs₁ hθ hs]
+    _ = 1 := mul_inv_cancel₀ hs_pos.ne'
 
 /-- For a finite interpolated exponent `1 / s = (1 - θ) / s₀ + θ / s₁`, there is a slope `k` with
 `1 / s₀ = (1 - θ k) / s` and `1 / s₁ = (1 + (1 - θ) k) / s`, both factors nonnegative. These are

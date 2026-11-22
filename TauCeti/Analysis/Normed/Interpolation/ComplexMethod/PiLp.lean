@@ -10,8 +10,8 @@ public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple.PiLp
 public import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Endpoints
 import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Poisson
-import TauCeti.Analysis.Normed.Lp.PiLp
-import TauCeti.MeasureTheory.Integral.WithLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Holder
+import TauCeti.MeasureTheory.Integral.Bochner.PiLp
 
 /-!
 # Complex interpolation of finite vector-valued sequence spaces
@@ -45,11 +45,11 @@ so the formal hypothesis differs from the real reciprocal relation; however, bot
 
 For `0 < θ < 1`, the upper norm bound applies `norm_mk_le_stripPoisson_geometricMean`
 coordinatewise, then log-convex Hölder in `PiLp` (`PiLp.norm_toLp_rpow_mul_rpow_le`) and
-Bochner–Minkowski via `PiLp.norm_toLp_integral_weighted_le`. For the reverse bound (`q < ∞`),
-near-optimal traces `g i` with `‖g i‖ < b i` (`b i = ‖v i‖ + δ`, `B = ‖b‖_{ℓ^q}`) are rescaled
-using `scaleFactor` with `M₀ = (b i / B) ^ (1 - α₀)` and `M₁ = (b i / B) ^ (1 - α₁)`, where
-`α_j = q.toReal * (q_j⁻¹).toReal`. Endpoints `θ = 0, 1` follow directly from `norm_mk_zero` and
-`norm_mk_one`.
+Bochner–Minkowski via `ZeroAtInftyContinuousMap.norm_toLp_integral_weighted_le`. For the reverse
+bound (`q < ∞`), near-optimal traces `g i` with `‖g i‖ < b i` (`b i = ‖v i‖ + δ`, `B = ‖b‖_{ℓ^q}`)
+are rescaled using `scaleFactor` with `M₀ = (b i / B) ^ (1 - α₀)` and
+`M₁ = (b i / B) ^ (1 - α₁)`, where `α_j = q.toReal * (q_j⁻¹).toReal`. Endpoints `θ = 0, 1` follow
+directly from `norm_mk_zero` and `norm_mk_one`.
 
 ## References
 
@@ -204,18 +204,8 @@ theorem stripEval_piLpStripTracesEquiv_apply (C : ∀ i, CompatibleCouple ℂ (X
       piLpSumEquiv C q₀ q₁ ((piLp C q₀ q₁).stripEval z g) i := by
   rw [piLpStripTracesEquiv_apply, piLpStripTracesFwd_apply,
     stripEval_stripTracesMap (PiLp.proj q₀ X₀ i) (PiLp.proj q₁ X₁ i)
-      (piLpProj_inter C q₀ q₁ i)]
-  obtain ⟨x₀, x₁, hx⟩ :=
-    (piLp C q₀ q₁).exists_fstToSum_add_sndToSum_eq ((piLp C q₀ q₁).stripEval z g)
-  have hfst := (piLp C q₀ q₁).sumLift_fstToSum ((C i).fstToSum.comp (PiLp.proj q₀ X₀ i))
-    ((C i).sndToSum.comp (PiLp.proj q₁ X₁ i))
-    (fun x => by simpa only [ContinuousLinearMap.comp_apply] using piLpProj_inter C q₀ q₁ i x) x₀
-  have hsnd := (piLp C q₀ q₁).sumLift_sndToSum ((C i).fstToSum.comp (PiLp.proj q₀ X₀ i))
-    ((C i).sndToSum.comp (PiLp.proj q₁ X₁ i))
-    (fun x => by simpa only [ContinuousLinearMap.comp_apply] using piLpProj_inter C q₀ q₁ i x) x₁
-  rw [← hx, map_add, map_add, hfst, hsnd, Pi.add_apply, piLpSumEquiv_fstToSum,
-    piLpSumEquiv_sndToSum]
-  simp only [ContinuousLinearMap.comp_apply, PiLp.proj_apply]
+      (piLpProj_inter C q₀ q₁ i),
+    ← piLpSumEquiv_apply_eq_sumLift]
 
 /-- `stripFunction` evaluation at `z` commutes coordinatewise with `piLpStripTracesEquiv`. -/
 @[simp]
@@ -350,6 +340,17 @@ theorem piLpContinuousLinearEquiv_symm_mk (C : ∀ i, CompatibleCouple ℂ (X₀
   rw [ContinuousLinearEquiv.apply_symm_apply, PiLp.toLp_apply,
     piLpContinuousLinearEquiv_mk_apply, ContinuousLinearEquiv.apply_symm_apply]
 
+@[simp]
+theorem toSum_piLpContinuousLinearEquiv_symm (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
+    (q₀ q₁ q : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (θ : ℝ)
+    (v : PiLp q (fun i => (C i).ComplexMethodSpace θ)) :
+    toSum ((piLpContinuousLinearEquiv C q₀ q₁ q θ).symm v) =
+      (piLpSumEquiv C q₀ q₁).symm fun i => toSum (v i) := by
+  apply (piLpSumEquiv C q₀ q₁).injective
+  ext i
+  rw [ContinuousLinearEquiv.apply_symm_apply, ← toSum_piLpContinuousLinearEquiv_apply,
+    ContinuousLinearEquiv.apply_symm_apply]
+
 /-! ### Forward and inverse norm bounds on `piLpContinuousLinearEquiv` -/
 
 private theorem norm_piLpContinuousLinearEquiv_zero
@@ -396,17 +397,18 @@ private theorem norm_piLpContinuousLinearEquiv_le (C : ∀ i, CompatibleCouple �
           rw [piLpContinuousLinearEquiv_mk_apply]
           simpa only [piLpStripTracesEquiv_apply_fst, piLpStripTracesEquiv_apply_snd] using
             norm_mk_le_stripPoisson_geometricMean hθoo (piLpStripTracesEquiv C q₀ q₁ g i)
-        have ha_norm := (PiLp.norm_toLp_integral_weighted_le g.val.1 (sub_pos.2 hθ1)
-          (integrable_stripPoisson₀ θ) (fun t => (stripPoisson₀_pos hθoo t).le)
+        have ha_norm := (ZeroAtInftyContinuousMap.norm_toLp_integral_weighted_le g.val.1
+          (sub_pos.2 hθ1) (integrable_stripPoisson₀ θ) (fun t => (stripPoisson₀_pos hθoo t).le)
           (integral_stripPoisson₀ ⟨hθ0, hθ1.le⟩)).trans
           ((norm_fst_le g.val).trans_eq (Submodule.norm_coe g))
-        have hb_norm := (PiLp.norm_toLp_integral_weighted_le g.val.2 hθ0
+        have hb_norm := (ZeroAtInftyContinuousMap.norm_toLp_integral_weighted_le g.val.2 hθ0
           (integrable_stripPoisson₁ θ) (fun t => (stripPoisson₁_pos hθoo t).le)
           (integral_stripPoisson₁ ⟨hθ0.le, hθ1⟩)).trans
           ((norm_snd_le g.val).trans_eq (Submodule.norm_coe g))
         refine ((PiLp.norm_mono (y := WithLp.toLp q fun i => a i ^ (1 - θ) * b i ^ θ)
           fun i => (hpt i).trans (le_abs_self _)).trans
-          (PiLp.norm_toLp_rpow_mul_rpow_le hθoo hq ha hb)).trans_lt (lt_of_le_of_lt ?_ hg)
+          (PiLp.norm_toLp_rpow_mul_rpow_le (Ioo_subset_Icc_self hθoo) hq ha hb)).trans_lt
+          (lt_of_le_of_lt ?_ hg)
         calc ‖WithLp.toLp q₀ a‖ ^ (1 - θ) * ‖WithLp.toLp q₁ b‖ ^ θ
             ≤ ‖g‖ ^ (1 - θ) * ‖g‖ ^ θ :=
               mul_le_mul (Real.rpow_le_rpow (norm_nonneg _) ha_norm (sub_pos.2 hθ1).le)
@@ -419,7 +421,7 @@ private theorem norm_piLpContinuousLinearEquiv_le (C : ∀ i, CompatibleCouple �
 private theorem exists_stripTraces_rescale {E₀ E₁ W : Type*}
     [NormedAddCommGroup E₀] [NormedSpace ℂ E₀] [NormedAddCommGroup E₁] [NormedSpace ℂ E₁]
     [AddCommGroup W] [Module ℂ W] [TopologicalSpace W] [ContinuousAdd W] [T1Space W]
-    {C₀ : CompatibleCouple ℂ E₀ E₁ W} {θ α₀ α₁ b B : ℝ} (hθ : θ ∈ Icc 0 1)
+    {C₀ : CompatibleCouple ℂ E₀ E₁ W} {θ α₀ α₁ b B : ℝ}
     (hα : (1 - θ) * α₀ + θ * α₁ = 1) (hb : 0 < b) (hB : 0 < B) (g : C₀.stripTraces)
     (hg : ‖g‖ < b) :
     ∃ g' : C₀.stripTraces, mk θ g' = mk θ g ∧
@@ -448,7 +450,7 @@ private theorem exists_stripTraces_rescale {E₀ E₁ W : Type*}
       _ = B * ((b / B) ^ (α - 1) * (b / B) ^ (1 : ℝ)) := by
           rw [Real.rpow_one]; field_simp [hB.ne']
       _ = B * (b / B) ^ α := by rw [← Real.rpow_add hqpos, sub_add_cancel]
-  refine ⟨g', by rw [heq hθ, hcθ, one_smul], fun t => ?_, fun t => ?_⟩
+  refine ⟨g', by rw [heq θ, hcθ, one_smul], fun t => ?_, fun t => ?_⟩
   · rw [hg₀', norm_smul, norm_scaleFactor_mul_I hM₀]
     exact hscale α₀ _ (((ZeroAtInftyContinuousMap.norm_coe_le_norm g.val.1 t).trans
       ((norm_fst_le g.val).trans_eq (Submodule.norm_coe g))).trans hg.le)
@@ -507,8 +509,7 @@ private theorem norm_symm_le_of_ne_top (C : ∀ i, CompatibleCouple ℂ (X₀ i)
       (∀ t, ‖g'.val.1 t‖ ≤ B * (b i / B) ^ (q.toReal * (q₀⁻¹).toReal)) ∧
       (∀ t, ‖g'.val.2 t‖ ≤ B * (b i / B) ^ (q.toReal * (q₁⁻¹).toReal)) := by
     obtain ⟨g, hg_eq, hg⟩ := norm_lt_iff.1 (hb i).2
-    obtain ⟨g', hg'_eq, hg'₀, hg'₁⟩ :=
-      exists_stripTraces_rescale ⟨hθ.1.le, hθ.2.le⟩ hα (hb i).1 hB g hg
+    obtain ⟨g', hg'_eq, hg'₀, hg'₁⟩ := exists_stripTraces_rescale hα (hb i).1 hB g hg
     exact ⟨g', hg'_eq.trans hg_eq, hg'₀, hg'₁⟩
   choose g' hg'_mk hg'_0 hg'_1 using hex
   refine (norm_piLpCLE_symm_le_of_mk C v g' hg'_mk ?_).trans hB_le
@@ -575,48 +576,18 @@ theorem coe_piLpEquiv (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) 
       piLpContinuousLinearEquiv C q₀ q₁ q θ :=
   (rfl)
 
+@[simp]
+theorem coe_piLpEquiv_symm (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) {q₀ q₁ q : ℝ≥0∞}
+    [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q)] {θ : ℝ}
+    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹) :
+    ((piLpEquiv C hq).symm : PiLp q (fun i => (C i).ComplexMethodSpace θ) →
+      (piLp C q₀ q₁).ComplexMethodSpace θ) =
+      (piLpContinuousLinearEquiv C q₀ q₁ q θ).symm :=
+  (rfl)
+
 end PiLpEquiv
 
 section Refl
-
-/-- For `0 ≤ θ ≤ 1`, the complex interpolation space `[X, X]_θ` of the constant couple `refl ℂ X`
-is canonically linearly isometric to `X`, packaging the diagonal inverse and isometry argument of
-`ComplexMethodSpace.norm_refl`. -/
-def reflEquiv {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ} (hθ : θ ∈ Icc 0 1) :
-    (refl ℂ X).ComplexMethodSpace θ ≃ₗᵢ[ℂ] X where
-  toFun u := (refl ℂ X).sumSpaceEmbed (toSum u)
-  invFun x := ofInter θ
-    ⟨(x, x), (refl ℂ X).mem_inter_iff.2 (by dsimp only; rw [refl_embed₀, refl_embed₁])⟩
-  map_add' u v := by simp
-  map_smul' c u := by simp
-  left_inv u := by
-    dsimp only
-    apply toSum_injective
-    rw [toSum_ofInter hθ, interFst_apply]
-    exact refl_fstToSum_sumSpaceEmbed (toSum u)
-  right_inv x := by
-    dsimp only
-    simp [toSum_ofInter hθ]
-  norm_map' u := (norm_refl_sumSpaceEmbed (toSum u)).trans (norm_refl u).symm
-
-@[simp]
-theorem reflEquiv_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
-    (hθ : θ ∈ Icc 0 1) (u : (refl ℂ X).ComplexMethodSpace θ) :
-    reflEquiv hθ u = (refl ℂ X).sumSpaceEmbed (toSum u) :=
-  (rfl)
-
-@[simp]
-theorem reflEquiv_symm_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
-    (hθ : θ ∈ Icc 0 1) (x : X) :
-    (reflEquiv hθ).symm x = ofInter θ
-      ⟨(x, x), (refl ℂ X).mem_inter_iff.2 (by dsimp only; rw [refl_embed₀, refl_embed₁])⟩ :=
-  (rfl)
-
-/-- `reflEquiv.symm` lifts `x : X` over `fstToSum x` in the sum space of `refl ℂ X`. -/
-theorem toSum_reflEquiv_symm {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
-    (hθ : θ ∈ Icc 0 1) (x : X) :
-    toSum ((reflEquiv hθ).symm x) = (refl ℂ X).fstToSum x := by
-  rw [reflEquiv_symm_apply, toSum_ofInter hθ, interFst_apply]
 
 /-- **Complex interpolation of finite vector-valued sequence spaces (`[ℓ_{q₀}^N(E), ℓ_{q₁}^N(E)]_θ =
 ℓ_q^N(E)` with equal norms).** For a finite family of complex normed spaces `X : ι → Type*`,

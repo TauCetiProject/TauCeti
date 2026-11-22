@@ -7,11 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Operator.Basic
-public import Mathlib.Basic.ENNReal.Holder
-import Mathlib.Analysis.Normed.Lp.LpEquiv
-import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
-import TauCeti.MeasureTheory.Function.LpSeminorm.Count
 
 /-!
 # Comparisons of finite product norms and distances
@@ -22,10 +18,12 @@ evaluations of a vector family with the vector family's `Lᵖ` norm. For constan
 deduce the bound for the image of a family under a map of bounded growth, the norm of a family
 of multiples of one vector (for `p ≠ 0`), and the invariance of the norm under reindexing. For
 `p ≥ 1`, a linear combination `∑ i, s i • v i` with the coordinates of `s` as coefficients has
-norm at most `‖s‖ * ∑ i, ‖v i‖`.
+norm at most `‖s‖ * ∑ i, ‖v i‖`. We also prove the exact norm identity for pointwise positive
+powers (`PiLp.norm_toLp_rpow_div_of_nonneg`) and measure-free scaling and positive-perturbation
+estimates for finite `Lᵖ` norms.
 
 For `p ≥ 1`, the `Lᵖ` distance dominates the sup distance. In the other direction, the `L²`
-distance is at most the square root of the number of coordinates times the sup distance.
+distance is at most the square root of the coordinate count times the sup distance.
 These estimates give inclusions between balls in the two metrics. The corresponding
 Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` times the `L²` norm.
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
@@ -275,101 +273,42 @@ theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : PiLp 2 β) (r : ℝ) :
 
 end PseudoMetricSpace
 
-section Holder
+section Scaling
 
-private theorem eNorm_toLp_eq_eLpNorm_count {s : ℝ≥0∞} [Fact (1 ≤ s)] (f : ι → ℝ) :
-    letI : MeasurableSpace ι := ⊤
-    ‖WithLp.toLp s f‖ₑ = MeasureTheory.eLpNorm f s MeasureTheory.Measure.count := by
-  let _ : MeasurableSpace ι := ⊤
-  have _ : MeasurableSingletonClass ι := ⟨fun _ ↦ trivial⟩
-  let F : lp (fun _ : ι ↦ ℝ) s := (lpPiLpₗᵢ (fun _ : ι ↦ ℝ) ℝ).symm (WithLp.toLp s f)
-  have hnorm : ‖WithLp.toLp s f‖ₑ = ‖F‖ₑ := by
-    rw [← ofReal_norm, ← ofReal_norm, (lpPiLpₗᵢ (fun _ : ι ↦ ℝ) ℝ).symm.norm_map]
-  exact hnorm.trans (lp.eLpNorm_count F).symm
-
-/-- Hölder's inequality for finite `Lᵖ` norms of a pointwise real product over a Hölder triple
-`p₀⁻¹ + p₁⁻¹ = r⁻¹`. -/
-theorem norm_toLp_mul_le {p₀ p₁ r : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] [Fact (1 ≤ r)]
-    [ENNReal.HolderTriple p₀ p₁ r] (a b : ι → ℝ) :
-    ‖WithLp.toLp r (fun i ↦ a i * b i)‖ ≤ ‖WithLp.toLp p₀ a‖ * ‖WithLp.toLp p₁ b‖ := by
-  let _ : MeasurableSpace ι := ⊤
-  have _ : MeasurableSingletonClass ι := ⟨fun _ ↦ trivial⟩
-  have h : ‖WithLp.toLp r (fun i ↦ a i * b i)‖ₑ ≤
-      ‖WithLp.toLp p₀ a‖ₑ * ‖WithLp.toLp p₁ b‖ₑ := by
-    rw [eNorm_toLp_eq_eLpNorm_count, eNorm_toLp_eq_eLpNorm_count, eNorm_toLp_eq_eLpNorm_count]
-    exact MeasureTheory.eLpNorm_smul_le_mul_eLpNorm (φ := a) (f := b)
-      Measurable.of_discrete.aestronglyMeasurable Measurable.of_discrete.aestronglyMeasurable
-  rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _)] at h
-  exact (ENNReal.ofReal_le_ofReal_iff (mul_nonneg (norm_nonneg _) (norm_nonneg _))).1 h
-
-/-- Hölder's inequality for finite `Lᵖ` norms of a pointwise scalar product over a Hölder triple
-`p₀⁻¹ + p₁⁻¹ = r⁻¹`. -/
-theorem norm_toLp_smul_le {p₀ p₁ r : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] [Fact (1 ≤ r)]
-    [ENNReal.HolderTriple p₀ p₁ r] {𝕜 : Type*} {β : ι → Type*} [NormedRing 𝕜]
-    [∀ i, SeminormedAddCommGroup (β i)] [∀ i, Module 𝕜 (β i)] [∀ i, IsBoundedSMul 𝕜 (β i)]
-    (a : ι → 𝕜) (x : ∀ i, β i) :
-    ‖WithLp.toLp r (fun i ↦ a i • x i)‖ ≤ ‖WithLp.toLp p₀ a‖ * ‖WithLp.toLp p₁ x‖ := by
-  refine (norm_mono (y := WithLp.toLp r fun i ↦ ‖a i‖ * ‖x i‖)
-    fun i ↦ by simpa using norm_smul_le (a i) (x i)).trans ?_
-  simpa only [norm_norm] using norm_toLp_mul_le (p₀ := p₀) (p₁ := p₁) (r := r)
-    (fun i ↦ ‖a i‖) (fun i ↦ ‖x i‖)
-
-private theorem norm_toLp_rpow_div_of_nonneg {s : ℝ≥0∞} [Fact (1 ≤ s)] {t : ℝ}
-    (ht0 : 0 < t) (ht1 : t ≤ 1) {a : ι → ℝ} (ha : ∀ i, 0 ≤ a i) :
-    haveI : Fact (1 ≤ s / ENNReal.ofReal t) := ⟨by
-      rw [← ENNReal.inv_le_one,
-        ENNReal.inv_div (.inl ENNReal.ofReal_ne_top) (.inl (ENNReal.ofReal_pos.2 ht0).ne'),
-        ENNReal.div_eq_inv_mul, mul_comm]
-      exact mul_le_one' (ENNReal.ofReal_le_one.2 ht1) (ENNReal.inv_le_one.2 Fact.out)⟩
+/-- Exact finite `L^{s / t}` norm of a pointwise positive power `(a i) ^ t` of nonnegative reals
+for `s ≠ 0` and `0 < t`. -/
+theorem norm_toLp_rpow_div_of_nonneg {s : ℝ≥0∞} (hs : s ≠ 0) {t : ℝ} (ht : 0 < t) {a : ι → ℝ}
+    (ha : ∀ i, 0 ≤ a i) :
     ‖WithLp.toLp (s / ENNReal.ofReal t) (fun i ↦ a i ^ t)‖ = ‖WithLp.toLp s a‖ ^ t := by
-  have _ : Fact (1 ≤ s / ENNReal.ofReal t) := ⟨by
-    rw [← ENNReal.inv_le_one,
-      ENNReal.inv_div (.inl ENNReal.ofReal_ne_top) (.inl (ENNReal.ofReal_pos.2 ht0).ne'),
-      ENNReal.div_eq_inv_mul, mul_comm]
-    exact mul_le_one' (ENNReal.ofReal_le_one.2 ht1) (ENNReal.inv_le_one.2 Fact.out)⟩
-  let _ : MeasurableSpace ι := ⊤
-  have _ : MeasurableSingletonClass ι := ⟨fun _ ↦ trivial⟩
-  have h : ‖WithLp.toLp (s / ENNReal.ofReal t) (fun i ↦ a i ^ t)‖ₑ = ‖WithLp.toLp s a‖ₑ ^ t := by
-    rw [eNorm_toLp_eq_eLpNorm_count, eNorm_toLp_eq_eLpNorm_count]
-    have hfun : (fun i ↦ a i ^ t) = fun i ↦ ‖a i‖ ^ t :=
-      funext fun i ↦ by rw [Real.norm_of_nonneg (ha i)]
-    rw [hfun, MeasureTheory.eLpNorm_norm_rpow a Measurable.of_discrete.aestronglyMeasurable ht0,
-      ENNReal.div_mul_cancel (ENNReal.ofReal_pos.2 ht0).ne' ENNReal.ofReal_ne_top]
-  rw [← ofReal_norm, ← ofReal_norm] at h
-  rw [ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) ht0.le] at h
-  exact (ENNReal.ofReal_eq_ofReal_iff (norm_nonneg _) (Real.rpow_nonneg (norm_nonneg _) _)).1 h
-
-/-- Log-convex Hölder inequality for finite `Lᵖ` norms under the complex interpolation relation
-`q⁻¹ = (1 - θ) / q₀ + θ / q₁` with `0 < θ < 1`. -/
-theorem norm_toLp_rpow_mul_rpow_le {q₀ q₁ q : ℝ≥0∞} [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q)]
-    {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 1)
-    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹) {a b : ι → ℝ}
-    (ha : ∀ i, 0 ≤ a i) (hb : ∀ i, 0 ≤ b i) :
-    ‖WithLp.toLp q (fun i ↦ a i ^ (1 - θ) * b i ^ θ)‖ ≤
-      ‖WithLp.toLp q₀ a‖ ^ (1 - θ) * ‖WithLp.toLp q₁ b‖ ^ θ := by
-  have h1θ : 0 < 1 - θ := sub_pos.2 hθ.2
-  let p₀ := q₀ / ENNReal.ofReal (1 - θ)
-  let p₁ := q₁ / ENNReal.ofReal θ
-  have hp₀_inv : p₀⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ := by
-    rw [ENNReal.inv_div (.inl ENNReal.ofReal_ne_top) (.inl (ENNReal.ofReal_pos.2 h1θ).ne'),
-      ENNReal.div_eq_inv_mul, mul_comm]
-  have hp₁_inv : p₁⁻¹ = ENNReal.ofReal θ * q₁⁻¹ := by
-    rw [ENNReal.inv_div (.inl ENNReal.ofReal_ne_top) (.inl (ENNReal.ofReal_pos.2 hθ.1).ne'),
-      ENNReal.div_eq_inv_mul, mul_comm]
-  have _ : Fact (1 ≤ p₀) := ⟨by
-    rw [← ENNReal.inv_le_one, hp₀_inv]
-    exact mul_le_one' (ENNReal.ofReal_le_one.2 (by linarith [hθ.1]))
-      (ENNReal.inv_le_one.2 Fact.out)⟩
-  have _ : Fact (1 ≤ p₁) := ⟨by
-    rw [← ENNReal.inv_le_one, hp₁_inv]
-    exact mul_le_one' (ENNReal.ofReal_le_one.2 hθ.2.le) (ENNReal.inv_le_one.2 Fact.out)⟩
-  have _ : ENNReal.HolderTriple p₀ p₁ q := ⟨by rw [hp₀_inv, hp₁_inv, hq]⟩
-  calc ‖WithLp.toLp q (fun i ↦ a i ^ (1 - θ) * b i ^ θ)‖
-      ≤ ‖WithLp.toLp p₀ (fun i ↦ a i ^ (1 - θ))‖ * ‖WithLp.toLp p₁ (fun i ↦ b i ^ θ)‖ :=
-        norm_toLp_mul_le (p₀ := p₀) (p₁ := p₁) (r := q) _ _
-    _ = ‖WithLp.toLp q₀ a‖ ^ (1 - θ) * ‖WithLp.toLp q₁ b‖ ^ θ := by
-        rw [norm_toLp_rpow_div_of_nonneg h1θ (by linarith [hθ.1]) ha,
-          norm_toLp_rpow_div_of_nonneg hθ.1 hθ.2.le hb]
+  rcases eq_or_ne s ∞ with rfl | hs_top
+  · rw [ENNReal.top_div_of_ne_top ENNReal.ofReal_ne_top, norm_eq_ciSup, norm_eq_ciSup]
+    simp only [Real.norm_of_nonneg (ha _), Real.norm_of_nonneg (Real.rpow_nonneg (ha _) _)]
+    rcases isEmpty_or_nonempty ι with hι | hι
+    · simp [Real.zero_rpow ht.ne']
+    · obtain ⟨i₀, _, hi₀⟩ := Finset.univ.exists_max_image a Finset.univ_nonempty
+      have hmax₁ : ⨆ i, a i ^ t = a i₀ ^ t :=
+        le_antisymm (ciSup_le fun i ↦ Real.rpow_le_rpow (ha i) (hi₀ i (Finset.mem_univ i)) ht.le)
+          (le_ciSup (f := fun i ↦ a i ^ t) (Set.finite_range _).bddAbove i₀)
+      have hmax₂ : ⨆ i, a i = a i₀ :=
+        le_antisymm (ciSup_le fun i ↦ hi₀ i (Finset.mem_univ i))
+          (le_ciSup (f := a) (Set.finite_range _).bddAbove i₀)
+      rw [hmax₁, hmax₂]
+  · have hs_pos : 0 < s.toReal := ENNReal.toReal_pos hs hs_top
+    have hq_ne_zero : s / ENNReal.ofReal t ≠ 0 := by
+      simp [ENNReal.div_eq_zero_iff, hs]
+    have hq_ne_top : s / ENNReal.ofReal t ≠ ∞ :=
+      ENNReal.div_ne_top hs_top (ENNReal.ofReal_pos.2 ht).ne'
+    have hq_pos : 0 < (s / ENNReal.ofReal t).toReal := ENNReal.toReal_pos hq_ne_zero hq_ne_top
+    have hq_toReal : (s / ENNReal.ofReal t).toReal = s.toReal / t := by
+      rw [ENNReal.toReal_div, ENNReal.toReal_ofReal ht.le]
+    rw [norm_eq_sum hq_pos, norm_eq_sum hs_pos, hq_toReal,
+      ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ by positivity)]
+    have hsum : (∑ i, ‖WithLp.toLp (s / ENNReal.ofReal t) (fun i ↦ a i ^ t) i‖ ^ (s.toReal / t)) =
+        ∑ i, ‖WithLp.toLp s a i‖ ^ s.toReal := by
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      simp only [Real.norm_of_nonneg (ha i), Real.norm_of_nonneg (Real.rpow_nonneg (ha i) _)]
+      rw [← Real.rpow_mul (ha i), mul_div_cancel₀ _ ht.ne']
+    rw [hsum, one_div, one_div, inv_div, div_eq_mul_inv, mul_comm]
 
 /-- Scaling estimate in `PiLp`: if `∑ i, b i ^ qr = B ^ qr` with `B > 0` and `b i > 0`, then
 `‖toLp p (i ↦ B * (b i / B) ^ (qr / p))‖ ≤ B`. -/
@@ -392,8 +331,9 @@ theorem norm_toLp_mul_div_rpow_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {B qr : ℝ}
       Real.rpow_rpow_inv hB.le hp0.ne']
     exact le_rfl
 
-/-- Perturbing a vector `v : PiLp q β` by a small positive constant gives strictly positive weights
-`b i > ‖v i‖` whose `ℓ^q` norm `B` satisfies `B ≤ ‖v‖ + ε` and `∑ i, b i ^ q = B ^ q`. -/
+/-- Perturbing a vector `v : PiLp q β` over a nonempty finite index type by `ε > 0`, for
+`1 ≤ q < ∞`, gives strictly positive weights `b i > ‖v i‖` whose `ℓ^q` norm `B` satisfies
+`B ≤ ‖v‖ + ε` and `∑ i, b i ^ q.toReal = B ^ q.toReal`. -/
 theorem exists_pos_perturbation [Nonempty ι] {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq_top : q ≠ ∞)
     {β : ι → Type*} [∀ i, SeminormedAddCommGroup (β i)] (v : PiLp q β) {ε : ℝ} (hε : 0 < ε) :
     ∃ (b : ι → ℝ) (B : ℝ), 0 < B ∧ B ≤ ‖v‖ + ε ∧ (∀ i, 0 < b i ∧ ‖v i‖ < b i) ∧
@@ -423,7 +363,7 @@ theorem exists_pos_perturbation [Nonempty ι] {q : ℝ≥0∞} [Fact (1 ≤ q)] 
       congr 1; exact Finset.sum_congr rfl fun i _ ↦ by rw [Real.norm_of_nonneg (hb i).le]
     rw [hBeq, one_div, Real.rpow_inv_rpow (Finset.sum_nonneg fun i _ ↦ by positivity) hq0.ne']
 
-end Holder
+end Scaling
 
 section UniformSpace
 
