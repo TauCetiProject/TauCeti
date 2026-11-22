@@ -11,8 +11,6 @@ public import Mathlib.CategoryTheory.Sites.LeftExact
 public import Mathlib.CategoryTheory.Sites.PreservesSheafification
 
 public import Mathlib.Algebra.Category.Grp.Colimits
-public import Mathlib.Algebra.Category.Grp.Zero
-public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Topology.Sheaves.Sheafify
 public import Mathlib.Topology.Sheaves.Stalks
 public import TauCeti.CategoryTheory.ConcreteCategory.Basic
