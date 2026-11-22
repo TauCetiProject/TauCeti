@@ -43,10 +43,9 @@ distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
   `∯ z in T(c, R), (∏ i, (z i - w i))⁻¹ • f z = (2πi)ⁿ • f w`.
   `DifferentiableOn.torusIntegral_prod_sub_inv_smul` is the case of a jointly differentiable `f`.
 * `ContinuousOn.analyticAt_of_differentiableAt_update`,
-  `ContinuousOn.analyticOnNhd_of_differentiableAt_update`,
-  `ContinuousOn.analyticOnNhd_of_differentiableAt_prod_prod`: **Osgood's lemma.** A function on
-  `ι → ℂ` (for a finite type `ι`) or `ℂ × ℂ × ℂ` which is continuous on an open set and complex
-  differentiable in each variable separately there is analytic on it.
+  `ContinuousOn.analyticOnNhd_of_differentiableAt_update`: **Osgood's lemma.** A function on
+  `ι → ℂ`, for a finite type `ι`, which is continuous on an open set and complex differentiable in
+  each variable separately there is analytic on it.
 * `TauCeti.analyticOnNhd_iff_continuousOn_and_differentiableAt_update`: on an open subset of
   `ι → ℂ`, analyticity is equivalent to continuity together with separate complex
   differentiability.
@@ -327,30 +326,6 @@ theorem analyticOnNhd_iff_continuousOn_and_differentiableAt_update (hs : IsOpen 
       ∀ y ∈ s, ∀ i, DifferentiableAt ℂ (fun x => f (update y i x)) (y i) :=
   ⟨fun h => ⟨h.continuousOn, fun y hy i => (h y hy).differentiableAt.comp_update i⟩,
     fun h => h.1.analyticOnNhd_of_differentiableAt_update hs h.2⟩
-
-/-- **Osgood's lemma on `ℂ × ℂ × ℂ`.** A function of three complex variables which is continuous
-on an open set and complex differentiable in each coordinate separately is jointly analytic on
-that set. -/
-theorem _root_.ContinuousOn.analyticOnNhd_of_differentiableAt_prod_prod
-    {f : ℂ × ℂ × ℂ → E} {s : Set (ℂ × ℂ × ℂ)} (hc : ContinuousOn f s) (hs : IsOpen s)
-    (hd₁ : ∀ p ∈ s, DifferentiableAt ℂ (fun x => f (x, p.2.1, p.2.2)) p.1)
-    (hd₂ : ∀ p ∈ s, DifferentiableAt ℂ (fun y => f (p.1, y, p.2.2)) p.2.1)
-    (hd₃ : ∀ p ∈ s, DifferentiableAt ℂ (fun z => f (p.1, p.2.1, z)) p.2.2) :
-    AnalyticOnNhd ℂ f s := by
-  let e : (Fin 3 → ℂ) ≃L[ℂ] ℂ × ℂ × ℂ :=
-    (Fin.consEquivL ℂ (fun _ : Fin 3 => ℂ)).symm.trans
-      ((ContinuousLinearEquiv.refl ℂ ℂ).prodCongr (ContinuousLinearEquiv.finTwoArrow ℂ ℂ))
-  have he : ∀ v, e v = (v 0, v 1, v 2) := fun v => by simp [e, Fin.tail_def]
-  have han : AnalyticOnNhd ℂ (f ∘ e) (e ⁻¹' s) := by
-    refine (hc.comp e.continuous.continuousOn (mapsTo_preimage _ _))
-      |>.analyticOnNhd_of_differentiableAt_update (hs.preimage e.continuous) fun v hv i => ?_
-    fin_cases i
-    · simpa [Function.comp_def, he] using hd₁ (e v) hv
-    · simpa [Function.comp_def, he] using hd₂ (e v) hv
-    · simpa [Function.comp_def, he] using hd₃ (e v) hv
-  have hfe : (f ∘ e) ∘ e.symm = f := funext fun p => congrArg f (e.apply_symm_apply p)
-  intro p hp
-  exact hfe ▸ (han (e.symm p) (by simpa [e.apply_symm_apply] using hp)).comp (e.symm.analyticAt p)
 
 end Osgood
 

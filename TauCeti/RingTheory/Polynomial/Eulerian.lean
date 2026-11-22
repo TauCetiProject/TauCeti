@@ -5,6 +5,7 @@ Authors: Tau Ceti
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Derivative
 
 /-!
@@ -137,5 +138,12 @@ image of `TauCeti.eulerianPolynomial m` under `Int.castRingHom R`. -/
 theorem shiftedEulerianPolynomial_one_left {R : Type*} [CommRing R] (m : ℕ) :
     shiftedEulerianPolynomial (1 : R) m = (eulerianPolynomial m).map (Int.castRingHom R) := by
   rw [eulerianPolynomial, map_shiftedEulerianPolynomial, map_one]
+
+/-- Evaluating `shiftedEulerianPolynomial (1 : R) m` at `z : R` coincides with
+`aeval z (eulerianPolynomial m)`. -/
+theorem shiftedEulerianPolynomial_one_eval_eq_aeval {R : Type*} [CommRing R] (m : ℕ) (z : R) :
+    (shiftedEulerianPolynomial (1 : R) m).eval z = aeval z (eulerianPolynomial m) := by
+  have hmap : Int.castRingHom R = algebraMap ℤ R := Subsingleton.elim _ _
+  rw [shiftedEulerianPolynomial_one_left, Polynomial.eval_map, Polynomial.aeval_def, hmap]
 
 end TauCeti

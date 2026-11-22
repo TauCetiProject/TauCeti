@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.LaplaceTransform.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
+import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!

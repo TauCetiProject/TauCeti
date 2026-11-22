@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
+public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.NumberTheory.LSeries.Lerch.Series
+import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
@@ -46,15 +47,14 @@ theorem expZeta_eq_mul_lerchZeta (a : ℝ) {s : ℂ} (hs : 1 < s.re) :
   have hsum := HurwitzZeta.hasSum_expZeta_of_one_lt_re a hs
   rw [← hsum.tsum_eq, hsum.summable.tsum_eq_zero_add]
   simp only [Nat.cast_zero, mul_zero, Complex.zero_cpow hs0, div_zero, zero_add]
-  rw [lerchZeta_def, lerchSeries_def, ← tsum_mul_left]
+  rw [lerchZeta_def, lerchSeries_eq_tsum_cpow _ s fun n => by exact_mod_cast Nat.succ_ne_zero n,
+    ← tsum_mul_left]
   refine tsum_congr fun n => ?_
-  have hn1 : ((n + 1 : ℕ) : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)
-  have hden : (((n + 1 : ℕ) : ℂ) ^ s)⁻¹ = Complex.exp (-s * Complex.log ((n : ℂ) + 1)) := by
-    rw [cpow_def_of_ne_zero hn1, ← Complex.exp_neg]
-    simp only [Nat.cast_add, Nat.cast_one, neg_mul, mul_comm (Complex.log _)]
+  have hden : (((n + 1 : ℕ) : ℂ) ^ s)⁻¹ = ((n : ℂ) + 1) ^ (-s) := by
+    rw [← Complex.cpow_neg]; push_cast; rfl
   have hphase : Complex.exp (2 * Real.pi * I * a * ((n + 1 : ℕ) : ℂ)) =
       Complex.exp (2 * Real.pi * I * a) * Complex.exp (2 * Real.pi * I * a) ^ n := by
-    rw [mul_right_comm _ (a : ℂ), ← Complex.exp_two_pi_I_mul_pow, pow_succ']
+    rw [mul_right_comm _ (a : ℂ), ← Complex.exp_two_pi_mul_I_mul_pow, pow_succ']
   rw [div_eq_mul_inv, hden, hphase, mul_assoc]
 
 /-- At `z = 1` and `c = 1`, `lerchSeries 1 s 1 = riemannZeta s` for `1 < s.re`. -/
@@ -69,18 +69,18 @@ theorem lerchSeries_neg_one_one_eq_mul_riemannZeta {s : ℂ} (hs : 1 < s.re) :
   rw [← LSeries_neg_one_pow_add_one_eq_mul_riemannZeta hs, LSeries]
   have hterm (n : ℕ) :
       LSeries.term (fun k => (-1 : ℂ) ^ (k + 1)) s (n + 1) =
-        (-1 : ℂ) ^ n * Complex.exp (-s * Complex.log (n + 1)) := by
-    have hn1 : ((n + 1 : ℕ) : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)
-    rw [LSeries.term_of_ne_zero (Nat.succ_ne_zero n), div_eq_mul_inv, cpow_def_of_ne_zero hn1,
-      ← Complex.exp_neg]
-    congr 1
-    · rw [pow_succ, pow_succ]; ring
-    · congr 1; push_cast; ring
+        (-1 : ℂ) ^ n * ((n : ℂ) + 1) ^ (-s) := by
+    rw [LSeries.term_of_ne_zero (Nat.succ_ne_zero n), div_eq_mul_inv, ← Complex.cpow_neg]
+    push_cast
+    rw [pow_succ, pow_succ]
+    ring
   have hsum : Summable (LSeries.term (fun k => (-1 : ℂ) ^ (k + 1)) s) :=
     (summable_nat_add_iff 1).mp <|
-      (summable_lerchSeries_term_of_norm_le_one (z := -1) (by simp) hs 1).congr
-        fun n => (hterm n).symm
-  rw [hsum.tsum_eq_zero_add, LSeries.term_zero, zero_add, lerchSeries_def]
+      ((summable_lerchSeries_term_of_norm_le_one (z := -1) (by simp) hs 1).congr fun n => by
+        rw [cpow_def_of_ne_zero (by exact_mod_cast Nat.succ_ne_zero n),
+          mul_comm (Complex.log _)]).congr fun n => (hterm n).symm
+  rw [hsum.tsum_eq_zero_add, LSeries.term_zero, zero_add,
+    lerchSeries_eq_tsum_cpow (-1) s fun n => by exact_mod_cast Nat.succ_ne_zero n]
   exact tsum_congr fun n => (hterm n).symm
 
 -- Alternating Basel check `lerchSeries (-1) 2 1 = π ^ 2 / 12`.

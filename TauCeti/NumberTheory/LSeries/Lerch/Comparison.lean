@@ -53,11 +53,9 @@ theorem polylog_one_eq_mul_lerchSeries {z : ℂ} (hz : ‖z‖ < 1) :
 /-- On the open unit disc `‖z‖ < 1`, `Li_{-m}(z) = z * Φ(z, -m, 1)` for every `m : ℕ`. -/
 theorem polylog_neg_nat_eq_mul_lerchSeries (m : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
     Polylog.polylog (-(m : ℤ)) z = z * lerchSeries z (-(m : ℂ)) 1 := by
-  have hmap : Int.castRingHom ℂ = algebraMap ℤ ℂ := Subsingleton.elim _ _
   rw [Polylog.polylog_neg_nat_eq_div,
     lerchSeries_neg_nat_eq_div m hz fun n => by exact_mod_cast Nat.succ_ne_zero n,
-    shiftedEulerianPolynomial_one_left, Polynomial.eval_map, Polynomial.aeval_def, hmap,
-    mul_div_assoc]
+    shiftedEulerianPolynomial_one_eval_eq_aeval, mul_div_assoc]
 
 /-- Across the cut plane `1 - z ∈ Complex.slitPlane`, `z * lerchIntegral (1, z, 1) = Li_1(z)`. -/
 theorem mul_lerchIntegral_one_one_eq_polylog_one {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :

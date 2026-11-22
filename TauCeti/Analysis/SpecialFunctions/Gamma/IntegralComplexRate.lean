@@ -33,12 +33,8 @@ integrable real majorant on `(0, ∞)`, giving holomorphy in `s` and joint analy
 * `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos`,
   `Complex.integral_cpow_mul_exp_neg_mul_Ioi_eq_Gamma_mul_exp`: the Gamma integral with complex
   rate, in principal-power and principal-logarithm forms.
-* `Complex.integrableOn_cpow_mul_log_pow_mul_exp_neg_mul_Ioi`,
-  `Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi`,
-  `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi`: convergence and holomorphy in the
-  rate on the right half-plane.
-* `IsCompact.exists_integrableOn_Ioi_norm_cpow_mul_log_pow_mul_exp_neg_mul_le`: compact-set
-  majorants on `(0, ∞)` with logarithmic power factors.
+* `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi`: holomorphy in the rate on the
+  right half-plane.
 * `Complex.analyticOnNhd_integral_cpow_mul_exp_neg_mul_Ioi_prod`,
   `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_prod`,
   `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_left`: joint analyticity and
@@ -61,22 +57,6 @@ open MeasureTheory Set Filter
 open scoped Topology
 
 namespace Complex
-
-/-- For `Re s > -1`, `Re w > 0`, and `k : ℕ`, `t ↦ t^s (log t)^k e^{-wt}` is integrable on
-`(0, ∞)`. -/
-theorem integrableOn_cpow_mul_log_pow_mul_exp_neg_mul_Ioi {s w : ℂ} (hs : -1 < s.re)
-    (hw : 0 < w.re) (k : ℕ) :
-    IntegrableOn (fun t : ℝ => (t : ℂ) ^ s * (log t) ^ k * exp (-(w * t))) (Ioi 0) := by
-  refine (Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi hs hw k).mono'
-    (Measurable.aestronglyMeasurable (by fun_prop)) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-  rw [norm_cpow_mul_log_pow_mul_exp_neg_mul s w k ht]
-
-/-- For `Re s > 0` and `Re w > 0`, `t ↦ t^{s-1} e^{-wt}` is integrable on `(0, ∞)`. -/
-theorem integrableOn_cpow_mul_exp_neg_mul_Ioi {s w : ℂ} (hs : 0 < s.re) (hw : 0 < w.re) :
-    IntegrableOn (fun t : ℝ => (t : ℂ) ^ (s - 1) * exp (-(w * t))) (Ioi 0) := by
-  have hs' : -1 < (s - 1).re := by simp; linarith
-  simpa using integrableOn_cpow_mul_log_pow_mul_exp_neg_mul_Ioi hs' hw 0
 
 /-- For `Re s > 0`, the Gamma integral `w ↦ ∫₀^∞ t^{s-1} e^{-wt} dt` is holomorphic in the rate
 `w` on the right half-plane. -/
@@ -135,34 +115,6 @@ theorem integral_cpow_mul_exp_neg_mul_Ioi_eq_Gamma_mul_exp {s z : ℂ} (hs : 0 <
     ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * exp (-(z * t)) = Gamma s * exp (-s * log z) := by
   have hz0 : z ≠ 0 := by intro h; rw [h, zero_re] at hz; exact lt_irrefl 0 hz
   rw [integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs hz, cpow_def_of_ne_zero hz0, mul_comm (log z)]
-
-/-- On any compact subset `K` of `{p : ℂ × ℂ | -1 < p.1.re ∧ 0 < p.2.re}`, the weighted
-Gamma-Laplace integrand `t^{p.1} (log t)^k e^{-p.2 t}` admits a single integrable real majorant
-on `(0, ∞)`. -/
-theorem _root_.IsCompact.exists_integrableOn_Ioi_norm_cpow_mul_log_pow_mul_exp_neg_mul_le
-    {K : Set (ℂ × ℂ)} (hK : IsCompact K) (hKs : ∀ p ∈ K, -1 < p.1.re)
-    (hKw : ∀ p ∈ K, 0 < p.2.re) (k : ℕ) :
-    ∃ g : ℝ → ℝ, IntegrableOn g (Ioi 0) ∧
-      ∀ p ∈ K, ∀ t > (0 : ℝ),
-        ‖(t : ℂ) ^ p.1 * (log t) ^ k * exp (-(p.2 * t))‖ ≤ g t := by
-  rcases K.eq_empty_or_nonempty with rfl | hne
-  · exact ⟨0, integrableOn_zero, by simp⟩
-  obtain ⟨p₁, hp₁, hmin_s⟩ := hK.exists_isMinOn hne (continuous_re.comp continuous_fst).continuousOn
-  obtain ⟨p₂, hp₂, hmax_s⟩ := hK.exists_isMaxOn hne (continuous_re.comp continuous_fst).continuousOn
-  obtain ⟨q, hq, hmin_w⟩ := hK.exists_isMinOn hne (continuous_re.comp continuous_snd).continuousOn
-  refine ⟨fun t => |Real.log t| ^ k * t ^ p₁.1.re * Real.exp (-q.2.re * t) +
-      |Real.log t| ^ k * t ^ p₂.1.re * Real.exp (-q.2.re * t),
-    (Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi (hKs p₁ hp₁) (hKw q hq) k).add
-      (Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi (hKs p₂ hp₂) (hKw q hq) k),
-    fun p hp t ht => ?_⟩
-  rw [norm_cpow_mul_log_pow_mul_exp_neg_mul p.1 p.2 k ht]
-  have hexp : Real.exp (-p.2.re * t) ≤ Real.exp (-q.2.re * t) :=
-    Real.exp_le_exp.mpr (by have : q.2.re ≤ p.2.re := hmin_w hp; nlinarith)
-  rcases le_or_gt t 1 with ht1 | ht1
-  · have hrp : t ^ p.1.re ≤ t ^ p₁.1.re := Real.rpow_le_rpow_of_exponent_ge ht ht1 (hmin_s hp)
-    exact le_add_of_le_of_nonneg (by gcongr) (by positivity)
-  · have hrp : t ^ p.1.re ≤ t ^ p₂.1.re := Real.rpow_le_rpow_of_exponent_le ht1.le (hmax_s hp)
-    exact le_add_of_nonneg_of_le (by positivity) (by gcongr)
 
 /-- The complex-rate Gamma integral `(s, z) ↦ ∫₀^∞ t^{s-1} e^{-zt} dt` is jointly analytic on
 `{p : ℂ × ℂ | 0 < p.1.re ∧ 0 < p.2.re}`. -/

@@ -8,9 +8,6 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 public import TauCeti.RingTheory.Polynomial.Eulerian
 import Mathlib.Analysis.Calculus.Deriv.Add
-import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.Calculus.Deriv.Polynomial
-import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Analysis.SpecialFunctions.Eulerian
 
 /-!
@@ -52,11 +49,11 @@ private theorem polylog_neg_nat_eq_mul_iterate_of_ne_one (r : ℕ) {z : ℂ} (hz
     have hF_local : F r =ᶠ[𝓝 z] fun w : ℂ => (shiftedEulerianPolynomial (1 : ℂ) r).eval w /
         (1 - w) ^ (r + 1) :=
       Eventually.of_forall fun w => iterate_mul_deriv_add_mul_inv_one_sub r w 1
-    have hne : 1 - z ≠ 0 := sub_ne_zero.mpr hz.symm
-    have hF_diff : HasDerivAt (F r) (deriv (F r) z) z := by
-      have hd := ((shiftedEulerianPolynomial (1 : ℂ) r).hasDerivAt z).div
-        (((hasDerivAt_const z (1 : ℂ)).sub (hasDerivAt_id z)).pow (r + 1)) (pow_ne_zero (r + 1) hne)
-      exact (hd.congr_of_eventuallyEq hF_local).differentiableAt.hasDerivAt
+    have hF_diff : HasDerivAt (F r) (deriv (F r) z) z :=
+      (((analyticOnNhd_shiftedEulerianPolynomial_div r (z, 1) hz).comp
+        (f := fun w : ℂ => (w, (1 : ℂ)))
+        (analyticAt_id.prod analyticAt_const)).differentiableAt.congr_of_eventuallyEq
+        hF_local).hasDerivAt
     have hmul := (hasDerivAt_id z).mul hF_diff
     rw [polylog_neg_nat_succ, (hmul.congr_of_eventuallyEq hlocal).deriv,
       Function.iterate_succ_apply']
@@ -109,10 +106,9 @@ theorem polylog_neg_nat_eq_div (r : ℕ) (z : ℂ) :
       rw [polylog_neg_nat_succ, deriv_zero_of_not_differentiableAt
         (mt DifferentiableAt.continuousAt (not_continuousAt_polylog_neg_nat_one r))]
       simp
-  · have hmap : Int.castRingHom ℂ = algebraMap ℤ ℂ := Subsingleton.elim _ _
-    rw [polylog_neg_nat_eq_mul_iterate_of_ne_one r hz,
-      iterate_mul_deriv_add_mul_inv_one_sub r z 1, shiftedEulerianPolynomial_one_left,
-      Polynomial.eval_map, Polynomial.aeval_def, hmap, mul_div_assoc]
+  · rw [polylog_neg_nat_eq_mul_iterate_of_ne_one r hz,
+      iterate_mul_deriv_add_mul_inv_one_sub r z 1, shiftedEulerianPolynomial_one_eval_eq_aeval,
+      mul_div_assoc]
 
 /-- In weight minus two the rational numerator is `z(1 + z)`.
 The identity includes the totalised value at 1. -/
