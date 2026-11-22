@@ -660,17 +660,9 @@ private theorem setAverage_closedBall_norm_iteratedGradient_sub_le_sum
       ⨍ w in ball z t, W1p.gradient (D k) w‖) (volume.restrict (ball z t)) := fun k =>
     (((Lp.memLp (W1p.gradient (D k))).integrableOn_of_subset one_le_two hball
       measure_ball_lt_top.ne).sub (integrable_const _)).norm
-  -- Averages over `B_t` are monotone.
-  have hmono : ∀ {F G : EuclideanSpace ℝ (Fin (n + 1)) → ℝ},
-      Integrable F (volume.restrict (ball z t)) → Integrable G (volume.restrict (ball z t)) →
-        F ≤ᵐ[volume.restrict (ball z t)] G → ⨍ y in ball z t, F y ≤ ⨍ y in ball z t, G y :=
-    fun hF hG hFG => by
-      rw [average_eq, average_eq, smul_eq_mul, smul_eq_mul]
-      exact mul_le_mul_of_nonneg_left (integral_mono_ae hF hG hFG)
-        (inv_nonneg.2 measureReal_nonneg)
   rw [← average_fun_finsetSum fun k _ => hint k]
-  refine hmono ((((Lp.memLp (Wkp.iteratedGradient 1 u)).integrableOn_of_subset one_le_two hball
-    measure_ball_lt_top.ne).sub (integrable_const _)).norm)
+  refine average_mono_ae ((((Lp.memLp (Wkp.iteratedGradient 1 u)).integrableOn_of_subset
+    one_le_two hball measure_ball_lt_top.ne).sub (integrable_const _)).norm)
     (integrable_finsetSum _ fun k _ => hint k) ?_
   filter_upwards [ae_restrict_of_ae_restrict_of_subset hball (ae_all_iff.2 hD)] with y hy
   refine (ContinuousLinearMap.opNorm_le_sum_norm_apply_orthonormalBasis _
