@@ -13,9 +13,9 @@ public import Mathlib.CategoryTheory.Sites.PreservesSheafification
 public import Mathlib.Algebra.Category.Grp.Colimits
 public import Mathlib.Algebra.Category.Grp.Zero
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
-public import Mathlib.Topology.Sheaves.Abelian
 public import Mathlib.Topology.Sheaves.Sheafify
 public import Mathlib.Topology.Sheaves.Stalks
+public import TauCeti.CategoryTheory.ConcreteCategory.Basic
 
 /-!
 # Maps from stalks and change of coefficients
@@ -31,10 +31,12 @@ morphisms (such as abelian groups or modules), the stalk at `x` vanishes exactly
 over a neighbourhood of `x` restricts to zero on a smaller neighbourhood of `x`
 (`TopCat.Presheaf.isZero_stalk_iff`). If a morphism of presheaves valued in a category with zero
 morphisms vanishes on all opens inside `V`, its induced map on stalks vanishes at every point of `V`
-(`TopCat.Presheaf.stalkFunctor_map_eq_zero_of_app_eq_zero`). Since sheafification does not change
-stalks (`TopCat.Presheaf.isZero_stalk_sheafify_iff`), the sheafification of a presheaf valued in
-such a concrete category with zero morphisms vanishes exactly when every section is locally zero
-(`TopCat.Presheaf.isZero_presheafToSheaf_obj_iff`).
+(`TopCat.Presheaf.stalkFunctor_map_eq_zero_of_app_eq_zero`). A sheaf valued in such a concrete
+category with zero morphisms vanishes exactly when all its stalks do
+(`TopCat.Sheaf.isZero_iff_forall_isZero_stalk`). Sheafification does not change stalks
+(`TopCat.Presheaf.isIso_stalkFunctor_map_toSheafify`, needing only weak sheafification), so the
+sheafification of a presheaf valued in such a category vanishes exactly when every section is
+locally zero (`TopCat.Presheaf.isZero_presheafToSheaf_obj_iff`).
 
 Taking stalks commutes with a coefficient functor preserving the neighborhood colimit,
 even after sheafifying the composed presheaf
@@ -110,7 +112,7 @@ variable {C : Type*} [Category.{u} C] [HasColimits C]
 /-- Mathlib's `stalkFunctor_map_unit_toSheafify_isIso` without its `[HasTerminal C]` hypothesis:
 weak sheafification already provides a terminal object, the sheafification of any presheaf
 on the empty space. -/
-private theorem isIso_stalkFunctor_map_toSheafify :
+theorem isIso_stalkFunctor_map_toSheafify :
     IsIso ((stalkFunctor C x).map (CategoryTheory.toSheafify (Opens.grothendieckTopology X) P)) :=
   have : HasTerminal C := (TopCat.Sheaf.isTerminalOfEmpty
     ((presheafToSheaf (Opens.grothendieckTopology X) C).obj P)).hasTerminal
@@ -133,20 +135,6 @@ variable {C : Type*} [Category.{u} C] [HasColimits C] {FC : C → C → Type*} {
   [PreservesFilteredColimits (forget C)] [∀ A, Zero (CC A)]
   [∀ A B, ZeroHomClass (FC A B) (CC A) (CC B)]
 
-omit [HasColimits C] [PreservesFilteredColimits (forget C)]
-  [∀ A B, ZeroHomClass (FC A B) (CC A) (CC B)] in
-/-- An object whose underlying type carries a zero is zero exactly when that type has no
-element other than `0`. -/
-private theorem isZero_iff_forall_eq_zero [HasZeroMorphisms C]
-    [PreservesLimit (Functor.empty.{0} C) (forget C)] (A : C) :
-    IsZero A ↔ ∀ a : ToType A, a = 0 :=
-  ⟨fun hA _ ↦
-      -- the forgetful functor sends the zero object `A` to a terminal type
-      have := Types.isTerminalEquivUnique _ (hA.isTerminal.isTerminalObj (forget C))
-      Subsingleton.elim _ _,
-    fun h ↦ (IsZero.iff_id_eq_zero _).2
-      (ConcreteCategory.hom_ext _ _ fun _ ↦ (h _).trans (h _).symm)⟩
-
 /-- The stalk at `x` of a presheaf valued in a concrete category whose objects carry a zero
 preserved by the morphisms vanishes if and only if every section over a neighbourhood of `x`
 restricts to zero on some smaller neighbourhood of `x`. The category needs zero morphisms, and
@@ -155,7 +143,7 @@ theorem isZero_stalk_iff [HasZeroMorphisms C] [PreservesLimit (Functor.empty.{0}
     (P : X.Presheaf C) (x : X) :
     IsZero (P.stalk x) ↔ ∀ (U : Opens X) (s : ToType (P.obj (op U))), x ∈ U →
       ∃ (V : Opens X) (h : V ≤ U), x ∈ V ∧ P.map (homOfLE h).op s = 0 := by
-  rw [isZero_iff_forall_eq_zero]
+  rw [ConcreteCategory.isZero_iff_forall_eq_zero]
   constructor
   · intro hP U s hx
     obtain ⟨W, hxW, iU, iV, e⟩ := P.germ_eq x hx hx s 0 ((hP _).trans (hP _).symm)
@@ -169,16 +157,19 @@ theorem isZero_stalk_iff [HasZeroMorphisms C] [PreservesLimit (Functor.empty.{0}
 vanishes if and only if all its stalks vanish. Unlike Mathlib's
 `TopCat.Sheaf.isZero_iff_stalkFunctor_obj_isZero`, the category need only have zero morphisms:
 a section with zero stalks is locally zero, hence zero, since the sections form a sheaf of types. -/
-private theorem isZero_sheaf_iff_forall_isZero_stalk [HasZeroMorphisms C]
+theorem _root_.TopCat.Sheaf.isZero_iff_forall_isZero_stalk [HasZeroMorphisms C]
     [PreservesLimits (forget C)] (Q : TopCat.Sheaf C X) :
     IsZero Q ↔ ∀ x : X, IsZero (Q.presheaf.stalk x) := by
   refine ⟨fun hQ x ↦ (Q.presheaf.isZero_stalk_iff x).2 fun U s hx ↦ ⟨U, le_rfl, hx, ?_⟩,
     fun h ↦ ?_⟩
-  · have hU : IsZero (Q.obj.obj (op U)) := (IsZero.iff_id_eq_zero _).2 <|
-      congrArg (fun f : Q ⟶ Q ↦ f.hom.app (op U)) (hQ.eq_of_src (𝟙 Q) (Sheaf.homEquiv.symm 0))
-    exact (isZero_iff_forall_eq_zero _).1 hU _
+  · -- `𝟙 Q` equals the sheaf morphism with underlying presheaf morphism `0`
+    have h0 : 𝟙 Q.obj = 0 := by
+      simpa using congrArg (·.hom) (hQ.eq_of_src (𝟙 Q) (ObjectProperty.homMk 0))
+    have hU : IsZero (Q.obj.obj (op U)) :=
+      (IsZero.iff_id_eq_zero _).2 (by simpa using NatTrans.congr_app h0 (op U))
+    exact (ConcreteCategory.isZero_iff_forall_eq_zero _).1 hU _
   refine IsZero.of_full_of_faithful_of_isZero (sheafToPresheaf _ C) Q
-    (Functor.isZero _ fun U ↦ (isZero_iff_forall_eq_zero _).2 fun s ↦ ?_)
+    (Functor.isZero _ fun U ↦ (ConcreteCategory.isZero_iff_forall_eq_zero _).2 fun s ↦ ?_)
   -- the underlying presheaf of types is a sheaf, so `s` vanishes because it vanishes locally
   let Qt : TopCat.Sheaf (Type u) X :=
     ⟨Q.obj ⋙ forget C, Presheaf.isSheaf_comp_of_isSheaf _ _ (forget C) Q.property⟩
@@ -199,7 +190,7 @@ theorem isZero_presheafToSheaf_obj_iff [HasZeroMorphisms C] [PreservesLimits (fo
     IsZero ((presheafToSheaf (Opens.grothendieckTopology X) C).obj P) ↔
       ∀ (x : X) (U : Opens X) (s : ToType (P.obj (op U))), x ∈ U →
         ∃ (V : Opens X) (h : V ≤ U), x ∈ V ∧ P.map (homOfLE h).op s = 0 :=
-  (isZero_sheaf_iff_forall_isZero_stalk _).trans <| forall_congr' fun x ↦
+  (TopCat.Sheaf.isZero_iff_forall_isZero_stalk _).trans <| forall_congr' fun x ↦
     (isZero_stalk_sheafify_iff x P).trans (P.isZero_stalk_iff x)
 
 end Concrete
