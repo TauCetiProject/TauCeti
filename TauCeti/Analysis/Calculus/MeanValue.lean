@@ -125,6 +125,12 @@ only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_ze
 compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
 (`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
 
+## Constancy from a vanishing derivative
+
+A function on a preconnected subset of `ℝ` whose derivative within the set vanishes is constant
+there (`IsPreconnected.eq_of_hasDerivWithinAt_zero`). A function `𝕜 → G`, `𝕜 = ℝ` or `𝕜 = ℂ`,
+with zero derivative at every point is constant (`TauCeti.is_const_of_hasDerivAt_zero`).
+
 ## Open-intersected convex sets
 
 Intersecting a convex set `C` with a non-convex open set `U` destroys global convexity while
@@ -711,6 +717,12 @@ theorem eq_of_hasDerivWithinAt_zero (hs : IsPreconnected s)
   simpa [sub_eq_zero, eq_comm] using h
 
 end IsPreconnected
+
+/-- A function `f : 𝕜 → G`, `𝕜 = ℝ` or `𝕜 = ℂ`, with zero derivative at every point is constant.
+This is the `HasDerivAt` form of Mathlib's `is_const_of_deriv_eq_zero`. -/
+theorem TauCeti.is_const_of_hasDerivAt_zero {𝕜 G : Type*} [RCLike 𝕜] [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {f : 𝕜 → G} (hf : ∀ t, HasDerivAt f 0 t) (t s : 𝕜) : f t = f s :=
+  is_const_of_deriv_eq_zero (fun t ↦ (hf t).differentiableAt) (fun t ↦ (hf t).deriv) t s
 
 section OpenInterConvex
 

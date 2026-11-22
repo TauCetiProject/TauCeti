@@ -37,6 +37,8 @@ Hilbert-space values with Plancherel's theorem transfer to any finite-dimensiona
   `∑ⱼ e_j (c_j u)`.
 * `TemperedDistribution.MemSobolev.postcomp`: applying `L` to the values of a tempered
   distribution in `H^{s,p}(E, F)` gives one in `H^{s,p}(E, G)`.
+* `TemperedDistribution.MemSobolev.compLp`: applying `L` to the values of an `Lᵖ` function in
+  `H^{s,p}` gives an `Lᵖ` function in `H^{s,p}`.
 -/
 
 public section
@@ -130,3 +132,17 @@ theorem SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM {s : ℝ} {p : ℝ≥0
   ext φ
   rw [toDistr_toBesselPotentialSpaceCLM, BesselPotentialSpace.toDistr_postcomp_apply,
     toDistr_toBesselPotentialSpaceCLM, toTemperedDistributionCLM_postcompCLM_apply]
+
+namespace TemperedDistribution
+
+/-- Applying a complex-linear map to the values of an `Lᵖ` function preserves `H^{s,p}`. -/
+theorem MemSobolev.compLp {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] {u : Lp F p (volume : Measure E)}
+    (hu : MemSobolev s p (u : 𝓢'(E, F))) (L : F →L[ℂ] G) :
+    MemSobolev s p ((L.compLp u : Lp G p volume) : 𝓢'(E, G)) := by
+  have h := (BesselPotentialSpace.postcomp E s p L hu.toBesselPotentialSpace).memSobolev_toDistr
+  convert h using 1
+  ext φ
+  rw [BesselPotentialSpace.toDistr_postcomp_apply, MemSobolev.toBesselPotentialSpace_toDistr,
+    Lp.toTemperedDistribution_compLp_apply]
+
+end TemperedDistribution
