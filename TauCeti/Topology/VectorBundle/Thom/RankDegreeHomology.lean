@@ -54,7 +54,7 @@ so for the negative bundle of a Morse–Bott critical submanifold of index `r` t
 relative homology across its critical level in degree `r`, the lowest degree in which it can be
 nonzero.
 
-Without an orientation and over an arbitrary commutative ring, the group in the rank degree is
+Without an orientation and over an arbitrary ring, the group in the rank degree is
 the zeroth homology of `B` twisted by the orientation local system of `E`; this is
 `TauCeti.Topology.VectorBundle.Orientation.RingRankDegreeHomology`.
 
