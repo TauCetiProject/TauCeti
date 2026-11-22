@@ -178,12 +178,25 @@ theorem memLp_stripMeasure_of_bound_of_eq_zero {u : ℝ × ℝ → V}
   exact MemLp.of_bound hu.restrict C ((ae_restrict_mem hK).mono hC)
 
 omit [NormedSpace ℝ V] in
+/-- A continuous section vanishing for `|s| > R` is bounded on the strip `ℝ × [0, 1]`. -/
+theorem exists_forall_mem_strip_norm_le {u : ℝ × ℝ → V} (hu : Continuous u) {R : ℝ}
+    (hR : ∀ z : ℝ × ℝ, R < |z.1| → u z = 0) :
+    ∃ C, 0 ≤ C ∧ ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1, ‖u z‖ ≤ C := by
+  obtain ⟨C, hC⟩ := (isCompact_Icc.prod isCompact_Icc).exists_bound_of_continuousOn
+    (s := Icc (-R) R ×ˢ Icc (0 : ℝ) 1) hu.continuousOn
+  refine ⟨max C 0, le_max_right _ _, fun z hz ↦ ?_⟩
+  by_cases hzR : R < |z.1|
+  · rw [hR z hzR, norm_zero]
+    exact le_max_right _ _
+  · exact (hC z ⟨abs_le.1 (not_lt.1 hzR), hz.2⟩).trans (le_max_left _ _)
+
+omit [NormedSpace ℝ V] in
 /-- A continuous section vanishing for `|s| > R` lies in every `Lᵖ` of the strip. -/
 theorem memLp_stripMeasure_of_continuous {u : ℝ × ℝ → V} (hu : Continuous u) {R : ℝ}
     (hR : ∀ z : ℝ × ℝ, R < |z.1| → u z = 0) (p : ℝ≥0∞) : MemLp u p stripMeasure := by
-  obtain ⟨C, hC⟩ := (isCompact_Icc.prod isCompact_Icc).exists_bound_of_continuousOn
-    (s := Icc (-R) R ×ˢ Icc (0 : ℝ) 1) hu.continuousOn
-  exact memLp_stripMeasure_of_bound_of_eq_zero hu.aestronglyMeasurable hC hR p
+  obtain ⟨C, -, hC⟩ := exists_forall_mem_strip_norm_le hu hR
+  exact memLp_stripMeasure_of_bound_of_eq_zero hu.aestronglyMeasurable
+    (fun z hz ↦ hC z ⟨mem_univ _, hz.2⟩) hR p
 
 /-- For a section vanishing for `|s| ≥ R`, a continuous function vanishing wherever the jet of the
 section vanishes is integrable on the strip. -/

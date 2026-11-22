@@ -15,10 +15,12 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 
 The Cauchy--Riemann operator `∂s + J ∂t` (`TauCeti.StripSobolev.cauchyRiemann`) acts on the
 Sobolev space `W^{1,2}` of the strip with boundary values in `L₀` and `L₁`
-(`TauCeti.StripSobolev.H1`), with values in `L²`. For disjoint isotropic `L₀` and `L₁`, for
-instance a transverse pair of Lagrangian subspaces, the energy estimate
+(`TauCeti.StripSobolev.H1`), with values in `L²`, as the first-order operator
+`TauCeti.StripSobolev.jetOperator` of a constant coefficient. For disjoint isotropic `L₀` and
+`L₁`, for instance a transverse pair of Lagrangian subspaces, the energy estimate
 `TauCeti.exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul` on test sections
 (`TauCeti.StripSobolev.exists_norm_jetLp_le_mul_norm_cauchyRiemann_jetLp`) passes to the closure:
+it is the case `A = 0` of the semi-Fredholm estimate below together with a global `L²` bound, so
 the operator is bounded below, hence injective with closed range. This is the linearized operator
 of the constant Floer strip at a transverse intersection point of two Lagrangian submanifolds, in
 a unitary trivialization. Its surjectivity is not proved here.
@@ -80,15 +82,17 @@ theorem cauchyRiemannJetCoeff_jet (J : AlmostComplexStructure V) (ξ : ℝ × �
 
 variable (J L₀ L₁) in
 /-- The Cauchy--Riemann operator `∂s + J ∂t` from the Sobolev space `W^{1,2}` of the strip with
-boundary values in `L₀` and `L₁` (`TauCeti.StripSobolev.H1`) to `L²(ℝ × [0, 1], V)`. -/
+boundary values in `L₀` and `L₁` (`TauCeti.StripSobolev.H1`) to `L²(ℝ × [0, 1], V)`: the
+first-order operator `TauCeti.StripSobolev.jetOperator` of the constant coefficient field
+`TauCeti.StripSobolev.cauchyRiemannJetCoeff J`, restricted to `H1`. -/
 noncomputable def cauchyRiemann : H1 L₀ L₁ →L[ℝ] Lp V 2 stripMeasure :=
-  ((cauchyRiemannJetCoeff J).compLpL 2 stripMeasure).comp (H1 L₀ L₁).subtypeL
+  (jetOperator fun _ ↦ cauchyRiemannJetCoeff J).comp (H1 L₀ L₁).subtypeL
 
-/-- The Cauchy--Riemann operator is the pointwise action of its coefficient on `L²` jets,
-restricted to `H1`. -/
+/-- The Cauchy--Riemann operator is the first-order operator of its constant coefficient field on
+`L²` jets, restricted to `H1`. -/
 theorem cauchyRiemann_apply (x : H1 L₀ L₁) :
     cauchyRiemann J L₀ L₁ x =
-      (cauchyRiemannJetCoeff J).compLpL 2 stripMeasure (x : Lp (V × V × V) 2 stripMeasure) :=
+      jetOperator (fun _ ↦ cauchyRiemannJetCoeff J) (x : Lp (V × V × V) 2 stripMeasure) :=
   (rfl)
 
 /-- The Cauchy--Riemann operator acts pointwise on `L²` jets: `(v, v_s, v_t) ↦ v_s + J v_t`. -/
@@ -96,7 +100,7 @@ theorem coeFn_cauchyRiemann (x : H1 L₀ L₁) :
     cauchyRiemann J L₀ L₁ x =ᵐ[stripMeasure]
       fun z ↦ ((x : Lp (V × V × V) 2 stripMeasure) z).2.1 +
         J ((x : Lp (V × V × V) 2 stripMeasure) z).2.2 :=
-  (cauchyRiemannJetCoeff J).coeFn_compLpL _
+  coeFn_jetOperator (memLp_top_const (cauchyRiemannJetCoeff J)) _
 
 /-- On the jet of a test section `ξ`, the Cauchy--Riemann operator is `∂s ξ + J ∂t ξ`. -/
 theorem cauchyRiemann_jetLp_ae_eq (ξ : testSection L₀ L₁) :
@@ -194,64 +198,9 @@ theorem exists_norm_jetLp_le_mul_norm_cauchyRiemann_jetLp (hg : ∀ v w, ω v (J
       (hest ξ ξ.property)
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hsq
 
-/-- **The Cauchy--Riemann operator of the strip with transverse isotropic boundary conditions is
-bounded below.** Let `J` be compatible with `ω` in the inner product of `V`, and let `L₀`, `L₁` be
-isotropic subspaces with `L₀ ∩ L₁ = 0`, for instance a transverse pair of Lagrangian subspaces.
-Then `‖x‖ ≤ C ‖(∂s + J ∂t) x‖` for every `x` in the Sobolev space `W^{1,2}` of the strip with
-boundary values in `L₀` and `L₁`. -/
-theorem exists_norm_le_mul_norm_cauchyRiemann (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁) (hL : Disjoint L₀ L₁) :
-    ∃ C, ∀ x : H1 L₀ L₁, ‖x‖ ≤ C * ‖cauchyRiemann J L₀ L₁ x‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_jetLp_le_mul_norm_cauchyRiemann_jetLp hg hL₀ hL₁ hL
-  set D := (cauchyRiemannJetCoeff J).compLpL 2 stripMeasure with hD
-  -- The estimate on the jets of test sections passes to their closure `H1`.
-  refine ⟨C, fun x ↦ ?_⟩
-  have hsub := jetClosure_subset_of_isClosed (S := testSection L₀ L₁)
-    (s := {f | ‖f‖ ≤ C * ‖D f‖})
-    (isClosed_le continuous_norm (continuous_const.mul (continuous_norm.comp D.continuous)))
-    (by
-      rintro _ ⟨ξ, rfl⟩
-      simpa only [mem_ofPred_eq, hD, cauchyRiemann_apply, Submodule.coe_mk] using hC ξ)
-  have hx := hsub x.property
-  rwa [mem_ofPred_eq, hD, ← cauchyRiemann_apply, Submodule.norm_coe] at hx
-
-/-- With transverse isotropic boundary conditions the Cauchy--Riemann operator on `W^{1,2}` of the
-strip is injective. -/
-theorem ker_cauchyRiemann_eq_bot (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁) (hL : Disjoint L₀ L₁) :
-    (cauchyRiemann J L₀ L₁).ker = ⊥ := by
-  obtain ⟨C, hC⟩ := exists_norm_le_mul_norm_cauchyRiemann hg hL₀ hL₁ hL
-  refine (Submodule.eq_bot_iff _).2 fun x hx ↦ norm_le_zero_iff.1 ?_
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hx
-  have h := hC x
-  rwa [hx, norm_zero, mul_zero] at h
-
-/-- With transverse isotropic boundary conditions the Cauchy--Riemann operator on `W^{1,2}` of the
-strip has closed range. -/
-theorem isClosed_range_cauchyRiemann (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁) (hL : Disjoint L₀ L₁) :
-    IsClosed (Set.range (cauchyRiemann J L₀ L₁)) := by
-  obtain ⟨C, hC⟩ := exists_norm_le_mul_norm_cauchyRiemann hg hL₀ hL₁ hL
-  refine ((cauchyRiemann J L₀ L₁).antilipschitz_of_bound (K := C.toNNReal) fun x ↦
-    (hC x).trans ?_).isClosed_range (cauchyRiemann J L₀ L₁).uniformContinuous
-  exact mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal C) (norm_nonneg _)
-
 end InnerProductSpace
 
 /-! ### Compactly supported zeroth-order perturbations -/
-
-omit [FiniteDimensional ℝ V] in
-/-- A continuous field of operators vanishing for `|s| > T` is bounded on the strip. -/
-private theorem exists_forall_mem_strip_norm_le {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A)
-    {T : ℝ} (hAT : ∀ z : ℝ × ℝ, T < |z.1| → A z = 0) :
-    ∃ B, 0 ≤ B ∧ ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1, ‖A z‖ ≤ B := by
-  obtain ⟨B, hB⟩ := (isCompact_Icc.prod isCompact_Icc :
-    IsCompact (Icc (-T) T ×ˢ Icc (0 : ℝ) 1)).exists_bound_of_continuousOn hA.continuousOn
-  refine ⟨max B 0, le_max_right _ _, fun z hz ↦ ?_⟩
-  by_cases hzT : T < |z.1|
-  · rw [hAT z hzT, norm_zero]
-    exact le_max_right _ _
-  · exact (hB z ⟨abs_le.1 (not_lt.1 hzT), hz.2⟩).trans (le_max_left _ _)
 
 variable (J) in
 /-- The coefficient field `z ↦ ((v, v_s, v_t) ↦ v_s + J v_t + A z v)` on jets of the operator
@@ -272,6 +221,13 @@ theorem cauchyRiemannAddJetCoeff_jet (J : AlmostComplexStructure V) (A : ℝ × 
       fderiv ℝ ξ z stdComplexLineReal + J (fderiv ℝ ξ z stdComplexLineImag) + A z (ξ z) := by
   rw [cauchyRiemannAddJetCoeff, add_apply, cauchyRiemannJetCoeff_jet,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', jet_apply]
+
+/-- Without zeroth-order term, the coefficient field is the constant coefficient of `∂s + J ∂t`. -/
+@[simp]
+theorem cauchyRiemannAddJetCoeff_zero (J : AlmostComplexStructure V) :
+    cauchyRiemannAddJetCoeff J 0 = fun _ ↦ cauchyRiemannJetCoeff J :=
+  funext fun _ ↦ by
+    rw [cauchyRiemannAddJetCoeff, Pi.zero_apply, ContinuousLinearMap.zero_comp, add_zero]
 
 /-- A continuous zeroth-order term gives a continuous coefficient field. -/
 theorem continuous_cauchyRiemannAddJetCoeff {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) :
@@ -409,6 +365,53 @@ theorem isClosed_range_jetOperator_cauchyRiemannAddJetCoeff
       Set (Lp V 2 stripMeasure)) := by
   obtain ⟨C, hC⟩ := exists_hasSemiFredholmEstimate_cauchyRiemannAddJetCoeff hg hL₀ hL₁ hL hA hAT
   exact isClosed_range_jetOperator_comp_subtypeL (memLp_cauchyRiemannAddJetCoeff hA hAT) hC
+
+/-- **The Cauchy--Riemann operator of the strip with transverse isotropic boundary conditions is
+bounded below.** Let `J` be compatible with `ω` in the inner product of `V`, and let `L₀`, `L₁` be
+isotropic subspaces with `L₀ ∩ L₁ = 0`, for instance a transverse pair of Lagrangian subspaces.
+Then `‖x‖ ≤ C ‖(∂s + J ∂t) x‖` for every `x` in the Sobolev space `W^{1,2}` of the strip with
+boundary values in `L₀` and `L₁`. -/
+theorem exists_norm_le_mul_norm_cauchyRiemann (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁) (hL : Disjoint L₀ L₁) :
+    ∃ C, ∀ x : H1 L₀ L₁, ‖x‖ ≤ C * ‖cauchyRiemann J L₀ L₁ x‖ := by
+  obtain ⟨C, -, hest⟩ := exists_setIntegral_energy_le_mul_setIntegral_cauchyRiemann hg hL₀ hL₁ hL
+  -- The semi-Fredholm estimate for `A = 0`, together with the global `L²` bound from the energy
+  -- estimate, gives the bound below by Peetre's argument.
+  obtain ⟨C', hC'⟩ := exists_hasSemiFredholmEstimate_cauchyRiemannAddJetCoeff hg hL₀ hL₁ hL
+    (A := 0) continuous_const (T := 0) fun _ _ ↦ rfl
+  rw [cauchyRiemannAddJetCoeff_zero] at hC'
+  obtain ⟨K, hK⟩ := exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL
+    (memLp_top_const (cauchyRiemannJetCoeff J)) hC' (C' := C) fun ξ ↦ by
+      obtain ⟨R, hR⟩ := IsTestSpace.exists_forall_le_abs_eq_zero _ ξ.property
+      have hξ := IsTestSpace.contDiff _ ξ.property
+      refine (integral_mono (integrable_of_jet_eq_zero hR (hξ.continuous.norm.pow 2)
+        fun z hz ↦ by simp_all [jet_apply]) (integrable_of_jet_eq_zero hR (continuous_energy hξ)
+        fun _ ↦ energy_eq_zero_of_jet_eq_zero) fun z ↦
+          le_add_of_nonneg_left (by positivity)).trans ?_
+      simpa only [cauchyRiemannJetCoeff_jet, stdComplexLineReal_eq, stdComplexLineImag_eq] using
+        hest ξ ξ.property
+  exact ⟨K, hK⟩
+
+/-- With transverse isotropic boundary conditions the Cauchy--Riemann operator on `W^{1,2}` of the
+strip is injective. -/
+theorem ker_cauchyRiemann_eq_bot (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁) (hL : Disjoint L₀ L₁) :
+    (cauchyRiemann J L₀ L₁).ker = ⊥ := by
+  obtain ⟨C, hC⟩ := exists_norm_le_mul_norm_cauchyRiemann hg hL₀ hL₁ hL
+  refine (Submodule.eq_bot_iff _).2 fun x hx ↦ norm_le_zero_iff.1 ?_
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hx
+  have h := hC x
+  rwa [hx, norm_zero, mul_zero] at h
+
+/-- With transverse isotropic boundary conditions the Cauchy--Riemann operator on `W^{1,2}` of the
+strip has closed range. -/
+theorem isClosed_range_cauchyRiemann (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁) (hL : Disjoint L₀ L₁) :
+    IsClosed (Set.range (cauchyRiemann J L₀ L₁)) := by
+  obtain ⟨C, hC⟩ := exists_norm_le_mul_norm_cauchyRiemann hg hL₀ hL₁ hL
+  refine ((cauchyRiemann J L₀ L₁).antilipschitz_of_bound (K := C.toNNReal) fun x ↦
+    (hC x).trans ?_).isClosed_range (cauchyRiemann J L₀ L₁).uniformContinuous
+  exact mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal C) (norm_nonneg _)
 
 end InnerProductSpace
 
