@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Isotypic
+public import TauCeti.Algebra.Coalgebra.Comodule.Unitary.UnitarizingMatrix
 public import TauCeti.Algebra.Coalgebra.Star
 public import TauCeti.Algebra.HopfAlgebra.Integral.Haar
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.Coalgebra.Comodule.Conjugate
+import TauCeti.Algebra.Coalgebra.Comodule.Unitary.SchurOrthogonality
 import TauCeti.Algebra.HopfAlgebra.Integral.CompactType
 
 /-!
@@ -32,6 +34,13 @@ So both maps are bijective, and every `h (a * ·)` is some `h (· * c)` with `c`
 In particular `θ` preserves every simple coefficient space
 (`TauCeti.AlgebraicHaar.modularAut_mem_of_mem_simpleCoefficientSubmodules`).
 
+On the coefficient matrix `u` of a simple comodule in a basis where `u` is unitary, `θ` acts by
+`θ(u) = F u F`, where `F` is the transpose of the normalized unitarizing matrix `Ft` of weighted
+Schur orthogonality (`TauCeti.AlgebraicHaar.map_modularAut_coefficientMatrix`). Both sides lie in
+the coefficient space of `u`, and the Schur orthogonality relations show that they pair in the same
+way with every `star (u k l)`; Haar orthogonality of distinct blocks and faithfulness of `h` then
+identify them.
+
 The construction of `θ` as an algebra automorphism adapts that of the Nakayama automorphism of a
 Frobenius functional (`LinearMap.IsFrobeniusFunctional.nakayamaAut`): a linear map characterized by
 the pairing identity, made unital and multiplicative by faithfulness. In infinite dimension there
@@ -47,6 +56,8 @@ is no perfect pairing, and the block-dimension argument above takes its place.
 * `TauCeti.AlgebraicHaar.star_modularAut`: `star (θ a) = θ⁻¹ (star a)`.
 * `TauCeti.AlgebraicHaar.modularAut_eq_refl_iff`: `θ` is the identity if and only if `h` is a
   trace.
+* `TauCeti.AlgebraicHaar.map_modularAut_coefficientMatrix`: `θ(u) = F u F` on a unitary
+  coefficient matrix of a simple comodule.
 
 ## References
 
@@ -308,6 +319,99 @@ theorem modularAut_eq_refl_iff :
   refine ⟨fun hθ a b ↦ ?_, fun H ↦ AlgEquiv.ext fun a ↦ ?_⟩
   · simpa [hθ] using (h.apply_mul_modularAut a b).symm
   · exact congrFun (h.coe_modularAut_eq (σ := id) fun a b ↦ (H a b).symm) a
+
+section CoefficientMatrix
+
+open Matrix
+open scoped ComplexOrder
+
+variable {M ι : Type*} [AddCommGroup M] [Module ℂ M] [Comodule ℂ A M]
+  [IsSimpleOrder (Subcomodule ℂ A M)] [Fintype ι] [DecidableEq ι]
+
+omit [StarRing A] [StarModule ℂ A] [StarCoalgebra ℂ A] [IsSimpleOrder (Subcomodule ℂ A M)]
+  [DecidableEq ι] in
+/-- Entries of `F u F` for a complex matrix `F`, as linear combinations of entries of `u`. -/
+private theorem transpose_mul_mul_apply (F : Matrix ι ι ℂ) (u : Matrix ι ι A) (i j : ι) :
+    (Fᵀ.map (algebraMap ℂ A) * u * Fᵀ.map (algebraMap ℂ A)) i j =
+      ∑ q, ∑ p, (F j q * F p i) • u p q := by
+  simp only [Matrix.mul_apply, Matrix.map_apply, Matrix.transpose_apply,
+    Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul, mul_smul_comm, mul_one,
+    Finset.smul_sum, smul_smul]
+
+/-- By Schur orthogonality, `F u F` pairs with the starred coefficients as `θ(u)` does:
+`h (star (u k l) * (F u F) i j) = h (u i j * star (u k l))`. -/
+private theorem apply_star_mul_transpose_mul_mul (b : Basis ι ℂ M)
+    (hu : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A)) (i j k l : ι) :
+    h (star (coefficientMatrix (C := A) b k l) *
+        ((unitarizingMatrix h.toLinearMap b)ᵀ.map (algebraMap ℂ A) * coefficientMatrix (C := A) b *
+          (unitarizingMatrix h.toLinearMap b)ᵀ.map (algebraMap ℂ A)) i j) =
+      h (coefficientMatrix (C := A) b i j * star (coefficientMatrix (C := A) b k l)) := by
+  set u := coefficientMatrix (C := A) b with hu_def
+  set Ft := unitarizingMatrix h.toLinearMap b with hFt_def
+  have hFt : Ft⁻¹ * Ft = 1 :=
+    Ft.nonsing_inv_mul ((isUnit_iff_isUnit_det _).mp (h.posDef_unitarizingMatrix b).isUnit)
+  have htr : Ft⁻¹.trace = Ft.trace := (h.trace_unitarizingMatrix_eq_trace_inv b).symm
+  have hsum : ∑ q, ∑ p, Ft j q * Ft p i * h (star (u k l) * u p q) =
+      Ft j l * (Ft⁻¹ * Ft) k i / Ft.trace := by
+    calc ∑ q, ∑ p, Ft j q * Ft p i * h (star (u k l) * u p q)
+        = ∑ q, if l = q then ∑ p, Ft j q * Ft p i * (Ft⁻¹ k p / Ft.trace) else 0 := by
+          simp only [hu_def, h.apply_star_mul_coefficientMatrix b hu, ← hFt_def, htr, mul_ite,
+            mul_zero, Finset.sum_ite_irrel, Finset.sum_const_zero]
+      _ = Ft j l * (Ft⁻¹ * Ft) k i / Ft.trace := by
+        simp only [Finset.sum_ite_eq, Finset.mem_univ, ite_true, Matrix.mul_apply,
+          Finset.mul_sum, Finset.sum_div]
+        exact Finset.sum_congr rfl fun p _ ↦ by ring
+  rw [transpose_mul_mul_apply, h.apply_coefficientMatrix_mul_star b hu, ← hFt_def]
+  simp only [Finset.mul_sum, mul_smul_comm, map_sum, map_smul, smul_eq_mul]
+  rw [hsum, hFt, Matrix.one_apply]
+  rcases eq_or_ne i k with rfl | hik
+  · simp
+  · simp [hik, hik.symm]
+
+/-- **The modular automorphism on a unitary coefficient matrix.** If `u` is the coefficient matrix
+of a simple comodule in a basis where it is unitary, then `θ(u) = F u F`, where `F` is the
+transpose of the normalized unitarizing matrix `Ft` of weighted Schur orthogonality
+(`TauCeti.AlgebraicHaar.apply_coefficientMatrix_mul_star`). -/
+theorem map_modularAut_coefficientMatrix (b : Basis ι ℂ M)
+    (hu : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A)) :
+    (coefficientMatrix (C := A) b).map h.modularAut =
+      (unitarizingMatrix h.toLinearMap b)ᵀ.map (algebraMap ℂ A) * coefficientMatrix (C := A) b *
+        (unitarizingMatrix h.toLinearMap b)ᵀ.map (algebraMap ℂ A) := by
+  set P := matrixCoefficientSubmodule (R := ℂ) (C := A) (M := M)
+  have hP : P ∈ simpleCoefficientSubmodules ℂ A :=
+    matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules
+  have huP (p q : ι) : coefficientMatrix (C := A) b p q ∈ P := by
+    rw [coefficientMatrix_apply]
+    exact matrixCoefficient_mem_submodule _ _
+  ext i j
+  rw [Matrix.map_apply, ← sub_eq_zero]
+  -- The difference `x` of the two sides lies in `P`, pairs to zero with `star P`, and therefore
+  -- with all of `A` by Haar orthogonality of the other blocks; faithfulness of `h` gives `x = 0`.
+  set x := h.modularAut (coefficientMatrix (C := A) b i j) -
+    ((unitarizingMatrix h.toLinearMap b)ᵀ.map (algebraMap ℂ A) * coefficientMatrix (C := A) b *
+      (unitarizingMatrix h.toLinearMap b)ᵀ.map (algebraMap ℂ A)) i j
+  have hxP : x ∈ P := by
+    refine sub_mem (h.modularAut_mem_of_mem_simpleCoefficientSubmodules hP (huP i j)) ?_
+    rw [transpose_mul_mul_apply]
+    exact Submodule.sum_mem _ fun q _ ↦ Submodule.sum_mem _ fun p _ ↦
+      Submodule.smul_mem _ _ (huP p q)
+  have hkl (k l : ι) : h (star (coefficientMatrix (C := A) b k l) * x) = 0 := by
+    rw [mul_sub, map_sub, apply_mul_modularAut, h.apply_star_mul_transpose_mul_mul b hu, sub_self]
+  refine h.eq_zero_of_forall_mul_left_eq_zero fun y ↦ ?_
+  suffices H : ∀ c, h (star c * x) = 0 by simpa using H (star y)
+  intro c
+  induction c using h.induction_simpleCoefficientSubmodules with
+  | mem Q hQ c hc =>
+    by_cases hQP : Q = P
+    · subst hQP
+      obtain ⟨X, rfl⟩ := (b.mem_matrixCoefficientSubmodule_iff_exists_matrix).mp hc
+      simp only [star_sum, star_smul, Finset.sum_mul, smul_mul_assoc, map_sum, map_smul, hkl,
+        smul_zero, Finset.sum_const_zero]
+    · exact h.map_star_mul_eq_zero_of_mem_simpleCoefficientSubmodules hQ hP hQP hc hxP
+  | zero => simp
+  | add c c' hc hc' => simp [add_mul, hc, hc']
+
+end CoefficientMatrix
 
 end AlgebraicHaar
 
