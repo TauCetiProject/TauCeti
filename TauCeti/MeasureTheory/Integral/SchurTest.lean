@@ -383,8 +383,12 @@ theorem tsum_sum_Ico_mul_le (L : ℕ) (a b : ℕ → ℝ≥0∞) :
   -- and each window has at most `2 L` elements.
   set κ : ℕ → ℕ → ℝ≥0∞ := fun j k ↦ (W j : Set ℕ).indicator 1 k
   have hrow (j : ℕ) : ∫⁻ k, κ j k ∂Measure.count ≤ 2 * L := by
+    have hcard : (W j).card ≤ 2 * L := by
+      simp only [W, Nat.card_Ico]
+      omega
+    simp only [κ]
     rw [lintegral_indicator_one (Finset.measurableSet _), Measure.count_apply_finset]
-    exact_mod_cast (show (W j).card ≤ 2 * L by simp only [W, Nat.card_Ico]; omega)
+    exact_mod_cast hcard
   have hmem (j k : ℕ) : k ∈ W j ↔ j ∈ W k := by
     simp only [W, Finset.mem_Ico]
     omega
@@ -399,8 +403,9 @@ theorem tsum_sum_Ico_mul_le (L : ℕ) (a b : ℕ → ℝ≥0∞) :
     rpow_two] at h
   calc ∑' j, ∑ k ∈ W j, a j * b k = ∑' j, ∑' k, a j * (κ j k * b k) := by
         refine tsum_congr fun j ↦ ?_
-        rw [tsum_eq_sum (s := W j) fun k hk ↦ by simp [κ, hk]]
-        exact Finset.sum_congr rfl fun k hk ↦ by simp [κ, hk]
+        rw [sum_eq_tsum_indicator]
+        refine tsum_congr fun k ↦ ?_
+        simp only [κ, Set.indicator_const_mul, ← Set.indicator_mul_left, Pi.one_apply, one_mul]
     _ ≤ _ := h
     _ = 2 * L * ((∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
         -- The constants `(2 L) ^ (1 - 2⁻¹)` and `(2 L) ^ 2⁻¹` of Schur's test multiply to `2 L`.

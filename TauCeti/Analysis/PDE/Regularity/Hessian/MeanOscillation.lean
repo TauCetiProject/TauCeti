@@ -598,7 +598,7 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matri
     havg r θ, havg r (fun x => ‖H x‖ ^ (2 * q)), hVρ]
   have hsplit : (K ^ (2 * q' - 1) * (V⁻¹ * Iθ)) ^ q'⁻¹ * (V⁻¹ * Ig) ^ q⁻¹ =
       V⁻¹ * ((K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * Ig ^ q⁻¹) := by
-    rw [mul_left_comm]
+    rw [mul_left_comm (K ^ (2 * q' - 1)) V⁻¹ Iθ]
     exact Real.mul_rpow_mul_mul_rpow_of_add_eq_one (inv_nonneg.2 hV.le)
       hq.symm.inv_add_inv_eq_one
   rw [hsplit]
