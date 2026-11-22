@@ -31,9 +31,9 @@ out on the ends and compatible along `u`, there are `C ≥ 0` and `T ≥ 0` such
 
 for every `C²` section `ξ` with compact support in `S`. Beyond the height `2 + ∑_q |L_q|` on each
 end, past every neck and collar, the datum is the pair-of-pants datum of `H`
-(`TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_le`), so this is
-the semi-Fredholm estimate for Floer data that agree with the pair-of-pants data far out on the ends
-(`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add`).
+(`TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_sum_le`), so this
+is the semi-Fredholm estimate for Floer data that agree with the pair-of-pants data far out on the
+ends (`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add`).
 The constants depend on the neck positions; no estimate uniform along a family of necks is made.
 
 ## References
@@ -122,13 +122,9 @@ theorem exists_forall_le_mul_integral_floerLinearization_pairOfPantsContinuation
   have hK (q : Puncture) (z : ℝ × ℝ) (hz : R ≤ (positiveEndCoord q z).1) (y : V) :
       pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) y =
         pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y := by
-    have hLq : L q ≤ ∑ r, |L r| := (le_abs_self _).trans
-      (Finset.single_le_sum (f := fun r ↦ |L r|) (fun _ _ ↦ abs_nonneg _) (Finset.mem_univ q))
-    have hsum : 0 ≤ ∑ r, |L r| := Finset.sum_nonneg fun _ _ ↦ abs_nonneg _
     rw [fst_positiveEndCoord] at hz
-    have hR : 2 + ∑ r, |L r| ≤ R := le_max_right _ _
-    exact pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_le (by linarith)
-      (by linarith) y
+    exact pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_sum_le
+      ((le_max_right _ _).trans hz) y
   exact ω.exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add hH
     hHs hX hx hnd hJe hJex (R₁ := R) (fun q ζ hζ ↦ hJeq q ζ ((le_max_left _ _).trans hζ))
     (fun q z _ hz ↦ ⟨funext fun y ↦ congrArg (· 1) (hK q z hz y),
