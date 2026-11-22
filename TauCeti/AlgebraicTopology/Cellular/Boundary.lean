@@ -22,7 +22,9 @@ map.  Thus computing the differential reduces to computing the maps induced by t
 spheres, rather than choosing singular chains representing each cell.
 
 The attaching maps here are restrictions of the characteristic maps, read on Euclidean disks
-through the same radial rescaling as the cellular generators.  The sphere class uses reduced
+through the same radial rescaling as the cellular generators.  As a continuous map to `X`, the
+characteristic map of one cell is `TauCeti.characteristicCellMap`; on the `1`-disk it reads a point
+through its coordinate (`TauCeti.characteristicCellMap_one_apply`).  The sphere class uses reduced
 homology: for a one-cell its boundary is the difference of the two endpoints, not their sum.
 Coefficients are objects in an abelian category with coproducts; only the coproduct indexed by
 the source cells needs to be exact.
@@ -109,6 +111,42 @@ lemma characteristicCellPairMap_snd {n : ℕ} (j : cell C n) :
     (congrArg Subtype.val (ConcreteCategory.congr_hom (characteristicCellPairMap_fst C j)
       (TopCat.diskBoundaryInclusion n x))).trans <|
     (coe_cellDiskHom_apply j _).trans (coe_cellAttachingMap_apply j x).symm
+
+/-- The characteristic map of one cell, as a continuous map from the Euclidean disk to `X`: the
+ambient component `TauCeti.cellDiskHom` of `TauCeti.characteristicCellPairMap`, followed by the
+inclusion of the skeleton. -/
+@[expose] def characteristicCellMap {n : ℕ} (j : cell C n) : C(TopCat.disk.{w} n, X) :=
+  ⟨fun x ↦ (ConcreteCategory.hom (X := TopCat.disk.{w} n)
+      (Y := TopCat.of (skeletonLT C ((n + 1 : ℕ) : ℕ∞)))
+      (TopPair.Hom.fst (characteristicCellPairMap C j)) x).val,
+    continuous_subtypeVal.comp (TopPair.Hom.fst (characteristicCellPairMap C j)).hom.continuous⟩
+
+/-- `TauCeti.characteristicCellMap` is the characteristic map of the cell in rescaled Euclidean
+coordinates. -/
+lemma characteristicCellMap_apply {n : ℕ} (j : cell C n) (x : TopCat.disk.{w} n) :
+    characteristicCellMap C j x =
+      map n j ((EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph x.down) :=
+  coe_characteristicCellPairMap_fst_apply C j x
+
+/-- In dimension one, the characteristic map of a cell reads a point of the disk through its
+coordinate. -/
+lemma characteristicCellMap_one_apply (j : cell C 1) (x : TopCat.disk.{w} 1) :
+    characteristicCellMap C j x = map 1 j fun _ ↦ (x.down : EuclideanSpace ℝ (Fin 1)) 0 :=
+  (characteristicCellMap_apply C j x).trans
+    (congrArg (map 1 j) ((coe_diskHomeomorphClosedBall_apply x).symm.trans
+      (coe_diskHomeomorphClosedBall_one_apply x)))
+
+/-- The characteristic map of a `1`-cell sends the pole `-e₀` to the end point `χⱼ(-1)`. -/
+lemma characteristicCellMap_sphereMinus (j : cell C 1) :
+    characteristicCellMap C j ((diskBoundaryPair.{w} 1).map sphereMinus) = map 1 j fun _ ↦ -1 :=
+  (characteristicCellMap_one_apply C j _).trans
+    (congrArg (fun a ↦ map 1 j fun _ ↦ a) sphereMinus_coord)
+
+/-- The characteristic map of a `1`-cell sends the pole `e₀` to the end point `χⱼ(1)`. -/
+lemma characteristicCellMap_spherePlus (j : cell C 1) :
+    characteristicCellMap C j ((diskBoundaryPair.{w} 1).map spherePlus) = map 1 j fun _ ↦ 1 :=
+  (characteristicCellMap_one_apply C j _).trans
+    (congrArg (fun a ↦ map 1 j fun _ ↦ a) spherePlus_coord)
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 

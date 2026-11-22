@@ -47,15 +47,15 @@ The comparison has two steps.
 * Under this isomorphism, the cellular differential of a `1`-cell `j` is the transport difference
   along `j`. The two end points of `D¹` are joined in the simply connected disk, and the
   characteristic map carries the segment between them to the path `TauCeti.cellPath` of the cell
-  along which the transport `τⱼ` is taken. So the two maps have the same image and the two
-  quotients agree.
+  along which the transport `τⱼ` is taken (`TauCeti.map_characteristicCellMap_eq_cellPath`). So
+  the two maps have the same image and the two quotients agree.
 
 ## Main definitions
 
 * `TauCeti.TopCat.serreFiberLocalSystemOn`: the local system of fibre homology on `C`.
 * `TauCeti.TopCat.serreZeroChainsIso`: `Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R) ≅ H₀(X⁰, X⁻¹; Hq(F))`.
 * `TauCeti.TopCat.serreSpectralSequenceSecondPageXZeroIsoTwistedCellularHomology`: `E²_{0,q}` is
-  the cellular homology `H₀(C; Hq(F))`.
+  the cellular homology `H₀(C, D; Hq(F))` of `C` relative to `D`.
 * `TauCeti.TopCat.serreSpectralSequenceSecondPageXZeroIsoTwistedHomology`: `E²_{0,q}` is the
   relative singular homology `H₀(C, D; Hq(F))`.
 
@@ -63,8 +63,8 @@ The comparison has two steps.
 
 * `TauCeti.TopCat.fiberHomologyToPreimageSkeletonZero_comp_serreZeroChainsIso_hom`: the
   identification of the column `p = 0` of the first page with the cellular chains on fibre classes.
-* `TopCat.homologyπ_comp_serreSpectralSequenceSecondPageXZeroIsoTwistedCellularHomology_hom`: on
-  the second page the identification is induced by that of the first page.
+* `TauCeti.TopCat.homologyπ_comp_serreSpectralSequenceSecondPageXZeroIsoTwistedCellularHomology_hom`
+  says that on the second page the identification is induced by that of the first page.
 
 ## References
 
@@ -95,35 +95,17 @@ variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} [T2Space B] {C D : Set B} [RelC
 
 section FiberCofan
 
-variable {R' : Type u} [Ring R']
-
-/-- The unique point of the closed unit ball of `ℝ⁰`, lifted to the universe `u`. -/
-private def ballPointZero : closedBall (0 : ULift.{u} (Fin 0 → ℝ)) 1 :=
-  ⟨0, mem_closedBall_self zero_le_one⟩
-
-/-- Every point of the closed unit ball of `ℝ⁰` is its centre. -/
-private lemma eq_ballPointZero (x : closedBall (0 : ULift.{u} (Fin 0 → ℝ)) 1) :
-    x = ballPointZero := Subsingleton.elim _ _
-
-omit [T2Space B] in
-/-- The characteristic map of a `0`-cell is constant at the centre of the cell. -/
-private lemma cellULiftMap_zero_apply (k : cell C 0)
-    (x : closedBall (0 : ULift.{u} (Fin 0 → ℝ)) 1) :
-    cellULiftMap C 0 k x = map 0 k 0 := by
-  rw [cellULiftMap_apply]
-  exact congrArg (map 0 k) (Subsingleton.elim _ _)
-
 variable (p) in
 /-- Over a `0`-cell `k`, the pullback `Pₖ` of `p` along the characteristic map is the fibre of `p`
 over the centre of the cell. -/
 private def cellZeroPullbackHomeomorph (k : cell C 0) :
     p.fiber (map 0 k 0) ≃ₜ (cellDiskPullbackPair p C 0 k).fst where
-  toFun e := ⟨(ballPointZero, e.val),
+  toFun e := ⟨(⟨0, mem_closedBall_self zero_le_one⟩, e.val),
     (cellULiftMap_zero_apply k _).trans (p.apply_coe_fiber _ e).symm⟩
   invFun x := ⟨x.val.2, by
     rw [mem_preimage, mem_singleton_iff, ← x.property, cellULiftMap_zero_apply]⟩
   left_inv _ := rfl
-  right_inv x := Subtype.ext (Prod.ext (eq_ballPointZero _).symm rfl)
+  right_inv x := Subtype.ext (Prod.ext (Subsingleton.elim _ _) rfl)
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
 
@@ -138,12 +120,6 @@ instance isEmpty_cellDiskPullbackPair_zero_snd (k : cell C 0) :
     rw [← ULift.norm_down]
     exact norm_eq_zero.2 (Subsingleton.elim _ _)
   exact zero_ne_one (h0.symm.trans h)
-
-omit [T2Space B] in
-/-- For a pair with empty subspace, ambient and relative homology agree. -/
-private lemma isIso_singularHomologyπ_of_isEmpty (M : ModuleCat.{u} R') (q : ℕ) (P : TopPair.{u})
-    [IsEmpty P.snd] : IsIso (P.singularHomologyπ M q) :=
-  inferInstance
 
 variable (R : Type u) [Ring R]
 
@@ -160,7 +136,8 @@ private def cellZeroFiberHomologyIso (q : ℕ) (k : cell C 0) :
       (ModuleCat.of R R)).map (_root_.TopCat.isoOfHomeo (cellZeroPullbackHomeomorph p k)).hom ≫
     (cellDiskPullbackPair p C 0 k).singularHomologyπ (ModuleCat.of R R) q)
     (@IsIso.comp_isIso _ _ _ _ _ _ _ (Functor.map_isIso _ _)
-      (isIso_singularHomologyπ_of_isEmpty (ModuleCat.of R R) q (cellDiskPullbackPair p C 0 k)))
+      (inferInstance :
+        IsIso ((cellDiskPullbackPair p C 0 k).singularHomologyπ (ModuleCat.of R R) q)))
 
 /-- Read through `Hq(p⁻¹(χₖ(0))) ≅ Hq(Pₖ, ∂Pₖ)`, the projection of the pullback over a `0`-cell
 to the skeletal filtration is the inclusion of the fibre over the centre. -/
@@ -226,6 +203,16 @@ def fiberHomologyToTwistedZeroChains (q : ℕ) (y : skeletonObj C 1) :
         (skeletonSystem C (serreFiberLocalSystemOn C R hp q) 1) y ≫
       (skeletonPair C 0).twistedHomologyπ _ 0
 
+/-- The class of a fibre homology class over a point `y` of the `0`-skeleton is the class in
+`H₀(X⁰, X⁻¹; Hq(F))` of the coefficient at `y`. -/
+lemma fiberHomologyToTwistedZeroChains_def (q : ℕ) (y : skeletonObj C 1) :
+    fiberHomologyToTwistedZeroChains C R hp q y =
+      (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q (FundamentalGroupoid.mk (y : B))).inv ≫
+        LocalCoefficientSystem.ιTwistedHomology₀
+            (skeletonSystem C (serreFiberLocalSystemOn C R hp q) 1) y ≫
+          (skeletonPair C 0).twistedHomologyπ _ 0 :=
+  (rfl)
+
 variable (C) in
 /-- **The fibre homology over the `0`-skeleton is the cellular chain group in degree zero with
 coefficients in the fibre homology.** The isomorphism
@@ -260,14 +247,14 @@ private lemma fiberHomologyToPreimageSkeletonZero_eq_zero (q : ℕ) {b : B}
     ((preimageSkeletonPair p C 0).homologyMap_comp_singularHomologyπ (ModuleCat.of R R) q)).trans
       comp_zero)
 
-/-- A coefficient over a point of `X⁻¹` has class zero in `H₀(X⁰, X⁻¹; L)`. -/
-private lemma fiberHomologyToTwistedZeroChains_eq_zero (q : ℕ) (y : skeletonObj C 1)
+/-- A fibre homology class over a point of `X⁻¹` has class zero in `H₀(X⁰, X⁻¹; Hq(F))`. -/
+lemma fiberHomologyToTwistedZeroChains_eq_zero (q : ℕ) (y : skeletonObj C 1)
     (hy : (y : B) ∈ (skeletonLT C (0 : ℕ∞) : Set B)) :
     fiberHomologyToTwistedZeroChains C R hp q y = 0 := by
   let y' : (skeletonPair C 0).snd := ⟨y, hy⟩
   have h := LocalCoefficientSystem.ιTwistedHomology₀_homologyMap
     (skeletonSystem C (serreFiberLocalSystemOn C R hp q) (0 + 1)) (skeletonPair C 0).map y'
-  rw [fiberHomologyToTwistedZeroChains]
+  rw [fiberHomologyToTwistedZeroChains_def]
   refine (congrArg (_ ≫ ·) ((congrArg (· ≫ _) h.symm).trans ((Category.assoc _ _ _).trans
     (congrArg (_ ≫ ·) ((skeletonPair C 0).twistedHomologyMap_comp_twistedHomologyπ _ 0))))).trans ?_
   exact (congrArg (_ ≫ ·) comp_zero).trans comp_zero
@@ -294,110 +281,7 @@ end ZeroChains
 
 section Edge
 
-/-- The Euclidean norm on `ℝ¹` is the absolute value of the coordinate. -/
-private lemma norm_euclideanSpace_one (x : EuclideanSpace ℝ (Fin 1)) : ‖x‖ = |x 0| := by
-  rw [EuclideanSpace.norm_eq, Fin.sum_univ_one, Real.norm_eq_abs, Real.sqrt_sq_eq_abs, abs_abs]
-
-/-- In dimension one, the radial rescaling from the Euclidean to the sup-norm unit ball is the
-identity on coordinates. -/
-private lemma unitBallHomeomorph_one_apply (v : EuclideanSpace ℝ (Fin 1)) :
-    (EuclideanSpace.equiv (Fin 1) ℝ).unitBallHomeomorph v = fun _ ↦ v 0 := by
-  have hc (x : EuclideanSpace ℝ (Fin 1)) : EuclideanSpace.equiv (Fin 1) ℝ x = fun _ ↦ x 0 :=
-    funext fun i ↦ by rw [Subsingleton.elim i 0]; rfl
-  have hnorm (x : EuclideanSpace ℝ (Fin 1)) : ‖EuclideanSpace.equiv (Fin 1) ℝ x‖ = ‖x‖ := by
-    rw [hc, pi_norm_const, norm_euclideanSpace_one, Real.norm_eq_abs]
-  have himage : EuclideanSpace.equiv (Fin 1) ℝ '' closedBall 0 1 = closedBall 0 1 := by
-    ext y
-    refine ⟨?_, fun hy ↦ ⟨(EuclideanSpace.equiv (Fin 1) ℝ).symm y, ?_,
-      (EuclideanSpace.equiv (Fin 1) ℝ).apply_symm_apply y⟩⟩
-    · rintro ⟨x, hx, rfl⟩
-      rw [mem_closedBall_zero_iff, hnorm]
-      exact mem_closedBall_zero_iff.1 hx
-    · rw [mem_closedBall_zero_iff, ← hnorm, ContinuousLinearEquiv.apply_symm_apply]
-      exact mem_closedBall_zero_iff.1 hy
-  rw [ContinuousLinearEquiv.unitBallHomeomorph_apply, himage,
-    gaugeRescale_self_apply (absorbent_nhds_zero (closedBall_mem_nhds 0 one_pos))
-      (NormedSpace.isVonNBounded_closedBall ℝ _ 1), hc]
-
-variable (j : cell C 1)
-
-/-- The characteristic map of a `1`-cell, as a map from the disk `D¹` to the base. -/
-private def cellDiskToBase : C(_root_.TopCat.disk.{u} 1, B) :=
-  ⟨fun x ↦ (ConcreteCategory.hom (X := _root_.TopCat.disk.{u} 1)
-      (Y := _root_.TopCat.of (skeletonLT C ((1 + 1 : ℕ) : ℕ∞)))
-      (TopPair.Hom.fst (characteristicCellPairMap C j)) x).val,
-    continuous_subtypeVal.comp (TopPair.Hom.fst (characteristicCellPairMap C j)).hom.continuous⟩
-
-/-- In dimension one, the characteristic map of a cell reads a point of the disk through its
-coordinate. -/
-private lemma cellDiskToBase_apply (x : _root_.TopCat.disk.{u} 1) :
-    cellDiskToBase j x = map 1 j fun _ ↦ (x.down : EuclideanSpace ℝ (Fin 1)) 0 :=
-  (coe_characteristicCellPairMap_fst_apply C j x).trans
-    (congrArg (map 1 j) (unitBallHomeomorph_one_apply _))
-
-/-- The end point `χⱼ(c)`, `c = ±1`, of a `1`-cell, as a point of the `0`-skeleton. -/
-private def cellEnd (c : ℝ) (hc : |c| = 1) : skeletonObj C 1 :=
-  ⟨map 1 j fun _ ↦ c, map_mem_skeletonLT_one C j hc⟩
-
-/-- The attaching map of a `1`-cell sends a pole of `S⁰` with coordinate `c` to the end point
-`χⱼ(c)`. -/
-private lemma characteristicCellPairMap_snd_eq_cellEnd (s : _root_.TopCat.diskBoundary.{u} 1)
-    (c : ℝ) (hc : |c| = 1)
-    (hs : ((_root_.TopCat.diskBoundaryInclusion 1 s).down : EuclideanSpace ℝ (Fin 1)) 0 = c) :
-    TopPair.Hom.snd (characteristicCellPairMap C j) s = cellEnd j c hc :=
-  Subtype.ext ((congrArg Subtype.val (TopPair.Hom.w_apply (characteristicCellPairMap C j) s)).trans
-    ((cellDiskToBase_apply j _).trans (congrArg (fun a ↦ map 1 j fun _ ↦ a) hs)))
-
-/-- A point of the disk `D¹` is determined by its coordinate. -/
-private lemma disk_one_ext {x y : _root_.TopCat.disk.{u} 1}
-    (h : (x.down : EuclideanSpace ℝ (Fin 1)) 0 = (y.down : EuclideanSpace ℝ (Fin 1)) 0) : x = y :=
-  ULift.ext (Subtype.ext (PiLp.ext fun i ↦ by rw [Subsingleton.elim i 0]; exact h))
-
-/-- The straight path in `D¹` from the pole `-e₀` to the pole `e₀`. -/
-private def diskSegment : Path ((diskBoundaryPair.{u} 1).map sphereMinus)
-    ((diskBoundaryPair.{u} 1).map spherePlus) where
-  toFun t := ULift.up ⟨(EuclideanSpace.equiv (Fin 1) ℝ).symm fun _ ↦ 2 * (t : ℝ) - 1, by
-    rw [mem_closedBall_zero_iff, norm_euclideanSpace_one]
-    exact unitInterval.abs_two_mul_sub_one_le_one t⟩
-  continuous_toFun := by fun_prop
-  source' := disk_one_ext ((show (2 * ((0 : unitInterval) : ℝ) - 1) = -1 by norm_num).trans
-    sphereMinus_coord.{u}.symm)
-  target' := disk_one_ext ((show (2 * ((1 : unitInterval) : ℝ) - 1) = 1 by norm_num).trans
-    spherePlus_coord.{u}.symm)
-
-/-- The characteristic map of a `1`-cell sends the pole `-e₀` to the end point `χⱼ(-1)`. -/
-private lemma cellDiskToBase_sphereMinus :
-    cellDiskToBase j ((diskBoundaryPair.{u} 1).map sphereMinus) = map 1 j fun _ ↦ -1 :=
-  (cellDiskToBase_apply j _).trans (congrArg (fun a ↦ map 1 j fun _ ↦ a) sphereMinus_coord)
-
-/-- The characteristic map of a `1`-cell sends the pole `e₀` to the end point `χⱼ(1)`. -/
-private lemma cellDiskToBase_spherePlus :
-    cellDiskToBase j ((diskBoundaryPair.{u} 1).map spherePlus) = map 1 j fun _ ↦ 1 :=
-  (cellDiskToBase_apply j _).trans (congrArg (fun a ↦ map 1 j fun _ ↦ a) spherePlus_coord)
-
-/-- **Through the characteristic map of a `1`-cell, a path class in `D¹` between the poles is the
-class of the path of the cell.** Since `D¹` is simply connected, every class from `-e₀` to `e₀`
-is the class of the straight segment, which the characteristic map carries to
-`TauCeti.cellPath`. -/
-private lemma map_cellDiskToBase_eq
-    (δ : FundamentalGroupoid.mk ((diskBoundaryPair.{u} 1).map sphereMinus) ⟶
-      FundamentalGroupoid.mk ((diskBoundaryPair.{u} 1).map spherePlus)) :
-    (FundamentalGroupoid.map (cellDiskToBase j)).map δ =
-      eqToHom (congrArg FundamentalGroupoid.mk (cellDiskToBase_sphereMinus j)) ≫
-        (Path.Homotopic.Quotient.mk (cellPath C j) :
-          FundamentalGroupoid.mk (map 1 j fun _ ↦ -1) ⟶
-            FundamentalGroupoid.mk (map 1 j fun _ ↦ 1)) ≫
-        eqToHom (congrArg FundamentalGroupoid.mk (cellDiskToBase_spherePlus j).symm) := by
-  obtain rfl : δ = Path.Homotopic.Quotient.mk diskSegment :=
-    Subsingleton.elim (α := Path.Homotopic.Quotient _ _) _ _
-  have hpath : diskSegment.map (cellDiskToBase j).continuous =
-      (cellPath C j).cast (cellDiskToBase_sphereMinus j) (cellDiskToBase_spherePlus j) := by
-    ext t
-    exact (cellDiskToBase_apply j _).trans (cellPath_apply j t).symm
-  exact (congrArg Path.Homotopic.Quotient.mk hpath).trans
-    (FundamentalGroupoid.conj_eqToHom (p := Path.Homotopic.Quotient.mk (cellPath C j)) _ _).symm
-
-variable (R : Type u) [Ring R] (hp : serreFibrations p) (q : ℕ)
+variable (j : cell C 1) (R : Type u) [Ring R] (hp : serreFibrations p) (q : ℕ)
 
 /-- Along the characteristic map of a `1`-cell, the pulled-back local system of fibre homology acts
 by the local system of fibre homology of `p` on the image path classes. -/
@@ -406,7 +290,14 @@ private lemma map_pullback_characteristicCellPairMap
     ((LocalCoefficientSystem.pullback (TopPair.Hom.fst (characteristicCellPairMap C j)).hom).obj
         (skeletonSystem C (serreFiberLocalSystemOn C R hp q) (1 + 1))).map δ =
       (serreFiberLocalSystem hp (ModuleCat.of R R) q).map
-        ((FundamentalGroupoid.map (cellDiskToBase j)).map δ) := by
+        ((FundamentalGroupoid.map (characteristicCellMap C j)).map δ) := by
+  -- The pulled-back system is presented on the ambient space of the disk pair, which is the disk
+  -- only up to unfolding `diskBoundaryPair`, so `pullback_obj_map` is applied as a term.
+  refine (LocalCoefficientSystem.pullback_obj_map _ _ δ).trans ?_
+  -- `skeletonSystem` and `serreFiberLocalSystemOn` are pullbacks along the inclusions of the
+  -- skeleton and of `C`, and `TauCeti.characteristicCellMap` is the composite of these inclusions
+  -- with the characteristic map, so on the class of a path both sides are transport along the same
+  -- path of the base.
   induction δ using Path.Homotopic.Quotient.ind with | mk γ => rfl
 
 /-- A path class in `D¹` from the centre to a point. -/
@@ -425,18 +316,18 @@ private def cellCenterToEndIso :
         (ModuleCat.of R R)).obj (p.fiber (map 1 j fun _ ↦ -1)) :=
   (serreFiberLocalSystem hp (ModuleCat.of R R) q).mapIso
       ((Groupoid.isoEquivHom _ _).symm
-        ((FundamentalGroupoid.map (cellDiskToBase j)).map
+        ((FundamentalGroupoid.map (characteristicCellMap C j)).map
             (diskPathClass ((diskBoundaryPair.{u} 1).map sphereMinus)) ≫
-          eqToHom (congrArg FundamentalGroupoid.mk (cellDiskToBase_sphereMinus j)))) ≪≫
+          eqToHom (congrArg FundamentalGroupoid.mk (characteristicCellMap_sphereMinus C j)))) ≪≫
     serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q _
 
 /-- The forward map of `TauCeti.TopCat.cellCenterToEndIso` is the transport in the base. -/
 private lemma cellCenterToEndIso_hom :
     (cellCenterToEndIso j R hp q).hom =
       (serreFiberLocalSystem hp (ModuleCat.of R R) q).map
-          ((FundamentalGroupoid.map (cellDiskToBase j)).map
+          ((FundamentalGroupoid.map (characteristicCellMap C j)).map
               (diskPathClass ((diskBoundaryPair.{u} 1).map sphereMinus)) ≫
-            eqToHom (congrArg FundamentalGroupoid.mk (cellDiskToBase_sphereMinus j))) ≫
+            eqToHom (congrArg FundamentalGroupoid.mk (characteristicCellMap_sphereMinus C j))) ≫
         (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q _).hom :=
   (rfl)
 
@@ -444,15 +335,15 @@ private lemma cellCenterToEndIso_hom :
 `χⱼ(-1)`, followed by the path of the cell, is transport from the image of the centre to
 `χⱼ(1)`. -/
 private lemma map_diskPathClass_comp_cellPath :
-    (FundamentalGroupoid.map (cellDiskToBase j)).map
+    (FundamentalGroupoid.map (characteristicCellMap C j)).map
         (diskPathClass ((diskBoundaryPair.{u} 1).map sphereMinus)) ≫
-      eqToHom (congrArg FundamentalGroupoid.mk (cellDiskToBase_sphereMinus j)) ≫
+      eqToHom (congrArg FundamentalGroupoid.mk (characteristicCellMap_sphereMinus C j)) ≫
         (Path.Homotopic.Quotient.mk (cellPath C j) :
           FundamentalGroupoid.mk (map 1 j fun _ ↦ -1) ⟶
             FundamentalGroupoid.mk (map 1 j fun _ ↦ 1)) =
-      (FundamentalGroupoid.map (cellDiskToBase j)).map
+      (FundamentalGroupoid.map (characteristicCellMap C j)).map
           (diskPathClass ((diskBoundaryPair.{u} 1).map spherePlus)) ≫
-        eqToHom (congrArg FundamentalGroupoid.mk (cellDiskToBase_spherePlus j)) := by
+        eqToHom (congrArg FundamentalGroupoid.mk (characteristicCellMap_spherePlus C j)) := by
   -- In the simply connected `D¹`, the class from the centre to `e₀` passes through `-e₀`.
   have hδ : diskPathClass ((diskBoundaryPair.{u} 1).map spherePlus) =
       diskPathClass ((diskBoundaryPair.{u} 1).map sphereMinus) ≫
@@ -463,9 +354,9 @@ private lemma map_diskPathClass_comp_cellPath :
   -- does not see through, so it is assembled by unification.
   refine Eq.trans ?_ (Category.assoc _ _ _).symm
   refine congrArg (_ ≫ ·) (Eq.symm ?_)
-  have h := map_cellDiskToBase_eq j (Path.Homotopic.Quotient.mk diskSegment)
   refine (congrArg
-    (· ≫ eqToHom (congrArg FundamentalGroupoid.mk (cellDiskToBase_spherePlus j))) h).trans ?_
+    (· ≫ eqToHom (congrArg FundamentalGroupoid.mk (characteristicCellMap_spherePlus C j)))
+    (map_characteristicCellMap_eq_cellPath C j (Path.Homotopic.Quotient.mk diskSegment))).trans ?_
   exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
     ((congrArg (_ ≫ ·) ((eqToHom_trans _ _).trans (eqToHom_refl _ _))).trans (Category.comp_id _))))
 
@@ -473,14 +364,49 @@ omit [T2Space B] in
 /-- Transport of fibre homology along a path, read in the local system of fibre homology. -/
 private lemma objIso_hom_comp_fiberHomologyTransport_comp {b₀ b₁ : B} (γ : Path b₀ b₁)
     {Z : ModuleCat.{u} R}
-    (r : (serreFiberLocalSystem hp (ModuleCat.of R R) q).obj (FundamentalGroupoid.mk b₁) ⟶ Z) :
+    (r : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).obj (p.fiber b₁) ⟶ Z) :
     (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q (FundamentalGroupoid.mk b₀)).hom ≫
-        fiberHomologyTransport hp (ModuleCat.of R R) q γ ≫
-          (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q
-            (FundamentalGroupoid.mk b₁)).inv ≫ r =
-      (serreFiberLocalSystem hp (ModuleCat.of R R) q).map (Path.Homotopic.Quotient.mk γ) ≫ r := by
-  rw [serreFiberLocalSystem_map_mk]
-  simp only [Category.assoc]
+        fiberHomologyTransport hp (ModuleCat.of R R) q γ ≫ r =
+      (serreFiberLocalSystem hp (ModuleCat.of R R) q).map (Path.Homotopic.Quotient.mk γ) ≫
+        (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q (FundamentalGroupoid.mk b₁)).hom ≫
+          r := by
+  simp
+
+/-- **One end point of the edge formula.** A term of the cellular differential of a `1`-cell `j`
+with coefficients in the fibre homology, at an end point `s` of `D¹` that the characteristic map
+sends to the point `y` of the `0`-skeleton, is transport in the base along the image of the path
+class from the centre, followed by the class of the fibre homology over `y`. -/
+private lemma pullback_map_comp_ιTwistedHomology₀_eq (s : _root_.TopCat.diskBoundary.{u} 1)
+    (y : skeletonObj C 1) (hy : characteristicCellMap C j ((diskBoundaryPair.{u} 1).map s) = y)
+    (δ : FundamentalGroupoid.mk (diskCenter.{u} 1) ⟶
+      FundamentalGroupoid.mk ((diskBoundaryPair.{u} 1).map s)) :
+    ((LocalCoefficientSystem.pullback (TopPair.Hom.fst (characteristicCellPairMap C j)).hom).obj
+          (skeletonSystem C (serreFiberLocalSystemOn C R hp q) (1 + 1))).map δ ≫
+        (TopPair.subspaceSystemPullbackIso (characteristicCellPairMap C j)
+          (skeletonSystem C (serreFiberLocalSystemOn C R hp q) (1 + 1))).hom.app
+          (FundamentalGroupoid.mk s) ≫
+        LocalCoefficientSystem.ιTwistedHomology₀
+            (skeletonSystem C (serreFiberLocalSystemOn C R hp q) 1)
+            (TopPair.Hom.snd (characteristicCellPairMap C j) s) ≫
+          (skeletonPair C 0).twistedHomologyπ _ 0 =
+      (serreFiberLocalSystem hp (ModuleCat.of R R) q).map
+          ((FundamentalGroupoid.map (characteristicCellMap C j)).map δ ≫
+            eqToHom (congrArg FundamentalGroupoid.mk hy)) ≫
+        (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q _).hom ≫
+          fiberHomologyToTwistedZeroChains C R hp q y := by
+  have hs : TopPair.Hom.snd (characteristicCellPairMap C j) s = y :=
+    Subtype.ext ((congrArg Subtype.val
+      (TopPair.Hom.w_apply (characteristicCellPairMap C j) s)).trans hy)
+  rw [map_pullback_characteristicCellPairMap, fiberHomologyToTwistedZeroChains_def,
+    Iso.hom_inv_id_assoc, Functor.map_comp_assoc]
+  -- The pulled-back systems on `D¹` and `S⁰` are presented on the spaces of the disk pair and the
+  -- subspace system on the `0`-skeleton is `skeletonSystem C _ 1` only up to unfolding, so the goal
+  -- is not type-correct at reducible transparency and the fibrewise lemmas are matched by `erw`.
+  erw [eqToHom_map, TopPair.subspaceSystemPullbackIso_hom_app,
+    ← LocalCoefficientSystem.eqToHom_comp_ιTwistedHomology₀ _ hs]
+  exact congrArg (_ ≫ ·) ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans
+    (eqToHom_trans_assoc _ _ _))
 
 /-- **The cellular differential of a `1`-cell with coefficients in the fibre homology is the
 transport difference along the cell.** Read through the identification of the fibre at the centre
@@ -503,43 +429,25 @@ private lemma twistedCellularDifferential_zero_eq :
   -- of the cellular differential, and `a ↦ a - τⱼ a`. The terms are matched separately, through
   -- the identification of the fibre classes over the end points with their cellular classes.
   rw [twistedHomologyMap_characteristicCellPairMap_comp_twistedCellularDifferential_zero C _ j
-    (diskPathClass _) (diskPathClass _), ι_oneCellTransportDifference_assoc, Preadditive.sub_comp,
-    Preadditive.comp_sub]
+      (diskPathClass _) (diskPathClass _),
+    pullback_map_comp_ιTwistedHomology₀_eq j R hp q sphereMinus
+      ⟨_, map_mem_skeletonLT_one C j (by norm_num)⟩ (characteristicCellMap_sphereMinus C j),
+    pullback_map_comp_ιTwistedHomology₀_eq j R hp q spherePlus
+      ⟨_, map_mem_skeletonLT_one C j (by norm_num)⟩ (characteristicCellMap_spherePlus C j),
+    ι_oneCellTransportDifference_assoc, Preadditive.sub_comp, Preadditive.comp_sub,
+    Category.assoc, fiberHomologyToPreimageSkeletonZero_comp_serreZeroChainsIso_hom C R hp q
+      ⟨_, map_mem_skeletonLT_one C j (by norm_num : |(-1 : ℝ)| = 1)⟩,
+    fiberHomologyToPreimageSkeletonZero_comp_serreZeroChainsIso_hom C R hp q
+      ⟨_, map_mem_skeletonLT_one C j (by norm_num : |(1 : ℝ)| = 1)⟩,
+    cellCenterToEndIso_hom]
+  -- The terms at the end point `χⱼ(-1)` agree on the nose; at `χⱼ(1)`, the transport along the
+  -- cell is absorbed into the path class from the centre of the disk.
   congr 1
-  · refine Eq.trans ?_ (congrArg (_ ≫ ·)
-      (fiberHomologyToPreimageSkeletonZero_comp_serreZeroChainsIso_hom
-        C R hp q (cellEnd j (-1) (by norm_num)))).symm
-    rw [map_pullback_characteristicCellPairMap]
-    erw [TopPair.subspaceSystemPullbackIso_hom_app]
-    erw [← LocalCoefficientSystem.eqToHom_comp_ιTwistedHomology₀ _
-      (characteristicCellPairMap_snd_eq_cellEnd j sphereMinus (-1) (by norm_num) sphereMinus_coord)]
-    rw [cellCenterToEndIso_hom, fiberHomologyToTwistedZeroChains]
-    -- The fibres are identified only up to unfolding the pulled-back systems, so the two sides
-    -- are compared by unification rather than by rewriting.
-    refine (congrArg (_ ≫ ·) ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans
-      (eqToHom_trans_assoc _ _ _))).trans ?_
-    refine Eq.trans ?_ ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
-      (Iso.hom_inv_id_assoc _ _))).symm
-    refine Eq.trans ?_ (Functor.map_comp_assoc (serreFiberLocalSystem hp (ModuleCat.of R R) q) _ _
-      (LocalCoefficientSystem.ιTwistedHomology₀
-          (skeletonSystem C (serreFiberLocalSystemOn C R hp q) 1) (cellEnd j (-1) (by norm_num)) ≫
-        (skeletonPair C 0).twistedHomologyπ _ 0)).symm
-    erw [eqToHom_map]
-    rfl
-  · refine Eq.trans ?_ (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
-      (fiberHomologyToPreimageSkeletonZero_comp_serreZeroChainsIso_hom
-        C R hp q (cellEnd j 1 (by norm_num)))))).symm
-    rw [map_pullback_characteristicCellPairMap]
-    erw [TopPair.subspaceSystemPullbackIso_hom_app]
-    erw [← LocalCoefficientSystem.eqToHom_comp_ιTwistedHomology₀ _
-      (characteristicCellPairMap_snd_eq_cellEnd j spherePlus 1 (by norm_num) spherePlus_coord)]
-    rw [cellCenterToEndIso_hom, fiberHomologyToTwistedZeroChains]
-    symm
-    erw [Category.assoc, objIso_hom_comp_fiberHomologyTransport_comp, ← Functor.map_comp_assoc,
-      Category.assoc,
-      map_diskPathClass_comp_cellPath, Functor.map_comp_assoc, eqToHom_map]
-    exact congrArg (_ ≫ ·) ((eqToHom_trans_assoc _ _ _).symm.trans
-      (congrArg (_ ≫ ·) (Category.assoc _ _ _).symm))
+  -- The implicit objects of the goal still mention the pulled-back system on the disk pair, which
+  -- is not type-correct at instance transparency, so `rw` cannot abstract the composites; `erw`
+  -- rewrites at default transparency.
+  erw [Category.assoc, objIso_hom_comp_fiberHomologyTransport_comp, ← Functor.map_comp_assoc,
+    Category.assoc, map_diskPathClass_comp_cellPath]
 
 end Edge
 
@@ -560,7 +468,7 @@ private def cokernelOneCellTransportDifferenceIso (q : ℕ) :
     have h := (Iso.eq_inv_comp _).2 (twistedCellularDifferential_zero_eq j R hp q).symm
     rw [comp_zero, ← Category.assoc, ← Category.assoc, Category.assoc (Sigma.ι _ j), h]
     simp only [Category.assoc]
-    erw [cokernel.condition]
+    rw [cokernel.condition]
     simp only [comp_zero])
   inv := cokernel.desc _ (cokernel.π _)
     ((isColimitCofanTwistedHomologyMapCharacteristicCellPairMap C
@@ -572,7 +480,7 @@ private def cokernelOneCellTransportDifferenceIso (q : ℕ) :
     simp only [Cofan.mk_pt, Cofan.mk_ι_app, comp_zero]
     rw [← Category.assoc, h]
     simp only [Category.assoc]
-    erw [hc]
+    rw [hc]
     simp only [comp_zero])
   hom_inv_id := by rw [← cancel_epi (cokernel.π _)]; simp
   inv_hom_id := by rw [← cancel_epi (cokernel.π _)]; simp
@@ -580,10 +488,10 @@ private def cokernelOneCellTransportDifferenceIso (q : ℕ) :
 variable (C) in
 /-- **The column `p = 0` of the second page of the Serre spectral sequence is cellular homology in
 degree zero with coefficients in the fibre homology.** For a Serre fibration `p : E ⟶ B` and a
-relative CW complex `C ⊆ B`, the object `E²_{0,q}` of the second page (numbered `3`) of the Serre
-spectral sequence, at `pq = (a, b)` with `b = -1` and `a + b = -q`, is the cellular homology
-`H₀(C; Hq(F))` of `C` in degree zero, with coefficients in the local system of fibre homology
-`b ↦ Hq(p⁻¹(b); R)` with its path-transport monodromy. -/
+relative CW complex `C ⊆ B` with base `D`, the object `E²_{0,q}` of the second page (numbered `3`)
+of the Serre spectral sequence, at `pq = (a, b)` with `b = -1` and `a + b = -q`, is the cellular
+homology `H₀(C, D; Hq(F))` of `C` relative to `D` in degree zero, with coefficients in the local
+system of fibre homology `b ↦ Hq(p⁻¹(b); R)` with its path-transport monodromy. -/
 def serreSpectralSequenceSecondPageXZeroIsoTwistedCellularHomology (q : ℕ) (pq : ℤ × ℤ)
     (hb : pq.2 = -1) (ha : pq.1 + pq.2 = -q) :
     ((serreSpectralSequence C p R).page 3).X pq ≅

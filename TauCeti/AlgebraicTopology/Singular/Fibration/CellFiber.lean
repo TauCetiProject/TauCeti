@@ -114,6 +114,12 @@ lemma cellULiftMap_apply (n : ℕ) (j : cell C n) (x : closedBall (0 : ULift.{u}
     cellULiftMap C n j x = map n j (x : ULift.{u} (Fin n → ℝ)).down :=
   congrArg (map n j) (coe_uliftClosedBall_apply 0 1 x)
 
+/-- The characteristic map of a `0`-cell is constant at the centre of the cell. -/
+lemma cellULiftMap_zero_apply (k : cell C 0) (x : closedBall (0 : ULift.{u} (Fin 0 → ℝ)) 1) :
+    cellULiftMap C 0 k x = map 0 k 0 := by
+  rw [cellULiftMap_apply]
+  exact congrArg (map 0 k) (Subsingleton.elim _ _)
+
 variable (p C) in
 /-- The pair `(Pⱼ, ∂Pⱼ)`: the pullback `Pⱼ` of `p` along the characteristic map of the `n`-cell
 `j`, relative to its part `∂Pⱼ` over the boundary sphere of the disk. -/

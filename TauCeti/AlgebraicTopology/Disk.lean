@@ -15,6 +15,7 @@ public import TauCeti.Topology.Homotopy.Cube.Radius
 public import TauCeti.Topology.Homotopy.Extension.Ball
 
 import TauCeti.AlgebraicTopology.Sphere.Puncture
+import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Convex.Contractible
 import TauCeti.Topology.Homotopy.Contractible
 import TauCeti.Topology.UnitInterval.OpenSquare
@@ -45,12 +46,14 @@ results about unit spheres of inner product spaces in that universe be applied t
 particular the boundary of the `n`-disk is empty exactly
 when `n = 0` (`TauCeti.nonempty_diskBoundary_iff`), removing a single point leaves a contractible
 subspace (`TauCeti.contractibleSpace_diskBoundary_compl_singleton`), and a point of the boundary
-`S⁰` of the `1`-disk is determined by its coordinate (`TauCeti.diskBoundary_one_ext`), so `S⁰`
+`S⁰` of the `1`-disk, like a point of the `1`-disk itself, is determined by its coordinate
+(`TauCeti.diskBoundary_one_ext`, `TauCeti.disk_one_ext`), so `S⁰`
 (`TopCat.sphere 0`) is a finite discrete two-point space (`TauCeti.TopCat.finite_sphere_zero`,
 `TauCeti.TopCat.discreteTopology_sphere_zero`) consisting of the poles `e₀` and `-e₀`
 (`TauCeti.spherePlus`, `TauCeti.sphereMinus`, `TauCeti.eq_sphereMinus_or_eq_spherePlus` on
 `TopCat.diskBoundary 1`, and `TauCeti.sphereZeroPlus`, `TauCeti.sphereZeroMinus`,
-`TauCeti.eq_sphereZeroMinus_or_eq_sphereZeroPlus` typed on `TopCat.sphere 0`).  The antipodal map of
+`TauCeti.eq_sphereZeroMinus_or_eq_sphereZeroPlus` typed on `TopCat.sphere 0`), joined in the
+`1`-disk by the straight path `TauCeti.diskSegment`.  The antipodal map of
 the boundary sphere is `TauCeti.diskBoundaryNeg`.  More generally, a linear isometry `e` of
 `EuclideanSpace ℝ (Fin n)` induces homeomorphisms of the disk and of its boundary sphere,
 compatible with the boundary
@@ -62,11 +65,12 @@ orthogonal reparametrizations of attached cells. Likewise a linear isometry of a
 
 The disk is also homeomorphic to the closed unit ball of the sup norm on `Fin n → ℝ`, with its
 boundary going to the unit sphere (`TauCeti.diskHomeomorphClosedBall`); this is how the disk is
-compared with the domains of characteristic maps of CW complexes and with the cube.  Composing it
+compared with the domains of characteristic maps of CW complexes and with the cube. In dimension one
+it is the identity on coordinates (`TauCeti.coe_diskHomeomorphClosedBall_one_apply`). Composing it
 with the affine homeomorphism `TauCeti.cubeHomeomorphClosedBall` of the cube onto the same ball
 identifies the disk pair with the pair `TauCeti.cubeBoundaryPair n = (Iⁿ, ∂Iⁿ)` formed by the cube
-and its boundary (`TauCeti.diskBoundaryPairIsoCube`).  A singular cube of a pair sending the
-boundary of the cube into the subspace is a map of pairs out of the cube pair
+and its boundary (`TauCeti.diskBoundaryPairIsoCube`). A singular cube of a pair sending the boundary
+of the cube into the subspace is a map of pairs out of the cube pair
 (`TauCeti.cubeBoundaryPairHom`). The product `Y × (Iᵐ, ∂Iᵐ)` of a space with the cube pair is the
 pair of `Y × Iᵐ` over the preimage of the boundary of the cube
 (`TauCeti.cubeBoundaryPairProdLeftIso`).
@@ -377,6 +381,15 @@ lemma diskBoundary_one_ext {p q : TopCat.diskBoundary.{u} 1}
   refine ULift.ext (Subtype.ext (PiLp.ext fun i ↦ ?_))
   rwa [Subsingleton.elim i 0]
 
+/-- A point of the `1`-disk is determined by its coordinate. -/
+lemma disk_one_ext {x y : TopCat.disk.{u} 1}
+    (h : ((x : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1)) 0 =
+      ((y : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1)) 0) : x = y := by
+  refine ULift.ext (Subtype.ext (PiLp.ext fun i ↦ ?_))
+  rwa [Subsingleton.elim i 0]
+
 /-- The coordinate of a point of the boundary `S⁰` of the `1`-disk is `±1`: its square is `1`. -/
 lemma sq_diskBoundary_one_eq_one (s : TopCat.diskBoundary.{u} 1) :
     ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
@@ -465,6 +478,25 @@ lemma sphereMinus_coord :
       ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
         EuclideanSpace ℝ (Fin 1)) 0 = -1 := by
   rw [TauCeti.TopCat.coe_diskBoundaryInclusion_apply_down, sphereMinus_down_apply_zero]
+
+/-- The straight path in the `1`-disk from the pole `-e₀` to the pole `e₀`, with coordinate
+`2 * t - 1` at time `t` (`TauCeti.diskSegment_coord`). -/
+def diskSegment : Path ((diskBoundaryPair.{u} 1).map sphereMinus)
+    ((diskBoundaryPair.{u} 1).map spherePlus) where
+  toFun t := ULift.up ⟨(EuclideanSpace.equiv (Fin 1) ℝ).symm fun _ ↦ 2 * (t : ℝ) - 1, by
+    rw [mem_closedBall_zero_iff, EuclideanSpace.norm_fin_one]
+    exact unitInterval.abs_two_mul_sub_one_le_one t⟩
+  continuous_toFun := by fun_prop
+  source' := disk_one_ext ((show (2 * ((0 : unitInterval) : ℝ) - 1) = -1 by norm_num).trans
+    sphereMinus_coord.{u}.symm)
+  target' := disk_one_ext ((show (2 * ((1 : unitInterval) : ℝ) - 1) = 1 by norm_num).trans
+    spherePlus_coord.{u}.symm)
+
+/-- At time `t`, the straight path `TauCeti.diskSegment` has coordinate `2 * t - 1`. -/
+lemma diskSegment_coord (t : unitInterval) :
+    ((diskSegment.{u} t : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1)) 0 = 2 * (t : ℝ) - 1 :=
+  (rfl)
 
 /-- **`S⁰` consists of the two points `-e₀` and `e₀`.** -/
 lemma eq_sphereMinus_or_eq_spherePlus (p : TopCat.diskBoundary.{u} 1) :
@@ -703,6 +735,18 @@ lemma diskHomeomorphClosedBall_one_apply_zero_of_mem (z : TopCat.disk.{u} 1)
     refine Eq.trans ?_ h
     exact (norm_le_pi_norm _ 0).antisymm
       ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i ↦ by rw [Subsingleton.elim i 0])
+
+/-- In dimension one the radial rescaling `TauCeti.diskHomeomorphClosedBall` is the identity on
+coordinates, since the Euclidean and the sup norms on `ℝ¹` agree. -/
+lemma coe_diskHomeomorphClosedBall_one_apply (z : TopCat.disk.{u} 1) :
+    (diskHomeomorphClosedBall 1 z : Fin 1 → ℝ) =
+      fun _ ↦ ((z : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1)) 0 := by
+  have hc (x : EuclideanSpace ℝ (Fin 1)) : EuclideanSpace.equiv (Fin 1) ℝ x = fun _ ↦ x 0 :=
+    funext fun i ↦ by rw [Subsingleton.elim i 0]; rfl
+  rw [coe_diskHomeomorphClosedBall_apply,
+    ContinuousLinearEquiv.unitBallHomeomorph_apply_of_norm_map _ (fun x ↦ by
+      rw [hc, pi_norm_const, EuclideanSpace.norm_fin_one, Real.norm_eq_abs]), hc]
 
 /-- The homeomorphism of the `1`-disk onto the interval sends the boundary point with positive
 coordinate to `1`. -/

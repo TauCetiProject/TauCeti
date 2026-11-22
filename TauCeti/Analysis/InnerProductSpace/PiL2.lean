@@ -44,6 +44,7 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.surjective_proj`: every coordinate projection is surjective.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
+* `EuclideanSpace.norm_fin_one`: the norm on `ℝ¹` is the absolute value of the coordinate.
 * `EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere`: the coordinates of a point of the unit sphere
   of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`.
 * `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
@@ -125,6 +126,10 @@ theorem toLp_mem_sphere_zero_one_iff {v : ι → ℝ} :
     WithLp.toLp 2 v ∈ Metric.sphere (0 : EuclideanSpace ℝ ι) 1 ↔ v ⬝ᵥ v = 1 := by
   rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
     ← real_inner_self_eq_norm_sq, inner_toLp_toLp, star_trivial]
+
+/-- The Euclidean norm on `ℝ¹` is the absolute value of the coordinate. -/
+theorem norm_fin_one (x : EuclideanSpace ℝ (Fin 1)) : ‖x‖ = |x 0| := by
+  rw [EuclideanSpace.norm_eq, Fin.sum_univ_one, Real.norm_eq_abs, Real.sqrt_sq_eq_abs, abs_abs]
 
 /-- The coordinates of a point of the unit sphere of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`. -/
 theorem sq_add_sq_add_sq_of_mem_sphere {x : EuclideanSpace ℝ (Fin 3)}
