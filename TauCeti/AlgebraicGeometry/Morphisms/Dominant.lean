@@ -290,7 +290,7 @@ theorem isIso_functionFieldMap_of_isOpenImmersion_morphismRestrict (f : X ⟶ Y)
     (U : Y.Opens) [Nonempty U] [IsOpenImmersion (f ∣_ U)] : IsIso f.functionFieldMap := by
   have hx : genericPoint X ∈ f ⁻¹ᵁ U :=
     ((genericPoint_spec X).mem_open_set_iff (f ⁻¹ᵁ U).isOpen).mpr
-      ⟨_, trivial, (Classical.arbitrary (f ⁻¹ᵁ U)).2⟩
+      ⟨_, trivial, (Classical.arbitrary (f ⁻¹ᵁ U)).property⟩
   have hU := fun y ↦ (inferInstance : IsIso ((f ∣_ U).stalkMap y))
   have : IsIso (f.stalkMap (genericPoint X)) :=
     ((MorphismProperty.isomorphisms _).arrow_mk_iso_iff

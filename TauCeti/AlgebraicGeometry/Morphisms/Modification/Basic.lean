@@ -27,8 +27,6 @@ target.
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.IsModification.of_isIso`: isomorphisms are modifications.
-* `TauCeti.AlgebraicGeometry.IsModification.isDominant`: modifications are dominant, hence, being
-  universally closed, surjective (Mathlib's `Surjective.of_universallyClosed_of_isDominant`).
 * `TauCeti.AlgebraicGeometry.IsModification.birationalOver`: a modification `f : X ⟶ Y` is
   birational over `Y`, comparing `f` with the identity of `Y`.
 * `TauCeti.AlgebraicGeometry.IsModification.birational`: the source and target of a modification
@@ -44,9 +42,9 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
-universe u
-
 namespace TauCeti.AlgebraicGeometry
+
+universe u
 
 variable {X Y : Scheme.{u}}
 
@@ -70,26 +68,15 @@ theorem birationalOver (f : X ⟶ Y) [IsModification f] : Scheme.BirationalOver 
   obtain ⟨U, hU, hfU, _⟩ := exists_isIso_morphismRestrict (f := f)
   exact ⟨⟨f ⁻¹ᵁ U, hfU, U, hU, asIso (f ∣_ U)⟩, by simp [Scheme.PartialIso.IsOver]⟩
 
-/-- A modification is dominant. -/
-instance (priority := 100) isDominant (f : X ⟶ Y) [IsModification f] : IsDominant f := by
-  obtain ⟨U, hU, -, _⟩ := exists_isIso_morphismRestrict (f := f)
-  exact (isDominant_morphismRestrict_iff f hU).mp inferInstance
-
 /-- The source and target of a modification are birational. -/
 theorem birational (f : X ⟶ Y) [IsModification f] : X.Birational Y :=
   ⟨(birationalOver f).choose⟩
 
-/-- Every modification `f : X ⟶ Y` is dominant: it restricts to an isomorphism over a dense open of
-`Y`, whose image therefore lies in the range of `f`. -/
+/-- Every modification `f : X ⟶ Y` is dominant: it restricts to an isomorphism, hence a dominant
+morphism, over a dense open of `Y`. -/
 instance isDominant (f : X ⟶ Y) [IsModification f] : IsDominant f := by
-  rw [isDominant_iff]
   obtain ⟨U, hU, -, _⟩ := exists_isIso_morphismRestrict (f := f)
-  have := Opens.isDominant_ι hU
-  have hd : DenseRange ((f ⁻¹ᵁ U).ι ≫ f) := by
-    rw [← morphismRestrict_ι]
-    exact (inferInstance : IsDominant (f ∣_ U ≫ U.ι)).denseRange
-  rw [DenseRange] at hd ⊢
-  exact hd.mono (by rintro _ ⟨z, rfl⟩; exact ⟨(f ⁻¹ᵁ U).ι z, Scheme.Hom.comp_apply _ _ z⟩)
+  exact (isDominant_morphismRestrict_iff f hU).mp inferInstance
 
 end IsModification
 
