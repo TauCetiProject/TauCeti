@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.Kronecker.Power
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Action
 
 /-!
@@ -150,7 +151,7 @@ theorem commute_brauerActionOrth_piTensorProductMap (x : BrauerAlgebra R (n : R)
   set T := PiTensorProduct.map fun _ : Fin k => A.mulVecLin
   have hT : T = Matrix.toLin (piTensorPowerBasis R (Fin k) (Fin n))
       (piTensorPowerBasis R (Fin k) (Fin n)) (A.kroneckerPower (Fin k)) := by
-    rw [← A.toMatrix_piTensorProductMap_tensorPowerBasis, Matrix.toLin_toMatrix]
+    rw [← A.toMatrix_piTensorProductMap_mulVecLin, Matrix.toLin_toMatrix]
   -- Both products are linear in `x`, so it suffices to compare them on the diagram basis.
   have hlin : (LinearMap.mulRight R T).comp (brauerActionOrth R n k).toLinearMap =
       (LinearMap.mulLeft R T).comp (brauerActionOrth R n k).toLinearMap :=

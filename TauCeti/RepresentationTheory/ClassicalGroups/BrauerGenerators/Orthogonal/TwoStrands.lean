@@ -254,7 +254,7 @@ theorem range_brauerActionOrth_two_eq_centralizer_of_noZeroDivisors [NoZeroDivis
     rw [Representation.tensorPower_apply, stdOrthogonalRep_apply] at h
     have h' := congrArg (LinearMap.toMatrix b b) h
     rw [LinearMap.toMatrix_mul, LinearMap.toMatrix_mul,
-      Matrix.toMatrix_piTensorProductMap_tensorPowerBasis] at h'
+      Matrix.toMatrix_piTensorProductMap_mulVecLin] at h'
     exact h'.symm
   obtain ⟨x, hx⟩ : ∃ x : BrauerAlgebra R (n : R) 2,
       LinearMap.toMatrix b b (brauerActionOrth R n 2 x) = M := by

@@ -198,9 +198,10 @@ private theorem repr_piTensorProductMap (A : Matrix (Fin n) (Fin n) R)
       ∑ m, (∏ s, A (ℓ s) (m s)) * (boundaryTensorBasis R n k).repr x m := by
   have h := LinearMap.toMatrix_mulVec_repr (boundaryTensorBasis R n k) (boundaryTensorBasis R n k)
     (PiTensorProduct.map fun _ : Fin k ⊕ Fin k => A.mulVecLin) x
-  rw [boundaryTensorBasis, A.toMatrix_piTensorProductMap_mulVecLin] at h
-  simpa only [boundaryTensorBasis, Matrix.mulVec, dotProduct, Matrix.kroneckerPower_apply] using
-    (congrFun h ℓ).symm
+  rw [boundaryTensorBasis, ← piTensorPowerBasis_def,
+    A.toMatrix_piTensorProductMap_mulVecLin] at h
+  simpa only [boundaryTensorBasis, piTensorPowerBasis_def, Matrix.mulVec, dotProduct,
+    Matrix.kroneckerPower_apply] using (congrFun h ℓ).symm
 
 /-- **Two-sided multiplication is the action on all the slots.** Composing `f` with the tensor power
 of `A` on the outputs and of its transpose on the inputs applies `A` in all `2 * k` slots of the
@@ -225,7 +226,7 @@ theorem boundaryTensorEquiv_piTensorProductMap_comp_comp (A : Matrix (Fin n) (Fi
   rw [repr_piTensorProductMap, repr_boundaryTensorEquiv,
     LinearMap.toMatrix_comp _ (piTensorPowerBasis R (Fin k) (Fin n)),
     LinearMap.toMatrix_comp _ (piTensorPowerBasis R (Fin k) (Fin n)),
-    A.toMatrix_piTensorProductMap_tensorPowerBasis, Aᵀ.toMatrix_piTensorProductMap_tensorPowerBasis,
+    A.toMatrix_piTensorProductMap_mulVecLin, Aᵀ.toMatrix_piTensorProductMap_mulVecLin,
     ← Matrix.transpose_kroneckerPower, ← Matrix.mul_assoc,
     ← (Equiv.sumArrowEquivProdArrow (Fin k) (Fin k) (Fin n)).symm.sum_comp, Fintype.sum_prod_type]
   simp only [Matrix.mul_apply, Matrix.transpose_apply, Finset.sum_mul, hsymm, hprod,

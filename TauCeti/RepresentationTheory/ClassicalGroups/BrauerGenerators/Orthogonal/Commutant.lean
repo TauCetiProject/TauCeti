@@ -315,7 +315,7 @@ theorem range_brauerActionOrth_two_eq_centralizer_of_sq_add_sq_eq_one (n : ℕ) 
     have h := congrArg (LinearMap.toMatrix b b) (hT _ ⟨g, rfl⟩)
     rw [Representation.tensorPower_apply] at h
     simp only [stdOrthogonalRep_apply, LinearMap.toMatrix_mul, b,
-      Matrix.toMatrix_piTensorProductMap_tensorPowerBasis] at h
+      Matrix.toMatrix_piTensorProductMap_mulVecLin] at h
     exact h.symm
   obtain ⟨q, r, p, hqrp⟩ := exists_eq_smul_add_smul_add_smul h2 hcs hc hs hM
   refine ⟨q • BrauerAlgebra.of (permToBrauer 1) +

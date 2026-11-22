@@ -10,7 +10,7 @@ public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Data.Matrix.PEquiv
 public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
+public import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Basic
 
 /-!
 # Kronecker powers of matrices
@@ -36,8 +36,9 @@ diagonal, and that of the matrix of an equivalence `f` is the matrix of the equi
   commutes with transposition and reindexing.
 * `Matrix.transpose_kroneckerPower_mul_self`: the Kronecker power of a matrix with `Aᵀ * A = 1`
   satisfies the same identity.
-* `Matrix.toMatrix_piTensorProductMap_mulVecLin`: the Kronecker power is the matrix of `A` acting
-  in every factor of the tensor power, in the monomial basis.
+* `Matrix.toMatrix_piTensorProductMap_mulVecLin` and
+  `Matrix.piTensorProductMap_piTensorPowerBasis`: the Kronecker power is the matrix of `A` acting
+  in every factor of the tensor power, in the monomial basis `TauCeti.piTensorPowerBasis`.
 * `Matrix.apply_comp_mul_prod_of_commute_kroneckerPower`: a matrix commuting with the Kronecker
   power of a monomial matrix is invariant under the relabelling of its indices, up to the weights.
 * `Matrix.kroneckerPower_diagonal` and `Matrix.kroneckerPower_toMatrix_toPEquiv`: the Kronecker
@@ -102,16 +103,30 @@ theorem transpose_kroneckerPower_mul_self [CommSemiring R] [Fintype n] [Decidabl
   rw [transpose_kroneckerPower, ← kroneckerPower_mul, hA, kroneckerPower_one]
 
 /-- **The Kronecker power is the matrix of the tensor power.** The matrix of `A` acting in every
-factor of the `κ`-indexed tensor power of `m → R`, in the monomial basis built from the standard
-bases, is the Kronecker power of `A`. -/
+factor of the `κ`-indexed tensor power of `m → R`, in the coordinate monomial basis
+`TauCeti.piTensorPowerBasis`, is the Kronecker power of `A`. -/
 theorem toMatrix_piTensorProductMap_mulVecLin [CommSemiring R] [Fintype m] [DecidableEq m]
     [Fintype κ] [DecidableEq κ] (A : Matrix m m R) :
-    LinearMap.toMatrix (Basis.piTensorProduct fun _ : κ => Pi.basisFun R m)
-        (Basis.piTensorProduct fun _ : κ => Pi.basisFun R m)
+    LinearMap.toMatrix (TauCeti.piTensorPowerBasis R κ m) (TauCeti.piTensorPowerBasis R κ m)
         (PiTensorProduct.map fun _ : κ => A.mulVecLin) =
       A.kroneckerPower κ := by
+  rw [TauCeti.piTensorPowerBasis_def]
   ext v u
   simp [LinearMap.toMatrix_apply]
+
+/-- **A matrix acting diagonally on the coordinate monomial basis.** Applying `A` in every tensor
+factor sends the basis tensor `e_u` to `∑ v, (∏ i, A (v i) (u i)) • e_v`, so its matrix in
+`TauCeti.piTensorPowerBasis` is `A.kroneckerPower κ`. -/
+theorem piTensorProductMap_piTensorPowerBasis [CommSemiring R] [Fintype m]
+    [Fintype κ] [DecidableEq κ] (A : Matrix m m R) (u : κ → m) :
+    PiTensorProduct.map (fun _ : κ => A.mulVecLin) (TauCeti.piTensorPowerBasis R κ m u) =
+      ∑ v, A.kroneckerPower κ v u • TauCeti.piTensorPowerBasis R κ m v := by
+  classical
+  have h := congrArg (Matrix.toLin (TauCeti.piTensorPowerBasis R κ m)
+    (TauCeti.piTensorPowerBasis R κ m)) (toMatrix_piTensorProductMap_mulVecLin A)
+  rw [Matrix.toLin_toMatrix] at h
+  have h' := LinearMap.congr_fun h (TauCeti.piTensorPowerBasis R κ m u)
+  rwa [Matrix.toLin_self] at h'
 
 /-- **Commuting with the Kronecker power of a monomial matrix.** Let `A` be the monomial matrix
 sending the `y`-th basis vector to `d y` times the `π y`-th one, so `A x y = d y` when `x = π y`

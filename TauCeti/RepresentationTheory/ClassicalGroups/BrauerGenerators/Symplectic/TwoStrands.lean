@@ -550,9 +550,9 @@ private theorem commute_toMatrix_kroneckerPower {T : Module.End K (⨂[K]^2 ((Fi
   have h := (Subalgebra.mem_centralizer_iff K).mp hT _ ⟨⟨A, hA⟩, rfl⟩
   rw [Representation.tensorPower_apply, stdSymplecticRep_apply] at h
   have h' := congrArg (LinearMap.toMatrix (monomialBasis K n) (monomialBasis K n)) h
-  rw [LinearMap.toMatrix_mul, LinearMap.toMatrix_mul, monomialBasis,
+  rw [LinearMap.toMatrix_mul, LinearMap.toMatrix_mul, monomialBasis, ← piTensorPowerBasis_def,
     Matrix.toMatrix_piTensorProductMap_mulVecLin] at h'
-  exact h'.symm
+  simpa [Commute, SemiconjBy, monomialBasis, ← piTensorPowerBasis_def] using h'.symm
 
 /-- The matrix of the crossing in the monomial basis: `-1` at `(e_q ⊗ e_p, e_p ⊗ e_q)`. -/
 private theorem toMatrix_symplecticCrossing_apply (v u : Fin 2 → Fin n ⊕ Fin n) :

@@ -135,9 +135,10 @@ private theorem commute_symplecticActionMatrix_kroneckerPower_of_brauerActionSym
     Matrix.reindex (Equiv.sumCongr e.symm e.symm) (Equiv.sumCongr e.symm e.symm) A
   let B := Basis.piTensorProduct fun _ : Fin k => Pi.basisFun R (Fin n ⊕ Fin n)
   have hmat : Commute (D.symplecticActionMatrix R (Fin n)) (A₀.kroneckerPower (Fin k)) := by
-    simpa only [LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply,
-      toMatrix_brauerActionSymp_of, Matrix.toMatrix_piTensorProductMap_mulVecLin, B] using
-      hop.map (LinearMap.toMatrixAlgEquiv B)
+    have hop' := hop.map (LinearMap.toMatrixAlgEquiv B)
+    simp only [LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply,
+      toMatrix_brauerActionSymp_of, B] at hop'
+    rwa [← piTensorPowerBasis_def, Matrix.toMatrix_piTensorProductMap_mulVecLin] at hop'
   have hA₀ : Matrix.reindex eSum eSum A₀ = A := by
     simp [A₀, eSum, ← Equiv.sumCongr_symm]
   simpa only [Matrix.coe_reindexAlgEquiv, eFun, eSum, reindex_symplecticActionMatrix R e,

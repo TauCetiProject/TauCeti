@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Basic
-public import TauCeti.LinearAlgebra.Matrix.Kronecker.Power
 public import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Basic
 
 /-!
@@ -28,11 +27,6 @@ The construction reuses `PiTensorProduct.reindex`; the convention is
 
 ## Main results
 
-* `TauCeti.finrank_tensorPower` is the dimension count `dim (Rⁿ)^{⊗d} = nᵈ` that the monomial
-  basis supplies.
-* `Matrix.piTensorProductMap_tensorPowerBasis` and
-  `Matrix.toMatrix_piTensorProductMap_tensorPowerBasis`: in the monomial basis, a matrix `A` acting
-  in every tensor factor has the Kronecker power `Matrix.kroneckerPower (Fin d) A` as its matrix.
 * `PiTensorProduct.map_reindex_range_reindexRepresentation_asAlgebraHom` transports the image of
   a group-algebra element along any equivalence of tensor-factor index types.
 -/
@@ -197,41 +191,6 @@ theorem map_reindex_range_permTensorAction_asAlgebraHom {m : ℕ} (h : m = d)
   simpa only [permTensorAction_def] using
     PiTensorProduct.map_reindex_range_reindexRepresentation_asAlgebraHom R (Fin n → R) (Fin m)
       (finCongr h) a
-
-/-- **The dimension of `(Rⁿ)^{⊗d}` is `nᵈ`**, read off the monomial basis
-`TauCeti.piTensorPowerBasis`, whose index type is `Fin d → Fin n`. -/
-theorem finrank_tensorPower [StrongRankCondition R] :
-    Module.finrank R (⨂[R] _ : Fin d, Fin n → R) = n ^ d := by
-  rw [Module.finrank_eq_card_basis (piTensorPowerBasis R (Fin d) (Fin n)), Fintype.card_fun]
-  simp
-
-/-- **A matrix acting diagonally on the monomial basis of `(Rⁿ)^{⊗d}`.** Applying `A` in every
-tensor factor sends the basis tensor `e_u` to `∑ v, (∏ i, A (v i) (u i)) • e_v`, so its matrix in
-the monomial basis is the Kronecker power of `A`. -/
-theorem _root_.Matrix.piTensorProductMap_tensorPowerBasis {R : Type u} [CommSemiring R] {n d : ℕ}
-    (A : Matrix (Fin n) (Fin n) R) (u : Fin d → Fin n) :
-    PiTensorProduct.map (fun _ : Fin d => A.mulVecLin) (piTensorPowerBasis R (Fin d) (Fin n) u) =
-      ∑ v, A.kroneckerPower (Fin d) v u • piTensorPowerBasis R (Fin d) (Fin n) v := by
-  have hcol : ∀ i, A.mulVecLin (Pi.single (u i) (1 : R)) =
-      ∑ c, A c (u i) • Pi.single c (1 : R) := fun i => by
-    rw [Matrix.mulVecLin_apply, Matrix.mulVec_single_one, ← (Pi.basisFun R (Fin n)).sum_repr
-      (A.col (u i))]
-    simp [Matrix.col_apply]
-  simp only [piTensorPowerBasis_apply, PiTensorProduct.map_tprod, hcol,
-    MultilinearMap.map_sum_finset, MultilinearMap.map_smul_univ]
-  simp
-
-/-- **The matrix of `A^{⊗d}` in the monomial basis is the Kronecker power of `A`.** The matrix of
-`A` acting in every tensor factor of `(Rⁿ)^{⊗d}`, in the basis `TauCeti.piTensorPowerBasis`, is
-`Matrix.kroneckerPower (Fin d) A`. -/
-theorem _root_.Matrix.toMatrix_piTensorProductMap_tensorPowerBasis {R : Type u} [CommSemiring R]
-    {n d : ℕ} (A : Matrix (Fin n) (Fin n) R) :
-    LinearMap.toMatrix (piTensorPowerBasis R (Fin d) (Fin n))
-        (piTensorPowerBasis R (Fin d) (Fin n))
-        (PiTensorProduct.map fun _ : Fin d => A.mulVecLin) =
-      A.kroneckerPower (Fin d) := by
-  rw [piTensorPowerBasis_def]
-  exact A.toMatrix_piTensorProductMap_mulVecLin
 
 -- These two derived normal forms remain explicit rewrite lemmas: `simpNF` detects each as already
 -- provable from the underlying tensor-action rules, so adding them to the simp set is redundant.

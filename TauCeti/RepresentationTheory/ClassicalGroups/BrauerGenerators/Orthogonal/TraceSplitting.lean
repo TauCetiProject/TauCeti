@@ -292,7 +292,7 @@ theorem finrank_harmonicTensors_two [NeZero n] :
     Module.finrank k (harmonicTensors k n 2) + 1 = n ^ 2 := by
   have h := LinearMap.finrank_range_add_finrank_ker (orthogonalCap k n)
   rw [LinearMap.range_eq_top.2 (orthogonalCap_surjective k n), finrank_top,
-    Module.finrank_self, finrank_tensorPower] at h
+    Module.finrank_self, finrank_piTensorPower, Nat.card_fin, Nat.card_fin] at h
   rw [harmonicTensors_two_eq_ker_orthogonalCap]
   omega
 

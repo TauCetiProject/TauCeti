@@ -215,7 +215,7 @@ theorem sum_finrank_spechtModule_mul_finrank_weylModuleOfShape (n d : ℕ) :
     ∑ μ : d.Partition, finrank ℚ (spechtModule (R := ℚ) μ) *
         finrank k (weylModuleOfShape k n (ofPartition μ)).toSubmodule = n ^ d := by
   have h := sum_finrank_spechtModule_mul_char_weylRepOfShape_ofPartition (k := k) (n := n) d 1
-  simp only [Representation.char_one, finrank_tensorPower] at h
+  simp only [Representation.char_one, finrank_piTensorPower, Nat.card_fin] at h
   exact_mod_cast h
 
 end TauCeti
