@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Height.Arakelov.SiegelsLemma
+import TauCeti.Algebra.Algebra.Pi
 import TauCeti.LinearAlgebra.BilinearForm.Dual.Basis
+import TauCeti.LinearAlgebra.Matrix.BaseChange
 import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.NumberTheory.Height.Arakelov.Absolute
 import TauCeti.NumberTheory.Height.Arakelov.Subspace.Bounds
@@ -84,20 +86,6 @@ open scoped Matrix
 
 namespace Matrix
 
-/-- `Pi.algebraMap` applies `algebraMap` coordinatewise. -/
-private theorem pi_algebraMap_apply {ι R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-    (v : ι → R) : Pi.algebraMap ι R A v = algebraMap R A ∘ v :=
-  rfl
-
-/-- The `K`-rational solutions of `A x = 0` are the kernel of
-`A.mulVecLin.restrictScalars K ∘ₗ Pi.algebraMap ι K F`. -/
-private theorem mem_ker_restrictScalars_comp_iff {K F : Type*} [Field K] [Field F] [Algebra K F]
-    {m ι : Type*} [Fintype ι] (A : Matrix m ι F) (x : ι → K) :
-    x ∈ LinearMap.ker (A.mulVecLin.restrictScalars K ∘ₗ Pi.algebraMap ι K F) ↔
-      A *ᵥ (fun i ↦ algebraMap K F (x i)) = 0 := by
-  rw [LinearMap.mem_ker, LinearMap.comp_apply, LinearMap.restrictScalars_apply, mulVecLin_apply,
-    pi_algebraMap_apply, Function.comp_def]
-
 section TraceRows
 
 variable {F : Type*} [Field F] {m ι κ : Type*}
@@ -132,7 +120,8 @@ private theorem ker_traceRows [Fintype ι] (b : Basis κ K F) (A : Matrix m ι F
       LinearMap.ker (A.mulVecLin.restrictScalars K ∘ₗ Pi.algebraMap ι K F) := by
   classical
   ext x
-  rw [mem_ker_restrictScalars_comp_iff, LinearMap.mem_ker, mulVecLin_apply, traceRows_mulVec]
+  rw [mem_ker_mulVecLin_restrictScalars_comp_piAlgebraMap_iff, LinearMap.mem_ker, mulVecLin_apply,
+    traceRows_mulVec]
   set b' := (Algebra.traceForm K F).dualBasis (traceForm_nondegenerate K F) b
   simp only [funext_iff, Prod.forall, Pi.zero_apply, ← b'.forall_coord_eq_zero_iff,
     Basis.coord_apply, Function.comp_def]
@@ -150,13 +139,13 @@ private theorem span_image_traceRows_eq (b : Basis κ K F) (A : Matrix m ι F) {
   have h₁ (i : m) (l : κ) : Pi.algebraMap ι K L ((traceRows K b A).row (i, l)) =
       ∑ σ : F →ₐ[K] L, σ (b l) • (σ ∘ A i) := by
     ext j
-    simp [traceRows, pi_algebraMap_apply, htr, Finset.sum_apply, mul_comm]
+    simp [traceRows, htr, Finset.sum_apply, mul_comm]
   have h₂ (σ : F →ₐ[K] L) (i : m) : σ ∘ A i =
       ∑ l, σ (b' l) • Pi.algebraMap ι K L ((traceRows K b A).row (i, l)) := by
     ext j
     conv_lhs => rw [Function.comp_apply, ← LinearMap.BilinForm.sum_apply_smul_dualBasis
       (traceForm_nondegenerate K F) b (A i j)]
-    simp [traceRows, pi_algebraMap_apply, Finset.sum_apply, b', Algebra.smul_def, mul_comm]
+    simp [traceRows, Finset.sum_apply, b', Algebra.smul_def, mul_comm]
   refine le_antisymm (span_le.2 ?_) (span_le.2 ?_)
   · have : span K (Set.range (traceRows K b A).row) ≤
         ((span L (Set.range fun p : (F →ₐ[K] L) × m ↦ p.1 ∘ A p.2)).restrictScalars K).comap
@@ -282,7 +271,8 @@ theorem exists_linearIndependent_mulVec_algebraMap_eq_zero_prod_absHeight_le
   obtain ⟨x, hli, hspan, hmem, hle⟩ := (LinearMap.ker (A.mulVecLin.restrictScalars K ∘ₗ
     Pi.algebraMap ι K F)).exists_linearIndependent_integerPoints_prod_absHeight_le
   refine ⟨x, hli, hspan, fun j ↦ ?_, hle.trans ?_⟩
-  · exact (mem_ker_restrictScalars_comp_iff A _).1 (mem_integerPoints.1 (hmem j))
+  · exact (mem_ker_mulVecLin_restrictScalars_comp_piAlgebraMap_iff A _).1
+      (mem_integerPoints.1 (hmem j))
   · exact mul_le_mul_of_nonneg_left (subspaceHeight_ker_restrictScalars_comp_le A)
       (by positivity)
 
@@ -320,7 +310,8 @@ theorem exists_ne_zero_mulVec_algebraMap_eq_zero_absHeight_le (A : Matrix m ι F
     rw [h, finrank_bot] at hk
     omega
   obtain ⟨z, hzW, hz0, hle⟩ := exists_ne_zero_mem_integerPoints_absHeight_le hW
-  refine ⟨z, hz0, (mem_ker_restrictScalars_comp_iff A _).1 (mem_integerPoints.1 hzW),
+  refine ⟨z, hz0,
+    (mem_ker_mulVecLin_restrictScalars_comp_piAlgebraMap_iff A _).1 (mem_integerPoints.1 hzW),
     hle.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))⟩
   have hP : 0 ≤ ∏ i, arakelovMulHeight (A i) :=
     Finset.prod_nonneg fun i _ ↦ arakelovMulHeight_nonneg (A i)
