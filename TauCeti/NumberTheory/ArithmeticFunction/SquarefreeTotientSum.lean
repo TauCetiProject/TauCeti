@@ -18,9 +18,10 @@ import TauCeti.NumberTheory.SmoothNumbers
 
 For every natural number `k` and real `z ≥ 0`,
 `∑_{1 ≤ d < z, (d, k) = 1} μ(d)² / φ(d) ≥ (φ(k) / k) log z`,
-with constant one and uniformly in `k`. This is the denominator of Selberg's upper bound for a
-sieve that deletes the primes dividing `k`, for instance to count primes in a progression
-modulo `k` (see `TauCeti.NumberTheory.SelbergSieve.CoprimeDiagonal`).
+with constant one and uniformly in `k`. This sum bounds from below the denominator of Selberg's
+upper bound for a sieve over the primes not dividing `k` (those dividing `k` are omitted), for
+instance to count primes in a progression modulo `k`
+(see `TauCeti.NumberTheory.SelbergSieve.CoprimeDiagonal`).
 
 ## Main results
 

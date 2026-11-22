@@ -9,17 +9,18 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Data.Nat.Totient
 public import TauCeti.NumberTheory.SelbergSieve.UpperBound
 
-import TauCeti.NumberTheory.ArithmeticFunction.MoebiusSqDivTotient
+import TauCeti.NumberTheory.ArithmeticFunction.SquarefreeTotientSum
 import TauCeti.NumberTheory.SelbergSieve.Bounds
 
 /-!
-# The Selberg diagonal sum with the primes of a modulus deleted
+# The Selberg diagonal sum with the primes of a modulus omitted
 
-When a sieve deletes the primes dividing a modulus `k`, for instance to count primes in a
-progression modulo `k`, its Selberg diagonal sum contains the coprime sum
+When a sieve omits the primes dividing a modulus `k` and sieves only by the primes not dividing
+`k`, for instance to count primes in a progression modulo `k`, its Selberg diagonal sum contains
+the coprime sum
 `∑_{1 ≤ d < z, (d, k) = 1} μ(d)² / φ(d) ≥ (φ(k) / k) log z`
-(`ArithmeticFunction.totient_div_mul_log_le_sum_moebius_sq_div_totient`), so Selberg's upper
-bound has its denominator uniformly in the modulus.
+(`ArithmeticFunction.totient_div_mul_log_le_sum_moebius_sq_div_totient`), so the denominator of
+Selberg's upper bound is bounded below uniformly in the modulus.
 
 ## Main results
 

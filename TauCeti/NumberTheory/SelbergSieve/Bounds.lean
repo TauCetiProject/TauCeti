@@ -5,10 +5,12 @@ Authors: Arend Mellendijk, OpenAI Codex
 -/
 module
 
+public import Mathlib.Algebra.Order.Archimedean.Real.Basic
+public import Mathlib.Data.Nat.Totient
 public import Mathlib.NumberTheory.SelbergSieve
 public import TauCeti.NumberTheory.ArithmeticFunction.EulerProduct
-public import Mathlib.NumberTheory.Harmonic.Bounds
 
+import Mathlib.Tactic.FieldSimp
 import TauCeti.Data.Nat.Totient
 
 /-!
