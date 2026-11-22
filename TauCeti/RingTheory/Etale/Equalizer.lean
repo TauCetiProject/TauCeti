@@ -262,7 +262,7 @@ private theorem etale_and_finite_equalizer {R A B : Type u} [CommRing R] [CommRi
   have hσ (q : PrimeSpectrum T') : ∀ x, a x ∉ (q.comap (algebraMap R T')).asIdeal ↔ σ x := by
     have h0 : algebraMap R T' (1 - ∏ x, if σ x then a x else 1 - a x) = 0 :=
       Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self _)
-    exact fun x ↦ TauCeti.notMem_iff_of_one_sub_prod_ite_mem σ
+    exact fun x ↦ TauCeti.notMem_iff_of_one_sub_prod_ite_mem σ Ideal.IsPrime.ne_top'
       (Ideal.mem_comap.mpr (h0 ▸ q.asIdeal.zero_mem)) (ha x)
   -- A rank bounded by `N` whose fibres are the basic open sets of elements `ε k` that every prime
   -- of `T'` sees uniformly is the same at all primes under primes of `T'`.
