@@ -36,6 +36,12 @@ exponent `α ∈ (0, 1]` and a constant depending only on `λ`, `Λ`, `θ`, `q`,
 normalization of the Haar measure. No regularity of the coefficients beyond measurability is
 used. Every bounded Lipschitz domain has such an exterior density.
 
+On a bounded Lipschitz domain the file also adds a scalar datum `f ∈ Lʳ(Ω)` with `r > 1` and
+`r > n/2`: a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, `u = G` on `∂Ω`, agrees almost
+everywhere with a function that is Hölder on `Ω` with constant
+`C ((‖f‖_{Lʳ(Ω)} + ‖F‖_{L^q(Ω)}) / λ + K₀ + K₁)`, where `K₀` bounds `G` and `K₁` is its Lipschitz
+constant.
+
 * `exists_holderWith_preciseRepresentative_indicator_of_measureReal_ball_diff_divergence`:
   for zero boundary values, the precise representative of the extension of `u` by zero is
   `α`-Hölder on all of `ℝⁿ` with constant `C R^(-α) (|Ω|^(1/n - 1/q) + R^(1 - n/q)) ‖F‖_{L^q} / λ`.
@@ -44,8 +50,8 @@ used. Every bounded Lipschitz domain has such an exterior density.
   values `g` whose value is `K₁`-Lipschitz on `Ω`, the difference `u - g` solves the equation with
   the datum `F + a ∇g`, of `L^q` norm at most `‖F‖_{L^q} + Λ K₁ |Ω|^(1/q)`.
 * `TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_and_sub_eq_neg_setIntegral_inner`: for the
-  equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ` with `f ∈ Lʳ(Ω)`, `r > 1`, `r > n/2`, subtracting the weak
-  solution `w ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = f` leaves the divergence datum alone.
+  equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ` with `f ∈ Lʳ(Ω)`, `r > 1`, `n (2 - r) < 2 r`, subtracting the
+  weak solution `w ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = f` leaves the divergence datum alone.
 * `TauCeti.PDE.exists_ae_eq_and_holderOnWith_of_measureReal_ball_diff_divergence`: for boundary
   values `G` with `|G| ≤ K₀` and Lipschitz constant `K₁` on `Ω`, the solution agrees almost
   everywhere on `Ω` with a function that is `α`-Hölder on `Ω` with constant
@@ -58,7 +64,11 @@ used. Every bounded Lipschitz domain has such an exterior density.
   `r > n/2`, as well, the constant is `C ((‖f‖_{Lʳ} + ‖F‖_{L^q}) / λ + K₀ + K₁)`.
 
 The last statement is the global Hölder estimate of Gilbarg–Trudinger, Theorem 8.29, with
-Lipschitz boundary values; the others are its case of a right-hand side in divergence form.
+Lipschitz boundary values. The Hölder estimates
+`exists_holderWith_preciseRepresentative_indicator_of_measureReal_ball_diff_divergence`,
+`exists_ae_eq_and_holderOnWith_of_measureReal_ball_diff_divergence` and
+`exists_ae_eq_and_holderOnWith_divergence` are its cases of a right-hand side in divergence form,
+and the remaining entries are the reduction steps.
 
 ## The argument
 
@@ -394,9 +404,11 @@ theorem exists_ae_eq_and_holderOnWith_of_measureReal_ball_diff_divergence
   rw [mul_div_assoc, mul_div_assoc, mul_assoc]
   gcongr
 
-/-- **Splitting off a scalar datum.** Let `n ≥ 1` be the dimension and let `r > 1` with `r > n/2`.
-On `Ω` of finite measure, let `a` be measurable and uniformly elliptic, let `f ∈ Lʳ(Ω)`, and let
-`u ∈ H¹(Ω)` satisfy `a(u, v) = ∫_Ω f v - ∫_Ω F · ∇v` for every `v ∈ H¹₀(Ω)`, the weak form of
+/-- **Splitting off a scalar datum.** Let `n ≥ 1` be the dimension and let `r > 1` with
+`n (2 - r) < 2 r`, that is `r > 2n/(n+2)`, the range in which `v ↦ ∫_Ω f v` is continuous on
+`H¹₀(Ω)`; this holds in particular for `r > n/2`. On `Ω` of finite measure, let `a` be
+measurable and uniformly elliptic, let `f ∈ Lʳ(Ω)`, and let `u ∈ H¹(Ω)` satisfy
+`a(u, v) = ∫_Ω f v - ∫_Ω F · ∇v` for every `v ∈ H¹₀(Ω)`, the weak form of
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`. Then there is a weak solution `w ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = f`, and
 `u - w` satisfies `a(u - w, v) = -∫_Ω F · ∇v` for every `v ∈ H¹₀(Ω)`: it solves the equation with
 the divergence datum alone and has the boundary values of `u`. -/
@@ -405,7 +417,7 @@ theorem exists_forall_energyFormH1_eq_setIntegral_and_sub_eq_neg_setIntegral_inn
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
     (hfin : mu (Omega : Set (EuclideanSpace ℝ ι)) ≠ ∞) {r : ℝ≥0} (hr : 1 < r)
-    (hrn : (Fintype.card ι : ℝ) < 2 * r) {f : EuclideanSpace ℝ ι → ℝ}
+    (hrn : (Fintype.card ι : ℝ) * (2 - r) < 2 * r) {f : EuclideanSpace ℝ ι → ℝ}
     (hf : MemLp f r (mu.restrict Omega)) {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
@@ -416,14 +428,9 @@ theorem exists_forall_energyFormH1_eq_setIntegral_and_sub_eq_neg_setIntegral_inn
         ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) ∧
       ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (u - (w : W1p mu Omega 2)) (v : W1p mu Omega 2) =
         -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu := by
-  -- `r > n/2` gives `r > 2n/(n + 2)`, the range in which `v ↦ ∫_Ω f v` is continuous on `H¹₀(Ω)`.
-  have hrn' : (Fintype.card ι : ℝ) * (2 - r) < 2 * r := by
-    have hn : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 Fintype.card_pos
-    have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-    nlinarith [mul_pos hn (sub_pos.2 hr1)]
   obtain ⟨w, hw, -⟩ := h.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp (c := 0)
     (gamma := 0) ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hfin hr
-    hrn' hf
+    hrn hf
   have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) :=
     memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) h.upper_nonneg ha
       aestronglyMeasurable_const aestronglyMeasurable_const (fun _ hx => h.upper_bound hx)
@@ -572,7 +579,8 @@ theorem exists_ae_eq_and_holderOnWith_add_divergence [Nonempty ι]
   -- The weak solution `w ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = f`, and `u - w`, which has the divergence
   -- datum alone and the boundary values `G`.
   obtain ⟨w, hw, hu'⟩ := exists_forall_energyFormH1_eq_setIntegral_and_sub_eq_neg_setIntegral_inner
-    h ha hb.measure_lt_top.ne hr hrn hf hu
+    h ha hb.measure_lt_top.ne hr
+    (mul_two_sub_lt_two_mul_of_lt_two_mul (Nat.cast_nonneg _) (by exact_mod_cast hr) hrn) hf hu
   obtain ⟨v₂, hv₂, hv₂H⟩ := hdiv h ha hF (by
     rw [sub_right_comm]; exact (w1p0Submodule mu Omega 2).toSubmodule.sub_mem hug w.property)
     hu' hgG hG hG0

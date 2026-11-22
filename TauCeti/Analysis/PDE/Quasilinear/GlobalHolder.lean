@@ -160,14 +160,12 @@ theorem exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq_and_hold
   have : IsFiniteMeasure (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     isFiniteMeasure_restrict.2 hfin
   -- The forcing `φ ↦ ∫_Ω f φ - ∫_Ω F · ∇φ` is a continuous linear functional on `H¹₀(Ω)`.
-  have hrn' : ((Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) : ℕ) : ℝ) * (2 - r) <
-      2 * r := by
-    rw [finrank_euclideanSpace, hcard]
-    have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-    nlinarith [mul_pos (show (0 : ℝ) < n + 1 by positivity) (sub_pos.2 hr1)]
-  obtain ⟨ℓf, hℓf⟩ := W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp hfin hr hrn' hf
-  have hF2 : MemLp F 2 (volume.restrict Omega) :=
-    hF.mono_exponent (by exact_mod_cast (show ((2 : ℝ≥0) : ℝ) ≤ q by exact_mod_cast hq.le))
+  have hrn' : (Fintype.card (Fin (n + 1)) : ℝ) * (2 - r) < 2 * r :=
+    mul_two_sub_lt_two_mul_of_lt_two_mul (Nat.cast_nonneg _) (by exact_mod_cast hr)
+      (by rwa [hcard])
+  obtain ⟨ℓf, hℓf⟩ := W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp hfin hr
+    (by rwa [finrank_euclideanSpace]) hf
+  have hF2 : MemLp F 2 (volume.restrict Omega) := hF.mono_exponent (by exact_mod_cast hq.le)
   have hℓ : ∀ φ : W1p0 volume Omega 2, (ℓf + divergenceForcing (hF2.toLp F)) φ =
       ∫ x in Omega, f x * W1p.value (φ : W1p volume Omega 2) x ∂volume -
         ∫ x in Omega, ⟪F x, W1p.gradient (φ : W1p volume Omega 2) x⟫ ∂volume := fun φ => by

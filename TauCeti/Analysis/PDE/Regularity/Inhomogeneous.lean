@@ -709,10 +709,8 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_add_divergence [Nonempt
   obtain ⟨K₁, -, hsplit₁⟩ := exists_forall_energyFormH1_eq_zero_ae_abs_sub_le (mu := mu) hr hrn
   obtain ⟨K₂, hK₂, hsplit₂⟩ :=
     exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence (mu := mu) hq hqn
-  have hrn' : (Fintype.card ι : ℝ) * (2 - r) < 2 * r := by
-    have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-    nlinarith [mul_pos (Nat.cast_pos.2 Fintype.card_pos : (0 : ℝ) < Fintype.card ι)
-      (sub_pos.2 hr1)]
+  have hrn' : (Fintype.card ι : ℝ) * (2 - r) < 2 * r :=
+    mul_two_sub_lt_two_mul_of_lt_two_mul (Nat.cast_nonneg _) (by exact_mod_cast hr) hrn
   refine ⟨max K₁ K₂, lt_max_of_lt_right hK₂, ?_⟩
   intro Omega a lam Lam f F u x₀ ρ h ha hf hF hu hρ hball
   set B : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ ρ, isOpen_ball⟩
