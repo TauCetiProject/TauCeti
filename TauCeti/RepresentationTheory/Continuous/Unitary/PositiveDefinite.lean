@@ -171,6 +171,23 @@ theorem norm_gnsVector_sub_sq (g h : G) :
   simp only [inner_gnsVector, inv_mul_cancel]
   ring
 
+/-- For a positive-definite function normalized by `φ 1 = 1`, the GNS vector at the identity is a
+unit vector. -/
+theorem norm_gnsVector_one (hφ1 : φ 1 = 1) : ‖hφ.gnsVector 1‖ = 1 := by
+  have h : ‖hφ.gnsVector 1‖ ^ 2 = 1 := by
+    rw [@norm_sq_eq_re_inner 𝕜, hφ.inner_gnsVector, inv_mul_cancel, hφ1, RCLike.one_re]
+  exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).mp h
+
+/-- For a positive-definite function normalized by `φ 1 = 1`, the GNS representation moves the GNS
+vector at the identity by `g` a distance whose square is at most `2 * ‖φ g - 1‖`. -/
+theorem norm_gnsRepresentation_gnsVector_one_sub_sq_le (hφ1 : φ 1 = 1) (g : G) :
+    ‖hφ.gnsRepresentation g (hφ.gnsVector 1) - hφ.gnsVector 1‖ ^ 2 ≤ 2 * ‖φ g - 1‖ := by
+  rw [hφ.gnsRepresentation_gnsVector_one, norm_sub_rev, hφ.norm_gnsVector_sub_sq, inv_one,
+    one_mul, hφ1, RCLike.one_re, ← norm_neg, neg_sub]
+  have := RCLike.re_le_norm (1 - φ g)
+  rw [map_sub, RCLike.one_re] at this
+  linarith
+
 /-- If a positive-definite function vanishes at infinity, then so does every coefficient
 `g ↦ ⟪x, π g y⟫` of its GNS representation `π`. -/
 theorem tendsto_inner_gnsRepresentation_cofinite (hφ0 : Tendsto φ cofinite (𝓝 0))
