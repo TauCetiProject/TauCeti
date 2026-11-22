@@ -29,23 +29,11 @@ variable {X Y : LocallyRingedSpace.{u}} {ι : Type w} (U : ι → Opens X) (hU :
   (hf : ∀ i j, X.restrictHomOfLE (inf_le_left : U i ⊓ U j ≤ U i) ≫ f i =
     X.restrictHomOfLE inf_le_right ≫ f j)
 
-private abbrev fPsh (i : ι) :
-    X.toPresheafedSpace.restrict (U i).isOpenEmbedding ⟶ Y.toPresheafedSpace := (f i).toHom
-
-include hf in
-private theorem presheafedSpace_pullback_compat (i j : ι) :
-    pullback.fst (X.toPresheafedSpace.ofRestrict (U i).isOpenEmbedding)
-        (X.toPresheafedSpace.ofRestrict (U j).isOpenEmbedding) ≫ fPsh U f i =
-      pullback.snd _ _ ≫ fPsh U f j := by
-  rw [← X.toPresheafedSpace.pullbackRestrictIso_hom_restrictHomOfLE_left (U i) (U j),
-    ← X.toPresheafedSpace.pullbackRestrictIso_hom_restrictHomOfLE_right (U i) (U j),
-    Category.assoc, Category.assoc]
-  have h := congrArg Hom.toHom (hf i j)
-  rw [comp_toHom, comp_toHom, restrictHomOfLE_toHom, restrictHomOfLE_toHom] at h
-  exact congrArg (_ ≫ ·) h
-
 private noncomputable def gluePsh : X.toPresheafedSpace ⟶ Y.toPresheafedSpace :=
-  PresheafedSpace.glueMorphisms X.IsSheaf U hU (fPsh U f) (presheafedSpace_pullback_compat U f hf)
+  PresheafedSpace.glueMorphisms X.IsSheaf U hU (fun i ↦ (f i).toHom) fun i j ↦
+    (X.toPresheafedSpace.pullback_comp_iff_restrictHomOfLE (f i).toHom (f j).toHom).mpr <| by
+      have h := congrArg Hom.toHom (hf i j)
+      rw [comp_toHom, comp_toHom, restrictHomOfLE_toHom, restrictHomOfLE_toHom] at h; exact h
 
 private theorem isLocalHom_stalkMap_gluePsh (x : X) :
     IsLocalHom ((gluePsh U hU f hf).stalkMap x).hom := by

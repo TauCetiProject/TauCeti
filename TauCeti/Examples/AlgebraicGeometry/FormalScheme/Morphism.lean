@@ -50,14 +50,14 @@ example (X : FormalScheme.{u}) (A : Type u) [CommRing A] [TopologicalSpace A]
 /-- Out of any empty formal scheme `X`, there is a unique morphism `X ⟶ ofSpf A`. -/
 theorem nonempty_unique_hom_of_isEmpty (X : FormalScheme.{u}) (hX : IsEmpty X) (A : Type u)
     [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A] :
-    Nonempty (Unique (X ⟶ ofSpf A)) := by
+    Nonempty (Unique (X ⟶ ofSpf A)) :=
   have hsub : Subsingleton (X.presheaf.obj (op ⊤)) :=
     ⟨fun _ _ ↦ X.toLocallyRingedSpace.IsSheaf.section_ext fun x ↦ (hX.false x).elim⟩
   let φ0 : A →+* X.presheaf.obj (op ⊤) :=
-    ⟨⟨⟨fun _ ↦ 0, hsub.elim _ _⟩, fun _ _ ↦ hsub.elim _ _⟩, rfl, fun _ _ ↦ hsub.elim _ _⟩
-  exact ⟨{ default := homOfContinuousOnAffines φ0 ((continuousOnAffines_iff_residue
-             (IsAdicRing.ideal_spec A).2.1 φ0).mpr fun _ _ x ↦ (hX.false x).elim)
-           uniq := fun _ ↦ sectionsHom_injective (RingHom.ext fun _ ↦ hsub.elim _ _) }⟩
+    ⟨⟨⟨0, hsub.elim _ _⟩, fun _ _ ↦ hsub.elim _ _⟩, rfl, fun _ _ ↦ hsub.elim _ _⟩
+  ⟨{ default := homOfContinuousOnAffines φ0 ((continuousOnAffines_iff_residue
+       (IsAdicRing.ideal_spec A).2.1 φ0).mpr fun _ _ x ↦ (hX.false x).elim)
+     uniq := fun _ ↦ sectionsHom_injective (RingHom.ext fun _ ↦ hsub.elim _ _) }⟩
 
 /-- `ofSpf (ZMod 1)` is empty and admits a unique morphism into any `ofSpf A`. -/
 example (A : Type) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
@@ -72,10 +72,9 @@ section Padic
 variable (p : ℕ) [Fact p.Prime]
 
 /-- `ℤ_[p]` is a complete separated adic ring of finite ideal type with ideal `(p)`. -/
-local instance padicIntIsAdicRing : IsAdicRing ℤ_[p] :=
-  ⟨IsLocalRing.maximalIdeal ℤ_[p],
-    PadicInt.maximalIdeal_eq_span_p (p := p) ▸ Submodule.fg_span_singleton _,
-    Huber.PadicInt.isAdic_maximalIdeal, inferInstance⟩
+local instance padicIntIsAdicRing : IsAdicRing ℤ_[p] := ⟨IsLocalRing.maximalIdeal ℤ_[p],
+  PadicInt.maximalIdeal_eq_span_p (p := p) ▸ Submodule.fg_span_singleton _,
+  Huber.PadicInt.isAdic_maximalIdeal, inferInstance⟩
 
 /-- `sectionsHom` recovers the identity on `ofSpf ℤ_[p]`. -/
 example (a : ℤ_[p]) : (Spf.topSectionsIso ℤ_[p]).hom (sectionsHom (𝟙 (ofSpf ℤ_[p])) a) = a :=
@@ -89,18 +88,19 @@ theorem padicInt_continuous_pow_witness :
         IsLocalRing.maximalIdeal ℤ_[p] ^ 2) ∧
       ¬ (IsLocalRing.maximalIdeal ℤ_[p]).map (Spf.homEquiv (𝟙 (Spf ℤ_[p])) : ℤ_[p] →+* ℤ_[p]) ≤
           IsLocalRing.maximalIdeal ℤ_[p] ^ 2 := by
-  have hI : IsAdic (IsLocalRing.maximalIdeal ℤ_[p]) := Huber.PadicInt.isAdic_maximalIdeal
+  let I := IsLocalRing.maximalIdeal ℤ_[p]
+  have hI : IsAdic I := Huber.PadicInt.isAdic_maximalIdeal
   refine ⟨(hI.continuous_iff_exists_pos_pow_map_le
     (is_ideal_adic_pow hI two_pos)).mp (Spf.homEquiv (𝟙 (Spf ℤ_[p]))).2, fun hle ↦ ?_⟩
   rw [Spf.homEquiv_apply_coe, Spf.sectionsHom_id, Ideal.map_id] at hle
-  have hpI : (p : ℤ_[p]) ∈ IsLocalRing.maximalIdeal ℤ_[p] :=
-    PadicInt.maximalIdeal_eq_span_p (p := p) ▸ Ideal.subset_span rfl
+  have hpI : (p : ℤ_[p]) ∈ I := by
+    rw [show I = IsLocalRing.maximalIdeal ℤ_[p] from rfl, PadicInt.maximalIdeal_eq_span_p]
+    exact Ideal.subset_span rfl
   obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.mp (show (p : ℤ_[p]) ∈ Ideal.span {(p : ℤ_[p]) ^ 2}
     by simpa only [PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow] using hle hpI)
   exact (IsLocalRing.maximalIdeal.isMaximal ℤ_[p]).ne_top <| (Ideal.eq_top_iff_one _).mpr <|
     (mul_left_cancel₀ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
-      (by linear_combination -hc) : (p : ℤ_[p]) * c = 1) ▸
-      (IsLocalRing.maximalIdeal ℤ_[p]).mul_mem_right c hpI
+      (by linear_combination -hc) : (p : ℤ_[p]) * c = 1) ▸ I.mul_mem_right c hpI
 
 /-- `ofSpf ℤ_[p]` has at most one point, yet its global `sectionsTopology` is nondiscrete. -/
 theorem subsingleton_and_not_discrete_sectionsTopology_padicInt :
@@ -109,7 +109,7 @@ theorem subsingleton_and_not_discrete_sectionsTopology_padicInt :
   have hmax (z : ofSpf ℤ_[p]) : z.1.asIdeal = IsLocalRing.maximalIdeal ℤ_[p] := le_antisymm
     (IsLocalRing.le_maximalIdeal z.1.isPrime.ne_top)
     ((Spf.mem_carrier_iff_le (Huber.PadicInt.isAdic_maximalIdeal (p := p))).mp z.2)
-  refine ⟨⟨fun x y ↦ Subtype.ext (PrimeSpectrum.ext ((hmax x).trans (hmax y).symm))⟩, fun h ↦ ?_⟩
+  refine ⟨⟨fun _ _ ↦ Subtype.ext (PrimeSpectrum.ext ((hmax _).trans (hmax _).symm))⟩, fun h ↦ ?_⟩
   let _ := (ofSpf ℤ_[p]).sectionsTopology ⊤ (isAffineOpen_top_ofSpf ℤ_[p])
   have : DiscreteTopology ℤ_[p] :=
     (isHomeomorph_topSectionsIso ℤ_[p]).homeomorph.discreteTopology_iff.mp h
@@ -123,16 +123,14 @@ to the unit `(p : ℚ_[p])`. -/
 theorem not_continuousOnAffines_spec_padic
     (φ : ℤ_[p] →+* (ofScheme.obj (Spec (CommRingCat.of ℚ_[p]))).presheaf.obj (op ⊤)) :
     ¬ ContinuousOnAffines (ofScheme.obj (Spec (CommRingCat.of ℚ_[p]))) ℤ_[p] φ := fun hφ ↦ by
-  let X := ofScheme.obj (Spec (CommRingCat.of ℚ_[p]))
-  let x : X := ⟨(⊥ : Ideal ℚ_[p]), inferInstance⟩
+  let X := ofScheme.obj (Spec (CommRingCat.of ℚ_[p])); let x : X := ⟨⊥, inferInstance⟩
   let toRes : ℚ_[p] →+* X.toLocallyRingedSpace.residueField x :=
     ((Scheme.ΓSpecIso (CommRingCat.of ℚ_[p])).inv ≫ X.toLocallyRingedSpace.Γevaluation x).hom
   have hzero := (continuousOnAffines_iff_residue
     (Huber.PadicInt.isAdic_maximalIdeal (p := p)) φ).mp hφ (p : ℤ_[p])
     (PadicInt.maximalIdeal_eq_span_p (p := p) ▸ Ideal.subset_span rfl) x
-  rw [map_natCast, map_natCast] at hzero
   exact ((isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)).map
-    toRes).ne_zero ((map_natCast toRes p).trans hzero)
+    toRes).ne_zero ((map_natCast toRes p).trans (by rwa [map_natCast, map_natCast] at hzero))
 
 /-- The canonical inclusion `ℤ_[p] →+* Γ(Spec ℚ_[p], ⊤)` is not continuous on affine opens. -/
 example :

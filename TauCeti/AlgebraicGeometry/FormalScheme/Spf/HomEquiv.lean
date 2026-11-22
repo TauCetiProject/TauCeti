@@ -64,14 +64,9 @@ theorem stalkResidueFieldEquiv_Γevaluation_topSectionsIso_inv (p : carrier A) (
   have := (IsAdicRing.ideal_spec A).2.2
   let u : BasicNeighbourhood p :=
     ⟨1, by simpa using (Ideal.ne_top_iff_one _).mp (p : PrimeSpectrum A).isPrime.ne_top⟩
-  have hsec : (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1
-        (IsAdicRing.ideal_spec A).1 u.elem).inv (algebraMap A _ a) =
-      (Spf A).presheaf.map (homOfLE (le_top : basicOpen u.elem ≤ ⊤)).op
-        ((topSectionsIso A).inv a) :=
-    ConcreteCategory.congr_hom (algebraMap_comp_basicOpenSectionsIso_inv u.elem) a
-  -- Unfold `Γevaluation` to `residue ∘ germ` so `germ_res_apply` applies.
-  rw [← stalkResidueFieldEquiv_residue_germ u a, hsec]
-  erw [TopCat.Presheaf.germ_res_apply (Spf A).presheaf
+  rw [← stalkResidueFieldEquiv_residue_germ u a]
+  erw [ConcreteCategory.congr_hom (algebraMap_comp_basicOpenSectionsIso_inv u.elem) a,
+    TopCat.Presheaf.germ_res_apply (Spf A).presheaf
     (homOfLE (le_top : basicOpen u.elem ≤ ⊤)) p (mem_basicOpen.mpr u.notMem)]; rfl
 
 /-- The global section attached to `a ∈ A` vanishes in the residue field of `Spf A` at `p` if and
@@ -170,15 +165,12 @@ private theorem res_c_app_basicOpen_eq_map_sectionsHom (g : Spf B ⟶ Spf A) (a 
       (op (basicOpen a)) := by
   obtain ⟨-, hIB, _⟩ := IsAdicRing.ideal_spec B
   let m := map (sectionsHom g) (continuous_sectionsHom g)
-  have htop : (g.c.app (op ⊤) : (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤)) =
-      m.c.app (op ⊤) := (cancel_mono (globalSectionsIso hIB).hom).mp <|
-    (c_app_top_comp_topSectionsIso_hom g).trans (map_globalSections _ _).symm
-  -- Rewrite via `g.c.naturality`, `Presheaf.map_comp`, and `htop` (`erw` unfolds `pushforward`).
+  -- Rewrite via naturality, `Presheaf.map_comp`, and `map_globalSections`.
   erw [← Category.assoc, g.c.naturality (homOfLE (le_top : basicOpen a ≤ ⊤)).op, Category.assoc,
     ← (Spf B).presheaf.map_comp, show ((Opens.map g.base).map (homOfLE (le_top :
-      basicOpen a ≤ ⊤))).op ≫ (eqToHom (congrArg (fun f ↦ (Opens.map f).obj (basicOpen a))
-      (base_eq_map_sectionsHom g).symm)).op = ((Opens.map m.base).map (homOfLE le_top)).op from
-      Quiver.Hom.unop_inj (Subsingleton.elim _ _), htop]
+      basicOpen a ≤ ⊤))).op ≫ (eqToHom _).op = ((Opens.map m.base).map (homOfLE le_top)).op from
+      Quiver.Hom.unop_inj (Subsingleton.elim _ _), (cancel_mono (globalSectionsIso hIB).hom).mp <|
+      (c_app_top_comp_topSectionsIso_hom g).trans (map_globalSections _ _).symm]
   exact (m.c.naturality (homOfLE le_top).op).symm
 
 private theorem exists_pow_map_quotient_eq_bot_of_map (φ : A →+* B) (hφ : Continuous φ)
@@ -197,10 +189,9 @@ private theorem exists_pow_map_quotient_eq_bot_of_map (φ : A →+* B) (hφ : Co
         (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map (homOfLE le_top).op := by
     -- Unfold `topSectionsIso`/`(Spf B).presheaf` to `globalSectionsIso`/`structureSheaf`.
     erw [← Category.assoc, show (topSectionsIso A).inv ≫ ((map φ hφ).c.app (op ⊤) :
-        (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤)) = CommRingCat.ofHom φ ≫
-        (topSectionsIso B).inv from by
-        simpa only [sectionsHom_map] using topSectionsIso_inv_comp_c_app_top (map φ hφ),
-      Category.assoc, (quotientProjection hIB n).hom.naturality (homOfLE (le_top : W ≤ ⊤)).op,
+        _ ⟶ (Spf B).presheaf.obj (op ⊤)) = CommRingCat.ofHom φ ≫ (topSectionsIso B).inv from by
+        simpa using topSectionsIso_inv_comp_c_app_top (map φ hφ), Category.assoc,
+      (quotientProjection hIB n).hom.naturality (homOfLE (le_top : W ≤ ⊤)).op,
       globalSectionsIso_inv_comp_quotientProjection_assoc, ← Category.assoc,
       ← CommRingCat.ofHom_comp]
   rw [ConcreteCategory.congr_hom hcomp r, ConcreteCategory.comp_apply]
@@ -259,12 +250,9 @@ continuous homomorphism on global sections (EGA I, Ch. I, 10.2.2; Stacks Tag 0AH
 
 /-- Two morphisms `Spf B ⟶ Spf A` with the same induced global-section homomorphism are equal. -/
 theorem sectionsHom_injective : Function.Injective (sectionsHom (A := A) (B := B)) :=
-  fun g₁ g₂ h ↦ by
-    have hs : (⟨sectionsHom g₁, continuous_sectionsHom g₁⟩ : {φ : A →+* B // Continuous φ}) =
-        ⟨sectionsHom g₂, continuous_sectionsHom g₂⟩ := Subtype.ext h
-    exact (map_sectionsHom g₁).symm.trans <|
-      (congrArg (fun φ : {φ : A →+* B // Continuous φ} ↦ map φ.1 φ.2) hs).trans
-        (map_sectionsHom g₂)
+  fun g₁ g₂ h ↦ (map_sectionsHom g₁).symm.trans <| ((by
+    rintro _ _ _ _ rfl; rfl : ∀ φ₁ φ₂ h₁ h₂, φ₁ = φ₂ → map φ₁ h₁ = map φ₂ h₂)
+    _ _ _ _ h).trans (map_sectionsHom g₂)
 @[simp] theorem sectionsHom_id : sectionsHom (𝟙 (Spf A)) = RingHom.id A := by
   rw [← map_id, sectionsHom_map]
 @[simp] theorem sectionsHom_comp (f : Spf C ⟶ Spf B) (g : Spf B ⟶ Spf A) :
@@ -303,9 +291,7 @@ instance (R : isAdicRing.{u}.FullSubcategory) : IsAdicRing R.obj := R.property
 /-- `Spf.functor` is fully faithful (EGA I, Ch. I, 10.2.2; Stacks Tag 0AHY). -/
 noncomputable def fullyFaithfulFunctor : functor.{u}.FullyFaithful where
   preimage f := (ObjectProperty.homMk (homEquiv (f : Spf _ ⟶ Spf _))).op
-  map_preimage f := by
-    -- Unfold `functor.obj`/`functor.map` and `homEquiv` to `sectionsHom` for `map_sectionsHom`.
-    change map (sectionsHom (f : Spf _ ⟶ Spf _)) _ = _; exact map_sectionsHom _
+  map_preimage f := by change map (sectionsHom (f : Spf _ ⟶ Spf _)) _ = _; exact map_sectionsHom _
   preimage_map _ := Quiver.Hom.unop_inj <| ObjectProperty.hom_ext _ <| Subtype.ext (by simp)
 
 instance : functor.{u}.Full := fullyFaithfulFunctor.full
@@ -350,7 +336,7 @@ private theorem continuous_structureSheafMap_sectionsTopology (φ : A →+* B) (
   let _ : TopologicalSpace ((quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.obj (op W)) := ⊥
   exact (@Continuous.comp _ _ _ (sectionsTopology hIA U) ⊥ ⊥ _ _ continuous_bot
     (continuous_toQuotientSheaf_app hIA (is_ideal_adic_pow hIA m.succ_pos) U)).congr fun x ↦
-      (ConcreteCategory.congr_hom (congrArg (fun η ↦ η.hom.app (op U))
+      (ConcreteCategory.congr_hom (congrArg (·.hom.app (op U))
         (structureSheafMap_comp_quotientProjection φ hφ hIA hIB _ n hm)) x).symm
 
 private theorem continuous_structureSheafMap_quotientSectionsTopology (φ : A →+* B)
@@ -379,22 +365,21 @@ private theorem continuous_structureSheafMap_quotientSectionsTopology (φ : A �
   let _ := sectionsTopology hIB ((Opens.map fBase).obj (basicOpen a))
   have hVφ : V ⟨a, haU⟩ ≤ (Opens.map fBase).obj (basicOpen a) :=
     (le_of_eq (basicOpen_mul _ _)).trans (inf_le_right.trans (comap_basicOpen φ hφ a).ge)
-  have hc3 : @Continuous _ _ (sectionsTopology hIB ((Opens.map fBase).obj (basicOpen a)))
-      (quotientSectionsTopology hIB (V ⟨a, haU⟩)) ((structureSheaf hIB).obj.map (homOfLE hVφ).op) :=
-    (quotientSectionsTopology_basicOpen hIB _).symm ▸ sectionsTopology_restrict hIB hVφ
-  have hnat : (η.app (op U) : (structureSheaf hIA).obj.obj (op U) ⟶ _) ≫
-        (structureSheaf hIB).obj.map (homOfLE hb).op ≫
+  have hnat : (η.app (op U) : _ ⟶ _) ≫ (structureSheaf hIB).obj.map (homOfLE hb).op ≫
         (structureSheaf hIB).obj.map (homOfLE (hVle ⟨a, haU⟩)).op =
       (structureSheaf hIA).obj.map (homOfLE haU).op ≫ (η.app (op (basicOpen a)) : _ ⟶ _) ≫
         (structureSheaf hIB).obj.map (homOfLE hVφ).op := by
     rw [← (structureSheaf hIB).obj.map_comp, show (homOfLE hb).op ≫ (homOfLE (hVle _)).op =
         ((Opens.map fBase).map (homOfLE haU)).op ≫ (homOfLE hVφ).op from
-        Quiver.Hom.unop_inj (Subsingleton.elim _ _),
-      (structureSheaf hIB).obj.map_comp, ← Category.assoc]
+        Quiver.Hom.unop_inj (Subsingleton.elim _ _), (structureSheaf hIB).obj.map_comp,
+      ← Category.assoc]
     exact congrArg (· ≫ _) (η.naturality (homOfLE haU).op).symm
-  refine (hc3.comp ((continuous_structureSheafMap_sectionsTopology φ hφ (basicOpen a)).comp
-    (continuous_restrict_basicOpen_sectionsTopology hIA haU))).congr fun x ↦
-      (ConcreteCategory.congr_hom hnat x).symm
+  refine (((quotientSectionsTopology_basicOpen hIB _).symm ▸ sectionsTopology_restrict hIB
+    hVφ : @Continuous _ _ (sectionsTopology hIB ((Opens.map fBase).obj (basicOpen a)))
+      (quotientSectionsTopology hIB (V ⟨a, haU⟩)) _).comp
+    ((continuous_structureSheafMap_sectionsTopology φ hφ (basicOpen a)).comp
+      (continuous_restrict_basicOpen_sectionsTopology hIA haU))).congr fun x ↦
+    (ConcreteCategory.congr_hom hnat x).symm
 
 /-- Every morphism `g : Spf B ⟶ Spf A` is continuous on rings of sections over all opens `U`,
 equipped with `quotientSectionsTopology` (EGA I, Ch. I, 10.2.2 and 10.4.5). -/
@@ -403,10 +388,8 @@ theorem continuous_c_app (g : Spf B ⟶ Spf A) (U : Opens (Spf A)) :
       (quotientSectionsTopology (IsAdicRing.ideal_spec B).2.1 ((Opens.map g.base).obj U))
       ((g.c.app (op U) : (Spf A).presheaf.obj (op U) ⟶
         (Spf B).presheaf.obj (op ((Opens.map g.base).obj U)))) := by
-  have heq : g.toHom = {
-      base := TopCat.ofHom (comap (sectionsHom g) (continuous_sectionsHom g))
-      c := (structureSheafMap (sectionsHom g) (continuous_sectionsHom g)
-        (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec B).2.1).hom } :=
+  have heq : g.toHom = ⟨TopCat.ofHom (comap (sectionsHom g) (continuous_sectionsHom g)),
+      (structureSheafMap _ _ (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec B).2.1).hom⟩ :=
     (congrArg LocallyRingedSpace.Hom.toHom (map_sectionsHom g).symm).trans (map_toHom _ _)
   generalize g.toHom = f at heq ⊢; subst heq
   exact continuous_structureSheafMap_quotientSectionsTopology _ (continuous_sectionsHom g) U
