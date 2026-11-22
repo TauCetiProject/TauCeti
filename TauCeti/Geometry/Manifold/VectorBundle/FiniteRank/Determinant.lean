@@ -36,6 +36,37 @@ variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
   {EB HB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
   [TopologicalSpace HB] [ChartedSpace HB B] {I : ModelWithCorners 𝕜 EB HB} {n : ℕ∞ω}
 
+/-- The forward total-space map of `detExteriorPowerIso A hr` is `C^n` at every regularity. -/
+theorem contMDiff_totalSpaceMap_detExteriorPowerIso_hom (A : FiniteRankBundleCore 𝕜 B) {r : ℕ}
+    (hr : A.rank = r) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin A.det.rank → 𝕜))
+      (I.prod 𝓘(𝕜, Fin ((exteriorPower 𝕜 B r).obj A).rank → 𝕜)) n
+      (detExteriorPowerIso A hr).hom.totalSpaceMap :=
+  contMDiff_totalSpaceMap_of_fiberMap_eq (detExteriorPowerIso A hr).hom
+    ((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 hr).symm).toContinuousLinearMap
+    (fun x ↦ ContinuousLinearMap.ext fun u ↦ (topExteriorScalarEquiv 𝕜 hr).injective <|
+      (topExteriorScalarEquiv_fiberMap_detExteriorPowerIso_hom A hr x u).trans
+        ((topExteriorScalarEquiv 𝕜 hr).apply_symm_apply _).symm)
+    fun i j x _ _ ↦ coordChange_comp_detExteriorPower A hr i j x
+
+/-- The inverse total-space map of `detExteriorPowerIso A hr` is `C^n` at every regularity. -/
+theorem contMDiff_totalSpaceMap_detExteriorPowerIso_inv (A : FiniteRankBundleCore 𝕜 B) {r : ℕ}
+    (hr : A.rank = r) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin ((exteriorPower 𝕜 B r).obj A).rank → 𝕜))
+      (I.prod 𝓘(𝕜, Fin A.det.rank → 𝕜)) n
+      (detExteriorPowerIso A hr).inv.totalSpaceMap :=
+  let e : (Fin A.det.rank → 𝕜) ≃L[𝕜] Fin ((exteriorPower 𝕜 B r).obj A).rank → 𝕜 :=
+    (detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 hr).symm
+  contMDiff_totalSpaceMap_of_fiberMap_eq (detExteriorPowerIso A hr).inv
+    e.symm.toContinuousLinearMap
+    (fun x ↦ ContinuousLinearMap.ext fun w ↦ (detScalarEquiv A).injective <|
+      (detScalarEquiv_fiberMap_detExteriorPowerIso_inv A hr x w).trans
+        ((detScalarEquiv A).apply_symm_apply _).symm)
+    (coordChange_intertwines_symm (D := (exteriorPower 𝕜 B r).obj A)
+      (fun i ↦ (baseSet_det A i).trans rfl)
+      e
+      fun i j x _ _ ↦ coordChange_comp_detExteriorPower A hr i j x)
+
 /-- For `r = A.rank`, `detExteriorPowerIso A hr` induces a `C^n` diffeomorphism of total spaces
 between `A.det` and `(exteriorPower 𝕜 B r).obj A`. -/
 noncomputable def detExteriorPowerDiffeomorph (A : FiniteRankBundleCore 𝕜 B) {r : ℕ}
@@ -43,35 +74,20 @@ noncomputable def detExteriorPowerDiffeomorph (A : FiniteRankBundleCore 𝕜 B) 
     A.det.core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin A.det.rank → 𝕜),
       I.prod 𝓘(𝕜, Fin ((exteriorPower 𝕜 B r).obj A).rank → 𝕜)⟯
         ((exteriorPower 𝕜 B r).obj A).core.TotalSpace :=
-  constIsoDiffeomorph (A := A.det) (D := (exteriorPower 𝕜 B r).obj A)
-    (fun i ↦ (baseSet_det A i).trans (localTriv_baseSet_exteriorPower_obj r A i).symm)
-    ((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 hr).symm)
-    fun i j x _ _ ↦ coordChange_comp_detExteriorPower A hr i j x
+  isoToDiffeomorph (detExteriorPowerIso A hr)
+    (contMDiff_totalSpaceMap_detExteriorPowerIso_hom A hr)
+    (contMDiff_totalSpaceMap_detExteriorPowerIso_inv A hr)
 
 @[simp] theorem coe_detExteriorPowerDiffeomorph (A : FiniteRankBundleCore 𝕜 B) {r : ℕ}
     (hr : A.rank = r) :
-    ⇑(detExteriorPowerDiffeomorph A hr I n) = (detExteriorPowerIso A hr).hom.totalSpaceMap := by
-  rw [detExteriorPowerDiffeomorph, coe_constIsoDiffeomorph]
-  refine congrArg CoordinateHom.totalSpaceMap (hom_ext fun x ↦ ContinuousLinearMap.ext fun u ↦
-    (topExteriorScalarEquiv 𝕜 hr).injective ?_)
-  exact (congrArg (topExteriorScalarEquiv 𝕜 hr) (DFunLike.congr_fun
-    (fiberMap_constIso_hom (A := A.det) (D := (exteriorPower 𝕜 B r).obj A)
-      _ ((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 hr).symm) _ x) u)).trans
-    (((topExteriorScalarEquiv 𝕜 hr).apply_symm_apply _).trans
-      (topExteriorScalarEquiv_fiberMap_detExteriorPowerIso_hom A hr x u).symm)
+    ⇑(detExteriorPowerDiffeomorph A hr I n) = (detExteriorPowerIso A hr).hom.totalSpaceMap :=
+  coe_isoToDiffeomorph _ _ _
 
 @[simp] theorem coe_detExteriorPowerDiffeomorph_symm (A : FiniteRankBundleCore 𝕜 B) {r : ℕ}
     (hr : A.rank = r) :
     ⇑(detExteriorPowerDiffeomorph A hr I n).symm =
-      (detExteriorPowerIso A hr).inv.totalSpaceMap := by
-  rw [detExteriorPowerDiffeomorph, coe_constIsoDiffeomorph_symm]
-  refine congrArg CoordinateHom.totalSpaceMap (hom_ext fun x ↦ ContinuousLinearMap.ext fun w ↦
-    (detScalarEquiv A).injective ?_)
-  exact (congrArg (detScalarEquiv A) (DFunLike.congr_fun
-    (fiberMap_constIso_inv (A := A.det) (D := (exteriorPower 𝕜 B r).obj A)
-      _ ((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 hr).symm) _ x) w)).trans
-    (((detScalarEquiv A).apply_symm_apply _).trans
-      (detScalarEquiv_fiberMap_detExteriorPowerIso_inv A hr x w).symm)
+      (detExteriorPowerIso A hr).inv.totalSpaceMap :=
+  coe_isoToDiffeomorph_symm _ _ _
 
 /-- A bundle map between `C^n` cores of rank `r` with `C^n` total-space map induces a `C^n`
 total-space map on determinant line cores. -/
@@ -103,39 +119,52 @@ variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [T
   {EB HB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
   [TopologicalSpace HB] [ChartedSpace HB B] {I : ModelWithCorners 𝕜 EB HB} {n : ℕ∞ω}
 
+/-- Over a complete scalar field, the forward total-space map of `dualDetIso A` is `C^n` at
+every regularity. -/
+theorem contMDiff_totalSpaceMap_dualDetIso_hom (A : FiniteRankBundleCore 𝕜 B) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin A.dual.det.rank → 𝕜))
+      (I.prod 𝓘(𝕜, Fin A.det.dual.rank → 𝕜)) n (dualDetIso A).hom.totalSpaceMap :=
+  contMDiff_totalSpaceMap_of_fiberMap_eq (dualDetIso A).hom
+    ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm).toContinuousLinearMap
+    (fun x ↦ ContinuousLinearMap.ext fun u ↦ (detScalarEquiv A).injective <|
+      (detScalarEquiv_fiberMap_dualDetIso_hom A x u).trans
+        ((detScalarEquiv A).apply_symm_apply _).symm)
+    fun i j x _ _ ↦ coordChange_comp_dualDet A i j x
+
+/-- Over a complete scalar field, the inverse total-space map of `dualDetIso A` is `C^n` at
+every regularity. -/
+theorem contMDiff_totalSpaceMap_dualDetIso_inv (A : FiniteRankBundleCore 𝕜 B) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin A.det.dual.rank → 𝕜))
+      (I.prod 𝓘(𝕜, Fin A.dual.det.rank → 𝕜)) n (dualDetIso A).inv.totalSpaceMap :=
+  let e : (Fin A.dual.det.rank → 𝕜) ≃L[𝕜] Fin A.det.dual.rank → 𝕜 :=
+    (detScalarEquiv A.dual).trans (detScalarEquiv A).symm
+  contMDiff_totalSpaceMap_of_fiberMap_eq (dualDetIso A).inv
+    e.symm.toContinuousLinearMap
+    (fun x ↦ ContinuousLinearMap.ext fun u ↦ (detScalarEquiv A.dual).injective <|
+      (detScalarEquiv_fiberMap_dualDetIso_inv A x u).trans
+        ((detScalarEquiv A.dual).apply_symm_apply _).symm)
+    (coordChange_intertwines_symm (D := A.det.dual)
+      (fun i ↦ (baseSet_det A.dual i).trans (baseSet_det A i).symm)
+      e
+      fun i j x _ _ ↦ coordChange_comp_dualDet A i j x)
+
 /-- Over a complete scalar field, `(A.dual).det` and `(A.det).dual` are `C^n` diffeomorphic on
 total spaces, upgrading `dualDetIso A` without smoothness assumptions on `A`. -/
 noncomputable def dualDetDiffeomorph (A : FiniteRankBundleCore 𝕜 B)
     (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) :
     A.dual.det.core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin A.dual.det.rank → 𝕜),
       I.prod 𝓘(𝕜, Fin A.det.dual.rank → 𝕜)⟯ A.det.dual.core.TotalSpace :=
-  constIsoDiffeomorph (A := A.dual.det) (D := A.det.dual)
-    (fun i ↦ (baseSet_det A.dual i).trans ((localTriv_baseSet_dual A i).trans
-      ((baseSet_det A i).symm.trans (localTriv_baseSet_dual A.det i).symm)))
-    ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm)
-    fun i j x _ _ ↦ coordChange_comp_dualDet A i j x
+  isoToDiffeomorph (dualDetIso A)
+    (contMDiff_totalSpaceMap_dualDetIso_hom A)
+    (contMDiff_totalSpaceMap_dualDetIso_inv A)
 
 @[simp] theorem coe_dualDetDiffeomorph (A : FiniteRankBundleCore 𝕜 B) :
-    ⇑(dualDetDiffeomorph A I n) = (dualDetIso A).hom.totalSpaceMap := by
-  rw [dualDetDiffeomorph, coe_constIsoDiffeomorph]
-  refine congrArg CoordinateHom.totalSpaceMap (hom_ext fun x ↦ ContinuousLinearMap.ext fun u ↦
-    (detScalarEquiv A).injective ?_)
-  exact (congrArg (detScalarEquiv A)
-    (DFunLike.congr_fun (fiberMap_constIso_hom (A := A.dual.det) (D := A.det.dual)
-      _ ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm) _ x) u)).trans
-    (((detScalarEquiv A).apply_symm_apply _).trans
-      (detScalarEquiv_fiberMap_dualDetIso_hom A x u).symm)
+    ⇑(dualDetDiffeomorph A I n) = (dualDetIso A).hom.totalSpaceMap :=
+  coe_isoToDiffeomorph _ _ _
 
 @[simp] theorem coe_dualDetDiffeomorph_symm (A : FiniteRankBundleCore 𝕜 B) :
-    ⇑(dualDetDiffeomorph A I n).symm = (dualDetIso A).inv.totalSpaceMap := by
-  rw [dualDetDiffeomorph, coe_constIsoDiffeomorph_symm]
-  refine congrArg CoordinateHom.totalSpaceMap (hom_ext fun x ↦ ContinuousLinearMap.ext fun u ↦
-    (detScalarEquiv A.dual).injective ?_)
-  exact (congrArg (detScalarEquiv A.dual)
-    (DFunLike.congr_fun (fiberMap_constIso_inv (A := A.dual.det) (D := A.det.dual)
-      _ ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm) _ x) u)).trans
-    (((detScalarEquiv A.dual).apply_symm_apply _).trans
-      (detScalarEquiv_fiberMap_dualDetIso_inv A x u).symm)
+    ⇑(dualDetDiffeomorph A I n).symm = (dualDetIso A).inv.totalSpaceMap :=
+  coe_isoToDiffeomorph_symm _ _ _
 
 /-- Reading `A.dual.det` vectors as top-degree continuous alternating forms on `A.core.Fiber` is
 `C^n` on total spaces at every regularity `n`, without smoothness or characteristic assumptions. -/

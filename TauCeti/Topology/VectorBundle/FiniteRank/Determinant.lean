@@ -197,6 +197,36 @@ theorem detScalarEquiv_fiberMap_detMap (r : ℕ) {A D : FiniteRankBundleCore �
   exact (topExteriorScalarEquiv_exteriorPowerCoords_self (f.fiberMap x) _).trans
     (congrArg _ (topExteriorScalarEquiv_fiberMap_detExteriorPowerIso_hom _ _ _ _))
 
+/-- If `f.fiberMap x` acts in normalized `Fin r → 𝕜` coordinates as `T`, then on scalar
+coordinates `detMap r f hA hD` multiplies by `T.det`. -/
+theorem detScalarEquiv_fiberMap_detMap_of_apply (r : ℕ) {A D : FiniteRankBundleCore 𝕜 B}
+    (f : A ⟶ D) (hA : A.rank = r) (hD : D.rank = r) (x : B)
+    (T : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜))
+    (hT : ∀ (v : Fin r → 𝕜) (i : Fin r),
+      f.fiberMap x (fun j ↦ v (Fin.cast hA j)) (Fin.cast hD.symm i) = T v i)
+    (u : Fin A.det.rank → 𝕜) :
+    detScalarEquiv D ((detMap r f hA hD).fiberMap x u) =
+      T.det * detScalarEquiv A u := by
+  rw [detScalarEquiv_fiberMap_detMap]
+  rcases A with ⟨nA, cA, hcA⟩
+  rcases D with ⟨nD, cD, hcD⟩
+  dsimp only at hA hD
+  subst hA hD
+  congr 2
+  ext v i
+  exact hT v i
+
+/-- If `f.fiberMap x` acts as the coordinate identity after rank-cast normalization, then
+`detMap r f hA hD` preserves scalar coordinates. -/
+theorem detScalarEquiv_fiberMap_detMap_of_apply_id (r : ℕ) {A D : FiniteRankBundleCore 𝕜 B}
+    (f : A ⟶ D) (hA : A.rank = r) (hD : D.rank = r) (x : B)
+    (hf : ∀ (v : Fin r → 𝕜) (i : Fin r),
+      f.fiberMap x (fun j ↦ v (Fin.cast hA j)) (Fin.cast hD.symm i) = v i)
+    (u : Fin A.det.rank → 𝕜) :
+    detScalarEquiv D ((detMap r f hA hD).fiberMap x u) = detScalarEquiv A u := by
+  rw [detScalarEquiv_fiberMap_detMap_of_apply r f hA hD x (ContinuousLinearMap.id 𝕜 (Fin r → 𝕜))
+    hf u, ContinuousLinearMap.det_id, one_mul]
+
 /-- An isomorphism `e : A ≅ D` between cores of rank `r` induces an isomorphism `A.det ≅ D.det`. -/
 noncomputable def detIso (r : ℕ) {A D : FiniteRankBundleCore 𝕜 B}
     (e : A ≅ D) (hA : A.rank = r) (hD : D.rank = r) : A.det ≅ D.det :=
@@ -237,8 +267,10 @@ theorem detScalarEquiv_fiberMap_ofLinearEquivChangeIso_hom (x : B)
           (rank_ofLinearEquiv e₁ V) (rank_ofLinearEquiv e₂ V)).hom.fiberMap x u) =
       (e₁.symm.trans e₂ : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)).det *
         detScalarEquiv (ofLinearEquiv e₁ V) u := by
-  rw [detIso_hom, detScalarEquiv_fiberMap_detMap, fiberMap_ofLinearEquivChangeIso_hom]
-  congr 2
+  rw [detIso_hom]
+  exact detScalarEquiv_fiberMap_detMap_of_apply r (ofLinearEquivChangeIso e₁ e₂ V).hom
+    (rank_ofLinearEquiv e₁ V) (rank_ofLinearEquiv e₂ V) x (e₁.symm.trans e₂)
+    (fun v i ↦ by rw [fiberMap_ofLinearEquivChangeIso_hom]; rfl) u
 
 /-- On determinant line cores, the inverse map of `ofLinearEquivChangeIso e₁ e₂ V` multiplies scalar
 coordinates by the determinant of `e₂.symm.trans e₁`. -/
@@ -249,8 +281,10 @@ theorem detScalarEquiv_fiberMap_ofLinearEquivChangeIso_inv (x : B)
           (rank_ofLinearEquiv e₁ V) (rank_ofLinearEquiv e₂ V)).inv.fiberMap x u) =
       (e₂.symm.trans e₁ : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)).det *
         detScalarEquiv (ofLinearEquiv e₂ V) u := by
-  rw [detIso_inv, detScalarEquiv_fiberMap_detMap, fiberMap_ofLinearEquivChangeIso_inv]
-  congr 2
+  rw [detIso_inv]
+  exact detScalarEquiv_fiberMap_detMap_of_apply r (ofLinearEquivChangeIso e₁ e₂ V).inv
+    (rank_ofLinearEquiv e₂ V) (rank_ofLinearEquiv e₁ V) x (e₂.symm.trans e₁)
+    (fun v i ↦ by rw [fiberMap_ofLinearEquivChangeIso_inv]; rfl) u
 
 end OfLinearEquiv
 

@@ -444,6 +444,24 @@ def constIso (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
     (constIso hbase e he).inv.fiberMap x = e.symm := by
   simp only [constIso, fiberMap_constHom]
 
+/-- The forward morphism of `constIso hbase e he` is `constHom` with operator `e`. -/
+theorem constIso_hom (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
+        (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
+    (constIso hbase e he).hom = constHom (fun i => (hbase i).le) e he := (rfl)
+
+/-- The inverse morphism of `constIso hbase e he` is `constHom` with operator `e.symm`. -/
+theorem constIso_inv (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
+        (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
+    (constIso hbase e he).inv =
+      constHom (fun i => (hbase i).ge) e.symm.toContinuousLinearMap
+        (coordChange_intertwines_symm hbase e he) := (rfl)
+
 section IsoTrivial
 
 variable (A : FiniteRankBundleCore 𝕜 B) {r : ℕ}

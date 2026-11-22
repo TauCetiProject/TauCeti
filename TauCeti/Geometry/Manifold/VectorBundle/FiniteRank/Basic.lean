@@ -181,6 +181,20 @@ instance isContMDiff_trivial (r : ℕ) : (trivial 𝕜 B r).core.IsContMDiff I n
 
 variable {A D : FiniteRankBundleCore 𝕜 B}
 
+/-- A morphism `a : A ⟶ D` whose fibre maps equal a fixed continuous linear map `T`
+intertwining transitions on `A`'s chart domains glues to a `C^n` map of total spaces, without
+smoothness assumptions on the base or cores. -/
+theorem contMDiff_totalSpaceMap_of_fiberMap_eq
+    (a : A ⟶ D) (T : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
+    (ha : ∀ x, a.fiberMap x = T)
+    (hT : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      T.comp (A.core.coordChange i j x) = (D.core.coordChange i j x).comp T) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
+      a.totalSpaceMap :=
+  contMDiff_totalSpaceMap_of_mem_baseSet a T fun x b hb v ↦ by
+    rw [ha x]
+    exact (DFunLike.congr_fun (hT x b x (A.mem_baseSet_self x) hb) v).symm
+
 /-- A constant operator intertwining the transitions of cores defines a `C^n` map of total
 spaces, without smoothness assumptions on the base or cores. The source chart domains need only
 lie in the corresponding target domains. -/
@@ -191,9 +205,33 @@ theorem contMDiff_totalSpaceMap_constHom
       T.comp (A.core.coordChange i j x) = (D.core.coordChange i j x).comp T) :
     ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
       (constHom hbase T hT).totalSpaceMap :=
-  contMDiff_totalSpaceMap_of_mem_baseSet (constHom hbase T hT) T fun x b hb v ↦ by
-    rw [fiberMap_constHom]
-    exact (DFunLike.congr_fun (hT x b x (A.mem_baseSet_self x) hb) v).symm
+  contMDiff_totalSpaceMap_of_fiberMap_eq (constHom hbase T hT) T (fiberMap_constHom hbase T hT) hT
+
+/-- The forward total-space map of `constIso hbase e he` is `C^n` at every regularity. -/
+theorem contMDiff_totalSpaceMap_constIso_hom
+    (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
+        (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
+      (constIso hbase e he).hom.totalSpaceMap := by
+  rw [constIso_hom]
+  exact contMDiff_totalSpaceMap_constHom (I := I) (n := n) (fun i ↦ (hbase i).le)
+    e.toContinuousLinearMap he
+
+/-- The inverse total-space map of `constIso hbase e he` is `C^n` at every regularity. -/
+theorem contMDiff_totalSpaceMap_constIso_inv
+    (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
+        (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
+      (constIso hbase e he).inv.totalSpaceMap := by
+  rw [constIso_inv]
+  exact contMDiff_totalSpaceMap_constHom (I := I) (n := n) (fun i ↦ (hbase i).ge)
+    e.symm.toContinuousLinearMap (coordChange_intertwines_symm hbase e he)
 
 /-- A fixed continuous linear equivalence intertwining transition functions induces a `C^n` bundle
 equivalence over the identity, using the existing core total spaces, without smoothness
@@ -209,19 +247,8 @@ noncomputable def constIsoDiffeomorph
   CoordinateHom.toDiffeomorphOfInv
     (constIso hbase e he).hom (constIso hbase e he).inv
     (constIso hbase e he).hom_inv_id (constIso hbase e he).inv_hom_id
-    (by
-      rw [show (constIso hbase e he).hom =
-          constHom (fun i ↦ (hbase i).le) e.toContinuousLinearMap he from
-        hom_ext fun x ↦ by rw [fiberMap_constIso_hom, fiberMap_constHom]]
-      exact contMDiff_totalSpaceMap_constHom (I := I) (n := n) (fun i ↦ (hbase i).le)
-        e.toContinuousLinearMap he)
-    (by
-      rw [show (constIso hbase e he).inv =
-          constHom (fun i ↦ (hbase i).ge) e.symm.toContinuousLinearMap
-            (coordChange_intertwines_symm hbase e he) from
-        hom_ext fun x ↦ by rw [fiberMap_constIso_inv, fiberMap_constHom]]
-      exact contMDiff_totalSpaceMap_constHom (I := I) (n := n) (fun i ↦ (hbase i).ge)
-        e.symm.toContinuousLinearMap (coordChange_intertwines_symm hbase e he))
+    (contMDiff_totalSpaceMap_constIso_hom hbase e he)
+    (contMDiff_totalSpaceMap_constIso_inv hbase e he)
 
 /-- The smooth comparison is the original constant core isomorphism on total spaces. -/
 @[simp]
