@@ -85,28 +85,7 @@ end Lower
 section Derivatives
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℝ F] {a b : ℝ} {hab : a < b} {u : ParabolicC2HolderSpace α E F hab}
-
-/-- A parabolic Hölder map of order `j + 1` with the same values as `u` has the same spatial
-gradient. -/
-private theorem spatialFDerivL_eq_of_coe_eq {j : ℕ} {U : ParabolicCkHolderSpace (j + 1) α E F hab}
-    (hU : ⇑U = ⇑u) (p : slab (E := E) a b) :
-    ParabolicCkHolderSpace.spatialFDerivL j α E F hab U p = spatialFDerivL u p := by
-  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
-  have h := U.hasSpatialFDerivAt t x
-  rw [hU] at h
-  exact h.unique (u.hasSpatialFDerivAt t x)
-
-/-- A parabolic Hölder map of order `j + 1` with the values of the spatial gradient of `u` has the
-spatial Hessian of `u` as its spatial gradient. -/
-private theorem spatialFDerivL_eq_spatialSecondFDerivL {j : ℕ}
-    {W : ParabolicCkHolderSpace (j + 1) α E (E →L[ℝ] F) hab} (hW : ∀ p, W p = spatialFDerivL u p)
-    (p : slab (E := E) a b) :
-    ParabolicCkHolderSpace.spatialFDerivL j α E (E →L[ℝ] F) hab W p = spatialSecondFDerivL u p := by
-  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
-  have h := W.hasSpatialFDerivAt t x
-  simp only [hW] at h
-  exact h.unique (u.hasSpatialSecondFDerivAt t x)
+  [NormedSpace ℝ F] {a b : ℝ} {hab : a < b}
 
 /-- The directional derivative of a coefficient of order `k + 1` along `e` is a coefficient of
 order `k`. -/
@@ -228,12 +207,13 @@ private theorem exists_apply_eq_spatialFDerivL_apply (hα₀ : 0 < α) (hα₁ :
   obtain ⟨C', hC'⟩ := hc'k
   obtain ⟨F', hF'⟩ := hf'k
   obtain ⟨U₀, hU₀⟩ := ParabolicCkHolderSpace.exists_coe_eq_of_le hα₁.le (by omega : k ≤ k + 2) U
-  have hW₁ := spatialFDerivL_eq_of_coe_eq hU
+  have hW₁ := ParabolicCkHolderSpace.spatialFDerivL_eq_of_coe_eq hU
   obtain ⟨Z, hZ⟩ := exists_apply_eq_add_sum hα₁.le A' B' C' F' U₀
     (ParabolicCkHolderSpace.spatialFDerivL (k + 1) α _ ℝ hT U)
   have hZf : ⇑Z = ⇑(f' + spatialOperatorL hα₁.le (euclideanSecondOrderCoeff a')
       (euclideanFirstOrderCoeff b') (euclideanZerothOrderCoeff c') u) := funext fun p ↦ by
-    rw [hZ, hW₁, spatialFDerivL_eq_spatialSecondFDerivL hW₁, congrFun hU₀, congrFun hU]
+    rw [hZ, hW₁, ParabolicCkHolderSpace.spatialFDerivL_eq_spatialSecondFDerivL hW₁, congrFun hU₀,
+      congrFun hU]
     simp [hA', hB', hC', hF']
   obtain ⟨V, hV⟩ := ih _ g' ⟨Z, hZf⟩ hg'k
   exact ⟨V, fun p ↦ (congrFun hV p).trans (hsol p)⟩
@@ -288,7 +268,7 @@ private theorem exists_coe_eq_succ (hα₀ : 0 < α) (hα₁ : α < 1) {k : ℕ}
         (hα₁ := hα₁) (hT := hT) (a := a) (b := b) (c := c) (ha := ha) (f, g))
     simp only [euclideanParabolicOperatorL_apply] at hP
     rw [hH, ParabolicCkHolderSpace.inclusionL_apply, hGr,
-      spatialFDerivL_eq_spatialSecondFDerivL hGr, congrFun hU]
+      ParabolicCkHolderSpace.spatialFDerivL_eq_spatialSecondFDerivL hGr, congrFun hU]
     simp only [hA, hB, hC, hF]
     linarith
   have hval : ⇑(valueL u) = ⇑u := funext (valueL_apply u)

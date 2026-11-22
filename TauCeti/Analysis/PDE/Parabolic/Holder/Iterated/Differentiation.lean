@@ -441,6 +441,28 @@ theorem norm_spatialFDerivL_le (u : ParabolicCkHolderSpace (k + 1) α E F hab) :
     ‖spatialFDerivL k α E F hab u‖ ≤ ‖u‖ :=
   norm_spatialFDeriv_le u
 
+/-- An element of `C_{par,b}^{(k+1)+α}` with the same values as `v : C_b^{2+α,1+α/2}` has the same
+spatial gradient. -/
+theorem spatialFDerivL_eq_of_coe_eq {u : ParabolicCkHolderSpace (k + 1) α E F hab}
+    {v : ParabolicC2HolderSpace α E F hab} (hu : ⇑u = ⇑v) (p : slab (E := E) a b) :
+    spatialFDerivL k α E F hab u p = ParabolicC2HolderSpace.spatialFDerivL v p := by
+  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+  have h := u.hasSpatialFDerivAt t x
+  rw [hu] at h
+  exact h.unique (v.hasSpatialFDerivAt t x)
+
+/-- An element of `C_{par,b}^{(k+1)+α}` with the values of the spatial gradient of
+`v : C_b^{2+α,1+α/2}` has the spatial Hessian of `v` as its spatial gradient. -/
+theorem spatialFDerivL_eq_spatialSecondFDerivL
+    {w : ParabolicCkHolderSpace (k + 1) α E (E →L[ℝ] F) hab}
+    {v : ParabolicC2HolderSpace α E F hab}
+    (hw : ∀ p, w p = ParabolicC2HolderSpace.spatialFDerivL v p) (p : slab (E := E) a b) :
+    spatialFDerivL k α E (E →L[ℝ] F) hab w p = ParabolicC2HolderSpace.spatialSecondFDerivL v p := by
+  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+  have h := w.hasSpatialFDerivAt t x
+  simp only [hw] at h
+  exact h.unique (v.hasSpatialSecondFDerivAt t x)
+
 /-- **The spatial and time derivatives commute**: `∂ₜ (D_x u) = D_x (∂ₜu)` for
 `u ∈ C_{par,b}^{(k+3)+α}`. -/
 theorem timeDerivL_spatialFDerivL (u : ParabolicCkHolderSpace (k + 3) α E F hab) :
