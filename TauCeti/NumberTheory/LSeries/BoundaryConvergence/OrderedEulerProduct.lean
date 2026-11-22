@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.NumberTheory.PrimeCounting
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
-import TauCeti.NumberTheory.Chebyshev.CofinalCutoff
+import TauCeti.NumberTheory.Mertens.CofinalCutoff
 import TauCeti.NumberTheory.PrimeCounting
 import TauCeti.NumberTheory.SumPrimePow
 
