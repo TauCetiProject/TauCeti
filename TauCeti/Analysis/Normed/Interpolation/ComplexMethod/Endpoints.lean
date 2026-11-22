@@ -24,7 +24,7 @@ using symmetry (`ComplexMethodSpace.swap`).
 
 public noncomputable section
 
-open Complex Complex.HadamardThreeLines Set
+open Complex Complex.HadamardThreeLines Set TauCeti.Complex.HadamardThreeLines
 open scoped ZeroAtInfty
 
 namespace TauCeti.CompatibleCouple.ComplexMethodSpace
@@ -33,6 +33,71 @@ variable {X₀ X₁ V : Type*}
   [NormedAddCommGroup X₀] [NormedSpace ℂ X₀] [NormedAddCommGroup X₁] [NormedSpace ℂ X₁]
   [AddCommGroup V] [Module ℂ V] [TopologicalSpace V] [ContinuousAdd V] [T1Space V]
   {C : CompatibleCouple ℂ X₀ X₁ V}
+
+/-- Multiplying an admissible trace pair by a bounded `DiffContOnCl` scalar function `c` on the
+open unit strip produces an admissible trace pair whose boundary traces are `c • g` on the two
+vertical lines and whose quotient class at `θ ∈ [0, 1]` is `c θ • mk θ g`. -/
+theorem exists_stripTraces_smul_of_diffContOnCl (g : C.stripTraces) {c : ℂ → ℂ}
+    (hc : DiffContOnCl ℂ c (verticalStrip 0 1)) {K : ℝ}
+    (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K) :
+    ∃ g' : C.stripTraces,
+      (∀ t : ℝ, (g' : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 t =
+        c (t * I) • (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 t) ∧
+      (∀ t : ℝ, (g' : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 t =
+        c (1 + t * I) • (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 t) ∧
+      ∀ ⦃θ : ℝ⦄, θ ∈ Icc 0 1 → mk θ g' = c θ • mk θ g := by
+  have hcl {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) : z ∈ closure (verticalStrip 0 1) := by
+    rw [verticalStrip, closure_preimage_re, closure_Ioo zero_ne_one]
+    exact hz
+  have hT : IsBoundedAnalyticFamily
+      (fun z => c z • ContinuousLinearMap.id ℂ C.SumSpace)
+      (fun t => c (t * I) • ContinuousLinearMap.id ℂ X₀)
+      (fun t => c (1 + t * I) • ContinuousLinearMap.id ℂ X₁) :=
+    { differentiableOn :=
+        (ContinuousLinearMap.toSpanSingleton ℂ (ContinuousLinearMap.id ℂ C.SumSpace)).differentiable
+          |>.comp_differentiableOn hc.differentiableOn
+      continuousOn_apply := fun _ =>
+        (hc.continuousOn.mono fun _ => hcl).smul continuousOn_const
+      exists_norm_le := ⟨max K 0, fun z hz =>
+        ContinuousLinearMap.opNorm_le_bound _ (le_max_right K 0) fun x => by
+          simpa [norm_smul] using mul_le_mul_of_nonneg_right
+            ((hK z hz).trans (le_max_left _ _)) (norm_nonneg x)⟩
+      continuous_fst := fun _ =>
+        (hc.continuousOn.comp_continuous (by fun_prop) fun t =>
+          hcl (by simp [verticalClosedStrip])).smul continuous_const
+      continuous_snd := fun _ =>
+        (hc.continuousOn.comp_continuous (by fun_prop) fun t =>
+          hcl (by simp [verticalClosedStrip])).smul continuous_const
+      exists_norm_fst_le := ⟨max K 0, fun t =>
+        ContinuousLinearMap.opNorm_le_bound _ (le_max_right K 0) fun x => by
+          simpa [norm_smul] using mul_le_mul_of_nonneg_right
+            ((hK _ (by simp [verticalClosedStrip])).trans (le_max_left _ _)) (norm_nonneg x)⟩
+      exists_norm_snd_le := ⟨max K 0, fun t =>
+        ContinuousLinearMap.opNorm_le_bound _ (le_max_right K 0) fun x => by
+          simpa [norm_smul] using mul_le_mul_of_nonneg_right
+            ((hK _ (by simp [verticalClosedStrip])).trans (le_max_left _ _)) (norm_nonneg x)⟩
+      apply_mul_I := fun _ _ => by simp
+      apply_one_add_mul_I := fun _ _ => by simp }
+  refine ⟨hT.stripTracesMap g,
+    fun t => by simp,
+    fun t => by simp,
+    fun θ _ => toSum_injective ?_⟩
+  rw [toSum_mk, map_smul, toSum_mk, hT.stripEval_stripTracesMap]
+  simp
+
+/-- Multiplying an admissible trace pair by a bounded holomorphic scalar function `c` on the strip
+scales `mk θ g` by `c θ` and bounds its norm by the boundary suprema of `c • g`. -/
+theorem norm_smul_mk_le_of_diffContOnCl {θ : ℝ} (hθ : θ ∈ Icc 0 1) (g : C.stripTraces)
+    {c : ℂ → ℂ} (hc : DiffContOnCl ℂ c (verticalStrip 0 1))
+    {K B : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K) (hB : 0 ≤ B)
+    (hb₀ : ∀ t : ℝ, ‖c (t * I) • g.val.1 t‖ ≤ B)
+    (hb₁ : ∀ t : ℝ, ‖c (1 + t * I) • g.val.2 t‖ ≤ B) :
+    ‖c θ‖ * ‖mk θ g‖ ≤ B := by
+  obtain ⟨g', hg₀', hg₁', heq⟩ := exists_stripTraces_smul_of_diffContOnCl g hc hK
+  rw [← norm_smul, ← heq hθ]
+  refine ((norm_mk_le g').trans_eq (Submodule.norm_coe g').symm).trans (max_le ?_ ?_)
+  · exact (ZeroAtInftyContinuousMap.norm_le hB).2 fun t => by rw [hg₀']; exact hb₀ t
+  · exact (ZeroAtInftyContinuousMap.norm_le hB).2 fun t => by rw [hg₁']; exact hb₁ t
 
 private theorem exp_neg_mul_norm_le {E : Type*} [NormedAddCommGroup E] {x y : ℝ} {f : C₀(ℝ, E)}
     {ε : ℝ} (hx : 0 < x) (hy : x ≤ y) (hε : 0 < ε) (hA : 2 * ‖f‖ / ε < x) (t : ℝ) :

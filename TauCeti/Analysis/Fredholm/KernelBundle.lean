@@ -64,7 +64,7 @@ theorem IsFredholm.exists_stabilization_kernel_vectorBundle (hT₀ : IsFredholm 
           ∃ U : Set X, IsOpen U ∧ x₀ ∈ U ∧
             ∃ h : ∀ x : U, (((T x).coprod S.subtypeL).prod q).IsInvertible,
               letI := TauCeti.kernelFiberBundle
-                ((hT.comp continuous_subtype_val).continuousLinearMapCoprod continuous_const) h
+                ((hT.comp continuous_subtypeVal).continuousLinearMapCoprod continuous_const) h
               VectorBundle 𝕜 ((T x₀).coprod S.subtypeL).ker
                 (fun x : U ↦ ((T x).coprod S.subtypeL).ker) := by
   obtain ⟨S, hSD, -, hS, q, U, hU, hx₀, hinv⟩ :=
@@ -74,7 +74,7 @@ theorem IsFredholm.exists_stabilization_kernel_vectorBundle (hT₀ : IsFredholm 
   exact ⟨S, hSD, hS, (hT₀.coprod_of_finiteDimensional S.subtypeL).finite_ker,
     q, U, hU, hx₀, fun x ↦ hinv x x.property,
     TauCeti.kernelVectorBundle (X := U)
-      ((hT.comp continuous_subtype_val).continuousLinearMapCoprod continuous_const)
+      ((hT.comp continuous_subtypeVal).continuousLinearMapCoprod continuous_const)
       (fun x ↦ hinv x x.property)⟩
 
 variable {EX HX : Type*} [NormedAddCommGroup EX] [NormedSpace 𝕜 EX]
@@ -106,7 +106,7 @@ theorem IsFredholm.exists_stabilization_kernel_contMDiffVectorBundle
                     (I.prod 𝓘(𝕜, E × S)) n
                     (fun p : TotalSpace ((T x₀).coprod S.subtypeL).ker
                       (fun x : U ↦ ((T x).coprod S.subtypeL).ker) ↦
-                        (p.proj, (p.2 : E × S))) := by
+                        (p.proj, (p.snd : E × S))) := by
   obtain ⟨S, hSD, -, hS, q, U, hU, hx₀, hinv⟩ :=
     hT₀.exists_stabilization_kernel_coordinates hT.continuous.continuousAt hD
   let := hS
@@ -114,7 +114,7 @@ theorem IsFredholm.exists_stabilization_kernel_contMDiffVectorBundle
   let V : TopologicalSpace.Opens X := ⟨U, hU⟩
   have hA : ContMDiff I 𝓘(𝕜, (E × S) →L[𝕜] F) n
       (fun x : V ↦ (T x).coprod S.subtypeL) :=
-    (hT.comp contMDiff_subtype_val).clm_coprod contMDiff_const
+    (hT.comp contMDiff_subtypeVal).clm_coprod contMDiff_const
   exact ⟨S, hSD, hS, (hT₀.coprod_of_finiteDimensional S.subtypeL).finite_ker,
     q, V, hx₀, fun x ↦ hinv x x.property, hA,
     TauCeti.kernelContMDiffVectorBundle hA.continuous _,

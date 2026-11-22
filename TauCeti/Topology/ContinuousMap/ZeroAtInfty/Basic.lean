@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
-# Scalar actions and pointwise norms on `C₀(α, β)`
+# Scalar actions, pointwise operators, and reindexing on `C₀(α, β)`
 
 Mathlib equips the space `C₀(α, β)` of continuous functions vanishing at infinity with the sup
 distance and, for normed fields, with a normed-space structure. This file supplies the structure
-needed for scalar actions beyond normed fields:
+needed for scalar actions beyond normed fields, together with pointwise operators and reindexing
+equivalences:
 
 * `ZeroAtInftyContinuousMap.instIsBoundedSMul`: a bounded scalar action on `β` induces one on
   `C₀(α, β)`, so for instance `C₀(α, R)` is a module with contractive action over a seminormed
@@ -24,13 +26,18 @@ needed for scalar actions beyond normed fields:
   on `C₀(α, β)` is the supremum of the pointwise norms;
 * `ZeroAtInftyContinuousMap.evalCLM`: evaluation at a point as a continuous linear map over an
   arbitrary semiring of scalars;
+* `ZeroAtInftyContinuousMap.toBCFₗᵢ`: the inclusion into bounded continuous functions as a linear
+  isometry;
 * `ZeroAtInftyContinuousMap.compLeftFamily`: a strongly continuous family `u : α → E →L[R] F` of
   continuous linear maps with a uniform bound `‖u x e‖ ≤ C * ‖e‖` acts pointwise as a continuous
   linear map `C₀(α, E) →L[R] C₀(α, F)`, by `f ↦ (x ↦ u x (f x))`;
 * `ZeroAtInftyContinuousMap.compLeft`: its constant case, the postcomposition with one continuous
   linear map `u : E →L[R] F` with a uniform bound `‖u e‖ ≤ C * ‖e‖`;
-* `ZeroAtInftyContinuousMap.congrLeft`: a homeomorphism `α ≃ₜ β` induces a linear isometry
-  equivalence `C₀(α, E) ≃ₗᵢ[R] C₀(β, E)`.
+* `ZeroAtInftyContinuousMap.congrLeft` and `ZeroAtInftyContinuousMap.congrLeftStarAlgEquiv`: a
+  homeomorphism `α ≃ₜ β` induces a linear isometry equivalence `C₀(α, E) ≃ₗᵢ[R] C₀(β, E)` and a
+  norm-preserving star-algebra equivalence `C₀(α, δ) ≃⋆ₐ[R] C₀(β, δ)`;
+* `ContinuousMap.isometry_liftZeroAtInfty` and `ContinuousMap.liftZeroAtInftyStarAlgEquiv`: on a
+  compact space `α`, lifting `C(α, A)` to `C₀(α, A)` is an isometric star-algebra equivalence.
 
 With `α` discrete these are the basic structures of the model space `C₀(I, R)` of
 nonarchimedean functional analysis over normed rings; its coordinate structure is developed in
@@ -70,11 +77,11 @@ instance (priority := 90) instContinuousConstSMul
       (uniformContinuous_const_smul r).comp_tendstoUniformly <|
         tendsto_iff_tendstoUniformly.1 Filter.tendsto_id
 
-/-- The coercion to functions commutes with finite sums. -/
-@[simp, norm_cast]
-theorem coe_sum [TopologicalSpace β] [AddCommMonoid β] [ContinuousAdd β] {ι : Type*}
-    (s : Finset ι) (f : ι → C₀(α, β)) : ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
-  map_sum (⟨⟨DFunLike.coe, FunLike.coe_zero⟩, FunLike.coe_add⟩ : C₀(α, β) →+ α → β) f s
+/-- A scalar acting injectively on `β` acts injectively on `C₀(α, β)`. -/
+theorem _root_.IsSMulRegular.zeroAtInftyContinuousMap [TopologicalSpace β] [Zero β] {M : Type*}
+    [SMulZeroClass M β] [ContinuousConstSMul M β] {r : M} (hr : IsSMulRegular β r) :
+    IsSMulRegular C₀(α, β) r :=
+  fun _ _ h ↦ ext fun x ↦ hr (congrArg (· x) h)
 
 section Normed
 
@@ -93,7 +100,12 @@ theorem norm_le {f : C₀(α, β)} {C : ℝ} (hC : 0 ≤ C) : ‖f‖ ≤ C ↔ 
 theorem norm_eq_iSup_norm (f : C₀(α, β)) : ‖f‖ = ⨆ x, ‖f x‖ :=
   f.toBCF.norm_eq_iSup_norm
 
-variable (𝕜 : Type*) [Semiring 𝕜] [Module 𝕜 β] [ContinuousConstSMul 𝕜 β]
+end Normed
+
+section Eval
+
+variable [PseudoMetricSpace β] [AddCommMonoid β] [ContinuousAdd β]
+  (𝕜 : Type*) [Semiring 𝕜] [Module 𝕜 β] [ContinuousConstSMul 𝕜 β]
 
 /-- Evaluation at a point, as a continuous linear map `C₀(α, β) →L[𝕜] β`. -/
 def evalCLM (x : α) : C₀(α, β) →L[𝕜] β where
@@ -105,6 +117,31 @@ def evalCLM (x : α) : C₀(α, β) →L[𝕜] β where
 /-- `evalCLM 𝕜 x` evaluates at `x`. -/
 @[simp]
 theorem evalCLM_apply (x : α) (f : C₀(α, β)) : evalCLM 𝕜 x f = f x := (rfl)
+
+end Eval
+
+section ToBCF
+
+variable [SeminormedAddCommGroup β] (𝕜 : Type*) [PseudoMetricSpace 𝕜] [Semiring 𝕜] [Module 𝕜 β]
+  [IsBoundedSMul 𝕜 β]
+
+/-- The inclusion `ZeroAtInftyContinuousMap.toBCF` of functions vanishing at infinity into bounded
+continuous functions, as a linear isometry `C₀(α, β) →ₗᵢ[𝕜] (α →ᵇ β)`. -/
+def toBCFₗᵢ : C₀(α, β) →ₗᵢ[𝕜] α →ᵇ β where
+  toFun := toBCF
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  norm_map' _ := norm_toBCF_eq_norm
+
+/-- `toBCFₗᵢ 𝕜` is the inclusion `ZeroAtInftyContinuousMap.toBCF`. -/
+@[simp]
+theorem toBCFₗᵢ_apply (f : C₀(α, β)) : toBCFₗᵢ 𝕜 f = f.toBCF := (rfl)
+
+end ToBCF
+
+section NormedExtra
+
+variable [SeminormedAddCommGroup β]
 
 /-- Pointwise scalar multiplication of a function vanishing at infinity by a bounded continuous
 scalar function `c : α → R`. -/
@@ -142,7 +179,7 @@ theorem exists_abs_ge_norm_le (f : C₀(ℝ, β)) {δ : ℝ} (hδ : 0 < δ) :
   have hle : |s| ≤ R := by simpa [Real.dist_eq] using Metric.mem_closedBall.1 (hR hsK)
   exact absurd ((hs.trans hle).trans (le_max_left R 0)) (not_le_of_gt (lt_add_one _))
 
-end Normed
+end NormedExtra
 
 section Comparison
 
@@ -217,6 +254,25 @@ def compLeft (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) : 
 theorem compLeft_apply (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) (f : C₀(α, E)) (x : α) :
     compLeft u hu f x = u (f x) := (rfl)
 
+/-- Postcomposing with the zero operator gives the zero operator on `C₀(α, E)`. -/
+@[simp]
+theorem compLeft_zero (h0 : ∃ C, ∀ x, ‖(0 : E →L[R] F) x‖ ≤ C * ‖x‖) :
+    compLeft (α := α) (0 : E →L[R] F) h0 = 0 := by
+  ext; simp
+
+/-- `compLeft` is additive in the bounded operator. -/
+theorem compLeft_add (u v : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖)
+    (hv : ∃ C, ∀ x, ‖v x‖ ≤ C * ‖x‖) (huv : ∃ C, ∀ x, ‖(u + v) x‖ ≤ C * ‖x‖) :
+    compLeft (α := α) (u + v) huv = compLeft u hu + compLeft v hv := by
+  ext; simp
+
+/-- `compLeft` commutes with scalar multiplication in the bounded operator. -/
+theorem compLeft_smul {S : Type*} [Semiring S] [Module S F]
+    [SMulCommClass R S F] [ContinuousConstSMul S F] (s : S) (u : E →L[R] F)
+    (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) (hsu : ∃ C, ∀ x, ‖(s • u) x‖ ≤ C * ‖x‖) :
+    compLeft (α := α) (s • u) hsu = s • compLeft u hu := by
+  ext; simp
+
 /-- The coordinatewise action of a composite is the composite of the coordinatewise actions. -/
 theorem compLeft_comp {G : Type*} [SeminormedAddCommGroup G] [Module R G] [ContinuousConstSMul R G]
     (v : F →L[R] G) (u : E →L[R] F) (hv : ∃ C, ∀ y, ‖v y‖ ≤ C * ‖y‖)
@@ -271,4 +327,117 @@ theorem congrLeft_compLeft (e : α ≃ₜ β) (u : E →L[R] F) (hu : ∃ C, ∀
 
 end Comparison
 
+section StarFunctoriality
+
+variable {R β γ δ : Type*} [TopologicalSpace β] [TopologicalSpace γ] [TopologicalSpace δ]
+
+variable (R δ) in
+/-- Reindexing `C₀(α, δ)` along a homeomorphism `e : α ≃ₜ β` as a star-algebra equivalence
+`f ↦ f ∘ e.symm`, matching `ZeroAtInftyContinuousMap.congrLeft`. -/
+def congrLeftStarAlgEquiv [NonUnitalNonAssocSemiring δ] [IsTopologicalSemiring δ]
+    [StarAddMonoid δ] [ContinuousStar δ] [SMulZeroClass R δ] [ContinuousConstSMul R δ]
+    (e : α ≃ₜ β) : C₀(α, δ) ≃⋆ₐ[R] C₀(β, δ) where
+  toFun f := f.comp e.symm.toCocompactMap
+  invFun f := f.comp e.toCocompactMap
+  left_inv f := by ext; simp
+  right_inv f := by ext; simp
+  map_smul' _ _ := rfl
+  map_add' _ _ := rfl
+  map_mul' _ _ := rfl
+  map_star' _ := rfl
+
+/-- `congrLeftStarAlgEquiv R δ e f` evaluates as `f (e.symm y)`. -/
+@[simp]
+theorem congrLeftStarAlgEquiv_apply [NonUnitalNonAssocSemiring δ] [IsTopologicalSemiring δ]
+    [StarAddMonoid δ] [ContinuousStar δ] [SMulZeroClass R δ] [ContinuousConstSMul R δ]
+    (e : α ≃ₜ β) (f : C₀(α, δ)) (y : β) :
+    congrLeftStarAlgEquiv R δ e f y = f (e.symm y) := (rfl)
+
+/-- The inverse of `congrLeftStarAlgEquiv R δ e` is `congrLeftStarAlgEquiv R δ e.symm`. -/
+@[simp]
+theorem congrLeftStarAlgEquiv_symm [NonUnitalNonAssocSemiring δ] [IsTopologicalSemiring δ]
+    [StarAddMonoid δ] [ContinuousStar δ] [SMulZeroClass R δ] [ContinuousConstSMul R δ]
+    (e : α ≃ₜ β) :
+    (congrLeftStarAlgEquiv R δ e).symm = congrLeftStarAlgEquiv R δ e.symm := (rfl)
+
+/-- Reindexing along `Homeomorph.refl α` is the identity star-algebra equivalence. -/
+@[simp]
+theorem congrLeftStarAlgEquiv_refl [NonUnitalNonAssocSemiring δ] [IsTopologicalSemiring δ]
+    [StarAddMonoid δ] [ContinuousStar δ] [SMulZeroClass R δ] [ContinuousConstSMul R δ] :
+    congrLeftStarAlgEquiv R δ (Homeomorph.refl α) = StarAlgEquiv.refl R C₀(α, δ) := (rfl)
+
+/-- Reindexing along a composite homeomorphism is the composite of the star-algebra equivalences. -/
+theorem congrLeftStarAlgEquiv_trans [NonUnitalNonAssocSemiring δ] [IsTopologicalSemiring δ]
+    [StarAddMonoid δ] [ContinuousStar δ] [SMulZeroClass R δ] [ContinuousConstSMul R δ]
+    (e : α ≃ₜ β) (e' : β ≃ₜ γ) :
+    congrLeftStarAlgEquiv R δ (e.trans e') =
+      (congrLeftStarAlgEquiv R δ e).trans (congrLeftStarAlgEquiv R δ e') := (rfl)
+
+/-- Reindexing `C₀` along a homeomorphism preserves the supremum norm. -/
+@[simp]
+theorem norm_congrLeftStarAlgEquiv {E : Type*} [NonUnitalSeminormedRing E] [StarAddMonoid E]
+    [ContinuousStar E] [SMulZeroClass R E] [ContinuousConstSMul R E]
+    (e : α ≃ₜ β) (f : C₀(α, E)) :
+    ‖congrLeftStarAlgEquiv R E e f‖ = ‖f‖ :=
+  norm_comp_toCocompactMap f e.symm
+
+end StarFunctoriality
+
 end ZeroAtInftyContinuousMap
+
+namespace ContinuousMap
+
+section CompactLift
+
+variable {R α β E A : Type*} [TopologicalSpace α] [CompactSpace α]
+
+/-- On a compact space, `ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty` is an isometry. -/
+theorem isometry_liftZeroAtInfty [PseudoMetricSpace β] [Zero β] :
+    Isometry (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty : C(α, β) → C₀(α, β)) :=
+  Isometry.of_dist_eq fun f g ↦ by
+    have h (h : C(α, β)) :
+        (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty h).toBCF =
+          BoundedContinuousFunction.mkOfCompact h := by
+      ext x
+      simp
+    rw [← ZeroAtInftyContinuousMap.dist_toBCF_eq_dist, h, h,
+      BoundedContinuousFunction.dist_mkOfCompact]
+
+/-- On a compact space, `ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty` preserves the
+supremum norm. -/
+@[simp]
+theorem norm_liftZeroAtInfty [SeminormedAddCommGroup E] (f : C(α, E)) :
+    ‖ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty f‖ = ‖f‖ :=
+  isometry_liftZeroAtInfty.norm_map_of_map_zero (by ext; simp) f
+
+variable (R α A) in
+/-- On a compact space `α`, `C(α, A)` and `C₀(α, A)` are canonically isomorphic as star
+algebras via `ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty`. -/
+def liftZeroAtInftyStarAlgEquiv [NonUnitalNonAssocSemiring A] [TopologicalSpace A]
+    [IsTopologicalSemiring A] [StarAddMonoid A] [ContinuousStar A] [SMulZeroClass R A]
+    [ContinuousConstSMul R A] : C(α, A) ≃⋆ₐ[R] C₀(α, A) where
+  toEquiv := ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty
+  map_smul' _ _ := rfl
+  map_add' _ _ := rfl
+  map_mul' _ _ := rfl
+  map_star' _ := rfl
+
+/-- As a map, `liftZeroAtInftyStarAlgEquiv R α A` is
+`ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty`. -/
+@[simp]
+theorem coe_liftZeroAtInftyStarAlgEquiv [NonUnitalNonAssocSemiring A] [TopologicalSpace A]
+    [IsTopologicalSemiring A] [StarAddMonoid A] [ContinuousStar A] [SMulZeroClass R A]
+    [ContinuousConstSMul R A] :
+    ⇑(liftZeroAtInftyStarAlgEquiv R α A) =
+      ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty := (rfl)
+
+/-- The inverse of `liftZeroAtInftyStarAlgEquiv R α A` forgets the zero-at-infinity witness. -/
+@[simp]
+theorem liftZeroAtInftyStarAlgEquiv_symm_apply [NonUnitalNonAssocSemiring A]
+    [TopologicalSpace A] [IsTopologicalSemiring A] [StarAddMonoid A] [ContinuousStar A]
+    [SMulZeroClass R A] [ContinuousConstSMul R A] (f : C₀(α, A)) :
+    (liftZeroAtInftyStarAlgEquiv R α A).symm f = f.toContinuousMap := (rfl)
+
+end CompactLift
+
+end ContinuousMap

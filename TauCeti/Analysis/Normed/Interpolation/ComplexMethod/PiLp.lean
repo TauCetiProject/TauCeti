@@ -85,8 +85,9 @@ private def piLpStripTracesFwd (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i
 
 private def piLpStripTracesInv (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
     (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] :
-    (∀ i, (C i).stripTraces) →L[ℂ] (piLp C q₀ q₁).stripTraces :=
-  ∑ i : ι, (stripTracesMap (PiLp.singleCLM q₀ i) (PiLp.singleCLM q₁ i)
+    (∀ i, (C i).stripTraces) →L[ℂ] (piLp C q₀ q₁).stripTraces := by
+  classical
+  exact ∑ i : ι, (stripTracesMap (PiLp.singleCLM q₀ ℂ X₀ i) (PiLp.singleCLM q₁ ℂ X₁ i)
     (piLpSingle_inter C q₀ q₁ i)).comp (ContinuousLinearMap.proj i)
 
 private theorem piLpStripTracesFwd_apply (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
@@ -138,17 +139,22 @@ of admissible boundary traces `∀ i, (C i).stripTraces` via coordinatewise proj
 def piLpStripTracesEquiv (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
     [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] :
     (piLp C q₀ q₁).stripTraces ≃L[ℂ] ∀ i, (C i).stripTraces :=
-  ContinuousLinearEquiv.equivOfInverse (piLpStripTracesFwd C q₀ q₁) (piLpStripTracesInv C q₀ q₁)
-    (fun g => Subtype.ext (Prod.ext
-      (ZeroAtInftyContinuousMap.ext fun t => PiLp.ext fun j => by
-        rw [piLpStripTracesInv_apply_fst, piLpStripTracesFwd_apply_fst])
-      (ZeroAtInftyContinuousMap.ext fun t => PiLp.ext fun j => by
-        rw [piLpStripTracesInv_apply_snd, piLpStripTracesFwd_apply_snd])))
-    (fun h => funext fun j => Subtype.ext (Prod.ext
+  ContinuousLinearEquiv.ofContinuousLinearMap (piLpStripTracesFwd C q₀ q₁)
+    (piLpStripTracesInv C q₀ q₁)
+    (ContinuousLinearMap.ext fun h => funext fun j => Subtype.ext (Prod.ext
       (ZeroAtInftyContinuousMap.ext fun t => by
-        rw [piLpStripTracesFwd_apply_fst, piLpStripTracesInv_apply_fst])
+        rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+          piLpStripTracesFwd_apply_fst, piLpStripTracesInv_apply_fst])
       (ZeroAtInftyContinuousMap.ext fun t => by
-        rw [piLpStripTracesFwd_apply_snd, piLpStripTracesInv_apply_snd])))
+        rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+          piLpStripTracesFwd_apply_snd, piLpStripTracesInv_apply_snd])))
+    (ContinuousLinearMap.ext fun g => Subtype.ext (Prod.ext
+      (ZeroAtInftyContinuousMap.ext fun t => PiLp.ext fun j => by
+        rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+          piLpStripTracesInv_apply_fst, piLpStripTracesFwd_apply_fst])
+      (ZeroAtInftyContinuousMap.ext fun t => PiLp.ext fun j => by
+        rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+          piLpStripTracesInv_apply_snd, piLpStripTracesFwd_apply_snd])))
 
 private theorem piLpStripTracesEquiv_apply (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
     (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (g : (piLp C q₀ q₁).stripTraces) :
@@ -264,8 +270,9 @@ private def piLpCLEFwd (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
 
 private def piLpCLEInv (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
     (q₀ q₁ q : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (θ : ℝ) :
-    PiLp q (fun i => (C i).ComplexMethodSpace θ) →L[ℂ] (piLp C q₀ q₁).ComplexMethodSpace θ :=
-  ∑ i : ι, (map θ (PiLp.singleCLM q₀ i) (PiLp.singleCLM q₁ i)
+    PiLp q (fun i => (C i).ComplexMethodSpace θ) →L[ℂ] (piLp C q₀ q₁).ComplexMethodSpace θ := by
+  classical
+  exact ∑ i : ι, (map θ (PiLp.singleCLM q₀ ℂ X₀ i) (PiLp.singleCLM q₁ ℂ X₁ i)
     (piLpSingle_inter C q₀ q₁ i)).comp (PiLp.proj q (fun j => (C j).ComplexMethodSpace θ) i)
 
 private theorem piLpCLEFwd_mk (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
@@ -296,17 +303,19 @@ requires no relation between `q₀`, `q₁`, `q`, and `θ`, and no `1 ≤ q` ass
 def piLpContinuousLinearEquiv (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
     (q₀ q₁ q : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (θ : ℝ) :
     (piLp C q₀ q₁).ComplexMethodSpace θ ≃L[ℂ] PiLp q (fun i => (C i).ComplexMethodSpace θ) :=
-  ContinuousLinearEquiv.equivOfInverse (piLpCLEFwd C q₀ q₁ q θ) (piLpCLEInv C q₀ q₁ q θ)
-    (fun u => by
-      obtain ⟨g, rfl⟩ := mk_surjective u
-      rw [piLpCLEFwd_mk, piLpCLEInv_mk]
-      exact congrArg (mk θ) ((piLpStripTracesEquiv C q₀ q₁).symm_apply_apply g))
-    (fun v => by
+  ContinuousLinearEquiv.ofContinuousLinearMap (piLpCLEFwd C q₀ q₁ q θ) (piLpCLEInv C q₀ q₁ q θ)
+    (ContinuousLinearMap.ext fun v => by
       choose h hh using fun i => mk_surjective (v i)
       have hv : v = WithLp.toLp q fun i => mk θ (h i) := PiLp.ext fun i => (hh i).symm
-      rw [hv, piLpCLEInv_mk, piLpCLEFwd_mk]
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, hv, piLpCLEInv_mk,
+        piLpCLEFwd_mk]
       refine PiLp.ext fun i => ?_
       rw [PiLp.toLp_apply, (piLpStripTracesEquiv C q₀ q₁).apply_symm_apply])
+    (ContinuousLinearMap.ext fun u => by
+      obtain ⟨g, rfl⟩ := mk_surjective u
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, piLpCLEFwd_mk,
+        piLpCLEInv_mk]
+      exact congrArg (mk θ) ((piLpStripTracesEquiv C q₀ q₁).symm_apply_apply g))
 
 private theorem piLpContinuousLinearEquiv_apply (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
     (q₀ q₁ q : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (θ : ℝ)
@@ -569,6 +578,45 @@ theorem coe_piLpEquiv (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) 
 end PiLpEquiv
 
 section Refl
+
+/-- For `0 ≤ θ ≤ 1`, the complex interpolation space `[X, X]_θ` of the constant couple `refl ℂ X`
+is canonically linearly isometric to `X`, packaging the diagonal inverse and isometry argument of
+`ComplexMethodSpace.norm_refl`. -/
+def reflEquiv {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ} (hθ : θ ∈ Icc 0 1) :
+    (refl ℂ X).ComplexMethodSpace θ ≃ₗᵢ[ℂ] X where
+  toFun u := (refl ℂ X).sumSpaceEmbed (toSum u)
+  invFun x := ofInter θ
+    ⟨(x, x), (refl ℂ X).mem_inter_iff.2 (by dsimp only; rw [refl_embed₀, refl_embed₁])⟩
+  map_add' u v := by simp
+  map_smul' c u := by simp
+  left_inv u := by
+    dsimp only
+    apply toSum_injective
+    rw [toSum_ofInter hθ, interFst_apply]
+    exact refl_fstToSum_sumSpaceEmbed (toSum u)
+  right_inv x := by
+    dsimp only
+    simp [toSum_ofInter hθ]
+  norm_map' u := (norm_refl_sumSpaceEmbed (toSum u)).trans (norm_refl u).symm
+
+@[simp]
+theorem reflEquiv_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
+    (hθ : θ ∈ Icc 0 1) (u : (refl ℂ X).ComplexMethodSpace θ) :
+    reflEquiv hθ u = (refl ℂ X).sumSpaceEmbed (toSum u) :=
+  (rfl)
+
+@[simp]
+theorem reflEquiv_symm_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
+    (hθ : θ ∈ Icc 0 1) (x : X) :
+    (reflEquiv hθ).symm x = ofInter θ
+      ⟨(x, x), (refl ℂ X).mem_inter_iff.2 (by dsimp only; rw [refl_embed₀, refl_embed₁])⟩ :=
+  (rfl)
+
+/-- `reflEquiv.symm` lifts `x : X` over `fstToSum x` in the sum space of `refl ℂ X`. -/
+theorem toSum_reflEquiv_symm {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
+    (hθ : θ ∈ Icc 0 1) (x : X) :
+    toSum ((reflEquiv hθ).symm x) = (refl ℂ X).fstToSum x := by
+  rw [reflEquiv_symm_apply, toSum_ofInter hθ, interFst_apply]
 
 /-- **Complex interpolation of finite vector-valued sequence spaces (`[ℓ_{q₀}^N(E), ℓ_{q₁}^N(E)]_θ =
 ℓ_q^N(E)` with equal norms).** For a finite family of complex normed spaces `X : ι → Type*`,

@@ -97,7 +97,7 @@ noncomputable def IsDeltaMove.vertexSlide (h : poly.IsDeltaMove ℝ i c)
     exact ((poly.insertVertex i (poly.edgePath ℝ i s)).continuous_boundaryParamCircle.comp
       continuous_snd).lineMap
       ((poly.insertVertex i c).continuous_boundaryParamCircle.comp continuous_snd)
-      (continuous_subtype_val.comp continuous_fst)
+      (continuous_subtypeVal.comp continuous_fst)
   map_zero_left := by intro z; simp
   map_one_left := by intro z; simp
   prop' t := IsClosedEmbedding.isEmbedding

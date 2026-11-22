@@ -24,6 +24,10 @@ manifold differential of a function to tangent vectors whose base point varies.
   smooth section of the tangent bundle of a model space.
 * `contMDiff_tangentBundle_mk_zero`: smoothness of the zero tangent vector over a varying point.
 * `contMDiff_tangentBundle_mk_constBase`: smoothness of a varying model vector over a fixed point.
+* `contMDiff_tangentBundle_mk_modelSpace`: smoothness of a varying model vector over a varying
+  point of the model space.
+* `ContMDiff.contDiff_tangentBundle_mk_constBase`: a `C^n` function on the tangent bundle is `C^n`
+  along each tangent fibre.
 * `TauCeti.mdifferentiableAt_mvfderiv_apply`: a directional derivative of a `C²` function
   along a differentiable vector field is differentiable at the point.
 * `ContMDiffAt.contMDiffAt_mvfderiv_apply`: applying the differential of a function that is
@@ -127,20 +131,40 @@ theorem contMDiff_tangentBundle_mk_constBase {v : N → E}
   change tangentCoordChange I x x x (v q) = v q
   exact tangentCoordChange_self (mem_extChartAt_source x)
 
+/-- A model-space vector over a model-space point, both varying smoothly, gives a smooth map into
+the tangent bundle of the model space. -/
+theorem contMDiff_tangentBundle_mk_modelSpace {f v : N → E}
+    (hf : ContMDiff J 𝓘(𝕜, E) n f) (hv : ContMDiff J 𝓘(𝕜, E) n v) :
+    ContMDiff J 𝓘(𝕜, E).tangent n
+      (fun p => TotalSpace.mk' E (f p) (v p) : N → TangentBundle 𝓘(𝕜, E) E) := by
+  have hpair : ContMDiff J 𝓘(𝕜, E).tangent n (fun p : N ↦ (f p, v p)) := hf.prodMk hv
+  rw [chartedSpaceSelf_prod] at hpair
+  have h := contMDiff_tangentBundleModelSpaceHomeomorph_symm.comp hpair
+  -- The inverse homeomorphism is `(TotalSpace.toProd E E).symm`, whose inverse function sends
+  -- `(a, b)` to the bundle point `⟨a, b⟩` by definition, so `h` is the claim.
+  rw [tangentBundleModelSpaceHomeomorph_coe_symm] at h
+  exact h
+
+/-- A `C^n` function on the tangent bundle is `C^n` along the tangent fibre over each point. -/
+theorem ContMDiff.contDiff_tangentBundle_mk_constBase {g : TangentBundle I M → F}
+    (hg : ContMDiff I.tangent 𝓘(𝕜, F) n g) (x : M) :
+    ContDiff 𝕜 n fun w : E ↦ g (TotalSpace.mk' E x w) :=
+  contMDiff_iff_contDiff.1 (hg.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id x))
+
 end TangentBundleInputs
 
 /-- If `f` is `C^n` at a point, its differential evaluated on tangent vectors is `C^m` at
 every vector over that point, provided `m + 1 ≤ n`. -/
 theorem ContMDiffAt.contMDiffAt_mvfderiv_apply {f : M → F} {p : TangentBundle I M}
-    (hf : ContMDiffAt I 𝓘(𝕜, F) n f p.1) (hmn : m + 1 ≤ n) :
+    (hf : ContMDiffAt I 𝓘(𝕜, F) n f p.proj) (hmn : m + 1 ≤ n) :
     ContMDiffAt I.tangent 𝓘(𝕜, F) m
-      (fun q : TangentBundle I M ↦ mvfderiv I f q.1 q.2) p := by
+      (fun q : TangentBundle I M ↦ mvfderiv I f q.proj q.snd) p := by
   have h := (contMDiff_snd_tangentBundle_modelSpace F 𝓘(𝕜, F) (n := m)).contMDiffAt.comp p
     (hf.contMDiffAt_tangentMap hmn)
   -- `NormedSpace.fromTangentSpace` is definitionally the identity on `F`, identifying
   -- `TangentSpace 𝓘(𝕜, F) (f q.1)` with `F` in the equality below.
   exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun q ↦
-    (mvfderiv_apply_eq_mfderiv_apply f q.1 q.2).trans tangentMap_snd.symm)
+    (mvfderiv_apply_eq_mfderiv_apply f q.proj q.snd).trans tangentMap_snd.symm)
 
 /-- The map that applies the differential of a `C^n` function to tangent vectors is `C^m` on the
 tangent bundle when `m + 1 ≤ n`. -/
@@ -148,8 +172,8 @@ theorem ContMDiff.contMDiff_mvfderiv_apply {f : M → F}
     (hf : ContMDiff I 𝓘(𝕜, F) n f)
     (hmn : m + 1 ≤ n) :
     ContMDiff I.tangent 𝓘(𝕜, F) m
-      (fun p : TangentBundle I M => mvfderiv I f p.1 p.2) :=
-  fun p ↦ (hf p.1).contMDiffAt_mvfderiv_apply hmn
+      (fun p : TangentBundle I M => mvfderiv I f p.proj p.snd) :=
+  fun p ↦ (hf p.proj).contMDiffAt_mvfderiv_apply hmn
 
 /-- The derivative of a `C^n` function along a `C^m` vector field is `C^m` on an open set, when
 `m + 1 ≤ n`. This is the set-local form of `ContMDiff.contMDiff_mvfderiv_apply`: only the germ of

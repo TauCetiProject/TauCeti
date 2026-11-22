@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.AffineMap
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Topology.MetricSpace.Holder
 public import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
@@ -57,9 +58,26 @@ The file also records the one-variable form of Mathlib's
 `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le'`, bounding the increment of a function
 against a fixed derivative `φ` (`Convex.norm_image_sub_le_of_norm_hasDerivWithin_le'`).
 
+For a map whose derivative is `α`-Hölder with constant `H` on the closed ball of radius `R` about
+`x`, the linearization error at `x` of an increment between two points of that ball is at most
+`H R^α` times the increment (`TauCeti.norm_sub_sub_le_of_holderOnWith`).
+
 For a function on the real line with derivative of norm at most `D r ^ (β - 1)` at every `r > 0`,
 where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
 `a / 2 ≤ b` (`TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt`).
+
+## Integrating a little-o derivative bound
+
+If `f` is differentiable near `a` and `Df(x) = o(‖x - a‖ ^ r)` as `x → a`, where `r ≥ 0`, then
+`f(x) - f(a) = o(‖x - a‖ ^ (r + 1))`, by the mean value inequality on balls about `a`
+(`TauCeti.sub_isLittleO_norm_rpow_add_one_of_fderiv`). This is the little-o counterpart of
+Mathlib's `sub_isBigO_norm_rpow_add_one_of_fderiv`.
+
+## Along a polygonal path
+
+On a set that is not convex, the mean value inequality still bounds the increment of a function
+along any polygonal path inside the set by the derivative bound times the length of the path
+(`TauCeti.norm_image_sub_le_of_norm_fderiv_le_of_segment_subset`, for three segments).
 
 ## Space-time functions vanishing outside a time interval
 
@@ -106,6 +124,40 @@ projection and the derivative of a map kills `ker π` on a ball about `0`, then 
 only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`), and a
 compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
 (`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
+
+## Signs from monotonicity on the real line
+
+A real function continuous on `[x, ∞)`, with nonpositive (negative) derivative on `(x, ∞)` and
+limit `L` at `+∞`, satisfies `L ≤ f x` (`L < f x`)
+(`TauCeti.le_of_tendsto_atTop_of_hasDerivAt_nonpos`,
+`TauCeti.lt_of_tendsto_atTop_of_hasDerivAt_neg`). A real function continuous on `[a, x]` with
+positive (negative) derivative on `(a, x)` satisfies `f a < f x` (`f x < f a`)
+(`TauCeti.lt_of_hasDerivAt_pos`, `TauCeti.lt_of_hasDerivAt_neg`). If a real function continuous on
+`[a, ∞)` with limit `L` at `+∞` satisfies `L ≤ f a`, and its derivative, once nonpositive at a
+point of `(a, ∞)`, stays nonpositive (negative) afterwards, then `L ≤ f x` on `[a, ∞)` (`L < f x`
+on `(a, ∞)`) (`TauCeti.le_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_nonpos`,
+`TauCeti.lt_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_neg`).
+`TauCeti.pos_of_hasDerivAt_mul_secant` propagates the sign of a function whose derivative is a
+positive weight times a function with the strict secant property `φ t < (t / s) φ s`.
+
+The first two statements are adapted from `tail_nonneg` and `tail_pos` of the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/ErrorFunctions/BoundsAsymptotics/ContinuedFractions.lean`; the sign-change and secant
+lemmas are factored out of the proofs in that file.
+
+## Second differences of maps with Lipschitz derivative
+
+Let `f` be differentiable on a convex set `s`, with derivative of norm at most `C` and
+`L`-Lipschitz on `s`. Then the second difference of `f` satisfies
+
+`‖(f (a + b) - f a) - (f (a' + b') - f a')‖ ≤ C ‖b - b'‖ + L ‖b'‖ ‖a - a'‖`
+
+whenever `a`, `a'`, `a + b`, `a + b'` and `a' + b'` lie in `s`
+(`Convex.norm_image_sub_sub_sub_le_of_norm_fderiv_le`). The first term changes the increment `b`
+into `b'` at the base point `a`; the second moves the base point of `y ↦ f (y + b') - f y`, whose
+derivative `Df(y + b') - Df(y)` is at most `L ‖b'‖`, from `a'` to `a`. Both steps are Mathlib's
+mean value inequality `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le`. This is the estimate
+that makes a nonlinear coefficient `x ↦ J(u(x))` Lipschitz in the map `u` for Hölder norms.
 -/
 
 public section
@@ -338,6 +390,28 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCom
     _ ≤ D * (2 * a ^ (β - 1)) * |b - a| := by gcongr
     _ = _ := by ring
 
+open Metric in
+open scoped NNReal in
+/-- **The linearization error of a map with a Hölder derivative.** If on the closed ball of radius
+`R` about `x` the map `g` has derivative `g'` and `g'` is `α`-Hölder with constant `H`, then for
+points `u, v` of that ball, `‖g u - g v - g' x (u - v)‖ ≤ H R^α ‖u - v‖`: on the segment from `v`
+to `u` the derivative stays within `H R^α` of `g' x`. -/
+theorem norm_sub_sub_le_of_holderOnWith {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {g : E → F} {g' : E → E →L[ℝ] F} {x : E} {R : ℝ}
+    (hg : ∀ z ∈ closedBall x R, HasFDerivWithinAt g (g' z) (closedBall x R) z) {H α : ℝ≥0}
+    (hg' : HolderOnWith H α g' (closedBall x R)) {u v : E} (hu : ‖u - x‖ ≤ R)
+    (hv : ‖v - x‖ ≤ R) :
+    ‖g u - g v - g' x (u - v)‖ ≤ H * R ^ (α : ℝ) * ‖u - v‖ := by
+  have hu' : u ∈ closedBall x R := by rwa [mem_closedBall, dist_eq_norm]
+  have hv' : v ∈ closedBall x R := by rwa [mem_closedBall, dist_eq_norm]
+  have hx : x ∈ closedBall x R := mem_closedBall_self ((norm_nonneg _).trans hu)
+  refine (convex_closedBall x R).norm_image_sub_le_of_norm_hasFDerivWithin_le' hg
+    (fun z hz ↦ ?_) hv' hu'
+  rw [← dist_eq_norm]
+  refine (hg'.dist_le hz hx).trans ?_
+  gcongr
+  exact mem_closedBall.1 hz
+
 section Direction
 
 variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
@@ -417,6 +491,25 @@ theorem _root_.HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero {g : F → G}
 
 end Direction
 
+/-- **The mean value inequality along three segments.** If the segments `[x, p]`, `[p, q]` and
+`[q, y]` lie in a set `s` on which `g` is differentiable with derivative bounded by `L`, then
+`‖g y - g x‖ ≤ L (‖x - p‖ + ‖p - q‖ + ‖q - y‖)`. Compare
+`Convex.norm_image_sub_le_of_norm_fderiv_le` for a single segment. -/
+theorem norm_image_sub_le_of_norm_fderiv_le_of_segment_subset {F G : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {s : Set F} {g : F → G} {L : ℝ}
+    (hg : ∀ z ∈ s, DifferentiableAt ℝ g z) (hL : ∀ z ∈ s, ‖fderiv ℝ g z‖ ≤ L) {x p q y : F}
+    (hxp : segment ℝ x p ⊆ s) (hpq : segment ℝ p q ⊆ s) (hqy : segment ℝ q y ⊆ s) :
+    ‖g y - g x‖ ≤ L * (dist x p + dist p q + dist q y) := by
+  have hseg : ∀ {a b : F}, segment ℝ a b ⊆ s → ‖g b - g a‖ ≤ L * dist a b := fun {a b} hab ↦ by
+    rw [dist_comm, dist_eq_norm]
+    exact (convex_segment a b).norm_image_sub_le_of_norm_fderiv_le (fun z hz ↦ hg z (hab hz))
+      (fun z hz ↦ hL z (hab hz)) (left_mem_segment ℝ a b) (right_mem_segment ℝ a b)
+  calc ‖g y - g x‖ = ‖(g p - g x) + (g q - g p) + (g y - g q)‖ := by abel_nf
+    _ ≤ ‖g p - g x‖ + ‖g q - g p‖ + ‖g y - g q‖ := norm_add₃_le
+    _ ≤ L * dist x p + L * dist p q + L * dist q y := by
+      gcongr <;> exact hseg ‹_›
+    _ = _ := by ring
+
 /-- A function with derivative bounded by `C` that vanishes outside the time interval `(a, b)` is
 bounded by `C * (b - a)`, by the mean value inequality from its value at the time `a`. -/
 theorem norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero {E : Type*} [NormedAddCommGroup E]
@@ -436,6 +529,33 @@ theorem norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero {E : Type*} [NormedAddCommG
     exact this.trans (mul_le_mul_of_nonneg_left hn hC0)
   · rw [hzero q hq, norm_zero]
     exact mul_nonneg hC0 (sub_nonneg.2 hab)
+
+open Topology in
+/-- Let `f : E → F` be differentiable in a neighbourhood of `a`. If `Df(x) = o(‖x - a‖ ^ r)` as
+`x → a`, where `r ≥ 0`, then `f(x) - f(a) = o(‖x - a‖ ^ (r + 1))`. This is the little-o counterpart
+of Mathlib's `sub_isBigO_norm_rpow_add_one_of_fderiv`. -/
+theorem sub_isLittleO_norm_rpow_add_one_of_fderiv {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} {a : E} {r : ℝ}
+    (hr : 0 ≤ r) (hdf : ∀ᶠ x in 𝓝 a, DifferentiableAt ℝ f x)
+    (hderiv : fderiv ℝ f =o[𝓝 a] (‖· - a‖ ^ r)) :
+    (f · - f a) =o[𝓝 a] (‖· - a‖ ^ (r + 1)) := by
+  -- the mean value inequality on balls about `a`, as for `sub_isBigO_norm_rpow_add_one_of_fderiv`
+  refine Asymptotics.IsLittleO.of_bound fun C hC ↦ ?_
+  obtain ⟨ε, hε₀, hε⟩ := Metric.eventually_nhds_iff_ball.mp (hdf.and (hderiv.bound hC))
+  rw [Metric.eventually_nhds_iff_ball]
+  refine ⟨ε, hε₀, fun y hy ↦ ?_⟩
+  have hsub : Metric.closedBall a ‖y - a‖ ⊆ Metric.ball a ε :=
+    Metric.closedBall_subset_ball (mem_ball_iff_norm.mp hy)
+  have h := (convex_closedBall a ‖y - a‖).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
+    (C := C * ‖y - a‖ ^ r) (fun z hz ↦ (hε z (hsub hz)).1) (fun z hz ↦ ?_)
+    (Metric.mem_closedBall_self (norm_nonneg _)) (mem_closedBall_iff_norm.mpr le_rfl)
+  · rw [Real.norm_of_nonneg (by positivity), Real.rpow_add_one' (by positivity) (by positivity),
+      ← mul_assoc]
+    exact h
+  · refine (hε z (hsub hz)).2.trans ?_
+    rw [Real.norm_of_nonneg (by positivity)]
+    gcongr
+    exact mem_closedBall_iff_norm.mp hz
 
 end TauCeti
 
@@ -580,3 +700,165 @@ theorem eq_of_hasDerivWithinAt_zero (hs : IsPreconnected s)
   simpa [sub_eq_zero, eq_comm] using h
 
 end IsPreconnected
+
+namespace TauCeti
+
+open Filter Set
+open scoped Topology
+
+variable {f f' : ℝ → ℝ} {a x L : ℝ}
+
+/-- A real function continuous on `[x, ∞)`, with a nonpositive derivative on `(x, ∞)` and limit
+`L` at `+∞`, satisfies `L ≤ f x`. -/
+theorem le_of_tendsto_atTop_of_hasDerivAt_nonpos (hfc : ContinuousOn f (Ici x))
+    (hf : ∀ y, x < y → HasDerivAt f (f' y) y) (hlim : Tendsto f atTop (𝓝 L))
+    (hf' : ∀ y, x < y → f' y ≤ 0) : L ≤ f x := by
+  have hanti : AntitoneOn f (Ici x) :=
+    antitoneOn_of_hasDerivWithinAt_nonpos (convex_Ici x) hfc
+      (fun y hy => (hf y (by simpa using hy)).hasDerivWithinAt)
+      (fun y hy => hf' y (by simpa using hy))
+  refine le_of_tendsto hlim ?_
+  filter_upwards [eventually_ge_atTop x] with t ht
+  exact hanti (mem_Ici.mpr le_rfl) (mem_Ici.mpr ht) ht
+
+/-- A real function continuous on `[x, ∞)`, with a negative derivative on `(x, ∞)` and limit `L`
+at `+∞`, satisfies `L < f x`. -/
+theorem lt_of_tendsto_atTop_of_hasDerivAt_neg (hfc : ContinuousOn f (Ici x))
+    (hf : ∀ y, x < y → HasDerivAt f (f' y) y) (hlim : Tendsto f atTop (𝓝 L))
+    (hf' : ∀ y, x < y → f' y < 0) : L < f x := by
+  have hanti : StrictAntiOn f (Ici x) :=
+    strictAntiOn_of_hasDerivWithinAt_neg (convex_Ici x) hfc
+      (fun y hy => (hf y (by simpa using hy)).hasDerivWithinAt)
+      (fun y hy => hf' y (by simpa using hy))
+  have h1 : L ≤ f (x + 1) := le_of_tendsto_atTop_of_hasDerivAt_nonpos
+    (hfc.mono (Ici_subset_Ici.mpr (by linarith))) (fun y hy => hf y (by linarith)) hlim
+    (fun y hy => (hf' y (by linarith)).le)
+  exact h1.trans_lt (hanti (mem_Ici.mpr le_rfl) (mem_Ici.mpr (by linarith)) (by linarith))
+
+/-- A real function continuous on `[a, x]`, `a < x`, with a positive derivative on `(a, x)`
+satisfies `f a < f x`. -/
+theorem lt_of_hasDerivAt_pos (hax : a < x) (hfc : ContinuousOn f (Icc a x))
+    (hf : ∀ y ∈ Ioo a x, HasDerivAt f (f' y) y) (hf' : ∀ y ∈ Ioo a x, 0 < f' y) : f a < f x :=
+  strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc a x) hfc
+    (fun y hy => (hf y (by simpa using hy)).hasDerivWithinAt)
+    (fun y hy => hf' y (by simpa using hy)) ⟨le_rfl, hax.le⟩ ⟨hax.le, le_rfl⟩ hax
+
+/-- A real function continuous on `[a, x]`, `a < x`, with a negative derivative on `(a, x)`
+satisfies `f x < f a`. -/
+theorem lt_of_hasDerivAt_neg (hax : a < x) (hfc : ContinuousOn f (Icc a x))
+    (hf : ∀ y ∈ Ioo a x, HasDerivAt f (f' y) y) (hf' : ∀ y ∈ Ioo a x, f' y < 0) : f x < f a :=
+  strictAntiOn_of_hasDerivWithinAt_neg (convex_Icc a x) hfc
+    (fun y hy => (hf y (by simpa using hy)).hasDerivWithinAt)
+    (fun y hy => hf' y (by simpa using hy)) ⟨le_rfl, hax.le⟩ ⟨hax.le, le_rfl⟩ hax
+
+/-- **Sign change of the derivative, nonstrict form.** Let `f` be continuous on `[a, ∞)` with
+limit `L` at `+∞` and `L ≤ f a`, and let its derivative stay nonpositive beyond any point of
+`(a, ∞)` where it is nonpositive (so `f` first increases, then decreases). Then `L ≤ f x` for
+`x ≥ a`. -/
+theorem le_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_nonpos (hax : a ≤ x)
+    (hfc : ContinuousOn f (Ici a)) (hf : ∀ y, a < y → HasDerivAt f (f' y) y) (ha : L ≤ f a)
+    (hlim : Tendsto f atTop (𝓝 L)) (hf' : ∀ y z, a < y → y ≤ z → f' y ≤ 0 → f' z ≤ 0) :
+    L ≤ f x := by
+  rcases hax.eq_or_lt with rfl | hax
+  · exact ha
+  rcases le_or_gt (f' x) 0 with hx | hx
+  · exact le_of_tendsto_atTop_of_hasDerivAt_nonpos (hfc.mono (Ici_subset_Ici.mpr hax.le))
+      (fun y hy => hf y (hax.trans hy)) hlim fun y hy => hf' x y hax hy.le hx
+  · have hmono : MonotoneOn f (Icc a x) :=
+      monotoneOn_of_hasDerivWithinAt_nonneg (convex_Icc a x) (hfc.mono Icc_subset_Ici_self)
+        (fun y hy => by
+          rw [interior_Icc] at hy
+          exact (hf y hy.1).hasDerivWithinAt)
+        (fun y hy => by
+          rw [interior_Icc] at hy
+          by_contra! h
+          exact (hf' y x hy.1 hy.2.le h.le).not_gt hx)
+    exact ha.trans (hmono ⟨le_rfl, hax.le⟩ ⟨hax.le, le_rfl⟩ hax.le)
+
+/-- **Sign change of the derivative, strict form.** Let `f` be continuous on `[a, ∞)` with limit
+`L` at `+∞` and `L ≤ f a`, and let its derivative be negative beyond any point of `(a, ∞)` where
+it is nonpositive. Then `L < f x` for `x > a`. -/
+theorem lt_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_neg (hax : a < x)
+    (hfc : ContinuousOn f (Ici a)) (hf : ∀ y, a < y → HasDerivAt f (f' y) y) (ha : L ≤ f a)
+    (hlim : Tendsto f atTop (𝓝 L)) (hf' : ∀ y z, a < y → y < z → f' y ≤ 0 → f' z < 0) :
+    L < f x := by
+  rcases le_or_gt (f' x) 0 with hx | hx
+  · exact lt_of_tendsto_atTop_of_hasDerivAt_neg (hfc.mono (Ici_subset_Ici.mpr hax.le))
+      (fun y hy => hf y (hax.trans hy)) hlim fun y hy => hf' x y hax hy hx
+  · refine ha.trans_lt (lt_of_hasDerivAt_pos hax (hfc.mono Icc_subset_Ici_self)
+      (fun y hy => hf y hy.1) fun y hy => ?_)
+    by_contra! h
+    exact (hf' y x hy.1 hy.2 h).not_gt hx
+
+/-- **Sign propagation for a secant-convex derivative.** Let `D(0) = 0` and
+`D′(y) = w(y) φ(y²)` with `w > 0`, where `φ(t) < (t/s) φ(s)` for `0 < t < s`. If `D(y) ≥ 0` at
+some `y > 0`, then `D > 0` on `(y, ∞)`. -/
+theorem pos_of_hasDerivAt_mul_secant {D w φ : ℝ → ℝ} (hw : ∀ y, 0 < w y)
+    (hD : ∀ y, HasDerivAt D (w y * φ (y ^ 2)) y) (hD0 : D 0 = 0)
+    (hsec : ∀ t s, 0 < t → t < s → φ t < t / s * φ s) {y : ℝ} (hy : 0 < y) (hDy : 0 ≤ D y)
+    {t : ℝ} (hyt : y < t) : 0 < D t := by
+  have hcont : Continuous D := continuous_iff_continuousAt.mpr fun s => (hD s).continuousAt
+  -- If `φ(y²) ≤ 0`, then `φ(s²) < 0` on `(0, y)` by the secant property, so `D y < D 0 = 0`.
+  have hφy : 0 < φ (y ^ 2) := by
+    by_contra! hcon
+    have := lt_of_hasDerivAt_neg (f' := fun s => w s * φ (s ^ 2)) hy hcont.continuousOn
+      (fun s _ => hD s) fun s hs => by
+        have hs0 : 0 < s := hs.1
+        have h1 := hsec _ _ (by positivity : 0 < s ^ 2) (by nlinarith [hs.2] : s ^ 2 < y ^ 2)
+        have h2 : s ^ 2 / y ^ 2 * φ (y ^ 2) ≤ 0 :=
+          mul_nonpos_of_nonneg_of_nonpos (by positivity) hcon
+        exact mul_neg_of_pos_of_neg (hw s) (by linarith)
+    linarith
+  -- Then `φ(s²) > 0` for `s > y`, so `D` increases strictly on `[y, t]`.
+  have := lt_of_hasDerivAt_pos (f' := fun s => w s * φ (s ^ 2)) hyt hcont.continuousOn
+    (fun s _ => hD s) fun s hs => by
+      have h1 := hsec _ _ (by positivity : 0 < y ^ 2) (by nlinarith [hs.1] : y ^ 2 < s ^ 2)
+      have h2 : 0 < φ (s ^ 2) := by
+        by_contra! hcon
+        have : y ^ 2 / s ^ 2 * φ (s ^ 2) ≤ 0 :=
+          mul_nonpos_of_nonneg_of_nonpos (by positivity) hcon
+        linarith
+      exact mul_pos (hw s) h2
+  linarith
+
+end TauCeti
+
+section SecondDifference
+
+variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
+  [NormedSpace ℝ G] {f : E → G} {s : Set E} {C L : ℝ}
+
+/-- **Second-difference estimate.** If `f` is differentiable on the convex set `s`, with
+`‖Df‖ ≤ C` and `Df` `L`-Lipschitz there, then
+`‖(f (a + b) - f a) - (f (a' + b') - f a')‖ ≤ C ‖b - b'‖ + L ‖b'‖ ‖a - a'‖`
+when `a`, `a'`, `a + b`, `a + b'` and `a' + b'` lie in `s`. -/
+theorem Convex.norm_image_sub_sub_sub_le_of_norm_fderiv_le (hs : Convex ℝ s)
+    (hd : ∀ x ∈ s, DifferentiableAt ℝ f x) (hC : ∀ x ∈ s, ‖fderiv ℝ f x‖ ≤ C)
+    (hL : ∀ x ∈ s, ∀ y ∈ s, ‖fderiv ℝ f x - fderiv ℝ f y‖ ≤ L * ‖x - y‖)
+    {a a' b b' : E} (ha : a ∈ s) (ha' : a' ∈ s) (hab : a + b ∈ s) (hab' : a + b' ∈ s)
+    (ha'b' : a' + b' ∈ s) :
+    ‖(f (a + b) - f a) - (f (a' + b') - f a')‖ ≤ C * ‖b - b'‖ + L * ‖b'‖ * ‖a - a'‖ := by
+  -- The first step changes `b` into `b'` at the base point `a`.
+  have hfirst : ‖f (a + b) - f (a + b')‖ ≤ C * ‖b - b'‖ := by
+    simpa using hs.norm_image_sub_le_of_norm_fderiv_le hd hC hab' hab
+  -- The second step moves the base point of `y ↦ f (y + b') - f y` from `a'` to `a`.
+  have hseg : ∀ y ∈ segment ℝ a' a, y ∈ s ∧ y + b' ∈ s := fun y hy ↦ by
+    refine ⟨hs.segment_subset ha' ha hy, hs.segment_subset ha'b' hab' ?_⟩
+    have h : b' + y ∈ segment ℝ (b' + a') (b' + a) := by
+      rw [← segment_translate_image]
+      exact ⟨y, hy, rfl⟩
+    simpa only [add_comm b'] using h
+  have hsecond : ‖(f (a + b') - f a) - (f (a' + b') - f a')‖ ≤ L * ‖b'‖ * ‖a - a'‖ := by
+    have hφd : ∀ y ∈ segment ℝ a' a, HasFDerivWithinAt (fun y ↦ f (y + b') - f y)
+        (fderiv ℝ f (y + b') - fderiv ℝ f y) (segment ℝ a' a) y := fun y hy ↦ by
+      have hshift := (hd _ (hseg y hy).2).hasFDerivAt.comp y ((hasFDerivAt_id y).add_const b')
+      rw [ContinuousLinearMap.comp_id] at hshift
+      exact (hshift.sub (hd y (hseg y hy).1).hasFDerivAt).hasFDerivWithinAt
+    refine (convex_segment a' a).norm_image_sub_le_of_norm_hasFDerivWithin_le hφd
+      (fun y hy ↦ ?_) (left_mem_segment ℝ a' a) (right_mem_segment ℝ a' a)
+    simpa using hL _ (hseg y hy).2 y (hseg y hy).1
+  calc _ = ‖(f (a + b) - f (a + b')) + ((f (a + b') - f a) - (f (a' + b') - f a'))‖ := by
+        congr 1; abel
+    _ ≤ _ := (norm_add_le _ _).trans (add_le_add hfirst hsecond)
+
+end SecondDifference

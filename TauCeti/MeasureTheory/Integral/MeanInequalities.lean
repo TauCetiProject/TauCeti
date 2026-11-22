@@ -15,6 +15,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.IntegrableOn
@@ -62,6 +63,8 @@ infinity (`TauCeti.exp_integral_log_max_le_rpow`, `TauCeti.weighted_integral_rpo
 ## Main declarations
 
 * `TauCeti.lintegral_mul_le_of_inv_add_inv_eq`: the three-exponent Hölder inequality.
+* `TauCeti.lintegral_mul_le_rpow_mul_eLpNorm`: uniform `1 < p ≤ ∞` Hölder bound
+  `∫⁻ k g ≤ (∫⁻ k ^ (1 - 1/p)⁻¹) ^ (1 - 1/p) * ‖g‖_p`.
 * `TauCeti.lintegral_ofReal_rpow_mul_eNorm_le`: Hölder's inequality for `w ^ (γ - 1) ‖g‖ₑ`.
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
 * `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
@@ -128,6 +131,32 @@ theorem lintegral_mul_le_of_inv_add_inv_eq {k g : β → ℝ≥0∞} (hk : AEMea
           ENNReal.rpow_add_of_nonneg _ _ (mul_nonneg hr0.le ha) (mul_nonneg hr0.le hb),
           ENNReal.rpow_add_of_nonneg _ _ (mul_nonneg hp0.le ha) (mul_nonneg hp0.le hc)]
         ring
+
+/-- **Hölder's inequality against an `eLpNorm` factor.** For `1 < p ≤ ∞` (with `1/∞` read as `0`),
+`∫⁻ y, k y * g y ∂ν ≤ (∫⁻ y, k y ^ (1 - 1/p)⁻¹ ∂ν) ^ (1 - 1/p) * ‖g‖_p`. -/
+theorem lintegral_mul_le_rpow_mul_eLpNorm {k g : β → ℝ≥0∞} (hk : AEMeasurable k ν)
+    {p : ℝ≥0∞} (hp : 1 < p) :
+    ∫⁻ y, k y * g y ∂ν ≤
+      (∫⁻ y, k y ^ (1 - p.toReal⁻¹)⁻¹ ∂ν) ^ (1 - p.toReal⁻¹) * eLpNorm g p ν := by
+  have : ENNReal.HolderTriple (1 - p⁻¹)⁻¹ p 1 :=
+    (ENNReal.HolderConjugate.inv_one_sub_inv' hp.le).symm
+  have hp_inv_lt : p⁻¹ < 1 := ENNReal.inv_lt_one.2 hp
+  have hsub_pos : 0 < 1 - p⁻¹ := tsub_pos_of_lt hp_inv_lt
+  have hq0 : (1 - p⁻¹)⁻¹ ≠ 0 := ENNReal.inv_ne_zero.2 (ENNReal.sub_ne_top ENNReal.one_ne_top)
+  have hq_top : (1 - p⁻¹)⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hsub_pos.ne'
+  have htoReal : ((1 - p⁻¹)⁻¹).toReal = (1 - p.toReal⁻¹)⁻¹ := by
+    rw [ENNReal.toReal_inv, ENNReal.toReal_sub_of_le hp_inv_lt.le ENNReal.one_ne_top,
+      ENNReal.toReal_one, ENNReal.toReal_inv]
+  calc ∫⁻ y, k y * g y ∂ν
+      ≤ eLpNorm (k * g) 1 ν := by
+        simpa only [Pi.mul_apply, eNorm_eq_self] using
+          lintegral_eNorm_le_eLpNorm_one (f := k * g) (μ := ν)
+    _ ≤ eLpNorm k (1 - p⁻¹)⁻¹ ν * eLpNorm g p ν :=
+        eLpNorm_le_eLpNorm_mul_eLpNorm_ennreal_of_pos one_pos
+    _ = (∫⁻ y, k y ^ (1 - p.toReal⁻¹)⁻¹ ∂ν) ^ (1 - p.toReal⁻¹) * eLpNorm g p ν := by
+        rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq_top hk.aestronglyMeasurable, htoReal,
+          one_div, inv_inv]
+        simp only [eNorm_eq_self]
 
 /-- **Hölder's inequality for a power times a norm.** If `p'` and `p` are conjugate exponents and
 `(γ - 1) p' = q`, then `∫⁻ w ^ (γ - 1) ‖g‖ₑ ≤ (∫⁻ w ^ q) ^ (1/p') ‖g‖_{Lᵖ}`. -/
