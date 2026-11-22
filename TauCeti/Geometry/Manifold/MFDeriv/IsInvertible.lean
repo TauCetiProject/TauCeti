@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Invertible manifold derivatives of composites
@@ -87,20 +87,9 @@ finite-dimensionality of the source follows from injectivity, which embeds the s
 the target model, not from the rank equality alone. -/
 theorem isInvertible_mfderiv_iff_injective [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E']
     {f : M → M'} {x : M} (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E') :
-    (mfderiv I I' f x).IsInvertible ↔ Function.Injective (mfderiv I I' f x) := by
-  refine ⟨ContinuousLinearMap.IsInvertible.injective, fun hinj ↦ ?_⟩
-  -- Read the derivative on the model spaces, where the operator criterion applies.
-  set e := tangentSpaceCastModel I x
-  set e' := tangentSpaceCastModel I' (f x)
-  set A : E →L[𝕜] E' := e.arrowCongrEquiv e' (mfderiv I I' f x)
-  have hA : Function.Injective A := by
-    simp only [A, ContinuousLinearEquiv.arrowCongrEquiv_apply, ContinuousLinearMap.coe_comp,
-      ContinuousLinearEquiv.coe_coe]
-    exact e'.injective.comp (hinj.comp e.symm.injective)
-  have hAinv := (ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq hdim).2 hA
-  simp only [A, ContinuousLinearEquiv.arrowCongrEquiv_apply] at hAinv
-  rwa [ContinuousLinearMap.isInvertible_equiv_comp,
-    ContinuousLinearMap.isInvertible_comp_equiv] at hAinv
+    (mfderiv I I' f x).IsInvertible ↔ Function.Injective (mfderiv I I' f x) :=
+  have : FiniteDimensional 𝕜 (TangentSpace I' (f x)) := inferInstanceAs (FiniteDimensional 𝕜 E')
+  ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq hdim
 
 /-- Between manifolds whose middle model is finite-dimensional and whose target model has the same
 `Module.finrank`, if a composite of differentiable maps has invertible manifold derivative, then so
