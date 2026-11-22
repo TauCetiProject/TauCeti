@@ -49,6 +49,8 @@ inside the ball carry no data. The size of the derivatives is measured by the op
 
 ## Main results
 
+* `TauCeti.norm_mfderiv_sq_eq_sum_pullbackMetricCoeff`: the squared length `‖dφ_x v‖²` is the
+  quadratic form `Σᵢⱼ g_ij(x) vᵢ vⱼ` of the pulled-back metric coefficients.
 * `TauCeti.IsAsymptoticallyEuclideanEnd.isOpen_image` and
   `TauCeti.IsAsymptoticallyEuclideanEnd.isPathConnected_image`: in dimension at least two, the
   image of an end is open and path-connected.
@@ -116,6 +118,23 @@ theorem pullbackMetricCoeff_apply (φ : EuclideanSpace ℝ (Fin n) → M)
       inner ℝ (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x (EuclideanSpace.basisFun (Fin n) ℝ i))
         (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x (EuclideanSpace.basisFun (Fin n) ℝ j)) :=
   (rfl)
+
+/-- The squared length of the image of a vector `v` under the differential of `φ` is the quadratic
+form of the pulled-back metric coefficients: `‖dφ_x v‖² = Σᵢⱼ g_ij(x) vᵢ vⱼ`. -/
+theorem norm_mfderiv_sq_eq_sum_pullbackMetricCoeff (φ : EuclideanSpace ℝ (Fin n) → M)
+    (x v : EuclideanSpace ℝ (Fin n)) :
+    ‖mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x v‖ ^ 2 =
+      ∑ i, ∑ j, pullbackMetricCoeff I φ x i j * v i * v j := by
+  set L := mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x
+  have hv : L v = ∑ i, v i • L (EuclideanSpace.basisFun (Fin n) ℝ i) := by
+    conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr v]
+    exact (map_sum L _ _).trans (Finset.sum_congr rfl fun i _ ↦ map_smul _ _ _)
+  rw [← real_inner_self_eq_norm_sq, hv]
+  simp only [sum_inner, inner_sum, real_inner_smul_left, real_inner_smul_right,
+    pullbackMetricCoeff_apply, L]
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by
+    rw [real_inner_comm]
+    ring
 
 /-- Composing with a local Riemannian isometry does not change the pulled-back metric
 coefficients at a point where the parametrization is differentiable. -/
