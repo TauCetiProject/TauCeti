@@ -485,23 +485,38 @@ instance instIsCancelSMulOp : IsCancelSMul Gᵐᵒᵖ (MilnorTotalSpace G) :=
     have hl : label i (op g.unop • p) = label i p := by rw [op_unop, hgp]
     rw [label_op_smul g.unop hi, mul_eq_left] at hl; exact unop_injective hl
 
+private def invRealizationHomeomorph (G : Type u) [Group G] :
+    universalGSpace G ≃ₜ universalGSpace G :=
+  letI : DecidableEq ℕ := Classical.decEq ℕ
+  letI : DecidableEq G := Classical.decEq G
+  let f := indexedJoinMap (A := fun _ : ℕ ↦ G) (B := fun _ : ℕ ↦ G)
+    _root_.id Function.injective_id (fun _ a ↦ a⁻¹)
+  have hff : f.comp f =
+      PreAbstractSimplicialComplex.SimplicialMap.id
+        (indexedJoin fun _ : ℕ ↦ G).toPreAbstractSimplicialComplex := by
+    rw [← indexedJoinMap_comp]
+    simp only [Function.comp_id, inv_inv]
+    exact indexedJoinMap_id
+  f.realizationHomeomorph f hff hff
+
 /-- Equivalence `universalGSpace G ≃ MilnorTotalSpace G` inverting every vertex label. -/
-def invEquiv (G : Type u) [Group G] : universalGSpace G ≃ MilnorTotalSpace G where
-  toFun x := relabel Inv.inv (ofRealization x)
-  invFun p := (relabel Inv.inv p).toRealization
-  left_inv x := congrArg toRealization <| by
-    have hinv : (Inv.inv : G → G) ∘ Inv.inv = _root_.id := funext inv_inv
-    rw [relabel_comp, hinv, relabel_id]
-  right_inv p := by
-    have hinv : (Inv.inv : G → G) ∘ Inv.inv = _root_.id := funext inv_inv
-    dsimp only
-    rw [← equivRealization_apply, ← equivRealization_symm_apply, Equiv.symm_apply_apply,
-      relabel_comp, hinv, relabel_id]
+def invEquiv (G : Type u) [Group G] : universalGSpace G ≃ MilnorTotalSpace G :=
+  (invRealizationHomeomorph G).toEquiv.trans (equivRealization G).symm
 
 theorem val_invEquiv (x : universalGSpace G) :
     (invEquiv G x).val =
-      Finsupp.mapDomain (fun v : Σ _ : ℕ, G ↦ (⟨v.1, v.2⁻¹⟩ : Σ _ : ℕ, G)) x.val :=
-  val_relabel Inv.inv (ofRealization x)
+      Finsupp.mapDomain (fun v : Σ _ : ℕ, G ↦ (⟨v.1, v.2⁻¹⟩ : Σ _ : ℕ, G)) x.val := by
+  let : DecidableEq ℕ := Classical.decEq ℕ
+  let : DecidableEq G := Classical.decEq G
+  rw [invEquiv, Equiv.trans_apply, Homeomorph.coe_toEquiv, equivRealization_symm_apply,
+    val_ofRealization, invRealizationHomeomorph,
+    PreAbstractSimplicialComplex.SimplicialMap.realizationHomeomorph_apply]
+  exact (PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val
+    (indexedJoinMap (A := fun _ : ℕ ↦ G) (B := fun _ : ℕ ↦ G)
+      _root_.id Function.injective_id (fun _ a ↦ a⁻¹)) x).trans
+    (congrArg (Finsupp.mapDomain · x.val) (funext (indexedJoinMap_apply
+      (A := fun _ : ℕ ↦ G) (B := fun _ : ℕ ↦ G)
+      _root_.id Function.injective_id (fun _ a ↦ a⁻¹))))
 
 @[simp] theorem invEquiv_basepoint : invEquiv G (universalGSpaceBasepoint G) = basepoint G :=
   ext_val (by
@@ -524,13 +539,10 @@ end MilnorTotalSpace
 
 /-- Continuous equivariant comparison from `universalGSpace G` to `MilnorTotalSpace G`. -/
 def weakToMilnorTotalSpace (G : Type u) [Group G] [TopologicalSpace G] :
-    C(universalGSpace G, MilnorTotalSpace G) where
-  toFun := MilnorTotalSpace.invEquiv G
-  continuous_toFun := by
-    let _ := Classical.decEq ℕ; let _ := Classical.decEq G
-    exact MilnorTotalSpace.continuous_ofRealization.comp
-      (indexedJoinMap (A := fun _ : ℕ ↦ G) (B := fun _ : ℕ ↦ G)
-        _root_.id Function.injective_id (fun _ a ↦ a⁻¹)).realizationMap.continuous
+    C(universalGSpace G, MilnorTotalSpace G) :=
+  ContinuousMap.comp
+    ⟨MilnorTotalSpace.ofRealization, MilnorTotalSpace.continuous_ofRealization⟩
+    (MilnorTotalSpace.invRealizationHomeomorph G : C(universalGSpace G, universalGSpace G))
 
 @[simp] theorem coe_weakToMilnorTotalSpace (G : Type u) [Group G] [TopologicalSpace G] :
     (weakToMilnorTotalSpace G : universalGSpace G → MilnorTotalSpace G) =

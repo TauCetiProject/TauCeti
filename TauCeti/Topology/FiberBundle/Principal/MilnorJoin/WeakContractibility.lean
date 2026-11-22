@@ -87,8 +87,7 @@ private def ofFinsetCoord (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G)
         · exact le_rfl
       · exact le_rfl
     · rw [ofFinsetCoordVal, Finsupp.sum_embDomain,
-        Finsupp.sum_of_support_subset _ (Finsupp.support_indicator_subset S _) _ fun _ _ ↦ rfl]
-      rw [Finset.sum_congr rfl fun i hi ↦ Finsupp.indicator_of_mem hi (fun i _ ↦ w i)]
+        Finsupp.sum_indicator_index (h_zero := fun _ _ ↦ rfl)]
       exact hw_sum
     · intro v₁ v₂ hv₁ hv₂ h12
       rw [← Finsupp.mem_support_iff, ofFinsetCoordVal, Finsupp.support_embDomain,

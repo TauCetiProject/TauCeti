@@ -155,13 +155,20 @@ private theorem le_maxBaseWeightFun (i : ℕ) (b : MilnorClassifyingSpace G) :
     baseWeight G i b ≤ maxBaseWeightFun G b :=
   le_ciSup ⟨1, forall_mem_range.2 fun j ↦ baseWeight_le_one j b⟩ i
 
-private theorem continuous_maxBaseWeightFun (G : Type u) [Group G] [TopologicalSpace G] :
-    Continuous (maxBaseWeightFun G) := by
-  refine TauCeti.continuous_ciSup_of_eventually_le (fun i ↦ (baseWeight G i).continuous)
-    (fun b ↦ ⟨1, forall_mem_range.2 fun j ↦ baseWeight_le_one j b⟩) baseWeight_nonneg fun b₀ ↦ ?_
+private theorem maxBaseWeightFun_pos (b : MilnorClassifyingSpace G) :
+    0 < maxBaseWeightFun G b :=
+  let ⟨i₀, hi₀⟩ := exists_mem_baseCoordSet b
+  hi₀.trans_le (le_maxBaseWeightFun i₀ b)
+
+private theorem eventually_tail_lt_and_half_lt_finSup (G : Type u) [Group G] [TopologicalSpace G]
+    (b₀ : MilnorClassifyingSpace G) :
+    ∃ W ∈ 𝓝 b₀, ∀ x ∈ W,
+      (∀ j ∉ (finite_support_baseWeight b₀).toFinset,
+        baseWeight G j x < maxBaseWeightFun G b₀ / 4) ∧
+      maxBaseWeightFun G b₀ / 2 <
+        ⨆ i : (finite_support_baseWeight b₀).toFinset, baseWeight G i.val x := by
   let I := (finite_support_baseWeight b₀).toFinset
-  obtain ⟨i₀, hi₀⟩ := exists_mem_baseCoordSet b₀
-  have hm₀ : 0 < maxBaseWeightFun G b₀ := hi₀.trans_le (le_maxBaseWeightFun i₀ b₀)
+  have hm₀ : 0 < maxBaseWeightFun G b₀ := maxBaseWeightFun_pos b₀
   have hcont_sup : Continuous fun x : MilnorClassifyingSpace G ↦ ⨆ i : I, baseWeight G i.val x :=
     TauCeti.continuous_ciSup_of_finite fun i : I ↦ (baseWeight G i.val).continuous
   have hcont_sum : Continuous fun x : MilnorClassifyingSpace G ↦ ∑ i ∈ I, baseWeight G i x := by
@@ -171,13 +178,24 @@ private theorem continuous_maxBaseWeightFun (G : Type u) [Group G] [TopologicalS
       ⟨1, forall_mem_range.2 fun j ↦ baseWeight_le_one j b₀⟩ (fun i ↦ baseWeight_nonneg i b₀)
       fun _ hj ↦ (baseWeight_eq_zero_of_notMem hj).symm ▸
         Real.iSup_nonneg fun i ↦ baseWeight_nonneg i.val b₀
-  have hW : ({x | 1 - maxBaseWeightFun G b₀ / 3 < ∑ i ∈ I, baseWeight G i x} ∩
-      {x | maxBaseWeightFun G b₀ / 2 < ⨆ i : I, baseWeight G i.val x}) ∈ 𝓝 b₀ :=
+  refine ⟨{x | 1 - maxBaseWeightFun G b₀ / 4 < ∑ i ∈ I, baseWeight G i x} ∩
+      {x | maxBaseWeightFun G b₀ / 2 < ⨆ i : I, baseWeight G i.val x},
     ((isOpen_lt continuous_const hcont_sum).inter (isOpen_lt continuous_const hcont_sup)).mem_nhds
       ⟨by have := sum_toFinset_support_baseWeight b₀; dsimp; linarith,
-       by dsimp; rw [← hsup₀]; linarith⟩
-  exact ⟨I, eventually_of_mem hW fun x ⟨hx1, hx2⟩ j hj ↦ by
-    have := baseWeight_le_one_sub_sum (b := x) hj; dsimp at hx1 hx2; linarith⟩
+       by dsimp; rw [← hsup₀]; linarith⟩,
+    fun x ⟨hx1, hx2⟩ ↦ ⟨fun j hj ↦ ?_, hx2⟩⟩
+  have htail := baseWeight_le_one_sub_sum (b := x) hj
+  dsimp at hx1
+  linarith
+
+private theorem continuous_maxBaseWeightFun (G : Type u) [Group G] [TopologicalSpace G] :
+    Continuous (maxBaseWeightFun G) := by
+  refine TauCeti.continuous_ciSup_of_eventually_le (fun i ↦ (baseWeight G i).continuous)
+    (fun b ↦ ⟨1, forall_mem_range.2 fun j ↦ baseWeight_le_one j b⟩) baseWeight_nonneg fun b₀ ↦ ?_
+  obtain ⟨W, hW, h⟩ := eventually_tail_lt_and_half_lt_finSup G b₀
+  have hm₀ : 0 < maxBaseWeightFun G b₀ := maxBaseWeightFun_pos b₀
+  exact ⟨(finite_support_baseWeight b₀).toFinset,
+    eventually_of_mem hW fun x hx j hj ↦ by linarith [(h x hx).1 j hj, (h x hx).2]⟩
 
 /-- Pointwise maximum weight `m(b) = ⨆ i, baseWeight G i b` as a continuous function. -/
 def maxBaseWeight (G : Type u) [Group G] [TopologicalSpace G] : C(MilnorClassifyingSpace G, ℝ) :=
@@ -188,28 +206,23 @@ def maxBaseWeight (G : Type u) [Group G] [TopologicalSpace G] : C(MilnorClassify
 theorem le_maxBaseWeight (i : ℕ) (b : MilnorClassifyingSpace G) :
     baseWeight G i b ≤ maxBaseWeight G b := le_maxBaseWeightFun i b
 theorem maxBaseWeight_pos (b : MilnorClassifyingSpace G) : 0 < maxBaseWeight G b :=
-  let ⟨i₀, hi₀⟩ := exists_mem_baseCoordSet b
-  hi₀.trans_le (le_maxBaseWeight i₀ b)
+  maxBaseWeightFun_pos b
 
 private theorem locallyFinite_support_halfMaxTrunc_baseWeight
     (G : Type u) [Group G] [TopologicalSpace G] :
     LocallyFinite fun i ↦ support
       (PartitionOfUnity.halfMaxTrunc (baseWeight G) (maxBaseWeight G) i) := fun b₀ ↦ by
-  let I := (finite_support_baseWeight b₀).toFinset
-  have hm₀ := maxBaseWeight_pos b₀
-  have hcont_sum : Continuous fun x : MilnorClassifyingSpace G ↦ ∑ i ∈ I, baseWeight G i x := by
-    fun_prop
-  have hW : ({x | 1 - maxBaseWeight G b₀ / 4 < ∑ i ∈ I, baseWeight G i x} ∩
-      {x | maxBaseWeight G b₀ / 2 < maxBaseWeight G x}) ∈ 𝓝 b₀ :=
-    ((isOpen_lt continuous_const hcont_sum).inter
-      (isOpen_lt continuous_const (maxBaseWeight G).continuous)).mem_nhds
-      ⟨by have := sum_toFinset_support_baseWeight b₀; dsimp; linarith, by dsimp; linarith⟩
-  refine ⟨_, hW, I.finite_toSet.subset fun j ⟨x, hx_supp, hx1, hx2⟩ ↦ ?_⟩
+  obtain ⟨W, hW, h⟩ := eventually_tail_lt_and_half_lt_finSup G b₀
+  refine ⟨W, hW, (finite_support_baseWeight b₀).toFinset.finite_toSet.subset
+    fun j ⟨x, hx_supp, hxW⟩ ↦ ?_⟩
   rw [Finset.mem_coe]; by_contra hj
-  have htail := baseWeight_le_one_sub_sum (b := x) hj
-  dsimp at hx1 hx2
-  rw [Function.mem_support, PartitionOfUnity.halfMaxTrunc_apply] at hx_supp
-  exact hx_supp (max_eq_left (by linarith))
+  have hpos : maxBaseWeight G x / 2 < baseWeight G j x :=
+    PartitionOfUnity.halfMaxTrunc_pos_iff.mp
+      (lt_of_le_of_ne (PartitionOfUnity.halfMaxTrunc_nonneg _ _ j x) (Ne.symm hx_supp))
+  have hfin : ⨆ i : (finite_support_baseWeight b₀).toFinset, baseWeight G i.val x ≤
+      maxBaseWeight G x :=
+    Real.iSup_le (fun i ↦ le_maxBaseWeight i.val x) (maxBaseWeight_pos x).le
+  linarith [(h x hxW).1 j hj, (h x hxW).2]
 
 end BaseWeights
 
