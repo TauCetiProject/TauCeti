@@ -165,11 +165,9 @@ theorem exists_forall_holderOnWith_coord_toSection_of_mul_eq (hp : 1 < p)
   rw [hβ, ENNReal.toNNReal_coe] at hC
   let T := A.sectionChartData.ofExponentLEL μ k hp₀p
   refine ⟨C * ‖T‖₊, fun w ↦ ?_⟩
-  have hTw : toSection (T w) = toSection w :=
-    toSection_eq_of_chartValueL_ae_eq (.of_finrank_lt_mul hp₀ hkp₀) fun i ↦ by
-      rw [SectionChartData.chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL]
   have h := hC (T w)
-  rw [hTw] at h
+  rw [toSection_ofExponentLEL hp₀p
+    ((HasContinuousRepresentatives.of_finrank_lt_mul hp₀ hkp₀).mono hp₀p le_rfl)] at h
   refine h.mono_const ?_
   rw [mul_assoc]
   gcongr

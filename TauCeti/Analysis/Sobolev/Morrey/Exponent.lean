@@ -102,6 +102,29 @@ theorem exists_le_and_inv_sub_inv_le_and_lt_mul {k : ℕ} {p n : ℝ≥0} (hpn :
 
 /-! ### Exponents in `ℝ≥0∞` -/
 
+/-- The exponent `q = p n / (n - r p)` satisfies `1/q + r/n = 1/p` in `ℝ≥0∞`. -/
+private theorem inv_add_mul_inv_eq_of_eq_div {n r : ℕ} {p q : ℝ≥0} (hp : 0 < p)
+    (hrp : (r : ℝ) * p < n) (hq : (q : ℝ) = p * n / (n - r * p)) :
+    (q : ℝ≥0∞)⁻¹ + r * (n : ℝ≥0∞)⁻¹ = (p : ℝ≥0∞)⁻¹ := by
+  have hN0 : (0 : ℝ) < n := (by positivity : (0 : ℝ) ≤ r * p).trans_lt hrp
+  have hq0 : q ≠ 0 := by rw [← NNReal.coe_ne_zero, hq]; positivity
+  have hn0 : (n : ℝ≥0) ≠ 0 := by exact_mod_cast hN0.ne'
+  rw [← ENNReal.coe_natCast n, ← ENNReal.coe_inv hq0, ← ENNReal.coe_inv hp.ne',
+    ← ENNReal.coe_inv hn0]
+  norm_cast
+  ext
+  push_cast
+  rw [hq]
+  field_simp
+  ring
+
+/-- Moves the Morrey exponent `a - n/q` of a positive exponent `q` from `ℝ≥0∞` to `ℝ`. -/
+private theorem natCast_sub_div_eq_ofReal {a n : ℕ} {q : ℝ≥0} (hq : 0 < q) :
+    (a : ℝ≥0∞) - n / q = ENNReal.ofReal (a - n / q) := by
+  rw [ENNReal.ofReal_sub _ (by positivity), ENNReal.ofReal_natCast,
+    ENNReal.ofReal_div_of_pos (by exact_mod_cast hq), ENNReal.ofReal_natCast,
+    ENNReal.ofReal_coe_nnreal]
+
 /-- One step of the exponent iteration for Morrey's condition with the critical exponent: if
 `1 ≤ p < n` and `(k + 1) p > n`, the Sobolev conjugate `q` of `p` in dimension `n`,
 `1/q + 1/n = 1/p`, is finite, larger than `1` and satisfies `k q > n`. -/
@@ -114,31 +137,13 @@ theorem exists_ne_top_and_inv_add_inv_eq_and_lt_mul {n k : ℕ} {p : ℝ≥0∞}
   have hkP : (n : ℝ) < (k + 1) * p := by exact_mod_cast hkp
   have hP0 : (0 : ℝ) < p := zero_lt_one.trans_le hP1
   have hNP : (0 : ℝ) < n - p := sub_pos.2 hPN
-  have hN0 : (0 : ℝ) < n := hP0.trans hPN
-  have hk0 : (0 : ℝ) < k := by
-    rcases Nat.eq_zero_or_pos k with rfl | hk
-    · simp only [Nat.cast_zero, zero_add, one_mul] at hkP
-      linarith
-    · exact_mod_cast hk
   -- The conjugate exponent is `q = p n / (n - p)`.
-  set Q : ℝ := p * n / (n - p) with hQ
-  have hQ0 : 0 < Q := by positivity
-  refine ⟨ENNReal.ofReal Q, ENNReal.ofReal_ne_top, ?_, ?_, ?_⟩
-  · rw [← ENNReal.ofReal_inv_of_pos hQ0, show ((n : ℝ≥0∞))⁻¹ = ENNReal.ofReal (n : ℝ)⁻¹ by
-      rw [ENNReal.ofReal_inv_of_pos hN0, ENNReal.ofReal_natCast],
-      ← ENNReal.ofReal_add (by positivity) (by positivity),
-      show ((p : ℝ≥0∞))⁻¹ = ENNReal.ofReal (p : ℝ)⁻¹ by
-      rw [ENNReal.ofReal_inv_of_pos hP0, ENNReal.ofReal_coe_nnreal]]
-    congr 1
-    rw [hQ]
-    field_simp
-    ring
-  · rw [← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff hQ0, hQ, lt_div_iff₀ hNP]
-    nlinarith
-  · rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_natCast k,
-      ← ENNReal.ofReal_mul (Nat.cast_nonneg k), ENNReal.ofReal_lt_ofReal_iff (by positivity), hQ,
-      mul_div_assoc', lt_div_iff₀ hNP]
-    nlinarith
+  obtain ⟨q, hq⟩ : ∃ q : ℝ≥0, (q : ℝ) = p * n / (n - p) := ⟨⟨_, by positivity⟩, rfl⟩
+  refine ⟨q, ENNReal.coe_ne_top, ?_, ?_, ?_⟩
+  · simpa using inv_add_mul_inv_eq_of_eq_div (r := 1) (by exact_mod_cast hP0)
+      (by rwa [Nat.cast_one, one_mul]) (by rwa [Nat.cast_one, one_mul])
+  · exact_mod_cast show (1 : ℝ) < q by rw [hq, lt_div_iff₀ hNP]; nlinarith
+  · exact_mod_cast show (n : ℝ) < k * q by rw [hq, mul_div_assoc', lt_div_iff₀ hNP]; nlinarith
 
 /-- One step of the exponent iteration for Morrey's condition, allowing `p = n`: if `1 < p ≤ n` and
 `(k + 1) p > n`, there are an exponent `1 ≤ p₀ ≤ p` and its finite Sobolev conjugate `q` in
@@ -157,22 +162,18 @@ theorem exists_le_and_ne_top_and_inv_add_inv_eq_and_lt_mul {n k : ℕ} {p : ℝ�
     rcases Nat.eq_zero_or_pos k with rfl | hk
     · simp only [Nat.cast_zero, zero_add, one_mul, lt_self_iff_false] at hkN
     · exact_mod_cast hk
-  have hN0 : (0 : ℝ) < n := by linarith
   -- Lower `p = n` to `p₀ = 3 n / 4`.
-  obtain ⟨q, hq⟩ := exists_ne_top_and_inv_add_inv_eq_and_lt_mul (n := n) (k := k)
-    (p := ENNReal.ofReal (3 * n / 4))
-    (by rw [← ENNReal.ofReal_one, ENNReal.ofReal_le_ofReal_iff (by positivity)]; linarith)
-    (by rw [← ENNReal.ofReal_natCast, ENNReal.ofReal_lt_ofReal_iff hN0]; linarith)
-    (by
-      rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_natCast (k + 1),
-        ← ENNReal.ofReal_mul (Nat.cast_nonneg _), ENNReal.ofReal_lt_ofReal_iff (by positivity)]
-      push_cast
-      nlinarith)
-  refine ⟨ENNReal.ofReal (3 * n / 4), q, ?_, ?_, hq⟩
-  · rw [← ENNReal.ofReal_one, ENNReal.ofReal_le_ofReal_iff (by positivity)]
-    linarith
-  · rw [← ENNReal.ofReal_natCast, ENNReal.ofReal_le_ofReal_iff hN0.le]
-    linarith
+  have h1 : (1 : ℝ≥0∞) ≤ (3 * n / 4 : ℝ≥0) := by
+    have : (1 : ℝ) ≤ 3 * n / 4 := by linarith
+    exact_mod_cast this
+  have h2 : ((3 * n / 4 : ℝ≥0) : ℝ≥0∞) < n := by
+    have : (3 * n / 4 : ℝ) < n := by linarith
+    exact_mod_cast this
+  have h3 : (n : ℝ≥0∞) < (k + 1 : ℕ) * (3 * n / 4 : ℝ≥0) := by
+    have : (n : ℝ) < (k + 1 : ℕ) * (3 * n / 4) := by push_cast; nlinarith
+    exact_mod_cast this
+  obtain ⟨q, hq⟩ := exists_ne_top_and_inv_add_inv_eq_and_lt_mul h1 h2 h3
+  exact ⟨_, q, h1, h2.le, hq⟩
 
 /-- The exponent arithmetic of `r` steps of the Sobolev embedding in dimension `n` at once: if
 `r ≥ 1` and `r p < n < (r + 1) p`, the exponent `q` with `1/q + r/n = 1/p` is finite and larger
@@ -195,31 +196,16 @@ theorem exists_inv_add_mul_inv_eq_and_lt_and_sub_div_eq {n r : ℕ} {p : ℝ≥0
   have hN0 : (0 : ℝ) < n := by nlinarith
   have hD : (0 : ℝ) < n - r * p := sub_pos.2 hrP
   -- The exponent is `q = p n / (n - r p)`.
-  set Q : ℝ := p * n / (n - r * p) with hQ
-  have hQ0 : 0 < Q := by positivity
-  refine ⟨ENNReal.ofReal Q, ENNReal.ofReal_ne_top, ?_, ?_, ?_⟩
-  · rw [← ENNReal.ofReal_inv_of_pos hQ0, show ((n : ℝ≥0∞))⁻¹ = ENNReal.ofReal (n : ℝ)⁻¹ by
-      rw [ENNReal.ofReal_inv_of_pos hN0, ENNReal.ofReal_natCast], ← ENNReal.ofReal_natCast r,
-      ← ENNReal.ofReal_mul (Nat.cast_nonneg r),
-      ← ENNReal.ofReal_add (by positivity) (by positivity),
-      show ((p : ℝ≥0∞))⁻¹ = ENNReal.ofReal (p : ℝ)⁻¹ by
-      rw [ENNReal.ofReal_inv_of_pos hP0, ENNReal.ofReal_coe_nnreal]]
+  obtain ⟨q, hq⟩ : ∃ q : ℝ≥0, (q : ℝ) = p * n / (n - r * p) := ⟨⟨_, by positivity⟩, rfl⟩
+  have hq0 : (0 : ℝ) < q := by rw [hq]; positivity
+  refine ⟨q, ENNReal.coe_ne_top, inv_add_mul_inv_eq_of_eq_div (by exact_mod_cast hP0) hrP hq,
+    ?_, ?_⟩
+  · exact_mod_cast show (n : ℝ) < q by rw [hq, lt_div_iff₀ hD]; nlinarith
+  · rw [← Nat.cast_one, natCast_sub_div_eq_ofReal (by exact_mod_cast hq0),
+      natCast_sub_div_eq_ofReal (by exact_mod_cast hP0)]
     congr 1
-    rw [hQ]
+    rw [hq]
     field_simp
-    ring
-  · rw [← ENNReal.ofReal_natCast, ENNReal.ofReal_lt_ofReal_iff hQ0, hQ, lt_div_iff₀ hD]
-    nlinarith
-  · have h₁ : (n : ℝ≥0∞) / ENNReal.ofReal Q = ENNReal.ofReal (n / p - r) := by
-      rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_div_of_pos hQ0, hQ]
-      congr 1
-      field_simp
-    have h₂ : (n : ℝ≥0∞) / (p : ℝ≥0∞) = ENNReal.ofReal (n / p) := by
-      rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_div_of_pos hP0]
-    rw [h₁, h₂, ← ENNReal.ofReal_one, ← ENNReal.ofReal_natCast (r + 1),
-      ← ENNReal.ofReal_sub _ (by rw [sub_nonneg, le_div_iff₀ hP0]; linarith),
-      ← ENNReal.ofReal_sub _ (by positivity)]
-    congr 1
     push_cast
     ring
 
@@ -254,26 +240,18 @@ theorem exists_mul_lt_and_lt_mul_and_sub_div_eq {n k : ℕ} {p : ℝ≥0∞} {β
       have : ((k : ℝ) - 1) < n := by rw [← hkP]; nlinarith
       exact_mod_cast hkR ▸ this
     exact_mod_cast (by omega : k ≤ n)
-  have hN0 : (0 : ℝ) < n := by linarith
   have hD : (0 : ℝ) < k - β := by linarith
-  set P₀ : ℝ := n / (k - β) with hP₀
-  have hP₀0 : 0 < P₀ := by positivity
-  refine ⟨ENNReal.ofReal P₀, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff hP₀0, hP₀, lt_div_iff₀ hD]
-    linarith
-  · rw [← ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_le_ofReal_iff p.coe_nonneg, hP₀,
-      div_le_iff₀ hD]
-    nlinarith
-  · rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_natCast n, ← ENNReal.ofReal_mul (by positivity),
-      ENNReal.ofReal_lt_ofReal_iff hN0, hkR, hP₀, mul_div_assoc', div_lt_iff₀ hD]
-    nlinarith
-  · rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_natCast k, ← ENNReal.ofReal_mul (by positivity),
-      ENNReal.ofReal_lt_ofReal_iff (by positivity), hP₀, mul_div_assoc', lt_div_iff₀ hD]
-    nlinarith
-  · rw [← ENNReal.ofReal_natCast n, ← ENNReal.ofReal_div_of_pos hP₀0, ← ENNReal.ofReal_natCast k,
-      ← ENNReal.ofReal_sub _ (by positivity), ← ENNReal.ofReal_coe_nnreal]
+  obtain ⟨p₀, hp₀⟩ : ∃ p₀ : ℝ≥0, (p₀ : ℝ) = n / (k - β) := ⟨⟨_, by positivity⟩, rfl⟩
+  have hp₀0 : (0 : ℝ) < p₀ := by rw [hp₀]; positivity
+  refine ⟨p₀, ?_, ?_, ?_, ?_, ?_⟩
+  · exact_mod_cast show (1 : ℝ) < p₀ by rw [hp₀, lt_div_iff₀ hD]; linarith
+  · exact_mod_cast show (p₀ : ℝ) ≤ p by rw [hp₀, div_le_iff₀ hD]; nlinarith
+  · exact_mod_cast show ((k - 1 : ℕ) : ℝ) * p₀ < n by
+      rw [hkR, hp₀, mul_div_assoc', div_lt_iff₀ hD]; nlinarith
+  · exact_mod_cast show (n : ℝ) < k * p₀ by rw [hp₀, mul_div_assoc', lt_div_iff₀ hD]; nlinarith
+  · rw [natCast_sub_div_eq_ofReal (by exact_mod_cast hp₀0), ← ENNReal.ofReal_coe_nnreal]
     congr 1
-    rw [hP₀]
+    rw [hp₀]
     field_simp
     ring
 
