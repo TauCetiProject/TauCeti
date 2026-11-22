@@ -143,7 +143,6 @@ Lie-group structures on `K₁` and the `SO(Q)` unit range, a smooth homomorphism
 `X` and `lieMap φ X`, the matrix `A` acts on embedded vectors `v` by `⁅x, ι Q v⁆`. -/
 theorem ι_mulVec_eq_lie_of_embeddedLieSubgroupData
     [IsModuleTopology 𝕜 (m → 𝕜)] [ContinuousMul (CliffordAlgebra Q)]
-    [CompleteSpace 𝕜]
     [FiniteDimensional ℝ R] {K₁ : Subgroup Rˣ}
     {E₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
     {E₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [FiniteDimensional ℝ E₂]
@@ -168,6 +167,7 @@ theorem ι_mulVec_eq_lie_of_embeddedLieSubgroupData
       (_hA : TauCeti.Lie.unitsLieAlgebraLieEquiv (d₂.lieMapSubtypeVal (lieMap φ X)) = A)
       (v : m → 𝕜),
       ι Q (A *ᵥ v) = ⁅x, ι Q v⁆ := by
+  let _ : CompleteSpace 𝕜 := FiniteDimensional.completeSpace ℝ 𝕜
   let _ : ChartedSpace E₁ K₁ := d₁.chartedSpace
   let _ : LieGroup 𝓘(ℝ, E₁) ∞ K₁ := d₁.lieGroup
   let _ : ChartedSpace E₂ (MonoidHom.range Q.specialOrthogonalToGeneralLinear) :=
