@@ -58,9 +58,9 @@ theorem affineBlowupExceptionalIdeal_comap_affineBlowupι (ha : a ∈ I) :
     (affineBlowupExceptionalIdeal R I).comap (affineBlowupι S ha) =
       ofIdealTop (Ideal.span {(Scheme.ΓSpecIso
         (.of (I.affineBlowup a S))).inv (algebraMap R (I.affineBlowup a S) a)}) := by
-  rw [affineBlowupExceptionalIdeal_def, ← comap_comp, affineBlowupι_toSpecZero,
-    comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom,
-    Ideal.map_algebraMap_affineBlowup ha, Ideal.map_span, Set.image_singleton]
+  rw [affineBlowupExceptionalIdeal_def, ← toSpecCoeff_reesAlgebra,
+    comap_affineBlowupι_toSpecCoeff S ha I, Ideal.map_algebraMap_affineBlowup ha,
+    Ideal.map_span, Set.image_singleton]
 
 /-- **The inverse image of the centre of an affine blowup is an effective Cartier divisor.**
 This holds for every ideal of every commutative ring, without a finite-generation hypothesis. -/

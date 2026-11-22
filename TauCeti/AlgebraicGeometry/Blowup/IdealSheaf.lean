@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
+public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
 public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.RelativeProj.Proper
 public import Mathlib.AlgebraicGeometry.Noetherian
-import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.FinitePresentation
+import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 
 /-!
 # The blowup of a scheme along an ideal sheaf
@@ -157,6 +157,20 @@ theorem blowupChart_blowupToBase {U : X.Opens} (hU : IsAffineOpen U) :
       ((Category.assoc _ _ _).symm.trans
         (congrArg (· ≫ hU.fromSpec) (I.map_reesAlgebraSectionsGradedHom_toSpecCoeff hU))))
 
+/-- **Pullback of an ideal sheaf to an affine blowup chart.** Over an affine open `U` of `X` and
+`a ∈ I(U)`, pulling back an arbitrary ideal sheaf `L` on `X` to the chart `Spec Γ(X, U)[I(U)/a]`
+extends `L(U)` along `Γ(X, U) → Γ(X, U)[I(U)/a]`. -/
+theorem comap_affineBlowupι_blowupChart {I L : X.IdealSheafData} {U : X.Opens}
+    (hU : IsAffineOpen U) {a : Γ(X, U)} (S : Type u) [CommRing S] [Algebra Γ(X, U) S]
+    [IsLocalization.Away a S] (ha : a ∈ I.ideal ⟨U, hU⟩) :
+    (L.comap I.blowupToBase).comap (affineBlowupι S ha ≫ I.blowupChart hU) =
+      ofIdealTop (((L.ideal ⟨U, hU⟩).map (algebraMap Γ(X, U)
+          ((I.ideal ⟨U, hU⟩).affineBlowup a S))).map
+        (Scheme.ΓSpecIso (.of ((I.ideal ⟨U, hU⟩).affineBlowup a S))).inv.hom) := by
+  rw [← comap_comp, Category.assoc, I.blowupChart_blowupToBase hU, ← Category.assoc,
+    affineBlowupι_toSpecCoeff]
+  exact L.comap_SpecMap_fromSpec_eq_ofIdealTop hU _
+
 /-- The image of the affine chart of the blowup over `U` is the preimage of `U`. -/
 theorem opensRange_blowupChart {U : X.Opens} (hU : IsAffineOpen U) :
     (I.blowupChart hU).opensRange = I.blowupToBase ⁻¹ᵁ U :=
@@ -207,13 +221,6 @@ instance isProper_blowupToBase_of_isLocallyNoetherian [IsLocallyNoetherian X] :
   I.isProper_blowupToBase fun U ↦
     have := IsLocallyNoetherian.component_noetherian U
     IsNoetherian.noetherian _
-
-/-- The blowup of the sum of two effective Cartier divisors is proper over `X`, without any
-Noetherian assumption. -/
-theorem IsEffectiveCartier.isProper_blowupToBase_sup {D₁ D₂ : X.IdealSheafData}
-    (hD₁ : D₁.IsEffectiveCartier) (hD₂ : D₂.IsEffectiveCartier) :
-    IsProper (D₁ ⊔ D₂).blowupToBase :=
-  (D₁ ⊔ D₂).isProper_blowupToBase fun U ↦ Submodule.FG.sup (hD₁.fg_ideal U) (hD₂.fg_ideal U)
 
 end Blowup
 

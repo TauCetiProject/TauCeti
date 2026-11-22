@@ -173,22 +173,12 @@ theorem epi_freeHomEquiv_symm_of_iSup_nonvanishingLocus_eq_top {ι : Type u} (f 
   refine ⟨fun {N : X.Modules} p q hpq ↦
     hom_ext_of_iSup_nonvanishingLocus_eq_top hcover p q fun i ↦ ?_⟩
   have heval (r : M ⟶ N) :
-      Hom.app (M := SheafOfModules.free ι)
-        (((M.freeHomEquiv.symm fun i ↦ M.sectionsEquivTop.symm (f i)) :
-          (SheafOfModules.free ι : X.Modules) ⟶ M) ≫ r) ⊤
-        (sectionsEquivTop (SheafOfModules.free ι) (SheafOfModules.freeSection i)) =
-      r.app ⊤ (f i) := by
-    have hcomp :
-        Hom.app (M := SheafOfModules.free ι)
-          (((M.freeHomEquiv.symm fun i ↦ M.sectionsEquivTop.symm (f i)) :
-            (SheafOfModules.free ι : X.Modules) ⟶ M) ≫ r) ⊤ =
-        Hom.app (M := SheafOfModules.free ι)
-            (M.freeHomEquiv.symm fun i ↦ M.sectionsEquivTop.symm (f i)) ⊤ ≫ r.app ⊤ :=
-      Scheme.Modules.Hom.comp_app (M := SheafOfModules.free ι) _ r
-    rw [hcomp, ConcreteCategory.comp_apply, app_freeHomEquiv_symm_freeSection]
-  exact (heval p).symm.trans ((congrArg (fun r : (SheafOfModules.free ι : X.Modules) ⟶ N ↦
-    Hom.app (M := SheafOfModules.free ι) r ⊤
-      (sectionsEquivTop (SheafOfModules.free ι) (SheafOfModules.freeSection i)))
+      N.sectionsEquivTop (N.freeHomEquiv ((M.freeHomEquiv.symm fun i ↦
+          M.sectionsEquivTop.symm (f i)) ≫ r) i) = r.app ⊤ (f i) := by
+    rw [SheafOfModules.freeHomEquiv_comp_apply _ r i,
+      congrFun (M.freeHomEquiv.apply_symm_apply _) i, sectionsEquivTop_sectionsMap,
+      M.sectionsEquivTop.apply_symm_apply]
+  exact (heval p).symm.trans ((congrArg (fun r ↦ N.sectionsEquivTop (N.freeHomEquiv r i))
     hpq).trans (heval q))
 
 end TauCeti.AlgebraicGeometry

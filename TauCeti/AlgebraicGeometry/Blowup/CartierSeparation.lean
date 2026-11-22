@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Blowup.ExceptionalDivisor
+public import TauCeti.AlgebraicGeometry.Blowup.Colon
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Colon
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Pullback
-import TauCeti.AlgebraicGeometry.Blowup.BaseChange
-import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
+import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.FinitePresentation
 
 /-!
 # Cartier separation
@@ -17,7 +16,7 @@ import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 Let `X` be an arbitrary scheme and `D₁`, `D₂` be two effective Cartier divisors on `X`, represented
 as `Scheme.IdealSheafData` satisfying `IsEffectiveCartier`. Blowing up the sum ideal sheaf
 `I = D₁ ⊔ D₂` yields a proper morphism `p : Bl_{D₁ ⊔ D₂} X ⟶ X`
-(`IsEffectiveCartier.isProper_blowupToBase_sup` in `TauCeti.AlgebraicGeometry.Blowup.IdealSheaf`),
+(`IsEffectiveCartier.isProper_blowupToBase_sup`),
 which is an isomorphism away from `V(D₁) ∩ V(D₂)`, together with its invertible exceptional divisor
 `F = (D₁ ⊔ D₂).comap p`.
 
@@ -57,6 +56,9 @@ open `U` where `D₁(U) = (x₁)` and `D₂(U) = (x₂)`, the residual ideals on
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.blowupSupResidualLeft`,
   `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.blowupSupResidualRight`:
   the residual ideal sheaves of effective Cartier divisors are effective Cartier.
+* `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.isProper_blowupToBase_sup`,
+  `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.isIso_blowupToBase_sup_of_le`:
+  properness of `Bl_{D₁ ⊔ D₂} X ⟶ X` and triviality when `D₂ ≤ D₁`.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_blowupSupResidual_mul_inv`:
   `[D'₁] * [D'₂]⁻¹ = p* ([D₁] * [D₂]⁻¹)`.
 
@@ -81,6 +83,20 @@ namespace AlgebraicGeometry.Scheme.IdealSheafData
 open TauCeti.AlgebraicGeometry
 
 variable {X : Scheme.{u}}
+
+/-- The blowup of the sum of two effective Cartier divisors is proper over `X`, without any
+Noetherian assumption. -/
+theorem IsEffectiveCartier.isProper_blowupToBase_sup {D₁ D₂ : X.IdealSheafData}
+    (hD₁ : D₁.IsEffectiveCartier) (hD₂ : D₂.IsEffectiveCartier) :
+    IsProper (D₁ ⊔ D₂).blowupToBase :=
+  (D₁ ⊔ D₂).isProper_blowupToBase fun U ↦ Submodule.FG.sup (hD₁.fg_ideal U) (hD₂.fg_ideal U)
+
+/-- If `D₁` is effective Cartier and `D₂ ≤ D₁`, the blowup along `D₁ ⊔ D₂ = D₁` is an
+isomorphism. -/
+theorem IsEffectiveCartier.isIso_blowupToBase_sup_of_le {D₁ D₂ : X.IdealSheafData}
+    (hD₁ : D₁.IsEffectiveCartier) (h : D₂ ≤ D₁) : IsIso (D₁ ⊔ D₂).blowupToBase := by
+  rw [isIso_blowupToBase_iff, sup_eq_left.mpr h]
+  exact hD₁
 
 /-- The **left residual ideal sheaf** `D'₁ = (p* D₁ : F)` on the blowup `Bl_{D₁ ⊔ D₂} X`, where
 `p = (D₁ ⊔ D₂).blowupToBase` and `F = (D₁ ⊔ D₂).comap p` is the invertible exceptional divisor.
@@ -126,23 +142,31 @@ theorem le_blowupSupResidualRight_iff (D₁ D₂ : X.IdealSheafData)
 
 /-- **Left factorization `p* D₁ = F + D'₁`.** On `Bl_{D₁ ⊔ D₂} X`, the product of the exceptional
 ideal `F` with the left residual ideal `D'₁` is the pulled-back ideal `p* D₁`. -/
+@[simp]
 theorem comap_blowupToBase_sup_mul_blowupSupResidualLeft (D₁ D₂ : X.IdealSheafData) :
-    (D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase * D₁.blowupSupResidualLeft D₂ =
+    (D₁.comap (D₁ ⊔ D₂).blowupToBase ⊔ D₂.comap (D₁ ⊔ D₂).blowupToBase) *
+        D₁.blowupSupResidualLeft D₂ =
       D₁.comap (D₁ ⊔ D₂).blowupToBase :=
-  (mul_comm _ _).trans
-    ((D₁.comap (D₁ ⊔ D₂).blowupToBase).eq_colon_mul ((D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase)
-      (D₁ ⊔ D₂).isEffectiveCartier_comap_blowupToBase.locallyPrincipal
-      (comap_mono _ le_sup_left)).symm
+  (congrArg (· * _)
+    (comap_sup (J₁ := D₁) (J₂ := D₂) (f := (D₁ ⊔ D₂).blowupToBase)).symm).trans
+    ((mul_comm _ _).trans
+      ((D₁.comap (D₁ ⊔ D₂).blowupToBase).eq_colon_mul ((D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase)
+        (D₁ ⊔ D₂).isEffectiveCartier_comap_blowupToBase.locallyPrincipal
+        (comap_mono _ le_sup_left)).symm)
 
 /-- **Right factorization `p* D₂ = F + D'₂`.** On `Bl_{D₁ ⊔ D₂} X`, the product of the exceptional
 ideal `F` with the right residual ideal `D'₂` is the pulled-back ideal `p* D₂`. -/
+@[simp]
 theorem comap_blowupToBase_sup_mul_blowupSupResidualRight (D₁ D₂ : X.IdealSheafData) :
-    (D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase * D₁.blowupSupResidualRight D₂ =
+    (D₁.comap (D₁ ⊔ D₂).blowupToBase ⊔ D₂.comap (D₁ ⊔ D₂).blowupToBase) *
+        D₁.blowupSupResidualRight D₂ =
       D₂.comap (D₁ ⊔ D₂).blowupToBase :=
-  (mul_comm _ _).trans
-    ((D₂.comap (D₁ ⊔ D₂).blowupToBase).eq_colon_mul ((D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase)
-      (D₁ ⊔ D₂).isEffectiveCartier_comap_blowupToBase.locallyPrincipal
-      (comap_mono _ le_sup_right)).symm
+  (congrArg (· * _)
+    (comap_sup (J₁ := D₁) (J₂ := D₂) (f := (D₁ ⊔ D₂).blowupToBase)).symm).trans
+    ((mul_comm _ _).trans
+      ((D₂.comap (D₁ ⊔ D₂).blowupToBase).eq_colon_mul ((D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase)
+        (D₁ ⊔ D₂).isEffectiveCartier_comap_blowupToBase.locallyPrincipal
+        (comap_mono _ le_sup_right)).symm)
 
 /-- **Coprimality of residual ideals.** On `Bl_{D₁ ⊔ D₂} X`, the sum of the two residual ideals
 `D'₁` and `D'₂` is the unit ideal sheaf. -/
@@ -150,7 +174,7 @@ theorem comap_blowupToBase_sup_mul_blowupSupResidualRight (D₁ D₂ : X.IdealSh
 theorem blowupSupResidualLeft_sup_right (D₁ D₂ : X.IdealSheafData) :
     D₁.blowupSupResidualLeft D₂ ⊔ D₁.blowupSupResidualRight D₂ = ⊤ := by
   refine (D₁ ⊔ D₂).isEffectiveCartier_comap_blowupToBase.mul_left_cancel ?_
-  rw [mul_inf, comap_blowupToBase_sup_mul_blowupSupResidualLeft,
+  rw [mul_inf, comap_sup, comap_blowupToBase_sup_mul_blowupSupResidualLeft,
     comap_blowupToBase_sup_mul_blowupSupResidualRight, ← comap_sup, mul_top]
 
 /-- **Cartier separation of supports.** On `Bl_{D₁ ⊔ D₂} X`, the two residual subschemes `V(D'₁)`
@@ -164,9 +188,9 @@ theorem disjoint_support_blowupSupResidual (D₁ D₂ : X.IdealSheafData) :
 theorem comap_mul_blowupSupResidualRight_eq (D₁ D₂ : X.IdealSheafData) :
     D₁.comap (D₁ ⊔ D₂).blowupToBase * D₁.blowupSupResidualRight D₂ =
       D₂.comap (D₁ ⊔ D₂).blowupToBase * D₁.blowupSupResidualLeft D₂ := by
-  rw [← comap_blowupToBase_sup_mul_blowupSupResidualLeft,
-    ← comap_blowupToBase_sup_mul_blowupSupResidualRight, mul_assoc, mul_assoc,
-    mul_comm (D₁.blowupSupResidualLeft D₂)]
+  conv_lhs => rw [← comap_blowupToBase_sup_mul_blowupSupResidualLeft]
+  conv_rhs => rw [← comap_blowupToBase_sup_mul_blowupSupResidualRight]
+  rw [mul_assoc, mul_assoc, mul_comm (D₁.blowupSupResidualLeft D₂)]
 
 /-- If `D₁` is an effective Cartier divisor, its residual `D'₁ = p* D₁ - F` on `Bl_{D₁ ⊔ D₂} X`
 is an effective Cartier divisor (for any ideal sheaf `D₂`). -/
@@ -186,131 +210,74 @@ theorem IsEffectiveCartier.blowupSupResidualRight {D₂ : X.IdealSheafData}
 
 /-! ### Explicit affine chart equations of the residual ideals -/
 
-/-- On the affine chart `Spec Γ(X, U)[I(U)/a]` over an affine open `U` where `a ∈ I(U)` and
-`L ≤ I` is locally generated on `U` by `b`, the residual ideal `(L.comap p : I.comap p)` on
-`Bl_I X` pulls back to the principal ideal generated by `b / a`. -/
-theorem comap_affineBlowupι_blowupChart_colon (I L : X.IdealSheafData) (hLI : L ≤ I)
-    {U : X.Opens} (hU : IsAffineOpen U) {a b : Γ(X, U)} (ha : a ∈ I.ideal ⟨U, hU⟩)
-    (hL : L.ideal ⟨U, hU⟩ = Ideal.span {b}) :
-    ((L.comap I.blowupToBase).colon (I.comap I.blowupToBase)).comap
-        (affineBlowupι (Localization.Away a) ha ≫ I.blowupChart hU) =
-      ofIdealTop (Ideal.span
-        {(Scheme.ΓSpecIso
-            (.of ((I.ideal ⟨U, hU⟩).affineBlowup a (Localization.Away a)))).inv
-          (⟨TauCeti.Localization.divBy (S := Localization.Away a) b a,
-            Ideal.divBy_mem_affineBlowup (hLI ⟨U, hU⟩ (hL ▸ Ideal.subset_span rfl))⟩ :
-            (I.ideal ⟨U, hU⟩).affineBlowup a (Localization.Away a))}) := by
-  let φ := affineBlowupι (Localization.Away a) ha ≫ I.blowupChart hU
-  have hb : b ∈ I.ideal ⟨U, hU⟩ := hLI ⟨U, hU⟩ (hL ▸ Ideal.subset_span rfl)
-  have hfact := (L.comap I.blowupToBase).eq_colon_mul (I.comap I.blowupToBase)
-    I.isEffectiveCartier_comap_blowupToBase.locallyPrincipal (comap_mono _ hLI)
-  have hprod : (I.comap I.blowupToBase).comap φ *
-      ((L.comap I.blowupToBase).colon (I.comap I.blowupToBase)).comap φ =
-      (L.comap I.blowupToBase).comap φ := by
-    rw [mul_comm, ← comap_mul]
-    exact congrArg (·.comap φ) hfact.symm
-  have hE : (I.comap I.blowupToBase).comap φ =
-      ofIdealTop (Ideal.span
-        {(Scheme.ΓSpecIso
-            (.of ((I.ideal ⟨U, hU⟩).affineBlowup a (Localization.Away a)))).inv
-          (algebraMap Γ(X, U) ((I.ideal ⟨U, hU⟩).affineBlowup a (Localization.Away a)) a)}) := by
-    rw [comap_comp, I.comap_blowupChart_comap_blowupToBase hU, toSpecCoeff_reesAlgebra,
-      ← comap_comp]
-    exact comap_affineBlowupι_eq_ofIdealTop (Localization.Away a) ha
-  have hLchart : (L.comap I.blowupToBase).comap φ =
-      ofIdealTop (Ideal.span
-        {(Scheme.ΓSpecIso
-            (.of ((I.ideal ⟨U, hU⟩).affineBlowup a (Localization.Away a)))).inv
-          (algebraMap Γ(X, U) ((I.ideal ⟨U, hU⟩).affineBlowup a (Localization.Away a)) b)}) := by
-    rw [comap_affineBlowupι_blowupChart hU _ ha, hL, Ideal.map_span, Set.image_singleton,
-      Ideal.map_span, Set.image_singleton]
-  have hreg : ((I.comap I.blowupToBase).comap φ).IsEffectiveCartier := by
-    rw [hE]
-    exact isEffectiveCartier_ofIdealTop_span_ΓSpecIso_inv
-      (Ideal.isRegular_algebraMap_affineBlowup (I := I.ideal ⟨U, hU⟩)
-        (a := a) (S := Localization.Away a)).left.isSMulRegular
-  refine hreg.mul_left_cancel (hprod.trans ?_)
-  rw [hLchart, hE, ← ofIdealTop_mul, Ideal.span_singleton_mul_span_singleton, ← map_mul]
-  congr 4
-  exact (Ideal.algebraMap_mul_algHom_divBy
-    (AlgHom.id Γ(X, U) ((I.ideal ⟨U, hU⟩).affineBlowup a (Localization.Away a))) hb).symm
-
 /-- On the affine chart `Spec Γ(X, U)[(D₁ ⊔ D₂)(U)/x₁]` over an affine open `U` where
 `D₁(U) = (x₁)`, the left residual ideal sheaf `D'₁` pulls back to the unit ideal sheaf. -/
 theorem comap_affineBlowupι_blowupChart_blowupSupResidualLeft_left
     (D₁ D₂ : X.IdealSheafData) {U : X.Opens} (hU : IsAffineOpen U) {x₁ : Γ(X, U)}
+    (S : Type u) [CommRing S] [Algebra Γ(X, U) S] [IsLocalization.Away x₁ S]
     (hD₁ : D₁.ideal ⟨U, hU⟩ = Ideal.span {x₁})
     (hx₁ : x₁ ∈ (D₁ ⊔ D₂).ideal ⟨U, hU⟩ := by
       rw [ideal_sup, Pi.sup_apply, hD₁]
       exact Ideal.mem_sup_left (Ideal.subset_span rfl)) :
     (D₁.blowupSupResidualLeft D₂).comap
-        (affineBlowupι (Localization.Away x₁) hx₁ ≫ (D₁ ⊔ D₂).blowupChart hU) = ⊤ := by
-  rw [blowupSupResidualLeft_def,
-    comap_affineBlowupι_blowupChart_colon (D₁ ⊔ D₂) D₁ le_sup_left hU hx₁ hD₁]
-  have h1 : (⟨TauCeti.Localization.divBy (S := Localization.Away x₁) x₁ x₁,
-      Ideal.divBy_mem_affineBlowup hx₁⟩ :
-        ((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup x₁ (Localization.Away x₁)) = 1 :=
-    Subtype.ext (TauCeti.Localization.divBy_self (S := Localization.Away x₁) x₁)
-  rw [h1, map_one, Ideal.span_singleton_one]
-  exact OrderIso.map_top equivOfIsAffine.symm.toOrderIso
+        (affineBlowupι S hx₁ ≫ (D₁ ⊔ D₂).blowupChart hU) = ⊤ :=
+  comap_affineBlowupι_blowupChart_colon_eq_top (D₁ ⊔ D₂) D₁ hU S hx₁ hD₁
 
 /-- On the affine chart `Spec Γ(X, U)[(D₁ ⊔ D₂)(U)/x₁]` over an affine open `U` where
 `D₂(U) = (x₂)` and `x₁ ∈ (D₁ ⊔ D₂)(U)`, the right residual ideal sheaf `D'₂` pulls back to the
 principal ideal generated by `x₂ / x₁`. -/
 theorem comap_affineBlowupι_blowupChart_blowupSupResidualRight_left
     (D₁ D₂ : X.IdealSheafData) {U : X.Opens} (hU : IsAffineOpen U) {x₁ x₂ : Γ(X, U)}
+    (S : Type u) [CommRing S] [Algebra Γ(X, U) S] [IsLocalization.Away x₁ S]
     (hx₁ : x₁ ∈ (D₁ ⊔ D₂).ideal ⟨U, hU⟩) (hD₂ : D₂.ideal ⟨U, hU⟩ = Ideal.span {x₂})
     (hx₂ : x₂ ∈ (D₁ ⊔ D₂).ideal ⟨U, hU⟩ := by
       rw [ideal_sup, Pi.sup_apply, hD₂]
       exact Ideal.mem_sup_right (Ideal.subset_span rfl)) :
     (D₁.blowupSupResidualRight D₂).comap
-        (affineBlowupι (Localization.Away x₁) hx₁ ≫ (D₁ ⊔ D₂).blowupChart hU) =
+        (affineBlowupι S hx₁ ≫ (D₁ ⊔ D₂).blowupChart hU) =
       ofIdealTop (Ideal.span
         {(Scheme.ΓSpecIso
-            (.of (((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup x₁ (Localization.Away x₁)))).inv
-          (⟨TauCeti.Localization.divBy (S := Localization.Away x₁) x₂ x₁,
+            (.of (((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup x₁ S))).inv
+          (⟨TauCeti.Localization.divBy (S := S) x₂ x₁,
             Ideal.divBy_mem_affineBlowup hx₂⟩ :
-            ((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup x₁ (Localization.Away x₁))}) :=
-  comap_affineBlowupι_blowupChart_colon (D₁ ⊔ D₂) D₂ le_sup_right hU hx₁ hD₂
+            ((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup x₁ S)}) :=
+  comap_affineBlowupι_blowupChart_colon (D₁ ⊔ D₂) D₂ hU
+    (fun _ h ↦ Ideal.mem_sup_right h) S hx₁ hD₂
 
 /-- Symmetric chart equation: on the affine chart `Spec Γ(X, U)[(D₁ ⊔ D₂)(U)/x₂]` over an affine
 open `U` where `D₂(U) = (x₂)`, the right residual ideal sheaf `D'₂` pulls back to the unit ideal
 sheaf. -/
 theorem comap_affineBlowupι_blowupChart_blowupSupResidualRight_right
     (D₁ D₂ : X.IdealSheafData) {U : X.Opens} (hU : IsAffineOpen U) {x₂ : Γ(X, U)}
+    (S : Type u) [CommRing S] [Algebra Γ(X, U) S] [IsLocalization.Away x₂ S]
     (hD₂ : D₂.ideal ⟨U, hU⟩ = Ideal.span {x₂})
     (hx₂ : x₂ ∈ (D₁ ⊔ D₂).ideal ⟨U, hU⟩ := by
       rw [ideal_sup, Pi.sup_apply, hD₂]
       exact Ideal.mem_sup_right (Ideal.subset_span rfl)) :
     (D₁.blowupSupResidualRight D₂).comap
-        (affineBlowupι (Localization.Away x₂) hx₂ ≫ (D₁ ⊔ D₂).blowupChart hU) = ⊤ := by
-  rw [blowupSupResidualRight_def,
-    comap_affineBlowupι_blowupChart_colon (D₁ ⊔ D₂) D₂ le_sup_right hU hx₂ hD₂]
-  have h1 : (⟨TauCeti.Localization.divBy (S := Localization.Away x₂) x₂ x₂,
-      Ideal.divBy_mem_affineBlowup hx₂⟩ :
-        ((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup x₂ (Localization.Away x₂)) = 1 :=
-    Subtype.ext (TauCeti.Localization.divBy_self (S := Localization.Away x₂) x₂)
-  rw [h1, map_one, Ideal.span_singleton_one]
-  exact OrderIso.map_top equivOfIsAffine.symm.toOrderIso
+        (affineBlowupι S hx₂ ≫ (D₁ ⊔ D₂).blowupChart hU) = ⊤ :=
+  comap_affineBlowupι_blowupChart_colon_eq_top (D₁ ⊔ D₂) D₂ hU S hx₂ hD₂
 
 /-- Symmetric chart equation: on the affine chart `Spec Γ(X, U)[(D₁ ⊔ D₂)(U)/x₂]` over an affine
 open `U` where `D₁(U) = (x₁)` and `x₂ ∈ (D₁ ⊔ D₂)(U)`, the left residual ideal sheaf `D'₁` pulls
 back to the principal ideal generated by `x₁ / x₂`. -/
 theorem comap_affineBlowupι_blowupChart_blowupSupResidualLeft_right
     (D₁ D₂ : X.IdealSheafData) {U : X.Opens} (hU : IsAffineOpen U) {x₁ x₂ : Γ(X, U)}
+    (S : Type u) [CommRing S] [Algebra Γ(X, U) S] [IsLocalization.Away x₂ S]
     (hx₂ : x₂ ∈ (D₁ ⊔ D₂).ideal ⟨U, hU⟩) (hD₁ : D₁.ideal ⟨U, hU⟩ = Ideal.span {x₁})
     (hx₁ : x₁ ∈ (D₁ ⊔ D₂).ideal ⟨U, hU⟩ := by
       rw [ideal_sup, Pi.sup_apply, hD₁]
       exact Ideal.mem_sup_left (Ideal.subset_span rfl)) :
     (D₁.blowupSupResidualLeft D₂).comap
-        (affineBlowupι (Localization.Away x₂) hx₂ ≫ (D₁ ⊔ D₂).blowupChart hU) =
+        (affineBlowupι S hx₂ ≫ (D₁ ⊔ D₂).blowupChart hU) =
       ofIdealTop (Ideal.span
         {(Scheme.ΓSpecIso
-            (.of (((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup x₂ (Localization.Away x₂)))).inv
-          (⟨TauCeti.Localization.divBy (S := Localization.Away x₂) x₁ x₂,
+            (.of (((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup x₂ S))).inv
+          (⟨TauCeti.Localization.divBy (S := S) x₁ x₂,
             Ideal.divBy_mem_affineBlowup hx₁⟩ :
-            ((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup x₂ (Localization.Away x₂))}) :=
-  comap_affineBlowupι_blowupChart_colon (D₁ ⊔ D₂) D₁ le_sup_left hU hx₂ hD₁
+            ((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup x₂ S)}) :=
+  comap_affineBlowupι_blowupChart_colon (D₁ ⊔ D₂) D₁ hU
+    (fun _ h ↦ Ideal.mem_sup_left h) S hx₂ hD₁
 
 /-! ### Degenerate and comparable cases -/
 
@@ -326,28 +293,32 @@ theorem blowupSupResidualRight_eq_top_of_le {D₁ D₂ : X.IdealSheafData} (h : 
   rw [blowupSupResidualRight_def, colon_eq_top_iff]
   exact comap_mono _ (sup_le h le_rfl)
 
-/-- If `D₁` is effective Cartier and `D₂ ≤ D₁`, the right residual ideal on `Bl_{D₁ ⊔ D₂} X` is
+/-- If `D₁` is locally principal and `D₂ ≤ D₁`, the right residual ideal on `Bl_{D₁ ⊔ D₂} X` is
 the pullback of the quotient `(D₂ : D₁)`. -/
-theorem IsEffectiveCartier.blowupSupResidualRight_of_le {D₁ D₂ : X.IdealSheafData}
-    (hD₁ : D₁.IsEffectiveCartier) (h : D₂ ≤ D₁) :
+theorem blowupSupResidualRight_of_le {D₁ D₂ : X.IdealSheafData}
+    (hD₁ : ∀ x : X, ∃ U : X.affineOpens, x ∈ U.val ∧
+      ∃ a : Γ(X, U), D₁.ideal U = Ideal.span {a})
+    (h : D₂ ≤ D₁) :
     D₁.blowupSupResidualRight D₂ = (D₂.colon D₁).comap (D₁ ⊔ D₂).blowupToBase := by
   have hsup : (D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase =
       D₁.comap (D₁ ⊔ D₂).blowupToBase :=
     congrArg (·.comap (D₁ ⊔ D₂).blowupToBase) (sup_eq_left.mpr h)
   rw [blowupSupResidualRight_def, hsup]
-  exact (comap_colon D₂ D₁ hD₁.locallyPrincipal h (D₁ ⊔ D₂).blowupToBase
+  exact (comap_colon D₂ D₁ hD₁ h (D₁ ⊔ D₂).blowupToBase
     (hsup ▸ (D₁ ⊔ D₂).isEffectiveCartier_comap_blowupToBase)).symm
 
-/-- If `D₂` is effective Cartier and `D₁ ≤ D₂`, the left residual ideal on `Bl_{D₁ ⊔ D₂} X` is
+/-- If `D₂` is locally principal and `D₁ ≤ D₂`, the left residual ideal on `Bl_{D₁ ⊔ D₂} X` is
 the pullback of the quotient `(D₁ : D₂)`. -/
-theorem IsEffectiveCartier.blowupSupResidualLeft_of_le {D₁ D₂ : X.IdealSheafData}
-    (hD₂ : D₂.IsEffectiveCartier) (h : D₁ ≤ D₂) :
+theorem blowupSupResidualLeft_of_le {D₁ D₂ : X.IdealSheafData}
+    (hD₂ : ∀ x : X, ∃ U : X.affineOpens, x ∈ U.val ∧
+      ∃ a : Γ(X, U), D₂.ideal U = Ideal.span {a})
+    (h : D₁ ≤ D₂) :
     D₁.blowupSupResidualLeft D₂ = (D₁.colon D₂).comap (D₁ ⊔ D₂).blowupToBase := by
   have hsup : (D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase =
       D₂.comap (D₁ ⊔ D₂).blowupToBase :=
     congrArg (·.comap (D₁ ⊔ D₂).blowupToBase) (sup_eq_right.mpr h)
   rw [blowupSupResidualLeft_def, hsup]
-  exact (comap_colon D₁ D₂ hD₂.locallyPrincipal h (D₁ ⊔ D₂).blowupToBase
+  exact (comap_colon D₁ D₂ hD₂ h (D₁ ⊔ D₂).blowupToBase
     (hsup ▸ (D₁ ⊔ D₂).isEffectiveCartier_comap_blowupToBase)).symm
 
 /-- For identical ideal sheaves `D`, the left residual ideal on `Bl_{D ⊔ D} X` is `⊤`. -/
@@ -371,13 +342,15 @@ theorem blowupSupResidualLeft_top_left (D₂ : X.IdealSheafData) :
 theorem blowupSupResidualRight_top_left (D₂ : X.IdealSheafData) :
     (⊤ : X.IdealSheafData).blowupSupResidualRight D₂ =
       D₂.comap ((⊤ : X.IdealSheafData) ⊔ D₂).blowupToBase := by
-  simpa only [colon_top] using (isEffectiveCartier_top X).blowupSupResidualRight_of_le le_top
+  simpa only [colon_top] using
+    blowupSupResidualRight_of_le (isEffectiveCartier_top X).locallyPrincipal le_top
 
 /-- When `D₂ = ⊤`, the left residual ideal is the pullback of `D₁`. -/
 @[simp]
 theorem blowupSupResidualLeft_top_right (D₁ : X.IdealSheafData) :
     D₁.blowupSupResidualLeft ⊤ = D₁.comap (D₁ ⊔ ⊤).blowupToBase := by
-  simpa only [colon_top] using (isEffectiveCartier_top X).blowupSupResidualLeft_of_le le_top
+  simpa only [colon_top] using
+    blowupSupResidualLeft_of_le (isEffectiveCartier_top X).locallyPrincipal le_top
 
 /-- When `D₂ = ⊤`, the right residual ideal is `⊤`. -/
 @[simp]

@@ -76,9 +76,7 @@ theorem isEffectiveCartier_comap_toSpecCoeff_mul_left {R : Type u} [CommRing R]
     inferInstance, hx, (Scheme.ΓSpecIso (.of B)).inv (φ p.1.val),
     (isSMulRegular_map_iff (Scheme.ΓSpecIso _).symm.commRingCatIsoToRingEquiv _).mpr
       hreg.of_mul_left.left.isSMulRegular, ?_⟩
-  rw [← comap_comp, toSpecCoeff_reesAlgebra, affineBlowupι_toSpecZero,
-    comap_ofIdealTop_map_ΓSpecIso_inv]
-  rw [CommRingCat.hom_ofHom,
+  rw [comap_affineBlowupι_toSpecCoeff (Localization.Away (s p)) hp I,
     Ideal.map_algebraMap_affineBlowup_mul_left (I := I) J _ p.1.property p.2.property,
     Ideal.map_span, Set.image_singleton]
 

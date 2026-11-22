@@ -41,8 +41,6 @@ is finite étale of rank `dim_κ (κ ⊗[A] A[I/a])`.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.toSpecCoeff_reesAlgebra`: the coefficient structure morphism of the
-  blowup is the structure morphism to the spectrum of the degree zero part `R`.
 * `TauCeti.AlgebraicGeometry.affineBlowupBaseChangeHom_snd`: the comparison lies over `Spec S`.
 * `TauCeti.AlgebraicGeometry.isClosedImmersion_affineBlowupBaseChangeHom`: the comparison is a
   closed immersion.
@@ -71,16 +69,6 @@ namespace TauCeti.AlgebraicGeometry
 open _root_.AlgebraicGeometry
 
 variable {R : Type u} [CommRing R] (I : Ideal R) (S : Type u) [CommRing S] [Algebra R S]
-
-/-- The coefficient structure morphism `Proj R[It] ⟶ Spec R` of the blowup is the structure
-morphism to the spectrum of the degree zero part of `R[It]`, identified with `R` by
-`reesAlgebra.gradeZeroEquiv`. -/
-theorem toSpecCoeff_reesAlgebra :
-    Proj.toSpecCoeff (grade I) =
-      Proj.toSpecZero (grade I) ≫ Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom := by
-  have h : (gradeZeroEquiv I : R →+* grade I 0) = algebraMap R (grade I 0) :=
-    RingHom.ext (gradeZeroEquiv_apply I)
-  rw [Proj.toSpecCoeff_def, RingEquiv.toCommRingCatIso_hom, h]
 
 /-- **The comparison of blowups under base change.** The morphism from the blowup `Proj S[(IS)t]`
 of `Spec S` along `V(IS)` to the base change `Spec S ×_{Spec R} Proj R[It]` of the blowup of

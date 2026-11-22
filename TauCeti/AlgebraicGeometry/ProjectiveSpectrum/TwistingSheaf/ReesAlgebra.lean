@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Ample
 public import TauCeti.RingTheory.ReesAlgebra.Grading
-import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ReesAlgebra
 
 /-!
 # Twisting sheaves on `Proj` of a Rees algebra
@@ -43,12 +43,10 @@ variable {R : Type u} [CommRing R] {I : Ideal R}
 `a t` (`a ∈ I`) cover `Proj R[It]`. -/
 theorem isInvertible_twistingSheaf_reesAlgebra (I : Ideal R) (n : ℤ) :
     TauCeti.SheafOfModules.IsInvertible (R := (Proj (grade I)).ringCatSheaf)
-      (Proj.twistingSheaf (grade I) n) := by
-  have hs : Ideal.span (Set.range ((↑) : I → R)) = I := by
-    rw [Subtype.range_coe, Ideal.span_eq]
-  exact Proj.isInvertible_twistingSheaf_of_iSup_eq_top
+      (Proj.twistingSheaf (grade I) n) :=
+  Proj.isInvertible_twistingSheaf_of_iSup_eq_top
     (fun a : I ↦ monomialDegreeOne a.property) (fun a ↦ monomialDegreeOne_mem_grade a.property)
-    (Proj.iSup_basicOpen_eq_top _ _ (irrelevant_eq_span_monomialDegreeOne hs).le) n
+    (iSup_basicOpen_monomialDegreeOne_coe I) n
 
 /-- **Cross-relation of degree-one Rees sections.** For any `a, b ∈ I`, the global sections `x'ₐ`
 and `x'_b` of `𝒪(1)` on `Proj R[It]` satisfy `b • x'ₐ = a • x'_b` under the pullback action of
@@ -72,12 +70,10 @@ theorem nonvanishingLocus_toTwistingSheaf_monomialDegreeOne {a : R} (ha : a ∈ 
     (Proj.twistingSheaf (grade I) 1).nonvanishingLocus
         (Proj.toTwistingSheaf (grade I) rfl ⊤
           ⟨monomialDegreeOne ha, monomialDegreeOne_mem_grade ha⟩) =
-      Proj.basicOpen (grade I) (monomialDegreeOne ha) := by
-  have hs : Ideal.span (Set.range ((↑) : I → R)) = I := by
-    rw [Subtype.range_coe, Ideal.span_eq]
-  exact Proj.twistingSheaf.nonvanishingLocus_toTwistingSheaf
+      Proj.basicOpen (grade I) (monomialDegreeOne ha) :=
+  Proj.twistingSheaf.nonvanishingLocus_toTwistingSheaf
     (fun c : I ↦ monomialDegreeOne c.property) (fun c ↦ monomialDegreeOne_mem_grade c.property)
-    (Proj.iSup_basicOpen_eq_top _ _ (irrelevant_eq_span_monomialDegreeOne hs).le)
+    (iSup_basicOpen_monomialDegreeOne_coe I)
     1 ⟨monomialDegreeOne ha, monomialDegreeOne_mem_grade ha⟩
 
 /-- If `g : ι → R` generates `I`, the corresponding degree-one Rees sections `gᵢ t` generate
@@ -93,7 +89,7 @@ theorem epi_freeHomEquiv_symm_toTwistingSheaf_reesAlgebra {ι : Type u} (g : ι 
   have := isInvertible_twistingSheaf_reesAlgebra I 1
   refine epi_freeHomEquiv_symm_of_iSup_nonvanishingLocus_eq_top _ ?_
   simp_rw [nonvanishingLocus_toTwistingSheaf_monomialDegreeOne]
-  exact Proj.iSup_basicOpen_eq_top _ _ (irrelevant_eq_span_monomialDegreeOne hg).le
+  exact iSup_basicOpen_monomialDegreeOne hg
 
 /-- **No common zero of the degree-one Rees sections.** On `Proj R[(x₁, x₂)t]`, the nonvanishing
 loci of the two degree-one sections `x'₁` and `x'₂` of `𝒪(1)` cover the entire blowup. -/

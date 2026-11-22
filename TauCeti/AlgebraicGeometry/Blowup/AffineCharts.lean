@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Basic
+public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ReesAlgebra
 public import TauCeti.RingTheory.ReesAlgebra.AffineBlowup
 
 /-!
@@ -39,7 +40,10 @@ with blowups, such as the blowup of the node `xy = πⁿ` at its singular point,
 * `TauCeti.AlgebraicGeometry.isIso_affineBlowupι_of_sq_mem`: if `I = (a, s)` with `s² ∈ a I`, the
   chart of `a` is the whole blowup. This applies at a node, where `I = 𝔪 = (x, y)` and the local
   equation gives `y² ∈ x 𝔪` once the coefficient of `y²` is a unit.
-* `TauCeti.AlgebraicGeometry.affineBlowupι_toSpecZero`: the chart is a morphism over `Spec R`.
+* `TauCeti.AlgebraicGeometry.affineBlowupι_toSpecZero`,
+  `TauCeti.AlgebraicGeometry.affineBlowupι_toSpecCoeff`: the chart is a morphism over `Spec R`.
+* `TauCeti.AlgebraicGeometry.comap_affineBlowupι_toSpecCoeff`: pullback of an ideal along an
+  affine blowup chart.
 
 ## References
 
@@ -55,7 +59,7 @@ universe u
 
 namespace TauCeti.AlgebraicGeometry
 
-open _root_.AlgebraicGeometry
+open _root_.AlgebraicGeometry Scheme.IdealSheafData
 
 variable {R : Type u} [CommRing R] {I : Ideal R} {a : R}
   (S : Type u) [CommRing S] [Algebra R S] [IsLocalization.Away a S]
@@ -108,23 +112,7 @@ theorem iSup_opensRange_affineBlowupι {ι : Type*} {s : ι → R}
     ⨆ i, (affineBlowupι (Localization.Away (s i))
       (hs ▸ Ideal.subset_span ⟨i, rfl⟩ : s i ∈ I)).opensRange = ⊤ := by
   simp_rw [opensRange_affineBlowupι]
-  exact Proj.iSup_basicOpen_eq_top _ _ (irrelevant_eq_span_monomialDegreeOne hs).le
-
-/-- The two standard opens `D₊(x₁ t)` and `D₊(x₂ t)` cover the blowup `Proj R[(x₁, x₂)t]`. -/
-theorem sup_basicOpen_monomialDegreeOne_span_pair (x₁ x₂ : R) :
-    Proj.basicOpen (grade (Ideal.span ({x₁, x₂} : Set R)))
-        (monomialDegreeOne (Ideal.subset_span (Set.mem_insert x₁ {x₂}))) ⊔
-      Proj.basicOpen (grade (Ideal.span ({x₁, x₂} : Set R)))
-        (monomialDegreeOne (Ideal.subset_span (Set.mem_insert_of_mem x₁ (Set.mem_singleton x₂)))) =
-      ⊤ := by
-  have hspan : Ideal.span (Set.range ![x₁, x₂]) = Ideal.span ({x₁, x₂} : Set R) := by
-    rw [Matrix.range_cons_cons_empty]
-  have htop := Proj.iSup_basicOpen_eq_top (grade (Ideal.span ({x₁, x₂} : Set R)))
-    (fun i : Fin 2 ↦ monomialDegreeOne (I := Ideal.span ({x₁, x₂} : Set R))
-      (hspan ▸ Ideal.subset_span ⟨i, rfl⟩))
-    (irrelevant_eq_span_monomialDegreeOne hspan).le
-  rw [← htop, ← finTwoEquiv.symm.iSup_comp, iSup_bool_eq, sup_comm]
-  simp [finTwoEquiv]
+  exact iSup_basicOpen_monomialDegreeOne hs
 
 /-- **A single chart covers the blowup.** If `I = (a, s)` and `s² ∈ a I`, then the chart
 `Spec R[I/a] ⟶ Proj R[It]` of `a` is an isomorphism: since `(s t)² = (a t)(c t)` with `c ∈ I`, the
@@ -164,5 +152,26 @@ theorem affineBlowupι_toSpecZero (ha : a ∈ I) :
   ext r
   simpa [gradeZeroEquiv_apply, HomogeneousLocalization.algebraMap_eq_comp] using
     congr_arg Subtype.val ((awayEquivAffineBlowup S ha).commutes r)
+
+/-- The chart `Spec R[I/a] ⟶ Proj R[It]` is a morphism over `Spec R`: followed by the coefficient
+structure map `Proj.toSpecCoeff`, it is the spectrum of the structure map `R → R[I/a]`. -/
+@[reassoc]
+theorem affineBlowupι_toSpecCoeff (ha : a ∈ I) :
+    affineBlowupι S ha ≫ Proj.toSpecCoeff (grade I) =
+      Spec.map (CommRingCat.ofHom (algebraMap R (I.affineBlowup a S))) := by
+  rw [toSpecCoeff_reesAlgebra]
+  exact affineBlowupι_toSpecZero S ha
+
+/-- **Pullback of an ideal along an affine blowup chart.** For an ideal `J` of `R` and `a ∈ I`,
+the inverse image of `V(J)` along `Spec R[I/a] ⟶ Proj R[It] ⟶ Spec R` is the zero scheme of the
+extended ideal `J · R[I/a]`. -/
+theorem comap_affineBlowupι_toSpecCoeff {a : R} (S : Type u) [CommRing S] [Algebra R S]
+    [IsLocalization.Away a S] (ha : a ∈ I) (J : Ideal R) :
+    ((ofIdealTop (J.map (Scheme.ΓSpecIso (.of R)).inv.hom)).comap
+        (Proj.toSpecCoeff (grade I))).comap (affineBlowupι S ha) =
+      ofIdealTop ((J.map (algebraMap R (I.affineBlowup a S))).map
+        (Scheme.ΓSpecIso (.of (I.affineBlowup a S))).inv.hom) := by
+  rw [← comap_comp, affineBlowupι_toSpecCoeff, comap_ofIdealTop_map_ΓSpecIso_inv,
+    CommRingCat.hom_ofHom]
 
 end TauCeti.AlgebraicGeometry

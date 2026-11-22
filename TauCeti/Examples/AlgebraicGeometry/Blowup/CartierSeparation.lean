@@ -69,7 +69,7 @@ example (k : Type u) [CommRing k] :
     rw [Ideal.span_singleton_le_span_singleton]
     exact map_dvd (Scheme.ΓSpecIso (.of R)).inv.hom ⟨Polynomial.X, by ring⟩
   refine ⟨hD₁.isIso_blowupToBase_sup_of_le hle, blowupSupResidualLeft_eq_top_of_le hle, ?_⟩
-  rw [hD₁.blowupSupResidualRight_of_le hle]
+  rw [blowupSupResidualRight_of_le hD₁.locallyPrincipal hle]
   congr 1
   rw [ofIdealTop_colon_ofIdealTop]
   refine congrArg ofIdealTop ?_
@@ -124,7 +124,7 @@ example :
   refine ⟨hDt, hDe, hDt.isIso_blowupToBase_sup_of_le hle,
     blowupSupResidualLeft_eq_top_of_le hle, ?_,
     comap_mul_blowupSupResidualRight_eq Dt Dt2⟩
-  rw [hDt.blowupSupResidualRight_of_le hle]
+  rw [blowupSupResidualRight_of_le hDt.locallyPrincipal hle]
   congr 1
   rw [ofIdealTop_colon_ofIdealTop]
   refine congrArg ofIdealTop ?_
