@@ -133,7 +133,7 @@ private theorem subst_derivZeroX {σ : Type*} {g : MvPowerSeries σ R}
   congr 1
   funext s
   fin_cases s
-  · simp
+  · simpa using map_zero (substAlgHom (R := R) hg.const)
   · simp [← PowerSeries.subst_def, PowerSeries.subst_X hg]
 
 /-- Differentiating associativity `F(F(U, T), S) = F(U, F(T, S))` in `U` at `U = 0`:

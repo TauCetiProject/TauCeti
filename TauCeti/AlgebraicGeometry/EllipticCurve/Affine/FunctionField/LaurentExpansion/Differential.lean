@@ -110,20 +110,6 @@ private theorem functionFieldLaurentExpansion_genericX_eq_div_formalW :
   rw [← h]
   field_simp
 
-private theorem coe_formalInvariantDifferentialDenom :
-    (W.formalInvariantDifferentialDenom : K⸨X⸩) =
-      1 - algebraMap K K⸨X⸩ W.a₁ * ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) -
-        algebraMap K K⸨X⸩ W.a₂ * ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) ^ 2 -
-        2 * algebraMap K K⸨X⸩ W.a₃ * (formalW W : K⸨X⸩) -
-        2 * algebraMap K K⸨X⸩ W.a₄ * (((PowerSeries.X : K⟦X⟧) : K⸨X⸩) * (formalW W : K⸨X⸩)) -
-        3 * algebraMap K K⸨X⸩ W.a₆ * (formalW W : K⸨X⸩) ^ 2 := by
-  have hC (c : K) : ((PowerSeries.C c : K⟦X⟧) : K⸨X⸩) = algebraMap K K⸨X⸩ c := by
-    rw [← LaurentSeries.coe_algebraMap, ← PowerSeries.algebraMap_eq,
-      IsScalarTower.algebraMap_apply K K⟦X⟧ K⸨X⸩]
-  rw [formalInvariantDifferentialDenom_def]
-  simp only [PowerSeries.smul_eq_C_mul, PowerSeries.coe_sub, PowerSeries.coe_one,
-    PowerSeries.coe_pow, hC, map_mul, map_ofNat]
-
 /-- **The invariant differential of an elliptic curve expands at infinity to the normalised
 invariant differential of its formal group.** -/
 @[simp]
@@ -133,23 +119,11 @@ theorem differentialLaurentSeries_invariantDifferential [W.IsElliptic] :
   let z : K⸨X⸩ := ((PowerSeries.X : K⟦X⟧) : K⸨X⸩)
   let w : K⸨X⸩ := (formalW W : K⸨X⸩)
   have hw0 : w ≠ 0 := W.formalW_coe_ne_zero
-  have heq : w = wEquationRHS W z w := by
-    have h := congrArg (ofPowerSeries ℤ K) W.formalW_wEquation
-    rwa [← LaurentSeries.coe_algebraMap, algebraMap_wEquationRHS, LaurentSeries.coe_algebraMap] at h
   have hmul : ((formalGroup W).invariantDifferential : K⸨X⸩) *
       (W.formalInvariantDifferentialDenom : K⸨X⸩) = 1 := by
     simpa only [PowerSeries.coe_mul, PowerSeries.coe_one] using
       congrArg (ofPowerSeries ℤ K)
         W.invariantDifferential_formalGroup_mul_formalInvariantDifferentialDenom
-  have hGeq : (W.formalInvariantDifferentialDenom : K⸨X⸩) =
-      1 - algebraMap K K⸨X⸩ W.a₁ * z - algebraMap K K⸨X⸩ W.a₂ * z ^ 2 -
-        2 * algebraMap K K⸨X⸩ W.a₃ * w - 2 * algebraMap K K⸨X⸩ W.a₄ * (z * w) -
-        3 * algebraMap K K⸨X⸩ W.a₆ * w ^ 2 :=
-    W.coe_formalInvariantDifferentialDenom
-  have hG0 : 1 - algebraMap K K⸨X⸩ W.a₁ * z - algebraMap K K⸨X⸩ W.a₂ * z ^ 2 -
-      2 * algebraMap K K⸨X⸩ W.a₃ * w - 2 * algebraMap K K⸨X⸩ W.a₄ * (z * w) -
-      3 * algebraMap K K⸨X⸩ W.a₆ * w ^ 2 ≠ 0 :=
-    hGeq ▸ right_ne_zero_of_mul_eq_one hmul
   have hdenom : W.functionFieldLaurentExpansion (Affine.invariantDifferentialDenom W.toAffine) =
       (W⁄K⸨X⸩).toAffine.polynomialY.evalEval (z / w) (-1 / w) := by
     rw [Affine.invariantDifferentialDenom_def, Affine.evalEval_polynomialY]
@@ -167,16 +141,18 @@ theorem differentialLaurentSeries_invariantDifferential [W.IsElliptic] :
     simp only [WeierstrassCurve.baseChange, map_a₁, map_a₃]
     field_simp
     linear_combination h0
-  have hkey := W.inv_evalEval_polynomialY_smul_derivation_div
-    (TauCeti.laurentSeriesDerivation K) heq hG0 hu
+  have hkey := W.inv_smul_derivation_div_subst_formalW_of_neg_two_add_ne_zero
+    (σ := Unit) (KK := K⸨X⸩) (TauCeti.laurentSeriesDerivation K) (q := (PowerSeries.X : K⟦X⟧))
+    (PowerSeries.constantCoeff_X)
+    (by simpa [LaurentSeries.coe_algebraMap, z, w] using hu)
+  simp only [PowerSeries.X_subst, LaurentSeries.coe_algebraMap,
+    TauCeti.laurentSeriesDerivation_apply, smul_eq_mul, inv_eq_of_mul_eq_one_left hmul] at hkey
   have hx : W.functionFieldLaurentExpansion W.toAffine.genericX = z / w :=
     W.functionFieldLaurentExpansion_genericX_eq_div_formalW
-  have hz' : _root_.LaurentSeries.derivative K z = 1 := by
-    simp [z]
+  have hz' : _root_.LaurentSeries.derivative K z = 1 := by simp [z]
   rw [Affine.invariantDifferential_def, differentialLaurentSeries_smul,
     differentialLaurentSeries_D, map_inv₀, hdenom, hx]
-  simpa only [TauCeti.laurentSeriesDerivation_apply, smul_eq_mul, ← hGeq, hz', mul_one,
-    inv_eq_of_mul_eq_one_left hmul] using hkey
+  simpa only [z, w, hz', mul_one] using hkey
 
 /-- **Laurent expansion of Kähler differentials is injective on an elliptic curve.** -/
 theorem differentialLaurentSeries_injective [W.IsElliptic] :
