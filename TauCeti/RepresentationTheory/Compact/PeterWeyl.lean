@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.RepresentationTheory.Compact.Orthonormal
 public import TauCeti.RepresentationTheory.Compact.RepresentativeDensity
 public import TauCeti.RepresentationTheory.Continuous.Conjugate

@@ -16,8 +16,8 @@ import Mathlib.Topology.Algebra.LinearMapCompletion
 Mathlib (`Mathlib.Analysis.InnerProductSpace.l2Space`) provides the norm-square Parseval identities
 for a Hilbert basis (`HilbertBasis.hasSum_norm_inner_sq`, `HilbertBasis.tsum_norm_inner_sq`,
 `HilbertBasis.summable_norm_inner_sq`, and `HilbertBasis.tsum_eNorm_inner_sq`). This file supplies
-the complementary functional Parseval and Bessel identities together with finite coisometric
-contractions:
+the complementary functional Parseval identity, the square-summability consequence of Bessel's
+inequality for a functional, and finite coisometric contractions:
 
 * For a continuous linear functional `A` on a finite orthonormal basis, the squared values
   `‖A (b i)‖ ^ 2` sum to `‖A‖ ^ 2` (`OrthonormalBasis.sum_sq_norm_apply_eq_norm_sq`).
@@ -37,8 +37,9 @@ contractions:
   linear maps along a map whose adjoint preserves inner products.
 * `OrthonormalBasis.sum_sum_inner_comp_eq_of_inner_eq` — double coisometric Parseval contraction
   of two bilinear maps along a map whose adjoint preserves inner products.
-* `Orthonormal.summable_norm_apply_sq` — Bessel's inequality for a functional: the squared values
-  of a continuous linear functional on an orthonormal family are summable.
+* `Orthonormal.summable_norm_apply_sq` — square-summability consequence of Bessel's inequality for
+  a functional: the squared values of a continuous linear functional on an orthonormal family are
+  summable.
 -/
 
 public section
@@ -138,9 +139,9 @@ section Seminormed
 
 variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
-/-- **Bessel's inequality for a functional.** The values of a continuous linear functional `φ` on
-an orthonormal family are square summable. The space need not be complete, and its seminorm need
-not be a norm. -/
+/-- **Square-summability consequence of Bessel's inequality for a functional.** The values of a
+continuous linear functional `φ` on an orthonormal family are square summable. The space need not be
+complete, and its seminorm need not be a norm. -/
 theorem _root_.Orthonormal.summable_norm_apply_sq {v : ι → E} (hv : Orthonormal 𝕜 v)
     (φ : StrongDual 𝕜 E) : Summable fun i ↦ ‖φ (v i)‖ ^ 2 := by
   -- Extend `φ` to the completion and represent the extension by a vector `u` (Riesz), so that

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Completion
-public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
 
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
