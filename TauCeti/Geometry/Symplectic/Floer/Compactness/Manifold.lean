@@ -225,22 +225,9 @@ theorem floerEnergyDensity_eq_inChartAt (ω : SmoothTwoForm I M)
           Floer.almostComplexInChartAt I α J (z, extChartAt I α (u z))
             (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
               ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z)))] := by
-  set T := trivializationAt E (TangentSpace I) α
-  have hub : u z ∈ T.baseSet :=
-    TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source hus
-  -- The chart coordinate of `∂ₛu - X_{K_s}`.
-  have hPs : T.symmL ℝ (u z) (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
-      ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z))) =
-      ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal := by
-    have hre := ω.continuousLinearMapAt_perturbedMFDeriv_apply (Ks := Ks) (Kt := Kt) hu hus
-      stdComplexLineReal
-    simp only [stdComplexLineReal_fst, stdComplexLineReal_snd, zero_smul, one_smul,
-      sub_zero] at hre
-    rw [← hre, Trivialization.symmL_continuousLinearMapAt _ hub]
-  have hPt := h.apply_stdComplexLineImag
-  simp only [ContinuousLinearMap.coe_coe] at hPt
-  rw [ω.inChartAt_apply_almostComplexInChartAt ((extChartAt I α).map_source hus),
-    (extChartAt I α).left_inv hus, hPs, floerEnergyDensity_def, hPt]
+  rw [ω.floerEnergyDensity_eq_inChartAt_sub hu hus,
+    (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub hu
+      hus).1 h]
 
 /-- **Floer solutions in a chart solve the coordinate Floer equation.** Let `u` be `C³` on an open
 set `U`, with values in the source of the chart at `α`, and solve the Floer equation for `J(z, u)`
