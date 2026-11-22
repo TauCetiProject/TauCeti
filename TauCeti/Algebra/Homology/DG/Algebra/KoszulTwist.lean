@@ -25,8 +25,8 @@ elements.
 
 * `TauCeti.IsNonUnitalDGAlgebra.leibniz_koszulTwist`: the Leibniz rule for an arbitrary left
   factor.
-* `TauCeti.IsNonUnitalDGAlgebra.koszulTwist_map`, `TauCeti.IsNonUnitalDGAlgebra.map_koszulTwist`:
-  the differential anticommutes with the Koszul twist.
+* `TauCeti.IsNonUnitalDGAlgebra.koszulTwist_map`: the differential anticommutes with the Koszul
+  twist.
 
 ## References
 
@@ -59,13 +59,6 @@ theorem koszulTwist_map (h : IsNonUnitalDGAlgebra 𝒜 d) (a : A) :
       -d ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1 a) := by
   rw [h.isHomogeneous.koszulTwist_apply 1 a, mul_one, Int.negOnePow_one, Units.val_neg,
     Units.val_one, Int.cast_neg, Int.cast_one, neg_one_smul]
-
-/-- The differential of the Koszul twist `a ↦ (-1) ^ |a| a` is minus the Koszul twist of the
-differential (`TauCeti.IsNonUnitalDGAlgebra.koszulTwist_map`). -/
-theorem map_koszulTwist (h : IsNonUnitalDGAlgebra 𝒜 d) (a : A) :
-    d ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1 a) =
-      -(InternalGrading.ofDecomposition 𝒜).koszulTwist 1 (d a) := by
-  rw [h.koszulTwist_map, neg_neg]
 
 /-- **The Leibniz rule for an arbitrary left factor**: the sign `(-1) ^ |a|` of the graded Leibniz
 rule is the Koszul twist `a ↦ (-1) ^ |a| a` of the left factor. -/
