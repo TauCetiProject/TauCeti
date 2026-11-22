@@ -21,7 +21,9 @@ For a holomorphic function `w` without critical points on an open set `U`, the
 and `w` are:
 
 * if `s` is a holomorphic square root of `w'` on `U`, then `v₁ = w / s` and `v₂ = 1 / s` solve the
-  Schwarzian equation of `w`, their Wronskian `v₁ v₂' - v₁' v₂` is `-1`, and `w = v₁ / v₂`;
+  Schwarzian equation of `w` and `w = v₁ / v₂`; on a simply connected `U` such an `s` exists, and
+  `exists_isSolution_ofSchwarzian` gives solutions with quotient `w` and Wronskian
+  `v₁ v₂' - v₁' v₂ = -1`;
 * conversely, if `y₁, y₂` solve an equation `y'' + Q y = 0` and their Wronskian does not vanish,
   then `S(y₁ / y₂) = 2 Q` wherever `y₂ ≠ 0`.
 
@@ -165,6 +167,7 @@ theorem ofSchwarzian_coeff_one : (ofSchwarzian w hw hw').coeff 1 = 0 := (rfl)
 
 /-- The zeroth-order coefficient of the Schwarzian equation of `w` is `S(w) / 2` on the
 domain. -/
+@[simp]
 theorem extend_ofSchwarzian_coeff_zero (hz : z ∈ U) :
     HolomorphicFunctions.extend ((ofSchwarzian w hw hw').coeff 0) z = schwarzian w z / 2 :=
   HolomorphicFunctions.extend_of _ hz

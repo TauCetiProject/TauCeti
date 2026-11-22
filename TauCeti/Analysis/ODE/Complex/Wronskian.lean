@@ -90,10 +90,10 @@ private theorem linearIndependent_initialJet_iff {a : ℂ} (ha : a ∈ U) (f g :
   have hrow : E.initialJet ha ∘ ![f, g] =
       (Matrix.of ![E.initialJet ha f, E.initialJet ha g]).row := by
     ext i j
-    fin_cases i <;> rfl
+    fin_cases i <;> simp [Matrix.row, Matrix.of_apply]
   rw [hrow, Matrix.linearIndependent_row_iff_isUnit, Matrix.isUnit_iff_isUnit_det,
     isUnit_iff_ne_zero, Matrix.det_fin_two]
-  rfl
+  simp only [Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- Two solutions of a second-order equation whose Wronskian is nonzero at some point of the
 domain are linearly independent. -/
