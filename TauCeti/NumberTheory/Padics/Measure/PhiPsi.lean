@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.Measure.AmiceTransform
 public import Mathlib.RingTheory.PowerSeries.Substitution
-public import TauCeti.NumberTheory.Padics.Coleman.Basic
+public import TauCeti.NumberTheory.Padics.Coleman.Frobenius
 public import TauCeti.NumberTheory.Padics.Division
 public import TauCeti.NumberTheory.Padics.Measure.Moments
 public import TauCeti.NumberTheory.Padics.Measure.Multiples

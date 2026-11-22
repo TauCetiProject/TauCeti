@@ -50,15 +50,15 @@ theorem isAdic_span_p_isRestricted_subring (n : ℕ) :
     IsAdic (Ideal.span {(p : MvPowerSeries.IsRestricted.subring (R := ℤ_[p])
       (fun _ : Fin n ↦ 1))}) := by
   rw [← _root_.PadicInt.map_maximalIdeal_eq_span_p (algebraMap ℤ_[p] _)]
-  exact isAdic_map_algebraMap_isRestricted_subring (k := n) isAdic_maximalIdeal
+  exact isAdic_map_algebraMap_isRestricted_subring (k := n) _root_.PadicInt.isAdic_maximalIdeal
     (maximalIdeal ℤ_[p]).fg_of_isNoetherianRing
 
 /-- The completed Huber restricted-series ring over `ℤ_[p]` carries the `(p)`-adic topology. -/
 theorem isAdic_span_p_restrictedMvPowerSeriesCompletion (n : ℕ) :
     IsAdic (Ideal.span {(p : restrictedMvPowerSeriesCompletion n ℤ_[p])}) := by
   rw [← _root_.PadicInt.map_maximalIdeal_eq_span_p (algebraMap ℤ_[p] _)]
-  exact isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion n isAdic_maximalIdeal
-    (maximalIdeal ℤ_[p]).fg_of_isNoetherianRing
+  exact isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion n
+    _root_.PadicInt.isAdic_maximalIdeal (maximalIdeal ℤ_[p]).fg_of_isNoetherianRing
 
 /-- `ℤ_[p]⟨T₁, …, Tₙ⟩` is not a Tate ring: its topology is adic for the proper ideal `(p)`. -/
 theorem not_isTateRing_isRestricted_subring (n : ℕ) :
@@ -85,7 +85,7 @@ noncomputable def quotientSpanPowIsRestrictedEquivMvPolynomialZMod (n m : ℕ) :
         (fun _ : Fin n ↦ 1)) ^ m}) ≃+* MvPolynomial (Fin n) (ZMod (p ^ m)) :=
   ((Ideal.quotEquivOfEq (by
       rw [_root_.PadicInt.map_maximalIdeal_eq_span_p, Ideal.span_singleton_pow])).trans
-    (quotientIsRestrictedPowEquivMvPolynomialQuotient (k := n) isAdic_maximalIdeal
+    (quotientIsRestrictedPowEquivMvPolynomialQuotient (k := n) _root_.PadicInt.isAdic_maximalIdeal
       (maximalIdeal ℤ_[p]).fg_of_isNoetherianRing m).toRingEquiv).trans
     (MvPolynomial.mapEquiv (Fin n) (quotientMaximalIdealPowEquivZMod m))
 
@@ -108,7 +108,8 @@ noncomputable def quotientSpanPowRestrictedCompletionEquivMvPolynomialZMod (n m 
       MvPolynomial (Fin n) (ZMod (p ^ m)) :=
   ((Ideal.quotEquivOfEq (by
       rw [_root_.PadicInt.map_maximalIdeal_eq_span_p, Ideal.span_singleton_pow])).trans
-    (quotientRestrictedCompletionPowEquivMvPolynomialQuotient (k := n) isAdic_maximalIdeal
+    (quotientRestrictedCompletionPowEquivMvPolynomialQuotient (k := n)
+      _root_.PadicInt.isAdic_maximalIdeal
       (maximalIdeal ℤ_[p]).fg_of_isNoetherianRing m).toRingEquiv).trans
     (MvPolynomial.mapEquiv (Fin n) (quotientMaximalIdealPowEquivZMod m))
 
@@ -121,7 +122,7 @@ theorem quotientSpanPowRestrictedCompletionEquivMvPolynomialZMod_mk (n m : ℕ)
       MvPolynomial.map (_root_.PadicInt.quotientSpanPowEquivZMod m).toRingHom
         ((Ideal.span {(p : ℤ_[p]) ^ m}).restrictedCompletionReduction
           (by simpa only [← Ideal.span_singleton_pow, ← _root_.PadicInt.maximalIdeal_eq_span_p]
-            using isAdic_maximalIdeal.isOpen_pow m) x) := by
+            using _root_.PadicInt.isAdic_maximalIdeal.isOpen_pow m) x) := by
   have hR : maximalIdeal ℤ_[p] ^ m = Ideal.span {(p : ℤ_[p]) ^ m} := by
     rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow]
   have hhom : (Ideal.quotEquivOfEq hR : _ →+* _) = Ideal.Quotient.factor (le_of_eq hR) := by

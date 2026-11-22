@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.Algebra.Ring.Compact
+public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.RingTheory.AdicRing.Basic
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
@@ -21,13 +22,9 @@ topologically nilpotent.
 
 ## Main results
 
-* `TauCeti.Huber.PadicInt.coe_maximalIdeal_pow`: `(p)ⁿ` is the closed ball of radius `p⁻ⁿ`.
-  Openness is Mathlib's `IsLocalRing.isOpen_maximalIdeal_pow`.
-* `TauCeti.Huber.PadicInt.isAdic_maximalIdeal`: the norm topology of `ℤ_[p]` is the `(p)`-adic
-  topology. Mathlib has `IsAdicComplete (maximalIdeal ℤ_[p]) ℤ_[p]` but not this comparison of
-  topologies, which is what a pair of definition requires.
-* `TauCeti.Huber.PadicInt.instIsLinearTopology`: consequently `ℤ_[p]` is linearly topologized,
-  and `TauCeti.Huber.PadicInt.isTopologicallyNilpotent_iff_dvd`: its topologically nilpotent
+* `TauCeti.Huber.PadicInt.instIsLinearTopology`: from `PadicInt.isAdic_maximalIdeal` (in
+  `TauCeti.NumberTheory.Padics.PadicIntegers`), `ℤ_[p]` is linearly topologized, and
+  `TauCeti.Huber.PadicInt.isTopologicallyNilpotent_iff_dvd`: its topologically nilpotent
   elements are the multiples of `p`.
 * `TauCeti.Huber.PadicInt.isAdicRing`, `TauCeti.Huber.PadicInt.isHuberRing`, and
   `TauCeti.Huber.PadicInt.not_isTateRing`: `ℤ_[p]` is an adic ring of finite ideal type (hence a
@@ -62,44 +59,23 @@ namespace PadicInt
 
 variable {p : ℕ} [Fact p.Prime]
 
-/-- The `n`-th power of the maximal ideal of `ℤ_[p]` is the closed ball of radius `p⁻ⁿ`: this is
-what ties the norm topology to the `(p)`-adic one. -/
-theorem coe_maximalIdeal_pow (n : ℕ) :
-    ((maximalIdeal ℤ_[p] ^ n : Ideal ℤ_[p]) : Set ℤ_[p])
-      = {x : ℤ_[p] | ‖x‖ ≤ (p : ℝ) ^ (-n : ℤ)} := by
-  ext x
-  simp only [Set.mem_ofPred_eq, SetLike.mem_coe]
-  rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow,
-    ← _root_.PadicInt.norm_le_pow_iff_mem_span_pow]
-
-/-- **The norm topology of `ℤ_[p]` is the `(p)`-adic topology.** -/
-theorem isAdic_maximalIdeal : IsAdic (maximalIdeal ℤ_[p]) := by
-  have hp1 : (p : ℝ)⁻¹ < 1 := inv_lt_one_of_one_lt₀ <| mod_cast (Fact.out : p.Prime).one_lt
-  rw [isAdic_iff]
-  refine ⟨IsLocalRing.isOpen_maximalIdeal_pow ℤ_[p], fun s hs ↦ ?_⟩
-  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp hs
-  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hε hp1
-  refine ⟨n, fun x hx ↦ hball ?_⟩
-  rw [coe_maximalIdeal_pow, Set.mem_ofPred_eq] at hx
-  refine Metric.mem_ball.mpr (lt_of_le_of_lt ?_ hn)
-  simpa [zpow_neg, zpow_natCast, ← inv_pow, dist_eq_norm] using hx
-
 /-- The norm topology of `ℤ_[p]` is linear: the ideals `(p ^ n)` are a neighbourhood basis of
 zero. -/
 instance instIsLinearTopology : IsLinearTopology ℤ_[p] ℤ_[p] :=
-  isAdic_maximalIdeal.isLinearTopology
+  _root_.PadicInt.isAdic_maximalIdeal.isLinearTopology
 
 /-- A `p`-adic integer is topologically nilpotent exactly when it is divisible by `p`. -/
 theorem isTopologicallyNilpotent_iff_dvd {c : ℤ_[p]} :
     IsTopologicallyNilpotent c ↔ (p : ℤ_[p]) ∣ c := by
-  rw [isAdic_maximalIdeal.isTopologicallyNilpotent_iff_mem_radical,
+  rw [_root_.PadicInt.isAdic_maximalIdeal.isTopologicallyNilpotent_iff_mem_radical,
     (maximalIdeal.isMaximal ℤ_[p]).isPrime.radical, _root_.PadicInt.maximalIdeal_eq_span_p,
     Ideal.mem_span_singleton]
 
 /-- **`ℤ_[p]` is an adic ring of finite ideal type**, with `(p)` as a finitely generated ideal of
 definition. -/
 instance isAdicRing : IsAdicRing ℤ_[p] :=
-  ⟨maximalIdeal ℤ_[p], IsNoetherian.noetherian _, isAdic_maximalIdeal, inferInstance⟩
+  ⟨maximalIdeal ℤ_[p], IsNoetherian.noetherian _, _root_.PadicInt.isAdic_maximalIdeal,
+    inferInstance⟩
 
 /-- **`ℤ_[p]` is a Huber ring**, with `(ℤ_[p], (p))` as a pair of definition: the norm topology
 is the adic topology of the principal ideal `(p)`. -/
@@ -108,7 +84,8 @@ instance isHuberRing : IsHuberRing ℤ_[p] := inferInstance
 /-- **`ℤ_[p]` is not a Tate ring**: it admits no pseudouniformiser. Together with
 `TauCeti.Huber.PadicInt.isHuberRing` this separates `IsHuberRing` from `IsTateRing`. -/
 theorem not_isTateRing : ¬ IsTateRing ℤ_[p] := fun _ ↦
-  (maximalIdeal.isMaximal ℤ_[p]).ne_top (IsTateRing.eq_top_of_isAdic isAdic_maximalIdeal)
+  (maximalIdeal.isMaximal ℤ_[p]).ne_top
+    (IsTateRing.eq_top_of_isAdic _root_.PadicInt.isAdic_maximalIdeal)
 
 end PadicInt
 

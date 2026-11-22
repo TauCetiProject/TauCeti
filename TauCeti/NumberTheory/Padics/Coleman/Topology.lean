@@ -12,22 +12,17 @@ public import TauCeti.NumberTheory.Padics.Coleman.Norm
 import Mathlib.Topology.Algebra.Constructions
 import Mathlib.Topology.Algebra.Group.Units
 import Mathlib.Topology.Instances.Matrix
-import TauCeti.RingTheory.PowerSeries.PiTopology
-import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Continuity of Coleman operators
 
-This file proves continuity of Frobenius substitution `frobeniusHom` (for any topological ring `O`
-and `O⟦X⟧` in the coefficientwise topology `PowerSeries.WithPiTopology`) and, for a prime `p`
-and `(p)`-adically complete ring `O` equipped with its `(p)`-adic topology, continuity of the
-Coleman coordinates `coord`, trace `trace`, norm `norm`, and unit norm `normUnits` in the
-coefficientwise topology on `O⟦X⟧`.
+For a prime `p` and `(p)`-adically complete ring `O` equipped with its `(p)`-adic topology, this
+file proves continuity of the Coleman coordinates `coord`, trace `trace`, norm `norm`, and unit
+norm `normUnits` in the coefficientwise topology `PowerSeries.WithPiTopology` on `O⟦X⟧`.
+(Continuity of `frobeniusHom` sits in `TauCeti.NumberTheory.Padics.Coleman.Frobenius`.)
 
 ## Main results
 
-* `TauCeti.Coleman.continuous_frobeniusHom`: Frobenius substitution `Φ` is continuous for the
-  coefficientwise topology on `O⟦X⟧`.
 * `TauCeti.Coleman.continuous_coord`: each `coord p O i` is continuous for the coefficientwise
   topology on `O⟦X⟧` when `O` has its `(p)`-adic topology.
 * `TauCeti.Coleman.continuous_trace`: `trace p O` is continuous for the coefficientwise topology
@@ -52,12 +47,6 @@ open scoped PowerSeries.WithPiTopology Topology
 namespace TauCeti.Coleman
 
 variable {p : ℕ} {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
-
-/-- Frobenius substitution `Φ` is continuous for the coefficientwise topology on `O⟦X⟧`. -/
-theorem continuous_frobeniusHom : Continuous (frobeniusHom p O) :=
-  (funext frobeniusHom_apply : (frobeniusHom p O : O⟦X⟧ → O⟦X⟧) = _).symm ▸
-    Continuous.powerSeries_subst continuous_id continuous_const (fun _ ↦ by simp)
-
 variable [Fact p.Prime] [IsAdicComplete (Ideal.span {(p : O)}) O]
 
 /-- Each Coleman coordinate `coord p O i` is continuous for the coefficientwise topology on

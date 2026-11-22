@@ -198,23 +198,15 @@ section CommSemiring
 coefficient `C (j.choose k)`. -/
 theorem cartier_one_add_X_pow {R : Type*} [CommSemiring R] (q k : ℕ) {j : ℕ} (hj : j < q) :
     cartier R q k ((1 + X : R⟦X⟧) ^ j) = C (j.choose k : R) := by
-  classical
   ext n
-  rw [coeff_cartier, coeff_C, add_comm (1 : R⟦X⟧) X, add_pow, map_sum]
-  have hterm (m : ℕ) :
-      coeff (q * n + k) (X ^ m * (1 : R⟦X⟧) ^ (j - m) * (j.choose m : R⟦X⟧)) =
-        if q * n + k = m then (j.choose m : R) else 0 := by
-    rw [one_pow, mul_one, ← map_natCast C, mul_comm (X ^ m), coeff_C_mul, coeff_X_pow]
-    split_ifs <;> simp
-  simp_rw [hterm, Finset.sum_ite_eq, Finset.mem_range]
+  have hcoe : ((1 + X : R⟦X⟧) ^ j) =
+      (((1 + Polynomial.X : Polynomial R) ^ j : Polynomial R) : R⟦X⟧) := by
+    simp
+  rw [coeff_cartier, hcoe, Polynomial.coeff_coe, Polynomial.coeff_one_add_X_pow, coeff_C]
   rcases eq_or_ne n 0 with rfl | hn
-  · simp only [mul_zero, zero_add, ↓reduceIte]
-    split_ifs with hk
-    · rfl
-    · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero]
-  · have hpos : 1 ≤ n := Nat.pos_of_ne_zero hn
-    have hnot : ¬ q * n + k < j + 1 := by nlinarith
-    simp [hn, hnot]
+  · simp
+  · have hlt : j < q * n + k := by nlinarith [Nat.pos_of_ne_zero hn]
+    simp [hn, Nat.choose_eq_zero_of_lt hlt]
 
 variable {R : Type*} [CommSemiring R]
 
@@ -415,7 +407,6 @@ noncomputable def expandOneAddXEquiv (q : ℕ) (hq : q ≠ 0) (R : Type*) [CommR
 
 /-- Evaluating `PowerSeries.expandOneAddXEquiv` at `a` expands to the shifted Cartier sum
 `∑ i : Fin q, expand q hq (a i) * (1 + X) ^ (i : ℕ)`. -/
-@[simp]
 theorem expandOneAddXEquiv_apply (q : ℕ) (hq : q ≠ 0) (R : Type*) [CommRing R]
     (a : Fin q → R⟦X⟧) :
     expandOneAddXEquiv q hq R a = ∑ i : Fin q, expand q hq (a i) * (1 + X) ^ (i : ℕ) :=

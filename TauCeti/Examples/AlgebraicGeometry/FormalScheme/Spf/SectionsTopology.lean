@@ -92,7 +92,7 @@ example (A : Type u) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] {I 
 is a homeomorphism onto `ℤ_[p]`, and `quotientSectionsTopology` on `⊤` is a complete Hausdorff
 topological ring topology that is not discrete. -/
 example (p : ℕ) [Fact p.Prime] :
-    let hI := Huber.PadicInt.isAdic_maximalIdeal (p := p)
+    let hI := _root_.PadicInt.isAdic_maximalIdeal (p := p)
     letI := quotientSectionsTopology hI ⊤
     haveI := quotientSectionsTopology_isTopologicalRing hI ⊤
     letI : UniformSpace ((structureSheaf hI).obj.obj (op ⊤)) :=
@@ -101,7 +101,7 @@ example (p : ℕ) [Fact p.Prime] :
       CompleteSpace ((structureSheaf hI).obj.obj (op ⊤)) ∧
       T2Space ((structureSheaf hI).obj.obj (op ⊤)) ∧
       ¬ DiscreteTopology ((structureSheaf hI).obj.obj (op ⊤)) := by
-  let hI := Huber.PadicInt.isAdic_maximalIdeal (p := p)
+  let hI := _root_.PadicInt.isAdic_maximalIdeal (p := p)
   let _ := quotientSectionsTopology hI ⊤
   have := quotientSectionsTopology_isTopologicalRing hI ⊤
   let _ : UniformSpace ((structureSheaf hI).obj.obj (op ⊤)) :=

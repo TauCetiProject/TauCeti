@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.Measure.RootAveraging.Integral
+public import TauCeti.NumberTheory.Padics.Coleman.Measure
 public import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.Analysis.Normed.Ring.Finite
 

@@ -50,7 +50,7 @@ example (J : Ideal (MvPowerSeries.IsRestricted.subring (R := ℚ_[p]) fun _ : Fi
 /-- `ℤ_[p]` is in Huber's standing class via `(ℤ_[p], (p))`, and so is every quotient `ℤ_[p] ⧸ J`,
 although `ℤ_[p]` is not a Tate ring. -/
 example (J : Ideal ℤ_[p]) : ¬ IsTateRing ℤ_[p] ∧ IsHuberStandard (ℤ_[p] ⧸ J) := by
-  have : IsHuberStandard ℤ_[p] := .of_isAdic PadicInt.isAdic_maximalIdeal
+  have : IsHuberStandard ℤ_[p] := .of_isAdic _root_.PadicInt.isAdic_maximalIdeal
   exact ⟨PadicInt.not_isTateRing, inferInstance⟩
 
 end Examples
@@ -111,7 +111,7 @@ example (p : ℕ) [Fact p.Prime] :
       obtain ⟨t, ht, hts⟩ := hs
       rw [nhds_prod_eq, Filter.mem_prod_iff] at ht
       obtain ⟨U, hU, V, hV, hUV⟩ := ht
-      obtain ⟨m, hm⟩ := (isAdic_iff.mp (PadicInt.isAdic_maximalIdeal (p := p))).2 U hU
+      obtain ⟨m, hm⟩ := (isAdic_iff.mp (_root_.PadicInt.isAdic_maximalIdeal (p := p))).2 U hU
       refine ⟨m + 1, fun u hu ↦ hts (hUV ?_)⟩
       rw [hpow m] at hu
       exact ⟨hm (Ideal.pow_le_pow_right m.le_succ hu.1),
@@ -129,8 +129,9 @@ example (p : ℕ) [Fact p.Prime] :
   let P : PairOfDefinition (ℤ_[p] × B) :=
     ⟨A₀, hA₀open, Ideal.span {π}, Submodule.fg_span_singleton _, hadic⟩
   have : IsHuberRing (ℤ_[p] × B) := ⟨⟨P⟩⟩
-  refine ⟨inferInstance, inferInstance, inferInstance, .of_isAdic PadicInt.isAdic_maximalIdeal,
-    inferInstance, .of_pairOfDefinition P hA₀noeth, fun hstd ↦ hstd.elim ?_ ?_ ?_⟩
+  refine ⟨inferInstance, inferInstance, inferInstance,
+    .of_isAdic _root_.PadicInt.isAdic_maximalIdeal, inferInstance,
+    .of_pairOfDefinition P hA₀noeth, fun hstd ↦ hstd.elim ?_ ?_ ?_⟩
   · intro Q _ _
     have := Algebra.FiniteType.isNoetherianRing Q.ringOfDefinition (ℤ_[p] × B)
     have hB : IsNoetherianRing B :=

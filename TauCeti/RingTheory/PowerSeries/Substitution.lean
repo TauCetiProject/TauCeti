@@ -96,6 +96,8 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.X_pow_dvd_subst`: substitution preserves divisibility by `X ^ n`.
 * `PowerSeries.X_pow_dvd_subst_sub_subst`: substitution respects congruence modulo `X ^ n` of
   the substituted series.
+* `PowerSeries.coeff_subst_sub_subst_mem_span_mul`: if `C r ∣ a - b`, the coefficients of
+  `f (a) - f (b)` lie in `(r) * J` whenever the initial coefficients of `f` lie in `J`.
 * `PowerSeries.homogeneousComponent_subst_of_le_order`: if `f` has order at least `n`, the
   degree-`n` homogeneous component of `f (φ)` is `c φ₁ ^ n`, for `c` the coefficient of `Xⁿ` in
   `f` and `φ₁` the linear part of `φ`.
@@ -440,6 +442,22 @@ theorem X_pow_dvd_subst_sub_subst {a b : S⟦X⟧} (ha : constantCoeff a = 0)
   rw [subst_coe ha', subst_coe hb', ← Polynomial.eval_map_algebraMap,
     ← Polynomial.eval_map_algebraMap]
   exact Polynomial.sub_dvd_eval_sub _ _ _
+
+/-- If `a` and `b` have zero constant coefficient and `C r ∣ a - b`, then for any ideal `J`
+containing the first `n + 1` coefficients of `f` (mapped into `S`), the `n`-th coefficient of
+`f.subst a - f.subst b` lies in `Ideal.span {r} * J`. -/
+theorem coeff_subst_sub_subst_mem_span_mul {r : S} {a b : S⟦X⟧}
+    (ha : constantCoeff a = 0) (hb : constantCoeff b = 0) (hab : C r ∣ a - b)
+    (J : Ideal S) {f : R⟦X⟧} {n : ℕ} (hf : ∀ m ≤ n, algebraMap R S (coeff m f) ∈ J) :
+    coeff n (f.subst a - f.subst b) ∈ Ideal.span {r} * J := by
+  rw [map_sub, coeff_subst_eq_sum_range f ha, coeff_subst_eq_sum_range f hb,
+    ← Finset.sum_sub_distrib]
+  refine Ideal.sum_mem _ fun k hk ↦ ?_
+  rw [Algebra.smul_def, Algebra.smul_def, ← mul_sub, ← map_sub]
+  refine Ideal.mul_mem_mul_rev ?_ (hf k (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)))
+  obtain ⟨q, hq⟩ := hab.trans (sub_dvd_pow_sub_pow _ _ k)
+  rw [hq, coeff_C_mul]
+  exact Ideal.mul_mem_right _ _ (Ideal.subset_span rfl)
 
 /-- **The lowest homogeneous component of a substitution.** If `φ` is a multivariate power
 series of zero constant coefficient and `f` has order at least `n`, then the degree-`n` homogeneous

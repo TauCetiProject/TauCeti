@@ -14,9 +14,7 @@ import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.LinearAlgebra.Vandermonde
 import Mathlib.RingTheory.PowerSeries.NoZeroDivisors
 import Mathlib.RingTheory.PowerSeries.PiTopology
-import TauCeti.NumberTheory.Padics.Coleman.Topology
 import TauCeti.RingTheory.PowerSeries.Evaluation
-import TauCeti.RingTheory.PowerSeries.PiTopology
 
 /-!
 # Root-of-unity evaluation of Coleman's trace and norm
@@ -131,17 +129,15 @@ open TauCeti TauCeti.Coleman
 variable {p : ℕ} [Fact p.Prime]
 
 omit [Fact p.Prime] in
-private theorem eval₂_root_map_frobeniusHom_mul_pow
+private theorem rootEvalHom_map_frobeniusHom_mul_pow
     {O S : Type*} [CommRing O] [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
     [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
     {ζ : S} (hζp : ζ ^ p = 1) (hζ_nil : IsTopologicallyNilpotent (ζ - 1))
     (ρ : O →+* S) (i n : ℕ) (a : O⟦X⟧) :
-    eval₂ C (C (ζ ^ i) * (1 + X) - 1)
-        (PowerSeries.map ρ (frobeniusHom p O a * (1 + X) ^ n)) =
+    rootEvalHom hζ_nil i (PowerSeries.map ρ (frobeniusHom p O a * (1 + X) ^ n)) =
       PowerSeries.map ρ (frobeniusHom p O a) * (C (ζ ^ i) * (1 + X)) ^ n := by
-  rw [← rootEvalHom_apply hζ_nil i, map_mul, map_mul, map_pow, map_add, map_one, map_X,
-    map_pow, rootEvalHom_one_add_X, rootEvalHom_apply, map_frobeniusHom,
-    eval₂_frobeniusHom hζp hζ_nil i]
+  rw [map_mul, map_mul, map_pow, map_add, map_one, map_X, map_pow, rootEvalHom_one_add_X,
+    rootEvalHom_apply, map_frobeniusHom, eval₂_frobeniusHom hζp hζ_nil i]
 
 /-- **Root-of-unity sum equals Frobenius of Coleman's trace** (Sharifi, Lemma 5.4.14; RJW,
 Lemma 10.8): for prime `p`, `(p)`-adically complete `O`, a homomorphism `ρ : O →+* S` into a
@@ -163,7 +159,7 @@ theorem sum_eval₂_map_eq_map_frobeniusHom_trace
     conv_lhs => rw [← sum_frobeniusHom_coord (p := p) F]
     rw [← rootEvalHom_apply hζ_nil (i : ℕ), map_sum, map_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [rootEvalHom_apply, eval₂_root_map_frobeniusHom_mul_pow hζ.pow_eq_one hζ_nil, mul_pow,
+    rw [rootEvalHom_map_frobeniusHom_mul_pow hζ.pow_eq_one hζ_nil, mul_pow,
       ← map_pow, ← pow_mul, mul_comm (i : ℕ) (j : ℕ), pow_mul]
     ring
   simp_rw [hterm]
@@ -197,17 +193,18 @@ theorem prod_eval₂_map_eq_map_frobeniusHom_norm
       (fun i : Fin p ↦ eval₂ C (C (ζ ^ (i : ℕ)) * (1 + X) - 1) (PowerSeries.map ρ F)) * V =
         V * ψ.mapMatrix (leftMulMatrix p O F) := by
     refine Matrix.ext fun i j ↦ ?_
-    have hcol := congrArg (fun g ↦ rootEvalHom hζ_nil (i : ℕ) (PowerSeries.map ρ g))
-      (mul_one_add_X_pow_eq_sum_leftMulMatrix (p := p) F j)
-    have h1X (k : Fin p) : rootEvalHom hζ_nil (i : ℕ) (PowerSeries.map ρ ((1 + X) ^ (k : ℕ))) =
-        (C (ζ ^ (i : ℕ)) * (1 + X)) ^ (k : ℕ) := by
-      rw [map_pow, map_pow, map_add, map_one, map_X, rootEvalHom_one_add_X]
-    simp only [map_mul, map_sum, h1X] at hcol
+    have hcol := congrArg (rootEvalHom hζ_nil (i : ℕ))
+      (congrArg (PowerSeries.map ρ) (mul_one_add_X_pow_eq_sum_leftMulMatrix (p := p) F j))
+    rw [map_mul (PowerSeries.map ρ), map_pow (PowerSeries.map ρ),
+      map_add (PowerSeries.map ρ), map_one (PowerSeries.map ρ), PowerSeries.map_X,
+      map_mul (rootEvalHom hζ_nil (i : ℕ)), map_pow (rootEvalHom hζ_nil (i : ℕ)),
+      rootEvalHom_one_add_X, map_sum (PowerSeries.map ρ),
+      map_sum (rootEvalHom hζ_nil (i : ℕ))] at hcol
     rw [Matrix.diagonal_mul, Matrix.mul_apply]; dsimp only [V]
     rw [Matrix.vandermonde_apply, ← rootEvalHom_apply hζ_nil (i : ℕ), hcol]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [Matrix.vandermonde_apply, rootEvalHom_apply, map_frobeniusHom,
-      eval₂_frobeniusHom hζ.pow_eq_one hζ_nil, ← map_frobeniusHom, mul_comm]
+    rw [Matrix.vandermonde_apply, rootEvalHom_map_frobeniusHom_mul_pow hζ.pow_eq_one hζ_nil,
+      mul_comm]
     simp [ψ]
   have hdet := congrArg Matrix.det hmat
   rw [Matrix.det_mul, Matrix.det_mul, Matrix.det_diagonal] at hdet

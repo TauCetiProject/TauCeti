@@ -72,7 +72,7 @@ noncomputable def pairOfDefinition : PairOfDefinition ℚ_[p] where
   idealOfDefinition := maximalIdeal ℤ_[p]
   fg_idealOfDefinition := by
     rw [_root_.PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _
-  isAdic_idealOfDefinition := PadicInt.isAdic_maximalIdeal
+  isAdic_idealOfDefinition := _root_.PadicInt.isAdic_maximalIdeal
 
 /-- The ring of definition of `pairOfDefinition` is `ℤ_[p]`.
 

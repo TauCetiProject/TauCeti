@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdicCompletion.Basic
-public import Mathlib.RingTheory.PowerSeries.Expand
-public import Mathlib.RingTheory.PowerSeries.Substitution
+public import TauCeti.NumberTheory.Padics.Coleman.Frobenius
 
 import TauCeti.LinearAlgebra.Submodule.CompleteFiltration
 import TauCeti.RingTheory.AdicCompletion.Pi
@@ -16,25 +15,24 @@ import TauCeti.RingTheory.PowerSeries.OneAddXPow
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
-# Coleman's Frobenius substitution and power-series basis
+# Coleman's power-series basis
 
 For a prime `p` and `(p)`-adically complete commutative ring `O`, Frobenius substitution
-`Φ : O⟦X⟧ →ₐ[O] O⟦X⟧` (`f(X) ↦ f((1 + X) ^ p - 1)`) reduces modulo `p` to `PowerSeries.expand p`.
-Combining the shifted-basis Cartier decomposition (`PowerSeries.expandOneAddXEquiv` in
-`TauCeti.RingTheory.PowerSeries.Cartier`) with `TauCeti.IsCompleteFiltration.isUnit_one_add` for
-the `(p)`-adically contractive perturbation `Φ - expand p` yields the unique expansion
-`f = ∑ i < p, Φ(cᵢ) * (1 + X) ^ i`.
+`Φ : O⟦X⟧ →ₐ[O] O⟦X⟧` (`TauCeti.Coleman.frobeniusHom` in `Coleman.Frobenius`) reduces modulo `p`
+to `PowerSeries.expand p`. Combining the shifted-basis Cartier decomposition
+(`PowerSeries.expandOneAddXEquiv` in `TauCeti.RingTheory.PowerSeries.Cartier`) with
+`TauCeti.IsCompleteFiltration.isUnit_one_add` for the `(p)`-adically contractive perturbation
+`Φ - expand p` yields the unique expansion `f = ∑ i < p, Φ(cᵢ) * (1 + X) ^ i`.
 
 ## Main definitions and results
 
-* `TauCeti.Coleman.frobeniusHom`, `TauCeti.Coleman.frobeniusHom_eq_expand`: Frobenius substitution
-  `f ↦ f((1 + X) ^ p - 1)`, coinciding with `expand p` when `(p : O) = 0`.
 * `TauCeti.Coleman.coordEquiv`, `TauCeti.Coleman.coord`, `TauCeti.Coleman.sum_frobeniusHom_coord`,
   `TauCeti.Coleman.coord_unique`: unique Coleman coordinates `f = ∑ i < p, Φ(cᵢ(f)) * (1 + X) ^ i`.
 * `TauCeti.Coleman.frobeniusHom_injective`, `TauCeti.Coleman.frobeniusHom_mem_span_p_pow_iff`,
   `TauCeti.Coleman.coord_one_add_X_pow`, `TauCeti.Coleman.map_coord`,
   `TauCeti.Coleman.coeff_coord_mem_span_pow_of_coeff_mem_span_pow`: injectivity/congruence
-  reflection of `Φ`, values on `(1 + X) ^ n`, functoriality, and `(p)`-adic continuity modulus.
+  reflection of `Φ` (for prime `p` and `(p)`-adically complete `O`), values on `(1 + X) ^ n`,
+  functoriality, and `(p)`-adic continuity modulus.
 
 ## References
 
@@ -52,67 +50,6 @@ public noncomputable section
 open PowerSeries
 
 namespace TauCeti.Coleman
-
-section Frobenius
-
-variable (p : ℕ) (O : Type*) [CommRing O]
-
-/-- The series `(1 + X) ^ p - 1` satisfies `HasSubst` over any commutative ring `O`. -/
-theorem hasSubst_one_add_X_pow_sub_one : HasSubst ((1 + X : O⟦X⟧) ^ p - 1) :=
-  HasSubst.of_constantCoeff_zero' (by simp)
-
-/-- The Frobenius substitution `Φ : O⟦X⟧ →ₐ[O] O⟦X⟧` sending `f(X)` to `f((1 + X) ^ p - 1)`. -/
-def frobeniusHom : O⟦X⟧ →ₐ[O] O⟦X⟧ := substAlgHom (hasSubst_one_add_X_pow_sub_one p O)
-
-variable {p O}
-
-/-- Applying `frobeniusHom` substitutes `(1 + X) ^ p - 1`. -/
-theorem frobeniusHom_apply (f : O⟦X⟧) : frobeniusHom p O f = f.subst ((1 + X : O⟦X⟧) ^ p - 1) :=
-  congrFun (coe_substAlgHom (hasSubst_one_add_X_pow_sub_one p O)) f
-
-/-- `frobeniusHom` sends `X` to `(1 + X) ^ p - 1`. -/
-@[simp]
-theorem frobeniusHom_X : frobeniusHom p O X = (1 + X : O⟦X⟧) ^ p - 1 := by
-  rw [frobeniusHom_apply, subst_X (hasSubst_one_add_X_pow_sub_one p O)]
-
-/-- `frobeniusHom` fixes constant power series. -/
-@[simp]
-theorem frobeniusHom_C (c : O) : frobeniusHom p O (C c) = C c := (frobeniusHom p O).commutes c
-
-/-- `frobeniusHom` preserves the constant coefficient. -/
-@[simp]
-theorem constantCoeff_frobeniusHom (f : O⟦X⟧) :
-    constantCoeff (frobeniusHom p O f) = constantCoeff f := by
-  rw [frobeniusHom_apply, PowerSeries.constantCoeff_subst_of_constantCoeff_zero' (by simp)]
-  simp
-
-/-- `frobeniusHom` raises `1 + X` to the `p`-th power. -/
-@[simp]
-theorem frobeniusHom_one_add_X : frobeniusHom p O (1 + X) = (1 + X : O⟦X⟧) ^ p := by simp [map_add]
-
-/-- `frobeniusHom` sends `(1 + X) ^ n` to `(1 + X) ^ (p * n)`. -/
-@[simp]
-theorem frobeniusHom_one_add_X_pow (n : ℕ) :
-    frobeniusHom p O ((1 + X) ^ n) = (1 + X : O⟦X⟧) ^ (p * n) := by
-  rw [map_pow, frobeniusHom_one_add_X, ← pow_mul]
-
-/-- Coefficientwise change of base ring commutes with `frobeniusHom`. -/
-theorem map_frobeniusHom {O' : Type*} [CommRing O'] (φ : O →+* O') (f : O⟦X⟧) :
-    PowerSeries.map φ (frobeniusHom p O f) = frobeniusHom p O' (PowerSeries.map φ f) := by
-  rw [frobeniusHom_apply, frobeniusHom_apply]
-  have hsub : PowerSeries.map φ ((1 + X : O⟦X⟧) ^ p - 1) = (1 + X : O'⟦X⟧) ^ p - 1 := by
-    simp [PowerSeries.map_X]
-  exact (PowerSeries.map_subst (hasSubst_one_add_X_pow_sub_one p O) (h := φ) f).trans
-    (congrArg (subst · _) hsub)
-
-/-- When `(p : O) = 0`, `frobeniusHom` coincides with `PowerSeries.expand p`. -/
-theorem frobeniusHom_eq_expand [Fact p.Prime] (hp : (p : O) = 0) (f : O⟦X⟧) :
-    frobeniusHom p O f = expand p (Fact.out : p.Prime).ne_zero f := by
-  obtain ⟨q, hq⟩ := C_dvd_one_add_X_pow_sub_one_sub_X_pow (O := O) (Fact.out : p.Prime)
-  rw [hp, map_zero, zero_mul, sub_eq_zero] at hq
-  rw [frobeniusHom_apply, expand_apply, hq]
-
-end Frobenius
 
 section BasisConstruction
 
@@ -249,9 +186,14 @@ variable {p O}
 theorem coordEquiv_apply (f : O⟦X⟧) (i : Fin p) : coordEquiv p O f i = coord p O i f := (rfl)
 
 /-- The inverse of `coordEquiv p O` assembles `∑ i < p, Φ(a i) * (1 + X) ^ i`. -/
-@[simp]
 theorem coordEquiv_symm_apply (a : Fin p → O⟦X⟧) :
     (coordEquiv p O).symm a = ∑ i : Fin p, frobeniusHom p O (a i) * (1 + X) ^ (i : ℕ) := (rfl)
+
+/-- Extracting the `i`-th Coleman coordinate from `(coordEquiv p O).symm a` recovers `a i`. -/
+@[simp]
+theorem coord_coordEquiv_symm (a : Fin p → O⟦X⟧) (i : Fin p) :
+    coord p O i ((coordEquiv p O).symm a) = a i :=
+  congrFun ((coordEquiv p O).apply_symm_apply a) i
 
 /-- **Coleman's basis expansion:** `∑ i < p, Φ(coord p O i f) * (1 + X) ^ i = f`
 (Coleman Thm. 11; Sharifi Prop. 5.4.3; RJW Lemma 10.8). -/
@@ -306,7 +248,7 @@ theorem coord_frobeniusHom (a : O⟦X⟧) (i : Fin p) :
     coord p O i (frobeniusHom p O a) = if (i : ℕ) = 0 then a else 0 := by
   simpa using coord_frobeniusHom_mul (p := p) a 1 i
 
-/-- Over a `(p)`-adically complete ring `O`, `frobeniusHom p O` is injective. -/
+/-- For prime `p` over a `(p)`-adically complete ring `O`, `frobeniusHom p O` is injective. -/
 theorem frobeniusHom_injective : Function.Injective (frobeniusHom p O) := fun _ _ h ↦ by
   simpa using congrArg (coord p O ⟨0, (Fact.out : p.Prime).pos⟩) h
 
@@ -321,7 +263,8 @@ theorem coord_C_mul (c : O) (f : O⟦X⟧) (i : Fin p) :
 theorem coord_C (c : O) (i : Fin p) : coord p O i (C c) = if (i : ℕ) = 0 then C c else 0 := by
   simpa only [frobeniusHom_C] using coord_frobeniusHom (p := p) (C c) i
 
-/-- Frobenius substitution preserves and reflects membership in `(p) ^ k`. -/
+/-- For prime `p` over a `(p)`-adically complete ring `O`, Frobenius substitution preserves and
+reflects membership in `(p) ^ k`. -/
 theorem frobeniusHom_mem_span_p_pow_iff (k : ℕ) {f : O⟦X⟧} :
     frobeniusHom p O f ∈ Ideal.span {(p : O⟦X⟧)} ^ k ↔ f ∈ Ideal.span {(p : O⟦X⟧)} ^ k := by
   rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton, Ideal.mem_span_singleton]

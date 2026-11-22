@@ -191,10 +191,10 @@ is both locally noetherian analytic and locally strongly sheafy. -/
 example
     (hs : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (⊤ : Subring ℤ_[p])))
       (presentationLimitPresheaf
-        (PairOfDefinition.adic (maximalIdeal ℤ_[p]) PadicInt.isAdic_maximalIdeal
+        (PairOfDefinition.adic (maximalIdeal ℤ_[p]) _root_.PadicInt.isAdic_maximalIdeal
           (by rw [_root_.PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _))
         (⊤ : Subring ℤ_[p]))) :
-    let P := PairOfDefinition.adic (maximalIdeal ℤ_[p]) PadicInt.isAdic_maximalIdeal
+    let P := PairOfDefinition.adic (maximalIdeal ℤ_[p]) _root_.PadicInt.isAdic_maximalIdeal
       (by rw [_root_.PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _)
     let hpb : ∀ ⦃a : ℤ_[p]⦄, a ∈ (⊤ : Subring ℤ_[p]) → IsPowerBounded a :=
       fun a _ ↦ IsPowerBounded.of_norm_le_one (_root_.PadicInt.norm_le_one a)

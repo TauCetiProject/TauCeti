@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.Padics.Measure.RootTranslation
 
 import TauCeti.NumberTheory.Padics.Coleman.Topology
 import TauCeti.NumberTheory.Padics.Measure.Topology.Amice
-import TauCeti.RingTheory.Huber.Padic.Basic
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
@@ -60,7 +60,7 @@ variable {p : ℕ} [Fact p.Prime]
 theorem coord_zero_eq_psiSeries (F : ℤ_[p]⟦X⟧) :
     coord p ℤ_[p] ⟨0, (Fact.out : p.Prime).pos⟩ F = TauCeti.psiSeries p F := by
   have hAdic : IsAdic (Ideal.span {(p : ℤ_[p])}) :=
-    PadicInt.maximalIdeal_eq_span_p (p := p) ▸ TauCeti.Huber.PadicInt.isAdic_maximalIdeal
+    PadicInt.maximalIdeal_eq_span_p (p := p) ▸ PadicInt.isAdic_maximalIdeal
   refine congrFun ((PowerSeries.WithPiTopology.denseRange_toPowerSeries ℤ_[p]).equalizer
     (continuous_coord hAdic _) TauCeti.continuous_psiSeries ?_) F
   funext P

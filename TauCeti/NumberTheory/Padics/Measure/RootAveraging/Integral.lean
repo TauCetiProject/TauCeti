@@ -6,16 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.Coleman.Measure
-public import TauCeti.NumberTheory.Padics.Measure.RootAveraging.Polynomial
-public import TauCeti.NumberTheory.Padics.Measure.RootTranslation
 
 /-!
 # Integral root averaging and descent
 
-The sum of the `p` root translates of an integral power series is `p` times its
-Frobenius-after-psi projection, after embedding the coefficients into the integers of `ℂ_p`.
-The root translates are topological evaluations: their arguments may have nonzero constant
-terms. All series carry the coefficientwise p-adic topology.
+For a primitive `p`-th root of unity `ζ ∈ 𝓞_ℂ_[p]`, the sum of the `p` root translates indexed by
+the powers `ζ ^ i` of an integral power series is `p` times its Frobenius-after-psi projection,
+after embedding the coefficients into the integers of `ℂ_p`. The root translates are topological
+evaluations: their arguments may have nonzero constant terms. All series carry the coefficientwise
+p-adic topology.
 
 The average descends uniquely to an integral series before Frobenius, namely `psiSeries p F`.
 Thus neither division by `p` in the receiving integer ring nor an inverse substitution is

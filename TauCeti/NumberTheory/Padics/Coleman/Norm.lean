@@ -140,29 +140,38 @@ private theorem overFrobeniusBasis_repr_apply (x : OverFrobenius p O) (i : Fin p
     (overFrobeniusBasis p O).repr x i = coord p O i (overFrobeniusRingEquiv p O x) := by
   simp [overFrobeniusBasis]
 
-private def overFrobeniusAdjoinRootEquiv [Nontrivial O] :
-    AdjoinRoot (Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧)) ≃ₐ[O⟦X⟧] OverFrobenius p O := by
-  set P : Polynomial O⟦X⟧ := Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧)
-  let φ : AdjoinRoot P →ₐ[O⟦X⟧] OverFrobenius p O :=
-    AdjoinRoot.liftAlgHom P (Algebra.ofId O⟦X⟧ (OverFrobenius p O))
-      ((overFrobeniusRingEquiv p O).symm (1 + X)) <| (overFrobeniusRingEquiv p O).injective <| by
-        simp [P, overFrobeniusRingEquiv_algebraMap]
-  let pb := AdjoinRoot.powerBasis'
-    (Polynomial.monic_X_pow_sub_C (1 + X : O⟦X⟧) (Fact.out : p.Prime).ne_zero)
+private def overFrobeniusAdjoinRootHom :
+    AdjoinRoot (Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧)) →ₐ[O⟦X⟧] OverFrobenius p O :=
+  AdjoinRoot.liftAlgHom (Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧))
+    (Algebra.ofId O⟦X⟧ (OverFrobenius p O))
+    ((overFrobeniusRingEquiv p O).symm (1 + X)) <| (overFrobeniusRingEquiv p O).injective <| by
+      simp [overFrobeniusRingEquiv_algebraMap]
+
+private theorem overFrobeniusAdjoinRootHom_bijective [Nontrivial O] :
+    Function.Bijective (overFrobeniusAdjoinRootHom (p := p) (O := O)) := by
+  let hp := Polynomial.monic_X_pow_sub_C (1 + X : O⟦X⟧) (Fact.out : p.Prime).ne_zero
+  let pb := AdjoinRoot.powerBasis' hp
   let e := pb.basis.equiv (overFrobeniusBasis p O)
-    (finCongr (Polynomial.natDegree_X_pow_sub_C (1 + X : O⟦X⟧)))
-  have hEq : φ.toLinearMap = e.toLinearMap := pb.basis.ext fun i ↦
-    (overFrobeniusRingEquiv p O).injective <| by
+    (finCongr ((AdjoinRoot.powerBasis'_dim hp).trans (Polynomial.natDegree_X_pow_sub_C _)))
+  have hEq : (overFrobeniusAdjoinRootHom (p := p) (O := O)).toLinearMap = e.toLinearMap :=
+    pb.basis.ext fun i ↦ (overFrobeniusRingEquiv p O).injective <| by
       rw [AlgHom.toLinearMap_apply, LinearEquiv.coe_toLinearMap, Module.Basis.equiv_apply,
-        overFrobeniusBasis_apply, pb.basis_eq_pow]
-      simp [φ, pb, P]; rfl
-  exact AlgEquiv.ofBijective φ ((congrArg DFunLike.coe hEq).symm ▸ e.bijective)
+        overFrobeniusBasis_apply, pb.basis_eq_pow, AdjoinRoot.powerBasis'_gen, map_pow,
+        overFrobeniusAdjoinRootHom, AdjoinRoot.liftAlgHom_root, map_pow,
+        (overFrobeniusRingEquiv p O).apply_symm_apply, finCongr_apply, Fin.val_cast]
+  exact (congrArg DFunLike.coe hEq).symm ▸ e.bijective
+
+private def overFrobeniusAdjoinRootEquiv [Nontrivial O] :
+    AdjoinRoot (Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧)) ≃ₐ[O⟦X⟧] OverFrobenius p O :=
+  AlgEquiv.ofBijective (overFrobeniusAdjoinRootHom (p := p) (O := O))
+    overFrobeniusAdjoinRootHom_bijective
 
 private theorem overFrobeniusAdjoinRootEquiv_root [Nontrivial O] :
     overFrobeniusAdjoinRootEquiv (p := p) (O := O)
         (AdjoinRoot.root (Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧))) =
       (overFrobeniusRingEquiv p O).symm (1 + X) := by
-  simp [overFrobeniusAdjoinRootEquiv]
+  rw [overFrobeniusAdjoinRootEquiv, AlgEquiv.ofBijective_apply, overFrobeniusAdjoinRootHom,
+    AdjoinRoot.liftAlgHom_root]
 
 private def overFrobeniusToScalarAlgEquiv :
     @AlgEquiv O⟦X⟧ (OverFrobenius p O) O⟦X⟧ _ _ _ _ (scalarAlgebra p O) :=
