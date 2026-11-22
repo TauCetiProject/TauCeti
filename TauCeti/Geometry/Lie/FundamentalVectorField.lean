@@ -52,6 +52,9 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 * `TauCeti.fundamentalVectorField_prod_of_smul_eq`: for an action on `M × N` through
   homomorphisms `φ`, `ψ` to groups acting on `M` and `N`, such as the factorwise action of a
   product group, `ξ_{M × N}` is the product of `(dφ ξ)_M` and `(dψ ξ)_N`.
+* `TauCeti.fundamentalVectorField_eq_add_of_smul_eq_smul_smul`: for commuting actions of `G` and
+  `K` on `M`, combined into the action `(g, k) • x = g • k • x` of `G × K`, the fundamental vector
+  field of `ξ` is the sum of those of its two components.
 * `TauCeti.mfderiv_fundamentalVectorField_eq_zero_of_smul_invariant`,
   `TauCeti.mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant`: the derivative of an
   invariant map vanishes on fundamental vector fields.
@@ -363,6 +366,37 @@ theorem fundamentalVectorField_prod
     (MonoidHom.id G) (MonoidHom.id G) mdifferentiableAt_id mdifferentiableAt_id
     (fun _ _ ↦ rfl) ξ
   rwa [MonoidHom.groupLieAlgebraMap_id, ContinuousLinearMap.id_apply] at h
+
+/-- **Fundamental vector fields of commuting actions.** Let `G` and `K` act on `M`, and let `G × K`
+act by `(g, k) • x = g • k • x`, as commuting actions combine. Then the fundamental vector field of
+`ξ ∈ Lie(G × K)` is the sum of the fundamental vector fields of its components `d(pr_G) ξ` and
+`d(pr_K) ξ`. -/
+theorem fundamentalVectorField_eq_add_of_smul_eq_smul_smul
+    {F HK : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HK]
+    {J : ModelWithCorners 𝕜 F HK} {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
+    [MulAction K M] [MulAction (G × K) M] [ContMDiffSMul I I' 1 G M] [ContMDiffSMul J I' 1 K M]
+    (hsmul : ∀ (p : G × K) (x : M), p • x = p.1 • p.2 • x)
+    (ξ : GroupLieAlgebra (I.prod J) (G × K)) :
+    fundamentalVectorField I' ξ =
+      fundamentalVectorField I' ((MonoidHom.fst G K).groupLieAlgebraMap (I.prod J) I ξ) +
+        (fundamentalVectorField I' ((MonoidHom.snd G K).groupLieAlgebraMap (I.prod J) J ξ) :
+          ∀ x : M, TangentSpace I' x) := by
+  funext x
+  have hF : MDifferentiableAt (I.prod J) I' (fun p : G × K ↦ p.1 • p.2 • x) 1 :=
+    ((ContMDiffSMul.contMDiff_smul (I := I) (I' := I') (n := 1)).comp
+      (contMDiff_fst.prodMk ((ContMDiffSMul.contMDiff_smul_const (I := J) x).comp
+        contMDiff_snd))).mdifferentiableAt one_ne_zero
+  -- The orbit map of `x` is `(g, k) ↦ g • k • x`, whose derivative at the identity is the sum of
+  -- its two partial derivatives, the derivatives of the orbit maps of `x` for `G` and for `K`.
+  have e : (fun p : G × K ↦ p • x) = fun p ↦ p.1 • p.2 • x := funext fun p ↦ hsmul p x
+  have e₁ : (fun g : G ↦ g • (1 : K) • x) = fun g ↦ g • x := funext fun g ↦ by rw [one_smul]
+  have e₂ : (fun k : K ↦ (1 : G) • k • x) = fun k ↦ k • x := funext fun k ↦ one_smul G _
+  simp only [Pi.add_apply, fundamentalVectorField_apply, MonoidHom.groupLieAlgebraMap_fst,
+    MonoidHom.groupLieAlgebraMap_snd]
+  -- The rewrites change the base point of the target tangent space only up to definitional
+  -- equality (`1 • x` against `1.1 • 1.2 • x`), so they are performed with `erw`.
+  erw [e, mfderiv_prod_eq_add_apply (v := ξ) hF, e₁, e₂]
+  rfl
 
 /-- **Fundamental vector fields along a homomorphism.** Let `K` act on `M` through a homomorphism
 `φ : K →* G` that is differentiable at the identity, `k • x = φ k • x`. Then the fundamental vector
