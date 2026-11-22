@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 public import TauCeti.Geometry.Symplectic.Floer.Trajectory
 import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Analysis.SpecificLimits.ShiftDoubling
 import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 
@@ -136,12 +137,12 @@ theorem exists_pos_forall_eq_of_floer (hH : ContDiff ℝ 2 (uncurry H)) (hHper :
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   have hH1 : ContDiff ℝ 1 (uncurry H) := hH.of_le (by norm_num)
   obtain ⟨δ₁, hδ₁, K, hK, hslice⟩ :=
-    exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity hH hc M hx hx1 hnd
+    exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity hH hx hx1 hnd c M hc
   obtain ⟨δ₂, hδ₂, C, -, hiso⟩ :=
     exists_forall_norm_sub_le_mul_integral_of_nondegenerate hH hx hx1 hnd
   refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, fun {u J} hu hper hJc hJM hfloer hE hclose ↦ ?_⟩
-  have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+    tames_of_mul_norm_sq_le hc (hJc z hz)
   -- The loops stay in a compact neighbourhood of `x`, so the actions have limits at both ends.
   have huK (s t : ℝ) : u (s, t) ∈ cthickening δ₁ (range x) :=
     mem_cthickening_of_dist_le _ (x t) _ _ (mem_range_self t) (by
@@ -160,12 +161,10 @@ theorem exists_pos_forall_eq_of_floer (hH : ContDiff ℝ 2 (uncurry H)) (hHper :
       ⟨_, forall_mem_range.2 (hmono.le_of_tendsto hlim₀)⟩ (fun s ↦ ?_) (fun a ↦
         ω.integrableOn_and_integral_setIntegral_floerEnergyDensity_eq hH1 isOpen_univ
           hu.contDiffOn (by linarith) (subset_univ _) fun r _ ↦ by simpa using hper r 0) s
-    have hsub : ∀ z ∈ Ioi (s - 1) ×ˢ Icc (0 : ℝ) 1, z ∈ (univ : Set ℝ) ×ˢ Icc 0 1 :=
-      fun z hz ↦ ⟨mem_univ _, hz.2⟩
-    exact hslice (a := s - 1) (hu.of_le one_le_two).contDiffOn (fun s _ ↦ hper s)
-      (fun z hz ↦ hJc z (hsub z hz)) (fun z hz ↦ hJM z (hsub z hz))
-      (fun z hz ↦ hfloer z (hsub z hz)) s (by linarith) fun t _ ↦
-        (hclose s t).trans (min_le_left _ _)
+    exact hslice isOpen_univ (hu.of_le one_le_two).contDiffOn (fun t ↦ mem_univ (s, t))
+      (by simpa using hper s 0) (fun t ht ↦ hJc (s, t) ⟨mem_univ s, ht⟩)
+      (fun t ht ↦ hJM (s, t) ⟨mem_univ s, ht⟩) (fun t ht ↦ hfloer (s, t) ⟨mem_univ s, ht⟩)
+      fun t _ ↦ (hclose s t).trans (min_le_left _ _)
   -- The two ends have the action of `x`, so the energy vanishes and `u` is stationary.
   have hA : (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) =
       fun _ ↦ ω.hamiltonianAction H x := funext hAx

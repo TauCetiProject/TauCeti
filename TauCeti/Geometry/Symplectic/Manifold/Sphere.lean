@@ -34,6 +34,8 @@ For the unit sphere `S² ⊂ ℝ³` with the standard orientation of `ℝ³`, th
   unit sphere for the standard orientation of `ℝ³`.
 * `TauCeti.eval₂_sphereAreaForm`: the area form of `S²` is the triple product.
 * `TauCeti.isSymplectic_sphereAreaForm`: the area form of `S²` is symplectic.
+* `TauCeti.isSmoothForm_sphereAreaForm` and `TauCeti.mextDeriv_sphereAreaForm`: the area form of
+  `S²` is continuously differentiable and closed, as the integral over spheres requires.
 
 ## References
 
@@ -97,5 +99,14 @@ theorem eval₂_sphereAreaForm (x : S²) (v w : TangentSpace (𝓡 2) x) :
 /-- The area form of `S²` is symplectic. -/
 theorem isSymplectic_sphereAreaForm : sphereAreaForm.IsSymplectic :=
   Orientation.isSymplectic_sphereVolumeForm _
+
+/-- The area form of `S²` is continuously differentiable, the regularity at which it is integrated
+over spheres (`TauCeti.sphereIntegral`). -/
+theorem isSmoothForm_sphereAreaForm : IsSmoothForm (𝓡 2) 1 sphereAreaForm.val :=
+  sphereAreaForm.isSmoothForm.of_le (by simp)
+
+/-- The area form of `S²` is closed: its manifold exterior derivative vanishes. -/
+theorem mextDeriv_sphereAreaForm : mextDeriv sphereAreaForm.val = 0 :=
+  (SmoothForm.isClosed_def _).1 isSymplectic_sphereAreaForm.isClosed
 
 end TauCeti
