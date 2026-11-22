@@ -206,13 +206,9 @@ private lemma mem_closure_affineWallReflections_apply {x : N}
   obtain ⟨g, hg, hgfxt⟩ :=
     exists_mem_closure_affineWallReflections_apply_mem_closedFundamentalAlcove b
       (y := f x) (z := f xt) (by simpa only [hfxt] using hsep)
-  have hgf : g * f ∈ P.affineWeylGroup :=
-    mul_mem (P.affinePointStabilizer_le_affineWeylGroup (f x)
-      (b.closure_affineWallReflections_le_affinePointStabilizer (f x) hg)) hf
-  have hfeq : f = g⁻¹ := eq_inv_of_mul_eq_one_right
-    (eq_one_of_mem_affineWeylGroup_of_apply_mem_closedFundamentalAlcove b hgf hxt hgfxt)
-  have hg' : g⁻¹ ∈ Subgroup.closure (b.affineWallReflections (f x)) := inv_mem hg
-  rwa [← hfeq] at hg'
+  exact mem_of_le_affineWeylGroup_of_apply_mem_closedFundamentalAlcove b
+    ((b.closure_affineWallReflections_le_affinePointStabilizer (f x)).trans
+      (P.affinePointStabilizer_le_affineWeylGroup (f x))) hf hxt hg hgfxt
 
 /-- **Two points of the closed fundamental alcove in the same `W_aff`-orbit are equal**: if
 `x ∈ Ā`, `f ∈ W_aff`, and `f x ∈ Ā`, then `f x = x`. -/

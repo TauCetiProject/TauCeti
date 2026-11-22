@@ -83,13 +83,13 @@ chambers.
   through `y`, then a product of wall reflections fixing `y` carries `z` into the closed
   fundamental alcove.
 * `RootPairing.exists_mem_closure_range_affineSimpleReflection_apply_mem_closedFundamentalAlcove`
-  and `RootPairing.exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove`: **every point of
-  the coweight space is carried into the closed fundamental alcove by the affine simple
-  reflections**, and in particular by the affine Weyl group.
-* `RootPairing.iUnion_image_closedFundamentalAlcove_eq_univ`: the translates of the closed
-  fundamental alcove under the affine Weyl group cover the coweight space.
-* `RootPairing.exists_mem_affineWeylGroup_apply_mem_fundamentalAlcove`: a point lying on no affine
-  root hyperplane is carried into the open fundamental alcove.
+  and `RootPairing.exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove`: **over an
+  archimedean ring, every point of the coweight space is carried into the closed fundamental alcove
+  by the affine simple reflections**, and in particular by the affine Weyl group.
+* `RootPairing.iUnion_image_closedFundamentalAlcove_eq_univ`: over an archimedean ring, the
+  translates of the closed fundamental alcove under the affine Weyl group cover the coweight space.
+* `RootPairing.exists_mem_affineWeylGroup_apply_mem_fundamentalAlcove`: over an archimedean ring, a
+  point lying on no affine root hyperplane is carried into the open fundamental alcove.
 * `RootPairing.eq_zero_of_mem_corootSpan_of_mem_closedFundamentalAlcove`: the only point of the
   coroot lattice in the closed fundamental alcove is `0`.
 * `RootPairing.exists_mem_affineWeylGroup_preimage_fundamentalAlcove_eq`: **over an archimedean
@@ -597,7 +597,7 @@ theorem exists_mem_closure_affineWallReflections_apply_mem_closedFundamentalAlco
       exact h
   have hsy : P.affineCoreflection j₀ c y = y := P.affineCoreflection_apply_of_root'_eq hj₀y
   have hmaps := sepSet_affineCoreflection_mapsTo b hpres hw hwz
-  refine ⟨⟨k₀, hwall0 y hj₀y, rfl⟩, fun j k hpos hlt ↦ ?_⟩
+  refine ⟨b.mem_affineWallReflections.mpr ⟨k₀, hwall0 y hj₀y, rfl⟩, fun j k hpos hlt ↦ ?_⟩
   obtain ⟨hw', -⟩ := (mem_sdiff _).mp (hmaps (j, k) ((mem_sepSet b).mpr ⟨hpos, hlt⟩))
   obtain ⟨hw'pos, hw'lt⟩ := (mem_sepSet b).mp hw'
   have hwy := hu _ _ hw'pos hw'lt
@@ -612,8 +612,8 @@ section Transitivity
 
 variable [Archimedean R]
 
-/-- **Every point of the coweight space is carried into the closed fundamental alcove by a product
-of affine simple reflections.** -/
+/-- **Over an archimedean ring, every point of the coweight space is carried into the closed
+fundamental alcove by a product of affine simple reflections.** -/
 theorem exists_mem_closure_range_affineSimpleReflection_apply_mem_closedFundamentalAlcove (x : N) :
     ∃ f ∈ Subgroup.closure (range b.affineSimpleReflection),
       f x ∈ closedFundamentalAlcove P b :=
@@ -621,23 +621,24 @@ theorem exists_mem_closure_range_affineSimpleReflection_apply_mem_closedFundamen
     (range b.affineSimpleReflection) (fun _ ↦ True) (fun u _ ↦ sepSet_finite b u)
     (fun _ k₀ _ _ _ _ _ _ _ _ _ ↦ ⟨mem_range_self k₀, trivial⟩) trivial
 
-/-- **The affine Weyl group carries every point into the closed fundamental alcove.** -/
+/-- **Over an archimedean ring, the affine Weyl group carries every point into the closed
+fundamental alcove.** -/
 theorem exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove (x : N) :
     ∃ f ∈ P.affineWeylGroup, f x ∈ closedFundamentalAlcove P b := by
   obtain ⟨f, hf, hfx⟩ :=
     exists_mem_closure_range_affineSimpleReflection_apply_mem_closedFundamentalAlcove b x
   exact ⟨f, b.closure_range_affineSimpleReflection_le_affineWeylGroup hf, hfx⟩
 
-/-- The translates of the closed fundamental alcove under the affine Weyl group cover the coweight
-space. -/
+/-- Over an archimedean ring, the translates of the closed fundamental alcove under the affine Weyl
+group cover the coweight space. -/
 theorem iUnion_image_closedFundamentalAlcove_eq_univ :
     ⋃ f ∈ P.affineWeylGroup, f '' closedFundamentalAlcove P b = univ := by
   refine eq_univ_of_forall fun x ↦ ?_
   obtain ⟨f, hf, hfx⟩ := exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove b x
   exact mem_iUnion₂.mpr ⟨f⁻¹, inv_mem hf, f x, hfx, by simp [AffineEquiv.inv_def]⟩
 
-/-- **A point lying on no affine root hyperplane is carried into the open fundamental alcove** by
-the affine Weyl group. -/
+/-- **Over an archimedean ring, a point lying on no affine root hyperplane is carried into the open
+fundamental alcove** by the affine Weyl group. -/
 theorem exists_mem_affineWeylGroup_apply_mem_fundamentalAlcove {x : N}
     (hx : ∀ j (k : ℤ), P.root' j x ≠ k) :
     ∃ f ∈ P.affineWeylGroup, f x ∈ fundamentalAlcove P b := by
@@ -645,10 +646,10 @@ theorem exists_mem_affineWeylGroup_apply_mem_fundamentalAlcove {x : N}
   exact ⟨f, hf, mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove.mpr
     ⟨hfx, P.root'_apply_ne_intCast_of_mem_affineWeylGroup hf hx⟩⟩
 
-/-- **The affine Weyl group is transitive on the alcoves.** The alcove of a point `x` lying on no
-affine root hyperplane, the set of points lying on no affine root hyperplane and on the same side
-as `x` of each of them, is the preimage of the fundamental alcove under an element of the affine
-Weyl group. -/
+/-- **The affine Weyl group is transitive on the alcoves.** Over an archimedean ring, the alcove of
+a point `x` lying on no affine root hyperplane, the set of points lying on no affine root hyperplane
+and on the same side as `x` of each of them, is the preimage of the fundamental alcove under an
+element of the affine Weyl group. -/
 theorem exists_mem_affineWeylGroup_preimage_fundamentalAlcove_eq {x : N}
     (hx : ∀ j (k : ℤ), P.root' j x ≠ k) :
     ∃ f ∈ P.affineWeylGroup, f ⁻¹' fundamentalAlcove P b =
@@ -685,8 +686,8 @@ theorem eq_zero_of_mem_corootSpan_of_mem_closedFundamentalAlcove {v : N}
 
 /-- An element of the affine Weyl group carrying a point of the open fundamental alcove back into
 the open fundamental alcove is the identity (so when `fundamentalAlcove P b` is nonempty, `W_aff`
-acts freely on its translates, and over an archimedean ring on the alcove of any point lying on no
-affine root hyperplane). -/
+acts freely on its translates, and over an archimedean ring on the set of alcoves, equivalently each
+alcove of a point lying on no affine root hyperplane has trivial setwise stabilizer in `W_aff`). -/
 theorem eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove {f : N ≃ᵃ[R] N}
     (hf : f ∈ P.affineWeylGroup) {x : N} (hx : x ∈ fundamentalAlcove P b)
     (hfx : f x ∈ fundamentalAlcove P b) : f = 1 := by
@@ -740,6 +741,19 @@ theorem eq_one_of_mem_affineWeylGroup_of_apply_mem_closedFundamentalAlcove {f : 
       ⟨hfx, P.root'_apply_ne_intCast_of_mem_affineWeylGroup hf
         (root'_ne_intCast_of_mem_fundamentalAlcove hx)⟩)
 
+/-- If a subgroup `H ≤ P.affineWeylGroup` contains an element `g` carrying `f x` back into the
+closed fundamental alcove for some `x ∈ fundamentalAlcove P b` and `f ∈ P.affineWeylGroup`, then
+`f ∈ H`. -/
+lemma mem_of_le_affineWeylGroup_of_apply_mem_closedFundamentalAlcove
+    {H : Subgroup (N ≃ᵃ[R] N)} (hH : H ≤ P.affineWeylGroup) {f g : N ≃ᵃ[R] N}
+    (hf : f ∈ P.affineWeylGroup) {x : N} (hx : x ∈ fundamentalAlcove P b) (hg : g ∈ H)
+    (hgfx : g (f x) ∈ closedFundamentalAlcove P b) : f ∈ H := by
+  have hgf : g * f ∈ P.affineWeylGroup := mul_mem (hH hg) hf
+  have hfeq : f = g⁻¹ := eq_inv_of_mul_eq_one_right
+    (eq_one_of_mem_affineWeylGroup_of_apply_mem_closedFundamentalAlcove b hgf hx
+      (by simpa only [AffineEquiv.coe_mul, Function.comp_apply] using hgfx))
+  exact hfeq ▸ inv_mem hg
+
 /-- Two elements of the affine Weyl group carrying the same point into the fundamental alcove are
 equal. -/
 theorem eq_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove {f g : N ≃ᵃ[R] N}
@@ -765,10 +779,10 @@ theorem affinePointStabilizer_eq_bot_of_mem_fundamentalAlcove {x : N}
     have ⟨hfW, hfx⟩ := P.mem_affinePointStabilizer.mp hf
     eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove b hfW hx (hfx.symm ▸ hx)
 
-/-- **The affine Weyl group acts simply transitively on the alcoves.** For a point `x` lying on no
-affine root hyperplane, exactly one element of the affine Weyl group pulls the fundamental alcove
-back to the alcove of `x`: the set of points lying on no affine root hyperplane and on the same
-side as `x` of each of them. -/
+/-- **The affine Weyl group acts simply transitively on the alcoves.** Over an archimedean ring,
+for a point `x` lying on no affine root hyperplane, exactly one element of the affine Weyl group
+pulls the fundamental alcove back to the alcove of `x`: the set of points lying on no affine root
+hyperplane and on the same side as `x` of each of them. -/
 theorem existsUnique_mem_affineWeylGroup_preimage_fundamentalAlcove_eq [Archimedean R] {x : N}
     (hx : ∀ j (k : ℤ), P.root' j x ≠ k) :
     ∃! f, f ∈ P.affineWeylGroup ∧ f ⁻¹' fundamentalAlcove P b =
@@ -799,11 +813,8 @@ theorem Base.closure_range_affineSimpleReflection [Archimedean R] :
   obtain ⟨x₀, hx₀⟩ := fundamentalAlcove_nonempty b
   obtain ⟨g, hg, hgfx⟩ :=
     exists_mem_closure_range_affineSimpleReflection_apply_mem_closedFundamentalAlcove b (f x₀)
-  have hgf : g * f ∈ P.affineWeylGroup :=
-    mul_mem (b.closure_range_affineSimpleReflection_le_affineWeylGroup hg) hf
-  have hfeq : f = g⁻¹ := eq_inv_of_mul_eq_one_right
-    (eq_one_of_mem_affineWeylGroup_of_apply_mem_closedFundamentalAlcove b hgf hx₀ hgfx)
-  exact hfeq ▸ inv_mem hg
+  exact mem_of_le_affineWeylGroup_of_apply_mem_closedFundamentalAlcove b
+    b.closure_range_affineSimpleReflection_le_affineWeylGroup hf hx₀ hg hgfx
 
 end Field
 
