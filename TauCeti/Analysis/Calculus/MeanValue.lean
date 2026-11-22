@@ -73,6 +73,12 @@ If `f` is differentiable near `a` and `Df(x) = o(‖x - a‖ ^ r)` as `x → a`,
 (`TauCeti.sub_isLittleO_norm_rpow_add_one_of_fderiv`). This is the little-o counterpart of
 Mathlib's `sub_isBigO_norm_rpow_add_one_of_fderiv`.
 
+## Along a polygonal path
+
+On a set that is not convex, the mean value inequality still bounds the increment of a function
+along any polygonal path inside the set by the derivative bound times the length of the path
+(`TauCeti.norm_image_sub_le_of_norm_fderiv_le_of_segment_subset`, for three segments).
+
 ## Space-time functions vanishing outside a time interval
 
 A function of time and space with derivative bounded by `C` that vanishes outside the time
@@ -118,6 +124,12 @@ projection and the derivative of a map kills `ker π` on a ball about `0`, then 
 only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`), and a
 compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
 (`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
+
+## Constancy from a vanishing derivative
+
+A function on a preconnected subset of `ℝ` whose derivative within the set vanishes is constant
+there (`IsPreconnected.eq_of_hasDerivWithinAt_zero`). A function `𝕜 → G`, `𝕜 = ℝ` or `𝕜 = ℂ`,
+with zero derivative at every point is constant (`TauCeti.is_const_of_hasDerivAt_zero`).
 
 ## Signs from monotonicity on the real line
 
@@ -485,6 +497,25 @@ theorem _root_.HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero {g : F → G}
 
 end Direction
 
+/-- **The mean value inequality along three segments.** If the segments `[x, p]`, `[p, q]` and
+`[q, y]` lie in a set `s` on which `g` is differentiable with derivative bounded by `L`, then
+`‖g y - g x‖ ≤ L (‖x - p‖ + ‖p - q‖ + ‖q - y‖)`. Compare
+`Convex.norm_image_sub_le_of_norm_fderiv_le` for a single segment. -/
+theorem norm_image_sub_le_of_norm_fderiv_le_of_segment_subset {F G : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {s : Set F} {g : F → G} {L : ℝ}
+    (hg : ∀ z ∈ s, DifferentiableAt ℝ g z) (hL : ∀ z ∈ s, ‖fderiv ℝ g z‖ ≤ L) {x p q y : F}
+    (hxp : segment ℝ x p ⊆ s) (hpq : segment ℝ p q ⊆ s) (hqy : segment ℝ q y ⊆ s) :
+    ‖g y - g x‖ ≤ L * (dist x p + dist p q + dist q y) := by
+  have hseg : ∀ {a b : F}, segment ℝ a b ⊆ s → ‖g b - g a‖ ≤ L * dist a b := fun {a b} hab ↦ by
+    rw [dist_comm, dist_eq_norm]
+    exact (convex_segment a b).norm_image_sub_le_of_norm_fderiv_le (fun z hz ↦ hg z (hab hz))
+      (fun z hz ↦ hL z (hab hz)) (left_mem_segment ℝ a b) (right_mem_segment ℝ a b)
+  calc ‖g y - g x‖ = ‖(g p - g x) + (g q - g p) + (g y - g q)‖ := by abel_nf
+    _ ≤ ‖g p - g x‖ + ‖g q - g p‖ + ‖g y - g q‖ := norm_add₃_le
+    _ ≤ L * dist x p + L * dist p q + L * dist q y := by
+      gcongr <;> exact hseg ‹_›
+    _ = _ := by ring
+
 /-- A function with derivative bounded by `C` that vanishes outside the time interval `(a, b)` is
 bounded by `C * (b - a)`, by the mean value inequality from its value at the time `a`. -/
 theorem norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero {E : Type*} [NormedAddCommGroup E]
@@ -675,6 +706,12 @@ theorem eq_of_hasDerivWithinAt_zero (hs : IsPreconnected s)
   simpa [sub_eq_zero, eq_comm] using h
 
 end IsPreconnected
+
+/-- A function `f : 𝕜 → G`, `𝕜 = ℝ` or `𝕜 = ℂ`, with zero derivative at every point is constant.
+This is the `HasDerivAt` form of Mathlib's `is_const_of_deriv_eq_zero`. -/
+theorem TauCeti.is_const_of_hasDerivAt_zero {𝕜 G : Type*} [RCLike 𝕜] [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {f : 𝕜 → G} (hf : ∀ t, HasDerivAt f 0 t) (t s : 𝕜) : f t = f s :=
+  is_const_of_deriv_eq_zero (fun t ↦ (hf t).differentiableAt) (fun t ↦ (hf t).deriv) t s
 
 namespace TauCeti
 

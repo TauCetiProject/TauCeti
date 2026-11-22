@@ -64,10 +64,11 @@ are those of its summands, so its tangent coordinate changes are those of the su
   is the actual continuous linear map of its tangent-core trivialization.
 * `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self` and
   `TauCeti.Manifold.symmL_trivializationAt_self`: the canonical trivialization at `x` and its
-  inverse act as the identity on the fibre over `x`; in particular the fibre coordinate of a
-  tangent vector over `x` is the vector itself (`TangentBundle.trivializationAt_mk_self_snd`).
+  inverse act as the identity on the fibre over `x`.
 * `TauCeti.Manifold.extChartAt_tangent_self_snd`: in the tangent-bundle chart at `v`, the fibre
   coordinate of `v` is `v` itself.
+* `TangentBundle.extChartAt_modelSpace_apply` and `TangentBundle.extChartAt_modelSpace_symm_apply`:
+  the charts of the tangent bundle of a model space `E` identify `w ∈ T_q E` with `(q, w)`.
 * `TauCeti.Manifold.extChartAt_tangent_symm_mem_baseSet_and_snd`: a point with coordinates `y` in
   the tangent-bundle chart at `v` lies over the base set of the trivialization at `v.proj`, with
   fibre coordinate `y.2` there.
@@ -269,15 +270,6 @@ theorem continuousLinearMapAt_trivializationAt_self (x : M) (v : TangentSpace I 
   rw [TangentBundle.continuousLinearMapAt_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
 
-/-- In the canonical trivialization at `x`, the fibre coordinate of a tangent vector over `x` is
-the vector itself. -/
-@[simp]
-theorem _root_.TangentBundle.trivializationAt_mk_self_snd (x : M) (v : TangentSpace I x) :
-    (trivializationAt E (TangentSpace I) x ⟨x, v⟩).2 = v :=
-  ((trivializationAt E (TangentSpace I) x).continuousLinearMapAt_apply_of_mem (R := 𝕜)
-    (FiberBundle.mem_baseSet_trivializationAt' x) v).symm.trans
-    (continuousLinearMapAt_trivializationAt_self x v)
-
 /-- In its own preferred chart, a tangent vector `z` has coordinates the chart image of its base
 point and its own fibre coordinate. -/
 theorem _root_.TangentBundle.extChartAt_self (z : TangentBundle I M) :
@@ -286,7 +278,10 @@ theorem _root_.TangentBundle.extChartAt_self (z : TangentBundle I M) :
     PartialEquiv.prod_coe, PartialEquiv.refl_coe, id_eq,
     OpenPartialHomeomorph.coe_toPartialEquiv, Trivialization.coe_coe,
     TangentBundle.trivializationAt_fst]
-  exact Prod.ext rfl (TangentBundle.trivializationAt_mk_self_snd z.proj z.snd)
+  refine Prod.ext rfl ?_
+  exact ((trivializationAt E (TangentSpace I) z.proj).continuousLinearMapAt_apply_of_mem (R := 𝕜)
+    (FiberBundle.mem_baseSet_trivializationAt' z.proj) z.snd).symm.trans
+    (continuousLinearMapAt_trivializationAt_self z.proj z.snd)
 
 /-- The inverse form of `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self`: over its
 own base point, the inverse of the canonical trivialization is the identity. -/
@@ -304,6 +299,25 @@ theorem extChartAt_tangent_self_snd (v : TangentBundle I M) :
   simp only [extChartAt_coe, Function.comp_apply, modelWithCorners_prod_coe, Prod.map_snd,
     modelWithCornersSelf_coe, id_eq, TangentBundle.coe_chartAt_snd]
   exact tangentCoordChange_self (mem_extChartAt_source v.proj)
+
+/-- Every chart of the tangent bundle of the model space `E` reads a tangent vector `w ∈ T_q E` as
+the pair `(q, w)`. -/
+theorem _root_.TangentBundle.extChartAt_modelSpace_apply (v w : TangentBundle 𝓘(𝕜, E) E) :
+    extChartAt 𝓘(𝕜, E).tangent v w = ((w.proj, w.snd) : E × E) := by
+  rw [extChartAt_coe, tangentBundle_model_space_coe_chartAt, modelWithCorners_prod_coe,
+    modelWithCornersSelf_coe, Prod.map_id]
+  -- The left side is `(id ∘ TotalSpace.toProd E E) w`, definitionally `TotalSpace.toProd E E w`.
+  exact TotalSpace.toProd_apply E E w
+
+/-- The inverse of every chart of the tangent bundle of the model space `E` sends the pair
+`(q, w)` to the tangent vector `w ∈ T_q E`. -/
+theorem _root_.TangentBundle.extChartAt_modelSpace_symm_apply (v : TangentBundle 𝓘(𝕜, E) E)
+    (y : E × E) :
+    (extChartAt 𝓘(𝕜, E).tangent v).symm y = (⟨y.1, y.2⟩ : TangentBundle 𝓘(𝕜, E) E) := by
+  rw [extChartAt_coe_symm, tangentBundle_model_space_coe_chartAt_symm,
+    modelWithCorners_prod_coe_symm, modelWithCornersSelf_coe_symm, Prod.map_id]
+  exact TotalSpace.ext (TotalSpace.toProd_symm_apply_proj E E y)
+    (heq_of_eq (TotalSpace.toProd_symm_apply_snd E E y))
 
 /-- A point with coordinates `y` in the tangent-bundle chart at `v` lies over the base set of the
 trivialization at `v.proj`, and its fibre coordinate there is `y.2`. -/
@@ -331,8 +345,12 @@ theorem _root_.TangentBundle.trivializationAt_symm_apply_self (x : M) (u : E) :
 constant coordinates `w` in the canonical trivialization of the tangent bundle at `x`. -/
 theorem extend_eq_trivializationAt_symm {x : M} (w : TangentSpace I x) :
     FiberBundle.extend E w = fun y ↦ (trivializationAt E (TangentSpace I) x).symm y w := by
+  have hw : (trivializationAt E (TangentSpace I) x ⟨x, w⟩).2 = w := by
+    rw [← (trivializationAt E (TangentSpace I) x).continuousLinearMapAt_apply_of_mem (R := 𝕜)
+      (FiberBundle.mem_baseSet_trivializationAt' x)]
+    exact continuousLinearMapAt_trivializationAt_self x w
   funext y
-  simp only [FiberBundle.extend, TangentBundle.trivializationAt_mk_self_snd]
+  simp only [FiberBundle.extend, hw]
 
 /-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
 `x` is differentiable at `x`. -/
@@ -904,6 +922,13 @@ theorem mfderiv_subtype_val {U : Opens M} (x : U) :
       (I.uniqueDiffOn.uniqueDiffWithinAt hxRange)]
   rfl
 
+/-- The differential of the inclusion of an open submanifold fixes every tangent vector, the
+tangent spaces of the open submanifold and of the ambient manifold being the same. -/
+theorem mfderiv_subtype_val_apply {U : Opens M} (x : U) (v : TangentSpace I x) :
+    mfderiv I I (Subtype.val : U → M) x v = v := by
+  rw [mfderiv_subtype_val]
+  exact tangentSpaceOpenEquiv_apply x v
+
 /-- The differential of an open-submanifold inclusion is injective. -/
 theorem mfderiv_subtype_val_injective {U : Opens M} (x : U) :
     Function.Injective (mfderiv I I (Subtype.val : U → M) x) := by
@@ -957,8 +982,8 @@ theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
     mfderiv J I ((Subtype.val : U → M) ∘ f) x v = mfderiv J I f x v := by
   by_cases hf : MDifferentiableAt J I f x
   · rw [mfderiv_comp x (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hf,
-      ContinuousLinearMap.comp_apply, mfderiv_subtype_val]
-    exact tangentSpaceOpenEquiv_apply _ _
+      ContinuousLinearMap.comp_apply]
+    exact mfderiv_subtype_val_apply _ _
   · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
       mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_subtype_val_comp_iff.not.mpr hf)]
     rfl
