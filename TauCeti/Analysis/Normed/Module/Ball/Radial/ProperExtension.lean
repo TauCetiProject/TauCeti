@@ -25,7 +25,8 @@ seminormed space `E`, and suppose that on the sphere of radius `r` it stays at d
 where `y = TauCeti.centeredRadialRetraction x₀ r x` is the point of the sphere on the ray through
 `x`, gives a proper map `g : E → F` which agrees with `f` on the closed ball and stays at distance
 at least `δ` from `y₀` outside the open ball. The growth of `g` along the rays makes it proper.
-For `r = 0` the closed ball and the sphere are both `{x₀}`, `y` is always `x₀`, and
+For `r = 0` the closed ball and the sphere both consist of the points at distance zero from `x₀`
+(just `{x₀}` when `E` is normed), `y` is always `x₀`, and
 `g x = y₀ + (dist x x₀ + 1) • (f x₀ - y₀)` runs out along the ray from `y₀` through `f x₀`.
 
 This is how a map defined near a point is replaced by a proper map with the same local behaviour,
