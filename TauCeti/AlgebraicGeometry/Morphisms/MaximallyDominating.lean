@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Coproduct
 
 import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+import TauCeti.Topology.Irreducible
 import TauCeti.Topology.Sober
 
 /-!
@@ -16,11 +17,12 @@ import TauCeti.Topology.Sober
 The scheme of generic points of a scheme is the disjoint union of the spectra of the residue
 fields at its component-generic points. Its structural map to the original scheme is a
 monomorphism. Maximal domination is equivalent to admitting a unique commuting map between
-the schemes of generic points. For a source with finitely many irreducible components, maximal
-domination is also equivalent to the first projection from the pullback of the target's scheme
-of generic points having dense image in the source. The implication from maximal domination to
-density holds without this finiteness assumption. Dominance alone permits vertical components
-of the source whose generic points do not map to component-generic points of the target.
+the schemes of generic points. If every irreducible component of the source has nonempty
+interior, maximal domination is also equivalent to the first projection from the pullback of
+the target's scheme of generic points having dense image in the source. In particular, this
+equivalence holds when the source has finitely many irreducible components. The implication
+from maximal domination to density holds for every source. Dominance alone permits vertical
+components of the source whose generic points do not map to component-generic points of the target.
 
 This follows M. Temkin, *Tame distillation and desingularization by p-alterations* (2017),
 §4.1.1. The construction uses Mathlib's `genericPoints`, scheme coproducts, and canonical
@@ -60,18 +62,8 @@ theorem IsMaximallyDominating.ι_genericPointSchemeMap {f : X ⟶ Y}
       Spec.map (f.residueFieldMap x) ≫
         Sigma.ι (fun y : genericPoints Y ↦ Spec (Y.residueField y))
           ⟨f x, (f.isMaximallyDominating_iff.mp hf) x x.property⟩ := by
-  have hindex : Set.MapsTo.restrict (⇑f) _ _ hf x =
-      ⟨f x, (f.isMaximallyDominating_iff.mp hf) x x.property⟩ :=
-    Subtype.ext (congrFun (Set.MapsTo.restrict_commutes (⇑f) _ _ hf) x)
-  have hι (i j : genericPoints Y) (e : i = j) :
-      Sigma.ι (fun y : genericPoints Y ↦ Spec (Y.residueField y)) i ≍
-        Sigma.ι (fun y : genericPoints Y ↦ Spec (Y.residueField y)) j := by
-    cases e
-    rfl
-  unfold genericPointSchemeMap
-  rw [Sigma.ι_comp_map']
-  exact congrArg (fun g : Spec (Y.residueField (f x)) ⟶ Y.genericPointScheme ↦
-    Spec.map (f.residueFieldMap x) ≫ g) (eq_of_heq (hι _ _ hindex))
+  unfold genericPointSchemeMap Set.MapsTo.restrict Subtype.map
+  exact Sigma.ι_comp_map' _ _ _
 
 /-- The induced map on generic-point schemes commutes with the maps to the original schemes. -/
 @[reassoc (attr := simp)]
@@ -141,15 +133,23 @@ theorem IsMaximallyDominating.isDominant_genericPointScheme_pullback_fst {f : X 
   rw [isDominant_iff, DenseRange, range_genericPointScheme_pullback_fst]
   exact (dense_iff_closure_eq.mpr genericPoints.closure).mono hf
 
-/-- If the source has finitely many irreducible components, maximal domination is equivalent
-to the projection from the generic fibre having dense image. -/
+/-- If every irreducible component of the source has nonempty interior, maximal domination is
+equivalent to the projection from the generic fibre having dense image. -/
 theorem isMaximallyDominating_iff_isDominant_genericPointScheme_pullback_fst
-    (f : X ⟶ Y) (hfin : (irreducibleComponents X).Finite) :
+    (f : X ⟶ Y) (hinterior : ∀ C ∈ irreducibleComponents X, (interior C).Nonempty) :
     f.IsMaximallyDominating ↔ IsDominant (pullback.fst f Y.fromGenericPointScheme) := by
   rw [isMaximallyDominating_iff, isDominant_iff, DenseRange,
     range_genericPointScheme_pullback_fst]
-  exact (hfin.dense_iff_genericPoints_subset
+  exact (TauCeti.dense_iff_genericPoints_subset_of_nonempty_interior (fun _ hx ↦ hinterior _ hx)
     (TauCeti.stableUnderGeneralization_genericPoints.preimage f.continuous)).symm
+
+/-- If the source has finitely many irreducible components, maximal domination is equivalent
+to the projection from the generic fibre having dense image. -/
+theorem isMaximallyDominating_iff_isDominant_genericPointScheme_pullback_fst_of_finite_components
+    (f : X ⟶ Y) (hfin : (irreducibleComponents X).Finite) :
+    f.IsMaximallyDominating ↔ IsDominant (pullback.fst f Y.fromGenericPointScheme) :=
+  f.isMaximallyDominating_iff_isDominant_genericPointScheme_pullback_fst
+    (fun _ hC ↦ hfin.nonempty_interior_of_mem_irreducibleComponents hC)
 
 /-- Between irreducible schemes, maximal domination agrees with dominance. -/
 theorem isMaximallyDominating_iff_isDominant [IrreducibleSpace X] [IrreducibleSpace Y]

@@ -17,8 +17,9 @@ with no proper generization. Every point of a closed subset is a specialization 
 generic point of that subset. These facts let one choose component-generic points without
 Noetherianity or a dimension argument.
 
-In a quasi-sober space with finitely many irreducible components, a generization-stable
-subset is dense exactly when it contains all component-generic points.
+In a quasi-sober space where the closure of every component-generic point has nonempty
+interior, a generization-stable subset is dense exactly when it contains all component-generic
+points. In particular, this applies when there are finitely many irreducible components.
 
 In a sober space, `x ↦ closure {x}` is a bijection from component-generic points onto
 irreducible components. For a continuous map between sober spaces, bijections on
@@ -37,7 +38,7 @@ open Set Topology
 variable {X : Type*} [TopologicalSpace X]
 
 /-- A generization of a component-generic point has the same closure as that point. -/
-theorem genericPoints.closure_singleton_eq_of_specializes_of_mem_genericPoints {x y : X}
+theorem Specializes.closure_eq_of_mem_genericPoints {x y : X}
     (hy : y ⤳ x) (hx : x ∈ genericPoints X) : _root_.closure {y} = _root_.closure {x} :=
   (hx.2 isIrreducible_singleton.closure hy.closure_subset).antisymm hy.closure_subset
 
@@ -52,7 +53,7 @@ theorem mem_genericPoints_iff {x : X} :
   constructor
   · intro hx y hy
     exact (inseparable_iff_closure_eq.mpr
-      (genericPoints.closure_singleton_eq_of_specializes_of_mem_genericPoints hy hx)).eq
+      (hy.closure_eq_of_mem_genericPoints hx)).eq
   · intro hx
     refine ⟨isIrreducible_singleton.closure, fun t ht hxt ↦ ?_⟩
     have hgen := ht.isGenericPoint_genericPoint_closure
@@ -78,26 +79,37 @@ theorem TauCeti.stableUnderGeneralization_genericPoints {X : Type*} [Topological
     StableUnderGeneralization (genericPoints X) := by
   intro x y hyx hx
   rw [genericPoints, mem_ofPred_eq,
-    genericPoints.closure_singleton_eq_of_specializes_of_mem_genericPoints hyx hx]
+    hyx.closure_eq_of_mem_genericPoints hx]
   exact hx
+
+/-- A dense set stable under generization contains every component-generic point whose closure
+has nonempty interior. -/
+theorem Dense.genericPoints_subset_of_nonempty_interior
+    {X : Type*} [TopologicalSpace X] {s : Set X} (hd : Dense s)
+    (hinterior : ∀ x ∈ genericPoints X, (interior (closure {x})).Nonempty)
+    (hs : StableUnderGeneralization s) : genericPoints X ⊆ s := by
+  intro x hx
+  obtain ⟨y, hys, hy⟩ := hd.exists_mem_open isOpen_interior (hinterior x hx)
+  exact hs (specializes_iff_mem_closure.mpr (interior_subset hy)) hys
+
+/-- In a quasi-sober space where each component-generic point has closure with nonempty
+interior, a set stable under generization is dense exactly when it contains all
+component-generic points. -/
+theorem TauCeti.dense_iff_genericPoints_subset_of_nonempty_interior
+    {X : Type*} [TopologicalSpace X] [QuasiSober X] {s : Set X}
+    (hinterior : ∀ x ∈ genericPoints X, (interior (closure {x})).Nonempty)
+    (hs : StableUnderGeneralization s) : Dense s ↔ genericPoints X ⊆ s :=
+  ⟨fun hd ↦ hd.genericPoints_subset_of_nonempty_interior hinterior hs,
+    fun h ↦ (dense_iff_closure_eq.mpr genericPoints.closure).mono h⟩
 
 /-- A dense set stable under generization contains every component-generic point when the
 space has finitely many irreducible components. -/
 theorem Dense.genericPoints_subset_of_finite_irreducibleComponents
     {X : Type*} [TopologicalSpace X] {s : Set X} (hd : Dense s)
     (hfin : (irreducibleComponents X).Finite) (hs : StableUnderGeneralization s) :
-    genericPoints X ⊆ s := by
-  intro x hx
-  let C := genericPoints.component ⟨x, hx⟩
-  -- The open complement of all the other components is dense in `C`.
-  let U := (⋃₀ (irreducibleComponents X \ {C.val}))ᶜ
-  have hU : closure U = C.val :=
-    closure_sUnion_irreducibleComponents_sdiff_singleton hfin C.val C.property
-  have hU_open : IsOpen U :=
-    hfin.sdiff.isOpen_compl_sUnion_irreducibleComponents sdiff_subset
-  have hU_nonempty : U.Nonempty := closure_nonempty_iff.mp (hU ▸ C.property.1.nonempty)
-  obtain ⟨y, hys, hyU⟩ := hd.exists_mem_open hU_open hU_nonempty
-  exact hs ((genericPoints.isGenericPoint ⟨x, hx⟩).specializes (hU ▸ subset_closure hyU)) hys
+    genericPoints X ⊆ s :=
+  hd.genericPoints_subset_of_nonempty_interior
+    (fun _ hx ↦ hfin.nonempty_interior_of_mem_irreducibleComponents hx) hs
 
 /-- In a quasi-sober space with finitely many irreducible components, a set stable under
 generization is dense exactly when it contains the generic point of every component. -/
@@ -105,8 +117,8 @@ theorem Set.Finite.dense_iff_genericPoints_subset
     {X : Type*} [TopologicalSpace X] [QuasiSober X] {s : Set X}
     (hfin : (irreducibleComponents X).Finite) (hs : StableUnderGeneralization s) :
     Dense s ↔ genericPoints X ⊆ s :=
-  ⟨fun hd ↦ hd.genericPoints_subset_of_finite_irreducibleComponents hfin hs,
-    fun h ↦ (dense_iff_closure_eq.mpr genericPoints.closure).mono h⟩
+  TauCeti.dense_iff_genericPoints_subset_of_nonempty_interior
+    (fun _ hx ↦ hfin.nonempty_interior_of_mem_irreducibleComponents hx) hs
 
 /-- Every point of a closed subset of a quasi-sober space is a specialization of a generic
 point of an irreducible component of that subset. -/
