@@ -12,7 +12,6 @@ public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.MFDeriv.Pi
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Family
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
-import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Append
 
 /-!
 # The coordinate time forms and the volume form of a torus
@@ -503,94 +502,18 @@ theorem mpullback_piAddCases_torusVolumeForm (p : Fin (m + k) → ℝ) [∀ i, F
   have hL : (SmoothForm.mpullback _ (Diffeomorph.piAddCases (fun _ ↦ 𝓘(ℝ))
       (fun i ↦ AddCircle (p i)) ∞).contMDiff (torusVolumeForm p)).val q b = 1 :=
     (SmoothForm.mpullback_apply _ _ _ q b).trans (by rw [hd, torusVolumeForm_apply_basisFun])
-  -- On the right, only the shuffles preserving the two blocks contribute, since the second factor
-  -- vanishes on a frame containing a vector of the first block.
+  -- On the right, the wedge of the pullbacks evaluates on the block frame `b` to the product of the
+  -- two volume forms on the coordinate bases.
   have hR : (SmoothForm.wedge
       (SmoothForm.mpullback Prod.fst contMDiff_fst
         (torusVolumeForm fun i : Fin m ↦ p (Fin.castAdd k i)))
       (SmoothForm.mpullback Prod.snd contMDiff_snd
-        (torusVolumeForm fun j : Fin k ↦ p (Fin.natAdd m j)))).val q (Fin.append a c) = 1 := by
-    rw [SmoothForm.coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply']
-    refine (ContinuousAlternatingMap.pairedWedge_apply_append_of_forall _ _ _ _ a c
-      fun y i j ↦ ?_).trans ?_
-    · exact (SmoothForm.mpullback_snd_apply _ q _).trans
-        (ContinuousAlternatingMap.map_coord_zero _ j
-          ((congrArg Prod.snd (Manifold.tangentSpaceProdEquiv_apply q _)).trans
-            (congrArg Prod.snd (update_self j (a i) y))))
-    · rw [ContinuousLinearMap.mul_apply']
-      have ha : (fun i ↦ (Manifold.tangentSpaceProdEquiv
-          (I := ModelWithCorners.pi fun _ : Fin m ↦ 𝓘(ℝ))
-          (J := ModelWithCorners.pi fun _ : Fin k ↦ 𝓘(ℝ)) q (a i)).1) = Pi.basisFun ℝ (Fin m) :=
-        funext fun i ↦ congrArg Prod.fst (Manifold.tangentSpaceProdEquiv_apply q (a i))
-      have hc : (fun j ↦ (Manifold.tangentSpaceProdEquiv
-          (I := ModelWithCorners.pi fun _ : Fin m ↦ 𝓘(ℝ))
-          (J := ModelWithCorners.pi fun _ : Fin k ↦ 𝓘(ℝ)) q (c j)).2) = Pi.basisFun ℝ (Fin k) :=
-        funext fun j ↦ congrArg Prod.snd (Manifold.tangentSpaceProdEquiv_apply q (c j))
-      refine (congrArg₂ (· * ·) (SmoothForm.mpullback_fst_apply _ q a)
-        (SmoothForm.mpullback_snd_apply _ q c)).trans ?_
-      rw [ha, hc, torusVolumeForm_apply_basisFun, torusVolumeForm_apply_basisFun, one_mul]
+        (torusVolumeForm fun j : Fin k ↦ p (Fin.natAdd m j)))).val q (Fin.append a c) = 1 :=
+    (SmoothForm.wedge_mpullback_fst_snd_apply_append _ _ q (Pi.basisFun ℝ (Fin m))
+      (Pi.basisFun ℝ (Fin k))).trans
+      (by rw [torusVolumeForm_apply_basisFun, torusVolumeForm_apply_basisFun, one_mul])
   -- Both sides are top-degree forms on the tangent space `(Fin m → ℝ) × (Fin k → ℝ)` that agree on
   -- the basis `b`, so they are equal.
-  refine sub_eq_zero.1 ((ContinuousAlternatingMap.map_basis_eq_zero_iff _ b).1 ?_)
-  exact (ContinuousAlternatingMap.sub_apply _ _ _).trans
-    ((congrArg₂ (· - ·) hL (hb ▸ hR)).trans (sub_self 1))
-
-/-- **Appending a circle, volume form.** The map `(x, t) ↦ Fin.snoc x t` from
-`T^m × AddCircle (p m)` to `T^(m + 1)` pulls the volume form of `T^(m + 1)` back to the wedge
-product `pr₁^* vol_m ∧ pr₂^* dt` of the pullbacks of the volume form of `T^m` and of the time form
-of the appended circle. -/
-@[simp]
-theorem mpullback_piSnoc_torusVolumeForm (p : Fin (m + 1) → ℝ) [∀ i, Fact (0 < p i)] :
-    SmoothForm.mpullback (Diffeomorph.piSnoc (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞)
-        (Diffeomorph.piSnoc (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞).contMDiff
-        (torusVolumeForm p) =
-      SmoothForm.wedge
-        (SmoothForm.mpullback Prod.fst contMDiff_fst (torusVolumeForm fun i : Fin m ↦ p i.castSucc))
-        (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (p (Fin.last m)))) := by
-  classical
-  -- The product of the coordinate basis of `Fin m → ℝ` with the unit vector of `ℝ`.
-  let a : Fin m → (Fin m → ℝ) × ℝ := fun i ↦ (Pi.basisFun ℝ (Fin m) i, 0)
-  let c : Fin 1 → (Fin m → ℝ) × ℝ := fun _ ↦ (0, 1)
-  let b := ((Pi.basisFun ℝ (Fin m)).prod (Module.Basis.singleton (Fin 1) ℝ)).reindex
-    finSumFinEquiv
-  have hb : ⇑b = Fin.append a c := funext fun i ↦ by
-    induction i using Fin.addCases <;> simp [b, a, c, Module.Basis.prod_apply]
-  refine Subtype.ext (funext fun q ↦ ?_)
-  -- The differential of `Fin.snoc` sends `b` to the coordinate basis of `Fin (m + 1) → ℝ`, so the
-  -- left side takes the value `1` on `b`.
-  have hd : (fun i ↦ mfderiv _ _ (Diffeomorph.piSnoc (fun _ ↦ 𝓘(ℝ))
-      (fun i ↦ AddCircle (p i)) ∞) q (b i)) = Pi.basisFun ℝ (Fin (m + 1)) := funext fun i ↦ by
-    refine (Diffeomorph.mfderiv_piSnoc_apply (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞ q
-      (b i).1 (b i).2).trans (funext fun l ↦ ?_)
-    induction i using Fin.lastCases <;> induction l using Fin.lastCases <;>
-      simp [b, Module.Basis.prod_apply, Pi.single_apply]
-  have hL : (SmoothForm.mpullback _ (Diffeomorph.piSnoc (fun _ ↦ 𝓘(ℝ))
-      (fun i ↦ AddCircle (p i)) ∞).contMDiff (torusVolumeForm p)).val q b = 1 :=
-    (SmoothForm.mpullback_apply _ _ _ q b).trans (by rw [hd, torusVolumeForm_apply_basisFun])
-  -- On the right, only the shuffles preserving the two blocks contribute, since the time form of
-  -- the circle vanishes on a vector of the first block.
-  have hR : (SmoothForm.wedge
-      (SmoothForm.mpullback Prod.fst contMDiff_fst (torusVolumeForm fun i : Fin m ↦ p i.castSucc))
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (p (Fin.last m))))).val q
-        (Fin.append a c) = 1 := by
-    rw [SmoothForm.coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply']
-    refine (ContinuousAlternatingMap.pairedWedge_apply_append_of_forall _ _ _ _ a c
-      fun y i j ↦ ?_).trans ?_
-    · exact (SmoothForm.mpullback_snd_apply _ q _).trans
-        (ContinuousAlternatingMap.map_coord_zero _ j
-          ((congrArg Prod.snd (Manifold.tangentSpaceProdEquiv_apply q _)).trans
-            (congrArg Prod.snd (update_self j (a i) y))))
-    · rw [ContinuousLinearMap.mul_apply']
-      have ha : (fun i ↦ (Manifold.tangentSpaceProdEquiv
-          (I := ModelWithCorners.pi fun _ : Fin m ↦ 𝓘(ℝ)) (J := 𝓘(ℝ)) q (a i)).1) =
-          Pi.basisFun ℝ (Fin m) :=
-        funext fun i ↦ congrArg Prod.fst (Manifold.tangentSpaceProdEquiv_apply q (a i))
-      refine (congrArg₂ (· * ·) (SmoothForm.mpullback_fst_apply _ q a)
-        (SmoothForm.mpullback_snd_apply _ q c)).trans ?_
-      rw [ha, torusVolumeForm_apply_basisFun, AddCircle.timeForm_apply]
-      exact (one_mul _).trans (congrArg Prod.snd (Manifold.tangentSpaceProdEquiv_apply q (c 0)))
-  -- Both sides are top-degree forms on the tangent space `(Fin m → ℝ) × ℝ` that agree on the basis
-  -- `b`, so they are equal.
   refine sub_eq_zero.1 ((ContinuousAlternatingMap.map_basis_eq_zero_iff _ b).1 ?_)
   exact (ContinuousAlternatingMap.sub_apply _ _ _).trans
     ((congrArg₂ (· - ·) hL (hb ▸ hR)).trans (sub_self 1))
@@ -617,6 +540,58 @@ theorem torusVolumeForm_fin_one (p : Fin 1 → ℝ) [∀ i, Fact (0 < p i)] :
   refine Subtype.ext (funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_)
   rw [torusVolumeForm_apply, torusTimeForm_apply, Matrix.det_unique, Matrix.of_apply,
     Fin.default_eq_zero]
+
+/-- **Appending a circle, volume form.** The map `(x, t) ↦ Fin.snoc x t` from
+`T^m × AddCircle (p m)` to `T^(m + 1)` pulls the volume form of `T^(m + 1)` back to the wedge
+product `pr₁^* vol_m ∧ pr₂^* dt` of the pullbacks of the volume form of `T^m` and of the time form
+of the appended circle. -/
+@[simp]
+theorem mpullback_piSnoc_torusVolumeForm (p : Fin (m + 1) → ℝ) [∀ i, Fact (0 < p i)] :
+    SmoothForm.mpullback (Diffeomorph.piSnoc (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞)
+        (Diffeomorph.piSnoc (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞).contMDiff
+        (torusVolumeForm p) =
+      SmoothForm.wedge
+        (SmoothForm.mpullback Prod.fst contMDiff_fst (torusVolumeForm fun i : Fin m ↦ p i.castSucc))
+        (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (p (Fin.last m)))) := by
+  -- Appending a circle is concatenating with the one-factor torus:
+  -- `Fin.snoc x t = Fin.addCases x (fun _ : Fin 1 ↦ t)`.
+  have h : ⇑(Diffeomorph.piSnoc (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞) ∘ id =
+      ⇑(Diffeomorph.piAddCases (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞) ∘
+        Prod.map id (Diffeomorph.piUnique (fun _ ↦ 𝓘(ℝ))
+          (fun j : Fin 1 ↦ AddCircle (p (Fin.natAdd m j))) ∞).symm :=
+    funext fun x ↦ funext fun i ↦ by
+      induction i using Fin.lastCases with
+      | last =>
+        simp only [Function.comp_apply, id_eq, Prod.map_fst, Prod.map_snd,
+          Diffeomorph.piSnoc_apply, Diffeomorph.piAddCases_apply,
+          Diffeomorph.piUnique_symm_apply, Fin.snoc_last]
+        exact ((Fin.addCases_right (motive := fun i ↦ AddCircle (p i)) (0 : Fin 1)).trans
+          (uniqueElim_default (α := fun j : Fin 1 ↦ AddCircle (p (Fin.natAdd m j))) x.2)).symm
+      | cast i =>
+        simp only [Function.comp_apply, id_eq, Prod.map_fst, Prod.map_snd,
+          Diffeomorph.piSnoc_apply, Diffeomorph.piAddCases_apply, Fin.snoc_castSucc]
+        exact (Fin.addCases_left (motive := fun i ↦ AddCircle (p i)) i).symm
+  have h₁ : (fun x : ∀ j : Fin 1, AddCircle (p (Fin.natAdd m j)) ↦ x 0) ∘
+      ⇑(Diffeomorph.piUnique (fun _ ↦ 𝓘(ℝ))
+        (fun j : Fin 1 ↦ AddCircle (p (Fin.natAdd m j))) ∞).symm = id :=
+    funext fun t ↦ by
+      simp only [Function.comp_apply, Diffeomorph.piUnique_symm_apply, id_eq]
+      exact uniqueElim_default (α := fun j : Fin 1 ↦ AddCircle (p (Fin.natAdd m j))) t
+  have key := SmoothForm.mpullback_mpullback_of_comp_eq contMDiff_id
+    (Diffeomorph.piSnoc (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞).contMDiff
+    (contMDiff_id.prodMap (Diffeomorph.piUnique (fun _ ↦ 𝓘(ℝ))
+      (fun j : Fin 1 ↦ AddCircle (p (Fin.natAdd m j))) ∞).symm.contMDiff)
+    (Diffeomorph.piAddCases (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞).contMDiff h
+    (torusVolumeForm p)
+  rw [SmoothForm.mpullback_id, LinearMap.id_apply] at key
+  rw [key, mpullback_piAddCases_torusVolumeForm]
+  refine (SmoothForm.mpullback_prodMap_wedge_mpullback_fst_snd contMDiff_id
+    (Diffeomorph.piUnique (fun _ ↦ 𝓘(ℝ))
+      (fun j : Fin 1 ↦ AddCircle (p (Fin.natAdd m j))) ∞).symm.contMDiff _ _).trans ?_
+  rw [torusVolumeForm_fin_one]
+  simp only [SmoothForm.mpullback_id, LinearMap.id_apply, torusTimeForm_def,
+    SmoothForm.mpullback_mpullback, h₁]
+  rfl
 
 /-- **The empty torus is a point.** For no factors the volume form is the constant function `1`,
 the positive orientation form of a point. -/
