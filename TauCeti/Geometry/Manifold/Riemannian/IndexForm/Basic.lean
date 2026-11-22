@@ -12,6 +12,7 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The index form and integration by parts
@@ -383,6 +384,21 @@ theorem indexFormIntegrand_comm (t : ℝ) :
 theorem indexForm_same : indexForm I γ V W a a = 0 := by
   simp only [indexForm_def, intervalIntegral.integral_same]
 
+open MeasureTheory in
+/-- A nonpositive radial curvature term gives nonnegative self-index on an ordered interval.
+Only the open interval matters, and no regularity or integrability hypothesis is needed. -/
+theorem indexForm_self_nonneg_of_curvature_nonpos (hab : a ≤ b)
+    (hR : ∀ t ∈ Ioo a b, inner ℝ
+      ((leviCivitaConnection I M).curvatureTensor (γ t) (W t)
+        (curveVelocity I γ t) (curveVelocity I γ t)) (W t) ≤ 0) :
+    0 ≤ indexForm I γ W W a b := by
+  rw [indexForm_def]
+  apply intervalIntegral.integral_nonneg_of_ae_restrict hab
+  rw [Measure.restrict_congr_set Ioo_ae_eq_Icc.symm]
+  filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
+  rw [indexFormIntegrand_def, real_inner_self_eq_norm_sq]
+  exact sub_nonneg.mpr ((hR t ht).trans (sq_nonneg _))
+
 /-- Reversing the orientation of the interval negates the index form. -/
 theorem indexForm_symm : indexForm I γ V W b a = -indexForm I γ V W a b := by
   rw [indexForm_def, indexForm_def, intervalIntegral.integral_symm]
@@ -653,6 +669,25 @@ theorem indexForm_sub_right
       indexForm I γ V W a b - indexForm I γ V W' a b := by
   rw [indexForm_comm, indexForm_sub_left hW hW' hV, indexForm_comm,
     indexForm_comm (V := W')]
+
+/-- Polarization of the self-index of the difference of two fields. -/
+theorem indexForm_sub_sub_self
+    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+      (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (uIcc a b))
+    (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+      (fun t ↦ TotalSpace.mk' E (γ t) (W t)) (uIcc a b)) :
+    indexForm I γ (V - W) (V - W) a b =
+      indexForm I γ V V a b - 2 * indexForm I γ V W a b + indexForm I γ W W a b := by
+  have hsub : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+      (fun t ↦ TotalSpace.mk' E (γ t) ((V - W) t)) (uIcc a b) :=
+    hV.sub_sectionAlong hW
+  calc
+    _ = indexForm I γ V (V - W) a b - indexForm I γ W (V - W) a b :=
+      indexForm_sub_left hV hW hsub
+    _ = _ := by
+      rw [indexForm_sub_right hV hV hW, indexForm_sub_right hW hV hW,
+        indexForm_comm (V := W) (W := V)]
+      ring
 
 /-- The index form commutes with finite sums of `C¹` fields in its first slot. -/
 @[to_fun indexForm_fun_sum_left]

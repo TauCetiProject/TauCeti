@@ -75,7 +75,8 @@ instance : (finiteProjectiveModulesToMatrixFunctor R ι).Additive :=
       eqToHom (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι P) ≫
         (ModuleCat.toMatrixModCat.{u, v, u} R ι).map g.hom ≫
           eqToHom (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι Q).symm :=
-  ObjectProperty.lift_map_hom_of_eq rfl g (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι P)
+  ObjectProperty.map_hom_of_comp_ι_eq (ObjectProperty.lift_comp_ι _ _ _) g
+    (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι P)
     (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι Q)
 
 variable [Nonempty ι]

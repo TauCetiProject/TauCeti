@@ -115,7 +115,8 @@ theorem finiteProjectiveModulesExtendScalars_map_hom
       eqToHom (f.finiteProjectiveModulesExtendScalars_obj_obj P) ≫
         ModuleCat.ofHom (BalancedExtension.map f g.hom.hom) ≫
           eqToHom (f.finiteProjectiveModulesExtendScalars_obj_obj Q).symm :=
-  ObjectProperty.lift_map_hom_of_eq rfl g (f.finiteProjectiveModulesExtendScalars_obj_obj P)
+  ObjectProperty.map_hom_of_comp_ι_eq (ObjectProperty.lift_comp_ι _ _ _) g
+    (f.finiteProjectiveModulesExtendScalars_obj_obj P)
     (f.finiteProjectiveModulesExtendScalars_obj_obj Q)
 
 /-- Composing `finiteProjectiveModulesExtendScalars` with the inclusion is naturally isomorphic to
@@ -483,7 +484,7 @@ instance : (f.finiteProjectiveModulesRestrictScalars hfin hproj).Additive :=
       eqToHom (f.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj M) ≫
         (ModuleCat.restrictScalars.{u} f).map g.hom ≫
           eqToHom (f.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj N).symm :=
-  ObjectProperty.lift_map_hom_of_eq rfl g
+  ObjectProperty.map_hom_of_comp_ι_eq (ObjectProperty.lift_comp_ι _ _ _) g
     (f.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj M)
     (f.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj N)
 

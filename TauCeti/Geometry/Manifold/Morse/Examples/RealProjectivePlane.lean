@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Singular.Sublevel
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.SpectralSequence
+import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 
 /-!
 # The critical-band spectral sequence of the real projective plane

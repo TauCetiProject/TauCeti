@@ -80,7 +80,8 @@ Artinian ring, in the indecomposable-projective and simple bases.
   `TauCeti.finiteProjectiveResolutionExactStructure_conflation_iff`: the conflations of the three
   structures are the short exact sequences of modules with terms in the subcategory.
 * `TauCeti.finiteProjectiveModulesExactStructure_eq_split`: the exact structure of the finitely
-  generated projectives is the split one.
+  generated projectives is the split one, so the comparison from their split `K₀` is injective
+  (`TauCeti.fromSplit_finiteProjectiveModules_injective`).
 * `TauCeti.finiteModulesExactStructure_eq_abelian`: over a noetherian ring, the exact structure of
   the finitely generated modules is the canonical one of the abelian category `FGModuleCat R`.
 * `TauCeti.finiteModulesExactK0Equiv` and `TauCeti.finiteProjectiveModulesExactK0Equiv`: the
@@ -186,6 +187,16 @@ noncomputable def finiteProjectiveModulesSplitK0EquivExactK0 :
 @[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_symm_of (P) :
     (finiteProjectiveModulesSplitK0EquivExactK0 R).symm (ExactK0.of.{u} P) = SplitK0.of.{u} P :=
   (finiteProjectiveModulesSplitK0EquivExactK0 R).injective (by simp)
+
+/-- The comparison from split to exact `K₀` of the finitely generated projective modules is
+injective, because their exact structure is the split one. -/
+theorem fromSplit_finiteProjectiveModules_injective :
+    Function.Injective (ExactK0.fromSplit.{u} (finiteProjectiveModulesExactStructure R)) := by
+  intro x y h
+  apply (ExactK0.fromSplitEquiv.{u} (E := finiteProjectiveModulesExactStructure R)
+    (fun hS ↦ by simpa only [finiteProjectiveModulesExactStructure_eq_split,
+      ExactStructure.split_conflation] using hS)).injective
+  simpa only [ExactK0.fromSplitEquiv_apply] using h
 
 /-- The conflations of finitely generated modules are the short exact sequences of `R`-modules
 whose three terms are finitely generated. -/

@@ -103,6 +103,12 @@ theorem isMicrolocallySobolevAt_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : E} :
         MemLp (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier φ η) 2 (volume.restrict Γ) :=
   Iff.rfl
 
+/-- A distribution can only be microlocally `H^s` over points of its domain. -/
+theorem IsMicrolocallySobolevAt.mem {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (h : T.IsMicrolocallySobolevAt s x ξ) : x ∈ Ω := by
+  obtain ⟨φ, hφ, -⟩ := h
+  exact φ.tsupport_subset (subset_tsupport _ hφ)
+
 /-- The **`H^s` wave front set** of a complex distribution `T` on `Ω`: the pairs `(x, ξ)` with
 `x ∈ Ω` and `ξ ≠ 0` at which `T` is not microlocally `H^s`. -/
 def sobolevWaveFrontSet (s : ℝ) (T : 𝓓'(Ω, ℂ)) : Set (E × E) :=
@@ -164,16 +170,24 @@ theorem isOpen_diff_sobolevWaveFrontSet (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
   rw [h]
   exact (Ω.isOpen.prod isOpen_compl_singleton).inter (T.isOpen_setOf_isMicrolocallySobolevAt s)
 
-/-- Being microlocally `H^s` implies being microlocally `H^t` for every `t ≤ s`. -/
-theorem IsMicrolocallySobolevAt.mono {s t : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : E}
-    (h : T.IsMicrolocallySobolevAt s x ξ) (hts : t ≤ s) : T.IsMicrolocallySobolevAt t x ξ := by
-  obtain ⟨φ, hφ, Γ, hΓ, hξ, hcone, hL⟩ := h
-  refine ⟨φ, hφ, Γ, hΓ, hξ, hcone, hL.mono (aestronglyMeasurable_weight_smul_localFourier t T φ _)
-    (.of_forall fun η ↦ ?_)⟩
+omit [FiniteDimensional ℝ E] in
+/-- Square integrability of the weighted localized Fourier transform passes to lower orders: the
+weight `(1 + ‖η‖ ^ 2) ^ (t / 2)` is at most `(1 + ‖η‖ ^ 2) ^ (s / 2)` for `t ≤ s`. -/
+theorem memLp_one_add_norm_sq_rpow_smul_localFourier_of_le {s t : ℝ} {T : 𝓓'(Ω, ℂ)}
+    {φ : 𝓓(Ω, ℂ)} {μ : Measure E}
+    (h : MemLp (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier φ η) 2 μ) (hts : t ≤ s) :
+    MemLp (fun η ↦ (1 + ‖η‖ ^ 2) ^ (t / 2) • T.localFourier φ η) 2 μ := by
+  refine h.mono (aestronglyMeasurable_weight_smul_localFourier t T φ _) (.of_forall fun η ↦ ?_)
   rw [norm_smul, norm_smul, Real.norm_of_nonneg (by positivity),
     Real.norm_of_nonneg (by positivity)]
   gcongr
   · nlinarith [sq_nonneg ‖η‖]
+
+/-- Being microlocally `H^s` implies being microlocally `H^t` for every `t ≤ s`. -/
+theorem IsMicrolocallySobolevAt.mono {s t : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (h : T.IsMicrolocallySobolevAt s x ξ) (hts : t ≤ s) : T.IsMicrolocallySobolevAt t x ξ := by
+  obtain ⟨φ, hφ, Γ, hΓ, hξ, hcone, hL⟩ := h
+  exact ⟨φ, hφ, Γ, hΓ, hξ, hcone, memLp_one_add_norm_sq_rpow_smul_localFourier_of_le hL hts⟩
 
 /-- The `H^s` wave front set grows with `s`. -/
 theorem sobolevWaveFrontSet_mono {s t : ℝ} (hts : t ≤ s) (T : 𝓓'(Ω, ℂ)) :
