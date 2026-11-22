@@ -1320,22 +1320,13 @@ theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL {Omega O 
   obtain ⟨χ, -, hχ, -, hχ1, hχc, hχs, -, -, -⟩ :=
     hK.exists_contDiff_cutoff_with_bounds O.isOpen (hΦU''.mono_left hψs).image_subset
   -- `χ u ∈ W₀^{1,p}(Ω)` restricts to `W₀^{1,p}(Ω ∩ O)` and pulls back to `W₀^{1,p}(Ω')`.
-  obtain ⟨v, hv⟩ := hu0 χ hχ hχc hχs
-  have hv0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport χ → W1p.value (v : W1p mu Omega p) x = 0 := by
-    filter_upwards [hv] with x hx hxχ
-    rw [hx, image_eq_zero_of_notMem_tsupport hxχ, zero_mul]
-  have hvO := W1p.restrictL_mem_w1p0Submodule_of_isCompact hχc hχs v.property hv0
-  have hvΩ' := hΦ.w1pCompL_mem_w1p0Submodule_of_leftInvOn hp hΨ hΨmaps hΨΦ hvO
+  obtain ⟨v, hv⟩ := W1p.exists_w1p0_value_ae_eq_mul_restrictL subset_rfl hu0 hχ hχc hχs
+  have hvΩ' := hΦ.w1pCompL_mem_w1p0Submodule_of_leftInvOn hp hΨ hΨmaps hΨΦ v.property
   obtain ⟨w, hw⟩ := W1p.exists_w1p0_value_ae_eq_mul_of_mem_w1p0Submodule hψ hψc hvΩ'
   refine ⟨w, ?_⟩
-  have hΩO : ((Omega ⊓ O : Opens E) : Set E) ⊆ Omega := fun x hx => hx.1
-  filter_upwards [hw,
-    hΦ.value_w1pCompL_ae hp (W1p.restrictL inf_le_left (v : W1p mu Omega p)),
-    hΦ.value_w1pCompL_ae hp (W1p.restrictL inf_le_left u),
-    hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left (v : W1p mu Omega p)),
-    hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left u),
-    hΦ.ae_comp (ae_restrict_of_ae_restrict_of_subset hΩO hv)] with x h1 h2 h3 h4 h5 h6
-  rw [h1, h2, h3, h4, h5, h6]
+  filter_upwards [hw, hΦ.value_w1pCompL_ae hp (v : W1p mu (Omega ⊓ O) p),
+    hΦ.value_w1pCompL_ae hp (W1p.restrictL inf_le_left u), hΦ.ae_comp hv] with x h1 h2 h3 h4
+  rw [h1, h2, h3, h4]
   by_cases hx : x ∈ tsupport ψ
   · rw [interior_subset (hχ1 ⟨x, hx, rfl⟩), one_mul]
   · rw [image_eq_zero_of_notMem_tsupport hx, zero_mul, zero_mul]
