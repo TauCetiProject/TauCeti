@@ -40,6 +40,8 @@ own topology instance; `TauCeti.Huber.hasBasis_nhds_zero_awayTopology` supplies 
 
 * `TauCeti.Huber.isTopologicalRing_awayTopology`, `TauCeti.Huber.nonarchimedeanRing_awayTopology`:
   `awayTopology` is a nonarchimedean ring topology.
+* `TauCeti.Huber.hasBasis_awayNhd_of_pow_associated`: `π`-adic and `w`-adic neighbourhood bases of
+  zero coincide when `π` is associated to `w ^ n`.
 * `TauCeti.Huber.algebraMap_mem_awayNhd_iff`,
   `TauCeti.Huber.sModEq_iff_algebraMap_sub_mem_awayNhd`: if `π` is a nonzerodivisor, `πⁿ A₀`
   restricts to the ideal `(πⁿ)` of `A₀`.
@@ -228,6 +230,32 @@ theorem t2Space_of_hasBasis [IsTopologicalAddGroup A] (hπ : π ∈ A₀⁰)
   refine hx ?_
   rw [IsHausdorff.haus (I := Ideal.span {π}) inferInstance (π ^ 0 * a) fun n ↦
     (sModEq_iff_algebraMap_sub_mem_awayNhd (A := A) hπ).mpr (by simpa using hmem n), map_zero]
+
+omit [IsLocalization.Away π A] in
+/-- If `π` is associated to `w ^ n` with `n ≠ 0`, the `π`-adic and `w`-adic neighbourhood bases of
+zero coincide on `A`. -/
+theorem hasBasis_awayNhd_of_pow_associated {w : A₀} {n : ℕ} (hn : n ≠ 0)
+    (hass : Associated π (w ^ n)) :
+    (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True) fun k ↦ (awayNhd w A k : Set A) := by
+  obtain ⟨u, hu⟩ := hass
+  refine h.to_hasBasis (fun k _ ↦ ⟨k * n, trivial, fun x hx ↦ ?_⟩)
+    fun k _ ↦ ⟨k, trivial, fun x hx ↦ ?_⟩
+  · obtain ⟨a, rfl⟩ := mem_awayNhd.mp hx
+    refine mem_awayNhd.mpr ⟨(u : A₀) ^ k * a, ?_⟩
+    rw [← mul_assoc, ← mul_pow, hu, ← pow_mul, mul_comm n k]
+  · obtain ⟨a, rfl⟩ := mem_awayNhd.mp hx
+    refine mem_awayNhd.mpr ⟨w ^ (k * (n - 1)) * ((u⁻¹ : A₀ˣ) : A₀) ^ k * a, ?_⟩
+    congr 1
+    calc w ^ k * (w ^ (k * (n - 1)) * ((u⁻¹ : A₀ˣ) : A₀) ^ k * a)
+      _ = (w ^ n) ^ k * ((u⁻¹ : A₀ˣ) : A₀) ^ k * a := by
+          rw [← mul_assoc, ← mul_assoc, ← pow_add, ← pow_mul]
+          congr 3
+          obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+          dsimp only [Nat.add_one_sub_one]
+          rw [Nat.succ_eq_add_one]
+          ring
+      _ = π ^ k * a := by
+          rw [← hu, mul_pow, mul_assoc (π ^ k), ← mul_pow, Units.mul_inv, one_pow, mul_one]
 
 end HasBasis
 

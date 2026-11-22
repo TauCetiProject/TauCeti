@@ -185,8 +185,7 @@ theorem almostSetupPlus_isAlmostZero_powerBounded_quotient
   have hcoe (a : Rplus) : (algebraMap Rplus (powerBoundedSubring R) a : R) = a :=
     (IsScalarTower.algebraMap_apply Rplus (powerBoundedSubring R) R a).symm
   refine ⟨⟨(ϖ : R) * (x : R), hmem⟩, Subtype.ext ?_⟩
-  change (algebraMap Rplus (powerBoundedSubring R) ⟨_, hmem⟩ : R) =
-    ((ϖ • x : powerBoundedSubring R) : R)
+  dsimp only [Algebra.linearMap_apply]
   rw [hcoe, Algebra.smul_def, Subring.coe_mul, hcoe]
 
 /-- For any ring of integral elements `R⁺` of `R`, the inclusion `R⁺ →ₗ[R⁺] R°` is an almost

@@ -17,7 +17,7 @@ These checks exercise `TauCeti.RingTheory.Perfectoid.Away` on `ℂ_p` regarded a
 `π ∈ ℂ_p°` satisfies `π ^ p = p`:
 
 * `algebraMap_mul_mem_range_of_isPowerBounded` recovers `π x ∈ ℂ_p°` for power-bounded `x ∈ ℂ_p`;
-* `isUniform_of_hasBasis` and `isPerfectoidTateRing_of_bijective_frobeniusModPow` certify
+* `isUniform_of_dvd_of_pow_dvd_pow` and `isPerfectoidTateRing_of_bijective_frobeniusModPow` certify
   uniformity and perfectoidness of `ℂ_p` purely from its integral perfectoid subring `ℂ_p°`;
 * `π⁻¹` satisfies the `n = 0` condition `π * π⁻¹ = 1 ∈ ℂ_p°` while failing power-boundedness,
   confirming that quantifying over all `n` in `isPowerBounded_iff_forall_untilt_mul_mem_range` is
@@ -50,19 +50,13 @@ example :
       rw [hr]
       exact mem_powerBoundedSubring.mp (natCast_mem (powerBoundedSubring ℂ_[p]) p)⟩
   have hπ_pow : π ^ p = (p : powerBoundedSubring ℂ_[p]) := Subtype.ext hr
-  have hr_ne : (π : ℂ_[p]) ≠ 0 := by
-    intro h0
-    have hp0 : (p : ℂ_[p]) = 0 := by
-      rw [← hr]
-      change (π : ℂ_[p]) ^ p = 0
-      rw [h0, zero_pow hp.out.ne_zero]
-    exact Nat.cast_ne_zero.mpr hp.out.ne_zero hp0
+  have hr_ne : (π : ℂ_[p]) ≠ 0 := fun h0 ↦
+    Nat.cast_ne_zero.mpr hp.out.ne_zero <| by
+      rw [← hr, show r ^ p = 0 from (congrArg (· ^ p) h0).trans (zero_pow hp.out.ne_zero)]
   have hnorm_lt : ‖(π : ℂ_[p])‖ < 1 := by
     by_contra h
     push Not at h
-    have hpow : 1 ≤ ‖(π : ℂ_[p])‖ ^ p := one_le_pow₀ h
-    rw [← norm_pow] at hpow
-    change 1 ≤ ‖r ^ p‖ at hpow
+    have hpow : 1 ≤ ‖r ^ p‖ := by simpa only [norm_pow] using one_le_pow₀ h
     rw [hr] at hpow
     exact not_lt_of_ge hpow (PadicComplex.norm_p_lt_one p)
   have hpu : IsPseudoUniformizer (π : ℂ_[p]) :=
@@ -76,11 +70,9 @@ example :
       obtain ⟨n, hn⟩ := (isBounded_singleton x).exists_pow_mul_subset
         hpu.isTopologicallyNilpotent
         ((isOpen_powerBoundedSubring ℂ_[p]).mem_nhds (zero_mem _))
-      refine ⟨⟨⟨(π : ℂ_[p]) ^ n * x,
-        hn (Set.mul_mem_mul (Set.mem_singleton _) (Set.mem_singleton _))⟩,
-        ⟨π ^ n, ⟨n, rfl⟩⟩⟩, ?_⟩
-      change x * (π : ℂ_[p]) ^ n = (π : ℂ_[p]) ^ n * x
-      ring
+      exact ⟨⟨⟨(π : ℂ_[p]) ^ n * x,
+          hn (Set.mul_mem_mul (Set.mem_singleton _) (Set.mem_singleton _))⟩,
+          ⟨π ^ n, ⟨n, rfl⟩⟩⟩, by rw [mul_comm]; rfl⟩
     · intro a b hab
       exact ⟨⟨1, ⟨0, pow_zero _⟩⟩, Subtype.ext (by simpa using hab)⟩
   have hbasis : (𝓝 (0 : ℂ_[p])).HasBasis (fun _ : ℕ ↦ True) fun n ↦
@@ -92,15 +84,10 @@ example :
     ext x
     simp only [SetLike.mem_coe, mem_awayNhd, D,
       PairOfDefinition.ofIsPseudoUniformizer_ringOfDefinition]
-    constructor
-    · rintro ⟨y, hy, rfl⟩
-      refine ⟨⟨y, hy⟩, ?_⟩
-      change (π : ℂ_[p]) ^ n * y = (π : ℂ_[p]) ^ n • y
-      rw [smul_eq_mul]
-    · rintro ⟨a, rfl⟩
-      refine ⟨(a : ℂ_[p]), a.property, ?_⟩
-      change (π : ℂ_[p]) ^ n • (a : ℂ_[p]) = (π : ℂ_[p]) ^ n * (a : ℂ_[p])
-      rw [smul_eq_mul]
+    exact ⟨fun ⟨y, hy, hyx⟩ ↦ ⟨⟨y, hy⟩, by
+        rw [← hyx, map_mul, map_pow]; exact (smul_eq_mul _ _).symm⟩,
+      fun ⟨a, hax⟩ ↦ ⟨(a : ℂ_[p]), a.property, by
+        rw [← hax, map_mul, map_pow]; exact smul_eq_mul _ _⟩⟩
   have hreg : π ∈ (powerBoundedSubring ℂ_[p])⁰ :=
     mem_nonZeroDivisors_of_ne_zero fun h0 ↦ hr_ne (congrArg Subtype.val h0)
   have hroot : ∀ a : powerBoundedSubring ℂ_[p], π ^ p ∣ a ^ p → π ∣ a := by
@@ -136,7 +123,7 @@ example :
     exact dvd_zero _
   refine ⟨π, hπ_pow, hloc,
     fun x hx ↦ algebraMap_mul_mem_range_of_isPowerBounded hp.out.one_lt hbasis hreg hroot hx,
-    isUniform_of_hasBasis hp.out.one_lt hbasis hreg hroot,
+    isUniform_of_dvd_of_pow_dvd_pow hp.out.one_lt hbasis hreg hroot,
     isPerfectoidTateRing_of_bijective_frobeniusModPow hbasis hreg hbij,
     ⟨⟨1, by simp [mul_inv_cancel₀ hr_ne]⟩, ?_⟩⟩
   rw [isPowerBounded_iff_norm_le_one, norm_inv, not_le]

@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Perfect
 public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.Topology.Algebra.Ring.Subring
 
+import Mathlib.Algebra.CharP.Subring
 import TauCeti.RingTheory.Huber.RingOfDefinition
 import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
@@ -38,6 +39,9 @@ than selected by a typeclass.
   positive power of which lies in `A⁺`.
 * `TauCeti.Huber.IsRingOfIntegralElements.exists_isPseudoUniformizer`: in a Tate ring, `A⁺`
   contains a pseudouniformiser.
+* `TauCeti.Huber.IsRingOfIntegralElements.exists_isPseudoUniformizer_pow_dvd`: in a perfect Tate
+  ring of exponential characteristic `p`, every topologically nilpotent element of `A⁺` is
+  divisible in `A⁺` by the `p`-th power of a pseudouniformiser.
 * `TauCeti.Huber.IsRingOfIntegralElements.isLocalization`: a Tate ring is the localisation of
   `A⁺` at the elements of `A⁺` which are units of the ambient ring.
 * `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
@@ -140,6 +144,33 @@ theorem IsRingOfIntegralElements.exists_isPseudoUniformizer [IsTopologicalRing A
     ∃ ϖ : Aplus, IsPseudoUniformizer (ϖ : A) :=
   have ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   ⟨⟨ϖ, h.mem_of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent⟩, hϖ⟩
+
+/-- For any topologically nilpotent element `a ∈ A⁺` of a perfect Tate ring of exponential
+characteristic `p > 1`, there exists a pseudouniformiser `ϖ ∈ A⁺` such that `ϖ ^ p ∣ a` in
+`A⁺`. -/
+theorem IsRingOfIntegralElements.exists_isPseudoUniformizer_pow_dvd [IsTopologicalRing A]
+    [IsTateRing A] {p : ℕ} (hp : 1 < p) [ExpChar A p] [PerfectRing A p] {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) (a : Aplus) (ha : IsTopologicallyNilpotent (a : A)) :
+    ∃ ϖ : Aplus, IsPseudoUniformizer (ϖ : A) ∧ ϖ ^ p ∣ a := by
+  have := h.isIntegrallyClosedIn
+  obtain ⟨ϖ₀, hϖ₀⟩ := h.exists_isPseudoUniformizer
+  obtain ⟨N, c, hc⟩ := Aplus.exists_dvd_pow_of_isTopologicallyNilpotent h.isOpen hϖ₀.isUnit ha
+  let ϖ : Aplus := (iterateFrobeniusEquiv Aplus p (N + 1)).symm ϖ₀
+  have hpow : ϖ ^ p ^ (N + 1) = ϖ₀ := by
+    rw [← iterateFrobeniusEquiv_def]
+    exact (iterateFrobeniusEquiv Aplus p (N + 1)).apply_symm_apply ϖ₀
+  have hϖ : IsPseudoUniformizer (ϖ : A) := by
+    have hpowA : (ϖ : A) ^ p ^ (N + 1) = (ϖ₀ : A) := by exact_mod_cast hpow
+    have hpn : p ^ (N + 1) ≠ 0 := pow_ne_zero _ (Nat.ne_zero_of_lt hp)
+    exact isPseudoUniformizer_iff.mpr
+      ⟨(isUnit_pow_iff hpn).mp (hpowA.symm ▸ hϖ₀.isUnit),
+        IsTopologicallyNilpotent.of_pow hpn (hpowA.symm ▸ hϖ₀.isTopologicallyNilpotent)⟩
+  have hle : N ≤ p ^ N := (Nat.lt_pow_self hp).le
+  have hdiv : (ϖ ^ p) ^ p ^ N ∣ a ^ p ^ N := by
+    rw [← pow_mul, ← pow_succ', hpow]
+    exact ⟨c * a ^ (p ^ N - N), by rw [← mul_assoc, ← hc, ← pow_add, Nat.add_sub_of_le hle]⟩
+  rw [← iterateFrobeniusEquiv_def, ← iterateFrobeniusEquiv_def] at hdiv
+  exact ⟨ϖ, hϖ, (map_dvd_iff (iterateFrobeniusEquiv Aplus p N)).mp hdiv⟩
 
 /-- A Tate ring `A` is the localisation of a ring of integral elements `A⁺` at the elements of
 `A⁺` which are units of `A`. -/

@@ -13,6 +13,7 @@ import Mathlib.Algebra.CharP.Subring
 import TauCeti.RingTheory.Huber.Pair.Complete
 import TauCeti.RingTheory.Huber.Perfect
 import TauCeti.RingTheory.WittVector.Primitive.Quotient
+import TauCeti.RingTheory.WittVector.TeichmullerCoeff
 
 /-!
 # The untilt of a Huber pair along an ideal of `𝕎 R⁺`
@@ -56,10 +57,10 @@ map* `θ_J : 𝕎 R⁺ [1/[ϖ]] → A` is induced by the quotient map, with kern
 For a Tate ring `R`, every element of `R` is a quotient of an element of `R⁺` by an element of
 `R⁺` which is a unit of `R`, and the Teichmüller representatives of the latter are inverted in the
 untilt; so `x ↦ x♯` extends uniquely to a multiplicative map `♯_J : R → A`. It is not additive in
-general. For `R` perfect of characteristic `p` and `J = (ξ)` with `ξ` primitive it is continuous:
-if `ϖ ^ p ^ k` divides `a - b` in `R⁺`, then `[a] - [b]` lies in `(p, [ϖ]) ^ (k + 1)`, and modulo
-`ξ` a power of `(p, [ϖ])` lies in `([ϖ])`. If moreover `ϖ` divides `ξ₀`, then
-`A⁺ ⧸ (♯ϖ) = 𝕎 R⁺ ⧸ (ξ, [ϖ]) = R⁺ ⧸ (ϖ)`.
+general. For `R` perfect of characteristic `p`, `♯_J` is continuous whenever `p` is topologically
+nilpotent in `A` (`TauCeti.Perfectoid.untilt.continuous_sharp_of_isTopologicallyNilpotent`), and in
+particular along `J = (ξ)` with `ξ` primitive (`TauCeti.Perfectoid.untilt.continuous_sharp`). If
+moreover `ϖ` divides `ξ₀`, then `A⁺ ⧸ (♯ϖ) = 𝕎 R⁺ ⧸ (ξ, [ϖ]) = R⁺ ⧸ (ϖ)`.
 
 ## Main definitions
 
@@ -98,8 +99,11 @@ if `ϖ ^ p ^ k` divides `a - b` in `R⁺`, then `[a] - [b]` lies in `(p, [ϖ]) ^
 * `TauCeti.Perfectoid.untilt.isPseudoUniformizer_sharp`: `♯_J` sends pseudouniformisers in `R⁺`
   to pseudouniformisers.
 * `TauCeti.Perfectoid.untilt.sharp_eq_natCast`: `♯_J t = p` when `p - [t] ∈ J`.
-* `TauCeti.Perfectoid.untilt.continuous_sharp`: for `R` a perfect Tate ring of characteristic `p`
-  and primitive `ξ`, the sharp map along `(ξ)` is continuous.
+* `TauCeti.Perfectoid.untilt.isTopologicallyNilpotent_natCast`,
+  `TauCeti.Perfectoid.untilt.continuous_sharp_of_isTopologicallyNilpotent`,
+  `TauCeti.Perfectoid.untilt.continuous_sharp`: for `R` a perfect Tate ring of characteristic `p`,
+  `♯_J` is continuous whenever `p` is topologically nilpotent in the untilt, and in particular
+  along `(ξ)` for primitive `ξ`.
 
 ## References
 
@@ -111,7 +115,7 @@ if `ϖ ^ p ^ k` divides `a - b` in `R⁺`, then `[a] - [b]` lies in `(p, [ϖ]) ^
 public section
 
 open Filter Topology TauCeti.Huber WittVector
-open scoped nonZeroDivisors
+open scoped nonZeroDivisors Pointwise
 
 namespace TauCeti.Perfectoid
 
@@ -375,6 +379,15 @@ theorem completeSpace (hξ : ξ.IsPrimitive) : CompleteSpace (untilt p P (Ideal.
   haveI := isAdicComplete_quotient hξ hϖ
   completeSpace_of_hasBasis (hasBasis_nhds_zero hϖ)
     (mk_teichmuller_mem_nonZeroDivisors hξ hϖ)
+
+/-- `T2Space` instance on `untilt p P (Ideal.span {ξ})` when `[Fact ξ.IsPrimitive]`. -/
+instance instT2Space [hξ : Fact ξ.IsPrimitive] : T2Space (untilt p P (Ideal.span {ξ})) :=
+  t2Space hξ.out
+
+/-- `CompleteSpace` instance on `untilt p P (Ideal.span {ξ})` when `[Fact ξ.IsPrimitive]`. -/
+instance instCompleteSpace [hξ : Fact ξ.IsPrimitive] :
+    CompleteSpace (untilt p P (Ideal.span {ξ})) :=
+  completeSpace hξ.out
 
 end Complete
 
@@ -666,47 +679,154 @@ theorem quotientSharpEquiv_mk_sharp (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀
       Ideal.Quotient.mk _ x := by
   simp
 
+/-- Integral uniform estimate for continuity of `sharp`: when `p` is topologically nilpotent in
+`untilt p P J`, `ϖ ^ M ∣ a - b` in `P.plus` puts `sharp a - sharp b` in `π ^ N A⁺`. -/
+private theorem sharp_sub_mem_awayNhd_of_dvd {J : Ideal (WittVector p P.plus)}
+    (hp : IsTopologicallyNilpotent (p : untilt p P J)) {ϖ : P.plus}
+    (hϖ : IsPseudoUniformizer (ϖ : R)) (N : ℕ) :
+    ∃ M : ℕ, ∀ a b : P.plus, ϖ ^ M ∣ a - b →
+      sharp p P J a - sharp p P J b ∈
+        awayNhd (Ideal.Quotient.mk J (teichmuller p ϖ)) (untilt p P J) N := by
+  set π₀ : WittVector p P.plus ⧸ J := Ideal.Quotient.mk J (teichmuller p ϖ)
+  have hbasis := hasBasis_nhds_zero (J := J) hϖ
+  obtain ⟨d, hd⟩ := Filter.eventually_atTop.mp
+    (hp.eventually_mem (hbasis.mem_of_mem (i := N) trivial))
+  refine ⟨N * p ^ d, fun a b hab ↦ ?_⟩
+  set w : WittVector p P.plus := teichmuller p a - teichmuller p b
+  -- `ϖ ^ (N * p ^ d) ∣ a - b` forces `ϖ ^ (N * p ^ d) ∣ w.coeff i` for every `i`.
+  have hcoeff (i : ℕ) : ϖ ^ (N * p ^ d) ∣ w.coeff i := by
+    let q := Ideal.Quotient.mk (Ideal.span {ϖ ^ (N * p ^ d)})
+    have hqab : q a = q b := Ideal.Quotient.eq.mpr (Ideal.mem_span_singleton.mpr hab)
+    have hmap : WittVector.map q w = 0 := by
+      rw [map_sub, map_teichmuller, map_teichmuller, hqab, sub_self]
+    have hi : q (w.coeff i) = 0 := by
+      simpa [WittVector.map_coeff] using congrArg (WittVector.coeff · i) hmap
+    exact Ideal.mem_span_singleton.mp (Ideal.Quotient.eq_zero_iff_mem.mp hi)
+  -- Hence the `i`-th Teichmüller coefficient of `w` is divisible by `ϖ ^ N` for `i < d`.
+  have htc (i : ℕ) (hi : i < d) : ϖ ^ N ∣ w.teichmullerCoeff i := by
+    have hdiv : (ϖ ^ (N * p ^ (d - i))) ^ p ^ i ∣ (w.teichmullerCoeff i) ^ p ^ i := by
+      rw [teichmullerCoeff_pow, ← pow_mul, mul_assoc, ← pow_add, Nat.sub_add_cancel hi.le]
+      exact hcoeff i
+    rw [← iterateFrobeniusEquiv_def, ← iterateFrobeniusEquiv_def] at hdiv
+    exact (pow_dvd_pow ϖ (Nat.le_mul_of_pos_right N (pow_pos (Fact.out : p.Prime).pos _))).trans
+      ((map_dvd_iff (iterateFrobeniusEquiv P.plus p i)).mp hdiv)
+  obtain ⟨b₀, hb₀⟩ := exists_eq_sum_teichmullerCoeff_add_pow_mul w d
+  have hsharp_sub : sharp p P J a - sharp p P J b =
+      algebraMap (WittVector p P.plus ⧸ J) (untilt p P J) (Ideal.Quotient.mk J w) := by
+    rw [sharp_apply, sharp_apply, ← map_sub, ← map_sub]
+  rw [hsharp_sub, hb₀, map_add, map_add, map_sum, map_sum]
+  refine add_mem (sum_mem fun i hi ↦ ?_) ?_
+  · obtain ⟨c, hc⟩ := htc i (Finset.mem_range.mp hi)
+    have hteich : teichmuller p (w.teichmullerCoeff i) =
+        teichmuller p ϖ ^ N * teichmuller p c := by
+      rw [hc, map_mul, map_pow]
+    rw [hteich, mul_assoc, map_mul, map_pow]
+    exact mem_awayNhd.mpr ⟨_, rfl⟩
+  · rw [map_mul, map_pow, map_natCast, map_mul, map_pow, map_natCast, mul_comm]
+    simpa using algebraMap_pow_mul_mul_mem_awayNhd (k := 0) (Ideal.Quotient.mk J b₀) (hd d le_rfl)
+
+/-- **Continuity of the sharp map**: if `R` is a perfect Tate ring of characteristic `p` and `p` is
+topologically nilpotent in `untilt p P J`, then `sharp p P J : R →*₀ untilt p P J` is
+continuous. -/
+theorem continuous_sharp_of_isTopologicallyNilpotent {J : Ideal (WittVector p P.plus)}
+    (hp : IsTopologicallyNilpotent (p : untilt p P J)) :
+    Continuous (sharp p P J) := by
+  obtain ⟨ϖ, hϖ⟩ := P.isRingOfIntegralElements.exists_isPseudoUniformizer
+  set π₀ : WittVector p P.plus ⧸ J := Ideal.Quotient.mk J (teichmuller p ϖ)
+  have hbasis := hasBasis_nhds_zero (J := J) hϖ
+  have hπ_unit : IsUnit (algebraMap (WittVector p P.plus ⧸ J) (untilt p P J) π₀) :=
+    (isPseudoUniformizer_algebraMap (J := J) hϖ).isUnit
+  -- Reduce continuity at `x₀ : R` to the integral estimate by clearing denominators with `ϖ ^ k`.
+  refine continuous_iff_continuousAt.mpr fun x₀ ↦ ?_
+  rw [ContinuousAt, ← tendsto_sub_nhds_zero_iff, hbasis.tendsto_right_iff]
+  intro r _
+  obtain ⟨k, hk⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent
+    hϖ.isTopologicallyNilpotent P.isRingOfIntegralElements.isOpen x₀
+  obtain ⟨M, hM⟩ := sharp_sub_mem_awayNhd_of_dvd hp hϖ (r + k)
+  let V : Set R := (hϖ.isUnit.pow M).unit • (P.plus : Set R)
+  have hV : V ∈ 𝓝 (0 : R) := by
+    refine (P.isRingOfIntegralElements.isOpen.smul (hϖ.isUnit.pow M).unit).mem_nhds ?_
+    exact ⟨0, P.plus.zero_mem, by simp⟩
+  have hmem : (fun x : R ↦ x - x₀) ⁻¹' V ∈ 𝓝 x₀ :=
+    (continuous_id.sub continuous_const).continuousAt.preimage_mem_nhds (by simpa using hV)
+  filter_upwards [hmem] with x hx
+  obtain ⟨c, hc, hxc⟩ := Set.mem_smul_set.mp hx
+  have hxc' : (ϖ : R) ^ M * c = x - x₀ := by simpa [smul_eq_mul] using hxc
+  have hxk : x * (ϖ : R) ^ k ∈ P.plus := by
+    have heq : x * (ϖ : R) ^ k = x₀ * (ϖ : R) ^ k + (ϖ : R) ^ M * c * (ϖ : R) ^ k := by
+      linear_combination -hxc' * (ϖ : R) ^ k
+    rw [heq]
+    exact P.plus.add_mem hk (P.plus.mul_mem (P.plus.mul_mem (P.plus.pow_mem ϖ.property M) hc)
+      (P.plus.pow_mem ϖ.property k))
+  let a : P.plus := ⟨x * (ϖ : R) ^ k, hxk⟩
+  let b : P.plus := ⟨x₀ * (ϖ : R) ^ k, hk⟩
+  have hdvd : ϖ ^ M ∣ a - b := by
+    refine ⟨⟨c, hc⟩ * ϖ ^ k, Subtype.ext ?_⟩
+    simp only [AddSubgroupClass.coe_sub, Subring.coe_mul, Subring.coe_pow, a, b]
+    linear_combination -hxc' * (ϖ : R) ^ k
+  obtain ⟨d, hd⟩ := mem_awayNhd.mp (hM a b hdvd)
+  refine mem_awayNhd.mpr ⟨d, (hπ_unit.pow k).mul_right_cancel ?_⟩
+  have hax : sharp p P J a = sharp p P J x * sharp p P J (ϖ : R) ^ k := by
+    rw [← map_pow, ← map_mul]
+  have hbx : sharp p P J b = sharp p P J x₀ * sharp p P J (ϖ : R) ^ k := by
+    rw [← map_pow, ← map_mul]
+  calc algebraMap (WittVector p P.plus ⧸ J) (untilt p P J) (π₀ ^ r * d) *
+        algebraMap (WittVector p P.plus ⧸ J) (untilt p P J) π₀ ^ k
+    _ = algebraMap (WittVector p P.plus ⧸ J) (untilt p P J) (π₀ ^ (r + k) * d) := by
+        simp only [map_mul, map_pow, π₀, pow_add]
+        ring
+    _ = sharp p P J a - sharp p P J b := hd
+    _ = (sharp p P J x - sharp p P J x₀) *
+          algebraMap (WittVector p P.plus ⧸ J) (untilt p P J) π₀ ^ k := by
+        rw [hax, hbx, sharp_apply ϖ, ← sub_mul]
+
+/-- In the untilt along a primitive element `ξ`, `p` is topologically nilpotent. -/
+theorem isTopologicallyNilpotent_natCast (hξ : ξ.IsPrimitive) :
+    IsTopologicallyNilpotent (p : untilt p P (Ideal.span {ξ})) := by
+  obtain ⟨ϖ, hϖ⟩ := P.isRingOfIntegralElements.exists_isPseudoUniformizer
+  obtain ⟨n, c, hc⟩ := P.plus.exists_dvd_pow_of_isTopologicallyNilpotent
+    P.isRingOfIntegralElements.isOpen hϖ.isUnit
+    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtypeVal)
+  obtain ⟨u, hu⟩ := isDistinguished_iff_exists_unit.mp hξ.isDistinguished
+  set J := Ideal.span {ξ}
+  have hξ' : Ideal.Quotient.mk J (teichmuller p (ξ.coeff 0)) =
+      -((p : WittVector p P.plus ⧸ J) * Ideal.Quotient.mk J ↑u) := by
+    rw [eq_neg_iff_add_eq_zero, ← map_natCast (Ideal.Quotient.mk J), ← map_mul, ← map_add,
+      ← hu, Ideal.Quotient.mk_singleton_self]
+  have hdvd : Ideal.Quotient.mk J (teichmuller p ϖ) ∣ (p : WittVector p P.plus ⧸ J) ^ (n + 1) := by
+    refine ⟨(-Ideal.Quotient.mk J ↑u⁻¹) ^ (n + 1) *
+      Ideal.Quotient.mk J (teichmuller p (ξ.coeff 0 * c)), ?_⟩
+    have hϖc : Ideal.Quotient.mk J (teichmuller p ϖ) *
+        Ideal.Quotient.mk J (teichmuller p (ξ.coeff 0 * c)) =
+        Ideal.Quotient.mk J (teichmuller p (ξ.coeff 0)) ^ (n + 1) := by
+      rw [← map_mul, ← map_mul, ← map_pow, ← map_pow, pow_succ, hc]
+      congr 2
+      ring
+    have hu' : Ideal.Quotient.mk J ↑u⁻¹ * Ideal.Quotient.mk J ↑u = 1 := by
+      rw [← map_mul, u.inv_mul, map_one]
+    rw [mul_left_comm, hϖc, hξ', ← mul_pow]
+    congr 1
+    linear_combination -(p : WittVector p P.plus ⧸ J) * hu'
+  obtain ⟨d, hd⟩ := hdvd
+  have hpow : (p : untilt p P J) ^ (n + 1) =
+      algebraMap (WittVector p P.plus ⧸ J) (untilt p P J) (Ideal.Quotient.mk J (teichmuller p ϖ)) *
+        algebraMap (WittVector p P.plus ⧸ J) (untilt p P J) d := by
+    rw [← map_mul, ← hd, map_pow, map_natCast]
+  refine IsTopologicallyNilpotent.of_pow n.succ_ne_zero ?_
+  rw [hpow, mul_comm]
+  exact (isBounded_untiltPlus.isPowerBounded_of_mem
+    (mem_untiltPlus.mpr ⟨d, rfl⟩)).isTopologicallyNilpotent_mul
+    (isPseudoUniformizer_algebraMap hϖ).isTopologicallyNilpotent
+
+/-- `p` is topologically nilpotent in the untilt along a primitive element. -/
+instance instFactIsTopologicallyNilpotentNatCast [hξ : Fact ξ.IsPrimitive] :
+    Fact (IsTopologicallyNilpotent (p : untilt p P (Ideal.span {ξ}))) :=
+  ⟨isTopologicallyNilpotent_natCast hξ.out⟩
+
 /-- **The sharp map is continuous** along a primitive element `ξ`, for `R` a perfect Tate ring of
 characteristic `p`. -/
-theorem continuous_sharp (hξ : ξ.IsPrimitive) : Continuous (sharp p P (Ideal.span {ξ})) := by
-  obtain ⟨ϖ, hϖ⟩ := P.isRingOfIntegralElements.exists_isPseudoUniformizer
-  refine continuous_iff_continuousAt.mpr fun x ↦ ?_
-  rw [ContinuousAt, ← tendsto_sub_nhds_zero_iff, (hasBasis_nhds_zero hϖ).tendsto_right_iff]
-  intro n _
-  -- Choose `k` with `ϖ ^ k x ∈ R⁺`, and `N` such that `ϖ ^ N ∣ b - a` in `R⁺` forces
-  -- `[b] ≡ [a]` modulo `[ϖ] ^ (n + k)`. Then `y - x ∈ ϖ ^ N R⁺` forces
-  -- `♯ y - ♯ x ∈ [ϖ] ^ n A⁺`, after multiplying by the unit `♯ (ϖ) ^ k`.
-  obtain ⟨k, hk⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent
-    P.isRingOfIntegralElements.isOpen x
-  obtain ⟨N, hN⟩ :=
-    hξ.isDistinguished.exists_mk_teichmuller_sub_mem (coeff_zero_mem_radical hξ hϖ) (n + k)
-  obtain ⟨u, hu⟩ := hϖ.isUnit.pow N
-  have hU : {y : R | ((u⁻¹ : Rˣ) : R) * (y - x) ∈ P.plus} ∈ 𝓝 x :=
-    (continuous_const.mul (continuous_id.sub continuous_const)).continuousAt.preimage_mem_nhds
-      (P.isRingOfIntegralElements.isOpen.mem_nhds (by simp))
-  filter_upwards [hU] with y hy
-  set c : P.plus := ⟨_, hy⟩
-  have hyx : y - x = ϖ ^ N * c := by
-    rw [← hu]
-    exact (u.mul_inv_cancel_left (y - x)).symm
-  have hb : y * ϖ ^ k ∈ P.plus := by
-    rw [← sub_add_cancel y x, add_mul, hyx]
-    exact add_mem (mul_mem (mul_mem (pow_mem ϖ.property _) c.property) (pow_mem ϖ.property _)) hk
-  obtain ⟨d, hd⟩ := Ideal.mem_span_singleton'.mp
-    ((Ideal.span_singleton_pow _ _).le (hN ⟨_, hb⟩ ⟨_, hk⟩ ⟨c * ϖ ^ k, Subtype.ext (by
-      push_cast
-      linear_combination (ϖ : R) ^ k * hyx)⟩))
-  refine mem_awayNhd.mpr ⟨d, ((isPseudoUniformizer_sharp (J := Ideal.span {ξ}) hϖ).isUnit.pow
-    k).mul_right_cancel ?_⟩
-  have key (z : R) (hz : z * ϖ ^ k ∈ P.plus) :
-      sharp p P (Ideal.span {ξ}) z * sharp p P (Ideal.span {ξ}) (ϖ : R) ^ k =
-        algebraMap _ (untilt p P (Ideal.span {ξ}))
-          (Ideal.Quotient.mk (Ideal.span {ξ}) (teichmuller p ⟨_, hz⟩)) := by
-    rw [← map_pow, ← map_mul]
-    exact sharp_apply ⟨_, hz⟩
-  rw [sub_mul, key y hb, key x hk, ← map_sub, ← map_sub, ← hd]
-  simp only [sharp_apply, map_pow, map_mul]
-  ring
+theorem continuous_sharp (hξ : ξ.IsPrimitive) : Continuous (sharp p P (Ideal.span {ξ})) :=
+  continuous_sharp_of_isTopologicallyNilpotent (isTopologicallyNilpotent_natCast hξ)
 
 end PrimitivePlus
 

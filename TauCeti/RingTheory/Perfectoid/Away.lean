@@ -18,11 +18,11 @@ Let `p` be a prime and `A₀` a commutative ring with a nonzerodivisor `π ∈ A
 `A₀` is `π`-adically complete and separated, and relative Frobenius
 `A₀ ⧸ (π) → A₀ ⧸ (π ^ p)` is bijective (so `A₀` is an integral perfectoid ring by
 `TauCeti.Perfectoid.IsIntegralPerfectoid.of_bijective_frobeniusModPow`). Let `A = A₀[1/π]` carry the
-`π`-adic topology, whose neighbourhoods of zero have basis `πⁿ A₀`. Then `A` is a complete Hausdorff
-perfectoid Tate ring, and after replacing `π` by an associated element `ϖ.untilt` with compatible
-`p`-power roots `wₙ = ((φ⁻¹)^[n] ϖ).untilt ∈ A₀` (`PreTilt.exists_associated_untilt`), the
-power-bounded elements are `{x ∈ A | ∀ n, wₙ * x ∈ A₀}`, with `A₀ ⊆ A°` and `π A° ⊆ A₀`
-(Bhatt–Morrow–Scholze, *Integral `p`-adic Hodge theory*, Lemma 3.21).
+`π`-adic topology, whose neighbourhoods of zero have basis `πⁿ A₀`. If moreover `A` is complete
+and Hausdorff, then `A` is a perfectoid Tate ring, and after replacing `π` by an associated
+element `ϖ.untilt` with compatible `p`-power roots `wₙ = ((φ⁻¹)^[n] ϖ).untilt ∈ A₀`
+(`PreTilt.exists_associated_untilt`), the power-bounded elements are `{x ∈ A | ∀ n, wₙ * x ∈ A₀}`,
+with `A₀ ⊆ A°` and `π A° ⊆ A₀` (Bhatt–Morrow–Scholze, *Integral `p`-adic Hodge theory*, Lemma 3.21).
 
 The inclusion `π A° ⊆ A₀` and uniformity of `A` require only regularity of `π` and the root
 condition `π ^ p ∣ a ^ p → π ∣ a` (with `1 < p`), with no completeness or surjectivity hypothesis.
@@ -31,7 +31,8 @@ condition `π ^ p ∣ a ^ p → π ∣ a` (with `1 < p`), with no completeness o
 
 * `TauCeti.Perfectoid.algebraMap_mul_mem_range_of_isPowerBounded`: `π x ∈ A₀` for every
   power-bounded `x ∈ A`, whenever `π` is a nonzerodivisor with `π ^ p ∣ a ^ p → π ∣ a`.
-* `TauCeti.Perfectoid.isUniform_of_hasBasis`: `A = A₀[1/π]` is uniform under the same hypotheses.
+* `TauCeti.Perfectoid.isUniform_of_dvd_of_pow_dvd_pow`: `A = A₀[1/π]` is uniform under the same
+  hypotheses.
 * `TauCeti.Perfectoid.isPowerBounded_iff_forall_untilt_mul_mem_range`: for `ϖ : PreTilt A₀ p` with
   `Associated π ϖ.untilt`, `x` is power-bounded iff `wₙ * x ∈ A₀` for every `p ^ n`-th root `wₙ` of
   `ϖ.untilt`.
@@ -134,17 +135,16 @@ theorem algebraMap_mul_mem_range_of_isPowerBounded (hp : 1 < p)
 /-- **Uniformity of `A₀[1/π]`**: under the hypotheses of
 `algebraMap_mul_mem_range_of_isPowerBounded`, the power-bounded elements lie in `π⁻¹ A₀` and are
 therefore bounded, so `A` is uniform. -/
-theorem isUniform_of_hasBasis (hp : 1 < p)
+theorem isUniform_of_dvd_of_pow_dvd_pow (hp : 1 < p)
     (h : (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True) fun n ↦ (awayNhd π A n : Set A))
     (hπ : π ∈ A₀⁰) (hroot : ∀ a : A₀, π ^ p ∣ a ^ p → π ∣ a) : IsUniform A := by
-  let u := (IsLocalization.Away.algebraMap_isUnit (S := A) π).unit
+  let hunit := IsLocalization.Away.algebraMap_isUnit (S := A) π
   refine isUniform_iff.mpr <|
-    ((isBounded_singleton (↑u⁻¹ : A)).mul (isBounded_range_algebraMap_of_hasBasis h)).subset
-      fun x hx ↦ ?_
-  refine Set.mem_mul.mpr ⟨↑u⁻¹, Set.mem_singleton _, algebraMap A₀ A π * x,
+    ((isBounded_singleton (↑hunit.unit⁻¹ : A)).mul
+      (isBounded_range_algebraMap_of_hasBasis h)).subset fun x hx ↦ ?_
+  refine Set.mem_mul.mpr ⟨↑hunit.unit⁻¹, Set.mem_singleton _, algebraMap A₀ A π * x,
     algebraMap_mul_mem_range_of_isPowerBounded hp h hπ hroot hx, ?_⟩
-  change (↑u⁻¹ : A) * ((u : A) * x) = x
-  rw [← mul_assoc, Units.inv_mul, one_mul]
+  exact hunit.unit.inv_mul_cancel_left x
 
 end Uniform
 
@@ -152,54 +152,6 @@ section Roots
 
 variable {p : ℕ} [hp : Fact p.Prime] {A₀ : Type*} [CommRing A₀] {π : A₀}
   {A : Type*} [CommRing A] [Algebra A₀ A]
-
-/-- If `π` is associated to `w ^ n` with `n ≠ 0`, then a localisation away from `π` is a
-localisation away from `w`. -/
-private theorem isLocalizationAway_of_pow_associated {w : A₀} {n : ℕ} (hn : n ≠ 0)
-    (hass : Associated π (w ^ n)) [IsLocalization.Away π A] :
-    IsLocalization.Away w A := by
-  obtain ⟨u, hu⟩ := hass
-  have hwu : IsUnit (algebraMap A₀ A w) := by
-    refine (isUnit_pow_iff hn).mp ?_
-    rw [← map_pow, ← hu, map_mul]
-    exact (IsLocalization.Away.algebraMap_isUnit π).mul (u.isUnit.map _)
-  refine IsLocalization.Away.mk w hwu (fun x ↦ ?_) fun a b hab ↦ ?_
-  · obtain ⟨k, a, ha⟩ := IsLocalization.Away.surj π x
-    refine ⟨k * n, a * (u : A₀) ^ k, ?_⟩
-    rw [pow_mul', ← map_pow, ← hu, map_mul, mul_pow, ← mul_assoc, ha, map_mul, map_pow]
-  · obtain ⟨⟨_, ⟨k, rfl⟩⟩, hk⟩ := (IsLocalization.eq_iff_exists (Submonoid.powers π) A).mp hab
-    refine ⟨k * n, ?_⟩
-    dsimp only at hk ⊢
-    calc w ^ (k * n) * a
-      _ = (u : A₀) ^ k * (π ^ k * a) := by rw [pow_mul', ← hu, mul_pow]; ring
-      _ = (u : A₀) ^ k * (π ^ k * b) := congrArg _ hk
-      _ = w ^ (k * n) * b := by rw [pow_mul', ← hu, mul_pow]; ring
-
-/-- If `π` is associated to `w ^ n` with `n ≠ 0`, the `π`-adic and `w`-adic neighbourhood bases of
-zero coincide on `A`. -/
-private theorem hasBasis_awayNhd_of_pow_associated [TopologicalSpace A] {w : A₀} {n : ℕ}
-    (hn : n ≠ 0) (hass : Associated π (w ^ n))
-    (h : (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True) fun k ↦ (awayNhd π A k : Set A)) :
-    (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True) fun k ↦ (awayNhd w A k : Set A) := by
-  obtain ⟨u, hu⟩ := hass
-  refine h.to_hasBasis (fun k _ ↦ ⟨k * n, trivial, fun x hx ↦ ?_⟩)
-    fun k _ ↦ ⟨k, trivial, fun x hx ↦ ?_⟩
-  · obtain ⟨a, rfl⟩ := mem_awayNhd.mp hx
-    refine mem_awayNhd.mpr ⟨(u : A₀) ^ k * a, ?_⟩
-    rw [← mul_assoc, ← mul_pow, hu, ← pow_mul, mul_comm n k]
-  · obtain ⟨a, rfl⟩ := mem_awayNhd.mp hx
-    refine mem_awayNhd.mpr ⟨w ^ (k * (n - 1)) * ((u⁻¹ : A₀ˣ) : A₀) ^ k * a, ?_⟩
-    congr 1
-    calc w ^ k * (w ^ (k * (n - 1)) * ((u⁻¹ : A₀ˣ) : A₀) ^ k * a)
-      _ = (w ^ n) ^ k * ((u⁻¹ : A₀ˣ) : A₀) ^ k * a := by
-          rw [← mul_assoc, ← mul_assoc, ← pow_add, ← pow_mul]
-          congr 3
-          obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-          dsimp only [Nat.add_one_sub_one]
-          rw [Nat.succ_eq_add_one]
-          ring
-      _ = π ^ k * a := by
-          rw [← hu, mul_pow, mul_assoc (π ^ k), ← mul_pow, Units.mul_inv, one_pow, mul_one]
 
 /-- Regularity and the root condition `w ^ p ∣ a ^ p → w ∣ a` propagate along the `p`-power root
 tower of `ϖ : PreTilt A₀ p`. -/
@@ -247,8 +199,9 @@ theorem isPowerBounded_iff_forall_untilt_mul_mem_range
   · intro hx n
     have hass_n : Associated π (w n ^ p ^ n) := by rwa [hw_pow n]
     have : IsLocalization.Away (w n) A :=
-      isLocalizationAway_of_pow_associated (pow_ne_zero n hp.out.ne_zero) hass_n
-    have hbasis_n := hasBasis_awayNhd_of_pow_associated (pow_ne_zero n hp.out.ne_zero) hass_n h
+      IsLocalization.Away.of_dvd_of_dvd_pow
+        ((dvd_pow_self _ (pow_ne_zero n hp.out.ne_zero)).trans hass_n.symm.dvd) hass_n.dvd
+    have hbasis_n := hasBasis_awayNhd_of_pow_associated h (pow_ne_zero n hp.out.ne_zero) hass_n
     have hstep := root_tower_step hπ hroot hass n
     exact algebraMap_mul_mem_range_of_isPowerBounded hp.out.one_lt hbasis_n
       hstep.1 hstep.2 hx
@@ -270,8 +223,7 @@ theorem isPowerBounded_iff_forall_untilt_mul_mem_range
         Nat.sub_add_cancel hle, hw_pow m]
     refine Set.mem_mul.mpr ⟨↑hwu.unit⁻¹, Set.mem_singleton _, algebraMap A₀ A ϖ.untilt * x ^ m,
       hmem, ?_⟩
-    change (↑hwu.unit⁻¹ : A) * ((hwu.unit : A) * x ^ m) = x ^ m
-    rw [← mul_assoc, Units.inv_mul, one_mul]
+    exact hwu.unit.inv_mul_cancel_left (x ^ m)
 
 /-- **Perfectoid Tate rings from integral perfectoid rings** (Bhatt–Morrow–Scholze, *Integral
 `p`-adic Hodge theory*, Lemma 3.21): if `A₀` is `π`-adically complete for a nonzerodivisor `π` with
@@ -289,7 +241,7 @@ theorem isPerfectoidTateRing_of_bijective_frobeniusModPow
   have hroot : ∀ a : A₀, π ^ p ∣ a ^ p → π ∣ a := (frobeniusModPow_injective_iff hdvd).mp hbij.1
   have hsurj : ∀ a : A₀, ∃ b : A₀, π ^ p ∣ a - b ^ p :=
     (frobeniusModPow_surjective_iff hdvd).mp hbij.2
-  have : IsUniform A := isUniform_of_hasBasis hp.out.one_lt h hπ hroot
+  have : IsUniform A := isUniform_of_dvd_of_pow_dvd_pow hp.out.one_lt h hπ hroot
   have : Nontrivial A₀ := by
     by_contra hnot
     rw [not_nontrivial_iff_subsingleton] at hnot
@@ -320,10 +272,10 @@ theorem isPerfectoidTateRing_of_bijective_frobeniusModPow
   have hϖPB_pu : IsPseudoUniformizer (ϖPB : A) := by
     have hpu := isPseudoUniformizer_algebraMap_of_hasBasis h
     refine isPseudoUniformizer_iff.mpr ⟨?_, ?_⟩
-    · change IsUnit (algebraMap A₀ A w0)
+    · dsimp only [ϖPB]
       rw [← hu, map_mul]
       exact hpu.isUnit.mul (u.isUnit.map _)
-    · change IsTopologicallyNilpotent (algebraMap A₀ A w0)
+    · dsimp only [ϖPB]
       rw [← hu, map_mul, mul_comm]
       exact ((isBounded_range_algebraMap_of_hasBasis h).isPowerBounded_of_mem
         ⟨(u : A₀), rfl⟩).isTopologicallyNilpotent_mul hpu.isTopologicallyNilpotent
@@ -348,13 +300,11 @@ theorem isPerfectoidTateRing_of_bijective_frobeniusModPow
   set y : A := (↑hw1_unit.unit⁻¹ : A) * algebraMap A₀ A y0
   have hyp : y ^ p = (x : A) - (p : A) * algebraMap A₀ A c := by
     apply hϖPB_pu.isUnit.mul_left_cancel
-    change algebraMap A₀ A w0 * y ^ p =
-      algebraMap A₀ A w0 * ((x : A) - (p : A) * algebraMap A₀ A c)
     have h1 : algebraMap A₀ A w0 * y ^ p = algebraMap A₀ A f.untilt := by
       rw [← hw1_pow, map_pow, ← mul_pow, ← hy0_pow, map_pow]
       congr 1
-      change (hw1_unit.unit : A) * ((↑hw1_unit.unit⁻¹ : A) * algebraMap A₀ A y0) = _
-      rw [← mul_assoc, Units.mul_inv, one_mul]
+      exact hw1_unit.unit.mul_inv_cancel_left (algebraMap A₀ A y0)
+    dsimp only [ϖPB]
     rw [h1, mul_sub, ← ha, ← mul_assoc, mul_right_comm (algebraMap A₀ A w0),
       ← map_natCast (algebraMap A₀ A), ← map_mul, ← map_mul, ← map_sub]
     congr 1
