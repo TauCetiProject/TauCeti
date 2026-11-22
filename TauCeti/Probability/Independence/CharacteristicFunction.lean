@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.ConditionalExpectation
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
+import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import TauCeti.MeasureTheory.Measure.CharacteristicFunction.Basic
 
 /-!
@@ -33,17 +34,8 @@ open scoped RealInnerProductSpace
 
 namespace ProbabilityTheory
 variable {Ω E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
-  [BorelSpace E]
-
-private lemma setIntegral_exp_inner_mul_I_of_condExp {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
-    [IsFiniteMeasure P] (hm : m ≤ mΩ) {X : Ω → E} (hX : AEMeasurable X P) {t : E} {c : ℂ}
-    (h : P[fun ω ↦ exp ((⟪X ω, t⟫ : ℂ) * I) | m] =ᵐ[P] fun _ ↦ c) {A : Set Ω}
-    (hA : MeasurableSet[m] A) : ∫ ω in A, exp ((⟪X ω, t⟫ : ℂ) * I) ∂P = ((P A).toReal : ℂ) * c := by
-  rw [← setIntegral_condExp hm (hX.integrable_exp_inner_mul_I t) hA,
-    setIntegral_congr_ae (hm A hA) (h.mono fun _ hω _ ↦ hω),
-    setIntegral_const, Measure.real, Complex.real_smul]
-
-variable [CompleteSpace E] [SecondCountableTopology E] {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
+  [BorelSpace E] [CompleteSpace E] [SecondCountableTopology E] {m mΩ : MeasurableSpace Ω}
+  {P : Measure Ω}
 
 /-- A random variable in a complete second-countable real inner product space has law `μ`
 whenever its characteristic integral matches `charFun μ` everywhere. -/
@@ -102,11 +94,9 @@ theorem indep_comap_iff_forall_condExp_exp_inner_mul_I [IsZeroOrProbabilityMeasu
     {X : Ω → E} (hX : AEMeasurable X P) : Indep (.comap X inferInstance) m P ↔
       ∀ t : E, P[fun ω ↦ exp ((⟪X ω, t⟫ : ℂ) * I) | m] =ᵐ[P] fun _ ↦ charFun (P.map X) t := by
   rw [indep_comap_iff_forall_setIntegral_exp_inner_mul_I hm hX]
-  refine ⟨fun h t ↦ (ae_eq_condExp_of_forall_setIntegral_eq hm (hX.integrable_exp_inner_mul_I t)
-      (fun _ _ _ ↦ (integrable_const _).integrableOn) (fun A hA _ ↦ by
-        rw [setIntegral_const, Measure.real, Complex.real_smul, h t A hA])
-      aestronglyMeasurable_const).symm,
-    fun h t _ hA ↦ setIntegral_exp_inner_mul_I_of_condExp hm hX (h t) hA⟩
+  refine forall_congr' fun t ↦ ?_
+  rw [TauCeti.MeasureTheory.condExp_ae_eq_const_iff hm (hX.integrable_exp_inner_mul_I t)]
+  simp only [Measure.real, Complex.real_smul, measure_lt_top, true_implies]
 
 /-- If the conditional characteristic function of `X` given `m` is almost surely equal to a
 deterministic function `φ`, then `X` is independent of `m`. -/
@@ -114,7 +104,9 @@ theorem indep_comap_of_condExp_exp_inner_mul_I [IsZeroOrProbabilityMeasure P] (h
     {X : Ω → E} (hX : AEMeasurable X P) {φ : E → ℂ}
     (h : ∀ t : E, P[fun ω ↦ exp ((⟪X ω, t⟫ : ℂ) * I) | m] =ᵐ[P] fun _ ↦ φ t) :
     Indep (.comap X inferInstance) m P :=
-  indep_comap_of_setIntegral_exp_inner_mul_I hm hX fun t _ hA ↦
-    setIntegral_exp_inner_mul_I_of_condExp hm hX (h t) hA
+  indep_comap_of_setIntegral_exp_inner_mul_I hm hX fun t A hA ↦ by
+    simpa only [Measure.real, Complex.real_smul] using
+      (TauCeti.MeasureTheory.condExp_ae_eq_const_iff hm
+        (hX.integrable_exp_inner_mul_I t) (φ t)).1 (h t) A hA (measure_lt_top _ _)
 
 end ProbabilityTheory

@@ -27,9 +27,13 @@ processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_in
 Pathwise set membership up to the random time also passes to the stopped process. Neither
 fact requires a stopping-time or measurability assumption. Restricting a strongly progressive
 process to `{⊥ < τ}` before stopping preserves strong progressivity
-(`MeasureTheory.IsStronglyProgressive.stoppedProcess_indicator_pos`). Under a finite measure,
-truncating an almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic bound
-`T : ℝ≥0` yields an integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`).
+(`MeasureTheory.IsStronglyProgressive.stoppedProcess_indicator_pos`), algebraic operations
+commute with `{⊥ < τ}`-stopped processes (`MeasureTheory.stoppedProcess_indicator_pos_smul`,
+`_add`, `_sub`, `_mul`, `_sq_sub`), deterministic processes vanishing at `⊥` evaluate via
+truncation (`MeasureTheory.stoppedProcess_indicator_pos_of_map_bot`,
+`MeasureTheory.stoppedProcess_indicator_linear`), and under a finite measure, truncating an
+almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic bound `T : ℝ≥0` yields
+an integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`).
 -/
 
 public section
@@ -149,6 +153,7 @@ theorem stoppedProcess_indicator_pos_apply {ι Ω E : Type*} [LinearOrder ι] [O
   simp only [Set.indicator_apply, Set.mem_ofPred_eq, stoppedProcess]
 
 /-- Scalar multiplication commutes with stopping on `{⊥ < τ}`. -/
+@[simp]
 theorem stoppedProcess_indicator_pos_smul {R ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
     [Zero E] [SMulZeroClass R E] (a : R) (X : ι → Ω → E) (τ : Ω → WithTop ι) :
     stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun ω ↦ a • X t ω)) τ =
@@ -158,6 +163,7 @@ theorem stoppedProcess_indicator_pos_smul {R ι Ω E : Type*} [LinearOrder ι] [
   split_ifs <;> simp
 
 /-- Pointwise addition commutes with stopping on `{⊥ < τ}`. -/
+@[simp]
 theorem stoppedProcess_indicator_pos_add {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
     [AddMonoid E] (X Y : ι → Ω → E) (τ : Ω → WithTop ι) :
     stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun ω ↦ X t ω + Y t ω)) τ =
@@ -168,6 +174,7 @@ theorem stoppedProcess_indicator_pos_add {ι Ω E : Type*} [LinearOrder ι] [Ord
   split_ifs <;> simp
 
 /-- Pointwise subtraction commutes with stopping on `{⊥ < τ}`. -/
+@[simp]
 theorem stoppedProcess_indicator_pos_sub {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
     [AddGroup E] (X Y : ι → Ω → E) (τ : Ω → WithTop ι) :
     stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun ω ↦ X t ω - Y t ω)) τ =
@@ -178,6 +185,7 @@ theorem stoppedProcess_indicator_pos_sub {ι Ω E : Type*} [LinearOrder ι] [Ord
   split_ifs <;> simp
 
 /-- Pointwise multiplication commutes with stopping on `{⊥ < τ}`. -/
+@[simp]
 theorem stoppedProcess_indicator_pos_mul {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
     [MulZeroClass E] (X Y : ι → Ω → E) (τ : Ω → WithTop ι) :
     stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun ω ↦ X t ω * Y t ω)) τ =
@@ -194,6 +202,18 @@ theorem stoppedProcess_indicator_pos_sq_sub {ι Ω E : Type*} [LinearOrder ι] [
       fun t ω ↦ stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ t ω ^ 2 -
         stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (A t)) τ t ω := by
   simp only [sq, stoppedProcess_indicator_pos_sub, stoppedProcess_indicator_pos_mul]
+
+/-- Evaluating the stopped restriction to `{⊥ < τ}` of a deterministic process `u ↦ f u` with
+`f ⊥ = 0` simplifies to `f (min (t : WithTop ι) (τ ω)).untopA`. -/
+theorem stoppedProcess_indicator_pos_of_map_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [Zero E] {f : ι → E} (hf : f ⊥ = 0) (τ : Ω → WithTop ι) (t : ι) (ω : Ω) :
+    stoppedProcess (fun u ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun _ ↦ f u)) τ t ω =
+      f (min (t : WithTop ι) (τ ω)).untopA := by
+  rw [stoppedProcess_indicator_pos_apply]
+  split_ifs with h
+  · rfl
+  · rw [not_lt, le_bot_iff] at h
+    rw [h, min_eq_right bot_le, WithTop.untopA_bot, hf]
 
 /-- At the initial time, stopping leaves any process unchanged. -/
 @[simp]
@@ -238,9 +258,8 @@ theorem stoppedProcess_indicator_pos_stoppedProcess_of_le {ι Ω E : Type*} [Lin
   · have hσω : (⊥ : WithTop ι) < σ ω := lt_of_lt_of_le hω (hle ω)
     have hmin_coe :
         ((min (t : WithTop ι) (τ ω)).untopA : WithTop ι) = min (t : WithTop ι) (τ ω) := by
-      cases hτω : τ ω with
-      | top => simp [WithTop.untopA, WithTop.untopD_coe]
-      | coe u => rw [← WithTop.coe_min, WithTop.untopA, WithTop.untopD_coe, WithTop.coe_min]
+      rw [WithTop.untopA_eq_untop (ne_top_of_le_ne_top WithTop.coe_ne_top (min_le_left _ _)),
+        WithTop.coe_untop]
     have hmin_le : min ((min (t : WithTop ι) (τ ω)).untopA : WithTop ι) (σ ω) =
         min (t : WithTop ι) (τ ω) := by
       rw [hmin_coe, min_eq_left ((min_le_right _ _).trans (hle ω))]
@@ -295,6 +314,16 @@ theorem IsStronglyProgressive.stoppedProcess_indicator_pos
   by_cases hω : (⊥ : WithTop ι) < τ ω <;> simp [hω]
 
 open scoped NNReal
+
+/-- Stopping the deterministic linear drift `u _ ↦ c * (u : ℝ)` restricted to `{0 < τ}`
+evaluates to `c * ((min (t : WithTop ℝ≥0) (τ ω)).untopA : ℝ)`. -/
+theorem stoppedProcess_indicator_linear {Ω : Type*} (c : ℝ) (τ : Ω → WithTop ℝ≥0)
+    (t : ℝ≥0) (ω : Ω) :
+    stoppedProcess (fun u : ℝ≥0 ↦
+        {ω | (0 : WithTop ℝ≥0) < τ ω}.indicator (fun _ ↦ c * (u : ℝ))) τ t ω =
+      c * ((min (t : WithTop ℝ≥0) (τ ω)).untopA : ℝ) := by
+  simpa only [bot_eq_zero] using
+    stoppedProcess_indicator_pos_of_map_bot (f := fun u : ℝ≥0 ↦ c * (u : ℝ)) (by simp) τ t ω
 
 /-- For any almost everywhere measurable `WithTop ℝ≥0`-valued function and deterministic horizon
 `T`, the truncated value `(min T (τ ω)).untopA` is integrable under any finite measure. -/

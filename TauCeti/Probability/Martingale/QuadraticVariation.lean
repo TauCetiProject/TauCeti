@@ -24,6 +24,8 @@ Provides set-integral and second-moment bounds for the discrete quadratic sum
 * `MeasureTheory.Martingale.integral_mul_increment_sq_le`: a nonnegative bounded `ℱ u`-measurable
   weight multiplied by `(Y v - Y u) ^ 2` has expectation bounded by `c * (v - u) * E[W]` when
   `Y ^ 2 - A` is a martingale and `A` has `c`-Lipschitz increments.
+* `MeasureTheory.Martingale.integral_increment_sq_le`: the unweighted second-moment increment
+  bound `E[(Y v - Y u) ^ 2] ≤ c * (v - u) * μ.real univ`.
 * `MeasureTheory.Martingale.integral_quadraticSum_sq_le`: a bounded continuous-bracket real
   martingale satisfies an `L²` bound on `quadraticSum Y g` depending only on the uniform bound on
   `Y` and the Lipschitz bracket increment `c * (g (Fin.last n) - g 0)`.
@@ -74,13 +76,6 @@ theorem setIntegral_sq_sub_eq_quadraticSum [SigmaFiniteFiltration μ ℱ] {Y : �
   congr 1; ext ω
   rw [Fin.sum_univ_succ_sub_castSucc (fun i ↦ Y (g i) ω ^ 2), hg0, hgl]
 
-private lemma integrableOn_mul_of_bound {f W : Ω → ℝ} {S : Set Ω} {C : ℝ}
-    (hf : Integrable f μ) (hW : AEStronglyMeasurable W μ) (hb : ∀ᵐ ω ∂μ, ‖W ω‖ ≤ C) :
-    IntegrableOn (fun ω ↦ f ω * W ω) S μ := by
-  have heq : (fun ω ↦ f ω * W ω) = fun ω ↦ W ω * f ω := funext fun ω ↦ mul_comm _ _
-  rw [heq]
-  exact (hf.bdd_mul hW hb).integrableOn
-
 /-- For a real `L²` martingale `Y` whose compensated square `Y ^ 2 - A` is a martingale with
 `c`-Lipschitz increments `A v - A u ≤ c * (v - u)`, multiplying `(Y v - Y u) ^ 2` by any bounded
 nonnegative `ℱ u`-measurable weight `W` yields expectation at most `c * (v - u) * ∫ W ∂μ`. -/
@@ -91,8 +86,7 @@ theorem integral_mul_increment_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω 
     {W : Ω → ℝ} {C : ℝ} (hW_sm : StronglyMeasurable[ℱ u] W)
     (hW_bd : ∀ᵐ ω ∂μ, W ω ≤ C) (hW_nn : ∀ ω, 0 ≤ W ω) :
     ∫ ω, W ω * (Y v ω - Y u ω) ^ 2 ∂μ ≤ c * ((v : ℝ) - u) * ∫ ω, W ω ∂μ := by
-  have hA : StronglyAdapted ℱ A := fun w ↦ by
-    convert ((hY.stronglyAdapted w).pow 2).sub (hQ.stronglyAdapted w); ext ω; simp
+  have hA : StronglyAdapted ℱ A := hY.stronglyAdapted.of_sq_sub hQ.stronglyAdapted
   have hd : Integrable (fun ω ↦ (Y v ω - Y u ω) ^ 2) μ := by
     simpa only [Pi.sub_apply] using (hYv.sub hYu).integrable_sq
   have ha : Integrable (fun ω ↦ A v ω - A u ω) μ := hA.integrable_sub_of_nonneg_le (hA_step u v huv)
@@ -100,11 +94,11 @@ theorem integral_mul_increment_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω 
   have hW_nbd : ∀ᵐ ω ∂μ, ‖W ω‖ ≤ C :=
     hW_bd.mono fun ω h ↦ by rwa [Real.norm_eq_abs, abs_of_nonneg (hW_nn ω)]
   have h0 := hY.setIntegral_sq_sub_smul_eq_zero hQ huv MeasurableSet.univ hW_sm.aestronglyMeasurable
-    (integrableOn_mul_of_bound ((hQ.integrable v).sub (hQ.integrable u)) hW_asm hW_nbd)
+    ((((hQ.integrable v).sub (hQ.integrable u)).mul_bdd hW_asm hW_nbd).integrableOn)
     (by
       have hmul : Integrable (fun ω ↦ (Y v ω - Y u ω) * Y u ω) μ := by
         convert (hYv.sub hYu).integrable_mul hYu
-      simpa only [smul_eq_mul, mul_assoc] using integrableOn_mul_of_bound hmul hW_asm hW_nbd)
+      simpa only [smul_eq_mul, mul_assoc] using (hmul.mul_bdd hW_asm hW_nbd).integrableOn)
   have hmul_eq (ω : Ω) :
       ((Y v ω - Y u ω) ^ 2 - (A v ω - A u ω)) • W ω =
         W ω * (Y v ω - Y u ω) ^ 2 - W ω * (A v ω - A u ω) := by
@@ -118,6 +112,17 @@ theorem integral_mul_increment_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω 
       rw [mul_comm (c * _)]
       exact mul_le_mul_of_nonneg_left hω.2 (hW_nn ω))
 
+/-- Unweighted second-moment bound for the increment of a real `L²` martingale `Y` whose
+compensated square `Y ^ 2 - A` is a martingale with `c`-Lipschitz increments. -/
+theorem integral_increment_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → ℝ} {c : ℝ}
+    (hY : Martingale Y ℱ μ) (hQ : Martingale (fun u ω ↦ Y u ω ^ 2 - A u ω) ℱ μ)
+    (hA_step : ∀ u v, u ≤ v → ∀ᵐ ω ∂μ, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ c * ((v : ℝ) - u))
+    {u v : ℝ≥0} (huv : u ≤ v) (hYu : MemLp (Y u) 2 μ) (hYv : MemLp (Y v) 2 μ) :
+    ∫ ω, (Y v ω - Y u ω) ^ 2 ∂μ ≤ c * ((v : ℝ) - u) * μ.real Set.univ := by
+  simpa [integral_const, mul_comm (μ.real Set.univ)] using
+    hY.integral_mul_increment_sq_le hQ hA_step huv hYu hYv (W := fun _ ↦ (1 : ℝ))
+      stronglyMeasurable_const (C := 1) (ae_of_all μ fun _ ↦ le_rfl) (fun _ ↦ zero_le_one)
+
 private lemma integral_quadraticSum_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → ℝ} {c : ℝ}
     (hY : Martingale Y ℱ μ) (hQ : Martingale (fun u ω ↦ Y u ω ^ 2 - A u ω) ℱ μ)
     (hA_step : ∀ u v, u ≤ v → ∀ᵐ ω ∂μ, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ c * ((v : ℝ) - u))
@@ -125,11 +130,9 @@ private lemma integral_quadraticSum_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → �
     ∫ ω, quadraticSum Y g ω ∂μ ≤ c * ((g (Fin.last n) : ℝ) - g 0) * μ.real Set.univ := by
   have hd_le (i : Fin n) :
       ∫ ω, (Y (g i.succ) ω - Y (g i.castSucc) ω) ^ 2 ∂μ ≤
-        c * ((g i.succ : ℝ) - g i.castSucc) * μ.real Set.univ := by
-    simpa [integral_const, mul_comm (μ.real Set.univ)] using
-      hY.integral_mul_increment_sq_le hQ hA_step (hg (Fin.castSucc_le_succ i))
-        (hmem i.castSucc) (hmem i.succ) (W := fun _ ↦ (1 : ℝ))
-        stronglyMeasurable_const (C := 1) (ae_of_all μ fun _ ↦ le_rfl) (fun _ ↦ zero_le_one)
+        c * ((g i.succ : ℝ) - g i.castSucc) * μ.real Set.univ :=
+    hY.integral_increment_sq_le hQ hA_step (hg (Fin.castSucc_le_succ i))
+      (hmem i.castSucc) (hmem i.succ)
   rw [quadraticSum_def, integral_finsetSum _ fun j _ ↦ by
     simpa only [Pi.sub_apply] using ((hmem j.succ).sub (hmem j.castSucc)).integrable_sq]
   refine (Finset.sum_le_sum fun j _ ↦ hd_le j).trans_eq ?_
@@ -178,12 +181,9 @@ private lemma integral_last_increment_pow_four_le [IsFiniteMeasure μ] {Y A : �
   have hstep_le : (g (Fin.last n).castSucc : ℝ≥0) ≤ g (Fin.last (n + 1)) := by
     simpa [Fin.succ_last] using hg (Fin.castSucc_le_succ (Fin.last n))
   have hd_last : ∫ ω, d ω ∂μ ≤
-      c * ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) * μ.real Set.univ := by
-    simpa [d, integral_const, mul_comm (μ.real Set.univ)] using
-      hY.integral_mul_increment_sq_le hQ hA_step hstep_le
-        (hmem (Fin.last n).castSucc) (hmem (Fin.last (n + 1)))
-        (W := fun _ ↦ (1 : ℝ)) stronglyMeasurable_const (C := 1)
-        (ae_of_all μ fun _ ↦ le_rfl) (fun _ ↦ zero_le_one)
+      c * ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) * μ.real Set.univ :=
+    hY.integral_increment_sq_le hQ hA_step hstep_le
+      (hmem (Fin.last n).castSucc) (hmem (Fin.last (n + 1)))
   have h4R : (2 * R) ^ 2 = 4 * R ^ 2 := by ring
   rw [← h4R]
   refine ((integral_mono_ae hd_lp.integrable_sq

@@ -9,17 +9,36 @@ public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.Probability.Process.Adapted
 
 /-!
-# Integrability of dominated increments of strongly adapted processes
+# Strong adaptation helpers and integrability of dominated increments
 
 An increment of a strongly adapted process dominated almost surely by a constant is integrable
 under any finite measure (`MeasureTheory.StronglyAdapted.integrable_sub_of_bound`), with a
 specialization to nonnegative real increments
-(`MeasureTheory.StronglyAdapted.integrable_sub_of_nonneg_le`).
+(`MeasureTheory.StronglyAdapted.integrable_sub_of_nonneg_le`). Also provides
+`MeasureTheory.StronglyAdapted.of_sub` and `MeasureTheory.StronglyAdapted.of_sq_sub` for
+recovering strong adaptation of `A` from `Y` and `Y - A` (or `X` and `X ^ 2 - A`).
 -/
 
 public section
 
 namespace MeasureTheory.StronglyAdapted
+
+/-- If `Y` and `Y - A` are strongly adapted processes, then `A` is strongly adapted. -/
+theorem of_sub {ι Ω E : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω} {ℱ : Filtration ι mΩ}
+    [AddCommGroup E] [TopologicalSpace E] [ContinuousSub E]
+    {Y A : ι → Ω → E} (hY : StronglyAdapted ℱ Y)
+    (hQ : StronglyAdapted ℱ (fun u ω ↦ Y u ω - A u ω)) :
+    StronglyAdapted ℱ A := fun u ↦ by
+  convert (hY u).sub (hQ u) using 1
+  ext ω
+  simp
+
+/-- If `X` and `X ^ 2 - A` are strongly adapted real processes, then `A` is strongly adapted. -/
+theorem of_sq_sub {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω} {ℱ : Filtration ι mΩ}
+    {X A : ι → Ω → ℝ} (hX : StronglyAdapted ℱ X)
+    (hQ : StronglyAdapted ℱ (fun u ω ↦ X u ω ^ 2 - A u ω)) :
+    StronglyAdapted ℱ A :=
+  of_sub (fun u ↦ (hX u).pow 2) hQ
 
 /-- An increment of a strongly adapted process dominated almost surely by a constant is integrable
 under any finite measure. -/

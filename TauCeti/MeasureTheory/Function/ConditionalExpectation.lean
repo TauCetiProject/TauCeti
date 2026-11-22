@@ -48,6 +48,8 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
   over the events `{X ∈ A}`.
 - `condExpLp`: for a finite measure and `1 ≤ p ≤ ∞`, conditional expectation as a contractive
   continuous linear operator on `Lᵖ`.
+- `condExp_ae_eq_const_iff`: a Banach-valued conditional expectation is almost surely equal to a
+  constant `c` iff every finite-measure `m`-set integral equals `μ.real s • c`.
 
 All are generic conditional-expectation facts (no exchangeability/tail/directing-measure
 hypotheses), each the bridge for a downstream construction.
@@ -417,6 +419,20 @@ theorem norm_condExpLp_le : ‖(condExpLp 𝕜 m p μ : Lp E p μ →L[𝕜] Lp 
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 end Lp
+
+/-- A Banach-valued conditional expectation `μ[f | m]` is almost surely equal to a constant `c`
+if and only if every finite-measure `m`-measurable set integral of `f` equals `μ.real s • c`. -/
+theorem condExp_ae_eq_const_iff {Ω E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {m m₀ : MeasurableSpace Ω} {μ : Measure Ω} (hm : m ≤ m₀)
+    [SigmaFinite (μ.trim hm)] {f : Ω → E} (hf : Integrable f μ) (c : E) :
+    μ[f | m] =ᵐ[μ] (fun _ ↦ c) ↔
+      ∀ s : Set Ω, MeasurableSet[m] s → μ s < ∞ → ∫ ω in s, f ω ∂μ = μ.real s • c := by
+  refine ⟨fun h s hs _ ↦ ?_, fun h ↦ (ae_eq_condExp_of_forall_setIntegral_eq hm hf
+    (fun _ _ hμs ↦ integrableOn_const hμs.ne)
+    (fun s hs hμs ↦ by rw [setIntegral_const, h s hs hμs])
+    aestronglyMeasurable_const).symm⟩
+  rw [← setIntegral_condExp hm hf hs,
+    setIntegral_congr_ae (hm s hs) (h.mono fun _ hω _ ↦ hω), setIntegral_const]
 
 end MeasureTheory
 

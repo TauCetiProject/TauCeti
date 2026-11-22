@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Probability.Martingale.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.MeasureTheory.Function.Lp.Bounded
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
@@ -16,6 +15,7 @@ import TauCeti.Probability.Martingale.Basic
 import TauCeti.Probability.Martingale.QuadraticVariation
 import TauCeti.Probability.Process.Adapted
 import TauCeti.Probability.Process.QuadraticVariation
+import TauCeti.Probability.Process.UniformGrid
 import TauCeti.Topology.Instances.Real.UniformGrid
 
 /-!
@@ -55,10 +55,6 @@ private def expRem (α x a : ℝ) : ℂ :=
 private abbrev remTerm (X A : ℝ≥0 → Ω → ℝ) (α : ℝ) (u v : ℝ≥0) (ω : Ω) : ℂ :=
   expProc X A α u ω * expRem α (X v ω - X u ω) (A v ω - A u ω)
 
-private def maxInc (X : ℝ≥0 → Ω → ℝ) (s t : ℝ≥0) (m : ℕ) (ω : Ω) : ℝ :=
-  (Finset.univ : Finset (Fin (m + 1))).sup' Finset.univ_nonempty fun k ↦
-    |X (uniformGridFin s t m k.succ) ω - X (uniformGridFin s t m k.castSucc) ω|
-
 private def remBound (X : ℝ≥0 → Ω → ℝ) (c : ℝ) (s t : ℝ≥0) (m : ℕ) (ω : Ω) : ℝ :=
   maxInc X s t m ω * quadraticSum X (uniformGridFin s t m) ω +
     c * ((t : ℝ) - s) * maxInc X s t m ω + (c * ((t : ℝ) - s)) ^ 2 / (m + 1 : ℝ)
@@ -67,12 +63,6 @@ private lemma remBound_eq (X : ℝ≥0 → Ω → ℝ) (c : ℝ) (s t : ℝ≥0)
     remBound X c s t m ω = maxInc X s t m ω * quadraticSum X (uniformGridFin s t m) ω +
       c * ((t : ℝ) - s) * maxInc X s t m ω + (c * ((t : ℝ) - s)) ^ 2 / (m + 1 : ℝ) :=
   rfl
-
-private lemma maxInc_nonneg (X : ℝ≥0 → Ω → ℝ) (s t : ℝ≥0) (m : ℕ) (ω : Ω) :
-    0 ≤ maxInc X s t m ω :=
-  (abs_nonneg _).trans (Finset.le_sup' (f := fun k : Fin (m + 1) ↦
-    |X (uniformGridFin s t m k.succ) ω - X (uniformGridFin s t m k.castSucc) ω|)
-    (Finset.mem_univ 0))
 
 private lemma exists_norm_expRem_le (α R : ℝ) {L : ℝ} (hL : 0 ≤ L) :
     ∃ K : ℝ, 0 ≤ K ∧ ∀ {D x a : ℝ}, |x| ≤ 2 * R → |x| ≤ D → 0 ≤ a → a ≤ L →
@@ -120,15 +110,6 @@ private lemma exists_norm_expRem_le (α R : ℝ) {L : ℝ} (hL : 0 ≤ L) :
 
 variable {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 
-private lemma ae_maxInc_le {X : ℝ≥0 → Ω → ℝ} {R : ℝ} (hXR : ∀ u, ∀ᵐ ω ∂P, |X u ω| ≤ R)
-    (s t : ℝ≥0) (m : ℕ) : ∀ᵐ ω ∂P, maxInc X s t m ω ≤ 2 * R :=
-  (ae_all_iff.2 fun k : Fin (m + 1) ↦
-    ae_norm_sub_le (f := X (uniformGridFin s t m k.succ))
-      (g := X (uniformGridFin s t m k.castSucc)) (R₁ := R) (R₂ := R)
-      ((hXR _).mono fun _ h ↦ by rwa [Real.norm_eq_abs])
-      ((hXR _).mono fun _ h ↦ by rwa [Real.norm_eq_abs])).mono fun _ h ↦
-    Finset.sup'_le _ _ fun k _ ↦ by simpa only [Real.norm_eq_abs, two_mul] using h k
-
 private lemma ae_norm_expProc_le {X A : ℝ≥0 → Ω → ℝ} {c : ℝ} (hA0 : ∀ᵐ ω ∂P, A 0 ω = 0)
     (hA_step : ∀ u v, u ≤ v → ∀ᵐ ω ∂P, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ c * ((v : ℝ) - u))
     (α : ℝ) (u : ℝ≥0) : ∀ᵐ ω ∂P, ‖expProc X A α u ω‖ ≤ Real.exp (α ^ 2 / 2 * (c * (u : ℝ))) :=
@@ -173,7 +154,8 @@ private lemma exists_ae_norm_sum_expRem_le {X A : ℝ≥0 → Ω → ℝ} {R c :
         D * (L / (m + 1 : ℝ)) + (L / (m + 1 : ℝ)) ^ 2)) fun k hk ↦ ?_).trans_eq ?_
   · obtain ⟨h1, h2⟩ := hAω k
     have hrem := hK (D := D) (hXω k)
-      (Finset.le_sup' (f := fun j : Fin (m + 1) ↦ |X (g j.succ) ω - X (g j.castSucc) ω|) hk) h1
+      ((Finset.le_sup' (f := fun j : Fin (m + 1) ↦ |X (g j.succ) ω - X (g j.castSucc) ω|)
+        hk).trans_eq (maxInc_apply X s t m ω).symm) h1
       (h2.trans (div_le_self hL (by linarith [Nat.cast_nonneg (α := ℝ) m])))
     exact ((norm_mul _ _).trans_le (mul_le_mul (hZω k) hrem (norm_nonneg _) hMz)).trans
       (by rw [mul_assoc]; gcongr)
@@ -186,50 +168,7 @@ private lemma exists_ae_norm_sum_expRem_le {X A : ℝ≥0 → Ω → ℝ} {R c :
     dsimp only [L, g, D]
     field_simp [hmne]
 
-private lemma integrableOn_smul_of_bound {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {f : Ω → ℝ} {W : Ω → F} {S : Set Ω} {C : ℝ} (hf : Integrable f P)
-    (hW : AEStronglyMeasurable W P) (hb : ∀ᵐ ω ∂P, ‖W ω‖ ≤ C) :
-    IntegrableOn (fun ω ↦ f ω • W ω) S P :=
-  ((hf.norm.const_mul (max C 0)).mono' (hf.aestronglyMeasurable.smul hW)
-    (hb.mono fun _ hω ↦ (norm_smul (f _) (W _)).trans_le
-      (by rw [mul_comm]; gcongr; exact hω.trans (le_max_left _ _)))).integrableOn
-
-private lemma ae_norm_smul_le_of_abs_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {f : Ω → ℝ} {W : Ω → F} {R C : ℝ} (hf : ∀ᵐ ω ∂P, |f ω| ≤ R) (hW : ∀ᵐ ω ∂P, ‖W ω‖ ≤ C) :
-    ∀ᵐ ω ∂P, ‖f ω • W ω‖ ≤ max R 0 * max C 0 :=
-  hf.mp <| hW.mono fun _ hC hR ↦ by
-    rw [norm_smul, Real.norm_eq_abs]
-    exact mul_le_mul (hR.trans (le_max_left _ _)) (hC.trans (le_max_left _ _))
-      (norm_nonneg _) (le_max_right _ _)
-
 variable [IsFiniteMeasure P] {ℱ : Filtration ℝ≥0 mΩ}
-
-private lemma memLp_maxInc {X : ℝ≥0 → Ω → ℝ} {R : ℝ} (hX : StronglyAdapted ℱ X)
-    (hXR : ∀ u, ∀ᵐ ω ∂P, |X u ω| ≤ R) (s t : ℝ≥0) (m : ℕ) : MemLp (maxInc X s t m) 2 P := by
-  have hm_eq : maxInc X s t m = (Finset.univ : Finset (Fin (m + 1))).sup' Finset.univ_nonempty
-      fun k ω ↦ |X (uniformGridFin s t m k.succ) ω - X (uniformGridFin s t m k.castSucc) ω| := by
-    ext ω; simp [maxInc]
-  refine MemLp.of_bound (hm_eq ▸ Finset.measurable_sup' Finset.univ_nonempty
-    fun (k : Fin (m + 1)) _ ↦ continuous_abs.measurable.comp
-      ((((hX (uniformGridFin s t m k.succ)).mono (ℱ.le _)).measurable).sub
-        (((hX (uniformGridFin s t m k.castSucc)).mono
-          (ℱ.le _)).measurable))).aestronglyMeasurable
-    (2 * R) ((ae_maxInc_le hXR s t m).mono fun ω hω ↦ by
-      rwa [Real.norm_eq_abs, abs_of_nonneg (maxInc_nonneg X s t m ω)])
-
-private lemma tendsto_integral_maxInc_sq {X : ℝ≥0 → Ω → ℝ} {R : ℝ} (hX : StronglyAdapted ℱ X)
-    (hcont : ∀ᵐ ω ∂P, Continuous (X · ω)) (hXR : ∀ u, ∀ᵐ ω ∂P, |X u ω| ≤ R)
-    {s t : ℝ≥0} (hst : s ≤ t) : Tendsto (fun m ↦ ∫ ω, maxInc X s t m ω ^ 2 ∂P) atTop (𝓝 0) := by
-  simpa only [integral_zero] using tendsto_integral_of_dominated_convergence
-    (F := fun m ω ↦ maxInc X s t m ω ^ 2) (f := fun _ ↦ (0 : ℝ)) (fun _ ↦ (2 * R) ^ 2)
-    (fun m ↦ (memLp_maxInc hX hXR s t m).aestronglyMeasurable.pow 2) (integrable_const _)
-    (fun m ↦ (ae_maxInc_le hXR s t m).mono fun ω h ↦ by
-      rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-      exact pow_le_pow_left₀ (maxInc_nonneg X s t m ω) h 2)
-    (hcont.mono fun ω hω ↦ by
-      rw [← zero_pow two_ne_zero]
-      simpa only [maxInc, Real.dist_eq] using
-        (tendsto_sup'_dist_uniformGridFin hst hω.continuousOn).pow 2)
 
 section PartitionEstimates
 
@@ -244,8 +183,7 @@ private lemma setIntegral_expProc_step (hA0 : ∀ᵐ ω ∂P, A 0 ω = 0) (α : 
     IntegrableOn (fun ω ↦ remTerm X A α u v ω) E P ∧
       ∫ ω in E, (expProc X A α v ω - expProc X A α u ω) ∂P =
         ∫ ω in E, remTerm X A α u v ω ∂P := by
-  have hA : StronglyAdapted ℱ A := fun w ↦ by
-    convert ((hX.stronglyAdapted w).pow 2).sub (hQ.stronglyAdapted w); ext ω; simp
+  have hA : StronglyAdapted ℱ A := hX.stronglyAdapted.of_sq_sub hQ.stronglyAdapted
   have hZ_bd := ae_norm_expProc_le (X := X) hA0 hA_step α u
   have hZ_asm : AEStronglyMeasurable (expProc X A α u) P :=
     ((hZ_adapt u).mono (ℱ.le u)).aestronglyMeasurable
@@ -276,12 +214,13 @@ private lemma setIntegral_expProc_step (hA0 : ∀ᵐ ω ∂P, A 0 ω = 0) (α : 
   simp_rw [hdec]
   rw [integral_add hZs1 h2, integral_sub hZs h1, integral_const_mul, integral_const_mul,
     hX.setIntegral_sub_smul_eq_zero huv (ℱ.mono hsu _ hE) (hZ_adapt u).aestronglyMeasurable
-      (integrableOn_smul_of_bound ((hX.integrable v).sub (hX.integrable u)) hZ_asm hZ_bd),
+      (((hX.integrable v).sub (hX.integrable u)).smul_bdd _ hZ_asm hZ_bd).integrableOn,
     hX.setIntegral_sq_sub_smul_eq_zero hQ huv (ℱ.mono hsu _ hE) (hZ_adapt u).aestronglyMeasurable
-      (integrableOn_smul_of_bound ((hQ.integrable v).sub (hQ.integrable u)) hZ_asm hZ_bd)
-      (integrableOn_smul_of_bound ((hX.integrable v).sub (hX.integrable u))
+      (((hQ.integrable v).sub (hQ.integrable u)).smul_bdd _ hZ_asm hZ_bd).integrableOn
+      (((hX.integrable v).sub (hX.integrable u)).smul_bdd _
         (((hX.stronglyAdapted u).mono (ℱ.le u)).aestronglyMeasurable.smul hZ_asm)
-        (ae_norm_smul_le_of_abs_le (hXR u) hZ_bd))]
+        (MeasureTheory.ae_norm_smul_le (f := X u)
+          ((hXR u).mono fun _ h ↦ (Real.norm_eq_abs _).trans_le h) hZ_bd)).integrableOn]
   simp
 
 private lemma integral_maxInc_remBound_le (hc : 0 ≤ c) {s t : ℝ≥0} (hst : s ≤ t) (m : ℕ) :
@@ -295,7 +234,8 @@ private lemma integral_maxInc_remBound_le (hc : 0 ≤ c) {s t : ℝ≥0} (hst : 
   have hXa := hX.stronglyAdapted
   let S := quadraticSum X g
   have hL : 0 ≤ L := mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 hst))
-  have hD_lp := memLp_maxInc hXa hXR s t m
+  have hD_lp := memLp_maxInc 2 s t m (fun k ↦ ((hXa (g k)).mono (ℱ.le _)).aestronglyMeasurable)
+    (fun _ ↦ hXR _)
   have hS_lp : MemLp S 2 P :=
     memLp_quadraticSum_of_bound 2 g (fun k ↦ ((hXa (g k)).mono (ℱ.le _)).aestronglyMeasurable)
       (fun _ ↦ hXR _)
@@ -372,8 +312,7 @@ theorem exp_I_mul_add_of_bounded {X A : ℝ≥0 → Ω → ℝ} {R c : ℝ}
     (hA_step : ∀ u v, u ≤ v → ∀ᵐ ω ∂P, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ c * ((v : ℝ) - u))
     (α : ℝ) :
     Martingale (fun t ω ↦ exp (I * α * X t ω + ((α ^ 2 / 2 * A t ω : ℝ) : ℂ))) ℱ P := by
-  have hA_adapt : StronglyAdapted ℱ A := fun u ↦ by
-    convert ((hX.stronglyAdapted u).pow 2).sub (hQ.stronglyAdapted u); ext ω; simp
+  have hA_adapt : StronglyAdapted ℱ A := hX.stronglyAdapted.of_sq_sub hQ.stronglyAdapted
   have hA_step' u v (huv : u ≤ v) := (hA_step u v huv).mono fun _ hω ↦ And.intro hω.1 <| hω.2.trans
     (mul_le_mul_of_nonneg_right (le_max_left c 0) (sub_nonneg.2 (NNReal.coe_le_coe.2 huv)))
   have hZ_adapt : StronglyAdapted ℱ (expProc X A α) := fun u ↦
@@ -391,7 +330,9 @@ theorem exp_I_mul_add_of_bounded {X A : ℝ≥0 → Ω → ℝ} {R c : ℝ}
   exact le_antisymm (ge_of_tendsto' (by
     simpa only [Function.comp_def, Real.sqrt_zero, mul_zero, mul_one_div, add_zero] using
       ((Real.continuous_sqrt.continuousAt.tendsto.comp
-        (tendsto_integral_maxInc_sq hX.stronglyAdapted hcont hXR hst)).const_mul C₁).add
+        (tendsto_integral_maxInc_sq hst
+          (fun u _ ↦ ((hX.stronglyAdapted u).mono (ℱ.le u)).aestronglyMeasurable)
+          (hcont.mono fun _ hω ↦ hω.continuousOn) (fun u _ ↦ hXR u))).const_mul C₁).add
         ((tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).const_mul C₂)) hbd) (norm_nonneg _)
 
 end MeasureTheory.Martingale
