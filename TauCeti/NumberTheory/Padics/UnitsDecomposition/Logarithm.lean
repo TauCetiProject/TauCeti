@@ -275,6 +275,13 @@ theorem unitsPrincipalLogEquiv_padicUnitsGenerator :
       .ofAdd 1 :=
   (unitsPrincipalLogEquiv p).apply_symm_apply _
 
+-- Not a `simp` lemma: it would loop with unfolding `padicUnitsGenerator`.
+/-- The inverse logarithm sends `1 ∈ ℤ_p` to `γ = exp q`, as an element of `1 + qℤ_p`. -/
+theorem unitsPrincipalLogEquiv_symm_ofAdd_one :
+    (unitsPrincipalLogEquiv p).symm (.ofAdd 1) =
+      ⟨padicUnitsGenerator p, padicUnitsGenerator_mem_unitsPrincipal⟩ :=
+  (unitsPrincipalLogEquiv p).symm_apply_eq.mpr unitsPrincipalLogEquiv_padicUnitsGenerator.symm
+
 /-- The powers of `γ = exp q` are `γ ^ k = exp (q k)`, for `k ∈ ℤ`. -/
 theorem coe_padicUnitsGenerator_zpow (k : ℤ) :
     (((padicUnitsGenerator p ^ k : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) =
