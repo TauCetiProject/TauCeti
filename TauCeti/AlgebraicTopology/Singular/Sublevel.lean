@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Empty
-public import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
+public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Finrank
 public import TauCeti.Topology.Order.Sublevel
 
 /-!
@@ -32,7 +32,7 @@ natural number coefficients, when no step has homology in degree `n + 1`
 `TauCeti.exists_sum_range_monomial_sum_sublevelPair_eq_add_mul`), and the
 lacunary principle `b = c` when of any two consecutive `cᵢ` one vanishes
 (`TauCeti.finrank_singularHomology_eq_sum_sublevelPair`). These are the filtration statements of
-`TauCeti.AlgebraicTopology.Singular.Triple.Finrank` for the sublevels, read through the
+`TauCeti.AlgebraicTopology.Singular.FilteredSpace.Finrank` for the sublevels, read through the
 identification above.
 
 When `f` is a smooth function on a compact manifold cut at regular values between its critical
@@ -71,7 +71,8 @@ variable {X : Type u} [TopologicalSpace X] {β : Type*} [Preorder β] {f : X →
 `{f ≤ b}` to the relative homology of the sublevel pair is an isomorphism. -/
 private theorem isIso_singularHomologyπ_sublevelPair (hab : a ≤ b) (ha : ∀ x, a < f x) (R : C)
     (n : ℕ) : IsIso ((sublevelPair f hab).singularHomologyπ R n) := by
-  have : IsEmpty (sublevelPair f hab).snd := ⟨fun (x : {x : X | f x ≤ a}) ↦ (ha x).not_ge x.2⟩
+  have : IsEmpty (sublevelPair f hab).snd := ⟨fun (x : {x : X | f x ≤ a}) ↦
+      (ha x).not_ge x.property⟩
   infer_instance
 
 /-- **The sublevel pair of a band covering `X`.** If `a < f ≤ b` everywhere, the relative singular
@@ -96,7 +97,7 @@ theorem singularHomologyπ_comp_singularHomologyIsoSublevelPair_inv (hab : a ≤
     (sublevelPair f hab).singularHomologyπ R n ≫
         (singularHomologyIsoSublevelPair hab ha hb R n).inv =
       ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map
-        (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) := by
+        (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩) := by
   rw [singularHomologyIsoSublevelPair, Iso.trans_inv]
   exact (@asIso _ _ _ _ _ (isIso_singularHomologyπ_sublevelPair hab ha R n)).hom_inv_id_assoc _
 

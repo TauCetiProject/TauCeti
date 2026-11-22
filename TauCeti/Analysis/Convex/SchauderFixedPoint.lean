@@ -83,17 +83,17 @@ theorem exists_dist_le_of_isCompact_closure_image (hC : IsClosed C) (hconv : Con
   -- A partition of unity on `K` moves each point of `K` by at most `ε` into the convex hull `D`
   -- of the finitely many points `T` of `K` it is indexed by.
   obtain ⟨s, ρ, hρ⟩ := ContinuousMap.exists_partitionOfUnity_dist_finsum_smul_le
-    ⟨((↑) : K → E), continuous_subtype_val⟩ hε
+    ⟨((↑) : K → E), continuous_subtypeVal⟩ hε
   let T : Set E := (↑) '' (s : Set K)
   let D := convexHull ℝ T
   let P : K → E := fun y ↦ ∑ᶠ k : s, ρ k y • ((k : K) : E)
   have hTfin : T.Finite := s.finite_toSet.image _
   have hP : ∀ y, P y ∈ D := fun y ↦ ρ.finsum_smul_mem_convex (g := fun k _ ↦ ((k : K) : E))
-    (mem_univ y) (fun k _ ↦ subset_convexHull ℝ T ⟨k, k.2, rfl⟩) (convex_convexHull ℝ T)
+    (mem_univ y) (fun k _ ↦ subset_convexHull ℝ T ⟨k, k.property, rfl⟩) (convex_convexHull ℝ T)
   have hPc : Continuous P := by
     simp only [P, finsum_eq_sum_of_fintype]
     fun_prop
-  have hDC : D ⊆ C := convexHull_min (image_subset_iff.2 fun k _ ↦ hKC k.2) hconv
+  have hDC : D ⊆ C := convexHull_min (image_subset_iff.2 fun k _ ↦ hKC k.property) hconv
   have hDK : MapsTo f D K := fun x hx ↦ subset_closure (mem_image_of_mem f (hDC hx))
   -- Brouwer's theorem on `D`, which lies in the finite-dimensional span of `T`, gives a fixed
   -- point of `P ∘ f`.
@@ -105,7 +105,7 @@ theorem exists_dist_le_of_isCompact_closure_image (hC : IsClosed C) (hconv : Con
     (hTfin.isCompact_convexHull (𝕜 := ℝ)) (convex_convexHull ℝ T) ⟨P ⟨y, hy⟩, hP _⟩
     ⟨fun x ↦ ⟨P (hDK.restrict f D K x), hP _⟩,
       (hPc.comp ((hf.mono hDC).mapsToRestrict hDK)).subtype_mk _⟩
-  refine ⟨x, hDC x.2, ?_⟩
+  refine ⟨x, hDC x.property, ?_⟩
   have hx' : P (hDK.restrict f D K x) = x := congrArg Subtype.val hx
   calc dist (f x) x = dist (f x) (P (hDK.restrict f D K x)) := by rw [hx']
     _ ≤ ε := (dist_comm _ _).trans_le (hρ _)
@@ -137,10 +137,10 @@ theorem schauderFixedPoint_closedConvex (hC : IsClosed C) (hconv : Convex ℝ C)
   -- Extend `f` to the ambient space by the identity off `C`.
   let g : E → E := fun x ↦ if hx : x ∈ C then f ⟨x, hx⟩ else x
   have hg : ∀ x : C, g x = f x := fun x ↦ by simp [g]
-  have hgC : MapsTo g C C := fun x hx ↦ (hg ⟨x, hx⟩).symm ▸ (f ⟨x, hx⟩).2
+  have hgC : MapsTo g C C := fun x hx ↦ (hg ⟨x, hx⟩).symm ▸ (f ⟨x, hx⟩).property
   have hgc : ContinuousOn g C := by
     rw [continuousOn_iff_continuous_domRestrict]
-    exact (continuous_subtype_val.comp f.continuous).congr fun x ↦ (hg x).symm
+    exact (continuous_subtypeVal.comp f.continuous).congr fun x ↦ (hg x).symm
   have himage : g '' C = range fun x ↦ (f x : E) := by
     rw [image_eq_range]
     exact congrArg range (funext hg)
@@ -155,7 +155,7 @@ finite-dimensional subspace. -/
 theorem schauderFixedPoint_compactConvex (hC : IsCompact C) (hconv : Convex ℝ C)
     (hne : C.Nonempty) (f : C(C, C)) : ∃ x, IsFixedPt f x :=
   schauderFixedPoint_closedConvex hC.isClosed hconv hne f <| hC.of_isClosed_subset
-    isClosed_closure (closure_minimal (range_subset_iff.2 fun x ↦ (f x).2) hC.isClosed)
+    isClosed_closure (closure_minimal (range_subset_iff.2 fun x ↦ (f x).property) hC.isClosed)
 
 /-- **Convex-combination fixed points**: let `g` map a nonempty closed convex set `C`
 continuously into a compact set `S`, and let `f i` be finitely many continuous maps such that each

@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.RegularValue.Open
+import TauCeti.Analysis.Normed.Module.Orientation
 
 /-!
 # Pulling back orientations
@@ -57,6 +58,11 @@ spaces glued from oriented pieces, such as the connected sum.
 * `TauCeti.Manifold.Orientation.eventually_isOrientationPreservingAt`,
   `TauCeti.Manifold.Orientation.eventually_isOrientationReversingAt`: a `C¹` map that preserves
   (reverses) orientation at a point does so at every nearby point.
+* `IsPreconnected.isOrientationPreservingAt_iff`: on a preconnected set where a `C¹` map has
+  invertible derivative, it preserves orientation at one point exactly when it does at any other.
+* `TauCeti.Manifold.Orientation.exists_eventually_isOrientationPreservingAt`: a map into the model
+  space with invertible derivative at a point, such as a chart, preserves orientations near that
+  point for one of the orientations of the model space.
 
 ## References
 
@@ -131,44 +137,22 @@ theorem eventually_mapOrientation_map_symm_eq {f : M → M'} {a : M}
     rw [ContinuousLinearMap.inCoordinates_eq hx hfx]
     ext v
     simp [T, ← hDx, e, e']
-  -- In the two trivializations the derivative varies continuously, so relative to its value at
-  -- `a` it has positive determinant near `a`.
-  let K : M → E →L[ℝ] E := fun x ↦ ((T a ha hfa).symm : E' →L[ℝ] E).comp (c x)
-  have hKa : K a = ContinuousLinearMap.id ℝ E := by
-    ext v
-    simp [K, hcT a hD.self_of_nhds ha hfa]
-  have hpos : ∀ᶠ x in 𝓝 a, 0 < (K x).det := by
-    have hK : ContinuousAt K a := continuousAt_const.clm_comp hc
-    exact (ContinuousLinearMap.continuous_det.continuousAt.comp hK).eventually
-      (lt_mem_nhds (by simp [hKa, ContinuousLinearMap.det]))
+  -- In the two trivializations the derivative varies continuously, so near `a` its readings
+  -- transport orientations as its reading at `a` does.
+  set ω' := e'.mapOrientation ι hfa (ω a)
+  have hS := _root_.Orientation.eventually_map_eq_map_of_continuousAt hι
+    (_root_.Orientation.map ι (T a ha hfa).symm.toLinearEquiv ω') (L := c) (fun _ ↦ hc)
+    (hcT a hD.self_of_nhds ha hfa)
   have hbase : ∀ᶠ x in 𝓝 a, x ∈ e.baseSet := e.open_baseSet.mem_nhds ha
   have hfbase : ∀ᶠ x in 𝓝 a, f x ∈ e'.baseSet :=
     hf.continuousAt.preimage_mem_nhds (e'.open_baseSet.mem_nhds hfa)
-  filter_upwards [hω, hpos, hbase, hfbase, hD] with x hωx hKx _ hfx hDx hx
+  filter_upwards [hω, hS, hbase, hfbase, hD] with x hωx hSx hx hfx hDx _
   rw [hread x hx hfx, hread a ha hfa, hωx hfx]
-  set ω' := e'.mapOrientation ι hfa (ω a)
-  set η := _root_.Orientation.map ι (T a ha hfa).symm.toLinearEquiv ω'
-  set L := (T x hx hfx).trans (T a ha hfa).symm
-  -- The change of reading `L = (T a)⁻¹ ∘ T x` fixes `η`, since its determinant is positive.
-  have hfix : _root_.Orientation.map ι L.toLinearEquiv η = η := by
-    by_cases hE : FiniteDimensional ℝ E
-    swap
-    · -- Without finite dimension `ι` is empty, and every orientation of an empty family is fixed.
-      have : IsEmpty ι := by
-        rw [← Fintype.card_eq_zero_iff, hι, Module.finrank_of_not_finite hE]
-      exact _root_.Orientation.map_of_isEmpty ι η _
-    refine (_root_.Orientation.map_eq_iff_det_pos η _ hι).mpr ?_
-    convert hKx using 2
-    ext v
-    simp [L, K, hcT x hDx hx hfx]
-  calc _root_.Orientation.map ι (T x hx hfx).symm.toLinearEquiv ω'
-      = _root_.Orientation.map ι L.symm.toLinearEquiv η := by
-        rw [← _root_.Orientation.map_trans]
-        exact congrArg (fun L ↦ _root_.Orientation.map ι L ω')
-          (LinearEquiv.ext fun v ↦ by simp [L])
-    _ = η := by
-        rw [ContinuousLinearEquiv.toLinearEquiv_symm, ← _root_.Orientation.map_symm,
-          Equiv.symm_apply_eq, hfix]
+  -- `T x` carries the right-hand side to `ω'`, as `T a` does.
+  rw [ContinuousLinearEquiv.toLinearEquiv_symm (T x hx hfx), ← _root_.Orientation.map_symm,
+    Equiv.symm_apply_eq, hSx (T x hx hfx) (hcT x hDx hx hfx).symm,
+    ContinuousLinearEquiv.toLinearEquiv_symm, ← _root_.Orientation.map_symm,
+    Equiv.apply_symm_apply]
 
 open Classical in
 /-- The pullback of an orientation `o'` of `M'` along a `C¹` map `f : M → M'` whose manifold
@@ -389,5 +373,49 @@ theorem eventually_isOrientationReversingAt {f : M → M'} {a : M} (hf : ContMDi
     ∀ᶠ x in 𝓝 a, IsOrientationReversingAt o o' f x := by
   simpa only [isOrientationPreservingAt_neg_right] using
     eventually_isOrientationPreservingAt hf ((isOrientationPreservingAt_neg_right o o' f a).mpr ho)
+
+/-- **Orientation preservation is constant on preconnected sets.** If a map `f` is `C¹` with
+invertible derivative at every point of a preconnected set `s`, then it preserves the orientations
+`o` and `o'` at one point of `s` exactly when it does at any other: the points where it preserves
+them and those where it reverses them cover `s`, and both conditions are open. -/
+theorem _root_.IsPreconnected.isOrientationPreservingAt_iff {f : M → M'} {s : Set M}
+    (hs : IsPreconnected s) (hf : ∀ x ∈ s, ContMDiffAt I I' 1 f x)
+    (hd : ∀ x ∈ s, (mfderiv I I' f x).IsInvertible) (o : Orientation I M ι)
+    (o' : Orientation I' M' ι) {a b : M} (ha : a ∈ s) (hb : b ∈ s) :
+    IsOrientationPreservingAt o o' f a ↔ IsOrientationPreservingAt o o' f b := by
+  -- The interiors of the two conditions are open, disjoint, and cover `s`.
+  have hcover : s ⊆ {x | ∀ᶠ y in 𝓝 x, IsOrientationPreservingAt o o' f y} ∪
+      {x | ∀ᶠ y in 𝓝 x, IsOrientationReversingAt o o' f y} := fun x hx ↦ by
+    obtain ⟨e, he⟩ := hd x hx
+    rcases isOrientationPreservingAt_or_isOrientationReversingAt o o' f x e he with h | h
+    · exact .inl (eventually_isOrientationPreservingAt (hf x hx) h)
+    · exact .inr (eventually_isOrientationReversingAt (hf x hx) h)
+  have hdisj : Disjoint {x | ∀ᶠ y in 𝓝 x, IsOrientationPreservingAt o o' f y}
+      {x | ∀ᶠ y in 𝓝 x, IsOrientationReversingAt o o' f y} :=
+    Set.disjoint_left.2 fun x h h' ↦
+      not_isOrientationPreservingAt_and_isOrientationReversingAt o o' f x
+        ⟨h.self_of_nhds, h'.self_of_nhds⟩
+  rcases hs.subset_or_subset isOpen_setOfPred_eventually_nhds isOpen_setOfPred_eventually_nhds hdisj
+    hcover with h | h
+  · exact iff_of_true (h ha).self_of_nhds (h hb).self_of_nhds
+  · exact iff_of_false
+      (fun h' ↦ not_isOrientationPreservingAt_and_isOrientationReversingAt o o' f a
+        ⟨h', (h ha).self_of_nhds⟩)
+      (fun h' ↦ not_isOrientationPreservingAt_and_isOrientationReversingAt o o' f b
+        ⟨h', (h hb).self_of_nhds⟩)
+
+/-- **A map into the model space preserves orientations near a point, for an orientation of the
+model space.** If `g : M → E` is `C¹` at `a` with invertible derivative there, then for some
+orientation `oE` of `E`, `g` preserves the orientations `o` and `oE` at every point near `a`: the
+constant orientation of `E` given by the image of `o` at `a`. -/
+theorem exists_eventually_isOrientationPreservingAt {g : M → E} {a : M}
+    (hg : ContMDiffAt I 𝓘(ℝ, E) 1 g a) (hd : (mfderiv I 𝓘(ℝ, E) g a).IsInvertible)
+    (o : Orientation I M ι) :
+    ∃ oE : Orientation 𝓘(ℝ, E) E ι, ∀ᶠ x in 𝓝 a, IsOrientationPreservingAt o oE g x := by
+  obtain ⟨e, he⟩ := hd
+  refine ⟨model (I := 𝓘(ℝ, E))
+    (_root_.Orientation.map ι e.toLinearEquiv (o.orientationAt a) : _root_.Orientation ℝ E ι)
+    o.card_eq, eventually_isOrientationPreservingAt hg
+      ((isOrientationPreservingAt_iff_of_coe_eq _ _ g a e he).2 (orientationAt_model _ _ _).symm)⟩
 
 end TauCeti.Manifold.Orientation

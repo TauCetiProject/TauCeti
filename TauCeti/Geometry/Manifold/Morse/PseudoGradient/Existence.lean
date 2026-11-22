@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Basic
+public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.VectorField.ModelChart
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
-import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.FDeriv.DiagonalQuadratic
@@ -42,10 +42,15 @@ union with the interiors of the critical-point neighbourhoods is the returned ne
 ## Main declarations
 
 * `TauCeti.MorseChart.field`: the linear field of a Morse chart, on the manifold, with
-  `TauCeti.MorseChart.mvfderiv_field_apply_lt_zero` and `TauCeti.MorseChart.mfderiv_eq_zero_iff`.
+  `TauCeti.MorseChart.mvfderiv_field_apply_lt_zero` and `TauCeti.MorseChart.mfderiv_eq_zero_iff`;
+  it is the only field that reads `(-wᵢ zᵢ)ᵢ` in the chart
+  (`TauCeti.MorseChart.eq_field_of_coord_mfderiv`).
+  The differential of `f` in a Morse chart is `TauCeti.MorseChart.mvfderiv_apply`.
 * `TauCeti.MorseChart.hessianQuadraticForm_quadratic` and
   `TauCeti.MorseChart.hessianQuadraticForm_extChartAt`: the Hessian of the quadratic normal form,
   and the Hessian of `f` at the centre of a Morse chart, read in the preferred chart.
+* `IsCompact.exists_morseChart_closed_nhds`: Morse charts at the finitely many critical points of a
+  compact set, with pairwise disjoint closed neighbourhoods inside them.
 * `IsCompact.exists_contMDiff_pseudoGradientOn_nhds`: existence of a pseudo-gradient near a
   compact set whose critical points are nondegenerate, and its Morse-function specialization
   `TauCeti.IsMorse.exists_contMDiff_pseudoGradientOn_nhds`.
@@ -109,6 +114,17 @@ theorem coord_mfderiv_field {y : M} (hy : y ∈ φ.toChart.source) :
   rw [field, mfderiv_mpullback_apply
     (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) _ hy]
   simp [linearVectorField, linearField]
+
+/-- A tangent vector that reads `(-wᵢ zᵢ)ᵢ` in the coordinates of the Morse chart is the value of
+the field of the chart. -/
+theorem eq_field_of_coord_mfderiv {y : M} (hy : y ∈ φ.toChart.source)
+    {v : TangentSpace 𝓘(ℝ, E) y}
+    (hv : φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)) :
+    v = φ.field y := by
+  have hinv := isInvertible_mfderiv_chart φ.mem_maximalAtlas_one hy
+  rw [← hinv.inverse_apply_self v, ← hinv.inverse_apply_self (φ.field y),
+    φ.coord.injective (hv.trans (φ.coord_mfderiv_field hy).symm)]
 
 end Basic
 
@@ -264,6 +280,18 @@ theorem mvfderiv_field_apply_lt_zero {y : M} (hy : y ∈ φ.toChart.source) (hyx
   obtain ⟨i, hi⟩ := Function.ne_iff.1 hne
   exact Finset.sum_pos' (fun j _ ↦ sq_nonneg _)
     ⟨i, Finset.mem_univ _, by simpa using (sq_pos_of_ne_zero hi : (0 : ℝ) < _)⟩
+
+/-- **The differential in a Morse chart**: on the source of the chart, `df_y v` is
+`Σᵢ wᵢ (L (ψ y))ᵢ (L (dψ v))ᵢ`. -/
+theorem mvfderiv_apply {y : M} (hy : y ∈ φ.toChart.source) (v : TangentSpace 𝓘(ℝ, E) y) :
+    mvfderiv 𝓘(ℝ, E) f y v = ∑ i, φ.weight i * φ.coord (φ.toChart y) i *
+      φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) i := by
+  -- `mvfderiv` composes `mfderiv` with `NormedSpace.fromTangentSpace`, which is the identity
+  -- on the underlying type `ℝ` of `TangentSpace 𝓘(ℝ) (f y)` and has no Mathlib `simp` lemma.
+  rw [mvfderiv, ContinuousLinearMap.comp_apply,
+    mfderiv_eq_fderiv_comp_of_eqOn
+      (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic hy]
+  exact φ.fderiv_quadratic_apply _ _
 
 /-- The centre is the only critical point of `f` in the source of a Morse chart. -/
 theorem mfderiv_eq_zero_iff {y : M} (hy : y ∈ φ.toChart.source) :
@@ -518,6 +546,38 @@ private theorem exists_contMDiff_field_lt_zero_and_eq_field
 
 end Glue
 
+open Filter in
+/-- **Morse charts on disjoint closed neighbourhoods of critical points.** Let `K` be a compact
+subset of a Hausdorff manifold and let `f` be smooth. If every critical point of `f` in `K` is
+nondegenerate, then `K` contains only finitely many critical points `c`. Moreover there are Morse
+charts `φ c` at them, pairwise disjoint open sets `W c`, and closed neighbourhoods `A c` of `c`
+inside both the source of `φ c` and `W c`. -/
+theorem _root_.IsCompact.exists_morseChart_closed_nhds [T2Space M] {K : Set M} (hK : IsCompact K)
+    (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f)
+    (hnd : ∀ x ∈ K, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 →
+      IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    (criticalPoints 𝓘(ℝ, E) f ∩ K).Finite ∧
+      ∃ (φ : ∀ c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K), MorseChart E f c)
+        (W A : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K) → Set M),
+        (∀ c, IsOpen (W c)) ∧ Pairwise (Disjoint on W) ∧ (∀ c, A c ∈ 𝓝 c.val) ∧
+          (∀ c, IsClosed (A c)) ∧ ∀ c, A c ⊆ (φ c).toChart.source ∩ W c := by
+  let _ : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace E M
+  -- Nondegenerate critical points are isolated, hence finitely many in `K`.
+  have hC : (criticalPoints 𝓘(ℝ, E) f ∩ K).Finite :=
+    finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint
+      (hf.of_le (by simp)) hK fun x hx ↦ hnd x hx.2 (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.1)
+  let φ (c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K)) : MorseChart E f c :=
+    ((hnd c c.property.2 (mem_criticalPoints_iff_mfderiv_eq_zero.1
+        c.property.1)).nonempty_morseChart
+      (Eventually.of_forall fun _ ↦ hf.contMDiffAt)).some
+  obtain ⟨W, hW, hWdisj⟩ := hC.t2_separation
+  choose A hAn hAc hAsub using fun c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K) ↦
+    exists_mem_nhds_isClosed_subset
+      (Filter.inter_mem ((φ c).toChart.open_source.mem_nhds (φ c).mem_source)
+        ((hW c).2.mem_nhds (hW c).1))
+  exact ⟨hC, φ, fun c ↦ W c, A, fun c ↦ (hW c).2,
+    fun c c' h ↦ hWdisj c.property c'.property (Subtype.coe_injective.ne h), hAn, hAc, hAsub⟩
+
 variable [T2Space M] [SigmaCompactSpace M]
 
 open Filter in
@@ -544,27 +604,12 @@ theorem _root_.IsCompact.exists_contMDiff_pseudoGradientOn_nhds {K : Set M}
             ∃ φ : MorseChart E f x, φ.toChart.source ⊆ U ∧
               ∀ y ∈ φ.toChart.source, X y = φ.field y := by
   classical
-  let _ : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace E M
-  -- The critical points in `K` are isolated, hence finitely many. Choose a Morse chart at each,
-  -- and pairwise disjoint closed neighbourhoods `A c` inside these charts.
+  -- The critical points in `K` are finitely many. Take Morse charts at them, and pairwise
+  -- disjoint closed neighbourhoods `A c` inside these charts.
   let C := criticalPoints 𝓘(ℝ, E) f ∩ K
   have hCcrit (c : C) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0 :=
-    mem_criticalPoints_iff_mfderiv_eq_zero.1 c.2.1
-  have hC : C.Finite := by
-    refine (hK.inter_left (isClosed_criticalPoints (hf.of_le (by simp)))).finite ?_
-    rw [isDiscrete_iff_nhdsNE]
-    rintro x ⟨hx, hxK⟩
-    rw [inf_principal_eq_bot]
-    filter_upwards [(hnd x hxK
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx)).eventually_notMem_criticalPoints]
-      with y hy using fun h ↦ hy h.1
-  let φ : ∀ c : C, MorseChart E f c := fun c ↦
-    ((hnd c c.2.2 (hCcrit c)).nonempty_morseChart
-      (Eventually.of_forall fun _ ↦ hf.contMDiffAt)).some
-  obtain ⟨W, hW, hWdisj⟩ := hC.t2_separation
-  choose A hAn hAc hAsub using fun c : C ↦ exists_mem_nhds_isClosed_subset
-    (Filter.inter_mem ((φ c).toChart.open_source.mem_nhds (φ c).mem_source)
-      ((hW c).2.mem_nhds (hW c).1))
+    mem_criticalPoints_iff_mfderiv_eq_zero.1 c.property.1
+  obtain ⟨hC, φ, W, A, hW, hWdisj, hAn, hAc, hAsub⟩ := hK.exists_morseChart_closed_nhds hf hnd
   have : Finite C := hC.to_subtype
   -- The regular core `R` of `K`, away from the interiors of these neighbourhoods, is compact.
   let R := K \ ⋃ c : C, interior (A c)
@@ -574,7 +619,7 @@ theorem _root_.IsCompact.exists_contMDiff_pseudoGradientOn_nhds {K : Set M}
   have hRreg : R ⊆ (criticalPoints 𝓘(ℝ, E) f)ᶜ := fun x hx hcrit ↦ hx.2 <|
     mem_iUnion.2 ⟨⟨x, hcrit, hx.1⟩, mem_interior_iff_mem_nhds.2 (hAn ⟨x, hcrit, hx.1⟩)⟩
   obtain ⟨s, hsm, hs⟩ := exists_contMDiff_field_lt_zero_and_eq_field hf hCcrit
-    (fun c ↦ (hW c).2) (fun c c' h ↦ hWdisj c.2 c'.2 (Subtype.coe_injective.ne h)) hAsub
+    hW (fun _ _ h ↦ hWdisj h) hAsub
     hRc.isClosed hRreg (isClosed_iUnion_of_finite hAc)
   exact exists_isOpen_pseudoGradientOn_of_field hf hCcrit hCK hAn (fun c y hy ↦ (hAsub c hy).1)
     (fun x hxK ↦ by

@@ -40,6 +40,9 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 ## Main definitions
 
 * `Ideal.mapQSMulTop`: the `R ⧸ I`-linear map `M ⧸ I • M → N ⧸ I • N` induced by `f : M →ₗ[R] N`.
+* `Ideal.quotSMulTopSelfEquiv`: the `R ⧸ I`-linear equivalence `(R ⧸ I • ⊤) ≃ₗ[R ⧸ I] R ⧸ I`.
+* `QuotSMulTop.quotSpanSingletonSMulTopEquiv`: the `R ⧸ (x)`-linear equivalence
+  `(M ⧸ (x) • ⊤) ≃ₗ[R ⧸ (x)] QuotSMulTop x M`.
 * `QuotSMulTop.quotSpanSingletonComm`: `(R ⧸ (s)) ⧸ r (R ⧸ (s)) ≃ (R ⧸ (r)) ⧸ s (R ⧸ (r))`.
 * `QuotSMulTop.restrictScalarsEquiv`: `N ⧸ (algebraMap R A r) N ≃ N ⧸ r N` as `R`-modules.
 
@@ -47,6 +50,8 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 
 * `QuotSMulTop.mk_smul_mk`: `[r] • [m] = [r • m]` in `M ⧸ x M`.
 * `QuotSMulTop.subsingleton_of_isUnit`: `M ⧸ x M` is trivial for a unit `x`.
+* `QuotSMulTop.subsingleton_iff_smul_right_surjective`: `M ⧸ x M` is trivial exactly when
+  multiplication by `x` on `M` is surjective.
 * `Ideal.mapQSMulTop_id` and `Ideal.mapQSMulTop_comp`: reduction modulo `I` is functorial.
 * `Ideal.mapQSMulTop_surjective` and `Ideal.mapQSMulTop_exact`: reduction modulo `I` preserves
   surjectivity and exactness at the middle of `M → N → P → 0`.
@@ -59,8 +64,13 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
   quotienting by `I` and by `y` may be done in either order.
 * `QuotSMulTop.natCard_eq_pow_finrank`: a finite free `R`-module `M` has
   `#(M ⧸ r M) = #(R ⧸ (r)) ^ finrank R M`.
+* `Ideal.isSMulRegular_quotient_smul_top_congr` and
+  `Ideal.isSMulRegular_quotient_smul_top_iff_of_mul_sub_mem`: regularity of a scalar on `M ⧸ I • M`
+  depends only on its class modulo `I`, up to multiplication by units.
 * `Prime.isSMulRegular_quotient_span_pow`: in a domain, if the prime `π` does not divide `r`, then
   `r` is regular on `R ⧸ (π ^ m)`.
+* `isSMulRegular_quotient_smul_top_congr`: elements congruent modulo a left ideal `I` have the same
+  regularity on `M ⧸ I • ⊤`.
 -/
 
 public section
@@ -110,6 +120,24 @@ theorem mapQSMulTop_exact (I : Ideal R) {f : M →ₗ[R] N} {g : N →ₗ[R] P} 
       rw [Submodule.map_smul'', Submodule.map_top, LinearMap.range_eq_top.mpr hg]
       exact inf_le_right)
 
+/-- For an ideal `I` of `R`, `R ⧸ I • ⊤` is `R ⧸ I` as an `R ⧸ I`-module. -/
+noncomputable def quotSMulTopSelfEquiv (I : Ideal R) :
+    (R ⧸ I • (⊤ : Submodule R R)) ≃ₗ[R ⧸ I] R ⧸ I :=
+  (Submodule.quotEquivOfEq _ _ (by rw [Ideal.smul_eq_mul, Ideal.mul_top])).extendScalarsOfSurjective
+    Ideal.Quotient.mk_surjective
+
+/-- `quotSMulTopSelfEquiv` sends the class of `r` to the class of `r` (not `@[simp]` because
+`Submodule.smul_eq_mul` rewrites `I • (⊤ : Submodule R R)` to `I * ⊤` on the left-hand side,
+which fails `simpNF`). -/
+theorem quotSMulTopSelfEquiv_mk (I : Ideal R) (r : R) :
+    I.quotSMulTopSelfEquiv (Submodule.Quotient.mk r) = Ideal.Quotient.mk I r :=
+  (rfl)
+
+/-- `quotSMulTopSelfEquiv.symm` sends the class of `r` to the class of `r`. -/
+theorem quotSMulTopSelfEquiv_symm_mk (I : Ideal R) (r : R) :
+    I.quotSMulTopSelfEquiv.symm (Ideal.Quotient.mk I r) = Submodule.Quotient.mk r :=
+  (rfl)
+
 end Ideal
 
 namespace QuotSMulTop
@@ -124,9 +152,44 @@ theorem mk_smul_mk {x : R} (r : R) (m : M) :
       Submodule.Quotient.mk (r • m) :=
   rfl
 
+/-- Identifying `(x) • ⊤` with `x • ⊤` gives an `R ⧸ (x)`-linear equivalence between
+`M ⧸ (x) • ⊤` and `QuotSMulTop x M`. -/
+noncomputable def quotSpanSingletonSMulTopEquiv (x : R) (M : Type*) [AddCommGroup M]
+    [Module R M] :
+    (M ⧸ Ideal.span {x} • (⊤ : Submodule R M)) ≃ₗ[R ⧸ Ideal.span {x}] QuotSMulTop x M :=
+  (Submodule.quotEquivOfEq _ _
+    (Submodule.ideal_span_singleton_smul x ⊤)).extendScalarsOfSurjective
+    Ideal.Quotient.mk_surjective
+
+@[simp]
+theorem quotSpanSingletonSMulTopEquiv_mk (x : R) (m : M) :
+    quotSpanSingletonSMulTopEquiv x M (Submodule.Quotient.mk m) = Submodule.Quotient.mk m :=
+  (rfl)
+
+@[simp]
+theorem quotSpanSingletonSMulTopEquiv_symm_mk (x : R) (m : M) :
+    (quotSpanSingletonSMulTopEquiv x M).symm (Submodule.Quotient.mk m) =
+      Submodule.Quotient.mk m :=
+  (rfl)
+
+/-- Negation is the identity on a module modulo twice itself. -/
+@[simp]
+theorem neg_eq_self (x : QuotSMulTop (2 : R) M) : -x = x := by
+  apply neg_eq_iff_add_eq_zero.mpr
+  simpa only [two_smul] using
+    (Module.mem_annihilator.mp (mem_annihilator (M := M) (2 : R)) x)
+
 /-- Modulo a unit, every module is trivial: `x • ⊤ = ⊤` for a unit `x`. -/
 theorem subsingleton_of_isUnit {x : R} (hx : IsUnit x) : Subsingleton (QuotSMulTop x M) :=
   Submodule.Quotient.subsingleton_iff.2 (Submodule.smul_eq_self_of_isUnit hx)
+
+/-- `M ⧸ x M` is trivial exactly when multiplication by `x` on `M` is surjective. -/
+theorem subsingleton_iff_smul_right_surjective {x : R} :
+    Subsingleton (QuotSMulTop x M) ↔ Surjective (x • · : M → M) := by
+  -- `x • ⊤` is the image of `⊤` under `DistribSMul.toLinearMap R M x`, i.e. the range of `x • ·`.
+  rw [Submodule.Quotient.subsingleton_iff, Submodule.pointwise_smul_def, ← LinearMap.range_eq_map,
+    LinearMap.range_eq_top]
+  rfl
 
 /-- `Ideal.mapQSMulTop (x) f` is Mathlib's `QuotSMulTop.map x f`, up to the identification of
 `(x) • ⊤` with `x • ⊤`. -/
@@ -161,9 +224,9 @@ end Ideal
 
 namespace LinearMap
 
-variable {R : Type*} [CommRing R]
-variable {M N P : Type*} [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P]
+variable {R : Type*} [CommSemiring R]
+variable {M N P : Type*} [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
 variable {f : M →ₗ[R] N} {g : N →ₗ[R] P} {r : R} {k : ℕ}
 
 /-- Bounded `r`-power torsion in the last term of an exact sequence gives a uniform comparison
@@ -268,3 +331,35 @@ theorem Prime.isSMulRegular_quotient_span_pow {R : Type*} [CommRing R] [IsDomain
   (isSMulRegular_quotient_iff_mem_of_smul_mem _ r).2 fun x hx ↦ by
     rw [smul_eq_mul, Ideal.mem_span_singleton] at hx
     exact Ideal.mem_span_singleton.2 (hπ.pow_dvd_of_dvd_mul_left m hr hx)
+
+namespace Ideal
+
+section Ring
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+
+/-- Regularity of a scalar on `M ⧸ I • M` depends only on its class modulo `I`. -/
+theorem isSMulRegular_quotient_smul_top_congr (I : Ideal R) {a b : R} (hab : a - b ∈ I) :
+    IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) a ↔
+      IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) b := by
+  simp only [isSMulRegular_quotient_iff_mem_of_smul_mem]
+  refine forall_congr' fun x ↦ imp_congr_left ?_
+  have hx : (a - b) • x ∈ I • (⊤ : Submodule R M) :=
+    Submodule.smul_mem_smul hab (Submodule.mem_top (x := x))
+  exact ⟨fun hax ↦ by simpa [sub_smul] using (I • (⊤ : Submodule R M)).sub_mem hax hx,
+    fun hbx ↦ by simpa [sub_smul] using (I • (⊤ : Submodule R M)).add_mem hx hbx⟩
+
+/-- Regularity of scalars on `M ⧸ I • M` is preserved when they agree modulo `I` up to unit
+factors: if `u₁` and `u₂` are units in `R` and `u₁ * a - u₂ * b ∈ I`, then `a` is regular on
+`M ⧸ I • M` if and only if `b` is. -/
+theorem isSMulRegular_quotient_smul_top_iff_of_mul_sub_mem (I : Ideal R) {a b u₁ u₂ : R}
+    (hu₁ : IsUnit u₁) (hu₂ : IsUnit u₂) (hab : u₁ * a - u₂ * b ∈ I) :
+    IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) a ↔
+      IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) b := by
+  rw [← (hu₁.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right,
+    I.isSMulRegular_quotient_smul_top_congr hab,
+    (hu₂.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right]
+
+end Ring
+
+end Ideal

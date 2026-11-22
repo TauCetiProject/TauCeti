@@ -45,6 +45,10 @@ arbitrary: it need not be adapted to the Morse charts of `f`.
 
 * `TauCeti.contMDiffOn_maximalIntegralCurve_neg_mgradient`: a negative gradient trajectory is
   `C¹` on its interval of definition.
+* `TauCeti.curveVelocity_maximalIntegralCurve_neg_mgradient`: the velocity of a negative
+  gradient trajectory is `-grad f`.
+* `TauCeti.maximalIntegralCurve_neg_mgradient_neg`: a global negative gradient trajectory of `f`
+  run backwards is the negative gradient trajectory of `-f`.
 * `TauCeti.hasDerivAt_comp_maximalIntegralCurve_neg_mgradient` and
   `TauCeti.antitoneOn_comp_maximalIntegralCurve_neg_mgradient`: energy dissipation and
   monotonicity along a negative gradient trajectory.
@@ -55,6 +59,8 @@ arbitrary: it need not be adapted to the Morse charts of `f`.
   trajectory along which `f` has a limit is finite, and equals the drop of `f`.
 * `TauCeti.mapsTo_maximalIntegralCurve_neg_mgradient_preimage_Iic`: a forward trajectory stays in
   the sublevel of its initial point.
+* `TauCeti.Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto`: a forward
+  trajectory converging to a critical point exists for all positive time.
 * `TauCeti.Ici_subset_maximalIntegralCurveInterval_neg_mgradient`: a trapped forward trajectory
   exists for all positive time.
 * `TauCeti.mem_criticalPoints_of_mapClusterPt_maximalIntegralCurve_neg_mgradient`: the ω-limit
@@ -94,6 +100,22 @@ theorem contMDiffOn_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(�
   (contMDiffOn_two_of_isMIntegralCurveOn isOpen_maximalIntegralCurveInterval.uniqueDiffOn
     (isMIntegralCurveOn_maximalIntegralCurve (contMDiff_neg_mgradient_one hf))
     fun _ _ ↦ (contMDiff_neg_mgradient_one hf).contMDiffAt).of_le one_le_two
+
+/-- **Reversing time in a global negative gradient trajectory.** If the maximal integral curve of
+`-grad f` through `x` is defined for all time, then run backwards it is the maximal integral curve
+of `-grad (-f)` through `x`. -/
+theorem maximalIntegralCurve_neg_mgradient_neg (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hγ : IsMIntegralCurve (maximalIntegralCurve (-mgradient I f) x) (-mgradient I f)) :
+    maximalIntegralCurve (-mgradient I (-f)) x =
+      maximalIntegralCurve (-mgradient I f) x ∘ (· * -1) := by
+  have hrev : IsMIntegralCurve (maximalIntegralCurve (-mgradient I f) x ∘ (· * -1))
+      (-mgradient I (-f)) := by
+    convert hγ.comp_mul (-1) using 1
+    funext y
+    simp [mgradient_neg]
+  funext t
+  simpa only [Function.comp_apply, zero_mul, maximalIntegralCurve_zero] using
+    hrev.maximalIntegralCurve_eq (contMDiff_neg_mgradient_one (f := -f) hf.neg) t
 
 /-! ### Energy dissipation -/
 
@@ -150,7 +172,7 @@ private theorem hasDerivAt_neg_comp_maximalIntegralCurve_neg_mgradient
   exact h
 
 /-- The velocity of the maximal integral curve of `-grad f` is `-grad f`. -/
-private theorem curveVelocity_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f)
+theorem curveVelocity_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (ht : t ∈ maximalIntegralCurveInterval (-mgradient I f) x) :
     curveVelocity I (maximalIntegralCurve (-mgradient I f) x) t =
       -mgradient I f (maximalIntegralCurve (-mgradient I f) x t) := by
@@ -210,6 +232,18 @@ theorem integral_Ioi_norm_mgradient_sq_maximalIntegralCurve (hf : ContMDiff I �
   ring
 
 omit hx hc
+
+omit [T2Space M] [IsManifold I 2 M] [BoundarylessManifold I M]
+  [IsContMDiffRiemannianBundle I 1 E fun x : M ↦ TangentSpace I x] in
+/-- **A forward trajectory converging to a critical point exists for all positive time.** If the
+maximal integral curve of `-grad f` through `x` converges to a critical point `p` of `f`, it is
+defined on `[0, ∞)`, since `p` is a zero of `-grad f`. -/
+theorem Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto [IsManifold I 1 M]
+    {p : M} (hp : p ∈ criticalPoints I f)
+    (hconv : Tendsto (maximalIntegralCurve (-mgradient I f) x) atTop (𝓝 p)) :
+    Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x :=
+  Ici_subset_maximalIntegralCurveInterval_of_tendsto
+    (by rwa [Pi.neg_apply, neg_eq_zero, mgradient_eq_zero_iff, ← mem_criticalPoints]) hconv
 
 /-! ### Trapped trajectories -/
 

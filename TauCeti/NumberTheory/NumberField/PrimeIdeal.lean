@@ -190,10 +190,10 @@ theorem card_primesOverFinset_le_finrank {p : Ideal ℤ} [p.IsMaximal] :
       rw [Finset.sum_const, smul_eq_mul, mul_one, Finset.card_univ,
         ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq,
         ← IsDedekindDomain.coe_primesOverFinset hp0 (𝓞 K), Set.ncard_coe_finset]
-    _ ≤ ∑ q : p.primesOver (𝓞 K), q.1.ramificationIdx ℤ * q.1.inertiaDeg ℤ :=
+    _ ≤ ∑ q : p.primesOver (𝓞 K), q.val.ramificationIdx ℤ * q.val.inertiaDeg ℤ :=
       Finset.sum_le_sum fun q _ => Nat.one_le_iff_ne_zero.mpr
-        (Nat.mul_ne_zero (Ideal.ramificationIdx_pos ℤ q.1).ne'
-          (Ideal.inertiaDeg_pos q.1 ℤ).ne')
+        (Nat.mul_ne_zero (Ideal.ramificationIdx_pos ℤ q.val).ne'
+          (Ideal.inertiaDeg_pos q.val ℤ).ne')
     _ = Module.finrank ℤ (𝓞 K) := Ideal.sum_ramification_inertia_eq_finrank p (𝓞 K)
     _ = Module.finrank ℚ K := _root_.NumberField.RingOfIntegers.rank K
 
@@ -360,25 +360,25 @@ theorem exists_prime_ne_zero_liesOver (p : ℕ) (hp : p.Prime) :
 of at most `[K : ℚ]` classes. -/
 theorem exists_finset_card_le_finrank_mk0_mem (p : ℕ) (hp : p.Prime) :
     ∃ F : Finset (ClassGroup (𝓞 K)), F.card ≤ Module.finrank ℚ K ∧
-      ∀ I : (Ideal (𝓞 K))⁰, I.1.IsPrime → I.1.LiesOver (span {(p : ℤ)}) →
+      ∀ I : (Ideal (𝓞 K))⁰, I.val.IsPrime → I.val.LiesOver (span {(p : ℤ)}) →
         ClassGroup.mk0 I ∈ F := by
   classical
   have _ : Fact p.Prime := ⟨hp⟩
   have hpne : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by simpa using hp.ne_zero
   let primes : Finset (Ideal (𝓞 K)) := IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K)
   let classOf : {P // P ∈ primes} → ClassGroup (𝓞 K) := fun P =>
-    ClassGroup.mk0 ⟨P.1, by
-      have hdata := (IsDedekindDomain.mem_primesOverFinset_iff hpne (𝓞 K)).mp P.2
-      let _ : P.1.LiesOver (span {(p : ℤ)}) := hdata.2
-      exact mem_nonZeroDivisors_of_prime_of_liesOver hp P.1⟩
+    ClassGroup.mk0 ⟨P.val, by
+      have hdata := (IsDedekindDomain.mem_primesOverFinset_iff hpne (𝓞 K)).mp P.property
+      let _ : P.val.LiesOver (span {(p : ℤ)}) := hdata.2
+      exact mem_nonZeroDivisors_of_prime_of_liesOver hp P.val⟩
   refine ⟨primes.attach.image classOf, ?_, fun I hprime hover => ?_⟩
   · calc
       (primes.attach.image classOf).card ≤ primes.attach.card := Finset.card_image_le
       _ = primes.card := Finset.card_attach
       _ ≤ Module.finrank ℚ K := TauCeti.NumberField.card_primesOverFinset_le_finrank (K := K)
-  · have hmem : I.1 ∈ primes := by
+  · have hmem : I.val ∈ primes := by
       rw [IsDedekindDomain.mem_primesOverFinset_iff hpne]
       exact ⟨hprime, hover⟩
-    exact Finset.mem_image.mpr ⟨⟨I.1, hmem⟩, Finset.mem_attach _ _, rfl⟩
+    exact Finset.mem_image.mpr ⟨⟨I.val, hmem⟩, Finset.mem_attach _ _, rfl⟩
 
 end NumberField

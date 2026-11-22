@@ -71,20 +71,20 @@ noncomputable def ofProd (hS : IsPreconnected S) (hprod : ∏ k, F k ≠ 0) :
     (map_ne_zero_iff _ (optionEquivRight ℝ (Fin n)).injective).2
       ((map_ne_zero_iff _ (rename_injective _ finSuccEquivLast.injective)).2 (hn k))
   have heval (x : S) :
-      (g (∏ k, F k)).lazardEval (Polynomial.C ∘ x.1) =
-        ∏ k, (g (F k)).lazardEval (Polynomial.C ∘ x.1) := by
+      (g (∏ k, F k)).lazardEval (Polynomial.C ∘ x.val) =
+        ∏ k, (g (F k)).lazardEval (Polynomial.C ∘ x.val) := by
     simp only [g, map_prod, ← lazardEvalHom_apply]
   -- Product valuation constancy on any continuous graph passes to every factor.
   have hfactor (r : S → ℝ) (hr : Continuous r)
       (hv : ∀ x y : S,
-        (∏ k, F k).lazardValuation (Fin.snoc x.1 (r x)) =
-          (∏ k, F k).lazardValuation (Fin.snoc y.1 (r y)))
+        (∏ k, F k).lazardValuation (Fin.snoc x.val (r x)) =
+          (∏ k, F k).lazardValuation (Fin.snoc y.val (r y)))
       (k : ι) (x y : S) :
-      (F k).lazardValuation (Fin.snoc x.1 (r x)) =
-        (F k).lazardValuation (Fin.snoc y.1 (r y)) :=
+      (F k).lazardValuation (Fin.snoc x.val (r x)) =
+        (F k).lazardValuation (Fin.snoc y.val (r y)) :=
     (F k).lazardValuation_eq_of_dvd hprod
       (Finset.dvd_prod_of_mem F (Finset.mem_univ k)) isPreconnected_univ
-      (continuous_subtype_val.finSnoc (A := fun _ ↦ ℝ) hr).continuousOn
+      (continuous_subtypeVal.finSnoc (A := fun _ ↦ ℝ) hr).continuousOn
       (fun x _ y _ ↦ hv x y) (mem_univ x) (mem_univ y)
   -- The existing stack API supplies a continuous graph in a sector, also for an empty root list.
   let hgraph := exists_continuous_forall_mem_sectorSet
@@ -95,15 +95,15 @@ noncomputable def ofProd (hS : IsPreconnected S) (hprod : ∏ k, F k ≠ 0) :
   have hsector (k : ι) (x y : S) := hfactor r hr
     (fun x y ↦ D.lazardValuation_snoc_eq_of_mem_sectorSet () (hrmem x) (hrmem y)) k x y
   have hexp (k : ι) (x : S) :
-      (g (F k)).lazardExponent (Polynomial.C ∘ x.1) =
-        (g (F k)).lazardExponent (Polynomial.C ∘ x₀.1) := by
+      (g (F k)).lazardExponent (Polynomial.C ∘ x.val) =
+        (g (F k)).lazardExponent (Polynomial.C ∘ x₀.val) := by
     have h := hsector k x x₀
     simp only [lazardValuation_snoc (hn k), WithTop.coe_inj, toLex_inj,
       Finsupp.snoc_inj] at h
     exact h.1
   have hmult (k : ι) (i : Fin D.count) (x : S) :
-      ((g (F k)).lazardEval (Polynomial.C ∘ x.1)).rootMultiplicity (D.root i x) =
-        ((g (F k)).lazardEval (Polynomial.C ∘ x₀.1)).rootMultiplicity (D.root i x₀) := by
+      ((g (F k)).lazardEval (Polynomial.C ∘ x.val)).rootMultiplicity (D.root i x) =
+        ((g (F k)).lazardEval (Polynomial.C ∘ x₀.val)).rootMultiplicity (D.root i x₀) := by
     have h := hfactor (D.root i) (D.continuous_root i)
       (fun x y ↦ D.lazardValuation_snoc_eq_of_mem_sectionSet ()
         (z := (x, D.root i x)) (z' := (y, D.root i y))
@@ -117,10 +117,10 @@ noncomputable def ofProd (hS : IsPreconnected S) (hprod : ∏ k, F k ≠ 0) :
       root := D.root
       continuous_root := D.continuous_root
       strictMono_root := D.strictMono_root
-      exponent := fun k ↦ (g (F k)).lazardExponent (Polynomial.C ∘ x₀.1)
+      exponent := fun k ↦ (g (F k)).lazardExponent (Polynomial.C ∘ x₀.val)
       lazardExponent_eq := hexp
       multiplicity := fun k i ↦
-        ((g (F k)).lazardEval (Polynomial.C ∘ x₀.1)).rootMultiplicity (D.root i x₀)
+        ((g (F k)).lazardEval (Polynomial.C ∘ x₀.val)).rootMultiplicity (D.root i x₀)
       rootMultiplicity_root := hmult
       exists_root_eq := ?_
       exists_multiplicity_pos := ?_ }
@@ -131,7 +131,7 @@ noncomputable def ofProd (hS : IsPreconnected S) (hprod : ∏ k, F k ≠ 0) :
   · intro i
     obtain ⟨⟨⟩, hu⟩ := D.exists_multiplicity_pos i
     rw [← D.rootMultiplicity_root () i x₀] at hu
-    have hroot : ((g (∏ k, F k)).lazardEval (Polynomial.C ∘ x₀.1)).IsRoot
+    have hroot : ((g (∏ k, F k)).lazardEval (Polynomial.C ∘ x₀.val)).IsRoot
         (D.root i x₀) := (Polynomial.rootMultiplicity_pos'.1 hu).2
     rw [heval] at hroot
     obtain ⟨k, _, hk⟩ := (Polynomial.isRoot_prod _ _ _).1 hroot
@@ -167,9 +167,9 @@ noncomputable def prod (hprod : ∏ k, F k ≠ 0) :
       ((map_ne_zero_iff _ (rename_injective _ finSuccEquivLast.injective)).2 (hn k))
   have heval (x : S) :
       (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (∏ k, F k))).lazardEval
-          (Polynomial.C ∘ x.1) =
+          (Polynomial.C ∘ x.val) =
         ∏ k, (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
-          (Polynomial.C ∘ x.1) := by
+          (Polynomial.C ∘ x.val) := by
     simp only [map_prod, ← lazardEvalHom_apply]
   exact
     { nonempty := D.nonempty

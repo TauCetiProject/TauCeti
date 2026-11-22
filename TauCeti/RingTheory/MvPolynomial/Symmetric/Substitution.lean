@@ -46,14 +46,14 @@ under permutations of the variables, `rename e (f i) = f (e i)`, yields a symmet
 polynomial. -/
 protected theorem IsSymmetric.bind₁ (hp : p.IsSymmetric) {f : σ → MvPolynomial σ R}
     (hf : ∀ (e : Equiv.Perm σ) (i : σ), rename e (f i) = f (e i)) :
-    (bind₁ f p).IsSymmetric := fun e => by
-  conv_rhs => rw [← hp e, bind₁_rename, Function.comp_def]
-  simp_rw [rename_bind₁, hf]
+    (aeval f p).IsSymmetric := fun e => by
+  conv_rhs => rw [← hp e, aeval_rename, Function.comp_def]
+  simp_rw [rename_aeval, hf]
 
 /-- Substituting the same univariate polynomial into every variable of a symmetric multivariate
 polynomial preserves symmetry. -/
 theorem IsSymmetric.bind₁_aeval_X (hp : p.IsSymmetric) (q : Polynomial R) :
-    (bind₁ (fun i => Polynomial.aeval (X i) q) p).IsSymmetric :=
+    (aeval (fun i => Polynomial.aeval (X i : MvPolynomial σ R) q) p).IsSymmetric :=
   hp.bind₁ fun e i => by rw [← Polynomial.aeval_algHom_apply, rename_X]
 
 end MvPolynomial
@@ -77,7 +77,7 @@ theorem esymmSubst_X [CommSemiring R] (n : ℕ) (i : Fin n) :
 
 /-- Elementary-symmetric substitution agrees with Mathlib's fundamental-theorem map. -/
 theorem esymmSubst_apply [CommSemiring R] (n : ℕ) (p : MvPolynomial (Fin n) R) :
-    esymmSubst n p = (MvPolynomial.esymmAlgHom (Fin n) R n p).1 :=
+    esymmSubst n p = (MvPolynomial.esymmAlgHom (Fin n) R n p).val :=
   (MvPolynomial.esymmAlgHom_apply p).symm
 
 /-- Substitution by the elementary symmetric polynomials is injective. -/

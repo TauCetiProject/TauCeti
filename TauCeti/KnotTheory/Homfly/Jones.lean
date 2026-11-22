@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.BraidWord.Jones
 public import TauCeti.KnotTheory.Homfly.Reduced
+import TauCeti.KnotTheory.Markov.Skein
 
 /-!
 # The Jones specialization of the HOMFLY polynomial

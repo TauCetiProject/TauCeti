@@ -15,8 +15,10 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 Bounded operators out of a finite-dimensional space are determined by the images of a basis,
 with operator norm controlled by the norms of those images. Hence such operators into `E` are
 approximated in operator norm by operators factoring through any operator `g : F →L[𝕜] E` of
-dense range. On a finite-dimensional real domain, strict pointwise norm bounds are equivalent
-to strict operator-norm bounds.
+dense range. On a finite-dimensional domain over a locally compact field, such as `ℝ`, `ℂ` or a
+`p`-adic field, strict pointwise norm bounds are equivalent to strict operator-norm bounds. Over
+a complete field, an operator into a finite-dimensional space from a space of the same `finrank`
+is invertible as soon as it is injective.
 
 Bounded operators between finite-dimensional spaces form a finite-dimensional space over every
 finite extension of the scalars acting compatibly on the codomain, for instance over `ℂ` for
@@ -27,7 +29,10 @@ real-linear operators into a complex space.
 * `ContinuousLinearMap.denseRange_comp`: on operators out of a finite-dimensional space,
   postcomposition with an operator of dense range has dense range.
 * `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
-  every nonzero vector of a finite-dimensional real domain.
+  every nonzero vector of a finite-dimensional domain over a locally compact field.
+* `ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq`: an operator into a
+  finite-dimensional space from a space of the same `finrank` is invertible exactly when it is
+  injective.
 * `ContinuousLinearMap.finiteDimensional_of_isScalarTower`: `E →L[𝕜] F` is finite-dimensional
   over a finite extension `𝕜'` of `𝕜` acting on a finite-dimensional codomain `F`.
 * `IsCompact.isCompact_setOfPred_mapsTo`: out of a finite-dimensional space over a complete field,
@@ -64,27 +69,39 @@ theorem denseRange_comp {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E
 
 section StrictNorm
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+open Metric
 
-/-- On a finite-dimensional real domain, a strict pointwise operator bound gives a strict
-operator-norm bound. The positivity assumption includes the zero-dimensional domain. -/
-theorem opNorm_lt_iff (A : E →L[ℝ] F) {c : ℝ} (hc : 0 < c) :
+variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [LocallyCompactSpace 𝕜]
+  [NontriviallyNormedField 𝕜₂] {σ₁₂ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ₁₂]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- On a finite-dimensional domain over a locally compact field, the operator norm is less than
+`c > 0` exactly when `‖A x‖ < c * ‖x‖` for every nonzero vector `x`: the supremum defining the
+operator norm is attained. The positivity of `c` is needed for the zero-dimensional domain. -/
+theorem opNorm_lt_iff (A : E →SL[σ₁₂] F) {c : ℝ} (hc : 0 < c) :
     ‖A‖ < c ↔ ∀ x ≠ 0, ‖A x‖ < c * ‖x‖ := by
   refine ⟨fun h x hx ↦ (A.le_opNorm x).trans_lt ?_, fun h ↦ ?_⟩
   · exact mul_lt_mul_of_pos_right h (norm_pos_iff.mpr hx)
-  · cases subsingleton_or_nontrivial E
-    · simpa only [Subsingleton.elim A 0, norm_zero] using hc
-    · obtain ⟨x, hx, hmax⟩ := (isCompact_sphere (0 : E) 1).exists_isMaxOn
-        (NormedSpace.sphere_nonempty.mpr zero_le_one) A.continuous.norm.continuousOn
-      have hxnorm : ‖x‖ = 1 := mem_sphere_zero_iff_norm.mp hx
-      have hxne : x ≠ 0 := by
-        intro hx0
-        simp [hx0] at hxnorm
-      calc
-        ‖A‖ ≤ ‖A x‖ := A.opNorm_le_of_unit_norm (norm_nonneg _) fun y hy ↦
-          hmax (mem_sphere_zero_iff_norm.mpr hy)
-        _ < c := by simpa only [hxnorm, mul_one] using h x hxne
+  cases subsingleton_or_nontrivial E
+  · simpa only [Subsingleton.elim A 0, norm_zero] using hc
+  have := FiniteDimensional.proper 𝕜 E
+  obtain ⟨k, hk⟩ := NormedField.exists_one_lt_norm 𝕜
+  -- The ratio `‖A x‖ / ‖x‖` attains its maximum on the compact shell `S`, which contains a
+  -- rescaling of every nonzero vector; by `opNorm_le_of_shell` this maximum bounds `‖A‖`.
+  let S := closedBall (0 : E) 1 ∩ {x | 1 / ‖k‖ ≤ ‖x‖}
+  have hmem {x : E} (h₁ : 1 / ‖k‖ ≤ ‖x‖) (h₂ : ‖x‖ < 1) : x ∈ S :=
+    ⟨mem_closedBall_zero_iff.2 h₂.le, h₁⟩
+  have hpos {x : E} (hx : x ∈ S) : 0 < ‖x‖ := (one_div_pos.2 (one_pos.trans hk)).trans_le hx.2
+  have hS : IsCompact S :=
+    (isCompact_closedBall 0 1).inter_right (isClosed_le continuous_const continuous_norm)
+  obtain ⟨y, hy⟩ := exists_ne (0 : E)
+  obtain ⟨d, -, hd₁, hd₂, -⟩ := rescale_to_shell hk one_pos hy
+  obtain ⟨x, hx, hmax⟩ := hS.exists_isMaxOn ⟨d • y, hmem hd₂ hd₁⟩
+    (A.continuous.norm.continuousOn.div continuous_norm.continuousOn fun x hx ↦ (hpos hx).ne')
+  calc ‖A‖ ≤ ‖A x‖ / ‖x‖ := A.opNorm_le_of_shell one_pos (by positivity) hk fun z hz₁ hz₂ ↦
+        (div_le_iff₀ (hpos (hmem hz₁ hz₂))).1 (hmax (hmem hz₁ hz₂))
+    _ < c := (div_lt_iff₀ (hpos hx)).2 (h x (norm_pos_iff.1 (hpos hx)))
 
 end StrictNorm
 
@@ -108,15 +125,17 @@ end ScalarExtension
 section Invertible
 
 variable {𝕜 U G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup U] [NormedSpace 𝕜 U] [FiniteDimensional 𝕜 U]
+  [NormedAddCommGroup U] [NormedSpace 𝕜 U]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
 
-/-- An injective continuous linear map between finite-dimensional spaces of the same dimension is
-invertible. -/
-theorem isInvertible_of_injective_of_finrank_eq (A : U →L[𝕜] G)
-    (hdim : Module.finrank 𝕜 U = Module.finrank 𝕜 G) (hinj : Function.Injective A) :
-    A.IsInvertible := by
-  exact ⟨((A : U →ₗ[𝕜] G).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv, rfl⟩
+/-- A continuous linear map into a finite-dimensional space, from a space of the same `finrank`,
+is invertible exactly when it is injective. The domain need not be assumed finite-dimensional:
+it injects into the codomain. -/
+theorem isInvertible_iff_injective_of_finrank_eq {A : U →L[𝕜] G}
+    (hdim : Module.finrank 𝕜 U = Module.finrank 𝕜 G) : A.IsInvertible ↔ Function.Injective A := by
+  refine ⟨IsInvertible.injective, fun hinj ↦ ?_⟩
+  have := FiniteDimensional.of_injective (A : U →ₗ[𝕜] G) hinj
+  exact ⟨((A : U →ₗ[𝕜] G).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv, by ext; simp⟩
 
 end Invertible
 

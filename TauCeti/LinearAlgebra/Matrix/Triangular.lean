@@ -6,9 +6,12 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Block
+public import Mathlib.Order.Interval.Finset.Defs
 public import Mathlib.Order.Interval.Set.OrdConnected
 public import Mathlib.RingTheory.Nilpotent.Defs
 import Mathlib.LinearAlgebra.Matrix.Reindex
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
+import TauCeti.Order.Preorder.Finite
 
 /-!
 # Triangular matrices
@@ -43,6 +46,9 @@ Lie-algebra theory.
   diagonal are determined by their product with their transpose.
 * `Matrix.IsLowerTriangular.submatrix_castLE_mul_transpose` — a leading principal submatrix of a
   lower-triangular Gram matrix is the Gram matrix of the corresponding submatrix.
+* `Matrix.mul_apply_eq_sum_Iic_of_isLowerTriangular_of_isUpperTriangular` — an entry of a product
+  of lower- and upper-triangular matrices is a sum over the columns at most both indices.
+* `Matrix.IsLowerTriangular.mul_transpose_apply_eq_sum_Iic` — the Gram-matrix specialization.
 * `Matrix.IsUpperTriangular.submatrix_mul` and `submatrix_pow` — restriction to order-connected
   index sets preserves multiplication and powers.
 * `Matrix.pow_apply_diag_of_isUpperTriangular` — the diagonal of a power of an upper-triangular
@@ -64,6 +70,8 @@ Lie-algebra theory.
 * `Matrix.IsUpperUnitriangular.det_eq_one` — an upper-unitriangular matrix has determinant one.
 * `Matrix.IsUpperUnitriangular.mul` and `Matrix.IsUpperUnitriangular.pow` — upper-unitriangular
   matrices are closed under products and natural powers.
+* `Matrix.isNilpotent_of_apply_eq_zero_of_le` — a matrix that is strictly block triangular for a
+  ranking of its indices, not necessarily injective, is nilpotent.
 * `Matrix.isNilpotent_of_isUpperTriangular_of_diag_eq_zero` — strict upper triangularity implies
   nilpotence.
 * `Matrix.updateCol_mul_updateCol_apply_of_lt` — replacing the same column of both factors of a
@@ -90,7 +98,7 @@ theorem BlockTriangular.det_eq_prod_diag {ι α S : Type*} [Fintype ι] [Decidab
     (hb : Function.Injective b) : N.det = ∏ i, N i i := by
   rw [hN.det, Finset.prod_image fun x _ y _ hxy ↦ hb hxy]
   refine Finset.prod_congr rfl fun i _ ↦ ?_
-  let _ : Unique {j // b j = b i} := ⟨⟨⟨i, rfl⟩⟩, fun j ↦ Subtype.ext (hb j.2)⟩
+  let _ : Unique {j // b j = b i} := ⟨⟨⟨i, rfl⟩⟩, fun j ↦ Subtype.ext (hb j.property)⟩
   exact det_unique _
 
 /-- A square matrix is upper unitriangular when it is upper triangular and every diagonal entry
@@ -187,7 +195,7 @@ variable {S : Type*} [Semiring S] {n : ℕ}
 theorem pow_apply_eq_zero_of_isUpperTriangular_of_diag_eq_zero
     {M : Matrix (Fin n) (Fin n) S} (htri : M.IsUpperTriangular)
     (hdiag : ∀ i, M i i = 0) (k : ℕ) (i j : Fin n)
-    (hji : j.1 < i.1 + k) : (M ^ k) i j = 0 := by
+    (hji : j.val < i.val + k) : (M ^ k) i j = 0 := by
   have hstrict : ∀ a b : Fin n, b ≤ a → M a b = 0 := by
     intro a b hba
     obtain hba | rfl := hba.lt_or_eq
@@ -204,27 +212,59 @@ theorem pow_apply_eq_zero_of_isUpperTriangular_of_diag_eq_zero
       rw [pow_succ, Matrix.mul_apply]
       apply Finset.sum_eq_zero
       intro l _
-      by_cases hil : i.1 + k ≤ l.1
+      by_cases hil : i.val + k ≤ l.val
       · rw [hstrict l j (by omega), mul_zero]
       · rw [ih (i := i) (j := l) (by omega), zero_mul]
+
+/-- Let `M` be strictly block triangular for a ranking `b` of its indices: `M i j = 0` unless
+`b i < b j`. An entry `(M ^ k) i j` is a sum over chains `i = z₀, …, z_k = j` with strictly
+increasing ranks, all but the last ranked strictly below `j`, so it vanishes once `k` exceeds the
+number of indices ranked strictly below `j`. -/
+theorem pow_apply_eq_zero_of_apply_eq_zero_of_le [Fintype m] [DecidableEq m] {α : Type*}
+    [LinearOrder α] {b : m → α} {M : Matrix m m S} (hM : ∀ i j, b j ≤ b i → M i j = 0) {k : ℕ}
+    (i j : m) (hk : (Finset.univ.filter fun z ↦ b z < b j).card < k) : (M ^ k) i j = 0 := by
+  induction k generalizing j with
+  | zero => exact absurd hk (Nat.not_lt_zero _)
+  | succ k ih =>
+      rw [pow_succ, Matrix.mul_apply]
+      refine Finset.sum_eq_zero fun l _ ↦ ?_
+      by_cases hl : b l < b j
+      · -- `l` is ranked below `j` but not below itself, so fewer indices are ranked below `l`.
+        have hlt : (Finset.univ.filter fun z ↦ b z < b l).card <
+            (Finset.univ.filter fun z ↦ b z < b j).card := by
+          refine Finset.card_lt_card ⟨fun z hz ↦ ?_, fun hsub ↦ ?_⟩
+          · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hz ⊢
+            exact hz.trans hl
+          · have := hsub (by simpa using hl)
+            simp at this
+        rw [ih l (by omega), zero_mul]
+      · rw [hM l j (not_lt.1 hl), mul_zero]
+
+/-- A strictly block-triangular matrix, `M i j = 0` unless `b i < b j` for a ranking `b` of its
+indices, has power equal to zero at the cardinality of its index type. -/
+theorem pow_card_eq_zero_of_apply_eq_zero_of_le [Fintype m] [DecidableEq m] {α : Type*}
+    [LinearOrder α] {b : m → α} {M : Matrix m m S} (hM : ∀ i j, b j ≤ b i → M i j = 0) :
+    M ^ Fintype.card m = 0 := by
+  ext i j
+  refine pow_apply_eq_zero_of_apply_eq_zero_of_le hM i j ?_
+  exact Finset.card_lt_univ_of_notMem (x := j) (by simp)
+
+/-- A strictly block-triangular matrix, `M i j = 0` unless `b i < b j` for a ranking `b` of its
+indices, is nilpotent. Neither commutativity of the entries nor injectivity of `b` is needed. -/
+theorem isNilpotent_of_apply_eq_zero_of_le [Fintype m] [DecidableEq m] {α : Type*}
+    [LinearOrder α] {b : m → α} {M : Matrix m m S} (hM : ∀ i j, b j ≤ b i → M i j = 0) :
+    _root_.IsNilpotent M :=
+  ⟨Fintype.card m, pow_card_eq_zero_of_apply_eq_zero_of_le hM⟩
 
 /-- A strictly upper-triangular matrix has power equal to zero at the cardinality of its index
 type. -/
 theorem pow_card_eq_zero_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [LinearOrder m]
     {M : Matrix m m S} (htri : M.IsUpperTriangular) (hdiag : ∀ i, M i i = 0) :
-    M ^ Fintype.card m = 0 := by
-  let e : Fin (Fintype.card m) ≃o m := Fintype.orderIsoFinOfCardEq m rfl
-  let reindexEquiv := reindexRingEquiv S e.symm.toEquiv
-  apply reindexEquiv.injective
-  rw [map_pow, map_zero]
-  apply ext
-  intro i j
-  apply pow_apply_eq_zero_of_isUpperTriangular_of_diag_eq_zero
-  · intro a b hba
-    exact htri (e.lt_iff_lt.2 hba)
-  · intro i
-    exact hdiag (e i)
-  · omega
+    M ^ Fintype.card m = 0 :=
+  pow_card_eq_zero_of_apply_eq_zero_of_le (b := id) fun i j hji ↦
+    hji.lt_or_eq.elim (fun h ↦ htri h) fun h ↦ by
+      obtain rfl : j = i := h
+      exact hdiag j
 
 /-- A strictly upper-triangular square matrix is nilpotent. -/
 theorem isNilpotent_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [LinearOrder m]
@@ -234,7 +274,7 @@ theorem isNilpotent_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [LinearOrde
 
 end Nilpotence
 
-variable {R : Type*} [NonUnitalNonAssocSemiring R] {n : Type*} [Fintype n] [LinearOrder n]
+variable [NonUnitalNonAssocSemiring R] {n : Type*} [Fintype n] [LinearOrder n]
   {A B : Matrix n n R}
 
 /-- The diagonal of a product of upper-triangular matrices is the pointwise product of the
@@ -259,6 +299,28 @@ theorem mul_apply_diag_of_isLowerTriangular (hA : A.IsLowerTriangular)
     · rw [hB hki, mul_zero]
     · rw [hA hik, zero_mul]
   · exact fun h ↦ absurd (Finset.mem_univ i) h
+
+/-- An entry of a product of lower- and upper-triangular matrices only involves the indices
+`k ≤ min i j`. -/
+theorem mul_apply_eq_sum_Iic_of_isLowerTriangular_of_isUpperTriangular
+    {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι] [Fintype ι]
+    {L U : Matrix ι ι R} (hL : L.IsLowerTriangular) (hU : U.IsUpperTriangular) (i j : ι) :
+    (L * U) i j = ∑ k ∈ Finset.Iic (min i j), L i k * U k j := by
+  rw [Matrix.mul_apply]
+  symm
+  apply Finset.sum_subset (Finset.subset_univ _)
+  intro k _ hk
+  rcases min_lt_iff.mp (not_le.mp (Finset.mem_Iic.not.mp hk)) with h | h
+  · rw [hL h, zero_mul]
+  · rw [hU h, mul_zero]
+
+/-- An entry of `L * Lᵀ` for lower-triangular `L` only involves the columns `k ≤ min i j`. -/
+theorem IsLowerTriangular.mul_transpose_apply_eq_sum_Iic
+    {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι] [Fintype ι]
+    {L : Matrix ι ι R} (hL : L.IsLowerTriangular) (i j : ι) :
+    (L * Lᵀ) i j = ∑ k ∈ Finset.Iic (min i j), L i k * L j k := by
+  apply mul_apply_eq_sum_Iic_of_isLowerTriangular_of_isUpperTriangular hL
+  exact fun _ _ h ↦ hL h
 
 /-- **The leading principal submatrix of a lower-triangular Gram matrix is a Gram matrix.** The
 first `q` rows of a lower-triangular matrix vanish outside their first `q` columns, so the leading
@@ -342,16 +404,7 @@ theorem IsLowerTriangular.eq_of_mul_transpose_self_eq
           nonsing_inv_mul L hLdet, one_apply_eq]
       nlinarith [hLpos i]
     · exact hMpos i
-  have hLinvt_right : Lᵀ * L⁻¹ᵀ = 1 := by
-    rw [← transpose_mul, nonsing_inv_mul L hLdet, transpose_one]
-  have hQorth : (L⁻¹ * M) * (L⁻¹ * M)ᵀ = 1 := by
-    rw [transpose_mul]
-    calc
-      (L⁻¹ * M) * (Mᵀ * L⁻¹ᵀ) = L⁻¹ * (M * Mᵀ) * L⁻¹ᵀ := by
-        simp only [Matrix.mul_assoc]
-      _ = L⁻¹ * (L * Lᵀ) * L⁻¹ᵀ := by rw [← hgram]
-      _ = (L⁻¹ * L) * (Lᵀ * L⁻¹ᵀ) := by simp only [Matrix.mul_assoc]
-      _ = 1 := by rw [nonsing_inv_mul L hLdet, hLinvt_right, one_mul]
+  have hQorth := inv_mul_mul_transpose_inv_mul_eq_one hLdet hgram
   have hQone : L⁻¹ * M = 1 := by
     exact hQtri.eq_one_of_mul_transpose_self_eq_one (fun i ↦ (hQdiag i).le) hQorth
   calc
@@ -490,25 +543,16 @@ theorem exists_ne_zero_forall_mulVec_eq_zero_of_invariant_submodule
     (hstable : ∀ j v, v ∈ N → A j *ᵥ v ∈ N) :
     ∃ v ∈ N, v ≠ 0 ∧ ∀ j, A j *ᵥ v = 0 := by
   classical
-  have htop (v : ι → S) (hv : v ≠ 0) :
-      ∃ a, v a ≠ 0 ∧ ∀ b, a < b → v b = 0 := by
-    have hs : {a | v a ≠ 0}.Nonempty := by
-      simpa only [Set.nonempty_def, Set.mem_ofPred_eq, ne_eq, funext_iff, Pi.zero_apply,
-        not_forall] using hv
-    obtain ⟨a, ha, hmax⟩ := (Set.toFinite {a | v a ≠ 0}).exists_maximal hs
-    exact ⟨a, ha, fun b hab ↦ by
-      by_contra hb
-      exact hab.not_ge (hmax hb hab.le)⟩
   let P : ι → Prop := fun a ↦ ∃ v ∈ N, v a ≠ 0 ∧ ∀ b, a < b → v b = 0
   have hP : ∃ a, P a := by
     obtain ⟨v, hv, hv0⟩ := N.ne_bot_iff.mp hN
-    obtain ⟨a, ha, htop⟩ := htop v hv0
+    obtain ⟨a, ha, htop⟩ := TauCeti.exists_ne_zero_forall_gt_eq_zero v hv0
     exact ⟨a, v, hv, ha, htop⟩
   obtain ⟨a, ha, hmin⟩ := (Set.toFinite {a | P a}).exists_minimal hP
   obtain ⟨v, hv, hva, hsupport⟩ := ha
   refine ⟨v, hv, fun h ↦ hva (congrFun h a), fun j ↦ ?_⟩
   by_contra hzero
-  obtain ⟨b, hb, htop'⟩ := htop (A j *ᵥ v) hzero
+  obtain ⟨b, hb, htop'⟩ := TauCeti.exists_ne_zero_forall_gt_eq_zero (A j *ᵥ v) hzero
   have hvanish (c : ι) (hac : a ≤ c) : (A j *ᵥ v) c = 0 := by
     apply Finset.sum_eq_zero
     intro d _
@@ -525,7 +569,7 @@ theorem exists_ne_zero_forall_mulVec_eq_zero_of_invariant_submodule
 /-- Replacing the column `a` of both factors of a product leaves every earlier column `c < a` of
 the product unchanged, when the right factor is upper triangular. -/
 theorem updateCol_mul_updateCol_apply_of_lt {T l p : Type*} [NonUnitalNonAssocSemiring T]
-    [Fintype p] [LinearOrder p] {J : Matrix l p T} {H : Matrix p p T}
+    [Fintype p] [DecidableEq p] [Preorder p] {J : Matrix l p T} {H : Matrix p p T}
     (hH : H.IsUpperTriangular) {a c : p} (hca : c < a) (x : l → T) (y : p → T) (i : l) :
     (J.updateCol a x * H.updateCol a y) i c = (J * H) i c := by
   simp only [Matrix.mul_apply, updateCol_apply, hca.ne, ↓reduceIte]
@@ -557,7 +601,7 @@ theorem exists_sum_mul_eq_of_isUpperUnitriangular {ι T : Type*} [LinearOrder ι
   have := congrFun hz ⟨i, hi⟩
   simp only [M, mulVec, dotProduct, submatrix_apply] at this
   rw [← this, ← Finset.sum_coe_sort S]
-  exact Finset.sum_congr rfl fun t _ ↦ by simp [y, t.2]
+  exact Finset.sum_congr rfl fun t _ ↦ by simp [y, t.property]
 
 end Matrix
 

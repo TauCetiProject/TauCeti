@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Normed
+import Mathlib.Topology.Order.ProjIcc
 
 /-!
 # The Dyson series of a continuous path in a Banach algebra
@@ -55,10 +56,14 @@ one-parameter automorphism groups of C⋆-algebras.
   `Γ' t = p t * Γ t` (`TauCeti.hasDerivAt_dysonSeriesLeft`), and factoring as
   `Γ (t + d) = Γ t * Γ d` for a path of period `d` (`TauCeti.dysonSeriesLeft_add_of_periodic`),
   hence `Γ (n d) = Γ d ^ n` (`TauCeti.dysonSeriesLeft_natCast_mul_of_periodic`).
+* `TauCeti.exists_isInvertible_hasDerivAt_clm_Icc`: an invertible fundamental solution on a
+  closed interval, initialized at any included time.
 * `TauCeti.eq_dysonSeriesLeft_apply`: for a path of bounded operators, every solution of the
   time-dependent linear equation `w' t = M t (w t)` is `w t = dysonSeriesLeft M t (w 0)`.
 * `TauCeti.periodic_dysonSeriesLeft_apply_iff`: for a periodic path of bounded operators, such a
   solution is periodic exactly when its initial value is fixed by the propagator over one period.
+* `TauCeti.dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul`: more generally, if the initial
+  value lies in the `ε`-eigenspace of `Γ d ^ n`, the solution is twisted by `ε` along `n d`.
 * `TauCeti.apply_dysonSeriesLeft_apply_dysonSeriesLeft`: the propagator of a continuous path
   that is skew for a continuous bilinear map `B` preserves `B`.
 * `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
@@ -74,6 +79,8 @@ one-parameter automorphism groups of C⋆-algebras.
   Theorem 3.1.33, for bounded perturbations and their Dyson expansions.
 * Bratteli--Robinson, *Operator Algebras and Quantum Statistical Mechanics 2*, second edition,
   Section 5.4.1, for the unitary cocycles of perturbed C⋆-dynamics.
+* Formalization references: https://github.com/frenzymath/lean-eval-submissions and
+  https://github.com/frenzymath/PoincareConjecture.
 -/
 
 public section
@@ -445,6 +452,28 @@ theorem contDiff_dysonSeriesLeft {n : ℕ} (hp : ContDiff ℝ n p) :
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
 
+/-- A continuous linear equation on a closed interval admits an everywhere invertible
+fundamental solution starting at any included time. The original coefficient equation holds
+at every time of the interval, including its endpoints. -/
+theorem exists_isInvertible_hasDerivAt_clm_Icc {a b t₀ : ℝ}
+    (ht₀ : t₀ ∈ Icc a b) (A : ℝ → X →L[ℝ] X) (hA : ContinuousOn A (Icc a b)) :
+    ∃ P : ℝ → X →L[ℝ] X,
+      P t₀ = 1 ∧ (∀ t ∈ Icc a b, HasDerivAt P (A t * P t) t) ∧
+        ∀ t, (P t).IsInvertible := by
+  let B : ℝ → X →L[ℝ] X := fun t ↦ A (projIcc a b (ht₀.1.trans ht₀.2) (t + t₀))
+  have hB : Continuous B :=
+    (hA.comp_continuous (continuous_subtypeVal.comp continuous_projIcc)
+      (fun _ ↦ (projIcc a b (ht₀.1.trans ht₀.2) _).property)).comp
+        (continuous_id.add continuous_const)
+  refine ⟨fun t ↦ dysonSeriesLeft B (t - t₀), by simp, ?_, ?_⟩
+  · intro t ht
+    simpa only [Function.comp_def, id_eq, B, sub_add_cancel, projIcc_of_mem _ ht, one_smul] using
+      (hasDerivAt_dysonSeriesLeft hB (t - t₀)).scomp t ((hasDerivAt_id t).sub_const t₀)
+  · intro t
+    exact ContinuousLinearMap.IsInvertible.of_inverse
+      (dysonSeriesLeft_mul_dysonSeries_neg hB (t - t₀))
+      (dysonSeries_neg_mul_dysonSeriesLeft hB (t - t₀))
+
 /-- **The propagator of a time-dependent linear equation.** Every solution of `w' t = M t (w t)`
 for a continuous path `M` of bounded operators is `w t = dysonSeriesLeft M t (w 0)`. -/
 theorem eq_dysonSeriesLeft_apply {M : ℝ → X →L[ℝ] X} (hM : Continuous M) {w : ℝ → X}
@@ -459,13 +488,24 @@ theorem hasDerivAt_dysonSeriesLeft_apply {M : ℝ → X →L[ℝ] X} (hM : Conti
     HasDerivAt (fun t => dysonSeriesLeft M t x) (M t (dysonSeriesLeft M t x)) t := by
   simpa using (hasDerivAt_dysonSeriesLeft hM t).clm_apply (hasDerivAt_const t x)
 
+/-- **The return twist of the propagator.** For a continuous path `M` of period `d`, if `x` lies
+in the `ε`-eigenspace of `Ψ(d) ^ n`, where `Ψ = dysonSeriesLeft M`, then the solution
+`t ↦ Ψ t x` of `w' t = M t (w t)` satisfies `Ψ (t + n d) x = ε • Ψ t x`. -/
+theorem dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    {d : ℝ} (hper : Function.Periodic M d) {n : ℕ} {ε : ℝ} {x : X}
+    (hx : (dysonSeriesLeft M d ^ n) x = ε • x) (t : ℝ) :
+    dysonSeriesLeft M (t + n * d) x = ε • dysonSeriesLeft M t x := by
+  rw [dysonSeriesLeft_add_of_periodic hM (hper.nat_mul n),
+    dysonSeriesLeft_natCast_mul_of_periodic hM hper, mul_apply_eq_comp, hx, map_smul]
+
 /-- For a continuous path `M` of period `d`, the solution `t ↦ dysonSeriesLeft M t x` of
 `w' t = M t (w t)` has period `d` exactly when `x` is fixed by the propagator over one period. -/
 theorem periodic_dysonSeriesLeft_apply_iff {M : ℝ → X →L[ℝ] X} (hM : Continuous M) {d : ℝ}
     (hper : Function.Periodic M d) (x : X) :
     Function.Periodic (fun t => dysonSeriesLeft M t x) d ↔ dysonSeriesLeft M d x = x := by
   refine ⟨fun h => by simpa [dysonSeriesLeft_zero] using h 0, fun h t => ?_⟩
-  simp only [dysonSeriesLeft_add_of_periodic hM hper t, mul_apply_eq_comp, h]
+  simpa using dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul hM hper (n := 1) (ε := 1)
+    (by simpa using h) t
 
 /-- **The propagator of a skew path preserves the bilinear form.** If `M` is a continuous path of
 bounded operators with `B (M r u) w + B u (M r w) = 0`, then the propagator of
