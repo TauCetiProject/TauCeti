@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.CWModel.Proper
 public import TauCeti.Geometry.Manifold.Morse.Examples.QuadraticWell
+public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
+public import TauCeti.Topology.CWComplex.Classical.ComplexProjective
 import TauCeti.Analysis.Calculus.Morse.NormSq
 import TauCeti.Topology.Algebra.Polynomial.Basic
 
@@ -18,13 +20,19 @@ A manifold `M` with a proper Morse function `f` bounded below is homotopy equiva
 CW complex whose `m`-cells correspond to the critical points of `f` of index `m`
 (`TauCeti.IsMorse.exists_cwComplex_homotopyEquiv`); for compact `M` the complex is finite
 (`TauCeti.IsMorse.exists_finite_cwComplex_homotopyEquiv`). This file reads off the cells of the
-model in four cases: a compact manifold, a noncompact one, one with infinitely many critical
+model in five cases: two compact manifolds, a noncompact one, one with infinitely many critical
 points, and the empty manifold.
 
 * **The sphere.** The height function on `Sⁿ`, `n ≥ 1`, has a minimum of index `0` and a maximum
   of index `n` and no other critical point, so `Sⁿ` is homotopy equivalent to a finite CW complex
   with one `0`-cell, one `n`-cell and no other cells
   (`TauCeti.exists_cwComplex_homotopyEquiv_sphere`).
+* **Complex projective space.** The moment function `[z] ↦ (∑ⱼ j |zⱼ|²) / ∑ⱼ |zⱼ|²` on `ℂℙⁿ` has
+  one critical point of each even index `0, 2, …, 2n` and no others
+  (`TauCeti.criticalCount_projectiveMomentFunction_complex`), so its CW model has, in every
+  dimension, as many cells as the standard CW structure on `ℂℙⁿ`
+  (`TauCeti.ComplexProjectiveSpace.cwComplex`), one in each even dimension up to `2n`
+  (`TauCeti.exists_cwComplex_homotopyEquiv_projectivization_complex`).
 * **The real line.** The function `x ↦ x²` on `ℝ` has the single critical point `0`, of index `0`,
   so `ℝ` is homotopy equivalent to a CW complex with one `0`-cell and no other cells, which is
   contractible (`TauCeti.exists_cwComplex_homotopyEquiv_real`).
@@ -42,13 +50,13 @@ points, and the empty manifold.
 ## References
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
-  Theorem 3.5.
+  Theorem 3.5 and §4 (the example of `ℂℙⁿ`).
 -/
 
 public section
 
 open Metric Module Set Topology
-open scoped ContDiff ContinuousMap Manifold
+open scoped ContDiff ContinuousMap LinearAlgebra.Projectivization Manifold
 
 universe u
 
@@ -103,6 +111,34 @@ theorem exists_cwComplex_homotopyEquiv_sphere (hn : n ≠ 0) :
     exact e.isEmpty
 
 end Sphere
+
+/-! ### Complex projective space -/
+
+/-- **The CW model of complex projective space.** `ℂℙⁿ` is homotopy equivalent to a finite
+Hausdorff CW complex whose cells in each dimension correspond to those of the standard CW structure
+on `ℂℙⁿ`, one in each even dimension up to `2n` and none in other dimensions: the cells of the CW
+model of the moment function with weights `0, 1, …, n`, whose critical points have the even
+indices `0, 2, …, 2n`, one of each. -/
+theorem exists_cwComplex_homotopyEquiv_projectivization_complex (n : ℕ) :
+    letI := ComplexProjectiveSpace.cwComplex n
+    ∃ (X : Type) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
+      RelCWComplex.Finite (univ : Set X) ∧ Nonempty (X ≃ₕ ℙ ℂ (Fin (n + 1) → ℂ)) ∧
+        ∀ m, Nonempty (cell (univ : Set X) m ≃ cell (univ : Set (ComplexProjectiveSpace n)) m) := by
+  let := ComplexProjectiveSpace.cwComplex n
+  have hw : Function.Injective fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ) :=
+    Nat.cast_injective.comp Fin.val_injective
+  obtain ⟨X, _, _, _, hfin, he, hcell⟩ :=
+    (isMorse_projectiveMomentFunction (𝕜 := ℂ) hw).exists_finite_cwComplex_homotopyEquiv
+  refine ⟨X, _, ‹_›, ‹_›, hfin, he, fun m ↦ ?_⟩
+  obtain ⟨c⟩ := hcell m
+  have := hfin.finite_cell m
+  have := (ComplexProjectiveSpace.finite_cwComplex (n := n)).finite_cell m
+  -- Both cell types are finite, with one element in each even dimension up to `2n`.
+  refine Finite.card_eq.1 ?_
+  rw [ComplexProjectiveSpace.nat_card_cell_cwComplex, Nat.card_congr c,
+    natCard_sep_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount,
+    criticalCount_projectiveMomentFunction_complex hw]
+  split_ifs <;> simp
 
 /-! ### The real line -/
 
