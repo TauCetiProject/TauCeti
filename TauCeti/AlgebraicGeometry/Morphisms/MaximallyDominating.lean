@@ -40,6 +40,16 @@ namespace Scheme
 noncomputable abbrev genericPointScheme (X : Scheme.{u}) : Scheme.{u} :=
   ∐ fun x : genericPoints X ↦ Spec (X.residueField x)
 
+/-- For an irreducible scheme, each generic-point summand is the whole generic-point scheme. -/
+instance (X : Scheme.{u}) [IrreducibleSpace X] (x : genericPoints X) :
+    IsIso (Sigma.ι (fun x : genericPoints X ↦ Spec (X.residueField x)) x) := by
+  have : Subsingleton (genericPoints X) := by
+    rw [genericPoints_eq_singleton]
+    infer_instance
+  let : Unique (genericPoints X) := { default := x, uniq := fun _ ↦ Subsingleton.elim _ _ }
+  exact inferInstanceAs (IsIso (coproductUniqueIso
+    (fun x : genericPoints X ↦ Spec (X.residueField x))).inv)
+
 /-- The canonical morphism from the scheme of generic points to the original scheme. -/
 noncomputable def fromGenericPointScheme (X : Scheme.{u}) : X.genericPointScheme ⟶ X :=
   Sigma.desc fun x ↦ X.fromSpecResidueField x
@@ -107,7 +117,7 @@ variable {X Y Z : Scheme.{u}}
 /-- A maximally dominating morphism induces a map between the schemes of generic points. -/
 noncomputable def IsMaximallyDominating.genericPointSchemeMap {f : X ⟶ Y}
     (hf : f.IsMaximallyDominating) : X.genericPointScheme ⟶ Y.genericPointScheme :=
-  Sigma.map' (Subtype.map f fun x hx ↦ (f.isMaximallyDominating_iff.mp hf) x hx)
+  Sigma.map' (Set.MapsTo.restrict (⇑f) _ _ hf)
     (fun x ↦ Spec.map (f.residueFieldMap x))
 
 /-- On each component, the induced map of generic-point schemes uses the residue-field map. -/
@@ -159,23 +169,16 @@ theorem isMaximallyDominating_id (X : Scheme.{u}) : IsMaximallyDominating (𝟙 
 @[simp]
 theorem IsMaximallyDominating.genericPointSchemeMap_id
     (h : IsMaximallyDominating (𝟙 X)) : h.genericPointSchemeMap = 𝟙 X.genericPointScheme := by
-  rw [genericPointSchemeMap,
-    ← Sigma.map'_id_id (f := fun x : genericPoints X ↦ Spec (X.residueField x))]
-  apply Sigma.map'_eq rfl
-  intro x
-  refine Eq.trans (Category.comp_id _) ?_
-  exact (congrArg Spec.map (residueFieldMap_id (x : X))).trans (Spec.map_id _)
+  apply (cancel_mono X.fromGenericPointScheme).mp
+  simp
 
 /-- Generic-point maps preserve composition. -/
 @[simp]
 theorem IsMaximallyDominating.genericPointSchemeMap_comp {f : X ⟶ Y} {g : Y ⟶ Z}
     (hg : IsMaximallyDominating g) (hf : IsMaximallyDominating f) :
     (hg.comp hf).genericPointSchemeMap = hf.genericPointSchemeMap ≫ hg.genericPointSchemeMap := by
-  rw [genericPointSchemeMap, genericPointSchemeMap, genericPointSchemeMap, Sigma.map'_comp_map']
-  apply Sigma.map'_eq rfl
-  intro x
-  refine Eq.trans (Category.comp_id _) ?_
-  exact (congrArg Spec.map (residueFieldMap_comp f g x)).trans (Spec.map_comp _ _)
+  apply (cancel_mono Z.fromGenericPointScheme).mp
+  simp [Category.assoc]
 
 /-- Every open immersion is maximally dominating, including an empty open immersion. -/
 @[simp]

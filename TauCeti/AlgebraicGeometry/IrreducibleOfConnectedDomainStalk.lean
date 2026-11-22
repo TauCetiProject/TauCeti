@@ -12,6 +12,8 @@ public import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 public import TauCeti.Topology.Irreducible
 
+import TauCeti.Topology.NoetherianSpace.IrreducibleComponents
+
 /-!
 # Irreducibility of connected schemes with domain stalks
 
@@ -294,34 +296,6 @@ private lemma disjoint_irreducibleComponents_of_unique_minimalPrime {Z : Scheme}
   rw [hEq1, hEq2] at hneq
   exact hneq rfl
 
-/-- In a topological space with finitely many irreducible components, pairwise-disjoint
-components are open. -/
-private lemma isOpen_irreducibleComponents_of_pairwise_disjoint {α : Type*} [TopologicalSpace α]
-    (hFinite : (irreducibleComponents α).Finite)
-    (hDisj : ∀ c1 c2 : irreducibleComponents α, c1 ≠ c2 →
-      Disjoint (c1 : Set α) (c2 : Set α))
-    (c : irreducibleComponents α) : IsOpen (c : Set α) := by
-  have hEq : (c : Set α) = (⋃ c' ∈ (irreducibleComponents α \ {c.val}), c')ᶜ := by
-    ext x
-    simp only [mem_compl_iff, mem_iUnion, mem_sdiff, mem_singleton_iff]
-    constructor
-    · intro hx
-      rintro ⟨c', ⟨hc', hneq⟩, hxc'⟩
-      have hDisj' := hDisj c ⟨c', hc'⟩ (fun heq => hneq (congrArg Subtype.val heq).symm)
-      exact hDisj'.le_bot ⟨hx, hxc'⟩
-    · intro hx
-      have hUniv : x ∈ ⋃₀ (irreducibleComponents α) := by
-        rw [sUnion_irreducibleComponents]
-        exact mem_univ x
-      rcases hUniv with ⟨c', hc'S, hxc'⟩
-      by_contra hc
-      apply hx
-      refine ⟨c', ⟨hc'S, ?_⟩, hxc'⟩
-      intro heq
-      exact hc (heq ▸ hxc')
-  rw [hEq, ← sUnion_eq_biUnion]
-  exact hFinite.sdiff.isOpen_compl_sUnion_irreducibleComponents sdiff_subset
-
 /-- In an affine locally noetherian scheme whose stalks have unique minimal
 primes, every irreducible component is open. -/
 private theorem isOpen_irreducibleComponents_of_affine_unique_minimalPrime {X : Scheme.{u}}
@@ -331,9 +305,10 @@ private theorem isOpen_irreducibleComponents_of_affine_unique_minimalPrime {X : 
   have : NoetherianSpace X.carrier :=
     @noetherianSpace_of_isAffine X _
       (IsLocallyNoetherian.component_noetherian ⟨⊤, isAffineOpen_top X⟩)
-  apply isOpen_irreducibleComponents_of_pairwise_disjoint
-    (NoetherianSpace.finite_irreducibleComponents (α := X.carrier))
-  exact disjoint_irreducibleComponents_of_unique_minimalPrime hStalks
+  have hDisj : (irreducibleComponents X.carrier).PairwiseDisjoint id :=
+    Pairwise.set_of_subtype (irreducibleComponents X.carrier) Disjoint
+      (disjoint_irreducibleComponents_of_unique_minimalPrime hStalks)
+  exact (TauCeti.isClopen_of_mem_irreducibleComponents_of_pairwiseDisjoint hDisj c.property).2
 
 /-- In a locally noetherian scheme whose stalks have unique minimal primes,
 every irreducible component is open. -/
