@@ -45,7 +45,8 @@ Under this dictionary, `curvatureEndomorphism (kulkarniNomizu h k) =
   `TauCeti.FourTensor.curvatureEndomorphism_constantCurvature`,
   `TauCeti.FourTensor.two_mul_trace_curvatureEndomorphism_comp_symmMap₂_id_of_antisymm`,
   `TauCeti.FourTensor.scalar_eq_two_mul_trace_curvatureEndomorphism_of_antisymm`,
-  `ContinuousLinearMap.curvatureEndomorphism_compContinuousLinearMap`, and
+  `ContinuousLinearMap.curvatureEndomorphism_compContinuousLinearMap`,
+  `ContinuousLinearMap.inner_curvatureEndomorphism_compContinuousLinearMap`, and
   `LinearIsometryEquiv.map_comp_curvatureEndomorphism_compContinuousLinearMap`.
 
 ## References
@@ -187,39 +188,39 @@ def algebraicCurvatureEndomorphismSubmodule : Submodule ℝ (Module.End ℝ (⋀
 /-- Linear equivalence `algebraicCurvatureSubmodule V ≃ₗ[ℝ] Sym²_B(⋀²V)`. -/
 def curvatureEndomorphismEquiv :
     algebraicCurvatureSubmodule V ≃ₗ[ℝ] algebraicCurvatureEndomorphismSubmodule V where
-  toFun r := ⟨curvatureEndomorphism r.1, mem_algebraicCurvatureEndomorphismSubmodule.mpr
-    ⟨(mem_algebraicCurvatureSubmodule.mp r.2).isSymmetric_curvatureEndomorphism,
-      (mem_algebraicCurvatureSubmodule.mp r.2).curvatureEndomorphism_cyclic_eq_zero⟩⟩
+  toFun r := ⟨curvatureEndomorphism r.val, mem_algebraicCurvatureEndomorphismSubmodule.mpr
+    ⟨(mem_algebraicCurvatureSubmodule.mp r.property).isSymmetric_curvatureEndomorphism,
+      (mem_algebraicCurvatureSubmodule.mp r.property).curvatureEndomorphism_cyclic_eq_zero⟩⟩
   invFun L :=
-    let B : LinearMap.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V) := ⟨(innerₗ _).comp L.1, by
+    let B : LinearMap.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V) := ⟨(innerₗ _).comp L.val, by
       rw [LinearMap.BilinForm.mem_symmSubmodule, ← isSymmetric_bilinFormToEnd_iff,
-        LinearMap.bilinFormToEnd_innerₗ_comp]; exact L.2.1⟩
+        LinearMap.bilinFormToEnd_innerₗ_comp]; exact L.property.isSymmetric⟩
     let r := bivectorSymmetricEquivSymmBilin.symm B
-    have hr := mem_bivectorSymmetricSubmodule.mp r.2
-    ⟨r.1, mem_algebraicCurvatureSubmodule.mpr ⟨hr.antisymm_first, hr.antisymm_last, hr.swap_pairs,
-      fun u v z w ↦ by simpa [r, B] using L.2.2 u v z w⟩⟩
-  map_add' r q := Subtype.ext (map_add curvatureEndomorphism r.1 q.1)
-  map_smul' c r := Subtype.ext (map_smul curvatureEndomorphism c r.1)
+    have hr := mem_bivectorSymmetricSubmodule.mp r.property
+    ⟨r.val, mem_algebraicCurvatureSubmodule.mpr ⟨hr.antisymm_first, hr.antisymm_last, hr.swap_pairs,
+      fun u v z w ↦ by simpa [r, B] using L.property.cyclic_eq_zero u v z w⟩⟩
+  map_add' r q := Subtype.ext (map_add curvatureEndomorphism r.val q.val)
+  map_smul' c r := Subtype.ext (map_smul curvatureEndomorphism c r.val)
   left_inv r := Subtype.ext <| toLinearMap₄_injective <| by
     ext u v z w; simp only [toLinearMap₄_apply, bivectorSymmetricEquivSymmBilin_symm_apply,
       LinearMap.comp_apply, innerₗ_apply_apply]
-    exact (mem_algebraicCurvatureSubmodule.mp r.2).inner_curvatureEndomorphism_ιMulti u v z w
+    exact (mem_algebraicCurvatureSubmodule.mp r.property).inner_curvatureEndomorphism_ιMulti u v z w
   right_inv L := Subtype.ext <| exteriorPower.linearMap_ext_inner_ιMulti_two fun u v z w ↦ by
     dsimp only; rw [(mem_bivectorSymmetricSubmodule.mp
-      (bivectorSymmetricEquivSymmBilin.symm _).2).inner_curvatureEndomorphism_ιMulti,
+      (bivectorSymmetricEquivSymmBilin.symm _).property).inner_curvatureEndomorphism_ιMulti,
       bivectorSymmetricEquivSymmBilin_symm_apply, LinearMap.comp_apply, innerₗ_apply_apply]
 
 /-- Evaluation of `curvatureEndomorphismEquiv` is `curvatureEndomorphism`. -/
 @[simp] theorem coe_curvatureEndomorphismEquiv (r : algebraicCurvatureSubmodule V) :
-    (curvatureEndomorphismEquiv r : Module.End ℝ (⋀[ℝ]^2 V)) = curvatureEndomorphism r.1 := (rfl)
+    (curvatureEndomorphismEquiv r : Module.End ℝ (⋀[ℝ]^2 V)) = curvatureEndomorphism r.val := (rfl)
 
 /-- Evaluation of `curvatureEndomorphismEquiv.symm` on four vectors via pure wedges. -/
 @[simp] theorem curvatureEndomorphismEquiv_symm_apply
     (L : algebraicCurvatureEndomorphismSubmodule V) (u v z w : V) :
-    (curvatureEndomorphismEquiv.symm L).1 ![u, v, z, w] =
-      ⟪L.1 (exteriorPower.ιMulti ℝ 2 ![u, v]), exteriorPower.ιMulti ℝ 2 ![z, w]⟫ := by
+    (curvatureEndomorphismEquiv.symm L).val ![u, v, z, w] =
+      ⟪L.val (exteriorPower.ιMulti ℝ 2 ![u, v]), exteriorPower.ιMulti ℝ 2 ![z, w]⟫ := by
   rw [← (mem_algebraicCurvatureSubmodule.mp
-    (curvatureEndomorphismEquiv.symm L).2).inner_curvatureEndomorphism_ιMulti,
+    (curvatureEndomorphismEquiv.symm L).property).inner_curvatureEndomorphism_ιMulti,
     ← coe_curvatureEndomorphismEquiv, LinearEquiv.apply_symm_apply]
 
 /-- `Sym²_B(⋀²V)` has dimension `n ^ 2 * (n ^ 2 - 1) / 12`. -/
@@ -277,7 +278,8 @@ theorem IsBivectorSymmetric.two_mul_trace_curvatureEndomorphism_comp_symmMap₂_
     2 * LinearMap.trace ℝ (⋀[ℝ]^2 V)
         (curvatureEndomorphism r ∘ₗ exteriorPower.symmMap₂ A LinearMap.id) =
       bilinFormTrace ((ricci r).compLeft A) :=
-  two_mul_trace_curvatureEndomorphism_comp_symmMap₂_id_of_antisymm hr.1 hr.2 A
+  two_mul_trace_curvatureEndomorphism_comp_symmMap₂_id_of_antisymm hr.antisymm_first
+      hr.antisymm_last A
 
 /-- Algebraic-curvature specialization of the `symmMap₂ A id` trace identity. -/
 theorem IsAlgebraicCurvature.two_mul_trace_curvatureEndomorphism_comp_symmMap₂_id
@@ -326,6 +328,16 @@ theorem curvatureEndomorphism_compContinuousLinearMap (f : W →L[ℝ] V) (r : F
     simp only [LinearMap.comp_apply, LinearMap.adjoint_inner_left,
       exteriorPower.map_apply_ιMulti_two, inner_curvatureEndomorphism_ιMulti,
       compContinuousLinearMap_apply_vec, ContinuousLinearMap.coe_coe]
+
+/-- The bivector form of the pullback of a four-tensor along `f : W →L[ℝ] V` evaluates the bivector
+form of `r` on the images under `exteriorPower.map 2 f`. -/
+theorem inner_curvatureEndomorphism_compContinuousLinearMap (f : W →L[ℝ] V) (r : FourTensor V)
+    (ω ω' : ⋀[ℝ]^2 W) :
+    ⟪curvatureEndomorphism (r.compContinuousLinearMap fun _ ↦ f) ω, ω'⟫ =
+      ⟪curvatureEndomorphism r (exteriorPower.map 2 f.toLinearMap ω),
+        exteriorPower.map 2 f.toLinearMap ω'⟫ := by
+  rw [f.curvatureEndomorphism_compContinuousLinearMap, LinearMap.comp_apply,
+    LinearMap.adjoint_inner_left, LinearMap.comp_apply]
 
 end ContinuousLinearMap
 

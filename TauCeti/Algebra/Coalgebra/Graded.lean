@@ -43,7 +43,7 @@ theorem Coalgebra.exists_eq_neg_two_mul_of_parityGrading_one_eq_bot_of_isHomogen
     {R A : Type*} [CommSemiring R] [AddCommMonoid A] [Nontrivial A] [Module R A]
     (𝒜 : ℤ → Submodule R A) [DirectSum.Decomposition 𝒜] [Coalgebra R A]
     (hparity : parityGrading 𝒜 1 = ⊥) {d : ℤ}
-    (hε : TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
+    (hε : LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
       (trivialGrading R R) d) : ∃ c : ℤ, d = -2 * c := by
   by_contra hd
   obtain ⟨a, ha⟩ := exists_ne (0 : A)
@@ -91,9 +91,9 @@ private theorem rid_lTensor_counitPiece_comul {R A : Type*} [CommSemiring R] [Ad
 is homogeneous of degree `-d`. -/
 theorem Coalgebra.isHomogeneous_counit_of_isHomogeneous_comul {R A : Type*} [CommSemiring R]
     [AddCommMonoid A] [Module R A] [Coalgebra R A] (G : InternalGrading R A ℤ) {d : ℤ}
-    (hΔ : TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) G.piece
+    (hΔ : LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) G.piece
       (G.tensorProduct G).piece d) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) G.piece
+    LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) G.piece
       (trivialGrading R R) (-d) := by
   set ε : Module.Dual R A := Coalgebra.counit with hε_def
   let ε₀sub : G.dualPiece (-d) := (G.dualPieceEquiv (-d)).symm (ε ∘ₗ (G.piece (- -d)).subtype)
@@ -102,7 +102,7 @@ theorem Coalgebra.isHomogeneous_counit_of_isHomogeneous_comul {R A : Type*} [Com
     simpa [ε₀, ε₀sub] using G.dualPieceEquiv_symm_apply_coe (-d)
       (ε ∘ₗ (G.piece (- -d)).subtype) ⟨y, by simpa using hy⟩
   have hε₀_zero {r : ℤ} {y : A} (hy : y ∈ G.piece r) (hr : r ≠ d) : ε₀ y = 0 :=
-    (G.mem_dualPiece_iff (-d) ε₀).mp ε₀sub.2 r y hy (by omega)
+    (G.mem_dualPiece_iff (-d) ε₀).mp ε₀sub.property r y hy (by omega)
   set g₁ : A ⊗[R] A →ₗ[R] A := (_root_.TensorProduct.rid R A).toLinearMap ∘ₗ ε₀.lTensor A
     with hg₁_def
   have hconv : ε ∘ₗ g₁ = ε₀ ∘ₗ (_root_.TensorProduct.lid R A).toLinearMap ∘ₗ ε.rTensor A :=
@@ -113,7 +113,7 @@ theorem Coalgebra.isHomogeneous_counit_of_isHomogeneous_comul {R A : Type*} [Com
       rid_lTensor_counitPiece_comul G (hΔ.map_mem ha) ε₀ hε₀_eq hε₀_zero ha
     rw [LinearMap.comp_apply, hg₁a] at hc
     simpa [hε_def, Coalgebra.rTensor_counit_comul] using hc
-  rw [← G.mem_dualPiece_iff_isHomogeneous_trivialGrading, hε_eq]; exact ε₀sub.2
+  rw [← G.mem_dualPiece_iff_isHomogeneous_trivialGrading, hε_eq]; exact ε₀sub.property
 
 section Equiv
 
@@ -125,28 +125,28 @@ variable {R A B : Type*} [CommSemiring R] [AddCommMonoid A] [AddCommMonoid B]
 /-- A counit-preserving degree-zero linear equivalence preserves homogeneity of the counit at any
 degree `d`. -/
 theorem LinearEquiv.isHomogeneous_counit_iff (e : A ≃ₗ[R] B)
-    (he_hom : TauCeti.LinearMap.IsHomogeneous e.toLinearMap 𝒜 ℬ 0)
+    (he_hom : LinearMap.IsHomogeneous e.toLinearMap 𝒜 ℬ 0)
     (he_counit : ∀ a, Coalgebra.counit (R := R) (e a) = Coalgebra.counit (R := R) a) (d : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
+    LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
         (trivialGrading R R) d ↔
-      TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := B)) ℬ
+      LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := B)) ℬ
         (trivialGrading R R) d := by
-  have he_equiv : TauCeti.LinearMap.IsHomogeneous e.toLinearMap
+  have he_equiv : LinearMap.IsHomogeneous e.toLinearMap
       (InternalGrading.ofDecomposition 𝒜).piece (InternalGrading.ofDecomposition ℬ).piece 0 := by
     simpa using he_hom
-  have hsymm : TauCeti.LinearMap.IsHomogeneous e.symm.toLinearMap ℬ 𝒜 0 := by
+  have hsymm : LinearMap.IsHomogeneous e.symm.toLinearMap ℬ 𝒜 0 := by
     simpa using he_equiv.linearEquiv_symm
-  simp only [TauCeti.LinearMap.isHomogeneous_def]
+  simp only [LinearMap.isHomogeneous_def]
   refine ⟨fun hA p b hb => ?_, fun hB p a ha => ?_⟩
   · simpa [← he_counit (e.symm b)] using hA p (e.symm b) (by simpa using hsymm.map_mem hb)
   · simpa [he_counit a] using hB p (e a) (by simpa using he_hom.map_mem ha)
 
 /-- A degree-zero coalgebra equivalence preserves homogeneity of the counit at any degree `d`. -/
 theorem CoalgEquiv.isHomogeneous_counit_iff (e : A ≃ₗc[R] B)
-    (he_hom : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e) 𝒜 ℬ 0) (d : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
+    (he_hom : LinearMap.IsHomogeneous (LinearMap.ofClass e) 𝒜 ℬ 0) (d : ℤ) :
+    LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
         (trivialGrading R R) d ↔
-      TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := B)) ℬ
+      LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := B)) ℬ
         (trivialGrading R R) d := by
   have hcoe : (e : A ≃ₗ[R] B).toLinearMap = LinearMap.ofClass e := by ext; rfl
   exact (e : A ≃ₗ[R] B).isHomogeneous_counit_iff 𝒜 ℬ (hcoe ▸ he_hom)
@@ -154,11 +154,11 @@ theorem CoalgEquiv.isHomogeneous_counit_iff (e : A ≃ₗc[R] B)
 
 private theorem CoalgEquiv.isHomogeneous_comul_imp (e : A ≃ₗc[R] B)
     (GA : InternalGrading R A ℤ) (GB : InternalGrading R B ℤ)
-    (he : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e) GA.piece GB.piece 0)
-    (hsymm : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e.symm) GB.piece GA.piece 0) {d : ℤ}
-    (hA : TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) GA.piece
+    (he : LinearMap.IsHomogeneous (LinearMap.ofClass e) GA.piece GB.piece 0)
+    (hsymm : LinearMap.IsHomogeneous (LinearMap.ofClass e.symm) GB.piece GA.piece 0) {d : ℤ}
+    (hA : LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) GA.piece
       (GA.tensorProduct GA).piece d) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := B)) GB.piece
+    LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := B)) GB.piece
       (GB.tensorProduct GB).piece d := by
   have hB_eq : Coalgebra.comul (R := R) (A := B) =
       _root_.TensorProduct.map (LinearMap.ofClass e) (LinearMap.ofClass e) ∘ₗ
@@ -169,20 +169,20 @@ private theorem CoalgEquiv.isHomogeneous_comul_imp (e : A ≃ₗc[R] B)
 /-- A degree-zero coalgebra equivalence between internally `ℤ`-graded coalgebras preserves
 homogeneity of the coproduct at any degree `d`. -/
 theorem CoalgEquiv.isHomogeneous_comul_iff (e : A ≃ₗc[R] B)
-    (he_hom : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e) 𝒜 ℬ 0) (d : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
+    (he_hom : LinearMap.IsHomogeneous (LinearMap.ofClass e) 𝒜 ℬ 0) (d : ℤ) :
+    LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
         ((InternalGrading.ofDecomposition 𝒜).tensorProduct
           (InternalGrading.ofDecomposition 𝒜)).piece d ↔
-      TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := B)) ℬ
+      LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := B)) ℬ
         ((InternalGrading.ofDecomposition ℬ).tensorProduct
           (InternalGrading.ofDecomposition ℬ)).piece d := by
   let GA := InternalGrading.ofDecomposition 𝒜; let GB := InternalGrading.ofDecomposition ℬ
   have hcoe : (e : A ≃ₗ[R] B).toLinearMap = LinearMap.ofClass e := by ext; rfl
   have hcoe_symm : (e : A ≃ₗ[R] B).symm.toLinearMap = LinearMap.ofClass e.symm := by ext; rfl
   have hsymm_symm : LinearMap.ofClass e.symm.symm = LinearMap.ofClass e := by ext; rfl
-  have he' : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e) GA.piece GB.piece 0 := by
+  have he' : LinearMap.IsHomogeneous (LinearMap.ofClass e) GA.piece GB.piece 0 := by
     simpa [GA, GB] using he_hom
-  have hsymm' : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e.symm) GB.piece GA.piece 0 :=
+  have hsymm' : LinearMap.IsHomogeneous (LinearMap.ofClass e.symm) GB.piece GA.piece 0 :=
     hcoe_symm ▸ (hcoe.symm ▸ he').linearEquiv_symm
   exact ⟨fun h => by
       simpa [GA, GB] using e.isHomogeneous_comul_imp GA GB he' hsymm' (by simpa [GA] using h),
@@ -201,11 +201,11 @@ variable {R A B : Type*} [CommSemiring R] [AddCommMonoid A] [AddCommMonoid B]
 /-- On a tensor product `A ⊗[R] B` of internally `ℤ`-graded coalgebras, homogeneous counits of
 degrees `dA` and `dB` tensor to a homogeneous counit of degree `dA + dB`. -/
 theorem Coalgebra.isHomogeneous_counit_tensorProduct
-    (hA : TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) GA.piece
+    (hA : LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) GA.piece
       (trivialGrading R R) dA)
-    (hB : TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := B)) GB.piece
+    (hB : LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := B)) GB.piece
       (trivialGrading R R) dB) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A ⊗[R] B))
+    LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A ⊗[R] B))
       (GA.tensorProduct GB).piece (trivialGrading R R) (dA + dB) := by
   rw [← (GA.tensorProduct GB).mem_dualPiece_iff_isHomogeneous_trivialGrading,
     TensorProduct.counit_eq_dualDistrib]
@@ -216,11 +216,11 @@ theorem Coalgebra.isHomogeneous_counit_tensorProduct
 /-- On a tensor product `A ⊗[R] B` of internally `ℤ`-graded coalgebras, homogeneous coproducts of
 degrees `dA` and `dB` tensor to a homogeneous coproduct of degree `dA + dB`. -/
 theorem Coalgebra.isHomogeneous_comul_tensorProduct
-    (hA : TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) GA.piece
+    (hA : LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) GA.piece
       (GA.tensorProduct GA).piece dA)
-    (hB : TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := B)) GB.piece
+    (hB : LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := B)) GB.piece
       (GB.tensorProduct GB).piece dB) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A ⊗[R] B))
+    LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A ⊗[R] B))
       (GA.tensorProduct GB).piece
       ((GA.tensorProduct GB).tensorProduct (GA.tensorProduct GB)).piece (dA + dB) := by
   have hdef : Coalgebra.comul (R := R) (A := A ⊗[R] B) =
@@ -241,11 +241,11 @@ variable {R S A : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
 /-- Extending scalars from `R` to a trivially graded commutative `R`-algebra `S` preserves
 homogeneity of the counit for `Submodule.baseChange`. -/
 theorem Coalgebra.isHomogeneous_counit_baseChange (𝒜 : ℤ → Submodule R A) {d : ℤ}
-    (hε : TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
+    (hε : LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
       (trivialGrading R R) d) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := S) (A := S ⊗[R] A))
+    LinearMap.IsHomogeneous (Coalgebra.counit (R := S) (A := S ⊗[R] A))
       (fun i : ℤ => (𝒜 i).baseChange S) (trivialGrading S S) d :=
-  TauCeti.LinearMap.isHomogeneous_def.mpr fun p z hz => by
+  LinearMap.isHomogeneous_def.mpr fun p z hz => by
     by_cases hp : p + d = 0
     · simp [hp]
     · have hle : (𝒜 p).baseChange S ≤
@@ -259,10 +259,10 @@ theorem Coalgebra.isHomogeneous_counit_baseChange (𝒜 : ℤ → Submodule R A)
 commutative `R`-algebra `S` preserves homogeneity of the coproduct for `Submodule.baseChange`. -/
 theorem Coalgebra.isHomogeneous_comul_baseChange (𝒜 : ℤ → Submodule R A)
     [DirectSum.Decomposition 𝒜] {d : ℤ}
-    (hΔ : TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
+    (hΔ : LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
       ((InternalGrading.ofDecomposition 𝒜).tensorProduct
         (InternalGrading.ofDecomposition 𝒜)).piece d) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := S) (A := S ⊗[R] A))
+    LinearMap.IsHomogeneous (Coalgebra.comul (R := S) (A := S ⊗[R] A))
       (fun i : ℤ => (𝒜 i).baseChange S)
       ((InternalGrading.ofDecomposition (fun i : ℤ => (𝒜 i).baseChange S)).tensorProduct
         (InternalGrading.ofDecomposition (fun i : ℤ => (𝒜 i).baseChange S))).piece d := by
@@ -272,7 +272,7 @@ theorem Coalgebra.isHomogeneous_comul_baseChange (𝒜 : ℤ → Submodule R A)
     ((_root_.TensorProduct.AlgebraTensorModule.tensorTensorTensorComm R S R S S S A
       A).toLinearMap.restrictScalars R) ∘ₗ
       _root_.TensorProduct.mk R (S ⊗[S] S) (A ⊗[R] A) ((1 : S) ⊗ₜ[S] (1 : S))
-  refine TauCeti.LinearMap.isHomogeneous_def.mpr fun n z hz => ?_
+  refine LinearMap.isHomogeneous_def.mpr fun n z hz => ?_
   let target := (GSA.tensorProduct GSA).piece (n + d)
   suffices hle : (𝒜 n).baseChange S ≤ target.comap (Coalgebra.comul (R := S) (A := S ⊗[R] A)) from
     Submodule.mem_comap.mp (hle hz)
@@ -292,14 +292,14 @@ homogeneous of degree `d` from the total-degree grading of `S ⊗[R] A` into `�
 theorem Coalgebra.isHomogeneous_restrictScalars_counit_baseChange
     (𝒮 : ℤ → Submodule R S) [DirectSum.Decomposition 𝒮]
     (𝒜 : ℤ → Submodule R A) [DirectSum.Decomposition 𝒜] {d : ℤ}
-    (hε : TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
+    (hε : LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
       (trivialGrading R R) d) :
-    TauCeti.LinearMap.IsHomogeneous
+    LinearMap.IsHomogeneous
       ((Coalgebra.counit (R := S) (A := S ⊗[R] A)).restrictScalars R)
       ((InternalGrading.ofDecomposition 𝒮).tensorProduct
         (InternalGrading.ofDecomposition 𝒜)).piece 𝒮 d := by
   let GS := InternalGrading.ofDecomposition 𝒮; let GA := InternalGrading.ofDecomposition 𝒜
-  refine TauCeti.LinearMap.isHomogeneous_def.mpr fun n z hz =>
+  refine LinearMap.isHomogeneous_def.mpr fun n z hz =>
     GS.tensorProduct_piece_le GA
       (C := (𝒮 (n + d)).comap ((Coalgebra.counit (R := S) (A := S ⊗[R] A)).restrictScalars R))
       (fun p s hs a ha => ?_) hz

@@ -55,13 +55,13 @@ barycentric coordinates. No global finiteness assumption is needed. -/
 theorem isEmbedding_realization_coe_of_finite_vertex_stars
     (hfin : ∀ v : ι,
       (PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex {v}).faces.Finite) :
-    Topology.IsEmbedding (fun x : Realization K => (x.1 : ι → ℝ)) := by
+    Topology.IsEmbedding (fun x : Realization K => (x.val : ι → ℝ)) := by
   -- Factor coordinates through their range and use its open-star cover.
   -- Check each restriction via the embedding of the compact closed star.
-  let c : Realization K → (ι → ℝ) := fun x => x.1
+  let c : Realization K → (ι → ℝ) := fun x => x.val
   let U : ι → TopologicalSpace.Opens (range c) := fun v =>
-    ⟨{y | 0 < y.1 v}, isOpen_lt continuous_const
-      ((continuous_apply v).comp continuous_subtype_val)⟩
+    ⟨{y | 0 < y.val v}, isOpen_lt continuous_const
+      ((continuous_apply v).comp continuous_subtypeVal)⟩
   have hpreimage (v : ι) : (rangeFactorization c) ⁻¹' (U v) = K.openStarRealization v := by
     ext x
     simp only [U, TopologicalSpace.Opens.coe_mk, mem_preimage, mem_ofPred_eq,
@@ -80,7 +80,7 @@ theorem isEmbedding_realization_coe_of_finite_vertex_stars
     apply (hcover.isEmbedding_iff_restrictPreimage hc).mpr
     intro v
     let C := K.closedStarRealization {v}
-    have hC : Topology.IsEmbedding (fun x : C => c x.1) :=
+    have hC : Topology.IsEmbedding (fun x : C => c x.val) :=
       (K.isClosedEmbedding_realization_coe_restrict
         (K.isCompact_closedStarRealization (hfin v))).isEmbedding
     have hsub : (rangeFactorization c) ⁻¹' (U v) ⊆ C := by
@@ -89,8 +89,9 @@ theorem isEmbedding_realization_coe_of_finite_vertex_stars
     have hi := hC.comp (Topology.IsEmbedding.inclusion hsub)
     -- Both sides evaluate to the coordinates of the same realization point:
     -- rangeFactorization, restrictPreimage, and inclusion only add subtype proofs.
-    have hcomp : (Subtype.val ∘ Subtype.val) ∘ (U v).1.restrictPreimage (rangeFactorization c) =
-        (fun x : C => c x.1) ∘ inclusion hsub := funext fun x => rfl
+    have hcomp : (Subtype.val ∘ Subtype.val) ∘ (U v).carrier.restrictPreimage
+        (rangeFactorization c) =
+        (fun x : C => c x.val) ∘ inclusion hsub := funext fun x => rfl
     rw [← hcomp] at hi
     exact (Topology.IsEmbedding.subtypeVal.comp Topology.IsEmbedding.subtypeVal).of_comp_iff.mp hi
   exact Topology.IsEmbedding.subtypeVal.comp he
@@ -106,7 +107,7 @@ theorem locallyCompactSpace_realization_of_isCombinatorialManifold {n : ℕ}
 space. -/
 theorem isEmbedding_realization_coe_of_isCombinatorialManifold {n : ℕ}
     (hK : PreAbstractSimplicialComplex.IsCombinatorialManifold K.toPreAbstractSimplicialComplex n) :
-    Topology.IsEmbedding (fun x : Realization K => (x.1 : ι → ℝ)) :=
+    Topology.IsEmbedding (fun x : Realization K => (x.val : ι → ℝ)) :=
   K.isEmbedding_realization_coe_of_finite_vertex_stars fun v =>
     hK.finite_faces_closedStar v
 

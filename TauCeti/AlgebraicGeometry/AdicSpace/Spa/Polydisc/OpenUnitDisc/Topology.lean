@@ -64,12 +64,12 @@ noncomputable def discExhaustion (c : K) (n : ℕ) : Set (closedPolydisc 1 K) :=
 @[simp]
 theorem mem_discExhaustion (c : K) (n : ℕ) (v : closedPolydisc 1 K) :
     v ∈ discExhaustion c n ↔
-      v.1.toValuativeRel.vle (T ^ (n + 1)) (C c) ∧ ¬ v.1.toValuativeRel.vle (C c) 0 := by
+      v.val.toValuativeRel.vle (T ^ (n + 1)) (C c) ∧ ¬ v.val.toValuativeRel.vle (C c) 0 := by
   rw [discExhaustion, Set.mem_preimage, mem_basicOpen_iff]
 
 /-- Each exhaustion disc is open in the closed unit disc. -/
 theorem isOpen_discExhaustion (c : K) (n : ℕ) : IsOpen (discExhaustion c n) :=
-  (isOpen_basicOpen _ _).preimage continuous_subtype_val
+  (isOpen_basicOpen _ _).preimage continuous_subtypeVal
 
 open scoped Classical in
 /-- The exhaustion disc is the rational subset with numerators `T^(n+1), c` and denominator
@@ -80,7 +80,7 @@ theorem discExhaustion_eq_rationalSubset (c : K) (n : ℕ) :
   classical
   ext v
   rw [mem_discExhaustion, Set.mem_preimage, mem_rationalSubset_iff]
-  have hv : v.1 ∈ spa (powerBoundedSubring 𝒯) := closedPolydisc_def 1 K ▸ v.2
+  have hv : v.val ∈ spa (powerBoundedSubring 𝒯) := closedPolydisc_def 1 K ▸ v.property
   simp [hv]
 
 /-- Exhaustion discs with unit denominator are quasi-compact over a Huber ring. -/
@@ -99,10 +99,10 @@ theorem isCompact_discExhaustion [IsHuberRing K] {c : K} (hc : IsUnit c) (n : �
 /-- The rational subsets in the exhaustion increase with their index. -/
 theorem monotone_discExhaustion (c : K) : Monotone (discExhaustion c) := by
   intro n m hnm v hv
-  let : ValuativeRel 𝒯 := v.1.toValuativeRel
+  let : ValuativeRel 𝒯 := v.val.toValuativeRel
   rw [mem_discExhaustion] at hv ⊢
-  have hT : v.1.toValuativeRel.vle T 1 :=
-    ((mem_closedPolydisc_iff 1 K v.1).mp v.2).2 T
+  have hT : v.val.toValuativeRel.vle T 1 :=
+    ((mem_closedPolydisc_iff 1 K v.val).mp v.property).2 T
       (mem_powerBoundedSubring.mpr (isPowerBounded_weightedX_one_weight 0))
   exact ⟨(ValuativeRel.pow_vle_pow_of_vle_one hT (Nat.add_le_add_right hnm 1)).trans hv.1,
     hv.2⟩
@@ -143,16 +143,16 @@ theorem discExhaustionUnion_eq_of_isPseudoUniformizer {c d : K}
   intro a b ha hb v hv
   obtain ⟨n, hn⟩ := (mem_discExhaustionUnion a v).mp hv
   rw [mem_discExhaustion] at hn
-  have hcont := ((mem_closedPolydisc_iff 1 K v.1).mp v.2).1
+  have hcont := ((mem_closedPolydisc_iff 1 K v.val).mp v.property).1
   have haNil : IsTopologicallyNilpotent (C a) :=
     ha.isTopologicallyNilpotent.map (continuous_weightedC isWeightFamily_one_weight)
   have hbNil : IsTopologicallyNilpotent (C b) :=
     hb.isTopologicallyNilpotent.map (continuous_weightedC isWeightFamily_one_weight)
-  have hbSupp : C b ∉ v.1.supp := v.1.supp.notMem_of_isUnit (hb.isUnit.map C)
+  have hbSupp : C b ∉ v.val.supp := v.val.supp.notMem_of_isUnit (hb.isUnit.map C)
   obtain ⟨m, hm⟩ := hcont.exists_pow_vlt_of_isTopologicallyNilpotent haNil hbSupp
-  have hvalcont := (isContinuous_def v.1).mp hcont
-  have hmval : v.1.valuation (C a) ^ m < v.1.valuation (C b) := by
-    simpa only [map_pow] using (valuation_lt_iff v.1 _ _).mpr hm
+  have hvalcont := (isContinuous_def v.val).mp hcont
+  have hmval : v.val.valuation (C a) ^ m < v.val.valuation (C b) := by
+    simpa only [map_pow] using (valuation_lt_iff v.val _ _).mpr hm
   have hmpos : 0 < m := by
     by_contra h
     have hmzero : m = 0 := by omega
@@ -164,8 +164,8 @@ theorem discExhaustionUnion_eq_of_isPseudoUniformizer {c d : K}
   refine ⟨(n + 1) * m - 1, (mem_discExhaustion b _ v).mpr ⟨?_, ?_⟩⟩
   · rw [hexp, pow_mul, ← valuation_le_iff]
     rw [map_pow]
-    exact (pow_le_pow_left₀ zero_le ((valuation_le_iff v.1 _ _).mpr hn.1) m).trans hmval.le
-  · exact fun h ↦ hbSupp ((mem_supp_iff v.1 _).mpr h)
+    exact (pow_le_pow_left₀ zero_le ((valuation_le_iff v.val _ _).mpr hn.1) m).trans hmval.le
+  · exact fun h ↦ hbSupp ((mem_supp_iff v.val _).mpr h)
 
 end TopologicalRing
 

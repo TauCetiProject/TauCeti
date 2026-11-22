@@ -100,8 +100,8 @@ exactly the flag pairs with no branch on `X v`. A flag point of `d` whose partne
 not a flag point of the result. -/
 def deleteComponent :
     FlagPairData {i // i ≠ v} {f : Flag // d.fst f ≠ v ∧ d.snd f ≠ v} (fun i ↦ X i) where
-  fst f := ⟨d.fst f, f.2.1⟩
-  snd f := ⟨d.snd f, f.2.2⟩
+  fst f := ⟨d.fst f, f.property.1⟩
+  snd f := ⟨d.snd f, f.property.2⟩
   fstPt f := d.fstPt f
   sndPt f := d.sndPt f
   flagPointOf_injective' := by
@@ -120,13 +120,13 @@ variable {d v}
 pairs keep their first components. -/
 @[simp]
 theorem FlagPairData.fst_deleteComponent (f : {f : Flag // d.fst f ≠ v ∧ d.snd f ≠ v}) :
-    (d.deleteComponent v).fst f = ⟨d.fst f, f.2.1⟩ :=
+    (d.deleteComponent v).fst f = ⟨d.fst f, f.property.1⟩ :=
   (rfl)
 
 /-- The flag pairs of the deleted data keep their second components. -/
 @[simp]
 theorem FlagPairData.snd_deleteComponent (f : {f : Flag // d.fst f ≠ v ∧ d.snd f ≠ v}) :
-    (d.deleteComponent v).snd f = ⟨d.snd f, f.2.2⟩ :=
+    (d.deleteComponent v).snd f = ⟨d.snd f, f.property.2⟩ :=
   (rfl)
 
 /-- The normalization of the deleted data is a part of the normalization of `d`. -/
@@ -139,7 +139,7 @@ private theorem sigmaMap_val_injective (v : ι) :
 theorem sigmaMap_flagPoint_deleteComponent
     (p : {f : Flag // d.fst f ≠ v ∧ d.snd f ≠ v} × Bool) :
     Sigma.map Subtype.val (fun _ ↦ id) (flagPoint (d.deleteComponent v) p) =
-      flagPoint d (p.1.1, p.2) := by
+      flagPoint d (p.1.val, p.2) := by
   obtain ⟨f, _ | _⟩ := p
   · rw [flagPoint_false, flagPoint_false, fstPoint_def, fstPoint_def]
     rfl
@@ -157,13 +157,13 @@ theorem flagRel_deleteComponent_iff (x y : Σ i : {i // i ≠ v}, X i) :
   have hoff (z : Σ i : {i // i ≠ v}, X i) (w : Σ i, X i)
       (h : Sigma.map Subtype.val (fun _ ↦ id) z = w) : w.1 ≠ v := by
     subst h
-    exact z.1.2
+    exact z.1.property
   rw [flagRel_def, flagRel_def]
   constructor
   · rintro ⟨f, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩
-    · exact ⟨f.1, Or.inl ⟨by simpa using sigmaMap_flagPoint_deleteComponent (f, false),
+    · exact ⟨f.val, Or.inl ⟨by simpa using sigmaMap_flagPoint_deleteComponent (f, false),
         by simpa using sigmaMap_flagPoint_deleteComponent (f, true)⟩⟩
-    · exact ⟨f.1, Or.inr ⟨by simpa using sigmaMap_flagPoint_deleteComponent (f, true),
+    · exact ⟨f.val, Or.inr ⟨by simpa using sigmaMap_flagPoint_deleteComponent (f, true),
         by simpa using sigmaMap_flagPoint_deleteComponent (f, false)⟩⟩
   · rintro ⟨f, ⟨hx, hy⟩ | ⟨hx, hy⟩⟩
     · have hf : d.fst f ≠ v ∧ d.snd f ≠ v :=
@@ -245,7 +245,7 @@ theorem attachPoint_notMem_flagPointSet_deleteComponent :
   have h := congrArg (Sigma.map Subtype.val fun _ ↦ id) hp
   rw [sigmaMap_flagPoint_deleteComponent, sigmaMap_attachPoint] at h
   have := congrArg Prod.fst (flagPoint_injective d h)
-  exact (fst_ne_and_snd_ne_iff_of_tail htail p.1.1).mp p.1.2 this
+  exact (fst_ne_and_snd_ne_iff_of_tail htail p.1.val).mp p.1.property this
 
 open scoped Classical in
 /-- The point of the contracted normalization to which a point of `d` is sent: the attaching point
@@ -259,7 +259,7 @@ private theorem collapse_of_fst_eq {x : Σ i, X i} (hx : x.1 = v) :
 
 private theorem collapse_sigmaMap (y : Σ i : {i // i ≠ v}, X i) :
     collapse htail (Sigma.map Subtype.val (fun _ ↦ id) y) = y :=
-  dite_eq_right y.1.2
+  dite_eq_right y.1.property
 
 private theorem sigmaMap_collapse_of_fst_eq {x : Σ i, X i} (hx : x.1 = v) :
     Sigma.map Subtype.val (fun _ ↦ id) (collapse htail x) = flagPoint d (p₀.1, !p₀.2) := by

@@ -56,7 +56,8 @@ Morse index is the negative index of inertia of the critical Hessian.
 * `TauCeti.criticalHessian_mfderiv_apply_eq_zero`: the critical Hessian vanishes on directions
   tangent to a family of critical points.
 * `TauCeti.criticalHessian_comp_apply`: the second-order chain rule at a critical point, for a
-  `C²` map between boundaryless manifolds.
+  `C²` map between boundaryless manifolds. `TauCeti.toQuadraticMap_toBilinForm_criticalHessian_comp`
+  states it as an equality of quadratic forms precomposed with `dφ`.
 * `TauCeti.criticalHessian_comp_snd_apply`: the critical Hessian of `(x, v) ↦ q v` on `M × V` is the
   second derivative of `q` on the second components.
   Its kernel is described by `TauCeti.criticalHessian_comp_snd_apply_eq_zero_iff`.
@@ -581,7 +582,7 @@ theorem mvfderiv_mvfderiv_extend_eq_criticalHessian [IsManifold I 2 M]
     (hf.contDiffAt_comp_extChartAt_symm.fderiv_right
       (by norm_num : (1 : ℕ∞ω) + 1 ≤ 2)).differentiableAt one_ne_zero
   -- Near `x`, `df(extend w)` is the coordinate expression of `df` along `w`, read in the chart.
-  rw [(Manifold.mvfderiv_extend_eventuallyEq (hf.of_le one_le_two) w).mvfderiv_eq,
+  rw [(Manifold.mvfderiv_extend_eventuallyEq f BoundarylessManifold.isInteriorPoint w).mvfderiv_eq,
     mvfderiv_comp_apply_of_differentiableAt (hDg.clm_apply (differentiableAt_const w))
       (mdifferentiableAt_extChartAt (mem_chart_source H x)),
     mvfderiv_apply_of_eventuallyEq_extChartAt EventuallyEq.rfl, criticalHessian_def]
@@ -715,6 +716,18 @@ theorem criticalHessian_comp_apply {x : M} (hφx : φ y = x) (hf : ContMDiffAt I
   rw [hy, hφd.mfderiv_eq_fderiv_extChartAt_conj rfl]
   -- `writtenInExtChartAt` is by definition `φ` read in the extended charts at `y` and `φ y`.
   rfl
+
+/-- **The second-order chain rule as quadratic forms.** If `φ y` is a critical point of a
+function `f` which is `C²` there, and `φ` is `C²` at `y`, then the quadratic form of the critical
+Hessian of `f ∘ φ` at `y` is that of `f` at `φ y` precomposed with `dφ_y`. No condition is put on
+`dφ_y`. -/
+theorem toQuadraticMap_toBilinForm_criticalHessian_comp (hf : ContMDiffAt I 𝓘(ℝ) 2 f (φ y))
+    (hφ : ContMDiffAt I' I 2 φ y) (hcrit : φ y ∈ criticalPoints I f) :
+    (criticalHessian I' (f ∘ φ) y).toBilinForm.toQuadraticMap =
+      (criticalHessian I f (φ y)).toBilinForm.toQuadraticMap.comp
+        (mfderiv I' I φ y : TangentSpace I' y →ₗ[ℝ] TangentSpace I (φ y)) := by
+  ext u
+  simp [criticalHessian_comp_apply rfl hf hφ hcrit]
 
 end Comp
 
@@ -911,11 +924,10 @@ theorem criticalHessian_trivializationAt_symm_apply [IsManifold I 2 M] {x₀ : M
   rw [criticalHessian_apply_eq_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x₀) hx hf
     hcrit, ← extChartAt, hcoord, hcoord]
 
-/-- **The Morse index is lower semicontinuous on the critical set.** On a boundaryless
-finite-dimensional manifold, if `f` is `C²` at `x`, then at every critical point of `f` near `x`
-the Morse index is at least the Morse index at `x`. The point `x` need not be critical, nor
-nondegenerate. -/
-theorem eventually_manifoldMorseIndex_le [FiniteDimensional ℝ E] [IsManifold I 2 M]
+/-- **The Morse index is lower semicontinuous on the critical set.** On a boundaryless manifold,
+if `f` is `C²` at `x`, then at every critical point of `f` near `x` the Morse index is at least
+the Morse index at `x`. The point `x` need not be critical, nor nondegenerate. -/
+theorem eventually_manifoldMorseIndex_le [IsManifold I 2 M]
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
     ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → manifoldMorseIndex I f x ≤ manifoldMorseIndex I f y := by
   -- Both indices are read in the preferred chart at `x`: at `x` by definition, and at nearby

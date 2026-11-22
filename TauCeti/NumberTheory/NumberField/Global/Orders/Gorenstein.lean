@@ -318,7 +318,7 @@ theorem isProperFractionalIdeal_iff_mul_dual_eq_dual_one
   refine forall_congr' fun x ↦ ?_
   rw [mem_multiplierRing_iff_mem_dual hI, FractionalIdeal.mem_one_iff]
   exact iff_congr Iff.rfl
-    ⟨fun h ↦ ⟨⟨x, h⟩, rfl⟩, fun ⟨y, hy⟩ ↦ hy ▸ y.2⟩
+    ⟨fun h ↦ ⟨⟨x, h⟩, rfl⟩, fun ⟨y, hy⟩ ↦ hy ▸ y.property⟩
 
 variable (O) in
 /-- The trace dual `Oᵛ` of an order, its codifferent, is a proper fractional ideal. -/
@@ -400,7 +400,7 @@ theorem traceDual_eq_spanSingleton_of_toSubalgebra_eq_adjoin {x : K}
   rw [Submodule.mem_smul_pointwise_iff_exists, Submodule.restrictScalars_mem,
     FractionalIdeal.mem_coeToSubmodule, FractionalIdeal.mem_spanSingleton, ← hx]
   exact ⟨fun ⟨b, hb, hby⟩ ↦ ⟨⟨b, hb⟩, by simp [← hby, Subalgebra.smul_def, mul_comm]⟩,
-    fun ⟨b, hby⟩ ↦ ⟨b, b.2, by simp [← hby, Subalgebra.smul_def, mul_comm]⟩⟩
+    fun ⟨b, hby⟩ ↦ ⟨b, b.property, by simp [← hby, Subalgebra.smul_def, mul_comm]⟩⟩
 
 /-- **A monogenic order `ℤ[x]` is Gorenstein**, since by Euler's formula its trace dual is
 principal. -/

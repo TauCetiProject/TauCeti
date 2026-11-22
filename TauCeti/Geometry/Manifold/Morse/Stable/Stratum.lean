@@ -59,8 +59,12 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   strata.
 * `morseBrokenTrajectoryStratum_eq_morseTrajectoryRecords`: the stratum of a one-step chain is the
   space of unbroken trajectories.
-* `antitone_apply_of_chain`, `strictAnti_apply_of_chain`: `f` decreases along a chain of critical
-  points joined by trajectories, strictly when consecutive points are distinct.
+* `strictAnti_apply_of_chain`: `f` decreases strictly along a chain of critical points joined by
+  trajectories with consecutive points distinct.
+* `value_lt_of_mem_morseBrokenTrajectoryRecords`: `f` decreases strictly from the start to the end
+  of a broken trajectory between distinct points.
+* `exists_flow_eq_of_mem_Ioo`: the point of a record on a level of step `j` lies on the orbit of
+  the component of step `j`.
 * `mem_unstableSet_inter_stableSet_of_mem_morseBrokenTrajectoryStratum`: the point of a record on a
   level of step `j` lies on a trajectory from `x j` to `x (j + 1)`.
 * `exists_homeomorph_morseBrokenTrajectoryStratum`: a stratum is the product of the spaces of
@@ -142,15 +146,6 @@ theorem morseBrokenTrajectoryStratum_eq_morseTrajectoryRecords (p r : M) (c : ι
   · rintro ⟨y, hy, hw⟩
     exact ⟨![y], hy, hw⟩
 
-/-- **`f` decreases along a chain joined by trajectories.** If each `x j` is joined to `x (j + 1)`
-by a trajectory, then `f (x (j + 1)) ≤ f (x j)` for all `j`. -/
-theorem antitone_apply_of_chain {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M}
-    (hz : ∀ j : Fin k, z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ)) :
-    Antitone fun j ↦ f (x j) :=
-  Fin.antitone_iff_succ_le.2 fun j ↦
-    (hX.mem_Icc_of_mem_unstableSet_inter_stableSet (hz j)).1.trans
-      (hX.mem_Icc_of_mem_unstableSet_inter_stableSet (hz j)).2
-
 /-- **`f` decreases strictly along a chain of distinct points joined by trajectories.** If each
 `x j` is joined to a different point `x (j + 1)` by a trajectory, then `f (x (j + 1)) < f (x j)`
 for all `j`. -/
@@ -162,9 +157,17 @@ theorem strictAnti_apply_of_chain {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k �
     (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet (hxne j) (hz j)).1.trans
       (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet (hxne j) (hz j)).2
 
+/-- **The function decreases strictly along a broken trajectory between distinct points.** If there
+is a broken trajectory from `p` to `r ≠ p`, recorded on any levels, then `f r < f p`. -/
+theorem value_lt_of_mem_morseBrokenTrajectoryRecords {p r : M} {c : ι → ℝ} {w : ι → M}
+    (hpr : p ≠ r) (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c) : f r < f p := by
+  obtain ⟨k, x, z, rfl, rfl, -, hne, hz, -⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
+  exact hX.strictAnti_apply_of_chain hne hz
+    ((Fin.zero_le _).lt_of_ne fun h ↦ hpr (congrArg x h))
+
 /-- The point of a record of a broken trajectory through `x`, made of the points `z j`, on a level
 strictly between `f (x (j + 1))` and `f (x j)` lies on the orbit of `z j`. -/
-private theorem exists_flow_eq_of_mem_Ioo {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M}
+theorem exists_flow_eq_of_mem_Ioo {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M}
     {c : ι → ℝ} {w : ι → M}
     (hz : ∀ j : Fin k, z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ))
     (hw : ∀ i, f (w i) = c i ∧ ∃ j t, hX.flow t (z j) = w i) {i : ι} {j : Fin k}
@@ -200,7 +203,7 @@ theorem exists_homeomorph_morseBrokenTrajectoryStratum {k : ℕ} {x : Fin (k + 1
     ∃ Φ : hX.morseBrokenTrajectoryStratum x c ≃ₜ
         ((j : Fin k) → hX.morseTrajectoryRecords (x j.castSucc) (x j.succ)
           fun i : {i // c i ∈ Ioo (f (x j.succ)) (f (x j.castSucc))} ↦ c i),
-      ∀ w j i, (Φ w j).1 i = w.1 i := by
+      ∀ w j i, (Φ w j).val i = w.val i := by
   -- Each level lies strictly between the values at the ends of some step `J i`.
   have hJ (i : ι) : ∃ j : Fin k, c i ∈ Ioo (f (x j.succ)) (f (x j.castSucc)) :=
     (Fin.exists_succ_lt_lt_castSucc (g := fun j ↦ f (x j)) (fun j ↦ (hcx i j).symm) (hc i).2
@@ -213,30 +216,30 @@ theorem exists_homeomorph_morseBrokenTrajectoryStratum {k : ℕ} {x : Fin (k + 1
           fun i : {i // c i ∈ Ioo (f (x j.succ)) (f (x j.castSucc))} ↦ c i := by
     obtain ⟨z, hz, hw⟩ := hw
     exact hX.mem_morseTrajectoryRecords.2
-      ⟨z j, hz j, fun i ↦ ⟨(hw i).1, hX.exists_flow_eq_of_mem_Ioo hz hw i.2⟩⟩
+      ⟨z j, hz j, fun i ↦ ⟨(hw i).1, hX.exists_flow_eq_of_mem_Ioo hz hw i.property⟩⟩
   -- Conversely, records of the steps assemble into a record of the stratum.
   have hbwd (v : (j : Fin k) → hX.morseTrajectoryRecords (x j.castSucc) (x j.succ)
       fun i : {i // c i ∈ Ioo (f (x j.succ)) (f (x j.castSucc))} ↦ c i) :
-      (fun i ↦ (v (J i)).1 ⟨i, hJ i⟩) ∈ hX.morseBrokenTrajectoryStratum x c := by
-    choose y hy hv using fun j ↦ hX.mem_morseTrajectoryRecords.1 (v j).2
+      (fun i ↦ (v (J i)).val ⟨i, hJ i⟩) ∈ hX.morseBrokenTrajectoryStratum x c := by
+    choose y hy hv using fun j ↦ hX.mem_morseTrajectoryRecords.1 (v j).property
     exact ⟨y, hy, fun i ↦ ⟨(hv (J i) ⟨i, hJ i⟩).1, J i, (hv (J i) ⟨i, hJ i⟩).2⟩⟩
   have hcont : Continuous fun (v : (j : Fin k) → hX.morseTrajectoryRecords (x j.castSucc)
       (x j.succ) fun i : {i // c i ∈ Ioo (f (x j.succ)) (f (x j.castSucc))} ↦ c i) i ↦
-      (v (J i)).1 ⟨i, hJ i⟩ :=
-    continuous_pi fun i ↦ ((continuous_apply _).comp continuous_subtype_val).comp
+      (v (J i)).val ⟨i, hJ i⟩ :=
+    continuous_pi fun i ↦ ((continuous_apply _).comp continuous_subtypeVal).comp
       (continuous_apply (J i))
   refine ⟨
-    { toFun w j := ⟨fun i ↦ (w : ι → M) i, hfwd w.1 w.2 j⟩
-      invFun v := ⟨fun i ↦ (v (J i)).1 ⟨i, hJ i⟩, hbwd v⟩
+    { toFun w j := ⟨fun i ↦ (w : ι → M) i, hfwd w.val w.property j⟩
+      invFun v := ⟨fun i ↦ (v (J i)).val ⟨i, hJ i⟩, hbwd v⟩
       left_inv w := rfl
       right_inv v := funext fun j ↦ Subtype.ext (funext fun i ↦ ?_)
       continuous_toFun := continuous_pi fun j ↦
-        (continuous_pi fun i ↦ (continuous_apply i.1).comp continuous_subtype_val).subtype_mk _
+        (continuous_pi fun i ↦ (continuous_apply i.val).comp continuous_subtypeVal).subtype_mk _
       continuous_invFun := hcont.subtype_mk _ },
     fun w j i ↦ rfl⟩
   -- A level of step `j` is a level of no other step, since `f` decreases along the chain.
   obtain ⟨i, hi⟩ := i
-  choose y hy _ using fun j ↦ hX.mem_morseTrajectoryRecords.1 (v j).2
+  choose y hy _ using fun j ↦ hX.mem_morseTrajectoryRecords.1 (v j).property
   obtain rfl : J i = j :=
     (hX.antitone_apply_of_chain hy).eq_of_mem_Ioo_of_mem_Icc_fin (hJ i) (Ioo_subset_Icc_self hi)
   rfl
@@ -260,7 +263,7 @@ theorem exists_homeomorph_morseBrokenTrajectoryStratum_orbitQuotient {k : ℕ}
   have hne : x j.castSucc ≠ x j.succ := fun h ↦ by
     obtain ⟨i, hi⟩ := hlev j
     exact (hi.1.trans hi.2).ne (by rw [h])
-  exact (hX.exists_homeomorph_morseTrajectoryRecords_orbitQuotient hne fun i ↦ i.2).some
+  exact (hX.exists_homeomorph_morseTrajectoryRecords_orbitQuotient hne fun i ↦ i.property).some
 
 /-- **A record determines its chain.** Let `x 0, …, x k` be a chain with a level strictly between
 `f (x (j + 1))` and `f (x j)` for every step `j`, and `x' 0, …, x' k'` a chain with the same ends

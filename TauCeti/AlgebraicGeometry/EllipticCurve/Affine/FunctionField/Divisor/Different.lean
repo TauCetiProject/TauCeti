@@ -131,7 +131,7 @@ separating element `x` is `2y + a₁x + a₃` times the invariant differential, 
 zero. -/
 theorem weilDifferentialDivisor_weilDifferentialOfSeparating_genericX :
     weilDifferentialDivisor W.isFunctionField (isIntegrallyClosedIn_functionField W)
-        (weilDifferentialOfSeparating W.isFunctionField (transcendental_genericX W)).2
+        (weilDifferentialOfSeparating W.isFunctionField (transcendental_genericX W)).property
         (by simpa using
           weilDifferentialOfSeparating_ne_zero W.isFunctionField (transcendental_genericX W)) =
       Divisor.principal W.isFunctionField
@@ -143,7 +143,7 @@ theorem weilDifferentialDivisor_weilDifferentialOfSeparating_genericX :
   set u := Units.mk0 (invariantDifferentialDenom W) (invariantDifferentialDenom_ne_zero W)
   -- The invariant differential is `u⁻¹ · dx`, whose divisor is `div u⁻¹ + (dx)`.
   have hD := weilDifferentialDivisor_repartitionDualMul hF hex
-    (weilDifferentialOfSeparating hF hx).2
+    (weilDifferentialOfSeparating hF hx).property
     (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) u⁻¹
   have hω : ((kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx
       (invariantDifferential W) : ↥(weilDifferentialSpace F W.FunctionField)) :
@@ -282,7 +282,7 @@ theorem different_eq_zeros_add_of_two_ne_zero (h2 : (2 : F) ≠ 0) :
 /-- `2y + a₁x + a₃` vanishes at the place of an affine point of order two. -/
 private theorem ord_invariantDifferentialDenom_pos {x y : F} (h : W.Nonsingular x y)
     (hT : -Point.some x y h = Point.some x y h) :
-    0 < (pointEquivDegreeOnePlace W (.some x y h)).1.ord (invariantDifferentialDenom W) := by
+    0 < (pointEquivDegreeOnePlace W (.some x y h)).val.ord (invariantDifferentialDenom W) := by
   -- A point of order two is its own negative, so `y = -y - a₁x - a₃`.
   have hy : W.polynomialY.evalEval x y = 0 := by
     rw [Point.neg_some, Point.some.injEq] at hT
@@ -312,11 +312,11 @@ theorem degree_zeros_invariantDifferentialDenom (h2 : (2 : F) ≠ 0) :
 /-- The places of a finite set of affine points of order two are zeros of `2y + a₁x + a₃`. -/
 private theorem sum_ofPoint_le_zeros {A : Finset W.Point} (hA0 : (0 : W.Point) ∉ A)
     (hA : ∀ T ∈ A, -T = T) :
-    ∑ T ∈ A, WeilDivisor.ofPoint (pointEquivDegreeOnePlace W T).1 ≤
+    ∑ T ∈ A, WeilDivisor.ofPoint (pointEquivDegreeOnePlace W T).val ≤
       Divisor.zeros W.isFunctionField
         (Units.mk0 (invariantDifferentialDenom W) (invariantDifferentialDenom_ne_zero W)) := by
   classical
-  have hpl : Function.Injective fun T ↦ (pointEquivDegreeOnePlace W T).1 :=
+  have hpl : Function.Injective fun T ↦ (pointEquivDegreeOnePlace W T).val :=
     Subtype.val_injective.comp (pointEquivDegreeOnePlace W).injective
   rw [← Finset.sum_image fun _ _ _ _ h ↦ hpl h, WeilDivisor.le_iff]
   intro Q
@@ -335,15 +335,15 @@ rational points of order dividing two, which forces characteristic other than tw
 theorem different_eq_sum_of_card_eq_four {S : Finset W.Point}
     (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) :
     Divisor.different F W.FunctionField (IsFunctionField.ratFunc F) =
-      ∑ T ∈ S, WeilDivisor.ofPoint (pointEquivDegreeOnePlace W T).1 := by
+      ∑ T ∈ S, WeilDivisor.ofPoint (pointEquivDegreeOnePlace W T).val := by
   classical
   have h2 := Point.two_ne_zero_of_two_lt_card hS (by omega)
   -- The affine points of `S` give at most `3` zeros of `2y + a₁x + a₃`, counted with degree.
   have hle := sum_ofPoint_le_zeros (A := S.erase 0) (Finset.notMem_erase 0 S)
     fun T hT ↦ hS T (Finset.mem_of_mem_erase hT)
   have hdeg : Divisor.degree (∑ T ∈ S.erase 0,
-      WeilDivisor.ofPoint (pointEquivDegreeOnePlace W T).1) = (S.erase 0).card := by
-    simp [map_sum, Divisor.degree_ofPoint, (pointEquivDegreeOnePlace W _).2]
+      WeilDivisor.ofPoint (pointEquivDegreeOnePlace W T).val) = (S.erase 0).card := by
+    simp [map_sum, Divisor.degree_ofPoint, (pointEquivDegreeOnePlace W _).property]
   have hA := Divisor.degree_le_of_le hle
   rw [hdeg, degree_zeros_invariantDifferentialDenom h2] at hA
   -- So `S` contains the point at infinity, and the inequality is an equality of divisors.
@@ -363,8 +363,8 @@ private theorem differentExponent_eq_ite_of_card_eq_four [DecidableEq (Place F W
     {S : Finset W.Point} (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4)
     (P : Place F W.FunctionField) :
     (Place.differentExponent F (RatFunc F) P : ℤ) =
-      if P ∈ S.image fun T ↦ (pointEquivDegreeOnePlace W T).1 then 1 else 0 := by
-  have hpl : Function.Injective fun T ↦ (pointEquivDegreeOnePlace W T).1 :=
+      if P ∈ S.image fun T ↦ (pointEquivDegreeOnePlace W T).val then 1 else 0 := by
+  have hpl : Function.Injective fun T ↦ (pointEquivDegreeOnePlace W T).val :=
     Subtype.val_injective.comp (pointEquivDegreeOnePlace W).injective
   have h := congrArg (WeilDivisor.coeff · P) (different_eq_sum_of_card_eq_four hS hcard)
   simp only [Divisor.coeff_different] at h
@@ -376,10 +376,10 @@ four rational points of order dividing two, the place of each point of `S` has d
 theorem differentExponent_pointEquivDegreeOnePlace_of_card_eq_four
     {S : Finset W.Point} (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) {T : W.Point}
     (hT : T ∈ S) :
-    Place.differentExponent F (RatFunc F) (pointEquivDegreeOnePlace W T).1 = 1 := by
+    Place.differentExponent F (RatFunc F) (pointEquivDegreeOnePlace W T).val = 1 := by
   classical
-  have h := differentExponent_eq_ite_of_card_eq_four hS hcard (pointEquivDegreeOnePlace W T).1
-  simp only [Finset.mem_image_of_mem (fun T ↦ (pointEquivDegreeOnePlace W T).1) hT,
+  have h := differentExponent_eq_ite_of_card_eq_four hS hcard (pointEquivDegreeOnePlace W T).val
+  simp only [Finset.mem_image_of_mem (fun T ↦ (pointEquivDegreeOnePlace W T).val) hT,
     ↓reduceIte] at h
   exact_mod_cast h
 
@@ -388,11 +388,11 @@ rational points of order dividing two, every place other than the places of the 
 different exponent `0` over `F(x)`. -/
 theorem differentExponent_eq_zero_of_card_eq_four {S : Finset W.Point}
     (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) {P : Place F W.FunctionField}
-    (hP : ∀ T ∈ S, (pointEquivDegreeOnePlace W T).1 ≠ P) :
+    (hP : ∀ T ∈ S, (pointEquivDegreeOnePlace W T).val ≠ P) :
     Place.differentExponent F (RatFunc F) P = 0 := by
   classical
   have h := differentExponent_eq_ite_of_card_eq_four hS hcard P
-  have hmem : P ∉ S.image fun T ↦ (pointEquivDegreeOnePlace W T).1 := by
+  have hmem : P ∉ S.image fun T ↦ (pointEquivDegreeOnePlace W T).val := by
     simpa [Finset.mem_image] using hP
   simp only [hmem, ↓reduceIte] at h
   exact_mod_cast h
@@ -403,17 +403,17 @@ four rational points of order dividing two, the place of each point of `S` has r
 theorem ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four
     {S : Finset W.Point} (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) {T : W.Point}
     (hT : T ∈ S) :
-    Place.ramificationIdx (RatFunc F) (pointEquivDegreeOnePlace W T).1 = 2 := by
-  have he2 := Place.ramificationIdx_le_finrank (RatFunc F) (pointEquivDegreeOnePlace W T).1
+    Place.ramificationIdx (RatFunc F) (pointEquivDegreeOnePlace W T).val = 2 := by
+  have he2 := Place.ramificationIdx_le_finrank (RatFunc F) (pointEquivDegreeOnePlace W T).val
   rw [finrank_functionField] at he2
-  have he1 := Place.ramificationIdx_pos (RatFunc F) (pointEquivDegreeOnePlace W T).1
+  have he1 := Place.ramificationIdx_pos (RatFunc F) (pointEquivDegreeOnePlace W T).val
   -- The place is rational and `e ≤ 2` is invertible, so it is tame and `e = d + 1 = 2`.
-  have := Place.isSeparable_residueField_of_degree_eq_one _ (pointEquivDegreeOnePlace W T).2
-  have htame : Place.IsTame F (RatFunc F) (pointEquivDegreeOnePlace W T).1 := by
+  have := Place.isSeparable_residueField_of_degree_eq_one _ (pointEquivDegreeOnePlace W T).property
+  have htame : Place.IsTame F (RatFunc F) (pointEquivDegreeOnePlace W T).val := by
     refine (Place.isTame_iff_isSeparable_residueField _ _ _).mpr
       ⟨Algebra.isSeparable_tower_top_of_isSeparable F _ _, ?_⟩
     rw [← map_natCast (algebraMap F _), _root_.map_ne_zero]
-    interval_cases Place.ramificationIdx (RatFunc F) (pointEquivDegreeOnePlace W T).1
+    interval_cases Place.ramificationIdx (RatFunc F) (pointEquivDegreeOnePlace W T).val
     · simp
     · exact_mod_cast Point.two_ne_zero_of_two_lt_card hS (by omega)
   rw [(Place.ramificationIdx_eq_differentExponent_add_one_iff _ _ _).mpr htame,
@@ -424,7 +424,7 @@ four rational points of order dividing two, every place of `F(W)` other than the
 points of `S` is unramified over `F(x)`. -/
 theorem ramificationIdx_eq_one_of_card_eq_four {S : Finset W.Point}
     (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) {P : Place F W.FunctionField}
-    (hP : ∀ T ∈ S, (pointEquivDegreeOnePlace W T).1 ≠ P) :
+    (hP : ∀ T ∈ S, (pointEquivDegreeOnePlace W T).val ≠ P) :
     Place.ramificationIdx (RatFunc F) P = 1 := by
   have hd := differentExponent_eq_zero_of_card_eq_four hS hcard hP
   have hle := Place.ramificationIdx_le_differentExponent_add_one F (RatFunc F) P
@@ -436,7 +436,7 @@ four rational points of order dividing two, a place of `F(W)` is ramified over `
 it is the place of a point of `S`. -/
 theorem one_lt_ramificationIdx_iff_of_card_eq_four {S : Finset W.Point}
     (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) (P : Place F W.FunctionField) :
-    1 < Place.ramificationIdx (RatFunc F) P ↔ ∃ T ∈ S, (pointEquivDegreeOnePlace W T).1 = P := by
+    1 < Place.ramificationIdx (RatFunc F) P ↔ ∃ T ∈ S, (pointEquivDegreeOnePlace W T).val = P := by
   refine ⟨fun he ↦ by_contra fun hT ↦ ?_, fun ⟨T, hT, hTP⟩ ↦ ?_⟩
   · push Not at hT
     rw [ramificationIdx_eq_one_of_card_eq_four hS hcard hT] at he

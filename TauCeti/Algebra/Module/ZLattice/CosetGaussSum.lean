@@ -135,7 +135,7 @@ theorem cosetGaussSum_eq_zero_of_modEq [FiniteDimensional ℝ E] [DiscreteTopolo
   intro hmem
   obtain ⟨t, ht⟩ := Int.modEq_iff_add_fac.mp ha.symm
   have hN : (level L : ℤ) • (γ : E) ∈ L := by
-    simpa only [natCast_zsmul] using level_nsmul_mem γ.2
+    simpa only [natCast_zsmul] using level_nsmul_mem γ.property
   have heq : ((γ + m : dual L) : E) =
       ((a • γ + m : dual L) : E) - t • ((level L : ℤ) • (γ : E)) := by
     simp only [coe_add, Submodule.coe_smul, ht]

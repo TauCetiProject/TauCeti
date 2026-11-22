@@ -564,7 +564,7 @@ private theorem IsAmenable.exists_mem_ker_precomp_precomp_eq_dualAction_sub
   -- Phase 3: apply bidual innerness on `ker T` and push the witness back into `ker T**`.
   obtain ⟨N₀, hN₀⟩ := h.exists_eq_bidual_dualAction_sub_dualAction hLK hRK hLRK DK hDK
   refine ⟨(T.bidualKerEquivKerPrecompPrecomp hT N₀ : StrongDual 𝕜 (StrongDual 𝕜 X)),
-    (T.bidualKerEquivKerPrecompPrecomp hT N₀).2, fun a ↦ ?_⟩
+    (T.bidualKerEquivKerPrecompPrecomp hT N₀).property, fun a ↦ ?_⟩
   rw [T.coe_bidualKerEquivKerPrecompPrecomp hT, ← precomp_dualAction_apply hSL,
     ← precomp_dualAction_apply hSR, ← map_sub, ← hN₀ a, hDK_coe]
 

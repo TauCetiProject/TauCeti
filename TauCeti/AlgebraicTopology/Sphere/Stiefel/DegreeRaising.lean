@@ -28,8 +28,8 @@ commutative coefficient ring.
 
 The degree-raising map sends the image `ℓ_* c` of a class under a family `ℓ : A → Ω²X` of double
 loops to the image of `[S¹] × c` under the evaluation `S¹ × A → ΩX`, `(z, a) ↦ ℓ a (z)`
-(`TauCeti.map_comp_degreeRaising`). For the family `σ`, this evaluation is the map `A × S¹ → ΩX`
-of the loops of loops `σ_x` with the factors exchanged
+(`TauCeti.map_comp_degreeRaising_eq_evalCircle`). For the family `σ`, this evaluation is the map
+`A × S¹ → ΩX` of the loops of loops `σ_x` with the factors exchanged
 (`TauCeti.BasedTopologicalSpace.evalCircle_comp_prodMap`), and that map is homotopic to `α ∘ τ`
 (`TauCeti.homotopic_loopFamilyCircleMap_stiefelDoubleLoop`), so the two maps agree on homology.
 The cross product is taken with the fundamental class of the circle on the left, as in the
@@ -71,7 +71,7 @@ theorem map_stiefelDoubleLoop_comp_degreeRaising :
           TopCat.of (stiefel (ℝ ∙ (p : E))ᗮ 2) ⟶
             TopCat.of
               ((⟨sphere (0 : E) 1, p⟩ : BasedTopologicalSpace).iteratedLoopSpace 2).carrier) ≫
-        degreeRaising R ⟨sphere (0 : E) 1, p⟩ q n h =
+        degreeRaising (𝟙_ (ModuleCat.{0} R)) ⟨sphere (0 : E) 1, p⟩ q n h =
       (λ_ _).inv ≫ (circleFundamentalClass (𝟙_ (ModuleCat.{0} R)) ▷ _) ≫
         TopCat.singularHomologyCross (C := ModuleCat.{0} R) (TopCat.of Sphere1)
           (TopCat.of (stiefel (ℝ ∙ (p : E))ᗮ 2)) (𝟙_ _) (𝟙_ _) 1 q n h ≫
@@ -81,28 +81,12 @@ theorem map_stiefelDoubleLoop_comp_degreeRaising :
           (TopCat.ofHom ((meridianLoopRotation p).comp ContinuousMap.prodSwap)) := by
   -- The evaluation of the double loops on the circle is the map of the loops of loops `σ_x`,
   -- which is homotopic to `α ∘ τ`.
-  have heval : (𝟙 (TopCat.of Sphere1) ⊗ₘ TopCat.ofHom
-      ⟨stiefelDoubleLoop p, continuous_stiefelDoubleLoop p⟩) ≫
-        evalCircleTop ⟨sphere (0 : E) 1, p⟩ =
-      TopCat.ofHom ((loopFamilyCircleMap (stiefelDoubleLoop p)
-        (Path.continuous_uncurry_iff.mpr (continuous_stiefelDoubleLoop p))).comp
-          ContinuousMap.prodSwap) := by
-    rw [evalCircleTop_def]
-    -- In `TopCat` the tensor product of maps is the product map, so the left side is the
-    -- composite of continuous maps of `evalCircle_comp_prodMap`.
-    exact congrArg TopCat.ofHom (BasedTopologicalSpace.evalCircle_comp_prodMap
-      (X := ⟨sphere (0 : E) 1, p⟩) (stiefelDoubleLoop p) (continuous_stiefelDoubleLoop p))
-  have key : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
-      ((𝟙 (TopCat.of Sphere1) ⊗ₘ TopCat.ofHom
-        ⟨stiefelDoubleLoop p, continuous_stiefelDoubleLoop p⟩) ≫
-          evalCircleTop ⟨sphere (0 : E) 1, p⟩) =
-      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
-        (TopCat.ofHom ((meridianLoopRotation p).comp ContinuousMap.prodSwap)) := by
-    rw [heval]
-    exact TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} R)
-      ((homotopic_loopFamilyCircleMap_stiefelDoubleLoop p).comp
-        (ContinuousMap.Homotopic.refl ContinuousMap.prodSwap)).some _ n
-  exact (map_comp_degreeRaising R _ q n h _).trans
-    (congrArg (fun f ↦ _ ≫ _ ≫ _ ≫ _ ≫ f) key)
+  rw [map_comp_degreeRaising_eq_evalCircle]
+  refine congrArg (fun f ↦ _ ≫ _ ≫ _ ≫ _ ≫ f) ?_
+  rw [TopCat.hom_ofHom, BasedTopologicalSpace.evalCircle_comp_prodMap
+    (X := ⟨sphere (0 : E) 1, p⟩) (stiefelDoubleLoop p) (continuous_stiefelDoubleLoop p)]
+  exact TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} R)
+    ((homotopic_loopFamilyCircleMap_stiefelDoubleLoop p).comp
+      (ContinuousMap.Homotopic.refl ContinuousMap.prodSwap)).some _ n
 
 end TauCeti

@@ -72,7 +72,7 @@ theorem explicitMap1_eq_of_conj
     rw [explicitMap1_mk, explicitMap1_mk, H1pi_eq_iff]
     refine mem_B1_iff.2 ⟨f ((c : G → M) g), fun h => ?_⟩
     simp only [Pi.sub_apply, cocyclesMap1_apply, hqf, hconj]
-    rw [groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁ (mem_Z1_iff.1 c.2).2,
+    rw [groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁ (mem_Z1_iff.1 c.property).2,
       map_add, map_sub, hφ]
     abel
 

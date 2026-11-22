@@ -201,7 +201,7 @@ theorem rootIntMatrix_rankTwo (k : Fin (1 + 1) ⊕ Fin (1 + 1)) :
       (TauCeti.typeBSimpleRootGeneratorFamily k)) (latticeBasis 1 s),
       rep_kostantForm_mem_lattice 1 _
         (TauCeti.UniversalEnvelopingAlgebra.rootVector_mem_kostantForm _ _ k) _
-        (latticeBasis 1 s).2⟩ : (lattice 1).toAddSubgroup) =
+        (latticeBasis 1 s).property⟩ : (lattice 1).toAddSubgroup) =
       ∑ t, rankTwoRootIntMatrix k t s • latticeBasis 1 t := by
     apply Subtype.ext
     simp only [AddSubmonoidClass.coe_finsetSum, AddSubgroupClass.coe_zsmul]

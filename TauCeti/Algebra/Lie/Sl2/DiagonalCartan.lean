@@ -101,8 +101,8 @@ theorem mem_slTwoDiagonalCartan_iff {x : SpecialLinear.sl (Fin 2) R} :
 
 instance : IsLieAbelian (slTwoDiagonalCartan R) where
   trivial x y := Subtype.ext <| Subtype.ext <| by
-    simpa using lie_eq_zero_of_isDiag (mem_slTwoDiagonalCartan_iff_isDiag.mp x.2)
-      (mem_slTwoDiagonalCartan_iff_isDiag.mp y.2)
+    simpa using lie_eq_zero_of_isDiag (mem_slTwoDiagonalCartan_iff_isDiag.mp x.property)
+      (mem_slTwoDiagonalCartan_iff_isDiag.mp y.property)
 
 /-- The top diagonal entry of `h = E₀₀ - E₁₁` is `1`. -/
 private theorem val_singleSubSingle_zero_zero :
@@ -123,7 +123,8 @@ private theorem lie_single_zero_one_of_mem (x : slTwoDiagonalCartan R) (c : R) :
     ⁅x, SpecialLinear.single (0 : Fin 2) 1 zero_ne_one c⁆ =
       (2 * x.val.val 0 0) • SpecialLinear.single (0 : Fin 2) 1 zero_ne_one c := by
   rw [LieSubalgebra.coe_bracket_of_module, SpecialLinear.lie_single_of_isDiag
-    (mem_slTwoDiagonalCartan_iff_isDiag.mp x.2), val_one_one_eq_neg_val_zero_zero, sub_neg_eq_add,
+    (mem_slTwoDiagonalCartan_iff_isDiag.mp x.property), val_one_one_eq_neg_val_zero_zero,
+        sub_neg_eq_add,
     two_mul]
 
 /-- An element of the diagonal Cartan lowers `E₁₀` by twice its top diagonal entry. -/
@@ -131,7 +132,7 @@ private theorem lie_single_one_zero_of_mem (x : slTwoDiagonalCartan R) (c : R) :
     ⁅x, SpecialLinear.single (1 : Fin 2) 0 one_ne_zero c⁆ =
       -(2 * x.val.val 0 0) • SpecialLinear.single (1 : Fin 2) 0 one_ne_zero c := by
   rw [LieSubalgebra.coe_bracket_of_module, SpecialLinear.lie_single_of_isDiag
-    (mem_slTwoDiagonalCartan_iff_isDiag.mp x.2), val_one_one_eq_neg_val_zero_zero]
+    (mem_slTwoDiagonalCartan_iff_isDiag.mp x.property), val_one_one_eq_neg_val_zero_zero]
   congr 1
   ring
 
@@ -155,7 +156,7 @@ theorem coe_slTwoCartanGenerator :
 /-- An element of the diagonal Cartan is its top diagonal entry times `h`. -/
 theorem eq_smul_slTwoCartanGenerator (x : slTwoDiagonalCartan R) :
     x = x.val.val 0 0 • slTwoCartanGenerator R :=
-  Subtype.ext (eq_smul_singleSubSingle_of_mem_slTwoDiagonalCartan x.2)
+  Subtype.ext (eq_smul_singleSubSingle_of_mem_slTwoDiagonalCartan x.property)
 
 /-- A linear form on the diagonal Cartan is determined by its value at `h`. -/
 theorem dual_ext_slTwoCartanGenerator {lam mu : Module.Dual R (slTwoDiagonalCartan R)}
