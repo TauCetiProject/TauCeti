@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.MeanOscillation
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
-public import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.Sobolev.W1p.GradientMeanOscillation
@@ -17,7 +16,6 @@ import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Hölder continuity of the Hessian of strong solutions with Hölder coefficients
@@ -292,9 +290,7 @@ private theorem setIntegral_sum_mul_inner_sub_sq_le
   have hvol : volume.real (ball x₀ r) =
       volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * r ^ ((n : ℝ) + 1) := by
     rw [Measure.addHaar_real_ball_of_pos _ x₀ hr, finrank_euclideanSpace_fin, mul_comm,
-      ← Real.rpow_natCast]
-    push_cast
-    rfl
+      ← Real.rpow_natCast, Nat.cast_add, Nat.cast_one]
   simp only [← Matrix.contraction_apply]
   calc ∫ x in ball x₀ r, (Matrix.contraction (a x₀) (H x) - f x₀) ^ 2
       ≤ ∫ x in ball x₀ r, 2 * r ^ (2 * (α : ℝ)) *
@@ -412,10 +408,7 @@ private theorem column_comparison {lam Lam : ℝ} {A : Matrix (Fin (n + 1)) (Fin
 private theorem sum_le_mul_mul_sum_add {F G : Fin (n + 1) → ℝ} {c q P : ℝ}
     (h : ∀ k, F k ≤ c * q * G k + P) : ∑ k, F k ≤ c * q * ∑ k, G k + ((n : ℝ) + 1) * P := by
   refine (Finset.sum_le_sum fun k _ => h k).trans_eq ?_
-  rw [Finset.sum_add_distrib, ← Finset.mul_sum, Finset.sum_const, Finset.card_univ,
-    Fintype.card_fin, nsmul_eq_mul]
-  push_cast
-  ring
+  simp [Finset.sum_add_distrib, ← Finset.mul_sum]
 
 /-- **Comparison with the frozen problem, summed over the columns.** There is `A`, depending only
 on `n`, `λ` and `Λ`, such that the following holds. Let `u ∈ W^{2,2}(Ω)` solve
@@ -533,10 +526,7 @@ private theorem exists_columnMass_le_pow {κ θ C₂ : ℝ} (hκ : 0 < κ) (hθ 
                 (hψ t' ht' ht'θ)) t ht htθ
   calc columnMass D z t ≤ ∑ _k : Fin (n + 1), C₃ * V * (t / R) ^ (n + 1) :=
         Finset.sum_le_sum fun k _ => hk k
-    _ = _ := by
-        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-        push_cast
-        ring
+    _ = _ := by simp; ring
 
 /-- **Decay of the mean oscillation of the Hessian at a centre.** Let `0 < γ < 1` with `γ ≤ α`.
 There are `θ ∈ (0, 1]` and `C`, depending only on `n`, `α`, `γ`, `λ`, `Λ` and `M`, such that the
@@ -725,10 +715,7 @@ private theorem setAverage_closedBall_norm_iteratedGradient_sub_le_mul_rpow
         Finset.sum_le_sum fun k _ =>
           W1p.setAverage_closedBall_norm_gradient_sub_le_mul_rpow (D k) hball ht hR hQ
             ((setIntegral_norm_gradient_sub_setAverage_sq_le_columnOsc k t).trans hψ)
-    _ = _ := by
-        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-        push_cast
-        ring
+    _ = _ := by simp; ring
 
 /-- If `‖D²u‖_{L²(Ω)} ≤ R^{(n+1)/2+a} Q` and `ball z R ⊆ Ω`, then for `0 < θ ≤ 1` the norm of the
 average of the weak Hessian over `closedBall z (θ R)` is at most `(n + 1) R^a Q / √(ω θ^{n+1})`,
@@ -758,10 +745,7 @@ private theorem norm_setAverage_closedBall_iteratedGradient_le_mul_div
           simpa only [inter_univ] using
             (Lp.memLp (W1p.gradient (D k))).monotoneOn_setIntegral_ball_inter_norm_sq
               (H := univ) hball hθR le_rfl hθR
-    _ = _ := by
-        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-        push_cast
-        ring
+    _ = _ := by simp
 
 /-- **Campanato's theorem for the Hessian.** Let `β > 0`, `0 < θ ≤ 1`, `R > 0` and
 `‖D²u‖_{L²(Ω)} ≤ R^{(n+1)/2+β} Q`. If `ball z R ⊆ Ω` and the sum `ψ` of the square mean
