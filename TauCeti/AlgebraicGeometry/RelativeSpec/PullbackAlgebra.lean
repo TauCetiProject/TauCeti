@@ -390,6 +390,7 @@ theorem pullbackComp_inv_app_hom_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) (A : Quasic
 def pullbackCongr {f g : X ⟶ Y} (h : f = g) : pullback f ≅ pullback g :=
   eqToIso (congrArg pullback h)
 
+/-- Congruence of algebra pullback along `rfl` is the identity natural isomorphism. -/
 @[simp]
 theorem pullbackCongr_refl (f : X ⟶ Y) : pullbackCongr (rfl : f = f) = Iso.refl _ :=
   (rfl)
