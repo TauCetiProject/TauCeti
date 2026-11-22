@@ -25,6 +25,10 @@ to the quotient and the normalized chains are functorial. An injective continuou
 reflects degeneracy, so its push-forward on normalized chains is injective, and even has a left
 inverse.
 
+No `0`-cube is degenerate, so the normalized `0`-chains are the free module on the points. On a
+totally disconnected space, such as a discrete one, every cube is constant, so the normalized
+chains vanish in positive dimensions and the chains are concentrated in dimension zero.
+
 ## Main definitions
 
 * `TauCeti.CubicalChain.degenerate X R n`: the submodule spanned by the degenerate `n`-cubes.
@@ -32,6 +36,8 @@ inverse.
 * `TauCeti.NormalizedCubicalChain.boundary X R n`: the induced boundary.
 * `TauCeti.NormalizedCubicalChain.map R f n`: the push-forward along a continuous map.
 * `TauCeti.NormalizedCubicalChain.cast R h`: reindexing along an equality of dimensions.
+* `TauCeti.NormalizedCubicalChain.zeroChainEquiv X R`: the normalized `0`-chains are the free
+  module on the points.
 * `TauCeti.NormalizedCubicalChain.desc g hg`: the linear map determined by its values on cubes,
   vanishing on the degenerate ones.
 
@@ -46,6 +52,8 @@ inverse.
   `TauCeti.NormalizedCubicalChain.map_boundary_apply`: the boundary is natural.
 * `TauCeti.NormalizedCubicalChain.map_injective`: injective continuous maps induce injective
   push-forwards, including all subspace inclusions.
+* The normalized chains of positive dimension of a totally disconnected space vanish (a
+  `Subsingleton` instance).
 * `TauCeti.NormalizedCubicalChain.exists_comp_map_eq_id`: the push-forward along an injective
   continuous map has a left inverse.
 
@@ -471,6 +479,43 @@ theorem map_const_succ (y : Y) (n : ℕ) :
       refine SingularCube.isDegenerate_iff.2 ⟨0, ?_⟩
       rw [SingularCube.isDegenerateAt_iff]
       simp
+
+/-! ### Chains of dimension zero and chains on totally disconnected spaces -/
+
+variable (X) in
+/-- **Normalized `0`-chains are the free module on the points**: a `0`-cube is the constant cube
+at a point (`TauCeti.SingularCube.eq_point`), and no `0`-cube is degenerate
+(`TauCeti.CubicalChain.degenerate_zero`). -/
+def zeroChainEquiv : (X →₀ R) ≃ₗ[R] NormalizedCubicalChain X R 0 :=
+  (Finsupp.domLCongr ⟨SingularCube.point, fun c ↦ c fun i ↦ i.elim0,
+      fun x ↦ SingularCube.point_apply x _, fun c ↦ (SingularCube.eq_point c).symm⟩).trans
+    (Submodule.quotEquivOfEqBot _ (CubicalChain.degenerate_zero (X := X) R)).symm
+
+/-- The basis vector at a point is the class of the `0`-cube at that point. -/
+@[simp]
+theorem zeroChainEquiv_single (x : X) (r : R) :
+    zeroChainEquiv X R (Finsupp.single x r) = r • ofCube X R (SingularCube.point x) := by
+  rw [zeroChainEquiv, LinearEquiv.trans_apply, Finsupp.domLCongr_single,
+    Submodule.quotEquivOfEqBot_symm_apply, ofCube_def, ← Submodule.Quotient.mk_smul,
+    smul_single_one]
+  rfl
+
+/-- **A totally disconnected space has no nonzero normalized chains of positive dimension**: every
+cube in it is constant, since the cube `Iⁿ` is connected, and a constant cube of positive dimension
+is degenerate. In particular this holds for discrete spaces, such as the fibres of a covering
+map. -/
+instance [TotallyDisconnectedSpace X] {n : ℕ} :
+    Subsingleton (NormalizedCubicalChain X R (n + 1)) :=
+  subsingleton_of_forall_eq 0 fun g ↦ by
+    induction g using induction_on with
+    | zero => rfl
+    | add a b ha hb => rw [ha, hb, add_zero]
+    | smul r a ha => rw [ha, smul_zero]
+    | ofCube c =>
+      have hc : c = ContinuousMap.const _ (c 0) := ContinuousMap.ext fun x ↦
+        (isPreconnected_range c.continuous).subsingleton ⟨x, rfl⟩ ⟨0, rfl⟩
+      rw [hc]
+      exact ofCube_eq_zero R (SingularCube.isDegenerate_const _)
 
 end NormalizedCubicalChain
 
