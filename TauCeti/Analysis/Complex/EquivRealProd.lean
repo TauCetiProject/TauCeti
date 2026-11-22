@@ -15,7 +15,8 @@ public import Mathlib.Analysis.Normed.Operator.Basic
 A statement about maps on `ℝ × ℝ` is often proved by reading the domain as `ℂ` through
 `Complex.equivRealProdCLM`. Vanishing to order `n` at `z₀`, measured by `‖z - z₀‖ⁿ`, is then
 vanishing to order `n` at the corresponding point in the complex coordinate
-(`TauCeti.isBigO_comp_equivRealProdCLM`).
+(`TauCeti.isBigO_comp_equivRealProdCLM`). The discs `‖w‖ ≤ r`, read in the real coordinates, are
+compact (`TauCeti.isCompact_setOf_norm_equivRealProdCLM_symm_le`).
 -/
 
 public section
@@ -39,5 +40,11 @@ theorem isBigO_comp_equivRealProdCLM {E : Type*} [Norm E] {ξ : ℝ × ℝ → E
   simp only [comp_apply, hw, norm_pow, norm_norm, ← mul_pow]
   gcongr
   exact (e : ℂ →L[ℝ] ℝ × ℝ).le_opNorm _
+
+/-- The discs `‖w‖ ≤ r` of the plane, read in the real coordinates `ℝ × ℝ`, are compact. -/
+theorem isCompact_setOf_norm_equivRealProdCLM_symm_le (r : ℝ) :
+    IsCompact {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ r} := by
+  simpa [Metric.closedBall] using (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage).2
+    (isCompact_closedBall (0 : ℂ) r)
 
 end TauCeti

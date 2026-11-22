@@ -29,6 +29,9 @@ values of countably many sentences.
 * `Function.Injective.exists_injOn_comp_eq_inl`: an injective map `g : α → β` has a left inverse
   `β → α ⊕ ℕ`, through `Sum.inl`, that is injective on the range of `g` together with a given
   countable set.
+* `TauCeti.exists_countable_forall_exists_mem`: for a relation between a countable type and an
+  arbitrary type, countably many elements of the second type serve as witnesses for every element
+  of the first that has a witness.
 * `TauCeti.exists_countable_exceptions_of_splits`: outside one countable set, every `P i` is
   constant.
 * `TauCeti.countable_range_of_splits`: a map that depends only on the truth values of the `P i`
@@ -44,6 +47,9 @@ values of countably many sentences.
 * Divergences from that source: the constancy result is stated for any map determined by the
   predicates, with the separating-tests form as a corollary, and assumes only that the domain is
   nonempty rather than uncountable.
+  `TauCeti.exists_countable_forall_exists_mem` is not from that source; it is the choice of
+  witnesses in the proof of Lemma 2.9 of V. Guirardel and G. Levitt, *JSJ decompositions of
+  groups*, Astérisque 395 (2017).
 -/
 
 public section
@@ -94,6 +100,14 @@ theorem Function.Injective.exists_injOn_comp_eq_inl {α β : Type*} {g : α → 
 namespace TauCeti
 
 open Set
+
+/-- **Countably many witnesses.** For a relation `P` between a countable type and an arbitrary
+type, some countable set of elements of the second type contains, for every `a` with `P a i` for
+some `i`, an element `j` with `P a j`. -/
+theorem exists_countable_forall_exists_mem {α : Sort*} {ι : Type*} [Countable α]
+    (P : α → ι → Prop) : ∃ J : Set ι, J.Countable ∧ ∀ a i, P a i → ∃ j ∈ J, P a j :=
+  ⟨range fun a : {a // ∃ i, P a i} => a.property.choose, countable_range _,
+    fun a i hi => ⟨_, ⟨⟨a, i, hi⟩, rfl⟩, (⟨i, hi⟩ : ∃ i, P a i).choose_spec⟩⟩
 
 variable {X : Type u} {ι : Type v} [Countable ι]
 

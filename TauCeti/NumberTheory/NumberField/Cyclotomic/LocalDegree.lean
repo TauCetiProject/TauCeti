@@ -84,7 +84,7 @@ theorem eventually_pow_dvd_ramificationIdx_mul_inertiaDeg {ℓ : ℕ} (hℓ : �
     (Ideal.inertiaDeg_pos v.asIdeal ℤ).ne'
   set N := j + d.factorization ℓ
   filter_upwards [Filter.eventually_ge_atTop (N + 1),
-    ZMod.eventually_pow_dvd_orderOf_natCast hℓ hp.one_lt N] with r hr hord F _ _ _ _ w _ _
+    ZMod.eventually_pow_dvd_orderOf_natCast ℓ hp.ne_one N] with r hr hord F _ _ _ _ w _ _
   obtain ⟨k, rfl⟩ : ∃ k, r = k + 1 := ⟨r - 1, by omega⟩
   -- The rational cyclotomic field `ℚ(ζ) ⊆ F` and the prime `u` of its integers below `w`.
   have hζ := zeta_spec (ℓ ^ (k + 1)) K F
