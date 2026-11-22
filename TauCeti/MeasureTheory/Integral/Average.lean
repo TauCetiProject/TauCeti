@@ -139,6 +139,9 @@ applied to an integrable function that is almost everywhere at least `a`.
   nonnegative function and `r ≥ 1`.
 * `TauCeti.sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖h‖ₑ)² ≤ ofReal (⨍_s ‖h‖²)` between a lower average and a Bochner average.
+* `TauCeti.enorm_integral_rpow_le_measure_univ_rpow_mul`: for `r ≥ 1`, the `r`-th power of the
+  extended norm of a Bochner integral is at most `μ univ ^ (r - 1) * ∫⁻ ‖f‖ₑ ^ r`; under a measure
+  of mass at most one this is Jensen's bound `‖∫ f‖ₑ ^ r ≤ ∫⁻ ‖f‖ₑ ^ r`.
 * `TauCeti.setLAverage_enorm_sq_le_of_ae_eq_zero`: the mean of `‖f‖²` is at most
   `2 (1 + θ⁻¹)` times the mean of `‖f - c‖²` when `f` vanishes on a proportion `θ` of the set.
 * `TauCeti.laverage_smul_measure`, `TauCeti.average_smul_measure`,
@@ -554,6 +557,16 @@ theorem rpow_laverage_le_laverage_rpow {u : X → ℝ≥0∞} {r : ℝ}
       rw [ENNReal.rpow_sub _ _ h0 htop, ENNReal.rpow_one, ENNReal.div_eq_inv_mul,
         ENNReal.div_eq_inv_mul]
       ring
+
+/-- **Jensen's inequality for the norm of a Bochner integral**: for `r ≥ 1`, the `r`-th power of
+the extended norm of `∫ f ∂μ` is at most `μ univ ^ (r - 1) * ∫⁻ ‖f‖ₑ ^ r ∂μ`. In particular it is
+at most `∫⁻ ‖f‖ₑ ^ r ∂μ` when `μ` has mass at most one. No integrability or finiteness is
+assumed: a non-integrable `f`, or a codomain that is not complete, has integral `0`. -/
+theorem enorm_integral_rpow_le_measure_univ_rpow_mul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (f : X → E) {r : ℝ} (hr : 1 ≤ r) :
+    ‖∫ x, f x ∂μ‖ₑ ^ r ≤ μ Set.univ ^ (r - 1) * ∫⁻ x, ‖f x‖ₑ ^ r ∂μ :=
+  (ENNReal.rpow_le_rpow (eNorm_integral_le_lintegral_eNorm f) (zero_le_one.trans hr)).trans
+    (rpow_lintegral_le_measure_univ_rpow_mul hr)
 
 /-- **Jensen's inequality for the square of a mean, in `ℝ≥0∞`.** If `‖h‖²` is integrable on `s`,
 the square of the mean of `‖h‖ₑ` over `s` is at most the mean of `‖h‖²`. No finiteness of the

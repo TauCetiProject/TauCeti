@@ -11,11 +11,11 @@ public import Mathlib.MeasureTheory.Function.L2Space
 /-!
 # Bochner integration against mixtures
 
-The Bochner integral against `Measure.bind` is the iterated integral against its components.
-Integrability is characterized by almost-everywhere component integrability and integrability
-of the component absolute moments. The second-moment version supports covariance calculations
-for mixtures. The real mass of a measurable set is the integral of its component real masses
-when those component masses are finite almost everywhere.
+The Bochner integral against `Measure.bind` of an observable integrable under the mixture is the
+iterated integral against its components. Integrability is characterized by almost-everywhere
+component integrability and integrability of the component absolute moments. The second-moment
+version supports covariance calculations for mixtures. The real mass of a measurable set is the
+integral of its component real masses when those component masses are finite almost everywhere.
 
 These results use Mathlib's integration theory for kernel composition, with the mixing measure
 viewed as a constant kernel. The component family need only be almost everywhere measurable: it
@@ -48,8 +48,8 @@ theorem integrable_bind_iff (hK : AEMeasurable K μ)
   refine and_congr (eventually_congr ?_) (integrable_congr ?_) <;>
     filter_upwards [hKκ] with a ha <;> rw [ha]
 
-/-- The integral against an almost-everywhere measurable mixture equals the iterated component
-integral. -/
+/-- The integral of an observable that is integrable against an almost-everywhere measurable mixture
+equals the iterated component integral. -/
 theorem integral_bind [NormedSpace ℝ E] (hK : AEMeasurable K μ)
     (hf : Integrable f (μ.bind K)) :
     ∫ x, f x ∂μ.bind K = ∫ a, ∫ x, f x ∂K a ∂μ := by

@@ -9,10 +9,12 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.Moments.Variance
-public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import TauCeti.MeasureTheory.Integral.Lebesgue.SetOfEqZero
 public import TauCeti.Probability.Moments.Mixture
+import TauCeti.MeasureTheory.Function.Lp.Iterated
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
@@ -364,14 +366,9 @@ private theorem evariance_integral_prod_le_of_measurable (hF : Measurable F)
         ∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π := by
       rw [integral_sub ha hmint, hm_eq]
     rw [hsub]
-    calc ‖∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π‖ₑ ^ 2
-        ≤ (∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ∂π) ^ 2 := by
-          gcongr
-          exact eNorm_integral_le_lintegral_eNorm _
-      _ ≤ _ := by
-          simpa [ENNReal.rpow_two] using rpow_lintegral_le_measure_univ_rpow_mul
-            (μ := π) (u := fun w => ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ)
-            one_le_two
+    simpa only [measure_univ, ENNReal.one_rpow, one_mul, ENNReal.rpow_two] using
+      enorm_integral_rpow_le_measure_univ_rpow_mul (μ := π)
+        (fun w => F (a, w) - ∫ a', F (a', w) ∂ν) one_le_two
   calc evariance (fun a => ∫ w, F (a, w) ∂π) ν
       ≤ ∫⁻ a, ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π ∂ν := lintegral_mono_ae hae
     _ = ∫⁻ w, ∫⁻ a, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂ν ∂π :=
@@ -396,8 +393,9 @@ theorem evariance_integral_prod_le (hint : Integrable F (ν.prod π)) :
   exact evariance_integral_prod_le_of_measurable hG.measurable (hint.congr hFG)
 
 omit [SFinite ν] in
-/-- If both integrated section variances of `F` on the product of a finite measure and a
-probability measure are finite, then `F` is square-integrable. -/
+/-- If `F` is almost everywhere strongly measurable on the product of a finite measure and a
+probability measure, and both of its integrated section variances are finite, then `F` is
+square-integrable. -/
 private theorem memLp_prod_of_lintegral_evariance_ne_top [IsFiniteMeasure ν]
     (hF : AEStronglyMeasurable F (ν.prod π))
     (h₁ : ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν ≠ ∞)
@@ -409,20 +407,14 @@ private theorem memLp_prod_of_lintegral_evariance_ne_top [IsFiniteMeasure ν]
     hF.prod_swap.integral_prod_right'
   have hGm : AEStronglyMeasurable (fun p : α × β => F p - ∫ a, F (a, p.2) ∂ν) (ν.prod π) :=
     hF.sub hm.comp_snd
-  have hG : ∫⁻ p, ‖F p - ∫ a, F (a, p.2) ∂ν‖ₑ ^ 2 ∂ν.prod π ≠ ∞ := by
-    rwa [lintegral_prod_symm _ (hGm.eNorm.pow_const 2)]
-  have hGL : MemLp (fun p : α × β => F p - ∫ a, F (a, p.2) ∂ν) 2 (ν.prod π) :=
-    (eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top two_ne_zero ENNReal.ofNat_ne_top hGm).mpr
-      (by simpa only [ENNReal.toReal_ofNat, ENNReal.rpow_two] using hG.lt_top)
+  have hGL : MemLp (fun p : α × β => F p - ∫ a, F (a, p.2) ∂ν) 2 (ν.prod π) := by
+    refine hGm.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr ?_
+    rw [lintegral_prod_symm _ (hGm.eNorm.pow_const 2)]
+    exact h₂.lt_top
   -- Almost every section in the second coordinate is square-integrable, both before and after
   -- centering in the first coordinate, so the centering function is square-integrable.
-  rw [lintegral_prod _ (hGm.eNorm.pow_const 2)] at hG
-  obtain ⟨a, ⟨ha₁, ha₂⟩, ha₃⟩ := (((ae_lt_top' (aemeasurable_evariance_prod_right hF) h₁).and
-    (ae_lt_top' (hGm.eNorm.pow_const 2).lintegral_prod_right' hG)).and hF.prodMk_left).exists
-  have hsec : MemLp (fun w => F (a, w) - ∫ a', F (a', w) ∂ν) 2 π :=
-    (eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top two_ne_zero ENNReal.ofNat_ne_top
-      (ha₃.sub hm)).mpr
-        (by simpa only [ENNReal.toReal_ofNat, ENNReal.rpow_two, Pi.sub_apply] using ha₂)
+  obtain ⟨a, ⟨ha₁, hsec⟩, ha₃⟩ := (((ae_lt_top' (aemeasurable_evariance_prod_right hF) h₁).and
+    hGL.ae_memLp_prod_right).and hF.prodMk_left).exists
   have hmL : MemLp (fun w => ∫ a, F (a, w) ∂ν) 2 π := by
     convert ((evariance_lt_top_iff_memLp ha₃).mp ha₁).sub hsec using 1
     ext w
