@@ -140,7 +140,7 @@ theorem condExp_stoppedValue_processShift
   have hbind {ν : Measure S} (hν : Integrable f (markovChainLaw ν κ)) :
       Integrable g ν ∧ ∫ w, f w ∂markovChainLaw ν κ = ∫ z, g z ∂ν := by
     rw [Measure.markovChainLaw_eq_comp] at hν ⊢
-    exact ⟨Measure.integrable_integral_bind κ.markovChainKernel.measurable hν,
+    exact ⟨Measure.integrable_integral_bind κ.markovChainKernel.measurable.aemeasurable hν,
       Measure.integral_bind κ.markovChainKernel.measurable.aemeasurable hν⟩
   have hgT : Integrable g ((μ.restrict T).map Y) := (hbind hf).1
   have hfi : Integrable (T.indicator fun ω => f (θ ω)) μ := by
