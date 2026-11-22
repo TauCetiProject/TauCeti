@@ -315,7 +315,21 @@ noncomputable def thomPairOverFiberGenerator {x : B} (hx : x ∈ e.baseSet) :
       (ModuleCat.of K K) (finrank ℝ F)
       (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)))
 
-private theorem singularHomologyMap_thomPairOverIso_thomPairOverFiberGenerator {W : Set B}
+/-- The fibre generator over `x` is the image of the point class of `1` in `Hᵣ(F, F ∖ {0}; K)`
+under the inverse of the identification of `(E_x, E_x ∖ {0})` with `(F, F ∖ {0})` read by `e`,
+followed by the inclusion of the fibre pair. -/
+theorem thomPairOverFiberGenerator_def {x : B} (hx : x ∈ e.baseSet) :
+    thomPairOverFiberGenerator K e hx =
+      TopPair.singularHomologyMap (fiberThomPairOverMap F E (mem_singleton x)) (ModuleCat.of K K)
+        (finrank ℝ F) (TopPair.singularHomologyMap
+          (e.continuousLinearEquivAt ℝ x hx).complZeroPairIso.inv
+          (ModuleCat.of K K) (finrank ℝ F)
+          (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K))) :=
+  (rfl)
+
+/-- Over a subset `W` of the base set of `e`, the trivialization `e` reads the image of the fibre
+generator over `x` as the class of `x` under `Hᵣ(W × F, W × (F ∖ {0}); K) ≅ H₀(W; K)`. -/
+theorem singularHomologyMap_thomPairOverIso_thomPairOverFiberGenerator {W : Set B}
     (hW : W ⊆ e.baseSet) (x : W) :
     TopPair.singularHomologyMap (e.thomPairOverIso ℝ hW).hom (ModuleCat.of K K) (finrank ℝ F)
         (TopPair.singularHomologyMap (thomPairOverMap F E (singleton_subset_iff.2 x.property))
@@ -344,6 +358,16 @@ noncomputable def thomPairOverSignFiberClass (x : B) :
     (singleton_subset_iff.2 (FiberBundle.mem_baseSet_trivializationAt' x)) _).inv
     (thomPairOverFiberGenerator K (trivializationAt F E x)
       (FiberBundle.mem_baseSet_trivializationAt' x))
+
+/-- The fibre class over `x` is the fibre generator of the trivialization at `x`, carried back
+through that trivialization's identification with untwisted homology. -/
+theorem thomPairOverSignFiberClass_def (x : B) :
+    thomPairOverSignFiberClass F E hι K ω x =
+      (thomPairOverSignHomologyIso hι K (trivializationAt F E x) ω
+        (singleton_subset_iff.2 (FiberBundle.mem_baseSet_trivializationAt' x)) _).inv
+        (thomPairOverFiberGenerator K (trivializationAt F E x)
+          (FiberBundle.mem_baseSet_trivializationAt' x)) :=
+  (rfl)
 
 /-- Replacing the model orientation `ω` by `-ω` negates the fibre class. -/
 @[simp]
@@ -428,6 +452,14 @@ noncomputable def thomPairOverSignFiberClassOver (W : Set B) (x : W) :
     thomPairOverSignHomology F E hι K W (finrank ℝ F) :=
   thomPairOverSignHomologyMap F E hι K (singleton_subset_iff.2 x.property) _
     (thomPairOverSignFiberClass F E hι K ω x)
+
+/-- The fibre class over `x` in the homology over `W` is the restriction of the fibre class over
+`x` from the fibre to `W`. -/
+theorem thomPairOverSignFiberClassOver_def (W : Set B) (x : W) :
+    thomPairOverSignFiberClassOver F E hι K ω W x =
+      thomPairOverSignHomologyMap F E hι K (singleton_subset_iff.2 x.property) _
+        (thomPairOverSignFiberClass F E hι K ω x) :=
+  (rfl)
 
 omit [FiniteDimensional ℝ F] in
 /-- The restrictions compose. -/
@@ -767,6 +799,14 @@ noncomputable def thomPairSignFiberClass (b : B) :
     (thomPair F E).twistedHomology (thomPairSignSystem F E hι K) (finrank ℝ F) :=
   (thomPairOverUnivSignHomologyIso F E hι K _).hom
     (thomPairOverSignFiberClassOver F E hι K ω univ ⟨b, trivial⟩)
+
+/-- The fibre class over `b` in `Hᵣ(E, E₀; o(E))` is the image of the fibre class over `b` in the
+homology over `univ`. -/
+theorem thomPairSignFiberClass_def (b : B) :
+    thomPairSignFiberClass F E hι K ω b =
+      (thomPairOverUnivSignHomologyIso F E hι K _).hom
+        (thomPairOverSignFiberClassOver F E hι K ω univ ⟨b, trivial⟩) :=
+  (rfl)
 
 /-- Replacing the model orientation `ω` by `-ω` negates the fibre class. -/
 @[simp]
