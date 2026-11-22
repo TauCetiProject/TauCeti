@@ -402,11 +402,16 @@ complementary subrepresentations `ρ₁` and `ρ₂` of `ρ`, the linear project
 `Submodule.projectionOnto` of `W` onto `ρ₁` along `ρ₂` intertwines `ρ` with `ρ₁`. -/
 theorem isIntertwiningMap_projectionOnto {ρ₁ ρ₂ : Subrepresentation ρ} (h : IsCompl ρ₁ ρ₂) :
     Representation.IsIntertwiningMap ρ ρ₁.toRepresentation
-      (ρ₁.toSubmodule.projectionOnto ρ₂.toSubmodule (isCompl_toSubmodule.mpr h)) :=
+      (ρ₁.toSubmodule.projectionOnto ρ₂.toSubmodule (isCompl_toSubmodule.mpr h)) := by
   -- `Submodule.projectionOnto` is the first component of the inverse of
-  -- `Submodule.prodEquivOfIsCompl`, whose inverse is the linear map of `equivProdOfIsCompl h`.
-  ⟨((Representation.IntertwiningMap.fst A ρ₁.toRepresentation ρ₂.toRepresentation).comp
-    (equivProdOfIsCompl h).toIntertwiningMap).isIntertwining⟩
+  -- `Submodule.prodEquivOfIsCompl` (`Submodule.prodEquivOfIsCompl_symm_apply`), which
+  -- `equivProdOfIsCompl_apply` identifies with the splitting.
+  obtain ⟨f, hf⟩ : ∃ f : Representation.IntertwiningMap ρ ρ₁.toRepresentation,
+      f.toLinearMap = ρ₁.toSubmodule.projectionOnto ρ₂.toSubmodule (isCompl_toSubmodule.mpr h) :=
+    ⟨(Representation.IntertwiningMap.fst A ρ₁.toRepresentation ρ₂.toRepresentation).comp
+      (equivProdOfIsCompl h).toIntertwiningMap,
+      LinearMap.ext fun v => by simp [equivProdOfIsCompl_apply]⟩
+  exact hf ▸ ⟨f.isIntertwining⟩
 
 /-- **Extending linear forms by zero along a complementary subrepresentation intertwines.** For
 complementary subrepresentations `τ₁` and `τ₂` of `τ`, the transpose of `Submodule.projectionOnto`
