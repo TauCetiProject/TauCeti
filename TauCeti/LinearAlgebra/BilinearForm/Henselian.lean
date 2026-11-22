@@ -157,9 +157,11 @@ theorem iIsOrtho.equivalent_of_forall_occCount_eq_and_isSquare
   have heqFin := (TauCeti.equivalent_weightedSumSquares_iff_isSquare_prod_mul_prod_of_isUnit_two
     h2 (fun r ↦ u (τF r).val) (fun r ↦ v (τG r).val)).mpr hsq
   rw [weightedSumSquares_units, weightedSumSquares_units] at heqFin
-  exact (TauCeti.equivalent_weightedSumSquares_comp (fun i : F ↦ (u i.val : R)) τF).trans
+  exact QuadraticMap.Equivalent.trans
+    ⟨QuadraticForm.isometryEquivWeightedSumSquaresReindex (fun i : F ↦ (u i.val : R)) τF⟩
     (heqFin.trans
-      (TauCeti.equivalent_weightedSumSquares_comp (fun j : G ↦ (v j.val : R)) τG).symm)
+      ⟨(QuadraticForm.isometryEquivWeightedSumSquaresReindex
+        (fun j : G ↦ (v j.val : R)) τG).symm⟩)
 
 section JordanSplitting
 
