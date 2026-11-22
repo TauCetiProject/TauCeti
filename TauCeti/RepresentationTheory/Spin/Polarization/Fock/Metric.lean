@@ -71,8 +71,11 @@ exists: it is `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonorma
   orthonormal basis of `W` identifies the wedge-basis form with the exterior Gram form `H`.
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_fockAction_left`: the normalized Fock action is
   a `*`-representation for the wedge-basis metric of an orthonormal polarization basis.
-* `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_degreeScaling_spinAction_left`: the
-  `*`-representation property of the native action.
+* `AlmostComplexStructure.sesqExteriorAlgebra_domRestrict₁₂_degreeScaling_of_mem_exteriorPower`:
+  the `2 ^ p` degree-`p` scaling factor of the exterior Gram metric.
+* `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_degreeScaling_of_mem_exteriorPower` and
+  `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_degreeScaling_spinAction_left`: the `2 ^ p`
+  degree-`p` scaling factor and `*`-representation property for the native action.
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_exteriorAlgebra_eq`: the metric does not depend
   on the orthonormal basis.
 * `TauCeti.AlmostComplexStructure.exists_basis_polar_tmulConj`: orthonormal bases exist for
@@ -215,14 +218,13 @@ theorem sesqExteriorAlgebra_domRestrict₁₂_fockAction_ι_one_tmul_left (v : V
     ⟨J.antiholomorphicPart v, J.antiholomorphicPart_mem_spinPolarizationData_W' hQJ hQ v⟩
   have hv : (1 : ℂ) ⊗ₜ v = (x : ℂ ⊗[ℝ] V) + (y : ℂ ⊗[ℝ] V) :=
     (J.holomorphicPart_add_antiholomorphicPart v).symm
-  conv_lhs =>
-    rw [hv, map_add (CliffordAlgebra.ι (Q.baseChange ℂ)), map_add (J.fockAction hQJ hQ),
-      LinearMap.add_apply, map_add, LinearMap.add_apply,
-      J.sesqExteriorAlgebra_domRestrict₁₂_fockAction_ι_coe_W_left hQJ hQ hg hQg,
-      J.sesqExteriorAlgebra_domRestrict₁₂_fockAction_ι_coe_W'_left hQJ hQ hg hQg,
-      ← map_add, ← LinearMap.add_apply, ← map_add (J.fockAction hQJ hQ),
-      ← map_add (conjStar Q), ← map_add (CliffordAlgebra.ι (Q.baseChange ℂ)), ← hv,
-      conjStar_ι_tmul, map_one (starRingEnd ℂ), map_neg, LinearMap.neg_apply, map_neg]
+  have hconj : -CliffordAlgebra.ι (Q.baseChange ℂ) ((1 : ℂ) ⊗ₜ v) =
+      conjStar Q (CliffordAlgebra.ι (Q.baseChange ℂ) ((1 : ℂ) ⊗ₜ v)) := by
+    simp [conjStar_ι_tmul]
+  rw [← map_neg, ← LinearMap.neg_apply, ← map_neg (J.fockAction hQJ hQ), hconj, hv]
+  simp only [map_add, LinearMap.add_apply,
+    J.sesqExteriorAlgebra_domRestrict₁₂_fockAction_ι_coe_W_left hQJ hQ hg hQg,
+    J.sesqExteriorAlgebra_domRestrict₁₂_fockAction_ι_coe_W'_left hQJ hQ hg hQg]
 
 /-- **The normalized Fock action is a `*`-representation for the exterior Gram metric**: when
 `Q (v) = -g (v, v)` for symmetric `g`, `H (c(a) s) t = H s (c(a^*) t)` on all of `⋀ W` without any
@@ -373,15 +375,52 @@ normalized Fock action, so the native action is a `*`-representation for the pul
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] (J : AlmostComplexStructure V)
   {Q : QuadraticForm ℝ V} [FiniteDimensional ℝ V] (hQJ : ∀ v, Q (J v) = Q v)
-  (hQ : Q.Nondegenerate) {ι : Type*} [Fintype ι] [LinearOrder ι]
-  (b : Basis ι ℂ (J.spinPolarizationData hQJ hQ).W) {r : ℂˣ} (hr : (r : ℂ) = Real.sqrt 2)
+  (hQ : Q.Nondegenerate) {r : ℂˣ} (hr : (r : ℂ) = Real.sqrt 2)
 include hr
+
+private theorem star_mul_self_of_eq_sqrt_two : star (r : ℂ) * r = 2 := by
+  rw [hr, Complex.star_def, Complex.conj_ofReal, ← Complex.ofReal_mul,
+    Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
+
+/-- **The native Fock metric has degree-`p` factor `2 ^ p`**: for the basis-free exterior Gram
+metric `H = ((g.sesqComplexification).domRestrict₁₂ W W).sesqExteriorAlgebra` and the degree
+scaling `T` by `√2`, the pullback `H (T s) (T t)` is `2 ^ p` times `H s t` for `s` in `⋀^p W`. -/
+theorem sesqExteriorAlgebra_domRestrict₁₂_degreeScaling_of_mem_exteriorPower
+    (g : LinearMap.BilinForm ℝ V) {p : ℕ}
+    {s : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W}
+    (hs : s ∈ ⋀[ℂ]^p (J.spinPolarizationData hQJ hQ).W)
+    (t : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W) :
+    ((LinearMap.BilinForm.sesqComplexification g).domRestrict₁₂
+        (J.spinPolarizationData hQJ hQ).W (J.spinPolarizationData hQJ hQ).W).sesqExteriorAlgebra
+        (degreeScaling r s) (degreeScaling r t) =
+      2 ^ p * ((LinearMap.BilinForm.sesqComplexification g).domRestrict₁₂
+        (J.spinPolarizationData hQJ hQ).W (J.spinPolarizationData hQJ hQ).W).sesqExteriorAlgebra
+        s t := by
+  rw [LinearMap.sesqExteriorAlgebra_degreeScaling_degreeScaling_of_mem_exteriorPower _ r hs t,
+    ← Complex.star_def, star_mul_self_of_eq_sqrt_two hr]
+
+/-- **The native Fock metric has degree-`p` factor `2 ^ p`**: for the metric `H` making the wedge
+basis of `b` orthonormal and the degree scaling `T` by `√2`, the pullback `H (T s) (T t)` is
+`2 ^ p` times `H s t` for `s` in `⋀^p W`. -/
+theorem toLinearMapₛₗ₂_degreeScaling_of_mem_exteriorPower {ι : Type*} [Fintype ι] [LinearOrder ι]
+    (b : Basis ι ℂ (J.spinPolarizationData hQJ hQ).W) {p : ℕ}
+    {s : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W}
+    (hs : s ∈ ⋀[ℂ]^p (J.spinPolarizationData hQJ hQ).W)
+    (t : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W) :
+    toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset ι) (Finset ι) ℂ) (degreeScaling r s) (degreeScaling r t) =
+      2 ^ p * toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset ι) (Finset ι) ℂ) s t := by
+  rw [ExteriorAlgebra.toLinearMapₛₗ₂_exteriorAlgebra_one b (starRingEnd ℂ),
+    LinearMap.sesqExteriorAlgebra_degreeScaling_degreeScaling_of_mem_exteriorPower _ r hs t,
+    ← Complex.star_def, star_mul_self_of_eq_sqrt_two hr]
 
 /-- **The native action is a `*`-representation for the native Fock metric**: for an orthonormal
 basis `b` of `W`, the metric `H` making its wedge basis orthonormal and the degree scaling `T` by
 `√2`, the native action `TauCeti.spinAction` satisfies
 `H (T (a • s)) (T t) = H (T s) (T (a^* • t))`, where `a^*` is `CliffordAlgebra.conjStar`. -/
-theorem toLinearMapₛₗ₂_degreeScaling_spinAction_left
+theorem toLinearMapₛₗ₂_degreeScaling_spinAction_left {ι : Type*} [Fintype ι] [LinearOrder ι]
+    (b : Basis ι ℂ (J.spinPolarizationData hQJ hQ).W)
     (hb : ∀ i j, polar (Q.baseChange ℂ) (tmulConj V (b i : ℂ ⊗[ℝ] V)) (b j) =
       if i = j then -2 else 0)
     (a : CliffordAlgebra (Q.baseChange ℂ))

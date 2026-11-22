@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Complexification
+public import TauCeti.Analysis.InnerProductSpace.ExteriorAlgebra.HermitianMetric
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Tensor
 public import TauCeti.LinearAlgebra.CliffordAlgebra.SpinorForms.Basic
 

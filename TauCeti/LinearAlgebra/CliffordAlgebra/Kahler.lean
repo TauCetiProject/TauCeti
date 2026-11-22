@@ -45,7 +45,7 @@ public section
 
 namespace TauCeti.AlmostComplexStructure
 
-open CliffordAlgebra _root_.exteriorPower
+open CliffordAlgebra exteriorPower
 open scoped RealInnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]

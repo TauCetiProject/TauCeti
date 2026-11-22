@@ -59,7 +59,7 @@ noncomputable section
 
 namespace TauCeti.SeibergWitten
 
-open CliffordAlgebra Module _root_.exteriorPower
+open CliffordAlgebra Module exteriorPower
 open scoped RealInnerProductSpace InnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]

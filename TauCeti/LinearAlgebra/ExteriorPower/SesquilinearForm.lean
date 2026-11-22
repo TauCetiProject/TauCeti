@@ -96,20 +96,27 @@ noncomputable def sesqExteriorPower (B : M →ₛₗ[σ] M →ₗ[R] R) (n : ℕ
       (RestrictScalars.module R R N) alt
   toDual.comp f
 
+private theorem sesqExteriorPower_ιMulti (B : M →ₛₗ[σ] M →ₗ[R] R) (n : ℕ) (v : Fin n → M) :
+    B.sesqExteriorPower n (ιMulti R n v) = alternatingMapToDual R M n (B ∘ v) := by
+  unfold sesqExteriorPower
+  let N := Module.Dual R (⋀[R]^n M)
+  -- `σ.toAlgebra` competes with `Algebra.id R` and `RestrictScalars` has separate `AddCommMonoid`
+  -- / `AddCommGroup` instances, so we supply `RestrictScalars.module` explicitly.
+  exact (congrArg (RestrictScalars.addEquiv R R N)
+    (@alternatingMapLinearEquiv_apply_ιMulti R _ n M (RestrictScalars R R N) _ _ _
+      (@RestrictScalars.module R R N _ _ _ σ.toAlgebra _) _ v)).trans
+    ((RestrictScalars.addEquiv R R N).apply_symm_apply _)
+
 /-- **Gram-determinant formula on pure wedges**: `B.sesqExteriorPower n` pairs two pure wedges by
 `det (B (v i) (w j))`. -/
 @[simp]
 theorem sesqExteriorPower_ιMulti_ιMulti (B : M →ₛₗ[σ] M →ₗ[R] R) (n : ℕ) (v w : Fin n → M) :
     B.sesqExteriorPower n (ιMulti R n v) (ιMulti R n w) =
       (Matrix.of fun i j ↦ B (v i) (w j)).det := by
-  let N := Module.Dual R (⋀[R]^n M)
-  have h : B.sesqExteriorPower n (ιMulti R n v) = alternatingMapToDual R M n (B ∘ v) :=
-    (congrArg (RestrictScalars.addEquiv R R N)
-      (@alternatingMapLinearEquiv_apply_ιMulti R _ n M (RestrictScalars R R N) _ _ _
-        (@RestrictScalars.module R R N _ _ _ σ.toAlgebra _) _ v)).trans
-      ((RestrictScalars.addEquiv R R N).apply_symm_apply _)
-  rw [h, alternatingMapToDual_apply_ιMulti, ← Matrix.det_transpose]
-  rfl
+  rw [sesqExteriorPower_ιMulti, alternatingMapToDual_apply_ιMulti, ← Matrix.det_transpose]
+  refine congrArg Matrix.det ?_
+  ext i j
+  simp [Matrix.transpose_apply]
 
 /-- A `σ`-sesquilinear form on `⋀[R]^n M` equals `B.sesqExteriorPower n` if and only if it takes
 the Gram-determinant values on pure wedges. -/
@@ -126,7 +133,7 @@ theorem eq_sesqExteriorPower_iff {B : M →ₛₗ[σ] M →ₗ[R] R} {n : ℕ}
 /-- In degree zero, `B.sesqExteriorPower 0` multiplies the `σ`-twisted first scalar by the second;
 in particular it is independent of `B` and equals `1` on the empty wedge. -/
 @[simp]
-theorem sesqExteriorPower_zero_apply (B : M →ₛₗ[σ] M →ₗ[R] R) (x y : ⋀[R]^0 M) :
+theorem sesqExteriorPower_degree_zero_apply (B : M →ₛₗ[σ] M →ₗ[R] R) (x y : ⋀[R]^0 M) :
     B.sesqExteriorPower 0 x y = σ (zeroEquiv R M x) * zeroEquiv R M y := by
   conv_lhs => rw [← (zeroEquiv R M).symm_apply_apply x, ← (zeroEquiv R M).symm_apply_apply y]
   simp only [zeroEquiv_symm_apply, map_smulₛₗ, LinearMap.smul_apply,
@@ -196,7 +203,9 @@ theorem BilinForm.sesqExteriorPower_eq_exteriorPower (B : LinearMap.BilinForm R 
   rw [eq_sesqExteriorPower_iff]
   intro v w
   rw [BilinForm.bilinForm_ιMulti_ιMulti, ← Matrix.det_transpose]
-  rfl
+  refine congrArg Matrix.det ?_
+  ext i j
+  simp [Matrix.transpose_apply]
 
 end LinearMap
 

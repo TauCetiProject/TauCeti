@@ -33,8 +33,10 @@ Let `M` be a module over a commutative ring `R`, `σ : R →+* R` a ring endomor
 When `M` has a finite ordered basis `b`, the coordinate form
 `Matrix.toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra 1` making the increasing wedge basis
 orthonormal equals `(Matrix.toLinearMapₛₗ₂ σ b b 1).sesqExteriorAlgebra`, so it inherits degree
-orthogonality, the Gram-determinant formula, creation–annihilation adjointness, basis-independence,
-and degree-scaling adjointness directly for any ring endomorphism `σ`.
+orthogonality, the Gram-determinant formula, left creation–annihilation adjointness,
+basis-independence, and degree-scaling adjointness directly for any ring endomorphism `σ` (while
+right creation–annihilation adjointness `sesqExteriorAlgebra_ι_mul_right` holds when `σ` is
+involutive, so that `Matrix.toLinearMapₛₗ₂ σ b b 1` is `σ`-Hermitian).
 
 ## Main definitions
 
