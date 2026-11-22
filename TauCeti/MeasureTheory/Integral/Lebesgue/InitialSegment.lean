@@ -60,12 +60,13 @@ theorem setLIntegral_indicator_le_setLIntegral_indicator_inter
         ≤ ∫⁻ x in S, f x ∂μ := lintegral_mono fun x ↦ indicator_le_self _ _ _
       _ ≤ ∫⁻ x in S, T.indicator w x ∂μ := hmass
       _ = ∫⁻ x in S, (R ∩ T).indicator w x ∂μ := setLIntegral_congr_fun₀ hS fun x hx ↦
-        indicator_eq_indicator ⟨fun hxT ↦ ⟨hTR (a := ⟨x, hx⟩) hxT, hxT⟩, And.right⟩ rfl
+        indicator_eq_indicator
+          ⟨fun hxT ↦ ⟨mem_preimage.1 (hTR (a := ⟨x, hx⟩) (mem_preimage.2 hxT)), hxT⟩, And.right⟩ rfl
   · -- The part of `S` in `R` lies in `T`: use `f ≤ w` almost everywhere on `S`.
     refine lintegral_mono_ae ?_
     filter_upwards [ae_restrict_mem₀ hS, hf] with x hx hfx
     rw [← indicator_indicator]
     exact indicator_le_indicator' fun hxR ↦ by
-      rwa [indicator_of_mem (show x ∈ T from hRT (a := ⟨x, hx⟩) hxR)]
+      rwa [indicator_of_mem (mem_preimage.1 (hRT (a := ⟨x, hx⟩) (mem_preimage.2 hxR)))]
 
 end TauCeti
