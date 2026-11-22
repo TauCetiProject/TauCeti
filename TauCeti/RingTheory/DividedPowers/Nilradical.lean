@@ -9,8 +9,6 @@ public import Mathlib.RingTheory.DividedPowers.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Nilpotent.Lemmas
 
-import Mathlib.Data.Nat.Factorial.BigOperators
-
 /-!
 # Nilradical criterion and factorial annihilation for divided power ideals
 

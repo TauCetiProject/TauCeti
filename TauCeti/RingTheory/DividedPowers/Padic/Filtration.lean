@@ -93,6 +93,7 @@ theorem pdFiltration_two_mul_le_span_pow (hp2 : p ≠ 2) (e : ℕ) :
     ((Nat.mul_le_mul_right e (by omega)).trans_eq (Nat.mul_assoc _ _ _))
 
 /-- The canonical divided power ideal `(p) ⊂ ℤ_[p]` is not PD-nilpotent for any prime `p`. -/
+@[simp]
 theorem not_isPDNilpotent_dividedPowers : ¬ (dividedPowers p).IsPDNilpotent := by
   rw [DividedPowers.isPDNilpotent_iff_eq_bot, Ideal.span_singleton_eq_bot]
   exact NeZero.ne _
@@ -108,16 +109,13 @@ theorem pdFiltration_two_eq {n : ℕ} (hn : n ≠ 0) :
     (dividedPowers 2).pdFiltration n = Ideal.span {(2 : ℤ_[2])} := by
   refine le_antisymm ?_ ?_
   · simpa only [Nat.cast_ofNat] using (dividedPowers 2).pdFiltration_le_self hn
-  · rw [Ideal.span_singleton_le_iff_mem]
-    obtain ⟨u, hu⟩ := exists_unit_mul_two_eq_dpow_two_pow n
+  · obtain ⟨u, hu⟩ := exists_unit_mul_two_eq_dpow_two_pow n
     have h2_mem : (2 : ℤ_[2]) ∈ Ideal.span {((2 : ℕ) : ℤ_[2])} := by
       rw [Ideal.mem_span_singleton, Nat.cast_ofNat]
     have hmem : (dividedPowers 2).dpow (2 ^ n) (2 : ℤ_[2]) ∈ (dividedPowers 2).pdFiltration n :=
       (dividedPowers 2).dpow_mem_pdFiltration_of_le Nat.lt_two_pow_self.le h2_mem
-    have h2 : (2 : ℤ_[2]) = (u⁻¹ : ℤ_[2]ˣ) * (dividedPowers 2).dpow (2 ^ n) (2 : ℤ_[2]) := by
-      rw [hu, ← mul_assoc, Units.inv_mul, one_mul]
-    rw [h2]
-    exact Ideal.mul_mem_left _ _ hmem
+    rw [← Ideal.span_singleton_mul_left_unit u.isUnit (2 : ℤ_[2]), ← hu]
+    exact (Ideal.span_singleton_le_iff_mem _).mpr hmem
 
 /-- In `ℤ_[2]`, `2` lies in every step of the divided power filtration of `(2)`. -/
 theorem two_mem_pdFiltration_two (n : ℕ) :
@@ -180,6 +178,7 @@ theorem pdFiltration_dividedPowers_two {e n : ℕ} (hn : n ≠ 0) :
 
 /-- Complete classification of PD-nilpotence for the canonical divided power structure on
 `(p) ⊂ ZMod (p ^ e)`: it is PD-nilpotent if and only if `p` is odd (`p ≠ 2`) or `e ≤ 1`. -/
+@[simp]
 theorem isPDNilpotent_dividedPowers_iff (p : ℕ) [hp : Fact p.Prime] (e : ℕ) :
     (ZMod.dividedPowers p e).IsPDNilpotent ↔ p ≠ 2 ∨ e ≤ 1 := by
   constructor

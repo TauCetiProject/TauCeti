@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GradedMonoid
 public import Mathlib.RingTheory.DividedPowers.RatAlgebra
 public import Mathlib.RingTheory.DividedPowers.SubDPIdeal
-
-import Mathlib.Algebra.GradedMonoid
 
 /-!
 # The divided power filtration of a divided power ideal
@@ -193,14 +192,12 @@ theorem pdFiltration_one : hI.pdFiltration 1 = I := by
   refine le_antisymm ?_ ?_
   · rw [pdFiltration_le_iff]
     intro l hl hsum
-    induction l with
-    | nil => simp at hsum
-    | cons p t ih =>
-      simp only [List.map_cons, List.prod_cons]
-      rcases eq_or_ne p.1 0 with hp0 | hp0
-      · simp only [List.map_cons, List.sum_cons, hp0, zero_add] at hsum
-        exact I.mul_mem_left _ (ih (fun q hq ↦ hl q (List.mem_cons_of_mem p hq)) hsum)
-      · exact I.mul_mem_right _ (hI.dpow_mem hp0 (hl p List.mem_cons_self))
+    obtain ⟨m, hm_mem, hm_pos⟩ := List.sum_pos_iff_exists_pos_nat.mp hsum
+    obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hm_mem
+    obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hp
+    rw [← Fin.prod_univ_fun_getElem l fun q ↦ hI.dpow q.1 q.2]
+    exact I.mem_of_dvd (Finset.dvd_prod_of_mem _ (Finset.mem_univ ⟨i, hi⟩))
+      (hI.dpow_mem hm_pos.ne' (hl _ hp))
   · intro x hx
     simpa [hI.dpow_one hx] using hI.dpow_mem_pdFiltration (n := 1) hx
 
@@ -214,15 +211,17 @@ theorem pdFiltration_mul_le (m n : ℕ) :
   rw [pdFiltration_def, pdFiltration_def, pdFiltration_def]
   exact hI.span_words_mul_le (I : Set R) m n
 
+/-- The divided power filtration is multiplicatively graded by `ℕ`. -/
+instance : SetLike.GradedMonoid hI.pdFiltration where
+  one_mem := by simp
+  mul_mem _ _ _ _ ha hb := hI.pdFiltration_mul_le _ _ (Ideal.mul_mem_mul ha hb)
+
 /-- A finite product of divided powers over a `Finset` belongs to `hI.pdFiltration n` whenever the
 sum of weights is at least `n`. -/
 theorem prod_dpow_mem_pdFiltration {ι : Type*} {s : Finset ι} {e : ι → ℕ} {x : ι → R}
     (hx : ∀ i ∈ s, x i ∈ I) {n : ℕ} (hn : n ≤ ∑ i ∈ s, e i) :
-    (∏ i ∈ s, hI.dpow (e i) (x i)) ∈ hI.pdFiltration n := by
-  have : SetLike.GradedMonoid hI.pdFiltration :=
-    { one_mem := by simp
-      mul_mem := fun _ _ _ _ ha hb ↦ hI.pdFiltration_mul_le _ _ (Ideal.mul_mem_mul ha hb) }
-  exact hI.pdFiltration_antitone hn <|
+    (∏ i ∈ s, hI.dpow (e i) (x i)) ∈ hI.pdFiltration n :=
+  hI.pdFiltration_antitone hn <|
     SetLike.prod_mem_graded hI.pdFiltration e (fun i ↦ hI.dpow (e i) (x i))
       fun i hi ↦ hI.dpow_mem_pdFiltration (hx i hi)
 
@@ -390,12 +389,10 @@ theorem pdFiltration_eq_span_of_eq_span_singleton {a : R} (ha : I = Ideal.span {
     have hmap : l.map (fun p ↦ hI.dpow p.1 p.2) = l.map fun p ↦ hI.dpow p.1 a :=
       List.map_congr_left fun p hp ↦ by rw [Set.mem_singleton_iff.mp (hl p hp)]
     have hprod : (l.map fun p ↦ hI.dpow p.1 a).prod =
-        ∏ i : Fin l.length, hI.dpow l[i].1 a := by
-      conv_lhs => rw [← List.ofFn_get l, List.map_ofFn, Fin.prod_ofFn]
-      rfl
-    have hsum : (l.map Prod.fst).sum = ∑ i : Fin l.length, l[i].1 := by
-      conv_lhs => rw [← List.ofFn_get l, List.map_ofFn, Fin.sum_ofFn]
-      rfl
+        ∏ i : Fin l.length, hI.dpow l[i].1 a :=
+      (Fin.prod_univ_fun_getElem l _).symm
+    have hsum : (l.map Prod.fst).sum = ∑ i : Fin l.length, l[i].1 :=
+      (Fin.sum_univ_fun_getElem l Prod.fst).symm
     rw [hmap, hprod, hI.prod_dpow haI, ← hsum]
     exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨(l.map Prod.fst).sum, hn, rfl⟩)
   · rw [Ideal.span_le]
@@ -416,7 +413,9 @@ section Functoriality
 variable {R S : Type*} [CommSemiring R] [CommSemiring S] {I : Ideal R} {J : Ideal S}
   {hI : DividedPowers I} {hJ : DividedPowers J}
 
-private theorem IsDPMorphism.map_list_prod_dpow {f : R →+* S} (hf : IsDPMorphism hI hJ f)
+/-- A divided power morphism maps a finite product of divided powers of elements of `I` to the
+corresponding product of divided powers of their images. -/
+theorem IsDPMorphism.map_list_prod_dpow {f : R →+* S} (hf : IsDPMorphism hI hJ f)
     {l : List (ℕ × R)} (hl : ∀ p ∈ l, p.2 ∈ I) :
     f (l.map fun p ↦ hI.dpow p.1 p.2).prod =
       ((l.map fun p ↦ (p.1, f p.2)).map fun q ↦ hJ.dpow q.1 q.2).prod := by
@@ -447,22 +446,19 @@ theorem IsDPMorphism.map_pdFiltration_eq {f : R →+* S} (hf : IsDPMorphism hI h
   have hJspan : J = Ideal.span (f '' (I : Set R)) := hIJ.symm
   rw [hJ.pdFiltration_le_iff_of_eq_span hJspan]
   intro l hl hn
-  let φ : ℕ × I → ℕ × (f '' (I : Set R)) := fun p ↦ (p.1, ⟨f p.2, p.2, p.2.property, rfl⟩)
-  have hφ : Function.Surjective φ := by
-    rintro ⟨k, y, x, hx, rfl⟩
-    exact ⟨(k, ⟨x, hx⟩), rfl⟩
-  let lImg : List (ℕ × (f '' (I : Set R))) := l.pmap (fun p hp ↦ (p.1, ⟨p.2, hp⟩)) hl
-  obtain ⟨l₀, hl₀⟩ := hφ.list_map lImg
-  let l' : List (ℕ × R) := l₀.map fun p ↦ (p.1, (p.2 : R))
+  have hl_range : l ∈ Set.range (List.map fun q : ℕ × I ↦ (q.1, f q.2)) := by
+    rw [Set.range_list_map]
+    intro p hp
+    obtain ⟨x, hx, hfx⟩ := hl p hp
+    exact ⟨(p.1, ⟨x, hx⟩), Prod.ext rfl hfx⟩
+  obtain ⟨l₀, hl₀⟩ := hl_range
+  let l' : List (ℕ × R) := l₀.map fun q ↦ (q.1, (q.2 : R))
   have hl'I : ∀ p ∈ l', p.2 ∈ I := by
     rintro p hp
     obtain ⟨q, _, rfl⟩ := List.mem_map.mp hp
     exact q.2.property
   have hl_eq : l'.map (fun p ↦ (p.1, f p.2)) = l := by
-    have h1 := congrArg (List.map fun q : ℕ × (f '' (I : Set R)) ↦ (q.1, (q.2 : S))) hl₀
-    have h2 : lImg.map (fun q : ℕ × (f '' (I : Set R)) ↦ (q.1, (q.2 : S))) = l := by
-      simp [lImg, List.map_pmap, List.pmap_eq_map]
-    simpa [l', φ, List.map_map, Function.comp_def, h2] using h1
+    simpa [l', List.map_map, Function.comp_def] using hl₀
   have hfst : (l'.map Prod.fst).sum = (l.map Prod.fst).sum := by
     conv_rhs => rw [← hl_eq, List.map_map]
     rfl

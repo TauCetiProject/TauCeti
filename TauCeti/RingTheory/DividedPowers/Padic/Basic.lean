@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.DividedPowers.Padic
 public import Mathlib.RingTheory.DividedPowers.SubDPIdeal
 public import TauCeti.NumberTheory.Padics.RingHoms
