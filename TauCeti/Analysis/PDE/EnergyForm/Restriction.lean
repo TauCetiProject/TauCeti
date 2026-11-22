@@ -45,6 +45,8 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.exists_energyFormH1_restrictL_add_const_nonneg`: the same shift with the mass
   coefficient packaged existentially, as a measurable coefficient bounded by `|c|`.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
+* `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral_of_eqOn`: the same after replacing the
+  principal coefficient by one that agrees with it on the subdomain.
 * `TauCeti.PDE.exists_forcing_restrictL_of_eqOn`: for `b, c ∈ L∞(Ω)`, the restriction of a weak
   solution to a set where the principal coefficient is replaced by an essentially bounded one
   solves the equation without lower-order terms, with an `L²` forcing bounded by
@@ -356,6 +358,21 @@ theorem energyFormH1_restrictL_eq_setIntegral {a : EuclideanSpace ℝ ι → Mat
   rw [energyFormH1_restrictL, hu, W1p0.value_extendByZeroL]
   exact setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => f x * y) (fun _ => mul_zero _) _
 
+/-- **Weak solutions restrict to weak solutions for a coefficient field agreeing on the
+subdomain.** If `u ∈ H¹(Ω)` satisfies `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)` and `a'` agrees
+with `a` on an open `U ⊆ Ω`, then `a'(u|_U, v) = ∫_U f v` for every `v ∈ H¹₀(U)`, where `a'(·, ·)`
+is the energy form with principal coefficient `a'` and the same lower-order coefficients. -/
+theorem energyFormH1_restrictL_eq_setIntegral_of_eqOn {a a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega)
+    (haa' : EqOn a' a U) {u : W1p mu Omega 2} {f : EuclideanSpace ℝ ι → ℝ}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
+    (v : W1p0 mu U 2) :
+    energyFormH1 a' b c (W1p.restrictL hU u) (v : W1p mu U 2) =
+      ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
+  rw [energyFormH1_congr_ae (ae_restrict_of_forall_mem U.isOpen.measurableSet haa') .rfl .rfl]
+  exact energyFormH1_restrictL_eq_setIntegral hU hu v
+
 /-- If `a'` agrees with `a` on an open `U ≤ Ω`, is essentially bounded on `U`, `b, c ∈ L∞(Ω)`, and
 `u ∈ H¹(Ω)` solves the equation with coefficients `a, b, c` and right-hand side `f`, then the
 restriction of `u` to `U` solves the equation with principal part `a'` and no lower-order terms,
@@ -388,9 +405,7 @@ theorem exists_forcing_restrictL_of_eqOn {a : EuclideanSpace ℝ ι → Matrix �
   have hu₁ : ∀ v : W1p0 mu U 2, energyFormH1 a' b c uU (v : W1p mu U 2) =
       ∫ x in U, hfU.toLp f x * W1p.value (v : W1p mu U 2) x ∂mu := by
     intro v
-    have h := energyFormH1_restrictL_eq_setIntegral hU hu v
-    rw [energyFormH1_def] at h ⊢
-    rw [setIntegral_congr_fun U.isOpen.measurableSet fun x hx => by rw [haa' hx], h]
+    rw [energyFormH1_restrictL_eq_setIntegral_of_eqOn hU haa' hu v]
     refine integral_congr_ae ?_
     filter_upwards [hfU.coeFn_toLp] with x hx
     rw [hx]
