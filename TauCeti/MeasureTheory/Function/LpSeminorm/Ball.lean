@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # `Lᵖ` seminorms on all balls of one radius
@@ -45,6 +47,9 @@ exact form of the bounded-overlap count.
   inequalities, whose right-hand side is a power of a mean rather than a mean.
 * `TauCeti.lpNorm_le_of_ae_lpNorm_restrict_ball_le_add`: the same for local estimates by two
   functions on concentric balls of radii `r` and `2 r`, with the explicit constant `2 ^ (d + 1)`.
+* `MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm`: Chebyshev point
+  selection on a ball, finding `w ∈ B(x₀, r)` with
+  `‖f w‖ ≤ |B(0, 1)|^(-1/p) r^(-n/p) ‖f‖_{L^p(B(x₀, r))}`.
 -/
 
 public section
@@ -281,5 +286,38 @@ theorem lpNorm_le_of_ae_lpNorm_restrict_ball_le_add (hp1 : 1 ≤ p) (hp : p ≠ 
     _ = _ := by ring
 
 end FiniteDimensional
+
+/-- **Chebyshev point selection on a ball.** For `p > 0`, `r > 0`, and `f ∈ L^p(B(x₀, r))` in
+dimension `n`, there is a point `w ∈ B(x₀, r)` at which
+`‖f w‖ ≤ |B(0, 1)|^(-1/p) r^(-n/p) ‖f‖_{L^p(B(x₀, r))}`. -/
+theorem _root_.MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {f : E → F} {p r : ℝ} {x₀ : E}
+    (hp : 0 < p) (hr : 0 < r)
+    (hf : MemLp f (ENNReal.ofReal p) (mu.restrict (ball x₀ r))) :
+    ∃ w ∈ ball x₀ r,
+      ‖f w‖ ≤ mu.real (ball (0 : E) 1) ^ (-p⁻¹) *
+        (r ^ (-((finrank ℝ E : ℝ) / p)) *
+          (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ r))).toReal) := by
+  have hp0 : ENNReal.ofReal p ≠ 0 := (ENNReal.ofReal_pos.2 hp).ne'
+  have hpos : 0 < mu (ball x₀ r) := isOpen_ball.measure_pos mu (nonempty_ball.2 hr)
+  obtain ⟨w, hw, hle⟩ := hf.exists_mem_measure_rpow_mul_enorm_le_eLpNorm hp0 ENNReal.ofReal_ne_top
+    hpos.ne' measure_ball_lt_top.ne
+  have hreal := ENNReal.toReal_mono hf.eLpNorm_ne_top hle
+  rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal hp.le, toReal_eNorm,
+    ← measureReal_def] at hreal
+  have hmr : 0 < mu.real (ball x₀ r) := Metric.measureReal_ball_pos mu x₀ hr
+  have hinv : ‖f w‖ ≤ mu.real (ball x₀ r) ^ (-p⁻¹) *
+      (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ r))).toReal := by
+    rw [Real.rpow_neg hmr.le, inv_mul_eq_div, le_div_iff₀' (Real.rpow_pos_of_pos hmr _)]
+    exact hreal
+  refine ⟨w, hw, hinv.trans_eq ?_⟩
+  have hvol : mu.real (ball x₀ r) = r ^ finrank ℝ E * mu.real (ball 0 1) := by
+    rw [measureReal_def, mu.addHaar_ball_of_pos x₀ hr, ENNReal.toReal_mul,
+      ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+  rw [hvol, Real.mul_rpow (by positivity) measureReal_nonneg, ← Real.rpow_natCast r,
+    ← Real.rpow_mul hr.le, show (finrank ℝ E : ℝ) * -p⁻¹ = -((finrank ℝ E : ℝ) / p) by ring]
+  ring
 
 end TauCeti

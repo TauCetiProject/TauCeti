@@ -155,31 +155,6 @@ theorem exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_sub_le_of_wkp {
         exact (eLpNorm_mono_measure _ (Measure.restrict_mono hSK le_rfl)).trans hvH
     _ = ENNReal.ofReal η := by rw [← ENNReal.ofReal_mul hN.le, mul_div_cancel₀ _ hN.ne']
 
-omit [DecidableEq ι] in
-/-- On `S ⊆ K ⊆ Ω`, adding `N` times the Hessian error `‖D²v - D²u‖` to a function `F` costs at most
-`N δ` in `Lᵖ(S)` when that error is at most `δ` in `Lᵖ(K)`. -/
-private theorem eLpNorm_add_smul_norm_fderiv_gradient_sub_le {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    {Ω : Opens (EuclideanSpace ℝ ι)} (u : Wkp mu Ω p 2) {v : EuclideanSpace ℝ ι → ℝ}
-    {K S : Set (EuclideanSpace ℝ ι)} (hKΩ : K ⊆ Ω) (hSK : S ⊆ K) {δ : ℝ}
-    (hvH : eLpNorm (fun y ↦ fderiv ℝ (∇ v) y - Wkp.iteratedGradient 1 u y) p
-      (mu.restrict K) ≤ ENNReal.ofReal δ)
-    (F : EuclideanSpace ℝ ι → ℝ) {N : ℝ} (hN : 0 ≤ N) :
-    eLpNorm (F + N • fun x ↦ ‖fderiv ℝ (∇ v) x - Wkp.iteratedGradient 1 u x‖) p
-      (mu.restrict S) ≤ eLpNorm F p (mu.restrict S) + ENNReal.ofReal (N * δ) := by
-  have hD : AEStronglyMeasurable (fun x ↦ fderiv ℝ (∇ v) x - Wkp.iteratedGradient 1 u x)
-      (mu.restrict S) :=
-    (measurable_fderiv ℝ (∇ v)).aestronglyMeasurable.sub ((Lp.aestronglyMeasurable _).mono_measure
-      (Measure.restrict_mono (hSK.trans hKΩ) le_rfl))
-  calc _ ≤ eLpNorm F p (mu.restrict S) + ‖N‖ₑ * eLpNorm
-        (fun x ↦ ‖fderiv ℝ (∇ v) x - Wkp.iteratedGradient 1 u x‖) p (mu.restrict S) := by
-        rw [← eLpNorm_const_smul]
-        exact eLpNorm_add_le Fact.out
-    _ ≤ eLpNorm F p (mu.restrict S) + ENNReal.ofReal N * ENNReal.ofReal δ := by
-        rw [Real.eNorm_eq_ofReal hN, eLpNorm_norm _ hD]
-        gcongr
-        exact (eLpNorm_mono_measure _ (Measure.restrict_mono hSK le_rfl)).trans hvH
-    _ = _ := by rw [← ENNReal.ofReal_mul hN]
-
 /-- **Approximation of a strong supersolution by classical ones.** Let `u ∈ W^{2,p}(Ω)`, `p < ∞`,
 have a representative `ū` continuous on `Ω`, let `K ⊆ Ω` be compact and `S ⊆ K`, and suppose that
 `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere on `S` for the weak Hessian, with coefficient entries
@@ -247,57 +222,39 @@ theorem exists_contDiff_sub_le_and_le_sum_mul_fderiv_fderiv_of_wkp {p : ℝ≥0�
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) ∧
       eLpNorm (fun x ↦ (g x)⁻) p (mu.restrict S) ≤
         eLpNorm (fun x ↦ (f x)⁻) p (mu.restrict S) + ENNReal.ofReal η := by
-  set N : ℝ := (Fintype.card ι : ℝ) ^ 2 * max Λ 0 + 1
-  have hN : 0 < N := by positivity
-  have hN1 : 1 ≤ N := le_add_of_nonneg_left (by positivity)
-  -- `w = v - η / 2` for an approximation `v` within `δ = η / (2 N) ≤ η / 2` of `ū`.
-  set δ := η / (2 * N)
-  have hδ : 0 < δ := by positivity
-  have hδη : δ ≤ η / 2 := div_le_div_of_nonneg_left hη.le two_pos (by linarith)
-  obtain ⟨v, hv, hvK, hvH⟩ := Wkp.exists_contDiff_abs_sub_le_and_eLpNorm_fderiv_gradient_sub_le hp
-    u hcont hū hK hKΩ hδ
+  obtain ⟨v, e, hv, hvK, hve, he⟩ :=
+    exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_sub_le_of_wkp hp u hcont hū hK hKΩ
+      hSK ha (half_pos hη)
   set w : EuclideanSpace ℝ ι → ℝ := fun y ↦ v y - η / 2
-  have hww : ∀ x, fderiv ℝ (fderiv ℝ w) x = fderiv ℝ (fderiv ℝ v) x := fun x ↦ by
-    simpa only [w, sub_eq_add_neg] using fderiv_fderiv_add_const v (-(η / 2)) x
-  set D : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι :=
-    fun x ↦ fderiv ℝ (∇ v) x - Wkp.iteratedGradient 1 u x
-  set L : EuclideanSpace ℝ ι → ℝ := fun x ↦ ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ w) x
+  set L : EuclideanSpace ℝ ι → ℝ := fun x ↦ ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ v) x
     (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-  set h : EuclideanSpace ℝ ι → ℝ := fun x ↦ -(f x)⁻ - N * ‖D x‖
-  -- Off a null set of `S`, the principal part of `w` is at least `-f⁻ - N ‖D‖`.
-  have hL : ∀ᵐ x ∂mu.restrict S, h x ≤ L x := by
-    filter_upwards [hf, ha] with x hfx hax
-    have hd : ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i -
-        L x ≤ N * ‖D x‖ := by
-      simp only [L, hww]
-      exact (abs_sub_le_iff.1 (abs_sum_mul_fderiv_fderiv_sub_le
-        (contDiff_infty.1 hv 2).contDiffAt hax (Wkp.iteratedGradient 1 u x))).2
-    linarith [posPart_sub_negPart (f x), posPart_nonneg (f x)]
-  have hgh : (fun x ↦ min (L x) (h x)) =ᵐ[mu.restrict S] h := by
-    filter_upwards [hL] with x hx
-    exact min_eq_right hx
-  refine ⟨w, fun x ↦ min (L x) (h x), hv.sub contDiff_const, fun y hy ↦ ?_,
-    fun x _ ↦ min_le_left _ _, ?_⟩
-  · have h1 := abs_le.1 ((hvK y hy).trans hδη)
-    constructor <;> simp only [w] <;> linarith [h1.1, h1.2]
-  -- Almost everywhere on `S`, the negative part of the right-hand side is `f⁻ + N ‖D‖`.
-  have hae : (fun x ↦ (min (L x) (h x))⁻) =ᵐ[mu.restrict S]
-      (fun x ↦ (f x)⁻) + N • fun x ↦ ‖D x‖ := by
-    filter_upwards [hgh] with x hx
+  set h : EuclideanSpace ℝ ι → ℝ := fun x ↦ -(f x)⁻ - e x
+  have hww : ∀ x, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ w) x
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = L x := fun x ↦ by
+    simp only [w, L, sub_eq_add_neg, fderiv_fderiv_add_const]
+  -- Off a null set of `S`, `-(f⁻ + e) ≤ L` and `-(f⁻ + e) ≤ 0`.
+  have hae : (fun x ↦ (min (L x) (h x))⁻) =ᵐ[mu.restrict S] (fun x ↦ (f x)⁻) + e := by
+    filter_upwards [hf, hve] with x hfx hx
     have hx0 : h x ≤ 0 := by
-      have := mul_nonneg hN.le (norm_nonneg (D x))
+      have : 0 ≤ e x := (abs_nonneg _).trans hx
       simp only [h]
       linarith [negPart_nonneg (f x)]
-    rw [hx, negPart_eq_neg.2 hx0]
-    simp only [h, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    have hxL : h x ≤ L x := by
+      simp only [h, L]
+      linarith [(abs_sub_le_iff.1 hx).2, posPart_sub_negPart (f x), posPart_nonneg (f x)]
+    rw [min_eq_right hxL, negPart_eq_neg.2 hx0]
+    simp only [h, Pi.add_apply]
     ring
-  calc _ = eLpNorm ((fun x ↦ (f x)⁻) + N • fun x ↦ ‖D x‖) p (mu.restrict S) :=
-        eLpNorm_congr_ae hae
-    _ ≤ _ := eLpNorm_add_smul_norm_fderiv_gradient_sub_le u hKΩ hSK hvH _ hN.le
-    _ ≤ _ := by
+  refine ⟨w, fun x ↦ min (L x) (h x), hv.sub contDiff_const, fun y hy ↦ ?_,
+    fun x _ ↦ (min_le_left _ _).trans_eq (hww x).symm, ?_⟩
+  · have h1 := abs_le.1 (hvK y hy)
+    constructor <;> simp only [w] <;> linarith [h1.1, h1.2]
+  calc _ = eLpNorm ((fun x ↦ (f x)⁻) + e) p (mu.restrict S) := eLpNorm_congr_ae hae
+    _ ≤ eLpNorm (fun x ↦ (f x)⁻) p (mu.restrict S) + eLpNorm e p (mu.restrict S) :=
+        eLpNorm_add_le Fact.out
+    _ ≤ eLpNorm (fun x ↦ (f x)⁻) p (mu.restrict S) + ENNReal.ofReal η := by
         gcongr
-        rw [mul_div_assoc', div_le_iff₀ (by positivity)]
-        nlinarith
+        exact he.trans (ENNReal.ofReal_le_ofReal (half_le_self hη.le))
 
 /-- **Approximation of a strong supersolution from above.** Under the hypotheses of
 `TauCeti.PDE.exists_contDiff_abs_sub_le_and_sum_mul_fderiv_fderiv_le_of_wkp`, shifting the smooth

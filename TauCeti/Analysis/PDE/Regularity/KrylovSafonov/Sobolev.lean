@@ -216,33 +216,9 @@ theorem exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp
 
 section StrongSolutions
 
-variable {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
+section
 
-omit [DecidableEq ι] in
-/-- Scales the `mu`-to-`volume` restricted `Lⁿ` comparison from `Haar.lean` by `s / λ ≤ R / λ`
-with `α₀^(1/n) ≤ K`. -/
-private theorem memLp_volume_and_mul_eLpNorm_div_le
-    {G F_fn : EuclideanSpace ℝ ι → ℝ} {S U : Set (EuclideanSpace ℝ ι)} {s R lam η K : ℝ}
-    (hSU : S ⊆ U) (hs0 : 0 ≤ s) (hsR : s ≤ R) (hlam : 0 < lam) (hη : 0 ≤ η)
-    (hK : (Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹ ≤ K)
-    (hf : MemLp F_fn (Fintype.card ι) (mu.restrict U))
-    (hg : eLpNorm G (Fintype.card ι) (mu.restrict S) ≤
-      eLpNorm F_fn (Fintype.card ι) (mu.restrict S) + ENNReal.ofReal η) :
-    MemLp G (Fintype.card ι) (volume.restrict S) ∧
-      s * (eLpNorm G (Fintype.card ι) (volume.restrict S)).toReal / lam ≤
-        K * (R * ((eLpNorm F_fn (Fintype.card ι) (mu.restrict U)).toReal + η) / lam) := by
-  refine ⟨hf.restrict_of_isAddHaarMeasure_of_eLpNorm_le_add hSU ENNReal.ofReal_ne_top hg volume, ?_⟩
-  have htr := toReal_eLpNorm_restrict_le_addHaarScalarFactor_rpow_mul_add G volume mu hSU hf
-    ENNReal.ofReal_ne_top hg
-  rw [ENNReal.toReal_natCast, ENNReal.toReal_ofReal hη] at htr
-  have hR : 0 ≤ R := hs0.trans hsR
-  calc s * (eLpNorm G (Fintype.card ι) (volume.restrict S)).toReal / lam
-      ≤ R * ((Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹ *
-          ((eLpNorm F_fn (Fintype.card ι) (mu.restrict U)).toReal + η)) / lam := by gcongr
-    _ = (Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹ *
-          (R * ((eLpNorm F_fn (Fintype.card ι) (mu.restrict U)).toReal + η) / lam) := by ring
-    _ ≤ K * (R * ((eLpNorm F_fn (Fintype.card ι) (mu.restrict U)).toReal + η) / lam) :=
-        mul_le_mul_of_nonneg_right hK (by positivity)
+variable {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
 
 /-- **The local maximum principle for strong subsolutions** (Gilbarg–Trudinger, Theorem 9.20,
 without lower-order terms). Let `p > 0` and `κ` be given. There is a constant `C > 0`, depending
@@ -322,8 +298,11 @@ theorem exists_preciseRepresentative_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp
     have hxK : x ∈ closedBall c s :=
       ball_subset_closedBall (ball_subset_ball (by linarith) hxs)
     linarith [(hwK x hxK).1]
-  obtain ⟨hg_vol, h2'⟩ := memLp_volume_and_mul_eLpNorm_div_le (K := K_haar) hbs_sub hs0.le hsR.le
-    hlam hη.le (le_max_right _ _) hf hg_neg
+  obtain ⟨hg_vol, h2⟩ := hf.restrict_and_mul_toReal_eLpNorm_le_of_isAddHaarMeasure hbs_sub
+    ENNReal.ofReal_ne_top hg_neg volume (div_nonneg hs0.le hlam.le)
+    (div_le_div_of_nonneg_right hsR.le hlam.le)
+    (by simpa only [ENNReal.toReal_natCast] using le_max_right (2 ^ (n / p) * α₀ ^ p⁻¹) (α₀ ^ n⁻¹))
+  rw [ENNReal.toReal_ofReal hη.le] at h2
   have hm := HM (ha.mono_set hbs_sub) hLam hw2.continuous.continuousOn hw2.contDiffOn hwg
     hg_vol x hxs
   rw [toReal_eLpNorm_restrict_eq_addHaarScalarFactor_rpow_mul (fun y ↦ (w y)⁺) (ENNReal.ofReal p)
@@ -354,22 +333,21 @@ theorem exists_preciseRepresentative_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp
       _ = (2 ^ (n / p) * α₀ ^ p⁻¹) * (R ^ (-n / p) * Np) := by ring
       _ ≤ K_haar * (R ^ (-n / p) * Np) :=
           mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-  have h2 : s / lam * (eLpNorm (fun y ↦ (g y)⁻) (Fintype.card ι)
-      (volume.restrict (ball c s))).toReal ≤ K_haar * (R / lam * (F + η)) := by
-    simpa only [F, div_mul_eq_mul_div, mul_div_assoc] using h2'
   calc ū x ≤ w x + η := hūx_le
     _ ≤ C_M * (K_haar * (R ^ (-n / p) * Np) + K_haar * (R / lam * (F + η))) + η := by
         linarith [hm, mul_le_mul_of_nonneg_left (add_le_add h1 h2) hCM.le]
     _ = C_M * K_haar * (R ^ (-n / p) * Np + R / lam * F) +
           η * (C_M * K_haar * (R / lam) + 1) := by ring
 
+end
+
 /-- **The weak Harnack inequality of Krylov and Safonov for strong supersolutions**
 (Gilbarg–Trudinger, Theorem 9.22; Caffarelli–Cabré, Theorem 4.8). Let `κ` be given. There is an
-exponent `p > 0`, depending only on the dimension `n` and on `κ`, such that for every `0 < θ < 1`
-there is a constant `C > 0`, depending only on `n`, the additive Haar measure `mu`, `κ`, and `θ`,
-with the following property. Let `B(x₀, R) ⊆ Ω`, let `a` be uniformly elliptic on `B(x₀, R)` with
-constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` be nonnegative almost everywhere in `B(x₀, R)`
-and satisfy `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere there for the weak Hessian, with
+exponent `p > 0`, depending only on the dimension `n` and on `κ`, such that for every additive Haar
+measure `mu` and every `0 < θ < 1` there is a constant `C > 0`, depending only on `n`, `mu`, `κ`,
+and `θ`, with the following property. Let `B(x₀, R) ⊆ Ω`, let `a` be uniformly elliptic on
+`B(x₀, R)` with constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` be nonnegative almost everywhere
+in `B(x₀, R)` and satisfy `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere there for the weak Hessian, with
 `f⁺ ∈ Lⁿ(B(x₀, R))`. Then at every `y ∈ B(x₀, θ R)`, the continuous precise representative `ū` of
 `u` satisfies
 
@@ -378,7 +356,8 @@ and satisfy `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere there for t
 The coefficients need no regularity or measurability, and need not be symmetric. -/
 theorem exists_rpow_neg_mul_eLpNorm_le_mul_preciseRepresentative_add_of_wkp
     [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] {κ : ℝ} :
-    ∃ p : ℝ, 0 < p ∧ ∀ ⦃θ : ℝ⦄, 0 < θ → θ < 1 →
+    ∃ p : ℝ, 0 < p ∧ ∀ (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure]
+      ⦃θ : ℝ⦄, 0 < θ → θ < 1 →
       ∃ C : ℝ, 0 < C ∧
         ∀ ⦃lam Lam R : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
           ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃f : EuclideanSpace ℝ ι → ℝ⦄
@@ -400,10 +379,10 @@ theorem exists_rpow_neg_mul_eLpNorm_le_mul_preciseRepresentative_add_of_wkp
   obtain ⟨p, hp, HW'⟩ :=
     exists_rpow_neg_mul_eLpNorm_le_mul_add_of_sum_mul_fderiv_fderiv_le (ι := ι) (κ := κ)
   set n : ℝ := (Fintype.card ι : ℝ)
+  refine ⟨p, hp, fun mu _ θ hθ0 hθ1 ↦ ?_⟩
   set α₀ : ℝ := (Measure.addHaarScalarFactor volume mu : ℝ)
   have hα₀ : 0 < α₀ :=
     NNReal.coe_pos.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure volume mu)
-  refine ⟨p, hp, fun θ hθ0 hθ1 ↦ ?_⟩
   set θ' : ℝ := √θ
   have hθ'0 : 0 < θ' := Real.sqrt_pos.2 hθ0
   have hθ'1 : θ' < 1 := by
@@ -450,8 +429,11 @@ theorem exists_rpow_neg_mul_eLpNorm_le_mul_preciseRepresentative_add_of_wkp
     rw [← hθ's]
     exact ball_subset_ball (mul_le_of_le_one_left hs0.le hθ'1.le)
   have hwy_le : w y ≤ ū y + η := (hwK y (ball_subset_closedBall (hθR_sub_s hy))).2
-  obtain ⟨hg_vol, h2⟩ := memLp_volume_and_mul_eLpNorm_div_le (K := max 1 (α₀ ^ n⁻¹)) hbs_sub hs0.le
-    hsR.le hlam hη.le (le_max_right _ _) hf hg
+  obtain ⟨hg_vol, h2⟩ := hf.restrict_and_mul_toReal_eLpNorm_le_of_isAddHaarMeasure hbs_sub
+    ENNReal.ofReal_ne_top hg volume (div_nonneg hs0.le hlam.le)
+    (div_le_div_of_nonneg_right hsR.le hlam.le)
+    (by simpa only [ENNReal.toReal_natCast] using le_max_right 1 (α₀ ^ n⁻¹))
+  simp only [ENNReal.toReal_ofReal hη.le, div_mul_eq_mul_div] at h2
   have hw_est := HW (ha.mono_set hbs_sub) hLam hw2.contDiffOn hw_nn hwg hg_vol y (hθ's.symm ▸ hy)
   rw [hθ's, toReal_eLpNorm_restrict_eq_addHaarScalarFactor_rpow_mul w (ENNReal.ofReal p)
     volume mu (ball x₀ (θ * R)), ENNReal.toReal_ofReal hp.le] at hw_est
@@ -495,6 +477,10 @@ theorem exists_rpow_neg_mul_eLpNorm_le_mul_preciseRepresentative_add_of_wkp
     _ = C_final * (ū y + R * F / lam) + η * (C_final * (1 + R / lam)) := by
         simp only [C_final]
         ring
+
+section
+
+variable {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
 
 /-- **The Harnack inequality of Krylov and Safonov for strong solutions** (Gilbarg–Trudinger,
 Theorem 9.22; Caffarelli–Cabré, Corollary 4.9), for functions in `W^{2,n}` satisfying the
@@ -562,8 +548,11 @@ theorem exists_preciseRepresentative_le_mul_add_of_abs_sum_mul_iteratedGradient_
     ball_subset_closedBall (ball_subset_ball (by linarith) hxs)
   have hyK : y ∈ closedBall x₀ (2 * s) :=
     ball_subset_closedBall (ball_subset_ball (by linarith) hys)
-  obtain ⟨hg_vol, h2⟩ := memLp_volume_and_mul_eLpNorm_div_le (K := max 1 (α₀ ^ n⁻¹)) hbs_sub hs0.le
-    hs_lt.le hlam hη.le (le_max_right _ _) hf hg
+  obtain ⟨hg_vol, h2⟩ := hf.restrict_and_mul_toReal_eLpNorm_le_of_isAddHaarMeasure hbs_sub
+    ENNReal.ofReal_ne_top hg volume (div_nonneg hs0.le hlam.le)
+    (div_le_div_of_nonneg_right hs_lt.le hlam.le)
+    (by simpa only [ENNReal.toReal_natCast] using le_max_right 1 (α₀ ^ n⁻¹))
+  simp only [ENNReal.toReal_ofReal hη.le, div_mul_eq_mul_div] at h2
   have hw_har := H (ha.mono_set hbs_sub) hLam hw2.contDiffOn hw_nn hwg hg_vol x hxs y hys
   have h1 : w y ≤ max 1 (α₀ ^ n⁻¹) * (ū y + η) :=
     (hwK y hyK).2.trans (le_mul_of_one_le_left
@@ -611,31 +600,37 @@ theorem exists_preciseRepresentative_le_mul_add_of_sum_mul_iteratedGradient_eq
   filter_upwards [heq] with z hz
   rw [hz, Real.norm_eq_abs]
 
+end
+
 /-- **The interior Hölder estimate of Krylov and Safonov for strong solutions** (Gilbarg–Trudinger,
 Corollary 9.24; Caffarelli–Cabré, Proposition 4.10), for functions in `W^{2,n}` satisfying the
-two-sided inequality `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` almost everywhere. Let `κ` be given. There are
-`0 < α ≤ 1` and `C > 0`, depending only on the dimension `n`, the additive Haar measure `mu`, and
-`κ`, with the following property. Let `B(x₀, 2 r) ⊆ Ω`, let `a` be uniformly elliptic on
-`B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` satisfy `|u| ≤ M` and
-`|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` almost everywhere in `B(x₀, 2 r)`, where `f ∈ Lⁿ(B(x₀, 2 r))`. Then the
-continuous precise representative `ū` of `u` is `α`-Hölder on `B(x₀, r)` with constant
+two-sided inequality `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` almost everywhere. Let `κ` be given. There is an
+exponent `0 < α ≤ 1`, depending only on the dimension `n` and on `κ`, such that for every additive
+Haar measure `mu` there is a constant `C > 0`, depending only on `n`, `mu`, and `κ`, with the
+following property. Let `B(x₀, 2 r) ⊆ Ω`, let `a` be uniformly elliptic on `B(x₀, 2 r)` with
+constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` satisfy `|u| ≤ M` and `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f`
+almost everywhere in `B(x₀, 2 r)`, where `f ∈ Lⁿ(B(x₀, 2 r))`. Then the continuous precise
+representative `ū` of `u` is `α`-Hölder on `B(x₀, r)` with constant
 `C r^(-α) (M + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`.
 
 The coefficients need no regularity or measurability, and need not be symmetric. -/
 theorem exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradient_le
     [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] {κ : ℝ} :
-    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧
-      ∀ ⦃lam Lam r M : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
-        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃f : EuclideanSpace ℝ ι → ℝ⦄
-        (u : Wkp mu Ω (Fintype.card ι) 2),
-        ball x₀ (2 * r) ⊆ Ω → UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam →
-        (∀ᵐ x ∂mu.restrict (ball x₀ (2 * r)), |Wkp.value 2 u x| ≤ M) →
-        (∀ᵐ x ∂mu.restrict (ball x₀ (2 * r)),
-          |∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i| ≤ f x) →
-        MemLp f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r))) →
-        HolderOnWith (C * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
-          (mu.restrict (ball x₀ (2 * r)))).toReal / lam)).toNNReal α
-          (preciseRepresentative mu (Wkp.value 2 u)) (ball x₀ r) := by
+    ∃ α : ℝ≥0, 0 < α ∧ α ≤ 1 ∧
+      ∀ (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure],
+        ∃ C : ℝ, 0 < C ∧
+          ∀ ⦃lam Lam r M : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
+            ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃f : EuclideanSpace ℝ ι → ℝ⦄
+            (u : Wkp mu Ω (Fintype.card ι) 2),
+            ball x₀ (2 * r) ⊆ Ω → UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam →
+            (∀ᵐ x ∂mu.restrict (ball x₀ (2 * r)), |Wkp.value 2 u x| ≤ M) →
+            (∀ᵐ x ∂mu.restrict (ball x₀ (2 * r)),
+              |∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i| ≤
+                f x) →
+            MemLp f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r))) →
+            HolderOnWith (C * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
+              (mu.restrict (ball x₀ (2 * r)))).toReal / lam)).toNNReal α
+              (preciseRepresentative mu (Wkp.value 2 u)) (ball x₀ r) := by
   have : Nonempty ι :=
     Fintype.card_pos_iff.1 (by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ Fintype.card ι))
   set κ' : ℝ := max κ 1
@@ -645,10 +640,11 @@ theorem exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradien
   have hα0' : (0 : ℝ) < α := NNReal.coe_pos.2 hα0
   have hα1' : (α : ℝ) ≤ 1 := by exact_mod_cast hα1
   set n : ℝ := (Fintype.card ι : ℝ)
+  refine ⟨α, hα0, hα1, fun mu _ ↦ ?_⟩
   set α₀ : ℝ := (Measure.addHaarScalarFactor volume mu : ℝ)
   set C : ℝ := 2 * C₀ * max 1 (α₀ ^ n⁻¹)
   have hC : 0 < C := by positivity
-  refine ⟨α, C, hα0, hα1, hC, ?_⟩
+  refine ⟨C, hC, ?_⟩
   intro lam Lam r M x₀ Ω a f u hBΩ ha hLam hM heq hf
   refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
   refine le_trans ?_ (mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) (by positivity))
@@ -691,8 +687,11 @@ theorem exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradien
     have htri := abs_add_le (ū z) (v z - ū z)
     rw [add_sub_cancel] at htri
     exact htri.trans (add_le_add (hū_abs z (hbs_sub hz)) (hvK z (ball_subset_closedBall hz)))
-  obtain ⟨hg_vol, h2⟩ := memLp_volume_and_mul_eLpNorm_div_le (K := max 1 (α₀ ^ n⁻¹)) hbs_sub hs0.le
-    hs_lt.le hlam hη.le (le_max_right _ _) hf hg
+  obtain ⟨hg_vol, h2⟩ := hf.restrict_and_mul_toReal_eLpNorm_le_of_isAddHaarMeasure hbs_sub
+    ENNReal.ofReal_ne_top hg volume (div_nonneg hs0.le hlam.le)
+    (div_le_div_of_nonneg_right hs_lt.le hlam.le)
+    (by simpa only [ENNReal.toReal_natCast] using le_max_right 1 (α₀ ^ n⁻¹))
+  simp only [ENNReal.toReal_ofReal hη.le, div_mul_eq_mul_div] at h2
   have hhold := (H hs0 (ha.mono_set hbs_sub) hLam' hv2.contDiffOn hv_abs hvg hg_vol).dist_le hxs hys
   have hv_dist : dist (v x) (v y) ≤
       C₀ * s ^ (-(α : ℝ)) * (M + η + s * (eLpNorm g (Fintype.card ι)
@@ -736,34 +735,40 @@ theorem exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradien
 
 /-- **The interior Hölder estimate of Krylov and Safonov for strong solutions** (Gilbarg–Trudinger,
 Corollary 9.24), for solutions of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f` almost everywhere in `W^{2,n}`. Let `κ` be
-given. There are `0 < α ≤ 1` and `C > 0`, depending only on the dimension `n`, the additive Haar
-measure `mu`, and `κ`, with the following property. Let `B(x₀, 2 r) ⊆ Ω`, let `a` be uniformly
-elliptic on `B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` satisfy `|u| ≤ M`
-and `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f` almost everywhere in `B(x₀, 2 r)`, where `f ∈ Lⁿ(B(x₀, 2 r))`. Then the
+given. There is an exponent `0 < α ≤ 1`, depending only on the dimension `n` and on `κ`, such that
+for every additive Haar measure `mu` there is a constant `C > 0`, depending only on `n`, `mu`, and
+`κ`, with the following property. Let `B(x₀, 2 r) ⊆ Ω`, let `a` be uniformly elliptic on
+`B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` satisfy `|u| ≤ M` and
+`∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f` almost everywhere in `B(x₀, 2 r)`, where `f ∈ Lⁿ(B(x₀, 2 r))`. Then the
 continuous precise representative `ū` of `u` is `α`-Hölder on `B(x₀, r)` with constant
 `C r^(-α) (M + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`.
 
 The coefficients need no regularity or measurability, and need not be symmetric. -/
 theorem exists_holderOnWith_preciseRepresentative_of_sum_mul_iteratedGradient_eq
     [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] {κ : ℝ} :
-    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧
-      ∀ ⦃lam Lam r M : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
-        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃f : EuclideanSpace ℝ ι → ℝ⦄
-        (u : Wkp mu Ω (Fintype.card ι) 2),
-        ball x₀ (2 * r) ⊆ Ω → UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam →
-        (∀ᵐ x ∂mu.restrict (ball x₀ (2 * r)), |Wkp.value 2 u x| ≤ M) →
-        (∀ᵐ x ∂mu.restrict (ball x₀ (2 * r)),
-          ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i = f x) →
-        MemLp f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r))) →
-        HolderOnWith (C * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
-          (mu.restrict (ball x₀ (2 * r)))).toReal / lam)).toNNReal α
-          (preciseRepresentative mu (Wkp.value 2 u)) (ball x₀ r) := by
-  obtain ⟨α, C, hα0, hα1, hC, H⟩ :=
+    ∃ α : ℝ≥0, 0 < α ∧ α ≤ 1 ∧
+      ∀ (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure],
+        ∃ C : ℝ, 0 < C ∧
+          ∀ ⦃lam Lam r M : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
+            ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃f : EuclideanSpace ℝ ι → ℝ⦄
+            (u : Wkp mu Ω (Fintype.card ι) 2),
+            ball x₀ (2 * r) ⊆ Ω → UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam →
+            (∀ᵐ x ∂mu.restrict (ball x₀ (2 * r)), |Wkp.value 2 u x| ≤ M) →
+            (∀ᵐ x ∂mu.restrict (ball x₀ (2 * r)),
+              ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i =
+                f x) →
+            MemLp f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r))) →
+            HolderOnWith (C * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
+              (mu.restrict (ball x₀ (2 * r)))).toReal / lam)).toNNReal α
+              (preciseRepresentative mu (Wkp.value 2 u)) (ball x₀ r) := by
+  obtain ⟨α, hα0, hα1, H⟩ :=
     exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradient_le
-      (ι := ι) (mu := mu) (κ := κ)
-  refine ⟨α, C, hα0, hα1, hC, fun lam Lam r M x₀ Ω a f u hBΩ ha hLam hM heq hf ↦ ?_⟩
+      (ι := ι) (κ := κ)
+  refine ⟨α, hα0, hα1, fun mu _ ↦ ?_⟩
+  obtain ⟨C, hC, Hmu⟩ := H mu
+  refine ⟨C, hC, fun lam Lam r M x₀ Ω a f u hBΩ ha hLam hM heq hf ↦ ?_⟩
   rw [← eLpNorm_norm f hf.aestronglyMeasurable]
-  refine H u hBΩ ha hLam hM ?_ hf.norm
+  refine Hmu u hBΩ ha hLam hM ?_ hf.norm
   filter_upwards [heq] with z hz
   rw [hz, Real.norm_eq_abs]
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
+import Mathlib.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
@@ -44,29 +45,25 @@ section PointSelection
 
 variable {α ε : Type*} [MeasurableSpace α] {μ : Measure α} [TopologicalSpace ε] [ContinuousENorm ε]
 
+private theorem mul_le_of_rpow_le_div {a b c : ℝ≥0∞} {r : ℝ} (hr : 0 < r)
+    (hc0 : c ≠ 0) (hc : c ≠ ∞) (h : a ^ r ≤ b ^ r / c) : c ^ r⁻¹ * a ≤ b := by
+  rw [← ENNReal.rpow_le_rpow_iff hr, ENNReal.mul_rpow_of_nonneg _ _ hr.le,
+    ENNReal.rpow_inv_rpow hr.ne', mul_comm]
+  exact (ENNReal.le_div_iff_mul_le (Or.inl hc0) (Or.inl hc)).1 h
+
 /-- **Chebyshev point selection in `Lᵖ`.** On a nonzero finite measure space, a function in `Lᵖ` for
 `0 < p < ∞` satisfies `(μ Set.univ) ^ (1 / p) ‖f x‖ₑ ≤ ‖f‖_{Lᵖ(μ)}` on a set of positive measure
 (in particular, at some point). -/
 theorem MemLp.frequently_measure_univ_rpow_mul_enorm_le_eLpNorm {f : α → ε} {p : ℝ≥0∞}
     (hf : MemLp f p μ) (hp0 : p ≠ 0) (hp : p ≠ ∞) (hμ0 : μ ≠ 0) (hμ : μ Set.univ ≠ ∞) :
     ∃ᵐ x ∂μ, (μ Set.univ) ^ p.toReal⁻¹ * ‖f x‖ₑ ≤ eLpNorm f p μ := by
-  by_contra h
   have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   have hμ0' : μ Set.univ ≠ 0 := mt Measure.measure_univ_eq_zero.1 hμ0
-  have hlt : ∀ᵐ x ∂μ, eLpNorm f p μ ^ p.toReal / μ Set.univ < ‖f x‖ₑ ^ p.toReal := by
-    filter_upwards [Filter.not_frequently.1 h] with x hx
-    have hpow := ENNReal.rpow_lt_rpow (not_le.1 hx) hpr
-    rw [ENNReal.mul_rpow_of_nonneg _ _ hpr.le, ← ENNReal.rpow_mul, inv_mul_cancel₀ hpr.ne',
-      ENNReal.rpow_one] at hpow
-    exact (ENNReal.div_lt_iff (Or.inl hμ0') (Or.inl hμ)).2 (by rwa [mul_comm])
-  have hfin : ∫⁻ _x, eLpNorm f p μ ^ p.toReal / μ Set.univ ∂μ ≠ ∞ := by
-    rw [lintegral_const, ENNReal.div_mul_cancel hμ0' hμ]
-    exact ENNReal.rpow_ne_top_of_nonneg hpr.le hf.eLpNorm_ne_top
-  have hstrict := lintegral_strict_mono hμ0 (hf.aestronglyMeasurable.eNorm.pow_const p.toReal)
-    hfin hlt
-  rw [lintegral_const, ENNReal.div_mul_cancel hμ0' hμ,
-    lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hf.aestronglyMeasurable] at hstrict
-  exact lt_irrefl _ hstrict
+  have : IsFiniteMeasure μ := ⟨hμ.lt_top⟩
+  have hpos := measure_le_laverage_pos hμ0 (hf.aestronglyMeasurable.eNorm.pow_const p.toReal)
+  rw [laverage_eq, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hf.aestronglyMeasurable] at hpos
+  refine frequently_ae_iff.2 fun h0 ↦ hpos.ne' (measure_mono_null (fun x hx ↦ ?_) h0)
+  exact mul_le_of_rpow_le_div hpr hμ0' hμ hx
 
 /-- **Chebyshev point selection on a set in `Lᵖ`.** On a set `s` of positive finite measure, a
 function in `Lᵖ(μ.restrict s)` for `0 < p < ∞` satisfies `(μ s) ^ (1 / p) ‖f x‖ₑ ≤ ‖f‖_{Lᵖ(s)}`
@@ -75,15 +72,11 @@ theorem MemLp.exists_mem_measure_rpow_mul_enorm_le_eLpNorm {f : α → ε} {p : 
     (hf : MemLp f p (μ.restrict s)) (hp0 : p ≠ 0) (hp : p ≠ ∞)
     (hμ0 : μ s ≠ 0) (hμ : μ s ≠ ∞) :
     ∃ x ∈ s, (μ s) ^ p.toReal⁻¹ * ‖f x‖ₑ ≤ eLpNorm f p (μ.restrict s) := by
-  have hfreq := hf.frequently_measure_univ_rpow_mul_enorm_le_eLpNorm hp0 hp
-    (mt (congrArg (· Set.univ)) (by simpa using hμ0)) (by simpa using hμ)
-  rw [Measure.restrict_apply_univ] at hfreq
-  have hne : μ ({x | (μ s) ^ p.toReal⁻¹ * ‖f x‖ₑ ≤ eLpNorm f p (μ.restrict s)} ∩ s) ≠ 0 := by
-    rw [← Measure.restrict_apply₀
-      (nullMeasurableSet_le (hf.aestronglyMeasurable.eNorm.const_mul _) aemeasurable_const)]
-    exact frequently_ae_iff.1 hfreq
-  obtain ⟨x, hx, hxs⟩ := nonempty_of_measure_ne_zero hne
-  exact ⟨x, hxs, hx⟩
+  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  obtain ⟨x, hxs, hx⟩ := exists_le_setLAverage hμ0 hμ
+    (hf.aestronglyMeasurable.eNorm.pow_const p.toReal)
+  rw [setLAverage_eq, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hf.aestronglyMeasurable] at hx
+  exact ⟨x, hxs, mul_le_of_rpow_le_div hpr hμ0 hμ hx⟩
 
 end PointSelection
 

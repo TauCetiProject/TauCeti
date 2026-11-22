@@ -130,6 +130,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   integrable on it.
 * `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
   every `Lᵖ` on its measurable subsets.
+* `ContinuousOn.memLp_restrict_ball_of_closedBall_subset`: in a proper pseudometric space, a
+  function continuous on a set containing `closedBall c r` is in every `Lᵖ` on `ball c r`.
 * `Continuous.integrable_of_support_subset_isCompact`: a continuous function supported in a
   compact set is integrable, without a separation assumption on the domain.
 * `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
@@ -622,6 +624,16 @@ theorem ContinuousOn.memLp_restrict_of_subset_isCompact {f : X → E} {K s : Set
     ((ae_restrict_iff' hs).2 (ae_of_all _ fun x hx => hC x (hsK hx)))
 
 end ContinuousOn
+
+/-- In a proper pseudometric space, a function continuous on a set containing `closedBall c r` lies
+in every `Lᵖ` on `ball c r`, for any measure that is finite on compact sets. -/
+theorem ContinuousOn.memLp_restrict_ball_of_closedBall_subset {X E : Type*} [PseudoMetricSpace X]
+    [ProperSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
+    [IsFiniteMeasureOnCompacts μ] [NormedAddCommGroup E] {f : X → E} {U : Set X}
+    (hf : ContinuousOn f U) {c : X} {r : ℝ} (hsub : Metric.closedBall c r ⊆ U) (p : ENNReal) :
+    MemLp f p (μ.restrict (Metric.ball c r)) :=
+  (hf.mono hsub).memLp_restrict_of_subset_isCompact (isCompact_closedBall c r)
+    Metric.isOpen_ball.measurableSet Metric.ball_subset_closedBall p
 
 namespace MeasureTheory.LocallyIntegrableOn
 

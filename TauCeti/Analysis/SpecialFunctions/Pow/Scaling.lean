@@ -19,8 +19,9 @@ This file collects the rearrangements of such powers that these arguments need.
   `r^{2a} c² r^d ≤ V (r / R)^{d+2a}`.
 * For `b ≤ a`, such a quantity also decays like `(r / R)^{d+2b}`, with the constant
   `(R^{a-b} c)² R^{d+2b}`.
-* A power `(r / R)^γ` of the ratio splits as `R^{-γ} r^γ`, and shrinking the outer radius by a
-  factor `θ` multiplies it by `θ^{-γ}`.
+* A power `(r / R)^γ` of the ratio splits as `R^{-γ} r^γ`, common radii cancel via
+  `(a R)^{-γ} (b R)^γ = (b / a)^γ`, and shrinking the outer radius by a factor `θ` multiplies it
+  by `θ^{-γ}`.
 * Shrinking a radius `R` to `R / N`, `N ≥ 1`, costs at most a factor `N` in `R^{-α}` for `α ≤ 1`.
 * A bound `βR ≤ σλ` on a dimensionless ratio gives `(1 + (βR/λ)²)ⁿ ≤ (1 + σ²)ⁿ`.
 * A constant of the form `(R^{d/2+a} Q)²`, which is the natural scale of an `L²` quantity on a
@@ -72,6 +73,12 @@ theorem rpow_mul_mul_rpow_le_mul_rpow_of_le {r R c a b d : ℝ} (hr : 0 < r) (hr
 theorem div_rpow_eq_rpow_neg_mul_rpow {r R γ : ℝ} (hr : 0 ≤ r) (hR : 0 < R) :
     (r / R) ^ γ = R ^ (-γ) * r ^ γ := by
   rw [div_rpow hr hR.le, rpow_neg hR.le, div_eq_inv_mul]
+
+/-- `(a * R)^{-γ} * (b * R)^γ = (b / a)^γ`. -/
+theorem mul_rpow_neg_mul_mul_rpow {a b R γ : ℝ} (ha : 0 < a) (hb : 0 ≤ b) (hR : 0 < R) :
+    (a * R) ^ (-γ) * (b * R) ^ γ = (b / a) ^ γ := by
+  rw [← div_rpow_eq_rpow_neg_mul_rpow (mul_nonneg hb hR.le) (mul_pos ha hR),
+    mul_div_mul_right _ _ hR.ne']
 
 /-- `(r / (θ R))^γ = θ^{-γ} (r / R)^γ`. -/
 theorem div_mul_rpow_eq {r θ R γ : ℝ} (hr : 0 ≤ r) (hθ : 0 < θ) (hR : 0 < R) :
