@@ -244,9 +244,9 @@ private theorem tendsto_hypergeometricMellinBarnesIntegrand_strip (a b c : ℂ) 
 
 /-! ### Independence of the line -/
 
-/-- The integrand of Barnes's integral is holomorphic wherever none of `a + t`, `b + t`, `-t` is a
-nonpositive integer. -/
-private theorem differentiableAt_hypergeometricMellinBarnesIntegrand {a b c z t : ℂ} (hz : z ≠ 0)
+/-- For `z ≠ 0`, the integrand of Barnes's integral is holomorphic wherever none of `a + t`,
+`b + t`, `-t` is a nonpositive integer. -/
+theorem differentiableAt_hypergeometricMellinBarnesIntegrand {a b c z t : ℂ} (hz : z ≠ 0)
     (ha : ∀ m : ℕ, a + t ≠ -m) (hb : ∀ m : ℕ, b + t ≠ -m) (ht : ∀ m : ℕ, -t ≠ -m) :
     DifferentiableAt ℂ (hypergeometricMellinBarnesIntegrand a b c z) t := by
   have hGa := (differentiableAt_Gamma _ ha).comp t (differentiableAt_id.const_add a)
@@ -256,9 +256,9 @@ private theorem differentiableAt_hypergeometricMellinBarnesIntegrand {a b c z t 
   have hpow := differentiableAt_id.const_cpow (x := t) (.inl (neg_ne_zero.mpr hz))
   exact (((hGa.mul hGb).mul hGs).mul hGc).mul hpow
 
-/-- On a line `Re t = σ` with `σ < 0` avoiding the poles of `Γ(a + t) Γ(b + t)`, the integrand of
-Barnes's integral is integrable. -/
-private theorem integrable_hypergeometricMellinBarnesIntegrand (a b c : ℂ) {z : ℂ}
+/-- For `-z ∈ slitPlane`, on a line `Re t = σ` with `σ < 0` avoiding the poles of
+`Γ(a + t) Γ(b + t)`, the integrand of Barnes's integral is integrable. -/
+theorem integrable_hypergeometricMellinBarnesIntegrand (a b c : ℂ) {z : ℂ}
     (hz : -z ∈ slitPlane) {σ : ℝ} (hσ : σ < 0) (ha : ∀ n : ℕ, a.re + σ ≠ -n)
     (hb : ∀ n : ℕ, b.re + σ ≠ -n) :
     Integrable fun y : ℝ ↦ hypergeometricMellinBarnesIntegrand a b c z (σ + y * I) := by
