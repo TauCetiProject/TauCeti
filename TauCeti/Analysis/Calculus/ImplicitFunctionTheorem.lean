@@ -255,18 +255,6 @@ noncomputable def linearCoord : E ≃L[ℝ] E' × (A : E →ₗ[ℝ] E').ker :=
 theorem linearCoord_apply_fst (x : E) : (A.linearCoord hA x).1 = A x := by
   simp [linearCoord]
 
-/-- The inverse of `linearCoord` sends `(0, k)` to the kernel vector `k`. -/
-@[simp]
-theorem linearCoord_symm_apply_zero_mk (k : (A : E →ₗ[ℝ] E').ker) :
-    (A.linearCoord hA).symm (0, k) = k :=
-  A.implicitCoordEquiv_symm_apply_zero_mk _ _ k
-
-/-- The second component of `linearCoord` is the identity on `ker A`: it is a projection onto
-`ker A`. -/
-@[simp]
-theorem linearCoord_apply_snd_coe (k : (A : E →ₗ[ℝ] E').ker) : (A.linearCoord hA k).2 = k := by
-  rw [← A.linearCoord_symm_apply_zero_mk hA k, ContinuousLinearEquiv.apply_symm_apply]
-
 /-- The linear section `y ↦ L⁻¹ (y, 0)` of `A`, where `L = linearCoord`. -/
 noncomputable def linearSection : E' →L[ℝ] E :=
   ((A.linearCoord hA).symm : E' × (A : E →ₗ[ℝ] E').ker →L[ℝ] E).comp
@@ -276,6 +264,22 @@ noncomputable def linearSection : E' →L[ℝ] E :=
 theorem linearSection_apply (y : E') :
     A.linearSection hA y = (A.linearCoord hA).symm (y, 0) := by
   simp [linearSection]
+
+/-- The inverse of `linearCoord` sends `(y, k)` to `s y + k`, where `s = linearSection`. -/
+@[simp]
+theorem linearCoord_symm_apply (y : E') (k : (A : E →ₗ[ℝ] E').ker) :
+    (A.linearCoord hA).symm (y, k) = A.linearSection hA y + k := by
+  have h : ((y, k) : E' × (A : E →ₗ[ℝ] E').ker) = (y, 0) + (0, k) := by simp
+  rw [h, map_add, linearSection_apply]
+  exact congrArg _ (A.implicitCoordEquiv_symm_apply_zero_mk _ _ k)
+
+/-- The second component of `linearCoord` is the identity on `ker A`: it is a projection onto
+`ker A`. -/
+@[simp]
+theorem linearCoord_apply_snd_coe (k : (A : E →ₗ[ℝ] E').ker) : (A.linearCoord hA k).2 = k := by
+  have h := A.linearCoord_symm_apply hA 0 k
+  rw [map_zero, zero_add, ContinuousLinearEquiv.symm_apply_eq] at h
+  rw [← h]
 
 /-- In the coordinates `linearCoord`, `linearSection y` is `(y, 0)`. -/
 @[simp]
@@ -298,8 +302,8 @@ theorem comp_linearSection : A.comp (A.linearSection hA) = ContinuousLinearMap.i
 second component of `linearCoord`. -/
 theorem linearSection_add_linearCoord_snd (x : E) :
     A.linearSection hA (A x) + ((A.linearCoord hA x).2 : E) = x := by
-  conv_rhs => rw [← (A.linearCoord hA).symm_apply_apply x, ← Prod.fst_add_snd (A.linearCoord hA x)]
-  rw [map_add, linearCoord_apply_fst, linearSection_apply, linearCoord_symm_apply_zero_mk]
+  rw [← linearCoord_symm_apply, ← A.linearCoord_apply_fst hA x]
+  exact (A.linearCoord hA).symm_apply_apply x
 
 end LinearCoord
 
