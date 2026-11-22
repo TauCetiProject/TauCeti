@@ -23,13 +23,14 @@ Over a noncommutative ring, the scalar expression `x ↦ lambda • x - A x` nee
 The predicate still requires its inverse to be linear over the full scalar ring; a parameter
 whose shift is not linear therefore does not belong to the resolvent set.
 
-This file gives the graph characterization, the two inverse identities, the fact that a point of
-the resolvent set is not an eigenvalue, and the fact that an operator has no proper extension
-sharing a resolvent point. The pointwise resolvent identity
-holds over rings. Over division rings resolvents commute, and the resolvent at `lambda` acts on
-an eigenvector for the eigenvalue `c` as multiplication by `(lambda - c)⁻¹`. For topological
-additive groups, an invertible continuous linear perturbation gives another resolvent. Over
-commutative rings with continuous scalar multiplication by constants, the resolvent of an
+This file gives the graph characterization, the two inverse identities, the fact that a point of the
+resolvent set is not an eigenvalue, and the fact that an operator has no proper extension sharing a
+resolvent point. The pointwise resolvent identity holds over rings, as does the second resolvent
+identity `R_{A+V}(z) - R_A(z) = R_{A+V}(z) V R_A(z)` for a perturbation `V` defined on `dom A`
+(`LinearPMap.resolvent_add_sub_apply`). Over division rings resolvents commute, and the resolvent at
+`lambda` acts on an eigenvector for the eigenvalue `c` as multiplication by `(lambda - c)⁻¹`. For
+topological additive groups, an invertible continuous linear perturbation gives another resolvent.
+Over commutative rings with continuous scalar multiplication by constants, the resolvent of an
 everywhere defined continuous linear operator agrees with Mathlib's algebraic resolvent, and their
 spectra agree.
 
@@ -255,6 +256,30 @@ theorem resolvent_apply_comm (h : lambda ∈ resolventSet A) (x : A.domain) :
 end Basic
 
 /-! ## The resolvent identity -/
+
+section SecondResolvent
+
+variable {𝕜 X : Type*} [Ring 𝕜] [AddCommGroup X] [TopologicalSpace X] [Module 𝕜 X]
+  [IsTopologicalAddGroup X]
+variable {A : X →ₗ.[𝕜] X} {z : 𝕜}
+
+/-- **The second resolvent identity.** If `dom A ⊆ dom V` and `z` lies in the resolvent sets of
+both `A` and `A + V`, then `R_{A+V}(z) - R_A(z) = R_{A+V}(z) V R_A(z)`. -/
+theorem resolvent_add_sub_apply {V : X →ₗ.[𝕜] X} (h : A.domain ≤ V.domain)
+    (hz : z ∈ A.resolventSet) (hz' : z ∈ (A + V).resolventSet) (y : X) :
+    ((A + V).resolvent z - A.resolvent z) y = (A + V).resolvent z (compResolvent h hz y) := by
+  set x := A.resolvent z y
+  have hx : x ∈ (A + V).domain := ⟨resolvent_mem_domain hz y, h (resolvent_mem_domain hz y)⟩
+  have hsolve := resolvent_smul_sub_apply hz' ⟨x, hx⟩
+  have hAx : A ⟨x, resolvent_mem_domain hz y⟩ = z • x - y := apply_resolvent hz y
+  have hsplit : z • x - (A + V) ⟨x, hx⟩ = y - V ⟨x, h (resolvent_mem_domain hz y)⟩ := by
+    rw [add_apply, hAx]
+    abel
+  rw [hsplit, ContinuousLinearMap.map_sub] at hsolve
+  rw [_root_.sub_apply, compResolvent_apply]
+  exact sub_eq_iff_comm.mp hsolve
+
+end SecondResolvent
 
 section Ring
 

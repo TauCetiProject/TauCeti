@@ -12,6 +12,7 @@ import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.KatoRellich
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.SubmoduleAdjoint
 import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
@@ -31,6 +32,8 @@ and `A` differ by a compact operator at every nonreal point, the input of Weyl's
 
 ## Main declarations
 
+* `LinearPMap.tendsto_dual_apply_of_isClosable`: for closable `A` and `A`-bounded `V`, a sequence
+  `uₙ → 0` of `dom A` with `‖A uₙ‖ ≤ 1` has `V uₙ → 0` weakly.
 * `LinearPMap.IsRelativelyCompact.exists_isRelativelyBounded`: for closable `A`, relative
   compactness gives relative bound zero.
 * `LinearPMap.IsRelativelyCompact.add_right`, `LinearPMap.IsRelativelyCompact.add_right_self`: for
@@ -59,106 +62,15 @@ variable {𝕜 E F G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProduct
   [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
-/-- For a closable `A` and a sequence `uₙ → 0` of `dom A` with `‖A uₙ‖ ≤ 1`, the vectors `A uₙ`
-tend to zero weakly. -/
-private theorem tendsto_inner_apply_of_isClosable {A : E →ₗ.[𝕜] F} (hA : A.IsClosable)
-    {u : ℕ → A.domain} (hu : Tendsto (fun n ↦ (u n : E)) atTop (𝓝 0))
-    (hAu : ∀ n, ‖A (u n)‖ ≤ 1) (k : F) : Tendsto (fun n ↦ ⟪A (u n), k⟫_𝕜) atTop (𝓝 0) := by
-  let e := WithLp.prodContinuousLinearEquiv 2 𝕜 E F
-  let S : Submodule 𝕜 (WithLp 2 (E × F)) := A.graph.comap e.toLinearMap
-  -- The second coordinates of the vectors orthogonal to the graph.
-  let D : Submodule 𝕜 F :=
-    Sᗮ.map ((LinearMap.snd 𝕜 E F).comp (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap)
-  have horth (w : WithLp 2 (E × F)) (hw : w ∈ Sᗮ) (x : A.domain) :
-      ⟪(x : E), (WithLp.ofLp w).1⟫_𝕜 + ⟪A x, (WithLp.ofLp w).2⟫_𝕜 = 0 := by
-    have hx : WithLp.toLp 2 ((x : E), A x) ∈ S := by
-      rw [Submodule.mem_comap]
-      simp [e]
-    simpa [WithLp.prod_inner_apply] using (Submodule.mem_orthogonal S w).1 hw _ hx
-  -- Closability makes these second coordinates dense.
-  have hdense : Dense (D : Set F) := by
-    refine Submodule.dense_iff_topologicalClosure_eq_top.2
-      (Submodule.topologicalClosure_eq_top_iff.2 ((Submodule.eq_bot_iff _).2 fun c hc ↦ ?_))
-    have h0c : WithLp.toLp 2 ((0 : E), c) ∈ S.topologicalClosure := by
-      rw [← Submodule.orthogonal_orthogonal_eq_closure]
-      refine (Submodule.mem_orthogonal' _ _).2 fun w hw ↦ ?_
-      have hwD : (WithLp.ofLp w).2 ∈ D := ⟨w, hw, rfl⟩
-      simpa [WithLp.prod_inner_apply] using (Submodule.mem_orthogonal' D c).1 hc _ hwD
-    have hcl : ((0 : E), c) ∈ _root_.closure (A.graph : Set (E × F)) := by
-      have hsub : (S.topologicalClosure : Set (WithLp 2 (E × F))) ⊆
-          e ⁻¹' A.graph.topologicalClosure :=
-        closure_minimal (fun s hs ↦ Submodule.le_topologicalClosure _ hs)
-          ((Submodule.isClosed_topologicalClosure _).preimage e.continuous)
-      simpa [e] using hsub h0c
-    obtain ⟨f', hf'⟩ := hA
-    rw [← Submodule.topologicalClosure_coe, hf'] at hcl
-    exact f'.graph_fst_eq_zero_snd hcl rfl
-  have hD (b : F) (hb : b ∈ D) : Tendsto (fun n ↦ ⟪A (u n), b⟫_𝕜) atTop (𝓝 0) := by
-    obtain ⟨w, hw, rfl⟩ := hb
-    have hw' : Tendsto (fun n ↦ -⟪(u n : E), (WithLp.ofLp w).1⟫_𝕜) atTop (𝓝 0) := by
-      have hc : Continuous fun x : E ↦ ⟪x, (WithLp.ofLp w).1⟫_𝕜 :=
-        continuous_id.inner continuous_const
-      simpa using ((hc.tendsto 0).comp hu).neg
-    refine hw'.congr fun n ↦ ?_
-    simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.snd_apply,
-      LinearEquiv.coe_coe, WithLp.coe_linearEquiv]
-    linear_combination (horth w hw (u n)).symm
-  have := ContinuousLinearMap.tendsto_apply_of_dense hdense (l := atTop)
-    (f := fun n ↦ innerSL 𝕜 (A (u n))) (g := 0) (C := 1)
-    (.of_forall fun n ↦ (innerSL_apply_norm 𝕜 _).trans_le (hAu n))
-    (fun b hb ↦ by simpa using hD b hb) k
-  simpa using this
-
-omit [CompleteSpace E] [CompleteSpace F] in
-/-- For an `A`-bounded `V`, every functional of `V x` is a continuous functional of `(x, A x)`,
-by Hahn–Banach on the graph of `A`. -/
-private theorem exists_dual_apply_eq_of_isRelativelyBounded {A : E →ₗ.[𝕜] F} {V : E →ₗ.[𝕜] G}
-    {a b : ℝ} (hV : V.IsRelativelyBounded A a b) (f : StrongDual 𝕜 G) :
-    ∃ g : StrongDual 𝕜 (E × F), ∀ x : A.domain,
-      f (V ⟨x, hV.domain_le x.2⟩) = g ((x : E), A x) := by
-  let L : A.domain →ₗ[𝕜] E × F := A.domain.subtype.prod A.toFun
-  have hL : Function.Injective L := fun x y h ↦ Subtype.ext (congrArg Prod.fst h)
-  let Φ : A.domain →ₗ[𝕜] 𝕜 :=
-    (f : G →ₗ[𝕜] 𝕜) ∘ₗ V.toFun ∘ₗ Submodule.inclusion hV.domain_le
-  let ψ : LinearMap.range L →ₗ[𝕜] 𝕜 := Φ ∘ₗ (LinearEquiv.ofInjective L hL).symm.toLinearMap
-  have hψ (x : A.domain) : ψ ⟨L x, x, rfl⟩ = f (V ⟨x, hV.domain_le x.2⟩) := by
-    have hx : (LinearEquiv.ofInjective L hL).symm ⟨L x, x, rfl⟩ = x :=
-      (LinearEquiv.ofInjective L hL).symm_apply_eq.2
-        (Subtype.ext (LinearEquiv.ofInjective_apply L x).symm)
-    simp only [ψ, Φ, LinearMap.comp_apply, LinearEquiv.coe_coe, hx, ContinuousLinearMap.coe_coe,
-      LinearPMap.toFun_eq_coe, Submodule.inclusion_apply]
-  have hbound (s : LinearMap.range L) : ‖ψ s‖ ≤ ‖f‖ * (|a| + |b|) * ‖s‖ := by
-    obtain ⟨_, x, rfl⟩ := s
-    have hLx : L x = ((x : E), A x) := by simp [L]
-    have hn : ‖(⟨L x, x, rfl⟩ : LinearMap.range L)‖ = max ‖(x : E)‖ ‖A x‖ := by
-      rw [← Submodule.norm_coe]
-      dsimp only
-      rw [hLx, Prod.norm_def]
-    rw [hψ, hn]
-    refine (f.le_opNorm _).trans ?_
-    rw [mul_assoc]
-    gcongr
-    refine (hV.norm_apply_le x).trans ?_
-    have h₁ : a * ‖(x : E)‖ ≤ |a| * max ‖(x : E)‖ ‖A x‖ :=
-      (mul_le_mul_of_nonneg_right (le_abs_self a) (norm_nonneg _)).trans
-        (mul_le_mul_of_nonneg_left (le_max_left _ _) (abs_nonneg a))
-    have h₂ : b * ‖A x‖ ≤ |b| * max ‖(x : E)‖ ‖A x‖ :=
-      (mul_le_mul_of_nonneg_right (le_abs_self b) (norm_nonneg _)).trans
-        (mul_le_mul_of_nonneg_left (le_max_right _ _) (abs_nonneg b))
-    linarith
-  obtain ⟨g, hg, -⟩ := exists_extension_norm_eq (LinearMap.range L) (ψ.mkContinuous _ hbound)
-  refine ⟨g, fun x ↦ ?_⟩
-  rw [← hψ, ← LinearMap.mkContinuous_apply ψ _ hbound, ← hg]
-  simp [L]
-
 /-- For a closable `A`, an `A`-bounded `V` and a sequence `uₙ → 0` of `dom A` with `‖A uₙ‖ ≤ 1`,
 the vectors `V uₙ` tend to zero weakly. -/
-private theorem tendsto_dual_apply_of_isClosable {A : E →ₗ.[𝕜] F} {V : E →ₗ.[𝕜] G}
+theorem tendsto_dual_apply_of_isClosable {A : E →ₗ.[𝕜] F} {V : E →ₗ.[𝕜] G}
     (hA : A.IsClosable) {a b : ℝ} (hV : V.IsRelativelyBounded A a b) {u : ℕ → A.domain}
     (hu : Tendsto (fun n ↦ (u n : E)) atTop (𝓝 0)) (hAu : ∀ n, ‖A (u n)‖ ≤ 1)
-    (f : StrongDual 𝕜 G) : Tendsto (fun n ↦ f (V ⟨u n, hV.domain_le (u n).2⟩)) atTop (𝓝 0) := by
+    (f : StrongDual 𝕜 G) :
+    Tendsto (fun n ↦ f (V ⟨u n, hV.domain_le (u n).property⟩)) atTop (𝓝 0) := by
   obtain ⟨g, hg⟩ := exists_dual_apply_eq_of_isRelativelyBounded hV f
-  have hsplit (n : ℕ) : f (V ⟨u n, hV.domain_le (u n).2⟩) =
+  have hsplit (n : ℕ) : f (V ⟨u n, hV.domain_le (u n).property⟩) =
       g (ContinuousLinearMap.inl 𝕜 E F (u n)) + g (ContinuousLinearMap.inr 𝕜 E F (A (u n))) := by
     rw [hg, ← _root_.map_add g]
     simp
@@ -188,7 +100,7 @@ theorem IsRelativelyCompact.exists_isRelativelyBounded {A : E →ₗ.[𝕜] F} {
   choose u hu1 hu2 using fun n : ℕ ↦
     exists_normalized_of_not_isRelativelyBounded hV.domain_le (hcon n)
   obtain ⟨K, hK, hKV⟩ := hV.exists_isCompact 1
-  have hmem (n : ℕ) : V ⟨u n, hV.domain_le (u n).2⟩ ∈ K := hKV (u n) (hu1 n).le
+  have hmem (n : ℕ) : V ⟨u n, hV.domain_le (u n).property⟩ ∈ K := hKV (u n) (hu1 n).le
   obtain ⟨M, hM⟩ := hK.isBounded.exists_norm_le
   have hAu (n : ℕ) : ‖A (u n)‖ ≤ 1 := by linarith [hu1 n, norm_nonneg (u n : E)]
   have hu0 : Tendsto (fun n ↦ ‖(u n : E)‖) atTop (𝓝 0) := by

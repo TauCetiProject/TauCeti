@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.LinearAlgebra.LinearPMap
 
 /-!
@@ -43,6 +44,8 @@ and scalar multiplication.
   zero map and restrictions of bounded operators.
 * `LinearPMap.exists_normalized_of_not_isRelativelyBounded`: over a normed `ℝ`-algebra, a relative
   bound that fails, fails at a vector of graph norm `‖x‖ + ‖A x‖ = 1`.
+* `LinearPMap.exists_dual_apply_eq_of_isRelativelyBounded`: by Hahn–Banach on the graph of `A`,
+  every functional of `V x` for an `A`-bounded `V` is a continuous functional of `(x, A x)`.
 
 ## References
 
@@ -120,10 +123,10 @@ theorem isRelativelyBounded_self_add {V : E →ₛₗ.[τ] F} (h : V.IsRelativel
     (hb : b < 1) : A.IsRelativelyBounded (A + V) (a / (1 - b)) (1 - b)⁻¹ where
   domain_le := h.domain_add.le
   norm_apply_le x := by
-    let y : A.domain := ⟨x, h.domain_add.le x.2⟩
-    have hAV : (A + V) x = A y + V ⟨x, h.domain_le y.2⟩ := add_apply A V x
-    have hVy : ‖V ⟨x, h.domain_le y.2⟩‖ ≤ a * ‖(x : E)‖ + b * ‖A y‖ := h.norm_apply_le y
-    have h₁ : ‖A y‖ ≤ ‖(A + V) x‖ + ‖V ⟨x, h.domain_le y.2⟩‖ := by
+    let y : A.domain := ⟨x, h.domain_add.le x.property⟩
+    have hAV : (A + V) x = A y + V ⟨x, h.domain_le y.property⟩ := add_apply A V x
+    have hVy : ‖V ⟨x, h.domain_le y.property⟩‖ ≤ a * ‖(x : E)‖ + b * ‖A y‖ := h.norm_apply_le y
+    have h₁ : ‖A y‖ ≤ ‖(A + V) x‖ + ‖V ⟨x, h.domain_le y.property⟩‖ := by
       rw [hAV]
       exact norm_le_add_norm_add _ _
     have h₂ : (1 - b) * ‖A y‖ ≤ a * ‖(x : E)‖ + ‖(A + V) x‖ := by linarith
@@ -149,13 +152,13 @@ variable {𝕜 E F G : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [Norme
 theorem exists_normalized_of_not_isRelativelyBounded {A : E →ₗ.[𝕜] F} {V : E →ₗ.[𝕜] G}
     (hle : A.domain ≤ V.domain) {a b : ℝ} (h : ¬ V.IsRelativelyBounded A a b) :
     ∃ u : A.domain, ‖(u : E)‖ + ‖A u‖ = 1 ∧
-      a * ‖(u : E)‖ + b * ‖A u‖ < ‖V ⟨u, hle u.2⟩‖ := by
-  obtain ⟨x, hx⟩ : ∃ x : A.domain, a * ‖(x : E)‖ + b * ‖A x‖ < ‖V ⟨x, hle x.2⟩‖ := by
+      a * ‖(u : E)‖ + b * ‖A u‖ < ‖V ⟨u, hle u.property⟩‖ := by
+  obtain ⟨x, hx⟩ : ∃ x : A.domain, a * ‖(x : E)‖ + b * ‖A x‖ < ‖V ⟨x, hle x.property⟩‖ := by
     by_contra! hall
     exact h ⟨hle, hall⟩
   have hx0 : (x : E) ≠ 0 := by
     intro h0
-    have hV0 : V ⟨x, hle x.2⟩ = 0 := by
+    have hV0 : V ⟨x, hle x.property⟩ = 0 := by
       rw [← V.map_zero]
       exact congrArg V (Subtype.ext h0)
     have hA0 : A x = 0 := by
@@ -167,7 +170,7 @@ theorem exists_normalized_of_not_isRelativelyBounded {A : E →ₗ.[𝕜] F} {V 
   have hs : 0 < s := by positivity
   set c : 𝕜 := algebraMap ℝ 𝕜 s⁻¹
   have hc : ‖c‖ = s⁻¹ := by rw [norm_algebraMap', Real.norm_of_nonneg (inv_nonneg.2 hs.le)]
-  have hV : V ⟨((c • x : A.domain) : E), hle (c • x).2⟩ = c • V ⟨x, hle x.2⟩ := by
+  have hV : V ⟨((c • x : A.domain) : E), hle (c • x).property⟩ = c • V ⟨x, hle x.property⟩ := by
     rw [← V.map_smul]
     exact congrArg V (Subtype.ext (by simp))
   refine ⟨c • x, ?_, ?_⟩
@@ -178,6 +181,54 @@ theorem exists_normalized_of_not_isRelativelyBounded {A : E →ₗ.[𝕜] F} {V 
     linarith
 
 end Normalized
+
+section Dual
+
+variable {𝕜 E F G : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- For an `A`-bounded `V`, every functional of `V x` is a continuous functional of `(x, A x)`,
+by Hahn–Banach on the graph of `A`. -/
+theorem exists_dual_apply_eq_of_isRelativelyBounded {A : E →ₗ.[𝕜] F} {V : E →ₗ.[𝕜] G}
+    {a b : ℝ} (hV : V.IsRelativelyBounded A a b) (f : StrongDual 𝕜 G) :
+    ∃ g : StrongDual 𝕜 (E × F), ∀ x : A.domain,
+      f (V ⟨x, hV.domain_le x.property⟩) = g ((x : E), A x) := by
+  let L : A.domain →ₗ[𝕜] E × F := A.domain.subtype.prod A.toFun
+  have hL : Function.Injective L := fun x y h ↦ Subtype.ext (congrArg Prod.fst h)
+  let Φ : A.domain →ₗ[𝕜] 𝕜 :=
+    (f : G →ₗ[𝕜] 𝕜) ∘ₗ V.toFun ∘ₗ Submodule.inclusion hV.domain_le
+  let ψ : LinearMap.range L →ₗ[𝕜] 𝕜 := Φ ∘ₗ (LinearEquiv.ofInjective L hL).symm.toLinearMap
+  have hψ (x : A.domain) : ψ ⟨L x, x, rfl⟩ = f (V ⟨x, hV.domain_le x.property⟩) := by
+    have hx : (LinearEquiv.ofInjective L hL).symm ⟨L x, x, rfl⟩ = x :=
+      (LinearEquiv.ofInjective L hL).symm_apply_eq.2
+        (Subtype.ext (LinearEquiv.ofInjective_apply L x).symm)
+    simp only [ψ, Φ, LinearMap.comp_apply, LinearEquiv.coe_coe, hx, ContinuousLinearMap.coe_coe,
+      LinearPMap.toFun_eq_coe, Submodule.inclusion_apply]
+  have hbound (s : LinearMap.range L) : ‖ψ s‖ ≤ ‖f‖ * (|a| + |b|) * ‖s‖ := by
+    obtain ⟨_, x, rfl⟩ := s
+    have hLx : L x = ((x : E), A x) := by simp [L]
+    have hn : ‖(⟨L x, x, rfl⟩ : LinearMap.range L)‖ = max ‖(x : E)‖ ‖A x‖ := by
+      rw [← Submodule.norm_coe]
+      dsimp only
+      rw [hLx, Prod.norm_def]
+    rw [hψ, hn]
+    refine (f.le_opNorm _).trans ?_
+    rw [mul_assoc]
+    gcongr
+    refine (hV.norm_apply_le x).trans ?_
+    have h₁ : a * ‖(x : E)‖ ≤ |a| * max ‖(x : E)‖ ‖A x‖ :=
+      (mul_le_mul_of_nonneg_right (le_abs_self a) (norm_nonneg _)).trans
+        (mul_le_mul_of_nonneg_left (le_max_left _ _) (abs_nonneg a))
+    have h₂ : b * ‖A x‖ ≤ |b| * max ‖(x : E)‖ ‖A x‖ :=
+      (mul_le_mul_of_nonneg_right (le_abs_self b) (norm_nonneg _)).trans
+        (mul_le_mul_of_nonneg_left (le_max_right _ _) (abs_nonneg b))
+    linarith
+  obtain ⟨g, hg, -⟩ := exists_extension_norm_eq (LinearMap.range L) (ψ.mkContinuous _ hbound)
+  refine ⟨g, fun x ↦ ?_⟩
+  rw [← hψ, ← LinearMap.mkContinuous_apply ψ _ hbound, ← hg]
+  simp [L]
+
+end Dual
 
 end LinearPMap
 

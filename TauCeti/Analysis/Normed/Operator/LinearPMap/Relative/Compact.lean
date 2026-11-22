@@ -33,7 +33,8 @@ needs no Hilbert-space structure:
 * for an `A`-compact `V` the resolvents of `A + V` and `A` differ by a compact operator at every
   common resolvent point (`LinearPMap.IsRelativelyCompact.isCompactOperator_resolvent_add_sub`),
   through the second resolvent identity `R_{A+V}(z) - R_A(z) = R_{A+V}(z) V R_A(z)`
-  (`LinearPMap.resolvent_add_sub_apply`).
+  (`LinearPMap.resolvent_add_sub_apply`, in
+  `TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic`).
 
 That an `A`-compact map has `A`-bound zero when `A` is closable on Hilbert spaces, so that
 symmetric relatively compact perturbations preserve self-adjointness, is in
@@ -84,7 +85,7 @@ structure IsRelativelyCompact (V : E →ₛₗ.[σ] G) (A : E →ₛₗ.[τ] F) 
   domain_le : A.domain ≤ V.domain
   /-- `V` maps sets of `dom A` that are bounded in the graph norm into compact sets. -/
   exists_isCompact (C : ℝ) : ∃ K : Set G, IsCompact K ∧
-    ∀ x : A.domain, ‖(x : E)‖ + ‖A x‖ ≤ C → V ⟨x, domain_le x.2⟩ ∈ K
+    ∀ x : A.domain, ‖(x : E)‖ + ‖A x‖ ≤ C → V ⟨x, domain_le x.property⟩ ∈ K
 
 /-- The zero map is relatively compact with respect to every partial linear map. -/
 @[simp]
@@ -144,7 +145,7 @@ theorem mono_left {V' : E →ₛₗ.[σ] G} (hV : V.IsRelativelyCompact A) (h : 
   exists_isCompact C := by
     obtain ⟨K, hK, hKV⟩ := hV.exists_isCompact C
     exact ⟨K, hK, fun x hx ↦ by
-      rw [← h.2 (x := ⟨x, hV.domain_le x.2⟩) rfl]
+      rw [← h.2 (x := ⟨x, hV.domain_le x.property⟩) rfl]
       exact hKV x hx⟩
 
 /-- **Relative compactness passes along relative bounds.** If `W` is `A`-compact and `A` is
@@ -155,7 +156,7 @@ theorem of_isRelativelyBounded (hW : W.IsRelativelyCompact A) {B : E →ₛₗ.[
   exists_isCompact C := by
     set C₀ := max C 0
     obtain ⟨K, hK, hKW⟩ := hW.exists_isCompact ((1 + |a| + |b|) * C₀)
-    refine ⟨K, hK, fun x hx ↦ hKW ⟨x, hA.domain_le x.2⟩ ?_⟩
+    refine ⟨K, hK, fun x hx ↦ hKW ⟨x, hA.domain_le x.property⟩ ?_⟩
     have hx₀ : ‖(x : E)‖ ≤ C₀ := le_max_of_le_left (by linarith [norm_nonneg (B x)])
     have hBx : ‖B x‖ ≤ C₀ := le_max_of_le_left (by linarith [norm_nonneg (x : E)])
     have hAx := hA.norm_apply_le x
@@ -174,7 +175,7 @@ theorem mono_right (hV : V.IsRelativelyCompact A) {A' : E →ₛₗ.[τ] F} (h :
   hV.of_isRelativelyBounded (a := 0) (b := 1)
     { domain_le := h.1
       norm_apply_le x := by
-        rw [← h.2 (x := x) (y := ⟨x, h.1 x.2⟩) rfl]
+        rw [← h.2 (x := x) (y := ⟨x, h.1 x.property⟩) rfl]
         simp }
 
 /-- **Relative compactness survives a perturbation of relative bound less than one.** If `W` is
@@ -217,7 +218,7 @@ exactly when `dom A ⊆ dom V` and `V` maps the vectors of graph norm at most `r
 set. -/
 theorem isRelativelyCompact_iff_exists_isCompact_of_pos {r : ℝ} (hr : 0 < r) :
     V.IsRelativelyCompact A ↔ ∃ h : A.domain ≤ V.domain, ∃ K : Set G, IsCompact K ∧
-      ∀ x : A.domain, ‖(x : E)‖ + ‖A x‖ ≤ r → V ⟨x, h x.2⟩ ∈ K := by
+      ∀ x : A.domain, ‖(x : E)‖ + ‖A x‖ ≤ r → V ⟨x, h x.property⟩ ∈ K := by
   refine ⟨fun hV ↦ ⟨hV.domain_le, hV.exists_isCompact r⟩, fun ⟨h, K, hK, hKV⟩ ↦ ⟨h, fun C ↦ ?_⟩⟩
   obtain ⟨c, hc⟩ := NormedField.exists_lt_norm 𝕜 (max (C / r) 0)
   have hc0 : 0 < ‖c‖ := (le_max_right _ _).trans_lt hc
@@ -229,7 +230,7 @@ theorem isRelativelyCompact_iff_exists_isCompact_of_pos {r : ℝ} (hr : 0 < r) :
     rw [A.map_smul, Submodule.coe_smul, norm_smul, norm_smul, ← mul_add, norm_inv,
       inv_mul_le_iff₀ hc0]
     linarith
-  have hVx : V ⟨x, h x.2⟩ = c • V ⟨y, h y.2⟩ := by
+  have hVx : V ⟨x, h x.property⟩ = c • V ⟨y, h y.property⟩ := by
     rw [← V.map_smul]
     exact congrArg V (Subtype.ext (by simp [y, smul_smul, mul_inv_cancel₀ hc']))
   rw [hVx]
@@ -319,22 +320,6 @@ theorem IsRelativelyCompact.exists_isCompactOperator_compResolvent [Nontrivially
     exact hc
   · rw [ContinuousLinearMap.coe_mkOfIsCompactOperator, compResolvent_apply]
 
-/-- **The second resolvent identity.** If `dom A ⊆ dom V` and `z` lies in the resolvent sets of
-both `A` and `A + V`, then `R_{A+V}(z) - R_A(z) = R_{A+V}(z) V R_A(z)`. -/
-theorem resolvent_add_sub_apply {V : E →ₗ.[𝕜] E} (h : A.domain ≤ V.domain)
-    (hz : z ∈ A.resolventSet) (hz' : z ∈ (A + V).resolventSet) (y : E) :
-    ((A + V).resolvent z - A.resolvent z) y = (A + V).resolvent z (compResolvent h hz y) := by
-  set x := A.resolvent z y
-  have hx : x ∈ (A + V).domain := ⟨resolvent_mem_domain hz y, h (resolvent_mem_domain hz y)⟩
-  have hsolve := resolvent_smul_sub_apply hz' ⟨x, hx⟩
-  have hAx : A ⟨x, resolvent_mem_domain hz y⟩ = z • x - y := apply_resolvent hz y
-  have hsplit : z • x - (A + V) ⟨x, hx⟩ = y - V ⟨x, h (resolvent_mem_domain hz y)⟩ := by
-    rw [add_apply, hAx]
-    abel
-  rw [hsplit, ContinuousLinearMap.map_sub] at hsolve
-  rw [_root_.sub_apply, compResolvent_apply]
-  exact sub_eq_iff_comm.mp hsolve
-
 /-- **Compact resolvent difference.** If `V : E →ₗ.[𝕜] E` is `A`-compact, then at every point `z`
 of the resolvent sets of both `A` and `A + V` the difference `R_{A+V}(z) - R_A(z)` is a compact
 operator. -/
@@ -368,6 +353,6 @@ theorem isRelativelyCompact_toPMap {T : E →ₛₗ[σ] G} (hT : IsCompactOperat
   exists_isCompact C := by
     obtain ⟨K, hK, hKT⟩ := hT.image_closedBall_subset_compact C
     exact ⟨K, hK, fun x hx ↦ hKT ⟨x, mem_closedBall_zero_iff.2 (by linarith [norm_nonneg (A x)]),
-      (T.toPMap_apply p ⟨x, hp x.2⟩).symm⟩⟩
+      (T.toPMap_apply p ⟨x, hp x.property⟩).symm⟩⟩
 
 end IsCompactOperator
