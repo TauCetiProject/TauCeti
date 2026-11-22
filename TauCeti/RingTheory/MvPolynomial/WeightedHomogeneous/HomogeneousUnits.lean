@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.RingTheory.GradedAlgebra.Localization.HomogeneousUnits
-public import TauCeti.RingTheory.MvPolynomial.Localization
 
 /-!
 # Homogeneous units of weighted polynomial rings and their localizations
@@ -79,29 +78,26 @@ theorem shiftClassGroupWeightedEquiv_symm_apply [Nontrivial R] (w : σ → M) (d
 
 attribute [local instance] WeightedHomogeneousSubmodule.gradedMonoid
 
+private theorem algebraMap_C_mem_awayGrading_weightedHomogeneousSubmodule (w : σ → M)
+    {f : MvPolynomial σ R} {e : M} (hf : f ∈ weightedHomogeneousSubmodule R w e) (c : R) :
+    algebraMap (MvPolynomial σ R) (Localization.Away f) (C c) ∈
+      GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf (0 : M) :=
+  GradedAlgebra.algebraMap_mem_awayGrading
+    ((mem_weightedHomogeneousSubmodule R w 0 (C c)).mpr (isWeightedHomogeneous_C w c))
+
 /-- In the weighted grading of `MvPolynomial σ R` localized away from a homogeneous element
 `f ∈ weightedHomogeneousSubmodule R w e`, the prime normal form `C c * f ^ m` has degree
 `m • e`. -/
-theorem C_mul_awayUnit_zpow_mem_awayGrading_weightedHomogeneousSubmodule (w : σ → M)
+theorem C_mul_awayUnitOfDvd_zpow_mem_awayGrading_weightedHomogeneousSubmodule (w : σ → M)
     {f : MvPolynomial σ R} {e : M} (hf : f ∈ weightedHomogeneousSubmodule R w e)
     (c : R) (m : ℤ) :
     algebraMap (MvPolynomial σ R) (Localization.Away f) (C c) *
-        ((TauCeti.Localization.awayUnit (Localization.Away f) f ^ m :
+        ((TauCeti.Localization.awayUnitOfDvd (Localization.Away f) (dvd_rfl : f ∣ f) ^ m :
           (Localization.Away f)ˣ) : Localization.Away f) ∈
       GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf (m • e) := by
-  classical
-  let := weightedGradedAlgebra R w
-  have hc : algebraMap (MvPolynomial σ R) (Localization.Away f) (C c) ∈
-      GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf (0 : M) :=
-    GradedAlgebra.algebraMap_mem_awayGrading
-      ((mem_weightedHomogeneousSubmodule R w 0 (C c)).mpr (isWeightedHomogeneous_C w c))
-  have hf_mem :
-      ((TauCeti.Localization.awayUnit (Localization.Away f) f :
-        (Localization.Away f)ˣ) : Localization.Away f) ∈
-        GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf e := by
-    simpa using GradedAlgebra.algebraMap_mem_awayGrading (hf := hf) hf
-  simpa using SetLike.mul_mem_graded hc
-    ((TauCeti.Localization.awayUnit (Localization.Away f) f).val_zpow_mem_graded hf_mem m)
+  simpa using SetLike.mul_mem_graded
+    (algebraMap_C_mem_awayGrading_weightedHomogeneousSubmodule w hf c)
+    (GradedAlgebra.awayUnitOfDvd_self_zpow_mem_awayGrading (weightedHomogeneousSubmodule R w) hf m)
 
 /-- In the weighted grading of `MvPolynomial σ R` localized away from `f`, the product normal form
 `C c * ∏ j : s, p j ^ m j` for divisors `p j` of `f` of weights `d j` has degree
@@ -118,58 +114,12 @@ theorem C_mul_prod_awayUnitOfDvd_zpow_mem_awayGrading_weightedHomogeneousSubmodu
       GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf (∑ j : s, m j • d j) := by
   classical
   let := weightedGradedAlgebra R w
-  have hc : algebraMap (MvPolynomial σ R) (Localization.Away f) (C c) ∈
-      GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf (0 : M) :=
-    GradedAlgebra.algebraMap_mem_awayGrading
-      ((mem_weightedHomogeneousSubmodule R w 0 (C c)).mpr (isWeightedHomogeneous_C w c))
-  have hprod :
-      ((∏ j : s,
-        TauCeti.Localization.awayUnitOfDvd (Localization.Away f) (hpf j j.property) ^ m j :
-          (Localization.Away f)ˣ) : Localization.Away f) ∈
-        GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf (∑ j : s, m j • d j) := by
-    rw [Units.coe_prod]
-    refine SetLike.prod_mem_graded (GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf)
-      (fun j : s ↦ m j • d j) _ fun j _ ↦ ?_
-    have hj :
-        ((TauCeti.Localization.awayUnitOfDvd (Localization.Away f) (hpf j j.property) :
-          (Localization.Away f)ˣ) : Localization.Away f) ∈
-          GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf (d j) := by
-      simpa using GradedAlgebra.algebraMap_mem_awayGrading (hf := hf) (hp j j.property)
-    exact (TauCeti.Localization.awayUnitOfDvd (Localization.Away f)
-      (hpf j j.property)).val_zpow_mem_graded hj (m j)
-  simpa using SetLike.mul_mem_graded hc hprod
+  simpa using SetLike.mul_mem_graded
+    (algebraMap_C_mem_awayGrading_weightedHomogeneousSubmodule w hf c)
+    (GradedAlgebra.prod_awayUnitOfDvd_zpow_mem_awayGrading (weightedHomogeneousSubmodule R w) hf s
+      hp hpf m)
 
 variable [IsCancelAdd R] [IsCancelMulZero R]
-
-/-- In the weighted grading of `MvPolynomial σ R` localized away from a homogeneous prime `f` of
-weight `e`, the unit `awayPrimeUnitsMulEquiv _ hprime (c, m)` has degree `m.toAdd • e`. -/
-theorem coe_awayPrimeUnitsMulEquiv_mem_awayGrading_weightedHomogeneousSubmodule (w : σ → M)
-    {f : MvPolynomial σ R} {e : M} (hf : f ∈ weightedHomogeneousSubmodule R w e)
-    (hprime : Prime f) (c : Rˣ) (m : Multiplicative ℤ) :
-    ((TauCeti.MvPolynomial.awayPrimeUnitsMulEquiv (Localization.Away f) hprime (c, m) :
-        (Localization.Away f)ˣ) : Localization.Away f) ∈
-      GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf (m.toAdd • e) := by
-  simpa [TauCeti.MvPolynomial.awayPrimeUnitsMulEquiv_apply] using
-    C_mul_awayUnit_zpow_mem_awayGrading_weightedHomogeneousSubmodule w hf (c : R) m.toAdd
-
-/-- In the weighted grading of `MvPolynomial σ R` localized away from a product `∏ j ∈ s, p j` of
-pairwise non-associated homogeneous primes of weights `d j`, the unit
-`awayProdPrimesUnitsMulEquiv _ s hp hs (c, m)` has degree `∑ j : s, (m j).toAdd • d j`. -/
-theorem coe_awayProdPrimesUnitsMulEquiv_mem_awayGrading_weightedHomogeneousSubmodule
-    (w : σ → M) {J : Type*} (s : Finset J) {p : J → MvPolynomial σ R} {d : J → M}
-    (hp : ∀ j ∈ s, p j ∈ weightedHomogeneousSubmodule R w (d j))
-    (hprime : ∀ j ∈ s, Prime (p j))
-    (hs : (s : Set J).Pairwise fun i j ↦ ¬Associated (p i) (p j))
-    {e : M} (hf : (∏ j ∈ s, p j) ∈ weightedHomogeneousSubmodule R w e)
-    (c : Rˣ) (m : s → Multiplicative ℤ) :
-    ((TauCeti.MvPolynomial.awayProdPrimesUnitsMulEquiv (Localization.Away (∏ j ∈ s, p j))
-        s hprime hs (c, m) :
-        (Localization.Away (∏ j ∈ s, p j))ˣ) : Localization.Away (∏ j ∈ s, p j)) ∈
-      GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf
-        (∑ j : s, (m j).toAdd • d j) := by
-  simpa [TauCeti.MvPolynomial.awayProdPrimesUnitsMulEquiv_apply] using
-    C_mul_prod_awayUnitOfDvd_zpow_mem_awayGrading_weightedHomogeneousSubmodule w hf s hp
-      (fun j hj ↦ Finset.dvd_prod_of_mem p hj) (c : R) (fun j ↦ (m j).toAdd)
 
 /-- Inverting a product `f` of weighted homogeneous primes `p j` of weights `d j` in
 `MvPolynomial σ R` over a nontrivial cancellative commutative semiring: the degrees of the

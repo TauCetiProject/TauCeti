@@ -126,6 +126,15 @@ graded-isomorphic to `A(d)`. -/
 noncomputable def shiftClass : ShiftClassGroup 𝒜 :=
   ((exists_shift_linearEquiv_of_connected 𝒜 ℳ).choose : ShiftClassGroup 𝒜)
 
+private theorem exists_linearEquiv_iff_of {A : Type*} [CommRing A] {P Q R : ℤ → A → Prop}
+    {φ₀ : A ≃ₗ[A] A} (hφ₀ : ∀ n x, P n (φ₀ x) ↔ Q n x) :
+    (∃ ψ : A ≃ₗ[A] A, ∀ n x, R n (ψ x) ↔ Q n x) ↔
+      ∃ φ : A ≃ₗ[A] A, ∀ n x, P n (φ x) ↔ R n x :=
+  ⟨fun ⟨ψ, hψ⟩ ↦ ⟨ψ.symm.trans φ₀, fun n x ↦ by
+      rw [LinearEquiv.trans_apply, hφ₀, ← hψ n (ψ.symm x), ψ.apply_symm_apply]⟩,
+    fun ⟨φ, hφ⟩ ↦ ⟨φ₀.trans φ.symm, fun n x ↦ by
+      rw [LinearEquiv.trans_apply, ← hφ n (φ.symm (φ₀ x)), φ.apply_symm_apply, hφ₀]⟩⟩
+
 /-- A compatible `ℤ`-grading `ℳ` of `A` on a preconnected prime spectrum has shift class `d` if
 and only if `(A, ℳ)` is graded-isomorphic to the shift `A(d)`. -/
 theorem shiftClass_eq_mk_iff {d : ℤ} :
@@ -135,10 +144,7 @@ theorem shiftClass_eq_mk_iff {d : ℤ} :
   obtain ⟨φ₀, hφ₀⟩ := (exists_shift_linearEquiv_of_connected 𝒜 ℳ).choose_spec
   have hd₀ : shiftClass 𝒜 ℳ = (d₀ : ShiftClassGroup 𝒜) := rfl
   rw [hd₀, ShiftClassGroup.mk_eq_mk_iff]
-  refine ⟨fun ⟨ψ, hψ⟩ ↦ ⟨ψ.symm.trans φ₀, fun n x ↦ by rw [LinearEquiv.trans_apply, hφ₀,
-      ← hψ n (ψ.symm x), ψ.apply_symm_apply]⟩,
-    fun ⟨φ, hφ⟩ ↦ ⟨φ₀.trans φ.symm, fun n x ↦ by rw [LinearEquiv.trans_apply,
-      ← hφ n (φ.symm (φ₀ x)), φ.apply_symm_apply, hφ₀]⟩⟩
+  exact exists_linearEquiv_iff_of hφ₀
 
 /-- If `ℳ` contains a homogeneous unit in degree `c`, its shift class is `-c`. -/
 theorem shiftClass_eq_mk_neg_of_isUnit_mem {u : A} (hu : IsUnit u) {c : ℤ} (hmem : u ∈ ℳ c) :
@@ -160,10 +166,7 @@ theorem shiftClass_eq_iff :
   obtain ⟨φN, hφN⟩ := (exists_shift_linearEquiv_of_connected 𝒜 𝒩).choose_spec
   have hN : shiftClass 𝒜 𝒩 = (d : ShiftClassGroup 𝒜) := rfl
   rw [hN, shiftClass_eq_mk_iff]
-  refine ⟨fun ⟨φM, hφM⟩ ↦ ⟨φM.symm.trans φN, fun n x ↦ by
-      rw [LinearEquiv.trans_apply, hφN, ← hφM n (φM.symm x), φM.apply_symm_apply]⟩,
-    fun ⟨φ, hφ⟩ ↦ ⟨φN.trans φ.symm, fun n x ↦ by
-      rw [LinearEquiv.trans_apply, ← hφ n (φ.symm (φN x)), φ.apply_symm_apply, hφN]⟩⟩
+  exact exists_linearEquiv_iff_of hφN
 
 end ShiftClass
 

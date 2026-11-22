@@ -25,8 +25,6 @@ primes `p i` are pairwise non-associated this gives `Rˣ × (s → Multiplicativ
 
 ## Main definitions
 
-* `TauCeti.Localization.awayUnit S x`: the image of `x` as a unit of an away localization `S` at
-  `x`, with inverse `IsLocalization.Away.invSelf x`.
 * `TauCeti.Localization.awayUnitOfDvd S h`: the image of a divisor `y` of `x` as a unit of an away
   localization `S` at `x`.
 * `Prime.awayUnitsMulEquiv hp S`: the unit group isomorphism `Rˣ × Multiplicative ℤ ≃* Sˣ` for a
@@ -53,24 +51,6 @@ section Semiring
 
 variable {R : Type*} (S : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S]
 
-/-- In a localization `S` of `R` away from `x`, the image `algebraMap R S x` paired with
-`IsLocalization.Away.invSelf x` as a unit of `S`. -/
-noncomputable def awayUnit (x : R) [IsLocalization.Away x S] : Sˣ where
-  val := algebraMap R S x
-  inv := IsLocalization.Away.invSelf x
-  val_inv := IsLocalization.Away.mul_invSelf x
-  inv_val := by rw [mul_comm]; exact IsLocalization.Away.mul_invSelf x
-
-@[simp]
-theorem val_awayUnit (x : R) [IsLocalization.Away x S] :
-    (awayUnit S x : S) = algebraMap R S x := by
-  simp [awayUnit]
-
-@[simp]
-theorem val_inv_awayUnit (x : R) [IsLocalization.Away x S] :
-    (((awayUnit S x)⁻¹ : Sˣ) : S) = IsLocalization.Away.invSelf x := by
-  simp [awayUnit]
-
 /-- Any divisor `y` of `x` maps to a unit in a localization `S` away from `x`. -/
 noncomputable def awayUnitOfDvd {x y : R} (h : y ∣ x) [IsLocalization.Away x S] : Sˣ :=
   (IsLocalization.Away.isUnit_of_dvd (S := S) x h).unit
@@ -79,17 +59,6 @@ noncomputable def awayUnitOfDvd {x y : R} (h : y ∣ x) [IsLocalization.Away x S
 theorem val_awayUnitOfDvd {x y : R} (h : y ∣ x) [IsLocalization.Away x S] :
     (awayUnitOfDvd S h : S) = algebraMap R S y :=
   (IsLocalization.Away.isUnit_of_dvd (S := S) x h).unit_spec
-
-/-- When `S` is also a localization away from a divisor `y` of `x`, `awayUnitOfDvd` agrees with
-`awayUnit`. -/
-theorem awayUnitOfDvd_eq_awayUnit {x y : R} (h : y ∣ x) [IsLocalization.Away x S]
-    [IsLocalization.Away y S] : awayUnitOfDvd S h = awayUnit S y :=
-  Units.ext (by simp)
-
-@[simp]
-theorem awayUnitOfDvd_self (x : R) [IsLocalization.Away x S] :
-    awayUnitOfDvd S (dvd_rfl : x ∣ x) = awayUnit S x :=
-  awayUnitOfDvd_eq_awayUnit S dvd_rfl
 
 /-- A product of natural powers of `awayUnitOfDvd` over `s` evaluates in `S` to the image of
 `∏ i ∈ s, p i ^ k i`. -/
@@ -295,6 +264,11 @@ end TauCeti.Localization
 
 namespace Prime
 
+private theorem isLocalization_away_prod_singleton_unit {R S : Type*} [CommSemiring R]
+    [CommSemiring S] [Algebra R S] (p : R) [IsLocalization.Away p S] :
+    IsLocalization.Away (∏ _ ∈ ({()} : Finset Unit), p) S := by
+  rwa [Finset.prod_singleton]
+
 variable {R S : Type*} [CommSemiring R] [IsCancelMulZero R] [CommSemiring S] [Algebra R S]
   {p x : R} [IsLocalization.Away p S]
 
@@ -302,8 +276,7 @@ variable {R S : Type*} [CommSemiring R] [IsCancelMulZero R] [CommSemiring S] [Al
 `p` is a unit if and only if `x` is associated to `p ^ n` for some `n : ℕ`. -/
 theorem isUnit_algebraMap_away_iff (hp : Prime p) :
     IsUnit (algebraMap R S x) ↔ ∃ n : ℕ, Associated x (p ^ n) := by
-  have : IsLocalization.Away (∏ _ ∈ ({()} : Finset Unit), p) S := by
-    rwa [Finset.prod_singleton]
+  have := isLocalization_away_prod_singleton_unit (S := S) p
   rw [({()} : Finset Unit).isUnit_algebraMap_away_prod_primes_iff (S := S)
     (p := fun _ ↦ p) (fun _ _ ↦ hp)]
   exact ⟨fun ⟨m, hm⟩ ↦ ⟨m (), by simpa using hm⟩, fun ⟨n, hn⟩ ↦ ⟨fun _ ↦ n, by simpa using hn⟩⟩
@@ -321,20 +294,19 @@ prime `p` is a unit if and only if it has the form `u * p ^ m` with `u : Rˣ` an
 theorem isUnit_away_iff (hp : Prime p) {y : S} :
     IsUnit y ↔
       ∃ (u : Rˣ) (m : ℤ),
-        algebraMap R S (u : R) * ((TauCeti.Localization.awayUnit S p ^ m : Sˣ) : S) = y := by
-  have : IsLocalization.Away (∏ _ ∈ ({()} : Finset Unit), p) S := by
-    rwa [Finset.prod_singleton]
+        algebraMap R S (u : R) *
+            ((TauCeti.Localization.awayUnitOfDvd S (dvd_rfl : p ∣ p) ^ m : Sˣ) : S) = y := by
+  have := isLocalization_away_prod_singleton_unit (S := S) p
   rw [({()} : Finset Unit).isUnit_away_prod_primes_iff (S := S) (p := fun _ ↦ p) (fun _ _ ↦ hp)]
   refine ⟨fun ⟨u, m, hy⟩ ↦ ⟨u, m default, ?_⟩, fun ⟨u, m, hy⟩ ↦ ⟨u, fun _ ↦ m, ?_⟩⟩
-  · simpa [Fintype.prod_unique, TauCeti.Localization.awayUnitOfDvd_eq_awayUnit S _] using hy
-  · simpa [Fintype.prod_unique, TauCeti.Localization.awayUnitOfDvd_eq_awayUnit S _] using hy
+  · simpa [Fintype.prod_unique] using hy
+  · simpa [Fintype.prod_unique] using hy
 
 /-- In a cancellative commutative semiring `R`, the units of a localization `S` away from a prime
 `p` are canonically isomorphic to `Rˣ × Multiplicative ℤ`, sending `(u, m)` to `u * p ^ m`. -/
 noncomputable def awayUnitsMulEquiv (hp : Prime p) (S : Type*) [CommSemiring S] [Algebra R S]
     [IsLocalization.Away p S] : Rˣ × Multiplicative ℤ ≃* Sˣ :=
-  letI : IsLocalization.Away (∏ _ ∈ ({()} : Finset Unit), p) S := by
-    rwa [Finset.prod_singleton]
+  letI := isLocalization_away_prod_singleton_unit (S := S) p
   ((MulEquiv.refl Rˣ).prodCongr
     (MulEquiv.piUnique fun _ : ({()} : Finset Unit) ↦ Multiplicative ℤ).symm).trans
     (TauCeti.Localization.awayProdPrimesUnitsMulEquiv S ({()} : Finset Unit)
@@ -345,7 +317,8 @@ theorem awayUnitsMulEquiv_apply (hp : Prime p) (S : Type*) [CommSemiring S] [Alg
     [IsLocalization.Away p S] (u : Rˣ) (m : Multiplicative ℤ) :
     hp.awayUnitsMulEquiv S (u, m) =
       Units.map (algebraMap R S : R →* S) u *
-        TauCeti.Localization.awayUnit S p ^ m.toAdd := by
+        TauCeti.Localization.awayUnitOfDvd S (dvd_rfl : p ∣ p) ^ m.toAdd := by
+  ext
   simp [awayUnitsMulEquiv, MulEquiv.prodCongr]
 
 @[simp]
@@ -356,9 +329,9 @@ theorem awayUnitsMulEquiv_symm_map (hp : Prime p) (S : Type*) [CommSemiring S] [
   simp
 
 @[simp]
-theorem awayUnitsMulEquiv_symm_awayUnit (hp : Prime p) (S : Type*) [CommSemiring S] [Algebra R S]
-    [IsLocalization.Away p S] :
-    (hp.awayUnitsMulEquiv S).symm (TauCeti.Localization.awayUnit S p) =
+theorem awayUnitsMulEquiv_symm_awayUnitOfDvd (hp : Prime p) (S : Type*) [CommSemiring S]
+    [Algebra R S] [IsLocalization.Away p S] :
+    (hp.awayUnitsMulEquiv S).symm (TauCeti.Localization.awayUnitOfDvd S (dvd_rfl : p ∣ p)) =
       (1, Multiplicative.ofAdd 1) := by
   rw [MulEquiv.symm_apply_eq]
   simp

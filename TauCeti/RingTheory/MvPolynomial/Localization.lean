@@ -28,12 +28,6 @@ product `∏ j ∈ s, p j` of pairwise non-associated prime polynomials with
 * `TauCeti.MvPolynomial.awayProdPrimesUnitsMulEquiv`: the unit group equivalence
   `Rˣ × (s → Multiplicative ℤ) ≃* Sˣ` for a localization away from a product of pairwise
   non-associated primes in `MvPolynomial σ R`.
-
-## Main results
-
-* `Prime.isUnit_away_mvPolynomial_iff` and `Finset.isUnit_away_prod_mvPolynomial_primes_iff`:
-  characterizations of units in a localization of `MvPolynomial σ R` away from a prime or finite
-  product of primes.
 -/
 
 public section
@@ -60,7 +54,7 @@ theorem awayPrimeUnitsMulEquiv_apply (S : Type*) [CommSemiring S]
     [IsLocalization.Away f S] (c : Rˣ) (m : Multiplicative ℤ) :
     awayPrimeUnitsMulEquiv S hprime (c, m) =
       Units.map ((algebraMap (_root_.MvPolynomial σ R) S).comp C : R →* S) c *
-        awayUnit S f ^ m.toAdd := by
+        awayUnitOfDvd S (dvd_rfl : f ∣ f) ^ m.toAdd := by
   ext
   simp [awayPrimeUnitsMulEquiv, MulEquiv.prodCongr]
 
@@ -75,10 +69,11 @@ theorem awayPrimeUnitsMulEquiv_symm_map (S : Type*) [CommSemiring S]
   simp
 
 @[simp]
-theorem awayPrimeUnitsMulEquiv_symm_awayUnit (S : Type*) [CommSemiring S]
+theorem awayPrimeUnitsMulEquiv_symm_awayUnitOfDvd (S : Type*) [CommSemiring S]
     [Algebra (_root_.MvPolynomial σ R) S] {f : _root_.MvPolynomial σ R} (hprime : Prime f)
     [IsLocalization.Away f S] :
-    (awayPrimeUnitsMulEquiv S hprime).symm (awayUnit S f) = (1, Multiplicative.ofAdd 1) := by
+    (awayPrimeUnitsMulEquiv S hprime).symm (awayUnitOfDvd S (dvd_rfl : f ∣ f)) =
+      (1, Multiplicative.ofAdd 1) := by
   rw [MulEquiv.symm_apply_eq]
   simp
 
@@ -133,49 +128,3 @@ theorem awayProdPrimesUnitsMulEquiv_symm_awayUnitOfDvd {J : Type*} [DecidableEq 
   simp [MulEquiv.prodCongr]
 
 end TauCeti.MvPolynomial
-
-namespace Prime
-
-open MvPolynomial
-
-variable {σ R : Type*} [CommSemiring R] [IsCancelAdd R] [IsCancelMulZero R]
-
-/-- Over an additively and multiplicatively cancellative commutative semiring `R`, every unit of a
-localization `S` of `MvPolynomial σ R` away from a prime `f` has the form `C c * f ^ m` with
-`c : Rˣ` and `m : ℤ`. -/
-theorem isUnit_away_mvPolynomial_iff {S : Type*} [CommSemiring S]
-    [Algebra (MvPolynomial σ R) S] {f : MvPolynomial σ R} (hprime : Prime f)
-    [IsLocalization.Away f S] {y : S} :
-    IsUnit y ↔
-      ∃ (c : Rˣ) (m : ℤ),
-        algebraMap (MvPolynomial σ R) S (C (c : R)) *
-            ((TauCeti.Localization.awayUnit S f ^ m : Sˣ) : S) = y := by
-  rw [hprime.isUnit_away_iff (S := S),
-    ← (TauCeti.MvPolynomial.unitsMulEquiv σ R).toEquiv.exists_congr_right]
-  simp
-
-end Prime
-
-namespace Finset
-
-open MvPolynomial
-
-variable {σ R : Type*} [CommSemiring R] [IsCancelAdd R] [IsCancelMulZero R]
-
-/-- Over an additively and multiplicatively cancellative commutative semiring `R`, every unit of a
-localization `S` of `MvPolynomial σ R` away from a product `∏ j ∈ s, p j` of primes has the form
-`C c * ∏ j : s, p j ^ m j` with `c : Rˣ` and `m : s → ℤ`. -/
-theorem isUnit_away_prod_mvPolynomial_primes_iff {J : Type*} {S : Type*} [CommSemiring S]
-    [Algebra (MvPolynomial σ R) S] (s : Finset J) {p : J → MvPolynomial σ R}
-    (hp : ∀ j ∈ s, Prime (p j)) [IsLocalization.Away (∏ j ∈ s, p j) S] {y : S} :
-    IsUnit y ↔
-      ∃ (c : Rˣ) (m : s → ℤ),
-        algebraMap (MvPolynomial σ R) S (C (c : R)) *
-            ((∏ j : s,
-              TauCeti.Localization.awayUnitOfDvd S (dvd_prod_of_mem p j.property) ^ m j : Sˣ) : S) =
-          y := by
-  rw [s.isUnit_away_prod_primes_iff (S := S) hp,
-    ← (TauCeti.MvPolynomial.unitsMulEquiv σ R).toEquiv.exists_congr_right]
-  simp
-
-end Finset

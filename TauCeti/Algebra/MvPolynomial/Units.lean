@@ -83,8 +83,9 @@ namespace TauCeti.MvPolynomial
 open _root_.MvPolynomial
 
 /-- Over any reduced commutative semiring, a multivariate polynomial is a unit if and only if it is
-`C r` for a unit `r` of the coefficient semiring. This generalizes Mathlib's ring result
-`MvPolynomial.isUnit_iff_eq_C_of_isReduced` via a separate leading-monomial proof using `degLex`. -/
+`C r` for a unit `r` of the coefficient semiring. This generalizes Mathlib's
+`MvPolynomial.isUnit_iff_eq_C_of_isReduced` from commutative rings to reduced commutative
+semirings. -/
 theorem isUnit_iff_eq_C {σ R : Type*} [CommSemiring R] [IsReduced R]
     {p : _root_.MvPolynomial σ R} : IsUnit p ↔ ∃ r, IsUnit r ∧ p = C r := by
   refine ⟨fun hp ↦ ?_, ?_⟩

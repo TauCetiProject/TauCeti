@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
 public import TauCeti.RingTheory.GradedAlgebra.Localization.Away
+public import TauCeti.RingTheory.Localization.Away.Units
 public import TauCeti.RingTheory.Localization.Defs
 import TauCeti.Algebra.BigOperators.Associated
 
@@ -41,6 +42,10 @@ element `x ^ 2` has degree `2`, but `x = x ^ 3 / x ^ 2` is a unit of degree `1` 
 * `TauCeti.GradedAlgebra.homogeneousUnitDegrees_le_homogeneousUnitDegrees_awayGrading` and
   `TauCeti.GradedAlgebra.mem_homogeneousUnitDegrees_awayGrading_of_dvd`: containment of original
   homogeneous unit degrees and degrees of homogeneous divisors of `f`.
+* `TauCeti.GradedAlgebra.awayUnitOfDvd_self_zpow_mem_awayGrading`,
+  `TauCeti.GradedAlgebra.awayUnitOfDvd_zpow_mem_awayGrading`, and
+  `TauCeti.GradedAlgebra.prod_awayUnitOfDvd_zpow_mem_awayGrading`: degrees of integer powers and
+  products of integer powers of inverted homogeneous elements and divisors in `awayGrading 𝒜 hf`.
 * `TauCeti.GradedAlgebra.homogeneousUnitDegrees_awayGrading_of_eq_zero` and
   `TauCeti.GradedAlgebra.homogeneousUnitDegrees_awayGrading_of_isUnit`: boundary cases `f = 0` (`⊤`)
   and `f` a unit (`homogeneousUnitDegrees 𝒜`).
@@ -138,7 +143,57 @@ theorem homogeneousUnitDegrees_awayGrading_one (h1 : (1 : A) ∈ 𝒜 (0 : ι)) 
     homogeneousUnitDegrees (awayGrading 𝒜 h1) = homogeneousUnitDegrees 𝒜 :=
   homogeneousUnitDegrees_awayGrading_of_isUnit 𝒜 h1 isUnit_one
 
+/-- An integer power `f ^ m` of `f ∈ 𝒜 e` as a unit of `Localization.Away f` has degree
+`m • e`. -/
+theorem awayUnitOfDvd_self_zpow_mem_awayGrading (m : ℤ) :
+    ((TauCeti.Localization.awayUnitOfDvd (Localization.Away f) (dvd_rfl : f ∣ f) ^ m :
+        (Localization.Away f)ˣ) : Localization.Away f) ∈
+      awayGrading 𝒜 hf (m • e) := by
+  let u := TauCeti.Localization.awayUnitOfDvd (Localization.Away f) (dvd_rfl : f ∣ f)
+  have hu : (u : Localization.Away f) ∈ awayGrading 𝒜 hf e := by
+    simpa [u] using algebraMap_mem_awayGrading (hf := hf) hf
+  have hinv : ((u⁻¹ : (Localization.Away f)ˣ) : Localization.Away f) ∈
+      awayGrading 𝒜 hf (-e) := by
+    have h_eq : ((u⁻¹ : (Localization.Away f)ˣ) : Localization.Away f) =
+        IsLocalization.Away.invSelf f := by
+      apply u.isUnit.mul_left_cancel
+      simp [u]
+    rw [h_eq]
+    exact invSelf_mem_awayGrading
+  rcases Int.eq_nat_or_neg m with ⟨n, rfl | rfl⟩
+  · simpa [u] using SetLike.pow_mem_graded n hu
+  · simpa [zpow_neg, ← inv_zpow, neg_zsmul, ← zsmul_neg] using SetLike.pow_mem_graded n hinv
+
 end Semiring
+
+section GradedAlgebra
+
+variable {ι R A : Type*} [AddCommGroup ι] [DecidableEq ι] [CommSemiring R] [CommSemiring A]
+  [Algebra R A] (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜] {f : A} {e : ι} (hf : f ∈ 𝒜 e)
+
+/-- An integer power `g ^ m` of a homogeneous divisor `g ∈ 𝒜 d` of `f` in `Localization.Away f`
+has degree `m • d`. -/
+theorem awayUnitOfDvd_zpow_mem_awayGrading {g : A} {d : ι} (hg : g ∈ 𝒜 d) (h : g ∣ f) (m : ℤ) :
+    ((TauCeti.Localization.awayUnitOfDvd (Localization.Away f) h ^ m :
+        (Localization.Away f)ˣ) : Localization.Away f) ∈
+      awayGrading 𝒜 hf (m • d) :=
+  (TauCeti.Localization.awayUnitOfDvd (Localization.Away f) h).val_zpow_mem_graded
+    (by simpa using algebraMap_mem_awayGrading (hf := hf) hg) m
+
+/-- A product of integer powers `∏ j : s, p j ^ m j` of homogeneous divisors `p j ∈ 𝒜 (d j)` of
+`f` in `Localization.Away f` has degree `∑ j : s, m j • d j`. -/
+theorem prod_awayUnitOfDvd_zpow_mem_awayGrading {J : Type*} (s : Finset J)
+    {p : J → A} {d : J → ι} (hp : ∀ j ∈ s, p j ∈ 𝒜 (d j)) (hpf : ∀ j ∈ s, p j ∣ f)
+    (m : s → ℤ) :
+    ((∏ j : s,
+        TauCeti.Localization.awayUnitOfDvd (Localization.Away f) (hpf j j.property) ^ m j :
+        (Localization.Away f)ˣ) : Localization.Away f) ∈
+      awayGrading 𝒜 hf (∑ j : s, m j • d j) := by
+  rw [Units.coe_prod]
+  exact SetLike.prod_mem_graded (awayGrading 𝒜 hf) (fun j : s ↦ m j • d j) _ fun j _ ↦
+    awayUnitOfDvd_zpow_mem_awayGrading 𝒜 hf (hp j j.property) (hpf j j.property) (m j)
+
+end GradedAlgebra
 
 section Cancel
 

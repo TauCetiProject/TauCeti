@@ -81,14 +81,10 @@ theorem Units.val_inv_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) :
 is homogeneous of degree `m • d`. -/
 theorem Units.val_zpow_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) (m : ℤ) :
     ((u ^ m : Aˣ) : A) ∈ 𝒜 (m • d) := by
-  cases m with
-  | ofNat n =>
-    simpa [Int.ofNat_eq_natCast] using SetLike.pow_mem_graded n hu
-  | negSucc n =>
-    rw [zpow_negSucc, ← inv_pow, Units.val_pow_eq_pow_val]
-    convert SetLike.pow_mem_graded (n + 1) (u.val_inv_mem_graded hu) using 2
-    rw [Int.negSucc_eq, neg_zsmul, ← zsmul_neg, ← natCast_zsmul]
-    norm_cast
+  rcases Int.eq_nat_or_neg m with ⟨n, rfl | rfl⟩
+  · simpa using SetLike.pow_mem_graded n hu
+  · simpa [zpow_neg, ← inv_zpow, neg_zsmul, ← zsmul_neg] using
+      SetLike.pow_mem_graded n (u.val_inv_mem_graded hu)
 
 end Inverse
 
