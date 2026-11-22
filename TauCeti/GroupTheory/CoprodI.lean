@@ -71,6 +71,23 @@ instance instUniqueOfIsEmpty [IsEmpty ι] : Unique (CoprodI M) :=
   have : ∀ i, Subsingleton (M i) := isEmptyElim
   inferInstance
 
+variable {M}
+
+/-- Casting an element of `M i` along an index equality `h : i = j` does not change its image
+under `Monoid.CoprodI.of`. -/
+@[simp]
+theorem of_cast {i j : ι} (h : i = j) (x : M i) :
+    of (M := M) (i := j) (cast (congrArg M h) x) = of (M := M) (i := i) x := by
+  subst h
+  rfl
+
+/-- Reindexing an element of `M i` via `MulEquiv.cast h` does not change its image under
+`Monoid.CoprodI.of`. -/
+theorem of_mulEquivCast {i j : ι} (h : i = j) (x : M i) :
+    of (M := M) (i := j) (MulEquiv.cast h x) = of (M := M) (i := i) x := by
+  subst h
+  rfl
+
 end Monoid.CoprodI
 
 namespace MulEquiv
@@ -94,18 +111,6 @@ theorem coprodICongr_symm (e : ∀ i, M i ≃* N i) :
     (coprodICongr e).symm = coprodICongr fun i => (e i).symm :=
   (rfl)
 
-private def mulEquivOfEq {α : Sort*} {M : α → Type*} [∀ a, Monoid (M a)] {a b : α}
-    (h : a = b) : M a ≃* M b := by
-  subst h
-  exact .refl _
-
-private theorem of_mulEquivOfEq_eq {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)]
-    (e : ι ≃ κ) {i' i : ι} (h : i' = i) (he : e i' = e i) (x : M (e i)) :
-    CoprodI.of (M := fun j => M (e j)) (i := i') (mulEquivOfEq he.symm x) =
-      CoprodI.of (M := fun j => M (e j)) (i := i) x := by
-  subst h
-  rfl
-
 /-- Reindexing the index type of an indexed free product along an equivalence `e : ι ≃ κ`
 induces an isomorphism `CoprodI (fun i => M (e i)) ≃* CoprodI M`. -/
 def coprodICongrLeft {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)] (e : ι ≃ κ) :
@@ -114,18 +119,9 @@ def coprodICongrLeft {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)] (e
     (CoprodI.lift fun i => CoprodI.of (i := e i))
     (CoprodI.lift fun k =>
       (CoprodI.of (M := fun i => M (e i)) (i := e.symm k)).comp
-        (mulEquivOfEq (e.apply_symm_apply k).symm).toMonoidHom)
-    (by
-      ext i x
-      exact of_mulEquivOfEq_eq M e (e.symm_apply_apply i) (e.apply_symm_apply (e i)) x)
-    (by
-      ext k m
-      obtain ⟨i, rfl⟩ := e.surjective k
-      change (CoprodI.lift fun j => CoprodI.of (i := e j))
-          (CoprodI.of (M := fun j => M (e j)) (i := e.symm (e i))
-            (mulEquivOfEq (e.apply_symm_apply (e i)).symm m)) = CoprodI.of m
-      rw [of_mulEquivOfEq_eq M e (e.symm_apply_apply i) (e.apply_symm_apply (e i)) m,
-        CoprodI.lift_of])
+        (MulEquiv.cast (e.apply_symm_apply k).symm).toMonoidHom)
+    (by ext i x; simp)
+    (by ext k m; simp)
 
 @[simp]
 theorem coprodICongrLeft_apply_of {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)]
@@ -133,12 +129,23 @@ theorem coprodICongrLeft_apply_of {ι κ : Type*} (M : κ → Type*) [∀ k, Mon
     coprodICongrLeft M e (CoprodI.of (M := fun i => M (e i)) m) = CoprodI.of (i := e i) m :=
   CoprodI.lift_of _ _
 
+/-- Evaluating the inverse of `coprodICongrLeft M e` on `CoprodI.of (i := k) m` casts `m` along
+`e.apply_symm_apply k` into the factor at `e.symm k`. -/
 @[simp]
 theorem coprodICongrLeft_symm_apply_of {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)]
+    (e : ι ≃ κ) {k : κ} (m : M k) :
+    (coprodICongrLeft M e).symm (CoprodI.of (i := k) m) =
+      CoprodI.of (M := fun i => M (e i)) (i := e.symm k)
+        (MulEquiv.cast (e.apply_symm_apply k).symm m) :=
+  CoprodI.lift_of _ _
+
+/-- Evaluating the inverse of `coprodICongrLeft M e` on `CoprodI.of (i := e i) m` recovers
+`CoprodI.of m` at index `i`. -/
+theorem coprodICongrLeft_symm_apply_of_apply {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)]
     (e : ι ≃ κ) {i : ι} (m : M (e i)) :
     (coprodICongrLeft M e).symm (CoprodI.of (i := e i) m) =
       CoprodI.of (M := fun i => M (e i)) m := by
-  rw [(coprodICongrLeft M e).symm_apply_eq, coprodICongrLeft_apply_of]
+  simp
 
 variable (M) [Unique ι]
 

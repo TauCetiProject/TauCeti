@@ -49,7 +49,7 @@ the algebraic structure of finite-order elements and characters of `PSL(2, ℤ)`
 * `TauCeti.ModularGroup.psl2zEquivCoprod`:
   `PSL(2, ℤ) ≃* Monoid.Coprod (Multiplicative (ZMod 2)) (Multiplicative (ZMod 3))`.
 * `TauCeti.ModularGroup.psl2zEquivCoprodI`:
-  `PSL(2, ℤ) ≃* Monoid.CoprodI fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))`.
+  `PSL(2, ℤ) ≃* Monoid.CoprodI fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))`.
 * `TauCeti.ModularGroup.isOfFinOrder_iff`, `TauCeti.ModularGroup.isOfFinOrder_iff_coe_U`:
   classification of torsion elements up to conjugacy.
 * `TauCeti.ModularGroup.not_isConj_coe_S_coe_R`, `TauCeti.ModularGroup.not_isConj_coe_R_coe_R_sq`,
@@ -151,13 +151,20 @@ theorem psl2zEquivCoprod_symm_inr_ofAdd_one :
     psl2zEquivCoprod.symm (.inr (.ofAdd 1)) = (R : PSL(2, ℤ)) := by
   simpa using psl2zEquivCoprod_symm_inr_ofAdd_intCast 1
 
+/-- The orders `2` and `3` of the cyclic free-product factors of `PSL(2, ℤ)` indexed by `Fin 2`. -/
+@[expose]
+def psl2zCoprodOrder : Fin 2 → ℕ
+  | 0 => 2
+  | 1 => 3
+
 /-- **Indexed free-product decomposition of `PSL(2, ℤ)`.** Identifies `PSL(2, ℤ)` with the indexed
 coproduct `Monoid.CoprodI` of `Multiplicative (ZMod 2)` and `Multiplicative (ZMod 3)` over
 `Fin 2`. -/
 def psl2zEquivCoprodI :
-    PSL(2, ℤ) ≃* Monoid.CoprodI fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i)) :=
+    PSL(2, ℤ) ≃* Monoid.CoprodI fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i)) :=
   psl2zEquivCoprod.trans
-    (Monoid.CoprodI.finTwoEquivCoprod fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))).symm
+    (Monoid.CoprodI.finTwoEquivCoprod
+      fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm
 
 /-- `psl2zEquivCoprodI` maps `S` to the generator of the factor at `0 : Fin 2`. -/
 @[simp]
@@ -165,14 +172,14 @@ theorem psl2zEquivCoprodI_coe_S :
     psl2zEquivCoprodI (S : PSL(2, ℤ)) = Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd 1) := by
   calc psl2zEquivCoprodI (S : PSL(2, ℤ))
     _ = (Monoid.CoprodI.finTwoEquivCoprod
-          fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))).symm
+          fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm
           (psl2zEquivCoprod (S : PSL(2, ℤ))) := rfl
     _ = (Monoid.CoprodI.finTwoEquivCoprod
-          fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))).symm (.inl (.ofAdd 1)) :=
+          fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm (.inl (.ofAdd 1)) :=
         congrArg _ psl2zEquivCoprod_coe_S
     _ = Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd 1) :=
         Monoid.CoprodI.finTwoEquivCoprod_symm_inl
-          (M := fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))) (.ofAdd 1)
+          (M := fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))) (.ofAdd 1)
 
 /-- `psl2zEquivCoprodI` maps `R` to the generator of the factor at `1 : Fin 2`. -/
 @[simp]
@@ -180,22 +187,24 @@ theorem psl2zEquivCoprodI_coe_R :
     psl2zEquivCoprodI (R : PSL(2, ℤ)) = Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd 1) := by
   calc psl2zEquivCoprodI (R : PSL(2, ℤ))
     _ = (Monoid.CoprodI.finTwoEquivCoprod
-          fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))).symm
+          fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm
           (psl2zEquivCoprod (R : PSL(2, ℤ))) := rfl
     _ = (Monoid.CoprodI.finTwoEquivCoprod
-          fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))).symm (.inr (.ofAdd 1)) :=
+          fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm (.inr (.ofAdd 1)) :=
         congrArg _ psl2zEquivCoprod_coe_R
     _ = Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd 1) :=
         Monoid.CoprodI.finTwoEquivCoprod_symm_inr
-          (M := fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))) (.ofAdd 1)
+          (M := fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))) (.ofAdd 1)
 
 /-- The inverse of `psl2zEquivCoprodI` maps the generator at `0 : Fin 2` to `S`. -/
+@[simp]
 theorem psl2zEquivCoprodI_symm_of_zero_ofAdd_one :
     psl2zEquivCoprodI.symm (Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd 1)) =
       (S : PSL(2, ℤ)) :=
   psl2zEquivCoprodI.symm_apply_eq.mpr psl2zEquivCoprodI_coe_S.symm
 
 /-- The inverse of `psl2zEquivCoprodI` maps the generator at `1 : Fin 2` to `R`. -/
+@[simp]
 theorem psl2zEquivCoprodI_symm_of_one_ofAdd_one :
     psl2zEquivCoprodI.symm (Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd 1)) =
       (R : PSL(2, ℤ)) :=
