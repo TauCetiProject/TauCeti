@@ -43,11 +43,15 @@ such a ring commutes with `δ` exactly when it commutes with the Frobenius lifts
 * `TauCeti.DeltaRing.IsDeltaMap.comp_frobenius`: `δ`-maps intertwine the Frobenius lifts.
 * `TauCeti.DeltaRing.isDeltaMap_iff_comp_frobenius`: if `p` is a nonzerodivisor on the target,
   the converse holds.
+* `TauCeti.DeltaRing.isDeltaMap_castRingHom`: the ring homomorphism `ℤ →+* A` into a `δ`-ring
+  is a `δ`-map, so `δ n = (n - n ^ p) / p` for integers `n` in `A` (`delta_intCast`).
+* `TauCeti.DeltaRing.isEmpty_of_natCast_eq_zero`: a nonzero ring in which `p = 0` has no
+  `δ`-structure.
 
 ## References
 
 * B. Bhatt and P. Scholze, *Prisms and prismatic cohomology*, Ann. of Math. 196 (2022),
-  §2.1, Definition 2.1, Remarks 2.2 and 2.4.
+  §2.1, Definition 2.1, Remarks 2.2 and 2.4, Example 2.6.
 -/
 
 public section
@@ -457,6 +461,63 @@ theorem delta_int_two : delta 2 (2 : ℤ) = -1 := by
   norm_num
 
 end Int
+
+section IntCast
+
+variable [hp : Fact p.Prime] [DeltaRing p A]
+
+/-- The unital ring homomorphism `ℤ →+* A` into a `δ`-ring is a `δ`-map (Bhatt and Scholze,
+*Prisms and prismatic cohomology*, Example 2.6). No hypothesis on `p`-torsion in `A` is
+needed: both sides satisfy the same recursion `δ (n + 1) = δ n + addCorrection p n 1`. -/
+theorem isDeltaMap_castRingHom : IsDeltaMap p (Int.castRingHom A) := by
+  have hc (m : ℤ) : ((addCorrection p m 1 : ℤ) : A) = addCorrection p (m : A) 1 := by
+    simpa only [eq_intCast, Int.cast_one] using map_addCorrection (p := p) (Int.castRingHom A) m 1
+  refine ⟨fun n => ?_⟩
+  simp only [eq_intCast]
+  induction n using Int.induction_on with
+  | zero => simp
+  | succ n ih =>
+    rw [delta_add (n : ℤ) 1, Int.cast_add (n : ℤ) 1, Int.cast_one, delta_add, Int.cast_add,
+      Int.cast_add, ih, hc, delta_one, delta_one, Int.cast_zero]
+  | pred n ih =>
+    have h1 := delta_add (p := p) (-(n : ℤ) - 1) 1
+    rw [sub_add_cancel, delta_one, add_zero] at h1
+    have h2 := delta_add (p := p) ((-(n : ℤ) - 1 : ℤ) : A) 1
+    rw [delta_one, add_zero] at h2
+    have h3 : ((-(n : ℤ) - 1 : ℤ) : A) + 1 = ((-(n : ℤ) : ℤ) : A) := by push_cast; ring
+    rw [show delta p (-(n : ℤ) - 1) = _ from eq_sub_of_add_eq h1.symm, Int.cast_sub, ih, hc,
+      ← h3, h2, add_sub_cancel_right]
+
+/-- In a `δ`-ring, `δ` of the integer `n` is the integer `(n - n ^ p) / p` (Bhatt and Scholze,
+*Prisms and prismatic cohomology*, Example 2.6). -/
+theorem delta_intCast (n : ℤ) : delta p (n : A) = ((n - n ^ p) / p : ℤ) := by
+  rw [← delta_int]
+  simpa using ((isDeltaMap_castRingHom (p := p) (A := A)).map_delta n).symm
+
+/-- In a `δ`-ring, `δ` of the natural number `n` is the integer `(n - n ^ p) / p`. -/
+theorem delta_natCast (n : ℕ) : delta p (n : A) = (((n : ℤ) - n ^ p) / p : ℤ) := by
+  rw [← delta_intCast, Int.cast_natCast]
+
+/-- In a `δ`-ring, `δ p = 1 - p ^ (p - 1)`. -/
+theorem delta_natCast_self : delta p (p : A) = 1 - (p : A) ^ (p - 1) := by
+  have hp0 : (p : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr hp.out.ne_zero
+  have h : (p : ℤ) - (p : ℤ) ^ p = p * (1 - (p : ℤ) ^ (p - 1)) := by
+    rw [mul_sub, mul_one, ← pow_succ', Nat.sub_add_cancel hp.out.one_le]
+  rw [delta_natCast, h, Int.mul_ediv_cancel_left _ hp0]
+  simp
+
+omit [DeltaRing p A] in
+/-- A nonzero ring in which `p = 0`, for instance a nonzero ring of characteristic `p`, has no
+`δ`-structure: `δ p` would be both `δ 0 = 0` and `1 - p ^ (p - 1) = 1` (Bhatt and Scholze,
+*Prisms and prismatic cohomology*, Example 2.6). -/
+theorem isEmpty_of_natCast_eq_zero [Nontrivial A] (h : (p : A) = 0) :
+    IsEmpty (DeltaRing p A) := by
+  refine ⟨fun d => ?_⟩
+  have h' := @delta_natCast_self p A _ _ d
+  rw [h, @delta_zero p A _ d, zero_pow (Nat.sub_ne_zero_of_lt hp.out.one_lt), sub_zero] at h'
+  exact zero_ne_one h'
+
+end IntCast
 
 end DeltaRing
 
