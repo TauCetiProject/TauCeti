@@ -79,25 +79,37 @@ private theorem norm_map_le_of_monotone [LE E] (he : IsOrderUnitNorm e) (hf : Is
   calc ‖T a‖ ≤ ‖‖a‖ • T e‖ := hf.norm_le_of_neg_le_of_le h1 h2
     _ = ‖T e‖ * ‖a‖ := by rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (norm_nonneg a), mul_comm]
 
-/-- Every positive linear map between order-unit spaces satisfies `‖T a‖ ≤ ‖T e‖ * ‖a‖`. -/
+/-- Every positive linear map between order-unit spaces satisfies `‖T a‖ ≤ ‖T e‖ * ‖a‖`.
+Stated for a bundled map type `G` carrying both `LinearMapClass G ℝ E F` and `OrderHomClass G E F`
+(such as `PositiveLinearMap`, written `E →ₚ[ℝ] F`), rather than a plain linear map with a separate
+monotonicity proof. -/
 theorem norm_map_le [LE E] {G : Type*} [FunLike G E F] [LinearMapClass G ℝ E F]
     [OrderHomClass G E F] (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : G) (a : E) :
     ‖T a‖ ≤ ‖T e‖ * ‖a‖ :=
   he.norm_map_le_of_monotone hf (T : E →ₗ[ℝ] F) (fun _ _ hab => map_rel T hab) a
 
-/-- Every positive linear map between order-unit spaces is automatically continuous. -/
+/-- Every positive linear map between order-unit spaces is automatically continuous.
+Stated for a bundled map type `G` carrying both `LinearMapClass G ℝ E F` and `OrderHomClass G E F`
+(such as `PositiveLinearMap`, written `E →ₚ[ℝ] F`), rather than a plain linear map with a separate
+monotonicity proof. -/
 theorem continuous_of_monotone [LE E] {G : Type*} [FunLike G E F] [LinearMapClass G ℝ E F]
     [OrderHomClass G E F] (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : G) :
     Continuous T :=
   (LinearMap.mkContinuous (T : E →ₗ[ℝ] F) ‖T e‖ (he.norm_map_le hf T)).continuous
 
-/-- Every unital positive linear map between order-unit spaces is contractive: `‖T a‖ ≤ ‖a‖`. -/
+/-- Every unital positive linear map between order-unit spaces is contractive: `‖T a‖ ≤ ‖a‖`.
+Stated for a bundled map type `G` carrying both `LinearMapClass G ℝ E F` and `OrderHomClass G E F`
+(such as `PositiveLinearMap`, written `E →ₚ[ℝ] F`), rather than a plain linear map with a separate
+monotonicity proof. -/
 theorem norm_map_le_of_map_unit [LE E] {G : Type*} [FunLike G E F] [LinearMapClass G ℝ E F]
     [OrderHomClass G E F] (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f)
     (T : G) (hunit : T e = f) (a : E) : ‖T a‖ ≤ ‖a‖ := by
   simpa [hunit, hf.norm_e] using he.norm_map_le hf T a
 
-/-- Bundle a positive linear map between order-unit spaces as a `PositiveContinuousLinearMap`. -/
+/-- Bundle a positive linear map between order-unit spaces as a `PositiveContinuousLinearMap`.
+Takes a bundled map type `G` carrying both `LinearMapClass G ℝ E F` and `OrderHomClass G E F`
+(such as `PositiveLinearMap`, written `E →ₚ[ℝ] F`), rather than a plain linear map with a separate
+monotonicity proof. -/
 def toPositiveContinuousLinearMap {E F : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
     [PartialOrder E] [SeminormedAddCommGroup F] [NormedSpace ℝ F] [PartialOrder F]
     [IsOrderedAddMonoid F] {e : E} {f : F} {G : Type*} [FunLike G E F] [LinearMapClass G ℝ E F]
@@ -538,18 +550,17 @@ def cstarStateRestrict (ψ : TauCeti.stateSpace A) : OrderUnit.stateSpace (1 : s
     { toFun := fun a => (ψ.1 a).re
       map_add' := fun a b => by simp
       map_smul' := fun r a => by
-        rw [selfAdjoint.val_smul, ← Complex.coe_smul, map_smul, smul_eq_mul, Complex.mul_re,
-          Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero, RingHom.id_apply, smul_eq_mul]
+        simp [selfAdjoint.val_smul, ← Complex.coe_smul]
       cont := Complex.continuous_re.comp ((WeakDual.toStrongDual ψ.1).continuous.comp
         continuous_subtype_val) }
   -- Local helper lemma unfolding the evaluation of the local `ContinuousLinearMap` literal `f`.
   have hf (x : selfAdjoint A) : f x = (ψ.1 x).re := rfl
   ⟨WeakDual.toStrongDual.symm f,
     fun a b hab => by
-      have hsub : 0 ≤ (b : A) - (a : A) := sub_nonneg.mpr hab
-      have hpos : 0 ≤ ψ.1 ((b : A) - (a : A)) := map_nonneg_of_mem_stateSpace ψ.2 hsub
+      have hpos : 0 ≤ ψ.1 ((b : A) - (a : A)) :=
+        map_nonneg_of_mem_stateSpace ψ.2 (sub_nonneg.mpr hab)
       have hre : 0 ≤ (ψ.1 b - ψ.1 a).re := by
-        simpa [map_sub] using (Complex.le_def.mp hpos).1
+        simpa only [map_sub, Complex.zero_re] using (Complex.le_def.mp hpos).1
       simpa [hf, sub_nonneg] using hre,
     by simp [hf, map_one_of_mem_stateSpace ψ.2]⟩
 
@@ -564,9 +575,11 @@ def cstarStateExtend (φ : OrderUnit.stateSpace (1 : selfAdjoint A)) : TauCeti.s
     { toFun := fun a => (φ.1 (ℜ a) : ℂ) + Complex.I * (φ.1 (ℑ a) : ℂ)
       map_add' := fun a b => by simp [map_add]; ring
       map_smul' := fun z a => by
-        rw [realPart_smul, imaginaryPart_smul, map_sub, map_add, map_smul, map_smul, map_smul,
-          map_smul]
-        apply Complex.ext <;> simp
+        have hre : φ.1 (ℜ (z • a)) = z.re * φ.1 (ℜ a) - z.im * φ.1 (ℑ a) := by
+          simp [realPart_smul, map_sub, map_smul]
+        have him : φ.1 (ℑ (z • a)) = z.re * φ.1 (ℑ a) + z.im * φ.1 (ℜ a) := by
+          simp [imaginaryPart_smul, map_add, map_smul]
+        apply Complex.ext <;> simp [hre, him]
       cont :=
         have hre : Continuous (fun a : A => ℜ a) := Continuous.subtype_mk (by fun_prop) _
         have him : Continuous (fun a : A => ℑ a) :=
@@ -617,25 +630,27 @@ def cstarStateSpaceHomeomorph :
       exact Complex.conj_eq_iff_im.mp (by simpa [Complex.star_def] using h)
     have hreal : ∀ x : selfAdjoint A, ((ψ.1 x).re : ℂ) = ψ.1 x := fun x =>
       Complex.ext rfl (by simp [him_sa x])
-    rw [cstarStateExtend_apply, cstarStateRestrict_apply, cstarStateRestrict_apply,
-      hreal (ℜ a), hreal (ℑ a)]
-    conv_rhs => rw [← realPart_add_I_smul_imaginaryPart a]
-    simp [map_add, map_smul]
+    have hdecomp : ψ.1 a = ψ.1 (ℜ a) + Complex.I * ψ.1 (ℑ a) := by
+      simpa only [map_add, map_smul, smul_eq_mul] using
+        congrArg ψ.1 (realPart_add_I_smul_imaginaryPart a).symm
+    simp only [cstarStateExtend_apply, cstarStateRestrict_apply, hreal, hdecomp]
   right_inv φ := by
     apply Subtype.ext
     apply DFunLike.ext
     intro a
-    rw [cstarStateRestrict_apply, cstarStateExtend_apply, selfAdjoint.realPart_coe,
+    simp only [cstarStateRestrict_apply, cstarStateExtend_apply, selfAdjoint.realPart_coe,
       selfAdjoint.imaginaryPart_coe, map_zero, Complex.ofReal_zero, mul_zero, add_zero,
       Complex.ofReal_re]
-  continuous_toFun := by
-    refine Continuous.subtype_mk (WeakDual.continuous_of_continuous_eval fun a => ?_) _
-    exact Complex.continuous_re.comp ((WeakDual.eval_continuous (a : A)).comp
-      continuous_subtype_val)
-  continuous_invFun := by
-    refine Continuous.subtype_mk (WeakDual.continuous_of_continuous_eval fun a => ?_) _
-    exact (Complex.continuous_ofReal.comp (continuous_eval_stateSpace (ℜ a))).add
-      (continuous_const.mul (Complex.continuous_ofReal.comp (continuous_eval_stateSpace (ℑ a))))
+  continuous_toFun := continuous_induced_rng.mpr <|
+    WeakDual.continuous_of_continuous_eval fun a => by
+      simpa only [Function.comp_def, cstarStateRestrict_apply] using
+        Complex.continuous_re.comp ((WeakDual.eval_continuous (a : A)).comp continuous_subtype_val)
+  continuous_invFun := continuous_induced_rng.mpr <|
+    WeakDual.continuous_of_continuous_eval fun a => by
+      simpa only [Function.comp_def, Pi.add_def, Pi.mul_def, cstarStateExtend_apply] using
+        (Complex.continuous_ofReal.comp (continuous_eval_stateSpace (ℜ a))).add
+          (continuous_const.mul (Complex.continuous_ofReal.comp
+            (continuous_eval_stateSpace (ℑ a))))
 
 @[simp]
 theorem cstarStateSpaceHomeomorph_apply (ψ : TauCeti.stateSpace A) (a : selfAdjoint A) :

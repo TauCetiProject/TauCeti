@@ -194,6 +194,8 @@ theorem orderUnitNorm_neg (a : E) : orderUnitNorm e (-a) = orderUnitNorm e a := 
       rw [neg_smul] at this
       exact neg_le_neg_iff.mp this
 
+/-- Triangle inequality for the constructed order-unit gauge `orderUnitNorm e`, holding on a
+`Preorder` before assuming antisymmetry. -/
 theorem orderUnitNorm_add_le (a b : E) :
     orderUnitNorm e (a + b) ≤ orderUnitNorm e a + orderUnitNorm e b := by
   rw [he.orderUnitNorm_le_iff (add_nonneg (orderUnitNorm_nonneg e a) (orderUnitNorm_nonneg e b))]
@@ -228,6 +230,8 @@ private theorem orderUnitNorm_smul_of_nonneg {r : ℝ} (hr : 0 ≤ r) (a : E) :
       refine ⟨?_, h2⟩
       simpa [mul_neg] using h1
 
+/-- Absolute homogeneity of the constructed order-unit gauge `orderUnitNorm e`, holding on a
+`Preorder` before assuming antisymmetry. -/
 @[simp]
 theorem orderUnitNorm_smul (r : ℝ) (a : E) :
     orderUnitNorm e (r • a) = |r| * orderUnitNorm e a := by
@@ -509,6 +513,26 @@ theorem isArchimedeanOrderUnit : IsArchimedeanOrderUnit e where
     (he.norm_le_iff a (‖a‖ + 1) (by positivity)).mp (le_add_of_nonneg_right zero_le_one)⟩
   archimedean _ h := he.archimedean h
 
+/-- Norm bound along the unit line: `‖r • e‖ ≤ |r|` for any `IsOrderUnitNorm e`, without
+assuming `NormedSpace ℝ E`. -/
+theorem norm_smul_self_le (r : ℝ) : ‖r • e‖ ≤ |r| := by
+  have nonneg_case : ∀ {s : ℝ}, 0 ≤ s → ‖s • e‖ ≤ s := fun {s} hs =>
+    (he.norm_le_iff (s • e) s hs).mpr ⟨by
+      rw [neg_smul]
+      exact (neg_nonpos.mpr (he.smul_nonneg_of_nonneg hs)).trans (he.smul_nonneg_of_nonneg hs),
+      le_rfl⟩
+  rcases le_total 0 r with hr | hr
+  · rw [abs_of_nonneg hr]
+    exact nonneg_case hr
+  · rw [abs_of_nonpos hr, ← norm_neg, ← neg_smul]
+    exact nonneg_case (neg_nonneg.mpr hr)
+
+/-- The scalar ray `r ↦ r • e` is `1`-Lipschitz. -/
+theorem lipschitzWith_smul_self : LipschitzWith 1 (fun r : ℝ => r • e) := by
+  refine LipschitzWith.of_dist_le_mul fun r s => ?_
+  simpa only [NNReal.coe_one, one_mul, dist_eq_norm, ← sub_smul, Real.norm_eq_abs] using
+    he.norm_smul_self_le (r - s)
+
 /-- The order relation of an order-unit space is closed in `E × E`. -/
 theorem orderClosedTopology : OrderClosedTopology E where
   isClosed_le' := by
@@ -517,23 +541,10 @@ theorem orderClosedTopology : OrderClosedTopology E where
       ext ⟨a, b⟩
       simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_Iic, sub_nonpos,
         ← he.nonneg_iff_norm_sub_le, sub_nonneg]
-    have hsmul : Continuous (fun r : ℝ => r • e) := by
-      refine LipschitzWith.continuous (K := 1) (LipschitzWith.of_dist_le_mul fun r s => ?_)
-      simp only [NNReal.coe_one, one_mul, dist_eq_norm, ← sub_smul, Real.norm_eq_abs]
-      rw [he.norm_le_iff _ |r - s| (abs_nonneg _)]
-      rcases le_total 0 (r - s) with h | h
-      · rw [abs_of_nonneg h, neg_smul]
-        exact ⟨(neg_nonpos.mpr (he.smul_nonneg_of_nonneg h)).trans
-          (he.smul_nonneg_of_nonneg h), le_rfl⟩
-      · rw [abs_of_nonpos h, neg_neg]
-        have hnn := he.smul_nonneg_of_nonneg (neg_nonneg.mpr h)
-        have hneg : (r - s) • e ≤ 0 := by
-          rw [← neg_neg ((r - s) • e), ← neg_smul]
-          exact neg_nonpos.mpr hnn
-        exact ⟨le_rfl, hneg.trans hnn⟩
     rw [hset]
     have hdiff : Continuous (fun p : E × E => p.2 - p.1) := continuous_snd.sub continuous_fst
-    exact isClosed_Iic.preimage ((((hsmul.comp hdiff.norm).sub hdiff).norm).sub hdiff.norm)
+    exact isClosed_Iic.preimage
+      ((((he.lipschitzWith_smul_self.continuous.comp hdiff.norm).sub hdiff).norm).sub hdiff.norm)
 
 theorem isClosed_nonneg : IsClosed {a : E | 0 ≤ a} := by
   have := he.orderClosedTopology
@@ -574,8 +585,12 @@ theorem posSMulMono {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [
 theorem submodule {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E] [LE E]
     {e : E} (he : IsOrderUnitNorm e) (S : Submodule ℝ E) (hmem : e ∈ S) :
     IsOrderUnitNorm (⟨e, hmem⟩ : S) where
-  norm_e := he.norm_e
-  norm_le_iff a r hr := he.norm_le_iff a.1 r hr
+  norm_e := by
+    rw [← Submodule.norm_coe]
+    exact he.norm_e
+  norm_le_iff a r hr := by
+    rw [← Submodule.norm_coe, he.norm_le_iff (a : E) r hr]
+    simp only [← Subtype.coe_le_coe, Submodule.coe_smul]
 
 /-- Product of two order-unit spaces with the coordinatewise order and maximum norm. -/
 theorem prod {E F : Type*} [Norm E] [SMul ℝ E] [LE E] [Norm F] [SMul ℝ F] [LE F]
