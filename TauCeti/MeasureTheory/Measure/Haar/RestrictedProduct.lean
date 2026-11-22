@@ -133,8 +133,8 @@ theorem isHaarMeasure_restrictedPrincipalPieceMeasure {B : ∀ i, K i} {T : Fins
     (restrictedPrincipalPieceMeasure B T μ).IsHaarMeasure := by
   have _ (i : {i // i ∉ T}) :
       IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
-    (isProbabilityMeasure_comap_subtype_iff (μ i.val)).mpr
-      ⟨(hBopen i.val i.property).measurableSet.nullMeasurableSet, hμT i.val i.property⟩
+    isProbabilityMeasure_comap_subtype (hBopen i.val i.property).measurableSet (μ i.val)
+      (hμT i.val i.property)
   have _ (i : {i // i ∉ T}) : ((μ i.val).comap (Subtype.val : B i.val → G i.val)).IsHaarMeasure :=
     IsHaarMeasure.comap (mH := inferInstance) (μ i.val) (f := SubgroupClass.subtype (B i.val))
       (hBopen i.val i.property).isOpenEmbedding_subtypeVal
@@ -221,8 +221,8 @@ private theorem comap_levelMonoidHom_eq (B : ∀ i, K i)
       (hBopen.out i.val).isOpenEmbedding_subtypeVal
   have _ (i : {i // i ∉ T}) :
       IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
-    (isProbabilityMeasure_comap_subtype_iff (μ i.val)).mpr
-      ⟨(hBopen.out i.val).measurableSet.nullMeasurableSet, hT i.val i.property⟩
+    isProbabilityMeasure_comap_subtype (hBopen.out i.val).measurableSet (μ i.val)
+      (hT i.val i.property)
   have _ (i : {i // i ∉ T}) : CompactSpace (B i.val) := by
     have _ : LocallyCompactSpace (B i.val) :=
       (hBopen.out i.val).isOpenEmbedding_subtypeVal.locallyCompactSpace
@@ -340,8 +340,8 @@ theorem exists_unique_restrictedHaar :
       (Finset.prod_subset hS₀T fun i _ hiS₀ ↦ by rw [hKref_eq i hiS₀, (hS₀ i hiS₀).2]).symm
     have _ (i : {i // i ∉ T}) :
         IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
-      (isProbabilityMeasure_comap_subtype_iff (μ i.val)).mpr
-        ⟨(hBopen.out i.val).measurableSet.nullMeasurableSet, hT_one i.val i.property⟩
+      isProbabilityMeasure_comap_subtype (hBopen.out i.val).measurableSet (μ i.val)
+        (hT_one i.val i.property)
     rw [← image_levelMonoidHom_pi_prod_univ B T hCBT,
       ← (isOpenEmbedding_levelMonoidHom B T).measurableEmbedding.comap_apply,
       comap_levelMonoidHom_eq B hBcompact μ ν hT_one
@@ -438,8 +438,8 @@ theorem restrictedHaar_box {T : Finset ι} (hT : ∀ i ∉ T, μ i (B i) = 1)
     restrictedHaar B μ hμB (box C) = ∏ i ∈ T, μ i (C i) := by
   have _ (i : {i // i ∉ T}) :
       IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
-    (isProbabilityMeasure_comap_subtype_iff (μ i.val)).mpr
-      ⟨(hBopen.out i.val).measurableSet.nullMeasurableSet, hT i.val i.property⟩
+    isProbabilityMeasure_comap_subtype (hBopen.out i.val).measurableSet (μ i.val)
+      (hT i.val i.property)
   rw [← image_levelMonoidHom_pi_prod_univ B T hCB,
     ← (isOpenEmbedding_levelMonoidHom B T).measurableEmbedding.comap_apply,
     comap_levelMonoidHom_restrictedHaar B μ hμB hT, restrictedPrincipalPieceMeasure_def,
