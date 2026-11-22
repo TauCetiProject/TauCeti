@@ -80,6 +80,7 @@ the finite-rank groups `Stₙ(R)` along the index inclusions `Fin m ↪ Fin n`.
   `Stₙ(R)` over `n : ℕ`.
 * `TauCeti.SteinbergGroup.range_toStableGL`: the image of `toStableGL R` in `GL_∞(R)` is
   `TauCeti.StableGeneralLinearGroup.elementarySubgroup R`.
+* `TauCeti.SteinbergGroup.toStableGL_map`: `toStableGL` is natural in ring homomorphisms.
 
 ## References
 
@@ -893,6 +894,21 @@ theorem toStableGL_ofFin (n : ℕ) (u : IndexedSteinbergGroup (Fin n) R) :
     simp only [MonoidHom.comp_apply, ofFin_x, toStableGL_x, IndexedSteinbergGroup.toGL_x]
     exact stableTransvection_eq_of ⟨(i.val, j.val), Fin.val_ne_of_ne hij⟩ a i.isLt j.isLt
   exact DFunLike.congr_fun hhom u
+
+/-- The canonical homomorphism `St(R) →* GL_∞(R)` is natural in ring homomorphisms. -/
+theorem toStableGL_comp_map (f : R →+* S) :
+    (toStableGL S).comp (IndexedSteinbergGroup.map f) =
+      (StableGeneralLinearGroup.map f).comp (toStableGL R) := by
+  ext i j hij a
+  simp
+
+/-- The image in `GL_∞(S)` of the Steinberg element `z` mapped along `f : R →+* S` is the image of
+`z` in `GL_∞(R)` with `f` applied to its entries. -/
+@[simp]
+theorem toStableGL_map (f : R →+* S) (z : SteinbergGroup R) :
+    toStableGL S (IndexedSteinbergGroup.map f z) =
+      StableGeneralLinearGroup.map f (toStableGL R z) :=
+  DFunLike.congr_fun (toStableGL_comp_map f) z
 
 /-- The image of `toStableGL R` in `GL_∞(R)` is the stable elementary subgroup `E_∞(R)`. -/
 theorem range_toStableGL :
