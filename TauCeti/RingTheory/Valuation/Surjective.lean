@@ -81,13 +81,16 @@ are closed under inverses, so they already form the value group. On a ring this 
 `t`-adic valuation on `k[t², t³]` has full value group in `ℤᵐ⁰` without attaining `exp (-1)`. -/
 theorem valueGroup_eq_top_iff_surjective (f : A →*₀ B) :
     f.valueGroup = ⊤ ↔ Function.Surjective f := by
-  refine ⟨fun h b ↦ ?_, valueGroup_eq_top_of_surjective f⟩
-  rcases eq_or_ne b 0 with rfl | hb
-  · exact ⟨0, map_zero f⟩
-  have hb' : Units.mk0 b hb ∈ (f.valueMonoid : Set Bˣ) := by
-    rw [valueMonoid_eq_valueGroup', h]
-    trivial
-  exact (mem_valueMonoid_iff f).mp hb'
+  classical
+  refine ⟨fun h ↦ ?_, valueGroup_eq_top_of_surjective f⟩
+  -- `f` factors as `ValueGroup₀.restrict₀ f`, which is onto, followed by
+  -- `ValueGroup₀.embedding`, which is onto once the value group is full.
+  have hs : Function.Surjective f.valueGroup.subtype := by
+    rw [← MonoidHom.range_eq_top, Subgroup.range_subtype, h]
+  have he : Function.Surjective (ValueGroup₀.embedding (f := f)) :=
+    WithZero.withZeroUnitsEquiv.surjective.comp (WithZero.map'_surjective hs)
+  convert he.comp (ValueGroup₀.restrict₀_surjective f) using 1
+  exact funext fun a ↦ (ValueGroup₀.embedding_restrict₀ a).symm
 
 /-- **Between groups with zero, a map that attains a generator of the units of its codomain is
 surjective**: the value group contains that generator, so it is full. -/
@@ -161,11 +164,11 @@ theorem eq_of_isEquiv_of_valueGroup_eq {v w : Valuation R Γ₀} [IsCyclic v.val
     have hw : IsRankOneDiscrete.generator' w = (⊤ : Subgroup w.valueGroup).genLTOne :=
       (⊤ : Subgroup w.valueGroup).genLTOne_unique (IsRankOneDiscrete.generator'_lt_one w)
         (IsRankOneDiscrete.generator'_zpowers_eq_top w)
-    have hgen : IsRankOneDiscrete.generator w = IsRankOneDiscrete.generator v :=
-      Subgroup.genLTOne_unique_of_zpowers_eq (IsRankOneDiscrete.generator_lt_one w)
-        (IsRankOneDiscrete.generator_lt_one v) <| by
-          rw [IsRankOneDiscrete.generator_zpowers_eq_valueGroup,
-            IsRankOneDiscrete.generator_zpowers_eq_valueGroup, hvw]
+    have hgen : IsRankOneDiscrete.generator w = IsRankOneDiscrete.generator v := by
+      rw [← IsRankOneDiscrete.valueGroup_genLTOne_eq_generator w,
+        ← IsRankOneDiscrete.valueGroup_genLTOne_eq_generator v]
+      congr 1
+      exact hvw.symm
     refine (MonoidHom.eq_iff_eq_on_generator (fun x ↦
       IsRankOneDiscrete.generator'_zpowers_eq_top v ▸ Subgroup.mem_top x) _ _).mpr ?_
     change ((h.orderMonoidIso (IsRankOneDiscrete.generator' v) : w.valueGroup) : Γ₀ˣ) =
