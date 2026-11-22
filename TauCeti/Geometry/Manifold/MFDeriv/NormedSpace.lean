@@ -25,6 +25,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   equation.
 * `TauCeti.mvfderiv_eq_fderiv_apply`: on normed spaces, `mvfderiv` applied to a tangent vector is
   `fderiv` applied to it.
+* `TauCeti.mvfderiv_apply_eval`: the derivative of evaluation `a ↦ a u` of continuous linear maps
+  is evaluation at `u`.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
 * `TauCeti.mvfderiv_scalar_comp`: the chain rule `d(φ ∘ g) = φ'(g x) • dg` for scalar `φ`.
@@ -47,6 +49,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   vanishes on a direction along which the map is constant.
 * `MDifferentiableAt.mvfderiv_prodMk_apply`: the derivative of a pair map into a product of normed
   spaces is the pair of the derivatives.
+* `MDifferentiableAt.mvfderiv_fst_apply` and `MDifferentiableAt.mvfderiv_snd_apply`: the derivative
+  of a component of a map into a product of normed spaces is that component of the derivative.
 * `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
   the component of its derivative, and `TauCeti.mvfderiv_apply_apply` is its evaluated form.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
@@ -57,6 +61,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   differentiability hypothesis.
 * `TauCeti.mvfderiv_smul_algebra`: the Leibniz rule for multiplication by a function with values in
   a normed algebra acting on the target.
+* `TauCeti.mvfderiv_smul_left`: for a group acting on a normed space by continuous linear maps,
+  the derivative of `k • ·` is `k • ·`.
 * `TauCeti.mvfderiv_add_const`: adding a constant does not change `mvfderiv`, without a
   differentiability hypothesis.
 * `TauCeti.mvfderiv_fun_sum`: `mvfderiv` of a finite sum of differentiable functions is the sum of
@@ -110,6 +116,16 @@ theorem mvfderiv_eq_fderiv_apply (f : F → F') (x : F) (v : TangentSpace 𝓘(�
     mvfderiv 𝓘(𝕜, F) f x v = fderiv 𝕜 f x v := by
   rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
   exact congrArg _ (NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) x v)
+
+/-- The derivative of the evaluation map `a ↦ a u` on continuous linear maps is evaluation
+at `u`. -/
+theorem mvfderiv_apply_eval (u : F) (a γ : F →L[𝕜] F') :
+    mvfderiv 𝓘(𝕜, F →L[𝕜] F') (fun b : F →L[𝕜] F' ↦ b u) a γ = γ u := by
+  refine (mvfderiv_eq_fderiv_apply _ a γ).trans ?_
+  -- The coercion of `ContinuousLinearMap.apply 𝕜 F' u` is the evaluation map `b ↦ b u` by
+  -- definition, which lets `ContinuousLinearMap.fderiv` compute its derivative.
+  rw [show (fun b : F →L[𝕜] F' ↦ b u) = ContinuousLinearMap.apply 𝕜 F' u from rfl,
+    ContinuousLinearMap.fderiv, ContinuousLinearMap.apply_apply]
 
 /-- For a normed vector-space target, evaluating `mvfderiv` agrees with evaluating
 `mfderiv` under the canonical tangent-space identification. -/
@@ -193,6 +209,22 @@ theorem _root_.MDifferentiableAt.mvfderiv_prodMk_apply {f : M → F} {g : M → 
   ext1
   · exact ((ContinuousLinearMap.fst 𝕜 F F').mvfderiv_comp_apply hd v).symm
   · exact ((ContinuousLinearMap.snd 𝕜 F F').mvfderiv_comp_apply hd v).symm
+
+/-- The derivative of the first component of a function into a product of normed spaces is the
+first component of its derivative. -/
+theorem _root_.MDifferentiableAt.mvfderiv_fst_apply {g : M → F × F'} {x : M}
+    (hg : MDifferentiableAt I 𝓘(𝕜, F × F') g x) (v : TangentSpace I x) :
+    mvfderiv I (fun z ↦ (g z).1) x v = (mvfderiv I g x v).1 :=
+  -- The first component is `fst ∘ g` by definition of the projection.
+  (ContinuousLinearMap.fst 𝕜 F F').mvfderiv_comp_apply hg v
+
+/-- The derivative of the second component of a function into a product of normed spaces is the
+second component of its derivative. -/
+theorem _root_.MDifferentiableAt.mvfderiv_snd_apply {g : M → F × F'} {x : M}
+    (hg : MDifferentiableAt I 𝓘(𝕜, F × F') g x) (v : TangentSpace I x) :
+    mvfderiv I (fun z ↦ (g z).2) x v = (mvfderiv I g x v).2 :=
+  -- The second component is `snd ∘ g` by definition of the projection.
+  (ContinuousLinearMap.snd 𝕜 F F').mvfderiv_comp_apply hg v
 
 /-- The vector-valued derivative on a product is the sum of its partial derivatives. -/
 theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_add_apply
@@ -351,6 +383,16 @@ theorem mvfderiv_smul_algebra {𝕜' : Type*} [NormedRing 𝕜'] [NormedAlgebra 
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp] at h ⊢
   rwa [Function.comp_apply, Function.comp_apply, extChartAt_to_inv] at h
+
+/-- For a group acting on a normed space by continuous linear maps, the derivative of `k • ·`, read
+in the space, is `k • ·` at every point. -/
+theorem mvfderiv_smul_left {K : Type*} [Group K] [DistribMulAction K F] [SMulCommClass K 𝕜 F]
+    [ContinuousConstSMul K F] (k : K) (p : F) (v : TangentSpace 𝓘(𝕜, F) p) :
+    mvfderiv 𝓘(𝕜, F) (fun x ↦ k • x) p v = k • NormedSpace.fromTangentSpace p v := by
+  have h : HasFDerivAt (fun x : F ↦ k • x)
+      (ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (M₁ := F) k : F →L[𝕜] F) p :=
+    (ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (M₁ := F) k).hasFDerivAt
+  simp [mvfderiv_eq_fderiv, h.fderiv]
 
 /-- Adding a constant does not change the derivative of a vector-valued function, read in the
 target space. No differentiability is needed: `g` and `g + c` are differentiable at the same
