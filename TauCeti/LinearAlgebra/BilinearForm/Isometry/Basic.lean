@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 import Mathlib.Algebra.Ring.NonZeroDivisors
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # Isometric endomorphisms of a bilinear form
@@ -66,9 +65,8 @@ theorem isIsometry_iff : IsIsometry B f ↔ ∀ x y, B (f x) (f y) = B x y := (I
 
 /-- An endomorphism is an isometry of `B` exactly when precomposing `B` with it on both sides
 returns `B`. -/
-theorem isIsometry_iff_comp : IsIsometry B f ↔ B.comp f f = B :=
-  ⟨fun h => LinearMap.BilinForm.ext fun x y => h x y, fun h x y =>
-    LinearMap.BilinForm.congr_fun h x y⟩
+theorem isIsometry_iff_comp : IsIsometry B f ↔ B.comp f f = B := by
+  simp [LinearMap.BilinForm.ext_iff, isIsometry_iff]
 
 /-- The underlying map of one of Mathlib's isometric maps `B →bᵢ B` is an isometry. -/
 theorem isIsometry_toLinearMap (φ : B →bᵢ B) : IsIsometry B φ.toLinearMap := φ.map_app
@@ -109,32 +107,25 @@ nilpotent, then `f = 1`. A nontrivial transvection such as the shear `(q, p) ↦
 therefore preserves no inner product. -/
 theorem IsIsometry.eq_one_of_isNilpotent_sub_one (hf : IsIsometry B f)
     (hB : B.toQuadraticMap.Anisotropic) (hN : IsNilpotent (f - 1)) : f = 1 := by
-  -- A vector `f u - u` fixed by `f` vanishes: `B (f u) (f w) = B u w` with `w = f u - u` forces
-  -- `B w w = 0`.
+  -- A vector `w = f u - u` fixed by `f` vanishes: `B w w = B (f u) w - B u w`, and
+  -- `B (f u) w = B (f u) (f w) = B u w`.
   have key (u : M) (hfw : f (f u - u) = f u - u) : f u - u = 0 := by
     refine hB _ ?_
     have hw := hf.apply u (f u - u)
-    rw [hfw, map_sub, map_sub] at hw
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, map_sub, map_sub, LinearMap.sub_apply,
-      LinearMap.sub_apply]
-    linear_combination hw
-  -- Hence `(f - 1) ^ (k + 2) = 0` implies `(f - 1) ^ (k + 1) = 0`: with `u = (f - 1) ^ k v`,
-  -- the vector `(f - 1) ^ (k + 1) v = f u - u` is fixed by `f`.
-  have step (k : ℕ) (hk : (f - 1) ^ (k + 2) = 0) : (f - 1) ^ (k + 1) = 0 := by
-    refine LinearMap.ext fun v ↦ ?_
-    have hw : ((f - 1) ^ (k + 1)) v = f (((f - 1) ^ k) v) - ((f - 1) ^ k) v := by
-      rw [pow_succ', mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self]
-    have hfw := LinearMap.congr_fun hk v
-    rw [pow_succ', mul_apply_eq_comp, hw, LinearMap.sub_apply, one_apply_eq_self,
-      LinearMap.zero_apply, sub_eq_zero] at hfw
-    rw [hw, key _ hfw, LinearMap.zero_apply]
-  have descend (n : ℕ) : (f - 1) ^ (n + 1) = 0 → (f - 1) ^ 1 = 0 := by
-    induction n with
-    | zero => exact id
-    | succ n ih => exact fun h ↦ ih (step n h)
+    rw [hfw] at hw
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.map_sub₂, hw, sub_self]
+  -- Hence `(f - 1) ^ (n + 1) v = 0` forces `(f - 1) v = 0`, by induction on `n`: the induction
+  -- hypothesis applied to `(f - 1) v` says that `f v - v` is fixed by `f`.
+  have descend (n : ℕ) (v : M) (hv : ((f - 1) ^ (n + 1)) v = 0) : (f - 1) v = 0 := by
+    induction n generalizing v with
+    | zero => rwa [pow_one] at hv
+    | succ n ih =>
+      have hfw := ih _ (by rwa [pow_succ, mul_apply_eq_comp] at hv)
+      simp only [LinearMap.sub_apply, one_apply_eq_self] at hfw ⊢
+      exact key v (sub_eq_zero.mp hfw)
   obtain ⟨n, hn⟩ := hN
-  have h1 := descend n (by rw [pow_succ, hn, zero_mul])
-  rwa [pow_one, sub_eq_zero] at h1
+  rw [← sub_eq_zero]
+  exact LinearMap.ext fun v ↦ descend n v (by rw [pow_succ, hn, zero_mul, LinearMap.zero_apply])
 
 end CommRing
 
@@ -245,8 +236,7 @@ theorem IsSymm.equivalent_iff_toQuadraticMap_equivalent
   have h : QuadraticMap.polar C.toQuadraticMap (f x) (f y) =
       QuadraticMap.polar B.toQuadraticMap x y := by
     simp only [QuadraticMap.polar, ← map_add, f.map_app]
-  rw [BilinMap.polar_toQuadraticMap, BilinMap.polar_toQuadraticMap, hB.eq y x, hC.eq (f y) (f x),
-    ← two_mul, ← two_mul] at h
+  simp only [BilinMap.polar_toQuadraticMap, hB.eq y x, hC.eq (f y) (f x), ← two_mul] at h
   exact h
 
 end LinearMap.BilinForm
