@@ -51,11 +51,13 @@ lacunary principle.
 For a Morse–Bott function the critical values are finite in number
 (`TauCeti.IsMorseBottFamily.finite_image_criticalPoints`), so there is a `ℤ`-indexed cut with one
 critical level in each band (`TauCeti.exists_isCriticalBandCut_of_finite_image_criticalPoints`);
-reindexed to the `ℕ`-indexed cut used here, it is a cut as above. Once the homology of each band is
-identified with the homology of the critical submanifolds of its level shifted by their indices,
-with coefficients twisted by the orientations of their negative normal bundles (Bott's attachment
-theorem with the Thom isomorphism, not formalized here), the statements here give the Morse–Bott
-inequalities.
+reindexed, it is a cut as above with each band a critical band
+(`TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`). Once the homology of
+each band is identified with the homology of the critical submanifolds of its level shifted by
+their indices, with coefficients twisted by the orientations of their negative normal bundles, the
+statements here give the Morse–Bott inequalities. The module
+`TauCeti.Geometry.Manifold.Morse.Bott.Inequalities` does this when the negative normal bundles
+have Thom classes, for instance when they are oriented.
 
 ## Main results
 
