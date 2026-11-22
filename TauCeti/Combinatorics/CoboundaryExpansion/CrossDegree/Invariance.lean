@@ -5,58 +5,58 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 public import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Basic
-public import TauCeti.Combinatorics.Hypergraph.Complex.TwoComplex.Relabel
 import Mathlib.Basic.Real.Pointwise
 import Mathlib.Order.ConditionallyCompleteLattice.Finset
 import Mathlib.Tactic.Linarith
 
 /-!
-# Attainment, coboundary vanishing, and relabelling invariance of cross-degree pair costs
+# Attainment, invariance, cross-degree cochain distance, and `h1Err`
 
-For edge labels `α : V → V → Equiv.Perm (Fin n)` and vertex gauges `β : V → Equiv.Perm (Fin m)`,
-the cross-degree pair cost sums `Equiv.Perm.distErr (α u v) (β u * (β v)⁻¹)` over oriented edges
-`(u, v)`, and the cross-degree gauge distance takes the infimum over all gauge degrees `m + 2 ≥ 2`.
-This file develops the structural properties connecting this cross-degree functional to equal-degree
-moved-point gauge costs, coboundaries, vertex orderings, and vertex relabellings:
+This file develops attainment, coboundary vanishing, and invariance for cross-degree pair costs on
+`Finset (V × V)` and introduces the Chapman–Lubotzky cross-degree cochain distance
+(`Cochain.costErr`, `Cochain.gaugeDistErr`) and Cheeger constant (`TauCeti.h1Err`):
 
 * **Equal-degree moved-norm rescaling and upper bounds**
   (`Finset.mul_sum_distErr_mul_inv_eq_sum_movedNorm`,
-  `Finset.mul_ciInf_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm`, and
-  `Finset.ciInf₂_sum_distErr_mul_inv_le_ciInf_sum_movedNorm_div`): in equal degree `n`, multiplying
-  the cross-degree pair cost (or its gauge infimum) by `n` recovers the `movedNorm (Fin n)` gauge
-  cost, so for `2 ≤ n` the cross-degree gauge infimum over `m + 2 ≥ 2` is at most `1 / n` times the
-  equal-degree `movedNorm` gauge infimum.
-* **Global gauge invariance in degree `2`** (`Finset.ciInf₂_sum_distErr_inv_mul_mul_two`): because
-  `2 ≤ m + 2` for every `m : ℕ`, transforming a degree-`2` assignment by a degree-`2` vertex gauge
+  `Finset.mul_ciInf_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm`,
+  `Finset.ciInf₂_sum_distErr_mul_inv_le_ciInf_sum_movedNorm_div`, and
+  `Cochain.gaugeDistErr_le_gaugeDist_div`): in equal degree `n`, multiplying the cross-degree cost
+  (or its gauge infimum) by `n` recovers the `movedNorm (Fin n)` gauge cost, so for `2 ≤ n` the
+  cross-degree gauge infimum over `m + 2 ≥ 2` is at most `1 / n` times the equal-degree
+  `movedNorm` gauge infimum.
+* **Global gauge invariance in degree `2`** (`Finset.ciInf₂_sum_distErr_inv_mul_mul_two` and
+  `Cochain.gaugeDistErr_smul`): transforming a degree-`2` assignment by a degree-`2` vertex gauge
   preserves the global cross-degree infimum over all `m + 2 ≥ 2`.
-* **Attainment across infinitely many gauge degrees** (`Finset.exists_eq_ciInf_sum_distErr_mul_inv`
-  and `Finset.exists_eq_ciInf₂_sum_distErr_mul_inv`): on any finite edge set `E : Finset (V × V)`
-  over an arbitrary (possibly infinite) vertex type `V`, both the fixed-degree infimum and the
-  two-parameter infimum over all degrees `m + 2 ≥ 2` are attained. Indeed, the total agreement count
-  lies in `{0, …, #E * n}` while `max n (m + 2)` grows without bound, so large gauge degrees cannot
-  improve on any configuration with at least one agreement.
+* **Attainment across infinitely many gauge degrees** (`Finset.exists_eq_ciInf_sum_distErr_mul_inv`,
+  `Finset.exists_eq_ciInf₂_sum_distErr_mul_inv`, and `Cochain.exists_costErr_eq_gaugeDistErr`): on
+  any finite edge set `E : Finset (V × V)` over an arbitrary (possibly infinite) vertex type `V`,
+  both the fixed-degree infimum and the two-parameter infimum over all degrees `m + 2 ≥ 2` are
+  attained. Indeed, the total agreement count lies in `{0, …, #E * n}` while `max n (m + 2)` grows
+  without bound, so large gauge degrees cannot improve on any configuration with at least one
+  agreement.
 * **Uniform `1 / (n + 1)` non-coboundary gap and coboundary characterization**
   (`Finset.one_div_add_one_le_sum_distErr_mul_inv_of_not_exists`,
-  `Finset.ciInf₂_sum_distErr_mul_inv_eq_zero_iff`, and
-  `Finset.ciInf₂_sum_distErr_mul_inv_pos_iff`): if `α` is not a coboundary on `E`, every gauge of
+  `Finset.ciInf₂_sum_distErr_mul_inv_eq_zero_iff`,
+  `Cochain.one_div_add_one_le_gaugeDistErr_of_not_isCoboundary`, and
+  `Cochain.gaugeDistErr_eq_zero_iff_isCoboundary`): if `α` is not a coboundary, every gauge of
   every degree `m : ℕ` incurs cost at least `1 / (n + 1)`; hence for `2 ≤ n`, the cross-degree
-  infimum vanishes if and only if `α` is an equal-degree coboundary on `E`.
-* **Orientation doubling, vertex-order independence, and relabelling invariance**
-  (`TauCeti.TwoComplex.two_mul_sum_distErr_mul_inv`,
-  `TauCeti.TwoComplex.sum_distErr_mul_inv_relabel`,
-  `TauCeti.TwoComplex.ciInf₂_sum_distErr_mul_inv_relabel`, and
-  `TauCeti.TwoComplex.ciInf₂_sum_distErr_mul_inv_congr_linearOrder`): when reversing an edge
-  inverts its permutation label, summing over `u < v` equals half the orientation-free sum over
-  both orientations of each edge, making cross-degree pair costs and their gauge infima independent
-  of the chosen linear order on `V` and invariant under arbitrary bijections `V ≃ W`.
+  infimum vanishes if and only if `α` is an equal-degree coboundary.
+* **Cochain unoriented edge sums, order independence, relabelling invariance, and `h1Err`**
+  (`Cochain.costErr_eq_sum_edges`, `Cochain.gaugeDistErr_congr_linearOrder`,
+  `Cochain.gaugeDistErr_relabel`, `Cochain.gaugeDistErr_relabelComplete`, and `TauCeti.h1Err`):
+  reversing an edge inverts its permutation label without changing `distErr`, so `Cochain.costErr`,
+  `Cochain.gaugeDistErr`, and `TauCeti.h1Err` are independent of the chosen linear order on `V` and
+  invariant under arbitrary bijections `V ≃ W`.
 
 ## References
 
 * M. Chapman and A. Lubotzky, *Stability of homomorphisms, coverings and cocycles II: examples,
-  applications and open problems*, arXiv:2311.06706v3, equations (2.8)–(2.9).
+  applications and open problems*, arXiv:2311.06706v3, Adv. Math. 463 (2025), 110117, §2.2,
+  equations (2.8)–(2.9) and the display after (2.9), pp. 6–7.
 * J. Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every k≥4*,
-  version 7, Section 2 and Proposition 10.
+  version 7, Zenodo, doi:10.5281/zenodo.23245792, Section 2 and Proposition 10.
 -/
 
 public section
@@ -68,6 +68,34 @@ namespace Finset
 open Equiv Equiv.Perm TauCeti
 
 variable {V : Type*} {n m : ℕ}
+
+/-! ### Nonnegativity and bounded-below helpers for cross-degree pair costs -/
+
+theorem sum_distErr_mul_inv_nonneg (E : Finset (V × V)) (α : V → V → Perm (Fin n))
+    (β : V → Perm (Fin m)) :
+    0 ≤ ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) :=
+  sum_nonneg fun _ _ => distErr_nonneg _ _
+
+theorem bddBelow_range_sum_distErr_mul_inv (E : Finset (V × V)) (α : V → V → Perm (Fin n))
+    (m : ℕ) :
+    BddBelow (Set.range fun β : V → Perm (Fin m) =>
+      ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) :=
+  ⟨0, Set.forall_mem_range.mpr (E.sum_distErr_mul_inv_nonneg α)⟩
+
+theorem ciInf_sum_distErr_mul_inv_nonneg (E : Finset (V × V)) (α : V → V → Perm (Fin n))
+    (m : ℕ) :
+    0 ≤ ⨅ β : V → Perm (Fin m), ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) :=
+  Real.iInf_nonneg (E.sum_distErr_mul_inv_nonneg α)
+
+theorem bddBelow_range_ciInf_sum_distErr_mul_inv (E : Finset (V × V)) (α : V → V → Perm (Fin n)) :
+    BddBelow (Set.range fun m : ℕ =>
+      ⨅ β : V → Perm (Fin (m + 2)), ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) :=
+  ⟨0, Set.forall_mem_range.mpr fun m => E.ciInf_sum_distErr_mul_inv_nonneg α (m + 2)⟩
+
+theorem ciInf₂_sum_distErr_mul_inv_nonneg (E : Finset (V × V)) (α : V → V → Perm (Fin n)) :
+    0 ≤ ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
+      ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) :=
+  Real.iInf_nonneg fun m => E.ciInf_sum_distErr_mul_inv_nonneg α (m + 2)
 
 /-! ### Equal-degree moved-norm normalization and upper bounds -/
 
@@ -115,12 +143,7 @@ theorem ciInf₂_sum_distErr_mul_inv_le_ciInf_of_le (E : Finset (V × V))
         ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) ≤
       ⨅ β : V → Perm (Fin n), ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
   rcases Nat.exists_eq_add_of_le' hn with ⟨k, rfl⟩
-  have hbdd : BddBelow (Set.range fun m : ℕ =>
-      ⨅ β : V → Perm (Fin (m + 2)), ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) := by
-    refine ⟨0, ?_⟩
-    rintro _ ⟨m, rfl⟩
-    exact le_ciInf fun _ => sum_nonneg fun _ _ => distErr_nonneg _ _
-  exact ciInf_le hbdd k
+  exact ciInf_le (E.bddBelow_range_ciInf_sum_distErr_mul_inv α) k
 
 /-- When `2 ≤ n`, the global cross-degree gauge-cost infimum over `m + 2 ≥ 2` is at most `1 / n`
 times the equal-degree `movedNorm (Fin n)` gauge-cost infimum. -/
@@ -226,8 +249,6 @@ theorem exists_eq_ciInf₂_sum_distErr_mul_inv (E : Finset (V × V)) (α : V →
   obtain ⟨M, hM⟩ := exists_cutoff_sum_distErr_mul_inv E α
   let g (m : ℕ) : ℝ :=
     ⨅ β : V → Perm (Fin (m + 2)), ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)
-  have hg_nonneg (m : ℕ) : 0 ≤ g m :=
-    le_ciInf fun _ => sum_nonneg fun _ _ => distErr_nonneg _ _
   have hS_ne : ((Iic M).image g).Nonempty := ⟨g 0, mem_image_of_mem g (mem_Iic.mpr (Nat.zero_le M))⟩
   obtain ⟨m₀, -, hm₀_eq⟩ := mem_image.mp (min'_mem ((Iic M).image g) hS_ne)
   obtain ⟨β₀, hβ₀⟩ := E.exists_eq_ciInf_sum_distErr_mul_inv α (m₀ + 2)
@@ -235,12 +256,9 @@ theorem exists_eq_ciInf₂_sum_distErr_mul_inv (E : Finset (V × V)) (α : V →
   · refine le_ciInf fun m => le_ciInf fun β => ?_
     obtain ⟨m₁, β₁, hm₁M, hle⟩ := hM m β
     have hmin : g m₀ ≤ g m₁ := hm₀_eq ▸ min'_le _ _ (mem_image_of_mem g (mem_Iic.mpr hm₁M))
-    have hbdd₁ : BddBelow (Set.range fun β' : V → Perm (Fin (m₁ + 2)) =>
-        ∑ e ∈ E, distErr (α e.1 e.2) (β' e.1 * (β' e.2)⁻¹)) :=
-      ⟨0, by rintro _ ⟨_, rfl⟩; exact sum_nonneg fun _ _ => distErr_nonneg _ _⟩
-    exact (hβ₀.trans_le (hmin.trans (ciInf_le hbdd₁ β₁))).trans hle
-  · have hbdd : BddBelow (Set.range g) := ⟨0, by rintro _ ⟨m, rfl⟩; exact hg_nonneg m⟩
-    exact (ciInf_le hbdd m₀).trans_eq hβ₀.symm
+    exact (hβ₀.trans_le (hmin.trans
+      (ciInf_le (E.bddBelow_range_sum_distErr_mul_inv α (m₁ + 2)) β₁))).trans hle
+  · exact (ciInf_le (E.bddBelow_range_ciInf_sum_distErr_mul_inv α) m₀).trans_eq hβ₀.symm
 
 /-- If `α : V → V → Perm (Fin n)` is not an equal-degree coboundary on `E`, then every vertex gauge
 `β : V → Perm (Fin m)` of every degree `m : ℕ` has cross-degree pair cost at least `1 / (n + 1)`. -/
@@ -303,9 +321,6 @@ theorem ciInf₂_sum_distErr_mul_inv_eq_zero_iff (E : Finset (V × V))
     (⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
         ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) = 0 ↔
       ∃ β : V → Perm (Fin n), ∀ e ∈ E, α e.1 e.2 = β e.1 * (β e.2)⁻¹ := by
-  have hnn : 0 ≤ ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
-      ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) :=
-    le_ciInf fun _ => le_ciInf fun _ => sum_nonneg fun _ _ => distErr_nonneg _ _
   constructor
   · intro h0
     by_contra hncob
@@ -315,12 +330,11 @@ theorem ciInf₂_sum_distErr_mul_inv_eq_zero_iff (E : Finset (V × V))
   · rintro ⟨β, hβ⟩
     have : NeZero n := ⟨by omega⟩
     have hle := E.ciInf₂_sum_distErr_mul_inv_le_ciInf_of_le α hn
-    have hbdd : BddBelow (Set.range fun β' : V → Perm (Fin n) =>
-        ∑ e ∈ E, distErr (α e.1 e.2) (β' e.1 * (β' e.2)⁻¹)) :=
-      ⟨0, by rintro _ ⟨_, rfl⟩; exact sum_nonneg fun _ _ => distErr_nonneg _ _⟩
     have hβ0 : (∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) = 0 :=
       sum_eq_zero fun e he => by rw [hβ e he, distErr_self]
-    exact le_antisymm (hle.trans ((ciInf_le hbdd β).trans_eq hβ0)) hnn
+    exact le_antisymm
+      (hle.trans ((ciInf_le (E.bddBelow_range_sum_distErr_mul_inv α n) β).trans_eq hβ0))
+      (E.ciInf₂_sum_distErr_mul_inv_nonneg α)
 
 /-- For `2 ≤ n`, the cross-degree gauge-cost infimum over all gauge degrees `m + 2 ≥ 2` is strictly
 positive if and only if `α` is not an equal-degree coboundary on `E`. -/
@@ -329,123 +343,530 @@ theorem ciInf₂_sum_distErr_mul_inv_pos_iff (E : Finset (V × V))
     0 < (⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
         ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) ↔
       ¬ ∃ β : V → Perm (Fin n), ∀ e ∈ E, α e.1 e.2 = β e.1 * (β e.2)⁻¹ := by
-  have hnn : 0 ≤ ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
-      ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) :=
-    le_ciInf fun _ => le_ciInf fun _ => sum_nonneg fun _ _ => distErr_nonneg _ _
-  rw [lt_iff_le_and_ne, and_iff_right hnn, ne_comm]
+  rw [lt_iff_le_and_ne, and_iff_right (E.ciInf₂_sum_distErr_mul_inv_nonneg α), ne_comm]
   exact not_iff_not.mpr (E.ciInf₂_sum_distErr_mul_inv_eq_zero_iff α hn)
 
 end Finset
 
-/-! ### Orientation doubling, vertex-order independence, and relabelling on two-complexes -/
+/-! ### Cross-degree cochain distance `costErr`, `gaugeDistErr`, and `h1Err` -/
 
-namespace TauCeti.TwoComplex
+namespace TauCeti
 
-open Equiv Equiv.Perm
+open Equiv Equiv.Perm TwoComplex
+
+namespace Cochain
+
+section CrossDegree
 
 variable {V W : Type*} {n m : ℕ}
 
-/-- When reversing an edge of `X` inverts `α`, twice the cross-degree pair cost summed over
-increasing edges `p.1 < p.2` equals the orientation-free sum over all ordered pairs of endpoints of
-edges of `X`. -/
-theorem two_mul_sum_distErr_mul_inv [Fintype V] [LinearOrder V] (X : TwoComplex V)
-    (α : V → V → Perm (Fin n)) (hα : ∀ u v, X.Adj u v → α v u = (α u v)⁻¹)
-    (β : V → Perm (Fin m)) :
-    2 * (∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
-        distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)) =
-      ∑ p : V × V with ({p.1, p.2} : Finset V) ∈ X.edges,
+/-- The cross-degree cost of a gauge `β` of degree `m` against a cochain `α` of degree `n`: the
+distance with errors from `α u v` to `β u * (β v)⁻¹`, summed over edges `u < v`. -/
+noncomputable def costErr [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin m)) : ℝ :=
+  ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges),
+    distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)
+
+theorem costErr_def [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin m)) :
+    α.costErr β =
+      ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges),
+        distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹) := (rfl)
+
+/-- On the complete complex, `costErr` sums `distErr (α u v) (β u * (β v)⁻¹)` over all strictly
+increasing vertex pairs `u < v`. -/
+theorem costErr_complete [Fintype V] [LinearOrder V]
+    (α : Cochain (complete V) (Perm (Fin n))) (β : V → Perm (Fin m)) :
+    α.costErr β =
+      ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2),
         distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹) := by
-  simpa only [nsmul_eq_mul, Nat.cast_ofNat] using
-    X.two_nsmul_sum_filter_lt_edges (fun u v => distErr (α u v) (β u * (β v)⁻¹)) fun u v huv => by
-      rw [hα u v huv, distErr_inv_mul_inv]
+  rw [costErr_def]
+  refine sum_congr ?_ fun _ _ => rfl
+  ext p
+  simp only [mem_filter, mem_univ, true_and, mem_edges_complete, card_pair_eq_two_iff,
+    and_iff_left_iff_imp]
+  exact LT.lt.ne
 
-/-- Relabelling `X : TwoComplex V` along an arbitrary bijection `e : V ≃ W` (not required to
-preserve the vertex linear order) preserves the cross-degree pair cost of skew-symmetric edge
-labels. -/
-theorem sum_distErr_mul_inv_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
-    (X : TwoComplex V) (e : V ≃ W) (α : W → W → Perm (Fin n))
-    (hα : ∀ u v, (X.relabel e).Adj u v → α v u = (α u v)⁻¹)
-    (β : W → Perm (Fin m)) :
-    (∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
-        distErr (α (e p.1) (e p.2)) (β (e p.1) * (β (e p.2))⁻¹)) =
-      ∑ q : W × W with q.1 < q.2 ∧ ({q.1, q.2} : Finset W) ∈ (X.relabel e).edges,
-        distErr (α q.1 q.2) (β q.1 * (β q.2)⁻¹) :=
-  X.sum_filter_lt_edges_relabel e (fun u v => distErr (α u v) (β u * (β v)⁻¹)) fun u v huv => by
-    rw [hα u v huv, distErr_inv_mul_inv]
+theorem costErr_nonneg [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin m)) :
+    0 ≤ α.costErr β :=
+  sum_nonneg fun _ _ => distErr_nonneg _ _
 
-/-- Relabelling `X : TwoComplex V` along an arbitrary bijection `e : V ≃ W` preserves the degree-`m`
-cross-degree gauge-cost infimum of skew-symmetric edge labels. -/
-theorem ciInf_sum_distErr_mul_inv_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
-    (X : TwoComplex V) (e : V ≃ W) (α : W → W → Perm (Fin n))
-    (hα : ∀ u v, (X.relabel e).Adj u v → α v u = (α u v)⁻¹) (m : ℕ) :
-    (⨅ β : V → Perm (Fin m),
-        ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
-          distErr (α (e p.1) (e p.2)) (β p.1 * (β p.2)⁻¹)) =
-      ⨅ β : W → Perm (Fin m),
-        ∑ q : W × W with q.1 < q.2 ∧ ({q.1, q.2} : Finset W) ∈ (X.relabel e).edges,
-          distErr (α q.1 q.2) (β q.1 * (β q.2)⁻¹) :=
-  ((Equiv.arrowCongr e (.refl (Perm (Fin m)))).symm.iInf_congr fun β => by
-    simpa using X.sum_distErr_mul_inv_relabel e α hα β).symm
+theorem bddBelow_range_costErr [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (m : ℕ) :
+    BddBelow (Set.range (α.costErr (m := m))) :=
+  ⟨0, Set.forall_mem_range.mpr (α.costErr_nonneg)⟩
 
-/-- Relabelling `X : TwoComplex V` along an arbitrary bijection `e : V ≃ W` preserves the global
-cross-degree gauge-cost infimum of skew-symmetric edge labels over all degrees `m + 2 ≥ 2`. -/
-theorem ciInf₂_sum_distErr_mul_inv_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
-    (X : TwoComplex V) (e : V ≃ W) (α : W → W → Perm (Fin n))
-    (hα : ∀ u v, (X.relabel e).Adj u v → α v u = (α u v)⁻¹) :
-    (⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
-        ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
-          distErr (α (e p.1) (e p.2)) (β p.1 * (β p.2)⁻¹)) =
-      ⨅ (m : ℕ) (β : W → Perm (Fin (m + 2))),
-        ∑ q : W × W with q.1 < q.2 ∧ ({q.1, q.2} : Finset W) ∈ (X.relabel e).edges,
-          distErr (α q.1 q.2) (β q.1 * (β q.2)⁻¹) :=
-  iInf_congr fun m => X.ciInf_sum_distErr_mul_inv_relabel e α hα (m + 2)
+theorem ciInf_costErr_nonneg [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (m : ℕ) :
+    0 ≤ ⨅ β : V → Perm (Fin m), α.costErr β :=
+  Real.iInf_nonneg α.costErr_nonneg
 
-/-- The cross-degree pair cost on `X : TwoComplex V` is independent of the chosen linear order on
-`V` whenever reversing an edge of `X` inverts `α`. -/
-theorem sum_distErr_mul_inv_congr_linearOrder [Fintype V] (X : TwoComplex V)
-    (l₁ l₂ : LinearOrder V) (α : V → V → Perm (Fin n))
-    (hα : ∀ u v, X.Adj u v → α v u = (α u v)⁻¹)
+theorem bddBelow_range_ciInf_costErr [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) :
+    BddBelow (Set.range fun m : ℕ => ⨅ β : V → Perm (Fin (m + 2)), α.costErr β) :=
+  ⟨0, Set.forall_mem_range.mpr fun m => α.ciInf_costErr_nonneg (m + 2)⟩
+
+@[simp] theorem costErr_one_one [Fintype V] [LinearOrder V] [NeZero n] {X : TwoComplex V} :
+    (1 : Cochain X (Perm (Fin n))).costErr (1 : V → Perm (Fin n)) = 0 := by
+  simp [costErr_def]
+
+/-- In equal degree `n`, multiplying `costErr` by `n` recovers `cost` with respect to
+`Equiv.Perm.movedNorm (Fin n)`, for every `n : ℕ`. -/
+theorem mul_costErr_eq_cost [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin n)) :
+    (n : ℝ) * α.costErr β = α.cost (movedNorm (Fin n)) β := by
+  rw [costErr_def, cost_def, mul_sum]
+  refine sum_congr rfl fun p _ => ?_
+  rw [mul_distErr_mul_inv_eq_movedNorm, movedNorm_apply]
+
+/-- In equal nonzero degree `n`, `costErr` equals `cost` with respect to `movedNorm (Fin n)`
+divided by `n`. -/
+theorem costErr_eq_cost_div [Fintype V] [LinearOrder V] [NeZero n] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin n)) :
+    α.costErr β = α.cost (movedNorm (Fin n)) β / n := by
+  have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
+  rw [eq_div_iff hn, mul_comm, α.mul_costErr_eq_cost β]
+
+/-- In equal degree `n`, multiplying the `costErr` gauge infimum by `n` recovers
+`gaugeDist (movedNorm (Fin n))`. -/
+theorem mul_ciInf_costErr_eq_gaugeDist [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) :
+    (n : ℝ) * (⨅ β : V → Perm (Fin n), α.costErr β) = α.gaugeDist (movedNorm (Fin n)) := by
+  rw [Real.mul_iInf_of_nonneg (Nat.cast_nonneg n), gaugeDist_def]
+  exact iInf_congr (α.mul_costErr_eq_cost)
+
+/-- In equal nonzero degree `n`, the `costErr` gauge infimum equals `gaugeDist (movedNorm (Fin n))`
+divided by `n`. -/
+theorem ciInf_costErr_eq_gaugeDist_div [Fintype V] [LinearOrder V] [NeZero n] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) :
+    (⨅ β : V → Perm (Fin n), α.costErr β) = α.gaugeDist (movedNorm (Fin n)) / n := by
+  have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
+  rw [eq_div_iff hn, mul_comm, α.mul_ciInf_costErr_eq_gaugeDist]
+
+/-- Reversing a vertex pair inverts both `α u v` and the gauge quotient `β u * (β v)⁻¹`, leaving
+the edge term `distErr` unchanged. -/
+theorem distErr_apply_mul_inv_swap {X : TwoComplex V} (α : Cochain X (Perm (Fin n)))
+    (β : V → Perm (Fin m)) (u v : V) :
+    distErr (α v u) (β v * (β u)⁻¹) = distErr (α u v) (β u * (β v)⁻¹) := by
+  rw [α.apply_swap u v, distErr_inv_mul_inv]
+
+/-- The cross-degree gauge cost contribution of an unoriented edge `e`, or `0` if `e ∉ X.edges`. -/
+noncomputable def edgeCostErr {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin m)) (e : Finset V) : ℝ := by
+  classical
+  exact if he : e ∈ X.edges then
+    distErr
+      (α (X.exists_vertices_of_mem_edges he).choose
+        (X.exists_vertices_of_mem_edges he).choose_spec.choose)
+      (β (X.exists_vertices_of_mem_edges he).choose *
+        (β (X.exists_vertices_of_mem_edges he).choose_spec.choose)⁻¹)
+  else 0
+
+/-- Evaluating `edgeCostErr` on any edge `e ∈ X.edges` via its two distinct endpoints. -/
+theorem edgeCostErr_of_mem_edges {X : TwoComplex V} (α : Cochain X (Perm (Fin n)))
+    (β : V → Perm (Fin m)) {e : Finset V} (he : e ∈ X.edges) {u v : V} (huv : u ≠ v)
+    (hu : u ∈ e) (hv : v ∈ e) :
+    α.edgeCostErr β e = distErr (α u v) (β u * (β v)⁻¹) := by
+  classical
+  simp only [edgeCostErr, he, ↓reduceDIte]
+  obtain ⟨hu'v', hu', hv'⟩ := (X.exists_vertices_of_mem_edges he).choose_spec.choose_spec
+  have he₁ :
+      ({(X.exists_vertices_of_mem_edges he).choose,
+        (X.exists_vertices_of_mem_edges he).choose_spec.choose} : Finset V) = e :=
+    eq_of_subset_of_card_le (insert_subset_iff.mpr ⟨hu', singleton_subset_iff.mpr hv'⟩)
+      (by rw [X.edge_card e he, card_pair hu'v'])
+  have he₂ : ({u, v} : Finset V) = e :=
+    eq_of_subset_of_card_le (by simp [insert_subset_iff, hu, hv])
+      (by rw [X.edge_card e he, card_pair huv])
+  have hpair := he₁.trans he₂.symm
+  rw [← coe_inj, coe_pair, coe_pair, Set.pair_eq_pair_iff] at hpair
+  rcases hpair with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+  · rw [h₂, h₁]
+  · rw [h₂, h₁]; exact α.distErr_apply_mul_inv_swap β u v
+
+/-- Evaluating `edgeCostErr` directly on a pair `{u, v} ∈ X.edges`. -/
+@[simp, grind =] theorem edgeCostErr_pair [DecidableEq V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin m)) {u v : V}
+    (he : ({u, v} : Finset V) ∈ X.edges) :
+    α.edgeCostErr β {u, v} = distErr (α u v) (β u * (β v)⁻¹) :=
+  α.edgeCostErr_of_mem_edges β he ((X.adj_iff_pair_mem_edges u v).mpr he).ne (by simp) (by simp)
+
+@[simp] theorem edgeCostErr_of_notMem_edges {X : TwoComplex V} (α : Cochain X (Perm (Fin n)))
+    (β : V → Perm (Fin m)) {e : Finset V} (he : e ∉ X.edges) : α.edgeCostErr β e = 0 := by
+  classical simp [edgeCostErr, he]
+
+theorem edgeCostErr_nonneg {X : TwoComplex V} (α : Cochain X (Perm (Fin n)))
+    (β : V → Perm (Fin m)) (e : Finset V) : 0 ≤ α.edgeCostErr β e := by
+  classical
+  by_cases he : e ∈ X.edges <;> simp [edgeCostErr, he, distErr_nonneg]
+
+/-- `costErr` equals the sum of `edgeCostErr` over the unoriented edges `X.edges`. -/
+theorem costErr_eq_sum_edges [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin m)) :
+    α.costErr β = ∑ e ∈ X.edges, α.edgeCostErr β e := by
+  rw [costErr_def]
+  refine sum_bij (fun p _ => ({p.1, p.2} : Finset V)) (fun p hp => (mem_filter.mp hp).2.2) ?_ ?_
+    (fun p hp => (α.edgeCostErr_pair β (mem_filter.mp hp).2.2).symm)
+  · rintro ⟨u₁, v₁⟩ hp₁ ⟨u₂, v₂⟩ hp₂ hpair
+    have hlt₁ : u₁ < v₁ := (mem_filter.mp hp₁).2.1
+    have hlt₂ : u₂ < v₂ := (mem_filter.mp hp₂).2.1
+    rw [← coe_inj, coe_pair, coe_pair, Set.pair_eq_pair_iff] at hpair
+    rcases hpair with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · rfl
+    · exact (lt_asymm hlt₁ hlt₂).elim
+  · intro e he
+    obtain ⟨u, v, hlt, hset⟩ := X.exists_increasing_of_mem_edges he
+    exact ⟨(u, v), mem_filter.mpr ⟨mem_univ _, hlt, hset ▸ he⟩, hset⟩
+
+/-- `costErr` does not depend on the `LinearOrder` chosen on `V`. -/
+theorem costErr_congr_linearOrder [Fintype V] (l₁ l₂ : LinearOrder V) {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin m)) :
+    @costErr V n m _ l₁ X α β = @costErr V n m _ l₂ X α β :=
+  (@costErr_eq_sum_edges V n m _ l₁ X α β).trans (@costErr_eq_sum_edges V n m _ l₂ X α β).symm
+
+@[simp] theorem edgeCostErr_relabel {X : TwoComplex V} (α : Cochain X (Perm (Fin n)))
+    (γ : W → Perm (Fin m)) (e : V ≃ W) (s : Finset W) :
+    (α.relabel e).edgeCostErr γ s = α.edgeCostErr (γ ∘ e) (s.map e.symm.toEmbedding) := by
+  by_cases hs : s ∈ (X.relabel e).edges
+  · obtain ⟨u, v, huv, hu, hv⟩ := (X.relabel e).exists_vertices_of_mem_edges hs
+    rw [(α.relabel e).edgeCostErr_of_mem_edges γ hs huv hu hv,
+      α.edgeCostErr_of_mem_edges (γ ∘ e) ((X.mem_edges_relabel e s).mp hs)
+        (e.symm.injective.ne huv) (mem_map_of_mem _ hu) (mem_map_of_mem _ hv)]
+    simp
+  · rw [edgeCostErr_of_notMem_edges _ _ hs,
+      edgeCostErr_of_notMem_edges _ _ (mt (X.mem_edges_relabel e s).mpr hs)]
+
+@[simp 1100] theorem edgeCostErr_relabel_map {X : TwoComplex V} (α : Cochain X (Perm (Fin n)))
+    (γ : W → Perm (Fin m)) (e : V ≃ W) (s : Finset V) :
+    (α.relabel e).edgeCostErr γ (s.map e.toEmbedding) = α.edgeCostErr (γ ∘ e) s := by
+  rw [α.edgeCostErr_relabel γ e]
+  congr 1; ext; simp
+
+/-- Relabelling a cochain along `e : V ≃ W` pulls the gauge back along `e` in `costErr`. -/
+@[simp] theorem costErr_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+    {X : TwoComplex V} (α : Cochain X (Perm (Fin n))) (γ : W → Perm (Fin m)) (e : V ≃ W) :
+    (α.relabel e).costErr γ = α.costErr (γ ∘ e) := by
+  rw [costErr_eq_sum_edges, costErr_eq_sum_edges, X.sum_edges_relabel e]
+  exact sum_congr rfl fun s _ => α.edgeCostErr_relabel_map γ e s
+
+private theorem congr_complex {γ : Sort*}
+    (F : ∀ X : TwoComplex W, Cochain X (Perm (Fin n)) → γ)
+    {X₁ X₂ : TwoComplex W} (hX : X₁ = X₂)
+    {α₁ : Cochain X₁ (Perm (Fin n))} {α₂ : Cochain X₂ (Perm (Fin n))}
+    (hα : ∀ u v, α₁ u v = α₂ u v) : F X₁ α₁ = F X₂ α₂ := by
+  subst hX; congr 1; exact Cochain.ext fun u v _ => hα u v
+
+/-- Relabelling a cochain on `complete V` along `e : V ≃ W` pulls the gauge back along `e` in
+`costErr`. -/
+@[simp] theorem costErr_relabelComplete [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+    (α : Cochain (complete V) (Perm (Fin n))) (γ : W → Perm (Fin m)) (e : V ≃ W) :
+    (α.relabelComplete e).costErr γ = α.costErr (γ ∘ e) :=
+  (congr_complex (fun _ δ => δ.costErr γ) (relabel_complete e).symm
+    fun _ _ => by simp).trans (α.costErr_relabel γ e)
+
+/-- Relabelling a cochain along `e : V ≃ W` preserves the degree-`m` `costErr` infimum. -/
+theorem ciInf_costErr_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+    {X : TwoComplex V} (α : Cochain X (Perm (Fin n))) (e : V ≃ W) (m : ℕ) :
+    (⨅ γ : W → Perm (Fin m), (α.relabel e).costErr γ) =
+      ⨅ β : V → Perm (Fin m), α.costErr β :=
+  (Equiv.arrowCongr e.symm (Equiv.refl (Perm (Fin m)))).iInf_congr fun γ =>
+    (α.costErr_relabel γ e).symm
+
+/-- Relabelling a cochain on `complete V` along `e : V ≃ W` preserves the degree-`m` `costErr`
+infimum. -/
+theorem ciInf_costErr_relabelComplete [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+    (α : Cochain (complete V) (Perm (Fin n))) (e : V ≃ W) (m : ℕ) :
+    (⨅ γ : W → Perm (Fin m), (α.relabelComplete e).costErr γ) =
+      ⨅ β : V → Perm (Fin m), α.costErr β :=
+  (Equiv.arrowCongr e.symm (Equiv.refl (Perm (Fin m)))).iInf_congr fun γ =>
+    (α.costErr_relabelComplete γ e).symm
+
+/-- The cross-degree gauge distance of `α`: the infimum of `costErr` over all gauges of all
+degrees `m + 2 ≥ 2`. -/
+noncomputable def gaugeDistErr [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) : ℝ :=
+  ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))), α.costErr β
+
+theorem gaugeDistErr_def [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) :
+    α.gaugeDistErr = ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))), α.costErr β := (rfl)
+
+theorem gaugeDistErr_nonneg [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) : 0 ≤ α.gaugeDistErr :=
+  Real.iInf_nonneg fun m => α.ciInf_costErr_nonneg (m + 2)
+
+theorem gaugeDistErr_le_costErr [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) {m : ℕ} (β : V → Perm (Fin (m + 2))) :
+    α.gaugeDistErr ≤ α.costErr β :=
+  (ciInf_le α.bddBelow_range_ciInf_costErr m).trans
+    (ciInf_le (α.bddBelow_range_costErr (m + 2)) β)
+
+theorem gaugeDistErr_le_costErr_of_le [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (hm : 2 ≤ m) (β : V → Perm (Fin m)) :
+    α.gaugeDistErr ≤ α.costErr β := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hm
+  exact α.gaugeDistErr_le_costErr β
+
+theorem gaugeDistErr_le_ciInf_costErr [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (hm : 2 ≤ m) :
+    α.gaugeDistErr ≤ ⨅ β : V → Perm (Fin m), α.costErr β := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hm
+  exact ciInf_le α.bddBelow_range_ciInf_costErr k
+
+/-- When `2 ≤ n`, the cross-degree gauge distance is at most `1 / n` times the equal-degree
+`movedNorm (Fin n)` gauge distance. -/
+theorem gaugeDistErr_le_gaugeDist_div [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) (hn : 2 ≤ n) :
+    α.gaugeDistErr ≤ α.gaugeDist (movedNorm (Fin n)) / n := by
+  have : NeZero n := ⟨by omega⟩
+  exact (α.gaugeDistErr_le_ciInf_costErr hn).trans_eq α.ciInf_costErr_eq_gaugeDist_div
+
+theorem le_gaugeDistErr_iff [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) {c : ℝ} :
+    c ≤ α.gaugeDistErr ↔ ∀ (m : ℕ) (β : V → Perm (Fin (m + 2))), c ≤ α.costErr β := by
+  rw [gaugeDistErr_def]
+  exact ⟨fun h m β => h.trans (α.gaugeDistErr_le_costErr β),
+    fun h => le_ciInf fun m => le_ciInf fun β => h m β⟩
+
+theorem gaugeDistErr_lt_iff [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) {c : ℝ} :
+    α.gaugeDistErr < c ↔ ∃ (m : ℕ) (β : V → Perm (Fin (m + 2))), α.costErr β < c := by
+  rw [← not_le, le_gaugeDistErr_iff]
+  push Not
+  exact Iff.rfl
+
+/-- When `n ≤ m`, the degree-`m` `costErr` infimum is invariant under the equal-degree gauge
+action on `α`. -/
+theorem ciInf_costErr_smul_of_le [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (γ : V → Perm (Fin n)) (α : Cochain X (Perm (Fin n))) (hnm : n ≤ m) :
+    (⨅ β : V → Perm (Fin m), (γ • α).costErr β) = ⨅ β : V → Perm (Fin m), α.costErr β := by
+  set E : Finset (V × V) :=
+    univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges)
+  have hL (β : V → Perm (Fin m)) :
+      (γ • α).costErr β =
+        ∑ p ∈ E, distErr ((γ p.1)⁻¹ * α p.1 p.2 * γ p.2) (β p.1 * (β p.2)⁻¹) := by
+    rw [costErr_def]
+    refine sum_congr rfl fun p hp => ?_
+    rw [smul_apply_of_adj γ α ((X.adj_iff_pair_mem_edges p.1 p.2).mpr (mem_filter.mp hp).2.2)]
+  simp_rw [hL, costErr_def]
+  exact E.ciInf_sum_distErr_inv_mul_mul_of_le α γ hnm
+
+/-- Transforming a degree-`2` cochain by a degree-`2` gauge preserves `gaugeDistErr`. -/
+@[simp] theorem gaugeDistErr_smul [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (γ : V → Perm (Fin 2)) (α : Cochain X (Perm (Fin 2))) :
+    (γ • α).gaugeDistErr = α.gaugeDistErr := by
+  simp_rw [gaugeDistErr_def]
+  exact iInf_congr fun m => ciInf_costErr_smul_of_le γ α (Nat.le_add_left 2 m)
+
+/-- `gaugeDistErr` does not depend on the `LinearOrder` chosen on `V`. -/
+theorem gaugeDistErr_congr_linearOrder [Fintype V] (l₁ l₂ : LinearOrder V) {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) :
+    @gaugeDistErr V n _ l₁ X α = @gaugeDistErr V n _ l₂ X α := by
+  rw [@gaugeDistErr_def V n _ l₁ X α, @gaugeDistErr_def V n _ l₂ X α]
+  exact iInf_congr fun m => iInf_congr fun β => costErr_congr_linearOrder l₁ l₂ α β
+
+/-- Relabelling a cochain along `e : V ≃ W` preserves `gaugeDistErr`. -/
+@[simp] theorem gaugeDistErr_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+    {X : TwoComplex V} (α : Cochain X (Perm (Fin n))) (e : V ≃ W) :
+    (α.relabel e).gaugeDistErr = α.gaugeDistErr := by
+  simp_rw [gaugeDistErr_def]
+  exact iInf_congr fun m => α.ciInf_costErr_relabel e (m + 2)
+
+/-- Relabelling a cochain on `complete V` along `e : V ≃ W` preserves `gaugeDistErr`. -/
+@[simp] theorem gaugeDistErr_relabelComplete [Fintype V] [LinearOrder V]
+    [Fintype W] [LinearOrder W] (α : Cochain (complete V) (Perm (Fin n))) (e : V ≃ W) :
+    (α.relabelComplete e).gaugeDistErr = α.gaugeDistErr :=
+  (congr_complex (fun _ γ => γ.gaugeDistErr) (relabel_complete e).symm
+    fun _ _ => by simp).trans (α.gaugeDistErr_relabel e)
+
+/-- The cross-degree gauge distance `gaugeDistErr` is always attained by some gauge of some degree
+`m + 2 ≥ 2`. -/
+theorem exists_costErr_eq_gaugeDistErr [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (α : Cochain X (Perm (Fin n))) :
+    ∃ (m : ℕ) (β : V → Perm (Fin (m + 2))), α.costErr β = α.gaugeDistErr :=
+  (univ.filter (fun p : V × V =>
+    p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges)).exists_eq_ciInf₂_sum_distErr_mul_inv α
+
+private theorem not_exists_eq_mul_inv_of_not_isCoboundary [Fintype V] [LinearOrder V]
+    {X : TwoComplex V} {α : Cochain X (Perm (Fin n))} (hncob : ¬ α.IsCoboundary) :
+    ¬ ∃ γ : V → Perm (Fin n),
+      ∀ e ∈ univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges),
+        α e.1 e.2 = γ e.1 * (γ e.2)⁻¹ := by
+  rintro ⟨γ, hγ⟩
+  apply hncob
+  rw [isCoboundary_def]
+  refine ⟨γ, fun u v huv => ?_⟩
+  rcases lt_trichotomy u v with hlt | rfl | hgt
+  · exact hγ (u, v) (mem_filter.mpr ⟨mem_univ _, hlt, (X.adj_iff_pair_mem_edges u v).mp huv⟩)
+  · exact (huv.ne rfl).elim
+  · have hvu := hγ (v, u)
+      (mem_filter.mpr ⟨mem_univ _, hgt, (X.adj_iff_pair_mem_edges v u).mp huv.symm⟩)
+    rw [α.apply_swap v u, hvu, mul_inv_rev, inv_inv]
+
+/-- Every non-coboundary cochain of degree `n` incurs `costErr` at least `1 / (n + 1)` against any
+gauge of any degree `m`. -/
+theorem one_div_add_one_le_costErr_of_not_isCoboundary [Fintype V] [LinearOrder V]
+    {X : TwoComplex V} {α : Cochain X (Perm (Fin n))} (hncob : ¬ α.IsCoboundary)
     (β : V → Perm (Fin m)) :
-    (letI := l₁
-      ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
-        distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)) =
-    (letI := l₂
-      ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
-        distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)) :=
-  X.sum_filter_lt_edges_congr_linearOrder l₁ l₂
-    (fun u v => distErr (α u v) (β u * (β v)⁻¹)) fun u v huv => by
-      rw [hα u v huv, distErr_inv_mul_inv]
+    1 / ((n : ℝ) + 1) ≤ α.costErr β := by
+  have hnot := not_exists_eq_mul_inv_of_not_isCoboundary hncob
+  exact Finset.one_div_add_one_le_sum_distErr_mul_inv_of_not_exists _ α β hnot
 
-/-- The degree-`m` cross-degree gauge-cost infimum on `X : TwoComplex V` is independent of the
-chosen linear order on `V` whenever reversing an edge of `X` inverts `α`. -/
-theorem ciInf_sum_distErr_mul_inv_congr_linearOrder [Fintype V] (X : TwoComplex V)
-    (l₁ l₂ : LinearOrder V) (α : V → V → Perm (Fin n))
-    (hα : ∀ u v, X.Adj u v → α v u = (α u v)⁻¹) (m : ℕ) :
-    (letI := l₁
-      ⨅ β : V → Perm (Fin m),
-        ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
-          distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)) =
-    (letI := l₂
-      ⨅ β : V → Perm (Fin m),
-        ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
-          distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)) :=
-  iInf_congr (X.sum_distErr_mul_inv_congr_linearOrder l₁ l₂ α hα)
+/-- Every non-coboundary cochain of degree `n` has `gaugeDistErr` at least `1 / (n + 1)`. -/
+theorem one_div_add_one_le_gaugeDistErr_of_not_isCoboundary [Fintype V] [LinearOrder V]
+    {X : TwoComplex V} {α : Cochain X (Perm (Fin n))} (hncob : ¬ α.IsCoboundary) :
+    1 / ((n : ℝ) + 1) ≤ α.gaugeDistErr :=
+  (α.le_gaugeDistErr_iff).mpr fun _ β =>
+    one_div_add_one_le_costErr_of_not_isCoboundary hncob β
 
-/-- The cross-degree gauge-cost infimum over all degrees `m + 2 ≥ 2` on `X : TwoComplex V` is
-independent of the chosen linear order on `V` whenever reversing an edge of `X` inverts `α`. -/
-theorem ciInf₂_sum_distErr_mul_inv_congr_linearOrder [Fintype V] (X : TwoComplex V)
-    (l₁ l₂ : LinearOrder V) (α : V → V → Perm (Fin n))
-    (hα : ∀ u v, X.Adj u v → α v u = (α u v)⁻¹) :
-    (letI := l₁
-      ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
-        ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
-          distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)) =
-    (letI := l₂
-      ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
-        ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
-          distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)) :=
-  iInf_congr fun m => X.ciInf_sum_distErr_mul_inv_congr_linearOrder l₁ l₂ α hα (m + 2)
+/-- For `2 ≤ n`, `α.gaugeDistErr = 0` if and only if `α` is an equal-degree coboundary. The
+hypothesis `2 ≤ n` is sharp: for `n ≤ 1`, `(1 : Cochain X (Perm (Fin n)))` is a coboundary,
+whereas on any complex with an edge every gauge of degree `m + 2 ≥ 2` has strictly positive
+`costErr`. -/
+theorem gaugeDistErr_eq_zero_iff_isCoboundary [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    {α : Cochain X (Perm (Fin n))} (hn : 2 ≤ n) :
+    α.gaugeDistErr = 0 ↔ α.IsCoboundary :=
+  (univ.filter (fun p : V × V =>
+    p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges)).ciInf₂_sum_distErr_mul_inv_eq_zero_iff α hn
+    |>.trans
+    ⟨fun h => by
+        by_contra hncob
+        exact not_exists_eq_mul_inv_of_not_isCoboundary hncob h,
+      fun h => by
+        rw [isCoboundary_def] at h
+        obtain ⟨γ, hγ⟩ := h
+        exact ⟨γ, fun e he => hγ e.1 e.2 ((X.adj_iff_pair_mem_edges e.1 e.2).mpr
+          (mem_filter.mp he).2.2)⟩⟩
 
-end TauCeti.TwoComplex
+/-- For `2 ≤ n`, `0 < α.gaugeDistErr` if and only if `α` is not an equal-degree coboundary. -/
+theorem gaugeDistErr_pos_iff_not_isCoboundary [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    {α : Cochain X (Perm (Fin n))} (hn : 2 ≤ n) :
+    0 < α.gaugeDistErr ↔ ¬ α.IsCoboundary := by
+  rw [← gaugeDistErr_eq_zero_iff_isCoboundary hn]
+  exact α.gaugeDistErr_nonneg.lt_iff_ne'
+
+@[simp] theorem gaugeDistErr_one [Fintype V] [LinearOrder V] {X : TwoComplex V}
+    (hn : 2 ≤ n) : (1 : Cochain X (Perm (Fin n))).gaugeDistErr = 0 :=
+  (gaugeDistErr_eq_zero_iff_isCoboundary hn).mpr isCoboundary_one
+
+end CrossDegree
+
+end Cochain
+
+/-! ### The Chapman–Lubotzky cross-degree Cheeger constant `h1Err` -/
+
+section CrossDegreeCheeger
+
+variable {V W : Type*}
+
+/-- On `complete V` with `3 ≤ Fintype.card V` and `2 ≤ n`, some degree-`n` cochain has strictly
+positive cross-degree gauge distance. -/
+theorem exists_gaugeDistErr_pos_complete [Fintype V] [LinearOrder V] (hV : 3 ≤ Fintype.card V)
+    {n : ℕ} (hn : 2 ≤ n) :
+    ∃ α : Cochain (complete V) (Perm (Fin n)), 0 < α.gaugeDistErr := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  obtain ⟨α, hα⟩ := exists_not_isCoboundary_complete (V := V) (G := Perm (Fin (k + 2))) hV
+  exact ⟨α, (α.gaugeDistErr_pos_iff_not_isCoboundary hn).mpr hα⟩
+
+/-- The Chapman–Lubotzky cross-degree Cheeger constant of `X`: the infimum over all cochain degrees
+`n + 2 ≥ 2` and all cochains `α` with `0 < α.gaugeDistErr` of
+`(α.defect (movedNorm (Fin (n + 2))) / (n + 2)) / α.gaugeDistErr`. -/
+noncomputable def h1Err [Fintype V] [LinearOrder V] (X : TwoComplex V) : ℝ :=
+  sInf {r : ℝ | ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr ∧
+    r = α.defect (movedNorm (Fin (n + 2))) / (n + 2 : ℕ) / α.gaugeDistErr}
+
+theorem h1Err_def [Fintype V] [LinearOrder V] (X : TwoComplex V) :
+    h1Err X = sInf {r : ℝ | ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr ∧
+      r = α.defect (movedNorm (Fin (n + 2))) / (n + 2 : ℕ) / α.gaugeDistErr} := (rfl)
+
+section FixedOrder
+
+variable [Fintype V] [LinearOrder V]
+
+private theorem bddBelow_setOf_defect_div_gaugeDistErr (X : TwoComplex V) :
+    BddBelow {r : ℝ | ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr ∧
+      r = α.defect (movedNorm (Fin (n + 2))) / (n + 2 : ℕ) / α.gaugeDistErr} :=
+  ⟨0, by
+    rintro r ⟨n, α, hα, rfl⟩
+    exact div_nonneg (div_nonneg (α.defect_nonneg _) (Nat.cast_nonneg _)) hα.le⟩
+
+/-- The cross-degree Cheeger constant is nonnegative. -/
+theorem h1Err_nonneg (X : TwoComplex V) : 0 ≤ h1Err X :=
+  Real.sInf_nonneg fun _ ⟨_, α, hα, hr⟩ =>
+    hr ▸ div_nonneg (div_nonneg (α.defect_nonneg _) (Nat.cast_nonneg _)) hα.le
+
+/-- Every cochain of degree `n + 2 ≥ 2` at positive `gaugeDistErr` gives an upper bound on
+`h1Err X`. -/
+theorem h1Err_le_div {X : TwoComplex V} {n : ℕ} {α : Cochain X (Perm (Fin (n + 2)))}
+    (hα : 0 < α.gaugeDistErr) :
+    h1Err X ≤ α.defect (movedNorm (Fin (n + 2))) / (n + 2 : ℕ) / α.gaugeDistErr :=
+  csInf_le (bddBelow_setOf_defect_div_gaugeDistErr X) ⟨n, α, hα, rfl⟩
+
+/-- When some cochain of degree `n + 2 ≥ 2` has positive `gaugeDistErr`, `c ≤ h1Err X` holds iff
+`c` bounds every cross-degree expansion ratio from below. -/
+theorem le_h1Err_iff {X : TwoComplex V}
+    (hne : ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr) {c : ℝ} :
+    c ≤ h1Err X ↔
+      ∀ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr →
+        c ≤ α.defect (movedNorm (Fin (n + 2))) / (n + 2 : ℕ) / α.gaugeDistErr := by
+  obtain ⟨n₀, α₀, hα₀⟩ := hne
+  rw [h1Err_def, le_csInf_iff (bddBelow_setOf_defect_div_gaugeDistErr X)
+    ⟨_, n₀, α₀, hα₀, rfl⟩]
+  exact ⟨fun h n α hα => h _ ⟨n, α, hα, rfl⟩, fun h _ ⟨n, α, hα, hr⟩ => hr ▸ h n α hα⟩
+
+/-- When some cochain of degree `n + 2 ≥ 2` has positive `gaugeDistErr`, `h1Err X < c` holds iff
+some admissible cochain has cross-degree expansion ratio strictly below `c`. -/
+theorem h1Err_lt_iff {X : TwoComplex V}
+    (hne : ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr) {c : ℝ} :
+    h1Err X < c ↔
+      ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr ∧
+        α.defect (movedNorm (Fin (n + 2))) / (n + 2 : ℕ) / α.gaugeDistErr < c := by
+  obtain ⟨n₀, α₀, hα₀⟩ := hne
+  rw [h1Err_def, csInf_lt_iff (bddBelow_setOf_defect_div_gaugeDistErr X)
+    ⟨_, n₀, α₀, hα₀, rfl⟩]
+  exact ⟨fun ⟨_, ⟨n, α, hα, hr⟩, hlt⟩ => ⟨n, α, hα, hr ▸ hlt⟩,
+    fun ⟨n, α, hα, hlt⟩ => ⟨_, ⟨n, α, hα, rfl⟩, hlt⟩⟩
+
+/-- Lower-bound criterion for `h1Err X` in the presence of a cochain at positive `gaugeDistErr`. -/
+theorem le_h1Err_of_forall {X : TwoComplex V}
+    (hne : ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr) {c : ℝ}
+    (hc : ∀ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr →
+      c ≤ α.defect (movedNorm (Fin (n + 2))) / (n + 2 : ℕ) / α.gaugeDistErr) :
+    c ≤ h1Err X :=
+  (le_h1Err_iff hne).mpr hc
+
+end FixedOrder
+
+/-- `h1Err X` does not depend on the `LinearOrder` chosen on `V`. -/
+theorem h1Err_congr_linearOrder [Fintype V] (l₁ l₂ : LinearOrder V) (X : TwoComplex V) :
+    @h1Err V _ l₁ X = @h1Err V _ l₂ X := by
+  rw [@h1Err_def V _ l₁ X, @h1Err_def V _ l₂ X]
+  congr 1; ext r
+  refine exists_congr fun n => exists_congr fun α => ?_
+  rw [Cochain.gaugeDistErr_congr_linearOrder l₁ l₂ α,
+    Cochain.defect_congr_linearOrder l₁ l₂ isConjInvariant_movedNorm α]
+
+/-- Relabelling `X` along `e : V ≃ W` preserves `h1Err`. -/
+@[simp] theorem h1Err_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+    (X : TwoComplex V) (e : V ≃ W) : h1Err (X.relabel e) = h1Err X := by
+  rw [h1Err_def, h1Err_def]; congr 1; ext r
+  refine exists_congr fun n => ?_
+  exact ((Cochain.relabelEquiv X e).exists_congr fun α => by
+    simp [α.defect_relabel isConjInvariant_movedNorm e]).symm
+
+/-- `h1Err` on the complete complex is preserved along any bijection `V ≃ W`. -/
+theorem h1Err_complete_congr [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+    (e : V ≃ W) : h1Err (complete V) = h1Err (complete W) := by
+  rw [← relabel_complete e, h1Err_relabel (complete V) e]
+
+/-- `h1Err (complete V)` depends on `V` only through `Fintype.card V`. -/
+theorem h1Err_complete_eq_of_card_eq [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+    (hcard : Fintype.card V = Fintype.card W) : h1Err (complete V) = h1Err (complete W) :=
+  h1Err_complete_congr (Fintype.equivOfCardEq hcard)
+
+end CrossDegreeCheeger
+
+end TauCeti
 
 end

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.Complex.Basic
 public import Mathlib.Data.Finset.Powerset
-public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Tactic.IntervalCases
@@ -177,15 +176,6 @@ noncomputable def complete (V : Type*) [Fintype V] : TwoComplex V := by
 theorem mem_edges_complete (e : Finset V) : e ∈ (complete V).edges ↔ e.card = 2 := by
   classical
   simp [complete, mem_powersetCard]
-
-/-- On `complete V`, strictly increasing pairs whose unordered pair lies in `(complete V).edges` are
-simply all strictly increasing pairs `p.1 < p.2`. -/
-theorem filter_lt_and_pair_mem_edges_complete [LinearOrder V] :
-    (univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ (complete V).edges) =
-      univ.filter fun p : V × V => p.1 < p.2 := by
-  ext p
-  simp only [mem_filter, mem_univ, true_and, mem_edges_complete, and_iff_left_iff_imp]
-  exact fun hlt => card_pair hlt.ne
 
 @[simp]
 theorem mem_triangles_complete (t : Finset V) :
