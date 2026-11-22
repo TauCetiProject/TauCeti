@@ -31,16 +31,16 @@ acts as `f D ξ + (∂s f) ξ + (∂t f) J ξ` (`floerLinearization_fun_smul`), 
 `β D ξ + β' ξ` (`floerLinearization_smul_fst`), a case of the same rule for any operator
 `∂s + J ∂t + A` (`TauCeti.cauchyRiemann_smul_fst` in
 `TauCeti.Geometry.Symplectic.JHolomorphic.Line`); in particular, conjugated by an exponential
-weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`). Its value at
-a point depends only on the germ of the direction there
-(`floerLinearization_congr_of_eventuallyEq`), so it vanishes off the support of the direction
-(`floerLinearization_of_notMem_tsupport`), and on the Floer data only through their values at that
-point (`floerLinearization_congr_data`). For `C¹` coefficients `J` and `C²` Hamiltonians it is
-continuous wherever the map and the direction are `C¹` (`continuousAt_floerLinearization`), and
-continuous everywhere when they are so everywhere (`continuous_floerLinearization`), or when the
-direction is supported in an open set on which the data are regular
-(`continuous_floerLinearization_of_tsupport_subset`), so its `L²` norms over compact sets are
-finite. A compactly supported direction has a compactly supported image
+weight `e^{κ(s)}` it becomes `floerLinearization - κ'` (`floerLinearization_exp_neg_smul`;
+`floerLinearization_exp_smul` for `κ(s) = δ s`). Its value at a point depends only on the germ of
+the direction there (`floerLinearization_congr_of_eventuallyEq`), so it vanishes off the support of
+the direction (`floerLinearization_of_notMem_tsupport`), and on the Floer data only through their
+values at that point (`floerLinearization_congr_data`). For `C¹` coefficients `J` and `C²`
+Hamiltonians it is continuous wherever the map and the direction are `C¹`
+(`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
+(`continuous_floerLinearization`), or when the direction is supported in an open set on which the
+data are regular (`continuous_floerLinearization_of_tsupport_subset`), so its `L²` norms over
+compact sets are finite. A compactly supported direction has a compactly supported image
 (`hasCompactSupport_floerLinearization`), whose square norm is then integrable
 (`integrable_norm_floerLinearization_sq`).
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
@@ -380,17 +380,29 @@ theorem floerLinearization_smul_fst (ω : SymplecticForm V)
   simp only [floerLinearization_eq_add]
   exact cauchyRiemann_smul_fst (fun z ↦ J z (u z)) (ω.floerLinearizationCoeff J Ks Kt u) hβ hξ
 
-/-- **Conjugating the linearization by an exponential weight.** On maps of the form
+/-- **Conjugating the linearization by an exponential weight.** If the weight `κ` has derivative
+`κ'` at `s`, then on maps of the form `e^{-κ(s)} ξ` the linearized Floer operator acts at
+`z = (s, t)` as `e^{-κ(s)} (D ξ - κ' ξ)`: this is the case `β = e^{-κ}` of
+`floerLinearization_smul_fst`. So `D - κ'` is `D` conjugated by the weight `e^{κ(s)}`. -/
+theorem floerLinearization_exp_neg_smul (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} {κ : ℝ → ℝ} {κ' : ℝ} (hκ : HasDerivAt κ κ' z.1)
+    (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ Real.exp (-κ w.1) • ξ w) z =
+      Real.exp (-κ z.1) • (ω.floerLinearization J Ks Kt u ξ z - κ' • ξ z) := by
+  rw [floerLinearization_smul_fst ω J Ks Kt u ξ (β := fun s ↦ Real.exp (-κ s)) hκ.neg.exp hξ]
+  module
+
+/-- **Conjugating the linearization by a linear exponential weight.** On maps of the form
 `e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: this is the case
-`β(s) = e^{-δ s}` of `floerLinearization_smul_fst`. -/
+`κ(s) = δ s` of `floerLinearization_exp_neg_smul`. -/
 theorem floerLinearization_exp_smul (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
     (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} (δ : ℝ) (hξ : DifferentiableAt ℝ ξ z) :
     ω.floerLinearization J Ks Kt u (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
       Real.exp (-(δ * z.1)) • (ω.floerLinearization J Ks Kt u ξ z - δ • ξ z) := by
-  rw [floerLinearization_smul_fst ω J Ks Kt u ξ (β := fun s ↦ Real.exp (-(δ * s)))
-    ((hasDerivAt_id' z.1).const_mul δ).neg.exp hξ]
-  module
+  simpa only [mul_one] using
+    ω.floerLinearization_exp_neg_smul J Ks Kt u ξ ((hasDerivAt_id' z.1).const_mul δ) hξ
 
 /-- The zeroth-order part of the linearized Floer operator is continuous at `z` when the data are
 `C¹` (and the Hamiltonians `C²`) at `(z, u z)`, and `u` is `C¹` at `z`. -/
