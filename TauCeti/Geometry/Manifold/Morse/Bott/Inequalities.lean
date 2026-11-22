@@ -203,14 +203,14 @@ variable {E : Type} {H M E' H' P : Type*} {S : Type} [NormedAddCommGroup E] [Nor
   [NormedSpace ℝ P] [FiniteDimensional ℝ P] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M}
   (hn : (∞ : ℕ∞ω) ≠ 0)
 
-/-- **The mod `2` homology of the negative disc bundle of a Morse–Bott submanifold.** Let `i` be a
-nondegenerate critical submanifold of a smooth function `f`, with Morse index `r` at every point,
-and let `g` be a smooth fibre metric on its normal bundle. Let `K` be a nontrivial commutative ring
-in which `2 = 0`, such as `ZMod 2` or a field of characteristic two. For `ε > 0`, the negative disc
+/-- **The homology in characteristic two of the negative disc bundle of a Morse–Bott
+submanifold.** Let `i` be a nondegenerate critical submanifold of a smooth function `f`, with Morse
+index `r` at every point, and let `g` be a smooth fibre metric on its normal bundle. Let `K` be a
+nontrivial commutative ring of characteristic two, such as `ZMod 2`. For `ε > 0`, the negative disc
 bundle `D_ε` relative to `g`, taken relative to its boundary `S_ε`, has
-`dim Hₙ(D_ε, S_ε; K) = b_{n - r}(S; K)` when `r ≤ n`, and `0` when `n < r`: it has the homology of
-the Thom pair of the negative normal bundle, a vector bundle of rank `r`, which has a mod `2` Thom
-class with no orientation needed. -/
+`dim Hₙ(D_ε, S_ε; K) = b_{n - r}(S; K)` when `r ≤ n`, and `0` when `n < r`: it has the homology
+of the Thom pair of the negative normal bundle, a vector bundle of rank `r`, which has a Thom
+class over `K` with no orientation needed. -/
 theorem finrank_singularHomology_negativeDiscSpherePair
     (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
@@ -640,9 +640,9 @@ private theorem exists_isThomClass_of_two_eq_zero (j : ι) :
   hN.exists_isThomClass_negativeNormalSpace_of_two_eq_zero hn h.contMDiff _ (hr j) K h2
 
 open scoped Classical in
-/-- **The mod `2` homology of a critical band of a Morse–Bott function.** Let the family
-`i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, the piece
-`S j` having index `r j`, and let `K` be a field of characteristic two, such as `ZMod 2`. Let
+/-- **The homology in characteristic two of a critical band of a Morse–Bott function.** Let the
+family `i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, the
+piece `S j` having index `r j`, and let `K` be a field of characteristic two, such as `ZMod 2`. Let
 `a < c < b` be such that `c` is the only critical value of `f` in `[a, b]`. Then
 `dim Hₙ({f ≤ b}, {f ≤ a}; K) = ∑ b_{n - r j}(S j; K)`, the sum running over the pieces on the
 level `f = c` of index at most `n`. If `c` is not a critical value, the sum is empty. -/
@@ -664,9 +664,9 @@ theorem bettiNumber_le_sum (n : ℕ) :
   h.bettiNumber_le_sum_of_isThomClass (by simp) K (fun _ ↦ finrank_euclideanSpace_fin)
     (h.exists_isThomClass_of_two_eq_zero _ K h2 hr) n
 
-/-- **The strong Morse–Bott inequalities in characteristic two.** Let the family
-`i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, the piece
-`S j` having index `r j`, and let `K` be a field of characteristic two, such as `ZMod 2`. Write
+/-- **The strong Morse–Bott inequalities in characteristic two.** Let the family `i j : S j → M`
+exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, the piece `S j` having
+index `r j`, and let `K` be a field of characteristic two, such as `ZMod 2`. Write
 `bₖ = bₖ(M; K)` and `cₖ = ∑ b_{k - r j}(S j; K)` over the pieces of index at most `k`, the
 coefficient of `tᵏ` in the Morse–Bott polynomial `∑ⱼ t^{r j} P_{S j}(t)`. Then
 `bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`. -/
