@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.ContinuousOn
 
 /-!
-# Restrictions of maps that are open
+# Restrictions of maps that are open or inducing
 
 The restriction `s.domRestrict f` of a map `f : X → Y` to a subset `s ⊆ X` is an open map exactly
 when, for each point `x ∈ s`, the image under `f` of every neighbourhood of `x` in `s` is a
@@ -16,11 +16,15 @@ neighbourhood of `f x` (`TauCeti.isOpenMap_domRestrict_iff`). The relatively ope
 are the traces `t ∩ s` of open sets of `X`, so this is a pointwise test that does not mention the
 subtype topology. When `f` is the projection of a cylinder to its base, it describes the sets whose
 projection is open on every relatively open subset.
+
+If `s.domRestrict f` is inducing, then the inverse `Function.invFunOn f s` of `f` on `s` is
+continuous on `f '' s` (`Topology.IsInducing.continuousOn_invFunOn`). When `s.domRestrict f` is an
+embedding, `f` thus maps `s` homeomorphically onto `f '' s`.
 -/
 
 public section
 
-open Set Topology
+open Function Set Topology
 
 namespace TauCeti
 
@@ -39,3 +43,15 @@ theorem isOpenMap_domRestrict_iff {f : X → Y} {s : Set X} :
     exact h x hxs t (ht.mem_nhds hxt)
 
 end TauCeti
+
+/-- If the restriction of `f` to `s` is inducing, then the inverse `invFunOn f s` of `f` on `s` is
+continuous on `f '' s`. Injectivity of `f` on `s` is not needed: `f (invFunOn f s y) = y` for
+`y ∈ f '' s`, and a map into `s` is continuous as soon as its composite with `s.domRestrict f`
+is. -/
+theorem Topology.IsInducing.continuousOn_invFunOn {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [Nonempty X] {f : X → Y} {s : Set X}
+    (hf : IsInducing (s.domRestrict f)) : ContinuousOn (invFunOn f s) (f '' s) := by
+  let g : f '' s → s := fun y ↦ ⟨invFunOn f s y, invFunOn_mem y.property⟩
+  have hg : Continuous g :=
+    hf.continuous_iff.2 (continuous_subtypeVal.congr fun y ↦ (invFunOn_eq y.property).symm)
+  exact continuousOn_iff_continuous_domRestrict.2 (continuous_subtypeVal.comp hg)
