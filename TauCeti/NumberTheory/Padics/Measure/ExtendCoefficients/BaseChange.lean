@@ -42,7 +42,8 @@ Combined with `@[simp]` lemmas `AbstractMeasure.baseChangeLinearEquiv_tmul`,
 `AbstractMeasure.coe_baseChangeAlgEquiv`, `AbstractMeasure.extendCoefficients_smul`,
 `AbstractMeasure.amiceTransform_extendScalars`, and
 `AbstractMeasure.amiceTransform_extendCoefficients_algebraMap`, `simp` automatically simplifies
-coefficient extensions, character evaluations, and Amice transforms on base-changed pure tensors.
+coefficient extensions and character evaluations on base-changed pure tensors. For the corresponding
+Amice-transform identity of power series, use `ext n <;> simp` to simplify each coefficient.
 Character integration allows a complete ultrametric normed commutative ring target and any
 uniform bound `∀ a, ‖j a‖ ≤ B`. The Amice simplification applies to measures on `X = ℤ_[p]`
 with `O` finite over `ℤ_[p]` and `K` a complete ultrametric normed field. Both coefficient

@@ -37,6 +37,8 @@ group, each a module over its scalars, while `E` is any module over `𝕜`.
 ## Main results
 
 * `LinearMap.extendOfBound_apply`: the extension agrees with the original map on dense tests.
+* `LinearMap.extendOfBound_eq_zero_of_not_denseRange`: the extension is zero when the comparison
+  map has non-dense range.
 * `LinearMap.norm_extendOfBound_apply_le`: the extension preserves the original bound.
 * `LinearMap.extendOfBound_unique`: the extension is the unique continuous linear extension.
 
@@ -57,8 +59,24 @@ namespace LinearMap
 open Topology
 
 variable {R V E F : Type*} [Ring R] [AddCommGroup V] [Module R V]
-  [SeminormedAddCommGroup E] [Module R E] [ContinuousConstSMul R E]
-  [NormedAddCommGroup F] [Module R F] [ContinuousConstSMul R F] [CompleteSpace F]
+  [SeminormedAddCommGroup E] [Module R E] [NormedAddCommGroup F] [Module R F]
+
+private noncomputable def rangeMapOfBound (f : V →ₗ[R] F) (e : V →ₗ[R] E)
+    (C : ℝ) (h : ∀ x, ‖f x‖ ≤ C * ‖e x‖) : e.range →ₗ[R] F :=
+  (e.ker.liftQ f (by
+    intro x hx
+    have hx' := h x
+    rw [LinearMap.mem_ker.mp hx, norm_zero, mul_zero] at hx'
+    exact LinearMap.mem_ker.mpr (norm_le_zero_iff.mp hx'))).comp
+      e.quotKerEquivRange.symm.toLinearMap
+
+private theorem rangeMapOfBound_apply (f : V →ₗ[R] F) (e : V →ₗ[R] E)
+    (C : ℝ) (h : ∀ x, ‖f x‖ ≤ C * ‖e x‖) (x : V) :
+    rangeMapOfBound f e C h ⟨e x, mem_range_self e x⟩ = f x := by
+  simp only [rangeMapOfBound, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    quotKerEquivRange_symm_apply_image, Submodule.mkQ_apply, Submodule.liftQ_apply]
+
+variable [ContinuousConstSMul R E] [ContinuousConstSMul R F] [CompleteSpace F]
 
 /-- Extend a bounded linear map along a linear map with dense range.
 
@@ -68,19 +86,22 @@ When `e` has dense range, this is the unique continuous linear extension of `f`;
 is zero. This construction works over rings that need not be fields. -/
 noncomputable def extendOfBound (f : V →ₗ[R] F) (e : V →ₗ[R] E)
     (C : ℝ) (h : ∀ x, ‖f x‖ ≤ C * ‖e x‖) : E →L[R] F :=
-  (((e.ker.liftQ f (by
-    intro x hx
-    have hx' := h x
-    rw [LinearMap.mem_ker.mp hx, norm_zero, mul_zero] at hx'
-    exact LinearMap.mem_ker.mpr (norm_le_zero_iff.mp hx'))).comp
-      e.quotKerEquivRange.symm.toLinearMap).mkContinuous C (by
-        intro y
-        obtain ⟨x, hx⟩ := y.property
-        have hy : y = ⟨e x, mem_range_self e x⟩ := Subtype.ext hx.symm
-        rw [hy]
-        simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
-        rw [quotKerEquivRange_symm_apply_image, Submodule.mkQ_apply, Submodule.liftQ_apply]
-        exact h x)).extend e.range.subtypeL
+  ((rangeMapOfBound f e C h).mkContinuous C (by
+    rintro ⟨_, x, rfl⟩
+    rw [rangeMapOfBound_apply, ← Submodule.norm_coe]
+    exact h x)).extend e.range.subtypeL
+
+/-- The bounded extension is zero when the comparison map does not have dense range. -/
+@[simp] theorem extendOfBound_eq_zero_of_not_denseRange (f : V →ₗ[R] F) (e : V →ₗ[R] E)
+    (C : ℝ) (h : ∀ x, ‖f x‖ ≤ C * ‖e x‖) (hd : ¬ DenseRange e) :
+    f.extendOfBound e C h = 0 := by
+  have hd' : ¬ DenseRange e.range.subtypeL := by
+    intro hs
+    apply hd
+    rw [Submodule.coe_subtypeL] at hs
+    change Dense (Set.range (e.range.subtype : e.range → E)) at hs
+    rwa [← LinearMap.coe_range, Submodule.range_subtype, LinearMap.coe_range] at hs
+  simp only [extendOfBound, ContinuousLinearMap.extend, hd', false_and, ↓reduceDIte]
 
 /-- The bounded extension agrees with the original map on the dense range. -/
 @[simp] theorem extendOfBound_apply (f : V →ₗ[R] F) (e : V →ₗ[R] E)
@@ -98,9 +119,7 @@ noncomputable def extendOfBound (f : V →ₗ[R] F) (e : V →ₗ[R] E)
   have hh : e.range.subtypeL ⟨e x, mem_range_self e x⟩ = e x :=
     Submodule.subtypeL_apply _ _
   rw [← hh, extendOfBound, ContinuousLinearMap.extend_eq _ hd' hi]
-  simp only [LinearMap.mkContinuous_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_toLinearMap, quotKerEquivRange_symm_apply_image, Submodule.mkQ_apply,
-    Submodule.liftQ_apply]
+  exact rangeMapOfBound_apply f e C h x
 
 /-- Extending a bounded linear map along a dense map preserves its bound. -/
 theorem norm_extendOfBound_apply_le (f : V →ₗ[R] F) (e : V →ₗ[R] E)

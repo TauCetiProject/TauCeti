@@ -45,7 +45,7 @@ namespace AbstractMeasure
 
 open scoped AbstractMeasure
 
-variable (p : ℕ) [Fact p.Prime] (R : Type*) [NormedCommRing R]
+variable (p : ℕ) [Fact p.Prime] (R : Type*) [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
 
 local instance : ContinuousMul C(ℤ_[p], R) :=
   ContinuousMap.instContinuousMulOfLocallyCompactSpace
@@ -56,12 +56,14 @@ def pMultiplesIndicator : C(ℤ_[p], R) :=
 
 variable {p R}
 
+omit [IsTopologicalRing R] in
 /-- The characteristic function of `pℤ_p` is one on multiples of `p`. -/
 @[simp]
 theorem pMultiplesIndicator_eq_one {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) :
     pMultiplesIndicator p R x = 1 := by
   simp [pMultiplesIndicator, PadicInt.toZMod_eq_zero_iff_dvd, hx]
 
+omit [IsTopologicalRing R] in
 /-- The characteristic function of `pℤ_p` vanishes away from multiples of `p`. -/
 @[simp]
 theorem pMultiplesIndicator_eq_zero {x : ℤ_[p]} (hx : ¬(p : ℤ_[p]) ∣ x) :

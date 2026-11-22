@@ -12,7 +12,7 @@ import Mathlib.NumberTheory.Padics.ProperSpace
 /-!
 # Coefficient extension and clopen restriction
 
-Extending the coefficients of a measure along a uniformly bounded homomorphism from a normed
+Extending the coefficients of a measure along a uniformly bounded homomorphism from a topological
 commutative ring to a complete ultrametric normed commutative ring commutes with restriction to
 any clopen subset of a profinite space. Both orders give the same integrals on that subset. With
 `AbstractMeasure.extendCoefficients_map`, this also compares the ambient extensions by zero.
@@ -34,11 +34,11 @@ open ContinuousMap TopologicalSpace
 namespace AbstractMeasure
 
 variable {X O K : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
-  [TotallyDisconnectedSpace X] [NormedCommRing O]
+  [TotallyDisconnectedSpace X] [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
   [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K] {B : ℝ}
   (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B)
 
-/-- Extension along a uniformly bounded homomorphism from a normed commutative ring to a
+/-- Extension along a uniformly bounded homomorphism from a topological commutative ring to a
 complete ultrametric normed commutative ring commutes with restriction to a clopen subset of a
 profinite space.
 The homomorphism need not be continuous. -/

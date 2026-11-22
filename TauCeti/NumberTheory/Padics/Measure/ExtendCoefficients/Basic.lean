@@ -9,11 +9,11 @@ public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.DiscreteQuotient
 public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
-public import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 import TauCeti.Analysis.Normed.Operator.Extend
 import TauCeti.Topology.ContinuousMap.LocallyConstant
+import TauCeti.Topology.DiscreteQuotient
 
 /-!
 # Extension of coefficients of measures along bounded homomorphisms
@@ -66,8 +66,6 @@ The dense-extension construction and its norm proof follow the formal pattern of
   every transported test has its integral in the coefficient image.
 * `AbstractMeasure.mem_range_extendCoefficients_iff_apply_comp_mem_range`: a measure belongs to
   the range exactly when the integrals of transported tests lie in the coefficient image.
-* `RingHom.isClosed_range_extendCoefficients_weak`: a bounded embedding with closed image gives
-  a weakly closed range.
 * `AbstractMeasure.exists_apply_comp_eq_of_norm_le_one`: over a nontrivially normed field `K`,
   for an embedding `j` onto its closed unit ball and compact `X`, a `K`-valued measure of norm at
   most `1` restricts to an `O`-valued measure.
@@ -205,15 +203,6 @@ private theorem cylinderSum_ite [DecidableEq A] (q : C(X, A)) (a : A) :
 
 end Cylinder
 
-/-- The finite discrete quotient of `X` attached to a locally constant function, as a continuous
-map. -/
-private def quotientMap {Y : Type*} (φ : LocallyConstant X Y) : C(X, φ.discreteQuotient) :=
-  ⟨_, φ.discreteQuotient.proj_continuous⟩
-
-private theorem lift_quotientMap {Y : Type*} (φ : LocallyConstant X Y) (x : X) :
-    φ.lift (quotientMap φ x) = φ x :=
-  congrFun φ.lift_comp_proj x
-
 variable [CompactSpace X]
 
 private instance {Y : Type*} (φ : LocallyConstant X Y) : Fintype φ.discreteQuotient :=
@@ -222,24 +211,25 @@ private instance {Y : Type*} (φ : LocallyConstant X Y) : Fintype φ.discreteQuo
 /-- The extension of `μ` evaluated on a locally constant function, through the finite quotient
 attached to it. -/
 private def locallyConstantSum (φ : LocallyConstant X K) : K :=
-  cylinderSum j μ (quotientMap φ) φ.lift
+  cylinderSum j μ φ.discreteQuotient.projContinuousMap φ.lift
 
 private theorem locallyConstantSum_eq {A : Type*} [TopologicalSpace A] [DiscreteTopology A]
     [Fintype A] (φ : LocallyConstant X K) (q : C(X, A)) (g : A → K) (h : ∀ x, g (q x) = φ x) :
     locallyConstantSum j μ φ = cylinderSum j μ q g :=
-  cylinderSum_eq_of_comp_eq j μ _ _ _ _ fun x ↦ (lift_quotientMap φ x).trans (h x).symm
+  cylinderSum_eq_of_comp_eq j μ _ _ _ _ fun x ↦ by simpa using (h x).symm
 
 /-- The extension of `μ` on locally constant functions, as a `K`-linear map. -/
 private def locallyConstantIntegral : LocallyConstant X K →ₗ[K] K where
   toFun := locallyConstantSum j μ
   map_add' φ ψ := by
-    let r := (quotientMap φ).prodMk (quotientMap ψ)
+    let r := φ.discreteQuotient.projContinuousMap.prodMk ψ.discreteQuotient.projContinuousMap
     rw [locallyConstantSum_eq j μ (φ + ψ) r ((φ.lift ∘ Prod.fst) + (ψ.lift ∘ Prod.snd))
-      fun _ ↦ rfl, cylinderSum_add, ← locallyConstantSum_eq j μ φ r _ fun _ ↦ rfl,
-      ← locallyConstantSum_eq j μ ψ r _ fun _ ↦ rfl]
+      (fun x ↦ by simp [r]), cylinderSum_add,
+      ← locallyConstantSum_eq j μ φ r _ (fun x ↦ by simp [r]),
+      ← locallyConstantSum_eq j μ ψ r _ (fun x ↦ by simp [r])]
   map_smul' c φ := by
-    rw [locallyConstantSum_eq j μ (c • φ) (quotientMap φ) (c • φ.lift)
-      fun x ↦ by simp [lift_quotientMap],
+    rw [locallyConstantSum_eq j μ (c • φ) φ.discreteQuotient.projContinuousMap (c • φ.lift)
+      fun x ↦ by simp,
       cylinderSum_smul, RingHom.id_apply, smul_eq_mul, locallyConstantSum]
 
 private theorem locallyConstantIntegral_apply (φ : LocallyConstant X K) {A : Type*}
@@ -254,14 +244,13 @@ variable [IsUltrametricDist K] {B : ℝ}
 private theorem norm_locallyConstantIntegral_le (hj : ∀ a, ‖j a‖ ≤ B)
     (φ : LocallyConstant X K) :
     ‖locallyConstantIntegral j μ φ‖ ≤ B * ‖LocallyConstant.toContinuousMapLinearMap K φ‖ := by
-  rw [locallyConstantIntegral_apply j μ φ (quotientMap φ) φ.lift (lift_quotientMap φ), cylinderSum]
+  rw [locallyConstantIntegral_apply j μ φ φ.discreteQuotient.projContinuousMap φ.lift
+    (fun x ↦ by simp), cylinderSum]
   have hB : 0 ≤ B := (norm_nonneg _).trans (hj 0)
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (mul_nonneg hB (norm_nonneg _))
     fun a _ ↦ ?_
-  have hq : Function.Surjective (quotientMap φ) := by
-    simpa only [quotientMap, ContinuousMap.coe_mk] using φ.discreteQuotient.proj_surjective
-  obtain ⟨x, rfl⟩ := hq a
-  rw [lift_quotientMap φ x, mul_comm B]
+  obtain ⟨x, rfl⟩ := φ.discreteQuotient.proj_surjective a
+  rw [φ.lift_proj, mul_comm B]
   have hφ : ‖φ x‖ ≤ ‖LocallyConstant.toContinuousMapLinearMap K φ‖ := by
     simpa only [LocallyConstant.toContinuousMapLinearMap_apply,
       LocallyConstant.coe_continuousMap] using
@@ -368,20 +357,20 @@ theorem norm_extendCoefficients_apply_le (μ : D(X, O)) (j : O →+* K)
 
 /-- Extension agrees with the coefficient homomorphism on locally constant source-valued tests,
 without assuming that the coefficient homomorphism is continuous. -/
-@[simp]
+@[simp↓]
 theorem extendCoefficients_apply_locallyConstant
     (f : LocallyConstant X O) :
     extendCoefficients j hj μ (f.map j) = j (μ f) := by
   classical
-  let q : C(X, f.discreteQuotient) := ⟨_, f.discreteQuotient.proj_continuous⟩
+  let q := f.discreteQuotient.projContinuousMap
   let := Fintype.ofFinite f.discreteQuotient
   have hf : (f : C(X, O)) = (equivFnOfDiscrete.symm f.lift).comp q := by
     ext x
-    exact (congrFun f.lift_comp_proj x).symm
+    simp [q]
   have hjf : (f.map j : C(X, K)) =
       (equivFnOfDiscrete.symm (j ∘ f.lift)).comp q := by
     ext x
-    exact congrArg j (congrFun f.lift_comp_proj x).symm
+    simp [q]
   rw [hjf, extendCoefficients_apply_comp_eq_sum, hf,
     apply_comp_eq_sum_finiteProjection, map_sum]
   simp
@@ -412,7 +401,7 @@ theorem extendCoefficients_map {Y : Type*} [TopologicalSpace Y] [CompactSpace Y]
 
 /-- For continuous `j`, the extension of coefficients of `μ` integrates `j ∘ f` to `j (μ f)` for
 every `f ∈ C(X, O)`. -/
-@[simp]
+@[simp↓]
 theorem extendCoefficients_apply_comp (hjc : Continuous j) (f : C(X, O)) :
     extendCoefficients j hj μ ((⟨j, hjc⟩ : C(O, K)).comp f) = j (μ f) := by
   -- The density argument only needs the canonical uniformity of the additive group of `O`.
@@ -461,21 +450,6 @@ theorem mem_range_extendCoefficients_iff_apply_comp_mem_range (hje : Topology.Is
     obtain ⟨μ, hμ⟩ := j.exists_apply_comp_eq_of_mem_range hje ν hν
     exact ⟨μ, (eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ).symm⟩
 
-/-- On a profinite space, extension along a bounded coefficient embedding with closed image has
-weakly closed range. -/
-theorem _root_.RingHom.isClosed_range_extendCoefficients_weak (hje : Topology.IsEmbedding j)
-    (hjr : IsClosed (Set.range j)) :
-    @IsClosed D(X, K) WeakTopology (extendCoefficients (X := X) j hj).range := by
-  have hrange : ((extendCoefficients (X := X) j hj).range : Set D(X, K)) =
-      ⋂ f : C(X, O), {ν | ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) ∈ Set.range j} := by
-    ext ν
-    simpa only [SetLike.mem_coe, Set.mem_iInter, Set.mem_ofPred_eq] using
-      mem_range_extendCoefficients_iff_apply_comp_mem_range j hj hje (ν := ν)
-  rw [hrange]
-  let : TopologicalSpace D(X, K) := WeakTopology
-  exact isClosed_iInter fun f ↦ hjr.preimage
-    (continuous_apply_weak ((⟨j, hje.continuous⟩ : C(O, K)).comp f))
-
 /-- Extension of coefficients is surjective when `j` is a surjective topological embedding. -/
 theorem _root_.RingHom.extendCoefficients_surjective (hje : Topology.IsEmbedding j)
     (hsurj : Function.Surjective j) : Function.Surjective (extendCoefficients (X := X) j hj) := by
@@ -491,14 +465,16 @@ theorem extendCoefficients_id (ν : D(X, K)) (h : ∀ a : K, ‖a‖ ≤ B) :
   ext a
   simp
 
-/-- Extending coefficients successively agrees with extending along the composite, independently
-of the chosen valid bound on that composite. -/
+/-- Extending coefficients successively agrees with extending along the composite with the bound
+inherited from the second map. Use `RingHom.extendCoefficients_eq_of_bound` to change that bound.
+The identity rule takes precedence when the second map is the identity. Evaluation rules on
+transported tests run before composition so they can still act on the intermediate measure. -/
+@[simp low]
 theorem extendCoefficients_comp (μ : D(X, O)) {L : Type*} [NormedCommRing L]
     [IsUltrametricDist L] [CompleteSpace L] (j : O →+* K) (k : K →+* L)
-    {Bj Bk Bjk : ℝ} (hj : ∀ a, ‖j a‖ ≤ Bj) (hk : ∀ a, ‖k a‖ ≤ Bk)
-    (hkj : ∀ a, ‖(k.comp j) a‖ ≤ Bjk) :
+    {Bj Bk : ℝ} (hj : ∀ a, ‖j a‖ ≤ Bj) (hk : ∀ a, ‖k a‖ ≤ Bk) :
     extendCoefficients k hk (extendCoefficients j hj μ) =
-      extendCoefficients (k.comp j) hkj μ := by
+      extendCoefficients (k.comp j) (fun a ↦ hk (j a)) μ := by
   apply finiteProjection_ext
   intro q
   ext a

@@ -7,14 +7,13 @@ module
 
 public import Mathlib.NumberTheory.Padics.Measure.Topology
 public import Mathlib.Topology.ContinuousMap.Compact
-import Mathlib.Analysis.Normed.Operator.Completeness
 
 /-!
-# Evaluation and the unit ball in the weak topology of measures
+# Evaluation and closed balls in the weak topology of measures
 
-Evaluation on any fixed continuous test is weakly continuous. For module-valued measures
-over a nontrivially normed field on a compact space, the operator-norm unit ball is weakly
-closed by Mathlib's weak closedness theorem for balls of continuous linear maps.
+Evaluation on any fixed continuous test is weakly continuous.
+`AbstractMeasure.isClosed_closedBall_weak` proves that the operator-norm closed balls of
+module-valued measures over a nontrivially normed field on a compact space are weakly closed.
 -/
 
 public section
@@ -32,17 +31,21 @@ theorem continuous_apply_weak [CommRing R] [TopologicalSpace R] [IsTopologicalRi
   let : TopologicalSpace (AbstractMeasure X R E) := WeakTopology
   exact (continuous_apply f).comp continuous_induced_dom
 
-/-- The operator-norm unit ball of measures on a compact space is weakly closed. -/
-theorem isClosed_unitBall_weak [CompactSpace X] [NontriviallyNormedField R] [NormedSpace R E] :
-    @IsClosed (AbstractMeasure X R E) WeakTopology {μ | ‖toCLMEquiv μ‖ ≤ 1} := by
-  have hsub :
-      (fun (μ : AbstractMeasure X R E) (f : C(X, R)) ↦ μ f) '' {μ | ‖toCLMEquiv μ‖ ≤ 1} ⊆
-        ((↑) : (C(X, R) →L[R] E) → C(X, R) → E) '' Metric.closedBall 0 1 := by
-    rintro _ ⟨ν, hν, rfl⟩
-    exact ⟨toCLMEquiv ν, mem_closedBall_zero_iff.mpr hν, funext (coe_toCLMEquiv ν)⟩
-  refine isClosed_induced_iff'.2 fun μ hμ ↦ mem_closedBall_zero_iff.mp <|
-    ContinuousLinearMap.is_weak_closed_closedBall 0 1 ?_
-  have hcoe : ⇑(toCLMEquiv μ) = (fun f ↦ μ f) := funext (coe_toCLMEquiv μ)
-  exact hcoe ▸ closure_mono hsub hμ
+/-- An operator-norm closed ball of measures on a compact space is weakly closed. -/
+theorem isClosed_closedBall_weak [CompactSpace X] [NontriviallyNormedField R] [NormedSpace R E]
+    (μ₀ : AbstractMeasure X R E) (r : ℝ) :
+    @IsClosed (AbstractMeasure X R E) WeakTopology
+      {μ | toCLMEquiv μ ∈ Metric.closedBall (toCLMEquiv μ₀) r} := by
+  let : TopologicalSpace (AbstractMeasure X R E) := WeakTopology
+  by_cases hr : 0 ≤ r
+  · have hball : {μ | toCLMEquiv μ ∈ Metric.closedBall (toCLMEquiv μ₀) r} =
+        ⋂ f : C(X, R), {μ | ‖μ f - μ₀ f‖ ≤ r * ‖f‖} := by
+      ext μ
+      simp only [Set.mem_ofPred_eq, Set.mem_iInter, Metric.mem_closedBall, dist_eq_norm,
+        ContinuousLinearMap.opNorm_le_iff hr, _root_.sub_apply, coe_toCLMEquiv]
+    rw [hball]
+    exact isClosed_iInter fun f ↦
+      isClosed_le (((continuous_apply_weak f).sub continuous_const).norm) continuous_const
+  · simp [Metric.closedBall_eq_empty.mpr (lt_of_not_ge hr)]
 
 end AbstractMeasure
