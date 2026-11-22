@@ -82,23 +82,6 @@ namespace TauCeti.ModularGroup
 
 open _root_.ModularGroup
 
-/-! ### Auxiliary images under `triangleGroupEquiv.symm` -/
-
-private theorem triangleGroupEquiv_symm_coe_R :
-    triangleGroupEquiv.symm (R : PSL(2, ℤ)) = TriangleGroup.x 3 2 0 := by
-  apply triangleGroupEquiv.injective
-  simp [coe_R_eq_coe_S_mul_coe_T]
-
-private theorem triangleGroupEquiv_symm_coe_S :
-    triangleGroupEquiv.symm (S : PSL(2, ℤ)) = TriangleGroup.y 3 2 0 := by
-  apply triangleGroupEquiv.injective
-  simp
-
-private theorem triangleGroupEquiv_symm_coe_T :
-    triangleGroupEquiv.symm (T : PSL(2, ℤ)) = (TriangleGroup.z 3 2 0)⁻¹ := by
-  apply triangleGroupEquiv.injective
-  simp
-
 /-! ### Free-product presentation `PSL(2, ℤ) ≃* ℤ/2ℤ ∗ ℤ/3ℤ` -/
 
 /-- **Free-product decomposition of the modular group.** `PSL(2, ℤ)` is isomorphic to the free

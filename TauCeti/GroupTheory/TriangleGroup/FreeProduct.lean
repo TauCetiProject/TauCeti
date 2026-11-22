@@ -255,20 +255,12 @@ theorem natCard_abelianization (a b : ℕ) :
 /-! ### Torsion classification and index divisibility -/
 
 private theorem equivCoprod_x_zpow (a b : ℕ) (k : ℤ) :
-    equivCoprod a b (x a b 0 ^ k) = Monoid.Coprod.inl (.ofAdd (k : ZMod a)) := by
-  rw [map_zpow, equivCoprod_x, ← map_zpow, ← ofAdd_zsmul, zsmul_one]
+    equivCoprod a b (x a b 0 ^ k) = Monoid.Coprod.inl (.ofAdd (k : ZMod a)) :=
+  ((equivCoprod a b).symm_apply_eq.mp (equivCoprod_symm_inl_ofAdd_intCast a b k)).symm
 
 private theorem equivCoprod_y_zpow (a b : ℕ) (k : ℤ) :
-    equivCoprod a b (y a b 0 ^ k) = Monoid.Coprod.inr (.ofAdd (k : ZMod b)) := by
-  rw [map_zpow, equivCoprod_y, ← map_zpow, ← ofAdd_zsmul, zsmul_one]
-
-private theorem equivCoprod_x_pow (a b k : ℕ) :
-    equivCoprod a b (x a b 0 ^ k) = Monoid.Coprod.inl (.ofAdd (k : ZMod a)) := by
-  rw [map_pow, equivCoprod_x, ← map_pow, ← ofAdd_nsmul, nsmul_one]
-
-private theorem equivCoprod_y_pow (a b k : ℕ) :
-    equivCoprod a b (y a b 0 ^ k) = Monoid.Coprod.inr (.ofAdd (k : ZMod b)) := by
-  rw [map_pow, equivCoprod_y, ← map_pow, ← ofAdd_nsmul, nsmul_one]
+    equivCoprod a b (y a b 0 ^ k) = Monoid.Coprod.inr (.ofAdd (k : ZMod b)) :=
+  ((equivCoprod a b).symm_apply_eq.mp (equivCoprod_symm_inr_ofAdd_intCast a b k)).symm
 
 /-- An element of `Δ(a, b, 0)` has finite order if and only if it is conjugate to a finite-order
 integer power of `x a b 0` or `y a b 0`. -/
@@ -321,29 +313,24 @@ conjugate to `x a b 0 ^ k` for some `k < a` or to `y a b 0 ^ k` for some `k < b`
 theorem isOfFinOrder_iff_of_neZero {a b : ℕ} [NeZero a] [NeZero b] {g : TriangleGroup a b 0} :
     IsOfFinOrder g ↔
       (∃ k < a, IsConj g (x a b 0 ^ k)) ∨ (∃ k < b, IsConj g (y a b 0 ^ k)) := by
-  rw [← (equivCoprod a b).injective.isOfFinOrder_iff (f := (equivCoprod a b).toMonoidHom),
-    MulEquiv.coe_toMonoidHom, Monoid.Coprod.isOfFinOrder_iff]
-  refine ⟨?_, ?_⟩
-  · rintro (⟨u, -, hconj⟩ | ⟨v, -, hconj⟩)
-    · refine Or.inl ⟨u.toAdd.val, u.toAdd.val_lt, ?_⟩
-      have hu : u = .ofAdd (u.toAdd.val : ZMod a) := by simp
-      rw [hu] at hconj
-      have hc := (equivCoprod a b).symm.toMonoidHom.map_isConj hconj
-      rwa [MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply,
-        equivCoprod_symm_inl_ofAdd_natCast] at hc
-    · refine Or.inr ⟨v.toAdd.val, v.toAdd.val_lt, ?_⟩
-      have hv : v = .ofAdd (v.toAdd.val : ZMod b) := by simp
-      rw [hv] at hconj
-      have hc := (equivCoprod a b).symm.toMonoidHom.map_isConj hconj
-      rwa [MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply,
-        equivCoprod_symm_inr_ofAdd_natCast] at hc
+  classical
+  have hx : IsOfFinOrder (x a b 0) :=
+    orderOf_pos_iff.mp (by rw [orderOf_x_zero]; exact Nat.pos_of_ne_zero (NeZero.ne a))
+  have hy : IsOfFinOrder (y a b 0) :=
+    orderOf_pos_iff.mp (by rw [orderOf_y_zero]; exact Nat.pos_of_ne_zero (NeZero.ne b))
+  refine ⟨fun hg ↦ ?_, ?_⟩
+  · rcases isOfFinOrder_iff.mp hg with ⟨k, -, hconj⟩ | ⟨k, -, hconj⟩
+    · obtain ⟨m, hm, hm_eq⟩ := Finset.mem_image.mp
+        (hx.mem_zpowers_iff_mem_range_orderOf.mp ⟨k, rfl⟩)
+      rw [Finset.mem_range, orderOf_x_zero] at hm
+      exact Or.inl ⟨m, hm, hm_eq ▸ hconj⟩
+    · obtain ⟨m, hm, hm_eq⟩ := Finset.mem_image.mp
+        (hy.mem_zpowers_iff_mem_range_orderOf.mp ⟨k, rfl⟩)
+      rw [Finset.mem_range, orderOf_y_zero] at hm
+      exact Or.inr ⟨m, hm, hm_eq ▸ hconj⟩
   · rintro (⟨k, -, hconj⟩ | ⟨k, -, hconj⟩)
-    · refine Or.inl ⟨.ofAdd (k : ZMod a), isOfFinOrder_of_finite _, ?_⟩
-      have hc := (equivCoprod a b).toMonoidHom.map_isConj hconj
-      rwa [MulEquiv.coe_toMonoidHom, equivCoprod_x_pow] at hc
-    · refine Or.inr ⟨.ofAdd (k : ZMod b), isOfFinOrder_of_finite _, ?_⟩
-      have hc := (equivCoprod a b).toMonoidHom.map_isConj hconj
-      rwa [MulEquiv.coe_toMonoidHom, equivCoprod_y_pow] at hc
+    · exact hconj.symm.isOfFinOrder (hx.pow (n := k))
+    · exact hconj.symm.isOfFinOrder (hy.pow (n := k))
 
 /-- For `1 < n`, an element of `Δ(a, b, 0)` has order `n` if and only if it is conjugate to an
 integer power of `x a b 0` or `y a b 0` of order `n`. -/

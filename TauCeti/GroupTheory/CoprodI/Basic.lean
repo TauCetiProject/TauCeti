@@ -34,6 +34,8 @@ from the free product.
 ## Main declarations
 
 * `MulEquiv.coprodICongr`: the isomorphism of free products induced by a family of isomorphisms.
+* `MulEquiv.coprodICongrLeft`: reindexing an indexed free product along an equivalence of index
+  types.
 * `Monoid.CoprodI.boolEquivCoprod`: `CoprodI M ≃* Coprod (M false) (M true)` for a family `M`
   indexed by `Bool`.
 * `Monoid.CoprodI.coprodLift_injective_iff`: for a family `M` indexed by `Bool`, homomorphisms
@@ -91,6 +93,45 @@ theorem coprodICongr_apply_of (e : ∀ i, M i ≃* N i) {i : ι} (m : M i) :
 theorem coprodICongr_symm (e : ∀ i, M i ≃* N i) :
     (coprodICongr e).symm = coprodICongr fun i => (e i).symm :=
   (rfl)
+
+private def castHom (M : ι → Type*) [∀ i, Monoid (M i)] {i j : ι} (h : i = j) : M i →* M j where
+  toFun x := h ▸ x
+  map_one' := by subst h; rfl
+  map_mul' _ _ := by subst h; rfl
+
+private theorem of_castHom (M : ι → Type*) [∀ i, Monoid (M i)] {i j : ι} (h : i = j) (m : M i) :
+    CoprodI.of (i := j) (castHom M h m) = CoprodI.of (i := i) m := by
+  subst h; rfl
+
+private theorem of_comp_castHom {ι' : Type*} (M : ι → Type*) [∀ i, Monoid (M i)]
+    (f : ι' → ι) {a b : ι'} (hab : a = b) (h : f b = f a) (m : M (f b)) :
+    CoprodI.of (M := fun x => M (f x)) (i := a) (castHom M h m) =
+      CoprodI.of (M := fun x => M (f x)) (i := b) m := by
+  subst hab; rfl
+
+/-- Reindexing an indexed free product along an equivalence `e : ι' ≃ ι` of index types. -/
+def coprodICongrLeft (M : ι → Type*) [∀ i, Monoid (M i)] {ι' : Type*} (e : ι' ≃ ι) :
+    CoprodI (fun i' => M (e i')) ≃* CoprodI M :=
+  MonoidHom.toMulEquiv
+    (CoprodI.lift fun i' => CoprodI.of (i := e i'))
+    (CoprodI.lift fun i => CoprodI.of.comp (castHom M (e.apply_symm_apply i).symm))
+    (CoprodI.ext_hom _ _ fun i' => MonoidHom.ext fun m => by
+      simp only [MonoidHom.comp_apply, MonoidHom.id_apply, CoprodI.lift_of]
+      exact of_comp_castHom M e (e.symm_apply_apply i') _ m)
+    (CoprodI.ext_hom _ _ fun i => MonoidHom.ext fun m => by
+      simp only [MonoidHom.comp_apply, MonoidHom.id_apply, CoprodI.lift_of]
+      exact of_castHom M (e.apply_symm_apply i).symm m)
+
+@[simp]
+theorem coprodICongrLeft_of (M : ι → Type*) [∀ i, Monoid (M i)] {ι' : Type*} (e : ι' ≃ ι)
+    {i' : ι'} (m : M (e i')) :
+    coprodICongrLeft M e (CoprodI.of (i := i') m) = CoprodI.of (i := e i') m :=
+  CoprodI.lift_of _ _
+
+theorem coprodICongrLeft_symm_of (M : ι → Type*) [∀ i, Monoid (M i)] {ι' : Type*} (e : ι' ≃ ι)
+    {i' : ι'} (m : M (e i')) :
+    (coprodICongrLeft M e).symm (CoprodI.of (i := e i') m) = CoprodI.of (i := i') m :=
+  (coprodICongrLeft M e).symm_apply_eq.mpr (coprodICongrLeft_of M e m).symm
 
 variable (M) [Unique ι]
 
@@ -178,35 +219,30 @@ variable (M : Fin 2 → Type*) [∀ i, Monoid (M i)]
 members: the inclusion of `M 0` corresponds to `Monoid.Coprod.inl` and that of `M 1` to
 `Monoid.Coprod.inr`. -/
 def finTwoEquivCoprod : CoprodI M ≃* Coprod (M 0) (M 1) :=
-  MonoidHom.toMulEquiv
-    (lift fun
-      | ⟨0, _⟩ => Coprod.inl
-      | ⟨1, _⟩ => Coprod.inr)
-    (Coprod.lift (of (i := 0)) (of (i := 1)))
-    (by
-      refine ext_hom _ _ fun i => ?_
-      match i with
-      | ⟨0, _⟩ => ext; simp
-      | ⟨1, _⟩ => ext; simp)
-    (by ext <;> simp)
+  (MulEquiv.coprodICongrLeft M finTwoEquiv.symm).symm.trans
+    (boolEquivCoprod fun b => M (finTwoEquiv.symm b))
 
 variable {M}
 
 @[simp]
 theorem finTwoEquivCoprod_of_zero (x : M 0) : finTwoEquivCoprod M (of x) = Coprod.inl x :=
-  lift_of _ _
+  (congrArg (boolEquivCoprod fun b => M (finTwoEquiv.symm b))
+    (MulEquiv.coprodICongrLeft_symm_of M finTwoEquiv.symm (i' := false) x)).trans
+    (boolEquivCoprod_of_false (M := fun b => M (finTwoEquiv.symm b)) x)
 
 @[simp]
 theorem finTwoEquivCoprod_of_one (x : M 1) : finTwoEquivCoprod M (of x) = Coprod.inr x :=
-  lift_of _ _
+  (congrArg (boolEquivCoprod fun b => M (finTwoEquiv.symm b))
+    (MulEquiv.coprodICongrLeft_symm_of M finTwoEquiv.symm (i' := true) x)).trans
+    (boolEquivCoprod_of_true (M := fun b => M (finTwoEquiv.symm b)) x)
 
 @[simp]
 theorem finTwoEquivCoprod_symm_inl (x : M 0) : (finTwoEquivCoprod M).symm (Coprod.inl x) = of x :=
-  Coprod.lift_apply_inl (of (i := 0)) (of (i := 1)) x
+  (finTwoEquivCoprod M).symm_apply_eq.mpr (finTwoEquivCoprod_of_zero x).symm
 
 @[simp]
 theorem finTwoEquivCoprod_symm_inr (x : M 1) : (finTwoEquivCoprod M).symm (Coprod.inr x) = of x :=
-  Coprod.lift_apply_inr (of (i := 0)) (of (i := 1)) x
+  (finTwoEquivCoprod M).symm_apply_eq.mpr (finTwoEquivCoprod_of_one x).symm
 
 end FinTwo
 
@@ -266,22 +302,19 @@ instance instMonoidFactors (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
   | true => inferInstanceAs (Monoid (ULift N))
 
 instance instGroupFactors (G : Type u) (H : Type v) [Group G] [Group H] (b : Bool) :
-    Group (Factors G H b) where
-  toMonoid := instMonoidFactors G H b
-  inv x := match b, x with
-    | false, x => ULift.up x.down⁻¹
-    | true, y => ULift.up y.down⁻¹
-  div x y := match b, x, y with
-    | false, x, y => ULift.up (x.down / y.down)
-    | true, x, y => ULift.up (x.down / y.down)
-  zpow n x := match b, x with
-    | false, x => ULift.up (x.down ^ n)
-    | true, y => ULift.up (y.down ^ n)
-  div_eq_mul_inv a c := by cases b <;> exact ULift.ext (div_eq_mul_inv a.down c.down)
-  zpow_zero' a := by cases b <;> exact ULift.ext (zpow_zero a.down)
-  zpow_succ' n a := by cases b <;> exact ULift.ext (DivInvMonoid.zpow_succ' n a.down)
-  zpow_neg' n a := by cases b <;> exact ULift.ext (DivInvMonoid.zpow_neg' n a.down)
-  inv_mul_cancel a := by cases b <;> exact ULift.ext (inv_mul_cancel a.down)
+    Group (Factors G H b) :=
+  let g : Group (Factors G H b) :=
+    Bool.rec (motive := fun b => Group (Factors G H b))
+      (inferInstance : Group (ULift.{v} G)) (inferInstance : Group (ULift.{u} H)) b
+  { toMonoid := instMonoidFactors G H b
+    inv := g.inv
+    div := g.div
+    zpow := g.zpow
+    div_eq_mul_inv := by cases b <;> exact div_eq_mul_inv
+    zpow_zero' := by cases b <;> exact zpow_zero
+    zpow_succ' := by cases b <;> exact DivInvMonoid.zpow_succ'
+    zpow_neg' := by cases b <;> exact DivInvMonoid.zpow_neg'
+    inv_mul_cancel := by cases b <;> exact inv_mul_cancel }
 
 section Monoid
 

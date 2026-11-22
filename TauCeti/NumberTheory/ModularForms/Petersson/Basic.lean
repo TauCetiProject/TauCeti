@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.NumberTheory.ModularForms.Bounds
-public import TauCeti.NumberTheory.Modular
+public import TauCeti.NumberTheory.Modular.Basic
 
 /-!
 # The Petersson inner product

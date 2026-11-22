@@ -173,17 +173,20 @@ variable {G : Type*} [Group G]
 meets every conjugate of `H` trivially. -/
 theorem isCancelSMul_quotient_iff {H K : Subgroup G} :
     IsCancelSMul K (G ⧸ H) ↔ ∀ k ∈ K, ∀ g : G, g⁻¹ * k * g ∈ H → k = 1 := by
-  rw [isCancelSMul_iff_eq_one_of_smul_eq]
-  refine ⟨fun hfree k hk g hmem ↦ ?_, fun hconj k q hkq ↦ ?_⟩
-  · have hfix : (⟨k⁻¹, inv_mem hk⟩ : K) • (g : G ⧸ H) = (g : G ⧸ H) := by
-      rw [Subgroup.smul_def, MulAction.Quotient.smul_coe, smul_eq_mul, QuotientGroup.eq]
-      simpa [mul_assoc] using hmem
-    have hk1 : (⟨k⁻¹, inv_mem hk⟩ : K) = 1 := hfree ⟨k⁻¹, inv_mem hk⟩ (g : G ⧸ H) hfix
-    exact inv_eq_one.mp (congrArg Subtype.val hk1)
-  · obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
-    rw [Subgroup.smul_def, MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq] at hkq
-    have hmem : g⁻¹ * (k : G)⁻¹ * g ∈ H := by
-      simpa [mul_assoc] using hkq
-    exact Subtype.ext (inv_eq_one.mp (hconj (k : G)⁻¹ (inv_mem k.property) g hmem))
+  rw [isCancelSMul_iff_stabilizer_eq_bot, QuotientGroup.mk_surjective.forall]
+  refine ⟨fun h k hk g hmem ↦ ?_, fun h g ↦ ?_⟩
+  · have hbot := h g
+    rw [← MulAction.stabilizer_subgroupOf, show (g : G ⧸ H) = g • ((1 : G) : G ⧸ H) by simp,
+      MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulAction.stabilizer_quotient,
+      Subgroup.eq_bot_iff_forall] at hbot
+    exact congrArg Subtype.val (hbot ⟨k, hk⟩ (by
+      rw [Subgroup.mem_subgroupOf, Subgroup.mem_map_equiv, MulAut.conj_symm_apply]
+      exact hmem))
+  · rw [← MulAction.stabilizer_subgroupOf, show (g : G ⧸ H) = g • ((1 : G) : G ⧸ H) by simp,
+      MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulAction.stabilizer_quotient,
+      Subgroup.eq_bot_iff_forall]
+    rintro ⟨k, hk⟩ hmem
+    rw [Subgroup.mem_subgroupOf, Subgroup.mem_map_equiv, MulAut.conj_symm_apply] at hmem
+    exact Subtype.ext (h k hk g hmem)
 
 end Subgroup

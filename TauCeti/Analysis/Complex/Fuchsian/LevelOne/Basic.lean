@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Covolume
-public import TauCeti.NumberTheory.Modular
+public import TauCeti.NumberTheory.Modular.Basic
 public import TauCeti.NumberTheory.Modular.Stabilizer
 
 /-!
