@@ -43,6 +43,8 @@ variation distance.
   word is `1` if `r = 0` and `2` otherwise;
 * `one_sub_descFactorial_div_pow_sub_mul_min_nonneg`: the error `1 - p - t * min p (1 - p)` is
   nonnegative for every sample and population size;
+* `descFactorial_div_mul_min_pos`: for `2 ≤ m ≤ n` the correction `t * min p (1 - p)` is
+  positive;
 * `sampleWithoutReplacement_dirac_update_id_apply_setOf_card_filter_eq_two`: under
   without-replacement sampling of the one-pair population, the probability of seeing `a` twice
   is `t`;
@@ -214,6 +216,22 @@ theorem one_sub_descFactorial_div_pow_sub_mul_min_nonneg (m n : ℕ) :
       (mul_nonneg (sub_nonneg.2 (descFactorial_div_pow_le_one m n))
         (sub_nonneg.2 (onePairT_le_one hmn)))
   · simp [Nat.descFactorial_eq_zero_iff_lt.2 hnm]
+
+/-- For `2 ≤ m ≤ n`, the correction `t * min p (1 - p)`, where
+`p = n.descFactorial m / n ^ m` and `t = m.descFactorial 2 / n.descFactorial 2`, is positive, so
+the sampling-discrepancy error `1 - p - t * min p (1 - p)` is strictly below `1 - p`. -/
+theorem descFactorial_div_mul_min_pos {m n : ℕ} (hm : 2 ≤ m) (hmn : m ≤ n) :
+    0 < (m.descFactorial 2 / n.descFactorial 2 : ℝ) *
+      min (n.descFactorial m / (n : ℝ) ^ m) (1 - n.descFactorial m / (n : ℝ) ^ m) := by
+  have hn : 0 < n := by omega
+  have hpow : (0 : ℝ) < (n : ℝ) ^ m := by positivity
+  have hd : (0 : ℝ) < n.descFactorial m := by exact_mod_cast Nat.descFactorial_pos.2 hmn
+  have hp1 : (n.descFactorial m / (n : ℝ) ^ m) < 1 :=
+    (div_lt_one hpow).2 (by exact_mod_cast Nat.descFactorial_lt_pow hn.ne' hm)
+  have ht : (0 : ℝ) < m.descFactorial 2 / n.descFactorial 2 :=
+    div_pos (by exact_mod_cast Nat.descFactorial_pos.2 hm)
+      (by exact_mod_cast Nat.descFactorial_pos.2 (hm.trans hmn))
+  exact mul_pos ht (lt_min (div_pos hd hpow) (sub_pos.2 hp1))
 
 variable [Fintype ι] [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ] [DecidableEq κ]
 

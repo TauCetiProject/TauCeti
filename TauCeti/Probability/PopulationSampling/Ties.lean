@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.PopulationSampling.Map
-public import TauCeti.Probability.PopulationSampling.OnePair
+public import TauCeti.Probability.PopulationSampling.RepeatedValues
 
 /-!
 # Sampling discrepancy for random populations with ties
@@ -17,10 +16,9 @@ that a uniform index map `ι → κ` is injective, and `t = m.descFactorial 2 / 
 For every random population the two sampling laws differ on each event by at most the collision
 probability `1 - p` (`sampleWithoutReplacement_le_sampleWithReplacement_add_exact_collision`).
 
-A deterministic population with a repeated value does better: if `x a = x b` for distinct indices
-`a b : κ`, both sampling laws of `x` are pushforwards of those of the one-pair population
-`Function.update id b a`, whose exact excess is `1 - p - t * min p (1 - p)`
-(`iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_eq`). Averaging over
+A deterministic population with a repeated value does better: its two sampling laws differ on each
+event, in either direction, by at most `1 - p - t * min p (1 - p)`
+(`sampleWithoutReplacement_le_sampleWithReplacement_dirac_add_of_not_injective`). Averaging over
 `ρ`, this file shows that if `S` is a measurable set of populations with a repeated value, the two
 sampling laws of `ρ` differ on every event, in either direction, by at most
 `1 - p - t * min p (1 - p) * ρ(S)`. The improvement over `1 - p` grows linearly with the
@@ -55,12 +53,11 @@ namespace TauCeti.Probability
 variable {ι κ α : Type*} [Fintype ι] [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
   [MeasurableSpace α]
 
-/-- **Pointwise errors.** For a sample no larger than the population, sampling a deterministic
-population `x` without and with replacement differ on each event, in either direction, by at most
-`1 - p - t * min p (1 - p)` if `x` lies in a set `S` of non-injective populations, and by at most
-`1 - p` otherwise. -/
-private theorem dirac_le_add_tieError (e : ι ↪ κ) {S : Set (κ → α)}
-    (hSx : ∀ x ∈ S, ¬ Injective x) (x : κ → α) (A : Set (ι → α)) :
+/-- **Pointwise errors.** Sampling a deterministic population `x` without and with replacement
+differ on each event, in either direction, by at most `1 - p - t * min p (1 - p)` if `x` lies in a
+set `S` of non-injective populations, and by at most `1 - p` otherwise. -/
+private theorem dirac_le_add_tieError {S : Set (κ → α)} (hSx : ∀ x ∈ S, ¬ Injective x)
+    (x : κ → α) (A : Set (ι → α)) :
     let p : ℝ := (Fintype.card κ).descFactorial (Fintype.card ι) /
       (Fintype.card κ : ℝ) ^ Fintype.card ι
     let t : ℝ := (Fintype.card ι).descFactorial 2 / (Fintype.card κ).descFactorial 2
@@ -75,17 +72,10 @@ private theorem dirac_le_add_tieError (e : ι ↪ κ) {S : Set (κ → α)}
   by_cases hx : x ∈ S
   · have hg : g x = ENNReal.ofReal (1 - p - t * min p (1 - p)) := by
       simp [g, hx]
-    obtain ⟨a, b, hxab, hab⟩ := not_injective_iff.1 (hSx x hx)
-    have hmn := Fintype.card_le_of_embedding e
-    have hP := iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_eq
-      (ι := ι) hab hmn
     rw [hg]
-    exact ⟨measure_le_add_of_iSup_sub_le
-        ((iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_le_update_id hxab).trans
-          hP.le) A,
-      measure_le_add_of_iSup_sub_le
-        ((iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_le_update_id e hxab).trans
-          hP.le) A⟩
+    exact ⟨sampleWithoutReplacement_le_sampleWithReplacement_dirac_add_of_not_injective
+        (hSx x hx) A,
+      sampleWithReplacement_le_sampleWithoutReplacement_dirac_add_of_not_injective (hSx x hx) A⟩
   · have hg : g x = ENNReal.ofReal (1 - p) := by
       simp [g, hx]
     rw [hg, ← one_sub_descFactorial_div_pow_eq_ofReal]
@@ -134,13 +124,10 @@ theorem sampleWithoutReplacement_le_sampleWithReplacement_add_ties
             (Fintype.card κ : ℝ) ^ Fintype.card ι
          let t : ℝ := (Fintype.card ι).descFactorial 2 / (Fintype.card κ).descFactorial 2
          1 - p - t * min p (1 - p) * (ρ S).toReal) := by
-  rcases le_or_gt (Fintype.card ι) (Fintype.card κ) with hmn | hnm
-  · obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
-    rw [← lintegral_tieError (ι := ι) ρ hS, sampleWithoutReplacement_def, sampleWithReplacement_def]
-    refine samplePopulation_le_add_lintegral (fun B _ => ae_of_all _ fun x => ?_) A
-    simpa only [sampleWithoutReplacement_def, sampleWithReplacement_def] using
-      (dirac_le_add_tieError e hSx x B).1
-  · simp [sampleWithoutReplacement_eq_zero_of_card_lt hnm]
+  rw [← lintegral_tieError (ι := ι) ρ hS, sampleWithoutReplacement_def, sampleWithReplacement_def]
+  refine samplePopulation_le_add_lintegral (fun B _ => ae_of_all _ fun x => ?_) A
+  simpa only [sampleWithoutReplacement_def, sampleWithReplacement_def] using
+    (dirac_le_add_tieError hSx x B).1
 
 /-- **The mixture bound with ties, with replacement to without replacement.** Let `S` be a
 measurable set of populations with a repeated value. For a random population with law `ρ`, every
@@ -156,17 +143,10 @@ theorem sampleWithReplacement_le_sampleWithoutReplacement_add_ties
             (Fintype.card κ : ℝ) ^ Fintype.card ι
          let t : ℝ := (Fintype.card ι).descFactorial 2 / (Fintype.card κ).descFactorial 2
          1 - p - t * min p (1 - p) * (ρ S).toReal) := by
-  rcases le_or_gt (Fintype.card ι) (Fintype.card κ) with hmn | hnm
-  · obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
-    rw [← lintegral_tieError (ι := ι) ρ hS, sampleWithoutReplacement_def, sampleWithReplacement_def]
-    refine samplePopulation_le_add_lintegral (fun B _ => ae_of_all _ fun x => ?_) A
-    simpa only [sampleWithoutReplacement_def, sampleWithReplacement_def] using
-      (dirac_le_add_tieError e hSx x B).2
-  · rcases isEmpty_or_nonempty (ι → κ) with h | h
-    · simp
-    · have := isProbabilityMeasure_sampleWithReplacement (ι := ι) ρ
-      simpa [sampleWithoutReplacement_eq_zero_of_card_lt hnm,
-        Nat.descFactorial_eq_zero_iff_lt.2 hnm] using prob_le_one
+  rw [← lintegral_tieError (ι := ι) ρ hS, sampleWithoutReplacement_def, sampleWithReplacement_def]
+  refine samplePopulation_le_add_lintegral (fun B _ => ae_of_all _ fun x => ?_) A
+  simpa only [sampleWithoutReplacement_def, sampleWithReplacement_def] using
+    (dirac_le_add_tieError hSx x B).2
 
 /-- **The mixture bound with ties, total-variation form.** Let `S` be a measurable set of
 populations with a repeated value. For a random population with law `ρ`, Mathlib's extended total
