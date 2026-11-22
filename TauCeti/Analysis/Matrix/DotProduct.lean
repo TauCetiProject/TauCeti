@@ -9,9 +9,10 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 import Mathlib.Analysis.Matrix.Hermitian
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
-# Diagonal and off-diagonal decomposition of `RCLike` matrix quadratic forms
+# Diagonal and off-diagonal decomposition of matrix forms
 
 For a square matrix `A : Matrix n n 𝕜` over an `RCLike` field `𝕜`, the sesquilinear quadratic form
 `star v ⬝ᵥ A *ᵥ v` splits into the weighted squared-norm sum `∑ i, A i i * ‖v i‖ ^ 2` and the
@@ -29,7 +30,9 @@ public section
 
 namespace Matrix
 
-variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
+variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n]
+
+variable [RCLike 𝕜]
 
 /-- Decomposes `star v ⬝ᵥ A *ᵥ v` into its diagonal squared-norm sum and its off-diagonal part
 `star v ⬝ᵥ (A - diagonal A.diag) *ᵥ v`. -/
@@ -42,6 +45,19 @@ theorem star_dotProduct_mulVec_eq_sum_diag_add (A : Matrix n n 𝕜) (v : n → 
     rw [mul_left_comm, RCLike.star_def, RCLike.conj_mul]; norm_cast
   nth_rw 1 [← add_sub_cancel (diagonal A.diag) A]
   rw [add_mulVec, dotProduct_add, hdiag]
+
+omit [DecidableEq n] in
+/-- Subtracting a weighted diagonal sum leaves the off-diagonal sum and the weighted
+differences from the diagonal squared norms. -/
+theorem star_dotProduct_mulVec_sub_sum_diag_eq (A : Matrix n n 𝕜) (v : n → 𝕜) (m : n → ℝ) :
+    star v ⬝ᵥ A *ᵥ v - ∑ i, A i i * (m i : 𝕜) =
+      (∑ p ∈ (Finset.univ : Finset n).offDiag, A p.1 p.2 * (star (v p.1) * v p.2)) +
+      ∑ i, A i i * ((‖v i‖ ^ 2 - m i : ℝ) : 𝕜) := by
+  classical
+  rw [A.star_dotProduct_mulVec_eq_sum_diag_add,
+    A.dotProduct_mulVec_sub_diagonal_eq_sum_offDiag, add_comm, add_sub_assoc,
+    ← Finset.sum_sub_distrib]
+  simp only [RCLike.ofReal_sub, mul_sub, Pi.star_apply, mul_assoc, mul_left_comm (star _) (A _ _)]
 
 /-- Real part of the diagonal/off-diagonal decomposition of `star v ⬝ᵥ A *ᵥ v`. -/
 theorem re_star_dotProduct_mulVec_eq_sum_diag_add (A : Matrix n n 𝕜) (v : n → 𝕜) :

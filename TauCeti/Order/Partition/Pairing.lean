@@ -63,12 +63,10 @@ theorem isPairing_iff_part : P.IsPairing ↔ ∀ a ∈ s, #(P.part a) = 2 := by
 /-- In a pair partition, each point has a unique distinct partner in its block. -/
 theorem IsPairing.existsUnique_mem_part_ne (hP : P.IsPairing) {a : α} (ha : a ∈ s) :
     ∃! b, b ∈ P.part a ∧ b ≠ a := by
-  obtain ⟨x, y, hxy, hpart⟩ := card_eq_two.mp (isPairing_iff.mp hP _ (P.part_mem.mpr ha))
-  have ha' := P.mem_part ha
-  rw [hpart] at ha' ⊢
-  rcases (by simpa only [mem_insert, mem_singleton] using ha' : a = x ∨ a = y) with rfl | rfl
-  · exact ⟨y, by simp [hxy.symm], by simp_all⟩
-  · exact ⟨x, by simp [hxy], by simp_all⟩
+  -- Removing `a` from its two-element block leaves exactly one element.
+  have h : #((P.part a).erase a) = 1 := by
+    rw [card_erase_of_mem (P.mem_part ha), hP _ (P.part_mem.2 ha)]
+  simpa only [mem_erase, and_comm] using card_eq_one_iff_existsUnique.1 h
 
 /-- A pairing of `s` has half as many parts as `s` has elements. -/
 theorem IsPairing.card_eq_two_mul (hP : P.IsPairing) : #s = 2 * #P.parts := by
@@ -117,14 +115,11 @@ theorem snd_mem_of_mem_orderedPairs {p : α × α} (hp : p ∈ P.orderedPairs) :
 
 @[simp]
 theorem orderedPairs_bot : (⊥ : Finpartition s).orderedPairs = ∅ := by
-  ext ⟨a, b⟩
-  simp only [mem_orderedPairs, notMem_empty, iff_false, not_and]
-  intro hab hpart
-  have hcard : #({a, b} : Finset α) = 1 := by
-    obtain ⟨c, -, hc⟩ := mem_bot_iff.1 hpart
-    rw [← hc, card_singleton]
-  rw [card_pair hab.ne] at hcard
-  omega
+  refine eq_empty_of_forall_notMem fun p hp => ?_
+  obtain ⟨hlt, hpart⟩ := mem_orderedPairs.1 hp
+  -- Every part of `⊥` is a singleton, but `{p.1, p.2}` has two elements.
+  obtain ⟨c, -, hc⟩ := mem_bot_iff.1 hpart
+  exact absurd (congrArg card hc) (by rw [card_singleton, card_pair hlt.ne]; omega)
 
 /-- For a pairing `P`, sending `(a, b)` to `{a, b}` identifies `P.orderedPairs` with `P.parts`, so
 products of block weights over `P.orderedPairs` agree with products over `P.parts`. -/
@@ -135,15 +130,11 @@ theorem IsPairing.prod_orderedPairs (hP : P.IsPairing) (F : Finset α → M) :
   refine Finset.prod_bij (fun p _ => {p.1, p.2})
     (fun p hp => pair_mem_parts_of_mem_orderedPairs hp) ?_ ?_ fun _ _ => rfl
   · rintro ⟨a₁, b₁⟩ hp₁ ⟨a₂, b₂⟩ hp₂ hEq
-    rw [mem_orderedPairs] at hp₁ hp₂
-    have ha₁ : a₁ ∈ ({a₂, b₂} : Finset α) := hEq ▸ mem_insert_self a₁ {b₁}
-    have hb₁ : b₁ ∈ ({a₂, b₂} : Finset α) := hEq ▸ mem_insert_of_mem (mem_singleton_self b₁)
-    rw [mem_insert, mem_singleton] at ha₁ hb₁
-    rcases ha₁ with rfl | rfl <;> rcases hb₁ with rfl | rfl
-    · exact absurd rfl hp₁.1.ne
+    -- Equal pairs `{a₁, b₁} = {a₂, b₂}` agree up to swapping; the order rules out the swap.
+    have hEq' : ({a₁, b₁} : Set α) = {a₂, b₂} := by rw [← coe_pair, ← coe_pair, hEq]
+    rcases Set.pair_eq_pair_iff.1 hEq' with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · rfl
-    · exact absurd (hp₂.1.trans hp₁.1) (lt_irrefl _)
-    · exact absurd rfl hp₁.1.ne
+    · exact (lt_asymm (lt_of_mem_orderedPairs hp₁) (lt_of_mem_orderedPairs hp₂)).elim
   · intro B hB
     obtain ⟨a, b, hab, rfl⟩ := card_eq_two.1 (hP B hB)
     rcases hab.lt_or_gt with hlt | hlt

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder
-public import TauCeti.Analysis.PDE.Regularity.Interior
+public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Basic
+public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
 import TauCeti.Topology.MetricSpace.Holder
