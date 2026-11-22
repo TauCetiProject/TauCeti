@@ -462,7 +462,9 @@ end Subadditive
 
 section Copy
 
-variable {G} {W : Type*} {H : SimpleGraph W} [H.LocallyFinite]
+omit [Fintype V] [DecidableRel G.Adj]
+
+variable {G} [Finite V] [G.LocallyFinite] {W : Type*} {H : SimpleGraph W} [H.LocallyFinite]
   [Semiring R] [PartialOrder R] [IsStrictOrderedRing R]
 
 omit [DecidableEq V] in
@@ -480,8 +482,8 @@ theorem Copy.exists_iso_of_sum_le_two_mul [Nonempty V] (f : Copy G H) (hH : H.Pr
     {a : W → R} (ha0 : 0 ≤ a) (ha : a ≠ 0)
     (hle : ∀ x, ∑ y ∈ H.neighborFinset x, a y ≤ 2 * a x) :
     ∃ e : G ≃g H, ⇑e = f := by
-  have hpos : ∀ x, 0 < a x :=
-    hH.pos_of_sum_le_smul (c := (2 : R)) ha0 ha fun x ↦ by rw [smul_eq_mul]; exact hle x
+  have := Fintype.ofFinite V
+  have hpos : ∀ x, 0 < a x := hH.pos_of_sum_le_smul (c := (2 : R)) ha0 ha hle
   -- The neighbours of `v` map to neighbours of `f v`.
   have hsub (v : V) : (G.neighborFinset v).map f.toEmbedding ⊆ H.neighborFinset (f v) := by
     rw [← coe_subset, coe_map, coe_neighborFinset, coe_neighborFinset]
