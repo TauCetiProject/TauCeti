@@ -371,15 +371,6 @@ private theorem mk_one_leftMaurerCartanEval_eq_tangentMap_mul (V : Π g : G, Tan
   rfl
 
 omit [ContMDiffMul I 1 G] in
-/-- In the trivialization at `1`, the fibre coordinate of a tangent vector over `1` is the vector
-itself. -/
-private theorem trivializationAt_one_mk_snd [IsManifold I 1 G] (v : E) :
-    (trivializationAt E (TangentSpace I) (1 : G) (TotalSpace.mk' E 1 v)).2 = v :=
-  ((trivializationAt E (TangentSpace I) (1 : G)).continuousLinearMapAt_apply_of_mem (R := 𝕜)
-    (FiberBundle.mem_baseSet_trivializationAt' 1) v).symm.trans
-    (Manifold.continuousLinearMapAt_trivializationAt_self 1 v)
-
-omit [ContMDiffMul I 1 G] in
 /-- The left Maurer-Cartan form evaluated on a vector field is differentiable wherever the vector
 field is. -/
 theorem _root_.MDifferentiableAt.leftMaurerCartanEval [LieGroup I 2 G]
@@ -395,7 +386,8 @@ theorem _root_.MDifferentiableAt.leftMaurerCartanEval [LieGroup I 2 G]
     exact ((hmul.mdifferentiable one_ne_zero _).comp x (hinv.prodMk hV)).congr_of_eventuallyEq
       (Filter.Eventually.of_forall (mk_one_leftMaurerCartanEval_eq_tangentMap_mul V))
   exact ((mdifferentiableAt_totalSpace I _).mp hF).2.congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun g ↦ (trivializationAt_one_mk_snd _).symm)
+    (Filter.Eventually.of_forall fun g ↦
+      (TangentBundle.trivializationAt_mk_self_snd (1 : G) _).symm)
 
 omit [ContMDiffMul I 1 G] in
 /-- On a `C^N` Lie group, the left Maurer-Cartan form evaluated on a vector field is `C^n` wherever
@@ -416,7 +408,8 @@ theorem _root_.ContMDiffAt.leftMaurerCartanEval {n N : ℕ∞ω} [LieGroup I N G
     exact ((hmul _).comp x (hinv.prodMk hV)).congr_of_eventuallyEq
       (Filter.Eventually.of_forall (mk_one_leftMaurerCartanEval_eq_tangentMap_mul V))
   exact (contMDiffAt_totalSpace_iff.mp hF).2.congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun g ↦ (trivializationAt_one_mk_snd _).symm)
+    (Filter.Eventually.of_forall fun g ↦
+      (TangentBundle.trivializationAt_mk_self_snd (1 : G) _).symm)
 
 end MaurerCartan
 
