@@ -27,8 +27,8 @@ scalar extension to the polynomial ring `A[X]`. Writing
 `χ(x, X) = ∑ᵢ (-1)ⁱ Λᵢ(x) X^(d - i)`, the coefficient `Λᵢ(x)` is the coefficient of `sⁱ t^(d - i)`
 in `D(s x + t)`; the first one, `Λ₁`, is the trace of `D`, an `A`-linear map. The coefficients
 are defined through the coefficients of the polynomial law, so they make sense over commutative
-semirings, as does the definition of a determinant, while the characteristic polynomial needs the
-subtraction of a ring.
+semirings, as does the definition of a determinant, while the characteristic polynomial needs `A`
+to be a ring.
 
 ## Main declarations
 
@@ -39,7 +39,8 @@ subtraction of a ring.
 * `TauCeti.Determinant.toFun_eq_one_of_dim_zero`: a determinant of dimension zero is constantly
   `1`, and there is exactly one.
 * `TauCeti.Determinant.charCoeff`: the characteristic coefficients `Λᵢ`, with
-  `TauCeti.Determinant.toFun_tmul_add_tmul_one` computing `D(s x + t)` from them.
+  `TauCeti.Determinant.toFun_tmul_add_tmul_one` and `TauCeti.Determinant.map_smul_add_algebraMap`
+  computing `D(s x + t)` from them.
 * `TauCeti.Determinant.trace`: the trace `Λ₁` as an `A`-linear map, with `D.trace 1 = d`.
 * `TauCeti.Determinant.charpoly`: the characteristic polynomial, monic of degree `d`, with
   `χ(x, 0) = (-1)ᵈ D x` and `χ(1, X) = (X - 1)ᵈ`.
@@ -110,6 +111,7 @@ theorem map_smul (a : A) (x : R) : D (a • x) = a ^ d * D x :=
   D.isHomogeneousOfDegree.ground_smul a x
 
 /-- A `d`-dimensional determinant sends the scalar `a` to `a ^ d`. -/
+@[simp]
 theorem map_algebraMap (a : A) : D (algebraMap A R a) = a ^ d := by
   rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one, mul_one]
 
@@ -159,6 +161,12 @@ def charCoeff (i : ℕ) (x : R) : A :=
   PolynomialLaw.coeff A A (Option.elim' x fun _ : Unit ↦ 1) D.toLaw
     ((Finsupp.single () (d - i)).optionElim i)
 
+/-- The characteristic coefficient `Λᵢ(x)` as a coefficient of the polynomial law. -/
+theorem charCoeff_def (i : ℕ) (x : R) :
+    D.charCoeff i x = PolynomialLaw.coeff A A (Option.elim' x fun _ : Unit ↦ 1) D.toLaw
+      ((Finsupp.single () (d - i)).optionElim i) :=
+  (rfl)
+
 /-- The characteristic coefficients vanish above the dimension. -/
 theorem charCoeff_eq_zero {i : ℕ} (hi : d < i) (x : R) : D.charCoeff i x = 0 :=
   D.isHomogeneousOfDegree.coeff_eq_zero _ <| by
@@ -191,32 +199,45 @@ theorem toFun_tmul_add_tmul_one {S : Type*} [CommSemiring S] [Algebra A S] (s t 
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simp [K, Fintype.prod_option, charCoeff]
 
+/-- After scalar extension to any commutative `A`-algebra `S`, `D(s ⊗ 1) = sᵈ ⊗ 1`. -/
+theorem toFun_tmul_one {S : Type*} [CommSemiring S] [Algebra A S] (s : S) :
+    D.toLaw.toFun S (s ⊗ₜ[A] (1 : R)) = (s ^ d) ⊗ₜ 1 := by
+  have h : s ⊗ₜ[A] (1 : R) = s • (1 : S ⊗[A] R) := by
+    rw [Algebra.TensorProduct.one_def, smul_tmul', smul_eq_mul, mul_one]
+  rw [h, D.isHomogeneousOfDegree.toFun_smul, D.isMultiplicative.toFun_one,
+    Algebra.TensorProduct.one_def, smul_tmul', smul_eq_mul, mul_one]
+
+/-- `D(s x + t) = ∑ᵢ sⁱ t^(d - i) Λᵢ(x)` for scalars `s, t ∈ A`. -/
+theorem map_smul_add_algebraMap (s t : A) (x : R) :
+    D (s • x + algebraMap A R t) =
+      ∑ i ∈ Finset.range (d + 1), s ^ i * t ^ (d - i) * D.charCoeff i x := by
+  have h := congrArg (TensorProduct.lid A A) (D.toFun_tmul_add_tmul_one s t x)
+  rw [map_sum] at h
+  simp only [TensorProduct.lid_tmul, smul_eq_mul] at h
+  rw [← h, ← ground_toLaw, PolynomialLaw.ground_apply, PolynomialLaw.toFun'_eq_toFun, tmul_add,
+    tmul_smul, smul_tmul', smul_eq_mul, mul_one, Algebra.algebraMap_eq_smul_one, tmul_smul,
+    smul_tmul', smul_eq_mul, mul_one]
+
 /-- The characteristic coefficient `Λ₀` is `1`. -/
+@[simp]
 theorem charCoeff_zero (x : R) : D.charCoeff 0 x = 1 := by
-  have h := D.toFun_tmul_add_tmul_one (0 : A) 1 x
-  rw [zero_tmul, zero_add, ← Algebra.TensorProduct.one_def, D.isMultiplicative.toFun_one,
-    Finset.sum_range_succ'] at h
-  simp only [pow_succ, mul_zero, zero_tmul, Finset.sum_const_zero, pow_zero, one_pow,
-    mul_one, zero_add] at h
-  simpa [Algebra.TensorProduct.one_def] using (congrArg (TensorProduct.lid A A) h).symm
+  simpa [Finset.sum_range_succ'] using (D.map_smul_add_algebraMap 0 1 x).symm
 
 /-- The top characteristic coefficient `Λ_d` is the determinant itself. -/
+@[simp]
 theorem charCoeff_dim (x : R) : D.charCoeff d x = D x := by
-  have h := D.toFun_tmul_add_tmul_one (1 : A) 0 x
-  rw [zero_tmul, add_zero, ← PolynomialLaw.toFun'_eq_toFun, ← PolynomialLaw.one_tmul_ground_apply',
-    Finset.sum_range_succ, Finset.sum_eq_zero fun i hi ↦ by
-      rw [zero_pow (by simp at hi; omega), mul_zero, zero_tmul]] at h
-  simpa using (congrArg (TensorProduct.lid A A) h).symm
+  have h := D.map_smul_add_algebraMap 1 0 x
+  rw [Finset.sum_range_succ, Finset.sum_eq_zero fun i hi ↦ by
+    rw [zero_pow (by simp at hi; omega), mul_zero, zero_mul]] at h
+  simpa using h.symm
 
 /-- The characteristic coefficients of `1` are the binomial coefficients. -/
+@[simp]
 theorem charCoeff_one_eq_choose (i : ℕ) : D.charCoeff i 1 = d.choose i := by
   rcases lt_or_ge d i with hi | hi
   · rw [D.charCoeff_eq_zero hi, Nat.choose_eq_zero_of_lt hi, Nat.cast_zero]
   have h := D.toFun_tmul_add_tmul_one (X : A[X]) 1 1
-  rw [← add_tmul, ← mul_one (X + 1 : A[X]), ← smul_eq_mul, ← smul_tmul',
-    D.isHomogeneousOfDegree.toFun_smul, ← Algebra.TensorProduct.one_def,
-    D.isMultiplicative.toFun_one, Algebra.TensorProduct.one_def, smul_tmul', smul_eq_mul,
-    mul_one] at h
+  rw [← add_tmul, toFun_tmul_one] at h
   have h' := congrArg (fun p ↦ (Algebra.TensorProduct.rid A A A[X] p).coeff i) h
   simp only [map_sum, Algebra.TensorProduct.rid_tmul, one_pow, mul_one, finsetSum_coeff,
     smul_eq_C_mul, coeff_C_mul, coeff_X_pow, mul_ite, mul_zero, Finset.sum_ite_eq,
@@ -241,6 +262,7 @@ theorem trace_one : D.trace 1 = d := by
   rw [trace_apply, charCoeff_one_eq_choose, Nat.choose_one_right]
 
 /-- A determinant of dimension zero has trace zero. -/
+@[simp]
 theorem trace_eq_zero_of_dim_zero (D : Determinant A R 0) : D.trace = 0 :=
   LinearMap.ext fun x ↦ D.charCoeff_eq_zero zero_lt_one x
 
@@ -248,13 +270,18 @@ end CommSemiring
 
 section CommRing
 
-variable {A : Type u} [CommRing A] {R : Type*} [Ring R] [Algebra A R] {d : ℕ}
+variable {A : Type u} [CommRing A] {R : Type*} [Semiring R] [Algebra A R] {d : ℕ}
   (D : Determinant A R d)
 
 /-- The characteristic polynomial `χ(x, X) = D(X − x) ∈ A[X]` of a determinant at `x ∈ R`,
 computed after scalar extension to the polynomial ring `A[X]`. -/
 def charpoly (x : R) : A[X] :=
   Algebra.TensorProduct.rid A A A[X] (D.toLaw.toFun' A[X] (X ⊗ₜ 1 - 1 ⊗ₜ x))
+
+/-- The characteristic polynomial as the scalar-extended law evaluated at `X ⊗ 1 - 1 ⊗ x`. -/
+theorem charpoly_def (x : R) :
+    D.charpoly x = Algebra.TensorProduct.rid A A A[X] (D.toLaw.toFun' A[X] (X ⊗ₜ 1 - 1 ⊗ₜ x)) :=
+  (rfl)
 
 /-- The characteristic polynomial in terms of the characteristic coefficients:
 `χ(x, X) = ∑ᵢ (-1)ⁱ Λᵢ(x) X^(d - i)`. -/
@@ -297,6 +324,7 @@ theorem charpoly_natDegree_eq_dim [Nontrivial A] (x : R) : (D.charpoly x).natDeg
     (by rw [coeff_charpoly_dim]; exact one_ne_zero)
 
 /-- The constant term of the characteristic polynomial is `(-1) ^ d D x`. -/
+@[simp]
 theorem eval_zero_charpoly (x : R) : (D.charpoly x).eval 0 = (-1) ^ d * D x := by
   rw [← coeff_zero_eq_eval_zero, coeff_charpoly, ite_eq_left (Nat.zero_le d), Nat.sub_zero,
     charCoeff_dim]
@@ -311,10 +339,7 @@ theorem trace_eq_neg_charpoly_coeff (hd : 0 < d) (x : R) :
 /-- The characteristic polynomial of `1` is `(X - 1) ^ d`. -/
 @[simp]
 theorem charpoly_one : D.charpoly 1 = (X - 1) ^ d := by
-  have h : (X : A[X]) ⊗ₜ[A] (1 : R) - 1 ⊗ₜ 1 = (X - 1 : A[X]) • (1 : A[X] ⊗[A] R) := by
-    rw [Algebra.TensorProduct.one_def, smul_tmul', smul_eq_mul, mul_one, sub_tmul]
-  rw [charpoly, h, D.isHomogeneousOfDegree.toFun'_smul, PolynomialLaw.toFun'_eq_toFun,
-    D.isMultiplicative.toFun_one, Algebra.TensorProduct.one_def, smul_tmul', smul_eq_mul, mul_one,
+  rw [charpoly, ← sub_tmul, PolynomialLaw.toFun'_eq_toFun, toFun_tmul_one,
     Algebra.TensorProduct.rid_tmul, one_smul]
 
 end CommRing
@@ -351,7 +376,7 @@ end AlgHomPow
 
 section AlgHomPowCharpoly
 
-variable {A : Type u} [CommRing A] {R : Type*} [Ring R] [Algebra A R]
+variable {A : Type u} [CommRing A] {R : Type*} [Semiring R] [Algebra A R]
 
 /-- The characteristic polynomial of `algHomPow φ d` at `x` is `(X - φ x) ^ d`. -/
 @[simp]
