@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.RingTheory.Ideal.Operations
 
 import Mathlib.RingTheory.MvPowerSeries.Derivative
+import TauCeti.Algebra.MvPolynomial.Derivation
 import TauCeti.Algebra.MvPolynomial.Eval
 
 /-!
@@ -59,6 +60,8 @@ difference of their constant coefficients.
   monomial `a X^m` is `a mᵢ (mᵢ - 1) ⋯ (mᵢ - k + 1) X^(m - k eᵢ)`.
 * `MvPolynomial.iterate_pderiv_prod_aeval_X`: on a separated product `∏ⱼ Qⱼ(Xⱼ)` of one-variable
   polynomials, the `k`-th iterated partial derivative along `Xᵢ` is `Qᵢ⁽ᵏ⁾(Xᵢ) ∏_{j ≠ i} Qⱼ(Xⱼ)`.
+* `MvPolynomial.pderiv_mem_supported`: partial differentiation preserves every variable-support
+  subalgebra `MvPolynomial.supported R s`.
 * `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_mul`,
   `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_sq`: Taylor's ideal-product estimate
   `p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ) ∈ I * J`, and its first-order specialisation modulo `I ^ 2`
@@ -231,6 +234,18 @@ theorem iterate_pderiv_prod_aeval_X [DecidableEq σ] {s : Finset σ} {i : σ} (h
   | zero => rfl
   | succ k ih =>
     simp [Function.iterate_succ_apply', ih, Derivation.leibniz, Derivation.map_aeval, hg, mul_comm]
+
+/-- Partial differentiation preserves every variable-support subalgebra
+`MvPolynomial.supported R s`. -/
+theorem pderiv_mem_supported (i : σ) {s : Set σ} {p : MvPolynomial σ R} (hp : p ∈ supported R s) :
+    pderiv i p ∈ supported R s := by
+  classical
+  refine derivation_mem_supported (pderiv i) Set.Subset.rfl
+    (fun b ↦ by simp) (fun j _ ↦ ?_) hp
+  simp only [pderiv_X, Pi.single_apply]
+  split_ifs
+  · exact one_mem _
+  · exact zero_mem _
 
 end CommSemiring
 

@@ -5,18 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Equiv
-public import Mathlib.Algebra.MvPolynomial.PDeriv
-public import TauCeti.Geometry.Variational.PolynomialJet.Basic
-public import TauCeti.RingTheory.Kaehler.DeRham.Basic
-public import TauCeti.RingTheory.Kaehler.DeRham.LieDerivative
+public import TauCeti.Algebra.MvPolynomial.Derivation
+public import TauCeti.Geometry.Variational.PolynomialJet.Defs
 public import TauCeti.RingTheory.Kaehler.DeRham.Polynomial
-import Mathlib.Algebra.MvPolynomial.Variables
-import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
+import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.RingTheory.Derivation.Basic
-import TauCeti.RingTheory.Derivation.BaseChange
 
 /-!
 # Relative polynomial jet algebras and the unsigned double-differential complex
@@ -36,23 +31,29 @@ identity with vertical partial derivatives:
 On the algebra `VertForms B ι α` of relative vertical Kähler forms over `B`, the exterior
 derivative `dAlg` and the Lie-derivative lifts `totalDerivForm δ i` of total differentiation
 commute (`dAlg_totalDerivForm`), and `totalDerivForm δ i` and `totalDerivForm δ j` commute
-whenever `δ i` and `δ j` commute. Tensoring with the constant-coefficient horizontal exterior
-algebra `ExteriorAlgebra R (ι →₀ R)` yields the unsigned double-differential complex with commuting
-square-zero differentials `dAlgTensor` and `horizDerivUnsigned`, over any commutative ring `R`
-(without characteristic restrictions).
+whenever `δ i` and `δ j` commute. Over a finite base index type `[Fintype ι]`, tensoring with the
+constant-coefficient horizontal exterior algebra `ExteriorAlgebra R (ι →₀ R)` yields the unsigned
+double-differential complex with differentials `dAlgTensor` and `horizDerivUnsigned`, over any
+commutative ring `R` (without characteristic restrictions). Here `dAlgTensor` squares to zero and
+commutes with `horizDerivUnsigned` for arbitrary base derivations `δ`, while `horizDerivUnsigned`
+squares to zero whenever the base derivations `δ i` and `δ j` commute.
 
 ## Main definitions
 
 * `TauCeti.RelJetAlgebra`: `MvPolynomial (α × (ι →₀ ℕ)) B`.
-* `TauCeti.RelJetAlgebra.totalDeriv`: total differentiation along `∂ i`.
+* `TauCeti.RelJetAlgebra.totalDeriv`, `TauCeti.RelJetAlgebra.stageDeriv`:
+  total differentiation along `∂ i` and its linear restriction between consecutive finite stages.
 * `TauCeti.RelJetAlgebra.stage`: finite-order subalgebra of jet order at most `r`.
 * `TauCeti.RelJetAlgebra.polyJetEquivRel`: `R`-algebra isomorphism
   `PolynomialJet R ι α ≃ₐ[R] RelJetAlgebra (MvPolynomial ι R) ι α`.
 * `TauCeti.RelJetAlgebra.VertForms`, `TauCeti.RelJetAlgebra.dAlg`,
-  `TauCeti.RelJetAlgebra.totalDerivForm`, `TauCeti.RelJetAlgebra.vertStage`: the relative vertical
-  de Rham complex and its total-derivative Lie actions.
-* `TauCeti.RelJetAlgebra.dAlgTensor` and `TauCeti.RelJetAlgebra.horizDerivUnsigned`: the commuting
-  square-zero differentials on `VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)`.
+  `TauCeti.RelJetAlgebra.totalDerivForm`, `TauCeti.RelJetAlgebra.vertStage`,
+  `TauCeti.RelJetAlgebra.vertStageDAlg`, `TauCeti.RelJetAlgebra.vertStageTotalDerivForm`: the
+  relative vertical de Rham complex, its total-derivative Lie actions, and their finite-stage linear
+  restrictions.
+* `TauCeti.RelJetAlgebra.dAlgTensor` and `TauCeti.RelJetAlgebra.horizDerivUnsigned`: the vertical
+  and (for `[Fintype ι]`) unsigned horizontal differentials on
+  `VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)`.
 
 ## Main results
 
@@ -61,9 +62,14 @@ square-zero differentials `dAlgTensor` and `horizDerivUnsigned`, over any commut
 * `TauCeti.RelJetAlgebra.polyJetEquivRel_totalDeriv` and
   `TauCeti.RelJetAlgebra.polyJetEquivRel_mem_stage_iff`: compatibility with `PolynomialJet`.
 * `TauCeti.RelJetAlgebra.dAlg_totalDerivForm`: `d_alg` commutes with `totalDerivForm ∂ i`.
-* `TauCeti.RelJetAlgebra.dAlgTensor_horizDerivUnsigned` and
-  `TauCeti.RelJetAlgebra.horizDerivUnsigned_horizDerivUnsigned`: commuting and square-zero
-  relations of the unsigned double-differential complex.
+* `TauCeti.RelJetAlgebra.algebraMap_mem_vertStage_iff` and
+  `TauCeti.RelJetAlgebra.ι_D_X_mem_vertStage_iff`: membership characterizations for vertical
+  zero-forms and coordinate one-forms in `vertStage`.
+* `TauCeti.RelJetAlgebra.dAlgTensor_dAlgTensor` and
+  `TauCeti.RelJetAlgebra.dAlgTensor_horizDerivUnsigned`: `dAlgTensor² = 0` and commutation of
+  `dAlgTensor` with `horizDerivUnsigned` (for `[Fintype ι]` and arbitrary `δ`).
+* `TauCeti.RelJetAlgebra.horizDerivUnsigned_horizDerivUnsigned`: `(D_H⁰)² = 0` when `[Fintype ι]`
+  and the base derivations commute.
 
 ## References
 
@@ -92,51 +98,12 @@ section TotalDeriv
 
 variable {R B ι α : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B]
 
-/-- The `R`-algebra isomorphism `MvPolynomial σ R ⊗[R] B ≃ₐ[R] MvPolynomial σ B`. -/
-private def tensorBaseEquiv (R B σ : Type*) [CommSemiring R] [CommSemiring B] [Algebra R B] :
-    MvPolynomial σ R ⊗[R] B ≃ₐ[R] MvPolynomial σ B :=
-  (Algebra.TensorProduct.comm R (MvPolynomial σ R) B).trans
-    ((MvPolynomial.algebraTensorAlgEquiv R B).restrictScalars R)
-
-private theorem tensorBaseEquiv_one_tmul (b : B) :
-    tensorBaseEquiv R B (α × (ι →₀ ℕ)) (1 ⊗ₜ[R] b) = C b := by
-  simp [tensorBaseEquiv, Algebra.smul_def, MvPolynomial.algebraMap_eq]
-
-private theorem tensorBaseEquiv_X_tmul_one (v : α × (ι →₀ ℕ)) :
-    tensorBaseEquiv R B (α × (ι →₀ ℕ)) (X v ⊗ₜ[R] 1) = X v := by
-  simp [tensorBaseEquiv]
-
-private theorem tensorBaseEquiv_symm_C (b : B) :
-    (tensorBaseEquiv R B (α × (ι →₀ ℕ))).symm (C b) = 1 ⊗ₜ[R] b := by
-  apply (tensorBaseEquiv R B (α × (ι →₀ ℕ))).injective
-  rw [AlgEquiv.apply_symm_apply, tensorBaseEquiv_one_tmul]
-
-private theorem tensorBaseEquiv_symm_X (v : α × (ι →₀ ℕ)) :
-    (tensorBaseEquiv R B (α × (ι →₀ ℕ))).symm (X v) = X v ⊗ₜ[R] 1 := by
-  apply (tensorBaseEquiv R B (α × (ι →₀ ℕ))).injective
-  rw [AlgEquiv.apply_symm_apply, tensorBaseEquiv_X_tmul_one]
-
-/-- Coefficient-wise lift of a base derivation `d : Derivation R B B` to `RelJetAlgebra B ι α`,
-obtained from `Derivation.baseChange` along `MvPolynomial _ R`. -/
-private def coeffDeriv (d : Derivation R B B) :
-    Derivation R (RelJetAlgebra B ι α) (RelJetAlgebra B ι α) :=
-  ((d.baseChange (MvPolynomial (α × (ι →₀ ℕ)) R)).restrictScalars R).conjAlgEquiv
-    (tensorBaseEquiv R B (α × (ι →₀ ℕ)))
-
-private theorem coeffDeriv_C (d : Derivation R B B) (b : B) :
-    coeffDeriv (ι := ι) (α := α) d (C b) = C (d b) := by
-  simp [coeffDeriv, tensorBaseEquiv_symm_C, tensorBaseEquiv_one_tmul]
-
-private theorem coeffDeriv_X (d : Derivation R B B) (v : α × (ι →₀ ℕ)) :
-    coeffDeriv (ι := ι) (α := α) d (X v) = 0 := by
-  simp [coeffDeriv, tensorBaseEquiv_symm_X]
-
 /-- **Total differentiation** on the relative polynomial jet algebra `RelJetAlgebra B ι α` along
 a family of base derivations `δ : ι → Derivation R B B`: it applies `δ i` to coefficients in `B`
 and shifts each field-jet coordinate `uᵃ_I` to `uᵃ_(I + eᵢ)`. -/
 def totalDeriv (δ : ι → Derivation R B B) (i : ι) :
     Derivation R (RelJetAlgebra B ι α) (RelJetAlgebra B ι α) :=
-  coeffDeriv (δ i) +
+  MvPolynomial.coeffDeriv (δ i) +
     (MvPolynomial.mkDerivation B fun aI : α × (ι →₀ ℕ) ↦
       (X (aI.1, aI.2 + Finsupp.single i 1) : RelJetAlgebra B ι α)).restrictScalars R
 
@@ -144,13 +111,13 @@ def totalDeriv (δ : ι → Derivation R B B) (i : ι) :
 @[simp]
 theorem totalDeriv_C (δ : ι → Derivation R B B) (i : ι) (b : B) :
     totalDeriv (α := α) δ i (C b) = C (δ i b) := by
-  simp [totalDeriv, coeffDeriv_C]
+  simp [totalDeriv]
 
 /-- Total differentiation shifts field-jet variables `uᵃ_I ↦ uᵃ_(I + eᵢ)`. -/
 @[simp]
 theorem totalDeriv_X (δ : ι → Derivation R B B) (i : ι) (a : α) (I : ι →₀ ℕ) :
     totalDeriv δ i (X (a, I)) = X (a, I + Finsupp.single i 1) := by
-  simp [totalDeriv, coeffDeriv_X]
+  simp [totalDeriv]
 
 /-- Total differentiation is uniquely determined among `R`-derivations by its action on base
 coefficients and field-jet coordinates. -/
@@ -158,14 +125,8 @@ theorem totalDeriv_unique (δ : ι → Derivation R B B) (i : ι)
     (D : Derivation R (RelJetAlgebra B ι α) (RelJetAlgebra B ι α))
     (hC : ∀ b, D (C b) = C (δ i b))
     (hX : ∀ a I, D (X (a, I)) = X (a, I + Finsupp.single i 1)) :
-    D = totalDeriv δ i := by
-  refine Derivation.ext fun p ↦ ?_
-  induction p using MvPolynomial.induction_on with
-  | C b => rw [hC, totalDeriv_C]
-  | add p q hp hq => simp only [map_add, hp, hq]
-  | mul_X p v hp =>
-    rcases v with ⟨a, I⟩
-    simp only [Derivation.leibniz, smul_eq_mul, hp, hX, totalDeriv_X]
+    D = totalDeriv δ i :=
+  MvPolynomial.derivation_ext' (fun b ↦ by simp [hC]) (fun ⟨a, I⟩ ↦ by simp [hX])
 
 /-- Commuting base derivations induce commuting total derivatives on `RelJetAlgebra B ι α`. -/
 theorem totalDeriv_comm {δ : ι → Derivation R B B} {i j : ι}
@@ -180,6 +141,32 @@ theorem totalDeriv_comm {δ : ι → Derivation R B B} {i j : ι}
     ring
 
 open Classical in
+private theorem pderiv_X_add_single (i : ι) (a b : α) (I J : ι →₀ ℕ) :
+    MvPolynomial.pderiv (a, I) (X (b, J + Finsupp.single i 1) : RelJetAlgebra B ι α) =
+      if 1 ≤ I i then
+        MvPolynomial.pderiv (a, I - Finsupp.single i 1) (X (b, J) : RelJetAlgebra B ι α)
+      else 0 := by
+  have hshift :
+      ((b, J + Finsupp.single i 1) = (a, I)) ↔
+        (1 ≤ I i ∧ (b, J) = (a, I - Finsupp.single i 1)) := by
+    simp only [Prod.mk.injEq]
+    constructor
+    · rintro ⟨rfl, rfl⟩
+      exact ⟨by simp, rfl, (add_tsub_cancel_right J (Finsupp.single i 1)).symm⟩
+    · rintro ⟨hI, rfl, rfl⟩
+      exact ⟨rfl, tsub_add_cancel_of_le (Finsupp.single_le_iff.mpr hI)⟩
+  simp only [MvPolynomial.pderiv_X, Pi.single_apply]
+  by_cases hI : 1 ≤ I i
+  · simp only [hI, ite_true]
+    by_cases hEq : (b, J + Finsupp.single i 1) = (a, I)
+    · simp [hEq, (hshift.mp hEq).2]
+    · have hNe' : (b, J) ≠ (a, I - Finsupp.single i 1) := fun h ↦ hEq (hshift.mpr ⟨hI, h⟩)
+      simp [hEq, hNe']
+  · simp only [hI, ite_false]
+    have hNe : (b, J + Finsupp.single i 1) ≠ (a, I) := fun h ↦ hI (hshift.mp h).1
+    simp [hNe]
+
+open Classical in
 /-- **Variational commutator identity**: vertical partial differentiation `∂/∂uᵃ_I` and total
 differentiation `Dᵢ` satisfy `[∂/∂uᵃ_I, Dᵢ] = ∂/∂uᵃ_(I - eᵢ)` (or `0` when `I i = 0`). -/
 theorem pderiv_totalDeriv (δ : ι → Derivation R B B) (i : ι) (a : α) (I : ι →₀ ℕ)
@@ -188,51 +175,29 @@ theorem pderiv_totalDeriv (δ : ι → Derivation R B B) (i : ι) (a : α) (I : 
       totalDeriv δ i (MvPolynomial.pderiv (a, I) p) +
         if 1 ≤ I i then MvPolynomial.pderiv (a, I - Finsupp.single i 1) p else 0 := by
   classical
-  have hshift (b : α) (J : ι →₀ ℕ) :
-      ((b, J + Finsupp.single i 1) = (a, I)) ↔
-        (1 ≤ I i ∧ (b, J) = (a, I - Finsupp.single i 1)) := by
-    simp only [Prod.mk.injEq]
-    constructor
-    · rintro ⟨rfl, rfl⟩
-      refine ⟨?_, rfl, (add_tsub_cancel_right J (Finsupp.single i 1)).symm⟩
-      simp
-    · rintro ⟨hI, rfl, rfl⟩
-      exact ⟨rfl, tsub_add_cancel_of_le (Finsupp.single_le_iff.mpr hI)⟩
   induction p using MvPolynomial.induction_on with
   | C c =>
     split_ifs <;> simp
   | add p q hp hq =>
-    split_ifs at hp hq ⊢
-    · simp only [map_add, hp, hq]; ac_rfl
-    · simp only [map_add, hp, hq, add_zero]
+    simp only [map_add, hp, hq]
+    by_cases hI : 1 ≤ I i <;> simp [hI]
+    ac_rfl
   | mul_X p v hp =>
     rcases v with ⟨b, J⟩
-    have hX1 : MvPolynomial.pderiv (a, I) (X (b, J + Finsupp.single i 1) : RelJetAlgebra B ι α) =
-        if 1 ≤ I i then
-          MvPolynomial.pderiv (a, I - Finsupp.single i 1) (X (b, J) : RelJetAlgebra B ι α)
-        else 0 := by
-      simp only [MvPolynomial.pderiv_X, Pi.single_apply]
-      by_cases hI : 1 ≤ I i
-      · simp only [hI, ite_true]
-        by_cases hEq : (b, J + Finsupp.single i 1) = (a, I)
-        · have hEq' : (b, J) = (a, I - Finsupp.single i 1) := ((hshift b J).mp hEq).2
-          simp [hEq, hEq']
-        · have hNe' : (b, J) ≠ (a, I - Finsupp.single i 1) := fun h ↦
-            hEq ((hshift b J).mpr ⟨hI, h⟩)
-          simp [hEq, hNe']
-      · simp only [hI, ite_false]
-        have hNe : (b, J + Finsupp.single i 1) ≠ (a, I) := fun h ↦ hI ((hshift b J).mp h).1
-        simp [hNe]
     have hD_pderiv_X :
         totalDeriv δ i (MvPolynomial.pderiv (a, I) (X (b, J) : RelJetAlgebra B ι α)) = 0 := by
       simp only [MvPolynomial.pderiv_X, Pi.single_apply]
       split_ifs <;> simp
-    split_ifs at hp hX1 ⊢ with hI
-    · simp only [Derivation.leibniz, smul_eq_mul, map_add, totalDeriv_X, hp, hX1, hD_pderiv_X]
-      ring
-    · simp only [add_zero, Derivation.leibniz, smul_eq_mul, map_add, totalDeriv_X, hp, hX1,
-        hD_pderiv_X]
-      ring
+    have hite (x y : RelJetAlgebra B ι α) :
+        (if 1 ≤ I i then x + y else 0) =
+          (if 1 ≤ I i then x else 0) + (if 1 ≤ I i then y else 0) := by
+      split_ifs <;> simp
+    have hmul_ite (x y : RelJetAlgebra B ι α) :
+        (if 1 ≤ I i then x * y else 0) = x * (if 1 ≤ I i then y else 0) := by
+      split_ifs <;> simp
+    simp only [Derivation.leibniz, smul_eq_mul, map_add, totalDeriv_X, hp, pderiv_X_add_single,
+      hD_pderiv_X, hite, hmul_ite]
+    ring
 
 end TotalDeriv
 
@@ -274,10 +239,10 @@ theorem X_mem_stage {r : ℕ} {a : α} {I : ι →₀ ℕ} (hI : I.degree ≤ r)
   Algebra.subset_adjoin ⟨(a, I), hI, rfl⟩
 
 /-- Over a nontrivial coefficient ring, `uᵃ_I ∈ stage B ι α r` if and only if `I.degree ≤ r`. -/
+@[simp]
 theorem X_mem_stage_iff [Nontrivial B] {r : ℕ} {a : α} {I : ι →₀ ℕ} :
     (X (a, I) : RelJetAlgebra B ι α) ∈ stage B ι α r ↔ I.degree ≤ r := by
-  rw [mem_stage_iff, MvPolynomial.vars_X]
-  simp
+  simp [stage]
 
 /-- Every relative jet polynomial belongs to some finite stage. -/
 theorem exists_mem_stage (p : RelJetAlgebra B ι α) : ∃ r, p ∈ stage B ι α r :=
@@ -290,40 +255,45 @@ theorem exists_mem_stage (p : RelJetAlgebra B ι α) : ∃ r, p ∈ stage B ι �
 theorem totalDeriv_mem_stage {R : Type*} [CommSemiring R] [Algebra R B]
     (δ : ι → Derivation R B B) (i : ι) {r : ℕ} {p : RelJetAlgebra B ι α}
     (hp : p ∈ stage B ι α r) : totalDeriv δ i p ∈ stage B ι α (r + 1) := by
-  induction hp using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨⟨a, I⟩, hI, rfl⟩ := hx
-    rw [totalDeriv_X]
-    exact X_mem_stage (by simpa using Nat.add_le_add_right hI 1)
-  | algebraMap b =>
-    rw [MvPolynomial.algebraMap_eq, totalDeriv_C]
-    exact (stage B ι α (r + 1)).algebraMap_mem (δ i b)
-  | add x y _ _ hx hy =>
-    rw [map_add]
-    exact add_mem hx hy
-  | mul x y hx hy ihx ihy =>
-    rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul]
-    exact add_mem (mul_mem (stage_mono (Nat.le_succ r) hx) ihy)
-      (mul_mem (stage_mono (Nat.le_succ r) hy) ihx)
+  refine MvPolynomial.derivation_mem_supported (totalDeriv δ i)
+    (s := {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r})
+    (t := {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r + 1})
+    (fun _ h ↦ h.trans (Nat.le_succ r))
+    (fun b ↦ by
+      rw [totalDeriv_C, ← MvPolynomial.algebraMap_eq]
+      exact Subalgebra.algebraMap_mem _ _)
+    (fun ⟨a, I⟩ hI ↦ by
+      rw [totalDeriv_X]
+      exact X_mem_stage (by simpa using Nat.add_le_add_right hI 1))
+    hp
 
 /-- Vertical partial differentiation preserves every finite stage. -/
 theorem pderiv_mem_stage (a : α) (I : ι →₀ ℕ) {r : ℕ} {p : RelJetAlgebra B ι α}
-    (hp : p ∈ stage B ι α r) : MvPolynomial.pderiv (a, I) p ∈ stage B ι α r := by
-  classical
-  induction hp using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨⟨b, J⟩, _, rfl⟩ := hx
-    simp only [MvPolynomial.pderiv_X, Pi.single_apply]
-    split_ifs
-    · exact one_mem _
-    · exact zero_mem _
-  | algebraMap b => simp
-  | add x y _ _ hx hy =>
-    rw [map_add]
-    exact add_mem hx hy
-  | mul x y hx hy ihx ihy =>
-    rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul]
-    exact add_mem (mul_mem hx ihy) (mul_mem hy ihx)
+    (hp : p ∈ stage B ι α r) : MvPolynomial.pderiv (a, I) p ∈ stage B ι α r :=
+  MvPolynomial.pderiv_mem_supported (a, I) hp
+
+/-- Total differentiation as an `R`-linear map between consecutive finite stages. -/
+def stageDeriv {R : Type*} [CommSemiring R] [Algebra R B] (δ : ι → Derivation R B B)
+    (i : ι) (r : ℕ) : stage B ι α r →ₗ[R] stage B ι α (r + 1) where
+  toFun p := ⟨totalDeriv δ i p, totalDeriv_mem_stage δ i p.property⟩
+  map_add' p q :=
+    Subtype.ext (map_add (totalDeriv δ i) (p : RelJetAlgebra B ι α) (q : RelJetAlgebra B ι α))
+  map_smul' c p := Subtype.ext ((totalDeriv δ i).toLinearMap.map_smul c (p : RelJetAlgebra B ι α))
+
+@[simp]
+theorem coe_stageDeriv {R : Type*} [CommSemiring R] [Algebra R B] (δ : ι → Derivation R B B)
+    (i : ι) (r : ℕ) (p : stage B ι α r) :
+    (stageDeriv δ i r p : RelJetAlgebra B ι α) = totalDeriv δ i p := by
+  rfl
+
+/-- Finite-stage total differentiation commutes with stage inclusions. -/
+@[simp]
+theorem stageDeriv_inclusion {R : Type*} [CommSemiring R] [Algebra R B]
+    (δ : ι → Derivation R B B) (i : ι) {r s : ℕ} (hrs : r ≤ s) (p : stage B ι α r) :
+    stageDeriv δ i s (Subalgebra.inclusion (stage_mono hrs) p) =
+      Subalgebra.inclusion (stage_mono (Nat.add_le_add_right hrs 1)) (stageDeriv δ i r p) := by
+  apply Subtype.ext
+  simp
 
 end Stage
 
@@ -364,10 +334,11 @@ theorem polyJetEquivRel_symm_C (b : MvPolynomial ι R) :
   apply (polyJetEquivRel R ι α).injective
   rw [AlgEquiv.apply_symm_apply, polyJetEquivRel, AlgEquiv.trans_apply,
     MvPolynomial.renameEquiv_apply, MvPolynomial.rename_rename]
-  change (C b : RelJetAlgebra (MvPolynomial ι R) ι α) =
-    MvPolynomial.sumAlgEquiv R (α × (ι →₀ ℕ)) ι (MvPolynomial.rename Sum.inr b)
-  simpa using (AlgHom.congr_fun
-    (MvPolynomial.sumAlgEquiv_comp_rename_inr R (α × (ι →₀ ℕ)) ι) b).symm
+  have h := AlgHom.congr_fun
+    (MvPolynomial.sumAlgEquiv_comp_rename_inr R (α × (ι →₀ ℕ)) ι) b
+  simp only [AlgHom.coe_comp, Function.comp_apply, AlgEquiv.coe_toAlgHom,
+    IsScalarTower.coe_toAlgHom', MvPolynomial.algebraMap_eq] at h
+  exact h.symm
 
 /-- The inverse comparison sends a field-jet coordinate `X (a, I)` to `X (Sum.inr (a, I))`. -/
 @[simp]
@@ -381,68 +352,72 @@ theorem polyJetEquivRel_totalDeriv (i : ι) (p : PolynomialJet R ι α) :
     polyJetEquivRel R ι α (PolynomialJet.totalDeriv i p) =
       totalDeriv (fun k ↦ MvPolynomial.pderiv (R := R) k) i (polyJetEquivRel R ι α p) := by
   classical
-  induction p using MvPolynomial.induction_on with
-  | C r => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p v hp =>
-    rcases v with j | ⟨a, I⟩
-    · simp only [Derivation.leibniz, smul_eq_mul, map_add, map_mul,
-        PolynomialJet.totalDeriv_X_base, polyJetEquivRel_X_base, totalDeriv_C,
-        MvPolynomial.pderiv_X, Pi.single_apply, hp]
+  have h :
+      (totalDeriv (α := α) (fun k ↦ MvPolynomial.pderiv (R := R) k) i).conjAlgEquiv
+          (polyJetEquivRel R ι α).symm =
+        PolynomialJet.totalDeriv i := by
+    apply PolynomialJet.totalDeriv_unique
+    · intro j
+      simp only [Derivation.conjAlgEquiv_apply, AlgEquiv.symm_symm, polyJetEquivRel_X_base,
+        totalDeriv_C, MvPolynomial.pderiv_X, Pi.single_apply]
       by_cases hij : i = j
       · subst hij; simp
       · simp [hij, Ne.symm hij]
-    · simp [Derivation.leibniz, hp]
+    · intro a I
+      simp
+  have hp := DFunLike.congr_fun h p
+  simpa [Derivation.conjAlgEquiv_apply] using congrArg (polyJetEquivRel R ι α) hp.symm
 
 /-- `polyJetEquivRel` identifies the finite stages of `PolynomialJet` and `RelJetAlgebra`. -/
 theorem polyJetEquivRel_mem_stage_iff (r : ℕ) (p : PolynomialJet R ι α) :
-    p ∈ PolynomialJet.stage R ι α r ↔
-      polyJetEquivRel R ι α p ∈ stage (MvPolynomial ι R) ι α r := by
-  classical
+    polyJetEquivRel R ι α p ∈ stage (MvPolynomial ι R) ι α r ↔
+      p ∈ PolynomialJet.stage R ι α r := by
+  have hmap :
+      ((stage (MvPolynomial ι R) ι α r).restrictScalars R).map
+          (polyJetEquivRel R ι α).symm.toAlgHom =
+        PolynomialJet.stage R ι α r := by
+    rw [stage, MvPolynomial.supported, Algebra.Subalgebra.restrictScalars_adjoin,
+      Algebra.map_sup, AlgHom.map_adjoin, PolynomialJet.stage, MvPolynomial.supported]
+    have hcoeff :
+        (IsScalarTower.toAlgHom R (MvPolynomial ι R)
+            (RelJetAlgebra (MvPolynomial ι R) ι α)).range.map
+            (polyJetEquivRel R ι α).symm.toAlgHom =
+          Algebra.adjoin R (X '' Set.range (Sum.inl : ι → ι ⊕ (α × (ι →₀ ℕ)))) := by
+      rw [← Algebra.map_top, ← MvPolynomial.adjoin_range_X (R := R) (σ := ι), AlgHom.map_adjoin,
+        AlgHom.map_adjoin, ← Set.image_comp]
+      congr 1
+      ext q
+      simp only [Set.mem_image, Set.mem_range, Function.comp_apply, AlgEquiv.coe_toAlgHom,
+        IsScalarTower.coe_toAlgHom', MvPolynomial.algebraMap_eq, polyJetEquivRel_symm_C]
+      constructor
+      · rintro ⟨_, ⟨j, rfl⟩, rfl⟩
+        exact ⟨Sum.inl j, ⟨j, rfl⟩, (MvPolynomial.rename_X Sum.inl j).symm⟩
+      · rintro ⟨_, ⟨j, rfl⟩, rfl⟩
+        exact ⟨X j, ⟨j, rfl⟩, MvPolynomial.rename_X Sum.inl j⟩
+    have hfield :
+        (polyJetEquivRel R ι α).symm.toAlgHom ''
+            (X '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r}) =
+          X '' (Sum.inr '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r}) := by
+      ext q
+      simp only [Set.mem_image]
+      constructor
+      · rintro ⟨_, ⟨⟨a, I⟩, hI, rfl⟩, rfl⟩
+        exact ⟨Sum.inr (a, I), ⟨(a, I), hI, rfl⟩, (polyJetEquivRel_symm_X a I).symm⟩
+      · rintro ⟨_, ⟨⟨a, I⟩, hI, rfl⟩, rfl⟩
+        exact ⟨X (a, I), ⟨(a, I), hI, rfl⟩, polyJetEquivRel_symm_X a I⟩
+    rw [hcoeff, hfield, ← Algebra.adjoin_union, ← Set.image_union]
+    congr 2
+    ext v
+    rcases v with j | ⟨a, I⟩ <;> simp
+  rw [← hmap, Subalgebra.mem_map]
   constructor
   · intro hp
-    rw [PolynomialJet.mem_stage_iff] at hp
-    rw [p.as_sum, map_sum]
-    refine sum_mem fun s hs ↦ ?_
-    rw [MvPolynomial.monomial_eq, Finsupp.prod, map_mul, map_prod]
-    refine mul_mem ?_ (prod_mem fun v hv ↦ ?_)
-    · rw [polyJetEquivRel_C]
-      exact (stage (MvPolynomial ι R) ι α r).algebraMap_mem (C (p.coeff s))
-    · rw [map_pow]
-      refine pow_mem ?_ _
-      rcases v with j | ⟨a, I⟩
-      · rw [polyJetEquivRel_X_base]
-        exact (stage (MvPolynomial ι R) ι α r).algebraMap_mem (X j)
-      · rw [polyJetEquivRel_X_field]
-        exact X_mem_stage (hp a I ((MvPolynomial.mem_vars_iff_mem_support _).mpr ⟨s, hs, hv⟩))
-  · intro hp
-    have hback : ∀ q ∈ stage (MvPolynomial ι R) ι α r,
-        (polyJetEquivRel R ι α).symm q ∈ PolynomialJet.stage R ι α r := by
-      intro q hq
-      induction hq using Algebra.adjoin_induction with
-      | mem x hx =>
-        obtain ⟨⟨a, I⟩, hI, rfl⟩ := hx
-        rw [polyJetEquivRel_symm_X]
-        exact PolynomialJet.X_field_mem_stage r a I hI
-      | algebraMap b =>
-        rw [MvPolynomial.algebraMap_eq, polyJetEquivRel_symm_C]
-        induction b using MvPolynomial.induction_on with
-        | C c =>
-          rw [MvPolynomial.rename_C]
-          exact (PolynomialJet.stage R ι α r).algebraMap_mem c
-        | add p q hp hq =>
-          rw [map_add]
-          exact add_mem hp hq
-        | mul_X p j hp =>
-          rw [map_mul, MvPolynomial.rename_X]
-          exact mul_mem hp (PolynomialJet.X_base_mem_stage r j)
-      | add x y _ _ hx hy =>
-        rw [map_add]
-        exact add_mem hx hy
-      | mul x y _ _ hx hy =>
-        rw [map_mul]
-        exact mul_mem hx hy
-    simpa using hback _ hp
+    exact ⟨polyJetEquivRel R ι α p, hp, by simp⟩
+  · rintro ⟨q, hq, hqp⟩
+    have hq' : polyJetEquivRel R ι α p = q := by
+      rw [← hqp]
+      simp
+    rwa [hq']
 
 end PolynomialBase
 
@@ -488,31 +463,6 @@ theorem totalDerivForm_ι_D_X (δ : ι → Derivation R B B) (i : ι) (a : α) (
         (KaehlerDifferential.D B (RelJetAlgebra B ι α) (X (a, I + Finsupp.single i 1))) := by
   simp [totalDerivForm]
 
-/-- `totalDerivForm δ i` satisfies the degree-zero Leibniz rule on wedge products. -/
-theorem totalDerivForm_mul (δ : ι → Derivation R B B) (i : ι) (ω η : VertForms B ι α) :
-    totalDerivForm δ i (ω * η) = totalDerivForm δ i ω * η + ω * totalDerivForm δ i η :=
-  Derivation.deRhamLieDeriv_mul _ _ ω η
-
-/-- `totalDerivForm δ i` annihilates `1`. -/
-@[simp]
-theorem totalDerivForm_one (δ : ι → Derivation R B B) (i : ι) :
-    totalDerivForm δ i (1 : VertForms B ι α) = 0 :=
-  Derivation.deRhamLieDeriv_one _ _
-
-/-- `totalDerivForm δ i` commutes with the grade involution on vertical forms. -/
-theorem totalDerivForm_involute (δ : ι → Derivation R B B) (i : ι) (ω : VertForms B ι α) :
-    totalDerivForm δ i
-        (CliffordAlgebra.involute (Q := (0 : QuadraticForm (RelJetAlgebra B ι α) _)) ω) =
-      CliffordAlgebra.involute (Q := (0 : QuadraticForm (RelJetAlgebra B ι α) _))
-        (totalDerivForm δ i ω) :=
-  Derivation.deRhamLieDeriv_involute _ _ ω
-
-/-- `totalDerivForm δ i` preserves vertical exterior degree. -/
-theorem totalDerivForm_mem_exteriorPower (δ : ι → Derivation R B B) (i : ι) {q : ℕ}
-    {ω : VertForms B ι α} (hω : ω ∈ ⋀[RelJetAlgebra B ι α]^q (Ω[RelJetAlgebra B ι α⁄B])) :
-    totalDerivForm δ i ω ∈ ⋀[RelJetAlgebra B ι α]^q (Ω[RelJetAlgebra B ι α⁄B]) :=
-  Derivation.deRhamLieDeriv_mem_exteriorPower _ _ hω
-
 /-- **Commutation of `d_alg` and `Dᵢ`**: the algebraic vertical exterior derivative commutes with
 total differentiation on all vertical forms. -/
 theorem dAlg_totalDerivForm (δ : ι → Derivation R B B) (i : ι) (ω : VertForms B ι α) :
@@ -534,39 +484,28 @@ theorem vertStage_eq_supportedForms (r : ℕ) :
       KaehlerDeRham.supportedForms B {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r} := by
   rfl
 
-/-- Increasing the jet-order bound enlarges the vertical stage subalgebra. -/
-theorem vertStage_mono : Monotone (vertStage B ι α) := by
-  intro r s hrs
-  exact KaehlerDeRham.supportedForms_mono fun _ h ↦ h.trans hrs
+/-- A vertical zero-form lies in `vertStage B ι α r` if and only if its polynomial lies in
+`stage B ι α r`. -/
+theorem algebraMap_mem_vertStage_iff {r : ℕ} {p : RelJetAlgebra B ι α} :
+    algebraMap (RelJetAlgebra B ι α) (VertForms B ι α) p ∈ vertStage B ι α r ↔
+      p ∈ stage B ι α r :=
+  KaehlerDeRham.algebraMap_mem_supportedForms_iff
 
-/-- A zero-form in `stage B ι α r` lies in `vertStage B ι α r`. -/
-theorem algebraMap_mem_vertStage {r : ℕ} {p : RelJetAlgebra B ι α} (hp : p ∈ stage B ι α r) :
-    algebraMap (RelJetAlgebra B ι α) (VertForms B ι α) p ∈ vertStage B ι α r :=
-  KaehlerDeRham.algebraMap_mem_supportedForms hp
-
-/-- A vertical generator one-form `duᵃ_I` lies in `vertStage B ι α r` whenever `I.degree ≤ r`. -/
-theorem ι_D_X_mem_vertStage {r : ℕ} {a : α} {I : ι →₀ ℕ} (hI : I.degree ≤ r) :
+/-- Over a nontrivial base ring, a vertical generator one-form `duᵃ_I` lies in `vertStage B ι α r`
+if and only if `I.degree ≤ r`. -/
+@[simp]
+theorem ι_D_X_mem_vertStage_iff [Nontrivial B] {r : ℕ} {a : α} {I : ι →₀ ℕ} :
     ExteriorAlgebra.ι (RelJetAlgebra B ι α)
-      (KaehlerDifferential.D B (RelJetAlgebra B ι α) (X (a, I))) ∈ vertStage B ι α r :=
-  KaehlerDeRham.ι_D_X_mem_supportedForms hI
-
-/-- The grade involution preserves every finite vertical stage `vertStage B ι α r`. -/
-theorem involute_mem_vertStage {r : ℕ} {ω : VertForms B ι α} (hω : ω ∈ vertStage B ι α r) :
-    CliffordAlgebra.involute (Q := (0 : QuadraticForm (RelJetAlgebra B ι α) _)) ω ∈
-      vertStage B ι α r :=
-  KaehlerDeRham.involute_mem_supportedForms hω
+        (KaehlerDifferential.D B (RelJetAlgebra B ι α) (X (a, I))) ∈ vertStage B ι α r ↔
+      I.degree ≤ r :=
+  KaehlerDeRham.ι_D_X_mem_supportedForms_iff
 
 /-- Every vertical form belongs to some finite vertical stage. -/
 theorem exists_mem_vertStage (ω : VertForms B ι α) : ∃ r, ω ∈ vertStage B ι α r := by
-  obtain ⟨s, hs⟩ := KaehlerDeRham.exists_mem_supportedForms_finset ω
+  obtain ⟨s, hs⟩ := KaehlerDeRham.exists_finset_mem_supportedForms ω
   refine ⟨s.sup (fun aI ↦ aI.2.degree), ?_⟩
   exact KaehlerDeRham.supportedForms_mono
     (fun aI haI ↦ Finset.le_sup (f := fun x : α × (ι →₀ ℕ) ↦ x.2.degree) haI) hs
-
-/-- `dAlg` preserves every finite vertical stage `vertStage B ι α r`. -/
-theorem dAlg_mem_vertStage {r : ℕ} {ω : VertForms B ι α} (hω : ω ∈ vertStage B ι α r) :
-    dAlg B ι α ω ∈ vertStage B ι α r :=
-  KaehlerDeRham.extDeriv_mem_supportedForms hω
 
 /-- `totalDerivForm δ i` raises the vertical stage by at most one. -/
 theorem totalDerivForm_mem_vertStage (δ : ι → Derivation R B B) (i : ι) {r : ℕ}
@@ -574,6 +513,60 @@ theorem totalDerivForm_mem_vertStage (δ : ι → Derivation R B B) (i : ι) {r 
     totalDerivForm δ i ω ∈ vertStage B ι α (r + 1) :=
   KaehlerDeRham.deRhamLieDeriv_mem_supportedForms (fun b ↦ by simp)
     (fun _ h ↦ le_trans h (Nat.le_succ r)) (fun _ hp ↦ totalDeriv_mem_stage δ i hp) hω
+
+variable (B ι α) in
+/-- The algebraic vertical exterior derivative restricted to a finite vertical stage. -/
+def vertStageDAlg (r : ℕ) : vertStage B ι α r →ₗ[B] vertStage B ι α r where
+  toFun ω := ⟨dAlg B ι α ω, KaehlerDeRham.extDeriv_mem_supportedForms ω.property⟩
+  map_add' ω η := Subtype.ext (map_add (dAlg B ι α) (ω : VertForms B ι α) (η : VertForms B ι α))
+  map_smul' b ω := Subtype.ext ((dAlg B ι α).map_smul b (ω : VertForms B ι α))
+
+@[simp]
+theorem coe_vertStageDAlg (r : ℕ) (ω : vertStage B ι α r) :
+    (vertStageDAlg B ι α r ω : VertForms B ι α) = dAlg B ι α ω := by
+  rfl
+
+/-- Finite-stage vertical exterior differentiation commutes with stage inclusions. -/
+@[simp]
+theorem vertStageDAlg_inclusion {r s : ℕ} (h : vertStage B ι α r ≤ vertStage B ι α s)
+    (ω : vertStage B ι α r) :
+    vertStageDAlg B ι α s (Subalgebra.inclusion h ω) =
+      Subalgebra.inclusion h (vertStageDAlg B ι α r ω) := by
+  apply Subtype.ext
+  simp
+
+/-- Total differentiation on vertical forms as an `R`-linear map between consecutive finite
+vertical stages. -/
+def vertStageTotalDerivForm (δ : ι → Derivation R B B) (i : ι) (r : ℕ) :
+    vertStage B ι α r →ₗ[R] vertStage B ι α (r + 1) where
+  toFun ω := ⟨totalDerivForm δ i ω, totalDerivForm_mem_vertStage δ i ω.property⟩
+  map_add' ω η :=
+    Subtype.ext (map_add (totalDerivForm δ i) (ω : VertForms B ι α) (η : VertForms B ι α))
+  map_smul' c ω := Subtype.ext ((totalDerivForm δ i).map_smul c (ω : VertForms B ι α))
+
+@[simp]
+theorem coe_vertStageTotalDerivForm (δ : ι → Derivation R B B) (i : ι) (r : ℕ)
+    (ω : vertStage B ι α r) :
+    (vertStageTotalDerivForm δ i r ω : VertForms B ι α) = totalDerivForm δ i ω := by
+  rfl
+
+/-- Finite-stage vertical total differentiation commutes with stage inclusions. -/
+@[simp]
+theorem vertStageTotalDerivForm_inclusion (δ : ι → Derivation R B B) (i : ι) {r s : ℕ}
+    (hrs : r ≤ s) (ω : vertStage B ι α r) :
+    vertStageTotalDerivForm δ i s
+        (Subalgebra.inclusion
+          (by
+            rw [vertStage_eq_supportedForms, vertStage_eq_supportedForms]
+            exact KaehlerDeRham.supportedForms_mono fun _ h ↦ h.trans hrs) ω) =
+      Subalgebra.inclusion
+        (by
+          rw [vertStage_eq_supportedForms, vertStage_eq_supportedForms]
+          exact KaehlerDeRham.supportedForms_mono
+            fun _ h ↦ h.trans (Nat.add_le_add_right hrs 1))
+        (vertStageTotalDerivForm δ i r ω) := by
+  apply Subtype.ext
+  simp
 
 end VerticalComplex
 
@@ -588,21 +581,14 @@ def dAlgTensor :
 
 variable {R B ι α}
 
-/-- Action of `dAlgTensor` on a pure tensor `α ⊗ₜ β`. -/
-@[simp]
-theorem dAlgTensor_tmul (ω : VertForms B ι α) (β : ExteriorAlgebra R (ι →₀ R)) :
-    dAlgTensor R B ι α (ω ⊗ₜ[R] β) = dAlg B ι α ω ⊗ₜ[R] β := by
-  simp [dAlgTensor]
-
 /-- `dAlgTensor` squares to zero. -/
 @[simp]
 theorem dAlgTensor_dAlgTensor (x : VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)) :
     dAlgTensor R B ι α (dAlgTensor R B ι α x) = 0 := by
-  have hcomp : ((dAlg B ι α).restrictScalars R).comp ((dAlg B ι α).restrictScalars R) = 0 := by
-    rw [← LinearMap.restrictScalars_comp, dAlg, KaehlerDeRham.extDeriv_comp_extDeriv,
-      LinearMap.restrictScalars_zero]
-  rw [← LinearMap.comp_apply, dAlgTensor, ← LinearMap.rTensor_comp, hcomp, LinearMap.rTensor_zero,
-    LinearMap.zero_apply]
+  induction x using TensorProduct.inductionOn with
+  | tmul ω β =>
+    simp [dAlgTensor, dAlg, KaehlerDeRham.extDeriv_extDeriv]
+  | add x y hx hy => simp [hx, hy]
 
 /-- The unsigned horizontal differential `D_H⁰(ω ⊗ₜ β) = ∑ μ, (D_μ ω) ⊗ₜ (dx^μ ∧ β)` on
 `VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)`. -/
@@ -626,12 +612,12 @@ theorem dAlgTensor_horizDerivUnsigned [Fintype ι] (δ : ι → Derivation R B B
     (x : VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)) :
     dAlgTensor R B ι α (horizDerivUnsigned δ x) =
       horizDerivUnsigned δ (dAlgTensor R B ι α x) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul ω β =>
-    simp only [horizDerivUnsigned_tmul, dAlgTensor_tmul, map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [dAlg_totalDerivForm]
-  | add x y hx hy => simp [hx, hy]
+  simp only [dAlgTensor, horizDerivUnsigned, LinearMap.sum_apply, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [LinearMap.rTensor_map, LinearMap.map_rTensor]
+  congr 2
+  ext ω
+  exact dAlg_totalDerivForm δ i ω
 
 /-- **Nilpotency of the unsigned horizontal differential**: `(D_H⁰)² = 0` whenever the base
 derivations commute, over any commutative ring `R` (including in characteristic two). -/
@@ -641,15 +627,23 @@ theorem horizDerivUnsigned_horizDerivUnsigned [Fintype ι] {δ : ι → Derivati
     horizDerivUnsigned δ (horizDerivUnsigned δ x) = 0 := by
   induction x using TensorProduct.inductionOn with
   | tmul ω β =>
+    have hdiag (i : ι) :
+        totalDerivForm δ i (totalDerivForm δ i ω) ⊗ₜ[R]
+            (ExteriorAlgebra.ι R (Finsupp.single i (1 : R)) *
+              (ExteriorAlgebra.ι R (Finsupp.single i (1 : R)) * β)) = 0 := by
+      rw [← mul_assoc, ExteriorAlgebra.ι_sq_zero, zero_mul, TensorProduct.tmul_zero]
+    have hswap (i j : ι) :
+        totalDerivForm δ j (totalDerivForm δ i ω) ⊗ₜ[R]
+            (ExteriorAlgebra.ι R (Finsupp.single j (1 : R)) *
+              (ExteriorAlgebra.ι R (Finsupp.single i (1 : R)) * β)) +
+          totalDerivForm δ i (totalDerivForm δ j ω) ⊗ₜ[R]
+            (ExteriorAlgebra.ι R (Finsupp.single i (1 : R)) *
+              (ExteriorAlgebra.ι R (Finsupp.single j (1 : R)) * β)) = 0 := by
+      rw [totalDerivForm_comm (hδ j i), ← TensorProduct.tmul_add, ← mul_assoc, ← mul_assoc,
+        ← add_mul, ExteriorAlgebra.ι_add_mul_swap, zero_mul, TensorProduct.tmul_zero]
     simp only [horizDerivUnsigned_tmul, map_sum]
-    refine Finset.sum_sum_eq_zero_of_diag Finset.univ
-      (f := fun i j ↦ totalDerivForm δ j (totalDerivForm δ i ω) ⊗ₜ[R]
-        (ExteriorAlgebra.ι R (Finsupp.single j (1 : R)) *
-          (ExteriorAlgebra.ι R (Finsupp.single i (1 : R)) * β)))
-      (fun i _ ↦ by rw [← mul_assoc, ExteriorAlgebra.ι_sq_zero, zero_mul, TensorProduct.tmul_zero])
-      (fun i _ j _ _ ↦ ?_)
-    rw [totalDerivForm_comm (hδ j i), ← TensorProduct.tmul_add, ← mul_assoc, ← mul_assoc,
-      ← add_mul, ExteriorAlgebra.ι_add_mul_swap, zero_mul, TensorProduct.tmul_zero]
+    exact Finset.sum_sum_eq_zero_of_diag Finset.univ
+      (fun i _ ↦ hdiag i) (fun i _ j _ _ ↦ hswap i j)
   | add x y hx hy => simp [hx, hy]
 
 end UnsignedDoubleComplex

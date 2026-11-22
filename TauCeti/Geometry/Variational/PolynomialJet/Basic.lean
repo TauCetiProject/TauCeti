@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Derivation
-public import Mathlib.Data.Finsupp.Weight
-import Mathlib.Tactic.Ring
+public import TauCeti.Geometry.Variational.PolynomialJet.Defs
+import TauCeti.Geometry.Variational.PolynomialJet.Relative
 
 /-!
 # Polynomial jets and total derivatives
@@ -36,19 +35,14 @@ jet bundle, differential forms, or convergence of infinite series is asserted he
 * I. M. Anderson, *The Variational Bicomplex* (1989), Chapter 1, §A, for symmetric jet
   coordinates and total derivatives.
 
-The construction uses Mathlib's `MvPolynomial.mkDerivation`, its generator extensionality,
-and `MvPolynomial.supported` for the finite-order subalgebras.
+The core definitions live in `TauCeti.Geometry.Variational.PolynomialJet.Defs`; stage finiteness,
+stage-growth, and total-derivative commutation are derived from the relative jet algebra via
+`TauCeti.RelJetAlgebra.polyJetEquivRel`.
 -/
 
 public section
 
 namespace TauCeti
-
-/-- Polynomial expressions in base coordinates and symmetric field-jet coordinates.
-The coefficient ring consists of constants; polynomial base dependence is represented by
-the `Sum.inl` variables. -/
-abbrev PolynomialJet (R ι α : Type*) [CommSemiring R] :=
-  MvPolynomial (ι ⊕ (α × (ι →₀ ℕ))) R
 
 namespace PolynomialJet
 
@@ -58,113 +52,17 @@ noncomputable section
 
 variable {R ι α : Type*} [CommSemiring R]
 
-/-- Total differentiation in a base direction, including differentiation of base coordinates. -/
-def totalDeriv (i : ι) :
-    Derivation R (PolynomialJet R ι α) (PolynomialJet R ι α) := by
-  classical
-  exact mkDerivation R (Sum.elim (fun j ↦ if i = j then 1 else 0)
-    (fun aI ↦ X (Sum.inr (aI.1, aI.2 + Finsupp.single i 1))))
-
-open Classical in
-@[simp]
-theorem totalDeriv_X_base (i j : ι) :
-    totalDeriv (R := R) (α := α) i (X (Sum.inl j)) = if i = j then 1 else 0 := by
-  classical
-  simp [totalDeriv]
-
-@[simp]
-theorem totalDeriv_X_field (i : ι) (a : α) (I : ι →₀ ℕ) :
-    totalDeriv (R := R) i (X (Sum.inr (a, I))) =
-      X (Sum.inr (a, I + Finsupp.single i 1)) := by
-  simp [totalDeriv]
-
-open Classical in
-/-- The total derivative is determined by its actions on base and field coordinates. -/
-theorem totalDeriv_unique (i : ι)
-    (D : Derivation R (PolynomialJet R ι α) (PolynomialJet R ι α))
-    (hx : ∀ j, D (X (Sum.inl j)) = if i = j then 1 else 0)
-    (hu : ∀ a I, D (X (Sum.inr (a, I))) = X (Sum.inr (a, I + Finsupp.single i 1))) :
-    D = totalDeriv i := by
-  classical
-  apply MvPolynomial.derivation_ext
-  rintro (j | ⟨a, I⟩) <;> simp [hx, hu]
-
-variable (R ι α)
-
-/-- The finite-order polynomial jet algebra, embedded in the algebra on all jet variables.
-Base-coordinate degree is unrestricted. -/
-def stage (r : ℕ) : Subalgebra R (PolynomialJet R ι α) :=
-  supported R {v | Sum.elim (fun _ ↦ True) (fun aI ↦ aI.2.degree ≤ r) v}
-
-variable {R ι α}
-
-/-- Membership in a finite stage means that every field variable occurring has bounded order. -/
-theorem mem_stage_iff (p : PolynomialJet R ι α) (r : ℕ) :
-    p ∈ stage R ι α r ↔ ∀ a I, Sum.inr (a, I) ∈ p.vars → I.degree ≤ r := by
-  rw [stage, mem_supported]
-  constructor
-  · intro h a I hI
-    exact h hI
-  · intro h v hv
-    rcases v with j | ⟨a, I⟩
-    · trivial
-    · exact h a I hv
-
-/-- Increasing the jet-order budget gives the canonical inclusion of stage algebras. -/
-theorem stage_mono : Monotone (stage R ι α) := by
-  intro r s hrs
-  apply supported_mono
-  rintro (j | ⟨a, I⟩) h
-  · trivial
-  · exact h.trans hrs
-
-@[simp]
-theorem X_base_mem_stage (r : ℕ) (j : ι) :
-    (X (Sum.inl j) : PolynomialJet R ι α) ∈ stage R ι α r := by
-  exact Algebra.subset_adjoin ⟨Sum.inl j, trivial, rfl⟩
-
-theorem X_field_mem_stage (r : ℕ) (a : α) (I : ι →₀ ℕ) (hI : I.degree ≤ r) :
-    (X (Sum.inr (a, I)) : PolynomialJet R ι α) ∈ stage R ι α r := by
-  exact Algebra.subset_adjoin ⟨Sum.inr (a, I), hI, rfl⟩
-
-@[simp]
-theorem X_field_mem_stage_iff [Nontrivial R] (r : ℕ) (a : α) (I : ι →₀ ℕ) :
-    (X (Sum.inr (a, I)) : PolynomialJet R ι α) ∈ stage R ι α r ↔ I.degree ≤ r := by
-  simp [stage]
-
 /-- Every polynomial expression uses only finitely many jet orders. -/
 theorem exists_mem_stage (p : PolynomialJet R ι α) : ∃ r, p ∈ stage R ι α r := by
-  induction p using MvPolynomial.induction_on with
-  | C c => exact ⟨0, (stage R ι α 0).algebraMap_mem c⟩
-  | add p q hp hq =>
-    obtain ⟨r, hr⟩ := hp
-    obtain ⟨s, hs⟩ := hq
-    exact ⟨max r s, add_mem (stage_mono (le_max_left r s) hr)
-      (stage_mono (le_max_right r s) hs)⟩
-  | mul_X p v hp =>
-    obtain ⟨r, hr⟩ := hp
-    rcases v with j | ⟨a, I⟩
-    · exact ⟨r, mul_mem hr (X_base_mem_stage r j)⟩
-    · exact ⟨max r I.degree, mul_mem (stage_mono (le_max_left _ _) hr)
-        (X_field_mem_stage _ a I (le_max_right _ _))⟩
+  obtain ⟨r, hr⟩ := RelJetAlgebra.exists_mem_stage (RelJetAlgebra.polyJetEquivRel R ι α p)
+  exact ⟨r, (RelJetAlgebra.polyJetEquivRel_mem_stage_iff r p).mp hr⟩
 
 /-- A total derivative raises field-jet order by at most one. -/
 theorem totalDeriv_mem_stage (i : ι) {r : ℕ} {p : PolynomialJet R ι α}
     (hp : p ∈ stage R ι α r) : totalDeriv i p ∈ stage R ι α (r + 1) := by
-  classical
-  induction hp using Algebra.adjoin_induction with
-  | mem v hv =>
-    obtain ⟨j | ⟨a, I⟩, hj, rfl⟩ := hv
-    · simp only [totalDeriv_X_base]
-      split <;> simp
-    · rw [totalDeriv_X_field]
-      exact X_field_mem_stage _ _ _ (by simpa using Nat.add_le_add_right hj 1)
-  | algebraMap c => simp
-  | add p q _ _ hp hq => simpa using add_mem hp hq
-  | mul p q hp hq hDp hDq =>
-    rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul]
-    exact add_mem (mul_mem (stage_mono (Nat.le_succ r) hp) hDq)
-      (mul_mem (stage_mono (Nat.le_succ r) hq) hDp)
+  rw [← RelJetAlgebra.polyJetEquivRel_mem_stage_iff, RelJetAlgebra.polyJetEquivRel_totalDeriv]
+  exact RelJetAlgebra.totalDeriv_mem_stage _ i
+    ((RelJetAlgebra.polyJetEquivRel_mem_stage_iff r p).mpr hp)
 
 /-- Total differentiation as a linear map between consecutive finite stages. -/
 def stageDeriv (i : ι) (r : ℕ) : stage R ι α r →ₗ[R] stage R ι α (r + 1) where
@@ -204,18 +102,9 @@ theorem totalDeriv_X_field_not_mem_stage [Nontrivial R] (i : ι) (a : α) (I : �
 /-- Symmetry of multi-indices makes all total derivatives commute. -/
 theorem totalDeriv_comm (i j : ι) (p : PolynomialJet R ι α) :
     totalDeriv i (totalDeriv j p) = totalDeriv j (totalDeriv i p) := by
-  classical
-  induction p using MvPolynomial.induction_on with
-  | C c => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p v hp =>
-    have hv : totalDeriv (R := R) i (totalDeriv j (X v)) =
-        totalDeriv j (totalDeriv i (X v)) := by
-      rcases v with k | ⟨a, I⟩
-      · simp [apply_ite]
-      · simp [add_right_comm I]
-    simp only [Derivation.leibniz, smul_eq_mul, map_add, hp, hv]
-    ring
+  apply (RelJetAlgebra.polyJetEquivRel R ι α).injective
+  simp only [RelJetAlgebra.polyJetEquivRel_totalDeriv]
+  exact RelJetAlgebra.totalDeriv_comm (MvPolynomial.pderiv_comm i j) _
 
 /-- Commuting total derivatives give the same map from stage `r` to stage `r + 2`. -/
 theorem stageDeriv_comm (i j : ι) (r : ℕ) (p : stage R ι α r) :
