@@ -5,11 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
-public import Mathlib.Algebra.Homology.Monoidal
-public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
-public import TauCeti.Algebra.Homology.Bifunctor.Basic
+public import TauCeti.Algebra.Homology.Monoidal.Basic
 
 /-!
 # The monoidal structure of homological complexes on homogeneous summands
@@ -20,44 +16,46 @@ structural map of a monoidal category of homological complexes, such as
 summands `X.X p ⊗ Y.X q` of `X ⊗ Y`.  Mathlib states the component formulas for the auxiliary
 constructions the monoidal structure is built from — `HomologicalComplex.mapBifunctorMap`,
 `HomologicalComplex.leftUnitor'`, `HomologicalComplex.rightUnitor'` and
-`HomologicalComplex.mapBifunctorAssociatorX` — but not for the whiskerings, `λ_`, `ρ_` and `α_`
-themselves.  This file supplies that last step, so that a calculation on homogeneous summands
-never has to unfold the monoidal structure.  The formulas hold verbatim for homological complexes
-of any shape in any monoidal preadditive category, and are stated in that generality; only their
-evaluation on pure tensors, `HomologicalComplex.ι_tensorHom_apply`, is specific to modules.
-The curried tensor bifunctor on cochain complexes is also identified with `tensorObj` and
-`tensorHom`, so consumers can use these formulas without unfolding the bifunctor.
+`HomologicalComplex.mapBifunctorAssociatorX` — but not for `⊗ₘ`, the whiskerings, `λ_`, `ρ_` and
+`α_` themselves.  This file supplies that last step, so that a calculation on homogeneous summands
+never has to unfold the monoidal structure.  The formulas are stated for homological complexes of
+any shape `c` on an additive monoid `I` of degrees with `[DecidableEq I]` and `c.TensorSigns`, in
+any preadditive monoidal category whose tensor product is additive in each variable.
+`HomologicalComplex.ι_tensorHom` and
+`HomologicalComplex.XIsoOfEq_hom_tensorHom_XIsoOfEq_hom_ιTensorObj` assume only that the tensor
+products of complexes they involve exist.  The formulas for the monoidal structure itself assume in
+addition what Mathlib's `HomologicalComplex.monoidalCategoryStruct` needs: tensor products of
+graded objects with good associativity (`GradedObject.HasTensor`,
+`GradedObject.HasGoodTensor₁₂Tensor` and `GradedObject.HasGoodTensorTensor₂₃`), and a zero
+object, from which, with the additivity of the tensor product, follows the preservation of the
+empty colimit that Mathlib also assumes.  The evaluation of `HomologicalComplex.ι_tensorHom` on
+pure tensors of modules, `HomologicalComplex.ι_tensorHom_apply`, is in
+`TauCeti/Algebra/Homology/ModuleCat/Tensor.lean`.  The identification of `⊗ₘ`, `◁` and `▷` with
+totalizations of morphisms, on which these formulas rest, is in
+`TauCeti/Algebra/Homology/Monoidal/Basic.lean`.
 
 ## Main results
 
-* `HomologicalComplex.ι_tensorHom`: the tensor product of two morphisms on a homogeneous summand.
+* `HomologicalComplex.ι_tensorHom` and `HomologicalComplex.ι_tensorHom_f`: the tensor product of
+  two morphisms on a homogeneous summand, for `HomologicalComplex.tensorHom` and for `⊗ₘ`.
 * `HomologicalComplex.XIsoOfEq_hom_tensorHom_XIsoOfEq_hom_ιTensorObj`: identifying the degrees of
   the two factors of a homogeneous summand along equalities of indices.
 * `HomologicalComplex.ιTensorObj_comp_XIsoOfEq_hom`: identifying the total degree of a homogeneous
   summand along an equality of indices.
-* `HomologicalComplex.zero_tensorHom` and `HomologicalComplex.tensorHom_zero`: the tensor product
-  of morphisms vanishes when either factor does.
 * `HomologicalComplex.isSplitEpi_tensorHom_f`, `HomologicalComplex.epi_tensorHom_of_isSplitEpi_f`,
   `HomologicalComplex.isSplitEpi_monoidalTensorHom_f`, and
   `HomologicalComplex.epi_monoidalTensorHom_of_isSplitEpi_f`: the tensor product of two degreewise
   split epimorphisms is a degreewise split epimorphism, hence an epimorphism of complexes.
-* `HomologicalComplex.tensorHom_eq_mapBifunctorMap`: `⊗ₘ` of homological complexes is the
-  totalization `HomologicalComplex.mapBifunctorMap` of the two morphisms.
 * `HomologicalComplex.ι_whiskerLeft` and `HomologicalComplex.ι_whiskerRight`: the two whiskerings
   on a homogeneous summand.
-* `HomologicalComplex.whiskerLeft_zero` and `HomologicalComplex.zero_whiskerRight`: whiskering the
-  zero morphism gives zero, so `tensorLeft X` and `tensorRight X` preserve zero morphisms.
 * `HomologicalComplex.leftUnitor_inv_f` and `HomologicalComplex.rightUnitor_inv_f`: the degreewise
-  components of the inverse unitors.
+  components of the inverse unitors, through the degree-`0` summand of `𝟙_ _`.
 * `HomologicalComplex.mapBifunctor₁₂.ι_eq_whiskerRight` and
   `HomologicalComplex.mapBifunctor₂₃.ι_eq_whiskerLeft`: the inclusions of the summand
   `X.X p ⊗ Y.X q ⊗ Z.X r` into `(X ⊗ Y) ⊗ Z` and `X ⊗ (Y ⊗ Z)` via whiskered `ιTensorObj`.
 * `HomologicalComplex.ι_ι_associator_hom` and `HomologicalComplex.ι_ι_associator_inv`: the
   associator and its inverse on the summand `X.X p ⊗ Y.X q ⊗ Z.X r`, with arbitrary intermediate
   degrees.
-* `CochainComplex.curriedTensorIsoMap₂CochainComplex`: natural isomorphism between
-  `MonoidalCategory.curriedTensor (CochainComplex C ℤ)` and
-  `(MonoidalCategory.curriedTensor C).map₂CochainComplex`.
 
 The analogous formula for the differential of a tensor product is
 `HomologicalComplex.ι_tensorObj_d` in `TauCeti/Algebra/Homology/Monoidal/Tensor/Differential.lean`.
@@ -66,8 +64,6 @@ The analogous formula for the differential of a tensor product is
 public section
 
 open CategoryTheory Limits MonoidalCategory
-
-universe v
 
 namespace HomologicalComplex
 
@@ -79,7 +75,9 @@ variable {C : Type*} [Category* C] [MonoidalCategory C] [Preadditive C]
 
 /-- The tensor product of two morphisms of homological complexes, restricted to a homogeneous
 summand, is the tensor product of their components.  Mathlib states this only for
-`HomologicalComplex.mapBifunctorMap`, by which `⊗ₘ` is defined. -/
+`HomologicalComplex.mapBifunctorMap`, by which `⊗ₘ` is defined.  It is not `@[simp]`: its
+left-hand side is already rewritten by Mathlib's simp lemma `HomologicalComplex.ι_mapBifunctorMap`,
+into the composite of the two whiskerings. -/
 @[reassoc]
 lemma ι_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂)
     [HasTensor K₁ K₂] [HasTensor L₁ L₂]
@@ -88,18 +86,6 @@ lemma ι_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ �
       (f₁.f i₁ ⊗ₘ f₂.f i₂) ≫ ιTensorObj L₁ L₂ i₁ i₂ j h := by
   refine (ι_mapBifunctorMap _ _ _ _ _ _ _ _).trans ?_
   simp [tensorHom_def]
-
-/-- The tensor product of homological complexes of the zero morphism with any morphism is zero. -/
-lemma zero_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₂ : K₂ ⟶ L₂)
-    [HasTensor K₁ K₂] [HasTensor L₁ L₂] :
-    tensorHom (0 : K₁ ⟶ L₁) f₂ = 0 :=
-  mapBifunctorMap_zero_left (curriedTensor C) c K₁ L₁ f₂
-
-/-- The tensor product of homological complexes of any morphism with the zero morphism is zero. -/
-lemma tensorHom_zero {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
-    [HasTensor K₁ K₂] [HasTensor L₁ L₂] :
-    tensorHom f₁ (0 : K₂ ⟶ L₂) = 0 :=
-  mapBifunctorMap_zero_right (curriedTensor C) c f₁ K₂ L₂
 
 /-- Identifying the degrees of the two factors along equalities of indices does not change the
 inclusion of a summand into a tensor product of complexes. -/
@@ -142,20 +128,26 @@ lemma ιTensorObj_comp_XIsoOfEq_hom (K L : HomologicalComplex C c) [K.HasTensor 
   subst hj
   simp
 
-variable [HasZeroObject C] (c) [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
-  [∀ X₂, PreservesColimit (CategoryTheory.Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
+-- Mathlib's monoidal structure assumes that tensoring preserves the empty colimit; here this
+-- follows from the zero object and the additivity of the tensor product, as in
+-- `TauCeti/Algebra/Homology/Monoidal/Basic.lean`.
+attribute [local instance] Functor.preservesInitialObject_of_preservesZeroMorphisms
+
+variable [HasZeroObject C] [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
   [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
   [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
 
-/-- In the monoidal category of homological complexes, `⊗ₘ` is the totalization of the two
-morphisms.  Mathlib defines `HomologicalComplex.monoidalCategory` this way, but states no lemma
-exposing it, so `HomologicalComplex.ι_tensorHom` does not apply to `⊗ₘ` without this rewrite. -/
-lemma tensorHom_eq_mapBifunctorMap {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
-    (f₂ : K₂ ⟶ L₂) :
-    f₁ ⊗ₘ f₂ = mapBifunctorMap f₁ f₂ (curriedTensor C) c :=
-  rfl
-
-variable {c}
+/-- The tensor product `⊗ₘ` of two morphisms in the monoidal category of homological complexes,
+restricted to a homogeneous summand, is the tensor product of their components.
+`HomologicalComplex.ι_tensorHom` states this for `HomologicalComplex.tensorHom`, which needs only
+the two tensor products involved to exist. -/
+@[reassoc (attr := simp)]
+lemma ι_tensorHom_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂)
+    (i₁ i₂ j : I) (h : i₁ + i₂ = j) :
+    ιTensorObj K₁ K₂ i₁ i₂ j h ≫ (f₁ ⊗ₘ f₂).f j =
+      (f₁.f i₁ ⊗ₘ f₂.f i₂) ≫ ιTensorObj L₁ L₂ i₁ i₂ j h := by
+  rw [tensorHom_eq_mapBifunctorMap]
+  exact ι_tensorHom f₁ f₂ i₁ i₂ j h
 
 /-- In the monoidal category of homological complexes, `f₁ ⊗ₘ f₂` is a split epimorphism in each
 degree when `f₁` and `f₂` are. -/
@@ -173,52 +165,6 @@ instance epi_monoidalTensorHom_of_isSplitEpi_f {K₁ K₂ L₁ L₂ : Homologica
     Epi (f₁ ⊗ₘ f₂) :=
   epi_of_epi_f _ fun _ ↦ inferInstance
 
-/-- Left whiskering of homological complexes is the totalization of the identity and
-the given morphism.  Mathlib defines the monoidal structure on homological complexes through
-`HomologicalComplex.mapBifunctorMap`, but states no component lemma for `◁`. -/
-lemma whiskerLeft_eq_mapBifunctorMap (X : HomologicalComplex C c) {Y Z : HomologicalComplex C c}
-    (g : Y ⟶ Z) :
-    X ◁ g = mapBifunctorMap (𝟙 X) g (curriedTensor C) c :=
-  rfl
-
-/-- Right whiskering of homological complexes is the totalization of the given
-morphism and the identity; the counterpart of
-`HomologicalComplex.whiskerLeft_eq_mapBifunctorMap`. -/
-lemma whiskerRight_eq_mapBifunctorMap {X Y : HomologicalComplex C c} (f : X ⟶ Y)
-    (Z : HomologicalComplex C c) :
-    f ▷ Z = mapBifunctorMap f (𝟙 Z) (curriedTensor C) c :=
-  rfl
-
-/-- Left whiskering of homological complexes by the zero morphism is zero.  Homological complexes
-carry no `MonoidalPreadditive` instance, so `MonoidalPreadditive.whiskerLeft_zero` does not
-apply. -/
-@[simp]
-lemma whiskerLeft_zero (X : HomologicalComplex C c) {Y Z : HomologicalComplex C c} :
-    X ◁ (0 : Y ⟶ Z) = 0 :=
-  tensorHom_zero _
-
-/-- Right whiskering of homological complexes by the zero morphism is zero; the counterpart of
-`HomologicalComplex.whiskerLeft_zero`. -/
-@[simp]
-lemma zero_whiskerRight {X Y : HomologicalComplex C c} (Z : HomologicalComplex C c) :
-    (0 : X ⟶ Y) ▷ Z = 0 :=
-  zero_tensorHom _
-
-section
-
-variable [∀ X₁, PreservesColimit (CategoryTheory.Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
-  [∀ (X₁ X₂ X₃ X₄ : GradedObject I C), GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
-
-/-- Left tensoring with a homological complex preserves zero morphisms. -/
-instance (X : HomologicalComplex C c) : (tensorLeft X).PreservesZeroMorphisms :=
-  ⟨fun _ _ ↦ whiskerLeft_zero X⟩
-
-/-- Right tensoring with a homological complex preserves zero morphisms. -/
-instance (X : HomologicalComplex C c) : (tensorRight X).PreservesZeroMorphisms :=
-  ⟨fun _ _ ↦ zero_whiskerRight X⟩
-
-end
-
 /-- Left whiskering of homological complexes, restricted to a homogeneous summand, is left
 whiskering of the summand. -/
 @[reassoc (attr := simp)]
@@ -235,25 +181,31 @@ lemma ι_whiskerRight {X Y : HomologicalComplex C c} (f : X ⟶ Y)
     ιTensorObj X Z p q j h ≫ (f ▷ Z).f j = (f.f p ▷ Z.X q) ≫ ιTensorObj Y Z p q j h := by
   rw [whiskerRight_eq_mapBifunctorMap, ι_tensorHom, id_f, tensorHom_id]
 
-/-- The degreewise component of the inverse left unitor of homological complexes is the
-component of the auxiliary graded isomorphism `HomologicalComplex.leftUnitor'`, whose value is
-recorded by `HomologicalComplex.leftUnitor'_inv`. -/
+/-- The degreewise component of the inverse left unitor of homological complexes: on degree `j`
+it is the inverse left unitor of `X.X j`, then the identification
+`𝟙_ C ≅ (𝟙_ (HomologicalComplex C c)).X 0` (the inverse of `HomologicalComplex.singleObjXSelf`)
+whiskered on the right by `X.X j`, then the inclusion of the summand `(𝟙_ _).X 0 ⊗ X.X j` of
+`𝟙_ _ ⊗ X`. -/
 lemma leftUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
-    (λ_ X).inv.f j = (leftUnitor' X).inv j := by
-  dsimp only [MonoidalCategoryStruct.leftUnitor, monoidalCategoryStruct,
-    monoidalCategory, leftUnitor, Iso.symm_inv]
-  simp only [Hom.isoOfComponents_hom_f, CategoryTheory.Functor.mapIso_hom, Iso.symm_hom]
-  rfl
+    (λ_ X).inv.f j = (λ_ (X.X j)).inv ≫ ((singleObjXSelf c 0 (𝟙_ C)).inv ▷ X.X j) ≫
+      ιTensorObj (𝟙_ (HomologicalComplex C c)) X 0 j j (zero_add j) := by
+  -- `HomologicalComplex.leftUnitor'_inv` is stated with `tensorUnit C c`, the definition of
+  -- `𝟙_ (HomologicalComplex C c)`.
+  refine Eq.trans ?_ (leftUnitor'_inv X j)
+  simp [MonoidalCategoryStruct.leftUnitor, leftUnitor]
 
-/-- The degreewise component of the inverse right unitor of homological complexes is the
-component of the auxiliary graded isomorphism `HomologicalComplex.rightUnitor'`, whose value is
-recorded by `HomologicalComplex.rightUnitor'_inv`. -/
+/-- The degreewise component of the inverse right unitor of homological complexes: on degree `j`
+it is the inverse right unitor of `X.X j`, then the identification
+`𝟙_ C ≅ (𝟙_ (HomologicalComplex C c)).X 0` (the inverse of `HomologicalComplex.singleObjXSelf`)
+whiskered on the left by `X.X j`, then the inclusion of the summand `X.X j ⊗ (𝟙_ _).X 0` of
+`X ⊗ 𝟙_ _`. -/
 lemma rightUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
-    (ρ_ X).inv.f j = (rightUnitor' X).inv j := by
-  dsimp only [MonoidalCategoryStruct.rightUnitor, monoidalCategoryStruct,
-    monoidalCategory, rightUnitor, Iso.symm_inv]
-  simp only [Hom.isoOfComponents_hom_f, CategoryTheory.Functor.mapIso_hom, Iso.symm_hom]
-  rfl
+    (ρ_ X).inv.f j = (ρ_ (X.X j)).inv ≫ (X.X j ◁ (singleObjXSelf c 0 (𝟙_ C)).inv) ≫
+      ιTensorObj X (𝟙_ (HomologicalComplex C c)) j 0 j (add_zero j) := by
+  -- `HomologicalComplex.rightUnitor'_inv` is stated with `tensorUnit C c`, the definition of
+  -- `𝟙_ (HomologicalComplex C c)`.
+  refine Eq.trans ?_ (rightUnitor'_inv X j)
+  simp [MonoidalCategoryStruct.rightUnitor, rightUnitor]
 
 /-- The inclusion `HomologicalComplex.mapBifunctor₁₂.ι` of the summand `X.X p ⊗ Y.X q ⊗ Z.X r`
 into `(X ⊗ Y) ⊗ Z`, written with the monoidal whiskering and `HomologicalComplex.ιTensorObj`.
@@ -309,105 +261,13 @@ lemma ι_ι_associator_inv (X Y Z : HomologicalComplex C c)
     (X.X p ◁ ιTensorObj Y Z q r qr hqr) ≫ ιTensorObj X (Y ⊗ Z) p qr j h' ≫ (α_ X Y Z).inv.f j =
       (α_ (X.X p) (Y.X q) (Z.X r)).inv ≫ (ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫
         ιTensorObj (X ⊗ Y) Z pq r j h := by
-  rw [← cancel_epi (α_ (X.X p) (Y.X q) (Z.X r)).hom, Iso.hom_inv_id_assoc,
-    ← ι_ι_associator_hom_assoc X Y Z p q r pq qr j hpq hqr h h', ← comp_f, Iso.hom_inv_id, id_f]
-  -- `Category.comp_id` is stated for the identity of the codomain of `ιTensorObj`, which is
-  -- spelled `(HomologicalComplex.tensorObj (X ⊗ Y) Z).X j` rather than `((X ⊗ Y) ⊗ Z).X j`.
-  erw [Category.comp_id]
+  -- Move the degree-`j` component of `α_ X Y Z` to the right-hand side; going through
+  -- `(α_ X Y Z).hom.f j ≫ (α_ X Y Z).inv.f j` instead would leave an identity whose object is
+  -- spelled differently from the codomain of `ιTensorObj`.
+  rw [← Hom.isoApp_inv, ← Category.assoc, Iso.comp_inv_eq, Hom.isoApp_hom]
+  simp only [Category.assoc, ι_ι_associator_hom X Y Z p q r pq qr j hpq hqr h h',
+    Iso.inv_hom_id_assoc]
 
 end General
 
-section ComplexesOfModules
-
-variable {R : Type v} [CommRing R]
-variable {I : Type*} [AddMonoid I] {c : ComplexShape I} [c.TensorSigns] [DecidableEq I]
-
-/-- The tensor product of two morphisms of homological complexes of modules on a pure tensor in a
-homogeneous summand: the tensor product of the components. -/
-lemma ι_tensorHom_apply {K₁ K₂ L₁ L₂ : HomologicalComplex (ModuleCat.{v} R) c} (f₁ : K₁ ⟶ L₁)
-    (f₂ : K₂ ⟶ L₂) [HasTensor K₁ K₂] [HasTensor L₁ L₂] (i₁ i₂ j : I) (h : i₁ + i₂ = j)
-    (a : K₁.X i₁) (b : K₂.X i₂) :
-    (tensorHom f₁ f₂).f j ((ιTensorObj K₁ K₂ i₁ i₂ j h).hom (a ⊗ₜ[R] b)) =
-      (ιTensorObj L₁ L₂ i₁ i₂ j h).hom (f₁.f i₁ a ⊗ₜ[R] f₂.f i₂ b) :=
-  LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (ι_tensorHom f₁ f₂ i₁ i₂ j h)) (a ⊗ₜ[R] b)
-
-end ComplexesOfModules
-
 end HomologicalComplex
-
-namespace CochainComplex
-
-open HomologicalComplex
-
-section HasTensor
-
-variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C]
-  [MonoidalPreadditive C] [∀ K L : CochainComplex C ℤ, HasTensor K L]
-
-/-- The curried tensor bifunctor on complexes computes the total tensor product. -/
-theorem curriedTensor_map₂CochainComplex_obj_obj (K A : CochainComplex C ℤ) :
-    ((curriedTensor C).map₂CochainComplex.obj K).obj A = tensorObj K A := rfl
-
-/-- The curried tensor bifunctor acts in the right input by tensoring with an identity. -/
-theorem curriedTensor_map₂CochainComplex_obj_map (K : CochainComplex C ℤ)
-    {A B : CochainComplex C ℤ} (g : A ⟶ B) :
-    ((curriedTensor C).map₂CochainComplex.obj K).map g = tensorHom (𝟙 K) g := rfl
-
-/-- The curried tensor bifunctor acts in the left input by tensoring with an identity. -/
-theorem curriedTensor_map₂CochainComplex_map_app {K L : CochainComplex C ℤ}
-    (f : K ⟶ L) (A : CochainComplex C ℤ) :
-    ((curriedTensor C).map₂CochainComplex.map f).app A = tensorHom f (𝟙 A) := rfl
-
-end HasTensor
-
-section Monoidal
-
-variable (C : Type*) [Category* C] [Preadditive C] [MonoidalCategory C]
-  [MonoidalPreadditive C] [HasZeroObject C]
-  [∀ X₁ X₂ : GradedObject ℤ C, GradedObject.HasTensor X₁ X₂]
-  [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
-  [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
-  [∀ X₁ X₂ X₃ X₄ : GradedObject ℤ C, GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
-  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
-  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
-
-/-- The curried tensor bifunctor of the totalized monoidal structure on `CochainComplex C ℤ` is
-naturally isomorphic to `(curriedTensor C).map₂CochainComplex`. -/
-noncomputable def curriedTensorIsoMap₂CochainComplex :
-    curriedTensor (CochainComplex C ℤ) ≅ (curriedTensor C).map₂CochainComplex where
-  hom :=
-    { app K :=
-        { app L := 𝟙 _
-          naturality _ _ g := by
-            dsimp
-            rw [Category.id_comp, Category.comp_id, whiskerLeft_eq_mapBifunctorMap] }
-      naturality _ _ f := NatTrans.ext <| funext fun L ↦ by
-        dsimp
-        rw [Category.id_comp, Category.comp_id, whiskerRight_eq_mapBifunctorMap] }
-  inv :=
-    { app K :=
-        { app L := 𝟙 _
-          naturality _ _ g := by
-            dsimp
-            rw [Category.id_comp, Category.comp_id, whiskerLeft_eq_mapBifunctorMap] }
-      naturality _ _ f := NatTrans.ext <| funext fun L ↦ by
-        dsimp
-        rw [Category.id_comp, Category.comp_id, whiskerRight_eq_mapBifunctorMap] }
-
-/-- Evaluating the forward direction of `curriedTensorIsoMap₂CochainComplex` on complexes `K` and
-`L` is the identity on `K ⊗ L`. -/
-@[simp]
-lemma curriedTensorIsoMap₂CochainComplex_hom_app_app (K L : CochainComplex C ℤ) :
-    ((curriedTensorIsoMap₂CochainComplex C).hom.app K).app L = 𝟙 (K ⊗ L) := by
-  rfl
-
-/-- Evaluating the inverse direction of `curriedTensorIsoMap₂CochainComplex` on complexes `K` and
-`L` is the identity on `K ⊗ L`. -/
-@[simp]
-lemma curriedTensorIsoMap₂CochainComplex_inv_app_app (K L : CochainComplex C ℤ) :
-    ((curriedTensorIsoMap₂CochainComplex C).inv.app K).app L = 𝟙 (K ⊗ L) := by
-  rfl
-
-end Monoidal
-
-end CochainComplex

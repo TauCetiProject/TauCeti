@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Cell.CharacteristicHomotopy
-public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCell.ReattachmentInv
+public import TauCeti.Geometry.Manifold.Morse.Cell.Family.Reattachment
 
 /-!
 # Milnor's comparison of Morse cells for compact families of charts
@@ -52,14 +51,15 @@ With the reattachment data `(g, K)` stated explicitly, the homotopy equivalence 
 reattachment map of the given polar factors `g` and of the homotopies `K` of characteristic maps,
 and `ρ'` that of the inverse isometries and the reversed homotopies.
 
-The construction is compatible with restriction of the parameter: along a continuous map
-`u : P' → P`, there are maps `ρᵤ` and `ρᵤ'` over `P'` between the cell attachments of the chart
-families `ψⱼ (u p) i`, which are the identity on `P' × M_{c-ε}`, whose composites are homotopic to
-the identities relative to `P' × M_{c-ε}` through maps over `P'`, for which `Φ₀ ∘ ρᵤ` is homotopic
-to `Φ₁` in the same way, and which the maps of fiberwise adjunction spaces over `u`
-(`TauCeti.fiberwiseCellAttachmentMap`) carry to `ρ` and its inverse. Only the maps are compared
-along `u`: the homotopies over `P'` are only asserted to exist, and the statement does not relate
-them to the homotopies over `P`, so their restriction along `u` remains open.
+The maps and homotopies are compatible with restriction of the parameter along a continuous map
+`u : P' → P`, for instance the inclusion of a subcomplex. For the chart families `ψⱼ (u p) i` the
+theorem gives maps `ρᵤ` and `ρᵤ'` over `P'` between their cell attachments, both the identity on
+`P' × M_{c-ε}`, with homotopies `G₁ᵤ : ρᵤ' ∘ ρᵤ ≃ id`, `G₂ᵤ : ρᵤ ∘ ρᵤ' ≃ id` and
+`G₃ᵤ : Φ₀ ∘ ρᵤ ≃ Φ₁` relative to `P' × M_{c-ε}` through maps over `P'`. The maps of fiberwise
+adjunction spaces over `u` (`TauCeti.fiberwiseCellAttachmentMap`) carry `ρᵤ`, `ρᵤ'`, `G₁ᵤ` and
+`G₂ᵤ` to `ρ`, `ρ'`, `G₁` and `G₂`, and `u × id` on `P' × M_{c+ε}` carries `G₃ᵤ` to `G₃`. The
+proof builds these from the polar factors `g i (u p)` and the homotopies `K i` read at `u p`
+(`TauCeti.exists_fiberwiseCellReattachment_comp_fiberwiseCellAttachmentMap_morseFamily`).
 
 ## Main results
 
@@ -67,7 +67,7 @@ them to the homotopies over `P`, so their restriction along `u` remains open.
   families of Morse charts.** The cell attachments of two compact families of normal-form charts
   are homotopy equivalent over the parameter space relative to the lower sublevel, by the
   reattachment map of the polar factors of their transitions, compatibly with the comparison maps
-  and with restriction of the parameter.
+  and with restriction of the parameter, homotopies included.
 * `TauCeti.exists_fiberwiseCellReattachmentInv_homotopyRel_morseFamily`: the same homotopy
   equivalence, with the polar factors and the homotopies of characteristic maps given explicitly.
 
@@ -207,62 +207,14 @@ variable {ι P : Type u} [TopologicalSpace P]
   (hs₁ : ∀ i, ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (ψ₁ q.1 i).symm q.2)
     (univ ×ˢ closedBall 0 √ε))
 
-/-- The homotopies of characteristic maps of two chart families over `P`, restricted along a map
-`u : P' → P` of parameter spaces: a homotopy between the characteristic maps of the restricted
-families. -/
-private def restrictHomotopy
-    (g : ∀ i, P → EuclideanSpace ℝ (Fin (k i)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (k i)))
-    (hgc : ∀ i, Continuous fun p ↦
-      (g i p : EuclideanSpace ℝ (Fin (k i)) →L[ℝ] EuclideanSpace ℝ (Fin (k i))))
-    (K : ∀ i, (morseFamilyCharacteristicMap ψ₁ k hk hε.le hball₁ hf₁ hs₁ i).Homotopy
-      ((morseFamilyCharacteristicMap ψ₀ k hk hε.le hball₀ hf₀ hs₀ i).comp
-        (ContinuousMap.fst.prodMk (diskMapFamily.{u} (g i) (hgc i)))))
-    {P' : Type u} [TopologicalSpace P'] (u : C(P', P))
-    (hs₀' : ∀ i, ContinuousOn (fun q : P' × EuclideanSpace ℝ (Fin n) ↦ (ψ₀ (u q.1) i).symm q.2)
-      (univ ×ˢ closedBall 0 √ε))
-    (hs₁' : ∀ i, ContinuousOn (fun q : P' × EuclideanSpace ℝ (Fin n) ↦ (ψ₁ (u q.1) i).symm q.2)
-      (univ ×ˢ closedBall 0 √ε)) (i : ι) :
-    (morseFamilyCharacteristicMap (fun p ↦ ψ₁ (u p)) k hk hε.le (fun p ↦ hball₁ (u p))
-      (fun p ↦ hf₁ (u p)) hs₁' i).Homotopy
-      ((morseFamilyCharacteristicMap (fun p ↦ ψ₀ (u p)) k hk hε.le (fun p ↦ hball₀ (u p))
-        (fun p ↦ hf₀ (u p)) hs₀' i).comp
-        (ContinuousMap.fst.prodMk (diskMapFamily.{u} (fun p ↦ g i (u p))
-          ((hgc i).comp u.continuous)))) :=
-  ((K i).compContinuousMap (u.prodMap (ContinuousMap.id _))).cast
-    (ContinuousMap.ext fun q ↦ (morseFamilyCharacteristicMap_comp_apply ψ₁ k hk hε.le hball₁
-      hf₁ hs₁ u hs₁' i q.1 q.2).symm)
-    (ContinuousMap.ext fun q ↦ by
-      simp only [ContinuousMap.comp_apply, ContinuousMap.prodMap_apply, ContinuousMap.prod_eval,
-        ContinuousMap.fst_apply, diskMapFamily_apply]
-      exact (morseFamilyCharacteristicMap_comp_apply ψ₀ k hk hε.le hball₀ hf₀ hs₀ u hs₀' i q.1
-        _).symm)
-
-omit [T2Space M] in
-/-- The restricted homotopy at `(t, (p, x))` is `K i` at `(t, (u p, x))`. -/
-private theorem restrictHomotopy_apply
-    (g : ∀ i, P → EuclideanSpace ℝ (Fin (k i)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (k i)))
-    (hgc : ∀ i, Continuous fun p ↦
-      (g i p : EuclideanSpace ℝ (Fin (k i)) →L[ℝ] EuclideanSpace ℝ (Fin (k i))))
-    (K : ∀ i, (morseFamilyCharacteristicMap ψ₁ k hk hε.le hball₁ hf₁ hs₁ i).Homotopy
-      ((morseFamilyCharacteristicMap ψ₀ k hk hε.le hball₀ hf₀ hs₀ i).comp
-        (ContinuousMap.fst.prodMk (diskMapFamily.{u} (g i) (hgc i)))))
-    {P' : Type u} [TopologicalSpace P'] (u : C(P', P))
-    (hs₀' : ∀ i, ContinuousOn (fun q : P' × EuclideanSpace ℝ (Fin n) ↦ (ψ₀ (u q.1) i).symm q.2)
-      (univ ×ˢ closedBall 0 √ε))
-    (hs₁' : ∀ i, ContinuousOn (fun q : P' × EuclideanSpace ℝ (Fin n) ↦ (ψ₁ (u q.1) i).symm q.2)
-      (univ ×ˢ closedBall 0 √ε)) (i : ι) (t : I) (p : P') (x : TopCat.disk.{u} (k i)) :
-    restrictHomotopy ψ₀ ψ₁ k hk hε hball₀ hball₁ hf₀ hf₁ hs₀ hs₁ g hgc K u hs₀' hs₁' i (t, (p, x)) =
-      K i (t, (u p, x)) :=
-  -- `Homotopy.cast` does not change the underlying map, and `compContinuousMap` along
-  -- `u × id` evaluates `K i` at `(t, (u p, x))`.
-  rfl
-
 omit [T2Space M] in
 /-- **The reattachment map of two chart families and its inverse.** For the data `(g, K)` of a
 fiberwise reattachment map `ρ` between the cell attachments of two chart families over `P`, with
-inverse `ρ'`, both lie over `P` and are the identity on `P × M_{c-ε}`, their composites are
-homotopic to the identities relative to `P × M_{c-ε}` through maps over `P`, and `Φ₀ ∘ ρ` is
-homotopic to `Φ₁` in the same way. -/
+inverse `ρ'`, both lie over `P` and are the identity on `P × M_{c-ε}`, and the homotopies
+`ρ' ∘ ρ ≃ id`, `ρ ∘ ρ' ≃ id` and `Φ₀ ∘ ρ ≃ Φ₁` relative to `P × M_{c-ε}` built from these data
+(`TauCeti.fiberwiseCellReattachmentCompInvHomotopy`,
+`TauCeti.fiberwiseCellReattachmentInvCompHomotopy` and `TauCeti.fiberwiseCellReattachmentHomotopy`)
+lie over `P` at all times. -/
 private theorem fiberwiseCellReattachment_morseFamily_spec
     (g : ∀ i, P → EuclideanSpace ℝ (Fin (k i)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (k i)))
     (hgc : ∀ i, Continuous fun p ↦
@@ -276,38 +228,30 @@ private theorem fiberwiseCellReattachment_morseFamily_spec
         (ContinuousMap.fst.prodMk (diskMapFamily.{u} (g i) (hgc i)))))
     (hK : ∀ i t p (s : TopCat.diskBoundary.{u} (k i)),
       K i (t, (p, TopCat.diskBoundaryInclusion (k i) s)) ∈ {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :
-    let ρ := fiberwiseCellReattachment _ _ _ _
-      (morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₀ k hk hε.le hball₀ hf₀ hs₀)
-      (morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₁ k hk hε.le hball₁ hf₁ hs₁) _ hh K hK
-    let ρ' := fiberwiseCellReattachmentInv _ _ _ _
-      (morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₀ k hk hε.le hball₀ hf₀ hs₀)
-      (morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₁ k hk hε.le hball₁ hf₁ hs₁) _ K hK g he
+    let hχ₀ := morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₀ k hk hε.le hball₀ hf₀ hs₀
+    let hχ₁ := morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₁ k hk hε.le hball₁ hf₁ hs₁
+    let ρ := fiberwiseCellReattachment _ _ _ _ hχ₀ hχ₁ _ hh K hK
+    let ρ' := fiberwiseCellReattachmentInv _ _ _ _ hχ₀ hχ₁ _ K hK g he
     fiberwiseCellAttachmentIncl _ ≫ ρ = fiberwiseCellAttachmentIncl _ ∧
       fiberwiseCellAttachmentIncl _ ≫ ρ' = fiberwiseCellAttachmentIncl _ ∧
       (∀ y, fiberwiseCellAttachmentProj _ (ρ y) = fiberwiseCellAttachmentProj _ y) ∧
       (∀ y, fiberwiseCellAttachmentProj _ (ρ' y) = fiberwiseCellAttachmentProj _ y) ∧
-      (∃ G : (ρ ≫ ρ').hom.HomotopyRel (ContinuousMap.id _) (range (fiberwiseCellAttachmentIncl _)),
-        ∀ t y, fiberwiseCellAttachmentProj _ (G (t, y)) = fiberwiseCellAttachmentProj _ y) ∧
-      (∃ G : (ρ' ≫ ρ).hom.HomotopyRel (ContinuousMap.id _) (range (fiberwiseCellAttachmentIncl _)),
-        ∀ t y, fiberwiseCellAttachmentProj _ (G (t, y)) = fiberwiseCellAttachmentProj _ y) ∧
-      ∃ G : (ρ ≫ fiberwiseCellComparison _
-            (morseFamilyCharacteristicMap ψ₀ k hk hε.le hball₀ hf₀ hs₀)
-            (morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₀ k hk hε.le hball₀ hf₀
-              hs₀)).hom.HomotopyRel
-          (fiberwiseCellComparison _ (morseFamilyCharacteristicMap ψ₁ k hk hε.le hball₁ hf₁ hs₁)
-            (morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₁ k hk hε.le hball₁ hf₁ hs₁)).hom
-          (range (fiberwiseCellAttachmentIncl _)),
-        ∀ t y, (G (t, y)).1 = fiberwiseCellAttachmentProj _ y := by
-  have hχ₀ := morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₀ k hk hε.le hball₀ hf₀ hs₀
-  have hχ₁ := morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₁ k hk hε.le hball₁ hf₁ hs₁
+      (∀ t y, fiberwiseCellAttachmentProj _
+        (fiberwiseCellReattachmentCompInvHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK g he (t, y)) =
+          fiberwiseCellAttachmentProj _ y) ∧
+      (∀ t y, fiberwiseCellAttachmentProj _
+        (fiberwiseCellReattachmentInvCompHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK g he (t, y)) =
+          fiberwiseCellAttachmentProj _ y) ∧
+      ∀ t y, (fiberwiseCellReattachmentHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK (t, y)).1 =
+        fiberwiseCellAttachmentProj _ y := by
+  intro hχ₀ hχ₁ ρ ρ'
   refine ⟨?_, ?_, fiberwiseCellAttachmentProj_fiberwiseCellReattachment _ _ _ _ hχ₀ hχ₁ _ hh K hK,
     fiberwiseCellAttachmentProj_fiberwiseCellReattachmentInv _ _ _ _ hχ₀ hχ₁ _ K hK g he,
-    exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachmentInv _ _ _ _ hχ₀ hχ₁
-      _ hh K hK g he,
-    exists_homotopyRel_fiberwiseCellReattachmentInv_comp_fiberwiseCellReattachment _ _ _ _ hχ₀ hχ₁
-      _ hh K hK g he,
-    ⟨fiberwiseCellReattachmentHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK,
-      fst_fiberwiseCellReattachmentHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK⟩⟩
+    fiberwiseCellAttachmentProj_fiberwiseCellReattachmentCompInvHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK
+      g he,
+    fiberwiseCellAttachmentProj_fiberwiseCellReattachmentInvCompHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK
+      g he,
+    fst_fiberwiseCellReattachmentHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK⟩
   · ext x
     exact fiberwiseCellReattachment_fiberwiseCellAttachmentIncl _ _ _ _ hχ₀ hχ₁ _ hh K hK x
   · ext x
@@ -325,19 +269,20 @@ where `ι : ℝ^{k i} → ℝⁿ` extends by zero onto the first `k i` coordinat
 
 Then each `g i p` is a linear isometry, depending continuously on `p`, and there are maps `ρ` and
 `ρ'` over `P` between the cell attachments `(P × M_{c-ε}) ∪_{αⱼ} ⨆ᵢ (P × D^{k i})` of the two
-families, in both directions, such that:
-* both are the identity on `P × M_{c-ε}`;
+families, in both directions, with homotopies `G₁`, `G₂` and `G₃`, such that:
+* both maps are the identity on `P × M_{c-ε}`;
 * on the disc of radius `1/2` of the `i`-th cell over `p`, `ρ` is `x ↦ g i p (2x)`;
-* `ρ' ∘ ρ` and `ρ ∘ ρ'` are homotopic to the identities relative to `P × M_{c-ε}`, through maps
+* `G₁ : ρ' ∘ ρ ≃ id` and `G₂ : ρ ∘ ρ' ≃ id` are homotopies relative to `P × M_{c-ε}` through maps
   over `P`;
-* `Φ₀ ∘ ρ` is homotopic to `Φ₁` relative to `P × M_{c-ε}`, through maps over `P`, for the
+* `G₃ : Φ₀ ∘ ρ ≃ Φ₁` is a homotopy relative to `P × M_{c-ε}` through maps over `P`, for the
   comparison maps `Φⱼ` to `P × M_{c+ε}` of the characteristic maps of the two families;
-* the construction restricts along every continuous `u : P' → P`: for the chart families
-  `ψⱼ (u p) i` there are maps `ρᵤ` and `ρᵤ'` over `P'`, both the identity on `P' × M_{c-ε}`,
-  whose composites are homotopic to the identities and with `Φ₀ ∘ ρᵤ` homotopic to `Φ₁`, all
-  relative to `P' × M_{c-ε}` through maps over `P'`, and which
-  `TauCeti.fiberwiseCellAttachmentMap` carries to `ρ` and `ρ'`. The homotopies over `P'` are not
-  claimed to be restrictions of those over `P`. -/
+* the maps and homotopies restrict along every continuous `u : P' → P`, for instance the
+  inclusion of a subcomplex: for the chart families `ψⱼ (u p) i` there are maps `ρᵤ`, `ρᵤ'` over
+  `P'`, both the identity on `P' × M_{c-ε}`, and homotopies `G₁ᵤ : ρᵤ' ∘ ρᵤ ≃ id`,
+  `G₂ᵤ : ρᵤ ∘ ρᵤ' ≃ id` and `G₃ᵤ : Φ₀ ∘ ρᵤ ≃ Φ₁` relative to `P' × M_{c-ε}` through maps over
+  `P'`; the maps of fiberwise adjunction spaces over `u` (`TauCeti.fiberwiseCellAttachmentMap`)
+  carry `ρᵤ`, `ρᵤ'`, `G₁ᵤ` and `G₂ᵤ` to `ρ`, `ρ'`, `G₁` and `G₂`, and `u × id` on
+  `P' × M_{c+ε}` carries `G₃ᵤ` to `G₃`. -/
 theorem exists_fiberwiseCellReattachment_morseFamily [CompactSpace P]
     (hfs : ContMDiff Iₘ 𝓘(ℝ) ∞ f) (hp : ∀ p i, (ψ₀ p i).symm 0 = (ψ₁ p i).symm 0)
     {r : ι → ℝ} (hr : ∀ i, 0 < r i)
@@ -358,7 +303,18 @@ theorem exists_fiberwiseCellReattachment_morseFamily [CompactSpace P]
       ∃ (ρ : fiberwiseCellAttachment (morseFamilyAttachingMap ψ₁ k hk hε.le hball₁ hf₁ hs₁) ⟶
           fiberwiseCellAttachment (morseFamilyAttachingMap ψ₀ k hk hε.le hball₀ hf₀ hs₀))
         (ρ' : fiberwiseCellAttachment (morseFamilyAttachingMap ψ₀ k hk hε.le hball₀ hf₀ hs₀) ⟶
-          fiberwiseCellAttachment (morseFamilyAttachingMap ψ₁ k hk hε.le hball₁ hf₁ hs₁)),
+          fiberwiseCellAttachment (morseFamilyAttachingMap ψ₁ k hk hε.le hball₁ hf₁ hs₁))
+        (G₁ : (ρ ≫ ρ').hom.HomotopyRel (ContinuousMap.id _)
+          (range (fiberwiseCellAttachmentIncl _)))
+        (G₂ : (ρ' ≫ ρ).hom.HomotopyRel (ContinuousMap.id _)
+          (range (fiberwiseCellAttachmentIncl _)))
+        (G₃ : (ρ ≫ fiberwiseCellComparison _
+            (morseFamilyCharacteristicMap ψ₀ k hk hε.le hball₀ hf₀ hs₀)
+            (morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₀ k hk hε.le hball₀ hf₀
+              hs₀)).hom.HomotopyRel
+          (fiberwiseCellComparison _ (morseFamilyCharacteristicMap ψ₁ k hk hε.le hball₁ hf₁ hs₁)
+            (morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₁ k hk hε.le hball₁ hf₁ hs₁)).hom
+          (range (fiberwiseCellAttachmentIncl _))),
         fiberwiseCellAttachmentIncl _ ≫ ρ = fiberwiseCellAttachmentIncl _ ∧
         fiberwiseCellAttachmentIncl _ ≫ ρ' = fiberwiseCellAttachmentIncl _ ∧
         (∀ i p (w v : TopCat.disk.{u} (k i)), ‖w.down.val‖ ≤ 1 / 2 →
@@ -367,21 +323,9 @@ theorem exists_fiberwiseCellReattachment_morseFamily [CompactSpace P]
             fiberwiseCellAttachmentCell _ i (p, (g i p).diskMap v)) ∧
         (∀ y, fiberwiseCellAttachmentProj _ (ρ y) = fiberwiseCellAttachmentProj _ y) ∧
         (∀ y, fiberwiseCellAttachmentProj _ (ρ' y) = fiberwiseCellAttachmentProj _ y) ∧
-        (∃ G : (ρ ≫ ρ').hom.HomotopyRel (ContinuousMap.id _)
-            (range (fiberwiseCellAttachmentIncl _)),
-          ∀ t y, fiberwiseCellAttachmentProj _ (G (t, y)) = fiberwiseCellAttachmentProj _ y) ∧
-        (∃ G : (ρ' ≫ ρ).hom.HomotopyRel (ContinuousMap.id _)
-            (range (fiberwiseCellAttachmentIncl _)),
-          ∀ t y, fiberwiseCellAttachmentProj _ (G (t, y)) = fiberwiseCellAttachmentProj _ y) ∧
-        (∃ G : (ρ ≫ fiberwiseCellComparison _
-              (morseFamilyCharacteristicMap ψ₀ k hk hε.le hball₀ hf₀ hs₀)
-              (morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₀ k hk hε.le hball₀ hf₀
-                hs₀)).hom.HomotopyRel
-            (fiberwiseCellComparison _ (morseFamilyCharacteristicMap ψ₁ k hk hε.le hball₁ hf₁ hs₁)
-              (morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₁ k hk hε.le hball₁ hf₁
-                hs₁)).hom
-            (range (fiberwiseCellAttachmentIncl _)),
-          ∀ t y, (G (t, y)).1 = fiberwiseCellAttachmentProj _ y) ∧
+        (∀ t y, fiberwiseCellAttachmentProj _ (G₁ (t, y)) = fiberwiseCellAttachmentProj _ y) ∧
+        (∀ t y, fiberwiseCellAttachmentProj _ (G₂ (t, y)) = fiberwiseCellAttachmentProj _ y) ∧
+        (∀ t y, (G₃ (t, y)).1 = fiberwiseCellAttachmentProj _ y) ∧
         ∀ {P' : Type u} [TopologicalSpace P'] (u : C(P', P))
           (hs₀' : ∀ i, ContinuousOn
             (fun q : P' × EuclideanSpace ℝ (Fin n) ↦ (ψ₀ (u q.1) i).symm q.2)
@@ -396,23 +340,31 @@ theorem exists_fiberwiseCellReattachment_morseFamily [CompactSpace P]
             (ρᵤ' : fiberwiseCellAttachment (morseFamilyAttachingMap (fun p ↦ ψ₀ (u p)) k hk hε.le
                 (fun p ↦ hball₀ (u p)) (fun p ↦ hf₀ (u p)) hs₀') ⟶
               fiberwiseCellAttachment (morseFamilyAttachingMap (fun p ↦ ψ₁ (u p)) k hk hε.le
-                (fun p ↦ hball₁ (u p)) (fun p ↦ hf₁ (u p)) hs₁')),
+                (fun p ↦ hball₁ (u p)) (fun p ↦ hf₁ (u p)) hs₁'))
+            (G₁ᵤ : (ρᵤ ≫ ρᵤ').hom.HomotopyRel (ContinuousMap.id _)
+              (range (fiberwiseCellAttachmentIncl _)))
+            (G₂ᵤ : (ρᵤ' ≫ ρᵤ).hom.HomotopyRel (ContinuousMap.id _)
+              (range (fiberwiseCellAttachmentIncl _)))
+            (G₃ᵤ : (ρᵤ ≫ fiberwiseCellComparison _
+                (morseFamilyCharacteristicMap (fun p ↦ ψ₀ (u p)) k hk hε.le (fun p ↦ hball₀ (u p))
+                  (fun p ↦ hf₀ (u p)) hs₀')
+                (morseFamilyCharacteristicMap_diskBoundaryInclusion (fun p ↦ ψ₀ (u p)) k hk hε.le
+                  (fun p ↦ hball₀ (u p)) (fun p ↦ hf₀ (u p)) hs₀')).hom.HomotopyRel
+              (fiberwiseCellComparison _
+                (morseFamilyCharacteristicMap (fun p ↦ ψ₁ (u p)) k hk hε.le (fun p ↦ hball₁ (u p))
+                  (fun p ↦ hf₁ (u p)) hs₁')
+                (morseFamilyCharacteristicMap_diskBoundaryInclusion (fun p ↦ ψ₁ (u p)) k hk hε.le
+                  (fun p ↦ hball₁ (u p)) (fun p ↦ hf₁ (u p)) hs₁')).hom
+              (range (fiberwiseCellAttachmentIncl _))),
             fiberwiseCellAttachmentIncl _ ≫ ρᵤ = fiberwiseCellAttachmentIncl _ ∧
             fiberwiseCellAttachmentIncl _ ≫ ρᵤ' = fiberwiseCellAttachmentIncl _ ∧
             (∀ y, fiberwiseCellAttachmentProj _ (ρᵤ y) = fiberwiseCellAttachmentProj _ y) ∧
             (∀ y, fiberwiseCellAttachmentProj _ (ρᵤ' y) = fiberwiseCellAttachmentProj _ y) ∧
-            (∃ G : (ρᵤ ≫ fiberwiseCellComparison _
-                  (morseFamilyCharacteristicMap (fun p ↦ ψ₀ (u p)) k hk hε.le (fun p ↦ hball₀ (u p))
-                    (fun p ↦ hf₀ (u p)) hs₀')
-                  (morseFamilyCharacteristicMap_diskBoundaryInclusion (fun p ↦ ψ₀ (u p)) k hk hε.le
-                    (fun p ↦ hball₀ (u p)) (fun p ↦ hf₀ (u p)) hs₀')).hom.HomotopyRel
-                (fiberwiseCellComparison _
-                  (morseFamilyCharacteristicMap (fun p ↦ ψ₁ (u p)) k hk hε.le (fun p ↦ hball₁ (u p))
-                    (fun p ↦ hf₁ (u p)) hs₁')
-                  (morseFamilyCharacteristicMap_diskBoundaryInclusion (fun p ↦ ψ₁ (u p)) k hk hε.le
-                    (fun p ↦ hball₁ (u p)) (fun p ↦ hf₁ (u p)) hs₁')).hom
-                (range (fiberwiseCellAttachmentIncl _)),
-              ∀ t y, (G (t, y)).1 = fiberwiseCellAttachmentProj _ y) ∧
+            (∀ t y, fiberwiseCellAttachmentProj _ (G₁ᵤ (t, y)) =
+              fiberwiseCellAttachmentProj _ y) ∧
+            (∀ t y, fiberwiseCellAttachmentProj _ (G₂ᵤ (t, y)) =
+              fiberwiseCellAttachmentProj _ y) ∧
+            (∀ t y, (G₃ᵤ (t, y)).1 = fiberwiseCellAttachmentProj _ y) ∧
             ρᵤ ≫ fiberwiseCellAttachmentMap u _ _
                 (morseFamilyAttachingMap_comp_apply ψ₀ k hk hε.le hball₀ hf₀ hs₀ u hs₀') =
               fiberwiseCellAttachmentMap u _ _
@@ -421,57 +373,56 @@ theorem exists_fiberwiseCellReattachment_morseFamily [CompactSpace P]
                 (morseFamilyAttachingMap_comp_apply ψ₁ k hk hε.le hball₁ hf₁ hs₁ u hs₁') =
               fiberwiseCellAttachmentMap u _ _
                 (morseFamilyAttachingMap_comp_apply ψ₀ k hk hε.le hball₀ hf₀ hs₀ u hs₀') ≫ ρ' ∧
-            (∃ G : (ρᵤ ≫ ρᵤ').hom.HomotopyRel (ContinuousMap.id _)
-                (range (fiberwiseCellAttachmentIncl _)),
-              ∀ t y, fiberwiseCellAttachmentProj _ (G (t, y)) = fiberwiseCellAttachmentProj _ y) ∧
-            ∃ G : (ρᵤ' ≫ ρᵤ).hom.HomotopyRel (ContinuousMap.id _)
-                (range (fiberwiseCellAttachmentIncl _)),
-              ∀ t y, fiberwiseCellAttachmentProj _ (G (t, y)) =
-                fiberwiseCellAttachmentProj _ y := by
+            (∀ t y, G₁ (t, fiberwiseCellAttachmentMap u _ _
+                (morseFamilyAttachingMap_comp_apply ψ₁ k hk hε.le hball₁ hf₁ hs₁ u hs₁') y) =
+              fiberwiseCellAttachmentMap u _ _
+                (morseFamilyAttachingMap_comp_apply ψ₁ k hk hε.le hball₁ hf₁ hs₁ u hs₁')
+                (G₁ᵤ (t, y))) ∧
+            (∀ t y, G₂ (t, fiberwiseCellAttachmentMap u _ _
+                (morseFamilyAttachingMap_comp_apply ψ₀ k hk hε.le hball₀ hf₀ hs₀ u hs₀') y) =
+              fiberwiseCellAttachmentMap u _ _
+                (morseFamilyAttachingMap_comp_apply ψ₀ k hk hε.le hball₀ hf₀ hs₀ u hs₀')
+                (G₂ᵤ (t, y))) ∧
+            ∀ t y, G₃ (t, fiberwiseCellAttachmentMap u _ _
+                (morseFamilyAttachingMap_comp_apply ψ₁ k hk hε.le hball₁ hf₁ hs₁ u hs₁') y) =
+              (u (G₃ᵤ (t, y)).1, (G₃ᵤ (t, y)).2) := by
   obtain ⟨g, hg, hgc, K, hK⟩ := exists_homotopy_morseFamilyCharacteristicMap_polarFactor hfs ψ₀ ψ₁
     k hk hε hball₀ hball₁ hf₀ hf₁ hs₀ hs₁ hp hr htr hT hD hcompact hreg
   -- The reattachment data: the disc maps of the polar factors and the homotopies `K i`.
   have hχ₀ := morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₀ k hk hε.le hball₀ hf₀ hs₀
   have hχ₁ := morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₁ k hk hε.le hball₁ hf₁ hs₁
   have hh (i : ι) (p : P) := mapsTo_diskMapFamily_range_diskBoundaryInclusion (g i) (hgc i) p
-  have he (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
-      ((diskMapFamily (g i) (hgc i) (p, w)).down : EuclideanSpace ℝ (Fin (k i))) =
-        g i p w.down := by
-    rw [diskMapFamily_apply, LinearIsometryEquiv.coe_diskMap_apply_down]
-  obtain ⟨hι, hι', hπ, hπ', hG, hG', hΦ⟩ := fiberwiseCellReattachment_morseFamily_spec ψ₀ ψ₁ k hk
-    hε hball₀ hball₁ hf₀ hf₁ hs₀ hs₁ g hgc hh he K hK
+  have he (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :=
+    coe_diskMapFamily_apply_down (g i) (hgc i) (p, w)
+  obtain ⟨hι, hι', hπ, hπ', hG₁, hG₂, hG₃⟩ := fiberwiseCellReattachment_morseFamily_spec ψ₀ ψ₁ k
+    hk hε hball₀ hball₁ hf₀ hf₁ hs₀ hs₁ g hgc hh he K hK
   refine ⟨g, hg, hgc, fiberwiseCellReattachment _ _ _ _ hχ₀ hχ₁ _ hh K hK,
-    fiberwiseCellReattachmentInv _ _ _ _ hχ₀ hχ₁ _ K hK g he, hι, hι',
+    fiberwiseCellReattachmentInv _ _ _ _ hχ₀ hχ₁ _ K hK g he,
+    fiberwiseCellReattachmentCompInvHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK g he,
+    fiberwiseCellReattachmentInvCompHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK g he,
+    fiberwiseCellReattachmentHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK, hι, hι',
     fun i p w v hw hv ↦ (fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le _ _ _ _
       hχ₀ hχ₁ _ hh K hK i p hw hv).trans (by rw [diskMapFamily_apply]),
-    hπ, hπ', hG, hG', hΦ, fun u hs₀' hs₁' ↦ ?_⟩
+    hπ, hπ', hG₁, hG₂, hG₃, fun u hs₀' hs₁' ↦ ?_⟩
   -- The same construction for the restricted data `(g ∘ u, K ∘ (u × id))` over `P'`.
-  have hχ₀' := morseFamilyCharacteristicMap_diskBoundaryInclusion (fun p ↦ ψ₀ (u p)) k hk hε.le
-    (fun p ↦ hball₀ (u p)) (fun p ↦ hf₀ (u p)) hs₀'
-  have hχ₁' := morseFamilyCharacteristicMap_diskBoundaryInclusion (fun p ↦ ψ₁ (u p)) k hk hε.le
-    (fun p ↦ hball₁ (u p)) (fun p ↦ hf₁ (u p)) hs₁'
+  obtain ⟨K', hK', hK'K, hρ, hρ'⟩ :=
+    exists_fiberwiseCellReattachment_comp_fiberwiseCellAttachmentMap_morseFamily u ψ₀ ψ₁ k hk hε.le
+      hball₀ hball₁ hf₀ hf₁ hs₀ hs₁ hs₀' hs₁' g hgc K hK
   have hgc' (i : ι) := (hgc i).comp u.continuous
   have hh' (i : ι) p := mapsTo_diskMapFamily_range_diskBoundaryInclusion _ (hgc' i) p
-  have hh'h (i : ι) p (w : TopCat.disk.{u} (k i)) :
-      diskMapFamily (fun p ↦ g i (u p)) (hgc' i) (p, w) = diskMapFamily (g i) (hgc i) (u p, w) := by
-    rw [diskMapFamily_apply, diskMapFamily_apply]
-  have he' (i : ι) p (w : TopCat.disk.{u} (k i)) :
-      ((diskMapFamily (fun p ↦ g i (u p)) (hgc' i) (p, w)).down :
-        EuclideanSpace ℝ (Fin (k i))) = g i (u p) w.down := by
-    rw [hh'h, he]
-  set K' := restrictHomotopy ψ₀ ψ₁ k hk hε hball₀ hball₁ hf₀ hf₁ hs₀ hs₁ g hgc K u hs₀' hs₁'
-  have hK'K :=
-    restrictHomotopy_apply ψ₀ ψ₁ k hk hε hball₀ hball₁ hf₀ hf₁ hs₀ hs₁ g hgc K u hs₀' hs₁'
-  have hK' : ∀ i t p (s : TopCat.diskBoundary.{u} (k i)), K' i (t, (p, TopCat.diskBoundaryInclusion
-      (k i) s)) ∈ {y : {x | f x ≤ c + ε} | f y ≤ c - ε} := fun i t p s ↦ by
-    rw [hK'K]
-    exact hK i t (u p) s
-  obtain ⟨hι, hι', hπ, hπ', hG, hG', hΦ⟩ := fiberwiseCellReattachment_morseFamily_spec _ _ k hk hε
-    _ _ _ _ hs₀' hs₁' _ hgc' hh' he' K' hK'
-  exact ⟨_, _, hι, hι', hπ, hπ', hΦ,
-    fiberwiseCellReattachment_comp_fiberwiseCellAttachmentMap u _ _ _ _ _ _ _ hh K hK _ _ _ _
-      hχ₀' hχ₁' _ hh' K' hK' _ _ hh'h hK'K,
-    fiberwiseCellReattachmentInv_comp_fiberwiseCellAttachmentMap _ _ _ _ _ _ _ K hK g he u
-      _ _ _ _ hχ₀' hχ₁' _ K' hK' _ he' _ _ (fun _ _ ↦ rfl) hK'K, hG, hG'⟩
+  have he' (i : ι) p (w : TopCat.disk.{u} (k i)) :=
+    coe_diskMapFamily_apply_down (fun p ↦ g i (u p)) (hgc' i) (p, w)
+  obtain ⟨hι, hι', hπ, hπ', hG₁, hG₂, hG₃⟩ := fiberwiseCellReattachment_morseFamily_spec _ _ k hk
+    hε _ _ _ _ hs₀' hs₁' _ hgc' hh' he' K' hK'
+  exact ⟨_, _, _, _, _, hι, hι', hπ, hπ', hG₁, hG₂, hG₃, hρ, hρ',
+    fun t y ↦ fiberwiseCellReattachmentCompInvHomotopy_fiberwiseCellAttachmentMap (g := u)
+      (hh := hh) (K := K) (hK := hK) (e := g) (he := he) (hh' := hh') (K' := K') (hK' := hK')
+      (he' := he') (hK'K := hK'K) (t := t) (y := y) ..,
+    fun t y ↦ fiberwiseCellReattachmentInvCompHomotopy_fiberwiseCellAttachmentMap (g := u)
+      (hh := hh) (K := K) (hK := hK) (e := g) (he := he) (hh' := hh') (K' := K') (hK' := hK')
+      (he' := he') (he'e := fun _ _ ↦ rfl) (hK'K := hK'K) (t := t) (y := y) ..,
+    fun t y ↦ fiberwiseCellReattachmentHomotopy_fiberwiseCellAttachmentMap (g := u) (hh := hh)
+      (K := K) (hK := hK) (hh' := hh') (K' := K') (hK' := hK') (hK'K := hK'K) (t := t)
+      (y := y) ..⟩
 
 end TauCeti

@@ -33,6 +33,8 @@ quasi-isomorphism on subcomplexes and ambient simplicial sets is a quasi-isomorp
 chains (`SSetPair.quasiIso_chainComplexMap`), hence induces isomorphisms on relative homology.
 Multiplication by a natural number invertible on the coefficients is invertible on relative chains
 (`SSetPair.isIso_smul_id_chainComplex`), as it is on the chains of `X` and of `Y`.
+The quotient maps on homology are also natural in the coefficient object
+(`SSetPair.homologyπ_coefficient_naturality`).
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
@@ -254,6 +256,19 @@ lemma homologyπ_naturality {P P' : SSetPair.{w}} (f : P ⟶ P') (R : D) (n : �
   have h : SSet.chainComplexMap f.right R ≫ P'.chainComplexπ R =
       P.chainComplexπ R ≫ SSetPair.chainComplexMap f R :=
     ((chainComplexFunctorπ D).app R).naturality f
+  rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp, h]
+
+/-- The quotient maps from ambient to relative simplicial homology are natural in the coefficient
+object. -/
+@[reassoc]
+lemma homologyπ_coefficient_naturality (P : SSetPair.{w}) {R R' : D} (φ : R ⟶ R') (n : ℕ) :
+    HomologicalComplex.homologyMap (((SSet.chainComplexFunctor D).map φ).app P.right) n ≫
+        P.homologyπ R' n =
+      P.homologyπ R n ≫
+        HomologicalComplex.homologyMap (((chainComplexFunctor D).map φ).app P) n := by
+  have h : ((SSet.chainComplexFunctor D).map φ).app P.right ≫ P.chainComplexπ R' =
+      P.chainComplexπ R ≫ ((chainComplexFunctor D).map φ).app P :=
+    congrArg (fun η ↦ η.app P) ((chainComplexFunctorπ D).naturality φ)
   rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp, h]
 
 end SSetPair
