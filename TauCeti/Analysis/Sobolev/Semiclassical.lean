@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Dilation
 public import TauCeti.Analysis.Sobolev.Wkp.Algebra
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
 # Semiclassical Sobolev norms on the whole space
@@ -235,10 +236,8 @@ theorem mul_semiclassicalSobolevNorm_fderiv_le {k : ℕ} {f : E → F} {h : ℝ}
   -- latter are the former followed by a linear isometry equivalence.
   have hD : ∀ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i (fderiv ℝ f)) 2 volume =
       lpNorm (iteratedFDeriv ℝ (i + 1) f) 2 volume := fun i _ ↦ by
+    rw [iteratedFDeriv_succ_eq_comp_right' f]
     set L := (continuousMultilinearCurryRightEquiv' ℝ i E F).symm
-    have hcomp : iteratedFDeriv ℝ (i + 1) f = L ∘ iteratedFDeriv ℝ i (fderiv ℝ f) :=
-      funext fun _ ↦ iteratedFDeriv_succ_eq_comp_right
-    rw [hcomp]
     by_cases hm : AEStronglyMeasurable (iteratedFDeriv ℝ i (fderiv ℝ f)) volume
     · rw [← toReal_eLpNorm, ← toReal_eLpNorm, eLpNorm_congr_norm_ae (g := L ∘ _) hm
         (L.continuous.comp_aestronglyMeasurable hm) (.of_forall fun x ↦ (L.norm_map _).symm)]

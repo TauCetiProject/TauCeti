@@ -17,7 +17,9 @@ as its `(i + m)`-th iterated derivative. This extends Mathlib's `norm_iteratedFD
 case `m = 1`, and lets bounds on all iterated derivatives of a function transfer to its iterated
 derivative fields. The first iterated derivative, uncurried, is the Fréchet derivative
 (`TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one`, with the function-level form
-`TauCeti.fderiv_eq_continuousMultilinearCurryFin1_comp`), while evaluating the third iterated
+`TauCeti.fderiv_eq_continuousMultilinearCurryFin1_comp`), the `(n + 1)`-st iterated derivative
+is the `n`-th iterated derivative of the Fréchet derivative, curried on the right
+(`TauCeti.iteratedFDeriv_succ_eq_comp_right'`), while evaluating the third iterated
 derivative on three directions gives the three-times curried Fréchet derivative
 (`TauCeti.iteratedFDeriv_three_apply`). The file also supplies the
 two-variable currying isometry used to identify continuous multilinear second derivatives with
@@ -114,6 +116,15 @@ these derivatives are junk-valued. -/
 theorem fderiv_eq_continuousMultilinearCurryFin1_comp (f : E → F) :
     fderiv 𝕜 f = continuousMultilinearCurryFin1 𝕜 E F ∘ iteratedFDeriv 𝕜 1 f :=
   funext fun x ↦ (continuousMultilinearCurryFin1_iteratedFDeriv_one f x).symm
+
+/-- The `(n + 1)`-st iterated derivative of `f` is the `n`-th iterated derivative of `Df` with its
+last variable joined to the others: the function-level form of Mathlib's pointwise
+`iteratedFDeriv_succ_eq_comp_right`, including at points where these derivatives are
+junk-valued. -/
+theorem iteratedFDeriv_succ_eq_comp_right' (f : E → F) {n : ℕ} :
+    iteratedFDeriv 𝕜 (n + 1) f = (continuousMultilinearCurryRightEquiv' 𝕜 n E F).symm ∘
+      iteratedFDeriv 𝕜 n (fderiv 𝕜 f) :=
+  funext fun _ ↦ iteratedFDeriv_succ_eq_comp_right
 
 /-- Currying the second iterated derivative gives the Fréchet derivative of the first
 Fréchet derivative, including at points where these derivatives are junk-valued. -/

@@ -751,13 +751,6 @@ attribute [irreducible] instNormedAddCommGroup instNormedSpace _root_.TauCeti.Ck
 
 section FDeriv
 
-/-- The `(k + 1)`-st derivative of `f` is the `k`-th derivative of `Df` with its last variable
-joined to the others. -/
-private theorem iteratedFDeriv_succ_eq_comp (f : E → F) :
-    _root_.iteratedFDeriv ℝ (k + 1) f = (continuousMultilinearCurryRightEquiv' ℝ k E F).symm ∘
-      _root_.iteratedFDeriv ℝ k (fderiv ℝ f) :=
-  funext fun _ ↦ iteratedFDeriv_succ_eq_comp_right
-
 /-- The derivative of `f ∈ C^{k+1,α}` as an element of `C^{k,α}`; `fderivL` is its bundled
 form. -/
 private def fderivAux (f : CkHolderSpace (k + 1) α E F) : CkHolderSpace k α E (E →L[ℝ] F) :=
@@ -766,7 +759,7 @@ private def fderivAux (f : CkHolderSpace (k + 1) α E F) : CkHolderSpace k α E 
       rw [norm_iteratedFDeriv_fderiv]
       exact f.norm_iteratedFDeriv_apply_le (by omega) x⟩)
     ((continuousMultilinearCurryRightEquiv' ℝ k E F).symm.isometry.holderWith_comp_iff.mp
-      (by simpa only [← iteratedFDeriv_succ_eq_comp] using
+      (by simpa only [← iteratedFDeriv_succ_eq_comp_right'] using
         f.memHolder_iteratedFDeriv.holderWith)).memHolder
 
 private theorem coe_fderivAux (f : CkHolderSpace (k + 1) α E F) : ⇑(fderivAux f) = fderiv ℝ f :=
@@ -788,7 +781,7 @@ private theorem norm_fderivAux_le (f : CkHolderSpace (k + 1) α E F) : ‖fderiv
       exact (f.iteratedFDeriv i.succ).norm_coe_le_norm x
   have htop : nnHolderNorm α (_root_.iteratedFDeriv ℝ k (fderivAux f)) =
       nnHolderNorm α (_root_.iteratedFDeriv ℝ (k + 1) f) := by
-    rw [coe_fderivAux, iteratedFDeriv_succ_eq_comp, nnHolderNorm, nnHolderNorm,
+    rw [coe_fderivAux, iteratedFDeriv_succ_eq_comp_right', nnHolderNorm, nnHolderNorm,
       (continuousMultilinearCurryRightEquiv' ℝ k E F).symm.isometry.eHolderNorm_comp]
   rw [norm_eq, norm_eq f, htop, Fin.sum_univ_succ (f := fun i ↦ ‖f.iteratedFDeriv i‖)]
   linarith [Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦ hfield i,
