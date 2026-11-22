@@ -532,6 +532,7 @@ theorem pdFiltration_eq_pow [Algebra ℚ R] (hI : DividedPowers I) (n : ℕ) :
 namespace OfInvertibleFactorial
 
 /-- For `OfInvertibleFactorial.dividedPowers`, the divided power filtration equals `I ^ n`. -/
+@[simp]
 theorem pdFiltration_eq_pow [DecidablePred (fun x : R ↦ x ∈ I)] {k : ℕ}
     (hk_fac : IsUnit ((k - 1).factorial : R)) (hkI : I ^ k = 0) (n : ℕ) :
     (OfInvertibleFactorial.dividedPowers hk_fac hkI).pdFiltration n = I ^ n := by
@@ -552,6 +553,7 @@ namespace OfSquareZero
 
 /-- For `OfSquareZero.dividedPowers` on a square-zero ideal `I`, the divided power filtration
 equals `I ^ n`. -/
+@[simp]
 theorem pdFiltration_eq_pow [DecidablePred (fun x : R ↦ x ∈ I)] (hI2 : I ^ 2 = 0) (n : ℕ) :
     (OfSquareZero.dividedPowers hI2).pdFiltration n = I ^ n :=
   OfInvertibleFactorial.pdFiltration_eq_pow (by simp) hI2 n
@@ -568,6 +570,7 @@ end OfSquareZero
 namespace IsNilpotent
 
 /-- For `DividedPowers.IsNilpotent.dividedPowers`, the divided power filtration equals `I ^ n`. -/
+@[simp]
 theorem pdFiltration_eq_pow {A : Type*} [CommRing A] {p : ℕ} [Fact p.Prime]
     (hp : _root_.IsNilpotent (p : A)) {J : Ideal A} [DecidablePred (fun x ↦ x ∈ J)]
     (hJp : J ^ p = 0) (n : ℕ) :
@@ -579,6 +582,7 @@ end IsNilpotent
 namespace CharP
 
 /-- For `DividedPowers.CharP.dividedPowers`, the divided power filtration equals `I ^ n`. -/
+@[simp]
 theorem pdFiltration_eq_pow (A : Type*) [CommRing A] (p : ℕ) [_root_.CharP A p] [Fact p.Prime]
     {J : Ideal A} [DecidablePred (fun x ↦ x ∈ J)] (hJp : J ^ p = 0) (n : ℕ) :
     (DividedPowers.CharP.dividedPowers A p hJp).pdFiltration n = J ^ n :=

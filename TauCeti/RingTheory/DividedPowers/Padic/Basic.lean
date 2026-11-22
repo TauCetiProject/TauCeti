@@ -195,7 +195,7 @@ variable (p : ℕ) [hp : Fact p.Prime] (e : ℕ)
 noncomputable def dividedPowers : DividedPowers (Ideal.span {(p : ZMod (p ^ e))}) :=
   DividedPowers.Quotient.OfSurjective.dividedPowers (PadicInt.dividedPowers p)
     (ZMod.ringHom_surjective (PadicInt.toZModPow e))
-    (map_toZModPow_span_p p e).symm
+    (PadicInt.map_toZModPow_span_p p e).symm
     (PadicInt.isSubDPIdeal_ker_toZModPow_inf p e)
 
 /-- The canonical quotient `PadicInt.toZModPow e : ℤ_[p] →+* ZMod (p ^ e)` is a divided power
@@ -204,7 +204,7 @@ theorem toZModPow_isDPMorphism :
     (PadicInt.dividedPowers p).IsDPMorphism (ZMod.dividedPowers p e) (PadicInt.toZModPow e) :=
   DividedPowers.Quotient.OfSurjective.isDPMorphism (PadicInt.dividedPowers p)
     (ZMod.ringHom_surjective (PadicInt.toZModPow e))
-    (map_toZModPow_span_p p e).symm
+    (PadicInt.map_toZModPow_span_p p e).symm
     (PadicInt.isSubDPIdeal_ker_toZModPow_inf p e)
 
 /-- Evaluation of `ZMod.dividedPowers p e` on the generator `(p : ZMod (p ^ e))`. -/
@@ -221,7 +221,7 @@ theorem dividedPowers_unique (hquot : DividedPowers (Ideal.span {(p : ZMod (p ^ 
     hquot = ZMod.dividedPowers p e :=
   DividedPowers.Quotient.OfSurjective.dividedPowers_unique (PadicInt.dividedPowers p)
     (ZMod.ringHom_surjective (PadicInt.toZModPow e))
-    (map_toZModPow_span_p p e).symm
+    (PadicInt.map_toZModPow_span_p p e).symm
     (PadicInt.isSubDPIdeal_ker_toZModPow_inf p e) hquot hm
 
 end Canonical

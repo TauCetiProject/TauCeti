@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.DividedPowers.Nilpotent
 public import TauCeti.RingTheory.DividedPowers.Padic.Basic
 
-import TauCeti.Data.Nat.SubOneMul
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -90,7 +89,8 @@ theorem pdFiltration_two_mul_le_span_pow (hp2 : p ≠ 2) (e : ℕ) :
   have hp3 : 3 ≤ p := by
     have := hp.out.two_le
     omega
-  exact pdFiltration_le_span_pow p (Nat.sub_one_mul_le_two_mul hp3 e)
+  exact pdFiltration_le_span_pow p
+    ((Nat.mul_le_mul_right e (by omega)).trans_eq (Nat.mul_assoc _ _ _))
 
 /-- The canonical divided power ideal `(p) ⊂ ℤ_[p]` is not PD-nilpotent for any prime `p`. -/
 theorem not_isPDNilpotent_dividedPowers : ¬ (dividedPowers p).IsPDNilpotent := by
@@ -103,6 +103,7 @@ section PrimeTwo
 
 /-- For `p = 2` and every `n ≠ 0`, the `n`-th divided power filtration step of `(2) ⊂ ℤ_[2]`
 equals `(2)` itself. -/
+@[simp]
 theorem pdFiltration_two_eq {n : ℕ} (hn : n ≠ 0) :
     (dividedPowers 2).pdFiltration n = Ideal.span {(2 : ℤ_[2])} := by
   refine le_antisymm ?_ ?_
@@ -131,8 +132,8 @@ theorem span_two_sq_lt_pdFiltration_two :
     (Ideal.span {(2 : ℤ_[2])}) ^ 2 < (dividedPowers 2).pdFiltration 2 := by
   have hle : (Ideal.span {(2 : ℤ_[2])}) ^ 2 ≤ (dividedPowers 2).pdFiltration 2 := by
     simpa only [Nat.cast_ofNat] using (dividedPowers 2).pow_le_pdFiltration 2
-  exact lt_of_le_of_ne hle fun h ↦
-    two_notMem_span_two_sq (h.symm ▸ two_mem_pdFiltration_two 2)
+  refine lt_of_le_of_ne hle fun h ↦ p_notMem_span_p_sq (p := 2) ?_
+  simpa only [Nat.cast_ofNat, h] using two_mem_pdFiltration_two 2
 
 end PrimeTwo
 
@@ -149,7 +150,7 @@ the divided power filtration of `PadicInt.dividedPowers p`. -/
 theorem pdFiltration_dividedPowers (n : ℕ) :
     (ZMod.dividedPowers p e).pdFiltration n =
       ((PadicInt.dividedPowers p).pdFiltration n).map (PadicInt.toZModPow e) :=
-  ((toZModPow_isDPMorphism p e).map_pdFiltration_eq (map_toZModPow_span_p p e) n).symm
+  ((toZModPow_isDPMorphism p e).map_pdFiltration_eq (PadicInt.map_toZModPow_span_p p e) n).symm
 
 /-- Vanishing of the `n`-th divided power filtration step in `ZMod (p ^ e)` is equivalent to
 containment of the `n`-th filtration step in `Ideal.span {(p : ℤ_[p]) ^ e}`. -/
@@ -171,10 +172,11 @@ section PrimeTwoAndClassification
 
 /-- For every `e : ℕ` and `n ≠ 0`, the `n`-th divided power filtration step of
 `ZMod.dividedPowers 2 e` equals `Ideal.span {(2 : ZMod (2 ^ e))}`. -/
+@[simp]
 theorem pdFiltration_dividedPowers_two {e n : ℕ} (hn : n ≠ 0) :
     (ZMod.dividedPowers 2 e).pdFiltration n = Ideal.span {(2 : ZMod (2 ^ e))} := by
   rw [pdFiltration_dividedPowers 2 e n, PadicInt.pdFiltration_two_eq hn]
-  simpa only [Nat.cast_ofNat] using map_toZModPow_span_p 2 e
+  simpa only [Nat.cast_ofNat] using PadicInt.map_toZModPow_span_p 2 e
 
 /-- Complete classification of PD-nilpotence for the canonical divided power structure on
 `(p) ⊂ ZMod (p ^ e)`: it is PD-nilpotent if and only if `p` is odd (`p ≠ 2`) or `e ≤ 1`. -/
