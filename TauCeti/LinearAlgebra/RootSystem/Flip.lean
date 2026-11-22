@@ -330,16 +330,9 @@ theorem autFlip_reflection (i : ι) :
 /-- `autFlip` carries the Weyl group of `P` into the Weyl group of `P.flip`. -/
 theorem autFlip_mem_weylGroup {f : P.Aut} (hf : f ∈ P.weylGroup) :
     autFlip P f ∈ P.flip.weylGroup := by
-  induction hf using RootPairing.weylGroup.induction with
-  | mem i =>
-    rw [autFlip_reflection]
-    exact (weylGroup.ofIdx P.flip i).property
-  | one =>
-    rw [map_one]
-    exact one_mem _
-  | mul g h _ _ hg hh =>
-    rw [map_mul]
-    exact mul_mem hg hh
+  rw [weylGroup, ← range_domRestrict_weylGroup (P := P) (f := (autFlip P).toMonoidHom)
+    (autFlip_reflection (P := P))]
+  exact ⟨⟨f, hf⟩, rfl⟩
 
 /-- `autFlip P f` lies in the Weyl group of `P.flip` if and only if `f` lies in the Weyl group of
 `P`. -/

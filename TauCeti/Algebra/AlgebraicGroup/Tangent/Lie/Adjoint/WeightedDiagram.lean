@@ -54,7 +54,6 @@ so `b.dominantVectorOrbit` is injective (`RootPairing.Base.dominantVectorOrbit_i
 dominant `sl₂` triples have `G(k)`-conjugate nilpositive elements—and identical topological adjoint
 orbit images in `P(𝔤 × k)`—if and only if their weighted Dynkin diagrams coincide
 (`IsSl2Triple.exists_basePointsRepresentation_eq_iff_weightedDynkinDiagram_eq`,
-`IsSl2Triple.vectorOrbit_mk_eq_iff_weightedDynkinDiagram_eq`,
 `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq_iff_weightedDynkinDiagram_eq`), and we obtain the
 explicit equivalence `RootPairing.Base.optionDominantNeutralElementsEquivNilpotentOrbit`, the
 injective invariant `RootPairing.Base.nilpotentOrbitWeightedDynkinDiagram`, and the exact orbit
@@ -84,7 +83,6 @@ count on the nilpotent cone
   for nilpotent orbits (and closure intervals) without assuming connectedness.
 * `RootPairing.Base.dominantVectorOrbit_injective`,
   `IsSl2Triple.exists_basePointsRepresentation_eq_iff_weightedDynkinDiagram_eq`,
-  `IsSl2Triple.vectorOrbit_mk_eq_iff_weightedDynkinDiagram_eq`,
   `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq_iff_weightedDynkinDiagram_eq`,
   `RootPairing.Base.optionDominantNeutralElementsEquivNilpotentOrbit`,
   `RootPairing.Base.nilpotentOrbitWeightedDynkinDiagram`, and
@@ -473,9 +471,7 @@ theorem eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_eq
     (Derivation.basePointsAdjointLieEquiv g)
     (by rwa [Derivation.basePointsAdjointLieEquiv_apply]) fun _ hp z ↦ by
       rw [Derivation.basePointsAdjointLieEquiv_apply]
-      exact lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials g z
-        ((adjointInvariantPolynomials_eq_lieInvariants
-          (H := FiniteTypeCommHopfAlgCat.of k H)).symm ▸ hp)
+      exact lift_eval_basePointsRepresentation_of_mem_lieInvariants hp g z
 
 /-- **Classification of nilpositive elements by weighted Dynkin diagrams.** For a connected affine
 group `G` over an algebraically closed field of characteristic zero with Killing Lie algebra `𝔤`,
@@ -516,19 +512,6 @@ theorem vectorOrbit_mk_eq_iff_eq {b : (LieAlgebra.IsKilling.rootSystem 𝔥).Bas
   · rintro rfl
     exact t₁.vectorOrbit_mk_eq t₂
 
-/-- **Weighted Dynkin diagram classification of nilpotent `G`-orbits.** For a connected Killing
-affine group `G`, two `sl₂` triples with dominant neutral elements have nilpositive elements in the
-same rational `G`-orbit if and only if their weighted Dynkin diagrams coincide. -/
-theorem vectorOrbit_mk_eq_iff_weightedDynkinDiagram_eq
-    {b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base} {h₁ h₂ : b.dominantNeutralElements}
-    {e₁ f₁ e₂ f₂ : Module.Dual k (Bialgebra.CotangentSpace k H)}
-    (t₁ : IsSl2Triple (h₁ : Module.Dual k (Bialgebra.CotangentSpace k H)) e₁ f₁)
-    (t₂ : IsSl2Triple (h₂ : Module.Dual k (Bialgebra.CotangentSpace k H)) e₂ f₂) :
-    Comodule.VectorOrbit.mk (k := k) (H := H) e₁ =
-      Comodule.VectorOrbit.mk (k := k) (H := H) e₂ ↔
-      b.weightedDynkinDiagram h₁ = b.weightedDynkinDiagram h₂ :=
-  (t₁.vectorOrbit_mk_eq_iff_eq t₂).trans b.weightedDynkinDiagram_injective.eq_iff.symm
-
 /-- **Geometric adjoint orbit classification by weighted Dynkin diagrams.** For a connected Killing
 affine group `G`, two `sl₂` triples with dominant neutral elements have identical topological
 adjoint `G`-orbit images in `P(𝔤 × k)` (including nonclosed points) if and only if their weighted
@@ -546,8 +529,9 @@ theorem range_projectiveOrbitMap_adjoint_eq_iff_weightedDynkinDiagram_eq
         (Module.isUnimodular_mk_one e₂)) ↔
       b.weightedDynkinDiagram h₁ = b.weightedDynkinDiagram h₂ := by
   rw [← Comodule.VectorOrbit.image_mk, ← Comodule.VectorOrbit.image_mk,
-    Comodule.VectorOrbit.image_injective.eq_iff]
-  exact t₁.vectorOrbit_mk_eq_iff_weightedDynkinDiagram_eq t₂
+    Comodule.VectorOrbit.image_injective.eq_iff, Comodule.VectorOrbit.mk_eq_mk_iff]
+  exact t₁.exists_basePointsRepresentation_eq_iff_weightedDynkinDiagram_eq b t₂
+    h₁.property h₂.property
 
 end IsSl2Triple
 
@@ -580,16 +564,10 @@ theorem existsUnique_dominantVectorOrbit_eq_of_isNilpotent_ad
     (he0 : e ≠ 0) :
     ∃! h : b.dominantNeutralElements,
       b.dominantVectorOrbit h = Comodule.VectorOrbit.mk (k := k) (H := H) e := by
-  obtain ⟨g, -, h₀, hh₀, f, t⟩ :=
-    exists_mem_quotientPointsSubgroup_isSl2Triple_basePointsRepresentation_of_isNilpotent_ad b
-      (J := ⊥) HopfIdeal.lieSubalgebra_bot he he0
-  refine ⟨⟨h₀, hh₀⟩, ?_, fun h' hh' ↦ ?_⟩
-  · dsimp only
-    rw [b.dominantVectorOrbit_eq_mk (h := ⟨h₀, hh₀⟩) t,
-      Comodule.VectorOrbit.mk_basePointsRepresentation]
-  · refine b.dominantVectorOrbit_injective (hh'.trans ?_)
-    rw [b.dominantVectorOrbit_eq_mk (h := ⟨h₀, hh₀⟩) t,
-      Comodule.VectorOrbit.mk_basePointsRepresentation]
+  rw [b.dominantVectorOrbit_injective.existsUnique_iff_exists, ← Set.mem_range,
+    b.range_dominantVectorOrbit, TauCeti.image_vectorOrbit_mk_setOf_exists_isSl2Triple]
+  exact ⟨Comodule.VectorOrbit.isNilpotentAd_mk_iff.mpr he,
+    mt Comodule.VectorOrbit.mk_eq_mk_zero_iff.mp he0⟩
 
 /-- Auxiliary map sending `none` to the zero nilpotent orbit and `some h` to
 `b.dominantVectorOrbit h`. -/
