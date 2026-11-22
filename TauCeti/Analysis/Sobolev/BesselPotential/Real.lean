@@ -29,7 +29,9 @@ continuous real representative `BesselPotentialSpace.continuousRep F`
 embedding `BesselPotentialSpace.toZeroAtInfty` into continuous functions. It lies in the real
 `H^s` functions `TemperedDistribution.realSobolevFunctions E s 2` and is `ℝ`-linear in `F`
 (`BesselPotentialSpace.continuousRep` is a linear map), and it determines `F`
-(`BesselPotentialSpace.continuousRep_injective`). Above `s > n + dim E / 2` it is a `Cⁿ` function
+(`BesselPotentialSpace.continuousRep_injective`). Convergence in `H^s` makes the continuous
+representatives converge uniformly (`BesselPotentialSpace.tendstoUniformly_continuousRep`). Above
+`s > n + dim E / 2` the continuous representative is a `Cⁿ` function
 (`BesselPotentialSpace.contDiff_continuousRep`).
 
 Complex conjugation of the `L²` function is a real-linear isometric involution
@@ -49,7 +51,7 @@ public section
 noncomputable section
 
 open MeasureTheory Module TemperedDistribution ComplexConjugate
-open scoped SchwartzMap BesselPotentialSpace
+open scoped SchwartzMap BesselPotentialSpace Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -155,6 +157,22 @@ theorem continuousRep_mem_realSobolevFunctions (hs : finrank ℝ E < 2 * s)
     (F : realSubmodule E h) : continuousRep F ∈ realSobolevFunctions E s 2 :=
   mem_realSobolevFunctions_of_ae_eq_ofReal (memSobolev_inclusionLp h (F : H^{s}(E)))
     (by simpa using coeFn_inclusionLp_ae_eq_continuousRep hs F)
+
+/-- **Continuous representatives converge uniformly.** Above the Sobolev threshold
+`s > dim E / 2`, if real elements `F` of `H^s(E)` tend to `F₀` in `H^s`, their continuous
+representatives tend uniformly to that of `F₀`. -/
+theorem tendstoUniformly_continuousRep (hs : finrank ℝ E < 2 * s) (F₀ : realSubmodule E h) :
+    TendstoUniformly (fun F : realSubmodule E h ↦ continuousRep F) (continuousRep F₀) (𝓝 F₀) := by
+  have happ (F : realSubmodule E h) (z : E) :
+      continuousRep F z = (toZeroAtInfty hs (F : H^{s}(E)) z).re := by
+    simp only [continuousRep, hs, ↓reduceDIte, LinearMap.coe_mk, AddHom.coe_mk]
+  have hT := ZeroAtInftyContinuousMap.tendsto_iff_tendstoUniformly.1
+    (((toZeroAtInfty hs).continuous.comp continuous_subtypeVal).tendsto F₀)
+  rw [Metric.tendstoUniformly_iff] at hT ⊢
+  intro ε hε
+  filter_upwards [hT ε hε] with F hF z
+  rw [happ, happ, Real.dist_eq, ← Complex.sub_re]
+  exact (Complex.abs_re_le_norm _).trans_lt (by simpa [dist_eq_norm] using hF z)
 
 /-- Above the threshold `s > n + dim E / 2`, the continuous representative of a real element of
 `H^s(E)` is a `Cⁿ` function. -/

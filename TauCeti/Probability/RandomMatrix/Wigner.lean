@@ -8,13 +8,13 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
-public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 public import Mathlib.Probability.IdentDistribIndep
 public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 public import TauCeti.Analysis.Matrix.Frobenius
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Wigner matrices
@@ -673,15 +673,10 @@ cardinality `k`, is integrable when the corner entries of size `n` lie in `Lᵏ`
 theorem integrable_prod_wignerMatrix_apply [IsFiniteMeasure P] {ι : Type*} [Fintype ι] {n : ℕ}
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) (Fintype.card ι) P)
     (hη : ∀ i < n, MemLp (η i) (Fintype.card ι) P) (u v : ι → Fin n) :
-    Integrable (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u s) (v s)) P := by
-  cases isEmpty_or_nonempty ι
-  · simp
-  have hcard : (Fintype.card ι : ℝ≥0∞) ≠ 0 := by simp [Fintype.card_ne_zero]
-  have h := MemLp.fun_prod (s := Finset.univ) (p := fun _ ↦ (Fintype.card ι : ℝ≥0∞))
-    fun s _ ↦ memLp_wignerMatrix_apply hξ hη (u s) (v s)
-  rwa [Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
-    ENNReal.mul_inv_cancel hcard (ENNReal.natCast_ne_top _), inv_one, memLp_one_iff_integrable]
-    at h
+    Integrable (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u s) (v s)) P :=
+  integrable_fun_prod_of_memLp_card fun s _ ↦ by
+    rw [Finset.card_univ]
+    exact memLp_wignerMatrix_apply hξ hη (u s) (v s)
 
 end Entries
 
