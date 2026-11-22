@@ -56,6 +56,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
   `R → Γ(X, U)` it induces.
 * `AlgebraicGeometry.IsAffineOpen.isOpenImmersion_SpecMap_presheaf_map`: for affine opens
   `V ≤ U`, restriction induces an open immersion `Spec Γ(X, V) ⟶ Spec Γ(X, U)`.
+* `AlgebraicGeometry.IsAffineOpen.SpecMap_presheaf_map_comp_isoSpec_inv` and
+  `AlgebraicGeometry.IsAffineOpen.isPullback_SpecMap_presheaf_map_isoSpec_inv`: for affine opens
+  `V ≤ U`, restriction `Spec Γ(X, V) ⟶ Spec Γ(X, U)` corresponds to the inclusion `V ⟶ U`.
 * `AlgebraicGeometry.IsAffineOpen.exists_SpecMap_comp_fromSpec_eq`: a morphism `Spec R ⟶ X` with
   image in an affine open `U` is the spectrum of a ring map `Γ(X, U) ⟶ R` followed by
   `Spec Γ(X, U) ⟶ X`.
@@ -209,6 +212,23 @@ theorem IsAffineOpen.isOpenImmersion_SpecMap_presheaf_map {X : Scheme.{u}} {U V 
     rw [IsAffineOpen.map_fromSpec _ hV]
     infer_instance
   exact IsOpenImmersion.of_comp _ hU.fromSpec
+
+/-- On affine opens `V ≤ U` of a scheme, the isomorphisms `U ≅ Spec Γ(X, U)` and
+`V ≅ Spec Γ(X, V)` carry the restriction `Spec Γ(X, V) ⟶ Spec Γ(X, U)` to the inclusion `V ⟶ U`. -/
+theorem IsAffineOpen.SpecMap_presheaf_map_comp_isoSpec_inv {X : Scheme.{u}} {U V : X.Opens}
+    (hU : IsAffineOpen U) (hV : IsAffineOpen V) (h : V ≤ U) :
+    Spec.map (X.presheaf.map (homOfLE h).op) ≫ hU.isoSpec.inv = hV.isoSpec.inv ≫ X.homOfLE h := by
+  rw [← cancel_mono U.ι, Category.assoc, Category.assoc, Scheme.homOfLE_ι]
+  exact IsAffineOpen.map_fromSpec hU hV (homOfLE h).op
+
+/-- On affine opens `V ≤ U` of a scheme, the square relating the restriction
+`Spec Γ(X, V) ⟶ Spec Γ(X, U)` to the inclusion `V ⟶ U` through `U ≅ Spec Γ(X, U)` and
+`V ≅ Spec Γ(X, V)` is a pullback square, as its vertical sides are isomorphisms. -/
+theorem IsAffineOpen.isPullback_SpecMap_presheaf_map_isoSpec_inv {X : Scheme.{u}}
+    {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V) (h : V ≤ U) :
+    CategoryTheory.IsPullback (Spec.map (X.presheaf.map (homOfLE h).op)) hV.isoSpec.inv
+      hU.isoSpec.inv (X.homOfLE h) :=
+  CategoryTheory.IsPullback.of_vert_isIso ⟨hU.SpecMap_presheaf_map_comp_isoSpec_inv hV h⟩
 
 /-- A morphism `f : Spec R ⟶ X` whose image lies in an affine open `U` of `X` is the spectrum of a
 ring map `Γ(X, U) ⟶ R` followed by `Spec Γ(X, U) ⟶ X`. -/

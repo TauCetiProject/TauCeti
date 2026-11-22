@@ -228,6 +228,7 @@ theorem isBaseChangeHom_comp (hgf : IsBaseChange R'' (g.restrictScalars R ∘ₗ
   have : IsScalarTower R' R'' B := .of_algebraMap_eq' rfl
   have : IsScalarTower R R'' B := .of_algebraMap_eq' rfl
   have : IsScalarTower R R' B := .of_algebraMap_eq' <| by
+    -- the three algebra maps into `B` are the `toAlgebra` ring maps chosen above
     change φ.hom.comp (algebraMap R R'') = (φ.hom.comp (algebraMap R' R'')).comp (algebraMap R R')
     rw [IsScalarTower.algebraMap_eq R R' R'', RingHom.comp_assoc]
   obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a hφ.symm

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.RelativeGluing
+public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.AlgebraicGeometry.Grassmannian.IsBaseChange
 public import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
 
@@ -29,10 +30,9 @@ datum over the directed cover of `X` by its affine opens
 (`AlgebraicGeometry.Scheme.Cover.RelativeGluingData`), whose glued scheme is the relative
 Grassmannian.
 
-The construction applies to every quasi-coherent `E`. The roadmap's relative Grassmannian of a
-finite locally free `E` is the case where each `Γ(E, U)` is finite projective; the universal
-quotient over the glued scheme and its universal property over arbitrary `X`-schemes are not
-treated here.
+The construction applies to every quasi-coherent `E`. For a finite locally free `E` each `Γ(E, U)`
+is finite projective; the universal quotient over the glued scheme and its universal property
+over arbitrary `X`-schemes are not treated here.
 
 ## Main definitions
 
@@ -131,17 +131,20 @@ theorem grassmannianChartMap_comp {U V W : X.affineOpens} (hWV : W.val ≤ V.val
   have hres (r : Γ(X, U.val)) :
       algebraMap Γ(X, V.val) Γ(X, W.val) (algebraMap Γ(X, U.val) Γ(X, V.val) r) =
         algebraMap Γ(X, U.val) Γ(X, W.val) r := by
+    -- the algebra maps are the restriction maps `X.presheaf.map _` by the `toAlgebra` above
     change (X.presheaf.map (homOfLE hVU).op ≫ X.presheaf.map (homOfLE hWV).op) r = _
     rw [← Functor.map_comp]
     rfl
   have _ : IsScalarTower Γ(X, U.val) Γ(X, V.val) Γ(X, W.val) :=
     .of_algebraMap_eq fun r ↦ (hres r).symm
   have _ : IsScalarTower Γ(X, U.val) Γ(X, V.val) Γ(E, W.val) := ⟨fun r s m ↦ by
+    -- the scalar actions on `Γ(E, W)` are `Module.compHom` along the algebra maps above
     change algebraMap Γ(X, V.val) Γ(X, W.val) (r • s) • m =
       algebraMap Γ(X, U.val) Γ(X, W.val) r • algebraMap Γ(X, V.val) Γ(X, W.val) s • m
     rw [Algebra.smul_def, map_mul, mul_smul, hres]⟩
   have hf := E.isBaseChange_sectionsRestrictionLinearMap U.property V.property hVU fun _ ↦ rfl
   have hg := E.isBaseChange_sectionsRestrictionLinearMap V.property W.property hWV fun _ ↦ rfl
+  -- `grassmannianChartMap` is `isBaseChangeHom` of the restriction base change, by definition
   change Module.Grassmannian.isBaseChangeHom hg k ≫ Module.Grassmannian.isBaseChangeHom hf k =
     Module.Grassmannian.isBaseChangeHom
       (E.isBaseChange_sectionsRestrictionLinearMap U.property W.property (hWV.trans hVU)
@@ -160,6 +163,7 @@ theorem grassmannianChartMap_self (U : X.affineOpens) :
     grassmannianChartMap E k (le_refl U.val) = 𝟙 _ := by
   -- the morphism is an idempotent isomorphism, as the base change of the identity
   have : IsIso (Spec.map (X.presheaf.map (homOfLE (le_refl U.val)).op)) := by
+    -- morphisms in the preorder category of opens are proofs, so `homOfLE` of `le_refl` is `𝟙`
     rw [show homOfLE (le_refl U.val) = 𝟙 _ from rfl]
     simp only [op_id, CategoryTheory.Functor.map_id]
     infer_instance
@@ -176,28 +180,14 @@ noncomputable def grassmannianFunctor : X.directedAffineCover.I₀ ⥤ Scheme.{u
   map_id U := grassmannianChartMap_self E k U
   map_comp h h' := (grassmannianChartMap_comp E k (leOfHom h) (leOfHom h')).symm
 
--- On an affine open `U`, the isomorphism `U ≅ Spec Γ(X, U)` is compatible with restriction to a
--- smaller affine open `V`.
-private lemma specMap_isoSpec_inv {U V : X.affineOpens} (h : V.val ≤ U.val) :
-    Spec.map (X.presheaf.map (homOfLE h).op) ≫ U.property.isoSpec.inv =
-      V.property.isoSpec.inv ≫ X.homOfLE h := by
-  rw [← cancel_mono U.val.ι, Category.assoc, Category.assoc, Scheme.homOfLE_ι]
-  exact IsAffineOpen.map_fromSpec U.property V.property (homOfLE h).op
-
--- The square relating restriction `Spec Γ(X, V) ⟶ Spec Γ(X, U)` to the inclusion `V ⟶ U` is a
--- pullback square, as its vertical sides are isomorphisms.
-private lemma isPullback_specMap_isoSpec_inv {U V : X.affineOpens} (h : V.val ≤ U.val) :
-    IsPullback (Spec.map (X.presheaf.map (homOfLE h).op)) V.property.isoSpec.inv
-      U.property.isoSpec.inv (X.homOfLE h) :=
-  IsPullback.of_vert_isIso ⟨specMap_isoSpec_inv h⟩
-
 -- The naturality square of the structure morphisms `G(k, Γ(E, U)) ⟶ U`.
 private lemma grassmannianChartMap_toSpec_isoSpec_inv {U V : X.affineOpens} (h : V.val ≤ U.val) :
     grassmannianChartMap E k h ≫ Module.Grassmannian.toSpec Γ(X, U.val) Γ(E, U.val) k ≫
         U.property.isoSpec.inv =
       (Module.Grassmannian.toSpec Γ(X, V.val) Γ(E, V.val) k ≫ V.property.isoSpec.inv) ≫
         X.homOfLE h := by
-  rw [grassmannianChartMap_toSpec_assoc, specMap_isoSpec_inv, Category.assoc]
+  rw [grassmannianChartMap_toSpec_assoc,
+    IsAffineOpen.SpecMap_presheaf_map_comp_isoSpec_inv U.property V.property h, Category.assoc]
 
 /-- The **relative gluing datum of the Grassmannian**: the Grassmannians `G(k, Γ(E, U))` over the
 affine opens `U ≅ Spec Γ(X, U)` of `X`, with the comparison morphisms for `V ≤ U`, which identify
@@ -208,9 +198,9 @@ noncomputable def grassmannianGluingData : X.directedAffineCover.RelativeGluingD
     { app (U : X.affineOpens) :=
         Module.Grassmannian.toSpec Γ(X, U.val) Γ(E, U.val) k ≫ U.property.isoSpec.inv
       naturality _ _ h := grassmannianChartMap_toSpec_isoSpec_inv E k (leOfHom h) }
-  equifibered _ _ h :=
+  equifibered V U h :=
     (isPullback_grassmannianChartMap E k (leOfHom h)).paste_vert
-      (isPullback_specMap_isoSpec_inv (leOfHom h))
+      (IsAffineOpen.isPullback_SpecMap_presheaf_map_isoSpec_inv U.property V.property (leOfHom h))
 
 /-- The **relative Grassmannian** of a quasi-coherent `𝒪_X`-module `E`: the scheme over `X` glued
 from the Grassmannians `G(k, Γ(E, U))` over the affine opens `U ≅ Spec Γ(X, U)` of `X`. Its part
