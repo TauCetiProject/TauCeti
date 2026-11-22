@@ -37,7 +37,8 @@ conclusion as for the linear equation with `C^{1,α}` coefficients
 
 No bound on `A` or on its derivatives that is uniform in `s` is assumed, and no integrability of
 `f` on `Ω`: only the values of `A` on compact subsets of `Ω × ℝ` and of `f` on compact subsets of
-`Ω` enter. The equation is tested against test functions, so `f` need only be locally integrable.
+`Ω` enter. The weak formulation only needs `f` to be locally integrable; the theorem assumes `f`
+locally `α`-Hölder.
 
 ## The bootstrap
 
@@ -172,10 +173,9 @@ private theorem exists_holderOnWith_and_lipschitzWith_truncation (hα1 : α ≤ 
   refine ⟨_, _, fun s => holderOnWith_matrixBilinearForm_of_forall fun i j =>
       ((hL i j).comp (LipschitzWith.prodMk_right _).lipschitzOnWith
         fun _ hx => ⟨hx, hcK s⟩).holderOnWith.of_le hD hα1,
-    fun x hx => holderWith_one.1 (holderOnWith_univ.1 (holderOnWith_matrixBilinearForm_of_forall
-      fun i j => (holderWith_one.2 (lipschitzOnWith_univ.1 ((hL i j).comp
-        ((LipschitzWith.prodMk_left x).comp hcLip).lipschitzOnWith
-          fun s _ => ⟨hx, hcK s⟩))).holderOnWith univ))⟩
+    fun x hx => lipschitzWith_matrixBilinearForm_of_forall fun i j => lipschitzOnWith_univ.1
+      ((hL i j).comp ((LipschitzWith.prodMk_left x).comp hcLip).lipschitzOnWith
+        fun s _ => ⟨hx, hcK s⟩)⟩
 
 /-- **The gradient is `α`-Hölder near each point.** Near every point of `Ω`, the precise
 representative of the gradient of a weak solution is `α`-Hölder. On a ball whose closure lies in
@@ -237,16 +237,16 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_ball (hα : 0
   exact preciseRepresentative_congr_ae_nhds
     (B.isOpen.mem_nhds (ball_subset_ball (by linarith) hy)) (W1p.gradient_restrictL_ae hBΩ u)
 
-/-- **`ū` is `C¹`.** The precise representative `P∇u` of the gradient of a weak solution is
-continuous on `Ω`, and the precise representative `ū` of the solution is differentiable at every
-point `x` of `Ω`, with derivative `v ↦ ⟪P∇u(x), v⟫`. -/
-private theorem continuousOn_and_hasFDerivAt_preciseRepresentative (hα : 0 < α) (hα1 : α < 1)
+/-- **`ū` is `C¹`.** The precise representative `ū` of a weak solution is `C¹` on `Ω`, and at every
+point `x` of `Ω` its derivative is `v ↦ ⟪P∇u(x), v⟫`, where `P∇u` is the precise representative of
+the gradient. -/
+private theorem contDiffOn_and_hasFDerivAt_preciseRepresentative (hα : 0 < α) (hα1 : α < 1)
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set E) (fun x => A x s) lam Lam)
     (hAC : ∀ i j, ContDiffOn ℝ 1 (fun p : E × ℝ => A p.1 p.2 i j) ((Omega : Set E) ×ˢ univ))
     (hf : ContinuousOn f Omega)
     (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 (fun x => A x (W1p.value u x)) 0 0 u
         (W1p.ofTestFunctionₗ volume Omega 2 φ) = ∫ x in Omega, f x * φ x) :
-    ContinuousOn (preciseRepresentative volume (W1p.gradient u : E → E)) Omega ∧
+    ContDiffOn ℝ 1 (preciseRepresentative volume (W1p.value u)) Omega ∧
       ∀ x ∈ Omega, HasFDerivAt (preciseRepresentative volume (W1p.value u))
         (innerSL ℝ (preciseRepresentative volume (W1p.gradient u : E → E) x)) x := by
   have hP : ContinuousOn (preciseRepresentative volume (W1p.gradient u : E → E)) Omega :=
@@ -254,12 +254,13 @@ private theorem continuousOn_and_hasFDerivAt_preciseRepresentative (hα : 0 < α
       obtain ⟨r, hr, C, hC⟩ :=
         exists_holderOnWith_preciseRepresentative_gradient_ball hα hα1 hA hAC hf hu hx
       exact ((hC.continuousOn hα).continuousAt (ball_mem_nhds x hr)).continuousWithinAt
-  refine ⟨hP, fun x hx => ?_⟩
   have hW := ((W1p.hasWeakFDerivOn u).congr_ae (W1p.ae_eq_preciseRepresentative u)).congr_ae_deriv
     ((ae_eq_restrict_preciseRepresentative Omega.isOpen
       (W1p.locallyIntegrableOn_gradient u)).fun_comp (innerSL ℝ))
-  exact hW.hasFDerivAt_of_continuousOn (continuousOn_preciseRepresentative_value hA hAC hf hu)
-    ((innerSL ℝ).continuous.comp_continuousOn hP) hx
+  have hub := continuousOn_preciseRepresentative_value hA hAC hf hu
+  have hPc := (innerSL ℝ).continuous.comp_continuousOn hP
+  exact ⟨by simpa using hW.contDiffOn_succ hub (n := 0) (contDiffOn_zero.2 hPc),
+    fun x hx => hW.hasFDerivAt_of_continuousOn hub hPc hx⟩
 
 /-- **The chain rule** for the frozen coefficient: if `v` has derivative `D` at `y ∈ Ω`, then
 `D[A(·, v(·))](y) = DA(y, v(y)) ∘ (id, D)`, entrywise. -/
@@ -291,13 +292,7 @@ private theorem contDiffOn_comp_and_exists_holderOnWith_fderiv (hα : 0 < α) (h
         (fderiv ℝ fun y => A y (preciseRepresentative volume (W1p.value u) y) i j) (ball x r) := by
   set ub := preciseRepresentative volume (W1p.value u)
   set P := preciseRepresentative volume (W1p.gradient u : E → E)
-  obtain ⟨hP, hder⟩ := continuousOn_and_hasFDerivAt_preciseRepresentative hα hα1 hA hAC hf hu
-  have hub : ContDiffOn ℝ 1 ub Omega := by
-    have hfd : ContinuousOn (fderiv ℝ ub) Omega :=
-      ((innerSL ℝ).continuous.comp_continuousOn hP).congr fun x hx => (hder x hx).fderiv
-    simpa using (contDiffOn_succ_iff_fderiv_of_isOpen (n := 0) Omega.isOpen).2
-      ⟨fun x hx => (hder x hx).differentiableAt.differentiableWithinAt, by simp,
-        contDiffOn_zero.2 hfd⟩
+  obtain ⟨hub, hder⟩ := contDiffOn_and_hasFDerivAt_preciseRepresentative hα hα1 hA hAC hf hu
   have hg : ContDiffOn ℝ 1 (fun y => (y, ub y)) Omega := contDiffOn_id.prodMk hub
   refine ⟨fun i j => (hAC i j).comp hg fun _ hx => ⟨hx, trivial⟩, fun x hx => ?_⟩
   -- Choose a closed ball `S = closedBall x r` on which `ū` is Lipschitz, `∇ū` is `α`-Hölder, and
