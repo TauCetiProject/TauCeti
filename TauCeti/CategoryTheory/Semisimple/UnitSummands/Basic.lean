@@ -249,46 +249,33 @@ private def chosenTensorUnitDecomp (C : Type u₁) [Category.{v₁} C] [Abelian 
     [MonoidalCategory C] [IsFiniteSemisimpleCategory C] : TensorUnitDecomp C := by
   classical
   let h := IsFiniteSemisimpleCategory.exists_biproduct_simples (𝟙_ C)
-  let κ : Type := h.choose
-  let hκ : Fintype κ := h.choose_spec.choose
-  let a : κ → C := h.choose_spec.choose_spec.choose
-  let ha : ∀ i, Simple (a i) := h.choose_spec.choose_spec.choose_spec.choose
-  let hba : HasBiproduct a := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e : 𝟙_ C ≅ ⨁ a := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
+  let κ := h.choose
+  let hκ := h.choose_spec.choose
+  let a := h.choose_spec.choose_spec.choose
+  let ha := h.choose_spec.choose_spec.choose_spec.choose
+  let hba := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
+  let e := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
   let f : κ → UnitSimpleClasses C :=
     fun i ↦ UnitSimpleClasses.mkOfHomNeZero (biproduct_ι_comp_inv_ne_zero e i)
-  have hf_inj : Function.Injective f := by
-    intro i j hij
+  have hf_inj : Function.Injective f := fun i j hij ↦ by
     have hcard : Nat.card {k // SimpleClasses.classOf (a k) = SimpleClasses.classOf (a i)} ≤ 1 := by
       rw [← simpleMultiplicities_apply_eq_card a e]
       exact simpleMultiplicities_tensorUnit_le_one _
     have hsub : Subsingleton {k // SimpleClasses.classOf (a k) = SimpleClasses.classOf (a i)} :=
       (Fintype.card_le_one_iff_subsingleton).1 (by rwa [← Nat.card_eq_fintype_card])
-    have hci : SimpleClasses.classOf (a j) = SimpleClasses.classOf (a i) :=
-      (congrArg Subtype.val hij).symm
-    exact (congrArg (fun x : {k // SimpleClasses.classOf (a k) = SimpleClasses.classOf (a i)} ↦
-      x.val) (@Subsingleton.elim _ hsub ⟨j, hci⟩ ⟨i, rfl⟩)).symm
-  have hf_surj : Function.Surjective f := by
-    intro I
+    exact congrArg Subtype.val
+      (@Subsingleton.elim _ hsub ⟨i, rfl⟩ ⟨j, (congrArg Subtype.val hij).symm⟩)
+  have hf_surj : Function.Surjective f := fun I ↦ by
     have hcard : Nat.card {k // SimpleClasses.classOf (a k) = I.val} = 1 := by
       rw [← simpleMultiplicities_apply_eq_card a e]
       exact UnitSimpleClasses.simpleMultiplicities_tensorUnit I
     have hne : Nonempty {k // SimpleClasses.classOf (a k) = I.val} := by
-      by_contra hempty
-      rw [not_nonempty_iff] at hempty
-      simp only [Nat.card_eq_fintype_card, Fintype.card_eq_zero] at hcard
-      exact Nat.zero_ne_one hcard
-    obtain ⟨k, hk⟩ := hne
-    refine ⟨k, Subtype.ext hk⟩
-  let eqv := Equiv.ofBijective f ⟨hf_inj, hf_surj⟩
-  refine
-    { ι := κ
-      fintype := hκ
-      summands := a
-      simple := ha
-      hasBiproduct := hba
-      iso := e
-      equiv := eqv
+      rw [← Fintype.card_pos_iff, ← Nat.card_eq_fintype_card, hcard]
+      omega
+    exact ⟨hne.some.val, Subtype.ext hne.some.property⟩
+  exact
+    { ι := κ, fintype := hκ, summands := a, simple := ha, hasBiproduct := hba, iso := e
+      equiv := Equiv.ofBijective f ⟨hf_inj, hf_surj⟩
       summandIso := fun i ↦ (SimpleClasses.classOfReprIso (a i)).symm }
 
 namespace UnitSimpleClasses
@@ -340,8 +327,7 @@ def tensorUnitBicone : Bicone (fun I : UnitSimpleClasses C ↦ I.repr) where
   ι := ι
   ι_π I J := by
     by_cases h : I = J
-    · subst h
-      simp
+    · subst h; simp
     · simp [h, ι_comp_π_ne h]
 
 /-- The point of `tensorUnitBicone` is the tensor unit `𝟙_ C`. -/
@@ -351,16 +337,14 @@ theorem tensorUnitBicone_pt : (tensorUnitBicone (C := C)).pt = 𝟙_ C := (rfl)
 /-- The projection leg of `tensorUnitBicone` at `I` is `π I` up to the point identification. -/
 @[simp]
 theorem tensorUnitBicone_π (I : UnitSimpleClasses C) :
-    (tensorUnitBicone (C := C)).π I = eqToHom (tensorUnitBicone_pt (C := C)) ≫ π I := by
-  change π I = eqToHom (rfl : 𝟙_ C = 𝟙_ C) ≫ π I
-  simp
+    (tensorUnitBicone (C := C)).π I = eqToHom (tensorUnitBicone_pt (C := C)) ≫ π I :=
+  (Category.id_comp _).symm
 
 /-- The inclusion leg of `tensorUnitBicone` at `I` is `ι I` up to the point identification. -/
 @[simp]
 theorem tensorUnitBicone_ι (I : UnitSimpleClasses C) :
-    (tensorUnitBicone (C := C)).ι I = ι I ≫ eqToHom (tensorUnitBicone_pt (C := C)).symm := by
-  change ι I = ι I ≫ eqToHom (rfl : 𝟙_ C = 𝟙_ C)
-  simp
+    (tensorUnitBicone (C := C)).ι I = ι I ≫ eqToHom (tensorUnitBicone_pt (C := C)).symm :=
+  (Category.comp_id _).symm
 
 private theorem π_equiv (i : (chosenTensorUnitDecomp C).ι) :
     π ((chosenTensorUnitDecomp C).equiv i) =
@@ -373,9 +357,7 @@ private theorem π_equiv (i : (chosenTensorUnitDecomp C).ι) :
         ((chosenTensorUnitDecomp C).summandIso j).hom ≫
         eqToHom (congrArg (fun K : UnitSimpleClasses C ↦ K.repr) hk) =
       (chosenTensorUnitDecomp C).iso.hom ≫ biproduct.π (chosenTensorUnitDecomp C).summands i ≫
-        ((chosenTensorUnitDecomp C).summandIso i).hom := by
-    rintro _ rfl _
-    simp
+        ((chosenTensorUnitDecomp C).summandIso i).hom := by rintro _ rfl _; simp
   exact h ((chosenTensorUnitDecomp C).equiv.symm_apply_apply i)
     ((chosenTensorUnitDecomp C).equiv.apply_symm_apply ((chosenTensorUnitDecomp C).equiv i))
 
@@ -392,9 +374,7 @@ private theorem ι_equiv (i : (chosenTensorUnitDecomp C).ι) :
         (chosenTensorUnitDecomp C).iso.inv =
       ((chosenTensorUnitDecomp C).summandIso i).inv ≫
         biproduct.ι (chosenTensorUnitDecomp C).summands i ≫
-        (chosenTensorUnitDecomp C).iso.inv := by
-    rintro _ rfl _
-    simp
+        (chosenTensorUnitDecomp C).iso.inv := by rintro _ rfl _; simp
   exact h ((chosenTensorUnitDecomp C).equiv.symm_apply_apply i)
     ((chosenTensorUnitDecomp C).equiv.apply_symm_apply ((chosenTensorUnitDecomp C).equiv i)).symm
 
@@ -624,25 +604,16 @@ def leftUnitClassReprIso (X : C) [Simple X] : (leftUnitClass X).repr ⊗ X ≅ X
     let := Fintype.ofFinite (UnitSimpleClasses C)
     have hsum : (UnitSimpleClasses.π (leftUnitClass X) ≫ UnitSimpleClasses.ι (leftUnitClass X)) ▷
         X = 𝟙 (𝟙_ C ⊗ X) := by
-      calc
-        (UnitSimpleClasses.π (leftUnitClass X) ≫ UnitSimpleClasses.ι (leftUnitClass X)) ▷ X =
-            ∑ I : UnitSimpleClasses C,
-              (UnitSimpleClasses.π I ≫ UnitSimpleClasses.ι I) ▷ X := by
-          rw [Finset.sum_eq_single (leftUnitClass X)]
-          · intro I _ hne
-            rw [comp_whiskerRight]
-            have h0 : UnitSimpleClasses.π I ▷ X = 0 :=
-              (isZero_unitRepr_tensorObj_of_ne hne).eq_of_tgt _ _
-            rw [h0, zero_comp]
-          · intro hmem
-            exact False.elim (hmem (Finset.mem_univ _))
-        _ = (∑ I : UnitSimpleClasses C,
-              UnitSimpleClasses.π I ≫ UnitSimpleClasses.ι I) ▷ X := by
-          simp only [sum_whiskerRight]
-        _ = 𝟙 (𝟙_ C ⊗ X) := by
-          rw [UnitSimpleClasses.sum_π_comp_ι, id_whiskerRight]
-    rw [Category.assoc, ← Category.assoc (UnitSimpleClasses.π (leftUnitClass X) ▷ X),
-      ← comp_whiskerRight, hsum, Category.id_comp, Iso.inv_hom_id]
+      rw [← id_whiskerRight, ← UnitSimpleClasses.sum_π_comp_ι, sum_whiskerRight]
+      symm
+      rw [Finset.sum_eq_single (leftUnitClass X)]
+      · intro I _ hne
+        rw [comp_whiskerRight,
+          (isZero_unitRepr_tensorObj_of_ne hne).eq_of_tgt (UnitSimpleClasses.π I ▷ X) 0,
+          zero_comp]
+      · exact fun h ↦ absurd (Finset.mem_univ _) h
+    rw [Category.assoc, ← Category.assoc (UnitSimpleClasses.π _ ▷ X), ← comp_whiskerRight, hsum,
+      Category.id_comp, Iso.inv_hom_id]
 
 @[reassoc]
 theorem leftUnitClassReprIso_hom (X : C) [Simple X] :
@@ -667,25 +638,16 @@ def rightUnitClassReprIso (X : C) [Simple X] : X ⊗ (rightUnitClass X).repr ≅
     let := Fintype.ofFinite (UnitSimpleClasses C)
     have hsum : X ◁ (UnitSimpleClasses.π (rightUnitClass X) ≫
         UnitSimpleClasses.ι (rightUnitClass X)) = 𝟙 (X ⊗ 𝟙_ C) := by
-      calc
-        X ◁ (UnitSimpleClasses.π (rightUnitClass X) ≫ UnitSimpleClasses.ι (rightUnitClass X)) =
-            ∑ I : UnitSimpleClasses C,
-              X ◁ (UnitSimpleClasses.π I ≫ UnitSimpleClasses.ι I) := by
-          rw [Finset.sum_eq_single (rightUnitClass X)]
-          · intro I _ hne
-            rw [whiskerLeft_comp]
-            have h0 : X ◁ UnitSimpleClasses.π I = 0 :=
-              (isZero_tensorObj_unitRepr_of_ne hne).eq_of_tgt _ _
-            rw [h0, zero_comp]
-          · intro hmem
-            exact False.elim (hmem (Finset.mem_univ _))
-        _ = X ◁ (∑ I : UnitSimpleClasses C,
-              UnitSimpleClasses.π I ≫ UnitSimpleClasses.ι I) := by
-          simp only [whiskerLeft_sum]
-        _ = 𝟙 (X ⊗ 𝟙_ C) := by
-          rw [UnitSimpleClasses.sum_π_comp_ι, whiskerLeft_id]
-    rw [Category.assoc, ← Category.assoc (X ◁ UnitSimpleClasses.π (rightUnitClass X)),
-      ← whiskerLeft_comp, hsum, Category.id_comp, Iso.inv_hom_id]
+      rw [← whiskerLeft_id, ← UnitSimpleClasses.sum_π_comp_ι, whiskerLeft_sum]
+      symm
+      rw [Finset.sum_eq_single (rightUnitClass X)]
+      · intro I _ hne
+        rw [whiskerLeft_comp,
+          (isZero_tensorObj_unitRepr_of_ne hne).eq_of_tgt (X ◁ UnitSimpleClasses.π I) 0,
+          zero_comp]
+      · exact fun h ↦ absurd (Finset.mem_univ _) h
+    rw [Category.assoc, ← Category.assoc (X ◁ UnitSimpleClasses.π _), ← whiskerLeft_comp, hsum,
+      Category.id_comp, Iso.inv_hom_id]
 
 @[reassoc]
 theorem rightUnitClassReprIso_hom (X : C) [Simple X] :

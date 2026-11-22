@@ -123,7 +123,6 @@ def universalGradingGroupoid : Type u₁ :=
 /-- A grading of the simple classes of `C` by a groupoid `G`: an object of `G` for each simple
 summand of `𝟙_ C` and a morphism for each simple class `S` between its left and right unit supports,
 compatible with nonzero tensor-constituent morphisms `U.repr ⟶ S.repr ⊗ T.repr`. -/
-@[ext]
 structure GroupoidGrading (G : Type u₂) [Groupoid.{v₂} G] where
   /-- Image object of each simple summand of the tensor unit. -/
   obj : UnitSimpleClasses C → G
@@ -134,6 +133,24 @@ structure GroupoidGrading (G : Type u₂) [Groupoid.{v₂} G] where
     deg U = eqToHom (congrArg obj (leftUnitClass_eq_of_hom_ne_zero hf)) ≫
       deg S ≫ eqToHom (congrArg obj (rightUnitClass_eq_leftUnitClass_of_hom_ne_zero hf)) ≫
       deg T ≫ eqToHom (congrArg obj (rightUnitClass_eq_of_hom_ne_zero hf)).symm
+
+/-- Two groupoid gradings are equal when they agree on unit summand objects and their degrees on
+every simple class agree up to `eqToHom` conjugation. -/
+@[ext (iff := false)]
+theorem GroupoidGrading.ext {C : Type u₁} [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
+    [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C]
+    {G : Type u₂} [Groupoid.{v₂} G] {γ₁ γ₂ : GroupoidGrading C G}
+    (hobj : ∀ I, γ₁.obj I = γ₂.obj I)
+    (hdeg : ∀ S, γ₁.deg S = eqToHom (hobj _) ≫ γ₂.deg S ≫ eqToHom (hobj _).symm) :
+    γ₁ = γ₂ := by
+  have hobj' : γ₁.obj = γ₂.obj := funext hobj
+  rcases γ₁ with ⟨o₁, d₁, _⟩
+  rcases γ₂ with ⟨o₂, d₂, _⟩
+  dsimp only at hobj' hdeg
+  subst hobj'
+  congr
+  funext S
+  simpa using hdeg S
 
 end Construction
 
@@ -410,27 +427,13 @@ private def gradingOfFunctor (F : universalGradingGroupoid C ⥤ G) : GroupoidGr
     rw [degree_comp f hf]
     simp only [CategoryTheory.Functor.map_comp, eqToHom_map]
 
-private theorem groupoidGrading_ext {C : Type u₁} [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
-    [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C]
-    {G : Type u₂} [Groupoid.{v₂} G] {γ₁ γ₂ : GroupoidGrading C G}
-    (hobj : γ₁.obj = γ₂.obj)
-    (hdeg : ∀ S, γ₁.deg S = eqToHom (congrFun hobj _) ≫ γ₂.deg S ≫ eqToHom (congrFun hobj _).symm) :
-    γ₁ = γ₂ := by
-  rcases γ₁ with ⟨o₁, d₁, _⟩
-  rcases γ₂ with ⟨o₂, d₂, _⟩
-  dsimp only at hobj hdeg
-  subst hobj
-  congr
-  funext S
-  simpa using hdeg S
-
 /-- The universal property of `universalGradingGroupoid C`: groupoid gradings of `C` by `G`
 correspond bijectively to functors `universalGradingGroupoid C ⥤ G`. -/
 def liftEquiv : GroupoidGrading C G ≃ (universalGradingGroupoid C ⥤ G) where
   toFun := lift
   invFun := gradingOfFunctor
   left_inv γ := by
-    refine groupoidGrading_ext (funext (lift_mkObj γ)) fun S ↦ ?_
+    refine GroupoidGrading.ext (lift_mkObj γ) fun S ↦ ?_
     simpa only [gradingOfFunctor] using lift_degree γ S
   right_inv F := functor_ext (fun _ ↦ by simp [gradingOfFunctor]) fun S ↦ by
     simp [gradingOfFunctor]

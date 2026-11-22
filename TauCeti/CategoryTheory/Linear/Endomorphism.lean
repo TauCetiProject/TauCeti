@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.Algebra.Algebra.Hom
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
 
@@ -19,7 +20,8 @@ corresponding operations in `End X`. As `simp` lemmas they push `End.of` inside 
 from morphisms `X ⟶ X`, so that algebra maps out of `End X` can then be applied termwise. We also
 compute the structure map of an `R`-linear category, `(algebraMap R (End X) r).asHom = r • 𝟙 X`.
 When that structure map is surjective, every endomorphism is a scalar multiple of the identity
-(`CategoryTheory.End.exists_smul_id_eq_of_surjective`).
+(`CategoryTheory.End.exists_smul_id_eq_of_surjective`); over a field with nontrivial `End X`, this
+packages into the algebra isomorphism `TauCeti.endAlgEquivOfSurjective : End X ≃ₐ[k] k`.
 
 The native precomposition action of `(End X)ᵐᵒᵖ` on `X ⟶ Y` respects the ground
 scalar tower.
@@ -106,6 +108,65 @@ instance hom_isScalarTower_opEnd {R : Type w} [Semiring R] [Linear R C] (Y : C) 
 end Preadditive
 
 end CategoryTheory.End
+
+namespace TauCeti
+
+open CategoryTheory
+
+universe w v u
+
+section Surjective
+
+variable (k : Type w) [Field k]
+variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear k C]
+
+/-- If the structure map `k → End X` of a nontrivial endomorphism algebra over a field `k` is
+surjective, it is bijective. -/
+theorem bijective_algebraMap_end_of_surjective (X : C) [Nontrivial (End X)]
+    (hsurj : Function.Surjective (algebraMap k (End X))) :
+    Function.Bijective (algebraMap k (End X)) :=
+  ⟨fun a b hab ↦ by_contra fun h ↦ one_ne_zero (α := End X) <| by
+    rw [← map_one (algebraMap k (End X)), ← mul_inv_cancel₀ (sub_ne_zero.mpr h),
+      map_mul, map_sub, hab, sub_self, zero_mul], hsurj⟩
+
+/-- Packaging scalar endomorphisms as an algebra isomorphism: if `End X` is nontrivial and
+`algebraMap k (End X)` is surjective, then `End X` is isomorphic as a `k`-algebra to `k`. -/
+noncomputable def endAlgEquivOfSurjective (X : C) [Nontrivial (End X)]
+    (hsurj : Function.Surjective (algebraMap k (End X))) : End X ≃ₐ[k] k :=
+  (AlgEquiv.ofBijective (Algebra.ofId k (End X)) <| by
+    rw [show ⇑(Algebra.ofId k (End X)) = algebraMap k (End X) from funext (Algebra.ofId_apply _)]
+    exact bijective_algebraMap_end_of_surjective k X hsurj).symm
+
+variable {k}
+variable {X : C} [Nontrivial (End X)] {hsurj : Function.Surjective (algebraMap k (End X))}
+
+/-- The inverse of `endAlgEquivOfSurjective` is the structure map `algebraMap k (End X)`. -/
+@[simp]
+theorem endAlgEquivOfSurjective_symm_apply (c : k) :
+    (endAlgEquivOfSurjective k X hsurj).symm c = algebraMap k (End X) c := by
+  rw [endAlgEquivOfSurjective, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply, Algebra.ofId_apply]
+
+/-- The structure map `algebraMap k (End X)` sends the scalar of an endomorphism `f` back to
+`f`. -/
+theorem algebraMap_endAlgEquivOfSurjective (f : End X) :
+    algebraMap k (End X) (endAlgEquivOfSurjective k X hsurj f) = f := by
+  rw [← endAlgEquivOfSurjective_symm_apply (hsurj := hsurj), AlgEquiv.symm_apply_apply]
+
+/-- Every endomorphism of an object with scalar endomorphisms is its scalar times the identity. -/
+@[simp]
+theorem endAlgEquivOfSurjective_smul_id (f : End X) :
+    endAlgEquivOfSurjective k X hsurj f • 𝟙 X = f.asHom := by
+  rw [← End.algebraMap_asHom, algebraMap_endAlgEquivOfSurjective]
+
+/-- The scalar of an endomorphism `f` is the unique `c` with `f = c • 𝟙 X`. -/
+theorem endAlgEquivOfSurjective_apply_eq_iff (f : End X) (c : k) :
+    endAlgEquivOfSurjective k X hsurj f = c ↔ f.asHom = c • 𝟙 X := by
+  rw [← AlgEquiv.eq_symm_apply, End.ext_iff, endAlgEquivOfSurjective_symm_apply,
+    End.algebraMap_asHom]
+
+end Surjective
+
+end TauCeti
 
 namespace CategoryTheory
 
