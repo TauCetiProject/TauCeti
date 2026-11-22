@@ -44,7 +44,7 @@ namespace MeasureTheory
 
 variable {G ε : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [SecondCountableTopology G] [MeasurableSpace G] [BorelSpace G]
-  [TopologicalSpace ε] [ContinuousENorm ε]
+  [TopologicalSpace ε] [ENorm ε]
 
 /-- On any subset `s`, two Haar measures on a second-countable locally compact group give
 restricted `Lᵖ` seminorms differing by the `p.toReal⁻¹`-th power of
@@ -83,20 +83,26 @@ theorem MemLp.restrict_of_isHaarMeasure {f : G → ε} {p : ℝ≥0∞} {μ : Me
   rw [Measure.restrict_eq_haarScalarFactor_smul ν μ s]
   exact hf.smul_measure_nnreal
 
+private theorem eLpNorm_restrict_le_add_and_lt_top {α F : Type*} [MeasurableSpace α]
+    [TopologicalSpace F] [ENorm F] {f : α → F} {g : α → ε} {p : ℝ≥0∞} {μ : Measure α}
+    {S U : Set α} (hSU : S ⊆ U) (hf : MemLp f p (μ.restrict U)) {c : ℝ≥0∞} (hc : c ≠ ∞)
+    (hg : eLpNorm g p (μ.restrict S) ≤ eLpNorm f p (μ.restrict S) + c) :
+    eLpNorm g p (μ.restrict S) ≤ eLpNorm f p (μ.restrict U) + c ∧
+      eLpNorm f p (μ.restrict U) + c < ∞ :=
+  ⟨hg.trans (add_le_add_left (eLpNorm_mono_measure _ (Measure.restrict_mono hSU le_rfl)) _),
+    ENNReal.add_lt_top.2 ⟨hf.eLpNorm_lt_top, hc.lt_top⟩⟩
+
 /-- If `f ∈ Lᵖ(U, μ)` and `‖g‖_{Lᵖ(S, μ)} ≤ ‖f‖_{Lᵖ(S, μ)} + c` for `S ⊆ U` and `c ≠ ∞`, then
 `g ∈ Lᵖ(S, ν)` for any other Haar measure `ν`. -/
 @[to_additive /-- If `f ∈ Lᵖ(U, μ)` and `‖g‖_{Lᵖ(S, μ)} ≤ ‖f‖_{Lᵖ(S, μ)} + c` for `S ⊆ U` and
 `c ≠ ∞`, then `g ∈ Lᵖ(S, ν)` for any other additive Haar measure `ν`. -/]
 theorem MemLp.restrict_of_isHaarMeasure_of_eLpNorm_le_add {F : Type*} [TopologicalSpace F]
-    [ContinuousENorm F] {f : G → F} {g : G → ε} {p : ℝ≥0∞} {μ : Measure G} [μ.IsHaarMeasure]
+    [ENorm F] {f : G → F} {g : G → ε} {p : ℝ≥0∞} {μ : Measure G} [μ.IsHaarMeasure]
     {S U : Set G} (hf : MemLp f p (μ.restrict U)) (hSU : S ⊆ U) {c : ℝ≥0∞} (hc : c ≠ ∞)
     (hg : eLpNorm g p (μ.restrict S) ≤ eLpNorm f p (μ.restrict S) + c)
     (ν : Measure G) [ν.IsHaarMeasure] :
     MemLp g p (ν.restrict S) := by
-  have hle : eLpNorm g p (μ.restrict S) ≤ eLpNorm f p (μ.restrict U) + c :=
-    hg.trans (add_le_add_left (eLpNorm_mono_measure _ (Measure.restrict_mono hSU le_rfl)) _)
-  have htop : eLpNorm f p (μ.restrict U) + c < ∞ :=
-    ENNReal.add_lt_top.2 ⟨hf.eLpNorm_lt_top, hc.lt_top⟩
+  have ⟨hle, htop⟩ := eLpNorm_restrict_le_add_and_lt_top hSU hf hc hg
   exact (memLp_iff.2 (hle.trans_lt htop)).restrict_of_isHaarMeasure ν
 
 /-- Real-valued restricted `Lᵖ` comparison across two Haar measures on a second-countable locally
@@ -108,17 +114,14 @@ compact group: if `S ⊆ U`, `f ∈ Lᵖ(U, ν)`, `c ≠ ∞`, and
 `S ⊆ U`, `f ∈ Lᵖ(U, ν)`, `c ≠ ∞`, and `‖g‖_{Lᵖ(S, ν)} ≤ ‖f‖_{Lᵖ(S, ν)} + c`, then
 `‖g‖_{Lᵖ(S, μ)} ≤ addHaarScalarFactor μ ν ^ p.toReal⁻¹ * (‖f‖_{Lᵖ(U, ν)} + c.toReal)`. -/]
 theorem toReal_eLpNorm_restrict_le_haarScalarFactor_rpow_mul_add {F : Type*} [TopologicalSpace F]
-    [ContinuousENorm F] {f : G → F} (g : G → ε) {p : ℝ≥0∞} (μ ν : Measure G)
+    [ENorm F] {f : G → F} (g : G → ε) {p : ℝ≥0∞} (μ ν : Measure G)
     [μ.IsHaarMeasure] [ν.IsHaarMeasure] {S U : Set G} (hSU : S ⊆ U)
     (hf : MemLp f p (ν.restrict U)) {c : ℝ≥0∞} (hc : c ≠ ∞)
     (hg : eLpNorm g p (ν.restrict S) ≤ eLpNorm f p (ν.restrict S) + c) :
     (eLpNorm g p (μ.restrict S)).toReal ≤
       (Measure.haarScalarFactor μ ν : ℝ) ^ p.toReal⁻¹ *
         ((eLpNorm f p (ν.restrict U)).toReal + c.toReal) := by
-  have hle : eLpNorm g p (ν.restrict S) ≤ eLpNorm f p (ν.restrict U) + c :=
-    hg.trans (add_le_add_left (eLpNorm_mono_measure _ (Measure.restrict_mono hSU le_rfl)) _)
-  have htop : eLpNorm f p (ν.restrict U) + c < ∞ :=
-    ENNReal.add_lt_top.2 ⟨hf.eLpNorm_lt_top, hc.lt_top⟩
+  have ⟨hle, htop⟩ := eLpNorm_restrict_le_add_and_lt_top hSU hf hc hg
   have htr : (eLpNorm g p (ν.restrict S)).toReal ≤
       (eLpNorm f p (ν.restrict U)).toReal + c.toReal := by
     have h := ENNReal.toReal_mono htop.ne hle

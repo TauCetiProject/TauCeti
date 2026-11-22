@@ -84,8 +84,8 @@ theorem AEStronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top
   norm_num only [ENNReal.toReal_ofNat, ENNReal.rpow_two]
 
 /-- For `p ≠ 0, ∞`, the integral of `‖f‖ₑ ^ p` is the `p`-th power of the `Lᵖ` seminorm of `f`. -/
-theorem lintegral_rpow_enorm_eq_eLpNorm_rpow {f : α → ε} {p : ℝ≥0∞} (hp0 : p ≠ 0)
-    (hp : p ≠ ∞) (hf : AEStronglyMeasurable f μ) :
+theorem lintegral_rpow_enorm_eq_eLpNorm_rpow {ε : Type*} [TopologicalSpace ε] [ENorm ε]
+    {f : α → ε} {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : AEStronglyMeasurable f μ) :
     ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ = eLpNorm f p μ ^ p.toReal := by
   rw [eLpNorm_eq_eLpNorm' hp0 hp hf,
     lintegral_rpow_eNorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp0 hp)]

@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.MeanInequalitiesPow
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Lebesgue.BiUnion
 
 /-!
@@ -147,16 +148,12 @@ theorem eLpNorm_restrict_biUnion_finset_rpow_le {α ε ι : Type*} [MeasurableSp
   classical
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   by_cases hm : ∀ i ∈ t, AEStronglyMeasurable f (μ.restrict (s i))
-  · have hpow {m : Measure α} (h : AEStronglyMeasurable f m) :
-        eLpNorm f p m ^ p.toReal = ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂m := by
-      rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp h, ← ENNReal.rpow_mul, one_div,
-        inv_mul_cancel₀ hr.ne', ENNReal.rpow_one]
-    have hfm : AEStronglyMeasurable f (μ.restrict (⋃ i ∈ t, s i)) :=
+  · have hfm : AEStronglyMeasurable f (μ.restrict (⋃ i ∈ t, s i)) :=
       (aestronglyMeasurable_sum_measure_iff.2 fun ⟨i, hi⟩ ↦ hm i hi).mono_measure
         (Measure.restrict_biUnion_le t.countable_toSet)
-    rw [hpow hfm]
+    rw [(lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hfm).symm]
     refine (TauCeti.lintegral_biUnion_finset_le t s _).trans_eq ?_
-    exact Finset.sum_congr rfl fun i hi ↦ (hpow (hm i hi)).symm
+    exact Finset.sum_congr rfl fun i hi ↦ lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp (hm i hi)
   · push Not at hm
     obtain ⟨i, hi, hni⟩ := hm
     have htop : ∑ j ∈ t, eLpNorm f p (μ.restrict (s j)) ^ p.toReal = ∞ :=
