@@ -88,19 +88,50 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M] {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
+/-- A gluing parameter `r₁ ≤ min r₀ 1` small enough that `n u² < ε²` for every `u ∈ [0, r₁ ε]`. -/
+private theorem exists_pos_forall_mul_sq_lt_sq {n ε r₀ : ℝ} (hn : 0 ≤ n) (hε : 0 < ε)
+    (hr₀ : 0 < r₀) :
+    ∃ r₁, 0 < r₁ ∧ r₁ ≤ r₀ ∧ r₁ ≤ 1 ∧ ∀ u, 0 ≤ u → u ≤ r₁ * ε → n * u ^ 2 < ε ^ 2 := by
+  set r₁ := min r₀ (1 / (n + 1))
+  have hr₁ : 0 < r₁ := lt_min hr₀ (by positivity)
+  have hr₁n : n * (r₁ * ε) ^ 2 < ε ^ 2 := by
+    have h₁ : r₁ * (n + 1) ≤ 1 := (le_div_iff₀ (by positivity)).1 (min_le_right _ _)
+    have h₂ : 0 < r₁ * ε := mul_pos hr₁ hε
+    have h₃ : r₁ * ε * (n + 1) ≤ ε := by nlinarith
+    have h₄ : (r₁ * ε * (n + 1)) ^ 2 ≤ ε ^ 2 := pow_le_pow_left₀ (by positivity) h₃ 2
+    nlinarith [mul_pos h₂ h₂]
+  exact ⟨r₁, hr₁, min_le_left _ _, (min_le_right _ _).trans
+    ((div_le_one (by positivity)).2 (by linarith)), fun u hu hu' ↦
+    lt_of_le_of_lt (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hu hu' 2) hn) hr₁n⟩
+
+/-- A homeomorphism from `[0, r₀]` onto `closure S = insert z₀ S`, taking `0` to `z₀`, takes every
+nonzero parameter into `S`. -/
+private theorem val_homeomorph_mem_of_ne_zero {X : Type*} [TopologicalSpace X] {S : Set X}
+    {z₀ : X} {r₀ : ℝ} (hr₀ : 0 ≤ r₀) (e : Icc (0 : ℝ) r₀ ≃ₜ closure S)
+    (hcl : closure S = insert z₀ S) (he₀ : (e ⟨0, left_mem_Icc.2 hr₀⟩).val = z₀)
+    (s : Icc (0 : ℝ) r₀) (hs : (s : ℝ) ≠ 0) : (e s).val ∈ S := by
+  have hmem : (e s).val ∈ insert z₀ S := hcl ▸ (e s).property
+  refine hmem.resolve_left fun h0 ↦ hs ?_
+  have : e s = e ⟨0, left_mem_Icc.2 hr₀⟩ := Subtype.ext (h0.trans he₀.symm)
+  exact congrArg Subtype.val (e.injective this)
+
 namespace IsAdaptedPseudoGradient
 
 /-- **An orbit meets a set transverse to the flow at most once near a regular point.** Let `Z` be
-a set flattened near a point `y` by a chart of the maximal atlas, with `y` not a critical point and
-`X y` not tangent to `Z` at `y`. Then two points of `Z` near `y` on a common orbit are equal, and
-the time from one to the other is `0`. -/
+a set flattened near a point `y` by a chart of the maximal atlas, with `X y` not tangent to `Z` at
+`y`, so that `X y ≠ 0` and `y` is not a critical point. Then two points of `Z` near `y` on a common
+orbit are equal, and the time from one to the other is `0`. -/
 theorem eventually_eq_zero_of_flow_eq_of_isSliceChart (hX : IsAdaptedPseudoGradient f X)
     {Z : Set M} {y : M} {L : Submodule ℝ E} {φZ : OpenPartialHomeomorph M E}
     (hφZ : φZ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) (hZ : IsSliceChart φZ (L : Set E) Z)
-    (hyφZ : y ∈ φZ.source) (hyZ : y ∈ Z) (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0)
+    (hyφZ : y ∈ φZ.source) (hyZ : y ∈ Z)
     (hXZ : X y ∉ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) Z y)) :
     ∀ᶠ w : M × M in 𝓝 (y, y), w.1 ∈ Z → w.2 ∈ Z → ∀ t, hX.flow t w.1 = w.2 → t = 0 := by
   have hL : IsClosed (L : Set E) := Submodule.isClosed_of_finiteDimensional _
+  -- `y` is not a critical point, since `X y` is not tangent to `Z`, so in particular nonzero.
+  have hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0 := mt hX.eq_zero_iff.2 fun h0 ↦ hXZ (by
+    rw [h0]
+    exact zero_mem _)
   -- A linear form `ℓ` vanishing on `L` but not on the image of `X y` in the chart: the level of
   -- `g = ℓ ∘ φZ` through `y` contains `Z` near `y` and is transverse to the flow.
   have hXL : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φZ y (X y) ∉ L := fun h ↦ hXZ <| by
@@ -108,13 +139,13 @@ theorem eventually_eq_zero_of_flow_eq_of_isSliceChart (hX : IsAdaptedPseudoGradi
     exact h
   obtain ⟨ℓ, hℓ, hLℓ⟩ := Submodule.exists_le_ker_of_notMem hXL
   set ℓc : E →L[ℝ] ℝ := LinearMap.toContinuousLinearMap ℓ
-  set g : M → ℝ := fun w ↦ ℓc (φZ w)
+  set g : M → ℝ := ℓc ∘ φZ with hg
   have hφZy : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ φZ y := contMDiffAt_of_mem_maximalAtlas hφZ hyφZ
   have hgd : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ g y := ℓc.contMDiff.contMDiffAt.comp y hφZy
   have hgv : mvfderiv 𝓘(ℝ, E) g y (X y) ≠ 0 := by
     have h := mvfderiv_comp_apply (g := ℓc) (f := φZ) y
       ((ℓc.contMDiff (n := ∞)).mdifferentiable (by simp) _) (hφZy.mdifferentiableAt (by simp)) (X y)
-    rw [show (⇑ℓc ∘ ⇑φZ) = g from rfl] at h
+    rw [← hg] at h
     rw [h, mvfderiv_eq_fderiv_apply, ℓc.fderiv]
     exact hℓ
   -- Near `(0, y)` the orbit of a point meets the level of `g` through `y` at a unique time.
@@ -245,7 +276,7 @@ private theorem exists_continuousOn_flow_inv (hX : IsAdaptedPseudoGradient f X)
   have hL : IsClosed (L : Set E) := Submodule.isClosed_of_finiteDimensional _
   have hXZ := hX.notMem_span_mtangentConeAt_of_isSliceChart hf hφZ hZ hyφZ hyZ hy hyc hdim htr
   obtain ⟨u₀, hu₀, v₀, hv₀, huv⟩ :=
-    mem_nhds_prod_iff.1 (hX.eventually_eq_zero_of_flow_eq_of_isSliceChart hφZ hZ hyφZ hyZ hyc hXZ)
+    mem_nhds_prod_iff.1 (hX.eventually_eq_zero_of_flow_eq_of_isSliceChart hφZ hZ hyφZ hyZ hXZ)
   -- A closed neighbourhood `C` of `y` in the source of `φZ`; then `C ∩ Z` is compact.
   obtain ⟨C, hC, hCc, hCsub⟩ :=
     exists_mem_nhds_isClosed_subset (inter_mem (inter_mem (inter_mem hu₀ hv₀)
@@ -431,36 +462,18 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
       hy₂ε hε hU' hV'
   rw [hΦy₁, hΦy₂] at he₀ hcl
   -- Restrict to gluing parameters small enough for the passage to be unique.
-  set n : ℝ := (Module.finrank ℝ E : ℝ)
-  have hn : 0 ≤ n := Nat.cast_nonneg _
-  set r₁ := min r₀ (1 / (n + 1))
-  have hr₁ : 0 < r₁ := lt_min hr₀ (by positivity)
-  have hr₁r₀ : r₁ ≤ r₀ := min_le_left _ _
-  have hr₁1 : r₁ ≤ 1 := (min_le_right _ _).trans
-    ((div_le_one (by positivity)).2 (by linarith))
-  have hr₁n : n * (r₁ * ε) ^ 2 < ε ^ 2 := by
-    have h₁ : r₁ * (n + 1) ≤ 1 := (le_div_iff₀ (by positivity)).1 (min_le_right _ _)
-    have h₂ : 0 < r₁ * ε := mul_pos hr₁ hε
-    have h₃ : r₁ * ε * (n + 1) ≤ ε := by nlinarith
-    have h₄ : (r₁ * ε * (n + 1)) ^ 2 ≤ ε ^ 2 := pow_le_pow_left₀ (by positivity) h₃ 2
-    nlinarith [mul_pos h₂ h₂]
-  have hsmall : ∀ u : ℝ, 0 ≤ u → u ≤ r₁ * ε → n * u ^ 2 < ε ^ 2 := fun u hu hu' ↦
-    lt_of_le_of_lt (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hu hu' 2) hn) hr₁n
+  obtain ⟨r₁, hr₁, hr₁r₀, hr₁1, hsmall⟩ :=
+    exists_pos_forall_mul_sq_lt_sq (n := (Module.finrank ℝ E : ℝ)) (Nat.cast_nonneg _) hε hr₀
   have hr₁ε : r₁ * ε ≤ ε := mul_le_of_le_one_left hε.le hr₁1
   have hz₀ : (Φ y₁, Φ y₂) ∈ closure (splitGluingPairs ε r₀ g k) := hcl ▸ mem_insert _ _
   have he₀' : e ⟨0, left_mem_Icc.2 hr₀.le⟩ = ⟨_, hz₀⟩ := Subtype.ext he₀
   have hepair : ∀ s : Icc (0 : ℝ) r₀, (s : ℝ) ≠ 0 →
       (e s).val ∈ splitGluingPairs ε r₀ g k ∧ ‖(e s).val.1.snd‖ = s * ε := by
     intro s hs
-    have hsn : ‖(e s).val.1.snd‖ = s * ε := by
-      have := he (e s)
-      rw [e.symm_apply_apply] at this
-      rw [this, div_mul_cancel₀ _ hε.ne']
-    refine ⟨?_, hsn⟩
-    have hmem : (e s).val ∈ insert (Φ y₁, Φ y₂) (splitGluingPairs ε r₀ g k) := hcl ▸ (e s).property
-    refine hmem.resolve_left fun h0 ↦ hs ?_
-    have : e s = e ⟨0, left_mem_Icc.2 hr₀.le⟩ := by rw [he₀']; exact Subtype.ext h0
-    exact congrArg Subtype.val (e.injective this)
+    refine ⟨val_homeomorph_mem_of_ne_zero hr₀.le e hcl he₀ s hs, ?_⟩
+    have := he (e s)
+    rw [e.symm_apply_apply] at this
+    rw [this, div_mul_cancel₀ _ hε.ne']
   -- Points of the gluing pairs read on `M`: the entrance points lie in `W^u(p)`, and the exit
   -- points are reached from points of `C ∩ Z'` in times in `[-1, 1]`.
   have hentry : ∀ z ∈ splitGluingPairs ε r₀ g k, Ψ z.1 ∈ hX.flow.unstableSet p := by
@@ -468,7 +481,7 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
     obtain ⟨⟨z₁, ⟨⟨hw, hwf, hws⟩, hwu, -⟩, hwz⟩, -⟩ := hpairs z hz
     have h₁ := hX.flow_splitEntryTime_of_norm_lt φ hφ hε hε₂ hw hwf hws
     rw [hwz] at h₁
-    change φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.1)) ∈ hX.flow.unstableSet p
+    simp only [hΨdef]
     rw [← h₁]
     exact (Flow.apply_mem_unstableSet_iff _ _).2 hwu
   have hexitR : ∀ z ∈ splitGluingPairs ε r₀ g k, Ψ z.2 ∈ R := by
@@ -502,7 +515,7 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
     exact (continuousAt_toChart_symm_of_mem_insert_splitGluingPairs φ hε₁ hy₁φ hy₂φ
       (by rw [← hcl]; exact (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).property)).comp
       hc.continuousAt
-  set B : Icc (0 : ℝ) r₁ → M × M := fun s ↦ ((c s).1, π (c s).2)
+  set B : Icc (0 : ℝ) r₁ → M × M := fun s ↦ ((c s).1, π (c s).2) with hBdef
   have hBc : Continuous B :=
     (continuous_fst.comp hcc).prodMk (hπ.comp_continuous (continuous_snd.comp hcc) hmemR)
   have hc0 : c ⟨0, left_mem_Icc.2 hr₁.le⟩ = (y₁, y₂) := by
@@ -514,27 +527,23 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
       hX.flow (-T₂) (B s).2 ∈ Z ∧ ∃ t, hX.flow t (B s).1 = (B s).2 := by
     intro s hs
     obtain ⟨hz, -⟩ := hepair (inclusion (Icc_subset_Icc_right hr₁r₀) s) hs
-    set z := (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).val
+    set z := (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).val with hzdef
     obtain ⟨hsrc, -, -, hpass, -⟩ := mem_splitGluingPairs.1 hz
     have hflow : hX.flow (splitExitTime ε z.1) (Ψ z.1) = Ψ z.2 := by
       rw [hpass]; exact hX.flow_splitExitTime φ hφ (fun z hz ↦ hε₂ z (by linarith)) hsrc
     obtain ⟨hK, τ, hτ⟩ := hπR _ (hmemR s)
     refine ⟨hentry z hz, hK.2, -τ + splitExitTime ε z.1, ?_⟩
-    change hX.flow _ (Ψ z.1) = π (c s).2
+    simp only [hBdef, hcdef, ← hzdef]
     rw [Flow.map_add, hflow]
-    change hX.flow _ (c s).2 = _
     have := congrArg (hX.flow (-τ)) hτ
     rw [Flow.map_neg_apply_map] at this
     exact this.symm
   refine ⟨T₁, T₂, r₁, hr₁, B, hBc, ?_, hBs, hBq, fun s s' hs hs' t hss' ↦ ?_, ?_⟩
   · -- The arc starts at the broken pair.
-    refine Prod.ext ?_ ?_
-    · change (c _).1 = _
-      rw [hc0, hT₁]
-    · change π (c _).2 = _
-      have := hπeq 0 (by norm_num) y₂ ⟨mem_of_mem_nhds hC, hy₂Z⟩
-      rw [Flow.map_zero_apply] at this
-      rw [hc0, this, hT₂]
+    have := hπeq 0 (by norm_num) y₂ ⟨mem_of_mem_nhds hC, hy₂Z⟩
+    rw [Flow.map_zero_apply] at this
+    simp only [hBdef]
+    rw [hc0, this, hT₁, hT₂]
   · -- Two unbroken pairs whose entrance points lie on one orbit are equal.
     set z := (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).val
     set z' := (e (inclusion (Icc_subset_Icc_right hr₁r₀) s')).val
@@ -554,14 +563,13 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
     exact inclusion_injective _ (e.injective (Subtype.ext hzz))
   · -- A trajectory near the broken one crosses the box once; its entrance and exit points form a
     -- gluing pair of small parameter.
-    have hκ₁ : ∀ᶠ w in 𝓝 y₁, ‖(Φ w).fst‖ * ‖(Φ w).snd‖ / ε < r₁ * ε := by
-      have h := hy₁κ.div_const ε
+    have hκ : ∀ x, Tendsto (fun w ↦ ‖(Φ w).fst‖ * ‖(Φ w).snd‖) (𝓝 x) (𝓝 0) →
+        ∀ᶠ w in 𝓝 x, ‖(Φ w).fst‖ * ‖(Φ w).snd‖ / ε < r₁ * ε := fun x hx ↦ by
+      have h := hx.div_const ε
       rw [zero_div] at h
       exact h.eventually (gt_mem_nhds (mul_pos hr₁ hε))
-    have hκ₂ : ∀ᶠ w in 𝓝 y₂, ‖(Φ w).fst‖ * ‖(Φ w).snd‖ / ε < r₁ * ε := by
-      have h := hy₂κ.div_const ε
-      rw [zero_div] at h
-      exact h.eventually (gt_mem_nhds (mul_pos hr₁ hε))
+    have hκ₁ := hκ y₁ hy₁κ
+    have hκ₂ := hκ y₂ hy₂κ
     obtain ⟨A₁, hA₁', A₂, hA₂', hA⟩ := mem_nhds_prod_iff.1 hexh
     have hC' : ∀ᶠ w in 𝓝 y₂, w ∈ C := hC
     rw [hT₁, hT₂]
@@ -603,12 +611,10 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
         ⟨_, subset_closure hEQ⟩ := by
       rw [← e.apply_symm_apply ⟨_, subset_closure hEQ⟩, ← hs₀def]
     refine ⟨⟨s₀, s₀.property.1, hs₀r₁.le⟩, hs₀r₁, ⟨splitEntryTime ε (Φ w.1), ?_⟩, ?_⟩
-    · change _ = (c _).1
-      simp only [hcdef, hes]
+    · simp only [hBdef, hcdef, hes]
       exact hX.flow_splitEntryTime_of_norm_lt φ hφ hε hε₂ hw₁src hw₁f hw₁s
     · have h₂ := hX.flow_splitExitTime_of_norm_lt φ hφ hε hε₂ hw₂src hw₂f hw₂s
-      change _ = π (c _).2
-      simp only [hcdef, hes]
+      simp only [hBdef, hcdef, hes]
       have h₂' : Ψ (splitQuadraticFlow (splitExitTime ε (Φ w.2)) (Φ w.2)) =
           hX.flow (splitExitTime ε (Φ w.2)) w.2 := h₂.symm
       rw [h₂', hπeq _ (Ioo_subset_Icc_self (hCm _ hw₂C).2.2) _ ⟨hw₂C, hw2Z⟩]
@@ -784,7 +790,7 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_isSliceChart {hX : IsAdaptedPseudo
     rw [Flow.map_zero_apply, Flow.map_add] at e₁
     rw [ht₁] at e₁
     refine Prod.ext e₁ ?_
-    change hX.flow (-T₂) (B _).2 = w.2
+    simp only [hFdef]
     rw [← ht₂, Flow.map_neg_apply_map]
   have hemb : IsEmbedding (F ∘ inclusion (Ico_subset_Icc_self : Ico (0 : ℝ) δ ⊆ Icc 0 δ)) :=
     (hFc.isClosedEmbedding hFinj).isEmbedding.comp (IsEmbedding.inclusion Ico_subset_Icc_self)
@@ -819,8 +825,11 @@ private theorem IsMorseSmale.exists_isSliceChart_stableSet_inter_level
   -- is tangent to `W^s(r)`.
   obtain ⟨L, φr, hLr, ha₂φr, hφr, hSr⟩ :=
     hX.exists_isSliceChart_stableSet (hX.mfderiv_eq_zero_of_mem_stableSet ha₂.2) ha₂.2
-  set T := Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet r) a₂)
+  set T := Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet r) a₂) with hTdef
   set U := Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet q) a₂)
+  -- The differential of `f` at `a₂`, read on the model space. `mvfderiv` is a map on
+  -- `TangentSpace 𝓘(ℝ, E) a₂`, which is `E` only by definition, so `rw` cannot pass between
+  -- `mvfderiv` and `df`; the `change` steps below restate goals across this identification.
   set df : E →ₗ[ℝ] ℝ := (mvfderiv 𝓘(ℝ, E) f a₂).toLinearMap
   set v₀ : E := X a₂
   have hXT : v₀ ∈ T := Submodule.subset_span
@@ -831,9 +840,10 @@ private theorem IsMorseSmale.exists_isSliceChart_stableSet_inter_level
     (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hqr' ha₂)).ne
   have hrange : (mvfderiv 𝓘(ℝ, E) f a₂).range = ⊤ :=
     LinearMap.range_eq_top_of_surjective _ fun c ↦ ⟨(c / df v₀) • v₀, by
+      -- Read the differential on `E` (see `df`).
       change df ((c / df v₀) • v₀) = c
       rw [map_smul, smul_eq_mul, div_mul_cancel₀ _ hdf]⟩
-  set K : Submodule ℝ E := LinearMap.ker df
+  set K : Submodule ℝ E := LinearMap.ker df with hKdef
   have htrK : T ⊔ K = ⊤ := top_unique <|
     (LinearMap.span_singleton_sup_ker_eq_top df hdf).ge.trans
       (sup_le_sup_right ((Submodule.span_singleton_le_iff_mem _ _).2 hXT) _)
@@ -846,17 +856,20 @@ private theorem IsMorseSmale.exists_isSliceChart_stableSet_inter_level
   have hspan := span_mtangentConeAt_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top
     (by simp) hφr hSr ha₂φr isOpen_univ (mem_univ _) hf.contMDiff.contMDiffOn rfl hrange
     htrK (hcc _) (hcc _) (hcc _)
+  -- Read the kernel of the differential on `E` (see `df`).
+  rw [← hTdef] at hspan
+  change _ = T ⊓ K at hspan
   -- It has dimension `n - ind q`: cutting `W^s(r)` by the transverse hyperplane `ker df`.
-  change Submodule.span ℝ _ = T ⊓ K at hspan
   have hdim : Module.finrank ℝ ↥(T ⊓ K) + manifoldMorseIndex 𝓘(ℝ, E) f q =
       Module.finrank ℝ E := by
     have hT := hX.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex ha₂.2
     have hsum := Submodule.finrank_sup_add_finrank_inf_eq T K
     have hker := LinearMap.finrank_range_add_finrank_ker df
     rw [htrK, finrank_top] at hsum
-    rw [show LinearMap.range df = ⊤ from hrange, finrank_top, Module.finrank_self] at hker
-    change Module.finrank ℝ T + _ = _ at hT
-    change 1 + Module.finrank ℝ K = _ at hker
+    -- Read the range of the differential on `E` (see `df`).
+    rw [show LinearMap.range df = ⊤ from hrange, finrank_top, Module.finrank_self, ← hKdef]
+      at hker
+    rw [← hTdef] at hT
     omega
   -- It is transverse to `W^u(q)`: a tangent vector of `W^s(r)` is a vector of the cut plus a
   -- multiple of `X a₂`, which is tangent to `W^u(q)`.
@@ -866,9 +879,9 @@ private theorem IsMorseSmale.exists_isSliceChart_stableSet_inter_level
     refine top_unique ((h.span_mtangentConeAt_sup_eq_top ha₂).symm.le.trans
       (sup_le (le_sup_right) fun v hv ↦ ?_))
     have hv' : v - (df v / df v₀) • v₀ ∈ T ⊓ K := by
-      refine ⟨T.sub_mem hv (T.smul_mem _ hXT), ?_⟩
-      change df (v - (df v / df v₀) • v₀) = 0
-      rw [map_sub, map_smul, smul_eq_mul, div_mul_cancel₀ _ hdf, sub_self]
+      refine Submodule.mem_inf.2 ⟨T.sub_mem hv (T.smul_mem _ hXT), ?_⟩
+      rw [hKdef, LinearMap.mem_ker, map_sub, map_smul, smul_eq_mul, div_mul_cancel₀ _ hdf,
+        sub_self]
     exact Submodule.mem_sup.2 ⟨_, hv', _, U.smul_mem _ hXU, sub_add_cancel _ _⟩
   exact ⟨_, φZ, hφZ, hZ, ha₂φZ, hdim, htr⟩
 

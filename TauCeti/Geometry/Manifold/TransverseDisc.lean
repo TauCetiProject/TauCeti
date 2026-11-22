@@ -133,7 +133,7 @@ theorem exists_param_of_span_mtangentConeAt_sup_eq_top [FiniteDimensional 𝕜 E
     exact Submodule.subset_span hu
   -- `π = P ∘ Ae` kills the tangent space of `s'` and is onto, so by transversality and the
   -- dimension count it is injective on `T`.
-  set π : E →ₗ[𝕜] G := ((P ∘L (Ae : E →L[𝕜] E) : E →L[𝕜] G) : E →ₗ[𝕜] G)
+  set π : E →ₗ[𝕜] G := ((P ∘L (Ae : E →L[𝕜] E) : E →L[𝕜] G) : E →ₗ[𝕜] G) with hπdef
   have hT'π : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s' y) ≤ LinearMap.ker π :=
     Submodule.span_le.2 fun u hu ↦ map_mtangentConeAt_eq_zero hAe hye hys' hs'P hu
   have hsurj : Function.Surjective (π.domRestrict T) :=
@@ -150,7 +150,8 @@ theorem exists_param_of_span_mtangentConeAt_sup_eq_top [FiniteDimensional 𝕜 E
     simpa using congrArg (fun B : E →L[𝕜] E ↦ B (A'.symm z)) hDA
   refine exists_param_of_isSliceChart hn hq hs hy hys he hye hdimL fun z z' hzz' ↦ ?_
   have h := @hinjT ⟨A'.symm z, hA'L z z.property⟩ ⟨A'.symm z', hA'L z' z'.property⟩ (by
-    change P (Ae (A'.symm (z : E))) = P (Ae (A'.symm (z' : E)))
+    simp only [hπdef, LinearMap.domRestrict_apply, ContinuousLinearMap.coe_coe,
+      ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearEquiv.coe_coe]
     rw [← hDF, ← hDF]
     exact hzz')
   exact Subtype.ext (A'.symm.injective (congrArg Subtype.val h))
@@ -226,7 +227,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   -- Linear algebra for `π = P ∘ Ae`: it kills the tangent space of `s'` and is onto, so by
   -- transversality its kernel meets `T` in a line, spanned by `v`. That line meets `ker dg` only
   -- in `0`, so `π` is injective on `F`, and `F` has the dimension of `G`.
-  set π : E →ₗ[𝕜] G := ((P ∘L (Ae : E →L[𝕜] E) : E →L[𝕜] G) : E →ₗ[𝕜] G)
+  set π : E →ₗ[𝕜] G := ((P ∘L (Ae : E →L[𝕜] E) : E →L[𝕜] G) : E →ₗ[𝕜] G) with hπdef
   have hT'π : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s' y) ≤ LinearMap.ker π :=
     Submodule.span_le.2 fun u hu ↦ map_mtangentConeAt_eq_zero hAe hye hys' hs'P hu
   have hπdisj := Submodule.disjoint_inf_ker_ker_of_finrank_eq_succ (π := π) (dg := dg)
@@ -249,7 +250,8 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
       ((injective_iff_map_eq_zero _).2 fun z hz ↦ Subtype.ext (by
         simpa using Submodule.disjoint_def.1 hπdisj _ (hA'F z z.property)
           (LinearMap.mem_ker.2 (by
-            change P (Ae (A'.symm (z : E))) = 0
+            simp only [hπdef, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp,
+              Function.comp_apply, ContinuousLinearEquiv.coe_coe]
             rw [← hDF]
             exact hz))))
   exact ⟨F, ι, ι', hι0, hcont, hmem, hd, hinv,
