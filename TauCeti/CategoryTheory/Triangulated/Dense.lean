@@ -63,7 +63,7 @@ variable {C : Type u} [Category.{v} C] [HasZeroObject C] [HasShift C ℤ] [Pread
 extension-closed subcategory `P` stable under `⟦1⟧`, then `X ⊞ X⟦1⟧` belongs to `P`. -/
 theorem prop_biprod_shift_one_of_retractClosure {X : C} (hX : P.retractClosure X) :
     P (X ⊞ X⟦(1 : ℤ)⟧) := by
-  obtain ⟨A₀, hA₀, ⟨r⟩⟩ := hX
+  obtain ⟨A₀, hA₀, ⟨r⟩⟩ := (P.prop_retractClosure_iff X).1 hX
   obtain ⟨Z, e, -⟩ := Pretriangulated.exists_iso_biprod_of_mono r.i
   have hXZ : P (X ⊞ Z) := P.prop_of_iso e hA₀
   let : PreservesBinaryBiproducts (shiftFunctor C (1 : ℤ)) :=
@@ -97,7 +97,7 @@ variable {C : Type u} [Category.{v} C] [HasZeroObject C] [HasShift C ℤ] [Pread
 /-- **Zero-class criterion**: in a pretriangulated category, an object has zero stable class modulo
 a strictly full triangulated subcategory `A` if and only if it belongs to `A`. -/
 @[simp, grind =]
-theorem mk_eq_zero_iff {A : ObjectProperty C} [A.ContainsZero] [A.IsClosedUnderIsomorphisms]
+theorem mk_eq_zero_iff {A : ObjectProperty C} [A.Nonempty] [A.IsClosedUnderIsomorphisms]
     [A.IsClosedUnderBinaryProducts] [A.IsTriangulatedClosed₁] {X : C} :
     mk A X = 0 ↔ A X := by
   refine ⟨fun h => ?_, mk_eq_zero_of_prop⟩
@@ -129,13 +129,8 @@ theorem mk_distTriang {T : Triangle C} (hT : T ∈ distTriang C)
     simpa only [add_comm] using mk_add_mk_shift_one h₁
   have h₃' : mk A (T.obj₃⟦(1 : ℤ)⟧) + mk A T.obj₃ = 0 := by
     simpa only [add_comm] using mk_add_mk_shift_one h₃
-  calc
-    mk A T.obj₂ = mk A T.obj₂ + 0 + 0 := by simp
-    _ = mk A T.obj₂ + (mk A (T.obj₁⟦(1 : ℤ)⟧) + mk A T.obj₁) +
-          (mk A (T.obj₃⟦(1 : ℤ)⟧) + mk A T.obj₃) := by rw [h₁', h₃']
-    _ = (mk A T.obj₂ + (mk A (T.obj₁⟦(1 : ℤ)⟧) + mk A (T.obj₃⟦(1 : ℤ)⟧))) +
-          (mk A T.obj₁ + mk A T.obj₃) := by ac_rfl
-    _ = mk A T.obj₁ + mk A T.obj₃ := by rw [hmid, zero_add]
+  exact left_neg_eq_right_neg hmid <| by
+    rw [add_add_add_comm, h₁', h₃', zero_add]
 
 variable (A) in
 /-- **Abelian group structure on stable classes modulo a dense triangulated subcategory**

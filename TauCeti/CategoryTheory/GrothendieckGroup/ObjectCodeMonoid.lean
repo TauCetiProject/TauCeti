@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.Presentation
-public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
 /-!

@@ -109,12 +109,6 @@ theorem fromK0_comp_map_ι (A : ObjectProperty C) [A.IsTriangulated] [A.IsClosed
   ext X
   simp [X.property]
 
-private lemma mem_ker_fromK0_of (A : ObjectProperty C) [A.IsTriangulated]
-    [A.IsClosedUnderIsomorphisms] (hdense : A.retractClosure = ⊤) (X : C) :
-    TriangulatedK0.of X ∈ (fromK0 A hdense).ker ↔ A X := by
-  let _ : AddCommGroup (StableClasses A) := addCommGroup A hdense
-  simp only [AddMonoidHom.mem_ker, fromK0_of, mk_eq_zero_iff]
-
 /-- **Kernel of `TauCeti.StableClasses.fromK0`**: an element of `TriangulatedK0 C` has zero stable
 class modulo a strictly full dense triangulated subcategory `A` if and only if it lies in the range
 of `TriangulatedK0.map A.ι`. -/
@@ -125,8 +119,8 @@ theorem ker_fromK0 (A : ObjectProperty C) [A.IsTriangulated] [A.IsClosedUnderIso
   refine le_antisymm (fun x hx => ?_)
     ((AddMonoidHom.range_le_ker_iff _ _).2 (fromK0_comp_map_ι A hdense))
   obtain ⟨X, rfl⟩ := TriangulatedK0.of_surjective x
-  rw [mem_ker_fromK0_of] at hx
-  exact ⟨TriangulatedK0.of ⟨X, hx⟩, TriangulatedK0.map_of A.ι ⟨X, hx⟩⟩
+  have hX : A X := by simpa only [AddMonoidHom.mem_ker, fromK0_of, mk_eq_zero_iff] using hx
+  exact ⟨TriangulatedK0.of ⟨X, hX⟩, TriangulatedK0.map_of A.ι ⟨X, hX⟩⟩
 
 /-- **Quotient identification of stable classes** (Thomason 1997, Lemma 2.2): for a strictly full
 dense triangulated subcategory `A` of `C`, the group of stable classes `TauCeti.StableClasses A` is
@@ -172,7 +166,8 @@ object belongs to a strictly full dense triangulated subcategory `A` if and only
 theorem membership_iff (A : ObjectProperty C) [A.IsTriangulated] [A.IsClosedUnderIsomorphisms]
     [EssentiallySmall.{w'} A.FullSubcategory] (hdense : A.retractClosure = ⊤) (X : C) :
     A X ↔ TriangulatedK0.of X ∈ (TriangulatedK0.map A.ι).range := by
-  rw [← StableClasses.ker_fromK0 A hdense, StableClasses.mem_ker_fromK0_of]
+  rw [← StableClasses.ker_fromK0 A hdense]
+  simp only [AddMonoidHom.mem_ker, StableClasses.fromK0_of, StableClasses.mk_eq_zero_iff]
 
 /-- The object property of objects of `C` whose class in `TriangulatedK0 C` lies in a subgroup
 `H`. -/
@@ -188,17 +183,16 @@ theorem ofSubgroup_apply (H : AddSubgroup (TriangulatedK0 C)) (X : C) :
 instance (H : AddSubgroup (TriangulatedK0 C)) : (ofSubgroup H).IsClosedUnderIsomorphisms where
   of_iso e hX := by
     rw [ofSubgroup_apply, ← TriangulatedK0.of_congr e]
-    exact hX
+    exact (ofSubgroup_apply H _).1 hX
 
 instance (H : AddSubgroup (TriangulatedK0 C)) : (ofSubgroup H).IsTriangulated where
   exists_zero := ⟨0, isZero_zero C, by simp⟩
   isStableUnderShiftBy n := ⟨fun X hX => by
-    dsimp only [ObjectProperty.shift]
-    rw [ofSubgroup_apply, TriangulatedK0.of_shift]
-    exact H.zsmul_mem hX _⟩
+    rw [ObjectProperty.prop_shift_iff, ofSubgroup_apply, TriangulatedK0.of_shift]
+    exact H.zsmul_mem ((ofSubgroup_apply H X).1 hX) _⟩
   ext₂' T hT h₁ h₃ := (ofSubgroup H).le_isoClosure _ (by
     rw [ofSubgroup_apply, TriangulatedK0.of_distTriang hT]
-    exact H.add_mem h₁ h₃)
+    exact H.add_mem ((ofSubgroup_apply H _).1 h₁) ((ofSubgroup_apply H _).1 h₃))
 
 /-- Every subcategory `TauCeti.DenseClasses.ofSubgroup H` is dense in `C`: each object `X` is a
 retract of `X ⊞ X⟦1⟧`, whose `K₀`-class vanishes. -/
@@ -206,10 +200,9 @@ retract of `X ⊞ X⟦1⟧`, whose `K₀`-class vanishes. -/
 theorem retractClosure_ofSubgroup (H : AddSubgroup (TriangulatedK0 C)) :
     (ofSubgroup H).retractClosure = ⊤ :=
   eq_top_iff.2 fun X _ =>
-    ⟨X ⊞ X⟦(1 : ℤ)⟧, by
+    ObjectProperty.prop_retractClosure (by
       rw [ofSubgroup_apply, TriangulatedK0.of_biprod, TriangulatedK0.of_shift_one, add_neg_cancel]
-      exact H.zero_mem,
-      ⟨(BinaryBiproduct.bicone X _).retract_left⟩⟩
+      exact H.zero_mem) (BinaryBiproduct.bicone X _).retract_left
 
 /-- The image of `K₀` of `TauCeti.DenseClasses.ofSubgroup H` in `TriangulatedK0 C` recovers `H`. -/
 @[simp]
@@ -219,7 +212,8 @@ theorem range_map_ι_ofSubgroup (H : AddSubgroup (TriangulatedK0 C))
   ext x
   obtain ⟨X, rfl⟩ := TriangulatedK0.of_surjective x
   rw [TriangulatedK0.mem_range_map_ι_iff]
-  exact ⟨fun ⟨_, hY, hXY⟩ => hXY ▸ hY, fun hX => ⟨X, hX, rfl⟩⟩
+  exact ⟨fun ⟨_, hY, hXY⟩ => hXY ▸ (ofSubgroup_apply H _).1 hY,
+    fun hX => ⟨X, (ofSubgroup_apply H X).2 hX, rfl⟩⟩
 
 /-- Recovering a strictly full dense triangulated subcategory from the range of its `K₀`-inclusion.
 -/
@@ -229,7 +223,7 @@ theorem ofSubgroup_range_map_ι (A : ObjectProperty C) [A.IsTriangulated]
     (hdense : A.retractClosure = ⊤) :
     ofSubgroup (TriangulatedK0.map A.ι).range = A := by
   ext X
-  exact (membership_iff A hdense X).symm
+  exact (ofSubgroup_apply _ X).trans (membership_iff A hdense X).symm
 
 /-- **Thomason's classification of dense triangulated subcategories** (Thomason 1997, Theorem 2.1):
 every subgroup `H` of `TriangulatedK0 C` determines a unique strictly full dense triangulated
@@ -242,7 +236,7 @@ theorem classification (H : AddSubgroup (TriangulatedK0 C)) :
     ofSubgroup_apply H⟩, ?_⟩
   rintro A ⟨_, _, _, hA⟩
   ext X
-  exact hA X
+  exact (hA X).trans (ofSubgroup_apply H X).symm
 
 /-- **Thomason's classification as an order isomorphism** (Thomason 1997, Theorem 2.1): strictly
 full dense triangulated subcategories of `C`, ordered by inclusion, correspond order-isomorphically
@@ -303,7 +297,8 @@ theorem map_injective (A : ObjectProperty C) [A.IsTriangulated]
     ObjectProperty.retractClosure_map_ι hdense (retractClosure_ofSubgroup ⊥)
   have hmk0 : StableClasses.mk B X = 0 := by
     rw [← StableClasses.fromK0_of B hBdense X, ha, map_zero]
-  obtain ⟨Y, hY, ⟨e⟩⟩ := (StableClasses.mk_eq_zero_iff (A := B)).1 hmk0
+  obtain ⟨Y, hY, ⟨e⟩⟩ := (ObjectProperty.prop_map_iff Q A.ι X).1
+    ((StableClasses.mk_eq_zero_iff (A := B)).1 hmk0)
   have hY₀ : TriangulatedK0.of Y = 0 := by
     simpa only [Q, ofSubgroup_apply, AddSubgroup.mem_bot] using hY
   exact (TriangulatedK0.of_congr (A.isoMk e)).symm.trans hY₀

@@ -13,9 +13,9 @@ import Mathlib.CategoryTheory.Adjunction.Limits
 /-!
 # Stable equivalence and stable object classes modulo an object property
 
-For an object property `A` containing a zero object and closed under binary products in a category
-`C` with zero morphisms and binary biproducts, two objects `X` and `Y` are stably equivalent modulo
-`A` (`TauCeti.StableEquiv A X Y`) when `X ⊞ A₁ ≅ Y ⊞ A₂` for some `A₁, A₂` satisfying `A`.
+For a nonempty object property `A` closed under binary products in a category `C` with zero
+morphisms and binary biproducts, two objects `X` and `Y` are stably equivalent modulo `A`
+(`TauCeti.StableEquiv A X Y`) when `X ⊞ A₁ ≅ Y ⊞ A₂` for some `A₁, A₂` satisfying `A`.
 
 The quotient `TauCeti.StableClasses A` is a commutative monoid under binary biproducts, with
 universal property `TauCeti.StableClasses.lift` characterizing additive homomorphisms out of
@@ -203,7 +203,7 @@ end StableClasses
 
 section AddCommMonoid
 
-variable [HasZeroObject C] (A : ObjectProperty C) [A.ContainsZero]
+variable [HasZeroObject C] (A : ObjectProperty C) [A.Nonempty]
   [A.IsClosedUnderBinaryProducts]
 
 namespace StableClasses
@@ -231,9 +231,9 @@ theorem mk_eq_zero_of_isZero {X : C} (hX : IsZero X) : mk A X = 0 := by
 
 /-- Every object satisfying `A` has zero stable class modulo `A`. -/
 theorem mk_eq_zero_of_prop {X : C} (hX : A X) : mk A X = 0 := by
-  obtain ⟨Z, _, hAZ⟩ := A.exists_prop_of_containsZero
   rw [← mk_zero, mk_eq_iff]
-  exact ⟨Z, X ⊞ Z, hAZ, A.prop_biprod_of_isClosedUnderBinaryProducts hX hAZ,
+  exact ⟨A.arbitrary, X ⊞ A.arbitrary, A.prop_arbitrary,
+    A.prop_biprod_of_isClosedUnderBinaryProducts hX A.prop_arbitrary,
     ⟨isoZeroBiprod (isZero_zero C)⟩⟩
 
 /-- Two additive homomorphisms out of `TauCeti.StableClasses A` agreeing on object classes are
@@ -257,8 +257,8 @@ def lift {G : Type*} [AddMonoid G] (f : C → G)
     simpa only [hbiprod, hA h₁, hA h₂, add_zero] using hiso e
   map_zero' := by
     rw [← mk_zero, liftOn_mk]
-    obtain ⟨Z, hZ, hAZ⟩ := A.exists_prop_of_containsZero
-    exact (hiso ((isZero_zero C).iso hZ)).trans (hA hAZ)
+    simpa only [hbiprod, hA A.prop_arbitrary, add_zero] using
+      (hiso (isoZeroBiprod (isZero_zero C) : A.arbitrary ≅ 0 ⊞ A.arbitrary)).symm
   map_add' x y := by
     induction x using induction_on with | h X =>
     induction y using induction_on with | h Y =>

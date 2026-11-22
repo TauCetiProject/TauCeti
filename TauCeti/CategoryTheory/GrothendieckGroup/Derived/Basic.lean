@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
-public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated.Basic
 public import TauCeti.Algebra.Homology.DerivedCategory.Bounded.Basic
 public import TauCeti.Algebra.Homology.DerivedCategory.Bounded.Localization
 public import TauCeti.CategoryTheory.GrothendieckGroup.BoundedHomotopy.Basic

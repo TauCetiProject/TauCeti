@@ -79,9 +79,9 @@ theorem retractClosure_map_ι {C : Type*} [Category* C] {A : ObjectProperty C}
     (hQ : Q.retractClosure = ⊤) :
     (Q.map A.ι).retractClosure = ⊤ := by
   refine eq_top_iff.2 fun X _ => ?_
-  obtain ⟨W, hW, ⟨r₁⟩⟩ := hdense.ge X trivial
-  obtain ⟨Z, hZ, ⟨r₂⟩⟩ := hQ.ge ⟨W, hW⟩ trivial
-  exact ⟨A.ι.obj Z, Q.prop_map_obj A.ι hZ, ⟨r₁.trans (r₂.map A.ι)⟩⟩
+  obtain ⟨W, hW, ⟨r₁⟩⟩ := (prop_retractClosure_iff A X).1 (hdense.ge X trivial)
+  obtain ⟨Z, hZ, ⟨r₂⟩⟩ := (prop_retractClosure_iff Q ⟨W, hW⟩).1 (hQ.ge ⟨W, hW⟩ trivial)
+  exact prop_retractClosure (Q.prop_map_obj A.ι hZ) (r₁.trans (r₂.map A.ι))
 
 end CategoryTheory.ObjectProperty
 
