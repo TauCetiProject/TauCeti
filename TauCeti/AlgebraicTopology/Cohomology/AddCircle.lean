@@ -73,8 +73,10 @@ cohomology.
 * `TopCat.singularCohomologyAddCircleProdSlantEquiv_symm_mk_zero`,
   `TopCat.singularCohomologyAddCircleProdSlantEquiv_symm_zero_singularCohomologyZeroOne`: the
   classes `pr₂^* b` and, in degree one, `pr₁^* θ_p` in the decomposition.
-* `TopCat.singularCohomologyAddCircleProdBasis`: for a path-connected `Y`, a basis of `H¹(Y; ℤ)`
-  together with `pr₁^* θ_p` gives a basis of `H¹((ℝ / pℤ) × Y; ℤ)`.
+* `TopCat.singularCohomologyAddCircleProdBasis`: bases of `Hⁿ⁺¹(Y; M)` and `Hⁿ(Y; M)` give a basis
+  `(pr₂^* b, pr₁^* θ_p ⌣ pr₂^* c)` of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)`.
+* `TopCat.singularCohomologyOneAddCircleProdBasis`: for a path-connected `Y`, a basis of
+  `H¹(Y; ℤ)` together with `pr₁^* θ_p` gives a basis of `H¹((ℝ / pℤ) × Y; ℤ)`.
 * `TopCat.mem_range_singularCohomologyMap_snd_addCircle_iff`: the classes pulled back from `Y`.
 * `TopCat.mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective`: classes of degree
   two pulled back after an injective change of coefficients are pulled back.
@@ -296,53 +298,95 @@ section Basis
 -- `Prod.instModule`, the structure of the product basis `Module.Basis.prod`.
 attribute [local instance 1100] Prod.instModule
 
+/-- **A basis of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)`.** For bases `b` of `Hⁿ⁺¹(Y; M)` and `c` of `Hⁿ(Y; M)`,
+the pullbacks `pr₂^* (b i)` and the products `pr₁^* θ_p ⌣ pr₂^* (c j)` with the angular class
+`θ_p` form a basis of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)`, indexed by `ι ⊕ κ`. It is the basis `(b, c)` of
+`Hⁿ⁺¹(Y; M) × Hⁿ(Y; M)` transported along the decomposition
+`TopCat.singularCohomologyAddCircleProdSlantEquiv`. -/
+def singularCohomologyAddCircleProdBasis (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n)) :
+    Module.Basis (ι ⊕ κ) ℤ
+      ((TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :=
+  (b.prod c).map (singularCohomologyAddCircleProdSlantEquiv M Y s₀ n).symm.toIntLinearEquiv
+
+/-- The vector of `TopCat.singularCohomologyAddCircleProdBasis` at `Sum.inl i` is the pullback
+`pr₂^* (b i)`. -/
+@[simp]
+lemma singularCohomologyAddCircleProdBasis_inl (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n)) (i : ι) :
+    singularCohomologyAddCircleProdBasis M Y s₀ n b c (Sum.inl i) =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + 1) (b i) := by
+  simp only [singularCohomologyAddCircleProdBasis, Module.Basis.map_apply,
+    Module.Basis.prod_apply, LinearMap.coe_inl, Sum.elim_inl, AddEquiv.coe_toIntLinearEquiv]
+  exact singularCohomologyAddCircleProdSlantEquiv_symm_mk_zero M Y s₀ n (b i)
+
+/-- The vector of `TopCat.singularCohomologyAddCircleProdBasis` at `Sum.inr j` is the product
+`pr₁^* θ_p ⌣ pr₂^* (c j)`. -/
+@[simp]
+lemma singularCohomologyAddCircleProdBasis_inr (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n)) (j : κ) :
+    singularCohomologyAddCircleProdBasis M Y s₀ n b c (Sum.inr j) =
+      (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ M).hom
+        1 n (n + 1) (add_comm 1 n)
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+          (AddCircle.angularClass p))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n (c j)) := by
+  simp only [singularCohomologyAddCircleProdBasis, Module.Basis.map_apply,
+    Module.Basis.prod_apply, LinearMap.coe_inr, Sum.elim_inr, Function.comp_apply,
+    AddEquiv.coe_toIntLinearEquiv, singularCohomologyAddCircleProdSlantEquiv_symm_apply, map_zero,
+    zero_add]
+
 /-- **A basis of `H¹((ℝ / pℤ) × Y; ℤ)`.** For a path-connected `Y` and a basis `b` of `H¹(Y; ℤ)`,
 the pullbacks `pr₂^* (b i)` and the angular class `pr₁^* θ_p` of the circle factor form a basis of
-`H¹((ℝ / pℤ) × Y; ℤ)`, indexed by `Option ι`, with `pr₁^* θ_p` at `none`. It is the basis
-`(b, 1)` of `H¹(Y; ℤ) × H⁰(Y; ℤ)` transported along the decomposition
-`TopCat.singularCohomologyAddCircleProdSlantEquiv`. -/
-def singularCohomologyAddCircleProdBasis [PathConnectedSpace Y] {ι : Type*}
+`H¹((ℝ / pℤ) × Y; ℤ)`, indexed by `Option ι`, with `pr₁^* θ_p` at `none`. It is the case `n = 0`
+of `TopCat.singularCohomologyAddCircleProdBasis`, for the basis `1` of `H⁰(Y; ℤ) ≅ ℤ`. -/
+def singularCohomologyOneAddCircleProdBasis [PathConnectedSpace Y] {ι : Type*}
     (b : Module.Basis ι ℤ
       (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1)) :
     Module.Basis (Option ι) ℤ
       ((TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
         (𝟙_ (ModuleCat.{0} ℤ)) 1) :=
-  .reindex ((b.prod ((Module.Basis.singleton Unit ℤ).map
-      (singularCohomologyZeroEvalEquiv (Classical.arbitrary Y)).symm)).map
-    (singularCohomologyAddCircleProdSlantEquiv _ Y (0 : AddCircle p) 0).symm.toIntLinearEquiv)
+  (singularCohomologyAddCircleProdBasis _ Y (0 : AddCircle p) 0 b
+      ((Module.Basis.singleton Unit ℤ).map
+        (singularCohomologyZeroEvalEquiv (Classical.arbitrary Y)).symm)).reindex
     (Equiv.optionEquivSumPUnit.{0} ι).symm
 
-/-- The vector of `TopCat.singularCohomologyAddCircleProdBasis` at `none` is the angular class
+/-- The vector of `TopCat.singularCohomologyOneAddCircleProdBasis` at `none` is the angular class
 `pr₁^* θ_p` of the circle factor. -/
 @[simp]
-lemma singularCohomologyAddCircleProdBasis_none [PathConnectedSpace Y] {ι : Type*}
+lemma singularCohomologyOneAddCircleProdBasis_none [PathConnectedSpace Y] {ι : Type*}
     (b : Module.Basis ι ℤ
       (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1)) :
-    singularCohomologyAddCircleProdBasis (p := p) Y b none =
+    singularCohomologyOneAddCircleProdBasis (p := p) Y b none =
       TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
         (AddCircle.angularClass p) := by
-  simp only [singularCohomologyAddCircleProdBasis, Module.Basis.coe_reindex, Equiv.symm_symm,
-    Function.comp_apply, Equiv.optionEquivSumPUnit_none, Module.Basis.map_apply,
-    Module.Basis.prod_apply, LinearMap.coe_inr, Sum.elim_inr, Module.Basis.singleton_apply,
-    AddEquiv.coe_toIntLinearEquiv]
-  rw [← singularCohomologyAddCircleProdSlantEquiv_symm_zero_singularCohomologyZeroOne Y
-    (0 : AddCircle p), (singularCohomologyZeroEvalEquiv _).symm_apply_eq.2
-    ((singularCohomologyZeroEvalEquiv_apply _ _).trans
-      (singularCohomologyZeroEval_singularCohomologyZeroOne (k := ℤ) _)).symm]
+  -- The basis vector `1` of `ℤ` is sent to the unit class. (The scalar action in
+  -- `singularCohomologyZeroEvalEquiv_symm_apply` is not reducibly the instance `one_smul` finds.)
+  have h₁ : (singularCohomologyZeroEvalEquiv (Classical.arbitrary Y)).symm (1 : ℤ) =
+      Y.singularCohomologyZeroOne := by
+    rw [LinearEquiv.symm_apply_eq, singularCohomologyZeroEvalEquiv_apply,
+      singularCohomologyZeroEval_singularCohomologyZeroOne]
+  simp only [singularCohomologyOneAddCircleProdBasis, singularCohomologyAddCircleProdBasis,
+    Module.Basis.coe_reindex, Equiv.symm_symm, Function.comp_apply,
+    Equiv.optionEquivSumPUnit_none, Module.Basis.map_apply, Module.Basis.prod_apply,
+    LinearMap.coe_inr, Sum.elim_inr, Module.Basis.singleton_apply, AddEquiv.coe_toIntLinearEquiv,
+    h₁]
+  exact singularCohomologyAddCircleProdSlantEquiv_symm_zero_singularCohomologyZeroOne Y
+    (0 : AddCircle p)
 
-/-- The vector of `TopCat.singularCohomologyAddCircleProdBasis` at `some i` is the pullback
+/-- The vector of `TopCat.singularCohomologyOneAddCircleProdBasis` at `some i` is the pullback
 `pr₂^* (b i)`. -/
 @[simp]
-lemma singularCohomologyAddCircleProdBasis_some [PathConnectedSpace Y] {ι : Type*}
+lemma singularCohomologyOneAddCircleProdBasis_some [PathConnectedSpace Y] {ι : Type*}
     (b : Module.Basis ι ℤ
       (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1))
     (i : ι) :
-    singularCohomologyAddCircleProdBasis (p := p) Y b (some i) =
+    singularCohomologyOneAddCircleProdBasis (p := p) Y b (some i) =
       TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 (b i) := by
-  simp only [singularCohomologyAddCircleProdBasis, Module.Basis.coe_reindex, Equiv.symm_symm,
-    Function.comp_apply, Equiv.optionEquivSumPUnit_some, Module.Basis.map_apply,
-    Module.Basis.prod_apply, LinearMap.coe_inl, Sum.elim_inl, AddEquiv.coe_toIntLinearEquiv]
-  exact singularCohomologyAddCircleProdSlantEquiv_symm_mk_zero _ Y (0 : AddCircle p) 0 (b i)
+  simp [singularCohomologyOneAddCircleProdBasis]
 
 end Basis
 

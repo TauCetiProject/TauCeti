@@ -292,6 +292,7 @@ theorem singularCohomologyMap_map_baseClass {G : Type} [TopologicalSpace G] (ψ 
 
 /-- **The periods of the base class**: `⟨[dt], h⟩` is the winding number of the projection of `h`
 to the base circle `ℝ/ℤ`. -/
+@[simp]
 theorem singularKronecker_baseClass
     (c : ((singularChains ℤ).obj (TopCat.of (MappingTorus φ))).homology 1) :
     (TopCat.of (MappingTorus φ)).singularKronecker ℤ 1 (baseClass φ) c =

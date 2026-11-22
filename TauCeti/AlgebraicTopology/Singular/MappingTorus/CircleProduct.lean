@@ -63,8 +63,8 @@ For the generator `a` one may take the base class `[dt] = proj^* θ_1` of the ma
 **The first cohomology.** For a path-connected `Y`, the same slant decomposition in degree one,
 `H¹((ℝ / pℤ) × Y; ℤ) ≃ H¹(Y; ℤ) × H⁰(Y; ℤ)`, together with `H⁰(Y; ℤ) ≅ ℤ`
 (`TauCeti.singularCohomologyZeroEvalEquiv`), extends a basis of `H¹(Y; ℤ)` by `pr₁^* θ_p` to a basis
-of `H¹((ℝ / pℤ) × Y; ℤ)` (`TopCat.singularCohomologyAddCircleProdBasis`). Since `H¹(Y_φ; ℤ)` has
-the basis `[dt]` (`TauCeti.MappingTorus.basisBaseClass`), the angular class `pr₁^* θ_p` of the
+of `H¹((ℝ / pℤ) × Y; ℤ)` (`TopCat.singularCohomologyOneAddCircleProdBasis`). Since `H¹(Y_φ; ℤ)`
+has the basis `[dt]` (`TauCeti.MappingTorus.basisBaseClass`), the angular class `pr₁^* θ_p` of the
 circle factor and the base class `pr₂^* [dt]` form a basis of `H¹((ℝ / pℤ) × Y_φ; ℤ)`
 (`TauCeti.MappingTorus.basisAddCircleProd`). This only needs a path-connected fibre with
 `H₁(F; ℤ)` free of finite rank and `det (1 - φ_*) ≠ 0`. For `p = 1` the basis is `([ds], [dt])`,
@@ -121,7 +121,7 @@ variable [PathConnectedSpace F]
 /-- **The basis `([ds], [dt])` of `H¹((ℝ / pℤ) × Y_φ; ℤ)`.** If `F` is path-connected, `H₁(F; ℤ)`
 is free of finite rank and `det (1 - φ_*) ≠ 0` on it, the angular class `pr₁^* θ_p` of the circle
 factor and the base class `pr₂^* [dt]` of the mapping torus form a basis, in this order: the basis
-`TopCat.singularCohomologyAddCircleProdBasis` built from the basis `[dt]` of `H¹(Y_φ; ℤ)`
+`TopCat.singularCohomologyOneAddCircleProdBasis` built from the basis `[dt]` of `H¹(Y_φ; ℤ)`
 (`TauCeti.MappingTorus.basisBaseClass`). For `p = 1` these are the classes `[ds]` and `[dt]` of the
 symplectic suspension `(ℝ / ℤ)_s × Y_φ`. The basis lives in the cohomology computed from chains
 with coefficients in `ℤ`. It is meant to supply the basis `(aₛ, aₜ)` of
@@ -133,7 +133,9 @@ def basisAddCircleProd
     Module.Basis (Fin 2) ℤ
       ((TopCat.of (AddCircle p) ⊗ TopCat.of (MappingTorus φ)).singularCohomology
         (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) :=
-  (TopCat.singularCohomologyAddCircleProdBasis _ (basisBaseClass φ hdet)).reindex
+  -- `basisBaseClass` is a basis of the cohomology with coefficients `ModuleCat.of ℤ ℤ`, used here
+  -- for the coefficients `𝟙_ (ModuleCat ℤ)`: the two objects agree by definition.
+  (TopCat.singularCohomologyOneAddCircleProdBasis _ (basisBaseClass φ hdet)).reindex
     (finSuccEquiv 1).symm
 
 /-- The first vector of `basisAddCircleProd` is the angular class `[ds] = pr₁^* θ_p`. -/
@@ -153,8 +155,12 @@ lemma basisAddCircleProd_one
     basisAddCircleProd φ p hdet 1 = TopCat.singularCohomologyMap (M := 𝟙_ (ModuleCat.{0} ℤ))
       (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) (TopCat.of (MappingTorus φ))) 1
       (baseClass φ) := by
-  rw [basisAddCircleProd, Module.Basis.reindex_apply, Equiv.symm_symm, ← Fin.succ_zero_eq_one,
-    finSuccEquiv_succ, TopCat.singularCohomologyAddCircleProdBasis_some, basisBaseClass_apply]
+  simp only [basisAddCircleProd, Module.Basis.reindex_apply, Equiv.symm_symm,
+    show finSuccEquiv 1 1 = some 0 from rfl, TopCat.singularCohomologyOneAddCircleProdBasis_some]
+  -- `baseClass` has coefficients `ModuleCat.of ℤ ℤ`, read here as `𝟙_ (ModuleCat ℤ)`: the two
+  -- objects agree by definition but not syntactically, so `simp` cannot use
+  -- `basisBaseClass_apply`.
+  exact congrArg _ (basisBaseClass_apply φ hdet 0)
 
 end FirstCohomology
 
