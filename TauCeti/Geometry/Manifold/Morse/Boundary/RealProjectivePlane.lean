@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Diffeomorph
 public import TauCeti.Geometry.Manifold.Morse.Boundary.IndexOne
+public import TauCeti.Geometry.Manifold.Morse.Boundary.UniqueExtremum
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Projectivization
 public import TauCeti.Geometry.Manifold.Projectivization.Signs
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
@@ -191,9 +192,6 @@ theorem signedTrajectoryCount_projectiveMomentFunction_real_eq_zero_of_manifoldM
     (hφq : ∀ y ∈ φq.toChart.source,
       φq.coord (mfderiv 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ, Fin 2 → ℝ) φq.toChart y (X y)) =
         fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
-    (hφm : ∀ y ∈ φm.toChart.source,
-      φm.coord (mfderiv 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ, Fin 2 → ℝ) φm.toChart y (X y)) =
-        fun i ↦ -(φm.weight i * φm.coord (φm.toChart y) i))
     (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ)
       (Fin (manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) q)))
     (om : Orientation ℝ ({i // φm.weight i < 0} → ℝ)
@@ -201,13 +199,14 @@ theorem signedTrajectoryCount_projectiveMomentFunction_real_eq_zero_of_manifoldM
     (hm0 : manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) m = 0)
     (hqm : manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) q =
       manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) m + 1) :
-    hX.signedTrajectoryCount φq φm oq om hqm = 0 :=
-  hX.signedTrajectoryCount_eq_zero_of_exists_trajectorySign
-    (hX.ncard_morseTrajectorySlice_projectiveMomentFunction_real hw
-      ((φq.mfderiv_eq_zero_iff φq.mem_source).2 rfl)
-      ((φm.mfderiv_eq_zero_iff φm.mem_source).2 rfl) hqm)
-    (hX.exists_trajectorySign_projectiveMomentFunction_real_eq_one_and_eq_neg_one_of_index_zero
-      hw hφq hφm oq om hm0 hqm)
+    hX.signedTrajectoryCount φq φm oq om hqm = 0 := by
+  have hmcrit := (φm.mfderiv_eq_zero_iff φm.mem_source).2 rfl
+  exact hX.signedTrajectoryCount_eq_zero_of_mem_stableSet (φ := φq) (φq := φm) (op := oq)
+    (oq := om) (hpq := hqm) hφq (isMorse_projectiveMomentFunction (𝕜 := ℝ) hw) (by omega)
+    fun _ ↦ (hX.isMorseSmale_projectiveMomentFunction_real hw).mem_stableSet_of_unique_index_zero
+      (isMorse_projectiveMomentFunction (𝕜 := ℝ) hw) (by omega) fun y hy hy0 ↦
+      subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0
+        ⟨hy, hy0⟩ ⟨hmcrit, hm0⟩
 
 namespace IsMorseSmale
 

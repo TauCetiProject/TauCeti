@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
 public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedAugmentation
-public import TauCeti.Geometry.Manifold.Morse.Boundary.UniqueExtremum
 import TauCeti.Geometry.Manifold.Morse.Stable.OneDimensional
 
 /-!
@@ -61,6 +60,8 @@ the orientability of `M` along them, which the local argument here does not see.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
+* `trajectorySign_eq_neg_of_mem_stableSet`: two different trajectories from a critical point of
+  index `1` to the same critical point of index `0` carry opposite signs.
 * `signedTrajectoryCount_eq_zero_of_mem_stableSet`: if both trajectories leaving a critical point
   of index `1` end at `q`, the signed count of the trajectories to `q` is zero.
 * `IsMorseSmale.signedMorseBoundary_single_eq_zero_of_unique_index_zero`: with a unique critical
@@ -174,7 +175,7 @@ include hφ
 `q` of index `0` carry opposite signs, for every choice of the orientations at `p` and `q`: this is
 `TauCeti.IsAdaptedPseudoGradient.trajectorySign_eq_neg_of_notMem_orbit` when `oq` is the positive
 orientation of the zero space at `q`, and both signs change when `oq` is reversed. -/
-private theorem trajectorySign_eq_neg_of_mem_stableSet (hf : IsMorse 𝓘(ℝ, E) f)
+theorem trajectorySign_eq_neg_of_mem_stableSet (hf : IsMorse 𝓘(ℝ, E) f)
     (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = 1) {y₁ y₂ : M}
     (hy₁ : y₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
     (hy₂ : y₂ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) (h : y₂ ∉ hX.flow.orbit y₁) :

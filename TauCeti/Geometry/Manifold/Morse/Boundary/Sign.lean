@@ -90,8 +90,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 ## Main results
 
-* `bijective_trajectoryComparison`: the comparison map is an isomorphism at the points of
-  trajectories between critical points of consecutive index.
+* `bijective_trajectoryComparison`, `bijective_stableComparison`: the comparison map and the
+  stable comparison map `v ↦ (df_y v, Nq v)` are isomorphisms at the points of trajectories
+  between critical points of consecutive index (and top source index).
 * `trajectorySign_eq_one_or_eq_neg_one`: so the sign of such a trajectory is `±1`.
 * `exists_trajectorySign_eq_and_map_eq`, `trajectorySign_eq_of_map_eq`: where the comparison map
   is an isomorphism, the sign is the unit by which it scales the target orientation; the second
@@ -327,10 +328,9 @@ theorem trajectorySign_neg_left (y : M) :
     hX.trajectorySign φp φq (-op) oq hpq y = -hX.trajectorySign φp φq op oq hpq y := by
   by_cases h : Bijective (hX.trajectoryComparison φp φq y)
   · rw [trajectorySign_of_bijective h, trajectorySign_of_bijective h, Orientation.map_neg]
-    generalize Orientation.map _ (LinearEquiv.ofBijective _ h) op = o
-    rcases φq.eq_or_eq_neg_trajectoryTargetOrientation (oq := oq) (hpq := hpq) o with rfl | rfl
-    · simp [(Module.Ray.ne_neg_self _).symm]
-    · simp [(Module.Ray.ne_neg_self _).symm, Module.Ray.neg_neg]
+    exact Orientation.ite_neg_eq_eq_neg_ite (by
+      rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self,
+        φq.finrank_negativeWeight_fun]; omega)
   · rw [trajectorySign_of_not_bijective h, trajectorySign_of_not_bijective h, neg_zero]
 
 /-- **Reversing the orientation at the target reverses the sign.** -/
@@ -340,10 +340,9 @@ theorem trajectorySign_neg_right (y : M) :
   by_cases h : Bijective (hX.trajectoryComparison φp φq y)
   · rw [trajectorySign_of_bijective h, trajectorySign_of_bijective h,
       MorseChart.trajectoryTargetOrientation_neg]
-    generalize Orientation.map _ (LinearEquiv.ofBijective _ h) op = o
-    rcases φq.eq_or_eq_neg_trajectoryTargetOrientation (oq := oq) (hpq := hpq) o with rfl | rfl
-    · simp [Module.Ray.ne_neg_self]
-    · simp [(Module.Ray.ne_neg_self _).symm]
+    exact Orientation.ite_eq_neg_eq_neg_ite (by
+      rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self,
+        φq.finrank_negativeWeight_fun]; omega)
   · rw [trajectorySign_of_not_bijective h, trajectorySign_of_not_bijective h, neg_zero]
 
 /-- **Measuring signs against a basis at the target.** The sign of a trajectory for the
@@ -379,10 +378,9 @@ theorem trajectorySign_eq_neg_of_map_eq_neg {y₁ y₂ : M}
         (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y₁).toLinearMap hC₁) op) :
     hX.trajectorySign φp φq op oq hpq y₂ = -hX.trajectorySign φp φq op oq hpq y₁ := by
   rw [trajectorySign_of_bijective hC₁, trajectorySign_of_bijective hC₂, hneg]
-  generalize Orientation.map _ (LinearEquiv.ofBijective _ hC₁) op = o
-  rcases φq.eq_or_eq_neg_trajectoryTargetOrientation (oq := oq) (hpq := hpq) o with rfl | rfl
-  · simp [(Module.Ray.ne_neg_self _).symm]
-  · simp [(Module.Ray.ne_neg_self _).symm, Module.Ray.neg_neg]
+  exact Orientation.ite_neg_eq_eq_neg_ite (by
+    rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self,
+      φq.finrank_negativeWeight_fun]; omega)
 
 /-- If the trajectory slice from `p` to `q` has two points carrying signs `+1` and `-1`, then the
 signed trajectory count vanishes. -/
@@ -472,6 +470,21 @@ theorem bijective_trajectoryComparison (hMS : hX.IsMorseSmale) (hf : IsMorse �
   rw [Module.finrank_prod, Module.finrank_self, φp.finrank_negativeWeight_fun,
     φq.finrank_negativeWeight_fun]
   omega
+
+/-- **The stable comparison map along a trajectory from a critical point of top index.** At a
+point `z` of a trajectory from a critical point `p` of index `n` to a critical point `q` of index
+`n - 1`, the map `v ↦ (df_z v, N_q v)` is an isomorphism: it is the comparison map after the
+inverse of the unstable frame of `p`. -/
+theorem bijective_stableComparison (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+    (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = Module.finrank ℝ E)
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) {z : M}
+    (hz : z ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
+    Bijective ((mvfderiv 𝓘(ℝ, E) f z).prod (hX.stableNormal φq z)) := by
+  obtain ⟨S, hS⟩ := (hX.eventually_mem_linearBackwardTimes hφp hf hz.1).exists
+  refine (Bijective.of_comp_iff _ (bijective_unstableFrame hφp hp hS)).1 ?_
+  convert bijective_trajectoryComparison hφp hφq hMS hf hpq hz using 1
+  funext c
+  rw [comp_apply, trajectoryComparison_apply, ContinuousLinearMap.prod_apply]
 
 /-- **The sign of a trajectory between critical points of consecutive index is `±1`.** -/
 theorem trajectorySign_eq_one_or_eq_neg_one (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
@@ -689,14 +702,13 @@ theorem unstableFrameEquiv_symm_trans_trajectoryComparison_apply
     (((hX.unstableFrameEquiv hφp hf hp hz).trans D.toLinearEquiv).symm.trans
       (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq z).toLinearMap hC)) w =
     (mvfderiv 𝓘(ℝ, E) f z (D.symm w), φq.negativeCoord w) := by
-  have hcomp : φq.toChart ∘ hX.flow 0 = φq.toChart := funext fun _ ↦ by simp
   set v := ((hX.unstableFrameEquiv hφp hf hp hz).trans D.toLinearEquiv).symm w
   have hv : D (hX.unstableFrame φp z v) = w := by
     simpa only [v, LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
       unstableFrameEquiv_apply] using
       ((hX.unstableFrameEquiv hφp hf hp hz).trans D.toLinearEquiv).apply_symm_apply w
-  have hsn := hX.stableNormal_apply hφq h0 (hX.unstableFrame φp z v)
-  rw [hcomp, neg_zero, Real.exp_zero, one_smul, ← hD _, hv] at hsn
+  have hsn := hX.stableNormal_apply_of_zero_mem hφq h0 (hX.unstableFrame φp z v)
+  rw [← hD _, hv] at hsn
   rw [LinearEquiv.trans_apply, LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe,
     trajectoryComparison_apply]
   exact Prod.ext (congrArg (mvfderiv 𝓘(ℝ, E) f z) (D.eq_symm_apply.2 hv)) hsn

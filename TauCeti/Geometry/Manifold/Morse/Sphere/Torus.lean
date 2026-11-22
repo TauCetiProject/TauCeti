@@ -147,6 +147,23 @@ theorem morseBoundary_sphereHeight_comp_fst_add_comp_snd (h : hX.IsMorseSmale)
   h.morseBoundary_eq_zero_of_finrank_eq_two hf (by simp)
     subsingleton_setOf_manifoldMorseIndex_eq_two subsingleton_setOf_manifoldMorseIndex_eq_zero
 
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
+/-- The sum of two height functions on `S¹ × S¹` is Morse in the product model. -/
+private theorem isMorse_sphereHeight_prod (v : sphere (0 : E) 1) (w : sphere (0 : E') 1) :
+    IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
+      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) := by
+  rw [modelWithCornersSelf_prod]
+  exact isMorse_sphereHeight_comp_fst_add_comp_snd v w
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
+/-- The product `S¹ × S¹` is orientable in the product model. -/
+private theorem orientable_sphereProd :
+    Orientable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
+      (sphere (0 : E) 1 × sphere (0 : E') 1) :=
+  have := orientable_sphere (E := E) (n := 1)
+  have := orientable_sphere (E := E') (n := 1)
+  orientable_chartedSpaceProd
+
 /-- **The integral Morse boundary of the standard Morse function on the torus is zero.** For every
 Morse–Smale pseudo-gradient adapted to the sum of two height functions on `S¹ × S¹` and every
 choice of orientations of the unstable manifolds, the integral Morse complex, with coefficients in
@@ -158,10 +175,7 @@ theorem signedMorseBoundary_sphereHeight_comp_fst_add_comp_snd (h : hX.IsMorseSm
       (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd))
     (𝔬 : MorseOrientation (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) X)
     (R : Type*) [Ring R] : hX.signedMorseBoundary 𝔬 hf R = 0 :=
-  have := orientable_sphere (E := E) (n := 1)
-  have := orientable_sphere (E := E') (n := 1)
-  have := orientable_chartedSpaceProd (E := EuclideanSpace ℝ (Fin 1))
-    (E' := EuclideanSpace ℝ (Fin 1)) (N := sphere (0 : E) 1) (N' := sphere (0 : E') 1)
+  have := orientable_sphereProd (E := E) (E' := E')
   h.signedMorseBoundary_eq_zero_of_finrank_eq_two hf 𝔬 (by simp)
     subsingleton_setOf_manifoldMorseIndex_eq_two subsingleton_setOf_manifoldMorseIndex_eq_zero R
 
@@ -195,18 +209,11 @@ theorem exists_trajectorySign_sphereHeight_comp_fst_add_comp_snd_eq_one_and_eq_n
       manifoldMorseIndex 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
         (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) q + 1) :
     ∃ y₁ ∈ hX.morseTrajectorySlice p q, ∃ y₂ ∈ hX.morseTrajectorySlice p q,
-      hX.trajectorySign φp φq op oq hpq y₁ = 1 ∧ hX.trajectorySign φp φq op oq hpq y₂ = -1 := by
-  have hf : IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
-      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) := by
-    rw [modelWithCornersSelf_prod]
-    exact isMorse_sphereHeight_comp_fst_add_comp_snd v w
-  have : Orientable (𝓡 1) (sphere (0 : E) 1) := orientable_sphere
-  have : Orientable (𝓡 1) (sphere (0 : E') 1) := orientable_sphere
-  have : Orientable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
-      (sphere (0 : E) 1 × sphere (0 : E') 1) := orientable_chartedSpaceProd
-  exact h.exists_trajectorySign_eq_one_and_eq_neg_one_of_finrank_eq_two hf (by simp)
-    subsingleton_setOf_manifoldMorseIndex_eq_two subsingleton_setOf_manifoldMorseIndex_eq_zero
-    hφp hφq op oq hpq
+      hX.trajectorySign φp φq op oq hpq y₁ = 1 ∧ hX.trajectorySign φp φq op oq hpq y₂ = -1 :=
+  have := orientable_sphereProd (E := E) (E' := E')
+  h.exists_trajectorySign_eq_one_and_eq_neg_one_of_finrank_eq_two (isMorse_sphereHeight_prod v w)
+    (by simp) subsingleton_setOf_manifoldMorseIndex_eq_two
+    subsingleton_setOf_manifoldMorseIndex_eq_zero hφp hφq op oq hpq
 
 /-- **Signed trajectory counts of the standard Morse function on the torus vanish.** For every
 Morse–Smale pseudo-gradient adapted to `sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd` on
@@ -236,16 +243,9 @@ theorem signedTrajectoryCount_sphereHeight_comp_fst_add_comp_snd (h : hX.IsMorse
         (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) p =
       manifoldMorseIndex 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
         (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) q + 1) :
-    hX.signedTrajectoryCount φp φq op oq hpq = 0 := by
-  have hf : IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
-      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) := by
-    rw [modelWithCornersSelf_prod]
-    exact isMorse_sphereHeight_comp_fst_add_comp_snd v w
-  have : Orientable (𝓡 1) (sphere (0 : E) 1) := orientable_sphere
-  have : Orientable (𝓡 1) (sphere (0 : E') 1) := orientable_sphere
-  have : Orientable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
-      (sphere (0 : E) 1 × sphere (0 : E') 1) := orientable_chartedSpaceProd
-  exact h.signedTrajectoryCount_eq_zero_of_finrank_eq_two hf (by simp)
+    hX.signedTrajectoryCount φp φq op oq hpq = 0 :=
+  have := orientable_sphereProd (E := E) (E' := E')
+  h.signedTrajectoryCount_eq_zero_of_finrank_eq_two (isMorse_sphereHeight_prod v w) (by simp)
     subsingleton_setOf_manifoldMorseIndex_eq_two subsingleton_setOf_manifoldMorseIndex_eq_zero
     hφp hφq op oq hpq
 

@@ -147,9 +147,6 @@ theorem signedTrajectoryCount_sphereHeight (hX : IsAdaptedPseudoGradient (sphere
     (hφp : ∀ y ∈ φp.toChart.source,
       φp.coord (mfderiv (𝓡 n) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) φp.toChart y (X y)) =
         fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
-    (hφq : ∀ y ∈ φq.toChart.source,
-      φq.coord (mfderiv (𝓡 n) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) φq.toChart y (X y)) =
-        fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
     (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ)
       (Fin (manifoldMorseIndex (𝓡 n) (sphereHeight v) p)))
     (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ)
@@ -161,9 +158,9 @@ theorem signedTrajectoryCount_sphereHeight (hX : IsAdaptedPseudoGradient (sphere
     ((φp.mfderiv_eq_zero_iff φp.mem_source).2 rfl)
     ((φq.mfderiv_eq_zero_iff φq.mem_source).2 rfl) hpq
   subst p q
-  exact hX.signedTrajectoryCount_eq_zero_of_exists_trajectorySign
-    (by rw [hX.morseTrajectorySlice_sphereHeight, ncard_setOf_sphereHeight_eq_zero Fact.out v])
-    (hX.exists_trajectorySign_sphereHeight_eq_one_and_eq_neg_one hφp hφq op oq hpq)
+  exact hX.signedTrajectoryCount_eq_zero_of_mem_stableSet (φ := φp) (φq := φq) (op := op)
+    (oq := oq) (hpq := hpq) hφp (isMorse_sphereHeight v) (manifoldMorseIndex_sphereHeight_self v)
+    fun _ _ hy ↦ by simpa [stableSet_sphereHeight_neg] using hy
 
 namespace IsMorseSmale
 
@@ -182,12 +179,11 @@ theorem morseBoundaryCoeff_sphereHeight (p q : criticalPoints (𝓡 n) (sphereHe
   swap
   · exact h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf hind
   rw [h.morseBoundaryCoeff_eq_ncard hf hind]
-  rw [criticalPoints_sphereHeight, mem_insert_iff, mem_singleton_iff] at hp hq
   -- The indices `n` and `0` of the poles differ by one only from `v` to `-v`, and only for `n = 1`.
-  rcases hp with rfl | rfl <;> rcases hq with rfl | rfl <;>
-    simp only [manifoldMorseIndex_sphereHeight_self, manifoldMorseIndex_sphereHeight_neg]
-      at hind <;> try omega
-  obtain rfl : n = 1 := hind
+  obtain ⟨hpv, hqv, rfl⟩ := eq_poles_of_manifoldMorseIndex_eq_add_one
+    (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp)
+    (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq) hind
+  subst p q
   rw [hX.morseTrajectorySlice_sphereHeight, ncard_setOf_sphereHeight_eq_zero Fact.out _,
     ZMod.natCast_self]
 
