@@ -37,9 +37,11 @@ finiteness for `K = ℂ`.
 * **Finiteness of transverse preimages.** The predicate `TauCeti.IsTransverseCutAt u D z` asks
   that near `u z` the set `D` be the zero set of a function `g : X → ℂ` such that `g ∘ u` has an
   invertible real derivative at `z`; no regularity of `g` is required
-  (`TauCeti.isTransverseCutAt_iff`). It holds when a smooth map `u` to a manifold is
-  transverse at `z` to a codimension-two submanifold `D` with local defining function `g`, that is,
-  when `dg ∘ du` is injective (`TauCeti.isTransverseCutAt_of_hasMFDerivAt`); in general it is
+  (`TauCeti.isTransverseCutAt_iff`, `TauCeti.IsTransverseCutAt.of_isInvertible_fderiv`). It holds
+  when a smooth map `u` to a manifold is transverse at `z` to a codimension-two submanifold `D`
+  with local defining function `g`, that is, when `dg ∘ du` is injective
+  (`TauCeti.exists_hasFDerivAt_comp_of_hasMFDerivAt`,
+  `TauCeti.isTransverseCutAt_of_hasMFDerivAt`); in general it is
   weaker than transversality, and it is exactly what the isolation argument needs. Intersection
   points at which it holds are isolated
   (`TauCeti.IsTransverseCutAt.eventually_notMem`). Hence if `u` is continuous, `D` is closed, `u`
@@ -104,6 +106,14 @@ theorem IsTransverseCutAt.intro {g : X → ℂ} {L : ℂ ≃L[ℝ] ℂ}
     IsTransverseCutAt u D z :=
   ⟨g, L, hD, hg⟩
 
+/-- Build `IsTransverseCutAt u D z` from a local defining function `g` of `D` near `u z` such that
+`g ∘ u` is differentiable at `z` with invertible derivative. -/
+theorem IsTransverseCutAt.of_isInvertible_fderiv {g : X → ℂ}
+    (hD : ∀ᶠ x in 𝓝 (u z), x ∈ D ↔ g x = 0) (hg : DifferentiableAt ℝ (g ∘ u) z)
+    (hL : (fderiv ℝ (g ∘ u) z).IsInvertible) : IsTransverseCutAt u D z := by
+  obtain ⟨L, hL⟩ := hL
+  exact ⟨g, L, hD, hL ▸ hg.hasFDerivAt⟩
+
 /-- A transverse intersection point of `u` with `D` is isolated: nearby points are not mapped
 into `D`. -/
 theorem IsTransverseCutAt.eventually_notMem (h : IsTransverseCutAt u D z)
@@ -145,6 +155,23 @@ theorem isTransverseCutAt_comp_affineEquiv_iff (f : ℂ ≃ᵃ[ℂ] ℂ) :
     simp
   simpa [hu] using h'.comp (f.symm.hasFDerivAt_restrictScalars ℝ (f z))
 
+/-- If `d(g ∘ u) = dg ∘ du` is injective at `z`, for a map `u` from `ℂ` to a manifold and
+`g` from the manifold to `ℂ`, then `g ∘ u` has an invertible real derivative at `z`. -/
+theorem exists_hasFDerivAt_comp_of_hasMFDerivAt {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+    [ChartedSpace H M] {u : ℂ → M} {g : M → ℂ}
+    {dg : TangentSpace I (u z) →L[ℝ] ℂ} {du : ℂ →L[ℝ] TangentSpace I (u z)}
+    (hg : HasMFDerivAt I 𝓘(ℝ, ℂ) g (u z) dg) (hu : HasMFDerivAt 𝓘(ℝ, ℂ) I u z du)
+    (hinj : Function.Injective (dg.comp du)) :
+    ∃ L : ℂ ≃L[ℝ] ℂ, HasFDerivAt (g ∘ u) (L : ℂ →L[ℝ] ℂ) z := by
+  refine ⟨(LinearEquiv.ofInjectiveEndo (dg.comp du : ℂ →ₗ[ℝ] ℂ) hinj).toContinuousLinearEquiv, ?_⟩
+  have he : ((LinearEquiv.ofInjectiveEndo (dg.comp du : ℂ →ₗ[ℝ] ℂ) hinj).toContinuousLinearEquiv :
+      ℂ →L[ℝ] ℂ) = dg.comp du := by
+    ext w
+    simp
+  rw [he]
+  exact hasMFDerivAt_iff_hasFDerivAt.1 (hg.comp z hu)
+
 /-- Transversality of a smooth map `u` from `ℂ` to a manifold to a set `D` with a local defining
 function `g` at `u z`: if `d(g ∘ u) = dg ∘ du` is injective at `z`, then `u` meets the target cut
 `D` transversally at `z`. -/
@@ -154,15 +181,9 @@ theorem isTransverseCutAt_of_hasMFDerivAt {E H M : Type*} [NormedAddCommGroup E]
     {dg : TangentSpace I (u z) →L[ℝ] ℂ} {du : ℂ →L[ℝ] TangentSpace I (u z)}
     (hD : ∀ᶠ x in 𝓝 (u z), x ∈ D ↔ g x = 0) (hg : HasMFDerivAt I 𝓘(ℝ, ℂ) g (u z) dg)
     (hu : HasMFDerivAt 𝓘(ℝ, ℂ) I u z du) (hinj : Function.Injective (dg.comp du)) :
-    IsTransverseCutAt u D z := by
-  refine ⟨g, (LinearEquiv.ofInjectiveEndo (dg.comp du : ℂ →ₗ[ℝ] ℂ) hinj).toContinuousLinearEquiv,
-    hD, ?_⟩
-  have he : ((LinearEquiv.ofInjectiveEndo (dg.comp du : ℂ →ₗ[ℝ] ℂ) hinj).toContinuousLinearEquiv :
-      ℂ →L[ℝ] ℂ) = dg.comp du := by
-    ext w
-    simp
-  rw [he]
-  exact hasMFDerivAt_iff_hasFDerivAt.1 (hg.comp z hu)
+    IsTransverseCutAt u D z :=
+  let ⟨L, hL⟩ := exists_hasFDerivAt_comp_of_hasMFDerivAt hg hu hinj
+  ⟨g, L, hD, hL⟩
 
 end Transverse
 

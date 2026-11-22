@@ -76,27 +76,12 @@ section General
 variable {P X : Type*} [TopologicalSpace P] [TopologicalSpace X] {u : P → ℂ → X} {s : Set P}
   {p₀ : P} {D : Set X}
 
-/-- Restricting a jointly continuous family to `p₀ ∈ s` gives a continuous map. -/
-private theorem continuous_apply_of_continuousOn (hp₀ : p₀ ∈ s)
-    (hu : ContinuousOn (Function.uncurry u) (s ×ˢ univ)) : Continuous (u p₀) :=
-  continuousOn_univ.1 <|
-    hu.comp (continuousOn_const.prodMk continuousOn_id) fun _ _ ↦ ⟨hp₀, trivial⟩
-
 /-- Joint continuity of the family at `(p₀, w)`, read along `𝓝[s] p₀ ×ˢ 𝓝 w`. -/
 private theorem tendsto_uncurry_of_continuousOn (hp₀ : p₀ ∈ s)
     (hu : ContinuousOn (Function.uncurry u) (s ×ˢ univ)) (w : ℂ) :
     Tendsto (fun q : P × ℂ ↦ u q.1 q.2) (𝓝[s] p₀ ×ˢ 𝓝 w) (𝓝 (u p₀ w)) := by
   have h := hu (p₀, w) ⟨hp₀, trivial⟩
   rwa [ContinuousWithinAt, nhdsWithin_prod_eq, nhdsWithin_univ] at h
-
-omit [TopologicalSpace X] in
-/-- A family that near `p₀` does not meet `D` near `∞` has a member `u p₀` that does not meet `D`
-near `∞`. -/
-private theorem eventually_cocompact_notMem (hp₀ : p₀ ∈ s)
-    (hinf : ∀ᶠ q in 𝓝[s] p₀ ×ˢ cocompact ℂ, Function.uncurry u q ∉ D) :
-    ∀ᶠ z in cocompact ℂ, u p₀ z ∉ D := by
-  obtain ⟨t, ht, c, hc, htc⟩ := eventually_prod_iff.1 hinf
-  exact hc.mono fun w hw ↦ htc (ht.self_of_nhdsWithin hp₀) hw
 
 /-- The data used to follow a cut point `z` of `u p₀` along the family `u` over the parameters `s`:
 near `u p₀ z` the set `D` is the zero set of a continuous function `g : X → ℂ` on an open set `W`,
@@ -124,11 +109,8 @@ theorem isTransverseCutFamilyAt_iff {z : ℂ} : IsTransverseCutFamilyAt u s D p�
 /-- A cut point that can be followed along the family is a transverse cut point of `u p₀`. -/
 theorem IsTransverseCutFamilyAt.isTransverseCutAt {z : ℂ} (hp₀ : p₀ ∈ s)
     (h : IsTransverseCutFamilyAt u s D p₀ z) : IsTransverseCutAt (u p₀) D z := by
-  obtain ⟨W, g, hW, hzW, hWD, -, hgd, -, ⟨L, hL⟩⟩ := h
-  refine IsTransverseCutAt.intro (g := g) (L := L)
-    (eventually_of_mem (hW.mem_nhds hzW) fun x hx ↦ hWD x hx) ?_
-  rw [hL]
-  exact (hgd p₀ hp₀ z hzW).hasFDerivAt
+  obtain ⟨W, g, hW, hzW, hWD, -, hgd, -, hinv⟩ := h
+  exact .of_isInvertible_fderiv (eventually_of_mem (hW.mem_nhds hzW) hWD) (hgd p₀ hp₀ z hzW) hinv
 
 /-- **The cut point near a transverse cut point persists.** Let `D` be cut out by `g` on an open
 set `W`, with `g ∘ u p` differentiable where `u p` takes values in `W` and its derivative continuous
@@ -169,12 +151,9 @@ private theorem eventually_exists_inter_closedBall_eq_singleton (hp₀ : p₀ �
       rw [← Set.ncard_congr' e, ← hzero p₀ hp₀', hrD, ncard_singleton]
     obtain ⟨w, hw⟩ := ncard_eq_one.1 h1
     have hwK : w ∈ {w ∈ closedBall z r | (g ∘ u p) w = 0} := hw ▸ mem_singleton w
-    refine ⟨w, (hzero p hp).trans hw, ?_⟩
-    obtain ⟨L, hL⟩ := (hnd w hwK.1 hwK.2).2
-    refine IsTransverseCutAt.intro (g := g) (L := L)
-      (eventually_of_mem (hW.mem_nhds (hp.2 w hwK.1)) fun x hx ↦ hWD x hx) ?_
-    rw [hL]
-    exact (hgd p hp.1 w (hp.2 w hwK.1)).hasFDerivAt
+    exact ⟨w, (hzero p hp).trans hw, .of_isInvertible_fderiv
+      (eventually_of_mem (hW.mem_nhds (hp.2 w hwK.1)) hWD) (hgd p hp.1 w (hp.2 w hwK.1))
+      (hnd w hwK.1 hwK.2).2⟩
   · -- The only zero of `g ∘ u p₀` in the ball is its centre.
     have hw' : w ∈ u p₀ ⁻¹' D ∩ closedBall z r := (hzero p₀ hp₀').symm ▸ ⟨hw, hw0⟩
     rw [hrD, mem_singleton_iff] at hw'
@@ -220,17 +199,16 @@ theorem eventually_isTransverseCutAt_and_exists_equiv_preimage (hD : IsClosed D)
     ∀ᶠ p in 𝓝[s] p₀, (∀ z ∈ u p ⁻¹' D, IsTransverseCutAt (u p) D z) ∧
       ∃ e : u p₀ ⁻¹' D ≃ u p ⁻¹' D, ∀ z, dist (e z : ℂ) z ≤ ε := by
   set Z := u p₀ ⁻¹' D
-  have hZ : Z.Finite := finite_preimage_of_isTransverseCutAt
-    (continuous_apply_of_continuousOn hp₀ hu) hD (eventually_cocompact_notMem hp₀ hinf)
-    fun z hz ↦ (hcut z hz).isTransverseCutAt hp₀
+  have hu₀ : Continuous (u p₀) := continuousOn_univ.1 (hu.uncurry_left p₀ hp₀)
+  have hZ : Z.Finite := finite_preimage_of_isTransverseCutAt hu₀ hD
+    (hinf.curry.self_of_nhdsWithin hp₀) fun z hz ↦ (hcut z hz).isTransverseCutAt hp₀
   choose! W g hW hzW hWD hg hgd hgd' hinv using hcut
   -- One radius `r < ε` of pairwise disjoint closed balls around the cut points of `u p₀`, each
   -- mapped by `u p₀` into its set `W`.
   obtain ⟨V, hV, hVdisj⟩ := hZ.t2_separation
   have hball (z) (hz : z ∈ Z) : ∀ᶠ r in 𝓝[>] (0 : ℝ), closedBall z r ⊆ u p₀ ⁻¹' W z ∩ V z :=
-    (eventually_closedBall_subset (inter_mem (((hW z hz).preimage
-      (continuous_apply_of_continuousOn hp₀ hu)).mem_nhds (hzW z hz))
-        ((hV z).2.mem_nhds (hV z).1))).filter_mono nhdsWithin_le_nhds
+    (eventually_closedBall_subset (inter_mem (((hW z hz).preimage hu₀).mem_nhds (hzW z hz))
+      ((hV z).2.mem_nhds (hV z).1))).filter_mono nhdsWithin_le_nhds
   obtain ⟨r, hrW, hr⟩ := ((hZ.eventually_all.2 hball).and (Ioo_mem_nhdsGT hε)).exists
   have hdisj : Z.PairwiseDisjoint fun z ↦ closedBall z r :=
     hVdisj.mono_on fun z hz ↦ (hrW z hz).trans inter_subset_right
@@ -270,7 +248,7 @@ theorem eventually_finite_preimage_and_ncard_eq (hD : IsClosed D) (hp₀ : p₀ 
     ∀ᶠ p in 𝓝[s] p₀, (u p ⁻¹' D).Finite ∧ (u p ⁻¹' D).ncard = (u p₀ ⁻¹' D).ncard := by
   have h := eventually_isTransverseCutAt_and_exists_equiv_preimage hD hp₀ hu hinf hcut one_pos
   have hZ : (u p₀ ⁻¹' D).Finite := finite_preimage_of_isTransverseCutAt
-    (continuous_apply_of_continuousOn hp₀ hu) hD (eventually_cocompact_notMem hp₀ hinf)
+    (continuousOn_univ.1 (hu.uncurry_left p₀ hp₀)) hD (hinf.curry.self_of_nhdsWithin hp₀)
     (h.self_of_nhdsWithin hp₀).1
   filter_upwards [h] with p hp
   obtain ⟨-, e, -⟩ := hp
@@ -350,13 +328,7 @@ theorem isTransverseCutFamilyAt_of_contMDiffOn (hU : IsOpen U) (hsU : s ⊆ U) (
     (((hu.contMDiffAt ((hU.prod isOpen_univ).mem_nhds ⟨hsU hq₀, trivial⟩)).comp z
       (contDiff_const.prodMk contDiff_id).contMDiff.contMDiffAt).mdifferentiableAt
         one_ne_zero).hasMFDerivAt
-  let L := (LinearEquiv.ofInjectiveEndo (dg.comp du : ℂ →ₗ[ℝ] ℂ) hinj).toContinuousLinearEquiv
-  have he : (L : ℂ →L[ℝ] ℂ) = dg.comp du := by
-    ext w
-    simp [L]
-  have hL : HasFDerivAt (g ∘ u q₀) (L : ℂ →L[ℝ] ℂ) z := by
-    rw [he]
-    exact hasMFDerivAt_iff_hasFDerivAt.1 (hgm.comp z hum)
+  obtain ⟨L, hL⟩ := exists_hasFDerivAt_comp_of_hasMFDerivAt hgm hum hinj
   exact ⟨L, hL.fderiv.symm⟩
 
 end Manifold
