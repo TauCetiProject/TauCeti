@@ -42,10 +42,12 @@ Since the defining identity determines `f_♯ φ`, fibre integration only depend
 ## Construction
 
 For a surjective linear map `A`, choose a linear equivalence `L : E ≃ E' × ker A` whose first
-component is `A`. Then `A_♯ ψ` is, up to the constant comparing `μ` with the image of the product
-measure, the partial integral `y ↦ ∫ k, ψ (L⁻¹ (y, k)) dk` over the second factor; it is a test
-function by `Distribution.partialPairing`, and the defining identity is Fubini's theorem. Near a
-point `a` of `Ω`, the local normal form of a submersion
+component is `A` (`TestFunction.linearCoord`, with linear section `TestFunction.linearSection` of
+`A`). Then `A_♯ ψ` is, up to the constant `TestFunction.linearScale` comparing `μ` with the image
+of the product measure (`TestFunction.map_linearCoord`), the partial integral
+`y ↦ ∫ k, ψ (L⁻¹ (y, k)) dk` over the second factor; it is a test function by
+`Distribution.partialPairing`, and the defining identity is Fubini's theorem. Near a point `a`
+of `Ω`, the local normal form of a submersion
 (`ContDiffOn.exists_openPartialHomeomorph_eqOn_fderiv_comp`) writes `f = Df(a) ∘ Θ` for a
 diffeomorphism `Θ`, so `f_♯ = Df(a)_♯ ∘ Θ_*` on tests supported near `a`. These local maps satisfy
 the same defining identity, which determines a continuous function by the fundamental lemma of the
@@ -76,12 +78,37 @@ section Linear
 
 variable {A : E →L[ℝ] E'} (hA : Function.Surjective A)
 
-/-- The linear equivalence `E ≃ E' × ker A` whose first component is `A`. -/
-private def linearCoord : E ≃L[ℝ] E' × (A : E →ₗ[ℝ] E').ker :=
+/-- The linear equivalence `L : E ≃ E' × ker A` whose first component is `A`, that is,
+`L x = (A x, P x)` for a projection `P` onto `ker A`. -/
+def linearCoord : E ≃L[ℝ] E' × (A : E →ₗ[ℝ] E').ker :=
   A.implicitCoordEquiv (LinearMap.range_eq_top.2 hA) (.of_finiteDimensional _)
 
-private theorem linearCoord_apply_fst (x : E) : (linearCoord hA x).1 = A x := by
+/-- The first component of `linearCoord` is `A`. -/
+theorem linearCoord_apply_fst (x : E) : (linearCoord hA x).1 = A x := by
   simp [linearCoord]
+
+/-- The linear section `y ↦ L⁻¹ (y, 0)` of `A`, where `L = linearCoord`. -/
+def linearSection : E' →L[ℝ] E :=
+  ((linearCoord hA).symm : E' × (A : E →ₗ[ℝ] E').ker →L[ℝ] E).comp
+    (ContinuousLinearMap.inl ℝ E' (A : E →ₗ[ℝ] E').ker)
+
+/-- `linearSection` is a right inverse of `A`. -/
+theorem comp_linearSection : A.comp (linearSection hA) = ContinuousLinearMap.id ℝ E' := by
+  ext y
+  simpa [linearSection] using (linearCoord_apply_fst hA ((linearCoord hA).symm (y, 0))).symm
+
+/-- Every `x` decomposes as `s (A x) + P x`, where `s = linearSection` and `P x ∈ ker A` is the
+second component of `linearCoord`. -/
+theorem linearSection_add_linearCoord_snd (x : E) :
+    linearSection hA (A x) + ((linearCoord hA x).2 : E) = x := by
+  symm
+  conv_lhs => rw [← (linearCoord hA).symm_apply_apply x]
+  rw [← linearCoord_apply_fst hA x, ← Prod.fst_add_snd (linearCoord hA x)]
+  simp only [map_add, linearSection, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
+    Function.comp_apply, ContinuousLinearMap.inl_apply, Prod.fst_add, Prod.snd_add, add_zero,
+    zero_add]
+  congr 1
+  exact A.implicitCoordEquiv_symm_apply_zero_mk _ _ _
 
 variable (W : Opens E)
 
@@ -108,12 +135,28 @@ variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E']
 
 /-- The constant comparing `μ` with the product of `ν` and a Haar measure on `ker A`, through
 `linearCoord`. -/
-private def linearScale : NNReal :=
+def linearScale : NNReal :=
   Measure.addHaarScalarFactor (μ.map (linearCoord hA)) (ν.prod Measure.addHaar)
 
-private theorem map_linearCoord :
+/-- The constant `linearScale` is positive. -/
+theorem linearScale_pos : 0 < linearScale hA μ ν :=
+  Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _
+
+/-- The image of `μ` under `linearCoord` is `linearScale` times the product of `ν` and a Haar
+measure on `ker A`. -/
+theorem map_linearCoord :
     μ.map (linearCoord hA) = linearScale hA μ ν • ν.prod Measure.addHaar :=
   Measure.isAddLeftInvariant_eq_smul _ _
+
+/-- **Fubini in the linear coordinates.** Integrating a product `u (A x) v (P x)` against `μ`
+gives `linearScale` times the product of the integrals. -/
+theorem integral_mul_linearCoord {𝕜 : Type*} [RCLike 𝕜] (u : E' → 𝕜)
+    (v : (A : E →ₗ[ℝ] E').ker → 𝕜) :
+    ∫ x, u (linearCoord hA x).1 * v (linearCoord hA x).2 ∂μ =
+      (linearScale hA μ ν : ℝ) • ((∫ y, u y ∂ν) * ∫ k, v k ∂Measure.addHaar) := by
+  rw [← integral_prod_mul, ← NNReal.smul_def, ← integral_smul_nnreal_measure,
+    ← map_linearCoord, ← (linearCoord hA).coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe,
+    integral_map_equiv]
 
 /-- Fibre integration along a surjective linear map `A`: `y ↦ c ∫ k, ψ (L⁻¹ (y, k)) dk`. -/
 private def linearFiberIntegral : 𝓓(W, ℝ) →L[ℝ] 𝓓(Ω', ℝ) :=

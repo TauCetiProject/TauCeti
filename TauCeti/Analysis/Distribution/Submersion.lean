@@ -28,8 +28,8 @@ of the support of `T`; and when `f` is a change of variables and `μ = ν`, `f^*
 `Distribution.compCLMOfOpenPartialHomeomorph`. The pullback is functorial, `(g ∘ f)^* = f^* ∘ g^*`,
 and local: it only depends on `f` on `Ω`, and restricting `f^* T` to an open subset `U` of `Ω` gives
 the pullback of `T` along `f` on `U`. Its complex-linear extension to complex test functions pairs
-`f^* T` with `φ` as `T` with the fibre integral of `φ`. Along a linear map `A`, the pullback is
-invariant under translations along `ker A`.
+`f^* T` with `φ` as `T` with the fibre integral of `φ`. Along a linear map `A`, the pullback has
+vanishing derivatives along `ker A`.
 
 Typical submersions are the projections of a product, coordinate charts followed by projections,
 and the maps `(x, y) ↦ x - y`, along which a distribution in one variable becomes a distribution
@@ -164,8 +164,8 @@ variable {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTop
   [ContinuousSMul ℝ F] {A : E →L[ℝ] E'} (hf : ContDiffOn ℝ ∞ A Ω) (hAΩ : MapsTo A Ω Ω')
   (hsurj : ∀ x ∈ Ω, Function.Surjective (fderiv ℝ A x))
 
-/-- **Invariance along the kernel.** The pullback along a linear map `A` is invariant under
-translations along `ker A`: its derivative in the direction of every `k ∈ ker A` vanishes. -/
+/-- **Vanishing derivatives along the kernel.** The derivative of the pullback along a linear map
+`A` in the direction of every `k ∈ ker A` vanishes. -/
 theorem lineDerivOp_compCLMOfSubmersion_eq_zero (T : 𝓓'(Ω', F)) {k : E} (hk : A k = 0) :
     ∂_{k} (compCLMOfSubmersion μ ν A hf hAΩ hsurj T) = 0 := by
   -- The fibre integral of `∂_k φ` vanishes: integrate by parts against `g ∘ A`, which is constant

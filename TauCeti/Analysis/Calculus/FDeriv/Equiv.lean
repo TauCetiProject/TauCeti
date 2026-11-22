@@ -47,6 +47,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `p` of the source and its image `e p`.
 * `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
   derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
+* `OpenPartialHomeomorph.isInvertible_fderiv_of_contDiffOn`: for an open partial homeomorphism
+  that is `C^n`, `n ≠ 0`, in both directions, the derivative is invertible on the source.
 * `OpenPartialHomeomorph.det_fderiv_ne_zero`: for an open partial homeomorphism of a space to
   itself, the derivative at such a point has nonzero determinant.
 * `OpenPartialHomeomorph.det_fderiv_mul_det_fderiv_symm`: for an open partial homeomorphism of a
@@ -60,6 +62,9 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   real inner product spaces, the transpose of the derivative of an open partial homeomorphism at
   a point of its source is a left inverse of the transpose of the derivative of its inverse at the
   image point, when both are differentiable there, in particular when both are `C^n`.
+* `OpenPartialHomeomorph.adjoint_apply_eq_adjoint_fderiv_symm_apply_iff`: in the coordinates of
+  such an open partial homeomorphism `e`, the covector identity `(A ∘ De(x))ᵀ η = ξ` reads
+  `Aᵀ η = De⁻¹(e x)ᵀ ξ`.
 * `OpenPartialHomeomorph.hasFDerivAt_transHomeomorph_iff`: postcomposing charts with continuous
   linear equivalences conjugates the Fréchet derivative of a map read in those charts.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
@@ -169,6 +174,14 @@ theorem isInvertible_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ 
   .of_inverse (e.fderiv_comp_fderiv_symm_of_mem_source hy he hes)
     (e.fderiv_symm_comp_fderiv_of_mem_source hy he hes)
 
+/-- An open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on its
+target, has an invertible derivative at every point of its source. -/
+theorem isInvertible_fderiv_of_contDiffOn (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞}
+    (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ e.source) : (fderiv 𝕜 e x).IsInvertible :=
+  e.isInvertible_fderiv hx ((he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx))
+    ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
+
 /-- Under the same hypotheses, the inverse of the derivative at a point of the source is the
 derivative of the inverse at the image point. -/
 theorem inverse_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ e.source)
@@ -267,6 +280,21 @@ theorem adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn
   e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply hx
     ((he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx))
     ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx))) ξ
+
+open scoped InnerProduct in
+/-- For an open partial homeomorphism differentiable at a point `x` of its source, with inverse
+differentiable at `e x`, and a continuous linear map `A`, the covector identity
+`(A ∘ De(x))ᵀ η = ξ` reads `Aᵀ η = De⁻¹(e x)ᵀ ξ` in the coordinates of `e`. -/
+theorem adjoint_apply_eq_adjoint_fderiv_symm_apply_iff (e : OpenPartialHomeomorph E F) {x : E}
+    (hx : x ∈ e.source) (hd : DifferentiableAt ℝ e x) (hds : DifferentiableAt ℝ e.symm (e x))
+    {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [CompleteSpace G]
+    (A : F →L[ℝ] G) (η : G) (ξ : E) :
+    (A†) η = ((fderiv ℝ e.symm (e x))†) ξ ↔ ((A.comp (fderiv ℝ e x))†) η = ξ := by
+  rw [ContinuousLinearMap.adjoint_comp, ContinuousLinearMap.comp_apply]
+  refine ⟨fun h ↦ by rw [h, e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply hx hd hds], fun h ↦ ?_⟩
+  rw [← h, ← ContinuousLinearMap.comp_apply (((fderiv ℝ e.symm (e x))†)),
+    ← ContinuousLinearMap.adjoint_comp, e.fderiv_comp_fderiv_symm_of_mem_source hx hd hds,
+    ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
 
 end OpenPartialHomeomorph
 
