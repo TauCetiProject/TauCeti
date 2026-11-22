@@ -37,8 +37,12 @@ differences of the remaining columns.
   minors of a matrix with `n + 2` rows and `n + 1` columns whose rows sum to `1` vanishes.
 * `Matrix.det_eq_det_of_col_zero_eq_one`: a square matrix whose first column is constant `1` has
   the determinant of its consecutive row differences on the remaining columns.
+* `Matrix.det_of_sum_rows`: the determinant of a matrix whose rows are sums over finite sets is the
+  sum, over the choices of one summand in each row, of the determinants of the resulting matrices.
 * `Matrix.det_submatrix_ne_zero_of_map`: a minor whose image under a ring homomorphism is nonzero
   is nonzero, and `Matrix.det_submatrix_map_ne_zero_iff` is the converse for an injective one.
+* `RingHom.det_map_ne_zero_of_isUnit_det`: the image of a matrix with unit determinant under a ring
+  homomorphism to a nontrivial commutative ring has nonzero determinant.
 -/
 
 public section
@@ -142,4 +146,31 @@ theorem det_submatrix_map_ne_zero_iff {m n R S l : Type*} [Fintype l] [Decidable
     {c : l → n} : ((A.map f).submatrix r c).det ≠ 0 ↔ (A.submatrix r c).det ≠ 0 := by
   rw [← f.map_det_submatrix, map_ne_zero_iff f hf]
 
+/-- **Multilinearity of the determinant in all rows at once.** The determinant of a matrix whose
+`i`-th row is a sum over a finite set `A i` is the sum, over the choices of one summand in each
+row, of the determinants of the resulting matrices. -/
+theorem det_of_sum_rows {ι R : Type*} {κ : ι → Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    (A : ∀ i, Finset (κ i)) (g : ∀ i, κ i → ι → R) :
+    (Matrix.of fun i j => ∑ t ∈ A i, g i t j).det
+      = ∑ y ∈ Fintype.piFinset A, (Matrix.of fun i j => g i (y i) j).det := by
+  have key := (detRowAlternating (R := R) (n := ι)).toMultilinearMap.map_sum_finset
+    (A := A) (g := g)
+  have hrow : (fun i => ∑ t ∈ A i, g i t) = fun i j => ∑ t ∈ A i, g i t j := by
+    funext i j
+    exact Finset.sum_apply j _ _
+  rw [hrow] at key
+  exact key
+
 end Matrix
+
+namespace RingHom
+
+/-- The image of a matrix with unit determinant under a ring homomorphism to a nontrivial
+commutative ring has nonzero determinant. -/
+theorem det_map_ne_zero_of_isUnit_det {ι R K : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    [CommRing K] [Nontrivial K] (f : R →+* K) {A : Matrix ι ι R} (hdet : IsUnit A.det) :
+    (A.map f).det ≠ 0 := by
+  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
+  exact (hdet.map _).ne_zero
+
+end RingHom

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 
 /-!
 # Geodesics of a Riemannian manifold
@@ -210,6 +211,14 @@ theorem IsGeodesicCurveOn.congr {γ' : ℝ → M} (h : IsGeodesicCurveOn I γ s)
   rw [hγ hr, derivWithin_congr hfirst (hfirst hr), hfirst hr]
   exact h.2 r hr
 
+/-- A geodesic with prescribed initial data depends only on the values of the curve on its
+parameter set. -/
+theorem IsGeodesicCurveOnFrom.congr {γ' : ℝ → M} (h : IsGeodesicCurveOnFrom I γ s p v)
+    (hγ : EqOn γ' γ s) : IsGeodesicCurveOnFrom I γ' s p v := by
+  refine ⟨h.isGeodesicCurveOn.congr hγ, h.zero_mem, Eq.trans ?_ h.initial_eq⟩
+  simpa only [curveVelocityLiftWithin_apply] using
+    hγ.eventuallyEq_nhdsWithin.curveVelocityLiftWithin_eq (I := I) (hγ h.zero_mem)
+
 /-! ### Open parameter sets -/
 
 /-- On an open parameter set, the geodesic equation is the unrestricted one. -/
@@ -232,6 +241,22 @@ theorem isGeodesicCurve_iff :
       ∀ t : ℝ, acceleration (leviCivitaConnection I M) γ t = 0 := by
   rw [← isGeodesicCurveOn_univ, isGeodesicCurveOn_iff_of_isOpen isOpen_univ, contMDiffOn_univ]
   simp
+
+/-- A parallel field along a geodesic agrees with its velocity on a preconnected parameter
+set if they agree at one parameter. Only differentiability of the field's coordinates is needed. -/
+theorem IsGeodesicCurveOn.eq_curveVelocityWithin_of_alongCurveWithin_eq_zero
+    (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
+    {P : ∀ t, TangentSpace I (γ t)}
+    (hP : ∀ u ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ P (γ u)) s u)
+    (hP₀ : ∀ u ∈ s, alongCurveWithin (leviCivitaConnection I M) γ P s u = 0)
+    {τ t : ℝ} (hτ : τ ∈ s) (ht : t ∈ s)
+    (hPτ : P τ = curveVelocityWithin I γ s τ) : P t = curveVelocityWithin I γ s t :=
+  (isMetricCompatible_leviCivitaConnection I).eq_of_alongCurveWithin_eq_zero hs
+    hγ.mdifferentiableOn hP
+    (fun u hu ↦ differentiableWithinAt_sectionCoord_curveVelocityWithin γ hγ.uniqueDiffOn
+      hγ.contMDiffOn hu (by simp))
+    hP₀ (fun u hu ↦ by rw [← accelerationWithin_def]; exact hγ.accelerationWithin_eq_zero u hu)
+    hτ ht hPτ
 
 /-! ### Constant curves -/
 

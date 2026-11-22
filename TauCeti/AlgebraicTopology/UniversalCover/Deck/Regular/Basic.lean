@@ -68,7 +68,7 @@ lemma isRegular_iff :
 lemma isRegular_iff_exists_apply_eq :
     IsRegular p ↔
       Function.Surjective p ∧
-        ∀ {e e' : E}, p e = p e' → ∃ φ : deck p, φ.1 e = e' := by
+        ∀ {e e' : E}, p e = p e' → ∃ φ : deck p, φ.val e = e' := by
   constructor
   · intro hreg
     refine ⟨hreg.1, ?_⟩
@@ -84,9 +84,9 @@ lemma isRegular_iff_exists_apply_eq :
     refine ⟨hsurj, fun b => ?_⟩
     refine MulAction.IsPretransitive.mk ?_
     intro x y
-    have hxy : p x.1 = p y.1 := by
-      have hx : p x.1 = b := Set.mem_singleton_iff.mp x.2
-      have hy : p y.1 = b := Set.mem_singleton_iff.mp y.2
+    have hxy : p x.val = p y.val := by
+      have hx : p x.val = b := Set.mem_singleton_iff.mp x.property
+      have hy : p y.val = b := Set.mem_singleton_iff.mp y.property
       rw [hx, hy]
     rcases hpoint hxy with ⟨φ, hφ⟩
     exact ⟨φ, by ext; simpa [deck.fiber_smul_eq_fiberHomeomorph] using hφ⟩
@@ -106,7 +106,7 @@ lemma fiber_isPretransitive (hreg : IsRegular p) (b : B) :
 /-- For a regular map, any two points with the same projection differ by a deck
 transformation. -/
 lemma exists_apply_eq (hreg : IsRegular p) {e e' : E} (heq : p e = p e') :
-    ∃ φ : deck p, φ.1 e = e' :=
+    ∃ φ : deck p, φ.val e = e' :=
   isRegular_iff_exists_apply_eq.mp hreg |>.2 heq
 
 /-- Regularity of the deck action is transported by an over-base homeomorphism. -/
@@ -164,7 +164,7 @@ lemma deckEquivFiber_apply [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : 
 homeomorphism. -/
 lemma deckEquivFiber_apply_coe [PreconnectedSpace E] (hp : IsCoveringMap p)
     (hreg : IsRegular p) (e : p ⁻¹' {b}) (φ : deck p) :
-    (deckEquivFiber hp hreg e φ : E) = φ.1 e.1 := by
+    (deckEquivFiber hp hreg e φ : E) = φ.val e.val := by
   rw [deckEquivFiber_apply]
   exact deck.fiber_smul_coe φ e
 
@@ -194,7 +194,7 @@ lemma deckEquivFiber_symm_smul [PreconnectedSpace E] (hp : IsCoveringMap p)
 requested point. -/
 lemma deckEquivFiber_symm_apply_coe [PreconnectedSpace E] (hp : IsCoveringMap p)
     (hreg : IsRegular p) (e e' : p ⁻¹' {b}) :
-    (((deckEquivFiber hp hreg e).symm e').1 e.1 : E) = e'.1 := by
+    (((deckEquivFiber hp hreg e).symm e').val e.val : E) = e'.val := by
   simpa only [deck.fiber_smul_eq_fiberHomeomorph, deck.fiberHomeomorph_apply] using
     congrArg Subtype.val (deckEquivFiber_symm_smul hp hreg e e')
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Tangent
-public import TauCeti.Geometry.Manifold.Instances.OpenBall
+public import TauCeti.Geometry.Manifold.Instances.OpenBall.Diffeomorph
 
 /-!
 # Stable and unstable manifolds are embedded open discs

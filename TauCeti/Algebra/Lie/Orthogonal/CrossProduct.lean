@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Classical
+public import Mathlib.Algebra.Lie.InvariantForm
 public import Mathlib.LinearAlgebra.CrossProduct
 public import Mathlib.LinearAlgebra.Matrix.Dual
 public import TauCeti.Algebra.Lie.Coadjoint
@@ -47,7 +48,9 @@ tangent model `so(3) ⧸ so(3)_ν` of the coadjoint orbit through `ν_n` has dim
 orbit derivative `[ξ̂] ↦ ν_(ξ ⨯₃ n)` maps it onto the plane `n^⊥`
 (`TauCeti.soThreeDualEquiv_mem_range_coadjointTangentMap_iff`). Over `ℝ`, `n^⊥` is the tangent
 plane at `n` of the sphere of radius `r = ‖n‖` about the origin; this sphere is the coadjoint orbit
-of the rotation group `SO(3)` through `ν_n`, a fact about the group action not treated here.
+of the rotation group `SO(3)` through `ν_n`
+(`TauCeti.range_specialOrthogonalCoadjointRepresentation_soThreeDualEquiv`, in
+`TauCeti.Algebra.Lie.Orthogonal.CoadjointOrbit`).
 
 The Kirillov–Kostant–Souriau form of `ν_n` is the triple product
 
@@ -63,10 +66,17 @@ normal, by
 the KKS form is `1 / r` times the area form, and its total KKS area is `4πr² / r = 4πr`; that
 integral is not formalized here.
 
+## The invariant form
+
+Read through the hat map, the dot product is a bilinear form `B(û, v̂) = u ⬝ᵥ v` on `so(3)`
+(`TauCeti.soThreeForm`), with `B û = ν_u`. It is symmetric, nondegenerate, and invariant, since
+`⁅ξ̂, ν_n⁆ = ν_(ξ ⨯₃ n)` (`TauCeti.lieInvariant_soThreeForm`).
+
 ## Main definitions
 
 * `TauCeti.soThreeEquiv R`: the isomorphism `u ↦ û` from `R³` onto `so(3)`.
 * `TauCeti.soThreeDualEquiv R`: the identification of `R³` with `so(3)*` by the dot product.
+* `TauCeti.soThreeForm R`: the dot product on `so(3)`, read through the hat map.
 
 ## Main results
 
@@ -81,6 +91,9 @@ integral is not formalized here.
   is `n^⊥`.
 * `TauCeti.kksForm_soThreeDualEquiv_mk`, `TauCeti.dotProduct_self_mul_kksForm_soThreeDualEquiv_mk`:
   the KKS form is the triple product, and it is `1 / ‖n‖` times the area form of the sphere.
+* `TauCeti.isSymm_soThreeForm`, `TauCeti.lieInvariant_soThreeForm`,
+  `TauCeti.separatingLeft_soThreeForm`: the dot product on `so(3)` is a symmetric, invariant,
+  nondegenerate form.
 
 ## References
 
@@ -323,5 +336,52 @@ theorem dotProduct_self_mul_kksForm_soThreeDualEquiv_mk (n ξ η : Fin 3 → R) 
     triple_product_permutation n ξ η, mul_comm]
 
 end KKS
+
+/-! ### The invariant dot product -/
+
+section Form
+
+variable (R : Type*) [CommRing R] [NoZeroDivisors R] [NeZero (2 : R)]
+
+/-- The dot product on `so(3)`, read through the hat map: `B(û, v̂) = u ⬝ᵥ v`. -/
+def soThreeForm : LinearMap.BilinForm R (so (Fin 3) R) :=
+  ((soThreeEquiv R).symm.trans (soThreeDualEquiv R)).toLinearMap
+
+variable {R}
+
+/-- The dot product of `A, C ∈ so(3)` is that of their vectors `A = û`, `C = v̂`. -/
+theorem soThreeForm_apply (A C : so (Fin 3) R) :
+    soThreeForm R A C = (soThreeEquiv R).symm A ⬝ᵥ (soThreeEquiv R).symm C :=
+  (rfl)
+
+/-- The dot product pairs `û` with the functional `ν_u`. -/
+@[simp]
+theorem soThreeForm_soThreeEquiv (u : Fin 3 → R) :
+    soThreeForm R (soThreeEquiv R u) = soThreeDualEquiv R u := by
+  simp [soThreeForm]
+
+/-- The dot product on `so(3)` pairs `û` and `v̂` to `u ⬝ᵥ v`. -/
+theorem soThreeForm_apply_soThreeEquiv (u v : Fin 3 → R) :
+    soThreeForm R (soThreeEquiv R u) (soThreeEquiv R v) = u ⬝ᵥ v := by
+  simp
+
+/-- The dot product on `so(3)` is symmetric. -/
+theorem isSymm_soThreeForm : (soThreeForm R).IsSymm :=
+  ⟨fun A C ↦ by rw [soThreeForm_apply, soThreeForm_apply, dotProduct_comm]⟩
+
+/-- **The dot product on `so(3)` is invariant**, because the coadjoint action is the infinitesimal
+rotation: `B ⁅û, v̂⁆ = ν_(u ⨯₃ v) = ⁅û, ν_v⁆ = ⁅û, B v̂⁆`. -/
+theorem lieInvariant_soThreeForm : (soThreeForm R).lieInvariant (so (Fin 3) R) := by
+  intro x y z
+  obtain ⟨u, rfl⟩ := (soThreeEquiv R).surjective x
+  obtain ⟨v, rfl⟩ := (soThreeEquiv R).surjective y
+  rw [lie_soThreeEquiv, soThreeForm_soThreeEquiv, soThreeForm_soThreeEquiv,
+    ← lie_soThreeEquiv_soThreeDualEquiv, Dual.lie_apply]
+
+/-- The dot product on `so(3)` is nondegenerate: `û ↦ ν_u` is a linear equivalence. -/
+theorem separatingLeft_soThreeForm : (soThreeForm R).SeparatingLeft :=
+  LinearMap.separatingLeft_iff_ker_eq_bot.mpr (LinearEquiv.ker _)
+
+end Form
 
 end TauCeti
