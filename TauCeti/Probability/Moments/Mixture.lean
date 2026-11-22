@@ -10,26 +10,30 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Probability.Moments.Covariance
 public import Mathlib.Probability.Moments.Variance
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 
 /-!
 # Means and covariances of mixtures
 
-The integral of an observable against a mixture is the integral of its component means against
-the mixing measure. The covariance of a mixture is the integral of the component covariances
-against the mixing measure plus the covariance of the component means under the mixing measure;
-taking the same observable twice gives the law of total variance.
+The integral against a mixture of an observable integrable under the mixture is the integral of
+its component means against the mixing measure. The covariance of a mixture is the integral of the
+component covariances against the mixing measure plus the covariance of the component means under
+the mixing measure; taking the same observable twice gives the law of total variance.
 
 Throughout, the component family need only be almost everywhere measurable, and the components
 need be probability measures only almost everywhere, so component means are genuine averages.
-Finite second moments of the mixture imply the required integrability of component means and
-covariances, with no assumption on the mixing measure. The laws of total covariance and variance
-need the mixing measure to be finite, but not of mass one: Mathlib's `covariance` and `variance`
-are defined for every measure and center by raw integrals, not by normalized averages, and the
-identities hold in that sense for every finite mixing measure. They fail for some infinite mixing
-measures. The covariance formula applies to any pair of real observables that are
-square-integrable under the mixture, including coordinates of a vector-valued law. The extended
-variance identity on a product needs no integrability at all: when the observable is not
-square-integrable, both sides are infinite.
+With no assumption on the mixing measure, an observable in `Lᵖ` of the mixture, for `1 ≤ p`, has
+its component means in `Lᵖ` of the mixing measure. In particular, for square-integrable
+observables the component means are square-integrable and the component covariances are
+integrable. The laws of total covariance and variance need the mixing measure to be finite, but
+not of mass one: Mathlib's `covariance` and `variance` are defined for every measure and center by
+raw integrals, not by normalized averages, and the identities hold in that sense for every finite
+mixing measure. They fail for some infinite mixing measures. The covariance formula applies to any
+pair of real observables that are square-integrable under the mixture, including coordinates of a
+vector-valued law. The extended variance identity on a product needs no integrability, only
+almost everywhere strong measurability with respect to the product measure: for such an
+observable that is not square-integrable, both sides are infinite. The extended variances of the
+sections of such an observable are almost everywhere measurable in the remaining coordinate.
 
 The integration steps use Mathlib's kernel-composition theory through
 `TauCeti.MeasureTheory.Integral.Bind`.
@@ -47,25 +51,38 @@ namespace TauCeti.Probability
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
   {μ : Measure α} {K : α → Measure β}
 
-/-- Component means of a square-integrable observable with values in a real normed space are
-square-integrable under the mixing law, even when the components are probability measures only
-almost everywhere. -/
+/-- Component means of an observable in `Lᵖ` of the mixture, for `1 ≤ p` and with values in a
+real normed space, are in `Lᵖ` of the mixing measure, even when the components are probability
+measures only almost everywhere. -/
 theorem memLp_integral_bind {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {X : β → E}
-    (hK : AEMeasurable K μ) (hprob : ∀ᵐ a ∂μ, IsProbabilityMeasure (K a))
-    (hX : MemLp X 2 (μ.bind K)) :
-    MemLp (fun a ↦ ∫ x, X x ∂K a) 2 μ := by
+    {p : ℝ≥0∞} (hp : 1 ≤ p) (hK : AEMeasurable K μ)
+    (hprob : ∀ᵐ a ∂μ, IsProbabilityMeasure (K a)) (hX : MemLp X p (μ.bind K)) :
+    MemLp (fun a ↦ ∫ x, X x ∂K a) p μ := by
   have hmean := Measure.aestronglyMeasurable_integral_bind hK hX.aestronglyMeasurable
-  apply (memLp_two_iff_integrable_sq_norm hmean).mpr
-  obtain ⟨hae, hsecond⟩ := (Measure.memLp_two_bind_iff hK hX.aestronglyMeasurable).mp hX
-  refine hsecond.mono' (hmean.norm.pow 2) ?_
-  filter_upwards [hprob, hae] with a hpa hXa
-  -- The second moment of `‖X‖` under `K a` dominates the square of its mean.
-  have hvar := variance_nonneg (fun x ↦ ‖X x‖) (K a)
-  rw [variance_eq_sub hXa.norm] at hvar
-  rw [Real.norm_of_nonneg (sq_nonneg _)]
-  calc ‖∫ x, X x ∂K a‖ ^ 2 ≤ (∫ x, ‖X x‖ ∂K a) ^ 2 :=
-        pow_le_pow_left₀ (norm_nonneg _) (norm_integral_le_integral_norm _) 2
-    _ ≤ ∫ x, ‖X x‖ ^ 2 ∂K a := by simpa only [Pi.pow_apply] using sub_nonneg.mp hvar
+  refine lt_of_le_of_lt ?_ hX.eLpNorm_lt_top
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · -- An essential bound of `X` under the mixture bounds almost every component mean.
+    rw [eLpNorm_exponent_top hmean, eLpNorm_exponent_top hX.aestronglyMeasurable]
+    refine eLpNormEssSup_le_of_ae_eNorm_bound ?_
+    filter_upwards [hprob, Measure.ae_ae_of_ae_bind hK (ae_le_eLpNormEssSup (f := X))] with a hpa ha
+    calc ‖∫ x, X x ∂K a‖ₑ ≤ ∫⁻ x, ‖X x‖ₑ ∂K a := eNorm_integral_le_lintegral_eNorm _
+      _ ≤ ∫⁻ _, eLpNormEssSup X (μ.bind K) ∂K a := lintegral_mono_ae ha
+      _ = eLpNormEssSup X (μ.bind K) := by simp
+  · -- Jensen's inequality under each component, integrated against the mixing measure.
+    have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp_top hp
+    have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hmean,
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hX.aestronglyMeasurable,
+      Measure.lintegral_bind hK (hX.aestronglyMeasurable.eNorm.pow_const _)]
+    gcongr ?_ ^ _
+    refine lintegral_mono_ae ?_
+    filter_upwards [hprob] with a hpa
+    calc ‖∫ x, X x ∂K a‖ₑ ^ p.toReal ≤ (∫⁻ x, ‖X x‖ₑ ∂K a) ^ p.toReal := by
+          gcongr
+          exact eNorm_integral_le_lintegral_eNorm _
+      _ ≤ ∫⁻ x, ‖X x‖ₑ ^ p.toReal ∂K a := by
+          simpa using rpow_lintegral_le_measure_univ_rpow_mul (μ := K a)
+            (u := fun x ↦ ‖X x‖ₑ) hr
 
 variable {X Y : β → ℝ}
 
@@ -88,8 +105,8 @@ theorem integrable_covariance_bind (hK : AEMeasurable K μ)
     (hX : MemLp X 2 (μ.bind K)) (hY : MemLp Y 2 (μ.bind K)) :
     Integrable (fun a ↦ covariance X Y (K a)) μ := by
   have hprod := Measure.integrable_integral_bind hK (hX.integrable_mul hY)
-  have hmeans := (memLp_integral_bind hK hprob hX).integrable_mul
-    (memLp_integral_bind hK hprob hY)
+  have hmeans := (memLp_integral_bind one_le_two hK hprob hX).integrable_mul
+    (memLp_integral_bind one_le_two hK hprob hY)
   simp only [Pi.mul_apply] at hprod hmeans
   exact (hprod.sub hmeans).congr (covariance_ae_eq_bind hK hprob hX hY).symm
 
@@ -110,6 +127,26 @@ private theorem covariance_eq_integral_mul_add {Ω : Type*} [MeasurableSpace Ω]
   simp only [Pi.mul_apply]
   ring
 
+/-- The extended variances of the sections in the second coordinate of a measurable function on
+a product form a measurable function of the first coordinate. -/
+theorem measurable_evariance_prod_right {π : Measure β} [SFinite π] {F : α × β → ℝ}
+    (hF : Measurable F) : Measurable fun a => evariance (fun w => F (a, w)) π := by
+  have hm : StronglyMeasurable fun a => ∫ w, F (a, w) ∂π :=
+    hF.stronglyMeasurable.integral_prod_right'
+  exact Measurable.lintegral_prod_right' (f := fun p : α × β => ‖F p - ∫ w, F (p.1, w) ∂π‖ₑ ^ 2)
+    ((hF.sub (hm.measurable.comp measurable_fst)).eNorm.pow_const 2)
+
+/-- The extended variances of the sections in the second coordinate of a function that is almost
+everywhere strongly measurable on a product form an almost everywhere measurable function of the
+first coordinate. -/
+theorem aemeasurable_evariance_prod_right {π : Measure β} [SFinite π] {F : α × β → ℝ}
+    (hF : AEStronglyMeasurable F (μ.prod π)) :
+    AEMeasurable (fun a => evariance (fun w => F (a, w)) π) μ := by
+  refine (measurable_evariance_prod_right (π := π)
+    hF.stronglyMeasurable_mk.measurable).aemeasurable.congr ?_
+  filter_upwards [Measure.ae_ae_of_ae_prod hF.ae_eq_mk] with a ha
+  exact (evariance_congr ha).symm
+
 variable [IsFiniteMeasure μ]
 
 /-- **Law of total covariance**: the covariance of a mixture over a finite mixing measure is the
@@ -129,8 +166,8 @@ theorem covariance_bind (hK : AEMeasurable K μ)
   have : IsFiniteMeasure (μ.bind K) := ⟨hmass ▸ measure_lt_top μ _⟩
   have hreal : (μ.bind K).real Set.univ = μ.real Set.univ := by
     simpa only [measureReal_def] using congrArg ENNReal.toReal hmass
-  have hmX := memLp_integral_bind hK hprob hX
-  have hmY := memLp_integral_bind hK hprob hY
+  have hmX := memLp_integral_bind one_le_two hK hprob hX
+  have hmY := memLp_integral_bind one_le_two hK hprob hY
   have hprod := Measure.integrable_integral_bind hK (hX.integrable_mul hY)
   have hmeans : Integrable (fun a ↦ (∫ x, X x ∂K a) * ∫ x, Y x ∂K a) μ :=
     hmX.integrable_mul hmY
@@ -153,7 +190,8 @@ theorem variance_bind (hK : AEMeasurable K μ)
       variance (fun a ↦ ∫ x, X x ∂K a) μ := by
   obtain ⟨hXae, _⟩ := (Measure.memLp_two_bind_iff hK hX.aestronglyMeasurable).mp hX
   rw [← covariance_self hX.aestronglyMeasurable.aemeasurable, covariance_bind hK hprob hX hX,
-    covariance_self (memLp_integral_bind hK hprob hX).aestronglyMeasurable.aemeasurable]
+    covariance_self
+      (memLp_integral_bind one_le_two hK hprob hX).aestronglyMeasurable.aemeasurable]
   congr 1
   exact integral_congr_ae
     (hXae.mono fun a ha ↦ covariance_self ha.aestronglyMeasurable.aemeasurable)
@@ -165,16 +203,7 @@ square-integrable. -/
 private theorem memLp_prod_of_evariance_ne_top (hF : AEStronglyMeasurable F (μ.prod π))
     (hslice : ∫⁻ a, evariance (fun w => F (a, w)) π ∂μ ≠ ∞)
     (hmean : evariance (fun a => ∫ w, F (a, w) ∂π) μ ≠ ∞) : MemLp F 2 (μ.prod π) := by
-  -- The section variances agree almost everywhere with those of `hF.mk F`, which are measurable.
-  have hG := hF.stronglyMeasurable_mk
-  have hm : StronglyMeasurable fun a => ∫ w, hF.mk F (a, w) ∂π := hG.integral_prod_right'
-  have hvm : AEMeasurable (fun a => evariance (fun w => F (a, w)) π) μ := by
-    have h := Measurable.lintegral_prod_right' (ν := π)
-      (f := fun p : α × β => ‖hF.mk F p - ∫ w, hF.mk F (p.1, w) ∂π‖ₑ ^ 2)
-      ((hG.measurable.sub (hm.measurable.comp measurable_fst)).eNorm.pow_const 2)
-    refine h.aemeasurable.congr ?_
-    filter_upwards [Measure.ae_ae_of_ae_prod hF.ae_eq_mk] with a ha
-    exact (evariance_congr ha).symm
+  have hvm := aemeasurable_evariance_prod_right hF
   have hsl : ∀ᵐ a ∂μ, MemLp (fun w => F (a, w)) 2 π := by
     filter_upwards [ae_lt_top' hvm hslice, hF.prodMk_left] with a ha hma
     exact (evariance_lt_top_iff_memLp hma).mp ha
@@ -190,7 +219,8 @@ private theorem memLp_prod_of_evariance_ne_top (hF : AEStronglyMeasurable F (μ.
 
 /-- The law of total variance on the product of a finite measure and a probability measure: the
 extended variance of `F` is the integral against the first factor of the variances in the second
-coordinate plus the variance of the average over the second coordinate. When `F` is not
+coordinate plus the variance of the average over the second coordinate. The observable `F` need
+only be almost everywhere strongly measurable with respect to the product measure; when it is not
 square-integrable, both sides are infinite. -/
 theorem evariance_prod_eq (hF : AEStronglyMeasurable F (μ.prod π)) :
     evariance F (μ.prod π) = ∫⁻ a, evariance (fun w => F (a, w)) π ∂μ +
@@ -214,7 +244,7 @@ theorem evariance_prod_eq (hF : AEStronglyMeasurable F (μ.prod π)) :
     exact ⟨variance_map ha.aestronglyMeasurable.aemeasurable hmp,
       integral_map hmp ha.aestronglyMeasurable, ha.comp_of_map hmp⟩
   have hmean : MemLp (fun a => ∫ w, F (a, w) ∂π) 2 μ :=
-    (memLp_integral_bind hK hprob hX).ae_eq (hslice.mono fun a ha => ha.2.1)
+    (memLp_integral_bind one_le_two hK hprob hX).ae_eq (hslice.mono fun a ha => ha.2.1)
   have hvarint : Integrable (fun a => variance (fun w => F (a, w)) π) μ := by
     refine (integrable_covariance_bind hK hprob hX hX).congr ?_
     filter_upwards [hae, hslice] with a ha hs

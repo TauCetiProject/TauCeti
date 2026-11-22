@@ -72,7 +72,7 @@ variances and Borel--Cantelli almost-sure convergence to the mean from summable 
 public section
 
 open Filter MeasureTheory ProbabilityTheory Set
-open scoped NNReal RealInnerProductSpace Topology
+open scoped ENNReal NNReal RealInnerProductSpace Topology
 
 namespace ProbabilityTheory
 
@@ -396,27 +396,63 @@ theorem evariance_integral_prod_le (hint : Integrable F (ν.prod π)) :
   exact evariance_integral_prod_le_of_measurable hG.measurable (hint.congr hFG)
 
 omit [SFinite ν] in
-/-- The two-factor Efron--Stein inequality. -/
-theorem evariance_prod_le [IsProbabilityMeasure ν] (hL : MemLp F 2 (ν.prod π)) :
+/-- If both integrated section variances of `F` on the product of a finite measure and a
+probability measure are finite, then `F` is square-integrable. -/
+private theorem memLp_prod_of_lintegral_evariance_ne_top [IsFiniteMeasure ν]
+    (hF : AEStronglyMeasurable F (ν.prod π))
+    (h₁ : ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν ≠ ∞)
+    (h₂ : ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π ≠ ∞) : MemLp F 2 (ν.prod π) := by
+  rcases eq_zero_or_neZero ν with rfl | hν
+  · simp
+  -- Centering each section in the first coordinate gives a square-integrable function.
+  have hm : AEStronglyMeasurable (fun w => ∫ a, F (a, w) ∂ν) π :=
+    hF.prod_swap.integral_prod_right'
+  have hGm : AEStronglyMeasurable (fun p : α × β => F p - ∫ a, F (a, p.2) ∂ν) (ν.prod π) :=
+    hF.sub hm.comp_snd
+  have hG : ∫⁻ p, ‖F p - ∫ a, F (a, p.2) ∂ν‖ₑ ^ 2 ∂ν.prod π ≠ ∞ := by
+    rwa [lintegral_prod_symm _ (hGm.eNorm.pow_const 2)]
+  have hGL : MemLp (fun p : α × β => F p - ∫ a, F (a, p.2) ∂ν) 2 (ν.prod π) :=
+    (eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top two_ne_zero ENNReal.ofNat_ne_top hGm).mpr
+      (by simpa only [ENNReal.toReal_ofNat, ENNReal.rpow_two] using hG.lt_top)
+  -- Almost every section in the second coordinate is square-integrable, both before and after
+  -- centering in the first coordinate, so the centering function is square-integrable.
+  rw [lintegral_prod _ (hGm.eNorm.pow_const 2)] at hG
+  obtain ⟨a, ⟨ha₁, ha₂⟩, ha₃⟩ := (((ae_lt_top' (aemeasurable_evariance_prod_right hF) h₁).and
+    (ae_lt_top' (hGm.eNorm.pow_const 2).lintegral_prod_right' hG)).and hF.prodMk_left).exists
+  have hsec : MemLp (fun w => F (a, w) - ∫ a', F (a', w) ∂ν) 2 π :=
+    (eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top two_ne_zero ENNReal.ofNat_ne_top
+      (ha₃.sub hm)).mpr
+        (by simpa only [ENNReal.toReal_ofNat, ENNReal.rpow_two, Pi.sub_apply] using ha₂)
+  have hmL : MemLp (fun w => ∫ a, F (a, w) ∂ν) 2 π := by
+    convert ((evariance_lt_top_iff_memLp ha₃).mp ha₁).sub hsec using 1
+    ext w
+    simp
+  convert hGL.add (hmL.comp_snd ν) using 1
+  ext p
+  simp
+
+omit [SFinite ν] in
+/-- The two-factor Efron--Stein inequality on the product of a finite measure and a probability
+measure. The function `F` need only be almost everywhere strongly measurable with respect to the
+product measure; when it is not square-integrable, both sides are infinite. -/
+theorem evariance_prod_le [IsFiniteMeasure ν] (hF : AEStronglyMeasurable F (ν.prod π)) :
     evariance F (ν.prod π) ≤ ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν +
       ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
-  rw [evariance_prod_eq hL.aestronglyMeasurable]
-  gcongr
-  exact evariance_integral_prod_le (hL.integrable one_le_two)
+  by_cases hL : MemLp F 2 (ν.prod π)
+  · rw [evariance_prod_eq hF]
+    gcongr
+    exact evariance_integral_prod_le (hL.integrable one_le_two)
+  rw [evariance_eq_top hF hL, top_le_iff, ENNReal.add_eq_top]
+  by_contra h
+  exact hL (memLp_prod_of_lintegral_evariance_ne_top hF (h ∘ .inl) (h ∘ .inr))
 
 /-- The variance of `f` in coordinate `i`, with the other coordinates frozen at `x`, is a
 measurable function of `x`. -/
 theorem measurable_evariance_update {ι : Type*} [DecidableEq ι] {α : ι → Type*}
     [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) (i : ι) [SFinite (μ i)]
     {f : (∀ i, α i) → ℝ} (hf : Measurable f) :
-    Measurable fun x => evariance (fun y => f (Function.update x i y)) (μ i) := by
-  have hu : Measurable fun p : (∀ i, α i) × α i => f (Function.update p.1 i p.2) :=
-    hf.comp measurable_update'
-  have hm : StronglyMeasurable fun x => ∫ y, f (Function.update x i y) ∂μ i :=
-    hu.stronglyMeasurable.integral_prod_right'
-  exact Measurable.lintegral_prod_right'
-    (f := fun p : (∀ i, α i) × α i =>
-      ‖f (Function.update p.1 i p.2) - ∫ y, f (Function.update p.1 i y) ∂μ i‖ₑ ^ 2)
-    ((hu.sub (hm.measurable.comp measurable_fst)).eNorm.pow_const 2)
+    Measurable fun x => evariance (fun y => f (Function.update x i y)) (μ i) :=
+  measurable_evariance_prod_right (π := μ i)
+    (F := fun p : (∀ i, α i) × α i => f (Function.update p.1 i p.2)) (hf.comp measurable_update')
 
 end TauCeti.Probability
