@@ -523,9 +523,7 @@ theorem exists_affine_coordinate_comparison_not_monotone :
   have hcomp (i : Fin 1) (x : ℝ) : componentRow g (a i) Dg0 x = ![x, -2 * x - 1] := by
     ext j; fin_cases j <;> simp [componentRow_apply, g, a, Dg0]; ring
   have houter (i : Fin 1) (y : Fin 2 → ℝ) : outerRow g h (a i) Dh0 y = -2 * y 0 + y 1 - 1 := by
-    simp only [outerRow_apply, g, h, a, Dh0, add_apply, smul_apply,
-      ContinuousLinearMap.proj_apply, Pi.sub_apply, Matrix.cons_val_zero,
-      Matrix.cons_val_one, smul_eq_mul]
+    simp [outerRow_apply, g, h, a, Dh0, Matrix.vecHead, Matrix.vecTail]
     ring
   have hnotSub : ¬ Prod.fst '' sharedOA Set.univ Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 ⊆
       directOA Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 := fun hsub => by

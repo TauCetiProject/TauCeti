@@ -28,8 +28,8 @@ yields the first-order tangent-support inequality for a differentiable convex fu
 
 All results hold for functions on a real topological vector space with values in an ordered real
 vector space. `ConvexOn.add_le_of_isLocalMinOn_sub` and the first-order tangent-support
-corollary also require an order-closed vector space topology on the codomain; real-valued
-functions are the case of interest.
+corollary also require a vector space topology on the codomain with closed lower rays
+(`ClosedIicTopology`); real-valued functions are the case of interest.
 
 ## References
 
@@ -58,7 +58,7 @@ theorem ConvexOn.add_le_of_eventually_add_le (hu : ConvexOn ℝ s u) (hx : x ∈
   simp_rw [key] at h ⊢
   exact IsMinOn.of_isLocalMinOn_of_convexOn hx h (hu.sub (ℓ.concaveOn hu.1))
 
-variable [TopologicalSpace β] [ContinuousAdd β] [ContinuousSMul ℝ β] [OrderClosedTopology β]
+variable [TopologicalSpace β] [ContinuousAdd β] [ContinuousSMul ℝ β] [ClosedIicTopology β]
 
 /-- **A differentiable function touching a convex function from below supports it.** If `u` is
 convex on `s`, `x ∈ s`, `u - g` has a local minimum at `x` relative to `s`, and `g` has

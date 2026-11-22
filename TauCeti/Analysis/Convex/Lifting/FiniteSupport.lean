@@ -294,11 +294,12 @@ section Separation
 /-- Strict separation of the original feasible set, shared-height projection
 (`Prod.fst '' sharedOA`), and direct outer approximation (`directOA`) — bridged to `sharedRows`
 and `independentRows` by `sharedOA_sum_eq_sharedRows` and
-`directOA_sum_eq_fst_image_independentRows`: for `g x j = x j ^ 2` and `h y = ∑ j, y j` on the
-box `[-1, 1]²` with anchors `(1, 1)` and `(-1, -1)` and budget `1 / 2`, the matched
-actual-derivative outer approximations satisfy
-`{x ∈ D | h (g x) ≤ 1 / 2} ⊂ Prod.fst '' sharedOA ⊂ directOA`, witnessed by `(1, 1 / 4)` and
-`(1, -1)`. -/
+`directOA_sum_eq_fst_image_independentRows`: there exist a domain `D`, functions `g` and `h`,
+anchors `a` in `D` with actual Fréchet derivatives `Dg` and `Dh`, and a budget `b` such that
+`{x ∈ D | h (g x) ≤ b} ⊂ Prod.fst '' sharedOA D Set.univ g h a Dg Dh b ⊂ directOA D g h a Dg Dh b`.
+As a concrete example, take `g x j = x j ^ 2` and `h y = ∑ j, y j` on the box `D = [-1, 1]²` with
+anchors `(1, 1)` and `(-1, -1)` and budget `b = 1 / 2`, where the strict inclusions are witnessed
+by `(1, 1 / 4)` and `(1, -1)`. -/
 theorem exists_strict_sharedOA_ssubset_directOA :
     ∃ (D : Set (Fin 2 → ℝ)) (g : (Fin 2 → ℝ) → Fin 2 → ℝ) (h : (Fin 2 → ℝ) → ℝ)
       (a : Fin 2 → Fin 2 → ℝ) (Dg : Fin 2 → (Fin 2 → ℝ) →L[ℝ] (Fin 2 → ℝ))
@@ -350,11 +351,12 @@ theorem exists_strict_sharedOA_ssubset_directOA :
       Prod.fst '' sharedOA D Set.univ g h a Dg Dh (1 / 2) := fun hsub => by
     have hmem : (![1, -1] : Fin 2 → ℝ) ∈ directOA D g h a Dg Dh (1 / 2) :=
       mem_directOA.2 ⟨Set.mem_pi.mpr fun j _ => by fin_cases j <;> norm_num, fun i => by
-        simp only [h, Dh]; rw [directRow_sum, Fin.sum_univ_two, hrow, hrow]
+        simp only [h, Dh, directRow_sum]
+        simp only [Fin.sum_univ_two, hrow]
         fin_cases i <;> norm_num [a]⟩
     have hsh := (mem_fst_image_sharedOA_sum_iff_forall_choice.1 (hsub hmem)).2 ![0, 1]
-    simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one] at hsh
-    rw [hrow, hrow] at hsh; norm_num [a] at hsh
+    simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, hrow] at hsh
+    norm_num [a] at hsh
   exact ⟨D, g, h, a, Dg, Dh, 1 / 2, ha, hg, hh,
     ssubset_iff_subset_ne.2 ⟨hcmp.1, fun heq => hstrict1 heq.symm.subset⟩,
     ssubset_iff_subset_ne.2 ⟨hcmp.2, fun heq => hstrict2 heq.symm.subset⟩⟩

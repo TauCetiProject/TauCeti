@@ -119,7 +119,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {G : Type*} [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G]
   [ContinuousAdd G] [ContinuousSMul 𝕜 G]
 
-/-- **Chain rule along filters on topological vector spaces.** Generalizes Mathlib's normed-only
+/-- **Chain rule along filters on topological vector spaces.** If `g` has Fréchet derivative `g'`
+along `L'`, `f` has Fréchet derivative `f'` along `L`, and `Prod.map f f` tends from `L` to `L'`,
+then `g ∘ f` has Fréchet derivative `g'.comp f'` along `L`. Generalizes Mathlib's normed-only
 `HasFDerivAtFilter.comp`. -/
 theorem HasFDerivAtFilter.comp_tvs {g : F → G} {g' : F →L[𝕜] G} {f : E → F} {f' : E →L[𝕜] F}
     {L : Filter (E × E)} {L' : Filter (F × F)}
