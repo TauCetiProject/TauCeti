@@ -8,9 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.Complex.Conformal.Area
 import TauCeti.Analysis.Complex.RemovableSingularity
