@@ -21,9 +21,9 @@ Nor does it describe the graphs containing a disjoint sum: `SimpleGraph.sum_le_i
 `V ⊕ W` contains `G ⊕g H` exactly when its two sides contain `G` and `H`, which is how containing a
 disjoint union of patterns splits into two independent containment events.
 
-`SimpleGraph.sum` has no `bot` law in Mathlib either: `TauCeti.SimpleGraph.sum_bot_bot` says a
-disjoint sum of edgeless graphs is edgeless, the form in which a graph parameter that is
-multiplicative over disjoint sums is evaluated on an edgeless graph.
+`SimpleGraph.sum` has no `bot` law in Mathlib either: `SimpleGraph.sum_bot_bot` says a disjoint
+sum of edgeless graphs is edgeless, the form in which a graph parameter that is multiplicative over
+disjoint sums is evaluated on an edgeless graph.
 
 Finally, Mathlib's `SimpleGraph.edgeSetSumEquiv`, implemented by `Sym2.fromRelNdrec`, comes with
 no evaluation lemmas. `SimpleGraph.coe_edgeSetSumEquiv_symm_inl` and
@@ -36,7 +36,7 @@ splits into products over the edges of `G` and of `H`.
 * `TauCeti.instDecidableRelSumAdj` — adjacency in a disjoint sum is decidable;
 * `SimpleGraph.sum_le_iff` — a graph contains a disjoint sum exactly when its two sides contain the
   summands;
-* `TauCeti.SimpleGraph.sum_bot_bot` — a disjoint sum of edgeless graphs is edgeless;
+* `SimpleGraph.sum_bot_bot` — a disjoint sum of edgeless graphs is edgeless;
 * `SimpleGraph.coe_edgeSetSumEquiv_symm_inl`, `SimpleGraph.coe_edgeSetSumEquiv_symm_inr` — the
   edges of the two summands sit in the disjoint sum through the two inclusions.
 -/
@@ -63,13 +63,15 @@ sides contain `G` and `H`: the sum has no edges across the sides. -/
 @[simp]
 theorem _root_.SimpleGraph.sum_le_iff {K : SimpleGraph (V ⊕ W)} :
     G ⊕g H ≤ K ↔ G ≤ K.comap Sum.inl ∧ H ≤ K.comap Sum.inr := by
-  refine ⟨fun h => ⟨fun a b hab => h (sum_adj_inl.2 hab), fun a b hab => h (sum_adj_inr.2 hab)⟩,
-    ?_⟩
-  rintro ⟨hG, hH⟩ (a | a) (b | b) hab
-  · exact hG (sum_adj_inl.1 hab)
-  · simp at hab
-  · simp at hab
-  · exact hH (sum_adj_inr.1 hab)
+  -- `G ⊕g H` is the join of the images of `G` and `H`; bound each through the map–comap Galois
+  -- connection of the embeddings `Function.Embedding.inl/inr`, which coerce to `Sum.inl/inr`.
+  rw [← map_inl_sup_map_inr, sup_le_iff]
+  exact (map_le_iff_le_comap (f := .inl)).and (map_le_iff_le_comap (f := .inr))
+
+/-- A disjoint sum of edgeless graphs is edgeless: no edge is contributed by either summand, and
+none across the two sides. -/
+theorem _root_.SimpleGraph.sum_bot_bot : ((⊥ : SimpleGraph V) ⊕g (⊥ : SimpleGraph W)) = ⊥ := by
+  ext (u | u) (v | v) <;> simp
 
 -- Both evaluation lemmas reduce the `Sym2.fromRelNdrec` implementation of `edgeSetSumEquiv` on an
 -- edge `s(a, b)`, which holds by `rfl` once the edge is split into its endpoints.
@@ -80,8 +82,8 @@ inclusion `Sum.inl`. -/
 theorem _root_.SimpleGraph.coe_edgeSetSumEquiv_symm_inl (e : G.edgeSet) :
     ((edgeSetSumEquiv.symm (.inl e) : (G ⊕g H).edgeSet) : Sym2 (V ⊕ W)) =
       Sym2.map Sum.inl (e : Sym2 V) := by
-  rcases e with ⟨e, he⟩
-  induction e using Sym2.ind with | _ a b => rfl
+  obtain ⟨⟨a, b⟩, _⟩ := e
+  rfl
 
 /-- The inverse of `SimpleGraph.edgeSetSumEquiv` sends an edge of `H` to its image under the right
 inclusion `Sum.inr`. -/
@@ -89,17 +91,7 @@ inclusion `Sum.inr`. -/
 theorem _root_.SimpleGraph.coe_edgeSetSumEquiv_symm_inr (e : H.edgeSet) :
     ((edgeSetSumEquiv.symm (.inr e) : (G ⊕g H).edgeSet) : Sym2 (V ⊕ W)) =
       Sym2.map Sum.inr (e : Sym2 W) := by
-  rcases e with ⟨e, he⟩
-  induction e using Sym2.ind with | _ a b => rfl
-
-namespace SimpleGraph
-
-/-- A disjoint sum of edgeless graphs is edgeless: no edge is contributed by either summand, and
-none across the two sides. -/
-theorem sum_bot_bot : ((⊥ : SimpleGraph V) ⊕g (⊥ : SimpleGraph W)) = ⊥ := by
-  ext u v
-  cases u <;> cases v <;> simp
-
-end SimpleGraph
+  obtain ⟨⟨a, b⟩, _⟩ := e
+  rfl
 
 end TauCeti
