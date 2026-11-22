@@ -98,23 +98,6 @@ theorem isMultiplicative_approximation : IsMultiplicative (approximation (𝕜 :
 
 end TauCeti.SNumbers
 
-namespace ContinuousLinearMap
-
-variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- Hilbert numbers satisfy the mixed-index triangle inequality. -/
-theorem hilbertNumber_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
-    (S + T).hilbertNumber (m + n) ≤ S.hilbertNumber m + T.hilbertNumber n :=
-  hilbertNumber_le_iff.mpr fun A B hA hB ↦ by
-    rw [add_comp, comp_add]
-    exact ((B ∘L S ∘L A).singularValue_add_index_le (B ∘L T ∘L A) m n).trans
-      (add_le_add (S.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one hA hB m)
-        (T.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one hA hB n))
-
-end ContinuousLinearMap
-
 namespace TauCeti.SNumbers
 
 variable {𝕜 : Type u} [RCLike 𝕜]

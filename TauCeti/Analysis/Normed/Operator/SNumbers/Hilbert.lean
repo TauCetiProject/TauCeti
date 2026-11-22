@@ -39,6 +39,7 @@ The remaining axioms are inherited from the approximation numbers through the su
 * `ContinuousLinearMap.hilbertNumber_eq_iSup_div`: the ratio form of `hₙ(T)`.
 * `ContinuousLinearMap.hilbertNumber_le_singularValue`: `hₙ(T) ≤ aₙ(T)`.
 * `ContinuousLinearMap.hilbertNumber_zero`: `h₀(T) = ‖T‖`.
+* `ContinuousLinearMap.hilbertNumber_add_index_le`: `h_{m+n}(S + T) ≤ hₘ(S) + hₙ(T)`.
 * `TauCeti.SNumbers.isSNumberSequence_hilbert`: the Hilbert numbers form an s-number sequence.
 
 ## References
@@ -235,15 +236,19 @@ theorem hilbertNumber_eq_zero_of_rank_le {T : E →L[𝕜] F} {n : ℕ} (hT : T.
   le_antisymm ((T.hilbertNumber_le_singularValue n).trans_eq
     (singularValue_eq_zero_of_rank_le hT)) bot_le
 
-/-- **Perturbative triangle bound.** `hₙ(S + T) ≤ hₙ(S) + ‖T‖`. -/
-theorem hilbertNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
-    (S + T).hilbertNumber n ≤ S.hilbertNumber n + ‖T‖₊ :=
+/-- Hilbert numbers satisfy the mixed-index triangle inequality. -/
+theorem hilbertNumber_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
+    (S + T).hilbertNumber (m + n) ≤ S.hilbertNumber m + T.hilbertNumber n :=
   hilbertNumber_le_iff.mpr fun A B hA hB ↦ by
     rw [add_comp, comp_add]
-    exact ((B ∘L S ∘L A).singularValue_add_le _ n).trans <| add_le_add
-      (S.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one hA hB n)
-      (((B ∘L T ∘L A).singularValue_zero).symm.trans_le
-        ((singularValue_comp_comp_le_of_norm_le_one hB hA T 0).trans (T.singularValue_le_nnnorm 0)))
+    exact ((B ∘L S ∘L A).singularValue_add_index_le (B ∘L T ∘L A) m n).trans
+      (add_le_add (S.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one hA hB m)
+        (T.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one hA hB n))
+
+/-- **Perturbative triangle bound.** `hₙ(S + T) ≤ hₙ(S) + ‖T‖`. -/
+theorem hilbertNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
+    (S + T).hilbertNumber n ≤ S.hilbertNumber n + ‖T‖₊ := by
+  simpa using S.hilbertNumber_add_index_le T n 0
 
 /-- **Two-sided ideal inequality.** `hₙ(B T A) ≤ ‖B‖ hₙ(T) ‖A‖`. -/
 theorem hilbertNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A : E →L[𝕜] F) (n : ℕ) :
