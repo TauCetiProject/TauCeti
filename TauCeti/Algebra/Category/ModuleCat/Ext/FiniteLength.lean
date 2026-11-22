@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.RingTheory.Artinian.Ring
 public import Mathlib.RingTheory.FiniteLength
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Exact.YonedaExt.BaerSum
@@ -14,7 +13,6 @@ import TauCeti.Algebra.Module.LinearMap.FiniteLength
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import TauCeti.Algebra.Category.ModuleCat.Quotient
 import TauCeti.Algebra.Module.Projective.FinitePresentation
-import TauCeti.CategoryTheory.Exact.Projective
 import TauCeti.CategoryTheory.Exact.YonedaExt.LongExact
 import TauCeti.CategoryTheory.Exact.YonedaExt.TrivialIdeal
 import TauCeti.RingTheory.Artinian.FiniteLength

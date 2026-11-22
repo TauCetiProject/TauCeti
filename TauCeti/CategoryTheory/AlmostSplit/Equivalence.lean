@@ -120,16 +120,19 @@ theorem isAlmostSplit_of_map {C D : Type*} [Category* C] [Category* D] [Abelian 
 /-- **Descending an almost-split sequence along a fully faithful functor.** Let `F` be a fully
 faithful functor between abelian categories, and `S` an almost-split sequence whose terms are
 isomorphic to `F.obj X₁`, `F.obj X₂` and `F.obj X₃`. Then there is an almost-split sequence
-`X₁ ⟶ X₂ ⟶ X₃`, the preimage of `S` under `F`. -/
+`X₁ ⟶ X₂ ⟶ X₃`, the preimage of `S` under `F`: its arrows are sent by `F` to those of `S` up to
+the given isomorphisms. -/
 theorem exists_isAlmostSplit_of_obj_iso {C D : Type*} [Category* C] [Category* D] [Abelian C]
     [Abelian D] (F : C ⥤ D) [F.PreservesZeroMorphisms] [F.Full] [F.Faithful]
     {S : ShortComplex D} (hS : S.IsAlmostSplit) {X₁ X₂ X₃ : C} (e₁ : F.obj X₁ ≅ S.X₁)
     (e₂ : F.obj X₂ ≅ S.X₂) (e₃ : F.obj X₃ ≅ S.X₃) :
-    ∃ (i : X₁ ⟶ X₂) (p : X₂ ⟶ X₃) (h : i ≫ p = 0), (ShortComplex.mk i p h).IsAlmostSplit := by
+    ∃ (i : X₁ ⟶ X₂) (p : X₂ ⟶ X₃) (h : i ≫ p = 0), (ShortComplex.mk i p h).IsAlmostSplit ∧
+      F.map i ≫ e₂.hom = e₁.hom ≫ S.f ∧ F.map p ≫ e₃.hom = e₂.hom ≫ S.g := by
   let i := F.preimage (e₁.hom ≫ S.f ≫ e₂.inv)
   let p := F.preimage (e₂.hom ≫ S.g ≫ e₃.inv)
   have h : i ≫ p = 0 := F.map_injective (by simp [i, p])
   exact ⟨i, p, h, F.isAlmostSplit_of_map (ShortComplex.isAlmostSplit_of_iso
-    (ShortComplex.isoMk e₁.symm e₂.symm e₃.symm (by simp [i]) (by simp [p])) hS)⟩
+    (ShortComplex.isoMk e₁.symm e₂.symm e₃.symm (by simp [i]) (by simp [p])) hS),
+    by simp [i], by simp [p]⟩
 
 end CategoryTheory.Functor

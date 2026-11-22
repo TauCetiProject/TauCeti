@@ -224,7 +224,7 @@ theorem exists_isAlmostSplit_of_not_projective [Small.{w} A] (M : ModuleCat.{w} 
     ((ModuleCat.mono_iff_injective i).mp hS.shortExact.mono_f)
   obtain ⟨X₀, _, ⟨e₁⟩⟩ := exists_uliftFunctor_obj_iso.{v, w, max u v} (arTranslate R E (F.obj M))
   obtain ⟨Y₀, _, ⟨e₂⟩⟩ := exists_uliftFunctor_obj_iso.{v, w, max u v} Y
-  obtain ⟨i', p', h', hS'⟩ := F.exists_isAlmostSplit_of_obj_iso hS e₁ e₂ (Iso.refl (F.obj M))
+  obtain ⟨i', p', h', hS', -⟩ := F.exists_isAlmostSplit_of_obj_iso hS e₁ e₂ (Iso.refl (F.obj M))
   exact ⟨X₀, Y₀, i', p', h', inferInstance, inferInstance, hS'⟩
 
 /-- Over an Artin algebra, a finitely generated module ends an almost-split sequence of `A`-modules
@@ -257,7 +257,7 @@ theorem exists_isAlmostSplit_of_not_injective [Small.{w} A] (N : ModuleCat.{w} A
   obtain ⟨Y, i, p, h, hY, hS⟩ := exists_isAlmostSplit_arTranslate R E hE M hiM hpM
   obtain ⟨Y₀, _, ⟨e₂⟩⟩ := exists_uliftFunctor_obj_iso.{v, w, max u v} Y
   obtain ⟨M₀, _, ⟨e₃⟩⟩ := exists_uliftFunctor_obj_iso.{v, w, max u v} M
-  obtain ⟨i', p', h', hS'⟩ := F.exists_isAlmostSplit_of_obj_iso hS e.symm e₂ e₃
+  obtain ⟨i', p', h', hS', -⟩ := F.exists_isAlmostSplit_of_obj_iso hS e.symm e₂ e₃
   exact ⟨Y₀, M₀, i', p', h', inferInstance, inferInstance, hS'⟩
 
 /-- Over an Artin algebra, a finitely generated module starts an almost-split sequence of
