@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Opens
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.GeneratedMap
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
+import TauCeti.Geometry.Manifold.DifferentialForm.Opens
+import TauCeti.Geometry.Manifold.MFDeriv.Opens
 
 /-!
 # Generating functions on open domains
@@ -20,7 +23,22 @@ entire branch stays inside the original domain.
 transformation, its smooth branch, the two covector identities, and the exact Liouville primitive.
 The branch is unique among continuous local right inverses through the specified point.
 The construction uses the globally smooth generated-map API and a smooth bump extension;
-no regularity outside the given open domain is needed.
+no regularity outside the given open domain is needed. The bump extension needs Hausdorff base
+manifolds.
+
+The generated relation is local in the base as well: restricting `S` to a product `U × V` of open
+subsets does not change its mixed Hessian (`TauCeti.mixedHessian_comp_prodMap_subtype_val`), and
+the cotangent inclusions `T*U → T*M`, `T*V → T*N` carry the source and target projections of the
+restriction to those of `S` (`TauCeti.CotangentBundle.openInclusion_generatingSource`,
+`TauCeti.CotangentBundle.openInclusion_generatingTarget`). Chart domains are Hausdorff, so applying
+the construction over the chart domains at the base point and reading the result in the ambient
+cotangent bundles (`TauCeti.CotangentBundle.exists_partialDiffeomorph_openInclusion_eq`) removes
+the Hausdorff hypothesis.
+`TauCeti.CotangentBundle.exists_diffeomorph_opens_of_isInvertible_mixedHessian` states the result
+as a diffeomorphism `φ : U → V` between open sets `U ⊆ T*M` and `V ⊆ T*N` which pulls the
+canonical symplectic form of `T*N`, restricted to `V`, back to that of `T*M`, restricted to `U`.
+It sends `(q₀, d_q S (x))` to `(Q₀, -d_Q S (x))`, and its graph lies in the relation
+`p = d_q S (q, Q)`, `P = -d_Q S (q, Q)` with `(q, Q)` in the domain of `S`.
 
 ## References
 
@@ -32,7 +50,7 @@ public section
 
 noncomputable section
 
-open Bundle Filter Manifold Set
+open Bundle Filter Manifold Set TopologicalSpace
 open scoped Manifold ContDiff Topology
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
@@ -43,9 +61,38 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 namespace TauCeti.CotangentBundle
 
+/-! ### Restricting generating functions to open subsets -/
+
+/-- The cotangent inclusion of an open subset `U ⊆ M` carries the source projection of the
+restriction of `S` to `U × V` to the source projection of `S`. -/
+theorem openInclusion_generatingSource {U : Opens M} {V : Opens N} (S : M × N → ℝ) (y : U × V) :
+    openInclusion U (generatingSource I (S ∘ Prod.map Subtype.val Subtype.val) y) =
+      generatingSource I S (Prod.map Subtype.val Subtype.val y) := by
+  rw [openInclusion_def, generatingSource_eq_mk, generatingSource_eq_mk]
+  refine CotangentBundle.ext rfl fun v ↦ ?_
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    Manifold.tangentSpaceOpenEquiv_symm_apply]
+  exact congrArg (· v) (Manifold.mvfderiv_comp_subtype_val (J := I) (fun q ↦ S (q, (y.2 : N))) y.1)
+
+/-- The cotangent inclusion of an open subset `V ⊆ N` carries the target projection of the
+restriction of `S` to `U × V` to the target projection of `S`. -/
+theorem openInclusion_generatingTarget {U : Opens M} {V : Opens N} (S : M × N → ℝ) (y : U × V) :
+    openInclusion V (generatingTarget J (S ∘ Prod.map Subtype.val Subtype.val) y) =
+      generatingTarget J S (Prod.map Subtype.val Subtype.val y) := by
+  rw [openInclusion_def, generatingTarget_eq_mk, generatingTarget_eq_mk]
+  refine CotangentBundle.ext rfl fun v ↦ ?_
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    Manifold.tangentSpaceOpenEquiv_symm_apply]
+  exact congrArg (fun L ↦ (-L) v)
+    (Manifold.mvfderiv_comp_subtype_val (J := J) (fun Q ↦ S ((y.1 : M), Q)) y.2)
+
 variable [IsManifold I ∞ M] [IsManifold J ∞ N]
   [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
-  [BoundarylessManifold I M] [BoundarylessManifold J N] [T2Space M] [T2Space N]
+  [BoundarylessManifold I M] [BoundarylessManifold J N]
+
+section T2
+
+variable [T2Space M] [T2Space N]
 
 /-- **Local generation on an open domain.** If `S` is smooth on an open `W` and its mixed Hessian
 is invertible at `x ∈ W`, there is a partial canonical transformation through the generated
@@ -143,5 +190,78 @@ theorem exists_partialDiffeomorph_of_isInvertible_mixedHessian
     · rw [hsrc]
       filter_upwards [hnear, hγsrc] with z hz hzsrc
       exact ((hO _ hz).2.generatingSource_eq (I := I)).trans hzsrc
+
+end T2
+
+/-- **Generating functions give symplectomorphisms between open sets.** Let `S` be smooth on an
+open set `W ⊆ M × N` whose mixed Hessian `d_Q (d_q S)` is invertible at `x ∈ W`. Then there are
+open sets `U ⊆ T*M` and `V ⊆ T*N` and a diffeomorphism `φ : U → V` pulling the canonical
+symplectic form of `T*N`, restricted to `V`, back to that of `T*M`, restricted to `U`. It sends
+`(q₀, d_q S (x))` to `(Q₀, -d_Q S (x))`, and every `z = (q, p) ∈ U` with `φ z = (Q, P)` satisfies
+`(q, Q) ∈ W`, `p = d_q S (q, Q)` and `P = -d_Q S (q, Q)`.
+
+No Hausdorff hypothesis on `M` or `N` is needed: the construction takes place over the chart
+domains at `x`. -/
+theorem exists_diffeomorph_opens_of_isInvertible_mixedHessian
+    {W : Set (M × N)} (hW : IsOpen W) (hxW : x ∈ W)
+    (hS : ContMDiffOn (I.prod J) 𝓘(ℝ) ∞ S W)
+    (hx : (mixedHessian I J S x).IsInvertible) :
+    ∃ (U : Opens (CotangentBundle I M)) (V : Opens (CotangentBundle J N))
+      (φ : U ≃ₘ⟮I.prod 𝓘(ℝ, E →L[ℝ] ℝ), J.prod 𝓘(ℝ, F →L[ℝ] ℝ)⟯ V),
+      (∃ h : generatingSource I S x ∈ U,
+        (φ ⟨_, h⟩ : CotangentBundle J N) = generatingTarget J S x) ∧
+      (∀ z : U, ((z : CotangentBundle I M).proj, (φ z : CotangentBundle J N).proj) ∈ W ∧
+        generatingSource I S ((z : CotangentBundle I M).proj, (φ z : CotangentBundle J N).proj) =
+          z ∧
+        generatingTarget J S ((z : CotangentBundle I M).proj, (φ z : CotangentBundle J N).proj) =
+          φ z) ∧
+      SmoothForm.mpullback φ φ.contMDiff
+          (SmoothForm.mpullback (Subtype.val : V → CotangentBundle J N) contMDiff_subtypeVal
+            (symplecticForm J N)) =
+        SmoothForm.mpullback (Subtype.val : U → CotangentBundle I M) contMDiff_subtypeVal
+          (symplecticForm I M) := by
+  -- Restrict `S` to the product of the chart domains at `x`, which are Hausdorff.
+  let U₀ : Opens M := ⟨(chartAt H x.1).source, (chartAt H x.1).open_source⟩
+  let V₀ : Opens N := ⟨(chartAt H' x.2).source, (chartAt H' x.2).open_source⟩
+  have : T2Space H := I.isClosedEmbedding.isEmbedding.t2Space
+  have : T2Space H' := J.isClosedEmbedding.isEmbedding.t2Space
+  have : T2Space U₀ := (chartAt H x.1).toHomeomorphSourceTarget.isEmbedding.t2Space
+  have : T2Space V₀ := (chartAt H' x.2).toHomeomorphSourceTarget.isEmbedding.t2Space
+  let y : U₀ × V₀ := (⟨x.1, mem_chart_source H x.1⟩, ⟨x.2, mem_chart_source H' x.2⟩)
+  have : Nonempty U₀ := ⟨y.1⟩
+  obtain ⟨Φ, β, hyΦ, hβy, -, hβ, hΦ, -, -⟩ := exists_partialDiffeomorph_of_isInvertible_mixedHessian
+    (hW.preimage (continuous_subtypeVal.prodMap continuous_subtypeVal))
+    (show Prod.map Subtype.val Subtype.val y ∈ W from hxW)
+    (hS.comp (contMDiff_subtypeVal.prodMap contMDiff_subtypeVal).contMDiffOn
+      (mapsTo_preimage _ _))
+    (by rwa [mixedHessian_comp_prodMap_subtype_val])
+  -- Read the resulting canonical transformation in the ambient cotangent bundles.
+  obtain ⟨Ψ, hΨsrc, hΨ, hΨω⟩ := exists_partialDiffeomorph_openInclusion_eq Φ hΦ
+  have hrel (z) (hz : z ∈ Ψ.source) :
+      ∃ w ∈ W, generatingSource I S w = z ∧ generatingTarget J S w = Ψ z := by
+    rw [hΨsrc] at hz
+    obtain ⟨z, hz, rfl⟩ := hz
+    obtain ⟨hβW, hsrc, htgt⟩ := hβ z hz
+    exact ⟨_, hβW, by rw [← openInclusion_generatingSource, hsrc],
+      by rw [hΨ z hz, htgt, openInclusion_generatingTarget]⟩
+  have hy : Prod.map Subtype.val Subtype.val y = x := rfl
+  have hx₀ : generatingSource I S x ∈ Ψ.source := by
+    rw [hΨsrc, ← hy]
+    exact ⟨_, hyΦ, openInclusion_generatingSource S y⟩
+  have hΨx : Ψ (generatingSource I S x) = generatingTarget J S x := by
+    rw [← hy, ← openInclusion_generatingSource S y, hΨ _ hyΦ, (hβ _ hyΦ).2.2, hβy,
+      openInclusion_generatingTarget]
+  refine ⟨⟨Ψ.source, Ψ.open_source⟩, ⟨Ψ.target, Ψ.open_target⟩, Ψ.toDiffeomorphSourceTarget,
+    ⟨hx₀, (Ψ.toDiffeomorphSourceTarget_apply_coe _).trans hΨx⟩, fun z ↦ ?_, ?_⟩
+  · obtain ⟨w, hwW, hws, hwt⟩ := hrel z z.property
+    rw [Ψ.toDiffeomorphSourceTarget_apply_coe, ← hwt, ← hws, proj_generatingSource,
+      proj_generatingTarget]
+    exact ⟨hwW, rfl, rfl⟩
+  -- The forms: through the inclusions, `φ` is `Ψ`, which preserves the canonical forms.
+  apply Subtype.ext
+  funext z
+  simp only [SmoothForm.coe_mpullback]
+  rw [mpullback_toDiffeomorphSourceTarget_apply Ψ (by simp), mpullback_subtype_val_apply]
+  exact hΨω z z.property
 
 end TauCeti.CotangentBundle
