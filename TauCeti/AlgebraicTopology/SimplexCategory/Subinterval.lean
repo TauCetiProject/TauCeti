@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 
-import TauCeti.AlgebraicTopology.SimplexCategory.Basic
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Faces of subintervals in the simplex category
@@ -62,8 +62,11 @@ lemma δ_comp_subinterval {n j q : ℕ} (i : Fin (q + 2)) (k : Fin (n + 2))
     δ i ≫ subinterval j (q + 1) h = subinterval j q (by omega) ≫ δ k := by
   ext l : 3
   rw [Fin.ext_iff]
-  simp only [comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply, val_δ_toOrderHom_apply,
-    val_subinterval_toOrderHom_apply, ← hik, add_comm j, Nat.add_lt_add_iff_right]
+  -- A coface map acts on vertices by `Fin.succAbove`, by definition (`SimplexCategory.δ_apply`).
+  change ((subinterval j (q + 1) h).toOrderHom (i.succAbove l) : ℕ) =
+    k.succAbove ((subinterval j q _).toOrderHom l)
+  simp only [val_subinterval_toOrderHom_apply, Fin.val_succAbove, ← hik, add_comm j,
+    Nat.add_lt_add_iff_right]
   split_ifs <;> omega
 
 /-- Deleting a vertex before a subinterval shifts the subinterval. -/
@@ -73,8 +76,10 @@ lemma subinterval_comp_δ_of_le {n j q : ℕ} (k : Fin (n + 2)) (hk : (k : ℕ) 
     subinterval j q h ≫ δ k = subinterval (j + 1) q (by omega) := by
   ext l : 3
   rw [Fin.ext_iff]
+  -- `δ k` acts on vertices by `Fin.succAbove k`, by definition (`SimplexCategory.δ_apply`).
+  change (k.succAbove ((subinterval j q h).toOrderHom l) : ℕ) = _
   have hnot : ¬(l : ℕ) + j < k := by omega
-  simp [val_δ_toOrderHom_apply, hnot]
+  simp [Fin.val_succAbove, hnot]
   omega
 
 /-- Deleting a vertex after a subinterval does not change it. -/
@@ -84,7 +89,9 @@ lemma subinterval_comp_δ_of_lt {n j q : ℕ} (k : Fin (n + 2)) (hk : j + q < k)
     subinterval j q h ≫ δ k = subinterval j q (by omega) := by
   ext l : 3
   rw [Fin.ext_iff]
-  simp [val_δ_toOrderHom_apply]
+  -- `δ k` acts on vertices by `Fin.succAbove k`, by definition (`SimplexCategory.δ_apply`).
+  change (k.succAbove ((subinterval j q h).toOrderHom l) : ℕ) = _
+  simp [Fin.val_succAbove]
   omega
 
 /-- The last face of the subinterval `j, …, j + q + 1` is the subinterval `j, …, j + q`. -/
