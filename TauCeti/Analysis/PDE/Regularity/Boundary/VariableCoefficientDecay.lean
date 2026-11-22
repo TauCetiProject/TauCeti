@@ -393,9 +393,8 @@ private theorem exists_setIntegral_ball_inter_norm_sq_le_rpow {κ θ C₂ : ℝ}
   -- The half-space has density one half in the closed balls centred on its boundary hyperplane.
   have hdens (t : ℝ) : (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ℝ≥0∞) * volume (closedBall z t) ≤
       volume (closedBall z t ∩ H) := by
-    rw [show (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH,
-      inter_comm, volume.addHaar_setOf_lt_inner_inter_closedBall hν hz,
-      ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat, ENNReal.div_eq_inv_mul]
+    rw [show (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH]
+    exact volume.two_inv_mul_addHaar_closedBall_le_addHaar_inter_setOf_lt_inner hν hz.ge t
   refine (h (Ω := H) (g := g) (fun t _ _ => hdens t) (hgs R le_rfl) hR hΦR (fun s hs hsθ => ?_) t
     ht htθ).trans_eq ?_
   · -- The distance to the multiples of `ν` bounds the square mean oscillation.
