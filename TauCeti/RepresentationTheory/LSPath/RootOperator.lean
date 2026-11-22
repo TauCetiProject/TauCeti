@@ -556,6 +556,7 @@ theorem reflectRecords_of_apply_sum_le (hc : f l.sum ≤ c) :
 
 /-- When the minimal height equals the final height, no record strictly increases, so record
 reflection leaves the segment list unchanged for every cap. -/
+@[simp]
 theorem reflectRecords_of_listMinHeight_eq_apply_sum (c : 𝕜)
     (hl : listMinHeight f l = f l.sum) :
     reflectRecords f x c l = l := by

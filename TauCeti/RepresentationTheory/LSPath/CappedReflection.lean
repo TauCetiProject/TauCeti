@@ -424,6 +424,8 @@ theorem cappedReflection_eq_of_apply_endpoint_le {c : 𝕜} (p : PLPath 𝕜 V)
 
 /-- When the minimal height equals the endpoint height, capped reflection fixes the path for every
 cap. -/
+-- Lower priority than `cappedReflection_one` and `cappedReflection_straight_of_nonpos`.
+@[simp low]
 theorem cappedReflection_eq_self_of_minHeight_eq_apply_endpoint (c : 𝕜) (p : PLPath 𝕜 V)
     (hp : p.minHeight f = f p.endpoint) :
     cappedReflection f x c p = p := by

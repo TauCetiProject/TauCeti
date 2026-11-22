@@ -316,16 +316,20 @@ theorem cast_apply (h : m = n) (ψ : SimilarityHom m c d) (x : B) :
   subst h
   rfl
 
-private theorem eq_cast_of_forall {k l : ℕ} (h : k = l) {ψ : SimilarityHom l c d}
+/-- Two similarity morphisms at propositionally equal scale factors are equal up to cast
+provided they agree pointwise. -/
+theorem eq_cast_of_forall {k l : ℕ} (h : k = l) {ψ : SimilarityHom l c d}
     {χ : SimilarityHom k c d} (happly : ∀ x, ψ x = χ x) :
     ψ = h ▸ χ := by
   subst h
   exact ext happly
 
+@[simp]
 theorem comp_id (ψ : SimilarityHom n c d) :
     ψ.comp (SimilarityHom.id c) = (Nat.mul_one n).symm ▸ ψ :=
   eq_cast_of_forall (Nat.mul_one n).symm fun _ ↦ by simp
 
+@[simp]
 theorem id_comp (ψ : SimilarityHom n c d) :
     (SimilarityHom.id d).comp ψ = (Nat.one_mul n).symm ▸ ψ :=
   eq_cast_of_forall (Nat.one_mul n).symm fun _ ↦ by simp
