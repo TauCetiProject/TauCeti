@@ -19,9 +19,10 @@ For a ring `k`, the simplicial singular chain complex with coefficients in `k` i
 gives the element-level interface to it: the chain `simplexChain σ a` of a simplex with a
 coefficient, the extensionality of linear maps out of the chains (and, for integer coefficients,
 of additive maps), the linear map with prescribed values on simplices, the push-forward and the
-boundary of a simplex, the chains of points and paths (`TauCeti.pointChain`,
-`TauCeti.pathChain`), and the augmentation, the sum of the coefficients of a `0`-chain, natural
-and vanishing on boundaries.
+boundary of a simplex, the inclusion of the chains of a subcomplex of the singular simplicial set,
+the chains of points, paths and maps from standard simplices (`TauCeti.pointChain`,
+`TauCeti.pathChain`, `TauCeti.simplexMapChain`), and the augmentation, the sum of the coefficients
+of a `0`-chain, natural and vanishing on boundaries.
 
 ## Main definitions
 
@@ -192,6 +193,18 @@ theorem singularAugment_map {X Y : TopCat.{u}} (f : X ⟶ Y) (x : ((singularChai
         singularAugment_simplexChain]
   exact LinearMap.congr_fun this x
 
+/-- The inclusion of the chains of a subcomplex of the singular simplicial set sends the chain of
+a simplex of the subcomplex to the chain of the same singular simplex. -/
+theorem chainComplexMap_ι_f_ιChainComplex {X : TopCat.{u}} (A : (TopCat.toSSet.obj X).Subcomplex)
+    {n : ℕ} (σ : (A : SSet.{u}) _⦋n⦌) (a : k) :
+    ((SSet.chainComplexMap A.ι (ModuleCat.of k k)).f n).hom
+        (((A : SSet.{u}).ιChainComplex (R := ModuleCat.of k k) σ).hom a) =
+      simplexChain σ.val a := by
+  rw [← ConcreteCategory.comp_apply, SSet.ι_chainComplexMap_f]
+  -- `simplexChain` is `ιChainComplex` of the singular simplicial set, and the inclusion of the
+  -- subcomplex sends `σ` to `σ.val`.
+  rfl
+
 /-- The boundary of a singular simplex is the alternating sum of its faces. -/
 @[simp]
 theorem singularChains_d_simplexChain {X : TopCat.{u}} {n : ℕ}
@@ -243,6 +256,11 @@ abbrev pointChain {X : TopCat.{u}} (p : X) : ((singularChains k).obj X).X 0 :=
 (`TauCeti.TopCat.simplex₁`). -/
 abbrev pathChain {X : TopCat.{u}} (g : C(I, X)) : ((singularChains k).obj X).X 1 :=
   simplexChain (TopCat.simplex₁ g) 1
+
+/-- The chain of the singular `n`-simplex of a map from the standard `n`-simplex. -/
+abbrev simplexMapChain {X : TopCat.{u}} {n : ℕ} (f : C(Convexity.StdSimplex ℝ (Fin (n + 1)), X)) :
+    ((singularChains k).obj X).X n :=
+  simplexChain ((X.toSSetObjEquiv (.op ⦋n⦌)).symm f) 1
 
 variable {k}
 
