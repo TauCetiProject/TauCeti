@@ -908,9 +908,9 @@ boundary hyperplane, and let `A` be a matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ`
 `∫_{B_ρ⁺} ‖∇u - p_ρ‖² ≤ C (ρ / r)^(n + 2) ∫_{B_r⁺} ‖∇u - t ν‖²`,
 
 where `p_ρ = (⟪(∇u)_{B_ρ⁺}, ν⟫ / ‖ν‖²) ν` is the multiple of `ν` closest to `∇u` in `L²(B_ρ⁺)`
-(`TauCeti.setIntegral_norm_sub_inner_setAverage_div_smul_sq_le`), so that the estimate can be
-iterated. The multiples of `ν` are the gradients of the linear functions `t (⟪x, ν⟫ - c₀)`, which
-vanish on the hyperplane and solve the equation. -/
+(`TauCeti.setIntegral_norm_sub_starProjection_setAverage_sq_le` for `ℝ ∙ ν`), so that the
+estimate can be iterated. The multiples of `ν` are the gradients of the linear functions
+`t (⟪x, ν⟫ - c₀)`, which vanish on the hyperplane and solve the equation. -/
 theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smul_sq_le
     {lam Lam : ℝ} (hlam : 0 < lam) :
     ∃ C : ℝ, 0 < C ∧ ∀ {U H : Opens (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
@@ -938,12 +938,15 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smu
   · rw [ball_zero, empty_inter, Measure.restrict_empty, integral_zero_measure]
     positivity
   -- Among the multiples of `ν`, the projection of the average of `∇u` is the best constant.
-  have hmin := setIntegral_norm_sub_inner_setAverage_div_smul_sq_le
-    (volume_ball_inter_ne_top z ρ H) ((Lp.memLp (W1p.gradient u)).mono_measure
+  have hmin := fun {c} => setIntegral_norm_sub_starProjection_setAverage_sq_le (c := c)
+    (volume_ball_inter_ne_top z ρ H) ((Lp.aestronglyMeasurable (W1p.gradient u)).mono_measure
       (Measure.restrict_mono (inter_subset_left.trans ((ball_subset_ball hρr).trans hball))
-        le_rfl)) ν
+        le_rfl)) (ℝ ∙ ν)
+  rw [Submodule.starProjection_singleton, RCLike.ofReal_real_eq_id, id_eq, real_inner_comm] at hmin
+  have hmem : ∀ t : ℝ, t • ν ∈ ℝ ∙ ν := fun t =>
+    Submodule.smul_mem _ t (Submodule.mem_span_singleton_self ν)
   refine le_mul_div_pow_mul_of_le (n + 2) (le_add_of_nonneg_right (div_nonneg hLam hlam.le)) hρ0
-    hρr hI (by positivity) (fun hsmall => ?_) ((hmin t).trans (setIntegral_mono_set
+    hρr hI (by positivity) (fun hsmall => ?_) ((hmin (hmem t)).trans (setIntegral_mono_set
       ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
         (inter_subset_left.trans hball) (volume_ball_inter_ne_top z r H) _)
       (Filter.Eventually.of_forall fun _ => by positivity)
@@ -959,7 +962,7 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smu
       (mapsTo_hyperplaneReflection_ball hz _) measurableSet_ball
       (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hsmall) hodd)
   have hMm : M m = (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν := (congrArg M hm).trans (hM _)
-  calc _ ≤ ∫ x in ball z ρ ∩ H, ‖W1p.gradient u x - M m‖ ^ 2 := by rw [hMm]; exact hmin _
+  calc _ ≤ ∫ x in ball z ρ ∩ H, ‖W1p.gradient u x - M m‖ ^ 2 := by rw [hMm]; exact hmin (hmem _)
     _ ≤ κ ^ 2 * ∫ y in ball z (κ * ρ), ‖W1p.gradient w y - m‖ ^ 2 :=
         hT ρ hsmall ((ball_subset_ball hρr).trans hball) m
     _ ≤ κ ^ 2 * (D * (κ * ρ / (r / κ)) ^ (n + 2) *

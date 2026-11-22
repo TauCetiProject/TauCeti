@@ -118,6 +118,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq`: in an inner product
   space the square mean oscillation about a constant splits orthogonally, so the average is the
   best constant, with no loss.
+* `TauCeti.setIntegral_norm_sub_starProjection_setAverage_sq_le`: among the constants in a
+  subspace `K`, the projection of the average onto `K` is the best constant.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le_add_of_subset`: the decay of the square mean
   oscillation from `t` to `s ⊆ t` passes from a comparison function `H` to `f`.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
@@ -898,26 +900,33 @@ theorem setIntegral_norm_sub_setAverage_sq_le_add_of_subset {t : Set X} {f H : X
   have := mul_le_mul_of_nonneg_left step3 hK
   linarith
 
-/-- **The best constant on a line.** Among the multiples `t ν` of a vector `ν`, the orthogonal
-projection `(⟪f_s, ν⟫ / ‖ν‖²) ν` of the average `f_s` of `f` over a set `s` of finite measure
-minimizes the square mean distance to `f` on `s`. -/
-theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le (hs : μ s ≠ ⊤)
-    (hf : MemLp f 2 (μ.restrict s)) (ν : F) (t : ℝ) :
-    ∫ x in s, ‖f x - (⟪⨍ y in s, f y ∂μ, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2 ∂μ ≤
-      ∫ x in s, ‖f x - t • ν‖ ^ 2 ∂μ := by
+/-- **The best constant in a subspace.** Among the constants `c` in a subspace `K` that admits an
+orthogonal projection, the projection `K.starProjection f_s` of the average `f_s` of `f` over a
+set `s` of finite measure minimizes the square mean distance to `f` on `s`. If `f` is not square
+integrable on `s`, both sides are `0`. -/
+theorem setIntegral_norm_sub_starProjection_setAverage_sq_le (hs : μ s ≠ ⊤)
+    (hfm : AEStronglyMeasurable f (μ.restrict s)) (K : Submodule ℝ F) [K.HasOrthogonalProjection]
+    {c : F} (hc : c ∈ K) :
+    ∫ x in s, ‖f x - K.starProjection (⨍ y in s, f y ∂μ)‖ ^ 2 ∂μ ≤
+      ∫ x in s, ‖f x - c‖ ^ 2 ∂μ := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  by_cases hf : MemLp f 2 (μ.restrict s)
+  swap
+  · -- Off `L²`, no `‖f - d‖²` is integrable, since `f - d ∈ L²` would put `f` in `L²`.
+    have h0 (d : F) : ∫ x in s, ‖f x - d‖ ^ 2 ∂μ = 0 := integral_undef fun hi => hf <| by
+      simpa using ((memLp_two_iff_integrable_sq_norm (hfm.sub aestronglyMeasurable_const)).2
+        hi).add (memLp_const d)
+    rw [h0, h0]
   have hint : IntegrableOn f s μ := hf.integrable one_le_two
   have hsq := hf.integrableOn_norm_sub_sq_of_subset subset_rfl hs
   set m := ⨍ y in s, f y ∂μ
   rw [setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hint
-      (hsq ((⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν)),
-    setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hint (hsq (t • ν))]
+      (hsq (K.starProjection m)),
+    setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hint (hsq c)]
   refine add_le_add_right (mul_le_mul_of_nonneg_left ?_ measureReal_nonneg) _
-  -- The projection of `m` onto `ℝ ∙ ν` is at least as close to `m` as `t • ν ∈ ℝ ∙ ν`.
-  have h := ((ℝ ∙ ν).dist_starProjection_eq_infDist m).trans_le
-    (Metric.infDist_le_dist_of_mem (Submodule.smul_mem _ t (Submodule.mem_span_singleton_self ν)))
-  rw [Submodule.starProjection_singleton, RCLike.ofReal_real_eq_id, id_eq, dist_eq_norm,
-    dist_eq_norm, real_inner_comm] at h
+  -- The projection of `m` onto `K` is at least as close to `m` as `c ∈ K`.
+  have h := (K.dist_starProjection_eq_infDist m).trans_le (Metric.infDist_le_dist_of_mem hc)
+  rw [dist_eq_norm, dist_eq_norm] at h
   exact pow_le_pow_left₀ (norm_nonneg _) h 2
 
 end InnerProduct

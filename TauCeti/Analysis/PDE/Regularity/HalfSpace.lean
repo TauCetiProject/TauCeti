@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
@@ -159,10 +160,11 @@ private theorem setIntegral_energyFormH1_split
           (matrixBilinearForm (a x) (b i) (b j) • ⟪W1p.gradient U x, b j⟫_ℝ)) ∂mu := by
     refine integral_congr_ae ?_
     filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-    rw [W1p.gradient_ofTestFunctionₗ, hx,
-      b.bilin_eq_inner_mul_sum_add_sum_sum (matrixBilinearForm (a x)) ν]
-    simp only [inner_gradient_left, (hφ x).lineDeriv_eq_fderiv, smul_eq_mul, Finset.mul_sum,
-      ν', P]
+    rw [W1p.gradient_ofTestFunctionₗ, hx, ← ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
+      b.bilin_eq_inner_mul_sum_add_sum_sum b _ ν]
+    simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, RCLike.ofReal_real_eq_id, id_eq,
+      real_inner_comm (gradient (φ : EuclideanSpace ℝ ι → ℝ) x), real_inner_comm (W1p.gradient U x),
+      inner_gradient_left, (hφ x).lineDeriv_eq_fderiv, smul_eq_mul, Finset.mul_sum, ν', P]
   rw [← hU φ, energyFormH1_zero_zero_eq_setIntegral, hpt,
     integral_add hIW.integrableOn (integrable_finsetSum _ fun i _ =>
       integrable_finsetSum _ fun j _ => (hI (P (b i)) (b i) j).integrableOn),
@@ -406,10 +408,17 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal
     (fun p q => (lipschitzOnWith_matrixBilinearForm_apply_apply hK p q).continuousOn)
     hU (G := fun i j => G i j) hG
   -- Subtracting the tangential parts leaves `⟪e, a e⟫ ∂_e u`, whose derivative is `R`.
+  have hnormal : ∀ x, ∑ j, matrixBilinearForm (a x) ((‖e‖ ^ 2)⁻¹ • e) (b j) •
+        ⟪W1p.gradient U x, b j⟫_ℝ -
+      ∑ j, matrixBilinearForm (a x) ((‖e‖ ^ 2)⁻¹ • e) (b j) • ⟪W1p.gradient U x, P (b j)⟫_ℝ =
+      matrixBilinearForm (a x) ((‖e‖ ^ 2)⁻¹ • e) ((‖e‖ ^ 2)⁻¹ • e) * ⟪W1p.gradient U x, e⟫_ℝ :=
+    fun x => by
+      simpa only [RCLike.ofReal_real_eq_id, id_eq, real_inner_comm (W1p.gradient U x),
+        smul_eq_mul, P] using b.sum_apply_mul_inner_sub_sum_apply_mul_inner_starProjection
+          (matrixBilinearForm (a x) ((‖e‖ ^ 2)⁻¹ • e)) e (W1p.gradient U x)
   obtain ⟨R, hRn, hRae⟩ := exists_norm_le_ae_eq_neg_add_sum_sub_sum f G T hGD hTD
   have hR := ((hW.sub (HasWeakLineDerivOn.sum Finset.univ fun j _ => hT j)).congr_ae
-    (Eventually.of_forall fun x => b.sum_smul_inner_sub_sum_smul_inner_proj
-      (matrixBilinearForm (a x)) e (W1p.gradient U x))).congr_ae_deriv hRae.symm
+    (Eventually.of_forall fun x => hnormal x)).congr_ae_deriv hRae.symm
   rw [hν'] at hR
   obtain ⟨G', hG'n, hG'⟩ :=
     exists_norm_le_hasWeakLineDerivOn_inner_gradient_of_matrixBilinearForm_mul he ha hK hR

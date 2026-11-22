@@ -15,9 +15,7 @@ A translation orthogonal to the normal vector preserves a strict half-space. The
 `r` about a unit vector `x` lies in the half-space `{z | 1 - r ≤ ⟪x, z⟫}`, and more generally a
 closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever `⟪w, ν⟫ + r * ‖ν‖ < c`
 (`TauCeti.closedBall_subset_setOf_inner_lt`) and in `{y | c < ⟪y, ν⟫}` whenever
-`c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`). Relative to an
-orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part along the
-basis vectors projected onto `(ℝ ∙ ν)ᗮ`. In rigid coordinates
+`c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`). In rigid coordinates
 `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so the region
 where it is positive is a half-space.
 -/
@@ -71,61 +69,6 @@ theorem closedBall_subset_setOf_lt_inner {E : Type*} [SeminormedAddCommGroup E]
   simpa [inner_neg_right] using closedBall_subset_setOf_inner_lt h' hy
 
 end TauCeti
-
-namespace OrthonormalBasis
-
-open scoped InnerProductSpace
-
-/-- Splitting a bilinear form along `ν` and the subspace orthogonal to it: for an orthonormal
-basis `(eᵢ)`,
-`B(g, w) = ⟪g, ν⟫ ∑ⱼ B(ν', eⱼ) ⟪w, eⱼ⟫ + ∑ᵢ ∑ⱼ ⟪g, P eᵢ⟫ B(eᵢ, eⱼ) ⟪w, eⱼ⟫`, where
-`ν' = ν / ‖ν‖²` and `P` is the orthogonal projection onto `(ℝ ∙ ν)ᗮ`. -/
-theorem bilin_eq_inner_mul_sum_add_sum_sum {ι E : Type*} [Fintype ι] [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] (b : OrthonormalBasis ι ℝ E) (B : E →L[ℝ] E →L[ℝ] ℝ)
-    (ν g w : E) :
-    B g w = ⟪g, ν⟫_ℝ * ∑ j, B ((‖ν‖ ^ 2)⁻¹ • ν) (b j) * ⟪w, b j⟫_ℝ +
-      ∑ i, ∑ j, ⟪g, (ℝ ∙ ν)ᗮ.starProjection (b i)⟫_ℝ * (B (b i) (b j) * ⟪w, b j⟫_ℝ) := by
-  have hw : ∀ p, B p w = ∑ j, B p (b j) * ⟪w, b j⟫_ℝ := fun p => by
-    conv_lhs => rw [← b.sum_repr' w]
-    simp only [map_sum, map_smul, smul_eq_mul, real_inner_comm, mul_comm]
-  -- `g` is its projection `⟪g, ν⟫ ν'` onto `ℝ ∙ ν` plus its projection onto `(ℝ ∙ ν)ᗮ`, and the
-  -- latter has coordinates `⟪g, P eᵢ⟫` because the projection is self-adjoint.
-  have hg : ⟪g, ν⟫_ℝ • (‖ν‖ ^ 2)⁻¹ • ν +
-      ∑ i, ⟪g, (ℝ ∙ ν)ᗮ.starProjection (b i)⟫_ℝ • b i = g := by
-    have hP : ∀ i, ⟪g, (ℝ ∙ ν)ᗮ.starProjection (b i)⟫_ℝ =
-        ⟪b i, (ℝ ∙ ν)ᗮ.starProjection g⟫_ℝ := fun i => by
-      rw [← Submodule.inner_starProjection_left_eq_right, real_inner_comm]
-    simp only [hP, b.sum_repr']
-    conv_rhs => rw [← (ℝ ∙ ν).starProjection_add_starProjection_orthogonal g]
-    rw [Submodule.starProjection_singleton, RCLike.ofReal_real_eq_id, id_eq, smul_smul,
-      div_eq_mul_inv, real_inner_comm]
-  conv_lhs => rw [← hg]
-  simp [hw, Finset.mul_sum, mul_assoc]
-
-/-- **The normal part of a bilinear form.** For an orthonormal basis `(eᵢ)`, subtracting the
-tangential parts `∑ⱼ B(ν', eⱼ) ⟪g, P eⱼ⟫` from `∑ⱼ B(ν', eⱼ) ⟪g, eⱼ⟫` leaves `B(ν', ν') ⟪g, ν⟫`,
-where `ν' = ν / ‖ν‖²` and `P` is the orthogonal projection onto `(ℝ ∙ ν)ᗮ`. -/
-theorem sum_smul_inner_sub_sum_smul_inner_proj {ι E : Type*} [Fintype ι] [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] (b : OrthonormalBasis ι ℝ E) (B : E →L[ℝ] E →L[ℝ] ℝ) (ν g : E) :
-    (∑ j, B ((‖ν‖ ^ 2)⁻¹ • ν) (b j) • ⟪g, b j⟫_ℝ) -
-      ∑ j, B ((‖ν‖ ^ 2)⁻¹ • ν) (b j) • ⟪g, (ℝ ∙ ν)ᗮ.starProjection (b j)⟫_ℝ =
-      B ((‖ν‖ ^ 2)⁻¹ • ν) ((‖ν‖ ^ 2)⁻¹ • ν) * ⟪g, ν⟫_ℝ := by
-  set ν' : E := (‖ν‖ ^ 2)⁻¹ • ν
-  -- `⟪g, eⱼ⟫ - ⟪g, P eⱼ⟫ = ⟪(ℝ ∙ ν).starProjection g, eⱼ⟫ = ⟪g, ν⟫ ⟪ν', eⱼ⟫`.
-  have hg : (ℝ ∙ ν).starProjection g = ⟪g, ν⟫_ℝ • ν' := by
-    rw [Submodule.starProjection_singleton, RCLike.ofReal_real_eq_id, id_eq, smul_smul,
-      div_eq_mul_inv, real_inner_comm]
-  have hν' : ∑ j, B ν' (b j) * ⟪ν', b j⟫_ℝ = B ν' ν' := by
-    conv_rhs => enter [2]; rw [← b.sum_repr' ν']
-    simp only [map_sum, map_smul, smul_eq_mul, real_inner_comm, mul_comm]
-  rw [← Finset.sum_sub_distrib, ← hν', Finset.sum_mul]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  rw [smul_eq_mul, smul_eq_mul, ← mul_sub, ← inner_sub_right,
-    Submodule.starProjection_orthogonal_val, sub_sub_cancel,
-    ← Submodule.inner_starProjection_left_eq_right, hg, real_inner_smul_left]
-  ring
-
-end OrthonormalBasis
 
 namespace AffineIsometryEquiv
 
