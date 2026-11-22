@@ -66,8 +66,7 @@ example (k : Type*) [Field k] :
       AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim k = (0 : ℕ) := by
   dsimp only
   have hadj : Algebra.adjoin k (Set.range (![0] : Fin 1 → k)) = ⊤ :=
-    eq_top_iff.mpr fun a _ ↦ by
-      simpa using (Algebra.adjoin k (Set.range (![0] : Fin 1 → k))).algebraMap_mem a
+    eq_top_iff.mpr fun a _ ↦ by simp
   have hind : AlgebraicIndependent k
       (fun i : Fin 0 ↦ ∑ j : Fin 1, (0 : Matrix (Fin 0) (Fin 1) k) i j • (![0] : Fin 1 → k) j) :=
     algebraicIndependent_empty_type_iff.mpr (algebraMap k k).injective

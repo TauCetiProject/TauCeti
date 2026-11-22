@@ -56,8 +56,10 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   densities at the bounds (`TauCeti.Probability.gaussianPDFRealEReal`) as derivative.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal` — the upper tail, in terms of
   `TauCeti.Real.erfc`.
-* `TauCeti.Probability.measureReal_Ioi_gaussianReal_eq_cdf` — the upper tail, in terms of the
-  standard Gaussian cdf.
+* `TauCeti.Probability.measureReal_Ioi_gaussianReal_eq_cdf` and
+  `TauCeti.Probability.measureReal_Ici_gaussianReal_eq_cdf` — the open and closed upper tails in
+  terms of the standard Gaussian cdf, together with closed-ray positivity
+  `TauCeti.Probability.gaussianReal_Iic_pos` and `TauCeti.Probability.gaussianReal_Ici_pos`.
 * `TauCeti.Probability.mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal` — a lower bound
   for the upper tail to the right of the mean, by the density at a later point.
 * `TauCeti.Probability.gaussianPDFReal_add_one_le_measureReal_map_abs_Ioi` — the corresponding
@@ -304,6 +306,28 @@ theorem measureReal_Ioi_gaussianReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 
   rw [measureReal_Ioi_gaussianReal m hv x, cdf_gaussianReal_zero_one, harg, Real.erf_neg,
     Real.erfc_def]
   ring
+
+/-- At positive variance, the closed upper tail `Ici x` of `gaussianReal m v` equals
+`Φ ((m - x) / √v)` where `Φ = cdf (gaussianReal 0 1)`. -/
+theorem measureReal_Ici_gaussianReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    (gaussianReal m v).real (Ici x) = cdf (gaussianReal 0 1) ((m - x) / √(v : ℝ)) := by
+  have := nullSingletonClass_gaussianReal (μ := m) hv
+  rw [← measureReal_congr (Ioi_ae_eq_Ici (μ := gaussianReal m v) (a := x)),
+    measureReal_Ioi_gaussianReal_eq_cdf m hv x]
+
+/-- At positive variance, every closed lower ray `Iic x` has positive Gaussian measure. -/
+theorem gaussianReal_Iic_pos (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    0 < gaussianReal m v (Iic x) := by
+  have hpre : Real.toEReal ⁻¹' Ioo ⊥ (x : EReal) ⊆ Iic x := fun y hy ↦
+    (EReal.coe_lt_coe_iff.1 hy.2).le
+  exact (gaussianReal_preimage_Ioo_pos m hv (EReal.bot_lt_coe x)).trans_le (measure_mono hpre)
+
+/-- At positive variance, every closed upper ray `Ici x` has positive Gaussian measure. -/
+theorem gaussianReal_Ici_pos (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    0 < gaussianReal m v (Ici x) := by
+  have hpre : Real.toEReal ⁻¹' Ioo (x : EReal) ⊤ ⊆ Ici x := fun y hy ↦
+    (EReal.coe_lt_coe_iff.1 hy.1).le
+  exact (gaussianReal_preimage_Ioo_pos m hv (EReal.coe_lt_top x)).trans_le (measure_mono hpre)
 
 /-- Over a right half-line, a Gaussian density of nonzero variance integrates to a value of the
 standard Gaussian cumulative distribution function:

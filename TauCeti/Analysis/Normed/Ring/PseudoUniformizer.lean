@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 public import TauCeti.Analysis.Normed.Monoid.MulUnit
 public import TauCeti.Analysis.Normed.Group.Rounding
+import TauCeti.Analysis.Normed.MulAction
 import TauCeti.RingTheory.Subsemiring.SpanSingleton
 
 /-!
@@ -28,8 +29,8 @@ The exact scaling law propagates to every module with contractive scalar action:
 rescaling `ϖ ^ n • m` into the shell `‖ϖ‖ < ‖ϖ ^ n • m‖ ≤ 1`. These are the shell arguments
 used throughout nonarchimedean functional analysis over Banach–Tate rings, for instance to turn
 topological statements about bounded maps into norm estimates. The inverse norm formula and the
-scaling law hold more generally for any unit `u` of positive norm with `‖u * x‖ = ‖u‖ * ‖x‖`,
-whatever the size of `‖u‖`.
+scaling law hold more generally for any unit `u` with `‖u * x‖ = ‖u‖ * ‖x‖`, whatever the size
+of `‖u‖`. Only the formula `‖u ^ n‖ = ‖u‖ ^ n` for powers of such a unit still requires `0 < ‖u‖`.
 
 The existence of a multiplicative pseudo-uniformiser forces `‖1‖ = 1`, so a Tate ring is
 nonzero, and its powers provide a zero sequence of units (`TauCeti.HasZeroSequenceOfUnits`). An
@@ -110,38 +111,43 @@ theorem norm_units_smul_of_norm_mul (m : M) : ‖(u : R) • m‖ = ‖(u : R)�
   calc ‖(u : R)‖ * ‖m‖ = ‖(u : R)‖ * ‖((u⁻¹ : Rˣ) : R) • (u : R) • m‖ := by simp [smul_smul]
     _ ≤ ‖(u : R)‖ * (‖((u⁻¹ : Rˣ) : R)‖ * ‖(u : R) • m‖) := by gcongr; exact norm_smul_le _ _
     _ = ‖(u : R) • m‖ := by
-        rw [norm_units_inv_of_norm_mul hu0.ne' hu]
+        rw [norm_units_inv_of_norm_mul hu]
         field_simp
 
-/-- The inverse of a unit of positive norm by which left multiplication scales the norm exactly
+omit hu0 in
+/-- The inverse of a unit by which left multiplication scales the norm exactly
 scales the norm of every vector by `‖u‖⁻¹` under a contractive scalar action. -/
 theorem norm_units_inv_smul_of_norm_mul (m : M) :
     ‖((u⁻¹ : Rˣ) : R) • m‖ = ‖(u : R)‖⁻¹ * ‖m‖ := by
-  rw [eq_inv_mul_iff_mul_eq₀ hu0.ne', ← norm_units_smul_of_norm_mul hu]
-  simp [smul_smul]
+  rcases (norm_nonneg (u : R)).eq_or_lt with h0 | hu0
+  · rw [← h0, inv_zero, zero_mul]
+    exact le_antisymm ((norm_smul_le _ _).trans_eq
+      (by rw [norm_eq_zero_of_norm_mul h0.symm hu, zero_mul])) (norm_nonneg _)
+  · rw [eq_inv_mul_iff_mul_eq₀ hu0.ne', ← norm_units_smul_of_norm_mul hu]
+    simp [smul_smul]
 
+omit hu0 in
 /-- **Exact scaling by integer powers**: `‖u ^ n • m‖ = ‖u‖ ^ n * ‖m‖` for every integer `n`,
-for a unit `u` of positive norm by which left multiplication scales the norm exactly, under a
+for a unit `u` by which left multiplication scales the norm exactly, under a
 contractive scalar action. -/
 theorem norm_units_zpow_smul_of_norm_mul (n : ℤ) (m : M) :
     ‖((u ^ n : Rˣ) : R) • m‖ = ‖(u : R)‖ ^ n * ‖m‖ := by
-  induction n generalizing m with
-  | zero => simp
-  | succ n ih =>
-    simp only [zpow_add_one, Units.val_mul, mul_smul, ih, norm_units_smul_of_norm_mul hu,
-      zpow_add_one₀ hu0.ne']
-    ring
-  | pred n ih =>
-    simp only [zpow_sub_one, Units.val_mul, mul_smul, ih, norm_units_inv_smul_of_norm_mul hu0 hu,
-      zpow_sub_one₀ hu0.ne']
-    ring
+  rw [mul_comm]
+  cases n with
+  | ofNat n =>
+    simpa using norm_pow_smul_mul_pow (u := (u : R)) (r := ‖(u : R)‖) (s := 1)
+      (fun m ↦ by rw [mul_one, norm_units_smul_of_norm_mul hu, mul_comm]) n m
+  | negSucc n =>
+    simpa [zpow_negSucc, ← inv_pow] using
+      norm_pow_smul_mul_pow (u := ((u⁻¹ : Rˣ) : R)) (r := ‖(u : R)‖⁻¹) (s := 1)
+        (fun m ↦ by rw [mul_one, norm_units_inv_smul_of_norm_mul hu, mul_comm]) (n + 1) m
 
 end Module
 
 /-- An integer power of a unit of positive norm by which left multiplication scales the norm
 exactly has the corresponding power of its norm. -/
 theorem norm_units_zpow_of_norm_mul (n : ℤ) : ‖((u ^ n : Rˣ) : R)‖ = ‖(u : R)‖ ^ n := by
-  simpa [norm_one_of_norm_mul hu0.ne' hu] using norm_units_zpow_smul_of_norm_mul hu0 hu n (1 : R)
+  simpa [norm_one_of_norm_mul hu0.ne' hu] using norm_units_zpow_smul_of_norm_mul hu n (1 : R)
 
 /-- A natural power of a unit of positive norm by which left multiplication scales the norm
 exactly has the corresponding power of its norm. -/
@@ -206,7 +212,7 @@ theorem nontrivial : Nontrivial R :=
 /-- The inverse of a multiplicative pseudo-uniformiser has the inverse norm. -/
 @[simp]
 theorem norm_inv : ‖((ϖ.unit⁻¹ : Rˣ) : R)‖ = ‖(ϖ.unit : R)‖⁻¹ :=
-  norm_units_inv_of_norm_mul ϖ.norm_pos.ne' ϖ.norm_mul
+  norm_units_inv_of_norm_mul ϖ.norm_mul
 
 section Module
 
@@ -223,14 +229,14 @@ theorem norm_smul (m : M) : ‖(ϖ.unit : R) • m‖ = ‖(ϖ.unit : R)‖ * �
 @[simp]
 theorem norm_inv_smul (m : M) :
     ‖((ϖ.unit⁻¹ : Rˣ) : R) • m‖ = ‖(ϖ.unit : R)‖⁻¹ * ‖m‖ :=
-  norm_units_inv_smul_of_norm_mul ϖ.norm_pos ϖ.norm_mul m
+  norm_units_inv_smul_of_norm_mul ϖ.norm_mul m
 
 /-- **Exact scaling by integer powers**: `‖ϖ ^ n • m‖ = ‖ϖ‖ ^ n * ‖m‖` for every integer `n`,
 under a contractive scalar action. -/
 @[simp]
 theorem norm_zpow_smul (n : ℤ) (m : M) :
     ‖((ϖ.unit ^ n : Rˣ) : R) • m‖ = ‖(ϖ.unit : R)‖ ^ n * ‖m‖ :=
-  norm_units_zpow_smul_of_norm_mul ϖ.norm_pos ϖ.norm_mul n m
+  norm_units_zpow_smul_of_norm_mul ϖ.norm_mul n m
 
 /-- **The shell**: every vector `m` of nonzero norm has a unique rescaling `ϖ ^ n • m`, `n ∈ ℤ`,
 with `‖ϖ‖ < ‖ϖ ^ n • m‖ ≤ 1`. -/

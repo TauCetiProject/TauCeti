@@ -204,7 +204,8 @@ theorem lieSpan_toSubmodule_le_of_isGlHighestWeightVector (hv : IsGlHighestWeigh
         lie_mem_of_lie_mem_strictLowerTriangular_of_lie_mem_upperTriangular _ hlow hup hm } :
           LieSubmodule R (Matrix n n R) M))).mpr (Set.singleton_subset_iff.mpr hv0) hm
   refine hle.trans fun m hm => ?_
-  exact (LieSubmodule.lieSpan_le (N := ({ __ := N, lie_mem := fun {x _} hm => hstab x x.2 _ hm } :
+  exact (LieSubmodule.lieSpan_le (N :=
+      ({ __ := N, lie_mem := fun {x _} hm => hstab x x.property _ hm } :
     LieSubmodule R ↥(strictLowerTriangular R n) M))).mpr (Set.singleton_subset_iff.mpr hvN) hm
 
 end Exhaustion
@@ -523,7 +524,7 @@ private theorem injective_prodFst [LieModule.IsIrreducible R (Matrix n n R) M']
   intro p q hpq
   have h1 : ((p : M × M') - q).1 = 0 := sub_eq_zero.mpr (by simpa using hpq)
   have hd : ((p : M × M') - q) ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')} :=
-    sub_mem p.2 q.2
+    sub_mem p.property q.property
   have h2 : ((p : M × M') - q).2 = 0 := by
     refine eq_zero_of_inr_mem_lieSpan_prod hv hv' ?_
     have hpair : ((0, ((p : M × M') - q).2) : M × M') = (p : M × M') - q :=
@@ -537,7 +538,7 @@ private theorem injective_prodSnd [LieModule.IsIrreducible R (Matrix n n R) M]
   intro p q hpq
   have h2 : ((p : M × M') - q).2 = 0 := sub_eq_zero.mpr (by simpa using hpq)
   have hd : ((p : M × M') - q) ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')} :=
-    sub_mem p.2 q.2
+    sub_mem p.property q.property
   have h1 : ((p : M × M') - q).1 = 0 := by
     refine eq_zero_of_inl_mem_lieSpan_prod hv hv' ?_
     have hpair : (((p : M × M') - q).1, (0 : M')) = (p : M × M') - q :=

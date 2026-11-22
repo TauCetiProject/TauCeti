@@ -50,9 +50,8 @@ theorem eventually_mem_polyhedron_iff (hf : ∀ j, Continuous (f j))
     intro j
     by_cases hj : j ∈ activeSet f c x
     · exact Eventually.of_forall fun _ h ↦ (h hj).elim
-    · have hlt : c j < f j x :=
-        (mem_polyhedron.1 hx j).lt_of_ne (Ne.symm (fun h ↦ hj (mem_activeSet.2 h)))
-      exact ((hf j).continuousAt.eventually (Ioi_mem_nhds hlt)).mono fun _ h _ ↦ h
+    · exact ((hf j).continuousAt.eventually
+        (Ioi_mem_nhds (lt_of_mem_polyhedron_of_notMem_activeSet hx hj))).mono fun _ h _ ↦ h
   filter_upwards [hslack] with y hy
   constructor
   · intro hyP j hj

@@ -58,22 +58,22 @@ theorem exists_diffeotopy_extend_boundaryCircle_of_lift
     (hper : ∀ x, F (x + T) = F x + T) (hpos : ∀ x, 0 < deriv F x)
     {φ : AddCircle T → AddCircle T} (hφ : ∀ x : ℝ, φ x = F x) :
     ∃ (Φ : Diffeotopy J n M) (K : Set M), IsCompact K ∧
-      K ⊆ χ '' ({r : EuclideanHalfSpace 1 | r.1 0 ≤ 2} ×ˢ univ) ∧
+      K ⊆ χ '' ({r : EuclideanHalfSpace 1 | r.val 0 ≤ 2} ×ˢ univ) ∧
       (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧
-      ∀ (r : EuclideanHalfSpace 1) (θ : AddCircle T), r.1 0 ≤ 1 →
+      ∀ (r : EuclideanHalfSpace 1) (θ : AddCircle T), r.val 0 ≤ 1 →
         Φ.final (χ (r, θ)) = χ (r, φ θ) := by
   let Λ := AddCircle.halfCylinderDiffeotopyOfLift hF hn hper hpos
   -- In dimension one the depth coordinate is a closed embedding into the real line.
   let e : EuclideanSpace ℝ (Fin 1) ≃L[ℝ] ℝ :=
     (EuclideanSpace.equiv (Fin 1) ℝ).trans (ContinuousLinearEquiv.piUnique ℝ (fun _ : Fin 1 ↦ ℝ))
-  have he : IsClosedEmbedding (fun r : EuclideanHalfSpace 1 ↦ r.1 0) :=
+  have he : IsClosedEmbedding (fun r : EuclideanHalfSpace 1 ↦ r.val 0) :=
     e.toHomeomorph.isClosedEmbedding.comp
       (isClosed_le continuous_const (PiLp.continuous_apply 2 _ 0)).isClosedEmbedding_subtypeVal
-  have hK : IsCompact {r : EuclideanHalfSpace 1 | r.1 0 ≤ 2} := by
-    have heq : (fun r : EuclideanHalfSpace 1 ↦ r.1 0) ⁻¹' Icc (0 : ℝ) 2 =
-        {r : EuclideanHalfSpace 1 | r.1 0 ≤ 2} := by
+  have hK : IsCompact {r : EuclideanHalfSpace 1 | r.val 0 ≤ 2} := by
+    have heq : (fun r : EuclideanHalfSpace 1 ↦ r.val 0) ⁻¹' Icc (0 : ℝ) 2 =
+        {r : EuclideanHalfSpace 1 | r.val 0 ≤ 2} := by
       ext r
-      simp [r.2]
+      simp [r.property]
     rw [← heq]
     exact he.isCompact_preimage isCompact_Icc
   obtain ⟨Φ, hΦχ, hΦK⟩ := Λ.exists_extend_of_isCompact hχ hχo
@@ -98,20 +98,20 @@ theorem exists_diffeotopy_extend_boundaryCircles_of_lifts {ι : Type*} [Finite �
     (hper : ∀ i x, F i (x + T) = F i x + T) (hpos : ∀ i x, 0 < deriv (F i) x)
     {φ : ι → AddCircle T → AddCircle T} (hφ : ∀ i (x : ℝ), φ i x = F i x) :
     ∃ (Φ : Diffeotopy J n M) (K : Set M), IsCompact K ∧
-      K ⊆ ⋃ i, χ i '' ({r : EuclideanHalfSpace 1 | r.1 0 ≤ 2} ×ˢ univ) ∧
+      K ⊆ ⋃ i, χ i '' ({r : EuclideanHalfSpace 1 | r.val 0 ≤ 2} ×ˢ univ) ∧
       (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧
-      ∀ i (r : EuclideanHalfSpace 1) (θ : AddCircle T), r.1 0 ≤ 1 →
+      ∀ i (r : EuclideanHalfSpace 1) (θ : AddCircle T), r.val 0 ≤ 1 →
         Φ.final (χ i (r, θ)) = χ i (r, φ i θ) := by
   let : Fintype ι := Fintype.ofFinite ι
-  let W (i : ι) := χ i '' ({r : EuclideanHalfSpace 1 | r.1 0 ≤ 2} ×ˢ univ)
+  let W (i : ι) := χ i '' ({r : EuclideanHalfSpace 1 | r.val 0 ≤ 2} ×ˢ univ)
   have hW : (univ : Set ι).PairwiseDisjoint W := fun i _ j _ hij ↦
     (hdis hij).mono (image_subset_range _ _) (image_subset_range _ _)
-  have ha (i : ι) (p : EuclideanHalfSpace 1 × AddCircle T) (hp : p.1.1 0 ≤ 1) :
+  have ha (i : ι) (p : EuclideanHalfSpace 1 × AddCircle T) (hp : p.1.val 0 ≤ 1) :
       χ i p ∈ W i := ⟨p, ⟨by dsimp; linarith, mem_univ _⟩, rfl⟩
   obtain ⟨Φ, K, hK, hKW, hΦK, hΦ⟩ :=
     exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint Finset.univ
       (by simpa only [Finset.coe_univ] using hW)
-      (A := {p : EuclideanHalfSpace 1 × AddCircle T | p.1.1 0 ≤ 1})
+      (A := {p : EuclideanHalfSpace 1 × AddCircle T | p.1.val 0 ≤ 1})
       (a := fun i p ↦ χ i p) (b := fun i p ↦ χ i (p.1, φ i p.2))
       (fun i _ ↦ ha i) (fun i _ ↦ by
         obtain ⟨Φ, K, hK, hKW, hΦK, hΦ⟩ :=
