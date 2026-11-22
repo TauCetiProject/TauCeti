@@ -785,26 +785,12 @@ theorem harmonicDegree_of_toHeckeCharacter_eq_one {χ : Grossencharacter K 𝔪}
 /-- `harmonicFactor` commutes with natural powers on `mixedSpace K`. -/
 theorem harmonicFactor_pow (χ : Grossencharacter K 𝔪) (x : mixedSpace K) (n : ℕ) :
     χ.harmonicFactor (x ^ n) = χ.harmonicFactor x ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [pow_succ, harmonicFactor_mul, ih, pow_succ]
+  simp only [harmonicFactor_eq_infinityType, ContinuousInfinityType.harmonicFactor_pow]
 
 /-- `harmonicFactor` commutes with coordinatewise inversion on `mixedSpace K`. -/
 theorem harmonicFactor_inv (χ : Grossencharacter K 𝔪) (x : mixedSpace K) :
     χ.harmonicFactor x⁻¹ = (χ.harmonicFactor x)⁻¹ := by
-  classical
-  have hcomp (w : {w : InfinitePlace K // w.IsComplex}) :
-      TauCeti.complexHarmonicMonomial
-          ((AlgebraicInfinityType.toContinuous χ.infinityType).complexAngularFrequency w)
-          (x.2 w)⁻¹ =
-        (TauCeti.complexHarmonicMonomial
-          ((AlgebraicInfinityType.toContinuous χ.infinityType).complexAngularFrequency w)
-          (x.2 w))⁻¹ := by
-    rcases ((AlgebraicInfinityType.toContinuous
-        χ.infinityType).complexAngularFrequency w).eq_nat_or_neg
-      with ⟨n, hn | hn⟩ <;> simp [hn, inv_pow]
-  simp only [harmonicFactor_def, Prod.fst_inv, Prod.snd_inv, Pi.inv_apply, ofReal_inv, inv_pow,
-    hcomp, mul_inv, Finset.prod_inv_distrib]
+  simp only [harmonicFactor_eq_infinityType, ContinuousInfinityType.harmonicFactor_inv]
 
 /-- When `harmonicDegree` vanishes, `harmonicFactor` is identically `1`. -/
 theorem harmonicFactor_of_harmonicDegree_eq_zero {χ : Grossencharacter K 𝔪}
@@ -844,11 +830,8 @@ theorem harmonicFactor_mixedSpaceOfRealSpace (χ : Grossencharacter K 𝔪) (r :
 /-- `harmonicFactor` is homogeneous of degree `harmonicDegree` under real scalar multiplication. -/
 theorem harmonicFactor_smul (χ : Grossencharacter K 𝔪) (c : ℝ) (x : mixedSpace K) :
     χ.harmonicFactor (c • x) = (c : ℂ) ^ χ.harmonicDegree * χ.harmonicFactor x := by
-  classical
-  have hsmul : c • x = mixedSpaceOfRealSpace (fun _ ↦ c) * x := by
-    ext w <;> simp [mixedSpaceOfRealSpace_apply]
-  rw [hsmul, harmonicFactor_mixedSpaceOfRealSpace_mul, Finset.prod_pow_eq_pow_sum,
-    ← harmonicDegree_def, ofReal_pow]
+  simp only [harmonicFactor_eq_infinityType, ContinuousInfinityType.harmonicFactor_smul,
+    harmonicDegree_eq_infinityType]
 
 /-- When `harmonicDegree` is nonzero, `harmonicFactor` vanishes at the origin. -/
 theorem harmonicFactor_zero_of_harmonicDegree_ne_zero {χ : Grossencharacter K 𝔪}
@@ -858,7 +841,8 @@ theorem harmonicFactor_zero_of_harmonicDegree_ne_zero {χ : Grossencharacter K �
 /-- Under negation on `mixedSpace K`, `harmonicFactor` transforms by `(-1) ^ harmonicDegree`. -/
 theorem harmonicFactor_neg (χ : Grossencharacter K 𝔪) (x : mixedSpace K) :
     χ.harmonicFactor (-x) = (-1 : ℂ) ^ χ.harmonicDegree * χ.harmonicFactor x := by
-  simpa using χ.harmonicFactor_smul (-1 : ℝ) x
+  simp only [harmonicFactor_eq_infinityType, ContinuousInfinityType.harmonicFactor_neg,
+    harmonicDegree_eq_infinityType]
 
 /-- On `K`, `harmonicFactor` commutes with inversion through `mixedEmbedding K`. -/
 theorem harmonicFactor_mixedEmbedding_inv (χ : Grossencharacter K 𝔪) (x : K) :

@@ -271,6 +271,38 @@ theorem harmonicFactor_unit_smul (t : ContinuousInfinityType K) (u : (𝓞 K)ˣ)
     t.harmonicFactor (u • x) = t.harmonicFactor (mixedEmbedding K u) * t.harmonicFactor x := by
   rw [unitSMul_smul, harmonicFactor_mul]
 
+/-- `harmonicFactor` commutes with natural powers on `mixedSpace K`. -/
+theorem harmonicFactor_pow (t : ContinuousInfinityType K) (x : mixedSpace K) (n : ℕ) :
+    t.harmonicFactor (x ^ n) = t.harmonicFactor x ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, harmonicFactor_mul, ih, pow_succ]
+
+/-- `harmonicFactor` commutes with coordinatewise inversion on `mixedSpace K`. -/
+theorem harmonicFactor_inv (t : ContinuousInfinityType K) (x : mixedSpace K) :
+    t.harmonicFactor x⁻¹ = (t.harmonicFactor x)⁻¹ := by
+  classical
+  have hcomp (w : {w : InfinitePlace K // w.IsComplex}) :
+      TauCeti.complexHarmonicMonomial (t.complexAngularFrequency w) (x.2 w)⁻¹ =
+        (TauCeti.complexHarmonicMonomial (t.complexAngularFrequency w) (x.2 w))⁻¹ := by
+    rcases (t.complexAngularFrequency w).eq_nat_or_neg with ⟨n, hn | hn⟩ <;> simp [hn, inv_pow]
+  simp only [harmonicFactor_def, Prod.fst_inv, Prod.snd_inv, Pi.inv_apply, ofReal_inv, inv_pow,
+    hcomp, mul_inv, Finset.prod_inv_distrib]
+
+/-- `harmonicFactor` is homogeneous of degree `harmonicDegree` under real scalar multiplication. -/
+theorem harmonicFactor_smul (t : ContinuousInfinityType K) (c : ℝ) (x : mixedSpace K) :
+    t.harmonicFactor (c • x) = (c : ℂ) ^ t.harmonicDegree * t.harmonicFactor x := by
+  classical
+  have hsmul : c • x = mixedSpaceOfRealSpace (fun _ ↦ c) * x := by
+    ext w <;> simp [mixedSpaceOfRealSpace_apply]
+  rw [hsmul, harmonicFactor_mixedSpaceOfRealSpace_mul, Finset.prod_pow_eq_pow_sum,
+    ← harmonicDegree_def, ofReal_pow]
+
+/-- Under negation on `mixedSpace K`, `harmonicFactor` transforms by `(-1) ^ harmonicDegree`. -/
+theorem harmonicFactor_neg (t : ContinuousInfinityType K) (x : mixedSpace K) :
+    t.harmonicFactor (-x) = (-1 : ℂ) ^ t.harmonicDegree * t.harmonicFactor x := by
+  simpa using t.harmonicFactor_smul (-1 : ℝ) x
+
 open scoped Classical in
 @[fun_prop]
 theorem hasTemperateGrowth_harmonicFactor (t : ContinuousInfinityType K) :

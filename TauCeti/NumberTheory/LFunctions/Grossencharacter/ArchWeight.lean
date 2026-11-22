@@ -151,14 +151,6 @@ theorem archWeight_surfaceScale (χ : Grossencharacter K 𝔪) (x : realSpace K)
 
 /-! ### Deligne `Γ_ℝ` / `Γ_ℂ` form of the weighted archimedean gamma integral -/
 
-/-- When `0 < s.re`, the shifted real part `(mult w : ℝ) * s.re + P_w` is positive at every
-infinite place `w`. -/
-theorem mult_mul_re_add_harmonicExponent_pos (χ : Grossencharacter K 𝔪) {s : ℂ} (hs : 0 < s.re)
-    (w : InfinitePlace K) :
-    0 < (mult w : ℝ) * s.re + χ.harmonicExponent w := by
-  have hm : (0 : ℝ) < mult w := Nat.cast_pos.mpr (Nat.pos_of_ne_zero mult_ne_zero)
-  positivity
-
 open scoped Classical in
 /-- Decomposition of `∏_w Γ_ℝ(mult w · s + P_w)` into Deligne's `Γ_ℝ` and `Γ_ℂ` factors across the
 real and complex infinite places of `K`. -/

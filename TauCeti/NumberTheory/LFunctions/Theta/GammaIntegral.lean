@@ -161,12 +161,6 @@ private theorem prod_Gammaℝ_mult_mul (s : ℂ) :
   push_cast
   rw [one_mul]
 
-omit [NumberField K] in
-private theorem re_mult_mul_pos {s : ℂ} (hs : 0 < s.re) (w : InfinitePlace K) :
-    0 < ((mult w : ℂ) * s).re := by
-  have hm : (0 : ℝ) < mult w := Nat.cast_pos.mpr (Nat.pos_of_ne_zero mult_ne_zero)
-  simpa using mul_pos hm hs
-
 variable {x : mixedSpace K} {s : ℂ}
 
 /-- For `x` of nonzero norm and `0 < Re s`, the archimedean Gaussian against `N(y)^(s/2)` is
@@ -174,7 +168,8 @@ integrable for the multiplicative Haar measure `dy / y` of the parameters. -/
 theorem integrable_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 0)
     (hs : 0 < s.re) :
     Integrable (fun y ↦ archGaussian y x * (archNorm y : ℂ) ^ (s / 2)) (archHaar K) := by
-  refine (integrable_prod_cpow_div_two_mul_archGaussian hx (re_mult_mul_pos hs)).congr ?_
+  refine (integrable_prod_cpow_div_two_mul_archGaussian hx (z := fun w ↦ (mult w : ℂ) * s)
+    fun w ↦ by simpa using mul_pos (Nat.cast_pos.mpr mult_pos) hs).congr ?_
   filter_upwards [ae_archHaar_pos] with y hy
   exact (archGaussian_mul_archNorm_cpow_eq hy x s).symm
 
@@ -193,7 +188,8 @@ theorem integral_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 
     refine integral_congr_ae ?_
     filter_upwards [ae_archHaar_pos] with y hy
     exact archGaussian_mul_archNorm_cpow_eq hy x s
-  rw [heq, integral_prod_cpow_div_two_mul_archGaussian hx (re_mult_mul_pos hs),
+  rw [heq, integral_prod_cpow_div_two_mul_archGaussian hx (z := fun w ↦ (mult w : ℂ) * s)
+      fun w ↦ by simpa using mul_pos (Nat.cast_pos.mpr mult_pos) hs,
     prod_Gammaℝ_mult_mul, mixedEmbedding.norm_apply,
     ofReal_prod_pow_cpow _ fun w _ ↦ (ha w).le]
   simp_rw [mul_neg]
