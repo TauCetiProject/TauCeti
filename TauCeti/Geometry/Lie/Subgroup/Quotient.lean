@@ -13,10 +13,12 @@ public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Topology.Algebra.Group.Quotient.RightRel
 import TauCeti.Geometry.Lie.IntegralCurve
+import TauCeti.Geometry.Lie.RightInvariantVectorField
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.Submersion.Basic
+import TauCeti.Geometry.Manifold.Submersion.Diffeomorph
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
 /-!
@@ -37,8 +39,11 @@ smooth manifold of dimension `dim G - dim K`, the **homogeneous space** of `G` b
   whose one-parameter subgroups lie in `K`
   (`Subgroup.ker_mfderiv_quotientMk_eq_mulInvariantDistribution`);
 * the projection sends the generators of left multiplication on `G` to those of the action on
-  `G ⧸ K` (`Subgroup.mfderiv_quotientMk_fundamentalVectorField`);
-* `G` acts smoothly on `G ⧸ K` by left multiplication (`Subgroup.contMDiffSMul_quotientOfIsClosed`).
+  `G ⧸ K` (`Subgroup.mfderiv_quotientMk_fundamentalVectorField`), which therefore span every
+  tangent space of `G ⧸ K` (`Subgroup.surjective_fundamentalVectorField`);
+* `G` acts smoothly on `G ⧸ K` by left multiplication (`Subgroup.contMDiffSMul_quotientOfIsClosed`);
+* for closed subgroups `K ≤ G` and `L ≤ G'`, the map `[(g, g')] ↦ ([g], [g'])` is a diffeomorphism
+  `(G × G') ⧸ (K × L) ≃ (G ⧸ K) × (G' ⧸ L)` (`Subgroup.quotientProdDiffeomorph`).
 
 More generally, if `G` acts smoothly on a boundaryless manifold `M` and `K` acts freely and
 properly, the orbit space `M ⧸ K` is a smooth manifold for the charts
@@ -343,6 +348,25 @@ theorem mfderiv_quotientMk_fundamentalVectorField (hK : IsClosed (K : Set G)) (g
     ((contMDiff_mul_right (I := I) (n := ∞)).mdifferentiableAt (by simp))
     (fun h ↦ (MulAction.Quotient.smul_coe K h g).symm) ξ
 
+/-- **The generators span the tangent spaces of a homogeneous space.** Every tangent vector of
+`G ⧸ K` at `x` is the value at `x` of the generator `ξ_(G ⧸ K)` of some `ξ` in the Lie algebra: the
+projection `G → G ⧸ K` is a submersion, and the generators `ξ_G(g)` of left multiplication, the
+right-invariant vector fields, exhaust `T_g G`. -/
+theorem surjective_fundamentalVectorField (hK : IsClosed (K : Set G)) (x : G ⧸ K) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    Surjective fun ξ : GroupLieAlgebra I G ↦
+      fundamentalVectorField 𝓘(ℝ, QuotientModelSpace I K) ξ x := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  intro v
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
+  obtain ⟨u, rfl⟩ := (isSubmersion_quotientMk hK).surjective_mfderiv (by simp) g v
+  obtain ⟨ξ, rfl⟩ := (bijective_mulRightInvariantVectorField (I := I) g).2 u
+  refine ⟨ξ, ?_⟩
+  dsimp only
+  rw [← mfderiv_quotientMk_fundamentalVectorField hK g ξ,
+    fundamentalVectorField_eq_mulRightInvariantVectorField]
+
 /-- **`G` acts smoothly on its homogeneous space** `G ⧸ K` by left multiplication. The action
 lifts along the submersion `(g, h) ↦ (g, [h])` to the multiplication of `G`, followed by the
 projection. -/
@@ -361,5 +385,86 @@ theorem contMDiffSMul_quotientOfIsClosed (hK : IsClosed (K : Set G)) :
   rw [hcomp]
   exact hπ.contMDiff.comp (contMDiff_mul I ∞)
 
-end Subgroup
+/-! ### Products of homogeneous spaces -/
 
+section Prod
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [J.Boundaryless]
+  {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G'] [LieGroup J ∞ G']
+  {L : Subgroup G'} {S : Subgroup (G × G')}
+
+variable (I J) in
+/-- **The homogeneous space of a product.** For closed subgroups `K ≤ G` and `L ≤ G'`, the map
+`[(g, g')] ↦ ([g], [g'])` is a diffeomorphism from the homogeneous space `(G × G') ⧸ S` of
+`S = K × L` onto the product `(G ⧸ K) × (G' ⧸ L)`. It is smooth with smooth inverse because both
+sides are quotients of `G × G'` by surjective submersions. The subgroup `S` is only required to be
+equal to `K × L`, so that this applies to subgroups, such as stabilizers, that are not
+syntactically products. -/
+def quotientProdDiffeomorph (hK : IsClosed (K : Set G)) (hL : IsClosed (L : Set G'))
+    (hS : S = K.prod L) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    letI := quotientChartedSpaceOfIsClosed J hL
+    letI := quotientChartedSpaceOfIsClosed (I.prod J)
+      (hS ▸ hK.prod hL : IsClosed (S : Set (G × G')))
+    Diffeomorph 𝓘(ℝ, QuotientModelSpace (I.prod J) S)
+      (𝓘(ℝ, QuotientModelSpace I K).prod 𝓘(ℝ, QuotientModelSpace J L))
+      ((G × G') ⧸ S) ((G ⧸ K) × (G' ⧸ L)) ∞ :=
+  letI := quotientChartedSpaceOfIsClosed I hK
+  letI := quotientChartedSpaceOfIsClosed J hL
+  letI := quotientChartedSpaceOfIsClosed (I.prod J)
+      (hS ▸ hK.prod hL : IsClosed (S : Set (G × G')))
+  haveI := isManifold_quotientOfIsClosed (I := I) hK
+  haveI := isManifold_quotientOfIsClosed (I := J) hL
+  ((quotientEquivOfEq hS).trans (QuotientGroup.prodEquiv K L)).diffeomorphOfSubmersions
+    (isSubmersion_quotientMk _) QuotientGroup.mk_surjective
+    ((isSubmersion_quotientMk hK).prodMap (isSubmersion_quotientMk hL)) (funext fun _ ↦ rfl)
+
+/-- The diffeomorphism `(G × G') ⧸ (K × L) ≃ (G ⧸ K) × (G' ⧸ L)` sends the coset of `(g, g')` to
+the pair of cosets of `g` and `g'`. -/
+@[simp]
+theorem quotientProdDiffeomorph_mk (hK : IsClosed (K : Set G)) (hL : IsClosed (L : Set G'))
+    (hS : S = K.prod L) (g : G × G') :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    letI := quotientChartedSpaceOfIsClosed J hL
+    letI := quotientChartedSpaceOfIsClosed (I.prod J)
+      (hS ▸ hK.prod hL : IsClosed (S : Set (G × G')))
+    quotientProdDiffeomorph I J hK hL hS (g : (G × G') ⧸ S) = ((g.1 : G ⧸ K), (g.2 : G' ⧸ L)) := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  let _ := quotientChartedSpaceOfIsClosed J hL
+  let _ := quotientChartedSpaceOfIsClosed (I.prod J)
+    (hS ▸ hK.prod hL : IsClosed (S : Set (G × G')))
+  exact Equiv.diffeomorphOfSubmersions_apply _ _ _ _ _ _
+
+/-- The inverse of `(G × G') ⧸ (K × L) ≃ (G ⧸ K) × (G' ⧸ L)` sends the pair of cosets of `g` and
+`g'` to the coset of `(g, g')`. -/
+@[simp]
+theorem quotientProdDiffeomorph_symm_mk (hK : IsClosed (K : Set G)) (hL : IsClosed (L : Set G'))
+    (hS : S = K.prod L) (g : G) (g' : G') :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    letI := quotientChartedSpaceOfIsClosed J hL
+    letI := quotientChartedSpaceOfIsClosed (I.prod J)
+      (hS ▸ hK.prod hL : IsClosed (S : Set (G × G')))
+    (quotientProdDiffeomorph I J hK hL hS).symm ((g : G ⧸ K), (g' : G' ⧸ L)) =
+      ((g, g') : (G × G') ⧸ S) := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  let _ := quotientChartedSpaceOfIsClosed J hL
+  let _ := quotientChartedSpaceOfIsClosed (I.prod J)
+    (hS ▸ hK.prod hL : IsClosed (S : Set (G × G')))
+  simpa using (quotientProdDiffeomorph I J hK hL hS).symm_apply_apply ((g, g') : (G × G') ⧸ S)
+
+/-- The diffeomorphism `(G × G') ⧸ (K × L) ≃ (G ⧸ K) × (G' ⧸ L)` composed with the projection of
+`G × G'` is the product of the projections of `G` and `G'`. -/
+theorem quotientProdDiffeomorph_comp_mk (hK : IsClosed (K : Set G)) (hL : IsClosed (L : Set G'))
+    (hS : S = K.prod L) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    letI := quotientChartedSpaceOfIsClosed J hL
+    letI := quotientChartedSpaceOfIsClosed (I.prod J)
+      (hS ▸ hK.prod hL : IsClosed (S : Set (G × G')))
+    quotientProdDiffeomorph I J hK hL hS ∘ QuotientGroup.mk =
+      Prod.map (QuotientGroup.mk : G → G ⧸ K) (QuotientGroup.mk : G' → G' ⧸ L) :=
+  funext (quotientProdDiffeomorph_mk (I := I) (J := J) hK hL hS)
+
+end Prod
+
+end Subgroup

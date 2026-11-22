@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Mathieu.Twelve.Simple
+import TauCeti.Algebra.Group.Subgroup.Finite
 import TauCeti.GroupTheory.Coset.SubgroupEnumeration
 import TauCeti.GroupTheory.Presentation.PowerConjugate.Basic
 
@@ -74,16 +75,13 @@ open CosetEnumeration SubgroupEnumeration
 private def m12Rels : List (List ℕ) :=
   M12.presentation.relatorLetters.map (List.map signedLetter)
 
-private def wordA5 : List ℕ := [0, 0, 0, 0, 0]
-private def wordB6 : List ℕ := [2, 2, 2, 2, 2, 2]
-private def wordAB6 : List ℕ := [0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2]
-private def wordAAB11 : List ℕ :=
-  [0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0,
-    2]
+private def wordA5 : List ℕ := List.replicate 5 0
+private def wordB6 : List ℕ := List.replicate 6 2
+private def wordAB6 : List ℕ := (List.replicate 6 [0, 2]).flatten
+private def wordAAB11 : List ℕ := (List.replicate 11 [0, 0, 2]).flatten
 private def wordH : List ℕ := [0, 2, 0]
 private def wordK : List ℕ := [2, 2, 0, 3, 3]
-private def wordConj : List ℕ :=
-  [2, 2, 0, 3, 3, 0, 2, 0, 2, 2, 1, 3, 3, 0, 2, 0, 0, 2, 0]
+private def wordConj : List ℕ := wordK ++ wordH ++ wordK.reverse.map invLetter ++ wordH ++ wordH
 
 /-! ### Stage 1: `a⁵ = 1` and `b⁶ = 1` -/
 
@@ -513,7 +511,7 @@ private theorem check_stage2 :
 
 private theorem check_stage3 :
     checkRelators M12.presentation.generatorCount
-      (m12Rels ++ [wordA5, wordB6, wordAB6, wordAAB11])
+      ((m12Rels ++ [wordA5, wordB6]) ++ [wordAB6, wordAAB11])
       [(25, wordConj)] stage3Parents stage3Steps = true := by
   rw [m12Rels, presentation_M12, Sporadic.m12Presentation_generatorCount,
     Sporadic.m12Presentation_relatorLetters]
@@ -548,6 +546,23 @@ private theorem letter_two : letter m12Of 2 = gB := by
 private theorem letter_three : letter m12Of 3 = gB⁻¹ := by
   simpa [gB] using letter_two_mul_add_one m12Of ⟨1, by simp [presentation_M12]⟩
 
+private theorem wordValue_wordH : wordValue m12Of wordH = gH := by
+  simp [wordH, wordValue_cons, wordValue_nil, letter_zero, letter_two, gH, mul_assoc]
+
+private theorem wordValue_wordK : wordValue m12Of wordK = gK := by
+  simp [wordK, wordValue_cons, wordValue_nil, letter_zero, letter_two, letter_three, gK, mul_assoc]
+
+private theorem wordValue_wordK_inv : wordValue m12Of (wordK.reverse.map invLetter) = gK⁻¹ := by
+  have hinv : wordK.map (letter m12Of ∘ invLetter) =
+      (wordK.map (letter m12Of)).map (·⁻¹) := by
+    rw [List.map_map]
+    refine List.map_congr_left fun t ht ↦ letter_invLetter m12Of ?_
+    simp only [wordK, List.mem_cons, List.not_mem_nil, or_false] at ht
+    simp only [presentation_M12, Sporadic.m12Presentation_generatorCount]
+    omega
+  rw [wordValue_def, List.map_map, ← List.map_reverse, hinv, List.map_reverse,
+    ← List.prod_inv_reverse, ← wordValue_def, wordValue_wordK]
+
 private theorem wordValue_wordA5 : wordValue m12Of wordA5 = 1 :=
   M12.presentation.wordValue_eq_one_of_checkRelators check_stage1 (131, wordA5)
     (by simp)
@@ -577,13 +592,10 @@ private theorem wordValue_wordAAB11 : wordValue m12Of wordAAB11 = 1 :=
     (72, wordAAB11) (by simp)
 
 private theorem wordValue_rels3 :
-    ∀ r ∈ m12Rels ++ [wordA5, wordB6, wordAB6, wordAAB11], wordValue m12Of r = 1 := by
-  intro r hr
-  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with hr | rfl | rfl | rfl | rfl
-  · exact M12.presentation.wordValue_relatorLetters_eq_one r hr
-  · exact wordValue_wordA5
-  · exact wordValue_wordB6
+    ∀ r ∈ (m12Rels ++ [wordA5, wordB6]) ++ [wordAB6, wordAAB11], wordValue m12Of r = 1 := by
+  refine List.forall_mem_append.2 ⟨wordValue_rels2, fun r hr ↦ ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
   · exact wordValue_wordAB6
   · exact wordValue_wordAAB11
 
@@ -594,8 +606,7 @@ private theorem wordValue_wordConj : wordValue m12Of wordConj = 1 :=
 private theorem gK_pow_five : gK ^ 5 = 1 := by
   have ha5 : gA ^ 5 = 1 := by
     have h := wordValue_wordA5
-    simp only [wordA5, wordValue_cons, wordValue_nil, letter_zero, mul_one] at h
-    simpa [pow_succ, mul_assoc] using h
+    rwa [wordA5, wordValue_def, List.map_replicate, List.prod_replicate, letter_zero] at h
   have hk : gK = MulAut.conj (gB * gB) gA := by
     simp [gK, MulAut.conj_apply, mul_assoc]
   rw [hk, ← map_pow, ha5, map_one]
@@ -603,18 +614,18 @@ private theorem gK_pow_five : gK ^ 5 = 1 := by
 private theorem gH_pow_eleven : gH ^ 11 = 1 := by
   have haab11 : (gA * gA * gB) ^ 11 = 1 := by
     have h := wordValue_wordAAB11
-    simp only [wordAAB11, wordValue_cons, wordValue_nil, letter_zero, letter_two, mul_one] at h
-    simpa [pow_succ, mul_assoc] using h
+    simpa [wordAAB11, wordValue_def, List.map_flatten, List.prod_flatten, Function.comp_def,
+      List.map_replicate, List.prod_replicate, letter_zero, letter_two, mul_assoc] using h
   have hh : gH = MulAut.conj gA⁻¹ (gA * gA * gB) := by
     simp [gH, mul_assoc]
   rw [hh, ← map_pow, haab11, map_one]
 
 private theorem gK_conj_gH : gK * gH * gK⁻¹ = (gH ^ 2)⁻¹ := by
   have hc := wordValue_wordConj
-  simp only [wordConj, wordValue_cons, wordValue_nil, letter_zero, letter_one, letter_two,
-    letter_three, mul_one] at hc
+  rw [wordConj, wordValue_append, wordValue_append, wordValue_append, wordValue_append,
+    wordValue_wordK, wordValue_wordH, wordValue_wordK_inv] at hc
   have hc' : gK * gH * gK⁻¹ * gH ^ 2 = 1 := by
-    simpa [gK, gH, sq, mul_assoc] using hc
+    simpa [sq, mul_assoc] using hc
   exact eq_inv_of_mul_eq_one_left hc'
 
 private def frobSubgroup : Subgroup M12.Group :=
@@ -650,14 +661,9 @@ private theorem wordValue_subgens :
   intro s hs
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hs
   rcases hs with rfl | rfl
-  · have : wordValue m12Of wordH = gH := by
-      simp [wordH, wordValue_cons, wordValue_nil, letter_zero, letter_two, gH, mul_assoc]
-    rw [this]
+  · rw [wordValue_wordH]
     exact Subgroup.subset_closure ⟨1, rfl⟩
-  · have : wordValue m12Of wordK = gK := by
-      simp [wordK, wordValue_cons, wordValue_nil, letter_zero, letter_two, letter_three, gK,
-        mul_assoc]
-    rw [this]
+  · rw [wordValue_wordK]
     exact Subgroup.subset_closure ⟨0, rfl⟩
 
 /-- **The presented group of `M₁₂` is finite.** -/
@@ -680,24 +686,15 @@ namespace TauCeti.Sporadic.M12
 /-- The transcribed presentation of `M₁₂` is isomorphic to the canonical permutation model,
 via the homomorphism sending its generators to `presentationImage`. -/
 noncomputable def presentationEquiv : SporadicName.M12.Group ≃* Sporadic.M12 :=
-  MulEquiv.ofBijective
-    (SporadicName.M12.presentation.homOfClosureRangeEq
-      ⟨presentationImage, lift_presentationImage_toFreeGroup_eq_one⟩
-      closure_range_presentationImage)
-    ((SporadicName.M12.presentation.surjective_homOfClosureRangeEq
-      ⟨presentationImage, lift_presentationImage_toFreeGroup_eq_one⟩
-      closure_range_presentationImage).bijective_of_nat_card_le
-        (by simpa only [card_M12] using SporadicName.natCard_group_M12_le))
+  presentationHom.mulEquivOfRangeEq range_presentationHom
+    (by simpa only [card_M12] using SporadicName.natCard_group_M12_le)
 
 /-- The underlying permutation of the recognition equivalence is the canonical presentation
 homomorphism. -/
 @[simp]
 theorem coe_presentationEquiv (g : SporadicName.M12.Group) :
-    (presentationEquiv g : Equiv.Perm (Fin 12)) = presentationHom g := by
-  dsimp only [presentationEquiv]
-  rw [MulEquiv.ofBijective_apply, GroupPresentation.coe_homOfClosureRangeEq]
-  refine DFunLike.congr_fun (PresentedGroup.ext fun i ↦ ?_) g
-  rw [GroupPresentation.homEquiv_symm_apply_of, presentationHom_of]
+    (presentationEquiv g : Equiv.Perm (Fin 12)) = presentationHom g :=
+  presentationHom.coe_mulEquivOfRangeEq_apply _ _ g
 
 end TauCeti.Sporadic.M12
 

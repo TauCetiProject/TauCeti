@@ -125,8 +125,8 @@ of `TauCeti.CosetEnumeration.State.step`. A closed replay returns the number of 
 points. -/
 @[expose]
 def run (n : ℕ) (rels subs : List (List ℕ)) (parents steps : List ℕ) : Option ℕ :=
-  let st := runSteps unlabeledScheme (2 * n) (rotations rels) subs steps ⟨1, 0, 0, (), [], parents⟩
-  if st.isClosed unlabeledScheme (2 * n) then some (st.roots unlabeledScheme).length else none
+  ((runSteps unlabeledScheme (2 * n) (rotations rels) subs steps
+    ⟨1, 0, 0, (), [], parents⟩).result unlabeledScheme (2 * n)).map Prod.fst
 
 /-! ### Soundness -/
 
@@ -145,6 +145,14 @@ private def unlabeledInterp {G : Type*} [Group G] (H : Subgroup G) :
   smul_actR _ _ _ := rfl
   onSelf_ok _ _ := trivial
 
+private theorem unlabeledInterp_sub {G : Type*} [Group G] {n : ℕ} {x : Fin n → G}
+    {H : Subgroup G} {subs : List (List ℕ)} (hsubs : ∀ s ∈ subs, wordValue x s ∈ H) :
+    ∀ s ∈ subs,
+      wordValue x s • (QuotientGroup.mk 1 : G ⧸ H) =
+        (unlabeledInterp H).actR (QuotientGroup.mk 1) unlabeledScheme.subLabel := fun s hs ↦ by
+  rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
+  exact QuotientGroup.eq.mpr (by simpa using H.inv_mem (hsubs s hs))
+
 private theorem closesAt_coset {G : Type*} [Group G] {n : ℕ} {x : Fin n → G} {H : Subgroup G}
     {rels subs : List (List ℕ)} {parents steps : List ℕ}
     (hrels : ∀ r ∈ rels, wordValue x r = 1) (hsubs : ∀ s ∈ subs, wordValue x s ∈ H)
@@ -152,13 +160,8 @@ private theorem closesAt_coset {G : Type*} [Group G] {n : ℕ} {x : Fin n → G}
     (hw : (runSteps unlabeledScheme (2 * n) (rotations rels) subs steps
       ⟨1, 0, 0, (), [], parents⟩).closesAt unlabeledScheme (2 * n) i w = true) :
     (pt x parents i)⁻¹ * wordValue x w * pt x parents i ∈ H := by
-  have hsub : ∀ s ∈ subs,
-      wordValue x s • (QuotientGroup.mk 1 : G ⧸ H) =
-        (unlabeledInterp H).actR (QuotientGroup.mk 1) unlabeledScheme.subLabel := fun s hs ↦ by
-    rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
-    exact QuotientGroup.eq.mpr (by simpa using H.inv_mem (hsubs s hs))
   obtain ⟨r, _, _, hw1, hw2⟩ :=
-    closesAt_of_runSteps (unlabeledInterp H) hrels hsub trivial hw
+    closesAt_of_runSteps (unlabeledInterp H) hrels (unlabeledInterp_sub hsubs) trivial hw
   have hmk : (QuotientGroup.mk (wordValue x w * pt x parents i) : G ⧸ H) =
       QuotientGroup.mk (pt x parents i) := by
     have heq := hw1.trans hw2.symm
@@ -200,19 +203,11 @@ private theorem surjective_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
     (hrels : ∀ r ∈ rels, wordValue x r = 1) (hsubs : ∀ s ∈ subs, wordValue x s ∈ H)
     (hrun : run n rels subs parents steps = some k) :
     ∃ f : Fin k → G ⧸ H, Function.Surjective f := by
-  set st := runSteps unlabeledScheme (2 * n) (rotations rels) subs steps ⟨1, 0, 0, (), [], parents⟩
-  have hclosed : st.isClosed unlabeledScheme (2 * n) = true ∧
-      (st.roots unlabeledScheme).length = k := by
-    dsimp only [run] at hrun
-    split_ifs at hrun with hc
-    exact ⟨hc, Option.some.inj hrun⟩
-  have hsub : ∀ s ∈ subs,
-      wordValue x s • (QuotientGroup.mk 1 : G ⧸ H) =
-        (unlabeledInterp H).actR (QuotientGroup.mk 1) unlabeledScheme.subLabel := fun s hs ↦ by
-    rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
-    exact QuotientGroup.eq.mpr (by simpa using H.inv_mem (hsubs s hs))
-  obtain ⟨h0, hstep⟩ := closed_edges_of_runSteps (unlabeledInterp H) hrels hsub trivial hclosed.1
-  rw [← hclosed.2]
+  obtain ⟨⟨k', _⟩, hres, rfl⟩ := Option.map_eq_some_iff.mp hrun
+  obtain ⟨hc, hk, _⟩ := State.result_eq_some_iff.mp hres
+  obtain ⟨h0, hstep⟩ := closed_edges_of_runSteps (unlabeledInterp H) hrels
+    (unlabeledInterp_sub hsubs) trivial hc
+  rw [← hk]
   refine ⟨_, surjective_mk_pt_of_roots hx H parents h0 fun i r hr ↦ ?_⟩
   obtain ⟨r', hr', _, he⟩ := hstep (2 * i) (by omega) r hr
   refine ⟨r', hr', ?_⟩

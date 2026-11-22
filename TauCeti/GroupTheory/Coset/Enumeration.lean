@@ -440,10 +440,16 @@ def result : Option (ℕ × A) :=
 
 end State
 
-/-- The subgroup exponent recorded in the accumulator field of a `ℕ`-valued state. -/
-@[expose]
-def State.exponent {L : Type} (st : State L ℕ) : ℕ :=
-  st.extra
+/-- A closed replay returns the surviving-root count and accumulator; an open replay returns
+`none`. -/
+theorem State.result_eq_some_iff {L A : Type} {S : Scheme L A} {m : ℕ} {st : State L A}
+    {k : ℕ} {a : A} :
+    st.result S m = some (k, a) ↔
+      st.isClosed S m = true ∧ (st.roots S).length = k ∧ st.extra = a := by
+  unfold State.result
+  split_ifs with hc
+  · simp [hc]
+  · simp [hc]
 
 /-- All cyclic rotations of the words in `rels`. -/
 @[expose]
@@ -967,23 +973,21 @@ section Main
 variable {G : Type*} [Group G] {n : ℕ} {x : Fin n → G} {rels : List (List ℕ)} {s : List ℕ}
   {parents steps : List ℕ} {k N : ℕ}
 
+private theorem cyclicInterp_sub (x : Fin n → G) (s : List ℕ) :
+    ∀ s' ∈ [s], wordValue x s' • (1 : G) =
+      (cyclicInterp (wordValue x s)).actR 1 cyclicScheme.subLabel := by
+  intro s' hs'
+  simp only [List.mem_singleton] at hs'
+  subst hs'
+  simp [cyclicInterp, cyclicScheme]
+
 private theorem surjective_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
     (hrels : ∀ r ∈ rels, wordValue x r = 1) (hrun : run n rels s parents steps = some (k, N)) :
     ∃ f : Fin k → G ⧸ Subgroup.zpowers (wordValue x s), Function.Surjective f := by
-  set st := replay n rels s parents steps
-  have hclosed : st.isClosed cyclicScheme (2 * n) = true ∧ (st.roots cyclicScheme).length = k := by
-    unfold run State.result at hrun
-    split_ifs at hrun with hc
-    exact ⟨hc, (Prod.mk.inj (Option.some.inj hrun)).1⟩
-  have hsub : ∀ s' ∈ [s], wordValue x s' • (1 : G) =
-      (cyclicInterp (wordValue x s)).actR 1 cyclicScheme.subLabel := by
-    intro s' hs'
-    simp only [List.mem_singleton] at hs'
-    subst hs'
-    simp [cyclicInterp, cyclicScheme]
-  obtain ⟨h0, hstep⟩ := closed_edges_of_runSteps (cyclicInterp (wordValue x s)) hrels hsub
-    (by simp [cyclicInterp]) hclosed.1
-  rw [← hclosed.2]
+  obtain ⟨hc, hk, _⟩ := State.result_eq_some_iff.mp hrun
+  obtain ⟨h0, hstep⟩ := closed_edges_of_runSteps (cyclicInterp (wordValue x s)) hrels
+    (cyclicInterp_sub x s) (by simp [cyclicInterp]) hc
+  rw [← hk]
   refine ⟨_, surjective_mk_pt_of_roots hx (Subgroup.zpowers (wordValue x s)) parents h0
     fun i r hr ↦ ?_⟩
   obtain ⟨r', hr', e, he⟩ := hstep (2 * i) (by omega) r hr
@@ -1017,21 +1021,14 @@ thus proves a relation `h ^ N = 1` in a group given by a presentation, without b
 itself. -/
 theorem wordValue_pow_exponent_replay_eq_one (hrels : ∀ r ∈ rels, wordValue x r = 1)
     (s parents steps : List ℕ) :
-    wordValue x s ^ (replay n rels s parents steps).exponent = 1 := by
-  have hsub : ∀ s' ∈ [s], wordValue x s' • (1 : G) =
-      (cyclicInterp (wordValue x s)).actR 1 cyclicScheme.subLabel := by
-    intro s' hs'
-    simp only [List.mem_singleton] at hs'
-    subst hs'
-    simp [cyclicInterp, cyclicScheme]
-  exact extraOk_of_runSteps (cyclicInterp (wordValue x s)) hrels hsub (by simp [cyclicInterp])
+    wordValue x s ^ (replay n rels s parents steps).extra = 1 :=
+  extraOk_of_runSteps (cyclicInterp (wordValue x s)) hrels (cyclicInterp_sub x s)
+    (by simp [cyclicInterp])
 
 /-- The exponent returned by a closed replay is the exponent of its final state. -/
 theorem exponent_replay_of_run (hrun : run n rels s parents steps = some (k, N)) :
-    (replay n rels s parents steps).exponent = N := by
-  unfold run State.result at hrun
-  split_ifs at hrun
-  exact (Prod.mk.inj (Option.some.inj hrun)).2
+    (replay n rels s parents steps).extra = N :=
+  (State.result_eq_some_iff.mp hrun).2.2
 
 /-- **Coset enumeration bounds the subgroup generator.** If the relators `rels` hold, the exponent
 returned by a closed replay annihilates the value of `s`. -/
@@ -1093,7 +1090,7 @@ theorem _root_.TauCeti.GroupPresentation.wordValue_pow_exponent_replay_eq_one
     (P : GroupPresentation) (s parents steps : List ℕ) :
     wordValue (PresentedGroup.of (rels := P.relatorSet)) s ^
       (replay P.generatorCount (P.relatorLetters.map (List.map signedLetter)) s parents
-        steps).exponent = 1 :=
+        steps).extra = 1 :=
   CosetEnumeration.wordValue_pow_exponent_replay_eq_one P.wordValue_relatorLetters_eq_one s
     parents steps
 
