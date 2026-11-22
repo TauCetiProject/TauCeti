@@ -171,8 +171,10 @@ theorem simpleDoubleDualIso_hom_eq_smul_pivotalIsoApp_hom :
     (simpleDoubleDualIso X).hom =
       endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim X)) • (pivotalIsoApp X).hom := by
   set d := endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim X))
-  have hd : d ≠ 0 := fun hd0 ↦ leftDim_ne_zero_of_simple k X
-    (by simpa [d] using (endAlgEquivOfSimple_apply_eq_iff (End.of (leftDim X)) 0).1 hd0)
+  have hd : d ≠ 0 := fun hd0 ↦
+    leftDim_ne_zero_of_surjective (Simple.not_isZero X)
+      (bijective_algebraMap_end_of_simple k X).surjective
+      (by simpa [d] using (endAlgEquivOfSimple_apply_eq_iff (End.of (leftDim X)) 0).1 hd0)
   rw [← Category.comp_id (simpleDoubleDualIso X).hom, ← Iso.inv_hom_id (pivotalIsoApp X),
     ← one_smul k (pivotalIsoApp X).inv, ← mul_inv_cancel₀ hd, mul_smul,
     ← simpleDoubleDualIso_inv_eq_smul_pivotalIsoApp_inv k X, Linear.smul_comp, Linear.comp_smul,
