@@ -11,6 +11,7 @@ public import Mathlib.Data.Matrix.Basic
 public import Mathlib.RingTheory.Ideal.BigOperators
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Operations
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
 
 /-!
 # Matrix entries lying in an ideal
@@ -37,6 +38,8 @@ matrix identity.
   with entries in `J` vanishes when `I * J = ⊥`.
 * `Matrix.forall_mem_ker_iff_map_eq_zero`: the entries of a matrix lie in the kernel of a ring
   homomorphism exactly when its image under that homomorphism is zero.
+* `Matrix.map_mk_eq_map_mk_iff`: two matrices agree modulo `r` exactly when they differ by `r`
+  times a matrix.
 * `Matrix.pow_apply_mem_pow`, `Matrix.isNilpotent_of_forall_apply_mem`: the `k`-th power of a
   square matrix with entries in `I` has entries in `I ^ k`, so a square matrix with entries in a
   nilpotent ideal is nilpotent.
@@ -81,6 +84,21 @@ theorem forall_mem_ker_iff_map_eq_zero {R : Type*} [Semiring R] [Semiring S] {F 
     [FunLike F R S] [RingHomClass F R S] {f : F} {D : Matrix m n R} :
     (∀ i j, D i j ∈ RingHom.ker f) ↔ D.map f = 0 := by
   simp only [RingHom.mem_ker, ← Matrix.ext_iff, map_apply, Matrix.zero_apply]
+
+/-- Two matrices have the same image modulo `r` exactly when they differ by `r` times a
+matrix. -/
+theorem map_mk_eq_map_mk_iff [CommRing S] {r : S} {A A' : Matrix m n S} :
+    A'.map (Ideal.Quotient.mk (Ideal.span {r})) = A.map (Ideal.Quotient.mk (Ideal.span {r})) ↔
+      ∃ C : Matrix m n S, A' = A + r • C := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · have (i : m) (j : n) : ∃ c, A' i j = A i j + r * c := by
+      obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.mp (Ideal.Quotient.eq.mp (congr_fun₂ h i j))
+      exact ⟨c, by rw [← hc, add_sub_cancel]⟩
+    choose c hc using this
+    exact ⟨of c, ext fun i j ↦ by simp [hc]⟩
+  · rintro ⟨C, rfl⟩
+    ext i j
+    simp [Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self r)]
 
 /-- **The powers of a matrix with entries in an ideal.** If every entry of a square matrix `M`
 lies in `I`, then every entry of `M ^ k` lies in `I ^ k`. -/
