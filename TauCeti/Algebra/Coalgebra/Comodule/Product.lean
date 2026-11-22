@@ -593,7 +593,7 @@ open CategoryTheory.Limits
 
 /-- The concrete product of comodules, with its two projections, is a limit cone over
 `pair M N`. -/
-@[expose] def binaryProductLimitCone (M N : ComoduleCat.{u, v, w} R C) :
+def binaryProductLimitCone (M N : ComoduleCat.{u, v, w} R C) :
     LimitCone (pair M N) where
   cone := BinaryFan.mk (prodFst M N) (prodSnd M N)
   isLimit := BinaryFan.IsLimit.mk _ (fun f g ↦ prodLift f g)
@@ -605,26 +605,32 @@ open CategoryTheory.Limits
 @[simp]
 theorem binaryProductLimitCone_cone_pt (M N : ComoduleCat.{u, v, w} R C) :
     (binaryProductLimitCone M N).cone.pt = prod R C M N :=
-  rfl
+  (rfl)
 
-/-- The first projection of `binaryProductLimitCone M N` is `prodFst M N`. -/
+/-- The first projection of `binaryProductLimitCone M N` is `prodFst M N`, transported along
+`binaryProductLimitCone_cone_pt`. -/
 @[simp]
 theorem binaryProductLimitCone_cone_fst (M N : ComoduleCat.{u, v, w} R C) :
-    BinaryFan.fst (binaryProductLimitCone M N).cone = prodFst M N :=
-  rfl
+    BinaryFan.fst (binaryProductLimitCone M N).cone =
+      eqToHom (binaryProductLimitCone_cone_pt M N) ≫ prodFst M N :=
+  (Category.id_comp _).symm
 
-/-- The second projection of `binaryProductLimitCone M N` is `prodSnd M N`. -/
+/-- The second projection of `binaryProductLimitCone M N` is `prodSnd M N`, transported along
+`binaryProductLimitCone_cone_pt`. -/
 @[simp]
 theorem binaryProductLimitCone_cone_snd (M N : ComoduleCat.{u, v, w} R C) :
-    BinaryFan.snd (binaryProductLimitCone M N).cone = prodSnd M N :=
-  rfl
+    BinaryFan.snd (binaryProductLimitCone M N).cone =
+      eqToHom (binaryProductLimitCone_cone_pt M N) ≫ prodSnd M N :=
+  (Category.id_comp _).symm
 
-/-- The universal lift into `binaryProductLimitCone M N` is `prodLift`. -/
+/-- The universal lift into `binaryProductLimitCone M N` is `prodLift`, transported along
+`binaryProductLimitCone_cone_pt`. -/
 @[simp]
 theorem binaryProductLimitCone_isLimit_lift (M N : ComoduleCat.{u, v, w} R C)
     (s : BinaryFan M N) :
-    (binaryProductLimitCone M N).isLimit.lift s = prodLift s.fst s.snd :=
-  rfl
+    (binaryProductLimitCone M N).isLimit.lift s =
+      prodLift s.fst s.snd ≫ eqToHom (binaryProductLimitCone_cone_pt M N).symm :=
+  (Category.comp_id _).symm
 
 /-- The concrete product of comodules is their categorical binary product. -/
 instance (M N : ComoduleCat.{u, v, w} R C) : HasBinaryProduct M N :=
