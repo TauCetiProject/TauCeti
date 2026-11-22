@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Conj
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Orbit
+public import TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.CoprimeExponents
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.Coxeter.Element
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
@@ -32,13 +33,13 @@ with exponents `1 ≤ eᵢ < h` (the lower bound is
 
 ## The argument
 
-For the bipartite Coxeter element `c = c₀ c₁`, where `c₀` and `c₁` are the products of the simple
-reflections of the two colours of the Dynkin diagram, `c⁻¹ = c₁ c c₁`. A regular eigenvector `x`
-of `c` for a primitive `h`-th root of unity `μ` therefore gives the regular eigenvector `c₁ x`
-for `μ⁻¹`, and the eigenvalue computation at both shows that the exponents `eᵢ` modulo `h` are
-stable under `e ↦ -e`, with multiplicity. None of them is `0` modulo `h`, as `1` is not an
-eigenvalue of `c`, so they pair off and `2 ∑ᵢ (eᵢ % h) = r h`. On the other hand
-`∑ᵢ eᵢ = |Φ⁺|`
+The bipartite Coxeter element `c` has a regular eigenvector for a primitive `h`-th root of unity
+`ζ`, and since its characteristic polynomial is rational, the eigenvalue computation there holds
+with `ζ` replaced by any primitive `h`-th root of unity
+(`RootPairing.charpoly_weylGroupRootRep_of_isRegularWeight_of_isPrimitiveRoot`). Using `ζ` and
+`ζ⁻¹` shows that the exponents `eᵢ` modulo `h` are stable under `e ↦ -e`, with multiplicity.
+None of them is `0` modulo `h`, as `1` is not an eigenvalue of `c`, so they pair off and
+`2 ∑ᵢ (eᵢ % h) = r h`. On the other hand `∑ᵢ eᵢ = |Φ⁺|`
 (`RootPairing.sum_sub_one_eq_ncard_posRoots_of_bijective_aeval_weylGroupRootRep_dual`) and every
 `⟨c⟩`-orbit of roots meets the inversion set of `c`, which has `r` elements, within `h` steps,
 so `2 |Φ⁺| = |Φ| ≤ r h` (`TauCeti.natCard_le_orderOf_wordProd_mul_length`). As `eᵢ % h ≤ eᵢ`,
@@ -72,48 +73,6 @@ variable {ι K M N κ : Type*} [Field K] [CharZero K] [Algebra ℝ K] [IsAlgClos
   (P : RootPairing ι K M N) [Finite ι] [Nonempty ι] [P.IsCrystallographic] [P.IsReduced]
   [P.IsIrreducible]
 
-/-- The eigenvalues `ζ ^ eᵢ` of the bipartite Coxeter element `c` are stable under inversion,
-since `c` and `c⁻¹` are conjugate: there is a primitive `h`-th root of unity `ζ` with
-`charpoly c = ∏ᵢ (X - ζ ^ eᵢ) = ∏ᵢ (X - ζ⁻¹ ^ eᵢ)`. -/
-private theorem exists_isPrimitiveRoot_charpoly_eq_prod_and_prod_eq_prod_inv
-    [FiniteDimensional K M] [Fintype κ]
-    (b : P.Base) (c : (coxeterMatrixOfBase P b).graph.Coloring Bool)
-    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
-    (hf : ∀ k, (f k : SymmetricAlgebra K (Module.Dual K M)) ∈
-      homogeneousSubmodule K (Module.Dual K M) (d k))
-    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
-    ∃ ζ : K, IsPrimitiveRoot ζ (orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c)) ∧
-      (P.weylGroupRootRep ((weylCoxeterSystem P b).bipartiteCoxeterElement c)).charpoly =
-        ∏ k, (X - C (ζ ^ (d k - 1))) ∧
-      ∏ k, (X - C (ζ ^ (d k - 1))) = ∏ k, (X - C (ζ⁻¹ ^ (d k - 1))) := by
-  set cs := weylCoxeterSystem P b
-  have := P.finite_weylGroup_of_base b
-  obtain ⟨x, μ, hx, hgx, hμ⟩ :=
-    P.exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveRoot b c
-  have hμ0 : μ ≠ 0 := hμ.ne_zero (orderOf_pos _).ne'
-  -- With `c = A B` for the involutions `A` and `B`, `B x` is an eigenvector of `c` for `μ⁻¹`.
-  set A := cs.colorClassProd c true
-  set B := cs.colorClassProd c false
-  have hAB : cs.bipartiteCoxeterElement c = A * B := cs.bipartiteCoxeterElement_def c
-  have hBx : B • x = μ • A • x :=
-    calc B • x = A • (A * B) • x := by
-          rw [← mul_smul, ← mul_assoc, cs.colorClassProd_mul_self, one_mul]
-      _ = A • μ • x := by rw [← hAB, hgx]
-      _ = μ • A • x := smul_comm _ _ _
-  have hμμ : μ⁻¹ * μ = 1 := inv_mul_cancel₀ hμ0
-  have hy : cs.bipartiteCoxeterElement c • B • x = (↑(Units.mk0 μ hμ0)⁻¹ : K) • B • x :=
-    calc cs.bipartiteCoxeterElement c • B • x = A • x := by
-          rw [hAB, ← mul_smul, mul_assoc, cs.colorClassProd_mul_self, mul_one]
-      _ = μ⁻¹ • B • x := by rw [hBx, smul_smul, hμμ, one_smul]
-      _ = (↑(Units.mk0 μ hμ0)⁻¹ : K) • B • x := by
-          simp only [Units.val_inv_eq_inv_val, Units.val_mk0]
-  have h₁ := P.charpoly_weylGroupRootRep_of_isRegularWeight_of_smul_eq b hf hbij
-    (c := Units.mk0 μ hμ0) hx hgx
-  have h₂ := P.charpoly_weylGroupRootRep_of_isRegularWeight_of_smul_eq b hf hbij
-    ((P.isRegularWeight_smul B x).mpr hx) hy
-  simp only [inv_inv, Units.val_inv_eq_inv_val, Units.val_mk0] at h₁ h₂
-  exact ⟨μ, hμ, h₂, h₂.symm.trans h₁⟩
-
 /-- The two results of this file for the bipartite Coxeter element: `|Φ| = r h` and `eᵢ < h`. -/
 private theorem natCard_eq_and_degree_sub_one_lt_orderOf_bipartiteCoxeterElement
     [FiniteDimensional K M] [Finite κ]
@@ -130,15 +89,20 @@ private theorem natCard_eq_and_degree_sub_one_lt_orderOf_bipartiteCoxeterElement
   set g := (weylCoxeterSystem P b).bipartiteCoxeterElement c
   have := P.finite_weylGroup_of_base b
   have : NeZero (orderOf g) := ⟨(orderOf_pos g).ne'⟩
-  obtain ⟨ζ, hζ, hchar, hsym⟩ :=
-    P.exists_isPrimitiveRoot_charpoly_eq_prod_and_prod_eq_prod_inv b c hf hbij
+  -- Springer's formula holds for every primitive `h`-th root of unity, so the eigenvalues
+  -- `ζ ^ eᵢ` of `c` are stable under inversion.
+  obtain ⟨x, ζ, hx, hgx, hζ⟩ :=
+    P.exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveRoot b c
+  have hchar {ξ : K} (hξ : IsPrimitiveRoot ξ (orderOf g)) :=
+    P.charpoly_weylGroupRootRep_of_isRegularWeight_of_isPrimitiveRoot b hf hbij hx hgx hζ hξ
+  have hsym := (hchar hζ).symm.trans (hchar hζ.inv)
   obtain ⟨l₁, l₂, -, -, hnd, hall, hw⟩ :=
     (weylCoxeterSystem P b).exists_wordProd_eq_bipartiteCoxeterElement c
   rw [weylCoxeterSystem_wordProd] at hw
   -- No exponent is divisible by `h`, since `1` is not an eigenvalue of `c`.
   have hdvd (k : κ) : ¬ orderOf g ∣ d k - 1 := fun hk ↦ by
     refine not_hasEigenvalue_one_wordProd b hnd hall ?_
-    rw [hw, Module.End.hasEigenvalue_iff_isRoot_charpoly, hchar, IsRoot.def, eval_prod]
+    rw [hw, Module.End.hasEigenvalue_iff_isRoot_charpoly, hchar hζ, IsRoot.def, eval_prod]
     exact Finset.prod_eq_zero (Finset.mem_univ k) (by simp [(hζ.pow_eq_one_iff_dvd _).2 hk])
   have hpair := hζ.two_mul_sum_mod_eq_mul_card hdvd hsym
   have hcard : Fintype.card κ = Module.finrank K M := by
