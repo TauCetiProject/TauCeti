@@ -20,8 +20,8 @@ commuting elements of `𝔤` commute (`commute_lieExp_of_lie_eq_zero`).
 
 ## Main results
 
-* `TauCeti.Lie.commute_of_lie_lieMap_eq_zero`: commuting Lie algebras integrate to commuting
-  images.
+* `ContMDiffMonoidMorphism.commute_of_lie_lieMap_eq_zero`: commuting Lie algebras integrate to
+  commuting images.
 -/
 
 public section
@@ -34,7 +34,9 @@ open scoped ContDiff Manifold
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-namespace TauCeti.Lie
+namespace ContMDiffMonoidMorphism
+
+open TauCeti TauCeti.Lie
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -80,4 +82,4 @@ theorem commute_of_lie_lieMap_eq_zero [PreconnectedSpace A] [PreconnectedSpace K
   | mul a a' _ _ ha ha' => rw [map_mul]; exact ha.mul_left ha'
   | inv a _ ha => rw [map_inv]; exact ha.inv_left
 
-end TauCeti.Lie
+end ContMDiffMonoidMorphism

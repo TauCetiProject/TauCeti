@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Abelian
 public import TauCeti.Geometry.Lie.InvariantVectorField.Foliation
 public import TauCeti.Geometry.Lie.Subgroup.Immersed.Uniqueness
 public import TauCeti.Geometry.Manifold.Foliation.IntegralManifold
+import Mathlib.Algebra.Lie.IdealOperations
 import TauCeti.Geometry.Lie.Exponential.Commute
 
 /-!
@@ -66,6 +67,8 @@ so the model of `G` is taken in `Type`.
   of `S` has range `S`.
 * `LieSubalgebra.commute_integralLeafSubgroupData_of_isLieAbelian`: the integral leaf subgroup of an
   abelian Lie subalgebra is commutative.
+* `LieIdeal.commute_integralLeafSubgroupData_of_disjoint`: the integral leaf subgroups of two Lie
+  ideals with trivial intersection commute with each other.
 
 ## References
 
@@ -303,7 +306,7 @@ attribute [local instance] ImmersedLieSubgroupData.connectedSpace in
 theorem commute_integralLeafSubgroupData_of_isLieAbelian
     (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) [IsLieAbelian ↥S]
     (x y : (S.integralLeafSubgroupData (I := I)).X) : Commute x y := by
-  have h := commute_of_lie_lieMap_eq_zero
+  have h := ContMDiffMonoidMorphism.commute_of_lie_lieMap_eq_zero
     (S.integralLeafSubgroupData (I := I)).toContMDiffMonoidMorphism
     (S.integralLeafSubgroupData (I := I)).toContMDiffMonoidMorphism
     (fun X Y ↦ by
@@ -312,6 +315,31 @@ theorem commute_integralLeafSubgroupData_of_isLieAbelian
         ⟨_, lieMap_integralLeafSubgroupData_mem S Y⟩)) x y
   refine (S.integralLeafSubgroupData (I := I)).injective ?_
   simpa [ImmersedLieSubgroupData.toContMDiffMonoidMorphism_apply] using h.eq
+
+attribute [local instance] ImmersedLieSubgroupData.connectedSpace in
+/-- The integral leaf subgroups of two Lie ideals with trivial intersection commute with each other
+in `G`: the ideals bracket to zero against each other, since `⁅𝔞, 𝔨⁆ ⊆ 𝔞 ⊓ 𝔨 = 0`. -/
+theorem _root_.LieIdeal.commute_integralLeafSubgroupData_of_disjoint
+    (𝔞 𝔨 : LieIdeal ℝ (LeftInvariantDerivation I G)) (h : Disjoint 𝔞 𝔨)
+    (x : ((𝔞 : LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
+      (I := I)).X)
+    (y : ((𝔨 : LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
+      (I := I)).X) :
+    Commute
+      (((𝔞 : LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
+        (I := I)).toHom x)
+      (((𝔨 : LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
+        (I := I)).toHom y) := by
+  have hlie : ⁅𝔞, 𝔨⁆ = ⊥ := _root_.eq_bot_iff.mpr ((LieSubmodule.lie_le_inf 𝔞 𝔨).trans h.le_bot)
+  have hc := ContMDiffMonoidMorphism.commute_of_lie_lieMap_eq_zero
+    ((𝔞 : LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
+      (I := I)).toContMDiffMonoidMorphism
+    ((𝔨 : LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
+      (I := I)).toContMDiffMonoidMorphism
+    (fun X Y ↦ (LieSubmodule.lie_eq_bot_iff (I := 𝔞) (N := 𝔨)).mp hlie _
+      ((LieIdeal.mem_toLieSubalgebra ℝ _ 𝔞 _).mp (lieMap_integralLeafSubgroupData_mem _ X)) _
+      ((LieIdeal.mem_toLieSubalgebra ℝ _ 𝔨 _).mp (lieMap_integralLeafSubgroupData_mem _ Y))) x y
+  simpa only [ImmersedLieSubgroupData.toContMDiffMonoidMorphism_apply] using hc
 
 end Data
 

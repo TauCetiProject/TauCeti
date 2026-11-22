@@ -174,6 +174,7 @@ theorem lieMap_inl_add_lieMap_inr (D : LeftInvariantDerivation (I.prod I') (G ×
 
 /-- The Lie map of the product `(g, g') ↦ φ g * ψ g'` of two smooth homomorphisms with commuting
 images is the sum of their Lie maps on the two components. -/
+@[simp]
 theorem lieMap_noncommCoprod
     {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
     {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}

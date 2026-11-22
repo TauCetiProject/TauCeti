@@ -11,8 +11,6 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Geometry.Lie.Covering
 public import TauCeti.Geometry.Lie.Prod
 public import TauCeti.Geometry.Lie.Subgroup.Immersed.Existence
-import Mathlib.Algebra.Lie.IdealOperations
-import TauCeti.Geometry.Lie.Exponential.Commute
 
 /-!
 # Splitting a simply connected Lie group along complementary ideals
@@ -31,7 +29,8 @@ The splitting rests on a general criterion. Let `φ : A → G` and `ψ : K → G
 homomorphisms out of connected Lie groups.
 
 * If the images of their Lie maps commute, so do their images
-  (`TauCeti.Lie.commute_of_lie_lieMap_eq_zero`, in `TauCeti/Geometry/Lie/Exponential/Commute.lean`).
+  (`ContMDiffMonoidMorphism.commute_of_lie_lieMap_eq_zero`, in
+  `TauCeti/Geometry/Lie/Exponential/Commute.lean`).
 * In that case `(a, k) ↦ φ a * ψ k` is a smooth homomorphism `A × K → G`
   (`ContMDiffMonoidMorphism.noncommCoprod`), whose Lie map is `(X, Y) ↦ dφ X + dψ Y`
   (`TauCeti.Lie.lieMap_noncommCoprod`). It is bijective as soon as `dφ` and `dψ` are injective
@@ -39,18 +38,19 @@ homomorphisms out of connected Lie groups.
 * A smooth homomorphism with bijective Lie map from a connected group to a simply connected one is
   a covering map onto a simply connected space, hence bijective, and it is a local
   diffeomorphism, hence open. So `A × K → G` is an isomorphism of topological groups
-  (`TauCeti.Lie.noncommCoprodContinuousMulEquiv`).
+  (`ContMDiffMonoidMorphism.noncommCoprodContinuousMulEquiv`).
 
 For the splitting along ideals, `A` and `K` are the integral leaf subgroups of `𝔞` and `𝔨` with
 their intrinsic Lie group structures (`LieSubalgebra.integralLeafSubgroupData`). The ideals bracket
-to zero against each other, since `⁅𝔞, 𝔨⁆ ⊆ 𝔞 ⊓ 𝔨 = 0`. The factors are only required to be
+to zero against each other, since `⁅𝔞, 𝔨⁆ ⊆ 𝔞 ⊓ 𝔨 = 0`, so these subgroups commute
+(`LieIdeal.commute_integralLeafSubgroupData_of_disjoint`). The factors are only required to be
 connected, not simply connected: the covering argument needs simple connectivity of `G` alone.
 
 ## Main definitions
 
-* `TauCeti.Lie.noncommCoprodContinuousMulEquiv`: the product of two commuting smooth homomorphisms
-  with complementary Lie algebras, as an isomorphism of topological groups onto a simply connected
-  Lie group.
+* `ContMDiffMonoidMorphism.noncommCoprodContinuousMulEquiv`: the product of two commuting smooth
+  homomorphisms with complementary Lie algebras, as an isomorphism of topological groups onto a
+  simply connected Lie group.
 * `TauCeti.Lie.idealProdContinuousMulEquiv`: a simply connected Lie group is the product of the
   integral leaf subgroups of two complementary ideals.
 * `TauCeti.Lie.centerProdDerivedContinuousMulEquiv`: the case of the centre and the derived
@@ -122,7 +122,7 @@ variable [PreconnectedSpace A] [PreconnectedSpace K] [SimplyConnectedSpace G]
 `ψ : K → G` be smooth homomorphisms out of connected Lie groups into a simply connected Lie group,
 with commuting images, whose Lie maps are injective with complementary ranges. Then
 `(a, k) ↦ φ a * ψ k` is an isomorphism of topological groups `A × K ≃ₜ* G`. -/
-def noncommCoprodContinuousMulEquiv
+def _root_.ContMDiffMonoidMorphism.noncommCoprodContinuousMulEquiv
     (φ : ContMDiffMonoidMorphism I J ∞ A G) (ψ : ContMDiffMonoidMorphism I' J ∞ K G)
     (h : ∀ a k, Commute (φ a) (ψ k)) (hφ : Injective (lieMap φ)) (hψ : Injective (lieMap ψ))
     (hc : IsCompl (LinearMap.range (lieMap φ).toLinearMap)
@@ -137,12 +137,12 @@ def noncommCoprodContinuousMulEquiv
     (map_mul μ)
 
 @[simp]
-theorem noncommCoprodContinuousMulEquiv_apply
+theorem _root_.ContMDiffMonoidMorphism.noncommCoprodContinuousMulEquiv_apply
     (φ : ContMDiffMonoidMorphism I J ∞ A G) (ψ : ContMDiffMonoidMorphism I' J ∞ K G)
     (h : ∀ a k, Commute (φ a) (ψ k)) (hφ : Injective (lieMap φ)) (hψ : Injective (lieMap ψ))
     (hc : IsCompl (LinearMap.range (lieMap φ).toLinearMap)
       (LinearMap.range (lieMap ψ).toLinearMap)) (p : A × K) :
-    noncommCoprodContinuousMulEquiv φ ψ h hφ hψ hc p = φ p.1 * ψ p.2 :=
+    φ.noncommCoprodContinuousMulEquiv ψ h hφ hψ hc p = φ p.1 * ψ p.2 :=
   φ.noncommCoprod_apply ψ h p
 
 end Criterion
@@ -171,23 +171,16 @@ def idealProdContinuousMulEquiv (𝔞 𝔨 : LieIdeal ℝ (LeftInvariantDerivati
     ((𝔞 : LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X ×
       ((𝔨 : LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X
       ≃ₜ* G :=
-  noncommCoprodContinuousMulEquiv
+  ContMDiffMonoidMorphism.noncommCoprodContinuousMulEquiv
     ((𝔞 : LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
       (I := I)).toContMDiffMonoidMorphism
     ((𝔨 : LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
       (I := I)).toContMDiffMonoidMorphism
-    (commute_of_lie_lieMap_eq_zero _ _ fun X Y ↦ (LieSubmodule.lie_eq_bot_iff (I := 𝔞) (N := 𝔨)).mp
-      (eq_bot_iff.mpr ((LieSubmodule.lie_le_inf 𝔞 𝔨).trans hc.disjoint.le_bot)) _
-      ((LieIdeal.mem_toLieSubalgebra ℝ _ 𝔞 _).mp
-        (LieSubalgebra.lieMap_integralLeafSubgroupData_mem _ X)) _
-      ((LieIdeal.mem_toLieSubalgebra ℝ _ 𝔨 _).mp
-        (LieSubalgebra.lieMap_integralLeafSubgroupData_mem _ Y)))
-    (by
-      rw [ImmersedLieSubgroupData.lieMap_toContMDiffMonoidMorphism]
-      exact ImmersedLieSubgroupData.injective_lieMapToHom _)
-    (by
-      rw [ImmersedLieSubgroupData.lieMap_toContMDiffMonoidMorphism]
-      exact ImmersedLieSubgroupData.injective_lieMapToHom _)
+    (fun a k ↦ by
+      simpa only [ImmersedLieSubgroupData.toContMDiffMonoidMorphism_apply] using
+        LieIdeal.commute_integralLeafSubgroupData_of_disjoint 𝔞 𝔨 hc.disjoint a k)
+    (ImmersedLieSubgroupData.injective_lieMap_toContMDiffMonoidMorphism _)
+    (ImmersedLieSubgroupData.injective_lieMap_toContMDiffMonoidMorphism _)
     (by
       rw [LieSubalgebra.range_lieMap_integralLeafSubgroupData,
         LieSubalgebra.range_lieMap_integralLeafSubgroupData,
@@ -206,7 +199,7 @@ theorem idealProdContinuousMulEquiv_apply (𝔞 𝔨 : LieIdeal ℝ (LeftInvaria
         (I := I)).toHom p.1 *
         ((𝔨 : LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
           (I := I)).toHom p.2 := by
-  rw [idealProdContinuousMulEquiv, noncommCoprodContinuousMulEquiv_apply,
+  rw [idealProdContinuousMulEquiv, ContMDiffMonoidMorphism.noncommCoprodContinuousMulEquiv_apply,
     ImmersedLieSubgroupData.toContMDiffMonoidMorphism_apply,
     ImmersedLieSubgroupData.toContMDiffMonoidMorphism_apply]
 
@@ -251,6 +244,8 @@ theorem commute_integralLeafSubgroupData_center
     (x y : ((LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
       LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X) :
     Commute x y :=
+  -- The centre is a Lie ideal; coerced to a Lie subalgebra it has the same carrier and bracket by
+  -- definition, so Mathlib's `IsLieAbelian` instance for the centre applies to it unchanged.
   have : IsLieAbelian ↥(LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
       LieSubalgebra ℝ (LeftInvariantDerivation I G)) :=
     inferInstanceAs (IsLieAbelian (LieAlgebra.center ℝ (LeftInvariantDerivation I G)))

@@ -97,6 +97,11 @@ def inl : ContMDiffMonoidMorphism I (I.prod I') n G (G × G') where
 theorem coe_inl : ⇑(inl (I := I) (I' := I') (n := n) (G := G) (G' := G')) = fun g ↦ (g, 1) :=
   (rfl)
 
+@[to_additive (attr := simp)]
+theorem toMonoidHom_inl :
+    (inl (I := I) (I' := I') (n := n) (G := G) (G' := G')).toMonoidHom = MonoidHom.inl G G' :=
+  (rfl)
+
 /-- The second inclusion `g' ↦ (1, g')` as a smooth monoid morphism. -/
 @[to_additive /-- The second inclusion `g' ↦ (0, g')` as a smooth additive monoid morphism. -/]
 def inr : ContMDiffMonoidMorphism I' (I.prod I') n G' (G × G') where
@@ -105,6 +110,11 @@ def inr : ContMDiffMonoidMorphism I' (I.prod I') n G' (G × G') where
 
 @[to_additive (attr := simp)]
 theorem coe_inr : ⇑(inr (I := I) (I' := I') (n := n) (G := G) (G' := G')) = fun g' ↦ (1, g') :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem toMonoidHom_inr :
+    (inr (I := I) (I' := I') (n := n) (G := G) (G' := G')).toMonoidHom = MonoidHom.inr G G' :=
   (rfl)
 
 /-- Composition of smooth monoid morphisms. -/
@@ -202,6 +212,12 @@ def noncommCoprod (φ : ContMDiffMonoidMorphism I I'' n G G'')
 theorem noncommCoprod_apply (φ : ContMDiffMonoidMorphism I I'' n G G'')
     (ψ : ContMDiffMonoidMorphism I' I'' n G' G'') (h : ∀ g g', Commute (φ g) (ψ g'))
     (p : G × G') : φ.noncommCoprod ψ h p = φ p.1 * ψ p.2 :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem toMonoidHom_noncommCoprod (φ : ContMDiffMonoidMorphism I I'' n G G'')
+    (ψ : ContMDiffMonoidMorphism I' I'' n G' G'') (h : ∀ g g', Commute (φ g) (ψ g')) :
+    (φ.noncommCoprod ψ h).toMonoidHom = φ.toMonoidHom.noncommCoprod ψ.toMonoidHom h :=
   (rfl)
 
 @[to_additive (attr := simp)]
