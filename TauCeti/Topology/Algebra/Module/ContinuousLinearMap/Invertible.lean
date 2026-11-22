@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 public import TauCeti.Topology.Algebra.Module.Equiv.SMul
 import Mathlib.Tactic.Abel
 
@@ -38,7 +39,8 @@ completeness assumption; this is how invertibility of a derivative of a composit
 the factors.
 
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
-(`ContinuousLinearMap.isInvertible_iff_isUnit`).
+(`ContinuousLinearMap.isInvertible_iff_isUnit`). A map is invertible exactly when its negation is
+(`ContinuousLinearMap.isInvertible_neg_iff`).
 
 A map agreeing pointwise with an equality cast is invertible
 (`ContinuousLinearMap.isInvertible_of_eq_cast`), including zero modules.
@@ -48,12 +50,20 @@ exactly when both factors are, which is how block-diagonal second derivatives on
 are shown to be invertible. More generally, a map `M₁ × M₂ → M₁ × M₃` which preserves the first
 coordinate is block lower triangular, and it is invertible exactly when its diagonal block
 `M₂ → M₃` is. This is the shape of the differential of a fibre-preserving map between vector
-bundles over the same base, read in bundle charts. For an endomorphism `B`, the map
-`(u, l) ↦ (B u + l, u)` of `M × M` is invertible
+bundles over the same base, read in bundle charts. Two invertible maps on `M₁ × M₂` which agree
+on `M₁` have mutually inverse diagonal blocks `M₂ → M₂`
+(`ContinuousLinearMap.IsInvertible.snd_comp_inverse_comp_inr_comp_snd_comp_inverse_comp_inr`).
+For a continuous linear map `B : M → N`, the map `(u, l) ↦ (B u + l, u)` from `M × N` to `N × M`
+is invertible
 (`ContinuousLinearMap.isInvertible_coprod_id_prod_fst`).
 
 Between uniformly topologized modules an invertible continuous linear map transfers
 completeness from the codomain to the domain, because its inverse is a uniform homeomorphism.
+
+An invertible map restricts to an invertible map between submodules `p` and `q` as soon as its
+inverse maps `q` into `p` (`ContinuousLinearMap.IsInvertible.restrictOfTower`), and the inverse of
+the restriction is the restriction of the inverse
+(`ContinuousLinearMap.IsInvertible.coe_inverse_restrictOfTower_apply`).
 
 The rectangular Jacobson identity says that `1 - u ∘ v` and `1 - v ∘ u` are invertible together,
 even for maps between different modules. It transports invertibility from an operator to its
@@ -103,6 +113,49 @@ theorem IsInvertible.inverse_sub_inverse {f g : E →L[R] F}
   simp [hf.inverse_apply_self, hg.self_apply_inverse]
 
 end Sub
+
+section Neg
+
+variable {R E F : Type*} [Ring R] [TopologicalSpace E] [AddCommGroup E] [Module R E]
+  [TopologicalSpace F] [AddCommGroup F] [Module R F] [IsTopologicalAddGroup F]
+
+/-- Negation preserves and reflects invertibility. -/
+@[simp]
+theorem isInvertible_neg_iff {f : E →L[R] F} : (-f).IsInvertible ↔ f.IsInvertible := by
+  have h : -f = (ContinuousLinearEquiv.neg R : F ≃L[R] F) ∘L f := by ext; simp
+  rw [h, isInvertible_equiv_comp]
+
+end Neg
+
+section Restrict
+
+variable {R S M N : Type*} [Semiring R] [Semiring S] [SMul R S]
+  [TopologicalSpace M] [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+  [TopologicalSpace N] [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
+
+/-- Let `f` be invertible, mapping the submodule `p` into the submodule `q`, and suppose that `x`
+lies in `p` whenever `f x` lies in `q`. Then the restriction `p →L[R] q` of `f` is invertible:
+the inverse of `f` maps `q` into `p`. The submodules may be over a larger ring `S` of scalars, for
+example complex subspaces for a real-linear `f`. -/
+theorem IsInvertible.restrictOfTower {f : M →L[R] N} (hf : f.IsInvertible) {p : Submodule S M}
+    {q : Submodule S N} (h : ∀ x ∈ p, f x ∈ q) (hq : ∀ x, f x ∈ q → x ∈ p) :
+    (f.restrictOfTower h).IsInvertible := by
+  refine IsInvertible.of_inverse (g := f.inverse.restrictOfTower fun y hy ↦
+    hq _ (by rwa [hf.self_apply_inverse])) ?_ ?_ <;> ext1 y <;> refine Subtype.ext ?_
+  · simpa using hf.self_apply_inverse (y : N)
+  · simpa using hf.inverse_apply_self (y : M)
+
+/-- The inverse of the restriction of an invertible map `f` to submodules `p` and `q` is the
+restriction of the inverse of `f`. -/
+@[simp]
+theorem IsInvertible.coe_inverse_restrictOfTower_apply {f : M →L[R] N} (hf : f.IsInvertible)
+    {p : Submodule S M} {q : Submodule S N} (h : ∀ x ∈ p, f x ∈ q)
+    (hq : ∀ x, f x ∈ q → x ∈ p) (y : q) :
+    ((f.restrictOfTower h).inverse y : M) = f.inverse y := by
+  conv_rhs => rw [← (hf.restrictOfTower h hq).self_apply_inverse y]
+  simp [hf.inverse_apply_self]
+
+end Restrict
 
 section OneSided
 
@@ -339,19 +392,37 @@ theorem isInvertible_iff_of_fst_comp_eq {T : M₁ × M₂ →L[R] M₁ × M₃}
       conv_rhs => rw [hp, map_add]
       simp [hKp, add_comm]
 
+/-- Two invertible maps `d₀, d₁ : M₁ × M₂ → N` which agree on the first factor have mutually
+inverse diagonal blocks `snd ∘ d₀⁻¹ ∘ d₁ ∘ inr` and `snd ∘ d₁⁻¹ ∘ d₀ ∘ inr : M₂ → M₂`, since
+`d₀⁻¹ ∘ d₁` restricts to the identity on `M₁`. This is how the normal parts of the differentials of
+two tubes around the same map are compared. -/
+theorem IsInvertible.snd_comp_inverse_comp_inr_comp_snd_comp_inverse_comp_inr {N : Type*}
+    [TopologicalSpace N] [AddCommGroup N] [Module R N] {d₀ d₁ : M₁ × M₂ →L[R] N}
+    (h₀ : d₀.IsInvertible) (h₁ : d₁.IsInvertible) (h : d₀ ∘L inl R M₁ M₂ = d₁ ∘L inl R M₁ M₂) :
+    (snd R M₁ M₂ ∘L d₀.inverse ∘L d₁ ∘L inr R M₁ M₂) ∘L
+      (snd R M₁ M₂ ∘L d₁.inverse ∘L d₀ ∘L inr R M₁ M₂) = .id R M₂ :=
+  ContinuousLinearMap.ext fun v ↦ by
+    have hbase (a : M₁) : d₀ (a, 0) = d₁ (a, 0) := by simpa using DFunLike.congr_fun h a
+    -- Write `w = d₁⁻¹ (d₀ (0, v))`; removing its base part, `d₁ (0, w.2) = d₀ ((0, v) - (w.1, 0))`.
+    have hw : d₁ (0, (d₁.inverse (d₀ (0, v))).2) =
+        d₀ ((0, v) - ((d₁.inverse (d₀ (0, v))).1, 0)) := by
+      rw [map_sub, hbase, eq_sub_iff_add_eq, ← map_add]
+      simp [h₁.self_apply_inverse]
+    simp [hw, h₀.inverse_apply_self]
+
 end FstPreserving
 
 section CoprodId
 
-variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
-  [IsTopologicalAddGroup M]
+variable {R M N : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
+  [TopologicalSpace N] [AddCommGroup N] [Module R N] [IsTopologicalAddGroup N]
 
-/-- For an endomorphism `B`, the map `(u, l) ↦ (B u + l, u)` of `M × M` is invertible, with
-inverse `(f, g) ↦ (g, f - B g)`. -/
-theorem isInvertible_coprod_id_prod_fst (B : M →L[R] M) :
-    ((B.coprod (ContinuousLinearMap.id R M)).prod (fst R M M)).IsInvertible :=
-  ⟨ContinuousLinearEquiv.ofContinuousLinearMap ((B.coprod (ContinuousLinearMap.id R M)).prod
-    (fst R M M)) ((snd R M M).prod (fst R M M - B ∘L snd R M M)) (ext fun _ ↦ by simp)
+/-- For a continuous linear map `B : M → N`, the map `(u, l) ↦ (B u + l, u)` from `M × N` to
+`N × M` is invertible, with inverse `(f, g) ↦ (g, f - B g)`. -/
+theorem isInvertible_coprod_id_prod_fst (B : M →L[R] N) :
+    ((B.coprod (ContinuousLinearMap.id R N)).prod (fst R M N)).IsInvertible :=
+  ⟨ContinuousLinearEquiv.ofContinuousLinearMap ((B.coprod (ContinuousLinearMap.id R N)).prod
+    (fst R M N)) ((snd R N M).prod (fst R N M - B ∘L snd R N M)) (ext fun _ ↦ by simp)
     (ext fun _ ↦ by simp), rfl⟩
 
 end CoprodId
