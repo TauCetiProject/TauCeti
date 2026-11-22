@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Pair
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Relative.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.RepresentingChainSystem
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Relative
+public import TauCeti.Topology.ContinuousMap.CodRestrict
 
 /-!
 # Representing cycles glued from faces
@@ -185,22 +186,20 @@ private theorem twistingChainSum_eq_sum_face {s : ∀ x y, normalizedCubicalChai
       (ind x - ind z.val - 1).toNat + (ind z.val - ind y - 1).toNat = n) :
     twistingChainSum ind ι k s x y = cubicalChainLof (M x y) k n
       (map k (ContinuousMap.subtypeVal (A x y)) n (∑ z, (ind x - ind z.val).negOnePow •
-        map k ⟨Set.codRestrict _ _ (hιA z), (ι x z.val y).continuous.codRestrict _⟩ n
+        map k ((ι x z.val y).codRestrict (A x y) (hιA z)) n
           (cast k (hpq z) (crossProduct _ _ k _ _ (a z) (b z))))) := by
   rw [twistingChainSum_eq_sum_subtype hs, map_sum, map_sum]
   refine Finset.sum_congr rfl fun z _ ↦ ?_
-  -- The face map followed by the inclusion of the boundary is the composition map.
-  have hg : (ContinuousMap.subtypeVal (A x y)).comp
-      ⟨Set.codRestrict _ _ (hιA z), (ι x z.val y).continuous.codRestrict _⟩ = ι x z.val y := rfl
   rw [← ha z, ← hb z, cubicalChainSumPairing_lof_lof, map_zsmul_unit, map_zsmul_unit,
-    ← LinearMap.comp_apply (map k (ContinuousMap.subtypeVal (A x y)) n), ← map_comp, hg,
-    map_cast, cubicalChainLof_cast]
+    ← LinearMap.comp_apply (map k (ContinuousMap.subtypeVal (A x y)) n), ← map_comp,
+    ContinuousMap.subtypeVal_comp_codRestrict, map_cast, cubicalChainLof_cast]
 
 /-- **Representing chain systems from a face-by-face condition.** Let `μ x y` be classes of the
 relative homology `H_{ind x - ind y - 1}(M x y, A x y)`. Suppose that:
 
-* whenever `ind x - ind y ≥ 2`, the boundary `A x y` is a compact Hausdorff space modelled on a
-  real normed space of dimension `ind x - ind y - 2`, a closed topological manifold;
+* each boundary `A x y` is a compact Hausdorff space charted on a finite-dimensional real normed
+  space `E x y`, of dimension `ind x - ind y - 2` whenever `ind x - ind y ≥ 2`, so that `A x y`
+  is then a closed topological manifold of that dimension;
 * the composition maps `ι x z y : M x z × M z y → M x y` are associative and, for `z` strictly
   between `y` and `x` in index, land in `A x y`;
 * the sets `U x z y`, the interiors of the faces, are together dense in `A x y`, the face of every
@@ -229,7 +228,7 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces
     (hUA : ∀ x z y (hyz : ind y < ind z) (hzx : ind z < ind x),
       Set.MapsTo (TopCat.ofHom
           (X := ↑((TopPair.ofSubset (A x z)).fst ⊗ (TopPair.ofSubset (A z y)).fst))
-          ⟨Set.codRestrict _ _ (hιA x z y hyz hzx), (ι x z y).continuous.codRestrict _⟩)
+          ((ι x z y).codRestrict (A x y) (hιA x z y hyz hzx)))
         ((TopPair.ofSubset (A x z)).prodSubspace (TopPair.ofSubset (A z y)))
         (Subtype.val ⁻¹' U x z y)ᶜ)
     (hface : ∀ x z y (hyz : ind y < ind z) (hzx : ind z < ind x),
@@ -259,7 +258,7 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces
   choose b hb hb' using hb
   -- The face maps `M x z × M z y → A x y`.
   let g (z : T) : C(M x z.val × M z.val y, A x y) :=
-    ⟨Set.codRestrict _ _ (hιA x z.val y z.prop.1 z.prop.2), (ι x z.val y).continuous.codRestrict _⟩
+    (ι x z.val y).codRestrict (A x y) (hιA x z.val y z.prop.1 z.prop.2)
   -- The face chains: the signed cross products of the representatives, carried to `A x y`.
   let c (z : T) : NormalizedCubicalChain (A x y) k (ind x - ind y - 2).toNat :=
     (ind x - ind z.val).negOnePow •
@@ -293,13 +292,9 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces
     have h := ((ha' z).crossProduct (hpq z) (hb' z)).map
       (TopPair.ofSubsetMap _ (hUA x z.val y z.prop.1 z.prop.2))
     rw [hface x z.val y z.prop.1 z.prop.2] at h
-    -- The face map of pairs is `g z` on the ambient spaces.
-    have hg : (TopPair.Hom.fst (TopPair.ofSubsetMap _ (hUA x z.val y z.prop.1 z.prop.2))).hom =
-        g z :=
-      ContinuousMap.ext fun p ↦ TopPair.ofSubsetMap_fst_apply _ _ p
     obtain ⟨r, hr, hcl⟩ := (TopPair.isCubicalRepresentative_iff _ _).1
       (h.zsmul ((ind x - ind z.val).negOnePow : ℤ))
-    simp only [hg] at hr
+    rw [TopPair.ofSubsetMap_fst] at hr
     refine (TopPair.isCubicalRepresentative_iff _ _).2 ⟨r, hr, hcl.trans ?_⟩
     rw [← Units.smul_def, smul_smul, Int.units_mul_self, one_smul]
     -- The two sides differ only in how the complement of `U x z y` is typed.

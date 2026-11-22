@@ -152,16 +152,9 @@ theorem twistingChainSum_congr {s' : ∀ x y, normalizedCubicalChainAlgebra (M x
     (hs' : ∀ x y, s' x y ∈ cubicalChainGrading (M x y) R (ind y - ind x + 1)) {x y : P}
     (h : ∀ z, ind y < ind z → ind z < ind x → s x z = s' x z ∧ s z y = s' z y) :
     twistingChainSum ind ι R s x y = twistingChainSum ind ι R s' x y := by
-  refine Finset.sum_congr rfl fun z _ ↦ ?_
-  -- Outside the range, the chain of `(x, z)` or that of `(z, y)` vanishes in both families.
-  by_cases hxz : ind z < ind x
-  · by_cases hzy : ind y < ind z
-    · rw [(h z hzy hxz).1, (h z hzy hxz).2]
-    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs z y),
-        eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs' z y), map_zero, map_zero]
-  · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs x z),
-      eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs' x z), map_zero,
-      LinearMap.zero_apply, LinearMap.zero_apply]
+  rw [twistingChainSum_eq_sum_subtype hs, twistingChainSum_eq_sum_subtype hs']
+  exact Finset.sum_congr rfl fun z _ ↦ by
+    rw [(h z.val z.prop.1 z.prop.2).1, (h z.val z.prop.1 z.prop.2).2]
 
 end Graded
 
