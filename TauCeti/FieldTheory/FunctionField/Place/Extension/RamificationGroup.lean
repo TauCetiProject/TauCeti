@@ -141,7 +141,7 @@ theorem mem_ramificationGroup_iff {i : ℕ} {g : P.integers.decompositionSubgrou
   · intro h x
     rw [P.mem_maximalIdeal_pow_iff_coe_mem_filtration, AddSubgroupClass.coe_sub,
       ValuationSubring.coe_decompositionSubgroup_smul, Nat.cast_add, Nat.cast_one]
-    exact h x x.2
+    exact h x x.property
 
 /-- **The `0`-th ramification group is the inertia group** (Stichtenoth, Definition 3.8.4): acting
 trivially on the residue field is acting trivially to order `1` on the valuation ring. -/
@@ -181,7 +181,7 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
     omega
   rw [Subgroup.mem_bot]
   exact ValuationSubring.decompositionSubgroup.ext P.integers fun x ↦
-    hfix x x.2
+    hfix x x.property
 
 /-- **The ramification groups of a place whose inertia group is finite are trivial from some index
 on** (Stichtenoth, Proposition 3.8.5). -/
@@ -207,7 +207,7 @@ private theorem sub_mem_filtration_add_two {i : ℕ} (g : ramificationGroup F P 
     (hx : x ∈ P.integers) :
     ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') x - x ∈
       P.filtration ((i : ℤ) + 2) := by
-  have h := (mem_ramificationGroup_iff F P).mp g.2 x hx
+  have h := (mem_ramificationGroup_iff F P).mp g.property x hx
   -- Normalize the coerced natural-number index to the integer index used by `filtration`.
   rwa [show (((i + 1 : ℕ) : ℤ) + 1) = (i : ℤ) + 2 by push_cast; ring] at h
 
@@ -221,7 +221,7 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
   MonoidHom.mk'
     (fun g ↦ Multiplicative.ofAdd fun x ↦
       filtrationResidue (P := P) (a := (i : ℤ) + 2) (s := (t ^ (i + 2))⁻¹)
-        (ord_inv_pow_add_two P ht i) ⟨_, sub_mem_filtration_add_two F P g x.2⟩)
+        (ord_inv_pow_add_two P ht i) ⟨_, sub_mem_filtration_add_two F P g x.property⟩)
     (by
       intro g h
       rw [← ofAdd_add]
@@ -232,7 +232,7 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
       set τ : F' ≃ₐ[F] F' := ((h : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F')
       -- Normalize the error of `τ` by the chosen power of the uniformizer.
       have hw : τ (x : F') - (x : F') ∈ P.filtration ((i : ℤ) + 2) :=
-        sub_mem_filtration_add_two F P h x.2
+        sub_mem_filtration_add_two F P h x.property
       have hc : s * (τ (x : F') - (x : F')) ∈ P.integers :=
         mul_mem_integers_of_mem_filtration (ord_inv_pow_add_two P ht i) hw
       set c : F' := s * (τ (x : F') - (x : F')) with hcdef
@@ -258,7 +258,7 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
         have h0 : (0 : ℤ) ≤ 1 := by norm_num
         exact add_mem (P.mem_filtration_zero_iff.mp (P.filtration_antitone h0 hu1)) (one_mem _)
       have hσc : σ c - c ∈ P.filtration 1 := by
-        have h1 := (mem_ramificationGroup_iff F P).mp g.2 c hc
+        have h1 := (mem_ramificationGroup_iff F P).mp g.property c hc
         have h2 : (1 : ℤ) ≤ ((i + 1 : ℕ) : ℤ) + 1 := by push_cast; omega
         exact P.filtration_antitone h2 h1
       have hσcmem : σ c ∈ P.integers := (mem_integers_decompositionSubgroup_apply F P _).mpr hc
@@ -292,7 +292,7 @@ theorem toAdd_ramificationResidueHom_apply (ht : P.ord t = 1) (i : ℕ)
       IsLocalRing.residue P.integers y := by
   have hrfl : Multiplicative.toAdd (ramificationResidueHom F P ht i g) x =
       filtrationResidue (P := P) (a := (i : ℤ) + 2) (s := (t ^ (i + 2))⁻¹)
-        (ord_inv_pow_add_two P ht i) ⟨_, sub_mem_filtration_add_two F P g x.2⟩ := rfl
+        (ord_inv_pow_add_two P ht i) ⟨_, sub_mem_filtration_add_two F P g x.property⟩ := rfl
   rw [hrfl, filtrationResidue_apply]
   exact congrArg _ (Subtype.ext hy.symm)
 
@@ -308,7 +308,7 @@ theorem ker_ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
   ext g
   have hval : ∀ x : P.integers, Multiplicative.toAdd (ramificationResidueHom F P ht i g) x =
       filtrationResidue (P := P) (a := (i : ℤ) + 2) (s := (t ^ (i + 2))⁻¹)
-        (ord_inv_pow_add_two P ht i) ⟨_, sub_mem_filtration_add_two F P g x.2⟩ := fun _ ↦ rfl
+        (ord_inv_pow_add_two P ht i) ⟨_, sub_mem_filtration_add_two F P g x.property⟩ := fun _ ↦ rfl
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, mem_ramificationGroup_iff, ← toAdd_eq_zero]
   constructor
   · intro hg x hx
@@ -321,7 +321,7 @@ theorem ker_ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
     funext x
     rw [hval, Pi.zero_apply]
     refine (filtrationResidue_eq_zero_iff (ord_inv_pow_add_two P ht i) hinv _).mpr ?_
-    have := hg (x : F') x.2
+    have := hg (x : F') x.property
     rwa [hidx] at this
 
 end Residue

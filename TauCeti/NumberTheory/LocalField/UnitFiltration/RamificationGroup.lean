@@ -85,8 +85,10 @@ is finite.
   is cyclic, of order dividing `q - 1`.
 * `TauCeti.eq_ramificationGroupOneSylow`: `G_1` is the unique Sylow `p`-subgroup of `G_0`.
 * `TauCeti.natCard_ramificationGroup_one`: the order of `G_1` is the `p`-part of the order of `G_0`.
+* `TauCeti.ker_tameCharacter`: the kernel of the tame character is `G_1`.
 * `TauCeti.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: `G_1` is
-  trivial exactly when `p` does not divide the order of `G_0`, the tame case.
+  trivial exactly when `p` does not divide `Nat.card G_0`, that is when `G_0` is finite of order
+  prime to `p` (the tame case), since `Nat.card G_0 = 0` when `G_0` is infinite.
 
 ## Implementation notes
 
@@ -360,7 +362,7 @@ theorem smul_div_mem_unitFiltration (hσ : σ ∈ ramificationGroup G 𝒪[L] (i
   have h₁ : f (Units.mk0 _ hϖ0) ∈ unitFiltration L i :=
     mem_unitFiltration_of_val_eq_smul_div hϖ hσ (hf _)
   have h₂ : f u ∈ unitFiltration L i := unitFiltration_antitone (Nat.le_succ i)
-    (mem_unitFiltration_succ_of_val_eq_smul_div hσ u.2 (hf _))
+    (mem_unitFiltration_succ_of_val_eq_smul_div hσ u.property (hf _))
   rw [show z = f (Units.mk0 _ hϖ0 ^ k * u) from Units.ext (by rw [hz, hf]), map_mul, map_zpow]
   exact mul_mem (zpow_mem h₁ k) h₂
 
@@ -653,6 +655,15 @@ theorem tameCharacterGraded_injective (hϖ : Irreducible ϖ) :
   IsDiscreteValuationRing.tameCharacterGraded_injective
     G (Localization.AtPrime (basePrimeIdeal L)) hϖ
 
+/-- **The kernel of the tame character is the wild inertia group `G_1`**, viewed inside `G_0`. -/
+@[simp]
+theorem ker_tameCharacter (hϖ : Irreducible ϖ) :
+    (tameCharacter (G := G) hϖ).ker =
+      (ramificationGroup G 𝒪[L] 1).subgroupOf (ramificationGroup G 𝒪[L] 0) := by
+  ext σ
+  rw [MonoidHom.mem_ker, ← tameCharacterGraded_mk,
+    map_eq_one_iff _ (tameCharacterGraded_injective hϖ), QuotientGroup.eq_one_iff, zero_add]
+
 variable (G L) in
 /-- **The tame quotient is cyclic**: `G_0 / G_1` embeds into the multiplicative group of the
 residue field, which is cyclic because the residue field is finite. -/
@@ -744,12 +755,25 @@ theorem natCard_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p]
 
 variable (G) in
 /-- **Wild inertia is trivial exactly in the tame case.** For the residue characteristic `p`, the
-first ramification group `G_1` is trivial if and only if `p` does not divide the order of the
-inertia group `G_0`: `G_1` is the Sylow `p`-subgroup of `G_0`. -/
+first ramification group `G_1` is trivial if and only if `p` does not divide `Nat.card G_0`, that
+is, if and only if the inertia group `G_0` is finite of order prime to `p`: when `G_0` is infinite,
+`Nat.card G_0 = 0`, and `G_1` is nontrivial because `G_0 / G_1` embeds in the finite group
+`𝓀[L]ˣ`. When `G_0` is finite, `G_1` is its Sylow `p`-subgroup. -/
 theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p : ℕ)
-    [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
-    ramificationGroup G 𝒪[L] 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G 𝒪[L] 0) :=
-  IsDiscreteValuationRing.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero
-    G (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L] p
+    [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]] :
+    ramificationGroup G 𝒪[L] 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G 𝒪[L] 0) := by
+  by_cases hfin : Finite (ramificationGroup G 𝒪[L] 0)
+  · exact
+      IsDiscreteValuationRing.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero
+        G (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L] p
+  · -- if `G_0` is infinite, `G_1 ≠ ⊥`, since `G_0 / G_1` embeds in the finite group `𝓀[L]ˣ`
+    have hinf := not_finite_iff_infinite.mp hfin
+    rw [Nat.card_eq_zero_of_infinite]
+    simp only [dvd_zero, not_true_eq_false, iff_false]
+    intro h
+    obtain ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+    have hker := ker_tameCharacter (G := G) hϖ
+    rw [h, Subgroup.bot_subgroupOf, MonoidHom.ker_eq_bot_iff] at hker
+    exact hfin (Finite.of_injective _ hker)
 
 end TauCeti

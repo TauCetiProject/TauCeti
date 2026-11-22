@@ -77,7 +77,7 @@ theorem principalUnitGradedSuccEquivResidueField_ofMul_mk (n : ℕ) {ϖ : S}
     residueFieldEquivMaximalIdealGradedOfUniformizer ϖ hϖ (n + 1)
         (principalUnitGradedSuccEquivResidueField n hϖ
           (Additive.ofMul (QuotientGroup.mk u))) =
-      Submodule.Quotient.mk ⟨((u : Sˣ) : S) - 1, Ideal.mem_principalUnitGroup.mp u.2⟩ := by
+      Submodule.Quotient.mk ⟨((u : Sˣ) : S) - 1, Ideal.mem_principalUnitGroup.mp u.property⟩ := by
   rw [principalUnitGradedSuccEquivResidueField_apply,
     principalUnitGradedSuccEquivMaximalIdealGraded_ofMul_mk,
     LinearEquiv.apply_symm_apply]

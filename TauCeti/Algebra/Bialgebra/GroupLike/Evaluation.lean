@@ -295,6 +295,21 @@ theorem evaluationBialgEquivOfLinearIndependentOfSpanEqTop_toBialgHom
   apply BialgHom.ext
   exact evaluationBialgEquivOfLinearIndependentOfSpanEqTop_apply R H hlinear hspan
 
+/-- The inverse of the general evaluation equivalence sends a group-like element to the
+corresponding standard basis element. -/
+@[simp]
+theorem _root_.GroupLike.evaluationBialgEquivOfLinearIndependentOfSpanEqTop_symm_val
+    (hlinear : LinearIndependent R
+      (_root_.GroupLike.val (R := R) (A := H)))
+    (hspan : Submodule.span R
+      (Set.range (_root_.GroupLike.val (R := R) (A := H))) = ⊤)
+    (g : _root_.GroupLike R H) :
+    (evaluationBialgEquivOfLinearIndependentOfSpanEqTop R H hlinear hspan).symm g.val =
+      MonoidAlgebra.single g 1 := by
+  apply EquivLike.injective (evaluationBialgEquivOfLinearIndependentOfSpanEqTop R H hlinear hspan)
+  simp only [BialgEquiv.apply_symm_apply, evaluationBialgEquivOfLinearIndependentOfSpanEqTop_apply,
+    MonoidAlgebra.liftGroupLikeBialgHom_single, one_smul]
+
 end Semiring
 
 section Domain
@@ -338,6 +353,17 @@ theorem evaluationBialgEquiv_toBialgHom
         MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H) :=
   evaluationBialgEquivOfLinearIndependentOfSpanEqTop_toBialgHom R H
     (linearIndep_groupLikeVal (R := R) (A := H)) hspan
+
+/-- The inverse of the spanning evaluation equivalence sends a group-like element to the
+corresponding standard basis element. -/
+@[simp]
+theorem _root_.GroupLike.evaluationBialgEquiv_symm_val
+    (hspan : Submodule.span R
+      (Set.range (_root_.GroupLike.val (R := R) (A := H))) = ⊤)
+    (g : _root_.GroupLike R H) :
+    (evaluationBialgEquiv R H hspan).symm g.val = MonoidAlgebra.single g 1 :=
+  _root_.GroupLike.evaluationBialgEquivOfLinearIndependentOfSpanEqTop_symm_val R H
+    (linearIndep_groupLikeVal (R := R) (A := H)) hspan g
 
 end Domain
 

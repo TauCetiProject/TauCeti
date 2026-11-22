@@ -67,7 +67,7 @@ instance instSMulCommClassInertiaSubgroupIntegers :
     rw [Algebra.smul_def, Algebra.smul_def, Subgroup.smul_def, Subgroup.smul_def,
       ValuationSubring.coe_decompositionSubgroup_smul, Submonoid.coe_mul, Submonoid.coe_mul,
       map_mul, coe_algebraMap_integers, IntermediateField.algebraMap_apply,
-      (mem_inertiaField_iff F P _).mp (a : inertiaField F P).2 g g.2,
+      (mem_inertiaField_iff F P _).mp (a : inertiaField F P).property g g.property,
       ValuationSubring.coe_decompositionSubgroup_smul]
 
 variable [hsep : Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
@@ -84,20 +84,20 @@ theorem algebra_adjoin_restrict_inertiaField_eq_top_of_ord_eq_one {t : P.integer
     isIntegral_iff_mem_integers_of_decompositionSubgroup_eq_top T P
       (decompositionSubgroup_inertiaField_eq_top F P)
   let f : integralClosure (P.restrict k T).integers F' →ₐ[(P.restrict k T).integers] P.integers :=
-    { toFun y := ⟨y, hint.mp y.2⟩
+    { toFun y := ⟨y, hint.mp y.property⟩
       map_one' := rfl
       map_mul' _ _ := rfl
       map_zero' := rfl
       map_add' _ _ := rfl
       commutes' _ := rfl }
   have hadj : Algebra.adjoin (P.restrict k T).integers
-      {(⟨t, hint.mpr t.2⟩ : integralClosure (P.restrict k T).integers F')} = ⊤ :=
+      {(⟨t, hint.mpr t.property⟩ : integralClosure (P.restrict k T).integers F')} = ⊤ :=
     algebra_adjoin_integralClosure_eq_top_of_isTotallyRamified (k := k) T
       (isTotallyRamified_inertiaField F P) ht
-  have hft : f ⟨t, hint.mpr t.2⟩ = t := rfl
+  have hft : f ⟨t, hint.mpr t.property⟩ = t := rfl
   refine eq_top_iff.mpr fun x _ ↦ ?_
   rw [← hft, ← Set.image_singleton, ← AlgHom.map_adjoin, hadj]
-  exact ⟨⟨x, hint.mpr x.2⟩, Algebra.mem_top, rfl⟩
+  exact ⟨⟨x, hint.mpr x.property⟩, Algebra.mem_top, rfl⟩
 
 omit [FiniteDimensional F F'] in
 include hsep in

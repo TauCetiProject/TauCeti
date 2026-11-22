@@ -144,7 +144,7 @@ noncomputable def uniformizerRatio (i : ℕ) {ϖ : S} (hϖ : Irreducible ϖ)
           (hϖ.smul (σ : G)) : S) - 1) = (σ : G) • ϖ - ϖ := by
       rw [mul_sub, mul_uniformizerChangeUnit, mul_one]
     rw [hmul]
-    exact mem_ramificationGroup_natCast_iff.mp σ.2 ϖ⟩
+    exact mem_ramificationGroup_natCast_iff.mp σ.property ϖ⟩
 
 /-- As a unit of `S`, `uniformizerRatio i hϖ σ` is `uniformizerChangeUnit ϖ ((σ : G) • ϖ)`. -/
 @[simp]
@@ -240,7 +240,7 @@ noncomputable def ramificationGroupToPrincipalUnitGraded (i : ℕ) {ϖ : S}
       dsimp only [uσ, uτ, v]
       group
     rw [heq]
-    exact inv_mem (map_mul_inv_mem_principalUnitGroup σ.2 uτ)
+    exact inv_mem (map_mul_inv_mem_principalUnitGroup σ.property uτ)
 
 @[simp]
 theorem ramificationGroupToPrincipalUnitGraded_apply (i : ℕ) {ϖ : S} (hϖ : Irreducible ϖ)
@@ -271,7 +271,7 @@ theorem ramificationGroupToPrincipalUnitGraded_eq_of_irreducible (i : ℕ) {ϖ �
     rw [eq_mul_inv_iff_mul_eq, mul_assoc, inv_mul_eq_iff_eq_mul, mul_comm _ a]
     exact hrel
   rw [heq]
-  exact map_mul_inv_mem_principalUnitGroup σ.2 a
+  exact map_mul_inv_mem_principalUnitGroup σ.property a
 
 /-- An element `σ ∈ G_i` lies in the kernel of `G_i →* U(S, i) / U(S, i + 1)` if and only if it
 moves `ϖ` by an element of `𝔪 ^ (i + 2)`. -/
@@ -442,11 +442,11 @@ theorem ramificationGroupToResidueField_ofMul (n : ℕ) {ϖ : S} (hϖ : Irreduci
     ramificationGroupToResidueField G n hϖ (Additive.ofMul τ) =
       principalUnitGradedSuccEquivResidueField n hϖ
         (Additive.ofMul (QuotientGroup.mk
-          (uniformizerRatio (n + 1) hϖ ⟨(τ : G), by exact_mod_cast τ.2⟩))) := by
+          (uniformizerRatio (n + 1) hϖ ⟨(τ : G), by exact_mod_cast τ.property⟩))) := by
   rw [ramificationGroupToResidueField, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
     MonoidHom.toAdditive_apply_apply, toMul_ofMul, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom, ramificationGroupToPrincipalUnitGraded_apply]
-  have hτ : ramificationGroupSuccEquiv G n τ = ⟨(τ : G), by exact_mod_cast τ.2⟩ :=
+  have hτ : ramificationGroupSuccEquiv G n τ = ⟨(τ : G), by exact_mod_cast τ.property⟩ :=
     Subtype.ext (MulEquiv.subgroupCongr_apply _ τ)
   rw [hτ]
 
@@ -477,7 +477,7 @@ theorem ramificationGroupToResidueField_of_smul_sub_eq (n : ℕ) {ϖ : S}
     (hϖ : Irreducible ϖ) (τ : ramificationGroup G S ((n : ℤ) + 1)) (y : S)
     (hmove : (τ : G) • ϖ - ϖ = y * ϖ ^ (n + 2)) :
     ramificationGroupToResidueField G n hϖ (Additive.ofMul τ) = residue S y := by
-  let τ' : ramificationGroup G S (n + 1 : ℕ) := ⟨(τ : G), by exact_mod_cast τ.2⟩
+  let τ' : ramificationGroup G S (n + 1 : ℕ) := ⟨(τ : G), by exact_mod_cast τ.property⟩
   have hu :
       ((((uniformizerRatio (n + 1) hϖ τ' :
         (maximalIdeal S ^ (n + 1)).principalUnitGroup) : Sˣ) : S) - 1) =
@@ -577,7 +577,7 @@ theorem ker_ramificationGroupToPrincipalUnitGraded (i : ℕ) {ϖ : S} (hϖ : Irr
   refine le_antisymm (fun σ hσ ↦ ?_) (ramificationGroup_succ_subgroupOf_le_ker G i hϖ)
   rw [mem_ker_ramificationGroupToPrincipalUnitGraded_iff i hϖ] at hσ
   have hσ₀ : (σ : G) ∈ ramificationGroup G S 0 :=
-    ramificationGroup_antitone G S (Int.natCast_nonneg i) σ.2
+    ramificationGroup_antitone G S (Int.natCast_nonneg i) σ.property
   rw [Subgroup.mem_subgroupOf, ← Nat.cast_succ,
     mem_ramificationGroup_natCast_iff_smul_sub_mem R hϖ hσ₀]
   exact hσ
@@ -632,7 +632,7 @@ theorem ker_ramificationGroupToResidueField (n : ℕ) {ϖ : S} (hϖ : Irreducibl
   ext x
   obtain ⟨τ, rfl⟩ := Additive.ofMul.surjective x
   have hτ₀ : (τ : G) ∈ ramificationGroup G S 0 :=
-    ramificationGroup_antitone G S (by omega : 0 ≤ (n : ℤ) + 1) τ.2
+    ramificationGroup_antitone G S (by omega : 0 ≤ (n : ℤ) + 1) τ.property
   rw [mem_ker_ramificationGroupToResidueField_iff n hϖ]
   change _ ↔ τ ∈ (ramificationGroup G S ((n : ℤ) + 2)).subgroupOf
     (ramificationGroup G S ((n : ℤ) + 1))
@@ -809,7 +809,7 @@ theorem tameCharacter_injective_of_charZero {ϖ : S} (hϖ : Irreducible ϖ) :
         simp only [s, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
       rw [heq]
       exact Ideal.sum_mem _ fun τ _ ↦
-        neg_mem_iff.mp (by simpa [neg_sub] using mem_ramificationGroup_zero_iff.mp τ.2 x)
+        neg_mem_iff.mp (by simpa [neg_sub] using mem_ramificationGroup_zero_iff.mp τ.property x)
     rw [hϖ.maximalIdeal_eq, Ideal.mem_span_singleton] at hdiff_mem
     obtain ⟨c, hc⟩ := hdiff_mem
     have hmul : ((Fintype.card (ramificationGroup G S 0) : ℕ) : S) * ((σ : G) • x - x) ∈
@@ -838,7 +838,7 @@ theorem tameCharacter_injective_of_charZero {ϖ : S} (hϖ : Irreducible ϖ) :
       · exact Ideal.mul_mem_right _ _ ((mem_ker_tameCharacter_iff hϖ).mp hσker)
       · have hϖm : ϖ ∈ maximalIdeal S := by rw [hϖ.maximalIdeal_eq]; exact Ideal.subset_span rfl
         rw [pow_two]
-        exact Ideal.mul_mem_mul hϖm (mem_ramificationGroup_zero_iff.mp σ.2 c)
+        exact Ideal.mul_mem_mul hϖm (mem_ramificationGroup_zero_iff.mp σ.property c)
     exact (Ideal.unit_mul_mem_iff_mem _ hunit).mp hmul
   have : Finite (ramificationGroup G S 1) :=
     Finite.of_injective _

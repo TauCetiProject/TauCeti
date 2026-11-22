@@ -82,8 +82,8 @@ theorem IsTopologicallyFinitelyGenerated.finite_isSolution
   have := hG.finite_monoidHom_isOpen_ker P.E
   exact Finite.of_injective
     (fun β : {β : G →* P.E // P.IsSolution β} ↦
-      (⟨β.1, β.2.isOpen_ker⟩ : {β : G →* P.E // IsOpen (β.ker : Set G)}))
+      (⟨β.val, β.property.isOpen_ker⟩ : {β : G →* P.E // IsOpen (β.ker : Set G)}))
     (fun _ _ h ↦ Subtype.ext
-      (congrArg (fun β : {β : G →* P.E // IsOpen (β.ker : Set G)} ↦ β.1) h))
+      (congrArg (fun β : {β : G →* P.E // IsOpen (β.ker : Set G)} ↦ β.val) h))
 
 end TauCeti

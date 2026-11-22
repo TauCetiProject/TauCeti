@@ -46,11 +46,12 @@ and permutations of the components.
 * `TauCeti.IntegralLattice.discriminantQuadraticIsometryPiOfIsometry`: the isometry
   `Π i, A_i ≅ A_(⊥ i, L i)` induced by summandwise isometries `A_i ≅ A_(L i)`, with coordinates
   `TauCeti.IntegralLattice.discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry`.
-* `discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry` and
-  `discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry`, in
-  `TauCeti.IntegralLattice`: naturality of that isometry under coordinatewise isometries
-  (`TauCeti.IntegralLattice.Isometry.pi`) and under reindexing
-  (`TauCeti.IntegralLattice.Isometry.piCongrLeft`).
+* `discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry`,
+  `discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry`, and
+`discriminantQuadraticIsometry_piCongrLeft_symm_trans_pi_discriminantQuadraticIsometryPiOfIsometry`
+  in `TauCeti.IntegralLattice`: naturality of that isometry under coordinatewise isometries
+  (`TauCeti.IntegralLattice.Isometry.pi`), under reindexing
+  (`TauCeti.IntegralLattice.Isometry.piCongrLeft`), and under their combination.
 
 ## References
 
@@ -95,8 +96,8 @@ theorem dualCarrier_pi : (pi L).dualCarrier = Submodule.pi Set.univ fun i ↦ (L
 
 /-- The dual carrier of an orthogonal sum is canonically the product of the dual carriers. -/
 def piDualCarrierEquiv : (pi L).dualCarrier ≃ₗ[ℤ] ∀ i, (L i).dualCarrier where
-  toFun x i := ⟨(x : ∀ i, V i) i, (mem_dualCarrier_pi_iff L x).mp x.2 i⟩
-  invFun x := ⟨fun i ↦ x i, (mem_dualCarrier_pi_iff L _).mpr fun i ↦ (x i).2⟩
+  toFun x i := ⟨(x : ∀ i, V i) i, (mem_dualCarrier_pi_iff L x).mp x.property i⟩
+  invFun x := ⟨fun i ↦ x i, (mem_dualCarrier_pi_iff L _).mpr fun i ↦ (x i).property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
@@ -327,6 +328,37 @@ theorem discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryP
     Equiv.piCongrLeft_apply_apply]
   refine (discriminantGroupPiEquiv_discriminantGroupEquiv_piCongrLeft L σ _ k).trans ?_
   rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry]
+
+/-- **Naturality of the summandwise alphabet isometry under reindexing and coordinatewise
+isometries.**  For an equivalence `σ : κ ≃ ι`, componentwise isometries `f k : L (σ k) ≅ M' k`,
+and alphabet maps `g k : A (σ k) → B k` compatible with them through the summandwise alphabet
+isometries `a` and `b`, reindexing `⊥ i, L i` along `σ` and applying `f` componentwise transports
+the class of an alphabet family `x` over `ι` to the class of `k ↦ g k (x (σ k))` over `κ`. -/
+theorem
+  discriminantQuadraticIsometry_piCongrLeft_symm_trans_pi_discriminantQuadraticIsometryPiOfIsometry
+    [∀ i, (L i).IsNondegenerate] {W' : κ → Type w} [∀ k, AddCommGroup (W' k)]
+    [∀ k, Module ℚ (W' k)] {M' : ∀ k, IntegralLattice (W' k)} [∀ k, (M' k).IsNondegenerate]
+    {hL : ∀ i, (L i).IsEven} {hM : ∀ k, (M' k).IsEven}
+    {A : ι → FiniteQuadraticModule.{u}} {B : κ → FiniteQuadraticModule.{w}}
+    (a : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i)))
+    (b : ∀ k, FiniteQuadraticModule.Isometry (B k) ((M' k).discriminantQuadraticModule (hM k)))
+    (σ : κ ≃ ι) (f : ∀ k, Isometry (L (σ k)) (M' k)) (g : ∀ k, A (σ k) → B k)
+    (h : ∀ k y, b k (g k y) = (f k).discriminantQuadraticIsometry (hL (σ k)) (a (σ k) y))
+    (x : ∀ i, A i) :
+    ((Isometry.piCongrLeft L σ).symm.trans (Isometry.pi f)).discriminantQuadraticIsometry
+        (isEven_pi hL) (discriminantQuadraticIsometryPiOfIsometry L a x) =
+      discriminantQuadraticIsometryPiOfIsometry M' b fun k ↦ g k (x (σ k)) := by
+  obtain ⟨v, rfl⟩ := (Equiv.piCongrLeft (fun i ↦ A i) σ).surjective x
+  -- Undo the reindexing to reach `v` over `k ↦ L (σ k)`, then apply `f` componentwise.
+  rw [Isometry.discriminantQuadraticIsometry_trans, FiniteQuadraticModule.Isometry.trans_apply,
+    Isometry.discriminantQuadraticIsometry_symm,
+    ← discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry L a σ v,
+    QuadraticMap.IsometryEquiv.symm_apply_apply]
+  refine (discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry
+    (fun k ↦ a (σ k)) b f g h v).trans ?_
+  congr 1
+  funext k
+  rw [Equiv.piCongrLeft_apply_apply]
 
 end Naturality
 

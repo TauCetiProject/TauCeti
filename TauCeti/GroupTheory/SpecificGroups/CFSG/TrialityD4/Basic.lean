@@ -118,7 +118,7 @@ tripled type-`D₄` Chevalley carrier over the algebraic closure of its prime fi
 reductivity, pinning or maximality statement is attached to it, and it is not claimed to be the
 points of the pinned simply connected `D₄` group scheme, no identification with that group being
 constructed in this module. -/
-abbrev AmbientGroup : Type := D4Tripled.points d.1.Closure
+abbrev AmbientGroup : Type := D4Tripled.points d.val.Closure
 
 /-- The fixed-point recipe runs inside this group, so it carries a group structure; the carrier
 being a subgroup of a general linear group supplies it. -/
@@ -127,8 +127,8 @@ example : Group d.AmbientGroup := inferInstance
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the `D₄` diagram. It is
 the carrier's numbered raising subgroup at the same node, the index type `Fin d.1.rank` being the
 upstream Bourbaki index type of the index's own Dynkin type. -/
-def simpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
-  D4Tripled.rootSubgroupPoints (.inl (finCongr d.rank_eq_four i)) d.1.Closure
+def simpleRootSubgroup (i : Fin d.val.rank) : Multiplicative d.val.Closure →* d.AmbientGroup :=
+  D4Tripled.rootSubgroupPoints (.inl (finCongr d.rank_eq_four i)) d.val.Closure
 
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding node.
 This is the equation through which the upstream root-subgroup API reaches `simpleRootSubgroup`,
@@ -137,9 +137,9 @@ whose definition itself stays sealed.
 It is deliberately not a `simp` lemma: the pinning equations `γ₃ (x_i(u)) = x_{σ i}(u)` and
 `Frob_q (x_i(u)) = x_i(u ^ q)` below are stated against `simpleRootSubgroup` itself, and unfolding
 to `TauCeti.D4Tripled.rootSubgroupPoints` would keep them from firing. -/
-theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
+theorem simpleRootSubgroup_def (i : Fin d.val.rank) :
     d.simpleRootSubgroup i =
-      D4Tripled.rootSubgroupPoints (.inl (finCongr d.rank_eq_four i)) d.1.Closure :=
+      D4Tripled.rootSubgroupPoints (.inl (finCongr d.rank_eq_four i)) d.val.Closure :=
   (rfl)
 
 /-- **The simple-root subgroups sit at the simple roots of the `D₄` root datum.** The character by
@@ -148,10 +148,10 @@ which the carrier's split torus rescales the parameter of `simpleRootSubgroup i`
 `TauCeti.DynkinType.simplyConnectedRootDatum` at the Dynkin type the index names, in the same
 Bourbaki numbering. It is not a claim that the carrier is the pinned group of that diagram, no
 pinning being constructed for it. -/
-theorem rootGeneratorWeight_eq_root_simpleIndex (i j : Fin d.1.rank) :
+theorem rootGeneratorWeight_eq_root_simpleIndex (i j : Fin d.val.rank) :
     TypeDStd.rootGeneratorWeight 4 (.inl (finCongr d.rank_eq_four i)) (finCongr d.rank_eq_four j) =
-      (d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).root
-        (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i) j := by
+      (d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid).root
+        (d.val.dynkinType.simpleIndex d.val.dynkinType_valid i) j := by
   -- Both sides are entries of the type-`D₄` Cartan matrix, the carrier's by
   -- `TypeDStd.rootGeneratorWeight_inl` and the datum's by the uniform
   -- `DynkinType.root_simpleIndex` followed by the rank-uniform bridge
@@ -169,7 +169,7 @@ theorem rootGeneratorWeight_eq_root_simpleIndex (i j : Fin d.1.rank) :
 being the field order the index records. It is the right-hand factor of the Steinberg map
 `γ₃ ∘ Frob_q`, and not that map itself. -/
 def frobenius : d.AmbientGroup →* d.AmbientGroup :=
-  D4Tripled.frobenius d.1.characteristic d.1.fieldExponent d.1.Closure
+  D4Tripled.frobenius d.val.characteristic d.val.fieldExponent d.val.Closure
 
 /-- The Frobenius of a `³D₄` index is the tripled carrier's Frobenius at the characteristic and the
 exponent the index records. This is its unfolding lemma; the definition itself stays sealed. -/
@@ -177,18 +177,18 @@ exponent the index records. This is its unfolding lemma; the definition itself s
 -- pinning equations of this file are stated against, and unfolding to `TauCeti.D4Tripled.frobenius`
 -- would keep them from firing.
 theorem frobenius_def :
-    d.frobenius = D4Tripled.frobenius d.1.characteristic d.1.fieldExponent d.1.Closure :=
+    d.frobenius = D4Tripled.frobenius d.val.characteristic d.val.fieldExponent d.val.Closure :=
   (rfl)
 
 /-- The Frobenius acts on the ambient group by raising every entry of the `24 × 24` matrix of a
 point to the `q`-th power. -/
 @[simp]
 theorem coe_frobenius_apply (g : d.AmbientGroup) (r c : Fin 24) :
-    ((d.frobenius g : Matrix.GeneralLinearGroup (Fin 24) d.1.Closure) :
-        Matrix (Fin 24) (Fin 24) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin 24) d.1.Closure) :
-        Matrix (Fin 24) (Fin 24) d.1.Closure) r c ^ d.1.fieldOrder := by
-  rw [frobenius_def, d.1.fieldOrder_eq_characteristic_pow]
+    ((d.frobenius g : Matrix.GeneralLinearGroup (Fin 24) d.val.Closure) :
+        Matrix (Fin 24) (Fin 24) d.val.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 24) d.val.Closure) :
+        Matrix (Fin 24) (Fin 24) d.val.Closure) r c ^ d.val.fieldOrder := by
+  rw [frobenius_def, d.val.fieldOrder_eq_characteristic_pow]
   exact D4Tripled.coe_frobenius_apply _ _ _ g r c
 
 /-- **The Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises its parameter
@@ -196,10 +196,10 @@ to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. The diagram perm
 twisted family enters through the other factor `γ₃` of the Steinberg map, and not through this
 one. -/
 @[simp]
-theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem frobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def, D4Tripled.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
@@ -207,32 +207,33 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
 defining characteristic. The `q`-power Frobenius is its `e`-th power, for `e` the field exponent
 the index records, by `frobenius_eq_primeFrobenius_pow`. -/
 def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
-  D4Tripled.frobenius d.1.characteristic 1 d.1.Closure
+  D4Tripled.frobenius d.val.characteristic 1 d.val.Closure
 
 -- Not `@[simp]`, for the reason `frobenius_def` is not.
 /-- The prime-field Frobenius is the tripled carrier's Frobenius at exponent one. -/
 theorem primeFrobenius_def :
-    d.primeFrobenius = D4Tripled.frobenius d.1.characteristic 1 d.1.Closure :=
+    d.primeFrobenius = D4Tripled.frobenius d.val.characteristic 1 d.val.Closure :=
   (rfl)
 
 /-- The prime-field Frobenius acts on the ambient group by raising every entry of its `24 × 24`
 matrix to the `p`-th power, for `p` the defining characteristic. -/
 @[simp]
 theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 24) :
-    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 24) d.1.Closure) :
-        Matrix (Fin 24) (Fin 24) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin 24) d.1.Closure) :
-        Matrix (Fin 24) (Fin 24) d.1.Closure) r c ^ d.1.characteristic := by
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 24) d.val.Closure) :
+        Matrix (Fin 24) (Fin 24) d.val.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 24) d.val.Closure) :
+        Matrix (Fin 24) (Fin 24) d.val.Closure) r c ^ d.val.characteristic := by
   rw [primeFrobenius_def]
-  simpa only [pow_one] using D4Tripled.coe_frobenius_apply d.1.characteristic 1 d.1.Closure g r c
+  simpa only [pow_one] using D4Tripled.coe_frobenius_apply d.val.characteristic 1 d.val.Closure g r
+      c
 
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
 its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
 @[simp]
-theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.characteristic)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def, D4Tripled.frobenius_rootSubgroupPoints, pow_one]
 
 -- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
@@ -241,7 +242,7 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
 /-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
 exponent the index records. -/
 theorem frobenius_eq_primeFrobenius_pow :
-    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.val.fieldExponent := by
   rw [primeFrobenius_def, frobenius_def, D4Tripled.frobenius_pow, Nat.one_mul]
 
 /-- **A point of the ambient group is fixed by the Frobenius exactly when every entry of its
@@ -256,11 +257,11 @@ inside. -/
 -- rejects the annotation.
 theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.frobenius ↔
-      ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 24) d.1.Closure) :
-        Matrix (Fin 24) (Fin 24) d.1.Closure) r c ∈ d.1.fixedField := by
+      ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 24) d.val.Closure) :
+        Matrix (Fin 24) (Fin 24) d.val.Closure) r c ∈ d.val.fixedField := by
   rw [mem_fixedSubgroup, frobenius_def, D4Tripled.frobenius_eq_self_iff]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
-    d.1.fieldOrder_eq_characteristic_pow]
+    d.val.fieldOrder_eq_characteristic_pow]
 
 /-! ## The triality factor of the Steinberg map -/
 
@@ -271,21 +272,21 @@ subgroups, `σ` being the diagram permutation `TauCeti.GraphTwistedIndex.diagram
 attached to the index, which is `TauCeti.trialityPermD4`; no pinning of the carrier itself is
 constructed. -/
 def graphAut : MulAut d.AmbientGroup :=
-  D4Tripled.trialityPoints d.1.Closure
+  D4Tripled.trialityPoints d.val.Closure
 
 /-- The graph automorphism of a `³D₄` index is triality on the points of the tripled carrier. This
 is its unfolding lemma; the definition itself stays sealed. -/
 -- Not `@[simp]`: `graphAut_simpleRootSubgroup` and `graphAut_pow_three` are the normal forms the
 -- pinning equations of this file are stated against, and unfolding to
 -- `TauCeti.D4Tripled.trialityPoints` would keep them from firing.
-theorem graphAut_def : d.graphAut = D4Tripled.trialityPoints d.1.Closure :=
+theorem graphAut_def : d.graphAut = D4Tripled.trialityPoints d.val.Closure :=
   (rfl)
 
 /-- **The graph automorphism satisfies the pinning equation on every positive simple-root
 subgroup**: it sends `x_i(u)` to `x_{σ i}(u)`, where `σ` is the diagram permutation of the index,
 triality. The parameter is carried across unchanged, with neither a field power nor a sign. -/
 @[simp]
-theorem graphAut_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem graphAut_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.graphAut (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i) u := by
   -- The `finCongr` round trip that `diagramPerm_toGraphTwistedIndex` introduces preserves the
@@ -349,10 +350,10 @@ theorem steinberg_eq_frobenius_comp_graphAut :
 It sends `x_i(u)` to `x_{σ i}(u ^ q)`, where `σ` is the diagram permutation of the index,
 triality, and `q` is its recorded field order. -/
 @[simp]
-theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem steinberg_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.steinberg (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i)
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [steinberg_def, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, frobenius_simpleRootSubgroup,
     graphAut_simpleRootSubgroup]
 

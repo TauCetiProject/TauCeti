@@ -120,7 +120,7 @@ its class to the class of `u - 1` in `𝔪 ^ (n + 1) ⧸ (𝔪 • ⊤)`. -/
 theorem principalUnitGradedSuccEquivMaximalIdealGraded_ofMul_mk (n : ℕ)
     (u : (maximalIdeal S ^ (n + 1)).principalUnitGroup) :
     principalUnitGradedSuccEquivMaximalIdealGraded S n (Additive.ofMul (QuotientGroup.mk u)) =
-      Submodule.Quotient.mk ⟨((u : Sˣ) : S) - 1, Ideal.mem_principalUnitGroup.mp u.2⟩ := by
+      Submodule.Quotient.mk ⟨((u : Sˣ) : S) - 1, Ideal.mem_principalUnitGroup.mp u.property⟩ := by
   rw [principalUnitGradedSuccEquivMaximalIdealGraded]
   simp only [AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
     Ideal.principalUnitGroupPowQuotientEquiv_mk, AddEquiv.additiveMultiplicative_apply,

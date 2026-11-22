@@ -82,7 +82,7 @@ theorem isPGroup_upperRamificationGroup_of_pos {u : RamificationIndexDomain}
   have hp := TauCeti.IsLocalRing.isPGroup_ramificationGroup (L ≃ₐ[K] L) 𝒪[L] p (i := 1) (by omega)
   rw [← lowerRamificationGroup_def K L] at hp
   intro σ
-  obtain ⟨n, hn⟩ := hp ⟨σ, hle σ.2⟩
+  obtain ⟨n, hn⟩ := hp ⟨σ, hle σ.property⟩
   refine ⟨n, Subtype.ext ?_⟩
   exact congrArg (fun x : lowerRamificationGroup K L 1 ↦ (x : L ≃ₐ[K] L)) hn
 

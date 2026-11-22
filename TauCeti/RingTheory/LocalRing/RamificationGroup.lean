@@ -387,6 +387,12 @@ theorem le_lowerIndex_iff {n : ℕ∞} {σ : G} :
     n ≤ lowerIndex S σ ↔ ∀ x : S, n ≤ IsDiscreteValuationRing.addVal S (σ • x - x) :=
   le_iInf_iff
 
+/-- An element of a subgroup `H`, acting on `S` by restriction, has the same lower index in `H` as
+in `G`. -/
+@[simp]
+theorem lowerIndex_coe {H : Subgroup G} (τ : H) : lowerIndex S (τ : G) = lowerIndex S τ :=
+  (rfl)
+
 /-- The lower index is at most the valuation `v (σ x - x)` at any `x`. -/
 theorem lowerIndex_le_addVal (σ : G) (x : S) :
     lowerIndex S σ ≤ IsDiscreteValuationRing.addVal S (σ • x - x) :=
@@ -447,6 +453,16 @@ theorem min_le_lowerIndex_mul (σ τ : G) :
       (le_trans hn (min_le_left ..)))
     (natCast_le_lowerIndex_iff_mem_ramificationGroup (n := n) (σ := τ) |>.mp
       (le_trans hn (min_le_right ..)))
+
+/-- If the product `σ τ` has lower index at most that of `σ`, then
+`i_G(σ τ) = min (i_G(τ), i_G(σ))`. This applies to every `τ ∈ H` when `σ` has the largest lower
+index in its coset `σ H`. -/
+theorem lowerIndex_mul_eq_min_of_le {σ τ : G} (h : lowerIndex S (σ * τ) ≤ lowerIndex S σ) :
+    lowerIndex S (σ * τ) = min (lowerIndex S τ) (lowerIndex S σ) := by
+  -- `i(τ) = i(σ⁻¹ (σ τ)) ≥ min (i(σ), i(σ τ)) = i(σ τ)`.
+  have h₂ := min_le_lowerIndex_mul (S := S) σ⁻¹ (σ * τ)
+  rw [inv_mul_cancel_left, lowerIndex_inv, min_eq_right h] at h₂
+  exact le_antisymm (le_min h₂ h) (min_comm (lowerIndex S τ) _ ▸ min_le_lowerIndex_mul σ τ)
 
 variable (S) in
 /-- The identity has lower index `⊤`. -/
@@ -595,7 +611,7 @@ def ramificationGroupSubgroupHom (H : Subgroup G) (i : ℤ) :
   toFun σ := ⟨((σ : H) : G), by
     have hσ : (σ : H) ∈ (ramificationGroup G S i).subgroupOf H := by
       rw [subgroupOf_ramificationGroup]
-      exact σ.2
+      exact σ.property
     exact hσ⟩
   map_one' := rfl
   map_mul' _ _ := rfl
@@ -965,7 +981,8 @@ theorem isMulCommutative_ramificationGroupGraded {i : ℤ} (hi : 0 < i) :
   intro σ _ τ _
   rw [Subgroup.mem_subgroupOf]
   have hmem : ((⁅σ, τ⁆ : ramificationGroup G S i) : G) ∈ ramificationGroup G S (i + i) :=
-    commutator_ramificationGroup_le G S i i (Subgroup.commutator_mem_commutator σ.2 τ.2)
+    commutator_ramificationGroup_le G S i i
+      (Subgroup.commutator_mem_commutator σ.property τ.property)
   exact ramificationGroup_antitone G S (by omega : i + 1 ≤ i + i) hmem
 
 /-- Each positive graded piece `G_{n+1} / G_{n+2}` (`n : ℕ`) is commutative. -/
@@ -1022,7 +1039,7 @@ theorem isPGroup_ramificationGroupGraded (p : ℕ) [CharP (ResidueField S) p]
   | _ σ =>
     refine ⟨1, ?_⟩
     rw [pow_one, ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf]
-    exact pow_mem_ramificationGroup_add_one p hi σ.2
+    exact pow_mem_ramificationGroup_add_one p hi σ.property
 
 variable (G S) in
 /-- **Positive-depth ramification groups are `p`-groups.** Over a Noetherian local ring of residue
@@ -1039,7 +1056,7 @@ theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField S) p]
   have hpow : ∀ k : ℕ, (g : G) ^ (p ^ k) ∈ ramificationGroup G S (i + k) := by
     intro k
     induction k with
-    | zero => simp [g.2]
+    | zero => simp [g.property]
     | succ k ih =>
       rw [pow_succ, pow_mul, show i + ((k + 1 : ℕ) : ℤ) = (i + k) + 1 by push_cast; ring]
       exact pow_mem_ramificationGroup_add_one p (by omega) ih
@@ -1165,3 +1182,19 @@ end HigherRamification
 end IsLocalRing
 
 end TauCeti
+
+namespace Subgroup
+
+open TauCeti.IsLocalRing
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
+  [MulSemiringAction G S]
+
+/-- Every coset `σ H` of a finite subgroup contains an element `σ τ₀` of largest lower index. -/
+theorem exists_mem_forall_lowerIndex_mul_le (H : Subgroup G) [Finite H] (σ : G) :
+    ∃ τ₀ ∈ H, ∀ τ ∈ H, lowerIndex S (σ * τ₀ * τ) ≤ lowerIndex S (σ * τ₀) := by
+  obtain ⟨τ₀, hτ₀⟩ := Finite.exists_max fun τ : H ↦ lowerIndex S (σ * τ)
+  refine ⟨τ₀, τ₀.property, fun τ hτ ↦ ?_⟩
+  simpa only [coe_mul, mul_assoc] using hτ₀ (τ₀ * ⟨τ, hτ⟩)
+
+end Subgroup

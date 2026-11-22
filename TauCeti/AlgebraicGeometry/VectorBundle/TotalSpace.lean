@@ -226,11 +226,12 @@ the base change of the relative spectrum of a symmetric algebra
 def totalSpaceSchemeBaseChangeIso :
     FiniteLocallyFreeSheaf.pullback f ⋙ totalSpaceScheme Y ≅
       totalSpaceScheme X ⋙ baseChangeAffineSchemeOver f :=
+  -- `Functor.rightOpCompOp` identifies the source with `rightOp` of the target of
+  -- `pullbackDualNatIso`; left to definitional unfolding, that check takes several seconds of
+  -- elaboration and kernel time.
   Functor.isoWhiskerRight
-      (NatIso.ofComponents (F := FiniteLocallyFreeSheaf.pullback f ⋙ dualFunctor.rightOp)
-        (G := dualFunctor.rightOp ⋙ (FiniteLocallyFreeSheaf.pullback f).op)
-        (fun E ↦ (pullbackDualIso f E).op)
-        fun g ↦ Quiver.Hom.unop_inj (pullbackDualIso_naturality f g).symm)
+      ((Functor.rightOpCompOp _ _).symm ≪≫
+        (Functor.leftOpRightOpEquiv _ _).functor.mapIso (pullbackDualNatIso f).op)
       ((toQuasicoherent Y).op ⋙ (symmetricAlgebra Y).op ⋙ relativeSpec Y) ≪≫
     Functor.isoWhiskerLeft dualFunctor.rightOp
       (Functor.isoWhiskerRight
@@ -252,8 +253,9 @@ lemma totalSpaceSchemeBaseChangeIso_hom_app (E : FiniteLocallyFreeSheaf X) :
         (relativeSpec Y).map
           ((symmetricAlgebra Y).map ((pullbackToQuasicoherentIso f).inv.app (dual E))).op ≫
           (relativeSpecSymmetricAlgebraBaseChangeIso f).hom.app
-            (op ((toQuasicoherent X).obj (dual E))) :=
-  (rfl)
+            (op ((toQuasicoherent X).obj (dual E))) := by
+  rw [← pullbackDualNatIso_hom_app f (op E), ← Category.comp_id ((pullbackDualNatIso f).hom.app _)]
+  rfl
 
 /-- The inverse component of `totalSpaceSchemeBaseChangeIso` at `E`: the inverse component of
 `relativeSpecSymmetricAlgebraBaseChangeIso` at `E^∨`, followed by relative Spec of the symmetric
@@ -265,8 +267,9 @@ lemma totalSpaceSchemeBaseChangeIso_inv_app (E : FiniteLocallyFreeSheaf X) :
         (relativeSpec Y).map
           ((symmetricAlgebra Y).map ((pullbackToQuasicoherentIso f).hom.app (dual E))).op ≫
           (relativeSpec Y).map
-            ((symmetricAlgebra Y).map ((toQuasicoherent Y).map (pullbackDualIso f E).inv)).op :=
-  Category.assoc _ _ _
+            ((symmetricAlgebra Y).map ((toQuasicoherent Y).map (pullbackDualIso f E).inv)).op := by
+  rw [← pullbackDualNatIso_inv_app f (op E), ← Category.id_comp ((pullbackDualNatIso f).inv.app _)]
+  exact Category.assoc _ _ _
 
 variable (E : FiniteLocallyFreeSheaf X)
 
