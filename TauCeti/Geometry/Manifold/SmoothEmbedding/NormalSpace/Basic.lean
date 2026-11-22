@@ -22,6 +22,10 @@ The differential is injective for an immersion of positive smoothness. Consequen
 space has the expected codimension in finite dimensions. The quotient map also characterizes
 exactly which ambient tangent vectors represent zero normal vectors.
 
+A continuous linear map out of the ambient tangent space whose kernel is exactly the tangent range
+identifies the normal space with any target of the same dimension
+(`TauCeti.SmoothEmbedding.normalSpaceEquivOfKer`).
+
 The inclusion of an open subset is the extreme case: it is tangent to every ambient direction
 (`TauCeti.SmoothEmbedding.tangentRange_ofOpens`), so its normal spaces are zero
 (`TauCeti.SmoothEmbedding.subsingleton_normalSpace_ofOpens`).
@@ -325,6 +329,49 @@ theorem finrank_normalSpace (f : SmoothEmbedding I J n M N) (x : M)
       Module.finrank 𝕜 (TangentSpace J (f x)) - Module.finrank 𝕜 (TangentSpace I x) := by
   have h := f.finrank_normalSpace_add_finrank x hn
   omega
+
+section KerEquiv
+
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] {V : Type*} [AddCommGroup V] [Module 𝕜 V]
+  [FiniteDimensional 𝕜 V] [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul 𝕜 V]
+  [T2Space V]
+
+/-- A continuous linear map out of the ambient tangent space whose kernel is exactly the tangent
+range, into a space of the dimension of the normal space, descends to a continuous linear
+equivalence from the normal space: the normal class `[v]` corresponds to `g v`. -/
+noncomputable def normalSpaceEquivOfKer (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
+    (g : TangentSpace J (f x) →L[𝕜] V) (hg : ∀ v, g v = 0 ↔ v ∈ f.tangentRange x hn)
+    (hdim : Module.finrank 𝕜 (f.NormalSpace x hn) = Module.finrank 𝕜 V) :
+    f.NormalSpace x hn ≃L[𝕜] V :=
+  let φ := f.normalLiftL x hn g fun v ↦ (hg v).2
+  have hinj : Function.Injective φ := by
+    refine (injective_iff_map_eq_zero φ).2 fun w hw ↦ ?_
+    obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn w
+    rw [normalLiftL_normalClass, hg] at hw
+    exact (f.normalClass_eq_zero_iff x hn v).2 hw
+  (φ.toLinearMap.linearEquivOfInjective hinj hdim).toContinuousLinearEquiv
+
+/-- The normal class `[v]` corresponds to `g v`. -/
+@[simp]
+theorem normalSpaceEquivOfKer_normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
+    (g : TangentSpace J (f x) →L[𝕜] V) (hg : ∀ v, g v = 0 ↔ v ∈ f.tangentRange x hn)
+    (hdim : Module.finrank 𝕜 (f.NormalSpace x hn) = Module.finrank 𝕜 V)
+    (v : TangentSpace J (f x)) :
+    f.normalSpaceEquivOfKer x hn g hg hdim (f.normalClass x hn v) = g v := by
+  rw [normalSpaceEquivOfKer, LinearEquiv.coe_toContinuousLinearEquiv',
+    LinearMap.linearEquivOfInjective_apply, ContinuousLinearMap.coe_coe, normalLiftL_normalClass]
+
+/-- The value `g v` corresponds to the normal class `[v]`. -/
+@[simp]
+theorem normalSpaceEquivOfKer_symm_apply (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
+    (g : TangentSpace J (f x) →L[𝕜] V) (hg : ∀ v, g v = 0 ↔ v ∈ f.tangentRange x hn)
+    (hdim : Module.finrank 𝕜 (f.NormalSpace x hn) = Module.finrank 𝕜 V)
+    (v : TangentSpace J (f x)) :
+    (f.normalSpaceEquivOfKer x hn g hg hdim).symm (g v) = f.normalClass x hn v :=
+  (ContinuousLinearEquiv.symm_apply_eq _).2
+    (f.normalSpaceEquivOfKer_normalClass x hn g hg hdim v).symm
+
+end KerEquiv
 
 /-- The inclusion of an open subset is tangent to every ambient direction: its tangent range is the
 whole tangent space, since the inclusion is a local diffeomorphism. -/

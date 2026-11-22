@@ -103,7 +103,7 @@ theorem cellIdx_eq_iff_of_succ_lt (hi : i + 1 < m) (x : I) :
     cellIdx m x = i ↔ (i : ℝ) / m ≤ (x : ℝ) ∧ (x : ℝ) < ((i : ℝ) + 1) / m := by
   have hm0 : 0 < m := by omega
   have hmR : (0 : ℝ) < m := by exact_mod_cast hm0
-  have h0 : (0 : ℝ) ≤ (m : ℝ) * (x : ℝ) := mul_nonneg hmR.le x.2.1
+  have h0 : (0 : ℝ) ≤ (m : ℝ) * (x : ℝ) := mul_nonneg hmR.le x.property.1
   have hmin : cellIdx m x = i ↔ ⌊(m : ℝ) * (x : ℝ)⌋₊ = i := by
     simp only [cellIdx]
     omega
@@ -120,7 +120,7 @@ theorem cellIdx_eq_iff_of_succ_lt (hi : i + 1 < m) (x : I) :
 theorem cellIdx_eq_sub_one_iff (hm : 0 < m) (x : I) :
     cellIdx m x = m - 1 ↔ ((m - 1 : ℕ) : ℝ) / m ≤ (x : ℝ) := by
   have hmR : (0 : ℝ) < m := by exact_mod_cast hm
-  have h0 : (0 : ℝ) ≤ (m : ℝ) * (x : ℝ) := mul_nonneg hmR.le x.2.1
+  have h0 : (0 : ℝ) ≤ (m : ℝ) * (x : ℝ) := mul_nonneg hmR.le x.property.1
   have hmin : cellIdx m x = m - 1 ↔ m - 1 ≤ ⌊(m : ℝ) * (x : ℝ)⌋₊ := by
     simp only [cellIdx]
     omega
@@ -131,7 +131,7 @@ theorem cellIdx_eq_sub_one_iff (hm : 0 < m) (x : I) :
 @[fun_prop]
 theorem measurable_cellIdx : Measurable (cellIdx m) :=
   (measurable_of_countable fun k => min k (m - 1)).comp
-    (Nat.measurable_floor.comp (measurable_const.mul measurable_subtype_coe))
+    (Nat.measurable_floor.comp (measurable_const.mul measurable_subtypeVal))
 
 /-- Each cell is measurable. -/
 @[measurability]
@@ -196,11 +196,11 @@ theorem cellIdx_mul_div {n : ℕ} (hn : 0 < n) (x : I) :
 /-- The left endpoint `cellIdx m x / m` of the cell containing `x` lies below `x`. -/
 theorem cellIdx_div_le (m : ℕ) (x : I) : (cellIdx m x : ℝ) / m ≤ x := by
   rcases Nat.eq_zero_or_pos m with rfl | hm
-  · simpa using x.2.1
+  · simpa using x.property.1
   have hmR : (0 : ℝ) < m := by exact_mod_cast hm
   rw [div_le_iff₀ hmR, mul_comm]
   calc (cellIdx m x : ℝ) ≤ ⌊(m : ℝ) * (x : ℝ)⌋₊ := by exact_mod_cast min_le_left _ _
-    _ ≤ m * x := Nat.floor_le (mul_nonneg hmR.le x.2.1)
+    _ ≤ m * x := Nat.floor_le (mul_nonneg hmR.le x.property.1)
 
 /-- The point `x` lies below the right endpoint `(cellIdx m x + 1) / m` of its cell. -/
 theorem le_cellIdx_add_one_div (hm : 0 < m) (x : I) :
@@ -211,7 +211,7 @@ theorem le_cellIdx_add_one_div (hm : 0 < m) (x : I) :
   · rw [cellIdx, min_eq_left h]
     linarith [Nat.lt_floor_add_one ((m : ℝ) * (x : ℝ))]
   · rw [cellIdx, min_eq_right h, Nat.cast_sub hm, Nat.cast_one, sub_add_cancel]
-    nlinarith [x.2.2]
+    nlinarith [x.property.2]
 
 /-- As the number of cells grows, the left endpoints of the cells containing `x` converge to
 `x`. -/

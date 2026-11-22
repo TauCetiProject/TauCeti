@@ -16,8 +16,8 @@ the ambient tangent bundle pulled back along the embedding. This is the topology
 normal bundle of the underlying immersion, `Manifold.IsImmersion.instTopologicalSpaceNormalBundle`,
 whose continuity properties apply through `TauCeti.SmoothEmbedding.isImmersion`.
 
-A commuting square with differentiable base map and C¹ ambient map induces a continuous
-map of these total spaces: the ambient tangent map descends through the quotient. This is
+A commuting square with C¹ ambient map induces a continuous map of these total spaces: the
+ambient tangent map descends through the quotient. This is
 the topological compatibility needed to express normal-bundle coordinates in different
 ambient manifold charts.
 
@@ -55,7 +55,7 @@ omit [IsManifold J 1 N] in
 /-- The quotient map preserves the base and takes the fibrewise normal class. -/
 @[simp] theorem normalQuotientMap_apply (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J))) :
-    f.normalQuotientMap (K := K) hn p = ⟨p.proj, f.normalClass p.proj hn p.2⟩ := (rfl)
+    f.normalQuotientMap (K := K) hn p = ⟨p.proj, f.normalClass p.proj hn p.snd⟩ := (rfl)
 
 /-- The intrinsic normal total space has the quotient topology from the pulled-back
 ambient tangent bundle, as for the underlying immersion. -/
@@ -83,30 +83,28 @@ omit [IsManifold J 1 N] in
 class of the ambient differential of the representative. -/
 @[simp↓] theorem normalBundleMap_normalQuotientMap
     (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' m M' N')
-    (hn : n ≠ 0) (hm : m ≠ 0) {u : M → M'} {v : N → N'}
-    (hu : MDifferentiable I I' u) (hv : MDifferentiable J J' v)
-    (h : v ∘ f = g ∘ u) (p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J))) :
-    f.normalBundleMap (K := K) (K' := K') g hn hm hu hv h (f.normalQuotientMap hn p) =
+    (hn : n ≠ 0) (hm : m ≠ 0) {u : M → M'} {v : N → N'} (h : v ∘ f = g ∘ u)
+    (p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J))) :
+    f.normalBundleMap (K := K) (K' := K') g hn hm h (f.normalQuotientMap hn p) =
       g.normalQuotientMap hm (⟨u p.proj, tangentSpaceCast J' (v (f p.proj)) (g (u p.proj))
-        (mfderiv J J' v (f p.proj) p.2)⟩ : TotalSpace F' ((g : M' → N') *ᵖ (TangentSpace J'))) := by
+        (mfderiv J J' v (f p.proj) p.snd)⟩ : TotalSpace F' ((g : M' → N') *ᵖ (TangentSpace J')))
+            := by
   rw [normalBundleMap_apply]
   exact congrArg (TotalSpace.mk (u p.proj))
-    (f.normalMap_normalClass g hn hm (hu p.proj) (hv (f p.proj)) (Filter.EventuallyEq.of_eq h) p.2)
+    (f.normalMap_normalClass g hn hm (Filter.EventuallyEq.of_eq h) p.snd)
 
-/-- A commuting square with differentiable base map and C¹ ambient map induces a continuous
-map of intrinsic normal bundles. -/
+/-- A commuting square with C¹ ambient map induces a continuous map of intrinsic normal bundles.
+The base map is then continuous, since the target embedding reflects continuity. -/
 theorem continuous_normalBundleMap
     [IsManifold J' 1 N']
     (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' m M' N')
-    (hn : n ≠ 0) (hm : m ≠ 0) {u : M → M'} {v : N → N'}
-    (hu : MDifferentiable I I' u) (hv : ContMDiff J J' 1 v)
+    (hn : n ≠ 0) (hm : m ≠ 0) {u : M → M'} {v : N → N'} (hv : ContMDiff J J' 1 v)
     (h : v ∘ f = g ∘ u) :
-    Continuous (f.normalBundleMap (K := K) (K' := K') g hn hm hu
-      (hv.mdifferentiable (by simp)) h) := by
+    Continuous (f.normalBundleMap (K := K) (K' := K') g hn hm h) := by
   let T : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J)) →
       TotalSpace F' ((g : M' → N') *ᵖ (TangentSpace J')) := fun p =>
     ⟨u p.proj, tangentSpaceCast J' (v (f p.proj)) (g (u p.proj))
-      (mfderiv J J' v (f p.proj) p.2)⟩
+      (mfderiv J J' v (f p.proj) p.snd)⟩
   have hT : Continuous T := by
     apply (inducing_pullbackTotalSpaceEmbedding F' (TangentSpace J')
       (g : M' → N')).continuous_iff.mpr
@@ -121,12 +119,14 @@ theorem continuous_normalBundleMap
       apply TotalSpace.ext (congrFun h p.proj).symm
       rfl
     rw [heq]
-    exact (hu.continuous.comp (Pullback.continuous_proj F (TangentSpace J) f)).prodMk
+    have hu : Continuous u :=
+      g.isEmbedding.continuous_iff.2 (h ▸ hv.continuous.comp f.contMDiff.continuous)
+    exact (hu.comp (Pullback.continuous_proj F (TangentSpace J) f)).prodMk
       (hv.continuous_tangentMap le_rfl |>.comp (Pullback.continuous_lift F (TangentSpace J) f))
   rw [(f.isQuotientMap_normalQuotientMap (K := K) hn).continuous_iff]
   convert (g.isQuotientMap_normalQuotientMap (K := K') hm).continuous.comp hT using 1
   funext p
-  exact f.normalBundleMap_normalQuotientMap g hn hm hu _ h p
+  exact f.normalBundleMap_normalQuotientMap g hn hm h p
 
 end Map
 
