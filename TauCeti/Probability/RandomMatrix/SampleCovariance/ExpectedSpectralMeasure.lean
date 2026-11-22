@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.SampleCovariance.Measurable
 
+import TauCeti.Analysis.Matrix.MeasurableSpace
 import TauCeti.MeasureTheory.Integral.Bind
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Cdf
 
@@ -23,14 +24,37 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory ProbabilityTheory
-open scoped Topology
+open Filter Matrix MeasureTheory ProbabilityTheory
+open scoped BoundedContinuousFunction Topology
 
 namespace TauCeti.Probability
 
 variable {Ω p n 𝕜 : Type*} [MeasurableSpace Ω] [Fintype p] [DecidableEq p] [Nonempty p]
   [Fintype n] [RCLike 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜]
-  {P : Measure Ω} [IsProbabilityMeasure P] {X : Ω → Matrix p n 𝕜}
+  {P : Measure Ω} {X : Ω → Matrix p n 𝕜}
+
+/-- Bounded continuous test integrals of a sample covariance spectrum are almost everywhere
+strongly measurable in the data. -/
+theorem aestronglyMeasurable_integral_spectralMeasure_sampleCovariance
+    (hX : AEMeasurable X P) (f : ℝ →ᵇ ℝ) :
+    AEStronglyMeasurable (fun ω ↦ ∫ x, f x ∂((X ω).sampleCovariance.spectralMeasure
+      (Matrix.isHermitian_sampleCovariance _) : Measure ℝ)) P := by
+  have hcov := measurable_sampleCovariance.comp_aemeasurable hX
+  have hHermitian := hcov.subtype_mk (s := {A | A.IsHermitian})
+    (hfs := fun ω ↦ isHermitian_sampleCovariance (X ω))
+  exact ((continuous_integral_spectralMeasure f.continuous).measurable.comp_aemeasurable
+    hHermitian).aestronglyMeasurable
+
+/-- Bounded continuous test integrals of a sample covariance spectrum are integrable under
+a finite data law. -/
+theorem integrable_integral_spectralMeasure_sampleCovariance [IsFiniteMeasure P]
+    (hX : AEMeasurable X P) (f : ℝ →ᵇ ℝ) :
+    Integrable (fun ω ↦ ∫ x, f x ∂((X ω).sampleCovariance.spectralMeasure
+      (Matrix.isHermitian_sampleCovariance _) : Measure ℝ)) P :=
+  Integrable.of_bound (aestronglyMeasurable_integral_spectralMeasure_sampleCovariance hX f)
+    ‖f‖ (.of_forall fun _ ↦ f.norm_integral_le_norm _)
+
+variable [IsProbabilityMeasure P]
 
 omit [IsProbabilityMeasure P] in
 private theorem aemeasurable_covarianceMeasure (hX : AEMeasurable X P) :

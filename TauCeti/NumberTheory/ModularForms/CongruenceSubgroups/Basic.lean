@@ -62,6 +62,7 @@ infrastructure independent of the diamond operators.
   `CongruenceSubgroup.Gamma_le_Gamma_of_dvd`: all three families are antitone in the level,
   `Γ(N) ≤ Γ(M)` whenever `M ∣ N`.
 * `CongruenceSubgroup.index_Gamma`: `[SL₂(ℤ) : Γ(N)] = |SL₂(ℤ/Nℤ)|`; in particular
+  `CongruenceSubgroup.index_Gamma_two`: `[SL₂(ℤ) : Γ(2)] = 6` and
   `CongruenceSubgroup.index_Gamma_three`: `[SL₂(ℤ) : Γ(3)] = 24`.
 * `CongruenceSubgroup.ker_map_intCast_zmod`, `CongruenceSubgroup.map_eq_one_of_mem_Gamma`,
   `CongruenceSubgroup.mem_Gamma_iff_dvd`: `Γ(N)` is the kernel of reduction modulo `N`, and its
@@ -88,6 +89,10 @@ infrastructure independent of the diamond operators.
   `CongruenceSubgroup.isUnit_intCast_add_natCast_mul_of_mem_Gamma0`:
   shearing the first column by a natural-number multiple of the lower-left entry changes nothing
   modulo the level, so the sheared entry is a unit too.
+* `CongruenceSubgroup.Gamma0Map_apply`: the value of Mathlib's `Gamma0Map`, the lower-right entry
+  reduced modulo `N`, as a named rewrite rule.
+* `CongruenceSubgroup.mul_inv_mem_Gamma1_iff_Gamma0Map_eq`: two elements of `Γ₀(N)` have
+  lower-right entries that agree modulo `N` exactly when their ratio lies in `Γ₁(N)`.
 * `CongruenceSubgroup.mem_Gamma1_iff_toHomUnits_eq_one`: inside `Γ₀(N)`, `Γ₁(N)` is the kernel of
   the unit-valued lower-right entry.
 * `CongruenceSubgroup.Gamma0_normalizes_Gamma1` and
@@ -96,6 +101,10 @@ infrastructure independent of the diamond operators.
   `GL₂(ℝ)`.
 * `CongruenceSubgroup.Gamma1_map_le_Gamma1_map_of_dvd`: the antitonicity `Γ₁(N) ≤ Γ₁(M)` for
   `M ∣ N`, after mapping to `GL₂(ℝ)`.
+* `CongruenceSubgroup.instIsFiniteRelIndexMapMapGL`: a finite-index subgroup of `SL(2, ℤ)` has
+  finite index in every subgroup of `SL(2, ℤ)` after mapping to `GL₂(ℝ)`.
+* `TauCeti.Gamma1_one_map_eq_SL`: at level one, the image of `Γ₁(1)` in `GL₂(ℝ)` is the full
+  modular group `𝒮ℒ`.
 * `CongruenceSubgroup.mapGL_mem_normalizer_Gamma1_map` and
   `CongruenceSubgroup.Gamma1_map_inv_conjAct_eq`:
   `(Gamma1 N).map (mapGL S)` is invariant under conjugation by `Γ₀(N)` elements in `GL₂(S)`,
@@ -119,10 +128,17 @@ infrastructure independent of the diamond operators.
   `CongruenceSubgroup.gamma0TwistOfUnit_apply_one_one`.
 * `CongruenceSubgroup.neg_one_mem_Gamma0` and
   `CongruenceSubgroup.Gamma0Map_toHomUnits_negOne`: `-I ∈ Γ₀(N)`, with lower-right entry the
-  unit `-1`; `CongruenceSubgroup.neg_one_mem_Gamma1_iff`: `-I ∈ Γ₁(N) ↔ N ∣ 2`, and
+  unit `-1`; `CongruenceSubgroup.Gamma0.negOne` packages `-I` as an element of `Γ₀(N)`, with the
+  simp lemmas `CongruenceSubgroup.Gamma0.coe_negOne` and `CongruenceSubgroup.Gamma0Map_negOne`;
+  `CongruenceSubgroup.neg_one_mem_Gamma1_iff`: `-I ∈ Γ₁(N) ↔ N ∣ 2`, and
   `CongruenceSubgroup.neg_one_mem_Gamma_iff`: `-I ∈ Γ(N) ↔ N ∣ 2`.
+* `CongruenceSubgroup.T_zpow_mem_Gamma1`: every integer power of the translation matrix `T` lies
+  in `Γ₁(N)`, at every level.
 * `CongruenceSubgroup.withCenter_le_Gamma0`: adjoining the centre of `SL₂(ℤ)` to a subgroup of
   `Γ₀(N)` keeps it inside `Γ₀(N)`, since `Γ₀(N)` already contains `-I`.
+* `CongruenceSubgroup.Gamma0_zero_index`: `Γ₀(0)` has index `0`, the value recording an infinite
+  index.
+* `CongruenceSubgroup.Gamma0_one_top`: `Γ₀(1)` is the whole group.
 * `CongruenceSubgroup.Gamma0_prime_index`: `[SL₂(ℤ) : Γ₀(p)] = p + 1` for prime `p`.
 * `CongruenceSubgroup.Gamma0_relIndex_pow_succ`: `[Γ₀(pᵏ) : Γ₀(p^(k+1))] = p` for `0 < p`
   and `0 < k`.
@@ -225,6 +241,11 @@ theorem index_Gamma (N : ℕ) : (Gamma N).index = Nat.card SL(2, ZMod N) := by
   rw [Gamma, Subgroup.index_ker,
     MonoidHom.range_eq_top.mpr Matrix.SpecialLinearGroup.map_intCast_zmod_surjective,
     Subgroup.card_top]
+
+/-- `Γ(2)` has index `6 = |SL₂(𝔽₂)|` in `SL₂(ℤ)`. -/
+theorem index_Gamma_two : (Gamma 2).index = 6 := by
+  rw [index_Gamma, Matrix.card_SL_field]
+  simp [Fin.prod_univ_two, ZMod.card]
 
 /-- `Γ(3)` has index `24 = |SL₂(𝔽₃)|` in `SL₂(ℤ)`. -/
 theorem index_Gamma_three : (Gamma 3).index = 24 := by
@@ -473,9 +494,10 @@ lemma mul_inv_mem_Gamma1_of_Gamma0Map_eq (g₁ g₂ : ↥(Gamma0 N))
     exact (MonoidHom.div_mem_ker_iff (Gamma0Map N)).mpr heq
   exact (Gamma1_mem _ _).mpr <| (Gamma1_to_Gamma0_mem _).mp hker
 
-/-- **Two `Γ₀(N)` elements have the same lower-right entry exactly when their ratio lies in
-`Γ₁(N)`.** The `mpr` direction is `mul_inv_mem_Gamma1_of_Gamma0Map_eq`; the converse reads the
-membership back through `Gamma1_mem'`, which says that `Gamma0Map N` is trivial on `Γ₁(N)`. -/
+/-- **Two `Γ₀(N)` elements have lower-right entries that agree modulo `N` exactly when their
+ratio lies in `Γ₁(N)`.** The `mpr` direction is `mul_inv_mem_Gamma1_of_Gamma0Map_eq`; the converse
+reads the membership back through `Gamma1_mem'`, which says that `Gamma0Map N` is trivial on
+`Γ₁(N)`. -/
 lemma mul_inv_mem_Gamma1_iff_Gamma0Map_eq (g₁ g₂ : ↥(Gamma0 N)) :
     ((g₁ : SL(2, ℤ)) * (g₂ : SL(2, ℤ))⁻¹) ∈ Gamma1 N ↔ Gamma0Map N g₁ = Gamma0Map N g₂ := by
   refine ⟨fun hmem ↦ ?_, mul_inv_mem_Gamma1_of_Gamma0Map_eq g₁ g₂⟩
