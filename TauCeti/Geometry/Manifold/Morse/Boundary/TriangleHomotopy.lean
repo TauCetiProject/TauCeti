@@ -292,7 +292,7 @@ noncomputable def morseTriangleHomotopy
     (φAt := fun n ↦ morseContinuationMapAt f₁ hf₂ V₁₂ n ∘ₗ morseContinuationMapAt f₀ hf₁ V₀₁ n)
     (fun n ↦ by
       rw [HomologicalComplex.comp_f, morseContinuationHom_f, morseContinuationHom_f]
-      rfl)
+      exact (ModuleCat.ofHom_comp _ _).symm)
     (fun _ _ ↦ by
       rw [LinearMap.comp_apply, mapDomain_morseContinuationMapAt, mapDomain_morseContinuationMapAt,
         LinearMap.comp_apply])
