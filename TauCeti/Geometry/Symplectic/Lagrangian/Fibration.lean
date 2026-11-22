@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # Lagrangian fibrations
@@ -139,17 +140,12 @@ are isotropic. -/
 theorem isLagrangianMap_iff_isIsotropicMap [FiniteDimensional ℝ E] {s : B → M}
     (hs : ∀ b, π (s b) = b) (hsm : MDifferentiable J I s) :
     hσ.IsLagrangianMap J s ↔ hσ.IsIsotropicMap J s := by
-  refine ⟨fun hL ↦ hL.isIsotropicMap, fun hiso ↦ isLagrangianMap_iff_forall.2 fun b ↦
-    (isIsotropicMap_iff_forall.1 hiso b).isLagrangian_of_finrank ?_⟩
+  refine ⟨fun hL ↦ hL.isIsotropicMap, fun hiso ↦ isLagrangianMap_iff_forall.2 fun b ↦ ?_⟩
   have : Nonempty M := ⟨s b⟩
-  -- `dπ ∘ ds = id`, so `ds` is injective and its range has dimension `dim B`.
-  have hcomp : (mfderiv I J π (s b)).comp (mfderiv J I s b) = ContinuousLinearMap.id ℝ _ := by
-    rw [← mfderiv_comp b (h.mdifferentiableAt (s b)) (hsm b), show π ∘ s = id from funext hs,
-      mfderiv_id]
-  have hinj : Injective (mfderiv J I s b) :=
-    LeftInverse.injective (g := mfderiv I J π (s b)) fun v ↦ DFunLike.congr_fun hcomp v
-  rw [LinearMap.finrank_range_of_inj hinj, finrank_tangentSpace, finrank_tangentSpace,
-    h.two_mul_finrank]
+  -- `π` is a left inverse of `s`, so `ds` is injective.
+  exact isLagrangianMap_iff_forall.1 (hiso.isLagrangianMap_of_finrank
+    (fun b ↦ mfderiv_injective_of_leftInverse (h.mdifferentiableAt (s b)) (hsm b) hs)
+    h.two_mul_finrank) b
 
 /-- **Hamiltonian vector fields of pulled-back functions are vertical.** If `g` is differentiable
 at `π x`, the Hamiltonian vector of `g ∘ π` at `x` is tangent to the fibre: it lies in `ker dπ_x`.
