@@ -170,22 +170,11 @@ quotient by it. -/
 theorem nonempty_addEquiv_prod_quotient {D : AddSubgroup A} (hD : D.IsDivisible) :
     Nonempty (A ≃+ D × (A ⧸ D)) := by
   obtain ⟨r, hr⟩ := hD.exists_retraction
-  have hr' : ∀ x ∈ D, (r x : A) = x := fun x hx ↦ congrArg Subtype.val (hr ⟨x, hx⟩)
-  refine ⟨AddEquiv.ofBijective (r.prod (QuotientAddGroup.mk' D)) ⟨?_, ?_⟩⟩
-  · rw [injective_iff_map_eq_zero]
-    intro x hx
-    simp only [AddMonoidHom.prod_apply, QuotientAddGroup.mk'_apply, Prod.mk_eq_zero,
-      QuotientAddGroup.eq_zero_iff] at hx
-    rw [← hr' x hx.2, hx.1, ZeroMemClass.coe_zero]
-  · rintro ⟨d, y⟩
-    induction y using QuotientAddGroup.induction_on with | H a => ?_
-    refine ⟨d + (a - r a), Prod.ext ?_ ?_⟩
-    · simp [hr]
-    · simp only [AddMonoidHom.prod_apply, QuotientAddGroup.mk'_apply, QuotientAddGroup.eq,
-        neg_add_rev]
-      have : -(a - r a) + -(d : A) + a = (r a : A) - d := by abel
-      rw [this]
-      exact sub_mem (r a).property d.property
+  refine ⟨(r.toIntLinearMap.equivProdOfSurjectiveOfIsCompl D.toIntSubmodule.mkQ
+    (LinearMap.range_eq_of_proj (p := D.toIntSubmodule) hr) D.toIntSubmodule.range_mkQ
+    ?_).toAddEquiv⟩
+  rw [Submodule.ker_mkQ]
+  exact (LinearMap.isCompl_of_proj (p := D.toIntSubmodule) (f := r.toIntLinearMap) hr).symm
 
 end IsDivisible
 
@@ -419,14 +408,7 @@ theorem maxDivisible_int : maxDivisible ℤ = ⊥ := by
   intro x hx
   obtain ⟨y, -, hy⟩ := exists_mem_maxDivisible_nsmul_eq hx (Nat.add_one_ne_zero x.natAbs)
   rw [nsmul_eq_mul] at hy
-  rw [mem_bot, ← hy]
-  rcases eq_or_ne y 0 with rfl | hy0
-  · simp
-  · exfalso
-    have h1 : 1 ≤ y.natAbs := Int.natAbs_pos.2 hy0
-    have h2 := congrArg Int.natAbs hy
-    rw [Int.natAbs_mul, Int.natAbs_natCast] at h2
-    nlinarith [Nat.mul_le_mul_left (x.natAbs + 1) h1]
+  exact mem_bot.2 <| Int.eq_zero_of_dvd_of_natAbs_lt_natAbs ⟨y, hy.symm⟩ (by omega)
 
 end Examples
 
