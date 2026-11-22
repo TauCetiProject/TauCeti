@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 import Mathlib.LinearAlgebra.Transvection.Basic
 import TauCeti.LinearAlgebra.Pi
@@ -54,9 +53,9 @@ theorem eq_smul_id_of_unique {ι : Type*} [Unique ι] [ContinuousConstSMul R R]
 
 end CommSemiring
 
-/-- Replacing one coordinate by a functional whose coefficient `c` at that coordinate is a unit
-is a continuous linear equivalence, provided right multiplication by `-c⁻¹` is continuous on `R`.
-No other continuity on `R` is needed. -/
+/-- Replacing one coordinate by a continuous linear functional whose coefficient `c` at that
+coordinate is a unit is a continuous linear equivalence, provided right multiplication by `-c⁻¹`
+is continuous on `R`. No other continuity on `R` is needed. -/
 theorem exists_pi_update_equiv {ι R : Type*} [DecidableEq ι] [Ring R] [TopologicalSpace R]
     (α : (ι → R) →L[R] R) (i : ι) (hα : IsUnit (α (Pi.single i 1)))
     (hcont : Continuous fun x : R ↦ x * -↑hα.unit⁻¹) :
@@ -72,18 +71,16 @@ theorem exists_pi_update_equiv {ι R : Type*} [DecidableEq ι] [Ring R] [Topolog
     simpa using hα
   set e := LinearEquiv.dilatransvection h
   have he (v : ι → R) : e v = f v := by
-    rw [hf, Pi.update_eq_sub_add_single, LinearEquiv.dilatransvection.apply, ← Pi.single_smul',
-      smul_eq_mul, mul_one]
-    simp only [LinearMap.sub_apply, coe_coe, LinearMap.proj_apply, Pi.single_sub]
-    abel
+    rw [hf, LinearEquiv.dilatransvection.apply, Function.eq_update_iff]
+    exact ⟨by simp, fun m hm ↦ by simp [hm]⟩
   -- With `d` the inverse of the coefficient, setting the coordinate `i` of `u` to `s * -d`
   -- lowers the value of `α` at `u` with that coordinate zeroed by `s`.
   set d : R := ↑hα.unit⁻¹
   have hd : d * α (Pi.single i 1) = 1 := hα.val_inv_mul
   have hupd (u : ι → R) (s : R) :
       α (Function.update u i (s * -d)) = α (Function.update u i 0) - s := by
-    rw [← coe_coe, LinearMap.apply_update_eq_add_smul, coe_coe, smul_eq_mul, mul_assoc, neg_mul,
-      hd, mul_neg_one, sub_eq_add_neg]
+    simpa [mul_assoc, hd, sub_eq_add_neg] using
+      (α : (ι → R) →ₗ[R] R).apply_update_eq_add_smul u i (s * -d)
   -- Hence the inverse sets the coordinate `i` of `u` to `α (update u i (u i * -d)) * -d`. It is
   -- built from `α`, coordinate updates and right multiplication by `-d` only, so it is visibly
   -- continuous.

@@ -54,6 +54,17 @@ normed spaces:
   diameter.
 * `LipschitzWith.smul_const`: if a scalar function `f` is `K`-Lipschitz, then `y ↦ f y • c` is
   `K ‖c‖`-Lipschitz.
+* `LinearMap.norm_apply_le_card_mul_norm_mul`: for a semilinear map `L : (ι → R) →ₛₗ[σ] F` on a
+  finite product over a seminormed ring, into a seminormed group with a bounded scalar action of
+  `S`, a bound `M` on the values at the coordinate vectors bounds every value:
+  `‖L v‖ ≤ #ι * ‖v‖ * M` for the sup norm, provided `‖σ (v j)‖ ≤ ‖v j‖` for every coordinate.
+* `LinearMap.norm_inv_smul_sub_le`: for a semilinear map `L : E →ₛₗ[σ] F` between seminormed
+  modules over normed division rings, an estimate `‖w - L (t • v)‖ ≤ c ‖t • v‖` with `t ≠ 0` and
+  `‖t‖ ≤ ‖σ t‖` rescales to `‖(σ t)⁻¹ • w - L v‖ ≤ c ‖v‖`. No continuity of `L` is needed.
+
+The coordinate bound is adapted from [KLS](https://github.com/human-ai-mathematics/kls-lean),
+commit `65810c73f9dd7945fc646ab484cb19d673f5291d`,
+`formalization/FunctionalInequalities/Analysis/Sard/Disk.lean`.
 -/
 
 public section
@@ -245,5 +256,57 @@ theorem LipschitzWith.smul_const {α 𝕜 E : Type*} [PseudoEMetricSpace α] [Se
     exact norm_smul_le _ _
   rw [mul_comm]
   exact hc.comp hf
+
+namespace LinearMap
+
+/-- A bound `M` on the values of a semilinear map `L : (ι → R) →ₛₗ[σ] F` at the coordinate vectors
+of a finite product bounds its value at every vector `v` by `#ι * ‖v‖ * M`, for the sup norm,
+when `S` acts on `F` with bounded scalar action and `σ` does not increase the norms of the
+coordinates of `v`. -/
+theorem norm_apply_le_card_mul_norm_mul {ι R S F : Type*} [Fintype ι] [DecidableEq ι]
+    [SeminormedRing R] [SeminormedRing S] [SeminormedAddCommGroup F] [Module S F]
+    [IsBoundedSMul S F] {σ : R →+* S} (L : (ι → R) →ₛₗ[σ] F) (v : ι → R)
+    (hσ : ∀ j, ‖σ (v j)‖ ≤ ‖v j‖) {M : ℝ} (h : ∀ j, ‖L (Pi.single j 1)‖ ≤ M) :
+    ‖L v‖ ≤ Fintype.card ι * ‖v‖ * M := by
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨j₀⟩⟩
+  · simp [Subsingleton.elim v 0]
+  -- Expand `v` in the coordinate vectors.
+  have hv : L v = ∑ j, σ (v j) • L (Pi.single j 1) := by
+    conv_lhs => rw [← Finset.univ_sum_single v]
+    simp only [map_sum, ← map_smulₛₗ, ← Pi.single_smul', smul_eq_mul, mul_one]
+  calc ‖L v‖ ≤ (∑ j, ‖σ (v j)‖) * M := hv ▸ TauCeti.norm_sum_smul_le_sum_norm_mul fun j _ ↦ h j
+    _ ≤ Fintype.card ι * ‖v‖ * M := by
+        gcongr
+        · exact (norm_nonneg _).trans (h j₀)
+        · exact (Finset.sum_le_sum fun j _ ↦ hσ j).trans <| by
+            simpa using Pi.sum_norm_apply_le_norm v
+
+section Rescale
+
+variable {𝕜 𝕜₂ E F : Type*} [NormedDivisionRing 𝕜] [NormedDivisionRing 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
+  [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [Module 𝕜 E] [Module 𝕜₂ F]
+  [NormSMulClass 𝕜 E] [NormSMulClass 𝕜₂ F]
+
+/-- A first-order estimate at `t • v` rescales to one at `v`: if `w` is within `c ‖t • v‖` of
+`L (t • v)` for a semilinear map `L`, with `t ≠ 0` and `‖t‖ ≤ ‖σ t‖`, then `(σ t)⁻¹ • w` is
+within `c ‖v‖` of `L v`. -/
+theorem norm_inv_smul_sub_le (L : E →ₛₗ[σ] F) {t : 𝕜} (ht : t ≠ 0) (hσt : ‖t‖ ≤ ‖σ t‖) {w : F}
+    {v : E} {c : ℝ} (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) :
+    ‖(σ t)⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
+  have hσ : σ t ≠ 0 := (map_ne_zero σ).2 ht
+  have : (σ t)⁻¹ • w - L v = (σ t)⁻¹ • (w - L (t • v)) := by
+    rw [map_smulₛₗ, smul_sub, inv_smul_smul₀ hσ]
+  rw [this, norm_smul, norm_inv]
+  rw [norm_smul] at h
+  have hcv : 0 ≤ c * ‖v‖ := (mul_nonneg_iff_of_pos_left (norm_pos_iff.2 ht)).1 <| by
+    linarith [norm_nonneg (w - L (t • v))]
+  calc ‖σ t‖⁻¹ * ‖w - L (t • v)‖ ≤ ‖σ t‖⁻¹ * (c * (‖t‖ * ‖v‖)) := by gcongr
+    _ = ‖t‖ / ‖σ t‖ * (c * ‖v‖) := by ring
+    _ ≤ 1 * (c * ‖v‖) := by gcongr; exact div_le_one_of_le₀ hσt (norm_nonneg _)
+    _ = c * ‖v‖ := one_mul _
+
+end Rescale
+
+end LinearMap
 
 end

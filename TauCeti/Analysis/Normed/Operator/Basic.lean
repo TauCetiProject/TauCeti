@@ -88,11 +88,9 @@ normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squ
 (`TauCeti.prodMap_mul_self_eq_neg_one`), and `a + J b = y` holds exactly when `b - J a = -J y`
 (`ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply`).
 
-Two first-order estimates for semilinear maps: an estimate `‖w - L (t v)‖ ≤ c ‖t v‖` with
-`t ≠ 0` and `‖t‖ ≤ ‖σ t‖` rescales to `‖(σ t)⁻¹ w - L v‖ ≤ c ‖v‖`
-(`LinearMap.norm_inv_smul_sub_le`, which needs no continuity),
-and if `B` sends `y` to `v`, with `‖B‖ ≤ K`, and `u` is within `ε' ‖v‖` of `y`, where `0 ≤ ε'` and
-`K ε' ≤ 1 / 2`, then any `B'` close to `B` sends `u` close to `v`
+A first-order estimate for continuous semilinear maps `B B' : F →SL[σ] E` over the same isometric
+scalar homomorphism `σ`: if `B` sends `y` to `v`, with `‖B‖ ≤ K`, and `u` is within `ε' ‖v‖` of
+`y`, where `0 ≤ ε'` and `K ε' ≤ 1 / 2`, then any `B'` close to `B` sends `u` close to `v`
 (`ContinuousLinearMap.norm_sub_apply_le_of_apply_eq`).
 
 If `a₀ ‖w‖² ≤ g w` and `‖S‖ ≤ m`, then `‖p‖² + ‖q‖² + ‖v‖²` is bounded by
@@ -587,10 +585,9 @@ end Support
 theorem opNorm_le_sqrt_of_forall_sq_norm_le {𝕜₂ Z : Type*} [NontriviallyNormedField 𝕜₂]
     [SeminormedAddCommGroup Z] [NormedSpace 𝕜₂ Z] {σ : 𝕜 →+* 𝕜₂} (T : X →SL[σ] Z) {c : ℝ}
     (h : ∀ x, ‖T x‖ ^ 2 ≤ c * ‖x‖ ^ 2) : ‖T‖ ≤ Real.sqrt c :=
-  T.opNorm_le_bound (Real.sqrt_nonneg _) fun x ↦
-    calc ‖T x‖ = Real.sqrt (‖T x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg _)).symm
-      _ ≤ Real.sqrt (c * ‖x‖ ^ 2) := Real.sqrt_le_sqrt (h x)
-      _ = Real.sqrt c * ‖x‖ := by rw [Real.sqrt_mul' _ (sq_nonneg _), Real.sqrt_sq (norm_nonneg _)]
+  T.opNorm_le_bound (Real.sqrt_nonneg _) fun x ↦ by
+    simpa only [Real.sqrt_mul' _ (sq_nonneg _), Real.sqrt_sq (norm_nonneg _)] using
+      Real.le_sqrt_of_sq_le (h x)
 
 end ContinuousLinearMap
 
@@ -714,36 +711,6 @@ end
 
 end TauCeti
 
-namespace LinearMap
-
-section Rescale
-
-variable {𝕜 𝕜₂ E F : Type*} [NormedDivisionRing 𝕜] [NormedDivisionRing 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
-  [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [Module 𝕜 E] [Module 𝕜₂ F]
-  [NormSMulClass 𝕜 E] [NormSMulClass 𝕜₂ F]
-
-/-- A first-order estimate at `t • v` rescales to one at `v`: if `w` is within `c ‖t • v‖` of
-`L (t • v)` for a semilinear map `L`, with `t ≠ 0` and `‖t‖ ≤ ‖σ t‖`, then `(σ t)⁻¹ • w` is
-within `c ‖v‖` of `L v`. -/
-theorem norm_inv_smul_sub_le {t : 𝕜} (ht : t ≠ 0) (hσt : ‖t‖ ≤ ‖σ t‖) {w : F} {v : E}
-    {L : E →ₛₗ[σ] F} {c : ℝ} (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) :
-    ‖(σ t)⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
-  have hσ : σ t ≠ 0 := (map_ne_zero σ).2 ht
-  have : (σ t)⁻¹ • w - L v = (σ t)⁻¹ • (w - L (t • v)) := by
-    rw [map_smulₛₗ, smul_sub, inv_smul_smul₀ hσ]
-  rw [this, norm_smul, norm_inv]
-  rw [norm_smul] at h
-  have hcv : 0 ≤ c * ‖v‖ := (mul_nonneg_iff_of_pos_left (norm_pos_iff.2 ht)).1 <| by
-    linarith [norm_nonneg (w - L (t • v))]
-  calc ‖σ t‖⁻¹ * ‖w - L (t • v)‖ ≤ ‖σ t‖⁻¹ * (c * (‖t‖ * ‖v‖)) := by gcongr
-    _ = ‖t‖ / ‖σ t‖ * (c * ‖v‖) := by ring
-    _ ≤ 1 * (c * ‖v‖) := by gcongr; exact div_le_one_of_le₀ hσt (norm_nonneg _)
-    _ = c * ‖v‖ := one_mul _
-
-end Rescale
-
-end LinearMap
-
 namespace ContinuousLinearMap
 
 variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
@@ -775,9 +742,10 @@ variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [Nontri
   [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [NormedSpace 𝕜₁ E] [NormedSpace 𝕜₂ F]
   {σ : 𝕜₂ →+* 𝕜₁} [RingHomIsometric σ]
 
-/-- Let `B` send `y` to `v`, with `‖B‖ ≤ K`, let `u` be within `ε' ‖v‖` of `y`, where `0 ≤ ε'` and
-`K ε' ≤ 1 / 2`, and let `B'` be within `η` of `B`. Then `v` is within `(2 K² ε' + η) ‖u‖` of
-`B' u`. Typically `B` inverts an operator `T` on `v` and `y = T v`. -/
+/-- Let `B B' : F →SL[σ] E` be continuous semilinear maps over the same isometric scalar
+homomorphism `σ`. Let `B` send `y` to `v`, with `‖B‖ ≤ K`, let `u` be within `ε' ‖v‖` of `y`, where
+`0 ≤ ε'` and `K ε' ≤ 1 / 2`, and let `B'` be within `η` of `B`. Then `v` is within
+`(2 K² ε' + η) ‖u‖` of `B' u`. Typically `B` inverts an operator `T` on `v` and `y = T v`. -/
 theorem norm_sub_apply_le_of_apply_eq {B B' : F →SL[σ] E} {y u : F} {v : E}
     {K ε' η : ℝ} (hBy : B y = v) (hB : ‖B‖ ≤ K) (hKε : K * ε' ≤ 1 / 2) (hε' : 0 ≤ ε')
     (hu : ‖u - y‖ ≤ ε' * ‖v‖) (hη : ‖B' - B‖ ≤ η) :

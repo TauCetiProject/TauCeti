@@ -26,13 +26,6 @@ so `L` moves each coordinate of `v` little when it is close to the identity.
 
 The map `x ↦ (x, f x)` into a product, the derivative of a graph map, has operator norm at most
 `max 1 ‖f‖` (`ContinuousLinearMap.opNorm_id_prod_le`).
-
-For a linear map `L` on a finite product `ι → R` over a seminormed ring, a bound `M` on its values
-at the coordinate vectors bounds every value: `‖L v‖ ≤ #ι * ‖v‖ * M` for the sup norm
-(`LinearMap.norm_apply_le_card_mul_norm_mul`). This coordinate bound is adapted from
-[KLS](https://github.com/human-ai-mathematics/kls-lean), commit
-`65810c73f9dd7945fc646ab484cb19d673f5291d`,
-`formalization/FunctionalInequalities/Analysis/Sard/Disk.lean`.
 -/
 
 public section
@@ -95,24 +88,4 @@ theorem norm_apply_snd_sub_snd_le (L : E × F →L[𝕜] E × F) (v : E × F) :
   (_root_.norm_snd_le ((L - 1) v)).trans ((L - 1).le_opNorm v)
 
 end ContinuousLinearMap
-
-namespace LinearMap
-
-/-- A bound `M` on the values of a linear map at the coordinate vectors of a finite product
-`ι → R` bounds its value at every vector `v` by `#ι * ‖v‖ * M`, for the sup norm. -/
-theorem norm_apply_le_card_mul_norm_mul {ι R F : Type*} [Fintype ι] [DecidableEq ι]
-    [SeminormedRing R] [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul R F]
-    (L : (ι → R) →ₗ[R] F) (v : ι → R) {M : ℝ} (h : ∀ j, ‖L (Pi.single j 1)‖ ≤ M) :
-    ‖L v‖ ≤ Fintype.card ι * ‖v‖ * M := by
-  -- Expand `v` in the coordinate vectors.
-  have hv : L v = ∑ j, v j • L (Pi.single j 1) := by
-    conv_lhs => rw [← Finset.univ_sum_single v]
-    simp only [map_sum, ← map_smul, ← Pi.single_smul', smul_eq_mul, mul_one]
-  calc ‖L v‖ ≤ ∑ j, ‖v j‖ * ‖L (Pi.single j 1)‖ :=
-        hv ▸ norm_sum_le_of_le _ fun j _ ↦ norm_smul_le _ _
-    _ ≤ ∑ _j : ι, ‖v‖ * M := Finset.sum_le_sum fun j _ ↦
-        mul_le_mul (norm_le_pi_norm v j) (h j) (norm_nonneg _) (norm_nonneg _)
-    _ = Fintype.card ι * ‖v‖ * M := by simp [mul_assoc]
-
-end LinearMap
 

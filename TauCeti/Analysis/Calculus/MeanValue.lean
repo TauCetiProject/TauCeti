@@ -19,7 +19,7 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Order.IntermediateValue
-import TauCeti.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Mean value estimates
@@ -656,7 +656,7 @@ theorem Differentiable.abs_sub_le_of_basis_bound {P : Type*}
         (mul_le_mul_of_nonneg_right (hbound _ hball) (norm_nonneg _))
     have hcoord_bound := LinearMap.norm_apply_le_card_mul_norm_mul
       (fderiv ℝ f (φ (a + t • (b - a)))).toLinearMap (fderiv ℝ φ (a + t • (b - a)) (b - a))
-      fun j ↦ (Real.norm_eq_abs _).trans_le (hcoord t ht j)
+      (fun _ ↦ le_rfl) fun j ↦ (Real.norm_eq_abs _).trans_le (hcoord t ht j)
     have hscalar : |g' t| ≤ n * ‖fderiv ℝ φ (a + t • (b - a)) (b - a)‖ * D := by
       simpa only [g', Fintype.card_fin, Real.norm_eq_abs, ContinuousLinearMap.coe_coe]
         using hcoord_bound

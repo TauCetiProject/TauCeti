@@ -271,9 +271,7 @@ theorem norm_sum_apply_apply_le {τ : 𝕜 →+* 𝕜₃} [RingHomIsometric τ] 
     ‖∑ i ∈ s, A (v i) (v i)‖ ≤ s.card * ‖A‖ := by
   refine (norm_sum_le _ _).trans <|
     (Finset.sum_le_card_nsmul _ _ _ fun i hi ↦ ?_).trans_eq (nsmul_eq_mul _ _)
-  calc ‖A (v i) (v i)‖ ≤ ‖A‖ * ‖v i‖ * ‖v i‖ := A.le_opNorm₂ _ _
-    _ ≤ ‖A‖ * 1 * 1 := by gcongr <;> exact hv i hi
-    _ = ‖A‖ := by ring
+  simpa only [mul_one] using A.le_of_opNorm₂_le_of_le le_rfl (hv i hi) (hv i hi)
 
 /-- A Young-type bound for a continuous map `B` of two variables, semilinear in each argument with
 respect to isometric scalar homomorphisms: for every `c > 0`,
