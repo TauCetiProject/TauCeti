@@ -337,6 +337,47 @@ theorem constantTensorIso_inv_app {X : TopCat.{v₁}} (K : LocalCoefficientSyste
     (constantTensorIso K).inv.app x = (λ_ (K.obj x)).inv :=
   (rfl)
 
+/-- The identification `S ⊗ K ≅ K` is natural in `K`. This is `leftUnitor_naturality` with the
+unit written as the constant system, so that it rewrites against `constantTensorIso`. -/
+@[reassoc]
+theorem constantTensorIso_hom_naturality {X : TopCat.{v₁}}
+    {K K' : LocalCoefficientSystem.{w, v₁, w} S X} (η : K ⟶ K') :
+    (constantFunctor X).obj (ModuleCat.of S S) ◁ η ≫ (constantTensorIso K').hom =
+      (constantTensorIso K).hom ≫ η :=
+  leftUnitor_naturality η
+
+/-- Pulling back the identification `S ⊗ K ≅ K` along `f` gives the identification
+`S ⊗ f^*K ≅ f^*K`, after the comparison `S ⊗ f^*K ≅ f^*(S ⊗ K)`. -/
+@[reassoc]
+theorem pullbackConstantTensorIso_hom_map_constantTensorIso_hom {X : TopCat.{v₁}}
+    {Y : TopCat.{v₂}} (f : C(X, Y)) (K : LocalCoefficientSystem.{w, v₂, w} S Y) :
+    (pullbackConstantTensorIso f (ModuleCat.of S S) K).hom ≫
+        (pullback f).map (constantTensorIso K).hom =
+      (constantTensorIso ((pullback f).obj K)).hom := by
+  ext x : 2
+  simp only [NatTrans.comp_app, pullbackConstantTensorIso_hom_app, pullback_map_app,
+    constantTensorIso_hom_app]
+  -- Both sides are the left unitor of the fibre `K.obj (f x)`, read on `(f^*K).obj x`.
+  rfl
+
+/-- The pullback tensor comparison along a composite `g ∘ f` is the comparison along `g` pulled
+back along `f`, followed by the comparison along `f`, after the identifications
+`(g ∘ f)^* ≅ f^* g^*`. -/
+@[reassoc]
+theorem pullbackTensorIso_pullbackCompIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z : TopCat.{v₃}}
+    (f : C(X, Y)) (g : C(Y, Z)) (L K : LocalCoefficientSystem.{w, v₃, w} S Z) :
+    (pullbackCompIso f g).inv.app (L ⊗ K) ≫ (pullbackTensorIso (g.comp f) L K).hom ≫
+        ((pullbackCompIso f g).hom.app L ⊗ₘ (pullbackCompIso f g).hom.app K) =
+      (pullback f).map (pullbackTensorIso g L K).hom ≫
+        (pullbackTensorIso f ((pullback g).obj L) ((pullback g).obj K)).hom := by
+  ext x : 2
+  simp only [NatTrans.comp_app, pullbackCompIso_inv_app_app, pullbackTensorIso_hom_app,
+    Monoidal.tensorHom_app, pullbackCompIso_hom_app_app, pullback_map_app]
+  -- Every component is an identity, but on fibres at `(g ∘ f) x` and `g (f x)`, which agree only
+  -- by unfolding `FundamentalGroupoid.map`; so `rw` cannot remove the identity composites (its
+  -- motive is ill-typed), and `exact` closes the goal up to that unfolding.
+  exact MonoidalCategory.id_tensorHom_id (C := ModuleCat S) _ _
+
 end Tensor
 
 section Homotopy
