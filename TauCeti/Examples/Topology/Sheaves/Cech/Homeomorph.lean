@@ -117,11 +117,9 @@ def liftedSectionClass :=
 
 /-- Transport sends the native class to the class of the actual transported section. -/
 theorem liftedClass_eq : liftedClass.{u,v} = liftedSectionClass.{u,v} := by
-  have h := Topology.cechCohomologyZeroIso_hom_comp_cechCohomologyHomeomorphIso
+  have h := Topology.cechCohomologyZeroIso_hom_comp_cechCohomologyHomeomorphIso_hom_app
     (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
-    (A := ModuleCat.{max (u + 1) (v + 1)} ℂ) liftHomeomorph.{u}
-    pointSheaf.{max u v} liftedSheaf.{u,v} (𝟙 _)
-  erw [CategoryTheory.Functor.map_id, Category.comp_id, NatTrans.id_app, Category.comp_id] at h
+    liftHomeomorph.{u} pointSheaf.{max u v}
   exact congrArg (fun f ↦ f.hom oneSection.{max u v}) h
 
 /-- The actual transported cohomology class remains nonzero. -/
@@ -159,7 +157,7 @@ theorem gammaTransportClass_eq : gammaTransportClass.{u,v} = liftedClass.{u,v} :
   have h : γ.hom ≫ c.hom ≫ d.hom = g.hom ≫ γ'.hom ≫ c'.hom :=
     ((Category.assoc _ _ _).symm.trans
       (((sectionsIsoCechZero_hom F).symm =≫ d.hom).trans
-        ((sectionsIsoCechZero_hom_comp_cechCohomologyHomeomorphIso
+        ((sectionsIsoCechZero_hom_comp_cechCohomologyHomeomorphIso_hom_app
           (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
           liftHomeomorph.{u} F).trans (g.hom ≫= sectionsIsoCechZero_hom liftedSheaf.{u,v}))))
   have he := ConcreteCategory.congr_hom h (γ.inv oneSection.{max u v})
@@ -523,7 +521,7 @@ theorem disconnectedSplit_delta_transport (n : ℕ) :
         (Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)) n).hom.app disconnectedSplit.X₃.obj ≫
           (disconnectedSplit_shortExact.map_of_exact E.functor).cechCohomologyδ
             (X := TopCat.of disconnectedBase) (R := ℂ) n :=
-  disconnectedSplit_shortExact.cechCohomologyδ_comp_cechCohomologyHomeomorphIso
+  disconnectedSplit_shortExact.cechCohomologyδ_comp_cechCohomologyHomeomorphIso_hom_app
     (X := TopCat.of disconnectedBase) (Y := TopCat.of disconnectedBase)
     (Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)) n
 
@@ -636,7 +634,7 @@ example :
           (P.map (eqToHom h.opensCongr.symm.map_top).op) ≫
         cechAugmentation (puncturedCover.mapHomeomorph h).opens isTerminalTop
           (h.opensCongr.equivalence.inverse.op ⋙ P) :=
-  cechAugmentation_comp_cechComplexHomeomorphIso
+  cechAugmentation_comp_cechComplexHomeomorphIso_hom_app
     (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
     (A := ModuleCat.{max (u + 1) (v + 1)} ℂ) _ _ _
 
@@ -693,10 +691,9 @@ theorem liftedTwiceClass_eq_section :
     exact (ConcreteCategory.comp_apply c.hom (M.map α.hom) oneSection.{max u v}).symm.trans
       ((ConcreteCategory.congr_hom h oneSection.{max u v}).symm.trans
         (ConcreteCategory.comp_apply (α.hom.app (op ⊤)) c.hom oneSection.{max u v}))
-  have ht := Topology.cechCohomologyZeroIso_hom_comp_cechCohomologyHomeomorphIso
+  have ht := Topology.cechCohomologyZeroIso_hom_comp_cechCohomologyHomeomorphIso_hom_app
     (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
-    liftHomeomorph.{u} F liftedSheaf.{u,v} (𝟙 _)
-  erw [CategoryTheory.Functor.map_id, Category.comp_id, NatTrans.id_app, Category.comp_id] at ht
+    liftHomeomorph.{u} F
   let d := (cechCohomologyHomeomorphIso
     (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
     (A := ModuleCat.{max (u + 1) (v + 1)} ℂ) liftHomeomorph.{u} 0).hom.app F.obj

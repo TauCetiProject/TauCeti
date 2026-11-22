@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Chart
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -58,6 +59,10 @@ needs no closedness of `ω` and no inner product on `E`, and for a symplectic ch
   uniformly off a finite set `Z` of bubbling points, with derivatives bounded on compact subsets
   of the complement and Floer energy at least a fixed `δ > 0` concentrating at each point of `Z`.
   The solutions themselves converge pointwise off `Z` in `M`.
+* **The energy over a window** (in the namespace `TauCeti.SmoothTwoForm`,
+  `integrableOn_and_setIntegral_floerEnergyDensity_le`): a bound on the energy over an open set
+  `S` bounds the Bochner integral of a nonnegative energy density over every measurable `Ω ⊆ S`,
+  which is the form of an energy bound the compactness theorems take.
 
 The coordinate compactness theorem for a finite-dimensional normed target (in the namespace
 `TauCeti.Floer`,
@@ -156,8 +161,9 @@ variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ} {u : ℝ ×
 of the chart at `α`, the coordinate expression of `ω` on a vector `a` and its image under the
 structure `J(z, ·)` read in the chart is `ω(a', J(z, x) a')`, at the point
 `x = (extChartAt I α).symm y` and for the tangent vector `a'` at `x` with tangent coordinate `a`. -/
-theorem inChartAt_apply_almostComplexInChartAt (ω : SmoothTwoForm I M) {y : E}
-    (hy : y ∈ (extChartAt I α).target) (z : ℝ × ℝ) (a : E) :
+theorem inChartAt_apply_almostComplexInChartAt {P : Type*}
+    {J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)} (ω : SmoothTwoForm I M) {y : E}
+    (hy : y ∈ (extChartAt I α).target) (z : P) (a : E) :
     RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α y
         ![a, Floer.almostComplexInChartAt I α J (z, y) a] =
       SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
@@ -243,13 +249,15 @@ theorem IsNondegenerate.floerEnergyDensity_nonneg_of_tames_inChartAt (hω : ω.I
   exact floerEnergyDensity_nonneg hω hJ h
 
 /-- **The energy form is comparable to the chart norm, uniformly on a compact window.** Let the
-structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `D × K`, for
-compact `D ⊆ ℝ × ℝ` and a compact set `K` of chart coordinates. There are constants `c > 0` and `C`
-such that at every point `x` with chart coordinate `y ∈ K`, and for every `z ∈ D`, the energy form
-`ω_x(a, J(z, x) a)` of the tangent vector `a` with tangent coordinate `ξ` in the chart at `α`
-satisfies `c ‖ξ‖² ≤ ω_x(a, J(z, x) a) ≤ C ‖ξ‖²`. -/
-theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq
-    (hω : ω.IsNondegenerate) (α : M) {D : Set (ℝ × ℝ)} {K : Set E} (hD : IsCompact D)
+structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `D × K`, for a
+compact set `D` of parameters, such as a compact window of the domain `ℝ × ℝ` or a compact family
+of almost complex structures, and a compact set `K` of chart coordinates. There are constants
+`c > 0` and `C` such that at every point `x` with chart coordinate `y ∈ K`, and for every `z ∈ D`,
+the energy form `ω_x(a, J(z, x) a)` of the tangent vector `a` with tangent coordinate `ξ` in the
+chart at `α` satisfies `c ‖ξ‖² ≤ ω_x(a, J(z, x) a) ≤ C ‖ξ‖²`. -/
+theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq {P : Type*}
+    [TopologicalSpace P] {J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    (hω : ω.IsNondegenerate) (α : M) {D : Set P} {K : Set E} (hD : IsCompact D)
     (hK : IsCompact K) (hKα : K ⊆ (extChartAt I α).target)
     (hJ : ContinuousOn (Floer.almostComplexInChartAt I α J) (D ×ˢ K))
     (hJt : ∀ z ∈ D, ∀ y ∈ K, (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames
@@ -472,15 +480,10 @@ theorem integrableOn_and_setIntegral_floerEnergyDensity_le (ω : SmoothTwoForm I
     (hf0 : ∀ z ∈ Ω, 0 ≤ ω.floerEnergyDensity Ks Kt u z) {E : ℝ} (hE0 : 0 ≤ E)
     (hE : ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≤ ENNReal.ofReal E) :
     IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω ∧
-      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E := by
-  have hf0' := ae_restrict_of_forall_mem (μ := volume) hΩ hf0
-  have hlin := (lintegral_mono_set hΩS).trans hE
-  have hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω :=
-    ⟨((ω.continuousOn_floerEnergyDensity hS hu hXs hXt).mono hΩS).aestronglyMeasurable hΩ,
-      (hasFiniteIntegral_iff_ofReal hf0').2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
-  refine ⟨hint, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae hf0' hint.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
+      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E :=
+  integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le
+    (((ω.continuousOn_floerEnergyDensity hS hu hXs hXt).mono hΩS).aestronglyMeasurable hΩ)
+    (ae_restrict_of_forall_mem hΩ hf0) hΩS hE0 hE
 
 end SmoothTwoForm
 

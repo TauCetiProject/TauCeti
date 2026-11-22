@@ -6,9 +6,6 @@ Authors: Kim Morrison
 module
 
 public import Mathlib.Topology.Sheaves.SheafCondition.Sites
-public import Mathlib.CategoryTheory.Sites.Equivalence
-public import Mathlib.CategoryTheory.Sites.GlobalSections
-public import Mathlib.CategoryTheory.Whiskering
 public import TauCeti.CategoryTheory.Sites.Whiskering
 
 /-!
@@ -46,16 +43,6 @@ instance opensCongr_isDenseSubsite :
       obtain ⟨V, f, hf, hv⟩ := hS (h y) hy
       exact ⟨h.symm.opensCongr V, h.symm.opensCongr.equivalence.functor.map f,
         ⟨V, f, 𝟙 _, hf, (Category.id_comp _).symm⟩, hv⟩
-
-/-- Inverse precomposition preserves the sectionwise addition of sheaf morphisms. -/
-instance sheafCongr_additive (A : Type a) [Category.{b} A] [Preadditive A] :
-    (h.opensCongr.equivalence.sheafCongr
-      (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y) A).functor.Additive where
-  map_add := by
-    intro F G α β
-    -- The native equivalence precomposes the original sectionwise morphisms.
-    ext U
-    rfl
 
 variable (A : Type a) [Category.{b} A]
 

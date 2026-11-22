@@ -169,6 +169,7 @@ theorem mapHomeomorph_refl (U : PointOpenCover X) :
   rfl
 
 /-- Successive homeomorphisms transport the same actual neighborhoods as their composite. -/
+@[simp]
 theorem mapHomeomorph_trans {Z : Type*} [TopologicalSpace Z]
     (h : X ≃ₜ Y) (k : Y ≃ₜ Z) (U : PointOpenCover X) :
     (U.mapHomeomorph h).mapHomeomorph k = U.mapHomeomorph (h.trans k) := by
@@ -176,7 +177,6 @@ theorem mapHomeomorph_trans {Z : Type*} [TopologicalSpace Z]
   rfl
 
 /-- Transporting through a homeomorphism and back recovers the same native cover. -/
-@[simp]
 theorem mapHomeomorph_symm_mapHomeomorph (h : X ≃ₜ Y) (U : PointOpenCover X) :
     (U.mapHomeomorph h).mapHomeomorph h.symm = U := by
   ext x z

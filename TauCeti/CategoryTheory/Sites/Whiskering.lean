@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import Mathlib.CategoryTheory.Sites.Equivalence
 public import Mathlib.CategoryTheory.Sites.GlobalSections
 public import Mathlib.CategoryTheory.Sites.Whiskering
 
@@ -54,3 +55,16 @@ noncomputable def ΓCompIsoSheafComposeCompΓ : Γ J A ⋙ F ≅ sheafCompose J 
     Functor.isoWhiskerLeft (sheafCompose J F) (ΓNatIsoSheafSections J B hT).symm
 
 end CategoryTheory.Sheaf
+
+namespace CategoryTheory.Equivalence
+
+variable {C : Type*} [Category* C] {D : Type*} [Category* D]
+  (e : C ≌ D) (J : GrothendieckTopology C) (K : GrothendieckTopology D)
+  (A : Type*) [Category* A] [Preadditive A] [e.inverse.IsDenseSubsite K J]
+
+/-- A site equivalence preserves the sectionwise addition of sheaf morphisms. -/
+instance sheafCongr_additive : (e.sheafCongr J K A).functor.Additive := by
+  unfold sheafCongr sheafCongr.functor
+  infer_instance
+
+end CategoryTheory.Equivalence
