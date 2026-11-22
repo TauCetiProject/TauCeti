@@ -14,7 +14,7 @@ import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.LFunctions.Zeros.ZeroFreeRegion.RiemannZeta
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne

@@ -11,7 +11,7 @@ import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Complex.LocalLogDeriv
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
 

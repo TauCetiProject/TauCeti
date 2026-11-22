@@ -11,7 +11,7 @@ public import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Complex.LocalLogDeriv
 import TauCeti.Analysis.RCLike.Basic
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.LSeries.DirichletEulerLog
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne

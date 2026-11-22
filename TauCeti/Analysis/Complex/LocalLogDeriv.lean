@@ -122,16 +122,15 @@ private lemma exists_factor_logDeriv_eq {z : ℂ}
   have hfin : D.support.Finite := D.finiteSupport (isCompact_closedBall _ _)
   have hD (ρ : ℂ) : 0 ≤ D ρ := (hf.mono (closedBall_subset_closedBall hrR)).divisor_nonneg ρ
   refine ⟨G, hfin, hD, Function.FactorizedRational.finprod_apply_eq_prod hfin, hG, hG0, hfG, ?_⟩
-  let P : ℂ → ℂ := ∏ᶠ ρ, (· - ρ) ^ D ρ
   have hDz : D z = 0 := (hf z (ball_subset_closedBall hzR)).divisor_apply_eq_zero hfz
-  have hPz : P z ≠ 0 := Function.FactorizedRational.ne_zero hDz
-  have hlogf : logDeriv f z = logDeriv P z + logDeriv G z := by
-    have hfPG : f = P * G := funext fun w ↦ congrFun hglobal w
-    rw [hfPG,
-      logDeriv_mul z hPz (hG0 z (ball_subset_closedBall hzb))
-        (Function.FactorizedRational.analyticAt (hD z)).differentiableAt
-        (hG z (ball_subset_closedBall hzR)).differentiableAt]
-  rw [hlogf, ← Function.FactorizedRational.logDeriv_eq_finsum hfin hDz, add_sub_cancel_left]
+  have hfPG : f =ᶠ[𝓝 z] (∏ᶠ ρ, (· - ρ) ^ D ρ) * G :=
+    .of_eq (funext fun w ↦ congrFun hglobal w)
+  have h := Function.FactorizedRational.logDeriv_sub_sum_eq hfin hDz
+    (hG z (ball_subset_closedBall hzR)).differentiableAt (hG0 z (ball_subset_closedBall hzb)) hfPG
+  rw [← finsum_eq_sum_of_support_subset (fun ρ ↦ (D ρ : ℂ) / (z - ρ))
+    (s := hfin.toFinset)
+    (fun ρ hρ ↦ hfin.mem_toFinset.mpr fun hzero ↦ hρ (by simp [hzero]))] at h
+  simpa only [D] using h
 
 -- Sum the logarithmic derivatives of the finite reflected product with integer multiplicities.
 private lemma norm_logDeriv_reflected_prod_le {S : Finset ℂ} {n : ℂ → ℤ} {z : ℂ}
