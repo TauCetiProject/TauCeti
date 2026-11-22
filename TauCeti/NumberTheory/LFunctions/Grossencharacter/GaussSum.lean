@@ -9,8 +9,8 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.NumberTheory.GaussSum
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.FiniteCharacter
+public import TauCeti.NumberTheory.NumberField.AddChar
 import Mathlib.NumberTheory.MulChar.Lemmas
-import TauCeti.Analysis.Complex.Circle
 import TauCeti.NumberTheory.GaussSum.Basic
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
@@ -49,9 +49,8 @@ the element `y = 1/25` does not give an additive character modulo `5` at all.
 
 ## Main definitions
 
-* `Ideal.traceAddChar`: the additive character `x ↦ e^{2πi Tr(x y)}` of `𝓞 K ⧸ I`
-  attached to `y` in the trace dual of `I`.
-* `TauCeti.LFunctions.Grossencharacter.gaussSum`: the Gauss sum `τ(χ, y)`.
+* `TauCeti.LFunctions.Grossencharacter.gaussSum`: the Gauss sum `τ(χ, y)`, built from the trace
+  character `Ideal.traceAddChar` of `TauCeti.NumberTheory.NumberField.AddChar`.
 
 ## Main results
 
@@ -84,119 +83,24 @@ variable {K : Type*} [Field K] [NumberField K]
 
 namespace Ideal
 
-/-! ### The trace character -/
-
-/-- For `y` in the trace dual of an ideal `I`, the trace `Tr(a y)` is an integer at every `a ∈ I`.
--/
-private theorem exists_trace_mul_eq_intCast (I : Ideal (𝓞 K))
-    (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K))
-    {a : 𝓞 K} (ha : a ∈ I) : ∃ n : ℤ, Algebra.trace ℚ K (a * y) = n := by
-  by_cases hI : (I : FractionalIdeal (𝓞 K)⁰ K) = 0
-  · rw [FractionalIdeal.coeIdeal_eq_zero] at hI
-    rw [hI, Ideal.mem_bot] at ha
-    exact ⟨0, by simp [ha]⟩
-  obtain ⟨n, hn⟩ := (FractionalIdeal.mem_dual hI).mp y.property a
-    (FractionalIdeal.mem_coeIdeal_of_mem _ ha)
-  exact ⟨n, by rw [mul_comm, ← Algebra.traceForm_apply, ← hn, eq_intCast]⟩
-
-/-- The function `a ↦ e^{2πi Tr(a y)}` on `𝓞 K ⧸ I`, for `y` in the trace dual of `I`. -/
-private def traceAddCharFun (I : Ideal (𝓞 K))
-    (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) :
-    𝓞 K ⧸ I → ℂ :=
-  _root_.Quotient.lift (fun a : 𝓞 K ↦ ((𝐞 (Algebra.trace ℚ K (a * y) : ℝ) : Circle) : ℂ))
-    fun a b hab ↦ by
-      obtain ⟨n, hn⟩ := exists_trace_mul_eq_intCast I y (Submodule.quotientRel_def I |>.mp hab)
-      have hab' : (Algebra.trace ℚ K (a * y) : ℝ) = Algebra.trace ℚ K (b * y) + n := by
-        have h : (a : K) * y = b * y + ((a - b : 𝓞 K) : K) * y := by push_cast; ring
-        rw [h, map_add, hn, Rat.cast_add, Rat.cast_intCast]
-      rw [hab', AddChar.map_add_eq_mul, Real.fourierChar_eq_one_iff.mpr ⟨n, rfl⟩, mul_one]
-
-private theorem traceAddCharFun_mk (I : Ideal (𝓞 K))
-    (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K))
-    (a : 𝓞 K) :
-    traceAddCharFun I y (Ideal.Quotient.mk I a) = 𝐞 (Algebra.trace ℚ K (a * y) : ℝ) :=
-  (rfl)
-
-/-- **The trace character of `y`**: the additive character `x ↦ e^{2πi Tr(x y)}` of `𝓞 K ⧸ I`, for
-`y` in the trace dual `I⁻¹ 𝔡⁻¹` of `I`, on which `Tr(x y)` is an integer for every `x ∈ I`. Its
-values are those of Mathlib's `Real.fourierChar` at the rational trace (`traceAddChar_mk`). -/
-def traceAddChar (I : Ideal (𝓞 K))
-    (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) :
-    AddChar (𝓞 K ⧸ I) ℂ where
-  toFun := traceAddCharFun I y
-  map_zero_eq_one' := by
-    rw [← map_zero (Ideal.Quotient.mk I), traceAddCharFun_mk]
-    simp
-  map_add_eq_mul' x₁ x₂ := by
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x₁
-    obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective x₂
-    rw [← map_add, traceAddCharFun_mk, traceAddCharFun_mk, traceAddCharFun_mk, ← Circle.coe_mul,
-      ← AddChar.map_add_eq_mul]
-    push_cast
-    rw [add_mul, map_add, Rat.cast_add]
-
-/-- **The value of the trace character** at the class of `a` is `e^{2πi Tr(a y)}`. -/
-@[simp]
-theorem traceAddChar_mk (I : Ideal (𝓞 K))
-    (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K))
-    (a : 𝓞 K) :
-    traceAddChar I y (Ideal.Quotient.mk I a) = 𝐞 (Algebra.trace ℚ K (a * y) : ℝ) :=
-  traceAddCharFun_mk I y a
-
-/-- **Shifting the trace character**: the trace character of `a y` is that of `y` shifted by the
-class of `a`, `x ↦ e^{2πi Tr(a x y)}`. -/
-theorem traceAddChar_smul (I : Ideal (𝓞 K)) (a : 𝓞 K)
-    (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) :
-    traceAddChar I (a • y) = (traceAddChar I y).mulShift (Ideal.Quotient.mk I a) := by
-  ext x
-  obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective x
-  rw [AddChar.mulShift_apply, ← map_mul, traceAddChar_mk, traceAddChar_mk, Submodule.coe_smul,
-    Algebra.smul_def]
-  congr 4
-  push_cast
-  ring
-
-/-- The shift of the trace character of `y` by the class of `z` is trivial exactly when `z y` lies
-in the inverse different `𝔡⁻¹ = (𝓞 K)^∨`. -/
-private theorem traceAddChar_mulShift_eq_one_iff (I : Ideal (𝓞 K))
-    (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K))
-    (z : 𝓞 K) :
-    (traceAddChar I y).mulShift (Ideal.Quotient.mk I z) = 1 ↔
-      (z : K) * y ∈ FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
-  have key (b : 𝓞 K) : Algebra.trace ℚ K (((z * b : 𝓞 K) : K) * y) =
-      Algebra.traceForm ℚ K ((z : K) * y) (algebraMap (𝓞 K) K b) := by
-    rw [Algebra.traceForm_apply]
-    push_cast
-    ring_nf
-  have hval (b : 𝓞 K) : (traceAddChar I y).mulShift (Ideal.Quotient.mk I z)
-      (Ideal.Quotient.mk I b) = 1 ↔
-        Algebra.traceForm ℚ K ((z : K) * y) (algebraMap (𝓞 K) K b) ∈ (algebraMap ℤ ℚ).range := by
-    rw [AddChar.mulShift_apply, ← map_mul, traceAddChar_mk, Circle.coe_eq_one,
-      Real.fourierChar_eq_one_iff, key]
-    refine exists_congr fun n ↦ ?_
-    rw [← Rat.cast_intCast, Rat.cast_inj, eq_intCast, eq_comm]
-  rw [FractionalIdeal.mem_dual one_ne_zero, AddChar.eq_one_iff]
-  constructor
-  · intro h a ha
-    obtain ⟨b, rfl⟩ := (FractionalIdeal.mem_one_iff (𝓞 K)⁰).mp ha
-    exact (hval b).mp (h _)
-  · intro h x
-    obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective x
-    exact (hval b).mpr (h _ ((FractionalIdeal.mem_one_iff (𝓞 K)⁰).mpr ⟨b, rfl⟩))
+/-! ### Primitivity of the trace character -/
 
 /-- **Primitivity of the trace character.** The trace character of `y` is primitive exactly when
 every `z ∈ 𝓞 K` with `z y` in the inverse different `𝔡⁻¹ = (𝓞 K)^∨` lies in `I`. -/
 theorem traceAddChar_isPrimitive_iff (I : Ideal (𝓞 K))
     (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) :
-    (traceAddChar I y).IsPrimitive ↔
+    (I.traceAddChar y).IsPrimitive ↔
       ∀ z : 𝓞 K, (z : K) * y ∈ FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) →
         z ∈ I := by
+  -- The shift by the class of `z` is the trace character of `z • y = z y`.
+  have hshift (z : 𝓞 K) : (I.traceAddChar y).mulShift (Ideal.Quotient.mk I z) = 1 ↔
+      (z : K) * y ∈ FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
+    rw [← traceAddChar_smul, traceAddChar_eq_one_iff, Submodule.coe_smul, Algebra.smul_def]
   refine ⟨fun h z hz ↦ ?_, fun h x hx ↦ ?_⟩
   · by_contra hzI
-    exact h (by rwa [Ne, Ideal.Quotient.eq_zero_iff_mem])
-      ((traceAddChar_mulShift_eq_one_iff I y z).mpr hz)
+    exact h (by rwa [Ne, Ideal.Quotient.eq_zero_iff_mem]) ((hshift z).mpr hz)
   · obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [Ne, traceAddChar_mulShift_eq_one_iff]
+    rw [Ne, hshift]
     exact fun hz ↦ hx (Ideal.Quotient.eq_zero_iff_mem.mpr (h z hz))
 
 /-- **The trace character is primitive when `y I 𝔡` is prime to `I`**, `𝔡` the different of `K`:
@@ -276,7 +180,7 @@ theorem gaussSum_eq_sum (χ : Grossencharacter K 𝔪)
   symm
   refine Fintype.sum_of_injective _ Units.val_injective _ _ (fun x hx ↦ ?_) fun x ↦ ?_
   · rw [MulChar.map_nonunit _ fun hu ↦ hx ⟨hu.unit, hu.unit_spec⟩, zero_mul]
-  · rw [← Ideal.traceAddChar_mk, hr]
+  · rw [← hr x, Ideal.traceAddChar_mk, numberFieldTraceChar_apply, hr, mul_comm (y : K)]
 
 /-- **At conductor one the Gauss sum is `1`**: the residue ring has a single element, a unit at
 which the residue character is `1`. -/

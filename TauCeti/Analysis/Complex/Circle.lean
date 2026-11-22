@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Circle
@@ -15,10 +16,12 @@ public import Mathlib.NumberTheory.Real.Irrational
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
@@ -59,18 +62,24 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.denseRange_zpow_of_not_isOfFinOrder`: the integer powers of a point of infinite order are
   dense in the circle.
 * `Circle.exp_neg_arg_mul_self`: rotating `x : ℂ` by `exp (-i arg x)` gives `‖x‖`.
-* `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`.
-* `Real.fourierChar_eq_one_iff`: the Fourier character `𝐞 x = exp (2π i x)` is `1` exactly at
-  the integers.
+* `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`,
+  and `Circle.sq_eq_one_iff`: so are its square roots of unity.
+* `Circle.finite_setOf_sq_eq_one_pi`, `Circle.infinite_setOf_sq_eq_one_pi`: a power of the circle
+  has finitely many elements of order at most two exactly when the exponent is finite. Hence an
+  infinite power of the circle does not embed in a finite one
+  (`MonoidHom.not_injective_pi_circle`, `Circle.isEmpty_pi_mulEquiv_pi`).
 * `Circle.im_coe_eq_zero_iff`: the real points of the circle are `1` and `-1`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
-* `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
-  is differentiable.
+* `Circle.differentiableAt_coe_inv` and `Circle.contDiff_coe_inv`: the pointwise inverse of a
+  differentiable, respectively `Cⁿ`, circle-valued map is differentiable, respectively `Cⁿ`.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
   `unitary ℂ` and the topological group isomorphism `Circle ≃ₜ* unitary ℂ`.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
+* `TauCeti.hasFDerivAt_circleExp_mul_ofReal` and `TauCeti.fderiv_circleExp_mul_ofReal_apply`: the
+  differential of a map `e^{iθ} r` in polar form, with real-valued angle `θ` and radius `r`, is
+  `e^{iθ} (dr + i r dθ)`.
 -/
 
 public section
@@ -257,6 +266,13 @@ theorem differentiableAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace
   simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
     Complex.conjCLE.differentiableAt.comp z hu
 
+/-- The pointwise inverse of a `Cⁿ` circle-valued map, as a map into `ℂ`, is `Cⁿ`. -/
+theorem contDiff_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : WithTop ℕ∞} {u : E → Circle} (hu : ContDiff ℝ n fun w ↦ (u w : ℂ)) :
+    ContDiff ℝ n fun w ↦ ((u⁻¹ w : Circle) : ℂ) := by
+  simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
+    Complex.conjCLE.contDiff.comp hu
+
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/
 def expContinuousMonoidHom : ContinuousMonoidHom (Multiplicative ℝ) Circle where
@@ -294,6 +310,11 @@ theorem coordinate_mem_unitary : coordinate ∈ unitary C(Circle, ℂ) :=
 /-- A point of the circle is its own inverse exactly when it is `1` or `-1`. -/
 theorem inv_eq_self_iff (v : Circle) : v⁻¹ = v ↔ v = 1 ∨ v = -1 := by
   simp [inv_eq_iff_mul_eq_one, ← Circle.coe_inj, mul_self_eq_one_iff]
+
+/-- The square roots of unity on the circle are `1` and `-1`. -/
+@[simp]
+theorem sq_eq_one_iff (v : Circle) : v ^ 2 = 1 ↔ v = 1 ∨ v = -1 := by
+  rw [← inv_eq_self_iff, inv_eq_iff_mul_eq_one, sq]
 
 /-- A point of the circle is real exactly when it is `1` or `-1`. -/
 theorem im_coe_eq_zero_iff (v : Circle) : (v : ℂ).im = 0 ↔ v = 1 ∨ v = -1 := by
@@ -377,7 +398,49 @@ theorem exists_upperSemicircle_eq_or_inv_eq (v : Circle) :
 theorem coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ := by
   simp [Unitary.mem_iff_self_mul_star, RCLike.star_def, RCLike.mul_conj]
 
+/-! ### Elements of order two in powers of the circle -/
+
+/-- In a finite power of the circle only finitely many elements square to `1`: each of their
+coordinates is `1` or `-1`. -/
+theorem finite_setOf_sq_eq_one_pi {κ : Type*} [Finite κ] :
+    {g : κ → Circle | g ^ 2 = 1}.Finite := by
+  refine (Set.Finite.pi (t := fun _ ↦ ({1, -1} : Set Circle)) fun _ ↦ Set.toFinite _).subset ?_
+  intro g hg i _
+  simpa using congrFun hg i
+
+/-- In an infinite power of the circle infinitely many elements square to `1`, for instance all
+the elements whose coordinates are `1` or `-1`. -/
+theorem infinite_setOf_sq_eq_one_pi {ι : Type*} [Infinite ι] :
+    {g : ι → Circle | g ^ 2 = 1}.Infinite := by
+  have hne : (-1 : Circle) ≠ 1 := by
+    simpa [← coe_inj] using (by norm_num : (-1 : ℂ) ≠ 1)
+  have hinj : Function.Injective fun c : Bool ↦ if c then (-1 : Circle) else 1 := by
+    rintro (_ | _) (_ | _) h
+    exacts [rfl, (hne h.symm).elim, (hne h).elim, rfl]
+  refine Set.infinite_of_injective_forall_mem (f := ((fun c : Bool ↦
+    if c then (-1 : Circle) else 1) ∘ ·)) (hinj.comp_left (α := ι)) fun b ↦ ?_
+  funext i
+  rw [Pi.pow_apply, Pi.one_apply, Function.comp_apply]
+  split_ifs <;> simp
+
 end Circle
+
+/-- **An infinite power of the circle does not embed in a finite one**: no homomorphism
+`(ι → S¹) → (κ → S¹)` with `ι` infinite and `κ` finite is injective, since it would map the
+infinitely many elements of the source that square to `1` injectively to elements of the target
+that square to `1`, of which there are finitely many. -/
+theorem MonoidHom.not_injective_pi_circle {ι κ : Type*} [Infinite ι] [Finite κ]
+    (f : (ι → Circle) →* (κ → Circle)) : ¬ Function.Injective f := fun hf ↦
+  Set.infinite_of_injOn_mapsTo (s := {g | g ^ 2 = 1}) (t := {g | g ^ 2 = 1}) hf.injOn
+    (fun g (hg : g ^ 2 = 1) ↦ (by rw [← map_pow, hg, map_one] : f g ^ 2 = 1))
+    Circle.infinite_setOf_sq_eq_one_pi Circle.finite_setOf_sq_eq_one_pi
+
+/-- An infinite power of the circle is not isomorphic, even as an abstract group, to a finite
+one: it has infinitely many elements of order at most two, and a finite power has finitely many
+(`MonoidHom.not_injective_pi_circle`). -/
+theorem Circle.isEmpty_pi_mulEquiv_pi {ι κ : Type*} [Infinite ι] [Finite κ] :
+    IsEmpty ((ι → Circle) ≃* (κ → Circle)) :=
+  ⟨fun e ↦ e.toMonoidHom.not_injective_pi_circle e.injective⟩
 
 namespace TauCeti
 
@@ -408,16 +471,31 @@ theorem hasDerivAt_coe_circleExp (t : ℝ) :
   simp only [Circle.coe_exp]
   simpa [mul_comm] using ((ofRealCLM.hasDerivAt (x := t)).mul_const I).cexp
 
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {θ r : E → ℝ}
+  {θ' r' : E →L[ℝ] ℝ} {x : E}
+
+/-- **The differential of a map in polar form.** If the angle `θ` and the radius `r` are
+differentiable at `x`, then `f = e^{iθ} r` is differentiable at `x`, with differential
+`df_x v = dr_x v • e^{iθ(x)} + dθ_x v • (r(x) i e^{iθ(x)})`. -/
+theorem hasFDerivAt_circleExp_mul_ofReal (hθ : HasFDerivAt θ θ' x) (hr : HasFDerivAt r r' x) :
+    HasFDerivAt (fun y ↦ (Circle.exp (θ y) : ℂ) * (r y : ℂ))
+      (r'.smulRight (Circle.exp (θ x) : ℂ) +
+        θ'.smulRight ((r x : ℂ) * I * Circle.exp (θ x))) x := by
+  refine ((((ofRealCLM.hasFDerivAt.comp x hθ).mul_const' I).cexp.mul
+      (ofRealCLM.hasFDerivAt.comp x hr)).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall fun y ↦ by simp [Circle.coe_exp])).congr_fderiv ?_
+  ext v
+  simp [Circle.coe_exp]
+  ring
+
+/-- The value of the differential of a map `e^{iθ} r` in polar form:
+`df_x v = e^{iθ(x)} (dr_x v + i r(x) dθ_x v)`. -/
+theorem fderiv_circleExp_mul_ofReal_apply (hθ : HasFDerivAt θ θ' x) (hr : HasFDerivAt r r' x)
+    (v : E) :
+    fderiv ℝ (fun y ↦ (Circle.exp (θ y) : ℂ) * (r y : ℂ)) x v =
+      (Circle.exp (θ x) : ℂ) * ((r' v : ℂ) + (r x * θ' v : ℝ) * I) := by
+  rw [(hasFDerivAt_circleExp_mul_ofReal hθ hr).fderiv]
+  simp
+  ring
+
 end TauCeti
-
-namespace Real
-
-open scoped FourierTransform
-
-/-- **The kernel of the Fourier character** `𝐞 x = e^{2πix}` consists of the integers. -/
-theorem fourierChar_eq_one_iff {x : ℝ} : 𝐞 x = 1 ↔ ∃ n : ℤ, x = n := by
-  rw [fourierChar_apply', Circle.exp_eq_one]
-  refine exists_congr fun n ↦ ⟨fun h ↦ ?_, fun h ↦ by rw [h]; ring⟩
-  exact mul_left_cancel₀ (by positivity : 2 * π ≠ 0) (by linarith)
-
-end Real
