@@ -55,8 +55,9 @@ continuous extension `LinearMap.extendOfNorm`.
 * `ProjValMeasure.norm_integral_le`: a pointwise bound on the symbol bounds the operator norm.
 * `ProjValMeasure.norm_integral_diag_sub_le` and `ProjValMeasure.abs_integral_diag_sub_le`:
   Lipschitz bounds for integrals against `P.diag` as a function of the vector.
-* `ProjValMeasure.norm_sq_integral_apply`: the vector norm identity
-  `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`.
+* `ProjValMeasure.norm_sq_integral_apply` and `ProjValMeasure.enorm_sq_integral_apply`: the
+  vector norm identities `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)` and
+  `‖(∫ f dP) ξ‖ₑ ^ 2 = ∫⁻ ‖f x‖ₑ ^ 2 d(P.diag ξ)(x)`.
 * `ProjValMeasure.diag_integral`: the diagonal measure of `(∫ f dP) ξ` is `P.diag ξ` with density
   `x ↦ ‖f x‖ₑ ^ 2`.
 * `ProjValMeasure.integral_apply_eq_zero_iff`: `(∫ f dP) ξ = 0` iff `f = 0` almost everywhere
@@ -432,6 +433,13 @@ theorem diag_integral (P : ProjValMeasure X H) (g : BoundedBorelFunction X) (ξ 
       refine lintegral_congr fun x => ?_
       rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
     _ = ((P.diag ξ).withDensity fun x => ‖g x‖ₑ ^ 2) B := (withDensity_apply _ hB).symm
+
+/-- The squared extended norm of `(∫ g dP) ξ` is the second moment of `‖g‖ₑ` against
+`P.diag ξ`. -/
+theorem enorm_sq_integral_apply (P : ProjValMeasure X H) (g : BoundedBorelFunction X)
+    (ξ : H) :
+    ‖P.integral g ξ‖ₑ ^ 2 = ∫⁻ x, ‖g x‖ₑ ^ 2 ∂(P.diag ξ) := by
+  rw [← P.diag_univ, P.diag_integral, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ]
 
 end ProjValMeasure
 end TauCeti

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Polarization
 public import Mathlib.MeasureTheory.VectorMeasure.Variation.Basic
 import Mathlib.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.VectorMeasure.Variation.Basic
 
 /-!
@@ -179,8 +180,7 @@ theorem polarizedComplexMeasure_variation_apply_le (P : ProjValMeasure X H) (ψ 
     (measurableSet_toMeasurable _ _).inter (measurableSet_toMeasurable _ _)
   have hBE : B ⊆ E := Set.subset_inter (subset_toMeasurable _ _) (subset_toMeasurable _ _)
   have hdiag (v : H) : ‖P.proj E hE v‖ₑ = (P.diag v E) ^ (1 / 2 : ℝ) := by
-    rw [← P.enorm_sq_proj_apply E hE v, ← ENNReal.rpow_two, one_div,
-      ENNReal.rpow_rpow_inv two_ne_zero]
+    rw [← P.enorm_sq_proj_apply E hE v, ENNReal.sq_rpow_one_half]
   have hψE : P.diag ψ E ≤ P.diag ψ B :=
     (measure_mono Set.inter_subset_left).trans_eq (measure_toMeasurable B)
   have hξE : P.diag ξ E ≤ P.diag ξ B :=
@@ -199,9 +199,10 @@ private theorem simpleFunc_lintegral_variation_le (P : ProjValMeasure X H) (ψ �
     (s : SimpleFunc X ℝ≥0∞) :
     s.lintegral (P.polarizedComplexMeasure ψ ξ).variation ≤
       ‖ψ‖ₑ * (∫⁻ t, s t ^ 2 ∂(P.diag ξ)) ^ (1 / 2 : ℝ) := by
+  have hhalf_sq (x : ℝ≥0∞) : (x ^ (1 / 2 : ℝ)) ^ (2 : ℝ) = x := by
+    rw [one_div, ENNReal.rpow_inv_rpow two_ne_zero]
   have hψ : (∑ c ∈ s.range, P.diag ψ (s ⁻¹' {c})) ^ (1 / 2 : ℝ) = ‖ψ‖ₑ := by
-    rw [s.sum_range_measure_preimage_singleton, P.diag_univ, ← ENNReal.rpow_two, one_div,
-      ENNReal.rpow_rpow_inv two_ne_zero]
+    rw [s.sum_range_measure_preimage_singleton, P.diag_univ, ENNReal.sq_rpow_one_half]
   have hξ : ∑ c ∈ s.range, c ^ 2 * P.diag ξ (s ⁻¹' {c}) = ∫⁻ t, s t ^ 2 ∂(P.diag ξ) := by
     rw [← SimpleFunc.map_lintegral (fun c => c ^ 2) s,
       ← (s.map (fun c => c ^ 2)).lintegral_eq_lintegral]
@@ -224,9 +225,8 @@ private theorem simpleFunc_lintegral_variation_le (P : ProjValMeasure X H) (ψ �
     _ = ‖ψ‖ₑ * (∫⁻ t, s t ^ 2 ∂(P.diag ξ)) ^ (1 / 2 : ℝ) := by
         rw [← hψ, ← hξ]
         congr 2 <;> refine Finset.sum_congr rfl fun c _ => ?_
-        · rw [one_div, ENNReal.rpow_inv_rpow two_ne_zero]
-        · rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ENNReal.rpow_two, one_div,
-            ENNReal.rpow_inv_rpow two_ne_zero]
+        · exact hhalf_sq _
+        · rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ENNReal.rpow_two, hhalf_sq]
 
 /-- **Cauchy–Schwarz inequality for the variation of a polarized spectral measure** (in the right
 vector): for every `g : X → ℝ≥0∞` (with no measurability hypothesis),

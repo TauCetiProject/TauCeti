@@ -35,9 +35,11 @@ measure that charges every such interval.
   everywhere convergence of symbols gives strong convergence of their integrals.
 * `ProjValMeasure.tendsto_proj_apply_of_eventually_mem_iff`, `ProjValMeasure.tendsto_proj_apply`,
   `ProjValMeasure.tendsto_proj_apply_iUnion_of_monotone`, and
-  `ProjValMeasure.tendsto_proj_norm_le_apply`: strong convergence of spectral projections along
-  families eventually matching a measurable target set, covering measurable families, monotone
-  families, and norm sublevel sets.
+  `ProjValMeasure.tendsto_proj_norm_le_apply`: strong convergence on `ξ` of spectral projections
+  along families whose membership eventually matches a measurable target set `P.diag ξ`-almost
+  everywhere along a countably generated filter, families covering `P.diag ξ`-almost every point
+  along a countably generated filter, monotone families with measurable union along a preorder
+  with countably generated `atTop`, and norm sublevel sets.
 
 ## References
 
@@ -75,14 +77,12 @@ theorem integral_congr_ae (P : ProjValMeasure X H) {f g : BoundedBorelFunction X
     (h : ⇑f =ᶠ[P.ae] g) : P.integral f = P.integral g :=
   (P.integral_eq_integral_iff f g).2 h
 
-/-- **Dominated convergence** for the integral against a projection-valued measure: if bounded
-Borel symbols `F n` are eventually bounded by a common constant `P`-almost everywhere and
-converge to `f` `P`-almost everywhere, then their integrals converge to the integral of `f`
-strongly, that is on every vector. -/
-theorem tendsto_integral_apply_filter_of_dominated_convergence (P : ProjValMeasure X H)
-    {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated] {F : ι → BoundedBorelFunction X}
-    {f : BoundedBorelFunction X} {M : ℝ} (h_bound : ∀ᶠ n in l, ∀ᶠ x in P.ae, ‖F n x‖ ≤ M)
-    (h_lim : ∀ᶠ x in P.ae, Tendsto (fun n => F n x) l (𝓝 (f x))) (ξ : H) :
+/-- Vectorwise dominated convergence helper with `P.diag ξ`-almost everywhere hypotheses. -/
+private theorem tendsto_integral_apply_filter_of_dominated_convergence_diag
+    (P : ProjValMeasure X H) {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+    {F : ι → BoundedBorelFunction X} {f : BoundedBorelFunction X} {M : ℝ} (ξ : H)
+    (h_bound : ∀ᶠ n in l, ∀ᵐ x ∂P.diag ξ, ‖F n x‖ ≤ M)
+    (h_lim : ∀ᵐ x ∂P.diag ξ, Tendsto (fun n => F n x) l (𝓝 (f x))) :
     Tendsto (fun n => P.integral (F n) ξ) l (𝓝 (P.integral f ξ)) := by
   rw [tendsto_iff_norm_sub_tendsto_zero]
   -- `‖(∫ F n dP - ∫ f dP) ξ‖ ^ 2 = ∫ ‖F n - f‖ ^ 2 d(P.diag ξ)`, which tends to `0` by scalar
@@ -95,46 +95,58 @@ theorem tendsto_integral_apply_filter_of_dominated_convergence (P : ProjValMeasu
       (Eventually.of_forall fun n =>
         (((F n).measurable.sub f.measurable).norm.pow_const 2).aestronglyMeasurable)
       (h_bound.mono fun n hn => by
-        filter_upwards [P.ae_diag_of_ae ξ hn] with x hx
+        filter_upwards [hn] with x hx
         rw [Real.norm_of_nonneg (by positivity)]
         exact pow_le_pow_left₀ (norm_nonneg _)
           ((norm_sub_le _ _).trans (add_le_add hx (f.norm_coe_le_norm x))) 2)
       (integrable_const _)
-      ((P.ae_diag_of_ae ξ h_lim).mono fun x hx => by
+      (h_lim.mono fun x hx => by
         simpa using (tendsto_iff_norm_sub_tendsto_zero.1 hx).pow 2)
   simpa [Real.sqrt_sq (norm_nonneg _)] using hsq.sqrt
 
+/-- **Dominated convergence** for the integral against a projection-valued measure: if bounded
+Borel symbols `F n` are eventually bounded by a common constant `P`-almost everywhere and
+converge to `f` `P`-almost everywhere, then their integrals converge to the integral of `f`
+strongly, that is on every vector. -/
+theorem tendsto_integral_apply_filter_of_dominated_convergence (P : ProjValMeasure X H)
+    {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated] {F : ι → BoundedBorelFunction X}
+    {f : BoundedBorelFunction X} {M : ℝ} (h_bound : ∀ᶠ n in l, ∀ᶠ x in P.ae, ‖F n x‖ ≤ M)
+    (h_lim : ∀ᶠ x in P.ae, Tendsto (fun n => F n x) l (𝓝 (f x))) (ξ : H) :
+    Tendsto (fun n => P.integral (F n) ξ) l (𝓝 (P.integral f ξ)) :=
+  P.tendsto_integral_apply_filter_of_dominated_convergence_diag ξ
+    (h_bound.mono fun _ hn => P.ae_diag_of_ae ξ hn) (P.ae_diag_of_ae ξ h_lim)
+
 /-- If a family of measurable sets `B i` has membership eventually equivalent to membership in a
-measurable set `A` `P`-almost everywhere along a countably generated filter `l`, then the spectral
-projections `P.proj (B i) (hB i)` converge strongly to `P.proj A hA` along `l`. -/
+measurable set `A` `P.diag ξ`-almost everywhere along a countably generated filter `l`, then the
+spectral projections `P.proj (B i) (hB i) ξ` converge to `P.proj A hA ξ` along `l`. -/
 theorem tendsto_proj_apply_of_eventually_mem_iff (P : ProjValMeasure X H) {ι : Type*}
     {l : Filter ι} [l.IsCountablyGenerated] {B : ι → Set X} (hB : ∀ i, MeasurableSet (B i))
-    {A : Set X} (hA : MeasurableSet A) (hlim : ∀ᶠ t in P.ae, ∀ᶠ i in l, (t ∈ B i ↔ t ∈ A))
-    (ξ : H) :
+    {A : Set X} (hA : MeasurableSet A) (ξ : H)
+    (hlim : ∀ᵐ t ∂P.diag ξ, ∀ᶠ i in l, (t ∈ B i ↔ t ∈ A)) :
     Tendsto (fun i => P.proj (B i) (hB i) ξ) l (𝓝 (P.proj A hA ξ)) := by
   let F : ι → BoundedBorelFunction X := fun i => BoundedBorelFunction.indicator (B i) (hB i) 1
   let G : BoundedBorelFunction X := BoundedBorelFunction.indicator A hA 1
-  have hG_lim : ∀ᶠ t in P.ae, Tendsto (fun i => F i t) l (𝓝 (G t)) := by
+  have hG_lim : ∀ᵐ t ∂P.diag ξ, Tendsto (fun i => F i t) l (𝓝 (G t)) := by
     filter_upwards [hlim] with t ht
     simpa only [F, G, BoundedBorelFunction.coe_indicator, BoundedBorelFunction.coe_one,
       Pi.one_def, tendsto_indicator_const_apply_iff_eventually] using ht
   have hlim' : Tendsto (fun i => P.integral (F i) ξ) l (𝓝 (P.integral G ξ)) :=
-    P.tendsto_integral_apply_filter_of_dominated_convergence (M := 1)
+    P.tendsto_integral_apply_filter_of_dominated_convergence_diag (M := 1) ξ
       (Eventually.of_forall fun i => Eventually.of_forall fun t => by
         by_cases ht : t ∈ B i <;> simp [F, ht])
-      hG_lim ξ
+      hG_lim
   simpa only [F, G, P.integral_indicator] using hlim'
 
-/-- If a family of measurable sets `B i` eventually covers `P`-almost every point along a
-countably generated filter `l`, then the spectral projections `P.proj (B i) (hB i)` converge
-strongly to the identity along `l`. -/
+/-- If a family of measurable sets `B i` eventually covers `P.diag ξ`-almost every point along a
+countably generated filter `l`, then the spectral projections `P.proj (B i) (hB i) ξ` converge to
+`ξ` along `l`. -/
 theorem tendsto_proj_apply (P : ProjValMeasure X H) {ι : Type*} {l : Filter ι}
-    [l.IsCountablyGenerated] {B : ι → Set X} (hB : ∀ i, MeasurableSet (B i))
-    (hcov : ∀ᶠ t in P.ae, ∀ᶠ i in l, t ∈ B i) (ξ : H) :
+    [l.IsCountablyGenerated] {B : ι → Set X} (hB : ∀ i, MeasurableSet (B i)) (ξ : H)
+    (hcov : ∀ᵐ t ∂P.diag ξ, ∀ᶠ i in l, t ∈ B i) :
     Tendsto (fun i => P.proj (B i) (hB i) ξ) l (𝓝 ξ) := by
   simpa only [P.proj_univ, ContinuousLinearMap.id_apply] using
-    P.tendsto_proj_apply_of_eventually_mem_iff hB MeasurableSet.univ
-      (hcov.mono fun t ht => ht.mono fun i hi => iff_true_intro hi) ξ
+    P.tendsto_proj_apply_of_eventually_mem_iff hB MeasurableSet.univ ξ
+      (hcov.mono fun t ht => ht.mono fun i hi => iff_true_intro hi)
 
 /-- Along a monotone family of measurable sets indexed by a preorder with countably generated
 `atTop` whose union is measurable, the spectral projections converge strongly to the projection of
@@ -144,11 +156,10 @@ theorem tendsto_proj_apply_iUnion_of_monotone (P : ProjValMeasure X H) {ι : Typ
     (hf : ∀ i, MeasurableSet (f i)) (hU : MeasurableSet (⋃ i, f i)) (hmono : Monotone f)
     (ξ : H) :
     Tendsto (fun i => P.proj (f i) (hf i) ξ) atTop (𝓝 (P.proj (⋃ i, f i) hU ξ)) :=
-  P.tendsto_proj_apply_of_eventually_mem_iff hf hU
+  P.tendsto_proj_apply_of_eventually_mem_iff hf hU ξ
     (Eventually.of_forall fun t =>
       (tendsto_indicator_const_apply_iff_eventually atTop (1 : ℂ) t).1
         ((hmono.tendsto_indicator f (fun _ => (1 : ℂ)) t).mono_right (pure_le_nhds _)))
-    ξ
 
 /-- For a measurable function `f`, the spectral projections `P.proj {t | ‖f t‖ ≤ M}` converge
 strongly to the identity on `H` as `M → ∞`. -/
@@ -156,8 +167,8 @@ theorem tendsto_proj_norm_le_apply {E : Type*} [NormedAddCommGroup E] [Measurabl
     [OpensMeasurableSpace E] (P : ProjValMeasure X H) {f : X → E} (hf : Measurable f) (ξ : H) :
     Tendsto (fun M : ℝ => P.proj {t | ‖f t‖ ≤ M}
       (measurableSet_le hf.norm measurable_const) ξ) atTop (𝓝 ξ) :=
-  P.tendsto_proj_apply (fun _ => measurableSet_le hf.norm measurable_const)
-    (Eventually.of_forall fun t => eventually_ge_atTop ‖f t‖) ξ
+  P.tendsto_proj_apply (fun _ => measurableSet_le hf.norm measurable_const) ξ
+    (Eventually.of_forall fun t => eventually_ge_atTop ‖f t‖)
 
 end ProjValMeasure
 end TauCeti

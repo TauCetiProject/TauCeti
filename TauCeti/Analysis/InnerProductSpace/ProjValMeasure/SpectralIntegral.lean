@@ -44,8 +44,8 @@ on `H`.
   `ProjValMeasure.spectralIntegral_hasCore_iSup_range_proj_norm_le`: the domain of
   `P.spectralIntegral f hf` is dense in `H`, and the supremum of the ranges of any family of
   spectral projections converging strongly to the identity along a nontrivial (`NeBot`) filter and
-  mapping into the domain (in particular `LinearMap.range (P.proj {‖f‖ ≤ n} _)`) is a graph core
-  for `P.spectralIntegral f hf`.
+  mapping into the domain (in particular `⨆ n : ℕ, LinearMap.range (P.proj {‖f‖ ≤ n} _)`)
+  is a graph core for `P.spectralIntegral f hf`.
 * `ProjValMeasure.norm_sq_spectralIntegral_apply` and `ProjValMeasure.diag_spectralIntegral`: the
   second-moment norm identity `‖P.spectralIntegral f hf x‖ ^ 2 = ∫ t, ‖f t‖ ^ 2 ∂(P.diag x)` and
   the diagonal measure density `P.diag (P.spectralIntegral f hf x) = (P.diag x).withDensity _`.
@@ -137,8 +137,7 @@ private theorem cauchy_map_integral_truncate (P : ProjValMeasure X H) {f : X →
   have henorm (g : BoundedBorelFunction X) : ‖P.integral g x‖ₑ = eLpNorm g 2 (P.diag x) := by
     refine ENNReal.rpow_left_injective (show (2 : ℝ) ≠ 0 by norm_num) ?_
     dsimp only
-    rw [ENNReal.rpow_two, ENNReal.rpow_two, ← P.diag_univ, P.diag_integral,
-      withDensity_apply _ MeasurableSet.univ, setLIntegral_univ,
+    rw [ENNReal.rpow_two, ENNReal.rpow_two, P.enorm_sq_integral_apply g x,
       TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow (n := 2) two_ne_zero
         g.measurable.aestronglyMeasurable]
     simp
@@ -251,18 +250,13 @@ theorem integral_apply_mem_spectralIntegral_domain (P : ProjValMeasure X H) {f :
     (hf : Measurable f) (g : BoundedBorelFunction X) {x : H}
     (hx : x ∈ (P.spectralIntegral f hf).domain) :
     P.integral g x ∈ (P.spectralIntegral f hf).domain := by
-  rw [P.mem_spectralIntegral_domain_iff hf, P.diag_integral,
-    lintegral_withDensity_eq_lintegral_mul₀ (g.measurable.eNorm.pow_const 2).aemeasurable
-      (hf.eNorm.pow_const 2).aemeasurable]
-  have hle : ∫⁻ t, ‖g t‖ₑ ^ 2 * ‖f t‖ₑ ^ 2 ∂(P.diag x) ≤
-      ∫⁻ t, ‖g‖ₑ ^ 2 * ‖f t‖ₑ ^ 2 ∂(P.diag x) := by
-    refine lintegral_mono fun t => ?_
-    gcongr
-    exact eNorm_le_iff_norm_le.2 (g.norm_coe_le_norm t)
-  refine hle.trans_lt ?_
-  rw [lintegral_const_mul _ (hf.eNorm.pow_const 2)]
-  exact ENNReal.mul_lt_top (ENNReal.pow_lt_top eNorm_lt_top)
-    ((P.mem_spectralIntegral_domain_iff hf x).1 hx)
+  rw [P.mem_spectralIntegral_domain_iff_memLp hf, P.diag_integral]
+  have hle : (P.diag x).withDensity (fun t => ‖g t‖ₑ ^ 2) ≤ (‖g‖ₑ ^ 2) • P.diag x := by
+    rw [← withDensity_const]
+    exact withDensity_mono (ae_of_all _ fun t => pow_le_pow_left'
+      (eNorm_le_iff_norm_le.2 (g.norm_coe_le_norm t)) 2)
+  exact (((P.mem_spectralIntegral_domain_iff_memLp hf x).1 hx).smul_measure
+    (ENNReal.pow_lt_top eNorm_lt_top).ne).mono_measure hle
 
 /-- Every spectral projection `P.proj B hB` leaves the domain of `P.spectralIntegral f hf`
 invariant. -/
@@ -498,9 +492,9 @@ theorem eq_spectralIntegral_of_domain_of_inner (P : ProjValMeasure X H) {f : X �
     (hdom : ∀ x : H, x ∈ T.domain ↔ ∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag x) < ∞)
     (hinner : ∀ (x : T.domain) (y : H),
       ⟪y, T x⟫_ℂ = ∫ᵛ t, f t ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure y x]) :
-    T = P.spectralIntegral f hf := by
-  refine LinearPMap.ext (Submodule.ext hdom) fun x hx₁ hx₂ => ext_inner_left ℂ fun y => ?_
-  rw [hinner ⟨x, hx₁⟩ y, ← P.inner_spectralIntegral_apply hf ⟨x, hx₂⟩ y]
+    T = P.spectralIntegral f hf :=
+  LinearPMap.ext (Submodule.ext hdom) fun x hx₁ hx₂ =>
+    (P.spectralIntegral_apply_eq_of_inner hf ⟨x, hx₂⟩ (hinner ⟨x, hx₁⟩)).symm
 
 /-! ## Bounded calculus comparison, algebraic properties, `P.ae`-invariance, and reindexing -/
 
@@ -811,11 +805,11 @@ private theorem adjoint_domain_le_spectralIntegral_star (P : ProjValMeasure X H)
   refine (iSup_le (a := ‖(P.spectralIntegral f hf).adjoint y'‖ₑ ^ 2) fun n => ?_).trans_lt
     (ENNReal.pow_lt_top eNorm_lt_top)
   have hdiag : ∫⁻ t, ‖BoundedBorelFunction.truncate f hf n t‖ₑ ^ 2 ∂(P.diag y) =
-      P.diag (P.integral (star (BoundedBorelFunction.truncate f hf n)) y) Set.univ := by
-    rw [P.diag_integral, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ]
-    exact lintegral_congr fun t => by
-      simp only [BoundedBorelFunction.star_apply, ← ofReal_norm, norm_star]
-  rw [hdiag, P.diag_univ, hproj_eq n]
+      ‖P.integral (star (BoundedBorelFunction.truncate f hf n)) y‖ₑ ^ 2 := by
+    rw [P.enorm_sq_integral_apply]
+    refine lintegral_congr fun t => ?_
+    simp only [BoundedBorelFunction.star_apply, ← ofReal_norm, norm_star]
+  rw [hdiag, hproj_eq n]
   exact pow_le_pow_left' (eNorm_le_iff_norm_le.2 (P.norm_proj_apply_le _ _ _)) 2
 
 /-- **Hilbert adjoint of the unbounded spectral integral.** The adjoint of `P.spectralIntegral f hf`
@@ -950,6 +944,7 @@ theorem isSelfAdjoint_spectralIntegral_iff_proj_im_ne_zero_eq_zero (P : ProjValM
   simp only [EventuallyEq, Pi.star_apply, Filter.eventually_iff, hset]
 
 /-- The unbounded spectral integral of a real-valued measurable function is self-adjoint. -/
+@[simp high]
 theorem isSelfAdjoint_spectralIntegral_ofReal (P : ProjValMeasure X H) {f : X → ℝ}
     (hf : Measurable f) :
     IsSelfAdjoint (P.spectralIntegral (fun t => (f t : ℂ))
