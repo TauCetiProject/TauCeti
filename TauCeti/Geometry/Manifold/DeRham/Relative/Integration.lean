@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.Relative.Basic
 public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham
 import TauCeti.Algebra.Homology.Embedding.Extend
+import TauCeti.Algebra.Homology.ModuleCat.LinearYoneda
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 
 /-!
@@ -226,10 +227,8 @@ private theorem hom_extendXIso_hom_extend_d_apply_eq_zero (k : ℕ) {c : 𝒮[M]
         have : (0 : ℤ) ≤ n := Int.natCast_nonneg n
         simp only [ComplexShape.embeddingUpNat_f] at hn
         lia
-    rw [Subsingleton.elim b 0, map_zero, map_zero]
-    -- The zero of the cochain module `Hom(𝒮[W]₀, ℝ)` is the zero morphism, whose underlying linear
-    -- map is zero.
-    exact LinearMap.zero_apply c'
+    rw [Subsingleton.elim b 0, map_zero, map_zero, ChainComplex.linearYonedaObj_hom_zero,
+      LinearMap.zero_apply]
   | succ j =>
     rw [extend_d_comp_extendXIso_hom_apply _ _ (i' := ((j + 1 : ℕ) : ℤ) + -1)
         (j' := ((j + 1 : ℕ) : ℤ)) (i := j) (j := j + 1)
@@ -261,8 +260,7 @@ theorem eval_d (k : ℕ)
   -- complexes, where the cochain `d g` is `g ∘ ∂` and the cochain `g|_W` is `g ∘ ι`.
   have hA : ((extendXIso 𝒞[M] ComplexShape.embeddingUpNat (i := k + 1) (by simp)).hom
       ((𝒞[M].extend ComplexShape.embeddingUpNat).d k ((k : ℤ) + 1) a)).hom c =
-        ((extendXIso 𝒞[M] ComplexShape.embeddingUpNat rfl).hom a).hom
-          ((𝒮[M].d (k + 1) k).hom c) := by
+        ((extendXIso 𝒞[M] ComplexShape.embeddingUpNat rfl).hom a).hom (𝒮[M].d (k + 1) k c) := by
     rw [extend_d_comp_extendXIso_hom_apply _ _ (i' := (k : ℤ)) (j' := (k : ℤ) + 1) (i := k)
         (j := k + 1) rfl (by simp),
       ChainComplex.linearYonedaObj_d_apply]
@@ -270,17 +268,12 @@ theorem eval_d (k : ℕ)
   have hB : ((extendXIso 𝒞[W] ComplexShape.embeddingUpNat rfl).hom
       ((smoothCochainRestriction I W).f k a)).hom c' =
         ((extendXIso 𝒞[M] ComplexShape.embeddingUpNat rfl).hom a).hom
-          (((SSet.chainComplexMap (smoothSingularSubcomplexMap (Subtype.val : W → M)
-            contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).f k).hom c') := by
+          ((SSet.chainComplexMap (smoothSingularSubcomplexMap (Subtype.val : W → M)
+            contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).f k c') := by
     rw [smoothCochainRestriction_f_comp_extendXIso_hom_apply I W (k := k) (p := k) rfl]
     exact ModuleCat.comp_apply _ _ c'
-  -- `hc` is stated with the coercion of morphisms to functions, which for `ModuleCat` is
-  -- definitionally `ModuleCat.Hom.hom`.
-  have hc' : (𝒮[M].d (k + 1) k).hom c = ((SSet.chainComplexMap (smoothSingularSubcomplexMap
-      (Subtype.val : W → M) contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).f k).hom c' := hc
-  -- Subtraction of cochains is subtraction of the underlying linear maps.
-  have hsub (u v : 𝒞[W].X k) : (u - v).hom c' = u.hom c' - v.hom c' := rfl
-  rw [eval_apply, hd, map_sub, hsub, hA, hB, hc', sub_sub_cancel]
+  rw [eval_apply, hd, map_sub, ChainComplex.linearYonedaObj_hom_sub, LinearMap.sub_apply, hA, hB,
+    hc, sub_sub_cancel]
   exact hom_extendXIso_hom_extend_d_apply_eq_zero I W k hc b
 
 /-- **The evaluation formula.** The relative integral of `(α, β)` pairs with `(c, c')` to
