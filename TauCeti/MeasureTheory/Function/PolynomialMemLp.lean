@@ -18,12 +18,14 @@ polynomial is moreover square-integrable:
 
 * `integrable_eval_of_forall_le_natDegree` — a polynomial is integrable, being a finite linear
   combination of monomials, as soon as its monomials up to its degree are integrable, and
-  `integral_eval_eq_sum_range` — under the same hypothesis, its integral is the corresponding
-  combination of moments;
+  `integral_eval_eq_sum_range` — under the same hypothesis, over a normed `ℝ`-algebra, its
+  integral is the corresponding combination of moments (if the algebra is not complete, every
+  Bochner integral is `0` by convention and both sides vanish);
 * `integrable_eval_of_forall_integrable_pow` — the all-moments corollary: every polynomial is
   integrable when every monomial is;
-* `integrable_pow_of_ae_norm_le` — every monomial is integrable against a finite measure
-  concentrated on a bounded set, so such measures satisfy the moment hypothesis;
+* `integrable_pow_of_ae_norm_le` — on a separable normed ring whose σ-algebra contains the open
+  sets, every monomial is integrable against a finite measure concentrated on a bounded set, so
+  such measures satisfy the moment hypothesis;
 * `abs_integral_eval_sub_le` — a real polynomial that approximates a bounded continuous function
   within `δ` on `[-M, M]` has integral within `δ` of that of the function, against a probability
   measure concentrated on `[-R, R]` with `R ≤ M`;
@@ -61,7 +63,9 @@ theorem integrable_eval_of_forall_le_natDegree {q : A[X]}
 
 /-- The integral of a polynomial over a normed `ℝ`-algebra, against a measure against which its
 monomials up to its degree are integrable, is the corresponding linear combination of the moments
-`∫ xᵏ dμ`. -/
+`∫ xᵏ dμ`. If `A` is not complete, every Bochner integral into `A` is `0` by convention, so both
+sides vanish and the identity carries no information; it is meaningful for complete `A`, such as
+`ℝ` or `ℂ`. -/
 theorem integral_eval_eq_sum_range [NormedAlgebra ℝ A] {q : A[X]}
     (hmom : ∀ k ≤ q.natDegree, Integrable (fun x : A => x ^ k) μ) :
     ∫ x, q.eval x ∂μ = ∑ k ∈ Finset.range (q.natDegree + 1), q.coeff k * ∫ x, x ^ k ∂μ := by
@@ -79,9 +83,9 @@ theorem integrable_eval_of_forall_integrable_pow
     Integrable (fun x : A => q.eval x) μ :=
   integrable_eval_of_forall_le_natDegree fun k _ => hmom k
 
-/-- Every monomial is integrable against a finite measure on a separable normed ring that is almost
-everywhere concentrated on the closed ball of radius `R`, so such a measure satisfies the moment
-hypothesis of the results above. -/
+/-- On a separable normed ring `A` whose σ-algebra contains the open sets, every monomial is
+integrable against a finite measure that is almost everywhere concentrated on the closed ball of
+radius `R`, so such a measure satisfies the moment hypothesis of the results above. -/
 theorem integrable_pow_of_ae_norm_le [OpensMeasurableSpace A] [SecondCountableTopology A]
     [IsFiniteMeasure μ] {R : ℝ} (h : ∀ᵐ x ∂μ, ‖x‖ ≤ R) (n : ℕ) :
     Integrable (fun x : A => x ^ n) μ := by
