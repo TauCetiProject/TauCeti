@@ -297,16 +297,19 @@ private theorem exists_unipotentHom_mem_commutator_x_eq (hσ : Function.Involuti
     calc a ^ 2 = a ^ 2 * (σ a)⁻¹ * σ a := (inv_mul_cancel_right₀ hσa (a ^ 2)).symm
       _ = σ a := by rw [h1, one_mul]
   let x₁ : K := c⁻¹ * x
-  obtain ⟨z₁, hz₁⟩ := htr (x₁ * σ x₁) (by simp only [map_mul, hσ x₁]; ring)
-  let u₁ := HeisenbergGroup.unitaryMk σ hσ x₁ z₁ hz₁
+  obtain ⟨u₁, hu₁⟩ := HeisenbergGroup.unitarySubgroup.exists_coe_x_eq hσ (htr 1 (map_one σ)) x₁
   let t : Kˣ := Units.mk0 a ha0
-  have hconj := torusHom_mul_unipotentHom_unitaryMk_mul_inv hσ t x₁ z₁ hz₁
-  set u₂ := HeisenbergGroup.unitaryMk σ hσ ((t : K) ^ 2 * σ ((t⁻¹ : Kˣ) : K) * x₁)
-    ((t : K) * σ (t : K) * z₁) _
+  have hconj := torusHom_mul_unipotentHom_unitaryMk_mul_inv hσ t
+    (u₁ : HeisenbergGroup K).x (u₁ : HeisenbergGroup K).z
+    (HeisenbergGroup.unitarySubgroup.z_add_map_z u₁)
+  rw [HeisenbergGroup.unitaryMk_eta hσ u₁] at hconj
+  set u₂ := HeisenbergGroup.unitaryMk σ hσ
+    ((t : K) ^ 2 * σ ((t⁻¹ : Kˣ) : K) * (u₁ : HeisenbergGroup K).x)
+    ((t : K) * σ (t : K) * (u₁ : HeisenbergGroup K).z) _
   refine ⟨u₂ * u₁⁻¹, ?_, ?_⟩
-  · simp only [u₂, u₁, t, HeisenbergGroup.unitarySubgroup.coe_mul,
+  · simp only [u₂, t, HeisenbergGroup.unitarySubgroup.coe_mul,
       HeisenbergGroup.unitarySubgroup.coe_inv, HeisenbergGroup.coe_unitaryMk,
-      Units.val_mk0, Units.val_inv_eq_inv_val, map_inv₀]
+      Units.val_mk0, Units.val_inv_eq_inv_val, map_inv₀, hu₁]
     calc a ^ 2 * (σ a)⁻¹ * x₁ + -x₁ = c * x₁ := by simp only [c]; ring
       _ = x := mul_inv_cancel_left₀ hc0 x
   · have hb_eq : unipotentHom K σ (u₂ * u₁⁻¹) = ⁅torusHom K σ hσ t, unipotentHom K σ u₁⁆ := by

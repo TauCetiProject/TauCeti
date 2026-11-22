@@ -288,9 +288,10 @@ theorem apply_one_zero_eq_zero_of_mem_borelSubgroup
     ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 0 = 0 := by
   have hg20 := mem_borelSubgroup_iff.mp hg
   have hiso := congrFun (congrFun (Matrix.mem_specialIsometryGroup_iff.mp g.property) 0) 0
+  rw [Matrix.mul_mul_apply, dotProduct_typeAGraphConjugator_two_mulVec] at hiso
   have hmul : σ (((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 0) *
-      ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 0 = 0 := by
-    simpa [Matrix.mul_apply, Fin.sum_univ_three, hg20] using hiso
+      ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 0 = 0 :=
+    neg_eq_zero.mp (by simpa [typeAGraphConjugator_apply, hg20] using hiso)
   exact (mul_eq_zero.mp hmul).elim (map_eq_zero σ).mp id
 
 /-- Every element of the Borel subgroup has nonzero `(0, 0)` entry. -/
@@ -380,11 +381,13 @@ theorem exists_torusHom_mul_unipotent_of_mem_borelSubgroup (hσ : Function.Invol
     simp [u, ← map_inv, hg20]
   have hiso := Matrix.mem_specialIsometryGroup_iff.mp u.property
   have hu21 : ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 1 = 0 := by
-    simpa [Matrix.mul_apply, Fin.sum_univ_three, hu00, hu10, hu20] using
-      congrFun (congrFun hiso 0) 1
+    have h01 := congrFun (congrFun hiso 0) 1
+    rw [Matrix.mul_mul_apply, dotProduct_typeAGraphConjugator_two_mulVec] at h01
+    simpa [typeAGraphConjugator_apply, hu00, hu10, hu20] using h01
   have hu22 : ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 2 = 1 := by
-    simpa [Matrix.mul_apply, Fin.sum_univ_three, hu00, hu10, hu20] using
-      congrFun (congrFun hiso 0) 2
+    have h02 := congrFun (congrFun hiso 0) 2
+    rw [Matrix.mul_mul_apply, dotProduct_typeAGraphConjugator_two_mulVec] at h02
+    simpa [typeAGraphConjugator_apply, hu00, hu10, hu20] using h02
   have htri :
       ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K).IsUpperTriangular := by
     intro i j hij
