@@ -63,8 +63,7 @@ theorem toLinearMap_flip_mul_eq_mulRight (x : R) :
 bounded endomorphism ring are subsingletons. -/
 instance _root_.RegularNormedAlgebra.of_subsingleton [Subsingleton R] :
     RegularNormedAlgebra 𝕜 R where
-  isometry_mul' := AddMonoidHomClass.isometry_of_norm _ fun x ↦ by
-    simp [Subsingleton.elim x 0, Subsingleton.elim (mul 𝕜 R 0) 0]
+  isometry_mul' := isometry_subsingleton
 
 end NonUnital
 
@@ -87,11 +86,6 @@ gives the flipped (right-multiplication) operator `(mul 𝕜 R).flip`. -/
 @[simp]
 theorem mulLeftRight_one : mulLeftRight 𝕜 R (1 : R) = (mul 𝕜 R).flip := by
   ext y x
-  simp
-
-/-- Specializing the left factor of `mulLeftRight 𝕜 R` to `1` gives bounded right multiplication
-by `y`. -/
-theorem mulLeftRight_one_left (y : R) : mulLeftRight 𝕜 R 1 y = (mul 𝕜 R).flip y := by
   simp
 
 /-- Specializing the right factor of `mulLeftRight 𝕜 R` to `1` gives bounded left multiplication
