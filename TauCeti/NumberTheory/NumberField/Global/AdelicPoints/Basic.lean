@@ -12,11 +12,10 @@ public import TauCeti.Topology.Algebra.PointTopology.Prod
 /-!
 # Adelic points of an affine group scheme
 
-Let `R` be a Dedekind domain with fraction field `K` (for instance the ring of integers of a number
-field `K`), and let `H` be a bialgebra over `K`; when `H` is a commutative Hopf algebra it is the
-coordinate ring of the affine group scheme `G = Spec H`. This file defines the groups of points of
-`G` over the adele ring `𝔸_K = K_∞ × 𝔸_{K,f}`, over its two factors and over the completions at
-the finite places,
+Let `R` be a Dedekind domain with fraction field `K`, and let `H` be a bialgebra over `K`; when `H`
+is a commutative Hopf algebra it is the coordinate ring of the affine group scheme `G = Spec H`.
+This file defines the groups of points of `G` over Mathlib's `AdeleRing R K = K_∞ × 𝔸_{K,f}`,
+written `𝔸_K`, over its two factors and over the completions at the finite places of `R`,
 
 * `TauCeti.AdelicPoints R K H`, the points `G(𝔸_K) = WithConv (H →ₐ[K] 𝔸_K)`;
 * `TauCeti.AdelicPoints.FiniteAdelicPoints R K H`, the points `G(𝔸_{K,f})` over the finite
@@ -30,6 +29,11 @@ every evaluation `x ↦ x h` continuous. For a Hopf algebra `H` these are topolo
 (`TauCeti.PointTopology.isTopologicalGroup`). The point topology on `G(𝔸_K)` is in general not
 the subspace topology of `𝔸_K` under a chosen coordinate: for the multiplicative group it is the
 topology of the ideles, not that of `𝔸_K`.
+
+When `K` is a number field and `R = 𝓞 K`, `AdeleRing R K` is the adele ring of `K` and these are
+the adelic points of `G` in the usual sense. For other `R` it is not the adele ring of `K`: for a
+function field `K` the factor `K_∞` is trivial, and for `R = ℤ[1/2]` the places over `2` are
+missing.
 
 The rational diagonals and the projections are changes of coefficients `AlgHom.mapValue` along
 algebra maps of the coefficient rings:
@@ -84,15 +88,18 @@ namespace TauCeti
 variable (R K H : Type*) [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
   [IsFractionRing R K] [Semiring H] [Bialgebra K H]
 
-/-- The adelic points `G(𝔸_K) = WithConv (H →ₐ[K] 𝔸_K)` of `G = Spec H`, where `𝔸_K` is the adele
-ring of the fraction field `K` of the Dedekind domain `R`. They carry the convolution product and
+/-- The points `G(𝔸_K) = WithConv (H →ₐ[K] 𝔸_K)` of `G = Spec H` over Mathlib's
+`𝔸_K = AdeleRing R K`. They are the adelic points of `G` when `K` is a number field and `R = 𝓞 K`;
+for other `R`, `AdeleRing R K` is not the adele ring of `K`. They carry the convolution product and
 the point topology; for a Hopf algebra `H` they form a topological group. -/
 abbrev AdelicPoints := WithConv (H →ₐ[K] AdeleRing R K)
 
 namespace AdelicPoints
 
-/-- The finite adelic points `G(𝔸_{K,f}) = WithConv (H →ₐ[K] 𝔸_{K,f})` of `G = Spec H`, with the
-convolution product and the point topology. -/
+/-- The points `G(𝔸_{K,f}) = WithConv (H →ₐ[K] 𝔸_{K,f})` of `G = Spec H` over the finite adele
+ring `𝔸_{K,f} = FiniteAdeleRing R K`, the restricted product over the height-one primes of `R`,
+with the convolution product and the point topology. They are the finite adelic points of `G` when
+`K` is a number field and `R = 𝓞 K`. -/
 abbrev FiniteAdelicPoints := WithConv (H →ₐ[K] FiniteAdeleRing R K)
 
 /-- The infinite points `G(K_∞) = WithConv (H →ₐ[K] K_∞)` of `G = Spec H`, over the infinite

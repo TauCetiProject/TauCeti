@@ -58,8 +58,8 @@ the inverse.
   convolution monoids.
 * `AlgHom.piValueMulEquiv`: points valued in a product of commutative algebras are families of
   points valued in the factors.
-* `WithConv.mapValue_algebraOfId`: mapping a base-valued point through an algebra-valued point
-  gives the corresponding constant point.
+* `AlgHom.mapValue_mapValue_ofId`: extending a base-valued point to `A` and then mapping it along
+  `φ : A →ₐ[R] B` extends it to `B`.
 
 ## References
 
@@ -298,24 +298,6 @@ lemma piValueMulEquiv_symm_apply (g : ∀ i, WithConv (H →ₐ[R] B i)) (h : H)
   rfl
 
 end Pi
-
-section BialgebraConstantPoint
-
-variable {R H₁ A : Type*} [CommSemiring R] [CommSemiring H₁] [_root_.Bialgebra R H₁]
-variable [CommSemiring A] [Algebra R A]
-
-/-- Mapping a base-valued point first to the coordinate algebra and then through an
-algebra-valued point gives the corresponding constant point in the value algebra. -/
-lemma _root_.WithConv.mapValue_algebraOfId (x : WithConv (H₁ →ₐ[R] A))
-    (g : WithConv (H₁ →ₐ[R] R)) :
-    mapValue (H := H₁) x.ofConv
-        (mapValue (H := H₁) (Algebra.ofId R H₁) g) =
-      mapValue (H := H₁) (Algebra.ofId R A) g := by
-  have h := DFunLike.congr_fun
-    (mapValue_comp (H := H₁) x.ofConv (Algebra.ofId R H₁)) g
-  simpa [Algebra.comp_ofId] using h.symm
-
-end BialgebraConstantPoint
 
 section CommHopf
 
