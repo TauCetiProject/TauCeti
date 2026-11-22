@@ -7,10 +7,10 @@ module
 
 public import Mathlib.RingTheory.PiTensorProduct
 public import TauCeti.RingTheory.Invariant.Free
+public import TauCeti.RingTheory.PiTensorProduct.Map
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 import TauCeti.LinearAlgebra.PiTensorProduct.Option
-import TauCeti.RingTheory.PiTensorProduct.Map
 
 /-!
 # The iterated Galois map of a group action
@@ -37,6 +37,8 @@ tensor factor, so the map is in vertex rather than edge coordinates.
 
 ## Main results
 
+* `TauCeti.MulSemiringAction.evalAlgHom_comp_iterTensorToPi`: each coordinate is the product map
+  of the actions of the vertices.
 * `TauCeti.MulSemiringAction.iterTensorToPi_tprod`: the value on pure tensors,
   `a₀ * ∏ i, gᵢ • aᵢ₊₁`.
 * `TauCeti.MulSemiringAction.iterTensorToPi_bijective`: for a finite group `G`, if `tensorToPi` is
@@ -67,6 +69,14 @@ noncomputable def iterTensorToPi (k : ℕ) : (⨂[R] _ : Fin (k + 1), A) →ₐ[
     productMap fun j ↦ MulSemiringAction.toAlgHom R A (Fin.cons (α := fun _ ↦ G) 1 g j)
 
 variable {R A G}
+
+/-- The coordinate of the iterated Galois map at `g : Fin k → G` is the product map
+`PiTensorProduct.productMap` of the actions of the vertices `Fin.cons 1 g j`. -/
+@[simp]
+theorem evalAlgHom_comp_iterTensorToPi (k : ℕ) (g : Fin k → G) :
+    (Pi.evalAlgHom R (fun _ : Fin k → G ↦ A) g).comp (iterTensorToPi R A G k) =
+      productMap fun j ↦ MulSemiringAction.toAlgHom R A (Fin.cons (α := fun _ ↦ G) 1 g j) :=
+  (rfl)
 
 /-- The iterated Galois map on a pure tensor `a₀ ⊗ a₁ ⊗ ⋯ ⊗ aₖ`. -/
 @[simp]

@@ -47,8 +47,9 @@ is their coproduct. This is the indexed analogue of `Algebra.TensorProduct.produ
   postcomposition acts factorwise.
 * `PiTensorProduct.productMap_comp_mapAlgHom`: precomposition with `PiTensorProduct.mapAlgHom`
   acts factorwise.
-* `PiTensorProduct.productMap_reindex`: invariance of `PiTensorProduct.productMap` under
-  reindexing.
+* `PiTensorProduct.productMap_reindex`, `PiTensorProduct.productMap_reindex'`: invariance of
+  `PiTensorProduct.productMap` under reindexing, for factor maps of the form `f (e.symm k)` and
+  for arbitrary factor maps out of the reindexed factors.
 -/
 
 public section
@@ -195,6 +196,20 @@ theorem productMap_reindex {τ' : Type*} [Fintype τ'] (e : τ ≃ τ') (f : ∀
   congr 1
   ext a
   simp [e.symm.prod_comp fun j ↦ f j (a j)]
+
+/-- `PiTensorProduct.productMap g` after reindexing the factors along a bijection `e`, for any
+family `g` of factor maps out of the reindexed factors: it is the product map of `g` transported
+back along `e` by `Equiv.piCongrLeft'`, whose value at `j` is `g (e j)` cast along
+`e.symm (e j) = j`. Its simp priority is low, so that `simp` uses the cast-free
+`PiTensorProduct.productMap_reindex` when the factor maps already have the form `f (e.symm k)`. -/
+@[simp low]
+theorem productMap_reindex' {τ' : Type*} [Fintype τ'] (e : τ ≃ τ')
+    (g : ∀ k, A (e.symm k) →ₐ[R] S) (x : ⨂[R] j, A j) :
+    productMap g (reindex R A e x) =
+      productMap ((e.piCongrLeft' fun j ↦ A j →ₐ[R] S).symm g) x := by
+  obtain ⟨f, rfl⟩ := (e.piCongrLeft' fun j ↦ A j →ₐ[R] S).surjective g
+  rw [Equiv.symm_apply_apply]
+  exact productMap_reindex e f x
 
 end ProductMap
 

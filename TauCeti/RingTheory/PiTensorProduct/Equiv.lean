@@ -31,7 +31,9 @@ permutations gives the action of `Equiv.Perm ι` on a tensor power by algebra au
 Applying algebra equivalences factorwise gives `PiTensorProduct.congrAlgEquiv`, the algebra
 version of Mathlib's `PiTensorProduct.congr`, compatible with `PiTensorProduct.mapAlgHom` and
 `PiTensorProduct.reindexAlgEquiv`; `PiTensorProduct.productMap` and `PiTensorProduct.mulAlgHom` are
-likewise invariant under `PiTensorProduct.reindexAlgEquiv` and `PiTensorProduct.permAlgEquiv`. On
+likewise invariant under `PiTensorProduct.reindexAlgEquiv` and `PiTensorProduct.permAlgEquiv`;
+for an arbitrary family of factor maps out of the reindexed factors,
+`PiTensorProduct.productMap_reindexAlgEquiv'` transports the family back along the reindexing. On
 tensor powers of a single commutative algebra, `PiTensorProduct.fiberwiseMul` commutes with
 reindexing along a commuting square of index maps (`PiTensorProduct.reindex_fiberwiseMul`, bundled
 as `PiTensorProduct.reindexAlgEquiv_comp_fiberwiseMul`).
@@ -248,6 +250,26 @@ theorem productMap_comp_reindexAlgEquiv (e : σ ≃ τ) (f : ∀ i, A i →ₐ[R
     (productMap (fun j ↦ f (e.symm j))).comp (reindexAlgEquiv (R := R) A e).toAlgHom =
       productMap f :=
   AlgHom.ext <| productMap_reindexAlgEquiv e f
+
+/-- `PiTensorProduct.productMap g` after `PiTensorProduct.reindexAlgEquiv` along `e`, for any family
+`g` of factor maps out of the reindexed factors: it is the product map of `g` transported back
+along `e` by `Equiv.piCongrLeft'`. Its simp priority is low, so that `simp` uses the cast-free
+`PiTensorProduct.productMap_reindexAlgEquiv` when the factor maps have the form `f (e.symm j)`. -/
+@[simp low]
+theorem productMap_reindexAlgEquiv' (e : σ ≃ τ) (g : ∀ j, A (e.symm j) →ₐ[R] S)
+    (x : ⨂[R] i, A i) :
+    productMap g (reindexAlgEquiv (R := R) A e x) =
+      productMap ((e.piCongrLeft' fun i ↦ A i →ₐ[R] S).symm g) x := by
+  rw [← AlgEquiv.toLinearEquiv_apply, reindexAlgEquiv_toLinearEquiv, productMap_reindex']
+
+/-- Precomposing `PiTensorProduct.productMap g` with `PiTensorProduct.reindexAlgEquiv` along `e`,
+for any family `g` of factor maps out of the reindexed factors, transports `g` back along `e` by
+`Equiv.piCongrLeft'`. This is the bundled form of `PiTensorProduct.productMap_reindexAlgEquiv'`. -/
+@[simp low]
+theorem productMap_comp_reindexAlgEquiv' (e : σ ≃ τ) (g : ∀ j, A (e.symm j) →ₐ[R] S) :
+    (productMap g).comp (reindexAlgEquiv (R := R) A e).toAlgHom =
+      productMap ((e.piCongrLeft' fun i ↦ A i →ₐ[R] S).symm g) :=
+  AlgHom.ext <| productMap_reindexAlgEquiv' e g
 
 end ProductMap
 
