@@ -218,6 +218,11 @@ theorem center_smul_mk (c : Subgroup.center G) (e : E) (a : A) :
     c • mk G e a = mk G e ((c : G) • a) :=
   (rfl)
 
+/-- Translating the point by a central element `c` translates the class by `c⁻¹`. -/
+theorem mk_center_smul_left (c : Subgroup.center G) (e : E) (a : A) :
+    mk G ((c : G) • e) a = c⁻¹ • mk G e a := by
+  rw [mk_smul_left, center_smul_mk, Subgroup.coe_inv]
+
 /-- Along a path of labels `a 0, …, a n` in which the step `i` is carried by `g i` to a central
 translate, `g i • a (i + 1) = l • a i`, the class of the endpoint, paired with `e` translated by the
 inverse of the product of the `g i`, is `l ^ n` times the class of the starting point. -/

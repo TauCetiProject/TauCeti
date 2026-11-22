@@ -260,12 +260,8 @@ theorem isHomogeneous_ofLinearMap [CharP R 2] (L : M →ₗ[R] M')
 
 /-- The identity morphism of a graded module is homogeneous of degree `1`. -/
 theorem isHomogeneous_id [CharP R 2] (l : G) : (id Mm).IsHomogeneous Ag Mg Mg l 1 := by
-  intro n g a s m ha hm
-  match n with
-  | 0 => simpa using hm
-  | n + 1 =>
-    rw [id_map_add_one]
-    exact zero_mem _
+  rw [id_eq_ofLinearMap]
+  exact isHomogeneous_ofLinearMap LinearMap.id (fun _ _ _ ↦ rfl) _root_.id l
 
 /-- The degree bookkeeping of a composite: the central factors `l ^ j c'⁻¹` of the second
 morphism move past the degree `P` of the inputs of the first. -/
@@ -348,6 +344,37 @@ variable {T : Type*} [MulAction G T] {X : Type*}
 
 variable [Fintype X] [DecidableEq X] {Mm : UngradedAInfinityRightModule d M}
 
+/-- Along the paths of matrices `F₁, …, Fₙ` homogeneous of degree `l`, a multilinear map whose
+values shift degrees by `l^n k⁻¹` on the left carries a row vector of degree `u` to entries of
+degree `k • u`. -/
+private theorem sum_ite_mem_boxGradedPart {M' : Type*} [AddCommGroup M'] [Module R M']
+    {Mg' : S → Submodule R M'} {n : ℕ}
+    {Φ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) (M →ₗ[R] M')}
+    {l k : Subgroup.center G}
+    (hΦ : ∀ (g : Fin n → G) (a : Fin n → A) (s : S) (m : M), (∀ i, a i ∈ Ag (g i)) →
+      m ∈ Mg s → Φ a m ∈ Mg' ((List.ofFn g).prod⁻¹ • (l : G) ^ n • (k : G)⁻¹ • s))
+    {gr : X → T} {F : Fin n → Matrix X X A} (hF : ∀ i, F i ∈ homogeneousMatrices Ag gr gr l)
+    {u : BalancedProduct G S T} {φ : X → M} (hφ : φ ∈ boxGradedPart Mg gr u) (z : X) :
+    (∑ x : Fin (n + 1) → X, if x (Fin.last n) = z then
+        Φ (fun i ↦ F i (x i.castSucc) (x i.succ)) (φ (x 0)) else 0) ∈
+      ⨆ s : {s : S // BalancedProduct.mk G s (gr z) = k • u}, Mg' s := by
+  rw [mem_boxGradedPart_iff] at hφ
+  refine Submodule.sum_mem _ fun x _ ↦ ?_
+  split_ifs with hz
+  swap
+  · exact zero_mem _
+  refine Submodule.iSup_induction _
+    (motive := fun m ↦ Φ (fun i ↦ F i (x i.castSucc) (x i.succ)) m ∈ _) (hφ (x 0)) ?_
+    (by rw [map_zero]; exact zero_mem _) fun m m' hm hm' ↦ by rw [map_add]; exact add_mem hm hm'
+  rintro ⟨s, hs⟩ m hm
+  -- The entries along the path are sums of homogeneous elements; by multilinearity it suffices to
+  -- treat homogeneous entries.
+  refine ((LinearMap.applyₗ m).compMultilinearMap Φ).map_mem_of_mem_homogeneousMatrices hF x
+    fun g a hg ha ↦ Submodule.mem_iSup_of_mem ⟨_, ?_⟩ (hΦ g a s m ha hm)
+  rw [← hz, BalancedProduct.mk_inv_prod_ofFn_smul l g (fun j ↦ gr (x j)) hg, ← Subgroup.coe_pow,
+    ← Subgroup.coe_inv, BalancedProduct.mk_center_smul_left,
+    BalancedProduct.mk_center_smul_left, hs, smul_smul, mul_inv_cancel, one_smul, inv_inv]
+
 /-- **The operations of the matrix module along homogeneous matrices.** Let `M` be a graded `A∞`
 module with differentials of central degree `l`, and let `F₁, …, Fₙ` be matrices homogeneous of
 degree `l`. Then `m_{n+1}(φ, F₁, …, Fₙ)` maps row vectors of degree `u ∈ S ×_G T` to row vectors
@@ -356,22 +383,13 @@ theorem IsGraded.matrixAct_mem_boxGradedPart {l : Subgroup.center G}
     (hMm : Mm.IsGraded Ag Mg l) {gr : X → T} {n : ℕ} {F : Fin n → Matrix X X A}
     (hF : ∀ i, F i ∈ homogeneousMatrices Ag gr gr l) {u : BalancedProduct G S T} {φ : X → M}
     (hφ : φ ∈ boxGradedPart Mg gr u) : Mm.matrixAct X n F φ ∈ boxGradedPart Mg gr (l • u) := by
-  rw [mem_boxGradedPart_iff] at hφ ⊢
+  rw [mem_boxGradedPart_iff]
   intro z
   rw [matrixAct_apply]
-  refine Submodule.sum_mem _ fun x _ ↦ ?_
-  split_ifs with hz
-  swap
-  · exact zero_mem _
-  refine Submodule.iSup_induction _
-    (motive := fun m ↦ Mm.act n (fun i ↦ F i (x i.castSucc) (x i.succ)) m ∈ _) (hφ (x 0)) ?_
-    (by rw [map_zero]; exact zero_mem _) fun m m' hm hm' ↦ by rw [map_add]; exact add_mem hm hm'
-  rintro ⟨s, hs⟩ m hm
-  -- The entries along the path are sums of homogeneous elements; by multilinearity it suffices to
-  -- treat homogeneous entries.
-  refine ((LinearMap.applyₗ m).compMultilinearMap (Mm.act n)).map_mem_of_mem_homogeneousMatrices hF
-    x fun g a hg ha ↦ Submodule.mem_iSup_of_mem ⟨_, ?_⟩ (hMm.act_mem ha hm)
-  rw [← hz, BalancedProduct.mk_inv_prod_ofFn_zpow_smul l g (fun j ↦ gr (x j)) hg, hs]
+  refine sum_ite_mem_boxGradedPart (k := l) (fun g a s m ha hm ↦ ?_) hF hφ z
+  -- The operation has degree `l^{1-n} = l^n l⁻¹`.
+  convert hMm.act_mem ha hm using 3
+  rw [← mul_smul, zpow_sub_one, zpow_natCast]
 
 /-- **The twisted differential of the matrix module along a homogeneous matrix.** For a graded
 `A∞` module with differentials of central degree `l` and a matrix `C` homogeneous of degree `l`,
@@ -504,62 +522,6 @@ section ModuleHom
 variable {M' : Type*} [AddCommGroup M'] [Module R M'] {Mg' : S → Submodule R M'}
   {Mm' : UngradedAInfinityRightModule d M'}
 
-/-- The class of a central translate `c • s` of a module degree is `c⁻¹` times the class of `s`. -/
-private theorem mk_center_smul_left (c : Subgroup.center G) (s : S) (t : T) :
-    BalancedProduct.mk G ((c : G) • s) t = c⁻¹ • BalancedProduct.mk G s t := by
-  rw [BalancedProduct.mk_smul_left, BalancedProduct.center_smul_mk, Subgroup.coe_inv]
-
-/-- Along the paths of a matrix homogeneous of degree `l`, a family of maps whose `n`-th member
-shifts degrees by `l^n k⁻¹` on the left carries a row vector of degree `u` to entries of degree
-`k • u`. -/
-private theorem sum_ite_map_mem
-    {Φ : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) (M →ₗ[R] M')}
-    {l k : Subgroup.center G}
-    (hΦ : ∀ (n : ℕ) (g : Fin n → G) (a : Fin n → A) (s : S) (m : M), (∀ i, a i ∈ Ag (g i)) →
-      m ∈ Mg s → Φ n a m ∈ Mg' ((List.ofFn g).prod⁻¹ • (l : G) ^ n • (k : G)⁻¹ • s))
-    {gr : X → T} {C : Matrix X X A} (hC : C ∈ homogeneousMatrices Ag gr gr l)
-    {u : BalancedProduct G S T} {φ : X → M} (hφ : φ ∈ boxGradedPart Mg gr u) (n : ℕ) (z : X) :
-    (∑ x : Fin (n + 1) → X, if x (Fin.last n) = z then
-        Φ n (fun i ↦ C (x i.castSucc) (x i.succ)) (φ (x 0)) else 0) ∈
-      ⨆ s : {s : S // BalancedProduct.mk G s (gr z) = k • u}, Mg' s := by
-  rw [mem_boxGradedPart_iff] at hφ
-  refine Submodule.sum_mem _ fun x _ ↦ ?_
-  split_ifs with hz
-  swap
-  · exact zero_mem _
-  refine Submodule.iSup_induction _
-    (motive := fun m ↦ Φ n (fun i ↦ C (x i.castSucc) (x i.succ)) m ∈ _) (hφ (x 0)) ?_
-    (by rw [map_zero]; exact zero_mem _) fun m m' hm hm' ↦ by rw [map_add]; exact add_mem hm hm'
-  rintro ⟨s, hs⟩ m hm
-  refine ((LinearMap.applyₗ m).compMultilinearMap (Φ n)).map_mem_of_mem_homogeneousMatrices
-    (fun _ ↦ hC) x fun g a hg ha ↦ Submodule.mem_iSup_of_mem ⟨_, ?_⟩ (hΦ n g a s m ha hm)
-  rw [← hz, BalancedProduct.mk_inv_prod_ofFn_smul l g (fun j ↦ gr (x j)) hg, ← Subgroup.coe_pow,
-    ← Subgroup.coe_inv, mk_center_smul_left, mk_center_smul_left, hs, smul_smul, mul_inv_cancel,
-    one_smul, inv_inv]
-
-/-- The map induced by a morphism `f` whose component `f_{n+1}` shifts degrees by `l^n k⁻¹` on
-the left maps row vectors of degree `u` to row vectors of degree `k • u`. -/
-private theorem typeABoxMapOfHom_mem_boxGradedPart_of_forall
-    {f : UngradedAInfinityRightModuleHom Mm Mm'} {l k : Subgroup.center G}
-    (hf : ∀ (n : ℕ) (g : Fin n → G) (a : Fin n → A) (s : S) (m : M), (∀ i, a i ∈ Ag (g i)) →
-      m ∈ Mg s → f.map n a m ∈ Mg' ((List.ofFn g).prod⁻¹ • (l : G) ^ n • (k : G)⁻¹ • s))
-    {N : TypeDStructure d ι X} {gr : X → T} (hN : N.coeff ∈ homogeneousMatrices Ag gr gr l)
-    {u : BalancedProduct G S T} {φ : X → M} (hφ : φ ∈ boxGradedPart Mg gr u) :
-    N.typeABoxMapOfHom f φ ∈ boxGradedPart Mg' gr (k • u) := by
-  rw [mem_boxGradedPart_iff]
-  intro z
-  rw [typeABoxMapOfHom_apply, typeABoxDifferential_def,
-    UngradedAInfinityRightModule.twistedDifferential_def]
-  refine finsum_induction (fun P : (X → M × M') →ₗ[R] X → M × M' ↦
-      (P (fun x ↦ (φ x, 0)) z).2 ∈ ⨆ s : {s : S // BalancedProduct.mk G s (gr z) = k • u}, Mg' s)
-    ?_ (fun P P' hP hP' ↦ ?_) fun n ↦ ?_
-  · simp
-  · simpa using add_mem hP hP'
-  -- Only the component of `f` survives on row vectors with values in `M`.
-  have h0 : (Mm'.matrixAct X n fun _ ↦ N.coeff) (fun _ ↦ (0 : M')) = 0 := map_zero _
-  have h := sum_ite_map_mem (Φ := f.map) hf hN hφ n z
-  simpa [UngradedAInfinityRightModuleHom.matrixAct_cone_apply, h0] using h
-
 /-- **Maps induced by homogeneous morphisms of graded type `A` modules.** Let the structure map of
 `N` have central degree `l`, and let the morphism `f` of graded `A∞` modules be homogeneous of
 central degree `c`. Then the induced map `T_f (m ⊗ x) = ∑_k (f_{k+1} ⊗ 1) (m ⊗ δ^k (x))` from
@@ -571,8 +533,21 @@ theorem typeABoxMapOfHom_mem_boxGradedPart {l c : Subgroup.center G}
     {f : UngradedAInfinityRightModuleHom Mm Mm'} (hf : f.IsHomogeneous Ag Mg Mg' l c)
     {N : TypeDStructure d ι X} {gr : X → T} (hN : N.coeff ∈ homogeneousMatrices Ag gr gr l)
     {u : BalancedProduct G S T} {φ : X → M} (hφ : φ ∈ boxGradedPart Mg gr u) :
-    N.typeABoxMapOfHom f φ ∈ boxGradedPart Mg' gr (c • u) :=
-  typeABoxMapOfHom_mem_boxGradedPart_of_forall hf hN hφ
+    N.typeABoxMapOfHom f φ ∈ boxGradedPart Mg' gr (c • u) := by
+  rw [mem_boxGradedPart_iff]
+  intro z
+  rw [typeABoxMapOfHom_apply, typeABoxDifferential_def,
+    UngradedAInfinityRightModule.twistedDifferential_def]
+  refine finsum_induction (fun P : (X → M × M') →ₗ[R] X → M × M' ↦
+      (P (fun x ↦ (φ x, 0)) z).2 ∈ ⨆ s : {s : S // BalancedProduct.mk G s (gr z) = c • u}, Mg' s)
+    ?_ (fun P P' hP hP' ↦ ?_) fun n ↦ ?_
+  · simp
+  · simpa using add_mem hP hP'
+  -- Only the component of `f` survives on row vectors with values in `M`.
+  rw [UngradedAInfinityRightModule.matrix_act,
+    UngradedAInfinityRightModuleHom.snd_matrixAct_cone_apply_inl]
+  exact UngradedAInfinityRightModule.sum_ite_mem_boxGradedPart
+    (fun g a s m ha hm ↦ hf.map_mem ha hm) (fun _ ↦ hN) hφ z
 
 /-- **Homotopies induced by homogeneous homotopies of graded type `A` modules.** Over a ring of
 characteristic two, let the structure map of `N` have central degree `l`, and let `H` be a
@@ -590,9 +565,9 @@ theorem typeABoxHomotopy_mem_boxGradedPart [CharP R 2] {l c : Subgroup.center G}
     N.typeABoxHomotopy H φ ∈ boxGradedPart Mg' gr ((l⁻¹ * c) • u) := by
   -- `T_H` is the second component of the map induced by `(id, h)`, into `M × M'` graded through
   -- its second factor.
-  have hT := typeABoxMapOfHom_mem_boxGradedPart_of_forall
+  have hT := typeABoxMapOfHom_mem_boxGradedPart
     (Mg' := fun s ↦ (Mg' s).comap (LinearMap.snd R M M')) (f := H.toConeHom) (l := l)
-    (k := l⁻¹ * c) (fun n g a s m ha hm ↦ ?_) hN hφ
+    (c := l⁻¹ * c) (fun n g a s m ha hm ↦ ?_) hN hφ
   · rw [mem_boxGradedPart_iff] at hT ⊢
     intro z
     have h := Submodule.mem_map_of_mem (f := LinearMap.snd R M M') (hT z)
