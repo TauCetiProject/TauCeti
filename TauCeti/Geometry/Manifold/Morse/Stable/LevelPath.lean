@@ -834,25 +834,11 @@ theorem concatLevelRecords_notMem_morseTrajectoryRecords (hqr : q ≠ r) {i₀ :
     concatLevelRecords c hq w₁ w₂ ∉
       hX.morseTrajectoryRecords p r ((c ⁻¹' Ioo (f r) (f p)).domRestrict c) := by
   intro hw
+  -- On the level `c i₀`, the concatenation is a point of the first broken trajectory, which meets
+  -- no unbroken trajectory to `r` since `f r < f q`.
   have hrq := hX.value_lt_of_mem_morseBrokenTrajectoryRecords hqr hw₂
-  -- On the level `c i₀`, the unbroken trajectory lies in the stable set of `r`, and the
-  -- concatenation is the first record.
-  obtain ⟨y, hy, hwy⟩ := hX.mem_morseTrajectoryRecords.1 hw
-  obtain ⟨-, t, ht⟩ := hwy ⟨i₀, hrq.trans hi₀.1, hi₀.2⟩
-  rw [concatLevelRecords_of_lt hq w₁ w₂ (i := ⟨i₀, hrq.trans hi₀.1, hi₀.2⟩) hi₀.1] at ht
-  -- There the first record lies on a component of the first broken trajectory, in the stable set
-  -- of a critical point `x j.succ` with `f q ≤ f (x j.succ)`, so not in that of `r`.
-  obtain ⟨k, x, z, -, rfl, -, -, hz, hw₁'⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw₁
-  obtain ⟨-, j, t', ht'⟩ := hw₁' ⟨i₀, hi₀⟩
-  have hxq : f (x (Fin.last k)) ≤ f (x j.succ) := hX.antitone_apply_of_chain hz (Fin.le_last _)
-  have hne : x j.succ ≠ r := fun h ↦ (hrq.trans_le hxq).ne' (congrArg f h)
-  have h₁ : w₁ ⟨i₀, hi₀⟩ ∈ hX.flow.stableSet (x j.succ) := by
-    rw [← ht']
-    exact (Flow.apply_mem_stableSet_iff _ t').2 (hz j).2
-  have h₂ : w₁ ⟨i₀, hi₀⟩ ∈ hX.flow.stableSet r := by
-    rw [← ht]
-    exact (Flow.apply_mem_stableSet_iff _ t).2 hy.2
-  exact disjoint_left.1 (Flow.disjoint_stableSet hne) h₁ h₂
+  exact hX.apply_ne_of_mem_morseBrokenTrajectoryRecords_of_mem_morseTrajectoryRecords hw₁ hw hrq
+    ⟨i₀, hi₀⟩ ⟨i₀, hrq.trans hi₀.1, hi₀.2⟩ (by rw [concatLevelRecords_of_lt hq w₁ w₂ hi₀.1])
 
 /-- **Above the level of `q`, the points of a concatenation are those of the first broken
 trajectory.** -/

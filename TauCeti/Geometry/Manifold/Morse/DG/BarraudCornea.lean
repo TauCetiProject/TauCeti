@@ -53,7 +53,9 @@ of regular values into `ℝ` is such a family.
 
 Two representing chain systems are joined by a homotopy
 (`TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`) when the composition maps are
-associative and land in the boundary of the target space. The space `L(x, x)` of records from a
+associative and land in the boundary of the target space, and the maps
+`H_{ind x - ind y - 1}(M x y) → H_{ind x - ind y - 1}(M x y, A x y)` are injective (its hypothesis
+`hinj`, not yet established for these spaces). The space `L(x, x)` of records from a
 critical point to itself is the single empty record, and concatenation with it is the identity of
 `L(x, y)`, which does not land in the boundary. The **trajectory space**
 (`TauCeti.IsAdaptedPseudoGradient.morseTrajectorySpace`) is therefore `L(x, y)` for `x ≠ y` and
@@ -345,7 +347,8 @@ of the chains of `S` along the restrictions of `morseLoopEvaluation` to the traj
 twisting cocycle over `C^□_*(Ω_{y₀} Y; R)`. When `ind` is the Morse index, `S` is a representing
 chain system and `θ : M → M` is homotopic to the identity, this is the twisting cocycle of Barraud
 and Cornea, and the twisting cocycles of two representing chain systems are related through
-`TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`. -/
+`TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy` once its injectivity hypothesis
+`hinj` holds for the trajectory spaces. -/
 noncomputable def morseTwistingCocycle (S : TwistingChainSystem ind (hX.morseTrajectoryComp hc) R) :
     TwistingCocycle (R := R) (A := loopChainAlgebra Y y₀ R)
       (cubicalChainGrading (MooreLoopSpace Y y₀) R)
