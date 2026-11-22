@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Operations
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
+public import TauCeti.Analysis.Calculus.ContDiff.SymbolClass.Basic
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
@@ -18,29 +16,27 @@ import TauCeti.Topology.MetricSpace.Bounded
 
 A map `f` from a real normed space `E` is a **symbol of order `ℓ` and regularity `k` at
 infinity** (`TauCeti.IsSymbolAtInfinity k ℓ f`) when it is `Cᵏ` outside a bounded set and, for
-every `j ≤ k`, its `j`-th derivative is `O(‖x‖ ^ (ℓ - j))` as `x → ∞`. For `ℓ = -t < 0` this is
-the class `O_k(‖x‖ ^ (-t))` of asymptotically Euclidean geometry: the coefficients `g_ij - δ_ij`
-of an asymptotically Euclidean end of order `t` are `O₂(‖x‖ ^ (-t))`, and so are the
-coefficients of the inverse metric and the volume density, which differ from their Euclidean
-values by smooth functions of `g_ij - δ_ij`.
+every `j ≤ k`, its `j`-th derivative is `O(‖x‖ ^ (ℓ - j))` as `x → ∞`: a symbol of order `ℓ` and
+regularity `k` along the cobounded filter in the sense of `TauCeti.IsSymbolAlong`. For
+`ℓ = -t < 0` this is the class `O_k(‖x‖ ^ (-t))` of asymptotically Euclidean geometry: the
+coefficients `g_ij - δ_ij` of an asymptotically Euclidean end of order `t` are
+`O₂(‖x‖ ^ (-t))`, and so are the coefficients of the inverse metric and the volume density,
+which differ from their Euclidean values by smooth functions of `g_ij - δ_ij`.
 
-This file proves that these classes form a graded calculus, the bookkeeping by which decay rates
-are propagated through algebraic and analytic operations on the metric coefficients:
+These classes form a graded calculus, the bookkeeping by which decay rates are propagated
+through algebraic and analytic operations on the metric coefficients. Sums, linear images,
+constants, products (which add orders), lower regularity and differentiation (which lowers the
+order and the regularity by one) are the filter-independent rules of `TauCeti.IsSymbolAlong`
+(`IsSymbolAlong.add`, `IsSymbolAlong.sum`, `IsSymbolAlong.continuousLinearMap_comp`,
+`TauCeti.isSymbolAlong_const`, `IsSymbolAlong.bilinear`, `IsSymbolAlong.of_le`,
+`TauCeti.isSymbolAlong_add_one_iff`, …). This file adds the rules particular to infinity:
 
-* sums, finite sums, constant multiples, linear images, passage to larger orders and to lower
-  regularity (`IsSymbolAtInfinity.add`, `IsSymbolAtInfinity.sum`,
-  `IsSymbolAtInfinity.const_smul`, `IsSymbolAtInfinity.continuousLinearMap_comp`,
-  `IsSymbolAtInfinity.mono`, `IsSymbolAtInfinity.of_le`), with constants of order `0`
-  (`TauCeti.isSymbolAtInfinity_const`);
-* **products add orders**: for a continuous bilinear map `B`, if `f` has order `ℓ` and `g` has
-  order `m`, then `x ↦ B (f x) (g x)` has order `ℓ + m` (`IsSymbolAtInfinity.bilinear`, with the
-  special cases `IsSymbolAtInfinity.smul` and `IsSymbolAtInfinity.mul`);
-* **differentiation lowers the order by one** (`IsSymbolAtInfinity.fderiv`), and conversely a
-  map of order `ℓ` whose derivative has order `ℓ - 1` has order `ℓ`
-  (`TauCeti.isSymbolAtInfinity_add_one_iff`);
+* passage to larger orders (`IsSymbolAtInfinity.mono`), limits of maps of negative order
+  (`IsSymbolAtInfinity.tendsto_zero`, `IsSymbolAtInfinity.tendsto_of_sub`), and differentiation
+  with the regularity counted in `ℕ` (`IsSymbolAtInfinity.fderiv`);
 * **composition with a map smooth at the limit**: if `f - c` has negative order `ℓ` and `G` is
   `Cᵏ` at `c`, then `G ∘ f` has order `0` (`IsSymbolAtInfinity.comp_of_contDiffAt`), and if `G`
-  is moreover differentiable at `c`, then `G ∘ f - G c` has order `ℓ`
+  is moreover `C^(max k 1)` at `c`, then `G ∘ f - G c` has order `ℓ`
   (`IsSymbolAtInfinity.comp_sub`);
 * **inversion**: in a complete normed algebra, if `a - 1` has negative order `ℓ`, then so does
   `Ring.inverse a - 1` (`IsSymbolAtInfinity.ringInverse_sub_one`).
@@ -65,19 +61,12 @@ open scoped Topology ContDiff
 
 namespace TauCeti
 
-variable {E F G H : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
-  [NormedAddCommGroup H]
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
 
 /-! ### Auxiliary facts about neighbourhoods of infinity -/
 
 private theorem eventually_one_le_norm : ∀ᶠ x in cobounded E, 1 ≤ ‖x‖ :=
   tendsto_norm_cobounded_atTop.eventually_ge_atTop 1
-
-/-- Near infinity, powers of the norm multiply by adding exponents. -/
-private theorem rpow_mul_rpow_eventuallyEq (a b : ℝ) :
-    (fun x : E ↦ ‖x‖ ^ a * ‖x‖ ^ b) =ᶠ[cobounded E] fun x ↦ ‖x‖ ^ (a + b) := by
-  filter_upwards [eventually_one_le_norm] with x hx
-  rw [Real.rpow_add (one_pos.trans_le hx)]
 
 /-- Near infinity, a power of the norm is dominated by every power of larger exponent. -/
 private theorem isBigO_rpow_rpow {a b : ℝ} (h : a ≤ b) :
@@ -87,65 +76,39 @@ private theorem isBigO_rpow_rpow {a b : ℝ} (h : a ≤ b) :
   rw [one_mul, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
   exact Real.rpow_le_rpow_of_exponent_le hx h
 
-/-- The exponents in the Leibniz rule for derivative bounds at infinity add up: the product of
-the bounds of orders `i` and `n - i` for symbols of orders `ℓ` and `m` is the bound of order `n`
-for order `ℓ + m`. -/
-private theorem isBigO_rpow_mul_rpow (ℓ m : ℝ) {n i : ℕ} (hi : i ≤ n) :
-    (fun x : E ↦ ‖x‖ ^ (ℓ - i) * ‖x‖ ^ (m - (n - i : ℕ))) =O[cobounded E]
-      fun x ↦ ‖x‖ ^ (ℓ + m - n) := by
-  refine ((rpow_mul_rpow_eventuallyEq _ _).trans (Eventually.of_forall fun x ↦ ?_)).isBigO
-  push_cast [Nat.cast_sub hi]
-  ring_nf
-
-variable [NormedSpace ℝ E] [NormedSpace ℝ F] [NormedSpace ℝ G] [NormedSpace ℝ H]
+variable [NormedSpace ℝ E] [NormedSpace ℝ F] [NormedSpace ℝ G]
 
 /-- A map `f` is a **symbol of order `ℓ` and regularity `k` at infinity** if it is `Cᵏ` near
-infinity and, for every `j ≤ k`, its `j`-th derivative is `O(‖x‖ ^ (ℓ - j))` as `x → ∞`. For
-`ℓ = -t` this is the class `O_k(‖x‖ ^ (-t))` of maps decaying at rate `t` together with their
-derivatives up to order `k`, each derivative gaining a further factor `‖x‖⁻¹`. -/
-def IsSymbolAtInfinity (k : ℕ) (ℓ : ℝ) (f : E → F) : Prop :=
-  (∀ᶠ x in cobounded E, ContDiffAt ℝ k f x) ∧
-    ∀ j ≤ k, iteratedFDeriv ℝ j f =O[cobounded E] fun x ↦ ‖x‖ ^ (ℓ - j)
+infinity and, for every `j ≤ k`, its `j`-th derivative is `O(‖x‖ ^ (ℓ - j))` as `x → ∞`: a symbol
+of order `ℓ` and regularity `k` along the cobounded filter. For `ℓ = -t` this is the class
+`O_k(‖x‖ ^ (-t))` of maps decaying at rate `t` together with their derivatives up to order `k`,
+each derivative gaining a further factor `‖x‖⁻¹`. -/
+abbrev IsSymbolAtInfinity (k : ℕ) (ℓ : ℝ) (f : E → F) : Prop :=
+  IsSymbolAlong (cobounded E) k ℓ f
 
 /-- The defining properties of a symbol at infinity: `Cᵏ` regularity near infinity and the
 bounds `D^j f = O(‖x‖ ^ (ℓ - j))` for `j ≤ k`. -/
 theorem isSymbolAtInfinity_iff {k : ℕ} {ℓ : ℝ} {f : E → F} :
     IsSymbolAtInfinity k ℓ f ↔ (∀ᶠ x in cobounded E, ContDiffAt ℝ k f x) ∧
       ∀ j ≤ k, iteratedFDeriv ℝ j f =O[cobounded E] fun x ↦ ‖x‖ ^ (ℓ - j) :=
-  Iff.rfl
-
-/-- If `fderiv F'` agrees near every point of a neighbourhood of infinity with a map `G'` whose
-`n`-th derivative is `O(ρ)`, then the `(n + 1)`-th derivative of `F'` is `O(ρ)`. -/
-private theorem isBigO_iteratedFDeriv_succ_of_eventuallyEq {F' : E → F} {G' : E → E →L[ℝ] F}
-    {ρ : E → ℝ} {n : ℕ} (hF : ∀ᶠ x in cobounded E, fderiv ℝ F' =ᶠ[𝓝 x] G')
-    (hG : iteratedFDeriv ℝ n G' =O[cobounded E] ρ) :
-    iteratedFDeriv ℝ (n + 1) F' =O[cobounded E] ρ := by
-  refine IsBigO.of_norm_left (hG.norm_left.congr' ?_ EventuallyEq.rfl)
-  filter_upwards [hF] with x hx
-  rw [← (hx.iteratedFDeriv ℝ n).eq_of_nhds, norm_iteratedFDeriv_fderiv]
+  and_congr (by norm_cast) (forall_congr' fun _ ↦ by norm_cast)
 
 /-! ### Basic properties -/
 
 namespace IsSymbolAtInfinity
 
-variable {k k' : ℕ} {ℓ m : ℝ} {f f₁ : E → F} {g : E → G}
+variable {k : ℕ} {ℓ m : ℝ} {f f₁ : E → F}
 
 /-- A symbol of regularity `k` at infinity is `Cᵏ` near infinity. -/
 theorem eventually_contDiffAt (hf : IsSymbolAtInfinity k ℓ f) :
     ∀ᶠ x in cobounded E, ContDiffAt ℝ k f x :=
-  hf.1
+  (isSymbolAtInfinity_iff.1 hf).1
 
 /-- The `j`-th derivative of a symbol of order `ℓ` at infinity is `O(‖x‖ ^ (ℓ - j))`, for `j` at
 most the regularity. -/
 theorem isBigO_iteratedFDeriv (hf : IsSymbolAtInfinity k ℓ f) {j : ℕ} (hj : j ≤ k) :
     iteratedFDeriv ℝ j f =O[cobounded E] fun x ↦ ‖x‖ ^ (ℓ - j) :=
-  hf.2 j hj
-
-/-- A symbol of order `ℓ` at infinity is `O(‖x‖ ^ ℓ)`. -/
-theorem isBigO (hf : IsSymbolAtInfinity k ℓ f) : f =O[cobounded E] fun x ↦ ‖x‖ ^ ℓ := by
-  have h := (hf.2 0 (Nat.zero_le _)).norm_left
-  simp only [norm_iteratedFDeriv_zero, CharP.cast_eq_zero, sub_zero] at h
-  exact h.of_norm_left
+  hf.2 j (by exact_mod_cast hj)
 
 /-- A symbol of negative order tends to `0` at infinity. -/
 theorem tendsto_zero (hf : IsSymbolAtInfinity k ℓ f) (hℓ : ℓ < 0) :
@@ -154,6 +117,11 @@ theorem tendsto_zero (hf : IsSymbolAtInfinity k ℓ f) (hℓ : ℓ < 0) :
   have h := (tendsto_rpow_neg_atTop (neg_pos.2 hℓ)).comp (tendsto_norm_cobounded_atTop (E := E))
   simp only [neg_neg] at h
   exact h
+
+/-- If `f - c` is a symbol of negative order at infinity, then `f` tends to `c` at infinity. -/
+theorem tendsto_of_sub {c : F} (hf : IsSymbolAtInfinity k ℓ fun x ↦ f x - c) (hℓ : ℓ < 0) :
+    Tendsto f (cobounded E) (𝓝 c) := by
+  simpa using (hf.tendsto_zero hℓ).add_const c
 
 /-- Being a symbol at infinity only depends on the map near infinity. -/
 theorem congr (hf : IsSymbolAtInfinity k ℓ f) (h : f =ᶠ[cobounded E] f₁) :
@@ -170,136 +138,11 @@ theorem congr (hf : IsSymbolAtInfinity k ℓ f) (h : f =ᶠ[cobounded E] f₁) :
 theorem mono (hf : IsSymbolAtInfinity k ℓ f) (h : ℓ ≤ m) : IsSymbolAtInfinity k m f :=
   ⟨hf.1, fun j hj ↦ (hf.2 j hj).trans (isBigO_rpow_rpow (by linarith))⟩
 
-/-- A symbol of regularity `k` at infinity has every smaller regularity. -/
-theorem of_le (hf : IsSymbolAtInfinity k ℓ f) (h : k' ≤ k) : IsSymbolAtInfinity k' ℓ f :=
-  ⟨hf.1.mono fun _ hx ↦ hx.of_le (by exact_mod_cast h), fun j hj ↦ hf.2 j (hj.trans h)⟩
-
-/-- The sum of two symbols of order `ℓ` at infinity has order `ℓ`. -/
-theorem add (hf : IsSymbolAtInfinity k ℓ f) (hf₁ : IsSymbolAtInfinity k ℓ f₁) :
-    IsSymbolAtInfinity k ℓ fun x ↦ f x + f₁ x := by
-  refine ⟨?_, fun j hj ↦ ((hf.2 j hj).add (hf₁.2 j hj)).congr' ?_ EventuallyEq.rfl⟩
-  · filter_upwards [hf.1, hf₁.1] with x hx hx₁
-    exact hx.add hx₁
-  · filter_upwards [hf.1, hf₁.1] with x hx hx₁
-    exact (iteratedFDeriv_add_apply (hx.of_le (by exact_mod_cast hj))
-      (hx₁.of_le (by exact_mod_cast hj))).symm
-
-/-- The negative of a symbol of order `ℓ` at infinity has order `ℓ`. -/
-theorem neg (hf : IsSymbolAtInfinity k ℓ f) : IsSymbolAtInfinity k ℓ fun x ↦ -f x := by
-  refine ⟨?_, fun j hj ↦ (hf.2 j hj).neg_left.congr' ?_ EventuallyEq.rfl⟩
-  · filter_upwards [hf.1] with x hx
-    exact hx.neg
-  · exact Eventually.of_forall fun x ↦ (iteratedFDeriv_neg_apply (f := f)).symm
-
-/-- The difference of two symbols of order `ℓ` at infinity has order `ℓ`. -/
-theorem sub (hf : IsSymbolAtInfinity k ℓ f) (hf₁ : IsSymbolAtInfinity k ℓ f₁) :
-    IsSymbolAtInfinity k ℓ fun x ↦ f x - f₁ x := by
-  simpa [sub_eq_add_neg] using hf.add hf₁.neg
-
-/-- The image of a symbol at infinity under a continuous linear map is a symbol of the same
-order. -/
-theorem continuousLinearMap_comp (hf : IsSymbolAtInfinity k ℓ f) (L : F →L[ℝ] G) :
-    IsSymbolAtInfinity k ℓ fun x ↦ L (f x) := by
-  refine ⟨?_, fun j hj ↦ (IsBigO.of_bound ‖L‖ ?_).trans (hf.2 j hj)⟩
-  · filter_upwards [hf.1] with x hx
-    exact L.contDiff.contDiffAt.comp x hx
-  · filter_upwards [hf.1] with x hx
-    exact L.norm_iteratedFDeriv_comp_left (f := f) hx (by exact_mod_cast hj)
-
 /-- Differentiation lowers the order of a symbol at infinity by one, and its regularity by
 one. -/
 protected theorem fderiv (hf : IsSymbolAtInfinity (k + 1) ℓ f) :
-    IsSymbolAtInfinity k (ℓ - 1) (fderiv ℝ f) := by
-  refine ⟨?_, fun j hj ↦ ?_⟩
-  · filter_upwards [hf.1] with x hx
-    exact hx.fderiv_right (m := k) (by push_cast; rfl)
-  · have h := (hf.2 (j + 1) (by omega)).norm_left
-    simp_rw [← norm_iteratedFDeriv_fderiv (n := j)] at h
-    refine h.of_norm_left.congr' EventuallyEq.rfl (Eventually.of_forall fun x ↦ ?_)
-    push_cast
-    ring_nf
-
-end IsSymbolAtInfinity
-
-/-- A constant map is a symbol of order `0` at infinity. -/
-theorem isSymbolAtInfinity_const (k : ℕ) (c : F) : IsSymbolAtInfinity k 0 fun _ : E ↦ c := by
-  refine ⟨Eventually.of_forall fun _ ↦ contDiffAt_const, fun j _ ↦ ?_⟩
-  rcases eq_or_ne j 0 with rfl | hj
-  · refine IsBigO.of_bound ‖c‖ (Eventually.of_forall fun x ↦ ?_)
-    simp
-  · rw [iteratedFDeriv_const_of_ne hj]
-    exact isBigO_zero _ _
-
-/-- The zero map is a symbol of every order at infinity. -/
-theorem isSymbolAtInfinity_zero (k : ℕ) (ℓ : ℝ) : IsSymbolAtInfinity k ℓ fun _ : E ↦ (0 : F) :=
-  ⟨Eventually.of_forall fun _ ↦ contDiffAt_const, fun j _ ↦ by
-    rw [iteratedFDeriv_fun_zero]
-    exact isBigO_zero _ _⟩
-
-/-- **Differentiation rule.** A map has order `ℓ` and regularity `k + 1` at infinity exactly when
-it is `C^(k + 1)` near infinity, `O(‖x‖ ^ ℓ)`, and its derivative has order `ℓ - 1` and
-regularity `k`. -/
-theorem isSymbolAtInfinity_add_one_iff {k : ℕ} {ℓ : ℝ} {f : E → F} :
-    IsSymbolAtInfinity (k + 1) ℓ f ↔ (∀ᶠ x in cobounded E, ContDiffAt ℝ (k + 1) f x) ∧
-      (f =O[cobounded E] fun x ↦ ‖x‖ ^ ℓ) ∧ IsSymbolAtInfinity k (ℓ - 1) (fderiv ℝ f) := by
-  refine ⟨fun hf ↦ ⟨by exact_mod_cast hf.1, hf.isBigO, hf.fderiv⟩, fun ⟨hC, h0, hD⟩ ↦
-    ⟨by exact_mod_cast hC, fun j hj ↦ ?_⟩⟩
-  cases j with
-  | zero =>
-    refine IsBigO.of_norm_left (h0.norm_left.congr' ?_ ?_) <;>
-      exact Eventually.of_forall fun x ↦ by simp
-  | succ j =>
-    have h := (hD.2 j (by omega)).norm_left
-    simp_rw [norm_iteratedFDeriv_fderiv (n := j)] at h
-    refine h.of_norm_left.congr' EventuallyEq.rfl (Eventually.of_forall fun x ↦ ?_)
-    push_cast
-    ring_nf
-
-namespace IsSymbolAtInfinity
-
-variable {k : ℕ} {ℓ m : ℝ} {f : E → F} {g : E → G}
-
-/-- A finite sum of symbols of order `ℓ` at infinity has order `ℓ`. -/
-theorem sum {ι : Type*} {s : Finset ι} {f : ι → E → F}
-    (hf : ∀ i ∈ s, IsSymbolAtInfinity k ℓ (f i)) :
-    IsSymbolAtInfinity k ℓ fun x ↦ ∑ i ∈ s, f i x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using isSymbolAtInfinity_zero (E := E) (F := F) k ℓ
-  | insert i s hi ih =>
-    simp only [Finset.sum_insert hi]
-    exact (hf i (Finset.mem_insert_self i s)).add
-      (ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj))
-
-/-! ### Products -/
-
-/-- **Products of symbols at infinity add their orders.** For a continuous bilinear map `B`, if
-`f` has order `ℓ` and `g` has order `m`, then `x ↦ B (f x) (g x)` has order `ℓ + m`. -/
-theorem bilinear (hf : IsSymbolAtInfinity k ℓ f) (hg : IsSymbolAtInfinity k m g)
-    (B : F →L[ℝ] G →L[ℝ] H) : IsSymbolAtInfinity k (ℓ + m) fun x ↦ B (f x) (g x) :=
-  ⟨(hf.1.and hg.1).mono fun _ hx ↦ B.isBoundedBilinearMap.contDiff.comp₂_contDiffAt hx.1 hx.2,
-    fun _ hj ↦ B.isBigO_iteratedFDeriv_of_bilinear_of_contDiffAt hf.1 hg.1
-      (by exact_mod_cast hj) (fun i hi ↦ hf.2 i (hi.trans hj)) (fun i hi ↦ hg.2 i (hi.trans hj))
-      fun _ hi ↦ isBigO_rpow_mul_rpow ℓ m hi⟩
-
-/-- A scalar symbol of order `ℓ` at infinity times a vector symbol of order `m` is a symbol of
-order `ℓ + m`. -/
-theorem smul {𝕜 : Type*} [NormedRing 𝕜] [NormedAlgebra ℝ 𝕜] [Module 𝕜 G] [IsBoundedSMul 𝕜 G]
-    [IsScalarTower ℝ 𝕜 G] {a : E → 𝕜} (ha : IsSymbolAtInfinity k ℓ a)
-    (hg : IsSymbolAtInfinity k m g) : IsSymbolAtInfinity k (ℓ + m) fun x ↦ a x • g x :=
-  ha.bilinear hg (ContinuousLinearMap.lsmul ℝ 𝕜)
-
-/-- A constant multiple of a symbol of order `ℓ` at infinity has order `ℓ`. -/
-theorem const_smul {𝕜 : Type*} [NormedRing 𝕜] [NormedAlgebra ℝ 𝕜] [Module 𝕜 G]
-    [IsBoundedSMul 𝕜 G] [IsScalarTower ℝ 𝕜 G] (hg : IsSymbolAtInfinity k ℓ g) (a : 𝕜) :
-    IsSymbolAtInfinity k ℓ fun x ↦ a • g x := by
-  simpa using (isSymbolAtInfinity_const k a).smul hg
-
-/-- Products of symbols at infinity with values in a normed algebra add their orders. -/
-theorem mul {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] {a b : E → A}
-    (ha : IsSymbolAtInfinity k ℓ a) (hb : IsSymbolAtInfinity k m b) :
-    IsSymbolAtInfinity k (ℓ + m) fun x ↦ a x * b x :=
-  ha.bilinear hb (ContinuousLinearMap.mul ℝ A)
+    IsSymbolAtInfinity k (ℓ - 1) (fderiv ℝ f) :=
+  IsSymbolAlong.fderiv (by exact_mod_cast hf)
 
 end IsSymbolAtInfinity
 
@@ -309,27 +152,13 @@ section Composition
 
 variable {k : ℕ} {ℓ : ℝ} {f : E → F} {c : F} {g : F → G}
 
-/-- The chain rule for `(D^j g) ∘ f` at a point where `D^j g` is differentiable at `f y` and `f`
-is differentiable at `y`: the derivative is the bilinear expression `(D^{j+1} g ∘ f) ∘ Df`, read
-through the currying of the first variable. -/
-private theorem fderiv_iteratedFDeriv_comp {j : ℕ} {y : E}
-    (hg : DifferentiableAt ℝ (iteratedFDeriv ℝ j g) (f y)) (hf : DifferentiableAt ℝ f y) :
-    fderiv ℝ (fun z ↦ iteratedFDeriv ℝ j g (f z)) y =
-      (ContinuousLinearMap.compL ℝ E F (ContinuousMultilinearMap ℝ (fun _ : Fin j ↦ F) G)).comp
-        (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ F)
-          G).toContinuousLinearEquiv.toContinuousLinearMap
-        (iteratedFDeriv ℝ (j + 1) g (f y)) (fderiv ℝ f y) := by
-  rw [fderiv_fun_comp y hg hf]
-  simp [iteratedFDeriv_succ_eq_comp_left]
-
 /-- The regularity facts behind the composition rule: near infinity, `g` is `Cᵏ` at `f x` and
 `f` is `Cᵏ` at `x`. -/
 private theorem eventually_contDiffAt_comp (hf : IsSymbolAtInfinity k ℓ fun x ↦ f x - c)
     (hℓ : ℓ < 0) (hg : ContDiffAt ℝ k g c) :
     ∀ᶠ x in cobounded E, ContDiffAt ℝ k g (f x) ∧ ContDiffAt ℝ k f x := by
-  have hfc : Tendsto f (cobounded E) (𝓝 c) := by
-    simpa using (hf.tendsto_zero hℓ).add_const c
-  filter_upwards [hfc.eventually (hg.eventually (by simp)), hf.1] with x hgx hfx
+  filter_upwards [(hf.tendsto_of_sub hℓ).eventually (hg.eventually (by simp)),
+    hf.eventually_contDiffAt] with x hgx hfx
   exact ⟨hgx, by simpa using hfx.add (contDiffAt_const (c := c))⟩
 
 /-- The derivative bounds of `(D^j g) ∘ f` at order `n + 1`: the derivative of `(D^j g) ∘ f` is
@@ -345,16 +174,16 @@ private theorem isBigO_iteratedFDeriv_comp_succ (hf : IsSymbolAtInfinity k ℓ f
   have hs := eventually_contDiffAt_comp hf hℓ hg
   -- `Df` has order `ℓ - 1`: it is the derivative of `f - c`.
   have hDf : IsSymbolAtInfinity n (ℓ - 1) (fderiv ℝ f) := by
-    have h := (hf.of_le (k' := n + 1) (by omega)).fderiv
+    have h := IsSymbolAtInfinity.fderiv
+      (hf.of_le (n' := (n + 1 : ℕ)) (by exact_mod_cast (by omega : n + 1 ≤ k)))
     have hd : fderiv ℝ (fun x ↦ f x - c) = fderiv ℝ f := funext fun _ ↦ fderiv_sub_const c
     rwa [hd] at h
-  refine isBigO_iteratedFDeriv_succ_of_eventuallyEq ?_
-    (ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear_of_contDiffAt (N := n)
+  refine isBigO_iteratedFDeriv_succ_rpow_of_eventuallyEq ?_
+    (ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear_rpow (ℓ := 0) (m := ℓ - 1)
       ((ContinuousLinearMap.compL ℝ E F (ContinuousMultilinearMap ℝ (fun _ : Fin j ↦ F) G)).comp
         (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ F)
-          G).toContinuousLinearEquiv.toContinuousLinearMap) ?_ hDf.1 le_rfl
-      (ρ₁ := fun i x ↦ ‖x‖ ^ (-(i : ℝ))) (ρ₂ := fun i x ↦ ‖x‖ ^ (ℓ - 1 - i)) hlow
-      (fun i hi ↦ hDf.2 i hi) fun i hi ↦ ?_)
+          G).toContinuousLinearEquiv.toContinuousLinearMap) ?_ hDf.eventually_contDiffAt le_rfl
+      (fun i hi ↦ by simpa using hlow i hi) fun i hi ↦ hDf.isBigO_iteratedFDeriv hi) (by ring)
   · filter_upwards [Metric.eventually_cobounded_eventually_nhds.2 hs] with x hx
     filter_upwards [hx] with y hy
     exact fderiv_iteratedFDeriv_comp
@@ -365,10 +194,6 @@ private theorem isBigO_iteratedFDeriv_comp_succ (hf : IsSymbolAtInfinity k ℓ f
     exact (hx.1.iteratedFDeriv_right (m := n) (i := j + 1)
       (by exact_mod_cast (by omega : n + (j + 1) ≤ k))).comp x
       (hx.2.of_le (by exact_mod_cast (by omega : n ≤ k)))
-  · -- The product of the bounds of orders `i` and `n - i` is `‖x‖ ^ (ℓ - (n + 1))`.
-    refine ((rpow_mul_rpow_eventuallyEq _ _).trans (Eventually.of_forall fun x ↦ ?_)).isBigO
-    push_cast [Nat.cast_sub hi]
-    ring_nf
 
 /-- The derivative bounds of `(D^j g) ∘ f` at order `0`, for all `j` at once, by induction on the
 derivative order: the derivatives of order `i` with `i + j ≤ k` are `O(‖x‖ ^ (-i))`. -/
@@ -376,8 +201,7 @@ private theorem isBigO_iteratedFDeriv_comp (hf : IsSymbolAtInfinity k ℓ fun x 
     (hℓ : ℓ < 0) (hg : ContDiffAt ℝ k g c) (n : ℕ) :
     ∀ j i : ℕ, i ≤ n → i + j ≤ k → iteratedFDeriv ℝ i (fun x ↦ iteratedFDeriv ℝ j g (f x))
       =O[cobounded E] fun x ↦ ‖x‖ ^ (-(i : ℝ)) := by
-  have hfc : Tendsto f (cobounded E) (𝓝 c) := by
-    simpa using (hf.tendsto_zero hℓ).add_const c
+  have hfc := hf.tendsto_of_sub hℓ
   induction n with
   | zero =>
     intro j i hi hij
@@ -419,27 +243,26 @@ regularity `k`: it is bounded near infinity, and its derivative of order `j ≤ 
 `O(‖x‖ ^ (-j))`. -/
 theorem comp_of_contDiffAt (hf : IsSymbolAtInfinity k ℓ fun x ↦ f x - c) (hℓ : ℓ < 0)
     (hg : ContDiffAt ℝ k g c) : IsSymbolAtInfinity k 0 fun x ↦ g (f x) := by
-  refine ⟨(eventually_contDiffAt_comp hf hℓ hg).mono fun x hx ↦ hx.1.comp x hx.2,
-    fun j hj ↦ ?_⟩
+  refine isSymbolAtInfinity_iff.2 ⟨(eventually_contDiffAt_comp hf hℓ hg).mono
+    fun x hx ↦ hx.1.comp x hx.2, fun j hj ↦ ?_⟩
   have h := (isBigO_iteratedFDeriv_comp hf hℓ hg j 0 j le_rfl (by omega)).norm_left
   simp_rw [norm_iteratedFDeriv_comp_eq] at h
   exact h.of_norm_left.congr' EventuallyEq.rfl (Eventually.of_forall fun x ↦ by simp)
 
 /-- **Composition with a map smooth at the limit, with decay.** If `f - c` is a symbol of
-negative order `ℓ` at infinity and regularity `k`, and `g` is `Cᵏ` and differentiable at `c`, then
-`g ∘ f - g c` is a symbol of order `ℓ` and regularity `k`. -/
+negative order `ℓ` at infinity and regularity `k`, and `g` is `C^(max k 1)` at `c` (so at least
+`C¹`), then `g ∘ f - g c` is a symbol of order `ℓ` and regularity `k`. -/
 theorem comp_sub (hf : IsSymbolAtInfinity k ℓ fun x ↦ f x - c) (hℓ : ℓ < 0)
     (hg : ContDiffAt ℝ (max k 1 : ℕ) g c) : IsSymbolAtInfinity k ℓ fun x ↦ g (f x) - g c := by
   have hgk : ContDiffAt ℝ k g c := hg.of_le (by exact_mod_cast le_max_left k 1)
   have hs := eventually_contDiffAt_comp hf hℓ hgk
-  refine ⟨hs.mono fun x hx ↦ (hx.1.comp x hx.2).sub contDiffAt_const, fun j hj ↦ ?_⟩
+  refine isSymbolAtInfinity_iff.2 ⟨hs.mono fun x hx ↦ (hx.1.comp x hx.2).sub contDiffAt_const,
+    fun j hj ↦ ?_⟩
   cases j with
   | zero =>
     -- `g` is differentiable at `c`, so `g ∘ f - g c = O(f - c) = O(‖x‖ ^ ℓ)`.
-    have hfc : Tendsto f (cobounded E) (𝓝 c) := by
-      simpa using (hf.tendsto_zero hℓ).add_const c
     have hd : DifferentiableAt ℝ g c := hg.differentiableAt (by exact_mod_cast (by omega))
-    have h := (hd.hasFDerivAt.isBigO_sub.comp_tendsto hfc).trans hf.isBigO
+    have h := (hd.hasFDerivAt.isBigO_sub.comp_tendsto (hf.tendsto_of_sub hℓ)).trans hf.isBigO
     refine IsBigO.of_norm_left (h.norm_left.congr' ?_ ?_) <;>
       exact Eventually.of_forall fun x ↦ by simp
   | succ j =>

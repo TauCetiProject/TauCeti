@@ -7,8 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import TauCeti.Analysis.Calculus.ContDiff.SymbolClass.Infinity
+public import TauCeti.Analysis.Calculus.ContDiff.SymbolClass.Matrix
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Basic
-import Mathlib.Analysis.Matrix.Normed
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.ContDiff.Matrix
 
@@ -35,7 +35,8 @@ to the scalar curvature.
 
 The proofs apply the composition rule `TauCeti.IsSymbolAtInfinity.comp_sub` to inversion and to
 `A ↦ √(det A)`, which are smooth at the identity matrix; the matrices are normed by the `L^∞`
-operator norm, which only enters the proofs.
+operator norm, which only enters the proofs, through the reduction of matrix-valued symbols to
+their entries (`TauCeti.isSymbolAlong_matrix_iff`).
 
 ## References
 
@@ -102,26 +103,6 @@ section Matrix
 
 open scoped Matrix.Norms.Operator
 
-variable {k : ℕ} {ℓ : ℝ} {A : EuclideanSpace ℝ (Fin n) → Matrix (Fin n) (Fin n) ℝ}
-
-/-- For the `L^∞` operator norm, a matrix-valued map is a symbol at infinity when its entries
-are. -/
-private theorem isSymbolAtInfinity_matrix (hA : ∀ i j, IsSymbolAtInfinity k ℓ fun x ↦ A x i j) :
-    IsSymbolAtInfinity k ℓ A := by
-  have hsum : A = fun x ↦ ∑ i, ∑ j, A x i j • Matrix.single i j (1 : ℝ) := by
-    funext x
-    conv_lhs => rw [Matrix.matrix_eq_sum_single (A x)]
-    simp [Matrix.smul_single]
-  rw [hsum]
-  exact IsSymbolAtInfinity.sum fun i _ ↦ IsSymbolAtInfinity.sum fun j _ ↦ by
-    simpa using (hA i j).smul (isSymbolAtInfinity_const k (Matrix.single i j (1 : ℝ)))
-
-/-- For the `L^∞` operator norm, the entries of a matrix-valued symbol at infinity are symbols
-of the same order. -/
-private theorem isSymbolAtInfinity_matrix_apply (hA : IsSymbolAtInfinity k ℓ A) (i j : Fin n) :
-    IsSymbolAtInfinity k ℓ fun x ↦ A x i j :=
-  hA.continuousLinearMap_comp (Matrix.entryLinearMap ℝ ℝ i j).toContinuousLinearMap
-
 namespace IsAsymptoticallyEuclideanEnd
 
 variable {t R : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
@@ -132,9 +113,10 @@ at infinity: the inverse metric is `O₂(‖x‖ ^ (-t))`-close to the Euclidean
 theorem isSymbolAtInfinity_inv_pullbackMetricCoeff_sub_one
     (h : IsAsymptoticallyEuclideanEnd I t R φ) (ht : 0 < t) (i j : Fin n) :
     IsSymbolAtInfinity 2 (-t) fun x ↦ ((pullbackMetricCoeff I φ x)⁻¹ - 1) i j := by
-  have hg := isSymbolAtInfinity_matrix (h.isSymbolAtInfinity_pullbackMetricCoeff_sub_one)
+  have hg : IsSymbolAtInfinity 2 (-t) fun x ↦ pullbackMetricCoeff I φ x - 1 :=
+    isSymbolAlong_matrix_iff.2 h.isSymbolAtInfinity_pullbackMetricCoeff_sub_one
   simpa only [Matrix.nonsing_inv_eq_ringInverse] using
-    isSymbolAtInfinity_matrix_apply (hg.ringInverse_sub_one (neg_neg_of_pos ht)) i j
+    isSymbolAlong_matrix_iff.1 (hg.ringInverse_sub_one (neg_neg_of_pos ht)) i j
 
 /-- **The volume density of an end.** For an end of order `t > 0`, the Riemannian volume density
 `√(det g)` of the pulled-back metric coefficients, minus `1`, is a symbol of order `-t` and
@@ -142,7 +124,8 @@ regularity `2` at infinity: the volume density is `O₂(‖x‖ ^ (-t))`-close t
 theorem isSymbolAtInfinity_sqrt_det_pullbackMetricCoeff_sub_one
     (h : IsAsymptoticallyEuclideanEnd I t R φ) (ht : 0 < t) :
     IsSymbolAtInfinity 2 (-t) fun x ↦ √(pullbackMetricCoeff I φ x).det - 1 := by
-  have hg := isSymbolAtInfinity_matrix (h.isSymbolAtInfinity_pullbackMetricCoeff_sub_one)
+  have hg : IsSymbolAtInfinity 2 (-t) fun x ↦ pullbackMetricCoeff I φ x - 1 :=
+    isSymbolAlong_matrix_iff.2 h.isSymbolAtInfinity_pullbackMetricCoeff_sub_one
   -- `A ↦ √(det A)` is smooth at the identity matrix, where the determinant is `1`.
   have hG : ContDiffAt ℝ (max 2 1 : ℕ) (fun B : Matrix (Fin n) (Fin n) ℝ ↦ √B.det) 1 :=
     (Real.contDiffAt_sqrt (by simp)).comp _ (ContDiffAt.matrix_det fun i j ↦

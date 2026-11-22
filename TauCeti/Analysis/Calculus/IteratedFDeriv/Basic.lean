@@ -45,7 +45,11 @@ most one (`TauCeti.norm_iteratedFDeriv_id_le_one`), as have those of right trans
 a continuous linear map `L` are constant (`ContinuousLinearMap.iteratedFDeriv_succ_eq`), so
 adding `L` to a differentiable function adds them to its derivatives of positive order
 (`ContinuousLinearMap.iteratedFDeriv_succ_add_apply`) and does not change their Hölder constants
-(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_succ_add_left_iff`).
+(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_succ_add_left_iff`). The derivative of
+`(D^j g) ∘ f` is the bilinear expression `(D^{j+1} g ∘ f) ∘ Df`
+(`TauCeti.fderiv_iteratedFDeriv_comp`), and where `Df` agrees locally with a map `g` whose `n`-th
+derivative is `O(ρ)` along a filter, the `(n + 1)`-th derivative of `f` is `O(ρ)`
+(`TauCeti.isBigO_iteratedFDeriv_succ_of_eventuallyEq`).
 -/
 
 public section
@@ -306,6 +310,31 @@ theorem nonneg_and_norm_le_of_norm_iteratedFDeriv_le {f : E → F} {N : ℕ} {G 
     0 ≤ G ∧ ∀ x, ‖f x‖ ≤ G :=
   have hf (x : E) : ‖f x‖ ≤ G := by simpa using hfG 0 (Nat.zero_le _) x
   ⟨(norm_nonneg _).trans (hf 0), hf⟩
+
+/-- The chain rule for `(D^j g) ∘ f` at `y`, where `D^j g` is differentiable at `f y` and `f` at
+`y`: the derivative is the bilinear expression `(D^{j+1} g ∘ f) ∘ Df`, read through the currying of
+the first variable. -/
+theorem fderiv_iteratedFDeriv_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {f : E → F} {g : F → G} {j : ℕ} {y : E} (hg : DifferentiableAt 𝕜 (iteratedFDeriv 𝕜 j g) (f y))
+    (hf : DifferentiableAt 𝕜 f y) :
+    fderiv 𝕜 (fun z ↦ iteratedFDeriv 𝕜 j g (f z)) y =
+      (ContinuousLinearMap.compL 𝕜 E F (ContinuousMultilinearMap 𝕜 (fun _ : Fin j ↦ F) G)).comp
+        (continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (j + 1) ↦ F)
+          G).toContinuousLinearEquiv.toContinuousLinearMap
+        (iteratedFDeriv 𝕜 (j + 1) g (f y)) (fderiv 𝕜 f y) := by
+  rw [fderiv_fun_comp y hg hf]
+  simp [iteratedFDeriv_succ_eq_comp_left]
+
+open Asymptotics in
+/-- If `fderiv 𝕜 f` agrees near every point of a set of the filter `l` with a map `g` whose `n`-th
+derivative is `O(ρ)` along `l`, then the `(n + 1)`-th derivative of `f` is `O(ρ)` along `l`: the
+two derivatives have the same norm. -/
+theorem isBigO_iteratedFDeriv_succ_of_eventuallyEq {l : Filter E} {f : E → F}
+    {g : E → E →L[𝕜] F} {ρ : E → ℝ} {n : ℕ} (hf : ∀ᶠ x in l, fderiv 𝕜 f =ᶠ[𝓝 x] g)
+    (hg : iteratedFDeriv 𝕜 n g =O[l] ρ) : iteratedFDeriv 𝕜 (n + 1) f =O[l] ρ := by
+  refine IsBigO.of_norm_left (hg.norm_left.congr' ?_ Filter.EventuallyEq.rfl)
+  filter_upwards [hf] with x hx
+  rw [← (hx.iteratedFDeriv 𝕜 n).eq_of_nhds, norm_iteratedFDeriv_fderiv]
 
 /-- Where a function `ζ` equals one on a neighbourhood of `x`, every iterated derivative of `ζ * u`
 at `x` is that of `u`. -/
