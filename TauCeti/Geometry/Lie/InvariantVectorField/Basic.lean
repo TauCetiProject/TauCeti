@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.GroupLieAlgebra
 public import TauCeti.Geometry.Lie.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
 import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Invariant vector fields on Lie groups
@@ -20,8 +21,8 @@ tangent-bundle smoothness inputs from `TauCeti.Geometry.Manifold.VectorField.Reg
 
 It also defines the left Maurer-Cartan form evaluated on a vector field `V`,
 `g ↦ d(L_{g⁻¹})_g (V g)`, the value of `V` translated back to the identity. Since it is read off
-the tangent map of multiplication, it is differentiable, and on a smooth Lie group `C^n`, wherever
-`V` is.
+the tangent map of multiplication, it is differentiable, and on a `C^N` Lie group `C^n` for
+`n + 1 ≤ N`, wherever `V` is.
 
 ## Main definitions
 
@@ -56,8 +57,8 @@ the tangent map of multiplication, it is differentiable, and on a smooth Lie gro
   has vanishing derivative at the identity has vanishing derivative at `g`.
 * `MDifferentiableAt.leftMaurerCartanEval`: the left Maurer-Cartan form evaluated on a
   differentiable vector field is differentiable.
-* `ContMDiffAt.leftMaurerCartanEval`: on a smooth Lie group, the left Maurer-Cartan form evaluated
-  on a `C^n` vector field is `C^n`.
+* `ContMDiffAt.leftMaurerCartanEval`: on a `C^N` Lie group, the left Maurer-Cartan form evaluated
+  on a `C^n` vector field is `C^n` when `n + 1 ≤ N`.
 
 ## Implementation notes
 
@@ -354,68 +355,68 @@ theorem leftMaurerCartanEval_mulInvariantVectorField (w : GroupLieAlgebra I G) (
   rw [leftMaurerCartanEval_apply]
   exact mfderiv_inv_mul_mulInvariantVectorField w g
 
+/-- The left Maurer-Cartan form evaluated on `V` at `g`, as a tangent vector over the identity, is
+the tangent map of multiplication applied to the zero vector at `g⁻¹` and to `V g`; that tangent
+vector sits over `g⁻¹ * g = 1`. -/
+private theorem mk_one_leftMaurerCartanEval_eq_tangentMap_mul (V : Π g : G, TangentSpace I g)
+    (g : G) :
+    TotalSpace.mk' E 1 (leftMaurerCartanEval (E := E) V g) =
+      tangentMap% (fun p : G × G => p.1 * p.2) ((equivTangentBundleProd I G I G).symm
+        (TotalSpace.mk' E g⁻¹ 0, TotalSpace.mk' E g (V g))) := by
+  rw [tangentMap_mul_prod_apply]
+  simp only [map_zero, zero_add]
+  -- Both sides are now the vector `d(L_{g⁻¹})_g (V g)` over `1`, built once with `TotalSpace.mk'`
+  -- and once with the anonymous constructor.
+  rw [inv_mul_cancel, leftMaurerCartanEval_apply]
+  rfl
+
+omit [ContMDiffMul I 1 G] in
+/-- In the trivialization at `1`, the fibre coordinate of a tangent vector over `1` is the vector
+itself. -/
+private theorem trivializationAt_one_mk_snd [IsManifold I 1 G] (v : E) :
+    (trivializationAt E (TangentSpace I) (1 : G) (TotalSpace.mk' E 1 v)).2 = v :=
+  ((trivializationAt E (TangentSpace I) (1 : G)).continuousLinearMapAt_apply_of_mem (R := 𝕜)
+    (FiberBundle.mem_baseSet_trivializationAt' 1) v).symm.trans
+    (Manifold.continuousLinearMapAt_trivializationAt_self 1 v)
+
 omit [ContMDiffMul I 1 G] in
 /-- The left Maurer-Cartan form evaluated on a vector field is differentiable wherever the vector
 field is. -/
 theorem _root_.MDifferentiableAt.leftMaurerCartanEval [LieGroup I 2 G]
     {V : Π g : G, TangentSpace I g} {x : G} (hV : MDiffAt (T% V) x) :
     MDiffAt (TauCeti.leftMaurerCartanEval (E := E) V) x := by
-  -- The evaluated form is read off the tangent map of multiplication, evaluated on the zero
-  -- vector at `g⁻¹` and on `V g` at `g`; that tangent vector sits over `g⁻¹ * g = 1`.
-  let F : G → TangentBundle I G := fun g ↦
-    TotalSpace.mk' E 1 (TauCeti.leftMaurerCartanEval (E := E) V g)
-  have hF : MDiffAt F x := by
+  -- The evaluated form, as a vector over `1`, is read off the tangent map of multiplication.
+  have hF : MDiffAt (fun g ↦
+      (TotalSpace.mk' E 1 (TauCeti.leftMaurerCartanEval (E := E) V g) : TangentBundle I G)) x := by
     have hmul := contMDiff_tangentMap_mul_prod (I := I) (G := G) (m := 1) (n := 2) (by norm_num)
     have hinv : MDiffAt (fun g : G ↦ (TotalSpace.mk' E g⁻¹ 0 : TangentBundle I G)) x :=
       (((contMDiff_zeroSection 𝕜 (TangentSpace I : G → Type _)).comp
         (contMDiff_inv I 2)).mdifferentiable two_ne_zero) x
-    refine ((hmul.mdifferentiable one_ne_zero _).comp x (hinv.prodMk hV)).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun g ↦ ?_)
-    simp only [Function.comp_apply, F]
-    rw [tangentMap_mul_prod_apply]
-    simp only [map_zero, zero_add]
-    rw [inv_mul_cancel]
-    rfl
-  refine ((mdifferentiableAt_totalSpace I F).mp hF).2.congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun g ↦ ?_)
-  -- In the trivialization at `1`, the fibre coordinate of a vector over `1` is the vector itself.
-  have h := Trivialization.continuousLinearMapAt_apply_of_mem 𝕜
-    (trivializationAt E (TangentSpace I) (1 : G)) (mem_baseSet_trivializationAt E _ (1 : G))
-    (TauCeti.leftMaurerCartanEval (E := E) V g)
-  rw [TangentBundle.continuousLinearMapAt_trivializationAt_eq_core
-    (mem_chart_source H (1 : G))] at h
-  exact ((tangentBundleCore I G).coordChange_self _ _ (mem_chart_source H (1 : G)) _).symm.trans h
+    exact ((hmul.mdifferentiable one_ne_zero _).comp x (hinv.prodMk hV)).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall (mk_one_leftMaurerCartanEval_eq_tangentMap_mul V))
+  exact ((mdifferentiableAt_totalSpace I _).mp hF).2.congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun g ↦ (trivializationAt_one_mk_snd _).symm)
 
 omit [ContMDiffMul I 1 G] in
-/-- On a smooth Lie group, the left Maurer-Cartan form evaluated on a vector field is `C^n` wherever
-the vector field is. -/
-theorem _root_.ContMDiffAt.leftMaurerCartanEval [LieGroup I ∞ G] {n : WithTop ℕ∞}
-    [ENat.LEInfty n] {V : Π g : G, TangentSpace I g} {x : G} (hV : CMDiffAt n (T% V) x) :
-    CMDiffAt n (TauCeti.leftMaurerCartanEval (E := E) V) x := by
+/-- On a `C^N` Lie group, the left Maurer-Cartan form evaluated on a vector field is `C^n` wherever
+the vector field is, for `n + 1 ≤ N`. -/
+theorem _root_.ContMDiffAt.leftMaurerCartanEval {n N : ℕ∞ω} [LieGroup I N G] (hn : n + 1 ≤ N)
+    {V : Π g : G, TangentSpace I g} {x : G} :
+    let _ : IsManifold I 1 G := IsManifold.of_le (le_add_self.trans hn)
+    CMDiffAt n (T% V) x → CMDiffAt n (TauCeti.leftMaurerCartanEval (E := E) V) x := by
+  intro _ hV
+  let _ : ContMDiffMul I 1 G := ContMDiffMul.of_le (le_add_self.trans hn)
   -- As for differentiability, the evaluated form is read off the tangent map of multiplication.
-  let F : G → TangentBundle I G := fun g ↦
-    TotalSpace.mk' E 1 (TauCeti.leftMaurerCartanEval (E := E) V g)
-  have hF : CMDiffAt n F x := by
-    have hmul := contMDiff_tangentMap_mul_prod (I := I) (G := G) (m := ∞) (n := ∞) (by simp)
+  have hF : CMDiffAt n (fun g ↦
+      (TotalSpace.mk' E 1 (TauCeti.leftMaurerCartanEval (E := E) V g) : TangentBundle I G)) x := by
+    have hmul := contMDiff_tangentMap_mul_prod (I := I) (G := G) hn
     have hinv : CMDiffAt n (fun g : G ↦ (TotalSpace.mk' E g⁻¹ 0 : TangentBundle I G)) x :=
       (((contMDiff_zeroSection 𝕜 (TangentSpace I : G → Type _)).comp
-        (contMDiff_inv I ∞)).of_le ENat.LEInfty.out) x
-    refine (((hmul.of_le ENat.LEInfty.out) _).comp x (hinv.prodMk hV)).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun g ↦ ?_)
-    simp only [Function.comp_apply, F]
-    rw [tangentMap_mul_prod_apply]
-    simp only [map_zero, zero_add]
-    rw [inv_mul_cancel]
-    rfl
-  refine (contMDiffAt_totalSpace_iff.mp hF).2.congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun g ↦ ?_)
-  -- In the trivialization at `1`, the fibre coordinate of a vector over `1` is the vector itself.
-  have h := Trivialization.continuousLinearMapAt_apply_of_mem 𝕜
-    (trivializationAt E (TangentSpace I) (1 : G)) (mem_baseSet_trivializationAt E _ (1 : G))
-    (TauCeti.leftMaurerCartanEval (E := E) V g)
-  rw [TangentBundle.continuousLinearMapAt_trivializationAt_eq_core
-    (mem_chart_source H (1 : G))] at h
-  exact ((tangentBundleCore I G).coordChange_self _ _ (mem_chart_source H (1 : G)) _).symm.trans h
+        (contMDiff_inv I N)).of_le (le_self_add.trans hn)) x
+    exact ((hmul _).comp x (hinv.prodMk hV)).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall (mk_one_leftMaurerCartanEval_eq_tangentMap_mul V))
+  exact (contMDiffAt_totalSpace_iff.mp hF).2.congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun g ↦ (trivializationAt_one_mk_snd _).symm)
 
 end MaurerCartan
 

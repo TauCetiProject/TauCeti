@@ -34,15 +34,18 @@ invariant formula for the exterior derivative only the Lie bracket terms survive
 left-invariant vector fields is the left-invariant vector field of the bracket in `𝔤`. Hence `j(a)`
 is closed exactly when `a` is a cocycle. For instance, the Cartan three-form
 `a(X, Y, Z) = B(X, [Y, Z])` of an invariant bilinear form `B` is a cocycle, so `j(a)` is a closed
-three-form; on a compact group its pullbacks along homomorphisms are again left-invariant, and in
-top degree their integrals are nonzero, which is how such forms detect nontrivial homotopy classes
-of maps of spheres.
+three-form. Its pullback along a homomorphism is again left-invariant, the left-invariant form of
+`a` precomposed with the differential of the homomorphism at the identity. In top degree, if that
+precomposition is nonzero and the source group is compact of positive dimension, the integral of
+the pullback is positive (`TauCeti.integralTopForm_leftInvariantForm_pos`), which is how such
+forms detect nontrivial homotopy classes of maps of spheres.
 
 ## Main definitions
 
 * `TauCeti.leftInvariantForm a`: the left-invariant form with value `a` at the identity.
 * `TauCeti.leftInvariantSmoothForm a`: the same form, bundled as a smooth form on a
-  finite-dimensional smooth Lie group.
+  finite-dimensional smooth Lie group; it is linear and injective in `a`, and invariant under
+  left translations (`TauCeti.SmoothForm.mpullback_mul_left_leftInvariantSmoothForm`).
 
 ## Main results
 
@@ -117,6 +120,16 @@ theorem leftInvariantForm_smul (c : ℝ) (a : GroupLieAlgebra I G [⋀^Fin k]→
     leftInvariantForm (c • a) = c • leftInvariantForm a :=
   (rfl)
 
+@[simp]
+theorem leftInvariantForm_neg (a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
+    leftInvariantForm (-a) = -leftInvariantForm a :=
+  (rfl)
+
+@[simp]
+theorem leftInvariantForm_sub (a b : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
+    leftInvariantForm (a - b) = leftInvariantForm a - leftInvariantForm b :=
+  (rfl)
+
 /-- At the identity, translating back to the identity is the identity. -/
 private theorem mfderiv_one_inv_mul :
     mfderiv I I (fun x : G ↦ (1 : G)⁻¹ * x) 1 =
@@ -130,6 +143,8 @@ theorem leftInvariantForm_one (a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
     leftInvariantForm a 1 = a := by
   ext v
   rw [leftInvariantForm_apply, mfderiv_one_inv_mul]
+  -- The identity map lands in `TangentSpace I (1⁻¹ * 1)`, which is only definitionally the Lie
+  -- algebra, so `ContinuousLinearMap.id_apply` does not rewrite here and the step is `rfl`.
   rfl
 
 /-- The left trivialization is injective: a left-invariant form is determined by its value at the
@@ -164,7 +179,7 @@ theorem leftInvariantForm_ne_zero {a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] 
   obtain ⟨w, hw⟩ := DFunLike.ne_iff.1 ha
   apply hw
   rw [← leftInvariantForm_apply_mulInvariantVectorField a w g, h]
-  rfl
+  simp only [ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
 
 /-- **Left invariance**: the left-invariant form of `a` is its own pullback along every left
 translation. -/
@@ -214,6 +229,7 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
 /-- **Naturality of the left trivialization**: the pullback of a left-invariant form along a
 differentiable homomorphism is the left-invariant form of the pullback of its value at the
 identity along the differential of the homomorphism. -/
+@[simp]
 theorem mpullback_leftInvariantForm (φ : ContMDiffMonoidMorphism I I' n G G') (hn : n ≠ 0)
     (a : GroupLieAlgebra I' G' [⋀^Fin k]→L[ℝ] F) :
     mpullback I I' φ (leftInvariantForm a) =
@@ -254,7 +270,7 @@ theorem isSmoothForm_leftInvariantForm (a : GroupLieAlgebra I G [⋀^Fin k]→L[
       exact contMDiffAt_const)
   have hMC : ContMDiffAt I 𝓘(ℝ, Fin k → E) ∞ (fun y ↦ fun i ↦
       leftMaurerCartanEval (E := E) (fun y : G ↦ e.symmL ℝ y (v i)) y) x :=
-    contMDiffAt_pi_module_iff.2 fun i ↦ (hV i).leftMaurerCartanEval
+    contMDiffAt_pi_module_iff.2 fun i ↦ ContMDiffAt.leftMaurerCartanEval (N := ∞) (by simp) (hV i)
   simp only [leftMaurerCartanEval_apply] at hMC
   -- The Lie algebra is the model space, on which `a` is a smooth multilinear map.
   let a' : E [⋀^Fin k]→L[ℝ] F := a
@@ -268,6 +284,51 @@ def leftInvariantSmoothForm (a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) : S
 theorem coe_leftInvariantSmoothForm (a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
     (leftInvariantSmoothForm a).val = leftInvariantForm a :=
   (rfl)
+
+@[simp]
+theorem leftInvariantSmoothForm_zero :
+    leftInvariantSmoothForm (0 : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) = 0 :=
+  (rfl)
+
+@[simp]
+theorem leftInvariantSmoothForm_add (a b : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
+    leftInvariantSmoothForm (a + b) = leftInvariantSmoothForm a + leftInvariantSmoothForm b :=
+  (rfl)
+
+@[simp]
+theorem leftInvariantSmoothForm_smul (c : ℝ) (a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
+    leftInvariantSmoothForm (c • a) = c • leftInvariantSmoothForm a :=
+  (rfl)
+
+@[simp]
+theorem leftInvariantSmoothForm_neg (a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
+    leftInvariantSmoothForm (-a) = -leftInvariantSmoothForm a :=
+  (rfl)
+
+@[simp]
+theorem leftInvariantSmoothForm_sub (a b : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
+    leftInvariantSmoothForm (a - b) = leftInvariantSmoothForm a - leftInvariantSmoothForm b :=
+  (rfl)
+
+/-- The smooth left trivialization is injective. -/
+theorem leftInvariantSmoothForm_injective :
+    Injective (leftInvariantSmoothForm :
+      (GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) → SmoothForm I G F k) :=
+  fun _ _ h ↦ leftInvariantForm_injective (congrArg Subtype.val h)
+
+@[simp]
+theorem leftInvariantSmoothForm_inj {a b : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F} :
+    leftInvariantSmoothForm a = leftInvariantSmoothForm b ↔ a = b :=
+  leftInvariantSmoothForm_injective.eq_iff
+
+/-- **Left invariance** of the smooth left-invariant form of `a`: it is its own pullback along
+every left translation. -/
+@[simp]
+theorem SmoothForm.mpullback_mul_left_leftInvariantSmoothForm
+    (a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) (h : G) :
+    SmoothForm.mpullback (h * ·) contMDiff_mul_left (leftInvariantSmoothForm a) =
+      leftInvariantSmoothForm a :=
+  Subtype.ext ((SmoothForm.coe_mpullback _ _ _).trans (mpullback_mul_left_leftInvariantForm a h))
 
 /-- **A nonzero left-invariant top form has positive integral** over a compact Lie group of
 positive dimension, for the orientation it defines. In particular its integral is not zero. -/
@@ -318,7 +379,8 @@ private theorem mextDeriv_leftInvariantForm_apply_succ {n : ℕ}
     rw [hbracket, ← hVg, ← leftInvariantForm_apply_mulInvariantVectorField a]
     congr 1
     funext l
-    cases l using Fin.cases <;> rfl
+    cases l using Fin.cases <;> simp only [Matrix.cons_val_zero, Matrix.cons_val_succ, V, w,
+      Fin.removeNth]
   rw [h, TauCeti.LieModule.Cohomology.d_succ_apply]
   simp only [hconst, mvfderiv_const, zero_apply, smul_zero,
     Finset.sum_const_zero, zero_sub, hpair, trivial_lie_zero, zero_add]
@@ -364,6 +426,9 @@ theorem mextDeriv_leftInvariantForm_eq_zero_iff (a : GroupLieAlgebra I G [⋀^Fi
   · funext g
     ext v
     rw [mextDeriv_leftInvariantForm_apply, h]
+    -- Both sides are zero; the translated vectors lie in `TangentSpace I (g⁻¹ * g)`, which is only
+    -- definitionally the Lie algebra, so the zero-application lemmas do not rewrite and the step
+    -- is `rfl`.
     rfl
 
 /-- The smooth left-invariant form of `a` is closed exactly when `a` is a Chevalley–Eilenberg

@@ -28,9 +28,10 @@ the orbit.
 * `Module.Dual.leftInvariantCovector ν : G → T*G` is the section `g ↦ g • ν` of the cotangent
   bundle obtained by moving the covector `ν` at the identity with the cotangent lift of left
   multiplication. Its value at `g` is `ν ∘ d(L_{g⁻¹})_g`.
-* `Module.Dual.leftInvariantForm ν` is the corresponding smooth one-form `α_ν`, the pullback of
-  the Liouville form along this section. It is the left-invariant one-form with value `ν` at the
-  identity: `α_ν(X^L_ξ) = ν ξ` for the left-invariant vector field `X^L_ξ` of `ξ`.
+* `Module.Dual.leftInvariantForm ν` is the corresponding smooth one-form `α_ν`, the left-invariant
+  form `TauCeti.leftInvariantSmoothForm` of `ν` in degree one, with value `ν` at the identity:
+  `α_ν(X^L_ξ) = ν ξ` for the left-invariant vector field `X^L_ξ` of `ξ`. It is also the pullback
+  of the Liouville form along this section.
 * `Module.Dual.leftInvariantKirillovForm ν` is the two-form `σ_ν = -dα_ν`, which is also the
   pullback of the canonical symplectic form `ω = -dλ` of `T*G` along the section.
 
@@ -146,17 +147,39 @@ theorem momentMap_leftInvariantCovector (g : G) :
 
 /-! ### The left-invariant one-form -/
 
-/-- The **left-invariant one-form** `α_ν` of `ν ∈ 𝔤*`, with value `ν` at the identity: the pullback
-of the Liouville form of `T*G` along the left-invariant covector field of `ν`. -/
+/-- The **left-invariant one-form** `α_ν` of `ν ∈ 𝔤*`, with value `ν` at the identity: the smooth
+left-invariant form `TauCeti.leftInvariantSmoothForm` of `ν`, read as an alternating map of degree
+one. It is also the pullback of the Liouville form of `T*G` along the left-invariant covector field
+of `ν` (`Module.Dual.leftInvariantForm_eq_mpullback_liouvilleForm`). -/
 def leftInvariantForm : SmoothForm I G ℝ 1 :=
-  SmoothForm.mpullback ν.leftInvariantCovector ν.contMDiff_leftInvariantCovector
-    (CotangentBundle.liouvilleForm I G)
+  leftInvariantSmoothForm (ContinuousAlternatingMap.ofSubsingleton ℝ (GroupLieAlgebra I G) ℝ
+    (0 : Fin 1) (LinearMap.toContinuousLinearMap ν))
+
+/-- The left-invariant one-form of `ν` is the left-invariant form `TauCeti.leftInvariantForm` of
+`ν`, read as an alternating map of degree one. -/
+theorem coe_leftInvariantForm :
+    ν.leftInvariantForm.val = TauCeti.leftInvariantForm
+      (ContinuousAlternatingMap.ofSubsingleton ℝ (GroupLieAlgebra I G) ℝ (0 : Fin 1)
+        (LinearMap.toContinuousLinearMap ν)) :=
+  coe_leftInvariantSmoothForm _
 
 /-- The left-invariant one-form of `ν` evaluates a tangent vector `v` at `g` to
 `ν (d(L_{g⁻¹})_g v)`. -/
 theorem leftInvariantForm_apply (g : G) (v : Fin 1 → TangentSpace I g) :
     ν.leftInvariantForm.val g v = ν (mfderiv I I (g⁻¹ * ·) g (v 0)) := by
-  rw [leftInvariantForm, SmoothForm.coe_mpullback,
+  rw [coe_leftInvariantForm, TauCeti.leftInvariantForm_apply]
+  exact ContinuousAlternatingMap.ofSubsingleton_apply_apply ℝ (GroupLieAlgebra I G) ℝ (0 : Fin 1)
+    (LinearMap.toContinuousLinearMap ν) fun i ↦ mfderiv I I (g⁻¹ * ·) g (v i)
+
+/-- The left-invariant one-form of `ν` is the pullback of the Liouville form of `T*G` along the
+left-invariant covector field of `ν`. -/
+theorem leftInvariantForm_eq_mpullback_liouvilleForm :
+    ν.leftInvariantForm = SmoothForm.mpullback ν.leftInvariantCovector
+      ν.contMDiff_leftInvariantCovector (CotangentBundle.liouvilleForm I G) := by
+  apply Subtype.ext
+  funext g
+  ext v
+  rw [leftInvariantForm_apply, SmoothForm.coe_mpullback,
     CotangentBundle.mpullback_liouvilleForm_apply_of_proj_comp_eq (g := id)
       (fun y ↦ ν.proj_leftInvariantCovector y)
       (ν.contMDiff_leftInvariantCovector.mdifferentiableAt (by simp)),
@@ -172,11 +195,8 @@ theorem leftInvariantForm_apply_mulInvariantVectorField (ξ : GroupLieAlgebra I 
 /-- The left-invariant one-form is invariant under left translations. -/
 @[simp]
 theorem mpullback_mul_left_leftInvariantForm (h : G) :
-    SmoothForm.mpullback (h * ·) contMDiff_mul_left ν.leftInvariantForm = ν.leftInvariantForm := by
-  rw [leftInvariantForm, SmoothForm.mpullback_mpullback_of_comp_eq contMDiff_mul_left
-    ν.contMDiff_leftInvariantCovector ν.contMDiff_leftInvariantCovector
-    (contMDiff_const_smul h) (funext fun g ↦ ν.leftInvariantCovector_mul h g),
-    CotangentBundle.mpullback_smul_liouvilleForm]
+    SmoothForm.mpullback (h * ·) contMDiff_mul_left ν.leftInvariantForm = ν.leftInvariantForm :=
+  SmoothForm.mpullback_mul_left_leftInvariantSmoothForm _ h
 
 /-- Right translation by `h` pulls the left-invariant one-form of `ν` back to that of the
 coadjoint translate `Ad*_h ν`. -/
@@ -192,18 +212,6 @@ theorem mpullback_mul_right_leftInvariantForm (h : G) :
     leftInvariantForm_apply, ← hξ, mfderiv_mul_right_mulInvariantVectorField,
     mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField,
     coadjointRepresentation_apply]
-
-/-- The left-invariant one-form of `ν` is the left-invariant form `TauCeti.leftInvariantForm` of
-`ν`, read as an alternating map of degree one. -/
-theorem coe_leftInvariantForm :
-    ν.leftInvariantForm.val = TauCeti.leftInvariantForm
-      (ContinuousAlternatingMap.ofSubsingleton ℝ (GroupLieAlgebra I G) ℝ (0 : Fin 1)
-        (LinearMap.toContinuousLinearMap ν)) := by
-  funext g
-  ext v
-  rw [leftInvariantForm_apply, TauCeti.leftInvariantForm_apply]
-  exact (ContinuousAlternatingMap.ofSubsingleton_apply_apply ℝ (GroupLieAlgebra I G) ℝ (0 : Fin 1)
-    (LinearMap.toContinuousLinearMap ν) fun i ↦ mfderiv I I (g⁻¹ * ·) g (v i)).symm
 
 /-! ### The left-invariant Kirillov form -/
 
@@ -223,7 +231,8 @@ theorem leftInvariantKirillovForm_def :
 theorem leftInvariantKirillovForm_eq_mpullback_symplecticForm :
     ν.leftInvariantKirillovForm = SmoothForm.mpullback ν.leftInvariantCovector
       ν.contMDiff_leftInvariantCovector (CotangentBundle.symplecticForm I G) := by
-  rw [leftInvariantKirillovForm, leftInvariantForm, SmoothForm.mextDerivₗ_mpullback,
+  rw [leftInvariantKirillovForm, leftInvariantForm_eq_mpullback_liouvilleForm,
+    SmoothForm.mextDerivₗ_mpullback,
     CotangentBundle.symplecticForm_eq_neg_mextDerivₗ, map_neg]
 
 /-- The left-invariant Kirillov form is closed. -/

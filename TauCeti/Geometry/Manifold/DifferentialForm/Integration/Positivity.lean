@@ -18,10 +18,10 @@ positively oriented bases of every tangent space. The integral of such a form is
 (`TauCeti.integralTopForm_nonneg`), and it is positive as soon as the form is continuous,
 compactly supported and positive at one point (`TauCeti.integralTopForm_pos`). The manifold may
 have boundary or corners, and it need not be Hausdorff. In particular, on a nonempty compact
-manifold a nowhere-vanishing continuous top form has positive integral for the orientation it
-defines (`TauCeti.integralTopForm_ofTopForm_pos`).
+manifold of positive dimension a nowhere-vanishing continuous top form has positive integral for
+the orientation it defines (`TauCeti.integralTopForm_ofTopForm_pos`).
 
-Both statements need positive degree. A zero-dimensional tangent space has a unique basis, and its
+These statements need positive degree. A zero-dimensional tangent space has a unique basis, and its
 orientation may be the opposite of the given one; the hypothesis on positively oriented bases is
 then vacuous at that point, where the form contributes its value with a negative sign.
 
