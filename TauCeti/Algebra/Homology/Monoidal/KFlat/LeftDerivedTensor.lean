@@ -611,8 +611,10 @@ def leftDerivedTensorObjIsoKFlatTensor (P : CochainComplex C ℤ) [P.IsKFlat] :
     ((MonoidalCategory.curriedTensor (CochainComplex C ℤ)).obj P ⋙ DerivedCategory.Q)
     (((MonoidalCategory.curriedTensor C).map₂CochainComplex.obj P) ⋙ DerivedCategory.Q)
     (LF.obj (DerivedCategory.Q.obj P)) P.kFlatTensor
-    (Functor.isoWhiskerRight ((CochainComplex.curriedTensorIsoMap₂CochainComplex C).app P)
-      DerivedCategory.Q)
+    -- Both functors send `L` to `HomologicalComplex.mapBifunctor P L (curriedTensor C) (.up ℤ)`
+    -- and act on morphisms by `HomologicalComplex.mapBifunctorMap`, by definition of Mathlib's
+    -- monoidal structure on complexes; see `TauCeti/Algebra/Homology/Monoidal/Basic.lean`.
+    (Iso.refl _)
 
 /-- On a complex model `L`, `leftDerivedTensorObjIsoKFlatTensor LF α P` intertwines
 `P.kFlatTensorModelIso` with `(α.app P).app L`. -/
@@ -628,9 +630,7 @@ theorem leftDerivedTensorObjIsoKFlatTensor_hom_app_Q_comp
   have h := Localization.liftNatTrans_app DerivedCategory.Q (quasiIso C (.up ℤ))
     ((MonoidalCategory.curriedTensor (CochainComplex C ℤ)).obj P ⋙ DerivedCategory.Q)
     (((MonoidalCategory.curriedTensor C).map₂CochainComplex.obj P) ⋙ DerivedCategory.Q)
-    (LF.obj (DerivedCategory.Q.obj P)) P.kFlatTensor
-    (Functor.isoWhiskerRight ((CochainComplex.curriedTensorIsoMap₂CochainComplex C).app P)
-      DerivedCategory.Q).hom L
+    (LF.obj (DerivedCategory.Q.obj P)) P.kFlatTensor (Iso.refl _).hom L
   rw [← CochainComplex.kFlatTensorModelIso_eq_liftingIso P] at h
   have h' := h =≫ P.kFlatTensorModelIso.hom.app L
   rw [Category.assoc, Category.assoc, Iso.inv_hom_id_app, Category.comp_id] at h'

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.LinearMap.DivisionRing
+public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
@@ -19,6 +20,13 @@ of linear maps, such as the module snake lemma, be applied to continuous linear 
 Precomposing with a continuous linear equivalence does not change whether a continuous linear map
 vanishes.
 
+A continuous linear map out of `κ → R`, with `κ` finite, is determined by its values on the
+coordinate vectors `Pi.single k 1`.
+
+A semilinear family `μ : M₁ →ₛₗ[σ₁₃] M₂ →SL[σ₂₃] M₃` of continuous semilinear maps becomes a
+family of semilinear maps after composing with the coercion `ContinuousLinearMap.coeLMₛₗ`, and
+then Mathlib's algebraic flip `LinearMap.flip` applies to it.
+
 ## Main results
 
 * `ContinuousLinearMap.toLinearMap_comp_eq`: a commutative square of continuous semilinear maps
@@ -27,6 +35,10 @@ vanishes.
   for a continuous semilinear equivalence `e`.
 * `ContinuousLinearMap.surjective_iff_ne_zero`: a continuous linear functional is surjective
   exactly when it is nonzero.
+* `ContinuousLinearMap.pi_ext_single_one`: a continuous linear map out of `κ → R`, `κ` finite, is
+  determined by its values on the coordinate vectors.
+* `LinearMap.flip_coeLMₛₗ_comp_apply`: evaluation of the algebraic flip of such a family `μ`,
+  `((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip y x = μ x y`.
 -/
 
 public section
@@ -65,4 +77,29 @@ theorem surjective_iff_ne_zero {R M : Type*} [DivisionSemiring R] [TopologicalSp
     Function.Surjective f ↔ f ≠ 0 :=
   LinearMap.surjective_iff_ne_zero.trans (not_congr (coe_inj (g := 0)))
 
+/-- A continuous linear map out of `κ → R`, with `κ` finite, is determined by its values on the
+coordinate vectors `Pi.single k 1`. -/
+theorem pi_ext_single_one {R M κ : Type*} [Semiring R] [TopologicalSpace R] [TopologicalSpace M]
+    [AddCommMonoid M] [Module R M] [Finite κ] [DecidableEq κ] {f g : (κ → R) →L[R] M}
+    (h : ∀ k, f (Pi.single k 1) = g (Pi.single k 1)) : f = g :=
+  coe_injective <| LinearMap.pi_ext' fun k ↦ LinearMap.ext_ring <| h k
+
 end ContinuousLinearMap
+
+namespace LinearMap
+
+variable {R₁ R₂ R₃ : Type*} [Semiring R₁] [Semiring R₂] [Semiring R₃]
+  {σ₁₃ : R₁ →+* R₃} {σ₂₃ : R₂ →+* R₃} {M₁ M₂ M₃ : Type*}
+  [AddCommMonoid M₁] [Module R₁ M₁]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R₂ M₂]
+  [TopologicalSpace M₃] [AddCommMonoid M₃] [Module R₃ M₃] [ContinuousAdd M₃]
+  [ContinuousConstSMul R₃ M₃] [SMulCommClass R₃ R₃ M₃]
+
+/-- Evaluation of the algebraic flip of a semilinear family `μ` of continuous semilinear maps,
+with each `μ x` viewed as a semilinear map through `ContinuousLinearMap.coeLMₛₗ`: it sends `y`
+and then `x` to `μ x y`. -/
+theorem flip_coeLMₛₗ_comp_apply (μ : M₁ →ₛₗ[σ₁₃] M₂ →SL[σ₂₃] M₃) (y : M₂) (x : M₁) :
+    ((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip y x = μ x y := by
+  rw [flip_apply, comp_apply, ContinuousLinearMap.coeLMₛₗ_apply, ContinuousLinearMap.coe_coe]
+
+end LinearMap
