@@ -50,17 +50,17 @@ where `u` is close to a nondegenerate orbit, `D_u` controls the whole `W^{1,2}` 
 * `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add` is the case of a Floer
   trajectory: `K = H_t dt` with `J_t` independent of `s`, which is cylindrical near the ends
   (`TauCeti.Floer.isCylindricalNearEnds_comp_snd`).
-* `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add` is the
-  semi-Fredholm estimate along a Floer trajectory between the Sobolev spaces with an exponential
-  weight `e^{κ(s)}`, read as the estimate of `D_u - κ'(s)`, when the slope `κ'` equals constants
-  `δ±` near `±∞` for which the shifted fields `dX_{H_t}(x±(t)) - δ± J_t(x±(t))` have
-  nondegenerate return maps; for one-periodic data this says that `δ±` are not eigenvalues of the
-  asymptotic operators at the ends. It is a case of
-  `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_cylindrical`,
-  the same estimate for data that are cylindrical near the ends, whose end estimates are
-  `exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sub_smul_sq` and whose
+* `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_cylindrical`
+  is the semi-Fredholm estimate of `D_u - c(s)` for data that are cylindrical near the ends, when
+  the slope `c` equals constants `δ±` near `±∞` for which the shifted fields
+  `dX_{H±_t}(x±(t)) - δ± J±_t(x±(t))` have nondegenerate return maps; for one-periodic data this
+  says that `δ±` are not eigenvalues of the asymptotic operators at the ends. Its end estimates are
+  `exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sub_smul_sq` and its
   case `c = 0` is
-  `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`.
+  `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`. For
+  `c = κ'` it is the semi-Fredholm estimate between the Sobolev spaces with an exponential weight
+  `e^{κ(s)}`; its case of a Floer trajectory is in
+  `TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Weighted`.
 
 Sections are `C²` maps `ξ : ℝ × ℝ → V` of period one in `t` that vanish outside a strip
 `(a, b) × ℝ`, and the integrals are over the fundamental domain `[a, b] × [0, 1]`. The Sobolev
@@ -441,57 +441,5 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add
   ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical
     (Floer.isCylindricalNearEnds_comp_snd hJ hH (R := 0) u) hu hJu hX hH hxm hndm hJ hJxm huxm hδm
     hX hH hxp hndp hJ hJxp huxp hδp
-
-/-- **The weighted semi-Fredholm estimate along a Floer trajectory.** Let `H` be a jointly `C²`
-Hamiltonian, `J_t(y)` a `C¹` family of almost complex structures and `u : ℝ × ℝ → V` a `C¹` map
-along which `J_t` is `ω`-compatible, whose loops converge uniformly to continuous loops `xm` at
-`-∞` and `xp` at `+∞`, with `J_t` compatible along them, while its slice defect
-`∂t u - X_{H_t}(u)` tends uniformly to zero at both ends, as for a Floer trajectory from `xm` to
-`xp`. Let `c : ℝ → ℝ` be continuous, equal to `δm` for `s ≤ -R` and to `δp` for `s ≥ R`, where the
-end weights are such that `S±_t - δ± J_t(x±(t))` have nondegenerate return maps, for
-`S±_t = dX_{H_t}(x±(t))`; when `H`, `J` and `x±` are one-periodic in `t`, this says that `δ±` is
-not an eigenvalue of the asymptotic operator at `x±`. Then
-there are `C ≥ 0` and `T` such that every `C²` map `ξ` of period one in `t` that vanishes for
-`s ∉ (a, b)` satisfies
-
-`∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D_u ξ - c(s) ξ‖² + ∫_{[-T, T] × [0, 1]} ‖ξ‖²)`
-
-over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` of the datum `K = H_t dt`. For
-`c = κ'` the operator `D_u - κ'` is `D_u` conjugated by the weight `e^{κ(s)}`
-(`floerLinearization_exp_neg_smul`), so this is the semi-Fredholm estimate of `D_u` between the
-Sobolev spaces with weight `e^{κ(s)}`, whose slopes at the ends are `δ±`. -/
-theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add
-    (ω : SymplecticForm V) {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (Function.uncurry H))
-    {xm xp : ℝ → V} (hxm : Continuous xm) (hxp : Continuous xp)
-    {J : ℝ → V → AlmostComplexStructure V}
-    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hJxm : ∀ t, ω.Compatible (J t (xm t))) (hJxp : ∀ t, ω.Compatible (J t (xp t)))
-    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) (hJu : ∀ z, ω.Compatible (J z.2 (u z)))
-    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
-    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
-    (hδm : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atBot (Icc 0 1))
-    (hδp : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
-        (Icc 0 1))
-    {c : ℝ → ℝ} (hc : Continuous c) {R δm δp : ℝ} (hcm : ∀ s ≤ -R, c s = δm)
-    (hcp : ∀ s, R ≤ s → c s = δp)
-    (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
-      fderiv ℝ (ω.hamiltonianVectorField (H t)) (xm t) -
-        δm • (J t (xm t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
-    (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
-      fderiv ℝ (ω.hamiltonianVectorField (H t)) (xp t) -
-        δp • (J t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
-    ∃ C, 0 ≤ C ∧ ∃ T, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
-      ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) →
-        ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
-            ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
-          C * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization
-            (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-            (fun w ↦ H w.2) u ξ z - c z.1 • ξ z‖ ^ 2) +
-            ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) :=
-  ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_cylindrical
-    (Floer.isCylindricalNearEnds_comp_snd hJ hH (R := R) u) hu hJu hc hcm hcp hH hxm hJ hJxm hdetm
-    huxm hδm hH hxp hJ hJxp hdetp huxp hδp
 
 end TauCeti.SymplecticForm
