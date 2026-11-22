@@ -92,11 +92,8 @@ theorem det_id_sub_homologyMap_monodromyChainMap_symm_ne_zero_iff (n : ℕ) :
       (homologyMap (monodromyChainMap φ.symm (ModuleCat.of k k)) n).hom).det ≠ 0 ↔
       (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) n).hom).det ≠ 0 := by
   refine LinearMap.det_id_sub_ne_zero_iff_of_comp_eq_id ?_
-  rw [← ModuleCat.hom_comp, ← homologyMap_comp, monodromyChainMap_def, monodromyChainMap_def,
-    ← Functor.map_comp, ← TopCat.ofHom_comp]
-  have h : (⟨φ.symm, φ.symm.continuous⟩ : C(F, F)).comp ⟨φ, φ.continuous⟩ = ContinuousMap.id F :=
-    ContinuousMap.ext φ.symm_apply_apply
-  rw [h, TopCat.ofHom_id, CategoryTheory.Functor.map_id, homologyMap_id, ModuleCat.hom_id]
+  rw [← ModuleCat.hom_comp, ← homologyMap_comp, monodromyChainMap_comp_monodromyChainMap_symm,
+    homologyMap_id, ModuleCat.hom_id]
 
 /-- **The kernel of the Wang connecting morphism is the torsion.** If `H₁(F)` is free of finite
 rank and `det (𝟙 - φ_*) ≠ 0` on it, the kernel of `δ : H₁(T_φ) ⟶ H₀(F)` is the torsion
