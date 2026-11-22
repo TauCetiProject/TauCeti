@@ -18,8 +18,9 @@ function on such a ball. This bundled function supplies the integrand in Pietsch
 
 Evaluation at a vector is itself a continuous function on such a ball, and
 `WeakDual.evalClosedBall` bundles `x ↦ (φ ↦ φ x)` as a bounded operator from `E` into the
-continuous functions on the ball of radius `r`, of norm at most `r`. On the unit ball it is the
-canonical map of `E` into `C(B, 𝕜)` through which Pietsch factorization passes to `Lᵖ`.
+continuous functions on the ball of radius `r`, of norm at most `r` when `0 ≤ r`. On the unit
+ball it is the canonical map of `E` into `C(B, 𝕜)` through which Pietsch factorization passes to
+`Lᵖ`.
 -/
 
 public section
@@ -36,7 +37,8 @@ instance [ProperSpace 𝕜] (f : StrongDual 𝕜 E) (r : ℝ) :
     CompactSpace (toStrongDual ⁻¹' Metric.closedBall f r : Set (WeakDual 𝕜 E)) :=
   isCompact_iff_compactSpace.mp (isCompact_closedBall f r)
 
-/-- The continuous function `φ ↦ ‖φ x‖ ^ p` on the weak-star closed ball of radius `r`. -/
+/-- The continuous function `φ ↦ ‖φ x‖ ^ p.toReal` on the weak-star closed ball of radius `r`.
+For `p = ∞` the exponent is `0`, so this is the constant function `1`. -/
 noncomputable def evalRpow (r : ℝ) (p : ℝ≥0∞) (x : E) :
     C(toStrongDual ⁻¹' Metric.closedBall (0 : StrongDual 𝕜 E) r, ℝ) where
   toFun φ := ‖(φ : WeakDual 𝕜 E) x‖ ^ p.toReal
@@ -73,8 +75,7 @@ theorem evalClosedBall_apply_apply (r : ℝ) (x : E)
 
 /-- Evaluation on the dual ball of radius `r ≥ 0` has operator norm at most `r`. -/
 theorem norm_evalClosedBall_le {r : ℝ} (hr : 0 ≤ r) :
-    ‖(evalClosedBall r : E →L[𝕜] C(toStrongDual ⁻¹' Metric.closedBall (0 : StrongDual 𝕜 E) r,
-      𝕜))‖ ≤ r := by
+    ‖evalClosedBall (𝕜 := 𝕜) (E := E) r‖ ≤ r := by
   rw [evalClosedBall]
   exact (LinearMap.mkContinuous_norm_le _ (le_max_right r 0) _).trans_eq (max_eq_left hr)
 
