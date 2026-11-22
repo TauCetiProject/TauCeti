@@ -51,16 +51,15 @@ With the reattachment data `(g, K)` stated explicitly, the homotopy equivalence 
 reattachment map of the given polar factors `g` and of the homotopies `K` of characteristic maps,
 and `ρ'` that of the inverse isometries and the reversed homotopies.
 
-The whole construction, maps and homotopies alike, is compatible with restriction of the
-parameter along a continuous map `u : P' → P`, for instance the inclusion of a subcomplex. The
-restricted data are the polar factors `g i (u p)` and the homotopies `K i` read at `u p`
-(`TauCeti.exists_fiberwiseCellReattachment_comp_fiberwiseCellAttachmentMap_morseFamily`). They give
-maps `ρᵤ` and `ρᵤ'` over `P'` between the cell attachments of the chart families `ψⱼ (u p) i`, with
-homotopies `ρᵤ' ∘ ρᵤ ≃ id`, `ρᵤ ∘ ρᵤ' ≃ id` and `Φ₀ ∘ ρᵤ ≃ Φ₁` relative to `P' × M_{c-ε}` through
-maps over `P'`. The maps of fiberwise adjunction spaces over `u`
-(`TauCeti.fiberwiseCellAttachmentMap`) carry `ρᵤ` and `ρᵤ'` to `ρ` and `ρ'`, and each homotopy over
-`P'` to the corresponding homotopy over `P`. So the restriction of the homotopy equivalence over
-`P` to `P'` is the homotopy equivalence of the restricted families, with its homotopies.
+The maps and homotopies are compatible with restriction of the parameter along a continuous map
+`u : P' → P`, for instance the inclusion of a subcomplex. For the chart families `ψⱼ (u p) i` the
+theorem gives maps `ρᵤ` and `ρᵤ'` over `P'` between their cell attachments, both the identity on
+`P' × M_{c-ε}`, with homotopies `G₁ᵤ : ρᵤ' ∘ ρᵤ ≃ id`, `G₂ᵤ : ρᵤ ∘ ρᵤ' ≃ id` and
+`G₃ᵤ : Φ₀ ∘ ρᵤ ≃ Φ₁` relative to `P' × M_{c-ε}` through maps over `P'`. The maps of fiberwise
+adjunction spaces over `u` (`TauCeti.fiberwiseCellAttachmentMap`) carry `ρᵤ`, `ρᵤ'`, `G₁ᵤ` and
+`G₂ᵤ` to `ρ`, `ρ'`, `G₁` and `G₂`, and `u × id` on `P' × M_{c+ε}` carries `G₃ᵤ` to `G₃`. The
+proof builds these from the polar factors `g i (u p)` and the homotopies `K i` read at `u p`
+(`TauCeti.exists_fiberwiseCellReattachment_comp_fiberwiseCellAttachmentMap_morseFamily`).
 
 ## Main results
 
@@ -277,12 +276,13 @@ families, in both directions, with homotopies `G₁`, `G₂` and `G₃`, such th
   over `P`;
 * `G₃ : Φ₀ ∘ ρ ≃ Φ₁` is a homotopy relative to `P × M_{c-ε}` through maps over `P`, for the
   comparison maps `Φⱼ` to `P × M_{c+ε}` of the characteristic maps of the two families;
-* the whole construction restricts along every continuous `u : P' → P`, for instance the
-  inclusion of a subcomplex: for the chart families `ψⱼ (u p) i` there are maps `ρᵤ`, `ρᵤ'` and
-  homotopies `G₁ᵤ`, `G₂ᵤ`, `G₃ᵤ` over `P'` with the same properties relative to `P' × M_{c-ε}`,
-  and the maps of fiberwise adjunction spaces over `u` (`TauCeti.fiberwiseCellAttachmentMap`)
-  carry `ρᵤ` and `ρᵤ'` to `ρ` and `ρ'`, and each of `G₁ᵤ`, `G₂ᵤ`, `G₃ᵤ` to the corresponding
-  homotopy over `P`. -/
+* the maps and homotopies restrict along every continuous `u : P' → P`, for instance the
+  inclusion of a subcomplex: for the chart families `ψⱼ (u p) i` there are maps `ρᵤ`, `ρᵤ'` over
+  `P'`, both the identity on `P' × M_{c-ε}`, and homotopies `G₁ᵤ : ρᵤ' ∘ ρᵤ ≃ id`,
+  `G₂ᵤ : ρᵤ ∘ ρᵤ' ≃ id` and `G₃ᵤ : Φ₀ ∘ ρᵤ ≃ Φ₁` relative to `P' × M_{c-ε}` through maps over
+  `P'`; the maps of fiberwise adjunction spaces over `u` (`TauCeti.fiberwiseCellAttachmentMap`)
+  carry `ρᵤ`, `ρᵤ'`, `G₁ᵤ` and `G₂ᵤ` to `ρ`, `ρ'`, `G₁` and `G₂`, and `u × id` on
+  `P' × M_{c+ε}` carries `G₃ᵤ` to `G₃`. -/
 theorem exists_fiberwiseCellReattachment_morseFamily [CompactSpace P]
     (hfs : ContMDiff Iₘ 𝓘(ℝ) ∞ f) (hp : ∀ p i, (ψ₀ p i).symm 0 = (ψ₁ p i).symm 0)
     {r : ι → ℝ} (hr : ∀ i, 0 < r i)
@@ -392,10 +392,8 @@ theorem exists_fiberwiseCellReattachment_morseFamily [CompactSpace P]
   have hχ₀ := morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₀ k hk hε.le hball₀ hf₀ hs₀
   have hχ₁ := morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₁ k hk hε.le hball₁ hf₁ hs₁
   have hh (i : ι) (p : P) := mapsTo_diskMapFamily_range_diskBoundaryInclusion (g i) (hgc i) p
-  have he (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
-      ((diskMapFamily (g i) (hgc i) (p, w)).down : EuclideanSpace ℝ (Fin (k i))) =
-        g i p w.down := by
-    rw [diskMapFamily_apply, LinearIsometryEquiv.coe_diskMap_apply_down]
+  have he (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :=
+    coe_diskMapFamily_apply_down (g i) (hgc i) (p, w)
   obtain ⟨hι, hι', hπ, hπ', hG₁, hG₂, hG₃⟩ := fiberwiseCellReattachment_morseFamily_spec ψ₀ ψ₁ k
     hk hε hball₀ hball₁ hf₀ hf₁ hs₀ hs₁ g hgc hh he K hK
   refine ⟨g, hg, hgc, fiberwiseCellReattachment _ _ _ _ hχ₀ hχ₁ _ hh K hK,
@@ -412,13 +410,8 @@ theorem exists_fiberwiseCellReattachment_morseFamily [CompactSpace P]
       hball₀ hball₁ hf₀ hf₁ hs₀ hs₁ hs₀' hs₁' g hgc K hK
   have hgc' (i : ι) := (hgc i).comp u.continuous
   have hh' (i : ι) p := mapsTo_diskMapFamily_range_diskBoundaryInclusion _ (hgc' i) p
-  have hh'h (i : ι) p (w : TopCat.disk.{u} (k i)) :
-      diskMapFamily (fun p ↦ g i (u p)) (hgc' i) (p, w) = diskMapFamily (g i) (hgc i) (u p, w) := by
-    rw [diskMapFamily_apply, diskMapFamily_apply]
-  have he' (i : ι) p (w : TopCat.disk.{u} (k i)) :
-      ((diskMapFamily (fun p ↦ g i (u p)) (hgc' i) (p, w)).down :
-        EuclideanSpace ℝ (Fin (k i))) = g i (u p) w.down := by
-    rw [hh'h, he]
+  have he' (i : ι) p (w : TopCat.disk.{u} (k i)) :=
+    coe_diskMapFamily_apply_down (fun p ↦ g i (u p)) (hgc' i) (p, w)
   obtain ⟨hι, hι', hπ, hπ', hG₁, hG₂, hG₃⟩ := fiberwiseCellReattachment_morseFamily_spec _ _ k hk
     hε _ _ _ _ hs₀' hs₁' _ hgc' hh' he' K' hK'
   exact ⟨_, _, _, _, _, hι, hι', hπ, hπ', hG₁, hG₂, hG₃, hρ, hρ',
