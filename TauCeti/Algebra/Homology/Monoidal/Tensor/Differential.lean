@@ -19,14 +19,18 @@ cochain complexes indexed by `ℤ` and `(-1) ^ p` for chain complexes indexed by
 the implementation notes, takes `tensorObj X Y` as the tensor product `X ⊗ Y`. The full monoidal
 instance `HomologicalComplex.monoidalCategory` assumes further conditions, and when it is available
 its tensor product is this same `X ⊗ Y`. This file records the resulting differential on a
-homogeneous summand, `d (x ⊗ y) = d x ⊗ y + (-1)^p x ⊗ d y` for `x` of degree `p`, in any monoidal
-preadditive category: as a single rewrite rule for cochain complexes indexed by `ℤ`, and as its two
-parts `HomologicalComplex.mapBifunctor.D₁` and `HomologicalComplex.mapBifunctor.D₂` for chain
-complexes indexed by `ℕ`, where a part vanishes on a summand whose factor of degree zero it would
-differentiate.
+homogeneous summand, `d (x ⊗ y) = d x ⊗ y + ε p • x ⊗ d y` for `x` of degree `p`, in any monoidal
+preadditive category: as a single rewrite rule for complexes of any shape with tensor signs, given
+the degrees that the two factor differentials reach, with the sign evaluated to `(-1)^p` for
+cochain complexes indexed by `ℤ`, and as its two parts `HomologicalComplex.mapBifunctor.D₁` and
+`HomologicalComplex.mapBifunctor.D₂` for chain complexes indexed by `ℕ`, where a part vanishes on a
+summand whose factor of degree zero it would differentiate.
 
 ## Main results
 
+* `HomologicalComplex.ιTensorObj_d_of_rel`: the differential of `HomologicalComplex.tensorObj X Y`
+  restricted to the summand `X.X p ⊗ Y.X q`, for complexes of any shape `c` with tensor signs whose
+  tensor product exists, given `c.Rel p p'` and `c.Rel q q'`.
 * `HomologicalComplex.ιTensorObj_d`: the differential of `HomologicalComplex.tensorObj X Y`
   restricted to the summand `X.X p ⊗ Y.X q`, for cochain complexes indexed by `ℤ` whose tensor
   product exists, and `HomologicalComplex.ιTensorObj_d'`, the same formula with arbitrary names
@@ -43,23 +47,26 @@ differentiate.
 
 ## Implementation notes
 
-`HomologicalComplex.ιTensorObj_d` and `HomologicalComplex.ιTensorObj_d'` only assume that the
-tensor product of the given pair of complexes exists, `[X.HasTensor Y]`. A monoidal structure on
-all complexes needs much more, and it can fail where pairwise tensor products exist: for bounded
-complexes of finite-dimensional vector spaces, the tensor product of two arbitrary graded objects
-can need infinite coproducts. The corollaries `HomologicalComplex.ιTensorObj_tensor_d` and
-`HomologicalComplex.ιTensorObj_tensor_d'` restate them for `X ⊗ Y` in Mathlib's
-`HomologicalComplex.monoidalCategoryStruct`, because `rw` and `simp` do not see through `X ⊗ Y` to
-`HomologicalComplex.tensorObj X Y`; `HomologicalComplex.tensor_d` records that identification for
-complexes of any shape. Their section variables are exactly the instances that structure takes:
-a zero object, the coproducts `GradedObject.HasTensor`, preservation of the initial object by
-`- ⊗ X₂`, and the conditions `GradedObject.HasGoodTensor₁₂Tensor` and
-`GradedObject.HasGoodTensorTensor₂₃`. For `ModuleCat R`, instance search finds all of them once
-`Mathlib.Algebra.Category.ModuleCat.Colimits`, `Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed`
-and `Mathlib.CategoryTheory.Monoidal.Closed.Braided` are imported.
+`HomologicalComplex.ιTensorObj_d_of_rel`, `HomologicalComplex.ιTensorObj_d` and
+`HomologicalComplex.ιTensorObj_d'` only assume that the tensor product of the given pair of
+complexes exists, `[X.HasTensor Y]`. A monoidal structure on all complexes needs much more, and it
+can fail where pairwise tensor products exist: for bounded complexes of finite-dimensional vector
+spaces, the tensor product of two arbitrary graded objects can need infinite coproducts. The
+corollaries `HomologicalComplex.ιTensorObj_tensor_d` and `HomologicalComplex.ιTensorObj_tensor_d'`
+restate them for `X ⊗ Y` in Mathlib's `HomologicalComplex.monoidalCategoryStruct`, because `rw` and
+`simp` do not see through `X ⊗ Y` to `HomologicalComplex.tensorObj X Y`;
+`HomologicalComplex.tensor_d` records that identification for complexes of any shape. Their section
+variables are exactly the instances that structure takes: a zero object, the coproducts
+`GradedObject.HasTensor`, preservation of the initial object by `- ⊗ X₂`, and the conditions
+`GradedObject.HasGoodTensor₁₂Tensor` and `GradedObject.HasGoodTensorTensor₂₃`. For `ModuleCat R`,
+instance search finds all of them once `Mathlib.Algebra.Category.ModuleCat.Colimits`,
+`Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed` and
+`Mathlib.CategoryTheory.Monoidal.Closed.Braided` are imported.
 
-The unprimed formulas are `simp` lemmas. The primed ones, whose successor degrees are arbitrary,
-are meant to be passed explicitly to `rw` or `simp only` with the equations that fix those degrees.
+The unprimed cochain formulas are `simp` lemmas, derived from
+`HomologicalComplex.ιTensorObj_d_of_rel`, which needs the target degrees as arguments. That lemma
+and the primed cochain formulas, whose successor degrees are arbitrary, are meant to be passed
+explicitly to `rw` or `simp only` with the equations that fix those degrees.
 -/
 
 public section
@@ -72,6 +79,25 @@ namespace HomologicalComplex
 
 section HasTensor
 
+section Shape
+
+variable {I : Type*} [AddMonoid I] [DecidableEq I] {c : ComplexShape I} [c.TensorSigns]
+  (X Y : HomologicalComplex C c) [X.HasTensor Y]
+
+/-- The differential of the tensor product `HomologicalComplex.tensorObj X Y` of two complexes of
+any shape with tensor signs, on the summand `X.X p ⊗ Y.X q`, is the sum of the two factor
+differentials towards degrees `p'` and `q'`, with the sign `c.ε p` on the second term. -/
+@[reassoc]
+lemma ιTensorObj_d_of_rel {p q j p' q' j' : I} (hpq : p + q = j) (hp : c.Rel p p')
+    (hq : c.Rel q q') (hp' : p' + q = j') (hq' : p + q' = j') :
+    ιTensorObj X Y p q j hpq ≫ (tensorObj X Y).d j j' =
+      (X.d p p' ▷ Y.X q) ≫ ιTensorObj X Y p' q j' hp' +
+        c.ε p • ((X.X p ◁ Y.d q q') ≫ ιTensorObj X Y p q' j' hq') := by
+  simp [mapBifunctor.d_eq, mapBifunctor.d₁_eq X Y _ c hp q j' hp',
+    mapBifunctor.d₂_eq X Y _ c p hq j' hq']
+
+end Shape
+
 variable (X Y : CochainComplex C ℤ) [X.HasTensor Y]
 
 /-- The differential of the tensor product `HomologicalComplex.tensorObj X Y` of two cochain
@@ -81,13 +107,8 @@ sign on the second term. -/
 lemma ιTensorObj_d (p q j : ℤ) (hpq : p + q = j) :
     ιTensorObj X Y p q j hpq ≫ (tensorObj X Y).d j (j + 1) =
       (X.d p (p + 1) ▷ Y.X q) ≫ ιTensorObj X Y (p + 1) q (j + 1) (by omega) +
-        p.negOnePow • ((X.X p ◁ Y.d q (q + 1)) ≫ ιTensorObj X Y p (q + 1) (j + 1) (by omega)) := by
-  simp [mapBifunctor.d_eq,
-    -- `dsimp` unfolds the total degree `ComplexShape.π` of the target summands to a sum.
-    mapBifunctor.d₁_eq X Y _ (.up ℤ) (ComplexShape.up_mk p (p + 1) rfl) q (j + 1)
-      (by dsimp; omega),
-    mapBifunctor.d₂_eq X Y _ (.up ℤ) p (ComplexShape.up_mk q (q + 1) rfl) (j + 1)
-      (by dsimp; omega)]
+        p.negOnePow • ((X.X p ◁ Y.d q (q + 1)) ≫ ιTensorObj X Y p (q + 1) (j + 1) (by omega)) :=
+  ιTensorObj_d_of_rel X Y hpq rfl rfl (by omega) (by omega)
 
 /-- `HomologicalComplex.ιTensorObj_d` with arbitrary indices `p'`, `q'` and `j'` for the
 successors of `p`, `q` and `j`. -/
@@ -96,9 +117,8 @@ lemma ιTensorObj_d' {p q j p' q' j' : ℤ}
     (hpq : p + q = j) (hp : p + 1 = p') (hq : q + 1 = q') (hj : j + 1 = j') :
     ιTensorObj X Y p q j hpq ≫ (tensorObj X Y).d j j' =
       (X.d p p' ▷ Y.X q) ≫ ιTensorObj X Y p' q j' (by omega) +
-        p.negOnePow • ((X.X p ◁ Y.d q q') ≫ ιTensorObj X Y p q' j' (by omega)) := by
-  subst hp hq hj
-  exact ιTensorObj_d X Y p q j hpq
+        p.negOnePow • ((X.X p ◁ Y.d q q') ≫ ιTensorObj X Y p q' j' (by omega)) :=
+  ιTensorObj_d_of_rel X Y hpq hp hq (by omega) (by omega)
 
 end HasTensor
 

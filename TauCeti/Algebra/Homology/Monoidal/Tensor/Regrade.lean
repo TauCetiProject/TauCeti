@@ -149,14 +149,10 @@ private lemma regradeTensorSummand_comp_d (a b k : ℤ) (h : a + b = k) :
         a.negOnePow • ((K.X (n₁ - a) ◁ L.d (n₂ - b) (n₂ - (b + 1))) ≫
           ((n₁ * (n₂ - (b + 1))).negOnePow •
             ιTensorObj K L (n₁ - a) (n₂ - (b + 1)) (n₁ + n₂ - (k + 1)) (by omega))) := by
-  rw [mapBifunctor.d_eq, Linear.units_smul_comp, Preadditive.comp_add, mapBifunctor.ι_D₁,
-    mapBifunctor.ι_D₂,
-    mapBifunctor.d₁_eq _ _ _ _ (down_mk (n₁ - a) (n₁ - (a + 1)) (by omega)) (n₂ - b)
-      (n₁ + n₂ - (k + 1)) (by dsimp; omega),
-    mapBifunctor.d₂_eq _ _ _ _ (n₁ - a) (down_mk (n₂ - b) (n₂ - (b + 1)) (by omega))
-      (n₁ + n₂ - (k + 1)) (by dsimp; omega)]
-  simp only [ε₁_def, ε₂_def, ε_down_ℤ, one_smul, curriedTensor_map_app, curriedTensor_obj_map,
-    Linear.comp_units_smul, smul_add, smul_smul]
+  rw [Linear.units_smul_comp, ιTensorObj_d_of_rel K L _
+    (down_mk (n₁ - a) (n₁ - (a + 1)) (by omega)) (down_mk (n₂ - b) (n₂ - (b + 1)) (by omega))
+    (by omega) (by omega)]
+  simp only [ε_down_ℤ, Linear.comp_units_smul, smul_add, smul_smul]
   congr 2
   rw [← Int.negOnePow_add, ← Int.negOnePow_add, Int.negOnePow_eq_iff]
   exact ⟨n₁ - a, by ring⟩
