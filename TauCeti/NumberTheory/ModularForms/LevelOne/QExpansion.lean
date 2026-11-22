@@ -11,8 +11,8 @@ public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Evaluation
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
-import Mathlib.NumberTheory.Bernoulli
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Congruence
+import TauCeti.NumberTheory.Bernoulli.Basic
 import TauCeti.NumberTheory.ModularForms.LevelOne.GradedRing
 import TauCeti.NumberTheory.ModularForms.QExpansion.Graded
 import TauCeti.NumberTheory.ModularForms.QExpansion.Order
@@ -77,11 +77,6 @@ open UpperHalfPlane ModularForm EisensteinSeries Filter Topology
 open scoped ArithmeticFunction.sigma MatrixGroups
 
 namespace TauCeti.ModularForm
-
-/- `bernoulli` is computed through `bernoulli'`, which is defined by well-founded recursion, so
-neither `norm_num` nor elaborator-side `decide` can evaluate it; the kernel can. -/
-
-private theorem bernoulli_twelve : bernoulli 12 = -691 / 2730 := by decide +kernel
 
 /-- The `q`-expansion of `E₄` is `1 + 240 ∑ σ₃(n) qⁿ`. -/
 theorem qExpansion_E₄_eq :
