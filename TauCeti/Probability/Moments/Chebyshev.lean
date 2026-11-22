@@ -81,40 +81,41 @@ theorem meas_gt_le_div_sq_of_integral_sq_le {Y : Ω → ℝ} (hY : Integrable (f
 `(∫ ‖Z k‖²) / b k ^ 2` are summable, then `(b k)⁻¹ • Z k → 0` almost everywhere, for any measure
 and any real sequence `b` (including terms where `b k = 0`). Integrability of `‖Z k‖²` is required
 only eventually. -/
-theorem ae_tendsto_inv_smul_zero_of_summable_integral_norm_sq
+theorem ae_tendsto_inv_smul_zero_of_summable_integral_norm_sq {E : Type*}
     [SeminormedAddGroup E] [SMulZeroClass ℝ E] [IsBoundedSMul ℝ E]
     {Z : ℕ → Ω → E} {b : ℕ → ℝ}
     (hint : ∀ᶠ k in atTop, Integrable (fun ω ↦ ‖Z k ω‖ ^ 2) μ)
     (hsum : Summable fun k ↦ (∫ ω, ‖Z k ω‖ ^ 2 ∂μ) / b k ^ 2) :
     ∀ᵐ ω ∂μ, Tendsto (fun k ↦ (b k)⁻¹ • Z k ω) atTop (𝓝 0) := by
   obtain ⟨N, hN⟩ := eventually_atTop.1 hint
-  let Z' : ℕ → Ω → E := fun k ω ↦ if N ≤ k then (b k)⁻¹ • Z k ω else 0
-  have h_ae : ∀ᵐ ω ∂μ, Tendsto (fun k ↦ Z' k ω) atTop (𝓝 0) := by
+  have h_ae : ∀ᵐ ω ∂μ, Tendsto (fun k ↦ (b (k + N))⁻¹ • Z (k + N) ω) atTop (𝓝 0) := by
     refine TauCeti.MeasureTheory.ae_tendsto_of_tsum_dist_ge_ne_top (g := 0) fun ε hε ↦ ?_
-    have hbound (k : ℕ) : μ {ω | ε ≤ dist (Z' k ω) 0} ≤
-        ENNReal.ofReal (ε⁻¹ ^ 2 * ((∫ ω, ‖Z k ω‖ ^ 2 ∂μ) / b k ^ 2)) := by
-      by_cases hkN : N ≤ k
-      · simp only [Z', hkN, ite_true, dist_zero_right]
-        by_cases hbk : b k = 0
-        · have hempty : {ω | ε ≤ ‖(b k)⁻¹ • Z k ω‖} = ∅ :=
-            Set.eq_empty_iff_forall_notMem.2 fun ω hω ↦ by
-              have h0 : ‖(b k)⁻¹ • Z k ω‖ ≤ 0 := by
-                simpa only [hbk, inv_zero, norm_zero, zero_mul] using norm_smul_le (b k)⁻¹ (Z k ω)
-              linarith [Set.mem_ofPred_eq.mp hω]
-          simp [hempty]
-        · have hsub : {ω | ε ≤ ‖(b k)⁻¹ • Z k ω‖} ⊆ {ω | ε * |b k| ≤ ‖Z k ω‖} := fun ω hω ↦ by
-            have h1 := norm_smul_le (b k)⁻¹ (Z k ω)
-            rw [Real.norm_eq_abs, abs_inv, inv_mul_eq_div] at h1
-            exact (le_div_iff₀ (abs_pos.2 hbk)).1 ((Set.mem_ofPred_eq.mp hω).trans h1)
-          refine (measure_mono hsub).trans ((meas_ge_le_integral_norm_sq_div_sq (hN k hkN)
-            (mul_pos hε (abs_pos.2 hbk))).trans_eq ?_)
-          congr 1; rw [mul_pow, sq_abs]; field_simp
-      · simp [Z', hkN, not_le_of_gt hε]
-    exact ne_top_of_le_ne_top (hsum.mul_left (ε⁻¹ ^ 2)).tsum_ofReal_ne_top (tsum_le_tsum hbound)
+    have hbound (k : ℕ) : μ {ω | ε ≤ dist ((b (k + N))⁻¹ • Z (k + N) ω) 0} ≤
+        ENNReal.ofReal (ε⁻¹ ^ 2 * ((∫ ω, ‖Z (k + N) ω‖ ^ 2 ∂μ) / b (k + N) ^ 2)) := by
+      rw [show {ω | ε ≤ dist ((b (k + N))⁻¹ • Z (k + N) ω) 0} =
+          {ω | ε ≤ ‖(b (k + N))⁻¹ • Z (k + N) ω‖} by simp only [dist_zero_right]]
+      by_cases hbk : b (k + N) = 0
+      · have hempty : {ω | ε ≤ ‖(b (k + N))⁻¹ • Z (k + N) ω‖} = ∅ :=
+          Set.eq_empty_iff_forall_notMem.2 fun ω hω ↦ by
+            have h0 : ‖(b (k + N))⁻¹ • Z (k + N) ω‖ ≤ 0 := by
+              simpa only [hbk, inv_zero, norm_zero, zero_mul] using
+                norm_smul_le (b (k + N))⁻¹ (Z (k + N) ω)
+            linarith [Set.mem_ofPred_eq.mp hω]
+        simp [hempty]
+      · have hsub : {ω | ε ≤ ‖(b (k + N))⁻¹ • Z (k + N) ω‖} ⊆
+            {ω | ε * |b (k + N)| ≤ ‖Z (k + N) ω‖} := fun ω hω ↦ by
+          have h1 := norm_smul_le (b (k + N))⁻¹ (Z (k + N) ω)
+          rw [Real.norm_eq_abs, abs_inv, inv_mul_eq_div] at h1
+          exact (le_div_iff₀ (abs_pos.2 hbk)).1 ((Set.mem_ofPred_eq.mp hω).trans h1)
+        refine (measure_mono hsub).trans ((meas_ge_le_integral_sq_div_sq
+          (hN (k + N) (Nat.le_add_left N k)) (mul_pos hε (abs_pos.2 hbk))).trans_eq ?_)
+        congr 1; rw [mul_pow, sq_abs]; field_simp
+    have hsum_shift : Summable fun k ↦ (∫ ω, ‖Z (k + N) ω‖ ^ 2 ∂μ) / b (k + N) ^ 2 :=
+      (summable_nat_add_iff N).2 hsum
+    exact ne_top_of_le_ne_top (hsum_shift.mul_left (ε⁻¹ ^ 2)).tsum_ofReal_ne_top
+      (tsum_le_tsum hbound)
   filter_upwards [h_ae] with ω hω
-  refine hω.congr' ?_
-  filter_upwards [eventually_ge_atTop N] with k hk
-  simp [Z', hk]
+  exact (Filter.tendsto_add_atTop_iff_nat N).1 hω
 
 /-- **Chebyshev–Borel–Cantelli almost-sure convergence for real sequences.** If
 `(∫ (Z k)²) / b k ^ 2` is summable, then `Z k / b k → 0` almost everywhere. -/

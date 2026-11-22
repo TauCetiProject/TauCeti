@@ -303,19 +303,17 @@ private theorem integral_bounds_mul_sum_measureReal_gt
   have hle_sum : (∫ x, f x ∂ν) / a ≤ ∑ j ∈ Finset.range k, g j := by
     simpa only [zero_add] using hint.trans_le hg_anti.integral_le_sum
   have hsum_le : ∑ j ∈ Finset.range k, g j ≤ 1 + (∫ x, f x ∂ν) / a := by
-    have hshift : g 0 + ∑ j ∈ Finset.range k, g (0 + ↑(j + 1)) =
-        (∑ j ∈ Finset.range k, g j) + g k := by
-      simp only [zero_add]
-      calc g 0 + ∑ j ∈ Finset.range k, g ↑(j + 1)
-          = (∑ j ∈ Finset.range k, g ↑(j + 1)) + g ↑(0 : ℕ) := by rw [Nat.cast_zero, add_comm]
-        _ = ∑ j ∈ Finset.range (k + 1), g j := (Finset.sum_range_succ' (fun j : ℕ ↦ g j) k).symm
-        _ = (∑ j ∈ Finset.range k, g j) + g k := Finset.sum_range_succ (fun j : ℕ ↦ g j) k
+    have hsub : (∑ j ∈ Finset.range k, g j) - ∑ j ∈ Finset.range k, g (j + 1 : ℕ) = g 0 - g k := by
+      rw [← Finset.sum_sub_distrib]
+      simpa only [Nat.cast_zero] using Finset.sum_range_sub' (fun j : ℕ ↦ g j) k
     have hgk : g k = 0 := by
       have hempty : {x | (k : ℝ) < f x / a} = ∅ := Set.eq_empty_iff_forall_notMem.2 fun x hx ↦
         not_lt_of_ge ((div_le_iff₀ ha).2 (hka x)) (Set.mem_ofPred_eq.mp hx)
       simp [g, hempty]
     have hg0 : g 0 ≤ 1 := measureReal_le_one
-    linarith [hg_anti.sum_le_integral]
+    have hsum_int : ∑ j ∈ Finset.range k, g (j + 1 : ℕ) ≤ (∫ x, f x ∂ν) / a := by
+      simpa only [zero_add, hint] using hg_anti.sum_le_integral
+    linarith
   have hgj (j : ℕ) : g j = ν.real {x | (j : ℝ) * a < f x} := by
     simp only [g, lt_div_iff₀ ha]
   simp only [hgj] at hle_sum hsum_le

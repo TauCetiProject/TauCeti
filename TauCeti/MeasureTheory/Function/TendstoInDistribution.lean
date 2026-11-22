@@ -232,17 +232,14 @@ protected theorem TendstoInDistribution.congr_of_tendstoInMeasure_dist
   tendsto := by
     apply ProbabilityMeasure.tendsto_iff_forall_lipschitz_integral_tendsto.2
     rintro F ⟨M, hF_bd⟩ ⟨L, hF_lip⟩
-    obtain rfl | hL := eq_zero_or_pos L
-    · have hne : Nonempty Ω' := nonempty_of_isProbabilityMeasure μ'
-      have hconst : ∀ x, F x = F (Z hne.some) :=
-        fun x ↦ (LipschitzWith.zero_iff F).1 hF_lip x (Z hne.some)
-      simp only [hconst, integral_const, smul_eq_mul]
-      simpa using tendsto_const_nhds
+    let L' : NNReal := max L 1
+    have hL' : 0 < L' := lt_of_lt_of_le zero_lt_one (le_max_right L 1)
+    have hF_lip' : LipschitzWith L' F := hF_lip.weaken (le_max_left L 1)
     rw [Metric.tendsto_nhds]
     intro ε hε
-    set δ : ℝ := ε / (2 * (L : ℝ))
+    set δ : ℝ := ε / (2 * (L' : ℝ))
     have hδ : 0 < δ := by positivity
-    have hLδ : (L : ℝ) * δ = ε / 2 := by
+    have hLδ : (L' : ℝ) * δ = ε / 2 := by
       dsimp [δ]
       field_simp
     have hdist : Tendsto (fun i ↦ μ''.real {ω | δ ≤ dist (Y i ω) (X i ω)}) l (𝓝 0) := by
@@ -250,7 +247,7 @@ protected theorem TendstoInDistribution.congr_of_tendstoInMeasure_dist
       simpa only [sub_zero, Real.norm_eq_abs, abs_of_nonneg dist_nonneg] using hXY δ hδ
     have hX_lim : Tendsto (fun i ↦ ∫ x, F x ∂(μ''.map (X i))) l (𝓝 (∫ x, F x ∂(μ'.map Z))) := by
       simpa using ProbabilityMeasure.tendsto_iff_forall_lipschitz_integral_tendsto.1 hXZ.tendsto
-        F ⟨M, hF_bd⟩ ⟨L, hF_lip⟩
+        F ⟨M, hF_bd⟩ ⟨L', hF_lip'⟩
     have h_rhs : Tendsto (fun i ↦ ε / 2 + M * μ''.real {ω | δ ≤ dist (Y i ω) (X i ω)} +
         |∫ x, F x ∂(μ''.map (X i)) - ∫ x, F x ∂(μ'.map Z)|) l (𝓝 (ε / 2)) := by
       have h1 := ((tendsto_const_nhds (x := ε / 2)).add (hdist.const_mul M)).add
@@ -260,7 +257,7 @@ protected theorem TendstoInDistribution.congr_of_tendstoInMeasure_dist
     rw [Real.dist_eq]
     simp only [ProbabilityMeasure.coe_mk]
     have hstep := abs_integral_map_sub_le_of_lipschitz (hXZ.forall_aemeasurable i) (hY i)
-      hF_bd hL hF_lip hδ
+      hF_bd hL' hF_lip' hδ
     rw [hLδ] at hstep
     have htri := abs_sub_le (∫ x, F x ∂(μ''.map (Y i))) (∫ x, F x ∂(μ''.map (X i)))
       (∫ x, F x ∂(μ'.map Z))
