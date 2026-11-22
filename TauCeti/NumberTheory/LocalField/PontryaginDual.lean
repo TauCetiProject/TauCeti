@@ -10,9 +10,11 @@ public import TauCeti.NumberTheory.LocalField.Different.Basic
 public import TauCeti.NumberTheory.LocalField.Topology
 public import TauCeti.RingTheory.DedekindDomain.Different.Quotient
 public import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
+public import TauCeti.RepresentationTheory.Continuous.Basic
 public import TauCeti.Topology.Algebra.Module.PontryaginDual.GroupAction
 public import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 import Mathlib.Topology.Algebra.OpenSubgroup
+import Mathlib.Topology.Algebra.Ring.Compact
 import TauCeti.Algebra.Module.Torsion.Snake
 import TauCeti.RingTheory.Length
 import TauCeti.Topology.Algebra.Module.Submodule
@@ -65,8 +67,9 @@ theorem continuousSMul_iff_isTorsion {M : Type*} [AddCommGroup M] [Module 𝒪[L
     obtain ⟨r, hrI, hr0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
     exact ⟨⟨r, mem_nonZeroDivisors_of_ne_zero hr0⟩, LinearMap.mem_ker.mp hrI⟩
   · obtain ⟨⟨a, ha⟩, ham⟩ := @htor m₀
-    have hIopen := isOpen_ideal_of_ne_bot L
-      (mt Ideal.span_singleton_eq_bot.mp (nonZeroDivisors.ne_zero ha))
+    have hIopen : IsOpen ((Ideal.span {a} : Ideal 𝒪[L]) : Set 𝒪[L]) :=
+      IsDedekindDomain.isOpen_of_ne_bot
+        (mt Ideal.span_singleton_eq_bot.mp (nonZeroDivisors.ne_zero ha))
     refine (continuousAt_const (y := r₀ • m₀)).congr (Filter.eventually_of_mem
       (((hIopen.preimage (continuous_sub_right r₀)).prod
         (isOpen_discrete {m₀})).mem_nhds ⟨by simp, rfl⟩) ?_)
@@ -77,16 +80,10 @@ theorem continuousSMul_iff_isTorsion {M : Type*} [AddCommGroup M] [Module 𝒪[L
     exact (sub_eq_zero.mp (by rw [← sub_smul, hdiff])).symm
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
-private theorem injective_algebraMap_integerRing :
-    Function.Injective (Algebra.linearMap 𝒪[L] L) :=
-  FaithfulSMul.algebraMap_injective 𝒪[L] L
-
-omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 private theorem exact_algebraMap_mkQ_one :
     Function.Exact (Algebra.linearMap 𝒪[L] L) (1 : Submodule 𝒪[L] L).mkQ := by
-  rw [LinearMap.exact_iff, Submodule.ker_mkQ]
-  ext x
-  simp [Submodule.mem_one]
+  rw [Submodule.one_eq_range]
+  exact LinearMap.exact_map_mkQ_range (Algebra.linearMap 𝒪[L] L)
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 private theorem bijective_smul_pow_uniformizer {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) (n : ℕ) :
@@ -116,7 +113,7 @@ def quotientMaximalIdealPowEquivTorsionBySet {ϖ : 𝒪[L]} (hϖ : Irreducible �
     rw [hmn, Submodule.torsionBySet_ideal_span_singleton_eq]
   (Submodule.quotEquivOfEq _ _ hq).trans
     ((torsionByδEquiv (ϖ ^ n) (exact_algebraMap_mkQ_one L)
-      (injective_algebraMap_integerRing L)
+      (FaithfulSMul.algebraMap_injective 𝒪[L] L)
       (Submodule.mkQ_surjective _) (bijective_smul_pow_uniformizer L hϖ n)).symm.trans
       (LinearEquiv.ofEq _ _ ht))
 
@@ -138,18 +135,18 @@ variable {L} in
     rw [mul_div_cancel₀ _ hpowL]
   let x : Submodule.torsionBy 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L)) (ϖ ^ n) :=
     ⟨Submodule.Quotient.mk ((a : L) / (ϖ : L) ^ n), hmem⟩
-  have hx : torsionByδEquiv (ϖ ^ n) (exact_algebraMap_mkQ_one L)
-      (injective_algebraMap_integerRing L)
+  have hinj : Function.Injective (Algebra.linearMap 𝒪[L] L) :=
+    FaithfulSMul.algebraMap_injective 𝒪[L] L
+  have hx : torsionByδEquiv (ϖ ^ n) (exact_algebraMap_mkQ_one L) hinj
       (Submodule.mkQ_surjective _) (bijective_smul_pow_uniformizer L hϖ n) x =
       Submodule.Quotient.mk a := by
     rw [torsionByδEquiv_apply]
-    refine torsionByδ_eq (exact_algebraMap_mkQ_one L) (injective_algebraMap_integerRing L)
+    refine torsionByδ_eq (exact_algebraMap_mkQ_one L) hinj
       (Submodule.mkQ_surjective _) x rfl ?_
     simp only [Algebra.linearMap_apply, Algebra.algebraMap_ofSubsemiring_apply, Algebra.smul_def,
       SubmonoidClass.coe_pow]
     rw [mul_div_cancel₀ _ hpowL]
-  have hsymm := (torsionByδEquiv (ϖ ^ n) (exact_algebraMap_mkQ_one L)
-    (injective_algebraMap_integerRing L)
+  have hsymm := (torsionByδEquiv (ϖ ^ n) (exact_algebraMap_mkQ_one L) hinj
     (Submodule.mkQ_surjective _) (bijective_smul_pow_uniformizer L hϖ n)).symm_apply_eq.mpr
     hx.symm
   rw [← Ideal.Quotient.mk_eq_mk]

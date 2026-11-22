@@ -269,10 +269,8 @@ def map (f : M →L[R] N) : ModulePontryaginDual R E N →L[R] ModulePontryaginD
 
 /-- A continuous linear equivalence dualizes to one in the opposite direction. -/
 def congr (e : M ≃L[R] N) : ModulePontryaginDual R E N ≃L[R] ModulePontryaginDual R E M :=
-  let f := map (E := E) e.toContinuousLinearMap; let g := map (E := E) e.symm.toContinuousLinearMap
-  { toFun := f, invFun := g, left_inv := fun _ ↦ ext fun _ ↦ by simp [f, g],
-    right_inv := fun _ ↦ ext fun _ ↦ by simp [f, g], map_add' := map_add f,
-    map_smul' := map_smul f, continuous_toFun := f.continuous, continuous_invFun := g.continuous }
+  .ofContinuousLinearMap (map (E := E) e.toContinuousLinearMap)
+    (map (E := E) e.symm.toContinuousLinearMap) (by ext; simp) (by ext; simp)
 @[simp] theorem congr_apply (e : M ≃L[R] N) (ψ : ModulePontryaginDual R E N) (x : M) :
     congr (E := E) e ψ x = ψ (e x) := (rfl)
 @[simp] theorem congr_symm (e : M ≃L[R] N) :
@@ -309,11 +307,8 @@ def mapCodomain (f : E →L[R] F) : ModulePontryaginDual R E M →L[R] ModulePon
 /-- A continuous linear equivalence of dualizing modules induces one on Pontryagin duals. -/
 def congrCodomain (e : E ≃L[R] F) :
     ModulePontryaginDual R E M ≃L[R] ModulePontryaginDual R F M :=
-  let f := mapCodomain (M := M) e.toContinuousLinearMap
-  let g := mapCodomain (M := M) e.symm.toContinuousLinearMap
-  { toFun := f, invFun := g, left_inv := fun _ ↦ ext fun _ ↦ by simp [f, g],
-    right_inv := fun _ ↦ ext fun _ ↦ by simp [f, g], map_add' := map_add f,
-    map_smul' := map_smul f, continuous_toFun := f.continuous, continuous_invFun := g.continuous }
+  .ofContinuousLinearMap (mapCodomain (M := M) e.toContinuousLinearMap)
+    (mapCodomain (M := M) e.symm.toContinuousLinearMap) (by ext; simp) (by ext; simp)
 @[simp] theorem congrCodomain_apply (e : E ≃L[R] F) (φ : ModulePontryaginDual R E M) (x : M) :
     congrCodomain (M := M) e φ x = e (φ x) := (rfl)
 @[simp] theorem congrCodomain_symm (e : E ≃L[R] F) :

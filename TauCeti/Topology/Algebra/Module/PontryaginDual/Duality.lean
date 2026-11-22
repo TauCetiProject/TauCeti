@@ -235,9 +235,10 @@ theorem map_surjective_of_injective_of_compact {N₁ N₂ : Type*}
     (hfK.isOpen_compl.mem_nhds h0)
   have hcomap : U.comap f.toLinearMap ≤ K := fun x hx ↦ by_contra fun hxK ↦ hUsub hx ⟨x, hxK, rfl⟩
   let fbar := Submodule.mapQ (U.comap f.toLinearMap) U f.toLinearMap le_rfl
-  have hfbar : Function.Injective fbar := (LinearMap.ker_eq_bot).mp <| eq_bot_iff.mpr fun q hq ↦ by
-    obtain ⟨x, rfl⟩ := Submodule.mkQ_surjective _ q
-    simpa [fbar, Submodule.Quotient.mk_eq_zero] using hq
+  have hfbar : Function.Injective fbar := by
+    rw [← LinearMap.ker_eq_bot]
+    dsimp only [fbar]
+    rw [Submodule.ker_mapQ, Submodule.mkQ_map_self]
   obtain ⟨ψbar, hψbar⟩ := Module.Injective.extension_property R E _ _ fbar hfbar
     ((U.comap f.toLinearMap).liftQ φ.toContinuousLinearMap.toLinearMap hcomap)
   have : DiscreteTopology (N₂ ⧸ U) := Submodule.Quotient.discreteTopology_of_isOpen U hUopen
@@ -400,20 +401,14 @@ theorem isCompactModule_of_discrete : IsCompactModule R (ModulePontryaginDual R 
   let valPi : (∀ m : M, T m) → M → E := fun f m ↦ (f m : E)
   have hvalPi : IsEmbedding valPi := .piMap fun _ ↦ .subtypeVal
   have hcoe : IsClosedEmbedding (valPi ∘ ι) := isClosedEmbedding_coe (R := R) (E := E) (M := M)
-  have hclosed : IsClosedEmbedding ι :=
-    ⟨⟨hvalPi.isInducing.of_comp_iff.mp hcoe.isInducing, Function.Injective.of_comp hcoe.injective⟩,
-      (Set.ext fun _ ↦ ⟨fun ⟨φ, hφ⟩ ↦ ⟨φ, congrArg valPi hφ⟩,
-        fun ⟨φ, hφ⟩ ↦ ⟨φ, hvalPi.injective hφ⟩⟩ :
-          Set.range ι = valPi ⁻¹' Set.range (valPi ∘ ι)) ▸
-        hcoe.isClosed_range.preimage hvalPi.continuous⟩
+  have hclosed : IsClosedEmbedding ι := IsClosedEmbedding.of_comp hvalPi hcoe
   have (m : M) : CompactSpace (T m) :=
     have := finite_torsionBySet_annihilator hE m; Finite.compactSpace
   have (m : M) : TotallyDisconnectedSpace (T m) :=
     inferInstanceAs (TotallyDisconnectedSpace {x : E // _})
   exact ⟨inferInstance, inferInstance, hclosed.compactSpace,
-    ⟨fun _ _ hs _ hx _ hy ↦ hclosed.injective <|
-      TotallyDisconnectedSpace.isTotallyDisconnected_univ _ (Set.subset_univ _)
-        (hs.image ι hclosed.continuous.continuousOn) ⟨_, hx, rfl⟩ ⟨_, hy, rfl⟩⟩⟩
+    hclosed.isEmbedding.isTotallyDisconnected_range.mp
+      (isTotallyDisconnected_of_totallyDisconnectedSpace _)⟩
 
 /-- **Biduality for discrete modules with continuous `R`-action**: `M ≃L[R] (M^∨)^∨`. -/
 def evalEquivOfDiscrete : M ≃L[R] ModulePontryaginDual R E (ModulePontryaginDual R E M) := by

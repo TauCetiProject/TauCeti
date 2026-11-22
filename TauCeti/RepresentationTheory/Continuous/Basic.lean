@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.RepresentationTheory.Continuous.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 
 /-!
 # Basic facts about continuous representations
@@ -15,9 +16,15 @@ This file records elementary identities for Mathlib's `ContRepresentation` that 
 group, without topology on the group or measure theory. Forgetting continuity leaves the action
 on each vector unchanged.
 
+## Main definitions
+
+* `ContRepresentation.restrictScalars`: a continuous representation over `A`, read as a
+  continuous representation over a compatibly acting ring `R`.
+
 ## Main results
 
 * `ContRepresentation.toRepresentation_apply`: evaluation agrees with the continuous action.
+* `ContRepresentation.restrictScalars_apply`: restricting scalars preserves evaluation on vectors.
 * `ContRepresentation.comp_inv_self`: the action operator of `g` composed with that of `g⁻¹` is
   the identity.
 * `ContRepresentation.apply_inr_apply_inl`: in a representation of a semidirect product
@@ -39,6 +46,31 @@ theorem toRepresentation_apply {R G V : Type*} [Ring R] [Monoid G]
     [AddCommGroup V] [TopologicalSpace V] [IsTopologicalAddGroup V] [Module R V]
     (π : ContRepresentation R G V) (g : G) (v : V) :
     (π.toRepresentation : Representation R G V) g v = π g v := (rfl)
+
+section RestrictScalars
+
+variable {A G V : Type*} [Ring A] [Monoid G] [AddCommGroup V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [Module A V]
+
+/-- A continuous representation on a topological `A`-module, read as a continuous representation
+over a ring `R` acting compatibly with `A`: each operator is restricted to a continuous
+`R`-linear map. Its operators are those of `π` (`ContRepresentation.restrictScalars_apply`). -/
+def restrictScalars (R : Type*) [Ring R] [Module R V] [LinearMap.CompatibleSMul V V R A]
+    (π : ContRepresentation A G V) : ContRepresentation R G V :=
+  ofMonoidHom
+    { toFun := fun g ↦ (π g).restrictScalars R
+      map_one' := by ext; simp
+      map_mul' := fun _ _ ↦ by ext; simp }
+
+/-- Restricting the scalars of a continuous representation does not change its action on
+vectors. -/
+@[simp]
+theorem restrictScalars_apply {R : Type*} [Ring R] [Module R V] [LinearMap.CompatibleSMul V V R A]
+    (π : ContRepresentation A G V) (g : G) (v : V) :
+    π.restrictScalars R g v = π g v :=
+  (rfl)
+
+end RestrictScalars
 
 /-- An action operator composed with the action of the inverse group element is the identity. -/
 @[simp]
