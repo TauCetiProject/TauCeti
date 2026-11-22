@@ -39,7 +39,6 @@ variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
   {EB HB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
   [TopologicalSpace HB] [ChartedSpace HB B] {I : ModelWithCorners 𝕜 EB HB} {n : ℕ∞ω}
   (A D C : FiniteRankBundleCore 𝕜 B)
-  [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] [C.core.IsContMDiff I n]
 
 -- The monoidal coherence isomorphisms are definitionally `constIso` with the data below;
 -- using the same data lets their total-space maps be identified by the generic coe lemmas.
@@ -65,7 +64,6 @@ theorem coe_tensorAssociatorDiffeomorph_symm :
       (α_ A D C).inv.totalSpaceMap :=
   coe_constIsoDiffeomorph_symm _ _ _
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- The left tensor unitor as a smooth bundle equivalence. -/
 noncomputable def tensorLeftUnitorDiffeomorph :
     ((𝟙_ (FiniteRankBundleCore 𝕜 B)) ⊗ A).core.TotalSpace ≃ₘ^n⟮
@@ -87,7 +85,6 @@ theorem coe_tensorLeftUnitorDiffeomorph_symm :
     ⇑(tensorLeftUnitorDiffeomorph (I := I) (n := n) A).symm = (λ_ A).inv.totalSpaceMap :=
   coe_constIsoDiffeomorph_symm _ _ _
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- The right tensor unitor as a smooth bundle equivalence. -/
 noncomputable def tensorRightUnitorDiffeomorph :
     (A ⊗ (𝟙_ (FiniteRankBundleCore 𝕜 B))).core.TotalSpace ≃ₘ^n⟮
@@ -109,7 +106,6 @@ theorem coe_tensorRightUnitorDiffeomorph_symm :
     ⇑(tensorRightUnitorDiffeomorph (I := I) (n := n) A).symm = (ρ_ A).inv.totalSpaceMap :=
   coe_constIsoDiffeomorph_symm _ _ _
 
-omit [C.core.IsContMDiff I n] in
 /-- The tensor symmetry as a smooth bundle equivalence. -/
 noncomputable def tensorBraidingDiffeomorph :
     (A ⊗ D).core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin (A ⊗ D).rank → 𝕜),

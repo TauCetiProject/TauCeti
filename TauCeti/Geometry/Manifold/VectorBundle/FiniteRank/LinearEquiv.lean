@@ -70,12 +70,14 @@ theorem contMDiff_ofLinearEquivTotalSpaceHomeomorph :
   rw [Bundle.contMDiffAt_totalSpace_iff, ofLinearEquivTotalSpaceHomeomorph_apply]
   refine ⟨((contMDiff_proj (ofLinearEquiv e V).core.Fiber).congr fun p ↦ by simp).contMDiffAt, ?_⟩
   have hU := ((ofLinearEquiv e V).core.localTriv p₀.proj).open_source.mem_nhds
-    ((ofLinearEquiv e V).core.mem_source_at p₀.proj p₀.snd)
+    (((ofLinearEquiv e V).core.mem_localTriv_source p₀.proj p₀).2
+      ((ofLinearEquiv e V).mem_baseSet_self p₀.proj))
   exact (e.symm.contDiff.comp_contMDiffAt
     ((ofLinearEquiv e V).contMDiffAt_localTriv_snd p₀)).congr_of_eventuallyEq
       (Filter.eventually_of_mem hU fun q hq ↦ congrArg Prod.snd
         (trivializationAt_ofLinearEquivTotalSpaceHomeomorph e V p₀.proj q
-          (((ofLinearEquiv e V).core.localTriv p₀.proj).mem_source.1 hq)))
+          ((localTriv_baseSet_ofLinearEquiv e V p₀.proj).symm ▸
+            ((ofLinearEquiv e V).core.localTriv p₀.proj).mem_source.1 hq)))
 
 /-- The inverse map of `ofLinearEquivTotalSpaceHomeomorph` is `C^n` at every order, without
 smoothness hypotheses on `B` or `V`. -/
@@ -141,31 +143,28 @@ of reconstructed total spaces, upgrading `ofLinearEquivChangeIso e₁ e₂ V`. -
 noncomputable def ofLinearEquivChangeDiffeomorph (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) :
     (ofLinearEquiv e₁ V).core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin (ofLinearEquiv e₁ V).rank → 𝕜),
       I.prod 𝓘(𝕜, Fin (ofLinearEquiv e₂ V).rank → 𝕜)⟯ (ofLinearEquiv e₂ V).core.TotalSpace :=
-  CoordinateHom.toDiffeomorphOfInv
-    (ofLinearEquivChangeIso e₁ e₂ V).hom (ofLinearEquivChangeIso e₁ e₂ V).inv
-    (ofLinearEquivChangeIso e₁ e₂ V).hom_inv_id (ofLinearEquivChangeIso e₁ e₂ V).inv_hom_id
-    (contMDiff_totalSpaceMap_of_mem_baseSet _ (e₁.symm.trans e₂).toContinuousLinearMap
-      fun x b _ v ↦ by
-        rw [fiberMap_ofLinearEquivChangeIso_hom]
-        exact (congrArg (fun w ↦ e₂ ((trivializationAt F V x).coordChangeL 𝕜
-          (trivializationAt F V b) x w)) (e₂.symm_apply_apply (e₁.symm v))).trans
-          (congrArg e₂ (e₁.symm_apply_apply _)).symm)
-    (contMDiff_totalSpaceMap_of_mem_baseSet _ (e₂.symm.trans e₁).toContinuousLinearMap
-      fun x b _ v ↦ by
-        rw [fiberMap_ofLinearEquivChangeIso_inv]
-        exact (congrArg (fun w ↦ e₁ ((trivializationAt F V x).coordChangeL 𝕜
-          (trivializationAt F V b) x w)) (e₁.symm_apply_apply (e₂.symm v))).trans
-          (congrArg e₁ (e₂.symm_apply_apply _)).symm)
+  constIsoDiffeomorph (A := ofLinearEquiv e₁ V) (D := ofLinearEquiv e₂ V)
+    (fun b ↦ (baseSet_ofLinearEquiv e₁ V b).trans (baseSet_ofLinearEquiv e₂ V b).symm)
+    (e₁.symm.trans e₂) fun b c x _ _ ↦
+      coordChange_comp_ofLinearEquiv_change e₁ e₂ V b c x
 
 @[simp] theorem coe_ofLinearEquivChangeDiffeomorph :
     ⇑(ofLinearEquivChangeDiffeomorph e₁ e₂ V I n) =
-      (ofLinearEquivChangeIso e₁ e₂ V).hom.totalSpaceMap :=
-  CoordinateHom.coe_toDiffeomorphOfInv _ _ _ _ _ _
+      (ofLinearEquivChangeIso e₁ e₂ V).hom.totalSpaceMap := by
+  rw [ofLinearEquivChangeDiffeomorph]
+  refine (coe_constIsoDiffeomorph _ _ _).trans (congrArg CoordinateHom.totalSpaceMap
+    (hom_ext fun x ↦ ?_))
+  exact (fiberMap_constIso_hom (A := ofLinearEquiv e₁ V) (D := ofLinearEquiv e₂ V)
+    _ (e₁.symm.trans e₂) _ x).trans (fiberMap_ofLinearEquivChangeIso_hom e₁ e₂ V x).symm
 
 @[simp] theorem coe_ofLinearEquivChangeDiffeomorph_symm :
     ⇑(ofLinearEquivChangeDiffeomorph e₁ e₂ V I n).symm =
-      (ofLinearEquivChangeIso e₁ e₂ V).inv.totalSpaceMap :=
-  CoordinateHom.coe_toDiffeomorphOfInv_symm _ _ _ _ _ _
+      (ofLinearEquivChangeIso e₁ e₂ V).inv.totalSpaceMap := by
+  rw [ofLinearEquivChangeDiffeomorph]
+  refine (coe_constIsoDiffeomorph_symm _ _ _).trans (congrArg CoordinateHom.totalSpaceMap
+    (hom_ext fun x ↦ ?_))
+  exact (fiberMap_constIso_inv (A := ofLinearEquiv e₁ V) (D := ofLinearEquiv e₂ V)
+    _ (e₁.symm.trans e₂) _ x).trans (fiberMap_ofLinearEquivChangeIso_inv e₁ e₂ V x).symm
 
 /-- The change-of-coordinates diffeomorphism `ofLinearEquivChangeDiffeomorph e₁ e₂ V I n` commutes
 with the two reconstruction diffeomorphisms `ofLinearEquivTotalSpaceDiffeomorph e₁ V I n` and
@@ -205,28 +204,33 @@ noncomputable def ofLinearEquivDualDiffeomorph (I : ModelWithCorners 𝕜 EB HB)
       I.prod 𝓘(𝕜, Fin (ofLinearEquiv e V).dual.rank → 𝕜),
       I.prod 𝓘(𝕜, Fin (ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜)).rank → 𝕜)⟯
         (ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜)).core.TotalSpace :=
-  CoordinateHom.toDiffeomorphOfInv
-    (ofLinearEquivDualIso e V).hom (ofLinearEquivDualIso e V).inv
-    (ofLinearEquivDualIso e V).hom_inv_id (ofLinearEquivDualIso e V).inv_hom_id
-    (contMDiff_totalSpaceMap_of_mem_baseSet _ (ContinuousLinearMap.id 𝕜 (Fin r → 𝕜))
-      fun x b hb v ↦ by
-        rw [fiberMap_ofLinearEquivDualIso_hom,
-          coordChange_ofLinearEquiv_dualCoords e V (mem_baseSet_trivializationAt F V x) hb]; rfl)
-    (contMDiff_totalSpaceMap_of_mem_baseSet _ (ContinuousLinearMap.id 𝕜 (Fin r → 𝕜))
-      fun x b hb v ↦ by
-        rw [fiberMap_ofLinearEquivDualIso_inv,
-          coordChange_ofLinearEquiv_dualCoords e V (mem_baseSet_trivializationAt F V x)
-            (by simpa using hb)]; rfl)
+  constIsoDiffeomorph (A := (ofLinearEquiv e V).dual)
+    (D := ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜))
+    (fun i ↦ (baseSet_ofLinearEquiv_dual e V i).trans (by rw [baseSet_ofLinearEquiv]; simp))
+    (ContinuousLinearEquiv.refl 𝕜 (Fin r → 𝕜))
+    fun _ _ _ hi hj ↦ coordChange_comp_ofLinearEquiv_dual e V hi hj
 
 @[simp] theorem coe_ofLinearEquivDualDiffeomorph :
     ⇑(ofLinearEquivDualDiffeomorph e V I n) =
-      (ofLinearEquivDualIso e V).hom.totalSpaceMap :=
-  CoordinateHom.coe_toDiffeomorphOfInv _ _ _ _ _ _
+      (ofLinearEquivDualIso e V).hom.totalSpaceMap := by
+  rw [ofLinearEquivDualDiffeomorph]
+  refine (coe_constIsoDiffeomorph _ _ _).trans (congrArg CoordinateHom.totalSpaceMap
+    (hom_ext fun x ↦ ?_))
+  exact (fiberMap_constIso_hom (A := (ofLinearEquiv e V).dual)
+    (D := ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜))
+    _ (ContinuousLinearEquiv.refl 𝕜 (Fin r → 𝕜)) _ x).trans
+    (fiberMap_ofLinearEquivDualIso_hom e V x).symm
 
 @[simp] theorem coe_ofLinearEquivDualDiffeomorph_symm :
     ⇑(ofLinearEquivDualDiffeomorph e V I n).symm =
-      (ofLinearEquivDualIso e V).inv.totalSpaceMap :=
-  CoordinateHom.coe_toDiffeomorphOfInv_symm _ _ _ _ _ _
+      (ofLinearEquivDualIso e V).inv.totalSpaceMap := by
+  rw [ofLinearEquivDualDiffeomorph]
+  refine (coe_constIsoDiffeomorph_symm _ _ _).trans (congrArg CoordinateHom.totalSpaceMap
+    (hom_ext fun x ↦ ?_))
+  exact (fiberMap_constIso_inv (A := (ofLinearEquiv e V).dual)
+    (D := ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜))
+    _ (ContinuousLinearEquiv.refl 𝕜 (Fin r → 𝕜)) _ x).trans
+    (fiberMap_ofLinearEquivDualIso_inv e V x).symm
 
 end Dual
 

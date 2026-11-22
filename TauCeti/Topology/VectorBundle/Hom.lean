@@ -269,6 +269,21 @@ theorem Bundle.Trivialization.continuousLinearMap_symmL
 
 namespace TauCeti
 
+/-- On the base set of `trivializationAt F V i`, the inverse dual trivialization at `x`
+precomposes a model functional with `(trivializationAt F V i).continuousLinearMapAt 𝕜 x`. -/
+theorem trivializationAt_dual_symm_eq {𝕜 B F : Type*} [NontriviallyNormedField 𝕜]
+    [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (V : B → Type*) [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+    [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+    [FiberBundle F V] [VectorBundle 𝕜 F V] {i x : B}
+    (hi : x ∈ (trivializationAt F V i).baseSet) (p : F →L[𝕜] 𝕜) :
+    (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) i).symm x p =
+      p.comp ((trivializationAt F V i).continuousLinearMapAt 𝕜 x) := by
+  have hdi : x ∈ (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) i).baseSet := by simp [hi]
+  rw [← Trivialization.symmL_apply (R := 𝕜) _ hdi]
+  exact (Bundle.Trivialization.continuousLinearMap_symmL (trivializationAt F V i)
+    (trivializationAt 𝕜 (Bundle.Trivial B 𝕜) i) x p).trans (by simp [Trivial.eq_trivialization B 𝕜])
+
 /-- For a finite-dimensional model source, a fibrewise continuous linear map is continuous
 on total spaces exactly when it is continuous as a section of the Hom bundle. The target
 need not have finite rank. -/

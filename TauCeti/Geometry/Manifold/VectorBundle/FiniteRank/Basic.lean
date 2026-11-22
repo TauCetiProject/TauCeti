@@ -33,8 +33,8 @@ intertwined by a fixed continuous linear map:
 * `FiniteRankBundleCore.isContMDiff_trivial`,
   `FiniteRankBundleCore.contMDiff_totalSpaceMap_constHom`, and
   `FiniteRankBundleCore.constIsoDiffeomorph` show that trivial cores are `C^n` and that constant
-  intertwining maps and equivalences (`constHom`, `constIso`) between `C^n` cores induce `C^n` maps
-  and diffeomorphisms of total spaces without completeness assumptions on the scalar field.
+  intertwining maps and equivalences (`constHom`, `constIso`) induce `C^n` maps and diffeomorphisms
+  of total spaces without smoothness or completeness assumptions.
 
 ## References
 
@@ -173,29 +173,24 @@ instance isContMDiff_trivial (r : ℕ) : (trivial 𝕜 B r).core.IsContMDiff I n
   contMDiffOn_coordChange _ _ := contMDiffOn_const
 
 variable {A D : FiniteRankBundleCore 𝕜 B}
-  [A.core.IsContMDiff I n] [D.core.IsContMDiff I n]
 
-/-- A constant operator intertwining the transitions of smooth cores defines a smooth map
-of total spaces. The source chart domains need only lie in the corresponding target domains. -/
+/-- A constant operator intertwining the transitions of cores defines a `C^n` map of total
+spaces, without smoothness assumptions on the base or cores. The source chart domains need only
+lie in the corresponding target domains. -/
 theorem contMDiff_totalSpaceMap_constHom
     (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
     (T : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
     (hT : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
       T.comp (A.core.coordChange i j x) = (D.core.coordChange i j x).comp T) :
     ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
-      (constHom hbase T hT).totalSpaceMap := by
-  apply CoordinateHom.contMDiff_totalSpaceMap
-  intro i j
-  refine (((D.core.contMDiffOn_coordChange I i j).mono
-    (fun x (hx : x ∈ A.core.baseSet i ∩ D.core.baseSet j) ↦
-      ⟨hbase i hx.1, hx.2⟩)).clm_comp (contMDiffOn_const (c := T))).congr ?_
-  intro x hx
-  rw [← CoordinateHom.operator_eq (constHom hbase T hT) i j ⟨x, hx⟩]
-  rw [operator_constHom]
-  rfl
+      (constHom hbase T hT).totalSpaceMap :=
+  contMDiff_totalSpaceMap_of_mem_baseSet (constHom hbase T hT) T fun x b hb v ↦ by
+    rw [fiberMap_constHom]
+    exact (DFunLike.congr_fun (hT x b x (A.mem_baseSet_self x) hb) v).symm
 
-/-- A fixed continuous linear equivalence intertwining smooth transition functions induces a
-smooth bundle equivalence over the identity, using the existing core total spaces. -/
+/-- A fixed continuous linear equivalence intertwining transition functions induces a `C^n` bundle
+equivalence over the identity, using the existing core total spaces, without smoothness
+assumptions on the base or cores. -/
 noncomputable def constIsoDiffeomorph
     (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
     (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
@@ -203,27 +198,23 @@ noncomputable def constIsoDiffeomorph
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     A.core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin A.rank → 𝕜),
-      I.prod 𝓘(𝕜, Fin D.rank → 𝕜)⟯ D.core.TotalSpace where
-  toFun := (constIso hbase e he).hom.totalSpaceMap
-  invFun := (constIso hbase e he).inv.totalSpaceMap
-  left_inv := fun ⟨x, v⟩ ↦ by
-    simp only [CoordinateHom.totalSpaceMap_def, fiberMap_constIso_hom, fiberMap_constIso_inv]
-    exact congrArg (fun w : Fin A.rank → 𝕜 ↦ (⟨x, w⟩ : A.core.TotalSpace))
-      (e.symm_apply_apply v)
-  right_inv := fun ⟨x, v⟩ ↦ by
-    simp only [CoordinateHom.totalSpaceMap_def, fiberMap_constIso_hom, fiberMap_constIso_inv]
-    exact congrArg (fun w : Fin D.rank → 𝕜 ↦ (⟨x, w⟩ : D.core.TotalSpace))
-      (e.apply_symm_apply v)
-  contMDiff_toFun :=
-    (contMDiff_totalSpaceMap_constHom (I := I) (n := n) (fun i ↦ (hbase i).le)
-      e.toContinuousLinearMap he).congr fun p ↦ by
-        simp only [CoordinateHom.totalSpaceMap_def, fiberMap_constHom, fiberMap_constIso_hom]
-        rfl
-  contMDiff_invFun :=
-    (contMDiff_totalSpaceMap_constHom (I := I) (n := n) (fun i ↦ (hbase i).ge)
-      e.symm.toContinuousLinearMap (coordChange_intertwines_symm hbase e he)).congr fun p ↦ by
-        simp only [CoordinateHom.totalSpaceMap_def, fiberMap_constHom, fiberMap_constIso_inv]
-        rfl
+      I.prod 𝓘(𝕜, Fin D.rank → 𝕜)⟯ D.core.TotalSpace :=
+  CoordinateHom.toDiffeomorphOfInv
+    (constIso hbase e he).hom (constIso hbase e he).inv
+    (constIso hbase e he).hom_inv_id (constIso hbase e he).inv_hom_id
+    (by
+      rw [show (constIso hbase e he).hom =
+          constHom (fun i ↦ (hbase i).le) e.toContinuousLinearMap he from
+        hom_ext fun x ↦ by rw [fiberMap_constIso_hom, fiberMap_constHom]]
+      exact contMDiff_totalSpaceMap_constHom (I := I) (n := n) (fun i ↦ (hbase i).le)
+        e.toContinuousLinearMap he)
+    (by
+      rw [show (constIso hbase e he).inv =
+          constHom (fun i ↦ (hbase i).ge) e.symm.toContinuousLinearMap
+            (coordChange_intertwines_symm hbase e he) from
+        hom_ext fun x ↦ by rw [fiberMap_constIso_inv, fiberMap_constHom]]
+      exact contMDiff_totalSpaceMap_constHom (I := I) (n := n) (fun i ↦ (hbase i).ge)
+        e.symm.toContinuousLinearMap (coordChange_intertwines_symm hbase e he))
 
 /-- The smooth comparison is the original constant core isomorphism on total spaces. -/
 @[simp]
@@ -234,7 +225,8 @@ theorem coe_constIsoDiffeomorph
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     ⇑(constIsoDiffeomorph (I := I) (n := n) hbase e he) =
-      (constIso hbase e he).hom.totalSpaceMap := (rfl)
+      (constIso hbase e he).hom.totalSpaceMap :=
+  CoordinateHom.coe_toDiffeomorphOfInv _ _ _ _ _ _
 
 /-- The inverse smooth comparison is the inverse of the original core isomorphism. -/
 @[simp]
@@ -245,6 +237,7 @@ theorem coe_constIsoDiffeomorph_symm
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     ⇑(constIsoDiffeomorph (I := I) (n := n) hbase e he).symm =
-      (constIso hbase e he).inv.totalSpaceMap := (rfl)
+      (constIso hbase e he).inv.totalSpaceMap :=
+  CoordinateHom.coe_toDiffeomorphOfInv_symm _ _ _ _ _ _
 
 end TauCeti.FiniteRankBundleCore

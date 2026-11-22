@@ -64,7 +64,8 @@ variable [IsManifold I 1 M]
 /-- The chart domain of `cotangentCore I b M` at `x₀` is `(chartAt H x₀).source`. -/
 theorem baseSet_cotangentCore (x₀ : M) :
     (cotangentCore I b M).core.baseSet x₀ = (chartAt H x₀).source := by
-  simp [cotangentCore]
+  rw [cotangentCore, FiniteRankBundleCore.baseSet_ofLinearEquiv]
+  simp
 
 /-- The base set of the local trivialization of `cotangentCore I b M` at `x₀` is the chart
 source. -/
@@ -110,13 +111,8 @@ back through the tangent trivialization at `p.proj`. -/
   refine (FiniteRankBundleCore.ofLinearEquivFiberEquiv_apply
     (FiniteRankBundleCore.dualCoords b.equivFunL)
     (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) p.proj p.snd).trans ?_
-  rw [← Trivialization.symmL_apply (R := 𝕜) _
-    (mem_baseSet_trivializationAt (E →L[𝕜] 𝕜) (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) p.proj)]
-  exact (Bundle.Trivialization.continuousLinearMap_symmL
-    (trivializationAt E (TangentSpace I) p.proj)
-    (trivializationAt 𝕜 (Bundle.Trivial M 𝕜) p.proj) p.proj
-    ((FiniteRankBundleCore.dualCoords b.equivFunL).symm p.snd)).trans
-    (by simp [Trivial.eq_trivialization M 𝕜])
+  exact trivializationAt_dual_symm_eq (TangentSpace I : M → Type _)
+    (mem_baseSet_trivializationAt E (TangentSpace I) p.proj) _
 
 /-- At `p.proj`, the inverse of `cotangentCoreTotalSpaceDiffeomorph` evaluates `p.snd` on the chart
 basis vectors `(trivializationAt E (TangentSpace I) p.proj).symmL 𝕜 p.proj (b i)`. -/

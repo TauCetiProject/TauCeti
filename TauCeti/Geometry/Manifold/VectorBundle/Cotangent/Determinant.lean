@@ -21,7 +21,8 @@ identifies it smoothly (and biholomorphically on complex manifolds) with `Canoni
    `isContMDiff_cotangentCore_det`, `tangentDualDetCotangentDetIso`, and
    `cotangentDetChangeBasisIso` (scaling coordinates by `b₁.det b₂`).
 2. **Comparison with `CanonicalBundle I M`:** for `b : Basis (Fin (finrank 𝕜 E)) 𝕜 E`,
-   `canonicalCore`, `cotangentDetCanonicalCoreIso`, `cotangentDetCanonicalFiberEquiv`,
+   `canonicalCore`, `canonicalCoreTotalSpaceDiffeomorph`, `cotangentDetCanonicalCoreIso`,
+   `cotangentDetCanonicalCoreDiffeomorph`, `cotangentDetCanonicalFiberEquiv`,
    `cotangentDetCanonicalDiffeomorph`, `cotangentDetCanonicalHomeomorph`,
    `cotangentDetCanonicalFiberEquiv_localTriv_symm_one`, and
    `cotangentDetCanonicalFiberEquiv_changeBasis`.
@@ -86,16 +87,37 @@ theorem detScalarEquiv_fiberMap_tangentDualDetCotangentDetIso_hom
     FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)
         ((tangentDualDetCotangentDetIso I b M).hom.fiberMap x u) =
       FiniteRankBundleCore.detScalarEquiv (tangentCore I b M).dual u := by
-  rw [tangentDualDetCotangentDetIso, FiniteRankBundleCore.detIso_hom,
-    FiniteRankBundleCore.detMap_def,
-    FiniteRankBundleCore.fiberMap_comp, FiniteRankBundleCore.fiberMap_comp,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    FiniteRankBundleCore.detScalarEquiv_fiberMap_detExteriorPowerIso_inv,
-    FiniteRankBundleCore.fiberMap_exteriorPower_map, fiberMap_tangentDualCotangentIso_hom]
-  refine (FiniteRankBundleCore.topExteriorScalarEquiv_exteriorPowerCoords_self
-    (ContinuousLinearMap.id 𝕜 (Fin r → 𝕜)) _).trans ?_
-  rw [ContinuousLinearMap.det_id, one_mul]
-  exact FiniteRankBundleCore.topExteriorScalarEquiv_fiberMap_detExteriorPowerIso_hom _ _ x u
+  rw [tangentDualDetCotangentDetIso, FiniteRankBundleCore.detIso_hom]
+  refine (FiniteRankBundleCore.detScalarEquiv_fiberMap_detMap r
+    (tangentDualCotangentIso I b M).hom
+    ((FiniteRankBundleCore.rank_dual _).trans (rank_tangentCore b))
+    (rank_cotangentCore b) x u).trans ?_
+  have hid :
+      ((ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜)
+        (finCongr (rank_cotangentCore (I := I) (M := M) b))).toContinuousLinearMap.comp
+        (((tangentDualCotangentIso I b M).hom.fiberMap x).comp
+          (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜)
+            (finCongr ((FiniteRankBundleCore.rank_dual (tangentCore I b M)).trans
+              (rank_tangentCore b)))).symm.toContinuousLinearMap)) =
+        ContinuousLinearMap.id 𝕜 (Fin r → 𝕜) := by
+    ext v i
+    have hL : (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜)
+        (finCongr ((FiniteRankBundleCore.rank_dual (tangentCore I b M)).trans
+          (rank_tangentCore b)))).symm v =
+        fun j ↦ v (Fin.cast ((FiniteRankBundleCore.rank_dual (tangentCore I b M)).trans
+          (rank_tangentCore b)) j) :=
+      funext fun j ↦ Equiv.piCongrLeft_symm_apply (fun _ ↦ 𝕜) _ v j
+    have hR (w : Fin (cotangentCore I b M).rank → 𝕜) :
+        (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜)
+          (finCongr (rank_cotangentCore (I := I) (M := M) b))) w i =
+          w (Fin.cast (rank_cotangentCore (I := I) (M := M) b).symm i) :=
+      (Equiv.piCongrLeft_apply (fun _ ↦ 𝕜)
+        (finCongr (rank_cotangentCore (I := I) (M := M) b)) w i).trans (by simp)
+    exact ((congrArg (fun f ↦ (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜)
+      (finCongr (rank_cotangentCore (I := I) (M := M) b))) f i)
+      ((DFunLike.congr_fun (fiberMap_tangentDualCotangentIso_hom b x) _).trans hL)).trans
+      (hR _)).trans (congrArg v (Fin.ext rfl))
+  rw [hid, ContinuousLinearMap.det_id, one_mul]
 
 /-- The inverse map of `tangentDualDetCotangentDetIso` preserves determinant scalar coordinates. -/
 theorem detScalarEquiv_fiberMap_tangentDualDetCotangentDetIso_inv
@@ -189,7 +211,8 @@ noncomputable def canonicalCore (I : ModelWithCorners 𝕜 E H)
 /-- The chart domain of `canonicalCore I b M` at `x₀` is `(chartAt H x₀).source`. -/
 theorem baseSet_canonicalCore (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (x₀ : M) :
     (canonicalCore I b M).core.baseSet x₀ = (chartAt H x₀).source := by
-  simp [canonicalCore]
+  rw [canonicalCore, FiniteRankBundleCore.baseSet_ofLinearEquiv]
+  simp
 
 /-- The base set of the local trivialization of `canonicalCore I b M` at `x₀` is the chart
 source. -/
@@ -216,6 +239,81 @@ theorem coordChange_canonicalCore (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) {x�
   obtain rfl : i = 0 := Subsingleton.elim i 0
   simp [b.det_self]; rfl
 
+/-- Reconstructed total space of `canonicalCore I b M` identified `C^k`-diffeomorphically with
+`CanonicalBundle I M`. -/
+noncomputable def canonicalCoreTotalSpaceDiffeomorph
+    (I : ModelWithCorners 𝕜 E H) (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
+    (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] (k : ℕ∞ω) :
+    (canonicalCore I b M).core.TotalSpace ≃ₘ^k⟮
+      I.prod 𝓘(𝕜, Fin (canonicalCore I b M).rank → 𝕜),
+      I.prod 𝓘(𝕜, E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜)⟯
+        TotalSpace (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) :=
+  FiniteRankBundleCore.ofLinearEquivTotalSpaceDiffeomorph
+    (canonicalModelCoords b) (CanonicalBundle I M) I k
+
+/-- At `p.proj`, `canonicalCoreTotalSpaceDiffeomorph` scales `CanonicalBundle.coordForm I p.proj b
+p.proj` by the unique coordinate of `p.snd`. -/
+@[simp] theorem canonicalCoreTotalSpaceDiffeomorph_apply
+    (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (k : ℕ∞ω)
+    (p : (canonicalCore I b M).core.TotalSpace) :
+    canonicalCoreTotalSpaceDiffeomorph I b M k p =
+      ⟨p.proj, p.snd ⟨0, (rank_canonicalCore (I := I) (M := M) b) ▸ Nat.zero_lt_one⟩ •
+        CanonicalBundle.coordForm I p.proj b p.proj⟩ := by
+  let F := E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜
+  refine (FiniteRankBundleCore.ofLinearEquivTotalSpaceDiffeomorph_apply
+    (canonicalModelCoords b) (CanonicalBundle I M) (I := I) (n := k) p).trans ?_
+  refine congrArg (TotalSpace.mk' F p.proj) ?_
+  refine (FiniteRankBundleCore.ofLinearEquivFiberEquiv_apply
+    (canonicalModelCoords b) (CanonicalBundle I M) p.proj p.snd).trans ?_
+  refine (congrArg (VectorBundle.continuousLinearEquivAt 𝕜 F (CanonicalBundle I M) p.proj).symm
+    (canonicalModelCoords_symm_apply b p.snd)).trans ?_
+  rw [map_smul, VectorBundle.continuousLinearEquivAt_symm_apply,
+    ← CanonicalBundle.trivializationAt_apply_snd_coordForm (I := I) (b := b)
+      (mem_chart_source H p.proj),
+    Trivialization.symm_apply_apply_mk _
+      (mem_baseSet_trivializationAt F (CanonicalBundle I M) p.proj)]
+  rfl
+
+/-- At `p.proj`, the inverse of `canonicalCoreTotalSpaceDiffeomorph` evaluates `p.snd` on the
+chart basis vectors `(trivializationAt E (TangentSpace I) p.proj).symmL 𝕜 p.proj (b i)`. -/
+@[simp] theorem canonicalCoreTotalSpaceDiffeomorph_symm_apply
+    (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (k : ℕ∞ω)
+    (p : TotalSpace (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M)) :
+    (canonicalCoreTotalSpaceDiffeomorph I b M k).symm p =
+      ⟨p.proj, fun _ ↦ p.snd fun i ↦
+        (trivializationAt E (TangentSpace I) p.proj).symmL 𝕜 p.proj (b i)⟩ := by
+  rcases p with ⟨x, η⟩
+  refine (FiniteRankBundleCore.ofLinearEquivTotalSpaceDiffeomorph_symm_apply
+    (canonicalModelCoords b) (CanonicalBundle I M) (I := I) (n := k) ⟨x, η⟩).trans ?_
+  refine congrArg (TotalSpace.mk' _ x) ?_
+  refine (FiniteRankBundleCore.ofLinearEquivFiberEquiv_symm_apply
+    (canonicalModelCoords b) (CanonicalBundle I M) x η).trans ?_
+  refine funext fun i ↦ ?_
+  dsimp only
+  rw [canonicalModelCoords_apply,
+    FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply]
+  rfl
+
+private theorem coordChange_comp_cotangentDetCanonicalCore
+    (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) {x₀ x₁ x : M}
+    (hx₀ : x ∈ (cotangentCore I b M).det.core.baseSet x₀)
+    (hx₁ : x ∈ (cotangentCore I b M).det.core.baseSet x₁) :
+    (((FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)).trans
+        (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm).toContinuousLinearMap.comp
+        ((cotangentCore I b M).det.core.coordChange x₀ x₁ x)) =
+      ((canonicalCore I b M).core.coordChange x₀ x₁ x).comp
+        ((FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)).trans
+          (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm).toContinuousLinearMap := by
+  rw [FiniteRankBundleCore.baseSet_det, baseSet_cotangentCore] at hx₀ hx₁
+  let e : (Fin (cotangentCore I b M).det.rank → 𝕜) ≃L[𝕜] Fin (canonicalCore I b M).rank → 𝕜 :=
+    (FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)).trans
+      (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm
+  ext u : 1
+  refine (congrArg e (DFunLike.congr_fun (coordChange_cotangentCore_det b hx₀ hx₁) u)).trans ?_
+  refine (e.map_smul _ u).trans ?_
+  exact (DFunLike.congr_fun (coordChange_canonicalCore b hx₀ hx₁) (e u)).symm
+
 /-- Core-level isomorphism in `FiniteRankBundleCore 𝕜 M` between `(cotangentCore I b M).det` and
 `canonicalCore I b M`, preserving scalar coordinates. -/
 noncomputable def cotangentDetCanonicalCoreIso
@@ -227,12 +325,35 @@ noncomputable def cotangentDetCanonicalCoreIso
       rw [FiniteRankBundleCore.baseSet_det, baseSet_cotangentCore, baseSet_canonicalCore])
     ((FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)).trans
       (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm)
-    fun x₀ x₁ x hx₀ hx₁ ↦ by
-      rw [FiniteRankBundleCore.baseSet_det, baseSet_cotangentCore] at hx₀ hx₁
-      ext u : 1
-      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-        coordChange_cotangentCore_det b hx₀ hx₁, coordChange_canonicalCore b hx₀ hx₁]
-      simp only [_root_.smul_apply, ContinuousLinearMap.id_apply, map_smul]
+    fun _ _ _ hx₀ hx₁ ↦ coordChange_comp_cotangentDetCanonicalCore b hx₀ hx₁
+
+/-- `C^k` diffeomorphism of total spaces upgrading `cotangentDetCanonicalCoreIso I b M` at every
+regularity `k`, without smoothness assumptions beyond `[IsManifold I 1 M]`. -/
+noncomputable def cotangentDetCanonicalCoreDiffeomorph
+    (I : ModelWithCorners 𝕜 E H) (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
+    (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] (k : ℕ∞ω) :
+    (cotangentCore I b M).det.core.TotalSpace ≃ₘ^k⟮
+      I.prod 𝓘(𝕜, Fin (cotangentCore I b M).det.rank → 𝕜),
+      I.prod 𝓘(𝕜, Fin (canonicalCore I b M).rank → 𝕜)⟯ (canonicalCore I b M).core.TotalSpace :=
+  FiniteRankBundleCore.constIsoDiffeomorph (A := (cotangentCore I b M).det)
+    (D := canonicalCore I b M)
+    (fun _ ↦ by
+      rw [FiniteRankBundleCore.baseSet_det, baseSet_cotangentCore, baseSet_canonicalCore])
+    ((FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)).trans
+      (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm)
+    fun _ _ _ hx₀ hx₁ ↦ coordChange_comp_cotangentDetCanonicalCore b hx₀ hx₁
+
+@[simp] theorem coe_cotangentDetCanonicalCoreDiffeomorph
+    (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (k : ℕ∞ω) :
+    ⇑(cotangentDetCanonicalCoreDiffeomorph I b M k) =
+      (cotangentDetCanonicalCoreIso I b M).hom.totalSpaceMap :=
+  FiniteRankBundleCore.coe_constIsoDiffeomorph _ _ _
+
+@[simp] theorem coe_cotangentDetCanonicalCoreDiffeomorph_symm
+    (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (k : ℕ∞ω) :
+    ⇑(cotangentDetCanonicalCoreDiffeomorph I b M k).symm =
+      (cotangentDetCanonicalCoreIso I b M).inv.totalSpaceMap :=
+  FiniteRankBundleCore.coe_constIsoDiffeomorph_symm _ _ _
 
 /-- Every coordinate entry of `(cotangentDetCanonicalCoreIso I b M).hom.fiberMap x u` is
 `detScalarEquiv (cotangentCore I b M) u`. -/
@@ -240,8 +361,11 @@ noncomputable def cotangentDetCanonicalCoreIso
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (x : M)
     (u : Fin (cotangentCore I b M).det.rank → 𝕜) (i : Fin (canonicalCore I b M).rank) :
     (cotangentDetCanonicalCoreIso I b M).hom.fiberMap x u i =
-      FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M) u := by
-  rw [cotangentDetCanonicalCoreIso, FiniteRankBundleCore.fiberMap_constIso_hom]; rfl
+      FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M) u :=
+  congrFun (DFunLike.congr_fun (FiniteRankBundleCore.fiberMap_constIso_hom
+    (A := (cotangentCore I b M).det) (D := canonicalCore I b M) _
+    ((FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)).trans
+      (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm) _ x) u) i
 
 /-- Every coordinate entry of `(cotangentDetCanonicalCoreIso I b M).inv.fiberMap x w` is the unique
 coordinate entry of `w` in `canonicalCore I b M`. -/
@@ -249,12 +373,15 @@ coordinate entry of `w` in `canonicalCore I b M`. -/
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (x : M)
     (w : Fin (canonicalCore I b M).rank → 𝕜) (i : Fin (cotangentCore I b M).det.rank) :
     (cotangentDetCanonicalCoreIso I b M).inv.fiberMap x w i =
-      w ⟨0, (rank_canonicalCore (I := I) (M := M) b) ▸ Nat.zero_lt_one⟩ := by
-  rw [cotangentDetCanonicalCoreIso, FiniteRankBundleCore.fiberMap_constIso_inv]
-  exact (congrFun (ContinuousLinearEquiv.symm_trans_apply
-    (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm
-    (FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)) w) i).trans
-    (FiniteRankBundleCore.detScalarEquiv_symm_apply (cotangentCore I b M) _ i)
+      w ⟨0, (rank_canonicalCore (I := I) (M := M) b) ▸ Nat.zero_lt_one⟩ :=
+  (congrFun (DFunLike.congr_fun (FiniteRankBundleCore.fiberMap_constIso_inv
+    (A := (cotangentCore I b M).det) (D := canonicalCore I b M) _
+    ((FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)).trans
+      (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm) _ x) w) i).trans
+    ((congrFun (ContinuousLinearEquiv.symm_trans_apply
+      (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm
+      (FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)) w) i).trans
+      (FiniteRankBundleCore.detScalarEquiv_symm_apply (cotangentCore I b M) _ i))
 
 /-- Fibrewise continuous linear equivalence identifying `(cotangentCore I b M).det.core.Fiber x`
 with `CanonicalBundle I M x` via `detScalarEquiv` and `CanonicalBundle.coordForm`. -/
@@ -299,55 +426,6 @@ noncomputable def cotangentDetCanonicalFiberEquiv
   rw [← htriv]
   exact CanonicalBundle.eq_smul_coordForm (b := b) (mem_chart_source H x) η
 
-private theorem contMDiff_cotangentDetCanonicalFiberEquiv (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
-    {k : ℕ∞ω} :
-    ContMDiff (I.prod 𝓘(𝕜, Fin (cotangentCore I b M).det.rank → 𝕜))
-      (I.prod 𝓘(𝕜, E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜)) k
-      (fun p : (cotangentCore I b M).det.core.TotalSpace ↦
-        TotalSpace.mk' (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (E := CanonicalBundle I M)
-          p.proj (cotangentDetCanonicalFiberEquiv I b M p.proj p.snd)) := by
-  intro p₀
-  rw [Bundle.contMDiffAt_totalSpace_iff]
-  refine ⟨contMDiffAt_proj _, ?_⟩
-  have hU := ((cotangentCore I b M).det.core.localTriv p₀.proj).open_source.mem_nhds
-    (((cotangentCore I b M).det.core.mem_localTriv_source p₀.proj p₀).2
-      ((cotangentCore I b M).det.mem_baseSet_self p₀.proj))
-  refine (((FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)).trans
-    b.topFormEquiv.symm).contDiff.comp_contMDiffAt
-    ((cotangentCore I b M).det.contMDiffAt_localTriv_snd p₀)).congr_of_eventuallyEq ?_
-  filter_upwards [hU] with ⟨x, w⟩ hq
-  have hx₀ : x ∈ (chartAt H p₀.proj).source := by
-    simpa [FiniteRankBundleCore.baseSet_det, baseSet_cotangentCore] using
-      ((cotangentCore I b M).det.core.mem_localTriv_source p₀.proj ⟨x, w⟩).1 hq
-  have hlhs (u : Fin (cotangentCore I b M).det.rank → 𝕜) :
-      b.topFormEquiv (trivializationAt (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜)
-        (CanonicalBundle I M) p₀.proj ⟨x, cotangentDetCanonicalFiberEquiv I b M x u⟩).2 =
-      LinearMap.det (tangentCoordChange I p₀.proj x x : E →ₗ[𝕜] E) *
-        FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M) u := by
-    rw [b.topFormEquiv_apply, cotangentDetCanonicalFiberEquiv_apply,
-      CanonicalBundle.trivializationAt_apply_snd_basis_eq_det_mul (mem_chart_source H x) hx₀ _ b,
-      ← Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ (mem_baseSet_trivializationAt _ _ x),
-      map_smul, Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _
-        (mem_baseSet_trivializationAt _ _ x),
-      CanonicalBundle.trivializationAt_apply_snd_coordForm (mem_chart_source H x)]
-    simp [b.det_self]
-  have hrhs (u : Fin (cotangentCore I b M).det.rank → 𝕜) :
-      b.topFormEquiv (((FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)).trans
-        b.topFormEquiv.symm)
-        (((cotangentCore I b M).det.core.coordChange x p₀.proj x) u)) =
-      LinearMap.det (tangentCoordChange I p₀.proj x x : E →ₗ[𝕜] E) *
-        FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M) u := by
-    rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.apply_symm_apply,
-      coordChange_cotangentCore_det b (mem_chart_source H x) hx₀]
-    simp [_root_.smul_apply]
-  apply b.topFormEquiv.injective
-  dsimp only [Function.comp_apply]
-  rw [VectorBundleCore.localTriv_apply, (cotangentCore I b M).det.indexAt_eq]
-  -- `VectorBundleCore.Fiber` is a semireducible `def` equal to the model fibre
-  -- `Fin (cotangentCore I b M).det.rank → 𝕜` with no wrapper lemma in Mathlib, so `rw` cannot
-  -- bridge them at reducible transparency; pass `w` directly into `hlhs` and `hrhs`.
-  exact (hlhs w).trans (hrhs w).symm
-
 /-- The reconstructed total space of `(cotangentCore I b M).det` is `C^k` diffeomorphic over `M` to
 `CanonicalBundle I M` at every regularity `k` (biholomorphic when `I = 𝓘(ℂ, E)` and `k = ∞`). -/
 noncomputable def cotangentDetCanonicalDiffeomorph
@@ -357,8 +435,8 @@ noncomputable def cotangentDetCanonicalDiffeomorph
       I.prod 𝓘(𝕜, Fin (cotangentCore I b M).det.rank → 𝕜),
       I.prod 𝓘(𝕜, E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜)⟯
         TotalSpace (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) :=
-  bundleDiffeomorph (cotangentDetCanonicalFiberEquiv I b M)
-    (contMDiff_cotangentDetCanonicalFiberEquiv b)
+  (cotangentDetCanonicalCoreDiffeomorph I b M k).trans
+    (canonicalCoreTotalSpaceDiffeomorph I b M k)
 
 /-- Topological bundle equivalence underlying `cotangentDetCanonicalDiffeomorph`. -/
 noncomputable def cotangentDetCanonicalHomeomorph
@@ -374,8 +452,18 @@ noncomputable def cotangentDetCanonicalHomeomorph
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (k : ℕ∞ω)
     (p : (cotangentCore I b M).det.core.TotalSpace) :
     cotangentDetCanonicalDiffeomorph I b M k p =
-      ⟨p.proj, cotangentDetCanonicalFiberEquiv I b M p.proj p.snd⟩ :=
-  bundleDiffeomorph_apply _ _ p
+      ⟨p.proj, cotangentDetCanonicalFiberEquiv I b M p.proj p.snd⟩ := by
+  change canonicalCoreTotalSpaceDiffeomorph I b M k
+      (cotangentDetCanonicalCoreDiffeomorph I b M k p) =
+    ⟨p.proj, cotangentDetCanonicalFiberEquiv I b M p.proj p.snd⟩
+  rw [coe_cotangentDetCanonicalCoreDiffeomorph, CoordinateHom.totalSpaceMap_def,
+    canonicalCoreTotalSpaceDiffeomorph_apply]
+  dsimp only
+  refine (congrArg
+    (fun c ↦ TotalSpace.mk' _ p.proj (c • CanonicalBundle.coordForm I p.proj b p.proj))
+    (fiberMap_cotangentDetCanonicalCoreIso_hom_apply b p.proj p.snd _)).trans ?_
+  exact congrArg (TotalSpace.mk' _ p.proj)
+    (cotangentDetCanonicalFiberEquiv_apply b p.proj p.snd).symm
 
 /-- On total spaces, the inverse of `cotangentDetCanonicalDiffeomorph` acts fibrewise by
 `(cotangentDetCanonicalFiberEquiv I b M p.proj).symm`. -/
@@ -383,8 +471,15 @@ noncomputable def cotangentDetCanonicalHomeomorph
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (k : ℕ∞ω)
     (p : TotalSpace (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M)) :
     (cotangentDetCanonicalDiffeomorph I b M k).symm p =
-      ⟨p.proj, (cotangentDetCanonicalFiberEquiv I b M p.proj).symm p.snd⟩ :=
-  bundleDiffeomorph_symm_apply _ _ p
+      ⟨p.proj, (cotangentDetCanonicalFiberEquiv I b M p.proj).symm p.snd⟩ := by
+  change (cotangentDetCanonicalCoreDiffeomorph I b M k).symm
+      ((canonicalCoreTotalSpaceDiffeomorph I b M k).symm p) =
+    ⟨p.proj, (cotangentDetCanonicalFiberEquiv I b M p.proj).symm p.snd⟩
+  rw [coe_cotangentDetCanonicalCoreDiffeomorph_symm, CoordinateHom.totalSpaceMap_def,
+    canonicalCoreTotalSpaceDiffeomorph_symm_apply, cotangentDetCanonicalFiberEquiv_symm_apply]
+  refine congrArg (TotalSpace.mk' _ p.proj) (funext fun i ↦ ?_)
+  exact (fiberMap_cotangentDetCanonicalCoreIso_inv_apply b p.proj _ i).trans
+    (FiniteRankBundleCore.detScalarEquiv_symm_apply (cotangentCore I b M) _ i).symm
 
 /-- The underlying homeomorphism of `cotangentDetCanonicalDiffeomorph` at any regularity `k` agrees
 with `cotangentDetCanonicalHomeomorph`. -/

@@ -39,6 +39,37 @@ variable {𝕜 : Type v} [NontriviallyNormedField 𝕜]
   {B : Type u} [TopologicalSpace B]
   {F : Type w} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+/-- The underlying `VectorBundleCore` presenting a vector bundle `V` with model fibre `F` through
+`e : F ≃L[𝕜] (Fin r → 𝕜)`. -/
+noncomputable def ofLinearEquivCore {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (V : B → Type z)
+    [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+    [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+    [FiberBundle F V] [VectorBundle 𝕜 F V] :
+    VectorBundleCore 𝕜 B (Fin r → 𝕜) B where
+  baseSet := fun b ↦ (trivializationAt F V b).baseSet
+  isOpen_baseSet := fun b ↦ (trivializationAt F V b).open_baseSet
+  indexAt := id
+  mem_baseSet_at := fun b ↦ mem_baseSet_trivializationAt F V b
+  coordChange := fun b c x ↦
+    e.arrowCongr e ((trivializationAt F V b).coordChangeL 𝕜 (trivializationAt F V c) x)
+  coordChange_self := fun b x hx u ↦ by
+    simp [Trivialization.coe_coordChangeL (R := 𝕜) _ _ ⟨hx, hx⟩]
+  continuousOn_coordChange := fun b c ↦
+    (e.arrowCongr e).continuous.comp_continuousOn (continuousOn_coordChange 𝕜 _ _)
+  coordChange_comp := fun b c d x hx u ↦ by
+    simp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.symm_apply_apply,
+      ContinuousLinearEquiv.coe_coe, Trivialization.coe_coordChangeL _ _ ⟨hx.1.1, hx.1.2⟩,
+      Trivialization.coe_coordChangeL _ _ ⟨hx.1.2, hx.2⟩,
+      Trivialization.coe_coordChangeL _ _ ⟨hx.1.1, hx.2⟩,
+      LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]
+
+/-- The chart index map of `ofLinearEquivCore e V` is the identity. -/
+theorem indexAt_ofLinearEquivCore {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (V : B → Type z)
+    [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+    [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+    [FiberBundle F V] [VectorBundle 𝕜 F V] (x : B) :
+    (ofLinearEquivCore e V).indexAt x = x := (rfl)
+
 /-- Present a vector bundle `V` with model fibre `F` as a point-indexed finite-rank core by
 conjugating its preferred chart transitions through `e : F ≃L[𝕜] (Fin r → 𝕜)`. -/
 -- Expose the rank projection so dependent coordinate spaces reduce to `Fin r → 𝕜`.
@@ -49,24 +80,8 @@ noncomputable def ofLinearEquiv {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (V
     [FiberBundle F V] [VectorBundle 𝕜 F V] :
     FiniteRankBundleCore 𝕜 B where
   rank := r
-  core :=
-    { baseSet := fun b ↦ (trivializationAt F V b).baseSet
-      isOpen_baseSet := fun b ↦ (trivializationAt F V b).open_baseSet
-      indexAt := id
-      mem_baseSet_at := fun b ↦ mem_baseSet_trivializationAt F V b
-      coordChange := fun b c x ↦
-        e.arrowCongr e ((trivializationAt F V b).coordChangeL 𝕜 (trivializationAt F V c) x)
-      coordChange_self := fun b x hx u ↦ by
-        simp [Trivialization.coe_coordChangeL (R := 𝕜) _ _ ⟨hx, hx⟩]
-      continuousOn_coordChange := fun b c ↦
-        (e.arrowCongr e).continuous.comp_continuousOn (continuousOn_coordChange 𝕜 _ _)
-      coordChange_comp := fun b c d x hx u ↦ by
-        simp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.symm_apply_apply,
-          ContinuousLinearEquiv.coe_coe, Trivialization.coe_coordChangeL _ _ ⟨hx.1.1, hx.1.2⟩,
-          Trivialization.coe_coordChangeL _ _ ⟨hx.1.2, hx.2⟩,
-          Trivialization.coe_coordChangeL _ _ ⟨hx.1.1, hx.2⟩,
-          LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply] }
-  indexAt_eq := fun _ ↦ rfl
+  core := ofLinearEquivCore e V
+  indexAt_eq := indexAt_ofLinearEquivCore e V
 
 section Basic
 
@@ -190,15 +205,24 @@ variable {r₁ r₂ : ℕ} (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F �
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
 
+/-- Changing model coordinates from `e₁` to `e₂` intertwines the transition maps of
+`ofLinearEquiv e₁ V` and `ofLinearEquiv e₂ V`. -/
+theorem coordChange_comp_ofLinearEquiv_change (b c x : B) :
+    ((e₁.symm.trans e₂).toContinuousLinearMap.comp
+        ((ofLinearEquiv e₁ V).core.coordChange b c x)) =
+      ((ofLinearEquiv e₂ V).core.coordChange b c x).comp
+        (e₁.symm.trans e₂).toContinuousLinearMap :=
+  ContinuousLinearMap.ext fun u ↦
+    let T := (trivializationAt F V b).coordChangeL 𝕜 (trivializationAt F V c) x
+    congrArg e₂ ((e₁.symm_apply_apply (T (e₁.symm u))).trans
+      (congrArg T (e₂.symm_apply_apply (e₁.symm u)).symm))
+
 /-- Changing the model-fibre coordinate equivalence from `e₁` to `e₂` induces a constant-matrix
 isomorphism of finite-rank cores with fibre map `e₁.symm.trans e₂`. -/
 noncomputable def ofLinearEquivChangeIso :
     ofLinearEquiv e₁ V ≅ ofLinearEquiv e₂ V :=
   constIso (fun _ ↦ rfl) (e₁.symm.trans e₂) fun b c x _ _ ↦
-    ContinuousLinearMap.ext fun u ↦
-      let T := (trivializationAt F V b).coordChangeL 𝕜 (trivializationAt F V c) x
-      congrArg e₂ ((e₁.symm_apply_apply (T (e₁.symm u))).trans
-        (congrArg T (e₂.symm_apply_apply (e₁.symm u)).symm))
+    coordChange_comp_ofLinearEquiv_change e₁ e₂ V b c x
 
 @[simp] theorem fiberMap_ofLinearEquivChangeIso_hom (x : B) :
     (ofLinearEquivChangeIso e₁ e₂ V).hom.fiberMap x =
@@ -291,16 +315,6 @@ variable {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (V : B → Type z)
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
 
-omit [CompleteSpace 𝕜] in
-private theorem trivializationAt_dual_symm_eq {i x : B}
-    (hi : x ∈ (trivializationAt F V i).baseSet) (p : F →L[𝕜] 𝕜) :
-    (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) i).symm x p =
-      p.comp ((trivializationAt F V i).continuousLinearMapAt 𝕜 x) := by
-  have hdi : x ∈ (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) i).baseSet := by simp [hi]
-  rw [← Trivialization.symmL_apply (R := 𝕜) _ hdi]
-  exact (Bundle.Trivialization.continuousLinearMap_symmL (trivializationAt F V i)
-    (trivializationAt 𝕜 (Bundle.Trivial B 𝕜) i) x p).trans (by simp [Trivial.eq_trivialization B 𝕜])
-
 /-- On the overlap of two chart domains, the transition of `fun x ↦ V x →L[𝕜] 𝕜` in `dualCoords e`
 equals the transposed reverse transition of `ofLinearEquiv e V`. -/
 theorem coordChange_ofLinearEquiv_dualCoords {i j x : B}
@@ -327,20 +341,32 @@ theorem coordChange_ofLinearEquiv_dualCoords {i j x : B}
     ← Trivialization.coordChangeL_apply (R := 𝕜) _ _ ⟨hj, hi⟩, dualCoords_symm_apply]
   simp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.coe_coe]
 
-private theorem baseSet_ofLinearEquiv_dual (i : B) :
+/-- The chart domain of `(ofLinearEquiv e V).dual` at `i` is `(trivializationAt F V i).baseSet`. -/
+theorem baseSet_ofLinearEquiv_dual (i : B) :
     (ofLinearEquiv e V).dual.core.baseSet i = (trivializationAt F V i).baseSet :=
   (localTriv_baseSet_dual (ofLinearEquiv e V) i).trans (baseSet_ofLinearEquiv e V i)
+
+/-- On the overlap of two chart domains, the identity intertwines the transitions of
+`(ofLinearEquiv e V).dual` and `ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜)`. -/
+theorem coordChange_comp_ofLinearEquiv_dual {i j x : B}
+    (hi : x ∈ (ofLinearEquiv e V).dual.core.baseSet i)
+    (hj : x ∈ (ofLinearEquiv e V).dual.core.baseSet j) :
+    (ContinuousLinearMap.id 𝕜 (Fin (ofLinearEquiv e V).dual.rank → 𝕜)).comp
+        ((ofLinearEquiv e V).dual.core.coordChange i j x) =
+      ((ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜)).core.coordChange i j x).comp
+        (ContinuousLinearMap.id 𝕜 (Fin (ofLinearEquiv e V).dual.rank → 𝕜)) := by
+  rw [baseSet_ofLinearEquiv_dual] at hi hj
+  exact ContinuousLinearMap.ext fun (w : Fin r → 𝕜) ↦
+    congrFun (congrArg DFunLike.coe (coordChange_ofLinearEquiv_dualCoords e V hi hj).symm) w
 
 /-- The dual of `ofLinearEquiv e V` is canonically isomorphic to the core of Mathlib's dual bundle
 `fun x ↦ V x →L[𝕜] 𝕜` in `dualCoords e`, by the identity on every coordinate fibre. -/
 noncomputable def ofLinearEquivDualIso :
     (ofLinearEquiv e V).dual ≅ ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜) :=
-  constIso (fun i ↦ (baseSet_ofLinearEquiv_dual e V i).trans (by simp))
+  constIso (fun i ↦ (baseSet_ofLinearEquiv_dual e V i).trans
+      (by rw [baseSet_ofLinearEquiv]; simp))
     (ContinuousLinearEquiv.refl 𝕜 (Fin r → 𝕜))
-    fun i j x hi hj ↦ by
-      rw [baseSet_ofLinearEquiv_dual] at hi hj
-      exact ContinuousLinearMap.ext fun (w : Fin r → 𝕜) ↦
-        congrFun (congrArg DFunLike.coe (coordChange_ofLinearEquiv_dualCoords e V hi hj).symm) w
+    fun _ _ _ hi hj ↦ coordChange_comp_ofLinearEquiv_dual e V hi hj
 
 @[simp] theorem fiberMap_ofLinearEquivDualIso_hom (x : B) :
     (ofLinearEquivDualIso e V).hom.fiberMap x = ContinuousLinearMap.id 𝕜 (Fin r → 𝕜) :=

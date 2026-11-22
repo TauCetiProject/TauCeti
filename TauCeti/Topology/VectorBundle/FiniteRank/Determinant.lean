@@ -105,26 +105,42 @@ theorem baseSet_det (A : FiniteRankBundleCore 𝕜 B) (i : B) :
 private theorem baseSet_exteriorPower_obj (j : ℕ) (A : FiniteRankBundleCore 𝕜 B) (i : B) :
     ((exteriorPower 𝕜 B j).obj A).core.baseSet i = A.core.baseSet i := (rfl)
 
+/-- Identifying `Fin A.det.rank → 𝕜` with `Fin ((exteriorPower 𝕜 B r).obj A).rank → 𝕜` via
+`detScalarEquiv A` and `topExteriorScalarEquiv 𝕜 hr` intertwines the transitions of `A.det` and
+`(exteriorPower 𝕜 B r).obj A`. -/
+theorem coordChange_comp_detExteriorPower (A : FiniteRankBundleCore 𝕜 B) {r : ℕ} (hr : A.rank = r)
+    (i j x : B) :
+    (((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 hr).symm :
+        (Fin A.det.rank → 𝕜) ≃L[𝕜]
+          (Fin ((exteriorPower 𝕜 B r).obj A).rank → 𝕜)).toContinuousLinearMap.comp
+        (A.det.core.coordChange i j x)) =
+      (((exteriorPower 𝕜 B r).obj A).core.coordChange i j x).comp
+        (((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 hr).symm :
+          (Fin A.det.rank → 𝕜) ≃L[𝕜]
+            (Fin ((exteriorPower 𝕜 B r).obj A).rank → 𝕜)).toContinuousLinearMap) := by
+  subst hr; ext u : 1
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, coordChange_det,
+    coordChange_exteriorPower_obj, ContinuousLinearMap.exteriorPowerCoords_self]
+  simp only [_root_.smul_apply, ContinuousLinearMap.id_apply]
+  exact (map_smul ((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 rfl).symm) _ u).symm
+
 /-- For `r = A.rank`, the determinant core `A.det` is canonically isomorphic to the `r`th exterior
 power `(exteriorPower 𝕜 B r).obj A`, preserving scalar coordinates. -/
 noncomputable def detExteriorPowerIso (A : FiniteRankBundleCore 𝕜 B) {r : ℕ} (hr : A.rank = r) :
     A.det ≅ (exteriorPower 𝕜 B r).obj A :=
   constIso (fun i ↦ (baseSet_det A i).trans (baseSet_exteriorPower_obj r A i).symm)
     ((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 hr).symm)
-    fun i j x _ _ ↦ by
-      subst hr; ext u : 1
-      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, coordChange_det,
-        coordChange_exteriorPower_obj, ContinuousLinearMap.exteriorPowerCoords_self]
-      simp only [_root_.smul_apply, ContinuousLinearMap.id_apply]
-      exact (map_smul ((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 rfl).symm) _ u).symm
+    fun i j x _ _ ↦ coordChange_comp_detExteriorPower A hr i j x
 
 /-- The forward map of `detExteriorPowerIso` preserves scalar coordinates. -/
 theorem topExteriorScalarEquiv_fiberMap_detExteriorPowerIso_hom
     (A : FiniteRankBundleCore 𝕜 B) {r : ℕ} (hr : A.rank = r) (x : B) (u : Fin A.det.rank → 𝕜) :
     topExteriorScalarEquiv 𝕜 hr ((detExteriorPowerIso A hr).hom.fiberMap x u) =
       detScalarEquiv A u := by
-  rw [detExteriorPowerIso, fiberMap_constIso_hom]
-  exact (topExteriorScalarEquiv 𝕜 hr).apply_symm_apply _
+  rw [detExteriorPowerIso]
+  exact (congrArg (topExteriorScalarEquiv 𝕜 hr)
+    (DFunLike.congr_fun (fiberMap_constIso_hom _ _ _ x) u)).trans
+    ((topExteriorScalarEquiv 𝕜 hr).apply_symm_apply _)
 
 /-- The inverse map of `detExteriorPowerIso` preserves scalar coordinates. -/
 theorem detScalarEquiv_fiberMap_detExteriorPowerIso_inv
@@ -132,8 +148,10 @@ theorem detScalarEquiv_fiberMap_detExteriorPowerIso_inv
     (w : Fin (((exteriorPower 𝕜 B r).obj A).rank) → 𝕜) :
     detScalarEquiv A ((detExteriorPowerIso A hr).inv.fiberMap x w) =
       topExteriorScalarEquiv 𝕜 hr w := by
-  rw [detExteriorPowerIso, fiberMap_constIso_inv]
-  exact (detScalarEquiv A).apply_symm_apply _
+  rw [detExteriorPowerIso]
+  exact (congrArg (detScalarEquiv A)
+    (DFunLike.congr_fun (fiberMap_constIso_inv _ _ _ x) w)).trans
+    ((detScalarEquiv A).apply_symm_apply _)
 
 /-- The bundle map on determinant line cores induced by `f : A ⟶ D` between two cores of rank `r`,
 transporting `(exteriorPower 𝕜 B r).map f` across `detExteriorPowerIso`. -/
@@ -153,6 +171,31 @@ theorem detMap_def (r : ℕ) {A D : FiniteRankBundleCore 𝕜 B}
 @[simp] theorem detMap_comp (r : ℕ) {A D C : FiniteRankBundleCore 𝕜 B}
     (f : A ⟶ D) (g : D ⟶ C) (hA : A.rank = r) (hD : D.rank = r) (hC : C.rank = r) :
     detMap r (f ≫ g) hA hC = detMap r f hA hD ≫ detMap r g hD hC := by simp [detMap]
+
+/-- On scalar coordinates, `detMap r f hA hD` multiplies by the determinant of `f.fiberMap x`
+after identifying `Fin A.rank → 𝕜` and `Fin D.rank → 𝕜` with `Fin r → 𝕜`. -/
+theorem detScalarEquiv_fiberMap_detMap (r : ℕ) {A D : FiniteRankBundleCore 𝕜 B}
+    (f : A ⟶ D) (hA : A.rank = r) (hD : D.rank = r) (x : B) (u : Fin A.det.rank → 𝕜) :
+    detScalarEquiv D ((detMap r f hA hD).fiberMap x u) =
+      ((ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr hD)).toContinuousLinearMap.comp
+          ((f.fiberMap x).comp
+            (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜)
+              (finCongr hA)).symm.toContinuousLinearMap)).det *
+        detScalarEquiv A u := by
+  rcases A with ⟨nA, cA, hcA⟩
+  rcases D with ⟨nD, cD, hcD⟩
+  dsimp only at hA hD
+  subst hA hD
+  rw [detMap, fiberMap_comp, fiberMap_comp, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply, detScalarEquiv_fiberMap_detExteriorPowerIso_inv,
+    fiberMap_exteriorPower_map]
+  have hpi : ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr (rfl : nD = nD)) =
+      ContinuousLinearEquiv.refl 𝕜 (Fin nD → 𝕜) := by
+    ext v i; simp [ContinuousLinearEquiv.piCongrLeft]
+  simp only [hpi, ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl,
+    ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_id]
+  exact (topExteriorScalarEquiv_exteriorPowerCoords_self (f.fiberMap x) _).trans
+    (congrArg _ (topExteriorScalarEquiv_fiberMap_detExteriorPowerIso_hom _ _ _ _))
 
 /-- An isomorphism `e : A ≅ D` between cores of rank `r` induces an isomorphism `A.det ≅ D.det`. -/
 noncomputable def detIso (r : ℕ) {A D : FiniteRankBundleCore 𝕜 B}
@@ -194,12 +237,8 @@ theorem detScalarEquiv_fiberMap_ofLinearEquivChangeIso_hom (x : B)
           (rank_ofLinearEquiv e₁ V) (rank_ofLinearEquiv e₂ V)).hom.fiberMap x u) =
       (e₁.symm.trans e₂ : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)).det *
         detScalarEquiv (ofLinearEquiv e₁ V) u := by
-  rw [detIso_hom, detMap, fiberMap_comp, fiberMap_comp, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, detScalarEquiv_fiberMap_detExteriorPowerIso_inv,
-    fiberMap_exteriorPower_map, fiberMap_ofLinearEquivChangeIso_hom]
-  exact (topExteriorScalarEquiv_exteriorPowerCoords_self
-    (e₁.symm.trans e₂ : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)) _).trans
-    (congrArg _ (topExteriorScalarEquiv_fiberMap_detExteriorPowerIso_hom _ _ _ _))
+  rw [detIso_hom, detScalarEquiv_fiberMap_detMap, fiberMap_ofLinearEquivChangeIso_hom]
+  congr 2
 
 /-- On determinant line cores, the inverse map of `ofLinearEquivChangeIso e₁ e₂ V` multiplies scalar
 coordinates by the determinant of `e₂.symm.trans e₁`. -/
@@ -210,12 +249,8 @@ theorem detScalarEquiv_fiberMap_ofLinearEquivChangeIso_inv (x : B)
           (rank_ofLinearEquiv e₁ V) (rank_ofLinearEquiv e₂ V)).inv.fiberMap x u) =
       (e₂.symm.trans e₁ : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)).det *
         detScalarEquiv (ofLinearEquiv e₂ V) u := by
-  rw [detIso_inv, detMap, fiberMap_comp, fiberMap_comp, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, detScalarEquiv_fiberMap_detExteriorPowerIso_inv,
-    fiberMap_exteriorPower_map, fiberMap_ofLinearEquivChangeIso_inv]
-  exact (topExteriorScalarEquiv_exteriorPowerCoords_self
-    (e₂.symm.trans e₁ : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)) _).trans
-    (congrArg _ (topExteriorScalarEquiv_fiberMap_detExteriorPowerIso_hom _ _ _ _))
+  rw [detIso_inv, detScalarEquiv_fiberMap_detMap, fiberMap_ofLinearEquivChangeIso_inv]
+  congr 2
 
 end OfLinearEquiv
 
@@ -243,6 +278,20 @@ theorem coordChange_det_dual (A : FiniteRankBundleCore 𝕜 B) (i j x : B) :
   rw [coordChange_dual, coordChange_det, ContinuousLinearMap.piTranspose_smul,
     ContinuousLinearMap.piTranspose_id]; rfl
 
+/-- Identifying `Fin A.dual.det.rank → 𝕜` with `Fin A.det.dual.rank → 𝕜` via scalar coordinates
+intertwines the transitions of `A.dual.det` and `A.det.dual`. -/
+theorem coordChange_comp_dualDet (A : FiniteRankBundleCore 𝕜 B) (i j x : B) :
+    (((detScalarEquiv A.dual).trans (detScalarEquiv A).symm :
+        (Fin A.dual.det.rank → 𝕜) ≃L[𝕜] (Fin A.det.dual.rank → 𝕜)).toContinuousLinearMap.comp
+        (A.dual.det.core.coordChange i j x)) =
+      (A.det.dual.core.coordChange i j x).comp
+        (((detScalarEquiv A.dual).trans (detScalarEquiv A).symm :
+          (Fin A.dual.det.rank → 𝕜) ≃L[𝕜] (Fin A.det.dual.rank → 𝕜)).toContinuousLinearMap) := by
+  ext u : 1
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, coordChange_dual_det,
+    coordChange_det_dual]
+  simp only [_root_.smul_apply, ContinuousLinearMap.id_apply, map_smul]
+
 /-- The determinant of the dual core is canonically isomorphic to the dual of the determinant core,
 preserving scalar coordinates. -/
 noncomputable def dualDetIso (A : FiniteRankBundleCore 𝕜 B) :
@@ -251,23 +300,31 @@ noncomputable def dualDetIso (A : FiniteRankBundleCore 𝕜 B) :
     (fun i ↦ (baseSet_det A.dual i).trans ((localTriv_baseSet_dual A i).trans
       ((baseSet_det A i).symm.trans (localTriv_baseSet_dual A.det i).symm)))
     ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm)
-    fun i j x _ _ ↦ by
-      ext u : 1
-      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, coordChange_dual_det,
-        coordChange_det_dual]
-      simp only [_root_.smul_apply, ContinuousLinearMap.id_apply, map_smul]
+    fun i j x _ _ ↦ coordChange_comp_dualDet A i j x
 
 /-- The forward map of `dualDetIso` preserves scalar coordinates. -/
 theorem detScalarEquiv_fiberMap_dualDetIso_hom (A : FiniteRankBundleCore 𝕜 B) (x : B)
     (u : Fin A.dual.det.rank → 𝕜) :
     detScalarEquiv A ((dualDetIso A).hom.fiberMap x u) = detScalarEquiv A.dual u := by
-  rw [dualDetIso, fiberMap_constIso_hom]; exact (detScalarEquiv A).apply_symm_apply _
+  rw [dualDetIso]
+  exact (congrArg (detScalarEquiv A)
+    (DFunLike.congr_fun (fiberMap_constIso_hom _
+      ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm :
+        (Fin A.dual.det.rank → 𝕜) ≃L[𝕜] (Fin A.det.dual.rank → 𝕜))
+      (fun i j x _ _ ↦ coordChange_comp_dualDet A i j x) x) u)).trans
+    ((detScalarEquiv A).apply_symm_apply _)
 
 /-- The inverse map of `dualDetIso` preserves scalar coordinates. -/
 theorem detScalarEquiv_fiberMap_dualDetIso_inv (A : FiniteRankBundleCore 𝕜 B) (x : B)
     (u : Fin A.det.dual.rank → 𝕜) :
     detScalarEquiv A.dual ((dualDetIso A).inv.fiberMap x u) = detScalarEquiv A u := by
-  rw [dualDetIso, fiberMap_constIso_inv]; exact (detScalarEquiv A.dual).apply_symm_apply _
+  rw [dualDetIso]
+  exact (congrArg (detScalarEquiv A.dual)
+    (DFunLike.congr_fun (fiberMap_constIso_inv _
+      ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm :
+        (Fin A.dual.det.rank → 𝕜) ≃L[𝕜] (Fin A.det.dual.rank → 𝕜))
+      (fun i j x _ _ ↦ coordChange_comp_dualDet A i j x) x) u)).trans
+    ((detScalarEquiv A.dual).apply_symm_apply _)
 
 /-- Each fibre of `A.dual.det` is identified with the space of top-degree scalar-valued continuous
 alternating forms on `A.core.Fiber x` via `(Pi.basisFun 𝕜 (Fin A.rank)).continuousDet`. -/
