@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 public import TauCeti.Geometry.Manifold.ModelTransport.Finrank
@@ -14,8 +14,8 @@ public import TauCeti.Geometry.Manifold.ModelTransport.Interior
 /-!
 # Compact manifolds are not highly connected
 
-A nonempty compact `n`-manifold `M` has a fundamental class with coefficients in any ring `K`
-whose only unit is `1`, such as `ZMod 2`, with no orientation hypothesis
+A nonempty compact `n`-manifold `M` has a fundamental class with coefficients in any
+Dedekind-finite ring `K` whose only unit is `1`, such as `ZMod 2`, with no orientation hypothesis
 (`TauCeti.existsUnique_isFundamentalClass_of_subsingleton_units`). Its image in the local homology
 at a point generates a nontrivial module, so it is nonzero, and the top homology `Hₙ(M; K)` is
 nontrivial (`TauCeti.nontrivial_singularHomology_of_subsingleton_units`).
@@ -36,8 +36,10 @@ compact connected Lie group `G` is detected on the simply connected compact fact
 cover `T × K → G` by a torus `T`: the covering and the torus do not change the higher homotopy
 groups, so if `G` is aspherical then so is `K`, which is therefore trivial.
 
-The manifolds are topological: `M` is a Hausdorff space charted on a finite-dimensional real normed
-space, with no smooth structure.
+Apart from the last section, the manifolds are topological: `M` is a Hausdorff space charted on a
+finite-dimensional real normed space, with no smooth structure. The last section treats compact
+boundaryless `C¹` manifolds modelled with corners, by reading their charts in the model vector
+space (`TauCeti.BoundarylessModel`).
 
 ## Main results
 
@@ -50,6 +52,8 @@ space, with no smooth structure.
 * `TauCeti.subsingleton_of_subsingleton_homotopyGroup`: such a manifold is a point.
 * `TauCeti.IsAspherical.subsingleton_of_simplyConnectedSpace`: a simply connected aspherical
   compact manifold is a point.
+* `TauCeti.IsAspherical.subsingleton_of_boundarylessManifold`: a simply connected aspherical
+  compact boundaryless `C¹` manifold modelled with corners is a point.
 
 ## References
 
@@ -122,11 +126,9 @@ theorem subsingleton_of_subsingleton_homotopyGroup [CompactSpace M] (x : M)
   have : Subsingleton E :=
     finrank_zero_iff.1 (finrank_eq_zero_of_subsingleton_homotopyGroup x h)
   have : DiscreteTopology M := ChartedSpace.discreteTopology E M
-  have := h 0 (Nat.zero_le _)
-  have : Subsingleton (ZerothHomotopy M) :=
-    (HomotopyGroup.pi0EquivZerothHomotopy (X := M) (x := x)).symm.subsingleton
-  have : PathConnectedSpace M := pathConnectedSpace_iff_zerothHomotopy.2 ⟨⟨⟦x⟧⟩, this⟩
-  exact ⟨fun y z ↦ isPreconnected_univ.subsingleton (Set.mem_univ y) (Set.mem_univ z)⟩
+  have : PathConnectedSpace M :=
+    (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).2 (h 0 (Nat.zero_le _))
+  exact subsingleton_of_preconnected_totallyDisconnected
 
 include E in
 /-- **A weakly contractible compact manifold is a point.** A compact Hausdorff space charted on a
@@ -135,9 +137,8 @@ theorem IsAspherical.subsingleton_of_simplyConnectedSpace [CompactSpace M] [Simp
     {x : M} (hM : IsAspherical M x) : Subsingleton M := by
   refine subsingleton_of_subsingleton_homotopyGroup (E := E) x fun k _ ↦ ?_
   match k with
-  | 0 => exact (HomotopyGroup.pi0EquivZerothHomotopy (X := M) (x := x)).subsingleton
-  | 1 => exact (HomotopyGroup.pi1EquivFundamentalGroup (X := M) (x := x)).subsingleton
-  | k + 2 => exact (isAspherical_iff.1 hM).2 k
+  | 0 | 1 => exact subsingleton_homotopyGroup_of_lt_two x (by omega)
+  | k + 2 => exact hM.subsingleton_homotopyGroup k
 
 section Boundaryless
 
@@ -151,10 +152,14 @@ is simply connected and aspherical is a single point. -/
 theorem IsAspherical.subsingleton_of_boundarylessManifold {N : Type w} [TopologicalSpace N]
     [T2Space N] [ChartedSpace H N] [IsManifold I 1 N] [BoundarylessManifold I N] [CompactSpace N]
     [SimplyConnectedSpace N] {x : N} (hN : IsAspherical N x) : Subsingleton N := by
-  -- The same space with its charts read in the model vector space `E`.
+  -- The same space with its charts read in the model vector space `E`, reached through the
+  -- identity homeomorphism, which carries simple connectivity and asphericity across.
   let _ : ChartedSpace E (BoundarylessModel I N) := BoundarylessModel.interiorChartedSpace I
-  have : SimplyConnectedSpace (BoundarylessModel I N) := ‹SimplyConnectedSpace N›
-  exact IsAspherical.subsingleton_of_simplyConnectedSpace (M := BoundarylessModel I N) (E := E) hN
+  let e := BoundarylessModel.homeomorph I N
+  have : SimplyConnectedSpace (BoundarylessModel I N) := e.symm.toHomotopyEquiv.simplyConnectedSpace
+  have := (hN.of_homotopyEquiv e.toHomotopyEquiv (e x)).subsingleton_of_simplyConnectedSpace
+    (E := E)
+  exact e.injective.subsingleton
 
 end Boundaryless
 

@@ -44,9 +44,8 @@ which is simply connected and aspherical has a single element. -/
 theorem IsAspherical.subsingleton_of_contMDiffMul {G : Type w} [TopologicalSpace G] [T2Space G]
     [ChartedSpace H G] [Group G] {n : WithTop ℕ∞} [ContMDiffMul I n G] (hn : 1 ≤ n)
     [CompactSpace G] [SimplyConnectedSpace G] (hG : IsAspherical G 1) : Subsingleton G := by
-  have : IsManifold I 1 G := IsManifold.of_le hn
-  have : BoundarylessManifold I G :=
-    ⟨ContMDiffMul.isInteriorPoint (I := I) (n := n) (ne_bot_of_le_ne_bot one_ne_zero hn)⟩
+  have := ContMDiffMul.of_le (I := I) (G := G) hn
+  have := ContMDiffMul.boundarylessManifold (I := I) (G := G)
   exact hG.subsingleton_of_boundarylessManifold (I := I)
 
 end TauCeti
