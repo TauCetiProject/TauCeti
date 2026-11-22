@@ -16,8 +16,9 @@ public import TauCeti.Topology.VectorBundle.Thom.OrientationCover
 # The Thom isomorphism with coefficients in the orientation local system
 
 Let `E → B` be a real vector bundle of rank `r`, with Thom pair `(E, E₀)`, and let `o(E)` be its
-orientation local system (`TauCeti.VectorBundleOrientationCover.signLocalSystem`). For a field `K`
-in which `2` is invertible, this file proves the Thom isomorphism with orientation-twisted
+orientation local system (`TauCeti.VectorBundleOrientationCover.signLocalSystem`). For a
+commutative ring `K` in which `2` is invertible, for instance `ℚ` or any field of characteristic
+other than `2`, this file proves the Thom isomorphism with orientation-twisted
 coefficients
 
 `Hₚ₊ᵣ(E, E₀; K) ≃ Hₚ(B; o(E) ⊗ K)`
@@ -33,7 +34,11 @@ orientation. It composes three isomorphisms.
 
 * The relative transfer. The Thom pair `(E', E'₀)` is a double cover of `(E, E₀)`, the quotient by
   the action of `ℤˣ` whose element `-1` acts by the lift `δ` of `σ`
-  (`TauCeti.VectorBundleOrientationCover.isQuotientCoveringMap_lift`). With `2` invertible, the
+  (`TauCeti.VectorBundleOrientationCover.isQuotientCoveringMap_lift`). Its relative transfer
+  `t : Hₘ(E, E₀; K) ⟶ Hₘ(E', E'₀; K)` (`TauCeti.VectorBundleOrientationCover.thomPairTransfer`)
+  sends a relative simplex to the sum of its two lifts; writing `q` for the map of Thom pairs
+  induced by the covering, `q_* ∘ t = 2`, `t ∘ q_* = 1 + δ_*` and `δ_* ∘ t = t`. With `2`
+  invertible, the
   transfer identifies `Hₘ(E, E₀; K)` with the classes of `Hₘ(E', E'₀; K)` fixed by `δ_*`
   (`IsQuotientCoveringMap.isLimitHomologyMapConePairTransferCone`); this is
   `TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEquivDeckInvariants`.
@@ -44,12 +49,18 @@ orientation. It composes three isomorphisms.
   coefficients in the sign local system of `σ` (`IsCoveringMap.signHomologyLinearEquiv`), which is
   `o(E)` by definition.
 
-## Main definitions
+## Main definitions and results
 
+* `TauCeti.VectorBundleOrientationCover.thomPairTransfer`: the relative transfer of the double cover
+  `(E', E'₀) → (E, E₀)`, with the transfer relations
+  `thomPairTransfer_comp_singularHomologyMap_pullbackThomPairMap` (`q_* ∘ t = 2`),
+  `singularHomologyMap_pullbackThomPairMap_comp_thomPairTransfer` (`t ∘ q_* = 1 + δ_*`) and
+  `thomPairTransfer_comp_singularHomologyMap_deckThomPairMap` (`δ_* ∘ t = t`).
 * `TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEquivDeckInvariants`: the transfer
   `Hₘ(E, E₀; K) ≃ {x ∈ Hₘ(E', E'₀; K) | δ_* x = x}`, for a ring `K` in which `2` is invertible.
 * `TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEquivTwistedHomology`: the twisted
-  Thom isomorphism `Hₚ₊ᵣ(E, E₀; K) ≃ Hₚ(B; o(E) ⊗ K)` for a field `K` in which `2` is invertible.
+  Thom isomorphism `Hₚ₊ᵣ(E, E₀; K) ≃ Hₚ(B; o(E) ⊗ K)` for a commutative ring `K` in which `2` is
+  invertible.
 
 ## References
 
@@ -57,7 +68,8 @@ orientation. It composes three isomorphisms.
   Princeton (1974), §10 (the Thom isomorphism) and §12 (the orientation double cover and twisted
   coefficients).
 * A. Hatcher, *Algebraic Topology*, Cambridge University Press (2002), Section 3.G (the transfer,
-  Proposition 3G.1) and Section 3.H (local coefficients and the orientation double cover).
+  Proposition 3G.1), Section 3.H (local coefficients and the orientation double cover) and
+  Section 4.D (the Thom isomorphism).
 -/
 
 public section
@@ -105,6 +117,32 @@ theorem preimageThomPairIso_hom_fst_apply
     TopPair.ofSubsetMap_fst_apply, TopCat.hom_id, ContinuousMap.coe_id]
   exact id_eq v
 
+/-- The underlying map of `preimageThomPairIso` is the identity. -/
+private theorem preimageThomPairIso_hom_fst :
+    TopPair.Hom.fst (preimageThomPairIso F E ι).hom = 𝟙 _ :=
+  (congrArg TopPair.Hom.fst (TopPair.ofSubsetIso_hom _ _)).trans (TopPair.ofSubsetMap_fst _ _)
+
+/-- The underlying map of the inverse of `preimageThomPairIso` is the identity. -/
+private theorem preimageThomPairIso_inv_fst :
+    TopPair.Hom.fst (preimageThomPairIso F E ι).inv = 𝟙 _ :=
+  (congrArg TopPair.Hom.fst (TopPair.ofSubsetIso_inv _ _)).trans (TopPair.ofSubsetMap_fst _ _)
+
+/-- The map of pairs induced by the covering is `TauCeti.pullbackThomPairMap`, read through
+`preimageThomPairIso`. -/
+private theorem pullbackThomPairMap_eq_preimageThomPairIso_inv_comp :
+    pullbackThomPairMap F E (projection : C(VectorBundleOrientationCover F E ι, B)) =
+      (preimageThomPairIso F E ι).inv ≫
+        TopPair.ofSubsetMap (liftHom F E ι) (Set.mapsTo_preimage _ (zeroSectionCompl F E)) := by
+  -- Pointwise, both sides are `Pullback.lift`. The steps are terms: the two sides read the zero of
+  -- the fibres of the pull-back through two instances that agree only up to unfolding.
+  refine TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦ ?_)
+  exact (pullbackThomPairMap_fst_apply F E _ v).trans
+    ((TopPair.ofSubsetMap_fst_apply (liftHom F E ι)
+      (Set.mapsTo_preimage _ (zeroSectionCompl F E)) v).symm.trans
+      (congrArg (fun φ ↦ TopPair.Hom.fst (TopPair.ofSubsetMap (liftHom F E ι)
+        (Set.mapsTo_preimage _ (zeroSectionCompl F E))) (φ v))
+          (preimageThomPairIso_inv_fst (F := F) (E := E) (ι := ι)).symm))
+
 variable [Fintype ι] [FiniteDimensional ℝ F] (hι : Fintype.card ι = finrank ℝ F)
 
 variable (F E) in
@@ -134,7 +172,110 @@ private theorem ofSubsetMap_neg_one_comp_preimageThomPairIso_hom :
 
 section CommRing
 
-variable {K : Type w} [CommRing K] [Invertible (2 : K)]
+variable {K : Type w} [CommRing K]
+
+variable (F E ι K) in
+/-- **The transfer of the orientation double cover on Thom pairs.** The relative transfer
+`Hₘ(E, E₀; K) ⟶ Hₘ(E', E'₀; K)` of the double cover of the Thom pair of `E` by the Thom pair of its
+pull-back `E'` to the orientation cover: it sends a relative singular simplex to the sum of its two
+lifts. -/
+def thomPairTransfer (m : ℕ) :
+    (thomPair F E).singularHomology (ModuleCat.of K K) m ⟶
+      (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).singularHomology
+        (ModuleCat.of K K) m :=
+  HomologicalComplex.homologyMap
+    ((isQuotientCoveringMap_liftHom F E hι).isCoveringMap.singularPairTransfer
+      (isQuotientCoveringMap_liftHom F E hι).finite_fiber (zeroSectionCompl F E)
+      (ModuleCat.of K K)) m ≫
+    TopPair.singularHomologyMap (preimageThomPairIso F E ι).hom (ModuleCat.of K K) m
+
+/-- **The transfer formula on Thom pairs.** The transfer of the orientation double cover followed by
+the map of Thom pairs `(E', E'₀) ⟶ (E, E₀)` is multiplication by `2`. -/
+theorem thomPairTransfer_comp_singularHomologyMap_pullbackThomPairMap (m : ℕ) :
+    thomPairTransfer F E ι hι K m ≫ TopPair.singularHomologyMap
+      (pullbackThomPairMap F E (projection : C(VectorBundleOrientationCover F E ι, B)))
+      (ModuleCat.of K K) m = 2 • 𝟙 _ := by
+  have hG := isQuotientCoveringMap_liftHom F E hι
+  -- Term-mode steps: the zero of the fibres of the pull-back enters the source of
+  -- `pullbackThomPairMap` and the target of the transfer as two instances that agree only up to
+  -- unfolding, so `rw` cannot work on this goal.
+  calc thomPairTransfer F E ι hι K m ≫ TopPair.singularHomologyMap
+        (pullbackThomPairMap F E (projection : C(VectorBundleOrientationCover F E ι, B)))
+        (ModuleCat.of K K) m
+      = HomologicalComplex.homologyMap (hG.isCoveringMap.singularPairTransfer hG.finite_fiber
+          (zeroSectionCompl F E) (ModuleCat.of K K)) m ≫ TopPair.singularHomologyMap
+          ((preimageThomPairIso F E ι).hom ≫ (preimageThomPairIso F E ι).inv ≫
+            TopPair.ofSubsetMap (liftHom F E ι) (Set.mapsTo_preimage _ (zeroSectionCompl F E)))
+          (ModuleCat.of K K) m :=
+        (Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
+          ((TopPair.singularHomologyMap_comp _ _ _ _).symm.trans
+          (congrArg (TopPair.singularHomologyMap · _ m)
+            (congrArg (_ ≫ ·) pullbackThomPairMap_eq_preimageThomPairIso_inv_comp))))
+    _ = 2 • 𝟙 _ := by
+      rw [Iso.hom_inv_id_assoc]
+      exact hG.isCoveringMap.homologyMap_singularPairTransfer_comp_singularHomologyMap
+        hG.finite_fiber (zeroSectionCompl F E) (ModuleCat.of K K) m fun b ↦
+          (hG.natCard_fiber b).trans (Nat.card_eq_fintype_card.trans Fintype.card_units_int)
+
+/-- **The transfer of a projected class is its symmetrization.** The map of Thom pairs
+`(E', E'₀) ⟶ (E, E₀)` followed by the transfer of the orientation double cover is `1 + δ_*`, for
+the lift `δ` of the deck involution. -/
+theorem singularHomologyMap_pullbackThomPairMap_comp_thomPairTransfer (m : ℕ) :
+    TopPair.singularHomologyMap
+      (pullbackThomPairMap F E (projection : C(VectorBundleOrientationCover F E ι, B)))
+      (ModuleCat.of K K) m ≫ thomPairTransfer F E ι hι K m =
+      𝟙 _ + TopPair.singularHomologyMap (deckThomPairMap F E ι) (ModuleCat.of K K) m := by
+  have hG := isQuotientCoveringMap_liftHom F E hι
+  set e := preimageThomPairIso F E ι
+  have h₁ : TopPair.ofSubsetMap (TopCat.ofHom ⟨((1 : ℤˣ) • · :
+      TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) → _),
+      hG.continuous_const_smul _⟩) (hG.mapsTo_smul_preimage (zeroSectionCompl F E) 1) = 𝟙 _ :=
+    TopPair.hom_ext_of_fst _ (by
+      simp only [TopPair.ofSubsetMap_fst, TopPair.Hom.fst_id]
+      exact TopCat.ext fun v ↦ Pullback.totalSpace_ext (one_smul ℤˣ v.proj) rfl)
+  -- On relative chains of the preimage pair, the projection followed by the transfer is the sum of
+  -- the actions of `1` and `-1`.
+  have h := hG.singularChainComplexMap_comp_singularPairTransfer (zeroSectionCompl F E)
+    (ModuleCat.of K K)
+  rw [UnitsInt.univ, Finset.sum_pair (by decide), h₁] at h
+  have h' := congrArg (fun φ ↦ HomologicalComplex.homologyMap φ m) h
+  simp only [HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_add,
+    TopPair.singularChainComplexMap_id, HomologicalComplex.homologyMap_id] at h'
+  -- Conjugated by `e`, the action of `-1` is the lift of the deck involution.
+  have key : TopPair.singularHomologyMap e.inv (ModuleCat.of K K) m ≫
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (liftHom F E ι)
+        (Set.mapsTo_preimage _ (zeroSectionCompl F E))) (ModuleCat.of K K) m ≫
+        HomologicalComplex.homologyMap (hG.isCoveringMap.singularPairTransfer hG.finite_fiber
+          (zeroSectionCompl F E) (ModuleCat.of K K)) m) ≫
+        TopPair.singularHomologyMap e.hom (ModuleCat.of K K) m =
+      𝟙 _ + TopPair.singularHomologyMap (deckThomPairMap F E ι) (ModuleCat.of K K) m := by
+    rw [h', Preadditive.add_comp, Preadditive.comp_add, Category.id_comp,
+      ← TopPair.singularHomologyMap_comp, e.inv_hom_id, TopPair.singularHomologyMap_id,
+      ← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp,
+      ofSubsetMap_neg_one_comp_preimageThomPairIso_hom hι, e.inv_hom_id_assoc]
+  -- Term-mode steps, as in `thomPairTransfer_comp_singularHomologyMap_pullbackThomPairMap`.
+  refine Eq.trans ?_ key
+  refine (congrArg (· ≫ _) ((congrArg (TopPair.singularHomologyMap · _ m)
+    pullbackThomPairMap_eq_preimageThomPairIso_inv_comp).trans
+      (TopPair.singularHomologyMap_comp _ _ _ _))).trans ?_
+  -- `thomPairTransfer` unfolds to the composite with `preimageThomPairIso`, which is `e`.
+  simp only [thomPairTransfer, Category.assoc]
+  rfl
+
+/-- **The transfer is invariant under the deck involution.** The transfer of the orientation
+double cover followed by the lift `δ` of the deck involution is the transfer. -/
+theorem thomPairTransfer_comp_singularHomologyMap_deckThomPairMap (m : ℕ) :
+    thomPairTransfer F E ι hι K m ≫ TopPair.singularHomologyMap (deckThomPairMap F E ι)
+      (ModuleCat.of K K) m = thomPairTransfer F E ι hι K m := by
+  have hG := isQuotientCoveringMap_liftHom F E hι
+  rw [thomPairTransfer, Category.assoc, ← TopPair.singularHomologyMap_comp,
+    ← ofSubsetMap_neg_one_comp_preimageThomPairIso_hom hι, TopPair.singularHomologyMap_comp,
+    ← Category.assoc,
+    hG.isCoveringMap.homologyMap_singularPairTransfer_comp_singularHomologyMap_of_comp_eq
+      hG.finite_fiber (zeroSectionCompl F E) (ModuleCat.of K K) m (MulAction.bijective _)
+      (TopCat.ext fun _ ↦ hG.map_smul _)]
+
+variable [Invertible (2 : K)]
 
 variable (K) in
 /-- **The transfer lands on the classes fixed by the lifted deck involution.** Let `δ` be the lift
@@ -193,34 +334,33 @@ def thomPairSingularHomologyEquivDeckInvariants (m : ℕ) :
         m).toLinearEquiv _ _ (map_range_pairTransfer_eq_ker_sub_id hι K m))
 
 /-- **The relative transfer of the orientation cover, as a value.** The class
-`thomPairSingularHomologyEquivDeckInvariants F E ι hι K m x` is the relative transfer of `x` to
-`Hₘ(E', p⁻¹ E₀; K)`, the leg of the transfer cone
-(`IsQuotientCoveringMap.pairTransferCone`), carried to `Hₘ(E', E'₀; K)` by the isomorphism of
-pairs `preimageThomPairIso`. -/
+`thomPairSingularHomologyEquivDeckInvariants F E ι hι K m x` is the relative transfer
+`thomPairTransfer F E ι hι K m x` of `x`. -/
 theorem coe_thomPairSingularHomologyEquivDeckInvariants_apply {m : ℕ}
     (x : ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat.{w} K)) :
     (thomPairSingularHomologyEquivDeckInvariants F E ι hι K m x :
         ((thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
           |>.singularHomology (ModuleCat.of K K) m : ModuleCat.{w} K)) =
-      (TopPair.singularHomologyMap (preimageThomPairIso F E ι).hom (ModuleCat.of K K) m).hom
-        ((((HomologicalComplex.homologyFunctor _ _ m).mapCone
-          ((isQuotientCoveringMap_liftHom F E hι).pairTransferCone (zeroSectionCompl F E)
-            (ModuleCat.of K K))).π.app (SingleObj.star ℤˣ)).hom x) :=
-  (rfl)
+      (thomPairTransfer F E ι hι K m).hom x := by
+  -- By definition the class is the leg of the transfer cone, carried by `preimageThomPairIso`.
+  change (TopPair.singularHomologyMap (preimageThomPairIso F E ι).hom (ModuleCat.of K K) m).hom
+    ((((HomologicalComplex.homologyFunctor _ _ m).mapCone
+      ((isQuotientCoveringMap_liftHom F E hι).pairTransferCone (zeroSectionCompl F E)
+        (ModuleCat.of K K))).π.app (SingleObj.star ℤˣ)).hom x) = _
+  simp only [Functor.mapCone_π_app, IsQuotientCoveringMap.pairTransferCone_π,
+    IsQuotientCoveringMap.pairTransferπ_app, thomPairTransfer, ModuleCat.hom_comp,
+    LinearMap.comp_apply]
+  rfl
 
-end CommRing
-
-section Field
-
-variable {K : Type w} [Field K] [Invertible (2 : K)] (ω : Orientation ℝ F ι)
+variable (ω : Orientation ℝ F ι)
   {g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology
     (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)} (hg : Submodule.span K {g} = ⊤)
   {p m : ℕ} (h : finrank ℝ F + p = m)
 
 /-- **The Thom isomorphism with coefficients in the orientation local system.** Let `E → B` be a
-real vector bundle of rank `r`, `o(E)` its orientation local system, and `K` a field in which `2`
-is invertible. Then `Hₘ(E, E₀; K) ≃ Hₚ(B; o(E) ⊗ K)` for `m = r + p`, with no orientation of `E`
-and over any base.
+real vector bundle of rank `r`, `o(E)` its orientation local system, and `K` a commutative ring in
+which `2` is invertible. Then `Hₘ(E, E₀; K) ≃ Hₚ(B; o(E) ⊗ K)` for `m = r + p`, with no orientation
+of `E` and over any base.
 
 The isomorphism passes through the orientation double cover `B'` of `E` and the pull-back `E'` of
 `E` to it: it is the relative transfer onto the deck-invariant classes of `Hₘ(E', E'₀; K)`
@@ -244,7 +384,7 @@ def thomPairSingularHomologyEquivTwistedHomology :
 `Hₚ(B; o(E) ⊗ K)` on the orientation cover `B'` (`IsCoveringMap.signHomologyToCover`), the image
 of `x ∈ Hₘ(E, E₀; K)` under `thomPairSingularHomologyEquivTwistedHomology` is the homology Thom
 map of the tautological Thom class of the pull-back `E'`, applied to the transfer of `x`
-(`thomPairSingularHomologyEquivDeckInvariants`). -/
+(`thomPairTransfer`). -/
 theorem signHomologyToCover_thomPairSingularHomologyEquivTwistedHomology
     (x : ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat.{w} K)) :
     (IsCoveringMap.signHomologyToCover (E := TopCat.of (VectorBundleOrientationCover F E ι))
@@ -256,7 +396,7 @@ theorem signHomologyToCover_thomPairSingularHomologyEquivTwistedHomology
       (homologyThomMap F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
         (ModuleCat.of K K) (finrank ℝ F) p m h
         ((tautologicalOrientation (F := F) (E := E) (ι := ι)).thomClassOfModel hι ω g)).hom
-        (thomPairSingularHomologyEquivDeckInvariants F E ι hι K m x) :=
+        ((thomPairTransfer F E ι hι K m).hom x) :=
   -- Reading the inverse of `IsCoveringMap.signHomologyLinearEquiv` on the cover returns the
   -- anti-invariant class itself, which is the image of the homology Thom map.
   (IsCoveringMap.coe_signHomologyLinearEquiv_apply
@@ -267,8 +407,9 @@ theorem signHomologyToCover_thomPairSingularHomologyEquivTwistedHomology
     proj_comp_deck (fun q ↦ deck_deck q) (isQuotientCoveringMap_proj hι).finite_fiber p
     _).symm.trans
     ((congrArg Subtype.val (LinearEquiv.apply_symm_apply _ _)).trans
-      (coe_homologyThomMapDeckEquiv_apply hι ω hg h _))
+      ((coe_homologyThomMapDeckEquiv_apply hι ω hg h _).trans
+        (congrArg _ (coe_thomPairSingularHomologyEquivDeckInvariants_apply hι x))))
 
-end Field
+end CommRing
 
 end TauCeti.VectorBundleOrientationCover
