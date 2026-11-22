@@ -72,41 +72,33 @@ variable (T : ℝ) [hT : Fact (0 < T)]
 
 /-- The derivative factor costs one order of regularity: for `s + 1 ≤ t`,
 `(1 + |n|) ^ s |2πin/T| ≤ 2π/T (1 + |n|) ^ t`. -/
-private theorem weight_mul_norm_derivFactor_le (h : s + 1 ≤ t) (n : ℤ) (x : E) :
-    weight s n * ‖(2 * π * I * n / T : ℂ) • x‖ ≤ 2 * π / T * (weight t n * ‖x‖) := by
+private theorem weight_mul_norm_derivFactor_le (h : s + 1 ≤ t) (n : ℤ) :
+    weight s n * ‖(2 * π * I * n / T : ℂ)‖ ≤ 2 * π / T * weight t n := by
   have hw : weight s n * |(n : ℝ)| ≤ weight t n := by
     calc weight s n * |(n : ℝ)| ≤ weight s n * (1 + |(n : ℝ)|) :=
           mul_le_mul_of_nonneg_left (le_add_of_nonneg_left zero_le_one) (weight_nonneg s n)
-      _ = weight (s + 1) n := by rw [weight_add, weight_def 1, Real.rpow_one]
+      _ = weight (s + 1) n := (weight_add_one s n).symm
       _ ≤ weight t n := weight_le_weight h n
   have hc : 0 ≤ 2 * π / T := div_nonneg (by positivity) hT.out.le
-  rw [norm_smul, norm_two_pi_I_mul_intCast_div hT.out]
-  calc weight s n * (2 * π / T * |(n : ℝ)| * ‖x‖)
-        = 2 * π / T * (weight s n * |(n : ℝ)| * ‖x‖) := by ring
-    _ ≤ 2 * π / T * (weight t n * ‖x‖) :=
-        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hw (norm_nonneg x)) hc
+  rw [norm_two_pi_I_mul_intCast_div hT.out]
+  calc weight s n * (2 * π / T * |(n : ℝ)|) = 2 * π / T * (weight s n * |(n : ℝ)|) := by ring
+    _ ≤ 2 * π / T * weight t n := mul_le_mul_of_nonneg_left hw hc
 
 /-- For `s + 1 ≤ t`, the derivative `H^t → H^s` on the circle `AddCircle T`: it multiplies the
 `n`-th Fourier coefficient by `2πin/T`, the factor by which differentiation multiplies the
 monomial `e^{2πinx/T}`. -/
 def derivative (h : s + 1 ≤ t) : CircleSobolev t E →L[ℂ] CircleSobolev s E :=
-  LinearMap.mkContinuous
-    { toFun a := ⟨fun n ↦ (2 * π * I * n / T : ℂ) • a.coeff n,
-        memℓp_of_forall_le fun n ↦ weight_mul_norm_derivFactor_le T h n (a.coeff n)⟩
-      map_add' a b := CircleSobolev.ext (funext fun n ↦ smul_add _ (a.coeff n) (b.coeff n))
-      map_smul' c a := CircleSobolev.ext (funext fun n ↦ smul_comm _ c (a.coeff n)) }
-    (2 * π / T) fun a ↦ norm_le_of_forall_le (C := 2 * π / T)
-      fun n ↦ weight_mul_norm_derivFactor_le T h n (a.coeff n)
+  fourierMultiplierOfBound (fun n ↦ (2 * π * I * n / T : ℂ)) (weight_mul_norm_derivFactor_le T h)
 
 @[simp]
 theorem coeff_derivative (h : s + 1 ≤ t) (a : CircleSobolev t E) (n : ℤ) :
     (derivative T h a).coeff n = (2 * π * I * n / T : ℂ) • a.coeff n :=
-  (rfl)
+  coeff_fourierMultiplierOfBound _ a n
 
 /-- Differentiation costs one order of regularity: `‖derivative T h a‖ ≤ 2π/T ‖a‖`. -/
 theorem norm_derivative_le (h : s + 1 ≤ t) (a : CircleSobolev t E) :
     ‖derivative T h a‖ ≤ 2 * π / T * ‖a‖ :=
-  norm_le_of_forall_le fun n ↦ weight_mul_norm_derivFactor_le T h n (a.coeff n)
+  norm_fourierMultiplierOfBound_le _ a
 
 theorem opNorm_derivative_le (h : s + 1 ≤ t) :
     ‖(derivative T h : CircleSobolev t E →L[ℂ] CircleSobolev s E)‖ ≤ 2 * π / T :=
@@ -126,7 +118,7 @@ theorem norm_sq_le_of_derivative (h : s + 1 = t) (a : CircleSobolev t E) :
   have hk : T / (2 * π) * (2 * π / T) = 1 := by
     field_simp [hT.out.ne']
   rw [coeff_inclusion, coeff_derivative, norm_smul, norm_two_pi_I_mul_intCast_div hT.out,
-    weight_add, weight_def 1, Real.rpow_one]
+    weight_add_one]
   calc (weight s n * (1 + |(n : ℝ)|) * ‖a.coeff n‖) ^ 2
       = (weight s n * ‖a.coeff n‖) ^ 2 * (1 + |(n : ℝ)|) ^ 2 := by ring
     _ ≤ (weight s n * ‖a.coeff n‖) ^ 2 * (2 * (1 + |(n : ℝ)| ^ 2)) := by
@@ -140,10 +132,7 @@ theorem norm_sq_le_of_derivative (h : s + 1 = t) (a : CircleSobolev t E) :
 @[simp]
 theorem derivative_single (h : s + 1 ≤ t) (n : ℤ) (x : E) :
     derivative T h (single n x) = single n ((2 * π * I * n / T : ℂ) • x) :=
-  CircleSobolev.ext (funext fun m ↦ by
-    rcases eq_or_ne m n with rfl | hm
-    · simp
-    · simp [hm])
+  fourierMultiplierOfBound_single _ n x
 
 @[simp]
 theorem derivative_inclusion {u : ℝ} (h : s + 1 ≤ t) (htu : t ≤ u) (a : CircleSobolev u E) :
@@ -181,8 +170,7 @@ theorem exists_inclusion_eq_and_derivative_eq (a b : CircleSobolev s E)
   -- term is `T / 2π` times `(1 + |n|) ^ s ‖b_n‖`.
   have hle (n : ℤ) : weight (s + 1) n * ‖a.coeff n‖ ≤
       weight s n * ‖a.coeff n‖ + (2 * π / T)⁻¹ * (weight s n * ‖b.coeff n‖) := by
-    rw [hb, norm_smul, norm_two_pi_I_mul_intCast_div hT.out, weight_add, weight_def 1,
-      Real.rpow_one]
+    rw [hb, norm_smul, norm_two_pi_I_mul_intCast_div hT.out, weight_add_one]
     refine le_of_eq ?_
     field_simp [hT.out.ne']
   have hsum : Summable fun n ↦ (weight (s + 1) n * ‖a.coeff n‖) ^ 2 := by
