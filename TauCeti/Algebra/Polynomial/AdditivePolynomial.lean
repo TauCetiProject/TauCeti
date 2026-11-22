@@ -238,19 +238,15 @@ theorem aeval_additivePolynomial_eq_zero_iff [NoZeroDivisors A] {x : A} :
   -- In the zero ring `x = algebraMap R A 0`.
   rcases subsingleton_or_nontrivial A with _ | _
   · exact ⟨0, V.zero_mem, Subsingleton.elim _ _⟩
-  -- An algebra over a commutative ring is a ring.
-  let := Algebra.semiringToRing (A := A) R
-  -- In the commutative subalgebra `R[x]` (Mathlib's `Algebra.instCommRingAdjoinSingleton`), which
-  -- has no zero divisors, `a_V` evaluated at `x` is the product of the factors `x - c`, so one of
-  -- them vanishes.
-  let y : Algebra.adjoin R {x} := ⟨x, Algebra.self_mem_adjoin_singleton R x⟩
-  have hy_coe : (y : A) = x := rfl
-  have hy : aeval y V.additivePolynomial = 0 :=
-    Subtype.val_injective <| by rw [aeval_subalgebra_coe, hy_coe, hx, ZeroMemClass.coe_zero]
-  obtain ⟨c, -, hc⟩ := Finset.prod_eq_zero_iff.mp ((V.aeval_additivePolynomial y).symm.trans hy)
-  have hcx := congrArg Subtype.val (sub_eq_zero.mp hc)
-  rw [Subalgebra.coe_algebraMap, hy_coe] at hcx
-  exact ⟨c, c.property, hcx.symm⟩
+  -- `aeval x` maps the product of the factors `X - c` to the list product of their values,
+  -- so one value vanishes.
+  rw [additivePolynomial_eq_prod, ← Finset.prod_map_toList, map_list_prod, List.map_map,
+    List.prod_eq_zero_iff, List.mem_map] at hx
+  obtain ⟨c, -, hc : aeval x (X - C (c : R)) = 0⟩ := hx
+  -- Evaluating `X = (X - c) + c` at `x` gives `x = 0 + c`.
+  have hcx := congrArg (aeval x) (sub_add_cancel X (C (c : R)))
+  rw [map_add, hc, zero_add, aeval_C, aeval_X] at hcx
+  exact ⟨c, c.property, hcx⟩
 
 end Semiring
 
