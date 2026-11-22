@@ -344,19 +344,16 @@ theorem toDistr_quantizeUniformBesselPotentialSpace_ofDifferentialSymbol_smul_id
     refine Finset.sum_congr rfl fun i hi ↦ ?_
     rw [SchwartzMap.smulLeftCLM_apply_apply (hgr i hi)]
     simp
-  have key : BesselPotentialSpace.toDistrCLM _ V _ p ∘L
-        a.quantizeUniformBesselPotentialSpace ha.isUniform r p =
-      (∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) ∘L
-        iteratedLineDerivOpCLM ℂ 𝓢'(CoordinateSpace n, V) (v i)) ∘L
-        BesselPotentialSpace.toDistrCLM _ V r p := by
-    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun w ↦ ?_
-    simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply,
-      ha.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM r hp hp_top, hq,
-      SchwartzMap.toDistr_toBesselPotentialSpaceCLM, sum_apply, map_sum,
-      iteratedLineDerivOpCLM_apply,
-      TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq,
-      TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]
-  simpa using congrArg (fun L ↦ L u) key
+  simpa using (ha.hasBesselPotentialSpaceExtension hp
+    hp_top).toDistr_quantizeUniformBesselPotentialSpace_eq_of_forall hp_top
+    ((∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) ∘L
+      iteratedLineDerivOpCLM ℂ 𝓢'(CoordinateSpace n, V) (v i)) ∘L
+      BesselPotentialSpace.toDistrCLM _ V r p) (fun w ↦ by
+      simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply, hq,
+        SchwartzMap.toDistr_toBesselPotentialSpaceCLM, sum_apply, map_sum,
+        iteratedLineDerivOpCLM_apply,
+        TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq,
+        TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]) u
 
 end BesselPotentialSpace
 

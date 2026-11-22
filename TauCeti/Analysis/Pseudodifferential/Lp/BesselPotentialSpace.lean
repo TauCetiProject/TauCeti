@@ -59,8 +59,9 @@ functions.
 * `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_inclusion`,
   `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_comp_inclusion`: compatibility with raising
   the order of the symbol and with the inclusions `H^{s,p} ⊆ H^{r,p}`.
-* `TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_congr`: the operators for different
-  orders `s` agree as maps of tempered distributions.
+* `TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_congr`,
+  `TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_congr_exponent`: the operators for
+  different orders `s` and exponents `p` agree as maps of tempered distributions.
 * `TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_comp`: composition of uniform
   quantizations on `H^{s,p}`.
 * `TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_ofSpatial`: for finite-dimensional
@@ -214,6 +215,24 @@ theorem toDistr_quantizeUniformBesselPotentialSpace_comp {U : Type*} [NormedAddC
     (hb.hasBesselPotentialSpaceExtension hp hp_top) (hc.hasBesselPotentialSpaceExtension hp hp_top)
     habc s hp_top u
 
+/-- **Compatibility of the extensions for different exponents.** For `1 < p, q < ∞` in positive
+dimension, the operators `Op(a)` on `H^{s,p}` and `Op(b)` on `H^{t,q}`, for uniform symbols with
+the same coefficient, agree on any `u ∈ H^{s,p}` and `v ∈ H^{t,q}` with the same tempered
+distribution. -/
+theorem toDistr_quantizeUniformBesselPotentialSpace_congr_exponent [NeZero n]
+    {a : Symbol n V W m} {b : Symbol n V W m'} (hab : a.coefficient = b.coefficient)
+    (ha : a.IsUniform) (hb : b.IsUniform) {p q : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
+    [Fact (1 ≤ (q : ℝ≥0∞))] (hp : 1 < p) (hq : 1 < q) {s t : ℝ}
+    {u : H^{s, p}(CoordinateSpace n, V)} {v : H^{t, q}(CoordinateSpace n, V)}
+    (huv : u.toDistr = v.toDistr) :
+    (a.quantizeUniformBesselPotentialSpace ha s p u).toDistr =
+      (b.quantizeUniformBesselPotentialSpace hb t q v).toDistr :=
+  HasBesselPotentialSpaceExtension.toDistr_quantizeUniformBesselPotentialSpace_congr_exponent
+    (ha.hasBesselPotentialSpaceExtension (mod_cast hp) ENNReal.coe_ne_top)
+    (ha.hasBesselPotentialSpaceExtension (mod_cast hq) ENNReal.coe_ne_top)
+    (hb.hasBesselPotentialSpaceExtension (mod_cast hp) ENNReal.coe_ne_top)
+    (hb.hasBesselPotentialSpaceExtension (mod_cast hq) ENNReal.coe_ne_top) hab hp hq huv
+
 open scoped ContDiff in
 /-- **Multiplication operators.** Let `1 < p < ∞` and let `V` and `W` be finite-dimensional. For a
 smooth `f : ℝⁿ → (V →L[ℂ] W)` all of whose derivatives are bounded, so that the symbol `f(x)` of
@@ -224,22 +243,9 @@ theorem toDistr_quantizeUniformBesselPotentialSpace_ofSpatial [FiniteDimensional
     (ha : (ofSpatial f hf).IsUniform) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
     (u : H^{s, p}(CoordinateSpace n, V)) :
     ((ofSpatial f hf).quantizeUniformBesselPotentialSpace ha s p u).toDistr =
-      TemperedDistribution.mulLeftCLM f u.toDistr := by
-  have hA : f.HasTemperateGrowth := by
-    simpa [coefficient_ofSpatial] using ha.hasTemperateGrowth_coefficient_slice 0
-  have key : BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
-        (ofSpatial f hf).quantizeUniformBesselPotentialSpace ha s p =
-      TemperedDistribution.mulLeftCLM f ∘L BesselPotentialSpace.toDistrCLM _ _ _ _ := by
-    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun v ↦ ?_
-    simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply,
-      quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM ha s hp hp_top,
-      SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
-    rw [TemperedDistribution.mulLeftCLM_toTemperedDistributionCLM_eq hA]
-    congr 1
-    ext x
-    simp only [quantizeUniformCLM_ofSpatial_apply, SchwartzMap.bilinLeftCLM_apply,
-      ContinuousLinearMap.apply_apply]
-  simpa using congrArg (fun T ↦ T u) key
+      TemperedDistribution.mulLeftCLM f u.toDistr :=
+  (ha.hasBesselPotentialSpaceExtension hp
+    hp_top).toDistr_quantizeUniformBesselPotentialSpace_ofSpatial s hp_top u
 
 end Symbol
 
