@@ -525,88 +525,6 @@ theorem _root_.HasFPowerSeriesAt.hasAsymptoticExpansion [NontriviallyNormedField
   refine hcomp.congr' (Eventually.of_forall fun z => ?_) EventuallyEq.rfl
   simp only [Function.comp_apply, add_sub_cancel]
 
-/-! ### Exponentially small functions and DLMF 2.1.17 -/
-
-/-- For any `r > 0` and `δ > 0`, `cexp (-z ^ (r : ℂ))` has the zero Poincaré expansion in
-`(z ^ n)⁻¹` at infinity in the closed sector `{z | |r * arg z| ≤ π / 2 - δ}`. -/
-theorem hasAsymptoticExpansion_zero_cexp_neg_cpow_sector {r δ : ℝ} (hr : 0 < r) (hδ : 0 < δ) :
-    HasAsymptoticExpansion
-      (Bornology.cobounded ℂ ⊓ 𝓟 {z : ℂ | |r * Complex.arg z| ≤ π / 2 - δ})
-      (fun n z => (z ^ n)⁻¹) 0 (fun z => Complex.exp (-z ^ (r : ℂ))) := by
-  intro N
-  by_cases hδpi : δ ≤ π / 2
-  · have hsin : 0 < Real.sin δ := Real.sin_pos_of_pos_of_lt_pi hδ (by linarith [Real.pi_pos])
-    have hu : Tendsto (fun z : ℂ => ‖z‖ ^ r)
-        (Bornology.cobounded ℂ ⊓ 𝓟 {z : ℂ | |r * Complex.arg z| ≤ π / 2 - δ}) atTop :=
-      (tendsto_rpow_atTop hr).comp (tendsto_norm_cobounded_atTop.mono_left inf_le_left)
-    have hdecay : (fun z : ℂ => Real.exp (-Real.sin δ * ‖z‖ ^ r)) =O[
-        Bornology.cobounded ℂ ⊓ 𝓟 {z : ℂ | |r * Complex.arg z| ≤ π / 2 - δ}]
-        fun z : ℂ => (‖z‖ ^ r) ^ (-(N : ℝ) / r) :=
-      ((isLittleO_exp_neg_mul_rpow_atTop hsin (-(N : ℝ) / r)).isBigO).comp_tendsto hu
-    have hnorm : (fun z : ℂ => Complex.exp (-z ^ (r : ℂ))) =O[
-        Bornology.cobounded ℂ ⊓ 𝓟 {z : ℂ | |r * Complex.arg z| ≤ π / 2 - δ}]
-        fun z : ℂ => Real.exp (-Real.sin δ * ‖z‖ ^ r) := by
-      refine IsBigO.of_bound 1 ?_
-      filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop 0).filter_mono inf_le_left,
-        Filter.mem_inf_of_right (mem_principal_self _)] with z hzpos hsec
-      have hzne : z ≠ 0 := norm_pos_iff.mp hzpos
-      have hre : (z ^ (r : ℂ)).re = ‖z‖ ^ r * Real.cos (r * Complex.arg z) := by
-        rw [Complex.cpow_def_of_ne_zero hzne, Complex.exp_re]
-        simp only [Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, mul_zero, sub_zero,
-          Complex.log_re, Complex.mul_im, Complex.log_im, zero_add]
-        rw [Real.rpow_def_of_pos hzpos, mul_comm (Complex.arg z) r]
-      have hcos : Real.sin δ ≤ Real.cos (r * Complex.arg z) := by
-        rw [← Real.cos_pi_div_two_sub, ← Real.cos_abs (r * Complex.arg z)]
-        exact Real.strictAntiOn_cos.antitoneOn
-          ⟨abs_nonneg _, hsec.trans (by linarith)⟩
-          ⟨by linarith, by linarith⟩ hsec
-      rw [one_mul, Complex.norm_exp, Complex.neg_re, hre,
-        Real.norm_of_nonneg (Real.exp_nonneg _)]
-      exact Real.exp_le_exp.mpr (by nlinarith [Real.rpow_pos_of_pos hzpos r])
-    rw [← isBigO_norm_right]
-    refine (hnorm.trans hdecay).congr' (Eventually.of_forall fun z => by simp) ?_
-    filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop 0).filter_mono inf_le_left]
-      with z hzpos
-    rw [← Real.rpow_mul hzpos.le, mul_div_cancel₀ _ hr.ne', Real.rpow_neg hzpos.le,
-      Real.rpow_natCast, norm_inv, norm_pow]
-  · have hemp : {z : ℂ | |r * Complex.arg z| ≤ π / 2 - δ} = ∅ := by
-      ext z
-      simp only [mem_ofPred_eq, mem_empty_iff_false, iff_false, not_le]
-      linarith [abs_nonneg (r * Complex.arg z)]
-    rw [hemp, principal_empty, inf_bot_eq]
-    exact isBigO_bot _ _
-
-/-- DLMF 2.1.17: `cexp (-z)` has the zero Poincaré expansion in `(z ^ n)⁻¹` at infinity in any
-closed sector `|arg z| ≤ π / 2 - δ` with `δ > 0`. -/
-theorem hasAsymptoticExpansion_zero_cexp_neg_sector {δ : ℝ} (hδ : 0 < δ) :
-    HasAsymptoticExpansion
-      (Bornology.cobounded ℂ ⊓ 𝓟 {z : ℂ | |Complex.arg z| ≤ π / 2 - δ})
-      (fun n z => (z ^ n)⁻¹) 0 (fun z => Complex.exp (-z)) := by
-  simpa using hasAsymptoticExpansion_zero_cexp_neg_cpow_sector one_pos hδ
-
-/-- DLMF 2.1.17: `cexp (-z ^ (1 / 2 : ℂ))` has the zero Poincaré expansion in `(z ^ n)⁻¹` at
-infinity in any closed sector `|arg z| ≤ π / 2 - δ` with `δ > 0`. -/
-theorem hasAsymptoticExpansion_zero_cexp_neg_sqrt_sector {δ : ℝ} (hδ : 0 < δ) :
-    HasAsymptoticExpansion
-      (Bornology.cobounded ℂ ⊓ 𝓟 {z : ℂ | |Complex.arg z| ≤ π / 2 - δ})
-      (fun n z => (z ^ n)⁻¹) 0 (fun z => Complex.exp (-z ^ (1 / 2 : ℂ))) := by
-  have h := hasAsymptoticExpansion_zero_cexp_neg_cpow_sector (r := 1 / 2) (δ := δ / 2)
-    (by positivity) (half_pos hδ)
-  refine (h.mono (inf_le_inf_left _ (principal_mono.mpr fun z hz => ?_))).congr_fun
-    (Eventually.of_forall fun z => by norm_num)
-  simp only [mem_ofPred_eq] at hz ⊢
-  rw [abs_mul, abs_of_pos (by positivity : (0 : ℝ) < 1 / 2)]
-  linarith [Real.pi_pos]
-
-/-- `Real.exp (-x)` has the zero Poincaré expansion in `(x ^ n)⁻¹` along `atTop`. -/
-theorem hasAsymptoticExpansion_zero_exp_neg_atTop :
-    HasAsymptoticExpansion atTop (fun n (x : ℝ) => (x ^ n)⁻¹) 0 (fun x => Real.exp (-x)) := by
-  intro N
-  have h := (isLittleO_exp_neg_mul_rpow_atTop one_pos (-(N : ℝ))).isBigO
-  refine h.congr' (Eventually.of_forall fun x => by simp) ?_
-  filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx
-  rw [Real.rpow_neg hx.le, Real.rpow_natCast]
-
 /-! ### Checks and examples -/
 
 /-- The inverse-power sequence `x ↦ (x ^ n)⁻¹` is not an asymptotic scale along `𝓝[>] (0 : ℝ)`. -/
@@ -669,7 +587,7 @@ example :
 
 -- Unpunctured singleton check: on `𝓝[{c}] c`, uniqueness fails since `(z - c) ^ n = 0`
 -- for `n ≥ 1`.
-example (c : ℂ) (f : ℂ → ℂ) (a : ℕ → ℂ) (ha0 : a 0 = f c) :
+example {𝕜 : Type*} [NormedField 𝕜] (c : 𝕜) (f : 𝕜 → 𝕜) (a : ℕ → 𝕜) (ha0 : a 0 = f c) :
     HasAsymptoticExpansion (𝓝[{c}] c) (fun n z => (z - c) ^ n) a f := by
   intro N
   cases N with
@@ -689,10 +607,10 @@ example (c : ℂ) (f : ℂ → ℂ) (a : ℕ → ℂ) (ha0 : a 0 = f c) :
       · intro h0; exact absurd (mem_range.mpr (Nat.succ_pos N)) h0
     rw [hsum, sub_self]
 
--- Geometric series check: `1 / (z - 1) ~ ∑_{s ≥ 1} z⁻ˢ` along `cobounded ℂ`.
-example :
-    HasAsymptoticExpansion (Bornology.cobounded ℂ) (fun n z => (z ^ n)⁻¹)
-      (fun s => if s = 0 then (0 : ℂ) else 1) (fun z => (z - 1)⁻¹) := by
+-- Geometric series check: `1 / (z - 1) ~ ∑_{s ≥ 1} z⁻ˢ` along `cobounded 𝕜`.
+example {𝕜 : Type*} [NormedField 𝕜] :
+    HasAsymptoticExpansion (Bornology.cobounded 𝕜) (fun n z => (z ^ n)⁻¹)
+      (fun s => if s = 0 then (0 : 𝕜) else 1) (fun z => (z - 1)⁻¹) := by
   refine hasAsymptoticExpansion_of_hasSum (R := 1) fun z hz => ?_
   have hzne : z ≠ 0 := norm_pos_iff.mp (zero_lt_one.trans hz)
   have hnorm : ‖z⁻¹‖ < 1 := by
@@ -700,7 +618,7 @@ example :
     exact inv_lt_one_of_one_lt₀ hz
   have h1 : z - 1 ≠ 0 := sub_ne_zero.mpr (by
     intro h; rw [h, norm_one] at hz; exact lt_irrefl _ hz)
-  have h2 : (1 : ℂ) - z⁻¹ ≠ 0 := sub_ne_zero.mpr (by
+  have h2 : (1 : 𝕜) - z⁻¹ ≠ 0 := sub_ne_zero.mpr (by
     intro h
     have := congrArg norm h
     simp only [norm_one, norm_inv] at this

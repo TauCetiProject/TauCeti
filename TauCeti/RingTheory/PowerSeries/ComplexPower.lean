@@ -81,6 +81,7 @@ theorem constantCoeff_exp_neg_mul_sub_one {ℓ : ℂ} {P : ℂ⟦X⟧}
 
 /-- The constant term of `formalCpow ℓ r P` is `Complex.exp (r * ℓ)` when
 `constantCoeff P = Complex.exp ℓ`. -/
+@[simp]
 theorem constantCoeff_formalCpow {ℓ r : ℂ} {P : ℂ⟦X⟧} (hP : constantCoeff P = Complex.exp ℓ) :
     constantCoeff (formalCpow ℓ r P) = Complex.exp (r * ℓ) := by
   have hU : MvPowerSeries.constantCoeff (C (Complex.exp (-ℓ)) * P - 1 : ℂ⟦X⟧) = 0 := by
@@ -97,6 +98,7 @@ theorem formalCpow_zero (ℓ : ℂ) (P : ℂ⟦X⟧) : formalCpow ℓ 0 P = 1 :=
   simp
 
 /-- The first formal complex power recovers `P` when `constantCoeff P = Complex.exp ℓ`. -/
+@[simp]
 theorem formalCpow_one {ℓ : ℂ} {P : ℂ⟦X⟧} (hP : constantCoeff P = Complex.exp ℓ) :
     formalCpow ℓ 1 P = P := by
   have hU : HasSubst (C (Complex.exp (-ℓ)) * P - 1) :=
@@ -117,6 +119,7 @@ theorem formalCpow_add {ℓ : ℂ} (r r' : ℂ) {P : ℂ⟦X⟧} (hP : constantC
   ring
 
 /-- Natural formal complex powers agree with ordinary powers in `ℂ⟦X⟧`. -/
+@[simp]
 theorem formalCpow_natCast {ℓ : ℂ} (n : ℕ) {P : ℂ⟦X⟧} (hP : constantCoeff P = Complex.exp ℓ) :
     formalCpow ℓ (n : ℂ) P = P ^ n := by
   induction n with
