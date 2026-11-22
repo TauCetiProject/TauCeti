@@ -227,6 +227,17 @@ theorem divergenceForcing_apply_eq_neg_setIntegral
     divergenceForcing F v = -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
   rw [divergenceForcing_apply, L2.inner_def]
 
+/-- The divergence-form forcing functional of a vector field `F ∈ L²(Ω; ℝⁿ)`, given as a function,
+is `v ↦ -∫_Ω ⟪F, ∇v⟫`. -/
+theorem divergenceForcing_toLp_apply {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hF : MemLp F 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
+    divergenceForcing (hF.toLp F) v =
+      -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+  rw [divergenceForcing_apply_eq_neg_setIntegral, neg_inj]
+  refine integral_congr_ae ?_
+  filter_upwards [hF.coeFn_toLp] with x hx
+  rw [hx]
+
 /-- The divergence-form forcing functional is bounded by the `L²` norm of its vector field,
 because the gradient component of a Sobolev jet is dominated by the graph norm. -/
 theorem norm_divergenceForcing_apply_le (F : Lp (EuclideanSpace ℝ ι) 2 (mu.restrict Omega))

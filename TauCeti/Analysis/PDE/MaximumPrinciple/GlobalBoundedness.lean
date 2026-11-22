@@ -705,7 +705,7 @@ theorem exists_forall_energyFormH1_eq_setIntegral_ae_abs_le_drift [Nonempty ι] 
   set n : ℝ := (Fintype.card ι : ℝ)
   have hn : (0 : ℝ) < n := Nat.cast_pos.2 Fintype.card_pos
   have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-  have hrn' : n * (2 - r) < 2 * r := by nlinarith [mul_pos hn (sub_pos.2 hr1)]
+  have hrn' : n * (2 - r) < 2 * r := mul_two_sub_lt_two_mul_of_lt_two_mul hn.le hr1 hrn
   obtain ⟨C, hC, hstamp⟩ := exists_ae_abs_value_le_mul_div_mul_rpow_drift (mu := mu) hr hrn
   set e : ℝ := 2 / n - (r : ℝ)⁻¹
   refine ⟨C * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e,
