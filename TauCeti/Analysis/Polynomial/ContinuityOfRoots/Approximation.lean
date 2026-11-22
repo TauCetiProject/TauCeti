@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
+import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
 
@@ -77,13 +78,11 @@ theorem eventually_exists_isRoot_norm_sub_lt
     (fun i _ ↦ hGcoeff i) hGdeg hδ, hdeg] with x hx hxdeg
   obtain ⟨a, b, ha, hb, hab⟩ := hx
   have hGa : ∃ i, a i = u := by
-    have heval := hroot.eq_zero
-    rw [ha, eval_mul, eval_C, eval_prod] at heval
     have hlc : (G x₀).leadingCoeff ≠ 0 :=
       leadingCoeff_ne_zero.mpr (ne_zero_of_coe_le_degree hGdeg.self_of_nhds.ge)
-    have hprod := (mul_eq_zero.mp heval).resolve_left hlc
-    obtain ⟨i, _, hi⟩ := Finset.prod_eq_zero_iff.mp hprod
-    exact ⟨i, (sub_eq_zero.mp (by simpa using hi)).symm⟩
+    rw [ha] at hroot
+    obtain ⟨i, -, hi⟩ := (isRoot_C_mul_prod_X_sub_C_iff hlc _ a u).1 hroot
+    exact ⟨i, hi⟩
   obtain ⟨i, hi⟩ := hGa
   have hbi : b i ≠ 0 ∧ ‖z - ((b i)⁻¹ + τ)‖ < ε :=
     hδclose (by simpa [dist_eq_norm, hi, norm_sub_rev] using hab i)

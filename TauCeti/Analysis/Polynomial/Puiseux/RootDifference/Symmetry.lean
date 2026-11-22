@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.RootDifference
 public import TauCeti.Analysis.Polynomial.Conjugation
 public import TauCeti.Analysis.Analytic.Laurent.Conjugation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Normed.Module.Connected
 
@@ -70,9 +71,8 @@ private lemma existsUnique_involutive_perm_root_conj (hR' : 0 < R') (hn : n ≠ 
     have hl : (F (q b)).coeff d ≠ 0 := by
       rw [hlead _ (hq hb)]
       exact mul_ne_zero (pow_ne_zero _ (hq hb).2.2) (hu0 _ ⟨(hq hb).1, (hq hb).2.1⟩)
-    rw [(hr b hb).2, root_mul, iff_false_intro (not_isRoot_C _ z hl),
-      false_or, isRoot_prod]
-    simp [sub_eq_zero, eq_comm]
+    rw [(hr b hb).2, isRoot_C_mul_prod_X_sub_C_iff hl]
+    simp only [Finset.mem_univ, true_and]
   -- The punctured product is connected, so conjugation uses one permutation of all labels.
   let := isPathConnected_iff_pathConnectedSpace.1
     (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])

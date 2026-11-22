@@ -79,6 +79,7 @@ theorem card_filter_roots_eq_natTrailingDegree_add [DecidableEq R] (f : R[X]) {q
 
 /-- Over a domain, the root multiplicities of `f` at its distinct roots add up to the number of
 roots of `f` counted with multiplicity. -/
+@[simp]
 theorem sum_rootMultiplicity_roots_toFinset_eq_card_roots [DecidableEq R] (f : R[X]) :
     ∑ a ∈ f.roots.toFinset, f.rootMultiplicity a = f.roots.card := by
   simpa only [count_roots] using Multiset.toFinset_sum_count_eq f.roots
@@ -102,14 +103,6 @@ theorem mul_card_le_natDegree_of_le_rootMultiplicity {f : R[X]} {s : Finset R} {
     (h : ∀ a ∈ s, k ≤ f.rootMultiplicity a) : k * s.card ≤ f.natDegree := by
   rw [mul_comm, ← smul_eq_mul]
   exact (Finset.card_nsmul_le_sum s _ k h).trans (sum_rootMultiplicity_le_natDegree f s)
-
-/-- A nonzero constant multiple of a product of linear factors vanishes exactly at the
-`r i` with `i ∈ s`. -/
-theorem isRoot_C_mul_prod_X_sub_C_iff {ι : Type*} {l : R} (hl : l ≠ 0) (s : Finset ι)
-    (r : ι → R) (z : R) :
-    (C l * ∏ i ∈ s, (X - C (r i))).IsRoot z ↔ ∃ i ∈ s, r i = z := by
-  rw [root_mul, iff_false_intro (not_isRoot_C _ z hl), false_or, isRoot_prod]
-  simp [sub_eq_zero, eq_comm]
 
 /-- A nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a` occurs
 at least `k` times in `E`. -/

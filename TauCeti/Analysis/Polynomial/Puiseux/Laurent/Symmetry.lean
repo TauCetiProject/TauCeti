@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Polynomial.Roots
 public import TauCeti.Analysis.Polynomial.Puiseux.Laurent.Factorization
 public import TauCeti.Analysis.Analytic.Laurent.Conjugation
+import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Analysis.Polynomial.Conjugation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Normed.Module.Connected

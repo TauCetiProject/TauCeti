@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Polynomial.Conjugation
 
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
+import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Analysis.Normed.Module.Connected
 
 /-!
@@ -100,9 +101,8 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution_conj
     have hl : (F (q b)).coeff d ≠ 0 := by
       rw [hlc _ (hq hb)]
       exact mul_ne_zero (pow_ne_zero _ (hq hb).2.2) (hu0 _ ⟨(hq hb).1, (hq hb).2.1⟩)
-    rw [(hfac b hb).2, root_mul, iff_false_intro (not_isRoot_C _ z hl),
-      false_or, isRoot_prod]
-    simp [sub_eq_zero, eq_comm]
+    rw [(hfac b hb).2, isRoot_C_mul_prod_X_sub_C_iff hl]
+    simp only [Finset.mem_univ, true_and]
   have hsymm (b : E × ℂ) (hb : b ∈ S) :
       F (q (κ b)) = (F (q b)).map (starRingEnd ℂ) := by
     simpa only [q, κ, map_pow] using hconj _ (hq hb)
