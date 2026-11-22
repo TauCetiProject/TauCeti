@@ -217,11 +217,19 @@ def dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (ht : 1 �
       |>.exists_norm_mixedDeriv_cutoff_smul_le χ hK α β
     exact ⟨C, hC0, fun x hx ξ => by simpa using hC t ht 0 le_rfl x hx ξ⟩
 
+/-- The coefficient of the dilated cutoff is `χ(ξ / t) id`. -/
+@[simp]
+theorem coefficient_dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ}
+    (ht : 1 ≤ t) : (dilatedCutoff (W := W) χ ht).coefficient =
+      fun p => χ (t⁻¹ • p.2) • ContinuousLinearMap.id ℂ W :=
+  funext fun p => by simp [dilatedCutoff]
+
 /-- Composing with the dilated cutoff `χ(ξ / t) id` multiplies a symbol by `χ(ξ / t)`. -/
+@[simp]
 theorem coefficient_dilatedCutoff_comp (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ}
     (ht : 1 ≤ t) {μ : ℝ} (a : Symbol n V W μ) :
     ((dilatedCutoff χ ht).comp a).coefficient = fun p => χ (t⁻¹ • p.2) • a.coefficient p :=
-  funext fun p => by simp [dilatedCutoff]
+  funext fun p => by simp
 
 /-- For large `t`, the cut-off terms `χ(ξ / t) a_τ(x, ξ)` of a continuous family `a` of symbols of
 order `μ` over a compact space of parameters `τ` are at most `2^{-j}` in the estimates of order
@@ -798,7 +806,7 @@ private theorem isUniform_dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n
   obtain ⟨C, hC0, hC⟩ :=
     (isUniform_const (n := n) (ContinuousLinearMap.id ℂ W)).exists_norm_mixedDeriv_cutoff_smul_le
       χ α β
-  exact ⟨C, hC0, fun x ξ => by simpa [dilatedCutoff] using hC t ht 0 le_rfl x ξ⟩
+  exact ⟨C, hC0, fun x ξ => by simpa using hC t ht 0 le_rfl x ξ⟩
 
 /-- For `t ≥ 1`, the removed cutoff `(χ(ξ / t) - 1) a(x, ξ)` of a uniform symbol `a` is a uniform
 symbol of every order `μ'`: it vanishes for `‖ξ‖ ≥ 2t`. -/
@@ -809,10 +817,10 @@ private theorem IsUniform.exists_isUniform_cutoff_smul_sub {μ : ℝ} {a : Symbo
   obtain ⟨E, hE, hEc⟩ := isUniformlySmoothing_iff.1 ((((isUniform_dilatedCutoff χ ht).sub
     (isUniform_const (ContinuousLinearMap.id ℂ W))).isUniformlySmoothing_of_coefficient_eq_zero
       (2 * t) fun x ξ hξ => by
-        simp [dilatedCutoff, χ.apply_inv_smul_eq_one (one_pos.trans_le ht) hξ]).comp_right ha) μ'
+        simp [χ.apply_inv_smul_eq_one (one_pos.trans_le ht) hξ]).comp_right ha) μ'
   refine ⟨E, hE, ?_⟩
   funext p
-  simp [hEc, dilatedCutoff]
+  simp [hEc]
 
 /-- For large `t`, the cut-off term `χ(ξ / t) a(x, ξ)` of a uniform symbol `a` of order `μ` is at
 most `2^{-j}` in the estimates of order `μ + 1` for the derivatives of length at most `j`, at
