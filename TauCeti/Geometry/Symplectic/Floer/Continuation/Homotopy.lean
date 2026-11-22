@@ -44,9 +44,10 @@ the exact estimate and of the monotone case are also here; their contractible fo
 `SmoothTwoForm.IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_sub_integral` and
 `SmoothTwoForm.IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_of_monotone`, in
 `TauCeti.Geometry.Symplectic.Floer.CylinderAction`. The underlying estimates of the integrated
-curvature along a map are `TauCeti.Floer.neg_setIntegral_fderiv_le_setIntegral`,
+curvature along a map are `TauCeti.Floer.neg_setIntegral_fderiv_le_setIntegral`, also in
+`TauCeti.Geometry.Symplectic.Floer.CylinderAction`, and
 `TauCeti.Floer.neg_setIntegral_fderiv_reparam_le` and
-`TauCeti.Floer.neg_setIntegral_fderiv_reparam_le_integral_add`.
+`TauCeti.Floer.neg_setIntegral_fderiv_reparam_le_integral_add`, here.
 
 The end `s = a` is the input of the continuation map and `s = b` its output. Barraud, Damian,
 Humilière and Oancea state the same estimates with the two ends exchanged, for continuation maps
@@ -89,35 +90,6 @@ namespace Floer
 variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace HM]
   {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M] {u : ℝ × ℝ → M}
   {a b : ℝ}
-
-/-- **The integrated curvature of a homotopy along a map.** Let `G_z`, `z = (s, t)`, be a `C¹`
-family of Hamiltonians on a manifold and `u` a `C¹` map. If `-∂_s G(s, t, u(s, t)) ≤ c(s)` on
-`[a, b] × [0, 1]` for a function `c` integrable on `[a, b]`, then minus the integral of the
-curvature `∂_s G` along `u` over the rectangle is at most `∫_a^b c`. -/
-theorem neg_setIntegral_fderiv_le_setIntegral {G : ℝ × ℝ → M → ℝ}
-    (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
-    {c : ℝ → ℝ} (hc : IntegrableOn c (Icc a b))
-    (hGc : ∀ z ∈ Icc a b ×ˢ Icc 0 1, -deriv (fun s ↦ G (s, z.2) (u z)) z.1 ≤ c z.1) :
-    -∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal ≤
-      ∫ s in Icc a b, c s := by
-  have hcurv : Continuous fun z ↦ fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal :=
-    (continuous_fderiv_of_contMDiff hu hG).clm_apply continuous_const
-  -- On the rectangle, the restricted Lebesgue measure is the product of the restrictions.
-  have hci : IntegrableOn (fun z : ℝ × ℝ ↦ c z.1) (Icc a b ×ˢ Icc 0 1) := by
-    rw [IntegrableOn, Measure.volume_eq_prod, ← Measure.prod_restrict]
-    exact Integrable.comp_fst hc _
-  have hle : ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1,
-      -fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal ≤ ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, c z.1 :=
-    setIntegral_mono_on hcurv.neg.integrableOn_Icc_prod_Icc hci
-      (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦ by
-        have hd : ContDiff ℝ 1 fun w ↦ G w (u z) :=
-          contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk contMDiff_const))
-        rw [stdComplexLineReal_eq,
-          fderiv_apply_mk_one_zero (hd.differentiable one_ne_zero z)]
-        exact hGc z hz
-  have hrhs : ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, c z.1 = ∫ s in Icc a b, c s := by
-    simpa using setIntegral_Icc_prod_comp_fst c zero_le_one
-  rwa [integral_neg, hrhs] at hle
 
 /-- **The integrated curvature of a reparametrized path along a map.** Let `K_w`, `w = (ϑ, t)`, be
 a `C¹` family of Hamiltonians on a manifold, `β` a monotone `C¹` reparametrization and `u` a `C¹`
