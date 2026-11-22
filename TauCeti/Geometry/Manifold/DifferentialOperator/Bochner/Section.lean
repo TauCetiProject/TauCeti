@@ -78,6 +78,11 @@ the formally self-adjoint operators `P` and `c ∇*∇`, hence fibrewise self-ad
 The canonical density matters: on the circle, `-∂ₓ² - cos x ∂ₓ` is formally self-adjoint for the
 density `e^(sin x) dx`, but its Bochner connection `d + ½ cos x dx` is not metric.
 
+## Main definitions
+
+* `CovariantDerivative.bochnerConnection`: the Bochner connection `∇ + A` of an operator `P` for
+  which `P - c ∇*∇` has order at most one.
+
 ## Main results
 
 * `CovariantDerivative.smoothRoughLaplacian_sub_mem_differentialOperators_zero_iff`: two smooth
@@ -85,14 +90,18 @@ density `e^(sin x) dx`, but its Bochner connection `d + ½ cos x dx` is not metr
   difference vanishes.
 * `CovariantDerivative.difference_eq_zero_of_sub_smul_smoothRoughLaplacian_mem`: **uniqueness of
   the Bochner connection**.
-* `CovariantDerivative.exists_sub_smul_smoothRoughLaplacian_mem_differentialOperators_zero`:
-  **existence of the Bochner connection** when `P - c ∇*∇` has order at most one.
+* `CovariantDerivative.sub_smul_smoothRoughLaplacian_bochnerConnection_mem`: **existence of the
+  Bochner connection**: for the Bochner connection `∇'`, `P - c ∇'*∇'` has order zero. Any other
+  such connection agrees with it (`CovariantDerivative.difference_bochnerConnection_eq_zero`), and
+  `CovariantDerivative.exists_sub_smul_smoothRoughLaplacian_mem_differentialOperators_zero` is the
+  existential form.
 * `TauCeti.IsSectionLaplaceType.sub_smul_smoothRoughLaplacian_mem_differentialOperators_one`: an
   operator of Laplace type differs from `c ∇*∇` by an operator of order at most one.
 * `TauCeti.IsSectionLaplaceType.exists_sub_smul_smoothRoughLaplacian_mem_differentialOperators_zero`
   : every operator of Laplace type has a Bochner connection.
-* `LinearMap.IsFormalAdjoint.isMetricCompatible_of_sub_smul_smoothRoughLaplacian_mem`: the Bochner
-  connection of a formally self-adjoint operator is metric.
+* `LinearMap.IsFormalAdjoint.isMetricCompatible_of_sub_smul_smoothRoughLaplacian_mem`,
+  `LinearMap.IsFormalAdjoint.isMetricCompatible_bochnerConnection`: the Bochner connection of a
+  formally self-adjoint operator is metric.
 * `LinearMap.IsFormalAdjoint.inner_sub_smul_smoothRoughLaplacian_apply`: its zeroth-order remainder
   is fibrewise self-adjoint.
 
@@ -134,7 +143,8 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimension
 
 /-- **Rough Laplacians determine connections.** The rough Laplacians of two smooth connections
 `∇`, `∇'`, built with the Levi-Civita connection on the tangent bundle, differ by an operator of
-order zero exactly when the connections are equal, that is their difference `∇ - ∇'` vanishes. -/
+order zero exactly when their difference `∇ - ∇'` vanishes, that is they agree on differentiable
+sections. -/
 theorem smoothRoughLaplacian_sub_mem_differentialOperators_zero_iff :
     cov.smoothRoughLaplacian (leviCivitaConnection I M) -
         cov'.smoothRoughLaplacian (leviCivitaConnection I M) ∈
@@ -172,8 +182,8 @@ theorem smoothRoughLaplacian_sub_mem_differentialOperators_zero_iff :
     exact sub_eq_zero.1 hd.symm
 
 /-- **Uniqueness of the Bochner connection.** If `P - c ∇*∇` and `P - c ∇'*∇'` are both operators
-of order zero for smooth connections `∇`, `∇'` and a constant `c ≠ 0`, then `∇ = ∇'`: their
-difference vanishes. The zeroth-order remainders are then equal as well. -/
+of order zero for smooth connections `∇`, `∇'` and a constant `c ≠ 0`, then their difference
+`∇ - ∇'` vanishes, so `∇` and `∇'` agree on differentiable sections. -/
 theorem difference_eq_zero_of_sub_smul_smoothRoughLaplacian_mem
     {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯} {c : ℝ} (hc : c ≠ 0)
     (h : P - c • cov.smoothRoughLaplacian (leviCivitaConnection I M) ∈
@@ -197,14 +207,6 @@ section Existence
 variable [BoundarylessManifold I M]
   {Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯}
 
-/-- The principal symbol at `x` of a first-order operator `Q`, as a linear map in the covector. -/
-private def bochnerSymbol
-    (hQ : Q ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 1) (x : M) :
-    (TangentSpace I x →L[ℝ] ℝ) →ₗ[ℝ] V x →ₗ[ℝ] V x where
-  toFun := sectionPrincipalSymbol I BoundarylessManifold.isInteriorPoint ⟨Q, hQ⟩
-  map_add' := sectionPrincipalSymbol_add_covector _ ⟨Q, hQ⟩
-  map_smul' a ξ := by simpa using sectionPrincipalSymbol_smul_covector _ ⟨Q, hQ⟩ a ξ
-
 /-- The endomorphism-valued one-form `A(u, w) = -(2 c)⁻¹ σ(Q)(⟪w, ·⟫) u` built from the principal
 symbol of a first-order operator `Q`. For `Q = P - c ∇*∇`, adding it to `∇` absorbs `Q` into the
 rough Laplacian. -/
@@ -217,9 +219,11 @@ private def bochnerForm
   haveI := VectorBundle.finiteDimensional ℝ F V x
   LinearMap.toContinuousLinearMap
     ((LinearMap.toContinuousLinearMap : (TangentSpace I x →ₗ[ℝ] V x) ≃ₗ[ℝ] _).toLinearMap ∘ₗ
-      LinearMap.mk₂ ℝ (fun u w ↦ -(2 * c)⁻¹ • bochnerSymbol hQ x (innerSL ℝ w) u)
+      LinearMap.mk₂ ℝ (fun u w ↦ -(2 * c)⁻¹ •
+          sectionPrincipalSymbolₗ I BoundarylessManifold.isInteriorPoint ⟨Q, hQ⟩ (innerSL ℝ w) u)
         (fun u u' w ↦ by simp [smul_add]) (fun a u w ↦ by simp [smul_comm a])
-        (fun u w w' ↦ by simp [smul_add]) (fun a u w ↦ by simp [smul_comm a]))
+        (fun u w w' ↦ by simp [smul_add, -sectionPrincipalSymbolₗ_apply])
+        (fun a u w ↦ by simp [smul_comm a, -sectionPrincipalSymbolₗ_apply]))
 
 omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- On a gradient, the one-form is a commutator: `A(s, grad f) = -(2 c)⁻¹ [Q, f] s`. -/
@@ -231,9 +235,8 @@ private theorem bochnerForm_apply_mgradient
     ContinuousLinearMap.ext fun v ↦ by rw [innerSL_apply_apply, inner_mgradient]
   have h := sectionPrincipalSymbol_mvfderiv_of_order_one (x := x)
     BoundarylessManifold.isInteriorPoint ⟨Q, hQ⟩ f s
-  simp only [bochnerForm, bochnerSymbol, LinearMap.coe_toContinuousLinearMap',
-    LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, LinearMap.mk₂_apply,
-    LinearMap.coe_mk, AddHom.coe_mk, hξ]
+  simp only [bochnerForm, sectionPrincipalSymbolₗ_apply, LinearMap.coe_toContinuousLinearMap',
+    LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, LinearMap.mk₂_apply, hξ]
   rw [h]
 
 /-- The one-form is smooth: near each point, the gradients of finitely many functions form a frame
@@ -256,6 +259,7 @@ private theorem contMDiff_bochnerForm
     (hb ▸ b.linearIndependent) (hb ▸ b.span_eq.ge)
   -- Near `x₀`, `A(s, W) = ∑ₖ Wₖ A(s, grad fₖ)` with smooth coefficients `Wₖ`.
   let s' : Cₛ^∞⟮I; F, V⟯ := ⟨s, hs⟩
+  have hs' : ⇑s' = s := ContMDiffSection.coeFn_mk s hs
   let τ (k : Fin (Module.finrank ℝ (TangentSpace I x₀))) : Cₛ^∞⟮I; F, V⟯ :=
     (-(2 * c)⁻¹) • (Q (f k • s') - f k • Q s')
   have hsum : ContMDiffAt I (I.prod 𝓘(ℝ, F)) ∞
@@ -269,38 +273,83 @@ private theorem contMDiff_bochnerForm
   conv_lhs => rw [hfr.coeff_sum_eq W hx]
   simp only [map_sum, map_smul]
   refine Finset.sum_congr rfl fun k _ ↦ congrArg _ ?_
-  rw [show s x = s' x from rfl, bochnerForm_apply_mgradient hQ c (f k) s' x]
+  rw [← hs', bochnerForm_apply_mgradient hQ c (f k) s' x]
   simp [τ, ContMDiffSection.smul_apply]
+
+variable (cov) in
+/-- **The Bochner connection.** Let `∇` be a smooth connection on `V` and `c` a constant, and let
+`P` be an operator for which `P - c ∇*∇` has order at most one. The Bochner connection of `P` is
+`∇ + A` for the endomorphism-valued one-form `A(u, w) = -(2 c)⁻¹ σ(P - c ∇*∇)(⟪w, ·⟫) u` built from
+the principal symbol of `P - c ∇*∇`, which absorbs its first-order part. For `c ≠ 0` it is a smooth
+connection `∇'` for which `P - c ∇'*∇'` has order zero
+(`CovariantDerivative.sub_smul_smoothRoughLaplacian_bochnerConnection_mem`),
+and this property determines it on differentiable sections
+(`CovariantDerivative.difference_bochnerConnection_eq_zero`). -/
+def bochnerConnection {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯} {c : ℝ}
+    (h1 : P - c • cov.smoothRoughLaplacian (leviCivitaConnection I M) ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 1) :
+    _root_.CovariantDerivative I F V :=
+  cov.addOneForm (bochnerForm h1 c)
+
+/-- The Bochner connection is smooth. -/
+instance ContMDiffCovariantDerivative.bochnerConnection {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯}
+    {c : ℝ} (h1 : P - c • cov.smoothRoughLaplacian (leviCivitaConnection I M) ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 1) :
+    ContMDiffCovariantDerivative (cov.bochnerConnection h1) ∞ :=
+  (inferInstance : ContMDiffCovariantDerivative cov ∞).addOneForm (contMDiff_bochnerForm h1 c)
+
+/-- **The Bochner connection absorbs the first-order part.** Let `∇` be a smooth connection on `V`
+and `c ≠ 0`. If `P - c ∇*∇` is an operator of order at most one, then for the Bochner connection
+`∇'` the operator `P - c ∇'*∇'` has order zero. -/
+theorem sub_smul_smoothRoughLaplacian_bochnerConnection_mem
+    {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯} {c : ℝ} (hc : c ≠ 0)
+    (h1 : P - c • cov.smoothRoughLaplacian (leviCivitaConnection I M) ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 1) :
+    P - c • (cov.bochnerConnection h1).smoothRoughLaplacian (leviCivitaConnection I M) ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 0 := by
+  set Q := P - c • cov.smoothRoughLaplacian (leviCivitaConnection I M)
+  -- The commutators of `P - c (∇ + A)*(∇ + A)` with multiplication vanish.
+  refine mem_differentialOperators_zero_iff_smulCommutator.2 fun f ↦
+    LinearMap.ext fun σ ↦ ContMDiffSection.ext fun x ↦ ?_
+  have hP : smulCommutator ℝ f P = smulCommutator ℝ f Q +
+      c • smulCommutator ℝ f (cov.smoothRoughLaplacian (leviCivitaConnection I M)) := by
+    rw [← map_smul, ← map_add, sub_add_cancel]
+  have hQc : smulCommutator ℝ f Q σ x = Q (f • σ) x - f x • Q σ x := by
+    simp [smulCommutator_apply_apply, ContMDiffSection.smul_apply]
+  rw [map_sub, hP, map_smul]
+  simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.smul_apply,
+    ContMDiffSection.coe_sub, ContMDiffSection.coe_add, ContMDiffSection.coe_smul, Pi.sub_apply,
+    Pi.add_apply, Pi.smul_apply, LinearMap.zero_apply, ContMDiffSection.coe_zero, Pi.zero_apply,
+    smulCommutator_smoothRoughLaplacian_apply, bochnerConnection, addOneForm_apply, add_apply,
+    bochnerForm_apply_mgradient h1 c f σ x, hQc]
+  match_scalars <;> field_simp <;> ring
+
+/-- **Uniqueness of the Bochner connection.** If `P - c ∇'*∇'` has order zero for a smooth
+connection `∇'` and `c ≠ 0`, then `∇'` agrees with the Bochner connection on differentiable
+sections: their difference vanishes. -/
+theorem difference_bochnerConnection_eq_zero {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯} {c : ℝ}
+    (hc : c ≠ 0)
+    (h1 : P - c • cov.smoothRoughLaplacian (leviCivitaConnection I M) ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 1)
+    (h0 : P - c • cov'.smoothRoughLaplacian (leviCivitaConnection I M) ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 0) :
+    cov'.difference (cov.bochnerConnection h1) = 0 :=
+  difference_eq_zero_of_sub_smul_smoothRoughLaplacian_mem hc h0
+    (sub_smul_smoothRoughLaplacian_bochnerConnection_mem hc h1)
 
 /-- **Existence of the Bochner connection.** Let `∇` be a smooth connection on `V` and `c ≠ 0`. If
 `P - c ∇*∇` is an operator of order at most one, then there is a smooth connection `∇'` for which
-`P - c ∇'*∇'` has order zero. It is `∇ + A` for the endomorphism-valued one-form
-`A(u, w) = -(2 c)⁻¹ σ(P - c ∇*∇)(⟪w, ·⟫) u` built from the principal symbol of `P - c ∇*∇`, which
-absorbs its first-order part. -/
+`P - c ∇'*∇'` has order zero, namely the Bochner connection
+`CovariantDerivative.bochnerConnection`. -/
 theorem exists_sub_smul_smoothRoughLaplacian_mem_differentialOperators_zero
     {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯} {c : ℝ} (hc : c ≠ 0)
     (h1 : P - c • cov.smoothRoughLaplacian (leviCivitaConnection I M) ∈
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 1) :
     ∃ (cov' : _root_.CovariantDerivative I F V) (_ : ContMDiffCovariantDerivative cov' ∞),
       P - c • cov'.smoothRoughLaplacian (leviCivitaConnection I M) ∈
-        differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 0 := by
-  set Q := P - c • cov.smoothRoughLaplacian (leviCivitaConnection I M)
-  -- The commutators of `P - c (∇ + A)*(∇ + A)` with multiplication vanish.
-  refine ⟨cov.addOneForm (bochnerForm h1 c),
-    (inferInstance : ContMDiffCovariantDerivative cov ∞).addOneForm (contMDiff_bochnerForm h1 c),
-    mem_differentialOperators_zero_iff_smulCommutator.2 fun f ↦
-      LinearMap.ext fun σ ↦ ContMDiffSection.ext fun x ↦ ?_⟩
-  have hP : P = Q + c • cov.smoothRoughLaplacian (leviCivitaConnection I M) :=
-    (sub_add_cancel _ _).symm
-  have hQc : smulCommutator ℝ f Q σ x = Q (f • σ) x - f x • Q σ x := by
-    simp [smulCommutator_apply_apply, ContMDiffSection.smul_apply]
-  rw [hP, map_sub, map_add, map_smul, map_smul]
-  simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.smul_apply,
-    ContMDiffSection.coe_sub, ContMDiffSection.coe_add, ContMDiffSection.coe_smul, Pi.sub_apply,
-    Pi.add_apply, Pi.smul_apply, LinearMap.zero_apply, ContMDiffSection.coe_zero, Pi.zero_apply,
-    smulCommutator_smoothRoughLaplacian_apply, addOneForm_apply, add_apply,
-    bochnerForm_apply_mgradient h1 c f σ x, hQc]
-  match_scalars <;> field_simp <;> ring
+        differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 0 :=
+  ⟨cov.bochnerConnection h1, inferInstance,
+    sub_smul_smoothRoughLaplacian_bochnerConnection_mem hc h1⟩
 
 end Existence
 
@@ -419,8 +468,7 @@ private theorem isFormalAdjoint_alongVectorField_of_sub_smul_smoothRoughLaplacia
     simpa [T, hX, Δf, sub_eq_zero] using hR
   have hT1 : T ∈ Γ 1 := smulCommutator_mem_differentialOperators hP2 f
   have hl1 : lsmul Δf ∈ Γ 1 :=
-    differentialOperators_le_succ 0 <|
-      mem_differentialOperators_zero_iff.2 fun b σ ↦ smul_comm Δf b σ
+    differentialOperators_le_succ 0 (Algebra.lsmul_mem_differentialOperators_zero Δf)
   -- `∇_X = -(2 c)⁻¹ (T + c Δ f)`, and `T` is formally skew-adjoint.
   have h := ((hP.smulCommutator (hsupp hP2) (hsupp hP2) f).add
     ((isFormalAdjoint_lsmul Δf).smul c) (hsupp hT1) (hsupp (Submodule.smul_mem _ _ hl1))
@@ -472,6 +520,7 @@ theorem isMetricCompatible_of_sub_smul_smoothRoughLaplacian_mem
   obtain ⟨f, hf⟩ := exists_contMDiffMap_mgradient_eq x w
   let X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
     ⟨mgradient I f, by simpa using contMDiff_mgradient_infty f.contMDiff⟩
+  have hX : ⇑X = mgradient I f := ContMDiffSection.coeFn_mk _ _
   let N := cov.metricCorrected.alongVectorField X
   let L := Algebra.lsmul ℝ ℝ Cₛ^∞⟮I; F, V⟯ (smoothDivergence I M X)
   have hB (σ : Cₛ^∞⟮I; F, V⟯) (y : M) :
@@ -484,13 +533,13 @@ theorem isMetricCompatible_of_sub_smul_smoothRoughLaplacian_mem
   -- formally skew-adjoint.
   have hN1 : N ∈ Γ 1 := cov.metricCorrected.alongVectorField_mem_differentialOperators_one X
   have hK1 : cov.alongVectorField X ∈ Γ 1 := cov.alongVectorField_mem_differentialOperators_one X
-  have hL1 : L ∈ Γ 1 := differentialOperators_le_succ 0 <|
-    mem_differentialOperators_zero_iff.2 fun b σ ↦ smul_comm (smoothDivergence I M X) b σ
+  have hL1 : L ∈ Γ 1 := differentialOperators_le_succ 0
+    (Algebra.lsmul_mem_differentialOperators_zero (smoothDivergence I M X))
   have hN : N.IsFormalAdjoint (-N - L) (riemannianVolume I M) :=
     cov.isMetricCompatible_metricCorrected.isFormalAdjoint_alongVectorField X fun τ y ↦ by
       simp [N, L]
   have hBadj := hN.sub (isFormalAdjoint_alongVectorField_of_sub_smul_smoothRoughLaplacian_mem
-      hP hc h0 f X rfl) (tsupport_differentialOperators_section_apply_subset hN1)
+      hP hc h0 f X hX) (tsupport_differentialOperators_section_apply_subset hN1)
     (tsupport_differentialOperators_section_apply_subset hK1)
     (tsupport_differentialOperators_section_apply_subset (sub_mem (neg_mem hN1) hL1))
     (tsupport_differentialOperators_section_apply_subset (sub_mem (neg_mem hK1) hL1))
@@ -501,8 +550,20 @@ theorem isMetricCompatible_of_sub_smul_smoothRoughLaplacian_mem
   obtain ⟨τ, hτ, rfl⟩ := exists_contMDiff_section_eq (I := I) (F := F) ∞ v
   have hpt := hBadj.inner_apply_eq_of_mem_differentialOperators_zero hB0 ⟨σ, hσ⟩ ⟨τ, hτ⟩ x
   simp only [LinearMap.neg_apply, ContMDiffSection.coe_neg, Pi.neg_apply, inner_neg_right, hB,
-    ContMDiffSection.coeFn_mk, show X x = w from hf] at hpt
+    ContMDiffSection.coeFn_mk, hX, hf] at hpt
   linarith
+
+/-- **The Bochner connection of a formally self-adjoint operator is metric.** If `P` is its own
+formal adjoint for the Riemannian volume, `c ≠ 0` and `P - c ∇*∇` has order at most one for a smooth
+connection `∇`, then the Bochner connection `CovariantDerivative.bochnerConnection` is compatible
+with the fibre metric. -/
+theorem isMetricCompatible_bochnerConnection
+    (hP : P.IsFormalAdjoint P (riemannianVolume I M)) (hc : c ≠ 0)
+    (h1 : P - c • cov.smoothRoughLaplacian (leviCivitaConnection I M) ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 1) :
+    (cov.bochnerConnection h1).IsMetricCompatible :=
+  hP.isMetricCompatible_of_sub_smul_smoothRoughLaplacian_mem hc
+    (sub_smul_smoothRoughLaplacian_bochnerConnection_mem hc h1)
 
 /-- **The zeroth-order remainder of a formally self-adjoint operator is self-adjoint.** If `P` is
 its own formal adjoint for the Riemannian volume and `E = P - c ∇*∇` is an operator of order zero
