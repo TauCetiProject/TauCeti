@@ -43,6 +43,8 @@ local rings.
 * `TauCeti.HenselianRing.bijOn_quotient_mk_isIdempotentElem`: for a Henselian pair `(S, J)`, the
   quotient map `S → S ⧸ J` is a bijection on idempotents (Stacks, Lemma 15.11.6 (09XI), condition
   (3) for the algebra `S` itself).
+* `TauCeti.HenselianRing.bijOn_isIdempotentElem_of_surjective`: the same along any surjective ring
+  homomorphism whose kernel is such an ideal.
 * `CompleteOrthogonalIdempotents.existsUnique_lift_of_henselianRing`: a finite complete family
   of orthogonal idempotents of `S ⧸ J` lifts uniquely to such a family in `S` for a Henselian
   pair `(S, J)`.
@@ -192,6 +194,22 @@ theorem bijOn_quotient_mk_isIdempotentElem (J : Ideal S) [HenselianRing S J] :
   ⟨fun _ he ↦ he.map _, Ideal.injOn_quotient_mk_isIdempotentElem
       (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J))),
     fun _ ht ↦ (existsUnique_isIdempotentElem_mk_eq J ht).exists⟩
+
+/-- **Idempotents along a surjection with Henselian kernel.** If `f : S →+* T` is surjective and
+`S` is Henselian along `ker f`, then `f` restricts to a bijection between the idempotents of `S`
+and those of `T`. This is `TauCeti.HenselianRing.bijOn_quotient_mk_isIdempotentElem` read through
+the isomorphism `S ⧸ ker f ≃+* T`. -/
+theorem bijOn_isIdempotentElem_of_surjective {T : Type*} [Ring T] (f : S →+* T)
+    (hf : Function.Surjective f) (J : Ideal S) [HenselianRing S J] (hJ : RingHom.ker f = J) :
+    Set.BijOn f {e | IsIdempotentElem e} {t | IsIdempotentElem t} := by
+  have hmk (a b : S) : f a = f b ↔ Ideal.Quotient.mk J a = Ideal.Quotient.mk J b := by
+    rw [Ideal.Quotient.eq, ← hJ, RingHom.sub_mem_ker_iff]
+  refine ⟨fun _ he ↦ he.map f, fun a ha b hb hab ↦
+    (bijOn_quotient_mk_isIdempotentElem J).injOn ha hb ((hmk a b).mp hab), fun t ht ↦ ?_⟩
+  obtain ⟨a, rfl⟩ := hf t
+  obtain ⟨e, he, hea⟩ := exists_isIdempotentElem_sub_mem J (a := a) (by
+    rw [← hJ, RingHom.mem_ker, map_sub, map_mul, ht.eq, sub_self])
+  exact ⟨e, he, (hmk e a).mpr (Ideal.Quotient.eq.mpr hea)⟩
 
 /-- **Uniqueness of idempotent lifts in integral algebras.** If `S` is Henselian along `J` and `T`
 is an integral `S`-algebra, for instance a finite one, then idempotents of `T` congruent modulo
