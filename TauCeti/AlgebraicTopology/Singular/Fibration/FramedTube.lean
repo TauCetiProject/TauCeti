@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Fibration.FiberInclusion
+public import TauCeti.AlgebraicTopology.Singular.Fibration.FundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 public import TauCeti.Geometry.Manifold.PontryaginThom.NormalCoordinate
 
@@ -46,6 +47,18 @@ the fibres, since the fibre `p⁻¹(s b')` then carries the homology of `p⁻¹(
 In Barraud–Damian–Humilière–Oancea, `p` is the evaluation fibration `Map(S², Q) → Q` and `s` is an
 embedded sphere meeting a highly connected framed submanifold of `Q` once.
 
+If `p` is moreover trivial over the part of the tube over a ball, with `S` and the fibre `T₁`
+spaces, the shriek map of the core sends fundamental classes of `E` to fundamental classes of
+`p⁻¹(f(S))`
+(`TauCeti.IsFundamentalClass.singularHomologyComplPreimageCoreIso_hom_singularHomologyπ`). For `p`
+the identity of a closed manifold `B`, trivial with a one-point fibre, and a framed closed
+submanifold `f(S)`, this says that the fundamental class of `B`, localized along `f(S)`, is a
+fundamental class of `f(S)`; for a fibre bundle it is the identity `j_![E] = [E|_{f(S)}]` of
+Barraud, Damian, Humilière and Oancea (Remark 2.10), up to the orientation conventions which
+`TauCeti.IsFundamentalClass` leaves free.
+The trivialization over the tube is read as a product with the ball through
+`TauCeti.IsFramedTube.tubeBallTrivialization`.
+
 ## Main definitions and results
 
 * `TauCeti.TopCat.singularHomologyComplPreimageCoreIso`: the local homology along the core of a
@@ -56,11 +69,15 @@ embedded sphere meeting a highly connected framed submanifold of `Q` once.
 * `TauCeti.TopCat.not_isOfFinAddOrder_singularHomologyComplPreimageCoreIso`,
   `not_isOfFinAddOrder_singularHomologyComplPreimageCoreIso_of_subsingleton_homotopyGroup`:
   classes of infinite order along the core.
+* `TauCeti.IsFramedTube.tubeBallTrivialization`: a trivialization of `p` over the tube, read as a
+  product with the ball compatibly with the normal coordinate.
+* `TauCeti.IsFundamentalClass.singularHomologyComplPreimageCoreIso_hom_singularHomologyπ`: the
+  shriek map of the core sends fundamental classes to fundamental classes.
 
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, §7, Lemma 7.7.
+  Applications to cotangent bundles*, arXiv:2404.07953, §2.4 (Remark 2.10) and §7, Lemma 7.7.
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
   Chapter II.
 -/
@@ -311,5 +328,78 @@ theorem not_isOfFinAddOrder_singularHomologyComplPreimageCoreIso_of_subsingleton
 end Transverse
 
 end TopCat
+
+/-! ### Fundamental classes along the core -/
+
+namespace IsFramedTube
+
+variable {V : Type u} [NormedAddCommGroup V] {E B : _root_.TopCat.{u}} {p : E ⟶ B}
+  {S : Type*} [TopologicalSpace S] {f : S → B} {τ : S × V → B} (hτ : IsFramedTube f τ) {ε : ℝ}
+  {Y : Type*} [TopologicalSpace Y] (T : Bundle.Trivialization Y p) (hT : tubeBall τ ε ⊆ T.baseSet)
+
+/-- Over the part `τ(S × D)` of a framed tube over the ball `D` of radius `ε` about `0`, a
+trivialization of `p` over a base set containing `τ(S × D)` identifies the part of `E` over it with
+`D × (S × Y)`: a point goes to the normal coordinate of its image, the coordinate of its image along
+the core, and its fibre coordinate. -/
+def tubeBallTrivialization : p ⁻¹' tubeBall τ ε ≃ₜ ball (0 : V) ε × (S × Y) :=
+  (T.preimageHomeomorph hT).trans <|
+    (((hτ.tubeBallHomeomorph ε).symm.trans (.prodComm _ _)).prodCongr (.refl Y)).trans
+      (.prodAssoc _ _ _)
+
+/-- The first coordinate of `TauCeti.IsFramedTube.tubeBallTrivialization` is the restriction of `p`
+over the tube followed by the normal coordinate (`TauCeti.TopCat.normalCoordinateProj`). -/
+@[simp]
+lemma tubeBallTrivialization_apply_fst (z : p ⁻¹' tubeBall τ ε) :
+    (hτ.tubeBallTrivialization T hT z).1 =
+      TopCat.normalCoordinateProj p (_root_.TopCat.ofHom (hτ.normalCoordinate ε)) z := by
+  rw [TopCat.normalCoordinateProj_apply, _root_.TopCat.ofHom_apply]
+  conv_rhs => rw [← (hτ.tubeBallHomeomorph ε).apply_symm_apply ⟨p z, z.property⟩]
+  rw [normalCoordinate_tubeBallHomeomorph]
+  simp [tubeBallTrivialization, T.preimageHomeomorph_apply, Homeomorph.prodAssoc]
+
+/-- The second coordinate of `TauCeti.IsFramedTube.tubeBallTrivialization` is the coordinate along
+the core given by the tube, together with the fibre coordinate of `T`. -/
+@[simp]
+lemma tubeBallTrivialization_apply_snd (z : p ⁻¹' tubeBall τ ε) :
+    (hτ.tubeBallTrivialization T hT z).2 =
+      (((hτ.tubeBallHomeomorph ε).symm ⟨p z, z.property⟩).1, (T z.val).2) := by
+  simp [tubeBallTrivialization, T.preimageHomeomorph_apply, Homeomorph.prodAssoc]
+
+end IsFramedTube
+
+section FundamentalClass
+
+variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {E B : _root_.TopCat.{u}} {p : E ⟶ B} {S : Type u} [TopologicalSpace S] [T1Space S] {f : S → B}
+  {τ : S × V → B} (hτ : IsFramedTube f τ) (hfc : IsClosed (range f)) {R : Type u} [Ring R]
+  {ε : ℝ} (hε₀ : 0 < ε) (hp : TopCat.serreFibrations p) {Y : Type u} [TopologicalSpace Y]
+  [T1Space Y] (T : Bundle.Trivialization Y p) (hT : IsFramedTube.tubeBall τ ε ⊆ T.baseSet)
+
+include hT in
+/-- **The shriek map of a framed submanifold sends fundamental classes to fundamental classes.**
+Let `τ : S × V → B` be a framed tube around `f : S → B` with closed core `f(S)`, where `V` is a
+real normed space of finite dimension `r` and `S` is a `T₁` space, and let `p : E ⟶ B` be a Serre
+fibration, trivial over the part `τ(S × D)` of the tube over a ball `D` about `0`, with fibre a `T₁`
+space. If `μ ∈ Hₙ₊ᵣ(E; R)` is a fundamental class of `E`, then its image under the shriek map
+`j_! : Hₙ₊ᵣ(E) → Hₙ₊ᵣ(E, E ∖ p⁻¹(f(S))) ≅ Hₙ(p⁻¹(f(S)))` of the inclusion of the core
+(`TauCeti.TopCat.singularHomologyComplPreimageCoreIso`) is a fundamental class of `p⁻¹(f(S))`.
+For `p` the identity of a closed manifold `B`, trivial with a one-point fibre, this is the identity
+`j_![B] = [f(S)]` for a framed closed submanifold, and for a fibre bundle of closed manifolds the
+identity `j_![E] = [E|_{f(S)}]`, up to the orientation conventions which
+`TauCeti.IsFundamentalClass` leaves free. -/
+theorem IsFundamentalClass.singularHomologyComplPreimageCoreIso_hom_singularHomologyπ {n m : ℕ}
+    (h : n + finrank ℝ V = m)
+    {μ : ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) m : ModuleCat.{u} R)}
+    (hμ : IsFundamentalClass μ) :
+    IsFundamentalClass (M := p ⁻¹' range f)
+      ((TopCat.singularHomologyComplPreimageCoreIso hτ (ModuleCat.of R R) hfc hε₀ hp n m h).hom.hom
+        (((TopPair.ofSubset (p ⁻¹' range f)ᶜ).singularHomologyπ (ModuleCat.of R R) m).hom μ)) :=
+  IsFundamentalClass.singularHomologyComplPreimageIso_hom_singularHomologyπ
+    hτ.normalCoordinate_eq_zero_iff (hτ.isOpen_tubeBall ε) hfc (hτ.range_subset_tubeBall hε₀)
+    (hτ.tubeBallTrivialization T hT) (hτ.tubeBallTrivialization_apply_fst T hT) hp
+    (TopCat.mem_serreFibrations_normalCoordinate hτ ε) (convex_ball 0 ε) (ball_mem_nhds 0 hε₀) h
+    hμ
+
+end FundamentalClass
 
 end TauCeti

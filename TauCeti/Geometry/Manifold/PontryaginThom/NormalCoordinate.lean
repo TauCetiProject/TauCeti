@@ -28,6 +28,7 @@ submanifold used to compute the local homology of a fibration along the preimage
 ## Main definitions
 
 * `TauCeti.IsFramedTube.tubeBall`: the part `τ(S × D)` of the tube over a ball about `0`.
+* `TauCeti.IsFramedTube.tubeBallHomeomorph`: the homeomorphism `S × D ≃ₜ τ(S × D)`.
 * `TauCeti.IsFramedTube.normalCoordinate`: the normal coordinate `τ(S × D) → D`.
 -/
 
@@ -75,14 +76,15 @@ lemma range_subset_tubeBall (h : IsFramedTube f τ) {ε : ℝ} (hε₀ : 0 < ε)
   exact apply_mem_tubeBall x (mem_ball_self hε₀)
 
 /-- The framed tube `S × D ≃ₜ τ(S × D)` over the ball `D` of radius `ε` about `0`. -/
-private def tubeBallHomeomorph (h : IsFramedTube f τ) (ε : ℝ) :
+def tubeBallHomeomorph (h : IsFramedTube f τ) (ε : ℝ) :
     S × ball (0 : V) ε ≃ₜ tubeBall τ ε :=
   ((Homeomorph.Set.univ S).symm.prodCongr (.refl _)).trans <|
     (Homeomorph.Set.prod univ (ball (0 : V) ε)).symm.trans <|
       (Homeomorph.setCongr univ_prod).trans <|
         h.isOpenEmbedding.isEmbedding.homeomorphImage _
 
-private lemma coe_tubeBallHomeomorph_apply (h : IsFramedTube f τ) {ε : ℝ}
+@[simp]
+lemma coe_tubeBallHomeomorph_apply (h : IsFramedTube f τ) {ε : ℝ}
     (q : S × ball (0 : V) ε) : (h.tubeBallHomeomorph ε q : N) = τ (q.1, q.2) :=
   (rfl)
 
@@ -111,6 +113,12 @@ lemma normalCoordinate_eq_of_eq (h : IsFramedTube f τ) {ε : ℝ} {w : tubeBall
   obtain ⟨w, hwm⟩ := w
   subst hw
   exact h.normalCoordinate_apply x v hwm
+
+/-- The normal coordinate of the point `τ (x, v)` of `τ(S × D)` given by the framed tube is `v`. -/
+@[simp]
+lemma normalCoordinate_tubeBallHomeomorph (h : IsFramedTube f τ) {ε : ℝ}
+    (q : S × ball (0 : V) ε) : h.normalCoordinate ε (h.tubeBallHomeomorph ε q) = q.2 :=
+  Subtype.ext (h.normalCoordinate_eq_of_eq (h.coe_tubeBallHomeomorph_apply q))
 
 /-- Every point of the part of the tube over the ball is `τ (x, v)`, with `v` its normal
 coordinate. -/
