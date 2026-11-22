@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CubicDiscriminant
 public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.Determinant
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.FreeModule.Int
 import TauCeti.RingTheory.Adjoin.Polynomial.Basic
 
@@ -72,7 +73,9 @@ coordinates of `u` and `v` along `b 1` and `b 2`. -/
 theorem det_vecCons_one (hb : b 0 = 1) (u v : A) :
     b.det ![1, u, v] = b.repr u 1 * b.repr v 2 - b.repr u 2 * b.repr v 1 := by
   rw [det_apply, det_fin_three, ← hb]
-  simp [toMatrix_apply]
+  simp only [toMatrix_apply, cons_val_zero, cons_val_one, cons_val, repr_self,
+    Finsupp.single_eq_same, Finsupp.single_eq_of_ne, ne_eq, one_ne_zero, Fin.reduceEq,
+    not_false_eq_true, one_mul, mul_zero, zero_mul, add_zero, sub_zero]
   ring
 
 /-- Translating `u` by a scalar does not change the determinant of `1, u, u ^ 2` in any basis. -/
@@ -184,12 +187,9 @@ theorem indexForm_eq_of_sub_mem_range (hb : b 0 = 1) {b' : Basis (Fin 3) R A} (h
   obtain ⟨s, hs⟩ := h₂
   rw [eq_sub_iff_add_eq, add_comm] at hr hs
   -- `b'.det = b.det` since the change of basis is unitriangular
-  have hdet : b'.det = b.det := by
-    have h1 : b.det b' = 1 := by
-      rw [b.det_eq_of_apply_zero_eq_one hb hb', ← hr, ← hs]
-      simp [Algebra.algebraMap_eq_smul_one, ← hb]
-    rw [AlternatingMap.eq_smul_basis_det b b'.det, ← mul_one (b'.det b), ← h1, det_mul_det,
-      det_self, one_smul]
+  have hdet : b'.det = b.det := det_eq_det_of_det_eq_one <| by
+    rw [b.det_eq_of_apply_zero_eq_one hb hb', ← hr, ← hs]
+    simp [Algebra.algebraMap_eq_smul_one, ← hb]
   have h1 : b.repr 1 = Finsupp.single 0 1 := by rw [← hb, repr_self]
   ext
   all_goals simp only [indexForm_a, indexForm_b, indexForm_c, indexForm_d, hdet,
@@ -197,7 +197,8 @@ theorem indexForm_eq_of_sub_mem_range (hb : b 0 = 1) {b' : Basis (Fin 3) R A} (h
   all_goals simp only [Algebra.algebraMap_eq_smul_one, sq, add_mul, mul_add, smul_mul_assoc,
     mul_smul_comm, one_mul, mul_one, map_add, map_smul, Finsupp.add_apply, Finsupp.smul_apply,
     smul_eq_mul, h1, repr_self]
-  all_goals simp
+  all_goals simp only [Finsupp.single_eq_same, Finsupp.single_eq_of_ne, ne_eq, one_ne_zero,
+    Fin.reduceEq, not_false_eq_true, one_mul, mul_one, mul_zero, zero_mul, add_zero, sub_zero]
   all_goals ring
 
 /-- **The index of `ℤ[u]` is the value of the index form.** Let `b` be a `ℤ`-basis of a
@@ -222,7 +223,7 @@ theorem index_closure_eq_natAbs_indexForm (b : Basis (Fin 3) ℤ A) (hb : b 0 = 
       (LinearMap.range (b.constr ℤ ![1, u, u ^ 2])).toAddSubgroup := by
     refine SetLike.ext' ?_
     rw [Submodule.coe_toAddSubgroup, ← hspan, Subalgebra.coe_toSubmodule, Algebra.adjoin_int]
-    rfl
+    exact Set.ext fun _ ↦ mem_subalgebraOfSubring.symm
   have hmat : LinearMap.toMatrix b b (b.constr ℤ ![1, u, u ^ 2]) = b.toMatrix ![1, u, u ^ 2] := by
     ext
     rw [LinearMap.toMatrix_apply, toMatrix_apply, constr_basis]

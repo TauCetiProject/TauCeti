@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Field.Rat
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Determinant.Basic
 public import TauCeti.RingTheory.CubicRing.IndexForm
 
 /-!
@@ -89,19 +90,20 @@ example {A : Type*} [CommRing A] [Algebra ℚ A] (b b' : Basis (Fin 3) ℚ A) (h
   rw [b.det_eq_of_apply_zero_eq_one hb hb'] at hc
   simp only [h₁, h₂, map_smul, Basis.repr_self, Finsupp.smul_apply, smul_eq_mul] at hc
   simp only [Basis.indexForm_a, Basis.indexForm_b, Basis.indexForm_c, Basis.indexForm_d] at hc ⊢
-  simp at hc
+  simp only [Finsupp.single_eq_same, Finsupp.single_eq_of_ne, ne_eq, Fin.reduceEq,
+    not_false_eq_true, mul_one, mul_zero, sub_zero, add_zero, zero_add] at hc
   linear_combination hc / 4
 
 /-- Negating `b 1` and `b 2` negates the index form. -/
 example {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] (b b' : Basis (Fin 3) R A)
     (hb : b 0 = 1) (hb' : b' 0 = 1) (h₁ : b' 1 = -b 1) (h₂ : b' 2 = -b 2) :
     b'.indexForm = ⟨-b.indexForm.a, -b.indexForm.b, -b.indexForm.c, -b.indexForm.d⟩ := by
-  have hdet : b'.det = b.det := by
-    have hbb' : b.det b' = 1 := by
-      rw [b.det_eq_of_apply_zero_eq_one hb hb', h₁, h₂]
-      simp
-    rw [AlternatingMap.eq_smul_basis_det b b'.det, ← mul_one (b'.det b), ← hbb', Basis.det_mul_det,
-      Basis.det_self, one_smul]
-  ext <;> simp [hdet, b.det_vecCons_one hb, h₁, h₂, sq] <;> ring
+  have hdet : b'.det = b.det := Basis.det_eq_det_of_det_eq_one <| by
+    rw [b.det_eq_of_apply_zero_eq_one hb hb', h₁, h₂]
+    simp
+  ext <;> simp only [Basis.indexForm_a, Basis.indexForm_b, Basis.indexForm_c, Basis.indexForm_d,
+    hdet, b.det_vecCons_one hb, h₁, h₂, sq, mul_neg, neg_mul, neg_neg, map_neg, Basis.repr_self,
+    Finsupp.coe_neg, Pi.neg_apply, Finsupp.single_eq_same, Finsupp.single_eq_of_ne, ne_eq,
+    Fin.reduceEq, not_false_eq_true, neg_zero, zero_mul, one_mul, sub_zero] <;> ring
 
 end TauCeti.IndexFormChecks
