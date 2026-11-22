@@ -76,6 +76,13 @@ theorem isIdempotentElem_zigzagVertexIdempotent (i : V) :
     IsIdempotentElem (zigzagVertexIdempotent k G i) :=
   zigzagMk_vertexIdempotent_mul_self k G i
 
+/-- The vertex idempotent has degree zero. -/
+theorem zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero (i : V) :
+    zigzagVertexIdempotent k G i ∈ zigzagIntegerGrade k G 0 := by
+  -- Normalize the integer zero to the cast required by the extension-by-zero lemma.
+  rw [show (0 : ℤ) = (0 : ℕ) from rfl, zigzagIntegerGrade_ofNat]
+  exact zigzagMk_mem_zigzagGrade k G (PathAlgebra.vertexIdempotent_mem_grade_zero _)
+
 /-- The left projective of the zigzag relation quotient at `i`, namely the principal left ideal
 `Z e_i`. -/
 noncomputable def zigzagProjective (i : V) : Ideal (nonisolatedZigzagQuotient k G) :=
