@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
@@ -94,22 +94,20 @@ private theorem tendsto_average_mFourier_of_ne_zero (n : d → ℤ) (θ ν : d �
     Tendsto (fun T : ℝ ↦ T⁻¹ • ∫ t in 0..T, mFourier n (fun i ↦ ((θ i + ν i * t : ℝ) :
       UnitAddCircle))) atTop (𝓝 0) := by
   simp_rw [mFourier_coe_add_mul, intervalIntegral.integral_const_mul]
-  generalize ∑ i, (n i : ℝ) * ν i = c at hn ⊢
-  generalize Complex.exp (2 * π * Complex.I * ∑ i, (n i : ℂ) * θ i) = A
-  have ha : 2 * π * Complex.I * c ≠ 0 := by simp [Real.pi_ne_zero, hn]
-  have hnorm (x : ℝ) : ‖Complex.exp (2 * π * Complex.I * c * x)‖ = 1 := by
-    rw [Complex.norm_exp]
-    simp
-  refine squeeze_zero_norm' ?_ (zero_mul (‖A‖ * (2 / ‖2 * π * Complex.I * c‖)) ▸
-    tendsto_inv_atTop_zero.mul_const _)
-  filter_upwards [eventually_gt_atTop 0] with T hT
-  rw [integral_exp_mul_complex ha, norm_smul, norm_mul, norm_div,
-    Real.norm_of_nonneg (inv_nonneg.2 hT.le)]
-  gcongr
-  calc ‖Complex.exp (2 * π * Complex.I * c * T) - Complex.exp (2 * π * Complex.I * c * (0 : ℝ))‖
-      ≤ ‖Complex.exp (2 * π * Complex.I * c * T)‖ +
-        ‖Complex.exp (2 * π * Complex.I * c * (0 : ℝ))‖ := norm_sub_le _ _
-    _ = 2 := by rw [hnorm, hnorm]; norm_num
+  set c : ℝ := ∑ i, (n i : ℝ) * ν i
+  set A : ℂ := Complex.exp (2 * π * Complex.I * ∑ i, (n i : ℂ) * θ i)
+  have hfreq : 2 * Real.pi * c ≠ 0 := mul_ne_zero (mul_ne_zero two_ne_zero Real.pi_ne_zero) hn
+  have hlim : Tendsto (fun T : ℝ ↦
+      A * ((T⁻¹ : ℂ) * ∫ t in 0..T, Complex.exp (t * (2 * Real.pi * c : ℝ) * Complex.I)))
+      atTop (𝓝 0) := by
+    simpa only [hfreq, ↓reduceIte, mul_zero] using
+      (TauCeti.tendsto_inv_mul_intervalIntegral_cexp_mul_I (2 * Real.pi * c)).const_mul A
+  have hint : ∀ T : ℝ,
+      (∫ t in 0..T, Complex.exp (t * (2 * Real.pi * c : ℝ) * Complex.I)) =
+        ∫ t in 0..T, Complex.exp (2 * π * Complex.I * c * t) := fun T ↦
+    intervalIntegral.integral_congr fun t _ ↦ by congr 1; push_cast; ring
+  refine hlim.congr fun T ↦ ?_
+  rw [Complex.real_smul, Complex.ofReal_inv, mul_left_comm, hint T]
 
 /-- Weyl's theorem for the trigonometric polynomials, the span of the monomials `mFourier n`. -/
 private theorem tendsto_inv_smul_intervalIntegral_of_mem_span {ν : d → ℝ}

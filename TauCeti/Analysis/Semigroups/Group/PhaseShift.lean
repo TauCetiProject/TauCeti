@@ -49,35 +49,69 @@ public section
 
 noncomputable section
 
+open scoped NNReal
+
 namespace TauCeti.Semigroups.StronglyContinuousGroup
 
 section ComplexNormed
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
 
+private theorem phaseShift_comp_reflect_phaseShift (U : StronglyContinuousGroup X)
+    (hU : U.toSemigroup.IsComplexLinear) (b : ℝ) (t : ℝ≥0) :
+    (U.toSemigroup.phaseShift hU b t).comp
+      (U.reflect.toSemigroup.phaseShift (U.reflect_isComplexLinear hU) (-b) t) =
+      ContinuousLinearMap.id ℝ X := by
+  ext x
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+    StronglyContinuousSemigroup.phaseShift_apply_apply, toSemigroup_apply, reflect_apply]
+  rw [U.map_smul_of_isComplexLinear hU, U.map_apply_map_neg_apply, smul_smul, ← Complex.exp_add]
+  have hzero : -((b : ℂ) * (t : ℝ)) * Complex.I + -((-b : ℝ) * (t : ℝ) : ℂ) * Complex.I = 0 := by
+    push_cast; ring
+  rw [show -((b : ℂ) * (t : ℝ)) * Complex.I + -(((-b : ℝ) : ℂ) * (t : ℝ)) * Complex.I = 0 from
+    hzero, Complex.exp_zero, one_smul]
+
+private theorem reflect_phaseShift_comp_phaseShift (U : StronglyContinuousGroup X)
+    (hU : U.toSemigroup.IsComplexLinear) (b : ℝ) (t : ℝ≥0) :
+    (U.reflect.toSemigroup.phaseShift (U.reflect_isComplexLinear hU) (-b) t).comp
+      (U.toSemigroup.phaseShift hU b t) =
+      ContinuousLinearMap.id ℝ X := by
+  ext x
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+    StronglyContinuousSemigroup.phaseShift_apply_apply, toSemigroup_apply, reflect_apply]
+  rw [U.map_smul_of_isComplexLinear hU, U.map_neg_apply_map_apply, smul_smul, ← Complex.exp_add]
+  have hzero : -((-b : ℝ) * (t : ℝ) : ℂ) * Complex.I + -((b : ℂ) * (t : ℝ)) * Complex.I = 0 := by
+    push_cast; ring
+  rw [show -(((-b : ℝ) : ℂ) * (t : ℝ)) * Complex.I + -((b : ℂ) * (t : ℝ)) * Complex.I = 0 from
+    hzero, Complex.exp_zero, one_smul]
+
 /-- The phase shift of a complex-linear C₀-group by `b : ℝ`: the group
-`t ↦ exp (-i b t) • U t`. -/
+`t ↦ exp (-i b t) • U t`, obtained by gluing the forward phase shift by `b` and the reflected
+phase shift by `-b`. -/
 def phaseShift (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear) (b : ℝ) :
-    StronglyContinuousGroup X where
-  toFun t := Complex.exp (-(b * t * Complex.I)) • U t
-  map_zero' := by
-    simp
-  map_add' s t := by
-    ext x
-    simp only [ContinuousLinearMap.comp_apply, smul_apply]
-    rw [U.map_add_apply, U.map_smul_of_isComplexLinear hU, smul_smul, ← Complex.exp_add]
-    congr 2
-    push_cast
-    ring
-  continuousAt_zero' x := by
-    have h_phase : Continuous fun t : ℝ => Complex.exp (-(b * t * Complex.I)) := by fun_prop
-    exact (h_phase.smul (U.continuous_orbit x)).continuousAt
+    StronglyContinuousGroup X :=
+  (U.toSemigroup.phaseShift hU b).toGroupOfInverse
+    (U.reflect.toSemigroup.phaseShift (U.reflect_isComplexLinear hU) (-b))
+    (U.phaseShift_comp_reflect_phaseShift hU b)
+    (U.reflect_phaseShift_comp_phaseShift hU b)
 
 /-- The operator at time `t` of a phase-shifted C₀-group. -/
 @[simp]
 theorem phaseShift_apply (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear)
-    (b t : ℝ) : U.phaseShift hU b t = Complex.exp (-(b * t * Complex.I)) • U t :=
-  (rfl)
+    (b t : ℝ) : U.phaseShift hU b t = Complex.exp (-(b * t * Complex.I)) • U t := by
+  rcases le_or_gt 0 t with ht | ht
+  · rw [phaseShift, StronglyContinuousSemigroup.toGroupOfInverse_apply_of_nonneg _ _ _ _ ht,
+      StronglyContinuousSemigroup.phaseShift_realOperator_of_nonneg _ _ _ _ ht,
+      U.toSemigroup_realOperator_of_nonneg ht]
+    congr 2
+    ring
+  · have hneg : 0 ≤ -t := neg_nonneg.mpr ht.le
+    rw [phaseShift, StronglyContinuousSemigroup.toGroupOfInverse_apply_of_nonpos _ _ _ _ ht.le,
+      StronglyContinuousSemigroup.phaseShift_realOperator_of_nonneg _ _ _ _ hneg,
+      U.reflect_toSemigroup_realOperator_of_nonneg hneg, neg_neg]
+    congr 2
+    push_cast
+    ring
 
 /-- Pointwise form of `StronglyContinuousGroup.phaseShift_apply`. -/
 theorem phaseShift_apply_apply (U : StronglyContinuousGroup X)
@@ -89,12 +123,20 @@ theorem phaseShift_apply_apply (U : StronglyContinuousGroup X)
 @[simp]
 theorem phaseShift_toSemigroup (U : StronglyContinuousGroup X)
     (hU : U.toSemigroup.IsComplexLinear) (b : ℝ) :
-    (U.phaseShift hU b).toSemigroup = U.toSemigroup.phaseShift hU b := by
-  ext t x
-  simp only [toSemigroup_apply, phaseShift_apply_apply,
-    StronglyContinuousSemigroup.phaseShift_apply_apply]
-  congr 2
-  ring
+    (U.phaseShift hU b).toSemigroup = U.toSemigroup.phaseShift hU b :=
+  StronglyContinuousSemigroup.toGroupOfInverse_toSemigroup _ _ _ _
+
+private theorem phaseShift_reflect_toSemigroup (U : StronglyContinuousGroup X)
+    (hU : U.toSemigroup.IsComplexLinear) (b : ℝ) :
+    (U.phaseShift hU b).reflect.toSemigroup =
+      U.reflect.toSemigroup.phaseShift (U.reflect_isComplexLinear hU) (-b) :=
+  StronglyContinuousSemigroup.toGroupOfInverse_reflect_toSemigroup _ _ _ _
+
+private theorem semigroup_phaseShift_congr {S₁ S₂ : StronglyContinuousSemigroup X} (h : S₁ = S₂)
+    (h₁ : S₁.IsComplexLinear) (h₂ : S₂.IsComplexLinear) {b₁ b₂ : ℝ} (hb : b₁ = b₂) :
+    S₁.phaseShift h₁ b₁ = S₂.phaseShift h₂ b₂ := by
+  subst h hb
+  rfl
 
 /-- A phase shift of a complex-linear C₀-group has a complex-linear forward semigroup. -/
 theorem phaseShift_isComplexLinear (U : StronglyContinuousGroup X)
@@ -106,9 +148,12 @@ theorem phaseShift_isComplexLinear (U : StronglyContinuousGroup X)
 /-- The zero phase shift is the original C₀-group. -/
 @[simp]
 theorem phaseShift_zero (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear) :
-    U.phaseShift hU 0 = U := by
-  ext t x
-  simp
+    U.phaseShift hU 0 = U :=
+  ((U.phaseShift hU 0).eq_toGroupOfInverse
+    (by rw [phaseShift_toSemigroup, StronglyContinuousSemigroup.phaseShift_zero])
+    (by rw [phaseShift_reflect_toSemigroup, neg_zero,
+      StronglyContinuousSemigroup.phaseShift_zero])).trans
+    U.toGroupOfInverse_toSemigroup_reflect_toSemigroup
 
 /-- Successive phase shifts add their frequencies. -/
 @[simp]
@@ -116,23 +161,31 @@ theorem phaseShift_phaseShift (U : StronglyContinuousGroup X) (hU : U.toSemigrou
     (b c : ℝ) :
     (U.phaseShift hU b).phaseShift (U.phaseShift_isComplexLinear hU b) c =
       U.phaseShift hU (b + c) := by
-  ext t x
-  simp only [phaseShift_apply_apply]
-  rw [smul_smul, ← Complex.exp_add]
-  congr 2
-  push_cast
-  ring
+  refine (((U.phaseShift hU b).phaseShift (U.phaseShift_isComplexLinear hU b) c).eq_toGroupOfInverse
+    ?_ ?_).trans (U.phaseShift hU (b + c)).toGroupOfInverse_toSemigroup_reflect_toSemigroup
+  · conv_lhs => rw [phaseShift_toSemigroup]
+    conv_rhs => rw [phaseShift_toSemigroup]
+    exact (semigroup_phaseShift_congr (U.phaseShift_toSemigroup hU b) _ _ rfl).trans
+      (StronglyContinuousSemigroup.phaseShift_phaseShift U.toSemigroup hU b c)
+  · conv_lhs => rw [phaseShift_reflect_toSemigroup]
+    conv_rhs => rw [phaseShift_reflect_toSemigroup]
+    exact (semigroup_phaseShift_congr (U.phaseShift_reflect_toSemigroup hU b) _ _ rfl).trans
+      ((StronglyContinuousSemigroup.phaseShift_phaseShift U.reflect.toSemigroup
+        (U.reflect_isComplexLinear hU) (-b) (-c)).trans
+        (by rw [← neg_add]))
 
 /-- Time reversal commutes with phase shift by negating the frequency. -/
 @[simp]
 theorem phaseShift_reflect (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear)
     (b : ℝ) :
     (U.phaseShift hU b).reflect = U.reflect.phaseShift (U.reflect_isComplexLinear hU) (-b) := by
-  ext t x
-  simp only [reflect_apply, phaseShift_apply_apply]
-  congr 2
-  push_cast
-  ring
+  refine ((U.phaseShift hU b).reflect.eq_toGroupOfInverse ?_ ?_).trans
+    (U.reflect.phaseShift (U.reflect_isComplexLinear hU)
+      (-b)).toGroupOfInverse_toSemigroup_reflect_toSemigroup
+  · rw [phaseShift_reflect_toSemigroup, phaseShift_toSemigroup]
+  · rw [reflect_reflect, phaseShift_toSemigroup, phaseShift_reflect_toSemigroup]
+    exact semigroup_phaseShift_congr (congrArg toSemigroup U.reflect_reflect.symm) _ _
+      (neg_neg b).symm
 
 /-- A phase shift preserves pointwise norms. -/
 theorem norm_phaseShift_apply (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear)

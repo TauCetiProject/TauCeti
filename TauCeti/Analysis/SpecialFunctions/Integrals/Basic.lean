@@ -304,27 +304,31 @@ theorem norm_inv_mul_intervalIntegral_cexp_mul_I_le_one (u T : ℝ) :
 for any nonzero real frequency `u` and every `T : ℝ`. -/
 theorem norm_inv_mul_intervalIntegral_cexp_mul_I_le {u : ℝ} (hu : u ≠ 0) (T : ℝ) :
     ‖(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ 2 / (|u| * |T|) := by
-  by_cases hT : T = 0
-  · simp [hT]
   have hc : (u : ℂ) * Complex.I ≠ 0 := mul_ne_zero (Complex.ofReal_ne_zero.mpr hu) Complex.I_ne_zero
-  have hfun : (fun t : ℝ => Complex.exp (t * u * Complex.I)) =
-      fun t : ℝ => Complex.exp (((u : ℂ) * Complex.I) * t) := by
-    funext t; congr 1; ring
-  have hnum : ‖Complex.exp (((u : ℂ) * Complex.I) * T) - 1‖ ≤ 2 := by
-    have harg : ((u : ℂ) * Complex.I) * T = ((u * T : ℝ) : ℂ) * Complex.I := by push_cast; ring
+  have hint : ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I) =
+      (Complex.exp ((u : ℂ) * Complex.I * T) - 1) / ((u : ℂ) * Complex.I) := by
+    have hfun : (fun t : ℝ => Complex.exp (t * u * Complex.I)) =
+        fun t : ℝ => Complex.exp (((u : ℂ) * Complex.I) * t) := funext fun t => by congr 1; ring
+    rw [hfun, integral_exp_mul_complex hc, Complex.ofReal_zero, mul_zero, Complex.exp_zero]
+  have hnum : ‖Complex.exp ((u : ℂ) * Complex.I * T) - 1‖ ≤ 2 := by
+    have harg : (u : ℂ) * Complex.I * T = ((u * T : ℝ) : ℂ) * Complex.I := by push_cast; ring
     calc
-      ‖Complex.exp (((u : ℂ) * Complex.I) * T) - 1‖
-          ≤ ‖Complex.exp (((u : ℂ) * Complex.I) * T)‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
+      ‖Complex.exp ((u : ℂ) * Complex.I * T) - 1‖
+          ≤ ‖Complex.exp ((u : ℂ) * Complex.I * T)‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
       _ = 2 := by rw [harg, Complex.norm_exp_ofReal_mul_I, norm_one]; norm_num
-  rw [hfun, integral_exp_mul_complex hc, Complex.ofReal_zero, mul_zero, Complex.exp_zero,
-    norm_mul, norm_div, ← Complex.ofReal_inv, Complex.norm_real, Real.norm_eq_abs, abs_inv,
-    norm_mul, Complex.norm_real, Complex.norm_I, mul_one, Real.norm_eq_abs]
+  have hTnorm : ‖(T⁻¹ : ℂ)‖ = |T|⁻¹ := by
+    rw [← Complex.ofReal_inv, Complex.norm_real, Real.norm_eq_abs, abs_inv]
+  have hunorm : ‖(u : ℂ) * Complex.I‖ = |u| := by
+    rw [norm_mul, Complex.norm_real, Complex.norm_I, mul_one, Real.norm_eq_abs]
+  rw [hint, norm_mul, norm_div, hTnorm, hunorm]
   calc
-    |T|⁻¹ * (‖Complex.exp (((u : ℂ) * Complex.I) * T) - 1‖ / |u|)
+    |T|⁻¹ * (‖Complex.exp ((u : ℂ) * Complex.I * T) - 1‖ / |u|)
         ≤ |T|⁻¹ * (2 / |u|) :=
       mul_le_mul_of_nonneg_left
         (div_le_div_of_nonneg_right hnum (abs_nonneg _)) (inv_nonneg.mpr (abs_nonneg T))
-    _ = 2 / (|u| * |T|) := by ring
+    _ = 2 / (|u| * |T|) := by
+      rw [div_eq_mul_inv, div_eq_mul_inv, mul_inv]
+      ring
 
 open Filter in
 open scoped Topology in
