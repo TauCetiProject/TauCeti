@@ -138,7 +138,7 @@ theorem dense_separableClosure :
     (algebraMap K _).injective q
   have : ExpChar E q := expChar_of_injective_algebraMap (algebraMap K E).injective q
   obtain ⟨n, b, hb⟩ := IsPurelyInseparable.pow_mem E q a
-  have hbE : a ^ q ^ n ∈ E := hb ▸ b.2
+  have hbE : a ^ q ^ n ∈ E := hb ▸ b.property
   by_cases hN : q ^ n = 1
   · exact ⟨a, Metric.mem_ball_self hδ, by simpa [hN] using hbE⟩
   set N := q ^ n
@@ -195,7 +195,7 @@ theorem denseRange_separableClosure :
     DenseRange fun x : separableClosure K (SpectralAlgClosure K) ↦
       ((x : SpectralAlgClosure K) : CompletedAlgClosure K) :=
   UniformSpace.Completion.denseRange_coe.comp
-    (SpectralAlgClosure.dense_separableClosure K).denseRange_val
+    (SpectralAlgClosure.dense_separableClosure K).denseRange_subtypeVal
     (UniformSpace.Completion.continuous_coe _)
 
 end CompletedAlgClosure

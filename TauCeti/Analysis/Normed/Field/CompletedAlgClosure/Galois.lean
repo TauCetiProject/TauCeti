@@ -161,7 +161,7 @@ theorem exists_galoisExtension_eq (τ : CompletedAlgClosure K →A[K] CompletedA
     exact IsAlgClosed.splits _
   let ρ := (AlgEquiv.ofInjective ι hι).symm.toAlgHom.comp (φ.codRestrict ι.range hφ)
   have hρ (a : SpectralAlgClosure K) : ι (ρ a) = φ a :=
-    congr($((AlgEquiv.ofInjective ι hι).apply_symm_apply ⟨φ a, hφ a⟩).1)
+    congr($((AlgEquiv.ofInjective ι hι).apply_symm_apply ⟨φ a, hφ a⟩).val)
   refine ⟨AlgEquiv.ofBijective ρ (Algebra.IsAlgebraic.algHom_bijective ρ),
     eq_galoisExtension_of_continuous _ τ.continuous fun a ↦ (hρ a).symm⟩
 
