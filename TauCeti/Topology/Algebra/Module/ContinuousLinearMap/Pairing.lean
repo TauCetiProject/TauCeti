@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # Flips of continuous pairings
@@ -40,12 +41,29 @@ variable {𝕜₁ 𝕜₂ 𝕜₃ G₁ G₂ G₃ : Type*} [NontriviallyNormedFie
   [AddCommGroup G₃] [Module 𝕜₃ G₃] [TopologicalSpace G₃]
   [IsTopologicalAddGroup G₃] [ContinuousConstSMul 𝕜₃ G₃]
 
-omit [RingHomSurjective σ₂₃] [TopologicalSpace G₁] [IsTopologicalAddGroup G₂]
-  [ContinuousConstSMul 𝕜₂ G₂] in
-/-- Evaluation of the algebraic flip of `μ`, with its slices viewed as semilinear maps. -/
-private theorem flip_coeLMₛₗ_comp_apply (μ : G₁ →ₛₗ[σ₁₃] G₂ →SL[σ₂₃] G₃) (y : G₂) (x : G₁) :
-    ((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip y x = μ x y := by
-  rw [flip_apply, comp_apply, ContinuousLinearMap.coeLMₛₗ_apply, ContinuousLinearMap.coe_coe]
+omit [RingHomSurjective σ₂₃] in
+/-- The semilinear curried map underlying `pairingFlip`: the algebraic flip of `μ`, lifted along
+the injective coercion `ContinuousLinearMap.coeLMₛₗ σ₁₃` by `LinearMap.codLift`, since each slice
+`x ↦ μ x y` is continuous by joint continuity. -/
+private noncomputable def pairingFlipAux (μ : G₁ →ₛₗ[σ₁₃] G₂ →SL[σ₂₃] G₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) : G₂ →ₛₗ[σ₂₃] G₁ →SL[σ₁₃] G₃ :=
+  ((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip.codLift (ContinuousLinearMap.coeLMₛₗ σ₁₃)
+    (fun f g h ↦ ContinuousLinearMap.coe_injective <| by
+      rwa [ContinuousLinearMap.coeLMₛₗ_apply, ContinuousLinearMap.coeLMₛₗ_apply] at h)
+    fun y ↦ mem_range.2
+      ⟨ContinuousLinearMap.mk _ <|
+          (hμ.uncurry_right y).congr fun x ↦ (flip_coeLMₛₗ_comp_apply μ y x).symm, by
+        rw [ContinuousLinearMap.coeLMₛₗ_apply, ContinuousLinearMap.coe_mk]⟩
+
+omit [RingHomSurjective σ₂₃] [IsTopologicalAddGroup G₂] [ContinuousConstSMul 𝕜₂ G₂] in
+private theorem pairingFlipAux_apply (μ : G₁ →ₛₗ[σ₁₃] G₂ →SL[σ₂₃] G₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (y : G₂) (x : G₁) :
+    pairingFlipAux μ hμ y x = μ x y := by
+  have h : (ContinuousLinearMap.coeLMₛₗ σ₁₃).comp (pairingFlipAux μ hμ) =
+      ((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip :=
+    comp_codLift _ _ _ _
+  rw [← flip_coeLMₛₗ_comp_apply μ y x, ← h, comp_apply, ContinuousLinearMap.coeLMₛₗ_apply,
+    ContinuousLinearMap.coe_coe]
 
 /-- The flipped continuous pairing `y ↦ (x ↦ μ x y)` of a jointly continuous pairing `μ`.
 
@@ -56,28 +74,18 @@ with `hμ` supplied separately. Joint continuity makes the flipped curried map c
 topology of bounded convergence, by `ContinuousLinearMap.continuous_of_continuous_uncurry`. -/
 noncomputable def pairingFlip (μ : G₁ →ₛₗ[σ₁₃] G₂ →SL[σ₂₃] G₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) : G₂ →SL[σ₂₃] G₁ →SL[σ₁₃] G₃ :=
-  let μ' : G₂ →ₛₗ[σ₂₃] G₁ →SL[σ₁₃] G₃ :=
-    { toFun := fun y =>
-        ContinuousLinearMap.mk (((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip y) <|
-          (hμ.uncurry_right y).congr fun x ↦ (flip_coeLMₛₗ_comp_apply μ y x).symm
-      map_add' := fun y z => by
-        ext x
-        simp only [ContinuousLinearMap.coe_mk', map_add, LinearMap.add_apply, _root_.add_apply]
-      map_smul' := fun c y => by
-        ext x
-        simp only [ContinuousLinearMap.coe_mk', map_smulₛₗ, LinearMap.smul_apply,
-          _root_.smul_apply] }
-  ContinuousLinearMap.mk μ' <| ContinuousLinearMap.continuous_of_continuous_uncurry μ' <|
-    (hμ.comp continuous_swap).congr fun p ↦ by
-      simp only [Function.comp_apply, Function.uncurry_def, Prod.fst_swap, Prod.snd_swap, μ',
-        coe_mk, AddHom.coe_mk, ContinuousLinearMap.coe_mk', flip_coeLMₛₗ_comp_apply]
+  ContinuousLinearMap.mk (pairingFlipAux μ hμ) <|
+    ContinuousLinearMap.continuous_of_continuous_uncurry (pairingFlipAux μ hμ) <|
+      (hμ.comp continuous_swap).congr fun p ↦ by
+        simp only [Function.comp_apply, Function.uncurry_def, Prod.fst_swap, Prod.snd_swap,
+          pairingFlipAux_apply]
 
+/-- Evaluating the flipped pairing at `x` and then at `y` gives `μ y x`. -/
 @[simp]
 theorem pairingFlip_apply (μ : G₁ →ₛₗ[σ₁₃] G₂ →SL[σ₂₃] G₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (x : G₂) (y : G₁) :
     pairingFlip μ hμ x y = μ y x := by
-  simp only [pairingFlip, ContinuousLinearMap.coe_mk', coe_mk, AddHom.coe_mk,
-    flip_coeLMₛₗ_comp_apply]
+  simp only [pairingFlip, ContinuousLinearMap.coe_mk', pairingFlipAux_apply]
 
 /-- The flipped pairing is jointly continuous after exchanging the two arguments. -/
 theorem continuous_uncurry_pairingFlip (μ : G₁ →ₛₗ[σ₁₃] G₂ →SL[σ₂₃] G₃)

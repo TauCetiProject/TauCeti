@@ -5,19 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
-# Commuting squares of continuous linear maps
+# Continuous linear maps as linear maps
 
 A commutative square of continuous (semi)linear maps between topological modules is also a
 commutative square of the underlying (semi)linear maps. This lets results about commuting squares
 of linear maps, such as the module snake lemma, be applied to continuous linear maps.
 
+A semilinear family `μ : M₁ →ₛₗ[σ₁₃] M₂ →SL[σ₂₃] M₃` of continuous semilinear maps becomes a
+family of semilinear maps after composing with the coercion `ContinuousLinearMap.coeLMₛₗ`, and
+then Mathlib's algebraic flip `LinearMap.flip` applies to it.
+
 ## Main results
 
 * `ContinuousLinearMap.toLinearMap_comp_eq`: a commutative square of continuous semilinear maps
   commutes after coercion to semilinear maps.
+* `LinearMap.flip_coeLMₛₗ_comp_apply`: evaluation of the algebraic flip of such a family `μ`,
+  `((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip y x = μ x y`.
 -/
 
 public section
@@ -42,3 +49,21 @@ theorem toLinearMap_comp_eq {f : M₁ →SL[σ₁₂] M₂} {g : M₃ →SL[σ�
   rw [← toLinearMap_comp, h, toLinearMap_comp]
 
 end ContinuousLinearMap
+
+namespace LinearMap
+
+variable {R₁ R₂ R₃ : Type*} [Semiring R₁] [Semiring R₂] [Semiring R₃]
+  {σ₁₃ : R₁ →+* R₃} {σ₂₃ : R₂ →+* R₃} {M₁ M₂ M₃ : Type*}
+  [AddCommMonoid M₁] [Module R₁ M₁]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R₂ M₂]
+  [TopologicalSpace M₃] [AddCommMonoid M₃] [Module R₃ M₃] [ContinuousAdd M₃]
+  [ContinuousConstSMul R₃ M₃] [SMulCommClass R₃ R₃ M₃]
+
+/-- Evaluation of the algebraic flip of a semilinear family `μ` of continuous semilinear maps,
+with each `μ x` viewed as a semilinear map through `ContinuousLinearMap.coeLMₛₗ`: it sends `y`
+and then `x` to `μ x y`. -/
+theorem flip_coeLMₛₗ_comp_apply (μ : M₁ →ₛₗ[σ₁₃] M₂ →SL[σ₂₃] M₃) (y : M₂) (x : M₁) :
+    ((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip y x = μ x y := by
+  rw [flip_apply, comp_apply, ContinuousLinearMap.coeLMₛₗ_apply, ContinuousLinearMap.coe_coe]
+
+end LinearMap
