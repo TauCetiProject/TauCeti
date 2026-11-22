@@ -320,13 +320,12 @@ theorem coordinateCompletedEnvelopingAut_homothety_tsum_normalOrderedSummand
           (normalOrderedSummand Φ hΦ hΦs a p n m x y)) =
       (u : K) ^ n • ∑' m, toCompletedEnveloping Φ hΦ hΦs a
         (normalOrderedSummand Φ hΦ hΦs a p n m x y) := by
-  refine ((summable_normalOrderedSummand Φ hΦ hΦs a p n x y).hasSum.map
+  rw [(summable_normalOrderedSummand Φ hΦ hΦs a p n x y).map_tsum
     (coordinateCompletedEnvelopingAut Φ hΦ hΦs a (FormalCoordinate.homothety u).substAlgEquiv)
-    (continuous_coordinateCompletedEnvelopingAut _)).unique ?_
-  convert (summable_normalOrderedSummand Φ hΦ hΦs a p n x y).hasSum.const_smul
-    ((u : K) ^ n) using 1
-  ext m
-  dsimp only [Function.comp_def]
+    (continuous_coordinateCompletedEnvelopingAut _),
+    ← (summable_normalOrderedSummand Φ hΦ hΦs a p n x y).tsum_const_smul ((u : K) ^ n)]
+  apply tsum_congr
+  intro m
   rw [coe_toCompletedEnveloping, coordinateCompletedEnvelopingAut_toLimQuotients,
     ← coe_toCompletedEnveloping, coordinateEnvelopingAut_homothety_normalOrderedSummand,
     map_smul]

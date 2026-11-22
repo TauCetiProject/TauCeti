@@ -23,6 +23,7 @@ public section
 /-- Scaling the coefficient of a Hahn monomial scales the whole monomial.
 This generalizes the `map_smul'` law of Mathlib's `HahnSeries.single.linearMap`, using
 `HahnSeries.map_single` for the zero-preserving coefficient action. -/
+@[simp ←]
 theorem TauCeti.hahnSeries_single_smul {Γ R V : Type*} [PartialOrder Γ] [Zero V]
     [SMulZeroClass R V] (a : Γ) (r : R) (v : V) :
     HahnSeries.single a (r • v) = r • HahnSeries.single a v := by
