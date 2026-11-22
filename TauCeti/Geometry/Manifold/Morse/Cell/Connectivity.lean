@@ -458,11 +458,9 @@ end SublevelHomology
 section PairConnectivity
 
 variable {E H : Type*} {M X : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
-  [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [TopologicalSpace X] [T2Space X]
-  {j : M → X} {F : X → ℝ} {A W : Set X} {n : ℕ}
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [T2Space X] in
+variable [IsManifold I ∞ M] [TopologicalSpace X] {j : M → X} {F : X → ℝ} {A W : Set X} in
 /-- Choose a regular value `0 < a < δ` of `F ∘ j` and an upper bound `b > F` so `{F ≤ a} ⊆ W` and
 `{F ≤ b} = univ`. -/
 private theorem IsMorse.exists_sandwich_levels (hj : IsOpenEmbedding j)
@@ -490,6 +488,9 @@ private theorem IsMorse.exists_sandwich_levels (hj : IsOpenEmbedding j)
     ha_reg, isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨p, _, hp⟩ ↦ (hFb (j p)).ne hp,
     hcompact a b ha_pos hab⟩
 
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
+  [TopologicalSpace X] [T2Space X] {j : M → X} {F : X → ℝ} {A W : Set X} {n : ℕ}
+
 /-- **Path connectivity of `(X, A)` from a high-index Morse function on the open manifold part.**
 If `0 < n`, every critical point of `F ∘ j` has index at least `n`, and `A ↪ W` is a weak homotopy
 equivalence on a set `W` containing a positive sublevel `{F ≤ δ}`, then every point of `X` is
@@ -507,7 +508,7 @@ theorem IsMorse.exists_joined_of_isOpenEmbedding (hj : IsOpenEmbedding j) (hF : 
     ha_reg hb_reg (fun p hp ↦ hindex p hp.1) hn ⟨x, (hFb x).le⟩
   rw [sublevelInclusion_eq_inclusion] at hy
   obtain ⟨a₀, ha₀⟩ := hW.exists_joined (ContinuousMap.inclusion haW y)
-  exact ⟨a₀, (ha₀.map continuous_subtype_val).trans (hy.map continuous_subtype_val)⟩
+  exact ⟨a₀, (ha₀.map continuous_subtypeVal).trans (hy.map continuous_subtypeVal)⟩
 
 /-- **Surjectivity of `π_k(A, a₀) → π_k(X, a₀)` for `k < n` on a compactified pair.** -/
 theorem IsMorse.surjective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding

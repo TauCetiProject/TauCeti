@@ -74,7 +74,7 @@ private lemma free_sectionsMulSemiringAction
     ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun x : Γ(A.X, U.toOpens) ↦ g • x - x) = ⊤ := by
   let := sectionsMulSemiringAction ρ U.toOpens
   intro g hg
-  simpa only [sectionsMulSemiringAction_smul] using hG ⟨U.1, U.2⟩ g hg
+  simpa only [sectionsMulSemiringAction_smul] using hG ⟨U.val, U.property⟩ g hg
 
 variable
     (hG : ∀ (U : X.affineOpens) (g : G), g ≠ 1 →

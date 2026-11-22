@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+public import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # Gradings of homogeneous submodules and of their quotients
@@ -30,7 +31,7 @@ The submodule may be over a larger semiring `S` than the semiring `R` of the gra
 for rings, the quotient by it then inherit gradings by `R`-submodules through scalar restriction.
 
 The kernel of a homogeneous linear map is homogeneous
-(`TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker`), so it inherits a grading in the same way.
+(`LinearMap.IsHomogeneous.isHomogeneous_ker`), so it inherits a grading in the same way.
 The map may be linear over a larger ring `S` than the ring `R` of the grading, as for a
 differential over a polynomial ring whose variables move the degree; the kernel is then an
 `S`-module graded by `R`-submodules.
@@ -103,7 +104,7 @@ noncomputable def submodule : InternalGrading R U ι where
   piece p := (G.piece p).comap (U.subtype.restrictScalars R)
   isInternal := DirectSum.isInternal_comap G.piece _ (U.subtype.restrictScalars R)
     Subtype.val_injective
-    (fun _ _ ↦ Iff.rfl) fun p x ↦ ⟨⟨_, hU p x.2⟩, rfl⟩
+    (fun _ _ ↦ Iff.rfl) fun p x ↦ ⟨⟨_, hU p x.property⟩, rfl⟩
 
 @[simp]
 theorem submodule_piece (p : ι) :

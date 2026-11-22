@@ -152,6 +152,15 @@ noncomputable def smoothTensorInducedChangeTransversalIso
     (DiscreteRep.tensorInducedChangeTransversalIso U hU s t
       ((ofSmoothDiscrete R U).obj A))
 
+/-- `smoothTensorInducedChangeTransversalIso` is `(toSmoothDiscrete R G).mapIso` of
+`DiscreteRep.tensorInducedChangeTransversalIso`. -/
+theorem smoothTensorInducedChangeTransversalIso_def
+    (A : SmoothDiscreteTopRep.{u, v, w} R U) :
+    smoothTensorInducedChangeTransversalIso U hU s t A =
+      (toSmoothDiscrete R G).mapIso
+        (DiscreteRep.tensorInducedChangeTransversalIso U hU s t
+          ((ofSmoothDiscrete R U).obj A)) := (rfl)
+
 /-- On a pure tensor, the smooth comparison applies the difference of the two transversal
 representatives in every coset coordinate. -/
 @[simp]

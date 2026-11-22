@@ -106,7 +106,7 @@ theorem subsingleton_tateCohomology_negOne_ofMulAction_of_isSMulRegular
     (hR : IsSMulRegular R (Fintype.card G)) :
     Subsingleton (tateCohomology (Rep.ofMulAction R G X) (-1)) :=
   subsingleton_of_forall_eq 0 fun x ↦ HNegOne_induction_on x fun y ↦
-    (HNegOneπ_eq_zero_iff y).2 (ker_norm_ofMulAction_le_coinvariantsKer hR y.2)
+    (HNegOneπ_eq_zero_iff y).2 (ker_norm_ofMulAction_le_coinvariantsKer hR y.property)
 
 /-- Degree `-1` Tate cohomology of a permutation module vanishes over a coefficient ring without
 additive torsion. -/

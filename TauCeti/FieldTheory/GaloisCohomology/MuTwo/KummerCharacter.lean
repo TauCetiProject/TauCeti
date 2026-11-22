@@ -212,7 +212,7 @@ theorem apply_eq_or_eq_neg_of_sq_eq_galoisSubgroup (σ : L →ₐ[K] SeparableCl
     (γ : AbsoluteGaloisGroup K) r = r ∨ (γ : AbsoluteGaloisGroup K) r = -r :=
   sq_eq_sq_iff_eq_or_eq_neg.1 <| by
     rw [← map_pow, hr]
-    exact (mem_galoisSubgroup_iff K L σ).1 γ.2 a
+    exact (mem_galoisSubgroup_iff K L σ).1 γ.property a
 
 /-- An element of `G_L = galoisSubgroup K L σ` acts on the Kummer coordinate `σ(y) r` through the
 sign of `r`, for a square root `r` of `σ a`. -/
@@ -261,7 +261,7 @@ theorem toAdd_galoisKummerCharacter (σ : L →ₐ[K] SeparableClosure K) (a : L
 theorem continuous_galoisKummerCharacter (σ : L →ₐ[K] SeparableClosure K) (a : Lˣ)
     (r : SeparableClosure K) (hr : r ^ 2 = σ (a : L)) :
     Continuous (galoisKummerCharacter σ a r hr) :=
-  continuous_ofAdd.comp ((continuous_rootSign r).comp continuous_subtype_val)
+  continuous_ofAdd.comp ((continuous_rootSign r).comp continuous_subtypeVal)
 
 /-- **The Kummer class of `a ∈ Lˣ`, carried to `galoisSubgroup K L σ`, is the class of its Kummer
 character**: for a square root `r` of `σ a`, the transported class is represented by the character

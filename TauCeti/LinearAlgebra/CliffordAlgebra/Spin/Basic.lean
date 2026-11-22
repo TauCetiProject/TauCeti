@@ -42,7 +42,7 @@ theorem mem_spinGroup_toUnits_range_iff (u : (CliffordAlgebra Q)ˣ) :
     u ∈ (spinGroup.toUnits (Q := Q)).range ↔ (u : CliffordAlgebra Q) ∈ spinGroup Q := by
   constructor
   · rintro ⟨s, rfl⟩
-    exact s.2
+    exact s.property
   · intro hu
     refine ⟨⟨(u : CliffordAlgebra Q), hu⟩, ?_⟩
     apply Units.ext
@@ -98,14 +98,14 @@ theorem exists_even_length_list_of_spinGroup [Invertible (2 : R)] (x : spinGroup
     ∃ l : List M, (∀ v ∈ l, IsUnit (Q v)) ∧ Even l.length ∧
       (x : CliffordAlgebra Q) = (l.map (ι Q)).prod := by
   obtain ⟨l, hl, hx⟩ := mem_lipschitzGroup_iff_exists_list.mp
-    (spinGroup.units_mem_lipschitzGroup (x := spinGroup.toUnits x) x.2)
+    (spinGroup.units_mem_lipschitzGroup (x := spinGroup.toUnits x) x.property)
   rw [spinGroup.val_toUnits_apply] at hx
   by_cases heven : Even l.length
   · exact ⟨l, hl, heven, hx⟩
   -- An odd product of vectors is negated by the grade involution, while the even element `x` is
   -- fixed by it. So the unit `x` vanishes, the Clifford algebra is trivial, and `[]` works.
   have hinv := involute_prod_map_ι (Q := Q) l
-  rw [← hx, spinGroup.involute_eq x.2, (Nat.not_even_iff_odd.mp heven).neg_one_pow,
+  rw [← hx, spinGroup.involute_eq x.property, (Nat.not_even_iff_odd.mp heven).neg_one_pow,
     neg_one_smul] at hinv
   have hzero : (x : CliffordAlgebra Q) = 0 := by
     have h2 : (2 : R) • (x : CliffordAlgebra Q) = 0 := by
@@ -123,7 +123,7 @@ containing it is (`lipschitzGroup_eq_bot`). -/
 instance instSubsingletonSpinGroup [Subsingleton M] : Subsingleton (spinGroup Q) := by
   refine ⟨fun x y => Subtype.ext ?_⟩
   have h (z : spinGroup Q) : (z : CliffordAlgebra Q) = 1 := by
-    obtain ⟨w, hw, hwz⟩ := pinGroup.mem_lipschitzGroup (spinGroup.mem_pin z.2)
+    obtain ⟨w, hw, hwz⟩ := pinGroup.mem_lipschitzGroup (spinGroup.mem_pin z.property)
     rw [SetLike.mem_coe, Subgroup.mem_toSubmonoid, lipschitzGroup_eq_bot, Subgroup.mem_bot] at hw
     simp [← hwz, hw]
   rw [h x, h y]

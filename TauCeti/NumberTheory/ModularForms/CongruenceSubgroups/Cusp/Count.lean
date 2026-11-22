@@ -255,7 +255,7 @@ theorem card_cuspOrbit_Gamma0 :
   rw [Nat.card_congr (gamma0CuspOrbitEquiv N), Nat.card_sigma, ← Finset.sum_coe_sort N.divisors]
   refine Finset.sum_congr rfl fun g _ ↦ ?_
   have : NeZero (Nat.gcd g (N / g)) :=
-    ⟨Nat.gcd_ne_zero_left (Nat.ne_of_gt (Nat.pos_of_mem_divisors g.2))⟩
+    ⟨Nat.gcd_ne_zero_left (Nat.ne_of_gt (Nat.pos_of_mem_divisors g.property))⟩
   rw [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
 
 /-- `Γ₀(p)` has two cusps for a prime `p`. -/

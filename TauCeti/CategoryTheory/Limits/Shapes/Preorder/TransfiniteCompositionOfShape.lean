@@ -92,7 +92,7 @@ noncomputable def stagesUnder : J ⥤ Under X where
 `Under X` creates the connected colimits indexed by `Set.Iio j`. -/
 instance : h.stagesUnder.IsWellOrderContinuous where
   nonempty_isColimit j hj := by
-    obtain ⟨k, hk⟩ := not_isMin_iff.1 hj.1
+    obtain ⟨k, hk⟩ := not_isMin_iff.1 hj.not_isMin
     have : Nonempty (Set.Iio j) := ⟨⟨k, hk⟩⟩
     exact ⟨isColimitOfReflects (Under.forget X) (h.F.isColimitOfIsWellOrderContinuous j hj)⟩
 
