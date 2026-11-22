@@ -50,7 +50,8 @@ at most one-dimensional over `R ⧸ 𝔪` because `J(R)` is a radical ideal.
   length.
 * `TauCeti.IsInjectiveEnvelope.isFiniteLength_quotient_jacobson` and
   `TauCeti.exists_isInjectiveEnvelope_quotient_jacobson`: over a commutative Artinian ring, every
-  injective hull of `R ⧸ J(R)` has finite length, and one exists in the universe of `R`.
+  injective hull of `R ⧸ J(R)` has finite length, and one exists in any universe in which `R`
+  is small.
 
 ## References
 

@@ -267,9 +267,7 @@ open MatlisDual
 
 /-- **Duals of `add M` and projectivization**: if an object `X` of `add M` has as underlying module
 the dual `D_R A` of the right regular module, then the dual `D_R M` is a projective right module
-over `Γ = Module.End A M`. By projectivization `Hom_A(M, X)` is a projective right `Γ`-module, and
-the Hom-tensor adjunction `TauCeti.MatlisDual.equivLinearMapDualRegular` identifies it with
-`D_R M`. -/
+over `Γ = Module.End A M`. -/
 theorem _root_.FGModuleCat.projective_end_op_matlisDual_of_additiveClosure {R : Type*} [CommRing R]
     {E : Type*} [AddCommGroup E] [Module R E] {A : Type*} [Ring A] [Algebra R A]
     {M X : FGModuleCat.{w} A} [Module R M.obj] [IsScalarTower R A M.obj]
