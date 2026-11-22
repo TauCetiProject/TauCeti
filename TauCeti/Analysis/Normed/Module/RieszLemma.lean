@@ -13,13 +13,16 @@ public import Mathlib.Analysis.Normed.Module.RieszLemma
 Mathlib's `riesz_lemma_of_norm_lt` finds, outside a proper closed subspace `F` of a normed space,
 a vector of controlled norm at distance at least `1` from `F`. This file records the relative
 form, for seminormed spaces: when `F` is a proper subspace of a subspace `G` and is closed in `G`,
-the vector can be chosen in `G`. This is the form used to build separated sequences along strictly
-decreasing chains of closed subspaces, as in the Riesz theory of compact operators.
+and `c` is a scalar with `1 < ‖c‖ < R`, the vector can be chosen in `G` with norm at most `R`.
+This is the form used to build separated sequences along strictly decreasing chains of closed
+subspaces, as in the Riesz theory of compact operators.
 
 It also records the translated form `TauCeti.riesz_lemma_translate`: in a seminormed group, for
 any `r < 1`, a prescribed vector `x` can be moved by an element of a closed additive submonoid `F`
 to a vector `x - y` with `r * ‖x - y‖ ≤ ‖x - y - z‖` for every `z ∈ F`. Unlike `riesz_lemma`, this
-keeps track of the coset `x + F`, which is what an approximate Gram–Schmidt process needs.
+keeps track of the prescribed vector: the witness `x - y` lies in `x - F`, which is the coset
+`x + F` when `F` is an additive subgroup, such as a submodule. This is what an approximate
+Gram–Schmidt process needs.
 -/
 
 public section

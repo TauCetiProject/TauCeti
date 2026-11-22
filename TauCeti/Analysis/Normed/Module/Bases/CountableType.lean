@@ -108,7 +108,9 @@ theorem exists_isTOrthogonalFamily_span_image_Iio_eq (w : ℕ → E) {t : ℝ≥
   have hr (n : ℕ) : ((T (n + 1) / T n : ℝ≥0) : ℝ) < 1 := by
     exact_mod_cast (div_lt_one (hT' n).1).2 (hT n.lt_succ_self)
   choose y hyF hy using fun n ↦
-    riesz_lemma_translate (F := (span K (w '' Iio n)).toAddSubmonoid) (hF n) (w n) (hr n)
+    riesz_lemma_translate (F := (span K (w '' Iio n)).toAddSubmonoid)
+      (by simpa only [Submodule.coe_toAddSubmonoid] using hF n) (w n) (hr n)
+  simp only [Submodule.mem_toAddSubmonoid] at hyF hy
   set e : ℕ → E := fun n ↦ w n - y n
   have hspan (n : ℕ) : span K (e '' Iio n) = span K (w '' Iio n) := by
     induction n with
