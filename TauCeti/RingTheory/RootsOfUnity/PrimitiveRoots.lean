@@ -49,6 +49,10 @@ primitive root of unity of order `orderOf g` as soon as `μ ^ l = 1` forces `g ^
 For a primitive `n`-th root of unity `ζ` with `0 < n`, factoring `1 - X ^ n` via the powers of `ζ`
 gives the reciprocal cyclotomic factorization `∏ i < n, (1 - ζ ^ i X) = 1 - X ^ n` and its
 evaluated scalar form.
+Applied to the primitive `n`-th root `ζ ^ m`, where `ζ` is a primitive `m * n`-th root of unity,
+it factors `1 - ζ ^ (b * n)` into the `n` differences `1 - ζ ^ (b + j * m)`. For `ζ` of order
+`p ^ a`, `n = p ^ r` with `r < a` and `b` prime to `p`, this writes a difference whose exponent is
+divisible by `p ^ r` as a product of differences with exponents prime to `p`.
 
 ## Main results
 
@@ -87,6 +91,8 @@ evaluated scalar form.
   with `0 < n`, `∏ i ∈ range n, (1 - C (ζ ^ i) * X) = 1 - X ^ n` in `R[X]`.
 * `IsPrimitiveRoot.prod_one_sub_pow_mul`: the evaluated form
   `∏ i ∈ range n, (1 - ζ ^ i * z) = 1 - z ^ n`.
+* `IsPrimitiveRoot.prod_one_sub_pow_add_mul`: for a primitive `m * n`-th root of unity `ζ`,
+  `1 - ζ ^ (b * n)` is the product of the differences `1 - ζ ^ (b + j * m)` over `j < n`.
 
 ## References
 
@@ -307,5 +313,17 @@ theorem _root_.IsPrimitiveRoot.prod_one_sub_pow_mul {n : ℕ} {ζ : R} (hζ : Is
     (hn : 0 < n) (z : R) : ∏ i ∈ Finset.range n, (1 - ζ ^ i * z) = 1 - z ^ n := by
   have h := congrArg (Polynomial.eval z) (hζ.prod_one_sub_pow_mul_X hn)
   simpa [Polynomial.eval_prod] using h
+
+/-- **Factorization of `1 - ζ ^ (b * n)` into differences.** If `ζ` is a primitive `m * n`-th root
+of unity in an integral domain `R` with `0 < m` and `0 < n`, then `1 - ζ ^ (b * n)` is the product
+of the differences `1 - ζ ^ (b + j * m)` over `j < n`. -/
+theorem _root_.IsPrimitiveRoot.prod_one_sub_pow_add_mul {m n : ℕ} {ζ : R}
+    (hζ : IsPrimitiveRoot ζ (m * n)) (hm : 0 < m) (hn : 0 < n) (b : ℕ) :
+    ∏ j ∈ Finset.range n, (1 - ζ ^ (b + j * m)) = 1 - ζ ^ (b * n) := by
+  have h := (hζ.pow (Nat.mul_pos hm hn) rfl).prod_one_sub_pow_mul hn (ζ ^ b)
+  rw [← pow_mul] at h
+  rw [← h]
+  refine Finset.prod_congr rfl fun j _ ↦ ?_
+  rw [← pow_mul, ← pow_add, add_comm, mul_comm m j]
 
 end TauCeti

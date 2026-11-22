@@ -30,6 +30,9 @@ For an imaginary quadratic field `K⁺ = ℚ`, which is how a real algebraic int
 extension of an imaginary quadratic field acquires a minimal polynomial with rational integer
 coefficients in the class number one problem.
 
+In any number field, a root of unity in the maximal real subfield has absolute value `1` and is
+real under a complex embedding, so it is `±1`.
+
 ## Main results
 
 * `NumberField.IsCMField.mem_maximalRealSubfield_iff_star_eq`: one complex embedding suffices to
@@ -44,6 +47,8 @@ coefficients in the class number one problem.
   element of `K` comes from `F` exactly when its image under a given complex embedding is real.
 * `NumberField.CMExtension.minpoly_eq_map_minpoly_of_star_eq`: for a CM extension `K / F` inside
   `ℂ`, the minimal polynomial over `K` of a real complex number is its minimal polynomial over `F`.
+* `NumberField.eq_one_or_eq_neg_one_of_pow_eq_one_of_mem_maximalRealSubfield`: in any number
+  field, the roots of unity in the maximal real subfield are `±1`.
 
 ## References
 
@@ -145,3 +150,23 @@ theorem minpoly_eq_map_minpoly_of_star_eq [Algebra F ℂ] [Algebra K ℂ] [IsSca
       minpoly.eq_zero fun h ↦ hint (isIntegral_trans (R := F) x h)]
 
 end NumberField.CMExtension
+
+namespace NumberField
+
+/-- **The real roots of unity are `±1`.** In a number field `K`, a root of unity lying in the
+maximal real subfield is `1` or `-1`: under a complex embedding it has absolute value `1` and is
+real. -/
+theorem eq_one_or_eq_neg_one_of_pow_eq_one_of_mem_maximalRealSubfield {K : Type*} [Field K]
+    [NumberField K] {x : K} {n : ℕ} (hn : n ≠ 0) (hx : x ^ n = 1)
+    (hreal : x ∈ maximalRealSubfield K) : x = 1 ∨ x = -1 := by
+  let φ : K →+* ℂ := Classical.choice inferInstance
+  have hφ : φ x ^ n = 1 := by rw [← map_pow, hx, map_one]
+  have hinv : (φ x)⁻¹ = φ x := by
+    rw [Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hφ hn), ← Complex.star_def,
+      (mem_maximalRealSubfield_iff x).1 hreal φ]
+  refine mul_self_eq_one_iff.1 (φ.injective ?_)
+  rw [map_mul, map_one]
+  nth_rw 1 [← hinv]
+  exact inv_mul_cancel₀ fun h ↦ zero_ne_one (by rwa [h, zero_pow hn] at hφ)
+
+end NumberField

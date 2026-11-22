@@ -13,12 +13,13 @@ import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 /-!
 # The element `ζ - 1` up to units
 
-Let `p` be a prime and `ζ` a primitive `p`-th root of unity in a domain `A`. Evaluating the
-cyclotomic polynomial `Φ_p = ∏ (X - η)`, the product over the primitive `p`-th roots `η`, at `1`
-gives `p = ∏ (1 - η)`, and each `1 - η` is associated to `ζ - 1`. Hence `p` is associated to
-`(ζ - 1) ^ (p - 1)`. In particular every valuation of `A` takes the value `v(ζ - 1) ^ (p - 1)`
-at `p`, which is how the valuation normalised by `v(p) = 1` is read off from one normalised by
-`v(ζ - 1) = 1`.
+Let `p` be a prime and `ζ` a primitive `p ^ (k + 1)`-th root of unity in a domain `A`.
+Evaluating the cyclotomic polynomial `Φ_{p ^ (k + 1)} = ∏ (X - η)`, the product over the primitive
+`p ^ (k + 1)`-th roots `η`, at `1` gives `p = ∏ (1 - η)`, and each `1 - η` is associated to
+`ζ - 1`. Hence `p` is associated to `(ζ - 1) ^ φ(p ^ (k + 1))`, and `ζ - 1` is a unit exactly
+when `p` is. When `ζ` has order `p` the exponent is `p - 1`, and every valuation of `A` takes the
+value `v(ζ - 1) ^ (p - 1)` at `p`, which is how the valuation normalised by `v(p) = 1` is read off
+from one normalised by `v(ζ - 1) = 1`.
 
 Mathlib proves this statement for the ring of integers of a `p`-th cyclotomic field
 (`IsCyclotomicExtension.Rat.associated_zeta_sub_one_pow_prime`); the proof here is the same, in an
@@ -32,6 +33,10 @@ Invertibility of `n` is needed: `1 - (-1) = 2` is not a unit of `ℤ_[2]`.
 
 ## Main results
 
+* `IsPrimitiveRoot.associated_sub_one_pow_totient_prime_pow`: for a primitive `p ^ (k + 1)`-th
+  root of unity, `(ζ - 1) ^ φ(p ^ (k + 1))` is associated to `p`.
+* `IsPrimitiveRoot.isUnit_sub_one_iff_isUnit_natCast`: for a primitive `p ^ (k + 1)`-th root of
+  unity, `ζ - 1` is a unit exactly when `p` is.
 * `IsPrimitiveRoot.associated_sub_one_pow_prime`: `(ζ - 1) ^ (p - 1)` is associated to `p`.
 * `IsPrimitiveRoot.valuation_natCast_eq_valuation_sub_one_pow`: a valuation `v ≤ 1` on `A`
   satisfies `v(p) = v(ζ - 1) ^ (p - 1)`.
@@ -42,19 +47,35 @@ Invertibility of `n` is needed: `1 - (-1) = 2` is not a unit of `ℤ_[2]`.
 public section
 
 open Polynomial in
+/-- If `ζ` is a primitive `p ^ (k + 1)`-th root of unity in a domain `A` and `p` is prime, then
+`(ζ - 1) ^ φ(p ^ (k + 1))` is associated to `p`. -/
+theorem IsPrimitiveRoot.associated_sub_one_pow_totient_prime_pow {A : Type*} [CommRing A]
+    [IsDomain A] {p k : ℕ} [hp : Fact p.Prime] {ζ : A} (hζ : IsPrimitiveRoot ζ (p ^ (k + 1))) :
+    Associated ((ζ - 1) ^ (p ^ (k + 1)).totient) (p : A) := by
+  rw [← eval_one_cyclotomic_prime_pow (R := A) (p := p) k,
+    cyclotomic_eq_prod_X_sub_primitiveRoots hζ, eval_prod]
+  simp only [eval_sub, eval_X, eval_C]
+  rw [← hζ.card_primitiveRoots, ← Finset.prod_const]
+  refine Associated.prod _ _ _ fun η hη ↦ ?_
+  have : NeZero (p ^ (k + 1)) := ⟨pow_ne_zero _ hp.out.ne_zero⟩
+  obtain ⟨i, -, hi, rfl⟩ := hζ.isPrimitiveRoot_iff.mp (isPrimitiveRoot_of_mem_primitiveRoots hη)
+  simpa using (hζ.associated_sub_one_pow_sub_one_of_coprime hi).neg_right
+
+/-- If `ζ` is a primitive `p ^ (k + 1)`-th root of unity in a domain `A` and `p` is prime, then
+`ζ - 1` is a unit exactly when `p` is. -/
+theorem IsPrimitiveRoot.isUnit_sub_one_iff_isUnit_natCast {A : Type*} [CommRing A] [IsDomain A]
+    {p k : ℕ} [hp : Fact p.Prime] {ζ : A} (hζ : IsPrimitiveRoot ζ (p ^ (k + 1))) :
+    IsUnit (ζ - 1) ↔ IsUnit (p : A) := by
+  rw [← hζ.associated_sub_one_pow_totient_prime_pow.isUnit_iff,
+    isUnit_pow_iff (Nat.totient_pos.2 (pow_pos hp.out.pos _)).ne']
+
 /-- If `ζ` is a primitive `p`-th root of unity in a domain `A` and `p` is prime, then
 `(ζ - 1) ^ (p - 1)` is associated to `p`. -/
 theorem IsPrimitiveRoot.associated_sub_one_pow_prime {A : Type*} [CommRing A] [IsDomain A]
     {p : ℕ} [hp : Fact p.Prime] {ζ : A} (hζ : IsPrimitiveRoot ζ p) :
     Associated ((ζ - 1) ^ (p - 1)) (p : A) := by
-  rw [← eval_one_cyclotomic_prime (R := A) (p := p), cyclotomic_eq_prod_X_sub_primitiveRoots hζ,
-    eval_prod]
-  simp only [eval_sub, eval_X, eval_C]
-  rw [← Nat.totient_prime hp.out, ← hζ.card_primitiveRoots, ← Finset.prod_const]
-  refine Associated.prod _ _ _ fun η hη ↦ ?_
-  have : NeZero p := ⟨hp.out.ne_zero⟩
-  obtain ⟨i, -, hi, rfl⟩ := hζ.isPrimitiveRoot_iff.mp (isPrimitiveRoot_of_mem_primitiveRoots hη)
-  simpa using (hζ.associated_sub_one_pow_sub_one_of_coprime hi).neg_right
+  have hζ' : IsPrimitiveRoot ζ (p ^ (0 + 1)) := by simpa using hζ
+  simpa [Nat.totient_prime hp.out] using hζ'.associated_sub_one_pow_totient_prime_pow
 
 /-- If `ζ` is a primitive `p`-th root of unity in a domain `A` and `p` is prime, then every
 valuation `v` of `A` bounded by `1` satisfies `v(p) = v(ζ - 1) ^ (p - 1)`. -/
