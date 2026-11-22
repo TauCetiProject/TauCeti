@@ -29,8 +29,9 @@ through the blocks of the data:
 * `‖cos(tD) f + D⁻¹ sin(tD) g‖_{L^q_t L^r_x} ≤ C (∑ⱼ 2^{jγ} ‖Pⱼ f‖₂ + ∑ⱼ 2^{j(γ - 1)} ‖Pⱼ g‖₂)`
   for the solution of the free wave equation `∂ₜ²u = Δu` with data `u(0) = f` and `∂ₜu(0) = g`,
   together with the estimates for `cos(tD)` and `D⁻¹ sin(tD)` separately. Every strong solution
-  of the free equation on the whole time line is of this form, so it satisfies the estimate with
-  `f = u(0)` and `g = ∂ₜu(0)`.
+  of the free equation on an interval of times containing `0` agrees there with this solution
+  for `f = u(0)` and `g = ∂ₜu(0)`, so it satisfies the estimate on that interval, with a
+  constant independent of the interval.
 
 The right-hand sides are the norms of the data in `\dot B^γ_{2,1}` and `\dot B^{γ - 1}_{2,1}`.
 Since these are `ℓ¹` sums over the blocks rather than square functions, the pairs with `r = ∞` are
@@ -67,7 +68,7 @@ Duhamel's formula
 * `ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum`: the
   Strichartz estimate for the free wave equation with data `(f, g)`.
 * `ContDiffBump.exists_eLpNorm_eLpNorm_le_tsum_of_isWaveSolutionOn`: the same estimate for every
-  strong solution of the free wave equation on the whole time line.
+  strong solution of the free wave equation on an interval of times containing `0`.
 
 ## References
 
@@ -295,16 +296,18 @@ theorem exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum (
 
 /-- **The Strichartz estimate for strong solutions of the free wave equation.** Under the
 hypotheses of `ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_le_tsum`, there is `C` such
-that every strong solution `u` of `∂ₜ²u = Δu` on the whole time line, with velocity `u'`, satisfies
+that for every interval `I` containing `0`, every strong solution `u` of `∂ₜ²u = Δu` on `I`, with
+velocity `u'`, satisfies
 
-`‖u‖_{L^q_t L^r_x} ≤ C (∑ⱼ 2^{jγ} ‖Pⱼ u(0)‖₂ + ∑ⱼ 2^{j(γ - 1)} ‖Pⱼ u'(0)‖₂)`. -/
+`‖u‖_{L^q(I; L^r_x)} ≤ C (∑ⱼ 2^{jγ} ‖Pⱼ u(0)‖₂ + ∑ⱼ 2^{j(γ - 1)} ‖Pⱼ u'(0)‖₂)`. -/
 theorem exists_eLpNorm_eLpNorm_le_tsum_of_isWaveSolutionOn (hq : 2 < q)
     (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2) :
     ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
       (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
-      ∀ u u' u'' : ℝ → Lp ℂ 2 (volume : Measure E), IsWaveSolutionOn u u' u'' 0 Set.univ →
-        eLpNorm (fun t ↦ eLpNorm (u t) r volume) q volume ≤
+      ∀ (s : Set ℝ) [s.OrdConnected], 0 ∈ s →
+      ∀ u u' u'' : ℝ → Lp ℂ 2 (volume : Measure E), IsWaveSolutionOn u u' u'' 0 s →
+        eLpNorm (fun t ↦ eLpNorm (u t) r volume) q (volume.restrict s) ≤
           C * (∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
               Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) *
                 ‖Lp.fourierMultiplierCLM ℂ (m j) (u 0)‖ₑ +
@@ -313,15 +316,15 @@ theorem exists_eLpNorm_eLpNorm_le_tsum_of_isWaveSolutionOn (hq : 2 < q)
                 ‖Lp.fourierMultiplierCLM ℂ (m j) (u' 0)‖ₑ) := by
   obtain ⟨C, hC⟩ :=
     φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum hq hqr
-  refine ⟨C, fun m hm u u' u'' hu ↦ ?_⟩
-  -- By Duhamel's formula with no forcing, `u(t) = cos(tD) u(0) + D⁻¹ sin(tD) u'(0)`.
-  have hrep (t : ℝ) : u t = waveCosPropagator ℂ t (u 0) + waveSinPropagator ℂ t (u' 0) := by
-    simpa using hu.eq_waveCosPropagator_add_waveSinPropagator_add_integral (Set.mem_univ 0)
-      (Set.mem_univ t) intervalIntegrable_const
-  have hnorm : (fun t ↦ eLpNorm (u t) r volume) =
-      fun t ↦ eLpNorm (waveCosPropagator ℂ t (u 0) + waveSinPropagator ℂ t (u' 0)) r volume :=
-    funext fun t ↦ by rw [hrep t]
-  rw [hnorm]
-  exact hC m hm _ _
+  refine ⟨C, fun m hm s _ h0 u u' u'' hu ↦ ?_⟩
+  -- By Duhamel's formula with no forcing, `u(t) = cos(tD) u(0) + D⁻¹ sin(tD) u'(0)` on `s`.
+  have hrep : ∀ᵐ t ∂volume.restrict s, eLpNorm (u t) r volume =
+      eLpNorm (waveCosPropagator ℂ t (u 0) + waveSinPropagator ℂ t (u' 0)) r volume :=
+    ae_restrict_of_forall_mem (Set.OrdConnected.measurableSet ‹_›) fun t ht ↦ by
+      rw [hu.eq_waveCosPropagator_add_waveSinPropagator_add_integral h0 ht
+        intervalIntegrable_const]
+      simp
+  rw [eLpNorm_congr_ae hrep]
+  exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans (hC m hm _ _)
 
 end ContDiffBump
