@@ -13,14 +13,17 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 /-!
 # Increment bounds at the rate of a real power
 
-These are scale-dependent increment bounds: they control the increment of a function `u` of
-time between `a` and `b` by a multiple of `|b - a|` times a power `r ^ (β - 1)` of a time scale
-`r` set by the endpoints (`min a b`, `-a` or `a` below). So `u` is Lipschitz in time near `a`,
-with a constant that depends on the scale `r` and, for `β < 1`, blows up as `r → 0`.
+These are conditional, scale-dependent increment bounds: under their hypotheses, they control the
+increment of a function `u` of time between `a` and `b` by a multiple of `|b - a|` times a power
+`r ^ (β - 1)` of a time scale `r` set by the endpoints (`a`, `b`, `-a` below). Each bound controls
+only the pairs of times that satisfy its hypotheses.
 
-For `0 < a`, `0 < b` and `β ≤ 1`, the mean value inequality gives the bound
-`D |b - a| (min a b) ^ (β - 1)` from a derivative of norm at most `D r ^ (β - 1)` at every `r`
-between `a` and `b`. Here `β` may be negative, and no Hölder hypothesis is involved.
+For `0 < a` and `0 < b`, the mean value inequality gives the bound
+`D |b - a| max (a ^ (β - 1)) (b ^ (β - 1))` from a derivative of norm at most `D r ^ (β - 1)` at
+every `r` between `a` and `b`. Here `β` may be any real number, and no Hölder hypothesis is
+involved. The factor is `(min a b) ^ (β - 1)` for `β ≤ 1` and `(max a b) ^ (β - 1)` for `1 ≤ β`.
+When the derivative bound holds at every time near a positive time `t`, this estimate makes `u`
+Lipschitz near `t`, with a constant that depends on `t` and, for `β < 1`, blows up as `t → 0`.
 
 The two other cases need no derivative, only data at the two endpoints, so they are stated for
 two points `x` and `y` of a pseudometric space, the values of `u` at `b` and `a`. For `a < 0`,
@@ -28,16 +31,17 @@ two points `x` and `y` of a pseudometric space, the values of `u` at `b` and `a`
 if `0 < b`. For `0 < a` and `a ≤ A |b - a|`, they are that `x` and `y` both lie within `K a ^ β`
 of a point `c`.
 
-Hölder-in-time estimates are an application of these bounds, not a premise. A function `u` equal
-to `c` on `(-∞, 0]` with `dist (u r) c ≤ K r ^ β` for `r ≥ 0`, such as one that is `β`-Hölder at
-time `0`, supplies, at `x = u b` and `y = u a`, the endpoint data of the first estimate for every
-`β`, and of the second when `0 ≤ β` and `b ≤ a`, so that `b ^ β ≤ a ^ β` for `0 < b`. The data
-alone do not give the first estimate: it still requires `0 ≤ β ≤ 1` and `0 ≤ K`.
+Hölder-in-time estimates are an application of these bounds, not a premise. Let `u` be equal to
+`c` on `(-∞, 0]` and satisfy the pointwise power bound `dist (u r) c ≤ K r ^ β` relative to `c`
+at every time `r ≥ 0`, not only at times near `0`. Then `x = u b` and `y = u a` supply the endpoint
+data of the estimate for `a < 0` for every `β`, and of the estimate for `0 < a` when `0 ≤ β` and
+`b ≤ a`, so that `b ^ β ≤ a ^ β` for `0 < b`. The data alone do not give the estimate for `a < 0`:
+it still requires `0 ≤ β ≤ 1` and `0 ≤ K`.
 
 ## Main results
 
 * `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt`:
-  `‖u b - u a‖ ≤ D |b - a| (min a b) ^ (β - 1)` for `0 < a`, `0 < b` and `β ≤ 1` when
+  `‖u b - u a‖ ≤ D |b - a| max (a ^ (β - 1)) (b ^ (β - 1))` for `0 < a` and `0 < b` when
   `u` has derivative `u' r` within `[[a, b]]` with `‖u' r‖ ≤ D r ^ (β - 1)` at every
   `r ∈ [[a, b]]`.
 * `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_neg_right`: `dist x y ≤ K |b - a| (-a) ^ (β - 1)`
@@ -54,21 +58,30 @@ namespace TauCeti
 
 open Real Set
 
-/-- Mean value bound at positive times: if `0 < a`, `0 < b`, `β ≤ 1` and `u` has derivative
-`f' r` within `[[a, b]]` of norm at most `D r^(β - 1)` at every `r ∈ [[a, b]]`, then
-`‖u b - u a‖ ≤ D |b - a| (min a b)^(β - 1)`. -/
+/-- Mean value bound at positive times: if `0 < a`, `0 < b` and `u` has derivative `f' r` within
+`[[a, b]]` of norm at most `D r^(β - 1)` at every `r ∈ [[a, b]]`, then
+`‖u b - u a‖ ≤ D |b - a| max (a^(β - 1)) (b^(β - 1))`. The exponent `β` is arbitrary: the power
+`r^(β - 1)` is monotone in `r > 0`, so its largest value on `[[a, b]]` is at an endpoint. -/
 theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {u f' : ℝ → F} {β D a b : ℝ} (hβ : β ≤ 1) (ha : 0 < a) (hb : 0 < b)
+    [NormedSpace ℝ F] {u f' : ℝ → F} {β D a b : ℝ} (ha : 0 < a) (hb : 0 < b)
     (hderiv : ∀ r ∈ uIcc a b, HasDerivWithinAt u (f' r) (uIcc a b) r)
     (hbound : ∀ r ∈ uIcc a b, ‖f' r‖ ≤ D * r ^ (β - 1)) :
-    ‖u b - u a‖ ≤ D * (|b - a| * min a b ^ (β - 1)) := by
+    ‖u b - u a‖ ≤ D * (|b - a| * max (a ^ (β - 1)) (b ^ (β - 1))) := by
   have hm : 0 < min a b := lt_min ha hb
   have hD : 0 ≤ D := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hbound a left_mem_uIcc))
     (rpow_pos_of_pos ha _)
+  -- On `[[a, b]]`, the power `r ^ (β - 1)` is largest at `min a b` or at `max a b`.
+  have hle : ∀ r ∈ uIcc a b, r ^ (β - 1) ≤ max (a ^ (β - 1)) (b ^ (β - 1)) := fun r hr ↦ by
+    rcases le_total (β - 1) 0 with hβ | hβ
+    · refine (rpow_le_rpow_of_nonpos hm hr.1 hβ).trans ?_
+      rcases min_choice a b with h | h <;> rw [h]
+      exacts [le_max_left _ _, le_max_right _ _]
+    · refine (rpow_le_rpow (hm.le.trans hr.1) hr.2 hβ).trans ?_
+      rcases max_choice a b with h | h <;> rw [h]
+      exacts [le_max_left _ _, le_max_right _ _]
   have hmv := (convex_uIcc a b).norm_image_sub_le_of_norm_hasDerivWithin_le (f := u)
-    (f' := f') (C := D * min a b ^ (β - 1)) hderiv
-    (fun r hr => (hbound r hr).trans
-      (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos hm hr.1 (by linarith)) hD))
+    (f' := f') (C := D * max (a ^ (β - 1)) (b ^ (β - 1))) hderiv
+    (fun r hr => (hbound r hr).trans (mul_le_mul_of_nonneg_left (hle r hr) hD))
     left_mem_uIcc right_mem_uIcc
   rw [Real.norm_eq_abs] at hmv
   exact hmv.trans_eq (by ring)

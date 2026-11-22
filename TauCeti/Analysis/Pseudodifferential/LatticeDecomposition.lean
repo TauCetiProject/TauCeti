@@ -450,10 +450,12 @@ private theorem IsBallFamily.exists_norm_pow_mul_norm_fourier_le (N : ℕ) :
       rw [sq_abs]
       ring
     calc ‖η‖ ^ (2 * (N + 1)) * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖
-        = ‖η‖ ^ 2 * (‖η‖ ^ (2 * N) * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖) := by ring
+        = ‖η‖ ^ ENNReal.toReal 2 * (‖η‖ ^ (2 * N) * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖) := by
+          rw [ENNReal.toReal_ofNat, Real.rpow_two]
+          ring
       _ ≤ ∑ j, ((2 * π) ^ 2)⁻¹ * (D j * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :=
-          PiLp.norm_sq_mul_le_sum fun j ↦ by
-            rw [Real.norm_eq_abs, sq_abs]
+          PiLp.norm_rpow_mul_le_sum (by simp) fun j ↦ by
+            rw [ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs, sq_abs]
             refine (mul_left_comm _ _ _).trans_le ?_
             rw [hj, mul_left_comm]
             exact mul_le_mul_of_nonneg_left (hD j i η ξ) (by positivity)

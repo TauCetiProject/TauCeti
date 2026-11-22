@@ -27,8 +27,8 @@ Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` t
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons. A squared-norm bound of `(k + 1) * t²` for a vector of `L²`
 also bounds the number of coordinates with norm exceeding a nonnegative `t` by `k`
-(`PiLp.card_filter_lt_norm_le`). Bounds `‖x i‖² F ≤ G i` on the coordinate shares of
-`‖x‖² F` add up to `‖x‖² F ≤ ∑ i, G i` (`PiLp.norm_sq_mul_le_sum`).
+(`PiLp.card_filter_lt_norm_le`). For `0 < p < ∞`, bounds `‖x i‖ ^ p F ≤ G i` on the coordinate
+shares of `‖x‖ ^ p F` add up to `‖x‖ ^ p F ≤ ∑ i, G i` (`PiLp.norm_rpow_mul_le_sum`).
 
 Extending a vector of `Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` places its coordinate `i`
 in the slot `f i`, and the vectors so obtained are those whose coordinates outside the range of
@@ -102,6 +102,14 @@ theorem norm_rpow_eq_sum [∀ i, SeminormedAddGroup (E i)] (hp : 0 < p.toReal) (
   rw [norm_eq_sum hp, ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ by positivity),
     one_div_mul_cancel hp.ne', Real.rpow_one]
 
+/-- For `0 < p < ∞`, bounds `‖x i‖ ^ p * F ≤ G i` on the coordinate shares of `‖x‖ ^ p * F` add
+up to `‖x‖ ^ p * F ≤ ∑ i, G i`. -/
+theorem norm_rpow_mul_le_sum [∀ i, SeminormedAddGroup (E i)] (hp : 0 < p.toReal) {x : PiLp p E}
+    {F : ℝ} {G : ι → ℝ} (h : ∀ i, ‖x i‖ ^ p.toReal * F ≤ G i) :
+    ‖x‖ ^ p.toReal * F ≤ ∑ i, G i := by
+  rw [norm_rpow_eq_sum hp, Finset.sum_mul]
+  exact Finset.sum_le_sum fun i _ ↦ h i
+
 /-- Taking coordinate norms preserves the finite `Lᵖ` norm. -/
 @[simp]
 theorem norm_norm [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) :
@@ -141,13 +149,6 @@ theorem card_filter_lt_norm_le {x : PiLp 2 E} {k : ℕ} {t : ℝ}
   have hcard' : (k + 1 : ℝ) ≤ s.card := by exact_mod_cast hcard
   exact (mul_le_mul_of_nonneg_right hcard' (sq_nonneg t)).not_gt
     (hsum.trans_le (htotal.trans hxt))
-
-/-- Bounds `‖x i‖ ^ 2 * F ≤ G i` on the coordinate shares of `‖x‖ ^ 2 * F` add up to
-`‖x‖ ^ 2 * F ≤ ∑ i, G i`. -/
-theorem norm_sq_mul_le_sum {x : PiLp 2 E} {F : ℝ} {G : ι → ℝ} (h : ∀ i, ‖x i‖ ^ 2 * F ≤ G i) :
-    ‖x‖ ^ 2 * F ≤ ∑ i, G i := by
-  rw [PiLp.norm_sq_eq_of_L2, Finset.sum_mul]
-  exact Finset.sum_le_sum fun i _ ↦ h i
 
 section SingleLI
 

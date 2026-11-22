@@ -305,10 +305,12 @@ private theorem IsBallFamily.exists_norm_sub_pow_mul_norm_ofRight_le (N : ℕ) :
         (hC'.trans (mul_le_mul_of_nonneg_left hwC (hC0 j))))
         ((hD j i x ξ).trans (mul_le_mul_of_nonneg_left hwD (hD0 j)))).trans_eq (by ring)
     calc ‖x - z i‖ ^ (2 * (N + 1)) * ‖((c i).ofRight hci).coefficient (x, ξ)‖
-        = ‖x - z i‖ ^ 2 * (‖x - z i‖ ^ (2 * N) * ‖((c i).ofRight hci).coefficient (x, ξ)‖) := by
+        = ‖x - z i‖ ^ ENNReal.toReal 2 *
+            (‖x - z i‖ ^ (2 * N) * ‖((c i).ofRight hci).coefficient (x, ξ)‖) := by
+          rw [ENNReal.toReal_ofNat, Real.rpow_two]
           ring
-      _ ≤ ∑ j, (A j + B j + C j + D j) * w := PiLp.norm_sq_mul_le_sum fun j ↦ by
-          rw [Real.norm_eq_abs, sq_abs]
+      _ ≤ ∑ j, (A j + B j + C j + D j) * w := PiLp.norm_rpow_mul_le_sum (by simp) fun j ↦ by
+          rw [ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs, sq_abs]
           exact (mul_left_comm _ _ _).trans_le (hj j)
       _ = _ := by rw [Finset.sum_mul]
 

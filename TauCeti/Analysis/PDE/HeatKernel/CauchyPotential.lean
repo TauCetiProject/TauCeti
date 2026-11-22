@@ -499,8 +499,9 @@ theorem exists_norm_laplacian_heatCauchyPotential_le :
     _ = n * C₂ * H * t ^ ((α : ℝ) / 2 - 1) := by ring
 
 /-- **The time-Lipschitz bound of the Cauchy potential at positive times.** If `g` is essentially
-bounded, `0 ≤ β ≤ 1` and the Laplacian of `u(r, ·)` at `x` is at most `D r^(β - 1)` for every
-`r > 0`, then `‖u(b, x) - u(a, x)‖ ≤ 2 D |b - a| a^(β - 1)` for `0 < a` and `a / 2 ≤ b`. -/
+bounded, `0 ≤ β ≤ 1` and the norm of the Laplacian of `u(r, ·)` at `x` is at most `D r^(β - 1)`
+for every `r > 0`, then `‖u(b, x) - u(a, x)‖ ≤ 2 D |b - a| a^(β - 1)` for `0 < a` and
+`a / 2 ≤ b`. -/
 private theorem norm_heatCauchyPotential_sub_le_of_half_le {D β : ℝ} (hβ₀ : 0 ≤ β)
     (hβ₁ : β ≤ 1) (hM : ∀ᵐ y, ‖g y‖ ≤ M) {x : E}
     (hΔ : ∀ r, 0 < r → ‖Δ (heatCauchyPotential g r) x‖ ≤ D * r ^ (β - 1)) {a b : ℝ} (ha : 0 < a)
@@ -511,17 +512,17 @@ private theorem norm_heatCauchyPotential_sub_le_of_half_le {D β : ℝ} (hβ₀ 
   have hpos : uIcc a b ⊆ Ioi 0 := ordConnected_Ioi.uIcc_subset ha hb0
   have hD : 0 ≤ D := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hΔ a ha))
     (rpow_pos_of_pos ha _)
-  -- Every time in `[[a, b]]` is at least `a / 2`, which costs a factor `2` in `r ^ (β - 1)`.
-  have hmin : min a b ^ (β - 1) ≤ 2 * a ^ (β - 1) :=
-    calc min a b ^ (β - 1) ≤ (a / 2) ^ (β - 1) :=
-          rpow_le_rpow_of_nonpos (half_pos ha) (le_min (half_le_self ha.le) hb) (by linarith)
-      _ ≤ 2 * a ^ (β - 1) := by
-          simpa only [neg_sub] using
-            Real.div_rpow_neg_le_mul_rpow_neg (by linarith : 1 - β ≤ 1) one_le_two ha.le
+  -- Both endpoints are at least `a / 2`, which costs a factor `2` in `r ^ (β - 1)`.
+  have h2 : (a / 2) ^ (β - 1) ≤ 2 * a ^ (β - 1) := by
+    simpa only [neg_sub] using
+      Real.div_rpow_neg_le_mul_rpow_neg (by linarith : 1 - β ≤ 1) one_le_two ha.le
+  have hmax : max (a ^ (β - 1)) (b ^ (β - 1)) ≤ 2 * a ^ (β - 1) :=
+    max_le ((rpow_le_rpow_of_nonpos (half_pos ha) (half_le_self ha.le) (by linarith)).trans h2)
+      ((rpow_le_rpow_of_nonpos (half_pos ha) hb (by linarith)).trans h2)
   calc ‖heatCauchyPotential g b x - heatCauchyPotential g a x‖
-      ≤ D * (|b - a| * min a b ^ (β - 1)) :=
+      ≤ D * (|b - a| * max (a ^ (β - 1)) (b ^ (β - 1))) :=
         norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt
-          (u := fun r ↦ heatCauchyPotential g r x) hβ₁ ha hb0
+          (u := fun r ↦ heatCauchyPotential g r x) ha hb0
           (fun r hr ↦
             (hasDerivAt_heatCauchyPotential_of_ae_norm_le hM (hpos hr) x).hasDerivWithinAt)
           (fun r hr ↦ hΔ r (hpos hr))
