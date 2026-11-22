@@ -530,9 +530,8 @@ theorem exists_ae_eq_and_holderOnWith_add_divergence [Nonempty ι]
   -- The distances in `Ω` are at most `D`, so both bounds hold with the exponent `min α₁ α₂`.
   set D : ℝ≥0 := (diam (Omega : Set (EuclideanSpace ℝ ι))).toNNReal
   have hD : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ∀ y ∈ (Omega : Set (EuclideanSpace ℝ ι)),
-      edist x y ≤ D := fun x hx y hy => by
-    rw [edist_dist, ← ENNReal.ofReal_coe_nnreal, Real.coe_toNNReal _ diam_nonneg]
-    exact ENNReal.ofReal_le_ofReal (dist_le_diam_of_mem hb hx hy)
+      edist x y ≤ D := fun x hx y hy =>
+    (Metric.edist_le_ediam_of_mem hx hy).trans_eq (ENNReal.ofReal_toReal hb.ediam_ne_top).symm
   set α := min α₁ α₂
   set P₁ : ℝ := (D : ℝ) ^ ((α₁ : ℝ) - α)
   set P₂ : ℝ := (D : ℝ) ^ ((α₂ : ℝ) - α)

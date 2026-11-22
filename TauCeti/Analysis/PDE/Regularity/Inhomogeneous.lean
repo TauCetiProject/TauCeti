@@ -510,12 +510,7 @@ theorem exists_forall_energyFormH1_eq_ae_abs_le_divergence [Nonempty ι] {q : �
   -- The datum `v ↦ -∫_D ⟪F, ∇v⟫` is the functional `divergenceForcing F`, since `F ∈ L²(D)`.
   have hF2 : MemLp F 2 (mu.restrict D) :=
     hF.mono_exponent (by exact_mod_cast (show ((2 : ℝ≥0) : ℝ) ≤ q by exact_mod_cast hq.le))
-  have hℓ : ∀ v : W1p0 mu D 2, divergenceForcing (hF2.toLp F) v =
-      -∫ x in D, ⟪F x, W1p.gradient (v : W1p mu D 2) x⟫ ∂mu := fun v => by
-    rw [divergenceForcing_apply_eq_neg_setIntegral, neg_inj]
-    refine integral_congr_ae ?_
-    filter_upwards [hF2.coeFn_toLp] with x hx
-    rw [hx]
+  have hℓ := divergenceForcing_toLp_apply hF2
   obtain ⟨w, hw, -⟩ := h.existsUnique_forall_energyFormH1_eq_of_measure_ne_top (c := 0)
     (gamma := 0) ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hD
     (divergenceForcing (hF2.toLp F))
@@ -571,12 +566,7 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence [Nonempty ι
   -- The datum `v ↦ -∫_B ⟪F, ∇v⟫` is the functional `divergenceForcing F`, since `F ∈ L²(B)`.
   have hF2 : MemLp F 2 (mu.restrict B) :=
     hF.mono_exponent (by exact_mod_cast (show ((2 : ℝ≥0) : ℝ) ≤ q by exact_mod_cast hq.le))
-  have hℓ : ∀ v : W1p0 mu B 2, divergenceForcing (hF2.toLp F) v =
-      -∫ x in B, ⟪F x, W1p.gradient (v : W1p mu B 2) x⟫ ∂mu := fun v => by
-    rw [divergenceForcing_apply_eq_neg_setIntegral, neg_inj]
-    refine integral_congr_ae ?_
-    filter_upwards [hF2.coeFn_toLp] with x hx
-    rw [hx]
+  have hℓ := divergenceForcing_toLp_apply hF2
   -- The weak solution `w ∈ H¹₀(B)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = ∂ᵢFⁱ` on `B`, and its bound; `u|_B - w` is
   -- the homogeneous part.
   obtain ⟨w, hw, -⟩ := hBell.existsUnique_forall_energyFormH1_eq_of_measure_ne_top (c := 0)

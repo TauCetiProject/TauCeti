@@ -169,11 +169,7 @@ theorem exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq_and_hold
   have hℓ : ∀ φ : W1p0 volume Omega 2, (ℓf + divergenceForcing (hF2.toLp F)) φ =
       ∫ x in Omega, f x * W1p.value (φ : W1p volume Omega 2) x ∂volume -
         ∫ x in Omega, ⟪F x, W1p.gradient (φ : W1p volume Omega 2) x⟫ ∂volume := fun φ => by
-    rw [add_apply, hℓf, divergenceForcing_apply_eq_neg_setIntegral,
-      ← sub_eq_add_neg, sub_right_inj]
-    refine integral_congr_ae ?_
-    filter_upwards [hF2.coeFn_toLp] with x hx
-    rw [hx]
+    rw [add_apply, hℓf, divergenceForcing_toLp_apply, ← sub_eq_add_neg]
   obtain ⟨u, hug, hu⟩ := exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq hA hAm
     hAc hb g (ℓf + divergenceForcing (hF2.toLp F))
   have hu' : ∀ φ : W1p0 volume Omega 2,
