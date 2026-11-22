@@ -276,8 +276,8 @@ theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_congr_range
   exact ⟨w, rfl⟩
 
 /-- A complex-linear map carrying one maximal real form into another intertwines their canonical
-conjugations. Neither map is required to be invertible, and no map between the real carriers is
-needed. -/
+conjugations. The map `A` need not be invertible, and no map between the real carriers `W` and
+`W'` is required. -/
 theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_natural
     {W W' E' : Type*} [AddCommGroup W] [Module ℝ W] [AddCommGroup W'] [Module ℝ W']
     [AddCommGroup E'] [Module ℝ E'] [Module ℂ E'] [IsScalarTower ℝ ℂ E']
@@ -288,7 +288,7 @@ theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_natural
     (A : E →ₗ[ℂ] E') (hA : Set.MapsTo A (f.range : Set E) (g.range : Set E')) (v : E) :
     g.conjugationOfMaximalTotallyReal hg hmax' (A v) =
       A (f.conjugationOfMaximalTotallyReal hf hmax v) := by
-  have h := (comp_eq_comp_iff_mapsTo_realPoints
+  have h := (Function.Involutive.comp_eq_comp_iff_mapsTo_realPoints
     (f.conjugationOfMaximalTotallyReal_involutive hf hmax) A).mpr fun u hu ↦
       mem_realPoints.mpr ((g.conjugationOfMaximalTotallyReal_eq_self_iff hg hmax' _).mpr
         (hA ((f.conjugationOfMaximalTotallyReal_eq_self_iff hf hmax u).mp (mem_realPoints.mp hu))))
