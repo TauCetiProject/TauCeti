@@ -100,12 +100,24 @@ abbrev Side : Type := Σ i : Fin (T.numHoles + 1), Fin (T.component i).numVertic
 variable {T}
 
 /-- The starting vertex of a side. -/
-@[expose] def Side.start (s : T.Side) : ℂ :=
+def Side.start (s : T.Side) : ℂ :=
   (T.component s.1).toPolygon s.2
 
 /-- The end vertex of a side, the start of the next side of the same boundary polygon. -/
-@[expose] def Side.finish (s : T.Side) : ℂ :=
+def Side.finish (s : T.Side) : ℂ :=
   (T.component s.1).toPolygon (finRotate _ s.2)
+
+/-- The starting vertex of the side `⟨i, j⟩` is vertex `j` of the boundary polygon `i`. -/
+@[simp]
+theorem Side.start_mk (i : Fin (T.numHoles + 1)) (j : Fin (T.component i).numVertices) :
+    Side.start (⟨i, j⟩ : T.Side) = (T.component i).toPolygon j :=
+  (rfl)
+
+/-- The end vertex of the side `⟨i, j⟩` is the vertex after `j` of the boundary polygon `i`. -/
+@[simp]
+theorem Side.finish_mk (i : Fin (T.numHoles + 1)) (j : Fin (T.component i).numVertices) :
+    Side.finish (⟨i, j⟩ : T.Side) = (T.component i).toPolygon (finRotate _ j) :=
+  (rfl)
 
 variable (T)
 
@@ -270,7 +282,7 @@ theorem vertexSet_ofSimplePolygon (p : SimplePolygon ℝ ℂ) :
   exact ⟨fun ⟨_, h⟩ => h, fun h => ⟨0, h⟩⟩
 
 /-- A triangle in the plane is a polygonal table, so the type of tables is inhabited. -/
-noncomputable instance : Inhabited PolygonalTable :=
+noncomputable instance instInhabited : Inhabited PolygonalTable :=
   ⟨ofSimplePolygon (Affine.Triangle.toSimplePolygon
     ⟨![0, 1, Complex.I], by
       rw [affineIndependent_iff_not_collinear_set, collinear_iff_of_mem (mem_insert 0 _)]
