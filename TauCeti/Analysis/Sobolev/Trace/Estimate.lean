@@ -10,7 +10,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.NormPow
 import Mathlib.Analysis.MeanInequalities
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
+import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 
 /-!
 # The one-dimensional energy estimate for traces
@@ -110,8 +110,7 @@ theorem hasCompactSupport_rpow_energy {u : F → G} (hsupp : HasCompactSupport u
   rcases eq_or_ne r 0 with rfl | hr0
   · simp only [Real.rpow_zero, zero_sub, mul_one, neg_add_cancel]
     exact HasCompactSupport.zero
-  exact (hsupp.mono fun x hx hz ↦ hx (by simp [hz, hr0])).add
-    ((hsupp.fderiv ℝ).mono fun x hx hz ↦ hx (by simp [hz, hr0]))
+  exact (hsupp.norm.rpow_const hr0).mul_left.add ((hsupp.fderiv ℝ).norm.rpow_const hr0)
 
 /-- The energy density of a compactly supported `C¹` curve is integrable. -/
 private theorem integrable_rpow_energy {g : ℝ → G} (hg : ContDiff ℝ 1 g)
@@ -152,30 +151,21 @@ theorem norm_rpow_le_integral_Ioi {g : ℝ → E} (hg : ContDiff ℝ 1 g) (hs : 
     (a : ℝ) {r : ℝ} (hr : 1 ≤ r) :
     ‖g a‖ ^ r ≤ ∫ t in Ioi a, (r - 1) * ‖g t‖ ^ r + ‖deriv g t‖ ^ r := by
   rcases hr.eq_or_lt with rfl | hr1
-  · -- For `r = 1`, the displacement from `a` to a point `c` beyond the support is at most the
-    -- integral of the speed.
-    have hint := integrable_rpow_energy hg hs zero_le_one
-    simp only [Real.rpow_one, sub_self, zero_mul, zero_add] at hint ⊢
-    obtain ⟨b, hb⟩ := hs.isCompact.bddAbove
-    set c := max a b + 1
-    have hac : a ≤ c := by linarith [le_max_left a b]
-    have hc : g c = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ by
-      linarith [hb h, le_max_right a b]
-    calc ‖g a‖ = ‖g c - g a‖ := by rw [hc, zero_sub, norm_neg]
-      _ ≤ ∫ t in a..c, ‖deriv g t‖ :=
-        norm_sub_le_integral_of_norm_deriv_le_of_le hac hg.continuous.continuousOn
-          (hg.differentiable one_ne_zero).differentiableOn (.of_forall fun _ _ ↦ le_rfl)
-          hint.intervalIntegrable
-      _ ≤ ∫ t in Ioi a, ‖deriv g t‖ := by
-        rw [intervalIntegral.integral_of_le hac]
-        exact setIntegral_mono_set hint.integrableOn (.of_forall fun _ ↦ norm_nonneg _)
-          (.of_forall fun _ h ↦ Ioc_subset_Ioi_self h)
-  · -- For `r > 1`, the same argument for the `C¹` function `‖g‖ʳ`, whose derivative
-    -- is bounded by `r ‖g‖ʳ⁻¹ ‖g'‖` and then by Young's inequality.
-    have hr0 : r ≠ 0 := (zero_lt_one.trans hr1).ne'
+  · -- For `r = 1`, this is Mathlib's endpoint bound on `Iic` for the reflected curve.
+    simp only [Real.rpow_one, sub_self, zero_mul, zero_add]
+    have h := (hs.comp_homeomorph (Homeomorph.neg ℝ)).eNorm_le_lintegral_Ici_deriv
+      (hg.comp contDiff_neg) (-a)
+    have hint : Integrable (fun t ↦ deriv g (-t)) volume :=
+      ((hg.continuous_deriv le_rfl).integrable_of_hasCompactSupport hs.deriv).comp_neg
+    simp only [Function.comp_def, neg_neg, deriv_comp_neg, eNorm_neg] at h
+    rw [← ofReal_norm, ← ofReal_integral_norm_eq_lintegral_eNorm hint.integrableOn,
+      integral_comp_neg_Iic (f := fun t ↦ ‖deriv g t‖), neg_neg] at h
+    exact (ENNReal.ofReal_le_ofReal_iff (integral_nonneg fun _ ↦ norm_nonneg _)).1 h
+  · -- For `r > 1`, integrate the derivative of the compactly supported `C¹` function `‖g‖ʳ`
+    -- over `Ioi a`; it is bounded by `r ‖g‖ʳ⁻¹ ‖g'‖` and then by Young's inequality.
     have hv : ContDiff ℝ 1 (fun t ↦ ‖g t‖ ^ r) := hg.norm_rpow hr1
     have hvs : HasCompactSupport (fun t ↦ ‖g t‖ ^ r) :=
-      hs.mono fun t ht hzero ↦ ht (by simp [hzero, hr0])
+      hs.norm.rpow_const (zero_lt_one.trans hr1).ne'
     have hi := hvs.integral_Ioi_deriv_eq hv a
     have hdv : Integrable (fun t ↦ deriv (fun t ↦ ‖g t‖ ^ r) t) volume :=
       (hv.continuous_deriv le_rfl).integrable_of_hasCompactSupport hvs.deriv
