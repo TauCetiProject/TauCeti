@@ -70,22 +70,23 @@ above `n` in the strictly plurisubharmonic case `q = 0` without assuming `[Finit
 
 ## Proper holomorphic immersions and closed holomorphic embeddings
 
-Along a proper holomorphic immersion `i : M → F` into a proper complex inner product space, there
-exist a centre `z₀ : F`, a Morse squared distance `x ↦ ‖i x - z₀‖²`, regular squared-distance
-values `a 0 < a 1 < ⋯`, and a finite-dimensional Hausdorff CW homotopy model exhausted by finite
-subcomplexes `W k ≃ₕ {x | ‖i x - z₀‖² ≤ a k}` with no cells above dimension `n`
-(`TauCeti.exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp`).
-For an arbitrary proper complex normed target `F` (which need not carry an inner product) and a
-source `M` modelled on any boundaryless complex model `I` over `E` (not assumed finite-dimensional
-a priori), transporting the source along `TauCeti.BoundarylessModel.homeomorph I M` and choosing a
-complex continuous linear equivalence `F ≃L[ℂ] EuclideanSpace ℂ (Fin (finrank ℂ F))` transfers the
-immersion to a Euclidean target, while `exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp`
-handles empty `M` via `PEmpty` and forces `E` to be finite-dimensional on nonempty `M` via the
-injective derivative. Every Hausdorff complex manifold admitting a proper holomorphic immersion
-into a proper complex normed space — and in particular every complex manifold admitting a closed
-holomorphic embedding into a finite-dimensional complex normed space, where Hausdorffness of `M` is
-itself inherited from the embedding — therefore has the homotopy type of a finite-dimensional
-Hausdorff CW complex with no cells above its complex dimension `n`
+Along a proper holomorphic immersion `i : M → F` from a Hausdorff complex manifold `M` modelled
+on a boundaryless complex model `I` over `E` (not assumed finite-dimensional a priori) into a
+proper complex inner product space `F`, transporting the source along
+`TauCeti.BoundarylessModel.homeomorph I M` yields a centre `z₀ : F`, a Morse squared distance
+`x ↦ ‖i x - z₀‖²`, regular squared-distance values `a 0 < a 1 < ⋯`, and a finite-dimensional
+Hausdorff CW homotopy model exhausted by finite subcomplexes `W k ≃ₕ {x | ‖i x - z₀‖² ≤ a k}`
+with no cells above dimension `n`
+(`TauCeti.exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp`), handling empty `M` via
+`PEmpty` and forcing `E` to be finite-dimensional on nonempty `M` via the injective derivative.
+For an arbitrary proper complex normed target `F` (which need not carry an inner product),
+choosing a complex continuous linear equivalence
+`F ≃L[ℂ] EuclideanSpace ℂ (Fin (finrank ℂ F))` transfers the immersion to a Euclidean target.
+Every Hausdorff complex manifold admitting a proper holomorphic immersion into a proper complex
+normed space — and in particular every complex manifold admitting a closed holomorphic embedding
+into a finite-dimensional complex normed space, where Hausdorffness of `M` is itself inherited from
+the embedding — therefore has the homotopy type of a finite-dimensional Hausdorff CW complex with
+no cells above its complex dimension `n`
 (`TauCeti.exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion`,
 `TauCeti.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding`,
 `Manifold.IsImmersion.exists_cwComplex_homotopyEquiv_of_isProperMap`,
@@ -477,14 +478,8 @@ end PseudoconvexExhaustion
 
 /-! ### Proper holomorphic immersions, closed holomorphic embeddings, and affine zero loci -/
 
-/-- **Squared-distance CW exhaustion along a proper holomorphic immersion.** Let `i : M → F` be a
-proper holomorphic immersion from a Hausdorff complex manifold `M` into a proper complex inner
-product space `F`. Then for some centre `z₀ : F` and regular squared-distance values
-`a 0 < a 1 < ⋯` tending to infinity, `M` admits a finite-dimensional Hausdorff CW homotopy model
-`X ≃ₕ M` exhausted by finite CW subcomplexes `W k ≃ₕ {x | ‖i x - z₀‖² ≤ a k}`, with `m`-cells
-corresponding to the critical points of `x ↦ ‖i x - z₀‖²` of index `m`, and with no cells in
-dimensions strictly above `finrank ℂ E`. -/
-theorem exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp
+/-- Self-model core of `exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp`. -/
+private theorem exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp_self
     {E F : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E]
     [NormedAddCommGroup F] [InnerProductSpace ℂ F] [ProperSpace F]
     [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) 1 M] [T2Space M]
@@ -542,6 +537,102 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [
   {I : ModelWithCorners ℂ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M] [T2Space M]
 
+/-- **Squared-distance CW exhaustion along a proper holomorphic immersion.** Let `i : M → F` be a
+proper holomorphic immersion from a Hausdorff manifold `M` modelled on a boundaryless complex model
+`I` over `E` into a proper complex inner product space `F`. Then for some centre `z₀ : F` and
+regular squared-distance values `a 0 < a 1 < ⋯` tending to infinity, `M` admits a finite-dimensional
+Hausdorff CW homotopy model `X ≃ₕ M` exhausted by finite CW subcomplexes
+`W k ≃ₕ {x | ‖i x - z₀‖² ≤ a k}`, with `m`-cells corresponding to the critical points of
+`x ↦ ‖i x - z₀‖²` of index `m`, and with no cells in dimensions strictly above `finrank ℂ E`. -/
+theorem exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [ProperSpace F]
+    {i : M → F} (hi : MDifferentiable I 𝓘(ℂ, F) i)
+    (hinj : ∀ x, Injective (mvfderiv I i x)) (hip : IsProperMap i) :
+    ∃ (z₀ : F) (a : ℕ → ℝ) (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X)
+      (_ : CWComplex (univ : Set X)) (W : ℕ → CWComplex.Subcomplex (univ : Set X))
+      (h : X ≃ₕ M) (hW : ∀ k, (W k : Set X) ≃ₕ {x | ‖i x - z₀‖ ^ 2 ≤ a k}),
+      StrictMono a ∧ Tendsto a atTop atTop ∧
+      (∀ k, IsRegularValue (I.restrictScalars ℝ) 𝓘(ℝ) (fun x ↦ ‖i x - z₀‖ ^ 2) (a k)) ∧
+      Monotone W ∧ (W 0 : Set X) = ∅ ∧ (⋃ k, (W k : Set X)) = univ ∧
+      (∀ k, RelCWComplex.Finite (W k : Set X)) ∧
+      RelCWComplex.FiniteDimensional (univ : Set X) ∧
+      (∀ k (x : (W k : Set X)), (hW k x : M) = h x) ∧
+      (∀ k, MapsTo h.symm {x | ‖i x - z₀‖ ^ 2 ≤ a k} (W k)) ∧
+      (∀ m, Nonempty (cell (univ : Set X) m ≃
+        ↥{x ∈ criticalPoints (I.restrictScalars ℝ) (fun y ↦ ‖i y - z₀‖ ^ 2) |
+          manifoldMorseIndex (I.restrictScalars ℝ) (fun y ↦ ‖i y - z₀‖ ^ 2) x = m})) ∧
+      (∀ k m, Nonempty (cell (W k : Set X) m ≃
+        ↥{x ∈ criticalPoints (I.restrictScalars ℝ) (fun y ↦ ‖i y - z₀‖ ^ 2) ∩
+            {x | ‖i x - z₀‖ ^ 2 ≤ a k} |
+          manifoldMorseIndex (I.restrictScalars ℝ) (fun y ↦ ‖i y - z₀‖ ^ 2) x = m})) ∧
+      (∀ m, finrank ℂ E < m → IsEmpty (cell (univ : Set X) m)) ∧
+      ∀ k m, finrank ℂ E < m → IsEmpty (cell (W k : Set X) m) := by
+  let hM := BoundarylessModel.homeomorph I M
+  have : T2Space (BoundarylessModel I M) := hM.symm.isEmbedding.t2Space
+  let j : BoundarylessModel I M → F := i ∘ hM.symm
+  have hj_diff : MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, F) j :=
+    fun x ↦ (BoundarylessModel.mdifferentiableAt_source_iff I 𝓘(ℂ, F) i x).2 (hi _)
+  have hj_inj : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) j x) := fun x ↦ by
+    rw [injective_mvfderiv_iff, BoundarylessModel.mfderiv_source I 𝓘(ℂ, F) i x]
+    exact ((injective_mvfderiv_iff.1 (hinj _)).comp
+      (tangentSpaceCastModel I (hM.symm x)).symm.injective).comp
+      (tangentSpaceCastModel 𝓘(ℂ, E) x).injective
+  obtain ⟨z₀, a, X, instTop, instT2, instCW, W, h, hW, hmono, htop, hreg', hWmono, hW0, hWuniv,
+      hWfin, hfd, hhW', hsymm', hcell', hWcell', hempty, hWempty⟩ :=
+    exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp_self hj_diff hj_inj
+      (hip.comp hM.symm.isClosedEmbedding.isProperMap)
+  let g : M → ℝ := fun x ↦ ‖i x - z₀‖ ^ 2
+  have hext (x : BoundarylessModel I M) :
+      extChartAt 𝓘(ℝ, E) x = extChartAt (I.restrictScalars ℝ) (hM.symm x) := by
+    rw [extChartAt, extChartAt, OpenPartialHomeomorph.extend, OpenPartialHomeomorph.extend,
+      modelWithCornersSelf_partialEquiv, PartialEquiv.trans_refl,
+      BoundarylessModel.chartAt_eq, BoundarylessModel.chart_toPartialEquiv,
+      OpenPartialHomeomorph.extend, ModelWithCorners.restrictScalars_toPartialEquiv]
+  have hcrit_iff (x : BoundarylessModel I M) :
+      x ∈ criticalPoints 𝓘(ℝ, E) (g ∘ hM.symm) ↔
+        hM.symm x ∈ criticalPoints (I.restrictScalars ℝ) g := by
+    rw [mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero,
+      mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero, hext,
+      BoundarylessModel.coe_homeomorph_symm]
+    rfl
+  have hidx_eq (x : BoundarylessModel I M) :
+      manifoldMorseIndex 𝓘(ℝ, E) (g ∘ hM.symm) x =
+        manifoldMorseIndex (I.restrictScalars ℝ) g (hM.symm x) := by
+    rw [manifoldMorseIndex_def, manifoldMorseIndex_def, hext,
+      BoundarylessModel.coe_homeomorph_symm]
+    rfl
+  let eSub (k : ℕ) : {x : BoundarylessModel I M | j x ∈ {y | ‖y - z₀‖ ^ 2 ≤ a k}} ≃ₜ
+      {x : M | g x ≤ a k} :=
+    { toFun x := ⟨hM.symm x, x.property⟩
+      invFun x := ⟨hM x, show ‖i (hM.symm (hM x)) - z₀‖ ^ 2 ≤ a k by
+        simpa only [g, mem_ofPred_eq, Homeomorph.symm_apply_apply] using x.property⟩
+      left_inv _ := Subtype.ext (hM.apply_symm_apply _)
+      right_inv _ := Subtype.ext (hM.symm_apply_apply _) }
+  refine ⟨z₀, a, X, instTop, instT2, instCW, W, h.trans hM.symm.toHomotopyEquiv,
+    fun k ↦ (hW k).trans (eSub k).toHomotopyEquiv, hmono, htop, fun k ↦ ?_, hWmono, hW0, hWuniv,
+    hWfin, hfd, fun k x ↦ congrArg hM.symm (hhW' k x),
+    fun k x hx ↦ hsymm' k (by simpa [j] using hx), fun m ↦ ⟨(hcell' m).some.trans ?_⟩,
+    fun k m ↦ ⟨(hWcell' k m).some.trans ?_⟩, hempty, hWempty⟩
+  · rw [isRegularValue_iff_notMem_image_criticalPoints]
+    rintro ⟨y, hy, hyk⟩
+    refine isRegularValue_iff_notMem_image_criticalPoints.1 (hreg' k)
+      ⟨hM y, (hcrit_iff (hM y)).2 (by simpa [g] using hy), by simpa [j] using hyk⟩
+  · exact {
+      toFun x := ⟨hM.symm x.val, (hcrit_iff x.val).1 x.property.1,
+        (hidx_eq x.val).symm.trans x.property.2⟩
+      invFun y := ⟨hM y.val, (hcrit_iff (hM y.val)).2 (by simpa [g] using y.property.1),
+        (hidx_eq (hM y.val)).trans (by simpa [g] using y.property.2)⟩
+      left_inv x := Subtype.ext (hM.apply_symm_apply x.val)
+      right_inv y := Subtype.ext (hM.symm_apply_apply y.val) }
+  · exact {
+      toFun x := ⟨hM.symm x.val, ⟨(hcrit_iff x.val).1 x.property.1.1, x.property.1.2⟩,
+        (hidx_eq x.val).symm.trans x.property.2⟩
+      invFun y := ⟨hM y.val, ⟨(hcrit_iff (hM y.val)).2 (by simpa [g] using y.property.1.1),
+          by simpa [j] using y.property.1.2⟩,
+        (hidx_eq (hM y.val)).trans (by simpa [g] using y.property.2)⟩
+      left_inv x := Subtype.ext (hM.apply_symm_apply x.val)
+      right_inv y := Subtype.ext (hM.symm_apply_apply y.val) }
+
 /-- **CW homotopy model along a proper holomorphic immersion** (Andreotti–Frankel; Milnor, Theorem
 7.2). Let `i : M → F` be a proper holomorphic immersion from a Hausdorff manifold `M` modelled on
 a boundaryless complex model `I` over `E` into a proper complex normed space `F` (no inner product
@@ -555,31 +646,20 @@ theorem exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       RelCWComplex.FiniteDimensional (univ : Set X) ∧ Nonempty (M ≃ₕ X) ∧
       ∀ m, finrank ℂ E < m → IsEmpty (cell (univ : Set X) m) := by
-  let hM := BoundarylessModel.homeomorph I M
-  have : T2Space (BoundarylessModel I M) := hM.symm.isEmbedding.t2Space
   have : FiniteDimensional ℂ F := .of_locallyCompactSpace ℂ
   let e : F ≃L[ℂ] EuclideanSpace ℂ (Fin (finrank ℂ F)) :=
     ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
-  let j : BoundarylessModel I M → EuclideanSpace ℂ (Fin (finrank ℂ F)) := (e ∘ i) ∘ hM.symm
   have hei : MDifferentiable I 𝓘(ℂ, EuclideanSpace ℂ (Fin (finrank ℂ F))) (e ∘ i) :=
     (e.contDiff.contMDiff.mdifferentiable one_ne_zero).comp hi
-  have hj_diff : MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, EuclideanSpace ℂ (Fin (finrank ℂ F))) j :=
-    fun x ↦ (BoundarylessModel.mdifferentiableAt_source_iff I 𝓘(ℂ, _) (e ∘ i) x).2 (hei _)
-  have hj_inj : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) j x) := fun x ↦ by
-    rw [injective_mvfderiv_iff, BoundarylessModel.mfderiv_source I 𝓘(ℂ, _) (e ∘ i) x]
-    have hein : Injective (mvfderiv I (e ∘ i) (hM.symm x)) := fun v w hvw ↦ by
-      simp only [mvfderiv_comp_apply_of_differentiableAt e.differentiableAt (hi _),
-        e.fderiv] at hvw
-      exact hinj _ (e.injective hvw)
-    exact ((injective_mvfderiv_iff.1 hein).comp
-      (tangentSpaceCastModel I (hM.symm x)).symm.injective).comp
-      (tangentSpaceCastModel 𝓘(ℂ, E) x).injective
+  have hein : ∀ x, Injective (mvfderiv I (e ∘ i) x) := fun x v w hvw ↦ by
+    simp only [mvfderiv_comp_apply_of_differentiableAt e.differentiableAt (hi _),
+      e.fderiv] at hvw
+    exact hinj _ (e.injective hvw)
   obtain ⟨_, _, X, instTop, instT2, instCW, _, h, _, -, -, -, -, -, -, -, hfd, -, -, -, -, hempty,
       -⟩ :=
-    exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp hj_diff hj_inj
-      ((e.toHomeomorph.isClosedEmbedding.isProperMap.comp hip).comp
-        hM.symm.isClosedEmbedding.isProperMap)
-  exact ⟨X, instTop, instT2, instCW, hfd, ⟨hM.toHomotopyEquiv.trans h.symm⟩, hempty⟩
+    exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp hei hein
+      (e.toHomeomorph.isClosedEmbedding.isProperMap.comp hip)
+  exact ⟨X, instTop, instT2, instCW, hfd, ⟨h.symm⟩, hempty⟩
 
 omit [T2Space M] in
 /-- **The closed holomorphic embedding CW theorem** (Andreotti–Frankel; Milnor, *Morse Theory*,
@@ -651,7 +731,7 @@ theorem exists_cwComplex_subcomplex_homotopyEquiv_affineZeroLocus {σ : Type u} 
       (fun y : affineZeroLocus p ↦ WithLp.toLp 2 (y : σ → ℂ)) :=
     (EuclideanSpace.equiv σ ℂ).symm.toHomeomorph.isClosedEmbedding.comp
       (isClosed_affineZeroLocus p).isClosedEmbedding_subtypeVal
-  simpa only [Module.finrank_fin_fun] using
+  simpa only [Module.finrank_fin_fun, modelWithCornersSelf_restrictScalars] using
     exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp
       ((contMDiff_toLp_coe_affineZeroLocus hp 1).mdifferentiable one_ne_zero)
       (injective_mvfderiv_toLp_coe_affineZeroLocus hp) hclosed.isProperMap

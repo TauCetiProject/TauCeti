@@ -236,6 +236,7 @@ private theorem CWModelExtends.trans {s m t : ℝ} {hsm : s ≤ m} {hmt : m ≤ 
     exact hA₁.image_of_isEmbedding hι₂.isEmbedding hA₂
   simp [he₁, he₂]
 
+omit [FiniteDimensional ℝ E] in
 /-- **Extending relative CW models of sublevels.** Let `f` be a Morse function and `a ≤ b` regular
 values of `f` with compact band `f⁻¹[a, b]`, and let `h : W ≃ₕ M_a` be a homotopy equivalence from a
 CW complex `W` relative to a base `D` to the sublevel `M_a = {f ≤ a}`. Then there are a space `W'`
@@ -254,12 +255,59 @@ theorem IsMorse.exists_relCWComplex_extension_homotopyEquiv_sublevel (hf : IsMor
       (∀ w, (h' (ι w) : M) = h w) ∧
       ∃ e : ∀ m, cell (univ : Set W') m ≃ cell (univ : Set W) m ⊕
           ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m},
-        ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) :=
-  hf.band_induction (P := CWModelExtends I f) hab hcompact ha hb
+        ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) := by
+  have hfc : Continuous f := hf.contMDiff.continuous
+  rcases hab.eq_or_lt with rfl | hab'
+  · have (m : ℕ) : IsEmpty
+        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a a | manifoldMorseIndex I f x = m} :=
+      ⟨fun x ↦ (lt_irrefl a) (x.property.1.2.1.trans_le x.property.1.2.2)⟩
+    refine ⟨W, _, ‹_›, .id W, D, ‹_›, h, (image_id D).symm, .id, ?_, fun _ ↦ rfl,
+      fun m ↦ (Equiv.sumEmpty _ _).symm, fun _ _ _ ↦ rfl⟩
+    rw [ContinuousMap.coe_id, range_id]
+    exact isClopen_univ.hasHomotopyExtensionProperty
+  rcases (f ⁻¹' Icc a b).eq_empty_or_nonempty with hEmpty | ⟨x₀, hx₀⟩
+  · have heq : {x | f x ≤ a} = {x | f x ≤ b} := by
+      ext x
+      refine ⟨fun hxa ↦ hxa.trans hab, fun hxb ↦ ?_⟩
+      by_contra hax
+      exact Set.eq_empty_iff_forall_notMem.1 hEmpty x ⟨(not_le.1 hax).le, hxb⟩
+    have (m : ℕ) : IsEmpty
+        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m} :=
+      ⟨fun x ↦ Set.eq_empty_iff_forall_notMem.1 hEmpty x.val (Ioc_subset_Icc_self x.property.1.2)⟩
+    refine ⟨W, _, ‹_›, .id W, D, ‹_›, h.trans (Homeomorph.setCongr heq).toHomotopyEquiv,
+      (image_id D).symm, .id, ?_, fun _ ↦ rfl,
+      fun m ↦ (Equiv.sumEmpty _ _).symm, fun _ _ _ ↦ rfl⟩
+    rw [ContinuousMap.coe_id, range_id]
+    exact isClopen_univ.hasHomotopyExtensionProperty
+  have ⟨y₀, hy₀⟩ : ∃ y, a < f y ∧ f y < b := by
+    by_contra! hno
+    rcases eq_or_lt_of_le hx₀.1 with hfa | hfa
+    · have hmax : IsLocalMax f x₀ := by
+        filter_upwards [(isOpen_lt hfc continuous_const).mem_nhds (hfa ▸ hab')] with y hy
+        exact not_lt.1 fun h ↦ hy.not_ge (hno y (hfa ▸ h))
+      exact isRegularValue_iff_notMem_image_criticalPoints.1 ha
+        ⟨x₀, hmax.mem_criticalPoints, hfa.symm⟩
+    · rcases eq_or_lt_of_le hx₀.2 with hfb | hfb
+      · have hmin : IsLocalMin f x₀ := by
+          filter_upwards [(isOpen_lt continuous_const hfc).mem_nhds (hfb.symm ▸ hab')] with y hy
+          exact hfb ▸ hno y hy
+        exact isRegularValue_iff_notMem_image_criticalPoints.1 hb
+          ⟨x₀, hmin.mem_criticalPoints, hfb⟩
+      · exact hfb.not_ge (hno x₀ hfa)
+  let U : TopologicalSpace.Opens M := ⟨f ⁻¹' Ioo a b, isOpen_Ioo.preimage hfc⟩
+  have : Nonempty U := ⟨⟨y₀, hy₀⟩⟩
+  have : CompactSpace (f ⁻¹' Icc a b) := isCompact_iff_compactSpace.1 hcompact
+  have : LocallyCompactSpace U :=
+    (Topology.IsOpenEmbedding.inclusion (s := (U : Set M)) (t := f ⁻¹' Icc a b)
+      (fun _ hx ↦ Ioo_subset_Icc_self hx)
+      (U.isOpen.preimage continuous_subtypeVal)).locallyCompactSpace
+  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold U I
+  exact hf.band_induction (P := CWModelExtends I f) hab hcompact ha hb
     (fun _ _ hst hcompact hcrit ↦ cwModelExtends_of_forall_notMem hf hst hcompact hcrit)
     (fun _ _ _ _ _ hδ hcompact ↦ hf.exists_cwModelExtends_level hδ hcompact)
     (fun _ _ _ _ _ _ h₁ h₂ ↦ h₁.trans h₂) W D h
 
+omit [FiniteDimensional ℝ E] in
 /-- **Extending CW models of sublevels.** Let `f` be a Morse function and `a ≤ b` regular values of
 `f` with compact band `f⁻¹[a, b]`, and let `h : W ≃ₕ M_a` be a homotopy equivalence from a CW
 complex `W` to the sublevel `M_a = {f ≤ a}`. Then there are a CW complex `W'`, a closed embedding
@@ -286,6 +334,7 @@ theorem IsMorse.exists_cwComplex_extension_homotopyEquiv_sublevel (hf : IsMorse 
   subst hD'
   exact ⟨W', _, ‹_›, RelCWComplex.toCWComplex _, ι, h', hι, hA, hh, e, he⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- **Extending finite CW models of sublevels.** Let `f` be a Morse function and `a ≤ b` regular
 values of `f` with compact band `f⁻¹[a, b]`, and let `h : W ≃ₕ M_a` be a homotopy equivalence from a
 finite CW complex `W` to the sublevel `M_a = {f ≤ a}`. Then the extension `h' : W' ≃ₕ M_b` of
@@ -316,6 +365,7 @@ theorem IsMorse.exists_finite_cwComplex_extension_homotopyEquiv_sublevel (hf : I
     (.of_equiv _ ((Equiv.sigmaSumDistrib _ _).symm.trans (Equiv.sigmaCongrRight e).symm)),
     hι, hA, hh, e, he⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- **Extending dimension-bounded finite CW models of sublevels.** Let `f` be a Morse function and
 `a ≤ b` regular values with compact band `f⁻¹[a, b]` in which every critical point with value in
 `(a, b]` has Morse index at most `d`. Any finite CW model `h : W ≃ₕ {f ≤ a}` with no cells above
@@ -345,6 +395,7 @@ theorem IsMorse.exists_finite_cwComplex_extension_homotopyEquiv_sublevel_of_mani
     ⟨fun ⟨x, hx, hxk⟩ ↦ ((hd x hx).trans_lt (hxk ▸ hk)).false⟩
   exact (e k).isEmpty
 
+omit [FiniteDimensional ℝ E] in
 /-- **The relative CW model of a regular band.** Let `f` be a Morse function and `a ≤ b` regular
 values of `f` with compact band `f⁻¹[a, b]`. Then the sublevel `M_b = {f ≤ b}` is homotopy
 equivalent to a CW complex `X` relative to a copy of `M_a = {f ≤ a}`, with one `m`-cell for each
@@ -369,6 +420,7 @@ theorem IsMorse.exists_relCWComplex_homotopyEquiv_sublevel (hf : IsMorse I f) {a
   subst hD'
   exact ⟨X, _, ‹_›, j, ‹_›, h, hj, hh, ⟨fun m ↦ (e m).trans (Equiv.emptySum _ _)⟩⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- **CW models of sublevels.** Let `f` be a Morse function and `a ≤ b` regular values of `f`
 with compact band `f⁻¹[a, b]`. If `W` is a finite CW complex homotopy equivalent to the sublevel
 `M_a = {f ≤ a}`, then `M_b` is homotopy equivalent to a finite CW complex `W'` whose number of

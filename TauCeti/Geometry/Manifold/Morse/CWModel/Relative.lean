@@ -121,6 +121,7 @@ private theorem sum_range_monomial_eq_add_mul_of_relCWComplex {W : Type u} [Topo
   congr 1
   exact Finset.sum_congr rfl fun i _ ↦ by rw [(hH i).some.toLinearEquiv.finrank_eq]
 
+omit [FiniteDimensional ℝ E] in
 /-- **The relative CW model of a regular band computes its relative homology.** Let `f` be a Morse
 function and `a ≤ b` regular values with compact band `f⁻¹[a, b]`. Then there are a space `X`, a
 closed embedding `j : M_a → X` of the sublevel `M_a = {f ≤ a}`, and a finite CW structure on `X`
@@ -149,6 +150,7 @@ theorem exists_relCWComplex_singularHomology_iso_sublevelPair (hf : IsMorse I f)
   rw [complexBasePair_eq_ofInclusion]
   exact TopPair.nonempty_singularHomology_ofInclusion_iso_of_homotopyEquiv _ hj.isEmbedding h hh R n
 
+omit [FiniteDimensional ℝ E] in
 /-- **The Morse polynomial identity of a sublevel pair, with cellular coefficients.** Let `f` be a
 Morse function and `a ≤ b` regular values with compact band `f⁻¹[a, b]`. Then there is a finite
 relative CW complex `(W, B)` whose relative `m`-cells correspond to the critical points of index
@@ -298,6 +300,7 @@ theorem exists_relCWComplex_sum_range_monomial_upperBandPair_eq_add_mul
   rw [← bandPair_neg]
   simpa only [hf.setOf_neg_band_eq] using hQ V hn
 
+omit [FiniteDimensional ℝ E] in
 /-- **Index-bounded Morse polynomial identity of a sublevel pair, with cellular coefficients.** Let
 `f` be a Morse function and `a ≤ b` regular values with compact band `f⁻¹[a, b]`, such that every
 critical point of `f` with value in `(a, b]` has Morse index at most `d`. Then there is a finite

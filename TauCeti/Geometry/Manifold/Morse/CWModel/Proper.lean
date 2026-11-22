@@ -173,6 +173,7 @@ private def sigmaCriticalPointsIocEquiv {a : ℕ → ℝ} (hmono : StrictMono a)
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
 
+omit [FiniteDimensional ℝ E] in
 /-- Across a compact band between regular values, a finite CW model of the lower sublevel extends
 to one of the upper sublevel, containing it as a subcomplex, with one new `m`-cell for each
 critical point of index `m` in the band. -/
