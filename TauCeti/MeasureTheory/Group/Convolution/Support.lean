@@ -20,10 +20,10 @@ Convolutions over a group `G` are parametric integrals `s ↦ ∫ r, F s r ∂μ
 vanishes unless `r ∈ K` and `r⁻¹ * s ∈ L`, where `K` and `L` are the supports of the two factors.
 This file records the resulting support bounds, for any normed-space valued integrand: the
 parametric integral is supported in `K * L`, and for compact `K` and `L` both the integrand on
-`G × G` and the parametric integral are compactly supported. For a left-invariant measure finite on
-compacts, Fubini's theorem for compactly supported continuous functions then evaluates the iterated
-`ℝ≥0∞`-norm convolution integral of two compactly supported continuous functions as the product of
-their `L¹` seminorms without σ-finiteness.
+`G × G` and the parametric integral are compactly supported. For measures `μ` and `ν` finite on
+compacts, with `ν` left-invariant, Fubini's theorem for compactly supported continuous functions
+then evaluates the iterated `ℝ≥0∞`-norm convolution integral of two compactly supported
+continuous functions as the product of their `L¹` seminorms without σ-finiteness.
 
 ## Main statements
 
@@ -36,11 +36,12 @@ their `L¹` seminorms without σ-finiteness.
 * `TauCeti.hasCompactSupport_integral_of_inv_mul_mem`: the parametric integral is compactly
   supported.
 * `TauCeti.continuous_integral_norm_mul_inv_mul`, `TauCeti.integrable_integral_norm_mul_inv_mul`,
-  and `TauCeti.lintegral_eNorm_mul_inv_mul_eq_ofReal_integral`: continuity, integrability, and
-  `ℝ≥0∞` conversion of `s ↦ ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ`.
+  and `TauCeti.lintegral_eNorm_mul_inv_mul_eq_ofReal_integral`: continuity, integrability
+  against `ν`, and `ℝ≥0∞` conversion of `s ↦ ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ`.
 * `TauCeti.integral_integral_norm_mul_inv_mul` and
   `TauCeti.lintegral_lintegral_eNorm_mul_inv_mul`: iterated norm convolution identities for
-  compactly supported continuous functions against a left-invariant measure finite on compacts.
+  compactly supported continuous functions against measures `μ` and `ν` finite on compacts with `ν`
+  left-invariant.
 -/
 
 public section
@@ -121,13 +122,13 @@ theorem continuous_integral_norm_mul_inv_mul [MeasurableSpace G] [OpensMeasurabl
   fun_prop
 
 /-- For compactly supported continuous `u : G → E₁` and `v : G → E₂`, the scalar parametric
-convolution `s ↦ ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ` is integrable against any measure finite on
-compact sets. -/
+convolution `s ↦ ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ` is integrable against any measure `ν` finite on
+compact sets, whenever `μ` is also finite on compact sets. -/
 theorem integrable_integral_norm_mul_inv_mul [MeasurableSpace G] [OpensMeasurableSpace G]
-    (μ : Measure G) [IsFiniteMeasureOnCompacts μ] {u : G → E₁} {v : G → E₂}
-    (hu : Continuous u) (huc : HasCompactSupport u) (hv : Continuous v)
-    (hvc : HasCompactSupport v) :
-    Integrable (fun s => ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ) μ :=
+    (μ ν : Measure G) [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν]
+    {u : G → E₁} {v : G → E₂} (hu : Continuous u) (huc : HasCompactSupport u)
+    (hv : Continuous v) (hvc : HasCompactSupport v) :
+    Integrable (fun s => ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ) ν :=
   (continuous_integral_norm_mul_inv_mul μ hu huc hv).integrable_of_hasCompactSupport
     (hasCompactSupport_integral_of_inv_mul_mem μ huc hvc fun _ _ hsr =>
       mem_tsupport_and_inv_mul_mem_tsupport hsr
@@ -149,14 +150,16 @@ theorem lintegral_eNorm_mul_inv_mul_eq_ofReal_integral [MeasurableSpace G]
   congr 1 with r
   rw [ENNReal.ofReal_mul (norm_nonneg _), ofReal_norm, ofReal_norm]
 
-/-- Against any left-invariant measure finite on compact sets (with no σ-finiteness assumption),
-two compactly supported continuous functions `u : G → E₁` and `v : G → E₂` satisfy
-`∫ s, ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ ∂μ = (∫ r, ‖u r‖ ∂μ) * ∫ s, ‖v s‖ ∂μ`. -/
+/-- Against measures `μ` and `ν` finite on compact sets with `ν` left-invariant (with no
+σ-finiteness assumption), two compactly supported continuous functions `u : G → E₁` and
+`v : G → E₂` satisfy
+`∫ s, ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ ∂ν = (∫ r, ‖u r‖ ∂μ) * ∫ s, ‖v s‖ ∂ν`. -/
 theorem integral_integral_norm_mul_inv_mul [MeasurableSpace G] [OpensMeasurableSpace G]
-    [MeasurableMul G] (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
-    {u : G → E₁} {v : G → E₂} (hu : Continuous u) (huc : HasCompactSupport u)
-    (hv : Continuous v) (hvc : HasCompactSupport v) :
-    (∫ s, ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ ∂μ) = (∫ r, ‖u r‖ ∂μ) * ∫ s, ‖v s‖ ∂μ := by
+    [MeasurableMul G] (μ ν : Measure G) [IsFiniteMeasureOnCompacts μ]
+    [IsFiniteMeasureOnCompacts ν] [ν.IsMulLeftInvariant] {u : G → E₁} {v : G → E₂}
+    (hu : Continuous u) (huc : HasCompactSupport u) (hv : Continuous v)
+    (hvc : HasCompactSupport v) :
+    (∫ s, ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ ∂ν) = (∫ r, ‖u r‖ ∂μ) * ∫ s, ‖v s‖ ∂ν := by
   have hcont : Continuous (uncurry fun s r => ‖u r‖ * ‖v (r⁻¹ * s)‖) := by
     rw [uncurry_def]; fun_prop
   have hsupp : HasCompactSupport (uncurry fun s r => ‖u r‖ * ‖v (r⁻¹ * s)‖) :=
@@ -164,13 +167,13 @@ theorem integral_integral_norm_mul_inv_mul [MeasurableSpace G] [OpensMeasurableS
       huc hvc fun _ _ hsr =>
         mem_tsupport_and_inv_mul_mem_tsupport hsr
           (by intro hu0; simp [hu0]) (by intro hv0; simp [hv0])
-  calc (∫ s, ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ ∂μ)
-      = ∫ r, ∫ s, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ ∂μ :=
+  calc (∫ s, ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ ∂ν)
+      = ∫ r, ∫ s, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂ν ∂μ :=
         integral_integral_swap_of_hasCompactSupport hcont hsupp
-    _ = ∫ r, ‖u r‖ * ∫ s, ‖v s‖ ∂μ ∂μ := by
+    _ = ∫ r, ‖u r‖ * ∫ s, ‖v s‖ ∂ν ∂μ := by
         congr 1 with r
         rw [integral_const_mul, integral_mul_left_eq_self (fun s => ‖v s‖) r⁻¹]
-    _ = (∫ r, ‖u r‖ ∂μ) * ∫ s, ‖v s‖ ∂μ := integral_mul_const _ _
+    _ = (∫ r, ‖u r‖ ∂μ) * ∫ s, ‖v s‖ ∂ν := integral_mul_const _ _
 
 omit [Group G] [IsTopologicalGroup G] in
 private theorem ofReal_integral_norm {E : Type*} [SeminormedAddCommGroup E]
@@ -183,22 +186,24 @@ private theorem ofReal_integral_norm {E : Type*} [SeminormedAddCommGroup E]
   congr 1 with x
   exact ofReal_norm _
 
-/-- Against any left-invariant measure finite on compact sets (with no σ-finiteness assumption),
-two compactly supported continuous functions `u : G → E₁` and `v : G → E₂` satisfy
-`∫⁻ s, ∫⁻ r, ‖u r‖ₑ * ‖v (r⁻¹ * s)‖ₑ ∂μ ∂μ = (∫⁻ r, ‖u r‖ₑ ∂μ) * ∫⁻ s, ‖v s‖ₑ ∂μ`. -/
+/-- Against measures `μ` and `ν` finite on compact sets with `ν` left-invariant (with no
+σ-finiteness assumption), two compactly supported continuous functions `u : G → E₁` and
+`v : G → E₂` satisfy
+`∫⁻ s, ∫⁻ r, ‖u r‖ₑ * ‖v (r⁻¹ * s)‖ₑ ∂μ ∂ν = (∫⁻ r, ‖u r‖ₑ ∂μ) * ∫⁻ s, ‖v s‖ₑ ∂ν`. -/
 theorem lintegral_lintegral_eNorm_mul_inv_mul [MeasurableSpace G] [OpensMeasurableSpace G]
-    [MeasurableMul G] (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
-    {u : G → E₁} {v : G → E₂} (hu : Continuous u) (huc : HasCompactSupport u)
-    (hv : Continuous v) (hvc : HasCompactSupport v) :
-    (∫⁻ s, (∫⁻ r, ‖u r‖ₑ * ‖v (r⁻¹ * s)‖ₑ ∂μ) ∂μ) =
-      (∫⁻ r, ‖u r‖ₑ ∂μ) * ∫⁻ s, ‖v s‖ₑ ∂μ := by
+    [MeasurableMul G] (μ ν : Measure G) [IsFiniteMeasureOnCompacts μ]
+    [IsFiniteMeasureOnCompacts ν] [ν.IsMulLeftInvariant] {u : G → E₁} {v : G → E₂}
+    (hu : Continuous u) (huc : HasCompactSupport u) (hv : Continuous v)
+    (hvc : HasCompactSupport v) :
+    (∫⁻ s, (∫⁻ r, ‖u r‖ₑ * ‖v (r⁻¹ * s)‖ₑ ∂μ) ∂ν) =
+      (∫⁻ r, ‖u r‖ₑ ∂μ) * ∫⁻ s, ‖v s‖ₑ ∂ν := by
   simp_rw [lintegral_eNorm_mul_inv_mul_eq_ofReal_integral μ hu huc hv]
   rw [← ofReal_integral_eq_lintegral_ofReal
-      (integrable_integral_norm_mul_inv_mul μ hu huc hv hvc)
+      (integrable_integral_norm_mul_inv_mul μ ν hu huc hv hvc)
       (.of_forall fun _ => integral_nonneg fun _ => mul_nonneg (norm_nonneg _) (norm_nonneg _)),
-    integral_integral_norm_mul_inv_mul μ hu huc hv hvc,
+    integral_integral_norm_mul_inv_mul μ ν hu huc hv hvc,
     ENNReal.ofReal_mul (integral_nonneg fun _ => norm_nonneg _),
-    ofReal_integral_norm μ hu huc, ofReal_integral_norm μ hv hvc]
+    ofReal_integral_norm μ hu huc, ofReal_integral_norm ν hv hvc]
 
 end Seminormed
 

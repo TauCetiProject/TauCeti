@@ -53,9 +53,10 @@ none of this assumes σ-finiteness.
   sets of an inner regular locally finite left-invariant measure (without `[μ.IsOpenPosMeasure]`).
 * `MeasureTheory.Measure.isMulRightInvariant_withDensity_modularCharacter`: `μ.withDensity c`
   is right invariant for an inner regular Haar measure `μ`.
-* `MeasureTheory.Measure.inv_eq_withDensity_modularCharacter` and
-  `MeasureTheory.Measure.inv_absolutelyContinuous_of_innerRegular`: `μ.inv = μ.withDensity c` and
-  `μ.inv ≪ μ` for an inner regular Haar measure `μ`.
+* `MeasureTheory.Measure.inv_eq_withDensity_modularCharacter`: `μ.inv = μ.withDensity c` for an
+  inner regular Haar measure `μ`.
+* `MeasureTheory.Measure.inv_absolutelyContinuous_of_innerRegular`: `μ.inv ≪ μ` for an inner
+  regular locally finite left-invariant measure `μ` (without `[μ.IsOpenPosMeasure]`).
 * `MeasureTheory.Measure.quasiMeasurePreserving_inv_mul_of_inv_absolutelyContinuous`: `y ↦ y⁻¹ * x`
   preserves null sets of any left-invariant measure satisfying `μ.inv ≪ μ`.
 * `MeasureTheory.Measure.map_right_mul_eq_modularCharacter_smul_of_regular`:
@@ -398,11 +399,21 @@ theorem inv_eq_withDensity_modularCharacter [μ.InnerRegular] :
       _ = μ.inv := inv_withDensity_modularCharacter_withDensity μ
   exact le_antisymm hle hge
 
-/-- Inversion maps null sets of an inner regular Haar measure to null sets: `μ.inv ≪ μ`. Compare
+omit [μ.IsHaarMeasure] in
+/-- Inversion maps null sets of an inner regular locally finite left-invariant measure to null
+sets: `μ.inv ≪ μ` (without `[μ.IsOpenPosMeasure]`). Compare
 `MeasureTheory.inv_absolutelyContinuous`, which assumes σ-finiteness instead of inner regularity. -/
-theorem inv_absolutelyContinuous_of_innerRegular [μ.InnerRegular] : μ.inv ≪ μ := by
-  rw [inv_eq_withDensity_modularCharacter μ]
-  exact withDensity_absolutelyContinuous _ _
+theorem inv_absolutelyContinuous_of_innerRegular [μ.IsMulLeftInvariant]
+    [IsFiniteMeasureOnCompacts μ] [μ.InnerRegular] : μ.inv ≪ μ := by
+  rcases eq_or_ne μ 0 with rfl | hμ0
+  · simp [inv_def]
+  · have hpos_univ : 0 < μ Set.univ := pos_iff_ne_zero.mpr (mt measure_univ_eq_zero.mp hμ0)
+    obtain ⟨K, -, hK, hμK⟩ := MeasurableSet.univ.exists_lt_isCompact hpos_univ
+    have : μ.IsOpenPosMeasure :=
+      isOpenPosMeasure_of_mulLeftInvariant_of_compact _ hK hμK.ne'
+    have : μ.IsHaarMeasure := {}
+    rw [inv_eq_withDensity_modularCharacter μ]
+    exact withDensity_absolutelyContinuous _ _
 
 section Regular
 

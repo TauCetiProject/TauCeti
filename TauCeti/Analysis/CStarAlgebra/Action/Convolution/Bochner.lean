@@ -268,7 +268,7 @@ private theorem exists_bochnerConvolution_majorant {φ u ψ v : ℕ → C_c(G, A
       (map_continuous (u p.1)) (u p.1).hasCompactSupport (map_continuous (v p.2))).measurable
   have hW_fin : ∫⁻ s, W s ∂μ ≠ ∞ := by
     rw [lintegral_tsum fun p => (hW_meas_term p).aemeasurable]
-    simp_rw [fun p : ℕ × ℕ => lintegral_lintegral_eNorm_mul_inv_mul μ
+    simp_rw [fun p : ℕ × ℕ => lintegral_lintegral_eNorm_mul_inv_mul μ μ
       (map_continuous (u p.1)) (u p.1).hasCompactSupport
       (map_continuous (v p.2)) (v p.2).hasCompactSupport]
     rw [tsum_prod' (f := fun p : ℕ × ℕ => (∫⁻ r, ‖u p.1 r‖ₑ ∂μ) * ∫⁻ s, ‖v p.2 s‖ₑ ∂μ)]

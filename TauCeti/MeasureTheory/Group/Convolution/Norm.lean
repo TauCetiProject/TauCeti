@@ -53,11 +53,11 @@ theorem integral_norm_le_mul_of_norm_le_integral {G E₁ E₂ E₃ : Type*}
         integral_mono
           (F.continuous.norm.integrable_of_hasCompactSupport
             (F.hasCompactSupport.comp_left norm_zero))
-          (integrable_integral_norm_mul_inv_mul μ f.continuous f.hasCompactSupport
+          (integrable_integral_norm_mul_inv_mul μ μ f.continuous f.hasCompactSupport
             g.continuous g.hasCompactSupport)
           hF
     _ = (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ :=
-        integral_integral_norm_mul_inv_mul μ f.continuous f.hasCompactSupport
+        integral_integral_norm_mul_inv_mul μ μ f.continuous f.hasCompactSupport
           g.continuous g.hasCompactSupport
 
 end TauCeti
