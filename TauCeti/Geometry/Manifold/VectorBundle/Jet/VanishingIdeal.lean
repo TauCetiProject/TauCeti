@@ -83,7 +83,7 @@ private theorem jet_smul_eq_zero {x : M} {f : C^∞⟮I, M; ℝ⟯}
     jet I F r (f • t : Cₛ^∞⟮I; F, V⟯) x = 0 := by
   have hx := FirstJetBundle.mem_baseSet_self (H := H) F V x
   have hxI : I.IsInteriorPoint x := BoundarylessManifold.isInteriorPoint
-  rw [jet_eq_zero_iff_iteratedFDeriv_localRep (contMDiffAt_section _ x)]
+  rw [jet_eq_zero_iff_forall_iteratedFDeriv_localRep_eq_zero (contMDiffAt_section _ x)]
   intro k hk
   -- Near the image of `x`, the local representative of `f • t` is the chart expression `g` of `f`
   -- times that of `t`, written as the application of `L ∘ g` with `L c = c • id`.
@@ -156,7 +156,8 @@ theorem jet_eq_zero_iff_mem_smoothVanishingIdeal_pow_smul_top [FiniteDimensional
     (trivializationAt F V x) (mem_baseSet_trivializationAt F V x)
     BoundarylessManifold.isInteriorPoint fun k hk ↦ ?_
   rw [hrep]
-  exact (jet_eq_zero_iff_iteratedFDeriv_localRep (contMDiffAt_section s x)).1 h k hk
+  exact (jet_eq_zero_iff_forall_iteratedFDeriv_localRep_eq_zero (contMDiffAt_section s x)).1
+    h k hk
 
 /-- **Equal jets.** For a smooth real vector bundle `V` of finite rank, two smooth sections have
 the same `r`-jet at `x` if and only if their difference lies in `I_x ^ (r + 1) Γ(V)`. -/

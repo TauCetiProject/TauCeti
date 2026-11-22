@@ -49,7 +49,7 @@ is why the base is assumed boundaryless.
   (`TauCeti.JetBundle.jet_congr_of_eventuallyEq`), linear on sections that are `C^r` at the base
   point (`TauCeti.JetBundle.jet_add`, `TauCeti.JetBundle.jet_const_smul`), and vanishes exactly
   when the derivatives of order at most `r` of the local representative do
-  (`TauCeti.JetBundle.jet_eq_zero_iff_iteratedFDeriv_localRep`).
+  (`TauCeti.JetBundle.jet_eq_zero_iff_forall_iteratedFDeriv_localRep_eq_zero`).
 
 ## References
 
@@ -316,7 +316,7 @@ theorem toJets_jet {s : ∀ x, V x} {x : M}
 /-- **The `r`-jet vanishes exactly when the derivatives do.** The `r`-jet of a section that is
 `C^r` at `x` is zero if and only if its local representative in the chart and trivialization at
 `x` has vanishing derivatives of every order at most `r` at the image of `x`. -/
-theorem jet_eq_zero_iff_iteratedFDeriv_localRep {s : ∀ x, V x} {x : M}
+theorem jet_eq_zero_iff_forall_iteratedFDeriv_localRep_eq_zero {s : ∀ x, V x} {x : M}
     (hs : ContMDiffAt I (I.prod 𝓘(𝕜, F)) r (fun x ↦ TotalSpace.mk' F x (s x)) x) :
     jet I F r s x = 0 ↔ ∀ k ≤ r,
       iteratedFDeriv 𝕜 k (FirstJetBundle.localRep I F s x) (extChartAt I x x) = 0 := by
