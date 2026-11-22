@@ -57,9 +57,6 @@ intended throughout.
   over a subfield `𝕜` with `𝕜'` finite-dimensional over `𝕜`; for instance, the realification of
   a complex Fredholm operator is Fredholm. Its index is computed by
   `ContinuousLinearMap.index_restrictScalars`.
-* `FredholmDecomposition.inessentialProj` and `FredholmDecomposition.prodEquiv`: the projection
-  onto the finite-dimensional inessential summand `X₀` along `X₁` and the product coordinate
-  equivalence `(X₁ × X₀) ≃L[𝕜] E`.
 * `ContinuousLinearMap.FredholmPackage.range_quasiInverse`,
   `ContinuousLinearMap.FredholmPackage.ker_quasiInverse`,
   `ContinuousLinearMap.FredholmPackage.isFredholm_quasiInverse`, and
@@ -304,71 +301,6 @@ theorem FredholmPackage.isFredholm_quasiInverse [ContinuousSub E] [ContinuousSub
 end FredholmPackage
 
 end ContinuousLinearMap
-
-namespace FredholmDecomposition
-
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
-  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-
-section ContinuousSub
-
-variable [ContinuousSub E]
-
-/-- Projection onto the finite-dimensional inessential summand `dec.X₀` along the essential
-summand `dec.X₁`. -/
-noncomputable def inessentialProj (dec : FredholmDecomposition 𝕜 E) : E →L[𝕜] dec.X₀ :=
-  dec.X₀.projectionOntoL dec.X₁ dec.isTopCompl.symm
-
-/-- Defining formula for `FredholmDecomposition.inessentialProj`. -/
-theorem inessentialProj_def (dec : FredholmDecomposition 𝕜 E) :
-    dec.inessentialProj = dec.X₀.projectionOntoL dec.X₁ dec.isTopCompl.symm :=
-  (rfl)
-
-/-- `inessentialProj` vanishes on the essential (left) summand `dec.X₁`. -/
-@[simp]
-theorem inessentialProj_apply_left (dec : FredholmDecomposition 𝕜 E) (x : dec.X₁) :
-    dec.inessentialProj (x : E) = 0 :=
-  dec.X₀.projectionOntoL_apply_right dec.isTopCompl.symm x
-
-/-- `inessentialProj` is the identity on the inessential (right) summand `dec.X₀`. -/
-@[simp]
-theorem inessentialProj_apply_right (dec : FredholmDecomposition 𝕜 E) (k : dec.X₀) :
-    dec.inessentialProj (k : E) = k :=
-  dec.X₀.projectionOntoL_apply_left dec.isTopCompl.symm k
-
-end ContinuousSub
-
-section IsTopologicalAddGroup
-
-variable [IsTopologicalAddGroup E]
-
-/-- Product coordinate equivalence `(dec.X₁ × dec.X₀) ≃L[𝕜] E` assembling the essential and
-inessential summands. -/
-noncomputable def prodEquiv (dec : FredholmDecomposition 𝕜 E) :
-    (dec.X₁ × dec.X₀) ≃L[𝕜] E :=
-  dec.X₁.prodEquivOfIsTopCompl dec.X₀ dec.isTopCompl
-
-/-- Defining formula for `FredholmDecomposition.prodEquiv`. -/
-theorem prodEquiv_def (dec : FredholmDecomposition 𝕜 E) :
-    dec.prodEquiv = dec.X₁.prodEquivOfIsTopCompl dec.X₀ dec.isTopCompl :=
-  (rfl)
-
-/-- `prodEquiv` sums the coerced coordinates in `E`. -/
-@[simp]
-theorem prodEquiv_apply (dec : FredholmDecomposition 𝕜 E) (p : dec.X₁ × dec.X₀) :
-    dec.prodEquiv p = (p.1 : E) + (p.2 : E) := by
-  rw [prodEquiv_def, Submodule.prodEquivOfIsTopCompl_apply]
-
-/-- `prodEquiv.symm` pairs the essential and inessential projections. -/
-@[simp]
-theorem prodEquiv_symm_apply (dec : FredholmDecomposition 𝕜 E) (x : E) :
-    dec.prodEquiv.symm x = (dec.proj x, dec.inessentialProj x) := by
-  rw [prodEquiv_def, inessentialProj_def]
-  exact Submodule.prodEquivOfIsTopCompl_symm_apply dec.isTopCompl x
-
-end IsTopologicalAddGroup
-
-end FredholmDecomposition
 
 section CompleteSpace
 

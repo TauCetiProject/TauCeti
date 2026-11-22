@@ -43,12 +43,10 @@ adjoints commutes with forming the canonical orthogonal quasi-inverse.
   operator into a Hilbert space admits an orthogonal projection.
 * `ContinuousLinearMap.IsFredholm.orthogonalFredholmPackage`: the canonical `FredholmPackage`
   built from the orthogonal splittings `E = (ker T)ᗮ ⊕ ker T` and `F = range T ⊕ ker T†`.
-* `ContinuousLinearMap.IsFredholm.orthogonalFredholmPackage_decDom_proj`,
-  `ContinuousLinearMap.IsFredholm.orthogonalFredholmPackage_decCodom_proj`,
-  `ContinuousLinearMap.IsFredholm.orthogonalFredholmPackage_decDom_inessentialProj`, and
-  `ContinuousLinearMap.IsFredholm.orthogonalFredholmPackage_decCodom_inessentialProj`: all four
-  projections of the orthogonal Fredholm package agree with the Hilbert-space orthogonal
-  projections.
+* `ContinuousLinearMap.IsFredholm.orthogonalFredholmPackage_decDom_proj` and
+  `ContinuousLinearMap.IsFredholm.orthogonalFredholmPackage_decCodom_proj`: the essential domain
+  and codomain projections of the orthogonal Fredholm package agree with the Hilbert-space
+  orthogonal projections.
 * `ContinuousLinearMap.IsFredholm.orthogonalFredholmPackage_quasiInverse_comp_self`,
   `ContinuousLinearMap.IsFredholm.orthogonalFredholmPackage_quasiInverse_apply_self`,
   `ContinuousLinearMap.IsFredholm.self_comp_orthogonalFredholmPackage_quasiInverse`, and
@@ -141,24 +139,6 @@ theorem IsFredholm.orthogonalFredholmPackage_decCodom_proj (hT : T.IsFredholm)
     hT.orthogonalFredholmPackage.decCodom.proj = T.range.orthogonalProjectionOnto :=
   T.projectionOntoL_range_ker_adjoint_eq_orthogonalProjectionOnto hT.isClosed_range
 
-/-- The inessential domain projection of the orthogonal Fredholm package is the orthogonal
-projection onto `ker T`. -/
-@[simp]
-theorem IsFredholm.orthogonalFredholmPackage_decDom_inessentialProj (hT : T.IsFredholm) :
-    hT.orthogonalFredholmPackage.decDom.inessentialProj = T.ker.orthogonalProjectionOnto := by
-  rw [FredholmDecomposition.inessentialProj_def]
-  exact Submodule.projectionOntoL_eq_orthogonalProjectionOnto_of_isOrtho
-    (U := T.ker) _ T.ker.isOrtho_orthogonal_right
-
-/-- The inessential codomain projection of the orthogonal Fredholm package is the orthogonal
-projection onto `ker T†`. -/
-@[simp]
-theorem IsFredholm.orthogonalFredholmPackage_decCodom_inessentialProj (hT : T.IsFredholm) :
-    hT.orthogonalFredholmPackage.decCodom.inessentialProj =
-      ((T†).ker).orthogonalProjectionOnto := by
-  rw [FredholmDecomposition.inessentialProj_def]
-  exact T.projectionOntoL_ker_adjoint_range_eq_orthogonalProjectionOnto hT.isClosed_range
-
 /-- Read in the ambient codomain `F`, the codomain projection of the orthogonal Fredholm package is
 `id - (ker T†).starProjection`. -/
 theorem IsFredholm.subtypeL_comp_orthogonalFredholmPackage_decCodom_proj (hT : T.IsFredholm) :
@@ -197,11 +177,8 @@ theorem IsFredholm.orthogonalFredholmPackage_quasiInverse_eq (hT : T.IsFredholm)
 @[simp]
 theorem IsFredholm.orthogonalFredholmPackage_quasiInverse_apply_of_mem_ker_adjoint
     (hT : T.IsFredholm) {y : F} (hy : y ∈ (T†).ker) :
-    hT.orthogonalFredholmPackage.quasiInverse y = 0 := by
-  have : T.range.HasOrthogonalProjection := hT.hasOrthogonalProjection_range
-  have hy' : y ∈ T.rangeᗮ := T.orthogonal_range.symm ▸ hy
-  rw [hT.orthogonalFredholmPackage_quasiInverse_eq]
-  simp [Submodule.orthogonalProjectionOnto_apply_of_mem_orthogonal hy']
+    hT.orthogonalFredholmPackage.quasiInverse y = 0 :=
+  LinearMap.mem_ker.mp (hT.orthogonalFredholmPackage.ker_quasiInverse ▸ hy)
 
 /-- Restricting the orthogonal quasi-inverse to `ker T†` gives the zero operator. -/
 @[simp]
@@ -209,15 +186,16 @@ theorem IsFredholm.orthogonalFredholmPackage_quasiInverse_comp_subtypeL_ker_adjo
     (hT : T.IsFredholm) :
     hT.orthogonalFredholmPackage.quasiInverse ∘L (T†).ker.subtypeL = 0 := by
   ext y
-  exact hT.orthogonalFredholmPackage_quasiInverse_apply_of_mem_ker_adjoint y.property
+  simp only [comp_apply, subtypeL_apply, zero_apply]
+  exact LinearMap.mem_ker.mp (hT.orthogonalFredholmPackage.ker_quasiInverse ▸ y.property)
 
 /-- Every value of the orthogonal quasi-inverse lies in `(ker T)ᗮ`. -/
 @[simp]
 theorem IsFredholm.orthogonalFredholmPackage_quasiInverse_apply_mem_orthogonal_ker
     (hT : T.IsFredholm) (y : F) :
     hT.orthogonalFredholmPackage.quasiInverse y ∈ (T.ker)ᗮ := by
-  have := hT.hasOrthogonalProjection_range
-  simp [hT.orthogonalFredholmPackage_quasiInverse_eq]
+  rw [← hT.orthogonalFredholmPackage_decDom_X₁, ← hT.orthogonalFredholmPackage.range_quasiInverse]
+  exact LinearMap.mem_range_self _ y
 
 /-- Precomposing the orthogonal quasi-inverse with `T` gives the orthogonal projection onto
 `(ker T)ᗮ`. -/
