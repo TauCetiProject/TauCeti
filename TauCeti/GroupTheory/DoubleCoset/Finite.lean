@@ -116,7 +116,8 @@ theorem card_doubleCoset_eq_card_mul_relIndex (s : G) (H K : Subgroup G) :
     have hdc : Nat.card (DoubleCoset.doubleCoset s (K : Set G) (H : Set G)) = 0 := by
       have : Infinite (DoubleCoset.doubleCoset s (K : Set G) (H : Set G)) :=
         Infinite.of_injective
-          (fun h : H => (⟨s * h, DoubleCoset.mem_doubleCoset.2 ⟨1, K.one_mem, h, h.2, by simp⟩⟩ :
+          (fun h : H => (⟨s * h, DoubleCoset.mem_doubleCoset.2 ⟨1, K.one_mem, h, h.property,
+              by simp⟩⟩ :
             DoubleCoset.doubleCoset s (K : Set G) (H : Set G)))
           fun a b hab => Subtype.ext (mul_left_cancel (congrArg Subtype.val hab))
       exact Nat.card_eq_zero_of_infinite

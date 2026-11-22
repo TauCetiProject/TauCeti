@@ -82,6 +82,11 @@ roots of `F(X, 1)` multiplied by `a`.
   substituting `(X₀ ^ p, X₁ ^ p)` into the homogenization of `q` at degree `n`.
 * `Polynomial.eval_homogenize_geom_sum`: the homogenization of degree `m (p - 1)` of the geometric
   sum `∑_{i < p} (X ^ m) ^ i` takes the value `∑_{i < p} (a ^ m) ^ i (b ^ m) ^ (p - 1 - i)`.
+* `Polynomial.aeval_adjugate_homogenize_aeval_linear`,
+  `Polynomial.aeval_linear_homogenize_ne_zero`: substituting the adjugate linear forms
+  `d X - b` and `-c X + a` into the degree-`n` homogenization of `F(a X + b, c X + d)` recovers
+  `(a d - b c) ^ n • p`, so `F(a X + b, c X + d) ≠ 0` when `p ≠ 0`, `natDegree p ≤ n`, and
+  `a d - b c ≠ 0` in a commutative ring without zero divisors.
 * `MvPolynomial.aeval_X_one_map`: the dehomogenization `F(X, 1)` commutes with mapping the
   coefficients along a ring homomorphism.
 * `MvPolynomial.IsHomogeneous.exists_linear_factors`: a binary form of degree `d` with no
@@ -373,6 +378,45 @@ theorem eval_homogenize_geom_sum (m p : ℕ) (a b : S) :
   simp
 
 end Evaluation
+
+/-- **Adjugate identity for homogenized linear substitution.** For `natDegree p ≤ n`, substituting
+`a X + b` and `c X + d` into `p.homogenize n`, homogenizing again in degree `n`, and substituting
+the adjugate forms `d X - b` and `-c X + a` scales `p` by `(a * d - b * c) ^ n`. -/
+theorem aeval_adjugate_homogenize_aeval_linear {p : R[X]} {n : ℕ} (hn : p.natDegree ≤ n)
+    (a b c d : R) :
+    MvPolynomial.aeval ![C d * X - C b, C (-c) * X + C a]
+      ((MvPolynomial.aeval ![C a * X + C b, C c * X + C d] (p.homogenize n)).homogenize n) =
+      (a * d - b * c) ^ n • p := by
+  set F : MvPolynomial (Fin 2) R := p.homogenize n
+  set L₁ : Fin 2 → MvPolynomial (Fin 2) R :=
+    ![MvPolynomial.C a * MvPolynomial.X 0 + MvPolynomial.C b * MvPolynomial.X 1,
+      MvPolynomial.C c * MvPolynomial.X 0 + MvPolynomial.C d * MvPolynomial.X 1]
+  have hF : F.IsHomogeneous n := isHomogeneous_homogenize p
+  have hL₁ : ∀ i, (L₁ i).IsHomogeneous 1 := fun i ↦ by
+    fin_cases i <;>
+      exact ((MvPolynomial.isHomogeneous_X R 0).C_mul _).add
+        ((MvPolynomial.isHomogeneous_X R 1).C_mul _)
+  have hG : (MvPolynomial.aeval L₁ F).IsHomogeneous n := by simpa using hF.aeval L₁ hL₁
+  have hGX : MvPolynomial.aeval ![(X : R[X]), 1] (MvPolynomial.aeval L₁ F) =
+      MvPolynomial.aeval ![C a * X + C b, C c * X + C d] F := by
+    rw [MvPolynomial.comp_aeval_apply]
+    congr 2; funext i; fin_cases i <;> simp [L₁]
+  rw [homogenize_eq_of_isHomogeneous hG hGX, MvPolynomial.comp_aeval_apply]
+  have hcomp : (fun i ↦ MvPolynomial.aeval ![C d * X - C b, C (-c) * X + C a] (L₁ i)) =
+      (a * d - b * c) • ![(X : R[X]), 1] := by
+    funext i; fin_cases i <;> simp [L₁, smul_eq_C_mul, map_sub, map_mul] <;> ring
+  rw [hcomp, hF.aeval_smul, aeval_homogenize_X_one p hn]
+
+/-- Substituting linear polynomials `a X + b` and `c X + d` of nonzero determinant `a * d - b * c`
+into the degree-`n` homogenization of a nonzero polynomial `p` of degree at most `n` over a
+commutative ring without zero divisors yields a nonzero polynomial. -/
+theorem aeval_linear_homogenize_ne_zero [NoZeroDivisors R] {p : R[X]} (hp : p ≠ 0) {n : ℕ}
+    (hn : p.natDegree ≤ n) {a b c d : R} (hdet : a * d - b * c ≠ 0) :
+    MvPolynomial.aeval ![C a * X + C b, C c * X + C d] (p.homogenize n) ≠ 0 := by
+  intro h0
+  have h := aeval_adjugate_homogenize_aeval_linear hn a b c d
+  rw [h0, homogenize_zero, map_zero, smul_eq_C_mul] at h
+  exact mul_ne_zero (C_ne_zero.mpr (pow_ne_zero n hdet)) hp h.symm
 
 end Polynomial
 

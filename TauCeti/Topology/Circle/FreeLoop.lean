@@ -182,7 +182,7 @@ private def straighteningLoop : C(I × C(Circle, Circle), ClosedUnitPath Circle)
     (ContinuousMap.continuous _).subtype_mk _⟩
 
 private theorem straighteningLoop_apply (p : I × C(Circle, Circle)) (t : I) :
-    (straighteningLoop p).1 t = p.2 1 * exp (straighteningAngle (p, t)) :=
+    (straighteningLoop p).val t = p.2 1 * exp (straighteningAngle (p, t)) :=
   rfl
 
 /-- The straightening homotopy, read as a family of circle maps. -/

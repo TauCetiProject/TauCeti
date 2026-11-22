@@ -11,7 +11,7 @@ public import Mathlib.Order.Filter.Germ.Basic
 /-!
 # Algebras of germs
 
-Composition along a map tending to a filter is a ring homomorphism on germs.
+Composition along a map or germ tending to a filter is a ring or algebra homomorphism on germs.
 Germs of algebra-valued functions inherit the pointwise scalar algebra structure.
 The projection from functions to germs is an algebra homomorphism. This lets subalgebras
 of germs retain the same scalars as their representatives.
@@ -62,5 +62,26 @@ def coeAlgHom (l : Filter α) : (α → A) →ₐ[R] Germ l A where
 
 @[simp]
 theorem coeAlgHom_apply (f : α → A) : coeAlgHom (R := R) l f = (f : Germ l A) := (rfl)
+
+/-- Composition of algebra-valued germs along a germ tending to the target filter, as an algebra
+homomorphism. -/
+def compTendsto'AlgHom {β : Type*} {l' : Filter β} (g : Germ l β) (hg : g.Tendsto l') :
+    Germ l' A →ₐ[R] Germ l A where
+  toFun f := f.compTendsto' g hg
+  map_one' := const_compTendsto' (1 : A) hg
+  map_mul' f₁ f₂ := by
+    revert hg
+    exact inductionOn₂ f₁ f₂ fun _ _ ↦ inductionOn g fun _ _ ↦ rfl
+  map_zero' := const_compTendsto' (0 : A) hg
+  map_add' f₁ f₂ := by
+    revert hg
+    exact inductionOn₂ f₁ f₂ fun _ _ ↦ inductionOn g fun _ _ ↦ rfl
+  commutes' r := const_compTendsto' (algebraMap R A r) hg
+
+/-- The algebra homomorphism on germs acts by germ composition. -/
+@[simp]
+theorem compTendsto'AlgHom_apply {β : Type*} {l' : Filter β} (g : Germ l β)
+    (hg : g.Tendsto l') (f : Germ l' A) :
+    compTendsto'AlgHom (R := R) g hg f = f.compTendsto' g hg := (rfl)
 
 end Filter.Germ

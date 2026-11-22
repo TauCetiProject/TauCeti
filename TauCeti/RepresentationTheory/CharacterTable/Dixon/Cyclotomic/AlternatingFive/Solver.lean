@@ -99,7 +99,8 @@ theorem alternatingGroupFiveExponentCentralCharacterTable_two_mul_natAbs_coeff_l
       fun z ↦ decide (2 * z.natAbs < 61)) = true := by
     rw [alternatingGroupFiveExponentCentralCharacterTable_apply,
       alternatingGroupFiveCandidateCentralCharacterTable_apply]
-    fin_cases i <;> fin_cases j <;> decide +kernel
+    revert i j
+    decide +kernel
   have hmem : (alternatingGroupFiveExponentCentralCharacterTable i j).coeff k ∈
       (alternatingGroupFiveExponentCentralCharacterTable i j).coeffs := by
     rw [Cyclotomic.coeff, List.getD_eq_getElem _ _

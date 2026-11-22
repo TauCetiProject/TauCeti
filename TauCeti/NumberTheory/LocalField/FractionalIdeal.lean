@@ -44,7 +44,7 @@ theorem spanSingleton_le_spanSingleton_iff_valuation_le {x y : K} :
   constructor
   · rintro ⟨z, rfl⟩
     rw [Subring.smul_def, smul_eq_mul, map_mul]
-    exact mul_le_of_le_one_left' z.2
+    exact mul_le_of_le_one_left' z.property
   · intro h
     rcases eq_or_ne y 0 with rfl | hy
     · exact ⟨0, by simp_all⟩
