@@ -245,8 +245,9 @@ theorem IsUnimodular.exists_isometry_hyperbolicPlane_orthogonalSum {L : Integral
   obtain ⟨u, hu, huu⟩ := L.exists_isPrimitive_integralNorm_eq_zero hiso
   rw [integralNorm_apply] at huu
   obtain ⟨w, huw⟩ := hL.exists_integralForm_eq_one hu
-  obtain ⟨d, hd⟩ := (L.even_integralNorm_iff w).mpr (hE.exists_norm_eq_two_mul w)
-  rw [integralNorm_apply, ← two_mul] at hd
+  -- The body of `IsEven` is not exposed, so read it pointwise through the identity equivalence.
+  obtain ⟨d, hd⟩ := (L.isEven_iff_of_integralForm_equiv _ (.refl ℤ L) fun _ ↦ rfl).mp hE w
+  rw [← two_mul] at hd
   obtain ⟨v, w', hvw, hv, hw⟩ :=
     L.isSymm_integralForm.exists_hyperbolic_of_apply_self_eq_zero huu huw hd
   let e := L.hyperbolicPlaneSplittingIsometry hv hw hvw
@@ -262,11 +263,9 @@ by one of odd norm: if `w` has even norm, so has the plane spanned by `v` and `w
 private theorem exists_odd_partner (hodd : ¬ L.IsEven) {v w : L} (hvv : L.integralForm v v = 0)
     (hvw : L.integralForm v w = 1) :
     ∃ w' : L, Odd (L.integralForm w' w') ∧ L.integralForm v w' = 1 := by
-  obtain ⟨x, hx⟩ : ∃ x : L, ¬ Even (L.integralNorm x) := by
-    by_contra h
-    push Not at h
-    exact hodd (L.isEven_iff_forall_norm.mpr fun x ↦ (L.even_integralNorm_iff x).mp (h x))
-  rw [integralNorm_apply, Int.not_even_iff_odd] at hx
+  obtain ⟨x, hx⟩ : ∃ x : L, ¬ Even (L.integralForm x x) :=
+    not_forall.mp (mt (L.isEven_iff_of_integralForm_equiv _ (.refl ℤ L) fun _ ↦ rfl).mpr hodd)
+  rw [Int.not_even_iff_odd] at hx
   set B := L.integralForm
   have hsymm (x y : L) : B x y = B y x := L.isSymm_integralForm.eq x y
   by_cases hw : Odd (B w w)
