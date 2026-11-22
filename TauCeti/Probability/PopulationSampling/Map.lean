@@ -49,7 +49,8 @@ one-pair case.
   deterministic population into a space with measurable singletons has the same discrepancy as
   `id : κ → κ`;
 * `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_of_injective`,
-  `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective`: exact finite
+  `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective`,
+  `tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective`: exact finite
   sampling discrepancy for injective populations into a space with measurable singletons, without
   a diagonal-measurability hypothesis;
 * `samplePopulation_dirac_eq_map_update_id`, `iSup_samplePopulation_dirac_sub_le_update_id`,
@@ -230,6 +231,21 @@ theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injec
     etvDist_samplePopulation_dirac_eq_id _ _ hx, ← sampleWithoutReplacement_def,
     ← sampleWithReplacement_def]
   exact etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq Function.injective_id e
+    (Set.to_countable _).measurableSet
+
+/-- When the value space has measurable singletons, the real total variation distance between
+sampling a distinct-valued finite population without and with replacement is twice the collision
+probability, without requiring measurability of `{f : ι → α | Function.Injective f}` in `ι → α`. -/
+theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective
+    {x : κ → α} (hx : Function.Injective x) (e : ι ↪ κ) :
+    tvDist (sampleWithoutReplacement (ι := ι) (Measure.dirac x))
+        (sampleWithReplacement (ι := ι) (Measure.dirac x)) =
+      2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ) ^ Fintype.card ι) := by
+  rw [sampleWithoutReplacement_def, sampleWithReplacement_def, tvDist,
+    etvDist_samplePopulation_dirac_eq_id _ _ hx, ← tvDist, ← sampleWithoutReplacement_def,
+    ← sampleWithReplacement_def]
+  exact tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq Function.injective_id e
     (Set.to_countable _).measurableSet
 
 end DistinctMeasurableSingletons

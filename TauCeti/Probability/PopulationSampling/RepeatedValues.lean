@@ -369,15 +369,11 @@ theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff
       2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ) ^ Fintype.card ι) ↔ Injective x := by
   obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
-  have : Nonempty (ι → κ) := ⟨e⟩
-  refine ⟨fun h => ?_, fun hx => ?_⟩
-  · by_contra hx
-    exact (tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective
-      hx hm).ne h
-  · have h_etv := etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective hx e
-    have h_tv := congrArg ENNReal.toReal h_etv
-    rwa [← tvDist, ENNReal.toReal_mul, ENNReal.toReal_ofNat, ← uniformOn_not_injective_apply_eq,
-      ← measureReal_def, uniformOn_real_not_injective_apply_eq] at h_tv
+  refine ⟨fun h => ?_, fun hx =>
+    tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective hx e⟩
+  by_contra hx
+  exact (tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective
+    hx hm).ne h
 
 end Characterization
 
