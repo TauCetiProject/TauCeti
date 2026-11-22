@@ -141,11 +141,18 @@ theorem ext {α β : GelfandSpectrum A} (h : ∀ x, α x = β x) : α = β :=
 theorem bound (α : GelfandSpectrum A) : (RingHom.id A).IsBoundedWrt norm α :=
   α.bound'
 
+private theorem normRingSeminorm_apply (x : A) : normRingSeminorm A x = ‖x‖ :=
+  rfl
+
 /-- **Contractivity of spectrum points.** Every `α : GelfandSpectrum A` satisfies `α x ≤ ‖x‖` for
 all `x : A`, because `α (x ^ n) = α x ^ n` absorbs multiplicative constants as `n → ∞`. -/
-theorem apply_le_norm (α : GelfandSpectrum A) (x : A) : α x ≤ ‖x‖ :=
-  contraction_of_isPowMul_of_boundedWrt (normRingSeminorm A) α.toMulRingSeminorm.isPowMul
-    α.bound' x
+theorem apply_le_norm (α : GelfandSpectrum A) (x : A) : α x ≤ ‖x‖ := by
+  obtain ⟨C, hC0, hC⟩ := α.bound'
+  have hbdd : (RingHom.id A).IsBoundedWrt (normRingSeminorm A) α.toMulRingSeminorm :=
+    ⟨C, hC0, fun y ↦ by simpa only [normRingSeminorm_apply, toMulRingSeminorm_apply] using hC y⟩
+  simpa only [RingHom.id_apply, toMulRingSeminorm_apply, normRingSeminorm_apply] using
+    contraction_of_isPowMul_of_boundedWrt (normRingSeminorm A) α.toMulRingSeminorm.isPowMul
+      hbdd x
 
 /-- Construct a point of `GelfandSpectrum A` from a contractive multiplicative ring seminorm. -/
 def ofLeNorm (α : MulRingSeminorm A) (h : ∀ x, α x ≤ ‖x‖) : GelfandSpectrum A :=
@@ -473,9 +480,6 @@ section SeminormedCommRing
 
 variable {A : Type*} [SeminormedCommRing A]
 
-private theorem normRingSeminorm_apply (x : A) : normRingSeminorm A x = ‖x‖ :=
-  rfl
-
 private theorem normRingSeminorm_ne_zero_of_norm_one_ne_zero (h1 : ‖(1 : A)‖ ≠ 0) :
     normRingSeminorm A ≠ 0 :=
   RingSeminorm.ne_zero_iff.2 ⟨1, by rwa [normRingSeminorm_apply]⟩
@@ -485,7 +489,10 @@ spectral seminorm `smoothingFun (normRingSeminorm A)`. -/
 theorem apply_le_smoothingFun (α : GelfandSpectrum A) (x : A) :
     α x ≤ smoothingFun (normRingSeminorm A) x := by
   obtain ⟨C, -, hC⟩ := α.bound'
-  exact α.toMulRingSeminorm.le_smoothingFun_of_le_mul (μ := normRingSeminorm A) hC x
+  rw [← toMulRingSeminorm_apply]
+  exact α.toMulRingSeminorm.le_smoothingFun_of_le_mul (μ := normRingSeminorm A)
+    (fun y ↦ by
+      simpa only [RingHom.id_apply, toMulRingSeminorm_apply, normRingSeminorm_apply] using hC y) x
 
 /-- If the ambient seminorm on a commutative ring is not identically zero, then for every `x : A`
 there exists a point `α : GelfandSpectrum A` attaining `smoothingFun (normRingSeminorm A) x`. -/
@@ -496,8 +503,10 @@ theorem exists_apply_eq_smoothingFun_of_norm_ne_zero (h : normRingSeminorm A ≠
   obtain ⟨α₀, hα₀, hα₀x⟩ :=
     RingSeminorm.exists_mulRingSeminorm_le_and_apply_eq
       (normRingSeminorm A).isPowMul_smoothing hsm x
-  exact ⟨ofLeNorm α₀ fun y ↦ (hα₀ y).trans ((normRingSeminorm A).smoothing_le_self y),
-    hα₀x.trans ((normRingSeminorm A).smoothing_apply x)⟩
+  refine ⟨ofLeNorm α₀ fun y ↦ ?_, ?_⟩
+  · rw [← normRingSeminorm_apply]
+    exact (hα₀ y).trans ((normRingSeminorm A).smoothing_le_self y)
+  · rw [ofLeNorm_apply, hα₀x, (normRingSeminorm A).smoothing_apply x]
 
 /-- Over a commutative seminormed ring, `GelfandSpectrum A` is nonempty if and only if
 `‖(1 : A)‖ ≠ 0`. -/
@@ -538,9 +547,13 @@ theorem smoothingFun_eq_sSup (x : A) :
   simp only [Set.mem_ofPred_eq, Set.mem_range]
   refine ⟨?_, ?_⟩
   · rintro ⟨α₀, hα₀, rfl⟩
-    exact ⟨ofLeNorm α₀ hα₀, rfl⟩
+    refine ⟨ofLeNorm α₀ fun y ↦ ?_, ofLeNorm_apply _ _ x⟩
+    rw [← normRingSeminorm_apply]
+    exact hα₀ y
   · rintro ⟨α, rfl⟩
-    exact ⟨α.toMulRingSeminorm, α.apply_le_norm, rfl⟩
+    refine ⟨α.toMulRingSeminorm, fun y ↦ ?_, toMulRingSeminorm_apply α x⟩
+    rw [toMulRingSeminorm_apply, normRingSeminorm_apply]
+    exact α.apply_le_norm y
 
 end SeminormedCommRing
 

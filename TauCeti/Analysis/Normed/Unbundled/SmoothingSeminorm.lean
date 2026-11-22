@@ -63,6 +63,12 @@ public section
 
 open Filter Topology
 
+/-- For any positive real `D`, `D ^ (1 / n) → 1` as `n → ∞`. -/
+private theorem tendsto_rpow_one_div_atTop {D : ℝ} (hD : 0 < D) :
+    Tendsto (fun n : ℕ ↦ D ^ (1 / n : ℝ)) atTop (𝓝 1) := by
+  simpa [Function.comp_def] using ((Real.continuousAt_const_rpow hD.ne').tendsto).comp
+    (tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ))
+
 variable {R S : Type*} [CommRing R] [CommRing S]
 
 namespace RingHom
@@ -79,10 +85,8 @@ theorem smoothingFun_map_le_of_le_mul {μ : RingSeminorm R} {ν : RingSeminorm S
   have hD : 0 < D := zero_lt_one.trans_le (le_max_right _ _)
   have hlim : Tendsto (fun n : ℕ ↦ D ^ (1 / n : ℝ) * smoothingSeminormSeq μ x n) atTop
       (𝓝 (smoothingFun μ x)) := by
-    have hD1 : Tendsto (fun n : ℕ ↦ D ^ (1 / n : ℝ)) atTop (𝓝 1) := by
-      simpa [Function.comp_def] using ((Real.continuousAt_const_rpow hD.ne').tendsto).comp
-        (tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ))
-    simpa using hD1.mul (tendsto_smoothingFun_of_map_one_le_one μ hμ1 x)
+    simpa using (tendsto_rpow_one_div_atTop hD).mul
+      (tendsto_smoothingFun_of_map_one_le_one μ hμ1 x)
   refine ge_of_tendsto hlim (eventually_atTop.2 ⟨1, fun n hn ↦ ?_⟩)
   calc smoothingFun ν (φ x) ≤ ν (φ x ^ n) ^ (1 / n : ℝ) :=
         smoothingFun_le ν (φ x) ⟨n, hn⟩
@@ -112,15 +116,41 @@ private theorem exists_pow_le_const_mul_pow (μ : RingSeminorm R) (hμ1 : μ 1 �
         (fun _ _ ↦ by positivity) hmem).trans (le_add_of_nonneg_left zero_le_one)
     exact (div_le_iff₀ (pow_pos ha0 k)).1 hdiv
   · have hk1 : 1 ≤ k := (Nat.le_add_left 1 K).trans hk
-    have hk0 : (k : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (Nat.one_le_iff_ne_zero.1 hk1)
+    have hk0 : k ≠ 0 := Nat.one_le_iff_ne_zero.1 hk1
     have hlt : μ (x ^ k) ^ (1 / k : ℝ) ≤ a := (hK k (Nat.le_of_succ_le hk)).le
     have hpow : μ (x ^ k) ≤ a ^ k := by
       calc μ (x ^ k) = (μ (x ^ k) ^ (1 / k : ℝ)) ^ k := by
-            rw [← Real.rpow_natCast, ← Real.rpow_mul (apply_nonneg μ _), one_div_mul_cancel hk0,
-              Real.rpow_one]
+            rw [one_div, Real.rpow_inv_natCast_pow (apply_nonneg μ _) hk0]
         _ ≤ a ^ k := pow_le_pow_left₀ (by positivity) hlt k
     exact hpow.trans (le_mul_of_one_le_left (pow_nonneg ha0.le k)
       (le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ ↦ by positivity)))
+
+/-- Binomial power bound: geometric upper bounds on `μ (x ^ k)` and `μ (y ^ k)` yield a
+geometric upper bound on `μ ((x + y) ^ n)`. -/
+private theorem pow_add_le_of_forall_pow_le (μ : RingSeminorm R) {x y : R} {Cx Cy a b : ℝ}
+    (hCx : ∀ k, μ (x ^ k) ≤ Cx * a ^ k) (hCy : ∀ k, μ (y ^ k) ≤ Cy * b ^ k) (n : ℕ) :
+    μ ((x + y) ^ n) ≤ Cx * Cy * (a + b) ^ n := by
+  calc μ ((x + y) ^ n)
+      = μ (∑ k ∈ Finset.range (n + 1), x ^ k * y ^ (n - k) * n.choose k) := by rw [add_pow]
+    _ ≤ ∑ k ∈ Finset.range (n + 1), μ (x ^ k * y ^ (n - k) * n.choose k) :=
+        Finset.map_sum_le_sum μ (Finset.range (n + 1)) _
+    _ ≤ ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) * (μ (x ^ k) * μ (y ^ (n - k))) := by
+        gcongr with k
+        have hchoose : μ (x ^ k * y ^ (n - k) * n.choose k) ≤
+            (n.choose k : ℝ) * μ (x ^ k * y ^ (n - k)) := by
+          simpa only [Finset.sum_const, Finset.card_range, ← nsmul_eq_mul', nsmul_eq_mul] using
+            Finset.map_sum_le_sum μ (Finset.range (n.choose k)) (fun _ ↦ x ^ k * y ^ (n - k))
+        exact hchoose.trans
+          (mul_le_mul_of_nonneg_left (map_mul_le_mul μ _ _) (Nat.cast_nonneg _))
+    _ ≤ ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) * ((Cx * a ^ k) * (Cy * b ^ (n - k))) :=
+        Finset.sum_le_sum fun k _ ↦ mul_le_mul_of_nonneg_left
+          (mul_le_mul (hCx k) (hCy (n - k)) (apply_nonneg μ _) ((apply_nonneg μ _).trans (hCx k)))
+          (Nat.cast_nonneg _)
+    _ = Cx * Cy * ∑ k ∈ Finset.range (n + 1), a ^ k * b ^ (n - k) * n.choose k := by
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl fun k _ ↦ ?_
+        ring
+    _ = Cx * Cy * (a + b) ^ n := by rw [← add_pow]
 
 /-- **Subadditivity of `smoothingFun` on commutative rings.** For any ring seminorm `μ` with
 `μ 1 ≤ 1` on a commutative ring, `smoothingFun μ` satisfies the triangle inequality, without
@@ -138,47 +168,22 @@ theorem smoothingFun_add_le_of_map_one_le_one (μ : RingSeminorm R) (hμ1 : μ 1
     exists_pow_le_const_mul_pow μ hμ1 y (lt_add_of_pos_right _ (half_pos hε))
   have hC : 0 < Cx * Cy := mul_pos (zero_lt_one.trans_le hCx1) (zero_lt_one.trans_le hCy1)
   have hClim : Tendsto (fun n : ℕ ↦ (Cx * Cy) ^ (1 / n : ℝ) * (a + b)) atTop (𝓝 (a + b)) := by
-    have h1 : Tendsto (fun n : ℕ ↦ (Cx * Cy) ^ (1 / n : ℝ)) atTop (𝓝 1) := by
-      simpa [Function.comp_def] using ((Real.continuousAt_const_rpow hC.ne').tendsto).comp
-        (tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ))
-    simpa using h1.mul_const (a + b)
+    simpa using (tendsto_rpow_one_div_atTop hC).mul_const (a + b)
   have hab : a + b = smoothingFun μ x + smoothingFun μ y + ε := by
     dsimp [a, b]; ring
   rw [← hab]
   refine le_of_tendsto_of_tendsto (tendsto_smoothingFun_of_map_one_le_one μ hμ1 (x + y)) hClim
     (eventually_atTop.2 ⟨1, fun n hn ↦ ?_⟩)
-  have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (Nat.one_le_iff_ne_zero.1 hn)
-  have hbound : μ ((x + y) ^ n) ≤ Cx * Cy * (a + b) ^ n := by
-    calc μ ((x + y) ^ n)
-        = μ (∑ k ∈ Finset.range (n + 1), x ^ k * y ^ (n - k) * n.choose k) := by
-          rw [add_pow]
-      _ ≤ ∑ k ∈ Finset.range (n + 1), μ (x ^ k * y ^ (n - k) * n.choose k) :=
-          Finset.map_sum_le_sum μ (Finset.range (n + 1)) _
-      _ ≤ ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) * (μ (x ^ k) * μ (y ^ (n - k))) := by
-          gcongr with k
-          have hchoose : μ (x ^ k * y ^ (n - k) * n.choose k) ≤
-              (n.choose k : ℝ) * μ (x ^ k * y ^ (n - k)) := by
-            simpa only [Finset.sum_const, Finset.card_range, ← nsmul_eq_mul', nsmul_eq_mul] using
-              Finset.map_sum_le_sum μ (Finset.range (n.choose k)) (fun _ ↦ x ^ k * y ^ (n - k))
-          exact hchoose.trans
-            (mul_le_mul_of_nonneg_left (map_mul_le_mul μ _ _) (Nat.cast_nonneg _))
-      _ ≤ ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) * ((Cx * a ^ k) * (Cy * b ^ (n - k))) := by
-          gcongr with k
-          exacts [hCx k, hCy (n - k)]
-      _ = Cx * Cy * ∑ k ∈ Finset.range (n + 1), a ^ k * b ^ (n - k) * n.choose k := by
-          rw [Finset.mul_sum]
-          refine Finset.sum_congr rfl fun k _ ↦ ?_
-          ring
-      _ = Cx * Cy * (a + b) ^ n := by rw [← add_pow]
+  have hn0 : n ≠ 0 := Nat.one_le_iff_ne_zero.1 hn
   calc smoothingSeminormSeq μ (x + y) n
       ≤ (Cx * Cy * (a + b) ^ n) ^ (1 / n : ℝ) := by
         dsimp [smoothingSeminormSeq]
         gcongr
+        exact pow_add_le_of_forall_pow_le μ hCx hCy n
     _ = (Cx * Cy) ^ (1 / n : ℝ) * ((a + b) ^ n) ^ (1 / n : ℝ) :=
         Real.mul_rpow hC.le (pow_nonneg (add_pos ha0 hb0).le n)
     _ = (Cx * Cy) ^ (1 / n : ℝ) * (a + b) := by
-        rw [← Real.rpow_natCast (a + b), ← Real.rpow_mul (add_pos ha0 hb0).le,
-          mul_one_div_cancel hn0, Real.rpow_one]
+        rw [one_div, Real.pow_rpow_inv_natCast (add_pos ha0 hb0).le hn0]
 
 private theorem map_mul_le_one_mul (μ : RingSeminorm R) (x y : R) :
     μ (x * y) ≤ 1 * μ x * μ y := by
@@ -226,10 +231,7 @@ theorem tendsto_smoothingFun (μ : RingSeminorm R) (x : R) :
   have hlow := tendsto_smoothingFun_of_map_one_le_one μ.boundedSeminorm μ.boundedSeminorm_one_le x
   have hhigh : Tendsto (fun n : ℕ ↦ D ^ (1 / n : ℝ) * smoothingSeminormSeq μ.boundedSeminorm x n)
       atTop (𝓝 (smoothingFun μ.boundedSeminorm x)) := by
-    have hD1 : Tendsto (fun n : ℕ ↦ D ^ (1 / n : ℝ)) atTop (𝓝 1) := by
-      simpa [Function.comp_def] using ((Real.continuousAt_const_rpow hD.ne').tendsto).comp
-        (tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ))
-    simpa using hD1.mul hlow
+    simpa using (tendsto_rpow_one_div_atTop hD).mul hlow
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hlow hhigh
     (Eventually.of_forall fun n ↦ ?_) (Eventually.of_forall fun n ↦ ?_)
   · dsimp [smoothingSeminormSeq]
