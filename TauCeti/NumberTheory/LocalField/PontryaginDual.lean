@@ -12,8 +12,10 @@ public import TauCeti.RingTheory.DedekindDomain.Different.Quotient
 public import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 public import TauCeti.Topology.Algebra.Module.PontryaginDual.GroupAction
 public import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
+import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.RingTheory.Length
 import TauCeti.Topology.Algebra.Module.Submodule
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # Coefficient-linear Pontryagin duality over rings of integers of local fields
@@ -55,7 +57,8 @@ theorem continuousSMul_iff_isTorsion {M : Type*} [AddCommGroup M] [Module 𝒪[L
     ContinuousSMul 𝒪[L] M ↔ Module.IsTorsion 𝒪[L] M := by
   refine ⟨fun _ m ↦ ?_, fun htor ↦ ⟨continuous_iff_continuousAt.mpr fun ⟨r₀, m₀⟩ ↦ ?_⟩⟩
   · let I := LinearMap.ker (LinearMap.toSpanSingleton 𝒪[L] M m)
-    have : Finite (𝒪[L] ⧸ I) := I.finite_quotient_of_isOpen (isOpen_annihilator_elem m)
+    have : Finite (𝒪[L] ⧸ I) :=
+      AddSubgroup.quotient_finite_of_isOpen I.toAddSubgroup (isOpen_annihilator_elem m)
     have hne : I ≠ ⊥ := fun hbot ↦ Infinite.not_finite <|
       Finite.of_equiv (𝒪[L] ⧸ I) (Submodule.quotEquivOfEqBot I hbot).toEquiv
     obtain ⟨r, hrI, hr0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
@@ -164,15 +167,10 @@ variable {L} in
 `𝒪[L] ⧸ 𝓂[L]^n`. -/
 def dualQuotientMaximalIdealPowEquiv {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) (n : ℕ) :
     ModulePontryaginDual 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L)) (𝒪[L] ⧸ (𝓂[L] ^ n : Ideal 𝒪[L])) ≃L[𝒪[L]]
-      (𝒪[L] ⧸ (𝓂[L] ^ n : Ideal 𝒪[L])) := by
-  have hopen : IsOpen ((𝓂[L] ^ n : Ideal 𝒪[L]) : Set 𝒪[L]) := isOpen_ideal_of_ne_bot L <| by
-    rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, ne_eq, Ideal.span_singleton_eq_bot]
-    exact pow_ne_zero n hϖ.ne_zero
+      (𝒪[L] ⧸ (𝓂[L] ^ n : Ideal 𝒪[L])) :=
   have : DiscreteTopology (𝒪[L] ⧸ (𝓂[L] ^ n : Ideal 𝒪[L])) :=
-    Submodule.Quotient.discreteTopology_of_isOpen _ hopen
-  have : CompactSpace (𝒪[L] ⧸ (𝓂[L] ^ n : Ideal 𝒪[L])) :=
-    have := (𝓂[L] ^ n : Ideal 𝒪[L]).finite_quotient_of_isOpen hopen; Finite.compactSpace
-  exact ⟨(equivLinearMap 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L)) _).trans
+    Submodule.Quotient.discreteTopology_of_isOpen _ ((isAdic_maximalIdeal L).isOpen_pow n)
+  ⟨(equivLinearMap 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L)) _).trans
       (((𝓂[L] ^ n : Ideal 𝒪[L]).quotientLinearMapEquivTorsionBySet _).trans
         (quotientMaximalIdealPowEquivTorsionBySet hϖ n).symm),
     continuous_of_discreteTopology, continuous_of_discreteTopology⟩
@@ -190,11 +188,7 @@ theorem isOpen_traceDual_one :
     IsOpen (Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L) : Set L) := by
   have := finite_of_valuativeExtension K L
   have := isIntegralClosure_integerRing K L
-  refine isOpen_iff_forall_mem_open.mpr fun x hx ↦
-    ⟨(· - x) ⁻¹' ((1 : Submodule 𝒪[L] L) : Set L), fun y hy ↦ ?_,
-      (isOpen_one_submodule_integerRing L).preimage (continuous_id.sub continuous_const), by simp⟩
-  simpa using (Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)).add_mem
-    (Submodule.one_le_traceDual_one hy) hx
+  exact Submodule.isOpen_mono Submodule.one_le_traceDual_one (isOpen_one_submodule_integerRing L)
 
 /-- The quotient `L ⧸ 𝒪[L]ᵛ` carries the discrete topology. -/
 instance instDiscreteTopologyQuotientTraceDual :

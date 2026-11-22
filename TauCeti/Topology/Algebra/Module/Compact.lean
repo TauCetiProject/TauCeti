@@ -16,6 +16,7 @@ public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 public import TauCeti.Topology.Algebra.Module.Quotient
 public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
 import Mathlib.GroupTheory.QuotientGroup.Finite
+import Mathlib.Topology.Algebra.OpenSubgroup
 import Mathlib.Topology.Separation.Connected
 import TauCeti.RingTheory.Length
 
@@ -390,16 +391,16 @@ theorem isOpen_maximalIdeal_of_compact : IsOpen (IsLocalRing.maximalIdeal R : Se
   have ⟨I, hIopen, h1⟩ : ∃ I : Ideal R, IsOpen (I : Set R) ∧ (1 : R) ∉ I := by
     by_contra h; push Not at h
     exact one_ne_zero (IsCompactModule.self.eq_zero_of_forall_mem_of_isOpen h)
-  exact (IsLocalRing.maximalIdeal R).toAddSubgroup.isOpen_of_mem_nhds
-    (mem_of_superset (hIopen.mem_nhds I.zero_mem)
-      (IsLocalRing.le_maximalIdeal fun htop ↦ h1 (htop ▸ Submodule.mem_top)))
+  exact Ideal.isOpen_of_isOpen_subideal (U := I) (I := IsLocalRing.maximalIdeal R)
+    (IsLocalRing.le_maximalIdeal fun htop ↦ h1 (htop ▸ Submodule.mem_top)) hIopen
 
 /-- Over a compact totally disconnected commutative local topological ring, every module of finite
 length is finite. -/
 theorem _root_.IsFiniteLength.finite {M : Type*} [AddCommGroup M] [Module R M]
     (hM : IsFiniteLength R M) : Finite M := by
   have : Finite (R ⧸ IsLocalRing.maximalIdeal R) :=
-    (IsLocalRing.maximalIdeal R).finite_quotient_of_isOpen (isOpen_maximalIdeal_of_compact (R := R))
+    AddSubgroup.quotient_finite_of_isOpen (IsLocalRing.maximalIdeal R).toAddSubgroup
+      (isOpen_maximalIdeal_of_compact (R := R))
   induction hM with
   | of_subsingleton => infer_instance
   | @of_simple_quotient M _ _ N _ _ ih =>

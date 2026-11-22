@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Topology.Compactness.Compact
 public import TauCeti.Topology.Algebra.Module.PontryaginDual.Duality
+import Mathlib.Topology.AlexandrovDiscrete
 
 /-!
 # Contragredient group actions on coefficient-linear Pontryagin duals
@@ -88,33 +89,33 @@ variable [TopologicalSpace G] [ContinuousInv G]
 of `G` on `ModulePontryaginDual R E M` is jointly continuous. -/
 theorem continuous_contragredient_of_discrete [DiscreteTopology M]
     (ρ : ContRepresentation R G M) (hρ : Continuous (fun p : G × M ↦ ρ p.1 p.2)) :
-    Continuous (fun p : G × ModulePontryaginDual R E M ↦ contragredient E ρ p.1 p.2) := by
-  refine continuous_of_continuous_eval fun m ↦ continuous_iff_continuousAt.mpr fun ⟨g₀, φ₀⟩ ↦ ?_
-  have hU : IsOpen ((fun g : G ↦ ρ g⁻¹ m) ⁻¹' {ρ g₀⁻¹ m}) :=
-    (isOpen_discrete _).preimage (hρ.comp (continuous_inv.prodMk continuous_const))
-  refine (((continuous_eval_const (ρ g₀⁻¹ m)).comp continuous_snd).continuousAt).congr
-    (Filter.eventually_of_mem ((hU.prod isOpen_univ).mem_nhds ⟨rfl, trivial⟩) ?_)
-  rintro ⟨g, φ⟩ ⟨hg, -⟩
-  simp only [Function.comp_apply, contragredient_apply]
-  rw [Set.mem_preimage.mp hg]
+    Continuous (fun p : G × ModulePontryaginDual R E M ↦ contragredient E ρ p.1 p.2) :=
+  isInducing_toContinuousMap.continuous_iff.mpr <|
+    ContinuousMap.continuous_of_continuous_uncurry _ <|
+      (continuous_eval.comp <|
+        (continuous_toContinuousMap.comp (continuous_snd.comp continuous_fst)).prodMk
+          (hρ.comp ((continuous_inv.comp (continuous_fst.comp continuous_fst)).prodMk
+            continuous_snd))).congr fun _ ↦ by simp [Function.uncurry]
+
+/-- If `M` is compact, `E` is discrete, and `G` acts jointly continuously on `M`, then the
+contragredient action of `G` on `ModulePontryaginDual R E M` is jointly continuous. -/
+theorem continuous_contragredient_of_compact [CompactSpace M] [DiscreteTopology E]
+    (ρ : ContRepresentation R G M) (hρ : Continuous (fun p : G × M ↦ ρ p.1 p.2)) :
+    Continuous (fun p : G × ModulePontryaginDual R E M ↦ contragredient E ρ p.1 p.2) :=
+  continuous_prod_of_discrete_right.mpr fun φ ↦
+    isInducing_toContinuousMap.continuous_iff.mpr <|
+      ContinuousMap.continuous_of_continuous_uncurry _ <|
+        ((map_continuous φ).comp
+          (hρ.comp ((continuous_inv.comp continuous_fst).prodMk continuous_snd))).congr
+            fun _ ↦ by simp [Function.uncurry]
 
 /-- For a compact continuous `G`-module `M` and discrete `E`, every level set
 `{g : G | contragredient E ρ g φ = ψ}` is open in `G`. -/
 theorem isOpen_setOf_contragredient_eq_of_compact [CompactSpace M] [DiscreteTopology E]
     (ρ : ContRepresentation R G M) (hρ : Continuous (fun p : G × M ↦ ρ p.1 p.2))
-    (φ ψ : ModulePontryaginDual R E M) : IsOpen {g : G | contragredient E ρ g φ = ψ} := by
-  rw [isOpen_iff_forall_mem_open]; intro g₀ hg₀
-  let F : G × M → E := fun p ↦ φ (ρ p.1⁻¹ p.2) - ψ p.2
-  have hn : IsOpen (F ⁻¹' {0}) := (isOpen_discrete {0}).preimage <|
-    ((map_continuous φ).comp (hρ.comp (continuous_fst.inv.prodMk continuous_snd))).sub
-      ((map_continuous ψ).comp continuous_snd)
-  have hsub : ({g₀} : Set G) ×ˢ (Set.univ : Set M) ⊆ F ⁻¹' {0} := by
-    rintro ⟨g, m⟩ ⟨rfl, -⟩; simp [F, show φ (ρ g⁻¹ m) = ψ m by simpa using DFunLike.congr_fun hg₀ m]
-  obtain ⟨u, _, huo, -, hsu, htv, huv⟩ :=
-    generalized_tube_lemma isCompact_singleton isCompact_univ hn hsub
-  exact ⟨u, fun g hg ↦ ext fun m ↦ by
-    rw [contragredient_apply]; exact sub_eq_zero.mp (huv (Set.mk_mem_prod hg (htv trivial))),
-    huo, hsu rfl⟩
+    (φ ψ : ModulePontryaginDual R E M) : IsOpen {g : G | contragredient E ρ g φ = ψ} :=
+  (isOpen_discrete {ψ}).preimage
+    ((continuous_contragredient_of_compact E ρ hρ).comp (continuous_id.prodMk continuous_const))
 
 /-- If `M` is compact, `E` is discrete, and `G` acts jointly continuously on `M`, then every
 element of `ModulePontryaginDual R E M` has an open stabilizer in `G`. -/
@@ -122,17 +123,6 @@ theorem isOpen_stabilizer_contragredient_of_compact [CompactSpace M] [DiscreteTo
     (ρ : ContRepresentation R G M) (hρ : Continuous (fun p : G × M ↦ ρ p.1 p.2))
     (φ : ModulePontryaginDual R E M) : IsOpen {g : G | contragredient E ρ g φ = φ} :=
   isOpen_setOf_contragredient_eq_of_compact E ρ hρ φ φ
-
-/-- If `M` is compact, `E` is discrete, and `G` acts jointly continuously on `M`, then the
-contragredient action of `G` on `ModulePontryaginDual R E M` is jointly continuous. -/
-theorem continuous_contragredient_of_compact [CompactSpace M] [DiscreteTopology E]
-    (ρ : ContRepresentation R G M) (hρ : Continuous (fun p : G × M ↦ ρ p.1 p.2)) :
-    Continuous (fun p : G × ModulePontryaginDual R E M ↦ contragredient E ρ p.1 p.2) := by
-  refine continuous_iff_continuousAt.mpr fun ⟨g₀, φ₀⟩ ↦ ?_
-  have hS := isOpen_setOf_contragredient_eq_of_compact E ρ hρ φ₀ (contragredient E ρ g₀ φ₀)
-  refine (continuousAt_const (y := contragredient E ρ g₀ φ₀)).congr
-    (Filter.eventually_of_mem ((hS.prod (isOpen_discrete {φ₀})).mem_nhds ⟨rfl, rfl⟩) ?_)
-  rintro ⟨g, φ⟩ ⟨hg, hφ⟩; obtain rfl : φ = φ₀ := hφ; exact hg.symm
 
 end JointContinuity
 

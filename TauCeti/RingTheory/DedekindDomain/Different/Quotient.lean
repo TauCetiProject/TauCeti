@@ -242,27 +242,18 @@ variable (A K B L : Type*) [CommRing A] [Field K] [CommRing B] [Field L]
 `(L ⧸ B) ≃ₗ[B] (L ⧸ Bᵛ)`. -/
 def quotientEquivTraceDualQuotientOfDifferentIdealEqSpan {δ : B}
     (hδ : differentIdeal A B = Ideal.span {δ}) :
-    (L ⧸ (1 : Submodule B L)) ≃ₗ[B] (L ⧸ Submodule.traceDual A K (1 : Submodule B L)) := by
-  have hδL : algebraMap B L δ ≠ 0 :=
-    algebraMap_ne_zero_of_differentIdeal_eq_span (R := A) (K := K) (L := L) hδ
-  let divMap : L →ₗ[B] L :=
-    { toFun := (· / algebraMap B L δ), map_add' := fun x y ↦ add_div x y _,
-      map_smul' := fun _ _ ↦ by simp [Algebra.smul_def, mul_div_assoc] }
-  let mulMap : L →ₗ[B] L :=
-    { toFun := (· * algebraMap B L δ), map_add' := fun x y ↦ add_mul x y _,
-      map_smul' := fun _ _ ↦ by simp [Algebra.smul_def, mul_assoc] }
-  refine LinearEquiv.ofLinearMap
-    (Submodule.mapQ _ _ divMap fun x hx ↦ by
-      rw [Submodule.mem_comap]; dsimp only [divMap, LinearMap.coe_mk, AddHom.coe_mk]
-      rwa [mem_traceDual_one_iff_mul_of_differentIdeal_eq_span hδ, div_mul_cancel₀ _ hδL])
-    (Submodule.mapQ _ _ mulMap fun x hx ↦
-      (mem_traceDual_one_iff_mul_of_differentIdeal_eq_span hδ).mp hx)
-    (by ext x; simp [divMap, mulMap, mul_div_cancel_right₀ _ hδL])
-    (by ext x; simp [divMap, mulMap, div_mul_cancel₀ _ hδL])
+    (L ⧸ (1 : Submodule B L)) ≃ₗ[B] (L ⧸ Submodule.traceDual A K (1 : Submodule B L)) :=
+  let u : Lˣ := Units.mk0 (algebraMap B L δ)
+    (algebraMap_ne_zero_of_differentIdeal_eq_span (R := A) (K := K) (L := L) hδ)
+  Submodule.Quotient.equiv _ _ (u.mulRightLinearEquiv B).symm <| by
+    ext y
+    rw [Submodule.mem_map_equiv, mem_traceDual_one_iff_mul_of_differentIdeal_eq_span hδ]
+    simp [u]
 @[simp] theorem quotientEquivTraceDualQuotientOfDifferentIdealEqSpan_mk {δ : B}
     (hδ : differentIdeal A B = Ideal.span {δ}) (x : L) :
     quotientEquivTraceDualQuotientOfDifferentIdealEqSpan A K B L hδ (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk (x / algebraMap B L δ) := (rfl)
+      Submodule.Quotient.mk (x / algebraMap B L δ) := by
+  simp [quotientEquivTraceDualQuotientOfDifferentIdealEqSpan, div_eq_mul_inv]
 @[simp] theorem quotientEquivTraceDualQuotientOfDifferentIdealEqSpan_symm_mk {δ : B}
     (hδ : differentIdeal A B = Ideal.span {δ}) (x : L) :
     (quotientEquivTraceDualQuotientOfDifferentIdealEqSpan A K B L hδ).symm

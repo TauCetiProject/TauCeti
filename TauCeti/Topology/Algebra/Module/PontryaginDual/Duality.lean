@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.Injective.Cogenerator
 public import TauCeti.Topology.Algebra.Module.Compact
 public import TauCeti.Topology.Algebra.Module.PontryaginDual.Basic
 import Mathlib.Topology.Algebra.Nonarchimedean.Basic
+import Mathlib.Topology.Algebra.OpenSubgroup
 import Mathlib.Topology.Compactness.Compact
 import TauCeti.RingTheory.Length
 import TauCeti.Topology.Algebra.Module.Submodule
@@ -92,10 +93,8 @@ private theorem liftExactRange_apply {f : M₁ →L[R] M₂} {g : M₂ →L[R] M
     (hex : Function.Exact f.toLinearMap g.toLinearMap)
     (φ : ModulePontryaginDual R E M₂) (hφ : map (E := E) f φ = 0) (x : M₂) :
     liftExactRange hex φ hφ ⟨g.toLinearMap x, x, rfl⟩ = φ x := by
-  have hq : g.toLinearMap.quotKerEquivRange.symm ⟨g.toLinearMap x, x, rfl⟩ =
-      Submodule.Quotient.mk x :=
-    g.toLinearMap.quotKerEquivRange.injective (by rw [LinearEquiv.apply_symm_apply]; rfl)
-  simp only [liftExactRange, LinearMap.comp_apply, LinearEquiv.coe_coe]; rw [hq]; rfl
+  dsimp only [liftExactRange, LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [g.toLinearMap.quotKerEquivRange_symm_apply_image x ⟨x, rfl⟩]; rfl
 
 private theorem exact_map_of_lift {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃}
     (hex : Function.Exact f.toLinearMap g.toLinearMap)
@@ -314,7 +313,8 @@ def evalEquivOfCompact {N : Type w} [AddCommGroup N] [Module R N] [TopologicalSp
     choose xU hxU using fun U : {U : Submodule R N // IsOpen (U : Set N)} ↦
       show ∃ xU : N ⧸ U.val, ∀ ψ, ψ xU = Φ (map (E := E) U.val.mkQL ψ) by
         have := Submodule.Quotient.discreteTopology_of_isOpen U.val U.property
-        have := U.val.finite_quotient_of_isOpen U.property
+        have : Finite (N ⧸ U.val) :=
+          AddSubgroup.quotient_finite_of_isOpen U.val.toAddSubgroup U.property
         obtain ⟨xU, hxU⟩ := (bijective_applyₗ_of_forall_isMaximal hE IsFiniteLength.of_finite).2
           (Φ.toContinuousLinearMap.toLinearMap ∘ₗ (map (E := E) U.val.mkQL).toLinearMap ∘ₗ
             (equivLinearMap R E (N ⧸ U.val)).symm.toLinearMap)
@@ -383,7 +383,8 @@ private theorem finite_torsionBySet_annihilator (m : M) :
     Finite (Submodule.torsionBySet R E
       (LinearMap.ker (LinearMap.toSpanSingleton R M m) : Set R)) := by
   let I : Ideal R := LinearMap.ker (LinearMap.toSpanSingleton R M m)
-  have : Finite (R ⧸ I) := I.finite_quotient_of_isOpen (isOpen_annihilator_elem m)
+  have : Finite (R ⧸ I) :=
+    AddSubgroup.quotient_finite_of_isOpen I.toAddSubgroup (isOpen_annihilator_elem m)
   refine IsFiniteLength.finite ((Module.length_ne_top_iff (R := R)).mp ?_)
   rw [← (I.quotientLinearMapEquivTorsionBySet E).length_eq, length_linearMap_of_forall_isMaximal hE]
   exact Module.length_ne_top_iff.mpr IsFiniteLength.of_finite
@@ -442,8 +443,11 @@ def evalEquivOfDiscrete : M ≃L[R] ModulePontryaginDual R E (ModulePontryaginDu
         (equivLinearMap R E M₀).symm.toLinearMap)
     refine ⟨x₀.val, ext fun φ ↦ ?_⟩
     have hx := LinearMap.congr_fun hx₀ (equivLinearMap R E M₀ (map (E := E) M₀.subtypeL φ))
-    have hq : eQ.symm (map (E := E) M₀.subtypeL φ) = Submodule.Quotient.mk φ :=
-      eQ.injective (by simp [eQ])
+    have hq : eQ.symm (map (E := E) M₀.subtypeL φ) = Submodule.Quotient.mk φ := by
+      rw [← ContinuousLinearMap.coe_coe (map (E := E) M₀.subtypeL),
+        ← LinearMap.quotKerEquivOfSurjective_apply_mk (map (E := E) M₀.subtypeL).toLinearMap
+          (map_surjective_of_injective_of_discrete (Submodule.subtype_injective M₀)) φ]
+      exact eQ.symm_apply_apply (Submodule.Quotient.mk φ)
     simp only [LinearMap.applyₗ_apply_apply, equivLinearMap_apply, map_apply,
       Submodule.subtypeL_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
       LinearEquiv.symm_apply_apply] at hx
