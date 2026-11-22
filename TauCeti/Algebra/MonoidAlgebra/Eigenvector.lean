@@ -34,7 +34,8 @@ injective, and that `g - 1` is not a zero divisor of `R[G]` when `G` is cancella
 ## Main statements
 
 * `TauCeti.mul_single_pow_eq_mul_single_one_pow`: over any semiring, if `x g = x c` then
-  `x g ^ n = x c ^ n` for every `n`.
+  `x g ^ n = x c ^ n` for every `n`; at `n = orderOf g` this is
+  `TauCeti.mul_single_one_pow_orderOf_eq_self_of_mul_single_eq_mul_single`.
 * `TauCeti.pow_orderOf_eq_one_of_mul_single_eq_mul_single`: if nonzero elements of `R` are left
   cancellable, the eigenvalue `c` satisfies `c ^ orderOf g = 1`.
 * `TauCeti.nat_eq_one_of_mul_single_eq_mul_single`: over a semiring whose additive monoid is
@@ -60,16 +61,18 @@ the scalar `c` acting on the right. -/
 theorem mul_single_pow_eq_mul_single_one_pow {x : MonoidAlgebra R G} {g : G} {c : R}
     (h : x * single g (1 : R) = x * single 1 c) (n : ℕ) :
     x * single (g ^ n) (1 : R) = x * single 1 (c ^ n) := by
-  -- `g` commutes with the scalar `c`, so `c ^ n` can be moved past `g`.
+  -- `g` commutes with the scalar `c`, so right multiplication by them commutes.
   have hcomm : Commute (single g (1 : R)) (single 1 c) :=
     single_commute_single (.one_right g) (.one_left c)
-  have key : x * single g (1 : R) ^ n = x * single 1 c ^ n := by
-    induction n with
-    | zero => rfl
-    | succ n ih =>
-      rw [pow_succ, ← mul_assoc, ih, mul_assoc, ← (hcomm.pow_right n).eq, ← mul_assoc, h,
-        mul_assoc, ← pow_succ']
-  simpa only [single_pow, one_pow] using key
+  simpa only [mul_right_iterate_apply, single_pow, one_pow] using
+    hcomm.function_commute_mul_right.iterate_eq_of_map_eq n h
+
+/-- If an element `x` of `R[G]` satisfies `x g = x c`, then the scalar `c ^ orderOf g`, acting on
+the right, fixes `x`. -/
+theorem mul_single_one_pow_orderOf_eq_self_of_mul_single_eq_mul_single {x : MonoidAlgebra R G}
+    {g : G} {c : R} (h : x * single g (1 : R) = x * single 1 c) :
+    x * single 1 (c ^ orderOf g) = x := by
+  rw [← mul_single_pow_eq_mul_single_one_pow h, pow_orderOf_eq_one, ← one_def, mul_one]
 
 /-- If nonzero elements of `R` are left cancellable and a nonzero element `x` of `R[G]` satisfies
 `x g = x c`, then `c ^ orderOf g = 1`. -/
@@ -77,9 +80,10 @@ theorem pow_orderOf_eq_one_of_mul_single_eq_mul_single [IsLeftCancelMulZero R]
     {x : MonoidAlgebra R G} (hx : x ≠ 0) {g : G} {c : R}
     (h : x * single g (1 : R) = x * single 1 c) : c ^ orderOf g = 1 := by
   obtain ⟨i, hi⟩ := Finsupp.support_nonempty_iff.mpr (coeff_eq_zero.not.mpr hx)
-  have hfix := congrArg (fun z ↦ z.coeff i) (mul_single_pow_eq_mul_single_one_pow h (orderOf g))
-  simp only [pow_orderOf_eq_one, ← one_def, mul_one, coeff_mul_single_one] at hfix
-  exact mul_left_cancel₀ (Finsupp.mem_support_iff.mp hi) (hfix.symm.trans (mul_one _).symm)
+  have hfix := congrArg (fun z ↦ z.coeff i)
+    (mul_single_one_pow_orderOf_eq_self_of_mul_single_eq_mul_single h)
+  simp only [coeff_mul_single_one] at hfix
+  exact (left_eq_mul₀ (Finsupp.mem_support_iff.mp hi)).mp hfix.symm
 
 /-- If the additive monoid of `R` is cancellative and torsion-free and a nonzero element `x` of
 `R[G]` satisfies `x g = x a` for an element `g` of finite order and a natural number `a`, then
@@ -88,27 +92,22 @@ theorem nat_eq_one_of_mul_single_eq_mul_single [IsCancelAdd R] [IsAddTorsionFree
     {x : MonoidAlgebra R G} (hx : x ≠ 0) {g : G} (hg : IsOfFinOrder g) {a : ℕ}
     (h : x * single g (1 : R) = x * single 1 (a : R)) : a = 1 := by
   have ha : a ^ orderOf g • x = x := by
-    rw [nsmul_eq_mul', natCast_def, Nat.cast_pow, ← mul_single_pow_eq_mul_single_one_pow h,
-      pow_orderOf_eq_one, ← one_def, mul_one]
-  -- In a cancellative torsion-free additive monoid, `m • x = x` with `x ≠ 0` forces `m = 1`.
-  have key : ∀ m : ℕ, m • x = x → m = 1 := by
-    rintro (_ | _ | m) hm
-    · exact absurd (by simpa using hm.symm) hx
-    · rfl
-    · refine absurd (eq_of_nsmul_eq_nsmul_of_addCommute m.succ_ne_zero (.zero_right x) ?_) hx
-      rw [nsmul_zero]
-      exact add_right_cancel (b := x) (by rw [← succ_nsmul, hm, zero_add])
-  exact (Nat.pow_eq_one.mp (key _ ha)).resolve_right hg.orderOf_pos.ne'
+    rw [nsmul_eq_mul', natCast_def, Nat.cast_pow]
+    exact mul_single_one_pow_orderOf_eq_self_of_mul_single_eq_mul_single h
+  -- Over a semiring, `R[G]` has no global `AddCancelMonoid` instance: build it from `IsCancelAdd`.
+  let _ : AddCancelMonoid (MonoidAlgebra R G) := { }
+  have := IsAddTorsionFree.nsmul_left_injective hx (ha.trans (one_nsmul x).symm)
+  exact (Nat.pow_eq_one.mp this).resolve_right hg.orderOf_pos.ne'
 
 section LeftCancelMonoid
 
 variable {R : Type*} [Semiring R] {G : Type*} [LeftCancelMonoid G]
 
-/-- An element `g` of infinite order has no nonzero eigenvector of eigenvalue `1` under right
-multiplication: `x * g = x` forces `x = 0`. -/
+/-- In a left-cancellative monoid, an element `g` of infinite order has no nonzero eigenvector of
+eigenvalue `1` under right multiplication: `x * g = x` forces `x = 0`. -/
 @[to_additive (dont_translate := R) eq_zero_of_mul_single_eq_self_of_not_isOfFinAddOrder
-  /-- An element `a` of infinite order has no nonzero eigenvector of eigenvalue `1` under
-  multiplication by `e^a`: `x * e^a = x` forces `x = 0`. -/]
+  /-- In a left-cancellative additive monoid, an element `a` of infinite order has no nonzero
+  eigenvector of eigenvalue `1` under multiplication by `e^a`: `x * e^a = x` forces `x = 0`. -/]
 theorem eq_zero_of_mul_single_eq_self_of_not_isOfFinOrder {x : MonoidAlgebra R G} {g : G}
     (hg : ¬IsOfFinOrder g) (h : x * single g (1 : R) = x) : x = 0 := by
   classical
@@ -139,10 +138,9 @@ order of a left-cancellative monoid. -/
   /-- Over a ring, multiplication by `e^a - 1` on the right is injective when `a` is an element of
   infinite order of a left-cancellative additive monoid. -/]
 theorem isRightRegular_single_sub_one_of_not_isOfFinOrder [LeftCancelMonoid G] {g : G}
-    (hg : ¬IsOfFinOrder g) : IsRightRegular (single g (1 : R) - 1) := fun x y hxy ↦
-  sub_eq_zero.mp <| eq_zero_of_mul_single_eq_self_of_not_isOfFinOrder hg <| by
-    rw [← sub_eq_zero, ← mul_sub_one, sub_mul]
-    exact sub_eq_zero.mpr hxy
+    (hg : ¬IsOfFinOrder g) : IsRightRegular (single g (1 : R) - 1) :=
+  isRightRegular_iff_left_eq_zero_of_mul.mpr fun x hx ↦
+    eq_zero_of_mul_single_eq_self_of_not_isOfFinOrder hg <| by rwa [mul_sub_one, sub_eq_zero] at hx
 
 /-- Over a ring, `g - 1` is regular when `g` is an element of infinite order of a cancellative
 monoid. -/

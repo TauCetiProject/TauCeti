@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import TauCeti.Algebra.MonoidAlgebra.Eigenvector
 public import TauCeti.Algebra.MonoidAlgebra.Exactness
@@ -23,8 +22,8 @@ scalars to a field. The single relation defines a map
 
 `R[G] → R[G]²,  x ↦ x · (σ - a, τ - b)`.
 
-For elements `σ, τ` of finite order, natural-number exponents, and a coefficient ring `R` of
-characteristic zero without zero divisors (such as `ℤ_p`), nonzero finite cardinality of the sharp
+For elements `σ, τ` of finite order, natural-number exponents, and a coefficient ring `R` whose
+additive group is torsion-free (such as `ℤ_p`), nonzero finite cardinality of the sharp
 quotient `R[G] / (σ - a, τ - b)` implies that this map is injective. Over a field `k` in which
 `#G` is nonzero, an injective tame-frame relation map presents one copy of the regular
 representation `k[G]`: this is the cancellation theorem
@@ -66,12 +65,12 @@ universe u v
 
 variable {G : Type v}
 
-/-- Let `R` be a commutative ring of characteristic zero without zero divisors, and let `σ, τ`
-have finite order. For natural numbers `a, b`, nonzero finite cardinality of the sharp quotient
-`R[G] / (σ - a, τ - b)` implies that the tame-frame relation map is injective. For `R = ℤ_p` and
-finite `G` this is the integral injectivity input for the rational tame-frame computation. -/
-theorem tameFrameRelationMap_injective_of_card_ne_zero [Monoid G] {R : Type u} [CommRing R]
-    [NoZeroDivisors R] [CharZero R] {σ τ : G} (hσ : IsOfFinOrder σ) (hτ : IsOfFinOrder τ)
+/-- Let `R` be a ring whose additive group is torsion-free, and let `σ, τ` have finite order. For
+natural numbers `a, b`, nonzero finite cardinality of the sharp quotient `R[G] / (σ - a, τ - b)`
+implies that the tame-frame relation map is injective. For `R = ℤ_p` and finite `G` this is the
+integral injectivity input for the rational tame-frame computation. -/
+theorem tameFrameRelationMap_injective_of_card_ne_zero [Monoid G] {R : Type u} [Ring R]
+    [IsAddTorsionFree R] {σ τ : G} (hσ : IsOfFinOrder σ) (hτ : IsOfFinOrder τ)
     {a b : ℕ}
     (hcard : Nat.card (MonoidAlgebra R G ⧸ Ideal.span
       {single σ (1 : R) - single 1 (a : R), single τ (1 : R) - single 1 (b : R)}) ≠ 0) :
@@ -102,6 +101,11 @@ theorem tameFrameRelationMap_injective_of_card_ne_zero [Monoid G] {R : Type u} [
   have : Finite (MonoidAlgebra R G ⧸ RingHom.ker (MonoidAlgebra.augmentation R G)) :=
     Finite.of_surjective _ (Submodule.factor_surjective hI)
   have : Finite R := Finite.of_equiv _ (MonoidAlgebra.quotientKerAugmentationEquiv R G).toEquiv
+  -- `R` is nontrivial because `x ≠ 0`, so `n ↦ n • 1` embeds `ℕ` into `R`.
+  obtain ⟨i, hi⟩ := DFunLike.ne_iff.mp (coeff_eq_zero.not.mpr hx0)
+  have : Nontrivial R := nontrivial_of_ne _ _ hi
+  have : Infinite R :=
+    .of_injective _ (IsAddTorsionFree.nsmul_left_injective (one_ne_zero : (1 : R) ≠ 0))
   exact not_finite R
 
 variable {k : Type u} [Field k]
