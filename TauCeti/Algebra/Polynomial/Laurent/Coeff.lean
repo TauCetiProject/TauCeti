@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Laurent
+-- Public: `TauCeti.Algebra.MonoidAlgebra.Basic` tags `AddMonoidAlgebra.coeff_natCast_mul` as a
+-- `simp` lemma, and re-exporting it keeps that lemma in the `simp` set of this file's importers.
+public import TauCeti.Algebra.MonoidAlgebra.Basic
 
 import TauCeti.Algebra.MonoidAlgebra.Eigenvector
 
@@ -29,8 +32,8 @@ over commutative semirings, needs commutativity.
 * `LaurentPolynomial.invert_T_mul_eq_self_iff`: if a nonzero Laurent polynomial `f` is fixed by
   `invert`, then `T n * f` is fixed by `invert` only for `n = 0`.
 * `LaurentPolynomial.coeff_C_mul`: constants scale coefficients. For natural-number constants
-  this file tags Mathlib's `AddMonoidAlgebra.coeff_natCast_mul` as a `simp` lemma, matching
-  `Polynomial.coeff_natCast_mul` and `PowerSeries.coeff_natCast_mul`.
+  this is Mathlib's `AddMonoidAlgebra.coeff_natCast_mul`, which
+  `TauCeti.Algebra.MonoidAlgebra.Basic` tags as a `simp` lemma.
 * `LaurentPolynomial.coeff_one`: the coefficients of `1`.
 * `LaurentPolynomial.coeff_trunc`: `(trunc f).coeff n = f.coeff (n : ℤ)`.
 * `LaurentPolynomial.leadingCoeff_toLaurent` and `LaurentPolynomial.leadingCoeff_mul_T`: the
@@ -67,11 +70,6 @@ theorem T_mul_eq_self_iff {n : ℤ} {f : R[T;T⁻¹]} : T n * f = f ↔ n = 0 �
 theorem coeff_C_mul (t : R) (f : R[T;T⁻¹]) (d : ℤ) : (C t * f).coeff d = t * f.coeff d := by
   rw [← single_eq_C]
   exact AddMonoidAlgebra.coeff_single_zero_mul f t d
-
--- Natural-number constants scale coefficients too. Mathlib states this for every additive monoid
--- algebra but does not tag it `simp`; tag it so that `simp` normalizes `(↑m * f).coeff d` as it
--- does `(C t * f).coeff d`, and as Mathlib does for polynomials and power series.
-attribute [simp] AddMonoidAlgebra.coeff_natCast_mul
 
 /-- The constant Laurent polynomial `1` has coefficient `1` at exponent `0` and `0` elsewhere. -/
 @[simp]
