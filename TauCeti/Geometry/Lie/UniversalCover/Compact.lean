@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Solvable
 public import TauCeti.Geometry.Lie.UniversalCover
 
+import TauCeti.Algebra.Lie.Perfect
 import TauCeti.AlgebraicTopology.UniversalCover.Compact
 import TauCeti.Geometry.Lie.Adjoint.Compact
 import TauCeti.Geometry.Lie.Perfect
@@ -26,8 +27,9 @@ with perfect Lie algebra, `⁅𝔤, 𝔤⁆ = 𝔤`, and `f : G →* K` a homomo
 is a local homeomorphism, such as a covering homomorphism. Then `G` is compact and the kernel of
 `f` is finite. Indeed the kernel is a discrete central subgroup of `G` with compact quotient, and
 `G` has no nonzero continuous homomorphism to `ℝ` because its Lie algebra is perfect
-(`MonoidHom.eq_one_of_continuous_of_derivedSeries_one_eq_top_real`); a central extension of a
-compact group by a discrete group without real characters is compact with finite kernel
+(`MonoidHom.eq_one_of_continuous_of_derivedSeries_one_eq_top_real`); a connected locally compact
+group without nonzero real characters that is a central extension of a compact group by a discrete
+group is compact, with finite kernel
 (`MonoidHom.compactSpace_of_isLocalHomeomorph_of_forall_continuous_eq_one`).
 
 For the universal covering group `UniversalCover (1 : G)` of a compact Lie group `G`, the
@@ -109,11 +111,9 @@ trivial centre is perfect: it is the Lie algebra of `G`. -/
 private theorem derivedSeries_one_eq_top_of_center_eq_bot [IsTopologicalGroup G]
     [LocallyPathConnectedSpace G] [SemilocallySimplyConnectedSpace G]
     (h : center ℝ (LeftInvariantDerivation I G) = ⊥) :
-    derivedSeries ℝ (LeftInvariantDerivation I (UniversalCover (1 : G))) 1 = ⊤ := by
-  let e := (lieEquivProjHom I G).symm
-  rw [← LieIdeal.derivedSeries_map_eq 1 (f := e.toLieHom) e.surjective,
-    (Lie.derivedSeries_one_eq_top_iff_center_eq_bot (I := I)).mpr h,
-    ← e.toLieHom.idealRange_eq_map, e.toLieHom.idealRange_eq_top_of_surjective e.surjective]
+    derivedSeries ℝ (LeftInvariantDerivation I (UniversalCover (1 : G))) 1 = ⊤ :=
+  (lieEquivProjHom I G).symm.toLieHom.derivedSeries_eq_top_of_surjective
+    (lieEquivProjHom I G).symm.surjective (Lie.derivedSeries_one_eq_top_iff_center_eq_bot.mpr h)
 
 /-- **Weyl's theorem.** The universal covering group of a compact Lie group whose Lie algebra has
 trivial centre, for instance one with semisimple Lie algebra (`LieAlgebra.center_eq_bot`), is

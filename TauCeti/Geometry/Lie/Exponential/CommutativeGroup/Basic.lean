@@ -13,7 +13,6 @@ public import TauCeti.Topology.Algebra.Module.Submodule
 import TauCeti.Topology.Algebra.Module.CompactQuotient
 import Mathlib.Topology.Algebra.Group.Neighborhood
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
-import TauCeti.Topology.Algebra.Group.Covering
 
 /-!
 # The exponential map of a commutative Lie group

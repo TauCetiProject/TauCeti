@@ -8,6 +8,8 @@ module
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import Mathlib.Topology.Maps.Strict.Group
 
+import Mathlib.Topology.Algebra.OpenSubgroup
+
 /-!
 # The topological first isomorphism theorem
 
@@ -20,6 +22,9 @@ replaced by the whole target.
 A continuous surjection from a compact group to a Hausdorff group is a closed map, hence strict,
 so it is a special case; that case permits changing the quotient model in profinite extensions.
 
+A continuous open homomorphism is strict, and its range is an open, hence closed, subgroup of the
+target. So the quotient of its source by its kernel is compact when the target is.
+
 ## Main definitions
 
 * `ContinuousMulEquiv.quotientKerEquivOfSurjective` and
@@ -28,6 +33,9 @@ so it is a special case; that case permits changing the quotient model in profin
   `quotientKerEquivOfSurjective_apply_mk` and `quotientKerEquivOfSurjective_symm_apply`.
 * `ContinuousMonoidHom.quotientKerEquivOfSurjective`: the case of a continuous surjection from a
   compact group to a Hausdorff group.
+* `MonoidHom.compactSpace_quotient_ker_of_isOpenMap` and
+  `AddMonoidHom.compactSpace_quotient_ker_of_isOpenMap`: the quotient by the kernel of a continuous
+  open homomorphism is compact when the target is.
 
 ## References
 
@@ -107,3 +115,21 @@ theorem quotientKerEquivOfSurjective_symm_apply (x : G) :
       (f.continuous.isClosedMap.isStrictMap f.continuous) hf x
 
 end ContinuousMonoidHom
+
+namespace MonoidHom
+
+variable {G K : Type*} [Group G] [TopologicalSpace G] [Group K] [TopologicalSpace K]
+
+/-- The quotient of the source of a continuous open homomorphism to a compact group by its kernel is
+compact. -/
+@[to_additive /-- The quotient of the source of a continuous open additive homomorphism to a compact
+additive group by its kernel is compact. -/]
+theorem compactSpace_quotient_ker_of_isOpenMap [SeparatelyContinuousMul K] [CompactSpace K]
+    (f : G →* K) (hc : Continuous f) (ho : IsOpenMap f) : CompactSpace (G ⧸ f.ker) := by
+  -- The quotient is the range, an open and hence closed subgroup of `K`.
+  have : CompactSpace f.range :=
+    isCompact_iff_compactSpace.mp (f.range.isClosed_of_isOpen ho.isOpen_range).isCompact
+  exact (ContinuousMulEquiv.quotientKerEquivRange (ho.isStrictMap hc)).symm.toHomeomorph
+    |>.compactSpace
+
+end MonoidHom

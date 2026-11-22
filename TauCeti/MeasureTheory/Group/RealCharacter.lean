@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.Topology.Maps.OpenQuotient
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 import TauCeti.RepresentationTheory.Compact.Haar
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 
 /-!
 # Real characters of central extensions of compact groups
@@ -47,7 +48,9 @@ has no nonzero continuous real character, then `f` has finite kernel and `G` is 
 (`MonoidHom.compactSpace_of_isLocalHomeomorph_of_forall_continuous_eq_one`). This is the
 group-theoretic half of Weyl's theorem that the universal cover of a compact Lie group with
 semisimple Lie algebra is compact. The Lie-theoretic half, that a connected Lie group with perfect
-Lie algebra has no nonzero continuous homomorphism to `ℝ`, belongs to the theory of Lie groups.
+Lie algebra has no nonzero continuous homomorphism to `ℝ`, is
+`MonoidHom.eq_one_of_continuous_of_derivedSeries_one_eq_top_real`; the two halves combine in
+`TauCeti.UniversalCover.compactSpace_of_center_eq_bot`.
 
 ## Main results
 
