@@ -20,7 +20,8 @@ linearity, as in the Riesz–Thorin theorem. Weighting the fibre pieces by coeff
 gives `x ↦ a (u x) • u x` (`MeasureTheory.SimpleFunc.sum_smul_restrict_const_apply`).
 
 If `u` lies in `Lᵖ` for some `0 < p < ∞`, each of these restricted constants lies in every `L^q`
-(`MeasureTheory.SimpleFunc.memLp_restrict_const_fiber`).
+(`MeasureTheory.SimpleFunc.memLp_restrict_const_fiber`), for `u` with values in any extended
+seminormed additive monoid.
 
 The file also records how products and stars act on simple functions defined piecewise on a
 measurable set (`MeasureTheory.SimpleFunc.piecewise_const_zero_mul_piecewise_const_zero`,
@@ -63,13 +64,31 @@ theorem eq_sum_restrict_const [AddCommMonoid β] (u : SimpleFunc α β) :
   map_eq_sum_restrict_const u id
 
 /-- If a simple function `u` lies in `Lᵖ` for some `0 < p < ∞`, the constant `c` restricted to the
-fibre `u ⁻¹' {c}` lies in every `L^q`: the fibres over nonzero values have finite measure. -/
-theorem memLp_restrict_const_fiber {E : Type*} [NormedAddCommGroup E] {μ : Measure α}
-    {u : SimpleFunc α E} {p : ℝ≥0∞} (hu : MemLp u p μ) (hp0 : p ≠ 0) (hp : p ≠ ∞)
-    (q : ℝ≥0∞) (c : E) : MemLp ((const α c).restrict (u ⁻¹' {c})) q μ := by
+fibre `u ⁻¹' {c}` lies in every `L^q`: by Markov's inequality, either `‖c‖ₑ = 0`, or the fibre
+is null, or `‖c‖ₑ < ∞` and the fibre has finite measure. -/
+theorem memLp_restrict_const_fiber {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε]
+    {μ : Measure α} {u : SimpleFunc α ε} {p : ℝ≥0∞} (hu : MemLp u p μ) (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (q : ℝ≥0∞) (c : ε) : MemLp ((const α c).restrict (u ⁻¹' {c})) q μ := by
+  have hs := (u.measurableSet_fiber c).nullMeasurableSet (μ := μ)
   rw [coe_restrict _ (u.measurableSet_fiber c), coe_const]
-  refine memLp_indicator_const q (u.measurableSet_fiber c).nullMeasurableSet c ?_
-  exact (eq_or_ne c 0).imp_right fun hc ↦ (u.measure_preimage_lt_top_of_memLp hp0 hp hu c hc).ne
+  have hp' : 0 < 1 / p.toReal := one_div_pos.2 (ENNReal.toReal_pos hp0 hp)
+  -- Markov's inequality: on the fibre `u` is `c`, so `‖c‖ₑ * μ (u ⁻¹' {c}) ^ (1 / p)` is bounded
+  -- by the `p`-seminorm of `u`.
+  have hfin : ‖c‖ₑ * μ (u ⁻¹' {c}) ^ (1 / p.toReal) < ∞ := by
+    have hind : (u ⁻¹' {c}).indicator (fun _ ↦ c) = (u ⁻¹' {c}).indicator u :=
+      Set.indicator_congr fun _ hx ↦ (Set.mem_singleton_iff.1 hx).symm
+    rw [← eLpNorm_indicator_const hs hp0 hp, hind]
+    exact (eLpNorm_indicator_le _ hs).trans_lt hu.eLpNorm_lt_top
+  rw [ENNReal.mul_lt_top_iff, ENNReal.rpow_lt_top_iff_of_pos hp',
+    ENNReal.rpow_eq_zero_iff_of_pos hp'] at hfin
+  rw [MeasureTheory.memLp_iff]
+  rcases hfin with ⟨hc, hμ⟩ | hc | hμ
+  · exact (eLpNorm_indicator_const_le c q hs).trans_lt
+      (ENNReal.mul_lt_top hc (ENNReal.rpow_lt_top_of_nonneg (by positivity) hμ.ne))
+  · exact (eLpNorm_indicator_const_le c q hs).trans_lt (by simp [hc])
+  · rw [eLpNorm_indicator_eq_eLpNorm_restrict hs, Measure.restrict_eq_zero.2 hμ,
+      eLpNorm_measure_zero]
+    exact ENNReal.zero_lt_top
 
 /-- Weighting each fibre piece of `u` by a coefficient depending on its value gives, at `x`, the
 value `u x` weighted by the coefficient of `u x`. -/
