@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Data.List.FinRange
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
 # Iterated directional derivatives along a list of directions
@@ -403,8 +404,8 @@ theorem _root_.ContDiffAt.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv {f : E → 
     have hd : DifferentiableAt 𝕜 (iteratedFDeriv 𝕜 j f) y :=
       ((hfs y hy).contDiffAt (hs.mem_nhds hy)).differentiableAt_iteratedFDeriv hlt
     rw [List.ofFn_succ, iteratedFDerivAlong_cons_apply, hev.fderiv_eq,
-      fderiv_continuousMultilinear_apply_const_apply hd, iteratedFDeriv_succ_apply_left]
-    rfl
+      fderiv_iteratedFDeriv_apply hd]
+    exact congrArg _ (Fin.cons_self_tail u)
 
 /-- The iterated directional derivative of a `C^k` map along the directions `m 0, …, m (k - 1)` is
 the `k`-th iterated derivative evaluated on them. -/
