@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-import Mathlib.Data.Nat.Choose.Cast
-import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
+import TauCeti.Data.Nat.Choose.Cast
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
@@ -23,8 +23,9 @@ is needed.
 
 The proof multiplies the power series of `e^z` and `𝐌(b − a, b, −z)`. With
 `(Γ(b + k))⁻¹ = (b + k)ₙ₋ₖ (Γ(b + n))⁻¹`, valid at the poles too, the `n`-th Cauchy coefficient
-is `∑ₖ (−1)ᵏ C(n, k) (b − a)ₖ (b + k)ₙ₋ₖ / (n! Γ(b + n))`, and the Chu–Vandermonde identity
-`TauCeti.sum_neg_one_pow_mul_choose_ascPochhammer` evaluates the sum as `(a)ₙ`.
+is `∑ₖ (−1)ᵏ C(n, k) (b − a)ₖ (b + k)ₙ₋ₖ / (n! Γ(b + n))`. The Chu–Vandermonde identity
+`TauCeti.sum_neg_one_pow_mul_choose_ascPochhammer` evaluates the numerator sum
+`∑ₖ (−1)ᵏ C(n, k) (b − a)ₖ (b + k)ₙ₋ₖ` as `(a)ₙ`, so the coefficient is `(a)ₙ / (n! Γ(b + n))`.
 
 ## Main results
 
@@ -62,19 +63,16 @@ theorem sum_regularizedHGFunCoeff_singleton_mul_neg_one_pow (a b : ℂ) (n : ℕ
       have hbn : b + k + ((n - k : ℕ) : ℂ) = b + n := by rw [Nat.cast_sub hk]; ring
       rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (b + k) (n - k), hbn]
     have hfac : (k ! : ℂ)⁻¹ * ((n - k)! : ℂ)⁻¹ = (n.choose k : ℂ) * (n ! : ℂ)⁻¹ := by
-      have hn0 : (n ! : ℂ) ≠ 0 := Nat.cast_ne_zero.2 n.factorial_ne_zero
-      rw [Nat.cast_choose ℂ hk]
-      field_simp
+      simpa only [Nat.add_sub_of_le hk] using Nat.inv_factorial_mul_inv_factorial (K := ℂ) k (n - k)
     have hcoeff : regularizedHGFunCoeff {b - a} {b} k =
         (ascPochhammer ℂ k).eval (b - a) * (k ! : ℂ)⁻¹ * (Gamma (b + k))⁻¹ := by
-      simp only [regularizedHGFunCoeff, Multiset.map_singleton, Multiset.prod_singleton]
-      ring
+      rw [regularizedHGFunCoeff_singleton, div_eq_mul_inv, mul_inv, mul_assoc]
     rw [hcoeff, hG, div_eq_mul_inv, mul_inv]
     linear_combination (ascPochhammer ℂ k).eval (b - a) * (-1) ^ k *
       (ascPochhammer ℂ (n - k)).eval (b + k) * (Gamma (b + n))⁻¹ * hfac
   rw [Finset.sum_congr rfl hterm, ← Finset.sum_div,
-    TauCeti.sum_neg_one_pow_mul_choose_ascPochhammer, sub_sub_cancel]
-  simp [regularizedHGFunCoeff]
+    TauCeti.sum_neg_one_pow_mul_choose_ascPochhammer, sub_sub_cancel,
+    regularizedHGFunCoeff_singleton]
 
 /-- **Kummer's transformation** (DLMF 13.2.39): `𝐌(a, b, z) = e^z 𝐌(b − a, b, −z)` for all
 complex `a`, `b`, `z`. -/

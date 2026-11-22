@@ -10,6 +10,7 @@ public import TauCeti.Topology.Homotopy.Monodromy.Basic
 public import TauCeti.Topology.IsLocalHomeomorph
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 
+import Mathlib.Algebra.Category.ModuleCat.Projective
 import TauCeti.Topology.Homotopy.Covering
 
 /-!
@@ -33,6 +34,9 @@ in which Thom and Euler classes of bundles without a chosen orientation live; a 
 identifies cohomology twisted by it with ordinary cohomology. Independently of orientability,
 `TauCeti.VectorBundleOrientationCover.signLocalSystemTensorIso` identifies its tensor square
 with the constant coefficient system: evaluate both factors at either orientation and multiply.
+If `2 = 0` in `R`, as for `R = 𝔽₂`, the system itself is constant without any orientation
+(`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfTwoEqZero`): evaluation at either
+orientation of a fibre gives the same value, since `-1 = 1` in `R`.
 
 Over the base set of a trivialization of the atlas the system is trivialized without a global
 orientation: transport along a path in the base set carries the element with value `r` at the
@@ -62,6 +66,8 @@ two orientations of a fibre, and it projects to a loop whose monodromy exchanges
 * `TauCeti.VectorBundleOrientationCover.pullbackSignLocalSystemIso`: the trivialization of the
   orientation system pulled back along a map into the base set of a trivialization, by evaluation
   at the orientations which it reads as a fixed orientation of the model fibre.
+* `TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfTwoEqZero`: the trivialization when
+  `2 = 0` in the coefficients.
 
 ## Main results
 
@@ -256,6 +262,15 @@ theorem monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one (b : B)
 
 variable [FiniteDimensional ℝ F]
 
+/-- The fibres of the orientation local system are free of rank one, hence projective: evaluation
+at either orientation of the fibre identifies each of them with `R`. -/
+instance projective_signLocalSystem_obj (x : FundamentalGroupoid (TopCat.of B)) :
+    Projective ((signLocalSystem F E R hι).obj x) := by
+  obtain ⟨b⟩ := x
+  obtain ⟨p, rfl⟩ := surjective_proj (F := F) (E := E) hι b
+  exact ModuleCat.projective_of_free
+    ((Basis.singleton Unit R).map (signLocalSystemFiberEquiv hι p.orientation).symm)
+
 /-- **A non-orientable bundle has an orientation-reversing loop.** Over a connected, locally
 path-connected base, if `E` is not orientable, some loop at `b` acts by `-1` on the fibre of the
 orientation local system over `b`. -/
@@ -280,6 +295,51 @@ theorem exists_monodromyRepresentation_signLocalSystem_eq_neg_one [ConnectedSpac
   refine ⟨g, hp.monodromyRepresentation_signLocalSystem_eq_neg_one (hσ := proj_comp_deck)
     deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) (e := ⟨q, hq⟩) (hg.trans (Subtype.ext ?_))⟩
   exact (Function.fiberMap_apply_coe _ proj_comp_deck b ⟨q, hq⟩).symm
+
+section TwoEqZero
+
+variable (h2 : (2 : R) = 0)
+
+/-- **The orientation local system in characteristic two.** If `2 = 0` in `R`, the orientation
+local system is constant, without any orientation of the bundle: over `b`, the isomorphism with
+the constant system evaluates at either orientation of `E_b`
+(`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfTwoEqZero_hom_app_apply`), the two
+values agreeing since `-1 = 1` in `R`. -/
+def signLocalSystemIsoOfTwoEqZero :
+    signLocalSystem F E R hι ≅
+      (LocalCoefficientSystem.constantFunctor (TopCat.of B)).obj
+        (ModuleCat.of R (ULift.{max uB uE uι} R)) :=
+  (isCoveringMap_proj hι).signLocalSystemIsoOfTwoEqZero (hσ := proj_comp_deck) deck_ne_self
+    (fun _ _ h ↦ eq_or_eq_deck hι h) (surjective_proj hι) h2
+
+-- Not `simp`: the orientation `o` appears only on the right-hand side.
+/-- The trivialization of the orientation local system in characteristic two evaluates at any
+orientation `o` of the fibre. -/
+theorem signLocalSystemIsoOfTwoEqZero_hom_app_apply {b : B} (o : Orientation ℝ (E b) ι)
+    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) :
+    (ModuleCat.Hom.hom (B := ModuleCat.of R (ULift.{max uB uE uι} R))
+        ((signLocalSystemIsoOfTwoEqZero hι h2).hom.app (FundamentalGroupoid.mk b))) f =
+      ULift.up (signLocalSystemFiberEquiv hι o f) := by
+  rw [signLocalSystemFiberEquiv_apply]
+  exact (isCoveringMap_proj hι).signLocalSystemIsoOfTwoEqZero_hom_app_apply (X := TopCat.of B)
+    (hσ := proj_comp_deck) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) (surjective_proj hι) h2
+    (FundamentalGroupoid.mk b) f ⟨⟨b, o⟩, rfl⟩
+
+/-- The inverse of the trivialization of the orientation local system in characteristic two
+sends `r` over `b` to the element of the fibre whose value at any orientation `o` of `E_b` is
+`r`. -/
+theorem signLocalSystemIsoOfTwoEqZero_inv_app_apply {b : B} (o : Orientation ℝ (E b) ι) (r : R) :
+    (ModuleCat.Hom.hom (A := ModuleCat.of R (ULift.{max uB uE uι} R))
+        ((signLocalSystemIsoOfTwoEqZero hι h2).inv.app (FundamentalGroupoid.mk b)))
+        (ULift.up r) =
+      (signLocalSystemFiberEquiv hι o).symm r := by
+  apply (signLocalSystemFiberEquiv hι o).injective
+  rw [LinearEquiv.apply_symm_apply, signLocalSystemFiberEquiv_apply]
+  exact (isCoveringMap_proj hι).signLocalSystemIsoOfTwoEqZero_inv_app_apply (X := TopCat.of B)
+    (hσ := proj_comp_deck) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) (surjective_proj hι) h2
+    (FundamentalGroupoid.mk b) r ⟨⟨b, o⟩, rfl⟩
+
+end TwoEqZero
 
 section Tensor
 
