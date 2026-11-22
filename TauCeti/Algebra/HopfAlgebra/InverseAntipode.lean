@@ -125,4 +125,18 @@ theorem mul_inverseAntipode_lTensor_comm_comul_apply
     | add t s ht hs => simp [ht, hs]
   rw [← ht, mul_antipode_lTensor_comul_apply, inverseAntipode_algebraMap]
 
+/-- In any representation `∑ aᵢ' ⊗ aᵢ''` of the coproduct of `a`, `∑ S⁻¹(aᵢ'') * aᵢ' = ε(a) • 1`.
+This is the Sweedler form of `mul_inverseAntipode_rTensor_comm_comul_apply`. -/
+theorem sum_inverseAntipode_mul_eq_smul (hS : Function.Bijective (antipode R : H →ₗ[R] H))
+    {a : H} {ι : Type*} (r : Coalgebra.Repr R a ι) :
+    ∑ i ∈ r.index, inverseAntipode hS (r.right i) * r.left i = Coalgebra.counit (R := R) a • 1 := by
+  simpa [← r.eq, map_sum, Algebra.smul_def] using mul_inverseAntipode_rTensor_comm_comul_apply hS a
+
+/-- In any representation `∑ aᵢ' ⊗ aᵢ''` of the coproduct of `a`, `∑ aᵢ'' * S⁻¹(aᵢ') = ε(a) • 1`.
+This is the Sweedler form of `mul_inverseAntipode_lTensor_comm_comul_apply`. -/
+theorem sum_mul_inverseAntipode_eq_smul (hS : Function.Bijective (antipode R : H →ₗ[R] H))
+    {a : H} {ι : Type*} (r : Coalgebra.Repr R a ι) :
+    ∑ i ∈ r.index, r.right i * inverseAntipode hS (r.left i) = Coalgebra.counit (R := R) a • 1 := by
+  simpa [← r.eq, map_sum, Algebra.smul_def] using mul_inverseAntipode_lTensor_comm_comul_apply hS a
+
 end TauCeti.HopfAlgebra
