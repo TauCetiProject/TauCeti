@@ -122,12 +122,6 @@ theorem exteriorPowerFiniteProjectiveEquivDualIso_hom_hom
   rw [h]
   rfl
 
-/-- The dual of an isomorphism of finite locally free sheaves, in the opposite direction. -/
-@[expose]
-def dualIsoOfIso {X : Scheme.{u}} {E F : FiniteLocallyFreeSheaf X} (e : E ≅ F) :
-    dual F ≅ dual E :=
-  dualFunctor.mapIso e.op
-
 /-- **Exterior powers of the dual on `Spec R`, for an associated sheaf.** For a finite projective
 `R`-module `M`, the `n`-th exterior power of the dual of `M~` is the dual of `⋀ⁿ M~`. It is the
 sheaf version of `⋀ⁿ (M^*) ≃ (⋀ⁿ M)^*` (`exteriorPower.pairingDualEquiv`), transported through
