@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Divisible
 public import Mathlib.GroupTheory.Exponent
 
 import Mathlib.Algebra.Category.Grp.Injective
+import Mathlib.LinearAlgebra.Projection
 
 /-!
 # The maximal divisible subgroup of an abelian group
@@ -161,11 +162,8 @@ complement is not canonical. -/
 theorem exists_isCompl {D : AddSubgroup A} (hD : D.IsDivisible) :
     ∃ C : AddSubgroup A, IsCompl D C := by
   obtain ⟨r, hr⟩ := hD.exists_retraction
-  refine ⟨r.ker, disjoint_def.2 fun {x} hxD hxr ↦ ?_, codisjoint_iff.2 ?_⟩
-  · have hx := congrArg Subtype.val (hr ⟨x, hxD⟩)
-    rwa [(AddMonoidHom.mem_ker).1 hxr, ZeroMemClass.coe_zero, eq_comm] at hx
-  · refine eq_top_iff.2 fun x _ ↦ mem_sup.2 ⟨r x, (r x).property, x - r x, ?_, add_sub_cancel _ _⟩
-    rw [AddMonoidHom.mem_ker, map_sub, hr, sub_self]
+  exact ⟨r.ker, toIntSubmodule.isCompl_iff.2 <|
+    LinearMap.isCompl_of_proj (p := D.toIntSubmodule) (f := r.toIntLinearMap) hr⟩
 
 /-- An abelian group splits, noncanonically, as the product of a divisible subgroup and the
 quotient by it. -/
