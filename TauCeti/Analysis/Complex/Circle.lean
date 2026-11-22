@@ -303,6 +303,7 @@ theorem inv_eq_self_iff (v : Circle) : v⁻¹ = v ↔ v = 1 ∨ v = -1 := by
   simp [inv_eq_iff_mul_eq_one, ← Circle.coe_inj, mul_self_eq_one_iff]
 
 /-- The square roots of unity on the circle are `1` and `-1`. -/
+@[simp]
 theorem sq_eq_one_iff (v : Circle) : v ^ 2 = 1 ↔ v = 1 ∨ v = -1 := by
   rw [← inv_eq_self_iff, inv_eq_iff_mul_eq_one, sq]
 
@@ -396,7 +397,7 @@ theorem finite_setOf_sq_eq_one_pi {κ : Type*} [Finite κ] :
     {g : κ → Circle | g ^ 2 = 1}.Finite := by
   refine (Set.Finite.pi (t := fun _ ↦ ({1, -1} : Set Circle)) fun _ ↦ Set.toFinite _).subset ?_
   intro g hg i _
-  simpa [sq_eq_one_iff] using congrFun hg i
+  simpa using congrFun hg i
 
 /-- In an infinite power of the circle infinitely many elements square to `1`, for instance all
 the elements whose coordinates are `1` or `-1`. -/
@@ -404,16 +405,14 @@ theorem infinite_setOf_sq_eq_one_pi {ι : Type*} [Infinite ι] :
     {g : ι → Circle | g ^ 2 = 1}.Infinite := by
   have hne : (-1 : Circle) ≠ 1 := by
     simpa [← coe_inj] using (by norm_num : (-1 : ℂ) ≠ 1)
-  refine Set.infinite_of_injective_forall_mem
-    (f := fun (b : ι → Bool) i ↦ if b i then (-1 : Circle) else 1) (fun b b' h ↦ ?_) fun b ↦ ?_
-  · funext i
-    have := congrFun h i
-    cases hb : b i <;> cases hb' : b' i <;> simp only [hb, hb', Bool.false_eq_true,
-      ite_false, ite_true] at this ⊢
-    exacts [(hne this.symm).elim, (hne this).elim]
-  · funext i
-    rw [Pi.pow_apply, Pi.one_apply]
-    split_ifs <;> simp
+  have hinj : Function.Injective fun c : Bool ↦ if c then (-1 : Circle) else 1 := by
+    rintro (_ | _) (_ | _) h
+    exacts [rfl, (hne h.symm).elim, (hne h).elim, rfl]
+  refine Set.infinite_of_injective_forall_mem (f := ((fun c : Bool ↦
+    if c then (-1 : Circle) else 1) ∘ ·)) (hinj.comp_left (α := ι)) fun b ↦ ?_
+  funext i
+  rw [Pi.pow_apply, Pi.one_apply, Function.comp_apply]
+  split_ifs <;> simp
 
 end Circle
 

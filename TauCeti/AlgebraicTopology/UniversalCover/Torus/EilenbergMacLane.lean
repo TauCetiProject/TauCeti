@@ -23,7 +23,8 @@ calculation in `TauCeti.AlgebraicTopology.UniversalCover.Circle.EilenbergMacLane
   `K(Π i, ℤ, 1)`.
 * `Circle.isAspherical_pi`: an indexed product of copies of the unit circle of `ℂ` is aspherical.
   Every topological group isomorphic to a torus `(S¹)ʳ` is therefore aspherical, through
-  `Homeomorph.isAspherical_iff`; so is the infinite product `ℕ → S¹`, which is not a torus.
+  `TauCeti.IsAspherical.of_homotopyEquiv`; so is the infinite product `ℕ → S¹`, which is not a
+  torus.
 -/
 
 public section

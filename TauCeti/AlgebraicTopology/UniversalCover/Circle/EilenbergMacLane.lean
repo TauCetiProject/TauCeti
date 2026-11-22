@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.HigherHomotopy
 
-import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
+import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
 
 /-!
 # Circles as Eilenberg--Mac Lane spaces
@@ -58,10 +58,8 @@ namespace Circle
 
 /-- The unit circle of `ℂ` is aspherical: it is homeomorphic to the real circle of period `2π`
 (`AddCircle.homeomorphCircle'`). -/
-theorem isAspherical (x : Circle) : TauCeti.IsAspherical Circle x := by
-  have h := (AddCircle.homeomorphCircle'.isAspherical_iff (AddCircle.homeomorphCircle'.symm x)).1
-    (AddCircle.isAspherical _ _)
-  rwa [Homeomorph.apply_symm_apply] at h
+theorem isAspherical (x : Circle) : TauCeti.IsAspherical Circle x :=
+  (AddCircle.isAspherical _ 0).of_homotopyEquiv AddCircle.homeomorphCircle'.toHomotopyEquiv x
 
 end Circle
 
