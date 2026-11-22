@@ -416,6 +416,7 @@ theorem isProperMap_source_target [CompactSpace G] :
 
 /-- The identity arrows of `SingleObj G` form a closed subset of `Quiver.Total (SingleObj G)`
 if and only if `{1}` is closed in `G`. -/
+@[simp]
 theorem isClosed_range_unit_iff [Monoid G] :
     IsClosed (Set.range fun x : SingleObj G ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total (SingleObj G))) ↔
       IsClosed ({(1 : G)} : Set G) := by

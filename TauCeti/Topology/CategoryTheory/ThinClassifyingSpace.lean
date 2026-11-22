@@ -20,9 +20,11 @@ space `TauCeti.thinClassifyingSpace C` is `(topologicalNerve C).geometricRealiza
 of `Σ n : ℕ, ComposableArrows C n × Δⁿ` by all face and degeneracy identifications, equipped with
 its genuine colimit topology in `TopCat` (with no compactly-generated replacement).
 
-Forgetting degeneracies gives the quotient map `TauCeti.fatToThinClassifyingSpace C`
-(`TauCeti.isQuotientMap_fatToThinClassifyingSpace`). Adapting the fat-realization APIs of
-`TauCeti.Topology.CategoryTheory.Nerve`, `TauCeti.Topology.CategoryTheory.CoarseSpace`, and
+The fat realization uses the underlying semi-simplicial nerve, and imposing the degeneracy
+identifications gives the quotient map `TauCeti.fatToThinClassifyingSpace C`
+(`TauCeti.isQuotientMap_fatToThinClassifyingSpace`) to the thin realization. Adapting the
+fat-realization APIs of `TauCeti.Topology.CategoryTheory.Nerve`,
+`TauCeti.Topology.CategoryTheory.CoarseSpace`, and
 `TauCeti.Topology.CategoryTheory.CoarseSpace.Restrict`, continuous functors and `[0, 1]`-families
 induce `TauCeti.thinClassifyingSpaceMap` and `TauCeti.thinClassifyingSpaceHomotopy`; when the
 source map `Quiver.Total.left : Quiver.Total C → C` is continuous, closed full subcategories induce
