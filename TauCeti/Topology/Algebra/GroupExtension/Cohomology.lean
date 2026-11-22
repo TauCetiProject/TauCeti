@@ -343,7 +343,7 @@ variable [ContinuousMul E] [ContinuousInv E]
 /-- **Two continuous normalized sections give continuously cohomologous factor sets**: their
 quotient is the coboundary of the difference of the sections, which is continuous. -/
 theorem isContCohomologous_factorSet (hinl : IsEmbedding ⇑S.inl) {σ σ' : S.Section}
-    (hσ : σ 1 = 1) (hσ' : σ' 1 = 1) (hact : InducesAction S) (hσc : Continuous ⇑σ)
+    (hσ : σ 1 = 1) (hσ' : σ' 1 = 1) (hact : S.InducesAction) (hσc : Continuous ⇑σ)
     (hσ'c : Continuous ⇑σ') :
     FactorSet.IsContCohomologous (factorSet σ hσ hact) (factorSet σ' hσ' hact) :=
   (FactorSet.isContCohomologous_iff _ _).2 ⟨sectionDiff σ σ', continuous_sectionDiff hinl hσc hσ'c,
@@ -351,7 +351,7 @@ theorem isContCohomologous_factorSet (hinl : IsEmbedding ⇑S.inl) {σ σ' : S.S
       simpa only [coe_factorSet] using (σ.factorSetFun_div_factorSetFun σ' hact g h).symm⟩
 
 variable [ContinuousMul G] [ContinuousSMul G M] (hinl : IsEmbedding ⇑S.inl) {σ σ' : S.Section}
-  (hσ : σ 1 = 1) (hσ' : σ' 1 = 1) (hact : InducesAction S)
+  (hσ : σ 1 = 1) (hσ' : σ' 1 = 1) (hact : S.InducesAction)
 
 /-- **The class of the factor set of a continuous normalized section does not depend on the
 section**, so it is an invariant of the extension. -/
@@ -395,7 +395,7 @@ theorem exists_splitting_continuous_iff_contCohomologyClass_factorSet_eq_zero
         map_one' := by simp [hx₁, hσ]
         map_mul' g h := by
           have h1 : σ g * S.inl (x h)⁻¹ = S.inl (g • (x h)⁻¹) * σ g := by
-            rw [inl_smul σ hact, inv_mul_cancel_right]
+            rw [σ.inl_smul hact, inv_mul_cancel_right]
           have h2 : (σ g : E) * σ h = S.inl (factorSet σ hσ hact (g, h)) * σ (g * h) := by
             rw [inl_factorSet, inv_mul_cancel_right]
           calc S.inl (x (g * h))⁻¹ * σ (g * h)
@@ -419,7 +419,7 @@ variable {E' : Type*} [Group E'] [TopologicalSpace E'] [ContinuousMul E] [Contin
   [ContinuousMul E'] [ContinuousInv E'] {S' : GroupExtension M E' G}
   (hinl : IsEmbedding ⇑S.inl) (hinl' : IsEmbedding ⇑S'.inl) {σ : S.Section} {σ' : S'.Section}
   (hσc : Continuous ⇑σ) (hσ'c : Continuous ⇑σ') (hσ : σ 1 = 1) (hσ' : σ' 1 = 1)
-  (hact : InducesAction S) (hact' : InducesAction S')
+  (hact : S.InducesAction) (hact' : S'.InducesAction)
 
 /-- **Equal classes give a homeomorphic equivalence.** Two extensions of `G` by `M`, both inducing
 the ambient action and both with continuous projection, embedded kernel and a continuous
@@ -499,7 +499,7 @@ cohomology group `H²(G, M)`: the class of the factor set of any continuous norm
 which `TauCeti.GroupExtension.exists_continuous_section` provides one. By
 `GroupExtension.contCohomologyClass_eq` the choice of section does not matter. -/
 noncomputable def _root_.GroupExtension.contCohomologyClass (S : GroupExtension M E G)
-    (hinl : Continuous S.inl) (hrh : Continuous S.rightHom) (hact : InducesAction S) :
+    (hinl : Continuous S.inl) (hrh : Continuous S.rightHom) (hact : S.InducesAction) :
     H2 G (Additive M) :=
   (factorSet (exists_continuous_section hrh).choose
     (exists_continuous_section hrh).choose_spec.2 hact).contCohomologyClass
@@ -507,7 +507,7 @@ noncomputable def _root_.GroupExtension.contCohomologyClass (S : GroupExtension 
       (exists_continuous_section hrh).choose_spec.1 _ hact)
 
 variable (S : GroupExtension M E G) (hinl : Continuous S.inl) (hrh : Continuous S.rightHom)
-  (hact : InducesAction S)
+  (hact : S.InducesAction)
 
 /-- The class of a profinite extension is the class of the factor set of any continuous normalized
 section. -/
@@ -527,7 +527,7 @@ theorem _root_.GroupExtension.exists_equiv_continuous_iff_contCohomologyClass_eq
     [Group E']
     [TopologicalSpace E'] [IsTopologicalGroup E'] [CompactSpace E'] [TotallyDisconnectedSpace E']
     (S' : GroupExtension M E' G) (hinl' : Continuous S'.inl) (hrh' : Continuous S'.rightHom)
-    (hact' : InducesAction S') :
+    (hact' : S'.InducesAction) :
     (∃ e : S.Equiv S', Continuous ⇑e) ↔
       S.contCohomologyClass hinl hrh hact = S'.contCohomologyClass hinl' hrh' hact' := by
   obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hrh

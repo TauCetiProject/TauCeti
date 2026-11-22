@@ -196,7 +196,7 @@ the extension Hausdorff: a continuous inclusion is then a closed embedding by
 continuous. -/
 theorem continuous_factorSet [ContinuousMul E] [ContinuousInv E] [ContinuousMul G]
     (hinl : Topology.IsEmbedding ⇑S.inl)
-    {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : InducesAction S) :
+    {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : S.InducesAction) :
     Continuous ⇑(factorSet σ hσ hact) := by
   refine hinl.continuous_iff.2 ?_
   have hfs : ⇑S.inl ∘ ⇑(factorSet σ hσ hact)
@@ -211,7 +211,7 @@ section is. Only the multiplication of `E` has to be continuous: the map is a pr
 continuous maps, so nothing is asked of inversion. -/
 theorem continuous_factorSetToGroupExtensionEquiv [ContinuousMul E] (hinl : Continuous S.inl)
     {σ : S.Section}
-    (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : InducesAction S) :
+    (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : S.InducesAction) :
     Continuous ⇑(factorSetToGroupExtensionEquiv σ hσ hact) := by
   have he : ⇑(factorSetToGroupExtensionEquiv σ hσ hact)
       = fun x : (factorSet σ hσ hact).Extension => S.inl x.left * σ x.right :=
@@ -228,7 +228,7 @@ image under the embedding `inl` is. Together with
 homeomorphism with no compactness assumption. -/
 theorem continuous_factorSetToGroupExtensionEquiv_symm [ContinuousMul E] [ContinuousInv E]
     (hinl : Topology.IsEmbedding ⇑S.inl) (hrh : Continuous S.rightHom) {σ : S.Section}
-    (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : InducesAction S) :
+    (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : S.InducesAction) :
     Continuous ⇑(factorSetToGroupExtensionEquiv σ hσ hact).symm := by
   have hright : ∀ y : E, ((factorSetToGroupExtensionEquiv σ hσ hact).symm y).right =
       S.rightHom y := fun y => by
@@ -268,7 +268,7 @@ map itself, only the multiplication of `E` is asked to be continuous. -/
 noncomputable def factorSetContinuousMulEquiv [ContinuousMul E] [T2Space E] [CompactSpace M]
     [CompactSpace G] (hinl : Continuous S.inl)
     {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1)
-    (hact : InducesAction S) : (factorSet σ hσ hact).Extension ≃ₜ* E :=
+    (hact : S.InducesAction) : (factorSet σ hσ hact).Extension ≃ₜ* E :=
   continuousMulEquivOfEquiv (factorSetToGroupExtensionEquiv σ hσ hact)
     (continuous_factorSetToGroupExtensionEquiv hinl hσc hσ hact)
 
@@ -276,7 +276,7 @@ noncomputable def factorSetContinuousMulEquiv [ContinuousMul E] [T2Space E] [Com
 theorem factorSetContinuousMulEquiv_apply [ContinuousMul E] [T2Space E] [CompactSpace M]
     [CompactSpace G] (hinl : Continuous S.inl)
     {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1)
-    (hact : InducesAction S) (x : (factorSet σ hσ hact).Extension) :
+    (hact : S.InducesAction) (x : (factorSet σ hσ hact).Extension) :
     factorSetContinuousMulEquiv hinl hσc hσ hact x = S.inl x.left * σ x.right :=
   factorSetToGroupExtensionEquiv_apply σ hσ hact x
 
@@ -288,7 +288,7 @@ dictionary that reads a cocycle off an extension;
 theorem exists_continuous_factorSet [IsTopologicalGroup E] [CompactSpace E]
     [TotallyDisconnectedSpace E] [CompactSpace M] [T2Space G]
     [ContinuousMul G] (hinl : Continuous S.inl)
-    (hrh : Continuous S.rightHom) (hact : InducesAction S) :
+    (hrh : Continuous S.rightHom) (hact : S.InducesAction) :
     ∃ α : FactorSet G M, Continuous ⇑α ∧ ∃ e : α.groupExtension.Equiv S, Continuous ⇑e := by
   obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hrh
   exact ⟨factorSet σ hσ hact,

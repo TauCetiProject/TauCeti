@@ -404,13 +404,15 @@ theorem _root_.TauCeti.GroupExtension.inducesAction_groupExtension :
   rw [mul_inl, mul_inv_cancel_right]
 
 /-- **The extension is central exactly when `G` acts trivially on `M`.** This is
-`TauCeti.GroupExtension.InducesAction.range_inl_le_center_iff` for the twisted product, which
+`GroupExtension.InducesAction.range_inl_le_center_iff` for the twisted product, which
 induces the given action by `TauCeti.GroupExtension.inducesAction_groupExtension`. The trivial
-action with `M = kˣ` is the case in which a projective representation of `G` with factor set `α` is
-a linear representation of the extension. -/
+action with `M = kˣ` is the case in which a projective representation of `G` with factor set `α`
+lifts to a linear representation of the extension, from which it is recovered by composing with
+`TauCeti.FactorSet.canonicalSection`. -/
 theorem range_inl_le_center_iff :
-    (inl α).range ≤ Subgroup.center α.Extension ↔ ∀ (g : G) (a : M), g • a = a :=
-  (GroupExtension.inducesAction_groupExtension α).range_inl_le_center_iff
+    (inl α).range ≤ Subgroup.center α.Extension ↔ ∀ (g : G) (a : M), g • a = a := by
+  simpa only [groupExtension_inl] using
+    (GroupExtension.inducesAction_groupExtension α).range_inl_le_center_iff
 
 /-- A character twist of a central twisted product keeps the `G`-component. -/
 theorem characterTwist_groupExtension_right
