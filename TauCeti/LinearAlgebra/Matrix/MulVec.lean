@@ -122,12 +122,11 @@ theorem pow_mulVec_eq_pow_smul [DecidableEq n] {R S : Type*} [Semiring R] [Monoi
 
 /-- For a multiplicative map `σ`, the pairing `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by `σ c * c`
 along a line: `h(c v, c v) = σ c * c * h(v, v)`. When `σ` is also additive, such as a ring
-endomorphism, `h` is the `σ`-sesquilinear form of `Q`. -/
-theorem comp_smul_dotProduct_mulVec_smul {R F : Type*} [NonUnitalCommSemiring R] [FunLike F R R]
-    [MulHomClass F R R] (Q : Matrix n n R) (σ : F) (c : R) (v : n → R) :
-    (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
-  -- Mathlib derives `SMulCommClass R R R` only from a `CommMonoid`; commutativity suffices.
-  have : SMulCommClass R R R := ⟨mul_left_comm⟩
+endomorphism, `h` is the `σ`-sesquilinear form of `Q`. The left multiplications of `R` must
+commute (`SMulCommClass R R R`), but `R` need not be commutative or unital. -/
+theorem comp_smul_dotProduct_mulVec_smul {R F : Type*} [NonUnitalSemiring R]
+    [SMulCommClass R R R] [FunLike F R R] [MulHomClass F R R] (Q : Matrix n n R) (σ : F) (c : R)
+    (v : n → R) : (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
   rw [TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
     smul_eq_mul, mul_assoc]
 
