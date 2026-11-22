@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 
-import TauCeti.Data.Fin.Basic
+import TauCeti.AlgebraicTopology.SimplexCategory.Basic
 
 /-!
 # Faces of subintervals in the simplex category
@@ -53,18 +53,6 @@ end SimplexCategory
 namespace TauCeti.SimplexCategory
 
 open _root_.SimplexCategory
-
-/-- The coface map `δ k` fixes the vertices before `k` and shifts the others up by one.
-
-This is `SimplexCategory.δ_apply` read under `Fin.val` with `Fin.val_succAbove`.  It is stated for
-the underlying monotone map `(δ k).toOrderHom`, the form the face proofs below reach after `ext`;
-`δ_apply` is stated for the concrete-category application `δ k x`, which is by definition
-`(δ k).toOrderHom x` (the concrete-category structure of `SimplexCategory` has
-`hom := Hom.toOrderHom`). -/
-private lemma val_δ_toOrderHom_apply {n : ℕ} (k : Fin (n + 2)) (x : Fin (n + 1)) :
-    ((δ k).toOrderHom x : ℕ) = if (x : ℕ) < k then (x : ℕ) else x + 1 := by
-  -- The concrete-category application `δ k x` of `δ_apply` unfolds to `(δ k).toOrderHom x`.
-  rw [show (δ k).toOrderHom x = k.succAbove x from δ_apply k x, Fin.val_succAbove]
 
 /-- A face of a subinterval is a subinterval of the corresponding face: the `i`-th face of the
 subinterval `j, …, j + q + 1`, which omits its vertex `k = j + i`, is the subinterval `j, …, j + q`
