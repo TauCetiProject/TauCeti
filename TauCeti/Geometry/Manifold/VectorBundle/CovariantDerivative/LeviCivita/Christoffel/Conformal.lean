@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 
 /-!
@@ -83,7 +84,7 @@ theorem christoffelSecondKind_smul_innerSL_apply {f : E → ℝ} {x : E}
     ext a b
     simp [innerSL_apply_apply ℝ, InnerProductSpace.toDual_apply_apply]
   have hinv : (innerSL ℝ (E := E)).IsInvertible :=
-    hinner ▸ ContinuousLinearMap.isInvertible_equiv
+    InnerProductSpace.isInvertible_innerSL
   rw [christoffelSecondKind_smul_apply hf (differentiableAt_const _) hfx hinv]
   have hconst : christoffelSecondKind (fun _ : E ↦ innerSL ℝ) x u v = 0 := by
     rw [christoffelSecondKind_apply]

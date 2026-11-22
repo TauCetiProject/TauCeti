@@ -125,7 +125,7 @@ theorem exists_contDiff_tendsto_integral_smul_bilin_of_hasWeakFDerivOn
   let U : ℂ → F := (W' : Set ℂ).indicator f
   have hU_mem (r : ℝ≥0∞) : MemLp U r volume :=
     (memLp_indicator_iff_restrict hW'm).2
-      ((hfi.mono_exponent le_top).memLp_of_closure_subset hW'c hW'Ω)
+      ((hfi.mono_exponent le_top).memLp_restrict_of_isCompact_closure hW'c hW'Ω)
   let fn : ℕ → ℂ → F :=
     fun n => (φ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] U
   have hfn_smooth (n : ℕ) : ContDiff ℝ ∞ (fn n) :=
@@ -139,7 +139,8 @@ theorem exists_contDiff_tendsto_integral_smul_bilin_of_hasWeakFDerivOn
   have : p.HolderConjugate p.conjExponent := .conjExponent hp1
   have hU'u : MemLp ((W' : Set ℂ).indicator fun z => Df z u) p volume :=
     (memLp_indicator_iff_restrict hW'm).2
-      ((hDfp.clm_comp (ContinuousLinearMap.apply ℝ F u)).memLp_of_closure_subset hW'c hW'Ω)
+      ((hDfp.clm_comp (ContinuousLinearMap.apply ℝ F u)).memLp_restrict_of_isCompact_closure
+        hW'c hW'Ω)
   refine (tendsto_integral_smul_bilin_normed_convolution_indicator B hφ hU'u α
     ((hαK.trans hKW).trans (subset_closure.trans hWW')) hg).congr fun n =>
       integral_congr_ae (.of_forall fun z => ?_)

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient
+import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 
 /-!
 # Local coefficient systems on contractible spaces are constant
@@ -22,7 +23,8 @@ to homology with constant coefficients.
 
 * `TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy`: a null-homotopy of the identity makes a
   local coefficient system constant, by transport along the paths traced by the homotopy
-  (`TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy_hom_app`).
+  (`TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy_hom_app`); its inverse is transport along
+  any path from `x` (`TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy_inv_app`).
 
 ## References
 
@@ -67,5 +69,20 @@ theorem isoConstantOfHomotopy_hom_app
   -- are only definitionally equal, so the unit laws are applied by `exact`.
   exact (congrArg (· ≫ _) (pullbackIdIso_inv_app_app X L x')).trans
     ((Category.id_comp _).trans (Category.comp_id _))
+
+/-- At a point `x'`, the inverse of the comparison
+`TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy` is transport along any path from `x` to
+`x'`: the space is contractible, so all such paths are homotopic. -/
+theorem isoConstantOfHomotopy_inv_app
+    (H : (ContinuousMap.id X).Homotopy (ContinuousMap.const X x))
+    (L : LocalCoefficientSystem.{u, v, w} R X) {x' : FundamentalGroupoid X}
+    (q : FundamentalGroupoid.mk x ⟶ x') :
+    (isoConstantOfHomotopy H L).inv.app x' = L.map q := by
+  have : ContractibleSpace X := (contractible_iff_id_nullhomotopic _).2 ⟨x, ⟨H⟩⟩
+  refine ((isoConstantOfHomotopy H L).app x').inv_ext ?_
+  rw [Iso.app_hom, isoConstantOfHomotopy_hom_app]
+  -- The space is contractible, so its fundamental groupoid is thin.
+  exact (L.map_comp _ q).symm.trans ((congrArg L.map
+    (Subsingleton.elim (α := Path.Homotopic.Quotient _ _) _ _)).trans (L.map_id _))
 
 end TauCeti.LocalCoefficientSystem

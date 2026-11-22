@@ -6,40 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
-public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-public import TauCeti.MeasureTheory.Function.PreciseRepresentative
+public import TauCeti.MeasureTheory.Function.MemLpLoc
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
-import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
-import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Local vector-valued Sobolev classes on planar domains
 
-`TauCeti.MemLpLoc p U f` requires `Lᵖ` membership on every compact subset of `U`.
 `TauCeti.MemWkpLoc p U k f` requires iterated weak derivatives through order `k` on
-`interior U`, with `Lᵖ` bounds on every compact subset of `U` itself. For half-discs these
+`interior U`, with `Lᵖ` bounds on every compact subset of `U` itself, in the sense of the local
+`Lᵖ` class `TauCeti.MemLpLoc` for Lebesgue measure on the plane. For half-discs these
 bounds reach the real axis, while test functions stay in the interior. On open sets this is
 the usual local Sobolev class. Derivatives take values in iterated continuous linear maps,
 rather than scalar jets.
 These predicates concern actual functions; almost-everywhere changes do not affect membership.
 They impose no global integrability condition on the possibly unbounded domain.
-Global `Lᵖ` membership on a set implies local membership there (`MeasureTheory.MemLp.memLpLoc`).
 
 This file supplies restriction to arbitrary subsets (also combined with a change of the function
-off the subset), linearity, continuous-linear composition,
-pairing of fields of continuous linear maps into product maps,
-multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
-supported in the domain), composition of local `Lᵖ` operator families with continuous ones,
-pairing, pointwise product maps of operator fields, decreasing the integrability exponent, and
-decreasing the derivative order. On an open set, local `Lᵖ` membership is detected on the open
-subsets with compact closure inside it, and on a disc on the smaller concentric discs
-(`TauCeti.memLpLoc_ball_iff`).
+off the subset), linearity, continuous-linear composition, pairing, pointwise product maps of
+operator fields, decreasing the integrability exponent, and decreasing the derivative order.
 Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension,
 and smooth maps on the whole plane are in every class on every set.
 Conversely, let `U` agree almost everywhere with its interior, as open sets and half-discs do.
@@ -53,10 +43,7 @@ On a relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane t
 (`TopologicalSpace.Opens.upperHalf`) of the open `W` with compact closure inside `Ω`
 (`TauCeti.memLpLoc_inter_setOf_im_nonneg_iff`). No boundary trace is asserted here;
 extension across the real axis is in `TauCeti.Analysis.Sobolev.Local.Reflection`. On open
-domains, local `L¹` membership is identified with local integrability, supplying the native
-weak-derivative hypotheses.
-There, with `1 ≤ p`, a locally `Lᵖ` function agrees almost everywhere with its precise
-representative, and every weak derivative of a member of `MemWkpLoc p Ω (k + 1)` is in
+domains, every weak derivative of a member of `MemWkpLoc p Ω (k + 1)` is in
 `MemWkpLoc p Ω k`; at order one, it is locally `Lᵖ`.
 `TauCeti.WeakDerivChainLe` compares the `Lᵖ` norms of two maps and, recursively, of every pair of
 their weak derivatives through a given order.
@@ -79,140 +66,6 @@ namespace TauCeti
 
 variable {F G : Type*} [NormedAddCommGroup F] [NormedAddCommGroup G]
   {p q : ENNReal} {U V : Set ℂ} {f g : ℂ → F}
-
-/-- A function is locally `Lᵖ` on `U` when it belongs to `Lᵖ` on every compact subset of `U`.
-On a set reaching the real axis, those compact subsets include the boundary. -/
-def MemLpLoc (p : ENNReal) (U : Set ℂ) (f : ℂ → F) : Prop :=
-  ∀ K : Set ℂ, K ⊆ U → IsCompact K → MemLp f p (volume.restrict K)
-
-/-- Local `Lᵖ` membership is characterized by `Lᵖ` membership on every compact subset. -/
-theorem memLpLoc_iff : MemLpLoc p U f ↔
-    ∀ K : Set ℂ, K ⊆ U → IsCompact K → MemLp f p (volume.restrict K) := Iff.rfl
-
-/-- Local integrability restricts to any smaller set. -/
-theorem MemLpLoc.mono_set (hf : MemLpLoc p U f) (hVU : V ⊆ U) : MemLpLoc p V f :=
-  fun K hK hc => hf K (hK.trans hVU) hc
-
-/-- Local `Lᵖ` membership on `U` gives `Lᵖ` membership on every set whose closure is compact and
-contained in `U`. -/
-theorem MemLpLoc.memLp_of_closure_subset (hf : MemLpLoc p U f) (hV : IsCompact (closure V))
-    (hVU : closure V ⊆ U) : MemLp f p (volume.restrict V) :=
-  (hf _ hVU hV).mono_measure (Measure.restrict_mono subset_closure le_rfl)
-
-/-- A locally `Lᵖ` function on `U` that vanishes off a compact set `T ⊆ U` is `Lᵖ` on the plane. -/
-theorem MemLpLoc.memLp_of_forall_notMem_eq_zero (hf : MemLpLoc p U f) {T : Set ℂ}
-    (hT : IsCompact T) (hTU : T ⊆ U) (h0 : ∀ z ∉ T, f z = 0) : MemLp f p volume := by
-  have : T.indicator f = f :=
-    Set.indicator_eq_self.2 fun z hz => by_contra fun h' => hz (h0 z h')
-  rw [← this, memLp_indicator_iff_restrict hT.measurableSet.nullMeasurableSet]
-  exact hf T hTU hT
-
-/-- A function that is `Lᵖ` on `U` is locally `Lᵖ` there. -/
-theorem _root_.MeasureTheory.MemLp.memLpLoc (hf : MemLp f p (volume.restrict U)) :
-    MemLpLoc p U f :=
-  fun _ hK _ => hf.mono_measure (Measure.restrict_mono hK le_rfl)
-
-/-- Local `Lᵖ` membership on a disc `ball c r` is `Lᵖ` membership on every smaller concentric disc
-`ball c R`, `R < r`. -/
-theorem memLpLoc_ball_iff {c : ℂ} {r : ℝ} :
-    MemLpLoc p (Metric.ball c r) f ↔ ∀ R < r, MemLp f p (volume.restrict (Metric.ball c R)) := by
-  refine ⟨fun hf R hR => hf.memLp_of_closure_subset Metric.isCompact_closure_ball
-    (Metric.closure_ball_subset_closedBall.trans (Metric.closedBall_subset_ball hR)),
-    fun hf K hK hKc => ?_⟩
-  obtain ⟨R, hR, hKR⟩ := exists_lt_subset_ball hKc.isClosed hK
-  exact (hf R hR).mono_measure (Measure.restrict_mono hKR le_rfl)
-
-/-- Almost-everywhere equality on `U` preserves local `Lᵖ` membership. -/
-theorem MemLpLoc.congr_ae (hf : MemLpLoc p U f)
-    (hfg : f =ᵐ[volume.restrict U] g) : MemLpLoc p U g := by
-  intro K hK hc
-  exact (hf K hK hc).ae_eq (ae_mono (Measure.restrict_mono_set volume hK) hfg)
-
-/-- Restricting to a subset preserves local `Lᵖ` membership of any function agreeing with the
-original one on that subset. -/
-theorem MemLpLoc.congr_mono (hf : MemLpLoc p U f) (hgf : Set.EqOn g f V) (hVU : V ⊆ U) :
-    MemLpLoc p V g := fun K hK hc => (hf K (hK.trans hVU) hc).ae_eq <| by
-  filter_upwards [ae_restrict_mem hc.measurableSet] with z hz using (hgf (hK hz)).symm
-
-/-- The zero function belongs to every local `Lᵖ` class. -/
-@[simp]
-theorem memLpLoc_zero : MemLpLoc p U (0 : ℂ → F) := fun _ _ _ => MemLp.zero
-
-/-- Local `Lᵖ` membership is closed under addition. -/
-theorem MemLpLoc.add (hf : MemLpLoc p U f) (hg : MemLpLoc p U g) :
-    MemLpLoc p U (f + g) := fun K hK hc => (hf K hK hc).add (hg K hK hc)
-
-/-- Local `Lᵖ` membership is closed under negation. -/
-theorem MemLpLoc.neg (hf : MemLpLoc p U f) : MemLpLoc p U (-f) :=
-  fun K hK hc => (hf K hK hc).neg
-
-/-- Local `Lᵖ` membership is closed under subtraction. -/
-theorem MemLpLoc.sub (hf : MemLpLoc p U f) (hg : MemLpLoc p U g) :
-    MemLpLoc p U (f - g) := fun K hK hc => (hf K hK hc).sub (hg K hK hc)
-
-/-- Compact subsets have finite volume, so decreasing the exponent preserves local membership.
-In particular this passes from the infinity endpoint to every finite exponent. -/
-theorem MemLpLoc.mono_exponent (hf : MemLpLoc p U f) (hqp : q ≤ p) : MemLpLoc q U f := by
-  intro K hK hc
-  have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hc.measure_lt_top⟩
-  exact (hf K hK hc).mono_exponent hqp
-
-/-- A function continuous on `U` is locally `Lᵖ` there, with no global bound required. -/
-theorem _root_.ContinuousOn.memLpLoc (hf : ContinuousOn f U) : MemLpLoc p U f :=
-  fun _K hK hc => (hf.mono hK).memLp_restrict_of_subset_isCompact
-    hc hc.measurableSet subset_rfl p
-
-/-- Every constant function is locally `Lᵖ` for all exponents, including infinity. -/
-@[simp]
-theorem memLpLoc_const (c : F) : MemLpLoc p U (fun _ => c) :=
-  continuousOn_const.memLpLoc
-
-/-- A locally `Lᵖ` function on a locally closed set is locally integrable when `1 ≤ p`.
-This supplies the local integrability hypothesis used by the weak-derivative API. -/
-theorem MemLpLoc.locallyIntegrableOn (hf : MemLpLoc p U f) (hp : 1 ≤ p) (hU : IsLocallyClosed U) :
-    LocallyIntegrableOn f U volume :=
-  (locallyIntegrableOn_iff hU).2 fun K hK hc =>
-    memLp_one_iff_integrable.1 ((hf.mono_exponent hp) K hK hc)
-
-/-- On a locally closed set, local `L¹` membership is exactly local integrability. -/
-theorem memLpLoc_one_iff_locallyIntegrableOn (hU : IsLocallyClosed U) :
-    MemLpLoc 1 U f ↔ LocallyIntegrableOn f U volume :=
-  ⟨fun hf => hf.locallyIntegrableOn le_rfl hU,
-    fun hf _K hK hc => memLp_one_iff_integrable.2 (hf.integrableOn_compact_subset hK hc)⟩
-
-/-- A finite sum of locally `Lᵖ` functions is locally `Lᵖ`, without a completeness assumption. -/
-theorem MemLpLoc.sum {ι : Type*} (s : Finset ι) {f : ι → ℂ → F}
-    (hf : ∀ i ∈ s, MemLpLoc p U (f i)) : MemLpLoc p U (fun z => ∑ i ∈ s, f i z) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa only [Finset.sum_empty, Pi.zero_def] using (memLpLoc_zero (p := p) (U := U))
-  | @insert i s hi ih =>
-    simpa only [Finset.sum_insert hi, Pi.add_def] using
-      (hf i (Finset.mem_insert_self i s)).add (ih fun j hj => hf j (Finset.mem_insert_of_mem hj))
-
-/-- Local `Lᵖ` membership on `U` gives `Lᵖ` membership on every set whose closure is compact and
-contained in `U`. -/
-theorem MemLpLoc.memLp_restrict_of_isCompact_closure (hf : MemLpLoc p U f) {W : Set ℂ}
-    (hWc : IsCompact (closure W)) (hWU : closure W ⊆ U) : MemLp f p (volume.restrict W) :=
-  (hf _ hWU hWc).mono_measure (Measure.restrict_mono subset_closure le_rfl)
-
-/-- On an open set `Ω`, a function that agrees almost everywhere with an `Lᵖ` function on every
-open `W` whose closure is compact and contained in `Ω` is locally `Lᵖ` on `Ω`. -/
-theorem memLpLoc_of_forall_opens {Ω : Opens ℂ}
-    (h : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
-      ∃ g : ℂ → F, MemLp g p (volume.restrict (W : Set ℂ)) ∧ g =ᵐ[volume.restrict W] f) :
-    MemLpLoc p Ω f := by
-  refine fun K hKΩ hK => ?_
-  obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
-  obtain ⟨g, hg, hgf⟩ := h ⟨W, hWo⟩ hWc hWΩ
-  exact (hg.ae_eq hgf).mono_measure (Measure.restrict_mono hKW le_rfl)
-
-/-- A function that is `Lᵖ` on a set `W` is locally `Lᵖ` on every set `U` contained in `W` up to a
-null set, including on compact subsets of `U` that leave `W`. -/
-theorem _root_.MeasureTheory.MemLp.memLpLoc_of_ae_le {W : Set ℂ}
-    (hf : MemLp f p (volume.restrict W)) (hUW : U ≤ᵐ[volume] W) : MemLpLoc p U f :=
-  memLpLoc_iff.2 fun _ hK _ => hf.mono_measure
-    (Measure.restrict_mono_ae ((Filter.EventuallySubset.of_subset hK).trans hUW))
 
 /-- **Local `Lᵖ` on a half-disc through upper halves.** A function is locally `Lᵖ` on
 `Ω ∩ {0 ≤ im}`, up to the real axis, exactly when it is `Lᵖ` on the upper half `W ∩ {0 < im}` of
@@ -238,109 +91,6 @@ theorem memLpLoc_inter_setOf_im_nonneg_iff {Ω : Opens ℂ} :
 
 variable [NormedSpace ℝ F] [NormedSpace ℝ G]
 
-/-- Real scalar multiplication preserves local `Lᵖ` membership. -/
-theorem MemLpLoc.const_smul (hf : MemLpLoc p U f) (c : ℝ) : MemLpLoc p U (c • f) :=
-  fun K hK hc => (hf K hK hc).const_smul c
-
-/-- A continuous linear map on the codomain preserves local `Lᵖ` membership. -/
-theorem MemLpLoc.clm_comp (hf : MemLpLoc p U f) (A : F →L[ℝ] G) :
-    MemLpLoc p U (fun z => A (f z)) :=
-  fun K hK hc => A.comp_memLp' (hf K hK hc)
-
-/-- Pairing two locally `Lᵖ` fields of continuous linear maps into their product map preserves
-local `Lᵖ` membership. -/
-theorem MemLpLoc.clm_prod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {A : ℂ → E →L[ℝ] F} {B : ℂ → E →L[ℝ] G} (hA : MemLpLoc p U A) (hB : MemLpLoc p U B) :
-    MemLpLoc p U (fun z => (A z).prod (B z)) := by
-  convert (hA.clm_comp (ContinuousLinearMap.compL ℝ E F (F × G)
-    (ContinuousLinearMap.inl ℝ F G))).add
-      (hB.clm_comp (ContinuousLinearMap.compL ℝ E G (F × G) (ContinuousLinearMap.inr ℝ F G)))
-    using 1
-  funext z
-  ext v <;> simp
-
-/-- Composing a locally `Lᵖ` operator family on the left with one continuous on `U` preserves
-local `Lᵖ` membership, since the continuous factor is bounded on every compact subset of `U`. -/
-theorem MemLpLoc.continuousOn_clm_comp {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
-    {A : ℂ → G →L[ℝ] H} {B : ℂ → F →L[ℝ] G} (hB : MemLpLoc p U B) (hA : ContinuousOn A U) :
-    MemLpLoc p U (fun z => A z ∘L B z) :=
-  memLpLoc_iff.2 fun K hKU hK => (memLpLoc_iff.1 hB K hKU hK).clm_comp_of_continuousOn
-    (hA.mono hKU) hK hK.measurableSet subset_rfl
-
-/-- Composing a locally `Lᵖ` operator family on the right with one continuous on `U` preserves
-local `Lᵖ` membership, since the continuous factor is bounded on every compact subset of `U`. -/
-theorem MemLpLoc.clm_comp_continuousOn {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
-    {B : ℂ → G →L[ℝ] H} {E : ℂ → F →L[ℝ] G} (hB : MemLpLoc p U B) (hE : ContinuousOn E U) :
-    MemLpLoc p U (fun z => B z ∘L E z) :=
-  memLpLoc_iff.2 fun K hKU hK => (ContinuousLinearMap.compL ℝ F G H).memLp_of_bilin p
-    (memLpLoc_iff.1 hB K hKU hK)
-    ((hE.mono hKU).memLp_top_restrict_of_subset_isCompact hK hK.measurableSet subset_rfl)
-
-/-- **Hölder's inequality on compact subsets**, for a Hölder triple `1/r = 1/p + 1/q`: a locally
-`Lᵖ` field of continuous linear maps applied to a locally `L^q` field is locally `Lʳ`. -/
-theorem MemLpLoc.clm_apply {A : ℂ → F →L[ℝ] G} {w : ℂ → F} {r : ENNReal}
-    [ENNReal.HolderTriple p q r] (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) :
-    MemLpLoc r U (fun z => A z (w z)) :=
-  fun K hK hc => (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin r (hA K hK hc) (hw K hK hc)
-
-/-- **Hölder's inequality on compact subsets**: a locally `Lᵖ` field of continuous linear maps
-applied to a locally `L^q` field is locally integrable on a locally closed set when
-`1/p + 1/q ≤ 1`. -/
-theorem MemLpLoc.locallyIntegrableOn_clm_apply {A : ℂ → F →L[ℝ] G} {w : ℂ → F}
-    (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) (hpq : p⁻¹ + q⁻¹ ≤ 1)
-    (hU : IsLocallyClosed U) : LocallyIntegrableOn (fun z => A z (w z)) U volume := by
-  have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
-  exact (hA.clm_apply hw).locallyIntegrableOn (ENNReal.one_le_inv.2 hpq) hU
-
-open TauCeti.MeasureTheory in
-/-- A locally `Lᵖ` function on an open set `Ω`, with `1 ≤ p`, agrees almost everywhere on `Ω` with
-its precise representative. -/
-theorem MemLpLoc.ae_eq_preciseRepresentative [CompleteSpace F] {Ω : Opens ℂ} (hp : 1 ≤ p)
-    (hu : MemLpLoc p Ω f) : f =ᵐ[volume.restrict Ω] preciseRepresentative volume f :=
-  ae_eq_restrict_preciseRepresentative Ω.isOpen
-    (hu.locallyIntegrableOn hp Ω.isOpen.isLocallyClosed)
-
-/-- A continuous linear change of codomain preserves and reflects local `Lᵖ` membership. -/
-@[simp]
-theorem _root_.ContinuousLinearEquiv.comp_memLpLoc_iff (e : F ≃L[ℝ] G) :
-    MemLpLoc p U (fun z => e (f z)) ↔ MemLpLoc p U f := by
-  constructor
-  · intro h
-    simpa only [ContinuousLinearEquiv.coe_coe, e.symm_apply_apply] using
-      h.clm_comp e.symm.toContinuousLinearMap
-  · exact fun h => h.clm_comp e.toContinuousLinearMap
-
-/-- A factor continuous on `U` preserves local `Lᵖ` membership on `U`, since it is bounded on
-every compact subset of `U`. -/
-theorem MemLpLoc.continuousOn_smul {χ : ℂ → ℝ} (hf : MemLpLoc p U f) (hχ : ContinuousOn χ U) :
-    MemLpLoc p U (fun z => χ z • f z) :=
-  memLpLoc_iff.2 fun K hK hc =>
-    (memLpLoc_iff.1 (hχ.memLpLoc (p := ⊤)) K hK hc).smul (memLpLoc_iff.1 hf K hK hc)
-
-/-- A locally `Lᵖ` field of continuous linear maps applied to a map continuous on `U` is locally
-`Lᵖ` on `U`, since the map is bounded on every compact subset of `U`. -/
-theorem MemLpLoc.clm_apply_continuousOn {A : ℂ → F →L[ℝ] G} (hA : MemLpLoc p U A)
-    (hf : ContinuousOn f U) : MemLpLoc p U (fun z => A z (f z)) :=
-  memLpLoc_iff.2 fun K hK hc =>
-    (memLpLoc_iff.1 hA K hK hc).of_bilin (fun B x => B x) 1
-      (memLpLoc_iff.1 (hf.memLpLoc (p := ⊤)) K hK hc) isBoundedBilinearMap_apply.continuous
-      (.of_forall fun z => by simpa using (A z).le_opNNNorm (f z))
-
-/-- A continuous factor supported in `U` extends a local `Lᵖ` function on `U` by zero to a local
-`Lᵖ` function on the whole plane: on a compact set `K` the product only sees
-`K ∩ tsupport χ`, a compact subset of `U`. -/
-theorem MemLpLoc.continuous_smul_of_tsupport_subset {χ : ℂ → ℝ} (hf : MemLpLoc p U f)
-    (hχ : Continuous χ) (hsupp : tsupport χ ⊆ U) : MemLpLoc p Set.univ (fun z => χ z • f z) := by
-  have hT := hf.continuousOn_smul hχ.continuousOn
-  have hcl : IsClosed (tsupport χ) := isClosed_tsupport χ
-  refine memLpLoc_iff.2 fun K _ hK => ?_
-  have heq : (fun z => χ z • f z) = (tsupport χ).indicator (fun z => χ z • f z) := by
-    refine (Set.indicator_eq_self.2 ?_).symm
-    exact (Function.support_smul_subset_left χ f).trans (subset_tsupport χ)
-  rw [heq, memLp_indicator_iff_restrict hcl.measurableSet.nullMeasurableSet,
-    Measure.restrict_restrict hcl.measurableSet]
-  exact memLpLoc_iff.1 hT _ (Set.inter_subset_left.trans hsupp) (hK.inter_left hcl)
-
 /-- The iterated weak derivatives through order `k` exist on `interior U` and are `Lᵖ` on
 every compact subset of `U`, including compact sets reaching its boundary.
 The first derivative takes values in `ℂ →L[ℝ] F`; higher derivatives iterate this construction.
@@ -350,19 +100,6 @@ def MemWkpLoc (p : ENNReal) (U : Set ℂ) :
   | 0, _, _, _, f => MemLpLoc p U f
   | k + 1, F, _, _, f => MemLpLoc p U f ∧
       ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D ∧ MemWkpLoc p U k D
-
-/-- A continuous compactly supported factor whose support meets the closed set `T` inside `S`
-makes a function in `MemLpLoc 1 S` integrable on `T`, even though `T` may be unbounded or leave
-`S`. -/
-theorem MemLpLoc.integrableOn_smul {S T : Set ℂ} {h : ℂ → F} (hh : MemLpLoc 1 S h)
-    {f : ℂ → ℝ} (hf : Continuous f) (hfc : HasCompactSupport f) (hT : IsClosed T)
-    (hfS : tsupport f ∩ T ⊆ S) : IntegrableOn (fun z => f z • h z) T := by
-  have hK : IsCompact (tsupport f ∩ T) := hfc.isCompact.inter_right hT
-  have hhK : IntegrableOn h (tsupport f ∩ T) :=
-    memLp_one_iff_integrable.1 (hh _ hfS hK)
-  refine (hhK.continuousOn_smul hf.continuousOn hK).of_forall_sdiff_eq_zero hT.measurableSet
-    fun z hz => ?_
-  simp [image_eq_zero_of_notMem_tsupport fun h => hz.2 ⟨h, hz.1⟩]
 
 variable {Ω : Opens ℂ} {k l : ℕ}
 
