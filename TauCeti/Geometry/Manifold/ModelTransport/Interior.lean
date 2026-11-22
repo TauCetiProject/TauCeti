@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 public import TauCeti.Geometry.Manifold.Algebra.Monoid
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Vector-space charts for a manifold with no boundary
@@ -178,18 +179,20 @@ theorem interiorChartedSpace_eq [I.Boundaryless] :
 
 /-- Preferred extended charts are unchanged on the copied carrier. -/
 theorem interiorExtChartAt_eq (x : BoundarylessModel I M) :
-    extChartAt 𝓘(𝕜, E) x = extChartAt I ((homeomorph I M).symm x) :=
-  extChartAt_eq_of_chartAt_toPartialEquiv I x (interiorChart_toPartialEquiv I _ _)
+    extChartAt 𝓘(𝕜, E) x = extChartAt I ((homeomorph I M).symm x) := by
+  simpa only [extChartAt, OpenPartialHomeomorph.extend_modelWithCornersSelf,
+    interiorChartAt_eq] using interiorChart_toPartialEquiv I _ (chart_mem_atlas H _)
 
 /-- The interior atlas preserves every manifold regularity of the original atlas. -/
 instance instIsManifoldInteriorChartedSpace {n : ℕ∞ω} [IsManifold I n M] :
     IsManifold 𝓘(𝕜, E) n (BoundarylessModel I M) := by
-  apply isManifold_of_atlas_extend I (M := M)
+  apply isManifold_of_atlas_extend I (atlas H M) fun _ hc _ hd ↦
+    (contDiffGroupoid n I).compatible hc hd
   intro C hC
   rw [interior_atlas_eq] at hC
   obtain ⟨c, hc, hC⟩ := hC
   rw [hC]
-  exact ⟨c, IsManifold.subset_maximalAtlas hc, interiorChart_toPartialEquiv I c hc⟩
+  exact ⟨c, hc, interiorChart_toPartialEquiv I c hc⟩
 
 /-- The identity diffeomorphism to the vector-space atlas, at any regularity. -/
 def interiorDiffeomorph (n : ℕ∞ω) : Diffeomorph I 𝓘(𝕜, E) M (BoundarylessModel I M) n :=
