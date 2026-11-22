@@ -54,6 +54,12 @@ theorem subtypeTrivialOnEquivQuotient_apply (H : Subgroup Mˣ)
     (subtypeTrivialOnEquivQuotient H χ (u : Mˣ ⧸ H) : R) = (χ : MulChar M R) u := by
   simp [subtypeTrivialOnEquivQuotient]
 
+/-- The character attached to a quotient character `ψ` takes the value `ψ u` at a unit `u`. -/
+@[simp]
+theorem subtypeTrivialOnEquivQuotient_symm_apply (H : Subgroup Mˣ) (ψ : Mˣ ⧸ H →* Rˣ) (u : Mˣ) :
+    ((subtypeTrivialOnEquivQuotient H).symm ψ : MulChar M R) u = ((ψ (u : Mˣ ⧸ H) : Rˣ) : R) := by
+  rw [← subtypeTrivialOnEquivQuotient_apply, Equiv.apply_symm_apply]
+
 end TrivialOn
 
 end MulChar
