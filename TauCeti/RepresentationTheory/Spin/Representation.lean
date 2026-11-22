@@ -100,7 +100,9 @@ theorem evenSpinAction_apply (Q : QuadraticForm K V) (P : SpinPolarizationData Q
 /-- **The Spin representation factors through the even Clifford action** along the inclusion
 `CliffordAlgebra.spinGroupToEven` of the Spin group into the even subalgebra. -/
 theorem spinRep_eq_evenSpinAction_comp (Q : QuadraticForm K V) (P : SpinPolarizationData Q) :
-    spinRep Q P = (evenSpinAction Q P).toMonoidHom.comp (CliffordAlgebra.spinGroupToEven Q) :=
+    spinRep Q P =
+      (evenSpinAction Q P : CliffordAlgebra.even Q →* Module.End K (ExteriorAlgebra K P.W)).comp
+        (CliffordAlgebra.spinGroupToEven Q) :=
   MonoidHom.ext fun g ↦ by simp
 
 /-- When the first isotropic summand is finite free, the Fock action of a Clifford algebra on its

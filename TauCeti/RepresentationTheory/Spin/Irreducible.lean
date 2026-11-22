@@ -193,7 +193,7 @@ private theorem isIrreducible_toMonoidHom_comp_spinGroupToEven_comp {K : Type u}
     {M : Type*} [AddCommGroup M] [Module K M] [Nontrivial M]
     (F : CliffordAlgebra.even Q →ₐ[K] Module.End K M)
     (hF : Function.Surjective F) :
-    Representation.IsIrreducible ((F.toMonoidHom.comp (spinGroupToEven Q)).comp φ) := by
+    Representation.IsIrreducible (((F : even Q →* End K M).comp (spinGroupToEven Q)).comp φ) := by
   rw [MonoidHom.comp_assoc]
   exact F.isIrreducible_toMonoidHom_comp_of_span_eq_top hF ((spinGroupToEven Q).comp φ)
     ((span_range_spinGroupToEven_comp_eq_top_iff φ).2 hspan)
@@ -404,8 +404,10 @@ theorem isEmpty_equiv_spinPlusSubrep_spinMinusSubrep_comp_of_span (φ : H →* s
   let f := (((spinPlusSubrepEquiv P hline).res φ).trans e).trans
     ((spinMinusSubrepEquiv P hline).res φ).symm
   have hf' : Representation.IsIntertwiningMap
-      ((spinPlusAction Q P hline).toMonoidHom.comp ((spinGroupToEven Q).comp φ))
-      ((spinMinusAction Q P hline).toMonoidHom.comp ((spinGroupToEven Q).comp φ))
+      ((spinPlusAction Q P hline : even Q →* End K (spinPlus Q P)).comp
+        ((spinGroupToEven Q).comp φ))
+      ((spinMinusAction Q P hline : even Q →* End K (spinMinus Q P)).comp
+        ((spinGroupToEven Q).comp φ))
       f.toLinearMap := by
     rw [← MonoidHom.comp_assoc, ← MonoidHom.comp_assoc]
     exact ⟨Representation.IntertwiningMap.isIntertwining _ _ f.toIntertwiningMap⟩

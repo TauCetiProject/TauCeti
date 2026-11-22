@@ -553,11 +553,19 @@ theorem toBaseChange_mem_baseChange_evenOdd_iff {x : CliffordAlgebra (Q.baseChan
 
 /-- **The `ℤ/2`-grading is compatible with extension of scalars**, in the direction of
 `CliffordAlgebra.ofBaseChange`: it maps the scalar extension of the parity-`i` part of `Cℓ(M, Q)`
-exactly onto the parity-`i` part of `Cℓ(A ⊗ M, Q_A)`. -/
-@[simp]
+exactly onto the parity-`i` part of `Cℓ(A ⊗ M, Q_A)`. It is a pre-simp rule, so that it applies
+before `CliffordAlgebra.ofBaseChange_one_tmul` rewrites the image of a unit tensor `1 ⊗ x`. -/
+@[simp↓]
 theorem ofBaseChange_mem_evenOdd_iff {y : A ⊗[R] CliffordAlgebra Q} {i : ZMod 2} :
     ofBaseChange A Q y ∈ evenOdd (Q.baseChange A) i ↔ y ∈ (evenOdd Q i).baseChange A := by
   rw [← toBaseChange_mem_baseChange_evenOdd_iff, toBaseChange_ofBaseChange]
+
+/-- `simp` transfers parity membership of the image of a unit tensor `1 ⊗ x` to the tensor carrier
+before evaluating that image by `CliffordAlgebra.ofBaseChange_one_tmul`. -/
+example (x : CliffordAlgebra Q) (i : ZMod 2) :
+    ofBaseChange A Q (1 ⊗ₜ x) ∈ evenOdd (Q.baseChange A) i ↔
+      1 ⊗ₜ x ∈ (evenOdd Q i).baseChange A := by
+  simp
 
 variable (A Q) in
 /-- **The parity-`i` part of `Cℓ(A ⊗ M, Q_A)` is spanned by the parity-`i` part of `Cℓ(M, Q)`**:

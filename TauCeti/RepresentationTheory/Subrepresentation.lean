@@ -462,11 +462,10 @@ theorem AlgHom.mem_invtSubmodule_toMonoidHom_comp_iff_of_span_eq_top {R B H M : 
     [CommSemiring R] [Semiring B] [Algebra R B] [Monoid H] [AddCommMonoid M] [Module R M]
     (F : B →ₐ[R] Module.End R M) (φ : H →* B) (hφ : Submodule.span R (Set.range φ) = ⊤)
     (p : Submodule R M) :
-    p ∈ Representation.invtSubmodule (F.toMonoidHom.comp φ) ↔
+    p ∈ Representation.invtSubmodule ((F : B →* Module.End R M).comp φ) ↔
       ∀ b, p ∈ Module.End.invtSubmodule (F b) := by
   -- The restricted action acts by `F (φ g)`.
-  simp only [Representation.mem_invtSubmodule, MonoidHom.comp_apply, AlgHom.toRingHom_eq_coe,
-    RingHom.toMonoidHom_eq_coe, AlgHom.toRingHom_toMonoidHom, MonoidHom.coe_ofClass]
+  simp only [Representation.mem_invtSubmodule, MonoidHom.comp_apply, AlgHom.coe_toMonoidHom]
   refine ⟨fun hp b ↦ ?_, fun hp g ↦ hp (φ g)⟩
   -- The elements of `B` whose action preserves `p` form a submodule containing the image of `φ`.
   have hmem (c : B) : c ∈ (p.compatibleMaps p).comap F.toLinearMap ↔

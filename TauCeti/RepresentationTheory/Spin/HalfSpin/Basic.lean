@@ -395,13 +395,14 @@ subrepresentation**: the even-subalgebra action `TauCeti.spinPlusAction` compose
 same subspace `S⁺` of the exterior algebra. Restricting it along `φ : H →* spinGroup Q`
 (`Representation.Equiv.res`) transports invariant subspaces and intertwiners between the two. -/
 noncomputable def spinPlusSubrepEquiv (hline : P.line = ⊥) :
-    Representation.Equiv ((spinPlusAction Q P hline).toMonoidHom.comp (spinGroupToEven Q))
+    Representation.Equiv
+      ((spinPlusAction Q P hline : even Q →* Module.End K (spinPlus Q P)).comp
+        (spinGroupToEven Q))
       (spinPlusSubrep P hline).toRepresentation :=
   .mk (LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm) fun g ↦
     LinearMap.ext fun s ↦ Subtype.ext <| by
-      simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
-        AlgHom.toRingHom_toMonoidHom, MonoidHom.coe_comp, MonoidHom.coe_ofClass,
-        Function.comp_apply, LinearMap.coe_comp, LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply,
+      simp only [MonoidHom.coe_comp, AlgHom.coe_toMonoidHom, Function.comp_apply,
+        LinearMap.coe_comp, LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply,
         coe_spinPlusAction_apply, coe_spinGroupToEven_apply,
         Subrepresentation.toRepresentation_apply, spinRep_apply, LinearMap.coe_restrict_apply]
 
@@ -410,13 +411,14 @@ subrepresentation**: the even-subalgebra action `TauCeti.spinMinusAction` compos
 `CliffordAlgebra.spinGroupToEven` is equivalent to `TauCeti.spinMinusSubrep`, both acting on the
 same subspace `S⁻` of the exterior algebra. -/
 noncomputable def spinMinusSubrepEquiv (hline : P.line = ⊥) :
-    Representation.Equiv ((spinMinusAction Q P hline).toMonoidHom.comp (spinGroupToEven Q))
+    Representation.Equiv
+      ((spinMinusAction Q P hline : even Q →* Module.End K (spinMinus Q P)).comp
+        (spinGroupToEven Q))
       (spinMinusSubrep P hline).toRepresentation :=
   .mk (LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm) fun g ↦
     LinearMap.ext fun s ↦ Subtype.ext <| by
-      simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
-        AlgHom.toRingHom_toMonoidHom, MonoidHom.coe_comp, MonoidHom.coe_ofClass,
-        Function.comp_apply, LinearMap.coe_comp, LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply,
+      simp only [MonoidHom.coe_comp, AlgHom.coe_toMonoidHom, Function.comp_apply,
+        LinearMap.coe_comp, LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply,
         coe_spinMinusAction_apply, coe_spinGroupToEven_apply,
         Subrepresentation.toRepresentation_apply, spinRep_apply, LinearMap.coe_restrict_apply]
 

@@ -274,15 +274,15 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
   obtain ⟨T, hT⟩ := exists_linearEquiv_dual_spinPlus_conj P hline hV
   -- The duality on the restricted even Clifford actions, from the conjugacy equation at `g⁻¹`.
   let E : Representation.Equiv
-      ((spinMinusAction Q P hline).toMonoidHom.comp (spinGroupToEven Q))
-      (Representation.dual ((spinPlusAction Q P hline).toMonoidHom.comp (spinGroupToEven Q))) :=
+      ((spinMinusAction Q P hline : even Q →* End K (spinMinus Q P)).comp (spinGroupToEven Q))
+      (Representation.dual
+        ((spinPlusAction Q P hline : even Q →* End K (spinPlus Q P)).comp (spinGroupToEven Q))) :=
     .mk T.symm fun g ↦ LinearMap.ext fun s ↦ by
       have h := hT (spinGroupToEven Q g⁻¹) (T.symm s)
       rw [reverseEven_spinGroupToEven, inv_inv, LinearEquiv.apply_symm_apply] at h
       -- Both restricted actions act through `spinGroupToEven Q`, and the dual one at `g⁻¹`.
-      simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
-        AlgHom.toRingHom_toMonoidHom, MonoidHom.comp_apply, MonoidHom.coe_ofClass,
-        LinearMap.comp_apply, LinearEquiv.coe_coe, Representation.dual_apply]
+      simp only [MonoidHom.comp_apply, AlgHom.coe_toMonoidHom, LinearMap.comp_apply,
+        LinearEquiv.coe_coe, Representation.dual_apply, ← LinearMap.dualMap_def]
       exact T.symm_apply_eq.2 h.symm
   exact ⟨(spinMinusSubrepEquiv P hline).symm.trans (E.trans (spinPlusSubrepEquiv P hline).dual)⟩
 

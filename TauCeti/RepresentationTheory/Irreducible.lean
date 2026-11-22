@@ -208,13 +208,12 @@ real form of a group acting through a complex algebra that it spans. -/
 theorem _root_.AlgHom.isIrreducible_toMonoidHom_comp_of_span_eq_top [Nontrivial V] {A : Type*}
     [Semiring A] [Algebra k A] (F : A →ₐ[k] Module.End k V) (hF : Function.Surjective F)
     (φ : G →* A) (hφ : Submodule.span k (Set.range φ) = ⊤) :
-    Representation.IsIrreducible (F.toMonoidHom.comp φ) := by
+    Representation.IsIrreducible ((F : A →* Module.End k V).comp φ) := by
   refine isIrreducible_of_asAlgebraHom_surjective _ ?_
   rw [← AlgHom.range_eq_top, ← Algebra.toSubmodule_eq_top, toSubmodule_range_asAlgebraHom]
   -- The restricted action takes the values `F (φ g)`, the image under `F` of the range of `φ`.
-  have hrange : Set.range (F.toMonoidHom.comp φ) = F.toLinearMap '' Set.range φ := by
-    simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe, AlgHom.toRingHom_toMonoidHom,
-      MonoidHom.coe_comp, MonoidHom.coe_ofClass, Set.range_comp, AlgHom.toLinearMap_apply,
+  have hrange : Set.range ((F : A →* Module.End k V).comp φ) = F.toLinearMap '' Set.range φ := by
+    simp only [MonoidHom.coe_comp, AlgHom.coe_toMonoidHom, Set.range_comp,
       AlgHom.coe_toLinearMap]
   rw [hrange, Submodule.span_image, hφ, Submodule.map_top, LinearMap.range_eq_top,
     AlgHom.coe_toLinearMap]
