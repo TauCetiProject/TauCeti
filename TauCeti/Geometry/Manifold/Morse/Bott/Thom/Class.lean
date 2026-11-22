@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
+public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.DiscSpherePair
 public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 public import TauCeti.Topology.VectorBundle.Thom.Homology
 
@@ -22,7 +22,7 @@ Thom pair `(ν⁻, ν⁻₀)`
 and when the band `f⁻¹[a, b]` around the level is compact with all its critical points on `i`, the
 relative homology across the level is that of `(D_ε, S_ε)` for all small `ε > 0`
 (`nonempty_singularHomology_sublevelPair_iso_negativeDiscSpherePair` in
-`TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair`). This file applies the homology Thom
+`TauCeti.Geometry.Manifold.Morse.Bott.Thom.DiscSpherePair`). This file applies the homology Thom
 isomorphism `Hᵣ₊ₚ(ν⁻, ν⁻₀; K) ≅ Hₚ(S; K)` (`TauCeti.homologyThomIso`) to these pairs:
 
 * given a Thom class `u` of `ν⁻` with coefficients in a commutative ring `K`, the pair `(D_ε, S_ε)`
