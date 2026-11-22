@@ -70,14 +70,14 @@ variable {𝕜 U}
 @[simp]
 theorem firstSelectedHilbertProj_apply (f : PiLp 2 fun _ : ShuffleMask k l ↦ U)
     (S : ShuffleMask k l) :
-    firstSelectedHilbertProj 𝕜 U f S = if (0 : Fin (k + l)) ∈ S.1 then f S else 0 :=
+    firstSelectedHilbertProj 𝕜 U f S = if (0 : Fin (k + l)) ∈ S.val then f S else 0 :=
   firstSelectedProj_apply (WithLp.ofLp f) S
 
 /-- Pointwise evaluation of `firstRestHilbertProj` at mask `S`. -/
 @[simp]
 theorem firstRestHilbertProj_apply (f : PiLp 2 fun _ : ShuffleMask k l ↦ U)
     (S : ShuffleMask k l) :
-    firstRestHilbertProj 𝕜 U f S = if (0 : Fin (k + l)) ∈ S.1 then 0 else f S :=
+    firstRestHilbertProj 𝕜 U f S = if (0 : Fin (k + l)) ∈ S.val then 0 else f S :=
   firstRestProj_apply (WithLp.ofLp f) S
 
 /-- `firstSelectedHilbertProj` and `firstRestHilbertProj` sum to `1`. -/
@@ -93,49 +93,49 @@ theorem firstSelectedHilbertProj_add_firstRestHilbertProj :
 theorem firstSelectedHilbertProj_comp_firstSelectedHilbertProj :
     (firstSelectedHilbertProj 𝕜 U : Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)) ∘ₗ
       firstSelectedHilbertProj 𝕜 U = firstSelectedHilbertProj 𝕜 U :=
-  LinearMap.ext fun _ ↦ PiLp.ext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+  LinearMap.ext fun _ ↦ PiLp.ext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.val <;> simp [h]
 
 /-- `firstRestHilbertProj` is idempotent under composition. -/
 @[simp]
 theorem firstRestHilbertProj_comp_firstRestHilbertProj :
     (firstRestHilbertProj 𝕜 U : Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)) ∘ₗ
       firstRestHilbertProj 𝕜 U = firstRestHilbertProj 𝕜 U :=
-  LinearMap.ext fun _ ↦ PiLp.ext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+  LinearMap.ext fun _ ↦ PiLp.ext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.val <;> simp [h]
 
 /-- `firstSelectedHilbertProj` annihilates the image of `firstRestHilbertProj`. -/
 @[simp]
 theorem firstSelectedHilbertProj_comp_firstRestHilbertProj :
     (firstSelectedHilbertProj 𝕜 U : Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)) ∘ₗ
       firstRestHilbertProj 𝕜 U = 0 :=
-  LinearMap.ext fun _ ↦ PiLp.ext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+  LinearMap.ext fun _ ↦ PiLp.ext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.val <;> simp [h]
 
 /-- `firstRestHilbertProj` annihilates the image of `firstSelectedHilbertProj`. -/
 @[simp]
 theorem firstRestHilbertProj_comp_firstSelectedHilbertProj :
     (firstRestHilbertProj 𝕜 U : Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)) ∘ₗ
       firstSelectedHilbertProj 𝕜 U = 0 :=
-  LinearMap.ext fun _ ↦ PiLp.ext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+  LinearMap.ext fun _ ↦ PiLp.ext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.val <;> simp [h]
 
 /-- `firstSelectedHilbertProj` is symmetric with respect to the `PiLp 2` inner product. -/
 theorem isSymmetric_firstSelectedHilbertProj :
     (firstSelectedHilbertProj 𝕜 U :
       Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)).IsSymmetric := fun _ _ ↦ by
   simp only [PiLp.inner_apply, firstSelectedHilbertProj_apply]
-  exact Finset.sum_congr rfl fun S _ ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+  exact Finset.sum_congr rfl fun S _ ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.val <;> simp [h]
 
 /-- `firstRestHilbertProj` is symmetric with respect to the `PiLp 2` inner product. -/
 theorem isSymmetric_firstRestHilbertProj :
     (firstRestHilbertProj 𝕜 U :
       Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)).IsSymmetric := fun _ _ ↦ by
   simp only [PiLp.inner_apply, firstRestHilbertProj_apply]
-  exact Finset.sum_congr rfl fun S _ ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+  exact Finset.sum_congr rfl fun S _ ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.val <;> simp [h]
 
 /-- The images of `firstSelectedHilbertProj` and `firstRestHilbertProj` are pairwise orthogonal. -/
 theorem inner_firstSelectedHilbertProj_firstRestHilbertProj
     (f g : PiLp 2 fun _ : ShuffleMask k l ↦ U) :
     ⟪firstSelectedHilbertProj 𝕜 U f, firstRestHilbertProj 𝕜 U g⟫_𝕜 = 0 := by
   simp only [PiLp.inner_apply, firstSelectedHilbertProj_apply, firstRestHilbertProj_apply]
-  exact Finset.sum_eq_zero fun S _ ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+  exact Finset.sum_eq_zero fun S _ ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.val <;> simp [h]
 
 /-- `firstSelectedHilbertProj` is continuous on the `PiLp 2` shuffle Hilbert carrier. -/
 theorem continuous_firstSelectedHilbertProj :
@@ -144,7 +144,7 @@ theorem continuous_firstSelectedHilbertProj :
   -- Expose the `toLp ∘ firstSelectedProj ∘ ofLp` definition to apply `PiLp.continuous_toLp`.
   change Continuous (fun f ↦ WithLp.toLp 2 (firstSelectedProj 𝕜 U (WithLp.ofLp f)))
   refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun S ↦ ?_)
-  by_cases h : (0 : Fin (k + l)) ∈ S.1
+  by_cases h : (0 : Fin (k + l)) ∈ S.val
   · simpa [h] using PiLp.continuous_apply 2 (fun _ : ShuffleMask k l ↦ U) S
   · simpa [h] using continuous_const
 
@@ -155,7 +155,7 @@ theorem continuous_firstRestHilbertProj :
   -- Expose the `toLp ∘ firstRestProj ∘ ofLp` definition to apply `PiLp.continuous_toLp`.
   change Continuous (fun f ↦ WithLp.toLp 2 (firstRestProj 𝕜 U (WithLp.ofLp f)))
   refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun S ↦ ?_)
-  by_cases h : (0 : Fin (k + l)) ∈ S.1
+  by_cases h : (0 : Fin (k + l)) ∈ S.val
   · simpa [h] using continuous_const
   · simpa [h] using PiLp.continuous_apply 2 (fun _ : ShuffleMask k l ↦ U) S
 

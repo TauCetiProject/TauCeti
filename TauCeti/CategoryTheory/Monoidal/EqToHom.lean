@@ -11,8 +11,9 @@ public import Mathlib.CategoryTheory.Monoidal.Functor
 # Tensor products of transports along object equalities
 
 The tensor product of two morphisms `eqToHom h` and `eqToHom h'` is the transport along the induced
-equality of tensor products. This complements Mathlib's `MonoidalCategory.whiskerLeft_eqToHom` and
-`MonoidalCategory.eqToHom_whiskerRight`, which treat whiskering.
+equality of tensor products, and whiskering by a morphism commutes with such transports of the
+tensor factors. This complements Mathlib's `MonoidalCategory.whiskerLeft_eqToHom` and
+`MonoidalCategory.eqToHom_whiskerRight`, which treat whiskering by a transport.
 
 The inverse tensor comparison of an oplax monoidal functor `F`, followed by the image under `F` of
 a morphism out of a tensor product, is unchanged when the factors and the target are transported
@@ -24,6 +25,8 @@ inverse tensor comparison at the transported factors.
 
 * `TauCeti.eqToHom_tensorHom_eqToHom`: `eqToHom h ⊗ₘ eqToHom h' = eqToHom _`.
 * `TauCeti.eqToIso_tensorIso_eqToIso`: `eqToIso h ⊗ᵢ eqToIso h' = eqToIso _`.
+* `TauCeti.whiskerRight_comp_tensorHom_eqToHom` and `TauCeti.whiskerLeft_comp_tensorHom_eqToHom`:
+  whiskering by a morphism commutes with transports of the tensor factors.
 * `CategoryTheory.Functor.eqToHom_conjugate_inv_δ_comp_map`: transporting
   `inv (δ F M N) ≫ F.map φ` along equalities `M = M'`, `N = N'` and `P = P'` gives
   `inv (δ F M' N') ≫ F.map ψ`, where `ψ` is the transport of `φ`;
@@ -57,6 +60,24 @@ isomorphism along the induced equality of tensor products. -/
 theorem eqToIso_tensorIso_eqToIso {X X' Y Y' : C} (h : X = X') (h' : Y = Y') :
     (eqToIso h ⊗ᵢ eqToIso h') = eqToIso (congrArg₂ (· ⊗ ·) h h') :=
   Iso.ext (eqToHom_tensorHom_eqToHom h h')
+
+/-- Whiskering a morphism `g : A ⟶ B` on the right commutes with transports of the tensor factors
+along equalities of objects. -/
+theorem whiskerRight_comp_tensorHom_eqToHom {A A' B B' K K' : C} (hA : A = A') (hB : B = B')
+    (hK : K = K') (g : A ⟶ B) :
+    g ▷ K ≫ (eqToHom hB ⊗ₘ eqToHom hK) =
+      (eqToHom hA ⊗ₘ eqToHom hK) ≫ (eqToHom hA.symm ≫ g ≫ eqToHom hB) ▷ K' := by
+  subst hA hB hK
+  simp
+
+/-- Whiskering a morphism `g : A ⟶ B` on the left commutes with transports of the tensor factors
+along equalities of objects. -/
+theorem whiskerLeft_comp_tensorHom_eqToHom {L L' A A' B B' : C} (hL : L = L') (hA : A = A')
+    (hB : B = B') (g : A ⟶ B) :
+    L ◁ g ≫ (eqToHom hL ⊗ₘ eqToHom hB) =
+      (eqToHom hL ⊗ₘ eqToHom hA) ≫ L' ◁ (eqToHom hA.symm ≫ g ≫ eqToHom hB) := by
+  subst hL hA hB
+  simp
 
 end TauCeti
 

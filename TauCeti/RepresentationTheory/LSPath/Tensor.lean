@@ -82,7 +82,7 @@ theorem forall_raise_mul_eq_none_iff
     rw [toPLPath_straight, PLPath.minHeight_mul, PLPath.minHeight_straight,
       PLPath.endpoint_straight, hF i]
     have hd : (0 : 𝕜) ≤ (P.coroot' i lam : 𝕜) := by
-      exact_mod_cast (mem_dominantChamber P b lam).mp hlam i i.2
+      exact_mod_cast (mem_dominantChamber P b lam).mp hlam i i.property
     have hi := h i
     rw [min_eq_left hd, min_eq_left (by linarith)]
     norm_num

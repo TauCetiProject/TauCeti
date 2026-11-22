@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Sobolev
+public import Mathlib.Analysis.Fourier.LpSpace
+public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
@@ -14,7 +16,10 @@ import TauCeti.Analysis.Distribution.Regularization
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
+import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
+import TauCeti.MeasureTheory.Measure.Comap
 
 /-!
 # Local Sobolev regularity on Bessel-potential spaces
@@ -26,10 +31,14 @@ transform of the tempered distribution `φ T` of `Distribution.cutoffTempered`:
 
 `𝓕 (φ T) ψ = ∫ ψ η • T (φ e_η) dη`
 
-for every compactly supported Schwartz function `ψ` (`Distribution.fourier_cutoffTempered_apply`),
-and these determine `𝓕 (φ T)` since they are dense. Indeed `φ 𝓕ψ` is the integral
-`∫ ψ η • φ e_η dη` of test functions over the compact support of `ψ`, and `T` passes under that
-integral (`Distribution.complexPairing_eq_integral_of_continuous_iteratedFDeriv`).
+for every Schwartz function `ψ` (`Distribution.fourier_cutoffTempered_apply`). For compactly
+supported `ψ`, `φ 𝓕ψ` is the integral `∫ ψ η • φ e_η dη` of test functions over the compact support
+of `ψ`, and `T` passes under that integral
+(`Distribution.complexPairing_eq_integral_of_continuous_iteratedFDeriv`). Both sides are tempered
+distributions in `ψ`, since the localized Fourier transform grows at most polynomially, and the
+compactly supported Schwartz functions are dense. Pairing with an inverse Fourier transform, this
+reads `∫ 𝓕⁻ f η T (φ e_η) dη = T (φ f)` for every Schwartz function `f`
+(`Distribution.integral_fourierInv_mul_localFourier`).
 
 Consequently the Fourier description of local Sobolev regularity used for the `H^s` wave front
 set agrees with Mathlib's Bessel-potential spaces: `φ T ∈ H^s`, in the sense of
@@ -59,10 +68,15 @@ elliptic regularity argument provides it, assembles into membership of a Bessel-
 
 * `Distribution.fourier_cutoffTempered_apply`: the Fourier transform of `φ T` is the localized
   Fourier transform of `T`.
+* `Distribution.integral_fourierInv_mul_localFourier`: pairing the localized Fourier transform
+  with `𝓕⁻ f` recovers `T (φ f)`.
 * `Distribution.smulLeftCLM_fourier_cutoffTempered_eq`,
   `Distribution.memSobolev_cutoffTempered_iff`: `φ T ∈ H^s` exactly when the weighted localized
   Fourier transform is square integrable, and it then represents the weighted Fourier transform of
   `φ T`.
+* `Distribution.one_add_norm_sq_rpow_smul_localFourier_ae_eq`: for `φ T ∈ H^r`, the weighted
+  localized Fourier transform `⟨η⟩ ^ s T (φ e_η)` is `⟨η⟩ ^ (s - r)` times the Fourier transform
+  of the `L²` function `⟨D⟩ ^ r (φ T)` representing `φ T ∈ H^r`.
 * `Distribution.isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered`,
   `Distribution.IsLocallySobolevAt.exists_nhds_forall_memSobolev_cutoffTempered`: being `H^s` near
   a point in terms of Mathlib's Bessel-potential spaces.
@@ -71,6 +85,9 @@ elliptic regularity argument provides it, assembles into membership of a Bessel-
   point of the support of `φ`, then `φ T ∈ H^s`.
 * `Distribution.sobolevSingularSupport_eq_empty_iff_forall_memSobolev_cutoffTempered`: the
   distributions with empty `H^s` singular support are those with `φ T ∈ H^s` for every `φ`.
+* `TemperedDistribution.isMicrolocallySobolevAt_toDistribution_iff`: microlocal `H^s` regularity
+  of a tempered distribution in terms of the Fourier transforms of the Bessel potentials
+  `⟨D⟩ ^ r (φ u)` of its products `φ u ∈ H^r`.
 * `TemperedDistribution.isLocallySobolevAt_toDistribution_iff`,
   `TemperedDistribution.MemSobolev.sobolevSingularSupport_toDistribution_eq_empty`,
   `TemperedDistribution.MemSobolev.sobolevWaveFrontSet_toDistribution_eq_empty`: local Sobolev
@@ -113,19 +130,16 @@ private theorem continuous_iteratedFDeriv_mul_fourierAtom (φ : 𝓓(Ω, ℂ)) (
     (k := k) (mod_cast le_top)
   exact (continuousOn_univ.1 hc).comp continuous_swap
 
-/-- **The Fourier transform of `φ T` is the localized Fourier transform of `T`.** For every
-compactly supported Schwartz function `ψ`, `𝓕 (φ T) ψ = ∫ ψ η • T (φ e_η) dη`. -/
-theorem fourier_cutoffTempered_apply (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {ψ : 𝓢(E, ℂ)}
-    (hψ : HasCompactSupport ψ) :
+/-- The Fourier transform of `φ T` on a compactly supported Schwartz function `ψ`:
+`𝓕 (φ T) ψ = ∫ ψ η • T (φ e_η) dη`. -/
+private theorem fourier_cutoffTempered_apply_of_hasCompactSupport (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ))
+    {ψ : 𝓢(E, ℂ)} (hψ : HasCompactSupport ψ) :
     𝓕 (T.cutoffTempered φ) ψ = ∫ η, ψ η • T.localFourier φ η := by
   rw [TemperedDistribution.fourier_apply]
   -- The parameter space is the compact support of `ψ`.
   let Y := tsupport (ψ : E → ℂ)
   have hY : MeasurableSet Y := (isClosed_tsupport _).measurableSet
   have : CompactSpace Y := isCompact_iff_compactSpace.1 hψ
-  have : IsFiniteMeasure (volume.comap ((↑) : Y → E)) := ⟨by
-    rw [comap_subtype_coe_apply hY, image_univ, Subtype.range_coe]
-    exact hψ.measure_lt_top⟩
   -- The modulated cutoffs `ψ η • φ e_η`, and `φ 𝓕ψ` as their integral.
   let f : Y → 𝓓(Ω, ℂ) := fun η ↦
     ψ η • bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom (η : E)) φ
@@ -153,7 +167,7 @@ theorem fourier_cutoffTempered_apply (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {
       congrArg (iteratedFDeriv ℝ k · p.2) (funext (hf p.1))
     simp only [heq]
     exact (continuous_iteratedFDeriv_mul_fourierAtom φ ψ k).comp
-      ((continuous_subtype_val.comp continuous_fst).prodMk continuous_snd)
+      ((continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd)
   have hfK (η : Y) : tsupport (f η) ⊆ tsupport φ := by
     rw [show ⇑(f η) = fun x ↦ ψ η * (φ x * TauCeti.fourierAtom (η : E) x) from funext (hf η)]
     exact tsupport_mul_subset_right.trans tsupport_mul_subset_left
@@ -162,6 +176,48 @@ theorem fourier_cutoffTempered_apply (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {
   rw [← hYE _ fun η hη ↦ by simp [hη]]
   refine integral_congr_ae (ae_of_all _ fun η ↦ ?_)
   simp only [f, map_smul, smul_eq_mul, localFourier_def]
+
+/-- **The Fourier transform of `φ T` is the localized Fourier transform of `T`.** For every
+Schwartz function `ψ`, `𝓕 (φ T) ψ = ∫ ψ η • T (φ e_η) dη`. -/
+theorem fourier_cutoffTempered_apply (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (ψ : 𝓢(E, ℂ)) :
+    𝓕 (T.cutoffTempered φ) ψ = ∫ η, ψ η • T.localFourier φ η := by
+  -- The right-hand side is the tempered distribution `w M`, for `M = ⟨η⟩ ^ s T (φ e_η)` square
+  -- integrable and the weight `w = ⟨η⟩ ^ (-s)` of temperate growth.
+  obtain ⟨s, hs⟩ := T.exists_memLp_one_add_norm_sq_rpow_smul_localFourier φ
+  set w : E → ℂ := fun η ↦ (((1 + ‖η‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ)
+  have hw : w.HasTemperateGrowth := by fun_prop
+  have hwM (η : E) :
+      w η • (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier φ η = T.localFourier φ η := by
+    have hpos : (0 : ℝ) < 1 + ‖η‖ ^ 2 := by positivity
+    have hne : ((1 + ‖η‖ ^ 2) ^ (s / 2) : ℝ) ≠ 0 := (Real.rpow_pos_of_pos hpos _).ne'
+    simp only [w, neg_div, Real.rpow_neg hpos.le, smul_eq_mul, Complex.real_smul, ofReal_inv,
+      ← mul_assoc]
+    rw [inv_mul_cancel₀ (by exact_mod_cast hne), one_mul]
+  have key (ψ : 𝓢(E, ℂ)) :
+      TemperedDistribution.smulLeftCLM ℂ w (hs.toLp _ : 𝓢'(E, ℂ)) ψ =
+        ∫ η, ψ η • T.localFourier φ η := by
+    rw [TemperedDistribution.smulLeftCLM_apply_apply, Lp.toTemperedDistribution_apply]
+    refine integral_congr_ae (hs.coeFn_toLp.mono fun η hη ↦ ?_)
+    dsimp only at hη ⊢
+    rw [hη, SchwartzMap.smulLeftCLM_apply_apply hw]
+    conv_rhs => rw [← hwM η]
+    simp only [smul_eq_mul, Complex.real_smul]
+    ring
+  have h : 𝓕 (T.cutoffTempered φ) =
+      TemperedDistribution.smulLeftCLM ℂ w (hs.toLp _ : 𝓢'(E, ℂ)) :=
+    TemperedDistribution.ext_real fun ψ hψ ↦ by
+      rw [key, fourier_cutoffTempered_apply_of_hasCompactSupport T φ (hψ.comp_left ofReal_zero)]
+  rw [h, key]
+
+/-- **Fourier inversion for `φ T`.** Pairing the localized Fourier transform of `T` with the inverse
+Fourier transform of a Schwartz function `f` gives `φ T` evaluated at `f`:
+`∫ 𝓕⁻ f η T (φ e_η) dη = T (φ f)`. -/
+theorem integral_fourierInv_mul_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (f : 𝓢(E, ℂ)) :
+    ∫ η, 𝓕⁻ f η * T.localFourier φ η = T.cutoffTempered φ f := by
+  rw [← FourierTransform.fourier_fourierInv_eq (F := 𝓢(E, ℂ)) f,
+    ← TemperedDistribution.fourier_apply, fourier_cutoffTempered_apply,
+    FourierTransform.fourier_fourierInv_eq]
+  simp only [smul_eq_mul]
 
 /-! ### Bessel-potential spaces -/
 
@@ -181,7 +237,7 @@ private theorem smulLeftCLM_fourier_cutoffTempered_apply (s : ℝ) (T : 𝓓'(Ω
       fun x ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ψ x :=
     funext (SchwartzMap.smulLeftCLM_apply_apply hw ψ)
   rw [TemperedDistribution.smulLeftCLM_apply_apply,
-    fourier_cutoffTempered_apply T φ (by
+    fourier_cutoffTempered_apply_of_hasCompactSupport T φ (by
       rw [hcoe]
       exact hψ.smul_left (f := fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))), hcoe]
   refine integral_congr_ae (ae_of_all _ fun η ↦ ?_)
@@ -225,6 +281,26 @@ theorem memSobolev_cutoffTempered_iff :
     simpa [hψ, G, Complex.real_smul] using h
   · exact fun hG ↦ ⟨hG.toLp G, smulLeftCLM_fourier_cutoffTempered_eq hG⟩
 
+/-- **The weighted localized Fourier transform of an element of `H^r`.** If `φ T ∈ H^r`, the
+`L²` function `u.toLp = ⟨D⟩ ^ r (φ T)`, the Bessel potential of the element `u = φ T` of
+`H^r`, has Fourier transform `⟨η⟩ ^ r T (φ e_η)`. So for every real `s`, the weighted localized
+Fourier transform `η ↦ ⟨η⟩ ^ s T (φ e_η)` is almost everywhere `⟨η⟩ ^ (s - r) 𝓕 u.toLp`. This
+translates square integrability statements about `𝓕 u.toLp`, such as the mapping properties of
+operators on `H^r`, into microlocal Sobolev regularity of `T`. -/
+theorem one_add_norm_sq_rpow_smul_localFourier_ae_eq {r : ℝ}
+    (hT : MemSobolev r 2 (T.cutoffTempered φ)) (s : ℝ) :
+    (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier φ η) =ᵐ[volume]
+      fun η ↦ (((1 + ‖η‖ ^ 2) ^ ((s - r) / 2) : ℝ) : ℂ) •
+        (𝓕 hT.toBesselPotentialSpace.toLp : Lp ℂ 2 (volume : Measure E)) η := by
+  have hG := memSobolev_cutoffTempered_iff.1 hT
+  have hfou : 𝓕 hT.toBesselPotentialSpace.toLp = hG.toLp _ :=
+    BesselPotentialSpace.fourier_toLp_eq_of_smulLeftCLM_fourier_eq (by
+      rw [MemSobolev.toBesselPotentialSpace_toDistr]
+      exact smulLeftCLM_fourier_cutoffTempered_eq hG)
+  filter_upwards [hfou ▸ hG.coeFn_toLp] with η hη
+  rw [hη, ← Complex.coe_smul, ← Complex.coe_smul, smul_smul, ← Complex.ofReal_mul,
+    ← TauCeti.one_add_norm_sq_rpow_add, sub_add_cancel]
+
 /-- **Local Sobolev regularity on Bessel-potential spaces.** A distribution is `H^s` near `x`
 exactly when `φ T ∈ H^s` for some test function `φ` with `φ x ≠ 0`. -/
 theorem isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered :
@@ -252,7 +328,7 @@ theorem memSobolev_cutoffTempered_of_forall_isLocallySobolevAt
     (h : ∀ x ∈ tsupport φ, T.IsLocallySobolevAt s x) : MemSobolev s 2 (T.cutoffTempered φ) := by
   -- Each point of `tsupport φ` has a neighbourhood on which every cutoff gives an `H^s` product.
   choose U hU hUs using fun x : tsupport φ ↦
-    (h x x.2).exists_nhds_forall_memSobolev_cutoffTempered
+    (h x x.property).exists_nhds_forall_memSobolev_cutoffTempered
   -- Split `φ` into finitely many test functions supported in these neighbourhoods.
   obtain ⟨t, ψ, hψU, hψφ, -⟩ := φ.exists_sum_subordinate (fun x ↦ interior (U x))
     (fun _ ↦ isOpen_interior) fun x hx ↦
@@ -292,6 +368,39 @@ theorem isLocallySobolevAt_toDistribution_iff :
       ∃ φ : 𝓓(Ω, ℂ), φ x ≠ 0 ∧ MemSobolev s 2 (smulLeftCLM ℂ (φ : E → ℂ) u) := by
   simp only [isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered,
     cutoffTempered_toDistribution]
+
+/-- **Microlocal Sobolev regularity of a tempered distribution.** A tempered distribution `u` is
+microlocally `H^s` at `(x, ξ)`, as a distribution on `Ω`, exactly when for some test function `φ`
+on `Ω` with `φ x ≠ 0` and some open cone `Γ` containing `ξ`, the product `φ u` lies in some `H^r`
+and the Fourier transform `⟨η⟩ ^ r 𝓕 (φ u)` of the `L²` function `⟨D⟩ ^ r (φ u)`, weighted by
+`⟨η⟩ ^ (s - r)`, is square integrable on `Γ`. -/
+theorem isMicrolocallySobolevAt_toDistribution_iff {ξ : E} :
+    (toDistribution Ω u).IsMicrolocallySobolevAt s x ξ ↔
+      ∃ φ : 𝓓(Ω, ℂ), φ x ≠ 0 ∧ ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧
+        (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+        ∃ (r : ℝ) (hu : MemSobolev r 2 (smulLeftCLM ℂ (φ : E → ℂ) u)),
+          MemLp (fun η ↦ (((1 + ‖η‖ ^ 2) ^ ((s - r) / 2) : ℝ) : ℂ) •
+            (𝓕 hu.toBesselPotentialSpace.toLp : Lp ℂ 2 (volume : Measure E)) η) 2
+            (volume.restrict Γ) := by
+  -- For `φ u ∈ H^r`, the weighted localized Fourier transform is `⟨η⟩ ^ (s - r) 𝓕 (φ u).toLp`.
+  have hae {φ : 𝓓(Ω, ℂ)} {r : ℝ} (hu : MemSobolev r 2 (smulLeftCLM ℂ (φ : E → ℂ) u)) :
+      (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • (toDistribution Ω u).localFourier φ η) =ᵐ[volume]
+        fun η ↦ (((1 + ‖η‖ ^ 2) ^ ((s - r) / 2) : ℝ) : ℂ) •
+          (𝓕 hu.toBesselPotentialSpace.toLp : Lp ℂ 2 (volume : Measure E)) η := by
+    have hT : MemSobolev r 2 ((toDistribution Ω u).cutoffTempered φ) := by
+      rwa [cutoffTempered_toDistribution]
+    have hTu : hT.toBesselPotentialSpace = hu.toBesselPotentialSpace :=
+      hT.toBesselPotentialSpace_eq_of_toDistr_eq (by
+        simp only [MemSobolev.toBesselPotentialSpace_toDistr, cutoffTempered_toDistribution])
+    simpa only [hTu] using one_add_norm_sq_rpow_smul_localFourier_ae_eq hT s
+  rw [isMicrolocallySobolevAt_iff]
+  constructor
+  · rintro ⟨φ, hφ, Γ, hΓ, hξ, hcone, hL⟩
+    obtain ⟨r, hr⟩ := exists_memSobolev_cutoffTempered (toDistribution Ω u) φ
+    rw [cutoffTempered_toDistribution] at hr
+    exact ⟨φ, hφ, Γ, hΓ, hξ, hcone, r, hr, hL.ae_eq ((hae hr).filter_mono ae_restrict_le)⟩
+  · rintro ⟨φ, hφ, Γ, hΓ, hξ, hcone, r, hr, hL⟩
+    exact ⟨φ, hφ, Γ, hΓ, hξ, hcone, hL.ae_eq ((hae hr).filter_mono ae_restrict_le).symm⟩
 
 /-- A tempered distribution in `H^s` is `H^s` near every point, as a distribution on `Ω`. -/
 theorem MemSobolev.isLocallySobolevAt_toDistribution (hu : MemSobolev s 2 u) (hx : x ∈ Ω) :

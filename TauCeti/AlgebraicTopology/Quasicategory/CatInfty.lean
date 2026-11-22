@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicTopology.SimplicialCategory.SimplicialObject
 public import Mathlib.AlgebraicTopology.SimplicialNerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.PushoutProduct
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
-public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn
+public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
 public import TauCeti.AlgebraicTopology.SimplicialNerve.Quasicategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
 
@@ -212,7 +212,7 @@ noncomputable def π₀SHomObj₀StdSimplexEquiv (n : ℕ) :
 lemma π₀SHomObj₀StdSimplexEquiv_mk {n : ℕ}
     (x : (sHom (⟨.of Δ[0], inferInstance⟩ : CatInftyΔ.{u}) ⟨.of Δ[n], inferInstance⟩) _⦋0⦌) :
     π₀SHomObj₀StdSimplexEquiv n (π₀.mk x) =
-      stdSimplex.obj₀Equiv ((SSet.sHomObj₀Iso Δ[n]).hom.app (op ⦋0⦌) x.1) := by
+      stdSimplex.obj₀Equiv ((SSet.sHomObj₀Iso Δ[n]).hom.app (op ⦋0⦌) x.val) := by
   -- `CatInftyΔ` inherits `sHom` definitionally from `CoreEnriched` as a `FullSubcategory`, and
   -- `π₀Functor.obj` unfolds to `π₀` at default transparency, so `Equiv.trans_apply` and
   -- `Iso.toEquiv_apply` are applied directly before rewriting with `mapπ₀_mk` and `π₀CoreEquiv_mk`.

@@ -66,8 +66,8 @@ fibre. -/
 def whitneySumTotalSpaceHomeomorph (A D : FiniteRankAtlas 𝕜 X) :
     TotalSpace Unit (whitneySum A D).Fiber ≃ₜ
       TotalSpace (Unit × Unit) (A.Fiber ×ᵇ D.Fiber) where
-  toFun p := ⟨p.proj, whitneySumFiberEquiv A D p.proj p.2⟩
-  invFun p := ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.2⟩
+  toFun p := ⟨p.proj, whitneySumFiberEquiv A D p.proj p.snd⟩
+  invFun p := ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.snd⟩
   left_inv p := by
     rcases p with ⟨x, v⟩
     exact congrArg (TotalSpace.mk' Unit x) ((whitneySumFiberEquiv A D x).symm_apply_apply v)
@@ -78,28 +78,28 @@ def whitneySumTotalSpaceHomeomorph (A D : FiniteRankAtlas 𝕜 X) :
   continuous_toFun := by
     rw [(FiberBundle.Prod.isInducing_diag Unit A.Fiber Unit D.Fiber).continuous_iff]
     have h := (continuous_mk_whitneySum_iff (A := A) (D := D) (b := TotalSpace.proj)
-      (s := fun p : TotalSpace Unit (whitneySum A D).Fiber => p.2)).1 continuous_id
+      (s := fun p : TotalSpace Unit (whitneySum A D).Fiber => p.snd)).1 continuous_id
     exact h.1.prodMk h.2
   continuous_invFun := by
     have hdiag := (FiberBundle.Prod.isInducing_diag Unit A.Fiber Unit D.Fiber).continuous
     refine (continuous_mk_whitneySum_iff (A := A) (D := D) (b := TotalSpace.proj)
       (s := fun p : TotalSpace (Unit × Unit) (A.Fiber ×ᵇ D.Fiber) =>
-        (whitneySumFiberEquiv A D p.proj).symm p.2)).2 ⟨?_, ?_⟩
+        (whitneySumFiberEquiv A D p.proj).symm p.snd)).2 ⟨?_, ?_⟩
     · refine hdiag.fst.congr fun p => ?_
       exact congrArg (TotalSpace.mk' Unit p.proj)
-        (congrArg Prod.fst ((whitneySumFiberEquiv A D p.proj).apply_symm_apply p.2)).symm
+        (congrArg Prod.fst ((whitneySumFiberEquiv A D p.proj).apply_symm_apply p.snd)).symm
     · refine hdiag.snd.congr fun p => ?_
       exact congrArg (TotalSpace.mk' Unit p.proj)
-        (congrArg Prod.snd ((whitneySumFiberEquiv A D p.proj).apply_symm_apply p.2)).symm
+        (congrArg Prod.snd ((whitneySumFiberEquiv A D p.proj).apply_symm_apply p.snd)).symm
 
 @[simp] theorem whitneySumTotalSpaceHomeomorph_apply (A D : FiniteRankAtlas 𝕜 X)
     (p : TotalSpace Unit (whitneySum A D).Fiber) :
-    whitneySumTotalSpaceHomeomorph A D p = ⟨p.proj, whitneySumFiberEquiv A D p.proj p.2⟩ := (rfl)
+    whitneySumTotalSpaceHomeomorph A D p = ⟨p.proj, whitneySumFiberEquiv A D p.proj p.snd⟩ := (rfl)
 
 @[simp] theorem whitneySumTotalSpaceHomeomorph_symm_apply (A D : FiniteRankAtlas 𝕜 X)
     (p : TotalSpace (Unit × Unit) (A.Fiber ×ᵇ D.Fiber)) :
     (whitneySumTotalSpaceHomeomorph A D).symm p =
-      ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.2⟩ := (rfl)
+      ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.snd⟩ := (rfl)
 
 /-- A map into `TotalSpace Unit (whitneySum A D).Fiber` is continuous if and only if its two
 coordinate-block projections into `TotalSpace Unit A.Fiber` and `TotalSpace Unit D.Fiber` are
@@ -107,9 +107,9 @@ continuous. -/
 theorem continuous_whitneySum_iff {Y : Type*} [TopologicalSpace Y] {A D : FiniteRankAtlas 𝕜 X}
     {f : Y → TotalSpace Unit (whitneySum A D).Fiber} :
     Continuous f ↔
-      Continuous (fun y => (⟨(f y).proj, (whitneySumFiberEquiv A D (f y).proj (f y).2).1⟩ :
+      Continuous (fun y => (⟨(f y).proj, (whitneySumFiberEquiv A D (f y).proj (f y).snd).1⟩ :
         TotalSpace Unit A.Fiber)) ∧
-      Continuous (fun y => (⟨(f y).proj, (whitneySumFiberEquiv A D (f y).proj (f y).2).2⟩ :
+      Continuous (fun y => (⟨(f y).proj, (whitneySumFiberEquiv A D (f y).proj (f y).snd).2⟩ :
         TotalSpace Unit D.Fiber)) := by
   rw [← (whitneySumTotalSpaceHomeomorph A D).comp_continuous_iff,
     (FiberBundle.Prod.isInducing_diag Unit A.Fiber Unit D.Fiber).continuous_iff]

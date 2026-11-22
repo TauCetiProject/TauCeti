@@ -64,10 +64,10 @@ theorem sup_ne_top_of_isLocalRing_end {N N' : Submodule R P} (hN : N ≠ ⊤) (h
   rcases IsLocalRing.isUnit_or_isUnit_of_add_one hab with ha | hb
   · refine hN (eq_top_iff.2 fun x _ ↦ ?_)
     obtain ⟨y, rfl⟩ := ((Module.End.isUnit_iff a).1 ha).2 x
-    exact (s y).1.2
+    exact (s y).1.property
   · refine hN' (eq_top_iff.2 fun x _ ↦ ?_)
     obtain ⟨y, rfl⟩ := ((Module.End.isUnit_iff b).1 hb).2 x
-    exact (s y).2.2
+    exact (s y).2.property
 
 end Semiring
 

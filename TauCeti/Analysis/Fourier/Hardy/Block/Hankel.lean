@@ -158,7 +158,7 @@ theorem blockToeplitz_comp_sub_blockToeplitz {r : ℕ} (A B : BlockSymbol r) :
     blockToeplitz r A ∘L blockToeplitz r B - blockToeplitz r (A * B) =
       -(adjoint (blockHankel r (star A)) ∘L blockHankel r B) := by
   ext f : 1; apply (blockHardyEquiv r).symm.injective; apply Subtype.ext
-  have hmul := congrArg (· ((blockHardyEquiv r).symm f).1)
+  have hmul := congrArg (· ((blockHardyEquiv r).symm f).val)
     (Lp.operatorMultiplication_comp_operatorMultiplication (p := 2) A B)
   simp [coe_blockHardyEquiv_symm_blockToeplitz_apply, adjoint_blockHankel, coe_blockHankel_apply,
     ← hmul]

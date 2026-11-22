@@ -37,8 +37,8 @@ the morphism of short exact sequences
 
 whose top row is `TopPair.shortExact_cubicalChainComplexProdShortComplex` and whose bottom row is
 the sequence of the triple `X × B ⊆ A × Y ∪ X × B ⊆ X × Y`, short exact by the third isomorphism
-theorem (`TauCeti.shortExact_of_isColimit_cokernelCofork`). Excision for open covers
-(`TopPair.isIso_singularHomologyMap_of_open_cover`) supplies the hypothesis when the interiors of
+theorem (`TauCeti.shortExact_of_isColimit_cokernelCofork`). Excision for a product of pairs
+(`TopPair.isIso_singularHomologyMap_prodExcisionMap`) supplies the hypothesis when the interiors of
 `A × Y` and `X × B` in their union cover it
 (`TopPair.quasiIso_cubicalChainComplexProdComparison`), in particular when `A` and `B` are open
 (`TopPair.quasiIso_cubicalChainComplexProdComparison_of_isOpen`).
@@ -180,38 +180,16 @@ theorem quasiIso_cubicalChainComplexProdComparison
         Set (P.prodSubspace Q)) ∪
       interior ((↑) ⁻¹' (CartesianMonoidalCategory.snd P.fst Q.fst ⁻¹' Set.range Q.map) :
         Set (P.prodSubspace Q)) = Set.univ) :
-    QuasiIso (P.cubicalChainComplexProdComparison k Q) := by
-  refine quasiIso_cubicalChainComplexProdComparison_of_isIso k P Q fun n ↦
-    isIso_singularHomologyMap_of_open_cover _ (P.prodExcisionMap Q)
-      (by rw [prodExcisionMap_fst]; exact P.isEmbedding_prodSubspaceInl Q) ?_ _ (fun b ↦ ?_)
-      (Set.union_eq_iUnion.symm.trans h) (fun b ↦ ?_) n
-  · -- A point `(a, y)` of `A × Y` lying in `X × B` lies in `A × B`.
-    rintro ⟨a, y⟩ ⟨⟨x, b⟩, hxb⟩
-    rw [prodExcisionMap_fst] at hxb
-    -- In `X × Y`, `hxb` says `(x, Q.map b) = (P.map a, y)`; compare second coordinates.
-    have hy : Q.map b = y := congrArg Prod.snd ((P.coe_prodSubspaceInr_apply Q _).symm.trans
-      ((congrArg Subtype.val hxb).trans (P.coe_prodSubspaceInl_apply Q _)))
-    exact ⟨(a, b), Prod.ext rfl hy⟩
-  · cases b <;> exact isOpen_interior
-  · cases b
-    · -- Points with second coordinate in `B` lie in `X × B`.
-      refine Or.inl fun x hx ↦ ?_
-      obtain ⟨b, hb⟩ := interior_subset hx
-      exact ⟨(x.1.1, b), Subtype.ext ((P.coe_prodSubspaceInr_apply Q _).trans (Prod.ext rfl hb))⟩
-    · -- Points with first coordinate in `A` lie in `A × Y`.
-      refine Or.inr fun x hx ↦ ?_
-      obtain ⟨a, ha⟩ := interior_subset hx
-      rw [prodExcisionMap_fst]
-      exact ⟨(a, x.1.2), Subtype.ext ((P.coe_prodSubspaceInl_apply Q _).trans (Prod.ext ha rfl))⟩
+    QuasiIso (P.cubicalChainComplexProdComparison k Q) :=
+  quasiIso_cubicalChainComplexProdComparison_of_isIso k P Q
+    (isIso_singularHomologyMap_prodExcisionMap _ P Q h)
 
 /-- **The relative cubical chains of a product of pairs with open subspaces.** If `A` is open in
 `X` and `B` is open in `Y`, then the comparison map `N(P × Q) ⟶ N(X × Y, A × Y ∪ X × B)` is a
 quasi-isomorphism. -/
 theorem quasiIso_cubicalChainComplexProdComparison_of_isOpen (hA : IsOpen (Set.range P.map))
-    (hB : IsOpen (Set.range Q.map)) : QuasiIso (P.cubicalChainComplexProdComparison k Q) := by
-  refine quasiIso_cubicalChainComplexProdComparison k P Q ?_
-  rw [(TopCat.isOpen_subtypeVal_preimage_preimage_fst_union hA).interior_eq,
-    (TopCat.isOpen_subtypeVal_preimage_preimage_snd_union hB).interior_eq]
-  exact Set.eq_univ_of_forall fun x ↦ x.2
+    (hB : IsOpen (Set.range Q.map)) : QuasiIso (P.cubicalChainComplexProdComparison k Q) :=
+  quasiIso_cubicalChainComplexProdComparison_of_isIso k P Q
+    (isIso_singularHomologyMap_prodExcisionMap_of_isOpen _ P Q hA hB)
 
 end TopPair

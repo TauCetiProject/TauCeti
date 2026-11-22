@@ -65,7 +65,7 @@ All four equivalences are opaque: their bodies are not `@[expose]`d. The `_tmul`
 `_symm_tmul` simp lemmas describe their action in both directions. For tensor-product base change,
 `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv` identifies the underlying
 Mathlib linear equivalence. Equalities of algebra-map composites record compatibility with
-fourfold tensor interchange and with scalar extension in stages.
+the second-factor inclusion, with fourfold tensor interchange and with scalar extension in stages.
 
 Mathlib's `Algebra.TensorProduct.cancelBaseChange` supplies the tower comparison for a commutative
 algebra being extended. The tower comparisons here also support noncommutative algebras, including
@@ -182,6 +182,16 @@ of scalar extension over a tensor product. -/
 theorem baseChangeTensorAlgEquiv_toLinearEquiv :
     (baseChangeTensorAlgEquiv K L A B).toLinearEquiv =
       _root_.TensorProduct.AlgebraTensorModule.distribBaseChange K L A B := (rfl)
+
+/-- Distributing base change over `⊗` carries the second-factor inclusion of the base-changed
+factors to the base change of the second-factor inclusion. -/
+theorem baseChangeTensorAlgEquiv_symm_comp_includeRight :
+    (baseChangeTensorAlgEquiv K L A B).symm.toAlgHom.comp
+        (Algebra.TensorProduct.includeRight (R := L) (A := L ⊗[K] A) (B := L ⊗[K] B)) =
+      Algebra.TensorProduct.map (AlgHom.id L L) Algebra.TensorProduct.includeRight := by
+  refine Algebra.TensorProduct.ext' fun l b ↦ ?_
+  rw [AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.one_def]
+  simp
 
 end Algebra.TensorProduct
 
@@ -314,6 +324,18 @@ theorem baseChangeTowerAlgEquiv_symm_tmul (m : M) (a : A) :
     (baseChangeTowerAlgEquiv K L A M).symm (m ⊗ₜ[K] a) = m ⊗ₜ[L] (1 ⊗ₜ[K] a) :=
   (baseChangeTowerAlgEquiv K L A M).symm_apply_eq.mpr <| by
     rw [baseChangeTowerAlgEquiv_tmul, one_smul]
+
+/-- `M ⊗[K] A` is the base change of `L ⊗[K] A` along `L → M`: the inverse tower comparison sends
+the image of `x ∈ L ⊗[K] A` under the scalar map `L → M` to `1 ⊗ x`. -/
+theorem _root_.Algebra.TensorProduct.baseChangeTowerAlgEquiv_symm_rTensor (x : L ⊗[K] A) :
+    (baseChangeTowerAlgEquiv K L A M).symm
+        (Algebra.TensorProduct.rTensor A (IsScalarTower.toAlgHom K L M) x) =
+      (1 : M) ⊗ₜ[L] x := by
+  induction x with
+  | tmul l a =>
+    simp [Algebra.algebraMap_eq_smul_one, _root_.TensorProduct.smul_tmul,
+      _root_.TensorProduct.smul_tmul']
+  | add x y hx hy => simp only [map_add, _root_.TensorProduct.tmul_add, hx, hy]
 
 /-- Collapsing a scalar-extension tower in both tensor factors commutes with distributing
 scalar extension over their tensor product, as an equality of algebra maps. -/

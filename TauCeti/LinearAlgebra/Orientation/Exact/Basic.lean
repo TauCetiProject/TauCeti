@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Basis.Exact
 public import TauCeti.LinearAlgebra.Orientation.Prod
+import TauCeti.LinearAlgebra.Orientation.Basic
 
 /-!
 # Orientations of short exact sequences
@@ -63,6 +64,8 @@ Naturality carries these orientations along the flow.
 * `Orientation.signBasis_ofExact`: the sign of such a basis relative to the induced orientation.
 * `Orientation.map_ofExact`, `Orientation.map_kerOfExact`, `Orientation.map_cokerOfExact`:
   naturality under isomorphisms of short exact sequences.
+* `Orientation.map_ofExact_of_pos`: an isomorphism of the middle terms which rescales the two maps
+  by positive scalars preserves the induced orientation.
 * `Orientation.ofExact_inl_snd`: for a product, the induced orientation is the product
   orientation.
 * `Orientation.ofExact_eq_map_prod`: the induced orientation read in a splitting of the sequence.
@@ -101,7 +104,7 @@ def ofExact (o : Orientation R A (Fin m)) (p : Orientation R C (Fin n))
     (hm : finrank R A = m) (hn : finrank R C = n) : Orientation R B (Fin (m + n)) :=
   Orientation.map (Fin (m + n))
     (hfg.splitSurjectiveEquiv hf
-      ⟨_, (Module.projective_lifting_property g .id hg).choose_spec⟩).1.symm
+      ⟨_, (Module.projective_lifting_property g .id hg).choose_spec⟩).val.symm
     (prod o p hm hn)
 
 /-- **The orientation of a short exact sequence in bases.** If the first `m` vectors of a basis
@@ -115,10 +118,10 @@ theorem ofExact_orientation (a : Basis (Fin m) R A) (c : Basis (Fin n) R C)
   let e := hfg.splitSurjectiveEquiv hf
     ⟨_, (Module.projective_lifting_property g .id hg).choose_spec⟩
   -- The splitting sends `A` to the first factor and lifts the projection to `C`.
-  have hfe (x : A) : e.1.symm (x, 0) = f x := (LinearMap.congr_fun e.2.1 x).symm
-  have hge (y : C) : g (e.1.symm (0, y)) = y := by
-    simpa using LinearMap.congr_fun e.2.2 (e.1.symm (0, y))
-  let b' := ((a.prod c).reindex finSumFinEquiv).map e.1.symm
+  have hfe (x : A) : e.val.symm (x, 0) = f x := (LinearMap.congr_fun e.property.1 x).symm
+  have hge (y : C) : g (e.val.symm (0, y)) = y := by
+    simpa using LinearMap.congr_fun e.property.2 (e.val.symm (0, y))
+  let b' := ((a.prod c).reindex finSumFinEquiv).map e.val.symm
   have hb'' : ofExact hf hfg hg a.orientation c.orientation hm hn = b'.orientation := by
     rw [ofExact, prod_basis_orientation, ← Basis.orientation_map]
   -- Both `b` and `b'` are images of `a` followed by lifts of `c`, so they differ by a change of
@@ -420,5 +423,28 @@ theorem ofExact_eq_map_prod {A₀ : Type*} [AddCommGroup A₀] [Module R A₀] [
       LinearMap.snd_apply]) o p hm hn
   rw [map_refl, Equiv.refl_apply, ofExact_inl_snd] at h
   rw [← h, ← map_trans, LinearEquiv.symm_trans_self, map_refl, Equiv.refl_apply]
+
+section Positive
+
+/-- **Positive rescalings of a short exact sequence.** If an isomorphism `eB` of the middle terms
+of two short exact sequences with the same outer terms carries `f` to a positive multiple of `f'`,
+and `g'` after it is a positive multiple of `g`, then it carries the orientation induced by `o` and
+`p` on one sequence to the orientation they induce on the other. -/
+theorem map_ofExact_of_pos {R A B B' C : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+    [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B] [AddCommGroup B'] [Module R B']
+    [AddCommGroup C] [Module R C] [FiniteDimensional R A] [FiniteDimensional R C]
+    {f : A →ₗ[R] B} {g : B →ₗ[R] C} {f' : A →ₗ[R] B'} {g' : B' →ₗ[R] C} {m n : ℕ}
+    (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g)
+    (hf' : Function.Injective f') (hfg' : Function.Exact f' g') (hg' : Function.Surjective g')
+    (eB : B ≃ₗ[R] B') {a b : R} (ha : 0 < a) (hb : 0 < b) (hfe : ∀ x, eB (f x) = a • f' x)
+    (hge : ∀ y, g' (eB y) = b • g y) (o : Orientation R A (Fin m)) (p : Orientation R C (Fin n))
+    (hm : finrank R A = m) (hn : finrank R C = n) :
+    Orientation.map (Fin (m + n)) eB (ofExact hf hfg hg o p hm hn) =
+      ofExact hf' hfg' hg' o p hm hn := by
+  rw [map_ofExact hf hfg hg hf' hfg' hg' (LinearEquiv.smulOfNeZero R A a ha.ne') eB
+      (LinearEquiv.smulOfNeZero R C b hb.ne') (fun x ↦ by simp [hfe]) (fun y ↦ by simp [hge]),
+    map_smulOfNeZero_of_pos o ha, map_smulOfNeZero_of_pos p hb]
+
+end Positive
 
 end Orientation

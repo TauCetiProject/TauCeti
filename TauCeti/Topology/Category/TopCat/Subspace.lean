@@ -78,8 +78,8 @@ morphism `x ↦ ⟨f x.1, Set.mem_univ _⟩`. -/
 lemma ofHom_restrictPreimage_univ_eq {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y]
     (f : C(X, Y)) :
     (ofHom (f.restrictPreimage Set.univ) : of (Set.univ : Set X) ⟶ of (Set.univ : Set Y)) =
-      ofHom ⟨fun x ↦ ⟨f x.1, Set.mem_univ _⟩,
-        (f.continuous.comp continuous_subtype_val).subtype_mk _⟩ := by
+      ofHom ⟨fun x ↦ ⟨f x.val, Set.mem_univ _⟩,
+        (f.continuous.comp continuous_subtypeVal).subtype_mk _⟩ := by
   ext x; exact Set.restrictPreimage_coe Set.univ f x
 
 variable (U V : Set α)

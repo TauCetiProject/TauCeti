@@ -415,7 +415,7 @@ theorem continuous_derivative : Continuous (derivative K : K⸨X⸩ → K⸨X⸩
   rw [ContinuousAt, map_zero]
   intro s hs
   obtain ⟨γ, hγ⟩ := Valued.mem_nhds_zero.mp hs
-  obtain ⟨k, hk⟩ : ∃ k : ℤ, MonoidWithZeroHom.ValueGroup₀.embedding γ.1 = WithZero.exp k :=
+  obtain ⟨k, hk⟩ : ∃ k : ℤ, MonoidWithZeroHom.ValueGroup₀.embedding γ.val = WithZero.exp k :=
     ⟨_, (WithZero.exp_log (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)).symm⟩
   -- Series of valuation below `exp (k - 2)` have derivatives of valuation below `exp k`.
   have hU : {x : K⸨X⸩ | Valued.v x < Valued.v (single (2 - k) (1 : K))} ∈ 𝓝 0 :=

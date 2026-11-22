@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Algebra.Group.Action.Pow
 public import TauCeti.LinearAlgebra.Eigenspace.Transport
+public import TauCeti.Algebra.Bialgebra.Module.TensorProduct
 public import TauCeti.QuantumGroups.UqSl2.Basic
+public import TauCeti.QuantumGroups.UqSl2.Hopf
 public import TauCeti.QuantumGroups.QuantumInteger.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
@@ -30,6 +32,8 @@ lowest-weight vector. This is the starting point for classifying finite-dimensio
 modules, and the generalized weight decomposition is the setting of the finite-dimensional
 complete-reducibility argument. Taking generalized weight spaces of finite-dimensional modules is
 exact: a surjective module map carries generalized weight spaces onto those of its target.
+An invariant functional, that is a module map to the trivial module, vanishes on every weight
+space of weight other than `1`.
 
 The action conventions are those of A. Virelizier, *Quantum groups*, Sections 2.3--2.4.
 -/
@@ -138,6 +142,19 @@ theorem map_weightSpace_le {W : Type*} [AddCommGroup W] [Module ℂ W] [Module (
     [IsScalarTower ℂ (UqSl2 q) W] (φ : V →ₗ[UqSl2 q] W) (μ : ℂ) :
     (weightSpace q V μ).map (φ.restrictScalars ℂ) ≤ weightSpace q W μ :=
   Module.End.map_genEigenspace_le _ (LinearMap.ext fun x => (φ.map_smul (k q) x).symm) μ 1
+
+/-- An invariant functional, that is a module map to the trivial module, kills every vector of
+weight different from `1`. -/
+theorem apply_eq_zero_of_mem_weightSpace [Fact (q ≠ 0)]
+    (g : V →ₗ[UqSl2 q] BialgebraModule.Trivial ℂ (UqSl2 q)) {μ : ℂ} (hμ : μ ≠ 1) {v : V}
+    (hv : v ∈ weightSpace q V μ) : g v = 0 := by
+  have h := congrArg (BialgebraModule.trivialEquiv ℂ (UqSl2 q)) (g.map_smul (k q) v)
+  rw [mem_weightSpace_iff.mp hv, LinearMapClass.map_smul_of_tower, map_smul,
+    BialgebraModule.trivialEquiv_smul, counit_k, smul_eq_mul, one_mul] at h
+  apply (BialgebraModule.trivialEquiv ℂ (UqSl2 q)).injective
+  rw [map_zero]
+  have h' : (μ - 1) * BialgebraModule.trivialEquiv ℂ (UqSl2 q) (g v) = 0 := by linear_combination h
+  exact (mul_eq_zero.mp h').resolve_left (sub_ne_zero.mpr hμ)
 
 variable (q V) in
 /-- A finite-dimensional module has only finitely many weights. -/

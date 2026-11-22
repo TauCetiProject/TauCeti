@@ -58,10 +58,15 @@ dimensions of its kernel and cokernel (`LinearMap.detLineCongr_neg_apply`).
   `LinearMap.IsComplexPositiveDetLine.not_neg`,
   `LinearMap.isComplexPositiveDetLine_or_isComplexPositiveDetLine_neg`: complex positivity is an
   orientation of the determinant line.
+* `LinearMap.isComplexPositiveDetLine_detLineEquivOfBijective_symm_one`: for a bijective map the
+  complex orientation is the orientation given by bijectivity.
 * `LinearMap.IsComplexPositiveDetLine.detLineCongr`: complex-linear transport preserves the
   complex orientation of the determinant line of a complex-linear map.
 * `LinearMap.IsComplexPositiveDetLine.neg_one_pow_smul_detLineCongr`: conjugate-linear transport
   multiplies it by `(-1) ^ (k + c)`.
+* `LinearMap.isComplexPositiveDetLine_iff_of_surjective`: for a surjective complex-linear map, the
+  complex orientation of the determinant line is that of the real determinant line of the complex
+  kernel (`LinearMap.detLineEquivOfSurjective`).
 * `LinearMap.isComplexPositiveDetLine_detLineEndGenerator`: the normalized generator of the
   determinant line of a complex-linear endomorphism (`LinearMap.detLineEndGenerator`) is complex
   positive.
@@ -165,6 +170,22 @@ theorem exists_isComplexPositiveDetLine [FiniteDimensional ℂ (ker f)]
   obtain ⟨t, ht⟩ := exists_isComplexPositiveTMulDual (E := ker f) (F := N ⧸ range f)
   exact ⟨f.detLineRestrictScalarsEquiv.symm t, by
     rwa [isComplexPositiveDetLine_iff, LinearEquiv.apply_symm_apply]⟩
+
+/-- **The complex orientation of a bijective complex-linear map** is the orientation given by
+bijectivity: kernel and cokernel vanish, and the element `1` of the determinant line under
+`LinearMap.detLineEquivOfBijective` is complex positive. -/
+theorem isComplexPositiveDetLine_detLineEquivOfBijective_symm_one
+    (hf : Function.Bijective (f.restrictScalars ℝ)) :
+    f.IsComplexPositiveDetLine ((detLineEquivOfBijective hf).symm 1) := by
+  have hf' : Function.Bijective f := by simpa using hf
+  have : Subsingleton (ker f) := Submodule.subsingleton_iff_eq_bot.2 (ker_eq_bot.2 hf'.1)
+  have : Subsingleton (N ⧸ range f) :=
+    Submodule.Quotient.subsingleton_iff.2 (range_eq_top.2 hf'.2)
+  rw [detLineEquivOfBijective_symm_one_eq_ιMulti_tmul, isComplexPositiveDetLine_iff,
+    detLineRestrictScalarsEquiv_tmul, LinearEquiv.detLineCongr_ιMulti]
+  refine (isComplexPositive_ιMulti_of_subsingleton _).isComplexPositiveTMulDual_tmul
+    ((isComplexPositive_ιMulti_of_subsingleton 0).isComplexPositiveDual_of_apply_eq_one ?_)
+  simp
 
 /-- A positive multiple of a complex positive element of the determinant line of a complex-linear
 map is complex positive. -/
@@ -294,6 +315,53 @@ theorem IsComplexPositiveDetLine.neg_one_pow_smul_detLineCongr [FiniteDimensiona
     (fun y ↦ by rw [cokerCongrOfComp_smul f e₁ e₂ h he₂' y, neg_smul])
 
 end Transport
+
+section Surjective
+
+/-! ### Surjective complex-linear maps -/
+
+/-- **The complex orientation of a surjective complex-linear map is that of its kernel.** For a
+surjective complex-linear map `f`, the determinant line of the underlying real map is the real
+determinant line of its kernel (`LinearMap.detLineEquivOfSurjective`), which is that of the complex
+kernel. An element is complex positive exactly when the corresponding element of the real
+determinant line of the complex kernel is complex positive. -/
+theorem isComplexPositiveDetLine_iff_of_surjective (hf : Function.Surjective f)
+    {z : (f.restrictScalars ℝ).detLine} :
+    f.IsComplexPositiveDetLine z ↔
+      IsComplexPositive (LinearEquiv.detLineCongr (f.kerRestrictScalarsEquiv ℝ).symm
+        ((f.restrictScalars ℝ).detLineEquivOfSurjective hf z)) := by
+  have : Subsingleton (N ⧸ range f) :=
+    Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hf)
+  -- The composite of the two identifications, and a family giving the empty exterior product of
+  -- the real cokernel.
+  let Ψ := ((f.restrictScalars ℝ).detLineEquivOfSurjective hf).trans
+    (LinearEquiv.detLineCongr (f.kerRestrictScalarsEquiv ℝ).symm)
+  let w : Fin (finrank ℝ (N ⧸ range (f.restrictScalars ℝ))) → N ⧸ range (f.restrictScalars ℝ) :=
+    fun _ ↦ 0
+  let e := exteriorPower.ιMulti ℝ _ (f.cokerRestrictScalarsEquiv ℝ ∘ w ∘
+    Fin.cast (f.cokerRestrictScalarsEquiv ℝ).finrank_eq.symm)
+  have he : IsComplexPositive e := isComplexPositive_ιMulti_of_subsingleton _
+  -- `Ψ` evaluates the cokernel factor at the empty exterior product.
+  have key (x : TauCeti.detLine ℝ (ker f)) (φ : Dual ℝ (TauCeti.detLine ℝ (N ⧸ range f))) :
+      Ψ (f.detLineRestrictScalarsEquiv.symm (x ⊗ₜ φ)) = φ e • x := by
+    rw [LinearEquiv.trans_apply, detLineRestrictScalarsEquiv_symm_tmul,
+      detLineEquivOfSurjective_tmul_ιMulti (f := f.restrictScalars ℝ) hf _ _ w,
+      LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.detLineCongr_ιMulti, map_smul,
+      ← LinearEquiv.detLineCongr_symm, LinearEquiv.symm_apply_apply]
+  rw [isComplexPositiveDetLine_iff, ← LinearEquiv.trans_apply]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨x, φ, hx, hφ, ht⟩ := isComplexPositiveTMulDual_iff.1 h
+    rw [← LinearEquiv.eq_symm_apply] at ht
+    rw [ht, key]
+    exact hx.smul (he.isComplexPositiveDual_iff.1 hφ)
+  · obtain ⟨φ, hφ⟩ := Module.Projective.exists_dual_eq_one ℝ he.ne_zero
+    have hz : f.detLineRestrictScalarsEquiv z = Ψ z ⊗ₜ φ := by
+      rw [← LinearEquiv.eq_symm_apply]
+      exact Ψ.injective (by rw [key, hφ, one_smul])
+    rw [hz]
+    exact h.isComplexPositiveTMulDual_tmul (he.isComplexPositiveDual_of_apply_eq_one hφ)
+
+end Surjective
 
 section Endomorphism
 

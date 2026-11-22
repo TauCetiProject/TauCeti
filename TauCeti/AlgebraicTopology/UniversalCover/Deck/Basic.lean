@@ -44,35 +44,35 @@ namespace Deck
 /-- A deck transformation restricts to a homeomorphism of every fibre of the projection,
 the restriction of its underlying homeomorphism along `Homeomorph.subtype`. -/
 def _root_.deck.fiberHomeomorph (φ : deck p) (b : B) : p ⁻¹' {b} ≃ₜ p ⁻¹' {b} :=
-  φ.1.subtype fun e => ⟨
-    fun he ↦ Function.mapsTo_fiber φ.1 (deck.comp_eq φ) b he,
+  φ.val.subtype fun e => ⟨
+    fun he ↦ Function.mapsTo_fiber φ.val (deck.comp_eq φ) b he,
     fun he ↦ by
-      simpa using Function.mapsTo_fiber (φ⁻¹ : deck p).1 (deck.comp_eq φ⁻¹) b he⟩
+      simpa using Function.mapsTo_fiber (φ⁻¹ : deck p).val (deck.comp_eq φ⁻¹) b he⟩
 
 /-- On points, the fibre homeomorphism induced by a deck transformation is just evaluation
 of that transformation. -/
 @[simp]
 lemma _root_.deck.fiberHomeomorph_apply (φ : deck p) (b : B) (e : p ⁻¹' {b}) :
-    (deck.fiberHomeomorph φ b e : E) = φ.1 e.1 :=
+    (deck.fiberHomeomorph φ b e : E) = φ.val e.val :=
   (rfl)
 
 /-- On points, the inverse fibre homeomorphism induced by a deck transformation is
 evaluation of the inverse homeomorphism. -/
 @[simp]
 lemma _root_.deck.fiberHomeomorph_symm_apply (φ : deck p) (b : B) (e : p ⁻¹' {b}) :
-    ((deck.fiberHomeomorph φ b).symm e : E) = φ.1.symm e.1 :=
+    ((deck.fiberHomeomorph φ b).symm e : E) = φ.val.symm e.val :=
   (rfl)
 
 /-- On points, the action of a deck transformation is evaluation of its underlying
 homeomorphism. The action itself is inherited, by subgroup transfer, from the tautological
 action of `E ≃ₜ E` on `E`. -/
 @[simp]
-lemma _root_.deck.smul_eq_apply (φ : deck p) (e : E) : φ • e = φ.1 e :=
+lemma _root_.deck.smul_eq_apply (φ : deck p) (e : E) : φ • e = φ.val e :=
   rfl
 
 /-- Applying the inverse deck transformation is evaluation of the inverse homeomorphism. -/
 @[simp]
-lemma _root_.deck.inv_smul_eq_symm_apply (φ : deck p) (e : E) : (φ⁻¹ : deck p) • e = φ.1.symm e :=
+lemma _root_.deck.inv_smul_eq_symm_apply (φ : deck p) (e : E) : (φ⁻¹ : deck p) • e = φ.val.symm e :=
   rfl
 
 -- `FaithfulSMul (deck p) E` is inherited from Mathlib's generic subgroup action, and

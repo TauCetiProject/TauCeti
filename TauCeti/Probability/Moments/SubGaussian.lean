@@ -12,8 +12,8 @@ public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Probability.Moments.SubGaussian.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Integral.Prod
-import TauCeti.Probability.Distributions.Gaussian.Moments
-import TauCeti.Probability.Distributions.Gaussian.QuadraticForm
+import TauCeti.Probability.Distributions.Gaussian.QuadraticForm.Basic
+import TauCeti.Probability.Distributions.Gaussian.Transforms
 import TauCeti.Probability.Moments.SubExponential
 
 /-!
@@ -410,8 +410,7 @@ theorem integral_exp_half_mul_sum_mulVec_sq_le {Ω γ κ : Type*} [MeasurableSpa
     (.of_forall fun _ ↦ (exp_pos _).le) hg_int (.of_forall hslice_P)
   have hF_int : Integrable F (P.prod ν) := hFs_int.swap
   have hgauss_id (ω : Ω) : ∫ g, F (ω, g) ∂ν = exp (a / 2 * ∑ l, ((M *ᵥ V ω) l) ^ 2) := by
-    rw [(integral_exp_mul_dotProduct_pi_gaussianReal (M *ᵥ V ω) 1 r).2,
-      NNReal.coe_one, one_mul, hr_sq]
+    simpa [F, ν, mgf, hr_sq] using Probability.mgf_dotProduct_pi_gaussianReal (M *ᵥ V ω) 0 1 r
   refine ⟨hF_int.integral_norm_prod_left.congr (.of_forall fun ω ↦
     (integral_congr_ae (.of_forall fun _ ↦ Real.norm_of_nonneg (exp_pos _).le)).trans
       (hgauss_id ω)), ?_⟩

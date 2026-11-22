@@ -250,7 +250,10 @@ theorem isZero_cechCohomology_one_holomorphicStructureSheafModules_sphere :
     IsZero ((cechCohomology (TopCat.of (OnePoint ℂ)) (ModuleCat.{0} ℂ) 1).obj
       (holomorphicStructureSheafModules 𝓘(ℂ) (OnePoint ℂ)).obj) :=
   Sheaf.isZero_cechCohomology_one_of_subsingleton_H _
-    (fun V hV ↦ exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules V hV)
+    (fun V hV ↦
+      let ⟨ι, _, U, hU⟩ :=
+        exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules V hV
+      ⟨ι, U, hU⟩)
     subsingleton_H_one_holomorphicStructureSheafModules_sphere
 
 end TauCeti.RiemannSurface
