@@ -57,7 +57,7 @@ The proof reduces to split algebras in three steps.
 * In general the ranks are locally constant, and the atoms of the idempotents cutting out their
   fibres decompose the base into components where both ranks are constant. Finite étaleness is
   local for such a decomposition (`TauCeti.Algebra.Etale.of_completeOrthogonalIdempotents`,
-  `TauCeti.Module.Finite.of_completeOrthogonalIdempotents`).
+  `CompleteOrthogonalIdempotents.module_finite_iff`).
 
 The main results take `R`, `A` and `B` in one universe, as
 `Algebra.IsFiniteSplit.exists_tensorProduct_of_etale` does.
@@ -97,7 +97,7 @@ private theorem etale_and_finite_equalizer_of_prod_ite {T ι : Type*} [CommRing 
       let T' := T ⧸ Ideal.span {1 - ∏ x, if σ x then a x else 1 - a x}
       Algebra.Etale T' (T' ⊗[T] equalizer f g) ∧ Module.Finite T' (T' ⊗[T] equalizer f g) from
     ⟨TauCeti.Algebra.Etale.of_completeOrthogonalIdempotents hF fun σ ↦ (H' σ).1,
-      TauCeti.Module.Finite.of_completeOrthogonalIdempotents hF fun σ ↦ (H' σ).2⟩
+      hF.module_finite_iff.mpr fun σ ↦ (H' σ).2⟩
   intro σ T'
   have : IsLocalization.Away (∏ x, if σ x then a x else 1 - a x) T' :=
     IsLocalization.Away.quotient_of_isIdempotentElem (hF.idem σ)
