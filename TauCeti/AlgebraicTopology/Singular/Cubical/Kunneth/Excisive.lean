@@ -68,6 +68,8 @@ factors.
   quasi-isomorphism.
 * `TauCeti.cubicalChainComplexProdToSingular_naturality`,
   `TauCeti.singularHomologyKunnethPair_naturality`: naturality in both pairs.
+* `TauCeti.tensorHom_ι_cubicalHomologyKunnethPair_comp_cubicalChainComplexProdToSingular`: the
+  cubical Künneth class of arbitrary pairs, read in the singular homology of the pairs it maps to.
 * `TauCeti.ι_singularHomologyKunnethPair`: on each summand the Künneth map is the cubical cross
   product of pairs, read in singular homology.
 * `TauCeti.isIso_singularHomologyKunnethPair_of_isSemisimpleRing`,
@@ -389,6 +391,39 @@ theorem singularHomologyKunnethPair_naturality {X' Y' : TopCat.{u}} {A' : Set X'
     homologyCross_naturality_assoc, hnat]
 
 variable {A B}
+
+/-- **The singular Künneth class of the image of a product of pairs.** Let `g : X ⟶ X'` and
+`h : Y ⟶ Y'` carry `A` into `A'` and `B` into `B'`. Read in the singular homology of
+`(X' × Y', A' × Y' ∪ X' × B')`, the image of the cubical cross product of the classes of `a` and
+`b` in `Hₙ(N((X, A) × (Y, B)))` is the singular Künneth class of `g_* a` and `h_* b`. The pairs
+`(X, A)` and `(Y, B)` need not be open, so their own cross product is only a class of cubical
+chains: this is how its images in the singular homology of open pairs, such as the local homology
+at a point, are computed. -/
+@[reassoc]
+theorem tensorHom_ι_cubicalHomologyKunnethPair_comp_cubicalChainComplexProdToSingular
+    {X' Y' : TopCat.{u}} {A' : Set X'} {B' : Set Y'} (g : X ⟶ X')
+    (h : Y ⟶ Y') (hg : Set.MapsTo g A A') (hh : Set.MapsTo h B B') (p q n : ℕ)
+    (hpq : p + q = n) :
+    ((TopPair.singularCubicalHomologyIso k (ofSubset A) p).hom ⊗ₘ
+        (TopPair.singularCubicalHomologyIso k (ofSubset B) q).hom) ≫
+      GradedObject.Monoidal.ιTensorObj (fun p ↦ ((ofSubset A).cubicalChainComplex k).homology p)
+        (fun q ↦ ((ofSubset B).cubicalChainComplex k).homology q) p q n hpq ≫
+        cubicalHomologyKunnethPair k (ofSubset A) (ofSubset B) n ≫
+          homologyMap (cubicalChainComplexProdMap k (ofSubset A) (ofSubset B)
+            (ofSubsetMap g hg) (ofSubsetMap h hh)) n ≫
+            homologyMap (cubicalChainComplexProdToSingular k A' B') n =
+      (TopPair.singularHomologyMap (ofSubsetMap g hg) (ModuleCat.of k k) p ⊗ₘ
+          TopPair.singularHomologyMap (ofSubsetMap h hh) (ModuleCat.of k k) q) ≫
+        GradedObject.Monoidal.ιTensorObj
+          (fun p ↦ (ofSubset A').singularHomology (ModuleCat.of k k) p)
+          (fun q ↦ (ofSubset B').singularHomology (ModuleCat.of k k) q) p q n hpq ≫
+          singularHomologyKunnethPair k A' B' n := by
+  -- Move the maps of the factors in front of the cubical Künneth map, then past the comparison
+  -- isomorphisms, and read both sides on the summand of `(p, q)`.
+  rw [← cubicalHomologyKunnethPair_naturality_assoc, GradedObject.Monoidal.ι_tensorHom_assoc,
+    tensorHom_comp_tensorHom_assoc, TopPair.singularCubicalHomologyIso_hom_naturality,
+    TopPair.singularCubicalHomologyIso_hom_naturality, ← tensorHom_comp_tensorHom_assoc,
+    ι_singularHomologyKunnethPair, ι_cubicalHomologyKunnethPair_assoc]
 
 /-- **The Künneth theorem for a product of open pairs** in singular homology: for open `A ⊆ X`
 and `B ⊆ Y`, the Künneth map

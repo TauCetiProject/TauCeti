@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Hive.Fibre
 public import TauCeti.Geometry.Convex.Cone.Farkas
 import Mathlib.LinearAlgebra.Matrix.Dual
+import Mathlib.LinearAlgebra.Matrix.Integer
 
 /-!
 # Farkas certificates for hives with prescribed boundary
@@ -37,7 +38,9 @@ an order-preserving extension of scalars (`TauCeti.Hive.exists_boundary_eq_map_i
 integral boundary `B` this gives rational witnesses, and clearing their denominators shows that
 `B` is the boundary of a real hive exactly when some positive multiple `N • B` is the boundary of
 an integer hive (`TauCeti.Hive.exists_boundary_eq_intCast_iff_exists_boundary_eq_nsmul`), by
-`Matrix.exists_mulVec_le_and_mulVec_eq_intCast_iff_exists_nsmul`.
+`Matrix.exists_mulVec_le_and_mulVec_eq_intCast_iff_exists_nsmul`. Denominators of a single rational
+hive can be cleared directly: some positive multiple of it is an integer hive
+(`TauCeti.Hive.exists_ofInt_eq_nsmul`).
 
 ## References
 
@@ -118,6 +121,12 @@ theorem forall_map_boundaryLinear_eq_zero_iff_exists_eq_mul_sum {R : Type*} [Com
   conv_lhs => rw [hB]
   simp only [map_sum, map_smul, he, smul_eq_mul, ← Finset.sum_mul, mul_comm]
 
+/-- A nonnegative combination of the unit-rhombus slacks of a hive is nonnegative. -/
+theorem sum_mul_rhombusSlack_nonneg {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    {y : Rhombus n → R} (hy : 0 ≤ y) (h : Hive n R) :
+    0 ≤ ∑ r : Rhombus n, y r * rhombusSlack h r.val.1 r.val.2.1 r.val.2.2.1 r.val.2.2.2 :=
+  Finset.sum_nonneg fun r _ => mul_nonneg (hy r) (rhombusSlack_nonneg h r.property)
+
 /-- **Valid boundary functionals are rhombus certificates.** A linear functional `φ` on cyclic
 boundary triples is nonnegative on the boundary of every hive with values in `K` exactly when, for
 some nonnegative weights `y` on the unit rhombi, `φ (boundaryLinear ℤ n K f)` equals the weighted
@@ -144,11 +153,10 @@ theorem forall_map_boundary_nonneg_iff_exists_sum_mul_rhombusSlack
         exact hφ _
     refine ⟨y, hy, fun f => ?_⟩
     have h := congrArg (· ⬝ᵥ f) hyc
-    simp only [← Matrix.dotProduct_mulVec, hc'] at h
-    simp only [dotProduct, rhombusMatrix_mulVec_apply, mul_neg, Finset.sum_neg_distrib] at h
+    simp only [← Matrix.dotProduct_mulVec, hc', dotProduct_rhombusMatrix_mulVec] at h
     exact (neg_inj.mp h).symm
   · rw [← boundaryLinear_coe ℤ h, hφ]
-    exact Finset.sum_nonneg fun r _ => mul_nonneg (hy r) (rhombusSlack_nonneg h r.property)
+    exact sum_mul_rhombusSlack_nonneg hy h
 
 /-- **Hive boundaries are cut out by their valid functionals.** A boundary triple `B` is the
 boundary of a hive with values in `K` exactly when `φ B` is nonnegative for every linear functional
@@ -167,9 +175,8 @@ theorem exists_boundary_eq_iff_forall_dual_nonneg (B : Fin 3 → Fin n → K) :
   have hz : ∀ β, z ⬝ᵥ eqRHS β = φ β := fun β => by
     simp [φ, dotProduct, Fintype.sum_sum_type, Fintype.sum_prod_type]
   refine (hB φ fun h => ?_).not_gt ?_
-  · obtain ⟨hE, hR⟩ := (mem_fixedBoundary_iff_mulVec h.boundary h).mp
-      ⟨h.apply_cornerA, h.isRhombusConcave, boundaryLinear_coe ℤ h⟩
-    simpa [h0, hz] using Matrix.vecMul_add_vecMul_dotProduct_le z hy hR hE
+  · simpa [h0, hz] using Matrix.vecMul_add_vecMul_dotProduct_le z hy
+      h.rhombusMatrix_mulVec_coe_nonpos h.eqMatrix_mulVec_coe
   · simpa [hz] using hlt
 
 /-- The existence of a hive with prescribed boundary is unchanged by an order-preserving ring
@@ -178,16 +185,9 @@ image of `B` exists exactly when a hive over `K` with boundary `B` does. -/
 theorem exists_boundary_eq_map_iff {L : Type*} [Ring L] [PartialOrder L] [IsOrderedRing L]
     [Nontrivial L] (f : K →+* L) (hf : Monotone f) (B : Fin 3 → Fin n → K) :
     (∃ h : Hive n L, h.boundary = fun s i => f (B s i)) ↔ ∃ h : Hive n K, h.boundary = B := by
-  have hR : (rhombusMatrix K n).map f = rhombusMatrix L n := by
-    rw [← map_intCast_rhombusMatrix K, Matrix.map_map, ← map_intCast_rhombusMatrix L]
-    exact congrArg _ (funext fun m => map_intCast f m)
-  have hE : (eqMatrix K n).map f = eqMatrix L n := by
-    rw [← map_intCast_eqMatrix K, Matrix.map_map, ← map_intCast_eqMatrix L]
-    exact congrArg _ (funext fun m => map_intCast f m)
-  have hd : f ∘ eqRHS B = eqRHS fun s i => f (B s i) := by
-    ext (⟨⟩ | ⟨s, i⟩) <;> simp
   rw [exists_boundary_eq_iff_mulVec, exists_boundary_eq_iff_mulVec,
-    ← Matrix.exists_mulVec_le_and_mulVec_eq_map_iff f hf, hR, hE, hd]
+    ← Matrix.exists_mulVec_le_and_mulVec_eq_map_iff f hf, map_rhombusMatrix, map_eqMatrix,
+    ← eqRHS_map]
   simp
 
 /-- **Rational witnesses and clearing denominators.** An integral boundary triple `B` is the
@@ -197,8 +197,8 @@ theorem exists_boundary_eq_intCast_iff_exists_boundary_eq_nsmul {L : Type*} [Fie
     [LinearOrder L] [IsStrictOrderedRing L] (B : Fin 3 → Fin n → ℤ) :
     (∃ h : Hive n L, h.boundary = fun s i => (B s i : L)) ↔
       ∃ N : ℕ, 0 < N ∧ ∃ h : IntegerHive n, h.boundary = N • B := by
-  have hd : (eqRHS fun s i => (B s i : L)) = Int.cast ∘ eqRHS B := by
-    ext (⟨⟩ | ⟨s, i⟩) <;> simp
+  have hd : (eqRHS fun s i => (B s i : L)) = Int.cast ∘ eqRHS B :=
+    eqRHS_map (Int.castRingHom L) B
   have hN (N : ℕ) : N • eqRHS B = eqRHS (N • B) := by
     ext (⟨⟩ | ⟨s, i⟩) <;> simp
   have key := Matrix.exists_mulVec_le_and_mulVec_eq_intCast_iff_exists_nsmul (K := L)
@@ -207,5 +207,25 @@ theorem exists_boundary_eq_intCast_iff_exists_boundary_eq_nsmul {L : Type*} [Fie
     Function.comp_def, Pi.zero_apply, Int.cast_zero] at key
   simp_rw [exists_boundary_eq_iff_mulVec]
   exact key
+
+/-- **Clearing denominators** for a single hive: every rational hive has a positive integer
+multiple that is an integer hive. -/
+theorem exists_ofInt_eq_nsmul (h : Hive n ℚ) : ∃ N : ℕ, 0 < N ∧ ∃ g : IntegerHive n,
+    ofInt ℚ g = N • h := by
+  let a : Matrix Unit (Vertex n) ℚ := fun _ p => h p
+  have hnum (p : Vertex n) : (a.num () p : ℚ) = a.den * h p := by
+    have := (div_eq_iff (Nat.cast_ne_zero.mpr a.den_ne_zero)).mp (a.num_div_den () p)
+    rw [this, mul_comm]
+  have hden : (0 : ℚ) < a.den := Nat.cast_pos.mpr (Nat.pos_of_ne_zero a.den_ne_zero)
+  refine ⟨a.den, Nat.pos_of_ne_zero a.den_ne_zero, ⟨a.num (), ?_, fun {w x y z} hr => ?_⟩, ?_⟩
+  · have := hnum (Vertex.cornerA n)
+    rw [h.apply_cornerA, mul_zero] at this
+    exact_mod_cast this
+  · have : (a.num () x + a.num () z : ℚ) ≤ a.num () w + a.num () y := by
+      simp only [hnum]
+      linarith [mul_le_mul_of_nonneg_left (h.le_of_isRhombus hr) hden.le]
+    exact_mod_cast this
+  · ext p
+    simp [hnum, nsmul_eq_mul]
 
 end TauCeti.Hive

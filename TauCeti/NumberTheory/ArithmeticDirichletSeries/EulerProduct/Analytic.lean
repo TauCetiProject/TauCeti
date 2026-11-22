@@ -98,14 +98,7 @@ theorem absNorm_cpow_sub_one_ne_zero (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
 theorem logDeriv_one_sub_absNorm_cpow_neg (P : HeightOneSpectrum (𝓞 K)) {s : ℂ} :
     logDeriv (fun z : ℂ ↦ 1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) s =
       Complex.log (Ideal.absNorm P.asIdeal) / ((Ideal.absNorm P.asIdeal : ℂ) ^ s - 1) := by
-  have h0 : (Ideal.absNorm P.asIdeal : ℂ) ≠ 0 := P.natCast_absNorm_ne_zero
-  have hpow : (Ideal.absNorm P.asIdeal : ℂ) ^ s ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl h0)
-  have h := Complex.logDeriv_one_sub_mul_cpow_neg h0 1 s
-  simp only [one_mul] at h
-  rw [h, Complex.cpow_neg]
-  by_cases hsub : (Ideal.absNorm P.asIdeal : ℂ) ^ s - 1 = 0
-  · simp [sub_eq_zero.mp hsub]
-  · field_simp
+  exact Complex.logDeriv_one_sub_cpow_neg (Ideal.absNorm P.asIdeal : ℂ) s
 
 end IsDedekindDomain.HeightOneSpectrum
 

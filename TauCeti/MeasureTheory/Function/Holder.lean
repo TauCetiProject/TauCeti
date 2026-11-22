@@ -32,6 +32,8 @@ integration-by-parts arguments:
 * `ContinuousLinearMap.integrable_of_bilin_of_continuousOn`: a continuous bilinear pairing of an
   integrable function vanishing off a compact set `K` with a function continuous on `K` is
   integrable.
+* `ContinuousLinearMap.norm_lpPairing_apply_apply_le`: Hölder's inequality
+  `‖B.lpPairing μ p q g f‖ ≤ ‖B‖ * ‖g‖ * ‖f‖` for the integral pairing of a bilinear map `B`.
 * `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
 * `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
@@ -151,6 +153,25 @@ theorem integrable_of_bilin_of_continuousOn (B : E →L[𝕜] F →L[𝕜] G) {f
     exact (hC x hx).trans (le_max_left _ _)
   · rw [Set.indicator_of_notMem hx, norm_zero]
     exact le_max_right _ _
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α 𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [NormedSpace ℝ G] [SMulCommClass ℝ 𝕜 G] [CompleteSpace G] {mα : MeasurableSpace α}
+  {μ : Measure α} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
+
+/-- **Hölder's inequality** for the integral pairing `lpPairing` of a bilinear map `B`. -/
+theorem norm_lpPairing_apply_apply_le (B : E →L[𝕜] F →L[𝕜] G) (g : Lp E p μ) (f : Lp F q μ) :
+    ‖B.lpPairing μ p q g f‖ ≤ ‖B‖ * ‖g‖ * ‖f‖ := by
+  have h : B.lpPairing μ p q g f = L1.integral (B.holder 1 g f) := by
+    simp [lpPairing, L1.integral_eq' 𝕜]
+  rw [h]
+  exact (L1.norm_integral_le _).trans (B.norm_holder_apply_apply_le _ _)
 
 end ContinuousLinearMap
 
