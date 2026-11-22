@@ -67,11 +67,7 @@ variable {Γ Γ' R S T : Type*}
 
 section Zero
 
-variable [Zero R] [Zero S] {F : Type*} [FunLike F R S] [ZeroHomClass F R S]
-
-section PartialOrder
-
-variable [PartialOrder Γ]
+variable [Zero R] [Zero S] {F : Type*} [FunLike F R S] [ZeroHomClass F R S] [PartialOrder Γ]
 
 /-- Coefficientwise maps commute with exponent embeddings. -/
 theorem map_embDomain [PartialOrder Γ'] (f : Γ ↪o Γ') (x : R⟦Γ⟧) (g : F) :
@@ -90,50 +86,34 @@ theorem support_map_of_injective (x : R⟦Γ⟧) {g : F} (hg : Function.Injectiv
   simp only [mem_support, map_coeff, ne_eq]
   rw [← map_zero g, hg.eq_iff]
 
-end PartialOrder
-
 /-- An injective coefficient map preserves `orderTop`. -/
 @[simp]
-theorem orderTop_map_of_injective [LinearOrder Γ] (x : R⟦Γ⟧) {g : F} (hg : Function.Injective g) :
+theorem orderTop_map_of_injective (x : R⟦Γ⟧) {g : F} (hg : Function.Injective g) :
     (x.map g).orderTop = x.orderTop := by
-  obtain rfl | hx := eq_or_ne x 0
-  · rw [orderTop_zero, orderTop_eq_top, ← support_eq_empty_iff, support_map_of_injective _ hg,
-      support_zero]
-  rw [orderTop_of_ne_zero hx]
-  refine orderTop_eq_of_le ?_ fun b hb ↦ ?_
-  · rw [support_map_of_injective x hg]
-    exact x.isWF_support.min_mem _
-  · rw [support_map_of_injective x hg] at hb
-    exact x.isWF_support.min_le _ hb
+  -- `orderTop` is defined from the support alone: whether it is empty, and its minimal element
+  simp only [orderTop, ← support_eq_empty_iff, support_map_of_injective x hg]
 
 /-- An injective coefficient map preserves the order of a nonzero series, and the junk value `0`
 of the order of `0`. -/
 @[simp]
-theorem order_map_of_injective [LinearOrder Γ] [Zero Γ] (x : R⟦Γ⟧) {g : F}
-    (hg : Function.Injective g) : (x.map g).order = x.order := by
-  obtain rfl | hx := eq_or_ne x 0
-  · rw [support_eq_empty_iff.mp ((support_map_of_injective _ hg).trans support_zero), order_zero,
-      order_zero]
-  have hx' : x.map g ≠ 0 := by
-    rw [← support_nonempty_iff, support_map_of_injective x hg]
-    exact support_nonempty_iff.mpr hx
-  exact WithTop.coe_injective <| by
-    rw [order_eq_orderTop_of_ne_zero hx', order_eq_orderTop_of_ne_zero hx,
-      orderTop_map_of_injective x hg]
+theorem order_map_of_injective [Zero Γ] (x : R⟦Γ⟧) {g : F} (hg : Function.Injective g) :
+    (x.map g).order = x.order := by
+  -- `order` is defined from the support alone: whether it is empty, and its minimal element
+  simp only [order, ← support_eq_empty_iff, support_map_of_injective x hg]
 
 end Zero
 
-section Semiring
+section NonAssocSemiring
 
 variable [PartialOrder Γ] [AddCommMonoid Γ] [IsOrderedCancelAddMonoid Γ]
-  [Semiring R] [Semiring S] [Semiring T]
+  [NonAssocSemiring R] [NonAssocSemiring S] [NonAssocSemiring T]
 
 /-- The ring homomorphism `R⟦Γ⟧ →+* S⟦Γ⟧` applying a ring homomorphism `f : R →+* S` to every
 coefficient. -/
 def mapRingHom (f : R →+* S) : R⟦Γ⟧ →+* S⟦Γ⟧ where
   toFun x := x.map f
   map_zero' := HahnSeries.map_zero (f : ZeroHom R S)
-  map_one' := HahnSeries.map_one (f : R →*₀ S)
+  map_one' := by simpa using map_C (Γ := Γ) 1 f
   map_add' _ _ := HahnSeries.map_add (f : R →+ S)
   map_mul' _ _ := HahnSeries.map_mul (f : R →ₙ+* S)
 
@@ -183,7 +163,7 @@ theorem eqLocusS_mapRingHom {f : R →+* S} {g₁ g₂ : S →+* T} (h : g₁.eq
   refine forall_congr' fun n ↦ ?_
   rw [coeff_mapRingHom, coeff_mapRingHom, ← RingHom.mem_eqLocusS, h]
 
-end Semiring
+end NonAssocSemiring
 
 section Algebra
 
@@ -306,14 +286,14 @@ variable [PartialOrder Γ] [AddCommMonoid Γ] [IsOrderedCancelAddMonoid Γ]
 
 /-- Applying a `K`-linear functional `f : L → K` to every coefficient of `c • x`, for a series `x`
 with coefficients in `K`, gives `f c • x`. -/
-theorem map_smul_mapRingHom_algebraMap {K L : Type*} [CommSemiring K] [CommSemiring L]
+theorem map_smul_mapRingHom_algebraMap {K L : Type*} [CommSemiring K] [Semiring L]
     [Algebra K L] (f : L →ₗ[K] K) (c : L) (x : K⟦Γ⟧) :
     (c • mapRingHom (algebraMap K L) x).map f = f c • x := by
   ext g
-  simp only [map_coeff, coeff_smul, coeff_mapRingHom]
-  simpa [Algebra.smul_def, mul_comm] using f.map_smul (x.coeff g) c
+  simp only [map_coeff, coeff_smul, coeff_mapRingHom, smul_eq_mul]
+  rw [← Algebra.commutes, ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
 
-variable {K L : Type*} [Field K] [CommRing L] [Algebra K L]
+variable {K L : Type*} [Field K] [Ring L] [Algebra K L]
 
 /-- **Descent of algebraic relations to the coefficient field.** Let `L` be an algebra over a field
 `K`, for instance a field extension, and let `φ` and `ℓ` be series with coefficients in `K`. If
@@ -331,13 +311,18 @@ theorem exists_mul_eval₂_C_eq_eval₂_C_of_mapRingHom {φ ℓ : K⟦Γ⟧} {P 
       map_add' _ _ := by ext; simp }
   -- apply `f` to every coefficient of a polynomial over `L`
   let lin (R : L[X]) : K[X] := ∑ i ∈ Finset.range (R.natDegree + 1), monomial i (f (R.coeff i))
+  -- a series with coefficients in `K` commutes with the constants, as `K` is central in `L`
+  have hcomm (y : K⟦Γ⟧) (c : L) : Commute (mapRingHom (algebraMap K L) y) (C c) := by
+    rw [commute_iff_eq]
+    ext g
+    simp [Algebra.commutes]
   have hlin (R : L[X]) (y : K⟦Γ⟧) :
       Λ (mapRingHom (algebraMap K L) y * R.eval₂ C (mapRingHom (algebraMap K L) ℓ)) =
         y * (lin R).eval₂ C ℓ := by
     rw [eval₂_eq_sum_range, Finset.mul_sum, map_sum]
     simp only [lin, eval₂_finsetSum, eval₂_monomial, Finset.mul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← map_pow, mul_left_comm, ← map_mul, C_mul_eq_smul, C_mul_eq_smul, mul_smul_comm]
+    rw [(hcomm y _).left_comm, ← map_pow, ← map_mul, C_mul_eq_smul, C_mul_eq_smul, mul_smul_comm]
     exact map_smul_mapRingHom_algebraMap f _ _
   refine ⟨lin P, lin Q, fun h0 ↦ ?_, ?_⟩
   · have := congrArg (fun p : K[X] ↦ p.coeff Q.natDegree) h0
