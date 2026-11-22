@@ -95,15 +95,9 @@ theorem exists_nhds_forall_decay_of_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω,
   have hdecay' : ∀ ξ ∈ t, ∃ C, ∀ η ∈ Γ ξ, (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C :=
     fun ξ hξ ↦ hdecay ξ ψ (hψ.trans (biInter_subset_of_mem hξ)) N
   choose! C hC using hdecay'
-  have hsum : 0 ≤ ∑ ξ ∈ t, |C ξ| := Finset.sum_nonneg fun _ _ ↦ abs_nonneg _
-  refine ⟨‖T.localFourier ψ 0‖ + ∑ ξ ∈ t, |C ξ|, fun η ↦ ?_⟩
-  rcases eq_or_ne η 0 with rfl | hη
-  · simpa using hsum
-  obtain ⟨ξ, hξt, hηΓ⟩ := mem_iUnion₂.1 (ht hη)
-  calc (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C ξ := hC ξ hξt η hηΓ
-    _ ≤ |C ξ| := le_abs_self _
-    _ ≤ ∑ ξ ∈ t, |C ξ| := Finset.single_le_sum (f := fun ξ ↦ |C ξ|) (fun _ _ ↦ abs_nonneg _) hξt
-    _ ≤ _ := le_add_of_nonneg_left (norm_nonneg _)
+  obtain ⟨C', -, hC'⟩ := TauCeti.exists_forall_le_of_diff_singleton_subset_biUnion (V := univ)
+    (fun _ hη ↦ ht hη.2) hC
+  exact ⟨C', fun η ↦ hC' η (mem_univ η)⟩
 
 /-! ### Fourier inversion for a rapidly decreasing localized Fourier transform -/
 
