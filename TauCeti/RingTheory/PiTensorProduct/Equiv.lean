@@ -33,7 +33,8 @@ version of Mathlib's `PiTensorProduct.congr`, compatible with `PiTensorProduct.m
 `PiTensorProduct.reindexAlgEquiv`; `PiTensorProduct.productMap` and `PiTensorProduct.mulAlgHom` are
 likewise invariant under `PiTensorProduct.reindexAlgEquiv` and `PiTensorProduct.permAlgEquiv`. On
 tensor powers of a single commutative algebra, `PiTensorProduct.fiberwiseMul` commutes with
-reindexing along a commuting square of index maps (`PiTensorProduct.reindex_fiberwiseMul`).
+reindexing along a commuting square of index maps (`PiTensorProduct.reindex_fiberwiseMul`, bundled
+as `PiTensorProduct.reindexAlgEquiv_comp_fiberwiseMul`).
 
 For finite index types, the tensor product of the split algebras `κ i → R` is the split algebra
 of functions on `Π i, κ i` (`PiTensorProduct.piScalarAlgEquiv`), built from Mathlib's
@@ -286,22 +287,28 @@ variable {σ τ σ' τ' : Type*} [Fintype σ] [DecidableEq τ] [Fintype σ'] [De
 
 /-- For tensor powers of a commutative `R`-algebra `B`, `PiTensorProduct.fiberwiseMul` is natural
 in the index map: reindexing along bijections of the source and target carries multiplication
+along `f` to multiplication along `f'` when the square `eτ ∘ f = f' ∘ eσ` commutes. This is the
+bundled form of `PiTensorProduct.reindex_fiberwiseMul`. -/
+theorem reindexAlgEquiv_comp_fiberwiseMul (eσ : σ ≃ σ') (eτ : τ ≃ τ') {f : σ → τ}
+    {f' : σ' → τ'} (h : eτ ∘ f = f' ∘ eσ) :
+    (reindexAlgEquiv (R := R) (fun _ ↦ B) eτ).toAlgHom.comp (fiberwiseMul (A := fun _ ↦ B) f) =
+      (fiberwiseMul (A := fun _ ↦ B) f').comp (reindexAlgEquiv (fun _ ↦ B) eσ).toAlgHom := by
+  classical
+  -- Both composites send the factor inclusion at `i` to the factor inclusion at `eτ (f i)`.
+  refine algHom_ext fun i ↦ AlgHom.ext fun a ↦ ?_
+  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, fiberwiseMul_singleAlgHom,
+    reindexAlgEquiv_singleAlgHom]
+  exact congrArg (singleAlgHom · a) (congr_fun h i)
+
+/-- For tensor powers of a commutative `R`-algebra `B`, `PiTensorProduct.fiberwiseMul` is natural
+in the index map: reindexing along bijections of the source and target carries multiplication
 along `f` to multiplication along `f'` when the square `eτ ∘ f = f' ∘ eσ` commutes. -/
 theorem reindex_fiberwiseMul (eσ : σ ≃ σ') (eτ : τ ≃ τ') {f : σ → τ} {f' : σ' → τ'}
     (h : eτ ∘ f = f' ∘ eσ) (x : ⨂[R] _ : σ, B) :
     reindex R (fun _ ↦ B) eτ (fiberwiseMul (R := R) (A := fun _ ↦ B) f x) =
       fiberwiseMul (A := fun _ ↦ B) f' (reindex R (fun _ ↦ B) eσ x) := by
-  classical
-  -- Both composites send the factor inclusion at `i` to the factor inclusion at `eτ (f i)`.
-  have key : (reindexAlgEquiv (R := R) (fun _ ↦ B) eτ).toAlgHom.comp
-      (fiberwiseMul (A := fun _ ↦ B) f) =
-      (fiberwiseMul (A := fun _ ↦ B) f').comp (reindexAlgEquiv (fun _ ↦ B) eσ).toAlgHom :=
-    algHom_ext fun i ↦ AlgHom.ext fun a ↦ by
-      simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, fiberwiseMul_singleAlgHom,
-        reindexAlgEquiv_singleAlgHom]
-      exact congrArg (singleAlgHom · a) (congr_fun h i)
   simpa only [← reindexAlgEquiv_toLinearEquiv, AlgEquiv.toLinearEquiv_apply, AlgHom.comp_apply,
-    AlgEquiv.coe_toAlgHom] using DFunLike.congr_fun key x
+    AlgEquiv.coe_toAlgHom] using DFunLike.congr_fun (reindexAlgEquiv_comp_fiberwiseMul eσ eτ h) x
 
 end FiberwiseMul
 
