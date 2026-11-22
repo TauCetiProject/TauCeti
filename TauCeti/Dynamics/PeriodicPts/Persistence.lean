@@ -167,11 +167,12 @@ theorem exists_pos_forall_ncard_fixedPoints_iterate_inter_eq (hK : IsCompact K)
     ∃ δ > 0, ∀ g : E → E, (∀ y ∈ U, DifferentiableAt ℝ g y) → (∀ y ∈ U, ‖g y - f y‖ ≤ δ) →
       (∀ y ∈ U, ‖fderiv ℝ g y - fderiv ℝ f y‖ ≤ δ) →
       (fixedPoints g^[k] ∩ K).ncard = (fixedPoints f^[k] ∩ K).ncard := by
-  obtain ⟨δ, hδ, h⟩ :=
-    hK.exists_pos_forall_exists_bijOn_fixedPoints_iterate_inter hf hnd hint hU one_pos
-  refine ⟨δ, hδ, fun g hg₁ hg₂ hg₃ ↦ ?_⟩
-  obtain ⟨φ, hφ, -⟩ := h g hg₁ hg₂ hg₃
-  exact hφ.ncard_eq.symm
+  have hfk (x : E) (hx : x ∈ K) : ContDiffAt ℝ 1 f^[k] x :=
+    contDiffAt_iterate fun j hj ↦ hf j hj x hx
+  exact hK.exists_pos_forall_iterate_of_exists_pos hf hU <|
+    hK.exists_pos_forall_ncard_fixedPoints_inter_eq
+      (fun x hx ↦ (hfk x hx).continuousAt.continuousWithinAt)
+      (fun x hx _ ↦ (hfk x hx).continuousAt_fderiv one_ne_zero) hnd hint
 
 /-- **The signed count of the periodic points of period `k` in a compact set is stable under small
 `C¹` perturbations.**
@@ -189,11 +190,12 @@ theorem exists_pos_forall_finsum_sign_det_iterate_eq (hK : IsCompact K)
           (SignType.sign (LinearMap.det (LinearMap.id - (fderiv ℝ g^[k] y : E →ₗ[ℝ] E))) : ℤ) =
         ∑ᶠ x ∈ fixedPoints f^[k] ∩ K,
           (SignType.sign (LinearMap.det (LinearMap.id - (fderiv ℝ f^[k] x : E →ₗ[ℝ] E))) : ℤ) := by
-  obtain ⟨δ, hδ, h⟩ :=
-    hK.exists_pos_forall_exists_bijOn_fixedPoints_iterate_inter hf hnd hint hU one_pos
-  refine ⟨δ, hδ, fun g hg₁ hg₂ hg₃ ↦ ?_⟩
-  obtain ⟨φ, hφ, hφx⟩ := h g hg₁ hg₂ hg₃
-  exact (finsum_mem_eq_of_bijOn φ hφ fun x hx ↦ by rw [(hφx x hx).2.2]).symm
+  have hfk (x : E) (hx : x ∈ K) : ContDiffAt ℝ 1 f^[k] x :=
+    contDiffAt_iterate fun j hj ↦ hf j hj x hx
+  exact hK.exists_pos_forall_iterate_of_exists_pos hf hU <|
+    hK.exists_pos_forall_finsum_sign_det_eq
+      (fun x hx ↦ (hfk x hx).continuousAt.continuousWithinAt)
+      (fun x hx _ ↦ (hfk x hx).continuousAt_fderiv one_ne_zero) hnd hint
 
 /-! ### All periods up to a cutoff -/
 
