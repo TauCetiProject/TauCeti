@@ -221,14 +221,17 @@ theorem tendsto_normSq_of_tendsto_sectionValue_mul {phase : ℂ → ℂ}
   simpa only [sq_norm_sectionValue, one_pow] using
     (tendsto_norm_sectionValue_of_tendsto_sectionValue_mul hphase hfr).pow 2
 
-/-- The degree-`m` phase `(z / |z|)^(-m)` of the end framing has modulus tending to one at
-infinity. -/
-private theorem tendsto_norm_inv_pow_div_norm (m : ℕ) :
-    Filter.Tendsto (fun z : ℂ ↦ ‖((z / (‖z‖ : ℂ)) ^ m)⁻¹‖) (Filter.cocompact ℂ) (nhds 1) := by
-  refine tendsto_const_nhds.congr' ?_
+/-- The inverse degree-`m` phase `((z / |z|) ^ m)⁻¹` has unit modulus away from the origin, so in
+particular eventually at infinity. -/
+theorem eventually_norm_inv_phase_eq_one (m : ℕ) :
+    ∀ᶠ z : ℂ in cocompact ℂ, ‖((z / (‖z‖ : ℂ)) ^ m)⁻¹‖ = 1 := by
   filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with z hz
-  simp only [norm_inv, norm_pow, norm_div, norm_real, norm_norm,
-    div_self (norm_ne_zero_iff.2 hz), one_pow, inv_one]
+  simp [norm_inv, norm_pow, norm_ne_zero_iff.mpr hz]
+
+/-- The modulus of the inverse degree-`m` winding phase tends to one at infinity. -/
+theorem tendsto_norm_inv_phase (m : ℕ) :
+    Tendsto (fun z : ℂ ↦ ‖((z / (‖z‖ : ℂ)) ^ m)⁻¹‖) (cocompact ℂ) (𝓝 1) :=
+  tendsto_const_nhds.congr' ((eventually_norm_inv_phase_eq_one m).mono fun _ h ↦ h.symm)
 
 /-- A field whose section has the degree-`m` end framing `α(z) (z / |z|)^(-m) → 1` has section
 modulus `|α|` tending to one at infinity. -/
@@ -237,7 +240,7 @@ theorem tendsto_norm_sectionValue_of_tendsto_sectionValue_mul_inv_pow {m : ℕ}
     (hframe : Filter.Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹)
       (Filter.cocompact ℂ) (nhds 1)) :
     Filter.Tendsto (fun z ↦ ‖sectionValue x z‖) (Filter.cocompact ℂ) (nhds 1) :=
-  tendsto_norm_sectionValue_of_tendsto_sectionValue_mul (tendsto_norm_inv_pow_div_norm m) hframe
+  tendsto_norm_sectionValue_of_tendsto_sectionValue_mul (tendsto_norm_inv_phase m) hframe
 
 /-- A field whose section has the degree-`m` end framing `α(z) (z / |z|)^(-m) → 1` has squared
 modulus `|α|² = 4 (p² + q²)` tending to one at infinity. -/
@@ -246,7 +249,7 @@ theorem tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow {m : ℕ}
     (hframe : Filter.Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹)
       (Filter.cocompact ℂ) (nhds 1)) :
     Filter.Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (Filter.cocompact ℂ) (nhds 1) :=
-  tendsto_normSq_of_tendsto_sectionValue_mul (tendsto_norm_inv_pow_div_norm m) hframe
+  tendsto_normSq_of_tendsto_sectionValue_mul (tendsto_norm_inv_phase m) hframe
 
 /-- The section with its real coordinates composed with `ofRealCLM`, the form used to compute its
 regularity and derivative. -/
