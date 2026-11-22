@@ -25,7 +25,8 @@ back along `f` with the transpose of its derivative (Hörmander I, Theorem 8.2.4
 `WF(f^* T) = {(x, Df(x)ᵀ η) | x ∈ Ω, (f x, η) ∈ WF(T)}`
 
 (`Distribution.waveFrontSet_compCLMOfSubmersion`). Unlike the pullback along a general smooth map,
-no condition on `WF(T)` is needed, since `Df(x)ᵀ` is injective and so `Df(x)ᵀ η ≠ 0` for every
+no condition on `WF(T)` is needed, since `Df(x)ᵀ` is injective
+(`ContinuousLinearMap.adjoint_injective_of_surjective`) and so `Df(x)ᵀ η ≠ 0` for every
 `η ≠ 0`. For a change of variables this is
 `Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`; for the projection `(x, y) ↦ x` of a
 product it is the wave front set of `T ⊗ 1`
@@ -161,10 +162,7 @@ private theorem isMicrolocallySmoothAt_compCLMOfSubmersion_of_inner_ne_zero (T :
     (k := fun _ ↦ 1) (m := fun _ ↦ ![k]) (M := 1) (by simp) ?_ ?_
   · simp only [Finset.sum_singleton, one_smul, iteratedLineDerivOp_one, Matrix.cons_val_fin_one,
       lineDerivOp_compCLMOfSubmersion_eq_zero μ ν hf hAΩ hsurj T hk]
-    by_contra h
-    have hmem : (x, ξ) ∈ (0 : 𝓓'(Ω, ℂ)).waveFrontSet :=
-      mem_waveFrontSet_iff.2 ⟨hx, fun hξ ↦ hkξ (by simp [hξ]), h⟩
-    simp at hmem
+    exact isMicrolocallySmoothAt_of_notMem_dsupport hx (by simp) ξ
   · simpa [TauCeti.constCoeffPrincipalSymbol_def] using hkξ
 
 /-- **The localized Fourier transform of a linear pullback.** For a cutoff
@@ -415,13 +413,8 @@ theorem waveFrontSet_compCLMOfSubmersion (T : 𝓓'(Ω', ℂ)) :
     exact hξ (by rw [← hη, map_zero])
   · rintro ⟨hx, η, ⟨-, hη0, hTη⟩, rfl⟩
     -- `Df(x)ᵀ` is injective, since `Df(x)` is surjective.
-    have hinj : ((fderiv ℝ f x)†) η ≠ 0 := fun h0 ↦ by
-      have hmem : η ∈ (fderiv ℝ f x).rangeᗮ := by
-        rw [ContinuousLinearMap.orthogonal_range]
-        exact h0
-      rw [LinearMap.range_eq_top.2 (hsurj x hx), Submodule.top_orthogonal_eq_bot,
-        Submodule.mem_bot] at hmem
-      exact hη0 hmem
+    have hinj : ((fderiv ℝ f x)†) η ≠ 0 :=
+      (map_ne_zero_iff _ (ContinuousLinearMap.adjoint_injective_of_surjective (hsurj x hx))).2 hη0
     refine ⟨hx, hinj, fun h ↦ hTη ?_⟩
     exact (isMicrolocallySmoothAt_compCLMOfSubmersion_iff μ ν hf hfΩ hsurj T hx hinj).1 h η rfl
 

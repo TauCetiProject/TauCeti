@@ -18,7 +18,9 @@ import TauCeti.Analysis.Normed.Operator.ClosedRange
 An endomorphism and its adjoint have the same real quadratic form
 (`ContinuousLinearMap.re_inner_star_apply_self`).
 For bounded operators between complete inner product spaces, the adjoint takes values in the
-orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
+orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`),
+and the adjoint of a surjective operator is injective
+(`ContinuousLinearMap.adjoint_injective_of_surjective`).
 The Gram operator of an operator with finite-dimensional source is invertible exactly when the
 operator is injective (`ContinuousLinearMap.isUnit_adjoint_comp_self_iff`).
 An operator on a Hilbert space is invertible exactly when its adjoint is
@@ -119,6 +121,13 @@ theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
     (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
   rw [orthogonal_ker]
   exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
+
+/-- The adjoint of a surjective bounded operator is injective: its kernel is the orthogonal
+complement of the range. -/
+theorem adjoint_injective_of_surjective [CompleteSpace E] [CompleteSpace F] {u : E →L[𝕜] F}
+    (hu : Function.Surjective u) : Function.Injective (u†) := by
+  rw [← coe_coe, ← LinearMap.ker_eq_bot, ← orthogonal_range, LinearMap.range_eq_top.2 hu,
+    Submodule.top_orthogonal_eq_bot]
 
 /-- Real scalars act on operators through `𝕜`, so they commute with adjoints. Mathlib records
 only `StarModule 𝕜` here. -/
