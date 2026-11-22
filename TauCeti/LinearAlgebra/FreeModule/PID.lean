@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.Algebra.Module.StablyFree.Basic
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.LinearAlgebra.Basis.Prod
@@ -26,7 +27,9 @@ the finite support of each vector.
 This is the arbitrary-rank form of Lang, *Algebra*, Chapter III, Theorem 7.1.  Mathlib's
 `Submodule.nonempty_basis_of_pid` is the finite-rank form.  A projective module embeds in a free
 module, so every submodule of a projective module is free as well
-(`Submodule.free_of_projective_of_isPrincipalIdealRing`), as is every module that injects into a
+(`Submodule.free_of_projective_of_isPrincipalIdealRing`), as is every projective module itself
+(`Module.Free.of_projective_of_isPrincipalIdealRing`, hence
+`Module.IsStablyFree.of_projective_of_isPrincipalIdealRing`), every module that injects into a
 projective module (`Module.Free.of_injective_of_projective_of_isPrincipalIdealRing`), and any
 middle term of an exact sequence `0 → M → N → P` with `M` free and `P` projective
 (`Function.Exact.free_of_injective_of_projective_of_isPrincipalIdealRing`).
@@ -132,7 +135,20 @@ theorem of_injective_of_projective_of_isPrincipalIdealRing [Module.Projective R 
   have := (LinearMap.range f).free_of_projective_of_isPrincipalIdealRing
   .of_equiv (LinearEquiv.ofInjective f hf).symm
 
+/-- Every projective module over a principal ideal ring without zero divisors is free. -/
+-- Kept as a theorem rather than an instance to avoid a cycle with `Module.Projective.of_free`.
+theorem of_projective_of_isPrincipalIdealRing [Module.Projective R M] : Module.Free R M :=
+  of_injective_of_projective_of_isPrincipalIdealRing (LinearMap.id : M →ₗ[R] M)
+    Function.injective_id
+
 end Module.Free
+
+/-- Every projective module over a principal ideal ring without zero divisors is stably free. -/
+theorem Module.IsStablyFree.of_projective_of_isPrincipalIdealRing
+    {R M : Type*} [Ring R] [NoZeroDivisors R] [IsPrincipalIdealRing R]
+    [AddCommGroup M] [Module R M] [Module.Projective R M] : Module.IsStablyFree R M :=
+  have := Module.Free.of_projective_of_isPrincipalIdealRing (R := R) (M := M)
+  inferInstance
 
 /-- Over a principal ideal ring without zero divisors, if `0 → M → N → P` is exact with `M` free
 and `P` projective, then `N` is free: the image of `N → P` is a submodule of `P`, hence free and

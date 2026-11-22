@@ -8,14 +8,12 @@ module
 public import Mathlib.Algebra.Module.StablyFree.Basic
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.RingTheory.Flat.TorsionFree
-public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.RingTheory.PrincipalIdealDomain
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.RingTheory.PrincipalIdealDomain.MulOpposite
 
 import TauCeti.LinearAlgebra.FreeModule.PID
-import TauCeti.RingTheory.LocalRing.Module
 
 /-!
 # `K₀` of rings whose projective modules are stably free
@@ -32,22 +30,17 @@ Following the right-module convention of algebraic `K`-theory, `K₀(R)` is the 
 group of finitely generated projective right `R`-modules, encoded as left `Rᵐᵒᵖ`-modules:
 `TauCeti.FiniteProjectiveRight R` and `TauCeti.KZero R`, defined in
 `TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs`. The criterion applies to
-division rings, where every module is free, to principal ideal domains such as `ℤ`, where every
-finitely generated projective module is free, and to commutative local rings; for these
-`K₀(R) ≅ ℤ`. Over the zero ring every module is zero and `K₀` is trivial.
+division rings, where every module is free, and to principal right-ideal domains (including
+commutative principal ideal domains such as `ℤ`), where every finitely generated projective right
+module is free; for these `K₀(R) ≅ ℤ`. Over the zero ring every module is zero and `K₀` is trivial.
 
 ## Main definitions
 
 * `TauCeti.FiniteProjectiveModules.rankEquiv A h`: the isomorphism of the split `K₀` of finitely
   generated projective `A`-modules with `ℤ`, when `A` has invariant basis number and every such
   module is stably free.
-* `TauCeti.finiteProjectiveModulesFinrankSplitK0EquivDivisionRing`,
-  `TauCeti.finiteProjectiveModulesFinrankSplitK0EquivPID`, and
-  `TauCeti.finiteProjectiveModulesFinrankSplitK0EquivLocalRing`: specializations of `rankEquiv` to
-  division rings, nontrivial principal left-ideal domains, and commutative local rings.
-* `TauCeti.KZero.finrankEquivDivisionRing`, `TauCeti.KZero.finrankEquivPID`,
-  `TauCeti.KZero.finrankEquivInt`, and `TauCeti.KZero.finrankEquivLocalRing`: explicit rank
-  isomorphisms `KZero R ≃+ ℤ` sending `[R] ↦ 1`.
+* `TauCeti.KZero.rankEquivPID`: explicit rank isomorphism `KZero R ≃+ ℤ` over a principal
+  right-ideal domain `R` (including commutative PIDs and division rings), sending `[R] ↦ 1`.
 
 ## Main results
 
@@ -177,183 +170,48 @@ instance FiniteProjectiveModules.subsingleton_splitK0 (A : Type u) [Ring A] [Sub
   | neg x hx => rw [hx, neg_zero]
   | add x y hx hy => rw [hx, hy, add_zero]
 
-/-- `K₀` of a division ring `D` is `ℤ`, with the class of the free right module of rank one going
-to `1`. -/
-theorem kZero_divisionRing (D : Type u) [DivisionRing D] :
-    ∃ e : KZero D ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Dᵐᵒᵖ)) = 1 :=
-  ⟨FiniteProjectiveModules.rankEquiv Dᵐᵒᵖ fun _ ↦ inferInstance,
-    FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular _ _⟩
-
-/-- `K₀` of a commutative principal ideal domain `R` is `ℤ`, with the class of the free right
-module of rank one going to `1`: every finitely generated projective module is free. -/
-theorem kZero_of_isPrincipalIdealRing (R : Type u) [CommRing R] [IsDomain R]
-    [IsPrincipalIdealRing R] :
-    ∃ e : KZero R ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Rᵐᵒᵖ)) = 1 := by
-  have : IsPrincipalIdealRing Rᵐᵒᵖ :=
-    .of_surjective (RingEquiv.toOpposite R) (RingEquiv.toOpposite R).surjective
-  exact ⟨FiniteProjectiveModules.rankEquiv Rᵐᵒᵖ fun _ ↦ inferInstance,
-    FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular _ _⟩
-
-/-- `K₀(ℤ)` is `ℤ`, with the class of the free module of rank one going to `1`. -/
-theorem kZero_int :
-    ∃ e : KZero ℤ ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular ℤᵐᵒᵖ)) = 1 :=
-  kZero_of_isPrincipalIdealRing ℤ
-
-/-- Over a division ring `D`, `TauCeti.FiniteProjectiveModules.rankEquiv` induces
-`K₀(proj D) ≃+ ℤ`. -/
-noncomputable def finiteProjectiveModulesFinrankSplitK0EquivDivisionRing (D : Type u)
-    [DivisionRing D] : SplitK0.{u} (finiteProjectiveModules D).FullSubcategory ≃+ ℤ :=
-  FiniteProjectiveModules.rankEquiv D fun _ ↦ inferInstance
-
-@[simp] theorem finiteProjectiveModulesFinrankSplitK0EquivDivisionRing_of (D : Type u)
-    [DivisionRing D] (P) : finiteProjectiveModulesFinrankSplitK0EquivDivisionRing D
-      (SplitK0.of.{u} P) = (Module.finrank D P.obj : ℤ) :=
-  FiniteProjectiveModules.rankEquiv_of D _ P
-
-theorem finiteProjectiveModulesFinrankSplitK0EquivDivisionRing_regular (D : Type u)
-    [DivisionRing D] : finiteProjectiveModulesFinrankSplitK0EquivDivisionRing D
-      (SplitK0.of.{u} (finiteProjectiveModulesRegular D)) = 1 :=
-  FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular D _
-
-@[simp] theorem finiteProjectiveModulesFinrankSplitK0EquivDivisionRing_symm_apply (D : Type u)
-    [DivisionRing D] (n : ℤ) : (finiteProjectiveModulesFinrankSplitK0EquivDivisionRing D).symm n =
-      n • SplitK0.of.{u} (finiteProjectiveModulesRegular D) :=
-  FiniteProjectiveModules.rankEquiv_symm_apply D _ n
-
-section PID
-variable (R : Type u) [Ring R] [Nontrivial R] [NoZeroDivisors R] [IsPrincipalIdealRing R]
-
-omit [Nontrivial R] in
-private theorem isStablyFree_of_isPrincipalIdealRing
-    (P : (finiteProjectiveModules R).FullSubcategory) : Module.IsStablyFree R P.obj :=
-  have : Module.Free R P.obj :=
-    Module.Free.of_injective_of_projective_of_isPrincipalIdealRing
-      (LinearMap.id : P.obj →ₗ[R] P.obj) Function.injective_id
-  inferInstance
-
-/-- Over a nontrivial principal left-ideal domain, `TauCeti.FiniteProjectiveModules.rankEquiv`
-induces `K₀(proj R) ≃+ ℤ`. -/
-noncomputable def finiteProjectiveModulesFinrankSplitK0EquivPID :
-    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+ ℤ :=
-  FiniteProjectiveModules.rankEquiv R (isStablyFree_of_isPrincipalIdealRing R)
-
-@[simp] theorem finiteProjectiveModulesFinrankSplitK0EquivPID_of (P) :
-    finiteProjectiveModulesFinrankSplitK0EquivPID R (SplitK0.of.{u} P) =
-      (Module.finrank R P.obj : ℤ) := by
-  have : Module.Free R P.obj :=
-    Module.Free.of_injective_of_projective_of_isPrincipalIdealRing
-      (LinearMap.id : P.obj →ₗ[R] P.obj) Function.injective_id
-  exact FiniteProjectiveModules.rankEquiv_of R _ P
-
-theorem finiteProjectiveModulesFinrankSplitK0EquivPID_regular :
-    finiteProjectiveModulesFinrankSplitK0EquivPID R
-      (SplitK0.of.{u} (finiteProjectiveModulesRegular R)) = 1 :=
-  FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular R _
-
-@[simp] theorem finiteProjectiveModulesFinrankSplitK0EquivPID_symm_apply (n : ℤ) :
-    (finiteProjectiveModulesFinrankSplitK0EquivPID R).symm n =
-      n • SplitK0.of.{u} (finiteProjectiveModulesRegular R) :=
-  FiniteProjectiveModules.rankEquiv_symm_apply R _ n
-
-end PID
-
-section LocalRing
-
-private theorem isStablyFree_of_isLocalRing (R : Type u) [CommRing R] [IsLocalRing R]
-    (P : (finiteProjectiveModules R).FullSubcategory) : Module.IsStablyFree R P.obj :=
-  have : Module.Free R P.obj := Module.free_of_projective_of_isLocalRing
-  inferInstance
-
-/-- Over a commutative local ring `R`, `TauCeti.FiniteProjectiveModules.rankEquiv` induces
-`K₀(proj R) ≃+ ℤ`. -/
-noncomputable def finiteProjectiveModulesFinrankSplitK0EquivLocalRing (R : Type u) [CommRing R]
-    [IsLocalRing R] : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+ ℤ :=
-  FiniteProjectiveModules.rankEquiv R (isStablyFree_of_isLocalRing R)
-
-@[simp] theorem finiteProjectiveModulesFinrankSplitK0EquivLocalRing_of (R : Type u) [CommRing R]
-    [IsLocalRing R] (P) : finiteProjectiveModulesFinrankSplitK0EquivLocalRing R (SplitK0.of.{u} P) =
-      (Module.finrank R P.obj : ℤ) := by
-  have : Module.Free R P.obj := Module.free_of_projective_of_isLocalRing
-  exact FiniteProjectiveModules.rankEquiv_of R _ P
-
-theorem finiteProjectiveModulesFinrankSplitK0EquivLocalRing_regular (R : Type u)
-    [CommRing R] [IsLocalRing R] : finiteProjectiveModulesFinrankSplitK0EquivLocalRing R
-      (SplitK0.of.{u} (finiteProjectiveModulesRegular R)) = 1 :=
-  FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular R _
-
-@[simp] theorem finiteProjectiveModulesFinrankSplitK0EquivLocalRing_symm_apply (R : Type u)
-    [CommRing R] [IsLocalRing R] (n : ℤ) :
-    (finiteProjectiveModulesFinrankSplitK0EquivLocalRing R).symm n =
-      n • SplitK0.of.{u} (finiteProjectiveModulesRegular R) :=
-  FiniteProjectiveModules.rankEquiv_symm_apply R _ n
-
-end LocalRing
-
 namespace KZero
-
-/-- **Rank isomorphism `KZero D ≃+ ℤ` over a division ring `D`**, sending `[D] ↦ 1`. -/
-noncomputable def finrankEquivDivisionRing (D : Type u) [DivisionRing D] : KZero D ≃+ ℤ :=
-  finiteProjectiveModulesFinrankSplitK0EquivDivisionRing Dᵐᵒᵖ
-
-@[simp] theorem finrankEquivDivisionRing_of (D : Type u) [DivisionRing D] (P) :
-    finrankEquivDivisionRing D (SplitK0.of.{u} P) = (Module.finrank Dᵐᵒᵖ P.obj : ℤ) :=
-  finiteProjectiveModulesFinrankSplitK0EquivDivisionRing_of Dᵐᵒᵖ P
-
-@[simp] theorem finrankEquivDivisionRing_one (D : Type u) [DivisionRing D] :
-    finrankEquivDivisionRing D (one D) = 1 :=
-  one_def D ▸ finiteProjectiveModulesFinrankSplitK0EquivDivisionRing_regular Dᵐᵒᵖ
-
-@[simp] theorem finrankEquivDivisionRing_symm_apply (D : Type u) [DivisionRing D] (n : ℤ) :
-    (finrankEquivDivisionRing D).symm n = n • one D :=
-  one_def D ▸ finiteProjectiveModulesFinrankSplitK0EquivDivisionRing_symm_apply Dᵐᵒᵖ n
 
 section PID
 variable (R : Type u) [Ring R] [Nontrivial R] [NoZeroDivisors R] [IsPrincipalIdealRing Rᵐᵒᵖ]
 
 /-- **Rank isomorphism `KZero R ≃+ ℤ` over a principal right-ideal domain `R`** (including any
-commutative PID), sending `[R] ↦ 1`. -/
-noncomputable def finrankEquivPID : KZero R ≃+ ℤ :=
-  finiteProjectiveModulesFinrankSplitK0EquivPID Rᵐᵒᵖ
+commutative PID and any division ring), sending `[R] ↦ 1`. -/
+noncomputable def rankEquivPID : KZero R ≃+ ℤ :=
+  FiniteProjectiveModules.rankEquiv Rᵐᵒᵖ fun _ ↦
+    Module.IsStablyFree.of_projective_of_isPrincipalIdealRing
 
-@[simp] theorem finrankEquivPID_of (P) :
-    finrankEquivPID R (SplitK0.of.{u} P) = (Module.finrank Rᵐᵒᵖ P.obj : ℤ) :=
-  finiteProjectiveModulesFinrankSplitK0EquivPID_of Rᵐᵒᵖ P
+@[simp] theorem rankEquivPID_of (P) :
+    rankEquivPID R (SplitK0.of.{u} P) = (Module.finrank Rᵐᵒᵖ P.obj : ℤ) :=
+  have : Module.Free Rᵐᵒᵖ P.obj := Module.Free.of_projective_of_isPrincipalIdealRing
+  FiniteProjectiveModules.rankEquiv_of Rᵐᵒᵖ _ P
 
-@[simp] theorem finrankEquivPID_one : finrankEquivPID R (one R) = 1 :=
-  one_def R ▸ finiteProjectiveModulesFinrankSplitK0EquivPID_regular Rᵐᵒᵖ
+@[simp] theorem rankEquivPID_regular : rankEquivPID R (regular R) = 1 :=
+  regular_def R ▸ FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular Rᵐᵒᵖ _
 
-@[simp] theorem finrankEquivPID_symm_apply (n : ℤ) : (finrankEquivPID R).symm n = n • one R :=
-  one_def R ▸ finiteProjectiveModulesFinrankSplitK0EquivPID_symm_apply Rᵐᵒᵖ n
+@[simp] theorem rankEquivPID_symm_apply (n : ℤ) : (rankEquivPID R).symm n = n • regular R :=
+  regular_def R ▸ FiniteProjectiveModules.rankEquiv_symm_apply Rᵐᵒᵖ _ n
 
 end PID
 
-/-- **Rank isomorphism `KZero ℤ ≃+ ℤ`**, sending `[ℤ]` to `1`. -/
-noncomputable def finrankEquivInt : KZero ℤ ≃+ ℤ := finrankEquivPID ℤ
-
-@[simp] theorem finrankEquivInt_of (P) :
-    finrankEquivInt (SplitK0.of.{0} P) = (Module.finrank ℤᵐᵒᵖ P.obj : ℤ) := finrankEquivPID_of ℤ P
-
-@[simp] theorem finrankEquivInt_one : finrankEquivInt (one ℤ) = 1 := finrankEquivPID_one ℤ
-
-@[simp] theorem finrankEquivInt_symm_apply (n : ℤ) : finrankEquivInt.symm n = n • one ℤ :=
-  finrankEquivPID_symm_apply ℤ n
-
-/-- **Rank isomorphism `KZero R ≃+ ℤ` over a commutative local ring**, sending `[R] ↦ 1`. -/
-noncomputable def finrankEquivLocalRing (R : Type u) [CommRing R] [IsLocalRing R] :
-    KZero R ≃+ ℤ := finiteProjectiveModulesFinrankSplitK0EquivLocalRing Rᵐᵒᵖ
-
-@[simp] theorem finrankEquivLocalRing_of (R : Type u) [CommRing R] [IsLocalRing R] (P) :
-    finrankEquivLocalRing R (SplitK0.of.{u} P) = (Module.finrank Rᵐᵒᵖ P.obj : ℤ) :=
-  finiteProjectiveModulesFinrankSplitK0EquivLocalRing_of Rᵐᵒᵖ P
-
-@[simp] theorem finrankEquivLocalRing_one (R : Type u) [CommRing R] [IsLocalRing R] :
-    finrankEquivLocalRing R (one R) = 1 :=
-  one_def R ▸ finiteProjectiveModulesFinrankSplitK0EquivLocalRing_regular Rᵐᵒᵖ
-
-@[simp] theorem finrankEquivLocalRing_symm_apply (R : Type u) [CommRing R] [IsLocalRing R] (n : ℤ) :
-    (finrankEquivLocalRing R).symm n = n • one R :=
-  one_def R ▸ finiteProjectiveModulesFinrankSplitK0EquivLocalRing_symm_apply Rᵐᵒᵖ n
-
 end KZero
+
+/-- `K₀` of a division ring `D` is `ℤ`, with the class of the free right module of rank one going
+to `1`. -/
+theorem kZero_divisionRing (D : Type u) [DivisionRing D] :
+    ∃ e : KZero D ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Dᵐᵒᵖ)) = 1 :=
+  ⟨KZero.rankEquivPID D, KZero.regular_def D ▸ KZero.rankEquivPID_regular D⟩
+
+/-- `K₀` of a commutative principal ideal domain `R` is `ℤ`, with the class of the free right
+module of rank one going to `1`: every finitely generated projective module is free. -/
+theorem kZero_of_isPrincipalIdealRing (R : Type u) [CommRing R] [IsDomain R]
+    [IsPrincipalIdealRing R] :
+    ∃ e : KZero R ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Rᵐᵒᵖ)) = 1 :=
+  ⟨KZero.rankEquivPID R, KZero.regular_def R ▸ KZero.rankEquivPID_regular R⟩
+
+/-- `K₀(ℤ)` is `ℤ`, with the class of the free module of rank one going to `1`. -/
+theorem kZero_int :
+    ∃ e : KZero ℤ ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular ℤᵐᵒᵖ)) = 1 :=
+  ⟨KZero.rankEquivPID ℤ, KZero.regular_def ℤ ▸ KZero.rankEquivPID_regular ℤ⟩
 
 end TauCeti

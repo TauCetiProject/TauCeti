@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.PrincipalIdealDomain
 # The opposite of a commutative principal ideal ring
 
 Records `IsPrincipalIdealRing Rᵐᵒᵖ` for a commutative principal ideal semiring `R` via
-`RingEquiv.toOpposite`, used by right-module results such as `TauCeti.KZero.finrankEquivPID`.
+`RingEquiv.toOpposite`, used by right-module results such as `TauCeti.KZero.rankEquivPID`.
 -/
 
 public section

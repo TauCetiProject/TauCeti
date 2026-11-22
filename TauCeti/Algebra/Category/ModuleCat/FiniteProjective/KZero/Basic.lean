@@ -13,7 +13,7 @@ import TauCeti.Algebra.Ring.Opposite
 /-!
 # Algebraic `K₀` of a ring, functoriality, and Morita invariance
 
-Built on `TauCeti.KZero R` and `TauCeti.KZero.one` (from
+Built on `TauCeti.KZero R` and `TauCeti.KZero.regular` (from
 `TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs`), this file provides covariant
 functoriality (`KZero.map`, `RingEquiv.kZeroEquiv`), comparison with left-module `SplitK0` for
 commutative rings (`KZero.commRingLeftSplitK0Equiv`), binary product decomposition
@@ -35,10 +35,10 @@ namespace TauCeti.KZero
 variable {R S T : Type u} [Ring R] [Ring S] [Ring T]
 
 /-- Every class in `KZero R` has the form `[P] - n • [R]`. -/
-theorem exists_eq_of_sub_nsmul_one (x : KZero R) :
+theorem exists_eq_of_sub_nsmul_regular (x : KZero R) :
     ∃ (P : FiniteProjectiveRight R) (n : ℕ),
-      x = SplitK0.of.{u} P - n • one R :=
-  one_def R ▸ SplitK0.exists_eq_of_sub_nsmul_finiteProjectiveModulesRegular x
+      x = SplitK0.of.{u} P - n • regular R :=
+  regular_def R ▸ SplitK0.exists_eq_of_sub_nsmul_finiteProjectiveModulesRegular x
 
 /-- **Covariant functoriality of `KZero`**, via balanced extension of scalars along
 `RingHom.op f : Rᵐᵒᵖ →+* Sᵐᵒᵖ`. -/
@@ -60,7 +60,8 @@ theorem map_comp (f : R →+* S) (g : S →+* T) : map (g.comp f) = (map g).comp
 @[simp] theorem map_map (f : R →+* S) (g : S →+* T) (x : KZero R) :
     map g (map f x) = map (g.comp f) x := (DFunLike.congr_fun (map_comp f g) x).symm
 
-@[simp] theorem map_one (f : R →+* S) : map f (one R) = one S := by simp [map, one_def]
+@[simp] theorem map_regular (f : R →+* S) : map f (regular R) = regular S := by
+  simp [map, regular_def]
 
 end TauCeti.KZero
 
@@ -120,9 +121,10 @@ theorem commRingLeftSplitK0Equiv_symm_apply (x) : (commRingLeftSplitK0Equiv R).s
       ((RingEquiv.toOpposite R).toRingHom.finiteProjectiveModulesExtendScalars.obj P) := by
   simp [commRingLeftSplitK0Equiv_symm_apply]
 
-@[simp] theorem commRingLeftSplitK0Equiv_one :
-    commRingLeftSplitK0Equiv R (one R) = SplitK0.of.{u} (finiteProjectiveModulesRegular R) := by
-  simp [commRingLeftSplitK0Equiv_apply, one_def]
+@[simp] theorem commRingLeftSplitK0Equiv_regular :
+    commRingLeftSplitK0Equiv R (regular R) =
+      SplitK0.of.{u} (finiteProjectiveModulesRegular R) := by
+  simp [commRingLeftSplitK0Equiv_apply, regular_def]
 
 end CommRing
 
@@ -145,17 +147,9 @@ noncomputable def prodEquiv (R S : Type u) [Ring R] [Ring S] :
 @[simp] theorem prodEquiv_symm_apply (R S : Type u) [Ring R] [Ring S]
     (x : KZero R × KZero S) : (prodEquiv R S).symm x =
       SplitK0.map.{u, u} ((RingHom.op (RingHom.fst R S)).finiteProjectiveModulesRestrictScalars
-        (RingHom.finite_toModule_of_surjective _ fun a ↦ ⟨op (a.unop, 0), rfl⟩)
-        (RingHom.projective_toModule_of_split _
-          ((opAddEquiv.toAddMonoidHom.comp (AddMonoidHom.inl R S)).comp
-            opAddEquiv.symm.toAddMonoidHom)
-          (fun _ ↦ rfl) (fun _ _ ↦ MulOpposite.unop_injective (Prod.ext rfl (zero_mul _))))) x.1 +
+        (RingHom.finite_op_fst R S) (RingHom.projective_op_fst R S)) x.1 +
       SplitK0.map.{u, u} ((RingHom.op (RingHom.snd R S)).finiteProjectiveModulesRestrictScalars
-        (RingHom.finite_toModule_of_surjective _ fun b ↦ ⟨op (0, b.unop), rfl⟩)
-        (RingHom.projective_toModule_of_split _
-          ((opAddEquiv.toAddMonoidHom.comp (AddMonoidHom.inr R S)).comp
-            opAddEquiv.symm.toAddMonoidHom) (fun _ ↦ rfl)
-          (fun _ _ ↦ MulOpposite.unop_injective (Prod.ext (zero_mul _) rfl)))) x.2 := by
+        (RingHom.finite_op_snd R S) (RingHom.projective_op_snd R S)) x.2 := by
   apply (prodEquiv R S).injective
   rw [AddEquiv.apply_symm_apply, prodEquiv_apply, map_add, map_add]
   refine Prod.ext ?_ ?_ <;>
@@ -183,9 +177,9 @@ theorem matrixEquiv_apply (x : KZero.{u} R) :
     ((RingEquiv.mopMatrix (m := ι) (α := R)).toRingHom.finiteProjectiveModulesExtendScalars.obj
       ((finiteProjectiveModulesToMatrixFunctor Rᵐᵒᵖ ι).obj P)) := by simp [matrixEquiv_apply]
 
-@[simp] theorem matrixEquiv_card_nsmul_one :
-    matrixEquiv R ι (Fintype.card ι • one R) = one (Matrix ι ι R) := by
-  simp [matrixEquiv_apply, one_def]
+@[simp] theorem matrixEquiv_card_nsmul_regular :
+    matrixEquiv R ι (Fintype.card ι • regular R) = regular (Matrix ι ι R) := by
+  simp [matrixEquiv_apply, regular_def]
 
 end Matrix
 

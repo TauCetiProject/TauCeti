@@ -19,7 +19,7 @@ group of finitely generated projective right `R`-modules, encoded as left `Rᵐ�
 * `TauCeti.FiniteProjectiveRight R`: finitely generated projective right `R`-modules.
 * `TauCeti.KZero R`: the projective `K₀` of `R`, the split Grothendieck group of
   `TauCeti.FiniteProjectiveRight R`.
-* `TauCeti.KZero.one R`: the canonical class `[R]` of the free right `R`-module of rank one.
+* `TauCeti.KZero.regular R`: the canonical class `[R]` of the free right `R`-module of rank one.
 -/
 
 public section
@@ -42,11 +42,11 @@ abbrev KZero (R : Type u) [Ring R] : Type u :=
 namespace KZero
 
 /-- The canonical class `[R]` of the free right `R`-module of rank one in `KZero R`. -/
-noncomputable def one (R : Type u) [Ring R] : KZero R :=
+noncomputable def regular (R : Type u) [Ring R] : KZero R :=
   SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ)
 
-theorem one_def (R : Type u) [Ring R] :
-    one R = SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ) := (rfl)
+theorem regular_def (R : Type u) [Ring R] :
+    regular R = SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ) := (rfl)
 
 end KZero
 

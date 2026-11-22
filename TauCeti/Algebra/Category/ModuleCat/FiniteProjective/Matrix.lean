@@ -19,8 +19,7 @@ For a ring `R : Type u` and a finite index type `ι : Type v` with decidable equ
 functor `ModuleCat.toMatrixModCat R ι` (`P ↦ (ι → P)`) preserves finitely generated projective
 modules (`TauCeti.finiteProjectiveModules_le_inverseImage_toMatrixModCat`). Lifting it yields a
 canonical additive functor `TauCeti.finiteProjectiveModulesToMatrixFunctor R ι` independent of any
-choice of index in `ι`. When `ι` is nonempty, `TauCeti.toMatrixModCatUliftIso`,
-`ModuleCat.matrixEquivalence`, and `Module.Finite.small` show it is an equivalence of categories.
+choice of index in `ι`, which is an equivalence of categories whenever `ι` is nonempty.
 -/
 
 public section
@@ -82,6 +81,8 @@ instance : (finiteProjectiveModulesToMatrixFunctor R ι).Additive :=
 
 variable [Nonempty ι]
 
+/-- For nonempty `ι`, `P ↦ (ι → P)` is an equivalence between finitely generated projective `R`-
+and `Matrix ι ι R`-modules. -/
 instance : (finiteProjectiveModulesToMatrixFunctor R ι).IsEquivalence := by
   obtain ⟨i⟩ := ‹Nonempty ι›; let E := ModuleCat.matrixEquivalence.{u, v, u} R i
   have : (ModuleCat.toMatrixModCat.{u, v, max u v} R ι).IsEquivalence :=

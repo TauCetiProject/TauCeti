@@ -164,6 +164,50 @@ theorem essSurj_lift_iff {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Ca
   · obtain ⟨A, ⟨e⟩⟩ := hPF _ Y.property
     exact ⟨A, ⟨P.isoMk e⟩⟩
 
+section LiftNatIso
+
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+  {P : ObjectProperty C} {Q : ObjectProperty D}
+  {F G H : P.FullSubcategory ⥤ Q.FullSubcategory} {F' G' H' : C ⥤ D}
+  (eF : F ⋙ Q.ι ≅ P.ι ⋙ F') (eG : G ⋙ Q.ι ≅ P.ι ⋙ G') (eH : H ⋙ Q.ι ≅ P.ι ⋙ H')
+  (α : F' ≅ G') (β : G' ≅ H')
+
+/-- Lift a natural isomorphism `α : F' ≅ G'` between ambient functors to a natural isomorphism
+between functors on full subcategories compatible with `F'` and `G'` via `eF` and `eG`. -/
+noncomputable def liftNatIso : F ≅ G :=
+  (Q.fullyFaithfulι.whiskeringRight _).preimageIso
+    (eF ≪≫ P.ι.isoWhiskerLeft α ≪≫ eG.symm)
+
+theorem liftNatIso_refl : liftNatIso eF eF (Iso.refl F') = Iso.refl F :=
+  Iso.ext <| (Q.fullyFaithfulι.whiskeringRight _).map_injective <| by
+    simp [-Functor.whiskeringRight_obj_map, liftNatIso]
+
+theorem liftNatIso_symm : (liftNatIso eF eG α).symm = liftNatIso eG eF α.symm :=
+  Iso.ext <| (Q.fullyFaithfulι.whiskeringRight _).map_injective <| by
+    simp [-Functor.whiskeringRight_obj_map, liftNatIso, Category.assoc]
+
+theorem liftNatIso_trans :
+    liftNatIso eF eG α ≪≫ liftNatIso eG eH β = liftNatIso eF eH (α ≪≫ β) :=
+  Iso.ext <| (Q.fullyFaithfulι.whiskeringRight _).map_injective <| by
+    simp [-Functor.whiskeringRight_obj_map, liftNatIso, Category.assoc]
+
+theorem liftNatIso_hom_app_hom (X : P.FullSubcategory) :
+    ((liftNatIso eF eG α).hom.app X).hom = eF.hom.app X ≫ α.hom.app X.obj ≫ eG.inv.app X := by
+  rw [← ObjectProperty.ι_map, liftNatIso, Functor.FullyFaithful.preimageIso_hom,
+    Functor.FullyFaithful.whiskeringRight_preimage_app, Functor.FullyFaithful.map_preimage]
+  simp
+
+theorem liftNatIso_inv_app_hom (X : P.FullSubcategory) :
+    ((liftNatIso eF eG α).inv.app X).hom = eG.hom.app X ≫ α.inv.app X.obj ≫ eF.inv.app X := by
+  rw [← Iso.symm_hom, liftNatIso_symm, liftNatIso_hom_app_hom, Iso.symm_hom]
+
+@[reassoc]
+theorem liftNatIso_hom_app_hom_comp (X : P.FullSubcategory) :
+    ((liftNatIso eF eG α).hom.app X).hom ≫ eG.hom.app X = eF.hom.app X ≫ α.hom.app X.obj := by
+  simp [liftNatIso_hom_app_hom]
+
+end LiftNatIso
+
 end ObjectProperty
 
 namespace Equivalence

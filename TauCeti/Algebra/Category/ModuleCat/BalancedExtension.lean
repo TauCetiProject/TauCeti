@@ -275,6 +275,7 @@ homomorphisms. -/
   simp only [ModuleCat.hom_comp, ModuleCat.hom_id, ModuleCat.hom_ofHom,
     LinearEquiv.toModuleIso_hom, LinearMap.comp_apply, LinearEquiv.coe_coe,
     cancelBaseChange_symm_tmul, map_tmul, lid_tmul, one_smul, LinearMap.id_apply]
+  -- `f.comp (RingHom.id R) = f` is definitional inside the dependent return type of `tmul`.
   rfl
 
 /-- **Right-unit coherence** for `TauCeti.BalancedExtension.functorId` and
@@ -292,6 +293,7 @@ homomorphisms. -/
   simp only [ModuleCat.hom_comp, ModuleCat.hom_id, ModuleCat.hom_ofHom,
     LinearEquiv.toModuleIso_hom, LinearMap.comp_apply, LinearEquiv.coe_coe,
     cancelBaseChange_symm_tmul, lid_tmul, one_smul, LinearMap.id_apply]
+  -- `(RingHom.id S).comp f = f` is definitional inside the dependent return type of `tmul`.
   rfl
 
 section Square
@@ -317,8 +319,9 @@ theorem functorCompCongr_def (f₁ : A →+* B) (g₁ : B →+* D) (f₂ : A →
         functorCongr.{u₁, u₄, max v u₂ u₃} h ≪≫
         functorComp.{u₁, u₃, u₄, max v u₂ u₃} f₂ g₂ := (rfl)
 
-/-- Not `@[simp]`: its left-hand side mentions the composite functor, which `Functor.comp_obj`
-simplifies inside the coercion type parameter. -/
+-- Not `@[simp]`: its left-hand side mentions the composite functor, which `Functor.comp_obj`
+-- simplifies inside the coercion type parameter.
+/-- The forward component of `functorCompCongr` sends `d ⊗ (b ⊗ m)` to `(d * g₁ b) ⊗ (1 ⊗ m)`. -/
 theorem functorCompCongr_hom_app_tmul_tmul (f₁ : A →+* B) (g₁ : B →+* D) (f₂ : A →+* C)
     (g₂ : C →+* D) (h : g₁.comp f₁ = g₂.comp f₂) (M : ModuleCat.{max v u₂ u₃} A)
     (d : D) (b : B) (m : M) :
@@ -329,8 +332,9 @@ theorem functorCompCongr_hom_app_tmul_tmul (f₁ : A →+* B) (g₁ : B →+* D)
   refine (ConcreteCategory.comp_apply _ _ _).trans <| (ConcreteCategory.comp_apply _ _ _).trans ?_
   rw [functorComp_inv_app_tmul_tmul, functorCongr_hom_app_tmul, functorComp_hom_app_tmul]
 
-/-- Not `@[simp]`: its left-hand side mentions the composite functor, which `Functor.comp_obj`
-simplifies inside the coercion type parameter. -/
+-- Not `@[simp]`: its left-hand side mentions the composite functor, which `Functor.comp_obj`
+-- simplifies inside the coercion type parameter.
+/-- The inverse component of `functorCompCongr` sends `d ⊗ (c ⊗ m)` to `(d * g₂ c) ⊗ (1 ⊗ m)`. -/
 theorem functorCompCongr_inv_app_tmul_tmul (f₁ : A →+* B) (g₁ : B →+* D) (f₂ : A →+* C)
     (g₂ : C →+* D) (h : g₁.comp f₁ = g₂.comp f₂) (M : ModuleCat.{max v u₂ u₃} A)
     (d : D) (c : C) (m : M) :
@@ -379,30 +383,34 @@ noncomputable def functorRingEquivIso (e : R ≃+* S) :
   (adjunction (e : R →+* S)).leftAdjointUniq
     (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).symm.toAdjunction
 
+/-- On pure tensors `1 ⊗ m`, `functorRingEquivIso` sends `1 ⊗ m` to `m` in the restricted module. -/
+theorem functorRingEquivIso_hom_app_tmul_one (e : R ≃+* S) (M : ModuleCat.{max v u₂} R)
+    (m : M) :
+    (functorRingEquivIso e).hom.app M (tmul (e : R →+* S) 1 m) =
+      ModuleCat.restrictScalarsAddEquiv (e.symm : S →+* R) M m := by
+  let adj₂ : ModuleCat.restrictScalars.{max v u₂} (e.symm : S →+* R) ⊣
+      ModuleCat.restrictScalars.{max v u₂} (e : R →+* S) :=
+    (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).symm.toAdjunction
+  have h := congrArg (ModuleCat.restrictScalarsAddEquiv (e : R →+* S)
+      ((ModuleCat.restrictScalars (e.symm : S →+* R)).obj M)).symm
+    (ConcreteCategory.congr_hom
+      (Adjunction.unit_leftAdjointUniq_hom_app (adjunction (e : R →+* S)) adj₂ M) m)
+  rw [ConcreteCategory.comp_apply, ModuleCat.restrictScalarsAddEquiv_symm_map_apply,
+    ModuleCat.restrictScalarsAddEquiv_symm_apply, adjunction_unit_app_apply,
+    ModuleCat.restrictScalarsAddEquiv_symm_apply] at h
+  rw [ModuleCat.restrictScalarsAddEquiv_apply]
+  refine h.trans ?_
+  dsimp only [adj₂, Equivalence.toAdjunction_unit, Equivalence.symm_unit, Equivalence.counitInv]
+  exact ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso_inv_app_apply e M m
+
 @[simp] theorem functorRingEquivIso_hom_app_tmul (e : R ≃+* S) (M : ModuleCat.{max v u₂} R)
     (s : S) (m : M) :
     (functorRingEquivIso e).hom.app M (tmul (e : R →+* S) s m) =
       ModuleCat.restrictScalarsAddEquiv (e.symm : S →+* R) M (e.symm s • m) := by
-  have h1 : (functorRingEquivIso e).hom.app M (tmul (e : R →+* S) 1 m) =
-      ModuleCat.restrictScalarsAddEquiv (e.symm : S →+* R) M m := by
-    let adj₂ : ModuleCat.restrictScalars.{max v u₂} (e.symm : S →+* R) ⊣
-        ModuleCat.restrictScalars.{max v u₂} (e : R →+* S) :=
-      (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).symm.toAdjunction
-    have h := congrArg (ModuleCat.restrictScalarsAddEquiv (e : R →+* S)
-        ((ModuleCat.restrictScalars (e.symm : S →+* R)).obj M)).symm
-      (ConcreteCategory.congr_hom
-        (Adjunction.unit_leftAdjointUniq_hom_app (adjunction (e : R →+* S)) adj₂ M) m)
-    rw [ConcreteCategory.comp_apply, ModuleCat.restrictScalarsAddEquiv_symm_map_apply,
-      ModuleCat.restrictScalarsAddEquiv_symm_apply, adjunction_unit_app_apply] at h
-    refine h.trans <| (congrArg _ ?_).trans (AddEquiv.symm_apply_apply _ _)
-    dsimp only [adj₂]; rw [Equivalence.toAdjunction_unit, Equivalence.symm_unit]
-    exact (ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso_inv_app_apply e M m).trans <|
-      (ModuleCat.restrictScalarsAddEquiv_apply (e.symm : S →+* R) M m).symm.trans
-        (ModuleCat.restrictScalarsAddEquiv_apply (e : R →+* S)
-          ((ModuleCat.restrictScalars (e.symm : S →+* R)).obj M) _).symm
   rw [tmul_eq_smul_one_tmul]
   refine (((functorRingEquivIso e).hom.app M).hom.map_smul s _).trans ?_
-  rw [h1, ModuleCat.smul_restrictScalarsAddEquiv, RingEquiv.coe_toRingHom]
+  rw [functorRingEquivIso_hom_app_tmul_one, ModuleCat.smul_restrictScalarsAddEquiv,
+    RingEquiv.coe_toRingHom]
 
 @[simp] theorem functorRingEquivIso_inv_app_apply (e : R ≃+* S) (M : ModuleCat.{max v u₂} R)
     (m : (ModuleCat.restrictScalars (e.symm : S →+* R)).obj M) :
