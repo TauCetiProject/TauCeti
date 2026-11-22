@@ -390,7 +390,9 @@ theorem exists_norm_le_mul_norm_cauchyRiemann (hg : ∀ v w, ω v (J w) = ⟪v, 
           le_add_of_nonneg_left (by positivity)).trans ?_
       simpa only [cauchyRiemannJetCoeff_jet, stdComplexLineReal_eq, stdComplexLineImag_eq] using
         hest ξ ξ.property
-  exact ⟨K, hK⟩
+  exact ⟨K, fun x ↦ by
+    simpa only [cauchyRiemann_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
+      using hK x⟩
 
 /-- With transverse isotropic boundary conditions the Cauchy--Riemann operator on `W^{1,2}` of the
 strip is injective. -/
