@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.MatrixReciprocity.Basic
-public import TauCeti.NumberTheory.QuadraticOrder.LevelTwoMatrix
+public import TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Two
 
 /-!
 # Level-two multiplication-matrix reciprocity over the Hilbert class field

@@ -159,6 +159,12 @@ theorem rayClassToClassGroup_eq_oneEquivClassGroup_comp_classMap (m : Modulus K)
     MulEquiv.coe_toMonoidHom, oneEquivClassGroup_rayClassMk,
     NumberFieldArithmetic.coe_idealsAwayInclusion]
 
+/-- The kernel of `rayClassToClassGroup m` equals the kernel of the transition map to the trivial
+modulus. -/
+theorem ker_rayClassToClassGroup_eq_ker_classMap_one_dvd (m : Modulus K) :
+    (rayClassToClassGroup m).ker = (classMap (Modulus.one_dvd m)).ker := by
+  ext x; simp [rayClassToClassGroup_eq_oneEquivClassGroup_comp_classMap]
+
 /-- Multiplying an ideal prime to `𝔪` by the principal ideal of a unit `x` congruent to one
 modulo `𝔪` and with prescribed valuations `exp (count I)` at the other primes of `𝔫.support`
 gives an ideal prime to `𝔫`. -/

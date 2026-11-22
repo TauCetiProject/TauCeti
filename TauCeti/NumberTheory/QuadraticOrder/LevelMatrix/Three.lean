@@ -5,7 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.QuadraticOrder.MatrixQuotient
+public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import Mathlib.Data.ZMod.Defs
+public import Mathlib.GroupTheory.QuotientGroup.Defs
+public import TauCeti.Algebra.QuadraticAlgebra.UnitMatrix
+
+import Mathlib.Data.ZMod.Basic
+import Mathlib.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Quadratic multiplication matrices at level three

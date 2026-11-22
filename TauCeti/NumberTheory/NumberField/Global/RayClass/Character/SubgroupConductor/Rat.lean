@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Rat
 
 import Mathlib.Data.Nat.Totient
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
 # The conductor of the trivial subgroup of a ray class group of `ℚ`
@@ -68,38 +67,39 @@ theorem ker_classMap_ratModulus_eq_bot_iff {d : ℕ} {hd : d ≠ 0}
     fun hc ↦ ((classMap_surjective h).bijective_of_nat_card_le hc.le).1⟩
 
 -- A divisor of `(n)·∞` is `(d)·∞` or `(d)` for a divisor `d` of `n`.
-private theorem exists_eq_ratModulus_or_eq_ratFiniteModulus {𝔫 : Modulus ℚ}
+private theorem exists_eq_ratModulus_or_eq_spanNat {𝔫 : Modulus ℚ}
     (h : 𝔫 ∣ ratModulus n hn) :
-    ∃ (d : ℕ) (hd : d ≠ 0), d ∣ n ∧ (𝔫 = ratModulus d hd ∨ 𝔫 = ratFiniteModulus d hd) := by
-  have hd : Ideal.absNorm 𝔫.finitePart ≠ 0 := by
+    ∃ (d : ℕ) (_ : NeZero d), d ∣ n ∧
+      (𝔫 = ratModulus d (NeZero.ne d) ∨ 𝔫 = Modulus.spanNat ℚ d) := by
+  have : NeZero (Ideal.absNorm 𝔫.finitePart) := ⟨by
     rw [Ne, Ideal.absNorm_eq_zero_iff]
-    exact 𝔫.finitePart_ne_bot
+    exact 𝔫.finitePart_ne_bot⟩
   have hspan := Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔫.finitePart
   have hinf := (Modulus.dvd_iff.mp h).2
   rw [ratModulus_infinitePart] at hinf
-  refine ⟨_, hd, dvd_ratModulus_iff.mp h, ?_⟩
+  refine ⟨_, inferInstance, dvd_ratModulus_iff.mp h, ?_⟩
   rcases Finset.subset_singleton_iff.mp hinf with hinf | hinf
-  · exact Or.inr (Modulus.ext (by rw [ratFiniteModulus_finitePart, hspan])
-      (by rw [ratFiniteModulus_infinitePart, hinf]))
+  · exact Or.inr (Modulus.ext (by rw [Modulus.spanNat_finitePart, hspan])
+      (by rw [Modulus.spanNat_infinitePart, hinf]))
   · exact Or.inl (Modulus.ext (by rw [ratModulus_finitePart, hspan])
       (by rw [ratModulus_infinitePart, hinf]))
 
 -- For `n > 2` the transition map from `(n)·∞` to a modulus `(d)` without the real place is not
 -- injective: the class of `-1` is nontrivial modulo `(n)·∞` and trivial modulo `(d)`.
-private theorem ker_classMap_ratFiniteModulus_ne_bot (h2 : 2 < n) {d : ℕ} {hd : d ≠ 0}
-    (h : ratFiniteModulus d hd ∣ ratModulus n hn) : (classMap h).ker ≠ ⊥ := by
-  have h₁ : ratFiniteModulus d hd ∣ ratModulus d hd := ratFiniteModulus_dvd_ratModulus
-  have h₂ : ratModulus d hd ∣ ratModulus n hn :=
-    ratModulus_dvd_ratModulus_iff.mpr (ratFiniteModulus_dvd_ratModulus_iff.mp h)
+private theorem ker_classMap_spanNat_ne_bot (h2 : 2 < n) {d : ℕ} [NeZero d]
+    (h : Modulus.spanNat ℚ d ∣ ratModulus n hn) : (classMap h).ker ≠ ⊥ := by
+  have h₁ : Modulus.spanNat ℚ d ∣ ratModulus d (NeZero.ne d) := spanNat_dvd_ratModulus
+  have h₂ : ratModulus d (NeZero.ne d) ∣ ratModulus n hn :=
+    ratModulus_dvd_ratModulus_iff.mpr (spanNat_dvd_ratModulus_iff.mp h)
   set c := (ratModulusEquivZMod n hn).symm (-1)
   have hc1 : c ≠ 1 := by
     have : Fact (2 < n) := ⟨h2⟩
     rw [Ne, MulEquiv.symm_apply_eq, map_one, Units.ext_iff]
     exact ZMod.neg_one_ne_one
-  have hc₂ : classMap h₂ c = residueSignRayClass (ratModulus d hd) (1, fun _ ↦ -1) := by
-    rw [← (ratModulusEquivZMod d hd).injective.eq_iff, ratModulusEquivZMod_classMap,
+  have hc₂ : classMap h₂ c = residueSignRayClass (ratModulus d (NeZero.ne d)) (1, fun _ ↦ -1) := by
+    rw [← (ratModulusEquivZMod d (NeZero.ne d)).injective.eq_iff, ratModulusEquivZMod_classMap,
       ratModulusEquivZMod_residueSignRayClass_neg_one, MulEquiv.apply_symm_apply]
-    have hdn := ratFiniteModulus_dvd_ratModulus_iff.mp h
+    have hdn := spanNat_dvd_ratModulus_iff.mp h
     ext
     simp [ZMod.unitsMap_val, ZMod.cast_neg hdn, ZMod.cast_one hdn]
   have hc : classMap h c = 1 := by
@@ -135,18 +135,18 @@ private theorem exists_rayClassConductor_bot_ratModulus_eq (h2 : 2 < n) :
   set 𝔣 := rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn)))
   have key {𝔫 : Modulus ℚ} (h : 𝔫 ∣ ratModulus n hn) : 𝔣 ∣ 𝔫 ↔ (classMap h).ker = ⊥ := by
     rw [rayClassConductor_dvd_iff h, le_bot_iff]
-  obtain ⟨d, hd, hdn, heq | heq⟩ :=
-    exists_eq_ratModulus_or_eq_ratFiniteModulus (rayClassConductor_dvd ⊥)
-  · have h' : ratModulus d hd ∣ ratModulus n hn := heq ▸ rayClassConductor_dvd ⊥
-    refine ⟨d, hd, hdn, (ker_classMap_ratModulus_eq_bot_iff h').mp
+  obtain ⟨d, _, hdn, heq | heq⟩ :=
+    exists_eq_ratModulus_or_eq_spanNat (rayClassConductor_dvd ⊥)
+  · have h' : ratModulus d (NeZero.ne d) ∣ ratModulus n hn := heq ▸ rayClassConductor_dvd ⊥
+    refine ⟨d, NeZero.ne d, hdn, (ker_classMap_ratModulus_eq_bot_iff h').mp
       ((key h').mp (heq ▸ Modulus.dvd_refl _)), heq, fun d' hd' hd'n hφ ↦ ?_⟩
     have h'' : ratModulus d' hd' ∣ ratModulus n hn := ratModulus_dvd_ratModulus_iff.mpr hd'n
     have := (key h'').mpr ((ker_classMap_ratModulus_eq_bot_iff h'').mpr hφ)
-    have hf : 𝔣 = ratModulus d hd := heq
+    have hf : 𝔣 = ratModulus d (NeZero.ne d) := heq
     rwa [hf, ratModulus_dvd_ratModulus_iff] at this
-  · have h' : ratFiniteModulus d hd ∣ ratModulus n hn := heq ▸ rayClassConductor_dvd ⊥
+  · have h' : Modulus.spanNat ℚ d ∣ ratModulus n hn := heq ▸ rayClassConductor_dvd ⊥
     exact absurd ((key h').mp (heq ▸ Modulus.dvd_refl _))
-      (ker_classMap_ratFiniteModulus_ne_bot h2 h')
+      (ker_classMap_spanNat_ne_bot h2 h')
 
 /-- **The conductor of the trivial subgroup modulo `(n)·∞` is `(n)·∞`** for `n > 2` not equal to
 `2` modulo `4`. -/

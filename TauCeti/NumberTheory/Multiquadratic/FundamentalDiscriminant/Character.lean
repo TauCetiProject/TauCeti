@@ -126,6 +126,22 @@ theorem fundamentalDiscriminantChar_two_eq_neg_one_iff {D : ℤ} (hD : Int.IsFun
   rw [fundamentalDiscriminantChar_two, ZMod.χ₈_int_eq_if_mod_eight]
   split_ifs <;> simp <;> omega
 
+/-- The fundamental-discriminant character satisfies `χ_D(2) = -1` and `χ_D(3) = 0` iff
+`D ≡ 21 (mod 24)` (the inert-two, ramified-three CM branch). -/
+theorem fundamentalDiscriminantChar_two_eq_neg_one_and_three_eq_zero_iff {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) :
+    fundamentalDiscriminantChar D hD 2 = -1 ∧ fundamentalDiscriminantChar D hD 3 = 0 ↔
+      D % 24 = 21 := by
+  have h2 := fundamentalDiscriminantChar_two_eq_neg_one_iff hD
+  have h3 : fundamentalDiscriminantChar D hD 3 = 0 ↔ D % 3 = 0 := by
+    have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
+    have h := fundamentalDiscriminantChar_natCast_eq_legendreSym hD (q := 3) (by decide)
+    rw [show ((3 : ℕ) : ℤ) = 3 by rfl, Int.cast_ofNat] at h
+    rw [h, legendreSym.eq_zero_iff, ZMod.intCast_zmod_eq_zero_iff_dvd, Int.dvd_iff_emod_eq_zero]
+    norm_cast
+  rw [h2, h3]
+  omega
+
 /-- **The character of a fundamental discriminant `D ≠ 1` is nontrivial.** -/
 theorem fundamentalDiscriminantChar_ne_one {D : ℤ} (hD : Int.IsFundamentalDiscr D)
     (h1 : D ≠ 1) : fundamentalDiscriminantChar D hD ≠ 1 := by

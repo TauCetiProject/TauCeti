@@ -134,11 +134,6 @@ theorem kerClassMapArtinEquiv_apply {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
     (y : rayClassField 𝔫) : kerClassMapArtinEquiv h x y = rayClassArtinEquiv 𝔫 x y := by
   rw [← AlgEquiv.restrictScalars_apply K, restrictScalars_kerClassMapArtinEquiv]
 
-/-- The kernel of transition to the trivial modulus is the kernel of `rayClassToClassGroup`. -/
-private theorem ker_rayClassToClassGroup_eq_ker_classMap_one_dvd (𝔪 : Modulus K) :
-    (rayClassToClassGroup 𝔪).ker = (classMap (Modulus.one_dvd 𝔪)).ker := by
-  ext x; simp [rayClassToClassGroup_eq_oneEquivClassGroup_comp_classMap]
-
 /-- **Relative reciprocity over the Hilbert class field**: the Artin map of `rayClassField 𝔪`
 identifies `(rayClassToClassGroup 𝔪).ker` with `Gal(rayClassField 𝔪 / hilbertClassField K)`. -/
 def kerRayClassToClassGroupArtinEquiv (𝔪 : Modulus K)

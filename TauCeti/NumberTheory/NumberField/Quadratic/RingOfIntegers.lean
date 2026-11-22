@@ -12,7 +12,6 @@ public import Mathlib.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import Mathlib.NumberTheory.SumTwoSquares
-import Mathlib.RingTheory.QuadraticAlgebra
 import TauCeti.NumberTheory.LegendreSymbol.NormForm
 import TauCeti.Algebra.Squarefree
 import TauCeti.RingTheory.Norm.Quadratic
