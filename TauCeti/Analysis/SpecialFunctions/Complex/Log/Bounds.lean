@@ -27,7 +27,9 @@ neither side is summable and both are `0`.  The double-family summability is not
 is `TauCeti.summable_mul_norm_pow_succ`, stated for a seminormed additive group and an arbitrary
 real weight, and this file uses it at weight `1`.
 
-The file also gives an explicit truncation error for a single `z`: the `n`-th partial sum
+For a single `z` of modulus less than one, comparing the Taylor series termwise bounds
+`‖log (1 - z)‖` by `-Real.log (1 - ‖z‖)`, the value of the same function at the real point
+`‖z‖`. The file also gives an explicit truncation error for a single `z`: the `n`-th partial sum
 `∑ j ∈ Icc 1 n, z ^ j / j` differs from `log (1 - z)⁻¹` by at most
 `‖z‖ ^ (n + 1) / ((1 - ‖z‖) (n + 1))`, which restates Mathlib's
 `Complex.norm_log_one_sub_inv_add_logTaylor_neg_le` with the Taylor polynomial written out.  At
@@ -56,6 +58,8 @@ term takes.
   summable, then `r` is summable (the converse of Mathlib's `Summable.clog_one_sub`).
 * `Complex.tsum_taylorSeries_neg_log`: for every `r` with `‖r i‖ < 1`, the sum over `ι × ℕ` is
   `∑' i, -log (1 - r i)` (both sides are `0` when `r` is not summable).
+* `Complex.norm_log_one_sub_le_neg_log_one_sub_norm`: for `‖z‖ < 1`,
+  `‖log (1 - z)‖ ≤ -Real.log (1 - ‖z‖)`.
 * `Complex.norm_log_one_sub_inv_sub_sum_Icc_le`: the truncation error of the same Taylor series
   for a single `z`, with its `n`-th partial sum `∑ j ∈ Icc 1 n, z ^ j / j`.
 * `Complex.norm_log_one_sub_div_inv_sub_sum_Icc_le`: the same truncation error at `z = w / p`,
@@ -151,6 +155,16 @@ theorem norm_neg_one_pow_div_add_one (n : ℕ) :
     ‖((-1) ^ n / (n + 1) : ℂ)‖ = ((n : ℝ) + 1)⁻¹ := by
   rw [norm_div, norm_pow, norm_neg, norm_one, one_pow, one_div, ← Nat.cast_add_one,
     Complex.norm_natCast, Nat.cast_add_one]
+
+/-- **The principal logarithm `log (1 - z)` is dominated by its value at `‖z‖`.** For `‖z‖ < 1`,
+`‖log (1 - z)‖ ≤ -Real.log (1 - ‖z‖)`: the Taylor series of `-log (1 - z)` is bounded termwise by
+the Taylor series of `-Real.log (1 - ‖z‖)`, which has nonnegative terms. -/
+theorem norm_log_one_sub_le_neg_log_one_sub_norm {z : ℂ} (hz : ‖z‖ < 1) :
+    ‖log (1 - z)‖ ≤ -Real.log (1 - ‖z‖) := by
+  rw [← norm_neg]
+  refine (hasSum_taylorSeries_neg_log' hz).norm_le_of_bounded
+    (Real.hasSum_pow_div_log_of_abs_lt_one (by rwa [abs_norm])) fun j ↦ ?_
+  rw [norm_div, norm_pow, ← Nat.cast_add_one, norm_natCast, Nat.cast_add_one]
 
 /-- **The truncation error of the Taylor series of `log (1 - z)⁻¹`.** For `‖z‖ < 1`, the partial
 sum `∑ j ∈ Icc 1 n, z ^ j / j` approximates `log (1 - z)⁻¹ = -log (1 - z)` to within

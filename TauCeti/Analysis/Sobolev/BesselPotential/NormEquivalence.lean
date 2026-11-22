@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Sobolev.BesselPotential.Conjugation
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
@@ -66,6 +67,11 @@ the measure of Mathlib's Bessel-potential spaces.
 * `TauCeti.Wkp.inclusionLp_toBesselPotentialSpace_of_ae_eq`,
   `TauCeti.Wkp.coeFn_inclusionLp_toBesselPotentialSpace`: through the inclusion `H^{k,p} ⊆ Lᵖ` it
   is the complexified value.
+* `TauCeti.Wkp.exists_memSobolev_value_smul`: the value of `u` times a fixed vector `c` is an `Lᵖ`
+  function in `H^{k,p}(E, K)`.
+* `TemperedDistribution.MemSobolev.exists_wkp_value_ae_eq_comp`: conversely, a real-valued
+  component `x ↦ ℓ (u x)` of an `Lᵖ` function `u` in `H^{k,p}(E, F)` is the value of an element
+  of `W^{k,p}(E)`.
 * `TauCeti.Wkp.isClosed_range_toBesselPotentialSpace`: the range is closed.
 * `TauCeti.Wkp.exists_norm_le_mul_norm_toBesselPotentialSpace`: the reverse bound
   `‖u‖_{W^{k,p}} ≤ C ‖u‖_{H^{k,p}}`, so that the two norms are equivalent.
@@ -235,6 +241,21 @@ theorem coeFn_inclusionLp_toBesselPotentialSpace (k : ℕ) (u : Wkp (volume : Me
     ← complexValue_apply]
   exact complexValue_ae_eq k u
 
+/-- The value of `w ∈ W^{k,p}(E)` times a fixed vector `c` is an `Lᵖ` function in
+`H^{k,p}(E, K)`. -/
+theorem exists_memSobolev_value_smul {K : Type*} [NormedAddCommGroup K] [NormedSpace ℂ K]
+    [CompleteSpace K] (k : ℕ) (w : Wkp (volume : Measure E) ⊤ p k) (c : K) :
+    ∃ z : Lp K p (volume : Measure E), (z =ᵐ[volume] fun x ↦ value k w x • c) ∧
+      MemSobolev k p (z : 𝓢'(E, K)) := by
+  set y := BesselPotentialSpace.inclusionLp (Nat.cast_nonneg k)
+    (toBesselPotentialSpace hp hp_top k w)
+  refine ⟨(ContinuousLinearMap.toSpanSingleton ℂ c).compLp y, ?_,
+    (BesselPotentialSpace.memSobolev_inclusionLp (Nat.cast_nonneg k) _).compLp _⟩
+  filter_upwards [(ContinuousLinearMap.toSpanSingleton ℂ c).coeFn_compLp y,
+    coeFn_inclusionLp_toBesselPotentialSpace hp hp_top k w] with x h₁ h₂
+  rw [h₁, ContinuousLinearMap.toSpanSingleton_apply, h₂]
+  exact Complex.coe_smul _ _
+
 /-- `toBesselPotentialSpace u` is the element of `H^{k,p}(E, ℂ)` that is almost everywhere the
 complexified value of `u` through the inclusion `H^{k,p} ⊆ Lᵖ`. -/
 theorem toBesselPotentialSpace_eq_iff {k : ℕ} {u : Wkp (volume : Measure E) ⊤ p k}
@@ -263,13 +284,13 @@ theorem isClosed_range_toBesselPotentialSpace (k : ℕ) :
     IsClosed (Set.range (toBesselPotentialSpace (E := E) hp hp_top k)) := by
   -- The complexified real functions are closed in `Lᵖ(E, ℂ)`: taking real parts is a retraction.
   have hclosed : IsClosed (Set.range (Complex.ofRealCLM.compLpL p (volume : Measure E))) := by
+    have hcomp : Complex.reCLM.comp Complex.ofRealCLM = ContinuousLinearMap.id ℝ ℝ := by
+      ext
+      simp
     refine Function.LeftInverse.isClosed_range (f := Complex.reCLM.compLpL p volume)
-      (fun g ↦ Lp.ext ?_) (ContinuousLinearMap.continuous _) (ContinuousLinearMap.continuous _)
-    simp only [ContinuousLinearMap.compLpL_apply]
-    filter_upwards [Complex.reCLM.coeFn_compLp (p := p) (μ := volume)
-      (Complex.ofRealCLM.compLp g), Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) g]
-      with x h₁ h₂
-    simp [h₁, h₂]
+      (fun g ↦ ?_) (ContinuousLinearMap.continuous _) (ContinuousLinearMap.continuous _)
+    simp only [ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.compLp_comp_linear,
+      hcomp, ContinuousLinearMap.id_compLp]
   -- By Calderón's theorem, the range is the preimage of this set under the inclusion into `Lᵖ`.
   convert hclosed.preimage (BesselPotentialSpace.inclusionLp (Nat.cast_nonneg k)).continuous
     using 1
@@ -322,3 +343,21 @@ theorem lineDerivOp_toDistr_toBesselPotentialSpace_of_hasWeakLineDerivOn {q : �
   (hasWeakLineDerivOn_iff_lineDerivOp_toDistr_toBesselPotentialSpace hp hp_top hq hq_top).1 hd
 
 end TauCeti.Wkp
+
+namespace TemperedDistribution
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- A real-valued component `x ↦ ℓ (u x)` of an `Lᵖ` function `u` in `H^{k,p}(E, F)` is the value
+of an element of `W^{k,p}(E)`. -/
+theorem MemSobolev.exists_wkp_value_ae_eq_comp (hp : 1 < p) (hp_top : p ≠ ∞) {k : ℕ}
+    {u : Lp F p (volume : Measure E)} (hu : MemSobolev k p (u : 𝓢'(E, F))) (ℓ : F →L[ℝ] ℝ) :
+    ∃ w : TauCeti.Wkp (volume : Measure E) ⊤ p k,
+      (TauCeti.Wkp.value k w : E → ℝ) =ᵐ[volume] fun x ↦ ℓ (u x) := by
+  obtain ⟨w, hw⟩ := (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top k
+    (ℓ.compLp u)).1 (hu.ofReal_compLp ℓ)
+  exact ⟨w, hw.trans (ℓ.coeFn_compLp u)⟩
+
+end TemperedDistribution

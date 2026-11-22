@@ -85,6 +85,9 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `TauCeti.continuousOn_ofReal_add_cpow`, `TauCeti.continuousOn_ofReal_add_cpow_Ici`,
   `TauCeti.continuous_ofReal_add_cpow_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
+* `TauCeti.ofReal_cpow_mul_inv_mul_inv_cpow` -- for `a > 0` and `w` off the negative real axis,
+  `a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`.
+* `Complex.exp_log_add_mul` -- split an exponential at a principal logarithm.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
   `Complex.neg_cpow_half_eq_or_eq_neg` -- algebraic identities for principal `±1/2` powers,
   including at `w = 0`, and the sign dichotomy `(-w) ^ (1/2) = ±(I * w ^ (1/2))`.
@@ -564,9 +567,25 @@ theorem one_div_cpow_mul_ofReal_rpow {w : ℂ} (hw : w.arg ≠ Real.pi) {p : ℝ
   rw [div_eq_mul_inv (p : ℂ) w, ofReal_mul_cpow hp, Complex.inv_cpow w (r : ℂ) hw,
     ← Complex.ofReal_cpow hp, one_div, mul_comm]
 
+/-- For `a > 0` and `w` off the negative real axis, the principal powers combine:
+`a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`. -/
+theorem ofReal_cpow_mul_inv_mul_inv_cpow {a : ℝ} (ha : 0 < a) {w : ℂ} (hw : w.arg ≠ Real.pi)
+    (s : ℂ) : (a : ℂ) ^ s * ((a : ℂ)⁻¹ * w⁻¹) ^ s = w ^ (-s) := by
+  have has : (a : ℂ) ^ s ≠ 0 := by simp [ha.ne']
+  rw [mul_cpow (by simpa [← ofReal_inv, arg_ofReal_of_nonneg (inv_nonneg.2 ha.le)]
+      using arg_mem_Ioc w⁻¹),
+    inv_cpow_ofReal_nonneg ha.le, inv_cpow _ _ hw, cpow_neg]
+  field_simp
+
 end TauCeti
 
 namespace Complex
+
+/-- An exponential based at a principal logarithm splits into a principal power and the
+exponential of the remaining summand. -/
+theorem exp_log_add_mul {z : ℂ} (hz : z ≠ 0) (w e : ℂ) :
+    exp ((log z + w) * e) = z ^ e * exp (w * e) := by
+  rw [add_mul, exp_add, cpow_def_of_ne_zero hz]
 
 /-- The product of two principal powers `w ^ (-1/2)` is `w⁻¹`, including at `w = 0`. -/
 theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) : ℂ) = w⁻¹ := by

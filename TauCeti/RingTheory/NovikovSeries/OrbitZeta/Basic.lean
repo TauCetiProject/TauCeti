@@ -47,6 +47,13 @@ Euler product with integer coefficients, so `ζ` has integer coefficients
 (`TauCeti.NovikovSeries.orbitZeta_eq_mapRingHom_eulerProduct`). Neither the injectivity of `N` nor
 the discreteness of its image is used, and the exponent group may have torsion.
 
+The orbit logarithm and the orbit zeta function are natural: the pushforward along a ring
+homomorphism of coefficients and an exponent homomorphism `φ` rescaling periods
+(`TauCeti.NovikovSeries.mapRingHom`) sends them to those of the classes `φ (γ i)`, with the same
+signs (`TauCeti.NovikovSeries.mapRingHom_orbitLog`, `TauCeti.NovikovSeries.mapRingHom_orbitZeta`).
+For an integer-valued period map this is the specialisation to one variable, treated in
+`TauCeti.RingTheory.NovikovSeries.OrbitZeta.Univariate`.
+
 The specialisation of the product formula to the Lefschetz signs `sgn det (1 - f ^ k)` of
 linearized return maps `f` is in `TauCeti.RingTheory.NovikovSeries.OrbitZeta.ReturnMap`.
 
@@ -79,6 +86,12 @@ linearized return maps `f` is in `TauCeti.RingTheory.NovikovSeries.OrbitZeta.Ret
   `i`-th orbit `c i` times multiplies its signs by `c i`.
 * `TauCeti.NovikovSeries.hasSum_orbitLog_sigma_fin`: listing the `i`-th orbit `c i` times and
   dividing the weight of each copy by `c i` sums to the orbit logarithm.
+* `TauCeti.NovikovSeries.finite_setOf_succ_nsmul_eq`,
+  `TauCeti.NovikovSeries.finite_support_ite_succ_nsmul_eq`, `TauCeti.NovikovSeries.coeff_orbitLog`:
+  only finitely many iterates have a given class, and the coefficient of the orbit logarithm at a
+  class is the sum of `ε i (k + 1) / (k + 1)` over them.
+* `TauCeti.NovikovSeries.mapRingHom_orbitLog`, `TauCeti.NovikovSeries.mapRingHom_orbitZeta`:
+  naturality under pushforward along coefficient and exponent maps.
 
 ## References
 
@@ -134,6 +147,24 @@ private theorem single_iterate_mem_periodFiltration {g : H} (hg : 0 ≤ N g) (k 
     rw [period_succ_nsmul]
     nlinarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]) (single_mem_periodFiltration _ _)
 
+/-- Only finitely many iterates of the orbits have period at most `C`, when only finitely many
+periods lie below each cutoff. -/
+private theorem finite_setOf_succ_mul_le (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (C : ℝ) :
+    {p : ι × ℕ | ((p.2 : ℝ) + 1) * N (γ p.1) ≤ C}.Finite := by
+  obtain ⟨c, hc, hcγ⟩ := hfin.exists_gt_forall_le hpos
+  -- An iterate of period at most `C` comes from an orbit of period at most `C`, iterated at most
+  -- `C / c` times.
+  refine ((((northcott_iff_tendsto _).2 hfin).finite_le C).prod
+    (Set.finite_Iic ⌊C / c⌋₊)).subset ?_
+  rintro ⟨i, k⟩ (hik : ((k : ℝ) + 1) * N (γ i) ≤ C)
+  have hk : (k : ℝ) ≤ C / c := by
+    rw [le_div_iff₀ hc]
+    nlinarith [hcγ i, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
+  refine ⟨?_, Nat.le_floor hk⟩
+  simp only [Set.mem_ofPred_eq]
+  nlinarith [hpos i, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
+
 /-- The orbit logarithm converges in the period topology when only finitely many periods lie below
 each cutoff. -/
 theorem hasSum_orbitLog (hpos : ∀ i, 0 < N (γ i))
@@ -143,22 +174,13 @@ theorem hasSum_orbitLog (hpos : ∀ i, 0 < N (γ i))
       (orbitLog K N γ ε) := by
   refine (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
     (hasBasis_nhds_zero.tendsto_right_iff.2 fun C _ => eventually_cofinite.2 ?_)).hasSum
-  obtain ⟨c, hc, hcγ⟩ := hfin.exists_gt_forall_le hpos
-  -- A term below the cutoff `C` comes from an orbit of period below `C`, iterated fewer than
-  -- `C / c` times.
-  refine ((((northcott_iff_tendsto _).2 hfin).finite_le C).prod
-    (Set.finite_Iio ⌈C / c⌉₊)).subset ?_
-  rintro ⟨i, k⟩ hik
-  have hlt : ((k : ℝ) + 1) * N (γ i) < C := by
+  -- A term below the cutoff `C` comes from an iterate of period below `C`.
+  refine (finite_setOf_succ_mul_le hpos hfin C).subset fun p hp => ?_
+  have hlt : ((p.2 : ℝ) + 1) * N (γ p.1) < C := by
     refine lt_of_not_ge fun hC =>
-      hik (antitone_periodFiltration ?_ (single_mem_periodFiltration _ _))
+      hp (antitone_periodFiltration ?_ (single_mem_periodFiltration _ _))
     rwa [period_succ_nsmul]
-  have hk : (k : ℝ) < C / c := by
-    rw [lt_div_iff₀ hc]
-    nlinarith [hcγ i, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
-  refine ⟨?_, Nat.lt_ceil.2 hk⟩
-  simp only [Set.mem_ofPred_eq]
-  nlinarith [hpos i, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
+  exact hlt.le
 
 /-- The orbit logarithm lies above every nonnegative lower bound of the periods. -/
 theorem orbitLog_mem_periodFiltration {c : ℝ} (hc₀ : 0 ≤ c) (hc : ∀ i, c ≤ N (γ i))
@@ -393,6 +415,64 @@ theorem hasSum_orbitLog_sigma_fin (hpos : ∀ i, 0 < N (γ i))
   have hs := (summable_sigma_fin_iff (fun p : ι × ℕ => c p.1) f).2 h.summable
   convert hs.hasSum using 1
   rw [tsum_sigma_fin, h.tsum_eq]
+
+/-- Only finitely many iterates of the orbits have a given class, when only finitely many periods
+lie below each cutoff. -/
+theorem finite_setOf_succ_nsmul_eq (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (h : H) :
+    {p : ι × ℕ | (p.2 + 1) • γ p.1 = h}.Finite :=
+  (finite_setOf_succ_mul_le hpos hfin (N h)).subset fun p (hp : (p.2 + 1) • γ p.1 = h) => by
+    rw [Set.mem_ofPred_eq, ← period_succ_nsmul, hp]
+
+/-- A family supported on the iterates of a given class has finite support, when only finitely
+many periods lie below each cutoff. -/
+theorem finite_support_ite_succ_nsmul_eq [DecidableEq H] {M : Type*} [Zero M]
+    (hpos : ∀ i, 0 < N (γ i)) (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (h : H)
+    (f : ι × ℕ → M) :
+    (Function.support fun p : ι × ℕ => if (p.2 + 1) • γ p.1 = h then f p else 0).Finite :=
+  (finite_setOf_succ_nsmul_eq hpos hfin h).subset
+    (Function.support_subset_iff'.2 fun _ hp => ite_eq_right hp)
+
+/-- **Coefficients of the orbit logarithm.** The coefficient of the orbit logarithm at `h` is the
+sum of `ε i (k + 1) / (k + 1)` over the finitely many iterates `(i, k)` of class
+`(k + 1) • γ i = h`. -/
+theorem coeff_orbitLog [DecidableEq H] (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (ε : ι → ℕ → ℤ) (h : H) :
+    (orbitLog K N γ ε).coeff h = algebraMap ℚ K (∑ᶠ p : ι × ℕ,
+      if (p.2 + 1) • γ p.1 = h then (ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ) else 0) := by
+  rw [coeff_eq_finsum_of_hasSum (hasSum_orbitLog hpos hfin ε) h,
+    map_finsum _ (finite_support_ite_succ_nsmul_eq hpos hfin h _)]
+  refine finsum_congr fun p => ?_
+  rw [coeff_single, Pi.single_apply]
+  by_cases hp : (p.2 + 1) • γ p.1 = h
+  · simp [hp]
+  · simp [hp, Ne.symm hp]
+
+section Map
+
+variable {H' K' : Type*} [AddCommMonoid H'] {N' : H' →+ ℝ} [CommRing K'] [Algebra ℚ K']
+
+/-- **Naturality of the orbit logarithm.** The pushforward along a ring homomorphism `ρ` of
+coefficients and an exponent homomorphism `φ` rescaling periods sends the orbit logarithm of the
+classes `γ i` to the orbit logarithm of their images `φ (γ i)`, with the same signs. -/
+theorem mapRingHom_orbitLog (ρ : K →+* K') (φ : H →+ H')
+    (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (ε : ι → ℕ → ℤ) :
+    mapRingHom ρ φ hφ (orbitLog K N γ ε) = orbitLog K' N' (φ ∘ γ) ε := by
+  rw [← ((hasSum_orbitLog hpos hfin ε).map _ (continuous_mapRingHom ρ φ hφ)).tsum_eq, orbitLog]
+  exact tsum_congr fun p => by simp [map_single, map_nsmul]
+
+/-- **Naturality of the orbit zeta function.** The pushforward along a ring homomorphism `ρ` of
+coefficients and an exponent homomorphism `φ` rescaling periods sends the orbit zeta function of
+the classes `γ i` to the orbit zeta function of their images `φ (γ i)`, with the same signs. -/
+theorem mapRingHom_orbitZeta (ρ : K →+* K') (φ : H →+ H')
+    (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (ε : ι → ℕ → ℤ) :
+    mapRingHom ρ φ hφ (orbitZeta K N γ ε) = orbitZeta K' N' (φ ∘ γ) ε := by
+  rw [orbitZeta_def, orbitZeta_def, ← mapRingHom_orbitLog ρ φ hφ hpos hfin ε]
+  exact mapRingHom_exp ρ φ hφ (orbitLog_mem_posIdeal hpos ε)
+
+end Map
 
 end OrbitZeta
 

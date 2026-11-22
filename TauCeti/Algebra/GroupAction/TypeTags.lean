@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Group.Action.TypeTags
 public import Mathlib.Algebra.Group.Pointwise.Set.Scalar
 public import Mathlib.Algebra.Group.Subgroup.Lattice
+public import Mathlib.Algebra.Group.TypeTags.Hom
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
+public import Mathlib.Algebra.Ring.Action.Submonoid
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.GroupTheory.GroupAction.Hom
 
@@ -41,6 +43,13 @@ This file also transfers cancellativity (`Additive.isLeftCancelVAdd`, `Additive.
 `Multiplicative.isLeftCancelSMul`, `Multiplicative.isCancelSMul`) and point stabilizers
 (`TauCeti.stabilizer_multiplicative`, `TauCeti.stabilizer_additive`) on the *acting* side,
 complementing `Additive.vadd` and `Multiplicative.smul`.
+
+The two transported actions have the same fixed points as the original ones:
+`FixedPoints.addSubgroup_additive` and `FixedPoints.subgroup_multiplicative` identify the fixed
+subgroup on a type tag with the image of the original fixed subgroup under Mathlib's subgroup
+correspondences `Subgroup.toAddSubgroup` and `AddSubgroup.toSubgroup`. Likewise
+`AddMonoidHom.toMultiplicative_map_smul` says that an additive homomorphism compatible with a map
+of acting monoids stays compatible on the multiplicative type tags.
 -/
 
 public section
@@ -128,6 +137,37 @@ theorem toAdd_smul (g : M) (x : Multiplicative A) : (g • x).toAdd = g • x.to
   rfl
 
 end Multiplicative
+
+namespace AddMonoidHom
+
+/-- An additive homomorphism `φ` compatible with a map of acting monoids `ψ`, in the sense that
+`φ (ψ g • m) = g • φ m`, stays compatible with `ψ` on the multiplicative type tags. -/
+theorem toMultiplicative_map_smul {M N A B : Type*} [Monoid M] [Monoid N] [AddMonoid A]
+    [AddMonoid B] [DistribMulAction M A] [DistribMulAction N B] (φ : A →+ B) (ψ : N → M)
+    (h : ∀ (g : N) (a : A), φ (ψ g • a) = g • φ a) (g : N) (x : Multiplicative A) :
+    φ.toMultiplicative (ψ g • x) = g • φ.toMultiplicative x := by
+  simp only [coe_toMultiplicative, Function.comp_apply, Multiplicative.toAdd_smul, h,
+    Multiplicative.ofAdd_smul]
+
+end AddMonoidHom
+
+namespace FixedPoints
+
+/-- The fixed points of the distributive action on `Additive A` are the fixed points of the action
+on `A`, read additively. -/
+theorem addSubgroup_additive (M A : Type*) [Monoid M] [Group A] [MulDistribMulAction M A] :
+    FixedPoints.addSubgroup M (Additive A) = (FixedPoints.subgroup M A).toAddSubgroup := by
+  ext x
+  simp [← Additive.toMul_smul, Additive.toMul.injective.eq_iff]
+
+/-- The fixed points of the action on `Multiplicative A` are the fixed points of the distributive
+action on `A`, read multiplicatively. -/
+theorem subgroup_multiplicative (M A : Type*) [Monoid M] [AddGroup A] [DistribMulAction M A] :
+    FixedPoints.subgroup M (Multiplicative A) = (FixedPoints.addSubgroup M A).toSubgroup := by
+  ext x
+  simp [← Multiplicative.toAdd_smul, Multiplicative.toAdd.injective.eq_iff]
+
+end FixedPoints
 
 namespace MulDistribMulActionHom
 

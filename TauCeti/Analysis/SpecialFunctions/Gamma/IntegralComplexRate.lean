@@ -43,6 +43,8 @@ integrable real majorant on `(0, ∞)`, giving holomorphy in `s` and joint analy
   `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_prod`,
   `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_left`: joint analyticity and
   holomorphy in `(s, z)` on `{0 < Re s} × {0 < Re z}`, and holomorphy in `s`.
+* `TauCeti.integral_norm_cpow_mul_exp_neg_mul_Ioi`: the integral of the norm of the integrand is
+  `(Re w)^{−Re s} Γ(Re s)`.
 
 ## References
 
@@ -197,4 +199,17 @@ theorem differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_left {w : ℂ} (hw : 
 
 end Complex
 
-end
+namespace TauCeti
+
+open Complex
+
+/-- For `Re s > 0` and `Re w > 0`, the integral of `|t^{s-1} e^{-wt}|` over `(0, ∞)` is
+`(1 / Re w)^{Re s} Γ(Re s)`. -/
+theorem integral_norm_cpow_mul_exp_neg_mul_Ioi {s w : ℂ} (hs : 0 < s.re) (hw : 0 < w.re) :
+    ∫ t in Ioi (0 : ℝ), ‖(t : ℂ) ^ (s - 1) * cexp (-(w * t))‖ =
+      (1 / w.re) ^ s.re * Real.Gamma s.re := by
+  rw [← Real.integral_rpow_mul_exp_neg_mul_Ioi hs hw]
+  refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
+  simpa [neg_mul] using norm_cpow_mul_log_pow_mul_exp_neg_mul (s - 1) w 0 ht
+
+end TauCeti
