@@ -39,9 +39,9 @@ by parts.
   `TauCeti.Probability.gaussianPDFReal_le`, and `TauCeti.Probability.gaussianPDF_le` — the density
   attains its global maximum `(√(2 * π * v))⁻¹` at the mean (with both sides vanishing when
   `v = 0`).
-* `TauCeti.Probability.tendsto_mul_gaussianPDFReal_zero_one_cocompact` — `x φ(x) → 0` as
-  `|x| → ∞`, for the standard Gaussian density `φ`.
-* `TauCeti.Probability.tendsto_gaussianPDFReal_zero_one_atBot` — `φ(x) → 0` as `x → -∞`.
+* `TauCeti.Probability.tendsto_gaussianPDFReal_cocompact` and
+  `TauCeti.Probability.tendsto_mul_gaussianPDFReal_cocompact` — every Gaussian density `g`
+  satisfies `g(x) → 0` and `x g(x) → 0` as `|x| → ∞`.
 * `TauCeti.Probability.hasDerivAt_gaussianPDFReal` — the derivative of the Gaussian density in
   its real argument is `-(x - μ) / v` times the density, for every variance.
 * `TauCeti.Probability.integrable_gaussianReal_iff_integrable_gaussianPDFReal_smul` — at positive
@@ -68,9 +68,7 @@ open scoped Topology NNReal
 `gaussianPDFReal 0 1 x = (√(2π))⁻¹ · e^{-x²/2}`. -/
 theorem gaussianPDFReal_zero_one (x : ℝ) :
     gaussianPDFReal 0 1 x = (Real.sqrt (2 * π))⁻¹ * Real.exp (-(x ^ 2 / 2)) := by
-  rw [gaussianPDFReal]
-  simp only [NNReal.coe_one, mul_one, sub_zero]
-  rw [show -x ^ 2 / 2 = -(x ^ 2 / 2) from by ring]
+  simp [gaussianPDFReal, neg_div]
 
 /-- Standardization of the Gaussian density: the density of `N(m, v)` at `x` is
 `φ ((x - m) / √v) / √v`, where `φ = gaussianPDFReal 0 1` is the standard Gaussian density. At zero
@@ -126,26 +124,39 @@ theorem gaussianPDF_le (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
     gaussianPDF μ v x ≤ ENNReal.ofReal (√(2 * π * (v : ℝ)))⁻¹ :=
   ENNReal.ofReal_le_ofReal (gaussianPDFReal_le μ v x)
 
-/-- The standard Gaussian density decays faster than `1 / |x|`: `x φ(x) → 0` as `|x| → ∞`. -/
-theorem tendsto_mul_gaussianPDFReal_zero_one_cocompact :
-    Tendsto (fun x => x * gaussianPDFReal 0 1 x) (cocompact ℝ) (𝓝 0) := by
-  have h := (tendsto_rpow_abs_mul_exp_neg_mul_sq_cocompact (a := 1 / 2) one_half_pos 1).const_mul
-    (√(2 * π))⁻¹
+/-- Every Gaussian density tends to `0` as `|x| → ∞` (at zero variance it vanishes
+identically). -/
+theorem tendsto_gaussianPDFReal_cocompact (μ : ℝ) (v : ℝ≥0) :
+    Tendsto (gaussianPDFReal μ v) (cocompact ℝ) (𝓝 0) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · exact gaussianPDFReal_zero_var μ ▸ tendsto_const_nhds
+  have h := ((tendsto_rpow_abs_mul_exp_neg_mul_sq_cocompact (a := (2 * (v : ℝ))⁻¹)
+    (by positivity) 0).comp (Homeomorph.subRight μ).isClosedEmbedding.tendsto_cocompact).const_mul
+    (√(2 * π * (v : ℝ)))⁻¹
   rw [mul_zero] at h
-  refine tendsto_zero_iff_norm_tendsto_zero.2 (h.congr fun x => ?_)
-  simp only [gaussianPDFReal_zero_one, rpow_one, norm_mul, norm_eq_abs, abs_exp,
-    abs_of_pos (inv_pos.2 (sqrt_pos.2 (by positivity : (0 : ℝ) < 2 * π)))]
+  refine h.congr fun x => ?_
+  simp only [Function.comp_apply, Homeomorph.coe_subRight, rpow_zero, one_mul, gaussianPDFReal]
   ring_nf
 
-/-- The standard Gaussian density tends to `0` at `-∞`. -/
-theorem tendsto_gaussianPDFReal_zero_one_atBot :
-    Tendsto (gaussianPDFReal 0 1) atBot (𝓝 0) := by
-  have h := (tendsto_mul_gaussianPDFReal_zero_one_cocompact.mono_left atBot_le_cocompact).mul
-    tendsto_inv_atBot_zero
-  rw [mul_zero] at h
-  refine h.congr' ?_
-  filter_upwards [eventually_lt_atBot 0] with x hx
-  rw [mul_comm x, mul_assoc, mul_inv_cancel₀ hx.ne, mul_one]
+/-- Every Gaussian density decays faster than `1 / |x|`: `x * gaussianPDFReal μ v x → 0` as
+`|x| → ∞`. -/
+theorem tendsto_mul_gaussianPDFReal_cocompact (μ : ℝ) (v : ℝ≥0) :
+    Tendsto (fun x => x * gaussianPDFReal μ v x) (cocompact ℝ) (𝓝 0) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp [gaussianPDFReal_zero_var]
+  -- the centered weight `(x - μ) * gaussianPDFReal μ v x` tends to `0`
+  have h₁ : Tendsto (fun x => (x - μ) * gaussianPDFReal μ v x) (cocompact ℝ) (𝓝 0) := by
+    have h := ((tendsto_rpow_abs_mul_exp_neg_mul_sq_cocompact (a := (2 * (v : ℝ))⁻¹)
+      (by positivity) 1).comp (Homeomorph.subRight μ).isClosedEmbedding.tendsto_cocompact).const_mul
+      (√(2 * π * (v : ℝ)))⁻¹
+    rw [mul_zero] at h
+    refine tendsto_zero_iff_norm_tendsto_zero.2 (h.congr fun x => ?_)
+    simp only [Function.comp_apply, Homeomorph.coe_subRight, rpow_one, gaussianPDFReal,
+      norm_mul, norm_eq_abs, abs_exp, abs_inv, abs_of_nonneg (sqrt_nonneg _)]
+    ring_nf
+  have h := h₁.add ((tendsto_gaussianPDFReal_cocompact μ v).const_mul μ)
+  rw [mul_zero, add_zero] at h
+  exact h.congr fun x => by ring
 
 /-- The derivative of the Gaussian density in its real argument is `-(x - μ) / v` times the
 density. At zero variance both sides vanish. -/
@@ -154,18 +165,11 @@ theorem hasDerivAt_gaussianPDFReal (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
   rcases eq_or_ne v 0 with rfl | hv
   · simp [gaussianPDFReal_zero_var]
   rw [gaussianPDFReal_def]
-  have hv' : (v : ℝ) ≠ 0 := NNReal.coe_ne_zero.mpr hv
-  have hq :
-      HasDerivAt (fun x : ℝ => -(x - μ) ^ 2 / (2 * (v : ℝ)))
-        (-(x - μ) / (v : ℝ)) x := by
-    convert ((((hasDerivAt_id x).sub_const μ).pow 2).neg.div_const (2 * (v : ℝ))) using 1
-    · ext y
-      simp only [id_eq, Pi.neg_apply, Pi.pow_apply]
-    · simp only [id_eq]
-      field_simp [hv']
-      ring_nf
-  convert hq.exp.const_mul (Real.sqrt (2 * π * (v : ℝ)))⁻¹ using 1
-  · ring_nf
+  -- the derivative of the exponent `-(x - μ) ^ 2 / (2 * v)`
+  have hq := (((hasDerivAt_id' x).sub_const μ).fun_pow 2).fun_neg.div_const (2 * (v : ℝ))
+  convert hq.exp.const_mul (√(2 * π * (v : ℝ)))⁻¹ using 1
+  field_simp
+  ring
 
 /-- At positive variance, a function is integrable against `gaussianReal μ v` if and only if its
 product with the Gaussian density is Lebesgue integrable. -/
