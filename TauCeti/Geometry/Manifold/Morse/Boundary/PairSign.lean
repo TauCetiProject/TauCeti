@@ -194,6 +194,14 @@ theorem signedPairCount_def
       ∑ᶠ y ∈ hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet q, hX₀.pairSign hX₁ φp φq op oq hpq y :=
   (rfl)
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- The index of the source is the dimension of the space carrying `oq`. -/
+private theorem card_fin_eq_finrank_negativeWeight_fun
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q) :
+    Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f₀ p)) =
+      Module.finrank ℝ ({i // φq.weight i < 0} → ℝ) := by
+  rw [Fintype.card_fin, φq.finrank_negativeWeight_fun, hpq]
+
 variable {hX₀ hX₁ φp φq}
   {op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f₀ p))}
   {oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f₁ q))}
@@ -228,7 +236,7 @@ theorem exists_pairSign_eq_and_map_eq {y : M} (h : Bijective (hX₀.pairComparis
         Units.map (Int.castRingHom ℝ).toMonoidHom u •
           Orientation.reindex ℝ _ (finCongr hpq.symm) oq :=
   Orientation.exists_linearMapSign_eq_and_map_eq
-    (by rw [Fintype.card_fin, φq.finrank_negativeWeight_fun, hpq]) h
+    (card_fin_eq_finrank_negativeWeight_fun φq hpq) h
 
 /-- **Reading off the sign.** If a linear equivalence `L` agrees with the comparison map and
 carries `op` to `oq`, reindexed, scaled by a unit sign `u`, the sign of the point is `u`. -/
@@ -246,7 +254,7 @@ theorem pairSign_eq_of_map_eq {y : M}
 theorem pairSign_neg_left (y : M) :
     hX₀.pairSign hX₁ φp φq (-op) oq hpq y = -hX₀.pairSign hX₁ φp φq op oq hpq y :=
   Orientation.linearMapSign_neg_left
-    (by rw [Fintype.card_fin, φq.finrank_negativeWeight_fun, hpq])
+    (card_fin_eq_finrank_negativeWeight_fun φq hpq)
 
 /-- **Reversing the orientation at the target reverses the sign.** -/
 @[simp]
@@ -254,7 +262,7 @@ theorem pairSign_neg_right (y : M) :
     hX₀.pairSign hX₁ φp φq op (-oq) hpq y = -hX₀.pairSign hX₁ φp φq op oq hpq y := by
   rw [pairSign_def, pairSign_def, Orientation.reindex_neg]
   exact Orientation.linearMapSign_neg_right
-    (by rw [Fintype.card_fin, φq.finrank_negativeWeight_fun, hpq])
+    (card_fin_eq_finrank_negativeWeight_fun φq hpq)
 
 /-- Reversing the orientation at the source reverses the signed count. -/
 @[simp]
@@ -354,7 +362,8 @@ theorem pairSign_self
     hX.pairSign hX φ φ o o rfl x = 1 := by
   have h := pairSign_eq_of_map_eq (hX₀ := hX) (hX₁ := hX) (op := o) (oq := o) (hpq := rfl)
     (LinearEquiv.refl ℝ _)
-    (fun v ↦ by rw [pairComparison_self hφ]; rfl) (u := 1)
+    (fun v ↦ by rw [pairComparison_self hφ, LinearEquiv.refl_apply, ContinuousLinearMap.id_apply])
+    (u := 1)
     (by rw [Orientation.map_refl, finCongr_refl, Orientation.reindex_refl]; simp)
   exact h.trans Units.val_one
 

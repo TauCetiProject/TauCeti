@@ -162,6 +162,14 @@ variable {p : M}
   {oq : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x))}
   {hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f x + 1}
 
+/-- The index of the source is the dimension of `ℝ × V`, which carries the target orientation. -/
+private theorem card_fin_eq_finrank_prod
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f x + 1) :
+    Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) =
+      Module.finrank ℝ (ℝ × ({i // φ.weight i < 0} → ℝ)) := by
+  rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
+  omega
+
 /-- The defining formula of the target orientation. -/
 theorem trajectoryTargetOrientation_def :
     φ.trajectoryTargetOrientation oq hpq = Orientation.reindex ℝ _
@@ -181,9 +189,7 @@ theorem trajectoryTargetOrientation_neg :
 theorem eq_or_eq_neg_trajectoryTargetOrientation
     (o : Orientation ℝ (ℝ × ({i // φ.weight i < 0} → ℝ)) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p))) :
     o = φ.trajectoryTargetOrientation oq hpq ∨ o = -φ.trajectoryTargetOrientation oq hpq :=
-  o.eq_or_eq_neg _ (by
-    rw [Nat.card_fin, Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
-    omega)
+  o.eq_or_eq_neg _ (Nat.card_eq_fintype_card.trans (φ.card_fin_eq_finrank_prod hpq))
 
 /-- Transporting the orientation `oq` of the coordinates of negative weight of `φ` to those of
 another Morse chart `φ'` at the same point, along a linear isomorphism `e`, transports the target
@@ -298,9 +304,7 @@ theorem exists_trajectorySign_eq_and_map_eq {y : M}
       Orientation.map _ (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y).toLinearMap h)
           op =
         Units.map (Int.castRingHom ℝ).toMonoidHom u • φq.trajectoryTargetOrientation oq hpq :=
-  Orientation.exists_linearMapSign_eq_and_map_eq (by
-    rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]
-    omega) h
+  Orientation.exists_linearMapSign_eq_and_map_eq (φq.card_fin_eq_finrank_prod hpq) h
 
 /-- **Reading off the sign.** If a linear equivalence `L` agrees with the comparison map and
 carries `op` to the target orientation scaled by a unit sign `u`, the sign of the trajectory is
@@ -317,18 +321,14 @@ theorem trajectorySign_eq_of_map_eq {y : M}
 @[simp]
 theorem trajectorySign_neg_left (y : M) :
     hX.trajectorySign φp φq (-op) oq hpq y = -hX.trajectorySign φp φq op oq hpq y :=
-  Orientation.linearMapSign_neg_left (by
-    rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]
-    omega)
+  Orientation.linearMapSign_neg_left (φq.card_fin_eq_finrank_prod hpq)
 
 /-- **Reversing the orientation at the target reverses the sign.** -/
 @[simp]
 theorem trajectorySign_neg_right (y : M) :
     hX.trajectorySign φp φq op (-oq) hpq y = -hX.trajectorySign φp φq op oq hpq y := by
   rw [trajectorySign_def, trajectorySign_def, MorseChart.trajectoryTargetOrientation_neg]
-  exact Orientation.linearMapSign_neg_right (by
-    rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]
-    omega)
+  exact Orientation.linearMapSign_neg_right (φq.card_fin_eq_finrank_prod hpq)
 
 /-- **Measuring signs against a basis at the target.** The sign of a trajectory for the
 orientation of a basis `b` of the coordinates of negative weight at the target is its sign for
@@ -493,11 +493,7 @@ theorem trajectorySign_flow (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f
     have hee : e' = e.trans B := LinearEquiv.ext fun v ↦ by
       rw [LinearEquiv.trans_apply, hBe, e.symm_apply_apply]
     rw [hee, Orientation.map_trans]
-  have hcard : Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) =
-      Module.finrank ℝ (ℝ × ({i // φq.weight i < 0} → ℝ)) := by
-    rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]
-    omega
-  rw [hmap, ((Orientation.map _ e op).map_eq_iff_det_pos B hcard).2
+  rw [hmap, ((Orientation.map _ e op).map_eq_iff_det_pos B (φq.card_fin_eq_finrank_prod hpq)).2
     (by rw [LinearMap.det_eq_fst_of_snd_eq _ hB]; exact h1)]
 
 /-- **The comparison maps vary continuously on `W^u(p) ∩ W^s(q)`.** The comparison map at `y`
