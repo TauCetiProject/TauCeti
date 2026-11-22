@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Uniform
+public import Mathlib.Analysis.Normed.Module.Convex
+public import Mathlib.Topology.Homotopy.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
@@ -15,7 +16,9 @@ An open partial homeomorphism `e : M → V` into a pseudometric space pulls the 
 about `e b` back to the open set `OpenPartialHomeomorph.chartBall e b ε` of `M`, a neighbourhood
 of `b` when `b ∈ e.source` and `0 < ε`. When `V` is a seminormed group and the ball lies in the
 target of `e`, the map `x ↦ e x - e b` is a homeomorphism of this set with the ball of radius `ε`
-about `0` (`OpenPartialHomeomorph.chartBallHomeomorph`).
+about `0` (`OpenPartialHomeomorph.chartBallHomeomorph`). When moreover `V` is a real normed
+space and `b ∈ e.source`, straight lines to `e b` contract every map into this set onto the
+constant map at `b` (`OpenPartialHomeomorph.chartBallHomotopy`).
 -/
 
 public section
@@ -89,5 +92,38 @@ lemma chartBallHomeomorph_eq_zero_iff (hb : b ∈ e.source) (x : chartBall e b �
   exact e.injOn.eq_iff (e.chartBall_subset_source b ε x.property) hb
 
 end SeminormedAddCommGroup
+
+section NormedSpace
+
+variable {X M V : Type*} [TopologicalSpace X] [TopologicalSpace M] [SeminormedAddCommGroup V]
+  [NormedSpace ℝ V] (e : OpenPartialHomeomorph M V) {b : M} (hb : b ∈ e.source) {ε : ℝ}
+  (hε : ball (e b) ε ⊆ e.target)
+
+include hb hε in
+/-- **Maps into a chart ball are nullhomotopic.** A continuous map `g` into the chart ball
+`chartBall e b ε`, for a ball about `e b` inside the target of `e`, is homotopic to the constant
+map at `b`, through `(t, x) ↦ e.symm (e b + (1 - t) • (e (g x) - e b))`: straight lines to `e b`
+in the chart. -/
+def chartBallHomotopy {g : C(X, M)} (hg : ∀ x, g x ∈ chartBall e b ε) :
+    g.Homotopy (ContinuousMap.const X b) where
+  toFun z := e.symm (e b + (1 - (z.1 : ℝ)) • (e (g z.2) - e b))
+  continuous_toFun := by
+    have heg : Continuous fun x ↦ e (g x) :=
+      e.continuousOn.comp_continuous g.continuous fun x ↦ (hg x).1
+    refine e.continuousOn_symm.comp_continuous (continuous_const.add
+      ((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).smul
+        ((heg.comp continuous_snd).sub continuous_const))) fun z ↦ hε ?_
+    exact (convex_ball (e b) ε).add_smul_sub_mem (mem_ball_self (pos_of_mem_ball (hg z.2).2))
+      (hg z.2).2 ⟨unitInterval.one_sub_nonneg z.1, unitInterval.one_sub_le_one z.1⟩
+  map_zero_left x := by simp [e.left_inv (hg x).1]
+  map_one_left x := by simp [e.left_inv hb]
+
+@[simp]
+lemma chartBallHomotopy_apply {g : C(X, M)} (hg : ∀ x, g x ∈ chartBall e b ε)
+    (z : unitInterval × X) :
+    chartBallHomotopy e hb hε hg z = e.symm (e b + (1 - (z.1 : ℝ)) • (e (g z.2) - e b)) :=
+  (rfl)
+
+end NormedSpace
 
 end OpenPartialHomeomorph

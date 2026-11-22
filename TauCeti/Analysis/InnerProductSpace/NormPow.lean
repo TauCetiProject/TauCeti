@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
 public import Mathlib.LinearAlgebra.Trace
+public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -33,7 +34,9 @@ exponent of a rotationally symmetric metric written over flat space.
 
 The Hessian is bounded by `‖x‖ ^ (p - 2)` in size and, for `p ≤ 3`, by `‖a - b‖ ‖b‖ ^ (p - 3)`
 in its variation between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.  For negative `p` these are
-the size and smoothness estimates of a singular integral kernel.
+the size and smoothness estimates of a singular integral kernel.  For `2 < p ≤ 3` they make the
+Hessian `(p - 2)`-Hölder on the whole space, and no better near the origin, where it vanishes: the
+radial power `‖x‖ ^ (2 + α)` is a `C^{2,α}` function that is not `C^{2,β}` for `β > α`.
 
 The first derivative proof adapts Mathlib's `hasFDerivAt_norm_rpow`, retaining its norm-square
 chain-rule argument while replacing the global exponent hypothesis with the local condition
@@ -61,10 +64,19 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
   in operator norm when a nonzero direction is orthogonal to `x`.
 * `norm_iteratedFDeriv_two_norm_rpow_sub_le`: for `p ≤ 3`, the Hessian changes by
   `O(‖a - b‖ ‖b‖ ^ (p - 3))` between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.
+* `iteratedFDeriv_two_norm_rpow_zero`, `norm_iteratedFDeriv_two_norm_rpow_le_of_two_lt`: for
+  `p > 2` the Hessian vanishes at the origin, so the size bound holds everywhere.
+* `holderWith_iteratedFDeriv_two_norm_rpow_two_add`: for `0 < α ≤ 1` the Hessian of
+  `‖x‖ ^ (2 + α)` is `α`-Hölder on the whole space.
+* `iteratedFDeriv_two_norm_rpow_smul_apply`: along a ray the radial second derivative is
+  `p (p - 1) t ^ (p - 2)`.
+* `not_holderOnWith_iteratedFDeriv_two_norm_rpow`: for `p > 2` the Hessian is not `β`-Hölder near
+  the origin for any `β > p - 2`.
 * `contDiffAt_of_eventuallyEq_comp_log_norm_sub_log_norm`: if a `Cⁿ` function agrees near `y ≠ 0`
   with `w(log ‖z‖) - log ‖z‖`, then `w` is `Cⁿ` at `log ‖y‖`.
 * `laplacian_norm_rpow_of_ne`: the radial Laplacian formula
   `Δ ‖x‖^p = p (p + dim E - 2) ‖x‖^(p-2)` away from zero.
+* `laplacian_norm_rpow_of_two_lt`: for `p > 2` the same formula holds at every point.
 * `ContDiffAt.laplacian_comp_norm`: the Laplacian of a radial function,
   `Δ F(‖x‖) = F''(‖x‖) + (dim E - 1) F'(‖x‖) / ‖x‖` away from zero.
 * `laplacian_inner_mul_norm_rpow_of_ne`: the dipole formula
@@ -88,7 +100,7 @@ noncomputable section
 namespace TauCeti
 
 open Filter InnerProductSpace Laplacian Topology
-open scoped RealInnerProductSpace ContDiff Gradient
+open scoped RealInnerProductSpace ContDiff Gradient NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
@@ -572,6 +584,160 @@ theorem norm_iteratedFDeriv_two_norm_rpow_sub_le {p : ℝ} (hp : p ≤ 3) {a b :
   simpa only [hg, one_smul, zero_smul, add_zero, hd, add_sub_cancel, Matrix.cons_val_zero,
     Matrix.cons_val_one] using hmvt
 
+/-- For `p > 2` the Hessian of `x ↦ ‖x‖ ^ p` vanishes at the origin: it is homogeneous of the
+positive degree `p - 2`. -/
+theorem iteratedFDeriv_two_norm_rpow_zero {p : ℝ} (hp : 2 < p) :
+    iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ p) 0 = 0 :=
+  iteratedFDeriv_at_zero_eq_zero_of_homogeneous (p := p) (fun t ht y ↦ by
+    simp only [norm_smul, Real.norm_of_nonneg ht.le, Real.mul_rpow ht.le (norm_nonneg y),
+      smul_eq_mul]) (by push_cast; linarith)
+
+/-- For `p > 2` the Hessian of `x ↦ ‖x‖ ^ p` has operator norm at most
+`|p| (|p - 2| + 1) ‖x‖ ^ (p - 2)` at every point, including the origin. -/
+theorem norm_iteratedFDeriv_two_norm_rpow_le_of_two_lt {p : ℝ} (hp : 2 < p) (x : E) :
+    ‖iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ p) x‖ ≤ |p| * (|p - 2| + 1) * ‖x‖ ^ (p - 2) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · rw [iteratedFDeriv_two_norm_rpow_zero hp, norm_zero]
+    positivity
+  · exact norm_iteratedFDeriv_two_norm_rpow_le p hx
+
+/-- Near the diagonal, `2 ‖a - b‖ ≤ ‖b‖`, the Hessian of `x ↦ ‖x‖ ^ (2 + α)` changes by at most
+`30 ‖a - b‖ ^ α`, by the variation bound `norm_iteratedFDeriv_two_norm_rpow_sub_le`. -/
+private theorem norm_iteratedFDeriv_two_norm_rpow_two_add_sub_le_of_two_mul_le {α : ℝ}
+    (hα0 : 0 < α) (hα1 : α ≤ 1) {a b : E} (hab : 2 * ‖a - b‖ ≤ ‖b‖) :
+    ‖iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ (2 + α)) a -
+        iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ (2 + α)) b‖ ≤ 30 * ‖a - b‖ ^ α := by
+  have h := norm_iteratedFDeriv_two_norm_rpow_sub_le (p := 2 + α) (by linarith) hab
+  -- `‖a - b‖ ‖b‖ ^ (α - 1) ≤ ‖a - b‖ ^ α`, since `‖a - b‖ ≤ ‖b‖` and `α ≤ 1`.
+  have hd : ‖a - b‖ * ‖b‖ ^ (2 + α - 3) ≤ ‖a - b‖ ^ α := by
+    rcases eq_or_lt_of_le (norm_nonneg (a - b)) with h0 | h0
+    · rw [← h0, zero_mul, Real.zero_rpow hα0.ne']
+    have hb : 0 < ‖b‖ := by linarith
+    have hsplit : ‖a - b‖ ^ α * ‖a - b‖ ^ (1 - α) = ‖a - b‖ := by
+      rw [← Real.rpow_add h0, add_sub_cancel, Real.rpow_one]
+    have hone : ‖b‖ ^ (1 - α) * ‖b‖ ^ (2 + α - 3) = 1 := by
+      rw [← Real.rpow_add hb, show 1 - α + (2 + α - 3) = 0 by ring, Real.rpow_zero]
+    calc ‖a - b‖ * ‖b‖ ^ (2 + α - 3)
+        = ‖a - b‖ ^ α * (‖a - b‖ ^ (1 - α) * ‖b‖ ^ (2 + α - 3)) := by
+          rw [← mul_assoc, hsplit]
+      _ ≤ ‖a - b‖ ^ α * (‖b‖ ^ (1 - α) * ‖b‖ ^ (2 + α - 3)) := by
+          gcongr
+          linarith
+      _ = ‖a - b‖ ^ α := by rw [hone, mul_one]
+  have h2 : (2 : ℝ) ^ (3 - (2 + α)) ≤ 2 := by
+    calc (2 : ℝ) ^ (3 - (2 + α)) ≤ 2 ^ (1 : ℝ) :=
+          Real.rpow_le_rpow_of_exponent_le (by norm_num) (by linarith)
+      _ = 2 := Real.rpow_one 2
+  have hK : |(2 + α) * (2 + α - 2)| * (7 - (2 + α)) * 2 ^ (3 - (2 + α)) ≤ 30 := by
+    rw [abs_of_nonneg (by nlinarith)]
+    calc (2 + α) * (2 + α - 2) * (7 - (2 + α)) * 2 ^ (3 - (2 + α)) ≤ 3 * 5 * 2 :=
+          mul_le_mul (mul_le_mul (by nlinarith) (by linarith) (by linarith) (by norm_num)) h2
+            (by positivity) (by norm_num)
+      _ = 30 := by norm_num
+  calc _ ≤ _ := h
+    _ = |(2 + α) * (2 + α - 2)| * (7 - (2 + α)) * 2 ^ (3 - (2 + α)) *
+        (‖a - b‖ * ‖b‖ ^ (2 + α - 3)) := by ring
+    _ ≤ 30 * ‖a - b‖ ^ α := mul_le_mul hK hd (by positivity) (by norm_num)
+
+/-- Far from the diagonal, `‖b‖ < 2 ‖a - b‖`, the Hessian of `x ↦ ‖x‖ ^ (2 + α)` changes by at most
+`30 ‖a - b‖ ^ α`: then `‖a‖ < 3 ‖a - b‖`, and both Hessians are at most `6 ‖·‖ ^ α` by the size
+bound `norm_iteratedFDeriv_two_norm_rpow_le_of_two_lt`. -/
+private theorem norm_iteratedFDeriv_two_norm_rpow_two_add_sub_le_of_lt_two_mul {α : ℝ}
+    (hα0 : 0 < α) (hα1 : α ≤ 1) {a b : E} (hab : ‖b‖ < 2 * ‖a - b‖) :
+    ‖iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ (2 + α)) a -
+        iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ (2 + α)) b‖ ≤ 30 * ‖a - b‖ ^ α := by
+  have hB (x : E) : ‖iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ (2 + α)) x‖ ≤ 6 * ‖x‖ ^ α := by
+    have h := norm_iteratedFDeriv_two_norm_rpow_le_of_two_lt (p := 2 + α) (by linarith) x
+    rw [show 2 + α - 2 = α by ring, abs_of_pos (by linarith : (0 : ℝ) < 2 + α),
+      abs_of_pos hα0] at h
+    exact h.trans (mul_le_mul_of_nonneg_right (by nlinarith) (by positivity))
+  have hpow {c x : ℝ} (hc : 1 ≤ c) (hx : 0 ≤ x) : (c * x) ^ α ≤ c * x ^ α := by
+    rw [Real.mul_rpow (by linarith) hx]
+    gcongr
+    calc c ^ α ≤ c ^ (1 : ℝ) := Real.rpow_le_rpow_of_exponent_le hc hα1
+      _ = c := Real.rpow_one c
+  have h3 : ‖a‖ ^ α ≤ 3 * ‖a - b‖ ^ α :=
+    (Real.rpow_le_rpow (norm_nonneg _) (by linarith [norm_sub_norm_le a b]) hα0.le).trans
+      (hpow (by norm_num) (norm_nonneg _))
+  have h2 : ‖b‖ ^ α ≤ 2 * ‖a - b‖ ^ α :=
+    (Real.rpow_le_rpow (norm_nonneg _) hab.le hα0.le).trans (hpow (by norm_num) (norm_nonneg _))
+  calc _ ≤ _ := norm_sub_le _ _
+    _ ≤ 6 * ‖a‖ ^ α + 6 * ‖b‖ ^ α := add_le_add (hB a) (hB b)
+    _ ≤ 30 * ‖a - b‖ ^ α := by linarith
+
+/-- For `0 < α ≤ 1` the Hessian of `x ↦ ‖x‖ ^ (2 + α)` is `α`-Hölder on the whole space, with
+constant `30`. -/
+theorem holderWith_iteratedFDeriv_two_norm_rpow_two_add {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α ≤ 1) :
+    HolderWith 30 α (iteratedFDeriv ℝ 2 fun y : E ↦ ‖y‖ ^ (2 + (α : ℝ))) := by
+  have ha0 : (0 : ℝ) < α := hα0
+  have ha1 : (α : ℝ) ≤ 1 := hα1
+  refine holderOnWith_univ.mp (HolderOnWith.of_dist_le fun a _ b _ ↦ ?_)
+  rw [dist_eq_norm, dist_eq_norm]
+  push_cast
+  rcases le_or_gt (2 * ‖a - b‖) ‖b‖ with hab | hab
+  · exact norm_iteratedFDeriv_two_norm_rpow_two_add_sub_le_of_two_mul_le ha0 ha1 hab
+  · exact norm_iteratedFDeriv_two_norm_rpow_two_add_sub_le_of_lt_two_mul ha0 ha1 hab
+
+/-- On a unit vector `e`, the Hessian of `x ↦ ‖x‖ ^ p` at `t • e`, `t > 0`, evaluated on `(e, e)` is
+the second derivative `p (p - 1) t ^ (p - 2)` of `t ↦ t ^ p`. -/
+theorem iteratedFDeriv_two_norm_rpow_smul_apply (p : ℝ) {e : E} (he : ‖e‖ = 1) {t : ℝ}
+    (ht : 0 < t) :
+    iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ p) (t • e) ![e, e] = p * (p - 1) * t ^ (p - 2) := by
+  have hte : t • e ≠ 0 := by
+    rw [← norm_ne_zero_iff, norm_smul, he, mul_one, Real.norm_of_nonneg ht.le]
+    exact ht.ne'
+  rw [iteratedFDeriv_two_norm_rpow_apply p hte, norm_smul, he, mul_one,
+    Real.norm_of_nonneg ht.le, real_inner_smul_left, real_inner_self_eq_norm_sq, he]
+  have h42 : t ^ (p - 4) * t * t = t ^ (p - 2) := by
+    rw [mul_assoc, ← sq, ← Real.rpow_natCast, ← Real.rpow_add ht]
+    congr 1
+    push_cast
+    ring
+  linear_combination (p * (p - 2)) * h42
+
+/-- For `p > 2` and `β > p - 2` the Hessian of `x ↦ ‖x‖ ^ p` is not `β`-Hölder on any
+neighbourhood of the origin, whatever the constant: it vanishes at the origin, and along a ray it
+grows like `p (p - 1) ‖x‖ ^ (p - 2)` (`iteratedFDeriv_two_norm_rpow_smul_apply`). -/
+theorem not_holderOnWith_iteratedFDeriv_two_norm_rpow [Nontrivial E] {p : ℝ} (hp : 2 < p)
+    {β C : ℝ≥0} (hβ : p - 2 < β) {s : Set E} (hs : s ∈ 𝓝 0) :
+    ¬ HolderOnWith C β (iteratedFDeriv ℝ 2 fun y : E ↦ ‖y‖ ^ p) s := by
+  intro hH
+  obtain ⟨e, he⟩ := exists_norm_eq E zero_le_one
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp hs
+  -- On the ray through `e`, the Hölder bound against the origin reads
+  -- `p (p - 1) t ^ (p - 2) ≤ C t ^ β`.
+  have key (t : ℝ) (ht : 0 < t) (htε : t < ε) : p * (p - 1) * t ^ (p - 2) ≤ C * t ^ (β : ℝ) := by
+    have hmem : t • e ∈ s := hball (mem_ball_zero_iff.mpr (by
+      rw [norm_smul, he, mul_one, Real.norm_of_nonneg ht.le]
+      exact htε))
+    have hd := hH.dist_le hmem (mem_of_mem_nhds hs)
+    rw [dist_zero_right, dist_eq_norm, iteratedFDeriv_two_norm_rpow_zero hp, sub_zero,
+      norm_smul, he, mul_one, Real.norm_of_nonneg ht.le] at hd
+    have hpos : 0 ≤ p * (p - 1) * t ^ (p - 2) := by
+      have : 0 ≤ p - 1 := by linarith
+      positivity
+    calc p * (p - 1) * t ^ (p - 2)
+        = ‖iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ p) (t • e) ![e, e]‖ := by
+          rw [iteratedFDeriv_two_norm_rpow_smul_apply p he ht, Real.norm_of_nonneg hpos]
+      _ ≤ ‖iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ p) (t • e)‖ * ∏ i, ‖![e, e] i‖ :=
+          (iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ p) (t • e)).le_opNorm _
+      _ = ‖iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ p) (t • e)‖ := by
+          simp [Fin.prod_univ_two, he]
+      _ ≤ C * t ^ (β : ℝ) := hd
+  -- Since `β > p - 2`, dividing by `t ^ (p - 2)` leaves `p (p - 1) ≤ C t ^ (β - (p - 2)) → 0`.
+  have hγ : 0 < (β : ℝ) - (p - 2) := by linarith
+  have hlim : Tendsto (fun t : ℝ ↦ (C : ℝ) * t ^ ((β : ℝ) - (p - 2))) (𝓝[>] 0) (𝓝 0) := by
+    have h := ((Real.continuous_rpow_const hγ.le).tendsto 0).const_mul (C : ℝ)
+    rw [Real.zero_rpow hγ.ne', mul_zero] at h
+    exact h.mono_left nhdsWithin_le_nhds
+  have hpos : 0 < p * (p - 1) := by nlinarith
+  obtain ⟨t, hlt, ht, htε⟩ :=
+    ((hlim.eventually (gt_mem_nhds hpos)).and (Ioo_mem_nhdsGT hε)).exists
+  have h := key t ht htε
+  rw [show (β : ℝ) = ((β : ℝ) - (p - 2)) + (p - 2) by ring, Real.rpow_add ht, ← mul_assoc] at h
+  have := le_of_mul_le_mul_right h (Real.rpow_pos_of_pos ht _)
+  linarith
+
 variable [FiniteDimensional ℝ E]
 
 /-- The divergence of the radial field `x ↦ ‖x‖ ^ p • x`: the trace of its derivative
@@ -627,6 +793,16 @@ theorem laplacian_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
       _ = ‖x‖ ^ (p - 2) := by ring_nf
   rw [mul_assoc (p * (p - 2)), hrpow]
   ring
+
+/-- For `p > 2` the Laplacian of `x ↦ ‖x‖ ^ p` is `p (p + dim E - 2) ‖x‖ ^ (p - 2)` at every
+point, including the origin, where both sides vanish. -/
+theorem laplacian_norm_rpow_of_two_lt {p : ℝ} (hp : 2 < p) (x : E) :
+    Δ (fun y : E ↦ ‖y‖ ^ p) x = p * (p + Module.finrank ℝ E - 2) * ‖x‖ ^ (p - 2) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis
+      (fun y : E ↦ ‖y‖ ^ p) (stdOrthonormalBasis ℝ E)) 0, iteratedFDeriv_two_norm_rpow_zero hp]
+    simp [Real.zero_rpow (by linarith : p - 2 ≠ 0)]
+  · exact laplacian_norm_rpow_of_ne p hx
 
 open Gradient in
 /-- **The radial Laplacian.** Away from the origin, a radial function `x ↦ F ‖x‖` has Laplacian

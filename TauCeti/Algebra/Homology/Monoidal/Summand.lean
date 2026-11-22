@@ -33,6 +33,8 @@ The curried tensor bifunctor on cochain complexes is also identified with `tenso
 * `HomologicalComplex.ι_tensorHom`: the tensor product of two morphisms on a homogeneous summand.
 * `HomologicalComplex.XIsoOfEq_hom_tensorHom_XIsoOfEq_hom_ιTensorObj`: identifying the degrees of
   the two factors of a homogeneous summand along equalities of indices.
+* `HomologicalComplex.ιTensorObj_comp_XIsoOfEq_hom`: identifying the total degree of a homogeneous
+  summand along an equality of indices.
 * `HomologicalComplex.zero_tensorHom` and `HomologicalComplex.tensorHom_zero`: the tensor product
   of morphisms vanishes when either factor does.
 * `HomologicalComplex.isSplitEpi_tensorHom_f`, `HomologicalComplex.epi_tensorHom_of_isSplitEpi_f`,
@@ -129,6 +131,16 @@ instance epi_tensorHom_of_isSplitEpi_f {K₁ K₂ L₁ L₂ : HomologicalComplex
     [∀ i₁, IsSplitEpi (f₁.f i₁)] [∀ i₂, IsSplitEpi (f₂.f i₂)] :
     Epi (tensorHom f₁ f₂) :=
   epi_of_epi_f _ fun _ ↦ inferInstance
+
+/-- Identifying the degree of a summand of a tensor product along an equality of indices does not
+change the inclusion of the summand. -/
+@[reassoc (attr := simp)]
+lemma ιTensorObj_comp_XIsoOfEq_hom (K L : HomologicalComplex C c) [K.HasTensor L] {p q j j' : I}
+    (h : p + q = j) (hj : j = j') :
+    ιTensorObj K L p q j h ≫ ((tensorObj K L).XIsoOfEq hj).hom =
+      ιTensorObj K L p q j' (h.trans hj) := by
+  subst hj
+  simp
 
 variable [HasZeroObject C] (c) [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
   [∀ X₂, PreservesColimit (CategoryTheory.Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
