@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.MeasureTheory.Measure.Regular
 public import Mathlib.Topology.UrysohnsLemma
 public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
+import TauCeti.Analysis.Normed.Group.InfiniteSum
 
 /-!
 # `Lᵖ` functions on a locally compact space
@@ -40,6 +41,8 @@ approximation from indicator functions to all of `Lᵖ`.
 * `MeasureTheory.Lp.dense_setOf_continuous_hasCompactSupport` and
   `CompactlySupportedContinuousMap.denseRange_toLp`: the classes of compactly supported continuous
   functions are dense in `Lᵖ`, `p < ∞`.
+* `CompactlySupportedContinuousMap.exists_hasSum_toLp`: every `Lᵖ` class (`p < ∞`) is the sum of
+  an absolutely norm-summable series of compactly supported continuous functions.
 
 ## References
 
@@ -156,5 +159,18 @@ theorem denseRange_toLp [R1Space X] [WeaklyLocallyCompactSpace X] [BorelSpace X]
   rintro u ⟨f, hfc, hfs, hfu⟩
   let f' : C_c(X, E) := ⟨⟨f, hfc⟩, hfs⟩
   exact ⟨f', Lp.ext ((coeFn_toLp 𝕜 f').trans hfu.symm)⟩
+
+/-- Every `Lᵖ` class (`p < ∞`) on a weakly locally compact `R₁` space is the sum of an
+absolutely norm-summable series of compactly supported continuous functions. -/
+theorem exists_hasSum_toLp [R1Space X] [WeaklyLocallyCompactSpace X] [BorelSpace X]
+    [NormedSpace ℝ E] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) (μ : Measure X)
+    [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop]
+    (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (v : Lp E p μ) :
+    ∃ ψ : ℕ → C_c(X, E),
+      HasSum (fun n => toLp p μ 𝕜 (ψ n)) v ∧ Summable fun n => ‖toLp p μ 𝕜 (ψ n)‖ := by
+  obtain ⟨ψ, hsum, hnorm, -⟩ :=
+    (denseRange_toLp hp μ 𝕜).exists_hasSum_norm_lt (f := (toLp p μ 𝕜).toAddMonoidHom) v
+      (lt_add_one _)
+  exact ⟨ψ, hsum, hnorm⟩
 
 end CompactlySupportedContinuousMap

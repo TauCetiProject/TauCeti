@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 import TauCeti.MeasureTheory.Function.Lp.Order
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 import TauCeti.MeasureTheory.Group.Convolution.Support
 import TauCeti.MeasureTheory.Integral.Bochner.Set
@@ -76,8 +77,9 @@ vector space with an additive Haar measure.
 * `MeasureTheory.Lp.convolutionL_assoc`: associativity, `(h ⋆ k) ⋆ f = h ⋆ (k ⋆ f)`.
 * `MeasureTheory.Lp.convolutionL_nonneg`: `h ⋆ f ≥ 0` when `h ≥ 0` and `f ≥ 0`.
 * `MeasureTheory.Lp.integral_convolutionL`: `∫ (h ⋆ f) = (∫ h) • ∫ f`.
-* `MeasureTheory.Lp.convolutionL_toL1_ae_eq`: for compactly supported continuous `h` and `f`, the
-  convolution `h ⋆ f` is represented by `x ↦ ∫ y, h y • f (y⁻¹ * x) dμ`.
+* `MeasureTheory.Lp.convolutionL_toLp_ae_eq` and `MeasureTheory.Lp.convolutionL_toL1_ae_eq`:
+  for compactly supported continuous `h` and `f`, the convolution `h ⋆ f` is represented by
+  `x ↦ ∫ y, h y • f (y⁻¹ * x) dμ`.
 * `MeasureTheory.Lp.convolutionL_ofRealCLM_compLp_left`: convolving on the left with a real `L¹`
   kernel coerced into an `RCLike` field agrees with convolving with the real kernel directly.
 * `MeasureTheory.Lp.modularInversion_convolutionL`: the modular inversion reverses convolution,
@@ -101,6 +103,34 @@ open Filter Function MeasureTheory.Measure TauCeti
 open scoped ENNReal
 
 namespace MeasureTheory.Lp
+
+/-- An `Lᵖ`-valued Bochner integral (`1 ≤ p < ∞`) whose integrands `T y` are represented almost
+everywhere by slices `x ↦ F x y` of a compactly supported continuous kernel is represented almost
+everywhere by the pointwise integral `x ↦ ∫ y, F x y ∂μ`. -/
+theorem integral_ae_eq_integral_of_hasCompactSupport {X E : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [IsFiniteMeasureOnCompacts μ]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p ≠ ∞) {T : X → Lp E p μ} {F : X → X → E} (hT_int : Integrable T μ)
+    (hFc : Continuous (uncurry F)) (hFs : HasCompactSupport (uncurry F))
+    (hint : Integrable (fun x => ∫ y, F x y ∂μ) μ)
+    (hT_ae : ∀ᵐ y ∂μ, T y =ᵐ[μ] fun x => F x y) :
+    (∫ y, T y ∂μ : Lp E p μ) =ᵐ[μ] fun x => ∫ y, F x y ∂μ := by
+  refine AEFinStronglyMeasurable.ae_eq_of_forall_setIntegral_eq
+    (fun s _ hμs => (L1.integrable_coeFn (Set.LpToL1RestrictCLM (𝕜 := ℝ) s hμs _)).congr
+      (Set.LpToL1RestrictCLM_coeFn s hμs _))
+    (fun _ _ _ => hint.integrableOn) (fun s _ hμs => ?_)
+    ((Lp.finStronglyMeasurable _ (lt_of_lt_of_le zero_lt_one Fact.out).ne' hp)
+      |>.aefinStronglyMeasurable)
+    hint.aefinStronglyMeasurable
+  rw [← Set.setIntegralLp_apply (𝕜 := ℝ) s hμs,
+    ← (Set.setIntegralLp (𝕜 := ℝ) s hμs).integral_comp_comm hT_int]
+  simp_rw [Set.setIntegralLp_apply]
+  refine (integral_congr_ae ?_).trans
+    (integral_integral_swap_of_hasCompactSupport (μ := μ) (ν := μ.restrict s)
+      (f := fun y x => F x y) (hFc.comp continuous_swap)
+      (hFs.comp_homeomorph (Homeomorph.prodComm X X)))
+  filter_upwards [hT_ae] with y hy
+  exact integral_congr_ae (ae_restrict_of_ae hy)
 
 section LeftInvariant
 
@@ -189,6 +219,34 @@ theorem norm_convolutionL_le : ‖convolutionL (𝕜 := 𝕜) (E := E) μ p hp�
   ContinuousLinearMap.opNorm_le_bound₂ _ zero_le_one fun h f ↦ by
     simpa using norm_convolutionL_apply_le h f
 
+/-- For compactly supported continuous `h` and `f` and `1 ≤ p < ∞`, the convolution `h ⋆ f` is
+represented almost everywhere by the pointwise convolution `x ↦ ∫ y, h y • f (y⁻¹ * x) dμ`. -/
+theorem convolutionL_toLp_ae_eq [CompleteSpace E] {h : G → 𝕜} {f : G → E} (hhc : Continuous h)
+    (hhs : HasCompactSupport h) (hfc : Continuous f) (hfs : HasCompactSupport f) :
+    convolutionL μ p hp ((hhc.integrable_of_hasCompactSupport hhs).toL1 h)
+        ((hfc.memLp_of_hasCompactSupport hfs).toLp f) =ᵐ[μ]
+      fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ := by
+  have hhi : Integrable h μ := hhc.integrable_of_hasCompactSupport (μ := μ) hhs
+  have hfm : MemLp f p μ := hfc.memLp_of_hasCompactSupport (μ := μ) hfs
+  set F : G → G → E := fun x y => h y • f (y⁻¹ * x)
+  have hFc : Continuous (uncurry F) :=
+    (hhc.comp continuous_snd).smul (hfc.comp (continuous_snd.inv.mul continuous_fst))
+  have hFsupp (x y : G) (hxy : F x y ≠ 0) : y ∈ tsupport h ∧ y⁻¹ * x ∈ tsupport f :=
+    ⟨subset_tsupport _ (left_ne_zero_of_smul hxy), subset_tsupport _ (right_ne_zero_of_smul hxy)⟩
+  have hFs : HasCompactSupport (uncurry F) :=
+    hasCompactSupport_uncurry_of_inv_mul_mem hhs hfs hFsupp
+  have hint : Integrable (fun x => ∫ y, F x y ∂μ) μ :=
+    (continuous_integral_of_compact_support μ hhs hFc fun x y hxy =>
+      (hFsupp x y hxy).1).integrable_of_hasCompactSupport
+      (hasCompactSupport_integral_of_inv_mul_mem μ hhs hfs hFsupp)
+  rw [convolutionL_toL1 hhi]
+  refine integral_ae_eq_integral_of_hasCompactSupport hp
+    (integrable_smul_leftTranslation hp hhi _) hFc hFs hint (.of_forall fun y => ?_)
+  filter_upwards [coeFn_smul (h y) (leftTranslation μ p 𝕜 y (hfm.toLp f)),
+    coeFn_leftTranslation (𝕜 := 𝕜) y (hfm.toLp f),
+    (measurePreserving_mul_left μ y⁻¹).quasiMeasurePreserving.ae hfm.coeFn_toLp] with x h₁ h₂ h₃
+  rw [h₁, Pi.smul_apply, h₂, h₃]
+
 /-- Convolution commutes with left translation: `L_g (h ⋆ f) = (L_g h) ⋆ f`. -/
 theorem leftTranslation_convolutionL (g : G) (h : Lp 𝕜 1 μ) (f : Lp E p μ) :
     leftTranslation μ p 𝕜 g (convolutionL μ p hp h f) =
@@ -252,39 +310,8 @@ theorem convolutionL_toL1_ae_eq [CompleteSpace E] {h : G → 𝕜} {f : G → E}
     (hhs : HasCompactSupport h) (hfc : Continuous f) (hfs : HasCompactSupport f) :
     convolutionL μ 1 ENNReal.one_ne_top ((hhc.integrable_of_hasCompactSupport hhs).toL1 h)
         ((hfc.integrable_of_hasCompactSupport hfs).toL1 f) =ᵐ[μ]
-      fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ := by
-  have hhi := hhc.integrable_of_hasCompactSupport (μ := μ) hhs
-  have hfi := hfc.integrable_of_hasCompactSupport (μ := μ) hfs
-  set F : G → G → E := fun x y => h y • f (y⁻¹ * x)
-  have hFc : Continuous (uncurry F) :=
-    (hhc.comp continuous_snd).smul (hfc.comp (continuous_snd.inv.mul continuous_fst))
-  have hFsupp (x y : G) (hxy : F x y ≠ 0) : y ∈ tsupport h ∧ y⁻¹ * x ∈ tsupport f :=
-    ⟨subset_tsupport _ (left_ne_zero_of_smul hxy), subset_tsupport _ (right_ne_zero_of_smul hxy)⟩
-  have hFs : HasCompactSupport (uncurry F) :=
-    hasCompactSupport_uncurry_of_inv_mul_mem hhs hfs hFsupp
-  have hint : Integrable (fun x => ∫ y, F x y ∂μ) μ :=
-    (continuous_integral_of_compact_support μ hhs hFc fun x y hxy =>
-      (hFsupp x y hxy).1).integrable_of_hasCompactSupport
-      (hasCompactSupport_integral_of_inv_mul_mem μ hhs hfs hFsupp)
-  refine (L1.integrable_coeFn _).ae_eq_of_forall_setIntegral_eq _ _ hint fun s _ _ => ?_
-  -- Integration over `s` is a continuous linear functional on `L¹`.
-  let T : Lp E 1 μ →L[𝕜] E :=
-    (L1.integralCLM' (μ := μ.restrict s) 𝕜).comp (LpToLpRestrictCLM G E 𝕜 μ 1 s)
-  have hT (u : Lp E 1 μ) : T u = ∫ x in s, u x ∂μ := by
-    rw [ContinuousLinearMap.comp_apply, ← L1.integral_eq', L1.integral_eq_integral]
-    exact integral_congr_ae (LpToLpRestrictCLM_coeFn 𝕜 s u)
-  have hL (y : G) : ∫ x in s, leftTranslation μ 1 𝕜 y (hfi.toL1 f) x ∂μ =
-      ∫ x in s, f (y⁻¹ * x) ∂μ := by
-    refine integral_congr_ae (ae_restrict_of_ae ?_)
-    filter_upwards [coeFn_leftTranslation (𝕜 := 𝕜) y (hfi.toL1 f),
-      (measurePreserving_mul_left μ y⁻¹).quasiMeasurePreserving.ae hfi.coeFn_toL1] with x h₁ h₂
-    exact h₁.trans h₂
-  rw [← hT, convolutionL_toL1 hhi,
-    ← T.integral_comp_comm (integrable_smul_leftTranslation ENNReal.one_ne_top hhi _)]
-  simp_rw [map_smul, hT, hL, ← integral_smul]
-  -- Fubini's theorem for the compactly supported continuous integrand `(y, x) ↦ F x y`.
-  exact integral_integral_swap_of_hasCompactSupport (f := fun y x => F x y)
-    (hFc.comp continuous_swap) (hFs.comp_homeomorph (Homeomorph.prodComm G G))
+      fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ :=
+  convolutionL_toLp_ae_eq hhc hhs hfc hfs
 
 /-- Convolving on the left with a real `L¹` kernel coerced into an `RCLike` scalar field `𝕜` agrees
 with convolving with the real kernel directly. -/

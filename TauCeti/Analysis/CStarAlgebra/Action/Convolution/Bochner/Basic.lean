@@ -15,7 +15,7 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Hom.Lp
 This file extends `TauCeti.Analysis.CStarAlgebra.Action.Hom.Lp`,
 `TauCeti.Analysis.CStarAlgebra.Action.Convolution.Functoriality`, and
 `TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1` by showing that
-`TauCeti.CStarAction.Hom.mapLp` intertwines `actionLp`, `translateLp`, `convolutionLp`,
+`TauCeti.CStarAction.Hom.mapLp` intertwines `convolutionLp`,
 `convolutionMapL1`, and `twistedInvolutionL1`.
 
 ## References
@@ -44,25 +44,6 @@ variable {G A B C : Type*} [Group G] [TopologicalSpace G]
 section MapLp
 
 variable [MeasurableSpace G] {μ : Measure G} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- `Hom.mapLp` intertwines the pointwise action `actionLp`. -/
-theorem mapLp_actionLp (φ : Hom α β) (r : G) (u : Lp A p μ) :
-    φ.mapLp μ p (α.actionLp μ p r u) = β.actionLp μ p r (φ.mapLp μ p u) := by
-  refine Lp.ext ?_
-  filter_upwards [φ.coeFn_mapLp (α.actionLp μ p r u), α.coeFn_actionLp r u,
-    β.coeFn_actionLp r (φ.mapLp μ p u), φ.coeFn_mapLp u] with s h₁ h₂ h₃ h₄
-  simp [h₁, h₂, h₃, h₄]
-
-/-- `Hom.mapLp` intertwines twisted left translation `translateLp`. -/
-theorem mapLp_translateLp [MeasurableMul G] [μ.IsMulLeftInvariant] (φ : Hom α β) (r : G)
-    (u : Lp A p μ) :
-    φ.mapLp μ p (α.translateLp μ p r u) = β.translateLp μ p r (φ.mapLp μ p u) := by
-  refine Lp.ext ?_
-  filter_upwards [φ.coeFn_mapLp (α.translateLp μ p r u), α.coeFn_translateLp r u,
-    β.coeFn_translateLp r (φ.mapLp μ p u),
-    (measurePreserving_mul_left μ r⁻¹).quasiMeasurePreserving.ae (φ.coeFn_mapLp u)]
-    with s h₁ h₂ h₃ h₄
-  simp [h₁, h₂, h₃, h₄]
 
 /-- `Hom.mapLp` intertwines twisted Bochner convolution `convolutionLp`. -/
 theorem mapLp_convolutionLp [IsTopologicalGroup G] [BorelSpace G] [μ.IsMulLeftInvariant]
