@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.RingTheory.Idempotents.Primitive.Decomposition
 
 /-!
@@ -131,13 +132,8 @@ theorem CompleteOrthogonalIdempotents.mem_zero_of_isHomogeneous_span
     have hsum : ∑ j, (decompose 𝒜 (e j) p : A) = 0 := by
       rw [← AddSubmonoidClass.coe_finsetSum, ← DirectSum.sum_apply, ← decompose_sum, he.complete]
       exact decompose_of_mem_ne 𝒜 SetLike.GradedOne.one_mem hp.symm
-    have h0 : ∑ j, DirectSum.of (fun j ↦ (Ideal.span {e j} : Ideal A)) j ⟨_, hmem j⟩ = 0 :=
-      he.isInternal_span_singleton.injective <| by simpa using hsum
-    have h0i := congr($h0 i)
-    rw [DirectSum.sum_apply, DirectSum.zero_apply,
-      Finset.sum_eq_single i (fun j _ hji ↦ of_eq_of_ne _ _ _ hji.symm) (by simp),
-      of_eq_same] at h0i
-    exact congr(($h0i : A))
+    exact he.isInternal_span_singleton.eq_of_finsetSum_eq (fun j _ ↦ hmem j)
+      (fun _ _ ↦ zero_mem _) (hsum.trans Finset.sum_const_zero.symm) (Finset.mem_univ i)
   rw [← sum_support_decompose 𝒜 (e i)]
   refine sum_mem fun p _ ↦ ?_
   obtain rfl | hp := eq_or_ne p 0
@@ -179,7 +175,7 @@ theorem surjective_algebraMap_quotient_irrelevant [CommSemiring R] [Ring A] [Alg
   intro y
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective y
   obtain ⟨c, hc⟩ := exists_sub_algebraMap_mem_irrelevant 𝒜 h𝒜 a
-  exact ⟨c, (Ideal.Quotient.eq.2 hc).symm⟩
+  exact ⟨c, by rw [← Ideal.Quotient.mk_algebraMap]; exact (Ideal.Quotient.eq.2 hc).symm⟩
 
 /-- The irrelevant ideal of a nontrivial connected graded algebra over a field is maximal. -/
 theorem isMaximal_toIdeal_irrelevant {k : Type*} [Field k] [Ring A] [Nontrivial A] [Algebra k A]
