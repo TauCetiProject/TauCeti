@@ -180,7 +180,7 @@ private theorem partialDerivativesLp_apply_ae (b : OrthonormalBasis (Fin (finran
     (TestFunction.lineDerivCLM (n := ⊤) (k := ⊤) ℝ (b i) φ)] with x hx
   simp only [partialDerivativesLp, LinearMap.pi_apply, LinearMap.coe_comp, Function.comp_apply,
     testFunctionLpₗ_apply, ContinuousLinearMap.coe_coe]
-  rw [hx, lineDerivCLM_apply_eq_inner]
+  rw [hx, TestFunction.lineDerivCLM_apply_eq_inner]
 
 /-- The `Lᵠ` norm of the gradient of a test function is at most `d` times the norm of its
 partial derivatives in `(Lᵠ(Ω))ᵈ`. -/
@@ -196,7 +196,7 @@ private theorem toReal_eLpNorm_gradient_le [Fact (1 ≤ q)]
     rw [enorm_testFunctionLp_eq_eLpNorm]
     congr 1
     funext x
-    exact lineDerivCLM_apply_eq_inner φ (b i) x
+    exact TestFunction.lineDerivCLM_apply_eq_inner φ (b i) x
   have h := b.toBasis.eLpNorm_le_sum_enorm_mul_eLpNorm_coord (p := q) (μ := μ)
     (continuous_gradient_testFunction φ).aestronglyMeasurable
   have hb (i : Fin (finrank ℝ E)) : ‖b i‖ₑ = 1 := by

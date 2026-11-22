@@ -59,7 +59,7 @@ test function on `Ω` whose gradient obeys the product rule.
   classical Laplacian.
 * `TestFunction.integrable_laplacian_smul`: `x ↦ Δφ(x) • u x` is integrable when `u` is locally
   integrable on `Ω`.
-* `TauCeti.lineDerivCLM_apply_eq_inner`: `∂_{v} φ x = ⟪v, ∇φ x⟫` for a scalar test function.
+* `TestFunction.lineDerivCLM_apply_eq_inner`: `∂_{v} φ x = ⟪v, ∇φ x⟫` for a scalar test function.
 * `TauCeti.exists_testFunction_mul`: for `ζ` smooth with `tsupport ζ ⊆ Ω`, the product `ζ φ` is a
   test function on `Ω` with gradient `ζ ∇φ + φ ∇ζ`.
 -/
@@ -294,10 +294,10 @@ theorem integrable_laplacian_smul [MeasurableSpace E] [OpensMeasurableSpace E] {
 
 end TestFunction
 
-namespace TauCeti
+namespace TestFunction
 
 open TopologicalSpace
-open scoped ContDiff Distributions Gradient InnerProductSpace
+open scoped Distributions Gradient InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {Ω : Opens E}
@@ -305,11 +305,20 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 /-- The directional derivative of a test function along `v` is the pairing of `v` with its
 gradient. -/
 theorem lineDerivCLM_apply_eq_inner (phi : 𝓓(Ω, ℝ)) (v x : E) :
-    (TestFunction.lineDerivCLM (n := ⊤) (k := ⊤) ℝ v phi : E → ℝ) x =
-      ⟪v, ∇ (phi : E → ℝ) x⟫_ℝ := by
-  rw [TestFunction.lineDerivCLM_apply_of_le le_top, real_inner_comm, gradient,
+    (lineDerivCLM (n := ⊤) (k := ⊤) ℝ v phi : E → ℝ) x = ⟪v, ∇ (phi : E → ℝ) x⟫_ℝ := by
+  rw [lineDerivCLM_apply_of_le le_top, real_inner_comm, gradient,
     InnerProductSpace.toDual_symm_apply,
     (phi.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv]
+
+end TestFunction
+
+namespace TauCeti
+
+open TopologicalSpace
+open scoped ContDiff Distributions Gradient InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {Ω : Opens E}
 
 /-- The product `ζ φ` of a test function `φ` with a smooth function `ζ` whose support lies in
 `Ω` is a test function on `Ω`, with gradient `ζ ∇φ + φ ∇ζ`. -/
