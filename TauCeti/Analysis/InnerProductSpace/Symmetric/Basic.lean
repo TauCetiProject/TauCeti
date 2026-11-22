@@ -13,7 +13,8 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 Two facts about symmetric operators complementing Mathlib's
 `Mathlib.Analysis.InnerProductSpace.Symmetric`:
 
-* the negative of a symmetric linear map is symmetric (`LinearMap.IsSymmetric.neg`);
+* the negative of a symmetric linear map is symmetric (`LinearMap.IsSymmetric.neg`), and
+  conversely (`LinearMap.isSymmetric_neg_iff`);
 * the symmetric bounded operators form a closed subset of `E →L[𝕜] E`
   (`ContinuousLinearMap.isClosed_setOf_isSymmetric`), so a limit of symmetric bounded operators
   is symmetric. No completeness of `E` is needed: the condition `⟪T x, y⟫ = ⟪x, T y⟫` is closed
@@ -29,6 +30,11 @@ namespace LinearMap
 /-- The negative of a symmetric linear map is symmetric. -/
 theorem IsSymmetric.neg {T : E →ₗ[𝕜] E} (hT : T.IsSymmetric) : (-T).IsSymmetric := by
   simpa using IsSymmetric.zero.sub hT
+
+/-- A linear map is symmetric if and only if its negative is. -/
+@[simp]
+theorem isSymmetric_neg_iff {T : E →ₗ[𝕜] E} : (-T).IsSymmetric ↔ T.IsSymmetric :=
+  ⟨fun h ↦ neg_neg T ▸ h.neg, IsSymmetric.neg⟩
 
 end LinearMap
 
