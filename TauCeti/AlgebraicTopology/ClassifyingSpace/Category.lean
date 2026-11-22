@@ -21,8 +21,7 @@ directly; together they form the functor `nerveFunctor ⋙ SSet.toTop`
 morphisms in `Type v`, then `BC` lives in `TopCat.{max u v}`; categories in other universes are
 compared after an explicit `ULift` or `AsSmall`.
 
-An object `X` gives a vertex `[X]` of `BC` (`TauCeti.CategoryTheory.classifyingSpace.vertex`, the
-declaration that the roadmap calls `classifyingSpace_vertex`), and
+An object `X` gives a vertex `[X]` of `BC` (`TauCeti.CategoryTheory.classifyingSpace.vertex`), and
 an arrow `f : X ⟶ Y` an edge path from `[X]` to `[Y]`
 (`TauCeti.CategoryTheory.classifyingSpace.edge`), the path traced by the `1`-simplex `f` of the
 nerve. These satisfy:
