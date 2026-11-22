@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.RingTheory.Huber.Normed
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
+import TauCeti.RingTheory.Valuation.Continuous.Valued
 
 /-!
 # The adic spectrum of a normed field
@@ -15,16 +16,23 @@ import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 For a normed field `K` with an ultrametric norm, every point `v` of `Spa (K, K°)` compares
 elements of `K` exactly as the norm does: `v(x) ≤ v(y)` if and only if `‖x‖ ≤ ‖y‖`. The plus ring
 `K°` is the closed unit ball, which gives one direction, and continuity of `v` gives the other,
-since an element of norm less than one is topologically nilpotent.
+since an element of norm less than one is topologically nilpotent. Consequently `Spa (K, K°)` is a
+singleton consisting of the canonical norm point `normSpaPoint K`.
 
 This is how points of `Spa (K, K°)` enter computations on spaces over `K`: whenever a point of
 an adic spectrum over `K` pulls back to `Spa (K, K°)`, as every point of the closed polydisc does
 along the constant embedding, it compares constants by their norms.
 
+## Main definitions
+
+* `TauCeti.ValuationSpectrum.normSpaPoint`: the canonical point of `Spa (K, K°)` defined by
+  `NormedField.valuation`.
+
 ## Main results
 
 * `TauCeti.ValuationSpectrum.vle_iff_norm_le_of_mem_spa`: every point of `Spa (K, K°)` compares
   elements of `K` by their norms.
+* `TauCeti.ValuationSpectrum.eq_normSpaPoint`: every point of `Spa (K, K°)` equals `normSpaPoint K`.
 
 ## References
 
@@ -65,5 +73,28 @@ theorem vle_iff_norm_le_of_mem_spa {v : Spv K} (hv : v ∈ spa (powerBoundedSubr
       exact div_le_one_of_le₀ h (norm_nonneg y)
     have hle := valuation_le_one_of_mem_spa hv hxy
     rwa [map_div₀, div_le_one₀ (pos_iff_ne_zero.mpr ((Valuation.ne_zero_iff _).mpr hy))] at hle
+
+/-- **The canonical point of `Spa (K, K°)`** attached to the defining norm of an ultrametric
+normed field `K`. -/
+noncomputable def normSpaPoint (K : Type*) [NormedField K] [IsUltrametricDist K] :
+    spa (powerBoundedSubring K) :=
+  ⟨ofValuation (NormedField.valuation (K := K)), (mem_spa_iff _ _).mpr
+    ⟨(isContinuous_ofValuation_iff _).mpr NormedField.isContinuous_valuation, fun a ha ↦ by
+      rw [vle_ofValuation, map_one, NormedField.valuation_apply, ← NNReal.coe_le_coe, coe_nnNorm,
+        NNReal.coe_one]
+      exact isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp ha)⟩⟩
+
+/-- The underlying point of `normSpaPoint K` in `Spv K` is `ofValuation NormedField.valuation`. -/
+@[simp]
+theorem coe_normSpaPoint (K : Type*) [NormedField K] [IsUltrametricDist K] :
+    (normSpaPoint K : Spv K) = ofValuation (NormedField.valuation (K := K)) :=
+  (rfl)
+
+/-- Every point of `Spa (K, K°)` equals the canonical norm point `normSpaPoint K`. -/
+theorem eq_normSpaPoint (x : spa (powerBoundedSubring K)) : x = normSpaPoint K :=
+  Subtype.ext <| ext' fun a b ↦ by
+    rw [coe_normSpaPoint, vle_ofValuation, vle_iff_norm_le_of_mem_spa x.property,
+      NormedField.valuation_apply, NormedField.valuation_apply, ← NNReal.coe_le_coe, coe_nnNorm,
+      coe_nnNorm]
 
 end TauCeti.ValuationSpectrum

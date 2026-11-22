@@ -53,6 +53,10 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   `A⟨T⟩ →ₐ[A] A`.
 * `TauCeti.ValuationSpectrum.classicalPoint`: the classical point of the closed polydisc attached
   to a point of `Spa (A, A°)` and a tuple `a ∈ (A°)ᵏ`.
+* `TauCeti.ValuationSpectrum.normClassicalPoint`: over a complete ultrametric normed field `K`,
+  the canonical classical point attached to `normSpaPoint K` and `a ∈ (K°)ᵏ`.
+* `TauCeti.ValuationSpectrum.classicalPoints`: the locus of classical points of
+  `closedPolydisc k K`.
 * `TauCeti.ValuationSpectrum.taylorHom`: the translation `Tᵢ ↦ Tᵢ + aᵢ` of `A⟨T⟩` by
   `a ∈ (A°)ᵏ`.
 * `TauCeti.ValuationSpectrum.taylorEquiv`: the same translation as a ring automorphism, with
@@ -69,6 +73,11 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   over a field this kernel is a maximal ideal with residue field finite over the field.
 * `TauCeti.ValuationSpectrum.classicalPoint_vle`: the classical point compares `f` and `g` as `x`
   compares `f (a)` and `g (a)`.
+* `TauCeti.ValuationSpectrum.classicalPoint_eq_normClassicalPoint` and
+  `TauCeti.ValuationSpectrum.range_classicalPoint_eq_classicalPoints`: every `x : Spa (K, K°)`
+  yields `normClassicalPoint` and sweeps out `classicalPoints k K`.
+* `TauCeti.ValuationSpectrum.subsingleton_closedPolydisc_zero`: the zero-dimensional closed
+  polydisc over an ultrametric normed field is a subsingleton.
 * `TauCeti.ValuationSpectrum.classicalPoint_injective`: when `x` has trivial support, the
   classical points are parametrised faithfully by `(A°)ᵏ`;
   `TauCeti.ValuationSpectrum.classicalPoint_injective_of_isField` is the case of a field.
@@ -643,6 +652,96 @@ theorem norm_sub_le_of_valuation_eq {k : ℕ} {v : closedPolydisc k K} {i : Fin 
   rw [← closedPolydisc_valuation_weightedC_le_iff v, weightedC_sub_eq_sub_sub i]
   refine (Valuation.map_sub _ _ _).trans (max_le h₁.le ?_)
   rwa [h₂, closedPolydisc_valuation_weightedC_le_iff]
+
+/-- **The zero-dimensional closed polydisc over an ultrametric normed field is a subsingleton**:
+every restricted power series in zero variables is constant, and every point of the polydisc
+compares constants by their norms. -/
+theorem subsingleton_closedPolydisc_zero : Subsingleton (closedPolydisc 0 K) := by
+  refine ⟨fun v w ↦ Subtype.ext <| ext' fun f g ↦ ?_⟩
+  have hconst : ∀ h : weightedRestrictedSubring (fun _ : Fin 0 ↦ ({1} : Set K))
+      isWeightFamily_one_weight,
+      h = weightedC _ isWeightFamily_one_weight (weightedRestrictedSubringFinZeroEquiv _ h) :=
+    fun h ↦ ((weightedRestrictedSubringFinZeroEquiv _).symm_apply_apply h).symm.trans
+      (Subtype.ext (by simp))
+  rw [hconst f, hconst g, closedPolydisc_vle_weightedC_iff, closedPolydisc_vle_weightedC_iff]
+
+section Complete
+
+variable {k : ℕ} [CompleteSpace K]
+
+/-- **The canonical classical point of `closedPolydisc k K`** attached to a power-bounded tuple
+`a ∈ (K°)ᵏ`, obtained by pulling back the canonical norm point `normSpaPoint K` along evaluation at
+`a`. -/
+noncomputable def normClassicalPoint (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
+    closedPolydisc k K :=
+  classicalPoint (normSpaPoint K) a ha
+
+/-- Unfolding equation for `normClassicalPoint`. -/
+theorem normClassicalPoint_def (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
+    normClassicalPoint a ha = classicalPoint (normSpaPoint K) a ha :=
+  (rfl)
+
+/-- Every classical point attached to any `x : Spa (K, K°)` equals `normClassicalPoint`. -/
+theorem classicalPoint_eq_normClassicalPoint (x : spa (powerBoundedSubring K)) (a : Fin k → K)
+    (ha : ∀ i, IsPowerBounded (a i)) :
+    classicalPoint x a ha = normClassicalPoint a ha := by
+  rw [eq_normSpaPoint x, normClassicalPoint_def]
+
+/-- `normClassicalPoint a ha` compares series by the norms of their evaluations at `a`. -/
+@[simp]
+theorem normClassicalPoint_vle (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i))
+    (f g : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) :
+    (normClassicalPoint a ha).val.toValuativeRel.vle f g ↔
+      ‖evalAtHom a ha f‖ ≤ ‖evalAtHom a ha g‖ := by
+  rw [normClassicalPoint_def, classicalPoint_vle,
+    vle_iff_norm_le_of_mem_spa (normSpaPoint K).property]
+
+/-- Distinct power-bounded tuples give distinct canonical classical points. -/
+theorem normClassicalPoint_injective :
+    Function.Injective fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
+      normClassicalPoint a.val a.property :=
+  classicalPoint_injective_of_isField (Field.toIsField K) (normSpaPoint K)
+
+end Complete
+
+/-- **The classical locus of the closed polydisc `closedPolydisc k K`**: the set of `K`-rational
+classical points parametrised by power-bounded tuples `a ∈ (K°)ᵏ`. -/
+noncomputable def classicalPoints (k : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K]
+    [NonarchimedeanRing K] [CompleteSpace K] : Set (closedPolydisc k K) :=
+  Set.range fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
+    normClassicalPoint a.val a.property
+
+/-- Unfolding equation for `classicalPoints k K`. -/
+theorem classicalPoints_def {k : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K]
+    [NonarchimedeanRing K] [CompleteSpace K] :
+    classicalPoints k K = Set.range fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
+      normClassicalPoint a.val a.property :=
+  (rfl)
+
+/-- Membership in `classicalPoints k K`: a point lies in the classical locus iff it equals
+`normClassicalPoint a ha` for some power-bounded tuple `a ∈ (K°)ᵏ`. -/
+theorem mem_classicalPoints_iff {k : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K]
+    [NonarchimedeanRing K] [CompleteSpace K] {v : closedPolydisc k K} :
+    v ∈ classicalPoints k K ↔
+      ∃ (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)), normClassicalPoint a ha = v := by
+  simp only [classicalPoints_def, Set.mem_range, Subtype.exists]
+
+/-- Every `classicalPoint x a ha` lies in `classicalPoints k K`. -/
+@[simp]
+theorem classicalPoint_mem_classicalPoints {k : ℕ} [CompleteSpace K]
+    (x : spa (powerBoundedSubring K)) (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
+    classicalPoint x a ha ∈ classicalPoints k K :=
+  mem_classicalPoints_iff.mpr ⟨a, ha, (classicalPoint_eq_normClassicalPoint x a ha).symm⟩
+
+/-- Every `x : Spa (K, K°)` sweeps out the same locus `classicalPoints k K`. -/
+@[simp]
+theorem range_classicalPoint_eq_classicalPoints {k : ℕ} [CompleteSpace K]
+    (x : spa (powerBoundedSubring K)) :
+    Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
+        classicalPoint x a.val a.property) = classicalPoints k K := by
+  ext v
+  simp only [Set.mem_range, Subtype.exists, classicalPoint_eq_normClassicalPoint,
+    mem_classicalPoints_iff]
 
 end NormedField
 

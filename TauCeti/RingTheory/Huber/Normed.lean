@@ -70,9 +70,10 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   `TauCeti.Huber.powerBoundedSubring.isUnit_iff_norm_eq_one`: in an ultrametric normed field
   divisibility in `K°` is comparison of norms and units of `K°` are the elements of norm one.
 * `TauCeti.Huber.isLocalRing_powerBoundedSubring`,
-  `TauCeti.Huber.maximalIdeal_powerBoundedSubring`, and
-  `TauCeti.Huber.isMaximal_topologicallyNilpotentIdeal`: `K°` is a local ring with maximal ideal
-  `K°°`.
+  `TauCeti.Huber.maximalIdeal_powerBoundedSubring`,
+  `TauCeti.Huber.isMaximal_topologicallyNilpotentIdeal`, and
+  `TauCeti.Huber.isOpen_topologicallyNilpotentIdeal`: `K°` is a local ring with open maximal
+  ideal `K°°`.
 * `TauCeti.Huber.exists_isOpen_isBounded_subring`: an ultrametric seminormed ring has an open
   bounded subring, even when `‖1‖ ≠ 1`.
 * `TauCeti.Huber.IsTateRing.of_isUnit_norm_lt_one`: an ultrametric seminormed commutative ring
@@ -316,6 +317,17 @@ theorem maximalIdeal_powerBoundedSubring :
 /-- For an ultrametric normed field `K`, `K°°` is a maximal ideal of `K°`. -/
 instance isMaximal_topologicallyNilpotentIdeal : (topologicallyNilpotentIdeal K).IsMaximal :=
   maximalIdeal_powerBoundedSubring (K := K) ▸ maximalIdeal.isMaximal (powerBoundedSubring K)
+
+/-- For an ultrametric normed field `K`, `K°°` is an open ideal of `K°`. -/
+theorem isOpen_topologicallyNilpotentIdeal :
+    IsOpen (topologicallyNilpotentIdeal K : Set (powerBoundedSubring K)) := by
+  have hopen : (topologicallyNilpotentIdeal K : Set (powerBoundedSubring K)) =
+      (Subtype.val : powerBoundedSubring K → K) ⁻¹' Metric.ball 0 1 := by
+    ext x
+    simp only [SetLike.mem_coe, mem_topologicallyNilpotentIdeal, IsTopologicallyNilpotent,
+      tendsto_pow_atTop_nhds_zero_iff_norm_lt_one, Set.mem_preimage, mem_ball_zero_iff]
+  rw [hopen]
+  exact Metric.isOpen_ball.preimage continuous_subtypeVal
 
 end UltrametricDvd
 
