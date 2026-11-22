@@ -5,32 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Bochner.Basic
+public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1
 import Mathlib.MeasureTheory.Function.LpSpace.InfiniteSum
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 
 /-!
-# Pointwise formulas for Bochner `L¹` twisted convolution and involution
+# Pointwise formulas for Bochner `L¹` twisted convolution
 
 On a locally compact topological group `G` with a regular left-invariant Borel measure `μ`,
 `TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1` identifies
 `Completion (ConvolutionAlgebra α μ)` isometrically with `Lp A 1 μ` via
-`ConvolutionAlgebra.completionEquivL1` and defines `CStarAction.convolutionLp` and
-`CStarAction.twistedInvolutionL1`.
+`ConvolutionAlgebra.completionEquivL1` and defines `CStarAction.convolutionLp`.
 
 This file derives pointwise almost-everywhere formulas for arbitrary Bochner-integrable functions
 by expanding `L¹` classes into absolutely norm-summable series of compactly supported continuous
 functions (`ConvolutionAlgebra.exists_hasSum_toL1`), without assuming second countability of `G`
-or σ-finiteness of `μ`. It extends `CStarAction.coeFn_twistedInvolutionL1` from Haar measures to
-arbitrary regular left-invariant measures (`μ = 0` included) and proves that for any integrable
-`f, g : G → A`, the twisted convolution integrand `r ↦ f r * α r (g (r⁻¹ * s))` is
-Bochner-integrable for almost every `s` and integrates to `CStarAction.convolutionLp` at `p = 1`.
+or σ-finiteness of `μ`. It proves that for any integrable `f, g : G → A`, the twisted convolution
+integrand `r ↦ f r * α r (g (r⁻¹ * s))` is Bochner-integrable for almost every `s` and
+integrates to `CStarAction.convolutionLp` at `p = 1`.
 
 ## Main results
 
-* `TauCeti.CStarAction.coeFn_twistedInvolutionL1_of_regular`: pointwise almost-everywhere formula
-  for `twistedInvolutionL1` without `IsOpenPosMeasure`.
 * `TauCeti.CStarAction.ae_integrable_convolution_integrand`,
   `TauCeti.CStarAction.convolutionLp_toL1_ae_eq`, `TauCeti.CStarAction.coeFn_convolutionLp`:
   almost-everywhere integrability and pointwise Bochner integral formula for `convolutionLp` at
@@ -57,19 +52,6 @@ variable {G A : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
   (α : CStarAction G A) {μ : Measure G} [μ.IsMulLeftInvariant] [μ.Regular]
 
-/-- **Pointwise almost-everywhere formula for `twistedInvolutionL1`**: for every `u ∈ Lp A 1 μ`
-and any regular left-invariant measure `μ` (including `μ = 0`),
-`(α.twistedInvolutionL1 μ u) s = c(s) • α s (star (u s⁻¹))` almost everywhere. -/
-theorem coeFn_twistedInvolutionL1_of_regular (u : Lp A 1 μ) :
-    α.twistedInvolutionL1 μ u =ᵐ[μ]
-      fun s => ((Measure.modularCharacter s : ℝ) : ℂ) • α s (star (u s⁻¹)) := by
-  rcases eq_zero_or_neZero μ with rfl | hμ
-  · simp [Filter.EventuallyEq]
-  · have : μ.IsOpenPosMeasure := isOpenPosMeasure_of_mulLeftInvariant_of_regular
-    have : μ.IsHaarMeasure := ⟨⟩
-    filter_upwards [α.coeFn_twistedInvolutionL1 u] with s hs
-    simpa [Complex.coe_smul] using hs
-
 omit [LocallyCompactSpace G] in
 private theorem ae_hasSum_ofConv_of_hasSum_toL1 {ι : Type*} [Countable ι]
     {φ : ι → ConvolutionAlgebra α μ} {u : Lp A 1 μ}
@@ -85,41 +67,42 @@ private theorem ae_hasSum_ofConv_of_hasSum_toL1 {ι : Type*} [Countable ι]
     with r hr hnr hcoe
   exact ⟨by simpa only [hcoe] using hr, by simpa only [hcoe] using hnr⟩
 
-omit [LocallyCompactSpace G] in
 private theorem eLpNorm_integral_norm_convolution_eq (f g : ConvolutionAlgebra α μ) :
     eLpNorm (fun s => ∫ r, ‖f.ofConv r‖ * ‖g.ofConv (r⁻¹ * s)‖ ∂μ) 1 μ =
       ENNReal.ofReal (‖f‖ * ‖g‖) := by
-  let W : G → ℝ := fun s => ∫ r, ‖f.ofConv r‖ * ‖g.ofConv (r⁻¹ * s)‖ ∂μ
-  have hsupp : ∀ s r, ‖f.ofConv r‖ * ‖g.ofConv (r⁻¹ * s)‖ ≠ 0 →
-      r ∈ tsupport f.ofConv ∧ r⁻¹ * s ∈ tsupport g.ofConv := fun s r hsr =>
-    ⟨subset_tsupport _ (mem_support.2 fun h => hsr (by simp [h])),
-      subset_tsupport _ (mem_support.2 fun h => hsr (by simp [h]))⟩
-  have hcont : Continuous (uncurry fun s r => ‖f.ofConv r‖ * ‖g.ofConv (r⁻¹ * s)‖) := by
-    rw [uncurry_def]; fun_prop
-  have hWi : Integrable W μ :=
-    (continuous_integral_of_compact_support μ f.ofConv.hasCompactSupport hcont
-      fun s r h => (hsupp s r h).1).integrable_of_hasCompactSupport
-      (hasCompactSupport_integral_of_inv_mul_mem μ f.ofConv.hasCompactSupport
-        g.ofConv.hasCompactSupport hsupp)
-  have hW_nonneg (s : G) : 0 ≤ W s :=
-    integral_nonneg fun r => mul_nonneg (norm_nonneg _) (norm_nonneg _)
-  rw [(memLp_one_iff_integrable.2 hWi).eLpNorm_eq_integral_rpow_norm one_ne_zero
-    ENNReal.one_ne_top]
-  simp only [ENNReal.toReal_one, Real.rpow_one, inv_one, Real.norm_of_nonneg (hW_nonneg _)]
+  have hfc : Continuous fun r => ‖f.ofConv r‖ := f.ofConv.continuous.norm
+  have hfs : HasCompactSupport fun r => ‖f.ofConv r‖ :=
+    f.ofConv.hasCompactSupport.comp_left norm_zero
+  have hgc : Continuous fun s => ‖g.ofConv s‖ := g.ofConv.continuous.norm
+  have hgs : HasCompactSupport fun s => ‖g.ofConv s‖ :=
+    g.ofConv.hasCompactSupport.comp_left norm_zero
+  have hfi := hfc.integrable_of_hasCompactSupport (μ := μ) hfs
+  have hgi := hgc.integrable_of_hasCompactSupport (μ := μ) hgs
+  let u : Lp ℝ 1 μ := hfi.toL1 _
+  let v : Lp ℝ 1 μ := hgi.toL1 _
+  have hu : 0 ≤ u :=
+    (Lp.coeFn_nonneg u).1 (hfi.coeFn_toL1.mono fun _ h => by dsimp only [u]; rw [h]; positivity)
+  have hv : 0 ≤ v :=
+    (Lp.coeFn_nonneg v).1 (hgi.coeFn_toL1.mono fun _ h => by dsimp only [v]; rw [h]; positivity)
+  let W := Lp.convolutionL μ 1 ENNReal.one_ne_top u v
+  have hW_nonneg : 0 ≤ W := Lp.convolutionL_nonneg hu hv
+  have hW_ae : W =ᵐ[μ] fun s => ∫ r, ‖f.ofConv r‖ * ‖g.ofConv (r⁻¹ * s)‖ ∂μ := by
+    simpa only [smul_eq_mul] using Lp.convolutionL_toL1_ae_eq hfc hfs hgc hgs
+  rw [eLpNorm_congr_ae hW_ae.symm,
+    (Lp.memLp W).eLpNorm_eq_integral_rpow_norm one_ne_zero ENNReal.one_ne_top]
+  simp only [ENNReal.toReal_one, Real.rpow_one, inv_one]
   congr 1
   calc
-    ∫ s, W s ∂μ = ∫ r, ∫ s, ‖f.ofConv r‖ * ‖g.ofConv (r⁻¹ * s)‖ ∂μ ∂μ :=
-      integral_integral_swap_of_hasCompactSupport hcont
-        (hasCompactSupport_uncurry_of_inv_mul_mem f.ofConv.hasCompactSupport
-          g.ofConv.hasCompactSupport hsupp)
-    _ = ∫ r, ‖f.ofConv r‖ * ∫ s, ‖g.ofConv s‖ ∂μ ∂μ := by
-      congr 1 with r
-      rw [integral_const_mul, integral_mul_left_eq_self (fun s => ‖g.ofConv s‖) r⁻¹]
+    ∫ s, ‖W s‖ ∂μ = ∫ s, W s ∂μ := by
+      refine integral_congr_ae ?_
+      filter_upwards [Lp.coeFn_zero ℝ 1 μ, (Lp.coeFn_nonneg W).2 hW_nonneg] with s h0 hs
+      exact Real.norm_of_nonneg (by simpa [h0] using hs)
+    _ = (∫ r, u r ∂μ) * (∫ s, v s ∂μ) := by
+      simpa only [smul_eq_mul] using Lp.integral_convolutionL u v
     _ = ‖f‖ * ‖g‖ := by
-      rw [integral_mul_const, ConvolutionAlgebra.norm_eq_integral_norm,
-        ConvolutionAlgebra.norm_eq_integral_norm]
+      rw [integral_congr_ae hfi.coeFn_toL1, integral_congr_ae hgi.coeFn_toL1,
+        ConvolutionAlgebra.norm_eq_integral_norm, ConvolutionAlgebra.norm_eq_integral_norm]
 
-omit [LocallyCompactSpace G] in
 private theorem ae_summable_integral_norm_of_summable
     {φ ψ : ℕ → ConvolutionAlgebra α μ} (hφ : Summable fun m => ‖φ m‖)
     (hψ : Summable fun n => ‖ψ n‖) :

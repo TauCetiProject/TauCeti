@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Nondegenerate
 public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.Normed.Ring.Completion
 public import Mathlib.Topology.Algebra.LinearMapCompletion
+import TauCeti.Topology.Algebra.Module.Span
 
 /-!
 # Contractive integrated representations
@@ -133,22 +133,17 @@ theorem topologicalClosure_span_integratedOperatorL1 [LocallyCompactSpace G] [μ
       (⋃ x : Completion (ConvolutionAlgebra α μ),
         Set.range (P.integratedOperatorL1 μ x))).topologicalClosure =
       (Submodule.span ℂ (⋃ a : A, Set.range (P.coefficient a))).topologicalClosure := by
-  rw [← P.topologicalClosure_span_integratedOperator μ]
-  refine le_antisymm ?_ (Submodule.topologicalClosure_mono <| Submodule.span_mono ?_)
-  · refine Submodule.topologicalClosure_minimal _ (Submodule.span_le.2 ?_)
-      (Submodule.isClosed_topologicalClosure _)
-    rintro _ ⟨_, ⟨x, rfl⟩, v, rfl⟩
-    induction x using Completion.induction_on with
-    | hp =>
-      exact (Submodule.isClosed_topologicalClosure _).preimage
-        ((ContinuousLinearMap.apply ℂ H v).continuous.comp (P.continuous_integratedOperatorL1 μ))
-    | ih f =>
-      rw [integratedOperatorL1_coe]
-      exact Submodule.le_topologicalClosure _ <| Submodule.subset_span <|
-        Set.mem_iUnion.2 ⟨f.ofConv, v, rfl⟩
-  · rintro _ ⟨_, ⟨f, rfl⟩, v, rfl⟩
-    refine Set.mem_iUnion.2 ⟨(ConvolutionAlgebra.toConv f : ConvolutionAlgebra α μ), v, ?_⟩
-    simp
+  rw [← Completion.denseRange_coe.topologicalClosure_span_iUnion_range_comp_eq (R := ℂ)
+    (L := fun x : Completion (ConvolutionAlgebra α μ) => ⇑(P.integratedOperatorL1 μ x)) fun v =>
+      (ContinuousLinearMap.apply ℂ H v).continuous.comp (P.continuous_integratedOperatorL1 μ)]
+  have hU : (⋃ f : ConvolutionAlgebra α μ, Set.range (P.integratedOperatorL1 μ f)) =
+      ⋃ f : C_c(G, A), Set.range (P.integratedOperator μ f) := by
+    simp_rw [integratedOperatorL1_coe]
+    simpa only [ConvolutionAlgebra.linearEquiv_apply] using
+      (ConvolutionAlgebra.linearEquiv α μ).surjective.iUnion_comp
+        fun g => Set.range (P.integratedOperator μ g)
+  rw [hU]
+  exact P.topologicalClosure_span_integratedOperator μ
 
 /-- The `L¹` integrated form has dense span of ranges precisely when the coefficient
 representation is nondegenerate. -/

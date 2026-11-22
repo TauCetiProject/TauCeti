@@ -306,10 +306,7 @@ theorem integrable_tsum_of_summable_integral_norm {ι E : Type*} [Countable ι]
     Integrable (fun x ↦ ∑' i, F i x) μ := by
   have heNorm : ∑' i, ‖(hF_int i).toL1 (F i)‖ₑ ≠ ⊤ := by
     refine ENNReal.tsum_coe_ne_top_iff_summable.2 <| NNReal.summable_coe.1 ?_
-    refine .of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun i ↦ ?_) hF_sum
-    rw [coe_nnNorm, L1.norm_eq_integral_norm]
-    exact integral_mono_ae (L1.integrable_coeFn _).norm (hF_int i).norm
-      (((hF_int i).coeFn_toL1.fun_comp norm).le)
+    simpa only [coe_nnNorm, L1.norm_of_fun_eq_integral_norm (hF_int _)] using hF_sum
   refine (L1.integrable_coeFn (∑' i, (hF_int i).toL1 (F i))).congr ?_
   filter_upwards [Lp.coeFn_tsum heNorm,
     ae_all_iff.2 fun i ↦ (hF_int i).coeFn_toL1] with x hx hcoe

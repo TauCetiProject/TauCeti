@@ -10,7 +10,9 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Star
 public import TauCeti.MeasureTheory.Measure.Regular
 public import TauCeti.Topology.Separation.TypeTags
 import Mathlib.Analysis.CStarAlgebra.Spectrum
+import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
+import TauCeti.Topology.Algebra.Module.Span
 
 /-!
 # Vector-valued integrated forms of covariant pairs on Bochner `L¹`
@@ -27,9 +29,11 @@ Here we construct the integrated form directly on the Bochner space `Lp A 1 μ` 
 vector integration,
 `(P.integratedOperatorBochnerL1 μ f) v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ`,
 for any inner-regular Borel measure (`[R1Space G] [BorelSpace G] [μ.InnerRegularCompactLTTop]`), and
-prove that it matches `P.integratedOperatorL1 μ` across `ConvolutionAlgebra.completionEquivL1`. The
-vector-integral operator construction, covariance identities, and elementary-tensor comparison
-closely adapt the scalar integrated representation `ContRepresentation.integratedOperatorL1` in
+prove that it matches `P.integratedOperatorL1 μ` across
+`ConvolutionAlgebra.toL1FromCompletion` (without local compactness) and
+`ConvolutionAlgebra.completionEquivL1`. The vector-integral operator construction, covariance
+identities, and elementary-tensor comparison closely adapt the scalar integrated representation
+`ContRepresentation.integratedOperatorL1` in
 `TauCeti.RepresentationTheory.Continuous.Integrated.Basic` and the compact-support covariant form
 `CovariantRepresentation.integratedOperator` /
 `CovariantRepresentation.integratedOperator_eq_coefficient_mul_integratedOperatorL1` in
@@ -58,11 +62,15 @@ measures need not have full support.
   `CovariantRepresentation.integratedOperatorBochnerL1_convolutionLp`: left coefficient covariance,
   group covariance, and multiplicativity under `CStarAction.convolutionLp` at `p = 1` directly on
   `Lp A 1 μ` without local compactness.
-* `CovariantRepresentation.integratedOperatorBochnerL1_completionEquivL1`,
+* `CovariantRepresentation.topologicalClosure_span_integratedOperatorBochnerL1`,
+  `CovariantRepresentation.dense_span_integratedOperatorBochnerL1_iff`: closed essential subspace
+  and nondegeneracy characterization for `integratedOperatorBochnerL1`.
+* `CovariantRepresentation.integratedOperatorBochnerL1_toL1FromCompletion`,
+  `CovariantRepresentation.integratedOperatorBochnerL1_completionEquivL1`,
   `CovariantRepresentation.integratedOperatorL1_completionEquivL1_symm`,
   `CovariantRepresentation.integratedOperatorBochnerL1_twistedInvolutionL1`: agreement of
-  `P.integratedOperatorBochnerL1 μ` with `P.integratedOperatorL1 μ` across `completionEquivL1` and
-  compatibility with `CStarAction.twistedInvolutionL1`.
+  `P.integratedOperatorBochnerL1 μ` with `P.integratedOperatorL1 μ` along `toL1FromCompletion` and
+  `completionEquivL1`, and compatibility with `CStarAction.twistedInvolutionL1`.
 * `CovariantRepresentation.integratedOperatorBochnerL1_compLp_smulRight`,
   `CovariantRepresentation.integratedOperatorBochnerL1_trivial`: comparison with the scalar
   `ContRepresentation.integratedOperatorL1` on elementary tensors `φ ⊗ a` and specialization to the
@@ -174,10 +182,9 @@ theorem norm_integratedOperatorBochnerL1_apply_le {μ : Measure G} [μ.InnerRegu
 /-- For an integrable `f : G → A`, `‖(π ⋊ U)(f)‖ ≤ ∫ g, ‖f g‖ dμ(g)`. -/
 theorem norm_integratedOperatorBochnerL1_toL1_le (μ : Measure G) [μ.InnerRegularCompactLTTop]
     {f : G → A} (hf : Integrable f μ) :
-    ‖P.integratedOperatorBochnerL1 μ (hf.toL1 f)‖ ≤ ∫ g, ‖f g‖ ∂μ := by
-  refine (P.norm_integratedOperatorBochnerL1_apply_le (hf.toL1 f)).trans_eq ?_
-  rw [L1.norm_eq_integral_norm]
-  exact integral_congr_ae (hf.coeFn_toL1.fun_comp norm)
+    ‖P.integratedOperatorBochnerL1 μ (hf.toL1 f)‖ ≤ ∫ g, ‖f g‖ ∂μ :=
+  (P.norm_integratedOperatorBochnerL1_apply_le (hf.toL1 f)).trans_eq
+    (L1.norm_of_fun_eq_integral_norm hf)
 
 /-- The operator norm of `P.integratedOperatorBochnerL1 μ` is at most `1`, including zero algebras
 and zero Hilbert spaces. -/
@@ -296,6 +303,33 @@ theorem integratedOperatorBochnerL1_trivial {μ : Measure G} [μ.InnerRegularCom
   rw [← ContinuousLinearMap.integral_apply hπ v]
   exact congrArg (· v) (πL.integral_comp_comm hint)
 
+/-- `integratedOperatorBochnerL1` generates the closed essential subspace of the coefficient
+representation. -/
+theorem topologicalClosure_span_integratedOperatorBochnerL1 [LocallyCompactSpace G]
+    (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop]
+    [μ.IsOpenPosMeasure] :
+    (Submodule.span ℂ
+      (⋃ u : Lp A 1 μ, Set.range (P.integratedOperatorBochnerL1 μ u))).topologicalClosure =
+      (Submodule.span ℂ (⋃ a : A, Set.range (P.coefficient a))).topologicalClosure := by
+  rw [← (CompactlySupportedContinuousMap.denseRange_toLp ENNReal.one_ne_top μ ℂ
+    |>.topologicalClosure_span_iUnion_range_comp_eq (R := ℂ)
+      (L := fun u : Lp A 1 μ => ⇑(P.integratedOperatorBochnerL1 μ u)) fun v =>
+        (ContinuousLinearMap.apply ℂ H v).continuous.comp
+          (P.integratedOperatorBochnerL1 μ).continuous)]
+  simp_rw [integratedOperatorBochnerL1_toLp]
+  exact P.topologicalClosure_span_integratedOperator μ
+
+/-- Nondegeneracy is preserved and reflected by `integratedOperatorBochnerL1`. -/
+theorem dense_span_integratedOperatorBochnerL1_iff [LocallyCompactSpace G]
+    (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop]
+    [μ.IsOpenPosMeasure] :
+    Dense (Submodule.span ℂ
+      (⋃ u : Lp A 1 μ, Set.range (P.integratedOperatorBochnerL1 μ u)) : Set H) ↔
+      P.coefficient.IsNondegenerate := by
+  rw [NonUnitalStarAlgHom.isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
+    Submodule.dense_iff_topologicalClosure_eq_top,
+    P.topologicalClosure_span_integratedOperatorBochnerL1 μ]
+
 end IntegratedOperatorBochnerL1
 
 section Convolution
@@ -334,10 +368,26 @@ end Convolution
 section CompletionComparison
 
 variable {G A H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
+  [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {α : CStarAction G A} (P : CovariantRepresentation α H)
   {μ : Measure G} [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
+
+/-- Along `ConvolutionAlgebra.toL1FromCompletion`, `integratedOperatorBochnerL1` agrees with
+`integratedOperatorL1` without requiring local compactness of `G`. -/
+@[simp]
+theorem integratedOperatorBochnerL1_toL1FromCompletion (x : Completion (ConvolutionAlgebra α μ)) :
+    P.integratedOperatorBochnerL1 μ (ConvolutionAlgebra.toL1FromCompletion α μ x) =
+      P.integratedOperatorL1 μ x := by
+  induction x using Completion.induction_on with
+  | hp =>
+    exact isClosed_eq
+      ((P.integratedOperatorBochnerL1 μ).continuous.comp
+        (ConvolutionAlgebra.toL1FromCompletion α μ).continuous)
+      (P.continuous_integratedOperatorL1 μ)
+  | ih f => simp
+
+variable [LocallyCompactSpace G]
 
 /-- **Agreement of the concrete and abstract `L¹` integrated forms**:
 `P.integratedOperatorBochnerL1 μ` composed with `ConvolutionAlgebra.completionEquivL1` equals
@@ -346,15 +396,8 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 theorem integratedOperatorBochnerL1_completionEquivL1 (x : Completion (ConvolutionAlgebra α μ)) :
     P.integratedOperatorBochnerL1 μ (ConvolutionAlgebra.completionEquivL1 α μ x) =
       P.integratedOperatorL1 μ x := by
-  induction x using Completion.induction_on with
-  | hp =>
-    exact isClosed_eq
-      ((P.integratedOperatorBochnerL1 μ).continuous.comp
-        (ConvolutionAlgebra.completionEquivL1 α μ).continuous)
-      (P.continuous_integratedOperatorL1 μ)
-  | ih f =>
-    rw [ConvolutionAlgebra.completionEquivL1_coe,
-      P.integratedOperatorBochnerL1_convolutionAlgebra_toL1, P.integratedOperatorL1_coe]
+  rw [← ConvolutionAlgebra.toL1FromCompletion_eq_completionEquivL1,
+    P.integratedOperatorBochnerL1_toL1FromCompletion]
 
 @[simp]
 theorem integratedOperatorL1_completionEquivL1_symm (f : Lp A 1 μ) :

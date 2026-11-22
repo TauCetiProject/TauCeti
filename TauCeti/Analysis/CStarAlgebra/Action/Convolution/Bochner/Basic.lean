@@ -7,17 +7,13 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Functoriality
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1
-public import TauCeti.Analysis.CStarAlgebra.Hom
-public import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
-import TauCeti.MeasureTheory.Function.Lp.Basic
 
 /-!
-# Bochner `Lᵖ` action and equivariant functoriality
+# Bochner `Lᵖ` equivariant functoriality
 
-This file extends `TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1` in two directions:
+This file extends `TauCeti.Analysis.CStarAlgebra.Action.Convolution.Functoriality` and
+`TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1` with Bochner `Lᵖ` functoriality:
 
-* `TauCeti.CStarAction.actionLp`: pointwise isometric action `(r • u) s = α r (u s)` on
-  `Lp A p μ` for `1 ≤ p ≤ ∞`, jointly continuous for `p < ∞`.
 * `TauCeti.CStarAction.Hom.mapLp`: contractive functoriality `Lp A p μ →L[ℂ] Lp B p μ` of an
   equivariant homomorphism, intertwining `actionLp`, `translateLp`, `convolutionLp`,
   `convolutionMapL1`, and `twistedInvolutionL1`.
@@ -36,108 +32,6 @@ open Filter Function MeasureTheory Topology UniformSpace
 open scoped CompactlySupported CStarAlgebra ENNReal NNReal
 
 namespace TauCeti.CStarAction
-
-/-! ### Pointwise action on `Lᵖ` -/
-
-section ActionLp
-
-variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
-  [MeasurableSpace G] (α : CStarAction G A) (μ : Measure G) (p : ℝ≥0∞) [Fact (1 ≤ p)]
-
-/-- Pointwise application `(r • u) s = α r (u s)` of a C⋆-action on `Lp A p μ`, as a group
-homomorphism into linear isometric equivalences. -/
-def actionLp : G →* (Lp A p μ ≃ₗᵢ[ℂ] Lp A p μ) where
-  toFun r := (α r).toLinearIsometryEquiv.compLpₗᵢ p μ
-  map_one' := by
-    ext u : 1
-    refine Lp.ext ?_
-    filter_upwards [(α 1).toLinearIsometryEquiv.coeFn_compLpₗᵢ (p := p) (μ := μ) u] with s hs
-    simpa using hs
-  map_mul' r t := by
-    ext u : 1
-    refine Lp.ext ?_
-    filter_upwards
-      [(α (r * t)).toLinearIsometryEquiv.coeFn_compLpₗᵢ (p := p) (μ := μ) u,
-      (α r).toLinearIsometryEquiv.coeFn_compLpₗᵢ (p := p) (μ := μ)
-        ((α t).toLinearIsometryEquiv.compLpₗᵢ p μ u),
-      (α t).toLinearIsometryEquiv.coeFn_compLpₗᵢ (p := p) (μ := μ) u] with s h₁ h₂ h₃
-    simp only [LinearIsometryEquiv.coe_mul, Function.comp_apply,
-      StarAlgEquiv.coe_toLinearIsometryEquiv] at h₁ h₂ h₃ ⊢
-    rw [h₁, h₂, h₃, mul_apply]
-
-variable {μ p}
-
-/-- `actionLp` acts by composing `Lp` classes with `(α r).toLinearIsometryEquiv`. -/
-theorem actionLp_apply (r : G) (u : Lp A p μ) :
-    α.actionLp μ p r u = (α r).toLinearIsometryEquiv.compLpₗᵢ p μ u :=
-  (rfl)
-
-/-- Pointwise almost-everywhere formula for `actionLp`. -/
-theorem coeFn_actionLp (r : G) (u : Lp A p μ) :
-    α.actionLp μ p r u =ᵐ[μ] fun s => α r (u s) := by
-  filter_upwards [(α r).toLinearIsometryEquiv.coeFn_compLpₗᵢ (p := p) (μ := μ) u] with s hs
-  simpa [actionLp_apply] using hs
-
-/-- The inverse of `actionLp` at `r` is `actionLp` at `r⁻¹`. -/
-@[simp]
-theorem actionLp_symm (r : G) : (α.actionLp μ p r).symm = α.actionLp μ p r⁻¹ := by
-  rw [map_inv, LinearIsometryEquiv.inv_def]
-
-/-- The trivial C⋆-action acts trivially on `Lp`. -/
-@[simp]
-theorem actionLp_trivial (r : G) : (trivial (G := G) (A := A)).actionLp μ p r = 1 := by
-  ext1 u
-  refine Lp.ext ?_
-  filter_upwards [(trivial (G := G) (A := A)).coeFn_actionLp r u] with s hs
-  simpa using hs
-
-/-- `actionLp` maps an indicator constant class by applying `α r` to its constant value. -/
-theorem actionLp_indicatorConstLp (r : G) {s : Set G} (hs : MeasurableSet s) (hμs : μ s ≠ ∞)
-    (c : A) :
-    α.actionLp μ p r (indicatorConstLp p hs hμs c) = indicatorConstLp p hs hμs (α r c) := by
-  rw [actionLp_apply, LinearIsometryEquiv.compLpₗᵢ_indicatorConstLp]
-  simp
-
-/-- For `p < ∞`, `actionLp` is jointly continuous on `G × Lp A p μ`. -/
-@[fun_prop]
-theorem continuous_actionLp (hp : p ≠ ∞) :
-    Continuous fun q : G × Lp A p μ => α.actionLp μ p q.1 q.2 :=
-  LinearIsometryEquiv.continuous_compLpₗᵢ hp (e := fun r => (α r).toLinearIsometryEquiv)
-    fun c => by
-      simp_rw [StarAlgEquiv.coe_toLinearIsometryEquiv]
-      exact α.continuous_orbit c
-
-/-- For `p < ∞`, every orbit `r ↦ α.actionLp μ p r u` is norm continuous in `Lp A p μ`. -/
-@[fun_prop]
-theorem continuous_actionLp_apply (hp : p ≠ ∞) (u : Lp A p μ) :
-    Continuous fun r => α.actionLp μ p r u :=
-  (α.continuous_actionLp hp).comp (continuous_id.prodMk continuous_const)
-
-/-- Pointwise coefficient action and group left translation commute on `Lp A p μ`. -/
-theorem actionLp_leftTranslation [MeasurableMul G] [μ.IsMulLeftInvariant] (r t : G)
-    (u : Lp A p μ) :
-    α.actionLp μ p r (Lp.leftTranslation μ p ℂ t u) =
-      Lp.leftTranslation μ p ℂ t (α.actionLp μ p r u) := by
-  refine Lp.ext ?_
-  filter_upwards [α.coeFn_actionLp r (Lp.leftTranslation μ p ℂ t u),
-    Lp.coeFn_leftTranslation (𝕜 := ℂ) t u,
-    Lp.coeFn_leftTranslation (𝕜 := ℂ) t (α.actionLp μ p r u),
-    (measurePreserving_mul_left μ t⁻¹).quasiMeasurePreserving.ae (α.coeFn_actionLp r u)]
-    with s h₁ h₂ h₃ h₄
-  rw [h₁, h₂, h₃, h₄]
-
-/-- `translateLp` factors as `actionLp` composed with `Lp.leftTranslation`. -/
-theorem translateLp_eq_actionLp_mul_leftTranslation [MeasurableMul G] [μ.IsMulLeftInvariant]
-    (r : G) :
-    α.translateLp μ p r = α.actionLp μ p r * Lp.leftTranslation μ p ℂ r := by
-  ext u : 1
-  refine Lp.ext ?_
-  filter_upwards [α.coeFn_translateLp r u,
-    α.coeFn_actionLp r (Lp.leftTranslation μ p ℂ r u),
-    Lp.coeFn_leftTranslation (𝕜 := ℂ) r u] with s h₁ h₂ h₃
-  simp [h₁, h₂, h₃]
-
-end ActionLp
 
 /-! ### Equivariant functoriality on Bochner `Lᵖ` -/
 
