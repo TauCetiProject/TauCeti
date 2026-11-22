@@ -199,22 +199,11 @@ private theorem idealCorrespondence_symm_coe {A : Type*} [Ring A] (I : TwoSidedI
     (J : TwoSidedIdeal (A ⧸ I)) :
     (((idealCorrespondence I).symm J : Set.Ici I).val : Set A) =
       TwoSidedIdeal.Quotient.mk I ⁻¹' (J : Set (A ⧸ I)) := by
-  have hval : ((idealCorrespondence I).symm J).val = J.comap (TwoSidedIdeal.Quotient.mk I) := by
-    ext a
-    -- Unfolding `OrderIso.Ici`, `Set.orderIsoOfEq`, and `RingCon.correspondence` reduces
-    -- ideal membership to `J.ringCon` on `(Quotient.ringCon I).mk'`.
-    have ha : ((TwoSidedIdeal.Quotient.ringCon I).mk' a : A ⧸ I) =
-        TwoSidedIdeal.Quotient.mk I a :=
-      TwoSidedIdeal.Quotient.quotientAddGroupMk_eq_mk I a
-    have h0 : ((TwoSidedIdeal.Quotient.ringCon I).mk' 0 : A ⧸ I) = 0 :=
-      (TwoSidedIdeal.Quotient.quotientAddGroupMk_eq_mk I 0).trans
-        (map_zero (TwoSidedIdeal.Quotient.mk I))
-    change J.ringCon ((TwoSidedIdeal.Quotient.ringCon I).mk' a)
-        ((TwoSidedIdeal.Quotient.ringCon I).mk' 0) ↔ a ∈ J.comap (TwoSidedIdeal.Quotient.mk I)
-    rw [ha, h0, TwoSidedIdeal.mem_comap, TwoSidedIdeal.mem_iff]
-    exact Iff.rfl
   ext a
-  rw [hval, SetLike.mem_coe, TwoSidedIdeal.mem_comap, Set.mem_preimage, SetLike.mem_coe]
+  let J' : TwoSidedIdeal (TwoSidedIdeal.Quotient.ringCon I).Quotient := J
+  change a ∈ J'.comap (TwoSidedIdeal.Quotient.ringCon I).mk' ↔ _
+  rw [TwoSidedIdeal.mem_comap, Set.mem_preimage, SetLike.mem_coe]
+  exact Iff.of_eq (congrArg (· ∈ J) (TwoSidedIdeal.Quotient.quotientAddGroupMk_eq_mk I a))
 
 /-- On a separable complex Hilbert space `H`, every closed two-sided ideal of `CalkinAlgebra H` is
 `⊥` or `⊤`. -/

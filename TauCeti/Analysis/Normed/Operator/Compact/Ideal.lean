@@ -291,9 +291,8 @@ theorem compactIdeal_le_separableRangeIdeal : compactIdeal 𝕜 E ≤ separableR
   choose K hK hsub using fun n : ℕ ↦
     (mem_compactIdeal.mp hf).image_closedBall_subset_compact (f := f.toLinearMap) n
   refine (IsSeparable.iUnion fun n ↦ (hK n).isSeparable).mono ?_
-  rintro _ ⟨x, rfl⟩
-  obtain ⟨n, hn⟩ := exists_nat_ge ‖x‖
-  exact Set.mem_iUnion.mpr ⟨n, hsub n ⟨x, mem_closedBall_zero_iff.mpr hn, rfl⟩⟩
+  rw [← Set.image_univ, ← Metric.iUnion_closedBall_nat (0 : E), Set.image_iUnion]
+  exact Set.iUnion_mono hsub
 
 end Normed
 
