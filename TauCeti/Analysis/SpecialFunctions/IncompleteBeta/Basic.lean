@@ -38,8 +38,6 @@ The real-variable theory of Euler's beta integral that the construction rests on
 * `TauCeti.regularizedIncompleteBeta_eq_zero_of_nonpos`,
   `TauCeti.regularizedIncompleteBeta_eq_zero_of_neg` and
   `TauCeti.regularizedIncompleteBeta_eq_one_of_one_le` — the values `0` and `1` off `(0, 1)`;
-* `TauCeti.exists_forall_regularizedIncompleteBeta_eq_of_notMem_Icc` — independence of the
-  parameters off `[0, 1]`;
 * `TauCeti.regularizedIncompleteBeta_eq_zero_of_neg_left` and
   `TauCeti.regularizedIncompleteBeta_eq_zero_of_nonpos_right` — the default value `0` outside the
   parameter range;
@@ -177,16 +175,6 @@ theorem regularizedIncompleteBeta_eq_one_of_one_le (ha : 0 ≤ a) (hb : 0 < b) (
   · exact regularizedIncompleteBeta_zero_left hb (by linarith)
   · rw [regularizedIncompleteBeta_def_of_pos ha hb, max_eq_left (by linarith : (0 : ℝ) ≤ x),
       min_eq_left hx, integral_rpow_mul_one_sub_rpow ha hb, div_self (beta_pos ha hb).ne']
-
-/-- Off `[0, 1]` the regularized incomplete beta function does not depend on the parameters in the
-range `0 ≤ a`, `0 < b`: it is `0` to the left of `0` and `1` from `1` on. This is what lets the
-homogeneous recurrences of DLMF §8.17(iv) hold for every real `x`. -/
-theorem exists_forall_regularizedIncompleteBeta_eq_of_notMem_Icc (hx : x ∉ Set.Icc 0 1) :
-    ∃ v, ∀ a b, 0 ≤ a → 0 < b → regularizedIncompleteBeta a b x = v := by
-  rcases lt_or_ge x 0 with hx0 | hx0
-  · exact ⟨0, fun a b _ _ ↦ regularizedIncompleteBeta_eq_zero_of_neg a b hx0⟩
-  · have hx1 : 1 ≤ x := (lt_of_not_ge fun h ↦ hx ⟨hx0, h⟩).le
-    exact ⟨1, fun a b ha hb ↦ regularizedIncompleteBeta_eq_one_of_one_le ha hb hx1⟩
 
 /-- The beta integrand is nonnegative on `[0, 1]`. -/
 private lemma beta_integrand_nonneg {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
