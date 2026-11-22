@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Beta
+public import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.Calculus.RealCharts
 import Mathlib.Topology.Order.MonotoneContinuity
 
@@ -26,7 +26,7 @@ makes the binomial-tail formula `(binomial n p).real {k | m ≤ k} = I_p(m, n - 
 `m = 0` without a separate case.
 
 The real-variable theory of Euler's beta integral that the construction rests on lives in
-`TauCeti/Analysis/SpecialFunctions/Beta.lean`.
+`TauCeti/Analysis/SpecialFunctions/Beta/Basic.lean`.
 
 ## Main results
 
@@ -55,11 +55,14 @@ The real-variable theory of Euler's beta integral that the construction rests on
 * `TauCeti.integral_Ioi_rpow_one_add_rpow_eq_interval_tail` and
   `TauCeti.integral_Ioi_rpow_one_add_rpow_tail_eq` — the second-beta-integral upper tail,
   rewritten through the incomplete beta function;
-* `TauCeti.regularizedIncompleteBeta_symm` — the reflection formula
-  `I_x(a, b) = 1 - I_{1-x}(b, a)`;
-* `TauCeti.regularizedIncompleteBeta_one_right` and
-  `TauCeti.regularizedIncompleteBeta_one_left` — the elementary values `x ^ a` and
-  `1 - (1 - x) ^ b` at a unit parameter;
+* `TauCeti.regularizedIncompleteBeta_symm` and
+  `TauCeti.inverseRegularizedIncompleteBeta_symm` — the reflection formulas
+  `I_x(a, b) = 1 - I_{1-x}(b, a)` and `I⁻¹_u(a, b) = 1 - I⁻¹_{1-u}(b, a)`;
+* `TauCeti.regularizedIncompleteBeta_one_right`,
+  `TauCeti.regularizedIncompleteBeta_one_left`,
+  `TauCeti.inverseRegularizedIncompleteBeta_one_right`, and
+  `TauCeti.inverseRegularizedIncompleteBeta_one_left` — the elementary values `x ^ a`,
+  `1 - (1 - x) ^ b`, `u ^ a⁻¹`, and `1 - (1 - u) ^ b⁻¹` at a unit parameter;
 * `TauCeti.regularizedIncompleteBeta_add_one_left` and
   `TauCeti.regularizedIncompleteBeta_add_one_right` — the unit-step recurrences
   `I_x(a + 1, b) = I_x(a, b) - x ^ a * (1 - x) ^ b / (a * Β(a, b))` and
@@ -237,9 +240,17 @@ theorem regularizedIncompleteBeta_le_one (a b x : ℝ) :
       (regularizedIncompleteBeta_eq_one_of_one_le ha.le hb (le_max_right x 1))
 
 /-- The regularized incomplete beta function is continuous on all of `ℝ`, including at the two
-endpoints of the support, where the integrand may blow up. -/
-theorem continuous_regularizedIncompleteBeta (ha : 0 < a) (hb : 0 < b) :
+endpoints of the support, where the integrand may blow up. The hypothesis `a ≠ 0` excludes the
+boundary convention `regularizedIncompleteBeta_zero_left`, under which the function jumps from `0`
+to `1` at `x = 0` when `0 < b`; for `a < 0` or `b ≤ 0` the function is identically `0`. -/
+theorem continuous_regularizedIncompleteBeta (ha : a ≠ 0) (b : ℝ) :
     Continuous (regularizedIncompleteBeta a b) := by
+  rcases ha.lt_or_gt with ha | ha
+  · exact continuous_const.congr fun x =>
+      (regularizedIncompleteBeta_eq_zero_of_neg_left ha b x).symm
+  rcases le_or_gt b 0 with hb | hb
+  · exact continuous_const.congr fun x =>
+      (regularizedIncompleteBeta_eq_zero_of_nonpos_right hb a x).symm
   have hII := intervalIntegrable_rpow_mul_one_sub_rpow ha hb
     (u := 0) (v := 1) (mem_Icc.2 ⟨le_rfl, zero_le_one⟩) (mem_Icc.2 ⟨zero_le_one, le_rfl⟩)
   have hc : Continuous fun x : ℝ =>
@@ -277,7 +288,7 @@ increasing on its support interval. -/
 theorem strictMonoOn_regularizedIncompleteBeta (ha : 0 < a) (hb : 0 < b) :
     StrictMonoOn (regularizedIncompleteBeta a b) (Icc 0 1) := by
   refine strictMonoOn_of_deriv_pos (convex_Icc 0 1)
-    (continuous_regularizedIncompleteBeta ha hb).continuousOn fun x hx => ?_
+    (continuous_regularizedIncompleteBeta ha.ne' b).continuousOn fun x hx => ?_
   rw [interior_Icc] at hx
   rw [(hasDerivAt_regularizedIncompleteBeta ha hb hx.1 hx.2).deriv]
   exact div_pos (mul_pos (Real.rpow_pos_of_pos hx.1 _) (Real.rpow_pos_of_pos (sub_pos.mpr hx.2) _))
@@ -306,24 +317,9 @@ theorem regularizedIncompleteBeta_pos_iff (ha : 0 < a) (hb : 0 < b) :
 theorem integral_Ioi_rpow_one_add_rpow_eq_interval_tail {a b u0 : ℝ} (hu01 : u0 < 1) :
     ∫ w in Ioi (u0 / (1 - u0)), w ^ (a - 1) * (1 + w) ^ (-(a + b)) =
       ∫ u in Ioo u0 1, u ^ (a - 1) * (1 - u) ^ (b - 1) := by
-  have hderiv : ∀ u ∈ Ioo u0 1,
-      HasDerivWithinAt (fun u : ℝ => u / (1 - u)) ((1 - u) ^ 2)⁻¹ (Ioo u0 1) u :=
-    fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt
-  let k0 : ℝ → ℝ := fun w => w ^ (a - 1) * (1 + w) ^ (-(a + b))
-  let k : ℝ → ℝ := fun u => u ^ (a - 1) * (1 - u) ^ (b - 1)
-  have hcov : ∀ u ∈ Ioo u0 1, |((1 - u) ^ 2)⁻¹| • k0 (u / (1 - u)) = k u := by
-    intro u hu
-    simpa [k0, k] using abs_deriv_smul_one_add_rpow a b hu.2
-  have himg :
-      (fun u : ℝ => u / (1 - u)) '' Ioo u0 1 = Ioi (u0 / (1 - u0)) := by
-    rw [image_div_one_sub_Ioo hu01]
-  have h21 : ∫ u in Ioo u0 1, |((1 - u) ^ 2)⁻¹| • k0 (u / (1 - u)) =
-      ∫ w in Ioi (u0 / (1 - u0)), k0 w := by
-    rw [← integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo hderiv
-        (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self) k0, himg]
-  have h2 : ∫ w in Ioi (u0 / (1 - u0)), k0 w = ∫ u in Ioo u0 1, k u := by
-    rw [← h21, setIntegral_congr_fun measurableSet_Ioo hcov]
-  simpa [k0, k] using h2
+  rw [integral_Ioi_eq_integral_div_one_sub _ hu01]
+  refine setIntegral_congr_fun measurableSet_Ioo fun u hu => ?_
+  exact inv_sq_smul_rpow_mul_one_add_rpow a b hu.2
 
 /-- The upper tail of the first beta-integral kernel is the total beta mass minus the normalized
 lower incomplete beta mass. -/
@@ -437,7 +433,7 @@ theorem exists_unique_regularizedIncompleteBeta_eq (ha : 0 < a) (hb : 0 < b)
       regularizedIncompleteBeta_eq_one_of_one_le ha.le hb le_rfl]
     exact ⟨hu0, hu1⟩
   rcases intermediate_value_Ioo (zero_le_one : (0 : ℝ) ≤ 1)
-      (continuous_regularizedIncompleteBeta ha hb).continuousOn hu with ⟨x, hx, hxu⟩
+      (continuous_regularizedIncompleteBeta ha.ne' b).continuousOn hu with ⟨x, hx, hxu⟩
   refine ⟨x, ⟨hx, hxu⟩, fun y hy => ?_⟩
   exact ((strictMonoOn_regularizedIncompleteBeta ha hb).injOn
     ⟨hx.1.le, hx.2.le⟩ ⟨hy.1.1.le, hy.1.2.le⟩ (hxu.trans hy.2.symm)).symm
@@ -455,6 +451,13 @@ theorem inverseRegularizedIncompleteBeta_eq_zero
     (h : ¬(0 < a ∧ 0 < b ∧ 0 < u ∧ u < 1)) :
     inverseRegularizedIncompleteBeta a b u = 0 := by
   simp [inverseRegularizedIncompleteBeta, h]
+
+/-- Outside the positive shape parameters, the inverse regularized incomplete beta function is
+identically zero. -/
+@[simp]
+theorem inverseRegularizedIncompleteBeta_eq_zero_of_not_pos (h : ¬(0 < a ∧ 0 < b)) :
+    inverseRegularizedIncompleteBeta a b = 0 :=
+  funext fun _ => inverseRegularizedIncompleteBeta_eq_zero fun h' => h ⟨h'.1, h'.2.1⟩
 
 /-- At valid parameters, the inverse regularized incomplete beta function lies in `(0, 1)`. -/
 theorem inverseRegularizedIncompleteBeta_mem_Ioo (ha : 0 < a) (hb : 0 < b)
@@ -535,10 +538,15 @@ theorem image_inverseRegularizedIncompleteBeta_Ioo (ha : 0 < a) (hb : 0 < b) :
     exact ⟨regularizedIncompleteBeta a b x, ⟨hu0, hu1⟩,
       inverseRegularizedIncompleteBeta_regularizedIncompleteBeta ha hb hx.1 hx.2⟩
 
-/-- At positive shape parameters, the inverse regularized incomplete beta function is continuous
-at every level in `(0, 1)`. -/
-theorem continuousAt_inverseRegularizedIncompleteBeta (ha : 0 < a) (hb : 0 < b)
+/-- The inverse regularized incomplete beta function is continuous at every level in `(0, 1)`
+(outside the positive shape parameters it is identically `0`). -/
+theorem continuousAt_inverseRegularizedIncompleteBeta (a b : ℝ)
     (hu : u ∈ Ioo (0 : ℝ) 1) : ContinuousAt (inverseRegularizedIncompleteBeta a b) u := by
+  by_cases hab : 0 < a ∧ 0 < b
+  swap
+  · rw [inverseRegularizedIncompleteBeta_eq_zero_of_not_pos hab]
+    exact continuousAt_const
+  obtain ⟨ha, hb⟩ := hab
   refine (strictMonoOn_inverseRegularizedIncompleteBeta ha hb).continuousAt_of_image_mem_nhds
     (Ioo_mem_nhds hu.1 hu.2) ?_
   rw [image_inverseRegularizedIncompleteBeta_Ioo ha hb]
@@ -546,36 +554,36 @@ theorem continuousAt_inverseRegularizedIncompleteBeta (ha : 0 < a) (hb : 0 < b)
     (inverseRegularizedIncompleteBeta_mem_Ioo ha hb hu.1 hu.2).1
     (inverseRegularizedIncompleteBeta_mem_Ioo ha hb hu.1 hu.2).2
 
-/-- At positive shape parameters, the inverse regularized incomplete beta function is continuous
-on the open unit interval. -/
-theorem continuousOn_inverseRegularizedIncompleteBeta (ha : 0 < a) (hb : 0 < b) :
+/-- The inverse regularized incomplete beta function is continuous on the open unit interval
+(outside the positive shape parameters it is identically `0`). -/
+theorem continuousOn_inverseRegularizedIncompleteBeta (a b : ℝ) :
     ContinuousOn (inverseRegularizedIncompleteBeta a b) (Ioo 0 1) :=
-  fun _ hu => (continuousAt_inverseRegularizedIncompleteBeta ha hb hu).continuousWithinAt
+  fun _ hu => (continuousAt_inverseRegularizedIncompleteBeta a b hu).continuousWithinAt
 
 /-- For fixed shape parameters, the totalized inverse regularized incomplete beta function is
 measurable. -/
 @[fun_prop]
 theorem measurable_inverseRegularizedIncompleteBeta (a b : ℝ) :
     Measurable (inverseRegularizedIncompleteBeta a b) := by
-  by_cases hab : 0 < a ∧ 0 < b
-  · have hp := (continuousOn_inverseRegularizedIncompleteBeta hab.1 hab.2).measurable_piecewise
-      (g := fun _ : ℝ => 0) continuousOn_const measurableSet_Ioo
-    convert hp using 1
-    funext u
-    by_cases hu : u ∈ Ioo (0 : ℝ) 1
-    · simp [hu]
-    · simp only [Set.piecewise, hu, ↓reduceIte]
-      exact inverseRegularizedIncompleteBeta_eq_zero (fun h => hu ⟨h.2.2.1, h.2.2.2⟩)
-  · have hzero : inverseRegularizedIncompleteBeta a b = fun _ => 0 := by
-      funext u
-      exact inverseRegularizedIncompleteBeta_eq_zero (fun h => hab ⟨h.1, h.2.1⟩)
-    rw [hzero]
-    fun_prop
+  have hp := (continuousOn_inverseRegularizedIncompleteBeta a b).measurable_piecewise
+    (g := fun _ : ℝ => 0) continuousOn_const measurableSet_Ioo
+  convert hp using 1
+  funext u
+  by_cases hu : u ∈ Ioo (0 : ℝ) 1
+  · simp [hu]
+  · simp only [Set.piecewise, hu, ↓reduceIte]
+    exact inverseRegularizedIncompleteBeta_eq_zero (fun h => hu ⟨h.2.2.1, h.2.2.2⟩)
 
-/-- At positive shape parameters, the inverse regularized incomplete beta function tends to the
-lower support endpoint as its level tends to zero from the right. -/
-theorem tendsto_inverseRegularizedIncompleteBeta_zero (ha : 0 < a) (hb : 0 < b) :
+/-- The inverse regularized incomplete beta function tends to the lower support endpoint as its
+level tends to zero from the right (outside the positive shape parameters it is identically
+`0`). -/
+theorem tendsto_inverseRegularizedIncompleteBeta_zero (a b : ℝ) :
     Tendsto (inverseRegularizedIncompleteBeta a b) (𝓝[>] 0) (𝓝 0) := by
+  by_cases hab : 0 < a ∧ 0 < b
+  swap
+  · rw [inverseRegularizedIncompleteBeta_eq_zero_of_not_pos hab]
+    exact tendsto_const_nhds
+  obtain ⟨ha, hb⟩ := hab
   rw [Metric.tendsto_nhds]
   intro ε hε
   let x : ℝ := min (ε / 2) (1 / 2)
@@ -641,6 +649,50 @@ theorem regularizedIncompleteBeta_one_left (hb : 0 < b) (hx0 : 0 ≤ x) (hx1 : x
   rw [regularizedIncompleteBeta_symm one_pos hb x,
     regularizedIncompleteBeta_one_right hb (by linarith) (by linarith)]
 
+/-- If `y ∈ (0, 1)` satisfies `regularizedIncompleteBeta a b y = u` for positive shape parameters
+`a` and `b`, then the inverse regularized incomplete beta function at `u` equals `y`. -/
+theorem inverseRegularizedIncompleteBeta_eq_of_regularizedIncompleteBeta_eq {y : ℝ}
+    (ha : 0 < a) (hb : 0 < b) (hy0 : 0 < y) (hy1 : y < 1)
+    (h : regularizedIncompleteBeta a b y = u) :
+    inverseRegularizedIncompleteBeta a b u = y := by
+  rw [← h]
+  exact inverseRegularizedIncompleteBeta_regularizedIncompleteBeta ha hb hy0 hy1
+
+/-- **Reflection of the inverse regularized incomplete beta function.** On the interior domain
+`0 < a`, `0 < b`, and `0 < u < 1`, swapping the shape parameters reflects both the probability
+level and the output across `1 / 2`. Outside `(0, 1)` the zero junk value breaks the outer
+`1 - ·` reflection. -/
+theorem inverseRegularizedIncompleteBeta_symm (ha : 0 < a) (hb : 0 < b)
+    (hu0 : 0 < u) (hu1 : u < 1) :
+    inverseRegularizedIncompleteBeta a b u =
+      1 - inverseRegularizedIncompleteBeta b a (1 - u) := by
+  have hu'0 : 0 < 1 - u := sub_pos.mpr hu1
+  have hu'1 : 1 - u < 1 := sub_lt_self 1 hu0
+  have hmem := inverseRegularizedIncompleteBeta_mem_Ioo hb ha hu'0 hu'1
+  refine inverseRegularizedIncompleteBeta_eq_of_regularizedIncompleteBeta_eq ha hb
+    (sub_pos.mpr hmem.2) (sub_lt_self 1 hmem.1) ?_
+  rw [regularizedIncompleteBeta_symm ha hb, sub_sub_cancel,
+    regularizedIncompleteBeta_inverse hb ha hu'0 hu'1, sub_sub_cancel]
+
+/-- At second shape parameter `1`, the inverse regularized incomplete beta function on `(0, 1)` is
+the power `u ^ a⁻¹`. -/
+@[simp]
+theorem inverseRegularizedIncompleteBeta_one_right (ha : 0 < a) (hu0 : 0 < u) (hu1 : u < 1) :
+    inverseRegularizedIncompleteBeta a 1 u = u ^ a⁻¹ := by
+  have hq : u ^ a⁻¹ ∈ Ioo 0 1 :=
+    ⟨Real.rpow_pos_of_pos hu0 _, Real.rpow_lt_one hu0.le hu1 (inv_pos.2 ha)⟩
+  refine inverseRegularizedIncompleteBeta_eq_of_regularizedIncompleteBeta_eq ha one_pos hq.1 hq.2 ?_
+  rw [regularizedIncompleteBeta_one_right ha hq.1.le hq.2.le, ← Real.rpow_mul hu0.le,
+    inv_mul_cancel₀ ha.ne', Real.rpow_one]
+
+/-- At first shape parameter `1`, the inverse regularized incomplete beta function on `(0, 1)` is
+the complementary power `1 - (1 - u) ^ b⁻¹`. -/
+@[simp]
+theorem inverseRegularizedIncompleteBeta_one_left (hb : 0 < b) (hu0 : 0 < u) (hu1 : u < 1) :
+    inverseRegularizedIncompleteBeta 1 b u = 1 - (1 - u) ^ b⁻¹ := by
+  rw [inverseRegularizedIncompleteBeta_symm one_pos hb hu0 hu1,
+    inverseRegularizedIncompleteBeta_one_right hb (sub_pos.mpr hu1) (sub_lt_self 1 hu0)]
+
 /-! ## The unit-step recurrence -/
 
 /-- The unit-step recurrence in the first parameter,
@@ -682,7 +734,7 @@ theorem regularizedIncompleteBeta_add_one_left (ha : 0 < a) (hb : 0 < b)
   -- expand the integral of the derivative, and split off one power of `1 - t`
   rw [intervalIntegral.integral_sub (hA.const_mul a) (hJ.const_mul b),
     intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
-    integral_rpow_mul_one_sub_rpow_add_one_right ha hb hx0 hx1] at hftc
+    integral_rpow_mul_one_sub_rpow_add_one_right ha hb] at hftc
   rw [regularizedIncompleteBeta_def_of_mem_Icc ha1 hb hmem,
     regularizedIncompleteBeta_def_of_mem_Icc ha hb hmem, add_sub_cancel_right,
     beta_add_one_left ha.ne' hab.ne']

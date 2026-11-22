@@ -42,7 +42,8 @@ noncomputable section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
   WithZeroMulInt
-open scoped TensorProduct AdicCompletionExtension NumberField.LiesOver WithZero
+open scoped TensorProduct AdicCompletionExtension WithZero
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -54,7 +55,7 @@ private theorem exists_restricted_finite_preimages (x : IdeleGroup (𝓞 K) K)
         (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range) :
     ∃ u : (v : HeightOneSpectrum (𝓞 K)) →
         (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) →
-          (w.1.adicCompletion L)ˣ,
+          (w.val.adicCompletion L)ˣ,
       (∀ v, (∏ᶠ w, Algebra.normUnits (v.adicCompletion K) (u v w)) = v.ideleFiniteCoord x) ∧
         ∀ᶠ w in Filter.cofinite,
           u (w.under (𝓞 K)) ⟨w, inferInstance⟩ ∈ (w.adicCompletionIntegers L).units := by
@@ -63,7 +64,7 @@ private theorem exists_restricted_finite_preimages (x : IdeleGroup (𝓞 K) K)
   -- local preimages; every other place admits unit preimages.
   let good (v : HeightOneSpectrum (𝓞 K)) :=
     (∀ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      Algebra.IsUnramifiedAt (𝓞 K) w.1.asIdeal) ∧
+      Algebra.IsUnramifiedAt (𝓞 K) w.val.asIdeal) ∧
       Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1
   have hg : ∀ᶠ v in Filter.cofinite, good v := by
     have hu := eventually_isUnramifiedAt_liesOver K L
@@ -73,9 +74,9 @@ private theorem exists_restricted_finite_preimages (x : IdeleGroup (𝓞 K) K)
     exact ⟨hv, by simpa using hxv⟩
   have hchoose (v : HeightOneSpectrum (𝓞 K)) :
       ∃ u : (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) →
-          (w.1.adicCompletion L)ˣ,
+          (w.val.adicCompletion L)ˣ,
         (∏ᶠ w, Algebra.normUnits (v.adicCompletion K) (u w)) = v.ideleFiniteCoord x ∧
-          (good v → ∀ w, Valued.v (u w : w.1.adicCompletion L) = 1) := by
+          (good v → ∀ w, Valued.v (u w : w.val.adicCompletion L) = 1) := by
     by_cases h : good v
     · obtain ⟨u, hu, hv⟩ :=
         exists_unit_preimages_of_isUnramifiedAt K L v (v.ideleFiniteCoord x) h.2 (by
@@ -98,7 +99,7 @@ theorem mem_range_normUnits_ideleFiniteCoord_ideleNormMap (x : IdeleGroup (𝓞 
     v.ideleFiniteCoord (GlobalNumberFields.ideleNormMap K L x) ∈
       (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range := by
   rw [mem_range_normUnits_adicCompletion_iff]
-  exact ⟨fun w ↦ w.1.ideleFiniteCoord x,
+  exact ⟨fun w ↦ w.val.ideleFiniteCoord x,
     (GlobalNumberFields.ideleFiniteCoord_ideleNormMap v x).symm⟩
 
 /-- Every infinite coordinate of an idele norm is a norm from the local étale algebra. -/
@@ -107,7 +108,7 @@ theorem mem_range_normUnits_ideleInfiniteCoord_ideleNormMap (x : IdeleGroup (�
     v.ideleInfiniteCoord (GlobalNumberFields.ideleNormMap K L x) ∈
       (Algebra.normUnits v.Completion (S := v.Completion ⊗[K] L)).range := by
   rw [mem_range_normUnits_completion_iff]
-  exact ⟨fun w ↦ w.1.ideleInfiniteCoord x,
+  exact ⟨fun w ↦ w.val.ideleInfiniteCoord x,
     (GlobalNumberFields.ideleInfiniteCoord_ideleNormMap v x).symm⟩
 
 /-- An arbitrary idele is a norm exactly when each finite and infinite coordinate is a norm
@@ -137,7 +138,7 @@ theorem mem_range_ideleNormMap_iff (x : IdeleGroup (𝓞 K) K) :
   refine ⟨y, ?_⟩
   refine IdeleGroup.ext (fun v ↦ ?_) (fun v ↦ ?_)
   · have hv := GlobalNumberFields.ideleInfiniteCoord_ideleNormMap v y
-    have hz' (w : {w : InfinitePlace L // w.LiesOver v}) : w.1.ideleInfiniteCoord y = t v w := by
+    have hz' (w : {w : InfinitePlace L // w.LiesOver v}) : w.val.ideleInfiniteCoord y = t v w := by
       obtain ⟨w, hw⟩ := w
       have hwv := LiesOver.comap_eq w v
       subst v
@@ -147,7 +148,7 @@ theorem mem_range_ideleNormMap_iff (x : IdeleGroup (𝓞 K) K) :
     exact hv
   · have hv := GlobalNumberFields.ideleFiniteCoord_ideleNormMap v y
     have hz' (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
-        w.1.ideleFiniteCoord y = u v w := by
+        w.val.ideleFiniteCoord y = u v w := by
       obtain ⟨w, hw⟩ := w
       have hwv : w.under (𝓞 K) = v := HeightOneSpectrum.ext hw.over.symm
       subst v

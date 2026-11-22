@@ -46,25 +46,25 @@ def realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex (n : ℕ) 
   let r := (isClosedEmbedding_realizationMap hK).isEmbedding.toHomeomorph
   let e := realizationTopHomeomorphCoordinateSimplex (n + 1)
   have hfront (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2)))) :
-      x ∈ range (realizationMap hK) ↔ (e x).1 ∈ frontier (coordinateSimplex (Fin (n + 1))) := by
+      x ∈ range (realizationMap hK) ↔ (e x).val ∈ frontier (coordinateSimplex (Fin (n + 1))) := by
     rw [mem_range_realizationMap, realizationTopHomeomorphCoordinateSimplex_mem_frontier_iff]
     simp only [K, mem_standardSuccSimplexBoundary_iff, Finset.ssubset_univ_iff]
     exact and_iff_right
       ((⊤ : AbstractSimplicialComplex (Fin (n + 2))).isRelLowerSet_faces.prop_of_mem
         (support_mem _ x))
   let b := e.subtype (p := fun x => x ∈ range (realizationMap hK))
-    (q := fun y => y.1 ∈ frontier (coordinateSimplex (Fin (n + 1)))) hfront
+    (q := fun y => y.val ∈ frontier (coordinateSimplex (Fin (n + 1)))) hfront
   let flat : {y : coordinateSimplex (Fin (n + 1)) //
-      y.1 ∈ frontier (coordinateSimplex (Fin (n + 1)))} ≃ₜ
+      y.val ∈ frontier (coordinateSimplex (Fin (n + 1)))} ≃ₜ
       frontier (coordinateSimplex (Fin (n + 1))) := {
-    toFun := fun y => ⟨y.1.1, y.2⟩
+    toFun := fun y => ⟨y.val.val, y.property⟩
     invFun := fun y =>
-      ⟨⟨y.1, (mem_coordinateSimplex _ _).mpr
-        ((mem_frontier_coordinateSimplex _ _).mp y.2).1⟩, y.2⟩
+      ⟨⟨y.val, (mem_coordinateSimplex _ _).mpr
+        ((mem_frontier_coordinateSimplex _ _).mp y.property).1⟩, y.property⟩
     left_inv := fun _ => rfl
     right_inv := fun _ => rfl
-    continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-    continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
+    continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+    continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
   let a := simplexCoordinateReindex n
   have hpre : a ⁻¹' coordinateSimplex (Option (Fin n)) = coordinateSimplex (Fin (n + 1)) :=
     Set.ext (simplexCoordinateReindex_mem_iff n)
@@ -75,8 +75,8 @@ def realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex (n : ℕ) 
 /-- The frontier identification reads the ambient linear coordinate map. -/
 @[simp] theorem realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex_apply
     (n : ℕ) (x : Realization (standardSuccSimplexBoundary n)) (i : Option (Fin n)) :
-    (realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex n x).1 i =
-      simplexBoundaryCoordinateMap n x.1 i := by
+    (realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex n x).val i =
+      simplexBoundaryCoordinateMap n x.val i := by
   simp [realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex,
     realizationTopHomeomorphCoordinateSimplex_apply, realizationMap_val,
     simplexBoundaryCoordinateMap_apply, simplexCoordinateReindex_apply]
@@ -84,10 +84,10 @@ def realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex (n : ℕ) 
 /-- The inverse frontier identification restores every retained coordinate. -/
 @[simp] theorem realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex_symm_castSucc
     (n : ℕ) (y : frontier (coordinateSimplex (Option (Fin n)))) (i : Fin (n + 1)) :
-    ((realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex n).symm y).1 i.castSucc =
-      y.1 (finSuccEquivLast i) := by
+    ((realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex n).symm y).val i.castSucc =
+      y.val (finSuccEquivLast i) := by
   have h := congrArg (fun z : frontier (coordinateSimplex (Option (Fin n))) =>
-    z.1 (finSuccEquivLast i))
+    z.val (finSuccEquivLast i))
     ((realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex n).apply_symm_apply y)
   simpa only [realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex_apply,
     simplexBoundaryCoordinateMap_apply, Equiv.symm_apply_apply] using h
@@ -95,8 +95,8 @@ def realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex (n : ℕ) 
 /-- The discarded barycentric coordinate is the missing coordinate mass. -/
 @[simp] theorem realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex_symm_last
     (n : ℕ) (y : frontier (coordinateSimplex (Option (Fin n)))) :
-    ((realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex n).symm y).1
-        (Fin.last (n + 1)) = 1 - ∑ i, y.1 i := by
+    ((realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex n).symm y).val
+        (Fin.last (n + 1)) = 1 - ∑ i, y.val i := by
   have h := Realization.sum_eq_one (standardSuccSimplexBoundary n)
     ((realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex n).symm y)
   rw [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at h
@@ -126,11 +126,12 @@ to `i`. This identifies the chart domains combinatorially for transport along su
       mem_openStarRealization, Option.elim_none]
     have hsum := Realization.sum_eq_one (standardSuccSimplexBoundary n) x
     rw [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at hsum
-    have hret : (∑ i, (realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex n x).1 i) =
-        ∑ j : Fin (n + 1), x.1 j.castSucc := by
+    have hret : (∑ i, (realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex n x).val i)
+        =
+        ∑ j : Fin (n + 1), x.val j.castSucc := by
       simp only [realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex_apply,
         simplexBoundaryCoordinateMap_apply]
-      exact finSuccEquivLast.symm.sum_comp (fun j => x.1 j.castSucc)
+      exact finSuccEquivLast.symm.sum_comp (fun j => x.val j.castSucc)
     rw [hret]
     constructor <;> intro h <;> linarith
   | some i =>
@@ -150,7 +151,7 @@ to `i`. This identifies the chart domains combinatorially for transport along su
 @[simp] theorem simplexBoundaryPLChart_apply (n : ℕ) (v : Option (Option (Fin n)))
     (x : Realization (standardSuccSimplexBoundary n)) :
     simplexBoundaryPLChart n v x =
-      coordinateSimplexBoundaryChartProjection v (simplexBoundaryCoordinateMap n x.1) := by
+      coordinateSimplexBoundaryChartProjection v (simplexBoundaryCoordinateMap n x.val) := by
   simp only [simplexBoundaryPLChart, Homeomorph.transOpenPartialHomeomorph_apply,
     Function.comp_apply, coordinateSimplexBoundaryChart_apply]
   congr 1
@@ -160,7 +161,7 @@ to `i`. This identifies the chart domains combinatorially for transport along su
 /-- On the chart target, inverse coordinates use the polyhedral PL lift. -/
 theorem simplexBoundaryPLChart_symm_castSucc (n : ℕ) (v : Option (Option (Fin n)))
     {y : Fin n → ℝ} (hy : ∑ i, coordinateSimplexBoundaryLift y i < 1) (i : Fin (n + 1)) :
-    ((simplexBoundaryPLChart n v).symm y).1 i.castSucc =
+    ((simplexBoundaryPLChart n v).symm y).val i.castSucc =
       coordinateSimplexBoundaryChartLift v y (finSuccEquivLast i) := by
   simp only [simplexBoundaryPLChart, Homeomorph.transOpenPartialHomeomorph_symm_apply,
     Function.comp_apply,
@@ -170,7 +171,7 @@ theorem simplexBoundaryPLChart_symm_castSucc (n : ℕ) (v : Option (Option (Fin 
 /-- The inverse chart recovers the discarded coordinate as the missing mass of the PL lift. -/
 theorem simplexBoundaryPLChart_symm_last (n : ℕ) (v : Option (Option (Fin n)))
     {y : Fin n → ℝ} (hy : ∑ i, coordinateSimplexBoundaryLift y i < 1) :
-    ((simplexBoundaryPLChart n v).symm y).1 (Fin.last (n + 1)) =
+    ((simplexBoundaryPLChart n v).symm y).val (Fin.last (n + 1)) =
       1 - ∑ i, coordinateSimplexBoundaryChartLift v y i := by
   simp only [simplexBoundaryPLChart, Homeomorph.transOpenPartialHomeomorph_symm_apply,
     Function.comp_apply,

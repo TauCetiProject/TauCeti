@@ -7,15 +7,17 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Multiplier
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.CoefficientApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.Multiplier.Nondegenerate
 public import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Nondegeneracy of the canonical coefficient map
 
-The canonical map `i_A : A → M(A ⋊ G)` is nondegenerate: the linear span of `i_A(a) x` is
-dense in the full crossed product. More precisely, an increasing approximate unit `e` of `A`
-satisfies `i_A(e) x → x` and `x i_A(e) → x` in norm for every `x`. Thus coefficient approximate
-units converge strictly to the identity multiplier, even for nonunital coefficients.
+The canonical map `i_A : A → M(A ⋊ G)` is nondegenerate
+(`FullCrossedProduct.isMultiplierNondegenerate_coefficientMultiplier`): the linear span of
+`i_A(a) x` is dense in the full crossed product. More precisely, an increasing approximate unit `e`
+of `A` satisfies `i_A(e) x → x` and `x i_A(e) → x` in norm for every `x`. Thus coefficient
+approximate units converge strictly to the identity multiplier, even for nonunital coefficients.
 
 No faithful representation, separability, or global σ-finiteness is needed.
 
@@ -81,5 +83,13 @@ theorem dense_span_range_coefficientMultiplier_fst :
   intro x
   exact mem_closure_of_tendsto (tendsto_coefficientMultiplier_fst hl x) <|
     .of_forall fun e => Submodule.subset_span <| Set.mem_iUnion.2 ⟨e, x, rfl⟩
+
+/-- The canonical coefficient map `i_A : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A ⋊_α G)` is multiplier-nondegenerate:
+the elements `i_A(a) x` span a norm-dense subspace of `A ⋊_α G`. -/
+@[simp]
+theorem isMultiplierNondegenerate_coefficientMultiplier :
+    (coefficientMultiplier α μ).IsMultiplierNondegenerate :=
+  NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_dense.2
+    dense_span_range_coefficientMultiplier_fst
 
 end TauCeti.CStarAction.FullCrossedProduct

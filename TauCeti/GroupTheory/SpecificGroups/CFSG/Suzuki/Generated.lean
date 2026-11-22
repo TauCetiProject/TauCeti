@@ -320,7 +320,7 @@ abbrev unipotentSubgroupOf : Subgroup (suzukiGroup n) :=
 
 /-- The unipotent subgroup is a `2`-group: each of its elements has order dividing four. -/
 theorem isPGroup_unipotentSubgroup : IsPGroup 2 (unipotentSubgroup n) := fun g ↦ by
-  obtain ⟨a, b, hg⟩ := g.2
+  obtain ⟨a, b, hg⟩ := g.property
   exact ⟨2, Subtype.ext (by simp [← hg])⟩
 
 /-- The unipotent subgroup is a `2`-group inside the Suzuki group. -/

@@ -308,7 +308,7 @@ theorem exists_forall_lt_isMorseOn_continuationPotential [CompactSpace M]
   refine ⟨K, fun C hKC ↦ isMorseOn_continuationPotential (hK.trans_lt hKC).ne' hf h₀ h₁
     (fun x ↦ by simpa using hgerm₀ x 0 hδ) (fun x ↦ by simpa using hgerm₁ x 1 (by linarith))
     fun x t ht ↦ ?_⟩
-  have hpos : 0 < t * (1 - t ^ 2) := mul_pos ht.1 (by nlinarith [ht.1, ht.2])
+  have hpos : 0 < t * (1 - t ^ 2) := mul_one_sub_sq_pos_of_mem_Ioo ht
   calc deriv (fun s ↦ f (x, s)) t ≤ K * t * (1 - t ^ 2) := (le_abs_self _).trans (hKle x t ht)
     _ < C * t * (1 - t ^ 2) := by nlinarith
 
@@ -361,7 +361,7 @@ private theorem continuous_continuationRescaling_and_mem_Icc
       ∀ z : M × ℝ, continuationRescaling C f z ∈ Icc (C / (C + K)) (C / (C - K)) := by
   have hne : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t ≠ C * t * (1 - t ^ 2) :=
     fun x t ht ↦ by
-      have hw : 0 < t * (1 - t ^ 2) := mul_pos ht.1 (by nlinarith [ht.1, ht.2])
+      have hw : 0 < t * (1 - t ^ 2) := mul_one_sub_sq_pos_of_mem_Ioo ht
       have := (le_abs_self _).trans (hb x t ht)
       exact ne_of_lt (by nlinarith)
   refine ⟨(ContMDiff.continuationRescaling (n := 0) (by simpa using hf) hδ hf₀ hf₁ hne).continuous,

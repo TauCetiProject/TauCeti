@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 public import Mathlib.Topology.Covering.Quotient
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Proper
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.SpinorNorm
+import TauCeti.LinearAlgebra.QuadraticForm.Real
 
 /-!
 # The two topological double covers of `Spinᶜ`
@@ -23,7 +24,16 @@ For definite real coordinate forms in positive dimension, this file proves that 
 actual product of the rotation homomorphism and determinant character is a covering map for the
 native coordinate topology on `SO(n)`. Its kernel is `{1, [1, -1]}`. The determinant character
 and rotation map are continuous; compactness of `Spin(n)` makes their surjective product a
-quotient map, and its finite kernel gives the covering.
+quotient map, and its finite kernel gives the covering. Charge conjugation `[s, z] ↦ [s, z⁻¹]`
+is a continuous automorphism (`CliffordAlgebra.spinCGroup.chargeConjContinuousMulEquiv`).
+
+For a positive- or negative-definite form on a finite-dimensional real space, `Spinᶜ(Q)` is
+compact (`CliffordAlgebra.spinCGroup.compactSpace_of_posDef_or_negDef`), as a quotient of the
+compact group `Spin(Q) × U(1)`. On any finite-dimensional real space, the rotation map
+`Spinᶜ(Q) → SO(Q)` is continuous for the topology of `SO(Q)` as a subgroup of the linear
+automorphisms (`CliffordAlgebra.spinCGroup.continuous_toSpecialOrthogonal`); for coordinate forms,
+`CliffordAlgebra.spinCGroup.continuous_toSpecialOrthogonal_pi` is the same statement for the native
+coordinate topology on `SO(n)`.
 
 These are topological group covers. No smoothness or covering statement about classifying
 spaces is asserted.
@@ -80,6 +90,82 @@ theorem continuous_det : Continuous (det Q hQ) := by
   -- Function powers are pointwise, so this is the square of the second projection.
   exact continuous_snd.pow 2
 
+/-- The weight-one central circle inclusion is continuous for the quotient topology. -/
+@[fun_prop]
+theorem continuous_ofCircle : Continuous (ofCircle Q hQ) := by
+  have h : Continuous (fun z : Circle ↦ mk Q hQ (1, z)) := by
+    simpa only [coe_mk, Function.comp_def, id_eq] using
+      (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous.comp
+        (continuous_const.prodMk continuous_id)
+  exact h.congr fun z ↦ (ofCircle_apply Q hQ z).symm
+
+/-- Charge conjugation `[s, z] ↦ [s, z⁻¹]` is continuous for the quotient topology. -/
+@[fun_prop]
+theorem continuous_chargeConj : Continuous (chargeConj Q hQ) := by
+  apply (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous_iff.mpr
+  simp only [Function.comp_def, ← mk_apply, chargeConj_mk]
+  simpa only [coe_mk, Function.comp_def] using
+    (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous.comp
+      (continuous_fst.prodMk (continuous_inv.comp continuous_snd))
+
+/-- Charge conjugation as a continuous automorphism of the Spinᶜ quotient. -/
+def chargeConjContinuousMulEquiv : spinCGroup Q hQ ≃ₜ* spinCGroup Q hQ where
+  toMulEquiv := chargeConj Q hQ
+  continuous_toFun := continuous_chargeConj Q hQ
+  continuous_invFun := by
+    rw [MulEquiv.invFun_eq_symm, chargeConj_symm]
+    exact continuous_chargeConj Q hQ
+
+/-- The bundled continuous charge conjugation is charge conjugation. -/
+@[simp]
+theorem chargeConjContinuousMulEquiv_apply (x : spinCGroup Q hQ) :
+    chargeConjContinuousMulEquiv Q hQ x = chargeConj Q hQ x := (rfl)
+
+/-- The determinant character as a continuous homomorphism on the Spinᶜ quotient. -/
+def detContinuousMonoidHom : spinCGroup Q hQ →ₜ* Circle where
+  toMonoidHom := det Q hQ
+  continuous_toFun := continuous_det Q hQ
+
+/-- The weight-one central circle as a continuous homomorphism into the Spinᶜ quotient. -/
+def ofCircleContinuousMonoidHom : Circle →ₜ* spinCGroup Q hQ where
+  toMonoidHom := ofCircle Q hQ
+  continuous_toFun := continuous_ofCircle Q hQ
+
+/-- The bundled determinant character is the original quotient determinant. -/
+@[simp]
+theorem detContinuousMonoidHom_apply (x : spinCGroup Q hQ) :
+    detContinuousMonoidHom Q hQ x = det Q hQ x := (rfl)
+
+/-- The bundled central inclusion is the original weight-one circle inclusion. -/
+@[simp]
+theorem ofCircleContinuousMonoidHom_apply (z : Circle) :
+    ofCircleContinuousMonoidHom Q hQ z = ofCircle Q hQ z := (rfl)
+
+/-- The determinant restricted to the central circle is the square character. -/
+@[simp]
+theorem detContinuousMonoidHom_comp_ofCircleContinuousMonoidHom :
+    (detContinuousMonoidHom Q hQ).comp (ofCircleContinuousMonoidHom Q hQ) =
+      (ContinuousMonoidHom.id Circle) ^ 2 := by
+  ext z
+  simp [ContinuousMonoidHom.pow_apply, det_ofCircle]
+
+/-- **`Spinᶜ(Q)` is compact** for a positive- or negative-definite form on a finite-dimensional
+real space, such as `Q v = -‖v‖²`: it is a quotient of `Spin(Q) × U(1)`, and `Spin(Q)` is
+compact (`CliffordAlgebra.compactSpace_spinGroup_of_posDef_or_negDef`). -/
+theorem compactSpace_of_posDef_or_negDef [FiniteDimensional ℝ M] (hdef : Q.PosDef ∨ (-Q).PosDef) :
+    CompactSpace (spinCGroup Q hQ) := by
+  have := compactSpace_spinGroup_of_posDef_or_negDef Q hdef
+  infer_instance
+
+/-- The rotation map on `Spinᶜ(Q)` is continuous into the special orthogonal group with its
+topology as a subgroup of the linear automorphisms. -/
+@[fun_prop]
+theorem continuous_toSpecialOrthogonal [FiniteDimensional ℝ M] :
+    Continuous (toSpecialOrthogonal Q hQ) := by
+  apply (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous_iff.mpr
+  simpa only [Function.comp_def, ← mk_apply, toSpecialOrthogonal_mk] using
+    (TauCeti.CliffordAlgebra.continuous_spinToSpecialOrthogonal Q).comp continuous_fst
+
 section Coordinates
 
 variable {ι : Type*} [Fintype ι] (Q : QuadraticForm ℝ (ι → ℝ)) (hQ : Q ≠ 0)
@@ -87,7 +173,7 @@ variable {ι : Type*} [Fintype ι] (Q : QuadraticForm ℝ (ι → ℝ)) (hQ : Q 
 /-- The rotation map on `Spinᶜ(Q)` is continuous into the special orthogonal group with its
 native coordinate topology. -/
 @[fun_prop]
-theorem continuous_toSpecialOrthogonal : Continuous (toSpecialOrthogonal Q hQ) := by
+theorem continuous_toSpecialOrthogonal_pi : Continuous (toSpecialOrthogonal Q hQ) := by
   apply (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous_iff.mpr
   simpa only [Function.comp_def, ← mk_apply, toSpecialOrthogonal_mk] using
     (continuous_spinToSpecialOrthogonal_pi Q).comp continuous_fst
@@ -96,7 +182,7 @@ theorem continuous_toSpecialOrthogonal : Continuous (toSpecialOrthogonal Q hQ) :
 @[fun_prop]
 theorem continuous_toSpecialOrthogonal_prod_det :
     Continuous ((toSpecialOrthogonal Q hQ).prod (det Q hQ)) :=
-  (continuous_toSpecialOrthogonal Q hQ).prodMk (continuous_det Q hQ)
+  (continuous_toSpecialOrthogonal_pi Q hQ).prodMk (continuous_det Q hQ)
 
 end Coordinates
 
@@ -109,12 +195,9 @@ theorem isQuotientCoveringMap_toSpecialOrthogonal_prod_det
     (hdef : Q.PosDef ∨ (-Q).PosDef) :
     IsQuotientCoveringMap ((toSpecialOrthogonal Q hQ).prod (det Q hQ))
       ((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker := by
-  have hQn : Q.Nondegenerate := by
-    rcases hdef with hpos | hneg
-    · exact hpos.anisotropic.nondegenerate
-    · exact (QuadraticMap.nondegenerate_neg Q).mp hneg.anisotropic.nondegenerate
-  let _ : CompactSpace (spinGroup Q) :=
-    isCompact_iff_compactSpace.mp ((isCompact_spinGroup_iff_posDef_or_negDef Q hQn).mpr hdef)
+  have hQn : Q.Nondegenerate :=
+    ((_root_.QuadraticForm.anisotropic_iff_posDef_or_negDef Q).mpr hdef).nondegenerate
+  let _ : CompactSpace (spinGroup Q) := compactSpace_spinGroup_of_posDef_or_negDef Q hdef
   have hsurj : Function.Surjective (spinToSpecialOrthogonal Q) := by
     rcases hdef with hpos | hneg
     · exact spinToSpecialOrthogonal_surjective_of_posDef Q hpos

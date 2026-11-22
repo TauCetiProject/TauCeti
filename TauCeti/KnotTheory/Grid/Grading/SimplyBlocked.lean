@@ -112,7 +112,7 @@ noncomputable def gradedSimplyBlockedSpecialization (R : Type*) [CommSemiring R]
     (i : Fin n) (g : ℤ × ℤ) :
     G.bigradedChainMinusPiece R g →ₗ[R] G.bigradedChainHatPiece R i g where
   toFun c := ⟨simplyBlockedSpecialization R i c,
-    G.simplyBlockedSpecialization_mem_bigradedChainHatPiece i c.2⟩
+    G.simplyBlockedSpecialization_mem_bigradedChainHatPiece i c.property⟩
   map_add' c d := Subtype.ext (map_add _ _ _)
   map_smul' r c := by
     apply Subtype.ext
@@ -135,7 +135,7 @@ theorem gradedSimplyBlockedSpecialization_surjective (R : Type*) [CommSemiring R
     (i : Fin n) (g : ℤ × ℤ) :
     Function.Surjective (G.gradedSimplyBlockedSpecialization R i g) := by
   intro c
-  obtain ⟨b, hb, hbc⟩ := G.mem_bigradedChainHatPiece_iff_exists.mp c.2
+  obtain ⟨b, hb, hbc⟩ := G.mem_bigradedChainHatPiece_iff_exists.mp c.property
   exact ⟨⟨b, hb⟩, Subtype.ext hbc⟩
 
 /-- A monomial multiple of a state is homogeneous of its expected bidegree. -/
@@ -157,7 +157,7 @@ This homogeneity holds for the unsigned map over any commutative semiring. -/
 theorem simplyBlockedDifferential_mem_bigradedChainHatPiece {R : Type*} [CommSemiring R]
     {i : Fin n} {g : ℤ × ℤ} {c : GridChainHat R n i}
     (hc : c ∈ G.bigradedChainHatPiece R i g) :
-    G.1.simplyBlockedDifferential R i c ∈ G.bigradedChainHatPiece R i (g - (1, 0)) := by
+    G.val.simplyBlockedDifferential R i c ∈ G.bigradedChainHatPiece R i (g - (1, 0)) := by
   obtain ⟨b, hb, rfl⟩ := G.mem_bigradedChainHatPiece_iff_exists.mp hc
   rw [← GridDiagram.simplyBlockedSpecialization_unblockedDifferential]
   exact G.simplyBlockedSpecialization_mem_bigradedChainHatPiece i
@@ -223,7 +223,7 @@ theorem isInternal_bigradedChainHatPiece (R : Type*) [CommRing R] (i : Fin n) :
 noncomputable def gradedSimplyBlockedDifferential (R : Type*) [CommSemiring R]
     (i : Fin n) (a m : ℤ) :
     G.bigradedChainHatPiece R i (m + 1, a) →ₗ[R] G.bigradedChainHatPiece R i (m, a) :=
-  ((G.1.simplyBlockedDifferential R i).restrictScalars R).restrict fun c hc => by
+  ((G.val.simplyBlockedDifferential R i).restrictScalars R).restrict fun c hc => by
     simpa using G.simplyBlockedDifferential_mem_bigradedChainHatPiece hc
 
 /-- Inclusion of a homogeneous piece intertwines the graded and total differentials. -/
@@ -231,7 +231,7 @@ noncomputable def gradedSimplyBlockedDifferential (R : Type*) [CommSemiring R]
 theorem coe_gradedSimplyBlockedDifferential (R : Type*) [CommSemiring R]
     (i : Fin n) (a m : ℤ) (c : G.bigradedChainHatPiece R i (m + 1, a)) :
     (G.gradedSimplyBlockedDifferential R i a m c : GridChainHat R n i) =
-      G.1.simplyBlockedDifferential R i c := (rfl)
+      G.val.simplyBlockedDifferential R i c := (rfl)
 
 variable (R : Type*) [CommRing R] [CharP R 2]
 
@@ -243,7 +243,7 @@ theorem gradedSimplyBlockedDifferential_comp_eq_zero (i : Fin n) (a m : ℤ) :
   apply Subtype.ext
   simp only [LinearMap.comp_apply, LinearMap.zero_apply,
     coe_gradedSimplyBlockedDifferential, ZeroMemClass.coe_zero]
-  exact LinearMap.congr_fun (G.1.simplyBlockedDifferential_comp_self_eq_zero R i) c
+  exact LinearMap.congr_fun (G.val.simplyBlockedDifferential_comp_self_eq_zero R i) c
 
 /-- The Maslov-graded specialization `V_i = 0` in Alexander degree `a`.
 For a knot grid this is the graded simply blocked complex. -/
@@ -271,5 +271,28 @@ theorem gradedSimplyBlockedComplex_d (i : Fin n) (a m : ℤ) :
   -- The object identifications act as identity maps on homogeneous chains.
   ext c
   rfl
+
+/-- Moving grid states along a bidegree-preserving surjection `φ` and renaming the surviving
+polynomial variables along `κ` identifies homogeneous pieces of the specialized chain modules. -/
+theorem mem_bigradedChainHatPiece_iff_of_rename {n m : ℕ}
+    {G : OddComponentGridDiagram n} {G' : OddComponentGridDiagram m}
+    {R : Type*} [CommSemiring R] {κ : Fin n ≃ Fin m} {i : Fin n}
+    {φ : GridState n → GridState m} (hφ : Function.Surjective φ)
+    (hdeg : ∀ x, G'.bidegree (φ x) = G.bidegree x)
+    {c : GridChainHat R n i} {c' : GridChainHat R m (κ i)}
+    (hcoeff : ∀ x, c' (φ x) = simplyBlockedRenameEquiv R κ i (c x)) {g : ℤ × ℤ} :
+    c' ∈ G'.bigradedChainHatPiece R (κ i) g ↔ c ∈ G.bigradedChainHatPiece R i g := by
+  classical
+  have hs (x : GridState n) : (c' (φ x)).support = (c x).support.image (Finsupp.mapDomain
+      (κ.subtypeEquiv fun _ => not_congr κ.injective.eq_iff.symm)) := by
+    rw [hcoeff, simplyBlockedRenameEquiv_apply, support_rename_of_injective (Equiv.injective _)]
+  rw [mem_bigradedChainHatPiece, mem_bigradedChainHatPiece]
+  refine ⟨fun hc x e he => ?_, fun hc y e he => ?_⟩
+  · have hx := hc (φ x) (e.mapDomain _) (by rw [hs]; exact Finset.mem_image_of_mem _ he)
+    rwa [hdeg, Finsupp.degree_mapDomain] at hx
+  · obtain ⟨x, rfl⟩ := hφ y
+    obtain ⟨e', he', rfl⟩ := Finset.mem_image.mp (hs x ▸ he)
+    rw [hdeg, Finsupp.degree_mapDomain]
+    exact hc x e' he'
 
 end TauCeti.OddComponentGridDiagram

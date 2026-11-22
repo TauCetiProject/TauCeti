@@ -122,8 +122,7 @@ structures are the pullback-induced ones, installed inside the proof, so the sta
 hypothesis-free. The rank identity, projectivity, fundamental identity, and prime-count bound are
 not in that source.
 
-⚠ *mathlib-track*, with the sibling `Isogeny` files: D. Angdinata's shared isogeny development
-carries the intermediate ring and its structural theory.
+D. Angdinata's isogeny development also carries the intermediate ring and its structural theory.
 
 ## References
 
@@ -241,7 +240,8 @@ theorem sum_ramificationIdx_mul_inertiaDeg_eq_degree (φ : Isogeny W₁ W₂)
     (p : Ideal W₂.CoordinateRing) [p.IsPrime]
     [Fintype (p.primesOver φ.intermediateRing)] :
     ∑ q : p.primesOver φ.intermediateRing,
-        q.1.ramificationIdx W₂.CoordinateRing * q.1.inertiaDeg W₂.CoordinateRing = φ.degree := by
+        q.val.ramificationIdx W₂.CoordinateRing * q.val.inertiaDeg W₂.CoordinateRing = φ.degree
+            := by
   rw [Ideal.sum_ramification_inertia_eq_finrank, φ.finrank_intermediateRing_eq_degree h]
 
 /-- **There are at most `deg φ` primes above `p`.** Dropping the weights from the fundamental

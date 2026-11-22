@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Cylinder.Basi
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Dimension
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Product
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
+import TauCeti.Topology.UnitInterval.Contractible
 
 /-!
 # Contractible two-dimensional simplicial complexes
@@ -98,10 +99,8 @@ end Contractible2Complex
 theorem contractible2Complex_standardOneSimplex :
     Contractible2Complex (⊤ : AbstractSimplicialComplex (Fin 2)) := by
   let e := realizationOneSimplexHomeomorphUnitInterval
-  let hunit : ContractibleSpace unitInterval :=
-    (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
   have hreal : ContractibleSpace (Realization (⊤ : AbstractSimplicialComplex (Fin 2))) :=
-    @Homeomorph.contractibleSpace _ _ _ _ hunit e
+    e.contractibleSpace
   refine ⟨?_, ?_, hreal⟩
   · have hfaces :
         (⊤ : AbstractSimplicialComplex (Fin 2)).faces =

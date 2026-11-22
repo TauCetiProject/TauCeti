@@ -11,6 +11,7 @@ public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 import TauCeti.Topology.Homotopy.AddCircle
 
@@ -67,6 +68,8 @@ monotone in `W`.
   along the level.
 * `TauCeti.SmoothTwoForm.HasContractibleClosedCharacteristic.comp`: closed characteristics of
   `F⁻¹(c)` are closed characteristics of the level `φ(c)` of `φ ∘ F` when `φ'(c) ≠ 0`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.eq_of_isMIntegralCurve_comp`: a contractible periodic
+  orbit of `φ ∘ F` is constant when its level carries no short closed characteristic of `F`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleAlmostExistence_smul_iff`: the property
   is conformally invariant.
 * `TauCeti.SmoothTwoForm.HasContractibleAlmostExistence.exists_hasContractibleClosedCharacteristic`:
@@ -76,6 +79,8 @@ monotone in `W`.
   characteristics are invariant under symplectic diffeomorphisms, and by its variant
   `IsNondegenerate.hasContractibleClosedCharacteristic_image_iff_of_mpullback_eq_smul` under
   conformally symplectic ones.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleAlmostExistence_image_iff`: so is the
+  contractible almost existence property.
 
 ## References
 
@@ -220,6 +225,46 @@ theorem HasContractibleClosedCharacteristic.comp
     rw [hamiltonianVectorField_comp (hx ▸ differentiableAt_of_deriv_ne_zero hφ')
       (hF x hx), hx]
 
+/-- **Orbits of `φ ∘ F`.** Let `σ` be nondegenerate on a manifold modelled on a
+finite-dimensional space, `F` differentiable and `φ : ℝ → ℝ` differentiable. A `T`-periodic orbit
+`γ` of `X_{φ ∘ F}` whose loop is contractible in `W` is constant as soon as, writing
+`c = φ'(F (γ 0))`, the level of `γ 0` carries no closed characteristic contractible in `W` of period
+at most `T |c|` when `c ≠ 0`. -/
+theorem IsNondegenerate.eq_of_isMIntegralCurve_comp [FiniteDimensional ℝ E]
+    (hσ : σ.IsNondegenerate) (hF : MDifferentiable I 𝓘(ℝ) F) {φ : ℝ → ℝ}
+    (hφ : Differentiable ℝ φ) {T : ℝ} (hT : 0 < T) {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (φ ∘ F)))
+    {g : C(AddCircle T, W)} (hg : g.Nullhomotopic) (hgγ : ∀ t : ℝ, (g t : M) = γ t)
+    (horb : deriv φ (F (γ 0)) ≠ 0 → ¬σ.HasContractibleClosedCharacteristicOfPeriodLE W F (F (γ 0))
+      (T * |deriv φ (F (γ 0))|)) :
+    ∀ t, γ t = γ 0 := by
+  set c := deriv φ (F (γ 0))
+  have hX (x : M) :
+      σ.hamiltonianVectorField (φ ∘ F) x = deriv φ (F x) • σ.hamiltonianVectorField F x :=
+    hamiltonianVectorField_comp (hφ _) (hF x)
+  -- `F` is constant along `γ`, since `dF(X_{φ ∘ F}) = φ'(F) dF(X_F) = 0`.
+  have hlev (t : ℝ) : F (γ t) = F (γ 0) :=
+    (hγ.isMIntegralCurveOn univ).apply_eq_of_mvfderiv_apply_eq_zero
+      isPreconnected_univ (fun u _ ↦ hF _) (fun u _ ↦ by
+        rw [hX, map_smul,
+          (hσ.isHamiltonianVectorField_hamiltonianVectorField F).mvfderiv_apply_self, smul_zero])
+      (mem_univ 0) (mem_univ t)
+  -- Along the level of `γ 0`, `X_{φ ∘ F} = c X_F`; if `c = 0` the field vanishes along `γ`.
+  have hXγ (t : ℝ) :
+      σ.hamiltonianVectorField (φ ∘ F) (γ t) = c • σ.hamiltonianVectorField F (γ t) := by
+    rw [hX, hlev]
+  by_cases hc : c = 0
+  · exact fun t ↦ hγ.apply_eq_of_forall_eq_zero (fun u ↦ by rw [hXγ, hc, zero_smul]) 0 t
+  -- Otherwise `t ↦ γ (t / c)` is a closed characteristic of period `T |c|`, which is excluded.
+  by_contra hne
+  have hγc : IsMIntegralCurve γ (c⁻¹⁻¹ • σ.hamiltonianVectorField F) := fun t ↦ by
+    rw [inv_inv, Pi.smul_apply, ← hXγ]
+    exact hγ t
+  have h := hasContractibleClosedCharacteristicOfPeriodLE_of_isMIntegralCurve_smul hT
+    (inv_ne_zero hc) hγc (not_forall.1 hne) hlev ⟨g, hg, hgγ⟩
+  rw [abs_inv, div_inv_eq_mul] at h
+  exact horb hc h
+
 /-- **Conformal invariance of closed characteristics.** For a nondegenerate form on a
 finite-dimensional manifold and `a ≠ 0`, the closed characteristics contractible in `W` of `aσ`
 and of `σ` are the same: `X^{aσ}_F = a⁻¹ X^σ_F`. -/
@@ -305,7 +350,7 @@ theorem HasContractibleClosedCharacteristic.image (hσ₂ : σ₂.IsNondegenerat
   obtain ⟨T, γ, hT, hγ, hper, ⟨t₀, ht₀⟩, hlev, g, hg, hgγ⟩ := h
   have hFψ : (F ∘ ψ.symm) ∘ ψ = F := funext fun x ↦ by simp
   refine ⟨T, ψ ∘ γ, hT, ?_, hper.comp ψ, ⟨t₀, fun h ↦ ht₀ (ψ.injective h)⟩,
-    fun t ↦ by simp [hlev], (⟨fun x ↦ ⟨ψ x, mem_image_of_mem ψ x.2⟩, by fun_prop⟩ :
+    fun t ↦ by simp [hlev], (⟨fun x ↦ ⟨ψ x, mem_image_of_mem ψ x.property⟩, by fun_prop⟩ :
       C(W, ψ '' W)).comp g, hg.comp_right _, fun t ↦ by simp [hgγ]⟩
   refine hσ.isMIntegralCurve_comp_hamiltonianVectorField hσ₂ ψ.contMDiff hψ
     (fun _ ↦ (ψ.isInvertible_mfderiv (by simp)).surjective) (fun t ↦ ?_) (by rwa [hFψ])
@@ -350,6 +395,22 @@ theorem IsNondegenerate.hasContractibleClosedCharacteristic_image_iff_of_mpullba
   have hσ : σ.IsNondegenerate := (isNondegenerate_smul_iff a ha).1 haσ
   rw [hσ₂.hasContractibleClosedCharacteristic_image_iff ψ hψ hF,
     hσ.hasContractibleClosedCharacteristic_smul_iff ha]
+
+/-- **Almost existence is symplectically invariant.** If a diffeomorphism `ψ : M → M₂` pulls a
+nondegenerate form `σ₂` back to `σ`, then the level `c` of `F ∘ ψ⁻¹` has the contractible almost
+existence property in `ψ(W)` for `σ₂` exactly when `F⁻¹(c)` has it in `W` for `σ`. The regular
+values of `F ∘ ψ⁻¹` are those of `F`, and `F` is differentiable along its regular levels, so no
+smoothness of `F` is assumed. -/
+theorem IsNondegenerate.hasContractibleAlmostExistence_image_iff
+    (hσ₂ : σ₂.IsNondegenerate) (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
+    (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) :
+    σ₂.HasContractibleAlmostExistence (ψ '' W) (F ∘ ψ.symm) c ↔
+      σ.HasContractibleAlmostExistence W F c := by
+  simp only [hasContractibleAlmostExistence_iff, ψ.symm.isRegularValue_comp_iff (by simp)]
+  refine exists_congr fun ε ↦ and_congr_right fun _ ↦ Filter.eventually_congr
+    (Filter.Eventually.of_forall fun c' ↦ imp_congr_right fun _ ↦ imp_congr_right fun hc' ↦ ?_)
+  exact hσ₂.hasContractibleClosedCharacteristic_image_iff ψ hψ fun x hx ↦
+    (hc'.isRegularPoint hx).mdifferentiableAt
 
 end Invariance
 

@@ -6,12 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Decay
-import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
+import TauCeti.Analysis.InnerProductSpace.Laplacian.DerivativeDecay
+import TauCeti.Analysis.PDE.Regularity.PlanarPoisson
+import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
+import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
-# Exponential decay of the first derivatives of a plane vortex
+# Exponential decay of the derivatives of a plane vortex
 
 In the coordinates of `TauCeti.Vortex.equation`, a field `x = (b₁, b₂, p, q)` has connection
 `a = i (b₁ ds + b₂ dt)` and section `α = 2 (p + i q)`, so `|α|² = 4 (p² + q²)`. For a vortex on the
@@ -42,9 +46,24 @@ covariant derivative is complex linear, `d_a α (v) = v · d_a α (1)`
 `|d_a α|` by the gradient of `|α|²`
 (`TauCeti.Vortex.norm_covariantDerivative_one_le_norm_fderiv_normSq`).
 
+For a vortex with `C²` section the same holds at every order: every iterated derivative of
+`log |α|²` and of `|α|² - 1` is `O(exp (-c |z|))` for every `c < 1 / 2`
+(`TauCeti.Vortex.isBigO_iteratedFDeriv_log_normSq`,
+`TauCeti.Vortex.isBigO_iteratedFDeriv_normSq_sub_one`). These follow from the general estimate
+for decaying solutions of `Δ ℓ = κ (exp ℓ - 1)` with `c² < κ`
+(`TauCeti.isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one`), here with `κ = 1 / 4`; its
+hypotheses are the decay of `log |α|²`, which is controlled by the modulus defect, the bound on
+its gradient proved above, and smoothness of `log |α|²` near infinity. Wherever `α ≠ 0`, the
+`C²` function `log |α|²` solves the scalar equation, hence by Green's identity weakly, so it is
+smooth there by planar elliptic regularity
+(`TauCeti.Vortex.contDiffAt_log_normSq_of_equation_eq_zero`, via
+`TauCeti.contDiffOn_succ_of_forall_integral_laplacian_mul_eq_comp`). In particular the second
+derivative of `log |α|²` decays
+(`TauCeti.Vortex.exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp`).
+
 These are gauge-invariant estimates for classical solutions. The decay of the connection
 coefficients themselves depends on a choice of gauge, such as the winding-`m` end trivialization,
-and is not treated here; neither are higher derivatives.
+and is not treated here.
 
 ## Main results
 
@@ -52,9 +71,17 @@ and is not treated here; neither are higher derivatives.
   `|∇ log |α|²| ≤ K exp (-c |z|)` for every `c < 1 / 2`.
 * `TauCeti.Vortex.exists_norm_fderiv_normSq_le_mul_exp`: `|∇ |α|²| ≤ K exp (-c |z|)`.
 * `TauCeti.Vortex.exists_norm_covariantDerivative_le_mul_exp`:
-  `|d_a α (v)| ≤ K |v| exp (-c |z|)`.
+  `|d_a α (v)| ≤ K |v| exp (-c |z|)`, so `d_a α (v) → 0` at infinity
+  (`TauCeti.Vortex.tendsto_covariantDerivative_cocompact`).
 * `TauCeti.Vortex.exists_energyDensity_le_mul_exp`: the energy density is bounded by
   `K exp (-c |z|)` for every `c < 1`.
+* `TauCeti.Vortex.contDiffAt_log_normSq_of_equation_eq_zero`: `log |α|²` is smooth wherever
+  `α ≠ 0`, for a vortex with `C²` section.
+* `TauCeti.Vortex.isBigO_iteratedFDeriv_log_normSq`,
+  `TauCeti.Vortex.isBigO_iteratedFDeriv_normSq_sub_one`: every iterated derivative of `log |α|²`
+  and of `|α|² - 1` is `O(exp (-c |z|))` for every `c < 1 / 2`.
+* `TauCeti.Vortex.exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp`: outside a compact
+  set, the second derivative of `log |α|²` is at most `K exp (-c |z|)`.
 
 ## References
 
@@ -70,7 +97,8 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex Filter Metric Topology InnerProductSpace Laplacian
+open Asymptotics Complex Filter Metric Topology InnerProductSpace Laplacian
+open scoped ContDiff
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
@@ -259,16 +287,9 @@ theorem exists_norm_fderiv_normSq_le_mul_exp
   refine exists_forall_le_mul_exp_of_eventually_le (K := K)
     (hscd.continuous_fderiv (by norm_num)).norm ?_
   filter_upwards [hK, hlim.eventually (lt_mem_nhds (by norm_num : (0 : ℝ) < 1))] with z hz hpos
-  -- Where `|α|² > 0`, `∇ |α|² = |α|² ∇ log |α|²` and `|α|² ≤ 1`.
-  have hd := ((hscd.differentiable (by norm_num)) z).hasFDerivAt.log hpos.ne'
-  rw [hd.fderiv, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hpos] at hz
-  have h₁ := normSq_le_one_of_tendsto hp hq hsol hlim z
-  have heq : ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖ =
-      4 * (x z 2 ^ 2 + x z 3 ^ 2) * ((4 * (x z 2 ^ 2 + x z 3 ^ 2))⁻¹ *
-        ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖) := by
-    rw [← mul_assoc, mul_inv_cancel₀ hpos.ne', one_mul]
-  rw [heq]
-  exact (mul_le_mul h₁ hz (by positivity) zero_le_one).trans_eq (one_mul _)
+  -- Where `0 < |α|² ≤ 1`, `|∇ |α|²| ≤ |∇ log |α|²|`.
+  exact (norm_fderiv_le_norm_fderiv_log ((hscd.differentiable (by norm_num)) z) hpos
+    (normSq_le_one_of_tendsto hp hq hsol hlim z)).trans hz
 
 /-- **Exponential decay of the covariant derivative of a plane vortex.** A vortex on the whole
 plane whose section satisfies `|α| → 1` at infinity has `|d_a α (v)| ≤ K |v| exp (-c |z|)` for
@@ -282,14 +303,9 @@ theorem exists_norm_covariantDerivative_le_mul_exp
     ∃ K, ∀ z v, ‖covariantDerivative x z v‖ ≤ K * ‖v‖ * Real.exp (-(c * ‖z‖)) := by
   have hp₁ : Differentiable ℝ (fun w ↦ x w 2) := hp.differentiable (by norm_num)
   have hq₁ : Differentiable ℝ (fun w ↦ x w 3) := hq.differentiable (by norm_num)
-  -- The covariant derivative along `1` is continuous.
-  have hαcd : ContDiff ℝ 2 (sectionValue x) := contDiff_sectionValue hp hq
-  have hcont : Continuous fun z ↦ ‖covariantDerivative x z 1‖ := by
-    have h₁ : Continuous fun z ↦ fderiv ℝ (sectionValue x) z 1 :=
-      (hαcd.continuous_fderiv (by norm_num)).clm_apply continuous_const
-    have h₂ := hαcd.continuous
-    simp only [covariantDerivative_apply, one_re, one_im, mul_one, mul_zero, add_zero]
-    exact (h₁.add ((continuous_const.mul (continuous_ofReal.comp hb₁)).mul h₂)).norm
+  have hcont : Continuous fun z ↦ ‖covariantDerivative x z 1‖ :=
+    (continuous_covariantDerivative_one hb₁ (hp.of_le (by norm_num))
+      (hq.of_le (by norm_num))).norm
   obtain ⟨K, hK⟩ := exists_norm_fderiv_normSq_le_mul_exp hp hq hsol hlim hc
   -- Where `|α|² ≥ 1 / 2`, the covariant derivative is bounded by the gradient of `|α|²`.
   obtain ⟨K', hK'⟩ := exists_forall_le_mul_exp_of_eventually_le hcont (c := c) (K := K) (by
@@ -297,9 +313,26 @@ theorem exists_norm_covariantDerivative_le_mul_exp
     exact (norm_covariantDerivative_one_le_norm_fderiv_normSq (hp₁ z) (hq₁ z) (by simp [hsol z])
       (by simp [hsol z]) hz.le).trans (hK z))
   refine ⟨K', fun z v ↦ ?_⟩
-  rw [covariantDerivative_eq_mul_of_equation_eq_zero (hp₁ z) (hq₁ z) (by simp [hsol z])
-    (by simp [hsol z]) v, norm_mul, mul_comm K', mul_assoc]
+  rw [norm_covariantDerivative_eq_mul_of_equation_eq_zero (hp₁ z) (hq₁ z) (by simp [hsol z])
+    (by simp [hsol z]) v, mul_comm K', mul_assoc]
   exact mul_le_mul_of_nonneg_left (hK' z) (norm_nonneg v)
+
+/-- **The covariant derivative of a plane vortex vanishes at infinity.** A vortex on the whole
+plane whose section satisfies `|α| → 1` at infinity has `d_a α (v) → 0` at infinity, for every
+tangent vector `v`. This is the hypothesis on `d_a α` in the Fredholm theory of the gauge-fixed
+operator. -/
+theorem tendsto_covariantDerivative_cocompact
+    (hb₁ : Continuous (fun w ↦ x w 0))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (v : ℂ) :
+    Tendsto (fun z ↦ covariantDerivative x z v) (cocompact ℂ) (𝓝 0) := by
+  obtain ⟨K, hK⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁ hp hq hsol hlim
+    (c := 1 / 4) (by norm_num)
+  have hexp : Tendsto (fun z : ℂ ↦ K * ‖v‖ * Real.exp (-(1 / 4 * ‖z‖))) (cocompact ℂ) (𝓝 0) := by
+    simpa using tendsto_const_nhds.mul (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+      (tendsto_norm_cocompact_atTop.const_mul_atTop (by norm_num : (0 : ℝ) < 1 / 4)))
+  exact squeeze_zero_norm (fun z ↦ hK z v) hexp
 
 /-- **Exponential decay of the energy density of a plane vortex.** A vortex on the whole plane
 whose section satisfies `|α| → 1` at infinity has energy density
@@ -314,26 +347,166 @@ theorem exists_energyDensity_le_mul_exp
   have hc' : c / 2 < 1 / 2 := by linarith
   obtain ⟨K₁, hK₁⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim hc'
   obtain ⟨K₂, hK₂⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁ hp hq hsol hlim hc'
-  refine ⟨(1 / 64 + 1) * K₁ ^ 2 + 2 * K₂ ^ 2, fun z ↦ ?_⟩
-  set E := Real.exp (-(c / 2 * ‖z‖)) with hE
-  have hEsq : E ^ 2 = Real.exp (-(c * ‖z‖)) := by
-    rw [hE, ← Real.exp_nat_mul]
-    ring_nf
-  -- The modulus defect, and hence the curvature, is bounded by `K₁ E`.
-  have hdef₀ : 0 ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
-    linarith [normSq_le_one_of_tendsto hp hq hsol hlim z]
-  have hdef : (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) ^ 2 ≤ K₁ ^ 2 * E ^ 2 := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ hdef₀ (hK₁ z) 2
-  have hcov (v : ℂ) (hv : ‖v‖ = 1) : ‖covariantDerivative x z v‖ ^ 2 ≤ K₂ ^ 2 * E ^ 2 := by
-    rw [← mul_pow]
-    have := hK₂ z v
-    rw [hv, mul_one] at this
-    exact pow_le_pow_left₀ (norm_nonneg _) this 2
-  have h1 := hcov 1 norm_one
-  have hI := hcov I norm_I
-  rw [energyDensity_apply, curvature_apply, curvature_eq_of_equation_eq_zero (hsol z),
-    sq_norm_sectionValue, ← hEsq]
-  nlinarith
+  refine ⟨65 / 64 * K₁ ^ 2 + 2 * K₂ ^ 2, fun z ↦ ?_⟩
+  -- The modulus defect is bounded by `K₁ exp (-(c / 2) |z|)`, and `|d_a α (1)|` by
+  -- `K₂ exp (-(c / 2) |z|)`.
+  refine (energyDensity_le_of_equation_eq_zero ((hp.differentiable (by norm_num)) z)
+    ((hq.differentiable (by norm_num)) z) (hsol z)
+    (by linarith [normSq_le_one_of_tendsto hp hq hsol hlim z]) (hK₁ z)
+    (by simpa using hK₂ z 1)).trans_eq ?_
+  rw [mul_pow, mul_pow, exp_neg_half_mul_sq]
+  ring
+
+/-! ### Derivatives of all orders -/
+
+/-- **Smoothness of `log |α|²` for a vortex with `C²` section.** Near a point where the section is
+`C²` and nonzero and `x` solves the vortex equations, `log |α|²` is smooth. It is a `C²` solution of
+`Δ ℓ = (exp ℓ - 1) / 4` there, hence a weak solution by Green's identity, so it is smooth by
+planar elliptic regularity (`TauCeti.contDiffOn_succ_of_forall_integral_laplacian_mul_eq_comp`). -/
+theorem contDiffAt_log_normSq_of_equation_eq_zero {z : ℂ}
+    (hp : ContDiffAt ℝ 2 (fun w ↦ x w 2) z) (hq : ContDiffAt ℝ 2 (fun w ↦ x w 3) z)
+    (hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0) (hsol : ∀ᶠ w in 𝓝 z, equation x w = 0) :
+    ContDiffAt ℝ ∞ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z := by
+  set s : ℂ → ℝ := fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)
+  -- An open neighbourhood `U` of `z` on which the section is `C²` and nonzero and `x` solves the
+  -- vortex equations.
+  have hα' : ∀ᶠ w in 𝓝 z, x w 2 ^ 2 + x w 3 ^ 2 ≠ 0 :=
+    ((hp.continuousAt.pow 2).add (hq.continuousAt.pow 2)).eventually_ne hα
+  obtain ⟨t, ht, htopen, hzt⟩ := _root_.eventually_nhds_iff.mp
+    ((hp.eventually (by simp)).and ((hq.eventually (by simp)).and (hα'.and hsol.eventually_nhds)))
+  let U : TopologicalSpace.Opens ℂ := ⟨t, htopen⟩
+  have hℓU : ContDiffOn ℝ 2 (fun w ↦ Real.log (s w)) U := fun w hw ↦ by
+    obtain ⟨hpw, hqw, hαw, -⟩ := ht w hw
+    exact (contDiffAt_const.mul ((hpw.pow 2).add (hqw.pow 2))).log
+      (mul_ne_zero four_ne_zero hαw) |>.contDiffWithinAt
+  -- On `U`, `ℓ` solves `Δ ℓ = (exp ℓ - 1) / 4`, hence weakly by Green's identity.
+  have hΔ : ∀ w ∈ U, Δ (fun w ↦ Real.log (s w)) w = 1 / 4 * (Real.exp (Real.log (s w)) - 1) :=
+    fun w hw ↦ by
+      obtain ⟨hpw, hqw, hαw, hsolw⟩ := ht w hw
+      rw [laplacian_log_normSq_of_equation_eq_zero hpw hqw hαw hsolw,
+        Real.exp_log (lt_of_le_of_ne (by positivity) (mul_ne_zero four_ne_zero hαw).symm)]
+      ring
+  have hF : ContDiffOn ℝ ∞ (fun p : ℂ × ℝ ↦ 1 / 4 * (Real.exp p.2 - 1)) (U ×ˢ Set.univ) :=
+    (contDiff_const.mul (Real.contDiff_exp.comp contDiff_snd |>.sub contDiff_const)).contDiffOn
+  have hsmooth : ContDiffOn ℝ ∞ (fun w ↦ Real.log (s w)) U := by
+    simpa using contDiffOn_succ_of_forall_integral_laplacian_mul_eq_comp (k := ⊤) hF
+      hℓU.continuousOn fun φ ↦ by
+        have h := ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian
+          (μ := MeasureTheory.volume) hℓU φ
+        simp only [smul_eq_mul] at h
+        rw [h]
+        refine MeasureTheory.integral_congr_ae (.of_forall fun y ↦ ?_)
+        by_cases hy : y ∈ U
+        · simp only [hΔ y hy]
+        · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (φ.tsupport_subset h)]
+  exact hsmooth.contDiffAt (htopen.mem_nhds hzt)
+
+/-- The hypotheses of `TauCeti.isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one` for
+`ℓ = log |α|²` and `κ = 1 / 4`, at some positive rate `c' ≥ c` with `c' < 1 / 2`, given a rate
+`c < 1 / 2`. -/
+private theorem laplacian_log_normSq_hypotheses
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
+    (hc : c < 1 / 2) :
+    ∃ c', c ≤ c' ∧ 0 < c' ∧ c' ^ 2 < 1 / 4 ∧
+      (∀ᶠ z in cocompact ℂ, ContDiffAt ℝ ∞ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z) ∧
+      (∀ᶠ z in cocompact ℂ, Δ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z =
+        1 / 4 * (Real.exp (Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))) - 1)) ∧
+      ((fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =O[cocompact ℂ]
+        fun z ↦ Real.exp (-(c' * ‖z‖))) ∧
+      fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =O[cocompact ℂ]
+        fun _ ↦ (1 : ℝ) := by
+  -- It suffices to treat a positive rate `c' ≥ c`.
+  set c' := max c (1 / 4)
+  have hc'pos : 0 < c' := lt_max_of_lt_right (by norm_num)
+  have hc'lt : c' < 1 / 2 := max_lt hc (by norm_num)
+  refine ⟨c', le_max_left _ _, hc'pos, by nlinarith, ?_⟩
+  set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2) with hs
+  have hpos : ∀ᶠ z in cocompact ℂ, 1 / 2 < s z := hlim.eventually (lt_mem_nhds (by norm_num))
+  have hs₁ : ∀ z, s z ≤ 1 := normSq_le_one_of_tendsto hp hq hsol hlim
+  have hα : ∀ z, 1 / 2 < s z → x z 2 ^ 2 + x z 3 ^ 2 ≠ 0 := fun z hz h ↦ by
+    simp only [hs, h, mul_zero] at hz
+    norm_num at hz
+  -- Where `|α|² > 1 / 2`, `ℓ` solves `Δ ℓ = (exp ℓ - 1) / 4`.
+  have hΔ : ∀ z, 1 / 2 < s z →
+      Δ (fun w ↦ Real.log (s w)) z = 1 / 4 * (Real.exp (Real.log (s z)) - 1) := fun z hz ↦ by
+    rw [laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt (hα z hz)
+      (Eventually.of_forall hsol), Real.exp_log (by linarith)]
+    ring
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · filter_upwards [hpos] with z hz
+    exact contDiffAt_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt (hα z hz)
+      (Eventually.of_forall hsol)
+  · filter_upwards [hpos] with z hz
+    exact hΔ z hz
+  · -- `|log |α|²| ≤ 2 (1 - |α|²)` where `|α|² ≥ 1 / 2`.
+    obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim hc'lt
+    refine IsBigO.of_bound (2 * K) ?_
+    filter_upwards [hpos] with z hz
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+    exact (Real.abs_log_le_two_mul_one_sub hz.le (hs₁ z)).trans (by linarith [hK z])
+  · obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hp hq hsol hlim
+      (c := 0) (by norm_num)
+    refine IsBigO.of_bound K ?_
+    filter_upwards [hK] with z hz
+    simpa using hz
+
+/-- **Exponential decay of all derivatives of `log |α|²`.** For a plane vortex with `C²` section
+whose section satisfies `|α| → 1` at infinity, every iterated derivative of `log |α|²` is
+`O(exp (-c |z|))` at infinity, for every rate `c < 1 / 2`. -/
+theorem isBigO_iteratedFDeriv_log_normSq
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
+    (hc : c < 1 / 2) (n : ℕ) :
+    iteratedFDeriv ℝ n (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =O[cocompact ℂ]
+      fun z ↦ Real.exp (-(c * ‖z‖)) := by
+  obtain ⟨c', hcc', hc'pos, hc'κ, hsmooth, heq, hℓd, hℓ'⟩ :=
+    laplacian_log_normSq_hypotheses hp hq hsol hlim hc
+  exact (isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one hc'pos hc'κ hsmooth heq hℓd hℓ'
+    n).trans (isBigO_exp_neg_mul_norm_of_le hcc' _)
+
+/-- **Exponential decay of the second derivative of `log |α|²`.** For a plane vortex with `C²`
+section whose section satisfies `|α| → 1` at infinity, the second derivative of `log |α|²` is at
+most `K exp (-c |z|)` outside a compact set, for every rate `c < 1 / 2`. -/
+theorem exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
+    (hc : c < 1 / 2) :
+    ∃ K, ∀ᶠ z in cocompact ℂ,
+      ‖fderiv ℝ (fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))) z‖ ≤
+        K * Real.exp (-(c * ‖z‖)) := by
+  obtain ⟨K, hK⟩ := (isBigO_iteratedFDeriv_log_normSq hp hq hsol hlim hc 2).bound
+  refine ⟨K, hK.mono fun z hz ↦ ?_⟩
+  rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+  rwa [Real.norm_of_nonneg (Real.exp_pos _).le] at hz
+
+/-- **Exponential decay of all derivatives of `|α|² - 1`.** For a plane vortex with `C²` section
+whose section satisfies `|α| → 1` at infinity, every iterated derivative of `|α|² - 1` is
+`O(exp (-c |z|))` at infinity, for every rate `c < 1 / 2`. Equivalently, by the curvature equation,
+every derivative of the curvature decays at that rate. -/
+theorem isBigO_iteratedFDeriv_normSq_sub_one
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
+    (hc : c < 1 / 2) (n : ℕ) :
+    iteratedFDeriv ℝ n (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2) - 1) =O[cocompact ℂ]
+      fun z ↦ Real.exp (-(c * ‖z‖)) := by
+  obtain ⟨c', hcc', hc'pos, hc'κ, hsmooth, heq, hℓd, hℓ'⟩ :=
+    laplacian_log_normSq_hypotheses hp hq hsol hlim hc
+  have h := isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one hc'pos hc'κ hsmooth
+    heq hℓd hℓ' n
+  -- Near infinity `exp (log |α|²) = |α|²`.
+  have hpos : ∀ᶠ z in cocompact ℂ, 1 / 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
+    hlim.eventually (lt_mem_nhds (by norm_num))
+  refine (h.congr' ?_ EventuallyEq.rfl).trans (isBigO_exp_neg_mul_norm_of_le hcc' _)
+  obtain ⟨R, -, hR⟩ :=
+    hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := ℂ) ▸ hpos)
+  filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop R] with z hz
+  refine Filter.EventuallyEq.eq_of_nhds (Filter.EventuallyEq.iteratedFDeriv ℝ ?_ n)
+  filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hz] with w hw
+  rw [Real.exp_log (by linarith [hR (Set.mem_ofPred.mpr hw.le)])]
 
 end TauCeti.Vortex

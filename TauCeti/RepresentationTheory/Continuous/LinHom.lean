@@ -49,6 +49,8 @@ this one along `LinearMap.toContinuousLinearMap`.
   `V →L[𝕜] W` acting by `(g, h) • T = ρ g ∘ T ∘ π h⁻¹`.
 * `ContRepresentation.invariantsEquivContIntertwiningMap`: its invariant subspace is the
   space of continuous intertwiners `π →ⁱL ρ`.
+* `ContIntertwiningMap.compLinHom`: composition with `T : π →ⁱL ρ`, as an intertwiner
+  `linHom σ π →ⁱL linHom σ ρ` of Hom representations.
 
 ## Main statements
 
@@ -61,6 +63,8 @@ this one along `LinearMap.toContinuousLinearMap`.
   subspace.
 * `ContRepresentation.character_linHom`: its character is `χ_π(g⁻¹) · χ_ρ(g)`.
 * `ContRepresentation.isIrreducible_biLinHom`: irreducibility of the two-sided Hom action.
+* `ContinuousOn.mapInvariants_compLinHom`: composition with an intertwining map acts on the
+  invariants of Hom representations continuously in the operator.
 
 ## References
 
@@ -172,9 +176,8 @@ theorem biLinHom_apply_one_mk (h : H) (T : V →L[𝕜] W) :
     biLinHom π ρ (1, h) T = T.comp (π h⁻¹) := by
   simp [ContinuousLinearMap.one_def]
 
-variable [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace H] [IsTopologicalGroup H]
+variable [TopologicalSpace G] [TopologicalSpace H]
 
-omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
 /-- **The two-sided Hom representation of two representations with continuous operator-valued
 action has one.** Only continuity of inversion on `H` is used, so `G` needs no topological group
 structure and `H` needs no continuous multiplication. -/
@@ -239,7 +242,7 @@ theorem toContinuousLinearMap_mem_invariants_linHom (f : ContIntertwiningMap π 
 /-- **The invariants of the Hom representation are the continuous intertwiners.** -/
 noncomputable def invariantsEquivContIntertwiningMap :
     (linHom π ρ).invariants ≃ₗ[𝕜] ContIntertwiningMap π ρ where
-  toFun T := ⟨(T : V →L[𝕜] W), (mem_linHom_invariants_iff_isIntertwining π ρ _).1 T.2⟩
+  toFun T := ⟨(T : V →L[𝕜] W), (mem_linHom_invariants_iff_isIntertwining π ρ _).1 T.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   invFun f := ⟨f.toContinuousLinearMap, toContinuousLinearMap_mem_invariants_linHom π ρ f⟩
@@ -262,13 +265,13 @@ end Invariants
 
 section Character
 
+section
+
 variable {𝕜 G V W : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Group G]
-  [TopologicalSpace G] [IsTopologicalGroup G]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W]
   (π : ContRepresentation 𝕜 G V) (ρ : ContRepresentation 𝕜 G W)
 
-omit [TopologicalSpace G] [IsTopologicalGroup G] [FiniteDimensional 𝕜 W] in
 /-- **The Hom representation is Mathlib's `Representation.linHom`, transported along
 `LinearMap.toContinuousLinearMap`.** In finite dimension every linear map is continuous, and the
 resulting identification of `V →ₗ[𝕜] W` with `V →L[𝕜] W` conjugates the algebraic conjugation
@@ -280,6 +283,14 @@ theorem conj_linHom (g : G) :
   ext T v
   simp only [ContinuousLinearMap.coe_coe, linHom_apply_apply]
   simp [LinearEquiv.conj_apply, ContRepresentation.toMonoidHom_apply]
+
+end
+
+variable {𝕜 G V W : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Group G]
+  [TopologicalSpace G] [IsTopologicalGroup G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W]
+  (π : ContRepresentation 𝕜 G V) (ρ : ContRepresentation 𝕜 G W)
 
 /-- **The character of the Hom representation is `χ_π(g⁻¹) · χ_ρ(g)`.** The trace is unchanged by
 transporting along `LinearMap.toContinuousLinearMap`, so this is Mathlib's
@@ -321,3 +332,61 @@ theorem isIrreducible_biLinHom (π : ContRepresentation 𝕜 H V)
 end Irreducible
 
 end ContRepresentation
+
+/-! ### Composition with an intertwining map -/
+
+namespace ContIntertwiningMap
+
+open ContRepresentation
+
+variable {𝕜 G V E F : Type*} [NontriviallyNormedField 𝕜] [Group G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  (σ : ContRepresentation 𝕜 G V) {π : ContRepresentation 𝕜 G E} {ρ : ContRepresentation 𝕜 G F}
+
+/-- **Composition with an intertwining map.** For `T : π →ⁱL ρ`, composition `S ↦ T ∘ S` on the
+operators out of `V` intertwines the Hom representations `linHom σ π` and `linHom σ ρ`. On their
+invariants, `(T.compLinHom σ).mapInvariants` sends an intertwiner `σ →ⁱL π` to its composite with
+`T`: this is the action of `T` on the multiplicity spaces of `σ`. -/
+noncomputable def compLinHom (T : π →ⁱL ρ) : linHom σ π →ⁱL linHom σ ρ where
+  toContinuousLinearMap := ContinuousLinearMap.compL 𝕜 V E F T.toContinuousLinearMap
+  isIntertwining' g := by
+    ext S v
+    simp [toContinuousLinearMap_apply, T.isIntertwining]
+
+/-- Composition with `T` sends an operator `S` to `T ∘ S`. -/
+@[simp]
+theorem compLinHom_apply (T : π →ⁱL ρ) (S : V →L[𝕜] E) :
+    T.compLinHom σ S = T.toContinuousLinearMap ∘L S :=
+  (rfl)
+
+/-- On multiplicity spaces, composition with `T` sends an intertwiner `S` to `T ∘ S`. -/
+@[simp]
+theorem coe_mapInvariants_compLinHom_apply (T : π →ⁱL ρ) (S : (linHom σ π).invariants) :
+    ((T.compLinHom σ).mapInvariants S : V →L[𝕜] F) = T.toContinuousLinearMap ∘L S :=
+  (rfl)
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- The action on multiplicity spaces depends continuously on the operator: a family of
+intertwining maps continuous on `s` for the operator topology acts on the multiplicity spaces of
+`σ` by a family continuous on `s`. -/
+theorem _root_.ContinuousOn.mapInvariants_compLinHom {A : X → π →ⁱL ρ} {s : Set X}
+    (hA : ContinuousOn (fun x ↦ (A x).toContinuousLinearMap) s) :
+    ContinuousOn (fun x ↦ ((A x).compLinHom σ).mapInvariants) s := by
+  -- Followed by the inclusion of the target invariants, which induces the operator topology, the
+  -- action is composition with `A x` restricted to the source invariants.
+  rw [(ContinuousLinearMap.isInducing_postcomp (linHom σ ρ).invariants.subtypeL
+    Topology.IsInducing.subtypeVal).continuousOn_iff]
+  exact ((ContinuousLinearMap.precomp (V →L[𝕜] F)
+    (linHom σ π).invariants.subtypeL).continuous.comp
+      (ContinuousLinearMap.compL 𝕜 V E F).continuous).comp_continuousOn hA
+
+/-- The action on multiplicity spaces of a family of intertwining maps, continuous for the operator
+topology, is continuous. -/
+theorem _root_.Continuous.mapInvariants_compLinHom {A : X → π →ⁱL ρ}
+    (hA : Continuous fun x ↦ (A x).toContinuousLinearMap) :
+    Continuous fun x ↦ ((A x).compLinHom σ).mapInvariants :=
+  continuousOn_univ.mp (hA.continuousOn.mapInvariants_compLinHom σ)
+
+end ContIntertwiningMap

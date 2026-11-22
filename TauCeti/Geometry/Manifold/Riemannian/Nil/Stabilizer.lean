@@ -154,8 +154,8 @@ private theorem differential_inner (Φ : Isom J Nil) (hΦ : Φ 1 = 1) (u v : P) 
 private theorem exists_differential_orthogonal (Φ : Isom J Nil) (hΦ : Φ 1 = 1) :
     ∃ g : Matrix.orthogonalGroup (Fin 2) ℝ, ∀ u : P,
       differential Φ u =
-        (g.1 0 0 * u.1 + g.1 0 1 * u.2.1,
-          g.1 1 0 * u.1 + g.1 1 1 * u.2.1, g.1.det * u.2.2) := by
+        (g.val 0 0 * u.1 + g.val 0 1 * u.2.1,
+          g.val 1 0 * u.1 + g.val 1 1 * u.2.1, g.val.det * u.2.2) := by
   -- Ricci preservation splits off the central line; metric preservation makes
   -- the remaining two columns orthonormal.
   obtain ⟨c, hc, hz, hr⟩ := differential_rotation Φ hΦ

@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Maps.Strict.Module
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.Compactness.SigmaCompact
 import Mathlib.Topology.Compactness.LocallyCompact
 
@@ -32,7 +34,10 @@ over a semiring with the indiscrete topology, the module topology of every modul
 separation of the scalars.
 
 Without a basis, any linear equivalence between modules with the module topology is a continuous
-linear equivalence (`LinearEquiv.toContinuousLinearEquivOfIsModuleTopology`). The module topology
+linear equivalence (`LinearEquiv.toContinuousLinearEquivOfIsModuleTopology`), and a tensor product
+`M ⊗[𝕜] N` carrying the `𝕜`-module topology (equipped by default on opening
+`TauCeti.ModuleTopology`) is a topological additive group
+(`TauCeti.instIsTopologicalAddGroupTensorProductOfIsModuleTopology`). The module topology
 on `M` is the quotient topology along any linear surjection `q : F → M` from a module with its
 module topology (`LinearMap.quotKerContinuousLinearEquivOfSurjective`), so any two presentations of
 an untopologised module from modules with the module topology induce topologically isomorphic
@@ -43,6 +48,15 @@ topology for the subspace topology (`LinearMap.isStrictMap_of_isModuleTopology_r
 
 Restriction of scalars along a finite algebra carrying the module topology preserves the
 module topology (`IsModuleTopology.restrictScalars`). No finiteness of the module is needed.
+
+A family `f : X → (M →ₗ[R] N)` of linear maps out of a finite module `M` with its module topology,
+into a topological module `N`, is jointly continuous on `X × M` exactly when each orbit map
+`x ↦ f x m` is continuous, and it suffices to check this on a finite generating family
+(`IsModuleTopology.continuous_linearMap_apply_iff`,
+`IsModuleTopology.continuous_linearMap_apply_iff_of_span_eq_top`). When `M` and `N` have finite
+bases and their module topologies, this is continuity of the matrices of the `f x`
+(`TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix`). Joint continuity
+is how continuity of a Galois representation is defined.
 
 The basis-dependent API is grouped in `TauCeti.ModuleTopology`, alongside Mathlib's
 organizational `ModuleTopology` namespace.
@@ -87,6 +101,44 @@ theorem restrictScalars (R S M : Type*) [CommRing R] [Ring S] [Algebra R S]
   -- The source keeps its given topology; only the target has the `R`-module topology.
   exact @IsModuleTopology.continuous_of_linearMap S _ _ M _ _ τM hM
     M _ _ τ (ModuleTopology.continuousAdd R M) this (LinearMap.id : M →ₗ[S] M)
+
+section JointContinuity
+
+variable {R M N X ι : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalSemiring R]
+  [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsModuleTopology R M]
+  [AddCommMonoid N] [Module R N] [TopologicalSpace N] [ContinuousAdd N] [ContinuousSMul R N]
+  [TopologicalSpace X]
+
+/-- **Joint continuity of a family of linear maps from a finite generating family.** For a
+module `M` with its module topology, spanned by a finite family `v`, a family `f` of linear maps
+`M → N` parametrised by a space `X` is jointly continuous on `X × M` as soon as each map
+`x ↦ f x (v i)` is continuous. The converse is clear. -/
+theorem continuous_linearMap_apply_iff_of_span_eq_top [Finite ι] (f : X → M →ₗ[R] N)
+    {v : ι → M} (hv : Submodule.span R (Set.range v) = ⊤) :
+    (Continuous fun p : X × M => f p.1 p.2) ↔ ∀ i, Continuous fun x => f x (v i) := by
+  refine ⟨fun h i => h.comp (continuous_id.prodMk continuous_const), fun h => ?_⟩
+  cases nonempty_fintype ι
+  -- The family `v` presents `M` as the open quotient `c ↦ ∑ i, c i • v i` of `ι → R`; through
+  -- that quotient the map is `(x, c) ↦ ∑ i, c i • f x (v i)`.
+  let q := Fintype.linearCombination R v
+  have hq : IsOpenQuotientMap q := isOpenQuotientMap_of_surjective
+    (LinearMap.range_eq_top.mp (by rw [Fintype.range_linearCombination, hv]))
+  refine ((IsOpenQuotientMap.id.prodMap hq).continuous_comp_iff).mp ?_
+  have hF : Continuous fun p : X × (ι → R) => ∑ i, p.2 i • f p.1 (v i) := by
+    fun_prop
+  refine hF.congr fun p => ?_
+  simp [q, Fintype.linearCombination_apply]
+
+/-- **Joint continuity of a family of linear maps on a finite module.** For a finite module `M`
+with its module topology, a family `f` of linear maps `M → N` parametrised by a space `X` is
+jointly continuous on `X × M` exactly when each orbit map `x ↦ f x m` is continuous. -/
+theorem continuous_linearMap_apply_iff [Module.Finite R M] (f : X → M →ₗ[R] N) :
+    (Continuous fun p : X × M => f p.1 p.2) ↔ ∀ m, Continuous fun x => f x m := by
+  refine ⟨fun h m => h.comp (continuous_id.prodMk continuous_const), fun h => ?_⟩
+  obtain ⟨n, v, hv⟩ := Module.Finite.exists_fin (R := R) (M := M)
+  exact (continuous_linearMap_apply_iff_of_span_eq_top f hv).2 fun i => h (v i)
+
+end JointContinuity
 
 end IsModuleTopology
 
@@ -270,6 +322,33 @@ theorem sigmaCompactSpace (b : _root_.Module.Basis ι K V) [SigmaCompactSpace K]
     SigmaCompactSpace V :=
   (equivFunHomeomorph b).isClosedEmbedding.sigmaCompactSpace
 
+section toMatrix
+
+variable {R M N X ι κ : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalSemiring R]
+  [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsModuleTopology R M]
+  [AddCommGroup N] [Module R N] [TopologicalSpace N] [IsModuleTopology R N]
+  [TopologicalSpace X] [Fintype ι] [DecidableEq ι] [Finite κ]
+
+/-- **Joint continuity of a family of linear maps through its matrices.** For finite bases `b`
+of `M` and `c` of `N`, both modules carrying their module topologies, a family `f` of linear
+maps `M → N` parametrised by a space `X` is jointly continuous on `X × M` exactly when its matrix
+`x ↦ LinearMap.toMatrix b c (f x)` is continuous, that is, when every matrix entry is. -/
+theorem continuous_linearMap_apply_iff_continuous_toMatrix (b : _root_.Module.Basis ι R M)
+    (c : _root_.Module.Basis κ R N) (f : X → M →ₗ[R] N) :
+    (Continuous fun p : X × M => f p.1 p.2) ↔
+      Continuous fun x => LinearMap.toMatrix b c (f x) := by
+  have := IsModuleTopology.toContinuousAdd R N
+  rw [IsModuleTopology.continuous_linearMap_apply_iff_of_span_eq_top f b.span_eq]
+  -- Read the `j`-th column `x ↦ f x (b j)` in the coordinates of `c`, a homeomorphism.
+  have hcol (j : ι) : Continuous (fun x => f x (b j)) ↔
+      ∀ i, Continuous fun x => LinearMap.toMatrix b c (f x) i j := by
+    rw [← (equivFunHomeomorph c).comp_continuous_iff, continuous_pi_iff]
+    simp [LinearMap.toMatrix_apply]
+  simp_rw [hcol]
+  exact ⟨fun h => continuous_matrix fun i j => h j i, fun h j i => h.matrix_elem i j⟩
+
+end toMatrix
+
 end ModuleTopology
 
 /-- The module topology on a free module over a Hausdorff topological semiring is Hausdorff. -/
@@ -337,4 +416,35 @@ theorem _root_.IndiscreteTopology.of_continuousSMul (R M : Type*) [MonoidWithZer
     simpa using (Inseparable.all (0 : R) 1).smul (.refl x)
   exact .of_forall_inseparable fun x y ↦ (h x).symm.trans (h y)
 
+/-- A tensor product `M ⊗[𝕜] N` carrying the `𝕜`-module topology is a topological additive group;
+unlike `IsModuleTopology.isTopologicalAddGroup`, this can be an instance because `𝕜` appears in the
+type `TensorProduct 𝕜 M N`. -/
+instance instIsTopologicalAddGroupTensorProductOfIsModuleTopology
+    {𝕜 M N : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜]
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    [TopologicalSpace (TensorProduct 𝕜 M N)] [IsModuleTopology 𝕜 (TensorProduct 𝕜 M N)] :
+    IsTopologicalAddGroup (TensorProduct 𝕜 M N) :=
+  IsModuleTopology.isTopologicalAddGroup 𝕜 (TensorProduct 𝕜 M N)
+
 end TauCeti
+
+section
+open scoped TensorProduct
+
+namespace TauCeti.ModuleTopology
+
+variable {𝕜 M N : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜]
+  [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+
+-- Scoped in `TauCeti.ModuleTopology` so `open scoped TensorProduct` stays unambiguous in `TauCeti`.
+/-- Scoped default topology on `M ⊗[𝕜] N`, given by `moduleTopology 𝕜 (M ⊗[𝕜] N)`. -/
+scoped instance instTopologicalSpaceTensorProduct : TopologicalSpace (M ⊗[𝕜] N) :=
+  moduleTopology 𝕜 (M ⊗[𝕜] N)
+
+/-- Under the scoped default topology `TauCeti.ModuleTopology`, `M ⊗[𝕜] N` carries the `𝕜`-module
+topology. -/
+scoped instance instIsModuleTopologyTensorProduct : IsModuleTopology 𝕜 (M ⊗[𝕜] N) := ⟨rfl⟩
+
+end TauCeti.ModuleTopology
+
+end
