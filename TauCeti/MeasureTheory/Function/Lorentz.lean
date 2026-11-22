@@ -688,18 +688,16 @@ theorem eLorentzNorm_eq_zero_iff {ε : Type*} [TopologicalSpace ε] [ENormedAddM
   have hf : AEStronglyMeasurable f μ :=
     aestronglyMeasurable_of_eLorentzNorm_ne_top (h ▸ ENNReal.zero_ne_top)
   rw [eLorentzNorm_eq_eLpNorm hf hp, eLpNorm_eq_zero_iff hq] at h
-  have hzero : ∀ᵐ t ∂volume.restrict (Ioi (0 : ℝ)), μ.decreasingRearrangement (‖f ·‖ₑ) t = 0 := by
+  have hzero : μ.decreasingRearrangement (‖f ·‖ₑ) =ᵐ[volume.restrict (Ioi (0 : ℝ))] 0 := by
     rw [← ae_multHaar_eq_ae_volume_Ioi]
     filter_upwards [h, ae_pos_multHaar] with t ht ht0
     have hpow : ENNReal.ofReal (t ^ (p⁻¹).toReal) ≠ 0 :=
       (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos ht0 _)).ne'
     exact (mul_eq_zero.1 (by simpa using ht)).resolve_left hpow
-  have hess : essSup (‖f ·‖ₑ) μ = 0 := by
-    rw [← μ.essSup_decreasingRearrangement]
-    exact le_antisymm (essSup_le_of_ae_le 0 (hzero.mono fun _ ht ↦ ht.le)) zero_le
-  filter_upwards [ENNReal.ae_le_essSup (μ := μ) (‖f ·‖ₑ)] with x hx
-  rw [hess, nonpos_iff_eq_zero, eNorm_eq_zero] at hx
-  exact hx
+  have hf0 : (‖f ·‖ₑ) =ᵐ[μ] 0 :=
+    ENNReal.essSup_eq_zero_iff.1 <|
+      (μ.essSup_decreasingRearrangement (‖f ·‖ₑ)).symm ▸ ENNReal.essSup_eq_zero_iff.2 hzero
+  exact hf0.mono fun _ hx ↦ eNorm_eq_zero.1 hx
 
 end ENormedAddMonoid
 

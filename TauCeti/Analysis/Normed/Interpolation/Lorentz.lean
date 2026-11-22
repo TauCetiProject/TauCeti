@@ -604,6 +604,14 @@ section Indicator
 
 variable [NormedSpace ℝ E]
 
+private theorem kFunctional_l1Linfty_indicator {u : L1AddLinfty 𝕜 E μ} {A : Set α} {c : E}
+    (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] A.indicator fun _ ↦ c) {t : ℝ} (ht : 0 ≤ t) :
+    (l1Linfty 𝕜 E μ).kFunctional t u = ‖c‖ * (min (μ A) (ENNReal.ofReal t)).toReal := by
+  have h := congrArg ENNReal.toReal (ofReal_kFunctional_l1Linfty_indicator hu ht)
+  rw [ENNReal.toReal_ofReal (kFunctional_nonneg ht), ENNReal.toReal_mul, ← ofReal_norm,
+    ENNReal.toReal_ofReal (norm_nonneg c), min_comm] at h
+  exact h
+
 private theorem kMethodENorm_l1Linfty_indicator_of_measure_eq_top {u : L1AddLinfty 𝕜 E μ}
     {A : Set α} {c : E} (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] A.indicator fun _ ↦ c)
     {θ : ℝ} (hθ : θ < 1) {q : ℝ≥0∞} (hq0 : q ≠ 0) (hc0 : ‖c‖ₑ ≠ 0) (hAtop : μ A = ∞) :
@@ -615,29 +623,30 @@ private theorem kMethodENorm_l1Linfty_indicator_of_measure_eq_top {u : L1AddLinf
   have hbound : ∀ m : ℝ, 0 < m →
       kMethodConst θ q * ‖c‖ₑ * ENNReal.ofReal (m ^ (1 - θ)) ≤
         (l1Linfty 𝕜 E μ).kMethodENorm θ q u := fun m hm ↦ by
-    have hmeas : AEStronglyMeasurable (fun t : ℝ ↦ t ^ (-θ) * min (‖c‖ * m) (t * ‖c‖)) multHaar :=
-      ((continuousOn_id.rpow_const fun _ ht ↦ Or.inl (ne_of_gt ht)).mul
-        (continuous_const.min
-          (continuous_id.mul continuous_const)).continuousOn).aestronglyMeasurable_multHaar
-    have hle : eLpNorm (fun t : ℝ ↦ t ^ (-θ) * min (‖c‖ * m) (t * ‖c‖)) q multHaar ≤
+    have hmeas : AEStronglyMeasurable (fun t : ℝ ↦ ‖c‖ * (t ^ (-θ) * min m t)) multHaar :=
+      (continuousOn_const.mul ((continuousOn_id.rpow_const fun _ ht ↦ Or.inl (ne_of_gt ht)).mul
+        (continuous_const.min continuous_id).continuousOn)).aestronglyMeasurable_multHaar
+    have hle : eLpNorm (fun t : ℝ ↦ ‖c‖ * (t ^ (-θ) * min m t)) q multHaar ≤
         (l1Linfty 𝕜 E μ).kMethodENorm θ q u := by
       rw [kMethodENorm_def]
       refine eLpNorm_mono_ae_real hmeas (ae_pos_multHaar.mono fun t ht ↦ ?_)
-      have hK_ofReal :
-          ENNReal.ofReal (t * ‖c‖) = ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) := by
-        rw [ofReal_kFunctional_l1Linfty_indicator hu ht.le, hAtop, min_eq_left le_top,
-          ENNReal.ofReal_mul ht.le, ofReal_norm, mul_comm]
-      have hK_le : min (‖c‖ * m) (t * ‖c‖) ≤ (l1Linfty 𝕜 E μ).kFunctional t u :=
-        (ENNReal.ofReal_le_ofReal_iff (kFunctional_nonneg ht.le)).1
-          (hK_ofReal ▸ ENNReal.ofReal_le_ofReal (min_le_right _ _))
-      rw [Real.norm_of_nonneg (mul_nonneg (Real.rpow_nonneg ht.le _)
-        (le_min (mul_nonneg hc_pos.le hm.le) (mul_nonneg ht.le hc_pos.le)))]
-      exact mul_le_mul_of_nonneg_left hK_le (Real.rpow_nonneg ht.le _)
-    refine le_trans (le_of_eq ?_) hle
-    rw [eLpNorm_rpow_neg_mul_min θ q (mul_pos hc_pos hm) hc_pos, Real.mul_rpow hc_pos.le hm.le,
-      mul_right_comm (‖c‖ ^ (1 - θ)), ← Real.rpow_add hc_pos, sub_add_cancel, Real.rpow_one,
-      ENNReal.ofReal_mul hc_pos.le, ofReal_norm]
-    ring
+      have hK : (l1Linfty 𝕜 E μ).kFunctional t u = ‖c‖ * t := by
+        rw [kFunctional_l1Linfty_indicator hu ht.le, hAtop, min_top_left,
+          ENNReal.toReal_ofReal ht.le]
+      rw [Real.norm_of_nonneg (mul_nonneg hc_pos.le
+        (mul_nonneg (Real.rpow_nonneg ht.le _) (le_min hm.le ht.le))), hK]
+      calc ‖c‖ * (t ^ (-θ) * min m t)
+          = t ^ (-θ) * (‖c‖ * min m t) := by ring
+        _ ≤ t ^ (-θ) * (‖c‖ * t) :=
+            mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (min_le_right _ _) hc_pos.le)
+              (Real.rpow_nonneg ht.le _)
+    refine le_trans ?_ hle
+    have hmul : (fun t : ℝ ↦ ‖c‖ * (t ^ (-θ) * min m t)) =
+        ‖c‖ • fun t : ℝ ↦ t ^ (-θ) * min m (t * 1) := by
+      ext t; simp [smul_eq_mul, mul_one]
+    rw [hmul, eLpNorm_const_smul, Real.eNorm_of_nonneg hc_pos.le, ofReal_norm,
+      eLpNorm_rpow_neg_mul_min θ q hm one_pos, Real.one_rpow, mul_one]
+    exact le_of_eq (by ring)
   have htend : Tendsto (fun m : ℝ ↦ kMethodConst θ q * ‖c‖ₑ * ENNReal.ofReal (m ^ (1 - θ)))
       atTop (𝓝 ∞) := by
     simpa [ENNReal.mul_top hC0] using ENNReal.Tendsto.const_mul (a := kMethodConst θ q * ‖c‖ₑ)
@@ -648,30 +657,22 @@ private theorem kMethodENorm_l1Linfty_indicator_of_measure_eq_top {u : L1AddLinf
 
 private theorem kMethodENorm_l1Linfty_indicator_of_measure_pos {u : L1AddLinfty 𝕜 E μ}
     {A : Set α} {c : E} (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] A.indicator fun _ ↦ c)
-    (θ : ℝ) (q : ℝ≥0∞) (hc0 : ‖c‖ₑ ≠ 0) (hA0 : μ A ≠ 0) (hAtop : μ A ≠ ∞) :
+    (θ : ℝ) (q : ℝ≥0∞) (hA0 : μ A ≠ 0) (hAtop : μ A ≠ ∞) :
     (l1Linfty 𝕜 E μ).kMethodENorm θ q u = kMethodConst θ q * ‖c‖ₑ * μ A ^ (1 - θ) := by
   set m : ℝ := (μ A).toReal
   have hm : 0 < m := ENNReal.toReal_pos hA0 hAtop
-  have hc_pos : 0 < ‖c‖ := norm_pos_iff.2 (by simpa using hc0)
   have heq : (fun t : ℝ ↦ t ^ (-θ) * (l1Linfty 𝕜 E μ).kFunctional t u) =ᵐ[multHaar]
-      fun t : ℝ ↦ t ^ (-θ) * min (‖c‖ * m) (t * ‖c‖) := by
+      ‖c‖ • fun t : ℝ ↦ t ^ (-θ) * min m (t * 1) := by
     filter_upwards [ae_pos_multHaar] with t ht
-    have hK_ofReal : ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) =
-        ENNReal.ofReal (min (‖c‖ * m) (t * ‖c‖)) := by
-      rw [ofReal_kFunctional_l1Linfty_indicator hu ht.le, ← ENNReal.ofReal_toReal hAtop,
-        ← ofReal_norm, ← ENNReal.ofReal_min, ← ENNReal.ofReal_mul (norm_nonneg c),
-        mul_min_of_nonneg _ _ (norm_nonneg c), mul_comm ‖c‖ t, min_comm]
-    have hK : (l1Linfty 𝕜 E μ).kFunctional t u = min (‖c‖ * m) (t * ‖c‖) := by
-      have := congrArg ENNReal.toReal hK_ofReal
-      rwa [ENNReal.toReal_ofReal (kFunctional_nonneg ht.le),
-        ENNReal.toReal_ofReal (le_min (mul_nonneg (norm_nonneg c) hm.le)
-          (mul_nonneg ht.le (norm_nonneg c)))] at this
-    rw [hK]
-  rw [kMethodENorm_def, eLpNorm_congr_ae heq,
-    eLpNorm_rpow_neg_mul_min θ q (mul_pos hc_pos hm) hc_pos, Real.mul_rpow hc_pos.le hm.le,
-    mul_right_comm (‖c‖ ^ (1 - θ)), ← Real.rpow_add hc_pos, sub_add_cancel, Real.rpow_one,
-    ENNReal.ofReal_mul (norm_nonneg c), ofReal_norm, ← ENNReal.ofReal_rpow_of_pos hm,
-    ENNReal.ofReal_toReal hAtop]
+    have hK : (l1Linfty 𝕜 E μ).kFunctional t u = ‖c‖ * min m t := by
+      rw [kFunctional_l1Linfty_indicator hu ht.le, ← ENNReal.ofReal_toReal hAtop,
+        ← ENNReal.ofReal_min, ENNReal.toReal_ofReal (le_min hm.le ht.le)]
+    simp only [Pi.smul_apply, smul_eq_mul, hK, mul_one]
+    ring
+  rw [kMethodENorm_def, eLpNorm_congr_ae heq, eLpNorm_const_smul,
+    Real.eNorm_of_nonneg (norm_nonneg c), ofReal_norm,
+    eLpNorm_rpow_neg_mul_min θ q hm one_pos, Real.one_rpow, mul_one,
+    ← ENNReal.ofReal_rpow_of_pos hm, ENNReal.ofReal_toReal hAtop]
   ring
 
 /-- Extended `K`-method gauge of a sum-space element `u` in `(L¹, L^∞)` represented almost
@@ -691,23 +692,20 @@ theorem kMethodENorm_l1Linfty_indicator {u : L1AddLinfty 𝕜 E μ} {A : Set α}
       eLpNorm_exponent_zero (aestronglyMeasurable_rpow_neg_mul_kFunctional θ u),
       eLpNorm_exponent_zero hmeas_min]
     simp
-  have hzero_of : ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional 1 u) = 0 →
-      (l1Linfty 𝕜 E μ).kMethodENorm θ q u = 0 := fun hK ↦ by
-    have hK0 : (l1Linfty 𝕜 E μ).kFunctional 1 u = 0 :=
-      le_antisymm (ENNReal.ofReal_eq_zero.1 hK) (kFunctional_nonneg zero_le_one)
+  have hzero_of : (l1Linfty 𝕜 E μ).kFunctional 1 u = 0 →
+      (l1Linfty 𝕜 E μ).kMethodENorm θ q u = 0 := fun hK0 ↦ by
     obtain ⟨v, rfl⟩ := lebesgue_one_top_sumSpaceEmbed_surjective u
     rw [kFunctional_l1Linfty_sumSpaceEmbed zero_le_one, kFunctional_eq_zero_iff one_pos] at hK0
     rw [hK0, map_zero, kMethodENorm_zero]
   rcases eq_or_ne ‖c‖ₑ 0 with hc0 | hc0
-  · rw [hzero_of (by rw [ofReal_kFunctional_l1Linfty_indicator hu zero_le_one, hc0, zero_mul]),
-      hc0, mul_zero, zero_mul]
+  · rw [hzero_of (by rw [kFunctional_l1Linfty_indicator hu zero_le_one,
+        show ‖c‖ = 0 by simpa using hc0, zero_mul]), hc0, mul_zero, zero_mul]
   rcases eq_or_ne (μ A) 0 with hA0 | hA0
-  · rw [hzero_of (by
-        rw [ofReal_kFunctional_l1Linfty_indicator hu zero_le_one, hA0, min_zero, mul_zero]),
-      hA0, ENNReal.zero_rpow_of_pos h1θ, mul_zero]
+  · rw [hzero_of (by rw [kFunctional_l1Linfty_indicator hu zero_le_one, hA0, zero_min,
+        ENNReal.toReal_zero, mul_zero]), hA0, ENNReal.zero_rpow_of_pos h1θ, mul_zero]
   rcases eq_or_ne (μ A) ∞ with hAtop | hAtop
   · exact kMethodENorm_l1Linfty_indicator_of_measure_eq_top hu hθ hq0 hc0 hAtop
-  · exact kMethodENorm_l1Linfty_indicator_of_measure_pos hu θ q hc0 hA0 hAtop
+  · exact kMethodENorm_l1Linfty_indicator_of_measure_pos hu θ q hA0 hAtop
 
 end Indicator
 

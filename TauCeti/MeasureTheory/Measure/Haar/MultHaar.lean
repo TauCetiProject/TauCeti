@@ -445,42 +445,34 @@ theorem eLpNorm_volume_Ioi_eq_eLpNorm_multHaar {p : ℝ≥0∞} (hp0 : p ≠ 0) 
     ← Real.rpow_mul ht.le, inv_mul_cancel₀ hp_pos.ne', Real.rpow_one,
     ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le), inv_mul_cancel₀ ht.ne', ENNReal.ofReal_one, one_mul]
 
+private theorem setLIntegral_multHaar_rpow {s : Set ℝ} (hs : MeasurableSet s) (α : ℝ) :
+    ∫⁻ x in s, ENNReal.ofReal (x ^ α) ∂multHaar =
+      ∫⁻ x in s ∩ Ioi 0, ENNReal.ofReal (x ^ (α - 1)) := by
+  rw [setLIntegral_multHaar_eq_setLIntegral hs]
+  refine setLIntegral_congr_fun (hs.inter measurableSet_Ioi) fun x hx ↦ ?_
+  rw [← ENNReal.ofReal_mul (inv_nonneg.2 hx.2.le), mul_comm, ← div_eq_mul_inv,
+    ← Real.rpow_sub_one hx.2.ne']
+
 /-- `∫_{s ≤ t} s ^ θ ds / s = t ^ θ / θ` for `0 < θ` and `0 < t`. -/
 theorem lintegral_Iic_multHaar_rpow {θ t : ℝ} (hθ : 0 < θ) (ht : 0 < t) :
     ∫⁻ s in Iic t, ENNReal.ofReal (s ^ θ) ∂multHaar = ENNReal.ofReal (t ^ θ * θ⁻¹) := by
-  rw [setLIntegral_multHaar_eq_setLIntegral measurableSet_Iic, Set.Iic_inter_Ioi,
-    ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
-  have hpt : ∀ s ∈ Ioo 0 t,
-      ENNReal.ofReal s⁻¹ * ENNReal.ofReal (s ^ θ) = ENNReal.ofReal (s ^ (θ - 1)) := fun s hs ↦ by
-    rw [← ENNReal.ofReal_mul (inv_nonneg.2 hs.1.le), ← Real.rpow_neg_one, ← Real.rpow_add hs.1,
-      neg_add_eq_sub]
-  rw [setLIntegral_congr_fun measurableSet_Ioo hpt,
-    lintegral_ofReal_rpow_Ioo (by linarith) ht.le, sub_add_cancel, div_eq_mul_inv]
+  rw [setLIntegral_multHaar_rpow measurableSet_Iic, Set.Iic_inter_Ioi,
+    ← Measure.restrict_congr_set Ioo_ae_eq_Ioc, lintegral_ofReal_rpow_Ioo (by linarith) ht.le,
+    sub_add_cancel, div_eq_mul_inv]
 
 /-- `∫_{s ≥ t} s ^ (-θ) ds / s = t ^ (-θ) / θ` for `0 < θ` and `0 < t`. -/
 theorem lintegral_Ici_multHaar_rpow_neg {θ t : ℝ} (hθ : 0 < θ) (ht : 0 < t) :
     ∫⁻ s in Ici t, ENNReal.ofReal (s ^ (-θ)) ∂multHaar = ENNReal.ofReal (t ^ (-θ) * θ⁻¹) := by
-  rw [setLIntegral_multHaar_eq_setLIntegral measurableSet_Ici,
-    inter_eq_self_of_subset_left (Ici_subset_Ioi.2 ht), ← Measure.restrict_congr_set Ioi_ae_eq_Ici]
-  have hpt : ∀ s ∈ Ioi t,
-      ENNReal.ofReal s⁻¹ * ENNReal.ofReal (s ^ (-θ)) = ENNReal.ofReal (s ^ (-θ - 1)) :=
-    fun s hs ↦ by
-      have hs0 : 0 < s := ht.trans hs
-      rw [← ENNReal.ofReal_mul (inv_nonneg.2 hs0.le), ← Real.rpow_neg_one, ← Real.rpow_add hs0,
-        show (-1 : ℝ) + -θ = -θ - 1 by ring]
-  rw [setLIntegral_congr_fun measurableSet_Ioi hpt,
+  rw [setLIntegral_multHaar_rpow measurableSet_Ici,
+    inter_eq_self_of_subset_left (Ici_subset_Ioi.2 ht), ← Measure.restrict_congr_set Ioi_ae_eq_Ici,
     lintegral_ofReal_rpow_Ioi_of_lt (by linarith) ht, sub_add_cancel, neg_div_neg_eq,
     div_eq_mul_inv]
 
 /-- `∫_0^∞ s ^ θ ds / s = ∞` for `0 < θ`. -/
 theorem lintegral_multHaar_rpow_eq_top {θ : ℝ} (_hθ : 0 < θ) :
     ∫⁻ s, ENNReal.ofReal (s ^ θ) ∂multHaar = ∞ := by
-  rw [lintegral_multHaar_eq_setLIntegral]
-  have hpt : ∀ s ∈ Ioi (0 : ℝ),
-      ENNReal.ofReal s⁻¹ * ENNReal.ofReal (s ^ θ) = ENNReal.ofReal (s ^ (θ - 1)) := fun s hs ↦ by
-    rw [← ENNReal.ofReal_mul (inv_nonneg.2 hs.le), ← Real.rpow_neg_one, ← Real.rpow_add hs,
-      neg_add_eq_sub]
-  rw [setLIntegral_congr_fun measurableSet_Ioi hpt, lintegral_ofReal_rpow_Ioi]
+  rw [← setLIntegral_univ, setLIntegral_multHaar_rpow MeasurableSet.univ, univ_inter,
+    lintegral_ofReal_rpow_Ioi]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
