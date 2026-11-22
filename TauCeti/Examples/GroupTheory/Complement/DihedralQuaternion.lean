@@ -5,15 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupAction.Inversion
+public import TauCeti.Data.ZMod.MonoidHomEquiv
 public import TauCeti.GroupTheory.GroupExtension.Quotient.Cohomology
 public import TauCeti.GroupTheory.GroupExtension.Relabel
 public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Extension
 public import TauCeti.GroupTheory.SpecificGroups.Quaternion.Extension
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
+import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.Data.ZMod.OrderOf
-import TauCeti.GroupTheory.GroupExtension.Cyclic
+import TauCeti.Data.ZMod.Torsion
+import TauCeti.GroupTheory.GroupExtension.Cyclic.Basic
+import TauCeti.GroupTheory.GroupExtension.Cyclic.Cohomology
 import TauCeti.GroupTheory.SpecificGroups.Dihedral.Cohomology
-import TauCeti.GroupTheory.SpecificGroups.Quaternion.Cohomology
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
 
 /-!
@@ -24,20 +28,21 @@ quaternion group `QuaternionGroup n` both sit in a short exact sequence
 `1 → C_{2n} → E → C₂ → 1` whose quotient `C₂` acts on the cyclic rotation subgroup `C_{2n}` by
 inversion (`TauCeti.invMulDistribMulAction`). This file transports both quotient extensions to
 the common kernel `Multiplicative (ZMod (2 * n))` and quotient `Multiplicative (ZMod 2)` via
-`TauCeti.dihedralExtension`, `TauCeti.quaternionExtension`, and
+`TauCeti.dihedralEvenExtension`, `TauCeti.quaternionExtension`, and
 `TauCeti.GroupExtension.relabelCohomologyIso`, and separates them inside the single cohomology group
 `H²(C₂, C_{2n}^{inv}) ≅ ℤ/2`.
 
-* **Cohomology of the inversion action.** By `TauCeti.cohomologyInvEquivZModTwo`,
+* **Cohomology of the inversion action.** By `groupCohomologyTwoInvEquivZModTwo`,
   `H²(C₂, C_{2n}^{inv}) ≃+ ZMod 2`, sending the extension class of a lift `e` of the generator with
   `S.inl (ofAdd a) = e ^ 2` to the unique residue `x : ZMod 2` with `x.val * n = a` in
-  `ZMod (2 * n)` (`GroupExtension.Section.cohomologyInvEquivZModTwo_cohomologyClass_factorSet_iff`).
-* **Separation in `H²(C₂, C_{2n}^{inv})`.** Under `cohomologyInvEquivZModTwo n`, the dihedral
-  extension class maps to `0` (`(sr 0) ^ 2 = 1`) and the quaternion extension class maps to `1`
-  (`(xa 0) ^ 2 = a n`). Thus the two classes are distinct, exhaust `H²(C₂, C_{2n}^{inv})`, witness
-  that the two extensions are inequivalent, and separate splitting from non-splitting:
-  `TauCeti.isComplement'_dihedralRotations_zpowers_sr 0` exhibits a complement in
-  `DihedralGroup (2 * n)` (with vanishing quotient cohomology class
+  `ZMod (2 * n)`
+  (`GroupExtension.Section.groupCohomologyTwoInvEquivZModTwo_cohomologyClass_factorSet_iff`).
+* **Separation in `H²(C₂, C_{2n}^{inv})`.** Under `groupCohomologyTwoInvEquivZModTwo n`, the
+  dihedral extension class maps to `0` (`(sr 0) ^ 2 = 1`) and the quaternion extension class maps
+  to `1` (`(xa 0) ^ 2 = a n`). Thus the two classes are distinct, exhaust
+  `H²(C₂, C_{2n}^{inv})`, witness that the two extensions are inequivalent, and separate splitting
+  from non-splitting: `TauCeti.isComplement'_dihedralRotations_zpowers_sr 0` exhibits a complement
+  in `DihedralGroup (2 * n)` (with vanishing quotient cohomology class
   `TauCeti.cohomologyClass_dihedralRotations_eq_zero`), whereas `quaternionRotations n` has no
   complement (`TauCeti.not_exists_isComplement'_quaternionRotations`, with nonzero quotient
   cohomology class `TauCeti.cohomologyClass_quaternionRotations_ne_zero`).
@@ -51,19 +56,24 @@ the common kernel `Multiplicative (ZMod (2 * n))` and quotient `Multiplicative (
 
 ## Main definitions
 
-* `TauCeti.Examples.DihedralQuaternion.dihedralExtensionClass`,
+* `TauCeti.Examples.DihedralQuaternion.groupCohomologyTwoInvEquivZModTwo`:
+  `H²(C₂, C_{2n}^{inv}) ≃+ ZMod 2` for `n ≠ 0`.
+* `TauCeti.Examples.DihedralQuaternion.dihedralEvenExtensionClass`,
   `TauCeti.Examples.DihedralQuaternion.quaternionExtensionClass`: the dihedral and quaternion
   cohomology classes inside the common group `H²(C₂, C_{2n}^{inv})`.
 
 ## Main results
 
-* `TauCeti.Examples.DihedralQuaternion.cohomologyInvEquivZModTwo_dihedralExtensionClass`,
-  `TauCeti.Examples.DihedralQuaternion.cohomologyInvEquivZModTwo_quaternionExtensionClass`: the
-  two classes map to `0` and `1` in `ZMod 2`.
-* `TauCeti.Examples.DihedralQuaternion.eq_dihedralExtensionClass_or_eq_quaternionExtensionClass`:
-  the dihedral and quaternion classes exhaust `H²(C₂, C_{2n}^{inv})`.
-* `TauCeti.Examples.DihedralQuaternion.isEmpty_equiv_dihedralExtension_quaternionExtension`: the
-  relabelled dihedral and quaternion extensions are not equivalent.
+* `TauCeti.Examples.DihedralQuaternion.natCard_groupCohomologyTwoInv`:
+  `|H²(C₂, C_{2n}^{inv})| = 2`.
+* `TauCeti.Examples.DihedralQuaternion.groupCohomologyTwoInvEquivZModTwo_dihedralEvenExtensionClass`
+  and
+  `TauCeti.Examples.DihedralQuaternion.groupCohomologyTwoInvEquivZModTwo_quaternionExtensionClass`:
+  the two classes map to `0` and `1` in `ZMod 2`.
+* `TauCeti.Examples.DihedralQuaternion.eq_dihedralEvenExtensionClass_or_eq_quaternionExtensionClass`
+  shows that the dihedral and quaternion classes exhaust `H²(C₂, C_{2n}^{inv})`.
+* `TauCeti.Examples.DihedralQuaternion.isEmpty_equiv_dihedralEvenExtension_quaternionExtension`:
+  the relabelled dihedral and quaternion extensions are not equivalent.
 * `TauCeti.Examples.DihedralQuaternion.subsingleton_groupCohomology_zmodThree_kleinFour`:
   `H^{k+1}(C₃, V) = 0` for every Klein four-group `V` and every `C₃`-action.
 
@@ -80,6 +90,116 @@ namespace TauCeti.Examples.DihedralQuaternion
 open _root_.groupCohomology
 open scoped IsMulCommutative IsKleinFour
 
+/-! ### Explicit identification `H²(C₂, C_{2n}^{inv}) ≃+ ZMod 2` -/
+
+section CohomologyTwoInv
+
+open CategoryTheory
+attribute [local instance] invMulDistribMulAction
+
+/-- Package the definitional identification between `Submodule.torsionBy ℤ A n` and
+`AddSubgroup.torsionBy A n` as an additive equivalence. -/
+private def submoduleTorsionByEquivAddSubgroup (A : Type*) [AddCommGroup A]
+    [instM : Module ℤ A] (n : ℤ) :
+    Submodule.torsionBy ℤ A n ≃+ AddSubgroup.torsionBy A n where
+  toFun x := ⟨x.val, by
+    change x.val ∈ @Submodule.torsionBy ℤ A _ _ (AddCommGroup.toIntModule A) n
+    rw [Subsingleton.elim (AddCommGroup.toIntModule A) instM]
+    exact x.property⟩
+  invFun x := ⟨x.val, by
+    rw [Subsingleton.elim instM (AddCommGroup.toIntModule A)]
+    exact x.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+
+@[simp]
+private theorem submoduleTorsionByEquivAddSubgroup_apply_coe {A : Type*} [AddCommGroup A]
+    [Module ℤ A] (n : ℤ) (x : Submodule.torsionBy ℤ A n) :
+    ((submoduleTorsionByEquivAddSubgroup A n x : AddSubgroup.torsionBy A n) : A) = x.val :=
+  rfl
+
+/-- **Second cohomology of the inversion action on `C_{2n}`.** For every nonzero `n`,
+`H²(C₂, C_{2n}^{inv})` is additively isomorphic to `ZMod 2`, obtained by composing the
+`2`-torsion identification `Rep.FiniteCyclicGroup.groupCohomologyEvenEquivTorsionBy` with
+`AddEquiv.torsionByCongr` and `TauCeti.zmodTorsionByEquiv`. -/
+noncomputable def groupCohomologyTwoInvEquivZModTwo (n : ℕ) [NeZero n] :
+    groupCohomology
+        (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n)))) 2 ≃+
+      ZMod 2 :=
+  let e₁ :=
+    (Rep.FiniteCyclicGroup.groupCohomologyEvenEquivTorsionBy
+      (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n))))
+      (Multiplicative.ofAdd (1 : ZMod 2)) Multiplicative.mem_zpowers_ofAdd_one
+      ((TauCeti.orderOf_ofAdd_one_zmod 2).symm ▸ even_two)
+      (Rep.ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv invMulDistribMulAction_ofAdd_one_smul)
+      2 even_two).toAddEquiv
+  let e₁₂ :=
+    submoduleTorsionByEquivAddSubgroup
+      (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n)))).V 2
+  let e₂ :=
+    AddEquiv.torsionByCongr
+      ((Rep.toAdditive (M := Multiplicative (ZMod 2)) (G := Multiplicative (ZMod (2 * n)))).trans
+        (AddEquiv.additiveMultiplicative (ZMod (2 * n))))
+      2
+  ((e₁.trans e₁₂).trans e₂).trans (zmodTorsionByEquiv 2 n).symm
+
+/-- `H²(C₂, C_{2n}^{inv})` has order `2` for every nonzero `n`. -/
+theorem natCard_groupCohomologyTwoInv (n : ℕ) [NeZero n] :
+    Nat.card (groupCohomology
+      (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n)))) 2) =
+      2 := by
+  rw [Nat.card_congr (groupCohomologyTwoInvEquivZModTwo n).toEquiv, Nat.card_zmod]
+
+/-- Under `groupCohomologyTwoInvEquivZModTwo n`, the periodic-resolution class of a `1`-fixed
+element `y` corresponds to the unique residue `x : ZMod 2` satisfying `x.val * n = a` in
+`ZMod (2 * n)`. -/
+theorem groupCohomologyTwoInvEquivZModTwo_groupCohomologyπEven (n : ℕ) [NeZero n]
+    (y : LinearMap.ker
+      ((Rep.applyAsHom
+        (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n))))
+        (Multiplicative.ofAdd (1 : ZMod 2)) - 𝟙 _).hom.toLinearMap))
+    (x : ZMod 2) :
+    groupCohomologyTwoInvEquivZModTwo n
+      (Rep.FiniteCyclicGroup.groupCohomologyπEven
+        (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n))))
+        (Multiplicative.ofAdd (1 : ZMod 2)) Multiplicative.mem_zpowers_ofAdd_one 2 even_two y) =
+      x ↔
+      ((x.val * n : ℕ) : ZMod (2 * n)) =
+        Multiplicative.toAdd (Additive.toMul (Rep.toAdditive y.val)) := by
+  rw [groupCohomologyTwoInvEquivZModTwo]
+  simp only [AddEquiv.trans_apply, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply]
+  rw [Rep.FiniteCyclicGroup.groupCohomologyEvenEquivTorsionBy_groupCohomologyπEven,
+    zmodTorsionByEquiv_symm_apply_eq_iff]
+  simp
+  rfl
+
+/-- **Evaluation of `groupCohomologyTwoInvEquivZModTwo` on an extension class.** For any extension
+`S` of `C₂` by `C_{2n}` inducing the inversion action, if `e` lifts `ofAdd 1` and
+`S.inl (ofAdd a) = e ^ 2`, then `groupCohomologyTwoInvEquivZModTwo n` maps the cohomology class
+of any normalized section of `S` to the unique `x : ZMod 2` satisfying `x.val * n = a` in
+`ZMod (2 * n)`. -/
+theorem
+    _root_.GroupExtension.Section.groupCohomologyTwoInvEquivZModTwo_cohomologyClass_factorSet_iff
+    {n : ℕ} [NeZero n] {E : Type*} [Group E]
+    {S : GroupExtension (Multiplicative (ZMod (2 * n))) E (Multiplicative (ZMod 2))}
+    (σ : S.Section) (hσ : σ 1 = 1)
+    (hact : TauCeti.GroupExtension.InducesAction S)
+    {e : E} (he : S.rightHom e = Multiplicative.ofAdd 1) {a : ZMod (2 * n)}
+    (ha : S.inl (Multiplicative.ofAdd a) = e ^ 2) (x : ZMod 2) :
+    groupCohomologyTwoInvEquivZModTwo n
+        (TauCeti.GroupExtension.factorSet σ hσ hact).cohomologyClass = x ↔
+      (x.val * n : ℕ) = a := by
+  have ha' : S.inl (Multiplicative.ofAdd a) =
+      e ^ orderOf (Multiplicative.ofAdd (1 : ZMod 2)) := by
+    rw [TauCeti.orderOf_ofAdd_one_zmod, ha]
+  rw [σ.cohomologyClass_factorSet_eq_groupCohomologyπEven hσ hact
+      Multiplicative.mem_zpowers_ofAdd_one he ha',
+    groupCohomologyTwoInvEquivZModTwo_groupCohomologyπEven]
+  simp
+
+end CohomologyTwoInv
+
 /-! ### Separating `DihedralGroup (2 * n)` and `QuaternionGroup n` inside `H²(C₂, C_{2n}^{inv})` -/
 
 section Separation
@@ -88,14 +208,14 @@ attribute [local instance] Subgroup.quotientConjugationAction invMulDistribMulAc
 
 /-- The cohomology class of `1 → C_{2n} → DihedralGroup (2 * n) → C₂ → 1` inside
 `H²(C₂, C_{2n}^{inv})`. -/
-noncomputable def dihedralExtensionClass (n : ℕ) :
+noncomputable def dihedralEvenExtensionClass (n : ℕ) :
     groupCohomology
       (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n)))) 2 :=
   (TauCeti.GroupExtension.factorSet
-    ((dihedralExtension n).cyclicPowerSection (Multiplicative.ofAdd 1)
+    ((dihedralEvenExtension n).cyclicPowerSection (Multiplicative.ofAdd 1)
       Multiplicative.mem_zpowers_ofAdd_one (e := DihedralGroup.sr 0) (by simp))
-    ((dihedralExtension n).cyclicPowerSection_one _ _ _)
-    (dihedralExtension_inducesAction n)).cohomologyClass
+    ((dihedralEvenExtension n).cyclicPowerSection_one _ _ _)
+    (dihedralEvenExtension_inducesAction n)).cohomologyClass
 
 /-- The cohomology class of `1 → C_{2n} → QuaternionGroup n → C₂ → 1` inside
 `H²(C₂, C_{2n}^{inv})`. -/
@@ -109,18 +229,34 @@ noncomputable def quaternionExtensionClass (n : ℕ) :
     (quaternionExtension_inducesAction n)).cohomologyClass
 
 /-- Relabelling sends the cohomology class of any normalized section of the dihedral quotient
-extension to `dihedralExtensionClass n`. -/
+extension to `dihedralEvenExtensionClass n`. -/
 theorem relabelCohomologyIso_dihedral_cohomologyClass (n : ℕ)
     (σ : (dihedralRotations (2 * n)).quotientExtension.Section) (hσ : σ 1 = 1) :
     (TauCeti.GroupExtension.relabelCohomologyIso (dihedralRotationsMulEquiv (2 * n)).symm
         (dihedralQuotientEquiv (2 * n)) (dihedralRotationsMulEquiv_symm_smul (2 * n)) 2).hom
       (TauCeti.GroupExtension.factorSet σ hσ
         (dihedralRotations (2 * n)).quotientExtension_inducesAction).cohomologyClass =
-      dihedralExtensionClass n :=
-  TauCeti.GroupExtension.relabelCohomologyIso_cohomologyClass_factorSet
-    (dihedralRotationsMulEquiv (2 * n)).symm (dihedralQuotientEquiv (2 * n))
-    (dihedralRotationsMulEquiv_symm_smul (2 * n)) σ hσ
-    (dihedralRotations (2 * n)).quotientExtension_inducesAction _ _
+      dihedralEvenExtensionClass n := by
+  rw [dihedralEvenExtensionClass]
+  have aux :
+      ∀ (S : _root_.GroupExtension (Multiplicative (ZMod (2 * n))) (DihedralGroup (2 * n))
+          (Multiplicative (ZMod 2)))
+        (_ : S = (dihedralRotations (2 * n)).quotientExtension.relabel
+          (dihedralRotationsMulEquiv (2 * n)).symm (dihedralQuotientEquiv (2 * n)))
+        (hact : TauCeti.GroupExtension.InducesAction S)
+        (σ' : S.Section) (hσ' : σ' 1 = 1),
+        (TauCeti.GroupExtension.relabelCohomologyIso (dihedralRotationsMulEquiv (2 * n)).symm
+            (dihedralQuotientEquiv (2 * n)) (dihedralRotationsMulEquiv_symm_smul (2 * n)) 2).hom
+          (TauCeti.GroupExtension.factorSet σ hσ
+            (dihedralRotations (2 * n)).quotientExtension_inducesAction).cohomologyClass =
+          (TauCeti.GroupExtension.factorSet σ' hσ' hact).cohomologyClass := by
+    rintro S rfl _ σ' hσ'
+    exact TauCeti.GroupExtension.relabelCohomologyIso_cohomologyClass_factorSet
+      (dihedralRotationsMulEquiv (2 * n)).symm (dihedralQuotientEquiv (2 * n))
+      (dihedralRotationsMulEquiv_symm_smul (2 * n)) σ hσ
+      (dihedralRotations (2 * n)).quotientExtension_inducesAction σ' hσ'
+  exact aux (dihedralEvenExtension n) (dihedralEvenExtension_def n)
+    (dihedralEvenExtension_inducesAction n) _ _
 
 /-- Relabelling sends the cohomology class of any normalized section of the quaternion quotient
 extension to `quaternionExtensionClass n`. -/
@@ -130,47 +266,64 @@ theorem relabelCohomologyIso_quaternion_cohomologyClass (n : ℕ)
         (quaternionQuotientEquiv n) (quaternionRotationsMulEquiv_symm_smul n) 2).hom
       (TauCeti.GroupExtension.factorSet σ hσ
         (quaternionRotations n).quotientExtension_inducesAction).cohomologyClass =
-      quaternionExtensionClass n :=
-  TauCeti.GroupExtension.relabelCohomologyIso_cohomologyClass_factorSet
-    (quaternionRotationsMulEquiv n).symm (quaternionQuotientEquiv n)
-    (quaternionRotationsMulEquiv_symm_smul n) σ hσ
-    (quaternionRotations n).quotientExtension_inducesAction _ _
+      quaternionExtensionClass n := by
+  rw [quaternionExtensionClass]
+  have aux :
+      ∀ (S : _root_.GroupExtension (Multiplicative (ZMod (2 * n))) (QuaternionGroup n)
+          (Multiplicative (ZMod 2)))
+        (_ : S = (quaternionRotations n).quotientExtension.relabel
+          (quaternionRotationsMulEquiv n).symm (quaternionQuotientEquiv n))
+        (hact : TauCeti.GroupExtension.InducesAction S)
+        (σ' : S.Section) (hσ' : σ' 1 = 1),
+        (TauCeti.GroupExtension.relabelCohomologyIso (quaternionRotationsMulEquiv n).symm
+            (quaternionQuotientEquiv n) (quaternionRotationsMulEquiv_symm_smul n) 2).hom
+          (TauCeti.GroupExtension.factorSet σ hσ
+            (quaternionRotations n).quotientExtension_inducesAction).cohomologyClass =
+          (TauCeti.GroupExtension.factorSet σ' hσ' hact).cohomologyClass := by
+    rintro S rfl _ σ' hσ'
+    exact TauCeti.GroupExtension.relabelCohomologyIso_cohomologyClass_factorSet
+      (quaternionRotationsMulEquiv n).symm (quaternionQuotientEquiv n)
+      (quaternionRotationsMulEquiv_symm_smul n) σ hσ
+      (quaternionRotations n).quotientExtension_inducesAction σ' hσ'
+  exact aux (quaternionExtension n) (quaternionExtension_def n)
+    (quaternionExtension_inducesAction n) _ _
 
-/-- The dihedral extension class maps to `0 : ZMod 2` under `cohomologyInvEquivZModTwo n`,
-because the reflection lift `sr 0` satisfies `(sr 0) ^ 2 = 1`. -/
+/-- The dihedral extension class maps to `0 : ZMod 2` under
+`groupCohomologyTwoInvEquivZModTwo n`, because the reflection lift `sr 0` satisfies
+`(sr 0) ^ 2 = 1`. -/
 @[simp]
-theorem cohomologyInvEquivZModTwo_dihedralExtensionClass (n : ℕ) [NeZero n] :
-    cohomologyInvEquivZModTwo n (dihedralExtensionClass n) = 0 := by
-  rw [dihedralExtensionClass]
-  refine (GroupExtension.Section.cohomologyInvEquivZModTwo_cohomologyClass_factorSet_iff
-    ((dihedralExtension n).cyclicPowerSection (Multiplicative.ofAdd 1)
+theorem groupCohomologyTwoInvEquivZModTwo_dihedralEvenExtensionClass (n : ℕ) [NeZero n] :
+    groupCohomologyTwoInvEquivZModTwo n (dihedralEvenExtensionClass n) = 0 := by
+  rw [dihedralEvenExtensionClass]
+  refine (GroupExtension.Section.groupCohomologyTwoInvEquivZModTwo_cohomologyClass_factorSet_iff
+    ((dihedralEvenExtension n).cyclicPowerSection (Multiplicative.ofAdd 1)
       Multiplicative.mem_zpowers_ofAdd_one (e := DihedralGroup.sr 0) (by simp))
-    ((dihedralExtension n).cyclicPowerSection_one _ _ _)
-    (dihedralExtension_inducesAction n) (e := DihedralGroup.sr 0) (by simp)
+    ((dihedralEvenExtension n).cyclicPowerSection_one _ _ _)
+    (dihedralEvenExtension_inducesAction n) (e := DihedralGroup.sr 0) (by simp)
     (a := (0 : ZMod (2 * n))) ?_ 0).2 (by simp)
   simp [sq]
 
 /-- The dihedral extension class vanishes in `H²(C₂, C_{2n}^{inv})`. -/
-theorem dihedralExtensionClass_eq_zero (n : ℕ) : dihedralExtensionClass n = 0 := by
-  have hsq : (dihedralExtension n).inl 1 = (DihedralGroup.sr (0 : ZMod (2 * n))) ^
+theorem dihedralEvenExtensionClass_eq_zero (n : ℕ) : dihedralEvenExtensionClass n = 0 := by
+  have hsq : (dihedralEvenExtension n).inl 1 = (DihedralGroup.sr (0 : ZMod (2 * n))) ^
       orderOf (Multiplicative.ofAdd (1 : ZMod 2)) := by
-    rw [Multiplicative.orderOf_ofAdd_one, map_one, sq, DihedralGroup.sr_mul_sr,
+    rw [TauCeti.orderOf_ofAdd_one_zmod, map_one, sq, DihedralGroup.sr_mul_sr,
       sub_self, DihedralGroup.r_zero]
   exact (GroupExtension.Section.cohomologyClass_factorSet_eq_zero_iff_eq_one_of_smul_eq_inv
-    ((dihedralExtension n).cyclicPowerSection (Multiplicative.ofAdd 1)
+    ((dihedralEvenExtension n).cyclicPowerSection (Multiplicative.ofAdd 1)
       Multiplicative.mem_zpowers_ofAdd_one (e := DihedralGroup.sr 0) (by simp))
-    ((dihedralExtension n).cyclicPowerSection_one _ _ _)
-    (dihedralExtension_inducesAction n) Multiplicative.mem_zpowers_ofAdd_one
-    ((Multiplicative.orderOf_ofAdd_one 2).symm ▸ even_two)
+    ((dihedralEvenExtension n).cyclicPowerSection_one _ _ _)
+    (dihedralEvenExtension_inducesAction n) Multiplicative.mem_zpowers_ofAdd_one
+    ((TauCeti.orderOf_ofAdd_one_zmod 2).symm ▸ even_two)
     invMulDistribMulAction_ofAdd_one_smul (e := DihedralGroup.sr 0) (by simp) hsq).2 rfl
 
-/-- The quaternion extension class maps to `1 : ZMod 2` under `cohomologyInvEquivZModTwo n`,
-because the lift `xa 0` satisfies `(xa 0) ^ 2 = a n`. -/
+/-- The quaternion extension class maps to `1 : ZMod 2` under
+`groupCohomologyTwoInvEquivZModTwo n`, because the lift `xa 0` satisfies `(xa 0) ^ 2 = a n`. -/
 @[simp]
-theorem cohomologyInvEquivZModTwo_quaternionExtensionClass (n : ℕ) [NeZero n] :
-    cohomologyInvEquivZModTwo n (quaternionExtensionClass n) = 1 := by
+theorem groupCohomologyTwoInvEquivZModTwo_quaternionExtensionClass (n : ℕ) [NeZero n] :
+    groupCohomologyTwoInvEquivZModTwo n (quaternionExtensionClass n) = 1 := by
   rw [quaternionExtensionClass]
-  refine (GroupExtension.Section.cohomologyInvEquivZModTwo_cohomologyClass_factorSet_iff
+  refine (GroupExtension.Section.groupCohomologyTwoInvEquivZModTwo_cohomologyClass_factorSet_iff
     ((quaternionExtension n).cyclicPowerSection (Multiplicative.ofAdd 1)
       Multiplicative.mem_zpowers_ofAdd_one (e := QuaternionGroup.xa 0) (by simp))
     ((quaternionExtension n).cyclicPowerSection_one _ _ _)
@@ -181,38 +334,38 @@ theorem cohomologyInvEquivZModTwo_quaternionExtensionClass (n : ℕ) [NeZero n] 
 /-- The quaternion extension class is nonzero in `H²(C₂, C_{2n}^{inv})`. -/
 theorem quaternionExtensionClass_ne_zero (n : ℕ) [NeZero n] :
     quaternionExtensionClass n ≠ 0 := fun h ↦ by
-  have h1 := congrArg (cohomologyInvEquivZModTwo n) h
-  rw [cohomologyInvEquivZModTwo_quaternionExtensionClass, map_zero] at h1
+  have h1 := congrArg (groupCohomologyTwoInvEquivZModTwo n) h
+  rw [groupCohomologyTwoInvEquivZModTwo_quaternionExtensionClass, map_zero] at h1
   exact one_ne_zero h1
 
 /-- **Same-action separation of dihedral and quaternion extensions.** Inside the single group
 `H²(C₂, C_{2n}^{inv})`, the classes of `DihedralGroup (2 * n)` and `QuaternionGroup n` are
 distinct. -/
-theorem dihedralExtensionClass_ne_quaternionExtensionClass (n : ℕ) [NeZero n] :
-    dihedralExtensionClass n ≠ quaternionExtensionClass n := by
-  rw [dihedralExtensionClass_eq_zero]
+theorem dihedralEvenExtensionClass_ne_quaternionExtensionClass (n : ℕ) [NeZero n] :
+    dihedralEvenExtensionClass n ≠ quaternionExtensionClass n := by
+  rw [dihedralEvenExtensionClass_eq_zero]
   exact (quaternionExtensionClass_ne_zero n).symm
 
 /-- **The dihedral and quaternion classes exhaust `H²(C₂, C_{2n}^{inv})`.** Every cohomology class
 in `H²(C₂, C_{2n}^{inv}) ≅ ℤ/2` is either the dihedral class `0` or the quaternion class `1`. -/
-theorem eq_dihedralExtensionClass_or_eq_quaternionExtensionClass (n : ℕ) [NeZero n]
+theorem eq_dihedralEvenExtensionClass_or_eq_quaternionExtensionClass (n : ℕ) [NeZero n]
     (c : groupCohomology
       (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n)))) 2) :
-    c = dihedralExtensionClass n ∨ c = quaternionExtensionClass n := by
+    c = dihedralEvenExtensionClass n ∨ c = quaternionExtensionClass n := by
   have h2 : ∀ x : ZMod 2, x = 0 ∨ x = 1 := by decide
-  rcases h2 (cohomologyInvEquivZModTwo n c) with h | h
+  rcases h2 (groupCohomologyTwoInvEquivZModTwo n c) with h | h
   · left
-    exact (cohomologyInvEquivZModTwo n).injective (by simp [h])
+    exact (groupCohomologyTwoInvEquivZModTwo n).injective (by simp [h])
   · right
-    exact (cohomologyInvEquivZModTwo n).injective (by simp [h])
+    exact (groupCohomologyTwoInvEquivZModTwo n).injective (by simp [h])
 
 /-- The relabelled dihedral and quaternion extensions over `C₂` by `C_{2n}` are inequivalent,
 even though they induce the same inversion action. -/
-theorem isEmpty_equiv_dihedralExtension_quaternionExtension (n : ℕ) [NeZero n] :
-    IsEmpty ((dihedralExtension n).Equiv (quaternionExtension n)) := by
-  refine ⟨fun e ↦ dihedralExtensionClass_ne_quaternionExtensionClass n ?_⟩
+theorem isEmpty_equiv_dihedralEvenExtension_quaternionExtension (n : ℕ) [NeZero n] :
+    IsEmpty ((dihedralEvenExtension n).Equiv (quaternionExtension n)) := by
+  refine ⟨fun e ↦ dihedralEvenExtensionClass_ne_quaternionExtensionClass n ?_⟩
   exact (TauCeti.GroupExtension.nonempty_equiv_iff_cohomologyClass_factorSet_eq _ _ _ _
-    (dihedralExtension_inducesAction n) (quaternionExtension_inducesAction n)).1 ⟨e⟩
+    (dihedralEvenExtension_inducesAction n) (quaternionExtension_inducesAction n)).1 ⟨e⟩
 
 -- The canonical quotient-extension vanishing/nonvanishing and complement results live in
 -- `Dihedral.Cohomology`, `Dihedral.Basic`, `Quaternion.Cohomology`, and `Quaternion.Basic`.

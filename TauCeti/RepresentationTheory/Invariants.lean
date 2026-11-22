@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.CategoryTheory.Limits.Preserves.Filtered
@@ -118,6 +119,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
 * `Rep.invariantsFunctor_map_surjective_of_projective`: taking invariants preserves
   a surjective morphism of representations whose target is projective over the group algebra.
 * `Rep.ρ_apply_of_mem_ker`: a vector killed by `ρ(g) - 1` is fixed by `g`.
+* `Rep.mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg`, `Rep.mem_range_applyAsHom_sub_iff_of_ρ_eq_neg`:
+  kernel and image of `ρ(g) - 𝟙` when `g` acts by negation.
 * `Rep.trivialHomEquivInvariants`: the intertwiners out of the trivial line are the invariant
   vectors.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
@@ -480,13 +483,6 @@ theorem applyAsHom_sub_id_apply {k G : Type*} [Semiring k] [CommMonoid G] (A : R
     Representation.IntertwiningMap.coe_sub, Pi.sub_apply, Rep.applyAsHom_apply, Rep.hom_id,
     Representation.IntertwiningMap.id_apply]
 
-/-- Evaluating the norm endomorphism `A.norm.asHom` at a vector `x` gives `A.ρ.norm x`. Not
-`@[simp]`: `simp` already simplifies the left-hand side. -/
-theorem norm_asHom_apply {k G : Type*} [Semiring k] [Group G] [Fintype G] (A : Rep k G)
-    (x : A) :
-    A.norm.asHom.hom.toLinearMap x = A.ρ.norm x := by
-  simp
-
 /-- A vector in the kernel of `ρ(g) - 1` is fixed by `g`. -/
 @[simp]
 theorem ρ_apply_of_mem_ker {k G : Type*} [Semiring k] [CommMonoid G] (A : Rep k G) (g : G)
@@ -494,6 +490,34 @@ theorem ρ_apply_of_mem_ker {k G : Type*} [Semiring k] [CommMonoid G] (A : Rep k
   have hx := LinearMap.mem_ker.1 x.property
   rw [applyAsHom_sub_id_apply, sub_eq_zero] at hx
   exact hx
+
+section Negation
+
+open scoped Pointwise
+
+/-- When `g` acts by negation, the kernel of `ρ(g) - 𝟙` is the `2`-torsion `A[2]`. -/
+theorem mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg {k G : Type*} [CommSemiring k] [CommMonoid G]
+    (A : Rep k G) (g : G) (hneg : ∀ x : A, A.ρ g x = -x) (x : A) :
+    x ∈ LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap ↔
+      x ∈ Submodule.torsionBy k A (2 : k) := by
+  rw [LinearMap.mem_ker, Submodule.mem_torsionBy_iff, two_smul, applyAsHom_sub_id_apply, hneg,
+    sub_eq_add_neg, ← neg_add, neg_eq_zero]
+
+/-- When `g` acts by negation, the image of `ρ(g) - 𝟙` is `2 A`. -/
+theorem mem_range_applyAsHom_sub_iff_of_ρ_eq_neg {k G : Type*} [CommSemiring k] [CommMonoid G]
+    (A : Rep k G) (g : G) (hneg : ∀ x : A, A.ρ g x = -x) (x : A) :
+    x ∈ LinearMap.range (applyAsHom A g - 𝟙 A).hom.toLinearMap ↔
+      x ∈ (2 : k) • (⊤ : Submodule k A) := by
+  rw [LinearMap.mem_range, Submodule.mem_smul_pointwise_iff_exists]
+  constructor
+  · rintro ⟨y, hy⟩
+    refine ⟨-y, Submodule.mem_top, ?_⟩
+    rw [← hy, applyAsHom_sub_id_apply, hneg, two_smul, sub_eq_add_neg]
+  · rintro ⟨y, -, hy⟩
+    refine ⟨-y, ?_⟩
+    rw [applyAsHom_sub_id_apply, hneg, neg_neg, sub_neg_eq_add, ← two_smul k, hy]
+
+end Negation
 
 variable {k G : Type*} [CommRing k] [Group G]
 

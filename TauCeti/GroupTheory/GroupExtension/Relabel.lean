@@ -68,8 +68,11 @@ theorem relabelCohomologyIso_hom (eM : M' ≃* M) (eG : G ≃* G')
     (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) (n : ℕ) :
     (relabelCohomologyIso eM eG hsmul n).hom =
       groupCohomology.map eG.symm.toMonoidHom
-        (Rep.ofMulDistribMulActionResHom eM eG hsmul) n :=
-  groupCohomology.mapIso_hom ..
+        (Rep.ofMulDistribMulActionResHom eM eG hsmul) n := by
+  rw [relabelCohomologyIso, groupCohomology.mapIso_hom]
+  refine congrArg (fun φ ↦ groupCohomology.map eG.symm.toMonoidHom φ n)
+    (Rep.hom_ext <| Representation.IntertwiningMap.ext ?_)
+  exact (Rep.ofMulDistribMulActionResHom_hom_toLinearMap eM eG hsmul).symm
 
 /-- The inverse map of `relabelCohomologyIso` is `groupCohomology.map` along `eG` and
 `Rep.ofMulDistribMulActionResHom` for the inverse equivalences. -/
@@ -82,8 +85,9 @@ theorem relabelCohomologyIso_inv (eM : M' ≃* M) (eG : G ≃* G')
             ((hsmul (eG.symm g') (eM.symm m)).trans (by simp))).symm) n := by
   rw [relabelCohomologyIso, groupCohomology.mapIso_inv]
   refine congrArg (fun φ ↦ groupCohomology.map eG.toMonoidHom φ n)
-    (Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext fun a ↦ ?_)
-  exact congrArg (fun f : _ ≃ₗ[ℤ] _ ↦ f a) (Rep.ofMulDistribMulActionLinearEquiv_symm eM)
+    (Rep.hom_ext <| Representation.IntertwiningMap.ext ?_)
+  exact (congrArg LinearEquiv.toLinearMap (Rep.ofMulDistribMulActionLinearEquiv_symm eM)).trans
+    (Rep.ofMulDistribMulActionResHom_hom_toLinearMap eM.symm eG.symm _).symm
 
 /-- **Cohomology class transport under relabelling.** In degree `2`, `relabelCohomologyIso` sends
 the cohomology class of any normalized section of `S` to the cohomology class of any normalized

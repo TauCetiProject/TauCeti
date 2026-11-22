@@ -32,6 +32,8 @@ these two equivalences gives `TauCeti.quaternionExtension n`, an extension of
 
 * `TauCeti.quaternionRotationsMulEquiv_symm_smul`: the quaternion coordinate equivalences
   intertwine the quotient conjugation action with `TauCeti.invMulDistribMulAction`.
+* `TauCeti.quaternionExtension_def`: `quaternionExtension n` as a relabelling of the quotient
+  extension.
 * `TauCeti.quaternionExtension_inl`, `TauCeti.quaternionExtension_rightHom`: inclusion and
   projection of `quaternionExtension`.
 * `TauCeti.quaternionExtension_inducesAction`: `quaternionExtension n` induces the inversion action.
@@ -62,23 +64,33 @@ theorem quaternionRotationsMulEquiv_symm_smul (n : ℕ)
 
 /-- The quotient extension of `QuaternionGroup n` by its rotation subgroup, relabelled to
 kernel `Multiplicative (ZMod (2 * n))` and quotient `Multiplicative (ZMod 2)`. -/
-@[expose] noncomputable def quaternionExtension (n : ℕ) :
+noncomputable def quaternionExtension (n : ℕ) :
     GroupExtension (Multiplicative (ZMod (2 * n))) (QuaternionGroup n)
       (Multiplicative (ZMod 2)) :=
   (quaternionRotations n).quotientExtension.relabel
     (quaternionRotationsMulEquiv n).symm (quaternionQuotientEquiv n)
 
+/-- `quaternionExtension n` is the quotient extension of `quaternionRotations n` relabelled
+along `quaternionRotationsMulEquiv n` and `quaternionQuotientEquiv n`. -/
+theorem quaternionExtension_def (n : ℕ) :
+    quaternionExtension n =
+      (quaternionRotations n).quotientExtension.relabel
+        (quaternionRotationsMulEquiv n).symm (quaternionQuotientEquiv n) :=
+  (rfl)
+
 /-- The inclusion of `quaternionExtension n` sends `ofAdd i` to `a i`. -/
 @[simp]
 theorem quaternionExtension_inl (n : ℕ) (m : Multiplicative (ZMod (2 * n))) :
     (quaternionExtension n).inl m = QuaternionGroup.a (Multiplicative.toAdd m) := by
-  simp [quaternionExtension]
+  rw [quaternionExtension_def]
+  simp
 
 /-- The projection of `quaternionExtension n` is the coset parity. -/
 @[simp]
 theorem quaternionExtension_rightHom (n : ℕ) (g : QuaternionGroup n) :
     (quaternionExtension n).rightHom g = quaternionCosetParity n g := by
-  simp [quaternionExtension]
+  rw [quaternionExtension_def]
+  simp
 
 /-- The relabelled quaternion extension induces the inversion action of `C₂` on `C_{2n}`. -/
 theorem quaternionExtension_inducesAction (n : ℕ) :

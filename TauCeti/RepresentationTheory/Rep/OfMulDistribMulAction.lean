@@ -16,14 +16,17 @@ Given a multiplicative distributive action of a monoid `G` on a commutative grou
 supplies evaluation, kernel, norm, and coefficient-transport lemmas for
 `Rep.ofMulDistribMulAction`:
 
+* `Rep.toAdditive_ofMulDistribMulAction_ρ_apply` and `Rep.toAdditive_ofMulDistribMulAction_norm`:
+  pointwise action and norm in `Rep.toAdditive` coordinates;
 * `Rep.norm_ofMulDistribMulAction_apply` and `Rep.mem_range_norm_ofMulDistribMulAction_iff`:
   explicit evaluation and range membership of the norm in multiplicative coordinates;
 * `Rep.ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv`: an element acting by inversion on `M` acts
   by negation on `Rep.ofMulDistribMulAction G M`;
 * `Rep.mem_ker_applyAsHom_sub_of_smul_eq_self`: fixed points of `g : G` in `M` lie in the kernel
   of `ρ(g) - 𝟙`;
-* `Rep.ofMulDistribMulActionLinearEquiv` and `Rep.ofMulDistribMulActionResHom`: the `ℤ`-linear
-  equivalence and intertwining morphism induced by action-intertwining equivalences `eM : M' ≃* M`
+* `Rep.ofMulDistribMulActionLinearEquiv`, `Rep.ofMulDistribMulActionResHom`, and
+  `Rep.ofMulDistribMulActionResHom_hom_toLinearMap`: the `ℤ`-linear equivalence, intertwining
+  morphism, and underlying linear map induced by action-intertwining equivalences `eM : M' ≃* M`
   and `eG : G ≃* G'`.
 -/
 
@@ -37,6 +40,21 @@ section NormAndAction
 
 variable {G M : Type*}
 
+/-- Evaluating the action on `Rep.ofMulDistribMulAction G M` in `Rep.toAdditive` coordinates. -/
+theorem toAdditive_ofMulDistribMulAction_ρ_apply [Monoid G] [CommGroup M]
+    [MulDistribMulAction G M] (g : G) (x : Rep.ofMulDistribMulAction G M) :
+    Rep.toAdditive (M := G) (G := M) ((Rep.ofMulDistribMulAction G M).ρ g x) =
+      Additive.ofMul (g • Additive.toMul (Rep.toAdditive (M := G) (G := M) x)) :=
+  Rep.ofMulDistribMulAction_ρ_apply_apply g (Rep.toAdditive (M := G) (G := M) x)
+
+/-- Evaluating the norm on `Rep.ofMulDistribMulAction G M` in `Rep.toAdditive` coordinates. -/
+theorem toAdditive_ofMulDistribMulAction_norm [Group G] [Fintype G] [CommGroup M]
+    [MulDistribMulAction G M] (x : Rep.ofMulDistribMulAction G M) :
+    Rep.toAdditive (M := G) (G := M) ((Rep.ofMulDistribMulAction G M).ρ.norm x) =
+      Additive.ofMul (∏ g : G, g • Additive.toMul (Rep.toAdditive (M := G) (G := M) x)) := by
+  rw [Representation.norm, LinearMap.sum_apply, map_sum, ofMul_prod]
+  simp only [toAdditive_ofMulDistribMulAction_ρ_apply]
+
 /-- On `Rep.ofMulDistribMulAction G M`, the norm sends `Additive.ofMul m` to
 `Additive.ofMul (∏ x : G, x • m)`. -/
 theorem norm_ofMulDistribMulAction_apply [Group G] [Fintype G] [CommGroup M]
@@ -45,9 +63,9 @@ theorem norm_ofMulDistribMulAction_apply [Group G] [Fintype G] [CommGroup M]
         ((Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul m)) =
       (Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul (∏ x : G, x • m)) := by
   apply (Rep.toAdditive (M := G) (G := M)).injective
-  apply Additive.toMul.injective
-  rw [Rep.norm_asHom_apply]
-  exact Representation.norm_ofMulDistribMulAction_eq (G := G) (M := M) (Additive.ofMul m)
+  rw [Representation.IntertwiningMap.toLinearMap_apply, Rep.norm_apply,
+    toAdditive_ofMulDistribMulAction_norm, AddEquiv.apply_symm_apply, toMul_ofMul,
+    AddEquiv.apply_symm_apply]
 
 /-- An element `Additive.ofMul a` lies in the range of the norm on
 `Rep.ofMulDistribMulAction G M` if and only if `a` is a norm `∏ x : G, x • m` in `M`. -/
@@ -62,7 +80,7 @@ theorem mem_range_norm_ofMulDistribMulAction_iff [Group G] [Fintype G] [CommGrou
     let m' : M := Additive.toMul (Rep.toAdditive (M := G) (G := M) m)
     refine ⟨m', Additive.ofMul.injective ((Rep.toAdditive (M := G) (G := M)).symm.injective ?_)⟩
     rw [← norm_ofMulDistribMulAction_apply (G := G) m']
-    exact hm
+    simpa only [m', ofMul_toMul, AddEquiv.symm_apply_apply] using hm
   · rintro ⟨m, rfl⟩
     exact ⟨(Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul m),
       norm_ofMulDistribMulAction_apply (G := G) m⟩
@@ -74,8 +92,8 @@ theorem ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv [Monoid G] [CommGroup M]
     (x : Rep.ofMulDistribMulAction G M) :
     (Rep.ofMulDistribMulAction G M).ρ g x = -x := by
   apply (Rep.toAdditive (M := G) (G := M)).injective
-  rw [map_neg]
-  exact congrArg Additive.ofMul (hinv (Additive.toMul (Rep.toAdditive x)))
+  rw [toAdditive_ofMulDistribMulAction_ρ_apply, map_neg,
+    hinv (Additive.toMul (Rep.toAdditive (M := G) (G := M) x)), ofMul_inv, ofMul_toMul]
 
 /-- An element `a : M` fixed by `g : G` defines an element in the kernel of `ρ(g) - 𝟙` on
 `Rep.ofMulDistribMulAction G M`. -/
@@ -85,12 +103,8 @@ theorem mem_ker_applyAsHom_sub_of_smul_eq_self [CommMonoid G] [CommGroup M]
       (Rep.applyAsHom (Rep.ofMulDistribMulAction G M) g - 𝟙 _).hom.toLinearMap := by
   rw [LinearMap.mem_ker, Rep.applyAsHom_sub_id_apply]
   apply (Rep.toAdditive (M := G) (G := M)).injective
-  have hρ : Rep.toAdditive (M := G) (G := M)
-      ((Rep.ofMulDistribMulAction G M).ρ g
-        ((Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul a))) =
-      Additive.ofMul (g • a) :=
-    Rep.ofMulDistribMulAction_ρ_apply_apply g (Additive.ofMul a)
-  rw [map_sub, map_zero, hρ, AddEquiv.apply_symm_apply, ha, sub_self]
+  rw [map_sub, map_zero, toAdditive_ofMulDistribMulAction_ρ_apply, AddEquiv.apply_symm_apply,
+    toMul_ofMul, ha, sub_self]
 
 end NormAndAction
 
@@ -98,7 +112,7 @@ section CoefficientTransport
 
 /-- The `ℤ`-linear equivalence between the underlying modules of `Rep.ofMulDistribMulAction G M`
 and `Rep.ofMulDistribMulAction G' M'` induced by `eM : M' ≃* M`. -/
-@[expose] def ofMulDistribMulActionLinearEquiv (G : Type*) {M : Type*} (G' : Type*) {M' : Type*}
+def ofMulDistribMulActionLinearEquiv (G : Type*) {M : Type*} (G' : Type*) {M' : Type*}
     [Monoid G] [CommGroup M] [MulDistribMulAction G M]
     [Monoid G'] [CommGroup M'] [MulDistribMulAction G' M']
     (eM : M' ≃* M) :
@@ -143,21 +157,14 @@ theorem ofMulDistribMulActionLinearEquiv_isIntertwining {G M G' M' : Type*}
         (ofMulDistribMulActionLinearEquiv G G' eM : _ →ₗ[ℤ] _) :=
   LinearMap.ext fun a ↦ (Rep.toAdditive (M := G') (G := M')).injective <| by
     rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      toAdditive_ofMulDistribMulActionLinearEquiv]
-    have h1 : Rep.toAdditive (M := G) (G := M) ((Rep.ofMulDistribMulAction G M).ρ g a) =
-        Additive.ofMul (g • Additive.toMul (Rep.toAdditive (M := G) (G := M) a)) :=
-      Rep.ofMulDistribMulAction_ρ_apply_apply g (Rep.toAdditive a)
-    have h2 : Rep.toAdditive (M := G') (G := M')
-        ((Rep.ofMulDistribMulAction G' M').ρ (eG g) (ofMulDistribMulActionLinearEquiv G G' eM a)) =
-        Additive.ofMul (eG g • Additive.toMul
-          (Rep.toAdditive (M := G') (G := M') (ofMulDistribMulActionLinearEquiv G G' eM a))) :=
-      Rep.ofMulDistribMulAction_ρ_apply_apply (eG g) (Rep.toAdditive _)
-    rw [h1, h2, toAdditive_ofMulDistribMulActionLinearEquiv, toMul_ofMul, toMul_ofMul]
+      toAdditive_ofMulDistribMulActionLinearEquiv, toAdditive_ofMulDistribMulAction_ρ_apply,
+      toAdditive_ofMulDistribMulAction_ρ_apply, toAdditive_ofMulDistribMulActionLinearEquiv,
+      toMul_ofMul, toMul_ofMul]
     exact congrArg Additive.ofMul (eM.injective (by simp [hsmul]))
 
 /-- The intertwining morphism `Rep.res eG.symm (Rep.ofMulDistribMulAction G M) ⟶
 Rep.ofMulDistribMulAction G' M'` induced by action-intertwining equivalences `eM` and `eG`. -/
-@[expose] def ofMulDistribMulActionResHom {G G' : Type*} {M M' : Type _}
+def ofMulDistribMulActionResHom {G G' : Type*} {M M' : Type _}
     [Group G] [CommGroup M] [MulDistribMulAction G M]
     [Group G'] [CommGroup M'] [MulDistribMulAction G' M']
     (eM : M' ≃* M) (eG : G ≃* G')
@@ -171,6 +178,18 @@ Rep.ofMulDistribMulAction G' M'` induced by action-intertwining equivalences `eM
         have h := ofMulDistribMulActionLinearEquiv_isIntertwining eM eG hsmul (eG.symm g')
         rw [MulEquiv.apply_symm_apply] at h
         exact h }
+
+/-- The underlying linear map of `Rep.ofMulDistribMulActionResHom` is
+`Rep.ofMulDistribMulActionLinearEquiv`. -/
+theorem ofMulDistribMulActionResHom_hom_toLinearMap {G G' : Type*} {M M' : Type _}
+    [Group G] [CommGroup M] [MulDistribMulAction G M]
+    [Group G'] [CommGroup M'] [MulDistribMulAction G' M']
+    (eM : M' ≃* M) (eG : G ≃* G')
+    (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
+    (ofMulDistribMulActionResHom eM eG hsmul).hom.toLinearMap =
+      (ofMulDistribMulActionLinearEquiv G G' eM :
+        (Rep.ofMulDistribMulAction G M).V →ₗ[ℤ] (Rep.ofMulDistribMulAction G' M').V) :=
+  (rfl)
 
 /-- Pointwise evaluation of `Rep.ofMulDistribMulActionResHom` in additive coordinates. -/
 theorem toAdditive_ofMulDistribMulActionResHom_hom {G G' : Type*} {M M' : Type _}

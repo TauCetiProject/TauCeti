@@ -21,6 +21,7 @@ homomorphisms of cyclic groups.
 ## Main results
 
 * `TauCeti.pow_cyclicLog`, `TauCeti.cyclicLog_lt`: the defining properties of `cyclicLog`.
+* `TauCeti.cyclicLog_one`: the exponent of `1` is `0`.
 * `TauCeti.cyclicLog_pow`: the exponent of `g ^ i` is `i % orderOf g`.
 * `TauCeti.cyclicLog_mul`: exponents add modulo `orderOf g`.
 * `TauCeti.cyclicLog_map`: a homomorphism sending `g` to `g' ^ d` multiplies exponents by `d`.
@@ -50,6 +51,11 @@ theorem cyclicLog_lt (x : G) : cyclicLog g hg x < orderOf g :=
 @[simp]
 theorem cyclicLog_pow (i : ℕ) : cyclicLog g hg (g ^ i) = i % orderOf g :=
   congrArg Fin.val (finEquivZPowers_symm_apply (isOfFinOrder_of_finite g) i)
+
+/-- The exponent of `1` with respect to `g` is `0`. -/
+@[simp]
+theorem cyclicLog_one : cyclicLog g hg 1 = 0 := by
+  rw [← pow_zero g, cyclicLog_pow, Nat.zero_mod]
 
 /-- Exponents with respect to `g` add modulo the order of `g`. -/
 theorem cyclicLog_mul (x y : G) :
