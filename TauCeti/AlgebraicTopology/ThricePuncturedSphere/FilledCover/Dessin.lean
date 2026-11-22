@@ -82,15 +82,15 @@ theorem isoClassEquivConnectedRibbonGraph_trans_connectedIsoClassEquiv (n : ℕ)
 
 /-- On `⟦P⟧`, `isoClassEquivConnectedRibbonGraph` gives the lifted ribbon graph of its monodromy. -/
 theorem isoClassEquivConnectedRibbonGraph_mk {n : ℕ}
-    (P : {P : AnalyticBelyiPair.{0} // degree P.β = n}) (ν : P.1.restrict ⁻¹' {basePt} ≃ Fin n) :
+    (P : {P : AnalyticBelyiPair.{0} // degree P.β = n}) (ν : P.val.restrict ⁻¹' {basePt} ≃ Fin n) :
     isoClassEquivConnectedRibbonGraph.{u} n ⟦P⟧ =
       Quotient.mk (connectedIsoSetoid.{u} n)
-        ⟨⟨(P.1.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.ulift,
-            (P.1.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.card_E_ulift.trans
-              (P.1.isCoveringMap_restrict.monodromyTriple ν).card_E_ribbonGraph⟩,
-          (P.1.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.uliftIso.isConnected_iff.2
-            ((P.1.isCoveringMap_restrict.monodromyTriple ν).isConnected_ribbonGraph.2
-              (P.1.isCoveringMap_restrict.isConnected_monodromyTriple ν))⟩ := by
+        ⟨⟨(P.val.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.ulift,
+            (P.val.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.card_E_ulift.trans
+              (P.val.isCoveringMap_restrict.monodromyTriple ν).card_E_ribbonGraph⟩,
+          (P.val.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.uliftIso.isConnected_iff.2
+            ((P.val.isCoveringMap_restrict.monodromyTriple ν).isConnected_ribbonGraph.2
+              (P.val.isCoveringMap_restrict.isConnected_monodromyTriple ν))⟩ := by
   rw [isoClassEquivConnectedRibbonGraph, Equiv.trans_apply, isoClassEquivConnectedIsoClass_mk P ν,
     connectedIsoClassEquiv_symm_mk]
 

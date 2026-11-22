@@ -67,16 +67,16 @@ end TypeZero
 /-- The equivalence `isoClassEquivConnectedIsoClass` preserves the Euler characteristic. -/
 @[simp] theorem eulerChar_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
     (isoClassEquivConnectedIsoClass n P).eulerChar = isoClassEulerChar n P :=
-  Quotient.inductionOn P fun P ↦ (P.1.nonempty_restrict_preimage_singleton_equiv basePt).elim
-    fun ν ↦ by simp [isoClassEquivConnectedIsoClass_mk P (ν.trans (finCongr P.2)),
-      P.1.eulerChar_X_eq_eulerChar_monodromyTriple (ν.trans (finCongr P.2))]
+  Quotient.inductionOn P fun P ↦ (P.val.nonempty_restrict_preimage_singleton_equiv basePt).elim
+    fun ν ↦ by simp [isoClassEquivConnectedIsoClass_mk P (ν.trans (finCongr P.property)),
+      P.val.eulerChar_X_eq_eulerChar_monodromyTriple (ν.trans (finCongr P.property))]
 
 /-- The equivalence `isoClassEquivConnectedIsoClass` preserves the genus. -/
 @[simp] theorem genus_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
     (isoClassEquivConnectedIsoClass n P).genus = isoClassGenus n P :=
-  Quotient.inductionOn P fun P ↦ (P.1.nonempty_restrict_preimage_singleton_equiv basePt).elim
-    fun ν ↦ by simp [isoClassEquivConnectedIsoClass_mk P (ν.trans (finCongr P.2)),
-      P.1.genus_X_eq_genus_monodromyTriple (ν.trans (finCongr P.2))]
+  Quotient.inductionOn P fun P ↦ (P.val.nonempty_restrict_preimage_singleton_equiv basePt).elim
+    fun ν ↦ by simp [isoClassEquivConnectedIsoClass_mk P (ν.trans (finCongr P.property)),
+      P.val.genus_X_eq_genus_monodromyTriple (ν.trans (finCongr P.property))]
 
 end AnalyticBelyiPair
 

@@ -127,6 +127,7 @@ public section
 noncomputable section
 
 open Filter Set Topology
+open scoped OnePoint
 
 namespace TauCeti
 

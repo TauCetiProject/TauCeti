@@ -36,14 +36,14 @@ transformation of `π` restricts to one of `TauCeti.TopBranchedCover.restrict`, 
 transformation of the unbranched cover extends uniquely across the marked fibres
 (`TauCeti.TopBranchedCover.Iso.ofRestrict`). -/
 def deckMulEquivDeckRestrict : deck X.π ≃* deck X.restrict where
-  toFun φ := ⟨(⟨φ.1, congrFun φ.2⟩ : Iso X X).restrict,
+  toFun φ := ⟨(⟨φ.val, congrFun φ.property⟩ : Iso X X).restrict,
     deck.mem_iff.2 (funext (Iso.restrict_restrict _))⟩
-  invFun ψ := ⟨(Iso.ofRestrict ψ.1 fun z ↦ by
+  invFun ψ := ⟨(Iso.ofRestrict ψ.val fun z ↦ by
       simpa using congrArg toOnePoint (deck.proj_smul ψ z)).toHomeomorph,
     deck.mem_iff.2 (funext (Iso.π_apply _))⟩
   left_inv φ := Subtype.ext <| congrArg Iso.toHomeomorph
     (Iso.restrict_injective (Iso.restrict_ofRestrict _ _) :
-      Iso.ofRestrict _ _ = (⟨φ.1, congrFun φ.2⟩ : Iso X X))
+      Iso.ofRestrict _ _ = (⟨φ.val, congrFun φ.property⟩ : Iso X X))
   right_inv ψ := Subtype.ext (Iso.restrict_ofRestrict _ _)
   map_mul' _ _ := Subtype.ext (Homeomorph.ext fun z ↦ Subtype.ext (by simp))
 

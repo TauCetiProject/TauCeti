@@ -70,18 +70,18 @@ theorem genus_X_eq_zero_of_degree_eq_one {P : AnalyticBelyiPair.{u}} (hP : degre
 
 /-- The Euler characteristic of an isomorphism class of degree-`n` analytic Belyi pairs. -/
 def isoClassEulerChar (n : ℕ) : Quotient (isoSetoid.{u} n) → ℤ :=
-  Quotient.lift (fun P ↦ eulerChar P.1.X) fun _ _ h ↦ (isoSetoid_r.1 h).elim Iso.eulerChar_eq
+  Quotient.lift (fun P ↦ eulerChar P.val.X) fun _ _ h ↦ (isoSetoid_r.1 h).elim Iso.eulerChar_eq
 
-/-- On the class of a pair, `isoClassEulerChar` evaluates to `eulerChar P.1.X`. -/
+/-- On the class of a pair, `isoClassEulerChar` evaluates to `eulerChar P.val.X`. -/
 @[simp] theorem isoClassEulerChar_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
-    isoClassEulerChar n ⟦P⟧ = eulerChar P.1.X := (rfl)
+    isoClassEulerChar n ⟦P⟧ = eulerChar P.val.X := (rfl)
 
 /-- The topological genus of an isomorphism class of degree-`n` analytic Belyi pairs. -/
 def isoClassGenus (n : ℕ) : Quotient (isoSetoid.{u} n) → ℕ :=
-  Quotient.lift (fun P ↦ genus P.1.X) fun _ _ h ↦ (isoSetoid_r.1 h).elim Iso.genus_eq
+  Quotient.lift (fun P ↦ genus P.val.X) fun _ _ h ↦ (isoSetoid_r.1 h).elim Iso.genus_eq
 
-/-- On the class of a pair, `isoClassGenus` evaluates to `genus P.1.X`. -/
+/-- On the class of a pair, `isoClassGenus` evaluates to `genus P.val.X`. -/
 @[simp] theorem isoClassGenus_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
-    isoClassGenus n ⟦P⟧ = genus P.1.X := (rfl)
+    isoClassGenus n ⟦P⟧ = genus P.val.X := (rfl)
 
 end TauCeti.AnalyticBelyiPair

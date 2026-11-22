@@ -129,8 +129,8 @@ variable {n : ℕ} (c : ConnectedIsoClass n) (t : ConnectedTriple n)
 /-- The ordered full cycle partitions `(λ₀, λ₁, λ∞)` of a connected isomorphism class. -/
 def cycleData : Multiset ℕ × Multiset ℕ × Multiset ℕ := c.forget.cycleData
 
-/-- Evaluating `cycleData` on `mk t` recovers `t.1.cycleData`. -/
-@[simp] theorem cycleData_mk : (mk t).cycleData = t.1.cycleData := by simp [cycleData]
+/-- Evaluating `cycleData` on `mk t` recovers `t.val.cycleData`. -/
+@[simp] theorem cycleData_mk : (mk t).cycleData = t.val.cycleData := by simp [cycleData]
 
 /-- Forgetting connectedness preserves `cycleData`. -/
 @[simp] theorem cycleData_forget : c.forget.cycleData = c.cycleData := (rfl)
@@ -138,8 +138,8 @@ def cycleData : Multiset ℕ × Multiset ℕ × Multiset ℕ := c.forget.cycleDa
 /-- The unordered multiset of the three full cycle partitions of a connected isomorphism class. -/
 def unorderedCycleData : Multiset (Multiset ℕ) := c.forget.unorderedCycleData
 
-/-- Evaluating `unorderedCycleData` on `mk t` recovers `t.1.unorderedCycleData`. -/
-@[simp] theorem unorderedCycleData_mk : (mk t).unorderedCycleData = t.1.unorderedCycleData := by
+/-- Evaluating `unorderedCycleData` on `mk t` recovers `t.val.unorderedCycleData`. -/
+@[simp] theorem unorderedCycleData_mk : (mk t).unorderedCycleData = t.val.unorderedCycleData := by
   simp [unorderedCycleData]
 
 /-- Forgetting connectedness preserves `unorderedCycleData`. -/
@@ -149,8 +149,8 @@ def unorderedCycleData : Multiset (Multiset ℕ) := c.forget.unorderedCycleData
 /-- The ordered numbers of cycles `(c₀, c₁, c∞)` of a connected class, fixed points included. -/
 noncomputable def cycleCounts : ℕ × ℕ × ℕ := c.forget.cycleCounts
 
-/-- Evaluating `cycleCounts` on `mk t` recovers `t.1.cycleCounts`. -/
-@[simp] theorem cycleCounts_mk : (mk t).cycleCounts = t.1.cycleCounts := by simp [cycleCounts]
+/-- Evaluating `cycleCounts` on `mk t` recovers `t.val.cycleCounts`. -/
+@[simp] theorem cycleCounts_mk : (mk t).cycleCounts = t.val.cycleCounts := by simp [cycleCounts]
 
 /-- Forgetting connectedness preserves `cycleCounts`. -/
 @[simp] theorem cycleCounts_forget : c.forget.cycleCounts = c.cycleCounts := (rfl)
@@ -168,8 +168,8 @@ theorem sum_cycleData :
 /-- The combinatorial Euler characteristic `c₀ + c₁ + c∞ - n` of a connected isomorphism class. -/
 noncomputable def eulerChar : ℤ := c.forget.eulerChar
 
-/-- Evaluating `eulerChar` on `mk t` recovers `t.1.eulerChar`. -/
-@[simp] theorem eulerChar_mk : (mk t).eulerChar = t.1.eulerChar := by simp [eulerChar]
+/-- Evaluating `eulerChar` on `mk t` recovers `t.val.eulerChar`. -/
+@[simp] theorem eulerChar_mk : (mk t).eulerChar = t.val.eulerChar := by simp [eulerChar]
 
 /-- Forgetting connectedness preserves `eulerChar`. -/
 @[simp] theorem eulerChar_forget : c.forget.eulerChar = c.eulerChar := (rfl)
@@ -184,13 +184,13 @@ theorem even_eulerChar : Even c.eulerChar := c.forget.even_eulerChar
 
 /-- Every connected isomorphism class satisfies the Euler bound `χ ≤ 2`. -/
 theorem eulerChar_le_two : c.eulerChar ≤ 2 := by
-  obtain ⟨t, rfl⟩ := mk_surjective c; simpa using t.2.eulerChar_le_two
+  obtain ⟨t, rfl⟩ := mk_surjective c; simpa using t.property.eulerChar_le_two
 
 /-- The combinatorial genus `(2 - χ) / 2` of a connected isomorphism class. -/
 noncomputable def genus : ℕ := c.forget.genus
 
-/-- Evaluating `genus` on `mk t` recovers `t.1.genus`. -/
-@[simp] theorem genus_mk : (mk t).genus = t.1.genus := by simp [genus]
+/-- Evaluating `genus` on `mk t` recovers `t.val.genus`. -/
+@[simp] theorem genus_mk : (mk t).genus = t.val.genus := by simp [genus]
 
 /-- Forgetting connectedness preserves `genus`. -/
 @[simp] theorem genus_forget : c.forget.genus = c.genus := (rfl)
@@ -200,22 +200,22 @@ theorem genus_def : c.genus = ((2 - c.eulerChar) / 2).toNat := c.forget.genus_de
 
 /-- Coercing the genus of a connected class to `ℤ` recovers the exact quotient `(2 - χ) / 2`. -/
 theorem natCast_genus : (c.genus : ℤ) = (2 - c.eulerChar) / 2 := by
-  obtain ⟨t, rfl⟩ := mk_surjective c; simpa using t.2.natCast_genus
+  obtain ⟨t, rfl⟩ := mk_surjective c; simpa using t.property.natCast_genus
 
 /-- The Euler characteristic of a connected isomorphism class is `2 - 2 g`. -/
 theorem two_sub_two_mul_genus : 2 - 2 * (c.genus : ℤ) = c.eulerChar := by
-  obtain ⟨t, rfl⟩ := mk_surjective c; simpa using t.2.two_sub_two_mul_genus
+  obtain ⟨t, rfl⟩ := mk_surjective c; simpa using t.property.two_sub_two_mul_genus
 
 /-- The unique connected isomorphism class of degree `1` has genus `0`. -/
 @[simp] theorem genus_of_degree_one (c : ConnectedIsoClass 1) : c.genus = 0 := by
-  obtain ⟨t, rfl⟩ := mk_surjective c; simpa using t.1.genus_of_degree_one
+  obtain ⟨t, rfl⟩ := mk_surjective c; simpa using t.val.genus_of_degree_one
 
 /-- The cardinality of the automorphism group of any representative of a connected class. -/
 noncomputable def natCardAutomorphismGroup : ℕ := c.forget.natCardAutomorphismGroup
 
-/-- Evaluating `natCardAutomorphismGroup` on `mk t` gives `Nat.card t.1.automorphismGroup`. -/
+/-- Evaluating `natCardAutomorphismGroup` on `mk t` gives `Nat.card t.val.automorphismGroup`. -/
 @[simp] theorem natCardAutomorphismGroup_mk :
-    (mk t).natCardAutomorphismGroup = Nat.card t.1.automorphismGroup := by
+    (mk t).natCardAutomorphismGroup = Nat.card t.val.automorphismGroup := by
   simp [natCardAutomorphismGroup]
 
 /-- Forgetting connectedness preserves `natCardAutomorphismGroup`. -/
@@ -225,13 +225,13 @@ noncomputable def natCardAutomorphismGroup : ℕ := c.forget.natCardAutomorphism
 /-- For a connected isomorphism class, the order of the automorphism group divides the degree. -/
 theorem natCardAutomorphismGroup_dvd : c.natCardAutomorphismGroup ∣ n := by
   obtain ⟨t, rfl⟩ := mk_surjective c
-  simpa using PermutationTriple.card_automorphismGroup_dvd t.2.isPretransitive
+  simpa using PermutationTriple.card_automorphismGroup_dvd t.property.isPretransitive
 
 /-- Regularity of a connected isomorphism class: transitive automorphism action on the sheets. -/
 def IsRegular : Prop := c.forget.IsRegular
 
-/-- Evaluating `IsRegular` on `mk t` recovers `t.1.IsRegular`. -/
-@[simp] theorem isRegular_mk : (mk t).IsRegular ↔ t.1.IsRegular := by simp [IsRegular]
+/-- Evaluating `IsRegular` on `mk t` recovers `t.val.IsRegular`. -/
+@[simp] theorem isRegular_mk : (mk t).IsRegular ↔ t.val.IsRegular := by simp [IsRegular]
 
 /-- Forgetting connectedness preserves `IsRegular`. -/
 @[simp] theorem isRegular_forget : c.forget.IsRegular ↔ c.IsRegular := Iff.rfl
@@ -239,7 +239,7 @@ def IsRegular : Prop := c.forget.IsRegular
 /-- A connected isomorphism class is regular iff its automorphism group has order `n`. -/
 theorem isRegular_iff_natCardAutomorphismGroup : c.IsRegular ↔ c.natCardAutomorphismGroup = n := by
   obtain ⟨t, rfl⟩ := mk_surjective c
-  simp [PermutationTriple.isRegular_iff_card_automorphismGroup, t.2]
+  simp [PermutationTriple.isRegular_iff_card_automorphismGroup, t.property]
 
 end ConnectedIsoClass
 

@@ -102,12 +102,12 @@ theorem coe_smul (τ : Perm (Fin n)) (t : ConnectedTriple n) :
   (rfl)
 
 /-- No connected permutation triple has degree zero. -/
-instance : IsEmpty (ConnectedTriple 0) := ⟨fun t => t.2.ne_zero rfl⟩
+instance : IsEmpty (ConnectedTriple 0) := ⟨fun t => t.property.ne_zero rfl⟩
 
 /-- There is a unique connected permutation triple of degree one. -/
 instance : Unique (ConnectedTriple 1) where
   default := ⟨1, PermutationTriple.isConnected_iff.2 ⟨one_ne_zero, inferInstance⟩⟩
-  uniq t := Subtype.ext (Subsingleton.elim t.1 1)
+  uniq t := Subtype.ext (Subsingleton.elim t.val 1)
 
 end ConnectedTriple
 
@@ -219,7 +219,7 @@ instance : Unique (ConnectedIsoClass 1) where
 
 /-- Every degree admitting a connected isomorphism class is nonzero. -/
 theorem ne_zero (c : ConnectedIsoClass n) : n ≠ 0 :=
-  Quotient.ind (motive := fun _ => n ≠ 0) (fun t => t.2.ne_zero) c
+  Quotient.ind (motive := fun _ => n ≠ 0) (fun t => t.property.ne_zero) c
 
 /-! ### The connected triples of a class, as a finset -/
 

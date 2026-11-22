@@ -1155,12 +1155,12 @@ theorem toIsoClass_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β =
 /-- The ordered triple of ramification partitions over `0`, `1` and `∞` on `isoSetoid`. -/
 def isoClassRamificationPartitions (n : ℕ) :
     Quotient (isoSetoid.{u} n) → Multiset ℕ × Multiset ℕ × Multiset ℕ :=
-  Quotient.lift (fun P ↦ P.1.ramificationPartitions) fun _ _ ⟨e⟩ ↦ e.ramificationPartitions_eq
+  Quotient.lift (fun P ↦ P.val.ramificationPartitions) fun _ _ ⟨e⟩ ↦ e.ramificationPartitions_eq
 
-/-- Evaluating `isoClassRamificationPartitions` on `⟦P⟧` gives `P.1.ramificationPartitions`. -/
+/-- Evaluating `isoClassRamificationPartitions` on `⟦P⟧` gives `P.val.ramificationPartitions`. -/
 @[simp] theorem isoClassRamificationPartitions_mk {n : ℕ}
     (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
-    isoClassRamificationPartitions n ⟦P⟧ = P.1.ramificationPartitions := (rfl)
+    isoClassRamificationPartitions n ⟦P⟧ = P.val.ramificationPartitions := (rfl)
 
 /-- Forgetting the complex structure preserves the ramification partitions over `0`, `1` and `∞`. -/
 @[simp] theorem ramificationPartitions_toTopBranchedCoverIsoClass {n : ℕ}
@@ -1170,25 +1170,25 @@ def isoClassRamificationPartitions (n : ℕ) :
 
 /-- The order of the automorphism group of an isomorphism class of analytic Belyi pairs. -/
 def isoClassNatCardAut (n : ℕ) : Quotient (isoSetoid.{u} n) → ℕ :=
-  Quotient.lift (fun P ↦ Nat.card (P.1.Iso P.1)) fun _ _ ⟨e⟩ ↦ e.natCard_iso_eq
+  Quotient.lift (fun P ↦ Nat.card (P.val.Iso P.val)) fun _ _ ⟨e⟩ ↦ e.natCard_iso_eq
 
-/-- Evaluating `isoClassNatCardAut` on `⟦P⟧` gives `Nat.card (P.1.Iso P.1)`. -/
+/-- Evaluating `isoClassNatCardAut` on `⟦P⟧` gives `Nat.card (P.val.Iso P.val)`. -/
 @[simp] theorem isoClassNatCardAut_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
-    isoClassNatCardAut n ⟦P⟧ = Nat.card (P.1.Iso P.1) := (rfl)
+    isoClassNatCardAut n ⟦P⟧ = Nat.card (P.val.Iso P.val) := (rfl)
 
 /-- Regularity on isomorphism classes of degree-`n` analytic Belyi pairs. -/
 def IsoClassIsRegular (n : ℕ) : Quotient (isoSetoid.{u} n) → Prop :=
-  Quotient.lift (fun P ↦ P.1.IsRegular) fun _ _ ⟨e⟩ ↦ propext e.isRegular_iff
+  Quotient.lift (fun P ↦ P.val.IsRegular) fun _ _ ⟨e⟩ ↦ propext e.isRegular_iff
 
-/-- Evaluating `IsoClassIsRegular` on `⟦P⟧` recovers `P.1.IsRegular`. -/
+/-- Evaluating `IsoClassIsRegular` on `⟦P⟧` recovers `P.val.IsRegular`. -/
 @[simp] theorem isoClassIsRegular_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
-    IsoClassIsRegular n ⟦P⟧ ↔ P.1.IsRegular := Iff.rfl
+    IsoClassIsRegular n ⟦P⟧ ↔ P.val.IsRegular := Iff.rfl
 
 /-- Forgetting the complex structure matches `isoClassNatCardAut` with `natCardDeck`. -/
 @[simp] theorem natCardDeck_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{u} n)) :
     (toTopBranchedCoverIsoClass n P).natCardDeck = isoClassNatCardAut n P :=
   Quotient.inductionOn P fun P ↦ by
-    simpa using (Nat.card_congr (P.1.isoMulEquivDeckToTopBranchedCover P.2).toEquiv).symm
+    simpa using (Nat.card_congr (P.val.isoMulEquivDeckToTopBranchedCover P.property).toEquiv).symm
 
 /-- Forgetting the complex structure preserves regularity. -/
 @[simp] theorem isRegular_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{u} n)) :
@@ -1472,7 +1472,7 @@ theorem degree_β_eq_one_iff_nonempty_iso {P : AnalyticBelyiPair.{0}} :
 
 /-- No analytic Belyi pair has degree zero. -/
 instance : IsEmpty {P : AnalyticBelyiPair.{u} // degree P.β = 0} :=
-  ⟨fun P ↦ (RiemannSurface.degree_pos (f := P.1.β)).ne' P.2⟩
+  ⟨fun P ↦ (RiemannSurface.degree_pos (f := P.val.β)).ne' P.property⟩
 
 /-- There are no isomorphism classes of analytic Belyi pairs of degree zero. -/
 instance : IsEmpty (Quotient (isoSetoid.{u} 0)) := ⟨Quotient.ind isEmptyElim⟩
