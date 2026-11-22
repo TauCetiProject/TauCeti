@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
-public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.Flat.Equalizer
 public import TauCeti.RingTheory.Localization.Away.MayerVietoris
 
 /-!
@@ -49,6 +49,8 @@ Neither `R → R₁` nor `R → R₂` is assumed to be flat.
 * `TauCeti.ExactSquare.injective_patchingDiagonal`: for a flat module `M` the diagonal is also
   injective, so tensoring an exact square with `M` gives the short exact sequence
   `0 → M → (R₁ ⊗[R] M) × (R₂ ⊗[R] M) → L ⊗[R] M → 0`.
+* `TauCeti.ExactSquare.injective_patchingDiagonal_of_flat_overlap`: when the overlap `L` is flat
+  over `R`, the diagonal is injective for every module `M`.
 
 ## References
 
@@ -191,6 +193,21 @@ private theorem patchingDifference_comp_prodLeft :
         (squareDifference (R := R) (R₁ := R₁) (R₂ := R₂) (L := L)).rTensor M := by
   ext x m <;> simp [squareDifference, patchingDifference_apply]
 
+variable (M) in
+/-- The diagonal map of `M` is injective as soon as the diagonal `R → R₁ × R₂` of the square
+stays injective after tensoring with `M`. -/
+private theorem injective_patchingDiagonal_of_injective_rTensor
+    (hM : Function.Injective ((squareDiagonal (R := R) (R₁ := R₁) (R₂ := R₂)).rTensor M)) :
+    Function.Injective (patchingDiagonal R R₁ R₂ M) := by
+  have := patchingDiagonal_comp_lid (R := R) (R₁ := R₁) (R₂ := R₂) (M := M)
+  have hd : ⇑(patchingDiagonal R R₁ R₂ M) = TensorProduct.prodLeft R R R₁ R₂ M ∘
+      squareDiagonal.rTensor M ∘ (TensorProduct.lid R M).symm := by
+    ext1 x
+    simpa using congr($this ((TensorProduct.lid R M).symm x))
+  rw [hd]
+  exact (TensorProduct.prodLeft R R R₁ R₂ M).injective.comp <|
+    hM.comp (TensorProduct.lid R M).symm.injective
+
 end Modules
 
 namespace ExactSquare
@@ -216,22 +233,25 @@ theorem surjective_patchingDifference :
 omit [Algebra R L] [IsScalarTower R R₁ L] [IsScalarTower R R₂ L] in
 /-- Tensoring an exact square with a flat module gives an injective diagonal map. -/
 theorem injective_patchingDiagonal [Module.Flat R M] :
-    Function.Injective (patchingDiagonal R R₁ R₂ M) := by
-  have hi : Function.Injective (squareDiagonal (R := R) (R₁ := R₁) (R₂ := R₂)) := h.injective
-  have hc := Module.Flat.rTensor_preserves_injective_linearMap (M := M) _ hi
-  have := patchingDiagonal_comp_lid (R := R) (R₁ := R₁) (R₂ := R₂) (M := M)
-  have hd : ⇑(patchingDiagonal R R₁ R₂ M) = TensorProduct.prodLeft R R R₁ R₂ M ∘
-      squareDiagonal.rTensor M ∘ (TensorProduct.lid R M).symm := by
-    ext1 x
-    simpa using congr($this ((TensorProduct.lid R M).symm x))
-  rw [hd]
-  exact (TensorProduct.prodLeft R R R₁ R₂ M).injective.comp <|
-    hc.comp (TensorProduct.lid R M).symm.injective
+    Function.Injective (patchingDiagonal R R₁ R₂ M) :=
+  injective_patchingDiagonal_of_injective_rTensor M <|
+    Module.Flat.rTensor_preserves_injective_linearMap _ h.injective
+
+/-- When the overlap `L` of an exact square is flat over `R`, for instance for the Zariski square
+`exactSquare_of_isCoprime`, the diagonal map of every module is injective. -/
+theorem injective_patchingDiagonal_of_flat_overlap [Module.Flat R L] :
+    Function.Injective (patchingDiagonal R R₁ R₂ M) :=
+  injective_patchingDiagonal_of_injective_rTensor M <|
+    (LinearMap.lTensor_inj_iff_rTensor_inj M squareDiagonal).mp <|
+      LinearMap.lTensor_injective_of_exact_of_flat
+        (squareDifference (R := R) (R₁ := R₁) (R₂ := R₂) (L := L)) h.surjective
+        (squareDiagonal (R := R) (R₁ := R₁) (R₂ := R₂)) h.injective h.exact M
 
 /-- The patching sequence of every module is exact in the middle, by right exactness of tensor
 products: a pair of elements of the two scalar extensions comes from `M` if and only if the two
-pieces agree in the scalar extension to the overlap. Flatness is only needed for injectivity on
-the left (`ExactSquare.injective_patchingDiagonal`). -/
+pieces agree in the scalar extension to the overlap. Flatness of `M` or of the overlap is only
+needed for injectivity on the left (`ExactSquare.injective_patchingDiagonal`,
+`ExactSquare.injective_patchingDiagonal_of_flat_overlap`). -/
 theorem exact_patchingDiagonal_patchingDifference :
     Function.Exact (patchingDiagonal R R₁ R₂ M) (patchingDifference R R₁ R₂ L M) := by
   have he : Function.Exact (squareDiagonal (R := R) (R₁ := R₁) (R₂ := R₂))

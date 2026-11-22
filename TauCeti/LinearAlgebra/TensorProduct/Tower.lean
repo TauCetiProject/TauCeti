@@ -39,6 +39,8 @@ an `A`-linear map `A ⊗[R] M → M`. Mathlib's `LinearMap.liftBaseChange` and
   map is semilinear over that map.
 * `TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply`: the `A`-linear base change of the
   structure map `A → B` is the base change of the `R`-algebra map `A →ₐ[R] B`.
+* `TensorProduct.AlgebraTensorModule.cancelBaseChange_one_tmul`: cancelling the base change
+  `B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M` on `1 ⊗ x` is the scalar extension of `x` along `A → B`.
 * `TensorProduct.AlgebraTensorModule.lTensor_eq_baseChange`: over the coefficient algebra itself,
   `TensorProduct.AlgebraTensorModule.lTensor` is `LinearMap.baseChange`.
 * `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_comp_map_baseChange`: the
@@ -78,6 +80,17 @@ theorem TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply {R A B M : Typ
       (IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x := by
   rw [AlgebraTensorModule.coe_rTensor]
   exact congrArg (LinearMap.rTensor M · x) (LinearMap.ext fun a ↦ by simp)
+
+/-- Cancelling the base change `B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M` on an element `1 ⊗ x` is the
+scalar extension of `x` along the structure map `A → B`. -/
+theorem TensorProduct.AlgebraTensorModule.cancelBaseChange_one_tmul {R A B M : Type*}
+    [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A] [Algebra R B] [Algebra A B]
+    [IsScalarTower R A B] [AddCommMonoid M] [Module R M] (x : A ⊗[R] M) :
+    cancelBaseChange R A B B M (1 ⊗ₜ x) =
+      (IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a m => simp [Algebra.smul_def]
+  | add x y hx hy => rw [tmul_add, map_add, hx, hy, map_add]
 
 /-- Over the coefficient algebra itself, `TensorProduct.AlgebraTensorModule.lTensor` is
 `LinearMap.baseChange`: both extend scalars along `A`. -/
