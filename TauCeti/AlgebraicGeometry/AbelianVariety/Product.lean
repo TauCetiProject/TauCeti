@@ -228,10 +228,12 @@ lemma lift_comp_fst_snd {A B C : AbelianVariety K} (f : C ⟶ prod A B) :
     lift (f ≫ fst A B) (f ≫ snd A B) = f := by
   apply hom_ext <;> simp
 
-private def binaryFan (A B : AbelianVariety K) : BinaryFan A B :=
+/-- The binary fan exhibiting `A.prod B` as the categorical product of `A` and `B`. -/
+@[expose] def binaryFan (A B : AbelianVariety K) : BinaryFan A B :=
   BinaryFan.mk (fst A B) (snd A B)
 
-private def binaryFanIsLimit (A B : AbelianVariety K) :
+/-- `prod.binaryFan A B` is a limit cone in `AbelianVariety K`. -/
+def binaryFanIsLimit (A B : AbelianVariety K) :
     IsLimit (binaryFan A B) :=
   BinaryFan.IsLimit.mk _
     (fun f g ↦ lift f g)

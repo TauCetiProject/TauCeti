@@ -11,7 +11,6 @@ public import Mathlib.CategoryTheory.Limits.Constructions.Over.Basic
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.GrpLimits
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
-public import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
 # Points of the base change of a group scheme
@@ -31,11 +30,7 @@ of group schemes preserves finite limits.
   `TauCeti.GroupScheme.baseChangePointMulEquiv_symm_apply_left`: the forward map is
   postcomposition with the first pullback projection and the inverse is the pullback lift with
   second component `T.hom`.
-* `TauCeti.GroupScheme.baseChangePointMulEquiv_naturality_left`,
-  `TauCeti.GroupScheme.baseChangePointMulEquiv_naturality_right`,
-  `TauCeti.GroupScheme.baseChangePointMulEquiv_id`, and
-  `TauCeti.GroupScheme.baseChangePointMulEquiv_comp`: naturality in test schemes and group-scheme
-  homomorphisms, and compatibility with identity and iterated base change.
+* `TauCeti.GroupScheme.baseChangePointMulEquiv_naturality_left`: naturality in test schemes.
 * `TauCeti.GroupScheme.pullback_mapGrp_mul_left_fst` (and its `one`/`inv` analogues): the group
   law of a base change projects to the group law of the original group scheme.
 * `TauCeti.GroupScheme.pullbackMapGrp_preservesFiniteLimits`: base change of group schemes
@@ -185,12 +180,8 @@ theorem baseChangePointMulEquiv_symm_apply_left
     (p : (Over.map s).obj T ⟶ G.X) :
     ((baseChangePointMulEquiv s G T).symm p).left =
       Limits.pullback.lift p.left T.hom (by simp) := by
-  rw [baseChangePointMulEquiv_symm_apply]
-  apply Limits.pullback.hom_ext
-  · rw [Limits.pullback.lift_fst]
-    exact congrArg Over.Hom.left ((Over.mapPullbackAdj s).homEquiv T G.X |>.left_inv p)
-  · rw [Limits.pullback.lift_snd]
-    exact ((Over.mapPullbackAdj s).homEquiv T G.X p).w
+  rw [baseChangePointMulEquiv_symm_apply, Over.mapPullbackAdj, Adjunction.mkOfHomEquiv_homEquiv]
+  rfl
 
 /-- The identity point of a base change projects to the identity point of the original group
 scheme. -/
@@ -234,35 +225,6 @@ theorem baseChangePointMulEquiv_naturality_left
       (Over.map s).map f ≫ baseChangePointMulEquiv s G T p := by
   simp only [baseChangePointMulEquiv_apply]
   exact (Over.mapPullbackAdj s).homEquiv_naturality_left_symm f p
-
-/-- Postcomposition with a group-scheme homomorphism commutes with the point-group
-equivalence. -/
-theorem baseChangePointMulEquiv_naturality_right
-    (s : Y ⟶ X) {G H : Grp (Over X)} (φ : G ⟶ H) (T : Over Y)
-    (p : T ⟶ ((Over.pullback s).mapGrp.obj G).X) :
-    baseChangePointMulEquiv s H T (p ≫ ((Over.pullback s).mapGrp.map φ).hom.hom) =
-      baseChangePointMulEquiv s G T p ≫ φ.hom.hom := by
-  simp only [baseChangePointMulEquiv_apply]
-  exact (Over.mapPullbackAdj s).homEquiv_naturality_right_symm p φ.hom.hom
-
-/-- For base change along the identity morphism, the point-group equivalence agrees with
-transport along `Over.pullbackId` and `Over.mapId`. -/
-theorem baseChangePointMulEquiv_id (G : Grp (Over X)) (T : Over X)
-    (p : T ⟶ ((Over.pullback (𝟙 X)).mapGrp.obj G).X) :
-    (Over.mapId X).inv.app T ≫ baseChangePointMulEquiv (𝟙 X) G T p =
-      p ≫ (Over.pullbackId (X := X)).hom.app G.X :=
-  Over.mapPullbackAdj_id_homEquiv_symm G.X T p
-
-/-- For iterated base change along `s₁ ≫ s₂`, the point-group equivalence agrees with the
-composite of the two step equivalences, up to `Over.pullbackComp` and `Over.mapComp`. -/
-theorem baseChangePointMulEquiv_comp {Z : Scheme.{u}} (s₁ : Z ⟶ Y) (s₂ : Y ⟶ X)
-    (G : Grp (Over X)) (T : Over Z)
-    (p : T ⟶ ((Over.pullback (s₁ ≫ s₂)).mapGrp.obj G).X) :
-    baseChangePointMulEquiv s₂ G ((Over.map s₁).obj T)
-        (baseChangePointMulEquiv s₁ ((Over.pullback s₂).mapGrp.obj G) T
-          (p ≫ (Over.pullbackComp s₁ s₂).hom.app G.X)) =
-      (Over.mapComp s₁ s₂).inv.app T ≫ baseChangePointMulEquiv (s₁ ≫ s₂) G T p :=
-  Over.mapPullbackAdj_comp_homEquiv_symm s₁ s₂ G.X T p
 
 /-- Pullback of group schemes along an arbitrary base morphism preserves finite limits. In
 particular, it preserves kernels. -/

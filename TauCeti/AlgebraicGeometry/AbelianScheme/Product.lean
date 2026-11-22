@@ -197,18 +197,18 @@ instance hasFiniteProducts : HasFiniteProducts (AbelianScheme S) :=
   CategoryTheory.hasFiniteProducts_of_has_binary_and_terminal
 
 /-- The product of `A` with the identity abelian scheme `S` is canonically isomorphic to `A`. -/
-def prodIdentityIso (A : AbelianScheme S) : A.prod (identity S) ≅ A where
-  hom := prod.fst A (identity S)
-  inv := prod.lift (𝟙 A) (toIdentity A)
-  hom_inv_id := prod.hom_ext (by simp) (Subsingleton.elim _ _)
-  inv_hom_id := by simp
+def prodIdentityIso (A : AbelianScheme S) : A.prod (identity S) ≅ A :=
+  haveI : IsIso (prod.fst A (identity S)) :=
+    (BinaryFan.isLimit_iff_isIso_fst (isTerminalIdentity S)
+      (prod.binaryFan A (identity S))).mp ⟨prod.binaryFanIsLimit A (identity S)⟩
+  asIso (prod.fst A (identity S))
 
 /-- The product of the identity abelian scheme `S` with `A` is canonically isomorphic to `A`. -/
-def identityProdIso (A : AbelianScheme S) : (identity S).prod A ≅ A where
-  hom := prod.snd (identity S) A
-  inv := prod.lift (toIdentity A) (𝟙 A)
-  hom_inv_id := prod.hom_ext (Subsingleton.elim _ _) (by simp)
-  inv_hom_id := by simp
+def identityProdIso (A : AbelianScheme S) : (identity S).prod A ≅ A :=
+  haveI : IsIso (prod.snd (identity S) A) :=
+    (BinaryFan.isLimit_iff_isIso_snd (isTerminalIdentity S)
+      (prod.binaryFan (identity S) A)).mp ⟨prod.binaryFanIsLimit (identity S) A⟩
+  asIso (prod.snd (identity S) A)
 
 private abbrev grpBinaryFan (A B : AbelianScheme S) :
     BinaryFan (Grp.mk A.toOver) (Grp.mk B.toOver) :=
@@ -216,44 +216,12 @@ private abbrev grpBinaryFan (A B : AbelianScheme S) :
 
 private def grpBinaryFanIsLimit (A B : AbelianScheme S) :
     IsLimit (grpBinaryFan A B) :=
-  BinaryFan.IsLimit.mk _
-    (fun f g ↦
-      haveI : IsMonHom f.hom.hom := f.hom.isMonHom_hom
-      haveI : IsMonHom g.hom.hom := g.hom.isMonHom_hom
-      Grp.homMk' (A := _) (B := Grp.mk (A.prod B).toOver)
-        { hom := CartesianMonoidalCategory.lift f.hom.hom g.hom.hom ≫
-            eqToHom (prod_toOver A B).symm
-          isMonHom_hom :=
-            { one_hom := by
-                rw [← cancel_mono (eqToHom (prod_toOver A B)), Category.assoc, prod_one]
-                simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
-                exact IsMonHom.one_hom (CartesianMonoidalCategory.lift f.hom.hom g.hom.hom)
-              mul_hom := by
-                rw [← cancel_mono (eqToHom (prod_toOver A B))]
-                simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
-                rw [prod_mul]
-                simp only [tensorHom_comp_tensorHom_assoc, Category.assoc, eqToHom_trans,
-                  eqToHom_refl, Category.comp_id]
-                exact IsMonHom.mul_hom (CartesianMonoidalCategory.lift f.hom.hom g.hom.hom) } })
-    (fun f g ↦ Grp.hom_ext _ _ (by
-      have hfst : (grpBinaryFan A B).fst.hom.hom = toOverHom (prod.fst A B) := rfl
-      rw [Grp.comp', Mon.comp_hom', hfst, prod.toOverHom_fst]
-      simp [Category.assoc]))
-    (fun f g ↦ Grp.hom_ext _ _ (by
-      have hsnd : (grpBinaryFan A B).snd.hom.hom = toOverHom (prod.snd A B) := rfl
-      rw [Grp.comp', Mon.comp_hom', hsnd, prod.toOverHom_snd]
-      simp [Category.assoc]))
-    (fun f g m hfst hsnd ↦ Grp.hom_ext _ _ (by
-      rw [← cancel_mono (eqToHom (prod_toOver A B))]
-      apply CartesianMonoidalCategory.hom_ext
-      · have h := congrArg (fun k : _ ⟶ Grp.mk A.toOver ↦ k.hom.hom) hfst
-        have h1 : (grpBinaryFan A B).fst.hom.hom = toOverHom (prod.fst A B) := rfl
-        rw [Grp.comp', Mon.comp_hom', h1, prod.toOverHom_fst] at h
-        simpa [Category.assoc] using h
-      · have h := congrArg (fun k : _ ⟶ Grp.mk B.toOver ↦ k.hom.hom) hsnd
-        have h2 : (grpBinaryFan A B).snd.hom.hom = toOverHom (prod.snd A B) := rfl
-        rw [Grp.comp', Mon.comp_hom', h2, prod.toOverHom_snd] at h
-        simpa [Category.assoc] using h))
+  haveI : IsMonHom (eqToIso (prod_toOver A B)).hom := isMonHom_eqToHom_prod_toOver A B
+  IsLimit.ofIsoLimit
+    (CartesianMonoidalCategory.tensorProductIsBinaryProduct (Grp.mk A.toOver) (Grp.mk B.toOver))
+    (BinaryFan.ext (Grp.mkIso' (eqToIso (prod_toOver A B))).symm
+      (by ext1; exact (Category.comp_id _).trans (prod.toOverHom_fst A B).symm)
+      (by ext1; exact (Category.comp_id _).trans (prod.toOverHom_snd A B).symm))
 
 /-- Base change preserves products of abelian schemes, respecting the group laws and projections. -/
 def baseChangeProdIso (A B : AbelianScheme S) (f : T ⟶ S) :
