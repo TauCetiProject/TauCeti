@@ -41,8 +41,7 @@ This file develops the ring-theoretic properties of `HasStableRangeLE`:
 ## Main results
 
 * `TauCeti.hasStableRangeLE_zero_iff`: `HasStableRangeLE R 0 ↔ Subsingleton R`.
-* `TauCeti.hasStableRangeLE_one_of_isLocalRing`: a local ring has stable range at most `1`, and
-  `TauCeti.hasStableRangeLE_one_of_divisionRing` the case of a division ring.
+* `TauCeti.hasStableRangeLE_one_of_isLocalRing`: a local ring has stable range at most `1`.
 * `TauCeti.HasStableRangeLE.exists_isUnimodular_add_mul_of_subset`: shortening into any finite
   subset of cardinality at least `s`.
 * `TauCeti.hasStableRangeLE_iff_forall_le`: equivalence with shortening all rows of length at least
@@ -138,14 +137,6 @@ theorem hasStableRangeLE_one_of_isLocalRing (R : Type*) [Ring R] [IsLocalRing R]
     refine ⟨fun _ ↦ 1, IsUnit.isUnimodular_pi (i := 0) ?_⟩
     have hu : IsUnit (a 1 + a 0) := isUnit_add_of_isUnit_of_not_isUnit ha1 ha0
     simpa [add_comm] using hu
-
-/-- Every division ring has stable range at most `1`: it is a local ring, since every element is
-either zero or a unit. -/
-theorem hasStableRangeLE_one_of_divisionRing (D : Type*) [DivisionRing D] :
-    HasStableRangeLE D 1 :=
-  haveI : IsLocalRing D := .of_isUnit_or_isUnit_one_sub_self fun a ↦
-    (em (a = 0)).elim (fun h ↦ .inr (by simp [h])) fun h ↦ .inl (.mk0 a h)
-  hasStableRangeLE_one_of_isLocalRing D
 
 /-! ## Subset shortening and longer rows (Vaserstein's first theorem) -/
 

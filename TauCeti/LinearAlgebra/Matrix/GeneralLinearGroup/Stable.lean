@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.IsPerfect
 public import TauCeti.Algebra.Colimit.DirectLimit
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 
 /-!
@@ -62,6 +63,8 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 * `TauCeti.StableGeneralLinearGroup.centralizer_elementarySubgroup`,
   `TauCeti.StableGeneralLinearGroup.center_eq_bot`: the centralizer of `E_∞(A)` in `GL_∞(A)`,
   and hence the center of `GL_∞(A)`, is trivial.
+* `TauCeti.AlgebraicK1.mk_reindexGL`: the class in `K₁(A)` of an invertible matrix does not
+  change under relabelling of indices.
 * `TauCeti.AlgebraicK1.mk_eq_one_iff`, `TauCeti.AlgebraicK1.ker_mk`,
   `TauCeti.AlgebraicK1.ker_mk_eq_iSup`: kernel of `AlgebraicK1.mk` at finite size.
 * `TauCeti.AlgebraicK1.map_id`, `TauCeti.AlgebraicK1.map_comp`, `TauCeti.AlgebraicK1.map_map`:
@@ -487,6 +490,14 @@ def mk (n : ℕ) : GL (Fin n) A →* AlgebraicK1 A :=
 theorem mk_stabilizeGL {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) A) :
     mk A n (stabilizeGL A h u) = mk A m u := by
   simp [mk]
+
+/-- The class in `K₁` of an invertible matrix does not change when its indices are relabelled
+along an equivalence `Fin m ≃ Fin n`. -/
+@[simp]
+theorem mk_reindexGL {m n : ℕ} (e : Fin m ≃ Fin n) (g : GL (Fin m) A) :
+    mk A n (e.reindexGL A g) = mk A m g := by
+  obtain rfl : m = n := by simpa using Fintype.card_congr e
+  rw [← permutationGL_mul_mul_inv, map_mul, map_mul, map_inv, mul_inv_cancel_comm]
 
 /-- Every class in algebraic `K₁` is the class of an invertible matrix of some size. -/
 theorem exists_mk (x : AlgebraicK1 A) : ∃ n u, mk A n u = x := by

@@ -12,8 +12,10 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability
 # The Dieudonné determinant and `K₁` of a division ring
 
 For a division ring `D` the determinant of a matrix cannot take values in `D`, but it does take
-values in the abelianization `Dˣ/[Dˣ, Dˣ]` of the unit group, with a zero adjoined for singular
-matrices. This file constructs this **Dieudonné determinant** and computes algebraic `K₁` of `D`.
+values in the abelianization `Dˣ/[Dˣ, Dˣ]` of the unit group. This file constructs this
+**Dieudonné determinant** `GLₙ(D) → Dˣ/[Dˣ, Dˣ]` on invertible `n × n` matrices, together with
+its extension to all `2 × 2` matrices by a zero adjoined for singular ones, and computes algebraic
+`K₁` of `D`.
 
 For `2 × 2` matrices the determinant is given by an explicit formula. Writing a matrix as
 `!![a, b; c, d]` and `[x]` for the class of a nonzero `x`, it is `[a d]` when `c = 0`, and
@@ -50,8 +52,6 @@ trivial, while the determinant of `(u)` is the class of `u`, trivial for every c
   of its entries.
 * `TauCeti.ker_dieudonneDet`: with at least two indices the kernel is the elementary subgroup.
 * `TauCeti.dieudonne_determinant`: the Dieudonné determinant theorem, as an existence statement.
-* `TauCeti.AlgebraicK1.mk_reindexGL`: for any ring, the class in `K₁` of an invertible matrix
-  does not change under relabelling of indices.
 
 ## Implementation notes
 
@@ -122,33 +122,37 @@ private theorem detTwo_of_ne_zero {M : Matrix (Fin 2) (Fin 2) D} (h : M 1 0 ≠ 
     detTwo M = ν (M 1 0 * (M 0 0 * (M 1 0)⁻¹ * M 1 1 - M 0 1)) := by
   simp [detTwo, h]
 
+/-- The formula on a matrix literal with vanishing lower left entry. -/
+private theorem detTwo_of_mk_zero (a b d : D) : detTwo !![a, b; 0, d] = ν (a * d) :=
+  detTwo_of_eq_zero (by simp)
+
+/-- The formula on a matrix literal with nonzero lower left entry. -/
+private theorem detTwo_of_mk_ne_zero {a b c d : D} (hc : c ≠ 0) :
+    detTwo !![a, b; c, d] = ν (c * (a * c⁻¹ * d - b)) :=
+  detTwo_of_ne_zero (by simpa using hc)
+
 private theorem detTwo_one : detTwo (1 : Matrix (Fin 2) (Fin 2) D) = 1 := by
   simp [detTwo_of_eq_zero]
 
 /-- The formula is multiplicative on left multiplication by an upper triangular matrix. -/
 private theorem detTwo_upper_mul (p q r : D) (M : Matrix (Fin 2) (Fin 2) D) :
     detTwo (!![p, q; 0, r] * M) = detTwo !![p, q; 0, r] * detTwo M := by
-  rw [detTwo_of_eq_zero (M := !![p, q; 0, r]) (by simp)]
+  have hpM : !![p, q; 0, r] * M =
+      !![p * M 0 0 + q * M 1 0, p * M 0 1 + q * M 1 1; r * M 1 0, r * M 1 1] := by
+    ext i j; fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply]
+  rw [hpM, detTwo_of_mk_zero]
   by_cases hc : M 1 0 = 0
-  · rw [detTwo_of_eq_zero (by simp [Matrix.mul_apply, hc]), detTwo_of_eq_zero hc]
-    simp only [Matrix.mul_apply, Fin.sum_univ_two, hc]
-    simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.empty_val', Matrix.cons_val_fin_one, mul_zero, add_zero, zero_mul, zero_add, map_mul]
+  · simp only [hc, mul_zero, add_zero, detTwo_of_mk_zero, detTwo_of_eq_zero hc, map_mul]
     ac_rfl
   by_cases hr : r = 0
-  · rw [detTwo_of_eq_zero (by simp [Matrix.mul_apply, hr])]
-    simp [Matrix.mul_apply, hr]
-  have hrc : r * M 1 0 ≠ 0 := mul_ne_zero hr hc
-  rw [detTwo_of_ne_zero (by simpa [Matrix.mul_apply] using hrc), detTwo_of_ne_zero hc]
+  · simp [hr, detTwo_of_mk_zero]
   have key : (p * M 0 0 + q * M 1 0) * (r * M 1 0)⁻¹ * (r * M 1 1) - (p * M 0 1 + q * M 1 1) =
       p * (M 0 0 * (M 1 0)⁻¹ * M 1 1 - M 0 1) := by
-    rw [_root_.mul_inv_rev, mul_assoc _ _ (r * _), mul_assoc _ r⁻¹, inv_mul_cancel_left₀ hr,
-      add_mul, mul_assoc q, mul_inv_cancel_left₀ hc]
+    simp only [_root_.mul_inv_rev, mul_assoc, inv_mul_cancel_left₀ hr, add_mul,
+      mul_inv_cancel_left₀ hc]
     noncomm_ring
-  simp only [Matrix.mul_apply, Fin.sum_univ_two]
-  simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.empty_val', Matrix.cons_val_fin_one, zero_mul, zero_add]
-  rw [key, map_mul, map_mul, map_mul, map_mul, map_mul]
+  rw [detTwo_of_mk_ne_zero (mul_ne_zero hr hc), detTwo_of_ne_zero hc, key]
+  simp only [map_mul]
   ac_rfl
 
 /-- The formula is unchanged by left multiplication by the rotation `!![0, -1; 1, 0]`. -/
@@ -158,14 +162,12 @@ private theorem detTwo_w_mul (M : Matrix (Fin 2) (Fin 2) D) :
     ext i j; fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply]
   rw [hwM]
   by_cases ha : M 0 0 = 0
-  · rw [detTwo_of_eq_zero (by simpa using ha)]
+  · rw [ha, detTwo_of_mk_zero]
     by_cases hc : M 1 0 = 0
     · simp [detTwo_of_eq_zero hc, ha, hc]
     · simp [detTwo_of_ne_zero hc, ha]
-  rw [detTwo_of_ne_zero (by simpa using ha)]
   by_cases hc : M 1 0 = 0
-  · simp [detTwo_of_eq_zero hc, hc]
-  rw [detTwo_of_ne_zero hc]
+  · simp [detTwo_of_mk_ne_zero ha, detTwo_of_eq_zero hc, hc]
   have key : M 0 0 * (-M 1 0 * (M 0 0)⁻¹ * M 0 1 - -M 1 1) =
       M 0 0 * M 1 0 * (M 0 0)⁻¹ * (M 0 0 * (M 1 0)⁻¹ * M 1 1 - M 0 1) := by
     have e : M 0 0 * M 1 0 * (M 0 0)⁻¹ * (M 0 0 * (M 1 0)⁻¹ * M 1 1) = M 0 0 * M 1 1 := by
@@ -173,10 +175,9 @@ private theorem detTwo_w_mul (M : Matrix (Fin 2) (Fin 2) D) :
     rw [mul_sub (M 0 0 * M 1 0 * (M 0 0)⁻¹), e]
     noncomm_ring
   have hνa : ν (M 0 0) ≠ 0 := (map_ne_zero _).mpr ha
-  simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.empty_val', Matrix.cons_val_fin_one]
-  rw [key, map_mul, map_mul, map_mul, map_inv₀, mul_comm (ν (M 0 0)) (ν (M 1 0)),
-    mul_inv_cancel_right₀ hνa, map_mul]
+  rw [detTwo_of_mk_ne_zero ha, detTwo_of_ne_zero hc, key]
+  simp only [map_mul, map_inv₀]
+  field_simp
 
 /-- A `2 × 2` matrix with nonzero lower left entry is an upper triangular matrix times the rotation
 `!![0, -1; 1, 0]` times a unipotent upper triangular matrix. -/
@@ -281,14 +282,6 @@ variable {D : Type*} [DivisionRing D]
 
 namespace AlgebraicK1
 
-/-- The class in `K₁` of an invertible matrix does not change when its indices are relabelled
-along an equivalence `Fin m ≃ Fin n`. -/
-@[simp]
-theorem mk_reindexGL {A : Type*} [Ring A] {m n : ℕ} (e : Fin m ≃ Fin n) (g : GL (Fin m) A) :
-    mk A n (e.reindexGL A g) = mk A m g := by
-  obtain rfl : m = n := by simpa using Fintype.card_congr e
-  rw [← permutationGL_mul_mul_inv, map_mul, map_mul, map_inv, mul_inv_cancel_comm]
-
 /-- The Dieudonné determinant of invertible `2 × 2` matrices, with values in the abelianization of
 `Dˣ`. -/
 private def dieudonneDetGLFinTwo : GL (Fin 2) D →* Group.Abelianization Dˣ :=
@@ -299,7 +292,7 @@ private theorem coe_dieudonneDetGLFinTwo (g : GL (Fin 2) D) :
   simp [dieudonneDetGLFinTwo]
 
 private theorem ker_mk_two_le : (mk D 2).ker ≤ dieudonneDetGLFinTwo.ker := by
-  rw [ker_mk_eq_elementarySubgroup (hasStableRangeLE_one_of_divisionRing D) le_rfl,
+  rw [ker_mk_eq_elementarySubgroup (hasStableRangeLE_one_of_isLocalRing D) le_rfl,
     elementarySubgroup_le_iff]
   intro i j hij a
   rw [MonoidHom.mem_ker, ← WithZero.coe_inj, coe_dieudonneDetGLFinTwo,
@@ -309,13 +302,13 @@ private theorem ker_mk_two_le : (mk D 2).ker ≤ dieudonneDetGLFinTwo.ker := by
 the identification of `K₁(D)` with a quotient of `GL₂(D)`. -/
 private def toAbelianization : AlgebraicK1 D →* Group.Abelianization Dˣ :=
   (QuotientGroup.lift _ dieudonneDetGLFinTwo ker_mk_two_le).comp
-    (quotientKerMkEquiv (hasStableRangeLE_one_of_divisionRing D)
+    (quotientKerMkEquiv (hasStableRangeLE_one_of_isLocalRing D)
       (by norm_num : 1 ≤ 2)).symm.toMonoidHom
 
 private theorem toAbelianization_mk_two (g : GL (Fin 2) D) :
     toAbelianization (mk D 2 g) = dieudonneDetGLFinTwo g := by
   rw [toAbelianization, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    ← quotientKerMkEquiv_mk (hasStableRangeLE_one_of_divisionRing D) (by norm_num : 1 ≤ 2) g,
+    ← quotientKerMkEquiv_mk (hasStableRangeLE_one_of_isLocalRing D) (by norm_num : 1 ≤ 2) g,
     MulEquiv.symm_apply_apply, QuotientGroup.lift_mk]
 
 private theorem toAbelianization_ofUnits (d : Dˣ) :
@@ -332,7 +325,7 @@ this is `K₁(F) = Fˣ`. -/
 def divisionRingEquiv : AlgebraicK1 D ≃* Group.Abelianization Dˣ :=
   toAbelianization.toMulEquiv (Group.Abelianization.lift (ofUnits D))
     (MonoidHom.ext fun x ↦ by
-      obtain ⟨d, rfl⟩ := ofUnits_surjective (hasStableRangeLE_one_of_divisionRing D) x
+      obtain ⟨d, rfl⟩ := ofUnits_surjective (hasStableRangeLE_one_of_isLocalRing D) x
       simp [toAbelianization_ofUnits])
     (Group.Abelianization.hom_ext _ _ (MonoidHom.ext fun d ↦ by simp [toAbelianization_ofUnits]))
 
@@ -478,7 +471,7 @@ theorem ker_dieudonneDet (hn : 2 ≤ Fintype.card n) :
   simp only [MonoidHom.mem_ker, dieudonneDet, MonoidHom.coe_comp, Function.comp_apply,
     MulEquiv.coe_toMonoidHom, MulEquiv.map_eq_one_iff]
   rw [← MonoidHom.mem_ker,
-    AlgebraicK1.ker_mk_eq_elementarySubgroup (hasStableRangeLE_one_of_divisionRing D) hn,
+    AlgebraicK1.ker_mk_eq_elementarySubgroup (hasStableRangeLE_one_of_isLocalRing D) hn,
     Equiv.reindexGL_mem_elementarySubgroup_iff]
 
 /-- **The Dieudonné determinant** (Weibel, *The K-book*, III.1.2.4 and Exercise III.1.2): for a
