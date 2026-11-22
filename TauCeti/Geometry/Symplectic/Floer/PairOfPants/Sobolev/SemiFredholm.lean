@@ -342,7 +342,10 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add (ω : S
           ‖restrictWeightedValue V thricePuncturedSphereReal K y‖) := by
   obtain ⟨C, -, T, hT, hest⟩ :=
     ω.exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add hH hHs
-      hX hx hnd hJe hJex hJeq hJ hu hc hF hux hδ
+      hX hx hnd hJe hJex hJeq (fun _ _ _ _ ↦ ⟨rfl, rfl⟩) hJ
+      (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) 1)
+      (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) Complex.I) hu hc
+      (fun _ z hz _ ↦ hF z hz) hux hδ
   have hM := ω.memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn hH hHs
     (fun q ↦ (continuous_iff_continuousAt.2 fun t ↦ (hx q t).continuousAt).continuousOn) hJe hJeq
     hJ hu hF hux hδ
