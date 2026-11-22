@@ -562,8 +562,8 @@ variable {U : TopologicalSpace.Opens (CoordinateSpace n)} {V W : Type*}
 
 /-! ### Smoothing classical symbols and the homogeneous terms -/
 
-/-- A smoothing symbol on `U` is a classical symbol of every order `m` on `U` whose homogeneous
-terms all vanish. -/
+/-- A smoothing symbol of order `m` on `U` is a classical symbol of order `m` on `U`, all of whose
+homogeneous terms vanish. -/
 def ofIsSmoothing (a : LocalSymbol U V W m) (ha : a.IsSmoothing) :
     LocalClassicalSymbol U V W m where
   toLocalSymbol := a
