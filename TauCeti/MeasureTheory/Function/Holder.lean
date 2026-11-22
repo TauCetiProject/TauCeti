@@ -29,9 +29,9 @@ integration-by-parts arguments:
 * `ContinuousLinearMap.lpPairing_mul_eq_integral`: the Hölder pairing
   `ContinuousLinearMap.lpPairing` of the multiplication of a complete normed algebra is the
   integral of the product.
-* `ContinuousLinearMap.integrableOn_of_bilin_of_continuousOn_of_subset`: a continuous bilinear
-  pairing of a function integrable on a set `s` with a function continuous on a compact set `K`
-  containing almost every point of `s` is integrable on `s`.
+* `ContinuousLinearMap.integrableOn_of_bilin_of_continuousOn_of_ae_mem`: a continuous bilinear
+  pairing of a function integrable on a set `s` with a function continuous on a compact set `K` of
+  full measure for `μ.restrict s` is integrable on `s`.
 * `ContinuousLinearMap.integrable_of_bilin_of_continuousOn`: a continuous bilinear pairing of a
   function integrable on a compact set `K` and vanishing almost everywhere off `K` with a function
   continuous on `K` is integrable.
@@ -134,9 +134,9 @@ variable {α 𝕜 E F G : Type*} [TopologicalSpace α] [MeasurableSpace α] [Ope
   [NormedAddCommGroup G] [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] [NormedSpace 𝕜 G] {μ : Measure α}
 
 /-- A continuous bilinear pairing of a function integrable on a set `s` with a function continuous
-on a compact set `K` that contains almost every point of `s` is integrable on `s`. Neither `s` nor
-`K` needs to be measurable. -/
-theorem integrableOn_of_bilin_of_continuousOn_of_subset (B : E →L[𝕜] F →L[𝕜] G) {f : α → E}
+on a compact set `K` of full measure for `μ.restrict s` (that is, `∀ᵐ x ∂μ.restrict s, x ∈ K`) is
+integrable on `s`. Neither `s` nor `K` needs to be measurable. -/
+theorem integrableOn_of_bilin_of_continuousOn_of_ae_mem (B : E →L[𝕜] F →L[𝕜] G) {f : α → E}
     {g : α → F} {s K : Set α} (hf : IntegrableOn f s μ) (hg : ContinuousOn g K)
     (hK : IsCompact K) (hsK : ∀ᵐ x ∂μ.restrict s, x ∈ K) :
     IntegrableOn (fun x ↦ B (f x) (g x)) s μ := by
@@ -158,7 +158,7 @@ theorem integrable_of_bilin_of_continuousOn (B : E →L[𝕜] F →L[𝕜] G) {f
   have hfi := hf.integrable_of_ae_notMem_eq_zero hfK
   -- `K` need not be measurable, so integrate over the support of `f` instead: it is
   -- null-measurable, and almost all of it lies in `K`.
-  refine (B.integrableOn_of_bilin_of_continuousOn_of_subset (s := Function.support f)
+  refine (B.integrableOn_of_bilin_of_continuousOn_of_ae_mem (s := Function.support f)
     hfi.integrableOn hg hK ?_).integrable_of_forall_notMem_eq_zero fun x hx ↦ ?_
   · filter_upwards [ae_restrict_mem₀ hfi.aestronglyMeasurable.nullMeasurableSet_support,
       ae_restrict_of_ae hfK] with x hx hxK

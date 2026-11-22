@@ -63,7 +63,7 @@ namespace CaratheodoryLinear
 private theorem integrableOn_Ioo (hab : a ≤ b) (hM : IntegrableOn M (Ioo a b))
     (hF : IntegrableOn F (Ioo a b)) (y : C(Icc a b, E)) :
     IntegrableOn (fun s ↦ M s (IccExtend hab y s) + F s) (Ioo a b) :=
-  (hM.clm_apply_continuousOn_of_subset y.continuous.Icc_extend'.continuousOn isCompact_Icc
+  (hM.clm_apply_continuousOn_of_ae_mem y.continuous.Icc_extend'.continuousOn isCompact_Icc
     (ae_restrict_of_forall_mem measurableSet_Ioo fun _ hs ↦ Ioo_subset_Icc_self hs)).add hF
 
 /-- The Picard map `y ↦ x₀ + ∫ₐᵗ (M s (y s) + F s) ds` on `C([a, b], E)`. -/
