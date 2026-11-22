@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.CalderonVaillancourt
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
+public import TauCeti.Analysis.Pseudodifferential.Symbol.UniformlySmoothing
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Pseudodifferential.Composition.Uniform
 import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
@@ -48,6 +49,8 @@ and the outer factors are the isometries `H^s → L²` and `L² → H^{s - m}`.
 * `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM`: the Sobolev mapping
   `H^s → H^{s - m}` for uniform symbols and every real `s`, for complex Hilbert fibres, in the
   composable form `SchwartzMap.HasSobolevExtension`.
+* `TauCeti.Symbol.IsUniformlySmoothing.hasSobolevExtension_quantizeUniformCLM`: uniformly smoothing
+  symbols quantize to bounded operators `H^t → H^s` for all real `t` and `s`.
 * `TauCeti.Symbol.exists_quantizeUniformSobolevHilbert`: the same mapping as an extension acting
   on tempered distributions.
 * `TauCeti.Symbol.exists_quantizeUniformSobolev`: the same mapping for finite-dimensional complex
@@ -157,6 +160,15 @@ theorem hasSobolevExtension_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUn
   rw [ha']
   exact (SchwartzMap.hasSobolevExtension_besselMultiplier (-(s - m)) (by ring)).comp
     (hasSobolevExtension_quantizeUniformCLM_of_le c hc (by linarith))
+
+/-- **Uniformly smoothing symbols gain every number of derivatives.** The quantization of a
+uniformly smoothing symbol extends to a bounded operator `H^t → H^s` for all real `t` and `s`. -/
+theorem IsUniformlySmoothing.hasSobolevExtension_quantizeUniformCLM {r : Symbol n V W m}
+    (hr : r.IsUniformlySmoothing) (t s : ℝ) :
+    SchwartzMap.HasSobolevExtension (quantizeUniformCLM r hr.isUniform) t s := by
+  obtain ⟨r', hr', hrr'⟩ := isUniformlySmoothing_iff.1 hr (t - s)
+  rw [quantizeUniformCLM_congr hr.isUniform hr' hrr'.symm]
+  simpa using Symbol.hasSobolevExtension_quantizeUniformCLM r' hr' t
 
 /-- **Sobolev mapping of uniform symbols**, for complex Hilbert fibres. Let `a` be a symbol of
 order `m` whose estimates are uniform in the position. For every real `s`, the quantization

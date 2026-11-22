@@ -51,6 +51,8 @@ is the subgroup of loops lifting to loops, so this decides which covers make a c
   manifold is exact exactly when its periods vanish.
 * `TauCeti.deRhamCohomology.period`: the periods of de Rham classes in degree one, an injective
   linear map on a connected manifold.
+* `TauCeti.pathClassIntegral_mapCoeff`: integration commutes with continuous linear maps of the
+  coefficients.
 * `TauCeti.pathClassIntegral_mpullback`, `TauCeti.periodHom_mpullback`,
   `TauCeti.deRhamCohomology.period_map`: naturality of integrals and periods under pullback.
 * `TauCeti.mpullback_mem_exactForms_one_iff_periodHom_map_eq_zero`: the pullback of a closed form
