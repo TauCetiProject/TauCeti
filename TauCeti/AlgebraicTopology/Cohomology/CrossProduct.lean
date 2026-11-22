@@ -36,10 +36,10 @@ Eilenberg–Zilber both cross products are represented by tensor products, so th
 algebraic identity `ChainComplex.homologyCross_comp_kronecker_cup`.
 
 For any commutative ring `k` of coefficients, it follows that the cup product of the pullbacks
-along the two projections satisfies `⟨pr₁^* a ⌣ pr₂^* b, z⟩ = ⟨a, x⟩ ⟨b, y⟩` for the class
-`z ∈ Hₙ(X × Y; k)` corresponding to the homology cross product of `x` and `y`
-(`TopCat.exists_singularKronecker_singularCup_fst_snd_eq_mul`). This detects nonzero cup products
-on products of spaces over any commutative ring, without a Künneth isomorphism.
+along the two projections satisfies `⟨pr₁^* a ⌣ pr₂^* b, x × y⟩ = ⟨a, x⟩ ⟨b, y⟩`, where the
+homology cross product `x × y ∈ Hₙ(X × Y; k)` is read with coefficients `k` instead of `k ⊗ k`
+(`TopCat.singularKronecker_singularCup_fst_snd_singularHomologyCross`). This detects nonzero cup
+products on products of spaces over any commutative ring, without a Künneth isomorphism.
 
 ## References
 
@@ -351,20 +351,22 @@ section CupProduct
 variable {k : Type w} [CommRing k] (X Y : TopCat.{w})
 
 /-- **The cup product of pullbacks along the projections evaluates multiplicatively on a homology
-cross product.** For `a ∈ Hᵖ(X; k)`, `b ∈ H^q(Y; k)`, `x ∈ Hₚ(X; k)` and `y ∈ H_q(Y; k)`, some
-class `z ∈ Hₙ(X × Y; k)`, namely the homology cross product of `x` and `y` read with
-coefficients `k` instead of `k ⊗ k`, satisfies `⟨pr₁^* a ⌣ pr₂^* b, z⟩ = ⟨a, x⟩ ⟨b, y⟩`. The
-cup product is the one of the commutative ring `k`, with the unitors of `ModuleCat k` as
-diagonal and multiplication. -/
-theorem exists_singularKronecker_singularCup_fst_snd_eq_mul {p q n : ℕ} (h : p + q = n)
+cross product.** For `a ∈ Hᵖ(X; k)`, `b ∈ H^q(Y; k)`, `x ∈ Hₚ(X; k)` and `y ∈ H_q(Y; k)`, let
+`x × y ∈ Hₙ(X × Y; k)` be the homology cross product of `x` and `y`, read with coefficients `k`
+instead of `k ⊗ k` through the left unitor `k ⊗ k ≅ k`. Then
+`⟨pr₁^* a ⌣ pr₂^* b, x × y⟩ = ⟨a, x⟩ ⟨b, y⟩`. The cup product is the one of the commutative ring
+`k`, with the unitors of `ModuleCat k` as diagonal and multiplication. -/
+theorem singularKronecker_singularCup_fst_snd_singularHomologyCross {p q n : ℕ} (h : p + q = n)
     (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
     (b : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q)
     (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ (ModuleCat.{w} k))).obj X)
     (y : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ (ModuleCat.{w} k))).obj Y) :
-    ∃ z : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj (X ⊗ Y),
-      (X ⊗ Y).singularKronecker k n ((X ⊗ Y).singularCup k (λ_ _).inv (λ_ _).hom p q n h
+    (X ⊗ Y).singularKronecker k n ((X ⊗ Y).singularCup k (λ_ _).inv (λ_ _).hom p q n h
         (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst X Y) p a)
-        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) q b)) z =
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) q b))
+      (((singularHomologyFunctor (ModuleCat.{w} k) n).map (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app
+        (X ⊗ Y) (singularHomologyCross X Y (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) p q n h
+          (x ⊗ₜ y))) =
       X.singularKronecker k p a x * Y.singularKronecker k q b y := by
   -- Changing the chain coefficients along `λ⁻¹ : k ⟶ k ⊗ k` turns the cross product, whose
   -- Alexander–Whitney diagonal has coefficients `k ⊗ k`, into the cup product with coefficients
@@ -386,14 +388,27 @@ theorem exists_singularKronecker_singularCup_fst_snd_eq_mul {p q n : ℕ} (h : p
     (singularHomologyCross_comp_singularKronecker_singularCross
       (μ := (λ_ (𝟙_ (ModuleCat.{w} k))).hom) (k := k) X Y p q n h a b) (x ⊗ₜ y)
   simp only [ConcreteCategory.comp_apply, singularKronecker_def] at hxy
-  -- The coefficient change `e` is an isomorphism, so the homology cross product of `x` and `y`
-  -- comes from a class with coefficients `k`.
-  obtain ⟨z, hz⟩ := (ConcreteCategory.bijective_of_isIso (homologyMap e n)).2
-    (singularHomologyCross X Y (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) p q n h (x ⊗ₜ y))
-  refine ⟨z, ?_⟩
+  -- The coefficient change `e` undoes the coefficient change `λ` on homology.
+  have hid : ((singularHomologyFunctor (ModuleCat.{w} k) n).map
+      (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (X ⊗ Y) ≫ homologyMap e n = 𝟙 _ := by
+    have hunit : ((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
+        (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (toSSet.obj (X ⊗ Y)) ≫ e = 𝟙 _ := by
+      rw [← NatTrans.comp_app, ← Functor.map_comp, Iso.hom_inv_id, CategoryTheory.Functor.map_id,
+        NatTrans.id_app]
+    -- By Mathlib's definition of `singularHomologyFunctor` as a functor composite, the first
+    -- factor of `hid` is `homologyMap` of the singular chain map of `λ`, which is the first factor
+    -- of `hunit` by `TauCeti.singularChainComplexFunctor_map_app`.
+    exact (homologyMap_comp _ _ n).symm.trans
+      ((congrArg (homologyMap · n) hunit).trans (homologyMap_id _ n))
+  have hz : homologyMap e n (((singularHomologyFunctor (ModuleCat.{w} k) n).map
+      (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (X ⊗ Y) (singularHomologyCross X Y
+        (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) p q n h (x ⊗ₜ y))) =
+      singularHomologyCross X Y (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) p q n h (x ⊗ₜ y) :=
+    ConcreteCategory.congr_hom hid _
   rw [hcup, singularKronecker_def]
   refine (ConcreteCategory.congr_hom (TauCeti.ChainComplex.kronecker_naturality e n _) _).trans ?_
-  rw [ConcreteCategory.comp_apply, hz]
+  refine (ConcreteCategory.comp_apply _ _ _).trans ?_
+  rw [hz]
   refine hxy.trans ?_
   simp [ModuleCat.MonoidalCategory.tensorHom_tmul, ModuleCat.MonoidalCategory.leftUnitor_hom_apply,
     singularKronecker_def]
