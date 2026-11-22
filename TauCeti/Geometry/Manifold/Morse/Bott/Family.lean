@@ -40,8 +40,9 @@ So the pieces are pairwise disjoint and cover the critical set
 (`TauCeti.IsMorseBottFamily.pairwise_disjoint_range`, `TauCeti.IsMorseBottFamily.iUnion_range`),
 each critical point lies on exactly one of them
 (`TauCeti.IsMorseBottFamily.existsUnique_mem_range`), only finitely many of them meet a compact set
-(by `LocallyFinite.finite_nonempty_inter_compact`), and on a compact manifold there are finitely
-many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
+(by `LocallyFinite.finite_nonempty_inter_compact`), so only finitely many lie in it
+(`TauCeti.IsMorseBottFamily.finite_setOf_range_subset`), and on a compact manifold there are
+finitely many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
 (`TauCeti.IsMorseBottFamily.isClosed_range`) and preconnected
 (`TauCeti.IsMorseBottFamily.preconnectedSpace`), so a piece lying in a compact set is compact
 (`TauCeti.IsMorseBottFamily.compactSpace_of_range_subset`). The function takes a single value on
@@ -203,6 +204,13 @@ theorem compactSpace_of_range_subset [IsManifold I 1 M] {K : Set M} (hK : IsComp
   isCompact_univ_iff.1 <| (i a).isEmbedding.isInducing.isCompact_iff.2 <| by
     rw [image_univ]
     exact hK.of_isClosed_subset (h.isClosed_range a) ha
+
+/-- Only finitely many pieces lie in a compact set, since only finitely many meet it. -/
+theorem finite_setOf_range_subset {K : Set M} (hK : IsCompact K) :
+    {a | range (i a) ⊆ K}.Finite :=
+  (h.locallyFinite_range.finite_nonempty_inter_compact hK).subset fun a ha ↦
+    have := h.nonempty a
+    (range_nonempty (i a)).mono (subset_inter subset_rfl ha)
 
 /-- **A Morse–Bott function takes a single value on each piece**, its critical value: `f ∘ i a` is
 locally constant, and the piece is connected because its image is a connected component of the

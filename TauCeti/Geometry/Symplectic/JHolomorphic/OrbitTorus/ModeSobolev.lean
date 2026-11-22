@@ -66,9 +66,9 @@ twisted orbit-torus operator is oriented (`TauCeti.isInvertible_torusModeOperato
 for maps periodic in `s` it splits off the nonconstant modes as an invertible summand
 (`TauCeti.isInvertible_torusModeOperator_periodic`).
 
-The twist along `γ` by the sign `-1` is not treated here: a map antiperiodic in `t` of period `T`
-is `exp (J₀ π t / T)` times a periodic one, and the corresponding loop operator is that of a
-different loop. Finite covers of the torus are not treated either.
+The twist along `γ` by the sign `-1` is treated in
+`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.DoublyAntiperiodic`, on the double cover of
+`γ`, by restricting the operator of this file. Finite covers of the torus are not treated here.
 
 ## Main definitions
 

@@ -227,6 +227,21 @@ def subsetPairTwistedChainComplexMap (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) :
         (TopCat.ofHom (ContinuousMap.inclusion hA)) (TopCat.ofHom (ContinuousMap.inclusion hC)) rfl)
       ((pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj L)
 
+/-- The map of relative twisted chains induced by an inclusion of pairs of subsets is the change of
+coefficients identifying the two restrictions of `L` to `A₁`, followed by the map of the inclusion
+of pairs. -/
+lemma subsetPairTwistedChainComplexMap_def (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) :
+    subsetPairTwistedChainComplexMap L hC₁ hC₂ hA hC =
+      (TopPair.ofInclusion hC₁).twistedChainComplexCoefficientMap
+          ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion hA)).hom
+            (TopCat.ofHom (ContinuousMap.subtypeVal A₂)).hom).hom.app L) ≫
+        TopPair.twistedChainComplexMap
+          (TopPair.ofHom (X := TopPair.ofInclusion hC₁) (Y := TopPair.ofInclusion hC₂)
+            (TopCat.ofHom (ContinuousMap.inclusion hA)) (TopCat.ofHom (ContinuousMap.inclusion hC))
+            rfl)
+          ((pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj L) :=
+  (rfl)
+
 /-- The map of relative twisted chains induced by an inclusion of pairs of subsets is induced by
 the map `TauCeti.LocalCoefficientSystem.subsetTwistedChainComplexMap` of absolute twisted
 chains. -/
