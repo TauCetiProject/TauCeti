@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Module
 
 /-!
@@ -33,6 +34,8 @@ normed spaces:
   `a`.
 * `TauCeti.norm_inv_sqrt_smul_sq`: scaling a vector by `(√a)⁻¹`, `a ≥ 0`, divides its squared
   norm by `a`.
+* `TauCeti.norm_sum_choose_smul_le`: a binomially weighted sum `∑ j ≤ r, (r choose j) • w j` of
+  vectors of norm at most `c` has norm at most `2 ^ r * c`.
 * `TauCeti.norm_neg_one_pow_smul`: the sign `(-1) ^ n` does not change norms.
 * `TauCeti.norm_smul_sq_div_add_norm_smul_sq`: the ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when
   `u` and `v` are scaled by the same nonzero scalar.
@@ -117,6 +120,15 @@ theorem norm_sqrt_smul_sq {E : Type*} [SeminormedAddCommGroup E] [NormedSpace �
 theorem norm_inv_sqrt_smul_sq {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {a : ℝ}
     (ha : 0 ≤ a) (x : E) : ‖(√a)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / a := by
   simp [norm_smul, mul_pow, Real.sq_sqrt ha, div_eq_inv_mul]
+
+/-- A binomially weighted sum `∑ j ≤ r, (r choose j) • w j` of vectors of norm at most `c` has norm
+at most `2 ^ r * c`. -/
+theorem norm_sum_choose_smul_le {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
+    {r : ℕ} {w : ℕ → V} {c : ℝ} (hw : ∀ j ∈ Finset.range (r + 1), ‖w j‖ ≤ c) :
+    ‖∑ j ∈ Finset.range (r + 1), (r.choose j : ℝ) • w j‖ ≤ 2 ^ r * c := by
+  refine (norm_sum_smul_le_sum_norm_mul hw).trans_eq ?_
+  simp only [Real.norm_natCast]
+  rw [← Nat.cast_sum, Nat.sum_range_choose, Nat.cast_pow, Nat.cast_ofNat]
 
 /-- The sign `(-1) ^ n` does not change norms. -/
 @[simp]
