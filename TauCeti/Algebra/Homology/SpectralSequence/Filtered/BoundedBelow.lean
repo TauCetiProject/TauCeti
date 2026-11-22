@@ -27,7 +27,9 @@ maps `E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1) ⟶ E^n(⊥ ≤ q ≤ q + 1 ≤ q +
 This is an analogue of the `E∞` part of Weibel's Classical Convergence Theorem 5.5.1(2), whose
 `E∞` is the direct limit along the spectral sequence's own maps from page `r` to page `r + 1`
 (page `r + 1` being the homology of page `r`), in the form needed when the filtration is not
-finite. Identifying `spectralSequencePageXToPageX` with those maps is not done here.
+finite. From page `r` to page `r + 1`, `spectralSequencePageXToPageX` is that map of the
+spectral sequence (`TauCeti.Algebra.Homology.SpectralObject.PageHomology`), so the graded piece
+is the direct limit of the pages along the spectral sequence's own maps.
 Convergence to `H^n(K)` needs in addition hypotheses in degree `n`, which this file does not
 assume: if every element of `K^n` lies in some `F_i`, the filtration of `H^n(K)` is exhaustive
 (`CochainComplex.exists_mem_range_filtrationAbutmentFiltrationι`), and if some stage vanishes in
@@ -303,8 +305,9 @@ the canonical maps `spectralSequencePageXToPageX` between pages. Let `pq = (p, q
 `F_{q+1} H^n / F_q H^n` exactly when it vanishes on some later page `r'` under the canonical map
 `spectralSequencePageXToPageX`. Together with the surjectivity of
 `filtrationSpectralSequencePageXToGraded`, this says that the graded piece is the direct limit of
-the objects at `(p, q)` on the pages `r' ≥ r` along these maps. They are not yet identified with
-the spectral sequence's own maps from page `r` to page `r + 1`. -/
+the objects at `(p, q)` on the pages `r' ≥ r` along these maps, which from page `r` to page
+`r + 1` are the maps of the spectral sequence
+(`TauCeti.Algebra.Homology.SpectralObject.PageHomology`). -/
 theorem filtrationSpectralSequencePageXToGraded_eq_zero_iff (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
     {s : ℤ} (hs : IsZero ((F s : CochainComplex (ModuleCat.{v} R) ℤ).X (pq.1 + pq.2 + 1)))
     (hrs : pq.2 - r + 2 ≤ s)

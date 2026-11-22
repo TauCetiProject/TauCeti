@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.LogVariation
+public import TauCeti.Analysis.Complex.ZeroMultiplicity
+public import Mathlib.Data.Multiset.Fintype
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.PDE.Schrodinger.Stationary
 import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
+import TauCeti.Analysis.PDE.Vortex.Zeros
 
 /-!
 # Kernel elements of the vortex operator with prescribed poles
@@ -37,6 +40,9 @@ smooth vortex section by `TauCeti.Vortex.exists_contDiffAt_sectionValue_eq_pow_m
 over `ℂ` and `(z, j)` over the zeros with `j` below the multiplicity, these principal parts span a
 real space of dimension `2m` for a vortex of degree `m`, the dimension of the tangent space of the
 divisor space `Sym^m ℂ`: every one of them is realized by a square-integrable kernel element.
+When the section has zero divisor `D`, this gives, for every point `⟨a, j⟩` of `D` and every
+`c ∈ ℂ`, a kernel element in `TauCeti.Vortex.gaugeFixedKernel x` with that principal part
+(`TauCeti.Vortex.exists_mem_gaugeFixedKernel_sectionValue_eq`).
 
 The construction cuts the pole off: `η₀ = χ c / (w - z)^(j+1)`, with `χ` a bump equal to one near
 `z`, has smooth logarithmic variation `y₀`, because `α` vanishes to order at least `j + 1` at
@@ -303,5 +309,24 @@ theorem exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add (hx : 
   · rw [sectionValue_add, sectionValue_apply, (hy₀η w hw).eq_of_nhds, ← sectionValue_apply,
       sectionValue_logVariation, sectionValue_logVariation]
     ring
+
+/-- **Kernel elements with a prescribed pole.** At a smooth field with vanishing holomorphicity
+rows and `|α|² → 1` at infinity, whose section has zero divisor `D`, for every point `⟨a, j⟩` of `D`
+and every `c ∈ ℂ` there is a smooth kernel element of `L_x` whose section variation is
+`δα = α (c / (w - a)^(j+1) + ξ)` off `a`, for a continuous function `ξ`. -/
+theorem exists_mem_gaugeFixedKernel_sectionValue_eq (hx : ContDiff ℝ ∞ x)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {D : Multiset ℂ}
+    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) (i : D.ToType) (c : ℂ) :
+    ∃ y ∈ gaugeFixedKernel x, ContDiff ℝ ∞ y ∧ ∃ ξ : ℂ → ℂ, Continuous ξ ∧ ∀ w, w ≠ i.1 →
+      sectionValue y w = sectionValue x w * (c / (w - i.1) ^ ((i.2 : ℕ) + 1) + ξ w) := by
+  have hxi (k : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w k := contDiff_euclidean.1 hx k
+  obtain ⟨v, hv, -, hvf⟩ := exists_contDiffAt_sectionValue_eq_pow_mul_of_order (k := ⊤) le_top
+    (hxi 0) (hxi 1) ((hxi 2).differentiable (by simp)) ((hxi 3).differentiable (by simp)) hhol
+    (isZeroMultiplicity_iff.1 hD i.1)
+  obtain ⟨y, hy, hy₂, hker, ξ, hξ, hyξ⟩ :=
+    exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add hx hhol hlim hv hvf
+      i.2.isLt c
+  exact ⟨y, mem_gaugeFixedKernel.2 ⟨hy.of_le (by simp), hy₂, hker⟩, hy, ξ, hξ.continuous, hyξ⟩
 
 end TauCeti.Vortex
