@@ -90,19 +90,6 @@ theorem homogeneousSection_mem_holomorphicTwistSections {d : ℕ}
 
 /-! ### The homogeneous function of a section -/
 
-/-- The homogeneous coordinate of the preferred chart of `𝒪(k)` at `[v]` does not vanish
-on `v`. -/
-private theorem apply_indexAt_twistCore_mk_ne_zero (k : ℤ) {v : Fin (n + 1) → ℂ} (hv : v ≠ 0) :
-    v ((twistCore (𝕜 := ℂ) k).indexAt (mk ℂ v hv)) ≠ 0 := by
-  have hx := (twistCore (𝕜 := ℂ) (n := n) k).mem_baseSet_at (mk ℂ v hv)
-  rwa [twistCore_baseSet, mk_mem_affineOpen_iff] at hx
-
-/-- The homogeneous coordinate of the preferred chart of `𝒪(k)` at `x` does not vanish on the
-chosen representative. -/
-private theorem rep_indexAt_twistCore_ne_zero (k : ℤ) (x : ℙ ℂ (Fin (n + 1) → ℂ)) :
-    x.rep ((twistCore (𝕜 := ℂ) k).indexAt x) ≠ 0 := by
-  simpa only [mk_rep] using apply_indexAt_twistCore_mk_ne_zero k x.rep_ne_zero
-
 /-- The function on `ℂⁿ⁺¹` attached to a section `s` of `𝒪(k)`: at `v ≠ 0` it is `s [v] * v a ^ k`,
 for `a` the preferred chart at `[v]`, and it is `0` at the origin. For the section of a
 homogeneous polynomial it is the polynomial function away from the origin. -/

@@ -206,6 +206,19 @@ theorem chartAt_eq_affineOpenPartialHomeomorph_twistCore_indexAt (k : ℤ)
     chartAt (Fin n → 𝕜) x = affineOpenPartialHomeomorph ((twistCore k).indexAt x) :=
   (rfl)
 
+/-- The homogeneous coordinate of the preferred chart of `𝒪(k)` at `[v]` does not vanish
+on `v`. -/
+theorem apply_indexAt_twistCore_mk_ne_zero (k : ℤ) {v : Fin (n + 1) → 𝕜} (hv : v ≠ 0) :
+    v ((twistCore (𝕜 := 𝕜) k).indexAt (mk 𝕜 v hv)) ≠ 0 := by
+  have hx := (twistCore (𝕜 := 𝕜) (n := n) k).mem_baseSet_at (mk 𝕜 v hv)
+  rwa [twistCore_baseSet, mk_mem_affineOpen_iff] at hx
+
+/-- The homogeneous coordinate of the preferred chart of `𝒪(k)` at `x` does not vanish on the
+chosen representative. -/
+theorem rep_indexAt_twistCore_ne_zero (k : ℤ) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    x.rep ((twistCore (𝕜 := 𝕜) k).indexAt x) ≠ 0 := by
+  simpa only [mk_rep] using apply_indexAt_twistCore_mk_ne_zero k x.rep_ne_zero
+
 @[simp]
 theorem twistCore_coordChange_apply (k : ℤ) (i j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜))
     (v : 𝕜) : (twistCore k).coordChange i j x v = twistTransition k i j x * v :=
@@ -330,8 +343,7 @@ theorem twistTransition_mul_homogeneousSection (d : ℕ) (P : MvPolynomial (Fin 
     (j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
     twistTransition (d : ℤ) ((twistCore (d : ℤ)).indexAt x) j x * homogeneousSection d P x =
       eval x.rep P / x.rep j ^ d := by
-  have ha : x.rep ((twistCore (𝕜 := 𝕜) (d : ℤ)).indexAt x) ≠ 0 :=
-    (mem_affineOpen_iff _ x).1 ((twistCore (𝕜 := 𝕜) (d : ℤ)).mem_baseSet_at x)
+  have ha := rep_indexAt_twistCore_ne_zero (𝕜 := 𝕜) (d : ℤ) x
   simp only [homogeneousSection, twistTransition, zpow_natCast]
   rw [div_pow]
   field_simp
@@ -369,8 +381,7 @@ theorem homogeneousSection_mk_eq_zero_iff {d : ℕ} {P : MvPolynomial (Fin (n + 
     (hP : P.IsHomogeneous d) (v : Fin (n + 1) → 𝕜) (hv : v ≠ 0) :
     homogeneousSection d P (mk 𝕜 v hv) = 0 ↔ eval v P = 0 := by
   obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep 𝕜 v hv
-  have hi := (mem_affineOpen_iff _ _).1
-    ((twistCore (𝕜 := 𝕜) (n := n) (d : ℤ)).mem_baseSet_at (mk 𝕜 v hv))
+  have hi := rep_indexAt_twistCore_ne_zero (𝕜 := 𝕜) (d : ℤ) (mk 𝕜 v hv)
   have hrep : eval (mk 𝕜 v hv).rep P = (a : 𝕜) ^ d * eval v P := by
     rw [← ha, Units.smul_def, hP.eval_smul]
   simp [homogeneousSection, hrep, hi]
