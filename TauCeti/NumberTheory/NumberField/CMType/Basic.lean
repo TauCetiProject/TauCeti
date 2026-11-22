@@ -219,19 +219,27 @@ theorem typeTrace_def (Φ : CMType E) (a : E) :
     Φ.typeTrace a = ∑ᶠ φ ∈ (Φ : Set (E →+* ℂ)), φ a :=
   (rfl)
 
+/-- The type trace of `0` is `0`. -/
+@[simp]
+theorem typeTrace_zero (Φ : CMType E) : Φ.typeTrace 0 = 0 := by
+  simp [typeTrace]
+
 /-- The type trace is additive when `E` has finitely many embeddings. -/
+@[simp]
 theorem typeTrace_add [Finite (E →+* ℂ)] (Φ : CMType E) (a b : E) :
     Φ.typeTrace (a + b) = Φ.typeTrace a + Φ.typeTrace b := by
   simp only [typeTrace, map_add]
   exact finsum_mem_add_distrib (Set.toFinite _)
 
 /-- The type trace is `ℚ`-homogeneous. -/
+@[simp]
 theorem typeTrace_smul [Module ℚ E] (Φ : CMType E) (q : ℚ) (a : E) :
     Φ.typeTrace (q • a) = q * Φ.typeTrace a := by
   simp only [typeTrace, map_rat_smul, Rat.smul_def]
   exact (mul_finsum_mem _ _).symm
 
 /-- The type trace of `ιΦ` is the complex conjugate of the type trace of `Φ`. -/
+@[simp]
 theorem typeTrace_conjugate (Φ : CMType E) (a : E) :
     Φ.conjugate.typeTrace a = star (Φ.typeTrace a) := by
   have h : star (Φ.typeTrace a) = ∑ᶠ φ ∈ (Φ : Set (E →+* ℂ)), star (φ a) := by
