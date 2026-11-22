@@ -467,8 +467,7 @@ theorem exists_energyDensity_le_mul_exp_of_forall_le_norm_sub (m : ℕ) {c : ℝ
   refine ⟨65 / 64 * K₁ ^ 2 + 2 * K₂ ^ 2, R, by positivity,
     fun x D hx hsol hframe hD z ρ hR hρ ↦ ?_⟩
   have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
-  have hs₁ := normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
-    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z
+  have hs₁ := normSq_le_one_of_framed hx hsol hframe z
   -- The modulus defect is at most `K₁ exp (-(c / 2) ρ)`, and `|d_a α (1)| ≤ K₂ exp (-(c / 2) ρ)`.
   refine (energyDensity_le_of_equation_eq_zero (((hxi 2).differentiable (by simp)) z)
     (((hxi 3).differentiable (by simp)) z) (hsol z) (by linarith)

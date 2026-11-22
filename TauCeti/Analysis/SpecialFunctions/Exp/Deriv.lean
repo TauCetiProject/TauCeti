@@ -225,7 +225,6 @@ theorem ContDiff.isBigO_iteratedFDeriv_exp_sub_one {D : Type*} [NormedAddCommGro
     rw [fun_iteratedFDeriv_sub_apply (hexp.contDiffAt.of_le (by simp)) contDiffAt_const,
       iteratedFDeriv_const_of_ne n.succ_ne_zero, Pi.zero_apply, sub_zero]
 
-open Set in
 open scoped Nat in
 /-- **Pointwise bound on the derivatives of `exp f`.** Let `f` be `Cⁿ` on an open set containing
 `x`, with derivatives of orders `1` to `n` at `x` of norm at most `ε`. Then the derivative of order
@@ -258,12 +257,8 @@ theorem ContDiffOn.norm_iteratedFDeriv_exp_comp_le {E : Type*} [NormedAddCommGro
       · simp
       · rw [Real.rpow_inv_natCast_pow hε hn.ne']
         exact le_max_left _ _
-  have h := norm_iteratedFDerivWithin_comp_le (g := Real.exp) (t := univ) (C := Real.exp (f x))
-    (D := D) Real.contDiff_exp.contDiffOn hf le_rfl uniqueDiffOn_univ hs.uniqueDiffOn
-    (mapsTo_univ _ _) hx (fun i _ ↦ by
-      rw [iteratedFDerivWithin_univ, TauCeti.norm_iteratedFDeriv_real_exp])
-    (fun i hi hin ↦ by
-      rw [iteratedFDerivWithin_of_isOpen i hs hx]
-      exact (hD i hi hin).trans (hεD i hi hin))
-  rw [iteratedFDerivWithin_of_isOpen n hs hx] at h
+  have h := TauCeti.norm_iteratedFDeriv_comp_le_of_contDiffAt (g := Real.exp)
+    (C := Real.exp (f x)) (D := D) Real.contDiff_exp.contDiffAt (hf.contDiffAt (hs.mem_nhds hx))
+    (fun j _ ↦ (TauCeti.norm_iteratedFDeriv_real_exp j _).le)
+    (fun i hi hin ↦ (hD i hi hin).trans (hεD i hi hin))
   exact h.trans (mul_le_mul_of_nonneg_left hDn (by positivity))
