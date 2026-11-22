@@ -35,6 +35,8 @@ the codimension of its image, and the dimension of the source is at most that of
   quasi-finite morphism.
 * `AlgebraicGeometry.Scheme.Hom.strictMono`: a locally quasi-finite morphism
   is strictly monotone for the specialization order.
+* `AlgebraicGeometry.Scheme.Hom.isClosed_singleton_of_locallyQuasiFinite_of_isClosed`: for a
+  locally quasi-finite morphism from a Jacobson scheme, every point over a closed point is closed.
 * `AlgebraicGeometry.Scheme.Hom.coheight_le_coheight_apply`: under a locally quasi-finite morphism
   the coheight of a point is at most the coheight of its image.
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_le`: the source of a locally quasi-finite
@@ -130,6 +132,21 @@ theorem Scheme.Hom.strictMono {X Y : Scheme.{u}} (f : X ⟶ Y)
     (f.isDiscrete_preimage_singleton (f x)).eq_of_specializes (le_iff_specializes.mp hxy.le)
       hfxy.symm rfl
   exact hxy_eq ▸ le_rfl
+
+/-- For a locally quasi-finite morphism from a Jacobson scheme, every point over a closed point is
+closed. -/
+theorem Scheme.Hom.isClosed_singleton_of_locallyQuasiFinite_of_isClosed {X Y : Scheme.{u}}
+    [JacobsonSpace X] (f : X ⟶ Y) [LocallyQuasiFinite f] {x : X} (hy : IsClosed {f x}) :
+    IsClosed {x} := by
+  have hne : (closure ({x} : Set X) ∩ closedPoints X).Nonempty := by
+    rw [← closure_nonempty_iff,
+      JacobsonSpace.closure_inter_closedPoints_eq_closure isClosed_closure.isLocallyClosed,
+      closure_closure, closure_nonempty_iff]
+    exact ⟨x, rfl⟩
+  obtain ⟨z, hzx, hzcl⟩ := hne
+  have hspec : x ⤳ z := specializes_iff_mem_closure.mpr hzx
+  have hfz : f z = f x := Set.mem_singleton_iff.mp ((hspec.map f.continuous).mem_closed hy rfl)
+  exact ((f.isDiscrete_preimage_singleton (f x)).eq_of_specializes hspec rfl hfz) ▸ hzcl
 
 /-- Under a locally quasi-finite morphism the coheight of a point is at most the coheight of its
 image. -/

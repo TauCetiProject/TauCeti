@@ -16,8 +16,6 @@ public import TauCeti.AlgebraicGeometry.Morphisms.RamificationIdx.Pullback
 This file specializes base change of function fields and pointwise ramification indices to proper
 curves over a field `k` (`AlgebraicGeometry.Scheme.IsCurveOver`):
 
-* `AlgebraicGeometry.Scheme.IsCurveOver.isClosed_singleton_of_ne_genericPoint`: non-generic points
-  of a curve are closed.
 * `AlgebraicGeometry.Scheme.IsCurveOver.of_isPullback`: base change of a geometrically integral
   curve along an arbitrary field extension `L / k` is a curve over `L`.
 * `AlgebraicGeometry.Scheme.Hom.formallyUnramified_stalkMap_genericPoint_of_isSeparable`,
@@ -38,16 +36,6 @@ open CategoryTheory Limits AlgebraicGeometry
 universe u
 
 namespace AlgebraicGeometry.Scheme
-
-/-- Every point of a curve over `k` other than the generic point is closed. -/
-theorem IsCurveOver.isClosed_singleton_of_ne_genericPoint {k : Type u} [Field k]
-    {X : Scheme.{u}} [X.Over (Spec (.of k))] [X.IsCurveOver k] {x : X}
-    (hx : x ≠ genericPoint X) : IsClosed {x} :=
-  have : IsNoetherian X := IsCurveOver.isNoetherian k X
-  TauCeti.isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one
-    (IsCurveOver.coheight_le_one (k := k))
-    ((TauCeti.AlgebraicGeometry.Scheme.coheight_eq_one_iff_ne_genericPoint
-      (IsCurveOver.topologicalKrullDim_eq_one k).le).mpr hx)
 
 /-- **Base change of a geometrically integral curve.** If `X` is a geometrically integral curve
 over `k`, its pullback `X'` along an arbitrary field extension `L / k` (algebraic or
@@ -142,7 +130,8 @@ theorem ramificationIdxAt_eq_of_isPullback_of_isCurveOver_of_formallyUnramified_
       (by simpa [mem_ramificationLocus_iff] using hfu'),
       f.ramificationIdxAt_eq_one_of_notMem_ramificationLocus
       (by simpa [mem_ramificationLocus_iff] using hfu)]
-  · have hxcl := Scheme.IsCurveOver.isClosed_singleton_of_ne_genericPoint (k := k) hgen
+  · have hxcl := TauCeti.AlgebraicGeometry.Scheme.isClosed_singleton_of_ne_genericPoint
+      (Scheme.IsCurveOver.topologicalKrullDim_eq_one k).le hgen
     exact ramificationIdxAt_eq_of_isPullback_of_isClosed Hf HY hxcl
       (by simpa only [Set.image_singleton] using f.isClosedMap _ hxcl)
 
@@ -175,9 +164,11 @@ If `f : X ⟶ Y` is a dominant `k`-morphism of curves over an algebraically clos
 noncomputable def curveFiberEquivOfIsAlgClosed (y' : Y') (hy : gY y' ≠ genericPoint Y) :
     {x' : X' // f' x' = y'} ≃ {x : X // f x = gY y'} :=
   fiberEquivOfIsAlgClosed Hf HY y'
-    (Scheme.IsCurveOver.isClosed_singleton_of_ne_genericPoint (k := k) hy)
-    fun _ hx ↦ Scheme.IsCurveOver.isClosed_singleton_of_ne_genericPoint (k := k) fun hgen ↦
-      hy (hx ▸ hgen ▸ f.genericPoint_eq_of_isDominant)
+    (TauCeti.AlgebraicGeometry.Scheme.isClosed_singleton_of_ne_genericPoint
+      (Scheme.IsCurveOver.topologicalKrullDim_eq_one k).le hy)
+    fun _ hx ↦ TauCeti.AlgebraicGeometry.Scheme.isClosed_singleton_of_ne_genericPoint
+      (Scheme.IsCurveOver.topologicalKrullDim_eq_one k).le fun hgen ↦
+        hy (hx ▸ hgen ▸ f.genericPoint_eq_of_isDominant)
 
 /-- `curveFiberEquivOfIsAlgClosed` acts on underlying points via the projection `gX`. -/
 @[simp]

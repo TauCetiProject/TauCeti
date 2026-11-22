@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Etale.Kaehler
+public import Mathlib.RingTheory.Kaehler.TensorProduct
 public import Mathlib.RingTheory.LocalProperties.Submodule
 
 /-!
@@ -26,12 +27,18 @@ differentials. This injectivity is not restated here: it follows from Mathlib's
 `KaehlerDifferential.isLocalizedModule_map`, together with
 `Module.Flat.isSMulRegular_of_nonZeroDivisors` in the formally smooth case.
 
+In a pushout `B = S ⊗[R] A` of commutative rings and a prime `q` of `B` over `p = q ∩ A`, Kähler
+differentials commute with base change and localization:
+`B_q ⊗[A_p] Ω[A_p ⁄ R] ≃ₗ[B_q] Ω[B_q ⁄ S]`.
+
 ## Main results
 
 * `TauCeti.KaehlerDifferential.range_map_eq_localized₀_range`: localization of differentials
   localizes their image in the target differential module.
 * `TauCeti.KaehlerDifferential.mem_range_map_iff_forall_isMaximal`: membership in the global
   image can be checked using any family of maximal localizations.
+* `TauCeti.KaehlerDifferential.atPrimePushoutEquiv`: base change and localization of Kähler
+  differentials at a prime in a pushout `B = S ⊗[R] A`.
 
 ## References
 
@@ -46,10 +53,12 @@ noncomputable section
 
 namespace TauCeti
 
-open KaehlerDifferential
+open KaehlerDifferential TensorProduct
 open scoped nonZeroDivisors
 
 namespace KaehlerDifferential
+
+section Localization
 
 variable (R A B F : Type*) [CommRing R] [CommRing A] [CommRing B] [CommRing F]
   [Algebra R A] [Algebra R B] [Algebra R F] [Algebra A B] [Algebra A F]
@@ -111,6 +120,40 @@ theorem mem_range_map_iff_forall_isMaximal (ω : Ω[F⁄R]) :
     exact h P
 
 end Maximal
+
+end Localization
+
+section Pushout
+
+variable (R S A : Type*) {B : Type*} [CommRing R] [CommRing S] [CommRing A] [CommRing B]
+  [Algebra R S] [Algebra R A] [Algebra R B] [Algebra A B] [Algebra S B]
+  [IsScalarTower R A B] [IsScalarTower R S B] [Algebra.IsPushout R S A B]
+
+/-- In a pushout `B = S ⊗[R] A`, `B_q ⊗[A_{q ∩ A}] Ω[A_{q ∩ A} ⁄ R] ≃ₗ[B_q] Ω[B_q ⁄ S]`. -/
+def atPrimePushoutEquiv (q : Ideal B) [q.IsPrime] :
+    letI := Localization.AtPrime.algebraOfLiesOver (q.under A) q
+    (Localization.AtPrime q ⊗[Localization.AtPrime (q.under A)]
+      Ω[Localization.AtPrime (q.under A)⁄R]) ≃ₗ[Localization.AtPrime q]
+      Ω[Localization.AtPrime q⁄S] := by
+  let p := q.under A
+  let Ap := Localization.AtPrime p
+  let Bq := Localization.AtPrime q
+  let := Localization.AtPrime.algebraOfLiesOver p q
+  let eAp : Ω[Ap⁄R] ≃ₗ[Ap] Ap ⊗[A] Ω[A⁄R] :=
+    (LinearEquiv.extendScalarsOfIsLocalization p.primeCompl Ap
+      (IsLocalizedModule.iso p.primeCompl (KaehlerDifferential.map R R A Ap)).symm) ≪≫ₗ
+      LocalizedModule.equivTensorProduct p.primeCompl Ω[A⁄R]
+  let eBq : Bq ⊗[B] Ω[B⁄S] ≃ₗ[Bq] Ω[Bq⁄S] :=
+    (LocalizedModule.equivTensorProduct q.primeCompl Ω[B⁄S]).symm ≪≫ₗ
+      (LinearEquiv.extendScalarsOfIsLocalization q.primeCompl Bq
+        (IsLocalizedModule.iso q.primeCompl (KaehlerDifferential.map S S B Bq)))
+  exact AlgebraTensorModule.congr (LinearEquiv.refl Bq Bq) eAp ≪≫ₗ
+    AlgebraTensorModule.cancelBaseChange A Ap Bq Bq Ω[A⁄R] ≪≫ₗ
+    (AlgebraTensorModule.cancelBaseChange A B Bq Bq Ω[A⁄R]).symm ≪≫ₗ
+    AlgebraTensorModule.congr (LinearEquiv.refl Bq Bq)
+      (KaehlerDifferential.tensorKaehlerEquiv R S A B) ≪≫ₗ eBq
+
+end Pushout
 
 end KaehlerDifferential
 

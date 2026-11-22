@@ -7,9 +7,11 @@ module
 
 public import Mathlib.AlgebraicGeometry.Geometrically.Irreducible
 public import Mathlib.AlgebraicGeometry.Geometrically.Connected
+public import Mathlib.CategoryTheory.MorphismProperty.Descent
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.RingTheory.Spectrum.Prime.Homeomorph
 public import TauCeti.RingTheory.TensorProduct.IsDomain
+import TauCeti.AlgebraicGeometry.Geometrically.Descent
 
 /-!
 # Geometric irreducibility over a separably closed field, images, and dense opens
@@ -50,6 +52,8 @@ subschemes.
 
 * `AlgebraicGeometry.GeometricallyIrreducible.of_comp_of_surjective`: if `f ≫ g` is geometrically
   irreducible and `f` is surjective, then `g` is geometrically irreducible.
+* `TauCeti.AlgebraicGeometry.descendsAlong_surjective_geometricallyIrreducible`:
+  `GeometricallyIrreducible` descends along arbitrary surjective morphisms of schemes.
 * `TauCeti.AlgebraicGeometry.geometricallyIrreducible_Spec_of_isPurelyInseparable`: a purely
   inseparable field extension gives a geometrically irreducible morphism of spectra.
 * `TauCeti.AlgebraicGeometry.geometricallyIrreducible_Spec_of_isSepClosed`: over a separably closed
@@ -101,6 +105,12 @@ end AlgebraicGeometry
 namespace TauCeti
 
 namespace AlgebraicGeometry
+
+/-- `GeometricallyIrreducible` descends along arbitrary surjective morphisms of schemes. -/
+instance descendsAlong_surjective_geometricallyIrreducible :
+    MorphismProperty.DescendsAlong @GeometricallyIrreducible.{u} @Surjective.{u} :=
+  GeometricallyIrreducible.eq_geometrically ▸ geometrically_descendsAlong_surjective
+    (IrreducibleSpace ·) fun f _ _ hX ↦ have := hX; f.surjective.irreducibleSpace f.continuous
 
 /-- Over an algebraically closed field `K`, every morphism `Spec A ⟶ Spec K` from the spectrum of a
 domain is geometrically irreducible. -/

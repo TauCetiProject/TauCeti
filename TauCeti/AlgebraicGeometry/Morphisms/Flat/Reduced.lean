@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
 
 /-!
-# Descent of reducedness at a point along a flat morphism
+# Descent of reducedness along a flat morphism
 
 A flat morphism induces faithfully flat local homomorphisms on stalks. Consequently,
-reducedness of a source stalk implies reducedness of the corresponding target stalk.
+reducedness of a source stalk implies reducedness of the corresponding target stalk, and
+reducedness of a scheme descends along any flat surjective morphism.
 This permits checking reducedness using flat neighbourhoods, in particular étale charts.
 
 The faithful-flatness argument on stalks follows Mathlib's `epi_of_flat_of_surjective` in
@@ -37,5 +39,13 @@ theorem isReduced_stalk_of_flat {X Y : Scheme.{u}} (f : X ⟶ Y) [Flat f]
     Module.FaithfullyFlat.of_flat_of_isLocalHom
   exact isReduced_of_injective (algebraMap _ (X.presheaf.stalk x))
     (FaithfulSMul.algebraMap_injective _ _)
+
+/-- Reducedness of a scheme descends along any flat surjective morphism, with no Noetherian
+assumption. -/
+theorem isReduced_of_flat_of_surjective {X Y : Scheme.{u}} (f : X ⟶ Y) [Flat f] [Surjective f]
+    [IsReduced X] : IsReduced Y :=
+  have (y : Y) : _root_.IsReduced (Y.presheaf.stalk y) :=
+    let ⟨x, hx⟩ := f.surjective y; hx ▸ f.isReduced_stalk_of_flat x
+  isReduced_of_isReduced_stalk Y
 
 end AlgebraicGeometry.Scheme.Hom

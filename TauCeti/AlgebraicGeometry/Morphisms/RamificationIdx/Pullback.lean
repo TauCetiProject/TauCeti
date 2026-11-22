@@ -12,21 +12,18 @@ public import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus.Pullback
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.ClosedPoint
 public import TauCeti.RingTheory.RamificationInertia.BaseChange
-public import TauCeti.RingTheory.RamificationInertia.Bijective
 
 /-!
 # Pointwise ramification indices under base change and closed-fibre comparison
 
 This file relates `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt` to `ramificationLocus` and
-studies its behaviour under open immersions, `Spec.map`, commutative squares, and base change along
-an arbitrary field extension `L / k`:
+studies its behaviour in commutative squares and under base change along an arbitrary field
+extension `L / k`:
 
-* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_specMap`: affine comparison with
-  `Ideal.ramificationIdx`, together with invariance under surjective-on-stalks postcomposition and
-  open-immersion precomposition.
-* `notMem_ramificationLocus_iff_ramificationIdxAt_eq_one_and_isSeparable`,
-  `mem_ramificationLocus_iff_ramificationIdxAt_ne_one`: pointwise relation between
-  `ramificationLocus` and `ramificationIdxAt`.
+* `Scheme.Hom.notMem_ramificationLocus_iff_ramificationIdxAt_eq_one_and_isSeparable`,
+  `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_eq_one_of_notMem_ramificationLocus`,
+  `AlgebraicGeometry.Scheme.Hom.mem_ramificationLocus_iff_ramificationIdxAt_ne_one`: pointwise
+  relation between `ramificationLocus` and `ramificationIdxAt`.
 * `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_eq_of_commSq_of_eq_one`: horizontal comparison
   in a commutative square with flat left stalk map and vertical ramification indices `1`.
 * `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_eq_one_of_isPullback_of_isSeparable_residueField`,
@@ -48,102 +45,6 @@ open scoped TensorProduct
 universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
-
-section Basic
-
-/-- If the stalk of `X` at `x` is a field, then `f.ramificationIdxAt x = 1`. -/
-theorem ramificationIdxAt_eq_one_of_isField {X Y : Scheme.{u}} (f : X ⟶ Y) {x : X}
-    (hx : IsField (X.presheaf.stalk x)) : f.ramificationIdxAt x = 1 := by
-  let := (f.stalkMap x).hom.toAlgebra; let := hx.toField
-  rw [ramificationIdxAt_def, isField_iff_maximalIdeal_eq.mp hx, Ideal.ramificationIdx_bot_eq_one]
-
-/-- If `f.stalkMap x` is surjective, `f.ramificationIdxAt x = 1`. -/
-theorem ramificationIdxAt_eq_one_of_surjective_stalkMap {X Y : Scheme.{u}} (f : X ⟶ Y) {x : X}
-    (hsurj : Function.Surjective (f.stalkMap x).hom) : f.ramificationIdxAt x = 1 := by
-  let := (f.stalkMap x).hom.toAlgebra
-  rw [ramificationIdxAt_def, ramificationIdx_maximalIdeal_eq_one_iff]
-  exact Ideal.map_comap_of_surjective _ hsurj _
-
-/-- A morphism surjective on stalks has ramification index `1` at every point. -/
-@[simp]
-theorem ramificationIdxAt_eq_one_of_surjectiveOnStalks {X Y : Scheme.{u}} (f : X ⟶ Y)
-    [SurjectiveOnStalks f] (x : X) : f.ramificationIdxAt x = 1 :=
-  f.ramificationIdxAt_eq_one_of_surjective_stalkMap (SurjectiveOnStalks.stalkMap_surjective f x)
-
-/-- Postcomposing `f` with `g` surjective on stalks at `f x` preserves `ramificationIdxAt`. -/
-theorem ramificationIdxAt_comp_of_surjective_stalkMap {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
-    (x : X) (hsurj : Function.Surjective (g.stalkMap (f x)).hom) :
-    (f ≫ g).ramificationIdxAt x = f.ramificationIdxAt x := by
-  let : Algebra (Z.presheaf.stalk ((f ≫ g) x)) (Y.presheaf.stalk (f x)) :=
-    (g.stalkMap (f x)).hom.toAlgebra
-  let : Algebra (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := (f.stalkMap x).hom.toAlgebra
-  let : Algebra (Z.presheaf.stalk ((f ≫ g) x)) (X.presheaf.stalk x) :=
-    ((f ≫ g).stalkMap x).hom.toAlgebra
-  have : IsScalarTower (Z.presheaf.stalk ((f ≫ g) x)) (Y.presheaf.stalk (f x))
-      (X.presheaf.stalk x) :=
-    .of_algebraMap_eq' (congrArg CommRingCat.Hom.hom (Scheme.Hom.stalkMap_comp f g x))
-  rw [ramificationIdxAt_def, ramificationIdxAt_def]
-  exact (Ideal.ramificationIdx_eq_of_surjective hsurj _).symm
-
-/-- Postcomposing `f` with a morphism surjective on stalks preserves `ramificationIdxAt`. -/
-@[simp]
-theorem ramificationIdxAt_comp_of_surjectiveOnStalks {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
-    [SurjectiveOnStalks g] (x : X) :
-    (f ≫ g).ramificationIdxAt x = f.ramificationIdxAt x :=
-  ramificationIdxAt_comp_of_surjective_stalkMap f g x
-    (SurjectiveOnStalks.stalkMap_surjective g (f x))
-
-/-- Precomposing with an open immersion preserves `ramificationIdxAt`. -/
-theorem ramificationIdxAt_isOpenImmersion_comp {X Y Z : Scheme.{u}} (ι : X ⟶ Y) [IsOpenImmersion ι]
-    (f : Y ⟶ Z) (x : X) : (ι ≫ f).ramificationIdxAt x = f.ramificationIdxAt (ι x) := by simp
-
-/-- In a commutative square `ι ≫ f' = h ≫ j` with open immersions `ι` and `j`,
-`f'.ramificationIdxAt (ι q) = h.ramificationIdxAt q`. -/
-theorem ramificationIdxAt_eq_of_isOpenImmersion_square {X₀ Y₀ X' Y' : Scheme.{u}} (ι : X₀ ⟶ X')
-    (f' : X' ⟶ Y') (h : X₀ ⟶ Y₀) (j : Y₀ ⟶ Y') [IsOpenImmersion ι] [IsOpenImmersion j]
-    (e : ι ≫ f' = h ≫ j) (q : X₀) :
-    f'.ramificationIdxAt (ι q) = h.ramificationIdxAt q := by
-  rw [← ramificationIdxAt_isOpenImmersion_comp ι f' q, e,
-    ramificationIdxAt_comp_of_surjectiveOnStalks]
-
-/-- For `Spec.map (algebraMap R S)`, `ramificationIdxAt` at `q` is `q.asIdeal.ramificationIdx R`. -/
-@[simp]
-theorem ramificationIdxAt_specMap {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
-    (q : Spec (.of S)) :
-    (Spec.map (CommRingCat.ofHom (algebraMap R S))).ramificationIdxAt q =
-      q.asIdeal.ramificationIdx R := by
-  have := q.isPrime
-  let φ := CommRingCat.ofHom (algebraMap R S)
-  let p := PrimeSpectrum.comap φ.hom q
-  have : p.asIdeal.IsPrime := p.isPrime; have : q.asIdeal.LiesOver p.asIdeal := ⟨rfl⟩
-  let Rp := Localization.AtPrime p.asIdeal; let Sq := Localization.AtPrime q.asIdeal
-  let : Algebra Rp Sq := (Localization.localRingHom p.asIdeal q.asIdeal φ.hom rfl).toAlgebra
-  have : IsScalarTower R Rp Sq := .of_algebraMap_eq fun r ↦
-    (Localization.localRingHom_to_map p.asIdeal q.asIdeal φ.hom rfl r).symm
-  have : IsLocalHom (algebraMap Rp Sq) :=
-    Localization.isLocalHom_localRingHom p.asIdeal q.asIdeal φ.hom rfl
-  let SR := (Spec (.of R)).presheaf.stalk ((Spec.map φ) q)
-  let SS := (Spec (.of S)).presheaf.stalk q
-  let ep : CommRingCat.of Rp ≅ SR := (AlgebraicGeometry.Spec.stalkIso (.of R) p).symm
-  let eq : SS ≅ CommRingCat.of Sq := AlgebraicGeometry.Spec.stalkIso (.of S) q
-  let : Algebra Rp SR := ep.hom.hom.toAlgebra
-  let : Algebra SR SS := ((Spec.map φ).stalkMap q).hom.toAlgebra
-  let : Algebra SR Sq := (((Spec.map φ).stalkMap q) ≫ eq.hom).hom.toAlgebra
-  have hsq : ep.hom ≫ (Spec.map φ).stalkMap q ≫ eq.hom = CommRingCat.ofHom (algebraMap Rp Sq) :=
-    (Iso.inv_comp_eq ep.symm).mpr ((Iso.comp_inv_eq eq).mp <|
-      (Category.assoc ep.symm.hom _ eq.inv).trans (localRingHom_comp_stalkIso φ q)).symm
-  have : IsScalarTower Rp SR Sq := .of_algebraMap_eq' (congrArg CommRingCat.Hom.hom hsq).symm
-  let algEq : SS ≃ₐ[SR] Sq := AlgEquiv.ofRingEquiv (f := eq.commRingCatIsoToRingEquiv) fun _ ↦ rfl
-  have : IsLocalHom algEq.toRingHom := ⟨fun a ha ↦ (isUnit_map_iff algEq a).mp ha⟩
-  have hmax : (maximalIdeal SS).map algEq = maximalIdeal Sq := by
-    change (maximalIdeal SS).map algEq.toRingHom = maximalIdeal Sq
-    rw [← maximalIdeal_comap algEq.toRingHom]
-    exact Ideal.map_comap_of_surjective algEq.toRingHom algEq.surjective _
-  rw [ramificationIdxAt_def, ← Ideal.ramificationIdx_map_algEquiv algEq, hmax,
-    Ideal.ramificationIdx_eq_of_surjective (ConcreteCategory.bijective_of_isIso ep.hom).surjective,
-    Ideal.ramificationIdx_maximalIdeal_localization_of_liesOver p.asIdeal q.asIdeal]
-
-end Basic
 
 section RamificationLocus
 
@@ -234,31 +135,6 @@ end CommSq
 
 section FieldPullback
 
-/-- At a closed point `x` of a scheme `X` locally of finite type over `Spec k`, `κ(x) / k` is
-finite. -/
-theorem finite_residueField_of_isClosed {k : Type u} [Field k] {X : Scheme.{u}}
-    [X.Over (Spec (.of k))] [LocallyOfFiniteType (X ↘ Spec (.of k))] {x : X}
-    (hx : IsClosed {x}) : Module.Finite k (X.residueField x) := by
-  have := isClosed_singleton_iff_isClosedImmersion.mp hx
-  have hfin : IsFinite (X.fromSpecResidueField x ≫ (X ↘ Spec (.of k))) :=
-    isFinite_iff_locallyOfFiniteType_of_jacobsonSpace.mpr inferInstance
-  rw [X.fromSpecResidueField_comp_over (k := k)] at hfin
-  exact RingHom.finite_algebraMap.mp ((IsFinite.SpecMap_iff _).mp hfin)
-
-/-- For a locally quasi-finite morphism from a Jacobson scheme, every point over a closed point is
-closed. -/
-theorem isClosed_singleton_of_locallyQuasiFinite_of_isClosed {X Y : Scheme.{u}} [JacobsonSpace X]
-    (f : X ⟶ Y) [LocallyQuasiFinite f] {x : X} (hy : IsClosed {f x}) : IsClosed {x} := by
-  have hne : (closure ({x} : Set X) ∩ closedPoints X).Nonempty := by
-    rw [← closure_nonempty_iff,
-      JacobsonSpace.closure_inter_closedPoints_eq_closure isClosed_closure.isLocallyClosed,
-      closure_closure, closure_nonempty_iff]
-    exact ⟨x, rfl⟩
-  obtain ⟨z, hzx, hzcl⟩ := hne
-  have hspec : x ⤳ z := specializes_iff_mem_closure.mpr hzx
-  have hfz : f z = f x := Set.mem_singleton_iff.mp ((hspec.map f.continuous).mem_closed hy rfl)
-  exact ((f.isDiscrete_preimage_singleton (f x)).eq_of_specializes hspec rfl hfz) ▸ hzcl
-
 section SinglePullback
 
 variable {k L : Type u} [Field k] [Field L] [Algebra k L] {X X' : Scheme.{u}}
@@ -309,7 +185,7 @@ theorem ramificationIdxAt_eq_one_of_isPullback_of_isSeparable_residueField {x' :
 theorem ramificationIdxAt_eq_one_of_isPullback_of_isClosed [PerfectField k]
     [LocallyOfFiniteType (X ↘ Spec (.of k))] {x' : X'} (hx : IsClosed {gX x'}) :
     gX.ramificationIdxAt x' = 1 :=
-  have := finite_residueField_of_isClosed (k := k) hx
+  have := Scheme.finite_residueField_of_isClosed (k := k) hx
   ramificationIdxAt_eq_one_of_isPullback_of_isSeparable_residueField HX inferInstance
 
 /-- Over an algebraically closed field `k`, every closed point of a locally-finite-type `k`-scheme
@@ -323,7 +199,8 @@ theorem existsUnique_preimage_of_isPullback_of_isAlgClosed [IsAlgClosed k]
   have hw : (b ≫ s) ≫ (X ↘ Spec (.of k)) = 𝟙 _ ≫ b := by simp [hs]
   have hpre := TauCeti.AlgebraicGeometry.preimage_singleton_section_closedPoint_of_isPullback HX
     hs (HX.lift_snd (b ≫ s) (𝟙 _) hw) (HX.lift_fst (b ≫ s) (𝟙 _) hw)
-  rw [show s (closedPoint k) = x from pointOfClosedPoint_apply (X ↘ Spec (.of k)) x hx _] at hpre
+  have hsx : s (closedPoint k) = x := pointOfClosedPoint_apply (X ↘ Spec (.of k)) x hx _
+  rw [hsx] at hpre
   exact ⟨HX.lift (b ≫ s) (𝟙 _) hw (closedPoint L),
     Set.mem_preimage.mp (hpre.symm ▸ Set.mem_singleton _),
     fun _ hz ↦ Set.mem_singleton_iff.mp (hpre ▸ Set.mem_preimage.mpr hz)⟩
@@ -363,8 +240,8 @@ theorem ramificationIdxAt_eq_of_isPullback_of_isClosed [PerfectField k]
     [LocallyOfFiniteType (X ↘ Spec (.of k))] [LocallyOfFiniteType (Y ↘ Spec (.of k))]
     {x' : X'} (hx : IsClosed {gX x'}) (hy : IsClosed {f (gX x')}) :
     f'.ramificationIdxAt x' = f.ramificationIdxAt (gX x') :=
-  have := finite_residueField_of_isClosed (k := k) hx
-  have := finite_residueField_of_isClosed (k := k) hy
+  have := Scheme.finite_residueField_of_isClosed (k := k) hx
+  have := Scheme.finite_residueField_of_isClosed (k := k) hy
   ramificationIdxAt_eq_of_isPullback_of_isSeparable_residueField Hf HY inferInstance inferInstance
 
 section AlgClosedFiber

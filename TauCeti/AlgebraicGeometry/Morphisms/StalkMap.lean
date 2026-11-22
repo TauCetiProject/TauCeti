@@ -164,6 +164,29 @@ theorem _root_.RingHom.RespectsIso.stalkMap_comp_isOpenImmersion_iff
   -- The stalks at `(i ≫ f) x` and `f (i x)` agree definitionally, but not reducibly.
   exact Iff.rfl
 
+/-- For an open immersion `j`, a ring-hom property `Q` stable under isomorphisms holds for the
+stalk map of `h ≫ j` at `q` iff it holds for the stalk map of `h` at `q`. -/
+theorem _root_.RingHom.RespectsIso.stalkMap_comp_isOpenImmersion_right_iff
+    {Q : ∀ {R S : Type u} [CommRing R] [CommRing S], (R →+* S) → Prop}
+    (hQ : RingHom.RespectsIso Q) {X₀ Y₀ Y : Scheme.{u}} (h : X₀ ⟶ Y₀) (j : Y₀ ⟶ Y)
+    [IsOpenImmersion j] (q : X₀) :
+    Q ((h ≫ j).stalkMap q).hom ↔ Q (h.stalkMap q).hom :=
+  Iff.trans (by rw [← CommRingCat.hom_comp, ← Scheme.Hom.stalkMap_comp]; exact Iff.rfl)
+    (hQ.cancel_left_isIso (j.stalkMap (h q)) (h.stalkMap q))
+
+/-- In a commutative square `ι ≫ f' = h ≫ j` with open immersions `ι` and `j`, any
+isomorphism-invariant ring-hom property holds for `f'.stalkMap (ι q)` iff it holds for
+`h.stalkMap q`. -/
+theorem _root_.RingHom.RespectsIso.stalkMap_iff_of_isOpenImmersion_square
+    {Q : ∀ {R S : Type u} [CommRing R] [CommRing S], (R →+* S) → Prop}
+    (hQ : RingHom.RespectsIso Q) {X₀ Y₀ X' Y' : Scheme.{u}} (ι : X₀ ⟶ X') (f' : X' ⟶ Y')
+    (h : X₀ ⟶ Y₀) (j : Y₀ ⟶ Y') [IsOpenImmersion ι] [IsOpenImmersion j]
+    (e : ι ≫ f' = h ≫ j) (q : X₀) :
+    Q (f'.stalkMap (ι q)).hom ↔ Q (h.stalkMap q).hom :=
+  (hQ.stalkMap_comp_isOpenImmersion_iff ι f' q).symm.trans <|
+    (iff_of_eq (congrArg (fun k : X₀ ⟶ Y' ↦ Q (k.stalkMap q).hom) e)).trans
+      (hQ.stalkMap_comp_isOpenImmersion_right_iff h j q)
+
 /-- Let `V ⊆ f⁻¹ U` with `U` and `V` affine, and let `P` be a morphism property attached to the
 ring-hom property `Q`. If `Q` holds for `Γ(Y, U) → Γ(X, V)_r`, then `P` holds for the restriction
 `D(r) ⟶ U` of `f`. -/

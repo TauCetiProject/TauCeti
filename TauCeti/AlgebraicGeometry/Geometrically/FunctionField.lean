@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.ConstantField
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.FractionField
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Parameter
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.TensorProduct
 public import TauCeti.RingTheory.TensorProduct.IsDomain
 
@@ -58,9 +59,6 @@ which supplies the integrality of the base change `X ×_k Spec L`.
   the base change of `X` to an algebraic extension `K / k` is the compositum `k(X) · K`;
 * `TauCeti.AlgebraicGeometry.isIntegrallyClosedIn_of_constantCompositum_eq_top`: `K` is
   algebraically closed in `k(X) · K`.
-* `AlgebraicGeometry.IsDominant.of_flat`, `AlgebraicGeometry.IsDominant.of_isPullback_of_flat`,
-  `AlgebraicGeometry.Scheme.Hom.isIso_functionFieldMap_of_isOpenImmersion`: dominance under flat
-  morphisms/pullbacks and generic-stalk isomorphisms for dominant open immersions.
 * `TauCeti.AlgebraicGeometry.functionFieldTensorToBaseChange`,
   `TauCeti.AlgebraicGeometry.isFractionRing_functionField_tensorProduct_of_isPullback`,
   `TauCeti.AlgebraicGeometry.constantCompositum_functionField_eq_top_of_isPullback`,
@@ -83,33 +81,6 @@ public section
 
 open CategoryTheory Limits _root_.AlgebraicGeometry
 open scoped TensorProduct
-
-namespace AlgebraicGeometry
-
-universe u
-
-/-- Any flat morphism between irreducible schemes sends the generic point to the generic point and
-is therefore dominant. -/
-theorem IsDominant.of_flat {X Y : Scheme.{u}} [IrreducibleSpace X] [IrreducibleSpace Y]
-    (g : X ⟶ Y) [Flat g] : IsDominant g := by
-  obtain ⟨z, hz, hgz⟩ := Flat.generalizingMap g ((genericPoint_spec Y).specializes trivial)
-  rw [isDominant_iff_genericPoint_eq, ← hgz]
-  exact congrArg g (((genericPoint_spec X).specializes trivial).antisymm hz).eq
-
-/-- The pullback of a dominant morphism between irreducible schemes along any flat morphism is
-dominant, with no irreducibility or openness assumption on the base change. -/
-theorem IsDominant.of_isPullback_of_flat {X Y X' Y' : Scheme.{u}} [IrreducibleSpace X]
-    [IrreducibleSpace Y] {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {gY : Y' ⟶ Y}
-    [IsDominant f] [Flat gY] (H : IsPullback gX f' f gY) : IsDominant f' := by
-  rw [isDominant_iff, denseRange_iff_closure_range, Set.eq_univ_iff_forall]
-  intro y'
-  obtain ⟨z', hz', hgz'⟩ := Flat.generalizingMap gY ((genericPoint_spec Y).specializes trivial)
-  obtain ⟨w, -, hw⟩ := Scheme.Pullback.exists_preimage_pullback (genericPoint X) z'
-    (f.genericPoint_eq_of_isDominant.trans hgz'.symm)
-  exact hz'.mem_closed isClosed_closure
-    (subset_closure ⟨H.isoPullback.inv w, by simp [← Scheme.Hom.comp_apply, hw]⟩)
-
-end AlgebraicGeometry
 
 namespace TauCeti
 
@@ -252,13 +223,11 @@ noncomputable def functionFieldTensorToBaseChange :
   letI : Algebra K (X.functionField ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
   letI : Algebra k Y.functionField :=
     ((algebraMap K Y.functionField).comp (algebraMap k K)).toAlgebra
+  haveI : IsScalarTower k K Y.functionField := .of_algebraMap_eq fun _ ↦ rfl
   let φX : X.functionField →ₐ[k] Y.functionField :=
     ⟨g.functionFieldMap.hom, functionFieldMap_baseChange_algebraMap H⟩
-  { __ := (Algebra.TensorProduct.productMap φX
-      (⟨algebraMap K Y.functionField, fun _ ↦ rfl⟩ : K →ₐ[k] Y.functionField)).toRingHom
-    commutes' c := by
-      change (Algebra.TensorProduct.productMap φX _) (1 ⊗ₜ[k] c) = algebraMap K Y.functionField c
-      simp }
+  (Algebra.TensorProduct.liftEquivRight k K X.functionField Y.functionField φX).comp
+    (Algebra.TensorProduct.commRight k K X.functionField).symm.toAlgHom
 
 /-- On pure tensors, `functionFieldTensorToBaseChange` sends `a ⊗ₜ c` to `g^* a * c`. -/
 @[simp]
@@ -268,6 +237,7 @@ theorem functionFieldTensorToBaseChange_tmul (a : X.functionField) (c : K) :
     letI : Algebra K (X.functionField ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
     functionFieldTensorToBaseChange H (a ⊗ₜ[k] c) =
       g.functionFieldMap a * algebraMap K Y.functionField c := by
+  rw [mul_comm]
   simp [functionFieldTensorToBaseChange]
 
 /-- Embed `Γ(X, U) ⊗[k] K` into `K(Y)` as a fraction-field map compatible with `g` and `K`. -/
@@ -282,14 +252,20 @@ private lemma exists_chart_to_baseChange_functionField {U : X.Opens} (hU : IsAff
       (∀ c : K, α (1 ⊗ₜ[k] c) = algebraMap K Y.functionField c) := by
   have := isIntegral_of_isPullback_spec H; have := isDominant_of_isPullback_spec H
   let A := Γ(X, U); let R := CommRingCat.of (A ⊗[k] K)
-  let ι : Spec R ⟶ Y :=
-    (pullbackSpecIso k A K).inv ≫ (pullback.congrHom hw.symm rfl).hom ≫
-      (pullbackRightPullbackFstIso (X ↘ Spec (.of k)) _ hU.fromSpec).inv ≫
-      pullback.snd _ _ ≫ H.isoPullback.inv
+  have := hU.isOpenImmersion_fromSpec
+  obtain ⟨ι₀, _, hι₀K, hι₀g, -⟩ := exists_isOpenImmersion_spec_tensorProduct_of_isPullback H
+    (iY := 𝟙 (Spec (.of k))) (iY' := 𝟙 (Spec (.of K))) (iX := hU.fromSpec)
+    rfl ((Category.comp_id _).trans hw.symm)
+  let cIso := (Algebra.TensorProduct.comm k K A).toRingEquiv.toCommRingCatIso
+  let ι : Spec R ⟶ Y := Spec.map cIso.hom ≫ ι₀
   have hιK : ι ≫ (Y ↘ Spec (.of K)) = Spec.map (CommRingCat.ofHom
-      (Algebra.TensorProduct.includeRight : K →ₐ[k] A ⊗[k] K).toRingHom) := by simp [ι]
+      (Algebra.TensorProduct.includeRight : K →ₐ[k] A ⊗[k] K).toRingHom) := by
+    rw [Category.assoc, hι₀K, Category.comp_id, ← Spec.map_comp]
+    congr 1
   have hιg : ι ≫ g = Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫
-      hU.fromSpec := by simp [ι]
+      hU.fromSpec := by
+    rw [Category.assoc, hι₀g, ← Spec.map_comp_assoc]
+    congr 2
   have : IsIntegral (Spec R) := isIntegral_of_isOpenImmersion ι
   have hDomR : IsDomain R := (affine_isIntegral_iff R).mp this
   have : IsDominant ι := isDominant_iff_genericPoint_eq.mpr (genericPoint_eq_of_isOpenImmersion ι)
@@ -297,11 +273,11 @@ private lemma exists_chart_to_baseChange_functionField {U : X.Opens} (hU : IsAff
   let e : (Spec R).functionField ≃+* Y.functionField :=
     (asIso ι.functionFieldMap).symm.commRingCatIsoToRingEquiv
   let α : (A ⊗[k] K) →+* Y.functionField := e.toRingHom.comp φ₀.hom
+  have hα_eq : CommRingCat.ofHom α = φ₀ ≫ inv ι.functionFieldMap := rfl
   have hSpecα : Spec.map (CommRingCat.ofHom α) ≫ ι = Y.fromSpecStalk (genericPoint Y) := by
     have hφ₀ : Spec.map φ₀ = (Spec R).fromSpecStalk (genericPoint (Spec R)) :=
       (_root_.AlgebraicGeometry.Spec.fromSpecStalk_eq' R (genericPoint (Spec R))).symm
-    change Spec.map (φ₀ ≫ inv ι.functionFieldMap) ≫ ι = _
-    rw [Spec.map_comp_assoc, reassoc_of% hφ₀, ← ι.SpecMap_functionFieldMap_fromSpecStalk,
+    rw [hα_eq, Spec.map_comp_assoc, reassoc_of% hφ₀, ← ι.SpecMap_functionFieldMap_fromSpecStalk,
       Spec.map_inv, IsIso.inv_hom_id_assoc]
   let _ : Algebra (A ⊗[k] K) (Spec R).functionField := φ₀.hom.toAlgebra
   let _ : Algebra (A ⊗[k] K) Y.functionField := α.toAlgebra

@@ -6,19 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Geometrically.Reduced
+public import Mathlib.CategoryTheory.MorphismProperty.Descent
 public import Mathlib.FieldTheory.Perfect
+import TauCeti.AlgebraicGeometry.Geometrically.Descent
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Reduced
 import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
 # Geometrically reduced morphisms and schemes over perfect fields
 
 Mathlib's `AlgebraicGeometry.GeometricallyReduced` is stable under base change. This file records
-its compatibility with isomorphisms and Zariski-local descent on the target, reducedness of base
-changes along morphisms from integral subsingleton schemes (such as spectra of fields, without a
-flatness or Noetherian hypothesis), and shows that every reduced scheme over a perfect field is
-geometrically reduced over that field, without any finiteness hypothesis. In particular, typeclass
-search supplies `GeometricallyReduced` for reduced schemes over algebraically closed, finite, and
-characteristic-zero fields.
+its compatibility with isomorphisms, Zariski-local and surjective descent on the target, reducedness
+of base changes along morphisms from integral subsingleton schemes (such as spectra of fields,
+without a flatness or Noetherian hypothesis), and shows that every reduced scheme over a perfect
+field is geometrically reduced over that field, without any finiteness hypothesis. In particular,
+typeclass search supplies `GeometricallyReduced` for reduced schemes over algebraically closed,
+finite, and characteristic-zero fields.
 
 ## Main declarations
 
@@ -26,6 +29,8 @@ characteristic-zero fields.
   isomorphisms on both source and target.
 * `TauCeti.AlgebraicGeometry.isZariskiLocalAtTarget_geometricallyReduced`: `GeometricallyReduced`
   is Zariski-local on the target.
+* `TauCeti.AlgebraicGeometry.descendsAlong_surjective_geometricallyReduced`: `GeometricallyReduced`
+  descends along arbitrary surjective morphisms of schemes.
 * `TauCeti.AlgebraicGeometry.isReduced_pullback_of_geometricallyReduced` and
   `TauCeti.AlgebraicGeometry.isReduced_over_pullback_obj_left`: pulling back a geometrically
   reduced morphism along a morphism from an integral subsingleton scheme (such as `Spec K` for a
@@ -58,6 +63,12 @@ instance respectsIso_geometricallyReduced : MorphismProperty.RespectsIso @Geomet
 instance isZariskiLocalAtTarget_geometricallyReduced :
     IsZariskiLocalAtTarget @GeometricallyReduced :=
   GeometricallyReduced.eq_geometrically ▸ inferInstance
+
+/-- `GeometricallyReduced` descends along arbitrary surjective morphisms of schemes. -/
+instance descendsAlong_surjective_geometricallyReduced :
+    MorphismProperty.DescendsAlong @GeometricallyReduced.{u} @Surjective.{u} :=
+  GeometricallyReduced.eq_geometrically ▸ geometrically_descendsAlong_surjective IsReduced
+    fun f _ _ hX ↦ have := hX; f.isReduced_of_flat_of_surjective
 
 /-- Pulling back a geometrically reduced morphism along a morphism from an integral subsingleton
 scheme (in particular, `Spec K` for a field `K`) gives a reduced scheme, without any flatness or

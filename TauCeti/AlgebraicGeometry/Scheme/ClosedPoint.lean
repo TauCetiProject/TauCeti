@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.ResidueField
 public import TauCeti.AlgebraicGeometry.ResidueDegree
+public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 
 /-!
 # Residue fields at closed points are finite over global functions
@@ -27,6 +28,8 @@ degree of a closed point `x` of a curve.
   `Γ(X, ⊤) ⟶ κ(x)` at a closed point is finite;
 * `AlgebraicGeometry.Scheme.Hom.residueDegree_ne_zero_of_isClosed`: the residue degree
   `[κ(x) : κ(f x)]` at a closed point is finite, hence nonzero.
+* `AlgebraicGeometry.Scheme.finite_residueField_of_isClosed`: for a scheme locally of finite type
+  over `Spec k`, the residue field at a closed point is finite over `k`.
 
 The input is Mathlib's `isFinite_iff_locallyOfFiniteType_of_jacobsonSpace` applied to
 `Spec κ(x) ⟶ X ⟶ Y`, as in Mathlib's `AlgebraicGeometry.residueFieldIsoBase`.
@@ -75,6 +78,17 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.residueDegree_ne_zero_of_isClosed
   have : IsFinite (Spec.map (f.residueFieldMap x)) :=
     IsFinite.of_comp _ (Y.fromSpecResidueField (f x))
   exact (f.residueDegree_ne_zero_iff x).mpr ((IsFinite.SpecMap_iff _).mp this)
+
+/-- At a closed point `x` of a scheme `X` locally of finite type over `Spec k`, `κ(x) / k` is
+finite. -/
+theorem _root_.AlgebraicGeometry.Scheme.finite_residueField_of_isClosed {k : Type u} [Field k]
+    {X : Scheme.{u}} [X.Over (Spec (.of k))] [LocallyOfFiniteType (X ↘ Spec (.of k))] {x : X}
+    (hx : IsClosed {x}) : Module.Finite k (X.residueField x) := by
+  have := isClosed_singleton_iff_isClosedImmersion.mp hx
+  have hfin : IsFinite (X.fromSpecResidueField x ≫ (X ↘ Spec (.of k))) :=
+    isFinite_iff_locallyOfFiniteType_of_jacobsonSpace.mpr inferInstance
+  rw [X.fromSpecResidueField_comp_over (k := k)] at hfin
+  exact RingHom.finite_algebraMap.mp ((IsFinite.SpecMap_iff _).mp hfin)
 
 end AlgebraicGeometry
 

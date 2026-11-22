@@ -7,7 +7,10 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
+public import Mathlib.AlgebraicGeometry.Morphisms.SurjectiveOnStalks
+public import TauCeti.RingTheory.RamificationInertia.Bijective
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
+public import TauCeti.RingTheory.RamificationInertia.Localization
 public import TauCeti.RingTheory.RamificationInertia.QuasiFinite
 
 /-!
@@ -41,6 +44,14 @@ quasi-finite and `Ideal.ramificationIdx_pos_of_quasiFiniteAt` applies.
   maximal ideal with exponent the ramification index.
 * `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_eq_of_map_maximalIdeal_eq_pow`: when the source
   stalk is a DVR, the index equals any exponent satisfying that maximal-ideal identity.
+* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_eq_one_of_isField`,
+  `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_eq_one_of_surjectiveOnStalks`,
+  `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_comp_of_surjectiveOnStalks`,
+  `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_isOpenImmersion_comp`,
+  `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_eq_of_isOpenImmersion_square`: invariance under
+  field stalks, morphisms surjective on stalks, and open immersions.
+* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_specMap`: affine comparison with
+  `Ideal.ramificationIdx`.
 
 ## References
 
@@ -159,5 +170,96 @@ theorem ramificationIdxAt_eq_of_map_maximalIdeal_eq_pow
     inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
   rw [ramificationIdxAt_def]
   exact TauCeti.IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow hexponent
+
+/-- If the stalk of `X` at `x` is a field, then `f.ramificationIdxAt x = 1`. -/
+theorem ramificationIdxAt_eq_one_of_isField {x : X} (hx : IsField (X.presheaf.stalk x)) :
+    f.ramificationIdxAt x = 1 := by
+  let := (f.stalkMap x).hom.toAlgebra; let := hx.toField
+  rw [ramificationIdxAt_def, isField_iff_maximalIdeal_eq.mp hx, Ideal.ramificationIdx_bot_eq_one]
+
+/-- If `f.stalkMap x` is surjective, `f.ramificationIdxAt x = 1`. -/
+theorem ramificationIdxAt_eq_one_of_surjective_stalkMap {x : X}
+    (hsurj : Function.Surjective (f.stalkMap x).hom) : f.ramificationIdxAt x = 1 := by
+  let := (f.stalkMap x).hom.toAlgebra
+  rw [ramificationIdxAt_def, ramificationIdx_maximalIdeal_eq_one_iff]
+  exact Ideal.map_comap_of_surjective _ hsurj _
+
+/-- A morphism surjective on stalks has ramification index `1` at every point. -/
+@[simp]
+theorem ramificationIdxAt_eq_one_of_surjectiveOnStalks [SurjectiveOnStalks f] (x : X) :
+    f.ramificationIdxAt x = 1 :=
+  f.ramificationIdxAt_eq_one_of_surjective_stalkMap (SurjectiveOnStalks.stalkMap_surjective f x)
+
+/-- Postcomposing `f` with `g` surjective on stalks at `f x` preserves `ramificationIdxAt`. -/
+theorem ramificationIdxAt_comp_of_surjective_stalkMap {Z : Scheme.{u}} (g : Y ⟶ Z)
+    (x : X) (hsurj : Function.Surjective (g.stalkMap (f x)).hom) :
+    (f ≫ g).ramificationIdxAt x = f.ramificationIdxAt x := by
+  let : Algebra (Z.presheaf.stalk ((f ≫ g) x)) (Y.presheaf.stalk (f x)) :=
+    (g.stalkMap (f x)).hom.toAlgebra
+  let : Algebra (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := (f.stalkMap x).hom.toAlgebra
+  let : Algebra (Z.presheaf.stalk ((f ≫ g) x)) (X.presheaf.stalk x) :=
+    ((f ≫ g).stalkMap x).hom.toAlgebra
+  have : IsScalarTower (Z.presheaf.stalk ((f ≫ g) x)) (Y.presheaf.stalk (f x))
+      (X.presheaf.stalk x) :=
+    .of_algebraMap_eq' (congrArg CommRingCat.Hom.hom (Scheme.Hom.stalkMap_comp f g x))
+  rw [ramificationIdxAt_def, ramificationIdxAt_def]
+  exact (Ideal.ramificationIdx_eq_of_surjective hsurj _).symm
+
+/-- Postcomposing `f` with a morphism surjective on stalks preserves `ramificationIdxAt`. -/
+@[simp]
+theorem ramificationIdxAt_comp_of_surjectiveOnStalks {Z : Scheme.{u}} (g : Y ⟶ Z)
+    [SurjectiveOnStalks g] (x : X) :
+    (f ≫ g).ramificationIdxAt x = f.ramificationIdxAt x :=
+  ramificationIdxAt_comp_of_surjective_stalkMap f g x
+    (SurjectiveOnStalks.stalkMap_surjective g (f x))
+
+/-- Precomposing with an open immersion preserves `ramificationIdxAt`. -/
+theorem ramificationIdxAt_isOpenImmersion_comp {Z : Scheme.{u}} (ι : X ⟶ Y) [IsOpenImmersion ι]
+    (g : Y ⟶ Z) (x : X) : (ι ≫ g).ramificationIdxAt x = g.ramificationIdxAt (ι x) := by simp
+
+/-- In a commutative square `ι ≫ f' = h ≫ j` with open immersions `ι` and `j`,
+`f'.ramificationIdxAt (ι q) = h.ramificationIdxAt q`. -/
+theorem ramificationIdxAt_eq_of_isOpenImmersion_square {X₀ Y₀ X' Y' : Scheme.{u}} (ι : X₀ ⟶ X')
+    (f' : X' ⟶ Y') (h : X₀ ⟶ Y₀) (j : Y₀ ⟶ Y') [IsOpenImmersion ι] [IsOpenImmersion j]
+    (e : ι ≫ f' = h ≫ j) (q : X₀) :
+    f'.ramificationIdxAt (ι q) = h.ramificationIdxAt q := by
+  rw [← ramificationIdxAt_isOpenImmersion_comp ι f' q, e,
+    ramificationIdxAt_comp_of_surjectiveOnStalks]
+
+/-- For `Spec.map (algebraMap R S)`, `ramificationIdxAt` at `q` is `q.asIdeal.ramificationIdx R`. -/
+@[simp]
+theorem ramificationIdxAt_specMap {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
+    (q : Spec (.of S)) :
+    (Spec.map (CommRingCat.ofHom (algebraMap R S))).ramificationIdxAt q =
+      q.asIdeal.ramificationIdx R := by
+  have := q.isPrime
+  let φ := CommRingCat.ofHom (algebraMap R S)
+  let p := PrimeSpectrum.comap φ.hom q
+  have : p.asIdeal.IsPrime := p.isPrime; have : q.asIdeal.LiesOver p.asIdeal := ⟨rfl⟩
+  let Rp := Localization.AtPrime p.asIdeal; let Sq := Localization.AtPrime q.asIdeal
+  let : Algebra Rp Sq := (Localization.localRingHom p.asIdeal q.asIdeal φ.hom rfl).toAlgebra
+  have : IsScalarTower R Rp Sq := .of_algebraMap_eq fun r ↦
+    (Localization.localRingHom_to_map p.asIdeal q.asIdeal φ.hom rfl r).symm
+  have : IsLocalHom (algebraMap Rp Sq) :=
+    Localization.isLocalHom_localRingHom p.asIdeal q.asIdeal φ.hom rfl
+  let SR := (Spec (.of R)).presheaf.stalk ((Spec.map φ) q)
+  let SS := (Spec (.of S)).presheaf.stalk q
+  let ep : CommRingCat.of Rp ≅ SR := (AlgebraicGeometry.Spec.stalkIso (.of R) p).symm
+  let eq : SS ≅ CommRingCat.of Sq := AlgebraicGeometry.Spec.stalkIso (.of S) q
+  let : Algebra Rp SR := ep.hom.hom.toAlgebra
+  let : Algebra SR SS := ((Spec.map φ).stalkMap q).hom.toAlgebra
+  let : Algebra SR Sq := (((Spec.map φ).stalkMap q) ≫ eq.hom).hom.toAlgebra
+  have hsq : ep.hom ≫ (Spec.map φ).stalkMap q ≫ eq.hom = CommRingCat.ofHom (algebraMap Rp Sq) :=
+    (Iso.inv_comp_eq ep.symm).mpr ((Iso.comp_inv_eq eq).mp <|
+      (Category.assoc ep.symm.hom _ eq.inv).trans (localRingHom_comp_stalkIso φ q)).symm
+  have : IsScalarTower Rp SR Sq := .of_algebraMap_eq' (congrArg CommRingCat.Hom.hom hsq).symm
+  let algEq : SS ≃ₐ[SR] Sq := AlgEquiv.ofRingEquiv (f := eq.commRingCatIsoToRingEquiv) fun _ ↦ rfl
+  have : IsLocalHom algEq.toRingHom := ⟨fun a ha ↦ (isUnit_map_iff algEq a).mp ha⟩
+  have hmax : (maximalIdeal SS).map algEq = maximalIdeal Sq := by
+    rw [← maximalIdeal_comap algEq.toRingHom]
+    exact Ideal.map_comap_of_surjective algEq.toRingHom algEq.surjective _
+  rw [ramificationIdxAt_def, ← Ideal.ramificationIdx_map_algEquiv algEq, hmax,
+    Ideal.ramificationIdx_eq_of_surjective (ConcreteCategory.bijective_of_isIso ep.hom).surjective,
+    Ideal.ramificationIdx_maximalIdeal_localization_of_liesOver p.asIdeal q.asIdeal]
 
 end AlgebraicGeometry.Scheme.Hom

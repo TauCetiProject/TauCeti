@@ -54,32 +54,6 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
 
-section OpenImmersionSquare
-
-/-- Postcomposing with an open immersion preserves isomorphism-invariant stalk-map properties. -/
-private theorem stalkMap_comp_isOpenImmersion_right_iff
-    {Q : ∀ {R S : Type u} [CommRing R] [CommRing S], (R →+* S) → Prop}
-    (hQ : RingHom.RespectsIso Q) {X₀ Y₀ Y : Scheme.{u}} (h : X₀ ⟶ Y₀) (j : Y₀ ⟶ Y)
-    [IsOpenImmersion j] (q : X₀) :
-    Q ((h ≫ j).stalkMap q).hom ↔ Q (h.stalkMap q).hom :=
-  Iff.trans (by rw [← CommRingCat.hom_comp, ← Scheme.Hom.stalkMap_comp]; exact Iff.rfl)
-    (hQ.cancel_left_isIso (j.stalkMap (h q)) (h.stalkMap q))
-
-/-- In a commutative square `ι ≫ f' = h ≫ j` with open immersions `ι` and `j`, any
-isomorphism-invariant ring-hom property holds for `f'.stalkMap (ι q)` iff it holds for
-`h.stalkMap q`. -/
-private theorem stalkMap_iff_of_isOpenImmersion_square
-    {Q : ∀ {R S : Type u} [CommRing R] [CommRing S], (R →+* S) → Prop}
-    (hQ : RingHom.RespectsIso Q) {X₀ Y₀ X' Y' : Scheme.{u}} (ι : X₀ ⟶ X') (f' : X' ⟶ Y')
-    (h : X₀ ⟶ Y₀) (j : Y₀ ⟶ Y') [IsOpenImmersion ι] [IsOpenImmersion j]
-    (e : ι ≫ f' = h ≫ j) (q : X₀) :
-    Q (f'.stalkMap (ι q)).hom ↔ Q (h.stalkMap q).hom :=
-  (hQ.stalkMap_comp_isOpenImmersion_iff ι f' q).symm.trans <|
-    (iff_of_eq (congrArg (fun k : X₀ ⟶ Y' ↦ Q (k.stalkMap q).hom) e)).trans
-      (stalkMap_comp_isOpenImmersion_right_iff hQ h j q)
-
-end OpenImmersionSquare
-
 section Pullback
 
 variable {X Y X' Y' : Scheme.{u}} {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {gY : Y' ⟶ Y}
@@ -99,12 +73,11 @@ private theorem exists_isPushout_stalkMap_iff_of_isPullback
     rw [← Scheme.Hom.comp_apply, ← H.w, Scheme.Hom.comp_apply]
   obtain ⟨_, ⟨U, hU : IsAffineOpen U, rfl⟩, hxU, -⟩ :=
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f (gX x'))) isOpen_univ
+  have hx'U : gY (f' x') ∈ U := hcomm ▸ hxU
   obtain ⟨_, ⟨U', hU' : IsAffineOpen U', rfl⟩, hx'U', hU'U⟩ :=
-    Y'.isBasis_affineOpens.exists_subset_of_mem_open
-      (show gY (f' x') ∈ U from hcomm ▸ hxU) (U.is_open'.preimage gY.continuous)
+    Y'.isBasis_affineOpens.exists_subset_of_mem_open hx'U (U.is_open'.preimage gY.continuous)
   obtain ⟨_, ⟨V, hV : IsAffineOpen V, rfl⟩, hxV, hVU⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open
-      (show f (gX x') ∈ U from hxU) (U.is_open'.preimage f.continuous)
+    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.is_open'.preimage f.continuous)
   algebraize [(gY.appLE U U' hU'U).hom, (f.appLE U V hVU).hom]
   let _ : Algebra Γ(X, V) (Γ(Y', U') ⊗[Γ(Y, U)] Γ(X, V)) := Algebra.TensorProduct.rightAlgebra
   have := hU.isOpenImmersion_fromSpec
@@ -126,14 +99,16 @@ private theorem exists_isPushout_stalkMap_iff_of_isPullback
     (congrArg PrimeSpectrum.asIdeal (Spec.map_apply φR q)).trans (PrimeSpectrum.comap_asIdeal _ q)
   refine ⟨Γ(Y, U), Γ(Y', U'), Γ(X, V), inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, q,
-    (stalkMap_iff_of_isOpenImmersion_square RingHom.FormallyUnramified.respectsIso
+    (RingHom.FormallyUnramified.respectsIso.stalkMap_iff_of_isOpenImmersion_square
       ι f' _ hU'.fromSpec h₁ q).trans (formallyUnramified_stalkMap_specMap_iff q), ?_,
-    (stalkMap_iff_of_isOpenImmersion_square RingHom.Flat.respectsIso
+    (RingHom.Flat.respectsIso.stalkMap_iff_of_isOpenImmersion_square
       ι gX _ hV.fromSpec h₂ q).trans (flat_stalkMap_specMap_iff q)⟩
   rw [hgx]
-  simpa only [hqA] using (stalkMap_iff_of_isOpenImmersion_square
-    RingHom.FormallyUnramified.respectsIso hV.fromSpec f (Spec.map (f.appLE U V hVU)) hU.fromSpec
-    (hU.SpecMap_appLE_fromSpec f hV hVU).symm qA).trans (formallyUnramified_stalkMap_specMap_iff qA)
+  simpa only [hqA] using
+    (RingHom.FormallyUnramified.respectsIso.stalkMap_iff_of_isOpenImmersion_square
+      hV.fromSpec f (Spec.map (f.appLE U V hVU)) hU.fromSpec
+      (hU.SpecMap_appLE_fromSpec f hV hVU).symm qA).trans
+      (formallyUnramified_stalkMap_specMap_iff qA)
 
 /-- **Formal unramifiedness of stalk maps is preserved under arbitrary pullback** (no flatness
 or finite-type hypothesis). -/
@@ -178,11 +153,9 @@ theorem ramificationLocus_subset_preimage_of_isPullback (H : IsPullback gX f' f 
 
 /-- Under an arbitrary pullback, `f'.branchLocus ⊆ gY ⁻¹' f.branchLocus`. -/
 theorem branchLocus_subset_preimage_of_isPullback (H : IsPullback gX f' f gY) :
-    f'.branchLocus ⊆ gY ⁻¹' f.branchLocus := fun y' hy' ↦ by
-  obtain ⟨x', hx', rfl⟩ := mem_branchLocus_iff.mp hy'
-  have hw : gY (f' x') = f (gX x') := by rw [← Scheme.Hom.comp_apply, ← H.w, Scheme.Hom.comp_apply]
-  exact mem_branchLocus_iff.mpr
-    ⟨gX x', ramificationLocus_subset_preimage_of_isPullback H hx', hw.symm⟩
+    f'.branchLocus ⊆ gY ⁻¹' f.branchLocus := by
+  rw [branchLocus_def, branchLocus_def, ← Scheme.image_preimage_eq_of_isPullback H]
+  exact Set.image_mono (ramificationLocus_subset_preimage_of_isPullback H)
 
 /-- Under an arbitrary pullback, `f'.nonEtaleLocus ⊆ gX ⁻¹' f.nonEtaleLocus`. -/
 theorem nonEtaleLocus_subset_preimage_of_isPullback (H : IsPullback gX f' f gY) :
@@ -202,13 +175,8 @@ theorem ramificationLocus_eq_preimage_of_isPullback (H : IsPullback gX f' f gY) 
 /-- **Flat base change of the branch locus.** -/
 theorem branchLocus_eq_preimage_of_isPullback (H : IsPullback gX f' f gY) [Flat gY] :
     f'.branchLocus = gY ⁻¹' f.branchLocus := by
-  refine (branchLocus_subset_preimage_of_isPullback H).antisymm fun y' hy' ↦ ?_
-  obtain ⟨x, hx, hxy'⟩ := mem_branchLocus_iff.mp hy'
-  obtain ⟨z, hz₁, hz₂⟩ := Scheme.Pullback.exists_preimage_pullback x y' hxy'
-  exact mem_branchLocus_iff.mpr ⟨H.isoPullback.inv z, by
-    rwa [ramificationLocus_eq_preimage_of_isPullback H, Set.mem_preimage,
-      ← Scheme.Hom.comp_apply, H.isoPullback_inv_fst, hz₁],
-    by rw [← Scheme.Hom.comp_apply, H.isoPullback_inv_snd, hz₂]⟩
+  rw [branchLocus_def, branchLocus_def, ramificationLocus_eq_preimage_of_isPullback H,
+    Scheme.image_preimage_eq_of_isPullback H]
 
 /-- **Flat base change of the non-étale locus** for `f` locally of finite presentation. -/
 theorem nonEtaleLocus_eq_preimage_of_isPullback (H : IsPullback gX f' f gY) [Flat gY]
@@ -267,27 +235,12 @@ theorem preimage_range_section_of_isPullback (H : IsPullback gY p' p b)
     {s : S ⟶ Y} (hs : s ≫ p = 𝟙 S) {s' : S' ⟶ Y'} (hs'p : s' ≫ p' = 𝟙 S')
     (hs'g : s' ≫ gY = b ≫ s) :
     gY ⁻¹' Set.range s = Set.range s' := by
-  refine Set.ext fun y' ↦ ⟨fun ⟨t, ht⟩ ↦ ?_, ?_⟩
-  · have htb : t = b (p' y') := by
-      calc t = (s ≫ p) t := by simp [hs]
-        _ = (gY ≫ p) y' := by rw [Scheme.Hom.comp_apply, ht, Scheme.Hom.comp_apply]
-        _ = b (p' y') := by rw [H.w, Scheme.Hom.comp_apply]
-    let y'₁ : Y' := s' (p' y')
-    have hp₁ : p' y' = p' y'₁ := by dsimp [y'₁]; rw [← Scheme.Hom.comp_apply, hs'p]; simp
-    have hg₁ : gY y' = gY y'₁ := by
-      rw [← ht, htb, ← Scheme.Hom.comp_apply, ← hs'g, Scheme.Hom.comp_apply]
-    have hsnd : pullback.snd b p (H.flip.isoPullback.hom y'₁) = s t := by
-      rw [← Scheme.Hom.comp_apply, H.flip.isoPullback_hom_snd, ← hg₁, ht]
-    have : IsIso (p.residueFieldMap (pullback.snd b p (H.flip.isoPullback.hom y'₁))) := by
-      rw [hsnd]; exact isIso_residueFieldMap_of_section hs t
-    have hz : H.flip.isoPullback.hom y' = H.flip.isoPullback.hom y'₁ :=
-      Scheme.Pullback.eq_of_fst_eq_snd_eq_of_isIso
-        (by rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, H.flip.isoPullback_hom_fst, hp₁])
-        (by rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, H.flip.isoPullback_hom_snd, hg₁])
-    exact ⟨p' y', ((Scheme.homeoOfIso H.flip.isoPullback).injective hz).symm⟩
-  · rintro ⟨t', rfl⟩
-    rw [Set.mem_preimage, ← Scheme.Hom.comp_apply, hs'g, Scheme.Hom.comp_apply]
-    exact ⟨b t', rfl⟩
+  have htop : IsPullback b (s' ≫ p') (s ≫ p) b := by
+    rw [hs'p, hs]
+    exact IsPullback.id_vert b
+  have hsec : IsPullback b s' s gY := IsPullback.of_bot htop hs'g.symm H
+  simpa only [Set.preimage_univ, Set.image_univ] using
+    (Scheme.image_preimage_eq_of_isPullback hsec Set.univ).symm
 
 /-- Specialization of `preimage_range_section_of_isPullback` to `baseChangeSection`. -/
 @[simp]
