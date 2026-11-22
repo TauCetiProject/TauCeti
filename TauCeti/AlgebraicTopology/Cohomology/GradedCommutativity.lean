@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Monoidal.KoszulBraiding
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Singular.KoszulBraiding
 
@@ -22,7 +23,7 @@ taken along the left unitor of the unit object, this is `b ⌣ a = (-1)^(p * q) 
 The cup product is computed along the Alexander–Whitney diagonal, which is not symmetric on the
 nose.  The proof compares it with its transpose by the chain homotopy
 `TopCat.alexanderWhitneyDiagonalKoszulBraidingHomotopy`, and then evaluates the cup product along
-the transposed diagonal by `TauCeti.NatChainComplex.cup_koszulBraidingHom`.
+the transposed diagonal by `TauCeti.ChainComplex.cup_tensorBraiding_hom`.
 
 ## Main results
 
@@ -76,7 +77,7 @@ theorem singularCup_gradedComm (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear
   rw [TauCeti.singularCup_def, TauCeti.singularCup_def,
     ← TauCeti.ChainComplex.cup_eq_of_homotopy
       (H := alexanderWhitneyDiagonalKoszulBraidingHomotopy X u),
-    TauCeti.NatChainComplex.cup_koszulBraidingHom]
+    TauCeti.ChainComplex.cup_tensorBraiding_hom]
 
 /-- **Graded commutativity of the cup product with commutative coefficients**: for coefficients in
 an object `M` with a commutative pairing `μ : M ⊗ M ⟶ M`, such as a commutative `k`-algebra in
