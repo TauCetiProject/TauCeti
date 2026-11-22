@@ -89,6 +89,7 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.valuation_natCast`, `PadicInt.valuation_eq_zero_of_isUnit`,
   `PadicInt.one_le_valuation_of_dvd`: the valuation of a natural number is its `p`-adic
   valuation, units have valuation `0`, and a nonzero multiple of `p` has valuation at least `1`.
+* `PadicInt.index_range_nsmul`: `n ℤ_p` has index `p ^ v_p(n)` in `ℤ_p` for `n ≠ 0`.
 * `PadicInt.dvd_pow_valuation`: a nonzero `x` divides `p ^ v` for `v` its valuation.
 * `PadicInt.quotientSpanToZMod`, `PadicInt.quotientSpanToZModPow`: for `p ∣ q`, respectively
   `p ^ n ∣ q`, reduction modulo `p`, respectively truncation modulo `p ^ n`, descends to a
@@ -485,6 +486,18 @@ theorem valuation_natCast (n : ℕ) : (n : ℤ_[p]).valuation = padicValNat p n 
   have h := valuation_coe (n : ℤ_[p])
   rw [coe_natCast, Padic.valuation_natCast] at h
   exact_mod_cast h.symm
+
+/-- **The index of `n ℤ_p` in `ℤ_p` is `p ^ v_p(n)`** for a natural number `n ≠ 0`, the inverse of
+the `p`-adic absolute value of `n`. -/
+theorem index_range_nsmul {n : ℕ} (hn : n ≠ 0) :
+    (nsmulAddMonoidHom (α := ℤ_[p]) n).range.index = p ^ multiplicity p n := by
+  have hrange : (nsmulAddMonoidHom (α := ℤ_[p]) n).range =
+      (Ideal.span {(n : ℤ_[p])}).toAddSubgroup := by
+    ext x
+    simp [Ideal.mem_span_singleton', nsmul_eq_mul, mul_comm]
+  rw [hrange, ← Nat.padicValNat_def, ← valuation_natCast,
+    ← natCard_quotient_span (Nat.cast_ne_zero.mpr hn)]
+  exact AddSubgroup.index_eq_card _
 
 /-- A unit of `ℤ_[p]` has valuation `0`. -/
 theorem valuation_eq_zero_of_isUnit {x : ℤ_[p]} (hx : IsUnit x) : x.valuation = 0 := by

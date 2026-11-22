@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.GroupTheory.Index.NSmul
-import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # The index of `n G` in a group containing `ℤ_p` with finite index
@@ -26,15 +26,12 @@ for `n = 2` it is `1` for odd `p` and `2` for `p = 2`. The point is that the rat
 (`AddSubgroup.index_range_nsmul_add_card_ker`), and on `ℤ_p` it is `#(ℤ_p ⧸ n ℤ_p) / 1`, because
 `ℤ_p` has no torsion. Only the abstract group structure enters.
 
-This is the shape of the local Kummer index of an abelian variety over a `p`-adic field: the
-points over the ring of integers reducing to the identity in a deep enough level of the formal
-group form a subgroup of finite index isomorphic to `ℤ_p ^ g`, and the ratio
-`#(A(ℚ_p) ⧸ 2 A(ℚ_p)) / #A(ℚ_p)[2]` is the local factor at `p` of the average size of the
-`2`-Selmer group of elliptic curves.
+For example, the points of an elliptic curve over `ℚ_p` contain a subgroup of finite index
+isomorphic to `ℤ_p`, and the ratio `#(E(ℚ_p) ⧸ 2 E(ℚ_p)) / #E(ℚ_p)[2]` is the local factor at `p`
+of the average size of the `2`-Selmer group of elliptic curves.
 
 ## Main results
 
-* `PadicInt.index_range_nsmul`: `#(ℤ_p ⧸ n ℤ_p) = p ^ v_p(n)` for `n ≠ 0`.
 * `AddSubgroup.finite_ker_nsmulAddMonoidHom_of_addEquiv_padicInt`: `G[n]` is finite.
 * `AddSubgroup.index_range_nsmul_of_addEquiv_padicInt`: `#(G ⧸ n G) = #G[n] · p ^ v_p(n)`.
 * `AddSubgroup.finiteIndex_range_nsmul_of_addEquiv_padicInt`: `n G` has finite index in `G`.
@@ -46,33 +43,6 @@ group form a subgroup of finite index isomorphic to `ℤ_p ^ g`, and the ratio
 -/
 
 public section
-
-namespace PadicInt
-
-variable {p : ℕ} [Fact p.Prime]
-
-/-- **The index of `n ℤ_p` in `ℤ_p` is `p ^ v_p(n)`** for a natural number `n ≠ 0`, the inverse of
-the `p`-adic absolute value of `n`. -/
-theorem index_range_nsmul {n : ℕ} (hn : n ≠ 0) :
-    (nsmulAddMonoidHom (α := ℤ_[p]) n).range.index = p ^ multiplicity p n := by
-  set v := multiplicity p n
-  -- `n = p ^ v * m` with `m` prime to `p`, so `n ℤ_p = p ^ v ℤ_p` is the kernel of reduction
-  have hm : IsUnit (n.divMaxPow p : ℤ_[p]) :=
-    isUnit_natCast_iff.mpr (Nat.not_dvd_divMaxPow (Fact.out : p.Prime).one_lt hn)
-  have hdvd (x : ℤ_[p]) : (n : ℤ_[p]) ∣ x ↔ (p : ℤ_[p]) ^ v ∣ x := by
-    rw [← Nat.pow_multiplicity_mul_divMaxPow p n, Nat.cast_mul, Nat.cast_pow, hm.mul_right_dvd]
-  have hrange :
-      (nsmulAddMonoidHom (α := ℤ_[p]) n).range = (toZModPow (p := p) v).toAddMonoidHom.ker := by
-    ext x
-    rw [AddMonoidHom.mem_ker, RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass,
-      ← RingHom.mem_ker, ker_toZModPow, Ideal.mem_span_singleton, ← hdvd, AddMonoidHom.mem_range,
-      dvd_def]
-    simp only [nsmulAddMonoidHom_apply, nsmul_eq_mul, eq_comm]
-  rw [hrange, AddSubgroup.index_ker,
-    AddMonoidHom.range_eq_top.mpr (ZMod.ringHom_surjective (toZModPow v)), AddSubgroup.card_top,
-    Nat.card_zmod]
-
-end PadicInt
 
 namespace AddSubgroup
 
@@ -93,10 +63,10 @@ private theorem ker_nsmulAddMonoidHom_eq_bot_of_addEquiv_padicInt (hn : n ≠ 0)
 variable [U.FiniteIndex]
 
 include e in
-/-- **The `n`-torsion of a group containing `ℤ_p` with finite index is finite** for `n ≠ 0`: it
-meets the subgroup trivially, so it embeds in the finite quotient. -/
+/-- **The `n`-torsion of a group containing `ℤ_p` with finite index is finite** for `n ≠ 0`. -/
 theorem finite_ker_nsmulAddMonoidHom_of_addEquiv_padicInt (hn : n ≠ 0) :
     Finite (nsmulAddMonoidHom (α := G) n).ker := by
+  -- `G[n]` meets `U` trivially, so it embeds in the finite quotient `G ⧸ U`
   have hker := ker_nsmulAddMonoidHom_eq_bot_of_addEquiv_padicInt U e hn
   refine Finite.of_injective (fun x ↦ (x : G ⧸ U)) fun x y hxy ↦ ?_
   rw [QuotientAddGroup.eq] at hxy
@@ -104,7 +74,10 @@ theorem finite_ker_nsmulAddMonoidHom_of_addEquiv_padicInt (hn : n ≠ 0) :
   have h0 : (⟨-x + y, hxy⟩ : U) ∈ (nsmulAddMonoidHom (α := U) n).ker := by
     rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, ← Subtype.coe_inj, coe_nsmul, smul_add,
       smul_neg]
-    simp [show n • (x : G) = 0 from x.property, show n • (y : G) = 0 from y.property]
+    have hx := AddMonoidHom.mem_ker.mp x.property
+    have hy := AddMonoidHom.mem_ker.mp y.property
+    rw [nsmulAddMonoidHom_apply] at hx hy
+    simp [hx, hy]
   rw [hker, mem_bot, ← Subtype.coe_inj] at h0
   exact Subtype.ext (neg_add_eq_zero.mp h0)
 
