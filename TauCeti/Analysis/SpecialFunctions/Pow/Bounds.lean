@@ -15,7 +15,9 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 # Elementary bounds on real powers
 
 If `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`, then `x ^ a ≤ R ^ |a|` for every real `a`. This bounds
-powers of a level confined to an interval bounded away from zero. Likewise, for `0 < u` and any
+powers of a level confined to an interval bounded away from zero. For `0 < x` and
+`|log x · y| ≤ 1`, `|x ^ y - 1| ≤ 2 |log x · y|`: a power with a small logarithm is close to `1`.
+Likewise, for `0 < u` and any
 exponent `p ∈ [p₁, p₂]`, `u ^ p ≤ u ^ p₁ + u ^ p₂`, which dominates `u ^ (Re s - 1)` for all
 `u > 0` by the sum of its endpoint powers as `s` varies in a vertical strip `σ₁ ≤ Re s ≤ σ₂`; and
 for `0 < a ≤ u` and `s ≤ t`, `u ^ s ≤ a ^ (s - t) * u ^ t` raises the exponent on `(a, ∞)`.
@@ -110,6 +112,7 @@ dyadic intervals.
 ## Main results
 
 * `Real.rpow_le_rpow_abs`: `x ^ a ≤ R ^ |a|` for `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`.
+* `Real.abs_rpow_sub_one_le`: `|x ^ y - 1| ≤ 2 |log x · y|` for `0 < x` and `|log x · y| ≤ 1`.
 * `Real.rpow_le_rpow_add_rpow_of_mem_Icc`: `u ^ p ≤ u ^ p₁ + u ^ p₂` for `0 < u` and
   `p ∈ Set.Icc p₁ p₂`.
 * `Real.rpow_le_rpow_sub_mul_rpow_of_exponent_le`: `u ^ s ≤ a ^ (s - t) * u ^ t` for `0 < a ≤ u`
@@ -185,6 +188,12 @@ theorem rpow_le_rpow_abs {x R : ℝ} (hx : 0 < x) (hxR : x ≤ R) (hinvR : x⁻�
   · calc x ^ a = x⁻¹ ^ (-a) := by rw [← rpow_neg_eq_inv_rpow, neg_neg]
          _ ≤ R ^ (-a) := rpow_le_rpow (inv_nonneg.mpr hx.le) hinvR (neg_nonneg.mpr ha.le)
          _ = R ^ |a| := by rw [abs_of_neg ha]
+
+/-- For `0 < x` and `|log x · y| ≤ 1`, `|x ^ y - 1| ≤ 2 |log x · y|`. -/
+theorem abs_rpow_sub_one_le {x y : ℝ} (hx : 0 < x) (h : |log x * y| ≤ 1) :
+    |x ^ y - 1| ≤ 2 * |log x * y| := by
+  rw [rpow_def_of_pos hx]
+  exact abs_exp_sub_one_le h
 
 /-- For `0 < u` and `p ∈ Set.Icc p₁ p₂`, `u ^ p ≤ u ^ p₁ + u ^ p₂`. -/
 theorem rpow_le_rpow_add_rpow_of_mem_Icc {u p p₁ p₂ : ℝ} (hu : 0 < u) (hp : p ∈ Set.Icc p₁ p₂) :

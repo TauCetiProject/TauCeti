@@ -53,7 +53,10 @@ to manifolds, including manifolds with boundary or corners.
 * `TauCeti.isRegularPoint_iff_isInvertible_mfderiv`: between models of the same finite dimension
   over a complete field, regularity is invertibility of the manifold derivative.
 * `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
-  the derivative of the outer map sends the tangent image of the inner map onto the target.
+  the derivative of the outer map sends the tangent image of the inner map onto the target; in
+  particular the outer map is then regular (`TauCeti.IsRegularPoint.of_comp`).
+* `IsLocalDiffeomorphAt.isRegularPoint`: a local diffeomorphism at a point is regular there.
+* `TauCeti.isRegularPoint_snd`: the second projection of a product is regular everywhere.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
   regular points.
 * `TauCeti.range_mfderiv_le_ker_mfderiv_of_eventually_eq`: a map into a level set `f ⁻¹' {y}`
@@ -114,6 +117,13 @@ theorem isRegularValue_iff : IsRegularValue I J f y ↔ ∀ x, f x = y → IsReg
 theorem IsRegularValue.isRegularPoint (hy : IsRegularValue I J f y) (hx : f x = y) :
     IsRegularPoint I J f x :=
   hy x hx
+
+/-- Regularity at a point depends only on the germ of the map there. -/
+theorem IsRegularPoint.congr_of_eventuallyEq {g : M → N} (hf : IsRegularPoint I J f x)
+    (hgf : g =ᶠ[𝓝 x] f) : IsRegularPoint I J g x := by
+  rw [isRegularPoint_iff, hgf.mfderiv_eq, ContinuousLinearMap.coe_comp,
+    ContinuousLinearEquiv.coe_coe, EquivLike.comp_surjective]
+  exact hf
 
 /-- A value is regular exactly when it is not the image of a non-regular point. -/
 theorem isRegularValue_iff_notMem_image :
@@ -293,6 +303,14 @@ theorem isRegularPoint_comp_iff (hfd : MDifferentiableAt I J f (g p))
   rw [isRegularPoint_iff, mfderiv_comp p hfd hgd, ← LinearMap.range_comp, LinearMap.range_eq_top,
     ← ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_coe]
 
+/-- If a composite `f ∘ g` of differentiable maps is regular at `p`, then `f` is regular at
+`g p`. -/
+theorem IsRegularPoint.of_comp (h : IsRegularPoint K J (f ∘ g) p)
+    (hfd : MDifferentiableAt I J f (g p)) (hgd : MDifferentiableAt K I g p) :
+    IsRegularPoint I J f (g p) := by
+  rw [isRegularPoint_iff, mfderiv_comp p hfd hgd, ContinuousLinearMap.coe_comp] at h
+  exact isRegularPoint_iff.2 h.of_comp
+
 /-- A composite `f ∘ g` has `y` as a regular value if `y` is a regular value of `f` and `g` is
 regular at every point of the fibre `(f ∘ g) ⁻¹' {y}`. -/
 theorem IsRegularValue.comp (hf : IsRegularValue I J f y)
@@ -301,6 +319,19 @@ theorem IsRegularValue.comp (hf : IsRegularValue I J f y)
   fun p hp ↦ (hf (g p) hp).comp (hg p hp)
 
 end Composition
+
+/-- A `C^n` local diffeomorphism at `x`, with `n ≠ 0`, has `x` as a regular point. -/
+theorem _root_.IsLocalDiffeomorphAt.isRegularPoint {n : ℕ∞ω}
+    (h : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) : IsRegularPoint I J f x :=
+  (h.isInvertible_mfderiv hn).surjective
+
+/-- Every point of a product is a regular point of the second projection. -/
+theorem isRegularPoint_snd (p : M × N) : IsRegularPoint (I.prod J) J (Prod.snd : M × N → N) p := by
+  rw [isRegularPoint_iff, mfderiv_snd]
+  -- The tangent space of `M × N` is the product of the tangent spaces of the factors by
+  -- definition, so the pair `(0, w)` is a tangent vector of the product, and
+  -- `ContinuousLinearMap.snd` sends it to `w` by definition.
+  exact fun w ↦ ⟨(0, w), rfl⟩
 
 /-- Every point of an open subset is a regular point of its inclusion. -/
 theorem isRegularPoint_subtype_val {U : TopologicalSpace.Opens M} (x : U) :
