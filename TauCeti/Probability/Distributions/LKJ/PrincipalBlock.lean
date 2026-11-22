@@ -67,30 +67,30 @@ Dimensions are cast to the reals before subtraction and division. -/
 theorem map_submatrix_partialCorrelationGram_pi_betaMeasure (h : q ≤ p)
     {η : ℝ} (hη : 0 < η) :
     ((Measure.pi fun ij : strictLowerTriangle p ↦
-        (betaMeasure (η + ((p : ℝ) - ij.1.2.val - 2) / 2)
-          (η + ((p : ℝ) - ij.1.2.val - 2) / 2)).map (fun x ↦ -1 + 2 * x)).map
+        (betaMeasure (η + ((p : ℝ) - ij.val.2.val - 2) / 2)
+          (η + ((p : ℝ) - ij.val.2.val - 2) / 2)).map (fun x ↦ -1 + 2 * x)).map
           partialCorrelationGram).map (fun R ↦ R.submatrix (Fin.castLE h) (Fin.castLE h)) =
       (Measure.pi fun ij : strictLowerTriangle q ↦
-        (betaMeasure (η + ((p : ℝ) - q) / 2 + ((q : ℝ) - ij.1.2.val - 2) / 2)
-          (η + ((p : ℝ) - q) / 2 + ((q : ℝ) - ij.1.2.val - 2) / 2)).map
+        (betaMeasure (η + ((p : ℝ) - q) / 2 + ((q : ℝ) - ij.val.2.val - 2) / 2)
+          (η + ((p : ℝ) - q) / 2 + ((q : ℝ) - ij.val.2.val - 2) / 2)).map
             (fun x ↦ -1 + 2 * x)).map partialCorrelationGram := by
   have hshape (ij : strictLowerTriangle p) :
-      0 < η + ((p : ℝ) - ij.1.2.val - 2) / 2 := by
-    have hj : ij.1.2.val + 2 ≤ p := by
-      have := ij.2
-      have := ij.1.1.isLt
+      0 < η + ((p : ℝ) - ij.val.2.val - 2) / 2 := by
+    have hj : ij.val.2.val + 2 ≤ p := by
+      have := ij.property
+      have := ij.val.1.isLt
       omega
-    have hj' : (ij.1.2.val : ℝ) + 2 ≤ p := by exact_mod_cast hj
+    have hj' : (ij.val.2.val : ℝ) + 2 ≤ p := by exact_mod_cast hj
     linarith
   let _ (ij : strictLowerTriangle p) :
-      IsProbabilityMeasure (betaMeasure (η + ((p : ℝ) - ij.1.2.val - 2) / 2)
-        (η + ((p : ℝ) - ij.1.2.val - 2) / 2)) :=
+      IsProbabilityMeasure (betaMeasure (η + ((p : ℝ) - ij.val.2.val - 2) / 2)
+        (η + ((p : ℝ) - ij.val.2.val - 2) / 2)) :=
     isProbabilityMeasureBeta (hshape ij) (hshape ij)
   rw [map_submatrix_partialCorrelationGram_pi h]
   congr 2
   funext ij
-  have hparam : η + ((p : ℝ) - (strictLowerTriangle.castLE h ij).1.2.val - 2) / 2 =
-      η + ((p : ℝ) - q) / 2 + ((q : ℝ) - ij.1.2.val - 2) / 2 := by
+  have hparam : η + ((p : ℝ) - (strictLowerTriangle.castLE h ij).val.2.val - 2) / 2 =
+      η + ((p : ℝ) - q) / 2 + ((q : ℝ) - ij.val.2.val - 2) / 2 := by
     simp only [strictLowerTriangle.castLE_apply, Fin.val_castLE]
     ring
   rw [hparam]
@@ -105,14 +105,14 @@ private theorem map_leadingBlock_lkjMeasure (h : q ≤ p) {η : ℝ} (hη : 0 < 
     linarith
   have he : MeasurableEmbedding (Subtype.val :
       selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ) → Matrix (Fin q) (Fin q) ℝ) :=
-    MeasurableEmbedding.subtype_coe isClosed_setOfPred_isSelfAdjoint.measurableSet
+    MeasurableEmbedding.subtypeVal isClosed_setOfPred_isSelfAdjoint.measurableSet
   apply he.map_injective
-  rw [Measure.map_map measurable_subtype_coe (by fun_prop), map_coe_lkjMeasure hη']
+  rw [Measure.map_map measurable_subtypeVal (by fun_prop), map_coe_lkjMeasure hη']
   have hshape {n : ℕ} (a : ℝ) (ij : strictLowerTriangle n) :
-      lkjPartialCorrelationShape n a ij = a + ((n : ℝ) - ij.1.2.val - 2) / 2 := by
-    have hj : ij.1.2.val + 2 ≤ n := by
-      have := ij.2
-      have := ij.1.1.isLt
+      lkjPartialCorrelationShape n a ij = a + ((n : ℝ) - ij.val.2.val - 2) / 2 := by
+    have hj : ij.val.2.val + 2 ≤ n := by
+      have := ij.property
+      have := ij.val.1.isLt
       omega
     rw [lkjPartialCorrelationShape_def, Nat.cast_sub (by omega),
       Nat.cast_sub (by omega)]
@@ -122,7 +122,7 @@ private theorem map_leadingBlock_lkjMeasure (h : q ≤ p) {η : ℝ} (hη : 0 < 
   have hcoe := map_coe_lkjMeasure (p := p) hη
   simp_rw [hshape] at hcoe
   rw [← map_submatrix_partialCorrelationGram_pi_betaMeasure h hη, ← hcoe]
-  rw [Measure.map_map (by fun_prop) measurable_subtype_coe]
+  rw [Measure.map_map (by fun_prop) measurable_subtypeVal]
   congr 1
   funext R
   simp [Matrix.transpose_submatrix,

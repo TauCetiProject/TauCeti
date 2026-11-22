@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol
+public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
+public import TauCeti.Geometry.Manifold.DifferentialOperator.Restrict
+public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
+import TauCeti.Geometry.Manifold.Riemannian.Hessian.Isometry
 
 /-!
 # Laplace-type operators on smooth functions
@@ -32,6 +35,8 @@ is `h ↦ h Δf + 2 ⟪grad f, grad h⟫` and that its double commutators are mu
 
 ## Main definitions
 
+* `TauCeti.smoothDivergence I M`: the divergence of smooth vector fields of a smooth metric, as a
+  real-linear map to `C^∞(M)`.
 * `TauCeti.smoothLaplaceBeltrami I M`: the Laplace–Beltrami operator of a smooth metric as a
   real-linear endomorphism of `C^∞(M)`.
 * `TauCeti.IsLaplaceType D c`: `D` is of Laplace type with constant `c`.
@@ -51,6 +56,10 @@ is `h ↦ h Δf + 2 ⟪grad f, grad h⟫` and that its double commutators are mu
 * `TauCeti.IsLaplaceType.unique`: in positive dimension the constant is determined by the operator.
 * `TauCeti.IsLaplaceType.conjDifferentialOperators`: the Laplace type is invariant under
   transport along diffeomorphisms which are Riemannian isometries.
+* `TauCeti.IsLocalRiemannianIsometry.smoothLaplaceBeltrami_comp`: a smooth local Riemannian
+  isometry `φ` intertwines the Laplace–Beltrami operators, `Δ (u ∘ φ) = (Δ u) ∘ φ`.
+* `TauCeti.IsLaplaceType.restrictDifferentialOperators`: the restriction of an operator of Laplace
+  type to an open subset, with the inherited metric, is of Laplace type with the same constant.
 
 ## References
 
@@ -62,7 +71,7 @@ is `h ↦ h Δf + 2 ⟪grad f, grad h⟫` and that its double commutators are mu
 
 public section
 
-open Bundle TauCeti.Manifold
+open Bundle TauCeti.Manifold TopologicalSpace
 open scoped ContDiff Manifold
 
 noncomputable section
@@ -166,11 +175,49 @@ theorem IsLaplaceType.conjDifferentialOperators (hD : IsLaplaceType D c) (φ : N
 
 end Isometry
 
+/-- **Restriction to open subsets.** For the Riemannian metric that an open subset `U` inherits
+from `M`, the restriction to `U` of an operator of Laplace type with constant `c` is of Laplace
+type with constant `c`. -/
+theorem IsLaplaceType.restrictDifferentialOperators (hD : IsLaplaceType D c) (U : Opens M) :
+    IsLaplaceType (U.restrictDifferentialOperators 2 D) c := by
+  refine ⟨hD.pos, fun x hx ξ ↦ ?_⟩
+  have hx' : I.IsInteriorPoint (x : M) := I.isInteriorPoint_iff_isInteriorPoint_val.mp hx
+  -- Write `ξ` as `η ∘ ι` for the identification `ι : T_x U ≃ T_x M` of the tangent spaces, which
+  -- is a linear isometric equivalence for the inherited metric, so `η` has the norm of `ξ`.
+  have hξ : ξ = (ξ.comp ((tangentSpaceOpenLinearIsometryEquiv (I := I) U x).symm :
+      TangentSpace I (x : M) →L[ℝ] TangentSpace I x)).comp
+      (tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap := by
+    ext v
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_coe, ← coe_tangentSpaceOpenLinearIsometryEquiv,
+      LinearIsometryEquiv.symm_apply_apply]
+  conv_lhs => rw [hξ]
+  rw [smoothPrincipalSymbol_restrictDifferentialOperators hx', hD.smoothPrincipalSymbol_eq hx',
+    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+
 end IsLaplaceType
 
-/-! ### The Laplace–Beltrami operator on smooth functions -/
+/-! ### The divergence and the Laplace–Beltrami operator on smooth functions -/
 
 variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+variable (I M) in
+/-- The Riemannian divergence `X ↦ div X` (`TauCeti.Manifold.divergence`) of a smooth metric, as a
+real-linear map from smooth vector fields to smooth functions. -/
+def smoothDivergence :
+    Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ where
+  toFun X := ⟨divergence I X,
+    contMDiff_divergence (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp) X.contMDiff⟩
+  map_add' X Y := ContMDiffMap.ext fun x ↦
+    divergence_add I X Y x (X.contMDiff.mdifferentiableAt (by simp))
+      (Y.contMDiff.mdifferentiableAt (by simp))
+  map_smul' c X := ContMDiffMap.ext fun x ↦
+    divergence_smul I c X x (X.contMDiff.mdifferentiableAt (by simp))
+
+@[simp]
+theorem smoothDivergence_apply (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (x : M) :
+    smoothDivergence I M X x = divergence I X x :=
+  (rfl)
 
 variable (I M) in
 /-- The Laplace–Beltrami operator `Δ = div ∘ grad` (`TauCeti.Manifold.laplaceBeltrami`) of a
@@ -259,5 +306,24 @@ theorem not_isLaplaceType_smoothLaplaceBeltrami [T2Space M] [Nontrivial E] {x : 
   have h := hD.smoothPrincipalSymbol_eq hx ξ
   rw [smoothPrincipalSymbol_smoothLaplaceBeltrami] at h
   nlinarith [hD.pos, pow_pos hξ 2]
+
+section LocalIsometry
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+
+/-- A smooth local Riemannian isometry `φ : M → N` intertwines the Laplace–Beltrami operators on
+smooth functions: `Δ_M (u ∘ φ) = (Δ_N u) ∘ φ`. Examples are the isometries of `M`, and the
+projection of `M` onto its quotient by a free, properly discontinuous isometric group action,
+for the quotient metric. -/
+theorem IsLocalRiemannianIsometry.smoothLaplaceBeltrami_comp {φ : C^∞⟮I, M; J, N⟯}
+    (hφ : IsLocalRiemannianIsometry I J φ) (u : C^∞⟮J, N; ℝ⟯) :
+    smoothLaplaceBeltrami I M (u.comp φ) = (smoothLaplaceBeltrami J N u).comp φ :=
+  ContMDiffMap.ext fun _ ↦ hφ.laplaceBeltrami_comp (u.contMDiff.contMDiffAt.of_le (by simp))
+
+end LocalIsometry
 
 end TauCeti

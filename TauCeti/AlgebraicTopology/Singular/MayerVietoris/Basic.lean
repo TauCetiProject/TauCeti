@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
+public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.AlgebraicTopology.Singular.Subspace
 
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Equiv
@@ -34,6 +35,9 @@ of `X`.
 
 ## Main definitions and results
 
+* `TopCat.bicartSq_range_toSSet_subtypeVal`, `TopCat.bicartSq_range_toSSet_map_inclusion`: the
+  singular simplices lying in `U ∩ V`, in `U`, in `V`, and in `U` or in `V` form a bicartesian
+  square of subcomplexes, for subsets and for open sets.
 * `TopCat.isPushout_toSSet_inter_smallSingularSubcomplex`: the pushout square of singular
   simplicial sets of an intersection.
 * `TopCat.mayerVietorisδ`: the Mayer–Vietoris connecting morphism `Hₙ(X) ⟶ Hₘ(U ∩ V)`,
@@ -45,6 +49,10 @@ of `X`.
 * `TopCat.epi_mayerVietorisFromBiprod_zero`: surjectivity at the degree-zero endpoint.
 * `TopCat.isIso_mayerVietorisToBiprod_of_isZero`: when `Hₙ₊₁(X)` and `Hₙ(X)` vanish,
   `Hₙ(U ∩ V) ≅ Hₙ(U) ⊞ Hₙ(V)`.
+* `TopCat.isIso_mayerVietorisFromBiprod_of_isZero`: when `Hₙ(U ∩ V)` and `Hₙ₋₁(U ∩ V)` vanish,
+  `Hₙ(U) ⊞ Hₙ(V) ≅ Hₙ(X)`.
+* `TopCat.isIso_biprodDesc_singularHomologyFunctor_map_of_disjoint`: for a cover by two disjoint
+  open sets, `Hₙ(U) ⊞ Hₙ(V) ≅ Hₙ(X)`.
 * `TopCat.mayerVietorisδ_naturality`: naturality of the connecting morphism.
 
 ## References
@@ -66,6 +74,46 @@ variable {X : TopCat.{w}}
 
 variable (U V : Set X)
 
+/-- For subsets `U` and `V` of `X`, the singular simplices of `X` lying in `U ∩ V`, in `U`, in `V`,
+and in `U` or in `V` form a bicartesian square of subcomplexes. -/
+theorem bicartSq_range_toSSet_subtypeVal :
+    SSet.Subcomplex.BicartSq
+      (SSet.Subcomplex.range (toSSet.map (ofHom (ContinuousMap.subtypeVal (U ∩ V)))))
+      (SSet.Subcomplex.range (toSSet.map (ofHom (ContinuousMap.subtypeVal U))))
+      (SSet.Subcomplex.range (toSSet.map (ofHom (ContinuousMap.subtypeVal V))))
+      (X.smallSingularSubcomplex ![U, V]) where
+  sup_eq := by
+    ext n σ
+    simp only [Subfunctor.max_obj, Set.mem_union, mem_range_toSSet_subtypeVal_iff,
+      mem_smallSingularSubcomplex_iff, Fin.exists_fin_two, Matrix.cons_val_zero,
+      Matrix.cons_val_one]
+  inf_eq := by
+    ext n σ
+    simp only [Subfunctor.min_obj, Set.mem_inter_iff, mem_range_toSSet_subtypeVal_iff]
+    exact Set.subset_inter_iff.symm
+
+/-- For open sets `U` and `V` of a space `M`, the singular simplices of `U ∪ V` lying in `U ∩ V`, in
+`U`, in `V`, and in `U` or in `V` form a bicartesian square of subcomplexes. -/
+theorem bicartSq_range_toSSet_map_inclusion {M : Type*} [TopologicalSpace M]
+    (U V : TopologicalSpace.Opens M) :
+    SSet.Subcomplex.BicartSq
+      (SSet.Subcomplex.range (toSSet.map (ofHom
+        ⟨TopologicalSpace.Opens.inclusion (inf_le_left.trans le_sup_left : U ⊓ V ≤ U ⊔ V),
+          continuous_inclusion (inf_le_left.trans le_sup_left : U ⊓ V ≤ U ⊔ V)⟩)))
+      (SSet.Subcomplex.range (toSSet.map (ofHom
+        ⟨TopologicalSpace.Opens.inclusion (le_sup_left : U ≤ U ⊔ V),
+          continuous_inclusion (le_sup_left : U ≤ U ⊔ V)⟩)))
+      (SSet.Subcomplex.range (toSSet.map (ofHom
+        ⟨TopologicalSpace.Opens.inclusion (le_sup_right : V ≤ U ⊔ V),
+          continuous_inclusion (le_sup_right : V ≤ U ⊔ V)⟩)))
+      ((of ↥(U ⊔ V)).smallSingularSubcomplex ![{x | (x : M) ∈ U}, {x | (x : M) ∈ V}]) := by
+  convert bicartSq_range_toSSet_subtypeVal (X := of ↥(U ⊔ V)) {x | (x : M) ∈ U}
+    {x | (x : M) ∈ V} using 1 <;>
+    ext n σ <;>
+    rw [mem_range_toSSet_map_inclusion_iff, mem_range_toSSet_subtypeVal_iff]
+  -- The points of `U ⊔ V` lying in `U ⊓ V` are those lying in `U` and in `V`.
+  rfl
+
 /-- **The singular simplicial sets of an intersection form a pushout square.** For subsets `U` and
 `V` of `X`, the singular simplicial sets of `U ∩ V`, `U` and `V` form a pushout square with the
 subcomplex of singular simplices of `X` whose image lies in `U` or in `V`. -/
@@ -82,22 +130,7 @@ theorem isPushout_toSSet_inter_smallSingularSubcomplex :
   let B := SSet.Subcomplex.range fU
   let C := SSet.Subcomplex.range fV
   let D := X.smallSingularSubcomplex ![U, V]
-  have h_inf : B ⊓ C = A := by
-    ext n σ
-    -- The lattice structure on subcomplexes is computed pointwise on their `obj` sets.
-    change (σ ∈ B.obj n ∧ σ ∈ C.obj n) ↔ σ ∈ A.obj n
-    rw [mem_range_toSSet_subtypeVal_iff U,
-      mem_range_toSSet_subtypeVal_iff V,
-      mem_range_toSSet_subtypeVal_iff (U ∩ V)]
-    exact Set.subset_inter_iff.symm
-  have h_sup : B ⊔ C = D := by
-    ext n σ
-    -- Supremum of subcomplexes is also computed pointwise.
-    change (σ ∈ B.obj n ∨ σ ∈ C.obj n) ↔ σ ∈ D.obj n
-    rw [mem_range_toSSet_subtypeVal_iff U,
-      mem_range_toSSet_subtypeVal_iff V, mem_smallSingularSubcomplex_iff]
-    simp only [Fin.exists_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one]
-  have sq : SSet.Subcomplex.BicartSq A B C D := ⟨h_sup, h_inf⟩
+  have sq : SSet.Subcomplex.BicartSq A B C D := bicartSq_range_toSSet_subtypeVal U V
   have hi : Mono fI := Functor.map_mono _ _
   have hu : Mono fU := Functor.map_mono _ _
   have hv : Mono fV := Functor.map_mono _ _
@@ -290,6 +323,41 @@ lemma epi_mayerVietorisFromBiprod_zero :
     exact epi_comp _ _
   rw [mayerVietorisFromBiprod_comp_homologyMap_ι] at hepi
   exact hepi
+
+include hU hV hUV in
+/-- If `Hₙ(U ∩ V)` vanishes, and so does `Hₘ(U ∩ V)` when `n = m + 1`, for instance when `U` and
+`V` are disjoint, the second map `Hₙ(U) ⊞ Hₙ(V) ⟶ Hₙ(X)` of the Mayer–Vietoris sequence of an
+open cover is an isomorphism. -/
+lemma isIso_mayerVietorisFromBiprod_of_isZero (n : ℕ)
+    (h₀ : IsZero ((toSSet.obj (of ↥(U ∩ V))).homology R n))
+    (h₁ : ∀ m, n = m + 1 → IsZero ((toSSet.obj (of ↥(U ∩ V))).homology R m)) :
+    IsIso (SSet.mayerVietorisFromBiprod R (toSSet.map (ofHom (ContinuousMap.subtypeVal U)))
+      (toSSet.map (ofHom (ContinuousMap.subtypeVal V))) n) := by
+  have := (mayerVietoris_exact₂ R hU hV hUV n).mono_g (h₀.eq_of_src _ _)
+  rcases n with _ | m
+  · have := epi_mayerVietorisFromBiprod_zero R hUV
+    exact isIso_of_mono_of_epi _
+  · have := (mayerVietoris_exact₃ R hU hV hUV (m + 1) m).epi_f ((h₁ m rfl).eq_of_tgt _ _)
+    exact isIso_of_mono_of_epi _
+
+include hU hV hUV in
+/-- For a cover of `X` by two disjoint open sets `U` and `V`, the sum `Hₙ(U) ⊞ Hₙ(V) ⟶ Hₙ(X)` of
+the maps induced by the subspace inclusions is an isomorphism: it is the second map of the
+Mayer–Vietoris sequence, and the homology of `U ∩ V` vanishes in every degree. -/
+lemma isIso_biprodDesc_singularHomologyFunctor_map_of_disjoint (hd : Disjoint U V) (n : ℕ) :
+    IsIso (biprod.desc
+      (((AlgebraicTopology.singularHomologyFunctor C n).obj R).map
+        (ofHom (ContinuousMap.subtypeVal U)))
+      (((AlgebraicTopology.singularHomologyFunctor C n).obj R).map
+        (ofHom (ContinuousMap.subtypeVal V)))) := by
+  have : IsEmpty ↥(U ∩ V) := ⟨fun x ↦ Set.disjoint_left.1 hd x.property.1 x.property.2⟩
+  have h (m : ℕ) := TauCeti.isZero_singularHomology_of_isEmpty R (of ↥(U ∩ V)) m
+  have := isIso_mayerVietorisFromBiprod_of_isZero R hU hV hUV n (h n) fun m _ ↦ h m
+  -- The Mayer–Vietoris map is this map: singular homology is by definition the homology of the
+  -- singular simplicial set (`TauCeti.singularHomologyFunctor_obj_map`).
+  rwa [show SSet.mayerVietorisFromBiprod R _ _ n = biprod.desc _ _ from biprod.hom_ext' _ _
+    ((SSet.inl_mayerVietorisFromBiprod R _ _ n).trans (biprod.inl_desc _ _).symm)
+    ((SSet.inr_mayerVietorisFromBiprod R _ _ n).trans (biprod.inr_desc _ _).symm)] at this
 
 variable {Y : TopCat.{w}} {U' V' : Set Y} (hU' : IsOpen U') (hV' : IsOpen V')
   (hUV' : U' ∪ V' = Set.univ) (f : X ⟶ Y) (hfU : Set.MapsTo f U U') (hfV : Set.MapsTo f V V')

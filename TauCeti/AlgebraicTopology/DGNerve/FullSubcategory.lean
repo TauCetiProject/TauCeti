@@ -137,11 +137,11 @@ def dgNerveIso :
     erw [CategoryTheory.EnrichedFunctor.mapDGNerveSimplex_obj, inclusion_obj]
     exact (y.obj 0).property
   inv :=
-    { app n := ↾fun x ↦ x.1.liftDGFullSubcategory
-        ((dgNerve.mem_fullEnhancedSubcategory_obj_iff_forall_fin x.1).1 x.2)
+    { app n := ↾fun x ↦ x.val.liftDGFullSubcategory
+        ((dgNerve.mem_fullEnhancedSubcategory_obj_iff_forall_fin x.val).1 x.property)
       naturality _ _ α := by
         ext x
-        exact x.1.liftDGFullSubcategory_map _ α.unop.toOrderHom }
+        exact x.val.liftDGFullSubcategory_map _ α.unop.toOrderHom }
   hom_inv_id := by
     ext n x
     -- Normalize component composition and the subtype lift before using the action lemma.
@@ -152,9 +152,9 @@ def dgNerveIso :
     ext n x
     apply Subtype.ext
     -- Normalize component composition and the subtype lift before using the action lemma.
-    change (inclusion (R := R)).mapDGNerve.app n (x.1.liftDGFullSubcategory _) = x.1
+    change (inclusion (R := R)).mapDGNerve.app n (x.val.liftDGFullSubcategory _) = x.val
     exact (CategoryTheory.EnrichedFunctor.mapDGNerve_app (inclusion (R := R))
-      (Δ := n) _).trans (x.1.mapDGNerveSimplex_inclusion_liftDGFullSubcategory _)
+      (Δ := n) _).trans (x.val.mapDGNerveSimplex_inclusion_liftDGFullSubcategory _)
 
 /-- The comparison identifies the inclusion of the full enhanced subcategory with the
 dg nerve of the enriched inclusion. -/
@@ -177,7 +177,7 @@ lemma dgNerveIso_inv_mapDGNerve :
 @[simp]
 lemma dgNerveIso_hom_app_coe (n : SimplexCategoryᵒᵖ)
     (x : (dgNerve R (DGFullSubcategory P)).obj n) :
-    dsimp% ((dgNerveIso R P).hom.app n x).1 =
+    dsimp% ((dgNerveIso R P).hom.app n x).val =
       (inclusion (R := R) (P := P)).mapDGNerveSimplex x := by
   dsimp only [dgNerveIso]
   rw [SSet.Subcomplex.lift_app_coe]
@@ -189,8 +189,8 @@ lemma dgNerveIso_inv_app (n : SimplexCategoryᵒᵖ)
     (x : ((dgNerve R C).fullEnhancedSubcategory
       (fun v ↦ P (v.obj 0))).obj n) :
     dsimp% (dgNerveIso R P).inv.app n x =
-      x.1.liftDGFullSubcategory
-        ((dgNerve.mem_fullEnhancedSubcategory_obj_iff_forall_fin x.1).1 x.2) :=
+      x.val.liftDGFullSubcategory
+        ((dgNerve.mem_fullEnhancedSubcategory_obj_iff_forall_fin x.val).1 x.property) :=
   (rfl)
 
 /-- The nerve of a full dg inclusion is fully faithful on right mapping spaces. -/

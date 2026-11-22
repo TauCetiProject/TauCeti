@@ -109,7 +109,7 @@ theorem gradedBracket_gradedPow_zero_left {k : ℕ} (x : gradedPiece p G 0)
   simp only [gradedPow_gradedMk, gradedBracket_gradedMk, gradedCast_gradedMk,
     ← gradedMk_pow, ← gradedMk_mul, gradedMk_eq_gradedMk_iff, coe_mul, coe_pow]
   have hdegree : k + 2 + 1 = 0 + k + 1 + 1 + 1 := by omega
-  exact hdegree ▸ mk_commutatorElement_pow_left (a := (x : G)) y.2 p
+  exact hdegree ▸ mk_commutatorElement_pow_left (a := (x : G)) y.property p
 
 /-- The correction to `[x, π y] = π [x, y]` when `y` has degree zero is
 `(p choose 2) • [y, [x, y]]`, with the inner bracket in this order. -/
@@ -124,7 +124,7 @@ theorem gradedBracket_gradedPow_zero_right {j : ℕ} (x : gradedPiece p G j)
   simp only [gradedPow_gradedMk, gradedBracket_gradedMk, gradedCast_gradedMk,
     ← gradedMk_pow, ← gradedMk_mul, gradedMk_eq_gradedMk_iff, coe_mul, coe_pow]
   simpa only [add_zero, Nat.add_assoc] using
-    mk_commutatorElement_pow_right (b := (y : G)) x.2 p
+    mk_commutatorElement_pow_right (b := (y : G)) x.property p
 
 /-- For odd `p`, the power operator commutes with the bracket on the left in every degree,
 including degree zero. No primality assumption is needed. -/
