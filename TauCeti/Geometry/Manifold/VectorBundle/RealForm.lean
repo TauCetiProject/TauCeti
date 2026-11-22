@@ -160,8 +160,6 @@ def maximalRealFormComplexificationDiffeomorph (i : ∀ x, W x →L[ℝ] V x)
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range) :
     TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] W x) ≃ₘ^n⟮
       IB.prod 𝓘(ℝ, Complexification F), IB.prod 𝓘(ℝ, G)⟯ TotalSpace G V :=
-  let : FiniteDimensional ℝ (Complexification F) :=
-    (Complexification.equivProd F).symm.finiteDimensional
   bundleDiffeomorph (fun x ↦
     (maximalRealFormComplexificationEquiv (F := F) (G := G) i x (hinj x)
       (hmax x)).restrictScalars' ℝ)

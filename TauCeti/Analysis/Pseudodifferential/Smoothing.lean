@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
+public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Distribution.TemperedDistribution.FiniteOrder
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
 /-!
 # Smoothing operators produce smooth functions
@@ -38,6 +42,17 @@ function `w`. The quantitative embedding `|f(x)| ≤ C ‖f‖_{H^t}`, `t > n / 
 value of `Op(a) u` at `x` by `C ‖Op(a) (u - w)‖_{H^t}`, which is small for Schwartz functions `w`
 close to `u` in `H^s`.
 
+The same conclusion holds for every tempered distribution `T`, of arbitrary order and growth: a
+smoothing symbol `r` with compact spatial support maps `T` into every Sobolev space `H^t`
+(`TauCeti.Symbol.IsSmoothing.memSobolev_quantizeTempered`), so `Op(r) T` is a smooth function. The
+proof writes `T = (1 + ‖y‖ ^ 2) ^ K S` with `S` of finite Sobolev order
+(`TemperedDistribution.exists_memSobolev_eq_smulLeftCLM_one_add_norm_sq_pow`) and moves each
+coordinate factor through `Op(r)` with the commutator rule
+`y_j Op(r) U = Op(r) (y_j U) + i Op(∂_{ξ_j} r) U` (`TauCeti.Symbol.smulLeftCLM_quantizeTempered`):
+`y_j Op(r) U` equals `(ψ y_j) Op(r) U` for a cutoff `ψ` equal to `1` on the spatial support of `r`
+(`TauCeti.Symbol.smulLeftCLM_quantizeTempered_of_eq_one`), and multiplication by the Schwartz
+function `ψ y_j` preserves every `H^t`.
+
 ## Main results
 
 * `TauCeti.Symbol.IsSmoothing.exists_contDiff_hasCompactSupport_quantizeSobolev`: for complex
@@ -45,6 +60,10 @@ close to `u` in `H^s`.
   every position at which `a` vanishes for all frequencies.
 * `TauCeti.Symbol.IsSmoothing.exists_contDiff_toDistr_apply_eq`: the same for every bounded
   extension `H^s → H^r` of `Op(a)` between finite-dimensional complex normed fibres.
+* `TauCeti.Symbol.IsSmoothing.memSobolev_quantizeTempered`: for a scalar smoothing symbol `r` with
+  compact spatial support, `Op(r) T` lies in every `H^t` for every tempered distribution `T`.
+* `TauCeti.Symbol.IsSmoothing.exists_contDiff_quantizeTempered_apply_eq_integral`: hence
+  `Op(r) T` is a smooth function.
 
 ## References
 
@@ -192,6 +211,134 @@ theorem IsSmoothing.exists_contDiff_toDistr_apply_eq (ha : a.IsSmoothing)
     ContinuousLinearEquiv.integral_comp_comm]
 
 end FiniteDimensional
+
+section Tempered
+
+variable {r : Symbol n ℂ ℂ m}
+
+/-- A smoothing symbol with compact spatial support maps every tempered distribution of some Sobolev
+order `s` into every Sobolev space `H^t`. -/
+private theorem IsSmoothing.memSobolev_quantizeTempered_of_memSobolev (hsm : r.IsSmoothing)
+    (hr : r.HasCompactSpatialSupport) {s : ℝ} {T : 𝓢'(CoordinateSpace n, ℂ)}
+    (hT : T.MemSobolev s 2) (t : ℝ) : (quantizeTempered ℂ r hr.isUniform T).MemSobolev t 2 := by
+  obtain ⟨b, hb⟩ := isSmoothing_iff.1 hsm (s - t)
+  have hbK := hr.of_coefficient_eq hb
+  rw [quantizeTempered_congr hr.isUniform hbK.isUniform hb.symm]
+  simpa using memSobolev_quantizeTempered hbK hT
+
+/-- The tempered distributions `U` such that `Op(r) U` lies in every Sobolev space `H^t` for every
+smoothing symbol `r` with compact spatial support. -/
+private def SmoothedBy (U : 𝓢'(CoordinateSpace n, ℂ)) : Prop :=
+  ∀ (m : ℝ) (r : Symbol n ℂ ℂ m), r.IsSmoothing → ∀ (hr : r.HasCompactSpatialSupport) (t : ℝ),
+    (quantizeTempered ℂ r hr.isUniform U).MemSobolev t 2
+
+private theorem smoothedBy_of_memSobolev {U : 𝓢'(CoordinateSpace n, ℂ)} {s : ℝ}
+    (hU : U.MemSobolev s 2) : SmoothedBy U :=
+  fun _ _ hsm hr t ↦ hsm.memSobolev_quantizeTempered_of_memSobolev hr hU t
+
+private theorem SmoothedBy.add {U V : 𝓢'(CoordinateSpace n, ℂ)} (hU : SmoothedBy U)
+    (hV : SmoothedBy V) : SmoothedBy (U + V) := fun m r hsm hr t ↦ by
+  rw [map_add]
+  exact (hU m r hsm hr t).add (hV m r hsm hr t)
+
+/-- The coordinate function `y ↦ y_j`, as a complex function, has temperate growth. -/
+private theorem hasTemperateGrowth_coord (j : Fin n) :
+    (fun y : CoordinateSpace n ↦ ((y j : ℝ) : ℂ)).HasTemperateGrowth :=
+  (Complex.ofRealCLM.comp (EuclideanSpace.proj j)).hasTemperateGrowth
+
+/-- Multiplying by a coordinate keeps the class: `Op(r) (y_j U) = y_j Op(r) U - i Op(∂_{ξ_j} r) U`,
+and `y_j Op(r) U = (y_j ψ) Op(r) U` for a cutoff `ψ` equal to `1` on the spatial support of `r`. -/
+private theorem SmoothedBy.smulLeftCLM_coord {U : 𝓢'(CoordinateSpace n, ℂ)} (hU : SmoothedBy U)
+    (j : Fin n) :
+    SmoothedBy (TemperedDistribution.smulLeftCLM ℂ
+      (fun y : CoordinateSpace n ↦ ((y j : ℝ) : ℂ)) U) := fun m r hsm hr t ↦ by
+  rw [eq_sub_of_add_eq (smulLeftCLM_quantizeTempered r hr.isUniform j U).symm]
+  refine TemperedDistribution.MemSobolev.sub ?_
+    ((hU _ _ (hsm.frequencyDeriv j) (hr.frequencyDeriv j) t).smul Complex.I)
+  obtain ⟨K, hK, hKr⟩ := hasCompactSpatialSupport_iff.1 hr
+  obtain ⟨ψ, -, -, hψ⟩ := hK.exists_schwartzMap_cutoff isOpen_univ (Set.subset_univ K)
+  have hψ1 (x : CoordinateSpace n) (ξ : CoordinateSpace n) (hx : r.coefficient (x, ξ) ≠ 0) :
+      ψ x = 1 := by
+    by_contra hψx
+    exact hx (hKr x (fun hxK ↦ hψx (hψ.self_of_nhdsSet x hxK)) ξ)
+  rw [← smulLeftCLM_quantizeTempered_of_eq_one hr.isUniform ψ.hasTemperateGrowth hψ1,
+    TemperedDistribution.smulLeftCLM_smulLeftCLM_apply ψ.hasTemperateGrowth
+      (hasTemperateGrowth_coord j), mul_comm (ψ : CoordinateSpace n → ℂ)]
+  exact (hU m r hsm hr t).smulLeftCLM_mul (hasTemperateGrowth_coord j) ψ
+
+/-- Multiplying by `1 + ‖y‖ ^ 2 = 1 + ∑ⱼ y_j ^ 2` keeps the class. -/
+private theorem SmoothedBy.smulLeftCLM_one_add_norm_sq {U : 𝓢'(CoordinateSpace n, ℂ)}
+    (hU : SmoothedBy U) :
+    SmoothedBy (TemperedDistribution.smulLeftCLM ℂ
+      (fun y : CoordinateSpace n ↦ ((1 + ‖y‖ ^ 2 : ℝ) : ℂ)) U) := by
+  set c : Fin n → CoordinateSpace n → ℂ := fun j y ↦ ((y j : ℝ) : ℂ)
+  have hc (j : Fin n) : (c j).HasTemperateGrowth := hasTemperateGrowth_coord j
+  have hp : (fun y : CoordinateSpace n ↦ ((1 + ‖y‖ ^ 2 : ℝ) : ℂ)).HasTemperateGrowth := by
+    fun_prop
+  have hid : TemperedDistribution.smulLeftCLM ℂ
+      (fun y : CoordinateSpace n ↦ ((1 + ‖y‖ ^ 2 : ℝ) : ℂ)) U =
+        U + ∑ j, TemperedDistribution.smulLeftCLM ℂ (c j)
+          (TemperedDistribution.smulLeftCLM ℂ (c j) U) := by
+    have hφ (φ : 𝓢(CoordinateSpace n, ℂ)) :
+        SchwartzMap.smulLeftCLM ℂ (fun y : CoordinateSpace n ↦ ((1 + ‖y‖ ^ 2 : ℝ) : ℂ)) φ =
+          φ + ∑ j, SchwartzMap.smulLeftCLM ℂ (c j) (SchwartzMap.smulLeftCLM ℂ (c j) φ) := by
+      ext x
+      rw [SchwartzMap.smulLeftCLM_apply_apply hp]
+      simp only [add_apply, sum_apply, SchwartzMap.smulLeftCLM_apply_apply (hc _), c, smul_eq_mul,
+        EuclideanSpace.norm_sq_eq, Real.norm_eq_abs, sq_abs]
+      push_cast
+      rw [add_mul, one_mul, Finset.sum_mul]
+      congr 1
+      exact Finset.sum_congr rfl fun j _ ↦ by ring
+    ext φ
+    rw [TemperedDistribution.smulLeftCLM_apply_apply, hφ, map_add, map_sum]
+    simp [TemperedDistribution.smulLeftCLM_apply_apply]
+  rw [hid]
+  refine hU.add ?_
+  induction (Finset.univ : Finset (Fin n)) using Finset.induction_on with
+  | empty =>
+    rw [Finset.sum_empty]
+    exact smoothedBy_of_memSobolev (s := 0) (TemperedDistribution.memSobolev_fun_zero _ _ 0 2)
+  | insert j s hj ih =>
+    rw [Finset.sum_insert hj]
+    exact SmoothedBy.add ((hU.smulLeftCLM_coord j).smulLeftCLM_coord j) ih
+
+/-- **Smoothing operators on tempered distributions.** A smoothing symbol `r` with compact spatial
+support maps every tempered distribution `T`, of any order and growth, into every Sobolev space
+`H^t`. -/
+theorem IsSmoothing.memSobolev_quantizeTempered (hsm : r.IsSmoothing)
+    (hr : r.HasCompactSpatialSupport) (T : 𝓢'(CoordinateSpace n, ℂ)) (t : ℝ) :
+    (quantizeTempered ℂ r hr.isUniform T).MemSobolev t 2 := by
+  obtain ⟨K, s, S, hS, rfl⟩ :=
+    TemperedDistribution.exists_memSobolev_eq_smulLeftCLM_one_add_norm_sq_pow T
+  set p : CoordinateSpace n → ℂ := fun y ↦ ((1 + ‖y‖ ^ 2 : ℝ) : ℂ)
+  have hp : p.HasTemperateGrowth := by fun_prop
+  -- Each factor `1 + ‖y‖ ^ 2` keeps the class.
+  have hpow (k : ℕ) (U : 𝓢'(CoordinateSpace n, ℂ)) (hU : SmoothedBy U) :
+      SmoothedBy (TemperedDistribution.smulLeftCLM ℂ (p ^ k) U) := by
+    induction k generalizing U with
+    | zero =>
+      rw [show p ^ 0 = fun _ ↦ (1 : ℂ) from funext fun _ ↦ by simp,
+        TemperedDistribution.smulLeftCLM_const, one_smul]
+      exact hU
+    | succ k ih =>
+      rw [pow_succ, ← TemperedDistribution.smulLeftCLM_smulLeftCLM_apply (hp.pow k) hp]
+      exact (ih U hU).smulLeftCLM_one_add_norm_sq
+  have hpK : p ^ K = fun y : CoordinateSpace n ↦ (((1 + ‖y‖ ^ 2) ^ K : ℝ) : ℂ) :=
+    funext fun y ↦ by simp [p]
+  exact hpK ▸ hpow K S (smoothedBy_of_memSobolev hS) m r hsm hr t
+
+/-- **Smoothing operators produce smooth functions.** For a smoothing symbol `r` with compact
+spatial support and every tempered distribution `T`, the tempered distribution `Op(r) T` is a
+smooth function `g`. -/
+theorem IsSmoothing.exists_contDiff_quantizeTempered_apply_eq_integral (hsm : r.IsSmoothing)
+    (hr : r.HasCompactSpatialSupport) (T : 𝓢'(CoordinateSpace n, ℂ)) :
+    ∃ g : CoordinateSpace n → ℂ, ContDiff ℝ ∞ g ∧
+      ∀ φ : 𝓢(CoordinateSpace n, ℂ), quantizeTempered ℂ r hr.isUniform T φ = ∫ x, φ x • g x :=
+  TemperedDistribution.exists_contDiff_eq_integral_of_forall_memSobolev
+    (hsm.memSobolev_quantizeTempered hr T)
+
+end Tempered
 
 end Symbol
 
