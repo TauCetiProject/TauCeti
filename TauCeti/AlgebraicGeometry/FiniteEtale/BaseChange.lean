@@ -35,10 +35,9 @@ private theorem spec_map_hom_left {R : Type u} [CommRing R]
     ((spec (.of R)).map f).hom.left = eqToHom (congrArg Over.left (spec_obj_eq_mk A₁)) ≫
       Spec.map (CommRingCat.ofHom f.unop.hom.hom.toRingHom) ≫
       eqToHom (congrArg Over.left (spec_obj_eq_mk A₂)).symm := by
-  have h := congrArg Over.Hom.left (Functor.congr_hom (spec_comp_ι (.of R)) f)
-  simp only [Functor.comp_obj, Functor.comp_map, ObjectProperty.ι_obj, ObjectProperty.ι_map,
-    Functor.op_obj, Functor.op_map, Over.comp_left, Over.eqToHom_left, algSpec_map_left,
-    Quiver.Hom.unop_op, commAlgCatEquivUnder_functor_map, AlgHom.toUnder, Under.homMk_right] at h
+  have h := congrArg Over.Hom.left (spec_map_hom (.of R) f)
+  simp only [Over.comp_left, Over.eqToHom_left, algSpec_map_left, Quiver.Hom.unop_op,
+    commAlgCatEquivUnder_functor_map, AlgHom.toUnder, Under.homMk_right] at h
   exact h
 
 variable (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
@@ -82,7 +81,9 @@ private theorem pullback_spec_map_hom_left {A₁ A₂ : (CommAlgCat.FiniteEtale.
   rw [pullback_map_hom]
   refine (Over.pullback_map_left_of_eq_mk _ ((spec (.of R)).map f).hom
     (spec_obj_eq_mk A₁) (spec_obj_eq_mk A₂)).trans ?_
-  apply Limits.pullback.hom_ext <;> simp [spec_map_hom_left]
+  apply Limits.pullback.hom_ext
+  · simp only [Limits.pullback.lift_fst]; rw [spec_map_hom_left]; simp
+  · simp
 private theorem spec_baseChange_map_hom_left {A₁ A₂ : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ}
     (f : A₁ ⟶ A₂) :
     eqToHom (spec_baseChange_obj_left R S A₁).symm ≫ ((spec (.of S)).map

@@ -137,6 +137,15 @@ theorem spec_obj_obj (A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ) :
     ((spec R).obj A).obj = (algSpec R).obj (op A.unop.obj) :=
   (rfl)
 
+/-- The morphism over the base underlying a finite étale spectrum map is Mathlib's algebraic
+spectrum map. -/
+@[simp]
+theorem spec_map_hom {A₁ A₂ : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ} (f : A₁ ⟶ A₂) :
+    ((spec R).map f).hom =
+      eqToHom (spec_obj_obj R A₁) ≫ (algSpec R).map f.unop.hom.op ≫
+        eqToHom (spec_obj_obj R A₂).symm :=
+  Functor.congr_hom (spec_comp_ι R) f
+
 private theorem exists_spec_iso (X : FiniteEtaleScheme (Spec R)) :
     ∃ A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ, Nonempty ((spec R).obj A ≅ X) := by
   have : IsAffine X.obj.left := isAffine_of_isAffineHom X.obj.hom
