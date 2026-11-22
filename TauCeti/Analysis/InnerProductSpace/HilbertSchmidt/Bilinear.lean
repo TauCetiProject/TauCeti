@@ -67,10 +67,10 @@ theorem bilinearHilbertSchmidtEnergy_eq_sum {ι₁ ι₂ : Type*} [Fintype ι₁
 
 /-- Sum of the ordinary one-slot Hilbert–Schmidt energies of the slices. -/
 theorem bilinearHilbertSchmidtEnergy_eq_sum_sq_hilbertSchmidtNorm
-    {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
-    (b₁ : OrthonormalBasis ι₁ 𝕜 E) (b₂ : OrthonormalBasis ι₂ 𝕜 E₂)
+    {ι₁ : Type*} [Fintype ι₁] (b₁ : OrthonormalBasis ι₁ 𝕜 E)
     (T : E →L[𝕜] E₂ →L[𝕜] F) :
     bilinearHilbertSchmidtEnergy T = ∑ i, (T (b₁ i)).hilbertSchmidtNorm ^ 2 := by
+  let b₂ := stdOrthonormalBasis 𝕜 E₂
   rw [bilinearHilbertSchmidtEnergy_eq_sum b₁ b₂]
   apply Finset.sum_congr rfl
   intro i _
