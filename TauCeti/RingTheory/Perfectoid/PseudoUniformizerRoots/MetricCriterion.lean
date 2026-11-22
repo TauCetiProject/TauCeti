@@ -15,8 +15,9 @@ For a prime `p`, let `R` be a uniform complete Hausdorff Tate ring with a pseudo
 admitting compatible `p`-power roots and satisfying `ϖ ^ p ∣ p` in the power-bounded subring.
 Then `R` is perfectoid exactly when one constant `0 < c < 1` gives, for every `x : R`, a
 `p`-th-power approximation whose spectral-gauge error is at most `c` times the gauge of `x`.
-In a perfectoid ring, any constant strictly larger than `(1 / 2) ^ p` works for the normalized
-gauge. The same approximating root is power bounded whenever the input is power bounded and
+In a perfectoid ring, any constant strictly larger than the gauge of `p` works. This gauge
+is at most `(1 / 2) ^ p` for the normalized gauge, and vanishes in characteristic `p`. The same
+approximating root is power bounded whenever the input is power bounded and
 the constant is at most one.
 
 For the converse, `1 < p` and a uniform absolute error bound strictly less than one on the
@@ -38,33 +39,23 @@ variable {p : ℕ} {R : Type*} [CommRing R] [UniformSpace R]
   [IsTopologicalRing R] [IsTateRing R] [IsUniform R]
   (ϖ : PseudoUniformizerRoots p R)
 
-private theorem powerBounded_of_gauge_sub_pow_le_one {x y : R} {k : ℕ}
-    (hk : k ≠ 0) (hx : x ∈ powerBoundedSubring R)
-    (he : ϖ.gauge (x - y ^ k) ≤ 1) : y ∈ powerBoundedSubring R := by
-  apply mem_powerBoundedSubring.mpr
-  apply IsPowerBounded.of_pow hk
-  apply mem_powerBoundedSubring.mp
-  simpa only [sub_sub_cancel] using
-    (powerBoundedSubring R).sub_mem hx (ϖ.gauge_le_one_iff.mp he)
-
 variable [IsUniformAddGroup R] [CompleteSpace R] [T2Space R]
 
 private theorem exists_scaled_gauge_sub_pow_le [Fact p.Prime] [IsPerfectoidTateRing p R]
     (x : R) (m : ℤ) (n : ℕ)
     (hx : (ϖ.zpow (-m) n : R) * x ∈ powerBoundedSubring R) :
     ∃ y : R, ϖ.gauge (x - y ^ p) ≤
-      (2 : ℝ) ^ (-((m : ℝ) / p ^ n)) * (1 / 2 : ℝ) ^ p := by
+      (2 : ℝ) ^ (-((m : ℝ) / p ^ n)) * ϖ.gauge (p : R) := by
   obtain ⟨y, hy⟩ := IsPerfectoidTateRing.exists_natCast_dvd_sub_pow
     (p := p) (⟨_, hx⟩ : powerBoundedSubring R)
-  have hradius : (2 : ℝ) ^ (-((p : ℝ) / p ^ 0)) = (1 / 2 : ℝ) ^ p := by
-    calc
-      (2 : ℝ) ^ (-((p : ℝ) / p ^ 0)) = ((2 : ℝ) ^ p)⁻¹ := by
-        rw [pow_zero, div_one, Real.rpow_neg zero_le_two, Real.rpow_natCast]
-      _ = (1 / 2 : ℝ) ^ p := by rw [← inv_pow, one_div]
-  have he : ϖ.gauge ((ϖ.zpow (-m) n : R) * x - (y : R) ^ p) ≤ (1 / 2 : ℝ) ^ p := by
-    rw [← hradius]
-    simpa only [AddSubgroupClass.coe_sub, Subring.coe_pow] using
-      (ϖ.gauge_le_rpow_iff_rootPB_pow_dvd _ 0 p).mpr ((ϖ.rootPB_pow_dvd 0).trans hy)
+  have he : ϖ.gauge ((ϖ.zpow (-m) n : R) * x - (y : R) ^ p) ≤
+      ϖ.gauge (p : R) := by
+    obtain ⟨z, hz⟩ := hy
+    have heq : (ϖ.zpow (-m) n : R) * x - (y : R) ^ p = (p : R) * z :=
+      congrArg Subtype.val hz
+    rw [heq]
+    exact (map_mul_le_mul ϖ.gauge _ _).trans
+      (mul_le_of_le_one_right (apply_nonneg _ _) (ϖ.gauge_le_one_iff.mpr z.property))
   refine ⟨(ϖ.zpow m (n + 1) : R) * (y : R), ?_⟩
   -- Undo the scaling using the next root, so its `p`-th power supplies the original scale.
   have hpow : (ϖ.zpow m (n + 1) : R) ^ p = (ϖ.zpow m n : R) := by
@@ -82,29 +73,37 @@ private theorem exists_scaled_gauge_sub_pow_le [Fact p.Prime] [IsPerfectoidTateR
 
 /-- For prime `p`, given a pseudouniformiser `ϖ` with compatible `p`-power roots and `ϖ ^ p ∣ p`
 in the power-bounded subring, every element of a perfectoid Tate ring admits a `p`-th-power
-approximation with relative spectral-gauge error at most `c` whenever `c > (1 / 2) ^ p`.
+approximation with relative spectral-gauge error at most `c` whenever `c > ϖ.gauge (p : R)`,
+including every positive tolerance in characteristic `p`.
 The same witness is power bounded if `x` is power bounded and `c ≤ 1`. -/
 theorem exists_gauge_sub_pow_le_mul [Fact p.Prime] [IsPerfectoidTateRing p R] {c : ℝ}
-    (hc : (1 / 2 : ℝ) ^ p < c) (x : R) :
+    (hc : ϖ.gauge (p : R) < c) (x : R) :
     ∃ y : R, ϖ.gauge (x - y ^ p) ≤ c * ϖ.gauge x ∧
       (c ≤ 1 → x ∈ powerBoundedSubring R → y ∈ powerBoundedSubring R) := by
   suffices h : ∃ y : R, ϖ.gauge (x - y ^ p) ≤ c * ϖ.gauge x by
     obtain ⟨y, hy⟩ := h
     refine ⟨y, hy, fun hc1 hx ↦ ?_⟩
-    exact ϖ.powerBounded_of_gauge_sub_pow_le_one (Fact.out : p.Prime).ne_zero hx
-      (hy.trans ((mul_le_of_le_one_left (apply_nonneg _ _) hc1).trans
-        (ϖ.gauge_le_one_iff.mpr hx)))
+    have he : ϖ.gauge (x - y ^ p) ≤ 1 :=
+      hy.trans ((mul_le_of_le_one_left (apply_nonneg _ _) hc1).trans
+        (ϖ.gauge_le_one_iff.mpr hx))
+    exact mem_powerBoundedSubring.mpr <| (mem_powerBoundedSubring.mp hx).of_sub_pow
+      (Fact.out : p.Prime).ne_zero (mem_powerBoundedSubring.mp (ϖ.gauge_le_one_iff.mp he))
   by_cases hx : x = 0
   · exact ⟨0, by simp [hx, (Fact.out : p.Prime).ne_zero]⟩
   have hx0 : 0 < ϖ.gauge x := (apply_nonneg _ _).lt_of_ne'
     (fun h ↦ hx (ϖ.gauge_eq_zero_iff.mp h))
-  have ha : 0 < (1 / 2 : ℝ) ^ p := by positivity
+  -- A positive intermediate bound also covers the case where the gauge of `p` is zero.
+  let a : ℝ := max (ϖ.gauge (p : R)) (c / 2)
+  have hc0 : 0 < c := (apply_nonneg _ _).trans_lt hc
+  have ha : 0 < a := lt_of_lt_of_le (by positivity) (le_max_right _ _)
+  have hac : a < c := max_lt hc (by linarith)
   obtain ⟨m, n, hm, hn⟩ := ϖ.exists_gauge_radius_lt (Fact.out : p.Prime).one_lt
-    (x := x) (d := c / (1 / 2 : ℝ) ^ p * ϖ.gauge x) (by
-      have hca : 1 < c / (1 / 2 : ℝ) ^ p := (lt_div_iff₀ ha).mpr (by simpa using hc)
+    (x := x) (d := c / a * ϖ.gauge x) (by
+      have hca : 1 < c / a := (lt_div_iff₀ ha).mpr (by simpa using hac)
       simpa using mul_lt_mul_of_pos_right hca hx0)
   obtain ⟨y, hy⟩ := ϖ.exists_scaled_gauge_sub_pow_le x m n hm
-  refine ⟨y, hy.trans ?_⟩
+  refine ⟨y, hy.trans ((mul_le_mul_of_nonneg_left (le_max_left (ϖ.gauge (p : R)) (c / 2))
+    (by positivity)).trans ?_)⟩
   have := mul_lt_mul_of_pos_right hn ha
   field_simp at this
   exact this.le
@@ -137,8 +136,11 @@ theorem isPerfectoidTateRing_of_exists_gauge_sub_pow_le (hp : 1 < p) {c : ℝ}
     (ϖ.rootPB_pow_dvd n) fun x ↦ ?_
   obtain ⟨y, hy⟩ := h x
   have hy' : ϖ.gauge ((x : R) - y ^ p) ≤ d := hy.trans (le_max_left c (1 / 2))
+  have he : IsPowerBounded ((x : R) - y ^ p) :=
+    mem_powerBoundedSubring.mp (ϖ.gauge_le_one_iff.mp (hy'.trans hd1.le))
   have hyPB : y ∈ powerBoundedSubring R :=
-    ϖ.powerBounded_of_gauge_sub_pow_le_one (NeZero.ne p) x.property (hy'.trans hd1.le)
+    mem_powerBoundedSubring.mpr <| (mem_powerBoundedSubring.mp x.property).of_sub_pow
+      (NeZero.ne p) he
   refine ⟨⟨y, hyPB⟩, ?_⟩
   apply (ϖ.gauge_le_rpow_iff_rootPB_pow_dvd _ n p).mp
   simpa only [AddSubgroupClass.coe_sub, Subring.coe_pow] using hy'.trans hn
@@ -160,7 +162,17 @@ theorem isPerfectoidTateRing_iff_exists_gauge_sub_pow_le_mul [Fact p.Prime] :
   have ha : (1 / 2 : ℝ) ^ p < 1 :=
     pow_lt_one₀ (by norm_num) (by norm_num) (Fact.out : p.Prime).ne_zero
   obtain ⟨c, hc0, hc1⟩ := exists_between ha
+  have hpGauge : ϖ.gauge (p : R) ≤ (1 / 2 : ℝ) ^ p := by
+    have hradius : (2 : ℝ) ^ (-((p : ℝ) / p ^ 0)) = (1 / 2 : ℝ) ^ p := by
+      calc
+        (2 : ℝ) ^ (-((p : ℝ) / p ^ 0)) = ((2 : ℝ) ^ p)⁻¹ := by
+          rw [pow_zero, div_one, Real.rpow_neg zero_le_two, Real.rpow_natCast]
+        _ = (1 / 2 : ℝ) ^ p := by rw [← inv_pow, one_div]
+    rw [← hradius]
+    simpa only [Subring.coe_natCast] using
+      (ϖ.gauge_le_rpow_iff_rootPB_pow_dvd (p : powerBoundedSubring R) 0 p).mpr
+        (ϖ.rootPB_pow_dvd 0)
   exact ⟨c, ⟨(by positivity : (0 : ℝ) < (1 / 2) ^ p).trans hc0, hc1⟩,
-    fun x ↦ (ϖ.exists_gauge_sub_pow_le_mul hc0 x).imp fun _ hy ↦ hy.1⟩
+    fun x ↦ (ϖ.exists_gauge_sub_pow_le_mul (hpGauge.trans_lt hc0) x).imp fun _ hy ↦ hy.1⟩
 
 end TauCeti.Perfectoid.PseudoUniformizerRoots

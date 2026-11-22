@@ -10,6 +10,8 @@ public import TauCeti.RingTheory.Huber.TateGauge.Spectral.Seminorm
 public import TauCeti.RingTheory.Huber.Uniform
 public import TauCeti.RingTheory.Perfectoid.PseudoUniformizerRoots.Basic
 
+import TauCeti.RingTheory.Subsemiring.SpanSingleton
+
 /-!
 # The spectral gauge of a pseudouniformiser with compatible roots
 
@@ -73,6 +75,7 @@ with which the tilt and its sharp map are compared to the ring.
 public section
 
 open Filter Topology TauCeti.Huber
+open scoped Pointwise
 
 namespace TauCeti.Perfectoid.PseudoUniformizerRoots
 
@@ -268,17 +271,21 @@ theorem gauge_le_rpow_iff {x : R} (m : ℤ) (n : ℕ) :
 by that root's `k`-th power, for every natural exponent `k`, including zero. -/
 theorem gauge_le_rpow_iff_rootPB_pow_dvd (x : powerBoundedSubring R) (n k : ℕ) :
     ϖ.gauge (x : R) ≤ (2 : ℝ) ^ (-((k : ℝ) / p ^ n)) ↔ ϖ.rootPB n ^ k ∣ x := by
+  let u := ϖ.zpow (k : ℤ) n
   have hg := ϖ.gauge_le_rpow_iff (x := (x : R)) (k : ℤ) n
   simp only [Int.cast_natCast] at hg
-  rw [hg]
-  constructor
-  · intro hz
-    refine ⟨⟨_, hz⟩, Subtype.ext ?_⟩
-    simp only [Subring.coe_mul, Subring.coe_pow, coe_rootPB, ← coe_zpow_natCast,
-      zpow_neg, Units.mul_inv_cancel_left]
-  · rintro ⟨z, rfl⟩
-    simpa only [Subring.coe_mul, Subring.coe_pow, coe_rootPB, ← coe_zpow_natCast,
-      zpow_neg, Units.inv_mul_cancel_left] using z.property
+  rw [hg, zpow_neg]
+  change u⁻¹ • (x : R) ∈ (powerBoundedSubring R : Set R) ↔ _
+  rw [← Set.mem_smul_set_iff_inv_smul_mem]
+  have hu : (u : R) = (ϖ.rootPB n ^ k : powerBoundedSubring R) := by
+    simp only [u, coe_zpow_natCast, Subring.coe_pow, coe_rootPB]
+  have hsmul : u • (powerBoundedSubring R : Set R) =
+      (u : R) • (powerBoundedSubring R : Set R) := by
+    ext z
+    simp only [Set.mem_smul_set, Units.smul_def]
+  rw [hsmul, hu]
+  exact (SubsemiringClass.coe_mem_smul_iff_dvd (powerBoundedSubring R)
+      (c := ϖ.rootPB n ^ k) (y := x))
 
 /-- **The open balls of the spectral gauge**: `|x|_ϖ < 2 ^ (-(m / p ^ n))` exactly when
 `ϖ ^ (-(m / p ^ n)) x` is topologically nilpotent. -/
