@@ -21,25 +21,29 @@ Fermat's theorem (`IsLocalExtr.mem_criticalPoints`), so it is a limit both of po
 differentiable its derivative is zero, so a regular point of a real function is a point of
 differentiability.
 
-When `f` is `C¹` and `M` is modelled on a space of dimension `n + 1`, the sublevel `{f ≤ c}` is a
-manifold with boundary for the atlas `TauCeti.scalarRegularSublevelChartedSpace`
-(`TauCeti.isManifold_scalarRegularSublevel`), whose manifold interior and boundary are `{f < c}`
-and `f⁻¹(c)` (`TauCeti.interior_scalarRegularSublevel`, `TauCeti.boundary_scalarRegularSublevel`).
-The results here say that these are also its topological interior and frontier in `M`, so the
-sublevel is a regular domain: a closed codimension-zero submanifold with boundary.
+When `f` is `C¹`, `M` is modelled on a space of dimension `n + 1` and the model `I` is
+boundaryless (`I.Boundaryless`), the sublevel `{f ≤ c}` is a manifold with boundary for the atlas
+`TauCeti.scalarRegularSublevelChartedSpace` (`TauCeti.isManifold_scalarRegularSublevel`), whose
+manifold interior and boundary are `{f < c}` and `f⁻¹(c)` (`TauCeti.interior_scalarRegularSublevel`,
+`TauCeti.boundary_scalarRegularSublevel`). The results here say that these are also its topological
+interior and frontier in `M`, so the sublevel is a regular domain: a closed codimension-zero
+submanifold with boundary.
 
 Every compact subset `K` of a Hausdorff, σ-compact (for instance second-countable),
-finite-dimensional smooth manifold without boundary lies in the interior of a compact regular
-domain of this kind (`IsCompact.exists_isRegularValue_isCompact_setOf_le`). The manifold carries a
-smooth proper exhaustion function `f ≥ 0` (`TauCeti.exists_contMDiffMap_isProperMap_nonneg`).
-By Sard's theorem (`ContMDiff.dense_isRegularValue`) the regular values of `f` are dense, so one of
-them, `c`, exceeds the maximum of `f` on `K`. Properness makes `{f ≤ c}` compact. Such compact
-neighbourhoods with smooth boundary are the compact pieces on which doubling arguments run, for
-instance to reduce approximation and transversality into a non-compact target to a compact one.
+finite-dimensional smooth manifold without boundary lies in the strict sublevel `{f < c}` of a
+smooth function `f` at a regular value `c` whose sublevel `{f ≤ c}` is compact
+(`IsCompact.exists_isRegularValue_isCompact_setOf_le`). In positive dimension and on a
+boundaryless model, this sublevel is a compact regular domain of the kind above with `K` in its
+interior. The manifold carries a smooth proper exhaustion function `f ≥ 0`
+(`TauCeti.exists_contMDiffMap_isProperMap_nonneg`). By Sard's theorem
+(`ContMDiff.dense_isRegularValue`) the regular values of `f` are dense, so one of them, `c`,
+exceeds the maximum of `f` on `K`. Properness makes `{f ≤ c}` compact. Such compact neighbourhoods
+with smooth boundary are the compact pieces on which doubling arguments run, for instance to
+reduce approximation and transversality into a non-compact target to a compact one.
 
 In dimension zero every point is critical, so a regular value `c` is not a value of `f` and the
 sublevel `{f ≤ c}` is open and closed. The existence theorem holds in every dimension; only the
-manifold structure with boundary needs positive dimension.
+manifold structure with boundary needs positive dimension and a boundaryless model.
 
 ## Main results
 
@@ -119,9 +123,9 @@ variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [BoundarylessManifold I 
 /-- **Compact regular neighbourhoods.** Every compact subset `K` of a Hausdorff, σ-compact,
 finite-dimensional smooth manifold without boundary, for instance a second-countable one, lies in
 the strict sublevel `{f < c}` of a smooth function `f` at a regular value `c` whose sublevel
-`{f ≤ c}` is compact. When `M` is
-modelled on a space of dimension `n + 1`, this sublevel is a compact manifold with boundary
-`f⁻¹(c)` for `TauCeti.scalarRegularSublevelChartedSpace`, and `K` lies in its interior
+`{f ≤ c}` is compact. When `M` is modelled on a space of dimension `n + 1` and the model `I` is
+boundaryless (`I.Boundaryless`), this sublevel is a compact manifold with boundary `f⁻¹(c)` for
+`TauCeti.scalarRegularSublevelChartedSpace`, and `K` lies in its interior
 (`TauCeti.IsRegularValue.interior_setOf_le`). -/
 theorem _root_.IsCompact.exists_isRegularValue_isCompact_setOf_le {K : Set M} (hK : IsCompact K) :
     ∃ (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) (c : ℝ), IsRegularValue I 𝓘(ℝ) f c ∧
