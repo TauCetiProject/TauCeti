@@ -28,6 +28,8 @@ residue field of the complete Noetherian local ring `R̂`
 
 * `TauCeti.IsInjectiveEnvelope.adicCompletionResidueMap`: `ι` lifted across
   `ResidueField R̂ ≃ₐ[R] κ` to an `R̂`-linear map `ResidueField R̂ →ₗ[R̂] E`.
+* `TauCeti.IsInjectiveEnvelope.adicCompletionLinearMapEquiv`: for a finite `R`-module `N`,
+  restriction along `AdicCompletion.of` gives `Hom_{R̂}(N̂, E) ≃ₗ[R̂] Hom_R(N, E)`.
 * `TauCeti.IsInjectiveEnvelope.adicCompletion`: `E` is an injective envelope of
   `ResidueField R̂` over `R̂`.
 
@@ -41,7 +43,7 @@ public section
 
 noncomputable section
 
-universe u v
+universe u v w
 
 open IsLocalRing LinearMap
 
@@ -81,6 +83,39 @@ theorem adicCompletionResidueMap_apply
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
   simp [adicCompletionResidueMap]
+
+section CompletionHomAdjunction
+
+variable (N : Type w) [AddCommGroup N] [Module R N] [Module.Finite R N]
+
+include hι
+
+/-- For a finitely generated `R`-module `N` over a Noetherian local ring `R`, restriction along
+`AdicCompletion.of` gives an `R̂`-linear isomorphism `Hom_{R̂}(N̂, E) ≃ₗ[R̂] Hom_R(N, E)`. -/
+def adicCompletionLinearMapEquiv :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    (_root_.AdicCompletion (maximalIdeal R) N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E)
+      ≃ₗ[_root_.AdicCompletion (maximalIdeal R) R] (N →ₗ[R] E) := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  exact (AdicCompletion.torsionLiftEquiv hι.mem_primaryComponent).symm
+
+@[simp]
+theorem adicCompletionLinearMapEquiv_apply
+    (g : letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+         _root_.AdicCompletion (maximalIdeal R) N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E)
+    (x : N) :
+    hι.adicCompletionLinearMapEquiv N g x = g (_root_.AdicCompletion.of (maximalIdeal R) N x) := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  exact AdicCompletion.torsionLiftEquiv_symm_apply hι.mem_primaryComponent g x
+
+@[simp]
+theorem adicCompletionLinearMapEquiv_symm_apply_of (f : N →ₗ[R] E) (x : N) :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    (hι.adicCompletionLinearMapEquiv N).symm f (_root_.AdicCompletion.of (maximalIdeal R) N x) =
+      f x :=
+  AdicCompletion.torsionLiftEquiv_apply_of hι.mem_primaryComponent f x
+
+end CompletionHomAdjunction
 
 variable [Small.{v} R]
 

@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Algebra.Module.Injective
 public import Mathlib.RingTheory.HopkinsLevitzki
-public import TauCeti.Algebra.Module.Torsion.ResidueField
+public import TauCeti.Algebra.Module.Torsion.Essential
 public import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
+public import TauCeti.RingTheory.SimpleModule.LocalRing
 
 /-!
 # Artinian modules over commutative local rings

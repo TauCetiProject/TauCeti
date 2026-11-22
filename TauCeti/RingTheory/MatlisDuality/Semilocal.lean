@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.HopkinsLevitzki
-public import TauCeti.Algebra.Module.Injective.Cogenerator
+public import TauCeti.Algebra.Module.Injective.Cogenerator.Basic
 public import TauCeti.Algebra.Module.Injective.Envelope.Existence
 import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 
@@ -23,7 +23,7 @@ there up to evaluation. No locality is assumed; over a local ring `R ⧸ J(R)` i
 the case treated in `TauCeti/RingTheory/MatlisDuality/FiniteLength.lean`.
 
 The argument applies the cogenerator criteria of
-`TauCeti/Algebra/Module/Injective/Cogenerator.lean`: an injective module `E` such that
+`TauCeti/Algebra/Module/Injective/Cogenerator/Basic.lean`: an injective module `E` such that
 `Hom_R(R ⧸ 𝔪, E)` has length one for every maximal ideal `𝔪` gives a duality preserving length,
 with biduality on modules of finite length. For the injective hull of `R ⧸ J(R)`, every map from
 `R ⧸ 𝔪` lands in the essential image of `R ⧸ J(R)`, and `Hom_R(R ⧸ 𝔪, R ⧸ J(R))` is simple:

@@ -18,7 +18,7 @@ the finite-length case of Matlis duality: `D` preserves length, and the evaluati
 needed. These are the base cases from which the duality between Artinian modules and finite
 modules over the completion is built, by passing to the submodules killed by powers of the
 maximal ideal. Length preservation and biduality are the cogenerator criteria of
-`TauCeti/Algebra/Module/Injective/Cogenerator.lean`, applied to the computation of `D(κ)`.
+`TauCeti/Algebra/Module/Injective/Cogenerator/Basic.lean`, applied to the computation of `D(κ)`.
 
 ## Main declarations
 

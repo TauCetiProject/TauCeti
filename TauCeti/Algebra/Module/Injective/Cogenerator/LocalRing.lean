@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Injective.Cogenerator
+public import TauCeti.Algebra.Module.Injective.Cogenerator.Basic
 public import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
@@ -15,7 +15,7 @@ Let `R` be a commutative local ring with residue field `κ`, and let `E` be an i
 containing a copy of `κ` via an injective linear map `ι : κ →ₗ[R] E`. Because `R` has a unique
 maximal ideal `𝔪` and `R ⧸ 𝔪 ≅ κ`, `E` receives a nonzero map from `R ⧸ 𝔪` for every maximal ideal
 `𝔪` and therefore satisfies the cogenerator criteria of
-`TauCeti/Algebra/Module/Injective/Cogenerator.lean`, without assuming finite length or an
+`TauCeti/Algebra/Module/Injective/Cogenerator/Basic.lean`, without assuming finite length or an
 injective envelope.
 
 ## Main results

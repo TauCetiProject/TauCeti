@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Injective
-import Mathlib.LinearAlgebra.Isomorphisms
-import Mathlib.RingTheory.Filtration
 import TauCeti.RingTheory.AdicCompletion.Algebra
 public import TauCeti.RingTheory.AdicCompletion.Basic
 import TauCeti.RingTheory.AdicCompletion.Noetherian
