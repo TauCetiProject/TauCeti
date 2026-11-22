@@ -902,6 +902,13 @@ theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (f : C(X
     map (g.comp f) (by rw [ContinuousMap.comp_apply, hf, hg]) = (map g hg).comp (map f hf) :=
   ContinuousMonoidHom.ext fun _ ↦ ext <| by simp
 
+/-- The Moore loop map sends only the unit to the unit, since it preserves lengths: the fibre of
+the Moore loop map over the unit is a single point. -/
+@[simp]
+theorem map_eq_one_iff (f : C(X, Y)) (hf : f x = y) {γ : MooreLoopSpace X x} :
+    map f hf γ = 1 ↔ γ = 1 := by
+  rw [← length_eq_zero_iff, ← length_eq_zero_iff, length_map]
+
 /-! ### Reversal of Moore loops -/
 
 /-- The **reversal** of a Moore loop: the same loop run backwards, `t ↦ γ (γ.length - t)`. It is

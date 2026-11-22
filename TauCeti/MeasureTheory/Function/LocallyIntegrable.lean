@@ -61,7 +61,8 @@ Likewise, a function locally integrable on `s` times a continuous function whose
 lies in `s`, on either side, is integrable on the whole space, and applying a field of continuous
 linear maps that is continuous on a locally closed set `s` to a function locally integrable on `s`
 keeps it locally integrable on `s`, as does applying a locally integrable field of operators to a
-continuous function.
+continuous function. On the whole space, applying a continuous field of operators to a locally
+integrable function keeps it locally integrable.
 
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
@@ -738,6 +739,22 @@ theorem clm_apply_continuousOn {f : X → F} {A : X → F →L[𝕜] G} (hs : Is
     ((hf.mono hks).aestronglyMeasurable_of_isCompact hk hk.measurableSet)
 
 end MeasureTheory.LocallyIntegrableOn
+
+namespace MeasureTheory.LocallyIntegrable
+
+variable {X 𝕜 F G : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  [T2Space X] [LocallyCompactSpace X] [NontriviallyNormedField 𝕜] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G] {μ : Measure X}
+
+/-- Applying a continuous field of continuous linear maps to a locally integrable function gives a
+locally integrable function. This is the operator-valued counterpart of Mathlib's
+`MeasureTheory.LocallyIntegrable.continuous_smul`. -/
+theorem continuous_clm_apply {f : X → F} {A : X → F →L[𝕜] G} (hA : Continuous A)
+    (hf : LocallyIntegrable f μ) : LocallyIntegrable (fun x ↦ A x (f x)) μ :=
+  locallyIntegrableOn_univ.1 ((hf.locallyIntegrableOn univ).continuousOn_clm_apply
+    isOpen_univ.isLocallyClosed hA.continuousOn)
+
+end MeasureTheory.LocallyIntegrable
 
 namespace MeasureTheory.LocallyIntegrableOn
 
