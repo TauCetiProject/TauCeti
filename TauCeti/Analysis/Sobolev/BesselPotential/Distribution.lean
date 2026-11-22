@@ -29,6 +29,8 @@ continuous linear map, so that the spaces `H^{s,p}` for different `s` can be com
   `BesselPotentialSpace.toLp_intervalIntegral`: the isometry `u ↦ J^s u` of `H^{s,p}` onto `Lᵖ`
   transfers extended norms, Bochner integrability of `H^{s,p}`-valued functions and their
   interval integrals.
+* `BesselPotentialSpace.toOrderZeroₗᵢ`: the real-order Bessel potential `J^s` as an isometry
+  `H^{s,p}(E, F) ≃ₗᵢ[ℂ] H^{0,p}(E, F)`.
 * `TauCeti.CompatibleCouple.besselPotentialSpace E F s₀ p₀ s₁ p₁`: the compatible couple
   `(H^{s₀,p₀}, H^{s₁,p₁})` inside `𝓢'(E, F)`.
 -/
@@ -107,6 +109,37 @@ theorem toLp_intervalIntegral {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (g : �
 theorem memSobolev_toDistr_of_eq {s t : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{t, p}(E, F))
     (h : t = s) : MemSobolev s p u.toDistr :=
   h ▸ u.memSobolev_toDistr
+
+section OrderZero
+
+variable {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+variable (E F) in
+/-- The Bessel potential `J^s` as a linear isometry equivalence
+`H^{s,p}(E, F) ≃ₗᵢ[ℂ] H^{0,p}(E, F)`: both spaces are identified with `Lᵖ` by
+`BesselPotentialSpace.toLpₗᵢ`. -/
+def toOrderZeroₗᵢ (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] : H^{s, p}(E, F) ≃ₗᵢ[ℂ] H^{0, p}(E, F) :=
+  (toLpₗᵢ E F s p).trans (toLpₗᵢ E F 0 p).symm
+
+/-- `toOrderZeroₗᵢ` acts on the underlying tempered distributions as the Bessel potential `J^s`. -/
+@[simp]
+theorem toDistr_toOrderZeroₗᵢ (u : H^{s, p}(E, F)) :
+    (toOrderZeroₗᵢ E F s p u).toDistr = besselPotential E F s u.toDistr := by
+  have h : (toOrderZeroₗᵢ E F s p u).toDistr = besselPotential E F (-0) u.toLp := by
+    simp [toOrderZeroₗᵢ]
+  rw [h, neg_zero, besselPotential_zero, ContinuousLinearMap.id_apply,
+    ← u.bessel_toDistr_eq_toLp]
+
+/-- The inverse of `toOrderZeroₗᵢ` acts on the underlying tempered distributions as the Bessel
+potential `J^{-s}`. -/
+@[simp]
+theorem toDistr_toOrderZeroₗᵢ_symm (u : H^{0, p}(E, F)) :
+    ((toOrderZeroₗᵢ E F s p).symm u).toDistr = besselPotential E F (-s) u.toDistr := by
+  have h : ((toOrderZeroₗᵢ E F s p).symm u).toDistr = besselPotential E F (-s) u.toLp := by
+    simp [toOrderZeroₗᵢ]
+  rw [h, ← u.bessel_toDistr_eq_toLp, besselPotential_zero, ContinuousLinearMap.id_apply]
+
+end OrderZero
 
 end BesselPotentialSpace
 

@@ -274,7 +274,7 @@ theorem interiorAngle_doubleTriangle_zero :
       simpa [hz] using vertexAngle_sideZero_reflected_vertex (P := P) (i := 0) (.inl rfl)
     refine Real.Angle.eq_two_mul_of_abs_toReal_eq habs ?_
       (Q.interiorAngle_pos_of_isLeft_vertex (by simp [hQz]))
-      (Q.interiorAngle_lt_pi 0)
+      ((Q.interiorAngle_lt_pi 0).trans (lt_two_mul_self Real.pi_pos))
     rw [← hP, orientedAngle_add, hQ]
   · have hQξ : Q.vertex 0 = .inr ξ := by simp [Q, hz]
     rw [Q.interiorAngle_eq_zero_of_vertex_eq_inr hQξ, P.interiorAngle_eq_zero_of_vertex_eq_inr hz,
@@ -303,7 +303,7 @@ theorem interiorAngle_doubleTriangle_two :
         vertexAngle_sideZero_reflected_vertex (P := P) (i := 1) (.inr rfl)
     refine Real.Angle.eq_two_mul_of_abs_toReal_eq habs ?_
       (Q.interiorAngle_pos_of_isLeft_vertex (by simp [hQz]))
-      (Q.interiorAngle_lt_pi 2)
+      ((Q.interiorAngle_lt_pi 2).trans (lt_two_mul_self Real.pi_pos))
     rw [← hP, add_comm, orientedAngle_add, hQ]
   · have hQξ : Q.vertex 2 = .inr ξ := by simp [Q, hz]
     rw [Q.interiorAngle_eq_zero_of_vertex_eq_inr hQξ, P.interiorAngle_eq_zero_of_vertex_eq_inr hz,

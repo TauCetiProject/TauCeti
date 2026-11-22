@@ -43,9 +43,9 @@ This file proves the exact formula and that the symbol classes are invariant:
   operator on Schwartz space. For invertible `P` the change of variables is injective and the
   symbol classes are invariant in both directions (`TauCeti.Symbol.isUniform_compProdMap_iff` and
   its analogues).
-* `TauCeti.Symbol.exists_bound_mixedDeriv_comp_prodMap`: the estimates for `a ∘ (P × Q)` hold with
-  one constant for all `P` and `Q` in a bounded set with `Q⁻¹` bounded too, as needed for families
-  of linear changes of variables such as compact group actions.
+* `TauCeti.Symbol.exists_bound_mixedDeriv_comp_prodMap_of_norm_le_mul_norm`: the estimates for
+  `a ∘ (P × Q)` hold with one constant for all `P` and `Q` in a bounded set with `Q⁻¹` bounded
+  too, as needed for families of linear changes of variables such as compact group actions.
 * `TauCeti.Symbol.compProdMap_symm_adjointEquiv_eq_self_iff`: a pseudodifferential operator
   commutes with the change of coordinates `u ↦ u ∘ A` exactly when its symbol is invariant under
   `(x, ξ) ↦ (A⁻¹ x, Aᵀ ξ)`.
@@ -58,8 +58,9 @@ The symbol estimates for `a ∘ (P × Q)` come from the chain rule: a mixed deri
 `a ∘ (P × Q)` is a derivative of `a` at `(P x, Q ξ)` along the directions `(P eⱼ, 0)` and
 `(0, Q eⱼ)` (`TauCeti.mixedDeriv_comp_prodMap`). Expanding these directions in the standard basis
 of each factor bounds it by mixed derivatives of `a` with the same numbers of position and
-frequency derivatives (`TauCeti.norm_iteratedFDeriv_append_le`), and the weights `⟨Q ξ⟩` and `⟨ξ⟩`
-are comparable since `Q` is invertible.
+frequency derivatives, with the weight `⟨Q ξ⟩` and one constant for all `P` and `Q` of bounded
+norm (`TauCeti.exists_bound_mixedDeriv_comp_prodMap`). The weights `⟨Q ξ⟩` and `⟨ξ⟩` are
+comparable since `Q` is invertible.
 
 ## References
 
@@ -95,47 +96,20 @@ coefficient `f` satisfies the estimates of order `m` with constants `C α' β'` 
 The constant `B` depends only on `c`, the constants `C` and `(α, β)`, and serves every pair of
 linear maps `P`, `Q` with `‖P‖ ≤ c`, `‖Q‖ ≤ c` and `‖ξ‖ ≤ c ‖Q ξ‖`; the last condition makes
 `⟨Q ξ⟩` and `⟨ξ⟩` comparable. -/
-theorem exists_bound_mixedDeriv_comp_prodMap
+theorem exists_bound_mixedDeriv_comp_prodMap_of_norm_le_mul_norm
     {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) {c : ℝ}
     (hc : 1 ≤ c) (C : List (Fin n) → List (Fin n) → ℝ) (α β : List (Fin n)) :
     ∃ B, 0 ≤ B ∧ ∀ P Q : CoordinateSpace n →L[ℝ] CoordinateSpace n, ‖P‖ ≤ c → ‖Q‖ ≤ c →
       (∀ ξ, ‖ξ‖ ≤ c * ‖Q ξ‖) → ∀ x, (∀ α' β' η, ‖mixedDeriv α' β' f (P x) η‖ ≤
         C α' β' * (1 + ‖η‖ ^ 2) ^ ((m - β'.length) / 2)) → ∀ ξ,
       ‖mixedDeriv α β (f ∘ P.prodMap Q) x ξ‖ ≤ B * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  set s : ℝ := m - β.length
-  set D : ℝ := ∑ r : Fin (α.length + β.length) → Fin n,
-    max (C (List.ofFn fun i => r (Fin.castAdd β.length i))
-      (List.ofFn fun i => r (Fin.natAdd α.length i))) 0
-  have _ : 0 ≤ D := Finset.sum_nonneg fun _ _ => le_max_right _ _
-  have _ : 0 ≤ c := zero_le_one.trans hc
-  refine ⟨c ^ α.length * c ^ β.length * D * c ^ |s|, by positivity,
-    fun P Q hP hQ hQ' x hC ξ => ?_⟩
-  -- Each direction `L eⱼ` of the chain rule has norm at most `‖L‖ ≤ c`.
-  have hprod (L : CoordinateSpace n →L[ℝ] CoordinateSpace n) (hL : ‖L‖ ≤ c)
-      (γ : List (Fin n)) : ∏ i, ‖L (EuclideanSpace.single (γ.get i) 1)‖ ≤ c ^ γ.length := by
-    calc ∏ i, ‖L (EuclideanSpace.single (γ.get i) 1)‖ ≤ ∏ _i : Fin γ.length, c :=
-          Finset.prod_le_prod₀ (fun _ _ => norm_nonneg _) fun i _ =>
-            (L.le_opNorm _).trans (by simpa using hL)
-      _ = c ^ γ.length := by simp
-  have hweight : (1 + ‖Q ξ‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2) :=
-    one_add_norm_sq_rpow_le_of_norm_le_mul hc s ((Q.le_opNorm ξ).trans (by gcongr)) (hQ' ξ)
-  have hsum : ∑ r : Fin (α.length + β.length) → Fin n,
-      ‖mixedDeriv (List.ofFn fun i => r (Fin.castAdd β.length i))
-        (List.ofFn fun i => r (Fin.natAdd α.length i)) f (P x) (Q ξ)‖ ≤
-        D * (1 + ‖Q ξ‖ ^ 2) ^ (s / 2) := by
-    rw [Finset.sum_mul]
-    refine Finset.sum_le_sum fun r _ => (hC _ _ _).trans ?_
-    rw [List.length_ofFn]
-    exact mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-  rw [mixedDeriv_comp_prodMap P Q (hf.of_le (mod_cast le_top))]
-  refine (norm_iteratedFDeriv_append_le (hf.of_le (mod_cast le_top)) _ _ _ _).trans ?_
-  calc _ ≤ (∏ i, ‖P (EuclideanSpace.single (α.get i) 1)‖) *
-        (∏ i, ‖Q (EuclideanSpace.single (β.get i) 1)‖) * (D * (1 + ‖Q ξ‖ ^ 2) ^ (s / 2)) := by
-        gcongr
-    _ ≤ c ^ α.length * c ^ β.length * (D * (c ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2))) := by
-        gcongr
-        exacts [hprod P hP α, hprod Q hQ β]
-    _ = _ := by ring
+  obtain ⟨B, hB, h⟩ := exists_bound_mixedDeriv_comp_prodMap (α := α) (β := β)
+    (hf.of_le (mod_cast le_top)) (zero_le_one.trans hc) C m
+  refine ⟨B * c ^ |m - β.length|, by positivity, fun P Q hP hQ hQ' x hC ξ =>
+    (h P Q hP hQ x hC ξ).trans ?_⟩
+  rw [mul_assoc]
+  exact mul_le_mul_of_nonneg_left (one_add_norm_sq_rpow_le_of_norm_le_mul hc _
+    ((Q.le_opNorm ξ).trans (by gcongr)) (hQ' ξ)) hB
 
 /-- The symbol estimates of a smooth coefficient `f` at the position `P x` give estimates of
 `f ∘ (P × Q)` at the position `x`, with a constant depending only on `P`, `Q` and the constants
@@ -150,7 +124,8 @@ private theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSp
         B * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
   set c : ℝ := max 1 (max ‖P‖ (max ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖
     ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖))
-  obtain ⟨B, hB, h⟩ := exists_bound_mixedDeriv_comp_prodMap (m := m) hf (le_max_left 1 _) C α β
+  obtain ⟨B, hB, h⟩ :=
+    exists_bound_mixedDeriv_comp_prodMap_of_norm_le_mul_norm (m := m) hf (le_max_left 1 _) C α β
   exact ⟨B, hB, h P Q (le_max_of_le_right (le_max_left _ _))
     (le_max_of_le_right (le_max_of_le_right (le_max_left _ _)))
     fun ξ => (norm_le_norm_symm_mul Q ξ).trans (mul_le_mul_of_nonneg_right

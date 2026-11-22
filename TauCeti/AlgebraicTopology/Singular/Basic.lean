@@ -33,7 +33,9 @@ and the vanishing of the singular homology of the empty space
 Applied to a class, the homology map induced by a composite of continuous maps is the composite of
 the homology maps (`ContinuousMap.homologyMap_comp_apply`).
 A commuting square of continuous maps gives a commuting square of homology maps
-(`TauCeti.homologyMap_toSSet_ofHom_comp_comm`).
+(`TauCeti.homologyMap_toSSet_ofHom_comp_comm`). With coefficients in a module, coefficient
+morphisms commute with the maps induced by continuous maps
+(`TauCeti.homologyMap_chainComplexFunctor_map_apply`).
 -/
 
 public section
@@ -162,6 +164,27 @@ theorem isZero_singularHomology_of_isEmpty [CategoryWithHomology C] (X : TopCat.
       isEmptyElim (TopCat.toSSetObj₀Equiv σ)
   exact (HomologicalComplex.homologyFunctor _ _ n).map_isZero
     ((TopCat.toSSet.obj X).isZero_chainComplex R)
+
+section ModuleCat
+
+/-- A coefficient morphism `φ : M ⟶ N` commutes with the map induced on homology by a continuous
+map: this is the naturality of `AlgebraicTopology.singularHomologyFunctor` in the coefficients, on
+elements. -/
+theorem homologyMap_chainComplexFunctor_map_apply {k : Type v} [Ring k] {M N : ModuleCat.{w} k}
+    (φ : M ⟶ N) {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y] (f : C(X, Y)) {m : ℕ}
+    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology M m : ModuleCat.{w} k)) :
+    (HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
+      φ).app (TopCat.toSSet.obj (TopCat.of Y))) m).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) M m).hom x) =
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) N m).hom
+        ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
+          φ).app (TopCat.toSSet.obj (TopCat.of X))) m).hom x) :=
+  -- The naturality square of `singularHomologyFunctor`, read through its definition as the
+  -- homology of `TopCat.toSSet`.
+  (ConcreteCategory.congr_hom (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k)
+    m).map φ).naturality (TopCat.ofHom f)) x)
+
+end ModuleCat
 
 end TauCeti
 
