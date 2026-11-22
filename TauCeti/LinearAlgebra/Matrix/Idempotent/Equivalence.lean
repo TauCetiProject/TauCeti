@@ -15,37 +15,13 @@ import TauCeti.Data.Matrix.Block
 # Further calculus of equivalence of idempotent matrices
 
 Building on `Matrix.IdempotentEquivalent` in `TauCeti.LinearAlgebra.Matrix.Idempotent`, this
-file develops the additional algebraic properties needed for `IdempotentMonoid` and stabilized
-similarity:
-
-* symmetry in iff form (`idempotentEquivalent_comm`), `reindex`, self-equivalence iff idempotence,
-  and characterization of equivalence with zero matrices and padding by zero blocks;
-* over any semiring with invariant basis number, characterization of equivalence between identity
-  matrices (`1ₘ ∼ 1ₙ ↔ |m| = |n|`) and separation of rank-one matrix units `Eᵢᵢ` from `0` and
-  `1ₘ` (`|m| > 1`);
-* the explicit right-module isomorphism `Matrix.linearEquivRangeMulVecBilinOfMulEq` induced by
-  witnesses `x * y = e`, `y * x = f`, and invariance of column-range `finrank`;
-* comparison of stable equivalence of column ranges with `IdempotentEquivalent` after adding `1ₖ`
-  and with unit conjugacy after also adding zero blocks (`e ⊕ 0` and `0 ⊕ f` are conjugate by the
-  involution `!![1 - e, x; y, 1 - f]`).
-
-## Main definitions
-
-* `Matrix.linearEquivRangeMulVecBilinOfMulEq`: the explicit `Rᵐᵒᵖ`-linear isomorphism between
-  column ranges induced by witnesses `x * y = e` and `y * x = f` for idempotent `e` and `f`.
-
-## Main results
-
-* `Matrix.idempotentEquivalent_one_iff`, `Matrix.not_idempotentEquivalent_single_one_zero`, and
-  `Matrix.not_idempotentEquivalent_single_one_one`: size invariance of identity matrices and
-  separation of rank-one matrix units `Eᵢᵢ` from `0` and `1` under invariant basis number.
-* `Matrix.IdempotentEquivalent.finrank_range_mulVecBilin_eq`: equivalence preserves column-range
-  `finrank`.
-* `Matrix.idempotentEquivalent_iff_exists_units_conj_fromBlocks_zero`: equivalence of an idempotent
-  `e` with `f` is unit conjugacy of `e ⊕ 0` and `0 ⊕ f`.
-* `Matrix.stableEquivalent_range_mulVecBilin_iff` and
-  `Matrix.stableEquivalent_range_mulVecBilin_iff_exists_units_conj`: stable equivalence of column
-  ranges matches equivalence after adding `1ₖ`, and unit conjugacy after also adding zero blocks.
+file develops symmetry/reindexing/zero-block padding, size invariance of identity matrices and
+separation of `Eᵢᵢ` from `0` and `1` under `InvariantBasisNumber`, the explicit isomorphism
+`Matrix.linearEquivRangeMulVecBilinOfMulEq` and invariance of column-range `finrank`, and the
+comparison of `IdempotentEquivalent` and `StableEquivalent` with unit conjugacy of `e ⊕ 0` and
+`0 ⊕ f` (`Matrix.idempotentEquivalent_iff_exists_units_conj_fromBlocks_zero`,
+`Matrix.stableEquivalent_range_mulVecBilin_iff`,
+`Matrix.stableEquivalent_range_mulVecBilin_iff_exists_units_conj`).
 
 ## References
 
@@ -107,26 +83,19 @@ theorem zero_idempotentEquivalent_iff [Fintype m] [Fintype n] {f : Matrix n n R}
     IdempotentEquivalent (0 : Matrix m m R) f ↔ f = 0 := by
   rw [idempotentEquivalent_comm, idempotentEquivalent_zero_iff]
 
-end NonUnitalNonAssocSemiring
-
-section NonUnitalSemiring
-
-variable {m m' n n' R : Type*} [NonUnitalSemiring R]
-
 /-- Padding an idempotent matrix by a lower-right zero block preserves its equivalence class. -/
 theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_right (n : Type*)
     [Fintype m] [Fintype n] {e : Matrix m m R} (he : IsIdempotentElem e) :
     IdempotentEquivalent (fromBlocks e 0 0 (0 : Matrix n n R)) e := by
-  have h := (IdempotentEquivalent.refl he).fromBlocks (idempotentEquivalent_zero_zero n (Fin 0))
-  have hEq : (fromBlocks e 0 0 (0 : Matrix (Fin 0) (Fin 0) R)).reindex
-      (Equiv.sumEmpty m (Fin 0)) (Equiv.sumEmpty m (Fin 0)) = e := by
-    ext i j
-    rfl
-  have hre : IdempotentEquivalent (fromBlocks e 0 0 (0 : Matrix (Fin 0) (Fin 0) R)) e := by
-    have h1 := ((he.fromBlocks_zero₁₂_zero₂₁ IsIdempotentElem.zero).idempotentEquivalent_reindex
-      (Equiv.sumEmpty m (Fin 0))).symm
-    rwa [hEq] at h1
-  exact h.trans hre
+  have hee (i j : m) : ∑ k, e i k * e k j = e i j := by
+    simpa [Matrix.mul_apply] using congr_fun (congr_fun he.eq i) j
+  refine idempotentEquivalent_iff.mpr ⟨fromRows e 0, fromCols e 0, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · ext (i | i) (j | j) <;> simp [Matrix.mul_apply, hee]
+  · ext i j; simp [Matrix.mul_apply, Fintype.sum_sum_type, hee]
+  · ext (i | i) j <;> simp [Matrix.mul_apply, Fintype.sum_sum_type, hee]
+  · ext (i | i) j <;> simp [Matrix.mul_apply, hee]
+  · ext i (j | j) <;> simp [Matrix.mul_apply, hee]
+  · ext i (j | j) <;> simp [Matrix.mul_apply, Fintype.sum_sum_type, hee]
 
 /-- Padding an idempotent matrix by an upper-left zero block preserves its equivalence class. -/
 theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_left (m : Type*)
@@ -136,8 +105,14 @@ theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_left (m : T
       (fromBlocks e 0 0 (0 : Matrix m m R)).reindex (Equiv.sumComm n m) (Equiv.sumComm n m) := by
     ext (_ | _) (_ | _) <;> rfl
   rw [hEq]
-  exact (he.idempotentEquivalent_fromBlocks_zero_right m).reindex
+  simpa using (he.idempotentEquivalent_fromBlocks_zero_right m).reindex
     (Equiv.sumComm n m) (Equiv.refl n)
+
+end NonUnitalNonAssocSemiring
+
+section NonUnitalSemiring
+
+variable {m m' n n' R : Type*} [NonUnitalSemiring R]
 
 /-- A square matrix is equivalent to itself if and only if it is idempotent. -/
 @[simp]
@@ -162,21 +137,13 @@ theorem idempotentEquivalent_single_one [Fintype m] [Fintype n] [DecidableEq m] 
 theorem idempotentEquivalent_single_one_one [Fintype m] [DecidableEq m] (i : m) :
     IdempotentEquivalent (single i i (1 : R)) (1 : Matrix (Fin 1) (Fin 1) R) := by
   have h1 : single (0 : Fin 1) 0 (1 : R) = (1 : Matrix (Fin 1) (Fin 1) R) := by
-    ext a b
-    fin_cases a
-    fin_cases b
-    rfl
+    ext a b; fin_cases a; fin_cases b; rfl
   exact h1 ▸ idempotentEquivalent_single_one i (0 : Fin 1)
 
-/-- Over a nontrivial nonassociative semiring, a diagonal matrix unit `Eᵢᵢ` is not equivalent to a
-zero matrix. -/
+/-- Over a nontrivial nonassociative semiring, `Eᵢᵢ` is not equivalent to a zero matrix. -/
 theorem not_idempotentEquivalent_single_one_zero [Nontrivial R] [Fintype m] [Fintype n]
-    [DecidableEq m] (i : m) :
-    ¬ IdempotentEquivalent (single i i (1 : R)) (0 : Matrix n n R) := by
-  rw [idempotentEquivalent_zero_iff]
-  intro h
-  have hii := congrFun (congrFun h i) i
-  simp at hii
+    [DecidableEq m] (i : m) : ¬ IdempotentEquivalent (single i i (1 : R)) (0 : Matrix n n R) := by
+  rw [idempotentEquivalent_zero_iff]; intro h; have hii := congrFun (congrFun h i) i; simp at hii
 
 end NonAssocSemiring
 
@@ -184,8 +151,7 @@ section Semiring
 
 variable {l m m' n n' R : Type*} [Semiring R]
 
-/-- Over a semiring with invariant basis number, two identity matrices are equivalent idempotents
-if and only if they have the same size. -/
+/-- Over a semiring with invariant basis number, `1ₘ ∼ 1ₙ ↔ |m| = |n|`. -/
 @[simp]
 theorem idempotentEquivalent_one_iff [InvariantBasisNumber R] [Fintype m] [Fintype n]
     [DecidableEq m] [DecidableEq n] :
@@ -197,18 +163,16 @@ theorem idempotentEquivalent_one_iff [InvariantBasisNumber R] [Fintype m] [Finty
   · obtain ⟨σ⟩ := Fintype.card_eq.mp h.symm
     simpa using (IsIdempotentElem.one (M := Matrix n n R)).idempotentEquivalent_reindex σ
 
-/-- Over a semiring with invariant basis number and any finite index type `m` with at least two
-elements, a diagonal matrix unit `Eᵢᵢ` is not equivalent to `1 : Matrix m m R`. -/
+/-- Over a semiring with invariant basis number and `|m| > 1`, `Eᵢᵢ` is not equivalent to `1ₘ`. -/
 theorem not_idempotentEquivalent_single_one_one [InvariantBasisNumber R] [Fintype m]
     [DecidableEq m] [Nontrivial m] (i : m) :
-    ¬ IdempotentEquivalent (single i i (1 : R)) (1 : Matrix m m R) := by
-  intro h
-  have h1 := (idempotentEquivalent_single_one_one i).symm.trans h
-  exact (ne_of_lt Fintype.one_lt_card) (idempotentEquivalent_one_iff.mp h1)
+    ¬ IdempotentEquivalent (single i i (1 : R)) (1 : Matrix m m R) := fun h ↦
+  (ne_of_lt Fintype.one_lt_card) (by
+    simpa using idempotentEquivalent_one_iff.mp
+      ((idempotentEquivalent_single_one_one i).symm.trans h))
 
-/-- **Mutually inverse module maps from equivalence witnesses.** When `e` and `f` are idempotent
-and `x * y = e`, `y * x = f`, left multiplication by `x` and `y` restrict to mutually inverse
-`Rᵐᵒᵖ`-linear maps between `f Rⁿ` and `e Rᵐ`. -/
+/-- **Mutually inverse module maps from equivalence witnesses.** When `x * y = e` and `y * x = f`
+for idempotent `e` and `f`, left multiplication by `x` and `y` induces `f Rⁿ ≃ₗ[Rᵐᵒᵖ] e Rᵐ`. -/
 def linearEquivRangeMulVecBilinOfMulEq [Fintype m] [Fintype n]
     {e : Matrix m m R} {f : Matrix n n R} {x : Matrix m n R} {y : Matrix n m R}
     (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f) :
@@ -231,29 +195,26 @@ theorem coe_linearEquivRangeMulVecBilinOfMulEq_apply [Fintype m] [Fintype n]
     {e : Matrix m m R} {f : Matrix n n R} {x : Matrix m n R} {y : Matrix n m R}
     (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (v : range (f.mulVecBilin R Rᵐᵒᵖ)) :
-    (linearEquivRangeMulVecBilinOfMulEq hxy hyx he hf v : m → R) = x *ᵥ v :=
-  (rfl)
+    (linearEquivRangeMulVecBilinOfMulEq hxy hyx he hf v : m → R) = x *ᵥ v := (rfl)
 
 @[simp]
 theorem coe_linearEquivRangeMulVecBilinOfMulEq_symm_apply [Fintype m] [Fintype n]
     {e : Matrix m m R} {f : Matrix n n R} {x : Matrix m n R} {y : Matrix n m R}
     (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (w : range (e.mulVecBilin R Rᵐᵒᵖ)) :
-    ((linearEquivRangeMulVecBilinOfMulEq hxy hyx he hf).symm w : n → R) = y *ᵥ w :=
-  (rfl)
+    ((linearEquivRangeMulVecBilinOfMulEq hxy hyx he hf).symm w : n → R) = y *ᵥ w := (rfl)
 
 /-- Equivalent idempotent matrices have equal right `R`-rank on their column ranges. -/
 theorem IdempotentEquivalent.finrank_range_mulVecBilin_eq [Fintype m] [Fintype n]
     {e : Matrix m m R} {f : Matrix n n R} (h : IdempotentEquivalent e f) :
     Module.finrank Rᵐᵒᵖ (range (e.mulVecBilin R Rᵐᵒᵖ)) =
-      Module.finrank Rᵐᵒᵖ (range (f.mulVecBilin R Rᵐᵒᵖ)) := by
-  obtain ⟨ψ⟩ := (nonempty_linearEquiv_range_mulVecBilin_iff
-    h.isIdempotentElem_left h.isIdempotentElem_right).mpr h
-  exact ψ.finrank_eq
+      Module.finrank Rᵐᵒᵖ (range (f.mulVecBilin R Rᵐᵒᵖ)) :=
+  ((nonempty_linearEquiv_range_mulVecBilin_iff h.isIdempotentElem_left
+    h.isIdempotentElem_right).mpr h).some.finrank_eq
 
-/-- **Stable equivalence of column ranges in matrix form.** For idempotent matrices `e` and `f`,
-their column ranges are stably equivalent right `R`-modules if and only if `e ⊕ 1ₖ` and `f ⊕ 1ₖ`
-are equivalent idempotents for some `k : ℕ`. -/
+/-- **Stable equivalence of column ranges in matrix form.** Column ranges of idempotents `e` and
+`f` are stably equivalent right `R`-modules iff `e ⊕ 1ₖ` and `f ⊕ 1ₖ` are equivalent for some
+`k`. -/
 theorem stableEquivalent_range_mulVecBilin_iff [Fintype m] [Fintype n]
     {e : Matrix m m R} {f : Matrix n n R} (he : IsIdempotentElem e) (hf : IsIdempotentElem f) :
     TauCeti.StableEquivalent Rᵐᵒᵖ
@@ -265,12 +226,11 @@ theorem stableEquivalent_range_mulVecBilin_iff [Fintype m] [Fintype n]
   rw [← nonempty_linearEquiv_range_mulVecBilin_iff
     (he.fromBlocks_zero₁₂_zero₂₁ IsIdempotentElem.one)
     (hf.fromBlocks_zero₁₂_zero₂₁ IsIdempotentElem.one)]
-  let eqLeft := (rangeMulVecBilinFromBlocksEquiv e (1 : Matrix (Fin k) (Fin k) R)).trans
+  let eqL := (rangeMulVecBilinFromBlocksEquiv e (1 : Matrix (Fin k) (Fin k) R)).trans
     ((LinearEquiv.refl Rᵐᵒᵖ _).prodCongr (rangeMulVecBilinOneEquiv (Fin k) R))
-  let eqRight := (rangeMulVecBilinFromBlocksEquiv f (1 : Matrix (Fin k) (Fin k) R)).trans
+  let eqR := (rangeMulVecBilinFromBlocksEquiv f (1 : Matrix (Fin k) (Fin k) R)).trans
     ((LinearEquiv.refl Rᵐᵒᵖ _).prodCongr (rangeMulVecBilinOneEquiv (Fin k) R))
-  exact ⟨fun ⟨ψ⟩ ↦ ⟨eqLeft.trans (ψ.trans eqRight.symm)⟩,
-    fun ⟨ψ⟩ ↦ ⟨eqLeft.symm.trans (ψ.trans eqRight)⟩⟩
+  exact ⟨fun ⟨ψ⟩ ↦ ⟨eqL.trans (ψ.trans eqR.symm)⟩, fun ⟨ψ⟩ ↦ ⟨eqL.symm.trans (ψ.trans eqR)⟩⟩
 
 end Semiring
 
@@ -278,9 +238,7 @@ section Ring
 
 variable {m n R : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] [Ring R]
 
-/-- **Equivalent idempotents become unit-conjugate after zero-block stabilization.** If `e` and
-`f` are equivalent idempotents, the involution `!![1 - e, x; y, 1 - f]` conjugates `e ⊕ 0` to
-`0 ⊕ f`. -/
+/-- **Equivalent idempotents become unit-conjugate after zero-block stabilization.** -/
 theorem IdempotentEquivalent.exists_units_conj_fromBlocks_zero
     {e : Matrix m m R} {f : Matrix n n R} (h : IdempotentEquivalent e f) :
     ∃ u : (Matrix (m ⊕ n) (m ⊕ n) R)ˣ,
@@ -288,12 +246,9 @@ theorem IdempotentEquivalent.exists_units_conj_fromBlocks_zero
   obtain ⟨x, y, hxy, hyx, hex, -, -, hye⟩ := idempotentEquivalent_iff.mp h
   have hinv := fromBlocks_one_sub_mul_self_of_mul_eq hxy hyx hex hye
   refine ⟨⟨Matrix.fromBlocks (1 - e) x y (1 - f), Matrix.fromBlocks (1 - e) x y (1 - f),
-    hinv, hinv⟩, ?_⟩
-  exact fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq hxy hyx hye
+    hinv, hinv⟩, fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq hxy hyx hye⟩
 
-/-- **Equivalence of an idempotent with another matrix is stabilized similarity.** For an
-idempotent matrix `e`, `e` is equivalent to `f` if and only if `e ⊕ 0` and `0 ⊕ f` are conjugate
-by an invertible block matrix. -/
+/-- **Equivalence of an idempotent with another matrix is stabilized similarity.** -/
 theorem idempotentEquivalent_iff_exists_units_conj_fromBlocks_zero
     {e : Matrix m m R} {f : Matrix n n R} (he : IsIdempotentElem e) :
     IdempotentEquivalent e f ↔ ∃ u : (Matrix (m ⊕ n) (m ⊕ n) R)ˣ,
@@ -306,8 +261,7 @@ theorem idempotentEquivalent_iff_exists_units_conj_fromBlocks_zero
   have hf : IsIdempotentElem f := by
     have h0f := hconj.isIdempotentElem_left.eq
     rw [fromBlocks_multiply] at h0f
-    rw [IsIdempotentElem]
-    simpa using congrArg toBlocks₂₂ h0f
+    rw [IsIdempotentElem]; simpa using congrArg toBlocks₂₂ h0f
   exact (he.idempotentEquivalent_fromBlocks_zero_right n).symm.trans
     (hconj.symm.trans (hf.idempotentEquivalent_fromBlocks_zero_left m))
 

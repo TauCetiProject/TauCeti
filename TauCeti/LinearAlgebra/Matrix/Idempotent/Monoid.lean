@@ -17,27 +17,17 @@ import TauCeti.RingTheory.GrothendieckRing
 
 For a nonunital semiring `A`, the *idempotent monoid* `V(A)` (`TauCeti.IdempotentMonoid A`) is
 the set of idempotent square matrices over `A`, of all sizes, modulo equivalence of idempotents
-(`Matrix.IdempotentEquivalent`: `e = x * y` and `f = y * x` for rectangular `x` and `y`). Block
-sum `e ⊕ f = Matrix.fromBlocks e 0 0 f` makes it a commutative monoid, with the empty matrix as
-zero. No cancellation is assumed: `V(A)` need not be cancellative.
+(`Matrix.IdempotentEquivalent`). Block sum `e ⊕ f = Matrix.fromBlocks e 0 0 f` makes it a
+commutative monoid with zero the empty matrix. No cancellation is assumed.
 
-This file develops the matrix-level theory of `V(A)` without categorical dependencies:
+## Main definitions and results
 
-* the quotient `TauCeti.IdempotentMonoid A`, its constructor `TauCeti.IdempotentMonoid.mk`,
-  induction principle `TauCeti.IdempotentMonoid.ind`, eliminator `TauCeti.IdempotentMonoid.lift`
-  (with `lift_mk` and the general-index computation lemma `lift_mk_eq`), extensionality
-  (`fun_ext`, `hom_ext`), `Unique` over a subsingleton semiring, and invariance under reindexing,
-  zero-block padding, unit conjugation, and diagonal matrix units `Eᵢᵢ`;
-* `nsmul_mk_one` (`n • [1₁] = [1ₙ]`) and separation of identity classes `[1ₘ] = [1ₙ] ↔ |m| = |n|`
-  under `InvariantBasisNumber`;
-* functoriality along nonunital ring homomorphisms (`TauCeti.IdempotentMonoid.map`) and ring
-  equivalences (`TauCeti.IdempotentMonoid.congr`), and transposition over the opposite ring
-  (`TauCeti.IdempotentMonoid.opEquiv`);
-* over a ring `R`, the group-completion normal form `exists_of_mk_sub_of_mk_one_eq` (`[e] - [1ₘ]`);
-* over a division ring `D`, the rank isomorphism `TauCeti.IdempotentMonoid.finrankAddEquiv :
-  IdempotentMonoid D ≃+ ℕ` and the induced isomorphism
-  `TauCeti.IdempotentMonoid.grothendieckAddGroupEquivInt :
-  Algebra.GrothendieckAddGroup (IdempotentMonoid D) ≃+ ℤ`.
+* `TauCeti.IdempotentMonoid` with `mk`, `mk_eq_mk_iff`, `ind`, `lift`, `fun_ext`, `hom_ext`,
+  `Unique` over subsingletons, `nsmul_mk_one`, and `mk_one_eq_mk_one_iff` under
+  `InvariantBasisNumber`.
+* Functoriality (`map`, `congr`), transposition over the opposite ring (`opEquiv`), the ring
+  group-completion normal form `exists_of_mk_sub_of_mk_one_eq`, and the division-ring rank
+  isomorphisms `finrankAddEquiv : IdempotentMonoid D ≃+ ℕ` and `grothendieckAddGroupEquivInt`.
 
 ## References
 
@@ -52,25 +42,6 @@ open LinearMap Matrix MulOpposite
 
 universe u v w
 
-section MatrixLemmas
-
-/-- Whenever `Rᵐᵒᵖ` satisfies the strong rank condition, the column range of `1 : Matrix m m R`
-has right `R`-rank `Fintype.card m`. -/
-theorem Matrix.finrank_range_mulVecBilin_one (R : Type*) [Semiring R] [StrongRankCondition Rᵐᵒᵖ]
-    (m : Type*) [Fintype m] [DecidableEq m] :
-    Module.finrank Rᵐᵒᵖ (range ((1 : Matrix m m R).mulVecBilin R Rᵐᵒᵖ)) = Fintype.card m :=
-  (rangeMulVecBilinOneEquiv m R).finrank_eq.trans (Module.finrank_fintype_fun_eq_card Rᵐᵒᵖ)
-
-/-- Whenever `Rᵐᵒᵖ` satisfies the strong rank condition, the column range of any diagonal matrix
-unit `Eᵢᵢ` has right `R`-rank `1`. -/
-theorem Matrix.finrank_range_mulVecBilin_single_one (R : Type*) [Semiring R]
-    [StrongRankCondition Rᵐᵒᵖ] {m : Type*} [Fintype m] [DecidableEq m] (i : m) :
-    Module.finrank Rᵐᵒᵖ (range ((single i i (1 : R)).mulVecBilin R Rᵐᵒᵖ)) = 1 :=
-  (idempotentEquivalent_single_one_one (R := R) i).finrank_range_mulVecBilin_eq.trans
-    (finrank_range_mulVecBilin_one R (Fin 1))
-
-end MatrixLemmas
-
 namespace TauCeti
 
 section NonUnitalSemiring
@@ -79,7 +50,7 @@ variable (A : Type u) [NonUnitalSemiring A]
 
 /-- Equivalence of idempotents (`Matrix.IdempotentEquivalent`), on idempotent square matrices of
 every size `n`. -/
-def idempotentSetoid :
+private def idempotentSetoid :
     Setoid (Σ n : ℕ, {e : Matrix (Fin n) (Fin n) A // IsIdempotentElem e}) where
   r e f := IdempotentEquivalent e.snd.val f.snd.val
   iseqv := ⟨fun e ↦ .refl e.snd.property, .symm, .trans⟩
@@ -149,21 +120,19 @@ def lift {β : Sort*} (F : ∀ {n : ℕ} (e : Matrix (Fin n) (Fin n) A), IsIdemp
 @[simp]
 theorem lift_mk {β : Sort*} {F : ∀ {n : ℕ} (e : Matrix (Fin n) (Fin n) A), IsIdempotentElem e → β}
     {hF : ∀ {n m : ℕ} (e : Matrix (Fin n) (Fin n) A) (f : Matrix (Fin m) (Fin m) A)
-      (he : IsIdempotentElem e) (hf : IsIdempotentElem f), IdempotentEquivalent e f →
-        F e he = F f hf}
+      (he : IsIdempotentElem e) (hf : IsIdempotentElem f),
+      IdempotentEquivalent e f → F e he = F f hf}
     {n : ℕ} (e : Matrix (Fin n) (Fin n) A) (he : IsIdempotentElem e) :
     lift F hF (mk e he) = F e he := by
-  rw [← quotient_mk_eq_mk]
-  rfl
+  rw [← quotient_mk_eq_mk]; rfl
 
 /-- `TauCeti.IdempotentMonoid.lift` computes `F` on `mk e he` for any finite index type `ι` via
-the canonical `Fin`-indexed representative
-`e.submatrix (Fintype.equivFin ι).symm (Fintype.equivFin ι).symm`. -/
+the canonical `Fin`-indexed representative. -/
 theorem lift_mk_eq {β : Sort*}
     {F : ∀ {n : ℕ} (e : Matrix (Fin n) (Fin n) A), IsIdempotentElem e → β}
     {hF : ∀ {n m : ℕ} (e : Matrix (Fin n) (Fin n) A) (f : Matrix (Fin m) (Fin m) A)
-      (he : IsIdempotentElem e) (hf : IsIdempotentElem f), IdempotentEquivalent e f →
-        F e he = F f hf}
+      (he : IsIdempotentElem e) (hf : IsIdempotentElem f),
+      IdempotentEquivalent e f → F e he = F f hf}
     (e : Matrix ι ι A) (he : IsIdempotentElem e) {b : β}
     (hb : F (e.submatrix (Fintype.equivFin ι).symm (Fintype.equivFin ι).symm)
       (idempotentEquivalent_submatrix he (Fintype.equivFin ι).symm).isIdempotentElem_right = b) :
@@ -171,16 +140,14 @@ theorem lift_mk_eq {β : Sort*}
   hb
 
 /-- The zero of `V(A)` is the class of the empty matrix. -/
-noncomputable instance : Zero (IdempotentMonoid A) :=
-  ⟨mk (0 : Matrix (Fin 0) (Fin 0) A) .zero⟩
+noncomputable instance : Zero (IdempotentMonoid A) := ⟨mk (0 : Matrix (Fin 0) (Fin 0) A) .zero⟩
 
 /-- Every zero matrix has the class `0` in `V(A)`. -/
 @[simp]
 theorem mk_zero : mk (0 : Matrix ι ι A) .zero = 0 :=
   mk_eq_mk (idempotentEquivalent_zero_zero ι (Fin 0))
 
-/-- Only the zero matrix has the class `0` in `V(A)`: an idempotent equivalent to the empty matrix
-factors through it. -/
+/-- Only the zero matrix has the class `0` in `V(A)`. -/
 @[simp]
 theorem mk_eq_zero_iff {e : Matrix ι ι A} (he : IsIdempotentElem e) : mk e he = 0 ↔ e = 0 :=
   (mk_eq_mk_iff he .zero).trans idempotentEquivalent_zero_iff
@@ -199,8 +166,6 @@ theorem mk_add_mk {e : Matrix ι ι A} {f : Matrix κ κ A} (he : IsIdempotentEl
     mk e he + mk f hf = mk (fromBlocks e 0 0 f) (he.fromBlocks_zero₁₂_zero₂₁ hf) :=
   mk_eq_mk ((idempotentEquivalent_toFin he).symm.fromBlocks (idempotentEquivalent_toFin hf).symm)
 
-/-- An idempotent is equivalent to its relabelling along a bijection `σ`, stated with the
-relabelled matrix given explicitly. -/
 private theorem idempotentEquivalent_of_submatrix_eq {μ : Type*} [Fintype μ] {e : Matrix ι ι A}
     (he : IsIdempotentElem e) {f : Matrix μ μ A} (σ : μ ≃ ι) (h : e.submatrix σ σ = f) :
     IdempotentEquivalent e f :=
@@ -208,24 +173,24 @@ private theorem idempotentEquivalent_of_submatrix_eq {μ : Type*} [Fintype μ] {
 
 noncomputable instance : AddCommMonoid (IdempotentMonoid A) where
   add_assoc x y z := by
-    induction x using ind with | mk n e he
-    induction y using ind with | mk m f hf
-    induction z using ind with | mk k g hg
+    induction x using ind with | mk n e he =>
+    induction y using ind with | mk m f hf =>
+    induction z using ind with | mk k g hg =>
     simp only [mk_add_mk]
-    refine mk_eq_mk <| idempotentEquivalent_of_submatrix_eq
+    exact mk_eq_mk <| idempotentEquivalent_of_submatrix_eq
       ((he.fromBlocks_zero₁₂_zero₂₁ hf).fromBlocks_zero₁₂_zero₂₁ hg) (Equiv.sumAssoc _ _ _).symm
       (by ext (i | i | i) (j | j | j) <;> simp)
   zero_add x := by
-    induction x using ind with | mk n e he
+    induction x using ind with | mk n e he =>
     rw [← mk_zero (ι := Fin 0), mk_add_mk]
     exact mk_eq_mk (he.idempotentEquivalent_fromBlocks_zero_left (Fin 0))
   add_zero x := by
-    induction x using ind with | mk n e he
+    induction x using ind with | mk n e he =>
     rw [← mk_zero (ι := Fin 0), mk_add_mk]
     exact mk_eq_mk (he.idempotentEquivalent_fromBlocks_zero_right (Fin 0))
   add_comm x y := by
-    induction x using ind with | mk n e he
-    induction y using ind with | mk m f hf
+    induction x using ind with | mk n e he =>
+    induction y using ind with | mk m f hf =>
     rw [mk_add_mk, mk_add_mk]
     exact mk_eq_mk <| idempotentEquivalent_of_submatrix_eq (he.fromBlocks_zero₁₂_zero₂₁ hf)
       (Equiv.sumComm _ _) (by simp)
@@ -322,20 +287,15 @@ noncomputable def map (φ : R →ₙ+* S) : IdempotentMonoid R →+ IdempotentMo
 
 @[simp]
 theorem map_mk {ι : Type*} [Fintype ι] (φ : R →ₙ+* S) (e : Matrix ι ι R)
-    (he : IsIdempotentElem e) :
-    map φ (mk e he) = mk (e.map φ) (he.matrix_map φ) :=
+    (he : IsIdempotentElem e) : map φ (mk e he) = mk (e.map φ) (he.matrix_map φ) :=
   mapFun_mk φ e he
 
 @[simp]
 theorem map_id : map (NonUnitalRingHom.id R) = AddMonoidHom.id (IdempotentMonoid R) := by
-  ext n e he
-  rw [map_mk, AddMonoidHom.id_apply]
-  exact mk_congr_matrix _ _ (by ext; simp)
+  ext n e he; rw [map_mk, AddMonoidHom.id_apply]; exact mk_congr_matrix _ _ (by ext; simp)
 
-theorem map_comp (φ : R →ₙ+* S) (ψ : S →ₙ+* T) :
-    (map ψ).comp (map φ) = map (ψ.comp φ) := by
-  ext n e he
-  rw [AddMonoidHom.comp_apply, map_mk, map_mk, map_mk]
+theorem map_comp (φ : R →ₙ+* S) (ψ : S →ₙ+* T) : (map ψ).comp (map φ) = map (ψ.comp φ) := by
+  ext n e he; rw [AddMonoidHom.comp_apply, map_mk, map_mk, map_mk]
   exact mk_congr_matrix _ _ (by ext; rfl)
 
 /-- A ring equivalence induces an additive isomorphism on `IdempotentMonoid`. -/
@@ -348,27 +308,19 @@ noncomputable def congr (e : R ≃+* S) : IdempotentMonoid R ≃+ IdempotentMono
   right_inv y := DFunLike.congr_fun ((map_comp _ _).trans
     ((congrArg map (NonUnitalRingHom.ext e.apply_symm_apply)).trans map_id)) y
 
-/-- Pointwise evaluation of `TauCeti.IdempotentMonoid.congr` as
-`TauCeti.IdempotentMonoid.map e.toNonUnitalRingHom`. Not marked `@[simp]` so `congr_mk` stays the
-normal form on representatives. -/
+/-- Pointwise evaluation of `congr` as `map e.toNonUnitalRingHom`. -/
 theorem congr_apply (e : R ≃+* S) (x : IdempotentMonoid R) :
     congr e x = map e.toNonUnitalRingHom x := by unfold congr; rfl
 
-/-- Pointwise evaluation of `(TauCeti.IdempotentMonoid.congr e).symm` as
-`TauCeti.IdempotentMonoid.map e.symm.toNonUnitalRingHom`. Not marked `@[simp]` so
-`congr_symm_mk` stays the normal form on representatives. -/
+/-- Pointwise evaluation of `(congr e).symm` as `map e.symm.toNonUnitalRingHom`. -/
 theorem congr_symm_apply (e : R ≃+* S) (y : IdempotentMonoid S) :
     (congr e).symm y = map e.symm.toNonUnitalRingHom y := by unfold congr; rfl
 
-/-- The underlying additive homomorphism of `TauCeti.IdempotentMonoid.congr e` is
-`TauCeti.IdempotentMonoid.map e.toNonUnitalRingHom`. -/
 @[simp]
 theorem coe_congr (e : R ≃+* S) :
     (congr e : IdempotentMonoid R →+ IdempotentMonoid S) = map e.toNonUnitalRingHom :=
   AddMonoidHom.ext fun x ↦ congr_apply e x
 
-/-- The underlying additive homomorphism of `(TauCeti.IdempotentMonoid.congr e).symm` is
-`TauCeti.IdempotentMonoid.map e.symm.toNonUnitalRingHom`. -/
 @[simp]
 theorem coe_congr_symm (e : R ≃+* S) :
     ((congr e).symm : IdempotentMonoid S →+ IdempotentMonoid R) = map e.symm.toNonUnitalRingHom :=
@@ -391,13 +343,11 @@ end Map
 
 section Opposite
 
-/-- Transposing over the opposite ring, on classes of idempotent matrices. -/
 private noncomputable def opFun (R : Type u) [NonUnitalSemiring R] :
     IdempotentMonoid R → IdempotentMonoid Rᵐᵒᵖ :=
   lift (fun e he ↦ mk (eᵀ.map MulOpposite.op) he.matrix_transpose_map_op)
     fun _ _ _ _ h ↦ mk_eq_mk (IdempotentEquivalent.transpose_map_op h)
 
-/-- Transposing back from the opposite ring, on classes of idempotent matrices. -/
 private noncomputable def unopFun (R : Type u) [NonUnitalSemiring R] :
     IdempotentMonoid Rᵐᵒᵖ → IdempotentMonoid R :=
   lift (fun e he ↦ mk (eᵀ.map MulOpposite.unop) he.matrix_transpose_map_unop)
@@ -417,10 +367,8 @@ private theorem unopFun_mk {R : Type u} [NonUnitalSemiring R] {e : Matrix ι ι 
 
 variable (R : Type u) [NonUnitalSemiring R]
 
-/-- **Transposition over the opposite ring.** The isomorphism `V(R) ≃ V(Rᵐᵒᵖ)` sending the class
-of an idempotent matrix `e` to the class of its transpose `eᵀ` with entries in `Rᵐᵒᵖ`
-(`TauCeti.IdempotentMonoid.opEquiv_mk`). It turns the column action of `e`, presenting a right
-`R`-module, into the row action of `eᵀ`, presenting the same module as a left `Rᵐᵒᵖ`-module. -/
+/-- **Transposition over the opposite ring.** The isomorphism `V(R) ≃ V(Rᵐᵒᵖ)` sending `[e]` to
+`[eᵀ]` over `Rᵐᵒᵖ`, turning the column action of `e` into the row action of `eᵀ` over `Rᵐᵒᵖ`. -/
 noncomputable def opEquiv : IdempotentMonoid R ≃+ IdempotentMonoid Rᵐᵒᵖ where
   toFun := opFun R
   invFun := unopFun R
@@ -431,22 +379,20 @@ noncomputable def opEquiv : IdempotentMonoid R ≃+ IdempotentMonoid Rᵐᵒᵖ 
     induction x using ind with | mk n e he =>
     rw [unopFun_mk, opFun_mk]; exact mk_congr_matrix _ _ (transpose_map_unop_transpose_map_op e)
   map_add' x y := by
-    induction x using ind with | mk n e he
-    induction y using ind with | mk m f hf
+    induction x using ind with | mk n e he =>
+    induction y using ind with | mk m f hf =>
     rw [mk_add_mk, opFun_mk, opFun_mk, opFun_mk, mk_add_mk]
     exact mk_congr_matrix _ _ (by simp [fromBlocks_transpose, fromBlocks_map])
 
 variable {R} in
-/-- `TauCeti.IdempotentMonoid.opEquiv` sends the class of `e` to the class of `eᵀ` with entries in
-`Rᵐᵒᵖ`. -/
+/-- `opEquiv` sends `[e]` to `[eᵀ]` with entries in `Rᵐᵒᵖ`. -/
 @[simp]
 theorem opEquiv_mk {e : Matrix ι ι R} (he : IsIdempotentElem e) :
     opEquiv R (mk e he) = mk (eᵀ.map MulOpposite.op) he.matrix_transpose_map_op :=
   opFun_mk he
 
 variable {R} in
-/-- The inverse of `TauCeti.IdempotentMonoid.opEquiv` sends the class of an idempotent `e` over
-`Rᵐᵒᵖ` to the class of `eᵀ` with entries in `R`. -/
+/-- `(opEquiv R).symm` sends `[e]` over `Rᵐᵒᵖ` to `[eᵀ]` with entries in `R`. -/
 @[simp]
 theorem opEquiv_symm_mk {e : Matrix ι ι Rᵐᵒᵖ} (he : IsIdempotentElem e) :
     (opEquiv R).symm (mk e he) = mk (eᵀ.map MulOpposite.unop) he.matrix_transpose_map_unop :=
@@ -491,8 +437,7 @@ theorem nsmul_mk_one (n : ℕ) :
       rw [fromBlocks_one]; ext a b; simp [Matrix.one_apply]
     rw [h1]; exact IsIdempotentElem.one.idempotentEquivalent_reindex _
 
-/-- Over a semiring with invariant basis number, two identity matrices represent the same class in
-`IdempotentMonoid R` if and only if they have the same size. -/
+/-- Over a semiring with invariant basis number, `[1ₘ] = [1ₙ]` iff `|m| = |n|`. -/
 theorem mk_one_eq_mk_one_iff [InvariantBasisNumber R] {ι κ : Type*} [Fintype ι] [Fintype κ]
     [DecidableEq ι] [DecidableEq κ] :
     mk (1 : Matrix ι ι R) IsIdempotentElem.one =
@@ -505,17 +450,15 @@ section Ring
 
 variable {R : Type u} [Ring R]
 
-/-- **Every element of the group completion of `V(R)` is `[e] - [1ₘ]`.** Adding the complement
-`1 - f` of an idempotent `f` to both terms of `[e] - [f]` replaces `[f]` by the class of an
-identity matrix. -/
+/-- **Every element of the group completion of `V(R)` is `[e] - [1ₘ]`.** -/
 theorem exists_of_mk_sub_of_mk_one_eq
     (y : _root_.Algebra.GrothendieckAddGroup (IdempotentMonoid R)) :
     ∃ (n : ℕ) (e : Matrix (Fin n) (Fin n) R) (he : IsIdempotentElem e) (m : ℕ),
       _root_.Algebra.GrothendieckAddGroup.of (mk e he) -
         _root_.Algebra.GrothendieckAddGroup.of (mk (1 : Matrix (Fin m) (Fin m) R) .one) = y := by
   obtain ⟨a, b, rfl⟩ := _root_.Algebra.GrothendieckAddGroup.exists_eq_sub_of y
-  induction a using ind with | mk n e he
-  induction b using ind with | mk m f hf
+  induction a using ind with | mk n e he =>
+  induction b using ind with | mk m f hf =>
   have hE := idempotentEquivalent_submatrix (he.fromBlocks_zero₁₂_zero₂₁ hf.one_sub)
     finSumFinEquiv.symm
   refine ⟨n + m, reindex finSumFinEquiv finSumFinEquiv (fromBlocks e 0 0 (1 - f)),
@@ -543,31 +486,21 @@ private theorem finrankFun_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι D)
   lift_mk_eq (hF := fun _ _ _ _ h ↦ h.finrank_range_mulVecBilin_eq) e he
     (idempotentEquivalent_submatrix he _).symm.finrank_range_mulVecBilin_eq
 
-/-- Right column-range dimension as an additive monoid homomorphism `IdempotentMonoid D →+ ℕ`. -/
-private noncomputable def finrankHom : IdempotentMonoid D →+ ℕ where
+/-- **Rank classification of idempotent matrices over a division ring.** Sending `[e]` to the
+right `D`-dimension of `e Dⁿ` gives `IdempotentMonoid D ≃+ ℕ` with inverse `n ↦ [1ₙ]`. -/
+noncomputable def finrankAddEquiv : IdempotentMonoid D ≃+ ℕ where
   toFun := finrankFun D
-  map_zero' := (finrankFun_mk D (0 : Matrix (Fin 0) (Fin 0) D) IsIdempotentElem.zero).trans
-    Module.finrank_zero_of_subsingleton
+  invFun n := mk (1 : Matrix (Fin n) (Fin n) D) IsIdempotentElem.one
   map_add' a b := by
     induction a using ind with | mk m e he =>
     induction b using ind with | mk n f hf =>
     rw [mk_add_mk, finrankFun_mk, finrankFun_mk, finrankFun_mk]
     exact (rangeMulVecBilinFromBlocksEquiv e f).finrank_eq.trans Module.finrank_prod
-
-/-- **Rank classification of idempotent matrices over a division ring.** Sending `[e]` to the right
-`D`-dimension of its column range `e Dⁿ` is an additive monoid isomorphism
-`IdempotentMonoid D ≃+ ℕ`, with inverse `n ↦ [1ₙ]`. -/
-noncomputable def finrankAddEquiv : IdempotentMonoid D ≃+ ℕ where
-  toFun := finrankFun D
-  invFun n := mk (1 : Matrix (Fin n) (Fin n) D) IsIdempotentElem.one
-  map_add' := (finrankHom D).map_add
   left_inv a := by
     induction a using ind with | mk n e he =>
-    rw [finrankFun_mk]
-    refine (mk_eq_mk_iff _ _).mpr ?_
-    rw [← nonempty_linearEquiv_range_mulVecBilin_iff IsIdempotentElem.one he]
-    refine ⟨LinearEquiv.ofFinrankEq _ _ ?_⟩
-    rw [finrank_range_mulVecBilin_one D (Fin _), Fintype.card_fin]
+    rw [finrankFun_mk, mk_eq_mk_iff, ← nonempty_linearEquiv_range_mulVecBilin_iff .one he]
+    exact ⟨LinearEquiv.ofFinrankEq _ _
+      (by rw [finrank_range_mulVecBilin_one D (Fin _), Fintype.card_fin])⟩
   right_inv n :=
     (finrankFun_mk D (1 : Matrix (Fin n) (Fin n) D) IsIdempotentElem.one).trans
       ((finrank_range_mulVecBilin_one D (Fin n)).trans (Fintype.card_fin n))
@@ -582,24 +515,23 @@ theorem finrankAddEquiv_symm_apply (n : ℕ) :
     (finrankAddEquiv D).symm n = mk (1 : Matrix (Fin n) (Fin n) D) IsIdempotentElem.one :=
   (rfl)
 
-private noncomputable def natIntLoc : (⊤ : AddSubmonoid ℕ).LocalizationMap ℤ :=
-  { __ := Nat.castAddMonoidHom ℤ
-    isLocalizationMap := AddSubmonoid.isLocalizationMap_top_nat_int }
-
 /-- **Grothendieck group of idempotent matrices over a division ring.** Group completion of
 `IdempotentMonoid D` is canonically isomorphic to `ℤ` via column-range dimension. -/
 noncomputable def grothendieckAddGroupEquivInt :
     _root_.Algebra.GrothendieckAddGroup (IdempotentMonoid D) ≃+ ℤ :=
   (AddLocalization.addMonoidOf (⊤ : AddSubmonoid (IdempotentMonoid D))).addEquivOfAddEquiv
-    natIntLoc (AddSubmonoid.map_equiv_top (finrankAddEquiv D))
+    _root_.Algebra.GrothendieckAddGroup.natIntLocalizationMap
+    (AddSubmonoid.map_equiv_top (finrankAddEquiv D))
 
 theorem grothendieckAddGroupEquivInt_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι D)
     (he : IsIdempotentElem e) :
     grothendieckAddGroupEquivInt D (_root_.Algebra.GrothendieckAddGroup.of (mk e he)) =
       (Module.finrank Dᵐᵒᵖ (range (e.mulVecBilin D Dᵐᵒᵖ)) : ℤ) :=
   ((AddLocalization.addMonoidOf (⊤ : AddSubmonoid (IdempotentMonoid D))).addEquivOfAddEquiv_eq
-    (k := natIntLoc) (AddSubmonoid.map_equiv_top (finrankAddEquiv D)) (mk e he)).trans
-    (congrArg Nat.cast (finrankAddEquiv_mk D e he))
+    (k := _root_.Algebra.GrothendieckAddGroup.natIntLocalizationMap)
+    (AddSubmonoid.map_equiv_top (finrankAddEquiv D)) (mk e he)).trans
+    ((_root_.Algebra.GrothendieckAddGroup.natIntLocalizationMap_apply _).trans
+      (congrArg Nat.cast (finrankAddEquiv_mk D e he)))
 
 end DivisionRing
 

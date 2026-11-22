@@ -61,14 +61,6 @@ modules exactly when the matrices are equivalent.
   isomorphic if and only if the matrices are equivalent idempotents.
 * `Module.Finite.exists_linearEquiv_range_vecMulLinear`: a finitely generated projective module is
   isomorphic to the range of an idempotent matrix.
-* `Matrix.rangeVecMulLinearMap`: applying a ring homomorphism `f` to the coordinates maps the
-  range of a matrix `e` to the range of `e.map f`.
-* `Matrix.mem_range_vecMulLinear_fromBlocks_iff`: a row vector lies in the range of a
-  block-diagonal matrix exactly when its two parts lie in the ranges of the blocks.
-* `Matrix.rangeVecMulLinearFromBlocksEquiv`: the range of a block-diagonal matrix is the product of
-  the ranges of its blocks.
-* `Matrix.rangeVecMulLinearTransposeMapOpEquiv`: the image of the column action of `e`, as a right
-  module, is the range of the row action of its transpose over the opposite ring.
 * `Matrix.nonempty_linearEquiv_range_mulVecBilin_iff`: the images of two idempotent matrices acting
   on column vectors are isomorphic right modules if and only if the matrices are equivalent
   idempotents.
@@ -395,97 +387,6 @@ theorem nonempty_linearEquiv_range_vecMulLinear_iff {e : Matrix ι ι A} {f : Ma
         simp [vecMul_vecMul, hxy, (he.mem_range_vecMulLinear_iff).1 v.property]
       right_inv w := Subtype.ext <| by
         simp [vecMul_vecMul, hyx, (hf.mem_range_vecMulLinear_iff).1 w.property] }⟩
-
-variable {ι' κ' : Type*}
-
-/-- The `f`-semilinear map between the ranges of right multiplication of row vectors by a matrix
-`e` and by its entrywise image `e.map f` under a ring homomorphism `f`, applying `f` to every
-coordinate. For an idempotent `e` this is the map `Aⁿ e → Bⁿ f(e)`. -/
-def rangeVecMulLinearMap {B : Type*} [Semiring B] (e : Matrix ι ι' A) (f : A →+* B) :
-    range e.vecMulLinear →ₛₗ[f] range (e.map f).vecMulLinear where
-  toFun v := ⟨f ∘ v, by
-    obtain ⟨u, hu⟩ := v.property
-    exact ⟨f ∘ u, funext fun i ↦ by simp [← hu, RingHom.map_vecMul]⟩⟩
-  map_add' v w := Subtype.ext <| funext fun i ↦ by simp
-  map_smul' r v := Subtype.ext <| funext fun i ↦ by simp
-
-@[simp]
-theorem coe_rangeVecMulLinearMap_apply {B : Type*} [Semiring B] (e : Matrix ι ι' A) (f : A →+* B)
-    (v : range e.vecMulLinear) : (e.rangeVecMulLinearMap f v : ι' → B) = f ∘ v :=
-  (rfl)
-
-/-- A row vector lies in the range of right multiplication by the block-diagonal matrix
-`Matrix.fromBlocks e 0 0 f` exactly when its two parts lie in the ranges of `e` and of `f`. -/
-theorem mem_range_vecMulLinear_fromBlocks_iff {e : Matrix ι ι' A} {f : Matrix κ κ' A}
-    {v : ι' ⊕ κ' → A} :
-    v ∈ range (fromBlocks e 0 0 f).vecMulLinear ↔
-      v ∘ Sum.inl ∈ range e.vecMulLinear ∧ v ∘ Sum.inr ∈ range f.vecMulLinear := by
-  constructor
-  · rintro ⟨u, rfl⟩
-    refine ⟨⟨u ∘ Sum.inl, ?_⟩, ⟨u ∘ Sum.inr, ?_⟩⟩ <;>
-      rw [vecMulLinear_apply, vecMulLinear_apply, ← Sum.elim_comp_inl_inr u, vecMul_fromBlocks] <;>
-      simp
-  · rintro ⟨⟨a, ha⟩, ⟨b, hb⟩⟩
-    refine ⟨Sum.elim a b, ?_⟩
-    rw [← Sum.elim_comp_inl_inr v, ← ha, ← hb]
-    simp [vecMul_fromBlocks]
-
-/-- **Block sums of matrices.** The range of right multiplication by the block-diagonal matrix
-`Matrix.fromBlocks e 0 0 f` is the product of the ranges of `e` and of `f`. -/
-def rangeVecMulLinearFromBlocksEquiv (e : Matrix ι ι' A) (f : Matrix κ κ' A) :
-    range (fromBlocks e 0 0 f).vecMulLinear ≃ₗ[A]
-      range e.vecMulLinear × range f.vecMulLinear where
-  toFun v := (⟨(v : ι' ⊕ κ' → A) ∘ Sum.inl, (mem_range_vecMulLinear_fromBlocks_iff.1 v.property).1⟩,
-    ⟨(v : ι' ⊕ κ' → A) ∘ Sum.inr, (mem_range_vecMulLinear_fromBlocks_iff.1 v.property).2⟩)
-  invFun p := ⟨Sum.elim p.1 p.2, mem_range_vecMulLinear_fromBlocks_iff.2 ⟨p.1.property,
-      p.2.property⟩⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := Subtype.ext (Sum.elim_comp_inl_inr _)
-  right_inv _ := rfl
-
-@[simp]
-theorem coe_rangeVecMulLinearFromBlocksEquiv_apply_fst (e : Matrix ι ι' A) (f : Matrix κ κ' A)
-    (v : range (fromBlocks e 0 0 f).vecMulLinear) :
-    ((rangeVecMulLinearFromBlocksEquiv e f v).1 : ι' → A) = (v : ι' ⊕ κ' → A) ∘ Sum.inl :=
-  (rfl)
-
-@[simp]
-theorem coe_rangeVecMulLinearFromBlocksEquiv_apply_snd (e : Matrix ι ι' A) (f : Matrix κ κ' A)
-    (v : range (fromBlocks e 0 0 f).vecMulLinear) :
-    ((rangeVecMulLinearFromBlocksEquiv e f v).2 : κ' → A) = (v : ι' ⊕ κ' → A) ∘ Sum.inr :=
-  (rfl)
-
-@[simp]
-theorem coe_rangeVecMulLinearFromBlocksEquiv_symm_apply (e : Matrix ι ι' A) (f : Matrix κ κ' A)
-    (p : range e.vecMulLinear × range f.vecMulLinear) :
-    ((rangeVecMulLinearFromBlocksEquiv e f).symm p : ι' ⊕ κ' → A) =
-      Sum.elim (p.1 : ι' → A) (p.2 : κ' → A) :=
-  (rfl)
-
-/-- **Columns as rows over the opposite ring.** For a matrix `e` over `A`, the range of
-`v ↦ e *ᵥ v` on column vectors, a right `A`-module (a left `Aᵐᵒᵖ`-module), is isomorphic, by
-`MulOpposite.unop` on every coordinate, to the range of right multiplication of row vectors over
-`Aᵐᵒᵖ` by the transpose of `e` with entries in `Aᵐᵒᵖ`. -/
-def rangeVecMulLinearTransposeMapOpEquiv (e : Matrix ι' ι A) :
-    range (eᵀ.map MulOpposite.op).vecMulLinear ≃ₗ[Aᵐᵒᵖ] range (mulVecBilin A Aᵐᵒᵖ e) :=
-  -- `unop` on every coordinate, on row vectors indexed by `ι'` and by `ι`.
-  let L' : (ι' → Aᵐᵒᵖ) ≃ₗ[Aᵐᵒᵖ] (ι' → A) :=
-    .piCongrRight fun _ ↦ (MulOpposite.opLinearEquiv Aᵐᵒᵖ).symm
-  let L : (ι → Aᵐᵒᵖ) ≃ₗ[Aᵐᵒᵖ] (ι → A) :=
-    .piCongrRight fun _ ↦ (MulOpposite.opLinearEquiv Aᵐᵒᵖ).symm
-  have hL : L'.toLinearMap ∘ₗ (eᵀ.map MulOpposite.op).vecMulLinear =
-      mulVecBilin A Aᵐᵒᵖ e ∘ₗ L.toLinearMap := by
-    ext v i
-    simp [L, L', vecMul, mulVec, dotProduct]
-  (L'.submoduleMap _).trans <| .ofEq _ _ <| by
-    rw [← range_comp, hL, range_comp_of_range_eq_top _ L.range]
-
-@[simp]
-theorem coe_rangeVecMulLinearTransposeMapOpEquiv_apply (e : Matrix ι' ι A)
-    (v : range (eᵀ.map MulOpposite.op).vecMulLinear) :
-    (rangeVecMulLinearTransposeMapOpEquiv e v : ι' → A) = MulOpposite.unop ∘ v :=
-  (rfl)
 
 /-- **Equivalence of idempotents and right modules.** The images `eAⁿ` and `fAᵐ` of the actions of
 two idempotent matrices on column vectors are isomorphic right `A`-modules (left `Aᵐᵒᵖ`-modules)
