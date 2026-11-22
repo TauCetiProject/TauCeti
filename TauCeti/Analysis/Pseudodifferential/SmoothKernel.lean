@@ -314,14 +314,6 @@ theorem eq_ofKernel_iff {a : Symbol n V W m} :
   exact Symbol.ext (coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u _ ↦
     funext fun x ↦ (h u x).trans (quantizeSchwartzValue_ofKernel hK hKc u x).symm)
 
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- The frequency slices `ξ ↦ a(x, ξ)` of a smoothing symbol are integrable. -/
-theorem IsSmoothing.integrable_coefficient {a : Symbol n V W m} (ha : a.IsSmoothing)
-    (x : CoordinateSpace n) : Integrable fun ξ ↦ a.coefficient (x, ξ) := by
-  obtain ⟨b, hb⟩ := isSmoothing_iff.1 ha (-n - 1)
-  rw [← hb]
-  exact b.integrable_coefficient (by linarith) x
-
 /-- The quantization kernel of the symbol of an integral operator is its kernel. -/
 @[simp]
 theorem quantizationKernel_ofKernel (x y : CoordinateSpace n) :
