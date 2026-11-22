@@ -33,7 +33,8 @@ that the later theory transports invariants along:
 * the common denominator `N`, the least positive integer killing every class of `α + β`, equal
   to the lcm of their additive orders, and `1` exactly for the empty pair;
 * the scaling `(α, β) ↦ (uα, uβ)` by an integer `u` prime to `N`, which preserves disjointness,
-  the degree and the common denominator, and composes multiplicatively.
+  the degree and the common denominator, and composes multiplicatively;
+* Galois stability: being fixed by every such scaling.
 
 ## Main declarations
 
@@ -46,6 +47,8 @@ that the later theory transports invariants along:
 * `TauCeti.Hypergeometric.Parameters.denominator`, with `denominator_eq_lcm`,
   `denominator_dvd_iff`, `isLeast_denominator` and `denominator_eq_one_iff`.
 * `TauCeti.Hypergeometric.Parameters.scale`, with `denominator_scale` and `scale_scale`.
+* `TauCeti.Hypergeometric.Parameters.IsGaloisStable`: stability under every such scaling, with
+  `isGaloisStable_iff`.
 
 ## References
 
@@ -414,6 +417,21 @@ theorem swap_scale : (P.scale hu).swap = P.swap.scale (P.denominator_swap ▸ hu
 @[simp]
 theorem neg_scale : -(P.scale hu) = (-P).scale (P.denominator_neg ▸ hu) := by
   ext1 <;> simp [Multiset.map_map]
+
+/-! ### Galois stability -/
+
+/-- A parameter pair is *Galois stable* when every scaling by an integer prime to the common
+denominator fixes it. The Galois-stable pairs are exactly the pairs of a cyclotomic datum. -/
+def IsGaloisStable : Prop :=
+  ∀ (u : ℤ) (hu : IsCoprime u P.denominator), P.scale hu = P
+
+theorem isGaloisStable_iff : P.IsGaloisStable ↔
+    ∀ u : ℤ, IsCoprime u P.denominator → P.α.map (u • ·) = P.α ∧ P.β.map (u • ·) = P.β := by
+  simp only [IsGaloisStable, Parameters.ext_iff, scale_α, scale_β]
+
+@[simp]
+theorem isGaloisStable_swap : P.swap.IsGaloisStable ↔ P.IsGaloisStable := by
+  simp only [isGaloisStable_iff, swap_α, swap_β, denominator_swap, and_comm]
 
 end Parameters
 

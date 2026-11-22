@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.Data.Nat.Totient
+public import Mathlib.RingTheory.Coprime.Basic
 public import TauCeti.Data.Nat.Factorization.MulDvd
 import Mathlib.FieldTheory.Finite.Basic
 
@@ -55,6 +56,8 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
 * `IsConj.orderOf_eq`, and its additive counterpart: conjugate elements of a monoid have the same
   order.
+* `IsCoprime.orderOf_zpow`, and its additive counterpart: an integer exponent coprime to the order
+  of `x` preserves it.
 * `QuotientGroup.orderOf_mk_dvd_iff_pow_mem`, and its additive counterpart: the order of the
   image of `g` in a quotient `G ⧸ K` divides `n` exactly when `g ^ n ∈ K`.
 * `Subgroup.mem_of_pow_mem_of_coprime_index`, and its additive counterpart: a normal subgroup
@@ -139,6 +142,26 @@ theorem IsConj.orderOf_eq {G : Type*} [Monoid G] {a b : G} (h : IsConj a b) :
   orderOf_eq_orderOf_iff.2 fun n ↦ by
     rw [← isConj_one_right, ← isConj_one_right (a := b ^ n)]
     exact ⟨fun h' ↦ h'.trans (h.pow n), fun h' ↦ h'.trans (h.pow n).symm⟩
+
+/-- An integer exponent coprime to the order of `x` preserves it. This is Mathlib's
+`Nat.Coprime.orderOf_pow` for integer exponents. -/
+@[to_additive /-- An integer coefficient coprime to the additive order of `x` preserves it. This
+is Mathlib's `Nat.Coprime.addOrderOf_nsmul` for integer coefficients. -/]
+theorem IsCoprime.orderOf_zpow {G : Type*} [Group G] {x : G} {u : ℤ}
+    (h : IsCoprime u (orderOf x)) : orderOf (x ^ u) = orderOf x := by
+  obtain ⟨v, w, hvw⟩ := h
+  -- `v` inverts `u` on the powers of `x`, so `x` is in turn a power of `x ^ u`.
+  set y := x ^ u with hy
+  have hx : y ^ v = x := by
+    calc y ^ v = x ^ (v * u + w * orderOf x) := by
+          rw [zpow_add, mul_comm w, zpow_mul x (orderOf x : ℤ), zpow_natCast, pow_orderOf_eq_one,
+            one_zpow, mul_one, hy, ← zpow_mul, mul_comm]
+      _ = x := by rw [hvw, zpow_one]
+  refine Nat.dvd_antisymm (orderOf_dvd_of_pow_eq_one ?_) (orderOf_dvd_of_pow_eq_one ?_)
+  · rw [hy, ← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, pow_orderOf_eq_one,
+      one_zpow]
+  · rw [← hx, ← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, pow_orderOf_eq_one,
+      one_zpow]
 
 /-- The order of the image of `g` in `G ⧸ K` divides `n` exactly when `g ^ n` lies in `K`. -/
 @[to_additive
