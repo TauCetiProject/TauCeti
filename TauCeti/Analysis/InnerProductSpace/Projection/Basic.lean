@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Rank
 
 /-!
 # Products and norms of orthogonal projections

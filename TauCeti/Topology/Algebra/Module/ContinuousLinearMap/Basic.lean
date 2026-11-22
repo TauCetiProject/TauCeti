@@ -17,7 +17,8 @@ commutative square of the underlying (semi)linear maps. This lets results about 
 of linear maps, such as the module snake lemma, be applied to continuous linear maps.
 
 Precomposing with a continuous linear equivalence does not change whether a continuous linear map
-vanishes, and a continuous linear map vanishes exactly when its range is trivial.
+vanishes. A continuous semilinear map whose scalar ring homomorphism is surjective vanishes exactly
+when the submodule range of its underlying semilinear map is trivial.
 
 ## Main results
 
@@ -25,8 +26,9 @@ vanishes, and a continuous linear map vanishes exactly when its range is trivial
   commutes after coercion to semilinear maps.
 * `ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff`: `L ∘ e = 0` exactly when `L = 0`,
   for a continuous semilinear equivalence `e`.
-* `ContinuousLinearMap.range_toLinearMap_eq_bot`: a continuous semilinear map has trivial range
-  exactly when it is zero.
+* `ContinuousLinearMap.range_toLinearMap_eq_bot`: for a surjective scalar ring homomorphism, a
+  continuous semilinear map is zero exactly when the submodule range of its underlying semilinear
+  map is `⊥`.
 * `ContinuousLinearMap.surjective_iff_ne_zero`: a continuous linear functional is surjective
   exactly when it is nonzero.
 -/
@@ -60,7 +62,9 @@ theorem comp_continuousLinearEquiv_eq_zero_iff {σ₂₁ : R₂ →+* R₁} [Rin
   refine ⟨fun h ↦ ext fun v ↦ ?_, fun h ↦ by rw [h, zero_comp]⟩
   simpa using congr($h (e.symm v))
 
-/-- A continuous semilinear map has trivial range exactly when it is the zero map. -/
+/-- A continuous semilinear map `f`, along a surjective scalar ring homomorphism `σ₁₂`, is the
+zero map exactly when the submodule range of its underlying semilinear map is `⊥`. Surjectivity of
+`σ₁₂` is what makes `LinearMap.range` a submodule of the target. -/
 @[simp]
 theorem range_toLinearMap_eq_bot [RingHomSurjective σ₁₂] {f : M₁ →SL[σ₁₂] M₂} :
     (f : M₁ →ₛₗ[σ₁₂] M₂).range = ⊥ ↔ f = 0 := by
