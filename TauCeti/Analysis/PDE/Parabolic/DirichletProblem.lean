@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
+public import TauCeti.Analysis.PDE.EnergyForm.LowerOrder
 public import TauCeti.Analysis.PDE.Parabolic.Existence
 import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate
 import TauCeti.Analysis.PDE.Parabolic.TimeRegularity
@@ -83,7 +83,9 @@ the difference of two weak solutions with the same initial value.
 
 When the coefficients do not depend on time and `a` is symmetric, a forcing in
 `L²(t₀, t₁; L²(Ω))` and an initial value in `H¹₀(Ω)` give a solution with `∂ₜu ∈ L²(t₀, t₁; L²(Ω))`
-that is essentially bounded in `H¹₀(Ω)` (Evans, §7.1.3, Theorem 5). This is the abstract theorem
+that is continuous on `[t₀, t₁]` with values in `H¹₀(Ω)`, so in particular essentially bounded
+there; Evans, §7.1.3, Theorem 5, proves the bounds on `∂ₜu` and `sup_t ‖u(t)‖_{H¹₀}`. This is the
+abstract theorem
 `TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm` for the
 symmetric coercive part `-∂ᵢ(aⁱʲ ∂ⱼ ·) + λ/2`; the lower-order terms `⟪b, ∇u⟫ + c u`, a bounded
 operator `H¹₀(Ω) → L²(Ω)` (`TauCeti.PDE.lowerOrderL`), and the mass shift
@@ -99,8 +101,13 @@ operator `H¹₀(Ω) → L²(Ω)` (`TauCeti.PDE.lowerOrderL`), and the mass shif
   solutions, for the continuous `L²(Ω)`-valued representative at every time and for the
   `H¹₀(Ω)`-valued solution almost everywhere.
 * `TauCeti.PDE.exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm`: time regularity,
-  `∂ₜu ∈ L²(t₀, t₁; L²(Ω))` and `u ∈ L^∞(t₀, t₁; H¹₀(Ω))`, for time-independent coefficients with
+  `∂ₜu ∈ L²(t₀, t₁; L²(Ω))` and `u ∈ C([t₀, t₁]; H¹₀(Ω))`, for time-independent coefficients with
   symmetric principal part.
+* `TauCeti.PDE.norm_sq_add_two_mul_integral_energyFormH1_eq_of_hasWeakLineDerivOn_gelfandDual`:
+  the energy identity `‖u(t)‖² + 2 ∫ₛᵗ a_r(u, u) = ‖u(s)‖² + 2 ∫ₛᵗ f(u)` for weak solutions, and
+  its unforced case
+  `norm_sq_add_two_mul_integral_energyFormH1_eq_norm_sq_of_hasWeakLineDerivOn_gelfandDual`,
+  `‖u(t)‖² + 2 ∫ₛᵗ a_r(u, u) = ‖u(s)‖²`.
 
 ## References
 
@@ -397,6 +404,68 @@ theorem ae_eq_of_hasWeakLineDerivOn_gelfandDual_energyFormH1
 
 end StandingHypotheses
 
+/-- **The energy identity for the parabolic Dirichlet problem.** Let `u` be a weak solution of
+`∂ₜu + L(t) u = f` in `(t₀, t₁) × Ω`, `u = 0` on `(t₀, t₁) × ∂Ω`, in the sense of
+`TauCeti.PDE.exists_hasWeakLineDerivOn_gelfandDual_energyFormH1`, with forcing
+`f ∈ L²(t₀, t₁; H⁻¹(Ω))`, and let `w` be its continuous `L²(Ω)`-valued representative. Then for all
+`s, t ∈ [t₀, t₁]`,
+
+`‖w t‖² + 2 ∫ₛᵗ a_r(u(r), u(r)) dr = ‖w s‖² + 2 ∫ₛᵗ f(r)(u(r)) dr`,
+
+where `a_r` is the energy form of `L(r)`. No hypothesis on the coefficients is needed beyond the
+equation itself. This is the abstract energy identity
+`TauCeti.HasWeakLineDerivOn.norm_sq_add_two_mul_integral_eq_of_gelfandDual` for the equation tested
+with `u(r)`. -/
+theorem norm_sq_add_two_mul_integral_energyFormH1_eq_of_hasWeakLineDerivOn_gelfandDual
+    {f : ℝ → StrongDual ℝ (W1p0 mu Omega 2)} {u : ℝ → W1p0 mu Omega 2}
+    {u' : ℝ → StrongDual ℝ (W1p0 mu Omega 2)} {w : ℝ → Lp ℝ 2 (mu.restrict Omega)}
+    (hd : HasWeakLineDerivOn volume ⟨Ioo t₀ t₁, isOpen_Ioo⟩
+      (fun t => (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual
+        (W1p0.valueL (u t))) u' 1)
+    (hu : MemLp u 2 (volume.restrict (Ioo t₀ t₁)))
+    (hu' : MemLp u' 2 (volume.restrict (Ioo t₀ t₁)))
+    (hf : MemLp f 2 (volume.restrict (Ioo t₀ t₁)))
+    (heq : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
+      u' t v + energyFormH1 (a t) (b t) (c t) (u t : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        f t v)
+    (hw : ContinuousOn w (Icc t₀ t₁))
+    (hae : (fun t => W1p0.valueL (u t)) =ᵐ[volume.restrict (Ioo t₀ t₁)] w)
+    {s t : ℝ} (hs : s ∈ Icc t₀ t₁) (ht : t ∈ Icc t₀ t₁) :
+    ‖w t‖ ^ 2 + 2 * ∫ r in s..t,
+        energyFormH1 (a r) (b r) (c r) (u r : W1p mu Omega 2) (u r : W1p mu Omega 2) =
+      ‖w s‖ ^ 2 + 2 * ∫ r in s..t, f r (u r) := by
+  refine hd.norm_sq_add_two_mul_integral_eq_of_gelfandDual hu hu' (hf.integrable_apply hu) ?_ hw
+    hae hs ht
+  -- Testing the equation with `u(r)` itself.
+  filter_upwards [heq] with r hr using hr (u r)
+
+/-- **The energy identity for the unforced parabolic Dirichlet problem.** Every weak solution of
+`∂ₜu + L(t) u = 0` in `(t₀, t₁) × Ω`, `u = 0` on `(t₀, t₁) × ∂Ω`, with continuous `L²(Ω)`-valued
+representative `w`, satisfies `‖w t‖² + 2 ∫ₛᵗ a_r(u(r), u(r)) dr = ‖w s‖²` for all
+`s, t ∈ [t₀, t₁]`. This is
+`TauCeti.PDE.norm_sq_add_two_mul_integral_energyFormH1_eq_of_hasWeakLineDerivOn_gelfandDual` with
+`f = 0`. -/
+theorem norm_sq_add_two_mul_integral_energyFormH1_eq_norm_sq_of_hasWeakLineDerivOn_gelfandDual
+    {u : ℝ → W1p0 mu Omega 2} {u' : ℝ → StrongDual ℝ (W1p0 mu Omega 2)}
+    {w : ℝ → Lp ℝ 2 (mu.restrict Omega)}
+    (hd : HasWeakLineDerivOn volume ⟨Ioo t₀ t₁, isOpen_Ioo⟩
+      (fun t => (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual
+        (W1p0.valueL (u t))) u' 1)
+    (hu : MemLp u 2 (volume.restrict (Ioo t₀ t₁)))
+    (hu' : MemLp u' 2 (volume.restrict (Ioo t₀ t₁)))
+    (heq : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
+      u' t v + energyFormH1 (a t) (b t) (c t) (u t : W1p mu Omega 2) (v : W1p mu Omega 2) = 0)
+    (hw : ContinuousOn w (Icc t₀ t₁))
+    (hae : (fun t => W1p0.valueL (u t)) =ᵐ[volume.restrict (Ioo t₀ t₁)] w)
+    {s t : ℝ} (hs : s ∈ Icc t₀ t₁) (ht : t ∈ Icc t₀ t₁) :
+    ‖w t‖ ^ 2 + 2 * ∫ r in s..t,
+        energyFormH1 (a r) (b r) (c r) (u r : W1p mu Omega 2) (u r : W1p mu Omega 2) =
+      ‖w s‖ ^ 2 := by
+  have h := norm_sq_add_two_mul_integral_energyFormH1_eq_of_hasWeakLineDerivOn_gelfandDual
+    (a := a) (b := b) (c := c) (f := fun _ => 0) hd hu hu'
+    (memLp_const (0 : StrongDual ℝ (W1p0 mu Omega 2))) heq hw hae hs ht
+  simpa using h
+
 /-! ### Time regularity for time-independent symmetric principal coefficients -/
 
 section TimeRegularity
@@ -447,9 +516,10 @@ elliptic on `Ω` and symmetric almost everywhere, and `b`, `c` bounded and measu
 weak solution of `∂ₜu + L u = F` in `(t₀, t₁) × Ω`, `u = 0` on `(t₀, t₁) × ∂Ω`, with forcing
 `F ∈ L²(t₀, t₁; L²(Ω))`, whose continuous `L²(Ω)`-valued representative starts at `u₀ ∈ H¹₀(Ω)`.
 Then `∂ₜu ∈ L²(t₀, t₁; L²(Ω))`: the `L²(Ω)`-valued map `t ↦ u(t)` has a weak time derivative
-`d ∈ L²(t₀, t₁; L²(Ω))`, which represents `u'` through the `L²(Ω)` pairing, and `u` is essentially
-bounded in `H¹₀(Ω)`. No regularity of `∂Ω`, no continuity of `a`, no boundedness of `Ω` and no
-sign condition on `c` is needed. -/
+`d ∈ L²(t₀, t₁; L²(Ω))`, which represents `u'` through the `L²(Ω)` pairing, and `u` has a
+representative continuous on `[t₀, t₁]` with values in `H¹₀(Ω)` that starts at `u₀`; in particular
+`u ∈ L^∞(t₀, t₁; H¹₀(Ω))`. No regularity of `∂Ω`, no continuity of `a`, no boundedness of `Ω` and
+no sign condition on `c` is needed. -/
 theorem exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm [DecidableEq ι]
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
     (hb : AEStronglyMeasurable b (mu.restrict Omega))
@@ -476,7 +546,8 @@ theorem exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm [Decidable
       HasWeakLineDerivOn volume ⟨Ioo t₀ t₁, isOpen_Ioo⟩ (fun t => W1p0.valueL (u t)) d 1 ∧
       (∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
         u' t v = ⟪d t, W1p0.valueL v⟫_ℝ) ∧
-      ∃ C, ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ‖u t‖ ≤ C := by
+      ∃ v : ℝ → W1p0 mu Omega 2, ContinuousOn v (Icc t₀ t₁) ∧
+        u =ᵐ[volume.restrict (Ioo t₀ t₁)] v ∧ v t₀ = u₀ := by
   have hlam : 0 < lam := hell.pos
   have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) :=
     memLp_energyIntegrand_of_bounds (b := fun _ => 0) (c := fun _ => 0) (beta := 0) (gamma := 0)
@@ -515,17 +586,12 @@ theorem exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm [Decidable
     simp only [add_apply, ContinuousLinearMap.gelfandDual_apply, inner_add_left, inner_sub_left,
       real_inner_smul_left, hA₀]
     linarith [ht v, hM (u t) v]
-  have key := HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm
-    hinj hsymm₀ (half_pos hlam) hcoer hg h hu hu' heq₀ hw hae h₀
-  obtain ⟨d, hd, hdd, hu'd, hAu, -⟩ := key
-  refine ⟨d, hd, hdd, ?_, ?_⟩
-  · filter_upwards [hu'd] with t ht v
-    exact (DFunLike.congr_fun ht v).trans (ContinuousLinearMap.gelfandDual_apply _ _ _)
-  · -- With `A₀ u u ≤ K`, coercivity gives `λ/2 ‖u‖² ≤ K`, so `‖u‖ ≤ √(K / (λ/2))`.
-    obtain ⟨K, hK⟩ : ∃ K, ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), A₀ (u t) (u t) ≤ K := ⟨_, hAu⟩
-    refine ⟨√(K / (lam / 2)), hK.mono fun t ht => Real.le_sqrt_of_sq_le ?_⟩
-    rw [le_div_iff₀ (half_pos hlam)]
-    linarith [hcoer (u t)]
+  obtain ⟨d, v, hd, hdd, hu'd, hv, huv, hv₀, -⟩ :=
+    HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm
+      hinj hsymm₀ (half_pos hlam) hcoer hg h hu hu' heq₀ hw hae h₀
+  refine ⟨d, hd, hdd, ?_, v, hv, huv, hv₀⟩
+  filter_upwards [hu'd] with t ht φ
+  exact (DFunLike.congr_fun ht φ).trans (ContinuousLinearMap.gelfandDual_apply _ _ _)
 
 end TimeRegularity
 

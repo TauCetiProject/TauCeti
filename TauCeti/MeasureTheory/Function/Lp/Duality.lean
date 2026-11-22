@@ -74,6 +74,8 @@ is `∞` outside the almost everywhere strongly measurable functions.
   and finite `ℓ²(L¹)` families in `L¹(μ)` by `L∞(μ)` test functions on any measure space.
 * `TauCeti.enorm_integral_inner_le`: Hölder's inequality `‖∫ ⟪u, v⟫‖ ≤ ‖u‖_p ‖v‖_q`.
 * `TauCeti.enorm_integral_inner_comm`: `‖∫ ⟪u, v⟫‖ = ‖∫ ⟪v, u⟫‖`.
+* `TauCeti.tendsto_integral_inner_of_tendsto_eLpNorm_sub`: if `Gᵢ → F` in `Lᵖ` then
+  `∫ ⟪Gᵢ, g⟫ → ∫ ⟪F, g⟫` for every `g ∈ L^q`.
 * `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`: the duality
   bound for `q < ∞` for inner product space valued functions, against bounded test functions of
   finite-measure support, without assuming `h ∈ L^q`.
@@ -125,6 +127,23 @@ theorem enorm_integral_inner_comm {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommG
     ‖∫ x, ⟪u x, v x⟫_𝕜 ∂μ‖ₑ = ‖∫ x, ⟪v x, u x⟫_𝕜 ∂μ‖ₑ := by
   rw [← RCLike.eNorm_conj, ← integral_conj]
   simp_rw [inner_conj_symm]
+
+open Filter Topology in
+/-- **Continuity of the pairing `∫ ⟪u, v⟫` in `Lᵖ`.** If `Gᵢ → F` in `Lᵖ`, then
+`∫ ⟪Gᵢ, g⟫ → ∫ ⟪F, g⟫` for every `g ∈ L^q`, `q` the Hölder conjugate exponent. -/
+theorem tendsto_integral_inner_of_tendsto_eLpNorm_sub {𝕜 H β : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] {p q : ℝ≥0∞} [p.HolderConjugate q]
+    {l : Filter β} {F g : α → H} {G : β → α → H} (hF : MemLp F p μ) (hG : ∀ i, MemLp (G i) p μ)
+    (hg : MemLp g q μ) (hGF : Tendsto (fun i => eLpNorm (F - G i) p μ) l (𝓝 0)) :
+    Tendsto (fun i => ∫ x, ⟪G i x, g x⟫_𝕜 ∂μ) l (𝓝 (∫ x, ⟪F x, g x⟫_𝕜 ∂μ)) := by
+  rw [tendsto_iff_edist_tendsto_0]
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa using ENNReal.Tendsto.mul_const hGF (Or.inr hg.eLpNorm_ne_top))
+    (fun _ => zero_le) fun i => ?_
+  rw [eDist_eq_eNorm_sub, ← integral_sub ((hG i).integrable_inner_of_holderConjugate hg)
+    (hF.integrable_inner_of_holderConjugate hg), eLpNorm_sub_comm]
+  simp_rw [← inner_sub_left]
+  exact enorm_integral_inner_le (u := G i - F)
 
 end TauCeti
 
@@ -262,10 +281,9 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_simpleFun
   set S := spanningSets μ N ∩ {x | ‖h' x‖ ≤ N}
   have hS : MeasurableSet S := measurableSet_spanningSets_inter_norm_le hh' N
   have hmem : MemLp (S.indicator h') q μ := by
-    refine (memLp_top_of_bound (hh'.indicator hS).aestronglyMeasurable N
-      (ae_of_all _ fun x => ?_)).mono_exponent_of_measure_support_ne_top
-      (fun x hx => Set.indicator_of_notMem (fun h => hx (Set.mem_of_mem_inter_left h)) _)
-      (measure_spanningSets_lt_top μ N).ne le_top
+    refine memLp_of_norm_le_of_measure_support_ne_top (hh'.indicator hS).aestronglyMeasurable
+      (c := N) (ae_of_all _ fun x => ?_) (measure_spanningSets_lt_top μ N).ne
+      (fun x hx => Set.indicator_of_notMem (fun h => hx (Set.mem_of_mem_inter_left h)) _) q
     by_cases hx : x ∈ S
     · simpa [Set.indicator_of_mem hx] using hx.2
     · simp [Set.indicator_of_notMem hx]

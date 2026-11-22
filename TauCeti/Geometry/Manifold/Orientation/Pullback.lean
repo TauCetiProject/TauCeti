@@ -58,6 +58,8 @@ spaces glued from oriented pieces, such as the connected sum.
 * `TauCeti.Manifold.Orientation.eventually_isOrientationPreservingAt`,
   `TauCeti.Manifold.Orientation.eventually_isOrientationReversingAt`: a `C¹` map that preserves
   (reverses) orientation at a point does so at every nearby point.
+* `IsPreconnected.isOrientationPreservingAt_iff`: on a preconnected set where a `C¹` map has
+  invertible derivative, it preserves orientation at one point exactly when it does at any other.
 * `TauCeti.Manifold.Orientation.exists_eventually_isOrientationPreservingAt`: a map into the model
   space with invertible derivative at a point, such as a chart, preserves orientations near that
   point for one of the orientations of the model space.
@@ -371,6 +373,36 @@ theorem eventually_isOrientationReversingAt {f : M → M'} {a : M} (hf : ContMDi
     ∀ᶠ x in 𝓝 a, IsOrientationReversingAt o o' f x := by
   simpa only [isOrientationPreservingAt_neg_right] using
     eventually_isOrientationPreservingAt hf ((isOrientationPreservingAt_neg_right o o' f a).mpr ho)
+
+/-- **Orientation preservation is constant on preconnected sets.** If a map `f` is `C¹` with
+invertible derivative at every point of a preconnected set `s`, then it preserves the orientations
+`o` and `o'` at one point of `s` exactly when it does at any other: the points where it preserves
+them and those where it reverses them cover `s`, and both conditions are open. -/
+theorem _root_.IsPreconnected.isOrientationPreservingAt_iff {f : M → M'} {s : Set M}
+    (hs : IsPreconnected s) (hf : ∀ x ∈ s, ContMDiffAt I I' 1 f x)
+    (hd : ∀ x ∈ s, (mfderiv I I' f x).IsInvertible) (o : Orientation I M ι)
+    (o' : Orientation I' M' ι) {a b : M} (ha : a ∈ s) (hb : b ∈ s) :
+    IsOrientationPreservingAt o o' f a ↔ IsOrientationPreservingAt o o' f b := by
+  -- The interiors of the two conditions are open, disjoint, and cover `s`.
+  have hcover : s ⊆ {x | ∀ᶠ y in 𝓝 x, IsOrientationPreservingAt o o' f y} ∪
+      {x | ∀ᶠ y in 𝓝 x, IsOrientationReversingAt o o' f y} := fun x hx ↦ by
+    obtain ⟨e, he⟩ := hd x hx
+    rcases isOrientationPreservingAt_or_isOrientationReversingAt o o' f x e he with h | h
+    · exact .inl (eventually_isOrientationPreservingAt (hf x hx) h)
+    · exact .inr (eventually_isOrientationReversingAt (hf x hx) h)
+  have hdisj : Disjoint {x | ∀ᶠ y in 𝓝 x, IsOrientationPreservingAt o o' f y}
+      {x | ∀ᶠ y in 𝓝 x, IsOrientationReversingAt o o' f y} :=
+    Set.disjoint_left.2 fun x h h' ↦
+      not_isOrientationPreservingAt_and_isOrientationReversingAt o o' f x
+        ⟨h.self_of_nhds, h'.self_of_nhds⟩
+  rcases hs.subset_or_subset isOpen_setOfPred_eventually_nhds isOpen_setOfPred_eventually_nhds hdisj
+    hcover with h | h
+  · exact iff_of_true (h ha).self_of_nhds (h hb).self_of_nhds
+  · exact iff_of_false
+      (fun h' ↦ not_isOrientationPreservingAt_and_isOrientationReversingAt o o' f a
+        ⟨h', (h ha).self_of_nhds⟩)
+      (fun h' ↦ not_isOrientationPreservingAt_and_isOrientationReversingAt o o' f b
+        ⟨h', (h hb).self_of_nhds⟩)
 
 /-- **A map into the model space preserves orientations near a point, for an orientation of the
 model space.** If `g : M → E` is `C¹` at `a` with invertible derivative there, then for some

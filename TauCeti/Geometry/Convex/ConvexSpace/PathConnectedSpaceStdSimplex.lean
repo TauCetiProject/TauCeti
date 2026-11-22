@@ -18,6 +18,10 @@ the two faces of the standard `1`-simplex, its vertices, to `1` and `0`
 `homeomorphI.symm t` are `1 - t` and `t` (`weights_homeomorphI_symm_zero`,
 `weights_homeomorphI_symm_one`), and reversing the vertices of `Fin 2` corresponds to
 `unitInterval.symm` (`map_rev_homeomorphI_symm`).
+
+More generally, the weight of a vertex of any real standard simplex is a continuous map to the
+unit interval (`weightI`), and so is the sum of the weights of the last two vertices of the
+standard `2`-simplex (`weightsOneAddTwoI`).
 -/
 
 public section
@@ -53,5 +57,41 @@ lemma homeomorphI_map_succAbove_one (w : StdSimplex ℝ (Fin 1)) :
   have h1 : (1 : Fin 2) = Fin.rev 0 := rfl
   rw [homeomorphI_apply_coe, Homeomorph.apply_symm_apply, unitInterval.coe_symm_eq, h1,
     weights_map_apply_of_injective Fin.rev_injective, weights_homeomorphI_symm_zero]
+
+/-- The weight of the vertex `i` of a real standard simplex, as a point of the unit interval. -/
+noncomputable def weightI {ι : Type*} (i : ι) : C(StdSimplex ℝ ι, unitInterval) :=
+  ⟨fun w ↦ ⟨w.weights i, w.weights_nonneg i, w.weights_apply_le_one i⟩,
+    (continuous_weights_apply ℝ i).subtype_mk _⟩
+
+/-- The value of `weightI i` at a point is its `i`-th weight. -/
+@[simp]
+lemma coe_weightI_apply {ι : Type*} (i : ι) (w : StdSimplex ℝ ι) :
+    (weightI i w : ℝ) = w.weights i :=
+  (rfl)
+
+/-- The point `weightI i w` of the unit interval is the `i`-th weight of `w`. -/
+lemma weightI_apply_eq_mk {ι : Type*} (i : ι) (w : StdSimplex ℝ ι) :
+    weightI i w = ⟨w.weights i, w.weights_nonneg i, w.weights_apply_le_one i⟩ :=
+  (rfl)
+
+/-- The sum of the weights of the last two vertices of a point of the standard `2`-simplex, as a
+point of the unit interval. -/
+noncomputable def weightsOneAddTwoI : C(StdSimplex ℝ (Fin 3), unitInterval) :=
+  ⟨fun w ↦ ⟨w.weights 1 + w.weights 2,
+    add_nonneg (w.weights_nonneg 1) (w.weights_nonneg 2), w.weights_one_add_weights_two_le_one⟩,
+    ((continuous_weights_apply ℝ 1).add (continuous_weights_apply ℝ 2)).subtype_mk _⟩
+
+/-- The value of `weightsOneAddTwoI` at a point is the sum of its last two weights. -/
+@[simp]
+lemma coe_weightsOneAddTwoI_apply (w : StdSimplex ℝ (Fin 3)) :
+    (weightsOneAddTwoI w : ℝ) = w.weights 1 + w.weights 2 :=
+  (rfl)
+
+/-- The point `weightsOneAddTwoI w` of the unit interval is the sum of the last two weights of
+`w`. -/
+lemma weightsOneAddTwoI_apply_eq_mk (w : StdSimplex ℝ (Fin 3)) :
+    weightsOneAddTwoI w = ⟨w.weights 1 + w.weights 2,
+      add_nonneg (w.weights_nonneg 1) (w.weights_nonneg 2), w.weights_one_add_weights_two_le_one⟩ :=
+  (rfl)
 
 end Convexity.StdSimplex

@@ -11,8 +11,11 @@ public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 /-!
 # Faces of the standard simplex
 
-Complements to Mathlib's `Convexity.StdSimplex` about the maps `StdSimplex.map f`.  An arbitrary
-map adds weights over its fibres.  An injective map embeds a standard simplex as a face of a larger
+Complements to Mathlib's `Convexity.StdSimplex`, mostly about the maps `StdSimplex.map f`.  A point
+is determined by its weight function (`StdSimplex.toFun_comp_weights_injective`), and
+`StdSimplex.extendWeights p` inverts the weight function on its range, sending every other
+function to the fallback point `p`.  An arbitrary map adds weights over its fibres.  An injective
+map embeds a standard simplex as a face of a larger
 one and keeps the weights of a point, so it is injective; a point supported on its range comes from
 the smaller simplex (`StdSimplex.comap`).  For `f = j.succAbove` its image is the
 facet on which the `j`-th weight vanishes; for the last vertex this facet is the smaller simplex
@@ -37,6 +40,46 @@ namespace Convexity.StdSimplex
 section AddCommMonoid
 
 variable {R : Type*} [LE R] [AddCommMonoid R] [One R]
+
+/-- A point of a standard simplex is determined by its weight function. -/
+theorem toFun_comp_weights_injective {X : Type*} :
+    Function.Injective fun p : StdSimplex R X ↦ (p.weights : X → R) := by
+  rintro ⟨w, _, _⟩ ⟨w', _, _⟩ h
+  obtain rfl : w = w' := DFunLike.coe_injective h
+  rfl
+
+variable {ι : Type*}
+
+/-- Read a weight vector as a simplex point when it lies in the simplex, using `p` elsewhere.
+This supplies probability parameters for mixtures supported on a simplex. -/
+noncomputable def extendWeights (p : StdSimplex R ι) (w : ι → R) : StdSimplex R ι :=
+  Function.extend (fun q : StdSimplex R ι ↦ (q.weights : ι → R)) id (fun _ ↦ p) w
+
+/-- The inverse weight map is extended with constant fallback value `p`. -/
+theorem extendWeights_def (p : StdSimplex R ι) :
+    p.extendWeights =
+      Function.extend (fun q : StdSimplex R ι ↦ (q.weights : ι → R)) id (fun _ ↦ p) := (rfl)
+
+/-- Extending the inverse of the weight embedding recovers every simplex point. -/
+@[simp]
+theorem extendWeights_weights (p q : StdSimplex R ι) :
+    p.extendWeights q.weights = q :=
+  toFun_comp_weights_injective.extend_apply _ _ q
+
+/-- Extending the inverse weight map preserves every vector in the simplex. -/
+@[simp]
+theorem weights_extendWeights_of_mem_range (p : StdSimplex R ι) {w : ι → R}
+    (hw : w ∈ Set.range (fun q : StdSimplex R ι ↦ (q.weights : ι → R))) :
+    ⇑(p.extendWeights w).weights = w := by
+  obtain ⟨q, rfl⟩ := hw
+  rw [extendWeights_weights]
+
+/-- A vector outside the simplex is sent to the chosen fallback point. -/
+@[simp]
+theorem extendWeights_of_notMem_range (p : StdSimplex R ι) {w : ι → R}
+    (hw : w ∉ Set.range (fun q : StdSimplex R ι ↦ (q.weights : ι → R))) :
+    p.extendWeights w = p :=
+  Function.extend_apply' _ _ _ hw
 
 /-- A point of the triangle `StdSimplex R (Fin 3)` is determined by its three weights. -/
 theorem ext_fin_three {x y : StdSimplex R (Fin 3)} (h0 : x.weights 0 = y.weights 0)
@@ -176,6 +219,13 @@ theorem weights_map_succAbove_of_eq {n : ℕ} {j k : Fin (n + 1)} {i : Fin n}
     (h : j.succAbove i = k) (x : StdSimplex R (Fin n)) :
     (x.map j.succAbove).weights k = x.weights i :=
   h ▸ weights_map_apply_of_injective Fin.succAbove_right_injective x i
+
+/-- On the face of the standard `2`-simplex opposite the vertex `0`, the weights `w₁` and `w₂`
+sum to `1`. -/
+theorem weights_one_add_weights_two_map_succAbove_zero (z : StdSimplex R (Fin 2)) :
+    (z.map (Fin.succAbove 0)).weights 1 + (z.map (Fin.succAbove 0)).weights 2 = 1 := by
+  rw [weights_map_succAbove_of_eq (j := 0) (i := 0) (k := 1) rfl,
+    weights_map_succAbove_of_eq (j := 0) (i := 1) (k := 2) rfl, total_fin_two]
 
 omit [IsStrictOrderedRing R] in
 /-- The facet of the standard simplex on `Fin (n + 1)` opposite its last vertex, the points with
