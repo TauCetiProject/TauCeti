@@ -310,6 +310,24 @@ theorem Isometry.restrictHom_restrictPrimaryComponent_apply {B : FiniteQuadratic
     B.restrictHom _ (f.restrictPrimaryComponent p x) = f (A.restrictHom _ x) :=
   f.restrictHom_restrict_apply _ x
 
+variable {A} in
+/-- Forgetting the quadratic map on a primary-component restriction gives the primary-component
+restriction of the underlying bilinear isometry. -/
+@[simp]
+theorem Isometry.restrictPrimaryComponent_toFiniteBilinearModule {B : FiniteQuadraticModule}
+    (f : Isometry A B) (p : ℕ) :
+    (f.restrictPrimaryComponent p).toFiniteBilinearModule =
+      f.toFiniteBilinearModule.restrictPrimaryComponent p := by
+  ext x
+  apply Subtype.ext
+  rw [Isometry.toFiniteBilinearModule_apply]
+  exact (B.restrictHom_apply _ ((f.restrictPrimaryComponent p) x)).symm.trans <|
+    (Isometry.restrictHom_restrictPrimaryComponent_apply f p x).trans <|
+      (congrArg f (A.restrictHom_apply _ x)).trans <|
+        (Isometry.toFiniteBilinearModule_apply f x.val).symm.trans
+          (FiniteBilinearModule.Isometry.coe_restrictPrimaryComponent_apply
+            f.toFiniteBilinearModule p x).symm
+
 /-- **The `p`-primary component of an orthogonal product** is the orthogonal product of the
 `p`-primary components (`AddCommGroup.primaryComponent_prod`). -/
 def restrictPrimaryComponentProdIsometry (B : FiniteQuadraticModule) (p : ℕ) :

@@ -11,28 +11,18 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Decomposition
 /-!
 # Primary decomposition of the Gauss-sum invariant
 
-For a nondegenerate finite quadratic module `A`, the canonical primary decomposition
-`TauCeti.FiniteQuadraticModule.primaryDecomposition` identifies `A` isometrically with the
-orthogonal product of its prime-primary components. Since `FiniteQuadraticModule.gaussSign` is
-additive over orthogonal sums of nondegenerate modules
-(`TauCeti.FiniteQuadraticModule.gaussSign_pi`) and vanishes on trivial modules, `A.gaussSign` is
-the sum of the `p`-primary Gauss-sum invariants over `(Nat.card A).primeFactors`, and more
-generally over any finite set of primes containing all prime factors of `Nat.card A`.
+For a nondegenerate finite quadratic module `A`, `A.gaussSign` splits as the sum of the `p`-primary
+Gauss-sum invariants over `(Nat.card A).primeFactors` (or any finite prime superset).
 
 ## Main declarations
 
-* `TauCeti.FiniteQuadraticModule.gaussSign_primaryComponents`: `A.primaryComponents.gaussSign` is
-  the sum of the prime-primary Gauss-sum invariants.
-* `TauCeti.FiniteQuadraticModule.gaussSign_eq_sum_primaryComponents`: `A.gaussSign` is the sum of
-  the prime-primary Gauss-sum invariants over `(Nat.card A).primeFactors`.
-* `TauCeti.FiniteQuadraticModule.gaussSign_eq_sum_primaryComponent`: `A.gaussSign` is the sum of
-  the `p`-primary Gauss-sum invariants over any finite set of primes containing
-  `(Nat.card A).primeFactors`.
+* `TauCeti.FiniteQuadraticModule.gaussSign_primaryComponents`
+* `TauCeti.FiniteQuadraticModule.gaussSign_eq_sum_primaryComponents`
+* `TauCeti.FiniteQuadraticModule.gaussSign_eq_sum_primaryComponent`
 
 ## References
 
-* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*,
-  Proposition 1.11.2.
+* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, Prop. 1.11.2.
 * J. Milnor and D. Husemoller, *Symmetric Bilinear Forms*, Appendix 4.
 -/
 
@@ -44,13 +34,30 @@ namespace TauCeti.FiniteQuadraticModule
 
 variable (A : FiniteQuadraticModule)
 
+private def piPrimaryComponentsIsometry :
+    Isometry
+      (pi fun p : (Nat.card A).primeFactors ↦ A.restrict (primaryComponent A p.val))
+      A.primaryComponents where
+  toLinearEquiv :=
+    { toFun := fun x p ↦ ⟨(x p).val, (x p).property⟩
+      invFun := fun y p ↦ ⟨(y p).val, (y p).property⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
+  map_app' x :=
+    (A.primaryComponents_quadratic (fun p ↦ ⟨(x p).val, (x p).property⟩)).trans <|
+      (Finset.sum_congr rfl fun p _ ↦
+        (A.restrict_quadratic (primaryComponent A p.val) ⟨(x p).val, (x p).property⟩).symm).trans
+        (pi_quadratic _ x).symm
+
 /-- The Gauss-sum invariant of `A.primaryComponents` is the sum of the Gauss-sum invariants of the
 prime-primary restrictions of `A`. -/
 theorem gaussSign_primaryComponents (hA : A.IsNondegenerate) :
     A.primaryComponents.gaussSign =
       ∑ p : (Nat.card A).primeFactors, (A.restrict (primaryComponent A p.val)).gaussSign := by
   classical
-  rw [← A.piPrimaryComponentsIsometry.gaussSign_eq]
+  rw [← (piPrimaryComponentsIsometry A).gaussSign_eq]
   exact gaussSign_pi _ fun p ↦
     A.isNondegenerate_restrict_primaryComponent hA (Nat.prime_of_mem_primeFactors p.property)
 

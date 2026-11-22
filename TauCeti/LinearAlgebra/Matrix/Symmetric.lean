@@ -387,6 +387,30 @@ private theorem IsSymm.exists_vecMul_eq_diag_zmod_two {ι : Type*} [Fintype ι]
   have hj := LinearMap.congr_fun hc (Pi.single j 1)
   simpa [φ, vecMul, dotProduct, Matrix.toBilin'_apply', Matrix.mulVec, Pi.single_apply] using hj
 
+/-- For a finite subset `X` of a Boolean ring `S`, the indicator products
+`e T = (∏ x ∈ T, x) * ∏ x ∈ X \ T, (1 - x)` form a partition of unity that diagonalizes
+multiplication by elements of `X`. -/
+private theorem booleanRing_partition_unity {S : Type*} [BooleanRing S] [DecidableEq S]
+    (X : Finset S) :
+    let e : Finset S → S := fun T ↦ (∏ x ∈ T, x) * ∏ x ∈ X \ T, (1 - x)
+    (∑ T ∈ X.powerset, e T = 1) ∧
+      ∀ (T : Finset S) {x : S}, x ∈ X →
+        e T * x = (if x ∈ T then (1 : S) else 0) * e T := by
+  intro e
+  refine ⟨?_, fun T x hx ↦ ?_⟩
+  · simpa [e, add_sub_cancel] using
+      (Finset.prod_add (fun x : S ↦ x) (fun x : S ↦ 1 - x) X).symm
+  · by_cases hxT : x ∈ T
+    · simp only [hxT, ↓reduceIte, one_mul, e]
+      rw [← Finset.mul_prod_erase T (fun y ↦ y) hxT]
+      linear_combination
+        (∏ y ∈ T.erase x, y) * (∏ y ∈ X \ T, (1 - y)) * BooleanRing.mul_self x
+    · have hx_sdiff : x ∈ X \ T := Finset.mem_sdiff.mpr ⟨hx, hxT⟩
+      simp only [hxT, ↓reduceIte, zero_mul, e]
+      rw [← Finset.mul_prod_erase (X \ T) (fun y ↦ 1 - y) hx_sdiff]
+      have h1x : (1 - x) * x = 0 := by rw [sub_mul, one_mul, BooleanRing.mul_self x, sub_self]
+      linear_combination (∏ y ∈ T, y) * (∏ y ∈ (X \ T).erase x, (1 - y)) * h1x
+
 /-- For a symmetric finite matrix `G` over a Boolean ring `S`, there exists a vector `c : ι → S`
 such that `c ᵥ* G = G.diag`. -/
 theorem IsSymm.exists_vecMul_eq_diag {S ι : Type*} [BooleanRing S] [Fintype ι]
@@ -396,65 +420,34 @@ theorem IsSymm.exists_vecMul_eq_diag {S ι : Type*} [BooleanRing S] [Fintype ι]
   have h2S : ((2 : ℕ) : S) = 0 := by
     rw [Nat.cast_ofNat, ← one_add_one_eq_two, BooleanRing.add_self 1]
   let toS : ZMod 2 →+* S := ZMod.castHom (ringChar.dvd h2S) S
-  -- Partition `1 : S` into orthogonal idempotents over subsets `T` of the matrix entries `X`,
-  -- reducing each piece to a symmetric system over `ℤ/2ℤ`.
   let X : Finset S := Finset.univ.image fun p : ι × ι ↦ G p.1 p.2
-  have hG_mem (i j) : G i j ∈ X :=
-    Finset.mem_image.mpr ⟨(i, j), Finset.mem_univ _, rfl⟩
+  have hG_mem (i j) : G i j ∈ X := Finset.mem_image.mpr ⟨(i, j), Finset.mem_univ _, rfl⟩
   let e : Finset S → S := fun T ↦ (∏ x ∈ T, x) * ∏ x ∈ X \ T, (1 - x)
-  have hsum_e : ∑ T ∈ X.powerset, e T = 1 := by
-    have h := Finset.prod_add (fun x : S ↦ x) (fun x : S ↦ 1 - x) X
-    simpa [e, add_sub_cancel] using h.symm
-  have he_mul (T : Finset S) (x : S) (hx : x ∈ X) :
-      e T * x = toS (if x ∈ T then 1 else 0) * e T := by
-    by_cases hxT : x ∈ T
-    · simp only [hxT, ↓reduceIte, map_one, one_mul]
-      dsimp only [e]
-      rw [← Finset.mul_prod_erase T (fun y ↦ y) hxT]
-      calc
-        x * (∏ y ∈ T.erase x, y) * (∏ y ∈ X \ T, (1 - y)) * x
-            = (x * x) * (∏ y ∈ T.erase x, y) * (∏ y ∈ X \ T, (1 - y)) := by ring
-        _ = x * (∏ y ∈ T.erase x, y) * (∏ y ∈ X \ T, (1 - y)) := by
-            rw [BooleanRing.mul_self x]
-    · simp only [hxT, ↓reduceIte, map_zero, zero_mul]
-      have hx_sdiff : x ∈ X \ T := Finset.mem_sdiff.mpr ⟨hx, hxT⟩
-      dsimp only [e]
-      rw [← Finset.mul_prod_erase (X \ T) (fun y ↦ 1 - y) hx_sdiff]
-      have h1x : (1 - x) * x = 0 := by
-        rw [sub_mul, one_mul, BooleanRing.mul_self x, sub_self]
-      calc
-        (∏ y ∈ T, y) * ((1 - x) * ∏ y ∈ (X \ T).erase x, (1 - y)) * x
-            = (∏ y ∈ T, y) * (∏ y ∈ (X \ T).erase x, (1 - y)) * ((1 - x) * x) := by ring
-        _ = 0 := by rw [h1x, mul_zero]
+  obtain ⟨hsum_e, he_mul⟩ := booleanRing_partition_unity X
   have hsol (T : Finset S) : ∃ c : ι → ZMod 2,
       ∀ j, ∑ i, c i * (if G i j ∈ T then 1 else 0) = if G j j ∈ T then 1 else 0 := by
     let A : Matrix ι ι (ZMod 2) := Matrix.of fun i j ↦ if G i j ∈ T then 1 else 0
-    have hA : A.IsSymm := Matrix.ext fun i j ↦ by simp [A, hG.apply i j]
-    obtain ⟨c, hc⟩ := hA.exists_vecMul_eq_diag_zmod_two
-    refine ⟨c, fun j ↦ ?_⟩
-    simpa [A, vecMul, dotProduct] using congrFun hc j
+    obtain ⟨c, hc⟩ := IsSymm.exists_vecMul_eq_diag_zmod_two (A := A) (by
+      ext i j; simp [A, hG.apply i j])
+    exact ⟨c, fun j ↦ by simpa [A, vecMul, dotProduct] using congrFun hc j⟩
   choose c hc using hsol
   refine ⟨fun i ↦ ∑ T ∈ X.powerset, toS (c T i) * e T, funext fun j ↦ ?_⟩
   simp only [vecMul, dotProduct, diag_apply]
   calc
     ∑ i, (∑ T ∈ X.powerset, toS (c T i) * e T) * G i j
         = ∑ T ∈ X.powerset, ∑ i, toS (c T i) * (e T * G i j) := by
-          simp_rw [Finset.sum_mul, mul_assoc]
-          exact Finset.sum_comm
+          simp_rw [Finset.sum_mul, mul_assoc]; exact Finset.sum_comm
     _ = ∑ T ∈ X.powerset, (∑ i, toS (c T i) * toS (if G i j ∈ T then 1 else 0)) * e T := by
           refine Finset.sum_congr rfl fun T _ ↦ ?_
           rw [Finset.sum_mul]
           refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [he_mul T (G i j) (hG_mem i j)]
-          ring
+          rw [he_mul T (hG_mem i j)]; simp only [apply_ite toS, map_one, map_zero]; ring
     _ = ∑ T ∈ X.powerset, toS (if G j j ∈ T then 1 else 0) * e T := by
           refine Finset.sum_congr rfl fun T _ ↦ ?_
-          rw [← hc T j, map_sum]
-          simp_rw [map_mul]
+          rw [← hc T j, map_sum]; simp_rw [map_mul]
     _ = ∑ T ∈ X.powerset, e T * G j j := by
           refine Finset.sum_congr rfl fun T _ ↦ ?_
-          exact (he_mul T (G j j) (hG_mem j j)).symm
-    _ = G j j := by
-          rw [← Finset.sum_mul, hsum_e, one_mul]
+          rw [he_mul T (hG_mem j j)]; simp only [apply_ite toS, map_one, map_zero]; rfl
+    _ = G j j := by rw [← Finset.sum_mul, hsum_e, one_mul]
 
 end Matrix

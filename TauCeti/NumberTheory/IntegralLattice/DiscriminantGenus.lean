@@ -18,54 +18,33 @@ import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.OddPrime
 
 By
 `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule`,
-at every odd prime `p` the integral localization `L_p` of a nondegenerate lattice `L` is determined
-up to isometry by `rank L`, the square class of `det L` in `ℤ_p`, and the `p`-primary discriminant
-bilinear module `(A_L)_p`. When two nondegenerate lattices `L` and `M` have equal real signature
-and isometric discriminant bilinear forms `b_L ≅ b_M`, their ranks and signed determinants already
-coincide, so every odd-prime local equivalence holds automatically. The genus relation
-`TauCeti.IntegralLattice.SameGenus` therefore reduces to three invariants: real signature, the
-dyadic localization `L_2`, and the discriminant form (`b_L` in general, or `q_L` for even lattices).
+at every odd prime `p` the localization `L_p` is determined by `rank L`, the square class of `det L`
+in `ℤ_p`, and `(A_L)_p`. When `L` and `M` have equal signature and isometric discriminant bilinear
+modules `b_L ≅ b_M`, their ranks and signed determinants agree, so `SameGenus` reduces to real
+signature, `L_2 ≃ M_2`, and `b_L ≅ b_M` (or `q_L ≅ q_M` when even).
 
-When `L` has **odd discriminant** (`Odd L.discriminant`, equivalently `det L ∈ ℤ_2ˣ` by
-`TauCeti.IntegralLattice.odd_discriminant_iff_isUnit_determinant_padicInt_two`), the dyadic
-localization `L_2` is unimodular and is itself determined by the remaining invariants:
-
-* For even lattices of odd discriminant, `L_2` is an even unimodular `ℤ_2`-form, classified by rank
-  and `2`-adic determinant square class
-  (`TauCeti.IntegralLattice.localIntegralForm_two_equivalent_iff_of_isEven`).
-  Moreover, at odd order `q_L` and `b_L` carry the same isometry information, giving Nikulin's
-  Corollary 1.9.4 unconditionally for odd discriminant.
-* For general (possibly odd) lattices of odd discriminant, `L` admits an integral characteristic
-  vector `w` (`TauCeti.IntegralLattice.exists_isCharacteristicVector`), and the odd-discriminant
-  generalization of `TauCeti.IntegralLattice.vanDerBlij`
-  (`TauCeti.IntegralLattice.integralNorm_cast_zmod_eight_eq_of_odd_discriminant`) expresses
-  `B(w, w) mod 8` as `(sigPos L - sigNeg L)` minus the odd-prime Gauss-sum invariants of the
-  canonical even sublattice `N = L.evenSublattice`. Since `[L : N] ≤ 2` is prime to every odd prime
-  `p`, `(A_N)_p` is isometric to `(A_L)_p`; thus `signature` and `b_L` determine the characteristic
-  norm modulo `8`, and together with parity (`L.IsEven`) they determine `L_2`, proving Nikulin's
-  Corollary 1.16.3 for all nondegenerate lattices of odd discriminant (generalizing
-  `TauCeti.IntegralLattice.sameGenus_iff_of_isUnimodular`).
+When `Odd L.discriminant`, `L_2` is unimodular (`det L ∈ ℤ_2ˣ`):
+* For even lattices, `L_2` is classified by rank and `2`-adic determinant square class, and at odd
+  order `q_L` and `b_L` are equivalent, yielding Nikulin's Corollary 1.9.4.
+* In general, `vanDerBlij` for odd discriminant expresses the mod-`8` norm of a characteristic
+  vector via signature and the odd-prime Gauss sums of `L.evenSublattice`, which match `(A_L)_p`
+  since `[L : L.evenSublattice] ≤ 2`. Hence signature, evenness, and `b_L` determine `L_2`, giving
+  Nikulin's Corollary 1.16.3.
 
 ## Main results
 
 * `IntegralLattice.sameGenus_iff_localIntegralForm_two_equivalent_and_discriminantBilinearModule`
-  and
-  `IntegralLattice.sameGenus_iff_localIntegralForm_two_equivalent_and_discriminantQuadraticModule`
-  — reduction of `SameGenus` for nondegenerate lattices to real signature, `L_2 ≃ M_2`, and isometry
-  of the discriminant form.
-* `TauCeti.IntegralLattice.sameGenus_iff_of_odd_discriminant`: Nikulin's Corollary 1.16.3 for
-  nondegenerate lattices of odd discriminant (`SameGenus` iff equal signature, matching evenness,
-  and isometric discriminant bilinear modules).
-* `TauCeti.IntegralLattice.sameGenus_iff_of_isEven_of_odd_discriminant`: Nikulin's Corollary 1.9.4
-  for even lattices of odd discriminant.
+* `IntegralLattice.sameGenus_iff_localIntegralForm_two_equivalent_and_discriminantQuadraticModule`
+* `TauCeti.IntegralLattice.sameGenus_iff_of_odd_discriminant` (Nikulin Corollary 1.16.3)
+* `TauCeti.IntegralLattice.sameGenus_iff_of_isEven_of_odd_discriminant` (Nikulin Corollary 1.9.4)
 
 ## References
 
-* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, Theorem 1.3.3
-  and Corollaries 1.9.4 and 1.16.3.
+* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, Thm. 1.3.3,
+  Cors. 1.9.4 and 1.16.3.
 * F. van der Blij, *An invariant of quadratic forms mod 8*, Indag. Math. 21 (1959), 291--293.
 * J. Milnor and D. Husemoller, *Symmetric Bilinear Forms*, Appendix 4.
-* J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 15, §7.
+* J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Ch. 15, §7.
 -/
 
 public section

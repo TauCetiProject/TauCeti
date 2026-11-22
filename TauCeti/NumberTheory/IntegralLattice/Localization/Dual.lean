@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Basic
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Localization.BaseChange
+import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.Dual.BaseChange
 
 /-!
@@ -39,6 +41,9 @@ every `ℤ_p`-linear functional on the localized carrier.
   with the completed rational form.
 * `TauCeti.IntegralLattice.range_localizationDualToCompletion`: equality of the localized dual
   and the dual of the localized carrier.
+* `TauCeti.IntegralLattice.diagonalDualVec` and
+  `TauCeti.IntegralLattice.localDualPairingEquiv_basis`:
+  dual basis vectors `p^{-kᵢ} bᵢ` for a diagonal Jordan basis.
 
 ## References
 
@@ -206,5 +211,79 @@ theorem range_localizationDualToCompletion :
     apply LinearMap.ext_on (L.span_range_localizationToCompletion p)
     rintro w ⟨y, rfl⟩
     exact hpair y
+
+/-! ### Diagonal dual basis vectors -/
+
+section DiagonalDual
+
+variable {L} {p} {ι : Type*} {b : Basis ι ℤ_[p] (L.LocalCarrier p)} {u : ι → ℤ_[p]ˣ} {k : ι → ℕ}
+
+/-- For a diagonal Jordan form `B(bᵢ, bᵢ) = uᵢ pᵏⁱ`, the vector `p^{-kᵢ} bᵢ` of the completed
+rational space lies in the localized dual. -/
+private theorem exists_localizationDualToCompletion_eq
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) (i : ι) :
+    ∃ y : L.LocalDualCarrier p, L.localizationDualToCompletion p y =
+      ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i) := by
+  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  rw [← LinearMap.mem_range, range_localizationDualToCompletion,
+    LinearMap.BilinForm.mem_dualSubmodule]
+  rintro _ ⟨x, rfl⟩
+  refine Submodule.mem_one.mpr ⟨b.repr x i * u i, ?_⟩
+  rw [LinearMap.BilinForm.smul_left, completedRationalForm_localizationToCompletion,
+    hb.apply_basis_left, hbu]
+  simp only [map_mul, map_pow, map_natCast]
+  field_simp
+
+/-- Chosen `p`-adic dual vector representing `p^{-kᵢ} bᵢ` for a diagonal Jordan form
+`B(bᵢ, bᵢ) = uᵢ pᵏⁱ`. -/
+noncomputable def diagonalDualVec
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) (i : ι) :
+    L.LocalDualCarrier p :=
+  Classical.choose (exists_localizationDualToCompletion_eq hb hbu i)
+
+/-- The chosen dual vector `diagonalDualVec` embeds into the completed rational space as
+`p^{-kᵢ} bᵢ`. -/
+theorem localizationDualToCompletion_diagonalDualVec
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) (i : ι) :
+    L.localizationDualToCompletion p (diagonalDualVec hb hbu i) =
+      ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i) :=
+  Classical.choose_spec (exists_localizationDualToCompletion_eq hb hbu i)
+
+variable {y : ι → L.LocalDualCarrier p}
+
+/-- The dual vector `p^{-kᵢ} bᵢ` pairs with `bⱼ` to `δᵢⱼ uᵢ`. -/
+theorem localDualPairingEquiv_basis [DecidableEq ι]
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
+    (hy : ∀ i, L.localizationDualToCompletion p (y i) =
+      ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i)) (i j : ι) :
+    L.localDualPairingEquiv p (y i) (b j) = if i = j then (u i : ℤ_[p]) else 0 := by
+  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  apply FaithfulSMul.algebraMap_injective ℤ_[p] ℚ_[p]
+  rw [← completedRationalForm_localizationDualToCompletion, hy, LinearMap.BilinForm.smul_left,
+    completedRationalForm_localizationToCompletion]
+  split_ifs with hij
+  · subst hij
+    rw [hbu]
+    simp only [map_mul, map_pow, map_natCast]
+    field_simp
+  · simp [LinearMap.BilinForm.iIsOrtho_def.mp hb i j hij]
+
+omit [L.IsNondegenerate] in
+/-- `pᵏⁱ` times the dual vector `p^{-kᵢ} bᵢ` is `bᵢ`. -/
+theorem pow_nsmul_eq_localCarrierToDual
+    (hy : ∀ i, L.localizationDualToCompletion p (y i) =
+      ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i)) (i : ι) :
+    p ^ k i • y i = L.localCarrierToDual p (b i) := by
+  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  apply L.localizationDualToCompletion_injective p
+  rw [map_nsmul, localizationDualToCompletion_localCarrierToDual, hy,
+    ← Nat.cast_smul_eq_nsmul ℚ_[p], smul_smul, Nat.cast_pow, mul_inv_cancel₀ (pow_ne_zero _ hp),
+    one_smul]
+
+end DiagonalDual
 
 end TauCeti.IntegralLattice

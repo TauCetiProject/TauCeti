@@ -68,8 +68,9 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   hence by `p` for `n ≠ 0`), `appr x n` reduces modulo `p` to `toZMod x`, `p ^ m` divides
   `appr x n` exactly when `p ^ m` divides `x`, and `appr x n` is coprime to `p` exactly when `x`
   is a unit.
-* `PadicInt.exists_int_isCoprime_and_pow_dvd_sub`: every unit of `ℤ_p` admits an integer lift
-  coprime to `p` and congruent modulo `p ^ max k 1`.
+* `PadicInt.exists_int_isCoprime_and_pow_dvd_sub`, `PadicInt.isCoprime_of_isUnit_of_dvd_sub`:
+  every unit of `ℤ_p` admits an integer lift coprime to `p` and congruent modulo `p ^ max k 1`,
+  and conversely any integer congruent modulo `p` to a unit of `ℤ_p` is coprime to `p`.
 * `PadicInt.div_pow_le_card_filter_dvd`: among `n` consecutive elements of `ℤ_[p]`, at least
   `⌊n / pʲ⌋` are divisible by `p ^ j`; `PadicInt.card_filter_pow_dvd_natCast_sub`: for a natural
   number `a`, exactly `⌊n / pʲ⌋ + [a mod pʲ < n mod pʲ]` of them are.
@@ -369,6 +370,20 @@ theorem exists_int_isCoprime_and_pow_dvd_sub {x : ℤ_[p]} (hx : IsUnit x) (k : 
   refine ⟨(x.appr (max k 1) : ℤ), ?_, ?_⟩
   · exact ((x.coprime_appr_iff (n := max k 1) (by simp)).mpr hx).isCoprime
   · simpa only [Int.cast_natCast] using x.dvd_sub_appr (max k 1)
+
+/-- If an integer `a` is congruent modulo `p` to a unit `x` of `ℤ_[p]`, then `p` and `a` are
+coprime. -/
+theorem isCoprime_of_isUnit_of_dvd_sub {x : ℤ_[p]} (hx : IsUnit x) {a : ℤ}
+    (ha : (p : ℤ_[p]) ∣ x - a) : IsCoprime (p : ℤ) a := by
+  have hmod : toZMod x = (a : ZMod p) := by
+    simpa only [map_intCast] using (toZMod_eq_iff_dvd_sub x a).mpr ha
+  have hne : (a : ZMod p) ≠ 0 := hmod ▸ (isUnit_iff_toZMod_ne_zero x).mp hx
+  have hndvd : ¬(p : ℤ) ∣ a := by rwa [← ZMod.intCast_zmod_eq_zero_iff_dvd]
+  have hcop : p.Coprime a.natAbs :=
+    hp.out.coprime_iff_not_dvd.mpr fun h ↦ hndvd (Int.natCast_dvd.mpr h)
+  rcases Int.natAbs_eq a with h | h
+  · exact h ▸ hcop.isCoprime
+  · exact h ▸ hcop.isCoprime.neg_right
 
 open scoped Classical Finset in
 /-- At least `⌊n / pʲ⌋` of the `n` consecutive elements `a, a - 1, …, a - (n - 1)` of `ℤ_p` are

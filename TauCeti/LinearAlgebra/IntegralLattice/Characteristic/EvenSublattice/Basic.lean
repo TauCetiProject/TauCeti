@@ -233,6 +233,14 @@ theorem relIndex_evenSublattice_eq_two_iff :
     rw [h]
     simp [hL]
 
+/-- Simp-normal form of `relIndex_evenSublattice_eq_two_iff` after rewriting
+`evenSublattice_carrier` to the mapped `evenSubmodule`. -/
+@[simp]
+theorem relIndex_map_evenSubmodule_eq_two_iff :
+    (L.evenSubmodule.map L.carrier.subtype).toAddSubgroup.relIndex L.carrier.toAddSubgroup = 2 ↔
+      ¬L.IsEven := by
+  simpa only [evenSublattice_carrier] using L.relIndex_evenSublattice_eq_two_iff
+
 /-- No odd number greater than `1` divides the index of `L.evenSublattice` in `L`. -/
 theorem not_dvd_relIndex_evenSublattice_of_odd {n : ℕ} (hn : Odd n) (hn1 : n ≠ 1) :
     ¬n ∣ L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup := by

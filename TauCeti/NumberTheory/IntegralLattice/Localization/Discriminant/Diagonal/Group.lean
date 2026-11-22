@@ -16,25 +16,17 @@ import TauCeti.NumberTheory.Padics.RingHoms
 /-!
 # Additive structure of the `p`-primary discriminant group from a diagonal Jordan form
 
-Let `L` be a nondegenerate integral lattice and `p` a prime (including `p = 2`). Whenever the
-localization `L_p = ℤ_p ⊗[ℤ] L` has an orthogonal basis `b` with self-pairings
-`B(bᵢ, bᵢ) = uᵢ pᵏⁱ` (`uᵢ ∈ ℤ_pˣ`), the dual classes of `p^{-kᵢ} bᵢ` give an additive isomorphism
-`∏ᵢ ℤ/pᵏⁱ ≃+ (A_L)_p` (`TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent`), and hence the
-generator count `AddGroup.rank (A_L)_p = #{i | kᵢ ≠ 0}`
-(`TauCeti.IntegralLattice.rank_primaryComponent_discriminantGroup_eq_card_filter`).
+Given an orthogonal basis `b` of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ` (`uᵢ ∈ ℤ_pˣ`), `[p^{-kᵢ} bᵢ]`
+identifies `∏ᵢ ℤ/pᵏⁱ ≃+ (A_L)_p`, giving `AddGroup.rank (A_L)_p = #{i | kᵢ ≠ 0}` and `kᵢ ≠ 0`
+when `finrank ℤ L = AddGroup.rank (A_L)_p`.
 
 ## Main results
 
-* `TauCeti.IntegralLattice.diagonalDualVec` and
-  `TauCeti.IntegralLattice.localizationDualToCompletion_diagonalDualVec`: the chosen `p`-adic
-  dual basis vectors representing `p^{-kᵢ} bᵢ`.
 * `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent`,
-  `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent_intCast`, and
-  `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent_symm_mk`: additive equivalence
-  `∏ᵢ ℤ/pᵏⁱ ≃+ (A_L)_p`, its evaluation on integer tuples, and its inverse on a dual
-  representative.
-* `TauCeti.IntegralLattice.rank_primaryComponent_discriminantGroup_eq_card_filter`: generator count
-  `AddGroup.rank (A_L)_p = #{i | kᵢ ≠ 0}`.
+  `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent_intCast`,
+  `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent_symm_mk`
+* `TauCeti.IntegralLattice.rank_primaryComponent_discriminantGroup_eq_card_filter`
+* `TauCeti.IntegralLattice.ne_zero_of_finrank_eq_rank`
 -/
 
 public section
@@ -45,75 +37,7 @@ namespace TauCeti.IntegralLattice
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] {L : IntegralLattice V} [L.IsNondegenerate]
   {p : ℕ} [Fact p.Prime] {ι : Type*} {b : Basis ι ℤ_[p] (L.LocalCarrier p)} {u : ι → ℤ_[p]ˣ}
-  {k : ι → ℕ}
-
-/-! ### The dual basis vectors `p^{-kᵢ} bᵢ` -/
-
-/-- For a diagonal Jordan form `B(bᵢ, bᵢ) = uᵢ pᵏⁱ`, the vector `p^{-kᵢ} bᵢ` of the completed
-rational space lies in the localized dual. -/
-private theorem exists_localizationDualToCompletion_eq
-    (hb : (L.localIntegralForm p).iIsOrtho b)
-    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) (i : ι) :
-    ∃ y : L.LocalDualCarrier p, L.localizationDualToCompletion p y =
-      ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i) := by
-  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  rw [← LinearMap.mem_range, range_localizationDualToCompletion,
-    LinearMap.BilinForm.mem_dualSubmodule]
-  rintro _ ⟨x, rfl⟩
-  refine Submodule.mem_one.mpr ⟨b.repr x i * u i, ?_⟩
-  rw [LinearMap.BilinForm.smul_left, completedRationalForm_localizationToCompletion,
-    hb.apply_basis_left, hbu]
-  simp only [map_mul, map_pow, map_natCast]
-  field_simp
-
-/-- Chosen `p`-adic dual vector representing `p^{-kᵢ} bᵢ` for a diagonal Jordan form
-`B(bᵢ, bᵢ) = uᵢ pᵏⁱ`. -/
-noncomputable def diagonalDualVec
-    (hb : (L.localIntegralForm p).iIsOrtho b)
-    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) (i : ι) :
-    L.LocalDualCarrier p :=
-  Classical.choose (exists_localizationDualToCompletion_eq hb hbu i)
-
-/-- The chosen dual vector `diagonalDualVec` embeds into the completed rational space as
-`p^{-kᵢ} bᵢ`. -/
-theorem localizationDualToCompletion_diagonalDualVec
-    (hb : (L.localIntegralForm p).iIsOrtho b)
-    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) (i : ι) :
-    L.localizationDualToCompletion p (diagonalDualVec hb hbu i) =
-      ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i) :=
-  Classical.choose_spec (exists_localizationDualToCompletion_eq hb hbu i)
-
-variable {y : ι → L.LocalDualCarrier p}
-
-/-- The dual vector `p^{-kᵢ} bᵢ` pairs with `bⱼ` to `δᵢⱼ uᵢ`. -/
-theorem localDualPairingEquiv_basis [DecidableEq ι]
-    (hb : (L.localIntegralForm p).iIsOrtho b)
-    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
-    (hy : ∀ i, L.localizationDualToCompletion p (y i) =
-      ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i)) (i j : ι) :
-    L.localDualPairingEquiv p (y i) (b j) = if i = j then (u i : ℤ_[p]) else 0 := by
-  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  apply FaithfulSMul.algebraMap_injective ℤ_[p] ℚ_[p]
-  rw [← completedRationalForm_localizationDualToCompletion, hy, LinearMap.BilinForm.smul_left,
-    completedRationalForm_localizationToCompletion]
-  split_ifs with hij
-  · subst hij
-    rw [hbu]
-    simp only [map_mul, map_pow, map_natCast]
-    field_simp
-  · simp [LinearMap.BilinForm.iIsOrtho_def.mp hb i j hij]
-
-omit [L.IsNondegenerate] in
-/-- `pᵏⁱ` times the dual vector `p^{-kᵢ} bᵢ` is `bᵢ`. -/
-private theorem pow_nsmul_eq_localCarrierToDual
-    (hy : ∀ i, L.localizationDualToCompletion p (y i) =
-      ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i)) (i : ι) :
-    p ^ k i • y i = L.localCarrierToDual p (b i) := by
-  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  apply L.localizationDualToCompletion_injective p
-  rw [map_nsmul, localizationDualToCompletion_localCarrierToDual, hy,
-    ← Nat.cast_smul_eq_nsmul ℚ_[p], smul_smul, Nat.cast_pow, mul_inv_cancel₀ (pow_ne_zero _ hp),
-    one_smul]
+  {k : ι → ℕ} {y : ι → L.LocalDualCarrier p}
 
 omit [L.IsNondegenerate] in
 /-- The local discriminant class of `p^{-kᵢ} bᵢ` is killed by `pᵏⁱ`. -/
@@ -283,9 +207,8 @@ theorem piZModPowEquivPrimaryComponent_symm_mk [Fintype ι]
     (L.piZModPowEquivPrimaryComponent hb hbu).symm
         ((L.primaryComponentEquivLocalDiscriminantGroup p).symm (Submodule.Quotient.mk z)) i =
       PadicInt.toZModPow (k i) (L.localDualPairingEquiv p z (b i) * (↑(u i)⁻¹ : ℤ_[p])) := by
-  have h := (L.piZModPowEquivPrimaryComponent hb hbu).symm_apply_eq.mpr
-    (piZModPowHom_toZModPow hb hbu (localizationDualToCompletion_diagonalDualVec hb hbu) z).symm
-  exact congrFun h i
+  exact congrFun ((L.piZModPowEquivPrimaryComponent hb hbu).symm_apply_eq.mpr
+    (piZModPowHom_toZModPow hb hbu (localizationDualToCompletion_diagonalDualVec hb hbu) z).symm) i
 
 /-- **Generator count (`AddGroup.rank`) of `(A_L)_p` from a diagonal Jordan form.** For any prime
 `p` and any orthogonal basis `b` of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ` (`uᵢ ∈ ℤ_pˣ`), the rank of
@@ -296,5 +219,21 @@ theorem rank_primaryComponent_discriminantGroup_eq_card_filter [Fintype ι]
     AddGroup.rank (primaryComponent L.DiscriminantGroup p) = #{i | k i ≠ 0} :=
   (AddGroup.rank_congr (L.piZModPowEquivPrimaryComponent hb hbu).symm).trans
     (AddCommGroup.rank_pi_zmod_pow k)
+
+/-- If a nondegenerate lattice achieves the minimal rank `finrank ℤ L = AddGroup.rank (A_L)_p`,
+then every diagonal Jordan exponent `kᵢ` is nonzero. -/
+theorem ne_zero_of_finrank_eq_rank
+    (L : IntegralLattice V) [L.IsNondegenerate] {p : ℕ} [Fact p.Prime]
+    {b : Basis (Fin (finrank ℤ L)) ℤ_[p] (L.LocalCarrier p)} {u : Fin (finrank ℤ L) → ℤ_[p]ˣ}
+    {k : Fin (finrank ℤ L) → ℕ}
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
+    (hLrank : finrank ℤ L = AddGroup.rank (primaryComponent L.DiscriminantGroup p))
+    (i : Fin (finrank ℤ L)) : k i ≠ 0 := by
+  classical
+  have hk_all : ({j : Fin (finrank ℤ L) | k j ≠ 0} : Finset (Fin (finrank ℤ L))) = Finset.univ :=
+    Finset.eq_of_subset_of_card_le (Finset.subset_univ _)
+      (by simp [← L.rank_primaryComponent_discriminantGroup_eq_card_filter hb hbu, ← hLrank])
+  exact (Finset.mem_filter.mp (Finset.eq_univ_iff_forall.mp hk_all i)).2
 
 end TauCeti.IntegralLattice

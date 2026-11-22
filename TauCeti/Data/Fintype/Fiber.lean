@@ -39,6 +39,8 @@ covering the range is weighted by its occurrence count.
   `Function.occCount_eq_of_occCount_eq_of_ne`, `Function.exists_perm_of_occCount_eq_of_ne`: on
   index types of equal finite cardinality, equal counts away from `z` force equal counts at `z` as
   well, giving a permutation when the index types coincide.
+* `Finset.prod_filter_equiv`: a product over a fiber is preserved by an equivalence intertwining
+  two families.
 * `Finset.prod_filter_subtype_ne`: a product over one fiber ignores the deletion of another.
 * `Finset.prod_filter_subtype_ne_equiv`: a product over one fiber is preserved by a value-preserving
   matching of the indices away from another fiber.
@@ -274,6 +276,17 @@ end Function
 namespace Finset
 
 variable {X S : Type*}
+
+/-- Matching two index types along a bijection `σ` that intertwines families `u` and `v` does not
+change a product over the indices at which they take a value `a`. -/
+@[to_additive /-- Matching two index types along a bijection `σ` that intertwines families `u` and
+`v` does not change a sum over the indices at which they take a value `a`. -/]
+theorem prod_filter_equiv {Y : Type*} [Fintype X] [Fintype Y] [DecidableEq S]
+    {M : Type*} [CommMonoid M] (u : X → S) (v : Y → S) (g : Y → M) (a : S)
+    (σ : X ≃ Y) (hσ : ∀ x, v (σ x) = u x) :
+    ∏ x with u x = a, g (σ x) = ∏ y with v y = a, g y := by
+  rw [prod_filter, prod_filter]
+  exact Fintype.prod_equiv σ _ _ fun x ↦ by simp only [hσ x]
 
 /-- A product over the indices at which a family takes a value `a` is unchanged by first deleting
 the indices at which it takes another value `z`. -/

@@ -221,17 +221,6 @@ theorem restrict_discriminantQuadraticModule_toFiniteBilinearModule (L : Integra
       L.discriminantBilinearModule.restrict H :=
   rfl
 
-/-- Restricting the discriminant quadratic module to its `n`-primary component has polar finite
-bilinear module equal to the restriction of the discriminant bilinear module to its `n`-primary
-component. -/
-theorem restrict_discriminantQuadraticModule_primaryComponent_toFiniteBilinearModule
-    (L : IntegralLattice V) [L.IsNondegenerate] (hL : L.IsEven) (n : ℕ) :
-    ((L.discriminantQuadraticModule hL).restrict
-      (AddCommGroup.primaryComponent (L.discriminantQuadraticModule hL) n)).toFiniteBilinearModule =
-      L.discriminantBilinearModule.restrict
-        (AddCommGroup.primaryComponent L.discriminantBilinearModule n) :=
-  rfl
-
 /-- At an odd index `n`, quadratic and bilinear isometry agree on the `n`-primary components of
 the discriminant modules of two even nondegenerate lattices. -/
 theorem nonempty_isometry_restrict_discriminantQuadraticModule_primaryComponent_iff
@@ -250,8 +239,11 @@ theorem nonempty_isometry_restrict_discriminantQuadraticModule_primaryComponent_
           (AddCommGroup.primaryComponent M.discriminantBilinearModule n))) := by
   rw [FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd
       ((L.discriminantQuadraticModule hL).odd_natCard_restrict_primaryComponent hn),
-    L.restrict_discriminantQuadraticModule_primaryComponent_toFiniteBilinearModule hL n,
-    M.restrict_discriminantQuadraticModule_primaryComponent_toFiniteBilinearModule hM n]
+    L.restrict_discriminantQuadraticModule_toFiniteBilinearModule hL
+      (AddCommGroup.primaryComponent (L.discriminantQuadraticModule hL) n),
+    M.restrict_discriminantQuadraticModule_toFiniteBilinearModule hM
+      (AddCommGroup.primaryComponent (M.discriminantQuadraticModule hM) n)]
+  rfl
 
 /-- The cardinality of the discriminant quadratic module is that of the discriminant group. -/
 @[simp]
