@@ -35,8 +35,8 @@ section InnerProduct
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
-local instance : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
-local instance : CompleteSpace E₂ := FiniteDimensional.completeSpace 𝕜 E₂
+local instance bilinearCompleteSpace₁ : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+local instance bilinearCompleteSpace₂ : CompleteSpace E₂ := FiniteDimensional.completeSpace 𝕜 E₂
 
 /-- The full ordered two-slot Hilbert–Schmidt energy of a continuous bilinear map, computed
 using the standard orthonormal basis in each slot. It is independent of that basis by
