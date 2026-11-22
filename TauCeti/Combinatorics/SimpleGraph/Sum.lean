@@ -70,6 +70,7 @@ theorem _root_.SimpleGraph.sum_le_iff {K : SimpleGraph (V ⊕ W)} :
 
 /-- A disjoint sum of edgeless graphs is edgeless: no edge is contributed by either summand, and
 none across the two sides. -/
+@[simp]
 theorem _root_.SimpleGraph.sum_bot_bot : ((⊥ : SimpleGraph V) ⊕g (⊥ : SimpleGraph W)) = ⊥ := by
   ext (u | u) (v | v) <;> simp
 
