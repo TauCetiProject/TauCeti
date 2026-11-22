@@ -94,12 +94,14 @@ theorem exists_map_int_eq_charpoly_weylGroupRootRep_of_base [CharZero R] [P.IsRo
     letI := Module.Finite.of_basis b.toWeightBasis
     ∃ p : Polynomial ℤ, p.map (algebraMap ℤ R) = (P.weylGroupRootRep w).charpoly := by
   classical
+  let := Module.Free.of_basis b.toWeightBasis
+  let := Module.Finite.of_basis b.toWeightBasis
   choose c _ _ hc using fun j : b.support ↦ b.exists_root_eq_sum_int (P.weylGroupToPerm w j)
   let A : Matrix b.support b.support ℤ := fun i j ↦ c j i
   have hA : b.ActsBy w A := Base.actsBy_iff.2 fun j ↦ by
     rw [P.weylGroup_apply_root, hc j, ← Finset.sum_attach b.support]
     rfl
-  exact ⟨A.charpoly, hA.map_charpoly_eq_charpoly_weylGroupRootRep⟩
+  exact ⟨A.charpoly, by rw [hA.charpoly_weylGroupRootRep, RingHom.ext_int (algebraMap ℤ R)]⟩
 
 /-- On a root system with a base over a `ℚ`-algebra of characteristic zero, the characteristic
 polynomial of any Weyl-group element on `M` is the scalar extension of a rational polynomial. -/

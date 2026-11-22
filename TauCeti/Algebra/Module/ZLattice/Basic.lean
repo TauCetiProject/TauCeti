@@ -51,6 +51,7 @@ vectors whose integer span contains a full lattice are linearly independent
 * `ZLattice.mem_comap`: `x ∈ ZLattice.comap K L e` if and only if `e x ∈ L`.
 * `ZLattice.instDiscreteTopologyComapSubtype`: the restriction `L ∩ V` of a discrete subgroup `L`
   to a subspace `V` is discrete.
+* `ZLattice.instIsZLatticeComapSpanSubtype`: a discrete subgroup is a full lattice in its span.
 * `ZLattice.instDiscreteTopologyComapLinearIsometryEquiv`,
   `ZLattice.instIsZLatticeComapLinearIsometryEquiv`: the pull-back of a discrete subgroup, or of a
   full lattice, along a linear isometry equivalence is again one.
@@ -212,6 +213,13 @@ instance instDiscreteTopologyComapSubtype {K : Type*} [NormedField K] {E : Type*
     [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L]
     (V : Submodule K E) : DiscreteTopology (ZLattice.comap K L V.subtype) :=
   comap_discreteTopology K L continuous_subtypeVal V.injective_subtype
+
+/-- A discrete subgroup `L` is a full lattice in its `K`-span: viewed as a subgroup of
+`span K L`, it spans that space. -/
+instance instIsZLatticeComapSpanSubtype {K : Type*} [NormedField K] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L] :
+    IsZLattice K (ZLattice.comap K L (Submodule.span K (L : Set E)).subtype) :=
+  ⟨by rw [ZLattice.coe_comap]; exact Submodule.span_span_coe_preimage⟩
 
 section LinearIsometryEquiv
 

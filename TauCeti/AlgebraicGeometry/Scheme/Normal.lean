@@ -103,7 +103,7 @@ theorem isNormalScheme_iff_forall_stalk :
 theorem IsNormalScheme.of_isOpenImmersion {Y : Scheme.{u}} (f : X ⟶ Y) [IsOpenImmersion f]
     [IsNormalScheme Y] : IsNormalScheme X :=
   isNormalScheme_iff_forall_stalk.mpr fun x ↦
-    (isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion f x).mp
+    (f.isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion x).mp
       (isNormalScheme_iff_forall_stalk.mp ‹_› (f x))
 
 /-- Open subschemes of a normal scheme are normal. -/
@@ -118,7 +118,7 @@ theorem IsNormalScheme.of_forall_exists_isOpenImmersion
     IsNormalScheme X := by
   refine isNormalScheme_iff_forall_stalk.mpr fun x ↦ ?_
   obtain ⟨Y, f, _, _, y, rfl⟩ := h x
-  exact (isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion f y).mpr
+  exact (f.isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion y).mpr
     (isNormalScheme_iff_forall_stalk.mp ‹_› y)
 
 /-- Normality is local on an open cover. Stacks, Lemma 28.7.2 (033J), in the form "normality
@@ -201,7 +201,7 @@ For an integral scheme, `IsIntegral.component_integral` supplies the domain inst
 theorem IsNormalScheme.isIntegrallyClosed_of_isAffineOpen [IsNormalScheme X]
     {U : X.Opens} [IsDomain Γ(X, U)] (hU : IsAffineOpen U) :
     IsIntegrallyClosed Γ(X, U) :=
-  hU.isIntegrallyClosed fun _ _ ↦ inferInstance
+  hU.isIntegrallyClosed_iff_forall_stalk.mpr fun _ _ ↦ inferInstance
 
 /-- On a locally Noetherian normal scheme the local ring at a point of coheight one is a
 discrete valuation ring. Stacks, Lemma 10.119.7 (00PD). -/

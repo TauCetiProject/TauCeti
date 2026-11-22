@@ -230,7 +230,7 @@ private theorem charpoly_weylGroupRootRep_wordProd_eq_map_rat
     (((l.map (reflMatrix b.cartanMatrix)).prod.map (Int.castRingHom ℚ)).charpoly).map
         (algebraMap ℚ K) =
       (P.weylGroupRootRep (wordProd P b l)).charpoly := by
-  rw [← (b.actsBy_wordProd l).map_charpoly_eq_charpoly_weylGroupRootRep,
+  rw [(b.actsBy_wordProd l).charpoly_weylGroupRootRep,
     Matrix.charpoly_map, Polynomial.map_map]
   congr 1; exact RingHom.ext_int _ _
 

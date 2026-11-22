@@ -5,17 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
+public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
+public import TauCeti.RepresentationTheory.Invariants
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Nat.Carry
 import TauCeti.RepresentationTheory.Cyclic.Norm
-import TauCeti.RepresentationTheory.Invariants
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
 import TauCeti.RepresentationTheory.Homological.Resolution
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # Cohomology of a finite cyclic group through the periodic resolution
@@ -28,6 +32,16 @@ kernel with the image of the norm. This file records that the map is surjective,
 of `Hⁱ(G, A)` is defined by its values on `g`-fixed elements. Likewise, in odd degree
 `Rep.FiniteCyclicGroup.groupCohomologyπOdd` is surjective, so that `Hⁱ(G, A)` is the quotient
 `Ker(N) / Im(ρ(g) - 𝟙)`.
+
+For a `k`-module `M` with the trivial action, `ρ(g) - 𝟙` vanishes and the norm is multiplication
+by the order `|G|`, so `Hⁱ(G, M)` is the `|G|`-torsion `M[|G|]` for odd `i`
+(`Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivOdd`) and `M / |G| M` for positive even
+`i` (`Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivEven`). When `|G|` kills `M`, every
+`Hⁱ(G, M)` therefore has the same `finrank` as `M`
+(`Rep.FiniteCyclicGroup.finrank_groupCohomology_trivial_of_isTorsionBy`); for instance
+`Hⁱ(ℤ/p, 𝔽_p)` is one-dimensional in every degree. These are the cohomological counterparts of
+`Rep.FiniteCyclicGroup.groupHomologyTrivialLinearEquivOdd` and
+`Rep.FiniteCyclicGroup.groupHomologyTrivialLinearEquivEven`.
 
 In degree `2` it then makes the map explicit on cocycles. Let `n` be the order of `G`. A
 `g`-fixed element `a` is sent to the class of the **carry cocycle**
@@ -64,6 +78,10 @@ Frobenius.
 
 ## Main definitions
 
+* `Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivOdd`: `Hⁱ(G, M) ≃ₗ[k] M[|G|]` for odd
+  `i` and trivial coefficients.
+* `Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivEven`: `Hⁱ(G, M) ≃ₗ[k] M / |G| M` for
+  positive even `i` and trivial coefficients.
 * `Rep.FiniteCyclicGroup.carryCocycle`: the carry cocycle of a `g`-fixed element, as a
   `k`-linear map into the `2`-cocycles.
 * `Rep.FiniteCyclicGroup.partialNormCocycle`: the partial norm cocycle of an element killed by
@@ -75,6 +93,8 @@ Frobenius.
   represented by an element fixed by the generator.
 * `Rep.FiniteCyclicGroup.groupCohomologyπOdd_surjective`: in odd degree every class is represented
   by an element killed by the norm.
+* `Rep.FiniteCyclicGroup.finrank_groupCohomology_trivial_of_isTorsionBy`: if `|G|` kills the
+  trivial coefficients `M`, then `Hⁱ(G, M)` has the same `finrank` as `M` in every degree.
 * `Rep.FiniteCyclicGroup.carryCocycle_apply`,
   `Rep.FiniteCyclicGroup.carryCocycle_apply_pow`: the values of the carry cocycle.
 * `Rep.FiniteCyclicGroup.groupCohomologyπEven_two`,
@@ -97,8 +117,8 @@ Frobenius.
 ## References
 
 * K. S. Brown, *Cohomology of Groups*, Graduate Texts in Mathematics 87, Springer (1982),
-  Chapter I, §6 (the periodic resolution of a cyclic group) and Chapter I, §7 (comparison of
-  projective resolutions).
+  Chapter I, §6 (the periodic resolution of a cyclic group), Chapter I, §7 (comparison of
+  projective resolutions) and Chapter III, §1 (the cohomology of a cyclic group).
 * J.-P. Serre, *Local Fields*, Graduate Texts in Mathematics 67, Springer (1979), Chapter VIII,
   §4 (the cohomology of cyclic groups).
 -/
@@ -139,6 +159,127 @@ theorem groupCohomologyπOdd_surjective (i : ℕ) (hi : Odd i) :
   have h₁ : Epi (subCompNormHom A g).moduleCatCyclesIso.inv := inferInstance
   have h₂ : Epi (subCompNormHom A g).homologyπ := inferInstance
   exact epi_comp' h₁ (epi_comp' h₂ inferInstance)
+
+/-! ### Trivial coefficients -/
+
+section Trivial
+
+open scoped Pointwise
+
+variable (k) (M : Type u) [AddCommGroup M] [Module k M]
+
+/-- For the trivial representation, the odd-degree representative map is injective, since
+`ρ(g) - 𝟙 = 0` has no nonzero image. -/
+private theorem groupCohomologyπOdd_trivial_injective (i : ℕ) (hi : Odd i) :
+    Function.Injective (groupCohomologyπOdd (Rep.trivial k G M) g hg i hi) := by
+  refine (injective_iff_map_eq_zero (groupCohomologyπOdd (Rep.trivial k G M) g hg i hi).hom).2
+    fun x hx ↦ ?_
+  obtain ⟨y, hy⟩ := (groupCohomologyπOdd_eq_zero_iff _ g hg i hi x).1 hx
+  exact Subtype.ext (hy.symm.trans (applyAsHom_trivial_sub_id_apply g M y))
+
+/-- **Odd-degree cohomology of a finite cyclic group with trivial coefficients.** If `G` is a
+finite group generated by `g` and `M` is a `k`-module with the trivial action, then for odd `i`,
+`Hⁱ(G, M)` is the `|G|`-torsion `M[|G|]` of `M`. It sends the class that
+`Rep.FiniteCyclicGroup.groupCohomologyπOdd` assigns to an element of `M[|G|]` to that element. -/
+noncomputable def groupCohomologyTrivialLinearEquivOdd (i : ℕ) (hi : Odd i) :
+    groupCohomology (Rep.trivial k G M) i ≃ₗ[k] Submodule.torsionBy k M (Nat.card G : k) :=
+  (LinearEquiv.ofBijective (groupCohomologyπOdd (Rep.trivial k G M) g hg i hi).hom
+    ⟨groupCohomologyπOdd_trivial_injective k g hg M i hi,
+      groupCohomologyπOdd_surjective (Rep.trivial k G M) g hg i hi⟩).symm.trans
+    -- For the trivial representation the norm is multiplication by `|G|`.
+    (LinearEquiv.ofEq _ _ (by
+      ext x
+      rw [LinearMap.mem_ker, Submodule.mem_torsionBy_iff]
+      exact Eq.congr_left (norm_trivial_hom_apply k x)))
+
+/-- The odd-degree identification sends the cohomology class of a representative `x` to `x`. -/
+theorem coe_groupCohomologyTrivialLinearEquivOdd_groupCohomologyπOdd (i : ℕ) (hi : Odd i)
+    (x : LinearMap.ker (Rep.trivial k G M).norm.asHom.hom.toLinearMap) :
+    (groupCohomologyTrivialLinearEquivOdd k g hg M i hi
+        (groupCohomologyπOdd (Rep.trivial k G M) g hg i hi x) : M) = x := by
+  rw [groupCohomologyTrivialLinearEquivOdd, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  exact congrArg Subtype.val ((LinearEquiv.ofBijective _ _).symm_apply_apply x)
+
+/-- The inverse of the odd-degree identification sends `x ∈ M[|G|]` to the cohomology class of
+the representative `x`. Unlike `coe_groupCohomologyTrivialLinearEquivOdd_groupCohomologyπOdd`,
+this direction can be used by `simp`. -/
+@[simp]
+theorem groupCohomologyTrivialLinearEquivOdd_symm_apply (i : ℕ) (hi : Odd i)
+    (x : Submodule.torsionBy k M (Nat.card G : k)) :
+    (groupCohomologyTrivialLinearEquivOdd k g hg M i hi).symm x =
+      groupCohomologyπOdd (Rep.trivial k G M) g hg i hi
+        ⟨x, by
+          rw [LinearMap.mem_ker]
+          exact (norm_trivial_hom_apply k (x : M)).trans
+            ((Submodule.mem_torsionBy_iff ..).1 x.property)⟩ :=
+  (LinearEquiv.symm_apply_eq _).2 (Subtype.ext
+    (coe_groupCohomologyTrivialLinearEquivOdd_groupCohomologyπOdd k g hg M i hi ⟨x, _⟩).symm)
+
+/-- The representative map `M → Hⁱ(G, M)` in positive even degree, for the trivial
+representation: every element of `M` is killed by `ρ(g) - 𝟙 = 0`, so
+`Rep.FiniteCyclicGroup.groupCohomologyπEven` is defined on all of `M`. -/
+private noncomputable def groupCohomologyTrivialπEven (i : ℕ) [NeZero i] (hi : Even i) :
+    M →ₗ[k] groupCohomology (Rep.trivial k G M) i :=
+  (groupCohomologyπEven (Rep.trivial k G M) g hg i hi).hom ∘ₗ
+    LinearMap.codRestrict _ (LinearMap.id : M →ₗ[k] M) (applyAsHom_trivial_sub_id_apply g M)
+
+private theorem groupCohomologyTrivialπEven_apply (i : ℕ) [NeZero i] (hi : Even i) (x : M) :
+    groupCohomologyTrivialπEven k g hg M i hi x =
+      groupCohomologyπEven (Rep.trivial k G M) g hg i hi
+        ⟨x, applyAsHom_trivial_sub_id_apply g M x⟩ := by
+  rw [groupCohomologyTrivialπEven, LinearMap.comp_apply]
+  exact congrArg _ (Subtype.ext (LinearMap.codRestrict_apply _ _ x))
+
+private theorem groupCohomologyTrivialπEven_surjective (i : ℕ) [NeZero i] (hi : Even i) :
+    Function.Surjective (groupCohomologyTrivialπEven k g hg M i hi) := by
+  intro y
+  obtain ⟨x, rfl⟩ := groupCohomologyπEven_surjective (Rep.trivial k G M) g hg i hi y
+  exact ⟨x.val, groupCohomologyTrivialπEven_apply k g hg M i hi x.val⟩
+
+private theorem ker_groupCohomologyTrivialπEven (i : ℕ) [NeZero i] (hi : Even i) :
+    LinearMap.ker (groupCohomologyTrivialπEven k g hg M i hi) =
+      (Nat.card G : k) • (⊤ : Submodule k M) := by
+  ext x
+  rw [LinearMap.mem_ker, groupCohomologyTrivialπEven_apply, groupCohomologyπEven_eq_zero_iff,
+    LinearMap.mem_range, Submodule.mem_smul_pointwise_iff_exists]
+  exact exists_congr fun y ↦ (Eq.congr_left (norm_trivial_hom_apply k y)).trans
+    (and_iff_right Submodule.mem_top).symm
+
+/-- **Even-degree cohomology of a finite cyclic group with trivial coefficients.** If `G` is a
+finite group generated by `g` and `M` is a `k`-module with the trivial action, then for positive
+even `i`, `Hⁱ(G, M) ≃ M / |G| M`. It sends the class that
+`Rep.FiniteCyclicGroup.groupCohomologyπEven` assigns to `x ∈ M` to the residue class of `x`. -/
+noncomputable def groupCohomologyTrivialLinearEquivEven (i : ℕ) [NeZero i] (hi : Even i) :
+    groupCohomology (Rep.trivial k G M) i ≃ₗ[k] QuotSMulTop (Nat.card G : k) M :=
+  ((Submodule.quotEquivOfEq _ _ (ker_groupCohomologyTrivialπEven k g hg M i hi).symm).trans
+    ((groupCohomologyTrivialπEven k g hg M i hi).quotKerEquivOfSurjective
+      (groupCohomologyTrivialπEven_surjective k g hg M i hi))).symm
+
+/-- The even-degree identification sends the cohomology class of a representative `x` to the
+residue class of `x` modulo `|G|`. -/
+theorem groupCohomologyTrivialLinearEquivEven_groupCohomologyπEven (i : ℕ) [NeZero i]
+    (hi : Even i)
+    (x : LinearMap.ker (applyAsHom (Rep.trivial k G M) g - 𝟙 (Rep.trivial k G M)).hom.toLinearMap) :
+    groupCohomologyTrivialLinearEquivEven k g hg M i hi
+        (groupCohomologyπEven (Rep.trivial k G M) g hg i hi x) =
+      Submodule.Quotient.mk (x : M) := by
+  rw [← LinearEquiv.eq_symm_apply, groupCohomologyTrivialLinearEquivEven, LinearEquiv.symm_symm,
+    LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivOfSurjective_apply_mk, groupCohomologyTrivialπEven_apply]
+
+/-- The inverse of the even-degree identification sends the residue class of `x ∈ M` to the
+cohomology class of the representative `x`. Unlike
+`groupCohomologyTrivialLinearEquivEven_groupCohomologyπEven`, whose left side applies the
+reducible `Rep.FiniteCyclicGroup.groupCohomologyπEven`, this direction can be used by `simp`. -/
+@[simp]
+theorem groupCohomologyTrivialLinearEquivEven_symm_mk (i : ℕ) [NeZero i] (hi : Even i) (x : M) :
+    (groupCohomologyTrivialLinearEquivEven k g hg M i hi).symm (Submodule.Quotient.mk x) =
+      groupCohomologyπEven (Rep.trivial k G M) g hg i hi
+        ⟨x, applyAsHom_trivial_sub_id_apply g M x⟩ :=
+  (LinearEquiv.symm_apply_eq _).2
+    (groupCohomologyTrivialLinearEquivEven_groupCohomologyπEven k g hg M i hi ⟨x, _⟩).symm
+
+end Trivial
 
 /-! ### The comparison map from the bar resolution to the periodic resolution -/
 
@@ -701,5 +842,32 @@ theorem map_groupCohomologyπEven_two {g' : G'} (hg' : ∀ x, x ∈ Subgroup.zpo
   split_ifs at key ⊢ <;>
     simp only [zero_smul, one_smul, add_zero, smul_zero, sub_zero, zero_sub] at key ⊢ <;>
     linear_combination (norm := module) (-1 : ℤ) • key
+
+end Rep.FiniteCyclicGroup
+
+namespace Rep.FiniteCyclicGroup
+
+variable (k : Type u) {G : Type u} [CommRing k] [Group G] [Finite G] [IsCyclic G]
+  (M : Type u) [AddCommGroup M] [Module k M]
+
+/-- **The cohomology of a finite cyclic group with coefficients killed by its order.** If `G` is
+a finite cyclic group and `M` is a `k`-module with the trivial action on which multiplication by
+`|G|` vanishes, then `Hⁱ(G, M)` has the same `finrank` as `M` in every degree `i`. For instance, the
+cohomology of `ℤ/p` with coefficients in `𝔽_p` is one-dimensional in every degree. -/
+theorem finrank_groupCohomology_trivial_of_isTorsionBy
+    (hM : Module.IsTorsionBy k M (Nat.card G : k)) (i : ℕ) :
+    Module.finrank k (groupCohomology (Rep.trivial k G M) i) = Module.finrank k M := by
+  classical
+  have := Fintype.ofFinite G
+  let : CommGroup G := IsCyclic.commGroup
+  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := G)
+  rcases Nat.even_or_odd i with hi | hi
+  · rcases eq_or_ne i 0 with rfl | hi₀
+    · exact (groupCohomology.H0IsoOfIsTrivial (Rep.trivial k G M)).toLinearEquiv.finrank_eq
+    · have : NeZero i := ⟨hi₀⟩
+      rw [(groupCohomologyTrivialLinearEquivEven k g hg M i hi).finrank_eq,
+        hM.quotSMulTopEquiv.finrank_eq]
+  · rw [(groupCohomologyTrivialLinearEquivOdd k g hg M i hi).finrank_eq,
+      (Module.isTorsionBy_iff_torsionBy_eq_top _).1 hM, finrank_top]
 
 end Rep.FiniteCyclicGroup

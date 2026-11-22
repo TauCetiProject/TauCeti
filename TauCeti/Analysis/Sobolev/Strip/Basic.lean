@@ -69,8 +69,10 @@ of `Lᵖ` of the strip from `TauCeti.Analysis.Sobolev.Strip.Jet`.
   the integrations by parts from which the formal adjoint of `∂s + J ∂t + S` and its boundary
   terms are computed.
 
-The Rellich compactness of the restriction to `[-T, T] × [0, 1]` and Peetre's argument, which the
-cylinder file proves, are not proved here.
+The Rellich compactness of the restriction to `[-T, T] × [0, 1]` is
+`TauCeti.StripSobolev.isCompactOperator_restrictValue_comp_subtypeL` in
+`TauCeti.Analysis.Sobolev.Strip.Rellich`, and Peetre's argument for first-order operators on the
+strip with boundary conditions is in `TauCeti.Analysis.Sobolev.Strip.Fredholm`.
 
 ## References
 
