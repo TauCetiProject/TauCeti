@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.PrimeCounting
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds
+import TauCeti.NumberTheory.PrimeCounting
 import TauCeti.NumberTheory.SelbergSieve.Bounds
 import TauCeti.NumberTheory.SelbergSieve.PrimeInterval
 
@@ -68,23 +69,6 @@ private theorem primeCounting_floor_add_sub_eq (x y : ℝ) (hy : 0 ≤ y) :
       ((Nat.primeCounting ⌊x + y⌋₊ - Nat.primeCounting ⌊x⌋₊ : ℕ) : ℝ) :=
   (Nat.cast_sub (Nat.monotone_primeCounting (Nat.floor_mono (by linarith)))).symm
 
-/-- An interval of length `y ≥ 0` contains at most `y + 1` primes. -/
-private theorem primeCounting_floor_add_sub_le_add_one (x y : ℝ) (hy : 0 ≤ y) :
-    (Nat.primeCounting ⌊x + y⌋₊ : ℝ) - Nat.primeCounting ⌊x⌋₊ ≤ y + 1 := by
-  refine (primeCounting_floor_add_sub_le_max x y).trans ?_
-  set x' := max x 0
-  have hx' : 0 ≤ x' := le_max_right x 0
-  rw [primeCounting_floor_add_sub_eq x' y hy]
-  refine (BoundingSieve.primeCounting_sub_le_primeInterval x' y 0).trans ?_
-  rw [BoundingSieve.siftedSum_primeInterval, Nat.floor_zero, Nat.primeCounting_zero,
-    Nat.cast_zero, add_zero]
-  calc (((Ioc ⌊x'⌋₊ ⌊x' + y⌋₊).filter (Nat.Coprime (primorial 0))).card : ℝ)
-      ≤ ((Ioc ⌊x'⌋₊ ⌊x' + y⌋₊).card : ℝ) := by exact_mod_cast card_filter_le _ _
-    _ = (⌊x' + y⌋₊ : ℝ) - ⌊x'⌋₊ := by
-      rw [Nat.card_Ioc, Nat.cast_sub (Nat.floor_mono (by linarith))]
-    _ ≤ y + 1 := by
-      linarith [Nat.floor_le (add_nonneg hx' hy), Nat.lt_floor_add_one x']
-
 /-- The Selberg remainder of the interval sieve at level `z` is at most `z² (1 + 2 log z)²`,
 the coefficient-one majorant of `∑_{n ≤ z²} 3^ω(n)`. -/
 private theorem sum_three_pow_mul_abs_rem_primeInterval_le (x y z : ℝ) (hx : 0 ≤ x)
@@ -125,12 +109,9 @@ theorem primeCounting_floor_add_sub_le_div_log_add (x y : ℝ) {z : ℝ} (hy : 0
     · rw [BoundingSieve.primeInterval_prodPrimes, hp.dvd_primorial_iff]
       exact Nat.le_floor hpz.le
     · rw [BoundingSieve.primeInterval_nu_apply]
-  have hπ : (Nat.primeCounting ⌊z⌋₊ : ℝ) ≤ z + 1 := by
-    have h : Nat.primeCounting ⌊z⌋₊ ≤ ⌊z⌋₊ + 1 := by
-      rw [Nat.primeCounting_eq_primeCounting'_succ, Nat.primeCounting']
-      exact Nat.count_le _
-    calc (Nat.primeCounting ⌊z⌋₊ : ℝ) ≤ ⌊z⌋₊ + 1 := by exact_mod_cast h
-      _ ≤ z + 1 := by gcongr; exact Nat.floor_le (by linarith)
+  have hπ : (Nat.primeCounting ⌊z⌋₊ : ℝ) ≤ z + 1 :=
+    calc (Nat.primeCounting ⌊z⌋₊ : ℝ) ≤ ⌊z⌋₊ := by exact_mod_cast Nat.primeCounting_le_self _
+      _ ≤ z + 1 := by linarith [Nat.floor_le (by linarith : (0 : ℝ) ≤ z)]
   rw [primeCounting_floor_add_sub_eq x' y hy]
   calc _ ≤ s.siftedSum + Nat.primeCounting ⌊z⌋₊ :=
         BoundingSieve.primeCounting_sub_le_primeInterval x' y z
@@ -157,6 +138,8 @@ private theorem primeCounting_floor_add_sub_le_of_log_le (x y : ℝ) (hy : 0 < y
   -- The sieving level `z = exp (L / 2 - 3a) = √y / L³`, and `E = y / L² = exp (L - 2a)`.
   have hyexp : Real.exp L = y := Real.exp_log hy
   have hLexp : Real.exp a = L := Real.exp_log hL0
+  have hL2 : L ^ 2 = Real.exp (2 * a) := by
+    rw [← hLexp, ← Real.exp_natCast_mul, Nat.cast_ofNat]
   have hE : y / L ^ 2 = Real.exp (L - 2 * a) := by
     rw [Real.exp_sub, hyexp, show 2 * a = a + a by ring, Real.exp_add, hLexp, sq]
   have hz : 1 < Real.exp (L / 2 - 3 * a) := Real.one_lt_exp_iff.mpr (by linarith)
@@ -175,10 +158,9 @@ private theorem primeCounting_floor_add_sub_le_of_log_le (x y : ℝ) (hy : 0 < y
     have hsq : (1 + 2 * (L / 2 - 3 * a)) ^ 2 ≤ (2 * L) ^ 2 :=
       pow_le_pow_left₀ (by linarith) (by linarith) 2
     calc _ ≤ Real.exp (L / 2 - 3 * a) ^ 2 * (2 * L) ^ 2 := by gcongr
+      _ = 4 * (Real.exp (L / 2 - 3 * a) ^ 2 * L ^ 2) := by ring
       _ = 4 * Real.exp (L - 4 * a) := by
-        rw [← hLexp, ← Real.exp_natCast_mul, mul_pow, ← Real.exp_natCast_mul, mul_left_comm,
-          ← Real.exp_add]
-        push_cast
+        rw [hL2, ← Real.exp_natCast_mul, ← Real.exp_add]
         ring_nf
       _ ≤ 4 * Real.exp (L - 2 * a) := by gcongr; linarith
       _ ≤ 4 * a * (y / L ^ 2) := by
@@ -232,7 +214,7 @@ theorem exists_primeCounting_floor_add_sub_le_two_mul_div_log_add :
         _ ≤ 2 * L₀ ^ 2 / Real.log (Real.log 3) * Real.log (Real.log (3 * y)) := by gcongr
         _ ≤ _ := mul_le_mul_of_nonneg_right (le_add_of_nonneg_left (by norm_num))
           (hℓ₀.le.trans hℓ)
-    calc _ ≤ y + 1 := primeCounting_floor_add_sub_le_add_one x y (by linarith)
+    calc _ ≤ y + 1 := Nat.primeCounting_floor_add_sub_le_add_one x (by linarith)
       _ ≤ 2 * y := by linarith
       _ ≤ (30 + 2 * L₀ ^ 2 / Real.log (Real.log 3)) * y * Real.log (Real.log (3 * y)) /
           Real.log y ^ 2 := by
