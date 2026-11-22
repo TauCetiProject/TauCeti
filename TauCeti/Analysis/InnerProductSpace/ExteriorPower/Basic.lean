@@ -18,7 +18,7 @@ import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
-import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.ExteriorPower.Square
@@ -633,12 +633,12 @@ theorem isSymm_sesqExteriorAlgebra_innerₗ :
 theorem posDef_toQuadraticMap_sesqExteriorAlgebra_innerₗ :
     (LinearMap.BilinMap.toQuadraticMap (innerₗ V).sesqExteriorAlgebra).PosDef := by
   intro x hx
-  obtain ⟨W, _, y, rfl⟩ := x.exists_finite_submodule_map_subtype
+  obtain ⟨W, _, y, rfl⟩ := x.exists_finite_submodule_mem_range_map_subtype
   have hy : y ≠ 0 := by rintro rfl; exact hx (map_zero _)
   let b := stdOrthonormalBasis ℝ W
   have hsub : ∀ u v : W, innerₗ V (W.subtype u) (W.subtype v) = innerₗ W u v :=
     fun u v ↦ by simp [Submodule.coe_inner]
-  rw [LinearMap.BilinMap.toQuadraticMap_apply,
+  rw [LinearMap.BilinMap.toQuadraticMap_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
     LinearMap.sesqExteriorAlgebra_map_map hsub,
     ← b.toLinearMap₂_toBasis_exteriorAlgebra_one]
   exact (Matrix.toLinearMapₛₗ₂_one_self_nonneg b.toBasis.ExteriorAlgebra y).lt_of_ne'
