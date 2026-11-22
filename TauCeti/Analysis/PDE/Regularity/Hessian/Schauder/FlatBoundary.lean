@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Basic
 import TauCeti.Analysis.Analytic.AffineHyperplane
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
@@ -402,12 +403,6 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_laplacian_of_halfSpace {α : �
     simpa using tendsto_const_nhds.add (htend.smul_const ν)
   · simpa [edist_add_right] using hT _ (hmem k y hy) _ (hmem k z hz)
 
-/-- The adjoint of a linear automorphism `e` does not vanish at `ν ≠ 0`; it is the normal of the
-pullback `{y | c₀ < ⟪y, e† ν⟫}` of the half-space `{x | c₀ < ⟪x, ν⟫}` under `e`. -/
-private theorem adjoint_apply_ne_zero (e : E ≃L[ℝ] E) {ν : E} (hν : ν ≠ 0) :
-    (e : E →L[ℝ] E).adjoint ν ≠ 0 := fun h0 => hν (inner_self_eq_zero (𝕜 := ℝ).1 (by
-  simpa [h0] using (ContinuousLinearMap.adjoint_inner_right (e : E →L[ℝ] E) (e.symm ν) ν).symm))
-
 /-- Under a linear automorphism `e` that is `√Λ`-Lipschitz, the part in the pulled back half-space
 `{y | c₀ < ⟪y, e† ν⟫}` of the open thickening of `e ⁻¹' S` of radius `R / √Λ` maps into the part
 in `{x | c₀ < ⟪x, ν⟫}` of the open `R`-thickening of `S`. -/
@@ -488,7 +483,8 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_half
   have hS' : Bornology.IsBounded (e ⁻¹' S) := by
     rw [← e.image_symm_eq_preimage]
     exact (e.symm : E →L[ℝ] E).lipschitzWith.isBounded_image hS
-  have hvhol := h (adjoint_apply_ne_zero e hν) (hU.preimage e.continuous)
+  have hvhol := h ((map_ne_zero_iff _ e.adjoint_bijective.injective).2 hν)
+    (hU.preimage e.continuous)
     (hu.comp (e : E →L[ℝ] E).contDiff.contDiffOn (mapsTo_preimage _ _)) hS'
     (fun y hy => by rw [hν'e]; exact hSc _ hy) (by positivity) hSU'
     (fun y hy hy0 => hu0 _ hy (by simpa only [ContinuousLinearEquiv.coe_coe, ← hν'e] using hy0))

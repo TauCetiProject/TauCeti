@@ -113,8 +113,6 @@ zero only at `0`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
 * `TauCeti.ciSup_le_two_mul_of_le_add_mul`: the same absorption for the supremum of a bounded
   nonnegative family `Φ` with `Φ i ≤ X + c * Φ (f i)` and `c ≤ 1 / 2`.
-* `TauCeti.le_two_mul_of_le_mul_add_mul_add`: the absorption step of the perturbation argument
-  for Schauder estimates with coefficients of small oscillation.
 * `TauCeti.div_one_add_nonneg`, `TauCeti.div_one_add_lt_one`, `TauCeti.div_one_add_le_one`,
   `TauCeti.div_one_add_mono`, `TauCeti.div_one_add_add_le`, `TauCeti.mul_div_one_add_mul_le`,
   `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
@@ -390,22 +388,6 @@ theorem add_le_mul_add_mul_of_le_of_le {α : Type*} [Field α] [LinearOrder α]
 theorem le_two_mul_of_le_add_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
     {J X Y : α} (hJ : 0 ≤ J) (hX : X ≤ 1 / 2) (h : J ≤ Y + X * J) : J ≤ 2 * Y := by
   nlinarith [mul_le_mul_of_nonneg_right hX hJ]
-
-/-- **The absorption step of a perturbation argument.** If `J ≥ 0` satisfies
-`J ≤ κ ((K + N (ε J + (J s + V M) L)) / λ + Q M)`, the bound that freezing the coefficients of an
-operator gives for the Hölder constant `J` of a Hessian bounded by `J s + V M`, and the smallness
-condition `2 κ N (ε + L s) ≤ λ` holds, then `J ≤ 2 κ (K / λ + (N L / λ V + Q) M)`. -/
-theorem le_two_mul_of_le_mul_add_mul_add {α : Type*} [Field α] [LinearOrder α]
-    [IsStrictOrderedRing α] {J K ε L κ lam s V M Q N : α} (hJ : 0 ≤ J) (hlam : 0 < lam)
-    (hsmall : 2 * κ * N * (ε + L * s) ≤ lam)
-    (h : J ≤ κ * ((K + N * (ε * J + (J * s + V * M) * L)) / lam + Q * M)) :
-    J ≤ 2 * κ * (K / lam + (N * L / lam * V + Q) * M) := by
-  have hX : κ * N * (ε + L * s) / lam ≤ 1 / 2 := by
-    rw [div_le_iff₀ hlam]
-    linarith
-  have h2 := le_two_mul_of_le_add_mul hJ hX (Y := κ * (K / lam + (N * L / lam * V + Q) * M))
-    (h.trans_eq (by field_simp; ring))
-  linarith
 
 /-- **Absorption of a supremum.** If `Φ ≥ 0` is bounded above and every value of `Φ` is at most
 `X` plus `c ≤ 1 / 2` times another value, then the supremum of `Φ` is at most `2 X`. -/

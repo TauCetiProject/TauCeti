@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.FlatBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.VariableCoefficient
-import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Holder.Lp
 
 /-!
@@ -50,8 +49,8 @@ of `D²u` on `closure H` and `B` bounds `D²u` there
 `x + (r / (2 ‖ν‖)) ν` (`HolderOnWith.norm_le_add_eLpNorm_toReal_of_halfSpace`). The
 constant-coefficient estimate applied to each two-point set `{x, y} ⊆ closure H` at the radius
 `r` bounds `J` by a multiple of these quantities, and the smallness condition absorbs the terms
-in `J`
-(`TauCeti.le_two_mul_of_le_mul_add_mul_add`).
+in `J` (`TauCeti.PDE.holderOnWith_of_forall_holderOnWith_dist_le`, shared with the interior
+estimate).
 
 ## References
 
@@ -116,19 +115,17 @@ theorem
   obtain ⟨C₀, hC₀, hS⟩ :=
     exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_halfSpace hα hα1 (n := n)
   refine ⟨C₀ + 1, by positivity, fun {A lam Lam} hlam hA hA' {ν c₀ a ε L K r} hν hr hsmall ha hL
-    {U u} hU hHU hu hu0 ⟨J₀, hJ₀⟩ hH2 hf => ?_⟩
+    {U u} hU hHU hu hu0 hJ₀ hH2 hf => ?_⟩
   set Hc : Set E := {x | c₀ ≤ ⟪x, ν⟫_ℝ}
   set Ho : Set E := {x | c₀ < ⟪x, ν⟫_ℝ}
   have hoc : Ho ⊆ Hc := fun _ hx => mem_ofPred.2 (mem_ofPred.1 hx).le
   let H := iteratedFDeriv ℝ 2 u
-  -- The best Hölder constant `J` of `D²u` on the closed half-space.
-  let J : ℝ≥0 := nnHolderNorm α (Hc.domRestrict H)
-  have hJ : HolderOnWith J α H Hc := HolderWith.restrict_iff.1 hJ₀.holderWith.memHolder.holderWith
   let M : ℝ := (eLpNorm H 2 (volume.restrict Ho)).toReal
   let V : ℝ := (volume (ball (0 : E) (r / 2)) ^ (-((2 : ℝ)⁻¹))).toReal
-  let κ : ℝ := (C₀ + 1) * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)
   have hLam : 0 < Lam :=
     hlam.trans_le (by simpa using (hA (EuclideanSpace.single 0 1)).trans (hA' _))
+  -- Absorbing the terms in `J` reduces the estimate to a two-point bound for each constant `J`.
+  refine holderOnWith_of_forall_holderOnWith_dist_le hJ₀ hlam hsmall fun J hJ x hx y hy => ?_
   -- Interpolation at scale `r`, on a ball of radius `r / 2` in `H` next to each point.
   have hsup (x : E) (hx : x ∈ Hc) : ‖H x‖ ≤ J * r ^ (α : ℝ) + V * M := by
     simpa only [ENNReal.toReal_ofNat] using hJ.norm_le_add_eLpNorm_toReal_of_halfSpace
@@ -137,31 +134,19 @@ theorem
   have hBc : (B : ℝ) = J * r ^ (α : ℝ) + V * M := Real.coe_toNNReal _ (by positivity)
   have hg := holderOnWith_sum_smul_fderiv_fderiv_of_abs_sub_le ha hL (hJ.mono hoc)
     (fun x hx => (hsup x (hoc hx)).trans_eq hBc.symm) hf
-  -- Apply the frozen estimate up to the boundary to each two-point set, with one common bound.
-  have hglobal : HolderOnWith (κ * ((K + ((n + 1 : ℝ≥0) ^ 2) * (ε * J + B * L)) / lam +
-      r ^ (-(((n : ℝ) + 1) / 2 + α)) * M)).toNNReal α H Hc := by
-    refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-    have hxy := hS hlam hA hA' hν hU hu ((finite_singleton y).insert x).isBounded
-      (by simp only [Hc, mem_ofPred_eq] at hx hy; rintro z (rfl | rfl) <;> assumption) hr
-      (inter_subset_right.trans hHU) (fun z _ hz => hu0 z hz) (hg.mono inter_subset_right)
-    have hb := hxy.dist_le (by simp : x ∈ ({x, y} : Set E)) (by simp : y ∈ ({x, y} : Set E))
-    rw [Real.coe_toNNReal _ (by positivity)] at hb ⊢
-    refine hb.trans (mul_le_mul_of_nonneg_right ?_ (by positivity))
-    have hLp : (eLpNorm H 2 (volume.restrict (thickening r ({x, y} : Set E) ∩ Ho))).toReal ≤ M :=
-      ENNReal.toReal_mono hH2.eLpNorm_ne_top
-        (eLpNorm_mono_measure H (Measure.restrict_mono inter_subset_right le_rfl))
-    calc _ ≤ C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2) *
-          ((K + ((n + 1 : ℝ≥0) ^ 2) * (ε * J + B * L)) / lam +
-            r ^ (-(((n : ℝ) + 1) / 2 + α)) * M) := by push_cast; gcongr
-      _ ≤ _ := by dsimp [κ]; gcongr; linarith
-  -- Absorb the terms in `J` with the smallness condition.
-  have hbound := (HolderWith.restrict_iff.2 hglobal).nnholderNorm_le
-  rw [← NNReal.coe_le_coe, Real.coe_toNNReal _ (by positivity)] at hbound
-  have hfinal := le_two_mul_of_le_mul_add_mul_add (K := (K : ℝ)) (V := V) (M := M)
-    (Q := r ^ (-(((n : ℝ) + 1) / 2 + α))) J.coe_nonneg hlam hsmall
-    (hbound.trans_eq (by push_cast; rw [hBc]))
-  exact hJ.mono_const (by
-    rw [← NNReal.coe_le_coe, Real.coe_toNNReal _ (by positivity)]
-    exact hfinal.trans_eq (by simp only [V, M]; ring))
+  -- Apply the frozen estimate up to the boundary to the two-point set `{x, y}`.
+  have hxy := hS hlam hA hA' hν hU hu ((finite_singleton y).insert x).isBounded
+    (by simp only [Hc, mem_ofPred_eq] at hx hy; rintro z (rfl | rfl) <;> assumption) hr
+    (inter_subset_right.trans hHU) (fun z _ hz => hu0 z hz) (hg.mono inter_subset_right)
+  have hb := hxy.dist_le (by simp : x ∈ ({x, y} : Set E)) (by simp : y ∈ ({x, y} : Set E))
+  rw [Real.coe_toNNReal _ (by positivity)] at hb
+  refine hb.trans (mul_le_mul_of_nonneg_right ?_ (by positivity))
+  have hLp : (eLpNorm H 2 (volume.restrict (thickening r ({x, y} : Set E) ∩ Ho))).toReal ≤ M :=
+    ENNReal.toReal_mono hH2.eLpNorm_ne_top
+      (eLpNorm_mono_measure H (Measure.restrict_mono inter_subset_right le_rfl))
+  push_cast
+  rw [hBc]
+  gcongr
+  linarith
 
 end TauCeti.PDE
