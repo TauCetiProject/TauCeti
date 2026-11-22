@@ -180,9 +180,7 @@ theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology {r : ℕ}
       (isZero_twistedHomology_of_isEmpty _ 0)⟩
   | inr _ =>
     -- The frames have size the dimension of the negative normal spaces, which is the index.
-    have hr (s : S) : manifoldMorseIndex I f (i s) = r + 1 := by
-      rw [← h.finrank_negativeNormalSpace hn g.toRiemannianMetric, hV.finrank_eq,
-        Fintype.card_fin]
+    have hr := h.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ hV
     obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
       hcrit hdim g hr (ModuleCat.of ℤ (ULift.{0} ℤ)) (r + 1)
     exact ⟨e ≪≫ thomPairSingularHomologyIsoTwistedHomology (Fin (r + 1) → ℝ) _

@@ -133,9 +133,7 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isTho
   have := h.toIsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc (hfs.of_le (by simp))
     hc hac.le hcb.le hcompact hcrit
   -- The negative normal spaces have the dimension of the Morse index.
-  have hr (s : S) : manifoldMorseIndex I f (i s) = r := by
-    rw [← h.finrank_negativeNormalSpace hn g.toRiemannianMetric s, hV.finrank_eq s,
-      Fintype.card_fin]
+  have hr := h.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ hV
   -- The band has the cohomology of the Thom pair of `ν⁻`, which the Thom class computes.
   obtain ⟨e⟩ := h.nonempty_singularCohomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
     hcrit hdim g hr (ModuleCat.of K K) K N m
