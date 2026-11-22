@@ -76,6 +76,7 @@ theorem exp_add_int_mul_pi_mul_I (z : ℂ) (k : ℤ) :
   k.cast_negOnePow ℂ ▸ exp_antiperiodic.add_int_mul_eq k
 
 /-- `(-1) ^ k * exp (z + k * (π * I)) = exp z` for an integer `k`. -/
+@[simp]
 theorem neg_one_zpow_mul_exp_add_int_mul_pi_mul_I (z : ℂ) (k : ℤ) :
     (-1 : ℂ) ^ k * cexp (z + k * (π * I)) = cexp z := by
   rw [exp_add_int_mul_pi_mul_I, ← mul_assoc, ← mul_zpow, neg_one_mul, neg_neg, one_zpow,

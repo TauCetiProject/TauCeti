@@ -12,6 +12,7 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.Analysis.Complex.UpperHalfPlane.Sqrt
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
+import TauCeti.NumberTheory.Modular.Reduction
 
 /-!
 # The transformation of the Dedekind eta function under `SL(2, ℤ)`
@@ -319,21 +320,27 @@ theorem etaMultiplier_of_c_eq_one (γ : SL(2, ℤ)) (hc : γ 1 0 = 1) :
 
 /-! ### The Dedekind-sum value of the eta multiplier -/
 
-/-- The Dedekind-sum formula for `ε(γ)` passes from `γ Tⁿ` to `γ`: both sides gain the factor
-`e^{π i n / 12}`, since `s(c n + d, c) = s(d, c)`. -/
-private theorem etaMultiplier_eq_of_mul_T_zpow (γ : SL(2, ℤ)) (n : ℤ) (hc : γ 1 0 ≠ 0)
-    (h : etaMultiplier (γ * T ^ n) = cexp (π * I * ((((γ * T ^ n) 0 0 : ℂ) + (γ * T ^ n) 1 1) /
-      (12 * (γ * T ^ n) 1 0) - dedekindSum ((γ * T ^ n) 1 1) ((γ * T ^ n) 1 0) - 1 / 4))) :
+/-- The Dedekind-sum formula for `ε(γ)` is preserved in both directions under `γ ↦ γ T`: both
+sides gain the factor `e^{π i / 12}`, since `s(c + d, c) = s(d, c)`. -/
+private theorem etaMultiplier_eq_iff_of_mul_T (γ : SL(2, ℤ)) (hc : γ 1 0 ≠ 0) :
+    etaMultiplier (γ * T) = cexp (π * I * ((((γ * T) 0 0 : ℂ) + (γ * T) 1 1) /
+      (12 * (γ * T) 1 0) - dedekindSum ((γ * T) 1 1) ((γ * T) 1 0) - 1 / 4)) ↔
     etaMultiplier γ = cexp (π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) -
       dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) := by
-  rw [etaMultiplier_mul_T_zpow, mul_T_zpow_apply_apply_zero, mul_T_zpow_apply_apply_zero,
-    mul_T_zpow_apply_apply_one, dedekindSum_self_mul_add] at h
-  rw [← mul_right_inj' (Complex.exp_ne_zero (π * I * n / 12)), h, ← Complex.exp_add]
-  congr 1
-  have hc'' : (γ 1 0 : ℂ) ≠ 0 := by exact_mod_cast hc
-  push_cast
-  field_simp
-  ring
+  have hT : γ * T = γ * T ^ (1 : ℤ) := by simp
+  rw [hT, etaMultiplier_mul_T_zpow, mul_T_zpow_apply_apply_zero, mul_T_zpow_apply_apply_zero,
+    mul_T_zpow_apply_apply_one, dedekindSum_self_mul_add]
+  have hrhs : cexp (π * I * ((((γ 0 0 : ℂ) + ((γ 1 0 * 1 + γ 1 1 : ℤ) : ℂ)) / (12 * γ 1 0)) -
+      dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) =
+      cexp (π * I * (1 : ℤ) / 12) * cexp (π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) -
+        dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) := by
+    rw [← Complex.exp_add]
+    congr 1
+    have hc'' : (γ 1 0 : ℂ) ≠ 0 := by exact_mod_cast hc
+    push_cast
+    field_simp
+    ring
+  rw [hrhs, mul_right_inj' (Complex.exp_ne_zero _)]
 
 /-- The Dedekind-sum formula for `ε(γ)` passes from `γ S` to `γ` when `c, d > 0`: the inversion
 step contributes `e^{-π i / 4}`, and the change of the Dedekind sums from `s(-c, d)` to `s(d, c)`
@@ -373,36 +380,14 @@ principal root `√(c τ + d)` of `eta_smul`. -/
 theorem etaMultiplier_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) :
     etaMultiplier γ = cexp (π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) -
       dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) := by
-  -- Strong induction on `c`, along the Euclidean algorithm.
-  suffices H : ∀ c : ℕ, ∀ γ : SL(2, ℤ), γ 1 0 = c → 0 < c → etaMultiplier γ =
-      cexp (π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) - dedekindSum (γ 1 1) (γ 1 0) - 1 / 4))
-    from H (γ 1 0).toNat γ (by omega) (by omega)
-  intro c
-  induction c using Nat.strong_induction_on with
-  | _ c ih =>
-  intro γ hγc hc
-  obtain rfl | hc1 := eq_or_ne c 1
-  · rw [etaMultiplier_of_c_eq_one γ hγc, hγc]
+  refine Matrix.SpecialLinearGroup.induction_on_of_c_pos γ hc
+    (P := fun δ ↦ etaMultiplier δ = cexp (π * I * (((δ 0 0 : ℂ) + δ 1 1) / (12 * δ 1 0) -
+      dedekindSum (δ 1 1) (δ 1 0) - 1 / 4))) ?_ ?_ ?_
+  · intro δ h1
+    rw [etaMultiplier_of_c_eq_one δ h1, h1]
     simp
-  -- Reduce `d` modulo `c` by a translation `γ Tⁿ`, with `n = -⌊d / c⌋`.
-  set n := -(γ 1 1 / c)
-  refine etaMultiplier_eq_of_mul_T_zpow γ n (by omega) ?_
-  set γ' := γ * T ^ n
-  have hc' : γ' 1 0 = c := by
-    rw [mul_T_zpow_apply_apply_zero, hγc]
-  have hd' : γ' 1 1 = γ 1 1 % c := by
-    rw [mul_T_zpow_apply_apply_one, hγc, Int.emod_def]
-    ring
-  -- The reduced `d` is positive: `c` and `d` are coprime, so `c ∣ d` forces `c = 1`.
-  have hdpos : 0 < γ' 1 1 := by
-    refine lt_of_le_of_ne (hd' ▸ Int.emod_nonneg _ (by omega)) fun h ↦ hc1 ?_
-    have hunit := (γ'.isCoprime_row 1).isUnit_of_dvd (h ▸ dvd_zero _)
-    rcases Int.isUnit_iff.mp hunit with h1 | h1 <;> omega
-  have hdlt : γ' 1 1 < c := hd' ▸ Int.emod_lt_of_pos _ (by omega)
-  -- Invert: `γ' S` has lower-left entry `d mod c`, which lies strictly between `0` and `c`.
-  have hS : (γ' * S) 1 0 = γ' 1 1 := mul_S_apply_apply_zero γ' 1
-  exact etaMultiplier_eq_of_mul_S γ' (by omega) hdpos
-    (ih (γ' 1 1).toNat (by omega) (γ' * S) (by omega) (by omega))
+  · exact fun δ hδ ↦ etaMultiplier_eq_iff_of_mul_T δ hδ.ne'
+  · exact fun δ hδc hδd ↦ etaMultiplier_eq_of_mul_S δ hδc hδd
 
 /-- When `c > 0`, negating `γ ∈ SL(2, ℤ)` multiplies the eta multiplier by `i`:
 `ε(-γ) = i ε(γ)`. -/

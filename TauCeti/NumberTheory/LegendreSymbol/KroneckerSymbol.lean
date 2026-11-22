@@ -491,49 +491,38 @@ theorem kroneckerSym_mod_left (a : ℤ) {b : ℤ} (hb : Odd b) (hb₀ : 0 < b) :
     kroneckerSym a b = kroneckerSym (a % b) b :=
   kroneckerSym_mod_left' hb hb₀ (Int.emod_emod a b).symm
 
+/-- Express `(a / b)` for odd `b` as a single `(-1) ^ (⋯)` factor times `J(|a| | |b|)`. -/
+private theorem kroneckerSym_of_odd_eq_negOnePow_mul_jacobiSym (a : ℤ) {b : ℤ} (hb : Odd b) :
+    kroneckerSym a b =
+      ((((if a < 0 then (1 : ℤ) else 0) * (if b < 0 then (1 : ℤ) else 0) +
+          (if a < 0 then (1 : ℤ) else 0) * ((b.natAbs / 2 : ℕ) : ℤ)).negOnePow : ℤ)) *
+        jacobiSym a.natAbs b.natAbs := by
+  have hs : (if a < 0 ∧ b < 0 then (-1 : ℤ) else 1) =
+      (((if a < 0 then (1 : ℤ) else 0) * (if b < 0 then (1 : ℤ) else 0)).negOnePow : ℤ) := by
+    by_cases ha0 : a < 0 <;> by_cases hb0 : b < 0 <;> simp [ha0, hb0]
+  rw [kroneckerSym_of_odd a hb, hs, jacobiSym_int_eq_negOnePow_mul_natAbs a (Int.natAbs_odd.mpr hb),
+    ← mul_assoc, ← Units.val_mul, ← Int.negOnePow_add]
+
 /-- **Quadratic reciprocity for the Kronecker symbol**: for odd integers `a` and `b` of either
 sign, `(a / b) = s * (-1) ^ (((a - 1) / 2) * ((b - 1) / 2)) * (b / a)`, where `s = -1` when
 both `a < 0` and `b < 0` and `s = 1` otherwise. -/
 theorem kroneckerSym_quadratic_reciprocity {a b : ℤ} (ha : Odd a) (hb : Odd b) :
     kroneckerSym a b = (if a < 0 ∧ b < 0 then -1 else 1) *
       ((((a - 1) / 2) * ((b - 1) / 2)).negOnePow : ℤ) * kroneckerSym b a := by
-  have haN : Odd a.natAbs := Int.natAbs_odd.mpr ha
-  have hbN : Odd b.natAbs := Int.natAbs_odd.mpr hb
-  set σa : ℤ := if a < 0 then 1 else 0
-  set σb : ℤ := if b < 0 then 1 else 0
-  set u : ℤ := ((a.natAbs / 2 : ℕ) : ℤ)
-  set v : ℤ := ((b.natAbs / 2 : ℕ) : ℤ)
-  set s : ℤ := if a < 0 ∧ b < 0 then -1 else 1
-  have hs_sq : s * s = 1 := by
-    by_cases h : a < 0 ∧ b < 0 <;> simp [s, h]
-  have hs_eq : (if a < 0 ∧ b < 0 then (-1 : ℤ) else 1) = ((σa * σb).negOnePow : ℤ) := by
-    by_cases ha0 : a < 0 <;> by_cases hb0 : b < 0 <;> simp [σa, σb, ha0, hb0]
-  have hs_comm : (if b < 0 ∧ a < 0 then (-1 : ℤ) else 1) = s := by
-    simp only [s, and_comm]
-  have hqr : jacobiSym a.natAbs b.natAbs =
-      ((u * v).negOnePow : ℤ) * jacobiSym b.natAbs a.natAbs := by
-    rw [jacobiSym.quadratic_reciprocity haN hbN, ← Int.coe_negOnePow_natCast, Nat.cast_mul]
-  have hpar : (((a - 1) / 2) * ((b - 1) / 2)).negOnePow = ((u + σa) * (v + σb)).negOnePow := by
-    rw [Int.negOnePow_eq_iff, even_iff_two_dvd]
-    exact ((Int.sub_one_ediv_two_modEq_natAbs ha).mul
-      (Int.sub_one_ediv_two_modEq_natAbs hb)).symm.dvd
-  have hexp : (σa * σb + σa * v + u * v).negOnePow = ((u + σa) * (v + σb) + σb * u).negOnePow := by
-    rw [Int.negOnePow_eq_iff]
-    exact ⟨-(u * σb), by ring⟩
-  have hLHS : kroneckerSym a b =
-      ((σa * σb + σa * v + u * v).negOnePow : ℤ) * jacobiSym b.natAbs a.natAbs := by
-    rw [kroneckerSym_of_odd a hb, hs_eq, jacobiSym_int_eq_negOnePow_mul_natAbs a hbN, hqr]
-    simp only [← mul_assoc, ← Units.val_mul, ← Int.negOnePow_add, add_assoc]
-    rfl
-  have hRHS : s * ((((a - 1) / 2) * ((b - 1) / 2)).negOnePow : ℤ) * kroneckerSym b a =
-      (((u + σa) * (v + σb) + σb * u).negOnePow : ℤ) * jacobiSym b.natAbs a.natAbs := by
-    rw [kroneckerSym_of_odd b ha, hs_comm, jacobiSym_int_eq_negOnePow_mul_natAbs b haN, hpar]
-    have hmul : s * ((((u + σa) * (v + σb)).negOnePow : ℤ)) *
-        (s * (((σb * u).negOnePow : ℤ) * jacobiSym b.natAbs a.natAbs)) =
-        (s * s) * ((((u + σa) * (v + σb)).negOnePow : ℤ) * ((σb * u).negOnePow : ℤ)) *
-          jacobiSym b.natAbs a.natAbs := by ring
-    rw [hmul, hs_sq, one_mul, ← Units.val_mul, ← Int.negOnePow_add]
-  rw [hLHS, hRHS, hexp]
+  have hs : (if a < 0 ∧ b < 0 then (-1 : ℤ) else 1) =
+      (((if a < 0 then (1 : ℤ) else 0) * (if b < 0 then (1 : ℤ) else 0)).negOnePow : ℤ) := by
+    by_cases ha0 : a < 0 <;> by_cases hb0 : b < 0 <;> simp [ha0, hb0]
+  rw [kroneckerSym_of_odd_eq_negOnePow_mul_jacobiSym a hb,
+    kroneckerSym_of_odd_eq_negOnePow_mul_jacobiSym b ha,
+    jacobiSym.quadratic_reciprocity (Int.natAbs_odd.mpr ha) (Int.natAbs_odd.mpr hb), hs]
+  simp only [← Int.coe_negOnePow_natCast, Nat.cast_mul, ← mul_assoc, ← Units.val_mul,
+    ← Int.negOnePow_add]
+  congr 2
+  rw [Int.negOnePow_eq_iff, even_iff_two_dvd]
+  obtain ⟨k, hk⟩ := ((Int.sub_one_ediv_two_modEq_natAbs ha).mul
+    (Int.sub_one_ediv_two_modEq_natAbs hb)).symm.dvd
+  exact ⟨-k - (if b < 0 then (1 : ℤ) else 0) * (if a < 0 then 1 else 0) -
+    (if b < 0 then (1 : ℤ) else 0) * (a.natAbs / 2 : ℕ), by linarith⟩
 
 /-- Modulo-8 helper for the `(2 * χ₄ m / ·)` factor in
 `kroneckerSym_add_self_right_of_emod_four_eq_two`. -/
