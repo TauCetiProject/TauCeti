@@ -42,6 +42,11 @@ over pairs of paths `Fin (i + 1) → X` and `Fin (j + 1) → X` meeting at an en
 the paths of length `i + j` (`Fin.sum_sum_ite_apply_last_eq_apply_zero`). A sum over the pairs
 `(a, b)` with `P a` and a fixed second entry `b` is the sum over the `a` with `P a`.
 
+Deleting the entry at position `p` of a tuple leaves its partial products up to `p` unchanged
+(`Fin.partialProd_removeNth_of_le`); in a group, the later partial products of the shortened tuple
+are those of the original one with the factor at `p` cancelled
+(`Fin.partialProd_removeNth_of_ge`).
+
 A strictly increasing list `a` on `Fin (n + 1)` in an additive group with a preorder (no
 compatibility between the two is needed) telescopes (`StrictMono.eq_add_sum_ite_sub`): `a k` is
 `a 0` plus the gaps below `a k`, and a finset sum of values in the list is the cardinality times
@@ -57,6 +62,11 @@ position of the cyclically next block, when that block is nonempty
 (`Fin.finRotate_finSigmaFinEquiv_of_eq`). The list of values of a function on `Fin (∑ i, m i)`
 is the concatenation of the lists of its values on the blocks (`List.ofFn_sum`), as `List.ofFn_mul`
 says for blocks of equal length.
+For a multi-index `α : Fin n → ℕ`, the blocks of lengths `αᵢ` give the word
+`TauCeti.multiIndexWord α` listing each index `i` exactly `αᵢ` times, in increasing order
+(`TauCeti.card_filter_multiIndexWord_eq`); a product over its letters is the monomial
+`∏ᵢ gᵢ ^ αᵢ` (`TauCeti.prod_multiIndexWord`), and a sum over its letters is `∑ᵢ αᵢ • gᵢ`
+(`TauCeti.sum_multiIndexWord`).
 -/
 
 public section
@@ -223,6 +233,38 @@ theorem sum_sum_ite_apply_last_eq_apply_zero {X N : Type*} [Fintype X] [Decidabl
       · simp only [show ¬ (i + t ≤ i) by omega, dite_false]
         exact congrArg p.2 (Fin.ext (by simp))
 
+/-- Deleting the entry at position `p` does not change the partial products up to `p`. -/
+@[to_additive /-- Deleting the entry at position `p` does not change the partial sums up to
+`p`. -/]
+theorem partialProd_removeNth_of_le {M : Type*} [Monoid M] {n : ℕ} (f : Fin (n + 1) → M)
+    {p l : Fin (n + 1)} (h : l ≤ p) :
+    partialProd (p.removeNth f) l = partialProd f l.castSucc := by
+  induction l using Fin.induction with
+  | zero => simp
+  | succ l ih =>
+    have hl : l.castSucc < p := lt_of_lt_of_le castSucc_lt_succ h
+    rw [partialProd_succ, ih hl.le, removeNth_apply, succAbove_of_castSucc_lt _ _ hl,
+      ← succ_castSucc, partialProd_succ]
+
+/-- After the deleted position `p`, a partial product of the shortened tuple is the corresponding
+partial product of the original tuple with the factor `f p` cancelled. -/
+@[to_additive /-- After the deleted position `p`, a partial sum of the shortened tuple is the
+corresponding partial sum of the original tuple with the term `f p` cancelled. -/]
+theorem partialProd_removeNth_of_ge {G : Type*} [Group G] {n : ℕ} (f : Fin (n + 1) → G)
+    {p l : Fin (n + 1)} (h : p ≤ l) :
+    partialProd (p.removeNth f) l =
+      partialProd f p.castSucc * (partialProd f p.succ)⁻¹ * partialProd f l.succ := by
+  induction l using Fin.induction with
+  | zero =>
+    obtain rfl : p = 0 := nonpos_iff_eq_zero.1 h
+    simp
+  | succ l ih =>
+    rcases (h.lt_or_eq) with hlt | rfl
+    · have hpl : p ≤ l.castSucc := le_castSucc_iff.2 hlt
+      rw [partialProd_succ, ih hpl, removeNth_apply, succAbove_of_le_castSucc _ _ hpl,
+        mul_assoc _ (partialProd f l.castSucc.succ), succ_castSucc, ← partialProd_succ]
+    · rw [partialProd_removeNth_of_le f le_rfl, inv_mul_cancel_right]
+
 end Fin
 
 namespace Fintype
@@ -357,6 +399,36 @@ theorem sum_finSuccAboveEquiv_last {M : Type*} [AddCommMonoid M] (n : ℕ)
     ∑ i : Fin n, z ⟨i.castSucc, Fin.castSucc_ne_last i⟩ = ∑ j, z j := by
   simpa only [finSuccAboveEquiv_last_apply] using
     Equiv.sum_comp (finSuccAboveEquiv (Fin.last n)) z
+
+/-- The word in the indices `Fin n` listing each index `i` exactly `αᵢ` times, in increasing
+order. Evaluating an iterated derivative on the directions of this word computes the monomial
+`∂^α` in directional derivatives. -/
+def multiIndexWord {n : ℕ} (α : Fin n → ℕ) (j : Fin (∑ i, α i)) : Fin n :=
+  (finSigmaFinEquiv.symm j).1
+
+/-- The letter of `TauCeti.multiIndexWord α` at a position in the block of `i` is `i`. -/
+@[simp]
+theorem multiIndexWord_finSigmaFinEquiv {n : ℕ} (α : Fin n → ℕ) (p : (i : Fin n) × Fin (α i)) :
+    multiIndexWord α (finSigmaFinEquiv p) = p.1 := by
+  simp [multiIndexWord]
+
+open Finset in
+/-- Each index `i` occurs exactly `αᵢ` times in `TauCeti.multiIndexWord α`. -/
+@[simp]
+theorem card_filter_multiIndexWord_eq {n : ℕ} (α : Fin n → ℕ) (i : Fin n) :
+    #{j | multiIndexWord α j = i} = α i := by
+  rw [card_filter, ← Fintype.sum_equiv finSigmaFinEquiv (fun p ↦ if p.1 = i then 1 else 0)
+    (fun j ↦ if multiIndexWord α j = i then 1 else 0) fun p ↦ by simp,
+    Fintype.sum_sigma]
+  simp [apply_ite]
+
+/-- A product over the letters of `TauCeti.multiIndexWord α` is the monomial `∏ᵢ gᵢ ^ αᵢ`. -/
+@[to_additive (attr := simp) /-- A sum over the letters of `TauCeti.multiIndexWord α` is
+`∑ᵢ αᵢ • gᵢ`. -/]
+theorem prod_multiIndexWord {n : ℕ} {M : Type*} [CommMonoid M] (α : Fin n → ℕ) (g : Fin n → M) :
+    ∏ j, g (multiIndexWord α j) = ∏ i, g i ^ α i := by
+  rw [← Fintype.prod_equiv finSigmaFinEquiv (fun p ↦ g p.1) _ fun p ↦ by simp]
+  simp [Fintype.prod_sigma]
 
 end TauCeti
 

@@ -59,9 +59,11 @@ the energy of nearby exponential-variation curves.
   of the squared speed `‖∂_t F (s, t)‖²` at `s = 0`.
 * `TauCeti.Manifold.hasDerivAt_deriv_energy`: **the second variation of energy** for a `C³` family
   with free endpoints.
-* `TauCeti.Manifold.hasDerivAt_deriv_energy_of_isGeodesicCurveOn`: specialization to a central
+* `TauCeti.Manifold.hasDerivAt_deriv_energy_of_acceleration_eq_zero` and
+  `TauCeti.Manifold.hasDerivAt_deriv_energy_of_isGeodesicCurveOn`: specialization to a central
   curve which is a geodesic on `uIoo a b`.
-* `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_deriv_energy` and
+* `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_deriv_energy`,
+  `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_deriv_energy_of_acceleration_eq_zero`, and
   `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_deriv_energy_of_isGeodesicCurveOn`:
   fixed-endpoint specializations.
 * `TauCeti.Manifold.hasDerivAt_deriv_energy_of_isGeodesicCurveOn_of_curveVelocityLift_eq`:
@@ -424,6 +426,28 @@ theorem hasDerivAt_deriv_energy {a b : ℝ}
     integral_inner_alongCurve_acceleration_fst_curveVelocity hF]
   ring
 
+/-- **The second variation of energy along a geodesic.** If the central curve `γ = F 0` of a
+family which is `C³` at every point of `{0} × [a, b]` has vanishing covariant acceleration on the
+open interval between `a` and `b`, that is, it is a geodesic there, then the derivative of the
+energy of `F s` is differentiable at `s = 0`, with derivative `I(V, V) + ⟪A(b), γ'(b)⟫ -
+⟪A(a), γ'(a)⟫`, where `I` is the index form, `V` the variation field and
+`A(t) = D_s ∂_s F (0, t)` the transverse acceleration. -/
+theorem hasDerivAt_deriv_energy_of_acceleration_eq_zero {a b : ℝ}
+    (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
+    (hγ : ∀ t ∈ uIoo a b, acceleration (leviCivitaConnection I M) (F 0) t = 0) :
+    HasDerivAt (deriv fun s ↦ energy I (F s) a b)
+      (indexForm I (F 0) (variationField I F) (variationField I F) a b +
+        inner ℝ (acceleration (leviCivitaConnection I M) (fun q ↦ F q b) 0)
+          (curveVelocity I (F 0) b) -
+        inner ℝ (acceleration (leviCivitaConnection I M) (fun q ↦ F q a) 0)
+          (curveVelocity I (F 0) a)) 0 := by
+  have hzero : ∫ t in a..b, inner ℝ (acceleration (leviCivitaConnection I M) (fun q ↦ F q t) 0)
+      (acceleration (leviCivitaConnection I M) (F 0) t) = 0 := by
+    refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ 0) fun t ht ↦ ?_).trans
+      intervalIntegral.integral_zero
+    rw [hγ t ht, inner_zero_right]
+  simpa only [hzero, sub_zero] using hasDerivAt_deriv_energy hF
+
 /-- **The second variation of energy of a geodesic.** If `F` is `C³` along `{0} × [a, b]` and its
 central curve `γ = F 0` is a geodesic on the open segment `uIoo a b`, then
 
@@ -465,6 +489,22 @@ theorem IsFixedEndpointVariation.hasDerivAt_deriv_energy {a b : ℝ}
   refine (TauCeti.Manifold.hasDerivAt_deriv_energy hF.contMDiffAt).congr_deriv ?_
   rw [ha, hb, inner_zero_left, inner_zero_left]
   ring
+
+/-- **The second variation of energy at a geodesic with fixed endpoints is the index form.** For
+a `C³` variation `F` with fixed endpoints between `a` and `b` of a curve `γ = F 0` which is a
+geodesic on `uIoo a b`, the derivative of the energy of `F s` is differentiable at `s = 0`, with
+derivative the index form `I(V, V)` of the variation field `V`. -/
+theorem IsFixedEndpointVariation.hasDerivAt_deriv_energy_of_acceleration_eq_zero {a b : ℝ}
+    (hF : IsFixedEndpointVariation I 3 F a b)
+    (hγ : ∀ t ∈ uIoo a b, acceleration (leviCivitaConnection I M) (F 0) t = 0) :
+    HasDerivAt (deriv fun s ↦ energy I (F s) a b)
+      (indexForm I (F 0) (variationField I F) (variationField I F) a b) 0 := by
+  have hA {t : ℝ} (h : (fun q ↦ F q t) =ᶠ[𝓝 0] fun _ ↦ F 0 t) :
+      acceleration (leviCivitaConnection I M) (fun q ↦ F q t) 0 = 0 := by
+    rw [h.acceleration_eq, acceleration_const]
+  simpa only [hA hF.eventually_apply_left, hA hF.eventually_apply_right, inner_zero_left,
+    add_zero, sub_zero] using
+    TauCeti.Manifold.hasDerivAt_deriv_energy_of_acceleration_eq_zero hF.contMDiffAt hγ
 
 /-- **Second variation of energy of a geodesic for fixed endpoints.** For a `C³` fixed-endpoint
 variation `F` of a curve `γ = F 0` which is a geodesic on `uIoo a b`, the second derivative of

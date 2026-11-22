@@ -285,8 +285,8 @@ theorem PiecewiseContMDiffSectionAlong.hasDerivAt_energy_exponentialVariation
         inner ℝ (W.val ⟨a, le_rfl, hγp.lt.le⟩) (curveVelocityWithin I γ (Icc a b) a) -
         ∫ t in a..b, inner ℝ (W.extendByZero t)
           (acceleration (leviCivitaConnection I M) γ t)) 0 := by
-  simpa only [W.extendByZero_of_mem ⟨hγp.lt.le, le_rfl⟩,
-    W.extendByZero_of_mem ⟨le_rfl, hγp.lt.le⟩] using
+  simpa only [W.extendByZero_apply_of_mem ⟨hγp.lt.le, le_rfl⟩,
+    W.extendByZero_apply_of_mem ⟨le_rfl, hγp.lt.le⟩] using
     hasDerivAt_energy_exponentialVariation_of_isPiecewiseContMDiffOn hγ
       (W.isPiecewiseContMDiffOn_extendByZero.of_le hn)
 

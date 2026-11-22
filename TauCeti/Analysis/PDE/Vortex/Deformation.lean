@@ -73,6 +73,32 @@ def sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℂ :=
 theorem sectionValue_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue x z = 2 * ((x z 2 : ℂ) + (x z 3 : ℂ) * I) := (rfl)
 
+/-- The real part of the section `α = 2 (p + i q)` is `2 p`. -/
+@[simp]
+theorem sectionValue_re (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    (sectionValue x z).re = 2 * x z 2 := by
+  simp [sectionValue_apply]
+
+/-- The imaginary part of the section `α = 2 (p + i q)` is `2 q`. -/
+@[simp]
+theorem sectionValue_im (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    (sectionValue x z).im = 2 * x z 3 := by
+  simp [sectionValue_apply]
+
+/-- The real part of `conj α_x α_y` in the field coordinates: `4 (p_x p_y + q_x q_y)`. -/
+theorem conj_sectionValue_mul_sectionValue_re (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    (starRingEnd ℂ (sectionValue x z) * sectionValue y z).re =
+      4 * (x z 2 * y z 2 + x z 3 * y z 3) := by
+  simp only [mul_re, conj_re, conj_im, sectionValue_re, sectionValue_im]
+  ring
+
+/-- The imaginary part of `conj α_x α_y` in the field coordinates: `4 (p_x q_y - q_x p_y)`. -/
+theorem conj_sectionValue_mul_sectionValue_im (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    (starRingEnd ℂ (sectionValue x z) * sectionValue y z).im =
+      4 * (x z 2 * y z 3 - x z 3 * y z 2) := by
+  simp only [mul_im, conj_re, conj_im, sectionValue_re, sectionValue_im]
+  ring
+
 /-- The section of a sum of fields is the sum of their sections. -/
 @[simp]
 theorem sectionValue_add (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -147,6 +173,14 @@ theorem norm_sectionValue_le (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) 
   rw [← sq_le_sq₀ (norm_nonneg _) (by positivity), sq_norm_sectionValue, mul_pow,
     EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
   nlinarith [sq_nonneg (x z 0), sq_nonneg (x z 1)]
+
+/-- The section of a field is bounded by its section coordinates: `|α| ≤ 2 (|p| + |q|)`. -/
+theorem norm_sectionValue_le_two_mul_abs_add_abs (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖sectionValue x z‖ ≤ 2 * (|x z 2| + |x z 3|) := by
+  rw [sectionValue_apply, norm_mul, Complex.norm_two]
+  gcongr
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_mul, norm_I, mul_one, norm_real, norm_real, Real.norm_eq_abs, Real.norm_eq_abs]
 
 /-- The section of a field vanishes exactly where `p ^ 2 + q ^ 2` does, for `p, q` its real
 coordinates. -/
@@ -228,6 +262,12 @@ theorem contDiff_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n : With
   rw [sectionValue_eq_ofRealCLM]
   exact contDiff_const.mul ((ofRealCLM.contDiff.comp hp).add
     ((ofRealCLM.contDiff.comp hq).mul contDiff_const))
+
+/-- The section of a continuous field is continuous. -/
+theorem continuous_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) :
+    Continuous (sectionValue x) :=
+  (contDiff_sectionValue (n := 0) (contDiff_zero.2 ((EuclideanSpace.proj 2).continuous.comp hx))
+    (contDiff_zero.2 ((EuclideanSpace.proj 3).continuous.comp hx))).continuous
 
 /-- The section `α = 2 (p + i q)` is differentiable wherever its real coordinates are. -/
 theorem differentiableAt_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
@@ -763,6 +803,21 @@ theorem gaugeDirection_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ �
     gaugeDirection x (t • f) z = t • gaugeDirection x f z := by
   ext i
   fin_cases i <;> simp [fderiv_const_smul_field] <;> ring
+
+/-- The infinitesimal gauge action of a `C^(n+1)` phase at a `Cⁿ` field is `Cⁿ`. -/
+theorem contDiff_gaugeDirection {x : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ → ℝ}
+    {n : WithTop ℕ∞} (hx : ContDiff ℝ n x) (hf : ContDiff ℝ (n + 1) f) :
+    ContDiff ℝ n (gaugeDirection x f) := by
+  have hdf (v : ℂ) : ContDiff ℝ n fun z ↦ fderiv ℝ f z v :=
+    (hf.fderiv_right le_rfl).clm_apply contDiff_const
+  have hf' : ContDiff ℝ n f := hf.of_le le_self_add
+  have hx' (i : Fin 4) : ContDiff ℝ n fun z ↦ x z i := contDiff_euclidean.1 hx i
+  refine contDiff_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa using (hdf 1).neg
+  · simpa using (hdf I).neg
+  · simpa using (hf'.mul (hx' 3)).neg
+  · simpa using hf'.mul (hx' 2)
 
 /-- The zero phase has zero infinitesimal gauge action. -/
 @[simp]

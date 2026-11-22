@@ -385,8 +385,8 @@ theorem PiecewiseContMDiffSectionAlong.eventually_energy_exponentialVariation_lt
       energy I (exponentialVariation I γ W.extendByZero s) a b < energy I γ a b := by
   refine eventually_energy_exponentialVariation_lt_of_indexForm_neg_of_isPiecewiseContMDiffOn
     hγ (W.isPiecewiseContMDiffOn_extendByZero.of_le hn) ?_ hneg
-  simpa only [W.extendByZero_of_mem ⟨hγp.lt.le, le_rfl⟩,
-    W.extendByZero_of_mem ⟨le_rfl, hγp.lt.le⟩] using hbdry
+  simpa only [W.extendByZero_apply_of_mem ⟨hγp.lt.le, le_rfl⟩,
+    W.extendByZero_apply_of_mem ⟨le_rfl, hγp.lt.le⟩] using hbdry
 
 end PiecewiseExponential
 
