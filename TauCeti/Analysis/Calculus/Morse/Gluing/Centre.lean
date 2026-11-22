@@ -152,17 +152,6 @@ private theorem exists_smul_comp_smul_eq_self [CompleteSpace Eᵤ] {ε δ η l :
     hmaps hcontr (mem_closedBall_self hδ.le) (edist_ne_top _ _)
   exact ⟨y, hy, hfix⟩
 
-omit [NormedSpace ℝ Eₛ] [NormedSpace ℝ Eᵤ] in
-/-- A neighbourhood of the centre of the split model contains the points whose two components
-have norm less than some `r > 0`. -/
-private theorem exists_pos_forall_toLp_mem {W : Set (WithLp 2 (Eₛ × Eᵤ))} (hW : W ∈ 𝓝 0) :
-    ∃ r > 0, ∀ (x : Eₛ) (y : Eᵤ), ‖x‖ < r → ‖y‖ < r → WithLp.toLp 2 (x, y) ∈ W := by
-  obtain ⟨r, hr, hrW⟩ := Metric.mem_nhds_iff.1 ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).tendsto 0
-    (by simpa using hW))
-  refine ⟨r, hr, fun x y hx hy ↦ hrW (?_ : (x, y) ∈ ball ((0 : Eₛ), (0 : Eᵤ)) r)⟩
-  rw [← ball_prod_same]
-  exact mk_mem_prod (mem_ball_zero_iff.2 hx) (mem_ball_zero_iff.2 hy)
-
 /-- **Gluing at the centre of the split hyperbolic box.** Let `y ↦ (g y, y)` be a `Kg`-Lipschitz
 graph in the entrance face `‖x‖ = ε` over the closed ball of radius `δ > 0` of the expanding
 factor, and `x ↦ (x, k x)` a `Kk`-Lipschitz graph through the centre over the closed ball of
@@ -183,7 +172,12 @@ theorem eventually_exists_splitQuadraticFlow_snd_eq [CompleteSpace Eᵤ] {ε δ 
         k (splitQuadraticFlow T (WithLp.toLp 2 (g y, y))).fst := by
   have hε : 0 ≤ ε := hgε 0 (mem_closedBall_self hδ.le) ▸ norm_nonneg _
   -- `W` contains the points whose two components are smaller than some `r`.
-  obtain ⟨r, hr, hW'⟩ := exists_pos_forall_toLp_mem hW
+  obtain ⟨r, hr, hrW⟩ := Metric.mem_nhds_iff.1 ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).tendsto 0
+    (by simpa using hW))
+  have hW' (x : Eₛ) (y : Eᵤ) (hx : ‖x‖ < r) (hy : ‖y‖ < r) : WithLp.toLp 2 (x, y) ∈ W :=
+    hrW (by
+      rw [← ball_prod_same]
+      exact mk_mem_prod (mem_ball_zero_iff.2 hx) (mem_ball_zero_iff.2 hy))
   -- The rate `e^{-T}` eventually beats every constant.
   have hsmall (C c : ℝ) (hc : 0 < c) : ∀ᶠ T in atTop, Real.exp (-T) * C < c := by
     simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.mul_const C).eventually

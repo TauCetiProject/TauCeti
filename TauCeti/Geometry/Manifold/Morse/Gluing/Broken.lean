@@ -100,16 +100,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M] {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- The points of the chart source whose coordinates have norm less than `ρ > 0` form a
-neighbourhood of the critical point. -/
-private theorem MorseChart.eventually_mem_source_norm_coord_lt {q : M} (φ : MorseChart E f q)
-    {ρ : ℝ} (hρ : 0 < ρ) : ∀ᶠ w in 𝓝 q, w ∈ φ.toChart.source ∧ ‖φ.coord (φ.toChart w)‖ < ρ := by
-  have hcont : ContinuousAt (fun w ↦ ‖φ.coord (φ.toChart w)‖) q :=
-    (φ.continuous_coord.norm.continuousAt).comp (φ.toChart.continuousAt φ.mem_source)
-  filter_upwards [φ.toChart.open_source.mem_nhds φ.mem_source,
-    hcont.eventually (gt_mem_nhds (by simpa [φ.apply_self] using hρ))] with w hw hwρ using ⟨hw, hwρ⟩
-
 namespace IsAdaptedPseudoGradient
 
 /-- **A Morse chart with a box at a critical point.** At the critical point `q` there are a Morse
