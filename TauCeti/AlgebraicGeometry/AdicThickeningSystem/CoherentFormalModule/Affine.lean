@@ -57,7 +57,7 @@ Transporting the section-tower functors along `specIso J` yields:
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory Opposite AlgebraicGeometry
 open TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.AdicThickeningSystem
 
 universe u
@@ -299,7 +299,9 @@ theorem specFiniteSectionsLim_map_hom (J : Ideal R) [IsPrecomplete J R]
 /-- **Coherent formal modules on `(Spec R)/V(J)` over a complete Noetherian ring** (Stacks,
 Lemma 30.23.1): when `R` is Noetherian and `J`-adically complete, coherent formal modules on the
 formal completion of `Spec R` along `V(J)` are equivalent to finite `R`-modules. -/
-@[stacks 087W]
+-- `@[expose]` is forced by dependent typing: the inverse module must reduce to the limit in the
+-- type of `coherentFormalModuleEquivSpecSelfInverseCompFiniteReductionIso_hom_app_reductionπ`.
+@[expose, stacks 087W]
 def coherentFormalModuleEquivSpecSelf (J : Ideal R) [IsNoetherianRing R] [IsAdicComplete J R] :
     FGModuleCat.{u} R ≌
       CoherentFormalModule
@@ -349,11 +351,31 @@ def coherentFormalModuleEquivSpecSelfInverseCompFiniteReductionIso (J : Ideal R)
         ⟨R, J, IsNoetherian.noetherian J⟩) ≪≫
     Functor.isoWhiskerRight (eqToIso (CoherentFormalModule.pullbackEquiv_inverse (specIso J))) _
 
+/-- The reductions-to-sections comparison for `coherentFormalModuleEquivSpecSelf J` is induced by
+the projections from the inverse limit. -/
+@[simp]
+theorem coherentFormalModuleEquivSpecSelfInverseCompFiniteReductionIso_hom_app_reductionπ
+    (J : Ideal R) [IsNoetherianRing R] [IsAdicComplete J R]
+    (M : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
+      (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom))))
+    (n : ℕ) (x : ((specSectionsTower J).obj M).lim) :
+    dsimp% only [CategoryTheory.Functor.comp_obj, CategoryTheory.ObjectProperty.ι_obj,
+      FGModuleCat.obj_carrier]
+    (((coherentFormalModuleEquivSpecSelfInverseCompFiniteReductionIso J).hom.app M).hom.app
+      (op n)).hom
+      (TauCeti.ModuleTower.reductionπ J
+        ((coherentFormalModuleEquivSpecSelf J).inverse.obj M).obj n x) =
+      ((specSectionsTower J).obj M).limπ n x :=
+  CoherentFormalModule.spfEquivFGModuleCatFunctorCompFiniteReductionIso_hom_app_reductionπ
+    ⟨R, J, IsNoetherian.noetherian J⟩ ((CoherentFormalModule.pullback (specIso J).inv).obj M) n x
+
 /-- **Coherent formal modules on `(Spec R)/V(J)` for a finitely generated ideal with Noetherian
 quotient** (Stacks, Lemma 30.23.1): if `J` is finitely generated and `R ⧸ J` is Noetherian, then
 `AdicCompletion J R` is Noetherian and coherent formal modules on `(Spec R)/V(J)` are equivalent to
 finite modules over `AdicCompletion J R`. -/
-@[stacks 087W]
+-- `@[expose]` is forced by dependent typing: the inverse module must reduce to the limit in the
+-- type of `coherentFormalModuleEquivSpecOfFGInverseCompFiniteReductionIso_hom_app_reductionπ`.
+@[expose, stacks 087W]
 def coherentFormalModuleEquivSpecOfFG (J : Ideal R) (fg : J.FG) [IsNoetherianRing (R ⧸ J)] :
     FGModuleCat.{u} (AdicCompletion J R) ≌
       CoherentFormalModule
@@ -420,11 +442,36 @@ def coherentFormalModuleEquivSpecOfFGInverseCompFiniteReductionIso (J : Ideal R)
     Functor.isoWhiskerRight
       (eqToIso (CoherentFormalModule.pullbackEquiv_inverse (specIsoSpfCompletion J fg))) _
 
+/-- The reductions-to-sections comparison for `coherentFormalModuleEquivSpecOfFG J fg` is induced
+by the projections from the inverse limit over the completed ring. -/
+@[simp]
+theorem coherentFormalModuleEquivSpecOfFGInverseCompFiniteReductionIso_hom_app_reductionπ
+    (J : Ideal R) (fg : J.FG) [IsNoetherianRing (R ⧸ J)]
+    (M : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
+      (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom))))
+    (n : ℕ)
+    (x : ((CoherentFormalModule.sectionsTower (AdicRing.completion J fg).ideal).obj
+      ((CoherentFormalModule.pullback (specIsoSpfCompletion J fg).inv).obj M)).lim) :
+    dsimp% only [CategoryTheory.Functor.comp_obj, CategoryTheory.ObjectProperty.ι_obj,
+      FGModuleCat.obj_carrier]
+    (((coherentFormalModuleEquivSpecOfFGInverseCompFiniteReductionIso J fg).hom.app M).hom.app
+      (op n)).hom
+      (TauCeti.ModuleTower.reductionπ (AdicRing.completion J fg).ideal
+        ((coherentFormalModuleEquivSpecOfFG J fg).inverse.obj M).obj n x) =
+      ((CoherentFormalModule.sectionsTower (AdicRing.completion J fg).ideal).obj
+        ((CoherentFormalModule.pullback (specIsoSpfCompletion J fg).inv).obj M)).limπ n x := by
+  let := Ideal.isNoetherianRing_adicCompletion_of_fg J fg
+  exact CoherentFormalModule.spfEquivFGModuleCatFunctorCompFiniteReductionIso_hom_app_reductionπ
+    (AdicRing.completion J fg)
+    ((CoherentFormalModule.pullback (specIsoSpfCompletion J fg).inv).obj M) n x
+
 /-- **Coherent formal modules on `(Spec R)/V(J)` over a Noetherian ring** (Stacks, Lemma 30.23.1):
 for any ideal `J` of a Noetherian ring `R`, coherent formal modules on the formal completion of
 `Spec R` along `V(J)` are equivalent to finite modules over the `J`-adic completion
 `AdicCompletion J R`. -/
-@[stacks 087W]
+-- `@[expose]` is forced by dependent typing: the inverse module must reduce to the limit in the
+-- type of `coherentFormalModuleEquivSpecInverseCompFiniteReductionIso_hom_app_reductionπ`.
+@[expose, stacks 087W]
 def coherentFormalModuleEquivSpec (J : Ideal R) [IsNoetherianRing R] :
     FGModuleCat.{u} (AdicCompletion J R) ≌
       CoherentFormalModule
@@ -469,6 +516,32 @@ def coherentFormalModuleEquivSpecInverseCompFiniteReductionIso (J : Ideal R)
         CoherentFormalModule.finiteSectionsTower
           (AdicRing.completion J (IsNoetherian.noetherian J)).ideal :=
   coherentFormalModuleEquivSpecOfFGInverseCompFiniteReductionIso J (IsNoetherian.noetherian J)
+
+/-- The reductions-to-sections comparison for `coherentFormalModuleEquivSpec J` is induced by the
+projections from the inverse limit over the completed ring. -/
+@[simp]
+theorem coherentFormalModuleEquivSpecInverseCompFiniteReductionIso_hom_app_reductionπ
+    (J : Ideal R) [IsNoetherianRing R]
+    (M : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
+      (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom))))
+    (n : ℕ)
+    (x : ((CoherentFormalModule.sectionsTower
+      (AdicRing.completion J (IsNoetherian.noetherian J)).ideal).obj
+      ((CoherentFormalModule.pullback
+        (specIsoSpfCompletion J (IsNoetherian.noetherian J)).inv).obj M)).lim) :
+    dsimp% only [CategoryTheory.Functor.comp_obj, CategoryTheory.ObjectProperty.ι_obj,
+      FGModuleCat.obj_carrier]
+    (((coherentFormalModuleEquivSpecInverseCompFiniteReductionIso J).hom.app M).hom.app
+      (op n)).hom
+      (TauCeti.ModuleTower.reductionπ
+        (AdicRing.completion J (IsNoetherian.noetherian J)).ideal
+        ((coherentFormalModuleEquivSpec J).inverse.obj M).obj n x) =
+      ((CoherentFormalModule.sectionsTower
+        (AdicRing.completion J (IsNoetherian.noetherian J)).ideal).obj
+        ((CoherentFormalModule.pullback
+          (specIsoSpfCompletion J (IsNoetherian.noetherian J)).inv).obj M)).limπ n x :=
+  coherentFormalModuleEquivSpecOfFGInverseCompFiniteReductionIso_hom_app_reductionπ
+    J (IsNoetherian.noetherian J) M n x
 
 end
 

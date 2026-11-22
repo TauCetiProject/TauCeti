@@ -305,10 +305,38 @@ lemma pullback_map_pullbackComp_hom_app_comp_pullbackSquareIso_hom_app
 
 /-- An isomorphism `e : X ≅ Y` of schemes induces an equivalence of categories of modules
 `Y.Modules ≌ X.Modules` by pullback along `e.hom` and `e.inv`. -/
+-- `@[expose]` is forced by dependent typing: clients must identify the types of
+-- `(pullbackEquiv e).unitIso` and `(pullbackEquiv e).counitIso` with the pullback coherence
+-- isomorphisms.
+@[expose]
 def pullbackEquiv (e : X ≅ Y) : Y.Modules ≌ X.Modules :=
-  CategoryTheory.Equivalence.mk (pullback e.hom) (pullback e.inv)
+  CategoryTheory.Equivalence.mk' (pullback e.hom) (pullback e.inv)
     ((pullbackId Y).symm ≪≫ pullbackCongr e.inv_hom_id.symm ≪≫ (pullbackComp e.inv e.hom).symm)
     (pullbackComp e.hom e.inv ≪≫ pullbackCongr e.hom_inv_id ≪≫ pullbackId X)
+    fun M ↦ by
+      simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, Functor.map_comp, Category.assoc]
+      have h0 : (pullback e.hom).map ((pullbackId Y).inv.app M) =
+          (pullbackCongr (Category.comp_id e.hom)).inv.app M ≫
+            (pullbackComp e.hom (𝟙 Y)).inv.app M := by
+        rw [← cancel_epi ((pullback e.hom).map ((pullbackId Y).hom.app M)),
+          ← Functor.map_comp, Iso.hom_inv_id_app, CategoryTheory.Functor.map_id,
+          ← pullbackComp_id_hom e.hom M]
+        simp
+      have h2 : (pullbackComp e.hom (𝟙 Y)).inv.app M ≫
+          (pullback e.hom).map ((pullbackCongr e.inv_hom_id.symm).hom.app M) =
+          eqToHom (by rw [e.inv_hom_id]) ≫ (pullbackComp e.hom (e.inv ≫ e.hom)).inv.app M := by
+        rw [pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app]
+      have h3 : (pullbackComp (e.hom ≫ e.inv) e.hom).inv.app M ≫
+          (pullbackCongr e.hom_inv_id).hom.app ((pullback e.hom).obj M) =
+          eqToHom (by rw [e.hom_inv_id]) ≫ (pullbackComp (𝟙 X) e.hom).inv.app M := by
+        rw [← cancel_epi ((pullbackComp (e.hom ≫ e.inv) e.hom).hom.app M),
+          Iso.hom_inv_id_app_assoc, ← cancel_mono ((pullbackComp (𝟙 X) e.hom).hom.app M),
+          Category.assoc, Category.assoc (eqToHom _), Iso.inv_hom_id_app, Category.comp_id]
+        exact pullbackCongr_hom_app_comp_pullbackComp_hom_app e.hom_inv_id e.hom M
+      rw [h0, Category.assoc, reassoc_of% h2,
+        pullbackComp_inv_app_comp_pullback_map_pullbackComp_inv_app_assoc,
+        Iso.inv_hom_id_app_assoc, reassoc_of% h3, pseudofunctor_right_unitality_app]
+      simp [pullbackCongr]
 
 /-- The forward functor of `pullbackEquiv e` is `pullback e.hom`. -/
 @[simp]
@@ -318,6 +346,56 @@ theorem pullbackEquiv_functor (e : X ≅ Y) : (pullbackEquiv e).functor = pullba
 /-- The inverse functor of `pullbackEquiv e` is `pullback e.inv`. -/
 @[simp]
 theorem pullbackEquiv_inverse (e : X ≅ Y) : (pullbackEquiv e).inverse = pullback e.inv :=
+  (rfl)
+
+/-- The unit isomorphism of `pullbackEquiv e` is the pullback coherence isomorphism
+`(pullbackId Y).symm ≪≫ pullbackCongr e.inv_hom_id.symm ≪≫ (pullbackComp e.inv e.hom).symm`. -/
+theorem pullbackEquiv_unitIso (e : X ≅ Y) :
+    (pullbackEquiv e).unitIso =
+      (pullbackId Y).symm ≪≫ pullbackCongr e.inv_hom_id.symm ≪≫ (pullbackComp e.inv e.hom).symm :=
+  (rfl)
+
+/-- The counit isomorphism of `pullbackEquiv e` is the pullback coherence isomorphism
+`pullbackComp e.hom e.inv ≪≫ pullbackCongr e.hom_inv_id ≪≫ pullbackId X`. -/
+theorem pullbackEquiv_counitIso (e : X ≅ Y) :
+    (pullbackEquiv e).counitIso =
+      pullbackComp e.hom e.inv ≪≫ pullbackCongr e.hom_inv_id ≪≫ pullbackId X :=
+  (rfl)
+
+/-- On components, the unit of `pullbackEquiv e` factors through `pullbackId`, `pullbackCongr`,
+and `pullbackComp`. -/
+@[simp]
+theorem pullbackEquiv_unitIso_hom_app (e : X ≅ Y) (M : Y.Modules) :
+    (pullbackEquiv e).unitIso.hom.app M =
+      (pullbackId Y).inv.app M ≫ (pullbackCongr e.inv_hom_id.symm).hom.app M ≫
+        (pullbackComp e.inv e.hom).inv.app M :=
+  (rfl)
+
+/-- On components, the inverse unit of `pullbackEquiv e` factors through `pullbackComp`,
+`pullbackCongr`, and `pullbackId`. -/
+@[simp]
+theorem pullbackEquiv_unitIso_inv_app (e : X ≅ Y) (M : Y.Modules) :
+    (pullbackEquiv e).unitIso.inv.app M =
+      (pullbackComp e.inv e.hom).hom.app M ≫ (pullbackCongr e.inv_hom_id.symm).inv.app M ≫
+        (pullbackId Y).hom.app M :=
+  (rfl)
+
+/-- On components, the counit of `pullbackEquiv e` factors through `pullbackComp`, `pullbackCongr`,
+and `pullbackId`. -/
+@[simp]
+theorem pullbackEquiv_counitIso_hom_app (e : X ≅ Y) (M : X.Modules) :
+    (pullbackEquiv e).counitIso.hom.app M =
+      (pullbackComp e.hom e.inv).hom.app M ≫ (pullbackCongr e.hom_inv_id).hom.app M ≫
+        (pullbackId X).hom.app M :=
+  (rfl)
+
+/-- On components, the inverse counit of `pullbackEquiv e` factors through `pullbackId`,
+`pullbackCongr`, and `pullbackComp`. -/
+@[simp]
+theorem pullbackEquiv_counitIso_inv_app (e : X ≅ Y) (M : X.Modules) :
+    (pullbackEquiv e).counitIso.inv.app M =
+      (pullbackId X).inv.app M ≫ (pullbackCongr e.hom_inv_id).inv.app M ≫
+        (pullbackComp e.hom e.inv).inv.app M :=
   (rfl)
 
 /-- Pulling back modules along an isomorphism of schemes is an equivalence of categories. -/

@@ -229,6 +229,13 @@ instance isLocallyNoetherian [AlgebraicGeometry.IsLocallyNoetherian X] :
 instance isIso_toScheme_bot (n : ℕ) : IsIso (toScheme X ⊥ n) :=
   (isIso_subschemeι_iff_eq_bot _).mpr (by rw [← zero_eq_bot, zero_pow n.succ_ne_zero])
 
+/-- Each step transition of the formal completion along `V(⊥)` is an isomorphism. -/
+instance isIso_ι_bot (n : ℕ) : IsIso ((X.formalCompletion ⊥).ι n) := by
+  have : IsIso (((X.formalCompletion ⊥).ι n) ≫ toScheme X ⊥ (n + 1)) := by
+    rw [ι_toScheme]
+    infer_instance
+  exact IsIso.of_isIso_comp_right ((X.formalCompletion ⊥).ι n) (toScheme X ⊥ (n + 1))
+
 /-- The formal completion along `V(⊥) = X` is the constant system of `X`. -/
 noncomputable def botIso : X.formalCompletion ⊥ ≅ AdicThickeningSystem.ofScheme.obj X :=
   AdicThickeningSystem.isoMk (fun n ↦ (asIso (toScheme X ⊥ n) : _ ≅ X)) fun n ↦

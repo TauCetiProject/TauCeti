@@ -711,10 +711,29 @@ theorem pullback_id_comp_app (f : 𝔛 ⟶ 𝔜) (M : CoherentFormalModule 𝔜)
 
 /-- An isomorphism `e : 𝔛 ≅ 𝔜` of adic thickening systems induces an equivalence of categories of
 coherent formal modules by pullback along `e.hom` and `e.inv`. -/
+-- `@[expose]` is forced by dependent typing: clients must identify the types of
+-- `(pullbackEquiv e).unitIso` and `(pullbackEquiv e).counitIso` with the pullback coherence
+-- isomorphisms.
+@[expose]
 def pullbackEquiv (e : 𝔛 ≅ 𝔜) : CoherentFormalModule 𝔜 ≌ CoherentFormalModule 𝔛 :=
-  CategoryTheory.Equivalence.mk (pullback e.hom) (pullback e.inv)
+  CategoryTheory.Equivalence.mk' (pullback e.hom) (pullback e.inv)
     ((pullbackId 𝔜).symm ≪≫ pullbackCongr e.inv_hom_id.symm ≪≫ (pullbackComp e.inv e.hom).symm)
     (pullbackComp e.hom e.inv ≪≫ pullbackCongr e.hom_inv_id ≪≫ pullbackId 𝔛)
+    fun M ↦ hom_ext fun n ↦ by
+      have htri := (Scheme.Modules.pullbackEquiv
+        { hom := e.hom.app n
+          inv := e.inv.app n
+          hom_inv_id := congrArg (·.app n) e.hom_inv_id
+          inv_hom_id := congrArg (·.app n) e.inv_hom_id }).functor_unitIso_comp (M.obj n)
+      dsimp only [CategoryTheory.Equivalence.unit, CategoryTheory.Equivalence.counit,
+        Scheme.Modules.pullbackEquiv] at htri
+      simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, comp_app, pullback_map_app,
+        pullbackId_inv_app_app, pullbackId_hom_app_app, pullbackComp_hom_app_app,
+        pullbackComp_inv_app_app, pullbackCongr_hom_app_app, Functor.map_comp,
+        Category.assoc] at htri ⊢
+      simp only [Scheme.Modules.pullbackCongr, eqToIso.hom, eqToIso.inv, eqToHom_app,
+        eqToHom_refl] at htri ⊢
+      exact htri
 
 @[simp]
 theorem pullbackEquiv_functor (e : 𝔛 ≅ 𝔜) : (pullbackEquiv e).functor = pullback e.hom := by
@@ -723,6 +742,56 @@ theorem pullbackEquiv_functor (e : 𝔛 ≅ 𝔜) : (pullbackEquiv e).functor = 
 @[simp]
 theorem pullbackEquiv_inverse (e : 𝔛 ≅ 𝔜) : (pullbackEquiv e).inverse = pullback e.inv := by
   rfl
+
+/-- The unit isomorphism of `pullbackEquiv e` is the pullback coherence isomorphism
+`(pullbackId 𝔜).symm ≪≫ pullbackCongr e.inv_hom_id.symm ≪≫ (pullbackComp e.inv e.hom).symm`. -/
+theorem pullbackEquiv_unitIso (e : 𝔛 ≅ 𝔜) :
+    (pullbackEquiv e).unitIso =
+      (pullbackId 𝔜).symm ≪≫ pullbackCongr e.inv_hom_id.symm ≪≫ (pullbackComp e.inv e.hom).symm :=
+  (rfl)
+
+/-- The counit isomorphism of `pullbackEquiv e` is the pullback coherence isomorphism
+`pullbackComp e.hom e.inv ≪≫ pullbackCongr e.hom_inv_id ≪≫ pullbackId 𝔛`. -/
+theorem pullbackEquiv_counitIso (e : 𝔛 ≅ 𝔜) :
+    (pullbackEquiv e).counitIso =
+      pullbackComp e.hom e.inv ≪≫ pullbackCongr e.hom_inv_id ≪≫ pullbackId 𝔛 :=
+  (rfl)
+
+/-- On components, the unit of `pullbackEquiv e` factors through `pullbackId`, `pullbackCongr`,
+and `pullbackComp`. -/
+@[simp]
+theorem pullbackEquiv_unitIso_hom_app (e : 𝔛 ≅ 𝔜) (M : CoherentFormalModule 𝔜) :
+    (pullbackEquiv e).unitIso.hom.app M =
+      (pullbackId 𝔜).inv.app M ≫ (pullbackCongr e.inv_hom_id.symm).hom.app M ≫
+        (pullbackComp e.inv e.hom).inv.app M :=
+  (rfl)
+
+/-- On components, the inverse unit of `pullbackEquiv e` factors through `pullbackComp`,
+`pullbackCongr`, and `pullbackId`. -/
+@[simp]
+theorem pullbackEquiv_unitIso_inv_app (e : 𝔛 ≅ 𝔜) (M : CoherentFormalModule 𝔜) :
+    (pullbackEquiv e).unitIso.inv.app M =
+      (pullbackComp e.inv e.hom).hom.app M ≫ (pullbackCongr e.inv_hom_id.symm).inv.app M ≫
+        (pullbackId 𝔜).hom.app M :=
+  (rfl)
+
+/-- On components, the counit of `pullbackEquiv e` factors through `pullbackComp`, `pullbackCongr`,
+and `pullbackId`. -/
+@[simp]
+theorem pullbackEquiv_counitIso_hom_app (e : 𝔛 ≅ 𝔜) (M : CoherentFormalModule 𝔛) :
+    (pullbackEquiv e).counitIso.hom.app M =
+      (pullbackComp e.hom e.inv).hom.app M ≫ (pullbackCongr e.hom_inv_id).hom.app M ≫
+        (pullbackId 𝔛).hom.app M :=
+  (rfl)
+
+/-- On components, the inverse counit of `pullbackEquiv e` factors through `pullbackId`,
+`pullbackCongr`, and `pullbackComp`. -/
+@[simp]
+theorem pullbackEquiv_counitIso_inv_app (e : 𝔛 ≅ 𝔜) (M : CoherentFormalModule 𝔛) :
+    (pullbackEquiv e).counitIso.inv.app M =
+      (pullbackId 𝔛).inv.app M ≫ (pullbackCongr e.hom_inv_id).inv.app M ≫
+        (pullbackComp e.hom e.inv).inv.app M :=
+  (rfl)
 
 instance isEquivalence_pullback (g : 𝔛 ⟶ 𝔜) [IsIso g] : (pullback g).IsEquivalence :=
   (pullbackEquiv (asIso g)).isEquivalence_functor
@@ -833,12 +902,6 @@ end General
 section Bot
 
 variable (X : Scheme.{u})
-
-private instance isIso_ι_bot (n : ℕ) : IsIso ((X.formalCompletion ⊥).ι n) := by
-  have : IsIso (((X.formalCompletion ⊥).ι n) ≫ toScheme X ⊥ (n + 1)) := by
-    rw [ι_toScheme]
-    infer_instance
-  exact IsIso.of_isIso_comp_right ((X.formalCompletion ⊥).ι n) (toScheme X ⊥ (n + 1))
 
 instance faithful_completionFunctor_bot : (completionFunctor X ⊥).Faithful where
   map_injective {_ _} _ _ h :=
