@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Group.GeometryOfNumbers
+public import TauCeti.MeasureTheory.Group.GeometryOfNumbers.Basic
 public import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!

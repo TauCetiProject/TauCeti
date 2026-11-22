@@ -7,32 +7,22 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCone
-public import Mathlib.RingTheory.Complex
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
-public import TauCeti.RingTheory.NormTrace.Pi
-public import TauCeti.RingTheory.NormTrace.Prod
 
 /-!
 # The volume scaling of multiplication on the mixed space
 
 Multiplication by a fixed point `c` of the mixed space is an `ℝ`-linear endomorphism whose
-determinant is the `ℝ`-algebra norm of `c`, so it scales Lebesgue measure by the absolute value
-of that norm.  The norm is computed here as one factor per real place and one `Complex.normSq`
-per complex place. This algebra-norm calculation holds for any field with finitely many infinite
-places. For a number field, its absolute value is `mixedEmbedding.norm c`.
+determinant is the `ℝ`-algebra norm of `c` (`NumberField.mixedEmbedding.algebraNorm_apply`, in
+`CanonicalEmbedding.Basic`), so it scales Lebesgue measure by the absolute value of that norm
+(`NumberField.mixedEmbedding.abs_algebraNorm`).
 
 Specialising to the image of a unit, which has mixed norm one, gives that the unit action on the
 mixed space leaves the volume of every set unchanged.
 
 ## Main results
 
-* `NumberField.mixedEmbedding.algebraNorm_apply`: the `ℝ`-algebra norm of `c`, as a product over
-  the places;
-* `TauCeti.NumberField.mixedEmbedding.algebraNorm_multSqrt`: the `ℝ`-algebra norm of `multSqrt K`
-  is `2 ^ nrComplexPlaces K`;
-* `NumberField.mixedEmbedding.abs_algebraNorm`: the absolute value of that norm is
-  `mixedEmbedding.norm c`;
 * `NumberField.mixedEmbedding.abs_det_changeOfVariables`: the absolute value of the real
   determinant of the `mixedSpace K`-linear change of variables `z ↦ ∑ i, z i • b i` of
   `ι → mixedSpace K`, for any family `b` of vectors of `ι → K`, is `|N (det b)|`;
@@ -52,28 +42,7 @@ open scoped Pointwise
 
 namespace NumberField.mixedEmbedding
 
-variable {K : Type*} [Field K]
-
-open scoped Classical in
-/-- **The `ℝ`-algebra norm of a point of the mixed space.**  Each real coordinate contributes
-its own factor and each complex coordinate contributes the norm of multiplication by a complex
-number, namely `Complex.normSq`. -/
-theorem algebraNorm_apply [Fintype (InfinitePlace K)] (c : mixedSpace K) :
-    Algebra.norm ℝ c = (∏ w, c.1 w) * ∏ w, Complex.normSq (c.2 w) := by
-  simp [TauCeti.Algebra.norm_prod, TauCeti.Algebra.norm_pi, Algebra.norm_complex_apply]
-
-variable [NumberField K]
-
-/-- **The absolute `ℝ`-algebra norm of `c` is the mixed norm of `c`.**  Reach for this rather
-than `algebraNorm_apply` when the norm feeds a measure-scaling lemma such as
-`Measure.addHaar_image_linearMap`, which asks for the absolute value. -/
-theorem abs_algebraNorm (c : mixedSpace K) : |Algebra.norm ℝ c| = mixedEmbedding.norm c := by
-  -- Both sides are the same product of local absolute values: a real place contributes `|c.1 w|`
-  -- with `mult w = 1`, a complex place `Complex.normSq (c.2 w) = ‖c.2 w‖ ^ 2` with `mult w = 2`.
-  rw [algebraNorm_apply, abs_mul, Finset.abs_prod, Finset.abs_prod, mixedEmbedding.norm_apply,
-    InfinitePlace.prod_eq_prod_mul_prod]
-  simp [normAtPlace_apply_of_isReal, normAtPlace_apply_of_isComplex, Complex.normSq_eq_norm_sq,
-    Subtype.prop]
+variable {K : Type*} [Field K] [NumberField K]
 
 open scoped Classical in
 /-- **Multiplication by `c` scales volume by the mixed norm of `c`.**  The set `A` is arbitrary,
@@ -135,15 +104,3 @@ theorem abs_det_changeOfVariables {ι : Type*} [Fintype ι] [DecidableEq ι]
   simp
 
 end NumberField.mixedEmbedding
-
-namespace TauCeti.NumberField.mixedEmbedding
-
-/-- The `ℝ`-algebra norm of `multSqrt K` is `2 ^ nrComplexPlaces K`. -/
-theorem algebraNorm_multSqrt {K : Type*} [Field K] [NumberField K] :
-    Algebra.norm ℝ (multSqrt K) = (2 : ℝ) ^ InfinitePlace.nrComplexPlaces K := by
-  classical
-  rw [_root_.NumberField.mixedEmbedding.algebraNorm_apply]
-  simp only [multSqrt_apply_isReal, multSqrt_apply_isComplex, Finset.prod_const_one, one_mul,
-    Complex.normSq_ofReal, Real.mul_self_sqrt zero_le_two, Finset.prod_const, Finset.card_univ]
-
-end TauCeti.NumberField.mixedEmbedding

@@ -8,9 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import TauCeti.NumberTheory.Height.Arakelov.KernelBasis
 import TauCeti.LinearAlgebra.Matrix.Rank
-import TauCeti.MeasureTheory.Group.GeometryOfNumbers
+import TauCeti.MeasureTheory.Group.GeometryOfNumbers.Euclidean
 import TauCeti.NumberTheory.Height.Arakelov.Subspace.Bounds
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
 
 /-!
 # Siegel's lemma via Arakelov subspace heights
@@ -237,37 +236,22 @@ theorem exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow {W : Submodul
   have : Nontrivial W.euclideanSpan := by
     rw [← finrank_pos_iff (R := ℝ), hfin]
     exact Nat.mul_pos finrank_pos finrank_pos
-  set T := W.mulMixedSubmodule (multSqrt K)
-  have hT_det : LinearMap.det T ≠ 0 := by
-    rw [W.det_mulMixedSubmodule, algebraNorm_multSqrt]
-    positivity
-  let eT : W.euclideanSpan ≃L[ℝ] W.euclideanSpan :=
-    (T.equivOfDetNeZero hT_det).toContinuousLinearEquiv
-  have heT : (eT.toLinearEquiv : W.euclideanSpan →ₗ[ℝ] W.euclideanSpan) =
-      W.mulMixedSubmodule (multSqrt K) := by
-    dsimp only [eT]
-    rw [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, LinearEquiv.coe_ofIsUnitDet]
-  let L' : Submodule ℤ W.euclideanSpan := ZLattice.comap ℝ W.integerLattice eT.symm.toLinearMap
-  -- Apply Minkowski's shortest-vector bound to the scaled lattice `T (W.integerLattice)`.
+  let L' := ZLattice.comap ℝ W.integerLattice
+    (W.mulMixedSubmoduleEquiv (isUnit_multSqrt K)).symm.toLinearMap
+  -- Apply Minkowski's shortest-vector bound to the scaled lattice `L'`.
   obtain ⟨x, hxL', hx0, hx_norm⟩ := ZLattice.exists_ne_zero_mem_norm_le L'
-  have hwL : eT.symm x ∈ W.integerLattice := by
-    rwa [← SetLike.mem_coe, ZLattice.coe_comap] at hxL'
-  set z : W.integerPoints := W.integerPointsEquivIntegerLattice.symm ⟨eT.symm x, hwL⟩
-  have hz_ne : (z : ι → 𝓞 K) ≠ 0 := by
-    intro hz0
-    apply hx0
-    have h0 : (⟨eT.symm x, hwL⟩ : W.integerLattice) = 0 :=
-      (W.integerPointsEquivIntegerLattice.symm.map_eq_zero_iff).mp (Subtype.ext hz0)
-    exact eT.symm.injective ((congrArg Subtype.val h0).trans (map_zero eT.symm).symm)
+  set z : W.integerPoints :=
+    (W.integerPointsEquivComapMulMixed (isUnit_multSqrt K)).symm ⟨x, hxL'⟩
+  have hz_ne : (z : ι → 𝓞 K) ≠ 0 := fun hz0 ↦ hx0 <| congrArg Subtype.val <|
+    (W.integerPointsEquivComapMulMixed (isUnit_multSqrt K)).symm.map_eq_zero_iff.mp
+      (Subtype.ext hz0)
   have hTx :
       W.mulMixedSubmodule (multSqrt K) (W.integerPointsEquivIntegerLattice z : W.euclideanSpan) =
         x := by
-    have hzw : (W.integerPointsEquivIntegerLattice z : W.euclideanSpan) = eT.symm x :=
-      congrArg Subtype.val (W.integerPointsEquivIntegerLattice.apply_symm_apply ⟨eT.symm x, hwL⟩)
-    rw [hzw, ← heT]
-    exact eT.apply_symm_apply x
-  have hcov_rpow := W.covolume_comap_mulMixedSubmodule_multSqrt_rpow hW eT heT
-  rw [hfin, hcov_rpow] at hx_norm
+    rw [← W.coe_integerPointsEquivComapMulMixed_apply (isUnit_multSqrt K) z]
+    exact congrArg Subtype.val
+      ((W.integerPointsEquivComapMulMixed (isUnit_multSqrt K)).apply_symm_apply ⟨x, hxL'⟩)
+  rw [hfin, W.covolume_comap_mulMixedSubmodule_multSqrt_rpow hW] at hx_norm
   refine ⟨z, z.property, hz_ne, ?_⟩
   calc height2 (fun i ↦ ((z : ι → 𝓞 K) i : K))
       ≤ ‖x‖ / √(D : ℝ) := hTx ▸ height2_le_norm_mulMixedSubmodule_multSqrt_div W z

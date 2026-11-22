@@ -21,8 +21,9 @@ lemma of `TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PlaceDecomposition
    `euclideanBallSlice` has volume `1`, while for `⊤ : Submodule K (Fin n → K)` `supSlice` has
    volume at least `2 ^ (r₁ * n) * π ^ (r₂ * n)`.
 1. **Single rational linear form `(1, 2)` (`U = 1, V = 2`).** `TauCeti.exists_ne_zero_height2_le`
-   produces a nonzero solution of `x 0 + 2 * x 1 = 0` with `H₂(x) ≤ √2 * √5`, while `(-2, 1)`
-   attains `H₂(-2, 1) = √5 ≤ √2 * √5`.
+   produces a nonzero rational solution of `x 0 + 2 * x 1 = 0` with `H₂(x) ≤ √2 * √5`, and
+   `Matrix.exists_ne_zero_int_mulVec_eq_zero_height2_le` produces a nonzero integer solution with
+   the same bound, while `(-2, 1)` attains `H₂(-2, 1) = √5 ≤ √2 * √5`.
 2. **Repeated rational rows `(1, 1, 0)` (`U = 2, V = 3`, rank `1`).** Without row independence,
    `TauCeti.exists_ne_zero_height2_le` gives a nonzero solution of Euclidean height at most `2 * √3`
    (attained with slack by `(0, 0, 1)` of height `1`), while
@@ -72,6 +73,8 @@ example (K : Type*) [Field K] [NumberField K] (n : ℕ) :
 
 example :
     (∃ x : Fin 2 → ℚ, x ≠ 0 ∧ x 0 + 2 * x 1 = 0 ∧ height2 x ≤ √2 * √5) ∧
+      (∃ z : Fin 2 → ℤ, z ≠ 0 ∧ (z 0 : ℚ) + 2 * (z 1 : ℚ) = 0 ∧
+        height2 (fun i ↦ (z i : ℚ)) ≤ √2 * √5) ∧
       height2 ![-2, (1 : ℚ)] = √5 ∧ √5 ≤ √2 * √5 := by
   let L : Fin 1 → Fin 2 → ℚ := ![![1, 2]]
   have hL : ∀ i, L i ≠ 0 := fun i ↦ by fin_cases i; exact fun h ↦ one_ne_zero (congrFun h 0)
@@ -81,10 +84,16 @@ example :
   obtain ⟨x, hx0, hLx, hxle⟩ := exists_ne_zero_height2_le hL (by decide)
   rw [Fintype.card_fin, Fintype.card_fin, NumberField.discr_rat, finrank_self,
     Fin.prod_univ_one, hH] at hxle
+  obtain ⟨z, hz0, hLz, hzle⟩ :=
+    Matrix.exists_ne_zero_int_mulVec_eq_zero_height2_le (A := Matrix.of L) hL (by decide)
+  rw [Fintype.card_fin, Fintype.card_fin, Fin.prod_univ_one,
+    show (Matrix.of L).row 0 = L 0 from rfl, hH] at hzle
   have hgen : height2 ![-2, (1 : ℚ)] = √5 := by
     have : ![-2, (1 : ℚ)] = ((↑) : ℤ → ℚ) ∘ ![-2, 1] := by ext j; fin_cases j <;> simp
     rw [this, height2_intCast_eq_sqrt_of_gcd_eq_one (by decide)]; norm_num [Fin.sum_univ_two]
   exact ⟨⟨x, hx0, by simpa [L, Fin.sum_univ_two] using hLx 0, by norm_num at hxle; exact hxle⟩,
+    ⟨z, hz0, by simpa [L, Matrix.mulVec, dotProduct, Fin.sum_univ_two] using congrFun hLz 0,
+      by norm_num at hzle; exact hzle⟩,
     hgen, le_mul_of_one_le_left (Real.sqrt_nonneg 5) (Real.one_le_sqrt.2 one_le_two)⟩
 
 /-! ### 2. Repeated rational rows `(1, 1, 0)`: rank `1` vs `U = 2` -/

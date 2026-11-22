@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.NumberTheory.DiophantineApproximation.Basic
-public import TauCeti.MeasureTheory.Group.GeometryOfNumbers
+public import TauCeti.MeasureTheory.Group.GeometryOfNumbers.Basic
 
 /-!
 # Dirichlet's theorem for systems of linear forms

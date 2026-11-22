@@ -8,6 +8,10 @@ module
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import Mathlib.NumberTheory.NumberField.House
 
+import Mathlib.RingTheory.Complex
+import TauCeti.RingTheory.NormTrace.Pi
+import TauCeti.RingTheory.NormTrace.Prod
+
 /-!
 # Coordinatewise embeddings, sup norm, and the integer lattice in the mixed space
 
@@ -50,6 +54,12 @@ equivalence `TauCeti.NumberField.mixedEmbedding.integerLatticeEquiv K`.
 * `TauCeti.NumberField.mixedEmbedding.abs_normAtPlace_sub_normAtPlace_le_norm`:
   `|normAtPlace w x - normAtPlace w y| ≤ ‖x - y‖`.
 * `TauCeti.NumberField.mixedEmbedding.normAtPlace_multSqrt`: `normAtPlace w (multSqrt K) = √w.mult`.
+* `TauCeti.NumberField.mixedEmbedding.isUnit_multSqrt`: `multSqrt K` is a unit in `mixedSpace K`.
+* `NumberField.mixedEmbedding.algebraNorm_apply`: the `ℝ`-algebra norm of `c : mixedSpace K` as a
+  product over the infinite places.
+* `NumberField.mixedEmbedding.abs_algebraNorm`: `|Algebra.norm ℝ c| = mixedEmbedding.norm c`.
+* `TauCeti.NumberField.mixedEmbedding.algebraNorm_multSqrt`: the `ℝ`-algebra norm of `multSqrt K`
+  is `2 ^ nrComplexPlaces K`.
 * `TauCeti.NumberField.norm_mixedEmbedding`: `‖mixedEmbedding K x‖ = house x`.
 * `TauCeti.NumberField.mixedEmbedding.coe_integerLatticeEquiv` and
   `TauCeti.NumberField.mixedEmbedding.mixedEmbedding_integerLatticeEquiv_symm`: coercing
@@ -59,6 +69,30 @@ equivalence `TauCeti.NumberField.mixedEmbedding.integerLatticeEquiv K`.
 public section
 
 open NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
+
+namespace NumberField.mixedEmbedding
+
+variable {K : Type*} [Field K]
+
+open scoped Classical in
+/-- **The `ℝ`-algebra norm of a point of the mixed space.** Each real coordinate contributes
+its own factor and each complex coordinate contributes the norm of multiplication by a complex
+number, namely `Complex.normSq`. -/
+theorem algebraNorm_apply [Fintype (InfinitePlace K)] (c : mixedSpace K) :
+    Algebra.norm ℝ c = (∏ w, c.1 w) * ∏ w, Complex.normSq (c.2 w) := by
+  simp [TauCeti.Algebra.norm_prod, TauCeti.Algebra.norm_pi, Algebra.norm_complex_apply]
+
+/-- **The absolute `ℝ`-algebra norm of `c` is the mixed norm of `c`.** Reach for this rather
+than `algebraNorm_apply` when the norm feeds a measure-scaling lemma such as
+`Measure.addHaar_image_linearMap`, which asks for the absolute value. -/
+theorem abs_algebraNorm [NumberField K] (c : mixedSpace K) :
+    |Algebra.norm ℝ c| = mixedEmbedding.norm c := by
+  rw [algebraNorm_apply, abs_mul, Finset.abs_prod, Finset.abs_prod, mixedEmbedding.norm_apply,
+    InfinitePlace.prod_eq_prod_mul_prod]
+  simp [normAtPlace_apply_of_isReal, normAtPlace_apply_of_isComplex, Complex.normSq_eq_norm_sq,
+    Subtype.prop]
+
+end NumberField.mixedEmbedding
 
 namespace TauCeti.NumberField.mixedEmbedding
 
@@ -183,6 +217,19 @@ theorem multSqrt_apply_isComplex (w : {w : InfinitePlace K // w.IsComplex}) :
 theorem normAtPlace_multSqrt (w : InfinitePlace K) :
     normAtPlace w (multSqrt K) = √(w.mult : ℝ) :=
   normAtPlace_mixedSpaceOfRealSpace (Real.sqrt_nonneg _)
+
+/-- The `ℝ`-algebra norm of `multSqrt K` is `2 ^ nrComplexPlaces K`. -/
+theorem algebraNorm_multSqrt {K : Type*} [Field K] [NumberField K] :
+    Algebra.norm ℝ (multSqrt K) = (2 : ℝ) ^ InfinitePlace.nrComplexPlaces K := by
+  classical
+  rw [_root_.NumberField.mixedEmbedding.algebraNorm_apply]
+  simp only [multSqrt_apply_isReal, multSqrt_apply_isComplex, Finset.prod_const_one, one_mul,
+    Complex.normSq_ofReal, Real.mul_self_sqrt zero_le_two, Finset.prod_const, Finset.card_univ]
+
+/-- `multSqrt K` is a unit in `mixedSpace K`. -/
+theorem isUnit_multSqrt (K : Type*) [Field K] : IsUnit (multSqrt K) := by
+  rw [Prod.isUnit_iff, Pi.isUnit_iff, Pi.isUnit_iff]
+  simp
 
 end TauCeti.NumberField.mixedEmbedding
 

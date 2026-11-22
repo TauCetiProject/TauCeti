@@ -21,16 +21,17 @@ in which a complex coordinate counts once. It is the inner product of Mathlib's 
 linear equivalence `euclidean.toMixed` (`mixedInner_toMixed`).
 
 On the ambient Euclidean product `PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K`, coordinatewise
-multiplication by `c : mixedSpace K` defines an `ℝ`-linear endomorphism
-`TauCeti.NumberField.mixedEmbedding.mulMixedAmbient c`, transported from `LinearMap.piMap` through
+multiplication by `mixedSpace K` defines an `ℝ`-algebra homomorphism
+`TauCeti.NumberField.mixedEmbedding.mulMixedAmbient : mixedSpace K →ₐ[ℝ] Module.End ℝ _`,
+constructed by composing `Pi.constAlgHom`, `Algebra.lmul`, and `LinearEquiv.conjAlgEquiv` through
 `WithLp.linearEquiv` and `NumberField.mixedEmbedding.euclidean.toMixed K`.
 
 ## Main definitions
 
 * `TauCeti.NumberField.mixedEmbedding.mixedInner`: the Euclidean pairing of the mixed space.
 * `TauCeti.NumberField.mixedEmbedding.mixedInnerBilin`: the same pairing as a bilinear form.
-* `TauCeti.NumberField.mixedEmbedding.mulMixedAmbient c`: coordinatewise multiplication by
-  `c : mixedSpace K` on `PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K`.
+* `TauCeti.NumberField.mixedEmbedding.mulMixedAmbient`: coordinatewise multiplication by
+  `mixedSpace K` on `PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K` as an `ℝ`-algebra homomorphism.
 
 ## Main results
 
@@ -212,39 +213,35 @@ section MulMixedAmbient
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*}
 
 open Classical in
-/-- Coordinatewise multiplication by `c : mixedSpace K` on the ambient Euclidean Minkowski space. -/
-def mulMixedAmbient (c : mixedSpace K) :
-    (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) →ₗ[ℝ]
-      (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) :=
-  ((WithLp.linearEquiv 2 ℝ (∀ _ : ι, euclidean.mixedSpace K)).trans
-      (LinearEquiv.piCongrRight fun _ : ι ↦ (euclidean.toMixed K).toLinearEquiv)).symm.conj
-    (LinearMap.piMap fun _ : ι ↦ Algebra.lmul ℝ (mixedSpace K) c)
+/-- Coordinatewise multiplication by `mixedSpace K` on the ambient Euclidean Minkowski space, as
+an `ℝ`-algebra homomorphism. -/
+def mulMixedAmbient :
+    mixedSpace K →ₐ[ℝ] Module.End ℝ (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) :=
+  (((WithLp.linearEquiv 2 ℝ (∀ _ : ι, euclidean.mixedSpace K)).trans
+        (LinearEquiv.piCongrRight fun _ : ι ↦
+          (euclidean.toMixed K).toLinearEquiv)).symm.conjAlgEquiv ℝ).toAlgHom.comp
+    ((Algebra.lmul ℝ (ι → mixedSpace K)).comp (Pi.constAlgHom ℝ ι (mixedSpace K)))
 
 /-- Coordinatewise formula for `mulMixedAmbient`. -/
 @[simp]
 theorem mulMixedAmbient_apply (c : mixedSpace K)
     (x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) (i : ι) :
     mulMixedAmbient c x i = (euclidean.toMixed K).symm (c * euclidean.toMixed K (x i)) := by
-  simp [mulMixedAmbient, LinearEquiv.conj_apply]
+  simp [mulMixedAmbient]
 
 /-- Multiplying by `1 : mixedSpace K` acts as the identity on the ambient Euclidean Minkowski
 space. -/
 @[simp]
 theorem mulMixedAmbient_one :
     (mulMixedAmbient (1 : mixedSpace K) :
-        (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) →ₗ[ℝ] _) = LinearMap.id := by
-  ext1 x
-  ext1 i
-  apply (euclidean.toMixed K).injective
-  simp
+        (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) →ₗ[ℝ] _) = LinearMap.id :=
+  map_one (mulMixedAmbient (K := K) (ι := ι))
 
 /-- `mulMixedAmbient` is multiplicative in the scaling element of `mixedSpace K`. -/
 theorem mulMixedAmbient_mul (c₁ c₂ : mixedSpace K)
     (x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) :
     mulMixedAmbient (c₁ * c₂) x = mulMixedAmbient c₁ (mulMixedAmbient c₂ x) := by
-  ext1 i
-  apply (euclidean.toMixed K).injective
-  simp [mul_assoc]
+  simp [map_mul]
 
 end MulMixedAmbient
 

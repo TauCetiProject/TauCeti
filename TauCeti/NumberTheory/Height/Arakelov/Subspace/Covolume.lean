@@ -10,10 +10,10 @@ public import TauCeti.Algebra.Module.ZLattice.Covolume
 public import TauCeti.NumberTheory.Height.Arakelov.Subspace.Basic
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SubspaceLattice
 
+import Mathlib.RingTheory.Complex
 import TauCeti.Analysis.ExteriorPower.Nonarchimedean
 import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import TauCeti.LinearAlgebra.Pi
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.FinitePlace.Ideal
 
@@ -556,38 +556,40 @@ theorem covolume_integerLattice (W : Submodule K (ι → K)) :
     mixedEmbedding.covolume_integerLattice, subspaceHeight_pow_finrank]
 
 open Classical in
-/-- Scaling `W.integerLattice` in `W.euclideanSpan` by `W.mulMixedSubmodule (multSqrt K)` cancels
-the `2 ^ (-r₂ * finrank K W)` factor in Schmidt's covolume formula, leaving
+/-- Scaling `W.integerLattice` in `W.euclideanSpan` by
+`W.mulMixedSubmoduleEquiv (isUnit_multSqrt K)` cancels the `2 ^ (-r₂ * finrank K W)` factor in
+Schmidt's covolume formula, leaving
 `(√|discr K|) ^ finrank K W * W.subspaceHeight ^ finrank ℚ K`. -/
-theorem covolume_comap_mulMixedSubmodule_multSqrt (W : Submodule K (ι → K))
-    (eT : W.euclideanSpan ≃L[ℝ] W.euclideanSpan)
-    (heT : (eT.toLinearEquiv : W.euclideanSpan →ₗ[ℝ] W.euclideanSpan) =
-      W.mulMixedSubmodule (multSqrt K)) :
-    ZLattice.covolume (ZLattice.comap ℝ W.integerLattice eT.symm.toLinearMap) =
+theorem covolume_comap_mulMixedSubmodule_multSqrt (W : Submodule K (ι → K)) :
+    ZLattice.covolume
+        (ZLattice.comap ℝ W.integerLattice
+          (W.mulMixedSubmoduleEquiv (isUnit_multSqrt K)).symm.toLinearMap) =
       (√|(discr K : ℝ)|) ^ finrank K W * W.subspaceHeight ^ finrank ℚ K := by
+  let eT := W.mulMixedSubmoduleEquiv (isUnit_multSqrt K)
   have hdet_symm : |eT.symm.toLinearMap.det|⁻¹ = (2 : ℝ) ^ (nrComplexPlaces K * finrank K W) := by
-    rw [ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm, heT, abs_inv, inv_inv,
-      W.det_mulMixedSubmodule, algebraNorm_multSqrt, ← pow_mul, abs_of_pos (by positivity)]
+    rw [ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm]
+    change |(eT : W.euclideanSpan →ₗ[ℝ] W.euclideanSpan).det⁻¹|⁻¹ = _
+    rw [W.toLinearMap_mulMixedSubmoduleEquiv, abs_inv, inv_inv, W.det_mulMixedSubmodule,
+      algebraNorm_multSqrt, ← pow_mul, abs_of_pos (by positivity)]
   rw [ZLattice.covolume_comap_continuousLinearEquiv W.integerLattice eT.symm volume,
     W.covolume_integerLattice, hdet_symm, mul_pow, ← pow_mul, inv_pow]
   field_simp
 
 open Classical in
 /-- The `([K : ℚ] * finrank K W)`-th root of the covolume of `W.integerLattice` scaled by
-`W.mulMixedSubmodule (multSqrt K)` is
+`W.mulMixedSubmoduleEquiv (isUnit_multSqrt K)` is
 `|discr K| ^ (1 / (2 * [K : ℚ])) * W.subspaceHeight ^ (1 / finrank K W)`. -/
-theorem covolume_comap_mulMixedSubmodule_multSqrt_rpow (W : Submodule K (ι → K)) (hW : W ≠ ⊥)
-    (eT : W.euclideanSpan ≃L[ℝ] W.euclideanSpan)
-    (heT : (eT.toLinearEquiv : W.euclideanSpan →ₗ[ℝ] W.euclideanSpan) =
-      W.mulMixedSubmodule (multSqrt K)) :
-    ZLattice.covolume (ZLattice.comap ℝ W.integerLattice eT.symm.toLinearMap) ^
+theorem covolume_comap_mulMixedSubmodule_multSqrt_rpow (W : Submodule K (ι → K)) (hW : W ≠ ⊥) :
+    ZLattice.covolume
+          (ZLattice.comap ℝ W.integerLattice
+            (W.mulMixedSubmoduleEquiv (isUnit_multSqrt K)).symm.toLinearMap) ^
         (((finrank ℚ K * finrank K W : ℕ) : ℝ)⁻¹) =
       |(discr K : ℝ)| ^ (1 / (2 * (finrank ℚ K : ℝ))) *
         W.subspaceHeight ^ (finrank K W : ℝ)⁻¹ := by
   have : Nontrivial W := Submodule.nontrivial_iff_ne_bot.mpr hW
   have hD : (0 : ℝ) < finrank ℚ K := Nat.cast_pos.mpr finrank_pos
   have hm : (0 : ℝ) < finrank K W := Nat.cast_pos.mpr finrank_pos
-  rw [W.covolume_comap_mulMixedSubmodule_multSqrt eT heT,
+  rw [W.covolume_comap_mulMixedSubmodule_multSqrt,
     Real.mul_rpow (by positivity) (pow_nonneg (Submodule.subspaceHeight_pos W).le _),
     Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (abs_nonneg _),
     ← Real.rpow_mul (abs_nonneg _), ← Real.rpow_natCast,
