@@ -16,7 +16,18 @@ In an abelian category, a morphism `a : A ⟶ Y` factors through the image subob
 (`imageSubobject_factors_iff_up_to_refinements`). This is the subobject form of the
 characterization of epimorphisms in `Mathlib.CategoryTheory.Abelian.Refinements`. As a
 consequence, the restriction of `f` to the preimage of a subobject of its image is an
-epimorphism onto that subobject (`Subobject.epi_pullbackπ_of_le_imageSubobject`).
+epimorphism onto that subobject (`Subobject.epi_pullbackπ_of_le_imageSubobject`), and a morphism
+factors through a subobject as soon as its precomposition with an epimorphism does
+(`Subobject.factors_epi_comp_iff`).
+
+## Main results
+
+* `CategoryTheory.imageSubobject_factors_iff_up_to_refinements`: a morphism factors through the
+  image subobject of `f` exactly when it lifts along `f` up to refinements.
+* `CategoryTheory.Subobject.epi_pullbackπ_of_le_imageSubobject`: the restriction of `f` to the
+  preimage of a subobject of its image is an epimorphism onto that subobject.
+* `CategoryTheory.Subobject.factors_epi_comp_iff`: a morphism factors through a subobject exactly
+  when its precomposition with an epimorphism does.
 -/
 
 public section
@@ -62,5 +73,17 @@ lemma Subobject.epi_pullbackπ_of_le_imageSubobject (f : X ⟶ Y) {y : Subobject
     (Subobject.factors_of_le _ hy (Subobject.factors_comp_arrow b))
   exact ⟨A', π, hπ, (Subobject.isPullback f y).lift (π ≫ b) x (by simpa using hx),
     by simp⟩
+
+/-- A morphism factors through a subobject exactly when its precomposition with an epimorphism
+does. -/
+lemma Subobject.factors_epi_comp_iff (P : Subobject X) {A A' : C} (π : A' ⟶ A) [Epi π]
+    (a : A ⟶ X) :
+    P.Factors (π ≫ a) ↔ P.Factors a := by
+  refine ⟨fun h ↦ ?_, Subobject.factors_of_factors_right π⟩
+  have hP : P = imageSubobject P.arrow := by rw [imageSubobject_mono, Subobject.mk_arrow]
+  rw [hP] at h ⊢
+  obtain ⟨A'', π', _, x, hx⟩ := (imageSubobject_factors_iff_up_to_refinements _ _).1 h
+  exact (imageSubobject_factors_iff_up_to_refinements _ _).2
+    ⟨A'', π' ≫ π, inferInstance, x, by rw [Category.assoc, hx]⟩
 
 end CategoryTheory

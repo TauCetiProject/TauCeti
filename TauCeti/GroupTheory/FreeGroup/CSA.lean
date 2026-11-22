@@ -7,7 +7,8 @@ module
 
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic
-public import TauCeti.GroupTheory.HNNExtension
+public import TauCeti.GroupTheory.HNNExtension.Basic
+import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 
 /-!
 # Free groups are CSA
@@ -35,6 +36,10 @@ extension `⟨F, t | [a ^ 2, t] = 1⟩` of a free group `F` along the identity o
 for a basis element `a`: there `t` commutes with `a ^ 2` but not with `a`, although `a` commutes
 with `a ^ 2`. This is why an extension of the centralizer of `u` must use the full centralizer of
 `u`, here `zpowers a`, rather than `zpowers u`.
+
+Finally, the list `[a, a, b]` in the free group on `a` and `b` illustrates how lists of nonidentity
+elements of a CSA group are moved into general position by conjugating their entries
+(`Group.IsCSA.exists_conj_isChain_not_commute`).
 
 ## Main results
 
@@ -202,5 +207,13 @@ theorem not_isCSA_hnnExtension_zpowers_sq {α : Type*} (a : α) :
     ¬ IsCSA (HNNExtension (FreeGroup α) (zpowers (FreeGroup.of a ^ 2))
       (zpowers (FreeGroup.of a ^ 2)) (MulEquiv.refl _)) := fun h =>
   not_isCommTransitive_hnnExtension_zpowers_sq a h.isCommTransitive
+
+/-- In the free group on `a` and `b`, the consecutive entries `a, a` of `[a, a, b]` commute and
+`a, b` do not. The list has entrywise conjugates with the same product in which no two
+consecutive entries commute. -/
+example : ∃ l' : List (FreeGroup (Fin 2)), List.Forall₂ IsConj [.of 0, .of 0, .of 1] l' ∧
+    l'.prod = [FreeGroup.of 0, .of 0, .of 1].prod ∧ l'.IsChain fun x y => ¬Commute x y :=
+  IsFreeGroup.isCSA.exists_conj_isChain_not_commute (by simp [FreeGroup.of_ne_one])
+    (by simpa using fun h => absurd (FreeGroup.eq_of_commute_of_of h) (by decide))
 
 end Group

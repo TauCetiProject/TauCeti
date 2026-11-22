@@ -32,6 +32,8 @@ the canonical operation internal to integral lattices is the integer action defi
   lattices.
 * `TauCeti.IntegralLattice.instInvolutiveNeg`: form negation, defined as scaling by `-1`.
 * `TauCeti.IntegralLattice.isEven_neg_iff`: form negation preserves evenness.
+* `TauCeti.IntegralLattice.IsEven.smul` and `TauCeti.IntegralLattice.isEven_smul_of_even`: scaling
+  an even lattice, or scaling any lattice by an even integer, gives an even lattice.
 * `TauCeti.IntegralLattice.gramMatrix_smul`: scaling multiplies every Gram-matrix entry.
 * `TauCeti.IntegralLattice.determinant_smul`: the determinant is multiplied by the scalar to the
   lattice rank.
@@ -306,6 +308,22 @@ theorem integralForm_neg (L : IntegralLattice V) :
   -- `rw [neg_def]` cannot rewrite an equality of forms whose domain depends on the carrier.
   change ((-1 : ℤ) • L).integralForm = -L.integralForm
   rw [integralForm_smul, neg_one_smul ℤ]
+
+/-- The integral norm of a scaled lattice is the scalar times the original integral norm. -/
+theorem integralNorm_smul_apply (n : ℤ) (L : IntegralLattice V) (x : L) :
+    (n • L).integralNorm x = n * L.integralNorm x := by
+  rw [integralNorm_apply, integralNorm_apply, integralForm_smul_apply]
+
+/-- Scaling an even lattice by any integer gives an even lattice. -/
+theorem IsEven.smul {L : IntegralLattice V} (hL : L.IsEven) (n : ℤ) : (n • L).IsEven :=
+  (n • L).isEven_of_span Submodule.span_univ fun x _ ↦ by
+    simpa only [integralNorm_smul_apply] using
+      ((L.even_integralNorm_iff x).mpr (hL.exists_norm_eq_two_mul x)).mul_left n
+
+/-- Scaling any integral lattice by an even integer gives an even lattice. -/
+theorem isEven_smul_of_even {n : ℤ} (hn : Even n) (L : IntegralLattice V) : (n • L).IsEven :=
+  (n • L).isEven_of_span Submodule.span_univ fun x _ ↦ by
+    simpa only [integralNorm_smul_apply] using hn.mul_right (L.integralNorm x)
 
 /-- An integral lattice is even if and only if its form negation is even. -/
 @[simp]

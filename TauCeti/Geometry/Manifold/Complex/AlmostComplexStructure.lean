@@ -51,6 +51,8 @@ apply to complex manifolds. Two properties tie it to the complex structure:
 * `TauCeti.isPseudoholomorphic_ofComplexManifold_subtype_val`,
   `TauCeti.isPseudoholomorphic_ofComplexManifold_inclusion`: inclusions of open subsets are
   pseudoholomorphic.
+* `MDifferentiableAt.mfderiv_ofComplexManifold_apply`: the real differential of a holomorphic map
+  commutes with the almost complex structures.
 * `TauCeti.mdifferentiableAt_iff_mvfderiv_ofComplexManifold_apply`: a real differentiable complex
   valued function is holomorphic at a point exactly when its real differential is complex linear.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_ofComplexManifold`: the almost complex structure
@@ -91,6 +93,31 @@ space. -/
 @[simp]
 theorem ofComplexManifold_apply (x : M) (v : E) : ofComplexManifold E M x v = Complex.I • v :=
   ofTangentCoordChangeISMul_apply (fun h v ↦ tangentCoordChange_smul ℝ (𝕜' := ℂ) h _ v) x v
+
+/-- The real differential of an inverse complex chart intertwines multiplication by `i` with
+its induced almost complex structure. -/
+theorem ofComplexManifold_apply_mfderivWithin_extChartAt_symm {x₀ : M} {z v : E}
+    (hz : z ∈ (extChartAt 𝓘(ℝ, E) x₀).target) :
+    ofComplexManifold E M ((extChartAt 𝓘(ℝ, E) x₀).symm z)
+        (mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, E) (extChartAt 𝓘(ℝ, E) x₀).symm
+          (range 𝓘(ℝ, E)) z v) =
+      mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, E) (extChartAt 𝓘(ℝ, E) x₀).symm
+        (range 𝓘(ℝ, E)) z (Complex.I • v) := by
+  exact (ofComplexManifold_apply (E := E) _ _).trans
+    (mfderivWithin_extChartAt_symm_smul ℝ (𝕜' := ℂ) hz Complex.I v).symm
+
+/-- On a complex curve, the inverse-chart image of `1` is sent by the induced complex structure
+to the inverse-chart image of `i`. -/
+theorem ofComplexManifold_apply_mfderivWithin_extChartAt_symm_one
+    {N : Type*} [TopologicalSpace N] [ChartedSpace ℂ N] [IsManifold 𝓘(ℂ) ∞ N]
+    {x₀ : N} {z : ℂ} (hz : z ∈ (extChartAt 𝓘(ℝ, ℂ) x₀).target) :
+    ofComplexManifold ℂ N ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z)
+        (mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm
+          (range 𝓘(ℝ, ℂ)) z (1 : ℂ)) =
+      mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm
+        (range 𝓘(ℝ, ℂ)) z Complex.I := by
+  simpa only [smul_eq_mul, mul_one] using
+    ofComplexManifold_apply_mfderivWithin_extChartAt_symm (v := (1 : ℂ)) hz
 
 /-- The almost complex structure of a complex manifold is multiplication by `i` on every tangent
 space, as an endomorphism. -/
@@ -213,6 +240,14 @@ theorem isPseudoholomorphic_ofComplexManifold_inclusion {U V : TopologicalSpace.
   isPseudoholomorphic_ofComplexManifold_iff.2
     ((contMDiff_inclusion h (n := 1)).mdifferentiable one_ne_zero)
 
+/-- The real differential of a map between complex manifolds that is holomorphic at a point
+commutes there with their almost complex structures, multiplication by `i`. -/
+theorem _root_.MDifferentiableAt.mfderiv_ofComplexManifold_apply
+    (hf : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, E') f x) (v : TangentSpace 𝓘(ℝ, E) x) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E') f x (ofComplexManifold E M x v) =
+      ofComplexManifold E' N (f x) (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E') f x v) :=
+  (isPseudoholomorphicAt_ofComplexManifold_iff.2 hf).mfderiv_apply_commute v
+
 end Pseudoholomorphic
 
 /-- A real differentiable complex valued function on a complex manifold is holomorphic at a point
@@ -246,8 +281,8 @@ private lemma mpullbackWithin_ofComplexManifold_eventuallyEq
   obtain ⟨y, hy, rfl⟩ : ∃ y ∈ (extChartAt 𝓘(ℝ, E) x).source, extChartAt 𝓘(ℝ, E) x y = z :=
     ⟨_, (extChartAt _ x).map_target hz, (extChartAt _ x).right_inv hz⟩
   rw [mpullbackWithin_extChartAt_symm_apply _ hy, mpullbackWithin_extChartAt_symm_apply _ hy,
-    TangentBundle.trivializationAt_apply_tangentCoordChange,
-    TangentBundle.trivializationAt_apply_tangentCoordChange]
+    TangentBundle.trivializationAt_snd_eq_tangentCoordChange,
+    TangentBundle.trivializationAt_snd_eq_tangentCoordChange]
   have h : y ∈ (chartAt E y).source ∩ (chartAt E x).source := by
     simpa using hy
   rw [smul_apply, ContinuousLinearMap.id_apply]

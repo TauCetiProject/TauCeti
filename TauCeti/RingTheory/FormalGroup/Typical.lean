@@ -52,6 +52,8 @@ transport along homotheties `X ↦ u X` (which conjugate `F.pTypicalCoordinate`)
 
 ## Main results
 
+* `FormalGroup.IsPTypical.monomialCurve_pow`: monomial curves in prime-power degrees on a
+  `p`-typical law are `p`-typical.
 * `FormalGroup.isPTypical_smul_iff`: `(c • F).IsPTypical p` holds if and only if `c⁻¹` is a
   `p`-typical curve on `F`.
 * `FormalGroup.isPTypical_iff_exists_eq_hazewinkelFormalGroup` and
@@ -60,6 +62,8 @@ transport along homotheties `X ↦ u X` (which conjugate `F.pTypicalCoordinate`)
 * `FormalGroup.isPTypical_pTypicalFormalGroup`, `FormalGroup.pTypicalFormalGroup_eq_self_iff`, and
   `FormalGroup.pTypicalFormalGroup_pTypicalFormalGroup`: `p`-typicality, fixed-point
   characterization, and idempotence of canonical `p`-typicalization.
+* `FormalGroup.eq_pTypicalCoordinate_iff`: `F.pTypicalCoordinate` is the unique formal coordinate
+  `φ` with `φ • F` `p`-typical and `T - φ⁻¹(T)` in the kernel of Cartier's projector.
 * `FormalGroup.coeff_log_pTypicalFormalGroup` and `FormalGroup.coeff_pow_log_pTypicalFormalGroup`:
   Quillen's logarithm formula for `F.pTypicalFormalGroup`.
 * `FormalGroup.existsUnique_pTypicalFormalGroup_eq_hazewinkelFormalGroup` and
@@ -112,6 +116,13 @@ theorem isPTypical_congr {F G : FormalGroup R} [F.IsComm] [G.IsComm] (h : F = G)
 theorem IsPTypical.tautologicalCurve {F : FormalGroup R} [F.IsComm] {p : ℕ}
     (hF : F.IsPTypical p) : F.tautologicalCurve.IsPTypical p :=
   hF
+
+/-- A monomial curve of prime-power degree on a `p`-typical law is `p`-typical. -/
+theorem IsPTypical.monomialCurve_pow {F : FormalGroup R} [F.IsComm] {p : ℕ}
+    (hF : F.IsPTypical p) (hp : p.Prime) (n : ℕ) (c : R) :
+    (F.monomialCurve (p ^ n) (pow_ne_zero n hp.ne_zero) c).IsPTypical p := by
+  rw [monomialCurve_eq_verschiebungCurve_homothetyCurve]
+  exact (hF.tautologicalCurve.homothetyCurve c).verschiebungCurve_pow hp n
 
 /-- Base change along a ring homomorphism preserves `p`-typicality of formal group laws. -/
 theorem IsPTypical.map {F : FormalGroup R} [F.IsComm] {p : ℕ} (hF : F.IsPTypical p)
@@ -409,6 +420,24 @@ theorem pTypicalCoordinate_eq_one_iff (p : ℕ)
     rw [pTypicalFormalGroup_def, h, one_smul]
   exact (isPTypical_congr h1 p).mp (F.isPTypical_pTypicalFormalGroup p hunit)
 
+/-- **Uniqueness characterization of Cartier's canonical `p`-typical coordinate**: a formal
+coordinate `φ` equals `F.pTypicalCoordinate p hunit` if and only if `φ • F` is `p`-typical and the
+difference between `F.tautologicalCurve` and the curve `φ⁻¹(T)` lies in the kernel of Cartier's
+`p`-typicalization projector. -/
+theorem eq_pTypicalCoordinate_iff (p : ℕ) (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
+    (φ : TauCeti.FormalCoordinate R) :
+    φ = F.pTypicalCoordinate p hunit ↔
+      (φ • F).IsPTypical p ∧
+        F.pTypicalProjectorCurve p hunit
+          (F.tautologicalCurve - ⟨φ⁻¹.toPowerSeries, φ⁻¹.constantCoeff_toPowerSeries⟩) = 0 := by
+  rw [isPTypical_smul_iff, ← AddMonoidHom.mem_ker]
+  have heq : φ = F.pTypicalCoordinate p hunit ↔
+      F.pTypicalProjectorCurve p hunit F.tautologicalCurve =
+        ⟨φ⁻¹.toPowerSeries, φ⁻¹.constantCoeff_toPowerSeries⟩ := by
+    rw [← inv_inj, TauCeti.FormalCoordinate.ext_iff, inv_pTypicalCoordinate_toPowerSeries,
+      Curve.ext_iff, eq_comm]
+  rw [heq, F.pTypicalProjectorCurve_eq_iff p hunit]
+
 /-- When `F` is already `p`-typical, its canonical `p`-typicalization is `F` itself. -/
 theorem pTypicalFormalGroup_eq_self_of_isPTypical (p : ℕ)
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (hF : F.IsPTypical p) :
@@ -441,6 +470,19 @@ theorem pTypicalFormalGroup_pTypicalFormalGroup (p : ℕ)
       F.pTypicalFormalGroup p hunit :=
   (F.pTypicalFormalGroup p hunit).pTypicalFormalGroup_eq_self_of_isPTypical p hunit
     (F.isPTypical_pTypicalFormalGroup p hunit)
+
+/-- The canonical `p`-typicalization coordinate of the additive formal group law is the identity
+coordinate. -/
+@[simp]
+theorem pTypicalCoordinate_𝔾ₐ (p : ℕ) (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
+    (𝔾ₐ (R := R)).pTypicalCoordinate p hunit = 1 :=
+  (𝔾ₐ (R := R)).pTypicalCoordinate_eq_one_of_isPTypical p hunit (isPTypical_𝔾ₐ p)
+
+/-- The additive formal group law is its own canonical `p`-typicalization. -/
+@[simp]
+theorem pTypicalFormalGroup_𝔾ₐ (p : ℕ) (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
+    (𝔾ₐ (R := R)).pTypicalFormalGroup p hunit = 𝔾ₐ :=
+  (𝔾ₐ (R := R)).pTypicalFormalGroup_eq_self_of_isPTypical p hunit (isPTypical_𝔾ₐ p)
 
 /-- Base change commutes with canonical `p`-typicalization of formal group laws. -/
 theorem map_pTypicalFormalGroup (φ : R →+* S) (p : ℕ)

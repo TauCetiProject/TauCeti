@@ -36,6 +36,8 @@ rather than restricting scalars, so that no algebra diamond arises.
   `fromBlocks A 0 0 B` is `max ‖A‖ ‖B‖`.
 * `Matrix.l2_opNorm_fromBlocks_zero_conjTranspose`: the Hermitian dilation `fromBlocks 0 A Aᴴ 0`
   has the same `ℓ²` operator norm as `A`.
+* `Matrix.l2_opNorm_map_ofReal`: a real, possibly rectangular, matrix has the same `ℓ²` operator
+  norm as a complex matrix.
 -/
 
 public section
@@ -168,5 +170,63 @@ theorem l2_opNorm_fromBlocks_zero_conjTranspose {m p : Type*} [Fintype m] [Finty
     simpa [l2_opNorm_conjTranspose] using l2_opNorm_conjTranspose_mul_self Aᴴ
   rw [sq, ← l2_opNorm_conjTranspose_mul_self, hmul, l2_opNorm_fromBlocks_zero₁₂_zero₂₁,
     l2_opNorm_conjTranspose_mul_self, hAA, max_self, sq]
+
+section OfReal
+
+variable {m n : Type*} [Fintype m] [Fintype n] [DecidableEq n]
+
+/-- **A real matrix has the same `ℓ²` operator norm over `ℂ`**: its norm as an operator
+`ℂⁿ → ℂᵐ` is its norm as an operator `ℝⁿ → ℝᵐ`. -/
+@[simp]
+theorem l2_opNorm_map_ofReal (S : Matrix m n ℝ) : ‖S.map ((↑) : ℝ → ℂ)‖ = ‖S‖ := by
+  refine le_antisymm ?_ ?_
+  · rw [l2_opNorm_def (S.map _)]
+    refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
+    rw [LinearEquiv.trans_apply, LinearMap.coe_toContinuousLinearMap', toLpLin_apply]
+    -- Split `v = a + i b` with real `a` and `b`: `‖S v‖² = ‖S a‖² + ‖S b‖²`.
+    let a : EuclideanSpace ℝ n := WithLp.toLp 2 fun i ↦ (v i).re
+    let b : EuclideanSpace ℝ n := WithLp.toLp 2 fun i ↦ (v i).im
+    have ha : ‖(WithLp.toLp 2 (S *ᵥ WithLp.ofLp a) : EuclideanSpace ℝ m)‖ ≤ ‖S‖ * ‖a‖ :=
+      l2_opNorm_mulVec S a
+    have hb : ‖(WithLp.toLp 2 (S *ᵥ WithLp.ofLp b) : EuclideanSpace ℝ m)‖ ≤ ‖S‖ * ‖b‖ :=
+      l2_opNorm_mulVec S b
+    have hv : ‖v‖ ^ 2 = ‖a‖ ^ 2 + ‖b‖ ^ 2 := by
+      simp only [EuclideanSpace.norm_sq_eq, a, b, ← Finset.sum_add_distrib, Real.norm_eq_abs,
+        sq_abs, Complex.sq_norm, Complex.normSq_apply]
+      exact Finset.sum_congr rfl fun i _ ↦ by ring
+    have hSv : ‖(WithLp.toLp 2 (S.map ((↑) : ℝ → ℂ) *ᵥ WithLp.ofLp v) : EuclideanSpace ℂ m)‖ ^ 2 =
+        ‖(WithLp.toLp 2 (S *ᵥ WithLp.ofLp a) : EuclideanSpace ℝ m)‖ ^ 2 +
+          ‖(WithLp.toLp 2 (S *ᵥ WithLp.ofLp b) : EuclideanSpace ℝ m)‖ ^ 2 := by
+      have hcoord (i : m) :
+          (S.map ((↑) : ℝ → ℂ) *ᵥ WithLp.ofLp v) i = ∑ j, (S i j : ℂ) * v j := by
+        simp [mulVec, dotProduct]
+      simp only [EuclideanSpace.norm_sq_eq, ← Finset.sum_add_distrib, Real.norm_eq_abs,
+        sq_abs, Complex.sq_norm, Complex.normSq_apply, hcoord]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      have hre : (∑ j, ((S i j : ℂ) * v j)).re = (S *ᵥ WithLp.ofLp a) i := by
+        simp [mulVec, dotProduct, Complex.re_sum, a]
+      have him : (∑ j, ((S i j : ℂ) * v j)).im = (S *ᵥ WithLp.ofLp b) i := by
+        simp [mulVec, dotProduct, Complex.im_sum, b]
+      rw [hre, him]
+      ring
+    have h0 := norm_nonneg S
+    rw [← pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero, hSv, mul_pow, hv]
+    nlinarith [norm_nonneg (WithLp.toLp 2 (S *ᵥ WithLp.ofLp a) : EuclideanSpace ℝ m),
+      norm_nonneg (WithLp.toLp 2 (S *ᵥ WithLp.ofLp b) : EuclideanSpace ℝ m),
+      mul_nonneg h0 (norm_nonneg a), mul_nonneg h0 (norm_nonneg b)]
+  · rw [l2_opNorm_def S]
+    refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun x ↦ ?_
+    rw [LinearEquiv.trans_apply, LinearMap.coe_toContinuousLinearMap', toLpLin_apply]
+    -- A real vector has the same norm as a complex vector.
+    let xc : EuclideanSpace ℂ n := WithLp.toLp 2 fun i ↦ (x i : ℂ)
+    have hx : ‖xc‖ = ‖x‖ := by
+      simp [EuclideanSpace.norm_eq, xc, Complex.norm_real]
+    have hSx : ‖(WithLp.toLp 2 (S.map ((↑) : ℝ → ℂ) *ᵥ WithLp.ofLp xc) : EuclideanSpace ℂ m)‖ =
+        ‖(WithLp.toLp 2 (S *ᵥ WithLp.ofLp x) : EuclideanSpace ℝ m)‖ := by
+      simp [EuclideanSpace.norm_eq, xc, mulVec, dotProduct, ← Complex.ofReal_mul,
+        ← Complex.ofReal_sum]
+    rw [← hSx, ← hx]
+    exact l2_opNorm_mulVec _ xc
+end OfReal
 
 end Matrix

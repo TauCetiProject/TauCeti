@@ -13,8 +13,8 @@ import Mathlib.Data.Finsupp.WellFounded
 
 `MvPowerSeries.invOfUnit D u` inverts a power series whose constant coefficient is the unit `u`.
 Monoid homomorphisms between power series rings preserve this inverse, provided the constant
-coefficient of the image is also a specified unit. The inverse of `1 - Xᵢ` is the geometric series
-`∑ₙ Xᵢⁿ`, and the coefficients of its powers `Xᵢⁿ` are all `1`.
+coefficient of the image is also a specified unit. The inverse of `1 - a Xᵢ` is the geometric
+series `∑ₙ aⁿ Xᵢⁿ`, so its coefficient at each power `Xᵢⁿ` is `aⁿ`.
 
 ## Main results
 
@@ -26,8 +26,8 @@ coefficient of the image is also a specified unit. The inverse of `1 - Xᵢ` is 
   (without any hypothesis on `constantCoeff`), and field inverses `φ⁻¹`.
 * `PowerSeries.map_invOfUnit`, `PowerSeries.map_inv_aux`, `PowerSeries.map_invOfUnit_ringHom`,
   `PowerSeries.map_inv`: the corresponding statements in one variable.
-* `MvPowerSeries.coeff_single_eq_one_of_one_sub_X_mul_eq_one`: a right inverse of `1 - Xᵢ` has
-  coefficient `1` at every power `Xᵢⁿ`.
+* `MvPowerSeries.coeff_single_eq_pow_of_one_sub_C_mul_X_mul_eq_one`: a right inverse of
+  `1 - a Xᵢ` has coefficient `aⁿ` at every power `Xᵢⁿ`.
 
 ## Implementation notes
 
@@ -108,22 +108,20 @@ protected theorem map_inv {k l : Type*} [Field k] [Field l] (f : k →+* l) (φ 
     inv.aux (constantCoeff (map f φ))⁻¹ (map f φ)
   rw [map_inv_aux, constantCoeff_map, map_inv₀]
 
-/-- **A right inverse of `1 - Xᵢ` has coefficient `1` at every power `Xᵢⁿ`**: it is the geometric
-series `∑ₙ Xᵢⁿ`. -/
-theorem coeff_single_eq_one_of_one_sub_X_mul_eq_one {g : MvPowerSeries σ R} {i : σ}
-    (hg : (1 - X i) * g = 1) (n : ℕ) : coeff (Finsupp.single i n) g = 1 := by
+/-- **A right inverse of `1 - a Xᵢ` has coefficient `aⁿ` at every power `Xᵢⁿ`**: it is the
+geometric series `∑ₙ aⁿ Xᵢⁿ`. -/
+theorem coeff_single_eq_pow_of_one_sub_C_mul_X_mul_eq_one {g : MvPowerSeries σ R} {i : σ}
+    {a : R} (hg : (1 - C a * X i) * g = 1) (n : ℕ) : coeff (Finsupp.single i n) g = a ^ n := by
   classical
-  have hg' : g = 1 + X i * g := by
-    rwa [sub_mul, one_mul, sub_eq_iff_eq_add] at hg
+  have hg' : g = 1 + C a * (X i * g) := by
+    rwa [sub_mul, one_mul, sub_eq_iff_eq_add, mul_assoc] at hg
   induction n with
   | zero => rw [hg']; simp
   | succ n ih =>
+    -- Multiplication by `Xᵢ` shifts the `Xᵢ`-exponent by one.
     have hX : coeff (Finsupp.single i (n + 1)) (X i * g) = coeff (Finsupp.single i n) g := by
-      rw [X_def, show Finsupp.single i (n + 1) = Finsupp.single i 1 + Finsupp.single i n by
-          rw [← Finsupp.single_add, add_comm],
-        coeff_add_monomial_mul, one_mul]
-    conv_lhs => rw [hg']
-    rw [map_add, hX, ih]
+      rw [X_def, add_comm n 1, Finsupp.single_add, coeff_add_monomial_mul, one_mul]
+    rw [hg', map_add, coeff_C_mul, hX, ih, pow_succ']
     simp [coeff_one]
 
 end MvPowerSeries

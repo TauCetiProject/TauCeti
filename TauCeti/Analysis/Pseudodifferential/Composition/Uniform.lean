@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
+public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import TauCeti.Analysis.Pseudodifferential.LatticeDecomposition
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
@@ -64,6 +65,23 @@ side `∑ⱼ Op(p # aⱼ) u (x) = Op(c) u (x)` by dominated convergence in the f
   quantization of a uniform symbol of order `m' + m`. The symbol is unique
   (`TauCeti.Symbol.quantizeSchwartzValue_injective`); when `a` has compact spatial support it is
   `p # a` (`TauCeti.Symbol.coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq`).
+* `TauCeti.Symbol.IsUniform.isUniformAsymptoticSum_sharpTerm_of_comp_eq`: **the asymptotic
+  expansion of the composition**. The symbol `c` of `Op(p) ∘ Op(a)` satisfies
+  `c ∼ ∑ₖ sharpTerm p a k` with remainders `c - ∑_{k < N} sharpTerm p a k` of order `m' + m - N`
+  whose estimates are uniform in the position.
+
+## The expansion
+
+The remainder of `c` after `N` terms is the series `∑ⱼ rⱼ` of the remainders
+`rⱼ = p # aⱼ - ∑_{k < N} sharpTerm p aⱼ k` of the pieces, because near each position only finitely
+many pieces are nonzero and they sum to `a`. The remainder estimates of the composition expansion
+hold uniformly over the pieces
+(`TauCeti.Symbol.IsUniform.exists_norm_mixedDeriv_sharpRemainder_le`), since its proof only uses
+bounds on the Fourier transforms of the slices of `aⱼ`. Away from `j`
+the terms `sharpTerm p aⱼ k` vanish, so `rⱼ = p # aⱼ` there for every `N`: it is bounded both by
+`C ‖x - j‖ ^ (-4n) ⟨ξ⟩ ^ (m' + m)` and by `C ⟨ξ⟩ ^ (m' + m - 2N)`, and the geometric mean of these
+bounds gives `C ‖x - j‖ ^ (-2n) ⟨ξ⟩ ^ (m' + m - N)`. The same holds for all derivatives, so the
+series `∑ⱼ rⱼ` converges to a uniform symbol of order `m' + m - N`.
 
 ## References
 
@@ -93,25 +111,39 @@ section Sharp
 
 variable {ι : Type*} {z : ι → CoordinateSpace n} {r : ℝ}
 
-/-- **The composition symbol is bounded uniformly in the family.** If `p` is a symbol of order
-`m'` with estimates uniform in the position and `c` is a ball family of order `m`, then
-`‖(p # cᵢ)(x, ξ)‖ ≤ C ⟨ξ⟩ ^ (m' + m)` with `C` independent of `i` and `x`. -/
-private theorem IsBallFamily.exists_norm_sharp_le {p : Symbol n W U m'} (hp : p.IsUniform)
-    {c : ι → Symbol n V W m} (hc : IsBallFamily z r c) :
-    ∃ C, ∀ i x ξ, ‖(p.sharp (c i) (hc.hasCompactSpatialSupport i)).coefficient (x, ξ)‖ ≤
-      C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
+/-- **The shifted composition integrals are bounded uniformly in the family.** If `p` is a symbol
+of order `m'` with estimates uniform in the position and `c` is a ball family of order `m`, then
+`‖∫ sharpIntegrand p cᵢ s (x, ξ) η dη‖ ≤ C ⟨ξ⟩ ^ (m' + m)` with `C` independent of `i`, of `x` and
+of the frequency scaling `|s| ≤ R`. -/
+private theorem IsBallFamily.exists_norm_integral_sharpIntegrand_le {p : Symbol n W U m'}
+    (hp : p.IsUniform) {c : ι → Symbol n V W m} (hc : IsBallFamily z r c) {R : ℝ} (hR : 1 ≤ R) :
+    ∃ C, 0 ≤ C ∧ ∀ i, ∀ s : ℝ, |s| ≤ R → ∀ x ξ,
+      ‖∫ η, sharpIntegrand p (c i) s (x, ξ) η‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
   obtain ⟨Cp, hCp0, hCp⟩ := hp.exists_bound_coefficient
   obtain ⟨D, hD⟩ := hc.exists_norm_fourier_le_rpow (|m'| + n + 1)
   set I := ∫ η : CoordinateSpace n, (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
-  set K := Cp * 2 ^ (|m'| / 2) * (2 * π) ^ |m'| * D
-  refine ⟨K * I, fun i x ξ ↦ ?_⟩
-  have hbound (η : CoordinateSpace n) : ‖(𝐞 ⟪η, x⟫ : ℂ) •
-      (p.coefficient (x, ξ + (2 * π) • η)).comp (𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η)‖ ≤
-        K * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
-    rw [norm_smul, Circle.norm_coe, one_mul]
+  have hI : 0 ≤ I := integral_nonneg fun η ↦ by positivity
+  set K := Cp * 2 ^ (|m'| / 2) * R ^ |m'| * max D 0
+  have hK : 0 ≤ K := by have := zero_le_one.trans hR; positivity
+  refine ⟨K * I, mul_nonneg hK hI, fun i s hs x ξ ↦ ?_⟩
+  have hbound (η : CoordinateSpace n) : ‖sharpIntegrand p (c i) s (x, ξ) η‖ ≤
+      K * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
+    rw [sharpIntegrand_apply, norm_smul, Circle.norm_coe, one_mul]
     refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
-    have hshift :=
-      one_add_norm_add_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m' ξ η
+    have hshift : (1 + ‖ξ + s • η‖ ^ 2) ^ (m' / 2) ≤
+        2 ^ (|m'| / 2) * R ^ |m'| * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖η‖ ^ 2) ^ (|m'| / 2) := by
+      refine (one_add_norm_add_sq_rpow_le_mul m' ξ (s • η)).trans ?_
+      have hsη : (1 + ‖s • η‖ ^ 2) ^ (|m'| / 2) ≤ R ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2) := by
+        have hle : ‖s • η‖ ≤ ‖R • η‖ := by
+          rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_of_nonneg (zero_le_one.trans hR)]
+          gcongr
+        refine (Real.rpow_le_rpow (by positivity)
+          (show 1 + ‖s • η‖ ^ 2 ≤ 1 + ‖R • η‖ ^ 2 by gcongr) (by positivity)).trans ?_
+        simpa only [abs_abs] using one_add_norm_smul_sq_rpow_le hR |m'| η
+      calc 2 ^ (|m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖s • η‖ ^ 2) ^ (|m'| / 2)
+          ≤ 2 ^ (|m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) *
+              (R ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2)) := by gcongr
+        _ = _ := by ring
     have hξ : (1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) =
         (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
       rw [← Real.rpow_add (by positivity)]
@@ -120,21 +152,33 @@ private theorem IsBallFamily.exists_norm_sharp_le {p : Symbol n W U m'} (hp : p.
         (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
       rw [← Real.rpow_add (by positivity)]
       ring_nf
-    calc ‖p.coefficient (x, ξ + (2 * π) • η)‖ * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖
-        ≤ (Cp * (2 ^ (|m'| / 2) * (2 * π) ^ |m'| * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) *
+    calc ‖p.coefficient (x, ξ + s • η)‖ * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖
+        ≤ (Cp * (2 ^ (|m'| / 2) * R ^ |m'| * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) *
             (1 + ‖η‖ ^ 2) ^ (|m'| / 2))) *
-          (D * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(|m'| + n + 1) / 2)) := by
+          (max D 0 * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(|m'| + n + 1) / 2)) := by
           gcongr
           · exact (hCp x _).trans (mul_le_mul_of_nonneg_left hshift hCp0)
-          · exact hD i η ξ
+          · exact (hD i η ξ).trans (by gcongr; exact le_max_left _ _)
       _ = K * ((1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) *
           ((1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-(|m'| + n + 1) / 2)) := by ring
       _ = _ := by rw [hξ, hη]
-  rw [coefficient_sharp]
   refine (norm_integral_le_of_norm_le (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul
     (K * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2))) (.of_forall hbound)).trans_eq ?_
   rw [integral_const_mul]
   ring
+
+/-- **The composition symbol is bounded uniformly in the family.** If `p` is a symbol of order `m'`
+with estimates uniform in the position and `c` is a ball family of order `m`, then
+`‖(p # cᵢ)(x, ξ)‖ ≤ C ⟨ξ⟩ ^ (m' + m)` with `C` independent of `i` and `x`. -/
+private theorem IsBallFamily.exists_norm_sharp_le {p : Symbol n W U m'} (hp : p.IsUniform)
+    {c : ι → Symbol n V W m} (hc : IsBallFamily z r c) :
+    ∃ C, ∀ i x ξ, ‖(p.sharp (c i) (hc.hasCompactSpatialSupport i)).coefficient (x, ξ)‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
+  obtain ⟨C, -, hC⟩ := hc.exists_norm_integral_sharpIntegrand_le hp (R := 2 * π)
+    (by linarith [Real.two_le_pi])
+  refine ⟨C, fun i x ξ ↦ ?_⟩
+  simpa only [coefficient_sharp, sharpIntegrand_apply] using
+    hC i (2 * π) (abs_of_pos Real.two_pi_pos).le x ξ
 
 variable [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
 
@@ -292,6 +336,108 @@ private theorem IsBallFamily.exists_norm_mixedDeriv_sharp_le {p : Symbol n W U m
   rw [mul_zero, pow_zero, one_mul] at h₀
   exact (le_mul_one_add_norm_sq_pow_inv (norm_nonneg _) h₀ (hC₁ i x ξ)).trans_eq (by ring)
 
+
+omit [CompleteSpace V] in
+/-- Away from the closed ball of a member of a ball family, the remainders of the composition
+expansion are the composition symbol itself, with all their derivatives: the terms of the expansion
+only involve the member near the position, where it vanishes. -/
+private theorem IsBallFamily.mixedDeriv_sharpRemainder_eq {p : Symbol n W U m'}
+    {c : ι → Symbol n V W m} (hc : IsBallFamily z r c) (N : ℕ) (α β : List (Fin n)) {i : ι}
+    {x : CoordinateSpace n} (hx : r < dist x (z i)) (ξ : CoordinateSpace n) :
+    mixedDeriv α β (p.sharpRemainder (c i) (hc.hasCompactSpatialSupport i) N).coefficient x ξ =
+      mixedDeriv α β (p.sharp (c i) (hc.hasCompactSpatialSupport i)).coefficient x ξ := by
+  refine mixedDeriv_congr_of_eventually ?_ α β ξ
+  filter_upwards [(isOpen_lt continuous_const (continuous_id.dist continuous_const)).mem_nhds hx]
+    with y hy η
+  rw [coefficient_sharpRemainder, Pi.sub_apply, Finset.sum_apply, sub_eq_self]
+  exact Finset.sum_eq_zero fun k _ ↦ coefficient_sharpTerm_eq_zero_of_eventuallyEq_zero_right
+    (((hc.eventually_eq_zero i hy).prod_inl_nhds η).mono fun q hq ↦ hq q.2) p k
+
+omit [CompleteSpace V] in
+/-- The remainder estimates of the composition expansion hold uniformly over a ball family: every
+mixed derivative of `p # cᵢ - ∑_{k < N} sharpTerm p cᵢ k` is bounded by
+`C ⟨ξ⟩ ^ (m' + m - N - |β|)`, with `C` independent of `i` and the position. -/
+private theorem IsBallFamily.exists_norm_mixedDeriv_sharpRemainder_le_rpow {p : Symbol n W U m'}
+    (hp : p.IsUniform) {c : ι → Symbol n V W m} (hc : IsBallFamily z r c) (N : ℕ)
+    (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ i x ξ,
+      ‖mixedDeriv α β (p.sharpRemainder (c i) (hc.hasCompactSpatialSupport i) N).coefficient x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N - β.length) / 2) :=
+  hp.exists_norm_mixedDeriv_sharpRemainder_le (fun c ↦ IsBallFamily z r c)
+    (fun hc i ↦ hc.hasCompactSpatialSupport i) (fun hc j ↦ hc.map_spatialDeriv j)
+    (fun hc j ↦ hc.map_frequencyDeriv j)
+    (fun ha hc ↦ hc.exists_norm_integral_sharpIntegrand_le ha (by linarith [Real.two_le_pi]))
+    hc N α β
+
+/-- **Decay of the composition away from the centres, at every order.** Outside the closed ball
+of radius `r` about `zᵢ`, the mixed derivatives of `p # cᵢ` satisfy
+`‖x - zᵢ‖ ^ (2n) ‖∂ₓ^α ∂_ξ^β (p # cᵢ)(x, ξ)‖ ≤ C ⟨ξ⟩ ^ (m' + m - N - |β|)` for every `N`,
+uniformly in `i`. There `p # cᵢ` agrees with the remainder after `2N` terms, of order
+`m' + m - 2N`, and it decays like `‖x - zᵢ‖ ^ (-4n) ⟨ξ⟩ ^ (m' + m - |β|)`; the bound is the
+geometric mean of these two. -/
+private theorem IsBallFamily.exists_norm_sub_pow_mul_norm_mixedDeriv_sharp_le_of_lt
+    {p : Symbol n W U m'} (hp : p.IsUniform) {c : ι → Symbol n V W m} (hc : IsBallFamily z r c)
+    (N : ℕ) (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ i x ξ, r < dist x (z i) → ‖x - z i‖ ^ (2 * n) *
+      ‖mixedDeriv α β (p.sharp (c i) (hc.hasCompactSpatialSupport i)).coefficient x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N - β.length) / 2) := by
+  obtain ⟨B, hB0, hB⟩ := hc.exists_norm_mixedDeriv_sharpRemainder_le_rpow hp (2 * N) α β
+  obtain ⟨A, hA0, hA⟩ :=
+    IsBallFamily.exists_norm_sub_pow_mul_norm_mixedDeriv_sharp_le (2 * n) α β hp hc
+  refine ⟨√(A * B), Real.sqrt_nonneg _, fun i x ξ hx ↦ ?_⟩
+  set F := ‖mixedDeriv α β (p.sharp (c i) (hc.hasCompactSpatialSupport i)).coefficient x ξ‖
+  set w := (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N - β.length) / 2)
+  have hFB : F ≤ B * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - ((2 * N : ℕ) : ℝ) - β.length) / 2) := by
+    simpa only [F, hc.mixedDeriv_sharpRemainder_eq _ _ _ hx] using hB i x ξ
+  have hw : (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) *
+      (1 + ‖ξ‖ ^ 2) ^ ((m' + m - ((2 * N : ℕ) : ℝ) - β.length) / 2) = w * w := by
+    rw [← Real.rpow_add (by positivity), ← Real.rpow_add (by positivity)]
+    congr 1
+    push_cast
+    ring
+  have hsq : (‖x - z i‖ ^ (2 * n) * F) ^ 2 ≤ (√(A * B) * w) ^ 2 := by
+    calc (‖x - z i‖ ^ (2 * n) * F) ^ 2 = (‖x - z i‖ ^ (2 * (2 * n)) * F) * F := by ring
+      _ ≤ (A * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2)) *
+          (B * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - ((2 * N : ℕ) : ℝ) - β.length) / 2)) :=
+        mul_le_mul (hA i x ξ) hFB (norm_nonneg _) (by positivity)
+      _ = (√(A * B) * w) ^ 2 := by
+        rw [mul_pow, Real.sq_sqrt (mul_nonneg hA0 hB0), pow_two w, ← hw]
+        ring
+  exact (pow_le_pow_iff_left₀ (by positivity) (by positivity) two_ne_zero).1 hsq
+
+/-- **The remainders decay away from the centres.** If `p` is a symbol of order `m'` with estimates
+uniform in the position and `c` is a ball family of order `m`, every mixed derivative
+`∂ₓ^α ∂_ξ^β` of the remainder `p # cᵢ - ∑_{k < N} sharpTerm p cᵢ k` is bounded by
+`C (1 + ‖x - zᵢ‖²) ^ (-n) ⟨ξ⟩ ^ (m' + m - N - |β|)`, with `C` independent of `i`: near the centre
+by the uniform remainder estimate, and away from it, where the remainder is `p # cᵢ`, by
+`IsBallFamily.exists_norm_sub_pow_mul_norm_mixedDeriv_sharp_le_of_lt`. -/
+private theorem IsBallFamily.exists_norm_mixedDeriv_sharpRemainder_le {p : Symbol n W U m'}
+    (hp : p.IsUniform) {c : ι → Symbol n V W m} (hc : IsBallFamily z r c) (N : ℕ)
+    (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ i x ξ,
+      ‖mixedDeriv α β (p.sharpRemainder (c i) (hc.hasCompactSpatialSupport i) N).coefficient x ξ‖ ≤
+        C * ((1 + ‖x - z i‖ ^ 2) ^ n)⁻¹ * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N - β.length) / 2) := by
+  obtain ⟨B, hB0, hB⟩ := hc.exists_norm_mixedDeriv_sharpRemainder_le_rpow hp N α β
+  obtain ⟨A, hA0, hA⟩ := hc.exists_norm_sub_pow_mul_norm_mixedDeriv_sharp_le_of_lt hp N α β
+  refine ⟨2 ^ (n - 1) * (B + (|r| ^ (2 * n) * B + A)), by positivity, fun i x ξ ↦ ?_⟩
+  set F := ‖mixedDeriv α β (p.sharpRemainder (c i) (hc.hasCompactSpatialSupport i) N).coefficient
+    x ξ‖
+  set w := (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N - β.length) / 2)
+  have h₁ : ‖x - z i‖ ^ (2 * n) * F ≤ (|r| ^ (2 * n) * B + A) * w := by
+    rcases le_or_gt (dist x (z i)) r with hx | hx
+    · have hxr : ‖x - z i‖ ^ (2 * n) ≤ |r| ^ (2 * n) :=
+        pow_le_pow_left₀ (norm_nonneg _) ((dist_eq_norm x (z i) ▸ hx).trans (le_abs_self r)) _
+      calc ‖x - z i‖ ^ (2 * n) * F ≤ |r| ^ (2 * n) * (B * w) :=
+            mul_le_mul hxr (hB i x ξ) (norm_nonneg _) (by positivity)
+        _ ≤ (|r| ^ (2 * n) * B + A) * w := by
+            rw [← mul_assoc, add_mul]
+            exact le_add_of_nonneg_right (by positivity)
+    · calc ‖x - z i‖ ^ (2 * n) * F ≤ A * w := by
+            simpa only [F, hc.mixedDeriv_sharpRemainder_eq _ _ _ hx] using hA i x ξ hx
+        _ ≤ (|r| ^ (2 * n) * B + A) * w :=
+            mul_le_mul_of_nonneg_right (le_add_of_nonneg_left (by positivity)) (by positivity)
+  exact (le_mul_one_add_norm_sq_pow_inv (norm_nonneg _) (hB i x ξ) h₁).trans_eq (by ring)
+
 end Sharp
 
 /-! ### The composition of two uniform symbols -/
@@ -300,53 +446,67 @@ section Composition
 
 variable [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
 
+/-- The lattice piece `χ(x - j) a(x, ξ)` of a symbol `a`, cut off by the integer translate of the
+bump `χ = TauCeti.latticeBump n` centred at the lattice point `j ∈ ℤⁿ`. -/
+private def latticePiece (a : Symbol n V W m) (j : Fin n → ℤ) : Symbol n V W m :=
+  smulLeft (Complex.ofRealCLM.contDiff.comp (contDiff_latticeBump_sub j)) a
+
+omit [CompleteSpace V] [CompleteSpace W] [CompleteSpace U] in
+private theorem coefficient_latticePiece (a : Symbol n V W m) (j : Fin n → ℤ)
+    (q : CoordinateSpace n × CoordinateSpace n) :
+    (latticePiece a j).coefficient q =
+      latticeBump n (q.1 - latticePoint j) • a.coefficient q := by
+  rw [latticePiece, coefficient_smulLeft_ofReal]
+
+omit [CompleteSpace V] [CompleteSpace W] [CompleteSpace U] in
+/-- The lattice pieces of a uniform symbol `a` form a ball family centred at the lattice points,
+with radius `√n`. -/
+private theorem isBallFamily_latticePiece {a : Symbol n V W m} (ha : a.IsUniform) :
+    IsBallFamily (fun j : Fin n → ℤ ↦ latticePoint j) √n (latticePiece a) :=
+  isBallFamily_smulLeft_latticeBump ha
+
 omit [CompleteSpace V] in
 /-- The quantization of `p # (χ(· - j) a)` is `Op(p)` applied to `χ(· - j) Op(a) u`. -/
-private theorem quantizeSchwartzValue_sharp_latticeBump_comp (p : Symbol n W U m')
+private theorem quantizeSchwartzValue_sharp_latticePiece (p : Symbol n W U m')
     {a : Symbol n V W m} (ha : a.IsUniform) (u : 𝓢(CoordinateSpace n, V))
     (x : CoordinateSpace n) (j : Fin n → ℤ) :
     quantizeSchwartzValue (p.sharp _
-      ((isBallFamily_latticeBump_comp ha).hasCompactSpatialSupport j)).coefficient u x =
+      ((isBallFamily_latticePiece ha).hasCompactSpatialSupport j)).coefficient u x =
       quantizeSchwartzValue p.coefficient (SchwartzMap.smulLeftCLM W
         (fun y ↦ latticeBump n (y - latticePoint j)) (quantizeUniformCLM a ha u)) x := by
   rw [quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue]
   congr 1
   ext y
-  rw [HasCompactSupport.toSchwartzMap_toFun, quantizeSchwartzValue_ofSpatial_smul_id_comp,
-    SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j), Complex.coe_smul,
+  simp [latticePiece, quantizeSchwartzValue_smulLeft,
+    SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j),
     quantizeUniformCLM_apply]
 
-/-- **Composition of uniform symbols.** If `p` and `a` are symbols of orders `m'` and `m` whose
-estimates hold uniformly in the position, then `Op(p) ∘ Op(a)` is the quantization of a symbol of
-order `m' + m` whose estimates hold uniformly in the position. No compact spatial support is
-assumed for either symbol. -/
-theorem IsUniform.exists_quantizeUniformCLM_comp {p : Symbol n W U m'} (hp : p.IsUniform)
-    {a : Symbol n V W m} (ha : a.IsUniform) :
+/-- The series `∑ⱼ p # χⱼ a` over the lattice pieces of `a` converges to a symbol of order
+`m' + m` with estimates uniform in the position, whose quantization is `Op(p) ∘ Op(a)`. -/
+private theorem IsUniform.exists_hasSum_sharp_latticePiece {p : Symbol n W U m'}
+    (hp : p.IsUniform) {a : Symbol n V W m} (ha : a.IsUniform) :
     ∃ (c : Symbol n V U (m' + m)) (hc : c.IsUniform),
+      (∀ q, HasSum (fun j ↦ (p.sharp (latticePiece a j)
+        ((isBallFamily_latticePiece ha).hasCompactSpatialSupport j)).coefficient q)
+          (c.coefficient q)) ∧
       quantizeUniformCLM p hp ∘L quantizeUniformCLM a ha = quantizeUniformCLM c hc := by
-  have hfam := isBallFamily_latticeBump_comp ha
-  set F : (Fin n → ℤ) → Symbol n V U (m' + (0 + m)) := fun j ↦ p.sharp _
+  have hfam := isBallFamily_latticePiece ha
+  set F : (Fin n → ℤ) → Symbol n V U (m' + m) := fun j ↦ p.sharp _
     (hfam.hasCompactSpatialSupport j)
-  set w : (Fin n → ℤ) → CoordinateSpace n → ℝ := fun j x ↦
-    ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹
-  obtain ⟨b, hb, hbsum⟩ := exists_isUniform_hasSum_coefficient F w (fun _ _ ↦ by positivity)
-    (fun x ↦ ⟨fun j ↦ 4 ^ n * w j x,
-      (summable_one_add_norm_sub_latticePoint_sq_pow_inv x).mul_left _,
-      fun j _ hy ↦ one_add_norm_sub_latticePoint_sq_pow_inv_le_of_dist_le_one (mem_ball.1 hy).le j⟩)
-    tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le
-    (hfam.exists_norm_mixedDeriv_sharp_le hp)
-  have hord : m' + (0 + m) = m' + m := by ring
-  refine ⟨Symbol.inclusion hord.le b, hb.inclusion hord.le, ?_⟩
+  obtain ⟨b, hb, hbsum⟩ := exists_isUniform_hasSum_coefficient F
+    (fun j x ↦ ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹) (fun _ _ ↦ by positivity)
+    exists_summable_forall_one_add_norm_sub_latticePoint_sq_pow_inv_le
+    tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le (hfam.exists_norm_mixedDeriv_sharp_le hp)
+  refine ⟨b, hb, hbsum, ?_⟩
   ext u x
-  rw [ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply, quantizeUniformCLM_apply,
-    coefficient_inclusion]
+  rw [ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply, quantizeUniformCLM_apply]
   -- Both sides are the sum of the series `∑ⱼ Op(p # χⱼ a) u (x)`.
   obtain ⟨C, -, hC⟩ := hfam.exists_norm_mixedDeriv_sharp_le hp [] []
   simp only [mixedDeriv_nil_nil, List.length_nil, CharP.cast_eq_zero, sub_zero] at hC
   refine ((hasSum_quantizeSchwartzValue_of_hasSum_coefficient hbsum
     (summable_one_add_norm_sub_latticePoint_sq_pow_inv x) (hC · x) u).unique ?_).symm
   -- The lattice partition of unity converges in Schwartz space, on which `Op(p)` is continuous.
-  simp only [F, quantizeSchwartzValue_sharp_latticeBump_comp p ha u x]
+  simp only [F, quantizeSchwartzValue_sharp_latticePiece p ha u x]
   have h := (SchwartzMap.hasSum_smulLeftCLM_latticeBump_sub (F := W)
     (quantizeUniformCLM a ha u)).mapL ((BoundedContinuousFunction.evalCLM ℂ x) ∘L
       (SchwartzMap.toBoundedContinuousFunctionCLM ℂ (CoordinateSpace n) U) ∘L
@@ -354,6 +514,87 @@ theorem IsUniform.exists_quantizeUniformCLM_comp {p : Symbol n W U m'} (hp : p.I
   simp only [ContinuousLinearMap.comp_apply, BoundedContinuousFunction.evalCLM_apply,
     SchwartzMap.toBoundedContinuousFunctionCLM_apply, quantizeUniformCLM_apply] at h
   exact h
+
+/-- **Composition of uniform symbols.** If `p` and `a` are symbols of orders `m'` and `m` whose
+estimates hold uniformly in the position, then `Op(p) ∘ Op(a)` is the quantization of a symbol of
+order `m' + m` whose estimates hold uniformly in the position. No compact spatial support is
+assumed for either symbol. The symbol has the asymptotic expansion `∑ₖ sharpTerm p a k`
+(`TauCeti.Symbol.IsUniform.isUniformAsymptoticSum_sharpTerm_of_comp_eq`). -/
+theorem IsUniform.exists_quantizeUniformCLM_comp {p : Symbol n W U m'} (hp : p.IsUniform)
+    {a : Symbol n V W m} (ha : a.IsUniform) :
+    ∃ (c : Symbol n V U (m' + m)) (hc : c.IsUniform),
+      quantizeUniformCLM p hp ∘L quantizeUniformCLM a ha = quantizeUniformCLM c hc :=
+  let ⟨c, hc, _, h⟩ := hp.exists_hasSum_sharp_latticePiece ha
+  ⟨c, hc, h⟩
+
+omit [CompleteSpace V] [CompleteSpace W] [CompleteSpace U] in
+/-- The terms of the composition expansion with the lattice pieces of `b` sum to the terms with
+`b`: near each position only finitely many pieces are nonzero, and they sum to `b` there. -/
+private theorem hasSum_coefficient_sharpTerm_latticePiece (p : Symbol n W U m')
+    (b : Symbol n V W m) (k : ℕ) (q : CoordinateSpace n × CoordinateSpace n) :
+    HasSum (fun j ↦ (p.sharpTerm (latticePiece b j) k).coefficient q)
+      ((p.sharpTerm b k).coefficient q) := by
+  obtain ⟨x, ξ⟩ := q
+  set R := ‖x‖ + √n + 1
+  have hfin := finite_setOf_norm_latticePoint_lt (ι := Fin n) R
+  have hs : ∀ j, ‖latticePoint j‖ < R → j ∈ hfin.toFinset := fun j hj ↦ hfin.mem_toFinset.2 hj
+  have hnear : ∀ᶠ y in 𝓝 x, ‖y‖ + √n < R :=
+    (isOpen_lt (continuous_norm.add continuous_const) continuous_const).mem_nhds (by simp [R])
+  -- Near `x`, the pieces centred at the lattice points of `hfin.toFinset` sum to `b`.
+  have hsum : (p.sharpTerm b k).coefficient (x, ξ) =
+      ∑ j ∈ hfin.toFinset, (p.sharpTerm (latticePiece b j) k).coefficient (x, ξ) := by
+    rw [← coefficient_sharpTerm_congr_of_eventually
+      (b' := ∑ j ∈ hfin.toFinset, latticePiece b j) ?_ p k ξ]
+    · simpa using congrFun (coefficient_sharpTerm_eq_sum_right hfin.toFinset (fun _ ↦ 1)
+        (latticePiece b) (b₀ := ∑ j ∈ hfin.toFinset, latticePiece b j)
+        (by simp [coefficient_sum]) p k) (x, ξ)
+    · filter_upwards [hnear] with y hy η
+      rw [coefficient_sum, Finset.sum_apply]
+      simp only [coefficient_latticePiece]
+      rw [← Finset.sum_smul, sum_latticeBump_sub_eq_one hs hy, one_smul]
+  rw [hsum]
+  -- The other pieces vanish near `x`.
+  refine hasSum_sum_of_ne_finset_zero fun j hj ↦
+    coefficient_sharpTerm_eq_zero_of_eventuallyEq_zero_right ?_ p k
+  filter_upwards [hnear.prod_inl_nhds ξ] with ⟨y, η⟩ hy
+  rw [Pi.zero_apply, coefficient_latticePiece,
+    latticeBump_sub_eq_zero_of_notMem (s := (hfin.toFinset : Set (Fin n → ℤ))) hs hy hj, zero_smul]
+
+/-- **The asymptotic expansion of the composition of uniform symbols.** Let `p` and `a` be symbols
+of orders `m'` and `m` whose estimates hold uniformly in the position, and let `c` be the symbol of
+order `m' + m` with `Op(p) ∘ Op(a) = Op(c)`
+(`TauCeti.Symbol.IsUniform.exists_quantizeUniformCLM_comp`). Then `c ∼ ∑ₖ sharpTerm p a k` in the
+uniform symbol classes: for every `N`, the remainder
+`c - ∑_{k < N} sharpTerm p a k` is a symbol of order `m' + m - N` whose estimates hold uniformly in
+the position. No compact spatial support is assumed for either symbol; with compact spatial
+support of `a`, `c` is the composition symbol `p # a` and this is
+`TauCeti.Symbol.IsUniform.sharpRemainder`. -/
+theorem IsUniform.isUniformAsymptoticSum_sharpTerm_of_comp_eq {p : Symbol n W U m'}
+    (hp : p.IsUniform) {a : Symbol n V W m} (ha : a.IsUniform) {c : Symbol n V U (m' + m)}
+    (hc : c.IsUniform)
+    (h : quantizeUniformCLM p hp ∘L quantizeUniformCLM a ha = quantizeUniformCLM c hc) :
+    IsUniformAsymptoticSum (m := fun k : ℕ ↦ m' + m - k) (Symbol.inclusion (by simp) c)
+      (p.sharpTerm a) := by
+  obtain ⟨b, hb, hbsum, hbq⟩ := hp.exists_hasSum_sharp_latticePiece ha
+  -- By uniqueness of symbols, `c` is the sum `b` of the series `∑ⱼ p # χⱼ a`.
+  obtain rfl : c = b := quantizeSchwartzValue_injective <| funext fun u ↦ funext fun x ↦ by
+    simpa only [quantizeUniformCLM_apply] using congrArg (fun T ↦ T u x) (h.symm.trans hbq)
+  have hfam := isBallFamily_latticePiece ha
+  refine isUniformAsymptoticSum_iff.2 fun N ↦ ?_
+  -- The remainders of the pieces decay away from their lattice points, so their series converges
+  -- to a uniform symbol of order `m' + m - N`.
+  obtain ⟨r, hr, hrsum⟩ := exists_isUniform_hasSum_coefficient
+    (fun j ↦ p.sharpRemainder (latticePiece a j) (hfam.hasCompactSpatialSupport j) N)
+    (fun j x ↦ ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹) (fun _ _ ↦ by positivity)
+    exists_summable_forall_one_add_norm_sub_latticePoint_sq_pow_inv_le
+    tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le
+    (hfam.exists_norm_mixedDeriv_sharpRemainder_le hp N)
+  refine ⟨Symbol.inclusion (by simp) r, hr.inclusion _, funext fun q ↦ ?_⟩
+  have hq := hrsum q
+  simp only [coefficient_sharpRemainder, Pi.sub_apply, Finset.sum_apply] at hq
+  simp only [coefficient_inclusion, Pi.sub_apply, Finset.sum_apply]
+  exact ((hbsum q).sub (hasSum_sum fun k _ ↦
+    hasSum_coefficient_sharpTerm_latticePiece p a k q)).unique hq
 
 end Composition
 
