@@ -55,7 +55,8 @@ factorization through simple constituents gives compatibility with tensor produc
 * `TauCeti.isPerfPair_homPairing`: in a finite semisimple category the pairing is perfect;
 * `Module.Basis.homDual`: the dual basis of `X ⟶ S` of a basis of `S ⟶ X`, characterized by
   `Module.Basis.apply_comp_homDual` and `Module.Basis.eq_homDual_iff`, with coordinates computed
-  by `Module.Basis.comp_homDual` and `Module.Basis.homDual_repr`;
+  by `Module.Basis.comp_homDual` and `Module.Basis.homDual_repr`, and source-isomorphism
+  transport `Module.Basis.homDual_map_homCongr`;
 * `TauCeti.sum_sum_homDual_comp_eq_id`: the completeness relation;
 * `Module.Basis.sum_homDual_comp`: naturality of the canonical element, and
   `Module.Basis.sum_homDual_eq` its independence of the basis;
@@ -185,6 +186,16 @@ theorem eq_homDual_iff (g : X ⟶ S) (j : ι) :
   rw [homDual_repr, homDual_repr, homPairing_homDual, repr_self, Finsupp.single_apply,
     homPairing_eq_iff, h i]
   split_ifs <;> simp_all [eq_comm]
+
+/-- Transporting a basis of `S ⟶ X` along a source isomorphism `u : S ≅ S'` yields the dual
+basis obtained by postcomposing with `u.hom`. -/
+theorem homDual_map_homCongr {S' : C} [Simple S'] [FiniteDimensional k (S' ⟶ S')]
+    (u : S ≅ S') (i : ι) :
+    (b.map (Linear.homCongr k u (Iso.refl X))).homDual i = b.homDual i ≫ u.hom := by
+  refine ((Basis.eq_homDual_iff _ _ i).2 fun l ↦ ?_).symm
+  rw [Basis.map_apply, Linear.homCongr_apply, Iso.refl_hom, Category.comp_id,
+    Category.assoc, ← Category.assoc (b l), b.apply_comp_homDual l i]
+  split_ifs <;> simp
 
 end Dual
 

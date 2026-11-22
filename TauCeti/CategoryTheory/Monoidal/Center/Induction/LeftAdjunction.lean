@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Adjunction
+public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Faithful
 public import TauCeti.CategoryTheory.Semisimple.OppositePairing
 public import TauCeti.CategoryTheory.Semisimple.Rigid
 
@@ -267,30 +268,35 @@ private theorem rightAdjointMate_whiskerRight_comp_inductionMate (S : SimpleClas
         monoidal
 
 private theorem left_triangle_self (X : C) (S : SimpleClasses C) :
-    S.repr ◁ (((λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫
-        ((SimpleClasses.classOfReprIso (𝟙_ C)).inv ⊗ₘ
-          (𝟙 X ⊗ₘ ((SimpleClasses.classOfReprIso (𝟙_ C)).hom)ᘁ))) ▷ S.reprᘁ ≫
+    S.repr ◁ ((inductionUnitSummandIso X).inv ▷ S.reprᘁ ≫
       inductionβComponent k X S.reprᘁ (SimpleClasses.classOf (𝟙_ C)) S) ≫
       (α_ S.repr S.reprᘁ (S.repr ⊗ X ⊗ S.reprᘁ)).inv ≫ oppEval S ▷ (S.repr ⊗ X ⊗ S.reprᘁ) ≫
       (λ_ (S.repr ⊗ X ⊗ S.reprᘁ)).hom = 𝟙 (S.repr ⊗ X ⊗ S.reprᘁ) := by
   let u₀ := SimpleClasses.classOfReprIso (𝟙_ C)
-  have hinner : ((λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ (u₀.inv ⊗ₘ (𝟙 X ⊗ₘ (u₀.hom)ᘁ))) ▷ S.reprᘁ ≫
+  have hinner : (inductionUnitSummandIso X).inv ▷ S.reprᘁ ≫
         inductionTerm k X (ε_ S.repr S.reprᘁ ≫ u₀.inv) (u₀.hom ≫ oppCoev S) =
       (λ_ (X ⊗ S.reprᘁ)).inv ≫ oppCoev S ▷ (X ⊗ S.reprᘁ) ≫
         (α_ S.reprᘁ S.repr (X ⊗ S.reprᘁ)).hom := by
-    rw [inductionTerm_apply]
-    calc _ = 𝟙 _ ⊗≫ (u₀.inv ▷ (X ⊗ 𝟙_ C)) ▷ S.reprᘁ ⊗≫
-              (((SimpleClasses.classOf (𝟙_ C)).repr ◁ (X ◁ (u₀.hom)ᘁ) ≫
-                (u₀.hom ≫ oppCoev S) ▷ (X ⊗ _)) ▷ S.reprᘁ) ⊗≫
-              S.reprᘁ ◁ S.repr ◁ X ◁ inductionMate k S.reprᘁ (ε_ S.repr S.reprᘁ ≫ u₀.inv) ⊗≫
-              𝟙 _ := by simp only [tensorHom_def, comp_whiskerRight]; monoidal
-      _ = 𝟙 _ ⊗≫ ((u₀.inv ≫ u₀.hom ≫ oppCoev S) ▷ (X ⊗ 𝟙_ C)) ▷ S.reprᘁ ⊗≫
-            S.reprᘁ ◁ S.repr ◁ X ◁
+    rw [inductionUnitSummandIso_inv, inductionTerm_apply]
+    calc _ = 𝟙 _ ⊗≫ (𝟙_ C ◁ (X ◁ (u₀.hom)ᘁ)) ▷ (S.reprᘁ : C) ⊗≫
+              ((u₀.inv ≫ u₀.hom ≫ oppCoev S) ▷ (X ⊗ (SimpleClasses.classOf (𝟙_ C)).reprᘁ)) ▷
+                (S.reprᘁ : C) ⊗≫
+              (S.reprᘁ : C) ◁ S.repr ◁ X ◁ inductionMate k S.reprᘁ (ε_ S.repr S.reprᘁ ≫ u₀.inv) ⊗≫
+              𝟙 _ := by simp only [comp_whiskerRight]; monoidal
+      _ = 𝟙 _ ⊗≫ ((oppCoev S ▷ (X ⊗ 𝟙_ C)) ≫
+              (((S.reprᘁ : C) ⊗ S.repr) ◁
+                (X ◁ (u₀.homᘁ : (𝟙_ C)ᘁ ⟶ (SimpleClasses.classOf (𝟙_ C)).reprᘁ)))) ▷
+                (S.reprᘁ : C) ⊗≫
+            (S.reprᘁ : C) ◁ S.repr ◁ X ◁ inductionMate k S.reprᘁ (ε_ S.repr S.reprᘁ ≫ u₀.inv) ⊗≫
+            𝟙 _ := by
+            rw [u₀.inv_hom_id_assoc, ← whisker_exchange]; simp only [comp_whiskerRight]; monoidal
+      _ = 𝟙 _ ⊗≫ oppCoev S ▷ (X ⊗ 𝟙_ C) ▷ (S.reprᘁ : C) ⊗≫
+            (S.reprᘁ : C) ◁ S.repr ◁ X ◁
               ((u₀.hom)ᘁ ▷ S.reprᘁ ≫ inductionMate k S.reprᘁ (ε_ S.repr S.reprᘁ ≫ u₀.inv)) ⊗≫
             𝟙 _ := by
-            rw [whisker_exchange]; simp only [comp_whiskerRight, whiskerLeft_comp]; monoidal
+            simp only [whiskerLeft_comp, comp_whiskerRight]; monoidal
       _ = _ := by
-            rw [u₀.inv_hom_id_assoc, rightAdjointMate_whiskerRight_comp_inductionMate k S]; monoidal
+            rw [rightAdjointMate_whiskerRight_comp_inductionMate k S]; monoidal
   rw [inductionβComponent_eq k X S.reprᘁ _ S (unitClassCoevaluationBasis k S), Fin.sum_univ_one,
     unitClassCoevaluationBasis_homDual, unitClassCoevaluationBasis_apply, hinner]
   calc _ = 𝟙 _ ⊗≫ (S.repr ◁ oppCoev S ⊗≫ oppEval S ▷ S.repr) ▷ (X ⊗ S.reprᘁ) ⊗≫ 𝟙 _ := by
@@ -311,30 +317,16 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [Linear k C] [MonoidalCategor
   [∀ X Y : C, FiniteDimensional k (X ⟶ Y)]
 
 private def unitL (X : C) : X ⟶ inductionObj X :=
-  (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫
-    ((SimpleClasses.classOfReprIso (𝟙_ C)).inv ⊗ₘ
-      (𝟙 X ⊗ₘ ((SimpleClasses.classOfReprIso (𝟙_ C)).hom)ᘁ)) ≫
+  (inductionUnitSummandIso X).inv ≫
     biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C))
 
 omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalPreadditive C] [MonoidalLinear k C]
   [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] in
 private theorem unitL_naturality {X X' : C} (f : X ⟶ X') :
     f ≫ unitL X' = unitL X ≫ inductionMap f := by
-  let u₀ := SimpleClasses.classOfReprIso (𝟙_ C)
-  have h1 : (SimpleClasses.classOf (𝟙_ C)).repr ◁ f ▷ (SimpleClasses.classOf (𝟙_ C)).reprᘁ =
-      𝟙 (SimpleClasses.classOf (𝟙_ C)).repr ⊗ₘ (f ⊗ₘ 𝟙 (SimpleClasses.classOf (𝟙_ C)).reprᘁ) := by
-    simp [tensorHom_def]
-  have hmid : (u₀.inv ⊗ₘ (𝟙 X ⊗ₘ (u₀.hom)ᘁ)) ≫ (SimpleClasses.classOf (𝟙_ C)).repr ◁ f ▷
-        (SimpleClasses.classOf (𝟙_ C)).reprᘁ =
-      (𝟙 (𝟙_ C) ⊗ₘ (f ⊗ₘ 𝟙 (𝟙_ C))) ≫ (u₀.inv ⊗ₘ (𝟙 X' ⊗ₘ (u₀.hom)ᘁ)) := by
-    rw [h1, tensorHom_comp_tensorHom, tensorHom_comp_tensorHom,
-      tensorHom_comp_tensorHom, tensorHom_comp_tensorHom]; simp
-  have hunitor : f ≫ (λ_ X').inv ≫ 𝟙_ C ◁ (ρ_ X').inv =
-      (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ (𝟙 (𝟙_ C) ⊗ₘ (f ⊗ₘ 𝟙 (𝟙_ C))) := by
-    simp only [tensorHom_def]; monoidal
   dsimp only [unitL]
-  simp only [Category.assoc, biproduct.ι_map]
-  rw [reassoc_of% hunitor, ← reassoc_of% hmid]
+  rw [inductionUnitSummandIso_inv_naturality_assoc]
+  simp [inductionMap, inductionSummand]
 
 private def counitLF {A : C} (b : HalfBraiding A) : inductionObj A ⟶ A :=
   biproduct.desc (counitComponent b)
@@ -356,17 +348,6 @@ private theorem counitLF_naturality {A A' : C} {b : HalfBraiding A} {b' : HalfBr
           (f ▷ (S.repr ⊗ S.reprᘁ) ≫ A' ◁ oppEval S) ≫ (ρ_ A').hom := by
           rw [hβ]; simp only [comp_whiskerRight, Category.assoc]; monoidal
     _ = _ := by rw [← whisker_exchange, Category.assoc, rightUnitor_naturality]; simp
-
-omit [MonoidalCategory C] [MonoidalPreadditive C] [MonoidalLinear k C] [RigidCategory C]
-  [Simple (𝟙_ C)] [Fintype (SimpleClasses C)] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] in
-private theorem homDual_map_homCongr {S S' X : C} [Simple S] [Simple S']
-    [FiniteDimensional k (S ⟶ S)] [FiniteDimensional k (S' ⟶ S')]
-    {ι : Type*} [Finite ι] [DecidableEq ι] (b : Basis ι k (S ⟶ X)) (u : S' ≅ S) (i : ι) :
-    (b.map (Linear.homCongr k u.symm (Iso.refl X))).homDual i = b.homDual i ≫ u.inv := by
-  refine ((Basis.eq_homDual_iff _ _ i).2 fun l ↦ ?_).symm
-  rw [Basis.map_apply, Linear.homCongr_apply, Iso.symm_inv, Iso.refl_hom, Category.comp_id,
-    Category.assoc, ← Category.assoc (b l), b.apply_comp_homDual l i]
-  split_ifs <;> simp
 
 private theorem sum_kernel_eq_evaluation (U : C) (S : SimpleClasses C) :
     (∑ T : SimpleClasses C, ∑ i,
@@ -392,7 +373,7 @@ private theorem sum_kernel_eq_evaluation (U : C) (S : SimpleClasses C) :
     let d' := d.map (Linear.homCongr k u.symm (Iso.refl (S.reprᘁ ⊗ U)))
     have hsum : ∑ i, d.homDual i ≫ d i = ∑ i, d'.homDual i ≫ d' i :=
       Finset.sum_congr rfl fun i _ ↦ by
-        simp [d', homDual_map_homCongr, Linear.homCongr_apply, Category.assoc]
+        simp [d', Basis.homDual_map_homCongr, Linear.homCongr_apply, Category.assoc]
     rw [hsum]
     exact d'.sum_homDual_eq (c T.dual) (Linear.comp _ _ _)
   simp_rw [hT]
@@ -419,40 +400,38 @@ private theorem counitLF_comm {A : C} (b : HalfBraiding A) (U : C) :
   rw [sum_kernel_eq_evaluation]
   simp only [counitComponent, comp_whiskerRight, whiskerLeft_comp]; monoidal
 
+omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalLinear k C] [Fintype (SimpleClasses C)]
+  [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] in
+private theorem counitComponent_classOf_unit {A : C} (b : HalfBraiding A) :
+    counitComponent b (SimpleClasses.classOf (𝟙_ C)) = (inductionUnitSummandIso A).hom := by
+  dsimp only [counitComponent, oppEval]
+  let u₀ := SimpleClasses.classOfReprIso (𝟙_ C)
+  have hβ : (b.β (SimpleClasses.classOf (𝟙_ C)).repr).inv =
+      u₀.hom ▷ A ≫ (λ_ A).hom ≫ (ρ_ A).inv ≫ A ◁ u₀.inv := by
+    have hunit : (b.β (𝟙_ C)).inv = (λ_ A).hom ≫ (ρ_ A).inv := Iso.inv_ext (by simp)
+    rw [← cancel_epi (u₀.inv ▷ A), ← comp_whiskerRight_assoc, u₀.inv_hom_id, id_whiskerRight,
+      Category.id_comp, b.naturality_inv u₀.inv, hunit, Category.assoc]
+  rw [hβ, simpleOppositeExactPairing_evaluation_of_iso_unit u₀, inductionUnitSummandIso_hom]
+  calc _ = 𝟙 _ ⊗≫ u₀.hom ▷ (A ⊗ (SimpleClasses.classOf (𝟙_ C)).reprᘁ) ⊗≫
+            ((A ◁ u₀.inv ≫ A ◁ u₀.hom) ▷ (SimpleClasses.classOf (𝟙_ C)).reprᘁ ≫
+              (A ⊗ 𝟙_ C) ◁ (u₀.inv)ᘁ) ⊗≫ (λ_ (A ⊗ 𝟙_ C)).hom ≫ (ρ_ A).hom := by
+          simp only [tensorHom_def, comp_whiskerRight, whiskerLeft_comp]; monoidal
+    _ = 𝟙 _ ⊗≫ u₀.hom ▷ (A ⊗ (SimpleClasses.classOf (𝟙_ C)).reprᘁ) ⊗≫
+          ((λ_ (A ⊗ (SimpleClasses.classOf (𝟙_ C)).reprᘁ)).hom ≫ A ◁ (u₀.inv)ᘁ) ⊗≫
+          (ρ_ A).hom := by
+          rw [← whiskerLeft_comp, u₀.inv_hom_id, whiskerLeft_id, id_whiskerRight,
+            Category.id_comp, ← leftUnitor_naturality]
+          monoidal
+    _ = _ := by
+          rw [← leftUnitor_naturality]
+          monoidal
+
 omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalLinear k C]
   [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] in
 private theorem unitL_comp_counitLF {A : C} (b : HalfBraiding A) :
     unitL A ≫ counitLF b = 𝟙 A := by
-  dsimp only [unitL, counitLF]
-  rw [Category.assoc, Category.assoc, Category.assoc, biproduct.ι_desc]
-  dsimp only [counitComponent, oppEval]
-  let u₀ := SimpleClasses.classOfReprIso (𝟙_ C)
-  have hβ : u₀.inv ▷ A ≫ (b.β (SimpleClasses.classOf (𝟙_ C)).repr).inv =
-      (λ_ A).hom ≫ (ρ_ A).inv ≫ A ◁ u₀.inv := by
-    have hunit : (b.β (𝟙_ C)).inv = (λ_ A).hom ≫ (ρ_ A).inv := Iso.inv_ext (by simp)
-    rw [b.naturality_inv u₀.inv, hunit, Category.assoc]
-  have hex : ((SimpleClasses.classOf (𝟙_ C)).repr ◁ A ◁ (u₀.hom)ᘁ) ≫
-        (α_ _ A _).inv ≫ (b.β _).inv ▷ _ =
-      (α_ _ A (𝟙_ C)).inv ≫ (b.β _).inv ▷ 𝟙_ C ≫ (A ⊗ _) ◁ (u₀.hom)ᘁ := by
-    calc _ = (α_ _ A (𝟙_ C)).inv ≫
-              (((SimpleClasses.classOf (𝟙_ C)).repr ⊗ A) ◁ (u₀.hom)ᘁ ≫ (b.β _).inv ▷ _) := by
-            monoidal
-      _ = _ := by rw [whisker_exchange]
-  have hmate_id : (u₀.hom)ᘁ ≫ (u₀.inv)ᘁ = 𝟙 ((𝟙_ C)ᘁ : C) := by
-    rw [← comp_rightAdjointMate, u₀.inv_hom_id, rightAdjointMate_id]
-  have hv : (u₀.inv ⊗ₘ (𝟙 A ⊗ₘ (u₀.hom)ᘁ)) =
-      u₀.inv ▷ (A ⊗ 𝟙_ C) ≫ (SimpleClasses.classOf (𝟙_ C)).repr ◁ A ◁ (u₀.hom)ᘁ := by
-    rw [tensorHom_def, id_tensorHom]; rfl
-  rw [simpleOppositeExactPairing_evaluation_of_iso_unit u₀, hv, Category.assoc (u₀.inv ▷ _),
-    reassoc_of% hex]
-  calc _ = 𝟙 _ ⊗≫ (u₀.inv ▷ A ≫ (b.β _).inv) ▷ 𝟙_ C ⊗≫
-            A ◁ ((SimpleClasses.classOf (𝟙_ C)).repr ◁ (u₀.hom)ᘁ ≫ (u₀.hom ⊗ₘ (u₀.inv)ᘁ)) ⊗≫
-            𝟙 A := by simp only [whiskerLeft_comp]; monoidal
-    _ = 𝟙 _ ⊗≫ A ◁ ((u₀.inv ⊗ₘ (u₀.hom)ᘁ) ≫ (u₀.hom ⊗ₘ (u₀.inv)ᘁ)) ⊗≫ 𝟙 A := by
-          rw [hβ]; simp only [tensorHom_def, comp_whiskerRight]; monoidal
-    _ = 𝟙 A := by
-          rw [tensorHom_comp_tensorHom, u₀.inv_hom_id, hmate_id, id_tensorHom_id, whiskerLeft_id]
-          monoidal
+  rw [unitL, Category.assoc, counitLF, biproduct.ι_desc, counitComponent_classOf_unit,
+    Iso.inv_hom_id]
 
 private theorem inductionMap_unitL_comp_counitLF (X : C) :
     inductionMap (unitL X) ≫ counitLF (inductionHalfBraiding k X) = 𝟙 (inductionObj X) := by
@@ -480,12 +459,13 @@ private theorem inductionMap_unitL_comp_counitLF (X : C) :
   by_cases hST : S = T
   · subst hST; rw [biproduct.ι_π_self]
     simpa only [inductionSummand, comp_whiskerRight, Category.assoc] using left_triangle_self k X S
-  · rw [biproduct.ι_π_ne _ hST, left_triangle_of_ne k X hST, comp_zero, comp_zero, comp_zero,
-      MonoidalPreadditive.whiskerLeft_zero, zero_comp]
+  · simp [biproduct.ι_π_ne _ hST, left_triangle_of_ne k X hST]
 
-private theorem unitL_comp_counitF (X : C) :
-    unitL X ≫ (forgetInductionAdjunction k C).counit.app X = 𝟙 X := by
-  rw [forgetInductionAdjunction_counit_app]; dsimp only [unitL]
+private theorem ι_classOf_unit_comp_forgetInductionAdjunction_counit_app (X : C) :
+    biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) ≫
+      (forgetInductionAdjunction k C).counit.app X =
+      (inductionUnitSummandIso X).hom := by
+  rw [forgetInductionAdjunction_counit_app]
   let u₀ := SimpleClasses.classOfReprIso (𝟙_ C)
   let r₀ : (SimpleClasses.classOf (𝟙_ C)).reprᘁ ⟶
       (RightRigidCategory.rightDual (𝟙_ C)).rightDual :=
@@ -499,28 +479,24 @@ private theorem unitL_comp_counitF (X : C) :
     have h1 := (biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) ≫= hdin) =≫
       u₀.hom ▷ (X ⊗ (RightRigidCategory.rightDual (𝟙_ C)).rightDual)
     simpa [Category.assoc, ← comp_whiskerRight] using h1
-  have hmate_unit : (u₀.hom)ᘁ ≫ r₀ ≫ (rightDualUnitIso C).hom = 𝟙 (𝟙_ C) := by
+  have hmate_unit : r₀ ≫ (rightDualUnitIso C).hom = (u₀.inv)ᘁ := by
     dsimp only [r₀]
-    rw [rightAdjointMate_eq_rightMate,
-      @rightAdjointMate_eq_rightMate C _ _ (𝟙_ C) _ (RightRigidCategory.rightDual (𝟙_ C)) _,
+    rw [@rightAdjointMate_eq_rightMate C _ _ (𝟙_ C) _ (RightRigidCategory.rightDual (𝟙_ C)) _,
       rightDualUnitIso_hom, ExactPairing.rightDualIso_hom, ← ExactPairing.comp_rightMate,
-      ← ExactPairing.comp_rightMate, Category.id_comp, u₀.inv_hom_id]
-    exact ExactPairing.rightMate_id exactPairingUnit
-  have hex : (SimpleClasses.classOf (𝟙_ C)).repr ◁ X ◁ ((u₀.hom)ᘁ ≫ r₀) ≫
-        u₀.hom ▷ (X ⊗ (RightRigidCategory.rightDual (𝟙_ C)).rightDual) =
-      u₀.hom ▷ (X ⊗ 𝟙_ C) ≫ 𝟙_ C ◁ X ◁ ((u₀.hom)ᘁ ≫ r₀) := whisker_exchange _ _
-  simp only [Category.assoc]
-  calc _ = (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ u₀.inv ▷ (X ⊗ 𝟙_ C) ≫
-            ((SimpleClasses.classOf (𝟙_ C)).repr ◁ X ◁ ((u₀.hom)ᘁ ≫ r₀) ≫
-              u₀.hom ▷ (X ⊗ (RightRigidCategory.rightDual (𝟙_ C)).rightDual)) ≫
-            (λ_ (X ⊗ (RightRigidCategory.rightDual (𝟙_ C)).rightDual)).hom ≫
-            X ◁ (rightDualUnitIso C).hom ≫ (ρ_ X).hom := by
-          rw [reassoc_of% hend]; simp only [tensorHom_def, whiskerLeft_comp, Category.assoc]
-          monoidal
-    _ = 𝟙 X ⊗≫ (u₀.inv ≫ u₀.hom) ▷ (X ⊗ 𝟙_ C) ⊗≫
-          𝟙_ C ◁ X ◁ ((u₀.hom)ᘁ ≫ r₀ ≫ (rightDualUnitIso C).hom) ⊗≫ 𝟙 X := by
-          rw [hex]; simp only [comp_whiskerRight, whiskerLeft_comp]; monoidal
-    _ = 𝟙 X := by rw [u₀.inv_hom_id, hmate_unit]; monoidal
+      Category.id_comp, rightAdjointMate_eq_rightMate]
+    rfl
+  rw [← Category.assoc, hend, Category.assoc, inductionUnitSummandIso_hom]
+  calc _ = u₀.hom ▷ (X ⊗ (SimpleClasses.classOf (𝟙_ C)).reprᘁ) ≫
+            𝟙_ C ◁ X ◁ (r₀ ≫ (rightDualUnitIso C).hom) ≫
+            (λ_ (X ⊗ 𝟙_ C)).hom ≫ (ρ_ X).hom := by
+          rw [whisker_exchange_assoc, ← leftUnitor_naturality_assoc]
+          simp only [whiskerLeft_comp, Category.assoc]
+    _ = _ := by rw [hmate_unit]
+
+private theorem unitL_comp_counitF (X : C) :
+    unitL X ≫ (forgetInductionAdjunction k C).counit.app X = 𝟙 X := by
+  refine (Category.assoc _ _ _).trans ?_
+  rw [ι_classOf_unit_comp_forgetInductionAdjunction_counit_app, Iso.inv_hom_id]
 
 /-! ### Public left adjunction API -/
 
@@ -561,9 +537,7 @@ instance instIsLeftAdjointInduction : (induction k C).IsLeftAdjoint :=
 /-- Explicit formula for the unit of `inductionForgetAdjunction` at `X`. -/
 theorem inductionForgetAdjunction_unit_app (X : C) :
     (inductionForgetAdjunction k C).unit.app X =
-      (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫
-        ((SimpleClasses.classOfReprIso (𝟙_ C)).inv ⊗ₘ
-          (𝟙 X ⊗ₘ ((SimpleClasses.classOfReprIso (𝟙_ C)).hom)ᘁ)) ≫
+      (inductionUnitSummandIso X).inv ≫
         biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) := (rfl)
 
 /-- Reassociated form of `inductionForgetAdjunction_unit_app`.
@@ -573,13 +547,10 @@ would otherwise leave the right-hand side left-associated at `biproduct.ι`. -/
 theorem inductionForgetAdjunction_unit_app_assoc (X : C) {W : C}
     (h : (forget C).obj ((induction k C).obj X) ⟶ W) :
     (inductionForgetAdjunction k C).unit.app X ≫ h =
-      (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫
-        ((SimpleClasses.classOfReprIso (𝟙_ C)).inv ⊗ₘ
-          (𝟙 X ⊗ₘ ((SimpleClasses.classOfReprIso (𝟙_ C)).hom)ᘁ)) ≫
+      (inductionUnitSummandIso X).inv ≫
         biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) ≫ h := by
   rw [inductionForgetAdjunction_unit_app]
-  exact (Category.assoc _ _ _).trans (congrArg _ ((Category.assoc _ _ _).trans
-    (congrArg _ (Category.assoc _ _ _))))
+  exact Category.assoc _ _ _
 
 private theorem inductionForgetAdjunction_counit_app_f (Z : Center C) :
     ((inductionForgetAdjunction k C).counit.app Z).f = counitLF Z.2 :=

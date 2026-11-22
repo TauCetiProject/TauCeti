@@ -65,8 +65,8 @@ morphism.
   coevaluation, and conversely;
 * `TauCeti.rightAdjointMate_eq_rightMate`, `CategoryTheory.ExactPairing.rightDualIso_hom` and
   `CategoryTheory.ExactPairing.rightDualIso_inv`: Mathlib's `rightAdjointMate` and `rightDualIso`
-  as mates, with the evaluation identities `rightDualIso_hom_whiskerRight_evaluation` and
-  `rightDualIso_inv_whiskerRight_evaluation`;
+  as mates, with the evaluation identities `rightDualIso_hom_whiskerRight_evaluation`,
+  `rightDualIso_inv_whiskerRight_evaluation`, and `evaluation_eq_of_coevaluation_eq`;
 * `CategoryTheory.ExactPairing.leftDualHom_ext`: morphisms into a left dual agree once they agree
   after evaluation;
 * `CategoryTheory.ExactPairing.leftMate`: the left adjoint mate with respect to explicit exact
@@ -281,6 +281,22 @@ the evaluation of `p₂`. -/
 theorem rightDualIso_inv_whiskerRight_evaluation {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁)
     (p₂ : ExactPairing X Y₂) : (rightDualIso p₁ p₂).inv ▷ X ≫ ε_ X Y₁ = ε_ X Y₂ := by
   rw [rightDualIso_inv, ← rightDualIso_hom, rightDualIso_hom_whiskerRight_evaluation]
+
+/-- Two exact pairings on the same pair `(X, Y)` with equal coevaluations have equal
+evaluations. -/
+theorem evaluation_eq_of_coevaluation_eq {X Y : C} (p₁ p₂ : ExactPairing X Y)
+    (h : @coevaluation C _ _ X Y p₁ = @coevaluation C _ _ X Y p₂) :
+    @evaluation C _ _ X Y p₁ = @evaluation C _ _ X Y p₂ := by
+  have hiso : (rightDualIso p₁ p₂).hom = 𝟙 Y := by
+    have hm := coevaluation_comp_rightMate p₂ p₁ (𝟙 X)
+    rw [← rightDualIso_hom, id_whiskerRight, Category.comp_id, ← h] at hm
+    let _ : ExactPairing X Y := p₁
+    have h1 := congrArg (tensorLeftHomEquiv (𝟙_ C) X Y Y).symm (by simpa using hm :
+      η_ X Y ≫ X ◁ (rightDualIso p₁ p₂).hom = η_ X Y ≫ X ◁ 𝟙 Y)
+    rw [tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft,
+      tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft] at h1
+    exact (cancel_epi (ρ_ Y).hom).1 h1
+  simpa [hiso] using (rightDualIso_hom_whiskerRight_evaluation p₁ p₂).symm
 
 /-- The mate of the evaluation `ε_ X X' : X' ⊗ X ⟶ 𝟙_ C`, taken with respect to the tensor product
 pairing of `(X', X'')` with `(X, X')` and the self-pairing of the unit, is the coevaluation

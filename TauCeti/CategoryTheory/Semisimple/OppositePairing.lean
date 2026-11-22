@@ -174,25 +174,16 @@ theorem simpleOppositeExactPairing_evaluation_of_iso_unit {X : C} [Simple X] (u 
     @ExactPairing.evaluation C _ _ Xᘁ X (simpleOppositeExactPairing X) =
       (u.hom ⊗ₘ (u.inv)ᘁ) ≫ (λ_ (𝟙_ C)).hom := by
   let v : Xᘁ ≅ 𝟙_ C := u.rightAdjointMate.symm
-  let p₁ : ExactPairing Xᘁ X := simpleOppositeExactPairing X
   let p₂ : ExactPairing Xᘁ X := exactPairingCongr v u
-  have hcoev : @ExactPairing.coevaluation C _ _ Xᘁ X p₁ =
+  have hcoev : @ExactPairing.coevaluation C _ _ Xᘁ X (simpleOppositeExactPairing X) =
       @ExactPairing.coevaluation C _ _ Xᘁ X p₂ := by
     rw [simpleOppositeExactPairing_coevaluation_of_iso_unit u, exactPairingCongr_coevaluation,
-      ExactPairing.unit_coevaluation, ← tensorHom_def', unitors_inv_equal]; simp [v]
-  have hiso : (rightDualIso p₁ p₂).hom = 𝟙 X := by
-    have h := ExactPairing.coevaluation_comp_rightMate p₂ p₁ (𝟙 (Xᘁ : C))
-    rw [← ExactPairing.rightDualIso_hom, id_whiskerRight, Category.comp_id, ← hcoev] at h
-    let _ : ExactPairing Xᘁ X := p₁
-    have h1 := congrArg (tensorLeftHomEquiv (𝟙_ C) Xᘁ X X).symm (by simpa using h :
-      η_ (Xᘁ : C) X ≫ Xᘁ ◁ (rightDualIso p₁ p₂).hom = η_ (Xᘁ : C) X ≫ Xᘁ ◁ 𝟙 X)
-    rw [tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft,
-      tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft] at h1
-    exact (cancel_epi (ρ_ X).hom).1 h1
-  have hev := ExactPairing.rightDualIso_hom_whiskerRight_evaluation p₁ p₂
-  rw [hiso, id_whiskerRight, Category.id_comp] at hev
-  rw [← hev, exactPairingCongr_evaluation, ExactPairing.unit_evaluation, ← tensorHom_def'_assoc,
-    ← unitors_equal]; simp [v]
+      ExactPairing.unit_coevaluation, ← tensorHom_def', unitors_inv_equal]
+    simp [v]
+  rw [ExactPairing.evaluation_eq_of_coevaluation_eq (simpleOppositeExactPairing X) p₂ hcoev,
+    exactPairingCongr_evaluation, ExactPairing.unit_evaluation, ← tensorHom_def'_assoc,
+    ← unitors_equal]
+  simp [v]
 
 end Construction
 
@@ -282,11 +273,16 @@ theorem simpleOppositeExactPairing_evaluation_congr {X Y : C} [Simple X] [Simple
     (u.hom ⊗ₘ (u.inv)ᘁ) ≫
         @ExactPairing.evaluation C _ _ Yᘁ Y (simpleOppositeExactPairing Y) =
       @ExactPairing.evaluation C _ _ Xᘁ X (simpleOppositeExactPairing X) := by
-  rw [simpleOppositeExactPairing_evaluation, simpleOppositeExactPairing_evaluation,
-    tensorHom_def_assoc, ← whisker_exchange_assoc, ← comp_whiskerRight_assoc,
-    hom_comp_simpleDoubleDualIso_hom k u, comp_whiskerRight_assoc,
-    rightAdjointMate_comp_evaluation, whisker_exchange_assoc, ← whiskerLeft_comp_assoc,
-    ← comp_rightAdjointMate, u.hom_inv_id, rightAdjointMate_id, whiskerLeft_id, Category.id_comp]
+  let _ : ExactPairing Yᘁ Y := simpleOppositeExactPairing Y
+  let p₂ : ExactPairing Xᘁ X := exactPairingCongr u.rightAdjointMate.symm u
+  have hcoev : @ExactPairing.coevaluation C _ _ Xᘁ X (simpleOppositeExactPairing X) =
+      @ExactPairing.coevaluation C _ _ Xᘁ X p₂ := by
+    rw [exactPairingCongr_coevaluation, ← simpleOppositeExactPairing_coevaluation_congr k u,
+      Category.assoc, Iso.symm_inv, Iso.rightAdjointMate_hom, ← tensorHom_def',
+      tensorHom_comp_tensorHom, ← comp_rightAdjointMate, u.hom_inv_id, rightAdjointMate_id,
+      id_tensorHom_id, Category.comp_id]
+  rw [ExactPairing.evaluation_eq_of_coevaluation_eq (simpleOppositeExactPairing X) p₂ hcoev,
+    exactPairingCongr_evaluation, Iso.symm_hom, Iso.rightAdjointMate_inv, ← tensorHom_def'_assoc]
 
 end Uniqueness
 
