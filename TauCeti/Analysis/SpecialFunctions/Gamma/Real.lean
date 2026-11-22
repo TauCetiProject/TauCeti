@@ -5,11 +5,14 @@ Authors: OpenAI Codex
 -/
 module
 
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
 public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.Complex.ExponentialBounds
+import TauCeti.Analysis.Complex.RealIdentity
+import TauCeti.Analysis.SpecialFunctions.Gamma.Log
 
 /-!
 # Real digamma and its bounds on the positive real axis
@@ -35,6 +38,8 @@ derivative of real Gamma, and relates it to Mathlib's `Complex.digamma`.
 * `Real.abs_digamma_sub_log_le`, `Complex.norm_digamma_ofReal_sub_log_le`,
   `Complex.isBigO_digamma_ofReal_sub_log`: for `x > 0`, `|ψ(x) - log x| ≤ 1 / x`, so complex
   digamma differs from the logarithm by `O(1 / x)` on the positive real axis.
+* `TauCeti.contDiffOn_digamma_Ioi`, `TauCeti.iteratedDeriv_digamma_ofReal`: `C^∞` smoothness of
+  `Real.digamma` on `(0, ∞)` and coercion of higher derivatives from `Complex.digamma`.
 
 The positive-axis bounds come from the log-convexity of Gamma (Bohr–Mollerup): `ψ(x)` and
 `ψ(x + 1)` are the derivatives of the convex function `log ∘ Gamma` at the endpoints of
@@ -232,3 +237,22 @@ theorem isBigO_digamma_ofReal_sub_log :
     norm_digamma_ofReal_sub_log_le hx
 
 end Complex
+
+namespace TauCeti
+
+open scoped ContDiff
+
+/-- Real digamma is `C^∞` on `(0, ∞)`. -/
+theorem contDiffOn_digamma_Ioi : ContDiffOn ℝ ∞ Real.digamma (Ioi 0) :=
+  differentiableOn_digamma_slitPlane.contDiffOn_ofReal isOpen_slitPlane
+    (fun _ ht ↦ ofReal_mem_slitPlane.mpr ht) fun _ _ ↦ Complex.digamma_ofReal
+
+/-- On `(0, ∞)`, every complex iterated derivative of `Complex.digamma` is the coercion of the
+corresponding real iterated derivative of `Real.digamma`. -/
+@[simp]
+theorem iteratedDeriv_digamma_ofReal (k : ℕ) {x : ℝ} (hx : 0 < x) :
+    iteratedDeriv k Complex.digamma (x : ℂ) = ((iteratedDeriv k Real.digamma x : ℝ) : ℂ) :=
+  differentiableOn_digamma_slitPlane.iteratedDeriv_ofReal isOpen_slitPlane isOpen_Ioi
+    (fun _ ht ↦ ofReal_mem_slitPlane.mpr ht) (fun _ _ ↦ Complex.digamma_ofReal) k hx
+
+end TauCeti

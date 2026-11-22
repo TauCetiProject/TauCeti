@@ -9,9 +9,10 @@ public import TauCeti.Analysis.CompletelyMonotone.Basic
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Real
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Series
 
-import Mathlib.Analysis.Calculus.Deriv.ZPow
-import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
+import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.SectorBounds
+import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.NumberTheory.ZetaValues
 
 /-!
@@ -46,8 +47,6 @@ form `‖r₁(z)‖ < 1 / (12 * sin (δ / 2) ^ 2 * ‖z‖)`, and the sharp `1 /
   `TauCeti.iteratedDeriv_realStirlingSeriesRemainder`,
   `TauCeti.realStirlingSeriesRemainder_eq_integral`: smoothness and real integral representation of
   `realStirlingSeriesRemainder n` and its derivatives on `(0, ∞)`.
-* `TauCeti.differentiableOn_digamma_slitPlane`, `TauCeti.contDiffOn_digamma_Ioi`,
-  `TauCeti.iteratedDeriv_digamma_ofReal`: holomorphy and real-axis derivative agreement for digamma.
 * `TauCeti.isCompletelyMonotoneOnIoi_realStirlingSeriesRemainder_odd`,
   `TauCeti.isCompletelyMonotoneOnIoi_neg_realStirlingSeriesRemainder_even`: Alzer's complete
   monotonicity of `F_m = r_{2m+1}` and `G_m = -r_{2m+2}` on `(0, ∞)`.
@@ -86,64 +85,12 @@ namespace TauCeti
 
 /-! ### Real-axis derivatives of slit-plane holomorphic functions -/
 
-/-- A function holomorphic on the slit plane that is real-valued on `(0, ∞)` restricts to a `C^∞`
-real function on `(0, ∞)`. -/
-private theorem contDiffOn_ofReal_of_differentiableOn_slitPlane {f : ℂ → ℂ} {g : ℝ → ℝ}
-    (hf : DifferentiableOn ℂ f slitPlane) (hfg : ∀ x : ℝ, 0 < x → f (x : ℂ) = (g x : ℂ)) :
-    ContDiffOn ℝ ∞ g (Ioi 0) := by
-  have hf_cd : ContDiffOn ℝ ∞ f slitPlane :=
-    (hf.contDiffOn (n := ∞) isOpen_slitPlane).restrict_scalars ℝ
-  have hcomp : ContDiffOn ℝ ∞ (fun x : ℝ ↦ Complex.reCLM (f (Complex.ofRealCLM x))) (Ioi 0) :=
-    Complex.reCLM.contDiff.contDiffOn.comp
-      (hf_cd.comp Complex.ofRealCLM.contDiff.contDiffOn
-        fun x hx ↦ Complex.ofReal_mem_slitPlane.mpr hx)
-      (mapsTo_univ _ _)
-  exact hcomp.congr fun x hx ↦ by
-    simp only [Complex.reCLM_apply, Complex.ofRealCLM_apply, hfg x hx, Complex.ofReal_re]
-
-/-- If `f : ℂ → ℂ` is holomorphic on the slit plane and agrees with `(g · : ℂ)` on `(0, ∞)`, then
-every complex iterated derivative of `f` on `(0, ∞)` is the coercion of the real iterated
-derivative of `g`. -/
-private theorem iteratedDeriv_ofReal_of_differentiableOn_slitPlane {f : ℂ → ℂ} {g : ℝ → ℝ}
-    (hf : DifferentiableOn ℂ f slitPlane) (hfg : ∀ x : ℝ, 0 < x → f (x : ℂ) = (g x : ℂ))
-    (k : ℕ) {x : ℝ} (hx : 0 < x) :
-    iteratedDeriv k f (x : ℂ) = ((iteratedDeriv k g x : ℝ) : ℂ) := by
-  have hdiff : ∀ m : ℕ, DifferentiableOn ℂ (iteratedDeriv m f) slitPlane := by
-    intro m
-    induction m with
-    | zero => simpa only [iteratedDeriv_zero] using hf
-    | succ m ih =>
-      rw [iteratedDeriv_succ]
-      exact ih.deriv isOpen_slitPlane
-  induction k generalizing x with
-  | zero => simpa only [iteratedDeriv_zero] using hfg x hx
-  | succ k ih =>
-    have hfk : HasDerivAt (iteratedDeriv k f) (iteratedDeriv (k + 1) f (x : ℂ)) (x : ℂ) := by
-      rw [iteratedDeriv_succ]
-      exact ((hdiff k).differentiableAt
-        (isOpen_slitPlane.mem_nhds (Complex.ofReal_mem_slitPlane.mpr hx))).hasDerivAt
-    have hcomp : HasDerivAt (fun t : ℝ ↦ ((iteratedDeriv k g t : ℝ) : ℂ))
-        (iteratedDeriv (k + 1) f (x : ℂ)) x := by
-      refine hfk.comp_ofReal.congr_of_eventuallyEq ?_
-      filter_upwards [isOpen_Ioi.mem_nhds hx] with t ht
-      exact (ih ht).symm
-    have hre : HasDerivAt (iteratedDeriv k g) (iteratedDeriv (k + 1) f (x : ℂ)).re x := by
-      simpa only [Function.comp_def, Complex.reCLM_apply, Complex.ofReal_re] using
-        Complex.reCLM.hasFDerivAt.comp_hasDerivAt x hcomp
-    have him : HasDerivAt (fun _ : ℝ ↦ (0 : ℝ)) (iteratedDeriv (k + 1) f (x : ℂ)).im x := by
-      simpa only [Function.comp_def, Complex.imCLM_apply, Complex.ofReal_im] using
-        Complex.imCLM.hasFDerivAt.comp_hasDerivAt x hcomp
-    have hre_eq : iteratedDeriv (k + 1) g x = (iteratedDeriv (k + 1) f (x : ℂ)).re := by
-      rw [iteratedDeriv_succ, hre.deriv]
-    have him_eq : (iteratedDeriv (k + 1) f (x : ℂ)).im = 0 :=
-      him.unique (hasDerivAt_const x (0 : ℝ))
-    exact Complex.ext (by simp [hre_eq]) (by simp [him_eq])
-
 /-- Every real Stirling remainder `realStirlingSeriesRemainder n` is `C^∞` on `(0, ∞)`. -/
 theorem contDiffOn_realStirlingSeriesRemainder (n : ℕ) :
     ContDiffOn ℝ ∞ (realStirlingSeriesRemainder n) (Ioi 0) :=
-  contDiffOn_ofReal_of_differentiableOn_slitPlane (differentiableOn_stirlingSeriesRemainder n)
-    (fun _ hx ↦ stirlingSeriesRemainder_ofReal n hx)
+  (differentiableOn_stirlingSeriesRemainder n).contDiffOn_ofReal isOpen_slitPlane
+    (fun _ ht ↦ Complex.ofReal_mem_slitPlane.mpr ht)
+    fun _ hx ↦ stirlingSeriesRemainder_ofReal n hx
 
 /-- On `(0, ∞)`, every complex iterated derivative of `stirlingSeriesRemainder n` is the coercion
 of the corresponding real iterated derivative of `realStirlingSeriesRemainder n`. -/
@@ -151,25 +98,9 @@ of the corresponding real iterated derivative of `realStirlingSeriesRemainder n`
 theorem iteratedDeriv_stirlingSeriesRemainder_ofReal (n k : ℕ) {x : ℝ} (hx : 0 < x) :
     iteratedDeriv k (stirlingSeriesRemainder n) (x : ℂ) =
       ((iteratedDeriv k (realStirlingSeriesRemainder n) x : ℝ) : ℂ) :=
-  iteratedDeriv_ofReal_of_differentiableOn_slitPlane (differentiableOn_stirlingSeriesRemainder n)
+  (differentiableOn_stirlingSeriesRemainder n).iteratedDeriv_ofReal isOpen_slitPlane isOpen_Ioi
+    (fun _ ht ↦ Complex.ofReal_mem_slitPlane.mpr ht)
     (fun _ ht ↦ stirlingSeriesRemainder_ofReal n ht) k hx
-
-/-- Complex digamma is holomorphic on the slit plane. -/
-theorem differentiableOn_digamma_slitPlane : DifferentiableOn ℂ Complex.digamma slitPlane :=
-  (differentiableOn_logGamma.deriv isOpen_slitPlane).congr fun _ hz ↦ (deriv_logGamma hz).symm
-
-/-- Real digamma is `C^∞` on `(0, ∞)`. -/
-theorem contDiffOn_digamma_Ioi : ContDiffOn ℝ ∞ Real.digamma (Ioi 0) :=
-  contDiffOn_ofReal_of_differentiableOn_slitPlane differentiableOn_digamma_slitPlane
-    (fun _ _ ↦ Complex.digamma_ofReal)
-
-/-- On `(0, ∞)`, every complex iterated derivative of `Complex.digamma` is the coercion of the
-corresponding real iterated derivative of `Real.digamma`. -/
-@[simp]
-theorem iteratedDeriv_digamma_ofReal (k : ℕ) {x : ℝ} (hx : 0 < x) :
-    iteratedDeriv k Complex.digamma (x : ℂ) = ((iteratedDeriv k Real.digamma x : ℝ) : ℂ) :=
-  iteratedDeriv_ofReal_of_differentiableOn_slitPlane differentiableOn_digamma_slitPlane
-    (fun _ _ ↦ Complex.digamma_ofReal) k hx
 
 /-- Exact real integral representation for every iterated derivative of
 `realStirlingSeriesRemainder n` on `(0, ∞)`: for `n ≥ 1`, `k : ℕ`, and `x > 0`,
@@ -339,7 +270,7 @@ theorem sum_stirlingTerm_lt_log_Gamma_sub (m : ℕ) {x : ℝ} (hx : 0 < x) :
     ∑ i ∈ Finset.Icc 1 (2 * m), stirlingTerm i x <
       Real.log (Real.Gamma x) - ((x - 1 / 2) * Real.log x - x + Real.log (2 * π) / 2) := by
   have h := neg_one_pow_mul_iteratedDeriv_realStirlingSeriesRemainder_odd_pos m 0 hx
-  simp only [pow_zero, one_mul, iteratedDeriv_zero, realStirlingSeriesRemainder,
+  simp only [pow_zero, one_mul, iteratedDeriv_zero, realStirlingSeriesRemainder_def,
     Finset.Ico_add_one_right_eq_Icc] at h
   linarith
 
@@ -349,7 +280,7 @@ theorem log_Gamma_sub_lt_sum_stirlingTerm (m : ℕ) {x : ℝ} (hx : 0 < x) :
     Real.log (Real.Gamma x) - ((x - 1 / 2) * Real.log x - x + Real.log (2 * π) / 2) <
       ∑ i ∈ Finset.Icc 1 (2 * m + 1), stirlingTerm i x := by
   have h := neg_one_pow_mul_iteratedDeriv_neg_realStirlingSeriesRemainder_even_pos m 0 hx
-  simp only [pow_zero, one_mul, iteratedDeriv_zero, realStirlingSeriesRemainder,
+  simp only [pow_zero, one_mul, iteratedDeriv_zero, realStirlingSeriesRemainder_def,
     show 2 * m + 2 = (2 * m + 1) + 1 by omega, Finset.Ico_add_one_right_eq_Icc] at h
   linarith
 
@@ -399,26 +330,22 @@ theorem deriv_realStirlingSeriesRemainder (n : ℕ) {x : ℝ} (hx : 0 < x) :
         (-((bernoulli (2 * j) : ℝ) / ((2 * j : ℝ) * x ^ (2 * j)))) x := by
     intro j hj
     have hj1 : 1 ≤ j := (Finset.mem_Ico.mp hj).1
-    have h2j1 : 2 * (j : ℝ) - 1 ≠ 0 := by
+    have h2j1 : (2 * (j : ℝ) - 1) ≠ 0 := by
       have : (1 : ℝ) ≤ j := by exact_mod_cast hj1
       linarith
-    have hpow : HasDerivAt (fun t : ℝ ↦ t ^ (2 * j - 1))
-        (((2 * j - 1 : ℕ) : ℝ) * x ^ (2 * j - 2)) x := by
-      simpa [Nat.sub_sub] using (hasDerivAt_id x).fun_pow (2 * j - 1)
-    have hinv := ((hpow.const_mul ((2 * (j : ℝ)) * (2 * (j : ℝ) - 1))).inv
-      (mul_ne_zero (mul_ne_zero (by positivity) h2j1) (pow_ne_zero _ hx.ne'))).const_mul
-      (bernoulli (2 * j) : ℝ)
-    refine (hinv.congr_of_eventuallyEq (Eventually.of_forall fun t ↦ by
-      simp only [stirlingTerm, Pi.inv_apply, div_eq_mul_inv])).congr_deriv ?_
-    have hc : ((2 * j - 1 : ℕ) : ℝ) = 2 * (j : ℝ) - 1 := by
-      rw [Nat.cast_sub (by omega : 1 ≤ 2 * j)]; push_cast; rfl
-    have hp1 : x ^ (2 * j - 1) = x ^ (2 * j - 2) * x := by rw [← pow_succ]; congr 1; omega
-    have hp2 : x ^ (2 * j) = x ^ (2 * j - 2) * x ^ 2 := by rw [← pow_add]; congr 1; omega
-    have hxpow : x ^ (2 * j - 2) ≠ 0 := pow_ne_zero _ hx.ne'
-    rw [hc, hp1, hp2]; field_simp
+    let c : ℝ := (bernoulli (2 * j) : ℝ) / ((2 * j : ℝ) * (2 * j - 1 : ℝ))
+    have hd := HasDerivAt.const_div_pow (hasDerivAt_id x) hx.ne' c (2 * j - 1)
+    refine (hd.congr_of_eventuallyEq (Eventually.of_forall fun t ↦ ?_)).congr_deriv ?_
+    · simp only [stirlingTerm_def, c, id_eq, div_eq_mul_inv, mul_inv]; ring
+    · have hpow : x ^ (2 * j - 1 + 1) = x ^ (2 * j) := by congr 1; omega
+      have hc : ((2 * j - 1 : ℕ) : ℝ) = 2 * (j : ℝ) - 1 := by
+        rw [Nat.cast_sub (by omega : 1 ≤ 2 * j)]; push_cast; rfl
+      rw [id_eq, hpow, hc]
+      dsimp only [c]
+      field_simp
   have htot : HasDerivAt (realStirlingSeriesRemainder n) _ x :=
     ((hlogG.sub hmain).sub (HasDerivAt.fun_sum hterm)).congr_of_eventuallyEq
-      (Eventually.of_forall fun _ ↦ by simp only [realStirlingSeriesRemainder, Pi.sub_apply])
+      (Eventually.of_forall fun _ ↦ by simp only [realStirlingSeriesRemainder_def, Pi.sub_apply])
   rw [htot.deriv, Finset.sum_neg_distrib]; ring
 
 /-- Arbitrary-order upper digamma bracket on `(0, ∞)`: for every `m : ℕ` and `x > 0`,
@@ -463,61 +390,33 @@ theorem log_sub_inv_two_mul_sub_lt_digamma {x : ℝ} (hx : 0 < x) :
 /-- The order-`p` Stirling partial sum for the `k`-th polygamma function `(-1)^{k+1} ψ^{(k)}(x)`:
 `S_k(p; x) = (k - 1)! / x^k + k! / (2 x^{k+1}) +`
 `∑_{i=1}^p B_{2i} (∏_{j=1}^{k-1} (2i + j)) / x^{2i+k}`. -/
-@[expose] noncomputable def polygammaStirlingSum (k p : ℕ) (x : ℝ) : ℝ :=
+noncomputable def polygammaStirlingSum (k p : ℕ) (x : ℝ) : ℝ :=
   ((k - 1)! : ℝ) / x ^ k + (k ! : ℝ) / (2 * x ^ (k + 1)) +
     ∑ i ∈ Finset.Icc 1 p,
       (bernoulli (2 * i) : ℝ) * (∏ j ∈ Finset.Ico 1 k, ((2 * i + j : ℕ) : ℝ)) / x ^ (2 * i + k)
 
-private theorem iteratedDeriv_log_eq {k : ℕ} (hk : 1 ≤ k) (x : ℝ) :
-    iteratedDeriv k Real.log x = (-1 : ℝ) ^ (k - 1) * ((k - 1)! : ℝ) / x ^ k := by
-  have hk_eq : k = (k - 1) + 1 := by omega
-  conv_lhs => rw [hk_eq, iteratedDeriv_succ', Real.deriv_log']
-  rw [iteratedDeriv_eq_iterate, iter_deriv_inv]
-  have hz : (-1 - (k - 1 : ℕ) : ℤ) = -(k : ℤ) := by omega
-  rw [hz, zpow_neg, zpow_natCast, div_eq_mul_inv]
+/-- Unfolding formula for `TauCeti.polygammaStirlingSum`. -/
+theorem polygammaStirlingSum_def (k p : ℕ) (x : ℝ) :
+    polygammaStirlingSum k p x =
+      ((k - 1)! : ℝ) / x ^ k + (k ! : ℝ) / (2 * x ^ (k + 1)) +
+        ∑ i ∈ Finset.Icc 1 p,
+          (bernoulli (2 * i) : ℝ) * (∏ j ∈ Finset.Ico 1 k, ((2 * i + j : ℕ) : ℝ)) /
+            x ^ (2 * i + k) :=
+  (rfl)
 
-private theorem iteratedDeriv_one_div_two_mul (k : ℕ) {x : ℝ} :
-    iteratedDeriv k (fun t : ℝ ↦ 1 / (2 * t)) x =
-      (-1 : ℝ) ^ k * ((k ! : ℝ) / (2 * x ^ (k + 1))) := by
-  have heq : (fun t : ℝ ↦ 1 / (2 * t)) = fun t : ℝ ↦ (2⁻¹ : ℝ) * t⁻¹ := by
-    ext t
-    simp only [one_div, mul_inv]
-  rw [heq, iteratedDeriv_const_mul_field (2⁻¹ : ℝ) Inv.inv, iteratedDeriv_eq_iterate,
-    iter_deriv_inv]
-  have hz : (-1 - (k : ℕ) : ℤ) = -((k + 1 : ℕ) : ℤ) := by omega
-  rw [hz, zpow_neg, zpow_natCast]
-  simp only [div_eq_mul_inv, mul_inv]
+/-- At `p = 0`, `polygammaStirlingSum k 0 x` reduces to the two leading terms. -/
+@[simp]
+theorem polygammaStirlingSum_zero (k : ℕ) (x : ℝ) :
+    polygammaStirlingSum k 0 x = ((k - 1)! : ℝ) / x ^ k + (k ! : ℝ) / (2 * x ^ (k + 1)) := by
+  simp [polygammaStirlingSum_def]
+
+/-- Recurrence adding the `(p + 1)`-th Bernoulli term to `polygammaStirlingSum k p x`. -/
+theorem polygammaStirlingSum_succ (k p : ℕ) (x : ℝ) :
+    polygammaStirlingSum k (p + 1) x = polygammaStirlingSum k p x +
+      (bernoulli (2 * (p + 1)) : ℝ) *
+        (∏ j ∈ Finset.Ico 1 k, ((2 * (p + 1) + j : ℕ) : ℝ)) / x ^ (2 * (p + 1) + k) := by
+  simp only [polygammaStirlingSum_def, Finset.sum_Icc_succ_top (by omega : 1 ≤ p + 1)]
   ring
-
-private theorem iteratedDeriv_bernoulli_div_mul_pow {i k : ℕ} (hi : 1 ≤ i) (hk : 1 ≤ k) {x : ℝ} :
-    iteratedDeriv k (fun t : ℝ ↦ (bernoulli (2 * i) : ℝ) / ((2 * i : ℝ) * t ^ (2 * i))) x =
-      (-1 : ℝ) ^ k * ((bernoulli (2 * i) : ℝ) *
-        (∏ j ∈ Finset.Ico 1 k, ((2 * i + j : ℕ) : ℝ)) / x ^ (2 * i + k)) := by
-  have heq : (fun t : ℝ ↦ (bernoulli (2 * i) : ℝ) / ((2 * i : ℝ) * t ^ (2 * i))) =
-      fun t : ℝ ↦ ((bernoulli (2 * i) : ℝ) / (2 * i : ℝ)) * t ^ (-((2 * i : ℕ) : ℤ)) := by
-    ext t
-    rw [zpow_neg, zpow_natCast, div_eq_mul_inv, mul_inv, div_eq_mul_inv, mul_assoc]
-  rw [heq, iteratedDeriv_const_mul_field ((bernoulli (2 * i) : ℝ) / (2 * i : ℝ))
-    (fun t : ℝ ↦ t ^ (-((2 * i : ℕ) : ℤ))), iteratedDeriv_eq_iterate, iter_deriv_zpow]
-  have hprod : ∏ j ∈ Finset.range k, (-((2 * i : ℕ) : ℝ) - (j : ℝ)) =
-      (-1 : ℝ) ^ k * ((2 * i : ℝ) * ∏ j ∈ Finset.Ico 1 k, ((2 * i + j : ℕ) : ℝ)) := by
-    have hneg : ∏ j ∈ Finset.range k, (-((2 * i : ℕ) : ℝ) - (j : ℝ)) =
-        ∏ j ∈ Finset.range k, ((-1 : ℝ) * ((2 * i + j : ℕ) : ℝ)) := by
-      refine Finset.prod_congr rfl fun j _ ↦ ?_
-      push_cast
-      ring
-    rw [hneg, Finset.prod_mul_distrib, Finset.prod_const, Finset.card_range]
-    congr 1
-    have hsplit : Finset.range k = insert 0 (Finset.Ico 1 k) := by
-      ext j
-      simp only [Finset.mem_range, Finset.mem_insert, Finset.mem_Ico]
-      omega
-    rw [hsplit, Finset.prod_insert (by simp)]
-    simp
-  have hz : (-((2 * i : ℕ) : ℤ) - (k : ℤ)) = -((2 * i + k : ℕ) : ℤ) := by omega
-  simp only [Int.cast_neg, Int.cast_natCast]
-  rw [hprod, hz, zpow_neg, zpow_natCast]
-  field_simp
 
 /-- Relation between `iteratedDeriv (k + 1) (realStirlingSeriesRemainder n)` and the `k`-th
 polygamma function `iteratedDeriv k Real.digamma` on `(0, ∞)` for `k ≥ 1`. -/
@@ -547,12 +446,18 @@ theorem iteratedDeriv_succ_realStirlingSeriesRemainder (n : ℕ) {k : ℕ} (hk :
       (fun t : ℝ ↦ ∑ i ∈ Finset.Ico 1 n, (bernoulli (2 * i) : ℝ) / ((2 * i : ℝ) * t ^ (2 * i)))
       x :=
     ContDiffAt.sum hcd_term
+  have hhalf : iteratedDeriv k (fun t : ℝ ↦ 1 / (2 * t)) x =
+      (-1 : ℝ) ^ k * ((k ! : ℝ) / (2 * x ^ (k + 1))) := by
+    have heq : (fun t : ℝ ↦ 1 / (2 * t)) = fun t : ℝ ↦ (2⁻¹ : ℝ) / t := by
+      ext t; simp [div_eq_mul_inv, mul_comm]
+    rw [heq, TauCeti.iteratedDeriv_const_div]
+    simp only [div_eq_mul_inv, mul_inv]; ring
   rw [iteratedDeriv_fun_add ((hcd_psi.sub hcd_log).add hcd_half) hcd_sum,
     iteratedDeriv_fun_add (hcd_psi.sub hcd_log) hcd_half,
     iteratedDeriv_fun_sub hcd_psi hcd_log,
     iteratedDeriv_fun_sum hcd_term,
-    iteratedDeriv_log_eq hk x,
-    iteratedDeriv_one_div_two_mul k]
+    Real.iteratedDeriv_log hk x,
+    hhalf]
   have hsum_eq :
       ∑ i ∈ Finset.Ico 1 n,
         iteratedDeriv k (fun t : ℝ ↦ (bernoulli (2 * i) : ℝ) / ((2 * i : ℝ) * t ^ (2 * i))) x =
@@ -562,8 +467,18 @@ theorem iteratedDeriv_succ_realStirlingSeriesRemainder (n : ℕ) {k : ℕ} (hk :
     rw [Finset.mul_sum, show Finset.Ico 1 n = Finset.Icc 1 (n - 1) by
       ext i; simp only [Finset.mem_Ico, Finset.mem_Icc]; omega]
     refine Finset.sum_congr rfl fun i hi ↦ ?_
-    exact iteratedDeriv_bernoulli_div_mul_pow (Finset.mem_Icc.mp hi).1 hk
-  rw [hsum_eq, polygammaStirlingSum]
+    have hi1 : 1 ≤ i := (Finset.mem_Icc.mp hi).1
+    have heq : (fun t : ℝ ↦ (bernoulli (2 * i) : ℝ) / ((2 * i : ℝ) * t ^ (2 * i))) =
+        fun t : ℝ ↦ ((bernoulli (2 * i) : ℝ) / (2 * i : ℝ)) / t ^ (2 * i) := by
+      ext t; simp only [div_eq_mul_inv, mul_inv]; ring
+    rw [heq, TauCeti.iteratedDeriv_const_div_pow]
+    have hsplit : Finset.range k = insert 0 (Finset.Ico 1 k) := by
+      ext j; simp only [Finset.mem_range, Finset.mem_insert, Finset.mem_Ico]; omega
+    rw [hsplit, Finset.prod_insert (by simp)]
+    simp only [add_zero, Nat.cast_mul, Nat.cast_ofNat]
+    have : (2 : ℝ) * i ≠ 0 := by positivity
+    field_simp
+  rw [hsum_eq, polygammaStirlingSum_def]
   have hsign : -((-1 : ℝ) ^ (k - 1)) = (-1 : ℝ) ^ k := by
     have hk_eq : k = (k - 1) + 1 := by omega
     conv_rhs => rw [hk_eq, pow_succ]
@@ -684,19 +599,18 @@ theorem norm_iteratedDeriv_stirlingRemainder_lt (k : ℕ) {z : ℂ} (hz : z ∈ 
   -- `(-1)^k r₁^{(k)}(‖z‖) < (-1)^k T₁^{(k)}(‖z‖)`.
   have hG := neg_one_pow_mul_iteratedDeriv_neg_realStirlingSeriesRemainder_even_pos 0 k hz_pos
   have heq_r2 : (fun t : ℝ ↦ -realStirlingSeriesRemainder 2 t) =
-      fun t : ℝ ↦ (12⁻¹ : ℝ) * t⁻¹ - realStirlingSeriesRemainder 1 t := by
+      fun t : ℝ ↦ (12⁻¹ : ℝ) / t - realStirlingSeriesRemainder 1 t := by
     ext t; rw [realStirlingSeriesRemainder_succ, stirlingTerm_one]
-    simp only [one_div, mul_inv]; ring
+    simp only [div_eq_mul_inv, mul_inv]; ring
   simp only [Nat.mul_zero, zero_add] at hG
-  have hT1_cd : ContDiffAt ℝ k (fun t : ℝ ↦ (12⁻¹ : ℝ) * t⁻¹) ‖z‖ :=
-    contDiffAt_const.mul (contDiffAt_id.inv hz_pos.ne')
+  have hT1_cd : ContDiffAt ℝ k (fun t : ℝ ↦ (12⁻¹ : ℝ) / t) ‖z‖ :=
+    contDiffAt_const.div contDiffAt_id hz_pos.ne'
   rw [heq_r2, iteratedDeriv_fun_sub hT1_cd
     (((contDiffOn_realStirlingSeriesRemainder 1).contDiffAt (isOpen_Ioi.mem_nhds hz_pos)).of_le
       (by exact_mod_cast le_top))] at hG
-  have hT1_deriv : iteratedDeriv k (fun t : ℝ ↦ (12⁻¹ : ℝ) * t⁻¹) ‖z‖ =
+  have hT1_deriv : iteratedDeriv k (fun t : ℝ ↦ (12⁻¹ : ℝ) / t) ‖z‖ =
       (-1 : ℝ) ^ k * ((k ! : ℝ) / (12 * ‖z‖ ^ (k + 1))) := by
-    rw [iteratedDeriv_const_mul_field (12⁻¹ : ℝ) Inv.inv, iteratedDeriv_eq_iterate, iter_deriv_inv,
-      show (-1 - (k : ℕ) : ℤ) = -((k + 1 : ℕ) : ℤ) by omega, zpow_neg, zpow_natCast]
+    rw [TauCeti.iteratedDeriv_const_div]
     simp only [div_eq_mul_inv, mul_inv]; ring
   have hk2 : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by rw [← mul_pow]; norm_num
   rw [hT1_deriv, mul_sub, ← mul_assoc, hk2, one_mul] at hG

@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
 
 /-!
 # Differentiation involving the logarithm
 
 For `x ≠ 0`, a function `v ∘ log` is differentiable at `x` exactly when `v` is differentiable at
 `log x`, by evenness of `v ∘ log` for `x < 0`.
-The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, and that of
-`r ↦ log (c / r)` wherever `c ≠ 0` and `r ≠ 0`.
+The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, that of `r ↦ log (c / r)`
+wherever `c ≠ 0` and `r ≠ 0`, and the higher derivatives `iteratedDeriv k Real.log` for `k ≥ 1`.
 
 ## Main results
 
@@ -23,6 +25,7 @@ The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, and t
 * `TauCeti.Real.hasDerivAt_div_log_pow`: the derivative of `x / log x ^ n` for every natural
   exponent, assuming `log x ≠ 0`.
 * `Real.hasDerivAt_log_const_div`: the derivative of `log (c / r)` is `-r⁻¹`.
+* `Real.iteratedDeriv_log`: for `k ≥ 1`, `iteratedDeriv k log x = (-1)^(k-1) (k-1)! / x^k`.
 
 The reciprocal-log-power derivative is adapted from the Ramanujan estimates in the
 [PrimeNumberTheoremAnd project][PNTLogPower].
@@ -33,6 +36,7 @@ The reciprocal-log-power derivative is adapted from the Ramanujan estimates in t
 public section
 
 open Real Filter Topology
+open scoped Nat
 
 namespace TauCeti
 
@@ -109,5 +113,14 @@ theorem hasDerivAt_log_const_div {c r : ℝ} (hc : c ≠ 0) (hr : r ≠ 0) :
       (hasDerivAt_inv hr).const_mul c
   refine (hdiv.log (div_ne_zero hc hr)).congr_deriv ?_
   field_simp
+
+/-- For `k ≥ 1`, the `k`-th derivative of `Real.log` at `x` is
+`(-1) ^ (k - 1) * (k - 1)! / x ^ k` (at `x = 0` both sides vanish). -/
+theorem iteratedDeriv_log {k : ℕ} (hk : 1 ≤ k) (x : ℝ) :
+    iteratedDeriv k log x = (-1 : ℝ) ^ (k - 1) * ((k - 1)! : ℝ) / x ^ k := by
+  have hk_eq : k = (k - 1) + 1 := by omega
+  conv_lhs => rw [hk_eq, iteratedDeriv_succ', deriv_log']
+  simpa [one_div, show k - 1 + 1 = k by omega] using
+    TauCeti.iteratedDeriv_const_div (k - 1) (1 : ℝ) x
 
 end Real

@@ -88,6 +88,12 @@ theorem IntervalIntegrable.bernoulliFun_fract_smul {u : ℝ → E} {a b : ℝ}
 
 namespace TauCeti
 
+/-- For every `k : ℕ`, the periodic Bernoulli function `x ↦ bernoulliFun k (Int.fract x)` is
+measurable. -/
+theorem measurable_bernoulliFun_fract (k : ℕ) :
+    Measurable (fun x : ℝ => bernoulliFun k (Int.fract x)) :=
+  (continuous_bernoulliFun k).measurable.comp measurable_fract
+
 /-- One integration by parts against a shifted Bernoulli polynomial on `[t, t + 1]`. -/
 private theorem integral_bernoulliFun_sub_smul {u u' : ℝ → E} {t : ℝ} (k : ℕ)
     (hu : ContinuousOn u (Set.Icc t (t + 1)))

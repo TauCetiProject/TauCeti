@@ -213,6 +213,10 @@ theorem hasDerivAt_logGamma {z : ℂ} (hz : z ∈ slitPlane) :
   deriv_logGamma hz ▸
     (differentiableOn_logGamma.differentiableAt (isOpen_slitPlane.mem_nhds hz)).hasDerivAt
 
+/-- Complex digamma is holomorphic on the slit plane. -/
+theorem differentiableOn_digamma_slitPlane : DifferentiableOn ℂ Complex.digamma slitPlane :=
+  (differentiableOn_logGamma.deriv isOpen_slitPlane).congr fun _ hz ↦ (deriv_logGamma hz).symm
+
 /-- Holomorphy on every sector avoiding the negative real axis. All these sectors use the same
 branch, so their restrictions agree on every overlap. -/
 theorem differentiableOn_logGamma_sector {δ : ℝ} (hδ : 0 < δ) :

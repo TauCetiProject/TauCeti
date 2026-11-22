@@ -48,6 +48,19 @@ public section
 
 open scoped Nat
 
+/-- The derivative of `y ↦ c / f y ^ m` at a point `x` where `f x ≠ 0` and `f` has derivative
+`f'`, computed via `hasDerivAt_zpow`. -/
+theorem HasDerivAt.const_div_pow {𝕜' 𝕜 : Type*} [NontriviallyNormedField 𝕜']
+    [NontriviallyNormedField 𝕜] [NormedAlgebra 𝕜' 𝕜] {f : 𝕜' → 𝕜} {f' : 𝕜} {x : 𝕜'}
+    (hf : HasDerivAt f f' x) (hfx : f x ≠ 0) (c : 𝕜) (m : ℕ) :
+    HasDerivAt (fun y ↦ c / f y ^ m) (-(m : 𝕜) * c * f' / f x ^ (m + 1)) x := by
+  have hz := ((hasDerivAt_zpow (-(m : ℤ)) (f x) (Or.inl hfx)).scomp x hf).const_mul c
+  refine (hz.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)).congr_deriv ?_
+  · simp [zpow_neg, zpow_natCast, div_eq_mul_inv]
+  · rw [show -(m : ℤ) - 1 = -((m + 1 : ℕ) : ℤ) by omega, smul_eq_mul, zpow_neg, zpow_natCast]
+    simp only [Int.cast_neg, Int.cast_natCast]
+    ring
+
 namespace TauCeti
 
 section OneVariable
@@ -62,6 +75,26 @@ theorem iteratedDeriv_const_div (k : ℕ) (c x : 𝕜) :
   simp_rw [div_eq_mul_inv c, iteratedDeriv_const_mul_field, iteratedDeriv_eq_iterate,
     iter_deriv_inv]
   rw [show (-1 - k : ℤ) = -((k + 1 : ℕ) : ℤ) by push_cast; ring, zpow_neg, zpow_natCast]
+  ring
+
+/-- The `k`-th derivative of `x ↦ c / x ^ m` is
+`(-1)^k (∏ i ∈ Finset.range k, (m + i)) c / x ^ (m + k)`. At `x = 0` with `m + k > 0` both sides
+vanish, with the conventions `0⁻¹ = 0` and `c / 0 = 0`. -/
+theorem iteratedDeriv_const_div_pow (k m : ℕ) (c x : 𝕜) :
+    iteratedDeriv k (fun y ↦ c / y ^ m) x =
+      (-1) ^ k * (∏ i ∈ Finset.range k, ((m + i : ℕ) : 𝕜)) * c / x ^ (m + k) := by
+  have heq : (fun y : 𝕜 ↦ c / y ^ m) = fun y ↦ c * y ^ (-(m : ℤ)) := by
+    ext y
+    rw [zpow_neg, zpow_natCast, div_eq_mul_inv]
+  rw [heq, iteratedDeriv_const_mul_field, iteratedDeriv_eq_iterate, iter_deriv_zpow]
+  have hprod : ∏ i ∈ Finset.range k, ((-(m : ℤ) : 𝕜) - i) =
+      (-1) ^ k * ∏ i ∈ Finset.range k, ((m + i : ℕ) : 𝕜) := by
+    have hneg : ∏ i ∈ Finset.range k, ((-(m : ℤ) : 𝕜) - i) =
+        ∏ i ∈ Finset.range k, ((-1 : 𝕜) * ((m + i : ℕ) : 𝕜)) :=
+      Finset.prod_congr rfl fun i _ ↦ by push_cast; ring
+    rw [hneg, Finset.prod_mul_distrib, Finset.prod_const, Finset.card_range]
+  simp only [Int.cast_neg, Int.cast_natCast] at hprod ⊢
+  rw [hprod, show -(m : ℤ) - k = -((m + k : ℕ) : ℤ) by omega, zpow_neg, zpow_natCast]
   ring
 
 /-- The `k`-th derivative of `x ↦ c / x` at a fixed point `x` is linear in `c`. -/

@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -29,6 +30,9 @@ Consequently, for any measure `μ` on `ℝ` and weight `g : ℝ → ℂ`, integr
 `t ↦ g t * ((t : ℂ) + z) ^ s` on `(0, ∞)` is independent of `z ∈ slitPlane`, is equivalent to
 almost-everywhere strong measurability of `g` with respect to `μ.restrict (Ioi 0)` together with
 integrability of `t ↦ ‖g t‖ * (1 + t) ^ s.re`, and is preserved when `s.re` decreases.
+In particular, with respect to Lebesgue measure, every measurable bounded weight `g` yields an
+integrable kernel for `s.re < -1` (`TauCeti.integrableOn_mul_ofReal_add_cpow_of_norm_le`,
+`TauCeti.integrableOn_ofReal_add_cpow`).
 Differentiating under the integral sign then shows that
 
 `w ↦ ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ`
@@ -47,6 +51,9 @@ holomorphy and partial-derivative formulas for Carlson's symmetric elliptic inte
 * `TauCeti.integrableOn_mul_ofReal_add_cpow_iff`,
   `TauCeti.integrableOn_mul_ofReal_add_cpow_of_re_le` — independence of `z ∈ slitPlane` and
   monotonicity in `s.re`.
+* `TauCeti.integrableOn_mul_ofReal_add_cpow_of_norm_le`,
+  `TauCeti.integrableOn_ofReal_add_cpow` — Lebesgue integrability for bounded measurable weights
+  when `s.re < -1`.
 * `TauCeti.hasDerivAt_integral_mul_ofReal_add_cpow` — differentiation under the integral sign for
   `w ↦ ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ` on `slitPlane`.
 * `TauCeti.differentiableOn_integral_mul_ofReal_add_cpow`,
@@ -150,6 +157,33 @@ theorem integrableOn_mul_ofReal_add_cpow_iff {μ : Measure ℝ} {g : ℝ → ℂ
       IntegrableOn (fun t : ℝ => g t * ((t : ℂ) + z₂) ^ s) (Ioi 0) μ :=
   ⟨integrableOn_mul_ofReal_add_cpow_of_re_le hz₁ hz₂ le_rfl,
     integrableOn_mul_ofReal_add_cpow_of_re_le hz₂ hz₁ le_rfl⟩
+
+/-- If `g : ℝ → ℂ` is almost-everywhere strongly measurable and bounded on `(0, ∞)` by `M`, then
+for every `z ∈ slitPlane` and `s : ℂ` with `s.re < -1`, `t ↦ g t * ((t : ℂ) + z) ^ s` is
+integrable on `(0, ∞)` with respect to Lebesgue measure. -/
+theorem integrableOn_mul_ofReal_add_cpow_of_norm_le {g : ℝ → ℂ}
+    (hg_meas : AEStronglyMeasurable g (volume.restrict (Ioi 0))) {M : ℝ}
+    (hg_bdd : ∀ᵐ t ∂(volume.restrict (Ioi 0)), ‖g t‖ ≤ M) {z : ℂ} (hz : z ∈ slitPlane)
+    {s : ℂ} (hs : s.re < -1) :
+    IntegrableOn (fun t : ℝ => g t * ((t : ℂ) + z) ^ s) (Ioi 0) := by
+  rw [integrableOn_mul_ofReal_add_cpow_iff_norm_mul_one_add_rpow hz s]
+  refine ⟨hg_meas, ?_⟩
+  have hrpow : IntegrableOn (fun t : ℝ => (1 + t) ^ s.re) (Ioi 0) :=
+    (integrableOn_add_rpow_Ioi_of_lt hs (by norm_num : -(1 : ℝ) < 0)).congr_fun
+      (fun t _ => by simp only [add_comm 1 t]) measurableSet_Ioi
+  refine (hrpow.const_mul M).mono'
+    (hg_meas.norm.mul hrpow.aestronglyMeasurable) ?_
+  filter_upwards [hg_bdd, ae_restrict_mem measurableSet_Ioi] with t ht hpos
+  have h1t : 0 < 1 + t := by have : (0 : ℝ) < t := hpos; linarith
+  rw [Real.norm_of_nonneg (mul_nonneg (norm_nonneg _) (by positivity))]
+  exact mul_le_mul_of_nonneg_right ht (Real.rpow_nonneg h1t.le s.re)
+
+/-- For `z ∈ slitPlane` and `s : ℂ` with `s.re < -1`, `t ↦ ((t : ℂ) + z) ^ s` is integrable on
+`(0, ∞)` with respect to Lebesgue measure. -/
+theorem integrableOn_ofReal_add_cpow {z : ℂ} (hz : z ∈ slitPlane) {s : ℂ} (hs : s.re < -1) :
+    IntegrableOn (fun t : ℝ => ((t : ℂ) + z) ^ s) (Ioi 0) := by
+  simpa using integrableOn_mul_ofReal_add_cpow_of_norm_le (g := fun _ => (1 : ℂ))
+    aestronglyMeasurable_const (M := (1 : ℝ)) (Eventually.of_forall fun _ => by norm_num) hz hs
 
 /-- **Differentiation under a slit-plane power integral.** If `z ∈ slitPlane` and
 `t ↦ g t * ((t : ℂ) + z) ^ s` is integrable on `(0, ∞)`, then
