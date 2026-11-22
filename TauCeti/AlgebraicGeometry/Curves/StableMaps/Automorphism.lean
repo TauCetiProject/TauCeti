@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DualNumber
 public import Mathlib.GroupTheory.GroupExtension.Basic
+public import TauCeti.AlgebraicGeometry.AugmentationPoint.Section
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
-public import TauCeti.AlgebraicGeometry.DualNumber
 
 /-!
 # Infinitesimal automorphisms of prestable maps
@@ -326,15 +327,15 @@ its base change along `Spec R[ε] ⟶ Spec R` to the dual numbers that reduce to
 they fix every marking and commute with the map to the target. -/
 def infinitesimalAut (F : PrestableMap q n) :
     Subgroup (Aut (F.pullback (Spec.map (CommRingCat.ofHom (algebraMap R (DualNumber R)))))) :=
-  (F.restrictAut (dualNumberSplitEpi R)).ker
+  (F.restrictAut (TrivSqZeroExt.fstHom R R R).specSplitEpi).ker
 
 /-- An automorphism of the base change of `F` to the dual numbers is infinitesimal exactly when it
 fixes the total space of `F`, included over `ε ↦ 0`. -/
 theorem mem_infinitesimalAut_iff (F : PrestableMap q n)
     (e : Aut (F.pullback (Spec.map (CommRingCat.ofHom (algebraMap R (DualNumber R)))))) :
     e ∈ F.infinitesimalAut ↔
-      F.pullbackSectionι (dualNumberSplitEpi R) ≫ e.asIso.hom.curve.hom =
-        F.pullbackSectionι (dualNumberSplitEpi R) :=
+      F.pullbackSectionι (TrivSqZeroExt.fstHom R R R).specSplitEpi ≫ e.asIso.hom.curve.hom =
+        F.pullbackSectionι (TrivSqZeroExt.fstHom R R R).specSplitEpi :=
   F.mem_ker_restrictAut_iff _ e
 
 end Infinitesimal
