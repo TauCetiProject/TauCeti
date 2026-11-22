@@ -35,12 +35,15 @@ character, and its infinite part is empty exactly when the Dirichlet character i
 
 Over `ℚ`, each nonzero norm `k` has a unique ideal `span {(k : 𝓞 ℚ)}`, so the norm-regrouped
 coefficients and `L`-series of `χ.toUnitaryIdealWeight` agree with those of the associated
-Dirichlet character `ratDirichletEquiv n hn (χ.induced _)` modulo `n = Ideal.absNorm 𝔪.finitePart`.
+Dirichlet character `χ.toDirichletCharacter` modulo `n = Ideal.absNorm 𝔪.finitePart`.
 
 ## Main definitions
 
 * `TauCeti.GlobalNumberFields.ratDirichletEquiv`: ray class characters of `(n)·∞` are Dirichlet
   characters modulo `n`.
+* `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter`: associated Dirichlet
+  character modulo `Ideal.absNorm 𝔪.finitePart` for a ray class character of an arbitrary modulus
+  `𝔪` of `ℚ`.
 
 ## Main results
 
@@ -58,6 +61,8 @@ Dirichlet character `ratDirichletEquiv n hn (χ.induced _)` modulo `n = Ideal.ab
   `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_infinitePart_eq_empty_iff_even`: the
   conductor of a ray class character of `(n)·∞` is the conductor of its Dirichlet character, with
   the real place included exactly for an odd character.
+* `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter_ne_one_iff`: nontriviality
+  preservation under `toDirichletCharacter`.
 * `TauCeti.GlobalNumberFields.normCoeff_rayClassCharacter_rat_eq` and
   `TauCeti.GlobalNumberFields.lSeries_rayClassCharacter_rat_eq`: coefficientwise and `L`-series
   identification between a ray class character over `ℚ` and its associated Dirichlet character.
@@ -273,6 +278,39 @@ theorem conductor_infinitePart_eq_empty_iff_even :
   rw [← key, Modulus.dvd_iff, ratFiniteModulus_finitePart, ← conductor_finitePart_eq_span,
     ratFiniteModulus_infinitePart, Finset.subset_empty, and_iff_right dvd_rfl]
 
+/-- **Associated Dirichlet character modulo `Ideal.absNorm 𝔪.finitePart`** for a ray class
+character of an arbitrary modulus `𝔪` of `ℚ`. -/
+noncomputable def toDirichletCharacter {𝔪 : Modulus ℚ} (χ : RayClassCharacter 𝔪) :
+    DirichletCharacter ℂ (Ideal.absNorm 𝔪.finitePart) :=
+  ratDirichletEquiv (Ideal.absNorm 𝔪.finitePart)
+    (Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot)
+    (χ.induced (dvd_ratModulus_absNorm 𝔪))
+
+/-- The conversion from ray class characters of `𝔪` to Dirichlet characters modulo
+`Ideal.absNorm 𝔪.finitePart` is injective. -/
+theorem toDirichletCharacter_injective {𝔪 : Modulus ℚ} :
+    Function.Injective (toDirichletCharacter (𝔪 := 𝔪)) := by
+  intro χ₁ χ₂ h
+  exact induced_injective (dvd_ratModulus_absNorm 𝔪) ((ratDirichletEquiv _ _).injective h)
+
+/-- The trivial ray class character maps to the principal Dirichlet character. -/
+@[simp]
+theorem toDirichletCharacter_one {𝔪 : Modulus ℚ} :
+    (1 : RayClassCharacter 𝔪).toDirichletCharacter = 1 := by
+  simp [toDirichletCharacter]
+
+/-- A ray class character over `ℚ` maps to the principal Dirichlet character iff it is trivial. -/
+@[simp]
+theorem toDirichletCharacter_eq_one_iff {𝔪 : Modulus ℚ} {χ : RayClassCharacter 𝔪} :
+    χ.toDirichletCharacter = 1 ↔ χ = 1 :=
+  toDirichletCharacter_injective.eq_iff' toDirichletCharacter_one
+
+/-- A ray class character over `ℚ` is nontrivial iff its associated Dirichlet character is
+nontrivial. -/
+theorem toDirichletCharacter_ne_one_iff {𝔪 : Modulus ℚ} {χ : RayClassCharacter 𝔪} :
+    χ.toDirichletCharacter ≠ 1 ↔ χ ≠ 1 :=
+  toDirichletCharacter_eq_one_iff.not
+
 end RayClassCharacter
 
 /-! ### Norm coefficients and `L`-series over `ℚ` -/
@@ -303,14 +341,12 @@ of its associated Dirichlet character.** -/
 theorem normCoeff_rayClassCharacter_rat_eq {𝔪 : Modulus ℚ} (χ : RayClassCharacter 𝔪)
     {k : ℕ} (hk : k ≠ 0) :
     normCoeff ℚ χ.toUnitaryIdealWeight.toIdealArithmeticFunction k =
-      ((ratDirichletEquiv (Ideal.absNorm 𝔪.finitePart)
-        (Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot)
-        (χ.induced (dvd_ratModulus_absNorm 𝔪)) : DirichletCharacter ℂ _) (k : ZMod _)) := by
+      χ.toDirichletCharacter k := by
   set n := Ideal.absNorm 𝔪.finitePart
   have hn : n ≠ 0 := Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot
   have : NeZero n := ⟨hn⟩
   have h𝔪 : 𝔪 ∣ ratModulus n hn := dvd_ratModulus_absNorm 𝔪
-  set ψ := ratDirichletEquiv n hn (χ.induced h𝔪)
+  dsimp only [RayClassCharacter.toDirichletCharacter]
   let I : Ideal (𝓞 ℚ) := Ideal.span {(k : 𝓞 ℚ)}
   have hI_ne : I ≠ 0 := mt (fun h ↦ Ideal.span_singleton_eq_bot.mp h) (by exact_mod_cast hk)
   let I₀ : (Ideal (𝓞 ℚ))⁰ := ⟨I, mem_nonZeroDivisors_of_ne_zero hI_ne⟩
@@ -344,9 +380,7 @@ theorem normCoeff_rayClassCharacter_rat_eq {𝔪 : Modulus ℚ} (χ : RayClassCh
 associated Dirichlet character.** -/
 theorem lSeries_rayClassCharacter_rat_eq {𝔪 : Modulus ℚ} (χ : RayClassCharacter 𝔪) :
     LSeries (normCoeff ℚ χ.toUnitaryIdealWeight.toIdealArithmeticFunction) =
-      LSeries ((ratDirichletEquiv (Ideal.absNorm 𝔪.finitePart)
-        (Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot)
-        (χ.induced (dvd_ratModulus_absNorm 𝔪)) : DirichletCharacter ℂ _) ·) := by
+      LSeries (χ.toDirichletCharacter ·) := by
   funext s
   exact LSeries_congr (fun {k} hk ↦ normCoeff_rayClassCharacter_rat_eq χ hk) s
 
