@@ -115,21 +115,9 @@ theorem coe_commutant_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype
       {R | (∀ i j, i ≠ j → R.piLpEntry i j = 0) ∧
         (∀ i j, R.piLpEntry i i = R.piLpEntry j j) ∧
         ∀ i, R.piLpEntry i i ∈ M.commutant} := by
+  rw [coe_commutant, ← coe_toStarSubalgebra, toStarSubalgebra_piLpMatrix]
   ext R
-  simp only [SetLike.mem_coe, mem_commutant_iff, mem_piLpMatrix_iff, Set.mem_ofPred_eq]
-  refine ⟨fun hR ↦ ⟨fun i j hij ↦ ?_, fun i j ↦ ?_, fun i s hs ↦ ?_⟩,
-    fun ⟨hoff, hdiag, hcomm⟩ A hA ↦ ContinuousLinearMap.ext_piLpEntry fun i j ↦ ?_⟩
-  · simpa [hij.symm] using congrArg (fun T ↦ T.piLpEntry i j)
-      (hR (PiLp.singleEntryCLM i i 1)
-        (mem_piLpMatrix_iff.1 (singleEntryCLM_mem_piLpMatrix i i M.one_mem)))
-  · simpa using (congrArg (fun T ↦ T.piLpEntry i j)
-      (hR (PiLp.singleEntryCLM i j 1)
-        (mem_piLpMatrix_iff.1 (singleEntryCLM_mem_piLpMatrix i j M.one_mem)))).symm
-  · simpa using congrArg (fun T ↦ T.piLpEntry i i)
-      (hR (PiLp.singleEntryCLM i i s)
-        (mem_piLpMatrix_iff.1 (singleEntryCLM_mem_piLpMatrix i i hs)))
-  · rw [ContinuousLinearMap.piLpEntry_mul_of_offDiag_zero_right hoff,
-      ContinuousLinearMap.piLpEntry_mul_of_offDiag_zero_left hoff, hdiag i j]
-    exact hcomm j (A.piLpEntry i j) (hA i j)
+  simp only [StarSubalgebra.mem_centralizer_piLpMatrix_iff, coe_toStarSubalgebra, ← coe_commutant,
+    SetLike.mem_coe, Set.mem_ofPred_eq]
 
 end VonNeumannAlgebra

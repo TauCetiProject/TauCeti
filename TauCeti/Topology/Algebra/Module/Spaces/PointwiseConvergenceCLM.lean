@@ -119,14 +119,6 @@ theorem mem_closure_iff {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [Nor
 
 end PointwiseConvergenceCLM
 
-/-- Evaluating `toPointwiseConvergenceCLM` at a vector agrees with evaluating the original map. -/
-theorem ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply {𝕜₁ 𝕜₂ E F : Type*}
-    [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [AddCommGroup E] [TopologicalSpace E]
-    [Module 𝕜₁ E] [ContinuousSMul 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]
-    [IsTopologicalAddGroup F] [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F]
-    (T : E →SL[σ] F) (x : E) :
-    (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F T) x = T x :=
-  (rfl)
 
 /-- Passing to the topology of pointwise convergence does not identify distinct maps. -/
 theorem ContinuousLinearMap.toPointwiseConvergenceCLM_injective {𝕜₁ 𝕜₂ E F : Type*}

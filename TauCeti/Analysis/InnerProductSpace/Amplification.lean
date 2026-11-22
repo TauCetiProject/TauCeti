@@ -61,14 +61,12 @@ variable [DecidableEq ι]
 at `i` of the image of a vector supported at `j`. -/
 noncomputable def piLpEntry (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H))
     (i j : ι) : H →L[𝕜] H :=
-  PiLp.proj 2 (fun _ : ι => H) i ∘L T ∘L
-    (PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι => H)).symm.toContinuousLinearMap ∘L
-      ContinuousLinearMap.single 𝕜 (fun _ : ι => H) j
+  PiLp.proj 2 (fun _ : ι => H) i ∘L T ∘L PiLp.singleCLM 2 𝕜 (fun _ : ι => H) j
 
 @[simp]
 theorem piLpEntry_apply (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H))
-    (i j : ι) (h : H) : T.piLpEntry i j h = T (PiLp.single 2 j h) i :=
-  (rfl)
+    (i j : ι) (h : H) : T.piLpEntry i j h = T (PiLp.single 2 j h) i := by
+  simp [piLpEntry]
 
 @[simp]
 theorem piLpEntry_zero (i j : ι) :
@@ -128,9 +126,10 @@ theorem forall_tendsto_apply_iff_forall_tendsto_piLpEntry_apply [Finite ι] {α 
     (∀ w, Tendsto (fun a => T a w) l (𝓝 (T₀ w))) ↔
       ∀ i j h, Tendsto (fun a => (T a).piLpEntry i j h) l (𝓝 (T₀.piLpEntry i j h)) := by
   have := Fintype.ofFinite ι
-  refine ⟨fun hw i j h =>
-    ((PiLp.proj (𝕜 := 𝕜) 2 (fun _ : ι => H) i).continuous.tendsto _).comp
-      (hw (PiLp.single 2 j h)), fun h w => ?_⟩
+  refine ⟨fun hw i j h => by
+    simpa [piLpEntry_apply, Function.comp_def] using
+      ((PiLp.proj (𝕜 := 𝕜) 2 (fun _ : ι => H) i).continuous.tendsto _).comp
+        (hw (PiLp.single 2 j h)), fun h w => ?_⟩
   have hcoord (i : ι) : Tendsto (fun a => T a w i) l (𝓝 (T₀ w i)) := by
     simp_rw [apply_eq_sum_piLpEntry]; exact tendsto_finsetSum _ fun j _ => h i j (w j)
   exact ((PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι => H)).symm.continuous.tendsto _).comp
@@ -236,17 +235,16 @@ continuous linear map for the strong operator (pointwise convergence) topology. 
 noncomputable def piLpEntryCLM (i j : ι) :
     (PiLp 2 (fun _ : ι => H) →Lₚₜ[𝕜] PiLp 2 (fun _ : ι => H)) →L[𝕜] (H →Lₚₜ[𝕜] H) :=
   (postcomp H (PiLp.proj 2 (fun _ : ι => H) i)).comp
-    (precomp (PiLp 2 (fun _ : ι => H))
-      ((PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι => H)).symm.toContinuousLinearMap ∘L
-        ContinuousLinearMap.single 𝕜 (fun _ : ι => H) j))
+    (precomp (PiLp 2 (fun _ : ι => H)) (PiLp.singleCLM 2 𝕜 (fun _ : ι => H) j))
 
 /-- Evaluating `piLpEntryCLM 𝕜 H i j T` at `h` gives the `i`-th coordinate of `T` applied to the
 single-entry vector supported at `j`. -/
 @[simp]
 theorem piLpEntryCLM_apply (i j : ι)
     (T : PiLp 2 (fun _ : ι => H) →Lₚₜ[𝕜] PiLp 2 (fun _ : ι => H)) (h : H) :
-    piLpEntryCLM 𝕜 H i j T h = T (PiLp.single 2 j h) i :=
-  (rfl)
+    piLpEntryCLM 𝕜 H i j T h = T (PiLp.single 2 j h) i := by
+  rw [← PiLp.singleCLM_apply (p := 2) (𝕜 := 𝕜) (β := fun _ : ι => H) j h]
+  rfl
 
 /-- On the image of `toPointwiseConvergenceCLM`, `piLpEntryCLM` agrees with
 `ContinuousLinearMap.piLpEntry`. -/
@@ -254,8 +252,10 @@ theorem piLpEntryCLM_toPointwiseConvergenceCLM [ContinuousSMul 𝕜 (PiLp 2 (fun
     (i j : ι) (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) :
     piLpEntryCLM 𝕜 H i j
         (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) _ _ T) =
-      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H (T.piLpEntry i j) :=
-  (rfl)
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H (T.piLpEntry i j) := by
+  ext h
+  rw [piLpEntryCLM_apply]
+  exact (ContinuousLinearMap.piLpEntry_apply T i j h).symm
 
 end PointwiseConvergenceCLM
 
@@ -269,14 +269,12 @@ variable [DecidableEq ι]
 everywhere else: it sends `w` to `PiLp.single 2 i (s (w j))`. -/
 noncomputable def singleEntryCLM (i j : ι) (s : H →L[𝕜] H) :
     PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H) :=
-  (PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι => H)).symm.toContinuousLinearMap ∘L
-    ContinuousLinearMap.single 𝕜 (fun _ : ι => H) i ∘L s ∘L
-      PiLp.proj 2 (fun _ : ι => H) j
+  PiLp.singleCLM 2 𝕜 (fun _ : ι => H) i ∘L s ∘L PiLp.proj 2 (fun _ : ι => H) j
 
 @[simp]
 theorem singleEntryCLM_apply (i j : ι) (s : H →L[𝕜] H) (w : PiLp 2 (fun _ : ι => H)) :
-    singleEntryCLM i j s w = PiLp.single 2 i (s (w j)) :=
-  (rfl)
+    singleEntryCLM i j s w = PiLp.single 2 i (s (w j)) := by
+  simp [singleEntryCLM]
 
 @[simp]
 theorem _root_.ContinuousLinearMap.piLpEntry_singleEntryCLM (i j k l : ι) (s : H →L[𝕜] H) :

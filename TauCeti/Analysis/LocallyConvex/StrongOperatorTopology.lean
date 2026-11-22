@@ -205,7 +205,7 @@ theorem isClosed_image_toPointwiseConvergenceCLM_closedBall (f₀ : E →SL[σ] 
       obtain ⟨g', rfl⟩ := ContinuousLinearMap.toPointwiseConvergenceCLM_surjective g
       rw [ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image,
         Metric.mem_closedBall, dist_eq_norm, Set.mem_iInter]
-      simp only [Set.mem_ofPred_eq, ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply]
+      simp only [ContinuousLinearMap.toPointwiseConvergenceCLM_apply]
       exact ⟨fun h x => (g' - f₀).le_of_opNorm_le h x, (g' - f₀).opNorm_le_bound hr⟩
     rw [heq]
     refine isClosed_iInter fun x => isClosed_le ?_ continuous_const
@@ -238,12 +238,12 @@ theorem exists_mem_forall_norm_sub_apply_lt_of_mem_closure [ContinuousSMul 𝕜�
       closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' A))
     {ι : Type*} [Finite ι] (v : ι → E) {ε : ℝ} (hε : 0 < ε) :
     ∃ a ∈ A, ∀ i, ‖x (v i) - a (v i)‖ < ε := by
-  obtain ⟨_, ⟨hU, a, ha, rfl⟩⟩ := _root_.mem_closure_iff.1 hx _
-    (isOpen_setOf_forall_norm_sub_apply_lt x v ε)
-    (fun i ↦ by rw [ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply, sub_self, norm_zero]
-                exact hε)
-  exact ⟨a, ha, fun i ↦ by
-    simpa only [ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply] using hU i⟩
+  classical
+  have := Fintype.ofFinite ι
+  obtain ⟨a, ha, hlt⟩ :=
+    (ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff_norm.mp hx)
+      (Finset.univ.image v) hε
+  exact ⟨a, ha, fun i ↦ hlt (v i) (Finset.mem_image_of_mem v (Finset.mem_univ i))⟩
 
 end Closure
 
