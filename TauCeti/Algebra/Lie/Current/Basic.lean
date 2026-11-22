@@ -44,9 +44,10 @@ current whose difference from the original lies in `orderSubmodule R L N`, and i
 
 The polynomial currents of order below `N`, spanned by the modes `t^m ⊗ x` with `m < N`, form the
 submodule `truncSubmodule R L N`. It is the range of truncation below `N` and a complement of
-`orderSubmodule R L N`, over every commutative ring. The bracket of polynomial currents of orders
-below `M` and `N` has order below `M + N - 1`; for `N = 0` this makes the negative currents
-`t⁻¹ L[t⁻¹]` a Lie subalgebra.
+`orderSubmodule R L N`, over every commutative ring, and its intersection with
+`orderSubmodule R L P` is spanned by the modes `t^m ⊗ x` with `P ≤ m < N`. The bracket of
+polynomial currents of orders below `M` and `N` has order below `M + N - 1`; for `N = 0` this
+makes the negative currents `t⁻¹ L[t⁻¹]` a Lie subalgebra.
 
 ## References
 
@@ -453,6 +454,12 @@ theorem ofLoop_trunc_sub_mem_orderSubmodule (N : ℤ) (u : currentAlgebra R L) :
     ofLoop R L (trunc R L N u) - u ∈ orderSubmodule R L N :=
   rTensor_toLaurentSeries_trunc_sub_mem_orderSubmodule R L N u
 
+/-- A current minus its truncation has order at least the cutoff. -/
+theorem sub_ofLoop_trunc_mem_orderSubmodule (N : ℤ) (u : currentAlgebra R L) :
+    u - ofLoop R L (trunc R L N u) ∈ orderSubmodule R L N := by
+  rw [← neg_sub]
+  exact neg_mem (ofLoop_trunc_sub_mem_orderSubmodule R L N u)
+
 /-- Truncating a current preserves every lower order bound, including when the cutoff lies
 below that bound. No freeness of the coefficient module is needed. -/
 theorem ofLoop_trunc_mem_orderSubmodule (P : ℤ) {M : ℤ} {u : currentAlgebra R L}
@@ -530,9 +537,37 @@ theorem isCompl_truncSubmodule_orderSubmodule (N : ℤ) :
       map_zero]
   · refine eq_top_iff.mpr fun u _ ↦ ?_
     rw [← add_sub_cancel (ofLoop R L (trunc R L N u)) u]
-    refine Submodule.add_mem_sup (ofLoop_trunc_mem_truncSubmodule R L N u) ?_
-    rw [← neg_sub]
-    exact neg_mem (ofLoop_trunc_sub_mem_orderSubmodule R L N u)
+    exact Submodule.add_mem_sup (ofLoop_trunc_mem_truncSubmodule R L N u)
+      (sub_ofLoop_trunc_mem_orderSubmodule R L N u)
+
+/-- **The polynomial currents with orders in a window.** A polynomial current of order below `N`
+and at least `P` is a combination of the modes `t^m ⊗ x` with `P ≤ m < N`. -/
+theorem truncSubmodule_inf_orderSubmodule (N P : ℤ) :
+    truncSubmodule R L N ⊓ orderSubmodule R L P =
+      Submodule.span R
+        {u | ∃ m, P ≤ m ∧ m < N ∧ ∃ x : L, u = HahnSeries.single m (1 : R) ⊗ₜ x} := by
+  refine le_antisymm (fun u hu ↦ ?_) (Submodule.span_le.mpr ?_)
+  · obtain ⟨hu, hu'⟩ := Submodule.mem_inf.mp hu
+    -- Split off the modes below `P`; they form a current of order below and at least `P`.
+    have hle : truncSubmodule R L N ≤ truncSubmodule R L P ⊔ Submodule.span R
+        {u | ∃ m, P ≤ m ∧ m < N ∧ ∃ x : L, u = HahnSeries.single m (1 : R) ⊗ₜ x} := by
+      refine Submodule.span_le.mpr ?_
+      rintro _ ⟨m, hm, x, rfl⟩
+      by_cases hmP : m < P
+      · exact Submodule.mem_sup_left (single_tmul_mem_truncSubmodule R L hmP 1 x)
+      · exact Submodule.mem_sup_right (Submodule.subset_span ⟨m, not_lt.mp hmP, hm, x, rfl⟩)
+    obtain ⟨b, hb, s, hs, rfl⟩ := Submodule.mem_sup.mp (hle hu)
+    have hs' : s ∈ orderSubmodule R L P := by
+      refine Submodule.span_le.mpr ?_ hs
+      rintro _ ⟨m, hPm, -, x, rfl⟩
+      exact single_tmul_mem_orderSubmodule R L hPm 1 x
+    have hb' : b ∈ orderSubmodule R L P := by simpa using sub_mem hu' hs'
+    rw [Submodule.disjoint_def.mp (isCompl_truncSubmodule_orderSubmodule R L P).disjoint b hb hb',
+      zero_add]
+    exact hs
+  · rintro _ ⟨m, hPm, hm, x, rfl⟩
+    exact Submodule.mem_inf.mpr
+      ⟨single_tmul_mem_truncSubmodule R L hm 1 x, single_tmul_mem_orderSubmodule R L hPm 1 x⟩
 
 /-- A linear map on polynomial currents which vanishes on all modes `t^n ⊗ x` with `n ≥ N` is
 unchanged by first truncating polynomial currents below `N`. -/

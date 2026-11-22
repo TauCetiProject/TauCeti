@@ -188,7 +188,7 @@ theorem ne_pow_sub_self_of_exists_reduced_artinSchreier_pole
       ¬ (p : ℤ) ∣ v.ord (u - (w₀ ^ p - w₀))) :
     ∀ w : R, w ^ p - w ≠ u := by
   obtain ⟨w₀, hneg, hdiv⟩ := hpole
-  have hp := one_lt_expChar_of_not_dvd R hdiv
+  have hp : 1 < p := one_lt_expChar_of_ne_one R (by rintro rfl; simp at hdiv)
   intro w hw
   apply v.ne_pow_sub_self_of_ord_neg_of_not_dvd
     hp hneg hdiv (w - w₀)
@@ -205,7 +205,7 @@ theorem ord_reduced_artinSchreier_representative_eq (p : ℕ) [ExpChar R p]
     (hz : v.ord (u - (z ^ p - z)) < 0)
     (hzdiv : ¬(p : ℤ) ∣ v.ord (u - (z ^ p - z))) :
     v.ord (u - (w ^ p - w)) = v.ord (u - (z ^ p - z)) := by
-  have hp := one_lt_expChar_of_not_dvd R hwdiv
+  have hp : 1 < p := one_lt_expChar_of_ne_one R (by rintro rfl; simp at hwdiv)
   have heq (a b : R) : (u - (a ^ p - a)) - ((b - a) ^ p - (b - a)) =
       u - (b ^ p - b) := by
     rw [sub_pow_expChar]

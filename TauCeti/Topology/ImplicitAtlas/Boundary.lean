@@ -139,6 +139,24 @@ namespace ImplicitAtlasWithBoundary
 
 variable {bd : Set X} (𝒜 : ImplicitAtlasWithBoundary Γ E ρ T act X bd d)
 
+/-! ### Basic properties of the boundary -/
+
+/-- The boundaries `∂X_I` are invariant under `Γ_I`. -/
+@[simp]
+theorem act_mem_boundary_iff {I : Finset A} (g : (α : I) → Γ α) {x : T I} :
+    act I g x ∈ 𝒜.boundary I ↔ x ∈ 𝒜.boundary I := by
+  refine ⟨fun h ↦ ?_, 𝒜.act_mem_boundary I g x⟩
+  simpa [← Homeomorph.mul_apply, ← map_mul] using 𝒜.act_mem_boundary I g⁻¹ _ h
+
+/-- The boundary `∂X_∅` is mapped onto `∂X` by the identification `X_∅ ≃ₜ X`. -/
+theorem image_baseHomeomorph_boundary : 𝒜.baseHomeomorph '' 𝒜.boundary ∅ = bd := by
+  rw [𝒜.boundary_empty, Homeomorph.image_preimage]
+
+include 𝒜 in
+/-- The boundary `∂X` of the base is closed. -/
+theorem isClosed_baseBoundary : IsClosed bd :=
+  𝒜.image_baseHomeomorph_boundary ▸ 𝒜.baseHomeomorph.isClosedMap _ (𝒜.isClosed_boundary ∅)
+
 /-! ### Boundary points have positive expected dimension -/
 
 /-- A regular point of a thickening lying on its boundary has positive expected dimension: a
@@ -156,6 +174,16 @@ theorem mem_boundary_of_baseHomeomorph_footprintMap_mem {I : Finset A}
     (hx : 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset I) x) ∈ bd) :
     x.val ∈ 𝒜.boundary I :=
   (𝒜.footprintMap_mem_boundary_iff _ x).1 (by rw [𝒜.boundary_empty]; exact hx)
+
+/-- **Regular charts of dimension `0` have empty boundary.** Where the expected dimension
+`d + m_I` is at most `0`, the regular locus `X_I^reg` misses the boundary `∂X_I`. -/
+theorem regLocus_inter_boundary_eq_empty {I : Finset A}
+    (hI : d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ≤ 0) :
+    𝒜.regLocus I ∩ 𝒜.boundary I = ∅ := by
+  refine eq_empty_of_forall_notMem fun x ⟨hx, hxb⟩ ↦ ?_
+  have := 𝒜.one_le_of_mem_boundary (subset_refl I) ⟨x, mem_kuranishiZeroSet_self _ x⟩
+    (by rwa [𝒜.footprintMap_self]) hxb
+  omega
 
 include 𝒜 in
 /-- An atlas with boundary all of whose expected dimensions `d + m_I` are at most `0` has empty
@@ -369,6 +397,18 @@ theorem coe_footprintMap_boundaryAtlas {I J : Finset A} (h : I ⊆ J)
     (𝒜.boundaryAtlas.footprintMap h x : T I) =
       𝒜.footprintMap h ⟨x.val, 𝒜.mem_kuranishiZeroSet_boundaryAtlas.1 x.property⟩ :=
   (rfl)
+
+/-- The regular footprints of the boundary atlas are the traces on `∂X` of the regular footprints
+of `𝒜`: `V_I ∩ ∂X`, viewed in the subtype `∂X`. -/
+@[simp]
+theorem footprint_boundaryAtlas (I : Finset A) :
+    𝒜.boundaryAtlas.footprint I = Subtype.val ⁻¹' 𝒜.footprint I := by
+  ext y
+  simp only [ImplicitAtlas.Core.mem_footprint, mem_preimage]
+  refine ⟨fun ⟨x, hx, hxy⟩ ↦ ⟨𝒜.zeroSetInclusion x, hx, congrArg Subtype.val hxy⟩,
+    fun ⟨x, hx, hxy⟩ ↦ ?_⟩
+  exact ⟨𝒜.zeroSetLift x (𝒜.mem_boundary_of_baseHomeomorph_footprintMap_mem x (hxy ▸ y.property)),
+    hx, Subtype.ext hxy⟩
 
 end ImplicitAtlasWithBoundary
 
