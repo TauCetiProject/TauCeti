@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.RepresentationTheory.Subrepresentation
 import TauCeti.Order.ModularLattice
-import TauCeti.RepresentationTheory.Dual
 
 /-!
 # Invariant splittings of a Lie algebra along a compact subgroup
@@ -31,9 +30,11 @@ one.
 A complement determines the inclusion of the dual of each summand into `𝔤*`: a linear form on a
 summand is extended by zero on the complementary sum, that is, composed with the projection along
 it. For invariant summands this inclusion intertwines the dual of the adjoint action of `H` on the
-summand with the coadjoint action of `H` on `𝔤*`
-(`TauCeti.Lie.isIntertwiningMap_dualMap_projectionOnto_coadjointRepresentation`). Applied to the
-splitting above, it includes `𝔥*` and `𝔪*` equivariantly into `𝔤*`.
+summand with the coadjoint action of `H` on `𝔤*`: this is
+`Subrepresentation.isIntertwiningMap_dualMap_projectionOnto`, since the coadjoint representation
+of `H` is the dual of its adjoint representation (`TauCeti.Lie.coadjointRepresentation_def` and
+`Representation.dual_comp`). Applied to the splitting above, it includes `𝔥*` and `𝔪*`
+equivariantly into `𝔤*`.
 
 This is the linear algebra of the local model of a Hamiltonian action near an orbit with compact
 stabilizer `H` (the Marle–Guillemin–Sternberg normal form), where `𝔨` is the Lie algebra of the
@@ -43,9 +44,6 @@ coadjoint stabilizer of the moment map value, which contains `𝔥`.
 
 * `TauCeti.Lie.exists_sup_eq_and_isCompl_of_isCompact`: `Ad(H)`-invariant complements
   `𝔤 = 𝔥 ⊕ 𝔪 ⊕ 𝔮` adapted to a flag `𝔥 ≤ 𝔨` of invariant subspaces.
-* `TauCeti.Lie.isIntertwiningMap_dualMap_projectionOnto_coadjointRepresentation`: extension by
-  zero along an invariant complement includes the dual of an invariant summand into `𝔤*`
-  equivariantly for the coadjoint action.
 
 ## References
 
@@ -62,29 +60,6 @@ public section
 namespace TauCeti.Lie
 
 open scoped ContDiff Manifold
-
-section Dual
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H' : Type*} [TopologicalSpace H'] {I : ModelWithCorners 𝕜 E H'}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H' G] [Group G] [LieGroup I 1 G]
-
-/-- **Equivariant inclusion of the dual of an invariant summand.** Let `𝔰 ⊕ 𝔱 = 𝔤` be
-complementary subspaces invariant under the adjoint action of a subgroup `H`. Extending linear
-forms on `𝔰` by zero on `𝔱`, that is, composing them with the projection onto `𝔰` along `𝔱`,
-intertwines the dual of the adjoint action of `H` on `𝔰` with the coadjoint action of `H` on
-`𝔤*`. -/
-theorem isIntertwiningMap_dualMap_projectionOnto_coadjointRepresentation {H : Subgroup G}
-    {𝔰 𝔱 : Subrepresentation ((adjointRepresentation 𝕜 I G).comp H.subtype)} (h : IsCompl 𝔰 𝔱) :
-    Representation.IsIntertwiningMap 𝔰.toRepresentation.dual
-      ((coadjointRepresentation 𝕜 I G).comp H.subtype)
-      (𝔰.toSubmodule.projectionOnto 𝔱.toSubmodule
-        (Subrepresentation.isCompl_toSubmodule.mpr h)).dualMap := by
-  simpa only [coadjointRepresentation_def, Representation.dual_comp] using
-    Subrepresentation.isIntertwiningMap_dualMap_projectionOnto h
-
-end Dual
 
 section Splitting
 
