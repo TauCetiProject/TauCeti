@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Morphism
 public import TauCeti.Algebra.Coalgebra.Comodule.Preadditive
 public import TauCeti.RingTheory.SimpleModule.Isotypic
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Trivial
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 
 /-!
 # Simple coefficient spaces are isotypic components
@@ -42,6 +43,7 @@ coefficient spaces label the isomorphism classes of simple comodules.
   comodules are independent.
 * `matrixCoefficientSubmodule_eq_iff`: two simple comodules, projective over the ground ring,
   have the same coefficient space exactly when there is a nonzero morphism between them.
+* `finite_of_mem_simpleCoefficientSubmodules`: simple coefficient spaces are finite-dimensional.
 * `sSupIndep_simpleCoefficientSubmodules`: independence of the distinct simple blocks.
 * `isInternal_of_sSup_simpleCoefficientSubmodules_eq_top`: a coalgebra over a field spanned by its
   distinct simple coefficient spaces is their internal direct sum.
@@ -261,6 +263,14 @@ theorem matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules
     ← (LinearEquiv.ofBijective g hg).isotypicComponent_eq,
     ← matrixCoefficientSubmodule_eq_isotypicComponent (M := S)]
   exact ⟨ComoduleCat.of k C S, inferInstance, rfl⟩
+
+/-- A simple coefficient space is finite-dimensional. -/
+theorem finite_of_mem_simpleCoefficientSubmodules {P : Submodule k C}
+    (hP : P ∈ simpleCoefficientSubmodules k C) : Module.Finite k P := by
+  obtain ⟨M, hM, rfl⟩ := mem_simpleCoefficientSubmodules.mp hP
+  have := hM
+  have : Module.Finite k M := finite_of_isSimpleOrder (C := C)
+  infer_instance
 
 /-- Zero is not a simple coefficient space. -/
 @[simp]

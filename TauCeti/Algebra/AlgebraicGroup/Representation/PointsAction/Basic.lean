@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
-public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Corestrict
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Corestrict.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.PointAction
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Space

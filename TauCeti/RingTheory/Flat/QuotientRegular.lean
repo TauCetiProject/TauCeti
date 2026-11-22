@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Flat.Tensor
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Ideal.Colon
 import Mathlib.RingTheory.OrderOfVanishing.Basic
-import TauCeti.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.Ideal.Quotient.Colon
 import TauCeti.RingTheory.Flat.Extensions
 
 /-!

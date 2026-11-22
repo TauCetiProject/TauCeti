@@ -63,7 +63,8 @@ Morse index is the negative index of inertia of the critical Hessian.
 * `TauCeti.criticalHessian_mfderiv_apply_eq_zero`: the critical Hessian vanishes on directions
   tangent to a family of critical points.
 * `TauCeti.criticalHessian_comp_apply`: the second-order chain rule at a critical point, for a
-  `C²` map between boundaryless manifolds.
+  `C²` map between boundaryless manifolds. `TauCeti.toQuadraticMap_toBilinForm_criticalHessian_comp`
+  states it as an equality of quadratic forms precomposed with `dφ`.
 * `TauCeti.criticalHessian_comp_snd_apply`: the critical Hessian of `(x, v) ↦ q v` on `M × V` is the
   second derivative of `q` on the second components.
   Its kernel is described by `TauCeti.criticalHessian_comp_snd_apply_eq_zero_iff`.
@@ -769,6 +770,18 @@ theorem criticalHessian_comp_apply {x : M} (hφx : φ y = x) (hf : ContMDiffAt I
   rw [hy, hφd.mfderiv_eq_fderiv_extChartAt_conj rfl]
   -- `writtenInExtChartAt` is by definition `φ` read in the extended charts at `y` and `φ y`.
   rfl
+
+/-- **The second-order chain rule as quadratic forms.** If `φ y` is a critical point of a
+function `f` which is `C²` there, and `φ` is `C²` at `y`, then the quadratic form of the critical
+Hessian of `f ∘ φ` at `y` is that of `f` at `φ y` precomposed with `dφ_y`. No condition is put on
+`dφ_y`. -/
+theorem toQuadraticMap_toBilinForm_criticalHessian_comp (hf : ContMDiffAt I 𝓘(ℝ) 2 f (φ y))
+    (hφ : ContMDiffAt I' I 2 φ y) (hcrit : φ y ∈ criticalPoints I f) :
+    (criticalHessian I' (f ∘ φ) y).toBilinForm.toQuadraticMap =
+      (criticalHessian I f (φ y)).toBilinForm.toQuadraticMap.comp
+        (mfderiv I' I φ y : TangentSpace I' y →ₗ[ℝ] TangentSpace I (φ y)) := by
+  ext u
+  simp [criticalHessian_comp_apply rfl hf hφ hcrit]
 
 end Comp
 

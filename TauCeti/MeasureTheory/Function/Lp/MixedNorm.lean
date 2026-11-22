@@ -39,6 +39,11 @@ This turns estimates proved in weak form, by testing against `L²`-valued functi
 estimates. The typical application is to Strichartz estimates, where the `TT*` argument bounds the
 pairings `∫ ⟪U(t) f, G(t)⟫ dt` for `L²`-valued `G`.
 
+Mixed norms are invariant under the reflection `b ↦ -b` of the parameter when `ρ` is invariant
+under negation (`ρ.IsNegInvariant`), as Lebesgue measure on the time line is
+(`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_comp_neg`); this reverses time in such
+estimates.
+
 ## The argument
 
 The test function is a truncated extremal function. In space, for `N > 0`, put
@@ -204,8 +209,8 @@ private theorem eLpNorm_le_of_enorm_rpow_le_re_inner {q q' r' : ℝ≥0∞} [q.H
   have hq0 : q ≠ 0 := ENNReal.HolderConjugate.ne_zero q q'
   -- `f` is bounded by `max K 0` and vanishes off `A`, which has finite measure.
   have hX : eLpNorm f q ρ ≠ ∞ := by
-    refine ((memLp_top_of_bound hf (max K 0) (ae_of_all _ fun b ↦ ?_)
-      ).mono_exponent_of_measure_support_ne_top hfA hρA le_top).eLpNorm_ne_top
+    refine (memLp_of_norm_le_of_measure_support_ne_top hf (c := max K 0) (ae_of_all _ fun b ↦ ?_)
+      hρA hfA q).eLpNorm_ne_top
     rw [Real.norm_of_nonneg (hf0 b)]
     by_cases hb : b ∈ A
     · exact (hfK b hb).trans (le_max_left _ _)
@@ -904,5 +909,16 @@ theorem AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_l
   · obtain rfl : r' = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ r').1 rfl
     exact eLpNorm_truncNorm_top_le hq hΦ' hM' _
   · exact eLpNorm_truncNorm_le hq hr hr2 hΦ' hM' _
+
+/-! ### Reflection of the parameter -/
+
+/-- Reflecting the parameter, `b ↦ -b`, preserves mixed norms when the measure `ρ` is invariant
+under negation, as Lebesgue measure on the time line is. -/
+theorem AEStronglyMeasurable.eLpNorm_eLpNorm_comp_neg [InvolutiveNeg β] [MeasurableNeg β]
+    [ρ.IsNegInvariant] {F : Type*} [NormedAddCommGroup F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {Φ : β → Lp F p μ} (hΦ : AEStronglyMeasurable Φ ρ) {q r : ℝ≥0∞} :
+    eLpNorm (fun b ↦ eLpNorm (Φ (-b)) r μ) q ρ = eLpNorm (fun b ↦ eLpNorm (Φ b) r μ) q ρ :=
+  eLpNorm_comp_measurePreserving (g := fun b ↦ eLpNorm (Φ b) r μ)
+    (hΦ.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable (Measure.measurePreserving_neg ρ)
 
 end MeasureTheory
